@@ -151,6 +151,19 @@ theorem inv_two_le_one_sub_norm_sq_sub_norm_sq_of_eq_zero {C r ρ : ℝ} (hC : 0
     nlinarith [hw y, mul_le_mul_of_nonneg_left (hw y) (div_nonneg hC hr₀.le)]
   linarith
 
+/-- For `C ≥ 0`, every `c₀ > 0` dominates a radius `c > 0` with `256 C c² ≤ 1`, the smallness
+condition under which the coarse bounds control the defect energy at the smallest scale
+(`ofReal_div_le_setLIntegral_of_eq_zero`). -/
+theorem exists_le_and_mul_sq_le_one {C c₀ : ℝ} (hC : 0 ≤ C) (hc₀ : 0 < c₀) :
+    ∃ c, 0 < c ∧ c ≤ c₀ ∧ 256 * C * c ^ 2 ≤ 1 := by
+  set c := min c₀ (16 * (C + 1))⁻¹
+  have h₁ : c * (16 * (C + 1)) ≤ 1 :=
+    (mul_le_mul_of_nonneg_right (min_le_right _ _) (by positivity)).trans_eq
+      (inv_mul_cancel₀ (by positivity))
+  refine ⟨c, lt_min hc₀ (by positivity), min_le_left _ _, ?_⟩
+  nlinarith [mul_le_mul h₁ h₁ (by positivity) zero_le_one,
+    mul_nonneg (sq_nonneg c) (by positivity : (0 : ℝ) ≤ C ^ 2 + C + 1)]
+
 variable [MeasurableSpace E]
 
 /-- The **defect measure** `(r / 4) |1 - |α|² - |β|²| μ` of the normalized spinor `χ = α u₀ + β` at

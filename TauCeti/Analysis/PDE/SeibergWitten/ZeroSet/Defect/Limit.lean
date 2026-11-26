@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.DefectEnergy
+public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Defect.Energy
 public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Density
 public import TauCeti.Topology.Sets.KuratowskiLimit
 import TauCeti.MeasureTheory.Measure.Prokhorov
@@ -73,18 +73,6 @@ namespace TauCeti.SeibergWitten
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F]
-
-/-- A radius `c ≤ c₀` with `256 C c² ≤ 1`, at which the coarse bounds control the defect energy at
-the smallest scale. -/
-private theorem exists_le_and_mul_sq_le_one {C c₀ : ℝ} (hC : 0 ≤ C) (hc₀ : 0 < c₀) :
-    ∃ c, 0 < c ∧ c ≤ c₀ ∧ 256 * C * c ^ 2 ≤ 1 := by
-  set c := min c₀ (16 * (C + 1))⁻¹
-  have h₁ : c * (16 * (C + 1)) ≤ 1 :=
-    (mul_le_mul_of_nonneg_right (min_le_right _ _) (by positivity)).trans_eq
-      (inv_mul_cancel₀ (by positivity))
-  refine ⟨c, lt_min hc₀ (by positivity), min_le_left _ _, ?_⟩
-  nlinarith [mul_le_mul h₁ h₁ (by positivity) zero_le_one,
-    mul_nonneg (sq_nonneg c) (by positivity : (0 : ℝ) ≤ C ^ 2 + C + 1)]
 
 /-- **The limit of the defect measures along a sequence of large-parameter solutions.** Let `E` be
 a flat chart of dimension four with an additive Haar measure `μ`, and let `r k → ∞`. Suppose that

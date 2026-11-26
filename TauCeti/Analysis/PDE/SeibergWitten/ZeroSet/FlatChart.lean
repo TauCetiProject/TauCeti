@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.PDE.SeibergWitten.LargeParameter.Curvature
 public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Covering
-public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.DefectEnergy
+public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Defect.Energy
 public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Monotonicity
 
 /-!
@@ -243,16 +243,7 @@ theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq {K
   have hB₁ : 0 < μ.real (ball (0 : E) 1) :=
     ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
   -- The smallest scale `c₀ / √r` is at most `R / 2` and keeps `|α|²` below `1 / 4`.
-  set c₀ := min (R / 2) (1 / (16 * (K + 1)))
-  have hc₀ : 0 < c₀ := lt_min (half_pos hR) (by positivity)
-  have hc₀K : 256 * K * c₀ ^ 2 ≤ 1 := by
-    have h1 : 256 * K * (1 / (16 * (K + 1))) ^ 2 ≤ 1 := by
-      rw [div_pow, one_pow, mul_one_div, div_le_one (by positivity)]
-      nlinarith
-    calc 256 * K * c₀ ^ 2 ≤ 256 * K * (1 / (16 * (K + 1))) ^ 2 := by
-          gcongr
-          exact min_le_right _ _
-      _ ≤ 1 := h1
+  obtain ⟨c₀, hc₀, hc₀R, hc₀K⟩ := exists_le_and_mul_sq_le_one hK (half_pos hR)
   obtain ⟨c, hc, ρ₀, hρ₀, hdens⟩ :=
     TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le (X := E) (C := 0)
       (C₁ := C)
@@ -281,7 +272,7 @@ theorem exists_forall_ofReal_mul_sq_le_measure_closedBall_of_add_hodgeStar_eq {K
   · -- The defect energy at the smallest scale.
     have hsR : c₀ / √r < R :=
       (div_le_self hc₀.le (Real.one_le_sqrt.2 hr)).trans_lt
-        ((min_le_left _ _).trans_lt (half_lt_self hR))
+        (hc₀R.trans_lt (half_lt_self hR))
     have hsub : closedBall x₀ (c₀ / √r) ⊆ ball x₀ R := closedBall_subset_ball hsR
     rw [← ENNReal.ofReal_le_iff_le_toReal (hfin _ hsR)]
     exact ofReal_div_le_withDensity_closedBall_of_eq_zero hK hr hrK hc₀.le hc₀K
