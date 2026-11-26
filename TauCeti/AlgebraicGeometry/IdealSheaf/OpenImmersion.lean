@@ -22,46 +22,58 @@ open CategoryTheory Opposite
 
 universe u
 
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-- The section isomorphisms of an open immersion commute with restriction of sections. -/
+theorem appIso_hom_naturality_apply {X Y : Scheme.{u}} (f : X ⟶ Y) [IsOpenImmersion f]
+    {U V : X.Opens} (i : V ⟶ U) (s : Γ(Y, f ''ᵁ U)) :
+    (f.appIso V).hom (Y.presheaf.map (f.opensFunctor.map i).op s) =
+      X.presheaf.map i.op ((f.appIso U).hom s) := by
+  simpa only [CommRingCat.comp_apply, Quiver.Hom.unop_op] using
+    congrArg (fun g : Γ(Y, f ''ᵁ U) ⟶ Γ(X, V) ↦ g s) (f.appIso_hom_naturality i.op)
+
+end AlgebraicGeometry.Scheme.Hom
+
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
-/-- Pulling back an ideal sheaf along an open immersion identifies its sections on an open
-with the original ideal sections on the image open. -/
-theorem sections_comap_of_isOpenImmersion {X Y : Scheme.{u}} (I : Y.IdealSheafData)
-    (f : X ⟶ Y) [IsOpenImmersion f] (U : X.Opens) :
-    (I.comap f).sections U = (I.sections (f ''ᵁ U)).map (f.appIso U).hom.hom := by
+/-- A section on the image of an open immersion lies in the ideal if and only if its pullback
+lies in the pulled-back ideal. -/
+theorem appIso_hom_mem_sections_comap_iff {X Y : Scheme.{u}} (I : Y.IdealSheafData)
+    (f : X ⟶ Y) [IsOpenImmersion f] {U : X.Opens} (s : Γ(Y, f ''ᵁ U)) :
+    (f.appIso U).hom s ∈ (I.comap f).sections U ↔ s ∈ I.sections (f ''ᵁ U) := by
   have ha (V : X.affineOpens) (s : Γ(Y, f ''ᵁ V.val)) :
       (f.appIso V.val).hom s ∈ (I.comap f).sections V.val ↔
         s ∈ I.sections (f ''ᵁ V.val) := by
     let W : Y.affineOpens := ⟨f ''ᵁ V.val, V.property.image_of_isOpenImmersion f⟩
     rw [sections_eq_ideal, ideal_comap_of_isOpenImmersion, ← I.sections_eq_ideal W]
     simp only [Ideal.mem_comap, ← CommRingCat.comp_apply, Iso.hom_inv_id, CommRingCat.id_apply]
+    -- The underlying open of the affine open `W` is `f ''ᵁ V.val`.
     rfl
-  have hn (V : X.Opens) (i : V ⟶ U) (s : Γ(Y, f ''ᵁ U)) :
-      (f.appIso V).hom (Y.presheaf.map (f.opensFunctor.map i).op s) =
-        X.presheaf.map i.op ((f.appIso U).hom s) := by
-    simpa only [CommRingCat.comp_apply, Quiver.Hom.unop_op] using
-      congrArg (fun g : Γ(Y, f ''ᵁ U) ⟶ Γ(X, V) ↦ g s) (f.appIso_hom_naturality i.op)
-  have he (s : Γ(Y, f ''ᵁ U)) :
-      (f.appIso U).hom s ∈ (I.comap f).sections U ↔ s ∈ I.sections (f ''ᵁ U) := by
-    constructor
-    · intro hs
-      apply I.mem_sections_of_forall_exists
-      rintro _ ⟨x, hx, rfl⟩
-      obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset hx
-      let i : V ⟶ U := homOfLE hVU
-      refine ⟨f ''ᵁ V, f.opensFunctor.map i, ⟨x, hxV, rfl⟩, (ha ⟨V, hV⟩ _).mp ?_⟩
-      rw [hn]
-      exact (I.comap f).map_mem_sections i hs
-    · intro hs
-      apply mem_sections_of_forall_affineOpens
-      intro V i
-      rw [← sections_eq_ideal, ← hn]
-      exact (ha V _).mpr (I.map_mem_sections (f.opensFunctor.map i) hs)
-  let e := (f.appIso U).commRingCatIsoToRingEquiv
-  have h : (e : Γ(Y, f ''ᵁ U) →+* Γ(X, U)) = (f.appIso U).hom.hom := rfl
-  rw [← h, Ideal.map_comap_of_equiv]
+  constructor
+  · intro hs
+    apply I.mem_sections_of_forall_exists
+    rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨V, hV, hxV, hVU⟩ := exists_isAffineOpen_mem_and_subset hx
+    let i : V ⟶ U := homOfLE hVU
+    refine ⟨f ''ᵁ V, f.opensFunctor.map i, ⟨x, hxV, rfl⟩, (ha ⟨V, hV⟩ _).mp ?_⟩
+    rw [f.appIso_hom_naturality_apply]
+    exact (I.comap f).map_mem_sections i hs
+  · intro hs
+    apply mem_sections_of_forall_affineOpens
+    intro V i
+    rw [← sections_eq_ideal, ← f.appIso_hom_naturality_apply]
+    exact (ha V _).mpr (I.map_mem_sections (f.opensFunctor.map i) hs)
+
+/-- Pulling back an ideal sheaf along an open immersion identifies its sections on an open
+with the original ideal sections on the image open. -/
+theorem sections_comap_of_isOpenImmersion {X Y : Scheme.{u}} (I : Y.IdealSheafData)
+    (f : X ⟶ Y) [IsOpenImmersion f] (U : X.Opens) :
+    (I.comap f).sections U = (I.sections (f ''ᵁ U)).map (f.appIso U).hom.hom := by
+  rw [← Iso.commRingCatIsoToRingEquiv_toRingHom, Ideal.map_comap_of_equiv]
   ext t
-  obtain ⟨s, rfl⟩ := e.surjective t
-  exact (he s).trans (by rw [Ideal.mem_comap, RingEquiv.symm_apply_apply])
+  obtain ⟨s, rfl⟩ := (f.appIso U).commRingCatIsoToRingEquiv.surjective t
+  rw [Ideal.mem_comap, RingEquiv.symm_apply_apply, ← RingEquiv.coe_toRingHom,
+    Iso.commRingCatIsoToRingEquiv_toRingHom]
+  exact I.appIso_hom_mem_sections_comap_iff f s
 
 end AlgebraicGeometry.Scheme.IdealSheafData

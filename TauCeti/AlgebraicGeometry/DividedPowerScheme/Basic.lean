@@ -86,9 +86,12 @@ instance : Category DividedPowerScheme.{u} where
   id X :=
     { hom := 𝟙 X.scheme
       isDPMorphism_appLE := fun U V h ↦ by
-        have hVU : V ≤ U := h
+        have hVU : V ≤ U := Scheme.Hom.id_preimage U ▸ h
         have he : Scheme.Hom.appLE (𝟙 X.scheme) U V h = X.scheme.presheaf.map (homOfLE hVU).op :=
-          Category.id_comp _
+          calc
+            _ = 𝟙 Γ(X.scheme, U) ≫ X.scheme.presheaf.map (homOfLE hVU).op :=
+              congrArg (· ≫ X.scheme.presheaf.map (homOfLE hVU).op) (Scheme.Hom.id_app U)
+            _ = _ := Category.id_comp _
         rw [he]
         exact X.isDPMorphism_res (homOfLE hVU) }
   comp f g :=
@@ -178,7 +181,7 @@ theorem Hom.closedFiberMap_comp_ι (f : X ⟶ Y) :
   subschemeMap_subschemeι _ _ _ _
 
 /-- The closed fibre construction is functorial. -/
-abbrev closedFiberFunctor : DividedPowerScheme.{u} ⥤ Scheme.{u} where
+@[expose, implicit_reducible] def closedFiberFunctor : DividedPowerScheme.{u} ⥤ Scheme.{u} where
   obj := closedFiber
   map f := f.closedFiberMap
   map_id X := by
@@ -187,6 +190,15 @@ abbrev closedFiberFunctor : DividedPowerScheme.{u} ⥤ Scheme.{u} where
   map_comp f g := by
     rw [← cancel_mono (closedFiberι _)]
     simp
+
+/-- The closed fibre functor sends a divided power scheme to its closed fibre. -/
+@[simp]
+theorem closedFiberFunctor_obj (X : DividedPowerScheme.{u}) :
+    closedFiberFunctor.obj X = X.closedFiber := (rfl)
+
+/-- The closed fibre functor sends a morphism to its induced map on closed fibres. -/
+@[simp]
+theorem closedFiberFunctor_map (f : X ⟶ Y) : closedFiberFunctor.map f = f.closedFiberMap := (rfl)
 
 /-- The closed fibres form a closed subscheme of the underlying schemes, naturally in the
 divided power scheme. -/
@@ -240,7 +252,7 @@ theorem Hom.fromTrivial_hom {T : Scheme.{u}} (f : T ⟶ X.scheme) (h) :
     (Hom.fromTrivial f h).hom = f := (rfl)
 
 /-- Equip ordinary schemes with the zero divided power ideal. -/
-abbrev trivial : Scheme.{u} ⥤ DividedPowerScheme.{u} where
+@[expose, implicit_reducible] def trivial : Scheme.{u} ⥤ DividedPowerScheme.{u} where
   obj := ofScheme
   map {_ T'} f := Hom.fromTrivial (X := ofScheme T') f fun U x hx ↦ by
     have hx0 : x = 0 := Ideal.mem_bot.mp (sections_bot U ▸ hx)
@@ -256,6 +268,10 @@ theorem trivial_obj_scheme (T : Scheme.{u}) : (trivial.obj T).scheme = T := (rfl
 @[simp]
 theorem trivial_obj_ideal (T : Scheme.{u}) :
     ((trivial.obj T).ideal : (trivial.obj T).scheme.IdealSheafData) = ⊥ := (rfl)
+
+/-- The zero-ideal functor retains the underlying scheme map. -/
+@[simp]
+theorem trivial_map_hom {T T' : Scheme.{u}} (f : T ⟶ T') : (trivial.map f).hom = f := (rfl)
 
 /-- The trivial divided power scheme is a divided power thickening. -/
 @[simp]
@@ -304,12 +320,13 @@ def trivialAdjunction : trivial.{u} ⊣ closedFiberFunctor.{u} :=
       homEquiv_naturality_left_symm := by
         intro T T' X f g
         apply Hom.ext
-        rw [Hom.comp_hom, trivialHomEquiv_symm_hom, trivialHomEquiv_symm_hom]
+        rw [Hom.comp_hom, trivialHomEquiv_symm_hom, trivialHomEquiv_symm_hom, trivial_map_hom]
         exact Category.assoc f g X.closedFiberι
       homEquiv_naturality_right := by
         intro T X Y f g
-        rw [← cancel_mono Y.closedFiberι, trivialHomEquiv_comp_ι, Category.assoc,
-          Hom.closedFiberMap_comp_ι, ← Category.assoc, trivialHomEquiv_comp_ι, Hom.comp_hom] }
+        rw [← cancel_mono Y.closedFiberι, trivialHomEquiv_comp_ι, closedFiberFunctor_map,
+          Category.assoc, Hom.closedFiberMap_comp_ι, ← Category.assoc, trivialHomEquiv_comp_ι,
+          Hom.comp_hom] }
 
 /-- The factorization supplied by the adjunction recovers the ambient map after the inclusion. -/
 @[reassoc (attr := simp)]
@@ -327,6 +344,19 @@ theorem trivialAdjunction_homEquiv_symm_hom (T : Scheme.{u}) (X : DividedPowerSc
     ((trivialAdjunction.homEquiv T X).symm g).hom = g ≫ X.closedFiberι := by
   rw [trivialAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
   exact trivialHomEquiv_symm_hom T X g
+
+/-- The counit of the zero-ideal adjunction has underlying map the closed fibre immersion. -/
+@[simp]
+theorem trivialAdjunction_counit_app_hom (X : DividedPowerScheme.{u}) :
+    (trivialAdjunction.counit.app X).hom = X.closedFiberι := by
+  rw [← trivialAdjunction.homEquiv_symm_id, trivialAdjunction_homEquiv_symm_hom, Category.id_comp]
+
+/-- The unit of the zero-ideal adjunction is a section of the closed fibre immersion. -/
+@[reassoc (attr := simp)]
+theorem trivialAdjunction_unit_app_comp_ι (T : Scheme.{u}) :
+    trivialAdjunction.unit.app T ≫ (trivial.obj T).closedFiberι = 𝟙 T := by
+  rw [← trivialAdjunction.homEquiv_id]
+  exact (trivialAdjunction_homEquiv_comp_ι T (trivial.obj T) (𝟙 _)).trans (Hom.id_hom _)
 
 end
 
