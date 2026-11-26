@@ -71,15 +71,19 @@ pregluing is a linear isomorphism `E₁ × E₂ ≃ E_R` for long necks and ever
 stabilizer components gives the obstruction map `b_R : E₁ × E₂ → S₁ × S₂`
 (`TauCeti.CylinderSobolev.gluingObstruction`). Through the gluing isomorphism, the exact sequence
 `0 → ker D_R → E_R → S₁ × S₂ → coker D_R → 0` of the stabilization `A_R`
-(`ContinuousLinearMap.exact_kerCoprodHom_parameterProj`,
-`ContinuousLinearMap.exact_parameterProj_parameterToCoker`) becomes the exact sequence of linear
-gluing
+(`ContinuousLinearMap.kerCoprodHom_injective`,
+`ContinuousLinearMap.exact_kerCoprodHom_parameterProj`,
+`ContinuousLinearMap.exact_parameterProj_parameterToCoker`, and
+`ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective` for the last map, which
+is onto as `A_R` has the right inverse `Q`) becomes, whenever the gluing map is bijective, the
+exact sequence of linear gluing
 
 `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`,
 
 with middle map `b_R` (`TauCeti.CylinderSobolev.gluingKerInclusion_injective`,
 `TauCeti.CylinderSobolev.exact_gluingKerInclusion_gluingObstruction`,
-`TauCeti.CylinderSobolev.exact_gluingObstruction_parameterToCoker`). When the stabilizers
+`TauCeti.CylinderSobolev.exact_gluingObstruction_parameterToCoker`; the last map is the same as
+for `A_R`). When the stabilizers
 `Sᵢ` project isomorphically onto the cokernels of the `Dᵢ`, as for the test-section stabilizers
 above, `Eᵢ` is a copy of `ker Dᵢ`, and the sequence compares the kernels and cokernels of the
 pieces with those of `D_R`. The kernel and the cokernel of `D_R` are `E₁ × E₂` and `S₁ × S₂`
@@ -104,8 +108,10 @@ is additive.
   gluing map is a linear isomorphism `E₁ × E₂ ≃ E_R`.
 * `TauCeti.CylinderSobolev.gluingKerInclusion_injective`,
   `TauCeti.CylinderSobolev.exact_gluingKerInclusion_gluingObstruction`,
-  `TauCeti.CylinderSobolev.exact_gluingObstruction_parameterToCoker`: the exact sequence
-  `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`.
+  `TauCeti.CylinderSobolev.exact_gluingObstruction_parameterToCoker`: when the gluing map is
+  bijective (as it is for long necks), the exact sequence
+  `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`, whose last map is onto by
+  `ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective`.
 * `TauCeti.CylinderSobolev.gluingKerInclusion_surjective_iff`,
   `TauCeti.CylinderSobolev.parameterToCoker_injective_iff_gluingObstruction_eq_zero`: the kernel
   and the cokernel of `D_R` split as those of the pieces exactly when the obstruction map
