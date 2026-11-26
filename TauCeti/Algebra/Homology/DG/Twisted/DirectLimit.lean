@@ -403,19 +403,19 @@ theorem homologyπ_app (n : ℤ) (i : ι) :
         (T.compl_m_eq_zero i)).continuationHom hM) n :=
   (rfl)
 
-/-- The connecting morphisms `H^n(P i ∖ S i) ⟶ H^(n+1)(S i)` of the long exact sequences of the
-subcomplexes, natural in `i`. -/
-noncomputable def homologyδ (n : ℤ) :
-    T.toQuotient.homologyFunctor hM n ⟶ T.toSub.homologyFunctor hM (n + 1) where
-  app i := (T.shortExact hM i).δ n (n + 1) rfl
+/-- The connecting morphisms `H^n(P i ∖ S i) ⟶ H^m(S i)`, for `n + 1 = m`, of the long exact
+sequences of the subcomplexes, natural in `i`. -/
+noncomputable def homologyδ (n m : ℤ) (hnm : n + 1 = m) :
+    T.toQuotient.homologyFunctor hM n ⟶ T.toSub.homologyFunctor hM m where
+  app i := (T.shortExact hM i).δ n m hnm
   naturality _ _ g := by
     rw [homologyFunctor_map, homologyFunctor_map, toQuotient_ν, toSub_ν]
     exact ((S.ν (leOfHom g)).restrictShortComplexMap_δ h hM _ _ _ _ _ _ _ _
-      (T.ν_eq_zero (leOfHom g)) n (n + 1) rfl).symm
+      (T.ν_eq_zero (leOfHom g)) n m hnm).symm
 
 @[simp]
-theorem homologyδ_app (n : ℤ) (i : ι) :
-    (T.homologyδ hM n).app i = (T.shortExact hM i).δ n (n + 1) rfl :=
+theorem homologyδ_app (n m : ℤ) (hnm : n + 1 = m) (i : ι) :
+    (T.homologyδ hM n m hnm).app i = (T.shortExact hM i).δ n m hnm :=
   (rfl)
 
 @[reassoc (attr := simp)]
@@ -429,14 +429,16 @@ theorem homologyι_comp_homologyπ (n : ℤ) : T.homologyι hM n ≫ T.homology�
   exact hn
 
 @[reassoc (attr := simp)]
-theorem homologyπ_comp_homologyδ (n : ℤ) : T.homologyπ hM n ≫ T.homologyδ hM n = 0 := by
+theorem homologyπ_comp_homologyδ (n m : ℤ) (hnm : n + 1 = m) :
+    T.homologyπ hM n ≫ T.homologyδ hM n m hnm = 0 := by
   ext i : 2
-  exact (T.shortExact hM i).comp_δ n (n + 1) rfl
+  exact (T.shortExact hM i).comp_δ n m hnm
 
 @[reassoc (attr := simp)]
-theorem homologyδ_comp_homologyι (n : ℤ) : T.homologyδ hM n ≫ T.homologyι hM (n + 1) = 0 := by
+theorem homologyδ_comp_homologyι (n m : ℤ) (hnm : n + 1 = m) :
+    T.homologyδ hM n m hnm ≫ T.homologyι hM m = 0 := by
   ext i : 2
-  exact (T.shortExact hM i).δ_comp n (n + 1) rfl
+  exact (T.shortExact hM i).δ_comp n m hnm
 
 /-- **Exactness at the whole complexes**: `H^n(S) ⟶ H^n(P) ⟶ H^n(P ∖ S)` is exact, as a
 sequence of functors on `ι`. -/
@@ -444,17 +446,17 @@ theorem exact_homologyι_homologyπ (n : ℤ) :
     (ShortComplex.mk _ _ (T.homologyι_comp_homologyπ hM n)).Exact :=
   (ShortComplex.exact_iff_evaluation _).2 fun i ↦ (T.shortExact hM i).homology_exact₂ n
 
-/-- **Exactness at the quotient complexes**: `H^n(P) ⟶ H^n(P ∖ S) ⟶ H^(n+1)(S)` is exact, as a
-sequence of functors on `ι`. -/
-theorem exact_homologyπ_homologyδ (n : ℤ) :
-    (ShortComplex.mk _ _ (T.homologyπ_comp_homologyδ hM n)).Exact :=
-  (ShortComplex.exact_iff_evaluation _).2 fun i ↦ (T.shortExact hM i).homology_exact₃ n (n + 1) rfl
+/-- **Exactness at the quotient complexes**: `H^n(P) ⟶ H^n(P ∖ S) ⟶ H^m(S)`, for `n + 1 = m`, is
+exact, as a sequence of functors on `ι`. -/
+theorem exact_homologyπ_homologyδ (n m : ℤ) (hnm : n + 1 = m) :
+    (ShortComplex.mk _ _ (T.homologyπ_comp_homologyδ hM n m hnm)).Exact :=
+  (ShortComplex.exact_iff_evaluation _).2 fun i ↦ (T.shortExact hM i).homology_exact₃ n m hnm
 
-/-- **Exactness at the subcomplexes**: `H^n(P ∖ S) ⟶ H^(n+1)(S) ⟶ H^(n+1)(P)` is exact, as a
-sequence of functors on `ι`. -/
-theorem exact_homologyδ_homologyι (n : ℤ) :
-    (ShortComplex.mk _ _ (T.homologyδ_comp_homologyι hM n)).Exact :=
-  (ShortComplex.exact_iff_evaluation _).2 fun i ↦ (T.shortExact hM i).homology_exact₁ n (n + 1) rfl
+/-- **Exactness at the subcomplexes**: `H^n(P ∖ S) ⟶ H^m(S) ⟶ H^m(P)`, for `n + 1 = m`, is exact,
+as a sequence of functors on `ι`. -/
+theorem exact_homologyδ_homologyι (n m : ℤ) (hnm : n + 1 = m) :
+    (ShortComplex.mk _ _ (T.homologyδ_comp_homologyι hM n m hnm)).Exact :=
+  (ShortComplex.exact_iff_evaluation _).2 fun i ↦ (T.shortExact hM i).homology_exact₁ n m hnm
 
 /-! ### The long exact sequence in the direct limit -/
 
@@ -468,16 +470,16 @@ theorem exact_map_colim_homologyι_homologyπ (n : ℤ) :
   (T.exact_homologyι_homologyπ hM n).map colim
 
 /-- **The direct limit is exact at the quotient complexes**: when colimits of shape `ι` are exact,
-`lim H^n(P i) ⟶ lim H^n(P i ∖ S i) ⟶ lim H^(n+1)(S i)` is exact. -/
-theorem exact_map_colim_homologyπ_homologyδ (n : ℤ) :
-    ((ShortComplex.mk _ _ (T.homologyπ_comp_homologyδ hM n)).map colim).Exact :=
-  (T.exact_homologyπ_homologyδ hM n).map colim
+`lim H^n(P i) ⟶ lim H^n(P i ∖ S i) ⟶ lim H^m(S i)`, for `n + 1 = m`, is exact. -/
+theorem exact_map_colim_homologyπ_homologyδ (n m : ℤ) (hnm : n + 1 = m) :
+    ((ShortComplex.mk _ _ (T.homologyπ_comp_homologyδ hM n m hnm)).map colim).Exact :=
+  (T.exact_homologyπ_homologyδ hM n m hnm).map colim
 
 /-- **The direct limit is exact at the subcomplexes**: when colimits of shape `ι` are exact,
-`lim H^n(P i ∖ S i) ⟶ lim H^(n+1)(S i) ⟶ lim H^(n+1)(P i)` is exact. -/
-theorem exact_map_colim_homologyδ_homologyι (n : ℤ) :
-    ((ShortComplex.mk _ _ (T.homologyδ_comp_homologyι hM n)).map colim).Exact :=
-  (T.exact_homologyδ_homologyι hM n).map colim
+`lim H^n(P i ∖ S i) ⟶ lim H^m(S i) ⟶ lim H^m(P i)`, for `n + 1 = m`, is exact. -/
+theorem exact_map_colim_homologyδ_homologyι (n m : ℤ) (hnm : n + 1 = m) :
+    ((ShortComplex.mk _ _ (T.homologyδ_comp_homologyι hM n m hnm)).map colim).Exact :=
+  (T.exact_homologyδ_homologyι hM n m hnm).map colim
 
 end Subsystem
 
