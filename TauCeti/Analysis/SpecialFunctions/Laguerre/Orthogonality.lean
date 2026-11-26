@@ -85,7 +85,7 @@ private theorem coeff_laguerre_mul_Gamma (hα : -1 < α) (j : ℕ) {n k : ℕ} (
   -- the sign `(-1) ^ (n - k) = (-1) ^ d` of the forward-difference summand meets the `(-1) ^ d`
   -- split off from `(-1) ^ n = (-1) ^ k * (-1) ^ d`
   have hsign : (-1 : ℝ) ^ d * (-1) ^ d = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
-  rw [coeff_laguerre_of_le_eq α hk, h₁, h₂, h₃, hΓ, hΓ, ← hfact]
+  rw [coeff_laguerre_of_le_eq_algebraMap_mul_eval α hk, h₁, h₂, h₃, hΓ, hΓ, ← hfact]
   simp only [Nat.add_sub_cancel_left, zsmul_eq_mul, pow_add, map_div₀, map_one, map_mul,
     map_natCast]
   push_cast

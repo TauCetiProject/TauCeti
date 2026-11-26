@@ -55,8 +55,9 @@ theorem derivative_laguerre (α : R) (n : ℕ) :
   ext k
   rw [coeff_derivative, coeff_neg]
   rcases le_or_gt k n with hk | hk
-  · rw [coeff_laguerre_of_le_eq α (by omega : k + 1 ≤ n + 1), coeff_laguerre_of_le_eq _ hk,
-      Nat.add_sub_add_right, Nat.one_div_factorial_mul_factorial_succ_right (n - k) k]
+  · rw [coeff_laguerre_of_le_eq_algebraMap_mul_eval α (by omega : k + 1 ≤ n + 1),
+      coeff_laguerre_of_le_eq_algebraMap_mul_eval _ hk, Nat.add_sub_add_right,
+      Nat.one_div_factorial_mul_factorial_succ_right (n - k) k]
     simp only [map_mul, map_add, map_natCast, map_one]
     have hα : α + ((k + 1 : ℕ) : R) + 1 = α + 1 + k + 1 := by push_cast; ring
     rw [hα]
@@ -71,9 +72,11 @@ theorem laguerre_add_one_sub (α : R) (n : ℕ) :
   rw [coeff_sub]
   rcases lt_trichotomy k (n + 1) with hk | rfl | hk
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + k := ⟨n - k, by omega⟩
-    rw [coeff_laguerre_of_le_eq α hk.le, coeff_laguerre_of_le_eq _ hk.le,
-      coeff_laguerre_of_le_eq _ (Nat.le_add_left k m), (by omega : m + k + 1 - k = m + 1),
-      Nat.add_sub_cancel, Nat.one_div_factorial_mul_factorial_succ_left m k]
+    rw [coeff_laguerre_of_le_eq_algebraMap_mul_eval α hk.le,
+      coeff_laguerre_of_le_eq_algebraMap_mul_eval _ hk.le,
+      coeff_laguerre_of_le_eq_algebraMap_mul_eval _ (Nat.le_add_left k m),
+      (by omega : m + k + 1 - k = m + 1), Nat.add_sub_cancel,
+      Nat.one_div_factorial_mul_factorial_succ_left m k]
     simp only [map_mul, map_add, map_natCast, map_one]
     -- `(a)ₘ₊₁ = a (a + 1)ₘ` and `(a + 1)ₘ₊₁ = (a + 1)ₘ (a + 1 + m)` for `a = α + k + 1`
     have e : (ascPochhammer R (m + 1)).eval (α + k + 1) =
@@ -93,16 +96,17 @@ theorem X_mul_laguerre_add_one (α : R) (n : ℕ) :
   ext k
   rw [coeff_sub, coeff_C_mul, nsmul_eq_mul, ← C_eq_natCast, coeff_C_mul]
   rcases k with _ | j
-  · rw [coeff_X_mul_zero, coeff_laguerre_of_le_eq α (Nat.zero_le n),
-      coeff_laguerre_of_le_eq α (Nat.zero_le (n + 1)), Nat.sub_zero, Nat.sub_zero,
-      ascPochhammer_succ_eval, Nat.one_div_factorial_mul_factorial_succ_left n 0]
+  · rw [coeff_X_mul_zero, coeff_laguerre_of_le_eq_algebraMap_mul_eval α (Nat.zero_le n),
+      coeff_laguerre_of_le_eq_algebraMap_mul_eval α (Nat.zero_le (n + 1)), Nat.sub_zero,
+      Nat.sub_zero, ascPochhammer_succ_eval, Nat.one_div_factorial_mul_factorial_succ_left n 0]
     push_cast
     ring
   rw [coeff_X_mul]
   rcases lt_trichotomy j n with hj | rfl | hj
   · obtain ⟨m, rfl⟩ : ∃ m, n = m + (j + 1) := ⟨n - (j + 1), by omega⟩
-    rw [coeff_laguerre_of_le_eq _ hj.le, coeff_laguerre_of_le_eq α hj,
-      coeff_laguerre_of_le_eq α (by omega : j + 1 ≤ m + (j + 1) + 1),
+    rw [coeff_laguerre_of_le_eq_algebraMap_mul_eval _ hj.le,
+      coeff_laguerre_of_le_eq_algebraMap_mul_eval α hj,
+      coeff_laguerre_of_le_eq_algebraMap_mul_eval α (by omega : j + 1 ≤ m + (j + 1) + 1),
       (by omega : m + (j + 1) - j = m + 1), (by omega : m + (j + 1) + 1 - (j + 1) = m + 1),
       Nat.add_sub_cancel, Nat.one_div_factorial_mul_factorial_succ_right (m + 1) j,
       Nat.one_div_factorial_mul_factorial_succ_left m (j + 1)]

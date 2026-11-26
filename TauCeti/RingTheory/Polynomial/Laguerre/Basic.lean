@@ -81,7 +81,7 @@ theorem coeff_laguerre_of_le (α : R) {n k : ℕ} (h : k ≤ n) :
 /-- The coefficient of `Xᵏ` in `Lₙ^{(α)}` for `k ≤ n`, with the rational factor written through
 `algebraMap` and the rising factorial through `eval`, the shape used by coefficient
 comparisons. -/
-theorem coeff_laguerre_of_le_eq (α : R) {n k : ℕ} (h : k ≤ n) :
+theorem coeff_laguerre_of_le_eq_algebraMap_mul_eval (α : R) {n k : ℕ} (h : k ≤ n) :
     (laguerre α n).coeff k =
       (-1 : R) ^ k * algebraMap ℚ R (1 / ((n - k).factorial * k.factorial)) *
         (ascPochhammer R (n - k)).eval (α + k + 1) := by
