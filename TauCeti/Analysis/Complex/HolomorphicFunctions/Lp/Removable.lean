@@ -131,7 +131,8 @@ theorem differentiableOn_update_limUnder_of_integrableOn_sq_norm (hs : s ∈ �
 /-- **The `L²` removable singularity at infinity.** If `G` is holomorphic on `|w| > T` and `‖G‖²`
 is integrable there, then the holomorphic `1`-form `G dw` read in the coordinate `q = w⁻¹` of the
 point at infinity has a coefficient, `q ↦ (q²)⁻¹ • G q⁻¹` up to sign, that extends holomorphically
-across `q = 0`. In particular `G(w) = O(|w|⁻²)` as `w → ∞`. -/
+across `q = 0` to the disc `|q| < T⁻¹`. The statement has content only for `0 < T`: for `T ≤ 0`
+Lean's `T⁻¹ ≤ 0` makes that disc empty. -/
 theorem exists_differentiableOn_eq_inv_sq_smul_comp_inv {G : ℂ → F} {T : ℝ}
     (hd : DifferentiableOn ℂ G {w | T < ‖w‖})
     (hi : IntegrableOn (fun w ↦ ‖G w‖ ^ 2) {w | T < ‖w‖}) :

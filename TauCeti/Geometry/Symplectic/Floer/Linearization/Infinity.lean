@@ -178,7 +178,8 @@ private theorem covectorComplexify_covectorPullback_inv (u : ℝ × ℝ → V) (
 annihilated there by the formal adjoint `D^*` of the constant data `J₀` with zero perturbation, with
 `‖η‖²` integrable on `|w| > T`. Then `η` read as a `(0, 1)`-form in the chart `ζ = w⁻¹` of the
 point at infinity, `η' = TauCeti.Floer.covectorPullback (realChart (·⁻¹)) J₀ u η`, agrees off
-`ζ = 0` with a field that is smooth on the whole disc `|ζ| < T⁻¹`. -/
+`ζ = 0` with a field that is smooth on the whole disc `|ζ| < T⁻¹`. The statement has content only
+for `0 < T`: for `T ≤ 0` Lean's `T⁻¹ ≤ 0` makes that disc empty. -/
 theorem exists_contDiffOn_eq_covectorPullback_inv_of_floerLinearizationAdjoint_eq_zero
     (hJ₀ : ω.Invariant J₀) (u : ℝ × ℝ → V) {η : ℝ × ℝ → V →L[ℝ] ℝ} {T : ℝ}
     (hη : ∀ z : ℝ × ℝ, T < ‖Complex.equivRealProdCLM.symm z‖ → DifferentiableAt ℝ η z)
