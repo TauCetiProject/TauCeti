@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Function.L1Space.HasFiniteIntegral
 public import TauCeti.MeasureTheory.Group.OrbitCutoff.Discrete
 public import TauCeti.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Algebra.Group.Subgroup.SubgroupOf
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Real
+import TauCeti.MeasureTheory.Group.LIntegral
+import TauCeti.MeasureTheory.Integral.Bochner.SMulMeasure
 
 /-!
 # Integration in Iwasawa coordinates
@@ -33,12 +36,12 @@ whose unfolding along `Δ` is the Haar measure of `M`.
 * `MeasureTheory.exists_integral_cutoffMeasure_iwasawa`: integration over `Γ \ G` in Iwasawa
   coordinates.
 
-The general facts these proofs use are stated in reusable form: measurable choice of rescaling
-factors (`MeasureTheory.exists_measurable_mul_eq_of_scale`), division of an integral formula by a
-factor `c ∈ (0, ∞]` of the measure (`MeasureTheory.exists_integral_eq_mul_of_smul_measure`), the
-splitting `D × (Γ ∩ N) ≃ Γ` of a subgroup along a complement
-(`Subgroup.exists_equiv_prod_subgroupOf`), and the averaged change of variables `x = b(p) y k⁻¹`
-for a two-sided invariant measure (`MeasureTheory.lintegral_mul_lintegral_translate`).
+The proofs use the measurable choice of rescaling factors
+(`MeasureTheory.exists_measurable_mul_eq_of_scale`), the division of an integral formula by a factor
+`c ∈ (0, ∞]` of the measure (`MeasureTheory.exists_integral_eq_mul_of_smul_measure`), the splitting
+`D × (Γ ∩ N) ≃ Γ` of a subgroup along a complement (`Subgroup.exists_equiv_prod_subgroupOf`), and
+the averaged change of variables `x = b(p) y k⁻¹` for a two-sided invariant measure
+(`MeasureTheory.lintegral_mul_lintegral_translate`).
 
 ## References
 
@@ -47,10 +50,9 @@ for a two-sided invariant measure (`MeasureTheory.lintegral_mul_lintegral_transl
 
 The statements and proofs are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache
 2.0, Copyright 2026 Anthropic PBC), `src/Lib/Adelic/QuotientMeasure/IwasawaUnfolding.lean`
-(`New.exists_measurable_mul_eq_of_scale`, `New.ofReal_mul_lintegral_iwasawa_translate`,
-`New.lintegral_iwasawa_inv_mul_translate`, `New.lintegral_iwasawa`,
-`New.exists_equiv_prod_subgroupOf`, `New.ofReal_mul_lintegral_quotMeasure_tsum`,
-`New.exists_integral_eq_mul_of_smul_measure`, `New.integral_quotMeasure_iwasawa`).
+(`New.ofReal_mul_lintegral_iwasawa_translate`, `New.lintegral_iwasawa_inv_mul_translate`,
+`New.lintegral_iwasawa`, `New.ofReal_mul_lintegral_quotMeasure_tsum`,
+`New.integral_quotMeasure_iwasawa`).
 -/
 
 public section
@@ -60,106 +62,6 @@ open MeasureTheory Measure Set Function ProbabilityTheory
 open scoped ENNReal Pointwise
 
 namespace MeasureTheory
-
-/-- **Measurable rescaling of a family of functions.** Let `J` send measurable functions
-`X → ℝ≥0∞` to measurable functions, and suppose that at each point `y` every `J f y` differs from
-`J f x₀` by the same finite nonzero factor `r y` (independent of `f`). Then for every measurable
-`β` there is a measurable `g` with `g y * J f y = β y * J f x₀` for all `y` and measurable `f`:
-the factors `y ↦ r y` can be chosen measurably. -/
-theorem exists_measurable_mul_eq_of_scale {X : Type*} [MeasurableSpace X]
-    {J : (X → ℝ≥0∞) → X → ℝ≥0∞} {x₀ : X} (hJ : ∀ f, Measurable f → Measurable (J f))
-    (h_scale : ∀ y, ∃ r : ℝ≥0∞, r ≠ 0 ∧ r ≠ ∞ ∧ ∀ f, Measurable f → r * J f y = J f x₀)
-    {β : X → ℝ≥0∞} (hβ : Measurable β) :
-    ∃ g : X → ℝ≥0∞, Measurable g ∧ ∀ y f, Measurable f → g y * J f y = β y * J f x₀ := by
-  by_cases! h_const : ∀ y f, Measurable f → J f y = J f x₀
-  · exact ⟨β, hβ, fun y f hf ↦ by rw [h_const y f hf]⟩
-  -- Otherwise some `J f` is finite and nonzero everywhere; the factor at `y` is `J f x₀ / J f y`.
-  obtain ⟨y₀, f, hf, h_ne⟩ := h_const
-  obtain ⟨r, hr_zero, hr_top, hr⟩ := h_scale y₀
-  have h_zero : J f x₀ ≠ 0 := fun h ↦ h_ne (by simpa [h, hr_zero] using hr f hf)
-  have h_top : J f x₀ ≠ ∞ := fun h ↦
-    h_ne (by simpa [h, hr_zero, hr_top, ENNReal.mul_eq_top] using hr f hf)
-  refine ⟨fun x ↦ β x * (J f x₀ / J f x), hβ.mul (measurable_const.div (hJ f hf)),
-    fun x φ hφ ↦ ?_⟩
-  obtain ⟨s, hs_zero, -, hs⟩ := h_scale x
-  have hx_zero : J f x ≠ 0 := fun h ↦ h_zero (by rw [← hs f hf, h, mul_zero])
-  have hx_top : J f x ≠ ∞ := fun h ↦ h_top (by rw [← hs f hf, h, ENNReal.mul_top hs_zero])
-  have h_div : J f x₀ / J f x = s := by
-    rw [← hs f hf, ENNReal.mul_div_cancel_right hx_zero hx_top]
-  simp only [h_div, mul_assoc, hs φ hφ]
-
-/-- **Dividing an integral formula by a factor of the measure.** For `c ∈ (0, ∞]` and finite
-nonzero `V` there is a real `a ≠ 0` such that whenever `F` is integrable for `c • q` with
-`∫ F ∂(c • q) = V • I`, then `F` is integrable for `q` with `∫ F ∂q = a • I`. For `c = ∞` this
-uses that a function integrable for `∞ • q` vanishes `q`-almost everywhere. -/
-theorem exists_integral_eq_mul_of_smul_measure {X E : Type*} [MeasurableSpace X]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] (q : Measure X) {c V : ℝ≥0∞} (hc : c ≠ 0)
-    (hV_zero : V ≠ 0) (hV_top : V ≠ ∞) :
-    ∃ a ≠ (0 : ℝ), ∀ (F : X → E) (I : E), Integrable F (c • q) →
-      ∫ x, F x ∂(c • q) = V.toReal • I → Integrable F q ∧ ∫ x, F x ∂q = a • I := by
-  have hV : V.toReal ≠ 0 := ENNReal.toReal_ne_zero.2 ⟨hV_zero, hV_top⟩
-  rcases eq_or_ne c ∞ with rfl | hc_top
-  · -- for `c = ∞` integrability forces `F = 0` almost everywhere
-    refine ⟨1, one_ne_zero, fun F I h_int h_eq ↦ ?_⟩
-    have hF_zero : F =ᵐ[q] 0 := TauCeti.MeasureTheory.ae_eq_zero_of_hasFiniteIntegral_top_smul
-      (h_int.aestronglyMeasurable.mono_ac (absolutelyContinuous_smul ENNReal.top_ne_zero))
-      h_int.hasFiniteIntegral
-    obtain rfl : I = 0 := by
-      rw [integral_smul_measure, ENNReal.toReal_top, zero_smul, eq_comm, smul_eq_zero] at h_eq
-      exact h_eq.resolve_left hV
-    exact ⟨(integrable_zero X E q).congr hF_zero.symm, by simp [integral_eq_zero_of_ae hF_zero]⟩
-  · have hc_real : c.toReal ≠ 0 := ENNReal.toReal_ne_zero.2 ⟨hc, hc_top⟩
-    refine ⟨V.toReal / c.toReal, div_ne_zero hV hc_real,
-      fun F I h_int h_eq ↦ ⟨(integrable_smul_measure hc hc_top).1 h_int, ?_⟩⟩
-    rw [integral_smul_measure] at h_eq
-    rw [div_eq_inv_mul, mul_smul, ← h_eq, smul_smul, inv_mul_cancel₀ hc_real, one_smul]
-
-/-- **Splitting a subgroup along a complement.** Let `i : M →* G` meet the subgroup `N` only in
-`i(1)`, and let `δ : D → M` be injective. If the subgroup `Γ` contains every `i(δ d)` and every
-`g ∈ Γ` has some `g i(δ d) ∈ N`, then `(d, γ) ↦ i(δ d) γ` is a bijection
-`D × (Γ ∩ N) ≃ Γ`. -/
-theorem _root_.Subgroup.exists_equiv_prod_subgroupOf {G M D : Type*} [Group G] [Group M]
-    {N Γ : Subgroup G} {i : M →* G}
-    (h_triv : ∀ a : M, i a ∈ N → a = 1) {δ : D → M} (hδ : δ.Injective)
-    (hδ_mem : ∀ d, i (δ d) ∈ Γ) (hΓ : ∀ g ∈ Γ, ∃ d, g * i (δ d) ∈ N) :
-    ∃ e : D × Γ.subgroupOf N ≃ Γ, ∀ d (γ : Γ.subgroupOf N), (e (d, γ) : G) = i (δ d) * (γ : N) := by
-  let φ (p : D × Γ.subgroupOf N) : Γ :=
-    ⟨i (δ p.1) * (p.2 : N), mul_mem (hδ_mem p.1) (Subgroup.mem_subgroupOf.1 p.2.property)⟩
-  refine ⟨.ofBijective φ ⟨?_, fun g ↦ ?_⟩, fun d γ ↦ rfl⟩
-  · rintro ⟨d, γ⟩ ⟨d', γ'⟩ h
-    have h_eq : i (δ d) * (γ : N) = i (δ d') * (γ' : N) := congrArg Subtype.val h
-    have h_mem : i ((δ d)⁻¹ * δ d') ∈ N := by
-      simpa [QuotientGroup.eq] using congrArg (QuotientGroup.mk : G → G ⧸ N) h_eq
-    obtain rfl : d = d' := hδ (inv_mul_eq_one.1 (h_triv _ h_mem))
-    simpa using h_eq
-  · obtain ⟨d, h_mem⟩ : ∃ d, (g : G)⁻¹ * i (δ d) ∈ N := hΓ _ (inv_mem g.property)
-    let γ : Γ.subgroupOf N :=
-      ⟨⟨(g : G)⁻¹ * i (δ d), h_mem⟩, mul_mem (inv_mem g.property) (hδ_mem d)⟩
-    exact ⟨(d, γ⁻¹), by simp [φ, γ]⟩
-
-/-- **Change of variables `x = b(p) y k⁻¹`, averaged over a measure on the translations.** For a
-left and right invariant s-finite measure `μ` on `G`, a measurable `b : P → G`, a subgroup `K` and
-an s-finite measure `π` on `P × K`,
-`∫ g(y) ∫ f(b(p) y k⁻¹) dπ(p, k) dμ(y) = ∫ (∫ g(b(p)⁻¹ x k) dπ(p, k)) f(x) dμ(x)`. -/
-theorem lintegral_mul_lintegral_translate {G P : Type*} [Group G] [MeasurableSpace G]
-    [MeasurableMul₂ G] [MeasurableInv G] [MeasurableSpace P] {K : Subgroup G} (μ : Measure G)
-    [μ.IsMulLeftInvariant] [μ.IsMulRightInvariant] [SFinite μ] {π : Measure (P × K)} [SFinite π]
-    {b : P → G} (hb : Measurable b) {g f : G → ℝ≥0∞} (hg : Measurable g) (hf : Measurable f) :
-    ∫⁻ y, g y * ∫⁻ h, f (b h.1 * y * h.2⁻¹) ∂π ∂μ =
-      ∫⁻ x, (∫⁻ h, g ((b h.1)⁻¹ * (x * h.2)) ∂π) * f x ∂μ := by
-  have : MeasurableInv K := ⟨measurable_subtypeVal.inv.subtype_mk⟩
-  calc ∫⁻ y, g y * ∫⁻ h, f (b h.1 * y * h.2⁻¹) ∂π ∂μ
-    _ = ∫⁻ h, ∫⁻ y, g y * f (b h.1 * y * h.2⁻¹) ∂μ ∂π := by
-      simp (disch := fun_prop) only [← lintegral_const_mul]
-      exact lintegral_lintegral_swap (by fun_prop)
-    _ = ∫⁻ h, ∫⁻ x, g ((b h.1)⁻¹ * (x * h.2)) * f x ∂μ ∂π := by
-      congr with ⟨p, k⟩
-      rw [← lintegral_mul_left_eq_self _ (b p)⁻¹, ← lintegral_mul_right_eq_self _ (k : G)]
-      simp [mul_assoc]
-    _ = ∫⁻ x, ∫⁻ h, g ((b h.1)⁻¹ * (x * h.2)) * f x ∂π ∂μ :=
-      lintegral_lintegral_swap (by fun_prop)
-    _ = ∫⁻ x, (∫⁻ h, g ((b h.1)⁻¹ * (x * h.2)) ∂π) * f x ∂μ :=
-      lintegral_congr fun x ↦ lintegral_mul_const _ (by fun_prop)
 
 variable {G M : Type*} [Group G] [Group M] [TopologicalSpace G] [IsTopologicalGroup G]
   [MeasurableSpace G] [BorelSpace G] [TopologicalSpace M] [IsTopologicalGroup M]
