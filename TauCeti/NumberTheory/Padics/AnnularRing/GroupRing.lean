@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.MonoidAlgebra.MvPowerSeries
 public import TauCeti.NumberTheory.Padics.AnnularRing.Quotient
-import TauCeti.Algebra.MonoidAlgebra.Augmentation
+import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 import TauCeti.Algebra.MonoidAlgebra.CyclicTwo
 import TauCeti.Algebra.MonoidAlgebra.LocalRing
 import TauCeti.Algebra.MonoidAlgebra.Quotient
