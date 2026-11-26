@@ -203,14 +203,6 @@ end Splice
 
 section Cutoff
 
-/-- The distance from a point of the positive end chart of `q` to the center of the end:
-`|φ'_q(s, t) - c_q| = |b_q| exp (∓2πs)`, with the sign of the end. -/
-theorem norm_equivRealProdCLM_symm_positiveEndChart_sub_endCenter (q : Puncture) (ζ : ℝ × ℝ) :
-    ‖Complex.equivRealProdCLM.symm (positiveEndChart q ζ) - q.endCenter‖ =
-      ‖q.endScale‖ * exp (-(2 * π * (q.endSign * ζ.1))) := by
-  rw [positiveEndChart_apply, equivRealProdCLM_symm_endChart, norm_cylindricalEndLift_sub_endCenter]
-  simp
-
 /-- A radial cutoff around `c`: `ψ(a + b |w - c|²)` for the smooth transition function `ψ`. -/
 private def radialCutoff (c : ℂ) (a b : ℝ) (z : ℝ × ℝ) : ℝ :=
   smoothTransition (a + b * ‖Complex.equivRealProdCLM.symm z - c‖ ^ 2)
@@ -601,10 +593,7 @@ private theorem exists_bound_of_tsupport_subset {β : ℝ × ℝ → ℝ} (hβ :
   -- Off `K` the function vanishes near `z`.
   have hzt : z ∉ tsupport β := fun h ↦ hz (hβK h)
   have h0 : β z = 0 := image_eq_zero_of_notMem_tsupport hzt
-  have hd : fderiv ℝ β z = 0 := by
-    rw [((notMem_tsupport_iff_eventuallyEq).1 hzt).fderiv_eq]
-    simp
-  simp [h0, hd]
+  simp [h0, fderiv_of_notMem_tsupport ℝ hzt]
 
 end Cutoff
 
@@ -744,10 +733,8 @@ private theorem exists_frozen_piece (ω : SymplecticForm F)
   by_cases hz₀ : z₀ ∈ thricePuncturedSphereReal
   swap
   · exact ⟨univ, univ_mem, 0, fun h ↦ absurd h hz₀⟩
-  have hS : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
-    (continuous_fderiv_slice_right (f := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (hH.of_le (by norm_num)))).comp
-        (continuous_id.prodMk (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt))
+  have hS := ω.continuous_fderiv_hamiltonianVectorField_comp (hH.of_le (by norm_num))
+    (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
   obtain ⟨U, hU, Q, hQ⟩ :=
     exists_mem_nhds_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoeff_endTransfer
       ω zero hM (hJ z₀ hz₀) hS
@@ -823,9 +810,7 @@ private theorem exists_core_pieces (ω : SymplecticForm F)
     (T₁ := T + 1) ((hγ i).of_le (by norm_num)) (fun z hz _ ↦ hKS (hγK i hz)) (hγB i).choose_spec
     (fun z hz ↦ interior_subset (hγO i hz).1)
     (fun ζ h ↦ image_eq_zero_of_notMem_tsupport (hγ0 i h))
-    (fun ζ h ↦ by
-      rw [((notMem_tsupport_iff_eventuallyEq).1 (hγ0 i h)).fderiv_eq]
-      simp)
+    (fun ζ h ↦ fderiv_of_notMem_tsupport ℝ (hγ0 i h))
   choose K hK hid using hpiece
   refine ⟨s, inferInstance, γ, fun i ↦ Q i, K, hγ, fun i z hz _ ↦ hKS (hγK i hz), hγB,
     fun z ↦ ?_, hK, hid⟩
