@@ -35,8 +35,10 @@ combined on the chart overlap by the cutoff `φ' · (φ ∘ e ∘ e'⁻¹)`
 * `OpenPartialHomeomorph.mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback`: multiplying a
   function by a cutoff `τ` read on `M` is pushing it forward to the chart by `τ` and pulling it back
   by a cutoff equal to `1` on the support of `τ`.
-* `OpenPartialHomeomorph.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`: a function whose
-  readings through cutoffs adding up to `1` on `M` all vanish is zero.
+* `OpenPartialHomeomorph.smulLeftCLM_cutoffPushforwardSchwartz_of_eqOn_one`: a reading
+  `ψ · (u ∘ e⁻¹)` is fixed by multiplication with a function equal to `1` on the support of `ψ`.
+* `TauCeti.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`: a function whose readings
+  through cutoffs adding up to `1` on `M` all vanish is zero.
 -/
 
 public section
@@ -78,6 +80,21 @@ theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
     cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
   e.complexCutoffPushforward_apply he ψ u y
+
+omit [T2Space M] in
+/-- **A reading is fixed by a multiplier equal to `1` on the cutoff.** Multiplying the reading
+`ψ · (u ∘ e⁻¹)` by a function `g` of temperate growth equal to `1` on the support of `ψ` leaves it
+unchanged. -/
+theorem smulLeftCLM_cutoffPushforwardSchwartz_of_eqOn_one (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    {g : CoordinateSpace n → ℂ} (hg : g.HasTemperateGrowth) (hg₁ : EqOn g 1 (tsupport ψ))
+    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    SchwartzMap.smulLeftCLM ℂ g (cutoffPushforwardSchwartz he ψ u) =
+      cutoffPushforwardSchwartz he ψ u := by
+  ext y
+  rw [SchwartzMap.smulLeftCLM_apply_apply hg, cutoffPushforwardSchwartz_apply]
+  by_cases hy : ψ y = 0
+  · simp [hy]
+  · rw [hg₁ (subset_tsupport _ hy), Pi.one_apply, one_smul]
 
 /-- **Multiplying by a cutoff read through a chart.** Multiplying a function `g` on `M` by a
 cutoff `τ` in the chart `e`, read on `M` as `τ ∘ e` extended by `0`, is pushing `g` forward to the
@@ -164,7 +181,9 @@ end Overlap
 
 end OpenPartialHomeomorph
 
-namespace OpenPartialHomeomorph
+namespace TauCeti
+
+open OpenPartialHomeomorph
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
   [T2Space M]
@@ -181,12 +200,13 @@ theorem eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero {ι : Type*} [Fintyp
     (hu : ∀ i, (e i).cutoffPushforwardSchwartz (he i) (ψ i) u = 0) : u = 0 := by
   ext x
   -- `u x = ∑ᵢ ψᵢ(eᵢ x) u x`, and each term is the reading of `u` in `eᵢ` at `eᵢ x`.
-  rw [ContMDiffMap.coe_zero, Pi.zero_apply, ← one_smul ℝ (u x), ← hψ x, Finset.sum_smul]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  by_cases hx : x ∈ (e i).source
-  · have h := congr($(hu i) (e i x))
-    rwa [cutoffPushforwardSchwartz_apply, (e i).left_inv hx, zero_apply,
-      ← cutoffPullback_one_apply_of_mem (he i) (ψ i) hx] at h
-  · rw [cutoffPullback_apply_of_notMem (he i) _ _ hx, zero_smul]
+  calc u x = (∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x) • u x := by simp [hψ x]
+    _ = 0 := by
+      simp only [Finset.sum_smul]
+      refine Finset.sum_eq_zero fun i _ ↦ ?_
+      by_cases hx : x ∈ (e i).source
+      · simpa [(e i).left_inv hx, cutoffPullback_one_apply_of_mem (he i) (ψ i) hx] using
+          congr($(hu i) (e i x))
+      · simp [cutoffPullback_apply_of_notMem (he i) _ _ hx]
 
-end OpenPartialHomeomorph
+end TauCeti

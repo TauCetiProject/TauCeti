@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartQuantization
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
+import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
 import TauCeti.Analysis.Sobolev.BesselPotential.Subsingleton
 import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
 import TauCeti.Geometry.Manifold.Sobolev.ChartReading
@@ -32,6 +36,12 @@ for every smooth `u`, where `(eⱼ, φⱼ)` is any finite family of charts and c
 This is the a priori estimate through which `P` extends to a bounded operator
 `H^s(M) → H^{s - m}(M)`, the starting point of the Fredholm theory of elliptic operators on compact
 manifolds.
+
+A Rellich theorem for these norms follows from Rellich's theorem on `ℝⁿ`
+(`BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`): a space of smooth
+functions on which `∑ᵢ ‖ψᵢ · (u ∘ e'ᵢ⁻¹)‖_{H^{s'}} ≤ C ∑ᵢ ‖ψᵢ · (u ∘ e'ᵢ⁻¹)‖_{H^s}` for some
+`s < s'` is finite-dimensional
+(`TauCeti.finiteDimensional_of_forall_sum_norm_toBesselPotentialSpaceCLM_le`).
 
 ## The argument
 
@@ -64,6 +74,12 @@ The estimate for a partition `ψᵢ` then follows by writing `u = ∑ᵢ Ψᵢ u
   reading of `P u` in one chart is bounded in `H^{s - m}` by the `H^s` norm of `u` for a partition.
 * `TauCeti.exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`: the
   Sobolev estimate `‖P u‖_{H^{s - m}} ≤ C ‖u‖_{H^s}` in these norms.
+* `TauCeti.smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_eqOn_one`: a
+  reading `ψ · (u ∘ e⁻¹)` in `H^s` is fixed by multiplication with a Schwartz function equal to `1`
+  on the support of `ψ`.
+* `TauCeti.finiteDimensional_of_forall_sum_norm_toBesselPotentialSpaceCLM_le`: a Rellich theorem; a
+  space of smooth functions on which a Sobolev norm is bounded by a weaker one is
+  finite-dimensional.
 
 ## References
 
@@ -265,5 +281,90 @@ theorem exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_appl
     exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum hP (he j) (φ j) he'
       ψ hψ s
   exact ⟨∑ j, C j, fun u ↦ (Finset.sum_le_sum fun j _ ↦ hC j u).trans_eq (Finset.sum_mul ..).symm⟩
+
+omit [T2Space M] in
+/-- A reading `ψ · (u ∘ e⁻¹)` of a function is fixed by multiplication with a Schwartz function
+`φ` equal to `1` on the support of `ψ`, also in `H^s`. -/
+theorem smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_eqOn_one
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {φ : 𝓢(CoordinateSpace n, ℂ)}
+    (hφ : EqOn φ 1 (tsupport ψ)) (s : ℝ) (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    BesselPotentialSpace.smulLeftCLM s φ
+        (SchwartzMap.toBesselPotentialSpaceCLM s 2 (e.cutoffPushforwardSchwartz he ψ u)) =
+      SchwartzMap.toBesselPotentialSpaceCLM s 2 (e.cutoffPushforwardSchwartz he ψ u) := by
+  conv_rhs =>
+    rw [← e.smulLeftCLM_cutoffPushforwardSchwartz_of_eqOn_one he ψ φ.hasTemperateGrowth hφ u]
+  exact BesselPotentialSpace.ext (by
+    simp [TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq])
+
+/-- **A Rellich theorem on a compact manifold.** Let `ψᵢ` be finitely many cutoffs in charts
+`eᵢ` whose readings `ψᵢ ∘ eᵢ` on `M`, extended by `0`, add up to `1`, and let `s < s'`. A space `V`
+of smooth functions on `M` on which, for some constant `C`,
+
+`∑ᵢ ‖ψᵢ · (u ∘ eᵢ⁻¹)‖_{H^{s'}} ≤ C ∑ᵢ ‖ψᵢ · (u ∘ eᵢ⁻¹)‖_{H^s}`
+
+is finite-dimensional. -/
+theorem finiteDimensional_of_forall_sum_norm_toBesselPotentialSpaceCLM_le {ι : Type*} [Fintype ι]
+    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    {V : Submodule ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {s s' C : ℝ} (hss' : s < s')
+    (hV : ∀ u ∈ V, ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s' 2
+        ((e i).cutoffPushforwardSchwartz (he i) (ψ i) u)‖ ≤
+      C * ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
+        ((e i).cutoffPushforwardSchwartz (he i) (ψ i) u)‖) :
+    FiniteDimensional ℂ V := by
+  classical
+  -- The readings `T u = (ψᵢ · (u ∘ eᵢ⁻¹))ᵢ ∈ (H^s)ⁱ` embed `V`.
+  let R (t : ℝ) (i : ι) : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      H^{t}(CoordinateSpace n, ℂ) :=
+    (SchwartzMap.toBesselPotentialSpaceCLM t 2 : _ →L[ℂ] H^{t}(CoordinateSpace n, ℂ)).toLinearMap
+      ∘ₗ (e i).cutoffPushforwardSchwartz (he i) (ψ i)
+  let T : V →ₗ[ℂ] ι → H^{s}(CoordinateSpace n, ℂ) := LinearMap.pi (fun i ↦ R s i) ∘ₗ V.subtype
+  have hT : Function.Injective T := by
+    refine (injective_iff_map_eq_zero T).2 fun u hu ↦ Subtype.ext ?_
+    refine eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero he ψ hψ fun i ↦ ?_
+    exact (SchwartzMap.toBesselPotentialSpaceCLM_injective s 2).eq_iff.1
+      (by simpa [T, R] using congr_fun hu i)
+  -- Schwartz functions `φᵢ` equal to `1` on the supports of the `ψᵢ`.
+  have hφ (i : ι) : ∃ φ : 𝓢(CoordinateSpace n, ℂ), EqOn φ 1 (tsupport (ψ i)) := by
+    obtain ⟨φ, -, -, hφ⟩ := (ψ i).hasCompactSupport.isCompact.exists_schwartzMap_cutoff
+      isOpen_univ (subset_univ _)
+    exact ⟨φ, fun y hy ↦ hφ.self_of_nhdsSet y hy⟩
+  choose φ hφ using hφ
+  -- The `H^{s'}` readings of the `u ∈ V` with `‖T u‖ ≤ 1` are bounded by `C` times the number of
+  -- charts, so by Rellich's theorem their images in `H^s` lie in a compact set.
+  set S : ι → Set H^{s'}(CoordinateSpace n, ℂ) := fun i ↦ (fun u : V ↦ R s' i u) '' {u | ‖T u‖ ≤ 1}
+  have hS (i : ι) : Bornology.IsBounded (S i) := by
+    refine (Metric.isBounded_closedBall (x := 0) (r := max C 0 * Fintype.card ι)).subset ?_
+    rintro _ ⟨u, hu, rfl⟩
+    rw [mem_closedBall_zero_iff]
+    have hle : ∑ j, ‖R s j u‖ ≤ Fintype.card ι := by
+      calc ∑ j, ‖R s j u‖ = ∑ j, ‖T u j‖ := by simp [T]
+        _ ≤ ∑ _j : ι, (1 : ℝ) := Finset.sum_le_sum fun j _ ↦ (norm_le_pi_norm (T u) j).trans hu
+        _ = Fintype.card ι := by simp
+    refine (Finset.single_le_sum (f := fun j ↦ ‖R s' j u‖) (fun j _ ↦ norm_nonneg _)
+      (Finset.mem_univ i)).trans <| (hV u u.property).trans ?_
+    gcongr
+    exacts [le_max_left C 0, hle]
+  have hK : IsCompact (univ.pi fun i ↦ closure
+      (BesselPotentialSpace.inclusion hss'.le '' S i : Set H^{s}(CoordinateSpace n, ℂ))) :=
+    isCompact_univ_pi fun i ↦
+      BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq hss' (hS i)
+        (φ := φ i) (by
+          rintro _ ⟨u, -, rfl⟩
+          exact smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_eqOn_one (he i)
+            (ψ i) (hφ i) s' u)
+  -- So the range of `T` has a totally bounded closed unit ball, and is finite-dimensional.
+  have hW : FiniteDimensional ℂ (LinearMap.range T) := by
+    refine .of_totallyBounded_nhds_zero ℂ
+      (Metric.closedBall_mem_nhds (0 : LinearMap.range T) one_pos) ?_
+    refine (totallyBounded_preimage isUniformEmbedding_subtypeVal.isUniformInducing
+      hK.totallyBounded).subset ?_
+    rintro ⟨_, u, rfl⟩ hu
+    refine fun i _ ↦ subset_closure ⟨R s' i u, ⟨u, by simpa using hu, rfl⟩, ?_⟩
+    simp [T, R, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM]
+  exact Module.Finite.equiv (LinearEquiv.ofInjective T hT).symm
 
 end TauCeti
