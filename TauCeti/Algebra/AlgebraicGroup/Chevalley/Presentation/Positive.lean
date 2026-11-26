@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Presentation.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
+public import Mathlib.LinearAlgebra.RootSystem.Finite.G2
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
 import TauCeti.Algebra.Group.Subgroup.OrderedProduct
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Rational
@@ -50,6 +51,9 @@ elements of `Û` that hold in the Chevalley group therefore already hold in `St`
 
 ## Main results
 
+* `TauCeti.DynkinType.commutatorElement_mem_of_isNotG2_of_root_eq_add`: outside `G₂`, the
+  commutator of the generators at roots `α`, `β` with `α + β` a root lies in every subgroup
+  containing the generators at the roots `jα + kβ` with `j, k > 0`.
 * `TauCeti.DynkinType.mem_steinbergPositiveSubgroup_iff_exists_list_prod`: every element of `Û`
   is an ordered product of positive root generators.
 * `TauCeti.DynkinType.ChevalleyDatum.map_steinbergLift_steinbergPositiveSubgroup`: Steinberg's
@@ -143,7 +147,52 @@ private theorem mk_steinbergRoot_mem_iSup_height {α β d : Fin t.numRoots}
         (t.steinbergRootSubgroup ht A γ).range :=
   (le_iSup₂ (f := fun γ _ => (t.steinbergRootSubgroup ht A γ).range) d
     (Finset.mem_filter.mpr ⟨(mem_posRootsFinset _ _ d).mpr hd, hheight⟩))
-    ⟨ofAdd w, t.steinbergRootSubgroup_apply ht A d (ofAdd w)⟩
+    ⟨ofAdd w, t.steinbergRootSubgroup_ofAdd ht A d w⟩
+
+/-- **Commutators of root generators outside `G₂`.** If the roots `α` and `β` sum to a root `γ`,
+the commutator of the generators at `α` and `β` lies in every subgroup that contains the generators
+at all roots `jα + kβ` with `j, k > 0`: by the root-string relators it is a product of generators
+at `α + β` and possibly `2α + β` or `α + 2β`. -/
+theorem commutatorElement_mem_of_isNotG2_of_root_eq_add [(t.rationalRootSystem ht).IsNotG2]
+    {α β γ : Fin t.numRoots} {H : Subgroup (PresentedGroup (t.steinbergRelators ht A))}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hH : ∀ (δ : Fin t.numRoots) (j k : ℕ), 0 < j → 0 < k →
+      (t.rationalRootSystem ht).root δ =
+        j • (t.rationalRootSystem ht).root α + k • (t.rationalRootSystem ht).root β →
+      ∀ w : A, PresentedGroup.mk (t.steinbergRelators ht A) (steinbergRoot δ w) ∈ H)
+    (u v : A) :
+    ⁅t.steinbergRootSubgroup ht A α (ofAdd u), t.steinbergRootSubgroup ht A β (ofAdd v)⁆ ∈ H := by
+  let P := t.rationalRootSystem ht
+  let R := t.simplyConnectedRootDatum ht
+  have hγQ : P.root γ = P.root α + P.root β := by
+    simpa only [one_nsmul] using
+      (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1).mpr (by rwa [one_nsmul])
+  have hlin := P.linearIndependent_of_add_mem_range_root' ⟨γ, hγQ⟩
+  have hγH := hH γ 1 1 one_pos one_pos (by rwa [one_nsmul, one_nsmul])
+  by_cases hdouble : 2 • R.root α + R.root β ∈ Set.range R.root
+  · -- The root string `β, α + β, 2α + β`.
+    obtain ⟨δ, hδ⟩ := hdouble
+    rw [commutatorElement_eq_of_isSteinbergRelator (IsSteinbergRelator.commutator_two_nsmul_add
+      hγ hδ (three_nsmul_add_notMem_range_root α β)
+      (add_two_nsmul_notMem_range_root hlin ⟨δ, hδ⟩) u v), map_mul]
+    exact H.mul_mem (hγH _) (hH δ 2 1 two_pos one_pos (by
+      rw [(t.root_rationalRootSystem_eq_nsmul_add_iff ht α β δ 2).mpr hδ, one_nsmul]) _)
+  · by_cases hdouble' : R.root α + 2 • R.root β ∈ Set.range R.root
+    · -- The root string `α, α + β, α + 2β`.
+      obtain ⟨δ, hδ⟩ := hdouble'
+      have hthree : R.root α + 3 • R.root β ∉ Set.range R.root := by
+        rw [add_comm]
+        exact three_nsmul_add_notMem_range_root β α
+      rw [commutatorElement_eq_of_isSteinbergRelator
+        (IsSteinbergRelator.commutator_add_two_nsmul hγ hδ hdouble hthree u v), map_mul]
+      exact H.mul_mem (hγH _) (hH δ 1 2 one_pos two_pos (by
+        rw [(t.root_rationalRootSystem_eq_nsmul_add_iff ht β α δ 2).mpr (by rw [hδ, add_comm]),
+          one_nsmul, add_comm]) _)
+    · -- Neither double string: the one-factor relation.
+      rw [commutatorElement_eq_of_isSteinbergRelator
+        (IsSteinbergRelator.commutator_add hγ hdouble hdouble' u v)]
+      exact hγH _
 
 /-- Outside `G₂`, if the sum of two positive roots `α` and `β` is a root `γ`, the commutator of
 their generators is a product of generators at `γ` and possibly `2α + β` or `α + 2β`, all of
@@ -159,50 +208,10 @@ private theorem commutatorElement_mem_iSup_height_of_root_eq_add
       ⨆ γ ∈ {γ ∈ posRootsFinset (t.rationalRootSystem ht) (t.rationalBase ht) |
         max ((t.rationalBase ht).height α) ((t.rationalBase ht).height β) <
           (t.rationalBase ht).height γ},
-        (t.steinbergRootSubgroup ht A γ).range := by
-  classical
-  let P := t.rationalRootSystem ht
-  let R := t.simplyConnectedRootDatum ht
-  have hapos := one_le_height_of_mem_posRoots P (t.rationalBase ht) hα
-  have hbpos := one_le_height_of_mem_posRoots P (t.rationalBase ht) hβ
-  have hγQ : P.root γ = P.root α + P.root β := by
-    simpa only [one_nsmul] using
-      (t.root_rationalRootSystem_eq_nsmul_add_iff ht α β γ 1).mpr (by rwa [one_nsmul])
-  have hγpos := add_mem_posRoots P (t.rationalBase ht) hα hβ hγQ
-  have hγheight := (t.rationalBase ht).height_add hγQ
-  have hlin := P.linearIndependent_of_add_mem_range_root' ⟨γ, hγQ⟩
-  by_cases hdouble : 2 • R.root α + R.root β ∈ Set.range R.root
-  · -- The root string `β, α + β, 2α + β`.
-    obtain ⟨δ, hδ⟩ := hdouble
-    have hδQ : P.root δ = P.root α + P.root γ := by
-      rw [(t.root_rationalRootSystem_eq_nsmul_add_iff ht α β δ 2).mpr hδ, hγQ, two_nsmul]; abel
-    have hδpos := add_mem_posRoots P (t.rationalBase ht) hα hγpos hδQ
-    have hδheight := (t.rationalBase ht).height_add hδQ
-    rw [commutatorElement_eq_of_isSteinbergRelator (IsSteinbergRelator.commutator_two_nsmul_add
-      hγ hδ (three_nsmul_add_notMem_range_root α β)
-      (add_two_nsmul_notMem_range_root hlin ⟨δ, hδ⟩) u v), map_mul]
-    exact Subgroup.mul_mem _ (mk_steinbergRoot_mem_iSup_height hγpos (by omega) _)
-      (mk_steinbergRoot_mem_iSup_height hδpos (by omega) _)
-  · by_cases hdouble' : R.root α + 2 • R.root β ∈ Set.range R.root
-    · -- The root string `α, α + β, α + 2β`.
-      obtain ⟨δ, hδ⟩ := hdouble'
-      have hδQ : P.root δ = P.root β + P.root γ := by
-        rw [(t.root_rationalRootSystem_eq_nsmul_add_iff ht β α δ 2).mpr (by rw [hδ, add_comm]),
-          hγQ, two_nsmul]
-        abel
-      have hδpos := add_mem_posRoots P (t.rationalBase ht) hβ hγpos hδQ
-      have hδheight := (t.rationalBase ht).height_add hδQ
-      have hthree : R.root α + 3 • R.root β ∉ Set.range R.root := by
-        rw [add_comm]
-        exact three_nsmul_add_notMem_range_root β α
-      rw [commutatorElement_eq_of_isSteinbergRelator
-        (IsSteinbergRelator.commutator_add_two_nsmul hγ hδ hdouble hthree u v), map_mul]
-      exact Subgroup.mul_mem _ (mk_steinbergRoot_mem_iSup_height hγpos (by omega) _)
-        (mk_steinbergRoot_mem_iSup_height hδpos (by omega) _)
-    · -- Neither double string: the one-factor relation.
-      rw [commutatorElement_eq_of_isSteinbergRelator
-        (IsSteinbergRelator.commutator_add hγ hdouble hdouble' u v)]
-      exact mk_steinbergRoot_mem_iSup_height hγpos (by omega) _
+        (t.steinbergRootSubgroup ht A γ).range :=
+  commutatorElement_mem_of_isNotG2_of_root_eq_add hγ (fun _ _ _ hj hk hδ _ =>
+    have h := mem_posRoots_and_max_height_lt hα hβ hj hk hδ
+    mk_steinbergRoot_mem_iSup_height h.1 h.2 _) u v
 
 /-- Outside `G₂`, the commutator of two positive root generators is a product of generators at
 positive roots of strictly larger height. -/
