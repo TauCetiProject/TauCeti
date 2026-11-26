@@ -7,7 +7,13 @@ module
 
 public import Mathlib.Analysis.MellinTransform
 
-/-! # Mellin transforms of finite sums -/
+/-!
+# Mellin transforms of finite sums
+
+`HasMellin.finsetSum` combines absolutely convergent Mellin representations at a common
+parameter. It lets us evaluate the transform of a finite kernel sum term by term while
+preserving absolute convergence.
+-/
 
 public section
 
