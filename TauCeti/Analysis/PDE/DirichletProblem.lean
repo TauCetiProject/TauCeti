@@ -1119,6 +1119,22 @@ theorem energyFormH1_one_zero_zero_eq_inner [DecidableEq ι] (u v : W1p mu Omega
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [EuclideanSpace.inner_eq_star_dotProduct])
 
+/-- The energy form of the Laplacian model `-Δ` is symmetric. -/
+theorem energyFormH1_one_zero_zero_comm [DecidableEq ι] (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => 1) 0 0 u v = energyFormH1 (fun _ => 1) 0 0 v u := by
+  rw [energyFormH1_one_zero_zero_eq_inner, energyFormH1_one_zero_zero_eq_inner, real_inner_comm]
+
+/-- The Gårding inequality of the Laplacian model `-Δ`:
+`min 1 ω ‖v‖²_{H¹} ≤ ∫_Ω |∇v|² + ω ‖v‖²_{L²}` for every `ω`. -/
+theorem min_mul_norm_sq_le_energyFormH1_one_zero_zero_add [DecidableEq ι] (omega : ℝ)
+    (v : W1p mu Omega 2) :
+    min 1 omega * ‖v‖ ^ 2 ≤
+      energyFormH1 (fun _ => 1) 0 0 v v + omega * ‖W1p.value v‖ ^ 2 := by
+  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
+    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
+  nlinarith [min_le_left 1 omega, min_le_right 1 omega, sq_nonneg ‖W1p.value v‖,
+    sq_nonneg ‖W1p.gradient v‖]
+
 /-- The weak formulation of the Laplacian model `-Δ` is the classical one: `u ∈ H¹₀(Ω)` solves
 `-Δu = f` weakly exactly when `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. -/
 theorem isWeakSolutionDirichlet_one_zero_zero_iff [DecidableEq ι]
