@@ -40,7 +40,9 @@ energy; so it applies to the levels of a breaking sequence of smooth trajectorie
   `∫_{[a, b] × [0, 1]} E(g) = A_H(g(b, ·)) - A_H(g(a, ·))` for `g`, although `g` is only known to
   be `C¹`
   (`TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_of_tendsto`).
-* **Energy of a level.** If the `u_k` are moreover `L`-Lipschitz, then `‖dg‖ ≤ L`, and if the
+* **Energy of a level.** If the `u_k` are moreover `L`-Lipschitz, then `g` has closed loops and
+  `‖dg‖ ≤ L`
+  (`contDiff_and_floer_and_periodic_and_norm_fderiv_le_of_tendstoLocallyUniformly`), and if the
   loops of `g` converge uniformly to closed `C¹` loops `x₀` as `s → -∞` and `x₁` as `s → ∞`, such
   as the orbits at which consecutive levels of a broken limit meet, then the actions of the loops
   of `g` converge to `A_H(x₀)` and `A_H(x₁)`
@@ -108,6 +110,34 @@ theorem tendstoLocallyUniformly_fderiv_of_floer_of_periodic (hH : ContDiff ℝ 2
       (fun s _ ↦ hper k s) (hfloer k) (z := z) ⟨mem_univ _, mem_univ _⟩)
     (fun C hC _ ↦ hbd C hC) fun z _ ↦ hlim z
   exact ⟨contDiffOn_univ.1 hg, tendstoLocallyUniformlyOn_univ.1 hconv, fun z ↦ heq z (mem_univ z)⟩
+
+/-- **Limits of Lipschitz Floer trajectories.** In the situation of
+`TauCeti.SymplecticForm.tendstoLocallyUniformly_fderiv_of_floer_of_periodic`, let the `u_k` be
+`L`-Lipschitz and converge to `g` locally uniformly. Then `g` is a `C¹` solution of the Floer
+equation with closed loops, `g(s, 1) = g(s, 0)`, and its derivative is bounded by `L`. -/
+theorem contDiff_and_floer_and_periodic_and_norm_fderiv_le_of_tendstoLocallyUniformly
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHper : Periodic H 1) (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ 1 (fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) W)
+    (hJper : Periodic J 1) (hu : ∀ k, ContDiff ℝ (⊤ : ℕ∞) (u k))
+    (hper : ∀ k s, Periodic (fun t ↦ u k (s, t)) 1)
+    (hfloer : ∀ k, ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (u k z))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    {L : ℝ≥0} (hL : ∀ k, LipschitzWith L (u k)) (hgW : ∀ z, (z.2, g z) ∈ W)
+    (hlim : TendstoLocallyUniformly u g atTop) :
+    ContDiff ℝ 1 g ∧
+      (∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z.2 (g z))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) g z : ℝ × ℝ →ₗ[ℝ] V)) ∧
+      (∀ s, g (s, 1) = g (s, 0)) ∧ ∀ z, ‖fderiv ℝ g z‖ ≤ L := by
+  have hpt (z : ℝ × ℝ) : Tendsto (fun k ↦ u k z) atTop (𝓝 (g z)) :=
+    hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)
+  obtain ⟨hg, hdlim, hgeq⟩ := tendstoLocallyUniformly_fderiv_of_floer_of_periodic hH hHper hW
+    hJ hJper hu hper hfloer
+    (fun _ _ ↦ ⟨L, fun k _ _ ↦ norm_fderiv_le_of_lipschitz ℝ (hL k)⟩) hgW hpt
+  refine ⟨hg, hgeq, fun s ↦ tendsto_nhds_unique
+    ((hpt (s, 1)).congr fun k ↦ by simpa using hper k s 0) (hpt (s, 0)), fun z ↦ ?_⟩
+  exact le_of_tendsto (hdlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)).norm
+    (.of_forall fun k ↦ norm_fderiv_le_of_lipschitz ℝ (hL k))
 
 /-- **The energy identity for limits of Floer trajectories.** In the situation of
 `TauCeti.SymplecticForm.tendstoLocallyUniformly_fderiv_of_floer_of_periodic`, suppose that the
@@ -180,17 +210,11 @@ theorem setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub_of_tends
       ENNReal.ofReal (ω.hamiltonianAction H x₁ - ω.hamiltonianAction H x₀) := by
   have hbd : ∀ C, IsCompact C → ∃ M, ∀ k, ∀ z ∈ C, ‖fderiv ℝ (u k) z‖ ≤ M :=
     fun _ _ ↦ ⟨L, fun k _ _ ↦ norm_fderiv_le_of_lipschitz ℝ (hL k)⟩
-  obtain ⟨hg, hdlim, hgeq⟩ := tendstoLocallyUniformly_fderiv_of_floer_of_periodic hH hHper hW
-    hJ hJper hu hper hfloer hbd hgW fun z ↦ hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)
+  -- The limit is a `C¹` Floer trajectory with closed loops and derivative bounded by `L`.
+  obtain ⟨hg, hgeq, hgper, hgL⟩ :=
+    contDiff_and_floer_and_periodic_and_norm_fderiv_le_of_tendstoLocallyUniformly hH hHper hW hJ
+      hJper hu hper hfloer hL hgW hlim
   have hH1 : ContDiff ℝ 1 (uncurry H) := hH.of_le one_le_two
-  -- The limit has closed loops and derivative bounded by `L`.
-  have hgper (s : ℝ) : g (s, 1) = g (s, 0) := tendsto_nhds_unique
-    ((hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ (s, 1))).congr fun k ↦ by
-      simpa using hper k s 0)
-    (hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ (s, 0)))
-  have hgL (z : ℝ × ℝ) : ‖fderiv ℝ g z‖ ≤ L :=
-    le_of_tendsto (hdlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)).norm
-      (.of_forall fun k ↦ norm_fderiv_le_of_lipschitz ℝ (hL k))
   -- On each rectangle the energy is the change of action, with a nonnegative density.
   have hE (n : ℕ) : ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ Icc 0 1,
       ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) g z) =

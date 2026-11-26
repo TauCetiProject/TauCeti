@@ -173,13 +173,14 @@ private theorem floer_and_energy_of_tendstoLocallyUniformly (hH : ContDiff ℝ 2
     fun n z _ ↦ hfloer n z
   have hbd : ∀ C, IsCompact C → ∃ M, ∀ n, ∀ z ∈ C, ‖fderiv ℝ (v n) z‖ ≤ M :=
     fun _ _ ↦ ⟨L, fun n _ _ ↦ norm_fderiv_le_of_lipschitz ℝ (hL n)⟩
-  have hpt (z : ℝ × ℝ) : Tendsto (fun n ↦ v n z) atTop (𝓝 (g z)) :=
-    hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)
-  obtain ⟨hg, hdlim, hgeq⟩ := tendstoLocallyUniformly_fderiv_of_floer_of_periodic hH hHper
-    isOpen_univ hJ.contDiffOn hJper hv hper hfl hbd (fun _ ↦ mem_univ _) hpt
+  -- The limit is a `C¹` Floer trajectory with closed loops and derivative bounded by `L`.
+  obtain ⟨hg, hgeq, hgper, hgL⟩ :=
+    contDiff_and_floer_and_periodic_and_norm_fderiv_le_of_tendstoLocallyUniformly hH hHper
+      isOpen_univ hJ.contDiffOn hJper hv hper hfl hL (fun _ ↦ mem_univ _) hlim
   -- The limit takes values in `K`, where `J` is tamed, so its energy density is nonnegative.
   have hJg (z : ℝ × ℝ) : ω.Tames (J z.2 (g z)) :=
-    hJt _ _ (hK.isClosed.mem_of_tendsto (hpt z) (.of_forall fun n ↦ hvK n z))
+    hJt _ _ (hK.isClosed.mem_of_tendsto (hlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z))
+      (.of_forall fun n ↦ hvK n z))
   have hx₀1 := ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField hH1 hx₀
   have hx₁1 := ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField hH1 hx₁
   refine ⟨hg, hgeq, ?_,
@@ -196,11 +197,6 @@ private theorem floer_and_energy_of_tendstoLocallyUniformly (hH : ContDiff ℝ 2
         ω.floerEnergyDensity_nonneg (hJg z) (hgeq z)
     linarith
   -- Its limits at the two ends are the actions of `x₀` and `x₁`.
-  have hgper (s : ℝ) : g (s, 1) = g (s, 0) := tendsto_nhds_unique
-    ((hpt (s, 1)).congr fun n ↦ by simpa using hper n s 0) (hpt (s, 0))
-  have hgL (z : ℝ × ℝ) : ‖fderiv ℝ g z‖ ≤ L :=
-    le_of_tendsto (hdlim.tendstoLocallyUniformlyOn.tendsto_at (mem_univ z)).norm
-      (.of_forall fun n ↦ norm_fderiv_le_of_lipschitz ℝ (hL n))
   exact (hmono.le_of_tendsto (ω.tendsto_hamiltonianAction_slice_of_tendstoUniformly
       hH1.continuous hg hgper hgL hx₀1 (by simpa using hx₀per 0) hbot) 0).trans
     (hmono.ge_of_tendsto (ω.tendsto_hamiltonianAction_slice_of_tendstoUniformly
