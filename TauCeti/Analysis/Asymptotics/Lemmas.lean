@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
@@ -72,6 +73,9 @@ In an ordered field, the ratio `(t + x) / (t + y)` of two translates tends to `1
 is the limit at infinity of antiderivatives built from such ratios, for example in elementary
 evaluations of elliptic integrals.
 
+A function asymptotically equivalent to an eventually nonvanishing function is itself eventually
+nonvanishing; this lets one divide by a solution `w ∼ y` of a differential equation.
+
 A function `g` with `f x ‖g x‖` eventually bounded along a filter on which `f → ∞` tends to `0`.
 For `f y = y` on the real line, a bound on `y ‖g y‖` for large `y` also bounds `y |Im g y|` when
 `g` is complex-valued. These are the decay estimates read off along the imaginary axis from
@@ -108,6 +112,8 @@ resolvent-type functions, which are `O(1 / y)` there.
 * `Asymptotics.IsBigO.isBigO_principal_Ici_of_continuousOn`: the same conclusion when closed
   intervals are compact, `f` and `g` take values in seminormed groups and are continuous on
   `[a, ∞)`, and `‖g‖` does not vanish there.
+* `Asymptotics.IsEquivalent.eventually_ne_zero`: if `u ~ v` and `v` is eventually nonzero, then
+  so is `u`.
 * `Asymptotics.IsBigO.exists_norm_le_div_log`: `f = O((log x)⁻¹)` at `atTop` gives a uniform bound
   `‖f x‖ ≤ C / log x` on `[a, ∞)` (`a > 1`) when `f` is bounded on each `[a, b]`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
@@ -354,6 +360,12 @@ theorem isBigO_inv_norm_smul_apply {α E F : Type*} [SeminormedAddCommGroup E] [
   refine IsBigO.of_bound' (Eventually.of_forall fun a ↦ ?_)
   rw [norm_smul, norm_inv, norm_norm, inv_mul_eq_div]
   exact div_le_of_le_mul₀ (norm_nonneg _) (norm_nonneg _) ((L a).le_opNorm (x a))
+
+/-- **An asymptotic equivalent of an eventually nonvanishing function is eventually nonvanishing.**
+If `u ~[l] v` and `v` is eventually nonzero along `l`, then so is `u`, since `v = O(u)`. -/
+theorem IsEquivalent.eventually_ne_zero {α β : Type*} [NormedAddCommGroup β] {l : Filter α}
+    {u v : α → β} (h : u ~[l] v) (hv : ∀ᶠ x in l, v x ≠ 0) : ∀ᶠ x in l, u x ≠ 0 :=
+  (h.isBigO_symm.eq_zero_imp.and hv).mono fun _ hx hu ↦ hx.2 (hx.1 hu)
 
 /-- **An eventual `O((log x)⁻¹)` bound holds on a whole half-line `[a, ∞)` (`a > 1`).** If
 `f = O((log x)⁻¹)` at `atTop` and `f` is bounded on every compact interval `[a, b]`, then there is
