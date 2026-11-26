@@ -252,6 +252,15 @@ theorem re_lt_one_of_LFunction_eq_zero {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) (h 
     s.re < 1 :=
   not_le.mp fun hs ↦ χ.LFunction_ne_zero_of_one_le_re h1.symm hs h
 
+/-- The natural analytic order of a Dirichlet L-function vanishes throughout `1 ≤ re s`,
+including at the principal character's pole, which is not counted as a zero. -/
+theorem analyticOrderNatAt_LFunction_eq_zero_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
+    analyticOrderNatAt χ.LFunction s = 0 := by
+  apply Nat.eq_zero_of_not_pos
+  intro h
+  obtain ⟨hz, hg⟩ := χ.one_le_analyticOrderNatAt_LFunction_iff.mp h
+  exact (χ.re_lt_one_of_LFunction_eq_zero hg hz).not_ge hs
+
 /-- **A Dirichlet character is determined by its `L`-function.** Two Dirichlet characters of the
 same level whose `L`-functions agree on `Re s > 1` are equal, since a Dirichlet series determines
 its coefficients. -/

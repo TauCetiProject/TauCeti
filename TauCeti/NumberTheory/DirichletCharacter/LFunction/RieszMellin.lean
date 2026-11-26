@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.RemainderMellin
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 
 /-!
@@ -91,5 +92,34 @@ theorem exists_pos_meromorphicTrailingCoeffAt_rieszRemainderMellin_LFunction {β
   rw [(χ.rieszRemainderMellin_LFunction_simplePole h₀ hzero).2, ← hn, WithTop.untop₀_coe]
   push_cast
   ring
+
+/-- A Dirichlet Riesz Mellin expression has at most a simple pole away from the origin. -/
+theorem neg_one_le_meromorphicOrderAt_rieszRemainderMellin_LFunction {ρ : ℂ} (h₀ : ρ ≠ 0) :
+    -1 ≤ meromorphicOrderAt (TauCeti.rieszRemainderMellin χ.LFunction) ρ := by
+  by_cases hzero : 0 < meromorphicOrderAt χ.LFunction ρ
+  · exact (χ.rieszRemainderMellin_LFunction_simplePole h₀ hzero).1.ge
+  · have hle : (-1 : WithTop ℤ) ≤ 0 :=
+      (WithTop.coe_lt_coe.mpr (neg_one_lt_zero : (-1 : ℤ) < 0)).le
+    exact hle.trans (not_lt.mp fun h ↦
+      hzero ((χ.meromorphicOrderAt_rieszRemainderMellin_LFunction_neg_iff h₀).mp h))
+
+/-- Away from the origin, the residue is the zero multiplicity divided by the Riesz
+kernel denominator `ρ * (1 - ρ)`. The multiplicity is zero at a nonzero regular value or
+at the original principal-character pole at `1`. -/
+theorem residue_rieszRemainderMellin_LFunction {ρ : ℂ} (h₀ : ρ ≠ 0) :
+    TauCeti.Contour.residue (TauCeti.rieszRemainderMellin χ.LFunction) ρ =
+      (analyticOrderNatAt χ.LFunction ρ : ℂ) / (ρ * (1 - ρ)) := by
+  by_cases hzero : 0 < meromorphicOrderAt χ.LFunction ρ
+  · have hg := (χ.meromorphicOrderAt_LFunction_pos_iff.mp hzero).2
+    obtain ⟨hord, hcoeff⟩ := χ.rieszRemainderMellin_LFunction_simplePole h₀ hzero
+    rw [TauCeti.Contour.residue_eq_meromorphicTrailingCoeffAt_of_order_eq_neg_one hord, hcoeff,
+      χ.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt hg]
+    simp
+  · have hn : analyticOrderNatAt χ.LFunction ρ = 0 := Nat.eq_zero_of_not_pos fun hp ↦
+      hzero (χ.meromorphicOrderAt_LFunction_pos_iff.mpr
+        (χ.one_le_analyticOrderNatAt_LFunction_iff.mp hp))
+    have hnonneg : 0 ≤ meromorphicOrderAt (TauCeti.rieszRemainderMellin χ.LFunction) ρ := by
+      rwa [← not_lt, χ.meromorphicOrderAt_rieszRemainderMellin_LFunction_neg_iff h₀]
+    simp [TauCeti.Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg hnonneg, hn]
 
 end DirichletCharacter
