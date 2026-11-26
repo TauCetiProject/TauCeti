@@ -65,7 +65,7 @@ theorem isPrimitiveRoot_gaussianUnit :
 /-- The Eisenstein generator is a primitive sixth root of unity. -/
 theorem isPrimitiveRoot_eisensteinUnit :
     IsPrimitiveRoot (eisensteinUnit : QuadraticAlgebra ℤ (-1) 1) 6 := by
-  have : NeZero (3 : QuadraticAlgebra ℤ (-1) 1) := ⟨by norm_num⟩
+  have : NeZero (3 : QuadraticAlgebra ℤ (-1) 1) := NeZero.charZero_ofNat
   exact TauCeti.isPrimitiveRoot_six_of_sq_sub_add_one_eq_zero
     eisensteinUnit_sq_sub_add_one_eq_zero
 

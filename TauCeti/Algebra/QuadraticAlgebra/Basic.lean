@@ -53,4 +53,22 @@ def omegaUnit {R : Type*} [CommRing R] (b : R) : (QuadraticAlgebra R (-1) b)ˣ :
 @[simp] theorem omegaUnit_inv_val {R : Type*} [CommRing R] (b : R) :
     (↑((omegaUnit b)⁻¹) : QuadraticAlgebra R (-1) b) = algebraMap R _ b - ω := (rfl)
 
+/-- Coefficient change sends the generator unit to the generator unit. The coefficient
+`f (-1)` in `mapRingHom` is identified with `-1` by the ring homomorphism laws; the optional
+proof argument allows callers to use their chosen transport. -/
+@[simp↓] theorem omegaUnit_map {R S : Type*} [CommRing R] [CommRing S]
+    (f : R →+* S) (b : R) (h : f (-1) = (-1 : S) := by simp) :
+    Units.map (h ▸
+      (_root_.QuadraticAlgebra.mapRingHom f (-1) b).toMonoidHom) (omegaUnit b) =
+      omegaUnit (f b) := by
+  apply Units.ext
+  simp only [Units.coe_map, omegaUnit_val]
+  suffices ∀ (a a' : S) (h : a = a')
+      (g : QuadraticAlgebra R (-1) b →* QuadraticAlgebra S a (f b)),
+      g ω = ω → (h ▸ g) ω = ω from
+    this _ _ _ _ (_root_.QuadraticAlgebra.mapRingHom_omega f (-1) b)
+  intro a a' h g hg
+  subst a'
+  exact hg
+
 end TauCeti.QuadraticAlgebra
