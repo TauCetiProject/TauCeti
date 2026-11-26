@@ -8,11 +8,9 @@ module
 public import Mathlib.Algebra.MvPolynomial.CommRing
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
-public import Mathlib.Topology.Algebra.Group.Matrix
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
-import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.PolynomialFunctions.Unitary
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 import TauCeti.RepresentationTheory.Compact.Haar
 import TauCeti.Topology.Algebra.MvPolynomial.Aeval
 import TauCeti.Topology.Algebra.UnitaryGroup
@@ -94,13 +92,8 @@ theorem exists_forall_map_eq_integral_translate
     exact (MvPolynomial.continuous_aeval p).comp h_coord
   refine ⟨∑ d ∈ Q.support, (∫ u, w u * φ u (Q.coeff d) ∂μ) • monomial d 1, fun M ↦ ?_⟩
   have h_int (d : Φ × n × n →₀ ℕ) :
-      Integrable (fun u ↦ w u * φ u (Q.coeff d) * M (monomial d 1)) μ := by
-    obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
-      (hφ_cont (Q.coeff d)).continuousOn
-    have h_bdd : Integrable (fun u ↦ φ u (Q.coeff d) * w u) μ :=
-      hw.bdd_mul (hφ_cont (Q.coeff d)).aestronglyMeasurable
-        (Filter.Eventually.of_forall fun u ↦ hC u (Set.mem_univ u))
-    simpa only [mul_comm (φ _ _)] using h_bdd.mul_const (M (monomial d 1))
+      Integrable (fun u ↦ w u * φ u (Q.coeff d) * M (monomial d 1)) μ :=
+    (hw.mul_continuous_of_compactSpace (hφ_cont (Q.coeff d))).mul_const (M (monomial d 1))
   simp only [h_expand, _root_.map_sum, _root_.map_smul, smul_eq_mul, Finset.mul_sum, ← mul_assoc,
     ← integral_mul_const]
   exact (integral_finsetSum Q.support fun d _ ↦ h_int d).symm
