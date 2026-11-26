@@ -46,7 +46,9 @@ is finite exactly when `det A ≠ 0`
 (`Matrix.finite_ker_smulVecHom_iff`). For a `1 × 1` matrix `n` the count is
 `AddCircle.natCard_torsionBy`, the number of points of the `n`-torsion of the circle. Applied to
 `1 - A`, it counts the fixed points of the toral automorphism induced by `A`
-(`AddCircle.nat_card_fixedPoints_generalLinearGroup_smul`).
+(`AddCircle.nat_card_fixedPoints_generalLinearGroup_smul`). When `det A ≠ 0` the map of the torus
+induced by `A` is moreover surjective, `[t]` being the image of `[A⁻¹ t]`
+(`Matrix.smulVecHom_addCircle_surjective`).
 -/
 
 public section
@@ -281,5 +283,15 @@ theorem finite_ker_smulVecHom_iff (A : Matrix ι ι ℤ) :
   · exact Nat.finite_of_card_ne_zero <| by
       rw [natCard_ker_smulVecHom p A hp]
       exact Int.natAbs_ne_zero.2 hA
+
+/-- **Surjectivity of an integer matrix acting on a torus.** A square integer matrix `A` with
+`det A ≠ 0` induces a surjective map of the torus `ι → AddCircle p`: the point `[t]` is the image of
+`[A⁻¹ t]`, the inverse taken over `K`. -/
+theorem smulVecHom_addCircle_surjective {A : Matrix ι ι ℤ} (hA : A.det ≠ 0) :
+    Function.Surjective (A.smulVecHom (AddCircle p)) := by
+  intro y
+  obtain ⟨t, rfl⟩ := AddCircle.exists_pi_coe_eq y
+  refine ⟨fun i ↦ (((A.map ((↑) : ℤ → K))⁻¹ *ᵥ t) i : AddCircle p), ?_⟩
+  rw [smulVecHom_coe_pi, mulVec_mulVec, mul_nonsing_inv _ (isUnit_det_map_intCast hA), one_mulVec]
 
 end Matrix
