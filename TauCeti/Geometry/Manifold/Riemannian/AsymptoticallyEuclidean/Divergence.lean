@@ -42,7 +42,10 @@ part of this file.
 ## Main declarations
 
 * `TauCeti.linearizedScalarCurvature`: the linearized scalar curvature
-  `Σ_{i,j} ∂_i ∂_j g_ij - Δ (tr g)` of metric coefficients.
+  `Σ_{i,j} ∂_i ∂_j g_ij - Δ (tr g)` of metric coefficients, with its basic API: it is measurable
+  (`TauCeti.measurable_linearizedScalarCurvature`), local
+  (`TauCeti.linearizedScalarCurvature_congr_of_eventuallyEq`) and linear in the coefficients
+  (`TauCeti.linearizedScalarCurvature_smul`, `TauCeti.linearizedScalarCurvature_add`).
 * `TauCeti.normalizedCoordinateFlux_sub_eq_setIntegral_linearizedScalarCurvature`: the flux
   difference between two radii is the integral of the linearized scalar curvature over the shell.
 * `TauCeti.tendsto_normalizedCoordinateFlux_of_integrableOn`,
@@ -107,6 +110,73 @@ theorem linearizedScalarCurvature_const_add (a : Fin n → Fin n → ℝ)
     linearizedScalarCurvature (fun y i j ↦ a i j + g y i j) x = linearizedScalarCurvature g x := by
   simp [linearizedScalarCurvature_def]
 
+/-- The linearized scalar curvature is measurable, whatever the regularity of the coefficients. -/
+theorem measurable_linearizedScalarCurvature
+    (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ) :
+    Measurable (linearizedScalarCurvature g) := by
+  rw [funext (linearizedScalarCurvature_def g)]
+  fun_prop
+
+/-- The linearized scalar curvature at `x` only depends on the coefficients near `x`. -/
+theorem linearizedScalarCurvature_congr_of_eventuallyEq
+    {g g' : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {x : EuclideanSpace ℝ (Fin n)}
+    (h : g =ᶠ[𝓝 x] g') :
+    linearizedScalarCurvature g x = linearizedScalarCurvature g' x := by
+  -- The first partial derivatives agree near `x`, hence so do their derivatives at `x`.
+  have hd (i j k : Fin n) :
+      fderiv ℝ (fun y ↦ fderiv ℝ (fun z ↦ g z i j) y (EuclideanSpace.single k 1)) x =
+        fderiv ℝ (fun y ↦ fderiv ℝ (fun z ↦ g' z i j) y (EuclideanSpace.single k 1)) x :=
+    EventuallyEq.fderiv_eq <| h.eventuallyEq_nhds.mono fun y hy ↦ by
+      have hy' : fderiv ℝ (fun z ↦ g z i j) y = fderiv ℝ (fun z ↦ g' z i j) y :=
+        (hy.fun_comp fun a ↦ a i j).fderiv_eq
+      simp only [hy']
+  simp only [linearizedScalarCurvature_def, hd]
+
+/-- The linearized scalar curvature is homogeneous in the coefficients. -/
+@[simp]
+theorem linearizedScalarCurvature_smul (c : ℝ)
+    (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ) (x : EuclideanSpace ℝ (Fin n)) :
+    linearizedScalarCurvature (c • g) x = c * linearizedScalarCurvature g x := by
+  have hd (f : EuclideanSpace ℝ (Fin n) → ℝ) :
+      fderiv ℝ (fun y ↦ c * f y) = c • fderiv ℝ f := by
+    rw [← fderiv_const_smul_field, Pi.smul_def]
+    simp only [smul_eq_mul]
+  simp only [linearizedScalarCurvature_def, Pi.smul_apply, smul_eq_mul, hd, FunLike.coe_smul,
+    ← mul_sub, ← Finset.mul_sum]
+
+/-- For `C²` coefficients, the first partial derivatives of the coefficients are `C¹`. -/
+private lemma contDiffAt_fderiv_apply_single
+    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {x : EuclideanSpace ℝ (Fin n)}
+    (hg : ∀ i j, ContDiffAt ℝ 2 (fun y ↦ g y i j) x) (i j k : Fin n) :
+    ContDiffAt ℝ 1 (fun y ↦ fderiv ℝ (fun z ↦ g z i j) y (EuclideanSpace.single k 1)) x :=
+  ((hg i j).fderiv_right (m := 1) (by norm_num)).clm_apply contDiffAt_const
+
+/-- The linearized scalar curvature is additive in coefficients of class `C²` at the point. -/
+theorem linearizedScalarCurvature_add {g h : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ}
+    {x : EuclideanSpace ℝ (Fin n)} (hg : ∀ i j, ContDiffAt ℝ 2 (fun y ↦ g y i j) x)
+    (hh : ∀ i j, ContDiffAt ℝ 2 (fun y ↦ h y i j) x) :
+    linearizedScalarCurvature (g + h) x =
+      linearizedScalarCurvature g x + linearizedScalarCurvature h x := by
+  -- Near `x` the first partial derivatives of `g + h` are the sums of those of `g` and `h`; the
+  -- sums are differentiable at `x`, so their derivatives at `x` add too.
+  have hd (i j k : Fin n) :
+      fderiv ℝ (fun y ↦ fderiv ℝ (fun z ↦ (g + h) z i j) y (EuclideanSpace.single k 1)) x =
+        fderiv ℝ (fun y ↦ fderiv ℝ (fun z ↦ g z i j) y (EuclideanSpace.single k 1)) x +
+          fderiv ℝ (fun y ↦ fderiv ℝ (fun z ↦ h z i j) y (EuclideanSpace.single k 1)) x := by
+    have hev : (fun y ↦ fderiv ℝ (fun z ↦ (g + h) z i j) y (EuclideanSpace.single k 1)) =ᶠ[𝓝 x]
+        fun y ↦ fderiv ℝ (fun z ↦ g z i j) y (EuclideanSpace.single k 1) +
+          fderiv ℝ (fun z ↦ h z i j) y (EuclideanSpace.single k 1) := by
+      filter_upwards [((hg i j).eventually (by simp)), ((hh i j).eventually (by simp))]
+        with y hgy hhy
+      simp only [Pi.add_apply]
+      rw [fderiv_fun_add (hgy.differentiableAt two_ne_zero) (hhy.differentiableAt two_ne_zero),
+        add_apply]
+    rw [hev.fderiv_eq, fderiv_fun_add
+      ((contDiffAt_fderiv_apply_single hg i j k).differentiableAt one_ne_zero)
+      ((contDiffAt_fderiv_apply_single hh i j k).differentiableAt one_ne_zero)]
+  simp only [linearizedScalarCurvature_def, hd, add_apply, ← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ by ring
+
 /-- The vector field `U_j = Σ_i (∂_i g_ij - ∂_j g_ii)` whose radial component is the ADM flux
 density. -/
 private def coordinateFluxField (g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ)
@@ -127,13 +197,6 @@ private lemma coordinateFluxIntegrand_eq_inner_div_norm
   simp only [coordinateFluxIntegrand_def, PiLp.inner_apply, coordinateFluxField_apply,
     Finset.sum_div, RCLike.inner_apply, conj_trivial]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
-
-/-- For `C²` coefficients, the first partial derivatives of the coefficients are `C¹`. -/
-private lemma contDiffAt_fderiv_apply_single
-    {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ} {x : EuclideanSpace ℝ (Fin n)}
-    (hg : ∀ i j, ContDiffAt ℝ 2 (fun y ↦ g y i j) x) (i j k : Fin n) :
-    ContDiffAt ℝ 1 (fun y ↦ fderiv ℝ (fun z ↦ g z i j) y (EuclideanSpace.single k 1)) x :=
-  ((hg i j).fderiv_right (m := 1) (by norm_num)).clm_apply contDiffAt_const
 
 /-- For `C²` coefficients, `coordinateFluxField` is `C¹`. -/
 private lemma contDiffAt_coordinateFluxField {g : EuclideanSpace ℝ (Fin n) → Fin n → Fin n → ℝ}
