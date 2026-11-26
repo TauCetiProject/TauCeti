@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import TauCeti.Analysis.Fredholm.ClosedRange
 import TauCeti.Analysis.Fredholm.Parametric
 import TauCeti.Analysis.Fredholm.Stabilization
+import TauCeti.Analysis.Fredholm.StabilizedPerturbation
 
 /-!
 # The kernel and the index of glued operators on the cylinder
@@ -70,6 +71,8 @@ Write `β = neckCutoff (-(2 / R))` for the cutoff equal to `1` on `s ≤ 0` and 
 * `TauCeti.CylinderSobolev.exists_forall_ge_isFredholm_and_index_jetOperator_gluedCoeff_eq`: the
   glued operator of two Fredholm operators is Fredholm for long necks, with
   `ind D_R = ind D₁ + ind D₂`.
+* `exists_pos_exists_forall_ge_isFredholm_and_index_eq_of_norm_sub_jetOperator_gluedCoeff_le`: so
+  is every operator within a fixed distance `ε` of `D_R`, with `ε` independent of `R`.
 
 ## References
 
@@ -911,5 +914,46 @@ theorem exists_forall_ge_isFredholm_and_index_jetOperator_gluedCoeff_eq
       (ContinuousLinearMap.rightInverse_of_comp hQ₂).surjective, hrank, Module.finrank_prod]
   push_cast
   ring
+
+variable [CompleteSpace V] [CompleteSpace W] in
+/-- **Index additivity under gluing, for every nearby operator.** Under the hypotheses of
+`TauCeti.CylinderSobolev.exists_forall_ge_isFredholm_and_index_jetOperator_gluedCoeff_eq`, there are
+`ε > 0` and `R₀` such that for every neck `R ≥ R₀`, every operator `P` from `W^{1,2}` to `L²` within
+`ε` in operator norm of the glued operator `D_R` is Fredholm, of index `ind D₁ + ind D₂`.
+
+The radius `ε` does not depend on `R`. So an operator `P_R` that approaches `D_R` as `R → ∞`, such
+as the linearized operator along a map pre-glued with neck length `2 R`, is Fredholm of index
+`ind D₁ + ind D₂` for every long neck. A radius taken from the openness of the Fredholm operators
+at each `D_R` separately could shrink as `R` grows. -/
+theorem exists_pos_exists_forall_ge_isFredholm_and_index_eq_of_norm_sub_jetOperator_gluedCoeff_le
+    {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+    {M : ℝ → V × V × V →L[ℝ] W} (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
+    (h₁ : TendstoUniformlyOn (Function.curry M₁) M atTop (Icc 0 1))
+    (h₂ : TendstoUniformlyOn (Function.curry M₂) M atBot (Icc 0 1))
+    (hD₁ : ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).IsFredholm)
+    (hD₂ : ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).IsFredholm) :
+    ∃ ε > 0, ∃ R₀ : ℝ, ∀ R ≥ R₀, ∀ P : H1 V →L[ℝ] Lp W 2 stripMeasure,
+      ‖P - (jetOperator stripMeasure
+        (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+          (H1 V).subtypeL‖ ≤ ε →
+      P.IsFredholm ∧
+        P.index = ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).index +
+          ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).index := by
+  -- The stabilized glued operators have right inverses bounded by `C`, independently of `R`.
+  obtain ⟨-, S₁, S₂, -, -, hS₁, hS₂, -, -, C, R₀, hR₀⟩ :=
+    exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff_of_isFredholm_smooth hM₁
+      hM₂ h₁ h₂ hD₁ hD₂
+  obtain ⟨R₁, hR₁⟩ :=
+    exists_forall_ge_isFredholm_and_index_jetOperator_gluedCoeff_eq hM₁ hM₂ h₁ h₂ hD₁ hD₂
+  refine ⟨1 / (4 * (|C| + 1)), by positivity, max R₀ R₁, fun R hR P hP ↦ ?_⟩
+  obtain ⟨Q, hQ, hQn⟩ := hR₀ R (le_of_max_le_left hR)
+  obtain ⟨hF, hind⟩ := hR₁ R (le_of_max_le_right hR)
+  rw [← hind]
+  refine hF.isFredholm_and_index_eq_of_norm_sub_mul_lt hQ ?_
+  calc _ ≤ 1 / (4 * (|C| + 1)) * |C| := mul_le_mul hP (hQn.trans (le_abs_self C))
+        (ContinuousLinearMap.opNorm_nonneg Q) (by positivity)
+    _ < 1 / 2 := by
+      rw [div_mul_eq_mul_div, one_mul, div_lt_div_iff₀ (by positivity) two_pos]
+      linarith [abs_nonneg C]
 
 end TauCeti.CylinderSobolev
