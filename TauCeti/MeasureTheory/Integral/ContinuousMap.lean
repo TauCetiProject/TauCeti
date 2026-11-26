@@ -32,7 +32,8 @@ For `𝕜 = ℝ` or `ℂ`, integration against a finite measure is a positive li
 `C(X, 𝕜)` (`ContinuousMap.integralPositiveLinearMap`), the compact-space, `𝕜`-valued counterpart of
 Mathlib's `CompactlySupportedContinuousMap.integralPositiveLinearMap`. For `𝕜 = ℂ` it is a positive
 functional on the commutative C⋆-algebra `C(X, ℂ)`, and a state when the measure is a probability
-measure.
+measure. In particular, integration against a probability measure concentrated on a compact set `K`
+is a state on `C(K, 𝕜)` (`ContinuousMap.integralPositiveLinearMap_comap_subtypeVal_one`).
 
 A `𝕜`-linear functional on `C(X, 𝕜)` that agrees with integration on real functions agrees with it
 everywhere (`LinearMap.apply_eq_integral_of_forall_realToRCLike`), since every `f : C(X, 𝕜)` is
@@ -102,6 +103,17 @@ theorem ContinuousMap.integralPositiveLinearMap_one :
   simp [integral_const, RCLike.real_smul_eq_coe_mul]
 
 end integralPositiveLinearMap
+
+/-- Integration against a probability measure `μ` on a Hausdorff space concentrated on a compact
+set `K` is a state on `C(K, 𝕜)`. -/
+theorem ContinuousMap.integralPositiveLinearMap_comap_subtypeVal_one {X 𝕜 : Type*}
+    [TopologicalSpace X] [T2Space X] [MeasurableSpace X] [OpensMeasurableSpace X] [RCLike 𝕜]
+    {K : Set X} [CompactSpace K] {μ : Measure X} [IsProbabilityMeasure μ] (hμ : μ Kᶜ = 0) :
+    integralPositiveLinearMap (μ.comap ((↑) : K → X)) (1 : C(K, 𝕜)) = 1 := by
+  have hK : MeasurableSet K := (isCompact_iff_compactSpace.2 ‹_›).isClosed.measurableSet
+  rw [integralPositiveLinearMap_one, Measure.real,
+    (MeasurableEmbedding.subtypeVal hK).comap_apply]
+  simp [(prob_compl_eq_zero_iff hK).1 hμ]
 
 /-- On a compact space, a `𝕜`-linear functional `φ` on `C(X, 𝕜)` that agrees with integration
 against a finite measure `μ` on real functions is integration against `μ`. -/

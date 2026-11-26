@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.LaplaceTransform.Basic
 import Mathlib.Analysis.Complex.TaylorSeries
+import TauCeti.Analysis.LaplaceTransform.GammaKernel
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.MeasureTheory.Integral.Exp.Moment
 
 /-!
@@ -37,6 +39,10 @@ pointwise sum is integrable (`TauCeti.integrable_exp_mul_of_summable_integral`).
   of the transform on `a - r < re s`.
 * `TauCeti.hasLaplace_ofReal_of_ae_nonneg_of_mem_ball`: **Landau's theorem**, the value `F₁ s` of
   the transform on `ball a r`.
+* `TauCeti.exists_setIntegral_Ioi_sdiff_Icc_pow_mul_exp_neg_mul_div_factorial_le`: the Gamma-kernel
+  estimate for the windowed form: for every `δ > 0` there are `σ > 2` and `C` such that for every
+  `U` some `k ≥ U` makes the mass of `u ^ k * exp (-((σ - 2) * u)) / k !` off `[U, (1 + δ) U]` at
+  most `C / σ ^ k`.
 
 ## References
 
@@ -54,6 +60,72 @@ open scoped Nat Topology
 
 namespace TauCeti
 
+/-! ### The Gamma-kernel window estimate used by the windowed form of Landau's theorem -/
+
+open Real in
+/-- **Mass of the Gamma kernel off a window.** For every `δ > 0` there are `σ > 2` and `C` such
+that for every real `U` some natural number `k ≥ U` bounds the mass of the Gamma kernel
+`u ^ k * exp (-((σ - 2) * u)) / k !` on `(0, ∞) \ [U, (1 + δ) U]` by `C σ^(-k)`. The proof
+applies the Chernoff bound `TauCeti.setIntegral_Ioi_sdiff_Icc_pow_mul_exp_neg_mul_div_factorial_le`
+with the same tilt `l` for both tails and suitable `l`, `σ` and `k`. The window estimate for
+`U ≥ 1` and this choice of parameters are `Deduction.landau_tails` in L. Alpöge's Lean
+formalization of the Riemann hypothesis for Dirichlet L-functions
+(<https://github.com/leanprover-community/riemann-hypothesis>); this theorem extends the estimate
+to every real `U` (for `U < 0` it takes `k = 0`). -/
+theorem exists_setIntegral_Ioi_sdiff_Icc_pow_mul_exp_neg_mul_div_factorial_le {δ : ℝ}
+    (hδ : 0 < δ) : ∃ σ > 2, ∃ C, ∀ U : ℝ, ∃ k : ℕ, U ≤ k ∧
+      ∫ u in Ioi 0 \ Icc U ((1 + δ) * U), u ^ k * exp (-((σ - 2) * u)) / k ! ≤ C / σ ^ k := by
+  -- `l = 2 + 6 / δ`, `σ = l (1 + δ) (l + 2)` (atoms with defining equations); for `0 ≤ U`, apply
+  -- the Chernoff bound with `k = ⌈(1 + δ / 2) σ U⌉`, `a = σ - 2`, `V = (1 + δ) U`; else `k = 0`.
+  obtain ⟨l, hl_def⟩ : ∃ l : ℝ, l = 2 + 6 / δ := ⟨_, rfl⟩
+  have hlδ : δ * l = 2 * δ + 6 := by rw [hl_def]; field_simp
+  have hl : 2 < l := by linarith [div_pos (by norm_num : (0 : ℝ) < 6) hδ]
+  obtain ⟨σ, hσ⟩ : ∃ σ : ℝ, σ = l * (1 + δ) * (l + 2) := ⟨_, rfl⟩
+  have hlδl : 0 < l * δ * (l + 2) := by positivity
+  have hd : 0 < σ - 2 - l := by linarith [mul_self_lt_mul_self (by norm_num : (0 : ℝ) ≤ 2) hl]
+  have he : 0 < σ - 2 + l := by linarith
+  have hy : 0 ≤ σ / (σ - 2 - l) - 1 := by rw [sub_nonneg, le_div_iff₀ hd]; linarith
+  refine ⟨σ, by linarith, exp (σ / (σ - 2 - l) - 1) / (σ - 2 - l) + 1 / (σ - 2 + l),
+    fun U ↦ ?_⟩
+  rcases lt_or_ge U 0 with hU | hU
+  · refine ⟨0, by simpa using hU.le, ?_⟩
+    calc _ ≤ ((σ - 2) ^ (0 + 1))⁻¹ :=
+          setIntegral_pow_mul_exp_neg_mul_div_factorial_le 0 (by linarith)
+            (ae_of_all _ sdiff_subset)
+      _ ≤ exp (σ / (σ - 2 - l) - 1) / (σ - 2 - l) := by
+          rw [zero_add, pow_one, inv_eq_one_div]
+          exact div_le_div₀ (exp_pos _).le (one_le_exp hy) hd (by linarith)
+      _ ≤ _ := by rw [pow_zero, div_one, le_add_iff_nonneg_right]; positivity
+  have hσ1 : 1 ≤ (1 + δ / 2) * σ := by linarith [mul_pos hδ (by linarith : (0 : ℝ) < σ)]
+  set k := ⌈(1 + δ / 2) * σ * U⌉₊
+  have hk1 : (1 + δ / 2) * σ * U ≤ k := Nat.le_ceil _
+  have hk2 : (k : ℝ) < (1 + δ / 2) * σ * U + 1 :=
+    Nat.ceil_lt_add_one (mul_nonneg (by linarith) hU)
+  refine ⟨k, (le_mul_of_one_le_left hU hσ1).trans hk1, ?_⟩
+  -- The two identities that fix `l = 2 + 6 / δ`: they make the rates of the two tails match.
+  have hup : (1 + δ / 2) * (l + 2) = l * (1 + δ) - 1 := by linear_combination -hlδ / 2
+  have hlow : (1 + δ / 2) * (l - 2) = l + 1 := by linear_combination hlδ / 2
+  have h1 : (1 + δ / 2) * σ * (σ / (σ - 2 - l) - 1) = l * (1 + δ) := by
+    rw [div_sub_one hd.ne', mul_div_assoc', div_eq_iff hd.ne']
+    linear_combination σ * hup - hσ
+  have h2 : (1 + δ / 2) * σ * (σ / (σ - 2 + l) - 1) ≤ -l := by
+    rw [div_sub_one he.ne', mul_div_assoc', div_le_iff₀ he]
+    -- By `hlow` the left side is `-(l + 1) σ`, and `l ^ 2 - 2 l ≤ σ`.
+    linarith [congrArg (· * σ) hlow, hσ, hlδl]
+  calc _ ≤ _ := setIntegral_Ioi_sdiff_Icc_pow_mul_exp_neg_mul_div_factorial_le k (l₂ := l)
+          (by linarith) (by linarith : l < σ - 2) (by linarith) U ((1 + δ) * U)
+    _ ≤ exp (σ / (σ - 2 - l) - 1) / σ ^ k / (σ - 2 - l) + exp 0 / σ ^ k / (σ - 2 + l) := by
+        simp only [pow_succ, ← div_eq_mul_inv, ← div_div]
+        gcongr ?_ / _ + ?_ / _
+        · refine exp_div_pow_le_exp_div_pow k (by linarith) hd.le ?_
+          -- `k y ≤ ((1 + δ / 2) σ U + 1) y = l (1 + δ) U + y` by `h1`.
+          linarith [mul_le_mul_of_nonneg_right hk2.le hy, congrArg (· * U) h1]
+        · refine exp_div_pow_le_exp_div_pow k (by linarith) he.le ?_
+          have hz : σ / (σ - 2 + l) - 1 ≤ 0 := by rw [sub_nonpos, div_le_one he]; linarith
+          -- `k z ≤ (1 + δ / 2) σ U z ≤ -l U` by `h2`.
+          linarith [mul_le_mul_of_nonpos_right hk1 hz, mul_le_mul_of_nonneg_left h2 hU]
+    _ = _ := by rw [exp_zero]; ring
+
 section Landau
 
 variable {f : ℝ → ℝ} {F₁ : ℂ → ℂ} {a r u₀ : ℝ}
@@ -66,31 +138,6 @@ private theorem eventually_hasLaplace_of_mem_ball
     ∀ᶠ w in 𝓝 z, HasLaplace (fun u ↦ (f u : ℂ)) w (F₁ w) := by
   filter_upwards [isOpen_ball.mem_nhds hz,
     (isOpen_lt continuous_const Complex.continuous_re).mem_nhds hza] with w hw hw' using hF w hw hw'
-
-/-- Let `F₁` be the Laplace transform of `f` near a real point `b`. For real `t`, the function
-`u ↦ (t * u) ^ n / n ! * (exp (-b * u) * f u)` is integrable on `(0, ∞)`, and its integral is the
-`n`-th term of the Taylor expansion of `F₁` about `b`, evaluated at `b - t`. -/
-private theorem integrable_and_taylor_term_eq {b : ℝ}
-    (hF : ∀ᶠ w in 𝓝 (b : ℂ), HasLaplace (fun u ↦ (f u : ℂ)) w (F₁ w)) (t : ℝ) (n : ℕ) :
-    Integrable (fun u ↦ (t * u) ^ n / (n ! : ℝ) * (Real.exp (-b * u) * f u))
-        (volume.restrict (Ioi 0)) ∧
-      (n ! : ℂ)⁻¹ • (-(t : ℂ)) ^ n • iteratedDeriv n F₁ b =
-        ((∫ u in Ioi 0, (t * u) ^ n / (n ! : ℝ) * (Real.exp (-b * u) * f u) : ℝ) : ℂ) := by
-  have hL := (hasLaplace_pow_div_factorial_smul_iteratedDeriv hF n).const_smul ((t : ℂ) ^ n)
-  have key : ∀ u : ℝ, Complex.exp (-(b : ℂ) * u) • ((t : ℂ) ^ n • ((u : ℂ) ^ n / n !) • (f u : ℂ)) =
-      (((t * u) ^ n / (n ! : ℝ) * (Real.exp (-b * u) * f u) : ℝ) : ℂ) := fun u ↦ by
-    simp only [smul_eq_mul]
-    push_cast
-    ring
-  have hc := hL.integrable.congr (.of_forall key)
-  refine ⟨hc.re.congr (.of_forall fun u ↦ by
-    simp only [RCLike.re_to_complex, Complex.ofReal_re]), ?_⟩
-  have hI : ∫ u : ℝ in Ioi 0,
-      Complex.exp (-(b : ℂ) * u) • ((t : ℂ) ^ n • ((u : ℂ) ^ n / n !) • (f u : ℂ)) =
-        (t : ℂ) ^ n • ((-1) ^ n / n ! : ℂ) • iteratedDeriv n F₁ b := hL.integral_eq
-  rw [← integral_complex_ofReal, ← integral_congr_ae (.of_forall key), hI]
-  simp only [smul_eq_mul, neg_pow (t : ℂ)]
-  ring
 
 /-- **Landau's theorem about a real point.** Let `f` be nonnegative at almost every `u > u₀` and
 let `F₁` be its Laplace transform near the real point `b`. If `F₁` is holomorphic on `ball b ρ`,
@@ -112,14 +159,14 @@ private theorem integrableOn_cexp_neg_mul_smul_ofReal_of_eventually_hasLaplace {
   have hσb : (σ : ℂ) - b = -((b - σ : ℝ) : ℂ) := by
     push_cast
     ring
-  simp_rw [hσb, fun n ↦ (integrable_and_taylor_term_eq hF (b - σ) n).2,
+  simp_rw [hσb, fun n ↦ (integrable_and_taylor_term_eq_integral hF (b - σ) n).2,
     Complex.summable_ofReal] at hsum
   -- Those functions are nonnegative right of `u₀`, and their sum is `exp (-σ * u) * f u`.
   have hf' : ∀ᵐ u ∂volume.restrict (Ioi (0 : ℝ)), u₀ < u → 0 ≤ Real.exp (-b * u) * f u :=
     (ae_restrict_of_ae ((ae_restrict_iff' measurableSet_Ioi).1 hf)).mono
       fun u hu h ↦ mul_nonneg (Real.exp_nonneg _) (hu h)
   have hint := integrable_exp_mul_of_summable_integral hf'
-    (fun n ↦ (integrable_and_taylor_term_eq hF (b - σ) n).1) hsum
+    (fun n ↦ (integrable_and_taylor_term_eq_integral hF (b - σ) n).1) hsum
   have hexp : ∀ u : ℝ, Real.exp ((b - σ) * u) * (Real.exp (-b * u) * f u) =
       Real.exp (-σ * u) * f u := fun u ↦ by
     rw [← mul_assoc, ← Real.exp_add]

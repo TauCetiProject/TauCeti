@@ -40,7 +40,9 @@ Finally, it provides one-variable removable-singularity patching across a relati
 discrete subset `E` (`Eᶜ ∈ codiscreteWithin Ω`): a function `f : ℂ → F` complex-differentiable on
 `Ω \ E` that agrees on `𝓝[≠] a` with a function analytic at `a` for every `a ∈ Ω ∩ E` agrees on
 `Ω \ E` with a function complex-differentiable on all of `Ω`
-(`TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`).
+(`TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`). Together with the one-point
+removable singularity theorem this gives the removable singularity theorem across such a set, for
+functions bounded near it (`TauCeti.exists_differentiableOn_eqOn_sdiff_of_bddAbove`).
 
 ## Main results
 
@@ -55,6 +57,8 @@ discrete subset `E` (`Eᶜ ∈ codiscreteWithin Ω`): a function `f : ℂ → F`
   an extension across the hyperplane keeps a local nonvanishing witness nonvanishing there.
 * `TauCeti.exists_differentiableOn_eqOn_of_analyticAt_nhdsNE`: removable-singularity patching across
   a relatively closed discrete subset.
+* `TauCeti.exists_differentiableOn_eqOn_sdiff_of_bddAbove`: in one variable, a function
+  holomorphic off a discrete set and locally bounded near it extends holomorphically.
 
 ## References
 
@@ -322,5 +326,32 @@ theorem exists_differentiableOn_eqOn_of_analyticAt_nhdsNE
       (hf z₀ ⟨hz₀, hz₀E⟩).mono_of_mem_nhdsWithin
         (by rw [Set.sdiff_eq]; exact inter_mem self_mem_nhdsWithin hE_nhds)
     exact hdiff.congr_of_eventuallyEq hev (hfh ⟨hz₀, hz₀E⟩).symm
+
+/-- **Removable singularities across a discrete set.** Let `s ⊆ ℂ` be open and let `S` have no
+accumulation point in `s`. A function complex differentiable on `s \ S` and bounded off `S` near
+every point of `s ∩ S` agrees on `s \ S` with a function complex differentiable on `s`. -/
+theorem exists_differentiableOn_eqOn_sdiff_of_bddAbove
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+    {f : ℂ → F} {s S : Set ℂ} (hs : IsOpen s)
+    (hS : Sᶜ ∈ codiscreteWithin s) (hf : DifferentiableOn ℂ f (s \ S))
+    (hb : ∀ z ∈ s ∩ S, ∃ t ∈ 𝓝 z, BddAbove (norm ∘ f '' (t \ S))) :
+    ∃ g : ℂ → F, DifferentiableOn ℂ g s ∧ EqOn g f (s \ S) := by
+  suffices hg : ∀ z ∈ s ∩ S, ∃ g : ℂ → F, AnalyticAt ℂ g z ∧ f =ᶠ[𝓝[≠] z] g by
+    obtain ⟨g, hg, hfg⟩ := exists_differentiableOn_eqOn_of_analyticAt_nhdsNE hS hf hg
+    exact ⟨g, hg, hfg.symm⟩
+  intro z hz
+  -- Near `z`, all other points lie in `s \ S`, so `f` extends across `z` by its limit there.
+  obtain ⟨t, ht, htb⟩ := hb z hz
+  have hcod := mem_codiscreteWithin_iff_forall_mem_nhdsWithin.mp hS z hz.1
+  rw [sdiff_eq, nhdsWithin_inter_of_mem (mem_nhdsWithin_of_mem_nhds (hs.mem_nhds hz.1))] at hcod
+  set N := insert z (t ∩ (s \ S))
+  have hmem : N ∈ 𝓝 z := insert_mem_nhds_iff.2 (inter_mem (mem_nhdsWithin_of_mem_nhds ht)
+    (inter_mem (mem_nhdsWithin_of_mem_nhds (hs.mem_nhds hz.1)) hcod))
+  have hsub : N \ {z} ⊆ t ∩ (s \ S) := fun y hy ↦ (mem_insert_iff.1 hy.1).resolve_left hy.2
+  have hsubt : t ∩ (s \ S) ⊆ t \ S := fun y hy ↦ ⟨hy.1, hy.2.2⟩
+  have hd := differentiableOn_update_limUnder_of_bddAbove hmem
+    (hf.mono (hsub.trans inter_subset_right)) (htb.mono (image_mono (hsub.trans hsubt)))
+  exact ⟨_, hd.analyticAt hmem,
+    eventually_mem_nhdsWithin.mono fun y hy ↦ (update_of_ne hy _ _).symm⟩
 
 end TauCeti

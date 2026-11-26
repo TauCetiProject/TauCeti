@@ -172,7 +172,7 @@ private theorem baseChangeFiberEquiv_self_one_tmul (σ : K →+* ℂ) (z : 𝓞 
     exact (congrArg₂ (· + ·) h₁ h₂).trans (by rw [map_add, TensorProduct.tmul_add])
   | tmul a x =>
     refine (congrArg (fiberCongr _) (baseChangeFiberEquiv_one_tmul_tmul σ a x)).trans ?_
-    rw [fiberCongr_smul_one_tmul, TensorProduct.lid_tmul, Codomain.one_tmul_smul]
+    rw [fiberCongr_smul_one_tmul, TensorProduct.lid_tmul, Codomain.tmul_smul]
 
 /-- Base change along the identity of `K` is isometric to the original metric, through
 `𝓞 K ⊗_{𝓞 K} E ≅ E`. -/

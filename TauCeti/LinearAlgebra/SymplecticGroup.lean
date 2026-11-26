@@ -52,6 +52,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
+* `Matrix.J_mul_fromBlocks_zero₁₂_zero₂₁`: left multiplication by `J` turns a block diagonal
+  matrix `[[A, 0], [0, D]]` into the antidiagonal matrix `[[0, -D], [A, 0]]`.
 * `Matrix.det_J`: its determinant is `1`.
 * `Matrix.star_J` and `Matrix.J_mem_unitaryGroup`: over any star ring its adjoint is `-J`, so
   it is unitary (orthogonal over `ℝ`).
@@ -103,6 +105,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   symplectic ones are exactly the orthogonal ones, and an orthogonal symplectic matrix commutes
   with `J`. Any two of the three conditions symplectic, orthogonal and commuting with `J` imply the
   third.
+* `SymplecticGroup.mem_iff_toBlocks`: a matrix is symplectic exactly when its blocks satisfy the
+  relations `Aᵀ C = Cᵀ A`, `Bᵀ D = Dᵀ B` and `Aᵀ D - Cᵀ B = 1`.
 * `SymplecticGroup.fromBlocks_upper_mem`: `fromBlocks 1 B 0 1` for symmetric `B`;
 * `SymplecticGroup.fromBlocks_lower_mem`: `fromBlocks 1 0 C 1` for symmetric `C`;
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
@@ -161,6 +165,12 @@ theorem neg_J_mul_J : (-J l R) * J l R = 1 := by
 /-- The canonical skew-symmetric matrix is a unit, with inverse `-J`, because `J * J = -1`. -/
 theorem isUnit_J : IsUnit (J l R) :=
   ⟨⟨J l R, -J l R, J_mul_neg_J l R, neg_J_mul_J l R⟩, rfl⟩
+
+/-- Left multiplication by `J` turns a block diagonal matrix into an antidiagonal one:
+`J * [[A, 0], [0, D]] = [[0, -D], [A, 0]]`. -/
+theorem J_mul_fromBlocks_zero₁₂_zero₂₁ (A D : Matrix l l R) :
+    J l R * fromBlocks A 0 0 D = fromBlocks 0 (-D) A 0 := by
+  simp [J, fromBlocks_multiply]
 
 /-- The canonical skew-symmetric matrix has determinant one. Mathlib records only
 `det J * det J = 1` (`Matrix.J_det_mul_J_det`), which leaves the sign open. -/
@@ -523,6 +533,17 @@ theorem commute_J_of_mem_orthogonalGroup {A : Matrix (l ⊕ l) (l ⊕ l) R}
   rw [mem_orthogonalGroup_iff'] at hO
   calc J l R * A = A * J l R * Aᵀ * A := by rw [hS]
     _ = A * J l R := by rw [Matrix.mul_assoc, hO, Matrix.mul_one]
+
+/-- **The block relations of a symplectic matrix.** A matrix `M = [[A, B], [C, D]]` is symplectic
+exactly when `Aᵀ C = Cᵀ A`, `Bᵀ D = Dᵀ B` and `Aᵀ D - Cᵀ B = 1`; this is
+`SymplecticGroup.fromBlocks_mem_iff` stated for the blocks `M.toBlocksᵢⱼ` of an arbitrary `M`. -/
+theorem mem_iff_toBlocks {M : Matrix (l ⊕ l) (l ⊕ l) R} :
+    M ∈ symplecticGroup l R ↔
+      M.toBlocks₁₁ᵀ * M.toBlocks₂₁ = M.toBlocks₂₁ᵀ * M.toBlocks₁₁ ∧
+        M.toBlocks₁₂ᵀ * M.toBlocks₂₂ = M.toBlocks₂₂ᵀ * M.toBlocks₁₂ ∧
+        M.toBlocks₁₁ᵀ * M.toBlocks₂₂ - M.toBlocks₂₁ᵀ * M.toBlocks₁₂ = 1 := by
+  conv_lhs => rw [← M.fromBlocks_toBlocks]
+  exact fromBlocks_mem_iff
 
 /-- An upper unitriangular block matrix is symplectic when its upper-right block is symmetric. -/
 theorem fromBlocks_upper_mem {B : Matrix l l R} (hB : Bᵀ = B) :

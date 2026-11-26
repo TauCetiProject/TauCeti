@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
+import TauCeti.Geometry.Symplectic.Hamiltonian.Transport
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 
@@ -24,7 +25,9 @@ If a Hamiltonian `H` has derivative `(δq, δp) ↦ ⟪a, δq⟫ + ⟪b, δp⟫`
 `H(q, p) = h(q)` depending only on position has `X_H(q, p) = (0, -∇h(q))`
 (`TauCeti.stdSymplecticForm_hamiltonianVectorField_comp_fst`). Consequently the Poisson bracket
 is given by the classical formula `{F, G} = ⟪∇_q F, ∇_p G⟫ - ⟪∇_p F, ∇_q G⟫`
-(`TauCeti.stdSymplecticForm_poissonBracket`).
+(`TauCeti.stdSymplecticForm_poissonBracket`). If a group acts linearly and isometrically on `V`,
+the Hamiltonian vector field of an invariant Hamiltonian commutes with the action
+(`TauCeti.stdSymplecticForm_hamiltonianVectorField_smul`).
 
 See V. I. Arnold, *Mathematical Methods of Classical Mechanics*, Sections 15 and 40.
 -/
@@ -78,5 +81,23 @@ theorem stdSymplecticForm_poissonBracket {F G : V × V → ℝ} {x : V × V} {a 
   rw [SymplecticForm.poissonBracket_eq_fderiv, stdSymplecticForm_hamiltonianVectorField hG,
     hF.fderiv]
   simp [inner_neg_right, sub_eq_add_neg]
+
+
+/-- **Hamiltonian vector fields of invariant Hamiltonians are equivariant.** Let a group act
+linearly and isometrically on `V`, and on positions and momenta of `V × V` alike. If a Hamiltonian
+`H` is invariant under `g`, then its Hamiltonian vector field satisfies `X_H(g • x) = g • X_H(x)`.
+For example, rotations commute with the Hamiltonian vector field of a central force. -/
+theorem stdSymplecticForm_hamiltonianVectorField_smul {G : Type*} [Group G]
+    [DistribMulAction G V] [SMulCommClass G ℝ V] [IsIsometricSMul G V] {H : V × V → ℝ} {g : G}
+    (hH : ∀ y, H (g • y) = H y) (x : V × V) :
+    (stdSymplecticForm (V := V)).hamiltonianVectorField H (g • x) =
+      g • (stdSymplecticForm (V := V)).hamiltonianVectorField H x := by
+  have he : SymplecticForm.IsSymplectomorphism stdSymplecticForm stdSymplecticForm
+      (DistribMulAction.toLinearEquiv ℝ (V × V) g) :=
+    SymplecticForm.isSymplectomorphism_iff.2 fun v w ↦ stdSymplecticForm_smul g v w
+  have hHe : H ∘ (DistribMulAction.toLinearEquiv ℝ (V × V) g).symm = H := by
+    funext y
+    simpa using (hH (g⁻¹ • y)).symm
+  simpa [hHe] using (he.map_hamiltonianVectorField H x).symm
 
 end TauCeti

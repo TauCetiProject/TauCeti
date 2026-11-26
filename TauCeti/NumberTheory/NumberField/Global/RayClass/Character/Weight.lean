@@ -84,6 +84,21 @@ theorem toMultiplicativeIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
     TauCeti.MultiplicativeIdealWeight.ofIntegralIdealsAway_mul]
   rfl
 
+/-- The inverse character gives the conjugate ideal weight, including at ideals meeting the
+modulus, where both weights vanish. -/
+@[simp]
+theorem toMultiplicativeIdealWeight_inv (χ : RayClassCharacter 𝔪) :
+    toMultiplicativeIdealWeight χ⁻¹ = χ.toMultiplicativeIdealWeight.conj := by
+  ext I
+  rw [MultiplicativeIdealWeight.conj_apply]
+  by_cases hI : I.IsPrimeTo 𝔪.support
+  · simp only [toMultiplicativeIdealWeight_apply_of_isPrimeTo _ hI, onIdeals_apply,
+      MonoidHom.inv_apply, Units.val_inv_eq_inv_val]
+    refine Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one ?_
+      (Nat.card_pos (α := RayClassGroup 𝔪)).ne')
+    rw [← Units.val_pow_eq_pow_val, ← map_pow, pow_card_eq_one', map_one, Units.val_one]
+  · simp [toMultiplicativeIdealWeight_apply_of_not_isPrimeTo _ hI]
+
 /-- Distinct ray class characters have distinct ideal weights: evaluation on the prime-to
 integral ideals already determines a ray class character. -/
 theorem toMultiplicativeIdealWeight_injective :
@@ -133,6 +148,13 @@ theorem toUnitaryIdealWeight_one_of_finitePart_eq_top (h : 𝔪.finitePart = ⊤
   simp [TauCeti.MultiplicativeIdealWeight.one_apply,
     Modulus.support_eq_empty_of_finitePart_eq_top h]
 
+/-- The ideal weight of the inverse character is the conjugate ideal weight. -/
+@[simp]
+theorem toUnitaryIdealWeight_inv (χ : RayClassCharacter 𝔪) :
+    χ⁻¹.toUnitaryIdealWeight = χ.toUnitaryIdealWeight.conj := by
+  apply Subtype.ext
+  simp [UnitaryIdealWeight.val_conj]
+
 /-- Increasing the modulus restricts the induced character's ideal weight away from the finite
 primes of the larger modulus. -/
 theorem toUnitaryIdealWeight_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪) :
@@ -163,5 +185,42 @@ theorem toUnitaryIdealWeight_injective :
   intro χ ψ h
   apply toMultiplicativeIdealWeight_injective
   simpa only [← val_toUnitaryIdealWeight] using congrArg Subtype.val h
+
+/-- The extended weight of `χ` takes the same value on principal ideals `(a)` and `(b)` whenever
+`a ≠ 0`, `b ≠ 0`, `b - a ∈ 𝔪.finitePart`, and `a`, `b` have the same strict sign at every real
+place of `𝔪.infinitePart`. -/
+theorem toMultiplicativeIdealWeight_span_eq_of_sub_mem (χ : RayClassCharacter 𝔪) {a b : 𝓞 K}
+    (ha0 : a ≠ 0) (hb0 : b ≠ 0) (hsub : b - a ∈ 𝔪.finitePart)
+    (hsign : ∀ w ∈ 𝔪.infinitePart,
+      0 < InfinitePlace.embedding_of_isReal w.property (a : K) *
+        InfinitePlace.embedding_of_isReal w.property (b : K)) :
+    χ.toMultiplicativeIdealWeight (Ideal.span {b}) =
+      χ.toMultiplicativeIdealWeight (Ideal.span {a}) := by
+  by_cases ha : (Ideal.span {a}).IsPrimeTo 𝔪.support
+  · have hb : (Ideal.span {b}).IsPrimeTo 𝔪.support :=
+      (isPrimeTo_span_iff_of_sub_mem ha0 hb0 hsub).mpr ha
+    rw [toMultiplicativeIdealWeight_apply_of_isPrimeTo χ hb,
+      toMultiplicativeIdealWeight_apply_of_isPrimeTo χ ha, onIdeals_apply, onIdeals_apply,
+      idealClass_span_eq_of_sub_mem _ _ hsub hsign]
+  · have hb : ¬ (Ideal.span {b}).IsPrimeTo 𝔪.support :=
+      mt (isPrimeTo_span_iff_of_sub_mem ha0 hb0 hsub).mp ha
+    rw [toMultiplicativeIdealWeight_apply_of_not_isPrimeTo χ hb,
+      toMultiplicativeIdealWeight_apply_of_not_isPrimeTo χ ha]
+
+/-- **Periodicity of a ray class weight on positive natural integers.** For `k ≥ 1`, shifting `k`
+by `Ideal.absNorm 𝔪.finitePart` leaves `χ.toMultiplicativeIdealWeight (Ideal.span {(k : 𝓞 K)})`
+unchanged. -/
+theorem toMultiplicativeIdealWeight_span_natCast_add_absNorm (χ : RayClassCharacter 𝔪) {k : ℕ}
+    (hk : 1 ≤ k) :
+    χ.toMultiplicativeIdealWeight (Ideal.span {((k + Ideal.absNorm 𝔪.finitePart : ℕ) : 𝓞 K)}) =
+      χ.toMultiplicativeIdealWeight (Ideal.span {(k : 𝓞 K)}) := by
+  refine χ.toMultiplicativeIdealWeight_span_eq_of_sub_mem (Nat.cast_ne_zero.mpr (by omega))
+    (Nat.cast_ne_zero.mpr (by omega)) ?_ fun w _ ↦ ?_
+  · push_cast
+    rw [add_sub_cancel_left]
+    exact Ideal.absNorm_mem 𝔪.finitePart
+  · have hkpos : (0 : ℝ) < k := by exact_mod_cast hk
+    have hsumpos : (0 : ℝ) < (k + Ideal.absNorm 𝔪.finitePart : ℕ) := by exact_mod_cast (by omega)
+    simpa using mul_pos hkpos hsumpos
 
 end TauCeti.GlobalNumberFields.RayClassCharacter

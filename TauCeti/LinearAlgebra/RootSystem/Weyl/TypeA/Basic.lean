@@ -106,18 +106,13 @@ private theorem range_weylGroupToPerm_eq_range_typeARootPermHom :
         rw [typeARootPermHom_swap n ⟨(a, b), hab⟩]
         exact Subgroup.subset_closure ⟨_, rfl⟩
 
-private theorem weylGroupToPerm_typeASimplyConnectedRootDatum_injective :
-    Function.Injective (typeASimplyConnectedRootDatum n).weylGroupToPerm :=
-  (RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top
-    (typeASimplyConnectedRootDatum n) (corootSpan_typeASimplyConnectedRootDatum_eq_top n)).comp
-      Subtype.val_injective
-
 /-- **The Weyl group of the pinned integral datum of type `Aₙ` is the symmetric group on
 `n + 1` letters.** Under this equivalence the reflection in `e_a - e_b` is the transposition
 of `a` and `b`; see `typeAWeylGroupEquiv_ofIdx_typeAIndexEquiv`. -/
 noncomputable def typeAWeylGroupEquiv :
     (typeASimplyConnectedRootDatum n).weylGroup ≃* Equiv.Perm (Fin (n + 1)) :=
-  (MonoidHom.ofInjective (weylGroupToPerm_typeASimplyConnectedRootDatum_injective n)).trans <|
+  (MonoidHom.ofInjective (weylGroupToPerm_injective_of_corootSpan_eq_top _
+      (corootSpan_typeASimplyConnectedRootDatum_eq_top n))).trans <|
     (MulEquiv.subgroupCongr (range_weylGroupToPerm_eq_range_typeARootPermHom n)).trans
       (MonoidHom.ofInjective (typeARootPermHom_injective n)).symm
 
@@ -170,7 +165,8 @@ include hinj in
 reflection permutations, then use its coordinate-permutation model. -/
 private noncomputable def typeAWeylGroupEquivOf : Q.weylGroup ≃* Equiv.Perm (Fin (n + 1)) :=
   (weylGroupEquivOfReflectionPermEq Q (typeASimplyConnectedRootDatum n) hQ hinj
-    (weylGroupToPerm_typeASimplyConnectedRootDatum_injective n)).trans (typeAWeylGroupEquiv n)
+    (weylGroupToPerm_injective_of_corootSpan_eq_top _
+      (corootSpan_typeASimplyConnectedRootDatum_eq_top n))).trans (typeAWeylGroupEquiv n)
 
 include hinj in
 private theorem typeARootPermHom_typeAWeylGroupEquivOf (w : Q.weylGroup) :
