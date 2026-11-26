@@ -119,9 +119,11 @@ def modularFunctionFieldGLAction :
     refine RingHom.eq_of_eqOn_of_field_closure_eq_top modularFunctionField_closure_eq_top ?_
     rintro F (⟨c, rfl⟩ | rfl | ⟨a, -, rfl⟩) <;>
       simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingAut.mul_apply]
-    · simp only [glActionAux_modularFunctionFieldConst]
+    · -- `det (γ δ) = det δ * det γ` in the commutative group of units, and the coefficient
+      -- action is a homomorphism, so `γ δ` acts on constants by `det γ` and then by `det δ`.
+      simp only [glActionAux_modularFunctionFieldConst]
       simp only [← modularFunctionFieldDiagAction_modularFunctionFieldConst]
-      rw [map_mul, mul_comm, map_mul, RingAut.mul_apply]
+      rw [map_mul, mul_comm (det γ) (det δ), map_mul, RingAut.mul_apply]
     · simp only [glActionAux_modularFunctionFieldMapOfLevelOne]
     · simp only [glActionAux_frickeModularFunction, Units.val_mul, Matrix.vecMul_vecMul]
 
@@ -184,18 +186,10 @@ when the two signs coincide. -/
 theorem modularFunctionFieldGLAction_eq_one_iff (γ : GL (Fin 2) (ZMod N)) :
     modularFunctionFieldGLAction N γ = 1 ↔ γ = 1 ∨ γ = -1 := by
   refine ⟨fun hγ ↦ ?_, ?_⟩
-  · have hdet : det γ = 1 := by
-      obtain ⟨σ, hσ⟩ := (det γ).exists_ringEquiv_apply_stdAddChar_one
-      have hζ : ZMod.stdAddChar (1 : ZMod N) ∈ Subfield.closure {z : ℂ | z ^ N = 1} :=
-        Subfield.subset_closure (ZMod.isPrimitiveRoot_stdAddChar_one N).pow_eq_one
-      have h := congrArg (fun e : (modularFunctionField N ≃+* modularFunctionField N)ᵐᵒᵖ ↦
-        unop e (modularFunctionFieldConst N ⟨_, hζ⟩)) hγ
-      simp only [unop_modularFunctionFieldGLAction_modularFunctionFieldConst, unop_one,
-        RingAut.one_apply] at h
-      have h' := congrArg Subtype.val ((modularFunctionFieldConst N).injective h)
-      rw [(det γ).coe_cyclotomicConjugate (σ := (σ : ℂ →+* ℂ)) hσ, RingEquiv.coe_toRingHom, hσ]
-        at h'
-      exact Units.val_eq_one.mp (ZMod.injective_stdAddChar h')
+  · have hdet : det γ = 1 := (det γ).eq_one_of_forall_cyclotomicConjugate_apply_eq fun c ↦ by
+      apply (modularFunctionFieldConst N).injective
+      rw [← unop_modularFunctionFieldGLAction_modularFunctionFieldConst, hγ, unop_one,
+        RingAut.one_apply]
     have hγg : γ = (γ.slFactor : GL (Fin 2) (ZMod N)) :=
       (Matrix.GeneralLinearGroup.toGL_slFactor_of_det_eq_one hdet).symm
     rw [hγg, modularFunctionFieldGLAction_toGL, modularFunctionFieldActionZMod_eq_one_iff] at hγ
