@@ -214,9 +214,6 @@ theorem sectionZeroCharge_eq_of_homotopy {σ₀ σ₁ : C(𝔻, Y)} (F : σ₀.H
     (hF : IsCompact ((F : unitInterval × 𝔻 → Y) ⁻¹' {y | (α y).snd = 0})) :
     α.sectionZeroCharge σ₀ = α.sectionZeroCharge σ₁ := by
   -- A frame along the whole homotopy, over the contractible paracompact `[0, 1] × 𝔻`.
-  have : ParacompactSpace (unitInterval × 𝔻) := by
-    let := TopologicalSpace.metrizableSpaceMetric (unitInterval × 𝔻)
-    infer_instance
   obtain ⟨Φ, C, hΦ, hC⟩ :=
     exists_continuous_frame_coordinate (𝕜 := ℂ) (α.comp (F : C(unitInterval × 𝔻, Y)))
   -- The coordinate `C` is a homotopy between the coordinates of the two ends.
