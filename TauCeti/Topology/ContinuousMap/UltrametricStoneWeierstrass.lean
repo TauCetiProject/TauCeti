@@ -10,10 +10,10 @@ public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 public import TauCeti.RingTheory.IntegralOrder.LeftOrder
-import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.RingTheory.Ideal.Maximal
 -- `ContinuousMap.isUltrametricDist`: the supremum norm on `C(X, k)` is ultrametric.
 import Mathlib.Topology.MetricSpace.Ultra.ContinuousMaps
+import TauCeti.Analysis.Normed.Ring.Ultra
 
 /-!
 # Ultrametric Stone–Weierstrass theorem for modules and subalgebras
@@ -69,35 +69,36 @@ section UltrametricStoneWeierstrass
 variable {X k : Type*} [TopologicalSpace X] [CompactSpace X] [NormedField k] [IsUltrametricDist k]
 
 /-- The subring of multipliers of `N` with supremum norm at most `1`. -/
-private def boundedMultipliers (N : Submodule k C(X, k)) : Subring C(X, k) where
-  carrier := {u | u ∈ N.leftOrder ∧ ‖u‖ ≤ 1}
-  mul_mem' {u v} hu hv :=
-    ⟨N.leftOrder.mul_mem hu.1 hv.1,
-      (norm_mul_le u v).trans ((mul_le_of_le_one_left (norm_nonneg v) hu.2).trans hv.2)⟩
-  one_mem' :=
-    ⟨N.leftOrder.one_mem, (ContinuousMap.norm_le _ zero_le_one).2 fun _ ↦ by simp⟩
-  add_mem' {u v} hu hv :=
-    ⟨N.leftOrder.add_mem hu.1 hv.1,
-      (IsUltrametricDist.norm_add_le_max u v).trans (max_le hu.2 hv.2)⟩
-  zero_mem' := ⟨N.leftOrder.zero_mem, by simp⟩
-  neg_mem' {u} hu := ⟨N.leftOrder.neg_mem hu.1, by simpa using hu.2⟩
+private def boundedMultipliers (N : Submodule k C(X, k)) : Subring C(X, k) :=
+  N.leftOrder.toSubring ⊓
+    ⨅ x : X, (Subring.unitClosedBall k).comap (ContinuousMap.evalAlgHom k k x).toRingHom
+
+private lemma mem_boundedMultipliers {N : Submodule k C(X, k)} {u : C(X, k)} :
+    u ∈ boundedMultipliers N ↔ u ∈ N.leftOrder ∧ ‖u‖ ≤ 1 := by
+  rw [boundedMultipliers, Subring.mem_inf, Subalgebra.mem_toSubring,
+    ContinuousMap.norm_le _ zero_le_one, Subring.mem_iInf]
+  exact and_congr_right fun _ ↦ forall_congr' fun _ ↦ Subring.mem_unitClosedBall
 
 private lemma exists_maximal_ideal_of_far (N : Submodule k C(X, k)) (φ : C(X, k)) {ε : ℝ}
-    (hε : 0 < ε) (h_far : ∀ g ∈ N, ε < ‖φ - g‖) :
+    (hε : 0 ≤ ε) (h_far : ∀ g ∈ N, ε < ‖φ - g‖) :
     ∃ m : Ideal (boundedMultipliers N), m.IsMaximal ∧
       ∀ w : boundedMultipliers N, ∀ g ∈ N, ‖(w : C(X, k)) * φ - g‖ ≤ ε → w ∈ m := by
   let B := boundedMultipliers N
   let N' : Submodule B C(X, k) :=
     { N.toAddSubmonoid with
-      smul_mem' := fun c d hd ↦ Submodule.mem_leftOrder_iff.1 c.property.1 d hd }
-  let ball : Submodule B C(X, k) :=
-    { carrier := {f | ‖f‖ ≤ ε}
-      add_mem' := fun {f g} hf hg ↦ (IsUltrametricDist.norm_add_le_max f g).trans (max_le hf hg)
-      zero_mem' := by simpa using hε.le
-      smul_mem' := fun c f hf ↦ by
-        rw [Set.mem_ofPred_eq, Subring.smul_def, smul_eq_mul]
-        exact (norm_mul_le (c : C(X, k)) f).trans
-          ((mul_le_of_le_one_left (norm_nonneg f) c.property.2).trans hf) }
+      smul_mem' := fun c d hd ↦
+        Submodule.mem_leftOrder_iff.1 (mem_boundedMultipliers.1 c.property).1 d hd }
+  obtain ⟨ball, hball⟩ : ∃ ball : Submodule B C(X, k), ∀ f, f ∈ ball ↔ ‖f‖ ≤ ε := by
+    rcases hε.eq_or_lt with rfl | hpos
+    · exact ⟨⊥, fun f ↦ by rw [Submodule.mem_bot, norm_le_zero_iff]⟩
+    · refine ⟨{ (IsUltrametricDist.closedBall_openAddSubgroup C(X, k) hpos :
+          AddSubgroup C(X, k)) with smul_mem' := ?_ }, fun _ ↦ mem_closedBall_zero_iff⟩
+      intro c f hf
+      apply mem_closedBall_zero_iff.2
+      rw [Subring.smul_def, smul_eq_mul]
+      have hc := (mem_boundedMultipliers.1 c.property).2
+      exact (norm_mul_le (c : C(X, k)) f).trans
+        ((mul_le_of_le_one_left (norm_nonneg f) hc).trans (mem_closedBall_zero_iff.1 hf))
   let I : Ideal B := (N' ⊔ ball).comap (LinearMap.toSpanSingleton B C(X, k) φ)
   have hI_ne_top : I ≠ ⊤ := by
     intro htop
@@ -105,11 +106,12 @@ private lemma exists_maximal_ideal_of_far (N : Submodule k C(X, k)) (φ : C(X, k
     rw [Submodule.mem_comap, LinearMap.toSpanSingleton_apply, one_smul, Submodule.mem_sup] at h1
     rcases h1 with ⟨g, hg, r, hr, hgr⟩
     have hsub : φ - g = r := sub_eq_of_eq_add' hgr.symm
-    exact (h_far g hg).not_ge (hsub ▸ hr)
+    exact (h_far g hg).not_ge (hsub ▸ (hball r).1 hr)
   obtain ⟨m, hm, hIm⟩ := Ideal.exists_le_maximal I hI_ne_top
   refine ⟨m, hm, fun w g hg hle ↦ hIm ?_⟩
   rw [Submodule.mem_comap, LinearMap.toSpanSingleton_apply, Submodule.mem_sup]
-  exact ⟨g, hg, (w : C(X, k)) * φ - g, hle, add_sub_cancel g ((w : C(X, k)) * φ)⟩
+  exact ⟨g, hg, (w : C(X, k)) * φ - g, (hball _).2 hle,
+    add_sub_cancel g ((w : C(X, k)) * φ)⟩
 
 /-- The closed set of points where every multiplier outside the prime ideal `m` has norm at
 least `1`. -/
@@ -117,12 +119,10 @@ private def zeroSet {N : Submodule k C(X, k)} (m : Ideal (boundedMultipliers N))
     Set X :=
   {x | ∀ f : m.primeCompl, 1 ≤ ‖(f : C(X, k)) x‖}
 
+omit [CompactSpace X] in
 private lemma isClosed_zeroSet {N : Submodule k C(X, k)} (m : Ideal (boundedMultipliers N))
     [m.IsPrime] : IsClosed (zeroSet m) := by
-  have hZ_eq : zeroSet m = ⋂ f : m.primeCompl, {y | (1 : ℝ) ≤ ‖(f : C(X, k)) y‖} := by
-    ext y
-    simp only [zeroSet, mem_iInter, mem_ofPred_eq]
-  rw [hZ_eq]
+  rw [zeroSet, Set.ofPred_forall]
   exact isClosed_iInter fun f : m.primeCompl ↦
     isClosed_le continuous_const (f : C(X, k)).continuous.norm
 
@@ -151,7 +151,8 @@ private lemma exists_mul_norm_le_of_le_on_zeroSet {N : Submodule k C(X, k)}
     simp only [U, mem_preimage, mem_closedBall_zero_iff, Submonoid.coe_mul, Subring.coe_mul,
       ContinuousMap.coe_mul, Pi.mul_apply, mul_assoc]
     rw [norm_mul]
-    have he : ‖(e : C(X, k)) x‖ ≤ 1 := (norm_coe_le_norm (e : C(X, k)) x).trans e.val.property.2
+    have he : ‖(e : C(X, k)) x‖ ≤ 1 :=
+      (norm_coe_le_norm _ x).trans (mem_boundedMultipliers.1 e.val.property).2
     have hfx : ‖(f : C(X, k)) x * g x‖ ≤ r := by simpa [U] using hx
     exact (mul_le_of_le_one_left (norm_nonneg _) he).trans hfx
   have h_open (f : P) : IsOpen (U f) :=
@@ -164,8 +165,17 @@ private lemma exists_mul_norm_le_of_le_on_zeroSet {N : Submodule k C(X, k)}
   refine ⟨f, (ContinuousMap.norm_le _ hr.le).2 fun x ↦ ?_⟩
   simpa [U] using hf (mem_univ x)
 
+omit [CompactSpace X] in
+private lemma mem_ideal_of_apply_eq_zero {N : Submodule k C(X, k)}
+    {m : Ideal (boundedMultipliers N)} [m.IsPrime] {w : boundedMultipliers N}
+    {x : X} (hx : x ∈ zeroSet m) (hw : (w : C(X, k)) x = 0) : w ∈ m := by
+  by_contra h
+  have hnorm := hx ⟨w, h⟩
+  rw [hw, norm_zero] at hnorm
+  exact not_le_of_gt zero_lt_one hnorm
+
 private lemma eq_on_zeroSet_of_mem_multiplier {N : Submodule k C(X, k)}
-    {m : Ideal (boundedMultipliers N)} [m.IsMaximal] {u : C(X, k)}
+    {m : Ideal (boundedMultipliers N)} [m.IsPrime] {u : C(X, k)}
     (hu : u ∈ N.leftOrder) {x a : X} (hx : x ∈ zeroSet m) (ha : a ∈ zeroSet m) :
     u x = u a := by
   let v : C(X, k) := u - ContinuousMap.const X (u a)
@@ -181,25 +191,17 @@ private lemma eq_on_zeroSet_of_mem_multiplier {N : Submodule k C(X, k)}
       (by rw [inv_mul_cancel₀ h_pos.ne'])
   let w : boundedMultipliers N :=
     ⟨(v y)⁻¹ • ((f : C(X, k)) * v),
-      N.leftOrder.smul_mem (N.leftOrder.mul_mem f.val.property.1 hv_mult) _, hw_norm⟩
-  have hw_mem : w ∈ m := by
-    by_contra hw
-    have h1 := ha ⟨w, hw⟩
-    have hwa : (w : C(X, k)) a = 0 := by
-      simp only [w, v, ContinuousMap.smul_apply, ContinuousMap.mul_apply,
-        ContinuousMap.sub_apply, ContinuousMap.const_apply, sub_self, mul_zero, smul_zero]
-    rw [hwa, norm_zero] at h1
-    linarith
-  have hdiff_mem : f.val - w ∈ m := by
-    by_contra hdw
-    have h1 := hy ⟨f.val - w, hdw⟩
+      mem_boundedMultipliers.2
+        ⟨N.leftOrder.smul_mem
+          (N.leftOrder.mul_mem (mem_boundedMultipliers.1 f.val.property).1 hv_mult) _, hw_norm⟩⟩
+  have hw_mem : w ∈ m := mem_ideal_of_apply_eq_zero ha (by
+    simp only [w, v, ContinuousMap.smul_apply, ContinuousMap.mul_apply,
+      ContinuousMap.sub_apply, ContinuousMap.const_apply, sub_self, mul_zero, smul_zero])
+  have hdiff_mem : f.val - w ∈ m := mem_ideal_of_apply_eq_zero hy (by
     have hvne : v y ≠ 0 := norm_pos_iff.1 h_pos
-    have hval : ((f.val - w : boundedMultipliers N) : C(X, k)) y = 0 := by
-      simp only [w, AddSubgroupClass.coe_sub, ContinuousMap.sub_apply, ContinuousMap.smul_apply,
-        ContinuousMap.mul_apply, smul_eq_mul]
-      rw [mul_comm ((f : C(X, k)) y), ← mul_assoc, inv_mul_cancel₀ hvne, one_mul, sub_self]
-    rw [hval, norm_zero] at h1
-    linarith
+    simp only [w, AddSubgroupClass.coe_sub, ContinuousMap.sub_apply, ContinuousMap.smul_apply,
+      ContinuousMap.mul_apply, smul_eq_mul]
+    rw [mul_comm ((f : C(X, k)) y), ← mul_assoc, inv_mul_cancel₀ hvne, one_mul, sub_self])
   exact f.property ((m.sub_mem_iff_left hw_mem).mp hdiff_mem)
 
 /-- **Ultrametric Stone–Weierstrass theorem for modules (epsilon form).** Let `X` be a compact
@@ -212,7 +214,7 @@ theorem exists_mem_norm_sub_le_of_eq_on_multiplier_fibers (N : Submodule k C(X, 
     {ε : ℝ} (hε : 0 < ε) :
     ∃ g ∈ N, ‖φ - g‖ ≤ ε := by
   by_contra! h_far
-  obtain ⟨m, hm, h_near⟩ := exists_maximal_ideal_of_far N φ hε h_far
+  obtain ⟨m, hm, h_near⟩ := exists_maximal_ideal_of_far N φ hε.le h_far
   have : m.IsMaximal := hm
   have hd_exists : ∃ d ∈ N, ∀ x ∈ zeroSet m, ‖(φ - d) x‖ ≤ ε := by
     by_cases hZ : (zeroSet m).Nonempty
@@ -228,7 +230,7 @@ theorem exists_mem_norm_sub_le_of_eq_on_multiplier_fibers (N : Submodule k C(X, 
   obtain ⟨f, hf⟩ := exists_mul_norm_le_of_le_on_zeroSet (m := m) (φ - d) hε h_bound
   have h_near_f : ‖(f : C(X, k)) * φ - (f : C(X, k)) * d‖ ≤ ε := by rwa [← mul_sub]
   exact f.property (h_near f.val ((f : C(X, k)) * d)
-    (Submodule.mem_leftOrder_iff.1 f.val.property.1 d hd) h_near_f)
+    (Submodule.mem_leftOrder_iff.1 (mem_boundedMultipliers.1 f.val.property).1 d hd) h_near_f)
 
 /-- **Ultrametric Stone–Weierstrass theorem for modules (closure form).** If `φ : C(X, k)` agrees
 with some element of `N` on every multiplier fiber of `N`, then `φ ∈ N.topologicalClosure`. -/
