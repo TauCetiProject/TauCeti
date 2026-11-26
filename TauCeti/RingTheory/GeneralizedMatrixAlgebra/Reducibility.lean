@@ -51,10 +51,11 @@ group), the values `x(σ, τ)` for `σ, τ ∈ G` generate the reducibility idea
   `ψᵢ(eᵢ x eₖ y eᵢ)` lie in `I_{ik}`.
 * `TauCeti.GMAData.forall_reducibilityIdeal_le_iff_map_diagonalBlock_mul`: the diagonal block of
   `i` is multiplicative modulo `J` if and only if `I_{ik} ⊆ J` for every `k ≠ i`.
-* `TauCeti.GMAData.reducibilityIdeal_eq_span_of_span_eq_top`: generators of `I_{ij}` from a
-  spanning set of `R`.
+* `TauCeti.GMAData.reducibilityIdeal_eq_span_of_span_eq_top`,
+  `TauCeti.GMAData.reducibilityIdeal_eq_span_idempotent_of_span_eq_top`: generators of `I_{ij}`
+  from a spanning set of `R`.
 * `TauCeti.GMAData.trace_idempotent_mul_mul_sub`,
-  `TauCeti.GMAData.reducibilityIdeal_eq_span_trace_sub`: for two blocks of size one,
+  `TauCeti.GMAData.reducibilityIdeal_eq_span_trace_sub`: for two blocks, the first of size one,
   `a(στ) - a(σ) a(τ) = T(eᵢ σ eⱼ τ)`, and these values generate `I_{ij}`.
 * `Matrix.reducibilityIdeal_scalarGMAData`: in a matrix algebra every reducibility ideal is `A`.
 
@@ -140,34 +141,19 @@ theorem diagonalBlock_mul [DecidableEq ι] (i : ι) (x y : R) :
 
 /-! ### Blocks of size one and trace coordinates -/
 
-/-- For a block of size one, the corner `eᵢ R eᵢ` is the scalars: `eᵢ x eᵢ = T(eᵢ x) eᵢ`. -/
-theorem idempotent_mul_mul_idempotent {i : ι} (h : d i = 1) (x : R) :
-    E.idempotent i * x * E.idempotent i = E.trace (E.idempotent i * x) • E.idempotent i := by
-  have : Subsingleton (Fin (d i)) := Fin.subsingleton_iff_le_one.2 h.le
-  let o : Fin (d i) := ⟨0, by omega⟩
-  have he : E.idempotent i = E.matrixUnit i o o := by
-    rw [← E.sum_matrixUnit_self, Fintype.sum_subsingleton _ o]
-  have hx := E.matrixUnit_mul_mul_matrixUnit i o o o o x
-  rw [← he] at hx
-  have h₁ : E.trace (E.idempotent i) = 1 := by
-    rw [he, trace_matrixUnit]
-    simp
-  have ht := congrArg E.trace hx
-  rw [map_smul, h₁, smul_eq_mul, mul_one, E.trace_mul_comm _ (E.idempotent i), ← mul_assoc,
-    (E.isIdempotentElem_idempotent i).eq] at ht
-  rw [hx, ht]
-
 /-- **The multiplication defect of a trace coordinate**: for a block of size one, the trace
-coordinate `a(x) = T(eᵢ x)` satisfies `a(xy) = a(x) a(y) + ∑_{k ≠ i} T(eᵢ x eₖ y)`. -/
+coordinate `a(x) = T(eᵢ x)` satisfies `a(xy) = a(x) a(y) + ∑_{k ≠ i} T(eᵢ x eₖ y)`. This is the
+trace of `TauCeti.GMAData.diagonalBlock_mul`, as the trace of `1 × 1` matrices is multiplicative. -/
 theorem trace_idempotent_mul_mul [DecidableEq ι] {i : ι} (h : d i = 1) (x y : R) :
     E.trace (E.idempotent i * (x * y)) =
       E.trace (E.idempotent i * x) * E.trace (E.idempotent i * y) +
         ∑ k ∈ Finset.univ.erase i, E.trace (E.idempotent i * x * E.idempotent k * y) := by
-  have hxy : E.idempotent i * (x * y) = ∑ k, E.idempotent i * x * E.idempotent k * y := by
-    rw [← Finset.sum_mul, ← Finset.mul_sum, E.completeOrthogonalIdempotents.complete, mul_one,
-      mul_assoc]
-  rw [hxy, map_sum, ← Finset.add_sum_erase _ _ (Finset.mem_univ i),
-    E.idempotent_mul_mul_idempotent h, smul_mul_assoc, map_smul, smul_eq_mul]
+  have : Subsingleton (Fin (d i)) := Fin.subsingleton_iff_le_one.2 h.le
+  let o : Fin (d i) := ⟨0, by omega⟩
+  have htr (M N : Matrix (Fin (d i)) (Fin (d i)) A) : (M * N).trace = M.trace * N.trace := by
+    simp only [Matrix.trace, Matrix.diag, Matrix.mul_apply, Fintype.sum_subsingleton _ o]
+  rw [trace_idempotent_mul, diagonalBlock_mul, Matrix.trace_add, htr, Matrix.trace_sum]
+  simp only [← trace_idempotent_mul, mul_assoc]
 
 /-! ### The reducibility ideal of two blocks -/
 
@@ -232,13 +218,17 @@ labelling `p : ι → κ` of the blocks by their parts: the sum `I_P` of the red
 def partitionReducibilityIdeal {κ : Type*} (p : ι → κ) : Ideal A :=
   ⨆ (i) (j) (_ : p i ≠ p j), E.reducibilityIdeal i j
 
+theorem partitionReducibilityIdeal_def {κ : Type*} (p : ι → κ) :
+    E.partitionReducibilityIdeal p = ⨆ (i) (j) (_ : p i ≠ p j), E.reducibilityIdeal i j :=
+  (rfl)
+
 theorem reducibilityIdeal_le_partitionReducibilityIdeal {κ : Type*} {p : ι → κ} {i j : ι}
     (h : p i ≠ p j) : E.reducibilityIdeal i j ≤ E.partitionReducibilityIdeal p :=
   le_iSup_of_le i <| le_iSup_of_le j <| le_iSup_of_le h le_rfl
 
 theorem partitionReducibilityIdeal_le_iff {κ : Type*} {p : ι → κ} {J : Ideal A} :
     E.partitionReducibilityIdeal p ≤ J ↔ ∀ i j, p i ≠ p j → E.reducibilityIdeal i j ≤ J := by
-  simp only [partitionReducibilityIdeal, iSup_le_iff]
+  simp only [partitionReducibilityIdeal_def, iSup_le_iff]
 
 /-- If `I_P ⊆ J` and `{i}` is a part of `P`, then `I_{ik} ⊆ J` for every block `k ≠ i`. -/
 theorem reducibilityIdeal_le_of_partitionReducibilityIdeal_le {κ : Type*} {p : ι → κ}
@@ -253,6 +243,13 @@ theorem diagonalBlock_apply_apply (i : ι) (x : R) (a c : Fin (d i)) :
     E.diagonalBlock i x a c = E.trace (E.matrixUnit i 0 a * x * E.matrixUnit i c 0) := by
   rw [E.matrixUnit_mul_mul_matrixUnit i 0 a c 0 x, map_smul, trace_matrixUnit, diagonalBlock_apply]
   simp
+
+/-- For opposite entries `x ∈ A_{ik}` and `y ∈ A_{ki}`, the `(0, 0)` entry of the diagonal block
+`ψᵢ(eᵢ xy eᵢ)` is the trace `T(xy) = φ(x, y)`. -/
+theorem diagonalBlock_mul_apply_zero_zero_of_mem_entry {i k : ι} {x y : R} (hx : x ∈ E.entry i k)
+    (hy : y ∈ E.entry k i) : E.diagonalBlock i (x * y) 0 0 = E.trace (x * y) := by
+  rw [diagonalBlock_apply_apply, ← primitiveIdempotent_def, ← mul_assoc,
+    E.primitiveIdempotent_mul_of_mem_entry hx, mul_assoc, E.mul_primitiveIdempotent_of_mem_entry hy]
 
 /-- **The entries of `ψᵢ(eᵢ x eₖ y eᵢ)` lie in the reducibility ideal `I_{ik}`**: writing
 `eₖ = ∑_b E_k^{b0} E_k^{0b}`, the `(a, c)` entry is the sum over `b` of the scalar pairings
@@ -281,42 +278,34 @@ theorem trace_idempotent_mul_mul_idempotent_mul_mem (i k : ι) (x y : R) :
 
 /-! ### Generators of the reducibility ideal -/
 
+/-- The common form of the generators of `I_{ij}` from a spanning set `G` of `R`: if `e, f ∈ R`
+are such that `e x f = x` for every `x ∈ A_{ij}` and every `T(e w f w')` lies in `I_{ij}`, then
+`I_{ij}` is generated by the traces `T(e σ f τ)` for `σ, τ ∈ G`. -/
+private theorem reducibilityIdeal_eq_span_trace_mul_mul_mul {G : Set R}
+    (hG : Submodule.span A G = ⊤) {i j : ι} (e f : R) (hx : ∀ x ∈ E.entry i j, e * x * f = x)
+    (hmem : ∀ w w', E.trace (e * w * f * w') ∈ E.reducibilityIdeal i j) :
+    E.reducibilityIdeal i j =
+      Ideal.span {t | ∃ σ ∈ G, ∃ τ ∈ G, E.trace (e * σ * f * τ) = t} := by
+  -- the bilinear form `(w, w') ↦ T(e w f w')`
+  let B : R →ₗ[A] R →ₗ[A] A :=
+    ((LinearMap.mul A R).compl₁₂ (LinearMap.mulLeftRight A (e, f)) LinearMap.id).compr₂ E.trace
+  have hB : E.reducibilityIdeal i j = Submodule.map₂ B ⊤ ⊤ := by
+    refine le_antisymm (E.reducibilityIdeal_le_iff.2 fun x y ↦ ?_)
+      (Submodule.map₂_le.2 fun w _ w' _ ↦ hmem w w')
+    rw [pairing_apply, ← hx x x.property]
+    exact Submodule.apply_mem_map₂ B Submodule.mem_top Submodule.mem_top
+  rw [hB, ← hG, Submodule.map₂_span_span]
+  rfl
+
 /-- **Generators of the reducibility ideal from a spanning set**: if `R` is spanned over `A` by
 `G`, then `I_{ij}` is generated by the traces `T(Eᵢ σ Eⱼ τ)` for `σ, τ ∈ G`. -/
 theorem reducibilityIdeal_eq_span_of_span_eq_top {G : Set R} (hG : Submodule.span A G = ⊤)
     (i j : ι) : E.reducibilityIdeal i j = Ideal.span
       {t | ∃ σ ∈ G, ∃ τ ∈ G,
         E.trace (E.primitiveIdempotent i * σ * E.primitiveIdempotent j * τ) = t} := by
-  set S := {t | ∃ σ ∈ G, ∃ τ ∈ G,
-    E.trace (E.primitiveIdempotent i * σ * E.primitiveIdempotent j * τ) = t}
-  -- the bilinear form `(w, w') ↦ T(Eᵢ w Eⱼ w')`
-  let B : R →ₗ[A] R →ₗ[A] A := LinearMap.mk₂ A
-    (fun w w' ↦ E.trace (E.primitiveIdempotent i * w * E.primitiveIdempotent j * w'))
-    (fun w₁ w₂ w' ↦ by simp [mul_add, add_mul])
-    (fun a w w' ↦ by simp only [mul_smul_comm, smul_mul_assoc, map_smul, smul_eq_mul])
-    (fun w w₁ w₂ ↦ by simp [mul_add])
-    (fun a w w' ↦ by simp only [mul_smul_comm, map_smul, smul_eq_mul])
-  have hmem (w : R) : w ∈ Submodule.span A G := by
-    rw [hG]
-    exact Submodule.mem_top
-  have h₁ : ∀ σ ∈ G, ∀ w', B σ w' ∈ Ideal.span S := by
-    intro σ hσ w'
-    have hle : Submodule.span A G ≤ Submodule.comap (B σ) (Ideal.span S) :=
-      Submodule.span_le.2 fun τ hτ ↦ Ideal.subset_span ⟨σ, hσ, τ, hτ, rfl⟩
-    exact hle (hmem w')
-  have hB : ∀ w w', B w w' ∈ Ideal.span S := by
-    intro w w'
-    have hle : Submodule.span A G ≤ Submodule.comap (B.flip w') (Ideal.span S) :=
-      Submodule.span_le.2 fun σ hσ ↦ h₁ σ hσ w'
-    exact hle (hmem w)
-  refine le_antisymm (E.reducibilityIdeal_le_iff.2 fun x y ↦ ?_) (Ideal.span_le.2 ?_)
-  · rw [pairing_apply]
-    have h := hB x y
-    simp only [B, LinearMap.mk₂_apply, E.mul_primitiveIdempotent_of_mem_entry x.property,
-      E.primitiveIdempotent_mul_of_mem_entry x.property] at h
-    exact h
-  · rintro _ ⟨σ, -, τ, -, rfl⟩
-    have h := E.trace_mul_mem_reducibilityIdeal (E.primitiveIdempotent_mul_mul_mem_entry i j σ)
+  refine E.reducibilityIdeal_eq_span_trace_mul_mul_mul hG _ _ (fun x hx ↦ ?_) fun σ τ ↦ ?_
+  · rw [E.primitiveIdempotent_mul_of_mem_entry hx, E.mul_primitiveIdempotent_of_mem_entry hx]
+  · have h := E.trace_mul_mem_reducibilityIdeal (E.primitiveIdempotent_mul_mul_mem_entry i j σ)
       (E.primitiveIdempotent_mul_mul_mem_entry j i τ)
     rwa [show E.primitiveIdempotent i * σ * E.primitiveIdempotent j *
         (E.primitiveIdempotent j * τ * E.primitiveIdempotent i) =
@@ -325,13 +314,15 @@ theorem reducibilityIdeal_eq_span_of_span_eq_top {G : Set R} (hG : Submodule.spa
       E.trace_mul_comm _ (E.primitiveIdempotent i), ← mul_assoc, ← mul_assoc, ← mul_assoc,
       (E.isIdempotentElem_primitiveIdempotent i).eq] at h
 
-/-! ### Blocks of size one -/
-
-/-- For a block of size one, the idempotent `Eᵢ = E_i^{00}` is the block idempotent `eᵢ`. -/
-theorem primitiveIdempotent_eq_idempotent {i : ι} (h : d i = 1) :
-    E.primitiveIdempotent i = E.idempotent i := by
-  have : Subsingleton (Fin (d i)) := Fin.subsingleton_iff_le_one.2 h.le
-  rw [← E.sum_matrixUnit_self, Fintype.sum_subsingleton _ 0, primitiveIdempotent_def]
+/-- **Generators of the reducibility ideal from block idempotents**: if `R` is spanned over `A`
+by `G`, then `I_{ij}` is generated by the traces `T(eᵢ σ eⱼ τ)` for `σ, τ ∈ G`. -/
+theorem reducibilityIdeal_eq_span_idempotent_of_span_eq_top {G : Set R}
+    (hG : Submodule.span A G = ⊤) (i j : ι) : E.reducibilityIdeal i j = Ideal.span
+      {t | ∃ σ ∈ G, ∃ τ ∈ G, E.trace (E.idempotent i * σ * E.idempotent j * τ) = t} :=
+  E.reducibilityIdeal_eq_span_trace_mul_mul_mul hG _ _
+    (fun _ hx ↦ (TauCeti.mem_cornerSubmodule_iff A (E.isIdempotentElem_idempotent i)
+      (E.isIdempotentElem_idempotent j)).1 (E.entry_le_cornerSubmodule i j hx))
+    (E.trace_idempotent_mul_mul_idempotent_mul_mem i j)
 
 end GMAData
 
@@ -386,9 +377,7 @@ theorem forall_reducibilityIdeal_le_iff_map_diagonalBlock_mul (i : ι) (J : Idea
     rw [E.diagonalBlock_eq_zero_of_mem_cornerSubmodule hk
       (E.entry_le_cornerSubmodule i k x.property), Matrix.map_zero _ (map_zero _), zero_mul,
       Matrix.map_apply, Matrix.zero_apply, Ideal.Quotient.eq_zero_iff_mem,
-      diagonalBlock_apply_apply, ← primitiveIdempotent_def, ← mul_assoc,
-      E.primitiveIdempotent_mul_of_mem_entry x.property, mul_assoc,
-      E.mul_primitiveIdempotent_of_mem_entry y.property] at h₀
+      E.diagonalBlock_mul_apply_zero_zero_of_mem_entry x.property y.property] at h₀
     rwa [pairing_apply]
 
 /-- The **quotient representation** of a block `i`: when the ideal `J` of `A` contains the
@@ -401,7 +390,9 @@ noncomputable def quotientRepresentation (i : ι) (J : Ideal A)
     R →ₐ[A] Matrix (Fin (d i)) (Fin (d i)) (A ⧸ J) :=
   AlgHom.ofLinearMap ((Ideal.Quotient.mkₐ A J).mapMatrix.toLinearMap ∘ₗ E.diagonalBlock i)
     (by simp) fun x y ↦ by
-      simpa using (E.forall_reducibilityIdeal_le_iff_map_diagonalBlock_mul i J).1 hJ x y
+      simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgHom.mapMatrix_apply,
+        Ideal.Quotient.mkₐ_eq_mk]
+      exact (E.forall_reducibilityIdeal_le_iff_map_diagonalBlock_mul i J).1 hJ x y
 
 @[simp]
 theorem quotientRepresentation_apply (i : ι) (J : Ideal A)
@@ -412,16 +403,16 @@ theorem quotientRepresentation_apply (i : ι) (J : Ideal A)
 /-! #### Pan's generators -/
 
 /-- **Pan's generators of the reducibility ideal**: for a generalized matrix algebra with two
-blocks `i, j` of size one, spanned over `A` by a set `G` (for instance the image of a group),
-the reducibility ideal `I_{ij}` is generated by the multiplication defects
+blocks `i, j`, the first of size one, spanned over `A` by a set `G` (for instance the image of a
+group), the reducibility ideal `I_{ij}` is generated by the multiplication defects
 `x(σ, τ) = a(στ) - a(σ) a(τ)` of the trace coordinate `a(σ) = T(eᵢ σ)`, for `σ, τ ∈ G`. -/
 theorem reducibilityIdeal_eq_span_trace_sub {i j : ι} (hij : i ≠ j) (hk : ∀ k, k = i ∨ k = j)
-    (hi : d i = 1) (hj : d j = 1) {G : Set R} (hG : Submodule.span A G = ⊤) :
+    (hi : d i = 1) {G : Set R} (hG : Submodule.span A G = ⊤) :
     E.reducibilityIdeal i j = Ideal.span {t | ∃ σ ∈ G, ∃ τ ∈ G,
       E.trace (E.idempotent i * (σ * τ)) -
         E.trace (E.idempotent i * σ) * E.trace (E.idempotent i * τ) = t} := by
-  simp_rw [E.reducibilityIdeal_eq_span_of_span_eq_top hG, E.trace_idempotent_mul_mul_sub hij hk hi,
-    E.primitiveIdempotent_eq_idempotent hi, E.primitiveIdempotent_eq_idempotent hj]
+  simp_rw [E.reducibilityIdeal_eq_span_idempotent_of_span_eq_top hG,
+    E.trace_idempotent_mul_mul_sub hij hk hi]
 
 end GMAData
 
