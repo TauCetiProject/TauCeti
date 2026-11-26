@@ -104,8 +104,9 @@ denotes the weighted norm `‖exp(c ρ) g‖₂` of the values of `g`.
   (`exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjection_le`), with `K`
   depending only on `m`, `R₀` and `c`.
 
-Derivatives in the parameter of order three and higher, and weighted Sobolev versions of the second
-derivative estimates, are not treated here.
+The weighted Sobolev versions of the second-derivative estimates are in
+`TauCeti.Analysis.PDE.Vortex.ParameterDerivative.SecondSobolev`. Derivatives in the parameter of
+order three and higher are not treated here.
 
 ## References
 
@@ -148,7 +149,7 @@ private theorem eLpNorm_exp_mul_smul_holderL_le (c : ℝ) (b : Lp (EuclideanSpac
 /-- **The weak equation of the realization.** At a continuous field `x` with `L∞` class `a`, the
 values of every `e ∈ H¹(ℂ)⁴` are a weak solution of `L_x y = L_a e`: tested against compactly
 supported `C²` fields, `∫ ⟪e, L_x* η⟫ = ∫ ⟪L_a e, η⟫`. -/
-private theorem integral_inner_sobolevFieldValues_gaugeFixedAdjoint
+theorem integral_inner_sobolevFieldValues_gaugeFixedAdjoint
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
     (hax : a =ᵐ[μ⊤] x) (e : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)
     {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
@@ -164,7 +165,7 @@ private theorem integral_inner_sobolevFieldValues_gaugeFixedAdjoint
 
 /-- At a smooth plane vortex with the degree-`m` end framing, the realization at its `L∞` class is
 Fredholm and onto. -/
-private theorem isFredholm_and_surjective_sobolevGaugeFixedOperator {m : ℕ}
+theorem isFredholm_and_surjective_sobolevGaugeFixedOperator {m : ℕ}
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
     {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} (hax : a =ᵐ[μ⊤] x) :
@@ -901,7 +902,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjec
 
 /-- An `L∞` class equal almost everywhere to a field whose coordinates are bounded by `M` has
 norm at most `2 M`. -/
-private theorem norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le
+theorem norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le
     {b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {β : ℂ → EuclideanSpace ℝ (Fin 4)} {M : ℝ}
     (hb : b =ᵐ[μ⊤] β) (hβb : ∀ i z, ‖β z i‖ ≤ M) : ‖b‖ ≤ 2 * M := by
   have h := Lp.norm_le_sqrt_card_mul_of_ae_norm_apply_le ((norm_nonneg _).trans (hβb 0 0))
@@ -913,7 +914,7 @@ private theorem norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le
 the following property. If `β` is a smooth field whose coordinates have derivatives bounded by `M`
 through order `k`, and `u : Fin 4 → H^(k+1)(ℂ)` are coordinates of a field `Y`, then
 `-Z(β, Y)` has coordinates `W : Fin 4 → H^k(ℂ)` with `‖W‖ ≤ C M ‖u‖`. -/
-private theorem exists_forall_exists_inclusionLp_ae_eq_neg_gaugeFixedZerothOrder (k : ℕ) :
+theorem exists_forall_exists_inclusionLp_ae_eq_neg_gaugeFixedZerothOrder (k : ℕ) :
     ∃ C ≥ 0, ∀ β : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ β → ∀ M : ℝ,
       (∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ β z i) z‖ ≤ M) →
       ∀ (Y : ℂ → EuclideanSpace ℝ (Fin 4)) (u : Fin 4 → H^{(k : ℝ) + 1}(ℂ)),
