@@ -162,37 +162,7 @@ end Ring
 section CommRing
 
 variable {R M ι κ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  (b : Basis ι R M) (e : κ ↪ ι)
-
-/-- **Membership in the span of rescaled selected basis vectors.** A vector lies in the span of
-the `a j • b (e j)` exactly when each coordinate along `e j` is divisible by `a j` and every
-coordinate off the range of `e` vanishes. -/
-theorem mem_span_range_smul_comp_iff (a : κ → R) {x : M} :
-    x ∈ span R (Set.range fun j ↦ a j • b (e j)) ↔
-      (∀ j, a j ∣ b.repr x (e j)) ∧ ∀ i ∉ Set.range e, b.repr x i = 0 := by
-  classical
-  -- extend the coefficients by zero off the range of `e`, and use the full rescaled-basis criterion
-  have hspan : span R (Set.range fun i ↦ Function.extend e a 0 i • b i) =
-      span R (Set.range fun j ↦ a j • b (e j)) := by
-    refine le_antisymm (span_le.2 ?_) (span_le.2 ?_)
-    · rintro _ ⟨i, rfl⟩
-      by_cases hi : ∃ j, e j = i
-      · obtain ⟨j, rfl⟩ := hi
-        exact subset_span ⟨j, by simp only [e.injective.extend_apply]⟩
-      · simp only [Function.extend_apply' _ _ _ hi, Pi.zero_apply, zero_smul]
-        exact zero_mem _
-    · rintro _ ⟨j, rfl⟩
-      exact subset_span ⟨e j, by simp only [e.injective.extend_apply]⟩
-  rw [← hspan, b.mem_span_range_smul_iff]
-  refine ⟨fun h ↦ ⟨fun j ↦ ?_, fun i hi ↦ ?_⟩, fun ⟨hdvd, hoff⟩ i ↦ ?_⟩
-  · simpa [e.injective.extend_apply] using h (e j)
-  · simpa [Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ hi ⟨j, hj⟩] using h i
-  · by_cases hi : ∃ j, e j = i
-    · obtain ⟨j, rfl⟩ := hi
-      simpa [e.injective.extend_apply] using hdvd j
-    · simp [Function.extend_apply' _ _ _ hi, hoff i fun ⟨j, hj⟩ ↦ hi ⟨j, hj⟩]
-
-variable [Fintype κ] {Z : Submodule R M} (hZ : ∀ j, b (e j) ∈ Z)
+  (b : Basis ι R M) (e : κ ↪ ι) [Fintype κ] {Z : Submodule R M} (hZ : ∀ j, b (e j) ∈ Z)
 
 /-- The classes of the coordinates along `e` modulo the `a j`, and the remainder off the selected
 basis vectors. Its kernel is the span of the rescaled vectors `a j • b (e j)`. -/
@@ -220,10 +190,8 @@ private theorem ker_quotientMapOfMem (a : κ → R) :
       (span R (Set.range fun j ↦ a j • b (e j))).comap Z.subtype := by
   ext z
   rw [LinearMap.mem_ker, quotientMapOfMem_apply, mem_comap, subtype_apply,
-    b.mem_span_range_smul_comp_iff e a, Prod.ext_iff, ← Subtype.coe_inj,
-    coe_equivPiProdOfMem_apply_snd, Prod.snd_zero, ZeroMemClass.coe_zero,
-    b.sub_sum_repr_smul_eq_zero_iff e, Prod.fst_zero, funext_iff]
-  simp [Ideal.Quotient.eq_zero_iff_dvd]
+    b.mem_span_range_smul_comp_iff e a, ← b.sub_sum_repr_smul_eq_zero_iff e]
+  simp [Prod.ext_iff, funext_iff, ← Subtype.coe_inj, Ideal.Quotient.eq_zero_iff_dvd]
 
 /-- **The subquotient by rescaled selected basis vectors.** If a submodule `Z` contains the
 selected basis vectors `b (e j)`, then its quotient by the span of the rescaled vectors
@@ -262,16 +230,12 @@ theorem range_eq_span_range_smul_of_toMatrix_eq [Finite ι] (b' : Basis ι' R M'
   have hrepr (l : ι') (i : ι) :
       b.repr (f (b' l)) i = ∑ j, if e j = i ∧ e' j = l then a j else 0 := by
     rw [← LinearMap.toMatrix_apply, h, Matrix.sum_apply]
-    rfl
+    simp_rw [Matrix.single_apply]
   -- the columns of the matrix: the selected ones are rescaled basis vectors, the others vanish
   have hsel (j : κ) : f (b' (e' j)) = a j • b (e j) := by
     classical
     refine b.ext_elem fun i ↦ ?_
-    rw [hrepr, map_smul, b.repr_self, Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul,
-      mul_ite, mul_one, mul_zero]
-    simp_rw [e'.injective.eq_iff]
-    rw [Finset.sum_eq_single j (fun j' _ hj' ↦ by simp [hj']) (by simp)]
-    simp only [and_true]
+    simp [hrepr, Finsupp.single_apply, e'.injective.eq_iff, and_comm, ite_and]
   have hoff (l : ι') (hl : l ∉ Set.range e') : f (b' l) = 0 := by
     refine b.ext_elem fun i ↦ ?_
     rw [hrepr, map_zero, Finsupp.coe_zero, Pi.zero_apply]
@@ -322,10 +286,8 @@ variable {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] {N : Submod
 /-- A submodule in Smith normal form is the span of the rescaled selected basis vectors
 `a j • bM (f j)`. -/
 theorem eq_span_range_smul (snf : Basis.SmithNormalForm N ι n) :
-    N = span R (Set.range fun j ↦ snf.a j • snf.bM (snf.f j)) := by
-  conv_lhs =>
-    rw [← N.range_subtype, ← Submodule.map_top, ← snf.bN.span_eq, map_span, ← Set.range_comp]
-  exact congrArg _ (congrArg _ (funext snf.snf))
+    N = span R (Set.range fun j ↦ snf.a j • snf.bM (snf.f j)) :=
+  N.eq_span_of_diagonal_basis (fun j ↦ snf.bM (snf.f j)) snf.bN snf.snf
 
 /-- The diagonal coefficients of a Smith normal form over a nontrivial ring are nonzero, since the
 basis vectors `a j • bM (f j)` of `N` are. -/

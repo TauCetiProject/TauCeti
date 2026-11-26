@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.Dimension.Localization
+public import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.LinearAlgebra.FreeModule.PID
 public import TauCeti.LinearAlgebra.FreeModule.SmithSubquotient
 
@@ -77,38 +78,34 @@ universe u v
 
 namespace CategoryTheory.ShortComplex
 
-/-- If the next term of a short complex of modules is torsion-free, a vector a regular multiple of
-which is a boundary is a cycle. -/
-theorem mem_ker_g_of_smul_mem_range_f {R : Type u} [Ring R] {S : ShortComplex (ModuleCat.{v} R)}
-    [Module.IsTorsionFree R S.X₃] {x : S.X₂} {r : R} (hr : IsRegular r)
-    (hx : r • x ∈ LinearMap.range S.f.hom) : x ∈ LinearMap.ker S.g.hom := by
-  obtain ⟨y, hy⟩ := hx
-  have : r • S.g.hom x = 0 := by
-    rw [← map_smul, ← hy]
-    exact S.moduleCat_zero_apply y
-  exact hr.smul_eq_zero_iff_right.1 this
-
 variable {R : Type u} [CommRing R] [IsDomain R] (S : ShortComplex (ModuleCat.{v} R))
   {ι κ : Type*} (b : Basis ι R S.X₂) (e : κ ↪ ι) (a : κ → R)
 
 variable [IsPrincipalIdealRing R] [Finite ι] [Fintype κ] [Module.IsTorsionFree R S.X₃]
 
+omit [IsPrincipalIdealRing R] [Finite ι] [Fintype κ] in
 variable {S b e a} in
-/-- The rank of the cycles off the selected basis vectors: the rank of `X₂`, minus the rank of
-`g`, minus the number of selected vectors. -/
-private theorem finrank_inf_span_image_compl (ha : ∀ j, a j ≠ 0)
-    (hf : LinearMap.range S.f.hom = span R (Set.range fun j ↦ a j • b (e j))) :
-    finrank R ↥(LinearMap.ker S.g.hom ⊓ span R (b '' (Set.range e)ᶜ)) =
-      finrank R S.X₂ - finrank R (LinearMap.range S.g.hom) - Fintype.card κ := by
-  have : Module.Free R S.X₂ := .of_basis b
-  have : Module.Finite R S.X₂ := .of_basis b
-  have hZ : ∀ j, b (e j) ∈ LinearMap.ker S.g.hom := fun j ↦
-    mem_ker_g_of_smul_mem_range_f (.of_ne_zero (ha j)) (hf ▸ subset_span ⟨j, rfl⟩)
-  have := Submodule.free_of_isPrincipalIdealRing
+/-- Every selected basis vector is a cycle when the rescaled vectors `a j • b (e j)`, with
+`a j ≠ 0`, span the boundaries. -/
+private theorem mem_ker_g_of_range_f_eq_span (ha : ∀ j, a j ≠ 0)
+    (hf : LinearMap.range S.f.hom = span R (Set.range fun j ↦ a j • b (e j))) (j : κ) :
+    b (e j) ∈ LinearMap.ker S.g.hom :=
+  mem_ker_g_of_smul_mem_range_f (.of_ne_zero (ha j)) (hf ▸ subset_span ⟨j, rfl⟩)
+
+variable {S b e} in
+/-- The cycles off the selected basis vectors form a free module whose rank is the rank of `X₂`,
+minus the rank of `g`, minus the number of selected vectors. -/
+private def kerInfSpanEquivFin (hZ : ∀ j, b (e j) ∈ LinearMap.ker S.g.hom) :
+    ↥(LinearMap.ker S.g.hom ⊓ span R (b '' (Set.range e)ᶜ)) ≃ₗ[R]
+      (Fin (finrank R S.X₂ - finrank R (LinearMap.range S.g.hom) - Fintype.card κ) → R) :=
+  haveI : Module.Free R S.X₂ := .of_basis b
+  haveI : Module.Finite R S.X₂ := .of_basis b
+  haveI := Submodule.free_of_isPrincipalIdealRing
     (LinearMap.ker S.g.hom ⊓ span R (b '' (Set.range e)ᶜ))
-  have hker := (LinearMap.ker S.g.hom).finrank_quotient_add_finrank
-  rw [S.g.hom.quotKerEquivRange.finrank_eq, b.finrank_eq_card_add_finrank_inf e hZ] at hker
-  omega
+  (Module.finBasisOfFinrankEq R _ (by
+    have hker := (LinearMap.ker S.g.hom).finrank_quotient_add_finrank
+    rw [S.g.hom.quotKerEquivRange.finrank_eq, b.finrank_eq_card_add_finrank_inf e hZ] at hker
+    omega)).equivFun
 
 /-- **The homology of a short complex with free middle term over a PID.** If the middle term of a
 short complex of modules over a principal ideal domain has a finite basis `b`, the next term is
@@ -120,18 +117,11 @@ def moduleCatHomologyEquivOfRangeEqSpan (ha : ∀ j, a j ≠ 0)
     S.homology ≃ₗ[R]
       (Fin (finrank R S.X₂ - finrank R (LinearMap.range S.g.hom) - Fintype.card κ) → R) ×
         ∀ j, R ⧸ Ideal.span ({a j} : Set R) :=
-  haveI : Module.Free R S.X₂ := .of_basis b
-  haveI : Module.Finite R S.X₂ := .of_basis b
-  haveI := Submodule.free_of_isPrincipalIdealRing
-    (LinearMap.ker S.g.hom ⊓ span R (b '' (Set.range e)ᶜ))
-  let hZ : ∀ j, b (e j) ∈ LinearMap.ker S.g.hom := fun j ↦
-    mem_ker_g_of_smul_mem_range_f (.of_ne_zero (ha j)) (hf ▸ subset_span ⟨j, rfl⟩)
   (S.moduleCatHomologyIso.toLinearEquiv.trans
     (Submodule.quotEquivOfEq _ _ (by rw [LinearMap.range_codRestrict, hf]))).trans <|
-    (b.quotientSpanSMulEquivOfMem e hZ a).trans <|
+    (b.quotientSpanSMulEquivOfMem e (mem_ker_g_of_range_f_eq_span ha hf) a).trans <|
       (LinearEquiv.prodComm R _ _).trans <|
-        LinearEquiv.prodCongr
-          (Module.finBasisOfFinrankEq R _ (finrank_inf_span_image_compl ha hf)).equivFun
+        LinearEquiv.prodCongr (kerInfSpanEquivFin (mem_ker_g_of_range_f_eq_span ha hf))
           (LinearEquiv.refl R _)
 
 /-- The torsion coordinates of the class of a cycle `z` are the classes modulo the `a j` of its
@@ -164,6 +154,17 @@ def moduleCatHomologyEquivOfSmithNormalForm {n : ℕ}
       (LinearEquiv.funCongrLeft R R (finCongr (by
         rw [finrank_eq_card_basis snf.bN, Fintype.card_fin]))) (LinearEquiv.refl R _))
 
+/-- The torsion coordinates of the class of a cycle `z` are the classes modulo the diagonal
+coefficients `a j` of its coordinates along the selected Smith basis vectors. -/
+theorem moduleCatHomologyEquivOfSmithNormalForm_homologyπ_snd {n : ℕ}
+    (snf : Basis.SmithNormalForm (LinearMap.range S.f.hom) ι n) (z : LinearMap.ker S.g.hom)
+    (j : Fin n) :
+    (S.moduleCatHomologyEquivOfSmithNormalForm snf
+      (S.homologyπ (S.moduleCatCyclesIso.inv z))).2 j =
+      Ideal.Quotient.mk _ (snf.bM.repr z (snf.f j)) :=
+  S.moduleCatHomologyEquivOfRangeEqSpan_homologyπ_snd snf.bM snf.f snf.a snf.a_ne_zero
+    snf.eq_span_range_smul z j
+
 end CategoryTheory.ShortComplex
 
 namespace HomologicalComplex
@@ -186,6 +187,17 @@ def homologyEquivOfSmithNormalForm {κ : Type*} [Finite κ] {n : ℕ}
         ∀ j, R ⧸ Ideal.span ({snf.a j} : Set R) :=
   haveI : Module.IsTorsionFree R (C.sc i).X₃ := ‹Module.IsTorsionFree R (C.X (c.next i))›
   (C.sc i).moduleCatHomologyEquivOfSmithNormalForm snf
+
+/-- The torsion coordinates of the homology class of a cycle `z` of `Cⁱ` are the classes modulo
+the diagonal coefficients `eⱼ` of its coordinates along the selected Smith basis vectors. -/
+theorem homologyEquivOfSmithNormalForm_homologyπ_snd {κ : Type*} [Finite κ] {n : ℕ}
+    (snf : Basis.SmithNormalForm (LinearMap.range (C.d (c.prev i) i).hom) κ n)
+    (z : LinearMap.ker (C.d i (c.next i)).hom) (j : Fin n) :
+    (C.homologyEquivOfSmithNormalForm i snf
+      (C.homologyπ i ((C.sc i).moduleCatCyclesIso.inv z))).2 j =
+      Ideal.Quotient.mk _ (snf.bM.repr z (snf.f j)) :=
+  haveI : Module.IsTorsionFree R (C.sc i).X₃ := ‹Module.IsTorsionFree R (C.X (c.next i))›
+  (C.sc i).moduleCatHomologyEquivOfSmithNormalForm_homologyπ_snd snf z j
 
 /-- **The homology of a complex of free modules from the matrix of its differential.** Let the term
 `Cⁱ` of a complex of modules over a principal ideal domain have a finite basis `b₁`, let the next
