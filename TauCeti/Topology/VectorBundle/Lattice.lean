@@ -459,7 +459,7 @@ theorem exists_continuous_section_of_latticeMonodromyHom_eq_one [PathConnectedSp
     fun b ↦ (latticeProjFiberEquiv F L b ⟨s b, hproj b⟩).property, ?_⟩
   · refine (continuous_subtypeVal.comp s.continuous).congr fun b ↦ ?_
     exact (TotalSpace.mk_cast (hproj b) _).symm
-  · change ((latticeProjFiberEquiv F L x ⟨s x, hproj x⟩ : L x) : E x) = a
+  · dsimp only
     rw [show (⟨s x, hproj x⟩ : latticeProj F L ⁻¹' {x}) = e from Subtype.ext hsx,
       Equiv.apply_symm_apply]
 
@@ -504,13 +504,12 @@ theorem exists_frame_of_latticeMonodromyHom_eq_one [PathConnectedSpace B]
   refine ⟨s, hs, fun b ↦ ⟨?_, hclosure b⟩⟩
   -- The real span of generators of `L b` is the real span of a basis of the full lattice `L b`.
   obtain ⟨t', ht', ht'L⟩ := hLb b
-  have key {u v : ι → E b} (h : AddSubgroup.closure (range u) = AddSubgroup.closure (range v)) :
-      Submodule.span ℝ (range u) ≤ Submodule.span ℝ (range v) := by
-    refine Submodule.span_le.2 fun _ ⟨i, hi⟩ ↦ hi ▸ ?_
-    exact (AddSubgroup.closure_le (Submodule.span ℝ (range v)).toAddSubgroup).2
-      Submodule.subset_span (h ▸ AddSubgroup.subset_closure ⟨i, rfl⟩)
-  have hspan : Submodule.span ℝ (range fun i ↦ s i b) = Submodule.span ℝ (range t') :=
-    le_antisymm (key ((hclosure b).symm.trans ht'L)) (key (ht'L.symm.trans (hclosure b)))
+  have hspan : Submodule.span ℝ (range fun i ↦ s i b) = Submodule.span ℝ (range t') := by
+    rw [← Submodule.span_span_of_tower ℤ ℝ (range fun i ↦ s i b),
+      ← Submodule.span_span_of_tower ℤ ℝ (range t'), ← Submodule.coe_toAddSubgroup,
+      ← Submodule.coe_toAddSubgroup (Submodule.span ℤ (range t')),
+      Submodule.span_int_eq_addSubgroupClosure, Submodule.span_int_eq_addSubgroupClosure,
+      (hclosure b).symm.trans ht'L]
   rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank, hspan, finrank_span_eq_card ht']
 
 /-- **The linear monodromy of a family of full lattices is trivial exactly when the family has a

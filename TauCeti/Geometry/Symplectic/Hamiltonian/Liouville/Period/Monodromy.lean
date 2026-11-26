@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
 import TauCeti.Geometry.Manifold.Topology
+import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 
 /-!
 # The linear monodromy of the period lattice
@@ -217,13 +218,19 @@ theorem exists_periodLattice_eq_closure_of_latticeMonodromyHom_eq_one [Boundaryl
   have hsmooth (i : Fin n) : ContMDiff J (J.prod 𝓘(ℝ, F →L[ℝ] ℝ)) ∞ (fun b ↦ TotalSpace.mk'
       (F →L[ℝ] ℝ) (E := fun b : B ↦ TangentSpace J b →L[ℝ] ℝ) b (s i b)) := fun b₀ ↦ by
     obtain ⟨g, U, hU, hb₀, hg, hgs⟩ := hloc i b₀
-    have hg' : ContMDiffAt J 𝓘(ℝ) (∞ + 1) g b₀ := (hg b₀ hb₀).contMDiffAt (hU.mem_nhds hb₀)
+    have hg' : ContMDiffAt J 𝓘(ℝ) (∞ + 1) g b₀ :=
+      ((hg b₀ hb₀).contMDiffAt (hU.mem_nhds hb₀)).of_le (by simp)
     refine hg'.contMDiffAt_totalSpaceMk_mvfderiv.congr_of_eventuallyEq ?_
     filter_upwards [hU.mem_nhds hb₀] with b hb
     rw [hgs b hb]
   set α : Fin n → SmoothForm J B ℝ 1 := fun i ↦ SmoothForm.degreeOneEquiv.symm ⟨s i, hsmooth i⟩
   have hα (i : Fin n) (b : B) : SmoothForm.degreeOneEquiv (α i) b = s i b := by simp [α]
-  refine ⟨α, fun i ↦ ?_, ⟨fun {b} _ ↦ ?_, fun {b} _ ↦ ?_, fun i ↦ ?_⟩, fun b ↦ ?_⟩
+  have hli (b : B) : LinearIndependent ℝ fun i ↦ SmoothForm.degreeOneEquiv (α i) b := by
+    simpa only [hα] using (hsL b).1
+  refine ⟨α, fun i ↦ ?_, .of_linearIndependent_of_card_eq_finrank
+    (by simp [n, ContinuousLinearMap.dual_finrank_eq])
+    (fun i ↦ (SmoothForm.degreeOneEquiv (α i)).contMDiff.contMDiffOn) fun b _ ↦ hli b,
+    fun b ↦ ?_⟩
   · -- `α i` has the local primitives `g`.
     refine (SmoothForm.isClosed_def _).2 (mextDeriv_eq_zero_of_forall_exists_isPrimitiveOn
       fun b₀ ↦ ?_)
@@ -231,11 +238,6 @@ theorem exists_periodLattice_eq_closure_of_latticeMonodromyHom_eq_one [Boundaryl
     refine ⟨g, U, hb₀, ⟨hU, hg.mdifferentiableOn (by simp), fun b hb ↦ ?_⟩, hg.of_le (by simp)⟩
     rw [mextDeriv_ofFunction, ← hgs b hb]
     exact ContinuousAlternatingMap.ext fun v ↦ by simp [α]
-  · simpa only [hα] using (hsL b).1
-  · have hli : LinearIndependent ℝ fun i ↦ SmoothForm.degreeOneEquiv (α i) b := by
-      simpa only [hα] using (hsL b).1
-    rw [hli.span_eq_top_of_card_eq_finrank' (by simp [n, ContinuousLinearMap.dual_finrank_eq])]
-  · exact (SmoothForm.degreeOneEquiv (α i)).contMDiff.contMDiffOn
   · have hb := (hsL b).2
     simp only [← hα] at hb
     exact hb

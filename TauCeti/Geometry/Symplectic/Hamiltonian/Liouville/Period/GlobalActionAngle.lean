@@ -14,6 +14,7 @@ import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.DevelopingMa
 import TauCeti.Geometry.Manifold.Flow.Related
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 import TauCeti.LinearAlgebra.Matrix.TransposeLattice
 import TauCeti.Topology.Algebra.Module.Matrix
 
@@ -425,9 +426,8 @@ theorem exists_actionAngle_iff [BoundarylessManifold J B]
       exact h.linearIndependent_of_periodLattice_le_closure hσc hι.le (hΛ b).le
     have hframe : IsLocalFrameOn J (F →L[ℝ] ℝ) ∞
         (fun j b ↦ SmoothForm.degreeOneEquiv (α j) b) univ :=
-      ⟨fun {b} _ ↦ hli b, fun {b} _ ↦ ((hli b).span_eq_top_of_card_eq_finrank'
-        (by simp [hι, ContinuousLinearMap.dual_finrank_eq])).ge,
-        fun j ↦ (SmoothForm.degreeOneEquiv (α j)).contMDiff.contMDiffOn⟩
+      .of_linearIndependent_of_card_eq_finrank (by simp [hι, ContinuousLinearMap.dual_finrank_eq])
+        (fun j ↦ (SmoothForm.degreeOneEquiv (α j)).contMDiff.contMDiffOn) fun b _ ↦ hli b
     obtain ⟨Φ, hΦ, hΦi, hΦσ, hΦa, -⟩ := h.exists_actionAngle_of_lagrangian_section hσc hs hframe
       -- The two spanning families agree up to the definitional identification
       -- `TangentSpace J b = F`.
