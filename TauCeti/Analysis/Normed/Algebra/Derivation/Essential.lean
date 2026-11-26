@@ -223,15 +223,19 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
   -- `essentialBimoduleSubmodule L R`.
   refine exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential hLL hRL hLRL hC
     hl.tendsto_mul_right DL hDL ?_
-  obtain ⟨ι, hι_coe, hιR, hιL⟩ :=
-    exists_continuousLinearMap_restrictAction_essentialBimoduleSubmodule hL hR hLR
+  let ι := restrictActionEssentialToEssentialBimodule hLR
   obtain ⟨ψ₀, hψ₀⟩ := hEss
   refine ⟨precomp 𝕜 ι ψ₀, fun a ↦ ?_⟩
   have h1 : (DL a).comp RL.essentialSubmodule.subtypeL =
       precomp 𝕜 ι ((D a).comp (essentialBimoduleSubmodule L R).subtypeL) := by
     ext x
-    simp only [DL, comp_apply, precomp_apply, Submodule.subtypeL_apply, hι_coe]
-  rw [h1, hψ₀ a, map_sub, precomp_dualAction_apply hιR, precomp_dualAction_apply hιL]
+    simp only [DL, comp_apply, precomp_apply, Submodule.subtypeL_apply, ι]
+    rw [coe_restrictActionEssentialToEssentialBimodule_apply]
+  rw [h1, hψ₀ a, map_sub,
+    precomp_dualAction_apply
+      (restrictActionEssentialToEssentialBimodule_restrictAction_right hR hLR),
+    precomp_dualAction_apply
+      (restrictActionEssentialToEssentialBimodule_restrictAction_left hL hLR)]
 
 end Reduction
 
