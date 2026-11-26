@@ -332,7 +332,7 @@ end GMAData
 
 namespace GMAData
 
-variable {A R : Type*} [CommRing A] [Ring R] [Algebra A R] {ι : Type*} [Fintype ι]
+variable {A R : Type*} [CommRing A] [Semiring R] [Algebra A R] {ι : Type*} [Fintype ι]
   {d : ι → ℕ} (E : GMAData A R d)
 
 /-! #### Trace coordinates of two blocks -/
