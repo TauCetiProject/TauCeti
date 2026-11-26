@@ -232,19 +232,11 @@ theorem isFaithfulTrace_iff_pos : τ.IsFaithfulTrace ↔ ∀ a ≠ 0, 0 < τ (st
 element lies in its kernel. -/
 theorem isFaithfulTrace_iff_eq_zero_of_nonneg :
     τ.IsFaithfulTrace ↔ ∀ a : A, 0 ≤ a → τ a = 0 → a = 0 := by
-  refine ⟨fun hf a ha => ?_,
+  refine ⟨fun hf a ha hτa => ?_,
     fun h => isFaithfulTrace_iff.mpr fun a ha =>
       star_mul_self_eq_zero.mp (h _ (star_mul_self_nonneg a) ha)⟩
-  rw [StarOrderedRing.nonneg_iff] at ha
-  refine (AddSubmonoid.closure_induction (motive := fun x _ => 0 ≤ x ∧ (τ x = 0 → x = 0))
-    (fun x hx => ?_) ⟨le_rfl, fun _ => rfl⟩ (fun x y _ _ ihx ihy => ?_) ha).right
-  · obtain ⟨s, rfl⟩ := hx
-    exact ⟨star_mul_self_nonneg s, fun hs => by
-      dsimp only at hs ⊢
-      rw [hf.eq_zero_of_map_star_mul_self_eq_zero hs, mul_zero]⟩
-  · refine ⟨add_nonneg ihx.left ihy.left, fun hxy => ?_⟩
-    rw [map_add, add_eq_zero_iff_of_nonneg (τ.map_nonneg ihx.left) (τ.map_nonneg ihy.left)] at hxy
-    rw [ihx.right hxy.left, ihy.right hxy.right, add_zero]
+  obtain ⟨s, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp ha
+  rw [hf.eq_zero_of_map_star_mul_self_eq_zero hτa, mul_zero]
 
 /-- A positive functional on a C⋆-algebra is faithful if and only if it maps strictly positive
 elements to strictly positive scalars. -/

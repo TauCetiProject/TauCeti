@@ -162,12 +162,8 @@ noncomputable def liftOfSurjective (ω : A →P[ℂ] ℂ) (f : F) (hf : Function
     LinearMap.mem_ker.mpr (hker a (LinearMap.mem_ker.mp ha))
   let L : B →ₗ[ℂ] ℂ := fL.liftOfSurjective hf ⟨ω.toLinearMap, hkerL⟩
   have hpos : ∀ b : B, 0 ≤ b → 0 ≤ L b := fun b hb => by
-    rw [StarOrderedRing.nonneg_iff] at hb
-    refine AddSubmonoid.closure_induction (fun y hy => ?_) (by simp)
-      (fun x y _ _ hx hy => by rw [map_add]; exact add_nonneg hx hy) hb
-    obtain ⟨c, rfl⟩ := hy
+    obtain ⟨c, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hb
     obtain ⟨a, rfl⟩ := hf c
-    dsimp only
     have hL : L (f (star a * a)) = ω (star a * a) :=
       LinearMap.equivOfSurjective_apply (f := fL) hf hkerL (m := star a * a)
     rw [← map_star f, ← map_mul f, hL]
