@@ -25,13 +25,13 @@ equations (`TauCeti.AInfinityAlgebra.taylor_transferInclusion_eq_sub`,
 `TauCeti.AInfinityAlgebra.higherTaylor_transfer`),
 `TauCeti.AInfinityAlgebra.higherTaylor_barMap_of_tprod`, and
 `TauCeti.ReducedPlanarTree.arityCompositionEquiv`. When `𝒜.m k = 0` for `k ≥ 3`, the sums restrict
-to planar binary trees; we also evaluate the cubic component `f₃` and establish naturality.
+to planar binary trees, and in arity `3` the branch sum yields the explicit cubic formula for `f₃`.
 
 ## Main results
 
-* `TauCeti.AInfinityAlgebra.suspendedComponent_transferInclusion` and
-  `TauCeti.AInfinityAlgebra.component_transferInclusion`: all-arity planar-tree sum formulas for the
-  extending `A∞` quasi-isomorphism.
+* `TauCeti.AInfinityAlgebra.suspendedComponent_transferInclusion_eq_sum_arity` and
+  `TauCeti.AInfinityAlgebra.component_transferInclusion_eq_sum_arity`: all-arity planar-tree sum
+  formulas for the extending `A∞` quasi-isomorphism.
 * `TauCeti.AInfinityAlgebra.suspendedM_transfer_eq_sum_arity` and
   `TauCeti.AInfinityAlgebra.m_transfer_eq_sum_arity`: planar-tree sum formulas for the transferred
   `A∞` operations in every arity `n ≠ 1`.
@@ -41,10 +41,6 @@ to planar binary trees; we also evaluate the cubic component `f₃` and establis
   `f₃`.
 * `TauCeti.AInfinityAlgebra.component_transferInclusion_eq_sum_isBinary` and
   `TauCeti.AInfinityAlgebra.m_transfer_eq_sum_isBinary`: Kontsevich--Soibelman binary-tree formulas.
-* `TauCeti.AInfinityStrictHom.compMultilinearMap_suspendedTreeBranch`,
-  `TauCeti.AInfinityStrictHom.compMultilinearMap_treeBranch`,
-  `TauCeti.AInfinityStrictHom.compMultilinearMap_suspendedTreeOperation`, and
-  `TauCeti.AInfinityStrictHom.compMultilinearMap_treeOperation`: naturality under strict morphisms.
 
 ## References
 
@@ -57,7 +53,7 @@ public section
 
 open scoped BigOperators
 
-universe uR uA uH uB uK
+universe uR uA uH
 
 namespace TauCeti
 
@@ -65,7 +61,7 @@ namespace AInfinityAlgebra
 
 open ReducedTensorWords
 
-/-! ### Three-leaf branch evaluations and binary-tree vanishing -/
+/-! ### Three-leaf branch evaluations -/
 
 variable {R : Type uR} {A : Type uA} {H : Type uH}
   [CommRing R] [AddCommGroup A] [Module R A] [AddCommGroup H] [Module R H]
@@ -155,53 +151,6 @@ theorem domDomCongr_treeBranch_binary_leaf_corolla_zero_apply
 
 end ThreeLeaf
 
-section PureBinaryVanishing
-
-variable (𝒜 : AInfinityAlgebra R A)
-
-/-- When `𝒜.m k = 0` for all `k ≥ 3`, every non-binary tree has zero suspended branch map. -/
-theorem suspendedTreeBranch_eq_zero_of_not_isBinary (incl : H →ₗ[R] A) (h : Module.End R A)
-    (h₃ : ∀ k, 3 ≤ k → 𝒜.m k = 0) {t : ReducedPlanarTree} (ht : ¬ t.IsBinary) :
-    𝒜.suspendedTreeBranch incl h t = 0 := by
-  induction t with
-  | leaf => exact absurd ReducedPlanarTree.isBinary_leaf ht
-  | node k children ih =>
-    rw [ReducedPlanarTree.isBinary_node, not_and_or, not_forall] at ht
-    ext x; rw [suspendedTreeBranch_node_apply, zero_apply]
-    rcases ht with hk | ⟨i, hi⟩
-    · rw [suspendedM_apply, h₃ (k + 2) (by omega), zero_apply, map_zero, neg_zero]
-    · rw [(𝒜.suspendedM (k + 2)).map_coord_zero i (by rw [ih i hi, zero_apply]), map_zero, neg_zero]
-
-/-- When `𝒜.m k = 0` for all `k ≥ 3`, every non-binary tree has zero suspended operation map. -/
-theorem suspendedTreeOperation_eq_zero_of_not_isBinary (incl : H →ₗ[R] A) (proj : A →ₗ[R] H)
-    (h : Module.End R A) (h₃ : ∀ k, 3 ≤ k → 𝒜.m k = 0) {t : ReducedPlanarTree} (ht : ¬ t.IsBinary) :
-    𝒜.suspendedTreeOperation incl proj h t = 0 := by
-  cases t with
-  | leaf => exact suspendedTreeOperation_leaf 𝒜 incl proj h
-  | node k children =>
-    rw [ReducedPlanarTree.isBinary_node, not_and_or, not_forall] at ht
-    ext x; rw [suspendedTreeOperation_node_apply, zero_apply]
-    rcases ht with hk | ⟨i, hi⟩
-    · rw [suspendedM_apply, h₃ (k + 2) (by omega), zero_apply, map_zero]
-    · rw [(𝒜.suspendedM (k + 2)).map_coord_zero i
-        (by rw [𝒜.suspendedTreeBranch_eq_zero_of_not_isBinary incl h h₃ hi, zero_apply]), map_zero]
-
-/-- When `𝒜.m k = 0` for all `k ≥ 3`, every non-binary tree has zero unsuspended branch map. -/
-theorem treeBranch_eq_zero_of_not_isBinary (incl : H →ₗ[R] A) (h : Module.End R A)
-    (GH : InternalGrading R H ℤ) (h₃ : ∀ k, 3 ≤ k → 𝒜.m k = 0) {t : ReducedPlanarTree}
-    (ht : ¬ t.IsBinary) : 𝒜.treeBranch incl h GH t = 0 := by
-  rw [treeBranch_def, 𝒜.suspendedTreeBranch_eq_zero_of_not_isBinary incl h h₃ ht,
-    MultilinearMap.zero_compLinearMap]
-
-/-- When `𝒜.m k = 0` for all `k ≥ 3`, every non-binary tree has zero unsuspended operation map. -/
-theorem treeOperation_eq_zero_of_not_isBinary (incl : H →ₗ[R] A) (proj : A →ₗ[R] H)
-    (h : Module.End R A) (GH : InternalGrading R H ℤ) (h₃ : ∀ k, 3 ≤ k → 𝒜.m k = 0)
-    {t : ReducedPlanarTree} (ht : ¬ t.IsBinary) : 𝒜.treeOperation incl proj h GH t = 0 := by
-  rw [treeOperation_def, 𝒜.suspendedTreeOperation_eq_zero_of_not_isBinary incl proj h h₃ ht,
-    MultilinearMap.zero_compLinearMap]
-
-end PureBinaryVanishing
-
 /-! ### Main planar-tree transfer theorems -/
 
 section TransferFormulas
@@ -215,7 +164,7 @@ variable (𝒜 : AInfinityAlgebra R A) {GH : InternalGrading R H ℤ} {dH : Modu
 /-- **Planar-tree formula for the suspended components of `transferInclusion`**: in every arity `n`,
 `suspendedComponent n` is the sum of `suspendedTreeBranch` over all reduced planar trees with `n`
 leaves. -/
-theorem suspendedComponent_transferInclusion (n : ℕ) :
+theorem suspendedComponent_transferInclusion_eq_sum_arity (n : ℕ) :
     (𝒜.transferInclusion c hh hincl hproj).suspendedComponent n = ∑ t : ReducedPlanarTree.Arity n,
       (𝒜.suspendedTreeBranch c.incl c.homotopy t.val).domDomCongr (finCongr t.property) := by
   induction n using Nat.strong_induction_on with
@@ -251,15 +200,15 @@ theorem suspendedComponent_transferInclusion (n : ℕ) :
 /-- **Planar-tree formula for the extending `A∞` quasi-isomorphism**: in every arity `n`, the
 unsuspended component `(𝒜.transferInclusion c hh hincl hproj).component n` is the sum of
 `𝒜.treeBranch c.incl c.homotopy GH t` over all reduced planar trees `t` with `n` leaves. -/
-theorem component_transferInclusion (n : ℕ) :
+theorem component_transferInclusion_eq_sum_arity (n : ℕ) :
     (𝒜.transferInclusion c hh hincl hproj).component n = ∑ t : ReducedPlanarTree.Arity n,
       (𝒜.treeBranch c.incl c.homotopy GH t.val).domDomCongr (finCongr t.property) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
   · ext x
     rw [AInfinityHom.component_apply _ n hn, ← AInfinityHom.suspendedComponent_apply _ n hn,
-      transfer_grading, 𝒜.suspendedComponent_transferInclusion c hh hincl hproj n, sum_apply,
-      sum_apply]
+      transfer_grading, 𝒜.suspendedComponent_transferInclusion_eq_sum_arity c hh hincl hproj n,
+      sum_apply, sum_apply]
     exact Finset.sum_congr rfl fun t _ ↦ by
       rw [treeBranch_def, MultilinearMap.domDomCongr_compLinearMap,
         MultilinearMap.compLinearMap_apply]
@@ -281,7 +230,7 @@ theorem suspendedM_transfer_eq_sum_arity {n : ℕ} (hn : n ≠ 1) :
       𝒜.higherTaylor_barMap_of_tprod (𝒜.transferInclusion c hh hincl hproj) hpos x, map_sum,
       sum_apply, ← (ReducedPlanarTree.arityCompositionEquiv hn).sum_comp, Fintype.sum_sigma]
     refine Finset.sum_congr rfl fun d _ ↦ ?_
-    simp_rw [𝒜.suspendedComponent_transferInclusion c hh hincl hproj, sum_apply]
+    simp_rw [𝒜.suspendedComponent_transferInclusion_eq_sum_arity c hh hincl hproj, sum_apply]
     rw [MultilinearMap.map_sum, map_sum]
     refine Finset.sum_congr rfl fun children _ ↦ ?_
     rw [ReducedPlanarTree.arityCompositionEquiv_apply]
@@ -314,7 +263,7 @@ theorem component_three_transferInclusion (x y z : H) :
         c.homotopy (𝒜.m 2 ![c.homotopy (𝒜.m 2 ![c.incl x, c.incl y]), c.incl z]) +
         c.homotopy (𝒜.m 2 ![c.incl (GH.koszulTwist 1 x),
           c.homotopy (𝒜.m 2 ![c.incl y, c.incl z])]) := by
-  rw [𝒜.component_transferInclusion c hh hincl hproj 3, sum_apply,
+  rw [𝒜.component_transferInclusion_eq_sum_arity c hh hincl hproj 3, sum_apply,
     ReducedPlanarTree.sum_arity_three]
   have ht0 : ((𝒜.treeBranch c.incl c.homotopy GH (.corolla 1)).domDomCongr
       (finCongr (ReducedPlanarTree.numLeaves_corolla 1))) ![x, y, z] =
@@ -331,7 +280,7 @@ theorem component_transferInclusion_eq_sum_isBinary (h₃ : ∀ k, 3 ≤ k → �
     (𝒜.transferInclusion c hh hincl hproj).component n =
       ∑ t : {t : ReducedPlanarTree.Arity n // t.val.IsBinary},
         (𝒜.treeBranch c.incl c.homotopy GH t.val.val).domDomCongr (finCongr t.val.property) := by
-  rw [𝒜.component_transferInclusion c hh hincl hproj n]
+  rw [𝒜.component_transferInclusion_eq_sum_arity c hh hincl hproj n]
   exact Finset.sum_congr_set {t : ReducedPlanarTree.Arity n | t.val.IsBinary} _ _ (fun _ _ ↦ rfl)
     fun t ht ↦ by
       rw [𝒜.treeBranch_eq_zero_of_not_isBinary c.incl c.homotopy GH h₃ ht]; ext; simp
@@ -353,102 +302,4 @@ end TransferFormulas
 
 end AInfinityAlgebra
 
-/-! ### Tree-by-tree naturality under strict morphisms -/
-
-namespace AInfinityStrictHom
-
-section Naturality
-
-variable {R : Type uR} [CommRing R] {A : Type uA} {H : Type uH} {B : Type uB} {K : Type uK}
-  [AddCommGroup A] [Module R A] [AddCommGroup H] [Module R H]
-  [AddCommGroup B] [Module R B] [AddCommGroup K] [Module R K]
-  {𝒜 : AInfinityAlgebra R A} {ℬ : AInfinityAlgebra R B}
-  {GH : InternalGrading R H ℤ} {GK : InternalGrading R K ℤ}
-  {incl : H →ₗ[R] A} {h : Module.End R A} {incl' : K →ₗ[R] B} {h' : Module.End R B}
-  (f : AInfinityStrictHom 𝒜 ℬ) (g : H →ₗ[R] K)
-
-section BranchNaturality
-
-variable (hι : f.toLinearMap ∘ₗ incl = incl' ∘ₗ g) (hη : f.toLinearMap ∘ₗ h = h' ∘ₗ f.toLinearMap)
-include hι hη
-
-/-- A strict `A∞` morphism `f` and a retract linear map `g` intertwining `(incl, h)` with
-`(incl', h')` intertwine `suspendedTreeBranch` on every reduced planar tree. -/
-theorem compMultilinearMap_suspendedTreeBranch (t : ReducedPlanarTree) :
-    f.toLinearMap.compMultilinearMap (𝒜.suspendedTreeBranch incl h t) =
-      (ℬ.suspendedTreeBranch incl' h' t).compLinearMap fun _ ↦ g := by
-  induction t with
-  | leaf =>
-    ext x
-    simpa only [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply,
-      AInfinityAlgebra.suspendedTreeBranch_leaf_apply, coe_toLinearMap, LinearMap.comp_apply] using
-      LinearMap.congr_fun hι (x ⟨0, ReducedPlanarTree.leaf.numLeaves_pos⟩)
-  | node k children ih =>
-    ext x
-    simp only [LinearMap.compMultilinearMap_apply, coe_toLinearMap,
-      MultilinearMap.compLinearMap_apply, AInfinityAlgebra.suspendedTreeBranch_node_apply, map_neg]
-    have hηx := LinearMap.congr_fun hη
-    simp only [LinearMap.comp_apply, coe_toLinearMap] at hηx
-    rw [hηx, f.map_suspendedM]
-    refine congrArg (fun v ↦ -h' (ℬ.suspendedM (k + 2) v)) (funext fun i ↦ ?_)
-    simpa [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply] using
-      MultilinearMap.congr_fun (ih i) fun j ↦ x (finSigmaFinEquiv ⟨i, j⟩)
-
-/-- A strict `A∞` morphism `f` and a degree-zero retract linear map `g` intertwining `(incl, h)`
-with `(incl', h')` intertwine `treeBranch` on every reduced planar tree. -/
-theorem compMultilinearMap_treeBranch (hg : LinearMap.IsHomogeneous g GH.piece GK.piece 0)
-    (t : ReducedPlanarTree) :
-    f.toLinearMap.compMultilinearMap (𝒜.treeBranch incl h GH t) =
-      (ℬ.treeBranch incl' h' GK t).compLinearMap fun _ ↦ g := by
-  rw [AInfinityAlgebra.treeBranch_def, AInfinityAlgebra.treeBranch_def,
-    LinearMap.compMultilinearMap_compLinearMap,
-    f.compMultilinearMap_suspendedTreeBranch g hι hη t]
-  simpa only [mul_zero, Finset.sum_const_zero, negOnePowCast_zero, one_smul] using
-    (InternalGrading.compLinearMap_koszulTwist_compLinearMap (fun _ ↦ hg) _
-      (ℬ.suspendedTreeBranch incl' h' t)).symm
-
-end BranchNaturality
-
-section OperationNaturality
-
-variable {proj : A →ₗ[R] H} {proj' : B →ₗ[R] K} (hι : f.toLinearMap ∘ₗ incl = incl' ∘ₗ g)
-  (hπ : g ∘ₗ proj = proj' ∘ₗ f.toLinearMap) (hη : f.toLinearMap ∘ₗ h = h' ∘ₗ f.toLinearMap)
-include hι hπ hη
-
-/-- A strict `A∞` morphism `f` and a retract linear map `g` intertwining `(incl, proj, h)` with
-`(incl', proj', h')` intertwine `suspendedTreeOperation` on every reduced planar tree. -/
-theorem compMultilinearMap_suspendedTreeOperation (t : ReducedPlanarTree) :
-    g.compMultilinearMap (𝒜.suspendedTreeOperation incl proj h t) =
-      (ℬ.suspendedTreeOperation incl' proj' h' t).compLinearMap fun _ ↦ g := by
-  cases t with
-  | leaf => ext x; simp
-  | node k children =>
-    ext x
-    simp only [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply,
-      AInfinityAlgebra.suspendedTreeOperation_node_apply]
-    have hπx := LinearMap.congr_fun hπ
-    simp only [LinearMap.comp_apply, coe_toLinearMap] at hπx
-    rw [hπx, f.map_suspendedM]
-    refine congrArg (fun v ↦ proj' (ℬ.suspendedM (k + 2) v)) (funext fun i ↦ ?_)
-    simpa [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply] using
-      MultilinearMap.congr_fun (f.compMultilinearMap_suspendedTreeBranch g hι hη (children i))
-        fun j ↦ x (finSigmaFinEquiv ⟨i, j⟩)
-
-/-- A strict `A∞` morphism `f` and a degree-zero retract linear map `g` intertwining
-`(incl, proj, h)` with `(incl', proj', h')` intertwine `treeOperation` on every reduced planar
-tree. -/
-theorem compMultilinearMap_treeOperation (hg : LinearMap.IsHomogeneous g GH.piece GK.piece 0)
-    (t : ReducedPlanarTree) :
-    g.compMultilinearMap (𝒜.treeOperation incl proj h GH t) =
-      (ℬ.treeOperation incl' proj' h' GK t).compLinearMap fun _ ↦ g := by
-  rw [AInfinityAlgebra.treeOperation_def, AInfinityAlgebra.treeOperation_def,
-    LinearMap.compMultilinearMap_compLinearMap,
-    f.compMultilinearMap_suspendedTreeOperation g hι hπ hη t]
-  simpa only [mul_zero, Finset.sum_const_zero, negOnePowCast_zero, one_smul] using
-    (InternalGrading.compLinearMap_koszulTwist_compLinearMap (fun _ ↦ hg) _
-      (ℬ.suspendedTreeOperation incl' proj' h' t)).symm
-
-end OperationNaturality
-end Naturality
-end AInfinityStrictHom
 end TauCeti

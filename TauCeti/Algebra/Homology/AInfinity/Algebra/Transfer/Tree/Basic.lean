@@ -42,6 +42,11 @@ and `2 - t.numLeaves`, and vertex recursions factor via `InternalGrading.signedC
   `TauCeti.AInfinityAlgebra.domDomCongr_treeOperation_binary_apply`,
   `TauCeti.AInfinityAlgebra.domDomCongr_treeBranch_corolla_apply`, and
   `TauCeti.AInfinityAlgebra.domDomCongr_treeOperation_corolla_apply`.
+* `TauCeti.AInfinityAlgebra.suspendedTreeBranch_eq_zero_of_not_isBinary`,
+  `TauCeti.AInfinityAlgebra.suspendedTreeOperation_eq_zero_of_not_isBinary`,
+  `TauCeti.AInfinityAlgebra.treeBranch_eq_zero_of_not_isBinary`, and
+  `TauCeti.AInfinityAlgebra.treeOperation_eq_zero_of_not_isBinary`: vanishing on non-binary trees
+  when `𝒜.m k = 0` for `k ≥ 3`.
 
 ## References
 
@@ -611,4 +616,53 @@ theorem isHomogeneous_treeOperation (t : ReducedPlanarTree) :
 
 end OperationHomogeneous
 end HomogeneousTree
+
+/-! ### Binary-tree vanishing -/
+
+section PureBinaryVanishing
+
+variable (𝒜 : AInfinityAlgebra R A)
+
+/-- When `𝒜.m k = 0` for all `k ≥ 3`, every non-binary tree has zero suspended branch map. -/
+theorem suspendedTreeBranch_eq_zero_of_not_isBinary (incl : H →ₗ[R] A) (h : Module.End R A)
+    (h₃ : ∀ k, 3 ≤ k → 𝒜.m k = 0) {t : ReducedPlanarTree} (ht : ¬ t.IsBinary) :
+    𝒜.suspendedTreeBranch incl h t = 0 := by
+  induction t with
+  | leaf => exact absurd ReducedPlanarTree.isBinary_leaf ht
+  | node k children ih =>
+    rw [ReducedPlanarTree.isBinary_node, not_and_or, not_forall] at ht
+    ext x; rw [suspendedTreeBranch_node_apply, zero_apply]
+    rcases ht with hk | ⟨i, hi⟩
+    · rw [suspendedM_apply, h₃ (k + 2) (by omega), zero_apply, map_zero, neg_zero]
+    · rw [(𝒜.suspendedM (k + 2)).map_coord_zero i (by rw [ih i hi, zero_apply]), map_zero, neg_zero]
+
+/-- When `𝒜.m k = 0` for all `k ≥ 3`, every non-binary tree has zero suspended operation map. -/
+theorem suspendedTreeOperation_eq_zero_of_not_isBinary (incl : H →ₗ[R] A) (proj : A →ₗ[R] H)
+    (h : Module.End R A) (h₃ : ∀ k, 3 ≤ k → 𝒜.m k = 0) {t : ReducedPlanarTree} (ht : ¬ t.IsBinary) :
+    𝒜.suspendedTreeOperation incl proj h t = 0 := by
+  cases t with
+  | leaf => exact suspendedTreeOperation_leaf 𝒜 incl proj h
+  | node k children =>
+    rw [ReducedPlanarTree.isBinary_node, not_and_or, not_forall] at ht
+    ext x; rw [suspendedTreeOperation_node_apply, zero_apply]
+    rcases ht with hk | ⟨i, hi⟩
+    · rw [suspendedM_apply, h₃ (k + 2) (by omega), zero_apply, map_zero]
+    · rw [(𝒜.suspendedM (k + 2)).map_coord_zero i
+        (by rw [𝒜.suspendedTreeBranch_eq_zero_of_not_isBinary incl h h₃ hi, zero_apply]), map_zero]
+
+/-- When `𝒜.m k = 0` for all `k ≥ 3`, every non-binary tree has zero unsuspended branch map. -/
+theorem treeBranch_eq_zero_of_not_isBinary (incl : H →ₗ[R] A) (h : Module.End R A)
+    (GH : InternalGrading R H ℤ) (h₃ : ∀ k, 3 ≤ k → 𝒜.m k = 0) {t : ReducedPlanarTree}
+    (ht : ¬ t.IsBinary) : 𝒜.treeBranch incl h GH t = 0 := by
+  rw [treeBranch_def, 𝒜.suspendedTreeBranch_eq_zero_of_not_isBinary incl h h₃ ht,
+    MultilinearMap.zero_compLinearMap]
+
+/-- When `𝒜.m k = 0` for all `k ≥ 3`, every non-binary tree has zero unsuspended operation map. -/
+theorem treeOperation_eq_zero_of_not_isBinary (incl : H →ₗ[R] A) (proj : A →ₗ[R] H)
+    (h : Module.End R A) (GH : InternalGrading R H ℤ) (h₃ : ∀ k, 3 ≤ k → 𝒜.m k = 0)
+    {t : ReducedPlanarTree} (ht : ¬ t.IsBinary) : 𝒜.treeOperation incl proj h GH t = 0 := by
+  rw [treeOperation_def, 𝒜.suspendedTreeOperation_eq_zero_of_not_isBinary incl proj h h₃ ht,
+    MultilinearMap.zero_compLinearMap]
+
+end PureBinaryVanishing
 end TauCeti.AInfinityAlgebra
