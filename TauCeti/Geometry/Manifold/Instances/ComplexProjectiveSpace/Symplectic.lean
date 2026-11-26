@@ -83,6 +83,9 @@ under multiplication by `i`, and `ω_FS(v, i v) = Re H(v', v')` is positive for 
 * `TauCeti.ComplexProjectiveSpace.eval₂_fubiniStudyForm_mfderiv_mk`: its values on images of
   tangent vectors of the sphere.
 * `TauCeti.ComplexProjectiveSpace.isSymplectic_fubiniStudyForm`: it is symplectic.
+* `TauCeti.ComplexProjectiveSpace.isSmoothForm_fubiniStudyForm`,
+  `TauCeti.ComplexProjectiveSpace.mextDeriv_fubiniStudyForm`: it is `C¹` and closed, as the
+  integral over spheres requires.
 * `TauCeti.ComplexProjectiveSpace.eval₂_fubiniStudyForm_mfderiv_mk_eq_im_fubiniStudyHermitian`:
   it is the imaginary part of the homogeneous Fubini–Study Hermitian form.
 * `TauCeti.ComplexProjectiveSpace.eval₂_mpullback_affineParam_fubiniStudyForm`: its expression in
@@ -309,6 +312,15 @@ theorem isSymplectic_fubiniStudyForm : (fubiniStudyForm n).IsSymplectic :=
     ⟨(SymplecticForm.isClosed_constSmooth _).mpullback _ contMDiff_coe_sphere,
       fun x ↦ (ker_bilinFormAt_mpullback_coe_sphere x).trans (ker_mfderiv_mk x).symm⟩).smul _
     (inv_ne_zero Real.pi_ne_zero)
+
+/-- The Fubini–Study form is `C¹`, the regularity at which forms are integrated over spheres. -/
+theorem isSmoothForm_fubiniStudyForm :
+    IsSmoothForm 𝓘(ℝ, Fin n → ℂ) 1 (fubiniStudyForm n).val :=
+  (fubiniStudyForm n).isSmoothForm.of_le (by simp)
+
+/-- The Fubini–Study form is closed: its manifold exterior derivative vanishes. -/
+theorem mextDeriv_fubiniStudyForm : mextDeriv (fubiniStudyForm n).val = 0 :=
+  (SmoothForm.isClosed_def _).1 isSymplectic_fubiniStudyForm.isClosed
 
 /-! ### The Fubini–Study form and the Fubini–Study Hermitian form -/
 
