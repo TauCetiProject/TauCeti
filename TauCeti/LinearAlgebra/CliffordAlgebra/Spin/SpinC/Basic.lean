@@ -360,6 +360,16 @@ theorem toSpecialOrthogonal_comp_mulCircle :
       (toSpecialOrthogonal Q hQ).comp (MonoidHom.fst _ _) :=
   MonoidHom.ext (toSpecialOrthogonal_mulCircle Q hQ)
 
+/-- Multiplication by the central circle lifts the first projection along the rotation
+homomorphism into the general linear group: `π ∘ μ = π ∘ fst` for `π : Spinᶜ(Q) → SO(Q) ⊆ GL(M)`.
+This is the compatibility that makes the twist of a `Spinᶜ` structure a `Spinᶜ` structure. -/
+theorem subtype_comp_toSpecialOrthogonal_comp_mulCircle :
+    ((specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ)).comp
+        (mulCircle Q hQ) =
+      ((specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ)).comp
+        (MonoidHom.fst _ _) := by
+  rw [MonoidHom.comp_assoc, toSpecialOrthogonal_comp_mulCircle, MonoidHom.comp_assoc]
+
 /-- **The kernel of the rotation homomorphism `Spinᶜ(Q) → SO(Q)` is the central circle**
 `{[1, z]}`, for a finite-dimensional nondegenerate quadratic form. -/
 theorem mem_ker_toSpecialOrthogonal_iff [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
@@ -562,6 +572,15 @@ theorem toSpecialOrthogonal_comp_chargeConj :
     (toSpecialOrthogonal Q hQ).comp (chargeConj Q hQ : spinCGroup Q hQ →* spinCGroup Q hQ) =
       toSpecialOrthogonal Q hQ :=
   MonoidHom.ext (toSpecialOrthogonal_chargeConj Q hQ)
+
+/-- **Charge conjugation covers the identity rotation**, into the general linear group:
+`π ∘ chargeConj = π` for `π : Spinᶜ(Q) → SO(Q) ⊆ GL(M)`. This is the compatibility that makes the
+charge conjugate of a `Spinᶜ` structure a `Spinᶜ` structure. -/
+theorem subtype_comp_toSpecialOrthogonal_comp_chargeConj :
+    ((specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ)).comp
+        (chargeConj Q hQ : spinCGroup Q hQ →* spinCGroup Q hQ) =
+      (specialOrthogonalGroup Q).subtype.comp (toSpecialOrthogonal Q hQ) := by
+  rw [MonoidHom.comp_assoc, toSpecialOrthogonal_comp_chargeConj]
 
 /-- **Charge conjugation is twisting by the inverse determinant**:
 `chargeConj x = x [1, (det x)⁻¹]`. Since `[s, z⁻¹] = [s, z] [1, (z²)⁻¹]`, the conjugate of a
