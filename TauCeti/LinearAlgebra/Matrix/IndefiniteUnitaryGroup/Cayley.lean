@@ -152,19 +152,20 @@ form, `star X * A + A * X = 0`, with `1 + X` invertible, onto the elements `g` o
 `g ↦ (1 - g) (1 + g)⁻¹`. -/
 noncomputable def cayleyEquiv (hA : IsUnit A) (h2 : IsUnit (2 : R)) :
     {X : Matrix n n R // star X * A + A * X = 0 ∧ IsUnit (1 + X)} ≃
-      {g : unitaryGroupOf A // IsUnit (1 + ((g : GL n R) : Matrix n n R))} where
-  toFun X := ⟨ofMatrix hA (cayleyCoord 1 X.val)
-      (star_cayleyCoord_one_mul_mul_cayleyCoord_one X.property.1 X.property.2), by
-    simpa using isUnit_one_add_cayleyCoord_one (h2.map (algebraMap R (Matrix n n R))) X.val⟩
-  invFun g := ⟨cayleyCoord 1 ((g.val : GL n R) : Matrix n n R),
-    star_cayleyCoord_one_mul_add_mul_cayleyCoord_one (mem_unitaryGroupOf_iff.1 g.val.property),
-    isUnit_one_add_cayleyCoord_one (h2.map (algebraMap R (Matrix n n R))) _⟩
-  left_inv X := Subtype.ext (by
-    simpa using cayleyCoord_one_cayleyCoord_one
-      (by simpa only [map_ofNat] using h2.map (algebraMap R (Matrix n n R))) X.property.2)
-  right_inv g := Subtype.ext (unitaryGroupOf.ext (by
-    simpa using cayleyCoord_one_cayleyCoord_one
-      (by simpa only [map_ofNat] using h2.map (algebraMap R (Matrix n n R))) g.property))
+      {g : unitaryGroupOf A // IsUnit (1 + ((g : GL n R) : Matrix n n R))} :=
+  -- The matrix `2` is the image of `2 : R` under `algebraMap`, hence a unit.
+  have h2' : IsUnit (2 : Matrix n n R) := by
+    simpa only [map_ofNat] using h2.map (algebraMap R (Matrix n n R))
+  { toFun := fun X ↦ ⟨ofMatrix hA (cayleyCoord 1 X.val)
+        (star_cayleyCoord_one_mul_mul_cayleyCoord_one X.property.1 X.property.2), by
+      simpa using isUnit_one_add_cayleyCoord_one h2' X.val⟩
+    invFun := fun g ↦ ⟨cayleyCoord 1 ((g.val : GL n R) : Matrix n n R),
+      star_cayleyCoord_one_mul_add_mul_cayleyCoord_one (mem_unitaryGroupOf_iff.1 g.val.property),
+      isUnit_one_add_cayleyCoord_one h2' _⟩
+    left_inv := fun X ↦ Subtype.ext (by
+      simpa using cayleyCoord_one_cayleyCoord_one h2' X.property.2)
+    right_inv := fun g ↦ Subtype.ext (unitaryGroupOf.ext (by
+      simpa using cayleyCoord_one_cayleyCoord_one h2' g.property)) }
 
 /-- The matrix of the image of `X` under `Matrix.unitaryGroupOf.cayleyEquiv` is its Cayley
 transform. -/

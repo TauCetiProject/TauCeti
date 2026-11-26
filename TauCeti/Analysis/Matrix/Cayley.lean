@@ -86,8 +86,7 @@ theorem cayley_zero : cayley (0 : Matrix n n ℂ) = 1 := by
 /-- The Hermitian Cayley transform is the ring Cayley coordinate of `-i H` relative to `1`. -/
 theorem cayley_eq_cayleyCoord_one (H : Matrix n n ℂ) :
     cayley H = TauCeti.cayleyCoord 1 (-(I • H)) := by
-  rw [cayley_def, TauCeti.cayleyCoord_def, ← nonsing_inv_eq_ringInverse,
-    sub_neg_eq_add, ← sub_eq_add_neg]
+  rw [cayley_def, TauCeti.cayleyCoord_neg, ← nonsing_inv_eq_ringInverse]
 
 /-- **Naturality of the Cayley transform.** Conjugating by an invertible matrix `P`, with inverse
 `Q`, commutes with the Cayley transform. -/

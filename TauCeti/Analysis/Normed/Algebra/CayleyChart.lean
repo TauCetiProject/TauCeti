@@ -204,8 +204,8 @@ theorem hasFDerivAt_cayleyCoord_one {x : A} (hx : IsUnit (1 + x)) :
     exact (h.comp x ((hasFDerivAt_id x).const_add 1)).congr_fderiv
       (ContinuousLinearMap.comp_id _)
   have h1 : (1 - x) * Ring.inverse (1 + x) = 2 * Ring.inverse (1 + x) - 1 := by
-    have h := one_add_cayleyCoord_one hx
-    rw [cayleyCoord_def] at h
+    have h := one_add_cayleyCoord hx
+    rw [cayleyCoord_def, mul_one] at h
     rw [← h]
     abel
   rw [cayleyCoord_eq_fun]

@@ -113,8 +113,12 @@ theorem cayleyChart_def (A : Matrix n n ℂ) (S : skewAdjoint.submodule ℝ (Mat
 theorem cayleyChart_eq (A : Matrix n n ℂ) (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
     cayleyChart A S = (1 + (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))) *
       (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))⁻¹ := by
-  rw [cayleyChart_def, cayleyCoord_def, ← nonsing_inv_eq_ringInverse,
-    sub_neg_eq_add, ← sub_eq_add_neg]
+  rw [cayleyChart_def, cayleyCoord_neg, ← nonsing_inv_eq_ringInverse]
+
+/-- The Cayley chart is `0` where `1 - A⁻¹ S / 2` is not invertible. -/
+theorem cayleyChart_of_not_isUnit
+    (hS : ¬IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))) : cayleyChart A S = 0 :=
+  cayleyCoord_of_not_isUnit (by rwa [← sub_eq_add_neg])
 
 /-- The Cayley chart sends `0` to the identity. -/
 @[simp]
