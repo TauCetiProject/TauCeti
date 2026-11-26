@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Toric.Delzant.Quotient.Simplex
+public import TauCeti.Geometry.Toric.Delzant.Quotient.Simplex.Basic
 public import TauCeti.Geometry.Toric.Delzant.Quotient.Symplectic
 public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Symplectic
 public import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
@@ -82,6 +82,22 @@ position `k`. -/
 theorem simplexHomogeneousCoord_apply
     (x : EuclideanSpace ℝ (Option (Fin n)) × EuclideanSpace ℝ (Option (Fin n))) (k : Fin (n + 1)) :
     simplexHomogeneousCoord n x k = x.1 (finSuccEquiv n k) + x.2 (finSuccEquiv n k) * I := by
+  simp [simplexHomogeneousCoord]
+
+/-- The `q`-coordinate of the facet `o` of a point `z` of `ℂⁿ⁺¹` is the real part of its
+homogeneous coordinate in the position of `o`. -/
+@[simp]
+theorem simplexHomogeneousCoord_symm_apply_fst (z : EuclideanSpace ℂ (Fin (n + 1)))
+    (o : Option (Fin n)) :
+    ((simplexHomogeneousCoord n).symm z).1 o = (z ((finSuccEquiv n).symm o)).re  := by
+  simp [simplexHomogeneousCoord]
+
+/-- The `p`-coordinate of the facet `o` of a point `z` of `ℂⁿ⁺¹` is the imaginary part of its
+homogeneous coordinate in the position of `o`. -/
+@[simp]
+theorem simplexHomogeneousCoord_symm_apply_snd (z : EuclideanSpace ℂ (Fin (n + 1)))
+    (o : Option (Fin n)) :
+    ((simplexHomogeneousCoord n).symm z).2 o = (z ((finSuccEquiv n).symm o)).im  := by
   simp [simplexHomogeneousCoord]
 
 /-- The coordinates `simplexHomogeneousCoord` carry `‖q‖² + ‖p‖²` to the squared norm. -/
@@ -373,6 +389,28 @@ theorem mpullback_simplexDiffeomorph_smul_fubiniStudyForm (ha : 0 < a) :
   let _ := (isDelzant_simplex ha).delzantQuotientChartedSpace (isIntegralLattice_intCast n)
   have := (isDelzant_simplex ha).isManifold_delzantLevel (isIntegralLattice_intCast n) ∞
   have := (isDelzant_simplex ha).isManifold_delzantQuotient (isIntegralLattice_intCast n)
+  -- On the level, the rescaling to the unit sphere is the restriction of the scaled homogeneous
+  -- coordinates.
+  have hcomp : ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 →
+      EuclideanSpace ℂ (Fin (n + 1))) ∘ simplexLevelDiffeomorph n ha =
+      scaledHomogeneousCoord n a ∘ (↑) :=
+    funext fun x ↦ (coe_simplexLevelDiffeomorph_apply ha x).trans
+      (scaledHomogeneousCoord_apply _).symm
+  -- Pulled back to the level along the rescaling and the Hopf projection, `ω_FS` is `1 / π` times
+  -- `1 / (2a)` times the restriction of `Σ dq_o ∧ dp_o`.
+  have hlevel : SmoothForm.mpullback (simplexLevelDiffeomorph n ha)
+      (simplexLevelDiffeomorph n ha).contMDiff
+        (SmoothForm.mpullback (ComplexProjectiveSpace.mk n) (ComplexProjectiveSpace.contMDiff_mk ∞)
+          (ComplexProjectiveSpace.fubiniStudyForm n)) =
+      π⁻¹ • (2 * a)⁻¹ • SmoothForm.mpullback _
+        ((isDelzant_simplex ha).contMDiff_coe_delzantLevel (isIntegralLattice_intCast n))
+          stdSymplecticForm.constSmooth := by
+    rw [ComplexProjectiveSpace.mpullback_mk_fubiniStudyForm, SmoothForm.mpullback_smul,
+      SmoothForm.mpullback_mpullback_of_comp_eq (simplexLevelDiffeomorph n ha).contMDiff
+        contMDiff_coe_sphere
+        ((isDelzant_simplex ha).contMDiff_coe_delzantLevel (isIntegralLattice_intCast n))
+        (scaledHomogeneousCoord n a).contDiff.contMDiff hcomp,
+      mpullback_scaledHomogeneousCoord_imInnerSymplecticForm ha, SmoothForm.mpullback_smul]
   -- Both forms are determined by their pullbacks to the level, where the projection followed by
   -- `simplexDiffeomorph` is the rescaling to the unit sphere followed by the Hopf projection.
   rw [(isDelzant_simplex ha).eq_delzantQuotientSymplecticForm_iff (isIntegralLattice_intCast n),
@@ -381,14 +419,7 @@ theorem mpullback_simplexDiffeomorph_smul_fubiniStudyForm (ha : 0 < a) :
         (isIntegralLattice_intCast n)).contMDiff
       (simplexDiffeomorph n ha).contMDiff (simplexLevelDiffeomorph n ha).contMDiff
       (ComplexProjectiveSpace.contMDiff_mk ∞) (funext fun x ↦ simplexDiffeomorph_mk ha x),
-    SmoothForm.mpullback_smul, ComplexProjectiveSpace.mpullback_mk_fubiniStudyForm,
-    SmoothForm.mpullback_smul, SmoothForm.mpullback_smul,
-    SmoothForm.mpullback_mpullback_of_comp_eq (simplexLevelDiffeomorph n ha).contMDiff
-      contMDiff_coe_sphere
-      ((isDelzant_simplex ha).contMDiff_coe_delzantLevel (isIntegralLattice_intCast n))
-      (scaledHomogeneousCoord n a).contDiff.contMDiff (funext fun x ↦ rfl),
-    mpullback_scaledHomogeneousCoord_imInnerSymplecticForm ha, SmoothForm.mpullback_smul,
-    smul_smul, smul_smul]
+    SmoothForm.mpullback_smul, SmoothForm.mpullback_smul, hlevel, smul_smul, smul_smul]
   convert one_smul ℝ _
   field_simp [ha.ne', Real.pi_ne_zero]
 
