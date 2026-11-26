@@ -27,9 +27,9 @@ points, a map `M → M` homotopic to the identity, this is the complex whose coh
 homological grading `C_n = C^{-n}`, is the Morse homology `H_*(M; 𝓕)` with DG coefficients of
 Barraud, Damian, Humilière and Oancea.
 
-The complex depends on the chain system `S` only up to an isomorphism specified by a homotopy. A
-homotopy `T` from `S` to `S'` (`TauCeti.TwistingChainSystem.Homotopy`) pushes forward to the
-continuation cocycle `1 + q_* h` between the two Barraud–Cornea cocycles
+Homotopic chain systems give isomorphic DG Morse complexes, by an isomorphism specified by the
+homotopy. A homotopy `T` from `S` to `S'` (`TauCeti.TwistingChainSystem.Homotopy`) pushes forward
+to the continuation cocycle `1 + q_* h` between the two Barraud–Cornea cocycles
 (`TauCeti.IsAdaptedPseudoGradient.barraudCorneaContinuationCocycle`). Under the Morse–Smale
 condition the trajectory spaces between distinct critical points of equal index are empty
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBrokenTrajectorySpace_eq_empty_of_le`), so
@@ -89,26 +89,6 @@ variable (hX : IsAdaptedPseudoGradient f X) {c : ι → ℝ} (hf : IsMorse 𝓘(
   {Y : Type*} [TopologicalSpace Y] {θ : C(M, Y)} {y₀ : Y}
   (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀)
   (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
-
-/-! ### The evaluation of the trajectory spaces into Moore loops -/
-
-/-- The evaluation of the trajectory spaces into Moore loops is multiplicative along the
-composition maps, the hypothesis under which the push-forwards of a homotopy of chain systems
-form a continuation cocycle. -/
-private theorem morseLoopEvaluation_comp_inclusion_morseBrokenTrajectorySpaceComp
-    (x z y : criticalPoints 𝓘(ℝ, E) f) (u : hX.morseBrokenTrajectorySpace c x z)
-    (v : hX.morseBrokenTrajectorySpace c z y) :
-    (hX.morseLoopEvaluation hf hdense hθ x y).comp
-        (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _))
-        (hX.morseBrokenTrajectorySpaceComp hc x z y (u, v)) =
-      (hX.morseLoopEvaluation hf hdense hθ x z).comp
-          (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)) u *
-        (hX.morseLoopEvaluation hf hdense hθ z y).comp
-          (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)) v := by
-  simp only [ContinuousMap.comp_apply]
-  exact (congrArg (hX.morseLoopEvaluation hf hdense hθ x y)
-    (hX.inclusion_morseBrokenTrajectorySpaceComp hc x z y (u, v))).trans
-      (hX.morseLoopEvaluation_morseRecordsConcat hf hdense hθ hc x z y _ _)
 
 variable {R : Type*} [CommRing R] [Fintype (criticalPoints 𝓘(ℝ, E) f)]
 
@@ -190,21 +170,22 @@ variable {S S' : TwistingChainSystem (fun x : criticalPoints 𝓘(ℝ, E) f ↦
 
 /-- **The continuation cocycle of a homotopy is invertible** under the Morse–Smale condition, for
 chain systems graded by the Morse index: the trajectory spaces between critical points of equal
-index are empty, so the chains of the homotopy vanish there and the cocycle is unitriangular. -/
+index are empty, so the chains of the homotopy vanish there and the cocycle is unitriangular
+(`TauCeti.TwistingChainSystem.Homotopy.isUnit_continuationCocycle`). -/
 theorem isUnit_barraudCorneaContinuationCocycle (hMS : hX.IsMorseSmale) (T : S.Homotopy S') :
-    IsUnit (Matrix.of (hX.barraudCorneaContinuationCocycle hf hdense hθ hc T).ν) := by
-  refine ContinuationCocycle.isUnit_of_eq_one_of_le _ fun x y hxy ↦ ?_
-  rcases hxy.lt_or_eq with hlt | heq
-  · rw [barraudCorneaContinuationCocycle_ν, T.chain_eq_zero_of_lt hlt, map_zero, add_zero]
-  · have : IsEmpty (hX.morseBrokenTrajectorySpace c x y) := by
-      rw [hMS.morseBrokenTrajectorySpace_eq_empty_of_le hf (by exact_mod_cast heq.le)]
-      infer_instance
-    rw [barraudCorneaContinuationCocycle_ν, Subsingleton.elim (T.chain x y) 0, map_zero, add_zero]
+    IsUnit (Matrix.of (hX.barraudCorneaContinuationCocycle hf hdense hθ hc T).ν) :=
+  T.isUnit_continuationCocycle
+    (hX.morseLoopEvaluation_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hθ hc)
+    fun x y heq ↦ by
+      have : IsEmpty (hX.morseBrokenTrajectorySpace c x y) := by
+        rw [hMS.morseBrokenTrajectorySpace_eq_empty_of_le hf (by exact_mod_cast heq.le)]
+        infer_instance
+      exact Subsingleton.elim _ _
 
 /-- **The continuation isomorphism of DG Morse complexes** induced by a homotopy `T` from the chain
 system `S` to `S'`, under the Morse–Smale condition: the continuation map of
 `barraudCorneaContinuationCocycle T`, with inverse the continuation map of its inverse matrix. So
-the DG Morse complex does not depend on the chain system, up to an isomorphism specified by the
+homotopic chain systems give isomorphic DG Morse complexes, by an isomorphism specified by the
 homotopy. -/
 def dgMorseComplexIsoOfHomotopy (hMS : hX.IsMorseSmale) (T : S.Homotopy S')
     (𝓕 : DGLocalSystem Y y₀ R) :
@@ -221,6 +202,21 @@ theorem dgMorseComplexIsoOfHomotopy_hom (hMS : hX.IsMorseSmale) (T : S.Homotopy 
       (hX.barraudCorneaContinuationCocycle hf hdense hθ hc T).continuationHom
         𝓕.isDGRightModule :=
   ContinuationCocycle.continuationIsoOfIsUnit_hom ..
+
+/-- The inverse of the continuation isomorphism of a homotopy is the continuation map of the
+inverse matrix of its continuation cocycle. -/
+@[simp]
+theorem dgMorseComplexIsoOfHomotopy_inv (hMS : hX.IsMorseSmale) (T : S.Homotopy S')
+    (𝓕 : DGLocalSystem Y y₀ R) :
+    (hX.dgMorseComplexIsoOfHomotopy hf hdense hθ hc hMS T 𝓕).inv =
+      ContinuationCocycle.continuationHom
+        ((hX.barraudCorneaContinuationCocycle hf hdense hθ hc T).inverse
+          (loopChain_isDGAlgebra Y y₀ R)
+          ↑(hX.isUnit_barraudCorneaContinuationCocycle hf hdense hθ hc hMS T).unit⁻¹
+          (hX.isUnit_barraudCorneaContinuationCocycle hf hdense hθ hc hMS T).mul_val_inv
+          (hX.isUnit_barraudCorneaContinuationCocycle hf hdense hθ hc hMS T).val_inv_mul)
+        𝓕.isDGRightModule :=
+  ContinuationCocycle.continuationIsoOfIsUnit_inv ..
 
 /-- The continuation isomorphism of the zero homotopy is the identity. -/
 @[simp]
