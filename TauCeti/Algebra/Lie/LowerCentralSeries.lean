@@ -25,7 +25,9 @@ No characteristic or algebraic-closure hypothesis is used.
 A Lie homomorphism into a Lie algebra with `C c = ⊥` kills `C c` of its source
 (`LieHom.lowerCentralSeries_le_ker`), and the quotient `L ⧸ C c` itself has vanishing `c`-th
 term (`TauCeti.lowerCentralSeries_quotient_lowerCentralSeries_eq_bot`): it is the universal
-quotient of nilpotency class at most `c`.
+quotient of nilpotency class at most `c`. Once a term of the lower central series vanishes, so
+do all later ones (`LieModule.lowerCentralSeries_eq_bot_of_le`); for a nilpotent module the series
+vanishes at its nilpotency length (`LieModule.lowerCentralSeries_nilpotencyLength_eq_bot`).
 
 ## References
 
@@ -142,8 +144,15 @@ section NilpotencyLength
 variable (R L M : Type*) [CommRing R] [LieRing L] [LieAlgebra R L] [AddCommGroup M] [Module R M]
   [LieRingModule L M] [LieModule R L M]
 
+omit [LieModule R L M] in
+variable {R L M} in
+/-- Once a term of the lower central series vanishes, so do all later terms. -/
+theorem _root_.LieModule.lowerCentralSeries_eq_bot_of_le {k l : ℕ} (h : k ≤ l)
+    (hk : lowerCentralSeries R L M k = ⊥) : lowerCentralSeries R L M l = ⊥ :=
+  eq_bot_iff.mpr (hk ▸ LieModule.antitone_lowerCentralSeries R L M h)
+
 /-- The lower central series of a nilpotent Lie module vanishes at its nilpotency length. -/
-theorem _root_.LieModule.lowerCentralSeries_nilpotencyLength [LieModule.IsNilpotent L M] :
+theorem _root_.LieModule.lowerCentralSeries_nilpotencyLength_eq_bot [LieModule.IsNilpotent L M] :
     lowerCentralSeries R L M (nilpotencyLength L M) = ⊥ := by
   rcases h : nilpotencyLength L M with _ | k
   · rw [nilpotencyLength_eq_zero_iff] at h

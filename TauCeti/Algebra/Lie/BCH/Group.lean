@@ -34,9 +34,9 @@ Since the free nilpotent quotient embeds in the truncated enveloping algebra, as
 product of exponentials gives associativity of `bch` in the free nilpotent Lie algebra on three
 generators, and naturality transports it to every Lie algebra of class at most `c`.
 
-For a commutative `ℚ`-algebra `R`, an `R`-Lie algebra with its compatible `ℚ`-module structure is
-a Lie algebra over `ℚ`, and its Baker–Campbell–Hausdorff group is that of the underlying rational
-Lie algebra: the product only involves rational scalars.
+The construction is stated for Lie algebras over `ℚ`: the product only involves rational scalars.
+The comparison with the scalar restriction to `ℚ` of an `R`-Lie algebra, for a commutative
+`ℚ`-algebra `R`, is not provided here.
 
 ## Main definitions
 
@@ -52,8 +52,6 @@ Lie algebra: the product only involves rational scalars.
 
 ## Main results
 
-* `TauCeti.FreeLieAlgebra.comp_lift_apply`: evaluation in a free Lie algebra commutes with Lie
-  homomorphisms.
 * `TauCeti.LieAlgebra.bch_eq_bch`: the product does not depend on the class bound.
 * `TauCeti.LieAlgebra.map_bch`: Lie homomorphisms preserve the product.
 * `TauCeti.LieAlgebra.bch_eq_add_of_lie_eq_zero`: commuting elements multiply by addition.
@@ -78,22 +76,18 @@ open _root_.TauCeti.UniversalEnvelopingAlgebra
 
 local notation "𝔣" => _root_.FreeLieAlgebra ℚ (Fin 2)
 
-namespace FreeLieAlgebra
-
-/-- Evaluating elements of a free Lie algebra commutes with Lie homomorphisms: `f` applied to the
-value of `r` at `v` is the value of `r` at `f ∘ v`. -/
-theorem comp_lift_apply {R L L' S : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L']
-    [LieAlgebra R L'] (f : L →ₗ⁅R⁆ L') (v : S → L) (r : _root_.FreeLieAlgebra R S) :
-    f (_root_.FreeLieAlgebra.lift R v r) = _root_.FreeLieAlgebra.lift R (f ∘ v) r := by
-  rw [← LieHom.comp_apply]
-  congr 1
-  exact _root_.FreeLieAlgebra.hom_ext fun s => by simp
-
-end FreeLieAlgebra
-
 namespace LieAlgebra
 
 variable {L L' : Type*} [LieRing L] [LieAlgebra ℚ L] [LieRing L'] [LieAlgebra ℚ L']
+
+/-- Lie homomorphisms commute with evaluation at a pair: `f` applied to the value of `r` at
+`(x, y)` is the value of `r` at `(f x, f y)`. -/
+private theorem map_lift_pair (f : L →ₗ⁅ℚ⁆ L') (x y : L) (r : 𝔣) :
+    f (_root_.FreeLieAlgebra.lift ℚ ![x, y] r) = _root_.FreeLieAlgebra.lift ℚ ![f x, f y] r := by
+  rw [_root_.FreeLieAlgebra.comp_lift_apply]
+  congr 2
+  ext i
+  fin_cases i <;> rfl
 
 /-- The **Baker–Campbell–Hausdorff product** of `x` and `y` in a Lie algebra `L` over `ℚ` of
 nilpotency class at most `c`: the value at `(x, y)` of the universal element
@@ -118,10 +112,7 @@ theorem map_bch {c : ℕ} (f : L →ₗ⁅ℚ⁆ L') (hc : lowerCentralSeries �
     f (bch c hc x y) = bch c hc' (f x) (f y) := by
   obtain ⟨r, hr⟩ := LieIdeal.surjective_mkQ _ (FreeLieAlgebra.bchElement c)
   rw [LieIdeal.mkQ_apply] at hr
-  rw [bch_eq_lift hc hr, bch_eq_lift hc' hr, FreeLieAlgebra.comp_lift_apply]
-  congr 2
-  ext i
-  fin_cases i <;> rfl
+  rw [bch_eq_lift hc hr, bch_eq_lift hc' hr, map_lift_pair]
 
 /-- The Baker–Campbell–Hausdorff product does not change when the class bound is raised. -/
 private theorem bch_eq_bch_of_le {c d : ℕ} (h : c ≤ d) (hc : lowerCentralSeries ℚ L L c = ⊥)
@@ -163,7 +154,7 @@ theorem bch_eq_add_of_lie_eq_zero {c : ℕ} (hc : lowerCentralSeries ℚ L L c =
   have hK1 : lowerCentralSeries ℚ K K 1 = ⊥ :=
     (LieModule.trivial_iff_lower_central_eq_bot ℚ K K).mp hK
   have hKc : lowerCentralSeries ℚ K K (c + 1) = ⊥ :=
-    eq_bot_iff.mpr (hK1 ▸ LieModule.antitone_lowerCentralSeries ℚ K K (by omega))
+    LieModule.lowerCentralSeries_eq_bot_of_le (by omega) hK1
   have hmap := map_bch K.incl hKc hc ⟨x, LieSubalgebra.subset_lieSpan (by simp)⟩
     ⟨y, LieSubalgebra.subset_lieSpan (by simp)⟩
   rw [bch_eq_bch hKc hK1, bch_one] at hmap
@@ -204,12 +195,7 @@ theorem exp_lowerCentralQuotientι_bch (u v : F ⧸ lowerCentralSeries ℚ F F c
       (LieSubmodule.Quotient.mk x) (LieSubmodule.Quotient.mk y) =
       LieSubmodule.Quotient.mk (_root_.FreeLieAlgebra.lift ℚ ![x, y] r) := by
     rw [bch_eq_lift _ hr]
-    refine Eq.trans ?_ (FreeLieAlgebra.comp_lift_apply (LieIdeal.mkQ _) ![x, y] r).symm
-    congr 2
-    ext i
-    fin_cases i <;> rfl
-  have hx : x = _root_.FreeLieAlgebra.lift ℚ ![x, y] (_root_.FreeLieAlgebra.of ℚ 0) := by simp
-  have hy : y = _root_.FreeLieAlgebra.lift ℚ ![x, y] (_root_.FreeLieAlgebra.of ℚ 1) := by simp
+    exact (map_lift_pair (LieIdeal.mkQ _) x y r).symm
   -- Transport the defining identity of `bchElement c` along the enveloping map of `φ`.
   have hq : ∀ z : 𝔣, IsNilpotent.exp
       (Ideal.Quotient.mk (J ^ (c + 1)) (ι (_root_.FreeLieAlgebra.lift ℚ ![x, y] z))) =
@@ -218,11 +204,14 @@ theorem exp_lowerCentralQuotientι_bch (u v : F ⧸ lowerCentralSeries ℚ F F c
         (IsNilpotent.exp (Ideal.Quotient.mk _ (ι z))) := fun z => by
     rw [(isNilpotent_mk_ι ℚ 𝔣 c z).map_exp, Ideal.quotient_map_mkₐ, Ideal.Quotient.mkₐ_eq_mk,
       map_ι]
+  -- The factors `x = φ X` and `y = φ Y` are the images of the generators.
+  have hx := hq (_root_.FreeLieAlgebra.of ℚ 0)
+  have hy := hq (_root_.FreeLieAlgebra.of ℚ 1)
+  rw [_root_.FreeLieAlgebra.lift_of_apply, Matrix.cons_val_zero] at hx
+  rw [_root_.FreeLieAlgebra.lift_of_apply, Matrix.cons_val_one, Matrix.cons_val_zero] at hy
   simp only [LieIdeal.mkQ_apply]
-  rw [hφ, lowerCentralQuotientι_mk, lowerCentralQuotientι_mk, lowerCentralQuotientι_mk]
-  nth_rw 2 [hx]
-  nth_rw 3 [hy]
-  rw [hq, hq, hq, ← map_mul, ← FreeLieAlgebra.exp_lowerCentralQuotientι_bchElement, ← hr,
+  rw [hφ, lowerCentralQuotientι_mk, lowerCentralQuotientι_mk, lowerCentralQuotientι_mk, hq, hx, hy,
+    ← map_mul, ← FreeLieAlgebra.exp_lowerCentralQuotientι_bchElement, ← hr,
     lowerCentralQuotientι_mk]
 
 /-- The Baker–Campbell–Hausdorff product is associative in every free nilpotent Lie algebra. -/
@@ -295,13 +284,13 @@ theorem log_inv [Neg L] (g : BCHGroup L) : g⁻¹.log = -g.log := (rfl)
 
 variable [LieRing L] [LieAlgebra ℚ L] [LieRing.IsNilpotent L]
 
-open LieModule (lowerCentralSeries_nilpotencyLength)
+open LieModule (lowerCentralSeries_nilpotencyLength_eq_bot)
 open _root_.TauCeti.LieAlgebra
 
 /-- The product of the Baker–Campbell–Hausdorff group, computed with the nilpotency length of `L`
 as class bound; `TauCeti.BCHGroup.exp_mul_exp` allows any other bound. -/
 noncomputable instance : Mul (BCHGroup L) :=
-  ⟨fun g h => exp (bch _ (lowerCentralSeries_nilpotencyLength ℚ L L) g.log h.log)⟩
+  ⟨fun g h => exp (bch _ (lowerCentralSeries_nilpotencyLength_eq_bot ℚ L L) g.log h.log)⟩
 
 /-- The product in the Baker–Campbell–Hausdorff group is the Baker–Campbell–Hausdorff product of
 the logarithms, computed with any bound `c` on the nilpotency class. -/
@@ -317,14 +306,14 @@ theorem log_mul {c : ℕ} (hc : lowerCentralSeries ℚ L L c = ⊥) (g h : BCHGr
 
 /-- The exponentials of commuting elements multiply by addition. -/
 theorem exp_add_of_lie_eq_zero {x y : L} (h : ⁅x, y⁆ = 0) : exp (x + y) = exp x * exp y := by
-  rw [exp_mul_exp (lowerCentralSeries_nilpotencyLength ℚ L L), bch_eq_add_of_lie_eq_zero _ h]
+  rw [exp_mul_exp (lowerCentralSeries_nilpotencyLength_eq_bot ℚ L L), bch_eq_add_of_lie_eq_zero _ h]
 
 /-- A nilpotent Lie algebra over `ℚ` is a group under the Baker–Campbell–Hausdorff product, with
 identity `exp 0`, inverse `exp x ↦ exp (-x)` and powers `exp x ^ n = exp (n • x)`. -/
 noncomputable instance : Group (BCHGroup L) where
   mul_assoc g h k := by
     rw [← exp_log g, ← exp_log h, ← exp_log k]
-    simp only [exp_mul_exp (lowerCentralSeries_nilpotencyLength ℚ L L), bch_assoc]
+    simp only [exp_mul_exp (lowerCentralSeries_nilpotencyLength_eq_bot ℚ L L), bch_assoc]
   one_mul g := by
     rw [← exp_log g, ← exp_zero, ← exp_add_of_lie_eq_zero (zero_lie _), zero_add]
   mul_one g := by
@@ -372,12 +361,10 @@ noncomputable def map (f : L →ₗ⁅ℚ⁆ L') : BCHGroup L →* BCHGroup L' w
   map_mul' g h := by
     -- Compute both products with a class bound common to `L` and `L'`.
     let c := max (LieModule.nilpotencyLength L L) (LieModule.nilpotencyLength L' L')
-    have hc : lowerCentralSeries ℚ L L c = ⊥ := le_bot_iff.mp
-      ((LieModule.antitone_lowerCentralSeries ℚ L L (le_max_left _ _)).trans
-        (lowerCentralSeries_nilpotencyLength ℚ L L).le)
-    have hc' : lowerCentralSeries ℚ L' L' c = ⊥ := le_bot_iff.mp
-      ((LieModule.antitone_lowerCentralSeries ℚ L' L' (le_max_right _ _)).trans
-        (lowerCentralSeries_nilpotencyLength ℚ L' L').le)
+    have hc : lowerCentralSeries ℚ L L c = ⊥ := LieModule.lowerCentralSeries_eq_bot_of_le
+      (le_max_left _ _) (lowerCentralSeries_nilpotencyLength_eq_bot ℚ L L)
+    have hc' : lowerCentralSeries ℚ L' L' c = ⊥ := LieModule.lowerCentralSeries_eq_bot_of_le
+      (le_max_right _ _) (lowerCentralSeries_nilpotencyLength_eq_bot ℚ L' L')
     rw [exp_mul_exp hc', ← map_bch f hc hc', log_mul hc]
 
 @[simp]
@@ -404,7 +391,7 @@ elements of a Lie subalgebra. -/
 def _root_.LieSubalgebra.bchSubgroup (K : LieSubalgebra ℚ L) : Subgroup (BCHGroup L) where
   carrier := {g | g.log ∈ K}
   mul_mem' {g h} hg hh := by
-    rw [Set.mem_ofPred_eq, log_mul (lowerCentralSeries_nilpotencyLength ℚ L L)]
+    rw [Set.mem_ofPred_eq, log_mul (lowerCentralSeries_nilpotencyLength_eq_bot ℚ L L)]
     exact bch_mem _ hg hh
   one_mem' := K.zero_mem
   inv_mem' {_} hg := K.neg_mem hg
@@ -437,8 +424,10 @@ noncomputable def _root_.LieIdeal.bchQuotientEquiv (I : LieIdeal ℚ L) :
 
 @[simp]
 theorem _root_.LieIdeal.bchQuotientEquiv_mk (I : LieIdeal ℚ L) (x : L) :
-    I.bchQuotientEquiv (exp x : BCHGroup L) = exp (LieSubmodule.Quotient.mk x) :=
-  (rfl)
+    I.bchQuotientEquiv (exp x : BCHGroup L) = exp (LieSubmodule.Quotient.mk x) := by
+  rw [LieIdeal.bchQuotientEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk]
+  -- The first isomorphism theorem sends the class of `g` to the image of `g`.
+  exact QuotientGroup.kerLift_mk (map I.mkQ) (exp x)
 
 end BCHGroup
 

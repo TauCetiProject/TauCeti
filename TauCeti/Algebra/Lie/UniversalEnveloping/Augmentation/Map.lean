@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Augmentation.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Functoriality
+import TauCeti.RingTheory.Ideal.Maps
 
 /-!
 # Enveloping maps preserve the augmentation filtration
@@ -48,13 +49,7 @@ theorem augmentation_le_comap_map (f : L →ₗ⁅R⁆ M) :
 /-- The algebra homomorphism of enveloping algebras induced by a Lie homomorphism sends each power
 of the augmentation ideal into the same power of the augmentation ideal. -/
 theorem augmentation_pow_le_comap_map (f : L →ₗ⁅R⁆ M) (n : ℕ) :
-    (J L) ^ n ≤ ((J M) ^ n).comap (map R f) := by
-  induction n with
-  | zero => simp only [Submodule.pow_zero, Ideal.one_eq_top, Ideal.comap_top, le_refl]
-  | succ n ih =>
-    rw [Submodule.pow_succ, Submodule.mul_le]
-    intro r hr s hs
-    rw [Ideal.mem_comap, map_mul, Submodule.pow_succ]
-    exact Submodule.mul_mem_mul (ih hr) (augmentation_le_comap_map R f hs)
+    (J L) ^ n ≤ ((J M) ^ n).comap (map R f) :=
+  Ideal.pow_le_comap_pow_of_le_comap (map R f) (augmentation_le_comap_map R f) n
 
 end TauCeti.UniversalEnvelopingAlgebra
