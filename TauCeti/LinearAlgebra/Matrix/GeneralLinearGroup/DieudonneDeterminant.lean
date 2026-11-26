@@ -547,8 +547,11 @@ theorem commutator_eq_elementarySubgroup (hn : 2 ≤ Fintype.card n)
 
 /-- **Uniqueness of the Dieudonné determinant**: a homomorphism `GL n D →* Dˣ/[Dˣ, Dˣ]` that sends
 the diagonal matrix with a chosen diagonal entry `d` and all others `1` to the class of `d` is the
-Dieudonné determinant. It is automatically trivial on elementary matrices, since its target is
-commutative. -/
+Dieudonné determinant. It is automatically trivial on elementary matrices: when `D` has an element
+other than `0` and `1`, these lie in the commutator subgroup by
+`TauCeti.elementarySubgroup_le_commutator_of_ne`, and otherwise `D = 𝔽₂`, so the target
+`Dˣ/[Dˣ, Dˣ]` is trivial. Commutativity of the target alone would not suffice: the sign of
+`GL₂(𝔽₂) ≅ S₃` is nontrivial on `E₂(𝔽₂) = GL₂(𝔽₂)`. -/
 theorem eq_dieudonneDet {φ : GL n D →* Group.Abelianization Dˣ} (i : n)
     (h : ∀ d : Dˣ, φ (diagGL (Pi.mulSingle i d)) = Group.Abelianization.of d) :
     φ = dieudonneDet n D := by
