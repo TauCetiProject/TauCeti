@@ -48,6 +48,14 @@ theorem unitaryConjAverage_apply {N : ℕ} (u : Fin N → unitary A) (z : A) :
     unitaryConjAverage u z = (N : ℂ)⁻¹ • ∑ j : Fin N, (u j : A) * z * star (u j : A) :=
   (rfl)
 
+/-- Rewrites `unitaryConjAverage u z` using real scalar multiplication by `(N : ℝ)⁻¹`. -/
+theorem unitaryConjAverage_apply_real_smul {N : ℕ} (u : Fin N → unitary A)
+    [SMul ℝ A] [IsScalarTower ℝ ℂ A] (z : A) :
+    unitaryConjAverage u z =
+      (N : ℝ)⁻¹ • ∑ j : Fin N, (u j : A) * z * star (u j : A) := by
+  rw [unitaryConjAverage_apply, show (N : ℂ)⁻¹ = (N : ℝ)⁻¹ • (1 : ℂ) by simp, smul_assoc,
+    one_smul]
+
 /-- Unitary conjugation averaging is unital for `0 < N`. -/
 @[simp]
 theorem unitaryConjAverage_one {N : ℕ} (hN : 0 < N) (u : Fin N → unitary A) :
@@ -100,17 +108,10 @@ variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 /-- Unitary conjugation averaging preserves positivity in a unital C⋆-algebra. -/
 theorem unitaryConjAverage_nonneg {N : ℕ} (u : Fin N → unitary A) {z : A} (hz : 0 ≤ z) :
     0 ≤ unitaryConjAverage u z := by
-  rw [unitaryConjAverage_apply]
+  rw [unitaryConjAverage_apply_real_smul]
   have hconj (j : Fin N) : 0 ≤ (u j : A) * z * star (u j : A) := by
     simpa [mul_assoc] using star_left_conjugate_nonneg hz (star (u j : A))
-  have hsum : 0 ≤ ∑ j : Fin N, (u j : A) * z * star (u j : A) :=
-    Finset.sum_nonneg fun j _ ↦ hconj j
-  have hsmul : (N : ℂ)⁻¹ • ∑ j : Fin N, (u j : A) * z * star (u j : A) =
-      (N : ℝ)⁻¹ • ∑ j : Fin N, (u j : A) * z * star (u j : A) := by
-    rw [← algebraMap_smul ℂ (N : ℝ)⁻¹]
-    simp
-  rw [hsmul]
-  exact smul_nonneg (by positivity) hsum
+  exact smul_nonneg (by positivity) (Finset.sum_nonneg fun j _ ↦ hconj j)
 
 /-- Unitary conjugation averaging as a positive linear map `A →ₚ[ℂ] A`. -/
 def unitaryConjAveragePositive {N : ℕ} (u : Fin N → unitary A) : A →ₚ[ℂ] A where

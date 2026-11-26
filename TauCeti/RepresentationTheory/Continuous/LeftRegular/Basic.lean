@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
+public import TauCeti.Analysis.Normed.Lp.LeftTranslation
 public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
 public import TauCeti.MeasureTheory.Function.Lp.CountBasis
 public import Mathlib.MeasureTheory.Function.L2Space
@@ -45,6 +46,9 @@ C⋆-dynamical system. For a compact group with normalized Haar measure and scal
 * `MeasureTheory.Measure.leftRegular_indicatorConstLp_singleton` and
   `MeasureTheory.Measure.leftRegular_countHilbertBasis`: left translation by `g` sends the
   singleton indicator (and point-mass basis vector) at `h` to that at `g * h`.
+* `MeasureTheory.Measure.countHilbertBasis_conjStarAlgEquiv_leftRegular`: conjugating the
+  counting-measure left regular representation by `(L2.countHilbertBasis 𝕜 G).repr` yields
+  `lp.leftTranslation 2 𝕜`.
 
 For the counting-measure obstruction, see Bekka–de la Harpe–Valette,
 *Kazhdan's Property (T)*, Appendix G.5.
@@ -176,5 +180,22 @@ theorem leftRegular_countHilbertBasis {G 𝕜 : Type*} [Group G] [MeasurableSpac
     (count : Measure G).leftRegular 𝕜 𝕜 2 g (L2.countHilbertBasis 𝕜 G h) =
       L2.countHilbertBasis 𝕜 G (g * h) := by
   simp [L2.countHilbertBasis_apply]
+
+/-- Conjugating the counting-measure left regular representation on `L²(G, 𝕜)` by
+`(L2.countHilbertBasis 𝕜 G).repr` gives `lp.leftTranslation 2 𝕜` on `ℓ²(G, 𝕜)`. -/
+theorem countHilbertBasis_conjStarAlgEquiv_leftRegular {G 𝕜 : Type*} [Group G]
+    [MeasurableSpace G] [MeasurableMul G] [MeasurableSingletonClass G] [RCLike 𝕜] (g : G) :
+    (L2.countHilbertBasis 𝕜 G).repr.conjStarAlgEquiv
+        ((count : Measure G).leftRegular 𝕜 𝕜 2 g) =
+      (lp.leftTranslation 2 𝕜 (X := G) (E := 𝕜) g :
+        lp (fun _ : G ↦ 𝕜) 2 →L[𝕜] lp (fun _ : G ↦ 𝕜) 2) := by
+  ext ξ t
+  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, LinearIsometryEquiv.coe_coe'',
+    lp.leftTranslation_apply, smul_eq_mul, L2.countHilbertBasis_repr_apply,
+    ae_count_iff.1 (coeFn_leftRegular (𝕜 := 𝕜) count 2 g
+      ((L2.countHilbertBasis 𝕜 G).repr.symm ξ)) t]
+  dsimp only
+  rw [← L2.countHilbertBasis_repr_apply ((L2.countHilbertBasis 𝕜 G).repr.symm ξ) (g⁻¹ * t),
+    (L2.countHilbertBasis 𝕜 G).repr.apply_symm_apply]
 
 end MeasureTheory.Measure
