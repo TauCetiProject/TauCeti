@@ -88,6 +88,11 @@ theorem prefixSum_succ {k : ℕ} (hk : k < n) (x : Fin n → M) :
     omega
   rw [prefixSum, prefixSum, hfilter, sum_insert (by simp), add_comm]
 
+/-- The prefix sum of length one is the first coordinate. -/
+@[simp]
+theorem prefixSum_one (x : Fin (n + 1) → M) : prefixSum 1 x = x 0 := by
+  rw [prefixSum_succ n.succ_pos, prefixSum_zero, zero_add, Fin.mk_zero]
+
 /-- A prefix sum of length at least `n` is the total sum. -/
 theorem prefixSum_of_le {k : ℕ} (hk : n ≤ k) (x : Fin n → M) : prefixSum k x = ∑ i, x i := by
   rw [prefixSum, filter_true_of_mem fun i _ ↦ i.isLt.trans_le hk]
