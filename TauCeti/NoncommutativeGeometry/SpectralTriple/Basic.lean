@@ -99,13 +99,18 @@ theorem dense_domain : Dense (S.operator.domain : Set H) :=
 theorem separableSpace (S : SpectralTriple A H) : TopologicalSpace.SeparableSpace H :=
   S.isSelfAdjoint_operator.separableSpace_of_hasCompactResolvent S.hasCompactResolvent_operator
 
+/-- Two bounded operators from `H` to a normed space that agree on the domain of `S.operator`
+are equal. -/
+theorem ext_of_eqOn_domain {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {T₁ T₂ : H →L[ℂ] E} (h : ∀ x ∈ S.operator.domain, T₁ x = T₂ x) : T₁ = T₂ :=
+  ContinuousLinearMap.ext <| congrFun <| Continuous.ext_on S.dense_domain
+    T₁.continuous T₂.continuous h
+
 private theorem eq_choose_commutator {a : A} {C : H →L[ℂ] H}
     (hC : LinearPMap.SylvesterEquation S.operator S.operator (S.rep a) C) :
-    C = (S.exists_bounded_commutator a).choose := by
-  ext x
-  exact congrFun (Continuous.ext_on S.dense_domain C.continuous
-    (S.exists_bounded_commutator a).choose.continuous fun y hy ↦ (hC.equation ⟨y, hy⟩).symm.trans
-      ((S.exists_bounded_commutator a).choose_spec.equation ⟨y, hy⟩)) x
+    C = (S.exists_bounded_commutator a).choose :=
+  S.ext_of_eqOn_domain fun y hy ↦ (hC.equation ⟨y, hy⟩).symm.trans
+    ((S.exists_bounded_commutator a).choose_spec.equation ⟨y, hy⟩)
 
 /-- The canonical bounded extension `a ↦ [D, π(a)]` of the commutator with `D`, as a `ℂ`-linear
 map `A →ₗ[ℂ] (H →L[ℂ] H)`. -/
@@ -166,23 +171,24 @@ theorem commutator_mul (a b : A) :
 theorem commutator_star (a : A) :
     S.commutator (star a) = -star (S.commutator a) := by
   refine (S.eq_commutator_of_domain fun x ↦ ?_).symm
-  refine ext_inner_left ℂ <| congrFun <| Continuous.ext_on S.dense_domain
-    (continuous_id.inner continuous_const) (continuous_id.inner continuous_const) fun y hy ↦ ?_
+  refine ext_inner_right ℂ fun y ↦ DFunLike.congr_fun
+    (S.ext_of_eqOn_domain (T₁ := innerSL ℂ _) (T₂ := innerSL ℂ _) fun z hz ↦ ?_) y
+  simp only [innerSL_apply_apply]
   have hπ_adj : S.rep (star a) = (S.rep a).adjoint := by
     rw [map_star, ContinuousLinearMap.star_eq_adjoint]
-  have h1 : ⟪y, S.operator ⟨S.rep (star a) x, S.rep_mem_domain (star a) x.property⟩⟫_ℂ =
-      ⟪S.rep a (S.operator ⟨y, hy⟩), (x : H)⟫_ℂ := by
-    rw [← S.isSelfAdjoint_operator.isFormalAdjoint ⟨y, hy⟩
-      ⟨S.rep (star a) x, S.rep_mem_domain (star a) x.property⟩]
+  have h1 : ⟪S.operator ⟨S.rep (star a) x, S.rep_mem_domain (star a) x.property⟩, z⟫_ℂ =
+      ⟪(x : H), S.rep a (S.operator ⟨z, hz⟩)⟫_ℂ := by
+    rw [S.isSelfAdjoint_operator.isFormalAdjoint
+      ⟨S.rep (star a) x, S.rep_mem_domain (star a) x.property⟩ ⟨z, hz⟩]
     dsimp only
-    rw [hπ_adj, ContinuousLinearMap.adjoint_inner_right]
-  have h2 : ⟪y, S.rep (star a) (S.operator x)⟫_ℂ =
-      ⟪S.operator ⟨S.rep a y, S.rep_mem_domain a hy⟩, (x : H)⟫_ℂ := by
-    rw [hπ_adj, ContinuousLinearMap.adjoint_inner_right,
-      ← S.isSelfAdjoint_operator.isFormalAdjoint ⟨S.rep a y, S.rep_mem_domain a hy⟩ x]
-  rw [inner_sub_right, h1, h2, neg_apply, inner_neg_right, ContinuousLinearMap.star_eq_adjoint,
-    ContinuousLinearMap.adjoint_inner_right, ← S.commutator_apply_domain a ⟨y, hy⟩,
-    inner_sub_left, neg_sub]
+    rw [hπ_adj, ContinuousLinearMap.adjoint_inner_left]
+  have h2 : ⟪S.rep (star a) (S.operator x), z⟫_ℂ =
+      ⟪(x : H), S.operator ⟨S.rep a z, S.rep_mem_domain a hz⟩⟫_ℂ := by
+    rw [hπ_adj, ContinuousLinearMap.adjoint_inner_left,
+      S.isSelfAdjoint_operator.isFormalAdjoint x ⟨S.rep a z, S.rep_mem_domain a hz⟩]
+  rw [inner_sub_left, h1, h2, neg_apply, inner_neg_left, ContinuousLinearMap.star_eq_adjoint,
+    ContinuousLinearMap.adjoint_inner_left, ← S.commutator_apply_domain a ⟨z, hz⟩,
+    inner_sub_right, neg_sub]
 
 /-- Taking the adjoint preserves the norm of the commutator `[D, π(a)]`. -/
 @[simp]
@@ -358,10 +364,8 @@ private theorem ofFiniteDimensional_operator_apply [FiniteDimensional ℂ H]
     (π : A →⋆ₐ[ℂ] H →L[ℂ] H) (D : H →L[ℂ] H) (hD : IsSelfAdjoint D)
     (x : (ofFiniteDimensional π D hD).operator.domain) :
     (ofFiniteDimensional π D hD).operator x = D x :=
-  ((LinearPMap.ext_iff.mp (ofFiniteDimensional_operator π D hD)).2
-      (hf := x.property) (hg := Submodule.mem_top)).trans
-    ((LinearMap.toPMap_apply (D : H →ₗ[ℂ] H) ⊤ ⟨x, Submodule.mem_top⟩).trans
-      (congrFun (ContinuousLinearMap.coe_coe D) (x : H)))
+  -- Holds by definition of `ofFiniteDimensional`.
+  LinearMap.toPMap_apply (D : H →ₗ[ℂ] H) ⊤ x
 
 @[simp]
 theorem ofFiniteDimensional_commutator [FiniteDimensional ℂ H] (π : A →⋆ₐ[ℂ] H →L[ℂ] H)
@@ -386,10 +390,7 @@ theorem star_grading : star S.grading = S.grading :=
 /-- The grading of an even spectral triple anticommutes with every commutator `[D, π(a)]`. -/
 theorem grading_mul_commutator (a : A) :
     S.grading * S.commutator a = -(S.commutator a * S.grading) := by
-  ext x
-  refine congrFun (Continuous.ext_on S.dense_domain
-    (S.grading * S.commutator a).continuous (-(S.commutator a * S.grading)).continuous
-    fun y hy ↦ ?_) x
+  refine S.toSpectralTriple.ext_of_eqOn_domain fun y hy ↦ ?_
   have hcomm (z : H) : S.grading (S.rep a z) = S.rep a (S.grading z) := by
     simpa [ContinuousLinearMap.mul_def] using
       congrArg (fun T : H →L[ℂ] H ↦ T z) (S.commute_grading_rep a).eq
