@@ -124,15 +124,16 @@ def prodAct (act₁ : ∀ I : Finset A₁, ((a : I) → Γ₁ a) →* (T₁ I �
     (act₂ : ∀ I : Finset A₂, ((b : I) → Γ₂ b) →* (T₂ I ≃ₜ T₂ I)) (I : Finset (A₁ ⊕ A₂)) :
     ((α : I) → Sum.elim Γ₁ Γ₂ α) →* (T₁ I.toLeft × T₂ I.toRight ≃ₜ T₁ I.toLeft × T₂ I.toRight)
     where
-  toFun g := (act₁ I.toLeft (Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I g).1).prodCongr
-    (act₂ I.toRight (Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I g).2)
+  toFun g :=
+    (act₁ I.toLeft ((Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I I.toLeft I.toRight) g).1).prodCongr
+      (act₂ I.toRight ((Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I I.toLeft I.toRight) g).2)
   map_one' := Homeomorph.ext fun x ↦ Prod.ext (DFunLike.congr_fun (map_one (act₁ I.toLeft)) x.1)
     (DFunLike.congr_fun (map_one (act₂ I.toRight)) x.2)
   map_mul' g g' := by
     -- `Equiv.piFinsetSum` underlies the multiplicative equivalence `MulEquiv.piFinsetSum`.
-    have h := map_mul (MulEquiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I) g g'
+    have h := map_mul (MulEquiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I I.toLeft I.toRight) g g'
     rw [MulEquiv.coe_piFinsetSum] at h
-    set e := Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I
+    set e := Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I I.toLeft I.toRight
     ext x
     · exact (congrArg (fun p ↦ act₁ I.toLeft p.1 x.1) h).trans
         (DFunLike.congr_fun (map_mul (act₁ I.toLeft) (e g).1 (e g').1) x.1)
@@ -143,8 +144,9 @@ def prodAct (act₁ : ∀ I : Finset A₁, ((a : I) → Γ₁ a) →* (T₁ I �
 theorem prodAct_apply (act₁ : ∀ I : Finset A₁, ((a : I) → Γ₁ a) →* (T₁ I ≃ₜ T₁ I))
     (act₂ : ∀ I : Finset A₂, ((b : I) → Γ₂ b) →* (T₂ I ≃ₜ T₂ I)) (I : Finset (A₁ ⊕ A₂))
     (g : (α : I) → Sum.elim Γ₁ Γ₂ α) (x : T₁ I.toLeft × T₂ I.toRight) :
-    prodAct act₁ act₂ I g x = (act₁ I.toLeft (Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I g).1 x.1,
-      act₂ I.toRight (Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I g).2 x.2) :=
+    prodAct act₁ act₂ I g x =
+      (act₁ I.toLeft ((Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I I.toLeft I.toRight) g).1 x.1,
+        act₂ I.toRight ((Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) I I.toLeft I.toRight) g).2 x.2) :=
   (rfl)
 
 end Data
@@ -277,7 +279,7 @@ private theorem prodFootprintMap_eq_prodFootprintMap_iff {I J : Finset (A₁ ⊕
     prodFootprintMap 𝒜₁ 𝒜₂ h x = prodFootprintMap 𝒜₁ 𝒜₂ h y ↔
       ∃ g : (α : J) → Sum.elim Γ₁ Γ₂ α,
         Finset.restrict₂ (π := Sum.elim Γ₁ Γ₂) h g = 1 ∧ prodAct act₁ act₂ J g x = y := by
-  let e := Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) J
+  let e := Equiv.piFinsetSum (Sum.elim Γ₁ Γ₂) J J.toLeft J.toRight
   rw [prodFootprintMap_apply, prodFootprintMap_apply, Prod.mk.injEq,
     𝒜₁.footprintMap_eq_footprintMap_iff, 𝒜₂.footprintMap_eq_footprintMap_iff]
   constructor
@@ -359,7 +361,7 @@ def prod : ImplicitAtlas.Core (Sum.elim Γ₁ Γ₂) (Sum.elim E₁ E₂) (sumEl
     rw [prodFootprintMap_apply] at hx
     rw [prodAct_apply, Prod.ext_iff] at hgx
     obtain ⟨hg₁, hg₂⟩ := (restrict₂_eq_one_iff_piFinsetSum h g).1 hg
-    refine (MulEquiv.piFinsetSum (Sum.elim Γ₁ Γ₂) J).map_eq_one_iff.1 ?_
+    refine (MulEquiv.piFinsetSum (Sum.elim Γ₁ Γ₂) J J.toLeft J.toRight).map_eq_one_iff.1 ?_
     rw [MulEquiv.coe_piFinsetSum]
     exact Prod.ext (𝒜₁.eq_one_of_act_eq (toLeft_subset_toLeft h) ⟨x.val.1, _⟩ hx.1 _ hg₁ hgx.1)
       (𝒜₂.eq_one_of_act_eq (toRight_subset_toRight h) ⟨x.val.2, _⟩ hx.2 _ hg₂ hgx.2)
@@ -468,15 +470,18 @@ noncomputable def prod (𝒜₁ : ImplicitAtlas Γ₁ E₁ ρ₁ T₁ act₁ X�
         EuclideanSpace ℝ (Fin (n₁ + n₂)) × ∀ α : ↥(J \ I), Sum.elim E₁ E₂ α :=
       (Homeomorph.prodProdProdComm _ _ _ _).trans
         (EuclideanSpace.finAddEquivProd.symm.toHomeomorph.prodCongr
-          (Homeomorph.piFinsetSumSdiff (Sum.elim E₁ E₂) I J).symm)
+          (Homeomorph.piFinsetSum (Sum.elim E₁ E₂) (J \ I) (J.toLeft \ I.toLeft)
+            (J.toRight \ I.toRight)).symm)
     -- The obstruction component of `F`: `Homeomorph.prodProdProdComm` exchanges the middle
     -- factors and `Homeomorph.prodCongr` acts factorwise. This is stated once here, with the
-    -- pair typed as the domain of `Homeomorph.piFinsetSumSdiff`, because that domain mentions
+    -- pair typed as the domain of `Homeomorph.piFinsetSum`, because that domain mentions
     -- `Sum.elim E₁ E₂ (.inl a)` where `F` mentions `E₁ a`: the apply lemmas of the wrappers
     -- (`Homeomorph.coe_prodCongr`) do not rewrite inside `F` across this difference.
-    have hF (p) : (F p).2 = (Homeomorph.piFinsetSumSdiff (Sum.elim E₁ E₂) I J).symm
-        ((p.1.2, p.2.2) : (∀ a : ↥(J.toLeft \ I.toLeft), Sum.elim E₁ E₂ (.inl a)) ×
-          ∀ b : ↥(J.toRight \ I.toRight), Sum.elim E₁ E₂ (.inr b)) :=
+    have hF (p) : (F p).2 =
+        (Homeomorph.piFinsetSum (Sum.elim E₁ E₂) (J \ I) (J.toLeft \ I.toLeft)
+          (J.toRight \ I.toRight)).symm
+          ((p.1.2, p.2.2) : (∀ a : ↥(J.toLeft \ I.toLeft), Sum.elim E₁ E₂ (.inl a)) ×
+            ∀ b : ↥(J.toRight \ I.toRight), Sum.elim E₁ E₂ (.inr b)) :=
       (rfl)
     refine ⟨n₁ + n₂, ?_, (e₁.prod e₂).transHomeomorph F, ⟨hxe₁, hxe₂⟩, fun y hy ↦ ?_⟩
     · have hsum : ∑ α ∈ I, (Module.finrank ℝ (Sum.elim E₁ E₂ α) : ℤ) =
@@ -492,10 +497,10 @@ noncomputable def prod (𝒜₁ : ImplicitAtlas Γ₁ E₁ ρ₁ T₁ act₁ X�
       refine funext fun ⟨α, hα⟩ ↦ ?_
       cases α with
       | inl a =>
-        rw [Homeomorph.piFinsetSumSdiff_symm_apply_inl]
+        rw [Homeomorph.coe_piFinsetSum_symm, Equiv.piFinsetSum_symm_apply_inl]
         simp [he₁ y.1 hy.1, kuranishiSdiff_apply]
       | inr b =>
-        rw [Homeomorph.piFinsetSumSdiff_symm_apply_inr]
+        rw [Homeomorph.coe_piFinsetSum_symm, Equiv.piFinsetSum_symm_apply_inr]
         simp [he₂ y.2 hy.2, kuranishiSdiff_apply]
 
 @[simp]

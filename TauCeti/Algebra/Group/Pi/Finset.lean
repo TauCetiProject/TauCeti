@@ -26,8 +26,9 @@ For an embedding `f : ι' ↪ ι`, a family indexed by `s` with values in `π (f
 by `s.map f`, by the multiplicative equivalence
 `MulEquiv.piFinsetMap π f s : (∀ i : s, π (f i)) ≃* ∀ j : s.map f, π j`, which commutes with
 restriction. A family indexed by a finite `s ⊆ ι ⊕ ι'` is the pair of its restrictions to
-`s.toLeft` and `s.toRight`, by the multiplicative equivalence
-`MulEquiv.piFinsetSum π s : (∀ i : s, π i) ≃* (∀ a : s.toLeft, π (.inl a)) × ∀ b, π (.inr b)`,
+`s.toLeft` and `s.toRight` (or, more generally, to its sets `l` and `r` of left and right
+indices), by the multiplicative equivalence
+`MulEquiv.piFinsetSum π s l r : (∀ i : s, π i) ≃* (∀ a : l, π (.inl a)) × ∀ b : r, π (.inr b)`,
 so such a family restricts to `1` on a smaller finite set exactly when both its parts do.
 
 These are the projections `Γ_J → Γ_I`, the disjoint-union identifications
@@ -208,24 +209,30 @@ end Map
 
 section Sum
 
-variable {ι ι' : Type*} (π : ι ⊕ ι' → Type*) [∀ i, Mul (π i)]
+variable {ι ι' : Type*} (π : ι ⊕ ι' → Type*) [∀ i, Mul (π i)] (s : Finset (ι ⊕ ι')) (l : Finset ι)
+  (r : Finset ι')
 
-/-- Splitting a family on a finite `s ⊆ ι ⊕ ι'` into its restrictions to `s.toLeft` and
-`s.toRight`. This is `Equiv.piFinsetSum` as a `MulEquiv`. -/
-@[to_additive /-- Splitting a family on a finite `s ⊆ ι ⊕ ι'` into its restrictions to
-`s.toLeft` and `s.toRight`. This is `Equiv.piFinsetSum` as an `AddEquiv`. -/]
-def piFinsetSum (s : Finset (ι ⊕ ι')) :
-    (∀ i : s, π i) ≃* (∀ a : s.toLeft, π (.inl a)) × ∀ b : s.toRight, π (.inr b) where
-  __ := Equiv.piFinsetSum π s
+/-- Splitting a family on a finite `s ⊆ ι ⊕ ι'` into its restrictions to its sets `l` and `r` of
+left and right indices, such as `s.toLeft` and `s.toRight`. This is `Equiv.piFinsetSum` as a
+`MulEquiv`. -/
+@[to_additive /-- Splitting a family on a finite `s ⊆ ι ⊕ ι'` into its restrictions to its sets
+`l` and `r` of left and right indices, such as `s.toLeft` and `s.toRight`. This is
+`Equiv.piFinsetSum` as an `AddEquiv`. -/]
+def piFinsetSum (hl : ∀ a, .inl a ∈ s ↔ a ∈ l := by simp)
+    (hr : ∀ b, .inr b ∈ s ↔ b ∈ r := by simp) :
+    (∀ i : s, π i) ≃* (∀ a : l, π (.inl a)) × ∀ b : r, π (.inr b) where
+  __ := Equiv.piFinsetSum π s l r hl hr
   map_mul' _ _ := (rfl)
 
+variable (hl : ∀ a, .inl a ∈ s ↔ a ∈ l) (hr : ∀ b, .inr b ∈ s ↔ b ∈ r)
+
 @[to_additive (attr := simp)]
-theorem coe_piFinsetSum (s : Finset (ι ⊕ ι')) : ⇑(piFinsetSum π s) = Equiv.piFinsetSum π s :=
+theorem coe_piFinsetSum : ⇑(piFinsetSum π s l r hl hr) = Equiv.piFinsetSum π s l r hl hr :=
   (rfl)
 
 @[to_additive (attr := simp)]
-theorem coe_piFinsetSum_symm (s : Finset (ι ⊕ ι')) :
-    ⇑(piFinsetSum π s).symm = (Equiv.piFinsetSum π s).symm :=
+theorem coe_piFinsetSum_symm :
+    ⇑(piFinsetSum π s l r hl hr).symm = (Equiv.piFinsetSum π s l r hl hr).symm :=
   (rfl)
 
 end Sum
@@ -234,7 +241,7 @@ end MulEquiv
 
 namespace Finset
 
-variable {ι ι' : Type*} {π : ι ⊕ ι' → Type*} [∀ i, MulOneClass (π i)]
+variable {ι ι' : Type*} {π : ι ⊕ ι' → Type*} [∀ i, One (π i)]
 
 /-- A family `f` on `t ⊆ ι ⊕ ι'` restricts to `1` on `s ⊆ t` exactly when its left and right parts
 restrict to `1` on `s.toLeft` and `s.toRight`. For families of groups: the subgroup `Γ_(t \ s)`
@@ -244,10 +251,11 @@ and right parts restrict to `0` on `s.toLeft` and `s.toRight`. -/]
 theorem restrict₂_eq_one_iff_piFinsetSum {s t : Finset (ι ⊕ ι')} (h : s ⊆ t) (f : ∀ i : t, π i) :
     restrict₂ h f = 1 ↔
       restrict₂ (π := fun a ↦ π (.inl a)) (toLeft_subset_toLeft h)
-          (Equiv.piFinsetSum π t f).1 = 1 ∧
+          ((Equiv.piFinsetSum π t t.toLeft t.toRight) f).1 = 1 ∧
         restrict₂ (π := fun b ↦ π (.inr b)) (toRight_subset_toRight h)
-          (Equiv.piFinsetSum π t f).2 = 1 := by
-  rw [← (MulEquiv.piFinsetSum π s).map_eq_one_iff, MulEquiv.coe_piFinsetSum,
+          ((Equiv.piFinsetSum π t t.toLeft t.toRight) f).2 = 1 := by
+  -- `Equiv.piFinsetSum` sends `1` to `1` by definition.
+  rw [← (Equiv.piFinsetSum π s s.toLeft s.toRight).injective.eq_iff' (b := 1) (c := 1) (rfl),
     Equiv.piFinsetSum_restrict₂, Prod.mk_eq_one]
 
 end Finset

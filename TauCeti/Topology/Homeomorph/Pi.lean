@@ -12,17 +12,15 @@ public import TauCeti.Data.Finset.Sum
 /-!
 # Homeomorphisms of products of subspaces, of products of pairs and of products over sums
 
-Four equivalences are homeomorphisms for the product topologies:
+Three equivalences are homeomorphisms for the product topologies:
 
 * `Homeomorph.Set.univPi`: the subspace `Set.pi univ s` of a product is the product of the
   subspaces `s i`, upgrading `Equiv.Set.univPi`;
 * `Homeomorph.arrowProdHomeomorphProdArrow`: a product of pairs is a pair of products,
   `(∀ i, X i × Y i) ≃ₜ (∀ i, X i) × (∀ i, Y i)`, upgrading `Equiv.arrowProdEquivProdArrow`;
 * `Homeomorph.piFinsetSum`: a product over a finite `s ⊆ ι ⊕ ι'` is the pair of the products over
-  `s.toLeft` and `s.toRight`, upgrading `Equiv.piFinsetSum`;
-* `Homeomorph.piFinsetSumSdiff`: a product over the difference `t \ s` of finite sets of `ι ⊕ ι'`
-  is the pair of the products over `t.toLeft \ s.toLeft` and `t.toRight \ s.toRight`, the splitting
-  `Homeomorph.piFinsetSum` at `t \ s` up to `Finset.toLeft_sdiff` and `Finset.toRight_sdiff`.
+  its sets of left and right indices, such as `s.toLeft` and `s.toRight`, or
+  `t.toLeft \ s.toLeft` and `t.toRight \ s.toRight` for `t \ s`, upgrading `Equiv.piFinsetSum`.
 -/
 
 public section
@@ -103,13 +101,16 @@ end arrowProd
 section piFinsetSum
 
 variable {ι' : Type*} (X : ι ⊕ ι' → Type*) [∀ i, TopologicalSpace (X i)] (s : Finset (ι ⊕ ι'))
+  (l : Finset ι) (r : Finset ι')
 
-/-- A product over a finite `s ⊆ ι ⊕ ι'` is homeomorphic to the pair of the products over its left
-part `s.toLeft` and its right part `s.toRight`. This is `Equiv.piFinsetSum` as a homeomorphism,
-the finite-set analogue of `Homeomorph.sumPiEquivProdPi`. -/
-def piFinsetSum :
-    (∀ i : s, X i) ≃ₜ (∀ a : s.toLeft, X (.inl a)) × ∀ b : s.toRight, X (.inr b) where
-  toEquiv := Equiv.piFinsetSum X s
+/-- A product over a finite `s ⊆ ι ⊕ ι'` is homeomorphic to the pair of the products over its sets
+`l` and `r` of left and right indices, such as `s.toLeft` and `s.toRight`. This is
+`Equiv.piFinsetSum` as a homeomorphism, the finite-set analogue of `Homeomorph.sumPiEquivProdPi`.
+The membership conditions are discharged by `simp` when omitted. -/
+def piFinsetSum (hl : ∀ a, .inl a ∈ s ↔ a ∈ l := by simp)
+    (hr : ∀ b, .inr b ∈ s ↔ b ∈ r := by simp) :
+    (∀ i : s, X i) ≃ₜ (∀ a : l, X (.inl a)) × ∀ b : r, X (.inr b) where
+  toEquiv := Equiv.piFinsetSum X s l r hl hr
   continuous_toFun := (continuous_pi fun _ ↦ continuous_apply _).prodMk
     (continuous_pi fun _ ↦ continuous_apply _)
   continuous_invFun := continuous_pi fun ⟨i, _⟩ ↦ by
@@ -117,85 +118,25 @@ def piFinsetSum :
     exacts [(continuous_apply _).comp (f := Prod.fst) continuous_fst,
       (continuous_apply _).comp (f := Prod.snd) continuous_snd]
 
+variable (hl : ∀ a, .inl a ∈ s ↔ a ∈ l) (hr : ∀ b, .inr b ∈ s ↔ b ∈ r)
+
 /-- The underlying equivalence of `Homeomorph.piFinsetSum` is `Equiv.piFinsetSum`. -/
 @[simp]
-theorem toEquiv_piFinsetSum : (piFinsetSum X s).toEquiv = Equiv.piFinsetSum X s :=
+theorem toEquiv_piFinsetSum :
+    (piFinsetSum X s l r hl hr).toEquiv = Equiv.piFinsetSum X s l r hl hr :=
   (rfl)
 
 /-- `Homeomorph.piFinsetSum` acts as `Equiv.piFinsetSum`. -/
 @[simp]
-theorem coe_piFinsetSum : ⇑(piFinsetSum X s) = Equiv.piFinsetSum X s :=
+theorem coe_piFinsetSum : ⇑(piFinsetSum X s l r hl hr) = Equiv.piFinsetSum X s l r hl hr :=
   (rfl)
 
 /-- The inverse of `Homeomorph.piFinsetSum` acts as the inverse of `Equiv.piFinsetSum`. -/
 @[simp]
-theorem coe_piFinsetSum_symm : ⇑(piFinsetSum X s).symm = (Equiv.piFinsetSum X s).symm :=
+theorem coe_piFinsetSum_symm :
+    ⇑(piFinsetSum X s l r hl hr).symm = (Equiv.piFinsetSum X s l r hl hr).symm :=
   (rfl)
 
 end piFinsetSum
-
-section piFinsetSumSdiff
-
-variable {ι' : Type*} [DecidableEq ι] [DecidableEq ι'] (X : ι ⊕ ι' → Type*)
-  [∀ i, TopologicalSpace (X i)] (s t : Finset (ι ⊕ ι'))
-
-/-- A product over the difference `t \ s` of finite sets of `ι ⊕ ι'` is homeomorphic to the pair of
-the products over the differences `t.toLeft \ s.toLeft` and `t.toRight \ s.toRight` of their left
-and right parts. This is `Homeomorph.piFinsetSum` at `t \ s` up to the equalities
-`Finset.toLeft_sdiff` and `Finset.toRight_sdiff`; it is defined directly, so that an index keeps its
-value and only the proof of its membership changes, and its evaluation lemmas hold by definition. -/
-def piFinsetSumSdiff :
-    (∀ i : ↥(t \ s), X i) ≃ₜ
-      (∀ a : ↥(t.toLeft \ s.toLeft), X (.inl a)) × ∀ b : ↥(t.toRight \ s.toRight), X (.inr b) where
-  toFun f :=
-    (fun a ↦ f ⟨.inl a, by rw [← Finset.mem_toLeft, Finset.toLeft_sdiff]; exact a.property⟩,
-      fun b ↦ f ⟨.inr b, by rw [← Finset.mem_toRight, Finset.toRight_sdiff]; exact b.property⟩)
-  invFun p := fun
-    | ⟨.inl a, h⟩ => p.1 ⟨a, by rw [← Finset.toLeft_sdiff]; exact Finset.mem_toLeft.2 h⟩
-    | ⟨.inr b, h⟩ => p.2 ⟨b, by rw [← Finset.toRight_sdiff]; exact Finset.mem_toRight.2 h⟩
-  left_inv f := funext fun ⟨i, _⟩ ↦ by cases i <;> rfl
-  right_inv _ := rfl
-  continuous_toFun := (continuous_pi fun _ ↦ continuous_apply _).prodMk
-    (continuous_pi fun _ ↦ continuous_apply _)
-  continuous_invFun := continuous_pi fun ⟨i, _⟩ ↦ by
-    cases i
-    exacts [(continuous_apply _).comp (f := Prod.fst) continuous_fst,
-      (continuous_apply _).comp (f := Prod.snd) continuous_snd]
-
-/-- The left part of the image of a family under `Homeomorph.piFinsetSumSdiff` is its restriction
-to `t.toLeft \ s.toLeft`. -/
-@[simp]
-theorem piFinsetSumSdiff_apply_fst (f : ∀ i : ↥(t \ s), X i) (a : ↥(t.toLeft \ s.toLeft)) :
-    (piFinsetSumSdiff X s t f).1 a =
-      f ⟨.inl a, by rw [← Finset.mem_toLeft, Finset.toLeft_sdiff]; exact a.property⟩ :=
-  (rfl)
-
-/-- The right part of the image of a family under `Homeomorph.piFinsetSumSdiff` is its restriction
-to `t.toRight \ s.toRight`. -/
-@[simp]
-theorem piFinsetSumSdiff_apply_snd (f : ∀ i : ↥(t \ s), X i) (b : ↥(t.toRight \ s.toRight)) :
-    (piFinsetSumSdiff X s t f).2 b =
-      f ⟨.inr b, by rw [← Finset.mem_toRight, Finset.toRight_sdiff]; exact b.property⟩ :=
-  (rfl)
-
-/-- The inverse of `Homeomorph.piFinsetSumSdiff` reads the left family at a left-tagged index. -/
-@[simp]
-theorem piFinsetSumSdiff_symm_apply_inl
-    (p : (∀ a : ↥(t.toLeft \ s.toLeft), X (.inl a)) × ∀ b : ↥(t.toRight \ s.toRight), X (.inr b))
-    (a : ι) (h : .inl a ∈ t \ s) :
-    (piFinsetSumSdiff X s t).symm p ⟨.inl a, h⟩ =
-      p.1 ⟨a, by rw [← Finset.toLeft_sdiff]; exact Finset.mem_toLeft.2 h⟩ :=
-  (rfl)
-
-/-- The inverse of `Homeomorph.piFinsetSumSdiff` reads the right family at a right-tagged index. -/
-@[simp]
-theorem piFinsetSumSdiff_symm_apply_inr
-    (p : (∀ a : ↥(t.toLeft \ s.toLeft), X (.inl a)) × ∀ b : ↥(t.toRight \ s.toRight), X (.inr b))
-    (b : ι') (h : .inr b ∈ t \ s) :
-    (piFinsetSumSdiff X s t).symm p ⟨.inr b, h⟩ =
-      p.2 ⟨b, by rw [← Finset.toRight_sdiff]; exact Finset.mem_toRight.2 h⟩ :=
-  (rfl)
-
-end piFinsetSumSdiff
 
 end Homeomorph
