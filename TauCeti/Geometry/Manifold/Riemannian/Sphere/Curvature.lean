@@ -66,11 +66,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 local notation "ι" => ((↑) : sphere (0 : E) 1 → E)
 local notation "∇" => leviCivitaConnection (𝓡 n) (sphere (0 : E) 1)
 
-/-- The height function `p ↦ ⟪a, p⟫` on the unit sphere is smooth. -/
-private theorem contMDiff_height (a : E) :
-    ContMDiff (𝓡 n) 𝓘(ℝ) ω fun q : sphere (0 : E) 1 ↦ inner ℝ a (q : E) :=
-  (innerSL ℝ a).contDiff.contMDiff.comp contMDiff_coe_sphere
-
 variable (n) in
 /-- The gradient of the height function `p ↦ ⟪a, p⟫`. -/
 private def field (a : E) (p : sphere (0 : E) 1) : TangentSpace (𝓡 n) p :=
@@ -79,7 +74,7 @@ private def field (a : E) (p : sphere (0 : E) 1) : TangentSpace (𝓡 n) p :=
 private theorem contMDiff_field (a : E) :
     ContMDiff (𝓡 n) (𝓡 n).tangent ∞
       (fun p ↦ (⟨p, field n a p⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) :=
-  Manifold.contMDiff_mgradient ((contMDiff_height (n := n) a).of_le le_top)
+  Manifold.contMDiff_mgradient ((contMDiff_inner_coe_sphere (n := n) a).of_le le_top)
 
 private theorem mdifferentiableAt_field (a : E) (p : sphere (0 : E) 1) :
     MDifferentiableAt (𝓡 n) (𝓡 n).tangent
@@ -109,7 +104,7 @@ private theorem mvfderiv_mvfderiv_coe_field (b : E) (p : sphere (0 : E) 1)
   have hι : MDifferentiableAt (𝓡 n) 𝓘(ℝ, E) ι p :=
     (contMDiff_coe_sphere (m := 1) p).mdifferentiableAt one_ne_zero
   have hh : MDifferentiableAt (𝓡 n) 𝓘(ℝ) (fun q : sphere (0 : E) 1 ↦ inner ℝ b (q : E)) p :=
-    (contMDiff_height (n := n) b p).mdifferentiableAt (by simp)
+    (contMDiff_inner_coe_sphere (n := n) b p).mdifferentiableAt (by simp)
   have hhι : MDifferentiableAt (𝓡 n) 𝓘(ℝ, E)
       (fun q : sphere (0 : E) 1 ↦ inner ℝ b (q : E) • (q : E)) p :=
     hh.smul hι
@@ -152,7 +147,7 @@ private theorem leviCivitaConnection_leviCivitaConnection_field (a b c : E)
       (fun q : sphere (0 : E) 1 ↦ -inner ℝ c (q : E)) • field n b :=
     funext fun y ↦ leviCivitaConnection_field b c y
   have hg : MDifferentiableAt (𝓡 n) 𝓘(ℝ) (fun q : sphere (0 : E) 1 ↦ -inner ℝ c (q : E)) p :=
-    ((contMDiff_height (n := n) c).neg p).mdifferentiableAt (by simp)
+    ((contMDiff_inner_coe_sphere (n := n) c).neg p).mdifferentiableAt (by simp)
   rw [hfun, ∇.isCovariantDerivativeOnUniv.leibniz (mdifferentiableAt_field b p) hg]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
     leviCivitaConnection_field, mvfderiv_fun_neg, neg_apply, mvfderiv_inner_coe_sphere,

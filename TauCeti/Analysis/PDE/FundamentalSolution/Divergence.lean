@@ -10,11 +10,16 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
+public import Mathlib.Topology.MetricSpace.Holder
+public import TauCeti.MeasureTheory.Function.Morrey
 import Mathlib.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.CompactSupport
+import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
+import TauCeti.MeasureTheory.Integral.DistRpow
 import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Scalar data as minus divergences of vector fields
@@ -41,6 +46,20 @@ accepts data in divergence form: localizing a weak solution of `-div(a ∇u) = -
 `ζ` produces the scalar term `⟪G - a ∇u, ∇ζ⟫`, and replacing it by its field `H` costs only its
 `L^q` norm, a lower order of integrability of `∇u` than the `Lᵖ` norm being estimated.
 
+## Data in a Morrey space
+
+For a Schauder estimate the field must be Hölder continuous rather than integrable. Let
+`0 < α < 1` and let `h` be measurable, compactly supported, and in the Morrey space
+`L^{1, d - 1 + α}(E)`: its mass on closed balls is `∫_{B(x, r)} |h| ≤ M r^(d - 1 + α)`. Then the
+same field `H` is `α`-Hölder, with Hölder constant `C M` for a constant `C` depending only on `E`,
+`μ` and `α`
+(`TauCeti.exists_holderWith_and_integral_inner_gradient_eq_of_morreyNormPow_le`). The space
+contains compactly supported `L^q` data for `q = d / (1 - α)`
+(`TauCeti.MeasureTheory.morreyNormPow_le_eLpNorm_rpow_mul`). The proof is the potential estimate
+behind Morrey's lemma (Gilbarg–Trudinger, Section 7.9), applied to the kernel of `H`, which is
+homogeneous of degree `1 - d`. This is how zero-order terms with Morrey coefficients enter Morrey's
+`C^{1,α}` estimates for divergence-form equations.
+
 ## The argument
 
 Pairing the convolution with `∂ᵢφ` and exchanging the integrals
@@ -52,10 +71,20 @@ field is pointwise at most a multiple of the Riesz potential `I₁ |h|`
 (`TauCeti.rieszPotential`), which the Hardy–Littlewood–Sobolev inequality
 (`TauCeti.exists_eLpNorm_rieszPotential_le`) bounds in `Lᵖ`.
 
+For the Hölder estimate at two points `x`, `x'` at distance `δ`, split the integral defining
+`H(x) - H(x')` at the ball `B(x, 2δ)`. Inside, each kernel is at most a multiple of `‖·‖^(1 - d)`,
+whose integral against `|h|` over a ball of radius `ρ` about its pole is at most a multiple of
+`M ρ^α` (`TauCeti.setLIntegral_ball_ofReal_dist_rpow_neg_mul_le`). Outside, the smoothness of the
+radial field `z ↦ ‖z‖⁻ᵈ z` (`TauCeti.norm_norm_rpow_smul_sub_le`) bounds the difference of the
+kernels by a multiple of `δ ‖x - y‖⁻ᵈ`, whose integral against `|h|` off the ball is at most a
+multiple of `M δ^(α - 1)` (`TauCeti.setLIntegral_ofReal_dist_rpow_neg_mul_le`).
+
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Lemma 4.1 (the gradient of the Newtonian potential) and Lemma 7.12 (potential estimates).
+  Lemma 4.1 (the gradient of the Newtonian potential), Lemma 7.12 (potential estimates) and
+  Section 7.9 (Morrey's estimate).
+* C. B. Morrey, *Multiple Integrals in the Calculus of Variations*, Springer, 1966, §3.5 and §5.5.
 * E. M. Stein, *Singular Integrals and Differentiability Properties of Functions*, Chapter V,
   §1.2 (the Hardy–Littlewood–Sobolev inequality).
 -/
@@ -278,6 +307,339 @@ private theorem integral_inner_divField_gradient [FiniteDimensional ℝ E] [Bore
         simp_rw [Finset.mul_sum]
     _ = ∫ t, h t * φ t ∂μ := by
         simp_rw [sum_integral_fderiv_mul_divKernel_sub b hφ hφc]
+
+/-! ### Data in a Morrey space
+
+If the mass of `|h|` on balls of radius `r` is at most `M r^(d - 1 + α)`, `0 < α < 1`, then the
+field `H` is `α`-Hölder, with constant a multiple of `M`. Near the two points compared, the kernel
+is integrated against `|h|` on dyadic annuli; away from them, the difference of the kernels decays
+like `‖x - y‖⁻ᵈ`. -/
+
+section Morrey
+
+/-- The kernel components inherit the smoothness estimate `norm_norm_rpow_smul_sub_le` of the
+radial field `z ↦ ‖z‖⁻ᵈ z`. -/
+private theorem abs_divKernel_sub_le (μ : Measure E) (v : E) {z w : E}
+    (hzw : 2 * ‖z - w‖ ≤ ‖z‖) :
+    |divKernel μ v z - divKernel μ v w| ≤
+      ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ * ‖v‖ *
+        ((1 + finrank ℝ E) * (2 : ℝ) ^ (finrank ℝ E : ℝ) * ‖z - w‖ *
+          ‖z‖ ^ (-(finrank ℝ E : ℝ))) := by
+  have hc : 0 ≤ ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ := by positivity
+  have heq : divKernel μ v z - divKernel μ v w =
+      -(((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ *
+        ⟪‖z‖ ^ (-(finrank ℝ E : ℝ)) • z - ‖w‖ ^ (-(finrank ℝ E : ℝ)) • w, v⟫_ℝ) := by
+    simp only [divKernel, inner_sub_left, real_inner_smul_left]
+    ring
+  rw [heq, abs_neg, abs_mul, abs_of_nonneg hc, mul_assoc]
+  gcongr
+  refine (abs_real_inner_le_norm _ _).trans ?_
+  rw [mul_comm]
+  gcongr
+  have h := norm_norm_rpow_smul_sub_le (p := -(finrank ℝ E : ℝ)) (a := w) (b := z)
+    (neg_nonpos.2 (Nat.cast_nonneg _)) (by rwa [norm_sub_rev])
+  rw [norm_sub_rev, norm_sub_rev w z, abs_neg, Nat.abs_cast, neg_neg] at h
+  exact h
+
+/-- The constant of the Hölder estimate for one component of the field of data in a Morrey space
+with exponent `d - 1 + α`. -/
+private noncomputable def divHolderConst (μ : Measure E) (α : ℝ) : ℝ :=
+  ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ *
+    (2 ^ ((finrank ℝ E : ℝ) - 1) / (1 - 2 ^ (-α)) * 2 ^ α +
+      2 ^ ((finrank ℝ E : ℝ) - 1) / (1 - 2 ^ (-α)) * 3 ^ α +
+      (1 + finrank ℝ E) * (2 : ℝ) ^ (finrank ℝ E : ℝ) *
+        (2 ^ ((finrank ℝ E : ℝ) - 1 + α) / (1 - 2 ^ (α - 1))) * 2 ^ (α - 1))
+
+private theorem divHolderConst_nonneg (μ : Measure E) {α : ℝ}
+    (hα : 0 < α) (hα1 : α < 1) : 0 ≤ divHolderConst μ α := by
+  have h₁ : 0 ≤ 1 - (2 : ℝ) ^ (-α) :=
+    sub_nonneg.2 (Real.rpow_le_one_of_one_le_of_nonpos one_le_two (by linarith))
+  have h₂ : 0 ≤ 1 - (2 : ℝ) ^ (α - 1) :=
+    sub_nonneg.2 (Real.rpow_le_one_of_one_le_of_nonpos one_le_two (by linarith))
+  unfold divHolderConst
+  positivity
+
+variable [FiniteDimensional ℝ E] [BorelSpace E] [Nontrivial E] {h : E → ℝ} {M : ℝ≥0∞} {α : ℝ}
+
+/-- Near its pole, the kernel integrated against a function whose mass on balls of radius `r` is at
+most `M r^(d - 1 + α)` is at most a multiple of `M ρ^α` on the ball of radius `ρ`. -/
+private theorem setLIntegral_ball_enorm_divKernel_sub_mul_le (v x : E) {ρ : ℝ} (hρ : 0 < ρ)
+    (hα : 0 < α)
+    (hM : ∀ x r, 0 < r → ∫⁻ y in closedBall x r, ‖h y‖ₑ ∂μ ≤
+      M * ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) - 1 + α))) :
+    ∫⁻ y in ball x ρ, ‖divKernel μ v (x - y)‖ₑ * ‖h y‖ₑ ∂μ ≤
+      M * ENNReal.ofReal (((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ * ‖v‖ *
+        (2 ^ ((finrank ℝ E : ℝ) - 1) / (1 - 2 ^ (-α)) * ρ ^ α)) := by
+  set c := ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ * ‖v‖
+  have hc : 0 ≤ c := by positivity
+  have hd : (1 : ℝ) ≤ finrank ℝ E := by exact_mod_cast finrank_pos
+  have hpt (y : E) : ‖divKernel μ v (x - y)‖ₑ * ‖h y‖ₑ ≤
+      ENNReal.ofReal c * (ENNReal.ofReal (dist y x ^ (-((finrank ℝ E : ℝ) - 1))) * ‖h y‖ₑ) := by
+    rw [← mul_assoc, ← ENNReal.ofReal_mul hc]
+    gcongr
+    rw [← ofReal_norm, Real.norm_eq_abs, neg_sub, dist_eq_norm, norm_sub_rev]
+    exact ENNReal.ofReal_le_ofReal (abs_divKernel_le μ v (x - y))
+  have hA := setLIntegral_ball_ofReal_dist_rpow_neg_mul_le (μ := μ) (y := x)
+    (g := fun y => ‖h y‖ₑ) (s := (finrank ℝ E : ℝ) - 1) (lam := (finrank ℝ E : ℝ) - 1 + α)
+    (fun r hr _ => hM x r hr) (by linarith) (by linarith) hρ
+  rw [show (finrank ℝ E : ℝ) - 1 - ((finrank ℝ E : ℝ) - 1 + α) = -α by ring,
+    show (finrank ℝ E : ℝ) - 1 + α - ((finrank ℝ E : ℝ) - 1) = α by ring] at hA
+  calc ∫⁻ y in ball x ρ, ‖divKernel μ v (x - y)‖ₑ * ‖h y‖ₑ ∂μ
+      ≤ ∫⁻ y in ball x ρ, ENNReal.ofReal c *
+          (ENNReal.ofReal (dist y x ^ (-((finrank ℝ E : ℝ) - 1))) * ‖h y‖ₑ) ∂μ :=
+        lintegral_mono hpt
+    _ = ENNReal.ofReal c * ∫⁻ y in ball x ρ,
+          ENNReal.ofReal (dist y x ^ (-((finrank ℝ E : ℝ) - 1))) * ‖h y‖ₑ ∂μ :=
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+    _ ≤ ENNReal.ofReal c * (M * ENNReal.ofReal
+          (2 ^ ((finrank ℝ E : ℝ) - 1) / (1 - 2 ^ (-α)) * ρ ^ α)) := by gcongr
+    _ = _ := by rw [mul_left_comm, ← ENNReal.ofReal_mul hc]
+
+/-- Away from the two points `x` and `x'`, at distance at least `2 dist x x'` from `x`, the
+difference of the kernels with poles `x` and `x'`, integrated against a function whose mass on
+balls of radius `r` is at most `M r^(d - 1 + α)`, is at most a multiple of `M dist x x' ^ α`. -/
+private theorem setLIntegral_enorm_divKernel_sub_sub_mul_le (v : E) {x x' : E}
+    (hxx' : 0 < dist x x') (hα : 0 < α) (hα1 : α < 1)
+    (hM : ∀ x r, 0 < r → ∫⁻ y in closedBall x r, ‖h y‖ₑ ∂μ ≤
+      M * ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) - 1 + α))) :
+    ∫⁻ y in {y | 2 * dist x x' ≤ dist y x},
+        ‖divKernel μ v (x - y) - divKernel μ v (x' - y)‖ₑ * ‖h y‖ₑ ∂μ ≤
+      M * ENNReal.ofReal (((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ * ‖v‖ *
+        ((1 + finrank ℝ E) * (2 : ℝ) ^ (finrank ℝ E : ℝ) * dist x x' *
+          (2 ^ ((finrank ℝ E : ℝ) - 1 + α) / (1 - 2 ^ (α - 1)) *
+            (2 * dist x x') ^ (α - 1)))) := by
+  set δ := dist x x'
+  set c := ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ * ‖v‖ *
+    ((1 + finrank ℝ E) * (2 : ℝ) ^ (finrank ℝ E : ℝ) * δ)
+  have hc : 0 ≤ c := by positivity
+  have hd : (1 : ℝ) ≤ finrank ℝ E := by exact_mod_cast finrank_pos
+  have hmeas : MeasurableSet {y | 2 * δ ≤ dist y x} :=
+    measurableSet_le measurable_const (continuous_id.dist continuous_const).measurable
+  have hpt (y : E) (hy : y ∈ {y | 2 * δ ≤ dist y x}) :
+      ‖divKernel μ v (x - y) - divKernel μ v (x' - y)‖ₑ * ‖h y‖ₑ ≤
+        ENNReal.ofReal c * (ENNReal.ofReal (dist y x ^ (-(finrank ℝ E : ℝ))) * ‖h y‖ₑ) := by
+    rw [← mul_assoc, ← ENNReal.ofReal_mul hc]
+    gcongr
+    have hzw : x - y - (x' - y) = x - x' := by abel
+    have hy' : dist y x = ‖x - y‖ := by rw [dist_eq_norm, norm_sub_rev]
+    rw [← ofReal_norm, Real.norm_eq_abs]
+    refine ENNReal.ofReal_le_ofReal ((abs_divKernel_sub_le μ v ?_).trans_eq ?_)
+    · rw [hzw, ← dist_eq_norm, ← hy']
+      exact hy
+    · rw [hzw, ← dist_eq_norm, ← hy']
+      ring
+  have hB := setLIntegral_ofReal_dist_rpow_neg_mul_le (μ := μ) (y := x)
+    (g := fun y => ‖h y‖ₑ) (R := 2 * δ) (s := finrank ℝ E) (lam := (finrank ℝ E : ℝ) - 1 + α)
+    (fun r hr => (lintegral_mono_set ball_subset_closedBall).trans
+      (hM x r (by linarith)))
+    (by linarith) (by linarith) (by positivity)
+  rw [show (finrank ℝ E : ℝ) - 1 + α - finrank ℝ E = α - 1 by ring] at hB
+  calc ∫⁻ y in {y | 2 * δ ≤ dist y x},
+        ‖divKernel μ v (x - y) - divKernel μ v (x' - y)‖ₑ * ‖h y‖ₑ ∂μ
+      ≤ ∫⁻ y in {y | 2 * δ ≤ dist y x}, ENNReal.ofReal c *
+          (ENNReal.ofReal (dist y x ^ (-(finrank ℝ E : ℝ))) * ‖h y‖ₑ) ∂μ :=
+        setLIntegral_mono' hmeas hpt
+    _ = ENNReal.ofReal c * ∫⁻ y in {y | 2 * δ ≤ dist y x},
+          ENNReal.ofReal (dist y x ^ (-(finrank ℝ E : ℝ))) * ‖h y‖ₑ ∂μ :=
+        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+    _ ≤ ENNReal.ofReal c * (M * ENNReal.ofReal (2 ^ ((finrank ℝ E : ℝ) - 1 + α) /
+          (1 - 2 ^ (α - 1)) * (2 * δ) ^ (α - 1))) := by gcongr
+    _ = _ := by
+        rw [mul_left_comm, ← ENNReal.ofReal_mul hc]
+        simp only [c, mul_assoc]
+
+/-- Against a function whose mass on balls grows like `r^(d - 1 + α)`, the kernel with any pole is
+integrable. -/
+private theorem integrable_divKernel_sub_mul (v x : E) (hh : Integrable h μ) (hMt : M ≠ ∞)
+    (hα : 0 < α)
+    (hM : ∀ x r, 0 < r → ∫⁻ y in closedBall x r, ‖h y‖ₑ ∂μ ≤
+      M * ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) - 1 + α))) :
+    Integrable (fun y => divKernel μ v (x - y) * h y) μ := by
+  set c := ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ * ‖v‖
+  have hc : 0 ≤ c := by positivity
+  have hd : (1 : ℝ) ≤ finrank ℝ E := by exact_mod_cast finrank_pos
+  refine ⟨((measurable_divKernel μ v).comp
+    (measurable_const.sub measurable_id)).aestronglyMeasurable.mul hh.aestronglyMeasurable, ?_⟩
+  simp only [HasFiniteIntegral, eNorm_mul]
+  -- Off the unit ball about the pole the kernel is bounded by `c`.
+  have hfar : ∫⁻ y in (ball x 1)ᶜ, ‖divKernel μ v (x - y)‖ₑ * ‖h y‖ₑ ∂μ ≤
+      ENNReal.ofReal c * ∫⁻ y, ‖h y‖ₑ ∂μ := by
+    rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+    refine (setLIntegral_mono' measurableSet_ball.compl fun y hy => ?_).trans
+      (setLIntegral_le_lintegral _ _)
+    gcongr
+    have hy : 1 ≤ ‖x - y‖ := by
+      rw [← dist_eq_norm, dist_comm]
+      exact not_lt.1 hy
+    rw [← ofReal_norm, Real.norm_eq_abs]
+    refine ENNReal.ofReal_le_ofReal ((abs_divKernel_le μ v (x - y)).trans ?_)
+    exact mul_le_of_le_one_right hc (Real.rpow_le_one_of_one_le_of_nonpos hy (by linarith))
+  rw [← lintegral_add_compl _ (measurableSet_ball (x := x) (ε := 1))]
+  exact ENNReal.add_lt_top.2
+    ⟨(setLIntegral_ball_enorm_divKernel_sub_mul_le v x one_pos hα hM).trans_lt
+      (ENNReal.mul_lt_top hMt.lt_top ENNReal.ofReal_lt_top),
+    hfar.trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hh.2)⟩
+
+/-- Near the two points `x` and `x'`, within distance `2 dist x x'` of `x`, the kernels with
+poles `x` and `x'` are integrated separately against `|h|`. -/
+private theorem setLIntegral_ball_enorm_divKernel_sub_sub_mul_le (v : E) (hh : Integrable h μ)
+    (hα : 0 < α)
+    (hM : ∀ x r, 0 < r → ∫⁻ y in closedBall x r, ‖h y‖ₑ ∂μ ≤
+      M * ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) - 1 + α))) {x x' : E} (hxx' : 0 < dist x x') :
+    ∫⁻ y in ball x (2 * dist x x'),
+        ‖divKernel μ v (x - y) - divKernel μ v (x' - y)‖ₑ * ‖h y‖ₑ ∂μ ≤
+      M * ENNReal.ofReal (((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ * ‖v‖ *
+          ((2 : ℝ) ^ ((finrank ℝ E : ℝ) - 1) / (1 - 2 ^ (-α)) * (2 * dist x x') ^ α)) +
+        M * ENNReal.ofReal (((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹ * ‖v‖ *
+          ((2 : ℝ) ^ ((finrank ℝ E : ℝ) - 1) / (1 - 2 ^ (-α)) * (3 * dist x x') ^ α)) := by
+  set δ := dist x x'
+  have hmeas : AEMeasurable (fun y => ‖divKernel μ v (x - y)‖ₑ * ‖h y‖ₑ) μ :=
+    ((measurable_divKernel μ v).comp (measurable_const.sub measurable_id)).eNorm.aemeasurable.mul
+      hh.aestronglyMeasurable.eNorm
+  calc ∫⁻ y in ball x (2 * δ), ‖divKernel μ v (x - y) - divKernel μ v (x' - y)‖ₑ * ‖h y‖ₑ ∂μ
+      ≤ ∫⁻ y in ball x (2 * δ), (‖divKernel μ v (x - y)‖ₑ * ‖h y‖ₑ +
+          ‖divKernel μ v (x' - y)‖ₑ * ‖h y‖ₑ) ∂μ :=
+        lintegral_mono fun y => by rw [← add_mul]; gcongr; exact eNorm_sub_le
+    _ = ∫⁻ y in ball x (2 * δ), ‖divKernel μ v (x - y)‖ₑ * ‖h y‖ₑ ∂μ +
+          ∫⁻ y in ball x (2 * δ), ‖divKernel μ v (x' - y)‖ₑ * ‖h y‖ₑ ∂μ :=
+        lintegral_add_left' hmeas.restrict _
+    _ ≤ ∫⁻ y in ball x (2 * δ), ‖divKernel μ v (x - y)‖ₑ * ‖h y‖ₑ ∂μ +
+          ∫⁻ y in ball x' (3 * δ), ‖divKernel μ v (x' - y)‖ₑ * ‖h y‖ₑ ∂μ := by
+        gcongr
+        intro y hy
+        rw [mem_ball] at hy ⊢
+        linarith [dist_triangle y x x']
+    _ ≤ _ := add_le_add (setLIntegral_ball_enorm_divKernel_sub_mul_le v x (by positivity) hα hM)
+        (setLIntegral_ball_enorm_divKernel_sub_mul_le v x' (by positivity) hα hM)
+
+variable [μ.IsAddHaarMeasure]
+
+/-- **The components of the field are `α`-Hölder.** If the mass of `|h|` on balls of radius `r` is
+at most `M r^(d - 1 + α)`, `0 < α < 1`, the components of the field along a unit vector differ at
+two points by at most a multiple of `M dist x x' ^ α`. -/
+private theorem enorm_convolution_divKernel_sub_le {v : E} (hv : ‖v‖ = 1) (hh : Integrable h μ)
+    (hMt : M ≠ ∞) (hα : 0 < α) (hα1 : α < 1)
+    (hM : ∀ x r, 0 < r → ∫⁻ y in closedBall x r, ‖h y‖ₑ ∂μ ≤
+      M * ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) - 1 + α))) {x x' : E} (hxx' : 0 < dist x x') :
+    ‖(divKernel μ v ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x -
+        (divKernel μ v ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x'‖ₑ ≤
+      M * ENNReal.ofReal (divHolderConst μ α * dist x x' ^ α) := by
+  set δ := dist x x'
+  set c := ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1))⁻¹
+  set A := (2 : ℝ) ^ ((finrank ℝ E : ℝ) - 1) / (1 - 2 ^ (-α))
+  set B := (2 : ℝ) ^ ((finrank ℝ E : ℝ) - 1 + α) / (1 - 2 ^ (α - 1))
+  set K := (1 + (finrank ℝ E : ℝ)) * (2 : ℝ) ^ (finrank ℝ E : ℝ)
+  have hA : 0 ≤ A := div_nonneg (by positivity)
+    (sub_nonneg.2 (Real.rpow_le_one_of_one_le_of_nonpos one_le_two (by linarith)))
+  have hB : 0 ≤ B := div_nonneg (by positivity)
+    (sub_nonneg.2 (Real.rpow_le_one_of_one_le_of_nonpos one_le_two (by linarith)))
+  simp only [convolution_lsmul_swap, smul_eq_mul]
+  rw [← integral_sub (integrable_divKernel_sub_mul v x hh hMt hα hM)
+      (integrable_divKernel_sub_mul v x' hh hMt hα hM)]
+  simp_rw [← sub_mul]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
+  simp_rw [eNorm_mul]
+  -- Near `x` each kernel is integrated separately; away from `x` their difference decays.
+  have hnear := setLIntegral_ball_enorm_divKernel_sub_sub_mul_le v hh hα hM (x := x) (x' := x')
+    hxx'
+  have hfar := setLIntegral_enorm_divKernel_sub_sub_mul_le v hxx' hα hα1 hM
+  have hcompl : (ball x (2 * δ))ᶜ = {y | 2 * δ ≤ dist y x} := by
+    ext y
+    simp [mem_ball]
+  rw [← lintegral_add_compl _ measurableSet_ball, hcompl]
+  refine (add_le_add hnear hfar).trans_eq ?_
+  rw [← mul_add, ← mul_add, ← ENNReal.ofReal_add (by positivity) (by positivity),
+    ← ENNReal.ofReal_add (by positivity) (by positivity)]
+  congr 2
+  have hδ : δ * (2 * δ) ^ (α - 1) = 2 ^ (α - 1) * δ ^ α := by
+    rw [Real.mul_rpow zero_le_two hxx'.le, Real.rpow_sub_one hxx'.ne']
+    field_simp
+  rw [Real.mul_rpow zero_le_two hxx'.le, Real.mul_rpow zero_le_three hxx'.le, divHolderConst, hv]
+  linear_combination c * K * B * hδ
+
+
+/-- **The field is `α`-Hölder.** Summing the estimates `enorm_convolution_divKernel_sub_le` of its
+components along an orthonormal basis, the field of a function whose mass on balls of radius `r` is
+at most `N r^(d - 1 + α)` moves by at most `d K N dist x x' ^ α`. -/
+private theorem dist_divField_le (hh : Integrable h μ) {N : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+    (hM : ∀ x r, 0 < r → ∫⁻ y in closedBall x r, ‖h y‖ₑ ∂μ ≤
+      (N : ℝ≥0∞) * ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) - 1 + α))) (x x' : E) :
+    dist (divField μ h x) (divField μ h x') ≤
+      (finrank ℝ E : ℝ) * divHolderConst μ α * N * dist x x' ^ α := by
+  have hK : 0 ≤ divHolderConst μ α := divHolderConst_nonneg μ hα hα1
+  set b := stdOrthonormalBasis ℝ E
+  -- Each component of the field is `α`-Hölder with constant `K N`, `K = divHolderConst μ α`.
+  have hcomp (i : Fin (finrank ℝ E)) {x x' : E} (hxx' : 0 < dist x x') :
+      ‖(divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x -
+          (divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x'‖ ≤
+        divHolderConst μ α * N * dist x x' ^ α := by
+    have h1 := enorm_convolution_divKernel_sub_le (b.orthonormal.1 i) hh ENNReal.coe_ne_top hα
+      hα1 hM hxx'
+    rw [← ofReal_norm, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul N.coe_nonneg,
+      ENNReal.ofReal_le_ofReal_iff (by positivity)] at h1
+    linarith
+  rcases (dist_nonneg (x := x) (y := x')).eq_or_lt with h0 | hxx'
+  · rw [(dist_eq_zero.1 h0.symm), dist_self]
+    positivity
+  calc dist (divField μ h x) (divField μ h x')
+      = ‖∑ i, ((divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x -
+          (divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x') • b i‖ := by
+        rw [dist_eq_norm, divField_apply, divField_apply, ← Finset.sum_sub_distrib]
+        simp only [b, sub_smul]
+    _ ≤ ∑ i, ‖((divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x -
+          (divKernel μ (b i) ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] h) x') • b i‖ :=
+        norm_sum_le _ _
+    _ ≤ ∑ _i : Fin (finrank ℝ E), divHolderConst μ α * N * dist x x' ^ α := by
+        refine Finset.sum_le_sum fun i _ => ?_
+        rw [norm_smul, b.orthonormal.1 i, mul_one]
+        exact hcomp i hxx'
+    _ = (finrank ℝ E : ℝ) * divHolderConst μ α * N * dist x x' ^ α := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        ring
+
+end Morrey
+
+/-- **Data in a Morrey space are minus divergences of Hölder fields.** Let `E` be a nontrivial
+finite-dimensional real inner product space of dimension `d` with an additive Haar measure `μ`, and
+let `0 < α < 1`. There is a constant `C` such that every measurable, compactly supported `h` in the
+Morrey space `L^{1, d - 1 + α}(E)` with `‖h‖_{L^{1, d - 1 + α}(E)} ≤ M`, that is with
+`∫_{B(x, r)} |h| ≤ M r^(d - 1 + α)` on every closed ball, is minus the divergence of an `α`-Hölder
+field `H` with Hölder constant `C M`: `∫ ⟪H, ∇φ⟫ = ∫ h φ` for every `C¹` function `φ` with compact
+support, so that `-div H = h` weakly. One may take for `H` the gradient of the Newtonian potential
+of `h`.
+
+By Hölder's inequality, `L^q(E) ⊆ L^{1, d - 1 + α}(E)` for `q = d / (1 - α)`
+(`TauCeti.MeasureTheory.morreyNormPow_le_eLpNorm_rpow_mul`), so this covers compactly supported
+`L^q` data, `q > d`, with `α = 1 - d / q`. -/
+theorem exists_holderWith_and_integral_inner_gradient_eq_of_morreyNormPow_le
+    [FiniteDimensional ℝ E] [BorelSpace E] [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) :
+    ∃ C : ℝ≥0, ∀ (h : E → ℝ) (M : ℝ≥0), AEStronglyMeasurable h μ → HasCompactSupport h →
+      MeasureTheory.morreyNormPow μ univ 1 ((finrank ℝ E : ℝ) - 1 + α) h ≤ M →
+      ∃ H : E → E, HolderWith (C * M) α H ∧
+        ∀ φ : E → ℝ, ContDiff ℝ 1 φ → HasCompactSupport φ →
+          ∫ x, ⟪H x, ∇ φ x⟫_ℝ ∂μ = ∫ x, h x * φ x ∂μ := by
+  have hα' : (0 : ℝ) < α := hα
+  have hα1' : (α : ℝ) < 1 := by exact_mod_cast hα1
+  set K := divHolderConst μ α
+  have hK : 0 ≤ K := divHolderConst_nonneg μ hα' hα1'
+  refine ⟨((finrank ℝ E : ℝ) * K).toNNReal, fun h M hhm hhc hM => ?_⟩
+  set lam : ℝ := (finrank ℝ E : ℝ) - 1 + α
+  -- The Morrey bound bounds the mass of `|h|` on every closed ball.
+  have hgrowth (x : E) (r : ℝ) (hr : 0 < r) :
+      ∫⁻ y in closedBall x r, ‖h y‖ₑ ∂μ ≤ (M : ℝ≥0∞) * ENNReal.ofReal (r ^ lam) := by
+    have h1 := MeasureTheory.setLIntegral_closedBall_le_morreyNormPow_of_mem (μ := μ) (p := 1)
+      (f := h) (lam := lam) (mem_univ x) hr
+    simp only [ENNReal.rpow_one, Measure.restrict_univ] at h1
+    exact h1.trans (by rw [mul_comm]; gcongr)
+  have hhi : Integrable h μ :=
+    MeasureTheory.integrable_of_hasCompactSupport_of_morreyNormPow_ne_top hhm hhc
+      (hM.trans_lt ENNReal.coe_lt_top).ne
+  refine ⟨divField μ h, ?_, fun φ hφ hφc => integral_inner_divField_gradient hhi hhc hφ hφc⟩
+  refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ x' _ => ?_)
+  rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
+  exact dist_divField_le hhi hα' hα1' hgrowth x x'
+
 
 /-- **Compactly supported `L^q` data are minus divergences of `Lᵖ` fields.** Let `E` be a nontrivial
 finite-dimensional real inner product space of dimension `d` with an additive Haar measure `μ`,
