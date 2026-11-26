@@ -252,15 +252,11 @@ theorem ContDiff.memLp_iteratedFDeriv_sub (hn : n ≤ N) (hu : ContDiff 𝕜 N u
   exact hum.sub hvm
 
 /-- The `n`-th derivative of a constant multiple of a function is in `Lᵖ` when that of the
-function is. No smoothness is needed: for `c ≠ 0`, scaling by `c` is a continuous linear
-equivalence, which commutes with iterated derivatives. -/
+function is. No smoothness is needed, by `TauCeti.iteratedFDeriv_fun_const_smul_apply`. -/
 theorem MeasureTheory.MemLp.iteratedFDeriv_const_smul (hum : MemLp (iteratedFDeriv 𝕜 n u) p μ)
     (c : 𝕜) : MemLp (iteratedFDeriv 𝕜 n (c • u)) p μ := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · rw [zero_smul, iteratedFDeriv_zero]
-    exact MemLp.zero (ε := E [×n]→L[𝕜] F)
-  rw [show iteratedFDeriv 𝕜 n (c • u) = c • iteratedFDeriv 𝕜 n u from funext fun _ ↦
-    (ContinuousLinearEquiv.smulLeft (R₁ := 𝕜) (Units.mk0 c hc)).iteratedFDeriv_comp_left]
+  rw [show iteratedFDeriv 𝕜 n (c • u) = c • iteratedFDeriv 𝕜 n u from
+    funext fun x ↦ TauCeti.iteratedFDeriv_fun_const_smul_apply u c x n]
   exact hum.const_smul c
 
 end Algebra
