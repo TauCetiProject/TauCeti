@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.StronglyRegular
+public import TauCeti.Combinatorics.SimpleGraph.AdjMatrix
 
 import Mathlib.Tactic.Ring
 
@@ -26,8 +27,6 @@ the parameter bounds exclude them by hypothesis.
 
 ## Main results
 
-* `SimpleGraph.adjMatrix_sq_apply`: the `(v, w)` entry of `A²` is the number of common neighbours
-  of `v` and `w`.
 * `SimpleGraph.adjMatrix_sq_eq_iff`: `A² = a A + b I + c J` in terms of degrees and numbers of
   common neighbours.
 * `SimpleGraph.isSRGWith_iff_adjMatrix_sq_eq`: over a ring of characteristic zero, `G` is
@@ -51,7 +50,7 @@ the parameter bounds exclude them by hypothesis.
 
 public section
 
-open Finset Matrix
+open Matrix
 
 namespace SimpleGraph
 
@@ -62,16 +61,6 @@ variable {V : Type*} [Fintype V] {G : SimpleGraph V} [DecidableRel G.Adj] {n k �
 section Square
 
 variable [DecidableEq V] {R : Type*}
-
-/-- The `(v, w)` entry of the square of the adjacency matrix is the number of common neighbours
-of `v` and `w`; on the diagonal this is the degree of `v`. -/
-theorem adjMatrix_sq_apply [Semiring R] (v w : V) :
-    (G.adjMatrix R ^ 2) v w = Fintype.card (G.commonNeighbors v w) := by
-  rw [sq, adjMatrix_mul_apply, Fintype.card_subtype]
-  simp only [adjMatrix_apply, sum_boole]
-  congr 2
-  ext u
-  simp [commonNeighbors, adj_comm]
 
 /-- `A² = a A + b I + c J` holds exactly when every vertex has degree `b + c`, every two adjacent
 vertices have `a + c` common neighbours and every two distinct nonadjacent vertices have `c`
