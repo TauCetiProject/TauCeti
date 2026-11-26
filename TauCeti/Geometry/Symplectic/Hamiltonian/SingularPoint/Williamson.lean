@@ -68,20 +68,6 @@ namespace TauCeti.SymplecticForm
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup G] [NormedSpace ℝ G] {ι : Type*} {kₑ kₕ k_f : ℕ}
 
-omit [FiniteDimensional ℝ E] in
-/-- Over the whole space, the Williamson type of a family of reduced quadratic forms is the
-Williamson type of the original family. -/
-theorem hasWilliamsonType_reduction_iff_of_eq_top {ω : SymplecticForm E} {U : Submodule ℝ E}
-    (hU : U = ⊤) (Q : ι → QuadraticForm ℝ E)
-    (hQ : ∀ i, ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar (Q i) w u = 0) :
-    (ω.reduction U).HasWilliamsonType (fun i ↦ ω.reducedQuadraticForm U (Q i) (hQ i)) kₑ kₕ k_f ↔
-      ω.HasWilliamsonType Q kₑ kₕ k_f := by
-  subst hU
-  rw [← hasWilliamsonType_comp_iff ω.isSymplectomorphism_reducedSpaceTopEquiv]
-  congr! with i
-  ext v
-  simp
-
 variable (ω : SymplecticForm E) in
 /-- A point `x` has **Williamson type** `(kₑ, kₕ, k_f)` for a `C²` map `F : E → G` on a symplectic
 vector space `(E, ω)` when it is a nondegenerate point of `F` and the family of transversal

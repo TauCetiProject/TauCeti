@@ -37,7 +37,9 @@ blocks, and the last `2 k_f` carry focus-focus pairs. Then:
   (`TauCeti.SymplecticForm.HasWilliamsonType.two_mul_add_add_eq_finrank`);
 * it depends only on the span of the family
   (`TauCeti.SymplecticForm.hasWilliamsonType_iff_of_span_eq`) and is invariant under linear
-  symplectomorphisms (`TauCeti.SymplecticForm.hasWilliamsonType_comp_iff`);
+  symplectomorphisms (`TauCeti.SymplecticForm.hasWilliamsonType_comp_iff`), in particular under
+  the reduction by the whole space
+  (`TauCeti.SymplecticForm.hasWilliamsonType_reduction_iff_of_eq_top`);
 * the Williamson blocks of a Darboux basis with `m + 2 f` planes and elliptic planes `u` have type
   `(|u|, m - |u|, f)` (`TauCeti.SymplecticForm.IsDarbouxBasis.hasWilliamsonType_williamsonBlocks`);
   in particular the elliptic blocks of a Darboux basis with `n` planes have type `(n, 0, 0)`
@@ -192,5 +194,18 @@ theorem hasWilliamsonType_comp_iff {ω' : SymplecticForm W} {e : V ≃ₗ[ℝ] W
     ext w
     simp
   simpa only [hQ] using h.comp he.symm
+
+/-- Over the whole space, the Williamson type of a family of reduced quadratic forms is the
+Williamson type of the original family. -/
+theorem hasWilliamsonType_reduction_iff_of_eq_top {U : Submodule ℝ V}
+    (hU : U = ⊤) (Q : ι → QuadraticForm ℝ V)
+    (hQ : ∀ i, ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar (Q i) w u = 0) :
+    (ω.reduction U).HasWilliamsonType (fun i ↦ ω.reducedQuadraticForm U (Q i) (hQ i)) kₑ kₕ k_f ↔
+      ω.HasWilliamsonType Q kₑ kₕ k_f := by
+  subst hU
+  rw [← hasWilliamsonType_comp_iff ω.isSymplectomorphism_reducedSpaceTopEquiv]
+  congr! with i
+  ext v
+  simp
 
 end TauCeti.SymplecticForm
