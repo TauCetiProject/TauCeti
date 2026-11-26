@@ -35,6 +35,8 @@ be stable under the quotients and localizations used to cut a valuation ring int
 * `TauCeti.IsAbsolutelyIntegrallyClosed.splits` and
   `TauCeti.isAbsolutelyIntegrallyClosed_iff_forall_splits`: `A` is absolutely integrally closed if
   and only if every monic polynomial over `A` is a product of monic linear factors.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.exists_pow_nat_eq`: every element has `n`-th roots for
+  all `n > 0`.
 * `TauCeti.isAbsolutelyIntegrallyClosed_iff_isAlgClosed`: for a field, the notion is
   `IsAlgClosed`.
 * `TauCeti.IsAbsolutelyIntegrallyClosed.of_surjective` and
@@ -89,6 +91,15 @@ theorem splits [IsAbsolutelyIntegrallyClosed A] {p : A[X]} (hp : p.Monic) : p.Sp
       rw [natDegree_divByMonic _ (monic_X_sub_C a), natDegree_X_sub_C, h, Nat.add_sub_cancel]
     exact hq ▸ (Splits.X_sub_C a).mul
       (ih ((monic_X_sub_C a).of_mul_monic_left (hq.symm ▸ hp)) hqdeg)
+
+/-- In an absolutely integrally closed ring every element has an `n`-th root for every `n > 0`. -/
+theorem exists_pow_nat_eq [IsAbsolutelyIntegrallyClosed A] (x : A) {n : ℕ} (hn : 0 < n) :
+    ∃ z, z ^ n = x := by
+  obtain _ | _ := subsingleton_or_nontrivial A
+  · exact ⟨0, Subsingleton.elim _ _⟩
+  obtain ⟨z, hz⟩ := exists_root (X ^ n - C x) (monic_X_pow_sub_C x hn.ne')
+    (by rwa [natDegree_X_pow_sub_C])
+  exact ⟨z, by simpa [sub_eq_zero] using hz⟩
 
 /-- The zero ring is absolutely integrally closed: no polynomial over it has positive degree. -/
 theorem of_subsingleton [Subsingleton A] : IsAbsolutelyIntegrallyClosed A where

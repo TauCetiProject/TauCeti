@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
 public import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.Analysis.BoundedVariation.BlowUp
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates

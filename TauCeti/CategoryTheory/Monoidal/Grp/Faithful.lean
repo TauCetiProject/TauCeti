@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.CommMon_
-public import Mathlib.CategoryTheory.Monoidal.Grp
+public import TauCeti.CategoryTheory.Monoidal.Grp.OfMap
 
 /-!
 # Monoid and group objects along faithful monoidal functors
@@ -16,8 +15,9 @@ structure on `F.obj X` back to `X` when `F` is fully faithful
 (`CategoryTheory.Functor.FullyFaithful.monObj`). If `F` is only faithful, the same works as soon as
 the unit and the multiplication of `F.obj X` are images under `F` of morphisms `𝟙_ C ⟶ X` and
 `X ⊗ X ⟶ X`, and similarly for the inverse of a group object: the axioms hold on `X` because they
-hold after applying `F`. The construction and its proofs follow Mathlib's
-`CategoryTheory.Functor.FullyFaithful.monObj` and `CategoryTheory.Functor.FullyFaithful.grpObj`.
+hold after applying `F` (`CategoryTheory.Functor.map_one_mul` and its companions). The
+construction follows Mathlib's `CategoryTheory.Functor.FullyFaithful.monObj` and
+`CategoryTheory.Functor.FullyFaithful.grpObj`.
 Faithfulness also makes the structure on `X` unique, and it reflects commutativity and
 homomorphisms.
 
@@ -63,10 +63,9 @@ abbrev monObjOfFaithful (X : C) [MonObj (F.obj X)] (one : 𝟙_ C ⟶ X) (mul : 
     (h_mul : F.map mul = δ F X X ≫ μ[F.obj X]) : MonObj X where
   one := one
   mul := mul
-  one_mul := F.map_injective <| by simp [h_one, h_mul, ← δ_natural_left_assoc]
-  mul_one := F.map_injective <| by simp [h_one, h_mul, ← δ_natural_right_assoc]
-  mul_assoc := F.map_injective <| by
-    simp [h_mul, ← δ_natural_left_assoc, ← δ_natural_right_assoc]
+  one_mul := F.map_injective (F.map_one_mul h_one h_mul)
+  mul_one := F.map_injective (F.map_mul_one h_one h_mul)
+  mul_assoc := F.map_injective (F.map_mul_assoc h_mul)
 
 end OplaxMonoidal
 
@@ -126,10 +125,8 @@ abbrev grpObjOfFaithful (X : C) [GrpObj (F.obj X)] (one : 𝟙_ C ⟶ X) (mul : 
     GrpObj X where
   __ := F.monObjOfFaithful X one mul h_one h_mul
   inv := inv
-  left_inv := F.map_injective <| by
-    simp [h_one, h_mul, h_inv, OplaxMonoidal.η_of_cartesianMonoidalCategory]
-  right_inv := F.map_injective <| by
-    simp [h_one, h_mul, h_inv, OplaxMonoidal.η_of_cartesianMonoidalCategory]
+  left_inv := F.map_injective (F.map_left_inv h_one h_mul h_inv)
+  right_inv := F.map_injective (F.map_right_inv h_one h_mul h_inv)
 
 end OplaxMonoidal
 

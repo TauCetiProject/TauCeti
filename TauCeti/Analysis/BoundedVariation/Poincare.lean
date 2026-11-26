@@ -66,6 +66,8 @@ exhaustion of `Ω` by such sets
   estimate `∫_Ω ∫_Ω |u x - u y| ≤ (∫_{Ω - Ω} ‖h‖) |Du|(Ω)` on a convex open set.
 * `TauCeti.setLIntegral_enorm_sub_setAverage_le_div_mul_totalVariationOn`: the Poincaré
   inequality on a convex open set, with constant `(∫_{Ω - Ω} ‖h‖) / μ(S)`.
+* `TauCeti.ae_eq_setAverage_of_totalVariationOn_eq_zero`: a locally integrable function of zero
+  total variation on a convex open set is almost everywhere constant there.
 * `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_convex`: the Poincaré
   inequality on a bounded convex open set, with constant `μ(B(0, 1)) (diam Ω) ^ (n + 1) / μ(S)`.
 * `TauCeti.integrableOn_of_totalVariationOn_ne_top_of_convex`: a locally integrable function of
@@ -220,6 +222,20 @@ theorem setLIntegral_enorm_sub_setAverage_le_div_mul_totalVariationOn
         exact setLIntegral_setLIntegral_enorm_sub_le_mul_totalVariationOn hconv hu
     _ = (∫⁻ h in (Ω : Set E) - Ω, ‖h‖ₑ ∂μ) / μ S * totalVariationOn μ Ω u := by
         rw [div_eq_mul_inv, mul_right_comm]
+
+/-- A locally integrable function of zero total variation on a convex open set `Ω` is almost
+everywhere on `Ω` equal to its mean over any `S ⊆ Ω` of finite positive measure: the right side
+of the Poincaré inequality vanishes. -/
+theorem ae_eq_setAverage_of_totalVariationOn_eq_zero
+    (hconv : Convex ℝ (Ω : Set E)) (hu : LocallyIntegrableOn u Ω μ) (hS : S ⊆ Ω)
+    (hS₀ : μ S ≠ 0) (hS_top : μ S ≠ ⊤) (h0 : totalVariationOn μ Ω u = 0) :
+    ∀ᵐ x ∂μ.restrict Ω, u x = ⨍ y in S, u y ∂μ := by
+  have h := setLIntegral_enorm_sub_setAverage_le_div_mul_totalVariationOn hconv hu hS hS₀ hS_top
+  have hm : AEStronglyMeasurable u (μ.restrict Ω) := hu.aestronglyMeasurable
+  rw [h0, mul_zero, nonpos_iff_eq_zero,
+    lintegral_eq_zero_iff' (hm.aemeasurable.sub_const _).eNorm] at h
+  filter_upwards [h] with x hx
+  exact sub_eq_zero.1 (eNorm_eq_zero.1 hx)
 
 /-- **The Poincaré inequality for functions of bounded variation on a bounded convex set.** Let
 `u` be locally integrable on a bounded convex open set `Ω` of dimension `n`, and let `S ⊆ Ω` have
