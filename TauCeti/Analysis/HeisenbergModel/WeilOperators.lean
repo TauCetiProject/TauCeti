@@ -43,9 +43,8 @@ continuous when `G` is first countable.
 
 ## Provenance
 
-This file carries out WeilRepresentationsOnBanachSpacesOfData §1.3 of the ShortGRH roadmap. It is
-adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
-PBC), file `src/Lib/Weil/Construction/WeilOperators.lean` (`New.Heisenberg.Rep.moveBy`,
+Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026
+Anthropic, PBC), file `src/Lib/Weil/Construction/WeilOperators.lean` (`New.Heisenberg.Rep.moveBy`,
 `New.Heisenberg.IsVacuum.weilOp`, `New.Heisenberg.IsVacuum.weilOp_inv_mul_weilOp_mul_weilOp`,
 `New.Heisenberg.IsVacuum.weilOp_mul`, `New.Heisenberg.IsVacuum.modelInner_weilOp`,
 `New.Heisenberg.IsVacuum.cocycleRadical`, `New.Heisenberg.IsVacuum.weilRep` and its lemmas).

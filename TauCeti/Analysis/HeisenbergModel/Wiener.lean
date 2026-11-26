@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.HeisenbergModel.Model
+import TauCeti.Algebra.Group.Pointwise.Set.Card
 public import Mathlib.Data.Set.Card
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
@@ -25,10 +26,10 @@ translates of a compact neighbourhood of `0` by the points of `φ` meet in at mo
 
 ## Provenance
 
-This file carries out WeilRepresentationsOnBanachSpacesOfData §1.4 (b) of the ShortGRH roadmap. It
-is adapted from `New.Heisenberg.IsVacuum.wiener_bound` in grh-lean
+Adapted from `New.Heisenberg.IsVacuum.wiener_bound` in grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
-`src/Lib/Weil/Construction/WeilOperators.lean`.
+`src/Lib/Weil/Construction/WeilOperators.lean`. Its counting step (`h_encard_le` there) is
+`Set.encard_setOf_sub_mem_le` in `TauCeti/Algebra/Group/Pointwise/Set/Card.lean`.
 
 ## References
 
@@ -49,19 +50,6 @@ variable {W W₁ : Type*} [AddCommGroup W] [TopologicalSpace W] [MeasurableSpace
   [AddCommGroup W₁] [TopologicalSpace W₁]
   {β : HeisenbergDatum W} {μ : Measure W} {e : W → ℂ} [μ.IsAddHaarMeasure] [β.IsVacuum μ e]
   {X : Type*} [NormedAddCommGroup X] [NormedSpace ℂ X] [CompleteSpace X]
-
-omit [TopologicalSpace W₁] in
-/-- The points `y` lying in at most `N = #φ⁻¹(B)` of the translates `φ i + K`, when `B` contains
-`-K + K`. -/
-private theorem encard_setOf_mem_le {I : Type*} [AddGroup I] (φ : I →+ W₁) {K B : Set W₁}
-    (hKB : ∀ a ∈ K, ∀ b ∈ K, -a + b ∈ B) (y : W₁) :
-    {i : I | y - φ i ∈ K}.encard ≤ (φ ⁻¹' B).encard := by
-  obtain h_empty | ⟨i₀, hi₀⟩ := {i : I | y - φ i ∈ K}.eq_empty_or_nonempty
-  · rw [h_empty, encard_empty]
-    exact zero_le
-  · have h_mem (i : I) (hi : y - φ i ∈ K) : φ (i - i₀) ∈ B := by
-      simpa [map_sub] using hKB (y - φ i) hi (y - φ i₀) hi₀
-    exact encard_le_encard_of_injOn (f := (· - i₀)) h_mem sub_left_injective.injOn
 
 /-- Superposition bounds one term: `‖u (-κ s)‖ * ‖T (ϱ (κ x) v)‖` is at most
 `∫ ‖v z‖ * ‖T (ϱ (z + κ (x + s)) u)‖ dμ(z)`. -/
@@ -141,8 +129,6 @@ theorem exists_isCompact_tsum_enorm_le [T2Space W₁] (T : ReproducingModel β �
       (v : ReproducingModel β μ e),
       ∑' i, ‖T (heisenbergRep (κ (φ i)) v)‖ₑ ≤ (φ ⁻¹' B).encard * M * ‖v‖ₑ := by
   obtain ⟨K, hK, hK₀⟩ : ∃ K : Set W₁, IsCompact K ∧ K ∈ nhds 0 := exists_compact_mem_nhds 0
-  have hKB (a : W₁) (ha : a ∈ K) (b : W₁) (hb : b ∈ K) : -a + b ∈ -K + K :=
-    add_mem_add (neg_mem_neg.mpr ha) hb
   refine ⟨-K + K, hK.neg.add hK, ?_⟩
   have u_cont : Continuous fun s ↦ ‖u (-κ s)‖ₑ := (continuous u).eNorm.comp (map_continuous κ).neg
   -- `u (-κ s) ≠ 0` for `s` near `0`, so the integral of its norm over `K` is positive.
@@ -170,7 +156,7 @@ theorem exists_isCompact_tsum_enorm_le [T2Space W₁] (T : ReproducingModel β �
       gcongr
       refine (Measure.sum_restrict_le (fun i ↦ measurable_sub_const (φ i) hK.measurableSet)
         fun y ↦ ?_).trans (by gcongr; exact μ₁.restrict_le_self)
-      simpa [hN] using encard_setOf_mem_le φ hKB y
+      simpa [hN] using Set.encard_setOf_sub_mem_le φ K y
     _ = N * (r * M) * ‖v‖ₑ := by
       rw [lintegral_smul_measure, lintegral_lintegral_enorm_eq T u v κ t h_enorm, hM]
       simp only [nsmul_eq_mul]

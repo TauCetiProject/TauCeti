@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.HeisenbergModel.WeilOperators
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Measure.Haar.IntegralUnique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Complex.Basic
 
@@ -48,14 +48,15 @@ reproducing models (`TauCeti.ReproducingModel.transport`).
 
 ## Provenance
 
-This file carries out WeilRepresentationsOnBanachSpacesOfData §1.4 (a) and (c) of the ShortGRH
-roadmap. It is adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright
-2026 Anthropic, PBC), file `src/Lib/Weil/Construction/WeilOperators.lean`
+Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026
+Anthropic, PBC), file `src/Lib/Weil/Construction/WeilOperators.lean`
 (`New.Heisenberg.OrthogonalSum` with `isVacuum`, `measurePreserving_equiv`, `tmul`, `tmul_apply`,
 `modelInner_tmul`, `norm_tmul`, `weilRep_tmul`, `tmul_vacElem`, `heisenbergOp_tmul`,
 `exists_restriction`, `New.Heisenberg.Rep.integrated_tmul`, `New.Heisenberg.IsVacuum.transport`,
-`New.Heisenberg.IsVacuum.norm_transport`), and from `New.addHaar_eq_of_integral_eq_one` in
-`src/Lib/General/Measure/HaarNormalisation.lean`.
+`New.Heisenberg.IsVacuum.norm_transport`). The Haar normalisation step
+(`New.addHaar_eq_of_integral_eq_one` in `src/Lib/General/Measure/HaarNormalisation.lean`) is
+`MeasureTheory.Measure.eq_addHaar_of_integral_eq` in
+`TauCeti/MeasureTheory/Measure/Haar/IntegralUnique.lean`.
 -/
 
 public noncomputable section
@@ -64,16 +65,6 @@ open MeasureTheory Measure
 open scoped ComplexConjugate
 
 namespace TauCeti
-
-/-- Two additive Haar measures on a locally compact second countable group that give the same
-function the integral `1` are equal. -/
-private theorem addHaar_eq_of_integral_eq_one {G : Type*} [AddGroup G] [TopologicalSpace G]
-    [IsTopologicalAddGroup G] [LocallyCompactSpace G] [SecondCountableTopology G]
-    [MeasurableSpace G] [BorelSpace G] {μ ν : Measure G} [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure]
-    {f : G → ℝ} (hν : ∫ x, f x ∂ν = 1) (hμ : ∫ x, f x ∂μ = 1) : μ = ν := by
-  obtain ⟨c, rfl⟩ : ∃ c : NNReal, μ = c • ν := ⟨_, μ.isAddLeftInvariant_eq_smul ν⟩
-  obtain rfl : c = 1 := by simpa [integral_smul_nnreal_measure, hν, NNReal.smul_def] using hμ
-  exact one_smul _ ν
 
 namespace HeisenbergDatum
 
@@ -174,8 +165,9 @@ carries `μ₁ × μ₂` to `μ`. -/
 theorem measurePreserving_equiv [he : β.IsVacuum μ e] [h₁ : β₁.IsVacuum μ₁ e₁]
     [h₂ : β₂.IsVacuum μ₂ e₂] : MeasurePreserving S.equiv (μ₁.prod μ₂) μ where
   measurable := by fun_prop
-  map_eq := addHaar_eq_of_integral_eq_one he.integral_norm_sq_eq_one
-    (S.isVacuum h₁ h₂).integral_norm_sq_eq_one
+  map_eq := eq_addHaar_of_integral_eq
+    ((S.isVacuum h₁ h₂).integral_norm_sq_eq_one.trans he.integral_norm_sq_eq_one.symm)
+    (by rw [he.integral_norm_sq_eq_one]; exact one_ne_zero)
 
 theorem integral_eq_integral_prod [β.IsVacuum μ e] [β₁.IsVacuum μ₁ e₁] [β₂.IsVacuum μ₂ e₂]
     {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] (f : W → X) :
@@ -409,7 +401,8 @@ theorem measurePreserving_of_vacuum (hφ : ∀ x, e (φ x) = e' x) : MeasurePres
     rw [integral_map (by fun_prop) (by fun_prop)]
     simp_rw [hφ]
     exact he'.integral_norm_sq_eq_one
-  exact ⟨by fun_prop, addHaar_eq_of_integral_eq_one he.integral_norm_sq_eq_one h_one⟩
+  exact ⟨by fun_prop, eq_addHaar_of_integral_eq (h_one.trans he.integral_norm_sq_eq_one.symm)
+    (by rw [he.integral_norm_sq_eq_one]; exact one_ne_zero)⟩
 
 variable (μ μ') in
 /-- The function `σ ∘ v ∘ φ` transported along an isomorphism lies in the model. -/

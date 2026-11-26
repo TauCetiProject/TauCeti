@@ -50,9 +50,8 @@ measures the failure of the Weil operators of `Δ` to multiply
 
 ## Provenance
 
-This file carries out the definitions of WeilRepresentationsOnBanachSpacesOfData §1.1 of the
-ShortGRH roadmap. It is adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0,
-Copyright 2026 Anthropic, PBC), file `src/Lib/Weil/Construction/HeisenbergModel.lean`
+Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026
+Anthropic, PBC), file `src/Lib/Weil/Construction/HeisenbergModel.lean`
 (`New.Heisenberg`, `New.Heisenberg.Rep`, `New.Heisenberg.IsVacuum`,
 `New.Heisenberg.MultiplierAction`, `New.Heisenberg.IsVacuum.integral_norm_sq_eq_one`,
 `New.Heisenberg.IsVacuum.norm_le_one`). Here the cocycle is a function of the multiplier rather

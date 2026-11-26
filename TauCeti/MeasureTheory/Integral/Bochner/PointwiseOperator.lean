@@ -60,8 +60,8 @@ theorem exists_apply_eq_integral {F : Y → X →L[𝕜] Z}
     have h_limit : (fun y : Y ↦ F y x) =ᵐ[μ] g :=
       h_ae.mono fun y hy ↦ tendsto_nhds_unique ((F y).continuous.seqContinuous (hu.comp hφ)) hy
     exact Lp.ext ((h_int x).coeFn_toL1.trans h_limit).symm
+  have hT (x : X) : T x = (h_int x).toL1 := rfl
   refine ⟨L1.integralCLM' 𝕜 ∘L .ofSeqClosedGraph h_closed, fun x ↦ ?_⟩
-  change L1.integralCLM' 𝕜 ((h_int x).toL1) = ∫ y : Y, F y x ∂μ
-  rw [integral_eq _ (h_int x), L1.integral_eq' 𝕜]
+  rw [comp_apply, coeFn_ofSeqClosedGraph, hT, integral_eq _ (h_int x), L1.integral_eq' 𝕜]
 
 end ContinuousLinearMap

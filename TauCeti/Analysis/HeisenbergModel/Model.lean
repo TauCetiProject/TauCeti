@@ -61,9 +61,8 @@ sesquilinear form invariant under every `ϱ y` is a multiple of `⟨·, ·⟩`.
 
 ## Provenance
 
-This file carries out WeilRepresentationsOnBanachSpacesOfData §§1.1 and 1.2 of the ShortGRH
-roadmap. It is adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright
-2026 Anthropic, PBC), file `src/Lib/Weil/Construction/HeisenbergModel.lean`
+Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026
+Anthropic, PBC), file `src/Lib/Weil/Construction/HeisenbergModel.lean`
 (`New.Heisenberg.IsVacuum.Model`, `New.Heisenberg.IsVacuum.heisenbergRep`,
 `New.Heisenberg.IsVacuum.vacElem`, `New.Heisenberg.IsVacuum.modelInner`,
 `New.Heisenberg.Rep.integrated`, `New.Heisenberg.IsVacuum.map_eq_integral`,
@@ -285,16 +284,18 @@ private def translate : ReproducingModel β μ e :=
 
 private theorem translate_apply : translate v y x = β y x * v (x - y) := mk_apply _ _ _ _
 
+/-- The twisted translation preserves the `L¹` norm, since `μ` is translation invariant. -/
+private theorem norm_translate : ‖translate v y‖ = ‖v‖ := by
+  rw [norm_eq_integral_norm, norm_eq_integral_norm]
+  simp only [translate_apply, norm_mul, β.norm_apply, one_mul]
+  exact integral_sub_right_eq_self (fun x ↦ ‖v x‖) y
+
 private def heisenbergIsometry : ReproducingModel β μ e →ₗᵢ[ℂ] ReproducingModel β μ e where
   toFun v := translate v y
   map_add' v w := ext fun x ↦ by simp only [translate_apply, add_apply, mul_add]
   map_smul' c v := ext fun x ↦ by
     rw [translate_apply, smul_apply, smul_apply, translate_apply, RingHom.id_apply, mul_left_comm]
-  norm_map' v := by
-    change ‖translate v y‖ = ‖v‖
-    rw [norm_eq_integral_norm, norm_eq_integral_norm]
-    simp only [translate_apply, norm_mul, β.norm_apply, one_mul]
-    exact integral_sub_right_eq_self (fun x ↦ ‖v x‖) y
+  norm_map' v := norm_translate v y
 
 private theorem heisenbergIsometry_apply : heisenbergIsometry y v x = β y x * v (x - y) :=
   translate_apply v x y
@@ -442,14 +443,15 @@ theorem integrable_norm_sq : Integrable (fun x ↦ ‖v x‖ ^ 2) μ := by
   exact mul_le_mul_of_nonneg_left (norm_apply_le v y) (norm_nonneg _)
 
 /-- The form `⟨·, ·⟩` is definite. -/
-theorem eq_zero_of_innerSL_self [μ.IsOpenPosMeasure] {v : ReproducingModel β μ e}
-    (h : innerSL v v = 0) : v = 0 := by
+theorem eq_zero_of_innerSL_self {v : ReproducingModel β μ e} (h : innerSL v v = 0) : v = 0 := by
+  -- `v` vanishes almost everywhere, hence everywhere by the reproducing identity.
+  have h_int : ∫ y, ‖v y‖ ^ 2 ∂μ = 0 := by exact_mod_cast (innerSL_self v).symm.trans h
+  have h_ae : (v : W → ℂ) =ᵐ[μ] 0 :=
+    ((integral_eq_zero_iff_of_nonneg (fun y ↦ sq_nonneg ‖v y‖) (integrable_norm_sq v)).1
+      h_int).mono fun y hy ↦ by simpa using hy
   ext x
-  by_contra hx
-  have h_pos : 0 < ∫ y, ‖v y‖ ^ 2 ∂μ :=
-    integral_pos_of_integrable_nonneg_ne_zero (x := x) (by fun_prop) (integrable_norm_sq v)
-      (fun y ↦ sq_nonneg ‖v y‖) (by simpa using hx)
-  exact h_pos.ne' (by exact_mod_cast (innerSL_self v).symm.trans h)
+  rw [← v.integral_mul_kernel, zero_apply]
+  exact (integral_congr_ae (h_ae.mono fun y hy ↦ by simp [hy])).trans (integral_zero W ℂ)
 
 section Inner
 
