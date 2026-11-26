@@ -261,7 +261,8 @@ theorem localToGaloisGroupS_eq_one_of_mem_inertia {S : Set (HeightOneSpectrum (�
     {g : AbsoluteGaloisGroup (v.adicCompletion K)}
     (hg : g ∈ separableClosureInertiaSubgroup (v.adicCompletion K)) :
     localToGaloisGroupS K S v τ g = 1 := by
-  show (restrictGaloisGroupS K (SeparableClosure K) S).toMonoidHom (absoluteGaloisGroupMap τ g) = 1
+  change (restrictGaloisGroupS K (SeparableClosure K) S).toMonoidHom
+    (absoluteGaloisGroupMap τ g) = 1
   rw [← MonoidHom.mem_ker, ker_restrictGaloisGroupS]
   exact absoluteGaloisGroupMap_mem_fixingSubgroup_maxUnramifiedOutside K hv τ hg
 
@@ -336,8 +337,8 @@ theorem fixingSubgroup_maxUnramifiedOutside_eq_inertiaOutsideSubgroup
       intro hmem
       obtain ⟨P, hP⟩ := TauCeti.NumberField.mem_ramifiedSupport_iff_exists.1 hmem
       let w : HeightOneSpectrum (𝓞 (adjoin K {x})) :=
-        ⟨P.1, P.2.1, Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot P.1⟩
-      have : w.asIdeal.LiesOver v.asIdeal := P.2.2
+        ⟨P.val, P.property.1, Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot P.val⟩
+      have : w.asIdeal.LiesOver v.asIdeal := P.property.2
       have hur := isUnramified_adicCompletion_of_inertia_le_fixingSubgroup K hle hv w
       have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
       have : Finite (𝓞 (adjoin K {x}) ⧸ w.asIdeal) :=
