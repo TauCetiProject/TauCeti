@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.AdicCompletion.Completeness
 
 /-!
-# Limits in adically Hausdorff modules
+# Adic limits and the map to the adic completion
 
 Let `I` be an ideal of a commutative ring `R` and `M` an `I`-adically Hausdorff `R`-module. An
 `I`-adic limit of a sequence in `M` is unique, and `R`-linear maps preserve `I`-adic convergence,
@@ -19,6 +19,12 @@ from the terms of an `I`-adically convergent sequence in an algebra to its limit
 The coordinates of an element of the completion `AdicCompletion I M` are compatible: a
 representative of its coordinate modulo `I ^ n` also represents its coordinate modulo `I ^ m` for
 every `m ≤ n`.
+
+The kernel of the canonical map `AdicCompletion.of I M : M → M̂` is `⋂ₙ Iⁿ M`, so it vanishes
+exactly when `M` is `I`-adically Hausdorff. When `I` is finitely generated, `I M̂` is the kernel of
+the evaluation at level one; hence the image of `M` and `I M̂` together span `M̂`, and an element of
+`M` whose image lies in `I M̂` already lies in `I M`. These are the facts that the regular-element
+reduction results in `TauCeti.RingTheory.AdicCompletion.Regular.Reduction` consume.
 
 ## Main results
 
