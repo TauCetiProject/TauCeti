@@ -42,6 +42,8 @@ Dedekind zeta function of `K`.
 
 * `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_eq_zero_iff`: `χ_D(p) = 0` iff `p`
   ramifies.
+* `TauCeti.Multiquadratic.isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero`: `p` is
+  unramified, as `Algebra.IsUnramifiedIn`, iff `χ_D(p) ≠ 0`.
 * `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_eq_one_iff`: `χ_D(p) = 1` iff `p`
   splits.
 * `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_eq_neg_one_iff`: `χ_D(p) = -1` iff
@@ -144,14 +146,16 @@ theorem fundamentalDiscriminantChar_discr_eq_neg_one_iff (hK : finrank ℚ K = 2
   · rcases fundamentalDiscriminantChar_discr_of_notMem_ramifiedPrimes hK p hram with
       ⟨h, hn⟩ | ⟨h, hn⟩ <;> simp [h, hn, hram]
 
-/-- A prime `p` with `χ_D(p) ≠ 0` is unramified in `K`. -/
-private theorem isUnramifiedIn_of_fundamentalDiscriminantChar_discr_ne_zero
-    (hK : finrank ℚ K = 2) (p : ℕ) [hp : Fact p.Prime]
-    (h : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p ≠ 0) :
-    Algebra.IsUnramifiedIn (𝓞 K) (span {(p : ℤ)}) := by
-  by_contra hn
-  exact h ((fundamentalDiscriminantChar_discr_eq_zero_iff hK p).mpr
-    (NumberField.mem_ramifiedPrimes_iff.mpr ⟨hp.out, hn⟩))
+/-- **`p` is unramified exactly when `χ_D(p) ≠ 0`.** For a quadratic field `K` with discriminant
+`D`, a prime `p` is unramified in `K`, in the sense of `Algebra.IsUnramifiedIn`, iff
+`χ_D(p) ≠ 0`. -/
+theorem isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero
+    (hK : finrank ℚ K = 2) (p : ℕ) [hp : Fact p.Prime] :
+    Algebra.IsUnramifiedIn (𝓞 K) (span {(p : ℤ)}) ↔
+      fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p ≠ 0 := by
+  rw [ne_eq, fundamentalDiscriminantChar_discr_eq_zero_iff hK p, NumberField.mem_ramifiedPrimes_iff,
+    not_and, not_not]
+  exact ⟨fun h _ => h, fun h => h hp.out⟩
 
 /-- **A split prime is the product of two distinct primes.** For a quadratic field `K` with
 discriminant `D`, if `χ_D(p) = 1`, then `p 𝓞 K = 𝔭 𝔮` for two distinct prime ideals `𝔭` and `𝔮`
@@ -161,7 +165,7 @@ theorem exists_span_natCast_eq_mul_of_fundamentalDiscriminantChar_discr_eq_one
     (h : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p = 1) :
     ∃ 𝔭 𝔮 : Ideal (𝓞 K), 𝔭.IsPrime ∧ 𝔮.IsPrime ∧ 𝔭 ≠ 𝔮 ∧ span {(p : 𝓞 K)} = 𝔭 * 𝔮 := by
   classical
-  have hun := isUnramifiedIn_of_fundamentalDiscriminantChar_discr_ne_zero hK p
+  have hun := (isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero hK p).mpr
     (by rw [h]; exact one_ne_zero)
   obtain ⟨𝔭, 𝔮, hne, hT⟩ := Set.ncard_eq_two.mp
     ((fundamentalDiscriminantChar_discr_eq_one_iff hK p).mp h)
@@ -183,7 +187,7 @@ theorem isPrime_span_natCast_of_fundamentalDiscriminantChar_discr_eq_neg_one
     (hK : finrank ℚ K = 2) (p : ℕ) [Fact p.Prime]
     (h : fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) p = -1) :
     (span {(p : 𝓞 K)}).IsPrime := by
-  have hun := isUnramifiedIn_of_fundamentalDiscriminantChar_discr_ne_zero hK p
+  have hun := (isUnramifiedIn_iff_fundamentalDiscriminantChar_discr_ne_zero hK p).mpr
     (by rw [h]; exact neg_ne_zero.mpr one_ne_zero)
   have hone := ((fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h).2
   obtain ⟨𝔭, h𝔭⟩ := Set.ncard_eq_one.mp hone
