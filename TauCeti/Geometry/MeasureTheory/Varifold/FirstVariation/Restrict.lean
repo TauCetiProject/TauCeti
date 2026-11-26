@@ -56,16 +56,13 @@ theorem firstVariation_restrictOpens [IsFiniteMeasureOnCompacts V] (h : W' ≤ W
       (firstVariation V).comp (monoCLM ℝ : 𝓓^{1}(W', E) →L[ℝ] 𝓓^{1}(W, E)) := by
   ext X
   have hX : ⇑(monoCLM ℝ X : 𝓓^{1}(W, E)) = X := coe_monoCLM_of_le le_rfl h X
-  set e : W' × grassmannian ℝ E k → W × grassmannian ℝ E k := Prod.map (inclusion h) id
-  have he : MeasurableEmbedding e :=
-    (W'.isOpen.measurableSet.measurableEmbedding_inclusion h).prodMap .id
   rw [ContinuousLinearMap.comp_apply, firstVariation_apply, firstVariation_apply, hX]
   have hS : ∫ p in Prod.fst ⁻¹' (Subtype.val ⁻¹' W'), tangentialDivergence X p.1 p.2 ∂V =
       ∫ p, tangentialDivergence X p.1 p.2 ∂V :=
     setIntegral_eq_integral_of_forall_compl_eq_zero fun p hp =>
       tangentialDivergence_eq_zero_of_notMem_tsupport (fun hpX => hp (X.tsupport_subset hpX)) _
-  rw [← hS, ← map_restrictOpens h, he.integral_map]
-  simp only [e, Prod.map_fst, Prod.map_snd, id_eq]
+  rw [← hS, ← map_restrictOpens h, (measurableEmbedding_inclusion_prodMap h).integral_map]
+  simp only [Prod.map_fst, Prod.map_snd, id_eq]
 
 /-- **Total first variation of a restriction.** For every set `U`, the total first variation of
 `V ⌞ W'` on `U` is the total first variation of `V` on `U ∩ W'`. -/
