@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Expand
-import Mathlib.RingTheory.RootsOfUnity.Complex
 
 /-!
 # Cyclotomic expansion and derivative size
@@ -24,7 +22,9 @@ The derivative estimate is the cyclotomic part of the different estimate
 
 public section
 
-namespace Polynomial
+namespace TauCeti
+
+open Polynomial
 
 /-- Expanding `Φ_n` by a nonzero factor supported on the primes of `n` gives `Φ_(n*m)`.
 This extends `cyclotomic_expand_eq_cyclotomic` from one prime to a product of primes. -/
@@ -78,4 +78,4 @@ theorem exists_pos_norm_eval_derivative_cyclotomic_mul {n m : ℕ} {z : ℂ}
   · exact Finset.single_le_sum (f := fun w ↦ |Real.log ‖(cyclotomic n ℂ).derivative.eval w‖|)
       (fun _ _ ↦ abs_nonneg _) ((mem_primitiveRoots hn).mpr hw)
 
-end Polynomial
+end TauCeti
