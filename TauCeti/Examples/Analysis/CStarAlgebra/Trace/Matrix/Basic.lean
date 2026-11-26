@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Trace.Matrix
+public import TauCeti.Analysis.CStarAlgebra.Trace.Matrix.Basic
 public import TauCeti.Examples.Analysis.CStarAlgebra.Matrix.Order
 public import TauCeti.Examples.Analysis.CStarAlgebra.TracePairing.Basic
 
