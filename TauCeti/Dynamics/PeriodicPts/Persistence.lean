@@ -65,7 +65,8 @@ nondegenerate fixed point of each `f^[k]`, `k ≤ N`, fixing it, the same holds 
 (`IsCompact.eventually_forall_isNondegenerateFixedPt_iterate_of_exists_isFixedPt`): these orbits
 are finitely many, near them persistence applies, and away from them avoidance does. This is the
 invariant of the induction over the periods that makes all periodic points of period at most `N`
-of an area-preserving surface map nondegenerate.
+of an area-preserving map of the plane nondegenerate
+(`TauCeti.exists_forall_mem_Icc_isNondegenerateFixedPt_iterate_comp`).
 
 For perturbations of the form `g ∘ ψ` with `ψ` close to the identity in `C¹` (`TauCeti.IsNearId`),
 as they arise when localized perturbations are composed one after another, nondegeneracy and the
@@ -370,9 +371,9 @@ theorem eventually_forall_fixedPoints_iterate_inter_eq (hK : IsCompact K) (hf : 
     |>.finite_of_isNondegenerateFixedPt fun x hx ↦ hnd x hx.2 hx.1
   -- Each point of `F` has a closed ball around it containing no other point of period `k`.
   have hiso (x : E) (hx : x ∈ F) : ∃ ρ > 0, ∀ y ∈ closedBall x ρ, IsFixedPt f^[k] y → y = x := by
-    obtain ⟨r, hr, hr'⟩ := Metric.mem_nhdsWithin_iff.1 (hnd x hx.2 hx.1).eventually_not_isFixedPt
-    exact ⟨r / 2, half_pos hr, fun y hy hyfix ↦ by_contra fun hyx ↦
-      hr' ⟨mem_ball.2 ((mem_closedBall.1 hy).trans_lt (half_lt_self hr)), hyx⟩ hyfix⟩
+    obtain ⟨r, hr, hr'⟩ := (nhdsWithin_hasBasis nhds_basis_closedBall _).eventually_iff.1
+      (hnd x hx.2 hx.1).eventually_not_isFixedPt
+    exact ⟨r, hr, fun y hy hyfix ↦ by_contra fun hyx ↦ hr' ⟨hy, hyx⟩ hyfix⟩
   choose! ρ hρ0 hρ using hiso
   -- On `K₂ = K ∪ ⋃ x ∈ F, closedBall x (ρ x)` the points of period `k` are those of `F`, and they
   -- lie in the interior of `K₂`, so they persist bijectively.
@@ -436,9 +437,8 @@ theorem eventually_forall_isNondegenerateFixedPt_iterate_of_exists_isFixedPt (hK
         exact (hnd k hk x hjx.2 hxk ⟨j, hj, hjx.1⟩).eventually_not_isFixedPt
       · exact nhdsWithin_le_nhds
           ((isClosed_fixedPoints (hf.continuous.iterate k)).isOpen_compl.mem_nhds hxk)
-    obtain ⟨r, hr, hr'⟩ := Metric.mem_nhdsWithin_iff.1 hev
-    exact ⟨r / 2, half_pos hr, fun y hy hyx ↦
-      hr' ⟨mem_ball.2 ((mem_closedBall.1 hy).trans_lt (half_lt_self hr)), hyx⟩⟩
+    obtain ⟨r, hr, hr'⟩ := (nhdsWithin_hasBasis nhds_basis_closedBall _).eventually_iff.1 hev
+    exact ⟨r, hr, fun y hy hyx ↦ hr' ⟨hy, hyx⟩⟩
   choose! r hr0 hr using hiso
   -- On the balls, all points of period at most `N` are points of `F`, which are nondegenerate.
   set L := K ∩ ⋃ x ∈ F, closedBall x (r x)

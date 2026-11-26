@@ -26,8 +26,10 @@ translation. A bound `M` on the vector field bounds the displacement of the time
 `M |t|`, and for a `C²` Hamiltonian a Lipschitz constant `K` of the vector field bounds the
 distance of the derivative of the time-`t` map from the identity by `exp (K |t|) - 1`. For a `C²`
 Hamiltonian, every time map preserves the symplectic form on tangent vectors: differentiating the
-pairing of two variations and using symmetry of the Hessian gives zero. A linear
-symplectomorphism `e` conjugates the flow of `G ∘ e` to the flow of `G`
+pairing of two variations and using symmetry of the Hessian gives zero. Preserving the symplectic
+form on tangent vectors is stable under composition and iteration of differentiable maps
+(`TauCeti.SymplecticForm.apply_fderiv_comp`, `TauCeti.SymplecticForm.apply_fderiv_iterate`). A
+linear symplectomorphism `e` conjugates the flow of `G ∘ e` to the flow of `G`
 (`TauCeti.SymplecticForm.IsSymplectomorphism.map_hamiltonianFlow`), and so their linearizations
 (`TauCeti.SymplecticForm.IsSymplectomorphism.fderiv_hamiltonianFlow`); in a frame `b` and its image
 `b.map e` the two linearized flows have the same matrix
@@ -164,6 +166,29 @@ theorem apply_fderiv_hamiltonianFlow (hX : LipschitzWith K (ω.hamiltonianVector
   have hc := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt)
     (fun s ↦ (hd s).deriv) t 0
   simpa using hc
+
+omit [FiniteDimensional ℝ V] in
+/-- **Preserving `ω` on tangent vectors is stable under composition.** If the derivatives of two
+differentiable maps `g` and `ψ` preserve `ω` at every point, so does the derivative of `g ∘ ψ`. -/
+theorem apply_fderiv_comp {g ψ : V → V} (hg : Differentiable ℝ g)
+    (hψ : Differentiable ℝ ψ) (hgω : ∀ x u v, ω (fderiv ℝ g x u) (fderiv ℝ g x v) = ω u v)
+    (hψω : ∀ x u v, ω (fderiv ℝ ψ x u) (fderiv ℝ ψ x v) = ω u v) (x u v : V) :
+    ω (fderiv ℝ (g ∘ ψ) x u) (fderiv ℝ (g ∘ ψ) x v) = ω u v := by
+  rw [fderiv_comp x (hg _) (hψ x)]
+  simp [hgω, hψω]
+
+omit [FiniteDimensional ℝ V] in
+/-- **Preserving `ω` on tangent vectors is stable under iteration.** If the derivative of a
+differentiable map `g` preserves `ω` at every point, so do the derivatives of all iterates
+`g^[m]`. -/
+theorem apply_fderiv_iterate {g : V → V} (hg : Differentiable ℝ g)
+    (hgω : ∀ x u v, ω (fderiv ℝ g x u) (fderiv ℝ g x v) = ω u v) (m : ℕ) (x u v : V) :
+    ω (fderiv ℝ g^[m] x u) (fderiv ℝ g^[m] x v) = ω u v := by
+  induction m generalizing x u v with
+  | zero => simp [fderiv_id]
+  | succ m ih =>
+    rw [Function.iterate_succ]
+    exact ω.apply_fderiv_comp (hg.iterate m) hg ih hgω x u v
 
 /-- The Hamiltonian flow does not depend on the chosen Lipschitz constant of the Hamiltonian
 vector field. -/

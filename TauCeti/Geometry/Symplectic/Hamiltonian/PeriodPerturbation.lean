@@ -14,25 +14,25 @@ import TauCeti.Dynamics.PeriodicPts.Persistence
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
 /-!
-# Making all periodic points of one period nondegenerate
+# Making periodic points nondegenerate: one period, and all periods up to a cutoff
 
 Let `(V, ω)` be a finite-dimensional symplectic vector space, for instance a chart of a surface
 with its area form, let `φ` be a `C¹` self-map of `V`, `K` a compact set and `k > 0` a period. A
 point `x` with `φ^[k] x = x` is *nondegenerate* when the linearized return map `d(φ^[k])_x` does
-not have `1` as an eigenvalue (`TauCeti.IsNondegenerateFixedPt`). This file shows that an
-arbitrarily `C¹`-small perturbation `φ ∘ ψ`, by a smooth compactly supported map `ψ` preserving
-`ω`, makes every point of `K` of period `k` nondegenerate, provided that this already holds at the
-points of `K` whose least period is smaller than `k`
+not have `1` as an eigenvalue (`TauCeti.IsNondegenerateFixedPt`). This file shows that, provided
+every point of `K` of period `k` whose least period is smaller than `k` is already nondegenerate,
+for every `ε > 0` there is a smooth compactly supported map `ψ` preserving `ω`, with `φ ∘ ψ` within
+`ε` of `φ` in value and derivative at every point, such that every point of `K` of period `k` for
+`φ ∘ ψ` is nondegenerate
 (`TauCeti.SymplecticForm.exists_forall_isNondegenerateFixedPt_iterate_comp`). The support of `ψ`
-lies in any prescribed open neighbourhood of `K`, and `φ ∘ ψ` is within `ε` of `φ` in value and
-derivative at every point.
+lies in any prescribed open neighbourhood of `K`.
 
-This is the step for one period of the induction over the periods `1, …, N` that makes all
-periodic points of period at most a cutoff `N` of an area-preserving map nondegenerate. The
-hypothesis at the points of smaller least period is what the earlier steps of that induction
-provide once their orbits are made nondegenerate in all iterates, for instance by the localized
-twists of `TauCeti.Geometry.Symplectic.Hamiltonian.ReturnMapPerturbation`. Since `φ ∘ ψ` is
-`C¹`-close to `φ` everywhere, nondegeneracy reached at the earlier steps persists
+This is the step for one period of the induction over the periods `1, …, N` carried out on the
+plane in the section *All periods up to a cutoff* below. The hypothesis at the points of smaller
+least period is what the earlier stages of that induction provide once their orbits are made
+nondegenerate in all iterates, by the localized twists of
+`TauCeti.Geometry.Symplectic.Hamiltonian.ReturnMapPerturbation`. Since `φ ∘ ψ` is `C¹`-close to
+`φ` everywhere, nondegeneracy reached at the earlier stages persists
 (`IsCompact.exists_pos_forall_mem_Icc_isNondegenerateFixedPt_iterate`).
 
 The proof is a finite version of Robinson's Baire argument.
@@ -59,9 +59,10 @@ The proof is a finite version of Robinson's Baire argument.
 
 **All periods up to a cutoff.** On the plane `ℂ` with its area form, the induction is carried out
 (`TauCeti.exists_forall_mem_Icc_isNondegenerateFixedPt_iterate_comp`): for an area-preserving `C¹`
-map `φ`, a compact set `K`, an open neighbourhood `U` of `K` and a cutoff `N`, an arbitrarily
-`C¹`-small compactly supported area-preserving perturbation `φ ∘ ψ`, supported in `U`, has all its
-points of period `k ≤ N` in `K` nondegenerate. The invariant after the stage `n` is that every point
+map `φ`, a compact set `K`, an open neighbourhood `U` of `K` and a cutoff `N`, for every `ε > 0`
+there is a compactly supported area-preserving map `ψ`, supported in `U`, with `φ ∘ ψ` within `ε`
+of `φ` in `C¹`, such that all points of period `k ≤ N` of `φ ∘ ψ` in `K` are nondegenerate. The
+invariant after the stage `n` is that every point
 of `K` of period at most `n` is a nondegenerate fixed point of every iterate `(φ ∘ ψ)^[k]`,
 `k ≤ N`, fixing it, so that the orbits of period at most `n` are nondegenerate in all their covers
 up to period `N`. It is `C¹`-open
@@ -82,12 +83,12 @@ up to period `N`. It is `C¹`-open
 
 ## Main results
 
-* `TauCeti.SymplecticForm.exists_forall_isNondegenerateFixedPt_iterate_comp`: a `C¹`-small
-  compactly supported perturbation preserving `ω` makes the points of period `k` in a compact set
-  nondegenerate, given nondegeneracy at those of smaller least period.
-* `TauCeti.exists_forall_mem_Icc_isNondegenerateFixedPt_iterate_comp`: on the plane, a `C¹`-small
-  compactly supported area-preserving perturbation of an area-preserving map makes all its points of
-  period at most `N` in a compact set nondegenerate.
+* `TauCeti.SymplecticForm.exists_forall_isNondegenerateFixedPt_iterate_comp`: given nondegeneracy
+  at the points of smaller least period, for every `ε > 0` some compactly supported perturbation
+  preserving `ω`, `ε`-close in `C¹`, makes the points of period `k` in a compact set nondegenerate.
+* `TauCeti.exists_forall_mem_Icc_isNondegenerateFixedPt_iterate_comp`: on the plane, for every
+  `ε > 0` some compactly supported area-preserving perturbation of an area-preserving map,
+  `ε`-close in `C¹`, makes all its points of period at most `N` in a compact set nondegenerate.
 
 ## References
 
@@ -129,12 +130,40 @@ private theorem IsPerturbation.comp {U : Set V} {ψ₁ ψ₂ : V → V} (h₁ : 
     (h₂ : IsPerturbation ω U ψ₂) : IsPerturbation ω U (ψ₁ ∘ ψ₂) := by
   obtain ⟨hs₁, hω₁, S₁, hS₁, hS₁U, hid₁⟩ := h₁
   obtain ⟨hs₂, hω₂, S₂, hS₂, hS₂U, hid₂⟩ := h₂
-  refine ⟨hs₁.comp hs₂, fun x u v ↦ ?_, S₁ ∪ S₂, hS₁.union hS₂, union_subset hS₁U hS₂U,
+  refine ⟨hs₁.comp hs₂, ω.apply_fderiv_comp (hs₁.differentiable (by simp))
+    (hs₂.differentiable (by simp)) hω₁ hω₂, S₁ ∪ S₂, hS₁.union hS₂, union_subset hS₁U hS₂U,
     fun w hw ↦ ?_⟩
-  · rw [fderiv_comp x (hs₁.differentiable (by simp) _) (hs₂.differentiable (by simp) x)]
-    simp [hω₁, hω₂]
-  · rw [mem_union, not_or] at hw
-    simp [hid₂ w hw.2, hid₁ w hw.1]
+  rw [mem_union, not_or] at hw
+  simp [hid₂ w hw.2, hid₁ w hw.1]
+
+omit [FiniteDimensional ℝ V] in
+/-- The perturbations of this file in terms of the support of their displacement `ψ w - w`. -/
+private theorem isPerturbation_iff {U : Set V} {ψ : V → V} :
+    IsPerturbation ω U ψ ↔ ContDiff ℝ (⊤ : ℕ∞) ψ ∧
+      (∀ x u v, ω (fderiv ℝ ψ x u) (fderiv ℝ ψ x v) = ω u v) ∧
+      HasCompactSupport (fun w ↦ ψ w - w) ∧ tsupport (fun w ↦ ψ w - w) ⊆ U := by
+  refine and_congr_right' (and_congr_right' ⟨fun ⟨S, hS, hSU, hψS⟩ ↦ ?_, fun ⟨hc, hU⟩ ↦
+    ⟨_, hc, hU, fun w hw ↦ sub_eq_zero.1 (image_eq_zero_of_notMem_tsupport (f := fun w ↦ ψ w - w)
+      hw)⟩⟩)
+  have hsupp : support (fun w ↦ ψ w - w) ⊆ S := fun w hw ↦
+    by_contra fun hwS ↦ hw (by simp [hψS w hwS])
+  exact ⟨HasCompactSupport.intro hS fun w hw ↦ by simp [hψS w hw],
+    (closure_minimal hsupp hS.isClosed).trans hSU⟩
+
+omit [FiniteDimensional ℝ V] in
+/-- Closeness of two successive perturbations adds up: if `g ∘ ψ₁` is within `a` of `g` and
+`g ∘ ψ₁ ∘ ψ₂` within `b` of `g ∘ ψ₁`, in value and derivative, then `g ∘ ψ₁ ∘ ψ₂` is within any
+`c ≥ a + b` of `g`. -/
+private theorem norm_comp_comp_sub_le {g ψ₁ ψ₂ : V → V} {a b c : ℝ}
+    (h₁₀ : ∀ y, ‖g (ψ₁ y) - g y‖ ≤ a) (h₁₁ : ∀ y, ‖fderiv ℝ (g ∘ ψ₁) y - fderiv ℝ g y‖ ≤ a)
+    (h₂₀ : ∀ y, ‖g (ψ₁ (ψ₂ y)) - g (ψ₁ y)‖ ≤ b)
+    (h₂₁ : ∀ y, ‖fderiv ℝ (g ∘ ψ₁ ∘ ψ₂) y - fderiv ℝ (g ∘ ψ₁) y‖ ≤ b) (habc : a + b ≤ c) :
+    (∀ y, ‖g (ψ₁ (ψ₂ y)) - g y‖ ≤ c) ∧
+      ∀ y, ‖fderiv ℝ (g ∘ ψ₁ ∘ ψ₂) y - fderiv ℝ g y‖ ≤ c :=
+  ⟨fun y ↦ (norm_sub_le_norm_sub_add_norm_sub _ (g (ψ₁ y)) _).trans
+      ((add_comm a b ▸ add_le_add (h₂₀ y) (h₁₀ y)).trans habc),
+    fun y ↦ (norm_sub_le_norm_sub_add_norm_sub _ (fderiv ℝ (g ∘ ψ₁) y) _).trans
+      ((add_comm a b ▸ add_le_add (h₂₁ y) (h₁₁ y)).trans habc)⟩
 
 /-- The time-one map of a smooth Hamiltonian that is the identity outside a compact subset `S` of
 `U` is one of the perturbations of this file. -/
@@ -194,23 +223,20 @@ private theorem exists_isPerturbation_of_finset {φ : V → V} (hφ : ContDiff �
     have hclose := hcomp ψ₂
       (fun w hw ↦ (hid w fun hw' ↦ hw (ball_subset_closedBall hw')).eq_of_nhds)
       (fun x _ ↦ hψ₂.1.differentiable (by simp) x) (fun x _ ↦ hdisp x) (fun x _ ↦ hderiv x)
-    refine ⟨ψ₁ ∘ ψ₂, hψ₁.comp ω hψ₂, fun y ↦ ?_, fun y ↦ ?_, fun x hx hfix ↦ ?_⟩
-    · exact (norm_sub_le_norm_sub_add_norm_sub _ (g₁ y) _).trans ((add_le_add (hclose y).1
-        (h₁₀ y)).trans (by linarith [min_le_right δ₁ (τ / 2)]))
-    · rw [← Function.comp_assoc]
-      exact (norm_sub_le_norm_sub_add_norm_sub _ (fderiv ℝ g₁ y) _).trans ((add_le_add
-        (hclose y).2 (h₁₁ y)).trans (by linarith [min_le_right δ₁ (τ / 2)]))
-    · rw [← Function.comp_assoc] at hfix ⊢
-      have hd : Differentiable ℝ (g₁ ∘ ψ₂) :=
-        (hg₁.differentiable one_ne_zero).comp (hψ₂.1.differentiable (by simp))
-      have hpers' := hpers (g₁ ∘ ψ₂) (fun y _ ↦ hd y)
-        (fun y _ ↦ (hclose y).1.trans (min_le_left _ _))
-        (fun y _ ↦ (hclose y).2.trans (min_le_left _ _))
-      simp only [Finset.set_biUnion_insert, mem_union] at hx
-      rcases hx with hx | hx | hx
-      · exact hpers' x (Or.inl hx) hfix
-      · exact hnd x hx hfix
-      · exact hpers' x (Or.inr hx) hfix
+    obtain ⟨h₂₀, h₂₁⟩ := norm_comp_comp_sub_le (c := τ) h₁₀ h₁₁ (fun y ↦ (hclose y).1)
+      (fun y ↦ (hclose y).2) (by linarith [min_le_right δ₁ (τ / 2)])
+    refine ⟨ψ₁ ∘ ψ₂, hψ₁.comp ω hψ₂, h₂₀, h₂₁, fun x hx hfix ↦ ?_⟩
+    rw [← Function.comp_assoc] at hfix ⊢
+    have hd : Differentiable ℝ (g₁ ∘ ψ₂) :=
+      (hg₁.differentiable one_ne_zero).comp (hψ₂.1.differentiable (by simp))
+    have hpers' := hpers (g₁ ∘ ψ₂) (fun y _ ↦ hd y)
+      (fun y _ ↦ (hclose y).1.trans (min_le_left _ _))
+      (fun y _ ↦ (hclose y).2.trans (min_le_left _ _))
+    simp only [Finset.set_biUnion_insert, mem_union] at hx
+    rcases hx with hx | hx | hx
+    · exact hpers' x (Or.inl hx) hfix
+    · exact hnd x hx hfix
+    · exact hpers' x (Or.inr hx) hfix
 
 /-- **Points of least period `k`.** Let the points of period `k` of `φ` in a compact set `L` be
 nondegenerate, and let every point of period `k` of `φ` in a compact set `K ⊆ U` have least period
@@ -302,9 +328,9 @@ theorem exists_forall_isNondegenerateFixedPt_iterate_comp {φ : V → V} (hφ : 
     (isClosed_biUnion_finset fun j _ ↦ isClosed_fixedPoints (hφ.continuous.iterate j))
   have hr : ∀ z ∈ Z, ∃ r > 0, ∀ y ∈ closedBall z r, IsFixedPt φ^[k] y → y = z := by
     intro z hz
-    obtain ⟨r, hr, hr'⟩ := Metric.mem_nhdsWithin_iff.1 (hlowZ z hz).eventually_not_isFixedPt
-    exact ⟨r / 2, half_pos hr, fun y hy hyfix ↦ by_contra fun hyz ↦
-      hr' ⟨mem_ball.2 ((mem_closedBall.1 hy).trans_lt (half_lt_self hr)), hyz⟩ hyfix⟩
+    obtain ⟨r, hr, hr'⟩ := (nhdsWithin_hasBasis nhds_basis_closedBall _).eventually_iff.1
+      (hlowZ z hz).eventually_not_isFixedPt
+    exact ⟨r, hr, fun y hy hyfix ↦ by_contra fun hyz ↦ hr' ⟨hy, hyz⟩ hyfix⟩
   choose! r hr0 hrfix using hr
   obtain ⟨t, htZ, hcover⟩ := hZ.elim_nhds_subcover (fun z ↦ ball z (r z))
     fun z hz ↦ ball_mem_nhds z (hr0 z hz)
@@ -314,15 +340,13 @@ theorem exists_forall_isNondegenerateFixedPt_iterate_comp {φ : V → V} (hφ : 
     obtain ⟨z, hz, hxz⟩ := mem_iUnion₂.1 hx
     rw [hrfix z (htZ z hz) x hxz hfix]
     exact hlowZ z (htZ z hz)
-  obtain ⟨ψ, ⟨hψs, hψω, S, hS, hSU, hψS⟩, hψ₀, hψ₁, hnd⟩ := exists_isPerturbation_of_forall_ne ω hφ
+  obtain ⟨ψ, hψ, hψ₀, hψ₁, hnd⟩ := exists_isPerturbation_of_forall_ne ω hφ
     hk (hK.diff (isOpen_biUnion fun _ _ ↦ isOpen_ball))
     (hK.inter_right (isClosed_biUnion_finset fun _ _ ↦ isClosed_closedBall)) hU
     (sdiff_subset.trans hKU) hLnd (fun x hx hfix j hj hjk hjx ↦ hx.2 (hcover
       ⟨⟨hx.1, hfix⟩, mem_iUnion₂.2 ⟨j, Finset.mem_Ioo.2 ⟨hj, hjk⟩, hjx⟩⟩)) hε
-  have hsupp : support (fun w ↦ ψ w - w) ⊆ S := fun w hw ↦
-    by_contra fun hwS ↦ hw (by simp [hψS w hwS])
-  refine ⟨ψ, hψs, hψω, HasCompactSupport.intro hS fun w hw ↦ by simp [hψS w hw],
-    (closure_minimal hsupp hS.isClosed).trans hSU, hψ₀, hψ₁, fun x hx hfix ↦ ?_⟩
+  obtain ⟨hψs, hψω, hψc, hψU⟩ := (ω.isPerturbation_iff).1 hψ
+  refine ⟨ψ, hψs, hψω, hψc, hψU, hψ₀, hψ₁, fun x hx hfix ↦ ?_⟩
   by_cases hxt : x ∈ ⋃ z ∈ t, ball z (r z)
   · obtain ⟨z, hz, hxz⟩ := mem_iUnion₂.1 hxt
     exact hnd x (Or.inr ⟨hx, mem_iUnion₂.2 ⟨z, hz, ball_subset_closedBall hxz⟩⟩) hfix
@@ -336,26 +360,6 @@ theorem exists_forall_isNondegenerateFixedPt_iterate_comp {φ : V → V} (hφ : 
 private def NondegenerateUpTo (g : V → V) (K : Set V) (N n : ℕ) : Prop :=
   ∀ k ∈ Finset.Icc 1 N, ∀ x ∈ K, IsFixedPt g^[k] x → (∃ j ∈ Finset.Icc 1 n, IsFixedPt g^[j] x) →
     IsNondegenerateFixedPt 𝓘(ℝ, V) g^[k] x
-
-omit [FiniteDimensional ℝ V] in
-/-- The composite of two maps whose derivatives preserve `ω` has derivative preserving `ω`. -/
-private theorem apply_fderiv_comp {g ψ : V → V} (hg : Differentiable ℝ g)
-    (hψ : Differentiable ℝ ψ) (hgω : ∀ x u v, ω (fderiv ℝ g x u) (fderiv ℝ g x v) = ω u v)
-    (hψω : ∀ x u v, ω (fderiv ℝ ψ x u) (fderiv ℝ ψ x v) = ω u v) (x u v : V) :
-    ω (fderiv ℝ (g ∘ ψ) x u) (fderiv ℝ (g ∘ ψ) x v) = ω u v := by
-  rw [fderiv_comp x (hg _) (hψ x)]
-  simp [hgω, hψω]
-
-omit [FiniteDimensional ℝ V] in
-/-- The iterates of a map whose derivative preserves `ω` have derivatives preserving `ω`. -/
-private theorem apply_fderiv_iterate {g : V → V} (hg : Differentiable ℝ g)
-    (hgω : ∀ x u v, ω (fderiv ℝ g x u) (fderiv ℝ g x v) = ω u v) (m : ℕ) (x u v : V) :
-    ω (fderiv ℝ g^[m] x u) (fderiv ℝ g^[m] x v) = ω u v := by
-  induction m generalizing x u v with
-  | zero => simp [fderiv_id]
-  | succ m ih =>
-    rw [iterate_succ]
-    exact ω.apply_fderiv_comp (hg.iterate m) hg ih hgω x u v
 
 end TauCeti.SymplecticForm
 
@@ -536,24 +540,16 @@ private theorem exists_step {g : ℂ → ℂ} (hg : ContDiff ℝ 1 g)
       hKU (fun x hxK hfix ⟨j, hj, hjk, hjx⟩ ↦ hP (n + 1) (Finset.mem_Icc.2 ⟨by omega, hnN⟩) x hxK
         hfix ⟨j, Finset.mem_Icc.2 ⟨hj, by omega⟩, hjx⟩) (lt_min hδ (half_pos hε))
   have hψ₁ : IsPerturbation stdComplexSymplecticForm U ψ₁ :=
-    ⟨hψ₁s, hψ₁ω, tsupport fun w ↦ ψ₁ w - w, hψ₁c, hψ₁U,
-      fun w hw ↦ sub_eq_zero.1 (image_eq_zero_of_notMem_tsupport (f := fun w ↦ ψ₁ w - w) hw)⟩
+    stdComplexSymplecticForm.isPerturbation_iff.2 ⟨hψ₁s, hψ₁ω, hψ₁c, hψ₁U⟩
   have hψ₁d : Differentiable ℝ ψ₁ := hψ₁s.differentiable (by simp)
   have hg₁ : ContDiff ℝ 1 (g ∘ ψ₁) := hg.comp (hψ₁s.of_le (by simp))
   obtain ⟨ψ₂, hψ₂, h₂₀, h₂₁, hP₂⟩ := exists_twist hg₁
     (stdComplexSymplecticForm.apply_fderiv_comp (hg.differentiable one_ne_zero) hψ₁d hgω hψ₁ω)
     hK hU hKU hnN (hδP _ (hg₁.differentiable one_ne_zero) (fun y ↦ (h₁₀ y).trans (min_le_left _ _))
       fun y ↦ (h₁₁ y).trans (min_le_left _ _)) hQ (half_pos hε)
-  refine ⟨ψ₁ ∘ ψ₂, hψ₁.comp _ hψ₂, fun y ↦ ?_, fun y ↦ ?_, hP₂⟩
-  · calc ‖g (ψ₁ (ψ₂ y)) - g y‖ ≤ ‖g (ψ₁ (ψ₂ y)) - g (ψ₁ y)‖ + ‖g (ψ₁ y) - g y‖ :=
-          norm_sub_le_norm_sub_add_norm_sub ..
-      _ ≤ ε / 2 + ε / 2 := add_le_add (h₂₀ y) ((h₁₀ y).trans (min_le_right _ _))
-      _ = ε := add_halves ε
-  · calc ‖fderiv ℝ (g ∘ ψ₁ ∘ ψ₂) y - fderiv ℝ g y‖
-        ≤ ‖fderiv ℝ ((g ∘ ψ₁) ∘ ψ₂) y - fderiv ℝ (g ∘ ψ₁) y‖ +
-          ‖fderiv ℝ (g ∘ ψ₁) y - fderiv ℝ g y‖ := norm_sub_le_norm_sub_add_norm_sub ..
-      _ ≤ ε / 2 + ε / 2 := add_le_add (h₂₁ y) ((h₁₁ y).trans (min_le_right _ _))
-      _ = ε := add_halves ε
+  obtain ⟨h₀, h₁⟩ := norm_comp_comp_sub_le (fun y ↦ (h₁₀ y).trans (min_le_right _ _))
+    (fun y ↦ (h₁₁ y).trans (min_le_right _ _)) h₂₀ h₂₁ (add_halves ε).le
+  exact ⟨ψ₁ ∘ ψ₂, hψ₁.comp _ hψ₂, h₀, h₁, hP₂⟩
 
 /-- The induction over the periods on the plane: for every `n ≤ N` an arbitrarily `C¹`-small
 perturbation makes the periods at most `n` nondegenerate in all covers up to period `N`. -/
@@ -575,16 +571,8 @@ private theorem exists_nondegenerateUpTo {φ : ℂ → ℂ} (hφ : ContDiff ℝ 
     obtain ⟨ψ, hψ, h₀, h₁, hP⟩ := exists_step (hφ.comp (hψ₀.1.of_le (by simp)))
       (stdComplexSymplecticForm.apply_fderiv_comp (hφ.differentiable one_ne_zero) hψ₀d hφω
         hψ₀.2.1) hK hU hKU hn hP₀ (half_pos hε)
-    refine ⟨ψ₀ ∘ ψ, hψ₀.comp _ hψ, fun y ↦ ?_, fun y ↦ ?_, hP⟩
-    · calc ‖φ (ψ₀ (ψ y)) - φ y‖ ≤ ‖φ (ψ₀ (ψ y)) - φ (ψ₀ y)‖ + ‖φ (ψ₀ y) - φ y‖ :=
-            norm_sub_le_norm_sub_add_norm_sub ..
-        _ ≤ ε / 2 + ε / 2 := add_le_add (h₀ y) (h₀₀ y)
-        _ = ε := add_halves ε
-    · calc ‖fderiv ℝ (φ ∘ ψ₀ ∘ ψ) y - fderiv ℝ φ y‖
-          ≤ ‖fderiv ℝ ((φ ∘ ψ₀) ∘ ψ) y - fderiv ℝ (φ ∘ ψ₀) y‖ +
-            ‖fderiv ℝ (φ ∘ ψ₀) y - fderiv ℝ φ y‖ := norm_sub_le_norm_sub_add_norm_sub ..
-        _ ≤ ε / 2 + ε / 2 := add_le_add (h₁ y) (h₀₁ y)
-        _ = ε := add_halves ε
+    obtain ⟨h₂₀, h₂₁⟩ := norm_comp_comp_sub_le h₀₀ h₀₁ h₀ h₁ (add_halves ε).le
+    exact ⟨ψ₀ ∘ ψ, hψ₀.comp _ hψ, h₂₀, h₂₁, hP⟩
 
 /-- **Making all periodic points up to a period cutoff nondegenerate.** Let `φ` be a `C¹` map of
 the plane `ℂ` preserving the area form `ω`, let `K` be a compact set, `U` an open neighbourhood of
@@ -605,12 +593,8 @@ theorem exists_forall_mem_Icc_isNondegenerateFixedPt_iterate_comp {φ : ℂ → 
       (∀ y, ‖φ (ψ y) - φ y‖ ≤ ε) ∧ (∀ y, ‖fderiv ℝ (φ ∘ ψ) y - fderiv ℝ φ y‖ ≤ ε) ∧
       ∀ k ∈ Finset.Icc 1 N, ∀ x ∈ K, IsFixedPt (φ ∘ ψ)^[k] x →
         IsNondegenerateFixedPt 𝓘(ℝ, ℂ) (φ ∘ ψ)^[k] x := by
-  obtain ⟨ψ, ⟨hψs, hψω, S, hS, hSU, hψS⟩, h₀, h₁, hnd⟩ :=
-    exists_nondegenerateUpTo hφ hφω hK hU hKU N le_rfl hε
-  have hsupp : support (fun w ↦ ψ w - w) ⊆ S := fun w hw ↦
-    by_contra fun hwS ↦ hw (by simp [hψS w hwS])
-  exact ⟨ψ, hψs, hψω, HasCompactSupport.intro hS fun w hw ↦ by simp [hψS w hw],
-    (closure_minimal hsupp hS.isClosed).trans hSU, h₀, h₁,
-    fun k hk x hx hfix ↦ hnd k hk x hx hfix ⟨k, hk, hfix⟩⟩
+  obtain ⟨ψ, hψ, h₀, h₁, hnd⟩ := exists_nondegenerateUpTo hφ hφω hK hU hKU N le_rfl hε
+  obtain ⟨hψs, hψω, hψc, hψU⟩ := stdComplexSymplecticForm.isPerturbation_iff.1 hψ
+  exact ⟨ψ, hψs, hψω, hψc, hψU, h₀, h₁, fun k hk x hx hfix ↦ hnd k hk x hx hfix ⟨k, hk, hfix⟩⟩
 
 end TauCeti

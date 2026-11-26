@@ -88,7 +88,7 @@ theorem exists_orbit_representatives {α : Type u} {f : α → α} {k : ℕ} {S 
     obtain ⟨j, hj⟩ := h
     refine ⟨(k - 1) * j, ?_⟩
     rw [← hj, ← iterate_add_apply, show (k - 1) * j + j = k * j by
-      rw [← Nat.succ_mul, Nat.succ_eq_add_one, Nat.sub_add_cancel hk]]
+      rw [Nat.sub_one_mul, Nat.sub_add_cancel (Nat.le_mul_of_pos_left j hk)]]
     exact ((hper _ x.property).mul_const j).eq
   let s : Setoid S := ⟨fun x y ↦ ∃ j, f^[j] x.val = y.val, ⟨fun _ ↦ ⟨0, rfl⟩,
     fun {x y} h ↦ hsymm x y h, fun ⟨i, hi⟩ ⟨j, hj⟩ ↦ ⟨j + i, by rw [iterate_add_apply, hi, hj]⟩⟩⟩
