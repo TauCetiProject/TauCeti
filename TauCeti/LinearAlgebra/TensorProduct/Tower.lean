@@ -54,6 +54,8 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
   `r ∈ B`, `r ⊗ m = 1 ⊗ r • m`.
 * `Submodule.one_tmul_mem_baseChange_of_smul_mem`: if `a • x ∈ N` and `a` becomes a unit in `A`,
   then `1 ⊗ₜ x` lies in the base change of `N` to `A`.
+* `Submodule.map_cancelBaseChange_baseChange_baseChange`: along a tower `R → K → A`, cancelling
+  the base change carries `(N_K)_A` onto `N_A`.
 * `LinearMap.baseChange_leftInverse`: base change preserves left inverses.
 * `LinearMap.liftBaseChangeSemilinear`, `AddMonoidHom.liftBaseChangeSemilinear`,
   `LinearMap.ext_one_tmul`, `LinearMap.eq_liftBaseChangeSemilinear_iff`,
@@ -175,6 +177,23 @@ theorem Submodule.one_tmul_mem_baseChange_of_smul_mem {R A M : Type*} [CommSemir
   rw [← (N.baseChange A).smul_mem_iff' ha.unit, Units.smul_def, IsUnit.unit_spec, algebraMap_smul,
     ← tmul_smul]
   exact tmul_mem_baseChange_of_mem 1 hx
+
+/-- Along a tower `R → K → A`, cancelling the base change `A ⊗[K] (K ⊗[R] M) ≃ A ⊗[R] M` carries
+`(N_K)_A` onto `N_A`. -/
+@[simp]
+theorem Submodule.map_cancelBaseChange_baseChange_baseChange {R K M : Type*} [CommSemiring R]
+    [CommSemiring K] [Algebra R K] [AddCommMonoid M] [Module R M] (N : Submodule R M)
+    (A : Type*) [CommSemiring A] [Algebra R A] [Algebra K A] [IsScalarTower R K A] :
+    ((N.baseChange K).baseChange A).map
+        (TensorProduct.AlgebraTensorModule.cancelBaseChange R K A A M).toLinearMap =
+      N.baseChange A := by
+  conv_lhs => rw [← N.span_eq]
+  conv_rhs => rw [← N.span_eq]
+  rw [baseChange_span, baseChange_span, baseChange_span, map_span, Set.image_image,
+    Set.image_image]
+  simp only [mk_apply, LinearEquiv.coe_coe, AlgebraTensorModule.cancelBaseChange_tmul, one_smul]
+  -- both sides are spanned by the `1 ⊗ₜ x` for `x ∈ N`
+  exact congrArg (span A) (Set.image_congr fun x _ ↦ (mk_apply 1 x).symm)
 
 /-- Base change preserves left inverses: if `f ∘ₗ g = id`, then `f.baseChange A` is a left
 inverse of `g.baseChange A`. -/
