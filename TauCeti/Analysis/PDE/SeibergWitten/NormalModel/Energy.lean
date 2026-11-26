@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Basic
+public import TauCeti.Analysis.PDE.Vortex.Kernel.Coercivity
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
@@ -14,10 +15,12 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
 import TauCeti.Analysis.PDE.Vortex.SpectralGap
+import TauCeti.MeasureTheory.Function.Lp.Slice
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Topology.Algebra.Support
 
 /-!
-# The energy identity of the normal model with base dependence
+# The energy identity and coercivity of the normal model with base dependence
 
 Near a pseudoholomorphic curve, Taubes's rescaled large-parameter Seiberg–Witten solutions are
 modelled on `ℂ_base × ℂ_normal` by a plane vortex `x` in the normal factor, and the linearized
@@ -64,7 +67,22 @@ bound `c ∫ |η|² ≤ ∫ |L_x* η|²` on the normal plane gives
 with `|α| → 1` the spectral gap of `L_x L_x*` supplies such a bound
 (`exists_pos_mul_integral_norm_sq_le_integral_norm_sq_add_norm_sq_familyNormalModel`).
 The normal family is not controlled in this way: at a vortex of degree `m ≥ 1`, `L_x` has a
-kernel of dimension `2m`.
+kernel of dimension `2m`. It is controlled slice by slice modulo that kernel. The same lower bound
+on `L_x*` bounds `L_x` below on the `L²`-orthogonal complement of its weak kernel
+(`TauCeti.Vortex.mul_norm_sub_starProjection_sq_le_integral_norm_sq_gaugeFixedOperator`), so with
+`u w` the `L²` class of the normal slice `Ξ (w, ·)` and `Π` the orthogonal projection onto the weak
+kernel,
+
+`c (∫ ‖u w - Π u w‖² dw + ∫ |Η|²) + ∫ (|∂_s Ξ|² + |∂_t Ξ|² + |∂_s Η|² + |∂_t Η|²)
+  ≤ ∫ (|N|² + |P|²)`
+
+(`mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel`). At a plane vortex the
+spectral gap supplies `c`
+(`exists_pos_mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel`), and one
+constant serves for all smooth framed vortices of degree `m`
+(`exists_pos_forall_mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel`). Thus the
+frozen normal model is coercive once the slicewise kernel component of the normal family is
+removed; that component is controlled only through its derivatives along the base.
 
 ## Main results
 
@@ -76,6 +94,10 @@ All in the namespace `TauCeti.SeibergWitten`:
 * `mul_integral_norm_sq_le_integral_norm_sq_add_norm_sq_familyNormalModel` and
   `exists_pos_mul_integral_norm_sq_le_integral_norm_sq_add_norm_sq_familyNormalModel`: coercivity
   of the paired family.
+* `mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel`,
+  `exists_pos_mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel` and
+  `exists_pos_forall_mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel`:
+  coercivity of the normal model modulo the kernel of the normal slices.
 
 ## References
 
@@ -485,6 +507,55 @@ theorem integral_norm_sq_fderiv_le_integral_norm_sq_add_norm_sq_familyNormalMode
   nlinarith [sq_nonneg ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2‖,
     sq_nonneg ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2‖]
 
+/-- The three parts of the right side of the energy identity, `|L_x Ξ|²`, `|L_x* Η|²` and the
+energy along the base, are integrable. -/
+private theorem integrable_parts_familyNormalModel (hx : Continuous x) (hΞ : ContDiff ℝ 1 Ξ)
+    (hΗ : ContDiff ℝ 1 Η) (hΞc : HasCompactSupport Ξ) (hΗc : HasCompactSupport Η) :
+    Integrable (fun p ↦ ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2‖ ^ 2)
+        (μ.prod ν) ∧
+      Integrable (fun p ↦ ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2‖ ^ 2)
+        (μ.prod ν) ∧
+      Integrable (fun p ↦ ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 1‖ ^ 2 +
+        ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 I‖ ^ 2 + ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 1‖ ^ 2 +
+        ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 I‖ ^ 2) (μ.prod ν) := by
+  set a : ℂ × ℂ → ℝ := fun p ↦ ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2‖ ^ 2
+  set b : ℂ × ℂ → ℝ := fun p ↦ ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2‖ ^ 2
+  set d : ℂ × ℂ → ℝ := fun p ↦ ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 1‖ ^ 2 +
+    ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 I‖ ^ 2 + ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 1‖ ^ 2 +
+    ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 I‖ ^ 2
+  -- The integrable right side of the energy identity is `a + b + d`.
+  have hR : Integrable (fun p ↦ a p + b p + d p) (μ.prod ν) :=
+    (integrable_energy_familyNormalModel hx hΞ hΗ hΞc hΗc).congr
+      (.of_forall fun p ↦ by simp only [a, b, d]; ring)
+  have ha (p : ℂ × ℂ) : 0 ≤ a p := by positivity
+  have hb (p : ℂ × ℂ) : 0 ≤ b p := by positivity
+  have hd (p : ℂ × ℂ) : 0 ≤ d p := by positivity
+  have hai : Integrable a (μ.prod ν) :=
+    hR.mono' ((continuous_gaugeFixedOperator_slice hx hΞ).norm.pow 2).aestronglyMeasurable
+      (.of_forall fun p ↦ by rw [Real.norm_of_nonneg (ha p)]; linarith [hb p, hd p])
+  have hbi : Integrable b (μ.prod ν) :=
+    hR.mono' ((continuous_gaugeFixedAdjoint_slice hx hΗ).norm.pow 2).aestronglyMeasurable
+      (.of_forall fun p ↦ by rw [Real.norm_of_nonneg (hb p)]; linarith [ha p, hd p])
+  exact ⟨hai, hbi, ((hR.sub hai).sub hbi).congr (.of_forall fun p ↦ by
+    simp only [Pi.sub_apply]; ring)⟩
+
+/-- Integrating a lower bound `c ∫ |η|² ≤ ∫ |L_x* η|²` along the normal slices bounds the paired
+family: `c ∫ |Η|² ≤ ∫ |L_x* Η|²`. -/
+private theorem mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint_slice
+    (hΗ : ContDiff ℝ 2 Η) (hΗc : HasCompactSupport Η) {c : ℝ}
+    (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c * ∫ z, ‖η z‖ ^ 2 ∂ν ≤ ∫ z, ‖Vortex.gaugeFixedAdjoint x η z‖ ^ 2 ∂ν)
+    (hbi : Integrable (fun p ↦ ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2‖ ^ 2)
+      (μ.prod ν)) :
+    c * ∫ p, ‖Η p‖ ^ 2 ∂μ.prod ν ≤
+      ∫ p, ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2‖ ^ 2 ∂μ.prod ν := by
+  have hΗi : Integrable (fun p ↦ ‖Η p‖ ^ 2) (μ.prod ν) :=
+    Continuous.integrable_of_hasCompactSupport (by fun_prop)
+      (hΗc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ ‖v‖ ^ 2) (by simp))
+  rw [integral_prod _ hΗi]
+  exact mul_integral_le_integral_prod_of_forall hΗi.integral_prod_left hbi fun w ↦
+    hgap _ (hΗ.comp (contDiff_const.prodMk contDiff_id)) (hΗc.comp_prodMk_right w)
+
 /-- **Coercivity of the paired block.** Suppose that `L_x*` is bounded below on the normal plane,
 `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`. Then the same constant
 bounds the paired family of the normal model: `c ∫ |Η|² ≤ ∫ (|N|² + |P|²)`. -/
@@ -498,34 +569,18 @@ theorem mul_integral_norm_sq_le_integral_norm_sq_add_norm_sq_familyNormalModel
           normalBaseCoupling (fderiv ℝ (fun w ↦ Η (w, p.2)) p.1)‖ ^ 2 +
         ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2 +
           pairedBaseCoupling (fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1)‖ ^ 2) ∂μ.prod ν := by
-  have hΗ₁ : ContDiff ℝ 1 Η := hΗ.of_le (by norm_num)
-  have hR := integrable_energy_familyNormalModel (μ := μ) (ν := ν) hx (hΞ.of_le (by norm_num)) hΗ₁
-    hΞc hΗc
-  have hΗi : Integrable (fun p ↦ ‖Η p‖ ^ 2) (μ.prod ν) :=
-    Continuous.integrable_of_hasCompactSupport (by fun_prop)
-      (hΗc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ ‖v‖ ^ 2) (by simp))
-  -- The squared norm of `L_x* Η` is dominated by the right side of the energy identity.
-  have hle (p : ℂ × ℂ) : ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2‖ ^ 2 ≤
-      ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2‖ ^ 2 +
-        ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2‖ ^ 2 +
-        ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 1‖ ^ 2 + ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 I‖ ^ 2 +
-        ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 1‖ ^ 2 + ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 I‖ ^ 2 := by
-    have := sq_nonneg ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2‖
-    have := sq_nonneg ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 1‖
-    have := sq_nonneg ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 I‖
-    have := sq_nonneg ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 1‖
-    have := sq_nonneg ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 I‖
-    linarith
-  have hAi : Integrable (fun p ↦ ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2‖ ^ 2)
-      (μ.prod ν) :=
-    hR.mono' ((continuous_gaugeFixedAdjoint_slice hx hΗ₁).norm.pow 2).aestronglyMeasurable
-      (.of_forall fun p ↦ by rw [Real.norm_of_nonneg (by positivity)]; exact hle p)
+  obtain ⟨-, hbi, -⟩ := integrable_parts_familyNormalModel (μ := μ) (ν := ν) hx
+    (hΞ.of_le (by norm_num)) (hΗ.of_le (by norm_num)) hΞc hΗc
   rw [integral_norm_sq_add_norm_sq_familyNormalModel hx hΞ hΗ hΞc hΗc]
-  refine le_trans ?_ (integral_mono hAi hR hle)
-  -- Integrate the gap along each normal slice.
-  rw [integral_prod _ hΗi, integral_prod _ hAi, ← integral_const_mul]
-  exact integral_mono (hΗi.integral_prod_left.const_mul c) hAi.integral_prod_left fun w ↦
-    hgap _ (hΗ.comp (contDiff_const.prodMk contDiff_id)) (hΗc.comp_prodMk_right w)
+  refine (mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint_slice hΗ hΗc hgap hbi).trans
+    (integral_mono hbi (integrable_energy_familyNormalModel hx (hΞ.of_le (by norm_num))
+      (hΗ.of_le (by norm_num)) hΞc hΗc) fun p ↦ ?_)
+  dsimp only
+  nlinarith [sq_nonneg ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2‖,
+    sq_nonneg ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 1‖,
+    sq_nonneg ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 I‖,
+    sq_nonneg ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 1‖,
+    sq_nonneg ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 I‖]
 
 /-- **Coercivity of the paired block at a plane vortex.** At a `C¹` plane vortex `x` whose
 section has modulus tending to one at infinity there is `c > 0` such that every pair of compactly
@@ -549,5 +604,173 @@ theorem exists_pos_mul_integral_norm_sq_le_integral_norm_sq_add_norm_sq_familyNo
       hΗc hgap⟩
 
 end Energy
+
+/-! ### Coercivity modulo the kernel of the normal slices -/
+
+section Kernel
+
+open scoped ContDiff
+
+variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+  {Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4)}
+
+/-- The energy identity, with its right side split into `∫ |L_x Ξ|²`, `∫ |L_x* Η|²` and the
+energy along the base. -/
+private theorem integral_norm_sq_add_norm_sq_familyNormalModel_eq_add (hx : Continuous x)
+    (hΞ : ContDiff ℝ 2 Ξ) (hΗ : ContDiff ℝ 2 Η) (hΞc : HasCompactSupport Ξ)
+    (hΗc : HasCompactSupport Η) :
+    ∫ p, (‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2 +
+          normalBaseCoupling (fderiv ℝ (fun w ↦ Η (w, p.2)) p.1)‖ ^ 2 +
+        ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2 +
+          pairedBaseCoupling (fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1)‖ ^ 2) ∂μ.prod volume =
+      ∫ p, ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2‖ ^ 2 ∂μ.prod volume +
+        ∫ p, ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2‖ ^ 2 ∂μ.prod volume +
+        ∫ p, (‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 1‖ ^ 2 +
+          ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 I‖ ^ 2 + ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 1‖ ^ 2 +
+          ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 I‖ ^ 2) ∂μ.prod volume := by
+  obtain ⟨hai, hbi, hdi⟩ := integrable_parts_familyNormalModel (μ := μ) (ν := volume) hx
+    (hΞ.of_le (by norm_num)) (hΗ.of_le (by norm_num)) hΞc hΗc
+  have h := (integral_add (hai.add hbi) hdi).trans
+    (congrArg (· + _) (integral_add hai hbi))
+  rw [integral_norm_sq_add_norm_sq_familyNormalModel hx hΞ hΗ hΞc hΗc, ← h]
+  exact integral_congr_ae (.of_forall fun p ↦ by simp only [Pi.add_apply]; ring)
+
+/-- **The normal family modulo the slicewise kernel.** Under a lower bound `c ∫ |η|² ≤ ∫ |L_x* η|²`,
+the `L²` classes `u w` of the normal slices `Ξ (w, ·)` of a compactly supported `C¹` family
+satisfy `c ∫ ‖u w - Π u w‖² dw ≤ ∫ |L_x Ξ|²`, with `Π` the orthogonal projection onto the weak
+kernel of `L_x`. -/
+private theorem mul_integral_norm_sub_starProjection_sq_le_integral_norm_sq_slice
+    (hx : Continuous x) {c : ℝ} (hc : 0 < c)
+    (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c * ∫ z, ‖η z‖ ^ 2 ≤ ∫ z, ‖Vortex.gaugeFixedAdjoint x η z‖ ^ 2)
+    (hΞ : ContDiff ℝ 1 Ξ) (hΞc : HasCompactSupport Ξ)
+    (hai : Integrable (fun p ↦ ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2‖ ^ 2)
+      (μ.prod volume))
+    {u : ℂ → Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
+    (hu : ∀ w, u w =ᵐ[volume] fun z ↦ Ξ (w, z)) :
+    c * ∫ w, ‖u w - (Vortex.weakGaugeFixedKernel x).starProjection (u w)‖ ^ 2 ∂μ ≤
+      ∫ p, ‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2‖ ^ 2 ∂μ.prod volume := by
+  -- The squared distance of the slices to the kernel is continuous and compactly supported.
+  have hu' : Continuous u :=
+    Lp.continuous_of_ae_eq_of_continuous_uncurry ENNReal.ofNat_ne_top (Φ := fun w z ↦ Ξ (w, z))
+      hΞ.continuous (hΞc.image continuous_snd) (fun w z hz ↦
+        image_eq_zero_of_notMem_tsupport fun h ↦ hz ⟨(w, z), h, rfl⟩) hu
+  have hgc : Continuous fun w ↦
+      ‖u w - (Vortex.weakGaugeFixedKernel x).starProjection (u w)‖ ^ 2 :=
+    (hu'.sub ((Vortex.weakGaugeFixedKernel x).starProjection.continuous.comp hu')).norm.pow 2
+  have hgs : HasCompactSupport fun w ↦
+      ‖u w - (Vortex.weakGaugeFixedKernel x).starProjection (u w)‖ ^ 2 :=
+    (Lp.hasCompactSupport_of_ae_eq_of_hasCompactSupport_uncurry (Φ := fun w z ↦ Ξ (w, z)) hΞc
+      hu).comp_left (g := fun v ↦ ‖v - (Vortex.weakGaugeFixedKernel x).starProjection v‖ ^ 2)
+      (by simp)
+  -- Integrate the plane estimate over the base.
+  exact mul_integral_le_integral_prod_of_forall (hgc.integrable_of_hasCompactSupport hgs) hai
+    fun w ↦ Vortex.mul_norm_sub_starProjection_sq_le_integral_norm_sq_gaugeFixedOperator hx hc hgap
+      (hΞ.comp (contDiff_const.prodMk contDiff_id)) (hΞc.comp_prodMk_right w) (hu w)
+
+/-- **Coercivity of the normal model modulo the kernel of the normal slices.** Suppose that
+`L_x*` is bounded below on the normal plane, `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly
+supported `C²` field `η`, with `c > 0`. Let `Ξ`, `Η` be compactly supported `C²` families of plane
+fields over the base, with normal-model rows `N` and `P`, and let `u w ∈ L²(ℂ; ℝ⁴)` be the class
+of the normal slice `Ξ (w, ·)`. With `Π` the orthogonal projection onto the weak kernel of `L_x`,
+
+`c (∫ ‖u w - Π u w‖² dw + ∫ |Η|²) + ∫ (|∂_s Ξ|² + |∂_t Ξ|² + |∂_s Η|² + |∂_t Η|²)
+  ≤ ∫ (|N|² + |P|²)`,
+
+where `w = s + i t`. Thus the normal model controls the families along the base, the paired
+family, and the normal family up to its slicewise component in the kernel of `L_x`; the
+function `w ↦ ‖u w - Π u w‖²` is continuous and compactly supported. -/
+theorem mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel (hx : Continuous x)
+    {c : ℝ} (hc : 0 < c)
+    (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c * ∫ z, ‖η z‖ ^ 2 ≤ ∫ z, ‖Vortex.gaugeFixedAdjoint x η z‖ ^ 2)
+    (hΞ : ContDiff ℝ 2 Ξ) (hΗ : ContDiff ℝ 2 Η) (hΞc : HasCompactSupport Ξ)
+    (hΗc : HasCompactSupport Η) {u : ℂ → Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
+    (hu : ∀ w, u w =ᵐ[volume] fun z ↦ Ξ (w, z)) :
+    c * (∫ w, ‖u w - (Vortex.weakGaugeFixedKernel x).starProjection (u w)‖ ^ 2 ∂μ +
+        ∫ p, ‖Η p‖ ^ 2 ∂μ.prod volume) +
+      ∫ p, (‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 1‖ ^ 2 +
+          ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 I‖ ^ 2 + ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 1‖ ^ 2 +
+          ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 I‖ ^ 2) ∂μ.prod volume ≤
+      ∫ p, (‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2 +
+          normalBaseCoupling (fderiv ℝ (fun w ↦ Η (w, p.2)) p.1)‖ ^ 2 +
+        ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2 +
+          pairedBaseCoupling (fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1)‖ ^ 2) ∂μ.prod volume := by
+  obtain ⟨hai, hbi, -⟩ := integrable_parts_familyNormalModel (μ := μ) (ν := volume) hx
+    (hΞ.of_le (by norm_num)) (hΗ.of_le (by norm_num)) hΞc hΗc
+  have hA := mul_integral_norm_sub_starProjection_sq_le_integral_norm_sq_slice hx hc hgap
+    (hΞ.of_le (by norm_num)) hΞc hai hu
+  have hB :=
+    mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint_slice (μ := μ) hΗ hΗc hgap hbi
+  rw [integral_norm_sq_add_norm_sq_familyNormalModel_eq_add hx hΞ hΗ hΞc hΗc]
+  linarith
+
+/-- **Coercivity of the normal model modulo the kernel at a plane vortex.** At a `C¹` plane vortex
+`x` whose section has modulus tending to one at infinity there is `c > 0` such that every pair of
+compactly supported `C²` families `Ξ`, `Η`, with `u w` the `L²` class of the normal slice
+`Ξ (w, ·)` and `Π` the orthogonal projection onto the weak kernel of `L_x`, satisfies
+`c (∫ ‖u w - Π u w‖² dw + ∫ |Η|²) + ∫ (|∂_s Ξ|² + |∂_t Ξ|² + |∂_s Η|² + |∂_t Η|²)
+  ≤ ∫ (|N|² + |P|²)`. -/
+theorem exists_pos_mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel
+    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, Vortex.equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∃ c > 0, ∀ Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 Ξ → ContDiff ℝ 2 Η →
+      HasCompactSupport Ξ → HasCompactSupport Η →
+      ∀ u : ℂ → Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
+        (∀ w, u w =ᵐ[volume] fun z ↦ Ξ (w, z)) →
+        c * (∫ w, ‖u w - (Vortex.weakGaugeFixedKernel x).starProjection (u w)‖ ^ 2 ∂μ +
+            ∫ p, ‖Η p‖ ^ 2 ∂μ.prod volume) +
+          ∫ p, (‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 1‖ ^ 2 +
+              ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 I‖ ^ 2 +
+              ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 1‖ ^ 2 +
+              ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 I‖ ^ 2) ∂μ.prod volume ≤
+          ∫ p, (‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2 +
+              normalBaseCoupling (fderiv ℝ (fun w ↦ Η (w, p.2)) p.1)‖ ^ 2 +
+            ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2 +
+              pairedBaseCoupling (fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1)‖ ^ 2) ∂μ.prod volume := by
+  obtain ⟨c, hc, hgap⟩ :=
+    Vortex.exists_pos_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := volume) hx
+      hsol hlim
+  exact ⟨c, hc, fun Ξ Η hΞ hΗ hΞc hΗc u hu ↦
+    mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel hx.continuous hc hgap hΞ hΗ
+      hΞc hΗc hu⟩
+
+/-- **Uniform coercivity of the normal model over the vortices of degree `m`.** There is `c > 0`,
+depending only on `m`, such that at every smooth plane vortex `x` with the degree-`m` end framing
+and zero divisor `D`, every pair of compactly supported `C²` families `Ξ`, `Η`, with `u w` the `L²`
+class of the normal slice `Ξ (w, ·)` and `Π` the orthogonal projection onto the weak kernel of
+`L_x`, satisfies
+`c (∫ ‖u w - Π u w‖² dw + ∫ |Η|²) + ∫ (|∂_s Ξ|² + |∂_t Ξ|² + |∂_s Η|² + |∂_t Η|²)
+  ≤ ∫ (|N|² + |P|²)`.
+The constant is uniform over the whole moduli space `Sym^m ℂ` of the frozen vortex. -/
+theorem exists_pos_forall_mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel
+    (m : ℕ) :
+    ∃ c > 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, Vortex.equation x z = 0) →
+      Tendsto (fun z ↦ Vortex.sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ)
+        (𝓝 1) →
+      IsZeroMultiplicity (Vortex.sectionValue x) (fun z ↦ D.count z) →
+      ∀ Ξ Η : ℂ × ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 Ξ → ContDiff ℝ 2 Η →
+      HasCompactSupport Ξ → HasCompactSupport Η →
+      ∀ u : ℂ → Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ),
+        (∀ w, u w =ᵐ[volume] fun z ↦ Ξ (w, z)) →
+        c * (∫ w, ‖u w - (Vortex.weakGaugeFixedKernel x).starProjection (u w)‖ ^ 2 ∂μ +
+            ∫ p, ‖Η p‖ ^ 2 ∂μ.prod volume) +
+          ∫ p, (‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 1‖ ^ 2 +
+              ‖fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1 I‖ ^ 2 +
+              ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 1‖ ^ 2 +
+              ‖fderiv ℝ (fun w ↦ Η (w, p.2)) p.1 I‖ ^ 2) ∂μ.prod volume ≤
+          ∫ p, (‖Vortex.gaugeFixedOperator x (fun z ↦ Ξ (p.1, z)) p.2 +
+              normalBaseCoupling (fderiv ℝ (fun w ↦ Η (w, p.2)) p.1)‖ ^ 2 +
+            ‖Vortex.gaugeFixedAdjoint x (fun z ↦ Η (p.1, z)) p.2 +
+              pairedBaseCoupling (fderiv ℝ (fun w ↦ Ξ (w, p.2)) p.1)‖ ^ 2) ∂μ.prod volume := by
+  obtain ⟨c, hc, hgap⟩ :=
+    Vortex.exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint
+      (μ := volume) m
+  exact ⟨c, hc, fun x D hx hsol hlim hD Ξ Η hΞ hΗ hΞc hΗc u hu ↦
+    mul_add_integral_le_integral_norm_sq_add_norm_sq_familyNormalModel hx.continuous hc
+      (hgap x D hx hsol hlim hD) hΞ hΗ hΞc hΗc hu⟩
+
+end Kernel
 
 end TauCeti.SeibergWitten

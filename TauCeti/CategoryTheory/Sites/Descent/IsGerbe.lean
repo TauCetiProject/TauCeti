@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 public import TauCeti.CategoryTheory.Sites.Descent.Over
+public import TauCeti.CategoryTheory.Sites.Descent.StrongTrans
 
 /-!
 # Gerbes over a site
@@ -21,12 +22,15 @@ pullback along every arrow of some `J`-covering sieve.
 ## Main declarations
 
 * `CategoryTheory.Pseudofunctor.IsGerbe`: the property that `F` is a gerbe for `J`.
+* `CategoryTheory.Pseudofunctor.IsGerbe.exists_covering_hom`: in a gerbe, any two objects over
+  `U` have morphisms between their pullbacks along every arrow of some covering sieve.
 * `CategoryTheory.Pseudofunctor.isGerbe_target_of_isEquivalence`,
   `CategoryTheory.Pseudofunctor.isGerbe_source_of_isEquivalence`: for a strong transformation
-  `F ⟶ G` whose components are equivalences, if one of `F` and `G` is a gerbe and the other is a
-  stack, then the other is a gerbe.
-* `CategoryTheory.Pseudofunctor.isGerbe_iff_of_isEquivalence`: for such a transformation between
-  stacks `F` and `G`, `F` is a gerbe if and only if `G` is.
+  `F ⟶ G` whose components are equivalences, if one of `F` and `G` is a gerbe, then so is the
+  other.
+* `CategoryTheory.Pseudofunctor.isGerbe_iff_of_isEquivalence`: for such a transformation, `F` is a
+  gerbe if and only if `G` is. The stack conditions are transported by
+  `CategoryTheory.Pseudofunctor.isStack_iff_of_isEquivalence`.
 * `CategoryTheory.Pseudofunctor.isGerbe_over`: the restriction `F.over U` of a gerbe for `J` to
   the slice site `(Over U, J.over U)` is a gerbe for `J.over U`.
 
@@ -67,6 +71,14 @@ attribute [instance] IsGerbe.isGroupoid
 
 variable {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} {J : GrothendieckTopology C}
 
+/-- **Local sections of `Hom(x, y)`.** For a gerbe, any two objects over `U` have a morphism
+between their pullbacks along every arrow of some covering sieve of `U`. -/
+theorem IsGerbe.exists_covering_hom [F.IsGerbe J] {U : C} (x y : F.obj (.mk (op U))) :
+    ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ⟶ (F.map f.op.toLoc).toFunctor.obj y) := by
+  obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_iso (J := J) x y
+  exact ⟨R, hR, fun _ f hf ↦ (h f hf).map Iso.hom⟩
+
 /-- Local isomorphy of objects transfers along a strong transformation whose components are
 essentially surjective. -/
 private lemma exists_covering_iso_of_essSurj [F.IsGerbe J] (η : StrongTrans F G)
@@ -99,11 +111,11 @@ private lemma exists_covering_iso_of_fullyFaithful [G.IsGerbe J] (η : StrongTra
     (η.naturalityObjIso f.op.toLoc x').symm)⟩
 
 /-- Let `η : F ⟶ G` be a strong transformation whose components are equivalences of fibre
-categories. If `F` is a gerbe and `G` is a stack, then `G` is a gerbe (Stacks, Section 06NY,
-Lemma 8.11.2, for the conditions beyond the stack condition). -/
-theorem isGerbe_target_of_isEquivalence [F.IsGerbe J] [G.IsStack J] (η : StrongTrans F G)
+categories. If `F` is a gerbe, then `G` is a gerbe (Stacks, Section 06NY, Lemma 8.11.2). -/
+theorem isGerbe_target_of_isEquivalence [F.IsGerbe J] (η : StrongTrans F G)
     (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) : G.IsGerbe J :=
-  { isGroupoid U := by
+  { toIsStack := (isStack_iff_of_isEquivalence η hη).1 inferInstance
+    isGroupoid U := by
       have := hη U
       exact isGroupoid_of_reflects_iso (η.app (.mk (op U))).toFunctor.inv
     exists_covering_nonempty U := by
@@ -113,11 +125,11 @@ theorem isGerbe_target_of_isEquivalence [F.IsGerbe J] [G.IsStack J] (η : Strong
       exists_covering_iso_of_essSurj η (fun U ↦ have := hη U; inferInstance) x y }
 
 /-- Let `η : F ⟶ G` be a strong transformation whose components are equivalences of fibre
-categories. If `G` is a gerbe and `F` is a stack, then `F` is a gerbe (Stacks, Section 06NY,
-Lemma 8.11.2, for the conditions beyond the stack condition). -/
-theorem isGerbe_source_of_isEquivalence [G.IsGerbe J] [F.IsStack J] (η : StrongTrans F G)
+categories. If `G` is a gerbe, then `F` is a gerbe (Stacks, Section 06NY, Lemma 8.11.2). -/
+theorem isGerbe_source_of_isEquivalence [G.IsGerbe J] (η : StrongTrans F G)
     (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) : F.IsGerbe J :=
-  { isGroupoid U := by
+  { toIsStack := (isStack_iff_of_isEquivalence η hη).2 inferInstance
+    isGroupoid U := by
       have := hη U
       exact isGroupoid_of_reflects_iso (η.app (.mk (op U))).toFunctor
     exists_covering_nonempty U := by
@@ -126,10 +138,9 @@ theorem isGerbe_source_of_isEquivalence [G.IsGerbe J] [F.IsStack J] (η : Strong
     exists_covering_iso x y :=
       exists_covering_iso_of_fullyFaithful η (fun U ↦ have := hη U; .ofFullyFaithful _) x y }
 
-/-- Let `η : F ⟶ G` be a strong transformation between stacks whose components are equivalences
-of fibre categories. Then `F` is a gerbe if and only if `G` is (Stacks, Section 06NY,
-Lemma 8.11.2, for the conditions beyond the stack condition). -/
-theorem isGerbe_iff_of_isEquivalence [F.IsStack J] [G.IsStack J] (η : StrongTrans F G)
+/-- Let `η : F ⟶ G` be a strong transformation whose components are equivalences of fibre
+categories. Then `F` is a gerbe if and only if `G` is (Stacks, Section 06NY, Lemma 8.11.2). -/
+theorem isGerbe_iff_of_isEquivalence (η : StrongTrans F G)
     (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) :
     F.IsGerbe J ↔ G.IsGerbe J :=
   ⟨fun _ ↦ isGerbe_target_of_isEquivalence η hη, fun _ ↦ isGerbe_source_of_isEquivalence η hη⟩

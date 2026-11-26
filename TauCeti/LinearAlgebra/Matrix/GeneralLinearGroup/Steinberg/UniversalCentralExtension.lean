@@ -49,6 +49,8 @@ every central extension out of `St_ι(R)`—including `MonoidHom.id (St_ι(R))` 
   centrally closed when `|ι| ≥ 5` or `Infinite ι`.
 * `TauCeti.SteinbergGroup.existsUnique_comp_eq_toStableGL`: existence and uniqueness of lifts from
   `St(R)` along any `q : E →* GL_∞(R)` with `E_∞(R) ≤ q.range` and central kernel.
+* `TauCeti.SteinbergGroup.existsUnique_toStableGL_comp_eq`: every homomorphism
+  `GL_∞(A) →* GL_∞(B)` lifts uniquely to `St(A) →* St(B)`.
 * `TauCeti.SteinbergGroup.isUniversalCentralExtension_toElementarySubgroup`:
   `toElementarySubgroup R` satisfies `MonoidHom.IsUniversalCentralExtension`.
 * `TauCeti.steinberg_universalCentralExtension`: the packaged Kervaire–Steinberg universal central
@@ -376,6 +378,20 @@ theorem existsUnique_comp_eq_toStableGL (q : E →* StableGeneralLinearGroup R)
     ∃! ψ : SteinbergGroup R →* E, q.comp ψ = toStableGL R :=
   IndexedSteinbergGroup.existsUnique_comp_eq_of_infinite
     (range_toStableGL (R := R) ▸ hq_range) hq_ker
+
+/-- **Homomorphisms of `GL_∞` lift to Steinberg groups.** Every homomorphism
+`Ψ : GL_∞(A) →* GL_∞(B)` lifts uniquely to a homomorphism `ψ : St(A) →* St(B)` over it:
+`St(B) →* GL_∞(B)` after `ψ` is `Ψ` after `St(A) →* GL_∞(A)`. No compatibility with elementary
+matrices is assumed: `Ψ` carries the commutator subgroup `E_∞(A)` into the commutator subgroup
+`E_∞(B)`. -/
+theorem existsUnique_toStableGL_comp_eq {A B : Type*} [Ring A] [Ring B]
+    (Ψ : StableGeneralLinearGroup A →* StableGeneralLinearGroup B) :
+    ∃! ψ : SteinbergGroup A →* SteinbergGroup B, (toStableGL B).comp ψ = Ψ.comp (toStableGL A) := by
+  refine IndexedSteinbergGroup.existsUnique_comp_eq_of_infinite ?_ ker_toStableGL_le_center
+  rw [MonoidHom.range_comp, range_toStableGL, range_toStableGL,
+    StableGeneralLinearGroup.elementarySubgroup_eq_commutator, map_commutator_eq,
+    StableGeneralLinearGroup.elementarySubgroup_eq_commutator]
+  exact Subgroup.commutator_mono le_top le_top
 
 variable (R) in
 /-- **The projection `St(R) →* E_∞(R)` is a universal central extension** in the sense of

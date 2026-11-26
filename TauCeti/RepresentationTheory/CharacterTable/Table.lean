@@ -83,6 +83,8 @@ take their familiar Hermitian form, because inversion conjugates character value
   (`TauCeti.apply_one_eq_one_of_mem_irreducibleCharacters_of_isMulCommutative`).
 * `TauCeti.mem_irreducibleCharactersOver_of_restrict_eq`: an irreducible character restricting to
   an irreducible character `θ` of a finite subgroup lies over `θ`.
+* `TauCeti.exists_mem_irreducibleCharactersOver`: every irreducible character lies over an
+  irreducible constituent of its restriction to a finite subgroup.
 
 ## Implementation notes
 
@@ -528,33 +530,38 @@ end RowOrthogonality
 section Orthonormal
 
 variable {k : Type u} {G : Type v} [Field k] [Group G] [Fintype G] [IsAlgClosed k]
-  [NeZero (Nat.card G : k)]
 
 omit [IsAlgClosed k] in
 /-- Distinct irreducible characters are orthogonal: `∑ g, β(g) β'(g⁻¹) = 0`. The field need not be
-algebraically closed: `β` and `β'` are the characters of inequivalent irreducible representations,
-which pair to `0` by Schur's lemma (`TauCeti.ClassFunction.characterPairing_ofCharacter_eq_zero`).
--/
+algebraically closed, and `|G|` may be zero in it. When `|G|` is nonzero in `k`, `β` and `β'` are
+the characters of inequivalent irreducible representations, which pair to `0` by Schur's lemma
+(`TauCeti.ClassFunction.characterPairing_ofCharacter_eq_zero`); otherwise every such sum vanishes
+(`Representation.sum_character_mul_character_inv_eq_zero_of_natCard_eq_zero`). -/
 theorem sum_mul_inv_eq_zero_of_mem_irreducibleCharacters {β β' : G → k}
     (hβ : β ∈ irreducibleCharacters k G) (hβ' : β' ∈ irreducibleCharacters k G) (h : β ≠ β') :
     ∑ g, β g * β' g⁻¹ = 0 := by
   obtain ⟨_, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hβ
   obtain ⟨_, ρ', hρ', rfl⟩ := mem_irreducibleCharacters_iff.mp hβ'
+  by_cases hG : (Nat.card G : k) = 0
+  · exact ρ.sum_character_mul_character_inv_eq_zero_of_natCard_eq_zero ρ' hG
+  have : NeZero (Nat.card G : k) := ⟨hG⟩
   have key := ClassFunction.characterPairing_ofCharacter_eq_zero ρ ρ'
     ⟨fun e => h (Representation.char_iso e).symm⟩
   rw [ClassFunction.characterPairing_ofCharacter] at key
-  exact (mul_eq_zero.mp key).resolve_left (inv_ne_zero (NeZero.ne _))
+  exact (mul_eq_zero.mp key).resolve_left (inv_ne_zero hG)
 
 /-- **Row orthogonality for the set of irreducible characters**, in a form free of division: over
 an algebraically closed field, the sum `∑ g, β(g) β'(g⁻¹)` is `|G|` when `β = β'` and `0`
-otherwise. -/
+otherwise. When `|G|` is zero in `k` both values are `0`. -/
 theorem sum_mul_inv_of_mem_irreducibleCharacters [DecidableEq (G → k)] {β β' : G → k}
     (hβ : β ∈ irreducibleCharacters k G) (hβ' : β' ∈ irreducibleCharacters k G) :
     ∑ g, β g * β' g⁻¹ = if β = β' then (Nat.card G : k) else 0 := by
-  have hG : (Nat.card G : k) ≠ 0 := NeZero.ne _
-  let : Invertible (Nat.card G : k) := invertibleOfNonzero hG
   obtain ⟨n, ρ, hρ, rfl⟩ := mem_irreducibleCharacters_iff.mp hβ
-  obtain ⟨n', ρ', -, rfl⟩ := mem_irreducibleCharacters_iff.mp hβ'
+  by_cases hG : (Nat.card G : k) = 0
+  · obtain ⟨_, ρ', -, rfl⟩ := mem_irreducibleCharacters_iff.mp hβ'
+    rw [hG, ite_self]
+    exact ρ.sum_character_mul_character_inv_eq_zero_of_natCard_eq_zero ρ' hG
+  let : Invertible (Nat.card G : k) := invertibleOfNonzero hG
   split_ifs with h
   · rw [← h]
     have key := Representation.char_orthonormal ρ ρ
@@ -564,7 +571,7 @@ theorem sum_mul_inv_of_mem_irreducibleCharacters [DecidableEq (G → k)] {β β'
   · exact sum_mul_inv_eq_zero_of_mem_irreducibleCharacters hβ hβ' h
 
 /-- Over an algebraically closed field, an irreducible character has unnormalized self-pairing
-`∑ g, β(g) β(g⁻¹) = |G|`. -/
+`∑ g, β(g) β(g⁻¹) = |G|` (which is `0` when `|G|` is zero in `k`). -/
 theorem sum_mul_inv_self_of_mem_irreducibleCharacters {β : G → k}
     (hβ : β ∈ irreducibleCharacters k G) : ∑ g, β g * β g⁻¹ = Nat.card G := by
   classical
@@ -586,6 +593,29 @@ theorem mem_irreducibleCharactersOver_of_restrict_eq {N : Subgroup G} [Finite N]
   refine mem_irreducibleCharactersOver_iff_sum.mpr ⟨hψ, ?_⟩
   simp only [h, sum_mul_inv_self_of_mem_irreducibleCharacters hθ]
   exact NeZero.ne _
+
+variable [CharZero k] {N : Subgroup G} [Finite N]
+
+/-- Every irreducible character lies over some irreducible constituent of its restriction to a
+finite subgroup. -/
+theorem exists_mem_irreducibleCharactersOver {χ : G → k} (hχ : χ ∈ irreducibleCharacters k G) :
+    ∃ θ ∈ irreducibleCharacters k N, χ ∈ irreducibleCharactersOver k N θ := by
+  classical
+  let := Fintype.ofFinite N
+  let : Invertible (Nat.card N : k) := invertibleOfNonzero (Nat.cast_ne_zero.mpr Nat.card_pos.ne')
+  obtain ⟨d, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.mp hχ
+  let f := ClassFunction.comap N.subtype (ClassFunction.ofCharacter ρ)
+  have h := ClassFunction.apply_eq_sum_characterPairing_mul_character
+    (irreducibleRepresentation k) (pairwise_isEmpty_equiv_irreducibleRepresentation k)
+    (by simp) f 1
+  have hf : (f : N → k) 1 ≠ 0 := by
+    simpa [f, ClassFunction.comap_apply] using apply_one_ne_zero_of_mem_irreducibleCharacters hχ
+  obtain ⟨i, -, hi⟩ := Finset.exists_ne_zero_of_sum_ne_zero (h ▸ hf)
+  refine ⟨_, irreducibleCharacter_mem k i, mem_irreducibleCharactersOver_iff_sum.mpr ⟨hχ, ?_⟩⟩
+  rw [ClassFunction.characterPairing_symm, ClassFunction.characterPairing_apply] at hi
+  simp only [f, ClassFunction.comap_apply, Subgroup.subtype_apply, ClassFunction.ofCharacter_apply,
+    character_irreducibleRepresentation] at hi
+  exact fun hz => hi (by rw [hz, mul_zero, zero_mul])
 
 end Restriction
 

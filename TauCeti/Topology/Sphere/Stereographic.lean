@@ -8,9 +8,15 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Geometry.Manifold.Instances.Sphere
+import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
 /-!
-# Compact subsets of a punctured sphere lie in a stereographic ball
+# The punctured sphere in stereographic coordinates
+
+The complement of a point of the unit sphere `Sᵐ` of a real normed space of dimension `m + 1` is
+homeomorphic to any real normed space `E` of dimension `m`: transport the point to a Euclidean
+sphere and project stereographically from it. The complements of two antipodal points, the poles,
+therefore cover `Sᵐ` by two open sets homeomorphic to `E`.
 
 Let `K` be a compact subset of the unit sphere `Sⁿ` of a real inner product space of dimension
 `n + 1`, missing a point `w`. Reading `Sⁿ \ {w}` in the stereographic chart from `w`, the image of
@@ -20,6 +26,10 @@ injection `E → Sⁿ` missing `w`.
 
 ## Main results
 
+* `TauCeti.nonempty_homeomorph_sphere_compl_singleton`: the sphere `Sᵐ` minus a point is
+  homeomorphic to `E`.
+* `TauCeti.exists_two_euclidean_opens_sphere`: `Sᵐ` is covered by two open sets homeomorphic to
+  `E`.
 * `TauCeti.exists_continuous_injective_subset_image_ball`: a compact subset of the sphere missing
   `w` lies in the image of the open unit ball under a continuous injection `E → Sⁿ` missing `w`.
 -/
@@ -30,8 +40,52 @@ open Function Metric Module Set
 
 namespace TauCeti
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+
+section NormedSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **The sphere minus a point is Euclidean.** Let `F` be a real normed space of dimension `m + 1`
+and `E` one of dimension `m`. The complement of any point `p` of the unit sphere of `F` is
+homeomorphic to `E`; in an inner product space this is stereographic projection from `p`. -/
+theorem nonempty_homeomorph_sphere_compl_singleton (hEF : finrank ℝ F = finrank ℝ E + 1)
+    (p : sphere (0 : F) 1) :
+    Nonempty (({p}ᶜ : Set (sphere (0 : F) 1)) ≃ₜ E) := by
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+  have : Fact (finrank ℝ (EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) = finrank ℝ E + 1) :=
+    ⟨by simp⟩
+  -- Move `p` to the Euclidean sphere and project stereographically from its image.
+  let h : sphere (0 : F) 1 ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1 :=
+    sphereHomeomorphOfFinrankEq (by simp [hEF])
+  let σ := stereographic' (finrank ℝ E) (h p)
+  have hsource : h '' {p}ᶜ = σ.source := by
+    rw [stereographic'_source, image_compl_eq h.bijective, image_singleton]
+  exact ⟨(h.image _).trans <| (Homeomorph.setCongr hsource).trans <|
+    σ.toHomeomorphSourceTarget.trans <| (Homeomorph.setCongr (stereographic'_target _)).trans <|
+      (Homeomorph.Set.univ _).trans
+        (ContinuousLinearEquiv.ofFinrankEq (E := EuclideanSpace ℝ (Fin (finrank ℝ E))) (F := E)
+          finrank_euclideanSpace_fin).toHomeomorph⟩
+
+/-- **The sphere is covered by two Euclidean open sets.** The unit sphere `Sᵐ` of a real normed
+space `F` of dimension `m + 1` is the union of the complements of two antipodal points `p` and
+`-p`, its two poles, and each of them is homeomorphic to a real normed space `E` of dimension `m`.
+For `m = 1` these are two open arcs of the circle; for `m = 0` they are the two points of `S⁰`. -/
+theorem exists_two_euclidean_opens_sphere (hEF : finrank ℝ F = finrank ℝ E + 1) :
+    ∃ U V : Set (sphere (0 : F) 1), IsOpen U ∧ IsOpen V ∧ U ∪ V = univ ∧ Nonempty (U ≃ₜ E) ∧
+      Nonempty (V ≃ₜ E) := by
+  have : Nontrivial F := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
+  obtain ⟨p⟩ : Nonempty (sphere (0 : F) 1) :=
+    ((NormedSpace.sphere_nonempty (x := (0 : F))).2 zero_le_one).to_subtype
+  refine ⟨{p}ᶜ, {-p}ᶜ, isOpen_compl_singleton, isOpen_compl_singleton, ?_,
+    nonempty_homeomorph_sphere_compl_singleton hEF p,
+    nonempty_homeomorph_sphere_compl_singleton hEF (-p)⟩
+  rw [← compl_inter, compl_univ_iff, singleton_inter_eq_empty, mem_singleton_iff]
+  exact ne_neg_of_mem_unit_sphere ℝ p
+
+end NormedSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- A compact subset `K` of the unit sphere `Sⁿ` of a real inner product space of dimension
 `n + 1` missing a point `w` lies in the image of the open unit ball of `E`, `dim E = n`, under a

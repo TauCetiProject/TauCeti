@@ -827,10 +827,10 @@ section TwistedHomology
 
 open LocalCoefficientSystem _root_.Module VectorBundleOrientationCover
 
-variable {E M : Type} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E M : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ι : Type*} {E' H' P : ι → Type*}
-  {S : ι → Type} [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)]
+  {S : ι → Type u} [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)]
   [∀ j, FiniteDimensional ℝ (E' j)] [∀ j, TopologicalSpace (H' j)]
   {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)} [∀ j, TopologicalSpace (S j)]
   [∀ j, ChartedSpace (H' j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
@@ -844,14 +844,15 @@ orientation-twisted coefficients.** Let the family `i j : S j → M` exhibit `f`
 function (`TauCeti.IsMorseBottFamily`) on a Hausdorff second-countable boundaryless manifold, not
 necessarily compact, with pieces modelled on boundaryless models, and let `g j` be a smooth fibre
 metric on the normal bundle of `i j`. Suppose that the negative normal spaces relative to `g j` have
-continuous local frames of size `r j`, so that they form the negative normal bundle `ν⁻ j` of rank
-`r j`, the index of the piece. Let `a : ℤ → ℝ` be monotone, let `a q < c < a (q + 1)` be such that
-the band `f⁻¹[a q, a (q + 1)]` is compact and every critical point of `f` in it lies on the level
-`c`, and let `K` be a commutative ring, for instance `ℤ`.
+continuous local frames indexed by a finite type `κ j`, so that they form the negative normal bundle
+`ν⁻ j` of rank `|κ j|`, the index of the piece. Let `a : ℤ → ℝ` be monotone, let
+`a q < c < a (q + 1)` be such that the band `f⁻¹[a q, a (q + 1)]` is compact and every critical
+point of `f` in it lies on the level `c`, and let `K` be a commutative ring, for instance `ℤ`. The
+manifolds, the frame index types and the ring lie in one universe.
 
 Then on the first page of the spectral sequence of the filtration `q ↦ {f ≤ a q}` with
 coefficients in `K`, the object at `(p, q)` with `p + q = -n` is the coproduct, over the pieces on
-the level `c` of index `r j ≤ n`, of the homologies `H_{n - r j}(S j; o(ν⁻ j) ⊗ K)` with
+the level `c` of index `|κ j| ≤ n`, of the homologies `H_{n - |κ j|}(S j; o(ν⁻ j) ⊗ K)` with
 coefficients in the orientation local systems `o(ν⁻ j)`. No orientation of the bundles `ν⁻ j` is
 assumed. -/
 theorem nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology
@@ -865,42 +866,43 @@ theorem nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomol
       letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
-    {r : ι → ℕ}
+    {κ : ι → Type u} [∀ j, Fintype (κ j)]
     (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
       letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
+      ∀ j, HasLocalSubbundleFrames (P j) (κ j)
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
-    (K : Type) [CommRing K] (pq : ℤ × ℤ) (hq : pq.2 = q) (n : ℕ)
+    (K : Type u) [CommRing K] (pq : ℤ × ℤ) (hq : pq.2 = q) (n : ℕ)
     (hpq : pq.1 + pq.2 = -n) :
     letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
     letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-    letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
+    letI : ∀ j, TopologicalSpace (TotalSpace (κ j → ℝ)
         fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
           (g j).toRiemannianMetric s) :=
       fun j ↦ subbundleTopology (P j)
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-    letI : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦
+    letI : ∀ j, FiberBundle (κ j → ℝ) fun s ↦
         (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
           (g j).toRiemannianMetric s :=
       fun j ↦ (hV j).fiberBundle
-    haveI : ∀ j, VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦
+    haveI : ∀ j, VectorBundle ℝ (κ j → ℝ) fun s ↦
         (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
           (g j).toRiemannianMetric s :=
       fun j ↦ (hV j).vectorBundle
     -- The pieces on the level `c` are finitely many, so the coproduct exists.
-    haveI : Finite {j // (∀ s, f (i j s) = c) ∧ r j ≤ n} :=
+    haveI : Finite {j // (∀ s, f (i j s) = c) ∧ Fintype.card (κ j) ≤ n} :=
       h.finite_subtype_of_forall_apply_eq hcompact (Ioo_subset_Icc_self hc) fun _ ↦ And.left
     Nonempty (((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
         ((sublevel_mono f).comp ha)).page 2).X pq ≅
-      ∐ fun j : {j // (∀ s, f (i j s) = c) ∧ r j ≤ n} ↦
-        twistedHomology (signLocalSystem (Fin (r j) → ℝ)
+      ∐ fun j : {j // (∀ s, f (i j s) = c) ∧ Fintype.card (κ j) ≤ n} ↦
+        twistedHomology (signLocalSystem (κ j → ℝ)
           (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
-            (g j).toRiemannianMetric s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm))
-          (n - r j)) := by
+            (g j).toRiemannianMetric s) K
+          ((Fintype.card_fin _).trans (finrank_fintype_fun_eq_card ℝ).symm))
+          (n - Fintype.card (κ j))) := by
   subst hq
   obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_twistedHomology hn hc.1 hc.2
     hcompact hcrit hdim g hV K n

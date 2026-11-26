@@ -7,10 +7,14 @@ module
 
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
+public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.LogDeriv
 import Mathlib.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Calculus.LogDeriv
+import TauCeti.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Meromorphic.Order
+import TauCeti.Analysis.Contour.Residue.SimplePole
 
 /-!
 # Meromorphic Mellin expression for a first Riesz remainder
@@ -60,6 +64,15 @@ theorem _root_.Meromorphic.rieszRemainderMellin_eventuallyEq {L : ℂ → ℂ}
     have := hL.logDeriv
     fun_prop
   exact (meromorphicOn_univ.mpr hm).toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ z)
+
+/-- The Riesz remainder Mellin expression depends only on the punctured germs
+of the input, including at `1` where the subtracted main term is determined. -/
+theorem rieszRemainderMellin_congr {L M : ℂ → ℂ}
+    (h : ∀ z : ℂ, L =ᶠ[𝓝[≠] z] M) : rieszRemainderMellin L = rieszRemainderMellin M := by
+  unfold rieszRemainderMellin
+  refine toMeromorphicNFOn_univ_congr_nhdsNE fun z ↦ ?_
+  filter_upwards [logDeriv_congr_nhdsNE (h z)] with s hs
+  rw [meromorphicOrderAt_congr (h 1), logDerivFinitePart_congr_nhdsNE (h 1), hs]
 
 /-- At a regular nonzero point of `L` other than `0` or `1`, the Mellin expression is analytic
 and its value is given by the defining quotient. -/
@@ -142,18 +155,18 @@ theorem _root_.Meromorphic.meromorphicContinuation_eq_rieszRemainderMellin {L : 
   have hs₁ : s ≠ 1 := by rintro rfl; simp at hs'
   exact (hL.rieszRemainderMellin_eq_and_analyticAt hs₀ hs₁ (ha s hs) (hne s hs')).1
 
-/-- Away from `0` and `1`, multiplying the Mellin germ by `s - z` gives an analytic numerator
-whose value at `z` is the order of `L` divided by `z * (1 - z)`. -/
+/-- Away from `0` and `1`, multiplying the Mellin germ by `s - z` gives an analytic numerator.
+Its value at `z` is the order of `L` divided by `z * (1 - z)`, taking infinite order as zero. -/
 theorem _root_.Meromorphic.exists_analyticAt_mul_rieszRemainderMellin {L : ℂ → ℂ}
-    (hL : Meromorphic L) {z : ℂ} (hz₀ : z ≠ 0) (hz₁ : z ≠ 1) {n : ℤ}
-    (hn : meromorphicOrderAt L z = n) :
-    ∃ H : ℂ → ℂ, AnalyticAt ℂ H z ∧ H z = (n : ℂ) / (z * (1 - z)) ∧
+    (hL : Meromorphic L) {z : ℂ} (hz₀ : z ≠ 0) (hz₁ : z ≠ 1) :
+    ∃ H : ℂ → ℂ, AnalyticAt ℂ H z ∧
+      H z = ((meromorphicOrderAt L z).untop₀ : ℂ) / (z * (1 - z)) ∧
       (fun s ↦ (s - z) * rieszRemainderMellin L s) =ᶠ[𝓝[≠] z] H := by
   obtain ⟨g, hg, heq⟩ := (hL z).exists_analyticAt_logDeriv_sub_order_div
-  rw [hn, WithTop.untop₀_coe] at heq
   let H (s : ℂ) := ((s - z) * (s * logDerivFinitePart L 1 -
     (meromorphicOrderAt L 1).untop₀ * (s - 1) - g s +
-    (meromorphicOrderAt L 1).untop₀ / (s - 1)) - (n : ℂ)) / (s * (s - 1))
+    (meromorphicOrderAt L 1).untop₀ / (s - 1)) -
+    (meromorphicOrderAt L z).untop₀) / (s * (s - 1))
   refine ⟨H, ?_, ?_, ?_⟩
   · dsimp only [H]
     have hsub := sub_ne_zero.mpr hz₁
@@ -172,6 +185,38 @@ theorem _root_.Meromorphic.exists_analyticAt_mul_rieszRemainderMellin {L : ℂ �
     field_simp [sub_ne_zero.mpr hsz]
     ring
 
+private theorem tendsto_sub_mul_rieszRemainderMellin {L : ℂ → ℂ} (hL : Meromorphic L)
+    {z : ℂ} (hz₀ : z ≠ 0) :
+    Tendsto (fun s ↦ (s - z) * rieszRemainderMellin L s) (𝓝[≠] z)
+      (𝓝 (((meromorphicOrderAt L z).untop₀ : ℂ) / (z * (1 - z)))) := by
+  by_cases hz₁ : z = 1
+  · subst z
+    have h : ContinuousAt (fun s : ℂ ↦ (s - 1) * rieszRemainderMellin L s) 1 :=
+      (continuousAt_id.sub continuousAt_const).mul
+        hL.analyticAt_rieszRemainderMellin_one.continuousAt
+    simpa using h.tendsto.mono_left nhdsWithin_le_nhds
+  · obtain ⟨H, ha, hval, heq⟩ := hL.exists_analyticAt_mul_rieszRemainderMellin hz₀ hz₁
+    rw [← hval]
+    exact (ha.continuousAt.tendsto.mono_left nhdsWithin_le_nhds).congr' heq.symm
+
+/-- Away from `0`, the Riesz remainder Mellin expression has at most a simple pole. -/
+theorem _root_.Meromorphic.neg_one_le_meromorphicOrderAt_rieszRemainderMellin {L : ℂ → ℂ}
+    (hL : Meromorphic L) {z : ℂ} (hz₀ : z ≠ 0) :
+    -1 ≤ meromorphicOrderAt (rieszRemainderMellin L) z :=
+  Contour.neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul
+    (tendsto_sub_mul_rieszRemainderMellin hL hz₀)
+
+/-- Away from `0`, the residue of the Mellin expression is the order of `L` divided by
+`z * (1 - z)`, taking infinite order as zero. At `1` the expression is analytic, and the
+formula gives zero by division by zero. -/
+theorem _root_.Meromorphic.residue_rieszRemainderMellin {L : ℂ → ℂ}
+    (hL : Meromorphic L) {z : ℂ} (hz₀ : z ≠ 0) :
+    Contour.residue (rieszRemainderMellin L) z =
+      ((meromorphicOrderAt L z).untop₀ : ℂ) / (z * (1 - z)) :=
+  Contour.residue_eq_of_tendsto_sub_mul
+    (meromorphicNFOn_rieszRemainderMellin L (mem_univ z)).meromorphicAt
+    (tendsto_sub_mul_rieszRemainderMellin hL hz₀)
+
 /-- At a point different from `0` and `1` where `L` has finite nonzero order `n`, the Mellin
 expression has a simple pole with residue `n / (z * (1 - z))`. -/
 theorem _root_.Meromorphic.rieszRemainderMellin_simplePole {L : ℂ → ℂ}
@@ -179,7 +224,8 @@ theorem _root_.Meromorphic.rieszRemainderMellin_simplePole {L : ℂ → ℂ}
     (hn : meromorphicOrderAt L z = n) (hne : n ≠ 0) :
     meromorphicOrderAt (rieszRemainderMellin L) z = -1 ∧
       meromorphicTrailingCoeffAt (rieszRemainderMellin L) z = (n : ℂ) / (z * (1 - z)) := by
-  obtain ⟨H, ha, hval, heq⟩ := hL.exists_analyticAt_mul_rieszRemainderMellin hz₀ hz₁ hn
+  obtain ⟨H, ha, hval, heq⟩ := hL.exists_analyticAt_mul_rieszRemainderMellin hz₀ hz₁
+  rw [hn, WithTop.untop₀_coe] at hval
   have hH : H z ≠ 0 := by
     rw [hval]
     exact div_ne_zero (Int.cast_ne_zero.mpr hne) (mul_ne_zero hz₀ (sub_ne_zero.mpr hz₁.symm))
@@ -189,5 +235,45 @@ theorem _root_.Meromorphic.rieszRemainderMellin_simplePole {L : ℂ → ℂ}
   have hm := (meromorphicNFOn_rieszRemainderMellin L (mem_univ z)).meromorphicAt
   refine ⟨?_, (ha.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE hH hrepr).trans hval⟩
   exact (meromorphicOrderAt_eq_int_iff hm).mpr ⟨H, ha, hH, hrepr⟩
+
+/-- Away from `0` and `1`, the Mellin expression has a pole exactly where the input has
+nonzero order, provided the order of the input is finite. In particular a regular nonvanishing
+germ does not produce a pole, even if the totalized input is not in normal form. -/
+theorem _root_.Meromorphic.meromorphicOrderAt_rieszRemainderMellin_neg_iff {L : ℂ → ℂ}
+    (hL : Meromorphic L) {z : ℂ} (hz₀ : z ≠ 0) (hz₁ : z ≠ 1)
+    (hfin : meromorphicOrderAt L z ≠ ⊤) :
+    meromorphicOrderAt (rieszRemainderMellin L) z < 0 ↔ meromorphicOrderAt L z ≠ 0 := by
+  lift meromorphicOrderAt L z to ℤ using hfin with n hn
+  rcases eq_or_ne n 0 with rfl | hne
+  · suffices 0 ≤ meromorphicOrderAt (rieszRemainderMellin L) z by simp [not_lt.mpr this]
+    obtain ⟨H, hH, hz, heq⟩ := hL.exists_analyticAt_mul_rieszRemainderMellin hz₀ hz₁
+    have hord := hH.meromorphicOrderAt_pos_iff_eq_zero.mpr (by simpa [← hn] using hz)
+    have hlin : MeromorphicAt (fun s : ℂ ↦ s - z) z :=
+      (analyticAt_id.sub analyticAt_const).meromorphicAt
+    have hmul := meromorphicOrderAt_mul hlin
+      (meromorphicNFOn_rieszRemainderMellin L (mem_univ z)).meromorphicAt
+    simp only [Pi.mul_def, meromorphicOrderAt_id_sub_const] at hmul
+    rw [← meromorphicOrderAt_congr heq, hmul] at hord
+    by_contra! hneg
+    lift meromorphicOrderAt (rieszRemainderMellin L) z to ℤ using (hneg.trans_le le_top).ne with m
+    norm_cast at hord hneg
+    omega
+  · have hneg : (-1 : WithTop ℤ) < 0 := by decide
+    simp [(hL.rieszRemainderMellin_simplePole hz₀ hz₁ hn.symm hne).1, hne, hneg]
+
+/-- At a real point `β ∈ (0, 1)` where `L` has finite positive order, the Mellin expression has
+a positive real leading Laurent coefficient, which is its residue since the pole is simple. -/
+theorem _root_.Meromorphic.exists_pos_meromorphicTrailingCoeffAt_rieszRemainderMellin
+    {L : ℂ → ℂ} (hL : Meromorphic L) {β : ℝ} (hβ₀ : 0 < β) (hβ₁ : β < 1)
+    (hfin : meromorphicOrderAt L β ≠ ⊤) (hpos : 0 < meromorphicOrderAt L β) :
+    ∃ c : ℝ, 0 < c ∧ meromorphicTrailingCoeffAt (rieszRemainderMellin L) β = (c : ℂ) := by
+  lift meromorphicOrderAt L β to ℤ using hfin with n hn
+  have hnpos : 0 < n := WithTop.coe_lt_coe.mp hpos
+  have h₀ : (β : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hβ₀.ne'
+  have h₁ : (β : ℂ) ≠ 1 := by exact_mod_cast hβ₁.ne
+  refine ⟨(n : ℝ) / (β * (1 - β)), by positivity, ?_⟩
+  rw [(hL.rieszRemainderMellin_simplePole h₀ h₁ hn.symm hnpos.ne').2]
+  push_cast
+  ring
 
 end TauCeti
