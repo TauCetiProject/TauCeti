@@ -47,6 +47,8 @@ finite place of the extension.
   power of the restriction of `v`. For an archimedean absolute value only `t ≤ 1` works in
   general; the example at the end of the file checks that `|·| ^ 2` on `ℚ` is not an absolute
   value.
+* `AbsoluteValue.isNonarchimedean_comp`: the restriction of a nonarchimedean absolute value along
+  an injective ring homomorphism is nonarchimedean.
 * `AbsoluteValue.isNonarchimedean_trivial`: the trivial absolute value on any semiring without zero
   divisors is nonarchimedean.
 
@@ -74,6 +76,14 @@ theorem isNonarchimedean_under_of_liesOver {K L S : Type*} [CommSemiring K] [Sem
     (hw : IsNonarchimedean w) : IsNonarchimedean u := fun x y ↦ by
   simpa only [← LiesOver.apply_algebraMap (w := w) u, map_add] using
     hw (algebraMap K L x) (algebraMap K L y)
+
+/-- The restriction of a nonarchimedean absolute value along an injective ring homomorphism is
+nonarchimedean. -/
+theorem isNonarchimedean_comp {R T S : Type*} [Semiring R] [Semiring T] [Semiring S]
+    [LinearOrder S] {v : AbsoluteValue R S} (hv : IsNonarchimedean v) {f : T →+* R}
+    (hf : Function.Injective f) :
+    IsNonarchimedean (v.comp hf) := fun x y ↦ by
+  simpa [AbsoluteValue.comp] using hv (f x) (f y)
 
 /-- The trivial absolute value is nonarchimedean. -/
 theorem isNonarchimedean_trivial {R S : Type*} [Semiring R] [DecidablePred fun x : R ↦ x = 0]

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.Analysis.Normed.Ring.WithAbs
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Topology.Algebra.Valued.NormedValued
+public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 public import TauCeti.RingTheory.Valuation.AbsoluteValue
 
 /-!
@@ -63,21 +64,13 @@ The action of a group on absolute values and the corresponding equivariance of
   Chapter II, §§1 to 4.
 -/
 
-@[expose] public section
+public section
 
 open IsLocalRing
 
 open scoped NNReal
 
 namespace AbsoluteValue
-
-/-- The restriction of a nonarchimedean absolute value along an injective ring homomorphism is
-nonarchimedean. -/
-theorem isNonarchimedean_comp {R T S : Type*} [Semiring R] [Semiring T] [Semiring S]
-    [LinearOrder S] {v : AbsoluteValue R S} (hv : IsNonarchimedean v) {f : T →+* R}
-    (hf : Function.Injective f) :
-    IsNonarchimedean (v.comp hf) := fun x y ↦ by
-  simpa [AbsoluteValue.comp] using hv (f x) (f y)
 
 section Field
 
@@ -120,6 +113,7 @@ theorem mem_maximalIdeal_valuationSubring_iff (hw : IsNonarchimedean w)
   rw [← ValuationSubring.coe_mem_nonunits_iff, mem_nonunits_valuationSubring_iff]
 
 /-- The units of the valuation subring of `w` are the elements with `w x = 1`. -/
+@[simp]
 theorem isUnit_valuationSubring_iff (hw : IsNonarchimedean w) {a : w.valuationSubring hw} :
     IsUnit a ↔ w a = 1 := by
   rw [← not_iff_not, ← mem_nonunits_iff, ← mem_maximalIdeal,
@@ -171,14 +165,14 @@ theorem valuationSubring_comp {L : Type*} [Field L] (hw : IsNonarchimedean w) {f
     (hf : Function.Injective f) :
     (w.comp hf).valuationSubring (isNonarchimedean_comp hw hf) =
       (w.valuationSubring hw).comap f :=
-  rfl
+  ValuationSubring.ext _ _ fun _ ↦ Iff.rfl
 
 /-- The valuation subring of the restriction of `w` to a subfield `L` is the intersection of the
 valuation subring of `w` with `L`. -/
 theorem valuationSubring_under {L : Type*} [Field L] [Algebra L K] (hw : IsNonarchimedean w) :
     (w.under L).valuationSubring (isNonarchimedean_comp hw _) =
       (w.valuationSubring hw).comap (algebraMap L K) :=
-  rfl
+  valuationSubring_comp hw _
 
 /-- If `w` lies over `v`, the valuation subring of `v` is the intersection of the valuation
 subring of `w` with `L`. -/
@@ -199,15 +193,13 @@ def toValuation {R : Type*} [Ring R] [Nontrivial R] {w : AbsoluteValue R ℝ}
   map_zero' := NNReal.eq w.map_zero
   map_one' := NNReal.eq w.map_one
   map_mul' x y := NNReal.eq (w.map_mul x y)
-  map_add_le_max' x y := by
-    rw [← NNReal.coe_le_coe, NNReal.coe_max, NNReal.coe_mk, NNReal.coe_mk, NNReal.coe_mk]
-    exact hw x y
+  map_add_le_max' x y := by exact_mod_cast hw x y
 
 /-- The valuation attached to `w` takes the values of `w`. -/
 @[simp]
 theorem coe_toValuation_apply {R : Type*} [Ring R] [Nontrivial R] {w : AbsoluteValue R ℝ}
     (hw : IsNonarchimedean w) (x : R) : (w.toValuation hw x : ℝ) = w x :=
-  rfl
+  NNReal.coe_mk _ _
 
 variable {K : Type*} [Field K] {w : AbsoluteValue K ℝ}
 
@@ -236,15 +228,24 @@ theorem valuationSubring_toAbsoluteValue {K S Γ₀ : Type*} [Field K] [Field S]
   ext x
   simp [← hf.le_iff_le]
 
+section RankLeOne
+
+variable {K Γ₀ : Type*} [Field K] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation K Γ₀)
+  [hv : RankLeOne v]
+
+/-- Mathlib's absolute value of a valuation of rank at most one is nonarchimedean. -/
+theorem isNonarchimedean_absoluteValue : IsNonarchimedean v.absoluteValue := fun x y ↦ by
+  simpa using v.norm_add_le x y
+
 /-- Mathlib's absolute value of a valuation of rank at most one has the same valuation subring as
 the valuation. -/
-theorem valuationSubring_absoluteValue {K Γ₀ : Type*} [Field K]
-    [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation K Γ₀) [hv : RankLeOne v] :
-    v.absoluteValue.valuationSubring (fun x y ↦ by simpa using v.norm_add_le x y) =
-      v.valuationSubring := by
+theorem valuationSubring_absoluteValue :
+    v.absoluteValue.valuationSubring v.isNonarchimedean_absoluteValue = v.valuationSubring := by
   ext x
-  change (hv.hom' (v.restrict x) : ℝ) ≤ 1 ↔ v x ≤ 1
-  rw [NNReal.coe_le_one, ← map_one hv.hom', hv.strictMono'.le_iff_le, restrict_le_one_iff]
+  rw [AbsoluteValue.mem_valuationSubring_iff, absoluteValue_apply, norm_def, NNReal.coe_le_one,
+    ← map_one hv.hom', hv.strictMono'.le_iff_le, restrict_le_one_iff, mem_valuationSubring_iff]
+
+end RankLeOne
 
 end Valuation
 
@@ -259,7 +260,7 @@ theorem isNonarchimedean_toAbsoluteValue : IsNonarchimedean (toAbsoluteValue K) 
 /-- Mathlib's valuation of a nonarchimedean normed field is the valuation attached to its norm. -/
 theorem toValuation_toAbsoluteValue :
     (toAbsoluteValue K).toValuation (isNonarchimedean_toAbsoluteValue K) = valuation :=
-  rfl
+  Valuation.ext fun _ ↦ rfl
 
 /-- The valuation subring of the norm of a nonarchimedean normed field is the valuation subring
 of Mathlib's valuation of the field. -/
