@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -25,9 +26,10 @@ third derivatives of `|x| ^ p` are `p (p - 1) |x| ^ (p - 2)` for `p > 2`
 (`TauCeti.iteratedDeriv_three_abs_rpow`).
 
 For `0 < β ≤ 1` the third derivative of `|x| ^ (3 + β)` is `β`-Hölder on all of `ℝ`
-(`TauCeti.holderWith_iteratedFDeriv_three_abs_rpow_three_add`) and `γ`-Hölder near the origin for
-no `γ > β` (`TauCeti.not_holderOnWith_iteratedFDeriv_three_abs_rpow_three_add`): the function is
-`C^{3,β}` near the origin, and no better.
+(`TauCeti.holderWith_iteratedFDeriv_three_abs_rpow_three_add`). For `p > 3` the third derivative of
+`|x| ^ p` is `γ`-Hölder near the origin for no `γ > p - 3`
+(`TauCeti.not_holderOnWith_iteratedFDeriv_three_abs_rpow`): `|x| ^ (3 + β)` is `C^{3,β}` near the
+origin, and no better.
 -/
 
 public section
@@ -120,40 +122,44 @@ theorem holderWith_iteratedFDeriv_three_abs_rpow_three_add {β : ℝ≥0} (hβ0 
   rw [show (3 + (β : ℝ)) - 4 = β - 1 by ring]
   ring
 
-/-- For `0 < β < γ`, the third derivative of `x ↦ |x| ^ (3 + β)` is not `γ`-Hölder on any
+/-- For `p > 3` and `γ > p - 3`, the third derivative of `x ↦ |x| ^ p` is not `γ`-Hölder on any
 neighbourhood of the origin, whatever the constant: it vanishes at the origin and equals
-`(3 + β) (2 + β) (1 + β) x ^ β` for `x > 0`. -/
-theorem not_holderOnWith_iteratedFDeriv_three_abs_rpow_three_add {β γ C : ℝ≥0} (hβ0 : 0 < β)
-    (hβγ : β < γ) {s : Set ℝ} (hs : s ∈ 𝓝 0) :
-    ¬ HolderOnWith C γ (iteratedFDeriv ℝ 3 fun x : ℝ ↦ |x| ^ (3 + (β : ℝ))) s := by
+`p (p - 1) (p - 2) x ^ (p - 3)` for `x > 0`. -/
+theorem not_holderOnWith_iteratedFDeriv_three_abs_rpow {p : ℝ} (hp : 3 < p) {γ C : ℝ≥0}
+    (hγ : p - 3 < γ) {s : Set ℝ} (hs : s ∈ 𝓝 0) :
+    ¬ HolderOnWith C γ (iteratedFDeriv ℝ 3 fun x : ℝ ↦ |x| ^ p) s := by
   intro hH
-  have hβ : (0 : ℝ) < β := hβ0
-  have hγβ : (0 : ℝ) < γ - β := sub_pos.2 (by exact_mod_cast hβγ)
-  set c : ℝ := (3 + β) * (2 + β) * (1 + β) with hc
-  have hc0 : 0 < c := by positivity
+  have hγp : (0 : ℝ) < γ - (p - 3) := sub_pos.2 hγ
+  set c : ℝ := p * (p - 1) * (p - 2)
+  have hc0 : 0 < c := by
+    have : 0 < p - 2 := by linarith
+    have : 0 < p - 1 := by linarith
+    positivity
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hs
-  -- At `t > 0` the third derivative is `c t ^ β`, and at the origin it is `0`.
+  -- At `t > 0` the third derivative is `c t ^ (p - 3)`, and at the origin it is `0`.
   have hD (t : ℝ) (ht : 0 < t) :
-      iteratedDeriv 3 (fun x : ℝ ↦ |x| ^ (3 + (β : ℝ))) t = c * t ^ (β : ℝ) := by
-    rw [iteratedDeriv_three_abs_rpow (by linarith)]
+      iteratedDeriv 3 (fun x : ℝ ↦ |x| ^ p) t = c * t ^ (p - 3) := by
+    rw [iteratedDeriv_three_abs_rpow hp, show p - 4 = p - 3 - 1 by ring]
     dsimp only
-    rw [abs_of_pos ht, show (3 + (β : ℝ)) - 4 = β - 1 by ring, ← Real.rpow_add_one ht.ne',
-      sub_add_cancel, hc]
-    ring
-  have hD0 : iteratedDeriv 3 (fun x : ℝ ↦ |x| ^ (3 + (β : ℝ))) 0 = 0 := by
-    simp [iteratedDeriv_three_abs_rpow (show (3 : ℝ) < 3 + β by linarith)]
-  -- So the Hölder bound against the origin reads `c t ^ β ≤ C t ^ γ`, false for small `t`.
-  obtain ⟨t, hCt, ht⟩ := ((eventually_mul_rpow_lt_nhdsGT_zero hγβ C hc0).and
+    rw [abs_of_pos ht, ← Real.rpow_eq_rpow_sub_one_mul ht.le (by linarith)]
+  have hD0 : iteratedDeriv 3 (fun x : ℝ ↦ |x| ^ p) 0 = 0 := by
+    simp [iteratedDeriv_three_abs_rpow hp]
+  have hdist (t : ℝ) (ht : 0 < t) :
+      dist (iteratedFDeriv ℝ 3 (fun x : ℝ ↦ |x| ^ p) t)
+        (iteratedFDeriv ℝ 3 (fun x : ℝ ↦ |x| ^ p) 0) = c * t ^ (p - 3) := by
+    simp only [iteratedFDeriv_eq_equiv_comp, Function.comp_apply, LinearIsometryEquiv.dist_map,
+      hD t ht, hD0, dist_zero_right, Real.norm_eq_abs]
+    exact abs_of_pos (by positivity)
+  -- So the Hölder bound against the origin reads `c t ^ (p - 3) ≤ C t ^ γ`, false for small `t`.
+  obtain ⟨t, hCt, ht⟩ := ((eventually_mul_rpow_lt_nhdsGT_zero hγp C hc0).and
     (Ioo_mem_nhdsGT hε)).exists
   have hts : t ∈ s := hball (by
     rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_pos ht.1]; exact ht.2)
   have hd := hH.dist_le hts (mem_of_mem_nhds hs)
-  rw [iteratedFDeriv_eq_equiv_comp, Function.comp_apply, Function.comp_apply,
-    LinearIsometryEquiv.dist_map, hD t ht.1, hD0, Real.dist_eq, Real.dist_eq, sub_zero, sub_zero,
-    abs_of_pos ht.1, abs_of_pos (mul_pos hc0 (Real.rpow_pos_of_pos ht.1 _))] at hd
-  have hsplit : t ^ (γ : ℝ) = t ^ ((γ : ℝ) - β) * t ^ (β : ℝ) := by
+  rw [hdist t ht.1, Real.dist_eq, sub_zero, abs_of_pos ht.1] at hd
+  have hsplit : t ^ (γ : ℝ) = t ^ ((γ : ℝ) - (p - 3)) * t ^ (p - 3) := by
     rw [← Real.rpow_add ht.1, sub_add_cancel]
   rw [hsplit, ← mul_assoc] at hd
-  linarith [mul_lt_mul_of_pos_right hCt (Real.rpow_pos_of_pos ht.1 (β : ℝ))]
+  linarith [mul_lt_mul_of_pos_right hCt (Real.rpow_pos_of_pos ht.1 (p - 3))]
 
 end TauCeti

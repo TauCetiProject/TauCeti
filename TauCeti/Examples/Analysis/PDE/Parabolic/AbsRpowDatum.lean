@@ -61,6 +61,12 @@ open scoped NNReal
 def bump : ContDiffBump (0 : ℝ) :=
   ⟨1, 3 / 2, one_pos, by norm_num⟩
 
+/-- The bump `χ` equals `1` on the ball of radius `1`. -/
+@[simp] theorem bump_rIn : bump.rIn = 1 := by rw [bump]
+
+/-- The bump `χ` is supported in the closed ball of radius `3 / 2`. -/
+@[simp] theorem bump_rOut : bump.rOut = 3 / 2 := by rw [bump]
+
 /-- The initial datum `u₀(x) = χ(x) |x| ^ (3 + β)`: the power `|x| ^ (3 + β)` near the origin, cut
 off at infinity. -/
 def datum (β : ℝ≥0) (x : ℝ) : ℝ :=
@@ -69,8 +75,8 @@ def datum (β : ℝ≥0) (x : ℝ) : ℝ :=
 /-- On `[-1, 1]` the datum is the power `|x| ^ (3 + β)`. -/
 theorem datum_eq_of_abs_le_one (β : ℝ≥0) {x : ℝ} (hx : |x| ≤ 1) :
     datum β x = |x| ^ (3 + (β : ℝ)) := by
-  rw [datum, bump.one_of_mem_closedBall (by rwa [mem_closedBall_zero_iff, Real.norm_eq_abs]),
-    one_mul]
+  rw [datum, bump.one_of_mem_closedBall (by rwa [bump_rIn, mem_closedBall_zero_iff,
+    Real.norm_eq_abs]), one_mul]
 
 /-- **The datum lies in `C_b^{3,β}`.** For `0 < β ≤ 1` the datum is a bounded `C³` function with
 bounded derivatives through order three and `β`-Hölder third derivative. -/
@@ -89,9 +95,7 @@ theorem exists_ckHolderSpace_coe_eq_datum {β : ℝ≥0} (hβ0 : 0 < β) (hβ1 :
     bump.hasCompactSupport.exists_bound_iteratedFDeriv bump.contDiff (3 + 1)
   have hsupp : tsupport bump ⊆ Ioo (-2 : ℝ) 2 := by
     intro x hx
-    rw [bump.tsupport_eq, mem_closedBall_zero_iff, Real.norm_eq_abs] at hx
-    have hx' : |x| ≤ 3 / 2 := hx
-    rw [abs_le] at hx'
+    rw [bump.tsupport_eq, bump_rOut, mem_closedBall_zero_iff, Real.norm_eq_abs, abs_le] at hx
     exact ⟨by linarith, by linarith⟩
   refine ⟨CkHolderSpace.cutoff hf.contDiffOn
     ((bump.contDiff (n := ⊤)).of_le (WithTop.coe_le_coe.2 le_top)) isOpen_Ioo
@@ -119,7 +123,8 @@ theorem not_exists_ckHolderSpace_coe_eq_datum {α β : ℝ≥0} (hβ0 : 0 < β) 
   rintro ⟨u, hu⟩
   obtain ⟨C, hC⟩ := u.memHolder_iteratedFDeriv
   rw [hu] at hC
-  refine not_holderOnWith_iteratedFDeriv_three_abs_rpow_three_add hβ0 hβα (C := C)
+  refine not_holderOnWith_iteratedFDeriv_three_abs_rpow (p := 3 + β)
+    (by linarith [show (0 : ℝ) < β from hβ0]) (C := C) (by norm_num; exact_mod_cast hβα)
     (Metric.ball_mem_nhds 0 one_pos) fun x hx y hy ↦ ?_
   rw [← iteratedFDeriv_datum_eq hx, ← iteratedFDeriv_datum_eq hy]
   exact hC x y

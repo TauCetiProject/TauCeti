@@ -13,6 +13,7 @@ import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 import Mathlib.Topology.ExtendFrom
 import Mathlib.Topology.Instances.ENNReal.Lemmas
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 
 /-!
@@ -964,10 +965,7 @@ theorem holderWith_abs_rpow_sub_one_mul_self {α : ℝ≥0} (hα0 : 0 < α) (hα
     HolderWith 2 α (fun x : ℝ ↦ |x| ^ ((α : ℝ) - 1) * x) := by
   have hα0' : (α : ℝ) ≠ 0 := by exact_mod_cast hα0.ne'
   have hpos (x : ℝ) (hx : 0 ≤ x) : |x| ^ ((α : ℝ) - 1) * x = |x| ^ (α : ℝ) := by
-    rcases hx.eq_or_lt with rfl | hx
-    · simp [Real.zero_rpow hα0']
-    · rw [Real.rpow_sub_one (abs_pos.2 hx.ne').ne', abs_of_pos hx]
-      field_simp
+    rw [abs_of_nonneg hx, ← Real.rpow_eq_rpow_sub_one_mul hx hα0']
   have hneg (x : ℝ) (hx : x ≤ 0) : |x| ^ ((α : ℝ) - 1) * x = -|x| ^ (α : ℝ) := by
     have h := hpos (-x) (neg_nonneg.2 hx)
     rw [abs_neg] at h
