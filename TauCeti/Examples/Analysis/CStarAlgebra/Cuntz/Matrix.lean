@@ -33,13 +33,9 @@ namespace TauCeti.CuntzMatrixCheck
 noncomputable def diagOneZero : {a : CStarMatrix (Fin 2) (Fin 2) ℂ // 0 ≤ a} :=
   ⟨CStarMatrix.matrixUnit 0 0, (CStarMatrix.isStarProjection_matrixUnit 0).nonneg⟩
 
-/-- The identity of `M₂(ℂ)`, as a positive element. -/
-noncomputable def oneMatrix : {a : CStarMatrix (Fin 2) (Fin 2) ℂ // 0 ≤ a} :=
-  ⟨1, zero_le_one⟩
-
 /-- **`1 ⋠ diag(1, 0)` in `M₂(ℂ)`.** The identity is not Cuntz subequivalent to the rank-one
 projection `diag(1, 0)`: no sequence `xₙ⋆ diag(1, 0) xₙ` converges to `1`. -/
-theorem not_cuntzLE_one_diag : ¬ CuntzLE oneMatrix diagOneZero := by
+theorem not_cuntzLE_one_diag : ¬ CuntzLE 1 diagOneZero := by
   rw [cuntzLE_iff_exists_tendsto]
   rintro ⟨x, hx⟩
   -- Every `xₙ⋆ diag(1, 0) xₙ` has determinant `0`, the determinant is continuous, and `det 1 = 1`.
@@ -51,7 +47,7 @@ theorem not_cuntzLE_one_diag : ¬ CuntzLE oneMatrix diagOneZero := by
       CStarMatrix.ofMatrix_symm_matrixUnit, Matrix.det_mul]
     simp [Matrix.det_fin_two]
   have hlim := (hdet.tendsto _).comp hx
-  simp only [Function.comp_def, h0, oneMatrix] at hlim
+  simp only [Function.comp_def, h0, Nonneg.coe_one] at hlim
   have : det 1 = 0 := tendsto_nhds_unique hlim tendsto_const_nhds
   simp [det, CStarMatrix.ofMatrix_symm_one] at this
 
