@@ -11,7 +11,6 @@ public import TauCeti.Dynamics.Flow.Stable
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Topology.OmegaLimit
 
 /-!
 # The flow of a Morse–Bott pseudo-gradient and its local stable sets
@@ -369,7 +368,7 @@ theorem forall_coord_eq_zero_of_forall_le_apply_flow (φ : MorseBottChart E f x)
 
 /-- **The local stable sets in a Morse–Bott chart.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ`
 in the Morse–Bott chart `φ`. On a small coordinate cube around `x`, a point `y` lies in the stable
-set `W^s(p)` of a critical point `p` of the cube exactly when the coordinates of negative weight of
+set `W^s(p)` of a critical point `p` in the chart exactly when the coordinates of negative weight of
 `y` vanish and its coordinates of weight `0` are those of `p`. -/
 theorem exists_forall_mem_stableSet_iff (φ : MorseBottChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
@@ -420,29 +419,22 @@ theorem exists_tendsto_atTop (y : M) :
     ∃ p, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 ∧ Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 p) := by
   set γ : ℝ → M := fun t ↦ hX.flow t y
   have hfc : Continuous f := hX.mdifferentiable.continuous
-  -- The values of `f` along the orbit decrease to their infimum `c`.
-  have hbdd : BddBelow (range fun t ↦ f (γ t)) := by
-    obtain ⟨m, -, hm⟩ := isCompact_univ.exists_isMinOn ⟨y, mem_univ y⟩ hfc.continuousOn
-    exact ⟨f m, by rintro _ ⟨t, rfl⟩; exact hm (mem_univ _)⟩
-  have hlim : Tendsto (fun t ↦ f (γ t)) atTop (𝓝 (⨅ t, f (γ t))) :=
-    tendsto_atTop_ciInf (hX.antitone_flow y) hbdd
-  set c := ⨅ t, f (γ t)
-  have hval : ∀ z, MapClusterPt z atTop γ → f z = c := fun z hz ↦
-    eq_of_nhds_neBot (NeBot.mono (hz.continuousAt_comp hfc.continuousAt) (inf_le_inf_left _ hlim))
   -- A cluster point `p` of the orbit is a critical point, as `f` is constant along its orbit.
   obtain ⟨p, hp⟩ := exists_clusterPt_of_compactSpace (map γ atTop)
-  have hp : MapClusterPt p atTop γ := hp
-  have hpc : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 := hX.mfderiv_eq_zero_of_forall_eq fun t ↦
-    (hval _ (Flow.mapClusterPt_atTop_flow hp t)).trans (hval p hp).symm
+  have hp : MapClusterPt p atTop γ := mapClusterPt_def.2 hp
+  have hpc : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 := hX.mfderiv_eq_zero_of_forall_eq
+    (Flow.apply_flow_eq_of_mapClusterPt_of_antitone (hX.antitone_flow y) hfc hp)
   -- The orbit enters a small cube of a Morse–Bott chart at `p` at some time `t₀`.
   obtain ⟨φ, hφ⟩ := hX.exists_morseBottChart p hpc
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
   obtain ⟨t₀, ht₀, ht₀r⟩ := (hp.frequently (φ.eventually_mem_source_norm_coord_lt
     (ρ := r / (4 * (Module.finrank ℝ E + 1))) (by positivity))).exists
-  -- It never goes below the level `c = f p`, so its coordinates of negative weight vanish there.
+  -- It never goes below the level `f p`, the infimum of `f` along the orbit, so its coordinates of
+  -- negative weight vanish there.
   have hu := hX.forall_coord_eq_zero_of_forall_le_apply_flow φ hφ hrT ht₀ ht₀r fun T ↦ by
-    rw [hval p hp, ← Flow.map_add]
-    exact ciInf_le hbdd _
+    rw [← Flow.map_add]
+    exact (Flow.isGLB_of_mapClusterPt_of_antitone (hX.antitone_flow y) hfc.continuousAt hp).1
+      ⟨_, rfl⟩
   have hyr : ‖φ.coord (φ.toChart (γ t₀))‖ < r / 2 := lt_half_of_lt_div hr ht₀r
   have hw := (φ.norm_ite_weight_eq_zero_le _).trans_lt (hyr.trans (half_lt_self hr))
   -- From time `t₀` on, the orbit converges along the linear flow to a critical point.

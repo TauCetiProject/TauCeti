@@ -409,9 +409,8 @@ theorem unstableSet_eq_singleton_of_lt {a : M}
   Flow.unstableSet_eq_singleton_of_antitone hX.mdifferentiable.continuous.continuousAt
     hX.antitone_flow hmin
 
-/-- **Two critical points.** If every critical point of a Morse function is one of two distinct
-points `a` and `b`, and the stable set of `a` is `{a}`, then the stable set of `b` is everything
-else. -/
+/-- **Two critical points.** If every critical point of `f` is one of two distinct points `a` and
+`b`, and the stable set of `a` is `{a}`, then the stable set of `b` is everything else. -/
 theorem stableSet_eq_compl_of_critical_eq_or_eq {a b : M}
     (hcrit : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → y = a ∨ y = b) (hab : a ≠ b)
     (ha : hX.flow.stableSet a = {a}) : hX.flow.stableSet b = {a}ᶜ := by
@@ -425,9 +424,8 @@ theorem stableSet_eq_compl_of_critical_eq_or_eq {a b : M}
     · exact absurd (ha ▸ hpc) hpa
     · exact hpc
 
-/-- **Two critical points.** If every critical point of a Morse function is one of two distinct
-points `a` and `b`, and the unstable set of `b` is `{b}`, then the unstable set of `a` is everything
-else. -/
+/-- **Two critical points.** If every critical point of `f` is one of two distinct points `a` and
+`b`, and the unstable set of `b` is `{b}`, then the unstable set of `a` is everything else. -/
 theorem unstableSet_eq_compl_of_critical_eq_or_eq {a b : M}
     (hcrit : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 → y = a ∨ y = b) (hab : a ≠ b)
     (hb : hX.flow.unstableSet b = {b}) : hX.flow.unstableSet a = {b}ᶜ := by
