@@ -41,8 +41,8 @@ be the radical of `t (W ⧸ q)`; then `W' = (W ⧸ q)_r`, whose spectrum is the 
 and `r` in `Spec W`. Every nonzero prime of `W ⧸ q` meets `V` in a nonzero prime, hence in the
 maximal ideal of `V`, and so contains `r`. Thus `W'` has only the two primes `0` and `r W'`.
 
-The second fact shows that every v-cover is an arc-cover, and that over a valuation domain of
-rank at most one the two notions agree.
+The second fact shows that every v-cover is an arc-cover; the first shows that over a valuation
+domain of rank at most one every arc-cover is a v-cover.
 
 ## Main results
 
@@ -167,10 +167,7 @@ theorem exists_krullDimLE_one_injective_isLocalHom_comp {V : Type*} [CommRing V]
   · push Not at hV
     exact exists_krullDimLE_one_injective_isLocalHom_comp_of_forall_isUnit e hV
   obtain ⟨t, ht0, ht⟩ := hV
-  -- `V` is local, its nonunits being the preimage of those of `W`.
-  have : IsLocalRing V := .of_nonunits_add fun a b ha hb hab =>
-    (mem_maximalIdeal _).mp (add_mem ((mem_maximalIdeal _).mpr fun h => ha (h.of_map e))
-      ((mem_maximalIdeal _).mpr fun h => hb (h.of_map e))) (by simpa using hab.map e)
+  have : IsLocalRing V := e.domain_isLocalRing
   -- Some prime `P` of `W` lies over `0`; dominate the pair `P ⊆ maximalIdeal W` by a valuation
   -- domain `W₁`, and then cut `W₁` down to rank at most one.
   obtain ⟨P, _, hP⟩ := (Ideal.comap_map_eq_self_iff_of_isPrime (f := e) ⊥).mp

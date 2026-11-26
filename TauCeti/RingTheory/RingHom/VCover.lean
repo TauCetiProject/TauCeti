@@ -73,8 +73,8 @@ integral ring maps have going up, so are integral ring homomorphisms surjective 
   209 (2017), Definition 2.1 and Remark 2.2.
 * D. Rydh, *Submersions and effective descent of étale morphisms*, Bull. Soc. Math. France 138
   (2010), Definition 2.2 and Theorem 2.8.
-* B. Bhatt and A. Mathew, *The arc-topology*, Forum Math. Pi 9 (2021), Definition 1.1 and
-  Lemma 2.3.
+* B. Bhatt and A. Mathew, *The arc-topology*, Forum Math. Pi 9 (2021), Definition 1.1,
+  Lemma 2.3 and Lemma 2.4.
 -/
 
 public section

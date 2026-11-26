@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.RingHom.VCover
 
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+import TauCeti.Algebra.Algebra.Prod
 import TauCeti.RingTheory.KrullDimension.Basic
 import TauCeti.RingTheory.Valuation.Extension
 import TauCeti.RingTheory.Valuation.PrimeSplitting
@@ -64,8 +65,9 @@ maximal, as for the middle prime of a valuation domain of rank two, it is not a 
 * `RingHom.IsVCover.isArcCover`: every v-cover is an arc-cover.
 * `RingHom.isArcCover_iff_isVCover`: out of a valuation domain of rank at most one, arc-covers and
   v-covers agree; `RingHom.IsArcCover.isVCover_algebraMap_tensorProduct` is the base-changed form.
-* `RingHom.isArcCover_iff_exists_isPrime_le`: out of a valuation domain of rank at most one, a
-  homomorphism is an arc-cover if and only if the generic-to-closed specialization lifts.
+* `RingHom.isArcCover_iff_exists_isPrime_le_of_valuationRing`: out of a valuation domain of rank
+  at most one, a homomorphism is an arc-cover if and only if the generic-to-closed specialization
+  lifts.
 * `TauCeti.ValuationRing.isArcCover_quotientMk_prod_algebraMap` and
   `TauCeti.ValuationRing.not_isVCover_quotientMk_prod_algebraMap`: the prime-splitting cover of a
   valuation domain is an arc-cover, and not a v-cover when the prime is neither zero nor maximal.
@@ -308,7 +310,7 @@ theorem isArcCover_iff_isVCover (f : A →+* B) : f.IsArcCover ↔ f.IsVCover :=
 arc-cover if and only if some prime of `B` lying over the zero ideal of `A` is contained in a prime
 lying over the maximal ideal of `A`. On spectra: the specialization from the generic to the closed
 point of `Spec A` lifts to `Spec B`. When `A` is a field this says that `B` is nonzero. -/
-theorem isArcCover_iff_exists_isPrime_le (f : A →+* B) :
+theorem isArcCover_iff_exists_isPrime_le_of_valuationRing (f : A →+* B) :
     f.IsArcCover ↔ ∃ P Q : Ideal B, P.IsPrime ∧ Q.IsPrime ∧ P ≤ Q ∧ P.comap f = ⊥ ∧
       Q.comap f = IsLocalRing.maximalIdeal A :=
   (isArcCover_iff_isVCover f).trans (isVCover_iff_exists_isPrime_le_of_valuationRing f)
@@ -350,31 +352,18 @@ theorem not_isVCover_quotientMk_prod_algebraMap (hp0 : p ≠ ⊥)
   intro h
   obtain ⟨W, _, _, _, e, ψ, he, _, hψ⟩ := (RingHom.isVCover_iff _).mp h V (RingHom.id V)
   have hψx (x : V) : ψ (Ideal.Quotient.mk p x, algebraMap V _ x) = e x := RingHom.congr_fun hψ x
-  -- As `W` is a domain, `ψ` kills one of the idempotents `(1, 0)` and `(0, 1)`.
-  have h10 : ψ (1, 0) * ψ (0, 1) = 0 := by
-    rw [← map_mul, Prod.mk_mul_mk, mul_zero, zero_mul, Prod.mk_zero_zero, map_zero]
-  have h11 : ψ (1, 0) + ψ (0, 1) = 1 := by
-    rw [← map_add, Prod.mk_add_mk, add_zero, zero_add, Prod.mk_one_one, map_one]
-  have hsplit (a b) : ψ (a, b) = ψ (1, 0) * ψ (a, 0) + ψ (0, 1) * ψ (0, b) := by
-    rw [← map_mul, ← map_mul, ← map_add, Prod.mk_mul_mk, Prod.mk_mul_mk, Prod.mk_add_mk]
-    simp
-  rcases mul_eq_zero.mp h10 with h | h
-  · -- Then `ψ` only sees `V_p`, so the image of an element `s` of the maximal ideal outside `p`,
-    -- a unit of `V_p`, is a unit of `W`.
-    have hψ01 : ψ (0, 1) = 1 := by rwa [h, zero_add] at h11
-    obtain ⟨s, hsm, hsp⟩ := IsConcreteLE.exists_of_lt
-      ((IsLocalRing.le_maximalIdeal (Ideal.IsPrime.ne_top ‹_›)).lt_of_ne hpm)
-    obtain ⟨u, hu⟩ :=
-      (IsLocalization.AtPrime.isUnit_to_map_iff (Localization.AtPrime p) p s).mpr hsp
-    have hes : e s = ψ (0, u) := by
-      rw [← hψx, hsplit, h, hu, zero_mul, zero_add, hψ01, one_mul]
-    have hunit : IsUnit (e s) := hes ▸ .of_mul_eq_one (ψ (0, ↑u⁻¹)) (by
-      rw [← map_mul, Prod.mk_mul_mk, mul_zero, u.mul_inv, hψ01])
-    exact (IsLocalRing.mem_maximalIdeal s).mp hsm (hunit.of_map e)
+  -- As `W` is a domain, `ψ` factors through one of the two projections.
+  rcases ψ.exists_eq_comp_fst_or_snd with ⟨φ, rfl⟩ | ⟨φ, rfl⟩
   · -- Then `ψ` only sees `V ⧸ p`, so it kills the image of `p ≠ 0`, contradicting injectivity.
     obtain ⟨x, hxp, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hp0
     refine hx0 (he ?_)
-    rw [map_zero, ← hψx, hsplit, h, Ideal.Quotient.eq_zero_iff_mem.mpr hxp, Prod.mk_zero_zero,
-      map_zero, mul_zero, zero_mul, add_zero]
+    simpa [Ideal.Quotient.eq_zero_iff_mem.mpr hxp] using (hψx x).symm
+  · -- Then `ψ` only sees `V_p`, so the image of an element `s` of the maximal ideal outside `p`,
+    -- a unit of `V_p`, is a unit of `W`.
+    obtain ⟨s, hsm, hsp⟩ := IsConcreteLE.exists_of_lt
+      ((IsLocalRing.le_maximalIdeal (Ideal.IsPrime.ne_top ‹_›)).lt_of_ne hpm)
+    have hunit : IsUnit (e s) := hψx s ▸
+      ((IsLocalization.AtPrime.isUnit_to_map_iff (Localization.AtPrime p) p s).mpr hsp).map φ
+    exact (IsLocalRing.mem_maximalIdeal s).mp hsm (hunit.of_map e)
 
 end TauCeti.ValuationRing
