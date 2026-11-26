@@ -35,6 +35,7 @@ namespace TauCeti.IdealArithmeticFunction
 variable {K : Type*} [Field K] [NumberField K]
 
 /-- The coefficients of an ideal von Mangoldt transform vanish off the rational prime powers. -/
+@[simp]
 theorem normCoeff_vonMangoldtTransform_eq_zero_of_not_isPrimePow
     (f : IdealArithmeticFunction K) {n : ℕ} (hn : ¬ IsPrimePow n) :
     normCoeff K f.vonMangoldtTransform n = 0 := by
@@ -43,6 +44,29 @@ theorem normCoeff_vonMangoldtTransform_eq_zero_of_not_isPrimePow
   rw [f.vonMangoldtTransform_apply, vonMangoldt_eq_zero_of_not_isPrimePow, mul_zero]
   intro hA'
   exact hn ((mem_normFiber K).mp hA ▸ isPrimePow_absNorm ⟨A, hA'⟩)
+
+section PrimesOver
+
+variable {p : ℕ} [hp : Fact p.Prime]
+
+/-- A prime of `𝓞 K` over `p`, as a nonzero ideal. -/
+private def primeOverNonZero (P : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)) :
+    (Ideal (𝓞 K))⁰ :=
+  ⟨P.val, NumberField.mem_nonZeroDivisors_of_prime_of_liesOver hp.out P.val⟩
+
+omit hp in
+/-- If the inertia degree of a prime over `p` divides `k > 0`, the quotient is positive. -/
+private theorem div_inertiaDeg_pos (P : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)) {k : ℕ}
+    (hk : 0 < k) (hd : P.val.inertiaDeg ℤ ∣ k) : 0 < k / P.val.inertiaDeg ℤ :=
+  Nat.div_pos (Nat.le_of_dvd hk hd) (Ideal.inertiaDeg_pos P.val ℤ)
+
+/-- A positive power of a prime over `p` is a prime power ideal. -/
+private theorem isPrimePow_primeOverNonZero_pow (P : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K))
+    {e : ℕ} (he : 0 < e) : IsPrimePow ((primeOverNonZero P ^ e : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) :=
+  ⟨P.val, e, Ideal.prime_of_isPrime (nonZeroDivisors.ne_zero (primeOverNonZero P).prop)
+    inferInstance, he, by simp [primeOverNonZero]⟩
+
+end PrimesOver
 
 /-- At `p ^ k`, a prime of inertia degree `d` above `p` contributes the weight of its
 `(k / d)`-th power times the logarithm of its own norm, and only when `d ∣ k`. -/
@@ -56,30 +80,24 @@ theorem normCoeff_vonMangoldtTransform_prime_pow (f : IdealArithmeticFunction K)
           Real.log (absNorm P.val) := by
   classical
   let P₀ : Ideal ℤ := span {(p : ℤ)}
-  let liftPrime (P : P₀.primesOver (𝓞 K)) : (Ideal (𝓞 K))⁰ :=
-    ⟨P.val, NumberField.mem_nonZeroDivisors_of_prime_of_liesOver hp.out P.val⟩
-  have hnorm (P : P₀.primesOver (𝓞 K)) : p ^ P.val.inertiaDeg ℤ = absNorm P.val :=
-    Ideal.pow_inertiaDeg p P.val
   have hprime (P : P₀.primesOver (𝓞 K)) : Prime P.val :=
-    Ideal.prime_of_isPrime (nonZeroDivisors.ne_zero (liftPrime P).prop) inferInstance
-  have hexp (P : P₀.primesOver (𝓞 K)) (hd : P.val.inertiaDeg ℤ ∣ k) :
-      0 < k / P.val.inertiaDeg ℤ :=
-    Nat.div_pos (Nat.le_of_dvd hk hd) (Ideal.inertiaDeg_pos P.val ℤ)
+    Ideal.prime_of_isPrime (nonZeroDivisors.ne_zero (primeOverNonZero P).prop) inferInstance
   rw [normCoeff_eq_sum_normFiber, ← Finset.sum_filter_of_ne (p :=
     fun A : (Ideal (𝓞 K))⁰ ↦ IsPrimePow (A : Ideal (𝓞 K)))
     (fun _ _ hA ↦ ((f.vonMangoldtTransform_ne_zero_iff).mp hA).1)]
   symm
   -- A prime above `p` contributes at most one power, determined by its inertia degree.
-  refine Finset.sum_bij (fun P _ ↦ liftPrime P ^ (k / P.val.inertiaDeg ℤ)) ?_ ?_ ?_ ?_
+  refine Finset.sum_bij (fun P _ ↦ primeOverNonZero P ^ (k / P.val.inertiaDeg ℤ)) ?_ ?_ ?_ ?_
   · intro P hP
     have hd := (Finset.mem_filter.mp hP).2
     refine Finset.mem_filter.mpr ⟨(mem_normFiber K).mpr ?_,
-      ⟨P.val, _, hprime P, hexp P hd, by simp [liftPrime]⟩⟩
-    simp only [SubmonoidClass.coe_pow, liftPrime, map_pow, ← hnorm, ← pow_mul]
+      isPrimePow_primeOverNonZero_pow P (div_inertiaDeg_pos P hk hd)⟩
+    simp only [SubmonoidClass.coe_pow, primeOverNonZero, map_pow, ← Ideal.pow_inertiaDeg p P.val,
+      ← pow_mul]
     rw [Nat.mul_div_cancel' hd]
   · intro P hP Q _ hPQ
     exact Subtype.ext (eq_of_prime_pow_eq (hprime P) (hprime Q)
-      (hexp P (Finset.mem_filter.mp hP).2) (congrArg Subtype.val hPQ))
+      (div_inertiaDeg_pos P hk (Finset.mem_filter.mp hP).2) (congrArg Subtype.val hPQ))
   · -- A prime over `p` dividing the given prime power must be its base.
     intro A hA
     obtain ⟨hAn, Q, j, hQ, _, hpow⟩ := Finset.mem_filter.mp hA
@@ -93,17 +111,17 @@ theorem normCoeff_vonMangoldtTransform_prime_pow (f : IdealArithmeticFunction K)
       have hdiv' : P ∣ Q := hPd.dvd_of_dvd_pow (hpow ▸ hdiv)
       exact ((Ideal.isPrime_of_prime hQ).isMaximal hQ.ne_zero).eq_of_le hP.ne_top
         (Ideal.le_of_dvd hdiv') |>.symm
-    have hdegree : q.val.inertiaDeg ℤ * j = k := Nat.pow_right_injective hp.out.two_le (by
-      dsimp only
-      rw [pow_mul, hnorm q, ← map_pow]
-      exact (congrArg absNorm ((congrArg (· ^ j) hPQ).trans hpow)).trans hAnorm)
+    have hdegree : P.inertiaDeg ℤ * j = k := Nat.pow_right_injective hp.out.two_le
+      (show p ^ (P.inertiaDeg ℤ * j) = p ^ k by
+        rw [pow_mul, Ideal.pow_inertiaDeg p P, ← map_pow]
+        exact (congrArg absNorm ((congrArg (· ^ j) hPQ).trans hpow)).trans hAnorm)
     have hd : q.val.inertiaDeg ℤ ∣ k := ⟨j, hdegree.symm⟩
     refine ⟨q, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hd⟩, Subtype.ext ?_⟩
     rw [SubmonoidClass.coe_pow, ← hdegree, Nat.mul_div_cancel_left _ (Ideal.inertiaDeg_pos q.val ℤ)]
     exact (congrArg (· ^ j) hPQ).trans hpow
   · intro P hP
     exact (f.vonMangoldtTransform_apply_prime_pow (hprime P)
-      (hexp P (Finset.mem_filter.mp hP).2)).symm
+      (div_inertiaDeg_pos P hk (Finset.mem_filter.mp hP).2)).symm
 
 /-- The norm of a twisted von Mangoldt coefficient is at most the field degree times the
 rational von Mangoldt coefficient. The twist need only be bounded by one on prime powers. -/
@@ -126,15 +144,8 @@ theorem norm_normCoeff_vonMangoldtTransform_le (f : IdealArithmeticFunction K)
         (fun P ↦ P.val.inertiaDeg ℤ ∣ k), (P.val.inertiaDeg ℤ : ℝ) * Real.log (p : ℝ))
       (Finset.sum_le_sum ?_) ?_)
     · intro P hP
-      have hd := (Finset.mem_filter.mp hP).2
-      have he : 0 < k / P.val.inertiaDeg ℤ := Nat.div_pos (Nat.le_of_dvd hk hd)
-        (Ideal.inertiaDeg_pos P.val ℤ)
-      have hne : P.val ∈ nonZeroDivisors (Ideal (𝓞 K)) :=
-        NumberField.mem_nonZeroDivisors_of_prime_of_liesOver hp P.val
-      have hpow : IsPrimePow (((⟨P.val, hne⟩ : (Ideal (𝓞 K))⁰) ^
-          (k / P.val.inertiaDeg ℤ) : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) :=
-        ⟨P.val, _, Ideal.prime_of_isPrime (nonZeroDivisors.ne_zero hne) inferInstance,
-          he, by simp⟩
+      have hpow := isPrimePow_primeOverNonZero_pow P
+        (div_inertiaDeg_pos P hk (Finset.mem_filter.mp hP).2)
       have hnon : 0 ≤ (P.val.inertiaDeg ℤ : ℝ) * Real.log (p : ℝ) := by positivity
       rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, hN P, abs_of_nonneg hnon]
       exact mul_le_of_le_one_left hnon (hf _ hpow)
