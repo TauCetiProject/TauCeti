@@ -150,6 +150,11 @@ theorem smoothLogLiouvilleGraphFunction_eq_of_le_left (hab : a ≤ b)
     smoothLogLiouvilleGraphFunction Z W ι f a b x = a :=
   smoothLowerTruncation_of_le_left hab hx
 
+/-- The smoothed logarithm of the defining function of the Liouville graph is at least `a`. -/
+theorem le_smoothLogLiouvilleGraphFunction (hab : a ≤ b) (x : M) :
+    a ≤ smoothLogLiouvilleGraphFunction Z W ι f a b x :=
+  le_smoothLowerTruncation hab _
+
 /-- Where `log F < b`, the smoothed logarithm of the defining function `F` of the Liouville graph is
 below `b`. -/
 theorem smoothLogLiouvilleGraphFunction_lt_of_lt (hab : a < b)
@@ -217,14 +222,12 @@ theorem smoothLogLiouvilleGraphFunction_flowOf (hab : a < b) {t : ℝ}
     rw [h.smoothLogLiouvilleGraphFunction_of_mem hZ ha hab.le hxW] at hx
     exact hab.not_gt hx
   rw [smoothLogLiouvilleGraphFunction_eq_of_lt hab hx] at hxt ⊢
-  rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW
-  obtain ⟨⟨t₀, s⟩, ⟨ht₀, -⟩, rfl⟩ := hxW
+  obtain ⟨t₀, ht₀, s, rfl⟩ := h.exists_flowOf_eq_of_notMem hZ hinj hιW hxW
   -- On the end, `log F (ψ_τ (ι s)) = τ - log f(s)` for `τ > 0`.
   have hlog {τ : ℝ} (hτ : 0 < τ) :
       Real.log (liouvilleGraphFunction Z W ι f (flowOf Z τ (ι s))) = τ - Real.log (f s) := by
     rw [h.liouvilleGraphFunction_flowOf hZ hιW' hinj hτ, Real.log_div (Real.exp_pos τ).ne'
       (hf₀ s).ne', Real.log_exp]
-  simp only at hxt ⊢
   rw [hlog ht₀] at hxt ⊢
   have hfs : -a < Real.log (f s) := (Real.lt_log_iff_exp_lt (hf₀ s)).2 (ha s)
   have htt : 0 < t + t₀ := by linarith
@@ -257,10 +260,7 @@ theorem setOf_smoothLogLiouvilleGraphFunction_lt_zero (hab : a < b) (hb : b ≤ 
     Real.log_neg_iff (liouvilleGraphFunction_pos hf₀ _), mem_liouvilleGraphRegion]
   by_cases hxW : x ∈ W
   · simp [hxW, h.liouvilleGraphFunction_lt_one_of_mem hZ hf1 hxW]
-  have hxW' : x ∈ Wᶜ := hxW
-  rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW'
-  obtain ⟨⟨t₀, s⟩, ⟨ht₀, -⟩, rfl⟩ := hxW'
-  simp only at hxW ⊢
+  obtain ⟨t₀, ht₀, s, rfl⟩ := h.exists_flowOf_eq_of_notMem hZ hinj hιW hxW
   simp only [hxW, false_or]
   rw [h.liouvilleGraphFunction_flowOf hZ hιW' hinj ht₀, div_lt_one (hf₀ s)]
   refine ⟨fun hlt ↦ ⟨t₀, s, (Real.lt_log_iff_exp_lt (hf₀ s)).2 hlt, rfl⟩, ?_⟩

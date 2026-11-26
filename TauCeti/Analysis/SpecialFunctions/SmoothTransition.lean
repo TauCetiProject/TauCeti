@@ -1080,7 +1080,9 @@ theorem smoothLowerClamp_of_two_mul_le {δ t : ℝ} (hδ : 0 < δ) (ht : 2 * δ 
 `s ↦ max s a`. For `a < b` it is the constant `a` on `(-∞, a]`
 (`TauCeti.smoothLowerTruncation_of_le_left`), the identity on `[b, ∞)`
 (`TauCeti.smoothLowerTruncation_of_right_le`) and below `b` on `(-∞, b)`
-(`TauCeti.smoothLowerTruncation_lt_of_lt`). -/
+(`TauCeti.smoothLowerTruncation_lt_of_lt`). It is at least `a` everywhere
+(`TauCeti.le_smoothLowerTruncation`) and at most `s` on `[a, ∞)`
+(`TauCeti.smoothLowerTruncation_le_self`). -/
 def smoothLowerTruncation (a b s : ℝ) : ℝ :=
   a + Real.smoothTransition ((s - a) / (b - a)) * (s - a)
 
@@ -1107,17 +1109,29 @@ theorem smoothLowerTruncation_of_right_le {a b s : ℝ} (hab : a < b) (hs : b �
   rw [smoothLowerTruncation_def, Real.smoothTransition.one_of_one_le
     ((one_le_div (sub_pos.2 hab)).2 (by linarith)), one_mul, add_sub_cancel]
 
+/-- The smooth lower truncation is at least `a`. -/
+theorem le_smoothLowerTruncation {a b : ℝ} (hab : a ≤ b) (s : ℝ) :
+    a ≤ smoothLowerTruncation a b s := by
+  rcases le_or_gt s a with hsa | hsa
+  · rw [smoothLowerTruncation_of_le_left hab hsa]
+  · rw [smoothLowerTruncation_def, le_add_iff_nonneg_right]
+    exact mul_nonneg (Real.smoothTransition.nonneg _) (sub_nonneg.2 hsa.le)
+
+/-- The smooth lower truncation is at most the identity on `[a, ∞)`. -/
+theorem smoothLowerTruncation_le_self {a b s : ℝ} (hs : a ≤ s) :
+    smoothLowerTruncation a b s ≤ s := by
+  have := mul_le_of_le_one_left (sub_nonneg.2 hs)
+    (Real.smoothTransition.le_one ((s - a) / (b - a)))
+  rw [smoothLowerTruncation_def]
+  linarith
+
 /-- The smooth lower truncation is below `b` on `(-∞, b)`. -/
 theorem smoothLowerTruncation_lt_of_lt {a b s : ℝ} (hab : a < b) (hs : s < b) :
     smoothLowerTruncation a b s < b := by
   rcases le_or_gt s a with hsa | hsa
   · rw [smoothLowerTruncation_of_le_left hab.le hsa]
     exact hab
-  · -- Between `a` and `b`, the truncation lies between `a` and `s`.
-    have := mul_le_of_le_one_left (sub_nonneg.2 hsa.le)
-      (Real.smoothTransition.le_one ((s - a) / (b - a)))
-    rw [smoothLowerTruncation_def]
-    linarith
+  · exact (smoothLowerTruncation_le_self hsa.le).trans_lt hs
 
 /-- Above `b`, the sublevel sets of the smooth lower truncation are those of the identity. -/
 theorem smoothLowerTruncation_lt_iff {a b c s : ℝ} (hab : a < b) (hc : b ≤ c) :

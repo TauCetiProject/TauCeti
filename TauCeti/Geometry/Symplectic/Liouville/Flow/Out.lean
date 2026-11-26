@@ -105,6 +105,15 @@ theorem IsLiouvilleCompletion.bijOn_flowOf_comp (h : IsLiouvilleCompletion ω α
     rwa [image_univ, hιW] at this
   exact (h.bijOn_flowOf_Ioi_prod_frontier hZ).comp hmap
 
+/-- **Every point of the cylindrical end flows out of the boundary.** Let `M` be a completion of
+the Liouville domain `W`, with Liouville flow `ψ`, and let `ι : S → M` be an injective map onto
+the boundary of `W`. Then every point `x ∉ W` is `ψₜ (ι s)` for some `t > 0` and `s`. -/
+theorem IsLiouvilleCompletion.exists_flowOf_eq_of_notMem (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hιinj : Injective ι) (hιW : range ι = frontier W)
+    {x : M} (hx : x ∉ W) : ∃ t > 0, ∃ s, flowOf Z t (ι s) = x := by
+  obtain ⟨⟨t, s⟩, ⟨ht, -⟩, hts⟩ := (h.bijOn_flowOf_comp hZ hιinj hιW).surjOn hx
+  exact ⟨t, ht, s, hts⟩
+
 /-! ### Smoothness of the flow-out -/
 
 variable [TopologicalSpace S] [ChartedSpace H' S]

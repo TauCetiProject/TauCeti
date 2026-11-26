@@ -173,9 +173,8 @@ theorem liouvilleGraphFunction_eq_one_iff [Nonempty S] (h : IsLiouvilleCompletio
     liouvilleGraphFunction Z W ι f x = 1 ↔ x ∈ range (liouvilleGraph Z ι f) := by
   have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
   refine ⟨fun hx ↦ ?_, ?_⟩
-  · have hxW : x ∈ Wᶜ := fun hxW ↦ (h.liouvilleGraphFunction_lt_one_of_mem hZ hf hxW).ne hx
-    rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW
-    obtain ⟨⟨t, s⟩, ⟨ht, -⟩, rfl⟩ := hxW
+  · have hxW : x ∉ W := fun hxW ↦ (h.liouvilleGraphFunction_lt_one_of_mem hZ hf hxW).ne hx
+    obtain ⟨t, ht, s, rfl⟩ := h.exists_flowOf_eq_of_notMem hZ hinj hιW hxW
     have hfs : 0 < f s := one_pos.trans (hf s)
     rw [h.liouvilleGraphFunction_flowOf hZ hιW' hinj ht, div_eq_one_iff_eq hfs.ne'] at hx
     exact ⟨s, by rw [liouvilleGraph_apply, ← hx, Real.log_exp]⟩
@@ -191,9 +190,7 @@ theorem liouvilleGraphFunction_flowOf_eq_exp_mul [Nonempty S] (h : IsLiouvilleCo
     liouvilleGraphFunction Z W ι f (flowOf Z τ x) =
       Real.exp τ * liouvilleGraphFunction Z W ι f x := by
   have hιW' : ∀ s, ι s ∈ frontier W := range_subset_iff.1 hιW.le
-  have hxW : x ∈ Wᶜ := hx
-  rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW
-  obtain ⟨⟨t, s⟩, ⟨ht, -⟩, rfl⟩ := hxW
+  obtain ⟨t, ht, s, rfl⟩ := h.exists_flowOf_eq_of_notMem hZ hinj hιW hx
   rw [h.flowOf_flowOf hZ] at hτ ⊢
   have hτt : 0 < τ + t :=
     not_le.1 fun hle ↦ hτ ((h.flowOf_mem_iff_of_mem_frontier hZ (hιW' s)).2 hle)
@@ -250,11 +247,9 @@ theorem mvfderiv_liouvilleGraphFunction_apply [Nonempty S] (h : IsLiouvilleCompl
     ((h.isCompleteVectorField hZ).mem_flowDomain 0 x) hF
   rw [flowOf_zero Z] at hcurve
   -- Along the trajectory `x = ψ_t(ι s)`, the flow stays outside `W` for times `τ > -t`.
-  have hxW : x ∈ Wᶜ := hx
-  rw [← (h.bijOn_flowOf_comp hZ hinj hιW).image_eq] at hxW
-  obtain ⟨⟨t, s⟩, ⟨ht, -⟩, hts⟩ := hxW
+  obtain ⟨t, ht, s, hts⟩ := h.exists_flowOf_eq_of_notMem hZ hinj hιW hx
   have heq : (F ∘ fun τ ↦ flowOf Z τ x) =ᶠ[𝓝 0] fun τ ↦ Real.exp τ * F x := by
-    filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 (mem_Ioi.1 ht))] with τ hτ
+    filter_upwards [Ioi_mem_nhds (neg_lt_zero.2 ht)] with τ hτ
     refine h.liouvilleGraphFunction_flowOf_eq_exp_mul hZ hinj hιW hx ?_
     rw [← hts, h.flowOf_flowOf hZ,
       h.flowOf_mem_iff_of_mem_frontier hZ (range_subset_iff.1 hιW.le s), not_le]
