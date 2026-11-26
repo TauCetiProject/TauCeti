@@ -27,9 +27,10 @@ matrices.
 
 ## Main results
 
-* `TauCeti.exists_forall_map_eq_integral_translate`: averaging the unitary translates `q (uᵀ Z)`
-  against any `μ`-integrable weight `w` on `Φ → unitaryGroup n ℂ` produces a polynomial `mean` such
-  that `M mean = ∫ u, w u * M (q (uᵀ Z)) ∂μ` for every `ℂ`-linear functional `M`.
+* `MeasureTheory.Measure.exists_forall_map_eq_integral_translate`: averaging the unitary
+  translates `q (uᵀ Z)` against any `μ`-integrable weight `w` on `Φ → unitaryGroup n ℂ` produces a
+  polynomial `mean` such that `M mean = ∫ u, w u * M (q (uᵀ Z)) ∂μ` for every `ℂ`-linear functional
+  `M`.
 * `TauCeti.exists_forall_eq_mul_map_det_pow`: for any polynomial `q : MvPolynomial (Φ × n × n) ℂ`
   and exponents `c : Φ → ℕ`, there is `a : ℂ` such that every `ℂ`-linear functional `M`
   transforming by `M (q (uᵀ Z)) = t * ∏ τ, det (u τ) ^ c τ` on `Φ → unitaryGroup n ℂ` satisfies
@@ -49,7 +50,7 @@ noncomputable section
 
 open Matrix MvPolynomial MeasureTheory
 
-namespace TauCeti
+namespace MeasureTheory.Measure
 
 variable {Φ n : Type*} [Fintype n] [DecidableEq n]
 
@@ -78,7 +79,7 @@ theorem exists_forall_map_eq_integral_translate
         ∑ d ∈ Q.support, φ u (Q.coeff d) • monomial d 1 := by
     calc _ = mapAlgHom (φ u) Q := by simp [Q, φ, comp_aeval_apply, smul_eq_C_mul]
       _ = ∑ d ∈ Q.support, φ u (Q.coeff d) • monomial d 1 := by
-        conv_lhs => rw [Q.as_sum, map_sum]
+        conv_lhs => rw [Q.as_sum, _root_.map_sum]
         refine Finset.sum_congr rfl fun d _ ↦ ?_
         have hmap : mapAlgHom (φ u) (monomial d (Q.coeff d)) =
             monomial d (φ u (Q.coeff d)) := map_monomial (φ u).toRingHom d (Q.coeff d)
@@ -100,9 +101,15 @@ theorem exists_forall_map_eq_integral_translate
       hw.bdd_mul (hφ_cont (Q.coeff d)).aestronglyMeasurable
         (Filter.Eventually.of_forall fun u ↦ hC u (Set.mem_univ u))
     simpa only [mul_comm (φ _ _)] using h_bdd.mul_const (M (monomial d 1))
-  simp only [h_expand, map_sum, map_smul, smul_eq_mul, Finset.mul_sum, ← mul_assoc,
+  simp only [h_expand, _root_.map_sum, _root_.map_smul, smul_eq_mul, Finset.mul_sum, ← mul_assoc,
     ← integral_mul_const]
   exact (integral_finsetSum Q.support fun d _ ↦ h_int d).symm
+
+end MeasureTheory.Measure
+
+namespace TauCeti
+
+variable {Φ n : Type*} [Fintype n] [DecidableEq n]
 
 /-- **Unitary averaging for determinant characters.** Let `q : MvPolynomial (Φ × n × n) ℂ` and
 `c : Φ → ℕ`. There exists `a : ℂ` such that every `ℂ`-linear functional `M` satisfying
@@ -130,7 +137,7 @@ theorem exists_forall_eq_mul_map_det_pow [Fintype Φ] (c : Φ → ℕ)
       unfold χ
       fun_prop
     exact hχ.comp continuous_inv
-  obtain ⟨mean, h_mean⟩ := exists_forall_map_eq_integral_translate μ q
+  obtain ⟨mean, h_mean⟩ := μ.exists_forall_map_eq_integral_translate q
     (hχ_cont.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _))
   let value (x : Φ → Matrix.unitaryGroup n ℂ) : MvPolynomial (Φ × n × n) ℂ →ₐ[ℂ] ℂ :=
     aeval fun y : Φ × n × n ↦ (x y.1 : Matrix n n ℂ) y.2.2 y.2.1
