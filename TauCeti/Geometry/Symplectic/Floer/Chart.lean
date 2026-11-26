@@ -124,9 +124,7 @@ with the pullback property there, not necessarily a chart of the manifold struct
 
 For a smooth partial diffeomorphism `φ` with the pullback property on a set `C ⊆ φ.source`,
 structures tamed by `ω` over `C` read in the chart as structures tamed by `ω₀` over `φ(C)`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_mem_image`), and the coordinate map `φ ∘ u` of a
-`Cⁿ` map `u` with values in `φ.source` is `Cⁿ`
-(`PartialDiffeomorph.contDiffOn_comp_of_contMDiffOn`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_mem_image`).
 
 ## References
 
@@ -751,23 +749,6 @@ theorem tames_of_mem_image (hω : ω.IsNondegenerate)
     (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' x hx) (hJt x hx)
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
-
-namespace PartialDiffeomorph
-
-variable {E H M V P : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup P] [NormedSpace ℝ P]
-
-/-- **The coordinate map in a chart is smooth.** The coordinate map `φ ∘ u` of a `Cⁿ` map `u` on a
-set `U` of a normed space, with values in the source of a smooth partial diffeomorphism `φ` into a
-normed space, is `Cⁿ` on `U`. -/
-theorem contDiffOn_comp_of_contMDiffOn (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {n : ℕ}
-    {u : P → M} {U : Set P} (hu : ContMDiffOn 𝓘(ℝ, P) I n u U)
-    (huφ : ∀ z ∈ U, u z ∈ φ.source) :
-    ContDiffOn ℝ n (φ ∘ u) U :=
-  contMDiffOn_iff_contDiffOn.1 <| (φ.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp hu huφ
-
-end PartialDiffeomorph
 
 end
 
