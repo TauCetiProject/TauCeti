@@ -34,7 +34,8 @@ This file defines `D_(I,J,B)` (`TauCeti.ImplicitAtlas.deformationSpace`) as a su
 
 * **The action of `Γ_B`** (`TauCeti.ImplicitAtlas.deformationAction`): `g` acts on `E_B` by the
   representations, trivially on `ℝ^B` and on `X_J` through the restriction `Γ_B → Γ_J`. It is a
-  homomorphism into the homeomorphisms of `D_(I,J,B)`.
+  homomorphism into the homeomorphisms of `D_(I,J,B)`, and makes `D_(I,J,B)` a space with a
+  continuous action of `Γ_B` (`TauCeti.ImplicitAtlas.instMulActionDeformationSpace`).
 * **The supports** (`TauCeti.ImplicitAtlas.deformationSupport`): for `K ⊆ X`, the set
   `Z_K ⊆ D_(I,J,B)` of the points with `e = 0` and `ψ_∅J(x) ∈ K`. It is monotone in `K`
   (`TauCeti.ImplicitAtlas.deformationSupport_mono`), closed when `K` is
@@ -268,6 +269,21 @@ theorem val_deformationAction_apply {I J B : Finset A} {hJB : J ⊆ B} (g : (α 
     (𝒜.deformationAction I hJB g p).val =
       (fun α : B ↦ ρ α (g α) (p.val.1 α), p.val.2.1, act J (Finset.restrict₂ hJB g) p.val.2.2) :=
   (rfl)
+
+/-- `Γ_B` acts on the deformation space `D_(I,J,B)` by `TauCeti.ImplicitAtlas.deformationAction`. -/
+instance instMulActionDeformationSpace (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
+    MulAction ((α : B) → Γ α) (𝒜.deformationSpace I hJB) :=
+  MulAction.compHom _ (𝒜.deformationAction I hJB)
+
+/-- An element of `Γ_B` acts on `D_(I,J,B)` by the homeomorphism
+`TauCeti.ImplicitAtlas.deformationAction`. -/
+theorem deformationSpace_smul_def {I J B : Finset A} {hJB : J ⊆ B} (g : (α : B) → Γ α)
+    (p : 𝒜.deformationSpace I hJB) : g • p = 𝒜.deformationAction I hJB g p :=
+  (rfl)
+
+instance (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
+    ContinuousConstSMul ((α : B) → Γ α) (𝒜.deformationSpace I hJB) :=
+  ⟨fun g ↦ by simpa only [deformationSpace_smul_def] using (𝒜.deformationAction I hJB g).continuous⟩
 
 /-! ### Supports -/
 

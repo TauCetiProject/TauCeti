@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.HasLimits
 public import Mathlib.CategoryTheory.Products.Basic
 public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.AlgebraicTopology.Singular.Relative
@@ -25,8 +24,8 @@ the chain bifunctor is natural in both variables.
 
 Its limit is the complex of `G`-invariant relative chains `C(X, A; L)^G`, and an equivariant map
 of pairs, a natural transformation `τ : P ⟶ P'`, induces an equivariant chain map
-(`TopPair.diagonalChainActionMap L τ`), functorially, hence a chain map of invariants
-`lim.map (TopPair.diagonalChainActionMap L τ)`.
+(`TopPair.diagonalChainActionMap L τ`), functorially (`TopPair.diagonalChainActionFunctor L`),
+hence a chain map of invariants `lim.map (TopPair.diagonalChainActionMap L τ)`.
 
 With `L` the dual orientation line of an obstruction representation, these invariant chains on the
 deformation spaces of an implicit atlas are the partial virtual complexes of Pardon's construction
@@ -38,6 +37,7 @@ of virtual fundamental classes (`TauCeti.Topology.ImplicitAtlas.PartialComplex`)
   `P` with coefficients in `L`.
 * `TopPair.diagonalChainActionMap L τ`: the equivariant chain map induced by an equivariant map
   `τ : P ⟶ P'` of pairs.
+* `TopPair.diagonalChainActionFunctor L`: the two together, as a functor of the action on the pair.
 
 ## References
 
@@ -104,8 +104,10 @@ map of pairs. -/
 lemma diagonalChainActionMap_app (τ : P ⟶ P') (Y : SingleObj G) :
     (diagonalChainActionMap L τ).app Y =
       ((singularChainComplexFunctor C).obj (L.obj Y)).map (τ.app Y) := by
-  simp [diagonalChainActionMap, -singularChainComplexFunctor_obj_map]
-  rfl
+  -- By `Functor.uncurry`, the component is the identity on coefficients followed by `τ.app Y`.
+  change ((singularChainComplexFunctor C).map (𝟙 (L.obj Y))).app (P.obj Y) ≫
+    ((singularChainComplexFunctor C).obj (L.obj Y)).map (τ.app Y) = _
+  rw [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
 
 @[simp]
 lemma diagonalChainActionMap_id : diagonalChainActionMap L (𝟙 P) = 𝟙 _ := by
@@ -118,8 +120,18 @@ lemma diagonalChainActionMap_comp (τ : P ⟶ P') (τ' : P' ⟶ P'') :
     diagonalChainActionMap L (τ ≫ τ') =
       diagonalChainActionMap L τ ≫ diagonalChainActionMap L τ' := by
   ext Y : 2
-  rw [NatTrans.comp_app, diagonalChainActionMap_app, diagonalChainActionMap_app,
-    diagonalChainActionMap_app, NatTrans.comp_app, Functor.map_comp]
-  rfl
+  simp only [NatTrans.comp_app, diagonalChainActionMap_app]
+  exact Functor.map_comp _ _ _
+
+/-- **The diagonal action on relative chains, as a functor of the action on the pair**: an action
+`P` of `G` on a pair goes to the diagonal action `diagonalChainAction L P` on its relative chains,
+and an equivariant map `τ` of pairs to the equivariant chain map `diagonalChainActionMap L τ`. -/
+-- The body is exposed so that its values and maps are definitionally the diagonal actions and the
+-- equivariant chain maps (`diagonalChainActionFunctor_obj`, `diagonalChainActionFunctor_map`).
+@[expose, simps]
+def diagonalChainActionFunctor :
+    (SingleObj G ⥤ TopPair.{w}) ⥤ (SingleObj G ⥤ ChainComplex C ℕ) where
+  obj := diagonalChainAction L
+  map := diagonalChainActionMap L
 
 end TopPair

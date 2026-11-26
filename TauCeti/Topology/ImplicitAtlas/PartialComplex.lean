@@ -45,16 +45,17 @@ This file constructs them, for coefficients in a commutative ring `k`.
 * **The complexes.** `TauCeti.ImplicitAtlas.partialChains` is the complex of invariant relative
   chains `C(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_(E_B)^∨)^(Γ_B)` in its homological grading, the limit
   of the diagonal action `TopPair.diagonalChainAction`. Placing the chains of degree `n` in
-  cochain degree `d + m_B - n`, the complexes form a K-presheaf of cochain complexes on `X`,
-  `TauCeti.ImplicitAtlas.partialVirtualComplex`: for `K ⊆ L` the restriction
+  cochain degree `d + m_B - n`, invariant chains become a functor of the pair with its action
+  (`TauCeti.ImplicitAtlas.invariantChainsFunctor`), and the complexes form a K-presheaf of cochain
+  complexes on `X`, `TauCeti.ImplicitAtlas.partialVirtualComplex`: for `K ⊆ L` the restriction
   `R_IJ(L) ⟶ R_IJ(K)` is induced by the identity of `D_(I,J,B)`, since `Z_K ⊆ Z_L`.
 * **The interval arrows.** For `I ⊆ I' ⊆ J' ⊆ J ⊆ B`, the comparison map
   `D_(I,J,B) ⟶ D_(I',J',B)` (`TauCeti.ImplicitAtlas.deformationMap`) is an equivariant map of
   pairs, so it induces a map of K-presheaves (`TauCeti.ImplicitAtlas.partialVirtualComplexMap`).
   The interval arrow `R_IJ ⟶ R_I'J'` is this map multiplied by `|Γ_(J ∖ J')|⁻¹`
-  (`TauCeti.ImplicitAtlas.partialVirtualComplexArrow`), for coefficients in a field, in which
-  the orders of the isotropy groups are invertible in characteristic zero. The arrows are
-  strictly functorial: the arrow of an interval to itself is the identity
+  (`TauCeti.ImplicitAtlas.partialVirtualComplexArrow`), for coefficients in a commutative ring in
+  which the orders of the isotropy groups are units, such as a field of characteristic zero. The
+  arrows are strictly functorial: the arrow of an interval to itself is the identity
   (`TauCeti.ImplicitAtlas.partialVirtualComplexArrow_self`), and the arrows compose
   (`TauCeti.ImplicitAtlas.partialVirtualComplexArrow_comp_partialVirtualComplexArrow`), the
   weights multiplying because `|Γ_(J ∖ J')| |Γ_(J' ∖ J'')| = |Γ_(J ∖ J'')|`. A single weight
@@ -93,21 +94,6 @@ variable {A : Type u} [DecidableEq A] {Γ : A → Type u} [∀ α, Group (Γ α)
 
 /-! ### The action of `Γ_B` on the deformation pairs -/
 
-/-- `Γ_B` acts on the deformation space `D_(I,J,B)` by `TauCeti.ImplicitAtlas.deformationAction`. -/
-instance instMulActionDeformationSpace (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
-    MulAction ((α : B) → Γ α) (𝒜.deformationSpace I hJB) :=
-  MulAction.compHom _ (𝒜.deformationAction I hJB)
-
-/-- An element of `Γ_B` acts on `D_(I,J,B)` by the homeomorphism
-`TauCeti.ImplicitAtlas.deformationAction`. -/
-theorem deformationSpace_smul_def {I J B : Finset A} {hJB : J ⊆ B} (g : (α : B) → Γ α)
-    (p : 𝒜.deformationSpace I hJB) : g • p = 𝒜.deformationAction I hJB g p :=
-  (rfl)
-
-instance (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
-    ContinuousConstSMul ((α : B) → Γ α) (𝒜.deformationSpace I hJB) :=
-  ⟨fun g ↦ by simpa only [deformationSpace_smul_def] using (𝒜.deformationAction I hJB g).continuous⟩
-
 /-- **The deformation pair** `(D_(I,J,B), D_(I,J,B) ∖ Z_K)` of a subset `K ⊆ X`, with the action of
 `Γ_B`, as a functor `SingleObj Γ_B ⥤ TopPair`. The action preserves the complement of the support
 `Z_K`, since `Z_K` is invariant (`deformationAction_mem_deformationSupport_iff`). -/
@@ -129,6 +115,24 @@ theorem deformationPairFunctor_obj (I : Finset A) {J B : Finset A} (hJB : J ⊆ 
         (𝒜.deformationSupport I hJB K)ᶜ :=
   (rfl)
 
+/-- An element `g` of `Γ_B` acts on the deformation pair of `K` by the map of pairs induced by the
+homeomorphism `deformationAction g` of `D_(I,J,B)`. -/
+theorem deformationPairFunctor_map (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (K : Set X)
+    (g : (α : B) → Γ α) :
+    (𝒜.deformationPairFunctor I hJB K).map (X := SingleObj.star _) (Y := SingleObj.star _) g =
+      TopPair.ofSubsetMap (TopCat.ofHom (𝒜.deformationAction I hJB g : C(_, _)))
+        fun p hp ↦ (deformationAction_mem_deformationSupport_iff g p).not.2 hp :=
+  (rfl)
+
+/-- An element `g` of `Γ_B` acts on the deformation pair of `K` by `deformationAction g`. -/
+@[simp]
+theorem deformationPairFunctor_map_fst_apply (I : Finset A) {J B : Finset A} (hJB : J ⊆ B)
+    (K : Set X) (g : (α : B) → Γ α) (p : 𝒜.deformationSpace I hJB) :
+    TopPair.Hom.fst ((𝒜.deformationPairFunctor I hJB K).map (X := SingleObj.star _)
+      (Y := SingleObj.star _) g) p = 𝒜.deformationAction I hJB g p :=
+  (TopPair.ofSubsetActionFunctor_map_fst_apply (TopCat.of (𝒜.deformationSpace I hJB)) _ _ _ g
+    p).trans (deformationSpace_smul_def g p)
+
 /-- **Restriction of the deformation pairs.** For `K ⊆ L`, the identity of `D_(I,J,B)` is an
 equivariant map of pairs `(D_(I,J,B), D_(I,J,B) ∖ Z_L) ⟶ (D_(I,J,B), D_(I,J,B) ∖ Z_K)`, since
 `Z_K ⊆ Z_L` (`deformationSupport_mono`). -/
@@ -139,7 +143,8 @@ def deformationPairRestriction (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) {
   naturality x y g := by
     obtain rfl : x = SingleObj.star _ := rfl
     obtain rfl : y = SingleObj.star _ := rfl
-    dsimp only [deformationPairFunctor, TopPair.ofSubsetActionFunctor_map]
+    dsimp only [deformationPairFunctor_map]
+    -- Both composites have ambient map `deformationAction g`, as the restriction is the identity.
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq (h := ConcreteCategory.hom_ext _ _ fun _ ↦ rfl) ..
 
 /-- The restriction of the deformation pairs is the identity on `D_(I,J,B)`. -/
@@ -164,7 +169,7 @@ def deformationPairArrow {I I' J J' B : Finset A} (hII' : I ⊆ I') (hI'J' : I' 
   naturality x y g := by
     obtain rfl : x = SingleObj.star _ := rfl
     obtain rfl : y = SingleObj.star _ := rfl
-    dsimp only [deformationPairFunctor, TopPair.ofSubsetActionFunctor_map]
+    dsimp only [deformationPairFunctor_map]
     refine TopPair.ofSubsetMap_comp_ofSubsetMap_eq (h := ConcreteCategory.hom_ext _ _ fun p ↦ ?_) ..
     have h := 𝒜.deformationMap_deformationAction (hII' := hII') (hIJ' := hII'.trans hI'J')
       (hJ'J := hJ'J) (hBB' := subset_rfl) g p 0
@@ -209,6 +214,7 @@ theorem deformationPairRestriction_comp_deformationPairArrow (hII' : I ⊆ I') (
         𝒜.deformationPairRestriction I' (hJ'J.trans hJB) h := by
   refine NatTrans.ext (funext fun Y ↦ ?_)
   dsimp only [NatTrans.comp_app]
+  -- Both composites have ambient map `deformationMap · 0`, since the restrictions are identities.
   exact TopPair.ofSubsetMap_comp_ofSubsetMap_eq _ _ _ _ (ConcreteCategory.hom_ext _ _ fun _ ↦ rfl)
 
 /-- The comparison of a deformation pair with itself is the identity
@@ -256,11 +262,10 @@ def dualOrientationLine (B : Finset A) : SingleObj ((α : B) → Γ α) ⥤ Modu
     { toFun g := .of <| ModuleCat.ofHom
         (((Representation.externalPi fun α : B ↦ ρ α).orientation.baseChange k).dual g)
       map_one' := End.ext <| ModuleCat.hom_ext <| by
-        rw [map_one]
-        rfl
+        rw [map_one, End.one_asHom, ModuleCat.hom_ofHom, ModuleCat.hom_id, Module.End.one_eq_id]
       map_mul' g h := End.ext <| ModuleCat.hom_ext <| by
-        rw [map_mul]
-        rfl }
+        rw [map_mul, End.mul_asHom, ModuleCat.hom_ofHom, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
+          ModuleCat.hom_ofHom, Module.End.mul_eq_comp] }
 
 omit [DecidableEq A] [∀ α, Finite (Γ α)] in
 /-- The dual orientation line is the dual of the scalar extension of `o_(E_B)`. -/
@@ -288,6 +293,19 @@ def partialChains (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (K : Set X) :
     ChainComplex (ModuleCat.{u} k) ℕ :=
   limit (TopPair.diagonalChainAction (dualOrientationLine ρ k B) (𝒜.deformationPairFunctor I hJB K))
 
+variable (ρ) in
+/-- **The invariant relative chains with coefficients in the dual orientation line, in cochain
+degrees `n - •`**, as a functor of a pair with an action of `Γ_B`: a pair `P` goes to the complex
+`C(P; o_(E_B)^∨)^(Γ_B)` of the chains invariant under the diagonal action, placed in cochain degrees
+`n - •`, and an equivariant map of pairs to the induced map of invariant chains. -/
+-- The body is exposed so that the values are definitionally the extended limits: the statement of
+-- `partialVirtualComplex_obj` typechecks only then.
+@[expose]
+def invariantChainsFunctor (B : Finset A) (n : ℤ) :
+    (SingleObj ((α : B) → Γ α) ⥤ TopPair.{u}) ⥤ CochainComplex (ModuleCat.{u} k) ℤ :=
+  TopPair.diagonalChainActionFunctor (dualOrientationLine ρ k B) ⋙ lim ⋙
+    (ComplexShape.embeddingUpIntLE n).extendFunctor _
+
 -- The body is exposed so that the values are definitionally the extended chain complexes: the
 -- statement of `partialVirtualComplexMap_app`, a map between values, typechecks only then.
 /-- **The partial virtual complex** `R_IJ` of an implicit atlas of virtual dimension `d`, for
@@ -297,20 +315,14 @@ compact set `K` is `R_IJ(K)^q = C_(d + m_B - q)(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_
 @[expose]
 def partialVirtualComplex (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) :
     TopCat.KPresheaf (CochainComplex (ModuleCat.{u} k) ℤ) (TopCat.of X) where
-  obj K := (𝒜.partialChains k I hJB K.unop).extend
-    (ComplexShape.embeddingUpIntLE (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ)))
-  map h := HomologicalComplex.extendMap (lim.map (TopPair.diagonalChainActionMap _
-    (𝒜.deformationPairRestriction I hJB (SetLike.coe_subset_coe.2 (leOfHom h.unop))))) _
+  obj K := (invariantChainsFunctor ρ k B (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))).obj
+    (𝒜.deformationPairFunctor I hJB K.unop)
+  map h := (invariantChainsFunctor ρ k B _).map
+    (𝒜.deformationPairRestriction I hJB (SetLike.coe_subset_coe.2 (leOfHom h.unop)))
   map_id K := by
-    rw [deformationPairRestriction_refl, TopPair.diagonalChainActionMap_id, lim.map_id,
-      HomologicalComplex.extendMap_id]
-    rfl
+    rw [deformationPairRestriction_refl, CategoryTheory.Functor.map_id]
   map_comp h h' := by
-    refine Eq.trans ?_ (HomologicalComplex.extendMap_comp _ _ _)
-    congr 1
-    refine Eq.trans ?_ (lim.map_comp _ _)
-    rw [← TopPair.diagonalChainActionMap_comp,
-      deformationPairRestriction_comp_deformationPairRestriction]
+    rw [← Functor.map_comp, deformationPairRestriction_comp_deformationPairRestriction]
 
 /-- The value of the partial virtual complex on a compact set `K` is the complex of invariant
 relative chains of the deformation pair of `K`, in cochain degrees `d + m_B - •`. -/
@@ -325,9 +337,8 @@ theorem partialVirtualComplex_obj (I : Finset A) {J B : Finset A} (hJB : J ⊆ B
 deformation pairs. -/
 theorem partialVirtualComplex_map (I : Finset A) {J B : Finset A} (hJB : J ⊆ B)
     {K L : (Compacts (TopCat.of X))ᵒᵖ} (h : K ⟶ L) :
-    (𝒜.partialVirtualComplex k I hJB).map h = HomologicalComplex.extendMap (lim.map
-      (TopPair.diagonalChainActionMap _ (𝒜.deformationPairRestriction I hJB
-        (SetLike.coe_subset_coe.2 (leOfHom h.unop))))) _ :=
+    (𝒜.partialVirtualComplex k I hJB).map h = (invariantChainsFunctor ρ k B _).map
+      (𝒜.deformationPairRestriction I hJB (SetLike.coe_subset_coe.2 (leOfHom h.unop))) :=
   (rfl)
 
 /-- **The comparison of partial virtual complexes** `R_IJ ⟶ R_I'J'`, for `I ⊆ I' ⊆ J' ⊆ J ⊆ B`,
@@ -335,15 +346,11 @@ induced by the comparison maps of the deformation pairs (`deformationPairArrow`)
 def partialVirtualComplexMap {I I' J J' B : Finset A} (hII' : I ⊆ I') (hI'J' : I' ⊆ J')
     (hJ'J : J' ⊆ J) (hJB : J ⊆ B) :
     𝒜.partialVirtualComplex k I hJB ⟶ 𝒜.partialVirtualComplex k I' (hJ'J.trans hJB) where
-  app K := HomologicalComplex.extendMap (lim.map (TopPair.diagonalChainActionMap _
-    (𝒜.deformationPairArrow hII' hI'J' hJ'J hJB K.unop))) _
+  app K := (invariantChainsFunctor ρ k B _).map (𝒜.deformationPairArrow hII' hI'J' hJ'J hJB K.unop)
   naturality K L h := by
-    refine (HomologicalComplex.extendMap_comp _ _ _).symm.trans
-      (Eq.trans ?_ (HomologicalComplex.extendMap_comp _ _ _))
-    congr 1
-    refine (lim.map_comp _ _).symm.trans (Eq.trans ?_ (lim.map_comp _ _))
-    rw [← TopPair.diagonalChainActionMap_comp, ← TopPair.diagonalChainActionMap_comp,
-      deformationPairRestriction_comp_deformationPairArrow]
+    let F := invariantChainsFunctor ρ k B (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))
+    refine (F.map_comp _ _).symm.trans (Eq.trans ?_ (F.map_comp _ _))
+    rw [deformationPairRestriction_comp_deformationPairArrow]
 
 variable {𝒜 k} {I I' I'' J J' J'' B : Finset A}
 
@@ -352,8 +359,7 @@ relative chains induced by the comparison of the deformation pairs of `K`. -/
 theorem partialVirtualComplexMap_app (hII' : I ⊆ I') (hI'J' : I' ⊆ J') (hJ'J : J' ⊆ J)
     (hJB : J ⊆ B) (K : (Compacts (TopCat.of X))ᵒᵖ) :
     (𝒜.partialVirtualComplexMap k hII' hI'J' hJ'J hJB).app K =
-      HomologicalComplex.extendMap (lim.map (TopPair.diagonalChainActionMap _
-        (𝒜.deformationPairArrow hII' hI'J' hJ'J hJB K.unop))) _ :=
+      (invariantChainsFunctor ρ k B _).map (𝒜.deformationPairArrow hII' hI'J' hJ'J hJB K.unop) :=
   (rfl)
 
 /-- The comparison of a partial virtual complex with itself is the identity. -/
@@ -361,11 +367,8 @@ theorem partialVirtualComplexMap_app (hII' : I ⊆ I') (hI'J' : I' ⊆ J') (hJ'J
 theorem partialVirtualComplexMap_self (hIJ : I ⊆ J) (hJB : J ⊆ B) :
     𝒜.partialVirtualComplexMap k subset_rfl hIJ subset_rfl hJB = 𝟙 _ := by
   refine NatTrans.ext (funext fun K ↦ ?_)
-  rw [partialVirtualComplexMap_app, NatTrans.id_app]
-  refine Eq.trans ?_ (HomologicalComplex.extendMap_id _ _)
-  congr 1
-  refine Eq.trans ?_ (lim.map_id _)
-  rw [deformationPairArrow_self, TopPair.diagonalChainActionMap_id]
+  rw [partialVirtualComplexMap_app, NatTrans.id_app, deformationPairArrow_self]
+  exact CategoryTheory.Functor.map_id _ _
 
 /-- Comparisons of partial virtual complexes compose. -/
 @[reassoc (attr := simp)]
@@ -376,10 +379,8 @@ theorem partialVirtualComplexMap_comp_partialVirtualComplexMap (hII' : I ⊆ I')
         𝒜.partialVirtualComplexMap k hI'I'' hI''J'' hJ''J' (hJ'J.trans hJB) =
       𝒜.partialVirtualComplexMap k (hII'.trans hI'I'') hI''J'' (hJ''J'.trans hJ'J) hJB := by
   refine NatTrans.ext (funext fun K ↦ ?_)
-  refine (HomologicalComplex.extendMap_comp _ _ _).symm.trans ?_
-  congr 1
-  refine (lim.map_comp _ _).symm.trans ?_
-  rw [← TopPair.diagonalChainActionMap_comp, deformationPairArrow_comp_deformationPairArrow]
+  refine ((invariantChainsFunctor ρ k B _).map_comp _ _).symm.trans ?_
+  rw [deformationPairArrow_comp_deformationPairArrow, partialVirtualComplexMap_app]
 
 end Complexes
 
@@ -387,34 +388,34 @@ end Complexes
 
 section Arrows
 
-variable (k : Type u) [Field k]
+variable (k : Type u) [CommRing k] (hΓ : ∀ α, IsUnit (Nat.card (Γ α) : k))
 
 /-- **The interval arrow** `R_IJ ⟶ R_I'J'` of the partial virtual complexes, for
 `I ⊆ I' ⊆ J' ⊆ J ⊆ B` (Pardon, Definition 4.2.6): the comparison induced by the comparison maps
-of the deformation pairs, multiplied by `|Γ_(J ∖ J')|⁻¹ = ∏_(α ∈ J ∖ J') |Γ_α|⁻¹`. The weight is
-the inverse in `k`; it is the normalization of the construction when the orders of the isotropy
-groups are invertible in `k`, as in characteristic zero. -/
+of the deformation pairs, multiplied by `|Γ_(J ∖ J')|⁻¹ = ∏_(α ∈ J ∖ J') |Γ_α|⁻¹`, for coefficients
+in a commutative ring `k` in which the orders `|Γ_α|` of the isotropy groups are units (`hΓ`), as in
+a field of characteristic zero. -/
 def partialVirtualComplexArrow {I I' J J' B : Finset A} (hII' : I ⊆ I') (hI'J' : I' ⊆ J')
     (hJ'J : J' ⊆ J) (hJB : J ⊆ B) :
     𝒜.partialVirtualComplex k I hJB ⟶ 𝒜.partialVirtualComplex k I' (hJ'J.trans hJB) :=
-  (∏ α ∈ J \ J', (Nat.card (Γ α) : k))⁻¹ • 𝒜.partialVirtualComplexMap k hII' hI'J' hJ'J hJB
+  (↑(∏ α ∈ J \ J', (hΓ α).unit)⁻¹ : k) • 𝒜.partialVirtualComplexMap k hII' hI'J' hJ'J hJB
 
 variable {𝒜 k} {I I' I'' J J' J'' B : Finset A}
 
 /-- The interval arrow is the weighted comparison of partial virtual complexes. -/
 theorem partialVirtualComplexArrow_def (hII' : I ⊆ I') (hI'J' : I' ⊆ J') (hJ'J : J' ⊆ J)
     (hJB : J ⊆ B) :
-    𝒜.partialVirtualComplexArrow k hII' hI'J' hJ'J hJB =
-      (∏ α ∈ J \ J', (Nat.card (Γ α) : k))⁻¹ • 𝒜.partialVirtualComplexMap k hII' hI'J' hJ'J hJB :=
+    𝒜.partialVirtualComplexArrow k hΓ hII' hI'J' hJ'J hJB =
+      (↑(∏ α ∈ J \ J', (hΓ α).unit)⁻¹ : k) • 𝒜.partialVirtualComplexMap k hII' hI'J' hJ'J hJB :=
   (rfl)
 
 /-- **The interval arrow of an interval to itself is the identity**: its weight is
 `|Γ_∅|⁻¹ = 1`. -/
 @[simp]
 theorem partialVirtualComplexArrow_self (hIJ : I ⊆ J) (hJB : J ⊆ B) :
-    𝒜.partialVirtualComplexArrow k subset_rfl hIJ subset_rfl hJB = 𝟙 _ := by
-  rw [partialVirtualComplexArrow_def, Finset.sdiff_self, Finset.prod_empty, inv_one, one_smul,
-    partialVirtualComplexMap_self]
+    𝒜.partialVirtualComplexArrow k hΓ subset_rfl hIJ subset_rfl hJB = 𝟙 _ := by
+  rw [partialVirtualComplexArrow_def, Finset.sdiff_self, Finset.prod_empty, inv_one,
+    Units.val_one, one_smul, partialVirtualComplexMap_self]
 
 /-- **The interval arrows compose**, for `I ⊆ I' ⊆ I'' ⊆ J'' ⊆ J' ⊆ J ⊆ B`: the comparisons
 compose, and the weights multiply, since `J ∖ J''` is the disjoint union of `J ∖ J'` and
@@ -423,12 +424,12 @@ compose, and the weights multiply, since `J ∖ J''` is the disjoint union of `J
 theorem partialVirtualComplexArrow_comp_partialVirtualComplexArrow (hII' : I ⊆ I')
     (hI'J' : I' ⊆ J') (hJ'J : J' ⊆ J) (hI'I'' : I' ⊆ I'') (hI''J'' : I'' ⊆ J'')
     (hJ''J' : J'' ⊆ J') (hJB : J ⊆ B) :
-    𝒜.partialVirtualComplexArrow k hII' hI'J' hJ'J hJB ≫
-        𝒜.partialVirtualComplexArrow k hI'I'' hI''J'' hJ''J' (hJ'J.trans hJB) =
-      𝒜.partialVirtualComplexArrow k (hII'.trans hI'I'') hI''J'' (hJ''J'.trans hJ'J) hJB := by
+    𝒜.partialVirtualComplexArrow k hΓ hII' hI'J' hJ'J hJB ≫
+        𝒜.partialVirtualComplexArrow k hΓ hI'I'' hI''J'' hJ''J' (hJ'J.trans hJB) =
+      𝒜.partialVirtualComplexArrow k hΓ (hII'.trans hI'I'') hI''J'' (hJ''J'.trans hJ'J) hJB := by
   rw [partialVirtualComplexArrow_def, partialVirtualComplexArrow_def,
     partialVirtualComplexArrow_def, Linear.smul_comp, Linear.comp_smul, smul_smul,
-    partialVirtualComplexMap_comp_partialVirtualComplexMap, ← mul_inv,
+    partialVirtualComplexMap_comp_partialVirtualComplexMap, ← Units.val_mul, ← mul_inv,
     ← Finset.prod_union (Finset.sdiff_disjoint.mono_right Finset.sdiff_subset),
     Finset.sdiff_union_sdiff_cancel hJ'J hJ''J']
 
@@ -445,24 +446,25 @@ def partialVirtualDiagram (B : Finset A) :
     IntervalDiagram (Set.Iic B)
       (TopCat.KPresheaf (CochainComplex (ModuleCat.{u} k) ℤ) (TopCat.of X)) where
   obj x := 𝒜.partialVirtualComplex k x.unop.fst.val x.unop.snd.property
-  map {x y} f := 𝒜.partialVirtualComplexArrow k (NonemptyInterval.le_def.1 (leOfHom f.unop)).1
+  map {x y} f := 𝒜.partialVirtualComplexArrow k hΓ (NonemptyInterval.le_def.1 (leOfHom f.unop)).1
     y.unop.fst_le_snd (NonemptyInterval.le_def.1 (leOfHom f.unop)).2 x.unop.snd.property
-  map_id _ := partialVirtualComplexArrow_self _ _
-  map_comp _ _ := (partialVirtualComplexArrow_comp_partialVirtualComplexArrow _ _ _ _ _ _ _).symm
+  map_id _ := partialVirtualComplexArrow_self hΓ _ _
+  map_comp _ _ :=
+    (partialVirtualComplexArrow_comp_partialVirtualComplexArrow hΓ _ _ _ _ _ _ _).symm
 
 /-- The value of the interval diagram on an interval `I ⊆ J` of subsets of `B` is the partial
 virtual complex `R_IJ`. -/
 @[simp]
 theorem partialVirtualDiagram_obj (B : Finset A) (x : (NonemptyInterval (Set.Iic B))ᵒᵖ) :
-    (𝒜.partialVirtualDiagram k B).obj x =
+    (𝒜.partialVirtualDiagram k hΓ B).obj x =
       𝒜.partialVirtualComplex k x.unop.fst.val x.unop.snd.property :=
   (rfl)
 
 /-- The arrows of the interval diagram are the weighted interval arrows. -/
 theorem partialVirtualDiagram_map (B : Finset A) {x y : (NonemptyInterval (Set.Iic B))ᵒᵖ}
     (f : x ⟶ y) :
-    (𝒜.partialVirtualDiagram k B).map f =
-      𝒜.partialVirtualComplexArrow k (NonemptyInterval.le_def.1 (leOfHom f.unop)).1
+    (𝒜.partialVirtualDiagram k hΓ B).map f =
+      𝒜.partialVirtualComplexArrow k hΓ (NonemptyInterval.le_def.1 (leOfHom f.unop)).1
         y.unop.fst_le_snd (NonemptyInterval.le_def.1 (leOfHom f.unop)).2 x.unop.snd.property :=
   (rfl)
 
