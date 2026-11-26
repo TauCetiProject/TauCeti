@@ -137,7 +137,7 @@ theorem tendsto_intervalIntegral_sincKernel {d : ℝ} (hd : 0 < d) :
   · field_simp [Real.pi_ne_zero]
 
 /-- The sinc kernel has limiting mass one on each fixed symmetric window of positive radius. -/
-theorem tendsto_intervalIntegral_neg_sincKernel {R : ℝ} (hR : 0 < R) :
+theorem tendsto_intervalIntegral_sincKernel_symmetric {R : ℝ} (hR : 0 < R) :
     Tendsto (fun T : ℝ ↦ ∫ u in -R..R, sincKernel T u) atTop (𝓝 1) := by
   have hmass : (2 : ℝ) * (1 / 2) = 1 := by norm_num
   have H := (tendsto_intervalIntegral_sincKernel hR).const_mul 2

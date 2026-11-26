@@ -273,7 +273,7 @@ theorem MeasureTheory.Integrable.tendsto_intervalIntegral_fourierInv_fourier
     · simpa only [abs_of_pos hpos] using hq
   have H := ((error_integrable hf hR' hq'.1).tendsto_integral_sin_smul_atTop.const_smul
     (π : ℂ)⁻¹).add
-    ((TauCeti.tendsto_intervalIntegral_neg_sincKernel hR').smul_const (f x))
+    ((TauCeti.tendsto_intervalIntegral_sincKernel_symmetric hR').smul_const (f x))
   simp only [smul_zero, one_smul, zero_add] at H
   exact H.congr (fun T ↦ (kernel_split hf hR'.le T).symm)
 
