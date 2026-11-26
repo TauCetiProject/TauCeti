@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
 import TauCeti.Analysis.Pseudodifferential.SmoothKernel
 import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Basic
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Integral operators with smooth kernels on a manifold
@@ -27,7 +28,7 @@ is an operator of order `-∞` (`TauCeti.smoothingPseudodifferentialOperators`),
 (III, §18.1). Such operators are the remainders of the pseudodifferential calculus, and the
 finite-rank projections of elliptic theory, onto spans of smooth compactly supported functions,
 are of this form. For a measure that is also finite on compact sets the file constructs the
-operator itself (`TauCeti.integralOperator`).
+operator itself (`TauCeti.smoothKernelOperator`).
 
 * `TauCeti.isProperlySupported_of_forall_apply_eq_integral`: an operator with a compactly supported
   kernel is properly supported: its outputs are supported in the first projection of the support
@@ -41,10 +42,10 @@ operator itself (`TauCeti.integralOperator`).
 * `TauCeti.mem_smoothingPseudodifferentialOperators_of_forall_apply_eq_integral_smul`: the
   rank-one operators `u ↦ (∫ g u dμ) f`, with smooth compactly supported `f` and `g`, have
   order `-∞`.
-* `TauCeti.integralOperator`: for a measure that is finite on compact sets, the operator
+* `TauCeti.smoothKernelOperator`: for a measure that is finite on compact sets, the operator
   `u ↦ (x ↦ ∫ K(x, y) u(y) dμ(y))`; the integral is smooth in `x` because `K(x, ·)` vanishes off a
   fixed compact set. When `μ` has smooth chart densities it has order `-∞`
-  (`TauCeti.integralOperator_mem_smoothingPseudodifferentialOperators`).
+  (`TauCeti.smoothKernelOperator_mem_smoothingPseudodifferentialOperators`).
 
 ## References
 
@@ -88,6 +89,19 @@ theorem isProperlySupported_of_forall_apply_eq_integral (hKc : HasCompactSupport
     · simp [hf.self_of_nhdsSet y (mem_union_right A hy)]
     · simp [hK (.inr hy)]
 
+omit [ChartedSpace (CoordinateSpace n) M] [T2Space M] [MeasurableSpace M] in
+/-- A kernel `K` on `M × M`, read in two charts `e`, `e'` and localized by cutoffs `φ`, `ψ` in their
+targets, is supported in the product of the supports of the cutoffs. -/
+private theorem tsupport_chartKernel_subset {e e' : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (ψ : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
+    (ρ : CoordinateSpace n → ℝ) :
+    tsupport (fun p : CoordinateSpace n × CoordinateSpace n ↦
+      ((φ p.1 * (ψ p.2 * ρ p.2) : ℝ) : ℂ) * K (e.symm p.1, e'.symm p.2)) ⊆
+      tsupport φ ×ˢ tsupport ψ :=
+  tsupport_subset_of_forall_notMem_eq_zero (fun p hp ↦ by
+    rcases not_and_or.1 hp with hp | hp <;> simp [image_eq_zero_of_notMem_tsupport hp])
+    ((isClosed_tsupport φ).prod (isClosed_tsupport ψ))
+
 omit [T2Space M] [MeasurableSpace M] in
 /-- A smooth kernel `K` on `M × M`, read in two charts `e`, `e'` of the maximal atlas and
 localized by cutoffs `φ`, `ψ` in their targets and a function `ρ` smooth on the target of `e'`, is
@@ -116,14 +130,11 @@ private theorem contDiff_chartKernel {e e' : OpenPartialHomeomorph M (Coordinate
   · exact ((Complex.ofRealCLM.contDiff.comp_contDiffOn hc).mul hKe).contDiffAt
       ((e.open_target.prod e'.open_target).mem_nhds hp)
   -- Off the product of the chart targets, `p` lies outside the product of the supports of the
-  -- cutoffs, a closed set off which the function vanishes.
-  have hp' : p ∉ tsupport φ ×ˢ tsupport ψ := fun h ↦
-    hp ⟨φ.tsupport_subset h.1, ψ.tsupport_subset h.2⟩
-  refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq (Filter.mem_of_superset
-    (((isClosed_tsupport φ).prod (isClosed_tsupport ψ)).isOpen_compl.mem_nhds hp') fun q hq ↦ ?_)
-  rcases not_and_or.1 hq with hq | hq
-  · simp [image_eq_zero_of_notMem_tsupport hq]
-  · simp [image_eq_zero_of_notMem_tsupport hq]
+  -- cutoffs, which contains the support of the function.
+  exact (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq
+    (notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hp
+      ⟨φ.tsupport_subset (tsupport_chartKernel_subset φ ψ ρ h).1,
+        ψ.tsupport_subset (tsupport_chartKernel_subset φ ψ ρ h).2⟩)
 
 omit [ChartedSpace (CoordinateSpace n) M] [T2Space M] [MeasurableSpace M] in
 /-- The kernel of `TauCeti.contDiff_chartKernel` has compact support, in the product of the
@@ -132,75 +143,53 @@ private theorem hasCompactSupport_chartKernel {e e' : OpenPartialHomeomorph M (C
     (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (ψ : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
     (ρ : CoordinateSpace n → ℝ) :
     HasCompactSupport fun p : CoordinateSpace n × CoordinateSpace n ↦
-      ((φ p.1 * (ψ p.2 * ρ p.2) : ℝ) : ℂ) * K (e.symm p.1, e'.symm p.2) := by
-  refine HasCompactSupport.intro (φ.hasCompactSupport.isCompact.prod ψ.hasCompactSupport.isCompact)
-    fun p hp ↦ ?_
-  rcases not_and_or.1 hp with hp | hp
-  · simp [image_eq_zero_of_notMem_tsupport hp]
-  · simp [image_eq_zero_of_notMem_tsupport hp]
-
-/-- Against a measure that is finite on compact sets, `y ↦ K(x, y) u(y)` is integrable for a
-continuous compactly supported kernel `K` and a continuous `u`. -/
-private theorem integrable_mul [OpensMeasurableSpace M] [IsFiniteMeasureOnCompacts μ]
-    (hK : Continuous K) (hKc : HasCompactSupport K) {u : M → ℂ} (hu : Continuous u) (x : M) :
-    Integrable (fun y ↦ K (x, y) * u y) μ :=
-  Continuous.integrable_of_hasCompactSupport (f := fun y ↦ K (x, y) * u y)
-    ((hK.comp (continuous_const.prodMk continuous_id)).mul hu)
-    (HasCompactSupport.intro (hKc.isCompact.image continuous_snd) fun y hy ↦ by
-      rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy ⟨_, h, rfl⟩, zero_mul])
+      ((φ p.1 * (ψ p.2 * ρ p.2) : ℝ) : ℂ) * K (e.symm p.1, e'.symm p.2) :=
+  (φ.hasCompactSupport.isCompact.prod ψ.hasCompactSupport.isCompact).of_isClosed_subset
+    (isClosed_tsupport _) (tsupport_chartKernel_subset φ ψ ρ)
 
 /-! ### The integral operator of a smooth kernel -/
 
-section IntegralOperator
+section SmoothKernelOperator
 
 variable [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [OpensMeasurableSpace M]
-
-/-- The integral `x ↦ ∫ K(x, y) u(y) dμ(y)` of a smooth compactly supported kernel against a
-smooth function is smooth, since `K(x, ·)` vanishes off the second projection of the support of
-`K`, a compact set of finite measure. -/
-private theorem contMDiff_integral_mul (μ : Measure M) [IsFiniteMeasureOnCompacts μ]
-    (hK : ContMDiff (𝓘(ℝ, CoordinateSpace n).prod 𝓘(ℝ, CoordinateSpace n)) 𝓘(ℝ, ℂ) ∞ K)
-    (hKc : HasCompactSupport K) (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    ContMDiff 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, ℂ) ∞ fun x ↦ ∫ y, K (x, y) * u y ∂μ := fun _ ↦
-  (hKc.isCompact.image continuous_snd).contMDiffAt_parametric_integral
-    (hKc.isCompact.image continuous_snd).measure_lt_top.ne
-    (fun _ _ ↦ (hK.mul (u.contMDiff.comp contMDiff_snd)) _)
-    (.of_forall fun x y hy ↦ by
-      rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy ⟨(x, y), h, rfl⟩, zero_mul])
 
 /-- **The integral operator of a smooth kernel.** For a measure `μ` that is finite on compact sets
 and a smooth compactly supported kernel `K` on `M × M`, the operator
 `u ↦ (x ↦ ∫ K(x, y) u(y) dμ(y))` on the complex-valued smooth functions on `M`. When `μ` has
 smooth chart densities it has order `-∞`
-(`TauCeti.integralOperator_mem_smoothingPseudodifferentialOperators`). -/
-noncomputable def integralOperator (μ : Measure M) [IsFiniteMeasureOnCompacts μ]
+(`TauCeti.smoothKernelOperator_mem_smoothingPseudodifferentialOperators`). -/
+noncomputable def smoothKernelOperator (μ : Measure M) [IsFiniteMeasureOnCompacts μ]
     (hK : ContMDiff (𝓘(ℝ, CoordinateSpace n).prod 𝓘(ℝ, CoordinateSpace n)) 𝓘(ℝ, ℂ) ∞ K)
     (hKc : HasCompactSupport K) :
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ where
-  toFun u := ⟨fun x ↦ ∫ y, K (x, y) * u y ∂μ, contMDiff_integral_mul μ hK hKc u⟩
+  toFun u := ⟨fun x ↦ ∫ y, K (x, y) * u y ∂μ, ContMDiff.parametric_integral_of_hasCompactSupport
+    (f := fun x y ↦ K (x, y) * u y) (hK.mul (u.contMDiff.comp contMDiff_snd)) hKc.mul_right⟩
   map_add' u v := by
     ext x
+    -- `y ↦ K(x, y) w(y)` is continuous and compactly supported, hence integrable.
+    have hint (w : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+        Integrable (fun y ↦ K (x, y) * w y) μ :=
+      ((hK.continuous.comp (continuous_const.prodMk continuous_id)).mul
+        w.contMDiff.continuous).integrable_of_hasCompactSupport
+        (hKc.comp_prodMk_right x).mul_right
     simp only [ContMDiffMap.coeFn_mk, ContMDiffMap.coe_add, Pi.add_apply, mul_add]
-    exact integral_add (integrable_mul hK.continuous hKc u.contMDiff.continuous x)
-      (integrable_mul hK.continuous hKc v.contMDiff.continuous x)
+    exact integral_add (hint u) (hint v)
   map_smul' a u := by
     ext x
-    -- `ContMDiffMap.complex_smul_apply` rewrites `a • _` once the integral is a bundled map.
-    refine (integral_congr_ae (.of_forall fun y ↦ ?_)).trans ((integral_const_mul a _).trans
-      (ContMDiffMap.complex_smul_apply a ⟨fun x ↦ ∫ y, K (x, y) * u y ∂μ, 
-        contMDiff_integral_mul μ hK hKc u⟩ x).symm)
-    simp only [ContMDiffMap.complex_smul_apply]
-    ring
+    -- Evaluate the scalar multiple of the bundled integral pointwise.
+    refine Eq.trans ?_ (ContMDiffMap.complex_smul_apply a _ x).symm
+    simp only [ContMDiffMap.coeFn_mk, ContMDiffMap.complex_smul_apply, ← integral_const_mul,
+      mul_left_comm]
 
 @[simp]
-theorem integralOperator_apply (μ : Measure M) [IsFiniteMeasureOnCompacts μ]
+theorem smoothKernelOperator_apply (μ : Measure M) [IsFiniteMeasureOnCompacts μ]
     (hK : ContMDiff (𝓘(ℝ, CoordinateSpace n).prod 𝓘(ℝ, CoordinateSpace n)) 𝓘(ℝ, ℂ) ∞ K)
     (hKc : HasCompactSupport K) (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
-    integralOperator μ hK hKc u x = ∫ y, K (x, y) * u y ∂μ :=
+    smoothKernelOperator μ hK hKc u x = ∫ y, K (x, y) * u y ∂μ :=
   (rfl)
 
-end IntegralOperator
+end SmoothKernelOperator
 
 section Density
 
@@ -287,24 +276,24 @@ theorem mem_smoothingPseudodifferentialOperators_of_forall_apply_eq_integral_smu
   refine mem_smoothingPseudodifferentialOperators_of_forall_apply_eq_integral (K := fun p ↦
     f p.1 * g p.2) hμ ((f.contMDiff.comp contMDiff_fst).mul (g.contMDiff.comp contMDiff_snd))
     ?_ fun u x ↦ ?_
-  · refine HasCompactSupport.intro (hf.isCompact.prod hg.isCompact) fun p hp ↦ ?_
-    rcases not_and_or.1 hp with hp | hp
-    · simp [image_eq_zero_of_notMem_tsupport hp]
-    · simp [image_eq_zero_of_notMem_tsupport hp]
+  · have h : HasCompactSupport fun p : M × M ↦ g p.2 • f p.1 :=
+      (hf.isCompact.prod hg.isCompact).of_isClosed_subset (isClosed_tsupport _)
+        (tsupport_snd_smul_fst_subset _ _)
+    simpa only [smul_eq_mul, mul_comm (g _)] using h
   · rw [hP, ContMDiffMap.complex_smul_apply, ← integral_mul_const]
     exact integral_congr_ae (.of_forall fun y ↦ by dsimp only; ring)
 
 /-- **The integral operator of a smooth kernel has order `-∞`.** For a measure `μ` with smooth
 chart densities that is finite on compact sets, and a smooth compactly supported kernel `K` on
 `M × M`, the operator `u ↦ (x ↦ ∫ K(x, y) u(y) dμ(y))` has order `-∞`. -/
-theorem integralOperator_mem_smoothingPseudodifferentialOperators
+theorem smoothKernelOperator_mem_smoothingPseudodifferentialOperators
     [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [OpensMeasurableSpace M]
     [IsFiniteMeasureOnCompacts μ]
     (hK : ContMDiff (𝓘(ℝ, CoordinateSpace n).prod 𝓘(ℝ, CoordinateSpace n)) 𝓘(ℝ, ℂ) ∞ K)
     (hKc : HasCompactSupport K) :
-    integralOperator μ hK hKc ∈ smoothingPseudodifferentialOperators :=
+    smoothKernelOperator μ hK hKc ∈ smoothingPseudodifferentialOperators :=
   mem_smoothingPseudodifferentialOperators_of_forall_apply_eq_integral hμ hK hKc
-    (integralOperator_apply μ hK hKc)
+    (smoothKernelOperator_apply μ hK hKc)
 
 end Density
 
