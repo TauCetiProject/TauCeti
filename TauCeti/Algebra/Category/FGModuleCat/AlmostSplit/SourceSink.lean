@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.Sequence
-public import TauCeti.CategoryTheory.AlmostSplit.IrreducibleCriterion
+public import TauCeti.CategoryTheory.AlmostSplit.Irreducible.Criterion
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 
@@ -22,17 +22,17 @@ the almost-split sequence ending at `M` (`FGModuleCat.exists_isAlmostSplit`); du
 maps. This discharges the existence hypotheses of `FGModuleCat.exists_isRightAlmostSplit_biproduct`
 and `FGModuleCat.exists_isLeftAlmostSplit_biproduct`.
 
-Through the categorical criterion of `TauCeti.CategoryTheory.AlmostSplit.IrreducibleCriterion`, a
-morphism `h : X ⟶ M` from a nonzero module is then irreducible exactly when `(h, h') : X ⊞ X' ⟶ M`
-is a sink map for some `h'`, and dually for morphisms out of `M`.
+Through the categorical criterion of `TauCeti.CategoryTheory.AlmostSplit.Irreducible.Criterion`,
+a morphism `h : X ⟶ M` from a nonzero module is then irreducible exactly when
+`(h, h') : X ⊞ X' ⟶ M` is a sink map for some `h'`, and dually for morphisms out of `M`.
 
 ## Main results
 
 * `FGModuleCat.exists_isRightAlmostSplit_biproduct_of_finite` and
   `FGModuleCat.exists_isLeftAlmostSplit_biproduct_of_finite`: sink and source maps out of and into
   finite biproducts of indecomposable modules, with irreducible components.
-* `FGModuleCat.exists_isRightAlmostSplit_and_minimal` and
-  `FGModuleCat.exists_isLeftAlmostSplit_and_minimal`: the existence of sink and source maps.
+* `FGModuleCat.exists_right_minimal_isRightAlmostSplit` and
+  `FGModuleCat.exists_left_minimal_isLeftAlmostSplit`: the existence of sink and source maps.
 * `FGModuleCat.isIrreducibleMorphism_iff_exists_isRightAlmostSplit_biprod_desc` and
   `FGModuleCat.isIrreducibleMorphism_iff_exists_isLeftAlmostSplit_biprod_lift`: the
   irreducibility criterion.
@@ -92,7 +92,7 @@ theorem exists_isLeftAlmostSplit_biproduct_of_finite {M : FGModuleCat.{w} A}
 
 /-- **Existence of sink maps.** Over an Artin algebra, every finitely generated indecomposable
 module is the target of a right minimal right almost split morphism in `FGModuleCat`. -/
-theorem exists_isRightAlmostSplit_and_minimal {M : FGModuleCat.{w} A} (hM : Indecomposable M) :
+theorem exists_right_minimal_isRightAlmostSplit {M : FGModuleCat.{w} A} (hM : Indecomposable M) :
     ∃ (Y : FGModuleCat.{w} A) (g : Y ⟶ M), IsRightAlmostSplit g ∧
       ∀ φ : Y ⟶ Y, φ ≫ g = g → IsIso φ := by
   obtain ⟨_, _, g, -, hg, hmin, -⟩ := exists_isRightAlmostSplit_biproduct_of_finite R hM
@@ -100,7 +100,7 @@ theorem exists_isRightAlmostSplit_and_minimal {M : FGModuleCat.{w} A} (hM : Inde
 
 /-- **Existence of source maps.** Over an Artin algebra, every finitely generated indecomposable
 module is the source of a left minimal left almost split morphism in `FGModuleCat`. -/
-theorem exists_isLeftAlmostSplit_and_minimal {M : FGModuleCat.{w} A} (hM : Indecomposable M) :
+theorem exists_left_minimal_isLeftAlmostSplit {M : FGModuleCat.{w} A} (hM : Indecomposable M) :
     ∃ (Y : FGModuleCat.{w} A) (f : M ⟶ Y), IsLeftAlmostSplit f ∧
       ∀ φ : Y ⟶ Y, f ≫ φ = f → IsIso φ := by
   obtain ⟨_, _, f, -, hf, hmin, -⟩ := exists_isLeftAlmostSplit_biproduct_of_finite R hM
@@ -115,7 +115,7 @@ theorem isIrreducibleMorphism_iff_exists_isRightAlmostSplit_biprod_desc
       IsRightAlmostSplit (biprod.desc h h') ∧
         ∀ u : X ⊞ X' ⟶ X ⊞ X', u ≫ biprod.desc h h' = biprod.desc h h' → IsIso u := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
-  obtain ⟨Y, g, hg, hmin⟩ := exists_isRightAlmostSplit_and_minimal R hM
+  obtain ⟨Y, g, hg, hmin⟩ := exists_right_minimal_isRightAlmostSplit R hM
   exact hg.isIrreducibleMorphism_iff_exists_biprod_desc hmin hX h
 
 /-- **Irreducible morphisms out of an indecomposable module.** Over an Artin algebra, a morphism
@@ -127,7 +127,7 @@ theorem isIrreducibleMorphism_iff_exists_isLeftAlmostSplit_biprod_lift
       IsLeftAlmostSplit (biprod.lift h h') ∧
         ∀ u : X ⊞ X' ⟶ X ⊞ X', biprod.lift h h' ≫ u = biprod.lift h h' → IsIso u := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
-  obtain ⟨Y, f, hf, hmin⟩ := exists_isLeftAlmostSplit_and_minimal R hM
+  obtain ⟨Y, f, hf, hmin⟩ := exists_left_minimal_isLeftAlmostSplit R hM
   exact hf.isIrreducibleMorphism_iff_exists_biprod_lift hmin hX h
 
 end FGModuleCat

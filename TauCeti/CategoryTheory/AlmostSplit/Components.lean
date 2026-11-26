@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.AlmostSplit.Irreducible
+public import TauCeti.CategoryTheory.AlmostSplit.Irreducible.Basic
 public import TauCeti.CategoryTheory.AlmostSplit.Minimal
 
 /-!
