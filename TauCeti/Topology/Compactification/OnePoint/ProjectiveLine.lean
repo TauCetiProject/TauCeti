@@ -231,6 +231,15 @@ lemma pslMk_smul (g : SL(2, K)) (c : OnePoint K) :
     (g : PSL(2, K)) • c = (g : GL (Fin 2) K) • c :=
   (rfl)
 
+/-- The image of a matrix of `SL(2, K)` under `Matrix.SpecialLinearGroup.mapGL K` acts on
+`OnePoint K` as its class in `PSL(2, K)`. -/
+lemma mapGL_smul (g : SL(2, K)) (c : OnePoint K) :
+    Matrix.SpecialLinearGroup.mapGL K g • c = (g : PSL(2, K)) • c := by
+  have h : Matrix.SpecialLinearGroup.mapGL K g = (g : GL (Fin 2) K) := by
+    ext i j
+    simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
+  rw [pslMk_smul, h]
+
 /-- The identification `OnePoint.equivProjectivization` intertwines the actions of `PSL(2, K)` on
 `OnePoint K` and on `ℙ K (Fin 2 → K)`. -/
 lemma equivProjectivization_psl_smul {g : PSL(2, K)} (x : OnePoint K) :

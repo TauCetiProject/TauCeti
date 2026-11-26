@@ -169,6 +169,79 @@ namespace Subgroup
 
 variable {Γ : Subgroup PSL(2, ℝ)} {z : ℍ} {ε : ℝ}
 
+/-- **The exponent of the frame at a point of finite stabilizer.** Let `Γ'` have image `Γ` and let
+the stabilizer of `z` in `Γ` have finite order `m`. If `k` is even or `-1 ∉ Γ'`, some `r < m`
+satisfies `denom g z ^ (2 * r + k) = 1` for every `g ∈ Γ'` fixing `z`, the condition on the exponent
+of the frame `Subgroup.LinearizingCoordinate.automorphyFrame`. In even weight `r ≡ -k / 2` modulo
+`m`. In odd weight `-1 ∉ Γ'`, so the lifts in `Γ'` of the stabilizer form a cyclic group of order
+`m`, which is odd since `-1` is the only element of order two fixing `z`, and `r ≡ -k / 2` modulo
+`m` again makes sense. -/
+theorem exists_lt_forall_denom_zpow_eq_one {Γ' : Subgroup SL(2, ℝ)} {k : ℤ}
+    (hΓ : Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))) = Γ) [Finite (stabilizer Γ z)]
+    (hk : -1 ∈ Γ' → Even k) :
+    ∃ r < Nat.card (stabilizer Γ z), ∀ g ∈ Γ', g • z = z →
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ (2 * r + k) = 1 := by
+  set m := Nat.card (stabilizer Γ z)
+  have hm0 : (0 : ℤ) < m := by exact_mod_cast Nat.card_pos
+  have hmem {g : SL(2, ℝ)} (hg : g ∈ Γ') : (g : PSL(2, ℝ)) ∈ Γ := hΓ ▸ mem_map_of_mem _ hg
+  rcases Int.even_or_odd k with ⟨j, rfl⟩ | hodd
+  · -- in even weight `k = 2 * j` the residue `r ≡ -j` modulo `m` works
+    have h0 := Int.emod_nonneg (-j) hm0.ne'
+    have hlt := Int.emod_lt_of_pos (-j) hm0
+    refine ⟨((-j) % m).toNat, by omega, fun g hg hgz ↦ denom_zpow_eq_one_of_dvd (hmem hg) hgz ?_⟩
+    rw [Int.toNat_of_nonneg h0]
+    exact ⟨-((-j) / m), by linear_combination 2 * Int.emod_add_mul_ediv (-j) m⟩
+  have hneg : (-1 : SL(2, ℝ)) ∉ Γ' := fun h ↦ Int.not_even_iff_odd.mpr hodd (hk h)
+  -- a lift `g ∈ Γ'` of an element of the stabilizer has `g ^ m = 1`, so its automorphy factor at
+  -- `z` is an `m`-th root of unity
+  have hpow {g : SL(2, ℝ)} (hg : g ∈ Γ') (hgz : g • z = z) :
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) z ^ m = 1 := by
+    let q : stabilizer Γ z :=
+      ⟨⟨g, hmem hg⟩, by rw [mem_stabilizer_iff, Subgroup.mk_smul, pslMk_smul, hgz]⟩
+    have hgm : ((g ^ m : SL(2, ℝ)) : PSL(2, ℝ)) = 1 := by
+      rw [QuotientGroup.mk_pow]
+      exact congrArg (fun q : stabilizer Γ z ↦ ((q : Γ) : PSL(2, ℝ))) (pow_card_eq_one' (x := q))
+    rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp
+      ((QuotientGroup.eq_one_iff _).mp hgm) with h | h
+    · rw [← Matrix.SpecialLinearGroup.denom_mapGL_pow_of_smul_eq_self hgz, h]
+      simp
+    · exact absurd (h ▸ pow_mem hg m) hneg
+  -- `m` is odd: a lift of the rotation by `-1` would square to `-1`
+  have hmodd : Odd m := by
+    by_contra hev
+    rw [Nat.not_odd_iff_even] at hev
+    obtain ⟨q, hq⟩ := (stabilizerRotation_bijective Γ z).2
+      ⟨-1, (mem_rootsOfUnity _ _).mpr hev.neg_one_pow⟩
+    obtain ⟨g, hg, hgq⟩ := mem_map.mp (by rw [hΓ]; exact (q : Γ).property :
+      ((q : Γ) : PSL(2, ℝ)) ∈ Γ'.map (QuotientGroup.mk' (center SL(2, ℝ))))
+    have hgz : g • z = z := smul_eq_self_of_coe_eq q hgq
+    have hrot := coe_stabilizerRotation_eq_denom_zpow q hgq
+    rw [hq] at hrot
+    have hsq : denom (Matrix.SpecialLinearGroup.mapGL ℝ (g ^ 2)) z = -1 := by
+      rw [Matrix.SpecialLinearGroup.denom_mapGL_pow_of_smul_eq_self hgz]
+      simp only [Units.val_neg, Units.val_one] at hrot
+      rw [zpow_neg, zpow_two] at hrot
+      have h := congrArg (·⁻¹) hrot
+      simp only [inv_inv, inv_neg, inv_one] at h
+      rw [sq, h]
+    have hc := Matrix.SpecialLinearGroup.mem_center_of_smul_eq_self_of_denom_sq_eq_one
+      (g := g ^ 2) (z := z) (by rw [sq, mul_smul, hgz, hgz]) (by rw [hsq]; norm_num)
+    rcases Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one.mp hc with h | h
+    · rw [h] at hsq
+      norm_num at hsq
+    · exact hneg (h ▸ pow_mem hg 2)
+  -- choose `r` with `m ∣ 2 * r + k`, using that `2` is invertible modulo the odd `m`
+  obtain ⟨a, ha⟩ := hmodd
+  have h0 := Int.emod_nonneg (-(k * (a + 1))) hm0.ne'
+  have hlt := Int.emod_lt_of_pos (-(k * (a + 1))) hm0
+  refine ⟨((-(k * (a + 1))) % m).toNat, by omega, fun g hg hgz ↦ ?_⟩
+  obtain ⟨t, ht⟩ : (m : ℤ) ∣ 2 * (((-(k * (a + 1))) % m).toNat : ℤ) + k := by
+    rw [Int.toNat_of_nonneg h0]
+    refine ⟨-k - 2 * ((-(k * (a + 1))) / m), ?_⟩
+    have hm' : (m : ℤ) = 2 * a + 1 := by exact_mod_cast ha
+    linear_combination 2 * Int.emod_add_mul_ediv (-(k * (a + 1))) m + k * hm'
+  rw [ht, zpow_mul, zpow_natCast, hpow hg hgz, one_zpow]
+
 namespace LinearizingCoordinate
 
 variable [Finite (stabilizer Γ z)] (ψ : Γ.LinearizingCoordinate z ε)

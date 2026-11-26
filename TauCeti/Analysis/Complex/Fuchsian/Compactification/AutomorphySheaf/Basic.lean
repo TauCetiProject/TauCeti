@@ -33,7 +33,9 @@ of a weight-`k` modular form for `Γ'` when the cusps of `Γ` coincide with thos
 image of `Γ'`. The boundedness condition at a cusp
 only involves `F` near the cusp (`Subgroup.CompactifiedQuotient.isBoundedAt_congr`): the
 neighbourhoods of a cusp orbit in `X(Γ)` pull back to horodiscs, along which `i∞` is approached
-after slashing by a lift of the scaling of a cusp datum. Suppose a cusp datum `D` represents a
+after slashing by a lift of the scaling of a cusp datum. For a function satisfying the
+transformation law for a `Γ'` with image `Γ` it depends only on the cusp orbit
+(`Subgroup.CompactifiedQuotient.isBoundedAt_of_cuspOrbit_eq`). Suppose a cusp datum `D` represents a
 cusp orbit in `U`, and its generator has a lift `g ∈ Γ'` with
 `(s * g * s⁻¹) 1 1 = -1`, where `s` lifts `D.scaling` (the irregular sign). In odd weight the
 expansion of a section, after slashing by `s⁻¹`, in the width parameter `q₂` then has only odd
@@ -53,7 +55,9 @@ holomorphic on `π⁻¹(U)` and bounded near every cusp of `U`
 restriction of functions, so this is a sheaf of `𝒪`-modules
 (`Subgroup.CompactifiedQuotient.automorphySheafOfModules`). Its local triviality, through the
 frames `Subgroup.LinearizingCoordinate.automorphyFrame` at elliptic points and
-`TauCeti.Subgroup.CuspDatum.automorphyFrame` at cusps, is not part of this file.
+`TauCeti.Subgroup.CuspDatum.automorphyFrame` at cusps, is
+`Subgroup.CompactifiedQuotient.isInvertible_automorphySheafOfModules`, in
+`TauCeti.Analysis.Complex.Fuchsian.Compactification.AutomorphySheaf.Invertible`.
 
 ## Main declarations
 
@@ -92,14 +96,31 @@ variable {Γ : Subgroup PSL(2, ℝ)}
 
 section Cusp
 
-/-- The inverse of a lift of the scaling of a cusp datum carries `∞` to the cusp. -/
-private theorem mapGL_inv_smul_infty {D : Γ.CuspDatum} {s : SL(2, ℝ)}
+/-- The inverse of a lift of the scaling of a cusp datum carries `∞` to the cusp, so that
+boundedness at the cusp is boundedness at `i∞` after slashing by it (`OnePoint.isBoundedAt_iff`). -/
+theorem _root_.Subgroup.CuspDatum.mapGL_inv_smul_infty {D : Γ.CuspDatum} {s : SL(2, ℝ)}
     (hs : (s : PSL(2, ℝ)) = D.scaling) :
     Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ • (OnePoint.infty : OnePoint ℝ) = D.cusp := by
-  have h : Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ = Matrix.SpecialLinearGroup.toGL s⁻¹ := by
-    ext i j
-    simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
-  rw [h, ← OnePoint.pslMk_smul, QuotientGroup.mk_inv, hs, inv_smul_eq_iff, D.scaling_smul_cusp]
+  rw [OnePoint.mapGL_smul, QuotientGroup.mk_inv, hs, inv_smul_eq_iff, D.scaling_smul_cusp]
+
+/-- **Boundedness at a cusp depends only on its cusp orbit.** If `F` satisfies the weight-`k`
+transformation law for `Γ' ≤ SL(2, ℝ)`, whose image is `Γ`, and is bounded at the cusp of a cusp
+datum `D`, then it is bounded at the cusp of every cusp datum `D'` representing the same cusp
+orbit. -/
+theorem isBoundedAt_of_cuspOrbit_eq {Γ' : _root_.Subgroup SL(2, ℝ)}
+    (hΓ : Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))) = Γ) {k : ℤ} {F : ℍ → ℂ}
+    (hF : ∀ g ∈ Γ', ∀ τ : ℍ, F (g • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ k * F τ)
+    {D D' : Γ.CuspDatum} (hDD' : D'.cuspOrbit = D.cuspOrbit)
+    (hD : OnePoint.IsBoundedAt D.cusp F k) : OnePoint.IsBoundedAt D'.cusp F k := by
+  obtain ⟨γ, hγ⟩ := (D'.cuspOrbit_eq_iff D).mp hDD'
+  obtain ⟨h, hh, hhγ⟩ := _root_.Subgroup.mem_map.mp (hΓ.symm ▸ γ.property :
+    (γ : PSL(2, ℝ)) ∈ Γ'.map (QuotientGroup.mk' (_root_.Subgroup.center SL(2, ℝ))))
+  have hc : Matrix.SpecialLinearGroup.mapGL ℝ h • D.cusp = D'.cusp := by
+    rw [OnePoint.mapGL_smul, ← hγ]
+    exact congrArg (· • D.cusp) hhγ
+  rw [← hc, OnePoint.IsBoundedAt.smul_iff,
+    (Matrix.SpecialLinearGroup.slash_mapGL_eq_self_iff h k F).mpr (hF h hh)]
+  exact hD
 
 variable [DiscreteTopology Γ] {D : Γ.CuspDatum} {s : SL(2, ℝ)}
 
@@ -122,8 +143,8 @@ theorem isBoundedAt_congr {V : Set Γ.CompactifiedQuotient} (hV : V ∈ 𝓝 (of
     {F G : ℍ → ℂ} (h : ∀ τ : ℍ, ofQuotient (Quotient.mk _ τ) ∈ V → F τ = G τ) (k : ℤ) :
     OnePoint.IsBoundedAt D.cusp F k ↔ OnePoint.IsBoundedAt D.cusp G k := by
   obtain ⟨s, hs⟩ := QuotientGroup.mk_surjective D.scaling
-  rw [OnePoint.isBoundedAt_iff (mapGL_inv_smul_infty hs),
-    OnePoint.isBoundedAt_iff (mapGL_inv_smul_infty hs)]
+  rw [OnePoint.isBoundedAt_iff (CuspDatum.mapGL_inv_smul_infty hs),
+    OnePoint.isBoundedAt_iff (CuspDatum.mapGL_inv_smul_infty hs)]
   have heq : F ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ =ᶠ[atImInfty]
       G ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ := by
     filter_upwards [tendsto_ofQuotient_quotientMk_inv_smul hs hV] with z hz
@@ -138,7 +159,7 @@ theorem isBoundedAt_comp_mul {φ : Γ.CompactifiedQuotient → ℂ}
     (hF : OnePoint.IsBoundedAt D.cusp F k) :
     OnePoint.IsBoundedAt D.cusp (fun τ ↦ φ (ofQuotient (Quotient.mk _ τ)) * F τ) k := by
   obtain ⟨s, hs⟩ := QuotientGroup.mk_surjective D.scaling
-  rw [OnePoint.isBoundedAt_iff (mapGL_inv_smul_infty hs)] at hF ⊢
+  rw [OnePoint.isBoundedAt_iff (CuspDatum.mapGL_inv_smul_infty hs)] at hF ⊢
   have hdet : 0 < ((Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ : GL (Fin 2) ℝ) :
       Matrix (Fin 2) (Fin 2) ℝ).det := by simp
   have heq : (fun τ ↦ φ (ofQuotient (Quotient.mk _ τ)) * F τ) ∣[k]
@@ -321,7 +342,7 @@ theorem isAutomorphySection_univ_one :
     IsAutomorphySection Γ' 0 (univ : Set Γ.CompactifiedQuotient) 1 := by
   refine isAutomorphySection_univ_iff.mpr ⟨fun g _ τ ↦ by simp, mdifferentiable_const, fun D ↦ ?_⟩
   obtain ⟨s, hs⟩ := QuotientGroup.mk_surjective D.scaling
-  rw [OnePoint.isBoundedAt_iff (mapGL_inv_smul_infty hs)]
+  rw [OnePoint.isBoundedAt_iff (CuspDatum.mapGL_inv_smul_infty hs)]
   have hdet : 0 < ((Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ : GL (Fin 2) ℝ) :
       Matrix (Fin 2) (Fin 2) ℝ).det := by simp
   have h : (1 : ℍ → ℂ) ∣[(0 : ℤ)] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ = Function.const ℍ 1 := by
