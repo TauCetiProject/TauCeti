@@ -65,7 +65,7 @@ variable {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [Topologic
 /-- The **external tensor product** `(s ⊠ t)(x, y) = s x ⊗ t y` of a bundle test `s` of `V` over
 `M` and a bundle test `t` of `W` over `N`, a bundle test of `V ⊠ W` over `M × N`. -/
 def externalTensor (s : BundleTest I F V) (t : BundleTest J G W) :
-    BundleTest (I.prod J) (ProjectiveTensor ℝ F G) (ExternalTensor V W) :=
+    BundleTest (I.prod J) (ProjectiveTensor ℝ F G) (ExternalTensor ℝ V W) :=
   ofCompactlySupported _ _ _
     ⟨((ofCompactlySupported I F V).symm s).val.externalTensor
         ((ofCompactlySupported J G W).symm t).val,
@@ -77,7 +77,7 @@ def externalTensor (s : BundleTest I F V) (t : BundleTest J G W) :
 /-- The external tensor product of bundle tests is `(s ⊠ t)(x, y) = s x ⊗ t y`. -/
 @[simp]
 theorem externalTensor_apply (s : BundleTest I F V) (t : BundleTest J G W) (p : M × N) :
-    s.externalTensor t p = (s p.1 ⊗ₜ[ℝ] t p.2 : ExternalTensor V W p) := by
+    s.externalTensor t p = (s p.1 ⊗ₜ[ℝ] t p.2 : ExternalTensor ℝ V W p) := by
   rw [externalTensor, coe_ofCompactlySupported]
   exact ContMDiffSection.externalTensor_apply _ _ p
 
@@ -90,7 +90,7 @@ theorem tsupport_externalTensor_subset (s : BundleTest I F V) (t : BundleTest J 
 /-- The external tensor product of bundle tests, as a bilinear map. -/
 def externalTensorₗ :
     BundleTest I F V →ₗ[ℝ] BundleTest J G W →ₗ[ℝ]
-      BundleTest (I.prod J) (ProjectiveTensor ℝ F G) (ExternalTensor V W) :=
+      BundleTest (I.prod J) (ProjectiveTensor ℝ F G) (ExternalTensor ℝ V W) :=
   LinearMap.mk₂ ℝ externalTensor
     (fun _ _ _ ↦ BundleTest.ext fun p ↦ by
       simp only [externalTensor_apply, add_apply]; exact TensorProduct.add_tmul _ _ _)
@@ -151,7 +151,7 @@ variable {EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [LocallyCo
   (hdt : d.source ⊆ t'.baseSet)
   {e : OpenPartialHomeomorph (M × N) (EM × EN)} (he : e = c.prod d)
   (hce : ContMDiffOn (I.prod J) 𝓘(ℝ, EM × EN) ∞ e e.source)
-  (hcet : e.source ⊆ (t.externalTensor t').baseSet)
+  (hcet : e.source ⊆ (t.externalTensor ℝ t').baseSet)
 
 include he in
 /-- **Chart extensions of tensor products in product charts.** Extending the test function
@@ -162,7 +162,7 @@ theorem chartTestCLM_externalTensor_prodSMulCLM
     (hV : (c.target : Set EM) ×ˢ (d.target : Set EN) ⊆ e.target)
     (φ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (ψ : 𝓓(⟨d.target, d.open_target⟩, ℝ)) (v : F)
     (w : G) :
-    (t.externalTensor t').chartTestCLM e hce hcet
+    (t.externalTensor ℝ t').chartTestCLM e hce hcet
         (postcompCLM (toSpanSingleton ℝ (ProjectiveTensor.mk (v ⊗ₜ[ℝ] w)))
           (prodSMulCLM (V := ⟨e.target, e.open_target⟩) ψ hV φ)) =
       (t.chartTestCLM c hc hct (postcompCLM (toSpanSingleton ℝ v) φ)).externalTensor
@@ -178,7 +178,7 @@ theorem chartTestCLM_externalTensor_prodSMulCLM
     simp only [postcompCLM_apply, Function.comp_apply, toSpanSingleton_apply, prodSMulCLM_apply,
       OpenPartialHomeomorph.prod_apply, map_smul]
     rw [symmL_apply _ (hcet hz), symmL_apply _ (hct hz'.1), symmL_apply _ (hdt hz'.2)]
-    rw [externalTensor_symm_apply_tmul t t' ⟨hct hz'.1, hdt hz'.2⟩, smul_smul, mul_comm]
+    rw [externalTensor_symm_apply_tmul ⟨hct hz'.1, hdt hz'.2⟩, smul_smul, mul_comm]
     exact (ExternalTensor.smul_tmul_smul _ _ _ _).symm
   · rw [chartTestCLM_apply_of_notMem _ _ _ _ _ hz]
     rw [OpenPartialHomeomorph.prod_source, mem_prod, not_and_or] at hz
