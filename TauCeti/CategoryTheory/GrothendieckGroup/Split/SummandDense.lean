@@ -15,7 +15,8 @@ Two objects `X` and `Y` have the same class in the split Grothendieck group of `
 `X ⊞ W ≅ Y ⊞ W` for some object `W` (`TauCeti.SplitK0.of_eq_of_iff`). If a functor `T : C ⥤ D`
 is summand-dense, so that every object of `D` is a direct summand of an object `T P`, the common
 summand `W` can be taken of the form `T P`: choose `W'` with `W ⊞ W' ≅ T P` and add `W'` to both
-sides.
+sides. This is the case of the essential image of `T` in
+`TauCeti.SplitK0.of_eq_of_iff_of_forall_exists_biprod`.
 
 This is how equalities in `K₀(D)` are lifted to isomorphisms in the image of `T`, as in the
 exactness of `K₀(T) → K₀(C) → K₀(D)` for the relative group `K₀(T)` of a summand-dense functor.
@@ -51,12 +52,11 @@ summand-dense, two objects of `D` have the same class in split `K₀` exactly wh
 isomorphic after adding an object `T P`. -/
 theorem of_eq_of_iff_of_isSummandDense (T : C ⥤ D) [T.IsSummandDense] {X Y : D} :
     (of X : SplitK0 D) = of Y ↔ ∃ P : C, Nonempty (X ⊞ T.obj P ≅ Y ⊞ T.obj P) := by
-  refine ⟨fun h => ?_, fun ⟨P, h⟩ => of_eq_of_iff.2 ⟨T.obj P, h⟩⟩
-  obtain ⟨W, ⟨e⟩⟩ := of_eq_of_iff.1 h
-  obtain ⟨W', P, ⟨e'⟩⟩ := Functor.IsSummandDense.exists_biprod_iso T W
-  -- Replace `T P` by `W ⊞ W'` and move `W'` out of the way of `e`.
-  exact ⟨P, ⟨biprod.mapIso (Iso.refl X) e'.symm ≪≫ (biprod.associator _ _ _).symm ≪≫
-    biprod.mapIso e (Iso.refl W') ≪≫ biprod.associator _ _ _ ≪≫ biprod.mapIso (Iso.refl Y) e'⟩⟩
+  rw [of_eq_of_iff_of_forall_exists_biprod T.essImage
+    Functor.IsSummandDense.exists_biprod_mem_essImage]
+  -- An object `B ≅ T P` of the essential image may be replaced by `T P` itself.
+  exact ⟨fun ⟨_, ⟨P, ⟨e⟩⟩, ⟨f⟩⟩ => ⟨P, ⟨biprod.mapIso (Iso.refl X) e ≪≫ f ≪≫
+    biprod.mapIso (Iso.refl Y) e.symm⟩⟩, fun ⟨P, h⟩ => ⟨T.obj P, T.obj_mem_essImage P, h⟩⟩
 
 end SplitK0
 
