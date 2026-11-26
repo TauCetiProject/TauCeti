@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Drift
-import Mathlib.MeasureTheory.Function.UniformIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.Basic
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # The weak maximum principle with a drift in `Lᵖ`
@@ -52,7 +53,7 @@ where `σ` bounds `e` and `Γ = {u > l, ∇u ≠ 0}`, outside of which `∇v = 0
 `TauCeti.W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq` for the first step). If `u > l`
 on a set of positive measure then `∇v ≠ 0` (`TauCeti.W1p.enorm_gradient_posPartAbove_ne_zero`),
 so `λ ≤ S ‖1_Γ W‖_p`. As `|Γ| → 0`, `‖1_Γ W‖_p → 0`, because `p < ∞` and `d ∈ Lᵖ`
-(`MeasureTheory.MemLp.tendsto_eLpNorm_restrict_zero`), and the level-set argument
+(`MeasureTheory.MemLp.tendsto_eLpNorm_restrict_of_tendsto_measure`), and the level-set argument
 `TauCeti.W1p.ae_value_le_of_forall_le_of_tendsto` concludes, as it does for bounded drifts in
 `TauCeti.PDE.UniformlyEllipticOn.value_le_const_of_forall_eLpNorm_le`.
 
@@ -105,17 +106,6 @@ private theorem integrable_const_add_norm_mul_norm_mul_norm {μ : Measure (Eucli
     (hd.integrable_norm_mul_norm_mul_norm (r := 2) (s := 2) hg hfq)).congr
     (ae_of_all _ fun x ↦ by simp only [Pi.add_apply, Pi.mul_apply]; ring)
 
-omit [mu.IsAddHaarMeasure] in
-/-- If `‖b‖ ≤ β + |d|` on `Ω`, then `|⟪b, g⟫ f| ≤ (β + |d|) |g| |f|` almost everywhere on `Ω`. -/
-private theorem ae_norm_inner_mul_le_const_add_norm_mul
-    (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta + ‖d x‖)
-    (g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (f : EuclideanSpace ℝ ι → ℝ) :
-    ∀ᵐ x ∂mu.restrict Omega, ‖⟪b x, g x⟫_ℝ * f x‖ ≤ (beta + ‖d x‖) * (‖g x‖ * ‖f x‖) := by
-  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
-  rw [norm_mul, ← mul_assoc]
-  exact mul_le_mul_of_nonneg_right ((norm_inner_le_norm _ _).trans
-    (mul_le_mul_of_nonneg_right (hb_bound x hx) (norm_nonneg _))) (norm_nonneg _)
-
 /-- If `‖b‖ ≤ β + |d|` on `Ω` with `d ∈ Lᵖ`, `u ∈ H¹(Ω)` and `φ ∈ H¹(Ω) ∩ L^q` with
 `1/p + 1/q = 1/2`, then the drift term `⟪b, ∇u⟫ φ` of the weak form is integrable. -/
 private theorem integrable_inner_gradient_mul_value
@@ -127,7 +117,8 @@ private theorem integrable_inner_gradient_mul_value
   (integrable_const_add_norm_mul_norm_mul_norm beta hd hpq (Lp.memLp (W1p.gradient u))
     (Lp.memLp _) hφ).mono'
     ((hb.inner (Lp.aestronglyMeasurable _)).mul (Lp.aestronglyMeasurable _))
-    (ae_norm_inner_mul_le_const_add_norm_mul hb_bound _ _)
+    ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx ↦
+      norm_inner_mul_le_of_norm_le (hb_bound x hx) _ _)
 
 variable [DecidableEq ι]
 
@@ -161,8 +152,7 @@ private theorem UniformlyEllipticOn.mul_norm_gradient_sq_le_integral_of_memLp_dr
   set f := W1p.value v
   set g := W1p.gradient v
   -- The coefficient bounds of the reduced operator `-∂ᵢ(aⁱʲ ∂ⱼ·) - eⁱ ∂ᵢ`.
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha aestronglyMeasurable_zero hc
-    (fun x hx eta xi ↦ h.upper_bound hx eta xi) (beta := 0) (fun x _ ↦ by simp) hc_bound
+  have hcoeff := h.memLp_energyIntegrand_zero_drift ha hc hc_bound
   have hbe_bound : ∀ x ∈ Omega, ‖((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) - e) x‖ ≤
       sigma := fun x hx ↦ by simpa using he_bound x hx
   have hcoeff' := memLp_energyIntegrand_of_bounds h.upper_nonneg ha
@@ -173,11 +163,9 @@ private theorem UniformlyEllipticOn.mul_norm_gradient_sq_le_integral_of_memLp_dr
   have hint₂ : Integrable (fun x ↦ (beta + ‖d x‖) * (‖g x‖ * ‖f x‖)) (mu.restrict Omega) :=
     integrable_const_add_norm_mul_norm_mul_norm beta hd hpq (Lp.memLp g) (Lp.memLp f) hfq
   have hneg : -∫ x in Omega, ⟪b x, g x⟫_ℝ * f x ∂mu ≤
-      ∫ x in Omega, (beta + ‖d x‖) * (‖g x‖ * ‖f x‖) ∂mu := by
-    refine (neg_le_abs _).trans ((Real.norm_eq_abs _).symm.le.trans
-      ((norm_integral_le_integral_norm _).trans
-      (integral_mono_of_nonneg (ae_of_all _ fun x ↦ norm_nonneg _) hint₂
-        (ae_norm_inner_mul_le_const_add_norm_mul hb_bound g f))))
+      ∫ x in Omega, (beta + ‖d x‖) * (‖g x‖ * ‖f x‖) ∂mu :=
+    neg_integral_inner_mul_le hint₂
+      ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx ↦ hb_bound x hx)
   have h₁ := mul_norm_gradient_sq_sub_le_energyFormH1_self h hcoeff' hbe_bound
     (fun _ _ ↦ le_rfl) v
   have h₂ := energyFormH1_sub_zero_posPartAbove_self_le hcoeff hcoeff' hc he hc_bound he_bound
@@ -239,26 +227,16 @@ private theorem UniformlyEllipticOn.ofReal_le_mul_eLpNorm_indicator_of_not_ae_va
     (W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq (ae_of_all _ fun x ↦ by positivity)
       (integrable_const_add_norm_mul_norm_mul_norm (sigma + beta) hd hpq (Lp.memLp g)
         (Lp.memLp f) hfq) hΓ (W1p.ae_mem_of_gradient_posPartAbove_ne_zero (by norm_num) hl u))
-  have hholder : ∫⁻ x in Γ, ‖sigma + beta + ‖d x‖‖ₑ * (‖g x‖ₑ * ‖f x‖ₑ) ∂μ ≤
-      eLpNorm (Γ.indicator fun x ↦ sigma + beta + ‖d x‖) p μ *
-        (eLpNorm g 2 μ * eLpNorm f q μ) := by
-    have : p.HolderTriple q 2 := ⟨hpq⟩
-    refine (lintegral_enorm_mul_enorm_mul_enorm_le (p := p) (q := q) (r := 2) (s := 2)
-      (w := fun x ↦ sigma + beta + ‖d x‖)
-      (aestronglyMeasurable_const.add hd.aestronglyMeasurable.norm).restrict
-      (Lp.aestronglyMeasurable g).restrict (Lp.aestronglyMeasurable f).restrict).trans ?_
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict hΓ.nullMeasurableSet]
-    gcongr <;> exact Measure.restrict_le_self
-  set B := eLpNorm (Γ.indicator fun x ↦ sigma + beta + ‖d x‖) p μ
-  have hcore : ENNReal.ofReal lam * ‖g‖ₑ ^ 2 ≤ S * B * ‖g‖ₑ ^ 2 := by
+  have : p.HolderTriple q 2 := ⟨hpq⟩
+  have hcore : ENNReal.ofReal lam * ‖g‖ₑ ^ 2 ≤
+      S * eLpNorm (Γ.indicator fun x ↦ sigma + beta + ‖d x‖) p μ * ‖g‖ₑ ^ 2 := by
     calc ENNReal.ofReal lam * ‖g‖ₑ ^ 2 = ENNReal.ofReal (lam * ‖g‖ ^ 2) := by
           rw [ENNReal.ofReal_mul h.pos.le, ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-      _ ≤ B * (eLpNorm g 2 μ * eLpNorm f q μ) := hlin.trans hholder
-      _ ≤ B * (‖g‖ₑ * (S * ‖g‖ₑ)) := by
-          rw [← Lp.eNorm_def]
-          gcongr
-          exact hsob v hmem
-      _ = S * B * ‖g‖ₑ ^ 2 := by ring
+      _ ≤ S * eLpNorm (fun x ↦ sigma + beta + ‖d x‖) p (μ.restrict Γ) * ‖g‖ₑ ^ 2 :=
+          hlin.trans (W1p.lintegral_enorm_mul_enorm_gradient_mul_enorm_value_le (t := 2)
+            (aestronglyMeasurable_const.add hd.aestronglyMeasurable.norm) (hsob v hmem) Γ)
+      _ = S * eLpNorm (Γ.indicator fun x ↦ sigma + beta + ‖d x‖) p μ * ‖g‖ₑ ^ 2 := by
+          rw [eLpNorm_indicator_eq_eLpNorm_restrict hΓ.nullMeasurableSet]
   -- `∇v ≠ 0`: otherwise the Sobolev inequality forces `v = 0`, that is `u ≤ l`.
   have hq0 : q ≠ 0 := by
     rintro rfl
@@ -326,10 +304,7 @@ theorem UniformlyEllipticOn.value_le_const_of_memLp_drift_of_forall_eLpNorm_le
     rwa [ENNReal.zero_rpow_of_pos hexp, mul_zero] at h
   have hdrift : Tendsto (fun j ↦ eLpNorm ((Γ j).indicator fun x ↦ ‖d x‖) p μ) atTop (𝓝 0) := by
     simp_rw [eLpNorm_indicator_eq_eLpNorm_restrict (hΓ _).nullMeasurableSet]
-    exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-      ((hd.norm.tendsto_eLpNorm_restrict_zero hp1 hp).comp htend)
-      (Eventually.of_forall fun _ ↦ bot_le)
-      (Eventually.of_forall fun j ↦ le_iSup_of_le (Γ j) (le_iSup_of_le le_rfl le_rfl))
+    exact hd.norm.tendsto_eLpNorm_restrict_of_tendsto_measure hp1 hp htend
   have hsum : Tendsto (fun j ↦ eLpNorm ((Γ j).indicator fun x ↦ C + ‖d x‖) p μ) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (by simpa using hconst.add hdrift) (fun _ ↦ zero_le) fun j ↦ ?_
@@ -370,8 +345,7 @@ theorem UniformlyEllipticOn.value_le_of_memLp_drift_of_forall_eLpNorm_le
             ∫ x in Omega, W1p.value v x * ⟪e x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu +
             ∫ x in Omega, ⟪b x, W1p.gradient v x⟫_ℝ * W1p.value (φ : W1p mu Omega 2) x ∂mu) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
-  have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha aestronglyMeasurable_zero hc
-    (fun x hx eta xi ↦ h.upper_bound hx eta xi) (beta := 0) (fun x _ ↦ by simp) hc_bound
+  have hcoeff := h.memLp_energyIntegrand_zero_drift ha hc hc_bound
   have hb_bound' : ∀ x ∈ Omega, ‖b x‖ ≤ beta + ‖d x‖ :=
     fun x hx ↦ (hb_bound x hx).trans (add_le_add_right (Real.le_norm_self _) _)
   -- The weak form is linear in `u`, so `u - v` is a weak subsolution.

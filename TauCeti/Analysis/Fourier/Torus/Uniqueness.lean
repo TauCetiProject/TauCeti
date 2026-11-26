@@ -37,6 +37,9 @@ almost everywhere the trigonometric polynomial `∑ n ∈ s, mFourier n • mFou
 * `MeasureTheory.Integrable.ae_eq_sum_mFourier_smul_mFourierCoeff`: an integrable function with
   finitely many nonzero Fourier coefficients agrees almost everywhere with a trigonometric
   polynomial.
+* `TauCeti.UnitAddTorus.coeFn_ae_eq_sum_mFourier_smul_mFourierCoeff`: the same for elements of
+  `L²(𝕋ᵈ)` taken for the product of the Haar probability measures, the space of Mathlib's
+  `UnitAddTorus.mFourierBasis`.
 -/
 
 public section
@@ -84,3 +87,31 @@ theorem Integrable.ae_eq_sum_mFourier_smul_mFourierCoeff (hf : Integrable f)
     · exact hs m hm
 
 end MeasureTheory
+
+namespace TauCeti.UnitAddTorus
+
+-- Mathlib's Fourier basis `mFourierBasis` lives on `L²` for the product of the Haar probability
+-- measures on the circle factors, given by this instance; use it here so that the statement
+-- applies to elements of that space.
+attribute [local instance 2000] instMeasureSpaceUnitAddCircle
+
+-- Mathlib records that this measure is a probability measure only with a file-local instance.
+local instance uniquenessIsProbabilityMeasureVolume :
+    IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
+  inferInstanceAs (IsProbabilityMeasure AddCircle.haarAddCircle)
+
+/-- A function in `L²(𝕋ᵈ)` whose Fourier coefficients vanish off a finite set `s` agrees almost
+everywhere with the trigonometric polynomial `∑_{n ∈ s} f̂(n) eₙ`: the form of
+`MeasureTheory.Integrable.ae_eq_sum_mFourier_smul_mFourierCoeff` for the product of the Haar
+probability measures on the circle factors. -/
+theorem coeFn_ae_eq_sum_mFourier_smul_mFourierCoeff
+    {f : Lp ℂ 2 (volume : Measure (UnitAddTorus d))} {s : Finset (d → ℤ)}
+    (hs : ∀ n ∉ s, mFourierCoeff f n = 0) :
+    f =ᵐ[volume] fun t ↦ ∑ n ∈ s, mFourier n t • mFourierCoeff f n := by
+  have hf : Integrable (f : UnitAddTorus d → ℂ) (Measure.pi fun _ ↦ AddCircle.haarAddCircle) :=
+    (Lp.memLp f).integrable one_le_two
+  rw [← volume_eq_pi_haarAddCircle] at hf
+  have h := hf.ae_eq_sum_mFourier_smul_mFourierCoeff hs
+  rwa [volume_eq_pi_haarAddCircle] at h
+
+end TauCeti.UnitAddTorus
