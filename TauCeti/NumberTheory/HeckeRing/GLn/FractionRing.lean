@@ -90,8 +90,9 @@ theorem mem_integralGL_iff {g : GL ι K} :
   · rintro ⟨A, hA, hAg⟩
     exact ⟨GeneralLinearGroup.mk'' A hA, Units.ext hAg⟩
 
-/-- Inverse transpose preserves `GL_ι(R)`. -/
-theorem inverseTranspose_mem_integralGL {g : GL ι K} :
+/-- Inverse transpose preserves `GL_ι(R)`. Not tagged `@[simp]` because `integralGL` is an `abbrev`
+for `MonoidHom.range`, so `MonoidHom.mem_range` already simplifies the left-hand side (`simpNF`). -/
+theorem inverseTranspose_mem_integralGL_iff {g : GL ι K} :
     GeneralLinearGroup.inverseTranspose g ∈ integralGL R K ι ↔ g ∈ integralGL R K ι := by
   have hmap (u : GL ι R) :
       GeneralLinearGroup.map (algebraMap R K) (GeneralLinearGroup.inverseTranspose u) =

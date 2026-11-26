@@ -448,4 +448,15 @@ theorem pairwise_disjoint_out_smul (hdisj : ∀ g ∉ H, Disjoint (g • V) V) :
 
 end Action
 
+/-- For a bijection `φ : G ≃ G` respecting left congruence modulo `K`, the chosen representative
+of `Quotient.congr φ hφ q` differs from `φ q.out` on the right by an element of `K`. -/
+theorem out_congr_eq_mul {G : Type*} [Group G] {K : Subgroup G} (φ : G ≃ G)
+    (hφ : ∀ a b : G, leftRel K a b ↔ leftRel K (φ a) (φ b)) (q : G ⧸ K) :
+    ∃ k ∈ K, (Quotient.congr φ hφ q).out = φ q.out * k := by
+  obtain ⟨⟨k, hk⟩, hq'⟩ := mk_out_eq_mul K (φ q.out)
+  refine ⟨k, hk, ?_⟩
+  have hq : Quotient.congr φ hφ q = mk (φ q.out) := by
+    simpa only [Quotient.out_eq] using Quotient.congr_mk φ hφ q.out
+  rw [hq, hq']
+
 end QuotientGroup

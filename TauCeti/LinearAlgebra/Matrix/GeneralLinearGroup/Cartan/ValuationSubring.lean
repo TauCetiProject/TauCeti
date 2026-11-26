@@ -7,8 +7,6 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
-public import TauCeti.NumberTheory.HeckeRing.GLn.FractionRing
 import Mathlib.Data.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Block
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
@@ -18,8 +16,9 @@ import Mathlib.LinearAlgebra.Matrix.Permutation
 # Cartan diagonalization for `GL_n` over a valuation subring
 
 Let `O : ValuationSubring F` be a valuation subring of a field `F`. Every square matrix
-`y : Matrix n n F` admits a Cartan factorization `y = k * diagonal d * k'` with
-`k, k' ∈ HeckeRing.GLn.integralGL O F n` (`ValuationSubring.exists_mul_diagonal_mul`).
+`y : Matrix n n F` admits a Cartan factorization
+`y = k * diagonal d * k'` with `k, k' : GL n O` mapped into `GL n F` via
+`GeneralLinearGroup.map (algebraMap O F)` (`ValuationSubring.exists_mul_diagonal_mul`).
 
 The proof proceeds by induction on `Fintype.card n` via pivot elimination over `O`:
 1. `ValuationSubring.exists_pivot_dvd` chooses an entry of maximal valuation, which `O`-divides
@@ -27,9 +26,6 @@ The proof proceeds by induction on `Fintype.card n` via pivot elimination over `
 2. `Matrix.exists_eq_mul_diagonal_mul_of_pivot_dvd` lifts a diagonalization of the Schur-complement
    block `(M - w · M p).toBlock (· ≠ p) (· ≠ p)` to a diagonalization of `M` via block-triangular
    matrices in `GL n O`.
-3. As a corollary, `ValuationSubring.exists_inverseTranspose_inv_eq` establishes Gelfand's
-   double-coset condition `inverseTranspose g⁻¹ = inverseTranspose k * g * k` (`k ∈ GL n O`) for
-   every `g : GL n F`.
 
 ## References
 
@@ -44,7 +40,7 @@ public section
 
 noncomputable section
 
-open Matrix Matrix.GeneralLinearGroup HeckeRing.GLn
+open Matrix Matrix.GeneralLinearGroup
 
 universe u
 
@@ -76,7 +72,7 @@ theorem exists_eq_mul_diagonal_mul_of_pivot_dvd {n : Type u} [Fintype n] [Decida
     have h := congrFun (congrFun h_block i) j
     simpa [Matrix.mul_apply, Matrix.diagonal_apply, GeneralLinearGroup.map,
       Algebra.smul_def] using h
-  have default_val : ((default : {i : n // i = p}) : n) = p := rfl
+  have default_val : ((default : {i : n // i = p}) : n) = p := (default : {i : n // i = p}).property
   refine ⟨lower, upper, D, (reindex e.symm e.symm).injective ?_⟩
   suffices M.submatrix e e =
       fromBlocks 1 0 ((of fun i j ↦ w i.val j.val).map (algebraMap R A))
@@ -103,78 +99,57 @@ namespace ValuationSubring
 
 /-- Every nonempty finite matrix over a field `F` has an entry that `O`-divides all other entries
 for any valuation subring `O : ValuationSubring F`. -/
-theorem exists_pivot_dvd {m : Type u} [Finite m] {F : Type*} [Field F]
-    (O : ValuationSubring F) (p : m) (y : Matrix m m F) :
+theorem exists_pivot_dvd {m : Type u} [Finite m] [Nonempty m] {F : Type*} [Field F]
+    (O : ValuationSubring F) (y : Matrix m m F) :
     ∃ ij₀ : m × m, ∀ ij : m × m, ∃ w : O, algebraMap O F w * y ij₀.1 ij₀.2 = y ij.1 ij.2 := by
   classical
   let : Fintype m := Fintype.ofFinite m
+  obtain ⟨p⟩ := ‹Nonempty m›
   obtain ⟨ij₀, -, hij₀⟩ := Finset.exists_max_image Finset.univ
     (fun ij : m × m ↦ O.valuation (y ij.1 ij.2)) ⟨(p, p), Finset.mem_univ _⟩
   exact ⟨ij₀, fun ij ↦ (O.valuation_le_iff _ _).1 (hij₀ ij (Finset.mem_univ _))⟩
 
 /-- **Diagonalization over a valuation subring.** For a valuation subring `O` of a field `F`,
-every square matrix `y : Matrix n n F` factors as `k * diagonal d * k'` with
-`k, k' ∈ HeckeRing.GLn.integralGL O F n`. -/
+every square matrix `y : Matrix n n F` factors as `k * diagonal d * k'` with `k, k' : GL n O`
+mapped into `GL n F`. -/
 theorem exists_mul_diagonal_mul {n : Type u} [Fintype n] [DecidableEq n] {F : Type*} [Field F]
     (O : ValuationSubring F) (y : Matrix n n F) :
-    ∃ (k : GL n F), k ∈ integralGL O F n ∧
-      ∃ (k' : GL n F), k' ∈ integralGL O F n ∧
-        ∃ d : n → F, y = k.val * diagonal d * k'.val := by
-  suffices ∀ {m : Type u} [Fintype m] [DecidableEq m] (y : Matrix m m F),
-      ∃ (k k' : GL m O) (d : m → F),
-        y = (GeneralLinearGroup.map (algebraMap O F) k).val * diagonal d *
-          (GeneralLinearGroup.map (algebraMap O F) k').val by
-    obtain ⟨k, k', d, h⟩ := this y
-    exact ⟨GeneralLinearGroup.map (algebraMap O F) k, ⟨k, rfl⟩,
-      GeneralLinearGroup.map (algebraMap O F) k', ⟨k', rfl⟩, d, h⟩
-  intro m _ _ y
-  induction h : Fintype.card m generalizing m with
+    ∃ (k k' : GL n O) (d : n → F),
+      y = (GeneralLinearGroup.map (algebraMap O F) k).val * diagonal d *
+        (GeneralLinearGroup.map (algebraMap O F) k').val := by
+  induction h : Fintype.card n generalizing n with
   | zero =>
-    have : IsEmpty m := Fintype.card_eq_zero_iff.1 h
+    have : IsEmpty n := Fintype.card_eq_zero_iff.1 h
     exact ⟨1, 1, 0, Matrix.ext fun i ↦ IsEmpty.elim inferInstance i⟩
   | succ r ih =>
-    obtain ⟨p⟩ : Nonempty m := Fintype.card_pos_iff.1 (by omega)
-    obtain ⟨⟨i₀, j₀⟩, hij₀⟩ := O.exists_pivot_dvd p y
-    let a : GL m O :=
+    have : Nonempty n := Fintype.card_pos_iff.1 (by omega)
+    obtain ⟨p⟩ := ‹Nonempty n›
+    obtain ⟨⟨i₀, j₀⟩, hij₀⟩ := O.exists_pivot_dvd y
+    let a : GL n O :=
       GeneralLinearGroup.mk'' ((Equiv.swap p i₀).permMatrix O) (by
-        simp; split_ifs <;> simp)
-    let b : GL m O :=
+        rw [Matrix.det_permutation]; exact (Units.isUnit _).map (Int.castRingHom O))
+    let b : GL n O :=
       GeneralLinearGroup.mk'' ((Equiv.swap p j₀).permMatrix O) (by
-        simp; split_ifs <;> simp)
-    set M : Matrix m m F :=
+        rw [Matrix.det_permutation]; exact (Units.isUnit _).map (Int.castRingHom O))
+    set M : Matrix n n F :=
       (GeneralLinearGroup.map (algebraMap O F) a).val * y *
         (GeneralLinearGroup.map (algebraMap O F) b).val with hM
-    have hM_entry (i j : m) : M i j = y (Equiv.swap p i₀ i) (Equiv.swap p j₀ j) := by
-      simp [hM, a, b, GeneralLinearGroup.map, Matrix.mul_apply, Equiv.Perm.permMatrix, apply_ite]
-      simp [Equiv.swap_apply_eq_iff]
-    have hpivot (i j : m) : ∃ w : O, algebraMap O F w * M p p = M i j := by
+    have hM_entry (i j : n) : M i j = y (Equiv.swap p i₀ i) (Equiv.swap p j₀ j) := by
+      have ha : (GeneralLinearGroup.map (algebraMap O F) a).val = (Equiv.swap p i₀).permMatrix F :=
+        by ext r c; simp [a, GeneralLinearGroup.map, Equiv.Perm.permMatrix, apply_ite]
+      have hb : (GeneralLinearGroup.map (algebraMap O F) b).val = (Equiv.swap p j₀).permMatrix F :=
+        by ext r c; simp [b, GeneralLinearGroup.map, Equiv.Perm.permMatrix, apply_ite]
+      simp [hM, ha, hb, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, Matrix.mul_apply,
+        Equiv.swap_apply_eq_iff]
+    have hpivot (i j : n) : ∃ w : O, algebraMap O F w * M p p = M i j := by
       simpa only [hM_entry, Equiv.swap_apply_left] using hij₀ (Equiv.swap p i₀ i, Equiv.swap p j₀ j)
     choose w hw using hpivot
     obtain ⟨k, l, d, h_block⟩ :=
-      ih ((M - of fun i : m ↦ algebraMap O F (w i p) • M p).toBlock (· ≠ p) (· ≠ p)) (by simp [h])
+      ih ((M - of fun i : n ↦ algebraMap O F (w i p) • M p).toBlock (· ≠ p) (· ≠ p)) (by simp [h])
     obtain ⟨lower, upper, D, factor⟩ := M.exists_eq_mul_diagonal_mul_of_pivot_dvd hw h_block
     refine ⟨a⁻¹ * lower, upper * b⁻¹, D, ?_⟩
     simp only [map_mul, map_inv, Units.val_mul, Matrix.mul_assoc, Units.eq_inv_mul_iff_mul_eq]
     simpa only [← Matrix.mul_assoc, Units.eq_mul_inv_iff_mul_eq, hM] using factor
-
-/-- **Gelfand's double-coset condition for `GL_n(F)` over a valuation subring `O`.**
-For every `g ∈ GL n F`, there is `k ∈ GL n O` such that `gᵀ = (kᵀ)⁻¹ * g * k`
-(written via `inverseTranspose g⁻¹ = inverseTranspose k * g * k`). -/
-theorem exists_inverseTranspose_inv_eq {n : Type u} [Fintype n] [DecidableEq n] {F : Type*}
-    [Field F] (O : ValuationSubring F) (g : GL n F) :
-    ∃ k ∈ integralGL O F n, inverseTranspose g⁻¹ = inverseTranspose k * g * k := by
-  obtain ⟨k, hk, l, hl, d, h_smith⟩ := O.exists_mul_diagonal_mul g.val
-  have hk_tr : (transposeMulEquiv n k).unop ∈ integralGL O F n := by
-    rw [unop_transposeMulEquiv_eq_inverseTranspose_inv, inverseTranspose_mem_integralGL]
-    exact Subgroup.inv_mem _ hk
-  refine ⟨l⁻¹ * (transposeMulEquiv n k).unop,
-    Subgroup.mul_mem _ (Subgroup.inv_mem _ hl) hk_tr, Units.ext ?_⟩
-  rw [map_mul, unop_transposeMulEquiv_eq_inverseTranspose_inv, inverseTranspose_inverseTranspose,
-    Units.val_mul, Units.val_mul, Units.val_mul, Units.val_mul, coe_inverseTranspose,
-    coe_inverseTranspose, coe_inverseTranspose, inv_inv, inv_inv, inv_inv, h_smith]
-  simp only [transpose_mul, diagonal_transpose, Matrix.mul_assoc]
-  rw [← Matrix.mul_assoc (k⁻¹).val k.val, Units.inv_mul, Matrix.one_mul,
-    ← Matrix.mul_assoc l.val (l⁻¹).val, Units.mul_inv, Matrix.one_mul]
 
 end ValuationSubring
 

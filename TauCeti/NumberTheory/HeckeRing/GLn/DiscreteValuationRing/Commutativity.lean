@@ -57,7 +57,7 @@ transpose of `k`. -/
 theorem transposeMulEquiv_mem_integralGL {g : GL (Fin n) K} (hg : g ∈ integralGL R K (Fin n)) :
     (GeneralLinearGroup.transposeMulEquiv (Fin n) g).unop ∈ integralGL R K (Fin n) := by
   rw [GeneralLinearGroup.unop_transposeMulEquiv_eq_inverseTranspose_inv,
-    inverseTranspose_mem_integralGL]
+    inverseTranspose_mem_integralGL_iff]
   exact Subgroup.inv_mem _ hg
 
 /-- Transposition as an anti-involution of the Hecke datum `(GL_n(K), GL_n(R))`. -/
