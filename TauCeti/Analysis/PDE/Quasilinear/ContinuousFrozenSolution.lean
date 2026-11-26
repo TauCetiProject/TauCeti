@@ -129,6 +129,22 @@ private theorem extendClosure_ae_eq
   filter_upwards [h, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
   rw [extendClosure_of_mem u (subset_closure hxΩ), hx]
 
+/-- Two bounded continuous functions on `closure Ω` that agree almost everywhere on `Ω` with the
+same function `w` are equal; this is `IsOpen.ext_closure_of_ae_eq` in the form used below. -/
+private theorem eq_of_ae_eq_of_ae_eq
+    {u u' : closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) →ᵇ ℝ}
+    {w : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
+    (h : ∀ᵐ x ∂volume.restrict Omega,
+      ∀ hx : x ∈ closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), u ⟨x, hx⟩ = w x)
+    (h' : ∀ᵐ x ∂volume.restrict Omega,
+      ∀ hx : x ∈ closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))), u' ⟨x, hx⟩ = w x) :
+    u = u' := by
+  refine DFunLike.coe_injective <| Omega.isOpen.ext_closure_of_ae_eq (μ := volume)
+    u.continuous u'.continuous ?_
+  filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 h,
+    (ae_restrict_iff' Omega.isOpen.measurableSet).1 h'] with x h₁ h₂ hx
+  rw [h₁ hx, h₂ hx]
+
 private theorem holderOnWith_extendClosure
     {u : closure (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) →ᵇ ℝ} {C α : ℝ≥0}
     (hu : HolderWith C α u) :
@@ -238,11 +254,7 @@ private theorem exists_forall_holderWith_and_ae_eq
           u ⟨x, hx⟩ = W1p.value (frozenSolution A g ℓ (extendClosure v)) x := ⟨u, hspec⟩
   have hT : continuousFrozenSolution A g ℓ v = u := by
     rw [continuousFrozenSolution, dite_eq_left hex]
-    refine DFunLike.coe_injective <| Omega.isOpen.ext_closure_of_ae_eq (μ := volume)
-      (BoundedContinuousFunction.continuous _) (BoundedContinuousFunction.continuous _) ?_
-    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hex.choose_spec,
-      (ae_restrict_iff' Omega.isOpen.measurableSet).1 hspec] with x h₁ h₂ hx
-    rw [h₁ hx, h₂ hx]
+    exact eq_of_ae_eq_of_ae_eq hex.choose_spec hspec
   rw [hT]
   exact ⟨hu, hspec⟩
 
@@ -287,12 +299,7 @@ theorem eq_continuousFrozenSolution_iff
   constructor
   · rintro rfl
     exact (hT v).2
-  · intro hu
-    refine DFunLike.coe_injective <| Omega.isOpen.ext_closure_of_ae_eq (μ := volume)
-      (BoundedContinuousFunction.continuous _) (BoundedContinuousFunction.continuous _) ?_
-    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 hu,
-      (ae_restrict_iff' Omega.isOpen.measurableSet).1 (hT v).2] with x h₁ h₂ hx
-    rw [h₁ hx, h₂ hx]
+  · exact fun hu => eq_of_ae_eq_of_ae_eq hu (hT v).2
 
 /-- **A uniform Hölder bound for the frozen-coefficient map.** Under the hypotheses of
 `TauCeti.PDE.eq_continuousFrozenSolution_iff`, there are `α > 0` and `C` such that every
@@ -476,11 +483,8 @@ theorem isFixedPt_continuousFrozenSolution_iff
         fun φ => by
           rw [energyFormH1_congr_ae (hval.mono fun x hx => congrArg (A x) hx) .rfl .rfl]
           exact hu φ
-    refine DFunLike.coe_injective <| Omega.isOpen.ext_closure_of_ae_eq (μ := volume)
-      (BoundedContinuousFunction.continuous _) (BoundedContinuousFunction.continuous _) ?_
-    filter_upwards [(ae_restrict_iff' Omega.isOpen.measurableSet).1 (hT v).2,
-      (ae_restrict_iff' Omega.isOpen.measurableSet).1 hvu] with x h₁ h₂ hx
-    rw [h₁ hx, h₂ hx, ← hfrozen]
+    rw [hfrozen] at hvu
+    exact eq_of_ae_eq_of_ae_eq (hT v).2 hvu
 
 /-- **Schauder's theorem for the frozen-coefficient map.** Under the hypotheses of
 `TauCeti.PDE.eq_continuousFrozenSolution_iff`, `continuousFrozenSolution A g ℓ` has a fixed point
