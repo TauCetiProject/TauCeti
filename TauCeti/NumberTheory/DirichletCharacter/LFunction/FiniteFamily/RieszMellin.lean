@@ -9,6 +9,7 @@ public import Mathlib.Data.Finsupp.Order
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
 import TauCeti.Analysis.Contour.Residue.Germ
 import TauCeti.Analysis.Contour.Residue.Noncancellation
+import TauCeti.Analysis.MellinTransform.WeightedReal
 import TauCeti.Analysis.Meromorphic.Order
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 
@@ -84,13 +85,12 @@ theorem hasLaplace_dirichletFamilyRieszRemainder_comp_exp
     (w : PrimitiveDirichletCharacter →₀ ℝ) {s : ℂ} (hs : 1 < s.re) :
     HasLaplace (fun u ↦ ((w.sum fun χ c ↦ c * (χ.rieszRemainder (Real.exp u)).re : ℝ) : ℂ)) s
       (dirichletFamilyRieszRemainderMellin w s) := by
-  have h := hasLaplace_sum (u := w.support) fun χ _ ↦
-    ((χ.hasLaplace_rieszRemainder_comp_exp hs).add
-      (χ⁻¹.hasLaplace_rieszRemainder_comp_exp hs)).const_smul ((w χ : ℂ) / 2)
+  have h := hasLaplace_comp_exp_finsupp_sum_re w (j := Inv.inv) (s := s)
+    (fun χ _ y _ ↦ χ.rieszRemainder_inv y)
+    (fun χ _ ↦ by simpa only [mul_comm, neg_add'] using χ.integrableOn_rieszRemainder_mul_cpow hs)
+    (fun χ _ ↦ by simpa only [mul_comm, neg_add'] using χ.integral_rieszRemainder_mul_cpow hs)
   rw [dirichletFamilyRieszRemainderMellin_apply]
-  simpa only [Finsupp.sum, ofReal_sum, ofReal_mul, Complex.re_eq_add_conj,
-    ← PrimitiveDirichletCharacter.rieszRemainder_inv, Pi.smul_apply, smul_eq_mul,
-    Pi.add_apply, Function.comp_apply, mul_div_assoc, div_mul_eq_mul_div] using h
+  simpa only [mul_div_assoc, div_mul_eq_mul_div] using h
 
 private theorem meromorphic_rieszPair (χ : PrimitiveDirichletCharacter) :
     Meromorphic (rieszRemainderMellin χ.character.LFunction +
