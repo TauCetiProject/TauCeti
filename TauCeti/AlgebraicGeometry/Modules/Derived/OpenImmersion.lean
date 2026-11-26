@@ -128,9 +128,8 @@ private lemma totalDirectImageCompDerivedRestrictAux_app (K : CochainComplex U.M
       (Modules.restrictFunctor j).mapDerivedCategoryFactorsh.hom.app
           ((HomotopyCategory.quotient _ _).obj (((pushforward j).mapHomologicalComplex _).obj K)) ≫
         Qh.map ((HomotopyCategory.quotient _ _).map
-          ((NatTrans.mapHomologicalComplex (restrictAdjunction j).counit _).app K)) := by
-  simp only [totalDirectImageCompDerivedRestrictAux]
-  rfl
+          ((NatTrans.mapHomologicalComplex (restrictAdjunction j).counit _).app K)) :=
+  Quotient.natTransLift_app _ _ _ _ K
 
 /-- On a complex `K` placed in the homotopy category, the auxiliary transformation of
 `Scheme.Hom.totalDirectImageCompDerivedRestrictAux` is an isomorphism, induced by the counit
@@ -240,9 +239,8 @@ private lemma totalDirectImageRestrictAux_app (K : CochainComplex U.Modules ℤ)
           ((HomotopyCategory.quotient _ _).obj (((Modules.restrictFunctor i).mapHomologicalComplex
             _).obj K)) ≫
         k.totalDirectImage.map ((Modules.restrictFunctor i).mapDerivedCategoryFactorsh.inv.app
-          ((HomotopyCategory.quotient _ _).obj K)) := by
-  simp only [totalDirectImageRestrictAux]
-  rfl
+          ((HomotopyCategory.quotient _ _).obj K)) :=
+  Quotient.natTransLift_app _ _ _ _ K
 
 /-- The restriction map `Rj_* K ⟶ Rk_* (K|_W)` for open immersions `i : W ⟶ U` and
 `j : U ⟶ X` with `i ≫ j = k`, natural in `K ∈ D(𝒪_U)`: the morphism of right derived functors
