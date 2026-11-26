@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.SeparatingContour.Basic
+public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Barnes.Basic
 import Mathlib.Analysis.Analytic.Constructions
 import TauCeti.Algebra.Order.Ring.Abs
 import TauCeti.Analysis.Complex.Basic
@@ -23,12 +23,15 @@ import TauCeti.Topology.MetricSpace.SeparatedBalls
 This module defines the canonical abscissa-independent separating-contour Mellin–Barnes integral
 `Complex.mellinBarnesIntegral` representing `Γ(a) Γ(b) 𝐅(a, b; c; z)` for `a, b ∉ -ℕ`,
 `-z ∈ Complex.slitPlane`, and all `c : ℂ` (and hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)` when
-`c ∉ -ℕ`), and proves joint four-variable holomorphy of both `Complex.hypergeometricMellinBarnes`
-(at fixed `σ < 0`) and `Complex.mellinBarnesIntegral` on
-`{(a, b, c, z) | a ∉ -ℕ ∧ b ∉ -ℕ ∧ -z ∈ Complex.slitPlane}` across all lower parameters `c : ℂ`,
-including resonant integer differences `a - b ∈ ℤ` where simple pole candidates coalesce
-(potentially producing double poles, though reciprocal Gamma zeros can lower their order or
-cancel the pole).
+`c ∉ -ℕ`), and proves joint four-variable holomorphy across all lower parameters `c : ℂ`
+(including resonant integer differences `a - b ∈ ℤ`, where simple pole candidates coalesce,
+potentially producing double poles though reciprocal Gamma zeros can lower their order or cancel
+the pole):
+* for fixed `σ < 0`, `Complex.hypergeometricMellinBarnes` is jointly holomorphic on the domain
+  where `a, b ∉ -ℕ`, `-z ∈ Complex.slitPlane`, and additionally `∀ k : ℕ, a.re + σ ≠ -k` and
+  `∀ k : ℕ, b.re + σ ≠ -k` (avoiding poles on the vertical line `Re t = σ`);
+* `Complex.mellinBarnesIntegral` is jointly holomorphic on
+  `{(a, b, c, z) | a ∉ -ℕ ∧ b ∉ -ℕ ∧ -z ∈ Complex.slitPlane}`.
 
 Locally around `(a₀, b₀, c₀, z₀)`, fixing `σ < 0` avoiding `-Re a₀ - ℕ` and `-Re b₀ - ℕ`, joint
 holomorphy of the vertical integral follows from compact-segment holomorphy, uniform Stirling decay,

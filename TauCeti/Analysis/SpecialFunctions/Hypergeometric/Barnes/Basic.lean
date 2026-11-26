@@ -26,7 +26,7 @@ This module extends `TauCeti.Analysis.SpecialFunctions.Hypergeometric.Barnes.Con
 * uniform vertical-strip exponential decay bounds
   `Complex.exists_norm_hypergeometricMellinBarnesIntegrand_vertical_le` on bounded parameter balls
   and compact sectorial subsets of `-z ∈ Complex.slitPlane`, supporting locally uniform truncation
-  and joint four-variable holomorphy in `SeparatingContour/Analyticity.lean`.
+  and joint four-variable holomorphy in `Barnes/Analyticity.lean`.
 
 ## Main results
 

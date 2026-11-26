@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
-public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.SeparatingContour.Analyticity
+public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Barnes.Analyticity
 import Mathlib.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
