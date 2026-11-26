@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Chow
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.Projective.Basic
+public import TauCeti.Topology.Algebra.PointTopology.Scheme.Surjective
 public import TauCeti.Topology.Maps.Proper.Basic
 public import TauCeti.Topology.Maps.Proper.LocalAtTarget
 
