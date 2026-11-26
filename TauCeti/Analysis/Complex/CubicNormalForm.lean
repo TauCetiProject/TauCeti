@@ -580,10 +580,7 @@ theorem exists_translated_cubic_normal_form {E : Type*} [NormedAddCommGroup E] [
         (hηα.fun_sub (haα.fun_mul hζα)).fun_add ((haα.fun_pow 3).mul_const (3 : ℂ)⁻¹)⟩
   · filter_upwards [hw, continuousAt_fst.eventually ha] with q ⟨hwq, hpq⟩ haq
     refine ⟨hwq.sub (haq.comp q differentiableAt_fst), ?_⟩
-    rw [hpq, ← add_pow_three_div_three_sub_mul_add (w q - a q.1) (a q.1)
-      (a q.1 ^ 2 - ζ q.1) (η q.1 - a q.1 * ζ q.1 + a q.1 ^ 3 / 3)]
-    simp only [sub_add_cancel, sub_sub_cancel]
-    congr 1
+    rw [hpq]
     ring
 
 /-! ### Critical points, jet identities, and nondegeneracy -/

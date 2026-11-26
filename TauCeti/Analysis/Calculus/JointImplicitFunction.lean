@@ -308,14 +308,10 @@ theorem exists_nhds_bijOn_jointImplicitFunctionOfProdDomain
       OpenPartialHomeomorph.transHomeomorph_apply, D]
   have he_src : e.source = D.toOpenPartialHomeomorph.source ∩ S₀ := by
     rw [OpenPartialHomeomorph.restrOpen_source, OpenPartialHomeomorph.transHomeomorph_source]
-  have he_tgt_sub : e.target ⊆ e₀.target := fun y hy ↦ by
-    have hsrc : e₀.symm y ∈ e₀.source := by
-      have hmem := e.map_target hy
-      rw [he_src] at hmem
-      simpa [e, OpenPartialHomeomorph.coe_restrOpen_symm,
-        e₀, OpenPartialHomeomorph.transHomeomorph_source] using hmem.1
-    simpa [e, OpenPartialHomeomorph.coe_restrOpen, OpenPartialHomeomorph.coe_restrOpen_symm]
-      using (e.right_inv hy) ▸ e₀.map_source hsrc
+  have he_tgt : e.target = e₀.target ∩ e₀.symm ⁻¹' S₀ :=
+    (congrArg PartialEquiv.target (e₀.restrOpen_toPartialEquiv S₀ hS₀_open)).trans
+      (e₀.toPartialEquiv.restr_target S₀)
+  have he_tgt_sub : e.target ⊆ e₀.target := he_tgt ▸ Set.inter_subset_left
   have he_symm : Set.EqOn e.symm (fun p : E₁ × F ↦ (p.1, ψ p)) e.target := fun p hp ↦ by
     have hp₀ : p.swap ∈ D.toOpenPartialHomeomorph.target := by
       simpa [e₀, OpenPartialHomeomorph.transHomeomorph_target] using he_tgt_sub hp
