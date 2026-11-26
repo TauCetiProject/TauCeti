@@ -15,6 +15,7 @@ public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.PDE.Spectrum.CompleteFamily
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
@@ -708,53 +709,6 @@ theorem exists_value_ae_eq_sin_two_mul_add_one_and_inner_gradient_eq (hab : a < 
     Real.cos_add_pi_div_two, Real.sin_nat_mul_pi]
   simp
 
-/-- The weak eigenvalues of `-Δ` on `W^{1,2}_Γ(a, b)` are the eigenvalues of a family of weak
-eigenfunctions, with values `x ↦ F k (x 0)`, that is complete in `L²(a, b)`: any other `κ` would
-have its eigenfunctions orthogonal to the whole family, since the form `∫ ∇u · ∇v` is
-symmetric. -/
-private theorem exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
-    {Γ : Set (EuclideanSpace ℝ (Fin 1))} {kappas : ℕ → ℝ} (F : ℕ → ℝ → ℝ)
-    (w : ℕ → W1pVanishingOn volume (intervalDomain a b) 2 Γ)
-    (hwv : ∀ k, W1p.value (w k : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x => F k (x 0))
-    (hw0 : ∀ k, W1p.value (w k : W1p volume (intervalDomain a b) 2) ≠ 0)
-    (hw : ∀ k, ∀ v : W1pVanishingOn volume (intervalDomain a b) 2 Γ,
-      ⟪W1p.gradient (w k : W1p volume (intervalDomain a b) 2),
-          W1p.gradient (v : W1p volume (intervalDomain a b) 2)⟫_ℝ =
-        kappas k * ⟪W1p.value (w k : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hc : ∀ f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))),
-      (∀ k, ∫ x in intervalDomain a b, f x * F k (x 0) = 0) → f = 0)
-    {kappa : ℝ} :
-    (∃ u : W1pVanishingOn volume (intervalDomain a b) 2 Γ, u ≠ 0 ∧
-      ∀ v : W1pVanishingOn volume (intervalDomain a b) 2 Γ,
-        ⟪W1p.gradient (u : W1p volume (intervalDomain a b) 2),
-            W1p.gradient (v : W1p volume (intervalDomain a b) 2)⟫_ℝ =
-          kappa * ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-            W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ) ↔
-      ∃ k, kappa = kappas k := by
-  constructor
-  · rintro ⟨u, hu0, hu⟩
-    by_contra hne
-    push Not at hne
-    refine hu0 (W1pVanishingOn.valueL_injective ?_)
-    rw [map_zero, W1pVanishingOn.valueL_apply]
-    refine hc _ fun k => ?_
-    -- `κ ⟪u, w k⟫ = ∫ ∇u · ∇(w k) = κₖ ⟪u, w k⟫`, and `κ ≠ κₖ`.
-    have h1 := hu (w k)
-    rw [real_inner_comm, hw k u, real_inner_comm (W1p.value _)] at h1
-    have h2 : (kappa - kappas k) * ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-        W1p.value (w k : W1p volume (intervalDomain a b) 2)⟫_ℝ = 0 := by
-      linarith
-    rw [← (mul_eq_zero.1 h2).resolve_left (sub_ne_zero.2 (hne k)), L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hwv k] with x hx
-    simp [hx, mul_comm]
-  · rintro ⟨k, rfl⟩
-    refine ⟨w k, fun h => hw0 k ?_, hw k⟩
-    rw [← W1pVanishingOn.valueL_apply, h, map_zero]
-
 /-- **The weak Neumann eigenvalues of `-Δ` on an interval.** On `(a, b)` they are exactly the
 numbers `(k π / (b - a))²` with `k ≥ 0`: the problem
 `∫ ∇u · ∇v = κ ∫ u v` for every `v ∈ H¹_∅(a, b)` has a nonzero solution `u ∈ H¹_∅(a, b)`,
@@ -774,7 +728,8 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty (hab : 
       ∃ k : ℕ, kappa = (k * π / (b - a)) ^ 2 := by
   choose w hwv hw using exists_value_ae_eq_cos_and_inner_gradient_eq hab
   refine exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
-    (fun k t => Real.cos (k * π * (t - a) / (b - a))) w hwv (fun k => ?_) hw
+    (fun (k : ℕ) (x : EuclideanSpace ℝ (Fin 1)) => Real.cos (k * π * (x 0 - a) / (b - a))) w hwv
+    (fun k => ?_) hw
     (eq_zero_of_forall_setIntegral_mul_cos_eq_zero hab)
   exact value_ne_zero_of_value_ae_eq hab (F := fun t => Real.cos (k * π * (t - a) / (b - a)))
     (by fun_prop) (left_mem_Icc.2 hab.le) (by simp) (hwv k)
@@ -795,7 +750,8 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_left (hab : a
       ∃ k : ℕ, kappa = ((2 * k + 1) * π / (2 * (b - a))) ^ 2 := by
   choose w hwv hw using exists_value_ae_eq_sin_two_mul_add_one_and_inner_gradient_eq hab
   refine exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
-    (fun k t => Real.sin ((2 * k + 1) * π * (t - a) / (2 * (b - a)))) w hwv (fun k => ?_) hw
+    (fun (k : ℕ) (x : EuclideanSpace ℝ (Fin 1)) =>
+      Real.sin ((2 * k + 1) * π * (x 0 - a) / (2 * (b - a)))) w hwv (fun k => ?_) hw
     (eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero hab)
   -- At `b` the mode is `sin (k π + π / 2) = ± 1`.
   refine value_ne_zero_of_value_ae_eq hab

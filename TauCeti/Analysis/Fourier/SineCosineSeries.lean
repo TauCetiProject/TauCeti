@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.MeasureTheory.Constructions.Pi
-import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Fourier.Uniqueness
 
 /-!
@@ -59,8 +59,6 @@ orthogonal to every sine, so it vanishes by the one-dimensional theorem, and Fub
   Dirichlet condition at `a` and a Neumann condition at `b`.
 * `TauCeti.ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero`: completeness of the products of
   sines among the integrable functions on a box.
-* `TauCeti.ae_eq_zero_prod_of_forall_integral_mul_eq_zero`: completeness passes from a system in
-  the first variable of a product to the whole product, slice by slice.
 
 ## References
 
@@ -382,31 +380,6 @@ theorem ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero {g : ℝ �
   filter_upwards [ae_restrict_of_ae_restrict_of_subset (Ioc_subset_Ioc_right (by linarith))
     hzero, ae_restrict_mem measurableSet_Ioc] with x hx hxm
   simpa [hxm.2] using hx
-
-/-- **Completeness in the first variable of a product.** Let `e k`, `k ∈ ι` countable, be a
-complete system for `μ`: an integrable function orthogonal to every `e k` vanishes almost
-everywhere. If `G` is integrable on `μ × ν` and for every `k` the coefficient
-`y ↦ ∫ G (t, y) e k t dμ(t)` vanishes for almost every `y`, then `G` vanishes almost everywhere.
-For almost every `y` the slice `G (·, y)` is integrable and orthogonal to every `e k`, so it
-vanishes, and Tonelli concludes. This is how completeness passes from a system on an interval to
-the separated systems on a product of intervals. -/
-theorem ae_eq_zero_prod_of_forall_integral_mul_eq_zero {α β ι : Type*} [MeasurableSpace α]
-    [MeasurableSpace β] [Countable ι] {μ : Measure α} {ν : Measure β} [SFinite μ] [SFinite ν]
-    {e : ι → α → ℝ}
-    (he : ∀ g : α → ℝ, Integrable g μ → (∀ k, ∫ t, g t * e k t ∂μ = 0) → g =ᵐ[μ] 0)
-    {G : α × β → ℝ} (hG : Integrable G (μ.prod ν))
-    (h : ∀ k, (fun y => ∫ t, G (t, y) * e k t ∂μ) =ᵐ[ν] 0) :
-    G =ᵐ[μ.prod ν] 0 := by
-  have hslice : ∀ᵐ y ∂ν, (fun t => G (t, y)) =ᵐ[μ] 0 := by
-    filter_upwards [ae_all_iff.2 h, hG.prod_left_ae] with y hy hyi
-    exact he _ hyi hy
-  have hlin : ∫⁻ z, ‖G z‖ₑ ∂μ.prod ν = 0 := by
-    rw [lintegral_prod_symm _ hG.aestronglyMeasurable.eNorm]
-    refine lintegral_eq_zero_of_ae_eq_zero ?_
-    filter_upwards [hslice] with y hy
-    exact lintegral_eq_zero_of_ae_eq_zero (by filter_upwards [hy] with t ht; simp [ht])
-  filter_upwards [(lintegral_eq_zero_iff' hG.aestronglyMeasurable.eNorm).1 hlin] with z hz
-  simpa using hz
 
 /-- Completeness of the sine system in the first variable of a product, with a parameter `y`:
 if for every `k ≥ 1` the coefficient `y ↦ ∫ G (t, y) sin (k π (t - a) / (b - a)) dt` vanishes for
