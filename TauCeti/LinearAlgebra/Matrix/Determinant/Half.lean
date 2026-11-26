@@ -143,6 +143,19 @@ theorem two_mul_halfDet (hι : Odd (Fintype.card ι)) (A : Matrix ι ι R) :
   ext i j
   simp [RingHom.mapMatrix_apply]
 
+/-- The half-determinant of the zero matrix is `0`. -/
+@[simp]
+theorem halfDet_zero : (0 : Matrix ι ι R).halfDet = 0 := by
+  by_cases hι : Odd (Fintype.card ι)
+  · have : Nonempty ι := Fintype.card_pos_iff.mp hι.pos
+    have hℤ : (0 : Matrix ι ι ℤ).halfDet = 0 := by
+      have h := two_mul_halfDet hι (0 : Matrix ι ι ℤ)
+      rw [transpose_zero, add_zero, det_zero] at h
+      exact (mul_eq_zero.mp h).resolve_left two_ne_zero
+    have h := map_halfDet (Int.castRingHom R) (0 : Matrix ι ι ℤ)
+    rwa [hℤ, map_zero, Matrix.map_zero _ (map_zero _), eq_comm] at h
+  · exact halfDet_of_not_odd hι _
+
 /-- In the polynomial ring over `ℤ`, `2` cancels. -/
 private theorem eq_of_two_mul_eq {σ : Type*} {a b : MvPolynomial σ ℤ} (h : 2 * a = 2 * b) :
     a = b :=

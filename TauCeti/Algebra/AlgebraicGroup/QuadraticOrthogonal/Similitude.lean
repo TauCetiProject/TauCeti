@@ -456,14 +456,13 @@ theorem mem_ker_multiplierPoints_iff (p : pointsSubgroup R n q A) :
   rw [MonoidHom.mem_ker, multiplierPoints_apply]
 
 /-- **For a nondegenerate form of positive rank, `g` determines the multiplier**: if `(g, c)` and
-`(g, c')` are similitudes of `q_A`, then `c = c'`. Indeed `(c - c') q_A(x) = 0` for every `x`,
-and the values of the nondegenerate form `q_A` generate the unit ideal
-(`QuadraticForm.span_range_eq_top_of_isDiscrNondegenerate`). Nondegeneracy is in the sense of
+`(g, c')` are similitudes of `q_A`, then `c = c'`. Nondegeneracy is in the sense of
 `QuadraticForm.IsDiscrNondegenerate`, with no assumption on `2`. -/
 theorem snd_eq_of_fst_eq (hn : 0 < n) (hq : IsDiscrNondegenerate q)
     {p p' : GL (Fin n) A × Aˣ} (hp : p ∈ pointsSubgroup R n q A)
     (hp' : p' ∈ pointsSubgroup R n q A) (h : p.1 = p'.1) : p.2 = p'.2 := by
   have : Nonempty (Fin n) := ⟨⟨0, hn⟩⟩
+  -- `(c - c') q_A(x) = 0` for every `x`, and the values of `q_A` generate the unit ideal.
   refine Units.ext (sub_eq_zero.mp (eq_zero_of_forall_mul_eq_zero (Pi.basisFun A (Fin n))
     (hq.baseChangeForm A) fun x ↦ ?_))
   rw [sub_mul, ← hp x, ← hp' x, h, sub_self]
