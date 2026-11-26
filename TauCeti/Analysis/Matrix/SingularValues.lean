@@ -9,6 +9,8 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
+import Mathlib.Analysis.InnerProductSpace.NormDet
+
 /-!
 # Singular values and two-sided unitary matrix orbits
 
@@ -17,6 +19,9 @@ agree. The singular values are Mathlib's `LinearMap.singularValues`, applied thr
 `Matrix.toEuclideanLin`; no second enumeration is introduced.
 The estimate `Matrix.abs_sq_singularValues_sub_le` controls squared singular values by the
 operator-norm distance of the source Gram matrix from a scalar matrix.
+
+For a square matrix, the norm of the determinant is the product of the singular values,
+so the determinant is nonzero exactly when all singular values in the finite list are nonzero.
 
 `Matrix.exists_unitary_mul_diagonal_mul_unitary` reads the operator singular value decomposition
 in the standard orthonormal basis. The orbit characterization then identifies the diagonal
@@ -44,6 +49,20 @@ variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 variable {κ : Type*} [Fintype κ] [DecidableEq κ]
+
+/-- The norm of the determinant of a square matrix is the product of its singular values.
+This is the matrix form of `LinearMap.normDet_eq_prod_singularValues`. -/
+theorem norm_det_eq_prod_singularValues (A : Matrix ι ι 𝕜) :
+    ‖A.det‖ = ∏ i : Fin (Fintype.card ι), (toEuclideanLin A).singularValues i := by
+  rw [← LinearMap.det_toLpLin 2 A, ← LinearMap.normDet_eq_norm_det,
+    LinearMap.normDet_eq_prod_singularValues, finrank_euclideanSpace, Fin.prod_univ_eq_prod_range]
+
+/-- A square matrix has nonzero determinant exactly when all singular values indexed by
+`Fin (Fintype.card ι)` are nonzero. -/
+theorem det_ne_zero_iff_forall_singularValues_ne_zero (A : Matrix ι ι 𝕜) :
+    A.det ≠ 0 ↔ ∀ i : Fin (Fintype.card ι), (toEuclideanLin A).singularValues i ≠ 0 := by
+  rw [← norm_ne_zero_iff, A.norm_det_eq_prod_singularValues]
+  simp [Finset.prod_ne_zero_iff]
 
 /-- Left multiplication by a unitary matrix preserves every singular value. -/
 theorem singularValues_toEuclideanLin_unitary_mul
@@ -174,13 +193,13 @@ private theorem exists_unitary_mul_mul_unitary_eq_self_fin [NeZero n]
   -- Conjugation by a unitary matrix preserves the determinant.
   refine ⟨P * D₁ * star P, star Q * D₂ * Q, ?_, ?_, ?_⟩
   · rw [Submonoid.coe_mul, Submonoid.coe_mul, Unitary.coe_star,
-      det_conj_of_mul_eq_one (Unitary.mul_star_self_of_mem P.2)
-        (Unitary.star_mul_self_of_mem P.2),
+      det_conj_of_mul_eq_one (Unitary.mul_star_self_of_mem P.property)
+        (Unitary.star_mul_self_of_mem P.property),
       det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i)]
     simp
   · rw [Submonoid.coe_mul, Submonoid.coe_mul, Unitary.coe_star,
-      det_conj_of_mul_eq_one (Unitary.star_mul_self_of_mem Q.2)
-        (Unitary.mul_star_self_of_mem Q.2),
+      det_conj_of_mul_eq_one (Unitary.star_mul_self_of_mem Q.property)
+        (Unitary.mul_star_self_of_mem Q.property),
       det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i)]
     simp
   · simp only [Submonoid.coe_mul]
@@ -204,8 +223,8 @@ theorem exists_unitary_mul_mul_unitary_eq_self [Nonempty ι] (A : Matrix ι ι �
   have : NeZero (Fintype.card ι) := ⟨Fintype.card_ne_zero⟩
   obtain ⟨X, Y, hX, hY, hXY⟩ := exists_unitary_mul_mul_unitary_eq_self_fin
     (A.submatrix e.symm e.symm) ha hb (by rwa [det_submatrix_equiv_self])
-  refine ⟨⟨(X : Matrix _ _ 𝕜).submatrix e e, submatrix_equiv_mem_unitary.mpr X.2⟩,
-    ⟨(Y : Matrix _ _ 𝕜).submatrix e e, submatrix_equiv_mem_unitary.mpr Y.2⟩,
+  refine ⟨⟨(X : Matrix _ _ 𝕜).submatrix e e, submatrix_equiv_mem_unitary.mpr X.property⟩,
+    ⟨(Y : Matrix _ _ 𝕜).submatrix e e, submatrix_equiv_mem_unitary.mpr Y.property⟩,
     (det_submatrix_equiv_self e _).trans hX, (det_submatrix_equiv_self e _).trans hY, ?_⟩
   have hA : (A.submatrix e.symm e.symm).submatrix e e = A := by simp
   calc (X : Matrix _ _ 𝕜).submatrix e e * A * (Y : Matrix _ _ 𝕜).submatrix e e
@@ -225,16 +244,16 @@ theorem exists_specialUnitary_mul_mul_specialUnitary_iff_singularValues_eq_and_d
   constructor
   · rintro ⟨U, V, rfl⟩
     refine ⟨(exists_unitary_mul_mul_unitary_iff_singularValues_eq A _).mp
-      ⟨⟨U, U.2.1⟩, ⟨V, V.2.1⟩, rfl⟩, ?_⟩
-    rw [det_mul, det_mul, (mem_specialUnitaryGroup_iff.mp U.2).2,
-      (mem_specialUnitaryGroup_iff.mp V.2).2, one_mul, mul_one]
+      ⟨⟨U, U.property.1⟩, ⟨V, V.property.1⟩, rfl⟩, ?_⟩
+    rw [det_mul, det_mul, (mem_specialUnitaryGroup_iff.mp U.property).2,
+      (mem_specialUnitaryGroup_iff.mp V.property).2, one_mul, mul_one]
   · rintro ⟨hσ, hdet⟩
     obtain ⟨U, V, hUV⟩ := (exists_unitary_mul_mul_unitary_iff_singularValues_eq A B).mpr hσ
-    have hU := det_of_mem_unitary U.2
-    have hV := det_of_mem_unitary V.2
+    have hU := det_of_mem_unitary U.property
+    have hV := det_of_mem_unitary V.property
     cases isEmpty_or_nonempty ι
-    · exact ⟨⟨U, mem_specialUnitaryGroup_iff.mpr ⟨U.2, det_isEmpty⟩⟩,
-        ⟨V, mem_specialUnitaryGroup_iff.mpr ⟨V.2, det_isEmpty⟩⟩, hUV⟩
+    · exact ⟨⟨U, mem_specialUnitaryGroup_iff.mpr ⟨U.property, det_isEmpty⟩⟩,
+        ⟨V, mem_specialUnitaryGroup_iff.mpr ⟨V.property, det_isEmpty⟩⟩, hUV⟩
     -- Correct the determinants of `U` and `V` by an element of the stabilizer of `A`.
     obtain ⟨X, Y, hX, hY, hXY⟩ := exists_unitary_mul_mul_unitary_eq_self A
       (Unitary.star_mem hU) (Unitary.star_mem hV) <| by
@@ -245,8 +264,8 @@ theorem exists_specialUnitary_mul_mul_specialUnitary_iff_singularValues_eq_and_d
           apply mul_left_cancel₀ h
           linear_combination -hB
         rw [← star_mul', this, star_one]
-    refine ⟨⟨U * X, mem_specialUnitaryGroup_iff.mpr ⟨(U * X).2, ?_⟩⟩,
-      ⟨Y * V, mem_specialUnitaryGroup_iff.mpr ⟨(Y * V).2, ?_⟩⟩, ?_⟩
+    refine ⟨⟨U * X, mem_specialUnitaryGroup_iff.mpr ⟨(U * X).property, ?_⟩⟩,
+      ⟨Y * V, mem_specialUnitaryGroup_iff.mpr ⟨(Y * V).property, ?_⟩⟩, ?_⟩
     · rw [det_mul, hX, Unitary.mul_star_self_of_mem hU]
     · rw [det_mul, hY, Unitary.star_mul_self_of_mem hV]
     · conv_lhs => rw [hUV, ← hXY]

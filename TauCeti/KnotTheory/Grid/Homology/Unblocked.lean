@@ -48,6 +48,9 @@ respects, such as the Alexander grading, descends to this quotient.
   homologies induced by a semilinear equivalence intertwining the differentials.
 * `TauCeti.GridDiagram.IsKnot.unblockedHomologyModule`: the `R[U]`-module structure on the
   unblocked grid homology of a knot grid.
+* `TauCeti.GridDiagram.IsKnot.unblockedHomologyLinearMapOfSemilinear`: a map between knot grid
+  homologies that is semilinear along a ring homomorphism commuting with `V_j ↦ U`, as an
+  `R[U]`-linear map.
 
 ## Main results
 
@@ -204,6 +207,55 @@ theorem unblockedHomologyClass_eq_zero_iff (z : LinearMap.ker (G.unblockedDiffer
 
 end Quotient
 
+section HomologyMap
+
+variable {m : ℕ} (G' : GridDiagram m)
+
+/-- A class-compatible surjective map on unblocked homology lifts cycles modulo boundaries. -/
+theorem exists_sub_map_mem_range_unblockedDifferential_of_surjective
+    (f : GridChainMinus R m → GridChainMinus R n)
+    (hf : ∀ z ∈ LinearMap.ker (G'.unblockedDifferential R),
+      f z ∈ LinearMap.ker (G.unblockedDifferential R))
+    (F : G'.unblockedHomology R → G.unblockedHomology R)
+    (hF : ∀ (z : LinearMap.ker (G'.unblockedDifferential R))
+      (hz : f z ∈ LinearMap.ker (G.unblockedDifferential R)),
+      F (G'.unblockedHomologyClass R z) = G.unblockedHomologyClass R ⟨f z, hz⟩)
+    (h : Function.Surjective F) {c : GridChainMinus R n}
+    (hc : c ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    ∃ z ∈ LinearMap.ker (G'.unblockedDifferential R),
+      c - f z ∈ LinearMap.range (G.unblockedDifferential R) := by
+  obtain ⟨y, hy⟩ := h (G.unblockedHomologyClass R ⟨c, hc⟩)
+  obtain ⟨z, rfl⟩ := G'.unblockedHomologyClass_surjective R y
+  have hz : f z ∈ LinearMap.ker (G.unblockedDifferential R) := hf z z.property
+  rw [hF z hz] at hy
+  have he : G.unblockedHomologyClass R (⟨c, hc⟩ - ⟨f z, hz⟩) = 0 := by
+    calc
+      _ = G.unblockedHomologyClass R ⟨c, hc⟩ -
+          G.unblockedHomologyClass R ⟨f z, hz⟩ := map_sub _ _ _
+      _ = 0 := sub_eq_zero.mpr hy.symm
+  exact ⟨z, z.property, (G.unblockedHomologyClass_eq_zero_iff R _).1 he⟩
+
+/-- A class-compatible injective map on unblocked homology reflects boundaries of cycles. -/
+theorem mem_range_unblockedDifferential_of_map_mem_range_of_injective
+    (f : GridChainMinus R m → GridChainMinus R n)
+    {𝓕 : Type*} [FunLike 𝓕 (G'.unblockedHomology R) (G.unblockedHomology R)]
+    [ZeroHomClass 𝓕 (G'.unblockedHomology R) (G.unblockedHomology R)] (F : 𝓕)
+    (hF : ∀ (z : LinearMap.ker (G'.unblockedDifferential R))
+      (hz : f z ∈ LinearMap.ker (G.unblockedDifferential R)),
+      F (G'.unblockedHomologyClass R z) = G.unblockedHomologyClass R ⟨f z, hz⟩)
+    (h : Function.Injective F) {z : GridChainMinus R m}
+    (hz : z ∈ LinearMap.ker (G'.unblockedDifferential R))
+    (hb : f z ∈ LinearMap.range (G.unblockedDifferential R)) :
+    z ∈ LinearMap.range (G'.unblockedDifferential R) := by
+  have hfz : f z ∈ LinearMap.ker (G.unblockedDifferential R) :=
+    (LinearMap.range_le_ker_iff.mpr (G.unblockedDifferential_comp_self_eq_zero R)) hb
+  apply (G'.unblockedHomologyClass_eq_zero_iff R ⟨z, hz⟩).1
+  apply h
+  rw [map_zero, hF ⟨z, hz⟩ hfz, unblockedHomologyClass_eq_zero_iff]
+  exact hb
+
+end HomologyMap
+
 /-! ### The equivalence induced by an intertwining map -/
 
 section Intertwining
@@ -277,7 +329,7 @@ theorem unblockedHomologyEquivOfIntertwining_unblockedHomologyClass
     (z : LinearMap.ker (G.unblockedDifferential R)) :
     G.unblockedHomologyEquivOfIntertwining R G' e he (G.unblockedHomologyClass R z) =
       G'.unblockedHomologyClass R
-        ⟨e z, G.map_mem_ker_unblockedDifferential_of_intertwining R G' e he z.2⟩ := by
+        ⟨e z, G.map_mem_ker_unblockedDifferential_of_intertwining R G' e he z.property⟩ := by
   simp only [unblockedHomologyEquivOfIntertwining, LinearEquiv.trans_apply,
     LinearEquiv.symm_apply_eq]
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
@@ -295,9 +347,7 @@ variable replaced by one fixed variable `V_c`. -/
 private theorem smul_eq_rename_const_smul (hG : G.IsKnot) (c : Fin n)
     (p : MvPolynomial (Fin n) R) (x : G.unblockedHomology R) :
     p • x = MvPolynomial.rename (fun _ => c) p • x :=
-  smul_unblockedHomology_eq_rename_smul _ (fun c' =>
-    ((G.isKnot_iff_componentPerm_isCycle).mp hG).sameCycle (G.componentPerm_apply_ne_self c')
-      (G.componentPerm_apply_ne_self c)) p x
+  smul_unblockedHomology_eq_rename_smul _ (fun c' => hG.sameCycle_componentPerm c' c) p x
 
 /-- On a knot grid the unblocked grid homology is annihilated by the kernel of the evaluation
 `R[V₀, …, V_{n-1}] → R[U]` sending every variable to `U`. -/
@@ -362,6 +412,45 @@ theorem isScalarTower_unblockedHomology (hG : G.IsKnot) :
   have hbase : r • y = (MvPolynomial.C r : MvPolynomial (Fin n) R) • y :=
     IsScalarTower.algebraMap_smul (MvPolynomial (Fin n) R) r y
   simpa only [MvPolynomial.aeval_C, hbase] using h
+
+section Semilinear
+
+variable {m : ℕ} {G' : GridDiagram m}
+
+variable (R) in
+/-- A map between the unblocked homologies of two knot grids that is semilinear along a ring
+homomorphism `σ` of the polynomial rings commuting with the evaluation `V_j ↦ U`, such as a
+renaming of the variables, as an `R[U]`-linear map. Since `U` acts on both homologies as any one
+grid variable, the semilinearity along `σ` becomes linearity over `R[U]`. -/
+noncomputable def unblockedHomologyLinearMapOfSemilinear (hG : G.IsKnot) (hG' : G'.IsKnot)
+    {σ : MvPolynomial (Fin n) R →+* MvPolynomial (Fin m) R}
+    (hσ : ∀ p, MvPolynomial.aeval (fun _ ↦ (Polynomial.X : Polynomial R)) (σ p) =
+      MvPolynomial.aeval (fun _ ↦ (Polynomial.X : Polynomial R)) p)
+    (f : G.unblockedHomology R →ₛₗ[σ] G'.unblockedHomology R) :
+    letI := hG.unblockedHomologyModule R
+    letI := hG'.unblockedHomologyModule R
+    G.unblockedHomology R →ₗ[Polynomial R] G'.unblockedHomology R :=
+  letI := hG.unblockedHomologyModule R
+  letI := hG'.unblockedHomologyModule R
+  haveI : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩⟩
+  { toFun := f
+    map_add' := map_add f
+    map_smul' := fun q y ↦ by
+      obtain ⟨p, rfl⟩ := MvPolynomial.aeval_const_X_surjective (Fin n) R q
+      rw [hG.aeval_smul_unblockedHomology, LinearMap.map_smulₛₗ, RingHom.id_apply, ← hσ,
+        hG'.aeval_smul_unblockedHomology] }
+
+/-- The `R[U]`-linear map of a semilinear map between knot grid homologies is that map. -/
+@[simp]
+theorem coe_unblockedHomologyLinearMapOfSemilinear {hG : G.IsKnot} {hG' : G'.IsKnot}
+    {σ : MvPolynomial (Fin n) R →+* MvPolynomial (Fin m) R}
+    (hσ : ∀ p, MvPolynomial.aeval (fun _ ↦ (Polynomial.X : Polynomial R)) (σ p) =
+      MvPolynomial.aeval (fun _ ↦ (Polynomial.X : Polynomial R)) p)
+    (f : G.unblockedHomology R →ₛₗ[σ] G'.unblockedHomology R) :
+    ⇑(hG.unblockedHomologyLinearMapOfSemilinear R hG' hσ f) = f :=
+  (rfl)
+
+end Semilinear
 
 variable (R) in
 /-- Equal knot grids have unblocked homology modules that are torsion simultaneously,

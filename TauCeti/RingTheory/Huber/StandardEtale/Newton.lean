@@ -79,11 +79,11 @@ theorem existsUnique_weightedEval_tateSeries_eq_zero
       (∀ i, weightedEval (RingHom.id C) (fun l ↦ (u l : C))
         (F i : MvPowerSeries (Fin N) C) = 0) ∧
       (∀ i, ϖ ^ (e - k) ∣ u i - t i) := by
-  have hFres (i) := mem_weightedRestrictedSubring.mp (F i).2
+  have hFres (i) := mem_weightedRestrictedSubring.mp (F i).property
   have hF₀ (i) := mem_tateSeriesPlus_iff.mp (hF i)
   have hFt_smul (i) : weightedEval (RingHom.id C) (fun l ↦ (t l : C))
       (F i : MvPowerSeries (Fin N) C) ∈ (ϖ : C) ^ e • (P.ringOfDefinition : Set C) := by
-    obtain ⟨r, hr⟩ := hFt i; exact ⟨r, r.2, hr.symm⟩
+    obtain ⟨r, hr⟩ := hFt i; exact ⟨r, r.property, hr.symm⟩
   have hFt_base (i) : weightedEval (RingHom.id C) (fun l ↦ (t l : C))
       (F i : MvPowerSeries (Fin N) C) ∈
         (ϖ : C) ^ (2 * k + 1) • (P.ringOfDefinition : Set C) := by
@@ -118,7 +118,7 @@ theorem eq_of_weightedEval_tateSeries_eq_zero
       (F i : MvPowerSeries (Fin N) C) = 0) :
     u = u' :=
   eq_of_weightedEval_eq_zero P hϖ
-    (fun i ↦ mem_weightedRestrictedSubring.mp (F i).2)
+    (fun i ↦ mem_weightedRestrictedSubring.mp (F i).property)
     (fun i ↦ mem_tateSeriesPlus_iff.mp (hF i))
     hJ hu hFu hu' hFu'
 
@@ -141,7 +141,7 @@ theorem map_weightedEval_tateSeries
         (tateSeries.mapRingHom hφ g : MvPowerSeries (Fin N) C') := by
   have hid : ContinuousAt (RingHom.id C) 0 := continuous_id.continuousAt
   have hsum := (hasSum_weightedEval_of_forall_isPowerBounded hid hx
-    (mem_weightedRestrictedSubring.mp g.2)).map φ hφ
+    (mem_weightedRestrictedSubring.mp g.property)).map φ hφ
   have hsum' : HasSum (weightedEvalTerm (RingHom.id C') (fun l ↦ φ (x l))
       (tateSeries.mapRingHom hφ g : MvPowerSeries (Fin N) C'))
       (φ (weightedEval (RingHom.id C) x (g : MvPowerSeries (Fin N) C))) := by
@@ -176,9 +176,9 @@ theorem map_weightedEval_tateSeries_eq_zero
     (hu_mod : ∀ i, ϖ ^ (k + 1) ∣ u i - t i)
     (hu_zero : ∀ i, weightedEval (RingHom.id C) (fun l ↦ (u l : C))
       (F i : MvPowerSeries (Fin N) C) = 0) :
-    let ϖ' : P'.ringOfDefinition := ⟨φ ϖ, hPφ _ ϖ.2⟩
-    let t' : Fin N → P'.ringOfDefinition := fun l ↦ ⟨φ (t l), hPφ _ (t l).2⟩
-    let u' : Fin N → P'.ringOfDefinition := fun l ↦ ⟨φ (u l), hPφ _ (u l).2⟩
+    let ϖ' : P'.ringOfDefinition := ⟨φ ϖ, hPφ _ ϖ.property⟩
+    let t' : Fin N → P'.ringOfDefinition := fun l ↦ ⟨φ (t l), hPφ _ (t l).property⟩
+    let u' : Fin N → P'.ringOfDefinition := fun l ↦ ⟨φ (u l), hPφ _ (u l).property⟩
     (∀ i, ϖ' ^ (k + 1) ∣ u' i - t' i) ∧
     (∀ i, weightedEval (RingHom.id C') (fun l ↦ (u' l : C'))
       (tateSeries.mapRingHom hφ (F i) : MvPowerSeries (Fin N) C') = 0) ∧
@@ -190,14 +190,14 @@ theorem map_weightedEval_tateSeries_eq_zero
   intro ϖ' t' u'
   have hu'_mod (i) : ϖ' ^ (k + 1) ∣ u' i - t' i := by
     obtain ⟨q, hq⟩ := hu_mod i
-    exact ⟨⟨φ q, hPφ _ q.2⟩, Subtype.ext <| by
+    exact ⟨⟨φ q, hPφ _ q.property⟩, Subtype.ext <| by
       simpa only [u', t', ϖ', AddSubgroupClass.coe_sub, Subring.coe_mul, Subring.coe_pow,
         map_sub, map_mul, map_pow] using congrArg (fun z : P.ringOfDefinition ↦ φ (z : C)) hq⟩
   have hu'_zero (i) : weightedEval (RingHom.id C') (fun l ↦ (u' l : C'))
       (tateSeries.mapRingHom hφ (F i) : MvPowerSeries (Fin N) C') = 0 := by
     dsimp only [u']
     rw [← map_weightedEval_tateSeries hφ
-      (fun l ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (u l).2) (F i),
+      (fun l ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (u l).property) (F i),
       hu_zero i, map_zero]
   refine ⟨hu'_mod, hu'_zero, fun v' hv'_mod hv'_zero ↦ ?_⟩
   let M' : Matrix (Fin N) (Fin N) P'.ringOfDefinition :=
@@ -215,7 +215,7 @@ theorem map_weightedEval_tateSeries_eq_zero
     · refine Finset.sum_congr rfl fun l _ ↦ congrArg (φ (M i l : C) * ·) ?_
       rw [← tateSeries.coe_pderiv, tateSeries.pderiv_mapRingHom,
         ← map_weightedEval_tateSeries hφ
-          (fun m ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (t m).2)
+          (fun m ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (t m).property)
           (tateSeries.pderiv j (F l)),
         tateSeries.coe_pderiv]
     · split_ifs <;> simp [ϖ']

@@ -8,10 +8,10 @@ module
 public import Mathlib.Analysis.Asymptotics.Lemmas
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
-public import Mathlib.Topology.UniformSpace.HeineCantor
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Topology.Compactness.Normed
 
 /-!
 # The punctured remainder form of the Fréchet derivative
@@ -19,7 +19,10 @@ import Mathlib.Topology.MetricSpace.Thickening
 A map `f` has Fréchet derivative `L` at `x` exactly when the relative remainder
 `‖f (x + h) - f x - L h‖ / ‖h‖` tends to `0` as `h → 0` with `h ≠ 0`. This is
 Mathlib's `hasFDerivAt_iff_isLittleO_nhds_zero` with the increment `0` removed from the filter,
-which is the form in which difference quotients are usually compared.
+which is the form in which difference quotients are usually compared. For relative derivatives
+`HasFDerivWithinAt f L s x`, `HasFDerivWithinAt.exists_ball_remainder_le` extracts the quantitative
+ball bound `‖f y - f x - L (y - x)‖ ≤ ε * ‖y - x‖` on `ball x δ ∩ s`, and
+`HasFDerivWithinAt.exists_ball_dist_le_add_one_mul` deduces the `(‖L‖ + 1)` distance bound at `x`.
 
 For a family of maps `F p` that is jointly `C¹` at the graph of `x`, the remainder is moreover
 small uniformly over a compact set `K` of parameters `p`, at base points `x p` depending
@@ -66,6 +69,30 @@ theorem hasFDerivAt_iff_tendsto_norm_div_nhdsNE :
   rw [hpunct, ← Asymptotics.isLittleO_norm_norm,
     Asymptotics.isLittleO_iff_tendsto (by simp +contextual)]
 
+/-- If the linear-approximation error `‖f y - f x - L (y - x)‖` is at most `‖y - x‖`, then
+`dist (f y) (f x) ≤ (‖L‖ + 1) * dist y x`. -/
+theorem _root_.ContinuousLinearMap.dist_le_add_one_mul_of_norm_sub_le (L : E →L[𝕜] F) {y : E}
+    (h : ‖f y - f x - L (y - x)‖ ≤ ‖y - x‖) :
+    dist (f y) (f x) ≤ (‖L‖ + 1) * dist y x := by
+  rw [dist_eq_norm, dist_eq_norm, ← sub_add_cancel (f y - f x) (L (y - x))]
+  exact (norm_add_le _ _).trans (by nlinarith [L.le_opNorm (y - x), norm_nonneg L])
+
+/-- Quantitative `δ`-ball remainder bound for `HasFDerivWithinAt`: for every `ε > 0`, there
+exists `δ > 0` such that `‖f y - f x - L (y - x)‖ ≤ ε * ‖y - x‖` for all `y ∈ ball x δ ∩ s`. -/
+theorem _root_.HasFDerivWithinAt.exists_ball_remainder_le {s : Set E}
+    (hf : HasFDerivWithinAt f L s x) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ y ∈ ball x δ, y ∈ s → ‖f y - f x - L (y - x)‖ ≤ ε * ‖y - x‖ :=
+  eventually_nhds_iff_ball.mp (eventually_nhdsWithin_iff.mp (hf.isLittleO.bound hε))
+
+/-- Near a relative differentiability point, `f` satisfies `dist (f y) (f x) ≤ (‖L‖ + 1) * dist y x`
+on `ball x δ ∩ s`. -/
+theorem _root_.HasFDerivWithinAt.exists_ball_dist_le_add_one_mul {s : Set E}
+    (hf : HasFDerivWithinAt f L s x) :
+    ∃ δ > 0, ∀ y ∈ ball x δ, y ∈ s → dist (f y) (f x) ≤ (‖L‖ + 1) * dist y x := by
+  obtain ⟨δ, hδ, hδb⟩ := hf.exists_ball_remainder_le zero_lt_one
+  exact ⟨δ, hδ, fun y hy hys =>
+    L.dist_le_add_one_mul_of_norm_sub_le (by simpa only [one_mul] using hδb y hy hys)⟩
+
 end TauCeti
 
 section CompactFamily
@@ -108,20 +135,10 @@ theorem IsCompact.exists_pos_forall_norm_fderiv_sub_le (hK : IsCompact K)
     (hF : ∀ p ∈ K, ContDiffAt ℝ 1 (Function.uncurry F) (p, x p)) (hx : ContinuousOn x K)
     {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∀ p ∈ K, ∀ y : E, ‖y - x p‖ ≤ δ →
-      ‖fderiv ℝ (F p) y - fderiv ℝ (F p) (x p)‖ ≤ ε := by
-  -- The derivative is uniformly continuous at the compact graph `{(p, x p) | p ∈ K}`.
-  set Q : Set (P × E) := (fun p => (p, x p)) '' K
-  have hQ : IsCompact Q := hK.image_of_continuousOn (continuousOn_id.prodMk hx)
-  have hD : ∀ q ∈ Q, ContinuousAt (fun q : P × E => fderiv ℝ (F q.1) q.2) q := by
-    rintro _ ⟨p, hp, rfl⟩
-    exact (contDiffAt_fderiv_uncurry (m := 0) (hF p hp) (by simp)).continuousAt
-  obtain ⟨δ, hδ, hD'⟩ := Metric.mem_uniformity_dist.1
-    (hQ.uniformContinuousAt_of_continuousAt _ hD (Metric.dist_mem_uniformity hε))
-  refine ⟨δ / 2, by positivity, fun p hp y hy => ?_⟩
-  rw [← dist_eq_norm, dist_comm]
-  refine (hD' (a := (p, x p)) (b := (p, y)) ?_ ⟨p, hp, rfl⟩).le
-  rw [Prod.dist_eq, dist_self, max_eq_right dist_nonneg, dist_comm, dist_eq_norm]
-  linarith
+      ‖fderiv ℝ (F p) y - fderiv ℝ (F p) (x p)‖ ≤ ε :=
+  -- The derivative is continuous, so uniformly continuous, at the compact graph of `x`.
+  hK.exists_pos_forall_norm_sub_le (Φ := fun q : P × E => fderiv ℝ (F q.1) q.2) hx
+    (fun p hp => (contDiffAt_fderiv_uncurry (m := 0) (hF p hp) (by simp)).continuousAt) hε
 
 /-- **Uniform first-order approximation over a compact parameter set.** Let `F : P → E → G` be
 jointly `C¹` at the points `(p, x p)`, where `x : P → E` is continuous on a compact set `K` and

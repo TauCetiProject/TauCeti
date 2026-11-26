@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Coalgebra.Subcoalgebra.RegularSubcomodule
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 import TauCeti.Algebra.Coalgebra.Basic
 import TauCeti.Algebra.Coalgebra.Subcoalgebra.Finite
-import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
@@ -96,19 +95,12 @@ theorem exists_mem_ne_zero_coact_eq_tmul_one_of_forall_isUnipotentPoint
     ∃ v ∈ N, v ≠ 0 ∧ coact (R := k) (C := H) (M := M) v = v ⊗ₜ[k] (1 : H) := by
   obtain ⟨w, hwN, hw0⟩ := Subcomodule.ne_bot_iff.mp hN
   let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup k
-  -- Every element of the comodule `N` lies in a finite-dimensional subcomodule `P`.
-  obtain ⟨P, hPfin, hwP⟩ :=
-    Subcomodule.exists_finite_subcomodule_mem (R := k) (C := H) (M := N) ⟨w, hwN⟩
-  let _ : AddCommGroup P := Module.addCommMonoidToAddCommGroup k
-  -- `↥P` and `↥P.toSubmodule` subtype the same carrier, so finite-dimensionality transfers.
-  have _ : FiniteDimensional k P := hPfin
-  have _ : Nontrivial P :=
-    ⟨⟨⟨⟨w, hwN⟩, hwP⟩, 0, fun hc ↦ hw0 (congrArg (Subtype.val ∘ Subtype.val) hc)⟩⟩
-  obtain ⟨v, hv, hvc⟩ :=
-    (hasNonzeroFixedVector_iff (k := k) (H := H) (M := P)).mp
-      (hasNonzeroFixedVector_of_forall_isUnipotentPoint (M := P) hH)
-  refine ⟨v.1.1, v.1.2, fun hc ↦ hv (Subtype.ext (Subtype.ext hc)), ?_⟩
-  exact Subcomodule.coact_coe_eq_tmul_one N (Subcomodule.coact_coe_eq_tmul_one P hvc)
+  have _ : Nontrivial N := ⟨⟨⟨w, hwN⟩, 0, fun hc ↦ hw0 (congrArg Subtype.val hc)⟩⟩
+  -- Every finite-dimensional subcomodule of `N` has a fixed vector by Kolchin's theorem.
+  obtain ⟨v, hv, hvc⟩ := hasNonzeroFixedVector_iff.mp
+    (hasNonzeroFixedVector_of_forall_subcomodule (k := k) (H := H) (M := N)
+      fun P _ _ ↦ hasNonzeroFixedVector_of_forall_isUnipotentPoint (M := P) hH)
+  exact ⟨v.val, v.property, fun hc ↦ hv (Subtype.ext hc), Subcomodule.coact_coe_eq_tmul_one N hvc⟩
 
 /-- If a comodule over a reduced finite-type commutative Hopf algebra with
 unipotent points is completely reducible, then the coaction is trivial on it: the represented

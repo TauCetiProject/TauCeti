@@ -83,6 +83,12 @@ with the exponential `exp D = ∑ Dʳ / r!`, which is a coalgebra automorphism f
 * `TauCeti.AInfinityAlgebra.commute_barDifferential_coderiv`: the coderivation of a degree-zero
   Hochschild cocycle commutes with the bar differential, and
   `TauCeti.AInfinityAlgebra.isIso_expHom`: its exponential is an `A∞` automorphism.
+* `TauCeti.AInfinityAlgebra.taylor_expHom_apply_of_mem_filtration`: if the cocycle `φ` vanishes
+  on the words of length at most `e`, the Taylor map of its exponential is `letter + φ` on the
+  words of length at most `2 e`, and
+  `TauCeti.AInfinityAlgebra.taylor_expHom_comp_apply_of_mem_filtration`: following a morphism with
+  linear part the identity by the exponential of `φ` adds `φ` to its Taylor map on the words of
+  length at most `e + 1`.
 
 ## References
 
@@ -506,15 +512,9 @@ theorem IsMinimal.taylor_gauge_apply_of_mem_filtration_add_one (h𝒜 : 𝒜.IsM
 at most `e` does not change the operations of arity at most `e + 1`. -/
 theorem IsMinimal.m_gauge_of_le (h𝒜 : 𝒜.IsMinimal) {e : ℕ}
     (hφe : ∀ z ∈ filtration R A e, φ z = 0) {n : ℕ} (hn : n ≤ e + 1) :
-    (𝒜.gauge φ hφ hφ₁).m n = 𝒜.m n := by
-  rcases Nat.eq_zero_or_pos n with rfl | hn0
-  · rw [m_zero, m_zero]
-  refine MultilinearMap.ext fun x ↦ ?_
-  have h := h𝒜.taylor_gauge_apply_of_mem_filtration_add_one hφ hφ₁ hφe
-    (of_mem_filtration R A (k := ⟨n, hn0⟩) hn
-      (PiTensorProduct.tprod R fun i ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i) (x i)))
-  rw [taylor_of_tprod, taylor_of_tprod, gauge_grading] at h
-  simpa only [InternalGrading.koszulTwist_koszulTwist] using h
+    (𝒜.gauge φ hφ hφ₁).m n = 𝒜.m n :=
+  m_eq_of_taylor_eq_on_filtration (gauge_grading 𝒜 φ hφ hφ₁) hn
+    fun _ hz ↦ h𝒜.taylor_gauge_apply_of_mem_filtration_add_one hφ hφ₁ hφe hz
 
 /-- **A gauge transformation of a minimal `A∞` algebra is minimal.** -/
 theorem IsMinimal.isMinimal_gauge (h𝒜 : 𝒜.IsMinimal) : (𝒜.gauge φ hφ hφ₁).IsMinimal := by
@@ -569,6 +569,42 @@ theorem isIso_expHom : (𝒜.expHom hφ hφ₁ hδ).IsIso :=
   AInfinityHom.isIso_of_linearPart_bijective _ <| by
     rw [linearPart_expHom]
     exact Function.bijective_id
+
+variable {𝒜} in
+/-- **The exponential of a Hochschild cocycle to first order.**  If the cocycle `φ` vanishes on
+the words of length at most `e`, then on the words of length at most `2 e` the Taylor map of the
+exponential `𝒜.expHom` of `φ` is `letter + φ`. -/
+theorem taylor_expHom_apply_of_mem_filtration {e : ℕ} (hφe : ∀ z ∈ filtration R A e, φ z = 0)
+    {z : ReducedTensorWords R A} (hz : z ∈ filtration R A (2 * e)) :
+    (𝒜.expHom hφ hφ₁ hδ).taylor z = letter R A z + φ z := by
+  obtain rfl | he := Nat.eq_zero_or_pos e
+  · rw [mul_zero, filtration_zero, Submodule.mem_bot] at hz
+    rw [hz, map_zero, map_zero, map_zero, add_zero]
+  rw [AInfinityHom.taylor_def, LinearMap.comp_apply, barMap_expHom,
+    expCoderiv_apply_of_mem_filtration he hφe hz, map_add, letter_coderiv_apply]
+
+variable {𝒜} in
+/-- **Following a morphism by the exponential of a Hochschild cocycle, to first order.**  Let
+`f : ℬ ⟶ 𝒜` be an `A∞` morphism with linear part the identity, and let the cocycle `φ` vanish on
+the words of length at most `e`.  Then on the words of length at most `e + 1` the Taylor map of `f`
+followed by the exponential `𝒜.expHom` of `φ` is `f.taylor + φ`. -/
+theorem taylor_expHom_comp_apply_of_mem_filtration {ℬ : AInfinityAlgebra R A} {e : ℕ}
+    (f : AInfinityHom ℬ 𝒜) (hf : f.linearPart = LinearMap.id)
+    (hφe : ∀ z ∈ filtration R A e, φ z = 0) {z : ReducedTensorWords R A}
+    (hz : z ∈ filtration R A (e + 1)) :
+    ((𝒜.expHom hφ hφ₁ hδ).comp f).taylor z = f.taylor z + φ z := by
+  -- The exponential is `letter` on the words of length at most `e`, where `φ` vanishes.
+  have hg : ∀ w ∈ filtration R A e, (𝒜.expHom hφ hφ₁ hδ).taylor w = letter R A w := fun w hw ↦ by
+    rw [taylor_expHom_apply_of_mem_filtration hφ hφ₁ hδ hφe
+      (filtration_monotone R A (by omega) hw), hφe w hw, add_zero]
+  rw [AInfinityHom.taylor_comp_apply_of_mem_filtration _ f hf hg hz]
+  obtain rfl | he := Nat.eq_zero_or_pos e
+  · -- On single letters the exponential is the identity and `φ` vanishes.
+    rw [AInfinityHom.taylor_apply_eq_letter_of_linearPart_eq_id (linearPart_expHom 𝒜 hφ hφ₁ hδ)
+      z hz, apply_eq_zero_of_mem_filtration_one R A hφ₁ z hz]
+    abel
+  rw [taylor_expHom_apply_of_mem_filtration hφ hφ₁ hδ hφe (filtration_monotone R A (by omega) hz)]
+  abel
 
 end Exp
 

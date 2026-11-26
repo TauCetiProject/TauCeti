@@ -35,6 +35,8 @@ one without reindexing.
 Both directions are characterized on generators by the `simp` lemmas
 `TauCeti.Algebra.matrixBaseChangeAlgEquiv_tmul` and
 `TauCeti.Algebra.matrixBaseChangeAlgEquiv_symm_single`, so the definition need never be unfolded.
+The isomorphism is natural in `S`: an `R`-algebra map `S → S'` acts on the matrices entrywise
+(`TauCeti.Algebra.matrixBaseChangeAlgEquiv_rTensor`).
 
 The same statement with an arbitrary, possibly noncommutative, coefficient algebra `A` in place of
 `R` is `TauCeti.Algebra.matrixCoeffBaseChangeAlgEquiv`:
@@ -78,6 +80,19 @@ theorem matrixBaseChangeAlgEquiv_tmul (s : S) (M : Matrix n n R) :
 theorem matrixBaseChangeAlgEquiv_symm_single (i j : n) (x : S) :
     (matrixBaseChangeAlgEquiv R S n).symm (Matrix.single i j x) = x ⊗ₜ Matrix.single i j 1 := by
   simp [matrixBaseChangeAlgEquiv]
+
+variable {R S n} in
+/-- Extending scalars to matrices is natural in the commutative algebra: for an `R`-algebra map
+`φ : S → S'`, applying `φ` to the scalar factor of `S ⊗[R] Matrix n n R` applies it to the
+entries of the corresponding matrix over `S`. -/
+@[simp]
+theorem matrixBaseChangeAlgEquiv_rTensor {S' : Type*} [CommSemiring S'] [Algebra R S']
+    (φ : S →ₐ[R] S') (x : S ⊗[R] Matrix n n R) :
+    matrixBaseChangeAlgEquiv R S' n (φ.toLinearMap.rTensor _ x) =
+      (matrixBaseChangeAlgEquiv R S n x).map φ := by
+  induction x using TensorProduct.inductionOn with
+  | tmul s M => ext i j; simp
+  | add x y hx hy => simp [hx, hy, Matrix.map_add]
 
 variable (A : Type*) [Semiring A] [Algebra R A]
 

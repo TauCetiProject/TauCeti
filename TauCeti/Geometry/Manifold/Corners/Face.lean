@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Corners.Depth
+import TauCeti.Topology.Algebra.Module.AddSMul
 
 /-!
 # The local faces of a manifold with corners do not depend on the chart
@@ -69,13 +70,6 @@ namespace TauCeti
 
 variable {ι ι' : Type*} {S : Set ι} {S' : Set ι'}
 
-/-- The path `t ↦ z + t • v` tends to `z` as `t` decreases to `0`. -/
-private theorem tendsto_add_smul [Finite ι] (z v : EuclideanSpace ℝ ι) :
-    Tendsto (fun t : ℝ ↦ z + t • v) (𝓝[>] 0) (𝓝 z) := by
-  have := Fintype.ofFinite ι
-  have h : Continuous fun t : ℝ ↦ z + t • v := by fun_prop
-  simpa using (h.tendsto 0).mono_left nhdsWithin_le_nhds
-
 /-- **Distinct local faces through a point are distinct near it.** If `y` lies on the faces
 `z i = 0` and `z k = 0` of the region `{z | ∀ i ∈ S, 0 ≤ z i}`, and near `y` every point of the
 region on the first face lies on the second, then `i = k`. -/
@@ -87,7 +81,8 @@ theorem eq_of_eventually_apply_eq_zero_imp [Finite ι] {y : EuclideanSpace ℝ �
   -- Move off `y` in the direction of the `k`-th coordinate: this stays on the face `z i = 0`.
   set v : EuclideanSpace ℝ ι := WithLp.toLp 2 fun j ↦ if j = k then 1 else 0
   have hT : Tendsto (fun t : ℝ ↦ y + t • v) (𝓝[>] 0) (𝓝[{z | ∀ i ∈ S, 0 ≤ z i}] y) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨tendsto_add_smul y v, ?_⟩
+    have := Fintype.ofFinite ι
+    refine tendsto_nhdsWithin_iff.2 ⟨tendsto_add_smul_nhdsWithin_zero (Ioi (0 : ℝ)) y v, ?_⟩
     filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t) j hj
     have := hy j hj
     simp only [v, PiLp.add_apply, PiLp.smul_apply, smul_eq_mul]
@@ -150,8 +145,11 @@ private theorem mem_closure_apply_eq_zero_pos [Finite ι] {U : Set (EuclideanSpa
   classical
   -- Move off `z` in the direction of the coordinates other than the `i`-th one.
   set v : EuclideanSpace ℝ ι := WithLp.toLp 2 fun k ↦ if k = i then 0 else 1
-  refine mem_closure_of_tendsto (tendsto_add_smul z v) ?_
-  filter_upwards [(tendsto_add_smul z v).eventually (hU.mem_nhds hz), self_mem_nhdsWithin]
+  have hlim : Tendsto (fun t : ℝ ↦ z + t • v) (𝓝[>] 0) (𝓝 z) := by
+    have := Fintype.ofFinite ι
+    exact tendsto_add_smul_nhdsWithin_zero _ z v
+  refine mem_closure_of_tendsto hlim ?_
+  filter_upwards [hlim.eventually (hU.mem_nhds hz), self_mem_nhdsWithin]
     with t ht (ht0 : 0 < t)
   refine ⟨ht, by simp [v, hzi], fun k hk hki ↦ ?_⟩
   have := hzS k hk
@@ -290,11 +288,11 @@ private theorem existsUnique_equiv_of_eventually_apply_eq_zero_imp [Finite ι] [
     rw [← hφψ hwt]
     exact hw h
   have hστ (i : {i // i ∈ S ∧ y i = 0}) : τ ⟨σ i, hσS i, hσy i⟩ = i :=
-    (TauCeti.eq_of_eventually_apply_eq_zero_imp hy i.2.2 (hτy _) <| by
+    (TauCeti.eq_of_eventually_apply_eq_zero_imp hy i.property.2 (hτy _) <| by
       filter_upwards [hσ i, hback i] with z h₁ h₂ h
       exact h₂ (h₁ h)).symm
   have hτσ (j : {j // j ∈ S' ∧ φ y j = 0}) : σ ⟨τ j, hτS j, hτy j⟩ = j :=
-    (TauCeti.eq_of_eventually_apply_eq_zero_imp hφy j.2.2 (hσy _) <| by
+    (TauCeti.eq_of_eventually_apply_eq_zero_imp hφy j.property.2 (hσy _) <| by
       filter_upwards [hτ j, hforth j] with w h₁ h₂ h
       exact h₂ (h₁ h)).symm
   let e : {i // i ∈ S ∧ y i = 0} ≃ {j // j ∈ S' ∧ φ y j = 0} :=
@@ -308,7 +306,7 @@ private theorem existsUnique_equiv_of_eventually_apply_eq_zero_imp [Finite ι] [
     exact ⟨fun h ↦ hστ i ▸ h₂ h, h₁⟩
   refine ⟨e, eventually_all.2 hiff, fun e' he' ↦ Equiv.ext fun i ↦ Subtype.ext ?_⟩
   -- Two such bijections agree: pull both characterizations back along `ψ`.
-  refine TauCeti.eq_of_eventually_apply_eq_zero_imp hφy (e' i).2.2 (hσy i) ?_
+  refine TauCeti.eq_of_eventually_apply_eq_zero_imp hφy (e' i).property.2 (hσy i) ?_
   filter_upwards [hTψ.eventually he', hTψ.eventually (hiff i), ht] with w h₁ h₂ hwt h
   rw [hφψ hwt] at h₁ h₂
   exact h₂.2 ((h₁ i).1 h)
@@ -360,10 +358,11 @@ theorem existsUnique_equiv_apply_eq_zero_iff_of_depthAt_eq
   -- Each face at `y` goes into a face at `φ y`, and back.
   have hσ (i : {i // i ∈ S ∧ y i = 0}) :=
     TauCeti.exists_eventually_apply_eq_zero_of_apply_eq_zero hy hs₀ (hφ.mono inter_subset_left)
-      (fun z hz ↦ hφs hz.1) (fun z hz ↦ hcard hz.1 hz.2) i.2.1 i.2.2
+      (fun z hz ↦ hφs hz.1) (fun z hz ↦ hcard hz.1 hz.2) i.property.1 i.property.2
   have hτ (j : {j // j ∈ S' ∧ φ y j = 0}) :=
     TauCeti.exists_eventually_apply_eq_zero_of_apply_eq_zero hφy ht₀
-      (hψ.mono fun _ hw ↦ hw.1.1) (fun w hw ↦ hψt hw.1.1) (fun w hw ↦ hcard' hw) j.2.1 j.2.2
+      (hψ.mono fun _ hw ↦ hw.1.1) (fun w hw ↦ hψt hw.1.1) (fun w hw ↦ hcard' hw) j.property.1
+          j.property.2
   choose σ hσS hσy hσ using hσ
   choose τ hτS hτy hτ using hτ
   rw [hψy] at hτy

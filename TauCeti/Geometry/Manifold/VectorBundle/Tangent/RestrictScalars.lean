@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
+import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Tangent.CoordChange
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
@@ -26,7 +27,7 @@ complex tangent bundle with the tangent bundle of the underlying real manifold.
 
 We work with arbitrary compatible normed field extensions and self-modelled manifolds.
 The fibrewise linear comparison uses the native self-model over the smaller field.
-The comparison uses `TauCeti.tangentCoordChange_restrictScalars` on chart overlaps;
+The comparison uses `ModelWithCorners.tangentCoordChange_restrictScalars` on chart overlaps;
 no equality of the two tangent-bundle topologies is assumed. Both manifold instances are
 explicit so that both tangent-bundle topologies can be named. The smaller-field instance can
 always be installed locally using `IsManifold.restrictScalars`.
@@ -60,9 +61,9 @@ variable (𝕜 : Type*) {𝕜' : Type*}
 preferred model coordinates. Continuity is established separately using bundle charts. -/
 private def restrictScalarsEquiv : TangentBundle 𝓘(𝕜', E) M ≃ TangentBundle 𝓘(𝕜, E) M where
   toFun p := ⟨p.proj, (tangentSpaceCastModel 𝓘(𝕜, E) p.proj).symm
-    (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.2)⟩
+    (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.snd)⟩
   invFun p := ⟨p.proj, (tangentSpaceCastModel 𝓘(𝕜', E) p.proj).symm
-    (tangentSpaceCastModel 𝓘(𝕜, E) p.proj p.2)⟩
+    (tangentSpaceCastModel 𝓘(𝕜, E) p.proj p.snd)⟩
   left_inv p := by simp
   right_inv p := by simp
 
@@ -72,17 +73,16 @@ private theorem trivializationAt_restrictScalarsEquiv (x : M)
     (p : TangentBundle 𝓘(𝕜', E) M) (hp : p.proj ∈ (chartAt E x).source) :
     trivializationAt E (TangentSpace 𝓘(𝕜, E)) x (restrictScalarsEquiv 𝕜 M p) =
       trivializationAt E (TangentSpace 𝓘(𝕜', E)) x p := by
-  have h := TauCeti.tangentCoordChange_restrictScalars 𝕜 (𝕜' := 𝕜')
-    (x := p.proj) (y := x) ⟨mem_chart_source E p.proj, hp⟩
+  have h := TauCeti.tangentCoordChange_modelWithCornersSelf_restrictScalars_apply 𝕜 (𝕜' := 𝕜')
+    ⟨mem_chart_source E p.proj, hp⟩ (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.snd)
   rw [TangentBundle.trivializationAt_apply, TangentBundle.trivializationAt_apply]
   -- The carrier equivalence is defined through the model casts; the coordinate changes
   -- below act on the resulting vectors in E.
   change (p.proj, tangentCoordChange 𝓘(𝕜, E) p.proj x p.proj
-    (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.2)) =
+    (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.snd)) =
     (p.proj, tangentCoordChange 𝓘(𝕜', E) p.proj x p.proj
-      (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.2))
+      (tangentSpaceCastModel 𝓘(𝕜', E) p.proj p.snd))
   rw [h]
-  rfl
 
 private theorem continuous_restrictScalarsEquiv :
     Continuous (restrictScalarsEquiv 𝕜 (𝕜' := 𝕜') (E := E) M) := by

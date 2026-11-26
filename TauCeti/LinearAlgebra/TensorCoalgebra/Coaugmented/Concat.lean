@@ -96,15 +96,14 @@ theorem cofreeLift_comp_tmulConcat {N : Type uN} [AddCommGroup N] [Module R N]
         (Comodule.Hom.cofreeLift (C := TensorWords R A)
           (φ ∘ₗ tmulConcat R A X z)).toLinearMap := by
   refine TensorProduct.ext' fun y w ↦ ?_
-  have hΔ := deconcatenation_reducedInclusion_prepend (R := R) y w
   simp only [LinearMap.comp_apply, LinearMap.add_apply, tmulConcat_tmul,
     Comodule.Hom.cofreeLift_toLinearMap, Comodule.cofree_coact_tmul, comul_eq_deconcatenation]
-  rw [hΔ]
+  rw [← cons_apply, deconcatenation_cons]
   simp only [TensorProduct.tmul_add, map_add, TensorProduct.assoc_symm_tmul,
     LinearMap.rTensor_tmul]
   congr 1
   induction deconcatenation R A w using TensorProduct.inductionOn with
-  | tmul u v => simp
+  | tmul u v => simp [cons_apply]
   | add s t hs ht => simp only [map_add, TensorProduct.tmul_add, hs, ht]
 
 /-- Concatenation behind an element of degree `q` raises the total degree by `q`. -/
@@ -160,7 +159,7 @@ theorem concatLetter_of_tprod {l n : ℕ} (w : Fin l → A) (x : A) (v : Fin n �
 private theorem concatLetter_of_tprod_eq {l n N : ℕ} (w : Fin l → A) (x : A) (v : Fin n → A)
     (hN : l + 1 + n = N) (u : Fin N → A)
     (hu : ∀ i : Fin N, u i =
-      if h : i.1 < l then w ⟨i, h⟩ else if _ : i.1 = l then x else v ⟨i - (l + 1), by omega⟩) :
+      if h : i.val < l then w ⟨i, h⟩ else if _ : i.val = l then x else v ⟨i - (l + 1), by omega⟩) :
     concatLetter R A ((of R A l (PiTensorProduct.tprod R w) ⊗ₜ x) ⊗ₜ
         of R A n (PiTensorProduct.tprod R v)) =
       ReducedTensorWords.of R A ⟨N, by omega⟩ (PiTensorProduct.tprod R u) := by

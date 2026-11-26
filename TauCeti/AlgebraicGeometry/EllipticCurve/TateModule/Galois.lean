@@ -107,6 +107,25 @@ theorem coe_proj_tateModuleGaloisRepresentation (σ : K ≃ₐ[F] K)
       Affine.Point.map σ.toAlgHom (TateModule.proj n x : (W⁄K).toAffine.Point) := by
   rw [tateModuleGaloisRepresentation_apply, TateModule.proj_map, TateModule.levelMap_apply]
 
+/-- If an automorphism has square-zero displacement on every `ℓ`-power torsion level,
+then it has square-zero displacement on the `ℓ`-adic Tate module. -/
+theorem tateModuleGaloisRepresentation_sub_one_sq_eq_zero (W : WeierstrassCurve F)
+    (σ : K ≃ₐ[F] K) (h : ∀ n : ℕ,
+      (torsionByMap ((ℓ ^ n : ℕ) : ℤ) (Affine.Point.map (W' := W) σ.toAlgHom).toIntLinearMap -
+        LinearMap.id) ^ 2 = 0) :
+    (W.tateModuleGaloisRepresentation ℓ σ - 1) ^ 2 = 0 := by
+  refine LinearMap.ext fun x ↦ TateModule.ext fun n ↦ ?_
+  have hproj (y : TateModule ℓ (W⁄K).toAffine.Point) :
+      TateModule.proj n ((W.tateModuleGaloisRepresentation ℓ σ - 1) y) =
+        (torsionByMap ((ℓ ^ n : ℕ) : ℤ) (Affine.Point.map σ.toAlgHom).toIntLinearMap -
+          LinearMap.id : _ →ₗ[ℤ] _) (TateModule.proj n y) := by
+    apply Subtype.ext
+    rw [LinearMap.sub_apply, one_apply_eq_self, map_sub, LinearMap.sub_apply, LinearMap.id_apply,
+      AddSubgroupClass.coe_sub, AddSubgroupClass.coe_sub, coe_proj_tateModuleGaloisRepresentation,
+      coe_torsionByMap_apply, AddMonoidHom.coe_toIntLinearMap]
+  simpa only [pow_two, mul_apply_eq_comp, hproj, LinearMap.zero_apply, map_zero] using
+    LinearMap.congr_fun (h n) (TateModule.proj n x)
+
 /-- **Serre's lemma for the `ℓ`-adic representation.** An automorphism `σ` fixing every point of
 `E[ℓ ^ k]`, with `ℓ ^ k ≥ 3`, and acting on `T_ℓ E` with finite order, acts trivially on `T_ℓ E`. -/
 theorem tateModuleGaloisRepresentation_eq_one_of_isOfFinOrder {σ : K ≃ₐ[F] K}
@@ -115,7 +134,7 @@ theorem tateModuleGaloisRepresentation_eq_one_of_isOfFinOrder {σ : K ≃ₐ[F] 
     W.tateModuleGaloisRepresentation ℓ σ = 1 :=
   TateModule.eq_one_of_isOfFinOrder_of_forall_proj_eq hσ hk fun t ↦ Subtype.ext <| by
     rw [coe_proj_tateModuleGaloisRepresentation,
-      hfix _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k t).2)]
+      hfix _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k t).property)]
 
 /-- **A subgroup acting on `T_ℓ E` through a finite quotient and trivially on `E[ℓ ^ k]`, with
 `ℓ ^ k ≥ 3`, acts trivially on `T_ℓ E`.** For an inertia group at a place of potential good
@@ -153,7 +172,7 @@ theorem tateModuleGaloisRepresentation_eq_one_iff [IsSepClosed K] [W.IsElliptic]
     rw [hσ, one_apply_eq_self, hx] at h
     exact h.symm
   · rw [coe_proj_tateModuleGaloisRepresentation, one_apply_eq_self,
-      h k _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k x).2)]
+      h k _ (AddSubgroup.torsionBy.nsmul_iff.mp (TateModule.proj k x).property)]
 
 end Representation
 
@@ -191,7 +210,7 @@ theorem continuous_tateModuleGaloisRepresentation_apply (ℓ : ℕ) [Fact ℓ.Pr
   (TateModule.continuous_map_apply fun n x ↦
     W.isLocallyConstant_map_of_zsmul_eq_zero (n := ((ℓ ^ n : ℕ) : ℤ))
       (Int.natCast_ne_zero.mpr (pow_ne_zero n (Fact.out : ℓ.Prime).ne_zero))
-      ((Submodule.mem_torsionBy_iff _ _).mp x.2)).congr
+      ((Submodule.mem_torsionBy_iff _ _).mp x.property)).congr
     fun q ↦ (tateModuleGaloisRepresentation_apply q.1 q.2).symm
 
 end WeierstrassCurve

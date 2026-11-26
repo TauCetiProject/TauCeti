@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import TauCeti.FieldTheory.FunctionField.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
 
 /-!
 # The function field of an integral scheme of finite type over a field
@@ -115,8 +115,7 @@ theorem isFunctionField_functionField_of_forall_coheight_le_one_of_coheight_eq_o
     (hX : ∀ y : X, Order.coheight y ≤ 1) {x₀ : X} (hx₀ : Order.coheight x₀ = 1) :
     IsFunctionField k X.functionField := by
   refine (isFunctionField_functionField_iff k).mpr (le_antisymm ?_ ?_)
-  · rw [topologicalKrullDim_eq_iSup_coheight]
-    exact iSup_le fun y ↦ by exact_mod_cast hX y
+  · exact TauCeti.topologicalKrullDim_le_of_forall_coheight_le hX
   · have h := coheight_le_topologicalKrullDim x₀
     rw [hx₀] at h
     exact_mod_cast h

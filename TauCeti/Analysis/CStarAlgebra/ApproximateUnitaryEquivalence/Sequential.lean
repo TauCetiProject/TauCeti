@@ -9,6 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Basic
 public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Topology.DenseEmbedding
+import TauCeti.Analysis.CStarAlgebra.Basic
 
 /-!
 # Sequential implementation of approximate unitary equivalence
@@ -16,7 +17,8 @@ public import Mathlib.Topology.DenseEmbedding
 For a separable source, approximate unitary equivalence with target unitaries is
 implemented by a single sequence of unitaries converging pointwise after conjugation.
 This replaces finite-set tests by sequences when constructing approximate intertwining
-maps. The converse works for any net along a nontrivial filter, without separability.
+maps. The converse and closure under point-norm limits work for any net along a
+nontrivial filter, without separability.
 
 The diagonal argument follows Kirchberg–Phillips, *Embedding of exact C*-algebras in
 the Cuntz algebra O₂*, Definition 0.5 and the paragraph immediately following it.
@@ -46,6 +48,55 @@ theorem of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] (u : ι → unitary B)
       simpa only [dist_eq_norm] using hi
   obtain ⟨i, hi⟩ := (F.eventually_all.mpr fun a _ ↦ he a).exists
   exact ⟨u i, hi⟩
+
+/-- Approximate unitary equivalence is jointly closed in both arguments under point-norm
+convergence along any nontrivial filter, without separability assumptions. -/
+theorem of_tendsto_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {Φ Ψ : ι → A →⋆ₙₐ[ℂ] B}
+    (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent (Φ i) (Ψ i))
+    (hφ : ∀ a, Tendsto (fun i ↦ Φ i a) l (𝓝 (φ a)))
+    (hψ : ∀ a, Tendsto (fun i ↦ Ψ i a) l (𝓝 (ψ a))) :
+    ApproximatelyUnitarilyEquivalent φ ψ := by
+  rw [approximatelyUnitarilyEquivalent_def]
+  intro F ε hε
+  have hε₃ : 0 < ε / 3 := by positivity
+  have heΦ (a : A) : ∀ᶠ i in l, ‖Φ i a - φ a‖ < ε / 3 :=
+    (Metric.tendsto_nhds.mp (hφ a) (ε / 3) hε₃).mono fun _ hi ↦ by
+      simpa only [dist_eq_norm] using hi
+  have heΨ (a : A) : ∀ᶠ i in l, ‖Ψ i a - ψ a‖ < ε / 3 :=
+    (Metric.tendsto_nhds.mp (hψ a) (ε / 3) hε₃).mono fun _ hi ↦ by
+      simpa only [dist_eq_norm] using hi
+  obtain ⟨i, ⟨hi, hΦi⟩, hΨi⟩ :=
+    ((h.and (F.eventually_all.mpr fun a _ ↦ heΦ a)).and
+      (F.eventually_all.mpr fun a _ ↦ heΨ a)).exists
+  obtain ⟨u, hu⟩ := (approximatelyUnitarilyEquivalent_def _ _).mp hi F (ε / 3) hε₃
+  refine ⟨u, fun a ha ↦ ?_⟩
+  calc
+    ‖(u : B) * φ a * star (u : B) - ψ a‖
+      ≤ (‖(u : B) * φ a * star (u : B) - (u : B) * Φ i a * star (u : B)‖ +
+          ‖(u : B) * Φ i a * star (u : B) - Ψ i a‖) + ‖Ψ i a - ψ a‖ :=
+        (norm_sub_le_norm_sub_add_norm_sub _ (Ψ i a) _).trans
+          (add_le_add_left (norm_sub_le_norm_sub_add_norm_sub _ ((u : B) * Φ i a * star (u : B)) _)
+            _)
+    _ = ‖Φ i a - φ a‖ + ‖(u : B) * Φ i a * star (u : B) - Ψ i a‖ + ‖Ψ i a - ψ a‖ := by
+        rw [CStarRing.norm_unitary_conj_sub, norm_sub_rev (φ a)]
+    _ < ε / 3 + ε / 3 + ε / 3 := add_lt_add (add_lt_add (hΦi a ha) (hu a ha)) (hΨi a ha)
+    _ = ε := by ring
+
+/-- Approximate unitary equivalence is closed in the left argument under point-norm convergence
+along any nontrivial filter, without separability assumptions. -/
+theorem of_tendsto_left {ι : Type*} {l : Filter ι} [l.NeBot] {Φ : ι → A →⋆ₙₐ[ℂ] B}
+    (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent (Φ i) ψ)
+    (hlim : ∀ a, Tendsto (fun i ↦ Φ i a) l (𝓝 (φ a))) :
+    ApproximatelyUnitarilyEquivalent φ ψ :=
+  of_tendsto_of_tendsto h hlim fun _ ↦ tendsto_const_nhds
+
+/-- Approximate unitary equivalence is closed in the right argument under point-norm convergence
+along any nontrivial filter, without separability assumptions. -/
+theorem of_tendsto_right {ι : Type*} {l : Filter ι} [l.NeBot] {Ψ : ι → A →⋆ₙₐ[ℂ] B}
+    (h : ∀ᶠ i in l, ApproximatelyUnitarilyEquivalent φ (Ψ i))
+    (hlim : ∀ a, Tendsto (fun i ↦ Ψ i a) l (𝓝 (ψ a))) :
+    ApproximatelyUnitarilyEquivalent φ ψ :=
+  of_tendsto_of_tendsto h (fun _ ↦ tendsto_const_nhds) hlim
 
 /-- For a separable source, approximate unitary equivalence is equivalent to pointwise
 convergence of conjugates along a sequence of target unitaries. -/

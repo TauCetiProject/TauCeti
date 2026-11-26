@@ -304,7 +304,21 @@ theorem stabilizer_eq_mackeySubgroup_subgroupOf (s : G) (H K : Subgroup G) :
   rw [Subgroup.mem_subgroupOf, mem_mackeySubgroup_iff, mem_stabilizer_iff,
     Subgroup.smul_def, ← mem_stabilizer_iff,
     stabilizer_quotientGroup_mk, mem_conj_smul]
-  exact ⟨fun hg => ⟨g.2, hg⟩, fun hg => hg.2⟩
+  exact ⟨fun hg => ⟨g.property, hg⟩, fun hg => hg.2⟩
+
+/-- Conjugation by `g` identifies the stabiliser `J ∩ g⁻¹ Γ g` of the coset `g⁻¹ Γ` with
+`Γ ∩ g J g⁻¹`, the stabiliser of the coset `g J` in `Γ`. -/
+theorem natCard_mackeySubgroup_inv_subgroupOf (Γ J : Subgroup G) (g : G) :
+    Nat.card ((mackeySubgroup g⁻¹ Γ J).subgroupOf J) = Nat.card (mackeySubgroup g J Γ) := by
+  rw [Nat.card_congr (Subgroup.subgroupOfEquivOfLe mackeySubgroup_le_right).toEquiv]
+  refine Nat.card_congr ((MulAut.conj g).toEquiv.subtypeEquiv fun x ↦ ?_)
+  simp only [mem_mackeySubgroup_iff, MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv,
+    MulAut.conj_apply, inv_inv]
+  constructor
+  · rintro ⟨hx, hΓ⟩
+    exact ⟨by simpa [mul_assoc] using hΓ, by simpa [mul_assoc] using hx⟩
+  · rintro ⟨hΓ, hx⟩
+    exact ⟨by simpa [mul_assoc] using hx, by simpa [mul_assoc] using hΓ⟩
 
 /-- If `H` has finite index in `G` then the Mackey subgroup has finite index in `K`, so the Mackey
 summand attached to `s` is induced along a finite-index inclusion. -/
@@ -343,7 +357,7 @@ theorem stabilizer_smul_eq_mackeySubgroup_subgroupOf (s : G) (Γ : Subgroup G) (
   ext g
   rw [Subgroup.mem_subgroupOf, mem_mackeySubgroup_iff, mem_stabilizer_iff, Subgroup.smul_def,
     mem_stabilizer_iff, mul_smul, mul_smul]
-  exact ⟨fun hg => ⟨g.2, inv_smul_eq_iff.mpr hg⟩, fun hg => inv_smul_eq_iff.mp hg.2⟩
+  exact ⟨fun hg => ⟨g.property, inv_smul_eq_iff.mpr hg⟩, fun hg => inv_smul_eq_iff.mp hg.2⟩
 
 end Translate
 

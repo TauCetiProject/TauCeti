@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
-public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
-public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
-public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
+public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.MeasureTheory.Integral.ContinuousMap
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import TauCeti.Probability.Moments.CompactDeterminacy
 
 /-!
@@ -48,6 +46,8 @@ probability measures on `ℝ`.
 * `PositiveLinearMap.eq_law_iff`: `μ_a` is the only finite measure on `ℝ` with this property for
   continuous `f`.
 * `PositiveLinearMap.law_compl_spectrum`: `μ_a` is concentrated on `spectrum ℝ a`.
+* `PositiveLinearMap.support_law_subset_spectrum`, `PositiveLinearMap.isCompact_support_law`:
+  the support of `μ_a` is a compact subset of `spectrum ℝ a`.
 * `PositiveLinearMap.integrable_law`: every `f` continuous on `spectrum ℝ a` is `μ_a`-integrable.
 * `PositiveLinearMap.isProbabilityMeasure_law`: `μ_a` is a probability measure when `φ 1 = 1`.
 * `PositiveLinearMap.ofReal_integral_pow_law`: the moments of `μ_a` are `φ (a ^ n)`.
@@ -152,7 +152,7 @@ instance (a : A) : IsFiniteMeasure (law φ a) := by
 theorem law_compl_spectrum (a : A) : law φ a (spectrum ℝ a)ᶜ = 0 := by
   by_cases ha : IsSelfAdjoint a
   · rw [law_of_isSelfAdjoint φ ha,
-      Measure.map_apply measurable_subtype_coe (spectrum.isClosed a).measurableSet.compl]
+      Measure.map_apply measurable_subtypeVal (spectrum.isClosed ℝ a).measurableSet.compl]
     simp
   · simp [law_of_not_isSelfAdjoint φ ha]
 
@@ -160,6 +160,15 @@ theorem law_compl_spectrum (a : A) : law φ a (spectrum ℝ a)ᶜ = 0 := by
 @[simp]
 theorem restrict_spectrum_law (a : A) : (law φ a).restrict (spectrum ℝ a) = law φ a :=
   Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr (law_compl_spectrum φ a))
+
+/-- The support of the law `μ_a` is contained in the spectrum of `a`. -/
+theorem support_law_subset_spectrum (a : A) : (law φ a).support ⊆ spectrum ℝ a :=
+  Measure.support_subset_of_isClosed (spectrum.isClosed ℝ a) (mem_ae_iff.2 (law_compl_spectrum φ a))
+
+/-- The law `μ_a` has compact support. -/
+theorem isCompact_support_law (a : A) : IsCompact (law φ a).support :=
+  (ContinuousFunctionalCalculus.isCompact_spectrum a).of_isClosed_subset Measure.isClosed_support
+    (support_law_subset_spectrum φ a)
 
 /-- Every function continuous on the spectrum of `a` is integrable against the law `μ_a`. -/
 theorem integrable_law (a : A) (f : ℝ → ℝ)
@@ -190,7 +199,7 @@ theorem ofReal_integral_law (f : ℝ → ℝ)
     ((∫ x, f x ∂(law φ a) : ℝ) : ℂ) = φ (cfc f a) := by
   by_cases ha : IsSelfAdjoint a
   · rw [law_of_isSelfAdjoint φ ha,
-      (MeasurableEmbedding.subtype_coe (spectrum.isClosed a).measurableSet).integral_map,
+      (MeasurableEmbedding.subtypeVal (spectrum.isClosed ℝ a).measurableSet).integral_map,
       cfc_apply f a]
     exact ofReal_integral_spectrumLaw φ ha ⟨_, hf.domRestrict⟩
   · simp [law_of_not_isSelfAdjoint φ ha, cfc_apply_of_not_predicate a ha]
@@ -237,7 +246,7 @@ theorem law_cfc (ha : IsSelfAdjoint a) (g : ℝ → ℝ)
     law φ (cfc g a) = (law φ a).map g := by
   have hgm : AEMeasurable g (law φ a) := by
     rw [← restrict_spectrum_law]
-    exact hg.aemeasurable (spectrum.isClosed a).measurableSet
+    exact hg.aemeasurable (spectrum.isClosed ℝ a).measurableSet
   refine (eq_law_iff.2 fun f hf ↦ ?_).symm
   rw [integral_map hgm hf.aestronglyMeasurable, ← cfc_comp f g a]
   exact ofReal_integral_law φ (f ∘ g) (hf.comp_continuousOn hg)
@@ -317,7 +326,7 @@ theorem law_integralPositiveLinearMap_comap_restrict_id {K : Set ℝ} [CompactSp
       ((ContinuousMap.restrict K (ContinuousMap.id ℝ)).realToRCLike ℂ) = μ := by
   have hK : IsCompact K := isCompact_iff_compactSpace.2 ‹_›
   rw [law_integralPositiveLinearMap_realToRCLike]
-  exact (map_comap_subtype_coe hK.measurableSet μ).trans
+  exact (map_comap_subtypeVal hK.measurableSet μ).trans
     (Measure.restrict_eq_self_of_ae_mem (ae_iff.2 hμ))
 
 end Realization

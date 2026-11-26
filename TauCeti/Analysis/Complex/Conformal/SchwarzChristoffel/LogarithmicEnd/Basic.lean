@@ -12,7 +12,7 @@ import Mathlib.Analysis.Complex.RemovableSingularity
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Calculus.DSlope.Star
 import TauCeti.Analysis.Complex.Conformal.Reflection.Primitive
-import TauCeti.Analysis.Complex.HasPrimitives
+import TauCeti.Analysis.Complex.HasPrimitives.Basic
 
 /-!
 # Logarithmic Schwarz--Christoffel ends at finite prevertices

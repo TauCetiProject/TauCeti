@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Young.Addable
 public import TauCeti.Combinatorics.Young.StandardTableau.Basic
 public import TauCeti.Combinatorics.Young.Tableau
+import Mathlib.Order.Interval.Finset.Fin
 import Mathlib.Order.Preorder.Finite
+import TauCeti.Combinatorics.Young.Sublevel
 
 /-!
 # The labels of a standard Young tableau, ordered by their cells
@@ -18,12 +21,16 @@ column are ordered as their rows are (`TauCeti.StandardYoungTableau.lt_iff_rowIn
 labels in one row are ordered as their columns are
 (`TauCeti.StandardYoungTableau.lt_iff_colIndex_lt`).
 
-The consequence this file is written for is that **a standard Young tableau is determined by the
-row of each of its labels** (`TauCeti.StandardYoungTableau.rowIndex_injective`): the labels of a row
-are placed there in increasing order, so nothing is left to choose once the rows are known.  Two
-standard tableaux with the same rows differ by a permutation preserving every row of the first,
-which restricts to a strictly monotone self-map of that row and is therefore the identity there by
-Mathlib's `StrictMono.apply_eq`.
+More generally, the labelling is strictly monotone for the product order on cells
+(`TauCeti.StandardYoungTableau.strictMono_toTableau`). The cells whose labels are below a cutoff
+`i` form an initial Young diagram (`TauCeti.StandardYoungTableau.initialDiagram`) of size `i.val`,
+and the cell carrying `i` is addable to this diagram. These results support the separation of
+standard tableaux by transformed label contents in
+`TauCeti/Combinatorics/Young/StandardTableau/Separation.lean`.
+
+A standard Young tableau is also determined by the row of each of its labels
+(`TauCeti.StandardYoungTableau.rowIndex_injective`): the labels of a row are placed there in
+increasing order, so nothing is left to choose once the rows are known.
 
 In the language of the Specht modules, the injectivity says that distinct standard tableaux have
 distinct tabloids, and that is how
@@ -33,6 +40,16 @@ distinct tabloids, and that is how
 
 * `TauCeti.StandardYoungTableau.lt_iff_rowIndex_lt`: labels in one column are ordered by row.
 * `TauCeti.StandardYoungTableau.lt_iff_colIndex_lt`: labels in one row are ordered by column.
+* `TauCeti.StandardYoungTableau.apply_lt_apply_of_le`: more generally, labels increase strictly
+  along the product order of the cells; `TauCeti.StandardYoungTableau.apply_lt_apply_of_mem` is
+  its form for cells given by their coordinates.
+* `TauCeti.StandardYoungTableau.strictMono_toTableau`: the labelling is strictly monotone for the
+  product order on cells.
+* `TauCeti.StandardYoungTableau.initialDiagram`: the Young diagram filled by labels below a cutoff.
+* `TauCeti.StandardYoungTableau.card_initialDiagram`: the initial diagram at cutoff `i` has `i.val`
+  cells.
+* `TauCeti.StandardYoungTableau.isAddable_initialDiagram`: the cutoff cell is addable to its initial
+  diagram.
 * `TauCeti.exists_standardYoungTableau_toTableau_eq_iff`: conversely, a tableau whose labels
   increase down each column and along each row is standard.
 * `TauCeti.StandardYoungTableau.rowIndex_injective`: a standard Young tableau is determined by the
@@ -99,6 +116,91 @@ theorem lt_iff_colIndex_lt (T : StandardYoungTableau μ) {x y : Fin μ.card}
   · exact absurd (rowIndex_colIndex_injective T.toTableau (Prod.ext hrow hc)) hxy.ne
   · exact absurd (lt_of_colIndex_lt T hrow.symm hc) (asymm hxy)
 
+/-! ### Comparing two labels along the product order of cells -/
+
+/-- The labels of a standard Young tableau increase strictly along the product order of the
+cells. -/
+theorem apply_lt_apply_of_le (T : StandardYoungTableau μ) {c d : ↥μ.cells} (h₁ : c.val.1 ≤ d.val.1)
+    (h₂ : c.val.2 ≤ d.val.2) (hne : c ≠ d) : T c < T d := by
+  obtain ⟨⟨i₁, j₁⟩, hc⟩ := c
+  obtain ⟨⟨i₂, j₂⟩, hd⟩ := d
+  simp only at h₁ h₂
+  have hd' : (i₂, j₂) ∈ μ := (YoungDiagram.mem_cells _).mp hd
+  have hm : (i₁, j₂) ∈ μ := μ.up_left_mem h₁ le_rfl hd'
+  -- pass through the cell `(i₁, j₂)`, first along the row of `c`, then down the column of `d`
+  have hrow : T ⟨(i₁, j₁), hc⟩ ≤ T ⟨(i₁, j₂), (YoungDiagram.mem_cells _).mpr hm⟩ := by
+    rcases h₂.lt_or_eq with h | rfl
+    · exact (T.row_strict h hm).le
+    · exact le_rfl
+  have hcol : T ⟨(i₁, j₂), (YoungDiagram.mem_cells _).mpr hm⟩ ≤ T ⟨(i₂, j₂), hd⟩ := by
+    rcases h₁.lt_or_eq with h | rfl
+    · exact (T.col_strict h hd').le
+    · exact le_rfl
+  refine lt_of_le_of_ne (hrow.trans hcol) fun h => hne ?_
+  exact T.injective h
+
+/-- Coordinate form of `TauCeti.StandardYoungTableau.apply_lt_apply_of_le`: the label of the cell
+`(i₁, j₁)` is smaller than that of a different cell `(i₂, j₂)` weakly below and to the right of
+it. -/
+theorem apply_lt_apply_of_mem (T : StandardYoungTableau μ) {i₁ j₁ i₂ j₂ : ℕ}
+    (hc : (i₁, j₁) ∈ μ) (hd : (i₂, j₂) ∈ μ) (h₁ : i₁ ≤ i₂) (h₂ : j₁ ≤ j₂)
+    (hne : i₁ < i₂ ∨ j₁ < j₂) : T ⟨(i₁, j₁), hc⟩ < T ⟨(i₂, j₂), hd⟩ :=
+  T.apply_lt_apply_of_le h₁ h₂ fun h => by
+    simp only [Subtype.mk.injEq, Prod.mk.injEq] at h
+    omega
+
+/-- The labels of a standard Young tableau are strictly monotone in the product order on cells. -/
+theorem strictMono_toTableau (T : StandardYoungTableau μ) : StrictMono T.toTableau :=
+  fun _ _ h => T.apply_lt_apply_of_le h.le.1 h.le.2 h.ne
+
+/-- The diagram of the cells labelled strictly below `i` in a standard Young tableau. -/
+def initialDiagram (T : StandardYoungTableau μ) (i : Fin μ.card) : YoungDiagram :=
+  μ.strictSublevel T.toTableau T.strictMono_toTableau.monotone i
+
+/-- The cells of the initial diagram are exactly those carrying a label below its cutoff. -/
+@[simp]
+theorem mem_initialDiagram {T : StandardYoungTableau μ} {i : Fin μ.card} {c : ℕ × ℕ} :
+    c ∈ T.initialDiagram i ↔
+      ∃ j < i, (rowIndex T.toTableau j, colIndex T.toTableau j) = c := by
+  rw [initialDiagram, YoungDiagram.mem_strictSublevel]
+  constructor
+  · rintro ⟨hc, hlt⟩
+    exact ⟨T.toTableau ⟨c, hc⟩, hlt, Prod.ext (rowIndex_apply _ _) (colIndex_apply _ _)⟩
+  · rintro ⟨j, hj, rfl⟩
+    let c : ↥μ.cells :=
+      ⟨(rowIndex T.toTableau j, colIndex T.toTableau j), rowIndex_colIndex_mem T.toTableau j⟩
+    have h : T c = j := apply_eq_of_coe_eq T j (c := c) rfl
+    have hlt : T.toTableau c < i := by rwa [toTableau_apply, h]
+    exact ⟨c.property, hlt⟩
+
+/-- Each label below the cutoff accounts for one cell of the initial diagram. -/
+@[simp]
+theorem card_initialDiagram (T : StandardYoungTableau μ) (i : Fin μ.card) :
+    (T.initialDiagram i).card = i.val := by
+  have h : (T.initialDiagram i).cells =
+      (Finset.Iio i).image (fun j => (rowIndex T.toTableau j, colIndex T.toTableau j)) := by
+    ext c
+    simp only [YoungDiagram.mem_cells, mem_initialDiagram, Finset.mem_image, Finset.mem_Iio]
+  rw [YoungDiagram.card, h,
+    Finset.card_image_of_injective _ (rowIndex_colIndex_injective T.toTableau), Fin.card_Iio]
+
+/-- The cell carrying the cutoff label is addable to the initial diagram. -/
+theorem isAddable_initialDiagram (T : StandardYoungTableau μ) (i : Fin μ.card) :
+    (T.initialDiagram i).IsAddable (rowIndex T.toTableau i, colIndex T.toTableau i) := by
+  rw [YoungDiagram.isAddable_def]
+  refine ⟨?_, ?_⟩
+  · intro hi
+    obtain ⟨j, hj, hji⟩ := mem_initialDiagram.mp hi
+    exact hj.ne (rowIndex_colIndex_injective T.toTableau hji)
+  · intro c hc
+    have hm : c ∈ μ := μ.isLowerSet hc.le (rowIndex_colIndex_mem T.toTableau i)
+    rw [rowIndex_def, colIndex_def] at hc
+    have hlt := T.apply_lt_apply_of_le (c := ⟨c, hm⟩) (d := T.toTableau.symm i)
+      hc.le.1 hc.le.2 (fun h => hc.ne (congrArg Subtype.val h))
+    simp only [← toTableau_apply T, Equiv.apply_symm_apply] at hlt
+    exact mem_initialDiagram.mpr
+      ⟨_, hlt, Prod.ext (rowIndex_apply _ _) (colIndex_apply _ _)⟩
+
 end StandardYoungTableau
 
 /-! ### Recognising a standard Young tableau -/
@@ -158,8 +260,6 @@ theorem StandardYoungTableau.rowIndex_injective (μ : YoungDiagram) :
     have hfix : σ x = x := by
       simpa using congrArg Subtype.val (StrictMono.apply_eq (x := ⟨x, rfl⟩) hmono)
     simpa using hfix
-  have htu : T.toTableau = U.toTableau := by rw [← hrel, hσ, relabel_one]
-  exact StandardYoungTableau.ext fun c => by
-    rw [← StandardYoungTableau.toTableau_apply, ← StandardYoungTableau.toTableau_apply, htu]
+  exact StandardYoungTableau.toTableau_injective (by rw [← hrel, hσ, relabel_one])
 
 end TauCeti

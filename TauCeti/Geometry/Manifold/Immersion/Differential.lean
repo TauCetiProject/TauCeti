@@ -10,7 +10,11 @@ public import TauCeti.Geometry.Manifold.MFDeriv.Prod
 public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
 # Immersion normal forms from split differentials
@@ -43,8 +47,13 @@ map with a global left inverse differentiable along its image is an immersion
 (`ContMDiff.isImmersion_of_leftInverse`). More generally, a `C^n` map into a manifold with
 finite-dimensional model is an immersion when its composite with a map differentiable along its
 image is one
-(`ContMDiff.isImmersion_of_isImmersion_comp`). Pairing an immersion with any `C^n` map into a
-finite-dimensional manifold gives an immersion (`Manifold.IsImmersion.prodMk`).
+(`ContMDiff.isImmersion_of_isImmersion_comp`). So a map whose composite with a smooth embedding is
+an immersion is itself one, with no separate smoothness hypothesis
+(`Manifold.IsSmoothEmbedding.isImmersion_of_isImmersion_comp`). Pairing an immersion with any
+`C^n` map into a finite-dimensional manifold gives an immersion (`Manifold.IsImmersion.prodMk`).
+Conversely, since its differential is injective, an immersion into a manifold with
+finite-dimensional model has finite-dimensional tangent spaces
+(`Manifold.IsImmersion.finiteDimensional_tangentSpace`).
 
 Reference: M. Hirsch, *Differential Topology*, Chapter 1, §3 (the local immersion
 theorem), and Chapter 8, §1 (its use in isotopy extension).
@@ -70,16 +79,8 @@ theorem ContDiffOn.isImmersionAt_of_hasLeftInverse
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n)
     (hdf : (fderiv 𝕜 f x).HasLeftInverse) :
     IsImmersionAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f x := by
-  -- `E` is complete: the derivative is a uniform embedding onto a closed subset of `F`.
-  have : CompleteSpace E :=
-    (completeSpace_iff_isComplete_range
-      (IsUniformInducing.of_comp (fderiv 𝕜 f x).uniformContinuous
-        hdf.leftInverse.uniformContinuous
-        (by
-          rw [show hdf.leftInverse ∘ fderiv 𝕜 f x = id from
-            funext hdf.leftInverse_leftInverse]
-          exact IsUniformInducing.id))).2
-      hdf.isClosed_range.isComplete
+  -- `E` is complete, as a retract of `F` through the derivative and its left inverse.
+  have : CompleteSpace E := hdf.completeSpace
   -- Adjoin the closed complement so that the augmented derivative is invertible.
   let G := hdf.complement
   have : CompleteSpace G := hdf.isClosed_complement.completeSpace_coe
@@ -93,14 +94,10 @@ theorem ContDiffOn.isImmersionAt_of_hasLeftInverse
     (hf.comp contDiffOn_fst (fun _ hp => hp)).add
       (G.subtypeL.contDiff.comp contDiff_snd).contDiffOn
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  have hderiv : HasFDerivAt g (e : (E × G) →L[𝕜] F) (x, 0) := by
-    convert (((hf.contDiffAt (hs.mem_nhds hx)).differentiableAt hn0).hasFDerivAt.comp
-      (x, (0 : G)) (hasFDerivAt_fst)).add
-      (G.subtypeL.hasFDerivAt.comp (x, 0) (hasFDerivAt_snd)) using 1
-    · rfl
-    · apply ContinuousLinearMap.ext
-      intro p
-      rfl
+  have hderiv : HasFDerivAt g (e : (E × G) →L[𝕜] F) (x, 0) :=
+    (((hf.contDiffAt (hs.mem_nhds hx)).differentiableAt hn0).hasFDerivAt.comp_fst_add_comp_snd
+      G.subtypeL.hasFDerivAt).congr_fderiv
+      (ContinuousLinearMap.coe_coprodSubtypeLEquivOfIsCompl _ _ _).symm
   obtain ⟨Θ, hΘ, hxΘ, hsub, hinv⟩ :=
     TauCeti.ContDiffOn.exists_openPartialHomeomorph hg ht hx hn hderiv.fderiv.symm
   have hforward : ContDiffOn 𝕜 n Θ Θ.source := hΘ ▸ hg.mono hsub
@@ -331,6 +328,18 @@ theorem ContMDiff.isImmersion_of_isImmersion_comp [FiniteDimensional 𝕜 E'] {E
       (isDiffImmersionAt_iff.mp ((hgf.isDiffImmersionAt hn0 x).of_comp
         ((hf x).mdifferentiableAt hn0) (hg x)))
 
+omit [CompleteSpace E'] in
+/-- A map between boundaryless manifolds, with finite-dimensional target model and `1 ≤ n`, is a
+`C^n` immersion when its composite with a `C^n` smooth embedding is one. -/
+theorem Manifold.IsSmoothEmbedding.isImmersion_of_isImmersion_comp [FiniteDimensional 𝕜 E']
+    {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [TopologicalSpace HP]
+    {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P] {φ : N → P}
+    (hφ : IsSmoothEmbedding J IP n φ) (hn : 1 ≤ n) (h : IsImmersion I IP n (φ ∘ f)) :
+    IsImmersion I J n f := by
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  exact (hφ.contMDiff_iff_comp.2 h.contMDiff).isImmersion_of_isImmersion_comp hn
+    (fun _ ↦ hφ.contMDiff.mdifferentiableAt hn0) h
+
 variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [CompleteSpace EP]
   [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P]
   [IP.Boundaryless] [IsManifold IP n P]
@@ -374,5 +383,23 @@ theorem Manifold.IsImmersion.prodMk [FiniteDimensional 𝕜 E'] [FiniteDimension
   exact fun u v huv ↦ hf.mfderiv_injective hn0 x congr(($huv).1)
 
 end Manifold
+
+namespace Manifold.IsImmersion
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F H G M N : Type*}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
+  [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace N] [ChartedSpace G N]
+  {n : ℕ∞ω} {f : M → N}
+
+/-- The tangent spaces of a positive-regularity immersion into a manifold with
+finite-dimensional model space are finite-dimensional, since the differential is injective. -/
+theorem finiteDimensional_tangentSpace (hf : IsImmersion I J n f) (x : M) (hn : n ≠ 0)
+    [FiniteDimensional 𝕜 F] : FiniteDimensional 𝕜 (TangentSpace I x) :=
+  .of_injective (mfderiv I J f x).toLinearMap (hf.mfderiv_injective hn x)
+
+end Manifold.IsImmersion
 
 end

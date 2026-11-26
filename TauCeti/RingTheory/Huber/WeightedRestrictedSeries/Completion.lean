@@ -72,8 +72,9 @@ Hausdorff — over a complete Hausdorff base, and over a discrete one — is
   and its continuity.
 * `TauCeti.Huber.weightedMapCompletion_id` and `TauCeti.Huber.weightedMapCompletion_comp`: the
   functor laws.
-* `TauCeti.Huber.weightedMapCompletionEquiv_apply` and `…_symm_apply`: each direction of the
-  equivalence is the corresponding `TauCeti.Huber.weightedMapCompletion`.
+* `TauCeti.Huber.weightedMapCompletionEquiv_apply`, `…_symm_apply`, `…_coe_weightedC`, and
+  `…_coe_weightedX`: each direction of the equivalence is the corresponding
+  `TauCeti.Huber.weightedMapCompletion`, acting coefficientwise on constants and fixing variables.
 * `TauCeti.Huber.continuous_weightedMapCompletionEquiv` and its `_symm`: the equivalence is one
   of topological rings.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionFinZeroEquiv_coe`,
@@ -300,6 +301,39 @@ theorem continuous_weightedMapCompletionEquiv_symm (e : A ≃+* B) (he : Continu
   (continuous_weightedMapCompletion ..).congr fun _ ↦
     (weightedMapCompletionEquiv_symm_apply ..).symm
 
+-- Not `@[simp]`: `weightedMapCompletionEquiv_apply` already simplifies the left-hand side, so
+-- `simpNF` rejects the tag (`simp` closes the equation via `weightedMapCompletionEquiv_apply`,
+-- `weightedMapCompletion_coe`, and `weightedMap_weightedC`). Stated for explicit `rw` use.
+/-- `TauCeti.Huber.weightedMapCompletionEquiv` maps the constant series `a` to the constant
+series `e a`. -/
+theorem weightedMapCompletionEquiv_coe_weightedC (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i)
+    (a : A) :
+    weightedMapCompletionEquiv e he he' hT hS hTS hST (weightedC T hT a) =
+      weightedC S hS (e a) :=
+  (weightedMapCompletionEquiv_apply e he he' hT hS hTS hST _).trans
+    ((weightedMapCompletion_coe he hT hS hTS _).trans
+      (congrArg ((↑) : weightedRestrictedSubring S hS →
+          UniformSpace.Completion (weightedRestrictedSubring S hS))
+        (weightedMap_weightedC he hTS a)))
+
+-- Not `@[simp]`: `weightedMapCompletionEquiv_apply` already simplifies the left-hand side, so
+-- `simpNF` rejects the tag (`simp` closes the equation via `weightedMapCompletionEquiv_apply`,
+-- `weightedMapCompletion_coe`, and `weightedMap_weightedX`). Stated for explicit `rw` use.
+/-- `TauCeti.Huber.weightedMapCompletionEquiv` fixes the `i`-th variable. -/
+theorem weightedMapCompletionEquiv_coe_weightedX (e : A ≃+* B) (he : Continuous e)
+    (he' : Continuous e.symm) (hT : IsWeightFamily T) (hS : IsWeightFamily S)
+    (hTS : ∀ i, (e : A →+* B) '' T i ⊆ S i) (hST : ∀ i, (e.symm : B →+* A) '' S i ⊆ T i)
+    (i : Fin k) :
+    weightedMapCompletionEquiv e he he' hT hS hTS hST (weightedX T hT i) =
+      weightedX S hS i :=
+  (weightedMapCompletionEquiv_apply e he he' hT hS hTS hST _).trans
+    ((weightedMapCompletion_coe he hT hS hTS _).trans
+      (congrArg ((↑) : weightedRestrictedSubring S hS →
+          UniformSpace.Completion (weightedRestrictedSubring S hS))
+        (weightedMap_weightedX he hTS i)))
+
 end Functoriality
 
 /-! ### Dense inducing coefficient maps -/
@@ -516,17 +550,14 @@ open UniformSpace Filter Topology
 
 variable {k A}
 
-/-- A subring of the completion of `A⟨X⟩_T` that is a neighbourhood of zero and contains the
-constants and the variables is everything: it contains the polynomials, then every element of
-`A⟨X⟩_T`, and being an open, hence closed, subgroup it contains their dense image. -/
-theorem mem_of_mem_nhds_of_forall_weightedX_mem {T : Fin k → Set A}
-    (hT : IsWeightFamily T)
+/-- A subring of the completion of `A⟨X⟩_T` containing the constants and the variables is dense:
+it contains the polynomials, whose image is dense. -/
+theorem dense_of_forall_weightedX_mem {T : Fin k → Set A} (hT : IsWeightFamily T)
     {R : Subring (Completion (weightedRestrictedSubring T hT))}
-    (hR : (R : Set (Completion (weightedRestrictedSubring T hT))) ∈ 𝓝 0)
     (hC : ∀ a, algebraMap A (Completion (weightedRestrictedSubring T hT)) a ∈ R)
     (hX : ∀ i, ((weightedX T hT i : weightedRestrictedSubring T hT) :
-      Completion (weightedRestrictedSubring T hT)) ∈ R)
-    (y : Completion (weightedRestrictedSubring T hT)) : y ∈ R := by
+      Completion (weightedRestrictedSubring T hT)) ∈ R) :
+    Dense (R : Set (Completion (weightedRestrictedSubring T hT))) := by
   have hpoly (p : MvPolynomial (Fin k) A) : ((weightedPolynomialHom T hT p :
       weightedRestrictedSubring T hT) : Completion (weightedRestrictedSubring T hT)) ∈ R := by
     -- Write the composite inclusion as polynomial evaluation and apply `eval₂_mem`.
@@ -541,17 +572,29 @@ theorem mem_of_mem_nhds_of_forall_weightedX_mem {T : Fin k → Set A}
         rw [Function.comp_apply, RingHom.comp_apply, weightedPolynomialHom_X]
         exact hX i)
     rwa [← MvPolynomial.eval₂_comp_left, MvPolynomial.eval₂_eta] at h
-  have hdense : Dense (R : Set (Completion (weightedRestrictedSubring T hT))) :=
-    Completion.denseRange_coe.dense_of_mapsTo (Completion.continuous_coe _)
-      (dense_weightedPolynomials hT) (by
-        intro f hf
-        obtain ⟨p, hp⟩ := (weightedPolynomialsEquiv hT).surjective ⟨f, hf⟩
-        have hp' := congrArg
-          (fun z : weightedPolynomials T hT ↦ (z : weightedRestrictedSubring T hT)) hp
-        rw [coe_weightedPolynomialsEquiv] at hp'
-        simpa only [hp', SetLike.mem_coe] using hpoly p)
-  exact closure_minimal (fun _ hx ↦ hx)
-    (R.toAddSubgroup.isClosed_of_isOpen (R.toAddSubgroup.isOpen_of_mem_nhds hR)) (hdense y)
+  exact Completion.denseRange_coe.dense_of_mapsTo (Completion.continuous_coe _)
+    (dense_weightedPolynomials hT) (by
+      intro f hf
+      obtain ⟨p, hp⟩ := (weightedPolynomialsEquiv hT).surjective ⟨f, hf⟩
+      have hp' := congrArg
+        (fun z : weightedPolynomials T hT ↦ (z : weightedRestrictedSubring T hT)) hp
+      rw [coe_weightedPolynomialsEquiv] at hp'
+      simpa only [hp', SetLike.mem_coe] using hpoly p)
+
+/-- A subring of the completion of `A⟨X⟩_T` that is a neighbourhood of zero and contains the
+constants and the variables is everything: it is dense by
+`TauCeti.Huber.dense_of_forall_weightedX_mem`, and closed, being an open subgroup. -/
+theorem mem_of_mem_nhds_of_forall_weightedX_mem {T : Fin k → Set A}
+    (hT : IsWeightFamily T)
+    {R : Subring (Completion (weightedRestrictedSubring T hT))}
+    (hR : (R : Set (Completion (weightedRestrictedSubring T hT))) ∈ 𝓝 0)
+    (hC : ∀ a, algebraMap A (Completion (weightedRestrictedSubring T hT)) a ∈ R)
+    (hX : ∀ i, ((weightedX T hT i : weightedRestrictedSubring T hT) :
+      Completion (weightedRestrictedSubring T hT)) ∈ R)
+    (y : Completion (weightedRestrictedSubring T hT)) : y ∈ R :=
+  closure_minimal (fun _ hx ↦ hx)
+    (R.toAddSubgroup.isClosed_of_isOpen (R.toAddSubgroup.isOpen_of_mem_nhds hR))
+    (dense_of_forall_weightedX_mem hT hC hX y)
 
 end Subring
 

@@ -32,6 +32,8 @@ from `f⁻¹(B)`, with the leftover element of `T` moved past `f w`, which norma
 
 * `TauCeti.TitsSystem.preimage_doubleCoset`: the preimage of a Bruhat cell is a Bruhat cell.
 * `TauCeti.TitsSystem.comap`: the Tits system `(f⁻¹(B), f⁻¹(N))` in `H`.
+* `TauCeti.TitsSystem.exists_mul_eq_of_surjective`: a surjective homomorphism satisfies the
+  hypothesis of `TauCeti.TitsSystem.comap`.
 * `TauCeti.TitsSystem.comapWeylGroupMulEquiv`: its Weyl group is the Weyl group of `(B, N)`.
 * `TauCeti.TitsSystem.comap_simple`: its simple reflections correspond to those of `(B, N)`.
 * `TauCeti.TitsSystem.comap_bruhatCell`: Weyl-indexed Bruhat cells pull back under this
@@ -141,7 +143,7 @@ private theorem comapWeylGroupHom_surjective
   intro q
   induction q using QuotientGroup.induction_on with
   | H n =>
-    obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf n.2
+    obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf n.property
     exact ⟨QuotientGroup.mk ⟨x, hx⟩, comapWeylGroupHom_mk_of_mul_eq T hx ht.1 hxt⟩
 
 private theorem closure_preimage_comapWeylGroupHom
@@ -153,6 +155,12 @@ private theorem closure_preimage_comapWeylGroupHom
     (e.image_symm_eq_preimage T.simple).symm
   rw [he, ← MulEquiv.coe_toMonoidHom, ← MonoidHom.map_closure, T.closure_simple]
   exact Subgroup.map_top_of_surjective _ e.symm.surjective
+
+/-- A surjective homomorphism `f : H →* G` satisfies `G = f(H) (B ∩ N)`, the hypothesis of
+`TauCeti.TitsSystem.comap`. -/
+theorem exists_mul_eq_of_surjective (hf : Function.Surjective f) (g : G) :
+    ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g :=
+  (hf g).imp fun _ hx ↦ ⟨1, one_mem _, by rw [mul_one, hx]⟩
 
 variable (f)
 
@@ -166,7 +174,7 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
   closure_subgroupB_union_subgroupN := by
     refine eq_top_iff.mpr fun z _ ↦ ?_
     obtain ⟨n, hn⟩ := T.exists_mem_doubleCoset (f z)
-    obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf n.2
+    obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf n.property
     have hcell : DoubleCoset.doubleCoset (n : G) T.subgroupB T.subgroupB =
         DoubleCoset.doubleCoset (f x) T.subgroupB T.subgroupB :=
       DoubleCoset.doubleCoset_eq_of_mem (DoubleCoset.mem_doubleCoset.mpr
@@ -191,8 +199,8 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
   mul_doubleCoset_subset s hs := by
     obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective s
     refine ⟨r, rfl, fun w ↦ ?_⟩
-    have hr : f r ∈ T.subgroupN := r.2
-    have hw : f w ∈ T.subgroupN := w.2
+    have hr : f r ∈ T.subgroupN := r.property
+    have hw : f w ∈ T.subgroupN := w.property
     -- The Weyl-indexed multiplication law already handles the choice of simple representative.
     have hmul := T.bruhatCell_mul_subset_union_of_mem_simple hs
       (QuotientGroup.mk (f.subgroupComap T.subgroupN w))
@@ -214,7 +222,7 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
       f.subgroupComap_apply_coe T.subgroupN w] using hmem
   exists_conj_not_mem s hs := by
     obtain ⟨r₀, hr₀, b, hb⟩ := T.exists_conj_not_mem _ hs
-    obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf r₀.2
+    obtain ⟨x, hx, t, ht, hxt⟩ := T.exists_mem_subgroupN_mul_eq hf r₀.property
     let r : T.subgroupN.comap f := ⟨x, hx⟩
     have hr : (QuotientGroup.mk r : _ ⧸ _) = s :=
       comapWeylGroupHom_injective T ((comapWeylGroupHom_mk_of_mul_eq T hx ht.1 hxt).trans hr₀)
@@ -222,7 +230,7 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
     obtain ⟨x, t₁, ht₁, hxt₁⟩ := hf (t * b * t⁻¹)
     have hx : f x ∈ T.subgroupB := by
       rw [eq_mul_inv_of_mul_eq hxt₁]
-      exact mul_mem (mul_mem (mul_mem ht.1 b.2) (inv_mem ht.1)) (inv_mem ht₁.1)
+      exact mul_mem (mul_mem (mul_mem ht.1 b.property) (inv_mem ht.1)) (inv_mem ht₁.1)
     refine ⟨r, hr, ⟨x, hx⟩, fun hmem ↦ hb ?_⟩
     -- Then `r₀ b r₀⁻¹ = f (r x r⁻¹) * (f r) t₁ (f r)⁻¹`, and both factors lie in `B`.
     have hconj : (r₀ : G) * b * (r₀ : G)⁻¹ =
@@ -232,7 +240,7 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
         _ = f r * (f x * t₁) * (f r)⁻¹ := by rw [hxt₁]
         _ = _ := by group
     rw [hconj]
-    exact mul_mem hmem (T.conj_mem_subgroupB r.2 ht₁)
+    exact mul_mem hmem (T.conj_mem_subgroupB r.property ht₁)
 
 variable (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g)
 
@@ -256,7 +264,7 @@ noncomputable def comapWeylGroupMulEquiv : (T.comap f hf).WeylGroup ≃* T.WeylG
 @[simp]
 theorem comapWeylGroupMulEquiv_mk (n : (T.comap f hf).subgroupN) :
     T.comapWeylGroupMulEquiv f hf (QuotientGroup.mk n) =
-      QuotientGroup.mk ⟨f n, by simpa using n.2⟩ :=
+      QuotientGroup.mk ⟨f n, by simpa using n.property⟩ :=
   comapWeylGroupHom_mk T n
 
 /-- The simple reflections of the pulled-back Tits system are the preimages of the simple
@@ -275,7 +283,7 @@ theorem comap_bruhatCell (w : (T.comap f hf).WeylGroup) :
   obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
   rw [comapWeylGroupMulEquiv_mk, bruhatCell_mk, bruhatCell_mk,
     comap_subgroupB]
-  exact (T.preimage_doubleCoset (fun b _ ↦ hf b) (by simpa using n.2)).symm
+  exact (T.preimage_doubleCoset (fun b _ ↦ hf b) (by simpa using n.property)).symm
 
 /-- The normal core `⋂ x f⁻¹(B) x⁻¹` of the pulled-back `B` is the preimage of the normal core
 `⋂ g B g⁻¹` of `B`: every `g : G` is `f y * t` with `t ∈ B ∩ N`, and `t` normalizes `B`. -/

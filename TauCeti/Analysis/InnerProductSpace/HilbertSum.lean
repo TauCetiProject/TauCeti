@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.Normed.Lp.MapCLM
+import TauCeti.Analysis.Normed.Lp.Reindex
 
 /-!
 # Adjoints of direct sums of operators on Hilbert sums
@@ -31,6 +32,11 @@ every summand is. For the ampliation `lp.ampliation ι 2 T` of a single operator
 * `lp.isSelfAdjoint_mapCLM_iff`: `⊕ T i` is self-adjoint iff every `T i` is.
 * `lp.inner_ampliation_apply`, `lp.adjoint_ampliation`: matrix coefficients and adjoints of
   ampliations.
+* `lp.ampliationStarAlgHom`: the ampliation as a star algebra homomorphism.
+* `lp.exists_inner_ampliation_apply_eq_sum`: a finite sum of matrix coefficients of ampliations
+  to `ℓ²(ℕ, ·)` is a single matrix coefficient of the ampliation.
+* `lp.summable_inner_prod`, `lp.inner_eq_tsum_prod`: summability and product-sum formula for inner
+  products in iterated `ℓ²` Hilbert sums.
 
 ## References
 
@@ -71,8 +77,12 @@ theorem isSelfAdjoint_mapCLM_iff (T : ∀ i, E i →L[𝕜] E i) {K : ℝ} (hK :
 
 section Ampliation
 
-variable {ι 𝕜 X Y : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [InnerProductSpace 𝕜 X]
-  [NormedAddCommGroup Y] [InnerProductSpace 𝕜 Y]
+variable {ι 𝕜 X Y : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedAddCommGroup Y]
+  [InnerProductSpace 𝕜 Y]
+
+section Coefficients
+
+variable [NormedSpace 𝕜 X]
 
 /-- The matrix coefficients of an ampliation are the sums of the matrix coefficients of the
 operator over the coordinates. -/
@@ -80,7 +90,29 @@ theorem inner_ampliation_apply (T : X →L[𝕜] Y) (x : ℓ²(ι, X)) (y : ℓ�
     ⟪y, ampliation ι 2 T x⟫_𝕜 = ∑' i, ⟪y i, T (x i)⟫_𝕜 := by
   simp [lp.inner_eq_tsum]
 
-variable [CompleteSpace X] [CompleteSpace Y]
+/-- **Finite sums of ampliation coefficients.** A finite sum of matrix coefficients of ampliations
+to `ℓ²(ℕ, ·)` is a single such coefficient, simultaneously for all operators: interleaving the
+vectors turns `∑ i ∈ s, ⟪η i, (⊕ T) (ξ i)⟫` into `⟪η', (⊕ T) ξ'⟫`. -/
+theorem exists_inner_ampliation_apply_eq_sum {κ : Type*} (s : Finset κ) (ξ : κ → ℓ²(ℕ, X))
+    (η : κ → ℓ²(ℕ, Y)) : ∃ (ξ' : ℓ²(ℕ, X)) (η' : ℓ²(ℕ, Y)), ∀ T : X →L[𝕜] Y,
+      ⟪η', ampliation ℕ 2 T ξ'⟫_𝕜 = ∑ i ∈ s, ⟪η i, ampliation ℕ 2 T (ξ i)⟫_𝕜 := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => exact ⟨0, 0, fun T ↦ by simp⟩
+  | insert i s hi ih =>
+    obtain ⟨ξ', η', h⟩ := ih
+    -- interleave the new pair with the pair representing the sum over `s`
+    refine ⟨⟨_, (lp.memℓp (ξ i)).interleave (lp.memℓp ξ')⟩,
+      ⟨_, (lp.memℓp (η i)).interleave (lp.memℓp η')⟩, fun T ↦ ?_⟩
+    rw [Finset.sum_insert hi, ← h]
+    refine (lp.hasSum_inner _ _).unique (HasSum.even_add_odd ?_ ?_)
+    · simpa using lp.hasSum_inner (η i) (ampliation ℕ 2 T (ξ i))
+    · have hk (k : ℕ) : (2 * k + 1) / 2 = k := by omega
+      simpa [hk] using lp.hasSum_inner η' (ampliation ℕ 2 T ξ')
+
+end Coefficients
+
+variable [InnerProductSpace 𝕜 X] [CompleteSpace X] [CompleteSpace Y]
 
 /-- **Adjoint of an ampliation.** `(⊕ T)† = ⊕ T†`. -/
 @[simp]
@@ -94,6 +126,45 @@ theorem adjoint_ampliation (T : X →L[𝕜] Y) : (ampliation ι 2 T)† = ampli
 theorem star_ampliation (T : X →L[𝕜] X) : star (ampliation ι 2 T) = ampliation ι 2 (star T) := by
   simp only [ContinuousLinearMap.star_eq_adjoint, adjoint_ampliation]
 
+variable (ι 𝕜 X) in
+/-- The ampliation `T ↦ ⊕_{i : ι} T` of bounded endomorphisms of a Hilbert space to `ℓ²(ι, X)`,
+bundled as a star algebra homomorphism. -/
+noncomputable def ampliationStarAlgHom :
+    (X →L[𝕜] X) →⋆ₐ[𝕜] (ℓ²(ι, X) →L[𝕜] ℓ²(ι, X)) where
+  toFun := ampliation ι 2
+  map_one' := ampliation_one
+  map_mul' := ampliation_mul
+  map_zero' := map_zero _
+  map_add' := map_add _
+  commutes' r := by simp [Algebra.algebraMap_eq_smul_one]
+  map_star' T := (star_ampliation T).symm
+
+@[simp]
+theorem coe_ampliationStarAlgHom :
+    ⇑(ampliationStarAlgHom ι 𝕜 X) = ampliation ι 2 :=
+  (rfl)
+
+theorem ampliationStarAlgHom_apply (T : X →L[𝕜] X) :
+    ampliationStarAlgHom ι 𝕜 X T = ampliation ι 2 T :=
+  (rfl)
+
 end Ampliation
+
+section Iterated
+variable {ι₁ ι₂ 𝕜 : Type*} [RCLike 𝕜] {G : ι₁ → ι₂ → Type*}
+  [∀ i j, NormedAddCommGroup (G i j)] [∀ i j, InnerProductSpace 𝕜 (G i j)]
+
+/-- For `f, g` in an iterated `ℓ²` Hilbert sum, `⟪f p.1 p.2, g p.1 p.2⟫` is summable over
+`ι₁ × ι₂`. -/
+theorem summable_inner_prod (f g : lp (fun i ↦ lp (G i) 2) 2) :
+    Summable fun p : ι₁ × ι₂ ↦ ⟪f p.1 p.2, g p.1 p.2⟫_𝕜 :=
+  lp.summable_inner (G := fun p : ι₁ × ι₂ ↦ G p.1 p.2)
+    ⟨fun p ↦ f p.1 p.2, lp.memℓp_prod f⟩ ⟨fun p ↦ g p.1 p.2, lp.memℓp_prod g⟩
+
+/-- The inner product on an iterated `ℓ²` Hilbert sum is the sum over `ι₁ × ι₂`. -/
+theorem inner_eq_tsum_prod (f g : lp (fun i ↦ lp (G i) 2) 2) :
+    ⟪f, g⟫_𝕜 = ∑' p : ι₁ × ι₂, ⟪f p.1 p.2, g p.1 p.2⟫_𝕜 :=
+  ((summable_inner_prod (𝕜 := 𝕜) f g).tsum_prod' fun i ↦ lp.summable_inner (f i) (g i)).symm
+end Iterated
 
 end lp

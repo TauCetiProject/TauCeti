@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
+public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 public import TauCeti.Geometry.Manifold.LinearSlice
 public import TauCeti.Geometry.Manifold.Projectivization.Polynomial
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Level
@@ -372,13 +372,15 @@ variable (hp : ∀ k, (p k).IsHomogeneous (d k)) {s V : Set (ℙ ℂ (Fin (n + 1
 for projective space at `z` and restricted to the open set cutting `s` out of the zero locus. -/
 private noncomputable def restrSliceChart (z : s) :
     OpenPartialHomeomorph (ℙ ℂ (Fin (n + 1) → ℂ)) ((Fin (n - Fintype.card ι) → ℂ) × (ι → ℂ)) :=
-  (complexProjectiveZeroLocusSliceChart hp (hs.subset z.2).1
-    (exists_mem_affineOpen (z : ℙ ℂ (Fin (n + 1) → ℂ))).choose_spec (hrank z z.2)).restrOpen V hV
+  (complexProjectiveZeroLocusSliceChart hp (hs.subset z.property).1
+    (exists_mem_affineOpen (z : ℙ ℂ (Fin (n + 1) → ℂ))).choose_spec (hrank z z.property)).restrOpen
+        V hV
 
 private theorem restrSliceChart_source (z : s) :
     (restrSliceChart hp hV hs hrank z).source =
-      (complexProjectiveZeroLocusSliceChart hp (hs.subset z.2).1
-        (exists_mem_affineOpen (z : ℙ ℂ (Fin (n + 1) → ℂ))).choose_spec (hrank z z.2)).source ∩ V :=
+      (complexProjectiveZeroLocusSliceChart hp (hs.subset z.property).1
+        (exists_mem_affineOpen (z : ℙ ℂ (Fin (n + 1) → ℂ))).choose_spec
+            (hrank z z.property)).source ∩ V :=
   OpenPartialHomeomorph.restrOpen_source _ _ _
 
 private theorem isSliceChart_restrSliceChart (z : s) :
@@ -390,7 +392,7 @@ private theorem isSliceChart_restrSliceChart (z : s) :
 private theorem mem_restrSliceChart_source (z : s) : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈
     (restrSliceChart hp hV hs hrank z).source := by
   rw [restrSliceChart_source]
-  exact ⟨mem_complexProjectiveZeroLocusSliceChart_source hp _ _ _, (hs.subset z.2).2⟩
+  exact ⟨mem_complexProjectiveZeroLocusSliceChart_source hp _ _ _, (hs.subset z.property).2⟩
 
 private theorem contMDiffOn_restrSliceChart (r : ℕ∞ω) (z : s) :
     ContMDiffOn 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, (Fin (n - Fintype.card ι) → ℂ) × (ι → ℂ)) r
@@ -426,8 +428,9 @@ noncomputable def complexProjectiveZeroLocusChartedSpace :
 /-- The chart of `s` at `z` reads the first coordinate of the slice chart at `z`. -/
 theorem complexProjectiveZeroLocusChartedSpace_chartAt_apply (z w : s) :
     @chartAt _ _ _ _ (complexProjectiveZeroLocusChartedSpace hp hV hs hrank) z w =
-      (complexProjectiveZeroLocusSliceChart hp (hs.subset z.2).1
-        (exists_mem_affineOpen (z : ℙ ℂ (Fin (n + 1) → ℂ))).choose_spec (hrank z z.2) w).1 := by
+      (complexProjectiveZeroLocusSliceChart hp (hs.subset z.property).1
+        (exists_mem_affineOpen (z : ℙ ℂ (Fin (n + 1) → ℂ))).choose_spec (hrank z z.property) w).1
+            := by
   rw [complexProjectiveZeroLocusChartedSpace, linearSliceChartedSpace_chartAt,
     linearSliceChart_apply, restrSliceChart, OpenPartialHomeomorph.coe_restrOpen]
 
@@ -435,11 +438,12 @@ theorem complexProjectiveZeroLocusChartedSpace_chartAt_apply (z w : s) :
 `z`. -/
 theorem complexProjectiveZeroLocusChartedSpace_chartAt_source (z : s) :
     (@chartAt _ _ _ _ (complexProjectiveZeroLocusChartedSpace hp hV hs hrank) z).source =
-      Subtype.val ⁻¹' (complexProjectiveZeroLocusSliceChart hp (hs.subset z.2).1
-        (exists_mem_affineOpen (z : ℙ ℂ (Fin (n + 1) → ℂ))).choose_spec (hrank z z.2)).source := by
+      Subtype.val ⁻¹' (complexProjectiveZeroLocusSliceChart hp (hs.subset z.property).1
+        (exists_mem_affineOpen (z : ℙ ℂ (Fin (n + 1) → ℂ))).choose_spec (hrank z z.property)).source
+            := by
   rw [complexProjectiveZeroLocusChartedSpace, linearSliceChartedSpace_chartAt,
     linearSliceChart_source, restrSliceChart_source, preimage_inter, inter_eq_left]
-  exact fun w _ ↦ (hs.subset w.2).2
+  exact fun w _ ↦ (hs.subset w.property).2
 
 /-- **The smooth part of a projective zero locus is a complex manifold.** With the atlas
 `TauCeti.complexProjectiveZeroLocusChartedSpace`, a relatively open subset of the zero locus on
@@ -463,7 +467,8 @@ theorem isImmersionOfComplement_subtypeVal_complexProjectiveZeroLocus (r : ℕ�
     Manifold.IsImmersionOfComplement (ι → ℂ) 𝓘(ℂ, Fin (n - Fintype.card ι) → ℂ)
       𝓘(ℂ, Fin n → ℂ) r (Subtype.val : s → ℙ ℂ (Fin (n + 1) → ℂ)) :=
   isImmersionOfComplement_subtypeVal_linearSliceChartedSpace _ _
-    (fun z ↦ modelEquiv (card_le_of_surjective_jacobiMatrixAt hp (hs.subset z.2).1 (hrank z z.2)))
+    (fun z ↦ modelEquiv (card_le_of_surjective_jacobiMatrixAt hp (hs.subset z.property).1
+        (hrank z z.property)))
     (contMDiffOn_restrSliceChart hp hV hs hrank r)
     (contMDiffOn_restrSliceChart_symm hp hV hs hrank r) _
 
@@ -475,7 +480,8 @@ theorem isSmoothEmbedding_subtypeVal_complexProjectiveZeroLocus (r : ℕ∞ω) :
     Manifold.IsSmoothEmbedding 𝓘(ℂ, Fin (n - Fintype.card ι) → ℂ) 𝓘(ℂ, Fin n → ℂ) r
       (Subtype.val : s → ℙ ℂ (Fin (n + 1) → ℂ)) :=
   isSmoothEmbedding_subtypeVal_linearSliceChartedSpace _ _
-    (fun z ↦ modelEquiv (card_le_of_surjective_jacobiMatrixAt hp (hs.subset z.2).1 (hrank z z.2)))
+    (fun z ↦ modelEquiv (card_le_of_surjective_jacobiMatrixAt hp (hs.subset z.property).1
+        (hrank z z.property)))
     (contMDiffOn_restrSliceChart hp hV hs hrank r)
     (contMDiffOn_restrSliceChart_symm hp hV hs hrank r) _
 
@@ -521,11 +527,11 @@ omit [Fintype ι] in
 private theorem eventually_eval_dehomogenize_affineChart_eq_zero
     (hp : ∀ k, (p k).IsHomogeneous (d k)) (hs : s = complexProjectiveZeroLocus p ∩ V) (z : s)
     (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
-    ∀ᶠ w : s in nhds z, (fun k ↦ eval (affineChart i w.1) (dehomogenize i (p k))) = 0 := by
-  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
+    ∀ᶠ w : s in nhds z, (fun k ↦ eval (affineChart i w.val) (dehomogenize i (p k))) = 0 := by
+  filter_upwards [continuous_subtypeVal.continuousAt.preimage_mem_nhds
     ((isOpen_affineOpen i).mem_nhds hi)] with w hw
   exact funext ((mem_complexProjectiveZeroLocus_iff_eval_affineChart hp hw).1
-    (hs.subset w.2).1)
+    (hs.subset w.property).1)
 
 /-- The dimensions of `s` and of the space of equation values add up to `n`. -/
 private theorem finrank_add_finrank_eq (hp : ∀ k, (p k).IsHomogeneous (d k))
@@ -533,7 +539,7 @@ private theorem finrank_add_finrank_eq (hp : ∀ k, (p k).IsHomogeneous (d k))
     (hrank : ∀ L ∈ s, Function.Surjective (jacobiMatrixAt p L.rep).mulVec) (z : s) :
     Module.finrank ℂ (Fin (n - Fintype.card ι) → ℂ) + Module.finrank ℂ (ι → ℂ) =
       Module.finrank ℂ (Fin n → ℂ) := by
-  have := card_le_of_surjective_jacobiMatrixAt hp (hs.subset z.2).1 (hrank z z.2)
+  have := card_le_of_surjective_jacobiMatrixAt hp (hs.subset z.property).1 (hrank z z.property)
   simp only [Module.finrank_fintype_fun_eq_card, Fintype.card_fin]
   omega
 
@@ -546,7 +552,7 @@ private theorem isRegularPoint_eval_dehomogenize_affineChart (hp : ∀ k, (p k).
       (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k)))
       (z : ℙ ℂ (Fin (n + 1) → ℂ)) :=
   isRegularPoint_iff.2 ((surjective_mfderiv_eval_dehomogenize_affineChart_iff i hp
-    (hs.subset z.2).1 hi).2 (hrank z z.2))
+    (hs.subset z.property).1 hi).2 (hrank z z.property))
 
 /-- **The tangent space of the smooth part of a projective zero locus.** At a point `z` of `s` in
 the standard affine open `U_i`, the image of the differential of the inclusion into `ℂℙⁿ` is the
@@ -555,7 +561,7 @@ kernel of the differential of the chart equations
 theorem tangentRange_complexProjectiveZeroLocusEmbedding (hr : r ≠ 0)
     (z : s) (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
     letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank
-    (complexProjectiveZeroLocusEmbedding hp hV hs hrank r).tangentRange z hr =
+    (complexProjectiveZeroLocusEmbedding hp hV hs hrank r).isImmersion.tangentRange z hr =
       (mfderiv 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
         (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k))) z).ker :=
   letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank
@@ -588,7 +594,8 @@ values (`TauCeti.complexProjectiveZeroLocusNormalSpaceEquiv_normalClass`). -/
 noncomputable def complexProjectiveZeroLocusNormalSpaceEquiv (hr : r ≠ 0)
     (z : s) (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
     letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank
-    (complexProjectiveZeroLocusEmbedding hp hV hs hrank r).NormalSpace z hr ≃L[ℂ] (ι → ℂ) :=
+    (complexProjectiveZeroLocusEmbedding hp hV hs hrank r).isImmersion.NormalSpace z hr ≃L[ℂ]
+        (ι → ℂ) :=
   letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank
   SmoothEmbedding.normalSpaceEquivOfLevel _ z hr
     (eventually_eval_dehomogenize_affineChart_eq_zero hp hs z hi)
@@ -604,7 +611,7 @@ theorem complexProjectiveZeroLocusNormalSpaceEquiv_normalClass (hr : r ≠ 0)
     (v : TangentSpace 𝓘(ℂ, Fin n → ℂ) (z : ℙ ℂ (Fin (n + 1) → ℂ))) :
     letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank
     complexProjectiveZeroLocusNormalSpaceEquiv hp hV hs hrank hr z hi
-        ((complexProjectiveZeroLocusEmbedding hp hV hs hrank r).normalClass z hr v) =
+        ((complexProjectiveZeroLocusEmbedding hp hV hs hrank r).isImmersion.normalClass z hr v) =
       mfderiv 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
         (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k))) z v :=
   letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank

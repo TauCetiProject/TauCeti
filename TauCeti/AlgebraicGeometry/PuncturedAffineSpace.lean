@@ -35,6 +35,9 @@ first column of a matrix.
 * `TauCeti.puncturedAffineSpaceOpens`: the open subset of `Spec R[Xᵢ]` where some coordinate is
   invertible.
 * `TauCeti.puncturedAffineSpace`: the punctured affine space as a scheme over `Spec R`.
+* `TauCeti.PuncturedAffineSpace.instCompactSpace`,
+  `TauCeti.PuncturedAffineSpace.instQuasiSeparatedSpace`: for finite `ι` punctured affine space
+  is quasi-compact, and it is always quasi-separated.
 * `TauCeti.PuncturedAffineSpace.range_specMap_subset_iff`: a morphism `Spec A ⟶ Spec R[Xᵢ]`
   factors through the punctured affine space exactly when the coordinates generate the unit
   ideal of `A`.
@@ -70,6 +73,24 @@ theorem mem_puncturedAffineSpaceOpens_iff (x : Spec (.of (MvPolynomial ι R))) :
       x ∉ PrimeSpectrum.zeroLocus (Set.range (MvPolynomial.X : ι → MvPolynomial ι R)) :=
   Iff.rfl
 
+/-- Punctured affine space is the union of the basic opens `D(Xᵢ)` of the coordinates. -/
+theorem puncturedAffineSpaceOpens_eq_iSup_basicOpen :
+    puncturedAffineSpaceOpens R ι = ⨆ i, (Spec (.of (MvPolynomial ι R))).basicOpen
+      ((Scheme.ΓSpecIso (.of (MvPolynomial ι R))).inv (MvPolynomial.X i)) := by
+  -- The points of `Spec R[Xᵢ]` are the primes of `R[Xᵢ]`, so the membership lemmas of
+  -- `PrimeSpectrum` apply to them.
+  have hmem (i : ι) (x : Spec (.of (MvPolynomial ι R))) :
+      x ∈ (Spec (.of (MvPolynomial ι R))).basicOpen
+          ((Scheme.ΓSpecIso (.of (MvPolynomial ι R))).inv (MvPolynomial.X i)) ↔
+        MvPolynomial.X i ∉ x.asIdeal := by
+    rw [basicOpen_eq_of_affine]
+    exact PrimeSpectrum.mem_basicOpen _ x
+  ext x
+  rw [SetLike.mem_coe, SetLike.mem_coe, TopologicalSpace.Opens.mem_iSup,
+    mem_puncturedAffineSpaceOpens_iff]
+  simp only [hmem]
+  exact (not_congr ((PrimeSpectrum.mem_zeroLocus x _).trans Set.range_subset_iff)).trans not_forall
+
 /-- **Punctured affine space** `𝔸^ι_R \ 0`, the open subscheme of `Spec R[Xᵢ]` where the
 coordinates do not all vanish, as a scheme over `Spec R`.
 
@@ -96,6 +117,19 @@ theorem puncturedAffineSpace_hom :
 theorem toAffineSpace_left :
     (toAffineSpace R ι).left = (puncturedAffineSpaceOpens R ι).ι :=
   (rfl)
+
+/-- For finitely many coordinates, punctured affine space is quasi-compact: it is the union of the
+finitely many basic opens `D(Xᵢ)` of the affine scheme `𝔸^ι_R`. -/
+instance instCompactSpace [Finite ι] : CompactSpace (puncturedAffineSpace R ι).left := by
+  have h : IsCompact (puncturedAffineSpaceOpens R ι : Set (Spec (.of (MvPolynomial ι R)))) := by
+    rw [puncturedAffineSpaceOpens_eq_iSup_basicOpen, TopologicalSpace.Opens.coe_iSup]
+    exact isCompact_iUnion fun i ↦ ((isAffineOpen_top _).basicOpen _).isCompact
+  exact isCompact_iff_compactSpace.mp h
+
+/-- Punctured affine space is quasi-separated, as an open subscheme of the affine scheme
+`𝔸^ι_R`. -/
+instance instQuasiSeparatedSpace : QuasiSeparatedSpace (puncturedAffineSpace R ι).left :=
+  (puncturedAffineSpaceOpens R ι).isOpen.isOpenEmbedding_subtypeVal.quasiSeparatedSpace
 
 variable {R ι}
 
@@ -209,7 +243,7 @@ noncomputable def homEquiv :
     ((algSpec (.of R)).obj (op A) ⟶ puncturedAffineSpace R ι) ≃
       {v : ι → A // Ideal.span (Set.range v) = ⊤} where
   toFun s := ⟨fun i ↦ coordinateAlgHom s (MvPolynomial.X i), span_range_coordinateAlgHom_X s⟩
-  invFun v := ofUnimodular v.1 v.2
+  invFun v := ofUnimodular v.val v.property
   left_inv s := ofUnimodular_coordinateAlgHom s
   right_inv v := Subtype.ext <| funext fun i ↦ by simp
 
@@ -222,7 +256,7 @@ theorem coe_homEquiv_apply
 
 @[simp]
 theorem homEquiv_symm_apply (v : {v : ι → A // Ideal.span (Set.range v) = ⊤}) :
-    (homEquiv R ι A).symm v = ofUnimodular v.1 v.2 :=
+    (homEquiv R ι A).symm v = ofUnimodular v.val v.property :=
   (rfl)
 
 /-- The coordinates of a point of punctured affine space are natural in the value algebra:

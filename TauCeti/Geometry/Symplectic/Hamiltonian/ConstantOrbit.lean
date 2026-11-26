@@ -49,7 +49,9 @@ nondegenerate critical point of `F`
 is the step of the comparison between Hamiltonian Floer theory and Morse theory for a `C²`-small
 Morse Hamiltonian `εF` which shows that the constant orbits at the critical points are admissible
 generators. That the constant orbits are the only one-periodic orbits is a separate statement
-(Yorke's period bound), and the index `μ = ind(F) - n` of these generators is not computed here.
+(Yorke's period bound). The Conley–Zehnder index of these generators, `n - ind(F)` in the
+coordinates of `ℂⁿ`, is computed in
+`TauCeti.Geometry.Symplectic.Hamiltonian.ConstantOrbit.ConleyZehnder`.
 
 The evolution is the global time-dependent Hamiltonian flow
 `TauCeti.SymplecticForm.timeDependentHamiltonianFlow`, so a globally Lipschitz Hamiltonian vector
@@ -62,6 +64,8 @@ symplectic manifold at a critical point; the manifold statement is not proved he
   derivative of the evolution of `εF` from `s` to `t` is `exp ((t - s) ε dX_F(p))`.
 * `SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt`: a nondegenerate constant
   orbit sits at a nondegenerate critical point, for every `ε`.
+* `SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt'`: the same for the
+  autonomous Hamiltonian `F` itself, written `fun _ ↦ F`.
 * `SymplecticForm.isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff`: for
   `ε (t - s) ≠ 0` and `|ε (t - s)| ‖dX_F(p)‖ < log 2`, the constant orbit is nondegenerate exactly
   at a nondegenerate critical point.
@@ -103,11 +107,10 @@ theorem fderiv_timeDependentHamiltonianFlow_const_mul (hF : ContDiff ℝ 2 F)
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension fun _ y ↦ ε * F y)) (s t : ℝ) :
     fderiv ℝ (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX s t) p =
       exp (((t - s) * ε) • fderiv ℝ (ω.hamiltonianVectorField F) p) := by
-  have hεX : ω.hamiltonianVectorField (fun y ↦ ε * F y) = ε • ω.hamiltonianVectorField F :=
-    funext fun y ↦ ω.hamiltonianVectorField_const_mul ε F y
   rw [ω.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft hX
     (contDiff_const.mul (hF.comp contDiff_snd))
-    (ω.hasDerivAt_const_hamiltonianVectorField_const_mul hp ε), hεX, fderiv_const_smul_field,
+    (ω.hasDerivAt_const_hamiltonianVectorField_const_mul hp ε), hamiltonianVectorField_const_mul',
+    fderiv_const_smul_field,
     dysonSeriesLeft_const, Pi.smul_apply, smul_smul]
 
 /-- The constant orbit at a critical point of `F` is fixed by every time map of the evolution of
@@ -155,6 +158,23 @@ theorem isNondegenerateCriticalPoint_of_isNondegenerateFixedPt (hF : ContDiff �
   refine (ω.isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff_exp hF hp ε hX s t).1
     h u ?_
   exact ContinuousLinearMap.exp_apply_of_apply_eq_zero (by rw [_root_.smul_apply, hA, smul_zero])
+
+/-- A nondegenerate constant orbit of the autonomous Hamiltonian `F` itself sits at a
+nondegenerate critical point: the case `ε = 1` of
+`SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt`, for the Hamiltonian
+written `fun _ ↦ F` rather than `fun _ y ↦ 1 * F y`. -/
+theorem isNondegenerateCriticalPoint_of_isNondegenerateFixedPt' (hF : ContDiff ℝ 2 F)
+    (hp : fderiv ℝ F p = 0) {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension fun _ ↦ F)) {s t : ℝ}
+    (h : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow (fun _ ↦ F) hX s t) p) :
+    IsNondegenerateCriticalPoint F p := by
+  have e : (fun (_ : ℝ) (y : V) ↦ (1 : ℝ) * F y) = fun _ ↦ F := by
+    funext _ y
+    exact one_mul _
+  -- `hX` and `h` mention the Hamiltonian, so they are reverted before rewriting it.
+  revert hX
+  rw [← e]
+  exact fun hX h ↦ ω.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt hF hp hX h
 
 /-- **Constant orbits of small Hamiltonians.** Let `p` be a critical point of a `C²` function `F`,
 and let `ε (t - s) ≠ 0` with `|ε (t - s)| ‖dX_F(p)‖ < log 2`. Then the constant orbit at `p` is a

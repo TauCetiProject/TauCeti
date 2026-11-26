@@ -184,6 +184,24 @@ theorem coordinateWeight_def (j : Fin D.dim) :
     D.coordinateWeight j = D.weightLatticeBasis.repr ⟨D.weight j, D.weight_mem_weightLattice j⟩ :=
   (rfl)
 
+/-- In a fundamental-weight lattice basis, reading coordinates is evaluation. -/
+theorem weightLatticeBasis_repr_of_coe_weightLatticeBasis
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1)
+    (μ : D.weightLattice) (i : Fin t.rank) :
+    D.weightLatticeBasis.repr μ i = (μ : Fin t.rank → ℤ) i := by
+  have h := congrArg Subtype.val (D.weightLatticeBasis.sum_repr μ)
+  rw [Submodule.coe_sum] at h
+  simpa [hb, Pi.single_apply] using congrFun h i
+
+/-- When the chosen basis of the weight lattice is the standard basis of fundamental weights, the
+coordinate weights agree with the weights themselves. -/
+theorem coordinateWeight_eq_of_coe_weightLatticeBasis
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1) :
+    D.coordinateWeight = D.weight := by
+  funext j i
+  rw [D.coordinateWeight_def]
+  exact D.weightLatticeBasis_repr_of_coe_weightLatticeBasis hb _ i
+
 /-- **The coordinate weights span the character lattice.** The weights span `Λ(D)` by definition,
 and reading `Λ(D)` in the chosen basis is a linear isomorphism onto `Fin t.rank → ℤ`. -/
 theorem span_range_coordinateWeight_eq_top :
@@ -260,6 +278,16 @@ theorem sum_coordinateRoot_smul (γ : Fin t.numRoots) :
       (t.simplyConnectedRootDatum ht).root γ := by
   have h := congrArg Subtype.val (D.weightLatticeBasis.sum_repr ⟨_, D.root_mem_weightLattice γ⟩)
   rwa [Submodule.coe_sum] at h
+
+/-- When the chosen basis of the weight lattice is the standard basis of fundamental weights, the
+coordinate roots agree with the roots of the pinned root datum. -/
+theorem coordinateRoot_eq_of_coe_weightLatticeBasis
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1)
+    (γ : Fin t.numRoots) :
+    D.coordinateRoot γ = (t.simplyConnectedRootDatum ht).root γ := by
+  funext i
+  rw [D.coordinateRoot_def]
+  exact D.weightLatticeBasis_repr_of_coe_weightLatticeBasis hb _ i
 
 /-! ## Nilpotence of the root generators -/
 
@@ -434,6 +462,15 @@ theorem coe_torusPoints (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
     (D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
       UniversalEnvelopingAlgebra.kostantTorusMatrix D.lattice D.basis D.coordinateWeight s :=
   (rfl)
+
+/-- Actual torus points are block upper triangular for every block indexing, since they
+are diagonal in the datum's original weight basis. -/
+theorem blockTriangular_torusPoints (A : Type v) [CommRing A] {α : Type*} [Preorder α]
+    (b : Fin D.dim → α) (s : Fin t.rank → Aˣ) :
+    ((D.torusPoints A s : Matrix.GeneralLinearGroup (Fin D.dim) A) :
+      Matrix (Fin D.dim) (Fin D.dim) A).BlockTriangular b := by
+  rw [D.coe_torusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
+  exact Matrix.blockTriangular_diagonal _
 
 /-- Maps of value rings carry actual torus parameters coordinatewise to their images. -/
 @[simp]

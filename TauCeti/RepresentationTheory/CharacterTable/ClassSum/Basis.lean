@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MonoidAlgebra.Center
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basic
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
@@ -38,9 +39,9 @@ omit [Fintype G] [DecidableEq G] in
 /-- The coefficient function of a central group-algebra element, as a class function on `G`. -/
 def centerToClassFunction :
     Subalgebra.center k (MonoidAlgebra k G) →ₗ[k] ClassFunction k G where
-  toFun z := ⟨fun g => z.1.coeff g, ClassFunction.mem_iff.mpr fun g x => by
+  toFun z := ⟨fun g => z.val.coeff g, ClassFunction.mem_iff.mpr fun g x => by
     have hz := congrArg (fun a : MonoidAlgebra k G => a.coeff (x * g))
-      (Subalgebra.mem_center_iff.mp z.2 (MonoidAlgebra.of k G x))
+      (Subalgebra.mem_center_iff.mp z.property (MonoidAlgebra.of k G x))
     simpa [mul_assoc] using hz.symm⟩
   map_add' z w := rfl
   map_smul' c z := rfl
@@ -49,15 +50,25 @@ omit [Fintype G] [DecidableEq G] in
 /-- The class function of a central element is its coefficient function. -/
 @[simp]
 theorem centerToClassFunction_apply (z : Subalgebra.center k (MonoidAlgebra k G)) (g : G) :
-    (centerToClassFunction z).1 g = z.1.coeff g :=
+    (centerToClassFunction z).val g = z.val.coeff g :=
   (rfl)
 
 omit [Fintype G] [DecidableEq G] in
 /-- The coefficients of a central group-algebra element agree on conjugate group elements. -/
 theorem center_coeff_eq_of_isConj (z : Subalgebra.center k (MonoidAlgebra k G))
     {g h : G} (hgh : IsConj g h) :
-    z.1.coeff g = z.1.coeff h :=
+    z.val.coeff g = z.val.coeff h :=
   ClassFunction.eq_of_isConj (centerToClassFunction z) hgh
+
+omit [Fintype G] [DecidableEq G] in
+/-- If `cls : G → ι` only identifies conjugate elements, the coefficients of a central element of
+`k[G]` factor through `cls`. -/
+theorem exists_center_coeff_eq_comp {ι : Type*} (cls : G → ι)
+    (hcls : ∀ g h, cls g = cls h → IsConj g h) (z : Subalgebra.center k (MonoidAlgebra k G)) :
+    ∃ ψ : ι → k, ⇑(z : MonoidAlgebra k G).coeff = ψ ∘ cls := by
+  classical
+  refine ⟨fun i ↦ (z : MonoidAlgebra k G).coeff (Function.invFun cls i), funext fun g ↦ ?_⟩
+  exact center_coeff_eq_of_isConj z (hcls _ _ (Function.invFun_eq ⟨g, rfl⟩)).symm
 
 omit [Fintype G] [DecidableEq G] in
 /-- Read the coefficients of a central group-algebra element as a function on conjugacy classes. -/
@@ -69,7 +80,7 @@ omit [Fintype G] [DecidableEq G] in
 /-- Reading the coefficient on the conjugacy class of `g` recovers the coefficient at `g`. -/
 @[simp]
 theorem centerToConjClasses_mk (z : Subalgebra.center k (MonoidAlgebra k G)) (g : G) :
-    centerToConjClasses z (ConjClasses.mk g) = z.1.coeff g := by
+    centerToConjClasses z (ConjClasses.mk g) = z.val.coeff g := by
   simp [centerToConjClasses]
 
 /-- Regard a class sum as an element of the center of the group algebra. -/
@@ -85,9 +96,8 @@ theorem classSumCenter_coe (C : ConjClasses G) :
 
 /-- The class sum of the conjugacy class of `1`, as an element of the center, is `1`. -/
 @[simp]
-theorem classSumCenter_mk_one : classSumCenter (k := k) (ConjClasses.mk (1 : G)) = 1 := by
-  apply Subtype.ext
-  simp
+theorem classSumCenter_mk_one : classSumCenter (k := k) (ConjClasses.mk (1 : G)) = 1 :=
+  Subtype.ext <| (classSum_mk_of_mem_center k (one_mem _)).trans (map_one _)
 
 /-- Convert a function on conjugacy classes to the corresponding linear combination of class
 sums. -/
@@ -176,5 +186,23 @@ theorem finrank_center_monoidAlgebra :
   let := Classical.decEq G
   rw [Module.finrank_eq_card_basis (classSumBasis (G := G) (k := k))]
   exact Fintype.card_eq_nat_card
+
+end TauCeti
+
+namespace TauCeti
+
+variable {k G : Type*} [CommSemiring k] [CommGroup G] [Fintype G] [DecidableEq G]
+
+/-- In a commutative group every element is central (`classSum_mk_of_mem_center`), so the
+class sum of `g`, as an element of the center, is `g`.
+
+Its simp priority is low so that `classSumCenter_mk_one` still rewrites the class of `1`
+to `1`, rather than to `toCenter (of k G 1)`, which simp leaves as `single 1 1`. -/
+@[simp low]
+theorem classSumCenter_mk_of_commGroup (g : G) :
+    classSumCenter (k := k) (ConjClasses.mk g) =
+      MonoidAlgebra.toCenter (MonoidAlgebra.of k G g) :=
+  Subtype.ext <| (classSum_mk_of_mem_center k
+    (Subgroup.mem_center_iff.mpr fun h => mul_comm h g)).trans (MonoidAlgebra.coe_toCenter _).symm
 
 end TauCeti

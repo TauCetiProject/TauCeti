@@ -17,14 +17,20 @@ conditional density. An adapted process `X`, integrable at each time under `Q`, 
 step in transferring martingale representations: one first represents the weighted
 process under the original measure, then transforms its integrand.
 
-The theorem permits vanishing densities; equivalence of the measures is unnecessary.
-It makes no assertion about stochastic integrals, path regularity or representation.
-A second form accepts any strongly adapted fixed-time version of the conditional
+The change-of-measure criterion permits vanishing densities; equivalence of the measures
+is unnecessary. It makes no assertion about stochastic integrals, path regularity or
+representation. A second form accepts any strongly adapted fixed-time version of the conditional
 density, allowing a continuous density martingale to be used without identifying its
 representative pointwise with conditional expectations. Neither form upgrades
 fixed-time agreement to indistinguishability.
 
-The proof uses the conditional-density set-integral identity from
+When `μ` is finite and the measures are equivalent, `1 / Z_t` is a `Q`-martingale closed
+by the reciprocal terminal density `1 / w.toReal`. No deterministic density bounds are
+needed. The result uses fixed-time identities only: a continuous version of `Z` would
+still need a separate nonattainment-of-zero argument before taking its reciprocal in
+a stochastic product formula.
+
+The criterion uses the conditional-density set-integral identity from
 `MeasureTheory.AEStronglyMeasurable.setIntegral_condExp_toReal_smul` and the native
 conditional-expectation characterization of martingales.
 
@@ -79,5 +85,30 @@ theorem StronglyAdapted.martingale_withDensity_iff_of_ae_eq_condExp
     (hZeq t).mono fun ω hω ↦ congrArg (· • X t ω) hω
   exact ⟨fun h ↦ h.congr (fun t ↦ (hZ t).smul (hX t)) (fun t ↦ (heq t).symm),
     fun h ↦ h.congr (fun t ↦ stronglyMeasurable_condExp.smul (hX t)) heq⟩
+
+/-- The reciprocal conditional density is a martingale under a finite density change with
+almost everywhere nonzero density. For an almost everywhere measurable density it is the
+changed-measure conditional expectation of the reciprocal terminal density. If the real density
+is not integrable under the original measure, the process is identically zero. -/
+theorem Filtration.martingale_inv_condExp_toReal_withDensity (ℱ : Filtration ι mΩ)
+    [IsFiniteMeasure μ] [IsFiniteMeasure (μ.withDensity w)] (hpos : ∀ᵐ x ∂μ, w x ≠ 0) :
+    Martingale (fun t x ↦ (μ[fun y ↦ (w y).toReal | ℱ t] x)⁻¹) ℱ
+      (μ.withDensity w) := by
+  by_cases hint : Integrable (fun x ↦ (w x).toReal) μ
+  swap
+  · simp only [condExp_of_not_integrable hint, Pi.zero_apply, inv_zero]
+    exact martingale_zero ℝ ℱ (μ.withDensity w)
+  -- On nonzero values, `toReal` loses only `∞`, which is recovered from the value zero.
+  have hrestore : Measurable (fun r : ℝ ↦ if r ∈ ({0} : Set ℝ) then ∞ else ENNReal.ofReal r) :=
+    measurable_const.ite (measurableSet_singleton 0) ENNReal.measurable_ofReal
+  have hmeas := hrestore.comp_aemeasurable hint.aemeasurable
+  have hw : AEMeasurable w μ := hmeas.congr <| hpos.mono fun x hx ↦ by
+    by_cases ht : w x = ∞
+    · simp [ht]
+    · simp [ENNReal.toReal_ne_zero.mpr ⟨hx, ht⟩, ENNReal.ofReal_toReal ht]
+  apply (martingale_condExp (fun x ↦ ((w x).toReal)⁻¹) ℱ (μ.withDensity w)).congr
+    (fun t ↦ (stronglyMeasurable_condExp (μ := μ)
+      (f := fun y ↦ (w y).toReal) (m := ℱ t)).inv₀)
+  exact fun t ↦ hw.condExp_inv_toReal_withDensity hpos
 
 end MeasureTheory

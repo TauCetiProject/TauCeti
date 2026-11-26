@@ -132,7 +132,7 @@ noncomputable def tateSeries.pderiv (j : Fin N) :
     tateSeries N A →ₗ[A] tateSeries N A where
   toFun f := ⟨MvPowerSeries.pderiv j (f : MvPowerSeries (Fin N) A),
     mem_weightedRestrictedSubring.mpr
-      ((mem_weightedRestrictedSubring.mp f.2).pderiv_one_weight j)⟩
+      ((mem_weightedRestrictedSubring.mp f.property).pderiv_one_weight j)⟩
   map_add' f g := Subtype.ext (map_add (MvPowerSeries.pderiv j) _ _)
   map_smul' a f := Subtype.ext <| by
     simp only [RingHom.id_apply, Algebra.smul_def, MulMemClass.coe_mul, tateSeries.coe_algebraMap]
@@ -253,7 +253,7 @@ theorem tateSeries.jacobian_mem_tateSeriesPlus {Aplus : Subring A} {F : Fin N �
       tateSeries.jacobian F := by
     rw [← Subring.subtype_apply, RingHom.map_det, RingHom.mapMatrix_apply, tateSeries.jacobian_def]
     congr 1
-  exact hdet ▸ Jplus.det.2
+  exact hdet ▸ Jplus.det.property
 
 @[simp]
 theorem tateSeries.jacobian_fin_zero (F : Fin 0 → tateSeries 0 A) :

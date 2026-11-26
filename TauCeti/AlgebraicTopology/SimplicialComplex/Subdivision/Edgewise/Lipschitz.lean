@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Edgewise.Homeomorph
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Realization
 public import TauCeti.Analysis.Convex.Lipschitz
-import TauCeti.Analysis.Convex.StdSimplex
+import TauCeti.Analysis.Convex.StdSimplex.Faces
 
 /-!
 # Lipschitz bounds across an edgewise subdivision
@@ -47,7 +47,7 @@ theorem lipschitzOnWith_stdSimplex_of_edgewiseSubdivision
     {k : ℕ} (hk : k ≠ 0) {f : (ι → ℝ) → Y} {C : ℝ≥0}
     (hf : ∀ ρ : Face ((⊤ : AbstractSimplicialComplex ι).edgewiseSubdivision k),
       LipschitzOnWith C f
-        (convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ)))) :
+        (convexHull ℝ (range fun a : ρ.val => (edgewisePoint a.val.val : ι → ℝ)))) :
     LipschitzOnWith C f (range fun t : Convexity.StdSimplex ℝ ι => ⇑t.weights) := by
   classical
   let K : AbstractSimplicialComplex ι := ⊤
@@ -57,7 +57,7 @@ theorem lipschitzOnWith_stdSimplex_of_edgewiseSubdivision
   refine Convex.lipschitzOnWith_of_finite_closed_cover
     (Convexity.StdSimplex.convex_range_toFun_comp_weights ℝ ι)
     (fun ρ : Face (K.edgewiseSubdivision k) =>
-      convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ)))
+      convexHull ℝ (range fun a : ρ.val => (edgewisePoint a.val.val : ι → ℝ)))
     (fun ρ => (finite_range _).isCompact_convexHull ℝ |>.isClosed) ?_
     (fun ρ => (hf ρ).mono inter_subset_right)
   rw [iUnion_convexHull_range_edgewisePoint K hk, range_realization_coe_top]

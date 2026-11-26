@@ -45,17 +45,8 @@ attribute [local instance 1100] HahnSeries.instAlgebra
 
 /-- Substitution by a formal coordinate, as a Lie automorphism of formal currents. -/
 def substLieEquiv (φ : FormalCoordinate K) : currentAlgebra K L ≃ₗ⁅K⁆ currentAlgebra K L :=
-  -- Rebundle the scalar equivalence for the coefficientwise algebra instance used by currents.
-  let er : K⸨X⸩ ≃+* K⸨X⸩ := by
-    letI : Algebra K K⸨X⸩ := HahnSeries.powerSeriesAlgebra ℤ K
-    exact (LaurentSeries.substAlgEquiv φ).toRingEquiv
-  let e : K⸨X⸩ ≃ₐ[K] K⸨X⸩ :=
-    { er with
-      commutes' := fun a ↦ by
-        simp only [HahnSeries.algebraMap_apply, Algebra.algebraMap_self_apply]
-        let : Algebra K K⸨X⸩ := HahnSeries.powerSeriesAlgebra ℤ K
-        simpa only [er, _root_.LaurentSeries.algebraMap_apply] using
-          (LaurentSeries.substAlgEquiv φ).commutes' a }
+  -- The substitution automorphism for the coefficientwise algebra instance used by currents.
+  let e := LaurentSeries.substAlgEquivRestrictScalars K φ
   { _root_.LieAlgebra.ExtendScalars.map e.toAlgHom
       (LieHom.id : L →ₗ⁅K⁆ L),
     TensorProduct.congr e.toLinearEquiv
@@ -65,7 +56,7 @@ def substLieEquiv (φ : FormalCoordinate K) : currentAlgebra K L ≃ₗ⁅K⁆ c
 @[simp]
 theorem substLieEquiv_tmul (φ : FormalCoordinate K) (f : K⸨X⸩) (x : L) :
     substLieEquiv (L := L) φ (f ⊗ₜ x) = LaurentSeries.substAlgEquiv φ f ⊗ₜ x :=
-  (rfl)
+  congrArg (· ⊗ₜ x) (LaurentSeries.substAlgEquivRestrictScalars_apply K φ f)
 
 /-- Substitution reverses composition of formal parameters. -/
 theorem substLieEquiv_mul_apply (φ ψ : FormalCoordinate K) (u : currentAlgebra K L) :
@@ -134,7 +125,7 @@ theorem residuePairing_substLieEquiv (φ : FormalCoordinate K) (Φ : LinearMap.B
   induction u using TensorProduct.inductionOn with
   | tmul f x =>
     induction v using TensorProduct.inductionOn with
-    | tmul g y => simp
+    | tmul g y => simp [LaurentSeries.coe_substAlgEquiv]
     | add v w hv hw => simp only [map_add, hv, hw]
   | add u w hu hw => simp only [map_add, LinearMap.add_apply, hu, hw]
 

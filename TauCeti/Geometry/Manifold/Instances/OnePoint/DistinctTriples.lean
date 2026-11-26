@@ -51,6 +51,8 @@ Baire, space on which the group acts transitively.
 * `OnePoint.pslHomeomorphDistinctTriples_symm_smul` and
   `OnePoint.pslHomeomorphDistinctTriples_symm_eq_iff`: its inverse sends a triple `p` to the unique
   element of `PSL(2, 𝕜)` carrying `b` to `p`.
+* `OnePoint.pslHomeomorphDistinctTriples_symm_eq_mul_inv`: changing the base triple multiplies
+  the inverse on the right by a fixed element.
 
 ## References
 
@@ -78,7 +80,7 @@ action whose orbit map is `OnePoint.pslHomeomorphDistinctTriples`. -/
 @[instance_reducible]
 private noncomputable def distinctTriplesMulAction :
     MulAction PSL(2, 𝕜) {p : Fin 3 → OnePoint 𝕜 // Injective p} where
-  smul g p := ⟨g • (p : Fin 3 → OnePoint 𝕜), (MulAction.injective g).comp p.2⟩
+  smul g p := ⟨g • (p : Fin 3 → OnePoint 𝕜), (MulAction.injective g).comp p.property⟩
   one_smul _ := Subtype.ext (one_smul _ _)
   mul_smul _ _ _ := Subtype.ext (mul_smul _ _ _)
 
@@ -99,8 +101,8 @@ private theorem bijective_smul_distinctTriple (b : {p : Fin 3 → OnePoint 𝕜 
   · -- Both `g` and `h` carry `b` to the same triple.
     have hgh' := congrArg Subtype.val hgh
     simp only [coe_smul_distinctTriple] at hgh'
-    exact (existsUnique_psl_smul_eq_of_injective b.2 (g • b).2).unique rfl hgh'.symm
-  · obtain ⟨g, hg, -⟩ := existsUnique_psl_smul_eq_of_injective b.2 p.2
+    exact (existsUnique_psl_smul_eq_of_injective b.property (g • b).property).unique rfl hgh'.symm
+  · obtain ⟨g, hg, -⟩ := existsUnique_psl_smul_eq_of_injective b.property p.property
     exact ⟨g, Subtype.ext hg⟩
 
 variable [ProperSpace 𝕜]
@@ -148,5 +150,16 @@ theorem pslHomeomorphDistinctTriples_symm_eq_iff
       ∀ i, g • (b : Fin 3 → OnePoint 𝕜) i = (p : Fin 3 → OnePoint 𝕜) i := by
   rw [Homeomorph.symm_apply_eq, Subtype.ext_iff, funext_iff]
   simp only [pslHomeomorphDistinctTriples_apply_coe, eq_comm]
+
+/-- **Change of the base triple.** The element carrying `b` to `p` is the element carrying another
+base triple `b'` to `p`, composed with the inverse of the one carrying `b'` to `b`. -/
+theorem pslHomeomorphDistinctTriples_symm_eq_mul_inv
+    (b b' p : {p : Fin 3 → OnePoint 𝕜 // Injective p}) :
+    (pslHomeomorphDistinctTriples b).symm p =
+      (pslHomeomorphDistinctTriples b').symm p * ((pslHomeomorphDistinctTriples b').symm b)⁻¹ := by
+  rw [pslHomeomorphDistinctTriples_symm_eq_iff]
+  intro i
+  rw [mul_smul, inv_smul_eq_iff.mpr (pslHomeomorphDistinctTriples_symm_smul b' b i).symm,
+    pslHomeomorphDistinctTriples_symm_smul]
 
 end OnePoint

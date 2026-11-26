@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.WeilDivisor.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Meromorphic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # The sheaf `𝒪_D` of a divisor on a Riemann surface
@@ -62,6 +64,8 @@ injective on sections, and functorial in the divisor.
   their values outside a closed discrete set.
 * `TauCeti.RiemannSurface.divisorSheafMapOfLE_app_injective`, `divisorSheafMapOfLE_refl` and
   `divisorSheafMapOfLE_comp`: the inclusions are injective and functorial.
+* `TauCeti.RiemannSurface.divisorSheafMapOfLE_app_eventuallyEq`: away from isolated points, the
+  inclusions do not change the values of sections.
 * `TauCeti.RiemannSurface.finrank_divisorSheaf_zero`: `h⁰(0) = 1` on a compact connected
   Riemann surface.
 
@@ -170,24 +174,18 @@ theorem indicator (hf : IsDivisorSectionAt D f x) {E : WeilDivisor X} (h : D ≤
 
 end IsDivisorSectionAt
 
-section IsManifold
-
-variable [IsManifold 𝓘(ℂ) 1 X]
-
 /-- Away from the support of `D`, the local sections of `𝒪_D` are the holomorphic germs. -/
 theorem isDivisorSectionAt_iff_of_eq_zero {D : WeilDivisor X} {f : X → ℂ} {x : X}
     (hD : D x = 0) :
     IsDivisorSectionAt D f x ↔ ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω f x := by
   refine ⟨fun hf ↦ hf.contMDiffAt hD.le, fun hf ↦ ?_⟩
-  have hev := (contMDiffAt_iff_eventually_mdifferentiableAt (by simp)).1 hf
   exact
-  { meromorphicAt := meromorphicAt_of_eventually_mdifferentiableAt hev
+  { meromorphicAt :=
+      (meromorphicAt_def f x).2 hf.contDiffAt_comp_chartAt_symm.analyticAt.meromorphicAt
     neg_le_meromorphicOrderAt := by
       simpa [hD] using meromorphicOrderAt_nonneg_of_continuousAt hf.continuousAt
     contMDiffAt := fun _ ↦ hf
     apply_eq_zero := fun h ↦ absurd hD h.ne' }
-
-end IsManifold
 
 /-- The sections of `𝒪_D` over an open set `U`, as functions on `U`: near each point of `U` they
 agree with a local section of `𝒪_D` in the sense of `IsDivisorSectionAt`. -/
@@ -215,7 +213,7 @@ theorem mem_divisorSections_iff {U : Opens X} {f : U → ℂ} :
 of `𝒪_D` over `U`. -/
 theorem comp_val_mem_divisorSections {U : Opens X} {g : X → ℂ}
     (hg : ∀ x ∈ U, IsDivisorSectionAt D g x) : g ∘ Subtype.val ∈ divisorSections D U :=
-  fun x ↦ ⟨g, hg x x.2, EventuallyEq.rfl⟩
+  fun x ↦ ⟨g, hg x x.property, EventuallyEq.rfl⟩
 
 /-- A section of `𝒪_D` over `U`, extended by zero to `X`, is a local section of `𝒪_D` at every
 point of `U`. -/
@@ -230,10 +228,10 @@ theorem isDivisorSectionAt_extend {U : Opens X} {f : U → ℂ} (hf : f ∈ divi
 /-- A global divisor section, read as a function on the surface, is a local divisor section
 at every point. -/
 theorem divisorSections.isDivisorSectionAt (f : divisorSections D ⊤) (x : X) :
-    IsDivisorSectionAt D (fun y ↦ f.1 ⟨y, trivial⟩) x := by
+    IsDivisorSectionAt D (fun y ↦ f.val ⟨y, trivial⟩) x := by
   have h := isDivisorSectionAt_extend f.property (⟨x, trivial⟩ : (⊤ : Opens X))
   exact h.congr (.of_forall fun y ↦ by
-    simpa using (Subtype.val_injective.extend_apply f.1 0
+    simpa using (Subtype.val_injective.extend_apply f.val 0
       (⟨y, trivial⟩ : (⊤ : Opens X))))
 
 /-- Sections of `𝒪_D` restrict to smaller open sets. -/
@@ -251,7 +249,7 @@ theorem apply_eq_zero_of_mem_divisorSections {U : Opens X} {f : U → ℂ}
 
 /-- Membership in `divisorSections D U` is local on `U`. -/
 private theorem mem_divisorSections_of_local {U : Opens X} (f : U → ℂ)
-    (hf : ∀ x : U, ∃ (V : Opens X) (_ : x.1 ∈ V) (i : V ⟶ U),
+    (hf : ∀ x : U, ∃ (V : Opens X) (_ : x.val ∈ V) (i : V ⟶ U),
       f ∘ Opens.inclusion i.le ∈ divisorSections D V) : f ∈ divisorSections D U := by
   intro x
   obtain ⟨V, hxV, i, hV⟩ := hf x
@@ -272,7 +270,7 @@ private def divisorLocalPredicate (D : WeilDivisor X) :
 /-- Restriction of sections of `𝒪_D` to a smaller open set. -/
 private def divisorRestrict (D : WeilDivisor X) {U V : Opens X} (i : V ⟶ U) :
     divisorSections D U →ₗ[ℂ] divisorSections D V where
-  toFun f := ⟨f.1 ∘ Opens.inclusion i.le, comp_inclusion_mem_divisorSections i.le f.2⟩
+  toFun f := ⟨f.val ∘ Opens.inclusion i.le, comp_inclusion_mem_divisorSections i.le f.property⟩
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
@@ -313,8 +311,8 @@ def divisorSheafSectionsEquiv (D : WeilDivisor X) (U : Opens X) :
 @[simp]
 theorem divisorSheafSectionsEquiv_map (D : WeilDivisor X) {U V : Opens X} (h : V ⟶ U)
     (f : (divisorSheaf D).obj.obj (op U)) :
-    (divisorSheafSectionsEquiv D V ((divisorSheaf D).obj.map h.op f)).1 =
-      (divisorSheafSectionsEquiv D U f).1 ∘ Opens.inclusion h.le := (rfl)
+    (divisorSheafSectionsEquiv D V ((divisorSheaf D).obj.map h.op f)).val =
+      (divisorSheafSectionsEquiv D U f).val ∘ Opens.inclusion h.le := (rfl)
 
 /-- **Sections of `𝒪_D` are meromorphic functions up to discrete sets.** Two sections of `𝒪_D`
 over `U` which agree outside a closed discrete subset of `U` are equal. -/
@@ -329,7 +327,7 @@ theorem eq_of_eventuallyEq_codiscrete {U : Opens X} {f g : U → ℂ}
       hf₁.apply_eq_zero hD, hg₁.apply_eq_zero hD]
   · have hcont {k : U → ℂ} {k₁ : X → ℂ} (hk₁ : IsDivisorSectionAt D k₁ x)
         (ek : k =ᶠ[𝓝 x] k₁ ∘ Subtype.val) : ContinuousAt k x :=
-      ((hk₁.contMDiffAt hD).continuousAt.comp continuous_subtype_val.continuousAt).congr ek.symm
+      ((hk₁.contMDiffAt hD).continuousAt.comp continuous_subtypeVal.continuousAt).congr ek.symm
     have := (tendsto_chartAt_symm_nhdsNE (H := ℂ) x).neBot
     exact tendsto_nhds_unique_of_eventuallyEq
       ((hcont hf₁ ef).tendsto.mono_left nhdsWithin_le_nhds)
@@ -337,24 +335,18 @@ theorem eq_of_eventuallyEq_codiscrete {U : Opens X} {f g : U → ℂ}
       ((eventuallyEq_codiscreteWithin_iff_forall_eventually_nhdsNE.1 h x (mem_univ _)).mono
         fun y hy ↦ hy (mem_univ y))
 
-section Holomorphic
-
-variable [IsManifold 𝓘(ℂ) 1 X]
-
 /-- On an open set disjoint from the support of `D`, the sections of `𝒪_D` are the holomorphic
 functions. -/
 theorem mem_divisorSections_iff_contMDiff {U : Opens X} (hU : ∀ x ∈ U, D x = 0) {f : U → ℂ} :
     f ∈ divisorSections D U ↔ ContMDiff 𝓘(ℂ) 𝓘(ℂ) ω f := by
   refine ⟨fun hf x ↦ ?_, fun hf x ↦ ?_⟩
   · obtain ⟨g, hg, e⟩ := hf x
-    exact (contMDiffAt_subtype_iff.2 (hg.contMDiffAt (hU x x.2).le)).congr_of_eventuallyEq e
+    exact (contMDiffAt_subtype_iff.2 (hg.contMDiffAt (hU x x.property).le)).congr_of_eventuallyEq e
   · have hext := Function.extend_comp Subtype.val_injective f (0 : X → ℂ)
-    refine ⟨Subtype.val.extend f 0, (isDivisorSectionAt_iff_of_eq_zero (hU x x.2)).2 ?_,
+    refine ⟨Subtype.val.extend f 0, (isDivisorSectionAt_iff_of_eq_zero (hU x x.property)).2 ?_,
       .of_eq hext.symm⟩
     rw [← contMDiffAt_subtype_iff]
     exact (hf x).congr_of_eventuallyEq (.of_eq hext)
-
-end Holomorphic
 
 /-! ### Increasing the divisor -/
 
@@ -373,9 +365,9 @@ theorem indicator_mem_divisorSections {E : WeilDivisor X} (h : D ≤ E) {U : Ope
 /-- The map `𝒪_D(U) → 𝒪_E(U)` for `D ≤ E`. -/
 private def divisorSectionsMapOfLE {E : WeilDivisor X} (h : D ≤ E) (U : Opens X) :
     divisorSections D U →ₗ[ℂ] divisorSections E U where
-  toFun f := ⟨{y : U | E y ≤ 0}.indicator f.1, indicator_mem_divisorSections h f.2⟩
-  map_add' f g := Subtype.ext (Set.indicator_add _ f.1 g.1)
-  map_smul' c f := Subtype.ext (Set.indicator_const_smul _ c f.1)
+  toFun f := ⟨{y : U | E y ≤ 0}.indicator f.val, indicator_mem_divisorSections h f.property⟩
+  map_add' f g := Subtype.ext (Set.indicator_add _ f.val g.val)
+  map_smul' c f := Subtype.ext (Set.indicator_const_smul _ c f.val)
 
 /-- **The inclusion `𝒪_D ⟶ 𝒪_E` for `D ≤ E`.** On sections it is the identity on meromorphic
 functions; as functions, the values at the poles allowed by `E` are set to `0`
@@ -395,8 +387,21 @@ def divisorSheafMapOfLE {E : WeilDivisor X} (h : D ≤ E) : divisorSheaf D ⟶ d
 @[simp]
 theorem divisorSheafMapOfLE_app {E : WeilDivisor X} (h : D ≤ E) (U : Opens X)
     (f : (divisorSheaf D).obj.obj (op U)) :
-    (no_index (divisorSheafSectionsEquiv E U ((divisorSheafMapOfLE h).hom.app (op U) f))).1 =
-      {y : U | E y ≤ 0}.indicator (divisorSheafSectionsEquiv D U f).1 := (rfl)
+    (no_index (divisorSheafSectionsEquiv E U ((divisorSheafMapOfLE h).hom.app (op U) f))).val =
+      {y : U | E y ≤ 0}.indicator (divisorSheafSectionsEquiv D U f).val := (rfl)
+
+/-- On a punctured neighbourhood of each point, the inclusion `𝒪_D ⟶ 𝒪_E` does not change the
+values of a section: the values it sets to `0` lie at the isolated points of the support of
+`E`. -/
+theorem divisorSheafMapOfLE_app_eventuallyEq {E : WeilDivisor X} (h : D ≤ E) (U : Opens X)
+    (f : (divisorSheaf D).obj.obj (op U)) (x : U) :
+    (divisorSheafSectionsEquiv E U ((divisorSheafMapOfLE h).hom.app (op U) f)).val =ᶠ[𝓝[≠] x]
+      (divisorSheafSectionsEquiv D U f).val := by
+  have := ChartedSpace.t1Space ℂ X
+  filter_upwards [(tendsto_subtype_val_nhdsNE x).eventually (E.eventually_eq_zero_nhdsNE x)]
+    with y hy
+  rw [divisorSheafMapOfLE_app]
+  exact Set.indicator_of_mem (s := {y : U | E y ≤ 0}) hy.le _
 
 /-- The inclusion `𝒪_D ⟶ 𝒪_E` is injective on sections. -/
 theorem divisorSheafMapOfLE_app_injective {E : WeilDivisor X} (h : D ≤ E) (U : Opens X) :
@@ -404,21 +409,12 @@ theorem divisorSheafMapOfLE_app_injective {E : WeilDivisor X} (h : D ≤ E) (U :
   intro f g hfg
   apply (divisorSheafSectionsEquiv D U).injective
   apply Subtype.ext
-  refine eq_of_eventuallyEq_codiscrete (divisorSheafSectionsEquiv D U f).2
-    (divisorSheafSectionsEquiv D U g).2 ?_
-  have hfg' := congrArg Subtype.val (congrArg (divisorSheafSectionsEquiv E U) hfg)
-  rw [divisorSheafMapOfLE_app, divisorSheafMapOfLE_app] at hfg'
+  refine eq_of_eventuallyEq_codiscrete (divisorSheafSectionsEquiv D U f).property
+    (divisorSheafSectionsEquiv D U g).property ?_
   refine eventuallyEq_codiscreteWithin_iff_forall_eventually_nhdsNE.2 fun x _ ↦ ?_
-  -- Near `x`, every point other than `x` lies off the poles allowed by `E`.
-  have hval : Tendsto (Subtype.val : U → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (continuous_subtype_val.continuousAt.mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun _ hy ↦ Subtype.coe_injective.ne hy)
-  have := ChartedSpace.t1Space ℂ X
-  have hev : ∀ᶠ y : U in 𝓝[≠] x, E y ≤ 0 :=
-    hval.eventually ((E.eventually_eq_zero_nhdsNE x).mono fun _ hy ↦ hy.le)
-  filter_upwards [hev] with y hy _
-  simpa [Set.indicator_of_mem (s := {y : U | E y ≤ 0}) hy] using congrFun hfg' y
+  filter_upwards [divisorSheafMapOfLE_app_eventuallyEq h U f x,
+    divisorSheafMapOfLE_app_eventuallyEq h U g x] with y hf hg _
+  rw [← hf, ← hg, hfg]
 
 /-- The map `𝒪_D ⟶ 𝒪_D` is the identity. -/
 @[simp]
@@ -436,7 +432,7 @@ theorem divisorSheafMapOfLE_refl : divisorSheafMapOfLE (le_refl D) = 𝟙 (divis
   by_cases hy : D y ≤ 0
   · exact Set.indicator_of_mem (s := {y : U.unop | D y ≤ 0}) hy _
   · exact (Set.indicator_of_notMem (s := {y : U.unop | D y ≤ 0}) hy _).trans
-      (apply_eq_zero_of_mem_divisorSections (divisorSheafSectionsEquiv D U.unop f).2
+      (apply_eq_zero_of_mem_divisorSections (divisorSheafSectionsEquiv D U.unop f).property
         (not_le.1 hy)).symm
 
 /-- The maps `𝒪_D ⟶ 𝒪_E` compose. -/
@@ -470,14 +466,14 @@ end
 
 section Zero
 
-variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
+variable {X : Type} [TopologicalSpace X] [ChartedSpace ℂ X]
 
 /-- The sections of `𝒪_0` over `U` are the holomorphic sections of the structure sheaf. -/
 private def divisorSectionsZeroEquiv (U : Opens X) :
     divisorSections (0 : WeilDivisor X) U ≃ₗ[ℂ]
       (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U) where
-  toFun f := holomorphicStructureSheafModules.ofContMDiff f.1
-    ((mem_divisorSections_iff_contMDiff fun _ _ ↦ rfl).1 f.2)
+  toFun f := holomorphicStructureSheafModules.ofContMDiff f.val
+    ((mem_divisorSections_iff_contMDiff fun _ _ ↦ rfl).1 f.property)
   invFun s := ⟨s, (mem_divisorSections_iff_contMDiff fun _ _ ↦ rfl).2
     (holomorphicStructureSheafModules.contMDiff s)⟩
   map_add' _ _ := holomorphicStructureSheafModules.ext fun _ ↦ by simp
@@ -511,7 +507,7 @@ def divisorSheafZeroIso :
 theorem divisorSheafZeroIso_hom_app_apply (U : Opens X)
     (f : (divisorSheaf (0 : WeilDivisor X)).obj.obj (op U)) (x : U) :
     (divisorSheafZeroIso X).hom.hom.app (op U) f x =
-      (divisorSheafSectionsEquiv 0 U f).1 x :=
+      (divisorSheafSectionsEquiv 0 U f).val x :=
   holomorphicStructureSheafModules.ofContMDiff_apply _ _ x
 
 -- Index past the unexposed section carriers, so that simp applies the lemma downstream.
@@ -520,14 +516,14 @@ sections. -/
 @[simp]
 theorem divisorSheafZeroIso_inv_app_apply (U : Opens X)
     (s : (holomorphicStructureSheafModules 𝓘(ℂ) X).obj.obj (op U)) :
-    (no_index (divisorSheafSectionsEquiv 0 U ((divisorSheafZeroIso X).inv.hom.app (op U) s))).1 =
+    (no_index (divisorSheafSectionsEquiv 0 U ((divisorSheafZeroIso X).inv.hom.app (op U) s))).val =
       s :=
   (rfl)
 
 /-- **`h⁰(0) = 1`.** On a compact connected Riemann surface the global sections of `𝒪_0` form a
 one-dimensional complex vector space. -/
 @[simp]
-theorem finrank_divisorSheaf_zero [CompactSpace X] [ConnectedSpace X] :
+theorem finrank_divisorSheaf_zero [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X] [ConnectedSpace X] :
     Module.finrank ℂ ((divisorSheaf (0 : WeilDivisor X)).obj.obj (op ⊤)) = 1 :=
   (((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X)).app
     (op ⊤)).toLinearEquiv.finrank_eq.trans

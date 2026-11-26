@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Module.FinitePresentation
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.FiniteBiproducts
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.RestrictedYoneda
 
 /-!
@@ -95,11 +95,6 @@ noncomputable def finitePresentationEquivalenceMod :
       (isFinitelyPresentedFunctor (finiteProjectiveModules R).FullSubcategory).FullSubcategory :=
   ObjectProperty.equivalenceMod (finiteProjectiveModules_le_categoryTheory_isProjective R)
     (presented_finiteProjectiveModules R).symm
-
-/-- The regular module `R`, as a finitely generated projective `R`-module. -/
-def finiteProjectiveModulesRegular : (finiteProjectiveModules R).FullSubcategory :=
-  ⟨ModuleCat.of R R, finiteProjectiveModules_iff.2
-    ⟨inferInstanceAs (Module.Finite R R), inferInstanceAs (Module.Projective R R)⟩⟩
 
 /-- The functor of `finitePresentationEquivalenceMod` is `M ↦ (-, M)|_{proj R}`. -/
 noncomputable def finitePresentationEquivalenceModCompιIso :

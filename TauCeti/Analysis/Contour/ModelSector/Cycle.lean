@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Analysis.Contour.ModelSector.Closed
+import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 
 /-!
 # Model sectors as contour cycles
@@ -19,7 +20,7 @@ decomposition uses.
 
 ## Main definitions
 
-* `Contour.modelSectorCurve` -- the model sector as a closed piecewise-`C¹` curve.
+* `Contour.modelSectorCurve` -- the model sector as a closed absolutely continuous curve.
 * `Contour.modelSectorCycle` -- the corresponding one-generator contour cycle.
 
 ## Main results
@@ -44,27 +45,28 @@ open Set
 
 namespace TauCeti.Contour
 
-/-- The model sector bundled as a closed piecewise-`C¹` curve. -/
+/-- The model sector bundled as a closed absolutely continuous curve. -/
 def modelSectorCurve (z₀ : ℂ) (r φ α : ℝ) (hr : 0 ≤ r) (hα : 0 ≤ α) :
-    PiecewiseC1ClosedCurve :=
-  PiecewiseC1ClosedCurve.of (modelSector z₀ r φ α)
-    (isPiecewiseC1On_modelSector hr φ α) (modelSector_closed z₀ hr φ hα)
+    AbsolutelyContinuousClosedCurve :=
+  AbsolutelyContinuousClosedCurve.of (modelSector z₀ r φ α)
+    (isPiecewiseC1On_modelSector hr φ α).absolutelyContinuousOnInterval
+    (modelSector_closed z₀ hr φ hα)
 
 /-- The model sector as a one-generator contour cycle. -/
 def modelSectorCycle (z₀ : ℂ) (r φ α : ℝ) (hr : 0 ≤ r) (hα : 0 ≤ α) : Cycle :=
-  FreeAbelianGroup.of (modelSectorCurve z₀ r φ α hr hα)
+  FreeAddCommGroup.of (modelSectorCurve z₀ r φ α hr hα)
 
 /-- The bundled model sector starts at `-r`. -/
 @[simp]
 theorem modelSectorCurve_a (z₀ : ℂ) (r φ α : ℝ) (hr : 0 ≤ r) (hα : 0 ≤ α) :
     (modelSectorCurve z₀ r φ α hr hα).a = -r := by
-  rw [modelSectorCurve, PiecewiseC1ClosedCurve.of_a]
+  rw [modelSectorCurve, AbsolutelyContinuousClosedCurve.of_a]
 
 /-- The bundled model sector ends at `r + α`. -/
 @[simp]
 theorem modelSectorCurve_b (z₀ : ℂ) (r φ α : ℝ) (hr : 0 ≤ r) (hα : 0 ≤ α) :
     (modelSectorCurve z₀ r φ α hr hα).b = r + α := by
-  rw [modelSectorCurve, PiecewiseC1ClosedCurve.of_b]
+  rw [modelSectorCurve, AbsolutelyContinuousClosedCurve.of_b]
 
 /-- On its parameter interval, the bundled model sector agrees with the raw model sector. -/
 @[simp]
@@ -72,7 +74,7 @@ theorem modelSectorCurve_apply {z₀ : ℂ} {r φ α t : ℝ} (hr : 0 ≤ r) (h�
     (ht : t ∈ uIcc (-r) (r + α)) :
     modelSectorCurve z₀ r φ α hr hα t = modelSector z₀ r φ α t := by
   rw [modelSectorCurve]
-  exact PiecewiseC1ClosedCurve.of_apply _ _ _ ht
+  exact AbsolutelyContinuousClosedCurve.of_apply _ _ _ ht
 
 /-- The trace of the model-sector cycle is the image of its raw parametrization. -/
 @[simp]

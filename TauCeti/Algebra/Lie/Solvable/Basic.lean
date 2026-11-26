@@ -51,6 +51,8 @@ whole algebra.
   solvable.
 * `LieIdeal.isSolvable_of_isSolvable_map`: solvability descends from the image together with the
   part of the ideal lying in the kernel.
+* `LieHom.map_mem_derivedSeries`: a Lie homomorphism maps the derived series of its source into
+  that of its target.
 * `LieAlgebra.lie_mem_derivedSeries_one`: every bracket lies in the derived ideal.
 * `LieAlgebra.derivedAbelianOfIdeal_le`: Mathlib's abelian ideal `LieAlgebra.derivedAbelianOfIdeal`
   of an ideal (the last nonzero term of its derived series when the ideal is solvable, and `⊥`
@@ -183,7 +185,7 @@ private theorem restrictIncl_injective (I J : LieIdeal R L) :
 
 private theorem restrictIncl_surjective {I J : LieIdeal R L} (h : J ≤ I) :
     Function.Surjective (restrictIncl I J) :=
-  fun x => ⟨⟨⟨(x : L), h x.2⟩, x.2⟩, Subtype.ext (I.incl.coe_lieIdealComap_apply J _)⟩
+  fun x => ⟨⟨⟨(x : L), h x.property⟩, x.property⟩, Subtype.ext (I.incl.coe_lieIdealComap_apply J _)⟩
 
 /-- Read inside an ideal, a solvable ideal stays solvable. -/
 instance isSolvable_restrict (I J : LieIdeal R L) [IsSolvable ↥J] :
@@ -218,6 +220,18 @@ theorem eq_bot_of_le_of_isSolvable {I J : LieIdeal R L} [HasTrivialRadical R I] 
 end Restrict
 
 end LieIdeal
+
+namespace LieHom
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+/-- A Lie homomorphism maps each term of the derived series of `L` into the corresponding term of
+the derived series of `L'`: the elementwise form of `LieIdeal.derivedSeries_map_le`. -/
+theorem map_mem_derivedSeries (f : L →ₗ⁅R⁆ L') (k : ℕ) {x : L} (hx : x ∈ derivedSeries R L k) :
+    f x ∈ derivedSeries R L' k :=
+  LieIdeal.derivedSeries_map_le (f := f) k (LieIdeal.mem_map hx)
+
+end LieHom
 
 namespace LieAlgebra
 

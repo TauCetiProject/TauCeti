@@ -30,6 +30,8 @@ mechanism behind the left-right symmetry of the radical, proved in
 * `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left` and
   `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_right`: the two elementwise descriptions of
   the Jacobson radical of a ring.
+* `TauCeti.Ring.isUnit_add_iff_of_mem_jacobson`: adding an element of the radical does not change
+  whether an element is a unit.
 * `TauCeti.Ring.mem_jacobson_of_forall_isNilpotent_mul`: an element all of whose left multiples
   are nilpotent lies in the radical.
 * `TauCeti.Ring.isLocalHom_mk_jacobson`: units lift modulo the Jacobson radical.
@@ -37,6 +39,8 @@ mechanism behind the left-right symmetry of the radical, proved in
   radical is nontrivial.
 * `Ideal.subsingleton_of_le_jacobson`: a commutative ring is trivial if its quotient by some
   ideal in the Jacobson radical is.
+* `Ideal.isUnit_one_sub_mul_of_le_jacobson`: `1 - r * s` is a unit when `r` or `s` lies in an
+  ideal contained in the Jacobson radical.
 
 ## References
 
@@ -105,6 +109,18 @@ theorem mem_jacobson_of_forall_isNilpotent_mul {x : R} (h : ∀ y : R, IsNilpote
     x ∈ Ring.jacobson R :=
   mem_jacobson_iff_isUnit_one_add_mul_left.2 fun y => (h y).isUnit_one_add
 
+/-- Adding an element of the Jacobson radical does not change whether an element is a unit. -/
+theorem isUnit_add_iff_of_mem_jacobson {a j : R} (hj : j ∈ Ring.jacobson R) :
+    IsUnit (a + j) ↔ IsUnit a := by
+  have key {a j : R} (hj : j ∈ Ring.jacobson R) (ha : IsUnit a) : IsUnit (a + j) := by
+    obtain ⟨u, rfl⟩ := ha
+    have he : (u : R) + j = u * (1 + ↑u⁻¹ * j) := by
+      rw [mul_add, mul_one, ← mul_assoc, Units.mul_inv, one_mul]
+    rw [he]
+    exact u.isUnit.mul (mem_jacobson_iff_isUnit_one_add_mul_left.1 hj _)
+  refine ⟨fun h => ?_, key hj⟩
+  simpa using key (neg_mem hj) h
+
 variable (R) in
 /-- The quotient of a nontrivial ring by its Jacobson radical is nontrivial, the radical being
 proper by `Ring.jacobson_lt_top`. -/
@@ -134,6 +150,14 @@ end Ring
 end TauCeti
 
 namespace Ideal
+
+/-- If an ideal `I` lies in the Jacobson radical and `r ∈ I` or `s ∈ I`, then `1 - r * s` is a
+unit: `r * s` lies in the radical, which is two-sided. -/
+theorem isUnit_one_sub_mul_of_le_jacobson {R : Type*} [Ring R] {I : Ideal R}
+    (hI : I ≤ Ring.jacobson R) {r s : R} (h : r ∈ I ∨ s ∈ I) : IsUnit (1 - r * s) := by
+  have hrs : r * s ∈ Ring.jacobson R :=
+    h.elim (fun hr ↦ mul_mem_right s _ (hI hr)) (fun hs ↦ mul_mem_left _ r (hI hs))
+  simpa [sub_eq_add_neg] using TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left.1 hrs (-1)
 
 /-- If `I` lies in the Jacobson radical of `R` and `R ⧸ I` is trivial, then `R` is trivial: the
 ideal `I = ⊤` can only lie in the Jacobson radical of the zero ring. -/

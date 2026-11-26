@@ -40,7 +40,8 @@ Riemannian manifold it is the compactness part of the Myers–Steenrod theorem.
 
 ## Main results
 
-* `Isometry.iterate`: the iterates of an isometric self-map are isometries.
+* `Isometry.iterate`, `Isometry.zpow`: the iterates of an isometric self-map, and the integer
+  powers of an isometric permutation, are isometries.
 * `Isometry.surjective_of_compactSpace`: an isometric self-map of a compact metric space is
   surjective.
 * `IsometryEquiv.isInducing_coe`, `IsometryEquiv.tendsto_nhds_iff`, `IsometryEquiv.continuous_iff`:
@@ -48,7 +49,8 @@ Riemannian manifold it is the compactness part of the Myers–Steenrod theorem.
 * `IsometryEquiv.instContinuousEval`: evaluation `(α ≃ᵢ β) × α → β` is continuous.
 * `IsometryEquiv.continuous_symm`, `IsometryEquiv.instIsTopologicalGroup`: the isometry group is a
   topological group.
-* `IsometryEquiv.instCompactSpace`: the isometry group of a compact metric space is compact.
+* `IsometryEquiv.instCompactSpace`: `α ≃ᵢ β` is compact when `α` is compact, and in particular the
+  isometry group `α ≃ᵢ α` of a compact metric space is compact.
 
 ## References
 
@@ -74,6 +76,18 @@ protected theorem iterate {α : Type*} [PseudoEMetricSpace α] {f : α → α} (
     ∀ n : ℕ, Isometry f^[n]
   | 0 => isometry_id
   | n + 1 => (hf.iterate n).comp hf
+
+/-- The integer powers of an isometric permutation are isometries. -/
+protected theorem zpow {α : Type*} [PseudoEMetricSpace α] {f : Equiv.Perm α} (hf : Isometry f) :
+    ∀ n : ℤ, Isometry ⇑(f ^ n)
+  | (n : ℕ) => by
+    rw [zpow_natCast, Equiv.Perm.coe_pow]
+    exact hf.iterate n
+  | .negSucc n => by
+    rw [zpow_negSucc]
+    refine Isometry.right_inv (f := ⇑(f ^ (n + 1))) ?_ fun _ ↦ by simp
+    rw [Equiv.Perm.coe_pow]
+    exact hf.iterate (n + 1)
 
 variable {α : Type*} [EMetricSpace α] [CompactSpace α] {f : α → α}
 
@@ -201,14 +215,26 @@ theorem range_coe_of_compactSpace : range ((⇑) : (α ≃ᵢ α) → α → α)
   Subset.antisymm (range_subset_iff.2 fun e ↦ e.isometry) fun _ hf ↦
     ⟨hf.isometryEquivOfCompactSpace, hf.coe_isometryEquivOfCompactSpace⟩
 
-/-- **van Dantzig–van der Waerden.** The isometry group of a compact metric space is compact. -/
-instance instCompactSpace : CompactSpace (α ≃ᵢ α) := by
+/-- **van Dantzig–van der Waerden** for self-isometries. -/
+private theorem compactSpace_self : CompactSpace (α ≃ᵢ α) := by
   refine ⟨isInducing_coe.isCompact_iff.2 ?_⟩
   rw [image_univ, range_coe_of_compactSpace]
   refine IsClosed.isCompact ?_
   simp only [Isometry, ofPred_forall]
   exact isClosed_iInter fun x ↦ isClosed_iInter fun y ↦ isClosed_eq
     ((continuous_apply x).edist (continuous_apply y)) continuous_const
+
+/-- **van Dantzig–van der Waerden.** Isometric equivalences from a compact metric space into a
+pseudo-emetric space form a compact space; in particular the isometry group `α ≃ᵢ α` is compact. -/
+instance instCompactSpace {β : Type*} [PseudoEMetricSpace β] : CompactSpace (α ≃ᵢ β) := by
+  have := compactSpace_self (α := α)
+  rcases isEmpty_or_nonempty (α ≃ᵢ β) with _ | ⟨⟨e₀⟩⟩
+  · infer_instance
+  · have hcont : Continuous (fun e : α ≃ᵢ α ↦ e.trans e₀) :=
+      continuous_iff.2 fun x ↦ e₀.continuous.comp (continuous_iff.1 continuous_id x)
+    have hsurj : Surjective (fun e : α ≃ᵢ α ↦ e.trans e₀) := fun f ↦
+      ⟨f.trans e₀.symm, by ext x; simp⟩
+    exact ⟨hsurj.range_eq ▸ isCompact_range hcont⟩
 
 end Compact
 

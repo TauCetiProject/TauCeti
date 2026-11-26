@@ -126,16 +126,17 @@ theorem IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctional) :
 
 end CommSemiring
 
-section CommRing
+section Ring
 
-variable {k : Type v} [CommRing k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
+variable {k : Type v} [CommSemiring k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
 
 /-- Two elements pairing identically from the right against a Frobenius functional are equal. -/
 theorem IsFrobeniusFunctional.eq_of_forall_apply_mul_eq
     (hφ : φ.IsFrobeniusFunctional) {x y : A} (h : ∀ b, φ (b * x) = φ (b * y)) : x = y :=
-  sub_eq_zero.mp <| hφ.eq_zero_of_forall_right fun b => by rw [mul_sub, map_sub, h, sub_self]
+  sub_eq_zero.mp <| hφ.eq_zero_of_forall_right fun b => by
+    rw [mul_sub, sub_eq_add_neg, map_add, h, ← map_add, add_neg_cancel, map_zero]
 
-end CommRing
+end Ring
 
 section Projective
 
@@ -255,21 +256,21 @@ isomorphism `e` goes back to the functional `e 1`, and these are inverse to each
 noncomputable def frobeniusFunctionalEquivDualEquiv :
     {φ : A →ₗ[k] k // φ.IsFrobeniusFunctional} ≃
       {e : A ≃ₗ[k] Module.Dual k A // ∀ a c : A, e (a * c) = DomMulAct.mk c • e a} where
-  toFun φ := ⟨φ.2.toDualEquiv, φ.2.toDualEquiv_mul⟩
-  invFun e := ⟨e.1 1, LinearMap.isFrobeniusFunctional_apply_one e.2⟩
-  left_inv φ := Subtype.ext φ.2.toDualEquiv_one
-  right_inv e := Subtype.ext (toDualEquiv_isFrobeniusFunctional_apply_one e.2)
+  toFun φ := ⟨φ.property.toDualEquiv, φ.property.toDualEquiv_mul⟩
+  invFun e := ⟨e.val 1, LinearMap.isFrobeniusFunctional_apply_one e.property⟩
+  left_inv φ := Subtype.ext φ.property.toDualEquiv_one
+  right_inv e := Subtype.ext (toDualEquiv_isFrobeniusFunctional_apply_one e.property)
 
 @[simp]
 theorem frobeniusFunctionalEquivDualEquiv_apply_coe
     (φ : {φ : A →ₗ[k] k // φ.IsFrobeniusFunctional}) :
     (frobeniusFunctionalEquivDualEquiv k A φ : A ≃ₗ[k] Module.Dual k A) =
-      φ.2.toDualEquiv := (rfl)
+      φ.property.toDualEquiv := (rfl)
 
 @[simp]
 theorem frobeniusFunctionalEquivDualEquiv_symm_apply_coe
     (e : {e : A ≃ₗ[k] Module.Dual k A // ∀ a c : A, e (a * c) = DomMulAct.mk c • e a}) :
-    ((frobeniusFunctionalEquivDualEquiv k A).symm e : A →ₗ[k] k) = e.1 1 := (rfl)
+    ((frobeniusFunctionalEquivDualEquiv k A).symm e : A →ₗ[k] k) = e.val 1 := (rfl)
 
 end TauCeti
 

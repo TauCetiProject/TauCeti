@@ -7,10 +7,9 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Basic
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Weighted
-import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
-import TauCeti.Analysis.Complex.Fuchsian.Compactification.Extension
 import TauCeti.FieldTheory.Galois.FixedField
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Degree
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Invariant
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Separation
 import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 
@@ -71,6 +70,8 @@ residues.
   `TauCeti.forall_unop_modularFunctionActionZMod_frickeMeromorphicFunction_eq_iff_level_two`.
 * `TauCeti.adjoin_insert_image_frickeMeromorphicFunction_eq_top`: `j` and the `f_a`, `a ≠ 0`,
   generate the function field of `X(N)` over `ℂ`.
+* `TauCeti.subfield_eq_top_of_frickeMeromorphicFunction_mem`: a subfield containing the
+  constants, `j` and every `f_a`, `a ≠ 0`, is the whole function field.
 
 ## References
 
@@ -159,75 +160,28 @@ theorem isBigO_frickeFunction_atImInfty (a : Fin 2 → ZMod N) :
 
 /-! ### The Fricke functions on `X(N)` -/
 
-/-- The Fricke functions are invariant under the effective image of `Γ(N)`. -/
-private theorem frickeFunction_smul_of_mem (a : Fin 2 → ZMod N) {g : PSL(2, ℝ)}
-    (hg : g ∈ (Gamma N).map sl2zToPSL2R) (τ : ℍ) :
-    frickeFunction a (g • τ) = frickeFunction a τ := by
-  obtain ⟨γ, hγ, rfl⟩ := hg
-  rw [UpperHalfPlane.sl2zToPSL2R_smul, frickeFunction_smul]
-  simp [Gamma_mem'.mp hγ]
-
-/-- `f_a` as a function on `X(N)`. Its value at the cusps is `0`; it only matters through its
-germs there, which do not see it. -/
-private def frickeCompactified (a : Fin 2 → ZMod N) :
-    ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient → ℂ
-  | .ofQuotient p => Quotient.lift (frickeFunction a) (fun _ _ h ↦ by
-      obtain ⟨g, rfl⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
-      exact frickeFunction_smul_of_mem a g.2 _) p
-  | .ofCusp _ => 0
-
-private theorem frickeCompactified_ofQuotient_mk (a : Fin 2 → ZMod N) (τ : ℍ) :
-    frickeCompactified a (ofQuotient (Quotient.mk _ τ)) = frickeFunction a τ :=
-  (rfl)
-
-private theorem continuousAt_frickeCompactified_ofQuotient (a : Fin 2 → ZMod N)
-    (p : MulAction.orbitRel.Quotient ((Gamma N).map sl2zToPSL2R) ℍ) :
-    ContinuousAt (frickeCompactified a) (ofQuotient p) :=
-  isOpenEmbedding_ofQuotient.continuousAt_iff.mp <| Continuous.continuousAt <|
-    isQuotientMap_quotient_mk'.continuous_iff (g := frickeCompactified a ∘ ofQuotient) |>.mpr <|
-      (mdifferentiable_frickeFunction a).continuous.congr fun τ ↦
-        (frickeCompactified_ofQuotient_mk a τ).symm
-
-/-- `f_a` is meromorphic on `X(N)`. At the cusp of `γ • ∞` it is read in the cusp datum of `∞`
-transported by `γ`, where it is `f_{aγ}` and has at most a pole of order `N` in `q_N`. -/
-private theorem meromorphicAt_frickeCompactified (a : Fin 2 → ZMod N)
-    (x : ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
-    RiemannSurface.MeromorphicAt (frickeCompactified a) x := by
-  refine Fuchsian.meromorphicAt_of_forall_isBigO (frickeCompactified_ofQuotient_mk a)
-    (fun τ ↦ meromorphicAt_of_eventually_mdifferentiableAt
-      (.of_forall (mdifferentiable_frickeFunction a))) (fun C ↦ ?_) x
-  obtain ⟨γ, rfl⟩ := (Gamma N).cuspOrbitOfSL2Z_surjective C
-  refine ⟨(cuspDatumInftyGamma N).conj (conjAct_sl2zToPSL2R_smul_map_Gamma γ), N,
-    Subtype.ext ?_, .of_forall fun τ ↦ mdifferentiable_frickeFunction a _, ?_⟩
-  · rw [Subgroup.CuspDatum.cuspOrbit_val, Subgroup.cuspOrbitOfSL2Z_val,
-      Subgroup.CuspDatum.conj_cusp, cuspDatumInftyGamma_cusp]
-  · simp only [Subgroup.CuspDatum.conj_scaling, cuspDatumInftyGamma_scaling, one_mul, inv_inv,
-      UpperHalfPlane.sl2zToPSL2R_smul, frickeFunction_smul, Subgroup.CuspDatum.conj_width,
-      cuspDatumInftyGamma_width]
-    refine (isBigO_frickeFunction_atImInfty _).congr_right fun τ ↦ ?_
-    have hN : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-    rw [Int.cast_natCast]
-    field_simp
-
 /-- **The Fricke function `f_a` as a meromorphic function on `X(N)`**: the function whose value at
-the orbit of `τ` is `f_a(τ)` (`TauCeti.frickeMeromorphicFunction_ofQuotient_mk`). -/
+the orbit of `τ` is `f_a(τ)` (`TauCeti.frickeMeromorphicFunction_ofQuotient_mk`). It is
+`Γ(N)`-invariant by its transformation law, and at the cusp of `γ • ∞` it is read through
+`f_a ∘ γ = f_{aγ}`, which is `O(exp (2π Im τ))` at `i∞`. -/
 def frickeMeromorphicFunction (a : Fin 2 → ZMod N) :
     MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient :=
-  MeromorphicFunction.ofMeromorphic (meromorphicAt_frickeCompactified a)
+  meromorphicFunctionOfGammaInvariant (frickeFunction a) (mdifferentiable_frickeFunction a)
+    (fun _ hγ τ ↦ by rw [frickeFunction_smul]; simp [Gamma_mem'.mp hγ])
+    (fun _ ↦ ⟨2 * π, by simpa only [frickeFunction_smul] using isBigO_frickeFunction_atImInfty _⟩)
 
 /-- The value of `f_a` at the orbit of `τ` is `f_a(τ)`. -/
 @[simp]
 theorem frickeMeromorphicFunction_ofQuotient_mk (a : Fin 2 → ZMod N) (τ : ℍ) :
     frickeMeromorphicFunction a (ofQuotient (Quotient.mk _ τ)) = frickeFunction a τ :=
-  MeromorphicFunction.ofMeromorphic_apply_of_continuousAt _
-    (continuousAt_frickeCompactified_ofQuotient a _)
+  meromorphicFunctionOfGammaInvariant_ofQuotient_mk _ _ _ τ
 
 /-- The finite part of `f_a` at the orbit of `τ` is `f_a(τ)`. -/
 @[simp]
 theorem finitePart_frickeMeromorphicFunction_ofQuotient_mk (a : Fin 2 → ZMod N) (τ : ℍ) :
     (frickeMeromorphicFunction a).finitePart (ofQuotient (Quotient.mk _ τ)) =
       frickeFunction a τ :=
-  MeromorphicFunction.finitePart_of_eq_coe (frickeMeromorphicFunction_ofQuotient_mk a τ)
+  finitePart_meromorphicFunctionOfGammaInvariant_ofQuotient_mk _ _ _ τ
 
 /-- **`SL(2, ℤ)` permutes the Fricke functions**: `γ` sends `f_a` to `f_{a γ}`. -/
 theorem unop_modularFunctionAction_frickeMeromorphicFunction (γ : SL(2, ℤ))
@@ -347,7 +301,8 @@ theorem adjoin_insert_image_frickeMeromorphicFunction_eq_top :
       (IntermediateField.adjoin (IntermediateField.fixedField H) S).fixingSubgroup = ⊥ := by
     refine (Subgroup.eq_bot_iff_forall _).mpr fun σ hσ ↦ ?_
     obtain ⟨τ, rfl⟩ := FixedPoints.toAlgAut_surjective H M σ
-    have hτ : (τ : M ≃ₐ[ℂ] M) = 1 := eq_one_of_mem_range_of_forall_frickeMeromorphicFunction τ.2
+    have hτ : (τ : M ≃ₐ[ℂ] M) = 1 := eq_one_of_mem_range_of_forall_frickeMeromorphicFunction
+        τ.property
       fun a ha ↦ (IntermediateField.mem_fixingSubgroup_iff _ _).mp hσ _
         (IntermediateField.subset_adjoin _ _ ⟨a, ha, rfl⟩)
     have hτ' : τ = 1 := Subtype.ext hτ
@@ -364,5 +319,22 @@ theorem adjoin_insert_image_frickeMeromorphicFunction_eq_top :
   · exact IntermediateField.adjoin.mono _ _ _ (Set.singleton_subset_iff.mpr
       (Set.mem_insert _ _)) hx
   · exact IntermediateField.subset_adjoin _ _ (Set.mem_insert_of_mem _ hx)
+
+/-- A subfield of the function field of `X(N)` containing the constants, the modular invariant `j`
+and the Fricke functions `f_a`, `a ≠ 0`, is the whole function field. -/
+theorem subfield_eq_top_of_frickeMeromorphicFunction_mem
+    {S : Subfield (MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient)}
+    (hc : ∀ c : ℂ, algebraMap ℂ _ c ∈ S)
+    (hj : Subgroup.compactifiedQuotientComap (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R
+      ModularGroup.jMeromorphicFunction ∈ S)
+    (hf : ∀ a : Fin 2 → ZMod N, a ≠ 0 → frickeMeromorphicFunction a ∈ S) : S = ⊤ := by
+  have h : IntermediateField.adjoin ℂ (insert (Subgroup.compactifiedQuotientComap
+      (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)
+      (frickeMeromorphicFunction '' {a : Fin 2 → ZMod N | a ≠ 0})) ≤ S.toIntermediateField hc :=
+    IntermediateField.adjoin_le_iff.mpr <| by
+      rintro F (rfl | ⟨a, ha, rfl⟩)
+      exacts [hj, hf a ha]
+  rw [adjoin_insert_image_frickeMeromorphicFunction_eq_top] at h
+  exact eq_top_iff.mpr fun F _ ↦ h IntermediateField.mem_top
 
 end TauCeti

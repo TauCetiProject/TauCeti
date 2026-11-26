@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Clique
 public import Mathlib.Probability.Distributions.Bernoulli
-public import TauCeti.Probability.Distributions.Uniform.Finite
+public import TauCeti.Probability.Distributions.Uniform.Finite.Basic
 public import TauCeti.Probability.Kernel.PMF
 public import TauCeti.Probability.Kernel.Reachability
 public import TauCeti.Probability.MarkovChain.Period
@@ -194,7 +194,7 @@ theorem reaches_empty (p : unitInterval) (hp : (p : ℝ) < 1) (I : State G) :
     · have : I = empty G := Subtype.ext he
       subst I
       exact Kernel.Reaches.refl _
-    obtain ⟨v, hv⟩ := Finset.nonempty_iff_ne_empty.mpr he
+    obtain ⟨v, hv⟩ := Finset.ne_empty_iff_nonempty.mp he
     exact (Kernel.reaches_of_pos (kernel_erase_pos G p hp I v)).trans
       (ih (erase G I v).val.card (by simpa [← hn] using Finset.card_erase_lt_of_mem hv)
         (erase G I v) rfl)
@@ -208,7 +208,7 @@ theorem empty_reaches (p : unitInterval) (hp : 0 < (p : ℝ)) (I : State G) :
     · have : I = empty G := Subtype.ext he
       subst I
       exact Kernel.Reaches.refl _
-    obtain ⟨v, hv⟩ := Finset.nonempty_iff_ne_empty.mpr he
+    obtain ⟨v, hv⟩ := Finset.ne_empty_iff_nonempty.mp he
     have hsmall := ih (erase G I v).val.card
       (by simpa [← hn] using Finset.card_erase_lt_of_mem hv) (erase G I v) rfl
     exact hsmall.trans (Kernel.reaches_of_pos (by

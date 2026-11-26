@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Lie.Abelian
 import TauCeti.Algebra.Lie.Killing.Perfect
 public import TauCeti.Algebra.Lie.NilpotentExtension
 public import TauCeti.Algebra.Lie.Quotient
@@ -45,6 +46,10 @@ does.
   derivation.
 * `LieIdeal.restrict_nilradical`: the nilradical of an ideal `I` is the nilradical of `L` read
   inside `I`.
+* `LieIdeal.map_incl_nilradical`: the nilradical of an ideal `I`, read inside `L`, is
+  `I ⊓ nilradical K L`.
+* `LieIdeal.map_incl_nilradical_of_le` and `TauCeti.LieAlgebra.map_incl_nilradical_radical`: the
+  nilradical of an ideal containing the nilradical, such as the radical, is the nilradical of `L`.
 
 ## References
 
@@ -85,13 +90,14 @@ theorem _root_.LieIdeal.nilradical_le_restrict_nilradical_of_forall [IsNoetheria
         exact LieSubmodule.coe_bracket _ x z }
   -- It is the image of the nilpotent Lie algebra `nilradical R I`, so it is nilpotent.
   let f : LieAlgebra.nilradical R I →ₗ⁅R⁆ N :=
-    { toFun := fun z ↦ ⟨(z : I), z, z.2, rfl⟩
+    { toFun := fun z ↦ ⟨(z : I), z, z.property, rfl⟩
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl
       map_lie' := fun {y z} ↦ Subtype.ext <|
         (congrArg _ ((LieAlgebra.nilradical R I : LieSubalgebra R I).coe_bracket y z)).trans <|
           ((I : LieSubalgebra R M).coe_bracket _ _).trans
-            ((N : LieSubalgebra R M).coe_bracket (⟨_, y, y.2, rfl⟩ : N) ⟨_, z, z.2, rfl⟩).symm }
+            ((N : LieSubalgebra R M).coe_bracket (⟨_, y, y.property, rfl⟩ : N) ⟨_, z, z.property,
+                rfl⟩).symm }
   have hf : Function.Surjective f := by
     rintro ⟨_, z, hz, rfl⟩
     exact ⟨⟨z, hz⟩, rfl⟩
@@ -123,7 +129,7 @@ variable [CharZero K]
 takes values in its nilradical. -/
 theorem _root_.LieDerivation.apply_mem_nilradical_of_isSolvable [IsSolvable L]
     (D : LieDerivation K L L) (x : L) : D x ∈ LieAlgebra.nilradical K L := by
-  have : IsLieAbelian K := isMulCommutative_iff_isLieAbelian.mp inferInstance
+  have := isLieAbelian_of_commRing K
   let E := L ⋊⁅D.lineHom⁆ K
   have : LieRing.IsNilpotent (derivedSeries K E 1) :=
     (LieIdeal.isNilpotent_iff_isNilpotent_ambient _).mpr
@@ -165,7 +171,7 @@ theorem mem_nilradical_of_mem_radical_of_isNilpotent_ad {x : L} (hx : x ∈ radi
     rw [LieAlgebra.isNilpotent_iff_forall (R := K)]
     intro z
     exact (J : LieSubalgebra K L).isNilpotent_ad_of_isNilpotent_ad (x := z)
-      (isNilpotent_ad_of_mem_span_singleton_sup_nilradical hnil z.2)
+      (isNilpotent_ad_of_mem_span_singleton_sup_nilradical hnil z.property)
   exact J.le_nilradical K L hJ (Submodule.mem_sup_left (Submodule.mem_span_singleton_self x))
 
 end LieAlgebra
@@ -175,7 +181,7 @@ finite-dimensional Lie algebra over a field of characteristic zero, `D (radical 
 in `nilradical K L`. -/
 theorem _root_.LieDerivation.apply_mem_nilradical_of_mem_radical (D : LieDerivation K L L)
     {x : L} (hx : x ∈ radical K L) : D x ∈ LieAlgebra.nilradical K L := by
-  have : IsLieAbelian K := isMulCommutative_iff_isLieAbelian.mp inferInstance
+  have := isLieAbelian_of_commRing K
   let E := L ⋊⁅D.lineHom⁆ K
   let π := (radical K E).mkQ
   -- The quotient of `E` by its radical is perfect, by Cartan's criterion.
@@ -229,5 +235,33 @@ theorem _root_.LieIdeal.restrict_nilradical (I : LieIdeal K L) :
   exact LieIdeal.le_nilradical K I _
     ((LieAlgebra.nilradical K L).isNilpotent_comap_of_injective I.incl I.incl_injective)
     (LieIdeal.mem_comap.mpr (LieIdeal.mem_restrict.mp hz))
+
+/-- **The nilradical of an ideal**: over a field of characteristic zero, the nilradical of an ideal
+`I` of a finite-dimensional Lie algebra `L`, read inside `L`, is the part of the nilradical of `L`
+lying in `I`. -/
+@[simp]
+theorem _root_.LieIdeal.map_incl_nilradical (I : LieIdeal K L) :
+    (LieAlgebra.nilradical K I).map I.incl = I ⊓ LieAlgebra.nilradical K L := by
+  have hcomap : I.restrict (LieAlgebra.nilradical K L) =
+      LieIdeal.comap I.incl (LieAlgebra.nilradical K L) := by
+    ext x
+    rw [LieIdeal.mem_restrict, LieIdeal.mem_comap, LieIdeal.incl_apply]
+  rw [← I.restrict_nilradical, hcomap, LieIdeal.map_comap_incl]
+
+/-- **The nilradical of an ideal containing the nilradical**: over a field of characteristic zero,
+if an ideal `I` of a finite-dimensional Lie algebra `L` contains the nilradical of `L`, then the
+nilradical of `I`, read inside `L`, is the nilradical of `L`. -/
+theorem _root_.LieIdeal.map_incl_nilradical_of_le {I : LieIdeal K L}
+    (h : LieAlgebra.nilradical K L ≤ I) :
+    (LieAlgebra.nilradical K I).map I.incl = LieAlgebra.nilradical K L := by
+  rw [I.map_incl_nilradical, inf_eq_right.mpr h]
+
+variable (K L) in
+/-- **The nilradical of the radical is the nilradical**: over a field of characteristic zero, the
+nilradical of the solvable radical of a finite-dimensional Lie algebra `L`, read inside `L`, is the
+nilradical of `L`. -/
+theorem LieAlgebra.map_incl_nilradical_radical :
+    (LieAlgebra.nilradical K (radical K L)).map (radical K L).incl = LieAlgebra.nilradical K L :=
+  LieIdeal.map_incl_nilradical_of_le (LieAlgebra.nilradical_le_radical K L)
 
 end TauCeti

@@ -95,7 +95,7 @@ theorem isNondegenerateCriticalSubmanifold_projectiveMomentFunction
   -- The tangent space lies in the kernel and has at least its dimension, so the two agree.
   refine (Submodule.eq_of_le_of_finrank_le (hcs.tangentRange_le_ker_criticalHessian hr0 s)
     ?_).ge
-  rw [SmoothEmbedding.tangentRange,
+  rw [Manifold.IsImmersion.tangentRange_def,
     LinearMap.finrank_range_of_inj ((i.isImmersion.isImmersionAt s).mfderiv_injective hr0),
     finrank_ker_criticalHessian_projectiveMomentFunction (hcrit s).1, (hcrit s).2, hm,
     finrank_tangentSpace]
@@ -165,7 +165,7 @@ private theorem injective_weightIncl (hc : c ∈ range w) : Injective (weightInc
 
 private theorem weightIncl_apply_of_ne (hc : c ∈ range w) (u : Fin (weightDim w c + 1) → 𝕜)
     {i : Fin (n + 1)} (hi : w i ≠ c) : weightIncl 𝕜 hc u i = 0 :=
-  extend_apply' _ _ _ fun ⟨a, ha⟩ ↦ hi (ha ▸ (weightEquiv hc a).2)
+  extend_apply' _ _ _ fun ⟨a, ha⟩ ↦ hi (ha ▸ (weightEquiv hc a).property)
 
 /-- The projective subspace of the weight space of `c`, as a smooth embedding of `ℙᵐ`. -/
 private def weightEmbedding (𝕜 : Type*) [RCLike 𝕜] (hc : c ∈ range w) {r : ℕ∞ω} (hr : 1 ≤ r) :
@@ -201,12 +201,15 @@ theorem exists_isMorseBottFamily_projectiveMomentFunction (𝕜 : Type*) [RCLike
         criticalPoints 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) ∩
           projectiveMomentFunction 𝕜 w ⁻¹' {(c : ℝ)}) ∧
       IsMorseBottFamily i (projectiveMomentFunction 𝕜 w) := by
-  refine ⟨fun c ↦ weightDim w c, fun c ↦ weightIncl 𝕜 c.2, fun c ↦ injective_weightIncl c.2,
-    fun c ↦ weightEmbedding 𝕜 c.2 hr, fun c ↦ ncard_eq_weightDim_add_one c.2,
-    fun c u _ ↦ weightIncl_apply_of_ne c.2 u, fun _ ↦ SmoothEmbedding.coe_ofIsSmoothEmbedding _ _,
-    fun c ↦ range_weightEmbedding c.2 hr,
+  refine ⟨fun c ↦ weightDim w c, fun c ↦ weightIncl 𝕜 c.property,
+      fun c ↦ injective_weightIncl c.property,
+    fun c ↦ weightEmbedding 𝕜 c.property hr, fun c ↦ ncard_eq_weightDim_add_one c.property,
+    fun c u _ ↦ weightIncl_apply_of_ne c.property u, fun _ ↦ SmoothEmbedding.coe_ofIsSmoothEmbedding
+        _ _,
+    fun c ↦ range_weightEmbedding c.property hr,
     isMorseBottFamily_projectiveMomentFunction Subtype.val_injective (fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩)
-      _ _ (fun c u _ ↦ weightIncl_apply_of_ne c.2 u) (fun c ↦ ncard_eq_weightDim_add_one c.2)
+      _ _ (fun c u _ ↦ weightIncl_apply_of_ne c.property u) (fun c ↦ ncard_eq_weightDim_add_one
+          c.property)
       fun _ ↦ SmoothEmbedding.coe_ofIsSmoothEmbedding _ _⟩
 
 end TauCeti

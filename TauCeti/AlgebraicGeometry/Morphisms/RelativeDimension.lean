@@ -6,10 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Fiber
+public import Mathlib.AlgebraicGeometry.FunctionField
+public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import Mathlib.RingTheory.Valuation.ValuationRing
 public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import TauCeti.RingTheory.KrullDimension.Fiber
+import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.AlgebraicGeometry.Scheme.SpecOver
+import TauCeti.RingTheory.KrullDimension.ValuationRing
 
 /-!
 # Morphisms of relative dimension at most `d`
@@ -27,6 +33,11 @@ along the extension of residue fields, which does not change the Krull dimension
 locally of finite type over a field. Without a finiteness hypothesis the bound is not stable
 under base change: `Spec K → Spec k` has relative dimension zero for every field extension
 `K / k`, while `Spec (K ⊗[k] K)` can have positive dimension when `K / k` is transcendental.
+
+Over a valuation ring `R`, a flat morphism `X ⟶ Spec R` locally of finite type has no fibre of
+larger dimension than its generic fibre, so the generic fibre alone controls the relative
+dimension. On an affine open `Spec A` of `X` this is the ring-level inequality
+`dim (κ(p) ⊗[R] A) ≤ dim (Frac R ⊗[R] A)` (`Ideal.ringKrullDim_fiber_le_ringKrullDim_fiber_bot`).
 
 Relative dimensions add up under composition of morphisms locally of finite type. The input is
 the fibrewise dimension inequality: if `f : X ⟶ Y` is a morphism of locally Noetherian schemes of
@@ -57,6 +68,9 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
   (`TauCeti.AlgebraicGeometry.coheight_le_of_relativeDimensionLE_of_field`).
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_SpecMap_iff`: for `Spec S ⟶ Spec R`, the
   condition bounds the Krull dimensions of the fibre rings `κ(p) ⊗[R] S`.
+* `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_topologicalKrullDim_preimage_genericPoint_le`:
+  a flat morphism locally of finite type to the spectrum of a valuation ring has relative
+  dimension at most `d` as soon as its generic fibre has dimension at most `d`.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_le_add_of_relativeDimensionLE`: for a morphism of
   locally Noetherian schemes of relative dimension at most `d`, `dim X ≤ dim Y + d`.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.comp`: relative dimensions at most `d` and `e`
@@ -92,7 +106,7 @@ Krull dimension at most `d`. -/
 theorem relativeDimensionLE_iff_topologicalKrullDim_preimage_le (f : X ⟶ Y) :
     RelativeDimensionLE d f ↔ ∀ y : Y, topologicalKrullDim (f ⁻¹' {y}) ≤ d := by
   simp_rw [← (f.fiberHomeo _).isHomeomorph.topologicalKrullDim_eq]
-  exact ⟨fun h ↦ h.1, fun h ↦ ⟨h⟩⟩
+  exact ⟨fun h ↦ h.topologicalKrullDim_fiber_le, fun h ↦ ⟨h⟩⟩
 
 /-- Every set-theoretic fibre of a morphism of relative dimension at most `d` has Krull dimension
 at most `d`. -/
@@ -137,7 +151,7 @@ private theorem topologicalKrullDim_preimage_comp_eq (i : Z ⟶ X) (hi : IsEmbed
   rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp]
   refine IsHomeomorph.topologicalKrullDim_eq _ <| isHomeomorph_iff_isEmbedding_surjective.mpr
     ⟨hi.restrictPreimage (f ⁻¹' {y}), fun x ↦ ?_⟩
-  obtain ⟨z, hz⟩ := hy x.2
+  obtain ⟨z, hz⟩ := hy x.property
   exact ⟨⟨z, by simp [hz]⟩, Subtype.ext hz⟩
 
 /-- Precomposing with a preimmersion, such as an open or closed immersion, preserves the bound on
@@ -160,7 +174,7 @@ theorem relativeDimensionLE_comp_iff_of_injective (f : X ⟶ Y) (g : Y ⟶ Z)
   by_cases hz : z ∈ Set.range g
   · obtain ⟨y, rfl⟩ := hz
     exact hpre y ▸ h y
-  · have : IsEmpty ((f ≫ g) ⁻¹' {z}) := ⟨fun x ↦ hz ⟨f x, by simpa using x.2⟩⟩
+  · have : IsEmpty ((f ≫ g) ⁻¹' {z}) := ⟨fun x ↦ hz ⟨f x, by simpa using x.property⟩⟩
     exact (topologicalKrullDim_zero_of_discreteTopology _).trans (mod_cast d.zero_le)
 
 /-- Postcomposing with a preimmersion, such as an open or closed immersion, preserves the bound on
@@ -193,11 +207,11 @@ instance RelativeDimensionLE.isZariskiLocalAtSource (d : ℕ) :
     exact RelativeDimensionLE.isPreimmersion_comp U.ι f
   refine (relativeDimensionLE_iff_topologicalKrullDim_preimage_le f).mpr fun y ↦ ?_
   have hcover (x : f ⁻¹' {y}) : ∃ i, x ∈ Set.range ((f ⁻¹' {y}).restrictPreimage (U i).ι) := by
-    have hx : x.1 ∈ iSup U := by
+    have hx : x.val ∈ iSup U := by
       rw [hU]
       trivial
     obtain ⟨i, hi⟩ := Opens.mem_iSup.mp hx
-    exact ⟨i, ⟨⟨x.1, hi⟩, x.2⟩, rfl⟩
+    exact ⟨i, ⟨⟨x.val, hi⟩, x.property⟩, rfl⟩
   rw [topologicalKrullDim_eq_iSup_of_isOpenEmbedding _
     (fun i ↦ (U i).ι.isOpenEmbedding.restrictPreimage _) hcover]
   refine iSup_le fun i ↦ ?_
@@ -261,16 +275,45 @@ if and only if every fibre ring `κ(p) ⊗[R] S` has Krull dimension at most `d`
 theorem relativeDimensionLE_SpecMap_iff (R S : Type u) [CommRing R] [CommRing S] [Algebra R S] :
     RelativeDimensionLE d (Spec.map (CommRingCat.ofHom (algebraMap R S))) ↔
       ∀ (p : Ideal R) [p.IsPrime], ringKrullDim (p.Fiber S) ≤ d := by
-  have hdim (p : PrimeSpectrum R) : topologicalKrullDim
-      ((Spec.map (CommRingCat.ofHom (algebraMap R S))) ⁻¹' {p}) =
-        ringKrullDim (p.asIdeal.Fiber S) := by
-    rw [← PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim]
-    -- The underlying map of `Spec.map (CommRingCat.ofHom f)` is `PrimeSpectrum.comap f`.
-    exact (PrimeSpectrum.preimageHomeomorphFiber R S p).isHomeomorph.topologicalKrullDim_eq
+  have hdim := topologicalKrullDim_preimage_SpecMap_eq_ringKrullDim_fiber R S
   rw [relativeDimensionLE_iff_topologicalKrullDim_preimage_le]
   refine ⟨fun h p _ ↦ (hdim ⟨p, ‹_›⟩).symm.trans_le (h ⟨p, ‹_›⟩), fun h p ↦ ?_⟩
   have := p.isPrime
   exact (hdim p).trans_le (h p.asIdeal)
+
+/-- **Fibre dimensions over a valuation ring.** A flat morphism `f : X ⟶ Spec R` locally of finite
+type, for `R` a valuation ring, has relative dimension at most `d` if and only if its generic
+fibre has Krull dimension at most `d`: no fibre of `f` is larger than the generic fibre. -/
+theorem relativeDimensionLE_iff_topologicalKrullDim_preimage_genericPoint_le {R : Type u}
+    [CommRing R] [IsDomain R] [ValuationRing R] (f : X ⟶ Spec (.of R)) [Flat f]
+    [LocallyOfFiniteType f] :
+    RelativeDimensionLE d f ↔ topologicalKrullDim (f ⁻¹' {genericPoint (Spec (.of R))}) ≤ d := by
+  refine ⟨fun _ ↦ RelativeDimensionLE.topologicalKrullDim_preimage_le f _, fun h ↦ ?_⟩
+  -- Over an affine open `U` of `X`, with `A = Γ(X, U)`, the generic fibre of `Spec A ⟶ Spec R`
+  -- embeds into that of `f`, and it bounds every other fibre of `Spec A ⟶ Spec R` by the
+  -- ring-level theorem.
+  refine IsZariskiLocalAtSource.of_iSup_eq_top _ (iSup_affineOpens_eq_top X) fun U ↦ ?_
+  have hU : IsAffineOpen (U : X.Opens) := U.property
+  let := f.sectionsAlgebra U
+  have hφ := f.fromSpec_toSpec hU
+  have : Flat (Spec.map (CommRingCat.ofHom (algebraMap R Γ(X, U)))) := hφ ▸ inferInstance
+  have : LocallyOfFiniteType (Spec.map (CommRingCat.ofHom (algebraMap R Γ(X, U)))) :=
+    hφ ▸ inferInstance
+  have : Algebra.FiniteType R Γ(X, U) := RingHom.finiteType_algebraMap.mp <|
+    (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mp ‹_›
+  have : Module.Flat R Γ(X, U) := RingHom.flat_algebraMap_iff.mp <|
+    (HasRingHomProperty.Spec_iff (P := @Flat)).mp ‹_›
+  have hgen : ringKrullDim ((⊥ : Ideal R).Fiber Γ(X, U)) ≤ d := by
+    have hη : genericPoint (Spec (.of R)) = (⊥ : PrimeSpectrum R) := genericPoint_eq_bot_of_affine _
+    rw [hη] at h
+    refine (topologicalKrullDim_preimage_SpecMap_eq_ringKrullDim_fiber R Γ(X, U) ⊥).symm.trans_le
+      (le_trans ?_ h)
+    rw [← hφ]
+    exact topologicalKrullDim_preimage_comp_le hU.fromSpec hU.fromSpec.isEmbedding f _
+  rw [← hU.isoSpec_hom_fromSpec, Category.assoc,
+    MorphismProperty.cancel_left_of_respectsIso (@RelativeDimensionLE d), hφ]
+  exact (relativeDimensionLE_SpecMap_iff R Γ(X, U)).mpr fun p _ ↦
+    (p.ringKrullDim_fiber_le_ringKrullDim_fiber_bot).trans hgen
 
 /-- A morphism `Spec S ⟶ Spec R` of spectra of Noetherian rings of relative dimension at most `d`
 satisfies `dim S ≤ dim R + d`. -/

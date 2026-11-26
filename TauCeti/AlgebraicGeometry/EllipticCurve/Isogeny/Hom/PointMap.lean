@@ -15,6 +15,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Place
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 -- Proof-only: a place has finitely many extensions.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
+-- Proof-only: a separable isogeny's point fibres over a separably closed field have degree size.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.PointHom.Fiber
 -- Proof-only: an elliptic curve over a separably closed field has `ℓ ²` points of order `ℓ`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.IsSepClosed
 
@@ -31,7 +33,8 @@ that map, `Hom.pointMap`, and proves the facts that make it the action of `f` on
   and composites act by composition;
 * the zero morphism sends every point to `O` and the identity fixes every point;
 * for a separable isogeny over a separably closed field it agrees with the additive class-group
-  point map `TauCeti.Isogeny.toPointHom`, so it is additive there.
+  point map `TauCeti.Isogeny.toPointHom`, so it is additive there and its fibres have degree many
+  points.
 
 **Rigidity.** A nonzero morphism has finite fibres on points. Thus two morphisms agreeing on
 infinitely many points are equal. Over a separably closed field the points are infinitely many,
@@ -54,7 +57,11 @@ the inner morphism over every field, is proved in `Isogeny/Hom/Ring.lean`.
 * `TauCeti.Isogeny.Hom.comp_pointMap`: a composite acts by composition.
 * `TauCeti.Isogeny.Hom.pointMap_ofIsogeny_eq_toPointHom`: for a separable isogeny over a
   separably closed field the action is the class-group point map.
+* `TauCeti.Isogeny.Hom.setOf_pointMap_eq_self` and `TauCeti.Isogeny.Hom.setOf_pointMap_eq_self'`:
+  the points fixed by `f` are the kernel of `1 - f`, equivalently of `f - 1`.
 * `TauCeti.Isogeny.Hom.finite_setOf_pointMap_eq`: a nonzero morphism has finite fibres.
+* `TauCeti.Isogeny.Hom.ncard_setOf_pointMap_eq`: over a separably closed field, a nonzero
+  separable morphism has fibres of size its degree.
 * `TauCeti.Isogeny.Hom.eq_of_infinite_setOf_pointMap_eq` and `TauCeti.Isogeny.Hom.ext_pointMap`:
   rigidity.
 * `TauCeti.Isogeny.Hom.ext_pointMap_of_prime_zsmul_eq_zero`: rigidity on prime torsion, over a
@@ -82,14 +89,14 @@ point at the place of `P`. For an isogeny this is the point under `P`
 (`pointMap_ofIsogeny_eq_iff`), and the zero morphism sends every point to `O`. -/
 noncomputable def pointMap (f : Hom W₁ W₂) (P : W₁.Point) : W₂.Point :=
   (Point.equivBaseChangeSelf W₂).symm
-    (reductionOfDegreeEqOne W₂ (W₁.pointEquivDegreeOnePlace P).2 f.tautologicalPoint)
+    (reductionOfDegreeEqOne W₂ (W₁.pointEquivDegreeOnePlace P).property f.tautologicalPoint)
 
 /-- **The image of `P` is the point congruent to the tautological point** at the place of `P`. -/
 theorem pointMap_eq_iff {f : Hom W₁ W₂} {P : W₁.Point} {Q : W₂.Point} :
     f.pointMap P = Q ↔
       f.tautologicalPoint - Point.baseChange (W' := W₂) F W₁.FunctionField
           (Point.equivBaseChangeSelf W₂ Q) ∈
-        polePoints W₂ (W₁.pointEquivDegreeOnePlace P).1 := by
+        polePoints W₂ (W₁.pointEquivDegreeOnePlace P).val := by
   rw [pointMap, AddEquiv.symm_apply_eq, reductionOfDegreeEqOne_eq_iff]
 
 /-- **The zero morphism sends every point to `O`.** -/
@@ -125,7 +132,7 @@ theorem nsmul_pointMap (n : ℕ) (f : Hom W₁ W₂) (P : W₁.Point) :
 /-- **Every morphism sends `O` to `O`.** -/
 @[simp]
 theorem pointMap_zero (f : Hom W₁ W₂) : f.pointMap 0 = 0 := by
-  have h0 : (W₁.pointEquivDegreeOnePlace 0).1 = Place.infinity W₁ :=
+  have h0 : (W₁.pointEquivDegreeOnePlace 0).val = Place.infinity W₁ :=
     coe_pointEquivDegreeOnePlace_zero W₁
   rw [pointMap_eq_iff, h0, (Point.equivBaseChangeSelf W₂).map_zero, map_zero, sub_zero]
   exact tautologicalPoint_mem_polePoints f
@@ -144,9 +151,9 @@ variable (φ : Isogeny W₁ W₂)
 /-- **An isogeny sends a point to the point under it.** If the place of `P` restricts along `φ^*`
 to the place of `Q`, then `φ` sends `P` to `Q`. -/
 theorem pointMap_ofIsogeny_of_isEquiv {P : W₁.Point} {Q : W₂.Point}
-    (h : (((W₁.pointEquivDegreeOnePlace P).1.valuation).comap
+    (h : (((W₁.pointEquivDegreeOnePlace P).val.valuation).comap
       (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
-        (W₂.pointEquivDegreeOnePlace Q).1.valuation) :
+        (W₂.pointEquivDegreeOnePlace Q).val.valuation) :
     (ofIsogeny φ).pointMap P = Q := by
   rw [pointMap_eq_iff, tautologicalPoint_ofIsogeny, Isogeny.tautologicalPoint_eq_map_genericPoint,
     genericPoint_eq_some, Point.map_some]
@@ -169,24 +176,24 @@ theorem pointMap_ofIsogeny_of_isEquiv {P : W₁.Point} {Q : W₂.Point}
 /-- **The place of the image of `P` is the restriction of the place of `P`** along the pullback of
 the isogeny, expressed as equivalence of valuations. -/
 theorem isEquiv_comap_pointMap_ofIsogeny (P : W₁.Point) :
-    (((W₁.pointEquivDegreeOnePlace P).1.valuation).comap
+    (((W₁.pointEquivDegreeOnePlace P).val.valuation).comap
       (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
-        (W₂.pointEquivDegreeOnePlace ((ofIsogeny φ).pointMap P)).1.valuation := by
+        (W₂.pointEquivDegreeOnePlace ((ofIsogeny φ).pointMap P)).val.valuation := by
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback fun _ ↦ rfl
   have := φ.finiteDimensional_functionField fun _ ↦ rfl
-  let v := (W₁.pointEquivDegreeOnePlace P).1
+  let v := (W₁.pointEquivDegreeOnePlace P).val
   -- the restriction of a rational place is rational
   have hv : (v.restrict F W₂.FunctionField).degree = 1 := by
     have hle := Place.degree_restrict_le F W₂.FunctionField v
     have hpos := (v.restrict F W₂.FunctionField).one_le_degree_of_isFunctionField
       W₂.isFunctionField
-    have hdeg : v.degree = 1 := (W₁.pointEquivDegreeOnePlace P).2
+    have hdeg : v.degree = 1 := (W₁.pointEquivDegreeOnePlace P).property
     omega
   let Q := (W₂.pointEquivDegreeOnePlace).symm ⟨v.restrict F W₂.FunctionField, hv⟩
-  have hQ : (W₂.pointEquivDegreeOnePlace Q).1 = v.restrict F W₂.FunctionField := by simp [Q]
+  have hQ : (W₂.pointEquivDegreeOnePlace Q).val = v.restrict F W₂.FunctionField := by simp [Q]
   have he : (v.valuation.comap (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
-      (W₂.pointEquivDegreeOnePlace Q).1.valuation :=
+      (W₂.pointEquivDegreeOnePlace Q).val.valuation :=
     (Place.restrict_eq_iff_isEquiv_comap F W₂.FunctionField v _).mp hQ.symm
   rwa [pointMap_ofIsogeny_of_isEquiv φ he]
 
@@ -194,9 +201,9 @@ theorem isEquiv_comap_pointMap_ofIsogeny (P : W₁.Point) :
 along its pullback. -/
 theorem pointMap_ofIsogeny_eq_iff {P : W₁.Point} {Q : W₂.Point} :
     (ofIsogeny φ).pointMap P = Q ↔
-      (((W₁.pointEquivDegreeOnePlace P).1.valuation).comap
+      (((W₁.pointEquivDegreeOnePlace P).val.valuation).comap
         (φ.fieldPullback : W₂.FunctionField →+* W₁.FunctionField)).IsEquiv
-          (W₂.pointEquivDegreeOnePlace Q).1.valuation :=
+          (W₂.pointEquivDegreeOnePlace Q).val.valuation :=
   ⟨fun h ↦ h ▸ isEquiv_comap_pointMap_ofIsogeny φ P, pointMap_ofIsogeny_of_isEquiv φ⟩
 
 /-- **An isogeny sends `P` to `Q` exactly when the place of `P` restricts to the place of `Q`.** -/
@@ -204,8 +211,8 @@ theorem pointMap_ofIsogeny_eq_iff_restrict {P : W₁.Point} {Q : W₂.Point} :
     letI := φ.fieldPullback.toRingHom.toAlgebra
     letI := φ.finiteDimensional_functionField fun _ ↦ rfl
     (ofIsogeny φ).pointMap P = Q ↔
-      (W₁.pointEquivDegreeOnePlace P).1.restrict F W₂.FunctionField =
-        (W₂.pointEquivDegreeOnePlace Q).1 := by
+      (W₁.pointEquivDegreeOnePlace P).val.restrict F W₂.FunctionField =
+        (W₂.pointEquivDegreeOnePlace Q).val := by
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.finiteDimensional_functionField fun _ ↦ rfl
   exact (pointMap_ofIsogeny_eq_iff φ).trans
@@ -248,6 +255,20 @@ theorem pow_pointMap (f : Hom W₁ W₁) (n : ℕ) (P : W₁.Point) :
   | succ n ih =>
     rw [pow_succ', mul_def, comp_pointMap, ih, Function.iterate_succ_apply']
 
+/-- **The points fixed by an endomorphism `f` are the kernel of `1 - f`.** -/
+theorem setOf_pointMap_eq_self (f : Hom W₁ W₁) :
+    {P | f.pointMap P = P} = {P | (1 - f).pointMap P = 0} := by
+  ext P
+  rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, sub_pointMap, one_def, id_pointMap, sub_eq_zero,
+    eq_comm]
+
+/-- **The points fixed by an endomorphism `f` are the kernel of `f - 1`.** Compare
+`setOf_pointMap_eq_self`, the same set as the kernel of `1 - f`. -/
+theorem setOf_pointMap_eq_self' (f : Hom W₁ W₁) :
+    {P | f.pointMap P = P} = {P | (f - 1).pointMap P = 0} := by
+  ext P
+  rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, sub_pointMap, one_def, id_pointMap, sub_eq_zero]
+
 /-- **A nonzero morphism has finite fibres on points.** -/
 theorem finite_setOf_pointMap_eq {f : Hom W₁ W₂} (hf : f ≠ 0) (Q : W₂.Point) :
     {P | f.pointMap P = Q}.Finite := by
@@ -255,15 +276,26 @@ theorem finite_setOf_pointMap_eq {f : Hom W₁ W₂} (hf : f ≠ 0) (Q : W₂.Po
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have := φ.isScalarTower_of_algebraMap_eq_fieldPullback fun _ ↦ rfl
   have := φ.finiteDimensional_functionField fun _ ↦ rfl
-  let place : W₁.Point → Place F W₁.FunctionField := fun P ↦ (W₁.pointEquivDegreeOnePlace P).1
+  let place : W₁.Point → Place F W₁.FunctionField := fun P ↦ (W₁.pointEquivDegreeOnePlace P).val
   have hplace : Set.InjOn place {P | (ofIsogeny φ).pointMap P = Q} := fun _ _ _ _ h ↦
     (W₁.pointEquivDegreeOnePlace).injective (Subtype.ext h)
   refine Set.Finite.of_finite_image (Set.Finite.subset
-    (Place.finite_setOf_restrict_eq F W₂.FunctionField (W₂.pointEquivDegreeOnePlace Q).1) ?_)
+    (Place.finite_setOf_restrict_eq F W₂.FunctionField (W₂.pointEquivDegreeOnePlace Q).val) ?_)
     hplace
   rintro _ ⟨P, hP, rfl⟩
   exact (Place.restrict_eq_iff_isEquiv_comap F W₂.FunctionField _ _).mpr
     ((pointMap_ofIsogeny_eq_iff φ).mp hP)
+
+/-- **The fibres of a nonzero separable morphism over a separably closed field have degree many
+points** (Silverman III.4.10). -/
+theorem ncard_setOf_pointMap_eq [IsSepClosed F] {f : Hom W₁ W₂} (hf : f ≠ 0)
+    [Algebra.IsSeparable (toIsogeny hf).fieldPullback.fieldRange W₁.FunctionField] (Q : W₂.Point) :
+    {P | f.pointMap P = Q}.ncard = f.degree := by
+  conv_rhs => rw [← ofIsogeny_toIsogeny hf, degree_ofIsogeny]
+  rw [← ncard_fiber_toPointHom_eq_degree _ Q]
+  congr 1
+  ext P
+  rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, ← pointMap_ofIsogeny_eq_toPointHom, ofIsogeny_toIsogeny]
 
 /-- **Rigidity: two morphisms agreeing on infinitely many points are equal.** -/
 theorem eq_of_infinite_setOf_pointMap_eq {f g : Hom W₁ W₂}

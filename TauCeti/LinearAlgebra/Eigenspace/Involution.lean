@@ -30,6 +30,8 @@ identity.
 * `Module.End.eigenProjOfInvolutive_apply_of_mem_neg`: it kills the `ν`-eigenspace for `μ ν = -1`.
 * `Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg`: the projections for `μ` and
   `-μ` add up to the identity.
+* `Module.End.hasEigenvalue_or_neg_of_involutive`: one of these eigenspaces is nonzero if
+  `Y` is nontrivial.
 -/
 
 public section
@@ -64,7 +66,7 @@ theorem coe_eigenProjOfInvolutive_apply (hg : Function.Involutive g) {μ : k} (h
 theorem eigenProjOfInvolutive_apply_of_mem (hg : Function.Involutive g) {μ : k}
     (hμ : μ * μ = 1) (y : g.eigenspace μ) : eigenProjOfInvolutive hg hμ y = y := by
   apply Subtype.ext
-  rw [coe_eigenProjOfInvolutive_apply, mem_eigenspace_iff.1 y.2, smul_smul, hμ, one_smul,
+  rw [coe_eigenProjOfInvolutive_apply, mem_eigenspace_iff.1 y.property, smul_smul, hμ, one_smul,
     ← two_smul k, invOf_smul_smul]
 
 /-- The projection onto the `μ`-eigenspace kills the `ν`-eigenspace when `μ ν = -1`, that is, when
@@ -74,7 +76,7 @@ theorem eigenProjOfInvolutive_apply_of_mem_neg (hg : Function.Involutive g) {μ 
     (hμ : μ * μ = 1) (hν : μ * ν = -1) (y : g.eigenspace ν) :
     eigenProjOfInvolutive hg hμ y = 0 := by
   apply Subtype.ext
-  rw [coe_eigenProjOfInvolutive_apply, mem_eigenspace_iff.1 y.2, smul_smul, hν, neg_one_smul,
+  rw [coe_eigenProjOfInvolutive_apply, mem_eigenspace_iff.1 y.property, smul_smul, hν, neg_one_smul,
     add_neg_cancel, smul_zero, ZeroMemClass.coe_zero]
 
 /-- The projections onto the `μ`- and `-μ`-eigenspaces of an involution add up to the identity. -/
@@ -84,5 +86,19 @@ theorem eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg (hg : Function.Invol
   have h := halfOneAdd_add_halfOneAdd_neg k (μ • g)
   rw [← neg_smul] at h
   exact LinearMap.congr_fun h y
+
+/-- On a nontrivial module, an involution has a nonzero eigenvector for one of the
+complementary eigenvalues `μ` and `-μ`. -/
+theorem hasEigenvalue_or_neg_of_involutive [Nontrivial Y] (hg : Function.Involutive g)
+    {μ : k} (hμ : μ * μ = 1) : g.HasEigenvalue μ ∨ g.HasEigenvalue (-μ) := by
+  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
+  have hμ' := (neg_mul_neg μ μ).trans hμ
+  have hsum := eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hg hμ hμ' y
+  by_cases hp : (eigenProjOfInvolutive hg hμ y : Y) = 0
+  · right
+    rw [hp, zero_add] at hsum
+    exact hasEigenvalue_of_hasEigenvector
+      ⟨(eigenProjOfInvolutive hg hμ' y).property, hsum.trans_ne hy⟩
+  · exact Or.inl <| hasEigenvalue_of_hasEigenvector ⟨(eigenProjOfInvolutive hg hμ y).property, hp⟩
 
 end Module.End

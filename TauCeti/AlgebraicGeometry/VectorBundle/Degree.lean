@@ -7,13 +7,14 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
-public import TauCeti.AlgebraicGeometry.Curves.Cohomology
+public import TauCeti.AlgebraicGeometry.Curves.Cohomology.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
 public import TauCeti.AlgebraicGeometry.Cohomology.Skyscraper
 public import TauCeti.AlgebraicGeometry.VectorBundle.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Curves.Degree.Pullback
+public import TauCeti.AlgebraicGeometry.VectorBundle.FreeSubsheaf
 import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
@@ -44,7 +45,11 @@ the skyscraper sheaf `κ(x)ₓ` at a point, this is the residue degree `[κ(x) :
 the direct image of a sheaf on an affine scheme with finitely many closed points, for instance a
 closed subscheme finite over `k`, tensoring with a vector bundle `V` of rank `s` multiplies
 `χ(X, T)` by `s` (`AlgebraicGeometry.Scheme.Hom.eulerCharBelow_tensor_pushforward`), so
-`deg (V ⊗ E) - s · deg E` is unchanged by such a modification of `E`.
+`deg (V ⊗ E) - s · deg E` is unchanged by such a modification of `E`. On a scheme locally of
+finite type over `k` this applies to every quotient `T` supported on finitely many points, which
+is the direct image of a sheaf on its scheme-theoretic support, a closed subscheme finite over `k`
+(`AlgebraicGeometry.Scheme.Modules.eulerCharBelow_tensor_of_finite_support`). On a curve every
+quotient whose stalk at the generic point vanishes has finite support.
 
 Twisting by a line bundle `L` changes the degree by `r · deg L`: on a proper integral curve,
 possibly singular, `deg (E ⊗ L) = deg E + r · deg L`, the case of rank-one `V` of Stacks,
@@ -52,6 +57,15 @@ Lemma 0AYX. Writing `L` as a difference of effective Cartier divisors reduces th
 `𝒪_X(-D)` for an effective Cartier divisor `D`. There the exact sequence
 `0 ⟶ E(-D) ⟶ E ⟶ E|_D ⟶ 0` and the triviality of `E|_D` on the finite scheme `D` give
 `χ(E(-D)) = χ(E) - r · dim_k Γ(D, 𝒪_D)` (`Scheme.IdealSheafData.eulerCharBelow_tensor_sheaf`).
+
+On a proper integral curve whose codimension-one local rings are discrete valuation rings, the
+degree of a tensor product is `deg (V ⊗ E) = r · deg V + s · deg E` for bundles `V` and `E` of
+ranks `s` and `r` (Stacks, Lemma 0AYX). A twist `E ⊗ L` of `E` by a line bundle contains the
+trivial bundle `𝒪_X^r` with finitely supported quotient
+(`FiniteLocallyFreeSheaf.FixedRank.exists_mono_free_twist_finite_support`); by the formula for
+tensoring modifications with finitely supported cokernel, `deg (V ⊗ E') - s · deg E'` takes the
+same value `r · deg V` for `E' = E ⊗ L` as for `𝒪_X^r`, and twisting by `L` changes both terms by
+`r s · deg L`.
 
 Pullback along a finite flat morphism `f : X ⟶ Y` of constant rank `d` onto a proper integral
 curve multiplies the degree of a vector bundle of rank one by `d`
@@ -89,6 +103,11 @@ Stacks, Lemma 0AYZ).
   and a vector bundle `V` of rank `s`, `deg (V ⊗ E₂) = deg (V ⊗ E₁) + s · χ(X, T)`, with curve
   version
   `FixedRank.vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_isCurveOver`;
+* `FixedRank.vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support`:
+  the same formula for a quotient `T` supported on finitely many points of a scheme locally of
+  finite type over `k`, with curve version
+`vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support_of_isCurveOver`
+  on proper integral curves;
 * `FixedRank.vectorBundleDegree_baseChange`: the degree of the pullback of `E` to `X_K` for a
   field extension `K / k` is the degree of `E`;
 * `FixedRank.vectorBundleDegree_twist_toInvertibleSheaf`: `deg E(-D) = deg E - r · deg D` for an
@@ -97,6 +116,10 @@ Stacks, Lemma 0AYZ).
   `FixedRank.finiteDimensional_cohomology_twist`: on a proper integral curve,
   `deg (E ⊗ L) = deg E + r · deg L` for every line bundle `L`, `deg E(D) = deg E + r · deg D` for
   an effective Cartier divisor `D`, and twisting preserves finiteness of cohomology;
+* `FixedRank.vectorBundleDegree_tensor_free` and
+  `FixedRank.vectorBundleDegree_tensor_of_isCurveOver`: `deg (V ⊗ 𝒪_X^r) = r · deg V`, and
+  `deg (V ⊗ E) = r · deg V + s · deg E` on a proper integral curve whose codimension-one local
+  rings are discrete valuation rings;
 * `FixedRank.vectorBundleDegree_pullback_of_finrank_eq` and
   `FixedRank.vectorBundleDegree_pullback_eq_finrank_functionField_mul`: for a vector bundle `E` of
   rank one on a proper integral curve `Y` and a finite flat morphism `f : X ⟶ Y` of constant rank
@@ -343,6 +366,28 @@ theorem vectorBundleDegree_elementaryModification_of_isCurveOver [X.IsCurveOver 
     Scheme.eulerCharBelow_skyscraperResidueField]
 
 open MonoidalCategory in
+/-- Tensoring a modification `0 ⟶ E₁ ⟶ E₂ ⟶ T ⟶ 0` of vector bundles of the same constant rank
+with a vector bundle `V` changes the degree by the Euler characteristic of `V ⊗ T`. -/
+private theorem vectorBundleDegree_tensor_eq_add_eulerCharBelow_tensor_of_shortExact
+    {g : E₂.obj.obj ⟶ T} {w : f ≫ g = 0} (hS : (ShortComplex.mk f g w).ShortExact) {s : ℕ}
+    (V : FixedRank X s)
+    [FiniteDimensional k (Scheme.Modules.Cohomology (V.tensor E₁).obj.obj 1)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology (V.tensor E₂).obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology (V.tensor E₂).obj.obj 1)]
+    (hvan : Subsingleton (Scheme.Modules.Cohomology (V.tensor E₁).obj.obj 2)) :
+    vectorBundleDegree k (V.tensor E₂) = vectorBundleDegree k (V.tensor E₁) +
+      eulerCharBelow k X (V.obj.obj ⊗ T) 2 := by
+  -- Tensoring with `V` keeps the sequence exact; identifying its first two terms with the
+  -- underlying sheaves of `V.tensor E₁` and `V.tensor E₂` makes it a modification of bundles.
+  have hS' := Scheme.Modules.shortExact_map_tensorLeft V.obj.obj hS
+  have e₁ := tensor_obj_obj V E₁
+  have e₂ := tensor_obj_obj V E₂
+  exact vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact k
+    (f := eqToHom e₁ ≫ V.obj.obj ◁ f ≫ eqToHom e₂.symm) (g := eqToHom e₂ ≫ V.obj.obj ◁ g)
+    (w := by simpa using ((ShortComplex.mk f g w).map (tensorLeft V.obj.obj)).zero)
+    (ShortComplex.shortExact_of_iso (ShortComplex.isoMk (eqToIso e₁.symm) (eqToIso e₂.symm)
+      (Iso.refl (V.obj.obj ⊗ T))) hS') hvan
+
 /-- **Tensoring a modification with a vector bundle.** Let `0 ⟶ E₁ ⟶ E₂ ⟶ ι_* G ⟶ 0` be a short
 exact sequence in which `E₁` and `E₂` are vector bundles of the same constant rank and the quotient
 is the direct image of a sheaf `G` along a morphism `ι : Z ⟶ X` from an affine scheme with finitely
@@ -359,17 +404,8 @@ theorem vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact {Z : S
     (hvan : Subsingleton (Scheme.Modules.Cohomology (V.tensor E₁).obj.obj 2)) :
     vectorBundleDegree k (V.tensor E₂) = vectorBundleDegree k (V.tensor E₁) +
       s * eulerCharBelow k X ((Scheme.Modules.pushforward ι).obj G) 2 := by
-  -- Tensoring with `V` keeps the sequence exact; identifying its first two terms with the
-  -- underlying sheaves of `V.tensor E₁` and `V.tensor E₂` makes it a modification of bundles.
-  have hS' := Scheme.Modules.shortExact_map_tensorLeft V.obj.obj hS
-  have e₁ := tensor_obj_obj V E₁
-  have e₂ := tensor_obj_obj V E₂
   rw [← Scheme.Hom.eulerCharBelow_tensor_pushforward ι k V G 2]
-  exact vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact k
-    (f := eqToHom e₁ ≫ V.obj.obj ◁ f ≫ eqToHom e₂.symm) (g := eqToHom e₂ ≫ V.obj.obj ◁ g)
-    (w := by simpa using ((ShortComplex.mk f g w).map (tensorLeft V.obj.obj)).zero)
-    (ShortComplex.shortExact_of_iso (ShortComplex.isoMk (eqToIso e₁.symm) (eqToIso e₂.symm)
-      (Iso.refl (V.obj.obj ⊗ (Scheme.Modules.pushforward ι).obj G))) hS') hvan
+  exact vectorBundleDegree_tensor_eq_add_eulerCharBelow_tensor_of_shortExact k hS V hvan
 
 /-- **Tensoring a modification with a vector bundle on a curve.** On a proper integral curve over
 `k` whose codimension-one local rings are discrete valuation rings, let
@@ -394,6 +430,51 @@ theorem vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_isC
   exact vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact k hS V
     (subsingleton_cohomology_of_two_le_of_isCurveOver k (V.tensor E₁).obj.obj 2 le_rfl)
 
+/-- **Tensoring a modification with finitely supported cokernel.** Let `X` be locally of finite
+type over `k` and `0 ⟶ E₁ ⟶ E₂ ⟶ T ⟶ 0` a short exact sequence in which `E₁` and `E₂` are vector
+bundles of the same constant rank and the quotient `T` is supported on finitely many points. Let
+`V` be a vector bundle of constant rank `s` such that `H¹(X, V ⊗ E₁)`, `H⁰(X, V ⊗ E₂)` and
+`H¹(X, V ⊗ E₂)` are finite-dimensional and `H²(X, V ⊗ E₁) = 0`. Then
+`deg (V ⊗ E₂) = deg (V ⊗ E₁) + s · χ(X, T)`. -/
+theorem vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support
+    [LocallyOfFiniteType (X ↘ Spec (.of k))] {g : E₂.obj.obj ⟶ T} {w : f ≫ g = 0}
+    (hS : (ShortComplex.mk f g w).ShortExact)
+    (hT : {x : X | Nontrivial (T.presheaf.stalk x)}.Finite) {s : ℕ} (V : FixedRank X s)
+    [FiniteDimensional k (Scheme.Modules.Cohomology (V.tensor E₁).obj.obj 1)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology (V.tensor E₂).obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology (V.tensor E₂).obj.obj 1)]
+    (hvan : Subsingleton (Scheme.Modules.Cohomology (V.tensor E₁).obj.obj 2)) :
+    vectorBundleDegree k (V.tensor E₂) = vectorBundleDegree k (V.tensor E₁) +
+      s * eulerCharBelow k X T 2 := by
+  -- The quotient `T` is the cokernel of `f`, hence quasi-coherent and of finite type.
+  have : T.IsQuasicoherent := (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso
+    (colimit.isoColimitCocone ⟨_, hS.gIsCokernel⟩) (Scheme.Modules.isQuasicoherent_cokernel f)
+  have : Epi g := hS.epi_g
+  have : T.IsFiniteType := Scheme.Modules.isFiniteType_of_epi g
+  rw [← Scheme.Modules.eulerCharBelow_tensor_of_finite_support k V T hT 2]
+  exact vectorBundleDegree_tensor_eq_add_eulerCharBelow_tensor_of_shortExact k hS V hvan
+
+/-- **Tensoring a modification with finitely supported cokernel on a curve.** On a proper integral
+curve over `k` whose codimension-one local rings are discrete valuation rings, let
+`0 ⟶ E₁ ⟶ E₂ ⟶ T ⟶ 0` be a short exact sequence in which `E₁` and `E₂` are vector bundles of the
+same constant rank and the quotient `T` is supported on finitely many points. Then for every vector
+bundle `V` of constant rank `s`, `deg (V ⊗ E₂) = deg (V ⊗ E₁) + s · χ(X, T)`. A quotient whose
+stalk at the generic point vanishes has finite support
+(`Scheme.Modules.finite_setOf_nontrivial_stalk_of_subsingleton_stalk_genericPoint`). -/
+theorem
+  vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support_of_isCurveOver
+    [X.IsCurveOver k]
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+    {g : E₂.obj.obj ⟶ T} {w : f ≫ g = 0} (hS : (ShortComplex.mk f g w).ShortExact)
+    (hT : {x : X | Nontrivial (T.presheaf.stalk x)}.Finite) {s : ℕ} (V : FixedRank X s) :
+    vectorBundleDegree k (V.tensor E₂) = vectorBundleDegree k (V.tensor E₁) +
+      s * eulerCharBelow k X T 2 := by
+  have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor E₁).obj.obj 1
+  have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor E₂).obj.obj 0
+  have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor E₂).obj.obj 1
+  exact vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support k hS hT
+    V (subsingleton_cohomology_of_two_le_of_isCurveOver k (V.tensor E₁).obj.obj 2 le_rfl)
+
 end Modification
 
 section BaseChange
@@ -412,10 +493,7 @@ theorem vectorBundleDegree_baseChange
     [CompactSpace X] [QuasiSeparatedSpace X] (E : FixedRank X r) :
     vectorBundleDegree K ((pullback g).obj E) = vectorBundleDegree k E := by
   -- The pullback of the structure sheaf `𝒪_X` is the structure sheaf `𝒪_Y`.
-  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
-      (InvertibleSheaf.trivial Y).obj :=
-    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
-      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  let e := InvertibleSheaf.pullbackTrivialObjIso g
   rw [vectorBundleDegree_def, vectorBundleDegree_def, pullback_obj_obj,
     FiniteLocallyFreeSheaf.pullback_obj_obj, ← eulerCharBelow_congr K e 2,
     eulerCharBelow_pullback_eq_of_isPullback H, eulerCharBelow_pullback_eq_of_isPullback H]
@@ -585,6 +663,72 @@ theorem vectorBundleDegree_twist_of_isEffective {D : Scheme.CartierDivisor X} (h
 end Curve
 
 end Twist
+
+section Tensor
+
+open MonoidalCategory
+
+/-- **The degree of a vector bundle tensored with a trivial bundle.** For a vector bundle `V` of
+constant rank, `deg (V ⊗ 𝒪_X^r) = r · deg V`, with no hypothesis on `X`: both sides are computed
+from `V ⊗ 𝒪_X^r ≅ V^{⊕r}` and `χ(X, V^{⊕r}) = r · χ(X, V)`. -/
+theorem vectorBundleDegree_tensor_free {s : ℕ} (V : FixedRank X s) :
+    vectorBundleDegree k (V.tensor (free X r)) = r * vectorBundleDegree k V := by
+  have : HasFiniteBiproducts X.Modules := Abelian.hasFiniteBiproducts
+  have : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
+  let e : (V.tensor (free X r)).obj.obj ≅ ⨁ fun _ : Fin r ↦ V.obj.obj :=
+    eqToIso (by rw [tensor_obj_obj, free_obj, FiniteLocallyFreeSheaf.free_obj]) ≪≫
+      whiskerLeftIso V.obj.obj ((TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) _).symm ≪≫
+        biproduct.whiskerEquiv (f := fun _ : ULift.{u} (Fin r) ↦ 𝟙_ X.Modules)
+          (g := fun _ : Fin r ↦ 𝟙_ X.Modules) Equiv.ulift fun _ ↦ Iso.refl _) ≪≫
+      leftDistributor V.obj.obj _ ≪≫ biproduct.mapIso fun _ ↦ ρ_ V.obj.obj
+  rw [vectorBundleDegree_def, vectorBundleDegree_def, eulerCharBelow_congr k e,
+    eulerCharBelow_biproduct_const, Fintype.card_fin]
+  push_cast
+  ring
+
+/-- **The degree of a tensor product of vector bundles** (Stacks, Lemma 0AYX). On a proper integral
+curve over `k` whose codimension-one local rings are discrete valuation rings, for vector bundles
+`V` and `E` of constant ranks `s` and `r`, `deg (V ⊗ E) = r · deg V + s · deg E`. A twist `E ⊗ L`
+contains `𝒪_X^r` with finitely supported quotient
+(`FixedRank.exists_mono_free_twist_finite_support`), which reduces the formula to the trivial
+bundle and to twisting by line bundles. -/
+theorem vectorBundleDegree_tensor_of_isCurveOver [X.IsCurveOver k]
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] {s : ℕ}
+    (V : FixedRank X s) (E : FixedRank X r) :
+    vectorBundleDegree k (V.tensor E) =
+      r * vectorBundleDegree k V + s * vectorBundleDegree k E := by
+  have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
+  have : RelativeDimensionLE 1 (X ↘ Spec (.of k)) :=
+    (relativeDimensionLE_iff_of_field _).mpr
+      (AlgebraicGeometry.Scheme.IsCurveOver.topologicalKrullDim_eq_one (X := X) k).le
+  obtain ⟨L, φ, _, hfin⟩ := E.exists_mono_free_twist_finite_support
+    (coheight_le_of_relativeDimensionLE_of_field (d := 1) (X ↘ Spec (.of k)))
+  have hS := TauCeti.cokernelSequence_shortExact φ
+  -- The modification `0 ⟶ 𝒪_X^r ⟶ E ⊗ L ⟶ T ⟶ 0` gives `deg (V ⊗ (E ⊗ L)) = r · deg V + s · χ(T)`
+  -- and `deg (E ⊗ L) = χ(T)`.
+  have h₁ :=
+  vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact_of_finite_support_of_isCurveOver
+    k hS hfin V
+  have h₂ := vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact_of_isCurveOver k hS
+  have := finiteDimensional_cohomology_of_isCurveOver k (InvertibleSheaf.trivial X).obj 0
+  have := finiteDimensional_cohomology_of_isCurveOver k (InvertibleSheaf.trivial X).obj 1
+  have := finiteDimensional_cohomology_of_isCurveOver k E.obj.obj 0
+  have := finiteDimensional_cohomology_of_isCurveOver k E.obj.obj 1
+  have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor E).obj.obj 0
+  have := finiteDimensional_cohomology_of_isCurveOver k (V.tensor E).obj.obj 1
+  -- Twisting by `L` adds `r · deg L` to `deg E` and `s r · deg L` to `deg (V ⊗ E)`.
+  have h₃ := vectorBundleDegree_twist k E L
+  have h₄ : vectorBundleDegree k (V.tensor (E.twist L)) =
+      vectorBundleDegree k ((V.tensor E).twist L) :=
+    vectorBundleDegree_congr k (eqToIso (by rw [tensor_obj_obj, twist_obj_obj]) ≪≫
+      (α_ V.obj.obj E.obj.obj L.obj).symm ≪≫ eqToIso (by rw [twist_obj_obj, tensor_obj_obj]))
+  rw [vectorBundleDegree_twist k (V.tensor E) L] at h₄
+  rw [vectorBundleDegree_tensor_free] at h₁
+  rw [vectorBundleDegree_free, zero_add] at h₂
+  push_cast at h₄
+  linear_combination h₁ - h₄ - (s : ℤ) * h₂ + (s : ℤ) * h₃
+
+end Tensor
 
 end FiniteLocallyFreeSheaf.FixedRank
 

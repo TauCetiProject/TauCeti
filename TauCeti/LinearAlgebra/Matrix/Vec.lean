@@ -9,13 +9,17 @@ public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.Vec
 
 /-!
-# Kronecker quadratic forms on vectorized matrices
+# Vectorized matrices: linear structure and Kronecker quadratic forms
+
+Column-stacking vectorization `Matrix.vec` is a linear equivalence between `m × n` matrices and
+functions on `n × m`, whose inverse puts `v (j, i)` at entry `(i, j)`.
 
 The quadratic form of a Kronecker product `V ⊗ₖ U` on column-stacked matrices is a trace.
 For positive semidefinite `U` and `V`, this makes `trace (Tᵀ * U * T * V)` nonnegative.
 
 ## Main results
 
+* `Matrix.vecLinearEquiv`: vectorization as a linear equivalence.
 * `Matrix.vec_dotProduct_kronecker_mulVec_vec`: the trace formula for the bilinear form of
   `V ⊗ₖ U` on vectorized matrices.
 * `Matrix.IsSymm.vec_dotProduct_kronecker_mulVec_vec`: the same formula for symmetric `V`,
@@ -31,6 +35,35 @@ public section
 open scoped Kronecker Matrix
 
 namespace Matrix
+
+section LinearEquiv
+
+variable {R m n : Type*} (S : Type*) [Semiring S] [AddCommMonoid R] [Module S R]
+
+/-- Column-stacking vectorization `Matrix.vec` as a linear equivalence. Its inverse puts the
+coordinate `v (j, i)` at the entry `(i, j)`. -/
+def vecLinearEquiv : Matrix m n R ≃ₗ[S] (n × m → R) where
+  toFun := vec
+  invFun v := of fun i j ↦ v (j, i)
+  map_add' := vec_add
+  map_smul' := vec_smul
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem vecLinearEquiv_apply (A : Matrix m n R) : vecLinearEquiv S A = A.vec := (rfl)
+
+@[simp]
+theorem vecLinearEquiv_symm_apply (v : n × m → R) (i : m) (j : n) :
+    (vecLinearEquiv S).symm v i j = v (j, i) := (rfl)
+
+@[simp]
+theorem vec_vecLinearEquiv_symm (v : n × m → R) : ((vecLinearEquiv S).symm v).vec = v := (rfl)
+
+@[simp]
+theorem vecLinearEquiv_symm_vec (A : Matrix m n R) : (vecLinearEquiv S).symm A.vec = A := (rfl)
+
+end LinearEquiv
 
 variable {R l m n p : Type*} [Fintype l] [Fintype m] [Fintype n] [Fintype p]
 

@@ -123,7 +123,7 @@ theorem isCompositionFactorAt_congr_of_eq {s t : CompositionSeries (Submodule R 
 
 /-- **The factors of a composition series are simple**: each step of a composition series is a
 covering, and a covering pair of submodules has simple quotient. -/
-theorem isSimpleModule_subquotient (s : CompositionSeries (Submodule R M)) (i : Fin s.length) :
+instance isSimpleModule_subquotient (s : CompositionSeries (Submodule R M)) (i : Fin s.length) :
     IsSimpleModule R (↥(s i.succ) ⧸ Submodule.comap (s i.succ).subtype (s i.castSucc)) :=
   have cov := s.step i
   (covBy_iff_quot_is_simple cov.le).mp cov
@@ -164,7 +164,7 @@ theorem compositionMultiplicity_ne_zero_iff (s : CompositionSeries (Submodule R 
     (S : Type w) [AddCommGroup S] [Module R S] :
     compositionMultiplicity s S ≠ 0 ↔ ∃ i, IsCompositionFactorAt s i S := by
   rw [compositionMultiplicity_def, Nat.card_ne_zero]
-  exact ⟨fun h => h.1.elim fun i => ⟨i.1, i.2⟩, fun ⟨i, hi⟩ => ⟨⟨⟨i, hi⟩⟩, inferInstance⟩⟩
+  exact ⟨fun h => h.1.elim fun i => ⟨i.val, i.property⟩, fun ⟨i, hi⟩ => ⟨⟨⟨i, hi⟩⟩, inferInstance⟩⟩
 
 theorem compositionMultiplicity_le_length (s : CompositionSeries (Submodule R M))
     (S : Type w) [AddCommGroup S] [Module R S] : compositionMultiplicity s S ≤ s.length :=
@@ -176,7 +176,7 @@ theorem compositionMultiplicity_eq_zero_of_not_isSimpleModule
     (S : Type w) [AddCommGroup S] [Module R S] (hS : ¬ IsSimpleModule R S) :
     compositionMultiplicity s S = 0 := by
   have : IsEmpty {i : Fin s.length // IsCompositionFactorAt s i S} :=
-    ⟨fun i => hS i.2.isSimpleModule⟩
+    ⟨fun i => hS i.property.isSimpleModule⟩
   simp [compositionMultiplicity_def]
 
 /-- The multiplicity along a fixed composition series depends on `S` only through its isomorphism
@@ -389,7 +389,7 @@ theorem compositionMultiplicity_eq_zero_of_isEmpty_linearEquiv_of_isSimpleModule
     compositionMultiplicity s S = 0 := by
   have : IsEmpty {i : Fin s.length // IsCompositionFactorAt s i S} :=
     ⟨fun i => he.elim'
-      ((isCompositionFactorAt_iff_of_isSimpleModule hbot htop i.1 S).mp i.2).some⟩
+      ((isCompositionFactorAt_iff_of_isSimpleModule hbot htop i.val S).mp i.property).some⟩
   simp [compositionMultiplicity_def]
 
 /-- **A simple module contains exactly one copy of itself**: the multiplicity `[M : S]` of a simple

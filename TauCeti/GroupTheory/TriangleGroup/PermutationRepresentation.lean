@@ -39,8 +39,9 @@ triangle group, so the universal property `TauCeti.TriangleGroup.lift` sends `x,
   subgroup `H`, read through an enumeration of the cosets. It is connected, its sheet `e 1` has
   point stabiliser `H` (`TauCeti.TriangleGroup.comap_stabilizer_toPerm_cosetTriple`), its
   isomorphism class does not depend on the enumeration
-  (`TauCeti.TriangleGroup.equivalent_cosetTriple`), and every connected triple is isomorphic to the
-  coset triple of any of its point stabilisers
+  (`TauCeti.TriangleGroup.equivalent_cosetTriple`; explicitly, renumbering relabels it by the
+  re-indexing permutation, `TauCeti.TriangleGroup.cosetTriple_eq_smul`), and every connected
+  triple is isomorphic to the coset triple of any of its point stabilisers
   (`TauCeti.TriangleGroup.equivalent_cosetTriple_of_comap_stabilizer_eq`).
 
 ## References
@@ -118,7 +119,7 @@ def permutationTripleEquiv :
   toFun ρ :=
     ⟨⟨ρ (x a b c), ρ (y a b c), ρ (z a b c), by rw [← map_mul, ← map_mul, z_mul_y_mul_x, map_one]⟩,
       by simp only [← map_pow, x_pow, y_pow, z_pow, map_one, and_self]⟩
-  invFun t := toPerm t.1 t.2.1 t.2.2.1 t.2.2.2
+  invFun t := toPerm t.val t.property.1 t.property.2.1 t.property.2.2
   left_inv ρ := by ext <;> simp
   right_inv t := by ext1; ext1 <;> simp
 
@@ -127,44 +128,44 @@ section permutationTripleEquiv
 variable (ρ : TriangleGroup a b c →* Perm (Fin n))
 
 @[simp]
-theorem permutationTripleEquiv_apply_σ0 : (permutationTripleEquiv ρ).1.σ0 = ρ (x a b c) := (rfl)
+theorem permutationTripleEquiv_apply_σ0 : (permutationTripleEquiv ρ).val.σ0 = ρ (x a b c) := (rfl)
 
 @[simp]
-theorem permutationTripleEquiv_apply_σ1 : (permutationTripleEquiv ρ).1.σ1 = ρ (y a b c) := (rfl)
+theorem permutationTripleEquiv_apply_σ1 : (permutationTripleEquiv ρ).val.σ1 = ρ (y a b c) := (rfl)
 
 @[simp]
 theorem permutationTripleEquiv_apply_σinf :
-    (permutationTripleEquiv ρ).1.σinf = ρ (z a b c) := (rfl)
+    (permutationTripleEquiv ρ).val.σinf = ρ (z a b c) := (rfl)
 
 @[simp]
 theorem permutationTripleEquiv_symm_apply
     (t : {t : PermutationTriple n // t.σ0 ^ a = 1 ∧ t.σ1 ^ b = 1 ∧ t.σinf ^ c = 1}) :
-    permutationTripleEquiv.symm t = toPerm t.1 t.2.1 t.2.2.1 t.2.2.2 := (rfl)
+    permutationTripleEquiv.symm t = toPerm t.val t.property.1 t.property.2.1 t.property.2.2 := (rfl)
 
 /-- The permutation representation of the triple of `ρ` is `ρ` itself. -/
 @[simp]
 theorem toPerm_permutationTripleEquiv {ha hb hc} :
-    toPerm (permutationTripleEquiv ρ).1 ha hb hc = ρ :=
+    toPerm (permutationTripleEquiv ρ).val ha hb hc = ρ :=
   permutationTripleEquiv.symm_apply_apply ρ
 
 /-- The triple of the representation of `t` is `t` itself. -/
 @[simp]
 theorem permutationTripleEquiv_toPerm (t : PermutationTriple n) (ha : t.σ0 ^ a = 1)
     (hb : t.σ1 ^ b = 1) (hc : t.σinf ^ c = 1) :
-    (permutationTripleEquiv (toPerm t ha hb hc)).1 = t :=
+    (permutationTripleEquiv (toPerm t ha hb hc)).val = t :=
   congrArg Subtype.val (permutationTripleEquiv.apply_symm_apply ⟨t, ha, hb, hc⟩)
 
 /-- The monodromy group of the triple of a representation is the image of the representation. -/
 @[simp]
 theorem monodromyGroup_permutationTripleEquiv :
-    (permutationTripleEquiv ρ).1.monodromyGroup = ρ.range := by
-  rw [← range_toPerm _ (permutationTripleEquiv ρ).2.1 (permutationTripleEquiv ρ).2.2.1
-    (permutationTripleEquiv ρ).2.2.2, toPerm_permutationTripleEquiv]
+    (permutationTripleEquiv ρ).val.monodromyGroup = ρ.range := by
+  rw [← range_toPerm _ (permutationTripleEquiv ρ).property.1 (permutationTripleEquiv ρ).property.2.1
+    (permutationTripleEquiv ρ).property.2.2, toPerm_permutationTripleEquiv]
 
 /-- The triple of a representation is connected exactly when the representation is transitive on
 a nonempty set of sheets. -/
 theorem isConnected_permutationTripleEquiv_iff :
-    (permutationTripleEquiv ρ).1.IsConnected ↔
+    (permutationTripleEquiv ρ).val.IsConnected ↔
       n ≠ 0 ∧ MulAction.IsPretransitive ρ.range (Fin n) := by
   rw [PermutationTriple.isConnected_iff, monodromyGroup_permutationTripleEquiv]
 
@@ -172,14 +173,14 @@ theorem isConnected_permutationTripleEquiv_iff :
 @[simp]
 theorem permutationTripleEquiv_conj (τ : Perm (Fin n)) :
     (permutationTripleEquiv
-      ((↑(MulAut.conj τ) : Perm (Fin n) →* Perm (Fin n)).comp ρ)).1 =
-      τ • (permutationTripleEquiv ρ).1 := by
+      ((↑(MulAut.conj τ) : Perm (Fin n) →* Perm (Fin n)).comp ρ)).val =
+      τ • (permutationTripleEquiv ρ).val := by
   ext1 <;> simp
 
 /-- **Classification up to relabeling.** Two permutation representations of `Δ(a, b, c)` give
 isomorphic triples exactly when they are conjugate by a permutation of the sheets. -/
 theorem equivalent_permutationTripleEquiv_iff (ρ' : TriangleGroup a b c →* Perm (Fin n)) :
-    PermutationTriple.Equivalent (permutationTripleEquiv ρ).1 (permutationTripleEquiv ρ').1 ↔
+    PermutationTriple.Equivalent (permutationTripleEquiv ρ).val (permutationTripleEquiv ρ').val ↔
       ∃ τ : Perm (Fin n),
         ((↑(MulAut.conj τ) : Perm (Fin n) →* Perm (Fin n)).comp ρ) = ρ' := by
   rw [PermutationTriple.equivalent_iff_exists_smul_eq]
@@ -194,7 +195,7 @@ end permutationTripleEquiv
 pretransitive and there is at least one sheet. -/
 theorem isConnected_permutationTripleEquiv_toPermHom_iff
     [MulAction (TriangleGroup a b c) (Fin n)] :
-    (permutationTripleEquiv (MulAction.toPermHom (TriangleGroup a b c) (Fin n))).1.IsConnected ↔
+    (permutationTripleEquiv (MulAction.toPermHom (TriangleGroup a b c) (Fin n))).val.IsConnected ↔
       n ≠ 0 ∧ MulAction.IsPretransitive (TriangleGroup a b c) (Fin n) := by
   rw [isConnected_permutationTripleEquiv_iff]
   refine and_congr_right fun _ ↦ ⟨fun ⟨h⟩ ↦ ⟨fun i j ↦ ?_⟩, fun ⟨h⟩ ↦ ⟨fun i j ↦ ?_⟩⟩
@@ -219,7 +220,7 @@ variable (H : Subgroup (TriangleGroup a b c)) (e : TriangleGroup a b c ⧸ H ≃
 cosets being numbered by `e`: its components are the permutations of the cosets by `x`, `y` and
 `z`. -/
 noncomputable def cosetTriple : PermutationTriple n :=
-  (permutationTripleEquiv (e.permutationRepresentation (G := TriangleGroup a b c))).1
+  (permutationTripleEquiv (e.permutationRepresentation (G := TriangleGroup a b c))).val
 
 @[simp]
 theorem cosetTriple_σ0 : (cosetTriple H e).σ0 = e.permutationRepresentation (x a b c) := by
@@ -234,13 +235,13 @@ theorem cosetTriple_σinf : (cosetTriple H e).σinf = e.permutationRepresentatio
   rw [cosetTriple, permutationTripleEquiv_apply_σinf]
 
 theorem cosetTriple_σ0_pow : (cosetTriple H e).σ0 ^ a = 1 :=
-  (permutationTripleEquiv (e.permutationRepresentation (G := TriangleGroup a b c))).2.1
+  (permutationTripleEquiv (e.permutationRepresentation (G := TriangleGroup a b c))).property.1
 
 theorem cosetTriple_σ1_pow : (cosetTriple H e).σ1 ^ b = 1 :=
-  (permutationTripleEquiv (e.permutationRepresentation (G := TriangleGroup a b c))).2.2.1
+  (permutationTripleEquiv (e.permutationRepresentation (G := TriangleGroup a b c))).property.2.1
 
 theorem cosetTriple_σinf_pow : (cosetTriple H e).σinf ^ c = 1 :=
-  (permutationTripleEquiv (e.permutationRepresentation (G := TriangleGroup a b c))).2.2.2
+  (permutationTripleEquiv (e.permutationRepresentation (G := TriangleGroup a b c))).property.2.2
 
 /-- The representation of a coset triple is the action on the cosets. -/
 @[simp]
@@ -266,11 +267,16 @@ theorem ker_toPerm_cosetTriple {ha hb hc} :
     (toPerm (cosetTriple H e) ha hb hc).ker = H.normalCore := by
   rw [toPerm_cosetTriple, Equiv.ker_permutationRepresentation, Subgroup.normalCore_eq_ker]
 
+/-- Changing the numbering of the cosets of `H` from `e` to `e'` relabels the coset triple by the
+re-indexing permutation `e.symm.trans e'`. -/
+theorem cosetTriple_eq_smul (e' : TriangleGroup a b c ⧸ H ≃ Fin n) :
+    cosetTriple H e' = (e.symm.trans e') • cosetTriple H e := by
+  ext1 <;> simp [Equiv.permutationRepresentation_eq_conj e e']
+
 /-- The isomorphism class of a coset triple does not depend on the numbering of the cosets. -/
 theorem equivalent_cosetTriple (e' : TriangleGroup a b c ⧸ H ≃ Fin n) :
-    (cosetTriple H e).Equivalent (cosetTriple H e') := by
-  refine (equivalent_permutationTripleEquiv_iff _ _).mpr ⟨e.symm.trans e', MonoidHom.ext fun g ↦ ?_⟩
-  simp [Equiv.permutationRepresentation_eq_conj e e' g]
+    (cosetTriple H e).Equivalent (cosetTriple H e') :=
+  PermutationTriple.equivalent_iff_exists_smul_eq.mpr ⟨_, (cosetTriple_eq_smul H e e').symm⟩
 
 /-- **Every connected triple is a coset triple.** If `H` is the stabiliser of a sheet `i` of a
 connected triple `t` under its representation, then `t` is isomorphic to the coset triple of `H`,

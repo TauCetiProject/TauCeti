@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.HalfTurn
-public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 public import TauCeti.KnotTheory.Grid.Grading.HalfTurn
+public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Relation
 
 /-!
 # The half-turn on unblocked grid homology
@@ -16,10 +16,11 @@ The half-turn of the torus carries a grid diagram `G` to `G.rotate` and its grid
 images under `GridState.halfTurn`, and it intertwines the unblocked differentials once the
 variables are renamed along `Fin.rev` (`Differential/HalfTurn.lean`). This file descends that
 symmetry to unblocked grid homology: `GH⁻(G)` and `GH⁻(G.rotate)` are identified by a
-semilinear equivalence along the renaming of the variables. It preserves the Alexander
-grading, so for a knot grid the two homologies are isomorphic as Alexander-graded `R[U]`-modules.
-On chains the half-turn preserves the
-full `O`-Maslov--Alexander bigrading, including the coefficient-variable degrees.
+semilinear equivalence along the renaming of the variables. On chains, and so on homology, the
+half-turn preserves the full `O`-Maslov--Alexander bigrading, including the coefficient-variable
+degrees. Hence for a knot grid the two homologies are isomorphic as bigraded `R[U]`-modules
+(`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_rotate`), and so also as
+Alexander-graded `R[U]`-modules (`GridDiagram.IsKnot.unblockedHomologyIsomorphic_rotate`).
 
 ## Main definitions
 
@@ -31,8 +32,12 @@ full `O`-Maslov--Alexander bigrading, including the coefficient-variable degrees
 * `TauCeti.GridDiagram.unblockedHomologyRotateEquiv_unblockedHomologyClass`,
   `TauCeti.GridDiagram.unblockedHomologyRotateEquiv_symm_unblockedHomologyClass`: it and its
   inverse send the class of a cycle to the class of the half-turned cycle.
-* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_rotate`: for a knot grid, `GH⁻` is
-  unchanged by the half-turn as an Alexander-graded `R[U]`-module.
+* `TauCeti.OddComponentGridDiagram.halfTurnRenameEquiv_mem_bigradedChainMinusPiece`,
+  `TauCeti.OddComponentGridDiagram.unblockedHomologyRotateEquiv_mem_bigradedUnblockedHomologyPiece`:
+  the half-turn preserves the bigrading of unblocked chains and of `GH⁻`.
+* `TauCeti.GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_rotate`,
+  `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_rotate`: for a knot grid, `GH⁻` is
+  unchanged by the half-turn as a bigraded, and so as an Alexander-graded, `R[U]`-module.
 
 ## References
 
@@ -67,7 +72,7 @@ theorem unblockedHomologyRotateEquiv_unblockedHomologyClass
       G.rotate.unblockedHomologyClass R
         ⟨GridChain.halfTurnRenameEquiv R z,
           G.map_mem_ker_unblockedDifferential_of_intertwining R _ _
-            (G.unblockedDifferential_rotate_halfTurnRenameEquiv R) z.2⟩ :=
+            (G.unblockedDifferential_rotate_halfTurnRenameEquiv R) z.property⟩ :=
   G.unblockedHomologyEquivOfIntertwining_unblockedHomologyClass R _ _ _ z
 
 /-- The inverse of the half-turn also moves the class of a cycle `w` of `GC⁻(G.rotate)` by the
@@ -79,7 +84,7 @@ theorem unblockedHomologyRotateEquiv_symm_unblockedHomologyClass
       G.unblockedHomologyClass R
         ⟨GridChain.halfTurnRenameEquiv R w,
           G.rotate.map_mem_ker_unblockedDifferential_of_intertwining R _ _
-            (G.unblockedDifferential_halfTurnRenameEquiv R) w.2⟩ := by
+            (G.unblockedDifferential_halfTurnRenameEquiv R) w.property⟩ := by
   rw [LinearEquiv.symm_apply_eq, unblockedHomologyRotateEquiv_unblockedHomologyClass]
   exact congrArg _ (Subtype.ext (GridChain.halfTurnRenameEquiv_halfTurnRenameEquiv R _).symm)
 
@@ -102,7 +107,7 @@ theorem halfTurnRenameEquiv_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : Gr
   rw [GridChain.halfTurnRenameEquiv_apply,
     support_rename_of_injective Fin.rev_injective, Finset.mem_image] at he
   obtain ⟨e, he, rfl⟩ := he
-  have hM := G.1.maslovOℤ_rotate_halfTurn x.halfTurn
+  have hM := G.val.maslovOℤ_rotate_halfTurn x.halfTurn
   have hA := G.alexanderℤ_rotate_halfTurn x.halfTurn
   rw [GridState.halfTurn_halfTurn] at hM hA
   have hdegree : G.rotate.monomialBidegree x (e.mapDomain Fin.rev) =
@@ -113,33 +118,19 @@ theorem halfTurnRenameEquiv_mem_bigradedChainMinusPiece {g : ℤ × ℤ} {c : Gr
   rw [hdegree]
   exact hc x.halfTurn e he
 
-/-- The half-turn, including reversal of coefficient-variable indices, preserves the Alexander
-grading of unblocked chains. -/
-theorem halfTurnRenameEquiv_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R n}
-    (hc : c ∈ G.alexanderChainMinusPiece R a) :
-    GridChain.halfTurnRenameEquiv R c ∈ G.rotate.alexanderChainMinusPiece R a := by
-  classical
-  rw [mem_alexanderChainMinusPiece] at hc ⊢
-  intro x e he
-  rw [GridChain.halfTurnRenameEquiv_apply,
-    support_rename_of_injective Fin.rev_injective, Finset.mem_image] at he
-  obtain ⟨e, he, rfl⟩ := he
-  have hx := G.alexanderℤ_rotate_halfTurn x.halfTurn
-  rw [GridState.halfTurn_halfTurn] at hx
-  rw [hx, Finsupp.degree_mapDomain]
-  exact hc x.halfTurn e he
-
 end Chains
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
 
-/-- The equivalence induced by the half-turn preserves the Alexander grading on homology. -/
-theorem unblockedHomologyRotateEquiv_mem_piece {a : ℤ} {y : G.1.unblockedHomology R}
-    (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
-    G.1.unblockedHomologyRotateEquiv R y ∈
-      (G.rotate.alexanderUnblockedHomologyGrading R).piece a :=
-  G.unblockedHomologyEquivOfIntertwining_mem_piece R G.rotate _ _
-    (fun _ _ hc => G.halfTurnRenameEquiv_mem_alexanderChainMinusPiece R hc) hy
+/-- The equivalence induced by the half-turn preserves the `O`-Maslov--Alexander bigrading on
+homology. -/
+theorem unblockedHomologyRotateEquiv_mem_bigradedUnblockedHomologyPiece {g : ℤ × ℤ}
+    {y : G.val.unblockedHomology R} (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
+    G.val.unblockedHomologyRotateEquiv R y ∈ G.rotate.bigradedUnblockedHomologyPiece R g := by
+  obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
+  rw [GridDiagram.unblockedHomologyRotateEquiv_unblockedHomologyClass]
+  exact G.rotate.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R
+    (G.halfTurnRenameEquiv_mem_bigradedChainMinusPiece R hz)
 
 end OddComponentGridDiagram
 
@@ -147,16 +138,22 @@ namespace GridDiagram.IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
 
+/-- The half-turn of a knot grid preserves the bigraded `GH⁻`. -/
+theorem bigradedUnblockedHomologyIsomorphic_rotate :
+    hG.BigradedUnblockedHomologyIsomorphic ((G.isKnot_rotate).mpr hG) K := by
+  refine .of_semilinearMap (fun _ ↦ by simp [aeval_rename, Function.comp_def])
+    (G.unblockedHomologyRotateEquiv K).toLinearMap
+    (G.unblockedHomologyRotateEquiv K).bijective fun _ _ hy ↦ ?_
+  -- The target piece is that of `hG.toOddComponentGridDiagram.rotate`: the two odd-component
+  -- diagrams agree by definition (`IsKnot.rotate_toOddComponentGridDiagram`).
+  change _ ∈ hG.toOddComponentGridDiagram.rotate.bigradedUnblockedHomologyPiece K _
+  exact OddComponentGridDiagram.unblockedHomologyRotateEquiv_mem_bigradedUnblockedHomologyPiece
+    hG.toOddComponentGridDiagram K hy
+
 /-- The half-turn of a knot grid preserves `GH⁻` as an Alexander-graded `K[U]`-module. -/
 theorem unblockedHomologyIsomorphic_rotate :
-    hG.UnblockedHomologyIsomorphic ((G.isKnot_rotate).mpr hG) K := by
-  refine .of_semilinearMap (fun p => ?_)
-    (G.unblockedHomologyRotateEquiv K).toLinearMap
-    (G.unblockedHomologyRotateEquiv K).bijective fun a y hy => ?_
-  · simp [aeval_rename, Function.comp_def]
-  · rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
-      ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
-    exact hG.toOddComponentGridDiagram.unblockedHomologyRotateEquiv_mem_piece K hy
+    hG.UnblockedHomologyIsomorphic ((G.isKnot_rotate).mpr hG) K :=
+  (hG.bigradedUnblockedHomologyIsomorphic_rotate K).unblockedHomologyIsomorphic
 
 end GridDiagram.IsKnot
 

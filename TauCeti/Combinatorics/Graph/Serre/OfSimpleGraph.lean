@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Serre.CyclicallyReduced
 public import TauCeti.Combinatorics.Graph.Serre.Tree
+public import TauCeti.Combinatorics.SimpleGraph.Acyclic
 public import TauCeti.Combinatorics.SimpleGraph.Backtracking
+import TauCeti.Data.List.Chain
 
 /-!
 # Connectivity and trees of the Serre graph of a simple graph
@@ -22,17 +25,26 @@ path, is such a walk, and in an acyclic graph the paths are the only ones. Hence
 acyclicity and the tree property of `G.toSerreGraph` in the sense of Serre agree with the
 corresponding notions for `G`; for connectedness and trees both sides require a vertex.
 
+Conversely, a Serre graph in which every vertex is the source of at most one dart whose target is
+not higher, for some height function with values in a linear order, is acyclic: it has no loop,
+and it maps locally injectively to the Serre graph of the simple graph joining the two ends of
+each dart, which is acyclic by the height criterion for simple graphs.
+
 ## Main declarations
 
 * `SimpleGraph.Walk.serrePathEquiv`: walks of `G` are the paths of `G.toSerreGraph`.
 * `SimpleGraph.Walk.isReduced_toSerrePath_iff`: the Serre path of a walk is reduced exactly when
   the walk does not backtrack.
+* `SimpleGraph.Walk.isCyclicallyReduced_toSerrePath_iff`: the Serre path of a closed walk is
+  cyclically reduced exactly when the walk is a non-backtracking cycle.
 * `SimpleGraph.IsAcyclic.isReduced_toSerrePath_iff`: in an acyclic graph, the Serre path of a walk
   is reduced exactly when the walk is a path.
 * `SimpleGraph.preconnected_toSerreGraph_iff`, `SimpleGraph.connected_toSerreGraph_iff`:
   `G.toSerreGraph` is (pre)connected exactly when `G` is.
 * `SimpleGraph.isAcyclic_toSerreGraph_iff`, `SimpleGraph.isTree_toSerreGraph_iff`:
   `G.toSerreGraph` is acyclic, respectively a tree, exactly when `G` is.
+* `TauCeti.SerreGraph.isAcyclic_of_forall_src_eq_le_eq`: the height criterion for acyclicity of a
+  Serre graph.
 
 ## References
 
@@ -58,7 +70,7 @@ def toSerreGraphArrow {u v : V} (h : G.Adj u v) :
   ⟨⟨(u, v), h⟩, rfl, G.toSerreGraph_tgt _⟩
 
 @[simp] theorem toSerreGraphArrow_val {u v : V} (h : G.Adj u v) :
-    (G.toSerreGraphArrow h).1 = ⟨(u, v), h⟩ := (rfl)
+    (G.toSerreGraphArrow h).val = ⟨(u, v), h⟩ := (rfl)
 
 /-- The ends of an arrow of the Serre graph of `G` are adjacent. -/
 theorem adj_of_toSerreGraph_hom {u v : V}
@@ -129,6 +141,15 @@ reverse. -/
 theorem isReduced_toSerrePath_iff {u v : V} (p : G.Walk u v) :
     Path.IsReduced G.toSerreGraph p.toSerrePath ↔ p.darts.IsChain fun d d' => d' ≠ d.symm := by
   rw [Path.isReduced_iff_isChain, darts_toSerrePath]
+  -- The reversal of the Serre graph is `Dart.symm` by definition.
+  rfl
+
+/-- The Serre path of a closed walk is cyclically reduced exactly when the walk is a
+non-backtracking cycle: it does not backtrack, also not from its last dart to its first. -/
+theorem isCyclicallyReduced_toSerrePath_iff {u : V} (p : G.Walk u u) :
+    Path.IsCyclicallyReduced G.toSerreGraph p.toSerrePath ↔ p.IsNonBacktrackingCycle := by
+  rw [Path.isCyclicallyReduced_iff_isChain, darts_toSerrePath, List.isChain_append_self_iff,
+    isNonBacktrackingCycle_iff_chain]
   -- The reversal of the Serre graph is `Dart.symm` by definition.
   rfl
 
@@ -224,7 +245,8 @@ theorem isAcyclic_toSerreGraph_iff : G.toSerreGraph.IsAcyclic ↔ G.IsAcyclic :=
   refine ⟨fun h => isAcyclic_iff_subsingleton_path.mpr fun v w => ⟨fun p q => Subtype.ext ?_⟩,
     fun h => (isAcyclic_iff _).mpr fun u p hp => ?_⟩
   · exact (Walk.serrePathEquiv G v w).injective
-      (h.eq_of_isReduced p.2.isTrail.isReduced_toSerrePath q.2.isTrail.isReduced_toSerrePath)
+      (h.eq_of_isReduced p.property.isTrail.isReduced_toSerrePath
+          q.property.isTrail.isReduced_toSerrePath)
   · rw [← G.toSerrePath_serrePathToWalk p, h.isReduced_toSerrePath_iff, Walk.isPath_iff_nil,
       ← Walk.eq_nil_iff_nil] at hp
     rw [← G.toSerrePath_serrePathToWalk p, hp, Walk.toSerrePath_nil]
@@ -235,3 +257,38 @@ theorem isTree_toSerreGraph_iff : G.toSerreGraph.IsTree ↔ G.IsTree := by
     SimpleGraph.isTree_iff]
 
 end SimpleGraph
+
+namespace TauCeti.SerreGraph
+
+/-- **A height criterion for acyclicity.** A Serre graph is acyclic if, for a height function on
+its vertices with values in a linear order, every vertex is the source of at most one dart whose
+target is not higher. -/
+theorem isAcyclic_of_forall_src_eq_le_eq (Γ : SerreGraph) {α : Type*} [LinearOrder α]
+    (height : Γ.V → α)
+    (h : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → height (Γ.tgt e) ≤ height (Γ.src e) →
+      height (Γ.tgt e') ≤ height (Γ.src e') → e = e') : Γ.IsAcyclic := by
+  -- A loop and its reverse would issue from the same vertex without going up.
+  have hne (e : Γ.E) : Γ.src e ≠ Γ.tgt e := fun he =>
+    Γ.rev_ne e (h _ _ (by simp [he]) (by simp [he]) (by simp [he]))
+  -- The simple graph joining the two ends of each dart.
+  let G := SimpleGraph.fromRel fun a b => ∃ e : Γ.E, Γ.src e = a ∧ Γ.tgt e = b
+  have hadj {a b : Γ.V} : G.Adj a b ↔ ∃ e : Γ.E, Γ.src e = a ∧ Γ.tgt e = b := by
+    refine ⟨fun ⟨_, hr⟩ => hr.elim id fun ⟨e, hb, ha⟩ => ⟨Γ.rev e, by simpa, by simpa⟩,
+      fun ⟨e, ha, hb⟩ => ⟨ha ▸ hb ▸ hne e, .inl ⟨e, ha, hb⟩⟩⟩
+  let φ : Γ.Hom G.toSerreGraph :=
+    { mapV := id
+      mapE := fun e => ⟨(Γ.src e, Γ.tgt e), hadj.mpr ⟨e, rfl, rfl⟩⟩
+      map_src := fun _ => rfl
+      map_rev := fun e => SimpleGraph.Dart.ext _ _ <| Prod.ext (by simp) (by simp) }
+  refine IsAcyclic.comap φ (fun e e' hs he => ?_) <| G.isAcyclic_toSerreGraph_iff.mpr <|
+    SimpleGraph.isAcyclic_of_forall_adj_le_eq height fun a b c hab hac hb hc => ?_
+  · -- Two darts with the same ends: compare them, or their reverses, as darts not going up.
+    have ht : Γ.tgt e = Γ.tgt e' := congrArg (fun d : G.Dart => d.snd) he
+    rcases le_total (height (Γ.tgt e)) (height (Γ.src e)) with hle | hle
+    · exact h e e' hs hle (by rwa [← hs, ← ht])
+    · exact Γ.rev_injective (h _ _ (by simpa) (by simpa) (by simpa [← hs, ← ht]))
+  · obtain ⟨e, rfl, rfl⟩ := hadj.mp hab
+    obtain ⟨e', he', rfl⟩ := hadj.mp hac
+    exact congrArg Γ.tgt (h e e' he'.symm hb (by rwa [he']))
+
+end TauCeti.SerreGraph

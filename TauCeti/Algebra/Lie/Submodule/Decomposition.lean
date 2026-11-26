@@ -35,6 +35,8 @@ The decomposition is indexed by `Fin k` rather than by the set of atoms: a `Fin 
 * `TauCeti.exists_isInternal_isIrreducible`: **complete reducibility as a decomposition.** A
   finite-dimensional Lie module whose submodule lattice is complemented is the internal direct sum
   of finitely many irreducible Lie submodules.
+* `LieAlgebra.IsSemisimple.isInternal_atoms`: a semisimple Lie algebra is the internal direct sum
+  of its simple ideals.
 
 ## Applications
 
@@ -65,7 +67,7 @@ theorem exists_isInternal_isIrreducible [FiniteDimensional K M]
     exists_sSupIndep_of_sSup_atoms_eq_top (α := LieSubmodule K L M) sSup_atoms_eq_top
   have : Fintype S := (WellFoundedGT.finite_of_sSupIndep hindep).fintype
   refine ⟨Fintype.card S, fun i ↦ ((Fintype.equivFin S).symm i : LieSubmodule K L M), ?_,
-    fun i ↦ (isIrreducible_iff_isAtom _).2 (hSatom ((Fintype.equivFin S).symm i).2)⟩
+    fun i ↦ (isIrreducible_iff_isAtom _).2 (hSatom ((Fintype.equivFin S).symm i).property)⟩
   refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top ?_ ?_
   · rw [LieSubmodule.iSupIndep_toSubmodule]
     exact ((sSupIndep_iff S).1 hindep).comp (Fintype.equivFin S).symm.injective
@@ -74,3 +76,20 @@ theorem exists_isInternal_isIrreducible [FiniteDimensional K M]
     exact hSsup
 
 end TauCeti
+
+namespace LieAlgebra
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+open Classical in
+/-- A semisimple Lie algebra is the internal direct sum of its simple ideals, so
+`LieEquiv.ofIsInternal` applies to them. -/
+theorem IsSemisimple.isInternal_atoms [IsSemisimple R L] :
+    DirectSum.IsInternal fun I : {I : LieIdeal R L // IsAtom I} ↦ (I : LieIdeal R L).toSubmodule :=
+  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+    (LieSubmodule.iSupIndep_toSubmodule.mpr
+      ((sSupIndep_iff _).mp IsSemisimple.sSupIndep_isAtom))
+    (LieSubmodule.iSup_toSubmodule_eq_top.mpr
+      ((sSup_eq_iSup' _).symm.trans IsSemisimple.sSup_atoms_eq_top))
+
+end LieAlgebra

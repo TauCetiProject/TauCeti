@@ -6,13 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fintype.Card
+public import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
-# Counting letters in prefixes of `List.ofFn`
+# Letter counts, duplicates, and permutations in `List.ofFn`
 
 The number of occurrences of a letter `s` among the first `j` letters of the word
 `f 0, …, f (k - 1)` is the number of positions `a < j` with `f a = s`
 (`List.count_take_ofFn`). This is the occurrence-count form of `List.sum_take_ofFn`.
+
+The concatenation `List.ofFn f ++ List.ofFn g` of the lists of two tuples has no duplicates if and
+only if the map `Sum.elim f g` out of the sum of their index types is injective
+(`List.nodup_ofFn_append_ofFn`), and similarly for three tuples
+(`List.nodup_ofFn_append_ofFn_append_ofFn`). Inserting an element via `Fin.insertNth` yields a
+permutation of `a :: List.ofFn f` (`List.ofFn_insertNth_perm`).
 -/
 
 public section
@@ -42,5 +49,32 @@ theorem count_take_ofFn {α : Type*} [DecidableEq α] {k : ℕ} (f : Fin k → �
       split_ifs with hs <;> simp [hs]
     · rw [card_eq_zero.mpr (filter_eq_empty_iff.mpr fun a _ ⟨h, _⟩ => hj (h ▸ a.isLt))]
       simp [hj]
+
+variable {α : Type*} {l m n : ℕ}
+
+/-- The concatenation of the lists of two tuples `f` and `g` has no duplicates if and only if the
+map `Sum.elim f g` is injective. -/
+theorem nodup_ofFn_append_ofFn {f : Fin m → α} {g : Fin n → α} :
+    (ofFn f ++ ofFn g).Nodup ↔ Function.Injective (Sum.elim f g) := by
+  rw [← ofFn_fin_append, nodup_ofFn, Fin.append_injective_iff, Sum.elim_injective]
+
+/-- The concatenation of the lists of three tuples `f`, `g` and `h` has no duplicates if and only
+if the map `Sum.elim (Sum.elim f g) h` is injective. -/
+theorem nodup_ofFn_append_ofFn_append_ofFn {f : Fin l → α} {g : Fin m → α} {h : Fin n → α} :
+    (ofFn f ++ ofFn g ++ ofFn h).Nodup ↔ Function.Injective (Sum.elim (Sum.elim f g) h) := by
+  rw [nodup_append, nodup_ofFn_append_ofFn, nodup_ofFn, Sum.elim_injective]
+  simp [mem_ofFn, Sum.forall, or_imp, forall_and]
+
+/-- Inserting `a` at any position `p` of `f : Fin j → α` via `Fin.insertNth` yields a permutation
+of `a :: List.ofFn f`. -/
+theorem ofFn_insertNth_perm :
+    ∀ {j : ℕ} (p : Fin (j + 1)) (a : α) (f : Fin j → α),
+      (ofFn (p.insertNth a f)).Perm (a :: ofFn f)
+  | 0, p, _, _ => p.cases (by simp) fun i => i.elim0
+  | _ + 1, p, a, f => p.cases (by simp) fun q => by
+      conv_lhs => rw [← Fin.cons_self_tail f, Fin.insertNth_succ_cons, ofFn_succ]
+      conv_rhs => rw [← Fin.cons_self_tail f, ofFn_succ]
+      simpa only [Fin.cons_zero, Fin.cons_succ] using
+        ((ofFn_insertNth_perm q a (Fin.tail f)).cons (f 0)).trans (Perm.swap a (f 0) _)
 
 end List

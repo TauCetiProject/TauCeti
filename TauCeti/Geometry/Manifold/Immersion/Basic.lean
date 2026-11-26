@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.Immersion
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.MFDeriv.OfCompLeft
 
 /-!
 # Composing immersions with diffeomorphisms, and immersions into finite dimensions
@@ -54,14 +55,28 @@ both sides, in order to apply the rule to `e.symm` as well.
   `N × M` is an immersion when the preferred chart of `N` at `c` sends `c` to `0`.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
-* `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for nonempty manifolds
-  modelled on `ℝᵏ` and `ℝᵐ`, the complement of an immersion is a copy of `ℝᵐ⁻ᵏ`.
+* `Manifold.IsImmersionAtOfComplement.nonempty_continuousLinearEquiv`,
+  `Manifold.IsImmersionAt.nonempty_complement_continuousLinearEquiv`, and
+  `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for a finite-dimensional
+  target model, the complement of an immersion is isomorphic to any normed space of the codimension
+  (in particular `ℝᵐ⁻ᵏ` for nonempty manifolds modelled on `ℝᵏ` and `ℝᵐ`).
 * `Manifold.IsImmersion.of_le`, together with its `Manifold.IsImmersionAt`,
   `Manifold.IsImmersionAtOfComplement`, and `Manifold.IsImmersionOfComplement` counterparts:
   lowering the regularity order preserves immersions.
 * `Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq`: in the charts of
   immersion data, a point `b` of the source chart is sent by `f` to the point read as
   `h.equiv (b, 0)` in the target chart.
+* `IsDiffImmersionAt.mdifferentiableAt_iff_comp`: a map is differentiable at `x` exactly when it
+  is continuous at `x` and its composite with a map whose differential at the image point has a
+  continuous left inverse, such as an immersion of positive order, is differentiable at `x`.
+* `TauCeti.isManifold_of_forall_isImmersionAt`, `Manifold.IsImmersionOfComplement.isManifold`,
+  and `Manifold.IsImmersion.isManifold`: a charted space admitting a `C^n` immersion (or pointwise
+  `C^n` immersion) is a `C^n` manifold.
+* `ContMDiffWithinAt.iff_comp_isImmersionAt`, `ContMDiffOn.iff_comp_isImmersion`, and their
+  `OfComplement` counterparts: within-a-set and on-a-set smoothness can be tested after composing
+  with an immersion, given continuity in the same sense.
+* `Manifold.IsImmersion.tangentMap_injective_iff`: for a `C^n` immersion (`n ≠ 0`),
+  `tangentMap I J f` is injective if and only if `f` is injective.
 
 `Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
 local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
@@ -116,7 +131,7 @@ theorem isImmersionAtOfComplement_comp_diffeomorph [IsManifold I n M']
       = ⇑e.symm ∘ ⇑(h.domChart.extend I).symm := rfl
   refine IsImmersionAtOfComplement.mk_of_charts h.equiv
     (e.toHomeomorph.transOpenPartialHomeomorph h.domChart) h.codChart ?_ h.mem_codChart_source
-    (e.transOpenPartialHomeomorph_mem_maximalAtlas h.domChart_mem_maximalAtlas)
+    (e.transOpenPartialHomeomorph_mem_maximalAtlas le_rfl h.domChart_mem_maximalAtlas)
     h.codChart_mem_maximalAtlas ?_ fun y hy => ?_
   · rw [hsource]
     exact h.mem_domChart_source
@@ -345,6 +360,34 @@ theorem isImmersion_iff_forall_isImmersionAt :
     (h x₀).isImmersionAtOfComplement_complement.equiv
   exact (h x).isImmersionAtOfComplement_complement.trans_F e
 
+/-- For an immersion at `x` with complement `F` into a finite-dimensional model space `E'`, any
+finite-dimensional normed space `Q` of dimension `finrank 𝕜 E' - finrank 𝕜 E` is continuously
+linearly isomorphic to `F`. -/
+theorem _root_.Manifold.IsImmersionAtOfComplement.nonempty_continuousLinearEquiv {Q : Type*}
+    [NormedAddCommGroup Q] [NormedSpace 𝕜 Q] [FiniteDimensional 𝕜 Q] {x : M}
+    (h : IsImmersionAtOfComplement F I J n f x)
+    (hdim : Module.finrank 𝕜 Q = Module.finrank 𝕜 E' - Module.finrank 𝕜 E) :
+    Nonempty (F ≃L[𝕜] Q) := by
+  have : FiniteDimensional 𝕜 (E × F) := h.equiv.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional 𝕜 E :=
+    Module.Finite.of_surjective (LinearMap.fst 𝕜 E F) LinearMap.fst_surjective
+  have : FiniteDimensional 𝕜 F :=
+    Module.Finite.of_surjective (LinearMap.snd 𝕜 E F) LinearMap.snd_surjective
+  refine ⟨ContinuousLinearEquiv.ofFinrankEq ?_⟩
+  have heq := h.equiv.toLinearEquiv.finrank_eq
+  rw [Module.finrank_prod] at heq
+  omega
+
+/-- For an immersion `h` at `x` into a finite-dimensional model space `E'`, any finite-dimensional
+normed space `Q` of dimension `finrank 𝕜 E' - finrank 𝕜 E` is continuously linearly isomorphic to
+`h.complement`. -/
+theorem _root_.Manifold.IsImmersionAt.nonempty_complement_continuousLinearEquiv {Q : Type*}
+    [NormedAddCommGroup Q] [NormedSpace 𝕜 Q] [FiniteDimensional 𝕜 Q] {x : M}
+    (h : IsImmersionAt I J n f x)
+    (hdim : Module.finrank 𝕜 Q = Module.finrank 𝕜 E' - Module.finrank 𝕜 E) :
+    Nonempty (h.complement ≃L[𝕜] Q) :=
+  h.isImmersionAtOfComplement_complement.nonempty_continuousLinearEquiv hdim
+
 end FiniteDimensional
 
 /-! ### Euclidean complements -/
@@ -361,16 +404,7 @@ theorem _root_.Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv [N
     (h : IsImmersion I J n f) {j : ℕ} (hj : m - k = j) :
     Nonempty (h.complement ≃L[ℝ] EuclideanSpace ℝ (Fin j)) := by
   obtain ⟨x⟩ := ‹Nonempty M›
-  let L := (h.isImmersionOfComplement_complement x).equiv
-  have : FiniteDimensional ℝ (EuclideanSpace ℝ (Fin k) × h.complement) :=
-    L.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℝ h.complement :=
-    Module.Finite.of_surjective (LinearMap.snd ℝ (EuclideanSpace ℝ (Fin k)) _) Prod.snd_surjective
-  refine ⟨ContinuousLinearEquiv.ofFinrankEq ?_⟩
-  have := L.toLinearEquiv.finrank_eq
-  rw [Module.finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin] at this
-  rw [finrank_euclideanSpace_fin]
-  omega
+  exact (h.isImmersionOfComplement_complement x).nonempty_continuousLinearEquiv (by simp [hj])
 
 end Euclidean
 
@@ -430,5 +464,155 @@ theorem _root_.Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend
     h.writtenInCharts hb
   refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
   rw [← hw, (h.codChart.extend J).left_inv (by simpa using hy)]
+
+/-! ### Injectivity of `tangentMap` -/
+
+/-- For a `C^n` immersion (`n ≠ 0`), the induced map `tangentMap I J f` on tangent bundles is
+injective if and only if the base map `f` is injective. -/
+theorem _root_.Manifold.IsImmersion.tangentMap_injective_iff
+    (hf : IsImmersion I J n f) (hn : n ≠ 0) :
+    Function.Injective (tangentMap I J f) ↔ Function.Injective f := by
+  refine ⟨fun hinj x₁ x₂ hfx ↦ ?_, fun hinj ⟨x₁, v₁⟩ ⟨x₂, v₂⟩ hp ↦ ?_⟩
+  · have h0 : tangentMap I J f ⟨x₁, 0⟩ = tangentMap I J f ⟨x₂, 0⟩ := by
+      simp only [tangentMap, map_zero]; congr 1
+    exact congrArg Bundle.TotalSpace.proj (hinj h0)
+  · obtain rfl : x₁ = x₂ := hinj (congrArg Bundle.TotalSpace.proj hp)
+    simp only [tangentMap, Bundle.TotalSpace.mk_inj] at hp ⊢
+    exact hf.mfderiv_injective hn x₁ hp
+
+/-! ### Lifting differentiability through a split differential -/
+
+section Lift
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] {G' : Type*}
+  [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 E'' G'} {N' : Type*} [TopologicalSpace N']
+  [ChartedSpace G' N'] {φ : N → N'} {x : M}
+
+/-- **Differentiability lifts through an immersion.** If the differential of `φ` at `f x` has a
+continuous left inverse, then `f` is differentiable at `x` exactly when it is continuous at `x`
+and `φ ∘ f` is differentiable at `x`. This is the differentiable counterpart of Mathlib's
+`ContMDiffAt.iff_comp_isImmersionAt`; only the differential of `φ` at the single point `f x` is
+used, so it applies to any immersion of positive order (`Manifold.IsImmersion.isDiffImmersionAt`).
+Continuity cannot be dropped: without it `f` could jump between points with the same image. -/
+theorem _root_.IsDiffImmersionAt.mdifferentiableAt_iff_comp
+    (hφ : IsDiffImmersionAt J J' φ (f x)) :
+    MDifferentiableAt I J f x ↔ ContinuousAt f x ∧ MDifferentiableAt I J' (φ ∘ f) x := by
+  refine ⟨fun h ↦ ⟨h.continuousAt, hφ.mdifferentiableAt.comp x h⟩, fun ⟨hf, h⟩ ↦ ?_⟩
+  obtain ⟨L, hL⟩ := isDiffImmersionAt_iff.1 hφ
+  exact (hasMFDerivWithinAt_univ.1 (HasMFDerivWithinAt.of_comp_of_leftInverse
+    hφ.mdifferentiableAt.hasMFDerivAt hf.continuousWithinAt h.hasMFDerivAt.hasMFDerivWithinAt
+    hL)).mdifferentiableAt
+
+end Lift
+
+/-! ### Manifold structure of the source -/
+
+section IsManifold
+
+open OpenPartialHomeomorph
+
+/-- A charted space admitting a map which is a `C^n` immersion at every point is a `C^n`
+manifold. -/
+theorem isManifold_of_forall_isImmersionAt (h : ∀ x : M, IsImmersionAt I J n f x) :
+    IsManifold I n M := by
+  have : HasGroupoid M (contDiffGroupoid n I) := ⟨fun {e e'} he he' ↦ by
+    refine (contDiffGroupoid n I).locality fun x hx ↦ ?_
+    have himm := h (e.symm x)
+    set φ := himm.domChart
+    let s := e.target ∩ e.symm ⁻¹' φ.source
+    have hs : IsOpen s := e.isOpen_inter_preimage_symm φ.open_source
+    have xs : x ∈ s := ⟨hx.1, himm.mem_domChart_source⟩
+    have hAB := (contDiffGroupoid n I).trans
+      (himm.domChart_mem_maximalAtlas e he).2 (himm.domChart_mem_maximalAtlas e' he').1
+    have hD : (e.symm ≫ₕ φ) ≫ₕ φ.symm ≫ₕ e' ≈ (e.symm ≫ₕ e').restr s := calc
+      (e.symm ≫ₕ φ) ≫ₕ φ.symm ≫ₕ e' = e.symm ≫ₕ (φ ≫ₕ φ.symm) ≫ₕ e' := by simp only [trans_assoc]
+      _ ≈ e.symm ≫ₕ ofSet φ.source φ.open_source ≫ₕ e' :=
+        EqOnSource.trans' (refl _) (EqOnSource.trans' (self_trans_symm _) (refl _))
+      _ ≈ (e.symm ≫ₕ ofSet φ.source φ.open_source) ≫ₕ e' := by rw [trans_assoc]
+      _ ≈ e.symm.restr s ≫ₕ e' := by rw [trans_of_set']; apply refl
+      _ ≈ (e.symm ≫ₕ e').restr s := by rw [restr_trans]
+    exact ⟨s, hs, xs, (contDiffGroupoid n I).mem_of_eqOnSource hAB (Setoid.symm hD)⟩⟩
+  exact IsManifold.mk' I n M
+
+/-- The source of a `C^n` immersion with a fixed complement is a `C^n` manifold. -/
+theorem _root_.Manifold.IsImmersionOfComplement.isManifold
+    (h : IsImmersionOfComplement F I J n f) : IsManifold I n M :=
+  isManifold_of_forall_isImmersionAt fun x ↦ (h x).isImmersionAt
+
+/-- The source of a `C^n` immersion is a `C^n` manifold. -/
+theorem _root_.Manifold.IsImmersion.isManifold (h : IsImmersion I J n f) : IsManifold I n M :=
+  isManifold_of_forall_isImmersionAt h.isImmersionAt
+
+end IsManifold
+
+section CompIsImmersion
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 E'' G'}
+  {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
+
+/-- A function `f : M → N` is `C^n` within `s` at `x` if and only if it is continuous within `s` at
+`x` and its composite `φ ∘ f` with a `C^n` immersion `φ : N → N'` at `f x` (with complement `F`) is
+`C^n` within `s` at `x`. -/
+theorem _root_.ContMDiffWithinAt.iff_comp_isImmersionAtOfComplement {φ : N → N'} {s : Set M} {x : M}
+    (hφ : IsImmersionAtOfComplement F J J' n φ (f x)) :
+    ContMDiffWithinAt I J n f s x ↔
+      ContinuousWithinAt f s x ∧ ContMDiffWithinAt I J' n (φ ∘ f) s x := by
+  refine ⟨fun hf ↦ ⟨hf.continuousWithinAt, hφ.contMDiffAt.comp_contMDiffWithinAt x hf⟩,
+    fun ⟨hf, h'⟩ ↦ ?_⟩
+  set u := s ∩ f ⁻¹' hφ.domChart.source
+  have hu : f ⁻¹' hφ.domChart.source ∈ nhdsWithin x s :=
+    hf (hφ.domChart.open_source.mem_nhds hφ.mem_domChart_source)
+  rw [← contMDiffWithinAt_inter' hu,
+    contMDiffWithinAt_iff_of_mem_maximalAtlas' hφ.domChart_mem_maximalAtlas hφ.mem_domChart_source]
+  refine ⟨hf.mono Set.inter_subset_left, ?_⟩
+  have h'u : ContMDiffWithinAt I J' n (φ ∘ f) u x := (contMDiffWithinAt_inter' hu).2 h'
+  rw [contMDiffWithinAt_iff_of_mem_maximalAtlas' (f := φ ∘ f)
+    hφ.codChart_mem_maximalAtlas hφ.mem_codChart_source] at h'u
+  let proj : E'' →L[𝕜] E' :=
+    (ContinuousLinearMap.fst 𝕜 E' F).comp hφ.equiv.symm.toContinuousLinearMap
+  have hproj := proj.contDiff.contDiffWithinAt.comp (extChartAt I x x) h'u.2 (Set.mapsTo_univ _ _)
+  have key {z : M} (hz : f z ∈ hφ.domChart.source) :
+      proj (hφ.codChart.extend J' (φ (f z))) = hφ.domChart.extend J (f z) := by
+    have hb : hφ.domChart.extend J (f z) ∈ (hφ.domChart.extend J).target :=
+      (hφ.domChart.extend J).map_source (by simpa using hz)
+    have hinv : (hφ.domChart.extend J).symm (hφ.domChart.extend J (f z)) = f z :=
+      (hφ.domChart.extend J).left_inv (by simpa using hz)
+    have hw := hφ.writtenInCharts hb
+    simp only [Function.comp_apply, hinv] at hw
+    rw [hw]
+    simp [proj]
+  refine hproj.congr (fun y hy ↦ (key hy.1.2).symm) ?_
+  simpa [(extChartAt I x).left_inv (mem_extChartAt_source x)] using
+    (key hφ.mem_domChart_source).symm
+
+/-- A function `f : M → N` is `C^n` within `s` at `x` if and only if it is continuous within `s` at
+`x` and its composite `φ ∘ f` with a `C^n` immersion `φ : N → N'` at `f x` is `C^n` within `s` at
+`x`. -/
+theorem _root_.ContMDiffWithinAt.iff_comp_isImmersionAt {φ : N → N'} {s : Set M} {x : M}
+    (hφ : IsImmersionAt J J' n φ (f x)) :
+    ContMDiffWithinAt I J n f s x ↔
+      ContinuousWithinAt f s x ∧ ContMDiffWithinAt I J' n (φ ∘ f) s x :=
+  ContMDiffWithinAt.iff_comp_isImmersionAtOfComplement hφ.isImmersionAtOfComplement_complement
+
+/-- A function `f : M → N` is `C^n` on `s` if and only if it is continuous on `s` and its composite
+`φ ∘ f` with a `C^n` immersion `φ : N → N'` (with complement `F`) is `C^n` on `s`. -/
+theorem _root_.ContMDiffOn.iff_comp_isImmersionOfComplement {φ : N → N'} {s : Set M}
+    (hφ : IsImmersionOfComplement F J J' n φ) :
+    ContMDiffOn I J n f s ↔ ContinuousOn f s ∧ ContMDiffOn I J' n (φ ∘ f) s :=
+  ⟨fun hf ↦ ⟨hf.continuousOn, hφ.contMDiff.comp_contMDiffOn hf⟩,
+    fun ⟨hf, h'⟩ x hx ↦
+      (ContMDiffWithinAt.iff_comp_isImmersionAtOfComplement (hφ (f x))).2 ⟨hf x hx, h' x hx⟩⟩
+
+/-- A function `f : M → N` is `C^n` on `s` if and only if it is continuous on `s` and its composite
+`φ ∘ f` with a `C^n` immersion `φ : N → N'` is `C^n` on `s`. -/
+theorem _root_.ContMDiffOn.iff_comp_isImmersion {φ : N → N'} {s : Set M}
+    (hφ : IsImmersion J J' n φ) :
+    ContMDiffOn I J n f s ↔ ContinuousOn f s ∧ ContMDiffOn I J' n (φ ∘ f) s :=
+  ⟨fun hf ↦ ⟨hf.continuousOn, hφ.contMDiff.comp_contMDiffOn hf⟩,
+    fun ⟨hf, h'⟩ x hx ↦
+      (ContMDiffWithinAt.iff_comp_isImmersionAt (hφ.isImmersionAt (f x))).2 ⟨hf x hx, h' x hx⟩⟩
+
+end CompIsImmersion
 
 end TauCeti

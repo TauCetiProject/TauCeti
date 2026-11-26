@@ -7,9 +7,15 @@ module
 
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Module
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+public import TauCeti.AlgebraicGeometry.IdealSheaf.Image
+public import TauCeti.AlgebraicGeometry.Modules.Dual
+public import TauCeti.AlgebraicGeometry.Modules.InternalHom.Quasicoherent
+import Mathlib.LinearAlgebra.TensorProduct.Submodule
+import TauCeti.AlgebraicGeometry.Modules.Sections
+import TauCeti.AlgebraicGeometry.Modules.Sheaf
 
 /-!
-# Multiplication of ideal sheaves
+# Tensor products and multiplication of ideal sheaves
 
 For ideal sheaves `I` and `J` on a scheme `X`, products of local functions in `I` and `J` are
 local functions in the product ideal sheaf `I * J`. This file packages that multiplication, first
@@ -18,6 +24,10 @@ It is the restriction of the multiplication `𝒪_X ⊗ 𝒪_X ≅ 𝒪_X` of th
 inclusions of `I`, `J` and `I * J` into `𝒪_X`. No hypothesis is placed on `I` or `J`; when `J` is
 the ideal sheaf of an effective Cartier divisor the multiplication is an isomorphism
 (`Scheme.IdealSheafData.tensorProductSheafIso`).
+
+For a finite locally free module sheaf `M`, a section of `M` lifting through `M ⊗ I` has its
+corresponding dual functional's image ideal contained in `I`. If the support of `I` meets the
+nonvanishing locus of that functional, `M ⊗ I → M` is not surjective on global sections.
 
 ## Main declarations
 
@@ -28,7 +38,16 @@ the ideal sheaf of an effective Cartier divisor the multiplication is an isomorp
   sectionwise tensor product of presheaves of modules;
 * `Scheme.IdealSheafData.sheafMul`: the multiplication morphism `I ⊗ J ⟶ I * J` of
   `𝒪_X`-modules, characterized by `sheafMul_sheafι` as the restriction of the multiplication of
-  `𝒪_X`.
+  `𝒪_X`, surjective on sections over affine opens
+  (`Scheme.IdealSheafData.sheafMul_app_surjective`) and so an epimorphism
+  (`Scheme.IdealSheafData.epi_sheafMul`); `tensorPresheafHom` is likewise locally surjective
+  (`Scheme.IdealSheafData.isLocallySurjective_tensorPresheafHom`);
+* `Scheme.IdealSheafData.sheafιUnit`: the inclusion `I ⟶ 𝒪_X` read as a morphism to the monoidal
+  unit of `X.Modules`, with its transport rule `Scheme.IdealSheafData.eqToHom_sheafιUnit`;
+* `Scheme.Modules.imageIdealSheaf_le_of_tensorLift`: a tensor lift places the functional's
+  image ideal in the given ideal sheaf;
+* `Scheme.Modules.not_surjective_app_tensorIdeal`: an ideal meeting the nonvanishing locus of
+  a dual functional prevents surjectivity on global sections.
 
 ## References
 
@@ -153,6 +172,41 @@ lemma tensorPresheafHom_app_tmul (s : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
     (tensorPresheafHom I J).app (op U) (s ⊗ₜ t) = sectionsMul I J U s t :=
   (rfl)
 
+/-- Over an affine open `V`, multiplication `I ⊗ J ⟶ I * J` is surjective on sections: the sections
+of `I * J` form the ideal `I(V) J(V)`, the range of multiplication `I(V) ⊗ J(V) ⟶ Γ(X, V)`. -/
+private lemma tensorPresheafHom_app_surjective {V : X.Opens} (hV : IsAffineOpen V) :
+    Function.Surjective ((tensorPresheafHom I J).app (op V)) := by
+  -- The inclusion `K ⟶ 𝒪_X` identifies the sections of `K` over `V` with the ideal `K(V)`.
+  let ι (K : X.IdealSheafData) : Γ(K.sheaf, V) →ₗ[Γ(X, V)] Γ(X, V) :=
+    { toFun := Scheme.Modules.Hom.app K.sheafι V, map_add' := map_add _,
+      map_smul' := Scheme.Modules.Hom.app_smul K.sheafι }
+  let e (K : X.IdealSheafData) : Γ(K.sheaf, V) ≃ₗ[Γ(X, V)] K.ideal ⟨V, hV⟩ :=
+    (LinearEquiv.ofInjective (ι K) (K.sheafι_app_injective V)).trans
+      (LinearEquiv.ofEq _ _ (SetLike.coe_injective
+        ((K.range_sheafι_app V).trans (by rw [K.sections_eq_ideal ⟨V, hV⟩]; rfl))))
+  -- Under these identifications, multiplication of sections is `Submodule.mulMap`.
+  have h : ι (I * J) ∘ₗ ((tensorPresheafHom I J).app (op V)).hom =
+      Submodule.mulMap _ _ ∘ₗ (TensorProduct.congr (e I) (e J)).toLinearMap :=
+    TensorProduct.ext' fun s t ↦ sheafι_app_sectionsMul I J V s t
+  intro z
+  have hz := (I * J).sheafι_app_mem V z
+  rw [(I * J).sections_eq_ideal ⟨V, hV⟩, ideal_mul, Pi.mul_apply, ← Submodule.mulMap_range] at hz
+  obtain ⟨w, hw⟩ := hz
+  refine ⟨(TensorProduct.congr (e I) (e J)).symm w, (I * J).sheafι_app_injective V ?_⟩
+  exact (LinearMap.congr_fun h _).trans ((congrArg _ (LinearEquiv.apply_symm_apply _ _)).trans hw)
+
+/-- **Multiplication of ideal sheaves is locally surjective**, being surjective on sections over
+affine opens. -/
+lemma isLocallySurjective_tensorPresheafHom :
+    Presheaf.IsLocallySurjective (Opens.grothendieckTopology X)
+      ((PresheafOfModules.toPresheaf X.ringCatSheaf.obj).map (tensorPresheafHom I J)) where
+  imageSieve_mem {U} z x hx := by
+    obtain ⟨_, ⟨V, hV, rfl⟩, hxV, hVU⟩ :=
+      X.isBasis_affineOpens.exists_subset_of_mem_open hx U.isOpen
+    obtain ⟨w, hw⟩ := tensorPresheafHom_app_surjective I J hV
+      ((I * J).sheaf.presheaf.map (homOfLE hVU).op z)
+    exact ⟨V, homOfLE hVU, ⟨w, hw⟩, hxV⟩
+
 section SheafMul
 
 open MonoidalCategory
@@ -227,8 +281,111 @@ theorem sheafMul_sheafι :
   erw [← h]
   exact tensorPresheafHom_comp_sheafι I J
 
+/-- **Multiplication of ideal sheaves is surjective on affine sections.** Over an affine open `V`,
+every section of `I * J` is the image under `sheafMul` of a section of `I ⊗ J`: the sections of
+`I * J` form the ideal `I(V) J(V)`, whose elements are sums of products. -/
+theorem sheafMul_app_surjective {V : X.Opens} (hV : IsAffineOpen V) :
+    Function.Surjective (Scheme.Modules.Hom.app (sheafMul I J) V) := fun z ↦ by
+  obtain ⟨w, rfl⟩ := tensorPresheafHom_app_surjective I J hV z
+  -- On sections, `sheafMul` after the comparison of tensor products is `tensorPresheafHom`.
+  exact ⟨_, ConcreteCategory.congr_hom
+    (congrArg (fun φ ↦ φ.app (op V)) (forget_μ_comp_sheafMul I J)) w⟩
+
+/-- **Multiplication of ideal sheaves is an epimorphism.** Multiplication of local functions
+`I ⊗ J ⟶ I * J` is an epimorphism of `𝒪_X`-modules, for all ideal sheaves `I` and `J`, as it is
+surjective on sections over affine opens. -/
+theorem epi_sheafMul : Epi (sheafMul I J) :=
+  Scheme.Modules.Hom.epi_of_surjective_on_affineOpens _ fun _ ↦ sheafMul_app_surjective I J
+
 end SheafMul
+
+section SheafιUnit
+
+open MonoidalCategory
+
+/-- The inclusion `I ⟶ 𝒪_X`, read as a morphism to the monoidal unit of `X.Modules`, so that
+composites with morphisms out of tensor products are formed in a single category. -/
+def sheafιUnit (J : X.IdealSheafData) : J.sheaf ⟶ 𝟙_ X.Modules :=
+  J.sheafι
+
+/-- The inclusion `J ⟶ 𝒪_X`, read as a morphism to the monoidal unit, is `sheafι`. -/
+theorem sheafιUnit_def (J : X.IdealSheafData) : J.sheafιUnit = J.sheafι :=
+  (rfl)
+
+/-- The inclusion `J ⟶ 𝒪_X`, read as a morphism to the monoidal unit, is a monomorphism. -/
+instance mono_sheafιUnit (J : X.IdealSheafData) : Mono J.sheafιUnit :=
+  inferInstanceAs (Mono J.sheafι)
+
+/-- Transport along an equality of ideal sheaves commutes with the inclusions into `𝒪_X`. -/
+@[reassoc]
+lemma eqToHom_sheafιUnit {J K : X.IdealSheafData} (h : J = K) :
+    eqToHom (congrArg sheaf h) ≫ K.sheafιUnit = J.sheafιUnit := by
+  subst h
+  exact Category.id_comp _
+
+end SheafιUnit
 
 end
 
 end AlgebraicGeometry.Scheme.IdealSheafData
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+open MonoidalCategory MonoidalClosed TauCeti
+
+noncomputable section
+
+variable {X : Scheme.{u}}
+
+/-- If the section corresponding to a functional lifts through tensoring with an ideal sheaf,
+the image ideal of the functional is contained in that ideal sheaf. -/
+theorem imageIdealSheaf_le_of_tensorLift (M : X.Modules)
+    [M.IsLocallyFree] [M.IsFiniteType]
+    (I : X.IdealSheafData)
+    (φ : (ihom M).obj (𝟙_ X.Modules) ⟶ 𝟙_ X.Modules)
+    (t : 𝟙_ X.Modules ⟶ M ⊗ I.sheaf)
+    (ht : t ≫ M ◁ I.sheafι ≫ (ρ_ M).hom = dualHomUnitEquiv M φ) :
+    φ.imageIdealSheaf ≤ I := by
+  let D := (ihom M).obj (𝟙_ X.Modules)
+  let : ExactPairing D M := exactPairingOfIsIsoDualTensorIhom
+  let i : I.sheaf ⟶ 𝟙_ X.Modules := I.sheafι
+  let ψ : D ⟶ I.sheaf := (λ_ D).inv ≫
+    (tensorRightHomEquiv (𝟙_ X.Modules) D M I.sheaf).symm (t ≫ (β_ M I.sheaf).hom)
+  have hφ : tensorRightHomEquiv (𝟙_ X.Modules) D M (𝟙_ X.Modules) ((λ_ D).hom ≫ φ) =
+      dualHomUnitEquiv M φ ≫ (λ_ M).inv := by
+    rw [dualHomUnitEquiv_apply, ← exactPairingOfIsIsoDualTensorIhom_coevaluation]
+    dsimp only [tensorRightHomEquiv, Equiv.coe_fn_mk]
+    simp only [comp_whiskerRight]
+    monoidal
+  have hψ : ψ ≫ i = φ := by
+    apply (cancel_epi (λ_ D).hom).mp
+    apply (tensorRightHomEquiv (𝟙_ X.Modules) D M (𝟙_ X.Modules)).injective
+    dsimp only [ψ]
+    rw [← Category.assoc, Iso.hom_inv_id_assoc, tensorRightHomEquiv_naturality,
+      Equiv.apply_symm_apply, Category.assoc,
+      ← BraidedCategory.braiding_naturality_right, hφ, ← ht]
+    simp only [braiding_tensorUnit_right, Category.assoc]
+    rfl
+  exact φ.imageIdealSheaf_le_of_factor I ψ hψ
+
+/-- Tensoring with an ideal sheaf does not surject onto global sections of a finite locally
+free sheaf when the ideal support meets the nonvanishing locus of a dual functional. -/
+theorem not_surjective_app_tensorIdeal (M : X.Modules)
+    [M.IsLocallyFree] [M.IsFiniteType]
+    (I : X.IdealSheafData) (φ : (ihom M).obj (𝟙_ X.Modules) ⟶ 𝟙_ X.Modules)
+    (x : X) (hxI : x ∈ I.support) (hxφ : x ∉ φ.imageIdealSheaf.support) :
+    ¬Function.Surjective ((M ◁ I.sheafι ≫ (ρ_ M).hom).app ⊤) := by
+  intro hsurj
+  obtain ⟨s, hs⟩ := hsurj (M.unitHomEquivTop (dualHomUnitEquiv M φ))
+  let t : 𝟙_ X.Modules ⟶ M ⊗ I.sheaf := (M ⊗ I.sheaf).unitHomEquivTop.symm s
+  have ht : t ≫ M ◁ I.sheafι ≫ (ρ_ M).hom = dualHomUnitEquiv M φ := by
+    apply M.unitHomEquivTop.injective
+    exact (unitHomEquivTop_comp (M ⊗ I.sheaf) t (M ◁ I.sheafι ≫ (ρ_ M).hom)).trans
+      ((congrArg ((M ◁ I.sheafι ≫ (ρ_ M).hom).app ⊤)
+        ((M ⊗ I.sheaf).unitHomEquivTop.apply_symm_apply s)).trans hs)
+  exact hxφ (IdealSheafData.support_antitone
+    (imageIdealSheaf_le_of_tensorLift M I φ t ht) hxI)
+
+end
+
+end AlgebraicGeometry.Scheme.Modules

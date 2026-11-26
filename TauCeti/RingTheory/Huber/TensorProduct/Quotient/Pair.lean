@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.TensorProduct.Map.Pair
 public import TauCeti.RingTheory.Huber.TensorProduct.Quotient.Basic
+public import TauCeti.RingTheory.Huber.TensorProduct.Symmetry
 public import TauCeti.RingTheory.Huber.QuotientMapping
+
+import TauCeti.Topology.Maps.OpenQuotient
 
 /-!
 # Quotient mappings of completed tensor products of Huber pairs
@@ -88,5 +92,14 @@ theorem isQuotientMapping_map (f : Hom S S') (g : Hom T T')
   · refine map_mem_integralClosure F _ (CompletedTensor.inr A B' C') ?_ (hg.mem_plus_iff.mp hc)
     rintro _ ⟨a, ha, hac⟩
     exact Subring.mem_map.mpr ⟨_, S.inr_mem_completedTensor_plus T ha, by simp [F, ← hac]⟩
+
+variable (A S T) in
+/-- Exchanging the two factors of a completed tensor product of Huber pairs is a quotient mapping
+of Huber pairs. -/
+theorem isQuotientMapping_commHom :
+    (commHom A S T).IsQuotientMapping := by
+  refine Hom.isQuotientMapping_of_comp_eq_id (g := commHom A T S) ?_ (commHom_comp_commHom A T S)
+  rw [toRingHom_commHom, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom]
+  exact (CompletedTensor.isHomeomorph_comm A B C).isOpenQuotientMap
 
 end TauCeti.Huber.Pair.completedTensor

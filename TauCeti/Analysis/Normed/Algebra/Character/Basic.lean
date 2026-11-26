@@ -8,17 +8,19 @@ module
 public import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 public import TauCeti.RingTheory.Jacobson.NonUnital
 
+import Mathlib.Analysis.Normed.Module.WeakDual
 import TauCeti.Analysis.Normed.Algebra.Jacobson
 import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
 import TauCeti.RingTheory.Jacobson.Spectrum
+import TauCeti.Topology.Compactness.LocallyCompact
 
 /-!
 # Characters and the radical of commutative Banach algebras
 
 A character of a complex algebra `A` is an algebra homomorphism `A → ℂ`. In the nonunital setting
-it is a nonunital algebra homomorphism, and the zero map is allowed. A nonunital character of a
-Banach algebra is bounded by the norm, with no unit and no continuity assumption, because its
-values lie in the quasispectrum.
+it is a nonunital algebra homomorphism, and the zero map is allowed. By Mathlib's
+`NonUnitalAlgHom.norm_apply_le_self`, a nonunital character of a Banach algebra is bounded by the
+norm, with no unit and no continuity assumption, because its values lie in the quasispectrum.
 
 Every character kills the Jacobson radical. In a commutative complex Banach algebra the converse
 holds. By Gelfand–Mazur every point of the spectrum is the value of a character, so an element
@@ -33,8 +35,10 @@ Banach algebras are automatically continuous.
 
 ## Main results
 
-* `NonUnitalAlgHom.norm_apply_le_self`, `NonUnitalAlgHom.instContinuousLinearMapClass`: nonunital
-  characters of Banach algebras are contractive, hence continuous.
+* `WeakDual.CharacterSpace.isCompact_union_zero`,
+  `WeakDual.CharacterSpace.instLocallyCompactSpace`: the character space of any nonunital Banach
+  algebra over a proper nontrivially normed field is locally compact, realized inside the weak-star
+  compact closed unit ball as `(characterSpace 𝕜 A ∪ {0}) \ {0}`.
 * `TauCeti.Ring.mem_jacobson_iff_forall_algHom_apply_eq_zero`,
   `TauCeti.ker_gelfandTransform`: in a commutative unital complex Banach algebra the radical is
   the common kernel of the characters, which is the kernel of the Gelfand transform.
@@ -49,33 +53,6 @@ Banach algebras are automatically continuous.
 -/
 
 public section
-
-namespace NonUnitalAlgHom
-
-variable {𝕜 A F : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [CompleteSpace A] [FunLike F A 𝕜] [NonUnitalAlgHomClass F 𝕜 A 𝕜]
-
-/-- A nonunital character of a Banach algebra is contractive. No continuity is assumed, and the
-scalar field need not be complete. -/
-theorem norm_apply_le_self (φ : F) (a : A) : ‖φ a‖ ≤ ‖a‖ := by
-  by_contra! h
-  have hφ : φ a ≠ 0 := fun h0 ↦ (norm_nonneg a).not_gt (by simpa [h0] using h)
-  -- If `‖φ a‖ > ‖a‖`, then `b = (φ a)⁻¹ • a` has norm `< 1` and `φ b = 1`, but the geometric
-  -- series `s` of `b` satisfies `b + b * s = s`, so `1 + φ s = φ s`.
-  have hb : φ ((φ a)⁻¹ • a) = 1 := by simp [hφ]
-  have hbn : ‖(φ a)⁻¹ • a‖ < 1 := by
-    rw [norm_smul, norm_inv]
-    exact (inv_mul_lt_iff₀ (norm_pos_iff.2 hφ)).2 (by simpa using h)
-  simpa [hb] using congrArg φ (add_self_mul_geom_series hbn)
-
-/-- A nonunital character of a Banach algebra is automatically continuous, so `map_continuous`
-applies to it. This is the nonunital counterpart of Mathlib's instance for unital characters. -/
-instance (priority := 100) instContinuousLinearMapClass : ContinuousLinearMapClass F 𝕜 A 𝕜 :=
-  { NonUnitalAlgHomClass.instLinearMapClass with
-    map_continuous := fun φ =>
-      AddMonoidHomClass.continuous_of_bound φ 1 fun a => by simpa using norm_apply_le_self φ a }
-
-end NonUnitalAlgHom
 
 namespace TauCeti
 
@@ -125,3 +102,44 @@ theorem mem_nonUnitalJacobson_iff_forall_nonUnitalAlgHom_apply_eq_zero {b : B} :
     (Unitization.inrNonUnitalAlgHom ℂ B))
 
 end TauCeti
+
+namespace WeakDual.CharacterSpace
+
+section LocallyCompact
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜] [NonUnitalNormedRing A]
+  [NormedSpace 𝕜 A] [CompleteSpace A]
+
+/-- For a nonunital Banach algebra over a proper nontrivially normed field,
+`characterSpace 𝕜 A ∪ {0}` is weak-star compact inside `WeakDual 𝕜 A`. -/
+theorem isCompact_union_zero :
+    IsCompact (characterSpace 𝕜 A ∪ {0} : Set (WeakDual 𝕜 A)) := by
+  refine (WeakDual.isCompact_closedBall 0 1).of_isClosed_subset
+    (union_zero_isClosed 𝕜 A) ?_
+  rintro φ (hφ | rfl)
+  · rw [Set.mem_preimage, mem_closedBall_zero_iff]
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a ↦ ?_
+    have hbound : ‖(WeakDual.toStrongDual φ) a‖ ≤ ‖a‖ :=
+      NonUnitalAlgHom.norm_apply_le_self (⟨φ, hφ⟩ : characterSpace 𝕜 A) a
+    simpa only [one_mul] using hbound
+  · simp
+
+/-- The character space of any nonunital Banach algebra over a proper nontrivially normed field is
+locally compact: `characterSpace 𝕜 A ∪ {0}` is weak-star compact, and `characterSpace 𝕜 A` is the
+open complement of `0` inside it. -/
+instance instLocallyCompactSpace : LocallyCompactSpace (characterSpace 𝕜 A) := by
+  let K : Set (WeakDual 𝕜 A) := characterSpace 𝕜 A ∪ {0}
+  have : CompactSpace K := isCompact_iff_compactSpace.mp isCompact_union_zero
+  let z₀ : K := ⟨0, Or.inr rfl⟩
+  let e : characterSpace 𝕜 A ≃ₜ {x : K // x ≠ z₀} :=
+    { toFun φ := ⟨⟨φ.val, Or.inl φ.property⟩, fun h ↦ φ.property.1 (congrArg Subtype.val h)⟩
+      invFun x := ⟨x.val.val, x.val.property.resolve_right fun h0 ↦ x.property (Subtype.ext h0)⟩
+      left_inv _ := rfl
+      right_inv _ := rfl
+      continuous_toFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _
+      continuous_invFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _ }
+  exact e.isOpenEmbedding.locallyCompactSpace
+
+end LocallyCompact
+
+end WeakDual.CharacterSpace
