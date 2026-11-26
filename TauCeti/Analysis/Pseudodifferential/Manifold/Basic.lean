@@ -490,6 +490,16 @@ def chartPartCutoff {e : OpenPartialHomeomorph M (CoordinateSpace n)}
     (g.contMDiff.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas he)))) φ
 
 omit [T2Space M] in
+/-- The cutoff `φ · L (g ∘ e⁻¹)` evaluated at a point of the chart. -/
+@[simp]
+theorem chartPartCutoff_apply {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (L : ℂ →L[ℝ] ℝ)
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (y : CoordinateSpace n) :
+    chartPartCutoff he g L φ y = L (g (e.symm y)) * φ y :=
+  TestFunction.smulLeftCLMOfContDiffOn_apply _ φ y
+
+omit [T2Space M] in
 /-- The cutoffs by the real and imaginary parts of `g` in the chart add up to `φ · (g ∘ e⁻¹)`. -/
 theorem chartPartCutoff_re_add_im {e : OpenPartialHomeomorph M (CoordinateSpace n)}
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
@@ -497,8 +507,7 @@ theorem chartPartCutoff_re_add_im {e : OpenPartialHomeomorph M (CoordinateSpace 
     (y : CoordinateSpace n) :
     (chartPartCutoff he g Complex.reCLM φ y : ℂ) +
         Complex.I * chartPartCutoff he g Complex.imCLM φ y = φ y * g (e.symm y) := by
-  simp only [chartPartCutoff, TestFunction.smulLeftCLMOfContDiffOn_apply, Function.comp_apply,
-    Complex.reCLM_apply, Complex.imCLM_apply, smul_eq_mul]
+  simp only [chartPartCutoff_apply, Complex.reCLM_apply, Complex.imCLM_apply]
   conv_rhs => rw [← Complex.re_add_im (g (e.symm y))]
   push_cast
   ring
