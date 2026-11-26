@@ -131,7 +131,7 @@ private theorem subsetMonomialHom_orbit_prod {G : Type*} [Group G] (U : Subgroup
   -- The restricted orbit list is the ambient orbit list of `U.monomialHom s x`.
   refine congrArg List.prod (List.ext_getElem (by
     simp only [List.length_ofFn]
-    rw [MulAction.subsetPermOn_minimalPeriod]
+    rw [MulAction.minimalPeriod_subsetPermOn]
     exact congrArg₂ _ (funext fun y ↦ (Subgroup.monomialHom_right U s x.val y).symm) rfl)
     fun i _ _ ↦ ?_)
   have ha : (((MulAction.subsetPermOn H T hT x)⁻¹ ^ i) q₀).val =
@@ -497,8 +497,7 @@ private theorem indClassFun_conjNormal_prod_apply {k G : Type*} [CommRing k] [Gr
       MulAut.conjNormal (x ^ (j : ℕ)) h := by
     apply Subtype.ext
     dsimp only
-    rw [inv_inv]
-    rfl
+    rw [inv_inv, MulAut.conjNormal_apply]
   rw [Function.indTerm_apply, dite_eq_left_of_eq_true (eq_true hmem), heq]
   dsimp only [f]
   refine (Fintype.prod_equiv (Equiv.addRight j) _ _ fun i ↦ ?_).symm

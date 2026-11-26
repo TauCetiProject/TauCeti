@@ -10,6 +10,9 @@ public import TauCeti.Algebra.BigOperators.Finset.Range
 public import Mathlib.Dynamics.PeriodicPts.Lemmas
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
+public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
 # Enumerating a finite set along the cycles of a permutation
@@ -38,6 +41,9 @@ which `σ` is `finRotate`.
 ## Main definitions
 
 * `Equiv.Perm.sigmaCycleEquiv`: the enumeration of `α` along the cycles of `σ`.
+* `Equiv.Perm.orbitElemEquiv`: the enumeration along the `⟨σ⟩`-orbits with the representatives
+  `Quotient.out`, with fibres `Fin (minimalPeriod (σ • ·) ω.out)`
+  (`Equiv.Perm.orbitElemEquiv_apply`, `Equiv.Perm.orbitElemEquiv_succ`).
 
 ## Main results
 
@@ -252,5 +258,36 @@ theorem prod_quotient_sameCycle_prod_range [Fintype α] [Fintype (Quotient (Same
     Fintype.prod_sigma]
   exact Finset.prod_congr rfl fun q _ ↦
     (σ.prod_sigmaCycleEquiv_eq_prod_range Quotient.out σ.existsUnique_sameCycle_out f q).symm
+
+section OrbitElem
+
+variable {ι : Type*} [Finite ι] (σ : Perm ι)
+
+/-- The enumeration `⟨ω, t⟩ ↦ (σ ^ t) ω.out` of `ι` along the `⟨σ⟩`-orbits, obtained from
+`Equiv.Perm.sigmaCycleEquiv` with the representatives `Quotient.out`. -/
+noncomputable def orbitElemEquiv :
+    (Σ ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι,
+      Fin (Function.minimalPeriod (σ • ·) ω.out)) ≃ ι :=
+  (Equiv.sigmaCongrRight fun ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι ↦
+      finCongr (σ.minimalPeriod_sub_one_add_one ω.out).symm).trans
+    (σ.sigmaCycleEquiv Quotient.out σ.existsUnique_sameCycle_orbitRel_out)
+
+/-- The enumeration along the `⟨σ⟩`-orbits sends `⟨ω, t⟩` to `(σ ^ t) ω.out`. -/
+theorem orbitElemEquiv_apply (ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι)
+    (t : Fin (Function.minimalPeriod (σ • ·) ω.out)) :
+    σ.orbitElemEquiv ⟨ω, t⟩ = (σ ^ (t : ℕ)) ω.out :=
+  σ.sigmaCycleEquiv_apply Quotient.out σ.existsUnique_sameCycle_orbitRel_out ω _
+
+/-- `σ` acts as the cyclic shift `finRotate` on every fibre of the enumeration along the
+`⟨σ⟩`-orbits. -/
+theorem orbitElemEquiv_succ (ω : MulAction.orbitRel.Quotient (Subgroup.zpowers σ) ι)
+    (t : Fin (Function.minimalPeriod (σ • ·) ω.out)) :
+    σ (σ.orbitElemEquiv ⟨ω, t⟩) =
+      σ.orbitElemEquiv ⟨ω, finRotate (Function.minimalPeriod (σ • ·) ω.out) t⟩ :=
+  (σ.sigmaCycleEquiv_finRotate _ _ ω _).symm.trans
+    (congrArg (fun i ↦ σ.sigmaCycleEquiv _ σ.existsUnique_sameCycle_orbitRel_out ⟨ω, i⟩)
+      (TauCeti.finCongr_finRotate (σ.minimalPeriod_sub_one_add_one ω.out).symm t).symm)
+
+end OrbitElem
 
 end Equiv.Perm

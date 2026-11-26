@@ -32,6 +32,7 @@ reversing each block is reversing the concatenated order followed by a rotation 
 Finally, `TauCeti.apply_comp_finCycle` iterates a single-step rotation rule (`Fin.cons` to
 `Fin.snoc`) along `finCycle`, and `TauCeti.apply_comp_finCycle_of_anticyclic` specializes it to
 anticyclic functions.
+`TauCeti.finCongr_finRotate` transports `finRotate` along an equality of lengths.
 `TauCeti.homotopyIndexEquiv` splits `Fin (n + 1) × Fin (n + 2)` into off-diagonal, diagonal, and
 superdiagonal pairs.
 -/
@@ -39,6 +40,12 @@ superdiagonal pairs.
 public section
 
 namespace TauCeti
+
+/-- Transporting a cyclic shift along an equality of lengths gives the cyclic shift. -/
+theorem finCongr_finRotate {a b : ℕ} (h : a = b) (t : Fin a) :
+    finCongr h (finRotate a t) = finRotate b (finCongr h t) := by
+  subst h
+  simp
 
 /-- Omitting the last index embeds each preceding index by `Fin.castSucc`. -/
 @[simp]

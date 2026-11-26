@@ -256,7 +256,7 @@ theorem subsetPermOn_zpow_val {G α : Type*} [Group G] [MulAction G α] [Decidab
     ((subsetPermOn H T hT x ^ k) y).val = ((x : G) ^ k) • y.val := by
   rw [← map_zpow, subsetPermOn_apply, Subgroup.coe_zpow]
 
-theorem subsetPermOn_minimalPeriod {G α : Type*} [Group G] [MulAction G α] [DecidableEq α]
+theorem minimalPeriod_subsetPermOn {G α : Type*} [Group G] [MulAction G α] [DecidableEq α]
     {H : Subgroup G} {T : Finset α} (hT : ∀ x : H, (x : G) • T = T) (x : H) (y : ↥T) :
     Function.minimalPeriod ((subsetPermOn H T hT x) • ·) y =
       Function.minimalPeriod ((x : G) • ·) y.val := by
@@ -297,7 +297,7 @@ theorem subsetOrbitEquiv_out_rel {G α : Type*} [Group G] [MulAction G α] [Deci
     orbitRel (Subgroup.zpowers (x : G)) α q.out.val (subsetOrbitEquiv T hT x q).val.out := by
   have hq : (subsetOrbitEquiv T hT x q).val = Quotient.mk'' q.out.val := by
     conv_lhs => rw [← Quotient.out_eq q]
-    rfl
+    rw [subsetOrbitEquiv, Equiv.subtypeQuotientEquivQuotientSubtype_symm_mk]
   rw [hq]
   exact Quotient.exact' (Quotient.out_eq _).symm
 

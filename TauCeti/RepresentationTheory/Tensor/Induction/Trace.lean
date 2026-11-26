@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GroupAction.Orbit.Quotient
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.Tensor.Induction.Basic
 
+import TauCeti.Data.Setoid.Basic
 import TauCeti.GroupTheory.GroupAction.Orbit.Basic
 import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.GroupTheory.Perm.WreathProduct.Monomial
@@ -183,10 +184,7 @@ theorem trace_tensorInducedRepresentation {R G M : Type*} [CommSemiring R] [Grou
   refine apply_conj_pow_minimalPeriod_eq_of_orbitRel
     (f := fun u ↦ LinearMap.trace R M (ρ u)) (fun u v ↦ ρ.trace_conj u v) g ?_
     (U.leftTransversalRep_mk s (qEquiv q).out) (U.leftTransversalRep_mk s q.out)
-  have hq : Quotient.mk'' q.out = qEquiv q := by
-    conv_rhs => rw [← Quotient.out_eq q]
-    rfl
-  exact Quotient.exact' ((Quotient.out_eq (qEquiv q)).trans hq.symm)
+  exact Setoid.symm' _ (Quotient.rel_out_congrRight_out _ q)
 
 /-- **Character of a tensor-induced representation.** Over any field `k`, the character of
 `U.tensorInducedRepresentation s ρ` equals `U.tensorIndClassFun ρ.character`. -/
@@ -236,20 +234,20 @@ theorem tensorIndClassFun_apply_of_mem_of_normal {R G : Type*} [CommMonoid R] [G
   let := H.fintypeQuotientOfFiniteIndex
   let := Fintype.ofFinite (MulAction.orbitRel.Quotient (Subgroup.zpowers (h : G)) (G ⧸ H))
   rw [tensorIndClassFun_def]
+  -- `h ∈ H` fixes every coset, so each `⟨h⟩`-orbit is a single coset, its representative.
   let qEquiv : MulAction.orbitRel.Quotient (Subgroup.zpowers (h : G)) (G ⧸ H) ≃ G ⧸ H :=
-    { toFun := Quotient.lift id fun x y hxy ↦ by
-        obtain ⟨⟨_, k, rfl⟩, rfl⟩ := MulAction.mem_orbit_iff.mp hxy
-        exact TauCeti.smul_quotient_eq_self_of_mem (H.zpow_mem h.property k) y
-      invFun := Quotient.mk''
-      left_inv := fun q ↦ Quotient.inductionOn' q fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
+    Equiv.ofBijective Quotient.out
+      ⟨fun q q' hq ↦ by rw [← Quotient.out_eq' q, ← Quotient.out_eq' q', hq], fun x ↦ by
+        refine ⟨Quotient.mk'' x, ?_⟩
+        obtain ⟨⟨_, k, rfl⟩, hk⟩ := MulAction.mem_orbit_iff.mp
+          (Quotient.mk_out' (s₁ := MulAction.orbitRel (Subgroup.zpowers (h : G)) (G ⧸ H)) x)
+        rw [← hk]
+        exact TauCeti.smul_quotient_eq_self_of_mem (H.zpow_mem h.property k) x⟩
   refine Fintype.prod_equiv qEquiv _ _ fun q ↦ ?_
   have hper : Function.minimalPeriod (fun x : G ⧸ H ↦ (h : G) • x) q.out = 1 :=
     Function.minimalPeriod_eq_one_iff_isFixedPt.mpr
       (TauCeti.smul_quotient_eq_self_of_mem h.property q.out)
-  have hmk : q.out = qEquiv q := by
-    conv_rhs => rw [← Quotient.out_eq q]
-    rfl
+  have hmk : q.out = qEquiv q := (Equiv.ofBijective_apply _ _ q).symm
   have helem :
       (⟨q.out.out⁻¹ * (h : G) ^ Function.minimalPeriod (fun x : G ⧸ H ↦ (h : G) • x) q.out *
           q.out.out, QuotientGroup.out_conj_pow_minimalPeriod_mem H (h : G) q.out⟩ : H) =

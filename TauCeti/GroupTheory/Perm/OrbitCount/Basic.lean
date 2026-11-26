@@ -123,9 +123,7 @@ theorem orbitCount_def (σ : Equiv.Perm α) :
 theorem orbitCount_eq_natCard_orbitRelQuotient_zpowers (σ : Equiv.Perm α) :
     orbitCount σ = Nat.card (MulAction.orbitRel.Quotient (Subgroup.zpowers σ) α) := by
   rw [orbitCount_def]
-  exact Nat.card_congr (Quotient.congrRight fun x y ↦ by
-    rw [MulAction.orbitRel_apply, ← Equiv.Perm.sameCycle_iff_mem_orbit_zpowers]
-    exact Equiv.Perm.sameCycle_comm)
+  exact Nat.card_congr (Quotient.congrRight fun _ _ ↦ (Equiv.Perm.orbitRel_zpowers_apply σ).symm)
 
 /-- An invariant colouring uses at most one colour per orbit. -/
 theorem _root_.Equiv.Perm.card_image_invariantColouringEquiv_le_orbitCount

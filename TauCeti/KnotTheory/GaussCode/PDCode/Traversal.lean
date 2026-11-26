@@ -10,6 +10,7 @@ public import TauCeti.KnotTheory.PDCode.Planar
 public import TauCeti.KnotTheory.PDCode.Visit
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import Mathlib.Logic.Equiv.Bool
+import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
 # Reading Gauss codes from oriented PD-codes
@@ -112,17 +113,12 @@ theorem exists_gaussTraversal (D : OrientedPDCode n)
   let e := (f.trans (finCongr D.card_outgoingHalfEdges)).symm
   refine ⟨e, ?_⟩
   intro i
-  have hcast : ∀ {a b : ℕ} (hab : a = b) (j : Fin a),
-      finCongr hab (finRotate a j) = finRotate b (finCongr hab j) := by
-    intro a b hab j
-    subst hab
-    rfl
   have hstep (a) : f (D.componentPermOutgoing a) = finRotate _ (f a) := by
     simpa only [Equiv.permCongr_apply, Equiv.symm_apply_apply] using
       congrArg (fun σ => σ (f a)) hf
   apply (f.trans (finCongr D.card_outgoingHalfEdges)).injective
   rw [Equiv.apply_symm_apply]
-  simp only [Equiv.trans_apply, hstep, hcast]
+  simp only [Equiv.trans_apply, hstep, TauCeti.finCongr_finRotate]
   have hi := (f.trans (finCongr D.card_outgoingHalfEdges)).apply_symm_apply i
   exact congrArg (finRotate _) hi.symm
 
