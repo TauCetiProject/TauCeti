@@ -40,9 +40,8 @@ available in `Mathlib.FieldTheory.IsRealClosed.Real`.
   ordered field, dimension modulo two agrees with signature modulo two.
 * `WittRing.signature_oneFoldPfisterClass`: over any ordered field, the signature of a one-fold
   Pfister class `⟨⟨a⟩⟩` is `0` for `a > 0` and `2` for `a < 0`.
-* `mem_fundamentalIdeal_pow_iff_dvd_signature` and `fundamentalIdeal_pow_map_equivInt`: over an
-  ordered real closed field, `I(K)^n` consists of the Witt classes whose signature is divisible by
-  `2^n`.
+* `mem_fundamentalIdeal_pow_iff_dvd_signature`: over an ordered real closed field, `I(K)^n`
+  consists of the Witt classes whose signature is divisible by `2^n`.
 
 ## References
 
@@ -211,17 +210,5 @@ theorem mem_fundamentalIdeal_pow_iff_dvd_signature {x : WittRing K} (n : ℕ) :
   push_cast
   exact Ideal.mul_mem_right (k : WittRing K) (fundamentalIdeal K ^ n)
     (two_pow_mem_fundamentalIdeal_pow n)
-
-/-- Under the signature isomorphism `W(K) ≃+* ℤ`, the `n`-th power of the fundamental ideal maps to
-the principal ideal `(2^n)` of `ℤ`. -/
-theorem fundamentalIdeal_pow_map_equivInt (n : ℕ) :
-    (fundamentalIdeal K ^ n).map (WittRing.equivInt (K := K)) = Ideal.span {(2 ^ n : ℤ)} := by
-  ext m
-  rw [Ideal.mem_map_iff_of_surjective _ WittRing.equivInt.surjective, Ideal.mem_span_singleton]
-  refine ⟨?_, fun hm => ⟨(m : WittRing K), ?_, by simp⟩⟩
-  · rintro ⟨x, hx, rfl⟩
-    exact (mem_fundamentalIdeal_pow_iff_dvd_signature n).mp hx
-  · rw [mem_fundamentalIdeal_pow_iff_dvd_signature, map_intCast]
-    exact hm
 
 end TauCeti
