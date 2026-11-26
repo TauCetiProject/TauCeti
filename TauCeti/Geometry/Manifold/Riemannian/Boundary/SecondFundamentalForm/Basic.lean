@@ -362,9 +362,9 @@ differential of the inclusion is injective. -/
 theorem boundaryInducedForm_self_pos (q : (𝓡∂ (n + 1)).boundary M)
     {u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q} (hu : u ≠ 0) :
     0 < boundaryInducedForm q u u := by
-  rw [boundaryInducedForm_apply, real_inner_self_eq_norm_sq]
-  exact pow_pos (norm_pos_iff.2 fun h ↦
-    hu (injective_mfderiv_subtypeVal_boundary q (h.trans (map_zero _).symm))) 2
+  rw [boundaryInducedForm_apply]
+  exact real_inner_self_pos.2 fun h ↦
+    hu ((map_eq_zero_iff _ (injective_mfderiv_subtypeVal_boundary q)).1 h)
 
 /-- The induced metric is the inner product of `T_q∂M ⊆ T_qM`, transported along
 `TauCeti.boundaryTangentEquiv`. -/
