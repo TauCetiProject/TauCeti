@@ -211,6 +211,12 @@ theorem coe_jetH1 (w : boundaryPath F₀ F₁) :
     (jetH1 F₀ F₁ w : Lp (X × X) 2 μ₁) = jetLp F₀ F₁ w :=
   (rfl)
 
+/-- The `L²((0, 1])` norm of the jet of a path is the norm of its jet in `H1`. -/
+theorem eLpNorm_pathJet_eq (w : boundaryPath F₀ F₁) :
+    eLpNorm (pathJet (w : ℝ → X)) 2 μ₁ = ENNReal.ofReal ‖jetH1 F₀ F₁ w‖ := by
+  rw [← Submodule.norm_coe, coe_jetH1, jetLp_apply, Lp.norm_toLp,
+    ENNReal.ofReal_toReal (memLp_pathJet w).eLpNorm_ne_top]
+
 /-- The jets of classical paths are dense in `H1`. -/
 theorem denseRange_jetH1 : DenseRange (jetH1 F₀ F₁) := by
   have h : ((H1 F₀ F₁ : Submodule ℝ (Lp (X × X) 2 μ₁)) : Set (Lp (X × X) 2 μ₁)) =
