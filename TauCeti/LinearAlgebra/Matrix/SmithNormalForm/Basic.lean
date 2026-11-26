@@ -15,24 +15,28 @@ import TauCeti.RingTheory.Valuation.FinsetDvd
 /-!
 # Existence of Smith normal forms
 
-Over a valuation domain, for instance a discrete valuation ring or the non-noetherian valuation
-ring of a valued field such as `ℂ` with the absolute value pulled back from `PadicAlgCl ℓ`, every
-square matrix has a Smith normal form: unimodular row and column operations bring it to a diagonal
-matrix whose entries form a divisibility chain `s₀ ∣ s₁ ∣ ⋯`. Singular matrices are included:
-zero entries appear at the end of the chain.
+Over a commutative ring in which divisibility is total (`PreValuationRing`), for instance a
+valuation domain such as a discrete valuation ring or the non-noetherian valuation ring of a valued
+field such as `ℂ` with the absolute value pulled back from `PadicAlgCl ℓ`, or `ZMod (p ^ n)` for a
+prime `p`, every square matrix has a Smith normal form: unimodular row and column operations bring
+it to a diagonal matrix whose entries form a divisibility chain `s₀ ∣ s₁ ∣ ⋯`. Singular matrices
+are included: zero entries appear at the end of the chain.
 
-The proof is elimination. Of finitely many elements of a valuation ring one divides all the others,
+The proof is elimination. Of finitely many elements of such a ring one divides all the others,
 since divisibility is total. Move such an entry of the matrix to the corner, clear its row and
 column, and treat the block that is left, all of whose entries are multiples of the corner entry.
 
-The refinement over `ℤ` with transformations of determinant `1` and a positive diagonal is in
-`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int`, and the characterisation of the invariant
+Over a principal ideal domain, `Matrix.exists_mul_mul_eq_diagonal` in
+`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal` diagonalises without a divisibility chain;
+its refinement over `ℤ`, with transformations of determinant `1` and a positive diagonal, is in
+`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int`. The characterisation of the invariant
 factors by minors is in `TauCeti.LinearAlgebra.Matrix.InvariantFactor`.
 
 ## Main results
 
-* `Matrix.exists_smith_normal_form_of_valuationRing`: over a valuation domain, a square matrix is
-  equivalent to a diagonal matrix whose entries form a divisibility chain.
+* `Matrix.exists_smith_normal_form_of_valuationRing`: over a commutative ring with total
+  divisibility, a square matrix is equivalent to a diagonal matrix whose entries form a
+  divisibility chain.
 * `Matrix.exists_mul_mul_eq_diagonal_of_valuationRing`: the same for matrices indexed by any finite
   type, without the divisibility chain.
 
@@ -108,11 +112,11 @@ private theorem exists_mul_mul_eq_cornerBlockSucc {n : ℕ}
       hw i.succ j.succ]
     ring
 
-/-- **Smith normal form over a valuation domain.** Every square matrix over a valuation domain,
-for instance a discrete valuation ring, has a Smith normal form: there are `L`, `Q` of unit
-determinant and a divisibility chain `s₀ ∣ s₁ ∣ ⋯` with `L * A * Q = diagonal s`. Zero diagonal
-entries are allowed. -/
-theorem exists_smith_normal_form_of_valuationRing [IsDomain R] [ValuationRing R] :
+/-- **Smith normal form over a valuation ring.** Every square matrix over a commutative ring in
+which divisibility is total, for instance a valuation domain such as a discrete valuation ring, has
+a Smith normal form: there are `L`, `Q` of unit determinant and a divisibility chain
+`s₀ ∣ s₁ ∣ ⋯` with `L * A * Q = diagonal s`. Zero diagonal entries are allowed. -/
+theorem exists_smith_normal_form_of_valuationRing [PreValuationRing R] :
     ∀ {n : ℕ} (A : Matrix (Fin n) (Fin n) R),
       ∃ (L Q : Matrix (Fin n) (Fin n) R) (s : Fin n → R), IsUnit L.det ∧ IsUnit Q.det ∧
         (∀ ⦃i j : Fin n⦄, i ≤ j → s i ∣ s j) ∧ L * A * Q = diagonal s
@@ -150,9 +154,10 @@ theorem exists_smith_normal_form_of_valuationRing [IsDomain R] [ValuationRing R]
         | zero => exact absurd hab (by simp [Fin.succ_ne_zero])
         | succ b => simpa using mul_dvd_mul_left _ (hs' (Fin.succ_le_succ_iff.1 hab))
 
-/-- Over a valuation domain, every square matrix indexed by a finite type is equivalent to a
-diagonal matrix by transformations of unit determinant. Zero diagonal entries are allowed. -/
-theorem exists_mul_mul_eq_diagonal_of_valuationRing [IsDomain R] [ValuationRing R] {ι : Type*}
+/-- Over a commutative ring in which divisibility is total, for instance a valuation domain, every
+square matrix indexed by a finite type is equivalent to a diagonal matrix by transformations of
+unit determinant. Zero diagonal entries are allowed. -/
+theorem exists_mul_mul_eq_diagonal_of_valuationRing [PreValuationRing R] {ι : Type*}
     [Fintype ι] [DecidableEq ι] (A : Matrix ι ι R) :
     ∃ (L Q : Matrix ι ι R) (d : ι → R), IsUnit L.det ∧ IsUnit Q.det ∧
       L * A * Q = diagonal d := by

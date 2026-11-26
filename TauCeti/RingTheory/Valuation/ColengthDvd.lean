@@ -14,9 +14,10 @@ import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic
 import TauCeti.RingTheory.Valuation.FinsetDvd
 
 /-!
-# Colength bounds over a valuation domain
+# Colength bounds over a valuation ring
 
-Over a valuation domain `O`, a submodule of `O ^ ι` that contains the image of a square matrix `A`
+Over a commutative ring `O` in which divisibility is total (`PreValuationRing`), for instance a
+valuation domain, a submodule of `O ^ ι` that contains the image of a square matrix `A`
 has colength dividing `det A`, in the sense of `Submodule.ColengthDvd` (`M ⊸_z N`: every finite
 family in `M` is carried into `N` by a square matrix whose determinant divides `z`). The ring need
 not be noetherian: the statement is used for the valuation ring `{z : |ι z| ≤ 1}` of a field
@@ -25,7 +26,7 @@ isomorphism `ι : ℂ ≃ PadicAlgCl ℓ`.
 ## Main results
 
 * `Submodule.ColengthDvd.of_det_dvd`: if `det A ∣ z` and `L` contains the image of `A`, then
-  `O ^ ι ⊸_z L`. This rests on the Smith normal form over a valuation domain,
+  `O ^ ι ⊸_z L`. This rests on the Smith normal form over such a ring,
   `Matrix.exists_mul_mul_eq_diagonal_of_valuationRing`.
 * `Submodule.colengthDvd_inf_comap_span`: for a linear form `f`, `M ⊸_a {v ∈ M : a ∣ f v}`.
 * `Submodule.colengthDvd_top_smul_top`: `O ^ ι ⊸_{a ^ #ι} a • O ^ ι`.
@@ -46,11 +47,10 @@ open Matrix Finset Pointwise
 
 namespace Submodule
 
-variable {O V ι : Type*} [CommRing O] [IsDomain O] [ValuationRing O] [AddCommGroup V] [Module O V]
-  {z : O}
+variable {O V ι : Type*} [CommRing O] [PreValuationRing O] [AddCommGroup V] [Module O V] {z : O}
 
-/-- Over a valuation domain, the vectors of `M` on which a linear form `f` is divisible by `a` have
-colength dividing `a` in `M`. -/
+/-- Over a commutative ring with total divisibility, the vectors of `M` on which a linear form `f`
+is divisible by `a` have colength dividing `a` in `M`. -/
 theorem colengthDvd_inf_comap_span (M : Submodule O V) (f : V →ₗ[O] O) (a : O) :
     ColengthDvd M (M ⊓ Submodule.comap f (Ideal.span {a})) a := by
   refine colengthDvd_iff.2 fun n Φ hΦ ↦ ?_
@@ -73,8 +73,9 @@ theorem colengthDvd_inf_comap_span (M : Submodule O V) (f : V →ₗ[O] O) (a : 
   rw [SetLike.mem_coe, mem_comap, h_comb]
   split_ifs <;> simp [Ideal.mem_span_singleton, hc i, mul_comm]
 
-/-- **The image of a square matrix.** Over a valuation domain, if a square matrix `A` has
-`det A ∣ z` and the submodule `L` of `ι → O` contains its image, then `O ^ ι ⊸_z L`.
+/-- **The image of a square matrix.** Over a commutative ring with total divisibility, if a square
+matrix `A` has `det A ∣ z` and the submodule `L` of `ι → O` contains its image, then
+`O ^ ι ⊸_z L`.
 
 The proof writes `A` in diagonal form `L₀ * A * Q₀ = diagonal d` and imposes the conditions
 `d j ∣ (L₀ x) j` one coordinate at a time, each of colength dividing `d j`. -/
@@ -111,7 +112,8 @@ theorem ColengthDvd.of_det_dvd [Fintype ι] [DecidableEq ι] {A : Matrix ι ι O
   have h_prod : ∏ j, d j ∣ z := h_assoc.symm.dvd.trans h_dvd
   simpa using ((h_chain univ).trans_dvd h_prod).trans (.of_le (h_image.trans h_le))
 
-/-- Over a valuation domain, `a • O ^ ι` has colength dividing `a ^ #ι` in `O ^ ι`. -/
+/-- Over a commutative ring with total divisibility, `a • O ^ ι` has colength dividing `a ^ #ι` in
+`O ^ ι`. -/
 theorem colengthDvd_top_smul_top [Fintype ι] (a : O) :
     ColengthDvd (⊤ : Submodule O (ι → O)) (a • ⊤) (a ^ Fintype.card ι) := by
   classical
@@ -119,8 +121,8 @@ theorem colengthDvd_top_smul_top [Fintype ι] (a : O) :
   rintro _ ⟨v, rfl⟩
   simpa [smul_mulVec] using smul_mem_pointwise_smul v a ⊤ mem_top
 
-/-- Over a valuation domain, for a submodule `N` and a finite set `s` of vectors, the colength of
-`N + z • V` in `N + span s` divides `z ^ #s`. -/
+/-- Over a commutative ring with total divisibility, for a submodule `N` and a finite set `s` of
+vectors, the colength of `N + z • V` in `N + span s` divides `z ^ #s`. -/
 theorem colengthDvd_sup_span (N : Submodule O V) (s : Finset V) (z : O) :
     ColengthDvd (N ⊔ span O (s : Set V)) (N ⊔ z • ⊤) (z ^ #s) := by
   -- push the bound for `z • O ^ s` in `O ^ s` forward along the map to linear combinations
