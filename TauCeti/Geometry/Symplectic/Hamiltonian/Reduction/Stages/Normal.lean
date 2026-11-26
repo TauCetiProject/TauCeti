@@ -23,10 +23,9 @@ where `K` acts on `M` through `ι` and `R` is the residual group: `p` is surject
 differential `dp : 𝔤 → 𝔯` at the identity is surjective, and `ker dp ≤ range dι`. No exactness
 of the groups themselves is needed. For a closed normal subgroup `N`, the intended instance is
 `K = N` with its inclusion and `R = G ⧸ N` with the projection; the Lie-algebra conditions are
-then the exactness of `𝔫 → 𝔤 → 𝔤 ⧸ 𝔫`, which
-`Subgroup.toLieSubalgebra_ker_lieMap_quotientMkSmoothHom` and
-`Subgroup.surjective_lieMap_quotientMkSmoothHom` state for the Lie maps on left-invariant
-derivations. The two reductions at zero are:
+then the exactness of `𝔫 → 𝔤 → Lie(G ⧸ N)` of the differentials `dι` and `dp` at the identity
+(`Subgroup.ker_groupLieAlgebraMap_mk'` and `Subgroup.surjective_groupLieAlgebraMap_mk'`). The
+two reductions at zero are:
 
 * **directly**, by `G` acting on the level `Z = μ⁻¹(0)`, with orbit projection `π : Z → Q`;
 * **in stages**, first by `K` acting on the level `Z₁ = μ_K⁻¹(0)` of the restricted moment map
