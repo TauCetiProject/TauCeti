@@ -318,6 +318,12 @@ theorem conjWirtingerDeriv_add_const (g : V → W) (c : W) (x : V) :
   rw [conjWirtingerDeriv_eq_complexAntilinearPart, fderiv_add_const,
     conjWirtingerDeriv_eq_complexAntilinearPart]
 
+/-- The conjugate Wirtinger derivative commutes with translations of the source. -/
+theorem conjWirtingerDeriv_comp_add_right (g : V → W) (a x : V) :
+    conjWirtingerDeriv (fun y ↦ g (y + a)) x = conjWirtingerDeriv g (x + a) := by
+  rw [conjWirtingerDeriv_eq_complexAntilinearPart, fderiv_comp_add_right,
+    conjWirtingerDeriv_eq_complexAntilinearPart]
+
 /-- The conjugate Wirtinger derivative commutes with multiplication by a complex constant. -/
 theorem conjWirtingerDeriv_const_smul {g : V → W} {x : V} (c : ℂ) :
     conjWirtingerDeriv (c • g) x = c • conjWirtingerDeriv g x := by
