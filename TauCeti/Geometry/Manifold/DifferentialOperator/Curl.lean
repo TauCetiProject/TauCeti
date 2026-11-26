@@ -33,8 +33,9 @@ covector `ξ ∈ T_x*M`, in the geometric convention, is
 
 (`TauCeti.sectionPrincipalSymbol_curlSection_apply`), the cross product with `ξ` on `ℝ³`; in the
 Fourier convention it is `i ⋆(ξ ∧ ·)`. Since `ξ ∧ ξ = 0`, this symbol kills `ξ` itself
-(`TauCeti.sectionPrincipalSymbol_curlSection_apply_self`), so the curl is not elliptic: its symbol
-is not injective at any nonzero covector.
+(`TauCeti.sectionPrincipalSymbol_curlSection_apply_self`). Informally, this is why the curl is not
+elliptic: its symbol is not injective at any nonzero covector; this file does not state
+non-ellipticity as a theorem.
 
 ## Main definitions
 
@@ -171,8 +172,10 @@ theorem sectionPrincipalSymbol_curlSection_apply [T2Space M] {x : M} (hx : I.IsI
   rw [ContMDiffSection.evalLinearMap_apply, sectionPrincipalSymbol_mvfderiv_of_order_one,
     curlSection_smul_apply, add_sub_cancel_left]
 
-/-- **The curl is not elliptic**: its principal symbol at a covector `ξ` kills the one-form `ξ`
-itself, since `ξ ∧ ξ = 0`. So the symbol is not injective at any nonzero covector. -/
+/-- **The principal symbol of the curl at `ξ` kills `ξ`**: `σ_geom(curl)(ξ) ξ = ⋆(ξ ∧ ξ) = 0`,
+since `ξ ∧ ξ = 0`. Informally, this is why the curl is not elliptic: at a nonzero covector `ξ` the
+one-form `ξ` is nonzero, so the symbol is not injective there (non-ellipticity itself is not
+stated here). -/
 theorem sectionPrincipalSymbol_curlSection_apply_self [T2Space M] {x : M} (hx : I.IsInteriorPoint x)
     (ξ : TangentSpace I x →L[ℝ] ℝ) :
     sectionPrincipalSymbol I hx ⟨curlSection o, curlSection_mem_differentialOperators_one o⟩ ξ
