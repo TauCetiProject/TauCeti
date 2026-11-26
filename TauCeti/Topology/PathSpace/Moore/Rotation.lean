@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.PathSpace.Moore.FreeLoop
+public import TauCeti.Topology.PathSpace.Moore.Comparison.FreeLoop
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 
 /-!
@@ -23,11 +23,13 @@ So, as `s` runs from `0` to `L`, the rotations of `γ` form a loop of free loops
 **rotation loop** `TauCeti.MooreFreeLoopSpace.rotationLoop γ` of duration `L`: the loop of loops
 whose adjoint is `(s, t) ↦ γ(s + t mod L)` for `s, t ≤ L`, which rotates `γ` once around itself
 (`TauCeti.MooreFreeLoopSpace.rotate_apply_of_le`,
-`TauCeti.MooreFreeLoopSpace.rotate_apply_length_sub_add`). Its base points trace
-`γ`: evaluating the rotation loop at the base point gives back `γ`, read as a based loop at its
-base point (`TauCeti.MooreFreeLoopSpace.map_basepointMap_rotationLoop`). Local systems on the free
-loop space are tested against this loop: a local system pulled back along evaluation at the base
-point has, along the rotation loop of `γ`, the monodromy of `γ` itself.
+`TauCeti.MooreFreeLoopSpace.rotate_apply_length_sub_add`). Read as a circle map, the rotation of
+`γ` by the fraction `s` of its length is `γ` precomposed with the rotation of the circle by
+`exp (2πis)` (`TauCeti.MooreFreeLoopSpace.toCircleMap_rotate`). The base points of the rotation
+loop trace `γ`: evaluating the rotation loop at the base point gives back `γ`, read as a based loop
+at its base point (`TauCeti.MooreFreeLoopSpace.map_basepointMap_rotationLoop`). Local systems on
+the free loop space are tested against this loop: a local system pulled back along evaluation at
+the base point has, along the rotation loop of `γ`, the monodromy of `γ` itself.
 
 ## Main definitions
 
@@ -43,6 +45,8 @@ point has, along the rotation loop of `γ`, the monodromy of `γ` itself.
 * `TauCeti.MooreFreeLoopSpace.rotate_apply_of_le`,
   `TauCeti.MooreFreeLoopSpace.rotate_apply_length_sub_add`: the values of the rotation by `s`,
   before and after the end of `γ`.
+* `TauCeti.MooreFreeLoopSpace.toCircleMap_rotate`: read as a circle map, the rotation is
+  precomposition with a rotation of the circle.
 * `TauCeti.MooreFreeLoopSpace.map_basepointMap_rotationLoop`: the base points of the rotation loop
   of `γ` trace `γ`.
 
@@ -55,6 +59,7 @@ point has, along the rotation loop of `γ`, the monodromy of `γ` itself.
 
 public noncomputable section
 
+open unitInterval
 open scoped NNReal
 
 namespace TauCeti
@@ -139,6 +144,50 @@ protected theorem _root_.Continuous.mooreFreeLoopSpace_rotate {Y : Type*} [Topol
     {f : Y → MooreFreeLoopSpace X} {g : Y → ℝ≥0} (hf : Continuous f) (hg : Continuous g) :
     Continuous fun y ↦ (f y).rotate (g y) :=
   continuous_rotate.comp (hf.prodMk hg)
+
+/-! ### Rotations as circle maps -/
+
+/-- **The rotation of a free Moore loop is a rotation of the circle**: read as a circle map, the
+rotation of `γ` by the fraction `s` of its length is `γ` precomposed with multiplication by
+`exp (2πis)`. -/
+theorem toCircleMap_rotate (γ : MooreFreeLoopSpace X) (s : I) (z : Circle) :
+    toCircleMap (γ.rotate (γ.length * toNNReal s)) z = toCircleMap γ (unitToCircle s * z) := by
+  obtain ⟨u, rfl⟩ := unitToCircle_surjective z
+  rw [toCircleMap_unitToCircle, MoorePath.toUnitPath_apply, length_toMoorePath, length_rotate]
+  have hs : γ.length * toNNReal s ≤ γ.length :=
+    mul_le_of_le_one_right (by positivity) (toNNReal_le_one s)
+  rcases le_total ((s : ℝ) + u) 1 with h | h
+  · -- Before the end of `γ`, the rotation runs along `γ` from the time `γ.length * s`.
+    obtain ⟨w, hw⟩ : ∃ w : I, (w : ℝ) = s + u :=
+      ⟨⟨_, add_nonneg (unitInterval.nonneg s) (unitInterval.nonneg u), h⟩, rfl⟩
+    have hle : γ.length * toNNReal u ≤ γ.length - γ.length * toNNReal s := by
+      refine le_tsub_of_add_le_right ?_
+      rw [← NNReal.coe_le_coe]
+      push_cast [coe_toNNReal]
+      rw [← mul_add]
+      exact mul_le_of_le_one_right γ.length.coe_nonneg (by linarith)
+    rw [rotate_apply_of_le _ hle, unitToCircle_mul_unitToCircle_of_coe_eq_add hw,
+      toCircleMap_unitToCircle, MoorePath.toUnitPath_apply, length_toMoorePath]
+    congr 1
+    ext
+    push_cast [coe_toNNReal, hw]
+    ring
+  · -- After the end of `γ`, the rotation runs along `γ` from its start.
+    obtain ⟨w, hw⟩ : ∃ w : I, (w : ℝ) = s + u - 1 :=
+      ⟨⟨_, by linarith, by linarith [unitInterval.le_one s, unitInterval.le_one u]⟩, rfl⟩
+    have hws : toNNReal w ≤ toNNReal s := by
+      rw [← NNReal.coe_le_coe, coe_toNNReal, coe_toNNReal, hw]
+      linarith [unitInterval.le_one u]
+    have heq : γ.length * toNNReal u =
+        γ.length - γ.length * toNNReal s + γ.length * toNNReal w := by
+      ext
+      rw [NNReal.coe_add, NNReal.coe_sub hs]
+      push_cast [coe_toNNReal, hw]
+      ring
+    rw [heq, rotate_apply_length_sub_add,
+      min_eq_left (mul_le_mul_of_nonneg_left hws (by positivity)),
+      unitToCircle_mul_unitToCircle_of_coe_eq_add_sub_one hw, toCircleMap_unitToCircle,
+      MoorePath.toUnitPath_apply, length_toMoorePath]
 
 /-! ### The rotation loop -/
 
