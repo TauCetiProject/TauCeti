@@ -7,16 +7,20 @@ module
 
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Homeomorph.Defs
+public import TauCeti.Data.Finset.Sum
 
 /-!
-# Homeomorphisms of products of subspaces and of products of pairs
+# Homeomorphisms of products of subspaces, of products of pairs and of products over sums
 
-Two equivalences of Mathlib are homeomorphisms for the product topologies:
+Three equivalences are homeomorphisms for the product topologies:
 
 * `Homeomorph.Set.univPi`: the subspace `Set.pi univ s` of a product is the product of the
   subspaces `s i`, upgrading `Equiv.Set.univPi`;
 * `Homeomorph.arrowProdHomeomorphProdArrow`: a product of pairs is a pair of products,
-  `(∀ i, X i × Y i) ≃ₜ (∀ i, X i) × (∀ i, Y i)`, upgrading `Equiv.arrowProdEquivProdArrow`.
+  `(∀ i, X i × Y i) ≃ₜ (∀ i, X i) × (∀ i, Y i)`, upgrading `Equiv.arrowProdEquivProdArrow`;
+* `Homeomorph.piFinsetSum`: a product over a finite `s ⊆ ι ⊕ ι'` is the pair of the products over
+  its sets of left and right indices, such as `s.toLeft` and `s.toRight`, or
+  `t.toLeft \ s.toLeft` and `t.toRight \ s.toRight` for `t \ s`, upgrading `Equiv.piFinsetSum`.
 -/
 
 public section
@@ -33,7 +37,7 @@ variable {X : ι → Type*} [∀ i, TopologicalSpace (X i)] (s : ∀ i, Set (X i
 
 /-- The subspace `Set.pi univ s` of a product is homeomorphic to the product of the subspaces
 `s i`. -/
-def Set.univPi : univ.pi s ≃ₜ ∀ i, s i where
+def Set.univPi : Set.pi .univ s ≃ₜ ∀ i, s i where
   toEquiv := Equiv.Set.univPi s
   continuous_toFun := continuous_pi fun i ↦
     ((continuous_apply i).comp continuous_subtypeVal).subtype_mk _
@@ -47,7 +51,7 @@ theorem Set.toEquiv_univPi : (Set.univPi s).toEquiv = Equiv.Set.univPi s :=
 
 /-- The `i`-th component of the image of a point of `Set.pi univ s` is its `i`-th coordinate. -/
 @[simp]
-theorem Set.coe_univPi_apply (z : univ.pi s) (i : ι) :
+theorem Set.coe_univPi_apply (z : Set.pi .univ s) (i : ι) :
     (Set.univPi s z i : X i) = (z : ∀ i, X i) i :=
   (rfl)
 
@@ -93,5 +97,46 @@ theorem arrowProdHomeomorphProdArrow_symm_apply (z : (∀ i, X i) × ∀ i, Y i)
   (rfl)
 
 end arrowProd
+
+section piFinsetSum
+
+variable {ι' : Type*} (X : ι ⊕ ι' → Type*) [∀ i, TopologicalSpace (X i)] (s : Finset (ι ⊕ ι'))
+  (l : Finset ι) (r : Finset ι')
+
+/-- A product over a finite `s ⊆ ι ⊕ ι'` is homeomorphic to the pair of the products over its sets
+`l` and `r` of left and right indices, such as `s.toLeft` and `s.toRight`. This is
+`Equiv.piFinsetSum` as a homeomorphism, the finite-set analogue of `Homeomorph.sumPiEquivProdPi`.
+The membership conditions are discharged by `simp` when omitted. -/
+def piFinsetSum (hl : ∀ a, .inl a ∈ s ↔ a ∈ l := by simp)
+    (hr : ∀ b, .inr b ∈ s ↔ b ∈ r := by simp) :
+    (∀ i : s, X i) ≃ₜ (∀ a : l, X (.inl a)) × ∀ b : r, X (.inr b) where
+  toEquiv := Equiv.piFinsetSum X s l r hl hr
+  continuous_toFun := (continuous_pi fun _ ↦ continuous_apply _).prodMk
+    (continuous_pi fun _ ↦ continuous_apply _)
+  continuous_invFun := continuous_pi fun ⟨i, _⟩ ↦ by
+    cases i
+    exacts [(continuous_apply _).comp (f := Prod.fst) continuous_fst,
+      (continuous_apply _).comp (f := Prod.snd) continuous_snd]
+
+variable (hl : ∀ a, .inl a ∈ s ↔ a ∈ l) (hr : ∀ b, .inr b ∈ s ↔ b ∈ r)
+
+/-- The underlying equivalence of `Homeomorph.piFinsetSum` is `Equiv.piFinsetSum`. -/
+@[simp]
+theorem toEquiv_piFinsetSum :
+    (piFinsetSum X s l r hl hr).toEquiv = Equiv.piFinsetSum X s l r hl hr :=
+  (rfl)
+
+/-- `Homeomorph.piFinsetSum` acts as `Equiv.piFinsetSum`. -/
+@[simp]
+theorem coe_piFinsetSum : ⇑(piFinsetSum X s l r hl hr) = Equiv.piFinsetSum X s l r hl hr :=
+  (rfl)
+
+/-- The inverse of `Homeomorph.piFinsetSum` acts as the inverse of `Equiv.piFinsetSum`. -/
+@[simp]
+theorem coe_piFinsetSum_symm :
+    ⇑(piFinsetSum X s l r hl hr).symm = (Equiv.piFinsetSum X s l r hl hr).symm :=
+  (rfl)
+
+end piFinsetSum
 
 end Homeomorph
