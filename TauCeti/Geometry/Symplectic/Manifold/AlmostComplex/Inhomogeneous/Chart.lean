@@ -504,9 +504,7 @@ private theorem tangentHom_mfderiv_symm_apply_one {φ φ' : OpenPartialHomeomorp
           mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) Complex.I :=
     ContinuousLinearMap.apply_eq_re_smul_one_add_im_smul_I _ _
   -- The holomorphic inverse chart intertwines multiplication by `i` with `j`.
-  have hI := (isPseudoholomorphicAt_ofComplexManifold_iff.2
-    (mdifferentiableAt_symm_of_mem_maximalAtlas hφ hτz)).mfderiv_apply_commute (1 : ℂ)
-  rw [SmoothAlmostComplexStructure.ofComplexManifold_apply (M := ℂ), smul_eq_mul, mul_one] at hI
+  have hI := mfderiv_symm_apply_I_of_mem_maximalAtlas hφ hτz
   have hj := ν.tangentHom_apply_j (φ.symm (φ'.symm.trans φ z), y)
     (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm (φ'.symm.trans φ z) (1 : ℂ))
   rw [SmoothAlmostComplexStructure.toContMDiff_apply] at hj

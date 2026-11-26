@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.PicardGroup
+import TauCeti.LinearAlgebra.TensorProduct.Cyclic
 
 /-!
 # Cancelling an invertible module against its dual
@@ -27,9 +28,9 @@ A free module of rank one, in particular a line over a field, is invertible
 (`Module.Invertible.of_finrank_eq_one`). In an invertible module every functional `ξ`
 satisfies `ξ x • y = ξ y • x`, so a vector `x` and a functional `ξ` with `ξ x = 1` are dual
 bases of `M` and of its dual: every vector `y` is `ξ y • x` and every functional `η` is
-`η x • ξ`. Consequently an element of `W ⊗ M^*` is the pure tensor of its evaluation at `x` with
-`ξ`. This is how an identity of determinant lines stated by evaluating a dual factor is turned
-into an identity of pure tensors.
+`η x • ξ`. Consequently every element of `M ⊗ N` is a pure tensor `x ⊗ n`, and an element of
+`W ⊗ M^*` is the pure tensor of its evaluation at `x` with `ξ`. This is how an identity of
+determinant lines stated by evaluating a dual factor is turned into an identity of pure tensors.
 
 Since the contraction `M^* ⊗ M → R` is surjective, there are finitely many pairs `(ξᵢ, xᵢ)`
 with `∑ ξᵢ xᵢ = 1` (`Module.Invertible.exists_finset_sum_apply_eq_one`). Together with the
@@ -48,8 +49,11 @@ of `M`, as used for the action of Frobenius on Picard groups.
 * `Module.Invertible.injective_of_ne_zero`: over a domain, a nonzero functional on an invertible
   module is injective.
 * `Module.Invertible.exists_finset_sum_apply_eq_one`: pairs `(ξᵢ, xᵢ)` with `∑ ξᵢ xᵢ = 1`.
+* `Module.Invertible.nontrivial`: an invertible module over a nontrivial ring is nontrivial.
 * `Module.Invertible.apply_smul_eq_self`, `Module.Invertible.dual_apply_smul_eq_self`: the
   expansions `ξ y • x = y` and `η x • ξ = η` for `ξ x = 1`.
+* `Module.Invertible.exists_eq_tmul_of_apply_eq_one`: every element of `M ⊗ N` is a pure tensor
+  `x ⊗ n`.
 * `Module.Invertible.rid_lTensor_eval_tmul_eq_self`: an element of `W ⊗ M^*` is the pure tensor
   of its evaluation at `x` with `ξ`.
 -/
@@ -134,6 +138,13 @@ theorem exists_finset_sum_apply_eq_one :
   refine ⟨s, ?_⟩
   simpa using congr(linearEquiv R M $hs).symm
 
+variable (R M) in
+/-- An invertible module over a nontrivial ring is nontrivial. -/
+theorem nontrivial [Nontrivial R] : Nontrivial M := by
+  by_contra hM
+  rw [not_nontrivial_iff_subsingleton] at hM
+  exact not_subsingleton R (linearEquiv R M).symm.toEquiv.subsingleton
+
 section DualPair
 
 variable {x : M} {ξ : Dual R M} (hξ : ξ x = 1)
@@ -150,6 +161,16 @@ theorem dual_apply_smul_eq_self (η : Dual R M) : η x • ξ = η := by
   ext y
   conv_rhs => rw [← apply_smul_eq_self hξ y]
   simp [mul_comm]
+
+/-- In `M ⊗ N` for an invertible module `M`, with `ξ x = 1`, every element is a pure tensor
+`x ⊗ n`: `y ⊗ n = x ⊗ ξ y • n`. -/
+theorem exists_eq_tmul_of_apply_eq_one {N : Type*} [AddCommMonoid N] [Module R N]
+    (X : M ⊗[R] N) : ∃ n, X = x ⊗ₜ n := by
+  have hs : Submodule.span R {x} = ⊤ := Submodule.eq_top_iff'.2 fun y ↦
+    Submodule.mem_span_singleton.2 ⟨ξ y, apply_smul_eq_self hξ y⟩
+  obtain ⟨n, h⟩ := TensorProduct.exists_eq_tmul_of_span_singleton_eq_top hs
+    (TensorProduct.comm R M N X)
+  exact ⟨n, (TensorProduct.comm R M N).injective (by simpa using h)⟩
 
 /-- In `W ⊗ M^*` for an invertible module `M`, with `ξ x = 1`, every element `X` is the pure
 tensor of its evaluation at `x` with `ξ`. -/

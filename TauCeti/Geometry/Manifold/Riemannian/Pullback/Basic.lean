@@ -348,6 +348,33 @@ theorem pullback_congr
   subst h
   rfl
 
+/-- Pulling back along maps that agree near `x` gives the same inner product at `x`, whatever the
+regularity and injectivity proofs supplied. This is the local form of `pullback_congr`. -/
+theorem pullback_inner_congr_of_eventuallyEq
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {f₁ f₂ : M → N}
+    {x : M} (h : f₁ =ᶠ[𝓝 x] f₂) (hf₁ : ContMDiff I J (n + 1) f₁)
+    (hinj₁ : ∀ x, Function.Injective (mfderiv I J f₁ x)) (hf₂ : ContMDiff I J (n + 1) f₂)
+    (hinj₂ : ∀ x, Function.Injective (mfderiv I J f₂ x)) :
+    (g.pullback f₁ hf₁ hinj₁).inner x = (g.pullback f₂ hf₂ hinj₂).inner x := by
+  ext v w
+  rw [pullback_inner, pullback_inner, h.mfderiv_eq, h.eq_of_nhds]
+  -- `EventuallyEq.mfderiv_eq` inserts `tangentSpaceCast`, which is the identity by definition.
+  rfl
+
+/-- The induced metrics of a family of immersions agree with `F_{t₀}^* g` outside `K` for `t` near
+`t₀` when `F_t = F_{t₀}` outside a closed set `K` for `t` near `t₀`. -/
+theorem eventually_forall_notMem_pullback_inner_eq
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) {Φ : ℝ → M → N}
+    (hΦ : ContMDiff (𝓘(ℝ).prod I) J (n + 1) (Function.uncurry Φ))
+    (hinj : ∀ t x, Function.Injective (mfderiv I J (Φ t) x)) {t₀ : ℝ} {K : Set M}
+    (hK : IsClosed K) (hΦK : ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, Φ t x = Φ t₀ x) :
+    ∀ᶠ t in 𝓝 t₀, ∀ x ∉ K, (g.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t)).inner x =
+      (g.pullback (Φ t₀) (hΦ.curry_right (x := t₀)) (hinj t₀)).inner x := by
+  filter_upwards [hΦK] with t ht x hx
+  refine g.pullback_inner_congr_of_eventuallyEq ?_ _ _ _ _
+  filter_upwards [hK.isOpen_compl.mem_nhds hx] with y hy
+  exact ht y hy
+
 /-- Pulling a Riemannian metric back along the identity leaves it unchanged. -/
 @[simp]
 theorem pullback_id

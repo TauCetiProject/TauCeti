@@ -36,6 +36,7 @@ linearisation involves the partial derivatives `σ_{k-1;i}` of `σ_k`.
 
 * `TauCeti.pderiv_esymm_succ` and `TauCeti.eval_pderiv_esymm_succ`: `∂e_{k+1}/∂X_i` is `e_k`
   with `X_i` set to zero, and its value at `μ` is `σ_{k;i}(μ)`.
+* `TauCeti.sum_pderiv_esymm_succ`: `∑_i ∂e_{k+1}/∂X_i = (n - k) e_k` in `n` variables.
 * `TauCeti.sum_mul_eval_update_zero_esymm`: Euler's identity
   `∑_i μ_i σ_{k;i}(μ) = (k + 1) σ_{k+1}(μ)`.
 
@@ -78,6 +79,18 @@ theorem eval_pderiv_esymm_succ (μ : σ → R) (i : σ) (k : ℕ) :
     funext j
     rcases eq_or_ne j i with rfl | hj <;> simp [*]
   rw [pderiv_esymm_succ, ← aeval_eq_eval, comp_aeval_apply, h, aeval_eq_eval]
+
+omit [DecidableEq σ] in
+/-- **The derivative of `e_{k+1}` in the direction `(1, …, 1)`**: in `n` variables,
+`∑_i ∂e_{k+1}/∂X_i = (n - k) e_k`. -/
+theorem sum_pderiv_esymm_succ (k : ℕ) :
+    ∑ i, pderiv i (esymm σ R (k + 1)) = ((Fintype.card σ - k : ℕ) : R) • esymm σ R k := by
+  classical
+  -- Evaluate `∑_i σ_{k;i}(μ) = (n - k) σ_k(μ)` at the variables, in the ring of polynomials.
+  have h := sum_eval_update_zero_esymm (X : σ → MvPolynomial σ R) k
+  simp_rw [pderiv_esymm_succ]
+  simp only [esymm, map_sum, map_prod, eval_X, aeval_X] at h ⊢
+  rw [h, Nat.cast_smul_eq_nsmul, nsmul_eq_mul]
 
 /-- **Euler's identity for the elementary symmetric functions**:
 `∑_i μ_i σ_{k;i}(μ) = (k + 1) σ_{k+1}(μ)`, where `σ_{k;i}(μ)` is the value of `e_k` with the

@@ -80,22 +80,25 @@ space whose dimension is the Morse index at `i s` to the normal space at `s`, al
 normal bundle carrying the closed ball of radius `√ε` onto the fibre over `s` of the negative disc
 bundle of size `ε`, for every `ε ≥ 0`. -/
 theorem exists_isClosedEmbedding_image_closedBall_eq_negativeDiscBundle_inter [T1Space S]
-    [FiberBundle P fun s ↦ i.NormalSpace s hn] (h : i.IsNondegenerateCriticalSubmanifold f)
-    (g : RiemannianMetric fun s ↦ i.NormalSpace s hn) (s : S) :
-    ∃ L : EuclideanSpace ℝ (Fin (manifoldMorseIndex I f (i s))) →ₗ[ℝ] i.NormalSpace s hn,
-      IsClosedEmbedding (fun x ↦ (⟨s, L x⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn)) ∧
+    [FiberBundle P fun s ↦ i.isImmersion.NormalSpace s hn]
+        (h : i.IsNondegenerateCriticalSubmanifold f)
+    (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn) (s : S) :
+    ∃ L : EuclideanSpace ℝ
+        (Fin (manifoldMorseIndex I f (i s))) →ₗ[ℝ] i.isImmersion.NormalSpace s hn,
+      IsClosedEmbedding (fun x ↦ (⟨s, L x⟩ : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn)) ∧
       (∀ x, -(2⁻¹ * h.normalHessian hn s (L x) (L x)) = ‖x‖ ^ 2) ∧
       ∀ ε, 0 ≤ ε →
-        (fun x ↦ (⟨s, L x⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn)) '' closedBall 0 √ε =
-          h.negativeDiscBundle hn P g ε ∩ π P (fun s ↦ i.NormalSpace s hn) ⁻¹' {s} := by
+        (fun x ↦
+            (⟨s, L x⟩ : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn)) '' closedBall 0 √ε =
+          h.negativeDiscBundle hn P g ε ∩ π P (fun s ↦ i.isImmersion.NormalSpace s hn) ⁻¹' {s} := by
   obtain ⟨e, he⟩ := h.exists_linearEquiv_negativeNormalSpace hn g s
   refine ⟨(h.negativeNormalSpace hn g s).subtype ∘ₗ e.toLinearMap,
     (FiberBundle.totalSpaceMk_isClosedEmbedding P _ s).comp
       (LinearMap.isClosedEmbedding_of_injective (LinearMap.ker_eq_bot.2
         (Subtype.val_injective.comp e.injective))), he, fun ε hε ↦ ?_⟩
-  set k := TotalSpace.mk' P (E := fun s ↦ i.NormalSpace s hn) s
+  set k := TotalSpace.mk' P (E := fun s ↦ i.isImmersion.NormalSpace s hn) s
   -- The fibre over `s` of the negative disc bundle is the image of a set of normal vectors at `s`.
-  have hfib : h.negativeDiscBundle hn P g ε ∩ π P (fun s ↦ i.NormalSpace s hn) ⁻¹' {s} =
+  have hfib : h.negativeDiscBundle hn P g ε ∩ π P (fun s ↦ i.isImmersion.NormalSpace s hn) ⁻¹' {s} =
       k '' {v | v ∈ h.negativeNormalSpace hn g s ∧ -(2⁻¹ * h.normalHessian hn s v v) ≤ ε} := by
     ext ⟨b, v⟩
     constructor
@@ -144,7 +147,7 @@ theorem exists_sublevel_union_image_closedBall_deformation [T2Space M]
     (hc : f (i s₀) = c) (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) :
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) :
     ∃ e : EuclideanSpace ℝ (Fin (manifoldMorseIndex I f (i s₀))) → M, e 0 = i s₀ ∧
       ∃ ε₀ > 0, ∀ ε ∈ Ioo 0 ε₀, IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
         criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ {i s₀} →
@@ -166,13 +169,13 @@ theorem exists_sublevel_union_image_closedBall_deformation [T2Space M]
     h.exists_isClosedEmbedding_image_closedBall_eq_negativeDiscBundle_inter hn (P := P)
       g.toRiemannianMetric s₀
   -- Over a point the negative disc bundle is its fibre over `s₀`.
-  set φ := fun x ↦ (⟨s₀, L x⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn)
+  set φ := fun x ↦ (⟨s₀, L x⟩ : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn)
   have hD (ε : ℝ) (hε : 0 ≤ ε) :
       φ '' closedBall 0 √ε = h.negativeDiscBundle hn P g.toRiemannianMetric ε := by
     rw [hLD ε hε, inter_eq_left]
     exact fun x _ ↦ Subsingleton.elim x.proj s₀
   refine ⟨fun x ↦ Θ (φ x), ?_, ε₀, hε₀, fun ε hε hcomp hcrit ↦ ?_⟩
-  · have h0 : φ 0 = zeroSection P (fun s ↦ i.NormalSpace s hn) s₀ := by
+  · have h0 : φ 0 = zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s₀ := by
       simp [φ, zeroSection]
     exact (congrArg Θ h0).trans (hΘi s₀)
   obtain ⟨hsource, hdef⟩ := hmain ε hε hcomp (hcrit.trans (singleton_subset_iff.2 ⟨s₀, rfl⟩))

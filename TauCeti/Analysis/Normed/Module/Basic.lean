@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
@@ -40,6 +41,7 @@ normed spaces:
 * `TauCeti.norm_neg_one_pow_smul`: the sign `(-1) ^ n` does not change norms.
 * `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
   `u` and `v` are scaled by the same nonzero scalar.
+* `TauCeti.norm_sq_add_norm_sq_ne_zero`: a nonzero pair `p` has `‖p.1‖² + ‖p.2‖² ≠ 0`.
 * `TauCeti.norm_smul_add_smul_sq_le`: the Cauchy–Schwarz bound
   `‖a • v + b • w‖² ≤ (a² + b²) (‖v‖² + ‖w‖²)` for real scalars.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
@@ -61,6 +63,8 @@ normed spaces:
 * `Continuous.div_norm_smul`: for a continuous real scalar action and continuous `τ` and `y`, the
   radial rescaling `p ↦ (τ p / ‖y p‖) • y p` is continuous as long as `τ` vanishes on the frontier
   of the locus where `‖y‖` vanishes.
+* `TauCeti.nonneg_of_forall_norm_eq_abs_le`: a bound on the absolute values of a real function on
+  a sphere of nonnegative radius in a nontrivial real normed space is nonnegative.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
   diameter.
 * `Units.norm_coe_zpow_smul`, `Units.exists_zpow_smul_mem_annulus`: on the nonzero vectors of a
@@ -175,6 +179,13 @@ theorem norm_smul_sq_div_add_norm_smul_sq {𝕜 E F : Type*} [NormedDivisionRing
   simp only [norm_smul, mul_pow, ← mul_add]
   exact mul_div_mul_left _ _ (pow_ne_zero 2 (norm_ne_zero_iff.2 ht))
 
+/-- A nonzero pair has nonzero squared norm `‖p.1‖² + ‖p.2‖²`. -/
+theorem norm_sq_add_norm_sq_ne_zero {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
+    {p : E × F} (hp : p ≠ 0) : ‖p.1‖ ^ 2 + ‖p.2‖ ^ 2 ≠ 0 := by
+  rcases not_and_or.1 (mt Prod.ext_iff.2 hp) with h | h
+  · exact (add_pos_of_pos_of_nonneg (pow_pos (norm_pos_iff.2 h) 2) (sq_nonneg _)).ne'
+  · exact (add_pos_of_nonneg_of_pos (sq_nonneg _) (pow_pos (norm_pos_iff.2 h) 2)).ne'
+
 /-- **Cauchy–Schwarz for a combination of two vectors.** For real scalars `a`, `b`,
 `‖a • v + b • w‖² ≤ (a² + b²) (‖v‖² + ‖w‖²)`. -/
 theorem norm_smul_add_smul_sq_le {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
@@ -273,6 +284,14 @@ theorem norm_div_norm_smul_le {F : Type*} [SeminormedAddGroup F] [SMulZeroClass 
   (norm_smul_le _ _).trans <| by
     rw [norm_div, Real.norm_of_nonneg (norm_nonneg y), div_eq_mul_inv, mul_assoc]
     exact mul_le_of_le_one_right (norm_nonneg τ) inv_mul_le_one
+
+/-- A bound on the absolute values of a real function on the sphere of radius `R ≥ 0` about the
+origin of a nontrivial real normed space is nonnegative, since that sphere is nonempty. -/
+theorem nonneg_of_forall_norm_eq_abs_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [Nontrivial E] {f : E → ℝ} {R M : ℝ} (hR : 0 ≤ R) (hbd : ∀ z, ‖z‖ = R → |f z| ≤ M) :
+    0 ≤ M := by
+  obtain ⟨z, hz⟩ := NormedSpace.sphere_nonempty (x := (0 : E)).2 hR
+  exact (abs_nonneg _).trans (hbd z (mem_sphere_zero_iff_norm.1 hz))
 
 end TauCeti
 

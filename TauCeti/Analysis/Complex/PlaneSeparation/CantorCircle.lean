@@ -29,6 +29,7 @@ satisfies `4π A = L²` (`TauCeti.four_pi_mul_volume_real_filledHull_sdiff_canto
 * `TauCeti.image_cantorCircle_Icc`: the trace of `cantorCircle` is the unit circle.
 * `TauCeti.injOn_cantorCircle`: `cantorCircle` is injective on `[0, 1)`.
 * `TauCeti.eVariationOn_cantorCircle`: `cantorCircle` has length `2π` on `[0, 1]`.
+* `TauCeti.ae_norm_deriv_cantorCircle`: `cantorCircle` has speed `π` almost everywhere.
 * `TauCeti.not_absolutelyContinuousOnInterval_cantorCircle`: `cantorCircle` is not absolutely
   continuous on `[0, 1]`.
 * `TauCeti.four_pi_mul_volume_real_filledHull_sdiff_cantorCircle`: equality in the isoperimetric
@@ -53,6 +54,20 @@ noncomputable def cantorCircle : ℝ → ℂ := circleMap 0 1 ∘ fun t ↦ 2 * 
 /-- Evaluation of `cantorCircle`. -/
 theorem cantorCircle_apply (t : ℝ) : cantorCircle t = circleMap 0 1 (2 * π * cantorReparam t) :=
   (rfl)
+
+/-- Off the Cantor set, `cantorCircle` has derivative `π i γ`. -/
+theorem hasDerivAt_cantorCircle_of_notMem {t : ℝ} (ht : t ∉ cantorSet) :
+    HasDerivAt cantorCircle (π * I * cantorCircle t) t := by
+  refine ((hasDerivAt_circleMap 0 1 _).scomp t
+    ((hasDerivAt_cantorReparam_of_notMem ht).const_mul (2 * π))).congr_deriv ?_
+  rw [cantorCircle_apply, real_smul]
+  push_cast
+  ring
+
+/-- `cantorCircle` has speed `π` at almost every point. -/
+theorem ae_norm_deriv_cantorCircle : ∀ᵐ t, ‖deriv cantorCircle t‖ = π :=
+  (measure_eq_zero_iff_ae_notMem.mp volume_cantorSet).mono fun t ht ↦ by
+    simp [(hasDerivAt_cantorCircle_of_notMem ht).deriv, cantorCircle_apply, abs_of_pos Real.pi_pos]
 
 /-- `cantorCircle` is continuous. -/
 theorem continuous_cantorCircle : Continuous cantorCircle :=
