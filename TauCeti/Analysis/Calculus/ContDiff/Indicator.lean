@@ -18,15 +18,15 @@ This is the smooth counterpart of Mathlib's `continuous_indicator`.
 
 It is how a smooth compactly supported function on the whole space whose support stays away from
 the frontier of an open set `Ω` is turned into a test function supported in `Ω`. Conversely, a
-function that is `Cⁿ` on an open set `U` and vanishes on `U` off a compact subset of `U` extends by
+function that is `Cⁿ` on an open set `U` and vanishes on `U` off a closed subset of `U` extends by
 zero to a `Cⁿ` function on the whole space.
 
 ## Main declarations
 
 * `ContDiff.indicator_of_disjoint_frontier`: the indicator of a `Cⁿ` function along a set whose
   frontier misses its support is `Cⁿ`.
-* `ContDiffOn.contDiff_indicator_of_isCompact`: the extension by zero off an open set `U` of a
-  function that is `Cⁿ` on `U` and vanishes on `U` off a compact subset of `U` is `Cⁿ`.
+* `ContDiffOn.contDiff_indicator_of_isClosed`: the extension by zero off an open set `U` of a
+  function that is `Cⁿ` on `U` and vanishes on `U` off a closed subset of `U` is `Cⁿ`.
 -/
 
 public section
@@ -60,10 +60,10 @@ theorem ContDiff.indicator_of_disjoint_frontier (hf : ContDiff 𝕜 n f)
     exact (contDiffAt_const (c := (0 : F))).congr_of_eventuallyEq <|
       (notMem_tsupport_iff_eventuallyEq.1 hx).mono fun y hy => indicator_apply_eq_zero.2 fun _ => hy
 
-/-- **Extension by zero.** If `f` is `Cⁿ` on an open set `U` and vanishes on `U` off a compact set
+/-- **Extension by zero.** If `f` is `Cⁿ` on an open set `U` and vanishes on `U` off a closed set
 `K ⊆ U`, then its extension by zero `U.indicator f` is `Cⁿ` on the whole space. -/
-theorem ContDiffOn.contDiff_indicator_of_isCompact {U K : Set E} (hf : ContDiffOn 𝕜 n f U)
-    (hU : IsOpen U) (hK : IsCompact K) (hKU : K ⊆ U) (hfK : U ∩ Function.support f ⊆ K) :
+theorem ContDiffOn.contDiff_indicator_of_isClosed {U K : Set E} (hf : ContDiffOn 𝕜 n f U)
+    (hU : IsOpen U) (hK : IsClosed K) (hKU : K ⊆ U) (hfK : U ∩ Function.support f ⊆ K) :
     ContDiff 𝕜 n (U.indicator f) := by
   refine contDiff_iff_contDiffAt.2 fun x => ?_
   by_cases hx : x ∈ U
@@ -72,5 +72,5 @@ theorem ContDiffOn.contDiff_indicator_of_isCompact {U K : Set E} (hf : ContDiffO
       mem_of_superset (hU.mem_nhds hx) fun y hy => indicator_of_mem hy f
   · -- Off `U`, hence off the closed set `K`, the indicator vanishes near `x`.
     exact (contDiffAt_const (c := (0 : F))).congr_of_eventuallyEq <|
-      mem_of_superset (hK.isClosed.isOpen_compl.mem_nhds fun h => hx (hKU h)) fun y hy =>
+      mem_of_superset (hK.isOpen_compl.mem_nhds fun h => hx (hKU h)) fun y hy =>
         indicator_apply_eq_zero.2 fun hyU => Function.notMem_support.1 fun h => hy (hfK ⟨hyU, h⟩)

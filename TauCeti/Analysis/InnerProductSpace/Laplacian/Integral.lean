@@ -22,10 +22,10 @@ integrable function has an integrable Laplacian. Dilated cutoffs turn the one-si
 bound into a global mass bound. These statements allow integrated Bochner estimates without
 assuming derivative decay at infinity.
 
-Green's first identity `∫ ⟪∇u, ∇v⟫ = -∫ v Δu` holds for a `C²` function `u` and a compactly
-supported `C¹` function `v`, with no condition on `u` at infinity. Its form for a continuous
-bilinear pairing `B` of vector-valued maps, `∫ B (Δ u) v = -∫ ∑ᵢ B (∂ᵢ u) (∂ᵢ v)`, needs `u` to be
-`C²` only near the support of `v`.
+Green's first identity `∫ ⟪∇u, ∇v⟫ = -∫ v Δu` holds for a compactly supported `C¹` function `v`
+and a function `u` that is `C²` near the support of `v`, with no condition on `u` at infinity. So
+does its form for a continuous bilinear pairing `B` of vector-valued maps,
+`∫ B (Δ u) v = -∫ ∑ᵢ B (∂ᵢ u) (∂ᵢ v)`.
 -/
 
 public section
@@ -95,11 +95,12 @@ theorem integral_bilinear_laplacian_eq_neg_integral_sum_fderiv {V W ι : Type*}
   rw [integral_bilinear_fderiv_apply_eq_neg_integral_fderiv_fderiv_apply B
     (fun x _ ↦ hu₁.contDiffAt) hv hvc (b i) (b i), neg_neg]
 
-/-- **Green's first identity against a compactly supported function.** For a `C²` function `u`
-and a compactly supported `C¹` function `v`, `∫ ⟪∇u, ∇v⟫ = -∫ v Δu`. No integrability or decay
-of `u` is needed. -/
+/-- **Green's first identity against a compactly supported function.** For a compactly supported
+`C¹` function `v` and a function `u` that is `C²` at every point of the support of `v`,
+`∫ ⟪∇u, ∇v⟫ = -∫ v Δu`. No integrability or decay of `u` is needed, and nothing is assumed about
+`u` away from the support of `v`. -/
 theorem integral_inner_gradient_eq_neg_integral_mul_laplacian {u v : E → ℝ}
-    (hu : ContDiff ℝ 2 u) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
+    (hu : ∀ x ∈ tsupport v, ContDiffAt ℝ 2 u x) (hv : ContDiff ℝ 1 v) (hvc : HasCompactSupport v) :
     ∫ x, ⟪∇ u x, ∇ v x⟫_ℝ ∂μ = -∫ x, v x * Δ u x ∂μ := by
   let b := stdOrthonormalBasis ℝ E
   have hinner (x) : ⟪∇ u x, ∇ v x⟫_ℝ = ∑ i, fderiv ℝ u x (b i) * fderiv ℝ v x (b i) := by
@@ -107,7 +108,7 @@ theorem integral_inner_gradient_eq_neg_integral_mul_laplacian {u v : E → ℝ}
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [inner_gradient_left, real_inner_comm (∇ v x), inner_gradient_left]
   have h := integral_bilinear_laplacian_eq_neg_integral_sum_fderiv (μ := μ) b
-    (ContinuousLinearMap.mul ℝ ℝ) (fun x _ ↦ hu.contDiffAt) hv hvc
+    (ContinuousLinearMap.mul ℝ ℝ) hu hv hvc
   simp only [ContinuousLinearMap.mul_apply'] at h
   simp_rw [hinner, mul_comm (v _), h, neg_neg]
 

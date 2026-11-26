@@ -71,7 +71,7 @@ private theorem exists_contDiff_hasCompactSupport_eventuallyEq
     ⟨_, subset_tsupport _ hgw, by rw [ofComplex_apply_of_im_pos hw, coe_mk]⟩
   have hGK : tsupport (upperHalfPlaneSet.indicator (g ∘ ofComplex)) ⊆ K :=
     closure_minimal (support_indicator.trans_subset hgK) hK.isClosed
-  refine ⟨_, hg.contDiff_indicator_of_isCompact isOpen_upperHalfPlaneSet hK hKU hgK,
+  refine ⟨_, hg.contDiff_indicator_of_isClosed isOpen_upperHalfPlaneSet hK.isClosed hKU hgK,
     hK.of_isClosed_subset isClosed_closure hGK, hGK, fun w hw ↦ ?_⟩
   filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds hw] with x hx using indicator_of_mem hx _
 
