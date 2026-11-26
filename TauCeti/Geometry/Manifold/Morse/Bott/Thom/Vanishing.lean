@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
 import TauCeti.AlgebraicTopology.Cohomology.Relative
+import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Ulift
 import TauCeti.Topology.VectorBundle.MayerVietoris.Basic
 
 /-!

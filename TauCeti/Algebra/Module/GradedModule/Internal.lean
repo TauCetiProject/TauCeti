@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.GradedMonoid
+public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.RingTheory.Binomial
@@ -54,6 +55,10 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.ext`: internal gradings are determined by their homogeneous pieces.
 * `TauCeti.InternalGrading.coe_decompose_ofDecomposition_piece_apply`: the decomposition carried by
   `ofDecomposition ℳ` is the given decomposition of `ℳ`, componentwise.
+* `TauCeti.InternalGrading.instGradedMonoidOfDecompositionPiece`: the pieces of
+  `ofDecomposition 𝒜` inherit the graded-monoid structure of `𝒜`.
+* `TauCeti.InternalGrading.instGradedSMulOfDecompositionSelf`: left multiplication respects the
+  grading of a graded algebra.
 * `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
   elements.
 * `TauCeti.InternalGrading.decompose_mem_of_mem_span_sigma`: the components of an element in the
@@ -61,9 +66,10 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.finite_piece_ne_bot`: a finitely generated internally graded module has
   only finitely many nonzero homogeneous pieces.
 * `TauCeti.InternalGrading.koszulTwist_apply_of_mem`,
-  `TauCeti.InternalGrading.koszulTwist_eq_negOnePow_smul`, and
-  `TauCeti.InternalGrading.koszulTwist_one_eq_negOnePow_smul`: the twist acts by the Koszul scalar
-  (or unit sign on an additive group) on each homogeneous piece.
+  `TauCeti.InternalGrading.koszulTwist_eq_negOnePow_smul`,
+  `TauCeti.InternalGrading.koszulTwist_one_eq_negOnePow_smul`, and
+  `TauCeti.InternalGrading.koszulTwist_one_smul_eq_negOnePow_smul`: the twist acts by the Koszul
+  scalar (or unit sign on an additive group or module action) on each homogeneous piece.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
 * `TauCeti.InternalGrading.koszulTwist_ofDecomposition_mul` and
   `TauCeti.InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra
@@ -152,6 +158,19 @@ noncomputable def ofDecomposition (ℳ : ι → Submodule R M) [DirectSum.Decomp
 theorem ofDecomposition_piece (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
 
+/-- The pieces of `ofDecomposition 𝒜` are those of `𝒜`, so they inherit its graded-monoid
+structure. -/
+instance instGradedMonoidOfDecompositionPiece {A : Type*} [Semiring A] [Module R A]
+    [AddMonoid ι] (𝒜 : ι → Submodule R A) [DirectSum.Decomposition 𝒜]
+    [SetLike.GradedMonoid 𝒜] : SetLike.GradedMonoid (ofDecomposition 𝒜).piece := by
+  rw [ofDecomposition_piece]
+  infer_instance
+
+/-- Reconstructing an internal grading from any decomposition of its pieces recovers it. -/
+@[simp]
+theorem ofDecomposition_piece_eq (G : InternalGrading R M ι) [DirectSum.Decomposition G.piece] :
+    ofDecomposition G.piece = G := (rfl)
+
 /-- The decomposition carried by `ofDecomposition ℳ` is the given one, on every component. The two
 instances are not definitionally equal (the one on `(ofDecomposition ℳ).piece` is chosen from
 internality), but decompositions are unique. -/
@@ -173,6 +192,16 @@ theorem isHomogeneous_ofDecomposition_piece_iff (ℳ : ι → Submodule R M)
       DirectSum.SetLike.IsHomogeneous ℳ U :=
   Iff.of_eq (congrArg (fun d ↦ @DirectSum.SetLike.IsHomogeneous _ _ _ _ _ _ _ ℳ d _ _ U)
     (Subsingleton.elim _ _))
+
+/-- Left multiplication respects the grading of a graded algebra, viewed as the internal grading
+of its regular module. This is the counterpart of `TauCeti.instGradedSMulOppositeSelf` for the
+left action; multiplication need not be unital or associative. -/
+instance instGradedSMulOfDecompositionSelf {A : Type*} [AddCommMonoid A] [Module R A] [Mul A]
+    [Add ι] (𝒜 : ι → Submodule R A) [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] :
+    SetLike.GradedSMul 𝒜 (ofDecomposition 𝒜).piece where
+  smul_mem {_ _} _ _ ha hb := by
+    rw [ofDecomposition_piece] at hb ⊢
+    exact SetLike.GradedMul.mul_mem ha hb
 
 /-- The homogeneous elements of an internally graded module span it over any scalar semiring
 acting on the total module. No compatibility between that action and the grading is needed. -/
@@ -941,6 +970,15 @@ theorem InternalGrading.koszulTwist_one_eq_negOnePow_smul (G : InternalGrading R
     {e : ℤ} (hx : x ∈ G.piece e) :
     koszulTwist G 1 x = e.negOnePow • x := by
   rw [InternalGrading.koszulTwist_eq_negOnePow_smul G hx 1, one_mul]
+
+/-- Acting by the Koszul twist of parameter one of a homogeneous element of degree `e` multiplies
+by the unit sign `(-1)^e`, even when the graded acting module `A` is only an `AddCommMonoid`. -/
+theorem InternalGrading.koszulTwist_one_smul_eq_negOnePow_smul {A : Type*} [AddCommMonoid A]
+    [Module R A] [SMul A M] [IsScalarTower R A M] (G : InternalGrading R A ℤ) {a : A} {e : ℤ}
+    (ha : a ∈ G.piece e) (y : M) :
+    koszulTwist G 1 a • y = e.negOnePow • (a • y) := by
+  rw [InternalGrading.koszulTwist_one_apply_of_mem G ha, smul_assoc,
+    Int.cast_smul_eq_zsmul R, ← Units.smul_def]
 
 end KoszulTwistNegOnePow
 

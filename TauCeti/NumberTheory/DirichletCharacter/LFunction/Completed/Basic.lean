@@ -111,6 +111,16 @@ theorem analyticAt_completedLFunction {s : ℂ} (h0 : s ≠ 0 ∨ N ≠ 1)
   filter_upwards [he0, he1] with z hz0 hz1
   exact χ.differentiableAt_completedLFunction z hz0 hz1
 
+/-- Near a point of the positive half-plane, the completed L-function is the gamma factor times
+`χ.LFunction` (Mathlib's `LFunction_eq_completed_div_gammaFactor`, solved for the completed
+function). -/
+private lemma completedLFunction_eventuallyEq_gammaFactor_mul {s : ℂ} (hs : 0 < s.re) :
+    χ.completedLFunction =ᶠ[𝓝 s] χ.gammaFactor * χ.LFunction := by
+  filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds hs] with z hz
+  dsimp only [Pi.mul_apply]
+  rw [χ.LFunction_eq_completed_div_gammaFactor z (.inl (by rintro rfl; simp at hz))]
+  exact (mul_div_cancel₀ _ (χ.gammaFactor_ne_zero_of_re_pos hz)).symm
+
 /-- On the positive half-plane away from the possible pole at `s = 1`, Mathlib's completed
 Dirichlet L-function and `χ.LFunction` have the same analytic order. No primitivity assumption is
 needed. -/
@@ -118,11 +128,7 @@ theorem analyticOrderAt_completedLFunction {s : ℂ} (hs : 0 < s.re) (hs₁ : s 
     analyticOrderAt χ.completedLFunction s = analyticOrderAt χ.LFunction s := by
   have hΓ := χ.analyticAt_gammaFactor_of_re_pos hs
   have hΓ0 := χ.gammaFactor_ne_zero_of_re_pos hs
-  have he : χ.completedLFunction =ᶠ[𝓝 s] χ.gammaFactor * χ.LFunction := by
-    filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds hs] with z hz
-    dsimp only [Pi.mul_apply]
-    rw [χ.LFunction_eq_completed_div_gammaFactor z (.inl (by rintro rfl; simp at hz))]
-    exact (mul_div_cancel₀ _ (χ.gammaFactor_ne_zero_of_re_pos hz)).symm
+  have he := χ.completedLFunction_eventuallyEq_gammaFactor_mul hs
   rw [analyticOrderAt_congr he, analyticOrderAt_mul hΓ (χ.analyticAt_LFunction hs₁),
     hΓ.analyticOrderAt_eq_zero.mpr hΓ0, zero_add]
 
@@ -132,6 +138,16 @@ assumption is needed. -/
 theorem analyticOrderNatAt_completedLFunction {s : ℂ} (hs : 0 < s.re) (hs₁ : s ≠ 1 ∨ χ ≠ 1) :
     analyticOrderNatAt χ.completedLFunction s = analyticOrderNatAt χ.LFunction s :=
   congrArg ENat.toNat (χ.analyticOrderAt_completedLFunction hs hs₁)
+
+/-- On the positive half-plane, Mathlib's completed Dirichlet L-function and `χ.LFunction` have the
+same meromorphic order. Unlike `analyticOrderAt_completedLFunction`, this includes the pole `1`
+of the principal character. No primitivity assumption is needed. -/
+theorem meromorphicOrderAt_completedLFunction {s : ℂ} (hs : 0 < s.re) :
+    meromorphicOrderAt χ.completedLFunction s = meromorphicOrderAt χ.LFunction s := by
+  rw [meromorphicOrderAt_congr
+      ((χ.completedLFunction_eventuallyEq_gammaFactor_mul hs).filter_mono nhdsWithin_le_nhds),
+    meromorphicOrderAt_mul_of_ne_zero
+    (χ.analyticAt_gammaFactor_of_re_pos hs) (χ.gammaFactor_ne_zero_of_re_pos hs)]
 
 omit [NeZero N] in
 /-- Conjugation exchanges the gamma factors of a character and its inverse. -/

@@ -77,6 +77,12 @@ theorem thomPairOverUnivIso_hom_fst_apply (v : π F E ⁻¹' univ) :
   TopCat.restrictPreimagePairMap_fst_apply (X := TopCat.of (TotalSpace F E)) (π F E)
     (zeroSectionCompl F E) univ v
 
+/-- On total spaces, the isomorphism `thomPairOverUnivIso` is the inclusion of the subtype. -/
+theorem thomPairOverUnivIso_hom_fst_eq :
+    (TopPair.Hom.fst (thomPairOverUnivIso F E).hom).hom =
+      ContinuousMap.subtypeVal (π F E ⁻¹' univ) :=
+  ContinuousMap.ext fun v ↦ thomPairOverUnivIso_hom_fst_apply F E v
+
 @[simp]
 theorem thomPairOverUnivIso_hom_snd_apply (v : ↥(π F E ⁻¹' univ ∩ zeroSectionCompl F E)) :
     TopPair.Hom.snd (thomPairOverUnivIso F E).hom v = ⟨v.val, v.property.2⟩ :=

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.ULift
 public import Mathlib.Data.Int.Cast.Lemmas
 public import Mathlib.Data.Int.Order.Units
 
@@ -14,7 +15,14 @@ public import Mathlib.Data.Int.Order.Units
 The group `ℤˣ = {±1}` has exponent two, so two signs are equal exactly when their product is `1`.
 This is the form in which an equality of two products of Hilbert symbols is checked, by expanding
 both sides into one common product of symbols. For the same reason, the image of a sign in any
-ring squares to `1`.
+ring squares to `1`. Read on the copy `ULift ℤˣ` of `ℤˣ` in any universe, the image of a sign in
+the units of a ring is a character `ULift ℤˣ →* kˣ`, used where a group acting on spaces of an
+arbitrary universe must lie in that universe.
+
+## Main definitions
+
+* `TauCeti.uliftIntUnitsSign`: the sign character `ULift ℤˣ →* kˣ` of the copy `ULift ℤˣ` of `ℤˣ`
+  in any universe.
 
 ## Main results
 
@@ -25,6 +33,7 @@ ring squares to `1`.
   `u = 1` or `2 = 0` in `R`.
 * `Int.exists_apply_eq_and_apply_eq`: two `ℤ`-valued functions that take all four pairs of signs at
   four points take every pair of signs.
+* `TauCeti.uliftIntUnitsSign_apply`: the sign character sends `g` to the image of `g.down` in `k`.
 -/
 
 public section
@@ -67,3 +76,23 @@ theorem exists_apply_eq_and_apply_eq {α : Type*} {f g : α → ℤ} {a₁ a₂ 
   · exact ⟨a₄, by simpa using h₄.1, by simpa using h₄.2⟩
 
 end Int
+
+namespace TauCeti
+
+universe u w
+
+variable (k : Type u) [Ring k]
+
+/-- **The sign character of `ULift ℤˣ`.** The character `ULift ℤˣ →* kˣ` sending `⟨u⟩` to the
+image of `u` in `k`: the sign character `ℤˣ →* kˣ` induced by `ℤ → k`, read on the copy
+`ULift ℤˣ` of `ℤˣ` in any universe through `MulEquiv.ulift`. -/
+def uliftIntUnitsSign : ULift.{w} ℤˣ →* kˣ :=
+  (Units.map (Int.castRingHom k).toMonoidHom).comp MulEquiv.ulift.toMonoidHom
+
+/-- The sign character of `ULift ℤˣ` sends `g` to the image of `g.down` in `k`. -/
+@[simp]
+theorem uliftIntUnitsSign_apply (g : ULift.{w} ℤˣ) :
+    (uliftIntUnitsSign k g : k) = ((g.down : ℤ) : k) :=
+  (rfl)
+
+end TauCeti

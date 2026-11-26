@@ -80,10 +80,8 @@ critical points lie on the submanifold, `Hₙ({f ≤ b}, {f ≤ a}) ≅ Hₙ(ν�
 any abelian category with coproducts
 (`IsNondegenerateCriticalSubmanifold.nonempty_singularHomology_sublevelPair_iso_thomPair`), and
 likewise `Hⁿ({f ≤ b}, {f ≤ a}) ≅ Hⁿ(ν⁻, ν⁻₀)` in cohomology
-(`IsNondegenerateCriticalSubmanifold.nonempty_singularCohomology_sublevelPair_iso_thomPair`), and
-a universe-lifted Thom-pair model exists without prescribing a metric
-(`IsNondegenerateCriticalSubmanifold.exists_thomPair_ulift_singularHomology_iso`): the band is
-narrowed to `f⁻¹[c - ε, c + ε]` by cutting off its regular collars
+(`IsNondegenerateCriticalSubmanifold.nonempty_singularCohomology_sublevelPair_iso_thomPair`):
+the band is narrowed to `f⁻¹[c - ε, c + ε]` by cutting off its regular collars
 (`TauCeti.singularHomologySublevelPairIsoSymmetricBand`,
 `TauCeti.singularCohomologySublevelPairIsoSymmetricBand`). For an isolated nondegenerate critical
 point of index `r` the Thom pair is `(ℝʳ, ℝʳ ∖ {0})`.
@@ -99,7 +97,7 @@ each summand being one such attachment. So `Hₙ({f ≤ b}, {f ≤ a})` is the c
 critical submanifolds on the level of the homologies `Hₙ(ν⁻ j, (ν⁻ j)₀)` of the Thom pairs of their
 negative normal bundles, for finitely many disjoint compact Morse–Bott submanifolds
 (`TauCeti.SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`) and for every
-band with a single critical value of a Morse–Bott function on a compact manifold
+compact band with a single critical value of a Morse–Bott function
 (`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`). The Thom
 isomorphism then computes each summand from the homology of the critical submanifold, shifted by its
 index.
@@ -152,14 +150,14 @@ variable {E : Type u} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
   {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
   [I.Boundaryless] [IsManifold I 2 M] (h : i.IsCriticalSubmanifold f)
-  (P : Type*) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn) {ε : ℝ}
+  (P : Type*) (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn) {ε : ℝ}
 
 /-- The **negative disc-sphere pair** of a critical submanifold, of size `ε`, relative to a fibre
 metric `g` on the normal spaces: the negative disc bundle
 `D_ε = {v ∈ ν⁻ | -½ Hessₛ (v, v) ≤ ε}` (`IsCriticalSubmanifold.negativeDiscBundle`) relative to its
 boundary `{v ∈ D_ε | -½ Hessₛ (v, v) = ε}`, the negative sphere bundle. -/
 abbrev negativeDiscSpherePair (ε : ℝ) : TopPair.{u} :=
-  TopPair.ofInclusion (X := TopCat.of (TotalSpace P fun s ↦ i.NormalSpace s hn))
+  TopPair.ofInclusion (X := TopCat.of (TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn))
     (inter_subset_left : h.negativeDiscBundle hn P g ε ∩
         {x | -(2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) = ε} ⊆ h.negativeDiscBundle hn P g ε)
 
@@ -224,7 +222,9 @@ def negativeNormalMetric (hε : 0 < ε) :
   .ofFiniteDimensional
     (fun s ↦ -(2 * ε)⁻¹ • (h.normalHessian hn s).compl₁₂ (h.negativeNormalSpace hn g s).subtype
       (h.negativeNormalSpace hn g s).subtype)
-    (fun s ↦ ⟨fun v w ↦ by simp [(h.isSymm_normalHessian hn s).eq (v : i.NormalSpace s hn) w]⟩)
+    (fun s ↦
+        ⟨fun v w ↦ by simp
+            [(h.isSymm_normalHessian hn s).eq (v : i.isImmersion.NormalSpace s hn) w]⟩)
     (fun s v hv ↦ by
       have hneg := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g v.property
         (by simpa using hv)
@@ -302,7 +302,7 @@ theorem mem_discBundle_iff_mem_negativeDiscBundle (hε : 0 < ε)
     (v : TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s) :
     letI := h.negativeNormalNorm hn g hε
     v ∈ discBundle (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↔
-      (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈
+      (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) ∈
         h.negativeDiscBundle hn P g ε := by
   let := h.negativeNormalNorm hn g hε
   exact ⟨fun hv ↦ (mem_negativeDiscBundle hn).2
@@ -317,7 +317,7 @@ theorem mem_sphereBundle_iff_mem_negativeSphereBundle (hε : 0 < ε)
     (v : TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s) :
     letI := h.negativeNormalNorm hn g hε
     v ∈ sphereBundle (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↔
-      (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈
+      (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) ∈
         h.negativeSphereBundle hn P g ε := by
   let := h.negativeNormalNorm hn g hε
   exact ⟨fun hv ↦ (mem_negativeSphereBundle hn).2
@@ -355,9 +355,11 @@ private def discSpherePairIso (hε : 0 < ε) :
       fun hv ↦ mem_gaugeSphereBundle.2
         ((h.norm_negativeNormalNorm_eq_one_iff hn g hε v.snd).2 hv.2)⟩)
     fun _ hx ↦ mem_negativeNormalSpace_of_mem_negativeDiscBundle hn hx.1
-  have hD (v : _) : (eD v : TotalSpace P fun s ↦ i.NormalSpace s hn) = ⟨v.val.proj, v.val.snd⟩ :=
+  have hD (v : _) : (eD v : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) =
+      ⟨v.val.proj, v.val.snd⟩ :=
     coe_subbundleTotalSpaceHomeomorph_apply ..
-  have hS (v : _) : (eS v : TotalSpace P fun s ↦ i.NormalSpace s hn) = ⟨v.val.proj, v.val.snd⟩ :=
+  have hS (v : _) : (eS v : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) =
+      ⟨v.val.proj, v.val.snd⟩ :=
     coe_subbundleTotalSpaceHomeomorph_apply ..
   have hD' (x : _) : (eD.symm x : TotalSpace (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g s) =
       ⟨x.val.proj, ⟨x.val.snd, mem_negativeNormalSpace_of_mem_negativeDiscBundle hn x.property⟩⟩ :=
@@ -413,7 +415,7 @@ private theorem discSpherePairIso_hom_comp_negativeDiscThomPairMap (hε : 0 < ε
   let := h.negativeNormalNorm hn g hε
   intro hρ
   let ι := fun v : TotalSpace (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g s) ↦
-    (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn)
+    (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn)
   have hι := injective_totalSpace_subbundle P (Fin r → ℝ) (h.negativeNormalSpace hn g)
   -- On both sides, the vector `x` read in the normal bundle.
   ext x : 2
@@ -479,7 +481,7 @@ variable {P} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P
 bundle. -/
 private theorem continuous_normalHessian_apply_self
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E') :
-    Continuous fun x : TotalSpace P (fun s ↦ i.NormalSpace s hn) ↦
+    Continuous fun x : TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) ↦
       h.normalHessian hn x.proj x.snd x.snd := by
   let := i.normalSpaceFiberBundle hn hdim
   -- Adapt the smoothness degrees of `contMDiff_normalHessian_apply_self` to `k = 0`.
@@ -641,7 +643,8 @@ variable {E S : Type u} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace IsCriticalSubmanifold
 
-variable (h : i.IsCriticalSubmanifold f) (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
+variable (h : i.IsCriticalSubmanifold f)
+    (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
 
 /-- The **gauge of the negative disc bundle** of size `ε` of a critical submanifold, relative to a
 fibre metric `g` on its normal spaces: the function `v ↦ √(-½ Hessₛ (v, v) / ε)` on the total space
@@ -667,7 +670,7 @@ exactly when, as a normal vector, it lies in the negative disc bundle of size `�
 theorem mem_gaugeDiscBundle_negativeNormalGauge {ε : ℝ} (hε : 0 < ε)
     {v : TotalSpace F' fun s ↦ h.negativeNormalSpace hn g s} :
     v ∈ gaugeDiscBundle (h.negativeNormalGauge hn g F' ε) ↔
-      (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈
+      (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) ∈
         h.negativeDiscBundle hn P g ε := by
   rw [mem_gaugeDiscBundle, negativeNormalGauge_apply, Real.sqrt_le_one, div_le_one hε,
     mem_negativeDiscBundle]
@@ -678,7 +681,7 @@ exactly when, as a normal vector, it lies in the negative sphere bundle of size 
 theorem mem_gaugeSphereBundle_negativeNormalGauge {ε : ℝ} (hε : 0 < ε)
     {v : TotalSpace F' fun s ↦ h.negativeNormalSpace hn g s} :
     v ∈ gaugeSphereBundle (h.negativeNormalGauge hn g F' ε) ↔
-      (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn) ∈
+      (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) ∈
         h.negativeSphereBundle hn P g ε := by
   rw [mem_gaugeSphereBundle, negativeNormalGauge_apply, Real.sqrt_eq_one, div_eq_one_iff_eq hε.ne',
     mem_negativeSphereBundle]
@@ -689,7 +692,7 @@ variable (h g) in
 the gauge of size `ε > 0` onto the negative disc bundle of size `ε`. -/
 theorem image_gaugeDiscBundle_negativeNormalGauge {ε : ℝ} (hε : 0 < ε) :
     (fun v : TotalSpace F' (fun s ↦ h.negativeNormalSpace hn g s) ↦
-        (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn)) ''
+        (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn)) ''
       gaugeDiscBundle (h.negativeNormalGauge hn g F' ε) = h.negativeDiscBundle hn P g ε := by
   ext x
   refine ⟨fun ⟨v, hv, hvx⟩ ↦ hvx ▸ (mem_gaugeDiscBundle_negativeNormalGauge hn hε).1 hv,
@@ -754,14 +757,15 @@ private theorem exists_isIso_negativeNormalGauge [T2Space M]
     (hc : ∀ s, f (i s) = c) (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P fun s ↦ i.NormalSpace s hn) M ∞,
-      (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
-      (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧
+    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I
+        (TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) M ∞,
+      (∀ s, zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s ∈ Θ.source) ∧
+      (∀ s, Θ (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) = i s) ∧
       (∀ x ∈ Θ.source, f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε (hε : 0 < ε), ε < ε₀ → IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
         criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ range i →
@@ -793,7 +797,7 @@ private theorem exists_isIso_negativeNormalGauge [T2Space M]
   -- The inclusion `ι` of the negative normal bundle into the normal bundle carries `D_ρ` onto `D`.
   set ι := fun v : TotalSpace (Fin r → ℝ)
       (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) ↦
-    (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.NormalSpace s hn)
+    (⟨v.proj, v.snd⟩ : TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn)
   have hι : IsEmbedding ι := isEmbedding_totalSpace_subbundle P _ _
   have hdisc : ι '' gaugeDiscBundle ρ = D :=
     IsCriticalSubmanifold.image_gaugeDiscBundle_negativeNormalGauge hn _ _ hε
@@ -847,14 +851,15 @@ theorem exists_isIso_singularHomologyMap_negativeNormalGauge [T2Space M]
     (hc : ∀ s, f (i s) = c) (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P fun s ↦ i.NormalSpace s hn) M ∞,
-      (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
-      (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧
+    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I
+        (TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) M ∞,
+      (∀ s, zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s ∈ Θ.source) ∧
+      (∀ s, Θ (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) = i s) ∧
       (∀ x ∈ Θ.source, f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε (hε : 0 < ε), ε < ε₀ → IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
         criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ range i →
@@ -886,14 +891,15 @@ theorem exists_isIso_singularCohomologyMap_negativeNormalGauge [T2Space M]
     (hc : ∀ s, f (i s) = c) (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I (TotalSpace P fun s ↦ i.NormalSpace s hn) M ∞,
-      (∀ s, zeroSection P (fun s ↦ i.NormalSpace s hn) s ∈ Θ.source) ∧
-      (∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) ∧
+    ∃ Θ : PartialDiffeomorph (J.prod 𝓘(ℝ, P)) I
+        (TotalSpace P fun s ↦ i.isImmersion.NormalSpace s hn) M ∞,
+      (∀ s, zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s ∈ Θ.source) ∧
+      (∀ s, Θ (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) = i s) ∧
       (∀ x ∈ Θ.source, f (Θ x) = c + 2⁻¹ * h.normalHessian hn x.proj x.snd x.snd) ∧
       ∃ ε₀ > 0, ∀ ε (hε : 0 < ε), ε < ε₀ → IsCompact (f ⁻¹' Icc (c - ε) (c + ε)) →
         criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ range i →
@@ -922,7 +928,7 @@ private theorem exists_isIso_negativeNormalGauge_of_band [T2Space M]
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
@@ -975,7 +981,7 @@ theorem nonempty_singularHomology_sublevelPair_iso_thomPair [T2Space M]
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
     {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (n : ℕ) :
     letI := i.normalSpaceFiberBundle hn hdim
@@ -1035,9 +1041,9 @@ theorem nonempty_singularHomology_union_image_negativeDiscBundle_iso_thomPair [T
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
-    {Θ : TotalSpace P (fun s ↦ i.NormalSpace s hn) → M} {c ε : ℝ} (hε : 0 < ε)
+    {Θ : TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) → M} {c ε : ℝ} (hε : 0 < ε)
     (hΘc : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
       ContinuousOn Θ (h.negativeDiscBundle hn P g.toRiemannianMetric ε))
@@ -1121,7 +1127,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair [T2Space M]
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
     {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (k : Type*) [Ring k]
     [Linear k C] (N : C) (n : ℕ) :
@@ -1163,63 +1169,11 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair [T2Space M]
       (asIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := N)
         (gaugeDiscSpherePairMap hρ) n)).symm⟩
 
-omit hn in
-/-- **Universe-lifted Thom pair of the negative normal bundle.** Under the hypotheses of
-`nonempty_singularHomology_sublevelPair_iso_thomPair`, without prescribing a fibre metric,
-there exists a real vector bundle `V → S` in the universe of `S` with model fibre
-`ULift.{u} (Fin r) → ℝ` whose Thom pair computes the relative homology across the level `c`. -/
-theorem exists_thomPair_ulift_singularHomology_iso [T2Space M]
-    [SecondCountableTopology M] [J.Boundaryless]
-    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
-    (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
-    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i) {r : ℕ}
-    (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
-    {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (n : ℕ) :
-    ∃ (V : S → Type u) (_ : ∀ s, AddCommGroup (V s)) (_ : ∀ s, Module ℝ (V s))
-        (_ : ∀ s, TopologicalSpace (V s))
-        (_ : TopologicalSpace (TotalSpace (ULift.{u} (Fin r) → ℝ) V))
-        (_ : FiberBundle (ULift.{u} (Fin r) → ℝ) V)
-        (_ : VectorBundle ℝ (ULift.{u} (Fin r) → ℝ) V),
-      Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
-        (thomPair (ULift.{u} (Fin r) → ℝ) V).singularHomology R n) := by
-  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-  have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
-  have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
-  have := h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc (hfs.of_le (by simp))
-    hc hac.le hcb.le hcompact hcrit
-  have : T2Space S := i.isEmbedding.t2Space
-  let P₀ := EuclideanSpace ℝ (Fin (Module.finrank ℝ E - Module.finrank ℝ E'))
-  have hdim : Module.finrank ℝ P₀ = Module.finrank ℝ E - Module.finrank ℝ E' :=
-    finrank_euclideanSpace_fin
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  obtain ⟨g⟩ := i.nonempty_contMDiffRiemannianMetric_normalSpace hn hdim
-  have hV := h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
-    (fun s ↦ (hfs (i s)).of_le (by simp)) hdim g hr
-  have hVu := hV.hasLocalSubbundleFrames.comp_equiv Equiv.ulift
-  let := subbundleTopology P₀ (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-  let := subbundleTopology P₀ (F' := ULift.{u} (Fin r) → ℝ)
-    (h.negativeNormalSpace hn g.toRiemannianMetric)
-  let := hVu.fiberBundle
-  have := hVu.vectorBundle
-  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
-    hcrit hdim g hr R n
-  exact ⟨fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance,
-    ⟨e ≪≫ TopPair.singularHomologyMapIso R (subbundleThomPairModelIso P₀ (Fin r → ℝ)
-      (ULift.{u} (Fin r) → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)) n⟩⟩
-
 end IsNondegenerateCriticalSubmanifold
 
 end Attachment
 
 end SmoothEmbedding
-
-/-- The rank of the universe-lifted function space `ULift.{u} (Fin r) → R` over a semiring `R`
-satisfying the strong rank condition is `r`. -/
-theorem finrank_ulift_fin_fun (R : Type*) [Semiring R] [StrongRankCondition R] (r : ℕ) :
-    Module.finrank R (ULift.{u} (Fin r) → R) = r := by
-  rw [Module.finrank_pi, Fintype.card_ulift, Fintype.card_fin]
 
 section Family
 
@@ -1233,7 +1187,7 @@ variable {E : Type u} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
   [∀ a, NormedAddCommGroup (P a)] [∀ a, NormedSpace ℝ (P a)] [∀ a, FiniteDimensional ℝ (P a)]
   {f : M → ℝ} {n : ℕ∞ω} {i : ∀ a, SmoothEmbedding (J a) I n (S a) M} (hn : n ≠ 0)
   {h : ∀ a, (i a).IsCriticalSubmanifold f}
-  {g : ∀ a, RiemannianMetric fun s ↦ (i a).NormalSpace s hn} {ε : ℝ}
+  {g : ∀ a, RiemannianMetric fun s ↦ (i a).isImmersion.NormalSpace s hn} {ε : ℝ}
   (hdim : ∀ a, Module.finrank ℝ (P a) = Module.finrank ℝ E - Module.finrank ℝ (E' a)) {r : ι → ℕ}
   (hV : ∀ a, letI := (i a).normalSpaceFiberBundle hn (hdim a)
     HasLocalSubbundleFrames (P a) (Fin (r a)) ((h a).negativeNormalSpace hn (g a)))
@@ -1299,9 +1253,9 @@ theorem isIso_biproductDesc_singularHomologyMap_of_attach_negativeDiscBundles
     {C : Type*} [Category C] [HasCoproducts.{u} C] [Abelian C] [HasFiniteBiproducts C] (R : C)
     (k : ℕ) :
     IsIso (biproduct.desc fun a ↦ TopPair.singularHomologyMap (φ a) R k) := by
-  let _ (a : ι) : FiberBundle (P a) fun s ↦ (i a).NormalSpace s hn :=
+  let _ (a : ι) : FiberBundle (P a) fun s ↦ (i a).isImmersion.NormalSpace s hn :=
     (i a).normalSpaceFiberBundle hn (hdim a)
-  have _ (a : ι) : VectorBundle ℝ (P a) fun s ↦ (i a).NormalSpace s hn :=
+  have _ (a : ι) : VectorBundle ℝ (P a) fun s ↦ (i a).isImmersion.NormalSpace s hn :=
     (i a).normalSpaceVectorBundle hn (hdim a)
   let _ (a : ι) : TopologicalSpace
       (TotalSpace (Fin (r a) → ℝ) fun s ↦ (h a).negativeNormalSpace hn (g a) s) :=
@@ -1336,9 +1290,9 @@ theorem isIso_biproductLift_singularCohomologyMap_of_attach_negativeDiscBundles
     [Linear K C] (N : C) (k : ℕ) :
     IsIso (biproduct.lift fun a ↦
       TopPair.singularCohomologyMap (R := R) (k := K) (M := N) (φ a) k) := by
-  let _ (a : ι) : FiberBundle (P a) fun s ↦ (i a).NormalSpace s hn :=
+  let _ (a : ι) : FiberBundle (P a) fun s ↦ (i a).isImmersion.NormalSpace s hn :=
     (i a).normalSpaceFiberBundle hn (hdim a)
-  have _ (a : ι) : VectorBundle ℝ (P a) fun s ↦ (i a).NormalSpace s hn :=
+  have _ (a : ι) : VectorBundle ℝ (P a) fun s ↦ (i a).isImmersion.NormalSpace s hn :=
     (i a).normalSpaceVectorBundle hn (hdim a)
   let _ (a : ι) : TopologicalSpace
       (TotalSpace (Fin (r a) → ℝ) fun s ↦ (h a).negativeNormalSpace hn (g a) s) :=
@@ -1397,16 +1351,16 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPai
     (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ ⋃ j, range (i j))
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
     {r : ι → ℕ} (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j)
     {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (n : ℕ) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
         fun s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s) :=
@@ -1414,9 +1368,9 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPai
     Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
       ∐ fun j ↦ (thomPair (Fin (r j) → ℝ)
         fun s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s).singularHomology R n) := by
-  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+  let : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
   obtain ⟨Θ, -, -, hΘf, ε₀, hε₀, hmain⟩ :=
     nonempty_singularHomology_sublevelPair_iso_sigma_negativeDiscBundle hn h hfs hc hd hac hcb
@@ -1432,33 +1386,35 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPai
 
 /-- **The relative homology across a critical level of a Morse–Bott function is the sum of the
 homologies of the Thom pairs of the negative normal bundles on that level.** Let the family
-`i j : S j → M` exhibit `f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily`) on a compact
-Hausdorff second-countable boundaryless manifold, with pieces modelled on boundaryless models and
-Morse index `r j` at every point of `i j`, and let `g j` be a smooth fibre metric on the normal
-bundle of `i j`. Give the total space of the negative normal spaces relative to `g j` the topology
-of a subspace of the normal bundle, so that they form a vector bundle `ν⁻ j` of rank `r j` over
-`S j`. Let `a < c < b` be such that `c` is the only critical value of `f` in `[a, b]`, and index
-the pieces on the level `f = c` by `{j // ∀ s, f (i j s) = c}`.
+`i j : S j → M` exhibit `f` as a Morse–Bott function (`TauCeti.IsMorseBottFamily`) on a Hausdorff
+second-countable boundaryless manifold, not necessarily compact, with pieces modelled on
+boundaryless models and Morse index `r j` at every point of `i j`, and let `g j` be a smooth fibre
+metric on the normal bundle of `i j`. Give the total space of the negative normal spaces relative to
+`g j` the topology of a subspace of the normal bundle, so that they form a vector bundle `ν⁻ j` of
+rank `r j` over `S j`. Let `a < c < b` be such that the band `f⁻¹[a, b]` is compact and `c` is its
+only critical value, and index the pieces on the level `f = c` by `{j // ∀ s, f (i j s) = c}`; they
+lie in the band, so they are finitely many and compact.
 
 Then the relative singular homology `Hₙ({f ≤ b}, {f ≤ a})` is isomorphic to the coproduct over the
 pieces on the level `c` of the relative homologies `Hₙ(ν⁻ j, (ν⁻ j)₀)` of their Thom pairs, for
 coefficients in any abelian category with coproducts and in every degree. If `c` is not a critical
 value there are no such pieces, and the coproduct is zero. -/
 theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair
-    [T2Space M] [SecondCountableTopology M] [CompactSpace M] [∀ j, (J j).Boundaryless]
+    [T2Space M] [SecondCountableTopology M] [∀ j, (J j).Boundaryless]
     (h : IsMorseBottFamily i f) {a b c : ℝ} (hac : a < c) (hcb : c < b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b))
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc a b → f x = c)
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
-    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+      letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).NormalSpace s hn)
+      ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
     {r : ι → ℕ} (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j)
     {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (n : ℕ) :
-    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
-    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).NormalSpace s hn :=
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ)
         fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
@@ -1466,21 +1422,21 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomP
       fun j ↦ subbundleTopology (P j)
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
     -- The pieces are finitely many, so the coproduct exists in the abelian category `C`.
-    haveI := h.finite
+    haveI := h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ id
     Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology R n ≅
       ∐ fun j : {j // ∀ s, f (i j s) = c} ↦ (thomPair (Fin (r j) → ℝ)
         fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
           (g j).toRiemannianMetric s).singularHomology R n) := by
-  have := h.finite
+  -- The pieces on the level `c` lie in the compact band, so they are finitely many and compact.
+  have := h.finite_subtype_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ fun _ ↦ id
   have (j : ι) : Nonempty (S j) := h.nonempty j
-  have (j : ι) : CompactSpace (S j) :=
-    (Topology.IsClosedEmbedding.mk (i j).isEmbedding (h.isClosed_range j)).compactSpace
+  have (j : {j // ∀ s, f (i j s) = c}) : CompactSpace (S j) :=
+    h.compactSpace_of_forall_apply_eq hcompact ⟨hac.le, hcb.le⟩ j.property
   refine SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair
     (ι := {j // ∀ s, f (i j s) = c}) (S := fun j ↦ S j) (P := fun j ↦ P j) (J := fun j ↦ J j)
     (i := fun j ↦ i j) hn (fun j ↦ h.isNondegenerateCriticalSubmanifold j) h.contMDiff
     (fun j ↦ j.property) (fun j k hjk ↦ h.pairwise_disjoint_range fun he ↦ hjk (Subtype.ext he))
-    hac hcb
-    (isClosed_Icc.preimage h.contMDiff.continuous).isCompact (fun x ⟨hx, hfx⟩ ↦ ?_)
+    hac hcb hcompact (fun x ⟨hx, hfx⟩ ↦ ?_)
     (fun j ↦ hdim j) (fun j ↦ g j) (fun j ↦ hr j) R n
   -- A critical point in the band has value `c`, so its piece lies on the level `c`.
   exact h.mem_iUnion_range_of_apply_eq hn hx (hcrit _ hx hfx)

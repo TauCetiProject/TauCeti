@@ -177,6 +177,15 @@ theorem isIso_singularCohomologyMap_excisionMap_of_isClosed_subset {U K : Set X}
   exact isIso_singularCohomologyMap_excisionMap R k M U Kᶜ
     (TauCeti.interior_union_interior_compl_eq_univ hU hK hKU) n
 
+/-- **Excision onto a neighbourhood is injective.** If `U` is open and contains the closed set
+`K`, a class of `Hⁿ(X, X ∖ K)` is determined by its restriction to `(U, U ∖ K)`. -/
+theorem injective_singularCohomologyMap_excisionMap_of_isClosed_subset {U K : Set X}
+    (hU : IsOpen U) (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
+    Function.Injective
+      (TopPair.singularCohomologyMap (R := R) (k := k) (M := M) (excisionMap U Kᶜ) n) := by
+  have := isIso_singularCohomologyMap_excisionMap_of_isClosed_subset R k M hU hK hKU n
+  exact ConcreteCategory.injective_of_mono_of_preservesPullback _
+
 variable (R k M) in
 /-- **Excision is compatible with shrinking the excised set.** Let `U` be open and let
 `L₂ ⊆ L₁ ⊆ U` be closed. The restriction `Hⁿ(U, U ∖ L₂) ⟶ Hⁿ(U, U ∖ L₁)` is an isomorphism
@@ -219,4 +228,64 @@ theorem isIso_singularCohomologyMap_bandCollarPairInclusion {X : Type w} [Topolo
 
 end BandCollar
 
+/-- If `A ⊆ B''`, the inclusion `(A, A ∩ B) ⟶ (X, B')` followed by the restriction
+`(X, B') ⟶ (X, B'')` factors through the subspace `B''`, so it induces zero on relative
+cohomology. -/
+lemma singularCohomologyMap_interPairMapOfSubset_comp_eq_zero {X : TopCat.{w}}
+    {A B B' B'' : Set X} (h : A ∩ B ⊆ B') (hB : Set.MapsTo (𝟙 X) B' B'') (hA : A ⊆ B'') (n : ℕ) :
+    TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (interPairMapOfSubset h ≫ ofSubsetMap (𝟙 X) hB) n = 0 :=
+  singularCohomologyMap_eq_zero_of_fac R k M _
+    (TopCat.ofHom ⟨fun x : A ↦ (⟨x.val, Set.mem_of_subset_of_mem hA x.property⟩ : B''),
+      by fun_prop⟩)
+    -- Both sides are `Subtype.val : A → X`; the `rfl` unfolds the composite of `TopCat.ofHom`s.
+    (by rw [interPairMapOfSubset_comp_ofSubsetMap_id, interPairMapOfSubset_fst, ofSubset_map]; rfl)
+    n
+
 end TopPair
+
+namespace TopCat
+
+variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] {R : C}
+  {k : Type*} [Ring k] [Linear k C] {M : C} {X : TopCat.{w}} {S T : Set X}
+
+/-- Restricting a class of `Hⁿ(X, X ∖ S)` to `Hⁿ(X, X ∖ T)`, `S ⊆ T`, and then to a pair
+`(A, A ∩ B)` with `A ∩ B ⊆ X ∖ T` is restricting it to `(A, A ∩ B)` directly. -/
+@[simp]
+lemma singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict (hST : S ⊆ T)
+    {A B : Set X} (h : A ∩ B ⊆ Tᶜ) {n : ℕ}
+    (x : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset h) n
+        (singularCohomologyComplRestrict R k M hST n x) =
+      TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset
+        (h.trans (Set.compl_subset_compl.2 hST))) n x := by
+  dsimp only [singularCohomologyComplRestrict]
+  rw [← TopPair.singularCohomologyMap_comp_apply, TopPair.interPairMapOfSubset_comp_ofSubsetMap_id]
+
+/-- Restricting a class of `Hⁿ(X, X ∖ S)` to `Hⁿ(X, X ∖ T)`, `S ⊆ T`, and then along the excision
+map `(A, A ∖ T) ⟶ (X, X ∖ T)` is restricting it to `(A, A ∖ T)` directly. This is the form of
+`TopCat.singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict` reached after
+`TopPair.interPairMapOfSubset_eq_excisionMap` rewrites the inclusion. -/
+@[simp]
+lemma singularCohomologyMap_excisionMap_singularCohomologyComplRestrict (hST : S ⊆ T)
+    {A : Set X} {n : ℕ} (x : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    TopPair.singularCohomologyMap (TopPair.excisionMap A Tᶜ) n
+        (singularCohomologyComplRestrict R k M hST n x) =
+      TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset
+        (Set.inter_subset_right.trans (Set.compl_subset_compl.2 hST))) n x := by
+  dsimp only [singularCohomologyComplRestrict]
+  rw [← TopPair.singularCohomologyMap_comp_apply, TopPair.excisionMap_comp_ofSubsetMap_id]
+
+/-- If moreover `A ⊆ X ∖ S`, that restriction vanishes: the inclusion of `(A, A ∩ B)` into
+`(X, X ∖ S)` factors through the subspace `X ∖ S`. -/
+lemma singularCohomologyMap_interPairMapOfSubset_singularCohomologyComplRestrict_eq_zero
+    (hST : S ⊆ T) {A B : Set X} (h : A ∩ B ⊆ Tᶜ) (hA : A ⊆ Sᶜ) {n : ℕ}
+    (x : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    TopPair.singularCohomologyMap (TopPair.interPairMapOfSubset h) n
+        (singularCohomologyComplRestrict R k M hST n x) = 0 := by
+  dsimp only [singularCohomologyComplRestrict]
+  rw [← TopPair.singularCohomologyMap_comp_apply,
+    TopPair.singularCohomologyMap_interPairMapOfSubset_comp_eq_zero h _ hA]
+  simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+
+end TopCat

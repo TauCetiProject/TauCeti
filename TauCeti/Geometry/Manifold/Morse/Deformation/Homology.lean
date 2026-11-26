@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+public import TauCeti.Geometry.Manifold.Morse.CriticalPoints.Band
 public import TauCeti.Geometry.Manifold.Morse.Deformation
 
 /-!

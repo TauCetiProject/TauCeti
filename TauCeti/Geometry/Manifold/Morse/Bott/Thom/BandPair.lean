@@ -59,7 +59,7 @@ theorem nonempty_singularHomology_sublevelPair_iso_thomPair_of_preconnectedSpace
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) (s₀ : S)
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) (s₀ : S)
     {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (n : ℕ) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
@@ -83,7 +83,7 @@ theorem nonempty_singularHomology_bandPair_iso_thomPair
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
     {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (n : ℕ) :
     letI := i.normalSpaceFiberBundle hn hdim
@@ -114,7 +114,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair_of_preconnectedSpa
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) (s₀ : S)
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) (s₀ : S)
     {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (k : Type*) [Ring k]
     [Linear k C] (N : C) (n : ℕ) :
     letI := i.normalSpaceFiberBundle hn hdim
@@ -140,7 +140,7 @@ theorem nonempty_singularCohomology_bandPair_iso_thomPair
     (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
-      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
     (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
     {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (k : Type*) [Ring k]
     [Linear k C] (N : C) (n : ℕ) :
