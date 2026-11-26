@@ -221,7 +221,7 @@ theorem mfderiv_flowOf_comp_reebVectorField (h : IsLiouvilleCompletion ω α W)
     (K := liouvilleRadialCoordinate Z W) (s := s)
     (by rw [Submodule.coe_neg, mextDeriv_neg, h.mextDeriv_eq, Pi.neg_apply])
     (h.range_mfderiv_flowOf_comp hZ hι hιW hιs hdim ht s)
-  rw [hpull, hα₀.reebVectorField_smul (neg_ne_zero.2 het), map_smul, comp_apply, hθ, hrx] at key
+  rw [hpull, hα₀.reebVectorField_smul, map_smul, comp_apply, hθ, hrx] at key
   -- `key : (-e^t)⁻¹ • d(ψ_t ∘ ι)(R) = (e^t)⁻¹ • X_r`.
   calc mfderiv J I (flowOf Z t ∘ ι) s ((SmoothForm.mpullback ι hι α).reebVectorField s)
       = (-Real.exp t) • ((-Real.exp t)⁻¹ •
