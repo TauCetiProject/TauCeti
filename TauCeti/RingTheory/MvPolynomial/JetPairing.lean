@@ -118,26 +118,24 @@ the functional's values on monomials by their multi-index factorials. -/
 noncomputable def jetPairingDualEquiv
     (h : ∀ d : σ →₀ ℕ, IsUnit (d.prod fun _ n ↦ (n.factorial : R))) :
     MvPowerSeries σ R ≃ₗ[R] (MvPolynomial σ R →ₗ[R] R) :=
-  LinearEquiv.ofBijective jetPairing.flip (by
-    refine ⟨?_, ?_⟩
-    · intro f g hfg
-      ext d
-      have hd := LinearMap.congr_fun hfg (monomial d 1)
-      simp only [LinearMap.flip_apply, jetPairing_monomial, one_mul] at hd
-      exact (h d).mul_left_cancel hd
-    · intro L
-      let f : MvPowerSeries σ R := fun d ↦ (↑(h d).unit⁻¹ : R) * L (monomial d 1)
-      refine ⟨f, (basisMonomials σ R).ext fun d ↦ ?_⟩
-      rw [coe_basisMonomials, LinearMap.flip_apply, jetPairing_monomial,
-        MvPowerSeries.coeff_apply]
-      simp only [f, one_mul, ← mul_assoc, (h d).mul_val_inv])
+  (LinearEquiv.piCongrRight fun d ↦ LinearEquiv.smulOfUnit (M := R) (h d).unit).trans
+    ((basisMonomials σ R).constr R)
 
 /-- Evaluating the functional represented by a series is the jet pairing. -/
 @[simp]
 theorem jetPairingDualEquiv_apply
     (h : ∀ d : σ →₀ ℕ, IsUnit (d.prod fun _ n ↦ (n.factorial : R)))
     (f : MvPowerSeries σ R) (p : MvPolynomial σ R) :
-    jetPairingDualEquiv h f p = jetPairing p f := (rfl)
+    jetPairingDualEquiv h f p = jetPairing p f := by
+  have heq : jetPairingDualEquiv h f = jetPairing.flip f := by
+    apply (basisMonomials σ R).ext
+    intro d
+    rw [LinearMap.flip_apply, jetPairing_basisMonomials, MvPowerSeries.coeff_apply]
+    -- On the underlying coefficient function, the diagonal equivalence multiplies by the units.
+    change (basisMonomials σ R).constr R (fun i ↦ (↑(h i).unit : R) * f i)
+      (basisMonomials σ R d) = _
+    rw [Module.Basis.constr_basis, (h d).unit_spec]
+  exact LinearMap.congr_fun heq p
 
 /-- The series representing a functional has its monomial values divided by the factorials. -/
 @[simp]
@@ -146,9 +144,10 @@ theorem coeff_jetPairingDualEquiv_symm
     (L : MvPolynomial σ R →ₗ[R] R) (d : σ →₀ ℕ) :
     MvPowerSeries.coeff d ((jetPairingDualEquiv h).symm L) =
       ↑(h d).unit⁻¹ * L (monomial d 1) := by
-  have hd := LinearMap.congr_fun ((jetPairingDualEquiv h).apply_symm_apply L) (monomial d 1)
-  simp only [jetPairingDualEquiv_apply, jetPairing_monomial, one_mul] at hd
-  rw [← hd, ← mul_assoc, (h d).val_inv_mul, one_mul]
+  rw [MvPowerSeries.coeff_apply]
+  -- The inverse coordinatewise equivalence divides the evaluated basis coefficient by its unit.
+  change ↑(h d).unit⁻¹ * (Module.Basis.constr (basisMonomials σ R) R).symm L d = _
+  rw [Module.Basis.constr_symm_apply, coe_basisMonomials]
 
 end CommSemiring
 
