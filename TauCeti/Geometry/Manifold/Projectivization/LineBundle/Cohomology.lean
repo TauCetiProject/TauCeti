@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Cech
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
+import TauCeti.Topology.Separation.Hausdorff
 import TauCeti.Topology.Sheaves.Cech.Functoriality
 
 /-!
@@ -102,13 +103,6 @@ private theorem contMDiff_mk_iff {W : Opens (ℙ ℂ (Fin 2 → ℂ))}
       (f := fun x ↦ TotalSpace.mk' ℂ (E := (twistCore (𝕜 := ℂ) (n := 1) k).Fiber) x (t x))).2
         ((h x x.property).contMDiffAt (W.isOpen.mem_nhds x.property))⟩
 
-/-- Two functions continuous at a non-isolated point `x` that agree on a punctured neighbourhood of
-`x` agree at `x`. -/
-private theorem eq_of_continuousAt_of_eventuallyEq_nhdsNE {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] [T2Space Y] {f g : X → Y} {x : X} [(𝓝[≠] x).NeBot]
-    (hf : ContinuousAt f x) (hg : ContinuousAt g x) (h : f =ᶠ[𝓝[≠] x] g) : f x = g x :=
-  ((hf.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hg).1 h).self_of_nhds
-
 /-! ### The projective line and the Riemann sphere -/
 
 /-- Near `∞`, the points of the Riemann sphere are finite and nonzero. -/
@@ -190,7 +184,7 @@ private theorem lowerCoord_apply {g : OnePoint ℂ → ℂ} {y : OnePoint ℂ}
     (hg : IsDivisorSectionAt (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) g y)
     (hy : y ≠ ((0 : ℂ) : OnePoint ℂ)) (hy' : y ≠ (∞ : OnePoint ℂ)) (hc : ContinuousAt g y) :
     lowerCoord k g y = invChart y ^ k * g y := by
-  refine eq_of_continuousAt_of_eventuallyEq_nhdsNE (contMDiffAt_lowerCoord k hg hy).continuousAt
+  refine ContinuousAt.eq_of_eventuallyEq_nhdsNE (contMDiffAt_lowerCoord k hg hy).continuousAt
     (ContinuousAt.mul ?_ hc) (lowerCoord_eventuallyEq k hg hy)
   have hs : y ∈ (invChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ).source := by
     simpa [invChart_source] using hy
@@ -201,7 +195,7 @@ private theorem lowerCoord_add {g₁ g₂ : OnePoint ℂ → ℂ} {y : OnePoint 
     (h₂ : IsDivisorSectionAt (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) g₂ y)
     (hy : y ≠ ((0 : ℂ) : OnePoint ℂ)) :
     lowerCoord k (g₁ + g₂) y = lowerCoord k g₁ y + lowerCoord k g₂ y := by
-  refine eq_of_continuousAt_of_eventuallyEq_nhdsNE
+  refine ContinuousAt.eq_of_eventuallyEq_nhdsNE
     (contMDiffAt_lowerCoord k (h₁.add h₂) hy).continuousAt
     ((contMDiffAt_lowerCoord k h₁ hy).continuousAt.add
       (contMDiffAt_lowerCoord k h₂ hy).continuousAt) ?_
@@ -213,7 +207,7 @@ private theorem lowerCoord_smul {g : OnePoint ℂ → ℂ} {y : OnePoint ℂ}
     (hg : IsDivisorSectionAt (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) g y)
     (hy : y ≠ ((0 : ℂ) : OnePoint ℂ)) (c : ℂ) :
     lowerCoord k (c • g) y = c * lowerCoord k g y := by
-  refine eq_of_continuousAt_of_eventuallyEq_nhdsNE
+  refine ContinuousAt.eq_of_eventuallyEq_nhdsNE
     (contMDiffAt_lowerCoord k (hg.const_smul c) hy).continuousAt
     (continuousAt_const.mul (contMDiffAt_lowerCoord k hg hy).continuousAt) ?_
   filter_upwards [lowerCoord_eventuallyEq k (hg.const_smul c) hy,
@@ -486,7 +480,7 @@ private theorem compLinearMap_injective (U : Opens (OnePoint ℂ)) :
         (by rw [zsmul_ofPoint_apply_infty]; exact hk)
     · have hc := ((isDivisorSectionAt_extend g'.property ⟨_, hy⟩).contMDiffAt
         (by rw [zsmul_ofPoint_apply_infty]; omega)).continuousAt
-      refine eq_of_continuousAt_of_eventuallyEq_nhdsNE hc (continuousAt_const (y := (0 : ℂ))) ?_
+      refine ContinuousAt.eq_of_eventuallyEq_nhdsNE hc (continuousAt_const (y := (0 : ℂ))) ?_
       filter_upwards [eventually_ne_infty_and_ne_zero,
         nhdsWithin_le_nhds (U.isOpen.mem_nhds hy)] with z hz hzU
       exact hfin z hzU hz.1
@@ -581,7 +575,7 @@ private theorem lowerCoord_coord_one_infty
     lowerCoord k (Subtype.val.extend g.val 0) (∞ : OnePoint ℂ) =
       coord k 0 t (equivProjectivization ℂ (∞ : OnePoint ℂ)) := by
   have hdiv := isDivisorSectionAt_extend g.property ⟨_, hUi⟩
-  refine eq_of_continuousAt_of_eventuallyEq_nhdsNE
+  refine ContinuousAt.eq_of_eventuallyEq_nhdsNE
     (contMDiffAt_lowerCoord k hdiv (infty_ne_coe 0)).continuousAt
     (contMDiffAt_coord_comp hs 0 hUi ((equivProjectivization_mem_affineOpen_zero_iff _).2
       (infty_ne_coe 0))).continuousAt ?_
