@@ -18,11 +18,13 @@ For Hölder conjugate exponents `p` and `q` with `q < ∞`, the continuous dual 
 The pairing is the bilinear series `∑' i, φ i (x i)`, also over complex scalars.
 Neither completeness of the fibres nor countability of the index type is needed.
 
-The coordinate estimates reuse the scalar duality estimates in
-`TauCeti.Analysis.Normed.Lp.Dual`: test a functional along coordinatewise scalar
-multiples of unit-ball vectors, then approximate the norms of the coordinate
-functionals. The forward map is Mathlib's `lp.dualPairing`, and reconstruction
-uses Mathlib's `lp.hasSum_single`.
+The equivalence is `lp.strongDualEquiv`, whose forward map is Mathlib's `lp.dualPairing`.
+Evaluate it with `lp.strongDualEquiv_apply`, or with `lp.strongDualEquiv_apply_single` on
+coordinate vectors; recover the representing family of a functional with
+`lp.strongDualEquiv_symm_apply`, which restricts it to each summand. The norm identity
+`ContinuousLinearMap.norm_rpow_eq_tsum_norm_comp_lp_single_rpow` computes the norm of a
+functional from these restrictions. The coordinate estimates build on the scalar duality
+estimates in `TauCeti.Analysis.Normed.Lp.Dual`.
 
 ## References
 
@@ -43,6 +45,15 @@ variable {𝕜 ι : Type*} [RCLike 𝕜] {E : ι → Type*}
 namespace ContinuousLinearMap
 
 variable [DecidableEq ι] {p q : ℝ≥0∞} [Fact (1 ≤ q)] [p.HolderConjugate q]
+
+/-- Restricting a continuous linear map on a dependent ℓ^q sum to a coordinate summand
+does not increase its norm. -/
+theorem norm_comp_lp_single_le {F : Type*} [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (f : lp E q →L[𝕜] F) (i : ι) :
+    ‖f.comp (lp.singleContinuousLinearMap 𝕜 E q i)‖ ≤ ‖f‖ := by
+  refine (f.comp _).opNorm_le_bound (norm_nonneg f) fun x ↦ ?_
+  simpa [lp.norm_single (zero_lt_one.trans_le (Fact.out : 1 ≤ q))] using
+    f.le_opNorm (lp.single q i x)
 
 /-- The finite sums of `p`-th powers of the norms of a functional's coordinate
 restrictions are bounded by the `p`-th power of its norm. -/
@@ -81,10 +92,7 @@ family, for conjugate exponents. -/
 theorem memℓp_comp_lp_single (f : StrongDual 𝕜 (lp E q)) :
     Memℓp (fun i ↦ f.comp (lp.singleContinuousLinearMap 𝕜 E q i)) p := by
   rcases eq_or_ne p ∞ with rfl | hp
-  · refine memℓp_infty ⟨‖f‖, Set.forall_mem_range.mpr fun i ↦ ?_⟩
-    refine (f.comp _).opNorm_le_bound (norm_nonneg f) fun x ↦ ?_
-    simpa [lp.norm_single (zero_lt_one.trans_le (Fact.out : 1 ≤ q))] using
-      f.le_opNorm (lp.single q i x)
+  · exact memℓp_infty ⟨‖f‖, Set.forall_mem_range.mpr f.norm_comp_lp_single_le⟩
   · exact memℓp_gen' (f.sum_norm_comp_lp_single_rpow_le hp)
 
 /-- An ℓᵖ family equal to the coordinate restrictions of a functional on a dependent
@@ -93,11 +101,7 @@ theorem norm_le_opNorm_of_forall_eq_comp_lp_single (f : StrongDual 𝕜 (lp E q)
     (a : lp (fun i ↦ StrongDual 𝕜 (E i)) p)
     (ha : ∀ i, a i = f.comp (lp.singleContinuousLinearMap 𝕜 E q i)) : ‖a‖ ≤ ‖f‖ := by
   rcases eq_or_ne p ∞ with rfl | hp
-  · refine lp.norm_le_of_forall_le (norm_nonneg f) fun i ↦ ?_
-    rw [ha i]
-    refine (f.comp _).opNorm_le_bound (norm_nonneg f) fun x ↦ ?_
-    simpa [lp.norm_single (zero_lt_one.trans_le (Fact.out : 1 ≤ q))] using
-      f.le_opNorm (lp.single q i x)
+  · exact lp.norm_le_of_forall_le (norm_nonneg f) fun i ↦ ha i ▸ f.norm_comp_lp_single_le i
   · refine lp.norm_le_of_forall_sum_le
       (ENNReal.toReal_pos (ENNReal.HolderConjugate.ne_zero p q) hp) (norm_nonneg f) ?_
     simpa only [ha] using f.sum_norm_comp_lp_single_rpow_le hp
@@ -108,6 +112,15 @@ namespace lp
 
 variable {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
 
+omit [Fact (1 ≤ q)] in
+/-- Summing coordinate functionals over a coordinate vector evaluates the functional at
+that coordinate. -/
+private theorem tsum_apply_single [DecidableEq ι] (a : ∀ i, StrongDual 𝕜 (E i)) (i : ι)
+    (x : E i) : ∑' j, a j (lp.single q i x j) = a i x := by
+  simp only [lp.single_apply]
+  simp_rw [Pi.apply_single (fun j ↦ a j) (fun j ↦ (a j).map_zero)]
+  exact tsum_pi_single _ _
+
 variable (𝕜 E p q) in
 /-- The duality between the ℓᵖ sum of continuous duals and the continuous dual of
 the dependent ℓ^q sum, for conjugate exponents with `q < ∞`.
@@ -115,29 +128,34 @@ At `q = 1`, its domain consists of all uniformly bounded families of functionals
 def strongDualEquiv (hq : q ≠ ∞) :
     lp (fun i ↦ StrongDual 𝕜 (E i)) p ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp E q) := by
   classical
-  have hid i : ‖ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 (E i))‖ ≤ ((1 : NNReal) : ℝ) :=
-    ContinuousLinearMap.norm_id_le
+  -- `hid` and the surjectivity proof below carry their stated types, so that
+  -- `strongDualEquiv_apply` can unfold this definition with `simp`.
+  have hid i : ‖ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 (E i))‖ ≤ ((1 : NNReal) : ℝ) := by
+    simpa only [NNReal.coe_one] using ContinuousLinearMap.norm_id_le
   let P := dualPairing p q (fun i ↦ ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 (E i))) hid
   have hP (a : lp (fun i ↦ StrongDual 𝕜 (E i)) p) i :
       (P a).comp (singleContinuousLinearMap 𝕜 E q i) = a i := by
     ext x
     simp only [ContinuousLinearMap.comp_apply, singleContinuousLinearMap_apply,
-      P, dualPairing_apply, ContinuousLinearMap.id_apply, lp.single_apply]
-    simp_rw [Pi.apply_single (fun j ↦ a j) (fun j ↦ (a j).map_zero)]
-    exact tsum_pi_single _ _
+      P, dualPairing_apply, ContinuousLinearMap.id_apply]
+    exact tsum_apply_single (fun j ↦ a j) i x
   have hnorm a : ‖P a‖ = ‖a‖ := by
     refine le_antisymm ?_
       ((P a).norm_le_opNorm_of_forall_eq_comp_lp_single a fun i ↦ (hP a i).symm)
     exact (P.le_opNorm a).trans (mul_le_of_le_one_left (norm_nonneg a)
       (norm_dualPairing _ hid))
-  refine LinearIsometryEquiv.ofSurjective { P.toLinearMap with norm_map' := hnorm } fun f ↦ ?_
-  refine ⟨⟨fun i ↦ f.comp (singleContinuousLinearMap 𝕜 E q i), f.memℓp_comp_lp_single⟩, ?_⟩
+  refine LinearIsometryEquiv.ofSurjective { P.toLinearMap with norm_map' := hnorm }
+    (Function.RightInverse.surjective
+      (g := fun f ↦ ⟨fun i ↦ f.comp (singleContinuousLinearMap 𝕜 E q i),
+        f.memℓp_comp_lp_single⟩) fun f ↦ ?_)
   exact ext_continuousLinearMap hq fun i ↦ hP _ i
 
 /-- The duality equivalence acts by the bilinear series of coordinate evaluations. -/
 theorem strongDualEquiv_apply (hq : q ≠ ∞)
     (a : lp (fun i ↦ StrongDual 𝕜 (E i)) p) (x : lp E q) :
-    strongDualEquiv 𝕜 E p q hq a x = ∑' i, a i (x i) := (rfl)
+    strongDualEquiv 𝕜 E p q hq a x = ∑' i, a i (x i) := by
+  simp only [strongDualEquiv, LinearIsometryEquiv.coe_ofSurjective, LinearIsometry.coe_mk,
+    ContinuousLinearMap.coe_coe, dualPairing_apply, ContinuousLinearMap.id_apply]
 
 /-- For scalar fibres, the dependent duality agrees with scalar sequence duality
 under the coordinatewise multiplication maps. -/
@@ -156,9 +174,8 @@ variable [DecidableEq ι]
 theorem strongDualEquiv_apply_single (hq : q ≠ ∞)
     (a : lp (fun i ↦ StrongDual 𝕜 (E i)) p) (i : ι) (x : E i) :
     strongDualEquiv 𝕜 E p q hq a (lp.single q i x) = a i x := by
-  simp only [strongDualEquiv_apply, lp.single_apply]
-  simp_rw [Pi.apply_single (fun j ↦ a j) (fun j ↦ (a j).map_zero)]
-  exact tsum_pi_single _ _
+  rw [strongDualEquiv_apply]
+  exact tsum_apply_single (fun j ↦ a j) i x
 
 /-- The inverse duality equivalence restricts a functional to a coordinate summand. -/
 @[simp]
@@ -169,7 +186,7 @@ theorem strongDualEquiv_symm_apply (hq : q ≠ ∞) (f : StrongDual 𝕜 (lp E q
   have h := congrArg (fun g : StrongDual 𝕜 (lp E q) ↦ g (lp.single q i x))
     ((strongDualEquiv 𝕜 E p q hq).apply_symm_apply f)
   rw [strongDualEquiv_apply_single] at h
-  exact h
+  simpa only [ContinuousLinearMap.comp_apply, singleContinuousLinearMap_apply] using h
 
 end lp
 
