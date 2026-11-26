@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Complexification
 
 /-!
 # Compatible Hermitian forms on complexified Clifford modules
@@ -14,10 +14,13 @@ public import TauCeti.Analysis.InnerProductSpace.SesquilinearForm
 On the complexification of a real Clifford algebra, the adjoint relevant to Hermitian
 representations is `CliffordAlgebra.conjStar`, not Mathlib's complex-linear Clifford `star`.
 Skew-adjointness on the real vectors is equivalent to compatibility with this conjugate-linear
-adjoint on the whole algebra. For a real Clifford action `ρ`, this says that its complex-linear
-extension `CliffordAlgebra.liftBaseChange ℂ Q ρ` is a `*`-representation exactly when Clifford
-multiplication by every real vector is skew-adjoint
-(`CliffordAlgebra.adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff`).
+adjoint on the whole algebra (`CliffordAlgebra.adjoint_map_eq_map_conjStar_iff`). For a real
+Clifford action `ρ`, this says that its complex-linear extension
+`CliffordAlgebra.liftBaseChange ℂ Q ρ` is a `*`-representation for `conjStar` exactly when
+Clifford multiplication by every real vector is skew-Hermitian
+(`CliffordAlgebra.inner_liftBaseChange_eq_conjStar_iff`, in arbitrary dimension, and
+`CliffordAlgebra.adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff`, in adjoint form on a
+finite-dimensional module).
 
 If the action surjects onto the full complex endomorphism algebra, every positive definite
 compatible Hermitian form is a unique positive real multiple of any given compatible inner
@@ -133,6 +136,21 @@ end Hermitian
 
 section RealAction
 
+/-- **Criterion for `conjStar`-compatibility of `liftBaseChange`** (in arbitrary dimension): the
+complex-linear extension `liftBaseChange ℂ Q ρ` satisfies
+`⟪ρ_ℂ a x, y⟫_ℂ = ⟪x, ρ_ℂ (conjStar Q a) y⟫_ℂ` for all `a` if and only if every real vector `v : V`
+acts skew-Hermitianly under `ρ`. -/
+theorem inner_liftBaseChange_eq_conjStar_iff [SeminormedAddCommGroup S] [InnerProductSpace ℂ S]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
+    (∀ (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S),
+        inner ℂ (liftBaseChange ℂ Q ρ a x) y =
+          inner ℂ x (liftBaseChange ℂ Q ρ (conjStar Q a) y)) ↔
+      ∀ (v : V) (x y : S), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y) := by
+  refine ⟨fun h v x y ↦ ?_, fun h a x y ↦ ?_⟩
+  · simpa using h (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) x y
+  · exact sesqForm_map_eq_map_conjStar (liftBaseChange ℂ Q ρ) (innerₛₗ ℂ)
+      (fun v x y ↦ by simpa using h v x y) a x y
+
 variable [NormedAddCommGroup S] [InnerProductSpace ℂ S] [FiniteDimensional ℂ S]
   {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S}
 
@@ -168,17 +186,11 @@ theorem existsUnique_pos_mul_of_surjective [Nontrivial S] (hsurj : Function.Surj
         -H x (ρ (ι (Q.baseChange ℂ) (1 ⊗ₜ v)) y)) :
     ∃! r : ℝ, 0 < r ∧ ∀ x y, H x y = (r : ℂ) * H₀ x y := by
   -- Make `H₀` the inner product of `S`.
-  let core : InnerProductSpace.Core ℂ S :=
-    { inner x y := H₀ x y
-      conj_inner_symm x y := hH₀.isSymm.eq y x
-      re_inner_nonneg x := (RCLike.nonneg_iff.mp (hH₀.isNonneg.nonneg x)).1
-      add_left x y z := by simp
-      smul_left x y r := by simp
-      definite x hx := by_contra fun h ↦ hdef₀ x h hx }
-  let := core.toNormedAddCommGroup
-  let := InnerProductSpace.ofCore core.toCore
-  -- `InnerProductSpace.ofCore` takes its inner product from the core, which is `H₀`.
-  have hinner (x y : S) : inner ℂ x y = H₀ x y := rfl
+  have hre₀ : ∀ x, x ≠ 0 → 0 < RCLike.re (H₀ x x) := fun x hx ↦
+    (RCLike.pos_iff.mp ((hH₀.isNonneg.nonneg x).lt_of_ne' (hdef₀ x hx))).1
+  let := (hH₀.isSymm.innerProductCore hre₀).toNormedAddCommGroup
+  let := InnerProductSpace.ofCore (hH₀.isSymm.innerProductCore hre₀).toCore
+  have hinner := hH₀.isSymm.inner_ofCore_innerProductCore hre₀
   simp_rw [← hinner]
   refine existsUnique_pos_mul_inner_of_surjective ρ hsurj (fun v ↦ ?_) H hpos hdef hH
   refine ((LinearMap.eq_adjoint_iff _ _).mpr fun x y ↦ ?_).symm

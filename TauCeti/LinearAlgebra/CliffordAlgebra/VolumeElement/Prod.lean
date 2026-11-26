@@ -6,13 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
-public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Complex
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.RealAction
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Involution
-public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
-import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Neg
 
 /-!
@@ -32,6 +29,12 @@ makes `E ⊗ F` a module over the complexified Clifford algebra of `V ⊕ W`
 (`CliffordAlgebra.complexProdTensor`), on which
 
   `c(v, 0) = c_V(v) ⊗ 1`,  `c(0, w) = Γ_V ⊗ c_W(w)`.
+
+For real Clifford actions `ρ₁` and `ρ₂` on complex modules `E` and `F`,
+`CliffordAlgebra.liftBaseChange_cliffordComplexProdLp_eq_complexProdTensor` identifies the
+complexification of `AlgHom.cliffordComplexProdLp` (from
+`TauCeti/LinearAlgebra/CliffordAlgebra/Prod/Complex.lean`, graded by the chirality of `V₁`) with
+`CliffordAlgebra.complexProdTensor`.
 
 The vectors are moved from `ℂ ⊗ (V ⊕ W)` to `(ℂ ⊗ V) × (ℂ ⊗ W)` by the quadratic isometry
 `QuadraticMap.IsometryEquiv.baseChangeProd` of `WithLp.linearEquiv`.
@@ -74,6 +77,8 @@ zero-dimensional `V` with its negative orientation, which has no positively orie
 ## Main results
 
 * `CliffordAlgebra.complexProdTensor_ι_one_tmul_toLp`: `c(v, w) = c_V(v) ⊗ 1 + Γ_V ⊗ c_W(w)`.
+* `CliffordAlgebra.liftBaseChange_cliffordComplexProdLp_eq_complexProdTensor`: complexifying
+  `AlgHom.cliffordComplexProdLp` graded by chirality yields `CliffordAlgebra.complexProdTensor`.
 * `CliffordAlgebra.complexProdTensor_complexVolume`: for `m` even,
   `Γ_(V ⊕ W) = Γ_V ⊗ Γ_W` for the ordered product orientation.
 * `CliffordAlgebra.complexProdTensor_complexVolume_of_odd`: for `m` odd,
@@ -395,5 +400,36 @@ theorem coe_complexProdTensorEigenspaceEquiv_symm_apply (hQ₂ : ∀ w, Q₂ w =
   rw [complexProdTensorEigenspaceEquiv, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
     LinearEquiv.ofEq_symm, LinearEquiv.coe_ofEq_apply,
     Module.End.coe_eigenspaceTensorMapEquiv_symm_apply]
+
+end CliffordAlgebra
+
+/-! ### Compatibility of `AlgHom.cliffordComplexProdLp` with `CliffordAlgebra.complexProdTensor` -/
+
+namespace CliffordAlgebra
+
+/-- **Compatibility with `CliffordAlgebra.complexProdTensor`**: when the first factor is graded by
+its chirality operator `liftBaseChange ℂ Q₁ ρ₁ (complexVolume Q₁ o₁)`, complexifying
+`AlgHom.cliffordComplexProdLp` produces `CliffordAlgebra.complexProdTensor`. -/
+theorem liftBaseChange_cliffordComplexProdLp_eq_complexProdTensor
+    {V₁ V₂ E F : Type*} [NormedAddCommGroup V₁] [InnerProductSpace ℝ V₁] [FiniteDimensional ℝ V₁]
+    [NormedAddCommGroup V₂] [InnerProductSpace ℝ V₂]
+    {Q₁ : QuadraticForm ℝ V₁} {Q₂ : QuadraticForm ℝ V₂}
+    {Q : QuadraticForm ℝ (WithLp 2 (V₁ × V₂))}
+    (hQ : ∀ x, Q x = Q₁ (WithLp.ofLp x).1 + Q₂ (WithLp.ofLp x).2)
+    {n : ℕ} [Fact (finrank ℝ V₁ = n)] (o₁ : Orientation ℝ V₁ (Fin n))
+    (hQ₁ : ∀ v, Q₁ v = -‖v‖ ^ 2) (hn : Even n)
+    [AddCommGroup E] [Module ℂ E] [AddCommGroup F] [Module ℂ F]
+    (ρ₁ : CliffordAlgebra Q₁ →ₐ[ℝ] Module.End ℂ E)
+    (ρ₂ : CliffordAlgebra Q₂ →ₐ[ℝ] Module.End ℂ F) :
+    liftBaseChange ℂ Q
+        (ρ₁.cliffordComplexProdLp hQ (liftBaseChange ℂ Q₁ ρ₁ (complexVolume Q₁ o₁))
+          (map_complexVolume_mul_self o₁ hQ₁ (liftBaseChange ℂ Q₁ ρ₁))
+          (liftBaseChange_complexVolume_mul_map_ι o₁ ρ₁ hn) ρ₂) =
+      complexProdTensor hQ o₁ hQ₁ hn (liftBaseChange ℂ Q₁ ρ₁) (liftBaseChange ℂ Q₂ ρ₂) := by
+  symm
+  rw [eq_liftBaseChange_iff_ι]
+  intro x
+  obtain ⟨⟨v, w⟩, rfl⟩ := WithLp.toLp_surjective 2 x
+  simp
 
 end CliffordAlgebra

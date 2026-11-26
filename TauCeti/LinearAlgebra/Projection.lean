@@ -45,6 +45,7 @@ remains injective.
   sum to the identity.
 * `DirectSum.IsInternal.coe_ofBijective_coeLinearMap_symm_apply_eq_internalProjection`: the
   component supplied by the inverse direct-sum equivalence is the internal projection.
+* `Submodule.projection_congr`: projections onto equal complementary submodule pairs agree.
 * `Submodule.projection_map_apply_of_mem`: an additive homomorphism preserving the two
   summands commutes with the projections.
 * `Submodule.apply_eq_sum_repr_projectionOnto`: a linear map vanishing on `F₀` is determined by
@@ -181,8 +182,17 @@ end DirectSum.IsInternal
 
 namespace Submodule
 
-variable {R : Type u} {V : Type v} {M : Type w} [Ring R] [AddCommGroup V] [Module R V]
-  [AddCommGroup M] [Module R M]
+variable {R : Type u} {V : Type v} [Ring R] [AddCommGroup V] [Module R V]
+
+/-- Congruence for `Submodule.projection` across equal complementary pairs of submodules. -/
+theorem projection_congr {p₁ p₂ q₁ q₂ : Submodule R V} (hp : p₁ = p₂) (hq : q₁ = q₂)
+    (h₁ : IsCompl p₁ q₁) (h₂ : IsCompl p₂ q₂) :
+    p₁.projection q₁ h₁ = p₂.projection q₂ h₂ := by
+  subst hp
+  subst hq
+  rfl
+
+variable {M : Type w} [AddCommGroup M] [Module R M]
 
 /-- An additive homomorphism sending each summand into the corresponding summand
 commutes with the projections onto the first summands. -/
