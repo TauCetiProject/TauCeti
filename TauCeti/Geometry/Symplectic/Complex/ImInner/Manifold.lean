@@ -9,8 +9,8 @@ public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
-import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
 /-!
 # Isotropic and Lagrangian maps into a complex inner product space
@@ -38,7 +38,7 @@ along the boundary loops of holomorphic discs with Lagrangian boundary are their
 
 At the other end of the dimension range, a map `f` of an open subset of `E` into `E` whose
 derivative preserves `Im ⟪·, ·⟫_ℂ` has injective derivative, since the form is nondegenerate
-(`LinearMap.injective_of_forall_im_inner_eq`), and is therefore a local diffeomorphism by the
+(`LinearMap.BilinForm.Isometry.injective`), and is therefore a local diffeomorphism by the
 inverse function theorem (`TauCeti.isLocalDiffeomorphOn_of_forall_im_inner_fderiv`). This is how a
 symplectic embedding of a ball into `ℂⁿ` is read as a partial diffeomorphism onto its image.
 
@@ -140,6 +140,8 @@ theorem isLocalDiffeomorphOn_of_forall_im_inner_fderiv {f : E → E} {s : Set E}
   refine isLocalDiffeomorphAt_of_injective_mfderiv (contMDiffOn_iff_contDiffOn.2 hf) hs hx
     BoundarylessManifold.isInteriorPoint hn ?_ rfl
   rw [mfderiv_eq_fderiv]
-  exact (fderiv ℝ f x).toLinearMap.injective_of_forall_im_inner_eq (hω x hx)
+  exact LinearMap.BilinForm.Isometry.injective (B := (imInnerSymplecticForm E).toBilinForm)
+    (B' := (imInnerSymplecticForm E).toBilinForm)
+    ⟨(fderiv ℝ f x).toLinearMap, by simpa using hω x hx⟩ (imInnerSymplecticForm E).nondegenerate.1
 
 end TauCeti

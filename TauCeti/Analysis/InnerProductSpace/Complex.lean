@@ -26,11 +26,6 @@ isotropy of the real span for the alternating form `Im ⟪·, ·⟫_ℂ` (the st
 form when `E` is normed), which becomes the Lagrangian condition when the real span has half the
 ambient real dimension.
 
-The form `Im ⟪·, ·⟫_ℂ` is nondegenerate on a complex inner product space, since `Im ⟪v, i v⟫_ℂ`
-is `‖v‖²`. So a real-linear map preserving it is injective
-(`LinearMap.injective_of_forall_im_inner_eq`): a linear symplectic map for the standard form is an
-embedding.
-
 ## Main results
 
 * `TauCeti.inner_real_eq_re_inner`: `⟪x, y⟫_ℝ = RCLike.re ⟪x, y⟫_𝕜` whenever a `𝕜`-inner product
@@ -39,8 +34,6 @@ embedding.
   space.
 * `Set.Pairwise.im_inner_eq_zero_of_mem_span`: if `Im ⟪x, y⟫_ℂ` vanishes for distinct elements of
   `s`, then `Im ⟪x, y⟫_ℂ = 0` for all `x, y ∈ Submodule.span ℝ s`.
-* `LinearMap.injective_of_forall_im_inner_eq`: a real-linear map preserving `Im ⟪·, ·⟫_ℂ` is
-  injective.
 -/
 
 public section
@@ -95,14 +88,3 @@ theorem im_inner_eq_zero_of_mem_span {E : Type*} [SeminormedAddCommGroup E] [Inn
     simp [hx]
 
 end Set.Pairwise
-
-/-- **A real-linear map preserving `Im ⟪·, ·⟫_ℂ` is injective.** If `L v = 0`, then
-`‖v‖² = Im ⟪v, i v⟫_ℂ = Im ⟪L v, L (i v)⟫_ℂ = 0`. -/
-theorem LinearMap.injective_of_forall_im_inner_eq {E F : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℂ E] [SeminormedAddCommGroup F] [InnerProductSpace ℂ F] (L : E →ₗ[ℝ] F)
-    (hL : ∀ v w, (⟪L v, L w⟫_ℂ).im = (⟪v, w⟫_ℂ).im) : Function.Injective L := by
-  refine (injective_iff_map_eq_zero L).2 fun v hv ↦ ?_
-  have h := hL v (Complex.I • v)
-  rw [hv, inner_zero_left, Complex.zero_im, inner_smul_right, inner_self_eq_norm_sq_to_K] at h
-  have hv0 : ‖v‖ ^ 2 = 0 := by simpa [← Complex.ofReal_pow] using h.symm
-  simpa using hv0

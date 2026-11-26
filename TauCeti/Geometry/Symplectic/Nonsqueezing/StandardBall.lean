@@ -105,6 +105,26 @@ theorem symplecticEmbeddingSphereTorusChart_source :
       s ∩ f ⁻¹' (euclideanSphereTorusChart a p c hr).source := by
   simp [symplecticEmbeddingSphereTorusChart]
 
+/-- The target of the chart is the image under the chart of `S²(a) × T` of the points of `f '' s`
+in its source. -/
+@[simp]
+theorem symplecticEmbeddingSphereTorusChart_target :
+    (symplecticEmbeddingSphereTorusChart a p hf hs hinj hω c hr).target =
+      euclideanSphereTorusChart a p c hr ''
+        (f '' s ∩ (euclideanSphereTorusChart a p c hr).source) := by
+  rw [← (symplecticEmbeddingSphereTorusChart a p hf hs hinj hω c hr).image_source_eq_target,
+    symplecticEmbeddingSphereTorusChart_source, ← image_inter_preimage, ← image_comp]
+  exact congrArg (· '' _) (coe_symplecticEmbeddingSphereTorusChart hf hs hinj hω c hr)
+
+/-- The inverse of the chart is the inverse of `f` on `s` after the inverse of the chart of
+`S²(a) × T`. -/
+@[simp]
+theorem coe_symplecticEmbeddingSphereTorusChart_symm :
+    ⇑(symplecticEmbeddingSphereTorusChart a p hf hs hinj hω c hr).toPartialEquiv.symm =
+      invFunOn f s ∘ (euclideanSphereTorusChart a p c hr).toPartialEquiv.symm := by
+  exact (PartialDiffeomorph.coe_trans_symm _ _).trans <| congrArg (· ∘ _)
+    (funext (IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_symm_apply _ hs hinj))
+
 /-- **The chart is symplectic.** For `a > 0`, at every point of its source the chart pulls the
 product form `a • ω_FS ⊕ ω_T` of `S²(a) × T` back to the standard symplectic form `Im ⟪v, w⟫` of
 `ℂᵐ⁺¹`. -/
