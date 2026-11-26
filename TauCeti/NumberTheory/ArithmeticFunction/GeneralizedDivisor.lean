@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import Mathlib.RingTheory.Binomial
 import TauCeti.Analysis.Analytic.Binomial
 import TauCeti.NumberTheory.ArithmeticFunction.Defs
+import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.RingTheory.Binomial
 
 /-!
@@ -22,13 +23,13 @@ the multiset coefficient `Ring.multichoose z a = z (z + 1) ⋯ (z + a - 1) / a!`
 
 The family is a one-parameter group under Dirichlet convolution: `d_z * d_w = d_{z + w}`. At a
 prime power this is the Chu--Vandermonde identity for multiset coefficients
-(`TauCeti.Ring.add_multichoose_eq`). Its first values are `d_0 = 1`, the unit of Dirichlet
-convolution, and `d_1 = ζ`, the constant function `1`; so `d_k = ζ ^ k` counts the ordered
-factorizations of `n` into `k` factors, and `d_{-1}`, the convolution inverse of `ζ`, is the
-Möbius function. Over `ℝ` or `ℂ` the coefficients are bounded by those of a real parameter:
-`‖d_z(n)‖ ≤ d_{‖z‖}(n) ≤ (ζ ^ k)(n)` for `‖z‖ ≤ k`. This is the majorant that makes the Dirichlet
-series of `d_z` converge absolutely on `Re s > 1`, where it is the Euler-product power `ζ(s) ^ z`
-(`TauCeti.NumberTheory.LSeries.Divisor.Generalized`).
+(`TauCeti.Ring.add_multichoose_eq`), via `ArithmeticFunction.mul_apply_prime_pow`. Its first
+values are `d_0 = 1`, the unit of Dirichlet convolution, and `d_1 = ζ`, the constant function `1`;
+so `d_k = ζ ^ k` counts the ordered factorizations of `n` into `k` factors, and `d_{-1}`, the
+convolution inverse of `ζ`, is the Möbius function. Over `ℝ` or `ℂ` the coefficients are bounded
+by those of a real parameter: `‖d_z(n)‖ ≤ d_{‖z‖}(n) ≤ (ζ ^ k)(n)` for `‖z‖ ≤ k`. This is the
+majorant that makes the Dirichlet series of `d_z` converge absolutely on `Re s > 1`, where it is
+the Euler-product power `ζ(s) ^ z` (`TauCeti.NumberTheory.LSeries.Divisor.Generalized`).
 
 ## Main definitions
 
@@ -36,8 +37,6 @@ series of `d_z` converge absolutely on `Re s > 1`, where it is the Euler-product
 
 ## Main results
 
-* `ArithmeticFunction.mul_apply_prime_pow`: a Dirichlet convolution at a prime power `p ^ k` is the
-  sum over the exponent pairs `i + j = k`.
 * `TauCeti.ArithmeticFunction.isMultiplicative_generalizedDivisor` and
   `TauCeti.ArithmeticFunction.generalizedDivisor_apply_prime_pow`: `d_z` is multiplicative with
   `d_z(p ^ a) = Ring.multichoose z a`.
@@ -49,10 +48,12 @@ series of `d_z` converge absolutely on `Re s > 1`, where it is the Euler-product
   `TauCeti.ArithmeticFunction.generalizedDivisor_natCast` and
   `TauCeti.ArithmeticFunction.generalizedDivisor_neg_one`: `d_0 = 1`, `d_1 = ζ`, `d_k = ζ ^ k` and
   `d_{-1} = μ`.
-* `TauCeti.ArithmeticFunction.norm_generalizedDivisor_le`,
+* `TauCeti.ArithmeticFunction.norm_generalizedDivisor_le_of_norm_le`,
+  `TauCeti.ArithmeticFunction.norm_generalizedDivisor_le`,
   `TauCeti.ArithmeticFunction.norm_generalizedDivisor_le_zeta_pow` and
-  `TauCeti.ArithmeticFunction.generalizedDivisor_le_zeta_pow`: `‖d_z(n)‖ ≤ d_{‖z‖}(n)`,
-  `‖d_z(n)‖ ≤ (ζ ^ k)(n)` for `‖z‖ ≤ k`, and `d_r(n) ≤ (ζ ^ k)(n)` for real `|r| ≤ k`.
+  `TauCeti.ArithmeticFunction.generalizedDivisor_le_zeta_pow`: `‖d_z(n)‖ ≤ d_r(n)` for real
+  `r ≥ ‖z‖` (in particular `‖d_z(n)‖ ≤ d_{‖z‖}(n)`), `‖d_z(n)‖ ≤ (ζ ^ k)(n)` for `‖z‖ ≤ k`, and
+  `d_r(n) ≤ (ζ ^ k)(n)` for real `|r| ≤ k`.
 
 ## References
 
@@ -64,21 +65,6 @@ public section
 
 open Finset
 open scoped ArithmeticFunction.zeta ArithmeticFunction.Moebius
-
-namespace ArithmeticFunction
-
-/-- At a prime power, a Dirichlet convolution is the sum over the pairs of exponents with sum `k`:
-`(f * g)(p ^ k) = ∑_{i + j = k} f(p ^ i) g(p ^ j)`. -/
-theorem mul_apply_prime_pow {R : Type*} [Semiring R] (f g : ArithmeticFunction R) {p : ℕ}
-    (hp : p.Prime) (k : ℕ) :
-    (f * g) (p ^ k) = ∑ ij ∈ antidiagonal k, f (p ^ ij.1) * g (p ^ ij.2) := by
-  rw [ArithmeticFunction.mul_apply, Nat.sum_divisorsAntidiagonal (fun a b ↦ f a * g b),
-    Nat.sum_divisors_prime_pow hp,
-    Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ f (p ^ i) * g (p ^ j))]
-  exact sum_congr rfl fun i hi ↦ by
-    rw [Nat.pow_div (Nat.lt_succ_iff.1 (mem_range.1 hi)) hp.pos]
-
-end ArithmeticFunction
 
 namespace TauCeti.ArithmeticFunction
 
@@ -168,9 +154,9 @@ theorem generalizedDivisor_add (z w : R) :
 
 /-- At a natural number `k`, `d_k = ζ ^ k`: `d_k(n)` is the number of ordered factorizations of
 `n` into `k` positive factors. -/
+@[simp]
 theorem generalizedDivisor_natCast (k : ℕ) :
-    generalizedDivisor (k : R) = ↑(ζ ^ k : ArithmeticFunction ℕ) := by
-  rw [natCoe_pow]
+    generalizedDivisor (k : R) = (ζ : ArithmeticFunction R) ^ k := by
   induction k with
   | zero => simp
   | succ k ih => rw [Nat.cast_succ, generalizedDivisor_add, ih, generalizedDivisor_one, pow_succ]
@@ -198,26 +184,28 @@ section RCLike
 
 variable {𝕜 : Type*} [RCLike 𝕜]
 
-/-- The coefficients of a real or complex parameter are bounded by those of its modulus:
-`‖d_z(n)‖ ≤ d_{‖z‖}(n)`. -/
-theorem norm_generalizedDivisor_le (z : 𝕜) (n : ℕ) :
-    ‖generalizedDivisor z n‖ ≤ generalizedDivisor ‖z‖ n := by
+/-- For a real `r ≥ ‖z‖`, the coefficients of a real or complex parameter `z` are bounded by
+those of `r`: `‖d_z(n)‖ ≤ d_r(n)`. -/
+theorem norm_generalizedDivisor_le_of_norm_le {z : 𝕜} {r : ℝ} (hz : ‖z‖ ≤ r) (n : ℕ) :
+    ‖generalizedDivisor z n‖ ≤ generalizedDivisor r n := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   rw [generalizedDivisor_apply _ hn, generalizedDivisor_apply _ hn, Finsupp.prod, Finsupp.prod]
   exact (Finset.norm_prod_le _ _).trans (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
-    fun _ _ ↦ norm_multichoose_le_of_norm_le le_rfl _)
+    fun _ _ ↦ norm_multichoose_le_of_norm_le hz _)
+
+/-- The coefficients of a real or complex parameter are bounded by those of its modulus:
+`‖d_z(n)‖ ≤ d_{‖z‖}(n)`. -/
+theorem norm_generalizedDivisor_le (z : 𝕜) (n : ℕ) :
+    ‖generalizedDivisor z n‖ ≤ generalizedDivisor ‖z‖ n :=
+  norm_generalizedDivisor_le_of_norm_le le_rfl n
 
 /-- For `‖z‖ ≤ k`, `‖d_z(n)‖ ≤ (ζ ^ k)(n)`: the coefficients of `d_z` are dominated by those of
 the `k`-fold divisor function `d_k = ζ ^ k`. -/
 theorem norm_generalizedDivisor_le_zeta_pow {z : 𝕜} {k : ℕ} (hz : ‖z‖ ≤ k) (n : ℕ) :
     ‖generalizedDivisor z n‖ ≤ ((ζ ^ k : ArithmeticFunction ℕ) n : ℝ) := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · simp
-  rw [← natCoe_apply, ← generalizedDivisor_natCast, generalizedDivisor_apply _ hn,
-    generalizedDivisor_apply _ hn, Finsupp.prod, Finsupp.prod]
-  exact (Finset.norm_prod_le _ _).trans (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _)
-    fun _ _ ↦ norm_multichoose_le_of_norm_le hz _)
+  rw [← natCoe_apply, natCoe_pow, ← generalizedDivisor_natCast]
+  exact norm_generalizedDivisor_le_of_norm_le hz n
 
 /-- For real `r` with `|r| ≤ k`, `d_r(n) ≤ (ζ ^ k)(n)`, the number of ordered factorizations of
 `n` into `k` factors. -/
