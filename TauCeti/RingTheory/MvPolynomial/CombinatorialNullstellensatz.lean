@@ -106,10 +106,12 @@ private lemma weightedBasis_mem_of_weight_le [Finite ι] {κ : ι → ℕ}
   refine add_mem (ih β (by simp) _ h_le') ?_
   -- `g u * b ∈ N` is the statement that `g u` lies in the preimage of `N` under `· * b`.
   suffices g u ∈ N.comap (LinearMap.mulRight K (weightedBasis κ g β γ)) by simpa
-  refine Submodule.span_le.2 ?_ (AddMonoidAlgebra.mem_span_support_coeff (g u))
-  rintro _ ⟨δ, hδ, rfl⟩
-  change δ ∈ (g u).support at hδ
-  change monomial δ 1 ∈ N.comap (LinearMap.mulRight K (weightedBasis κ g β γ))
+  rw [(g u).as_sum]
+  refine sum_mem fun δ hδ ↦ ?_
+  have hsmul : monomial δ ((g u).coeff δ) = (g u).coeff δ • monomial δ 1 := by
+    rw [smul_monomial, smul_eq_mul, mul_one]
+  rw [hsmul]
+  refine smul_mem _ _ ?_
   have h_lt : cost (δ + β) < 1 + cost β := by simpa using hg u δ hδ
   rw [Submodule.mem_comap, LinearMap.mulRight_apply, monomial_mul_weightedBasis]
   exact ih (δ + β) h_lt γ (by linarith)
@@ -124,10 +126,12 @@ private lemma mem_of_forall_weightedBasis_mem [Finite ι] {κ : ι → ℕ}
       γ.degree + weight (fun u : ι ↦ (κ u : ℝ))⁻¹ β ≤ weight (fun u : ι ↦ (κ u : ℝ))⁻¹ α →
         weightedBasis κ g β γ ∈ N) :
     p ∈ N := by
-  refine Submodule.span_le.2 ?_ (AddMonoidAlgebra.mem_span_support_coeff p)
-  rintro _ ⟨α, hα, rfl⟩
-  change α ∈ p.support at hα
-  change monomial α 1 ∈ N
+  rw [p.as_sum]
+  refine sum_mem fun α hα ↦ ?_
+  have hsmul : monomial α (p.coeff α) = p.coeff α • monomial α 1 := by
+    rw [smul_monomial, smul_eq_mul, mul_one]
+  rw [hsmul]
+  refine smul_mem _ _ ?_
   rw [← weightedBasis_zero κ g α]
   exact weightedBasis_mem_of_weight_le hκ hg (hN α hα) α 0 (by simp)
 
