@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Projection
 public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Basic
+import TauCeti.Analysis.InnerProductSpace.Projection.Trace
 
 /-!
 # The Frobenius seminorm through traces
@@ -84,12 +85,9 @@ omit [FiniteDimensional 𝕜 F] in
 /-- The squared Frobenius seminorm of the orthogonal projection onto `U` is `dim U`. -/
 theorem sq_frobenius_starProjection (U : Submodule 𝕜 E) :
     frobenius 𝕜 E E (U.starProjection : E →ₗ[𝕜] E) ^ 2 = finrank 𝕜 U := by
-  have hU := U.isSymmetricProjection_starProjection
-  have h_proj : IsProj U (U.starProjection : E →ₗ[𝕜] E) :=
-    ⟨U.starProjection_apply_mem, fun _ ↦ Submodule.starProjection_eq_self_iff.2⟩
   apply RCLike.ofReal_injective (K := 𝕜)
-  rw [sq_frobenius_eq_trace, hU.isSymmetric.adjoint_eq, U.starProjection_toLinearMap_comp_self,
-    h_proj.trace, RCLike.ofReal_natCast]
+  rw [sq_frobenius_eq_trace, U.isSymmetricProjection_starProjection.isSymmetric.adjoint_eq,
+    U.starProjection_toLinearMap_comp_self, U.trace_starProjection, RCLike.ofReal_natCast]
 
 /-- The squared Frobenius seminorm of `A pr_U` is the Hilbert–Schmidt inner product of `pr_U` with
 `A† A`: `‖A pr_U‖_F² = tr (pr_U† (A† A))`. -/

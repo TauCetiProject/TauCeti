@@ -15,8 +15,8 @@ Composition of linear maps is additive in each argument, so it distributes over 
 
 ## Main results
 
-* `LinearMap.sum_comp`: composition on the right distributes over a finite sum.
-* `LinearMap.comp_sum`: composition on the left distributes over a finite sum.
+* `LinearMap.finsetSum_comp`: composition on the right distributes over a finite sum.
+* `LinearMap.comp_finsetSum`: composition on the left distributes over a finite sum.
 -/
 
 public section
@@ -27,12 +27,12 @@ variable {R M N P ι : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N] [
   [Module R M] [Module R N] [Module R P]
 
 /-- Composition on the right distributes over a finite sum of linear maps. -/
-theorem sum_comp (s : Finset ι) (f : ι → N →ₗ[R] P) (g : M →ₗ[R] N) :
+theorem finsetSum_comp (s : Finset ι) (f : ι → N →ₗ[R] P) (g : M →ₗ[R] N) :
     (∑ i ∈ s, f i) ∘ₗ g = ∑ i ∈ s, f i ∘ₗ g :=
   LinearMap.ext fun x ↦ by simp only [comp_apply, LinearMap.sum_apply]
 
 /-- Composition on the left distributes over a finite sum of linear maps. -/
-theorem comp_sum (s : Finset ι) (f : ι → M →ₗ[R] N) (g : N →ₗ[R] P) :
+theorem comp_finsetSum (s : Finset ι) (f : ι → M →ₗ[R] N) (g : N →ₗ[R] P) :
     g ∘ₗ (∑ i ∈ s, f i) = ∑ i ∈ s, g ∘ₗ f i :=
   LinearMap.ext fun x ↦ by simp only [comp_apply, LinearMap.sum_apply, map_sum]
 

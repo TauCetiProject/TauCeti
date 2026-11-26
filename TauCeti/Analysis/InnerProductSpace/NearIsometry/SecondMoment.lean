@@ -89,7 +89,7 @@ theorem sum_trace_adjoint_comp_eq_card_mul_sum_sq_frobenius [Fintype Γ]
         ∑ t : Γ, (ρ t ∘ₗ B) ∘ₗ (ρ t ∘ₗ B).adjoint) =
       ((Fintype.card Γ * ∑ s : Γ,
         UnitarilyInvariantSeminorm.frobenius 𝕜 S S (B.adjoint ∘ₗ ρ s ∘ₗ B) ^ 2 : ℝ) : 𝕜) := by
-  simp_rw [map_sum, LinearMap.sum_comp, LinearMap.comp_sum, map_sum,
+  simp_rw [map_sum, LinearMap.finsetSum_comp, LinearMap.comp_finsetSum, map_sum,
     trace_adjoint_comp_eq_sq_frobenius_adjoint_comp_comp hρ]
   -- For each `s`, the map `t ↦ s⁻¹ * t` is a bijection of `Γ`.
   have h_row (s : Γ) : ∑ t : Γ, ((UnitarilyInvariantSeminorm.frobenius 𝕜 S S
@@ -117,7 +117,7 @@ theorem sq_sum_sq_frobenius_starProjection_comp_le [Fintype Γ] (hρ : ∀ s x, 
       rw [sq_frobenius_eq_trace, sum_trace_adjoint_comp_eq_card_mul_sum_sq_frobenius hρ]
   have h_inner : ∑ s : Γ, UnitarilyInvariantSeminorm.frobenius 𝕜 S T (p ∘ₗ ρ s ∘ₗ B) ^ 2 =
       RCLike.re (trace 𝕜 T (p.adjoint ∘ₗ X)) := by
-    rw [LinearMap.comp_sum, map_sum, map_sum]
+    rw [LinearMap.comp_finsetSum, map_sum, map_sum]
     refine Fintype.sum_congr _ _ fun s ↦ ?_
     rw [← sq_frobenius_starProjection_comp, RCLike.ofReal_re]
   have h_cs := re_trace_adjoint_comp_le p X
