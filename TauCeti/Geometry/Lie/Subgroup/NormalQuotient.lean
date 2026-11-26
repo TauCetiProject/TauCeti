@@ -112,6 +112,13 @@ theorem coe_quotientMkSmoothHom [N.Normal] (hN : IsClosed (N : Set G)) :
     ⇑(quotientMkSmoothHom I hN) = (QuotientGroup.mk : G → G ⧸ N) :=
   (rfl)
 
+/-- The smooth projection onto `G ⧸ N` is the quotient homomorphism. -/
+@[simp]
+theorem toMonoidHom_quotientMkSmoothHom [N.Normal] (hN : IsClosed (N : Set G)) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    (quotientMkSmoothHom I hN).toMonoidHom = QuotientGroup.mk' N :=
+  (rfl)
+
 section Lift
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
@@ -322,25 +329,23 @@ theorem ker_groupLieAlgebraMap_mk' [N.Normal] (hN : IsClosed (N : Set G))
     (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E')) (n := ∞) (by simp) (1 : N))
   -- Read at the identity, the Lie maps of `π` and of `ι` are the differentials `dπ` and `dι`.
   have hπ (D : LeftInvariantDerivation I G) :
-      (QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, QuotientModelSpace I N) (e D) =
-        e' (lieMap (quotientMkSmoothHom I hN) D) := by
-    rw [MonoidHom.groupLieAlgebraMap_apply, QuotientGroup.coe_mk',
-      ← coe_quotientMkSmoothHom (I := I) hN]
-    exact (leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap (quotientMkSmoothHom I hN) D).symm
+      e'.symm ((QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, QuotientModelSpace I N) (e D)) =
+        lieMap (quotientMkSmoothHom I hN) D := by
+    rw [← toMonoidHom_quotientMkSmoothHom (I := I) hN]
+    exact leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap _ D
   have hι (Y : LeftInvariantDerivation 𝓘(ℝ, E') N) :
-      N.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I (eN Y) = e (d.lieMapSubtypeVal Y) := by
-    -- The inclusion `N.subtype` is the underlying map of the smooth inclusion `d.subtypeVal`.
-    rw [MonoidHom.groupLieAlgebraMap_apply, d.lieMapSubtypeVal_apply,
-      show ⇑N.subtype = ⇑d.subtypeVal from funext fun k ↦ (d.subtypeVal_apply k).symm]
-    exact (leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap d.subtypeVal Y).symm
+      e.symm (N.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I (eN Y)) = d.lieMapSubtypeVal Y := by
+    rw [← d.toMonoidHom_subtypeVal, d.lieMapSubtypeVal_apply]
+    exact leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap _ Y
   ext ξ
   obtain ⟨D, rfl⟩ : ∃ D, e D = ξ := e.surjective ξ
   -- Both sides say that `D` lies in the Lie algebra of `N`, the range of the Lie map of `ι`.
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, hπ, map_eq_zero_iff e' e'.injective,
-    lieMap_quotientMkSmoothHom_eq_zero_iff hN, ← d.range_lieMapSubtypeVal_eq, LieHom.mem_range,
-    LinearMap.mem_range, ContinuousLinearMap.coe_coe]
-  exact ⟨fun ⟨Y, hY⟩ ↦ ⟨eN Y, by rw [hι, hY]⟩, fun ⟨w, hw⟩ ↦ ⟨eN.symm w,
-    EquivLike.injective e ((hι _).symm.trans (by rw [LieEquiv.apply_symm_apply, hw]))⟩⟩
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+    ← map_eq_zero_iff e'.symm e'.symm.injective, hπ, lieMap_quotientMkSmoothHom_eq_zero_iff hN,
+    ← d.range_lieMapSubtypeVal_eq, LieHom.mem_range, LinearMap.mem_range,
+    ContinuousLinearMap.coe_coe]
+  exact ⟨fun ⟨Y, hY⟩ ↦ ⟨eN Y, e.symm_apply_eq.1 ((hι Y).trans hY)⟩,
+    fun ⟨w, hw⟩ ↦ ⟨eN.symm w, by rw [← hι, eN.apply_symm_apply]; exact e.symm_apply_eq.2 hw⟩⟩
 
 /-- **A normal subgroup acts trivially on `𝔤 ⧸ 𝔫`.** For `n ∈ N` and `ξ ∈ 𝔤`, the difference
 `Ad_n ξ - ξ` lies in the image `𝔫` of the differential `dι` of the inclusion of `N`, for any
@@ -357,9 +362,8 @@ theorem adjointContinuousLinearMap_sub_self_mem_range_groupLieAlgebraMap_subtype
   let _ := quotientChartedSpaceOfIsClosed I hN
   have := lieGroup_quotientOfIsClosed (I := I) hN
   rw [← ker_groupLieAlgebraMap_mk' hN d, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub,
-    MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap, QuotientGroup.mk'_apply,
-    (QuotientGroup.eq_one_iff n).2 hn, Lie.adjointContinuousLinearMap_one,
-    ContinuousLinearMap.id_apply, sub_self]
+    MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap]
+  simp [(QuotientGroup.eq_one_iff n).2 hn]
 
 end TangentLieAlgebra
 
