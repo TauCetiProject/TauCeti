@@ -88,8 +88,10 @@ theorem exists_measurableSet_mapsTo_of_ae {T : X → X} (hTm : Measurable T)
     ∃ X₀ : Set X, MeasurableSet X₀ ∧ μ X₀ᶜ = 0 ∧ MapsTo T X₀ X₀ ∧ ∀ x ∈ X₀, p x := by
   have := measurableSMul_iterateMulAct.mpr hTm
   obtain ⟨X₀, hm, h0, hmaps, hp⟩ :=
-    exists_measurableSet_mapsTo_smul_of_ae (M := IterateMulAct T) (fun n ↦ hT.iterate n.val) hp
-  exact ⟨X₀, hm, h0, hmaps (.mk 1), hp⟩
+    exists_measurableSet_mapsTo_smul_of_ae (M := IterateMulAct T)
+      (fun ⟨n⟩ ↦ by simpa only [IterateMulAct.mk_smul] using hT.iterate n) hp
+  refine ⟨X₀, hm, h0, ?_, hp⟩
+  simpa only [IterateMulAct.mk_smul, Function.iterate_one] using hmaps (.mk 1)
 
 end Invariant
 
