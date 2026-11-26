@@ -86,7 +86,7 @@ theorem GradedPiece.map_mk (x : F p) :
 
 /-- The induced map on graded pieces is injective exactly when every element of `F_p M` sent by
 `u` into `G_{q-1} N` already lies in `F_{p-1} M`. -/
-theorem GradedPiece.injective_map_iff :
+theorem GradedPiece.map_injective_iff :
     Function.Injective (GradedPiece.map u h h') ↔ F p ⊓ (G (q - 1)).comap u ≤ F (p - 1) := by
   rw [← LinearMap.ker_eq_bot, Submodule.eq_bot_iff]
   constructor
@@ -102,7 +102,7 @@ theorem GradedPiece.injective_map_iff :
 
 /-- The induced map on graded pieces is surjective exactly when `G_q N` is contained in the image
 of `F_p M` plus `G_{q-1} N`. -/
-theorem GradedPiece.surjective_map_iff :
+theorem GradedPiece.map_surjective_iff :
     Function.Surjective (GradedPiece.map u h h') ↔ G q ≤ (F p).map u ⊔ G (q - 1) := by
   constructor
   · intro hsurj y hy
