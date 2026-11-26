@@ -18,16 +18,16 @@ with `q_A(g x) = c · q_A(x)` for all `x ∈ Aⁿ`, where `q_A` is the form with
 (`QuadraticForm.baseChangeForm`). The unit `c` is the *multiplier*; the pairs with multiplier `1`
 are the points of the orthogonal group scheme `O(q)` (`TauCeti.QuadraticOrthogonal`), so `O(q)` is
 the kernel of the multiplier on points
-(`TauCeti.QuadraticSimilitude.mk_one_mem_pointsSubgroup_iff`).
+(`TauCeti.QuadraticSimilitude.kerMultiplierPointsMulEquiv`).
 Nothing here assumes `2` invertible, and nothing is assumed of `q`.
 
 Its coordinate Hopf algebra is the quotient of the coordinate Hopf algebra `O(GLₙ) ⊗[R] R[T;T⁻¹]`
 of `GLₙ × 𝔾_m` (`TauCeti.ConstantFormSimilitude.ambientHopfAlgebra`) by the coefficients of the
 polynomial identity `q(X x) - r q(x) = xᵀ (Xᵀ M X - r M) x` in the coordinates of `x`, for `X` the
 generic matrix, `r` the multiplier coordinate and `M` the coefficient matrix of `q`: the diagonal
-entries and the symmetric sums of `N = Xᵀ M X - r M`, as for `TauCeti.QuadraticOrthogonal`. The
-three Hopf-ideal closure conditions follow from `N` being alternating modulo the ideal
-(`Matrix.IsAltMod`), through the framing identities
+entries and the symmetric sums of `N = Xᵀ M X - r M` (`Matrix.altRelationSet`), as for
+`TauCeti.QuadraticOrthogonal`. The three Hopf-ideal closure conditions follow from `N` being
+alternating modulo the ideal (`Matrix.IsAltMod`), through the framing identities
 
 ```text
 (Y Z)ᵀ M (Y Z) - r₁ r₂ M = Zᵀ (Yᵀ M Y - r₁ M) Z + r₁ (Zᵀ M Z - r₂ M),
@@ -43,8 +43,14 @@ Wᵀ M W - s M = -(s Wᵀ (Xᵀ M X - r M) W)    (W X = 1, s r = 1).
 * `TauCeti.QuadraticSimilitude.pointsSubgroup` and `TauCeti.QuadraticSimilitude.pointsMulEquiv`:
   the points are the pairs `(g, c)` with `q_A(g x) = c · q_A(x)`, with `pointsMulEquiv_fst`,
   `pointsMulEquiv_snd` and the naturality `pointsMulEquiv_mapValue`.
-* `TauCeti.QuadraticSimilitude.mk_one_mem_pointsSubgroup_iff`: a pair `(g, 1)` is a similitude
-  exactly when `g` is a point of `O(q)`.
+* `TauCeti.QuadraticSimilitude.coordinateMap_eq_zero_of_mem_relationSet` and
+  `TauCeti.QuadraticSimilitude.isAltMod_map_coordinateMap`: the relations hold in the coordinate
+  Hopf algebra of `GO(q)`.
+* `TauCeti.QuadraticSimilitude.multiplierPoints`: the multiplier on points, `(g, c) ↦ c`, which is
+  the multiplier character under the points identification (`multiplierPoints_pointsMulEquiv`).
+* `TauCeti.QuadraticSimilitude.kerMultiplierPointsMulEquiv`: the kernel of the multiplier on points
+  is the group of points of `O(q)`, a pair `(g, 1)` being a similitude exactly when `g` is a point
+  of `O(q)` (`mk_one_mem_pointsSubgroup_iff`).
 
 ## References
 
@@ -92,22 +98,32 @@ theorem relationMatrix_def :
 diagonal entries `N i i` and the symmetric sums `N i j + N j i` of the relation matrix `N`. The
 sums with `i ≥ j` are redundant. -/
 noncomputable def relationSet : Set (ambientHopfAlgebra R n) :=
-  Set.range (fun i => relationMatrix R n q i i) ∪
-    Set.range fun ij : Fin n × Fin n =>
-      relationMatrix R n q ij.1 ij.2 + relationMatrix R n q ij.2 ij.1
+  (relationMatrix R n q).altRelationSet
 
-/-- The defining relations are the diagonal entries and the symmetric sums of the relation
-matrix. -/
-theorem relationSet_def :
-    relationSet R n q =
-      Set.range (fun i => relationMatrix R n q i i) ∪
-        Set.range fun ij : Fin n × Fin n =>
-          relationMatrix R n q ij.1 ij.2 + relationMatrix R n q ij.2 ij.1 := by
+/-- The defining relations are the alternating relations of the relation matrix: its diagonal
+entries and its symmetric sums. -/
+theorem relationSet_def : relationSet R n q = (relationMatrix R n q).altRelationSet := by
   rw [relationSet]
+
+/-- Mapping `gᵀ M g - c M` through an algebra morphism `phi`, for `M` the coefficient matrix of
+`q` read in each algebra, applies `phi` to `g` and to `c`. -/
+theorem transpose_mul_mul_sub_smul_map {A B : Type*} [Ring A] [Algebra R A] [Ring B]
+    [Algebra R B] (phi : A →ₐ[R] B) (g : Matrix (Fin n) (Fin n) A) (c : A) :
+    (gᵀ * (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A) * g -
+        c • (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A)).map phi =
+      (g.map phi)ᵀ * (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R B) *
+          g.map phi -
+        phi c • (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R B) := by
+  have hC : ((coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A)).map phi =
+      (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R B) := by
+    rw [Matrix.map_map]
+    exact congrArg _ (funext fun r => phi.commutes r)
+  rw [Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul,
+    Matrix.map_smul' _ _ _ (map_mul phi), hC, Matrix.transpose_map]
 
 /-- Mapping the relation matrix through an algebra morphism gives the relation of the images of
 the generic matrix and of the multiplier coordinate. -/
-theorem relationMatrix_map {T : Type*} [CommRing T] [Algebra R T]
+theorem relationMatrix_map {T : Type*} [Ring T] [Algebra R T]
     (phi : ambientHopfAlgebra R n →ₐ[R] T) :
     (relationMatrix R n q).map phi =
       ((matrixCoord R n).map phi)ᵀ *
@@ -115,40 +131,7 @@ theorem relationMatrix_map {T : Type*} [CommRing T] [Algebra R T]
           (matrixCoord R n).map phi -
         phi (multiplierCoord R n) •
           (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) := by
-  have hC : ((coefficientMatrix q (Pi.basisFun R (Fin n))).map
-      (algebraMap R (ambientHopfAlgebra R n))).map phi =
-      (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R T) := by
-    rw [Matrix.map_map]
-    exact congrArg _ (funext fun r => phi.commutes r)
-  rw [relationMatrix, Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul,
-    Matrix.map_smul' _ _ _ (map_mul phi), hC, Matrix.transpose_map]
-
-/-- An ideal contains the defining relations exactly when it makes the relation matrix
-alternating. -/
-theorem span_relationSet_le_iff {I : Ideal (ambientHopfAlgebra R n)} :
-    Ideal.span (relationSet R n q) ≤ I ↔ IsAltMod I (relationMatrix R n q) := by
-  rw [Ideal.span_le]
-  refine ⟨fun h => IsAltMod.of_mem (fun i => h (Or.inl ⟨i, rfl⟩))
-    fun i j => h (Or.inr ⟨(i, j), rfl⟩), ?_⟩
-  rintro h _ (⟨i, rfl⟩ | ⟨ij, rfl⟩)
-  · exact h.diag_mem i
-  · exact h.add_transpose_mem ij.1 ij.2
-
-/-- The relation matrix is alternating modulo the ideal its relations generate. -/
-theorem isAltMod_relationMatrix :
-    IsAltMod (Ideal.span (relationSet R n q)) (relationMatrix R n q) :=
-  (span_relationSet_le_iff R n q).mp le_rfl
-
-/-- If a ring morphism makes the image of the relation matrix alternating modulo `J`, it carries
-every defining relation into `J`. -/
-theorem apply_mem_of_isAltMod_map {T F : Type*} [CommRing T]
-    [FunLike F (ambientHopfAlgebra R n) T] [RingHomClass F (ambientHopfAlgebra R n) T] {f : F}
-    {J : Ideal T} (h : IsAltMod J ((relationMatrix R n q).map f)) {x : ambientHopfAlgebra R n}
-    (hx : x ∈ relationSet R n q) : f x ∈ J := by
-  have hcomap : IsAltMod (J.comap f) (relationMatrix R n q) :=
-    IsAltMod.of_mem (fun i => Ideal.mem_comap.mpr (h.diag_mem i)) fun i j => by
-      simpa only [Ideal.mem_comap, Matrix.map_apply, map_add] using h.add_transpose_mem i j
-  exact Ideal.mem_comap.mp ((span_relationSet_le_iff R n q).mpr hcomap (Ideal.subset_span hx))
+  rw [relationMatrix, transpose_mul_mul_sub_smul_map]
 
 /-! ### The three Hopf-ideal closure conditions -/
 
@@ -183,14 +166,14 @@ private theorem comul_relation_mem {x : ambientHopfAlgebra R n} (hx : x ∈ rela
       (Ideal.span (relationSet R n q)) ⊔
     Ideal.rightTensorIdeal (R := R) (A := ambientHopfAlgebra R n)
       (Ideal.span (relationSet R n q))
-  have hL := (isAltMod_relationMatrix R n q).map (J := J) (leftCopy R n)
+  have hL := (isAltMod_span_altRelationSet (relationMatrix R n q)).map (J := J) (leftCopy R n)
     ((Ideal.leftTensorIdeal_def R (ambientHopfAlgebra R n) _).ge.trans le_sup_left)
-  have hR := (isAltMod_relationMatrix R n q).map (J := J) (rightCopy R n)
+  have hR := (isAltMod_span_altRelationSet (relationMatrix R n q)).map (J := J) (rightCopy R n)
     ((Ideal.rightTensorIdeal_def R (ambientHopfAlgebra R n) _).ge.trans le_sup_right)
   have hcomul := (hL.transpose_mul_mul ((matrixCoord R n).map (rightCopy R n))).add
     (hR.smul (leftCopy R n (multiplierCoord R n)))
   rw [← relationMatrix_map_comul] at hcomul
-  simpa only [Bialgebra.comulAlgHom_apply] using apply_mem_of_isAltMod_map R n q hcomul hx
+  simpa only [Bialgebra.comulAlgHom_apply] using hcomul.apply_mem_of_map hx
 
 /-- **The antipode of the relation matrix**: for `W = S(X)` and `s = S(r)`,
 `Wᵀ M W - s M = -(s Wᵀ (Xᵀ M X - r M) W)`. -/
@@ -221,12 +204,14 @@ private theorem relationMatrix_map_antipode :
 /-- The antipode carries every defining relation into the span of the relations. -/
 private theorem antipode_relation_mem {x : ambientHopfAlgebra R n} (hx : x ∈ relationSet R n q) :
     HopfAlgebra.antipode R x ∈ Ideal.span (relationSet R n q) := by
-  have hS := (((isAltMod_relationMatrix R n q).transpose_mul_mul ((matrixCoord R n).map
-    (HopfAlgebra.antipodeAlgHom (R := R) (A := ambientHopfAlgebra R n)))).smul
+  have hS := (((isAltMod_span_altRelationSet (relationMatrix R n q)).transpose_mul_mul
+    ((matrixCoord R n).map
+      (HopfAlgebra.antipodeAlgHom (R := R) (A := ambientHopfAlgebra R n)))).smul
       (HopfAlgebra.antipodeAlgHom (R := R) (A := ambientHopfAlgebra R n)
         (multiplierCoord R n))).neg
   rw [← relationMatrix_map_antipode] at hS
-  simpa only [HopfAlgebra.antipodeAlgHom_apply] using apply_mem_of_isAltMod_map R n q hS hx
+  rw [relationSet_def] at hx ⊢
+  simpa only [HopfAlgebra.antipodeAlgHom_apply] using hS.apply_mem_of_map hx
 
 /-! ### The defining Hopf ideal and the group scheme -/
 
@@ -241,7 +226,7 @@ noncomputable def definingHopfIdeal : HopfIdeal R (ambientHopfAlgebra R n) :=
         rw [counit_relationMatrix]
         exact IsAltMod.zero
       simpa only [Bialgebra.counitAlgHom_apply, Ideal.mem_bot] using
-        apply_mem_of_isAltMod_map R n q h0 hx)
+        h0.apply_mem_of_map hx)
     (fun _ hx => antipode_relation_mem R n q hx)
 
 /-- The underlying ideal of the defining Hopf ideal is the span of the defining relations. -/
@@ -257,7 +242,7 @@ theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [CommRing T] [Algebra R
     (phi : ambientHopfAlgebra R n →ₐ[R] T) :
     (definingHopfIdeal R n q).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
       IsAltMod ⊥ ((relationMatrix R n q).map phi) := by
-  rw [definingHopfIdeal_toIdeal, span_relationSet_le_iff]
+  rw [definingHopfIdeal_toIdeal, relationSet, span_altRelationSet_le_iff]
   simp only [isAltMod_iff, Matrix.map_apply, RingHom.mem_ker, Ideal.mem_bot, AlgHom.coe_toRingHom,
     map_add]
 
@@ -283,10 +268,32 @@ theorem coordinateMap_apply (h : ambientHopfAlgebra R n) :
   unfold coordinateMap
   exact CommHopfAlgCat.mkQuotient_apply (ambientHopfAlgebra R n) (definingHopfIdeal R n q) h
 
+/-- Every defining relation vanishes in the coordinate Hopf algebra of `GO(q)`. -/
+theorem coordinateMap_eq_zero_of_mem_relationSet {x : ambientHopfAlgebra R n}
+    (hx : x ∈ relationSet R n q) : (coordinateMap R n q).hom x = 0 := by
+  rw [coordinateMap_def]
+  exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr
+    (HopfIdeal.mem_toIdeal.mp (definingHopfIdeal_toIdeal R n q ▸ Ideal.subset_span hx))
+
+/-- The image of the relation matrix in the coordinate Hopf algebra of `GO(q)` is alternating:
+`q(X x) = r q(x)` holds there. -/
+theorem isAltMod_map_coordinateMap :
+    IsAltMod ⊥ ((relationMatrix R n q).map (coordinateMap R n q).hom) :=
+  (isAltMod_span_altRelationSet (relationMatrix R n q)).map _ <|
+    Ideal.map_le_iff_le_comap.mpr <| Ideal.span_le.mpr fun _ hx =>
+      Ideal.mem_comap.mpr (Ideal.mem_bot.mpr (coordinateMap_eq_zero_of_mem_relationSet R n q hx))
+
 /-- **The orthogonal similitude group scheme `GO(q)`** of a quadratic form on `Rⁿ`: the closed
 subgroup scheme of `GLₙ × 𝔾_m` of pairs `(g, c)` with `q(g x) = c q(x)`. -/
 noncomputable abbrev groupScheme :=
   CommHopfAlgCat.quotientSpec (ambientHopfAlgebra R n) (definingHopfIdeal R n q)
+
+/-- The orthogonal similitude group scheme is the quotient spectrum of its coordinate Hopf
+algebra. -/
+theorem groupScheme_def :
+    groupScheme R n q =
+      CommHopfAlgCat.quotientSpec (ambientHopfAlgebra R n) (definingHopfIdeal R n q) :=
+  rfl
 
 /-- The closed-subgroup inclusion of `GO(q)` into `GLₙ × 𝔾_m`. -/
 noncomputable def inclusion :
@@ -376,8 +383,8 @@ theorem mem_pointsSubgroup_iff_isAltMod (p : GL (Fin n) A × Aˣ) :
     dotProduct_sub, Matrix.dotProduct_transpose_mul_mul_mulVec, Matrix.smul_mulVec,
     dotProduct_smul, smul_eq_mul, sub_eq_zero]
 
-/-- **The kernel of the multiplier is `O(q)`**: a pair `(g, 1)` is a similitude exactly when `g`
-is a point of the orthogonal group scheme. -/
+/-- **Similitudes with multiplier `1`**: a pair `(g, 1)` is a similitude exactly when `g` is a
+point of the orthogonal group scheme. -/
 theorem mk_one_mem_pointsSubgroup_iff (g : GL (Fin n) A) :
     (g, 1) ∈ pointsSubgroup R n q A ↔ g ∈ QuadraticOrthogonal.pointsSubgroup R n q A := by
   simp
@@ -448,6 +455,63 @@ theorem pointsMulEquiv_fst
   rw [Matrix.map_apply, Matrix.map_apply, CommHopfAlgCat.quotientPointsHom_apply_apply,
     coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk]
 
+variable (A) in
+/-- **The multiplier on points**, `(g, c) ↦ c`, on the similitudes of `q`. -/
+def multiplierPoints : pointsSubgroup R n q A →* Aˣ :=
+  (MonoidHom.snd _ _).comp (pointsSubgroup R n q A).subtype
+
+/-- The multiplier of a similitude is its unit component. -/
+@[simp]
+theorem multiplierPoints_apply (p : pointsSubgroup R n q A) :
+    multiplierPoints R n q A p = (p : GL (Fin n) A × Aˣ).2 := by
+  unfold multiplierPoints
+  rfl
+
+/-- Under the points identification, the multiplier on points is the multiplier character. -/
+theorem multiplierPoints_pointsMulEquiv
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n q) (CommAlgCat.of R A)) :
+    ((multiplierPoints R n q A (pointsMulEquiv R n q (A := A) f) : Aˣ) : A) =
+      f.ofConv ((multiplierCoordinateMap R n q).hom (LaurentPolynomial.T 1)) := by
+  rw [multiplierPoints_apply, pointsMulEquiv_snd]
+
+/-- A similitude lies in the kernel of the multiplier exactly when its multiplier is `1`. -/
+theorem mem_ker_multiplierPoints_iff (p : pointsSubgroup R n q A) :
+    p ∈ (multiplierPoints R n q A).ker ↔ (p : GL (Fin n) A × Aˣ).2 = 1 := by
+  rw [MonoidHom.mem_ker, multiplierPoints_apply]
+
+variable (A) in
+/-- **`O(q)` is the kernel of the multiplier on points**: `(g, 1) ↦ g` identifies the kernel of
+the multiplier on `GO(q)(A)` with the group of points of the orthogonal group scheme. -/
+def kerMultiplierPointsMulEquiv :
+    (multiplierPoints R n q A).ker ≃* QuadraticOrthogonal.pointsSubgroup R n q A where
+  toFun p := ⟨((p : pointsSubgroup R n q A) : GL (Fin n) A × Aˣ).1, by
+    have hmem := (p : pointsSubgroup R n q A).property
+    rw [← Prod.mk.eta (p := ((p : pointsSubgroup R n q A) : GL (Fin n) A × Aˣ)),
+      (mem_ker_multiplierPoints_iff R n q _).mp p.property] at hmem
+    exact (mk_one_mem_pointsSubgroup_iff R n q _).mp hmem⟩
+  invFun g := ⟨⟨((g : GL (Fin n) A), 1), (mk_one_mem_pointsSubgroup_iff R n q _).mpr g.property⟩,
+    (mem_ker_multiplierPoints_iff R n q _).mpr rfl⟩
+  left_inv p := Subtype.ext <| Subtype.ext <|
+    Prod.ext rfl ((mem_ker_multiplierPoints_iff R n q _).mp p.property).symm
+  right_inv _ := rfl
+  map_mul' _ _ := rfl
+
+/-- The point of `O(q)` attached to a similitude with multiplier `1` is its matrix. -/
+@[simp]
+theorem coe_kerMultiplierPointsMulEquiv (p : (multiplierPoints R n q A).ker) :
+    (kerMultiplierPointsMulEquiv R n q A p : GL (Fin n) A) =
+      ((p : pointsSubgroup R n q A) : GL (Fin n) A × Aˣ).1 := by
+  unfold kerMultiplierPointsMulEquiv
+  rfl
+
+/-- The similitude attached to a point `g` of `O(q)` is `(g, 1)`. -/
+@[simp]
+theorem coe_kerMultiplierPointsMulEquiv_symm (g : QuadraticOrthogonal.pointsSubgroup R n q A) :
+    (((kerMultiplierPointsMulEquiv R n q A).symm g : pointsSubgroup R n q A) :
+        GL (Fin n) A × Aˣ) = ((g : GL (Fin n) A), 1) := by
+  unfold kerMultiplierPointsMulEquiv
+  rfl
+
 variable {B : Type*} [CommRing B] [Algebra R B]
 
 /-- **Change of value algebra on similitudes**: an algebra morphism `phi : A → B` sends a
@@ -456,14 +520,9 @@ def pointsSubgroupMap (phi : A →ₐ[R] B) : pointsSubgroup R n q A →* points
   ((MonoidHom.prodMap (Matrix.GeneralLinearGroup.map (phi : A →+* B))
       (Units.map (phi : A →* B))).comp (pointsSubgroup R n q A).subtype).codRestrict _
     fun p => by
-      have hC : ((coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R A)).map phi =
-          (coefficientMatrix q (Pi.basisFun R (Fin n))).map (algebraMap R B) := by
-        rw [Matrix.map_map]
-        exact congrArg _ (funext fun r => phi.commutes r)
       have h := ((mem_pointsSubgroup_iff_isAltMod R n q _).mp p.property).map phi
         (by rw [Ideal.map_bot])
-      rw [Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul,
-        Matrix.map_smul' _ _ _ (map_mul phi), hC, Matrix.transpose_map] at h
+      rw [transpose_mul_mul_sub_smul_map] at h
       rw [mem_pointsSubgroup_iff_isAltMod]
       exact h
 

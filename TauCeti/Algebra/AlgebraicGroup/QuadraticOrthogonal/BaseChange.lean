@@ -107,7 +107,8 @@ theorem image_relationSet_baseChange
           (1 ⊗ₜ[R] (relationMatrix R n q i j + relationMatrix R n q j i)) =
         relationMatrix K n q' i j + relationMatrix K n q' j i := by
     rw [TensorProduct.tmul_add, map_add, hrel, hrel]
-  rw [relationSet_def, relationSet_def, Set.image_union, ← Set.range_comp, ← Set.range_comp]
+  rw [relationSet_def, relationSet_def, Matrix.altRelationSet_def, Matrix.altRelationSet_def,
+    Set.image_union, ← Set.range_comp, ← Set.range_comp]
   congr 1
   · exact congrArg Set.range (funext fun i ↦ hrel i i)
   · exact congrArg Set.range (funext fun ij ↦ hsum ij.1 ij.2)

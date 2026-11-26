@@ -34,6 +34,9 @@ every characteristic: `g` preserves the form with coefficient matrix `M` exactly
 * `Matrix.dotProduct_transpose_mul_mul_mulVec`: the quadratic expression of a framed matrix.
 * `Matrix.IsAltMod.transpose_mul_mul`: stability under framing `N ↦ Pᵀ N P`.
 * `Matrix.IsAltMod.map`: stability under a ring morphism carrying the ideal into another.
+* `Matrix.altRelationSet`: the diagonal entries and symmetric sums, which generate the smallest
+  ideal modulo which the matrix is alternating (`Matrix.span_altRelationSet_le_iff`), with
+  `Matrix.IsAltMod.apply_mem_of_map`.
 * `Matrix.isAltMod_bot_iff`: alternating modulo `⊥` means the quadratic form vanishes.
 -/
 
@@ -165,6 +168,45 @@ theorem map {T F : Type*} [CommSemiring T] [FunLike F S T] [RingHomClass F S T] 
       exact hIJ (Ideal.mem_map_of_mem f (hN.add_transpose_mem i j))
 
 end IsAltMod
+
+/-- **The alternating relations** of a square matrix `N`: its diagonal entries `N i i` and its
+symmetric sums `N i j + N j i`. They generate the smallest ideal modulo which `N` is alternating
+(`Matrix.span_altRelationSet_le_iff`). -/
+def altRelationSet (N : Matrix ι ι S) : Set S :=
+  Set.range (fun i => N i i) ∪ Set.range fun ij : ι × ι => N ij.1 ij.2 + N ij.2 ij.1
+
+/-- The alternating relations are the diagonal entries and the symmetric sums. -/
+theorem altRelationSet_def (N : Matrix ι ι S) :
+    N.altRelationSet =
+      Set.range (fun i => N i i) ∪ Set.range fun ij : ι × ι => N ij.1 ij.2 + N ij.2 ij.1 := by
+  rw [altRelationSet]
+
+/-- An ideal contains the alternating relations of `N` exactly when `N` is alternating modulo
+it. -/
+theorem span_altRelationSet_le_iff {I : Ideal S} {N : Matrix ι ι S} :
+    Ideal.span N.altRelationSet ≤ I ↔ IsAltMod I N := by
+  rw [Ideal.span_le]
+  refine ⟨fun h => IsAltMod.of_mem (fun i => h (Or.inl ⟨i, rfl⟩))
+    fun i j => h (Or.inr ⟨(i, j), rfl⟩), ?_⟩
+  rintro h _ (⟨i, rfl⟩ | ⟨ij, rfl⟩)
+  · exact h.diag_mem i
+  · exact h.add_transpose_mem ij.1 ij.2
+
+/-- A matrix is alternating modulo the ideal its alternating relations generate. -/
+theorem isAltMod_span_altRelationSet (N : Matrix ι ι S) :
+    IsAltMod (Ideal.span N.altRelationSet) N :=
+  span_altRelationSet_le_iff.mp le_rfl
+
+/-- If a ring morphism makes the image of `N` alternating modulo `J`, it carries every
+alternating relation of `N` into `J`. -/
+theorem IsAltMod.apply_mem_of_map {T F : Type*} [CommSemiring T] [FunLike F S T]
+    [RingHomClass F S T] {f : F} {J : Ideal T} {N : Matrix ι ι S} (h : IsAltMod J (N.map f))
+    {x : S} (hx : x ∈ N.altRelationSet) : f x ∈ J := by
+  -- `N` is alternating modulo the preimage of `J`, which therefore contains every relation.
+  have hcomap : IsAltMod (J.comap f) N :=
+    IsAltMod.of_mem (fun i => Ideal.mem_comap.mpr (h.diag_mem i)) fun i j => by
+      simpa only [Ideal.mem_comap, Matrix.map_apply, map_add] using h.add_transpose_mem i j
+  exact Ideal.mem_comap.mp (span_altRelationSet_le_iff.mpr hcomap (Ideal.subset_span hx))
 
 end CommSemiring
 
