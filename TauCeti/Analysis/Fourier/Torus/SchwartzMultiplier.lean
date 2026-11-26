@@ -49,6 +49,8 @@ It remains to bound `‖K‖₁`. By Poisson summation the lift of `K` to `ℝ�
 * `SchwartzMap.periodicKernel`: the periodic kernel `∑ₙ σ(n) eₙ` of a Schwartz symbol.
 * `SchwartzMap.mFourierCoeff_periodicKernel`: its Fourier coefficients are the values `σ(n)`.
 * `SchwartzMap.eLpNorm_periodicKernel_le`: its `L¹` norm is at most `‖𝓕⁻ σ‖_{L¹(ℝᵈ)}`.
+* `TauCeti.UnitAddTorus.mFourier_euclidean_apply`: lifted to `ℝᵈ`, the monomial `eₙ` is the
+  character `x ↦ 𝐞 ⟪x, n⟫`.
 * `TauCeti.UnitAddTorus.eLpNorm_fourierMultiplier_le`: the `Lᵖ` bound for a Fourier multiplier
   whose symbol is a Schwartz function sampled on `ℤᵈ`.
 
@@ -122,6 +124,27 @@ theorem _root_.SchwartzMap.eLpNorm_periodicKernel_le (σ : 𝓢(EuclideanSpace �
   -- product of the Haar probability measures `AddCircle.haarAddCircle` on the circle factors.
   simp only [SchwartzMap.periodicKernel_apply]
   exact h
+
+/-! ### Fourier monomials lifted to `ℝᵈ` -/
+
+omit [Fintype d] in
+/-- The reduction modulo `ℤᵈ` from `EuclideanSpace ℝ d` onto the torus is continuous. -/
+theorem continuous_euclidean_coe :
+    Continuous fun (x : EuclideanSpace ℝ d) (i : d) ↦ (x i : UnitAddCircle) :=
+  continuous_pi fun i ↦ continuous_quotient_mk'.comp
+    ((continuous_apply i).comp (PiLp.continuous_ofLp 2 _))
+
+/-- The value of the Fourier monomial `eₙ` at the image of `x : EuclideanSpace ℝ d` on the torus
+is `𝐞 ⟪x, n⟫`. -/
+theorem mFourier_euclidean_apply (n : d → ℤ) (x : EuclideanSpace ℝ d) :
+    mFourier n (fun i ↦ (x i : UnitAddCircle)) = 𝐞 ⟪x, latticePoint n⟫ := by
+  rw [mFourier_coe_apply (x := fun i ↦ x i), Real.fourierChar_apply]
+  congr 1
+  simp only [PiLp.inner_apply, latticePoint_apply, RCLike.inner_apply, conj_trivial]
+  push_cast
+  rw [Finset.mul_sum, Finset.mul_sum, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  ring
 
 -- Mathlib's Fourier basis `mFourierBasis` lives on `L²` for the product of the Haar probability
 -- measures on the circle factors, given by this instance; use it here so that the multipliers act
