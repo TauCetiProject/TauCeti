@@ -857,6 +857,19 @@ theorem add_weightMomentMap_vertexChart {q : DelzantQuotient i u c}
       (le_of_mem_vertexChart_target hv hi hvP ((vertexChart hv hi hvP).map_source hq)),
     (vertexChart hv hi hvP).left_inv hq]
 
+/-- **The centre of the vertex chart.** A point of the source of the chart at `v` is sent to `0`
+exactly when it lies over `v`: the weights `-ε_k` of the translated weight model are linearly
+independent. -/
+theorem vertexChart_eq_zero_iff {q : DelzantQuotient i u c}
+    (hq : q ∈ (vertexChart hv hi hvP).source) :
+    haveI := hi.finiteDimensional
+    vertexChart hv hi hvP q = 0 ↔
+      reducedMomentMap (hv.surjective_linearCombination_real hi) q = v := by
+  have := hi.finiteDimensional
+  rw [← add_weightMomentMap_vertexChart hv hi hvP hq, add_eq_left,
+    weightMomentMap_eq_zero_iff (α := fun k ↦ -hv.edgeBasis hi k)
+      (hv.edgeBasis hi).linearIndependent.neg]
+
 /-- The point of the Delzant quotient at the centre of the vertex chart lies over `v`; it is the
 fixed point over `v` (`TauCeti.Toric.DelzantQuotient.bijOn_reducedMomentMap_fixedPoints`). -/
 theorem reducedMomentMap_vertexChart_symm_zero :
