@@ -615,7 +615,7 @@ along `γ` at `s = 0` and along `γ₀` at `s = 1`, each loop being traversed ov
 with `u (s, 1) = u (s, 0)` for `s ∈ [0, 1]`: a smooth `id`-seamed cylinder. The start is
 prescribed for all `t`, so that two cylinders from the same loop can be glued smoothly along it;
 the other conditions only concern the unit square. When `γ₀` is constant, `u` is a cap of `γ`. -/
-@[expose] def IsSmoothCylinder (γ γ₀ : ℝ → M) (u : ℝ × ℝ → M) : Prop :=
+def IsSmoothCylinder (γ γ₀ : ℝ → M) (u : ℝ × ℝ → M) : Prop :=
   IsSmoothSeamedCylinder I id γ γ₀ u
 
 section Seamed
@@ -627,6 +627,32 @@ variable {f : M → M} {γ γ' γ₀ : ℝ → M} {u u₁ u₂ : ℝ × ℝ → 
 theorem isSmoothSeamedCylinder_id_iff :
     IsSmoothSeamedCylinder I id γ γ₀ u ↔ IsSmoothCylinder I γ γ₀ u :=
   Iff.rfl
+
+/-- A smooth cylinder is smooth. -/
+theorem IsSmoothCylinder.contMDiff (hu : IsSmoothCylinder I γ γ₀ u) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u :=
+  IsSmoothSeamedCylinder.contMDiff hu
+
+/-- A smooth cylinder from `γ` runs along `γ` at `s = 0`. -/
+theorem IsSmoothCylinder.apply_zero (hu : IsSmoothCylinder I γ γ₀ u) (t : ℝ) : u (0, t) = γ t :=
+  IsSmoothSeamedCylinder.apply_zero hu t
+
+/-- A smooth cylinder to `γ₀` runs along `γ₀` at `s = 1`, for `t ∈ [0, 1]`. -/
+theorem IsSmoothCylinder.apply_one (hu : IsSmoothCylinder I γ γ₀ u) :
+    ∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = γ₀ t :=
+  IsSmoothSeamedCylinder.apply_one hu
+
+/-- Every loop `u (s, ·)`, `s ∈ [0, 1]`, of a smooth cylinder closes up at `t = 1`. -/
+theorem IsSmoothCylinder.periodic (hu : IsSmoothCylinder I γ γ₀ u) :
+    ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0) :=
+  IsSmoothSeamedCylinder.seam hu
+
+/-- Constructing a smooth cylinder from its smoothness, its two ends and the closing condition
+`u (s, 1) = u (s, 0)` of its loops. -/
+theorem IsSmoothCylinder.mk (contMDiff : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u)
+    (apply_zero : ∀ t, u (0, t) = γ t) (apply_one : ∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = γ₀ t)
+    (periodic : ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0)) : IsSmoothCylinder I γ γ₀ u :=
+  ⟨contMDiff, apply_zero, apply_one, periodic⟩
 
 /-- The initial path of an `f`-seamed cylinder is `f`-seamed. -/
 theorem IsSmoothSeamedCylinder.source_apply_one (hu : IsSmoothSeamedCylinder I f γ γ₀ u) :
@@ -734,7 +760,7 @@ def VanishesOnSeamedTori (f : M → M) (φ : RoughForm I M F 2) : Prop :=
 smooth map `u : ℝ × ℝ → M` that agrees on opposite edges of the square, so that it factors
 through the torus: it vanishes on `id`-seamed tori. For a symplectic form this formulates the
 area condition of symplectic atoroidality on maps of the square. -/
-@[expose] def VanishesOnTori (φ : RoughForm I M F 2) : Prop :=
+def VanishesOnTori (φ : RoughForm I M F 2) : Prop :=
   VanishesOnSeamedTori id φ
 
 /-- Unfolding `TauCeti.VanishesOnSpheres`. -/

@@ -14,8 +14,8 @@ import TauCeti.Analysis.Calculus.BumpFunction.Basic
 
 The pointwise, local form of the fundamental lemma of the calculus of variations: a function
 `g : ℝ → ℝ` vanishes at a time `t₀ ∈ [a, b]` if, for every smooth bump `φ` supported near `t₀`,
-the product `φ g` is continuous, and its integral over `[a, b]` vanishes whenever `φ` is moreover
-supported in `(a, b)` (`TauCeti.eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero`).
+the product `φ g` is continuous on `[a, b]`, and its integral over `[a, b]` vanishes whenever `φ`
+is moreover supported in `(a, b)` (`TauCeti.eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero`).
 
 Only the bumps near `t₀` are tested, and `g` is only assumed continuous near `t₀` through these
 products, so the lemma applies to a function `g` that is only meaningful near `t₀`, such as the
@@ -31,24 +31,26 @@ open Set Metric Filter
 namespace TauCeti
 
 /-- The positive half of `TauCeti.eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero`: `g` is not
-positive at `t₀`. A bump equal to `1` near `t₀` shows that `g` is continuous at `t₀`; if
-`g t₀ > 0`, a bump centred at an interior time near `t₀`, where `g > 0`, has a positive integral
-against `g`. -/
+positive at `t₀`. A bump equal to `1` near `t₀` shows that `g` is continuous at `t₀` within
+`[a, b]`; if `g t₀ > 0`, a bump centred at an interior time near `t₀`, where `g > 0`, has a
+positive integral against `g`. -/
 private theorem not_pos_of_intervalIntegral_contDiffBump_mul_eq_zero {g : ℝ → ℝ} {a b t₀ δ : ℝ}
     (hab : a < b) (ht₀ : t₀ ∈ Icc a b) (hδ : 0 < δ)
     (hcont : ∀ {c : ℝ} (φ : ContDiffBump c), tsupport φ ⊆ ball t₀ δ →
-      Continuous fun t ↦ φ t * g t)
+      ContinuousOn (fun t ↦ φ t * g t) (Icc a b))
     (hint : ∀ {c : ℝ} (φ : ContDiffBump c), tsupport φ ⊆ ball t₀ δ ∩ Ioo a b →
       ∫ t in a..b, φ t * g t = 0) :
     ¬0 < g t₀ := by
   intro hg₀
-  -- `g` is continuous at `t₀`, where it agrees with `φ g` for a bump `φ` equal to `1` near `t₀`
-  have hgcont : ContinuousAt g t₀ := by
+  -- `g` is continuous at `t₀` within `[a, b]`, where it agrees with `φ g` for a bump `φ` equal to
+  -- `1` near `t₀`
+  have hgcont : ContinuousWithinAt g (Icc a b) t₀ := by
     obtain ⟨φ, hφ⟩ := exists_contDiffBump_tsupport_subset_ball t₀ hδ
-    refine (hcont φ hφ).continuousAt.congr ?_
-    filter_upwards [closedBall_mem_nhds t₀ φ.rIn_pos] with t ht
+    refine (hcont φ hφ t₀ ht₀).congr_of_eventuallyEq ?_ (by rw [φ.one_of_mem_closedBall
+      (mem_closedBall_self φ.rIn_pos.le), one_mul])
+    filter_upwards [mem_nhdsWithin_of_mem_nhds (closedBall_mem_nhds t₀ φ.rIn_pos)] with t ht
     rw [φ.one_of_mem_closedBall ht, one_mul]
-  obtain ⟨ε, hε, hεg⟩ := Metric.eventually_nhds_iff.mp (hgcont.eventually (lt_mem_nhds hg₀))
+  obtain ⟨ε, hε, hεg⟩ := Metric.mem_nhdsWithin_iff.mp (hgcont.eventually (lt_mem_nhds hg₀))
   -- an interior time `t₁` near `t₀`, and a ball around it inside `(a, b)` where `g > 0`
   obtain ⟨t₁, ht₁, ht₁₀⟩ : ∃ t₁ ∈ Ioo a b, dist t₀ t₁ < min δ ε :=
     Metric.mem_closure_iff.mp (by rwa [closure_Ioo hab.ne]) _ (lt_min hδ hε)
@@ -58,9 +60,9 @@ private theorem not_pos_of_intervalIntegral_contDiffBump_mul_eq_zero {g : ℝ �
   have hφJ : tsupport φ ⊆ ball t₀ δ ∩ Ioo a b := fun t ht ↦
     ⟨ball_subset_ball (min_le_left _ _) (hrsub (hφ ht)).2, (hrsub (hφ ht)).1⟩
   have hg : ∀ t ∈ ball t₁ r, 0 < g t := fun t ht ↦
-    hεg ((mem_ball.mp (hrsub ht).2).trans_le (min_le_right _ _))
+    hεg ⟨ball_subset_ball (min_le_right _ _) (hrsub ht).2, Ioo_subset_Icc_self (hrsub ht).1⟩
   -- `φ g` is nonnegative, as `g > 0` on the support of `φ`, and `φ g = g > 0` at `t₁`
-  refine (intervalIntegral.integral_pos hab (hcont φ fun t ht ↦ (hφJ ht).1).continuousOn
+  refine (intervalIntegral.integral_pos hab (hcont φ fun t ht ↦ (hφJ ht).1)
     (fun t _ ↦ ?_) ⟨t₁, Ioo_subset_Icc_self ht₁, ?_⟩).ne' (hint φ hφJ)
   · by_cases hφt : φ t = 0
     · rw [hφt, zero_mul]
@@ -70,12 +72,12 @@ private theorem not_pos_of_intervalIntegral_contDiffBump_mul_eq_zero {g : ℝ �
 
 /-- **Testing against bumps near a point.** Let `g : ℝ → ℝ`, `a < b`, `t₀ ∈ [a, b]` and `δ > 0`.
 If, for every smooth bump `φ` supported in the ball of radius `δ` about `t₀`, the product `φ g`
-is continuous, and `∫_a^b φ g = 0` whenever `φ` is moreover supported in `(a, b)`, then
-`g t₀ = 0`. -/
+is continuous on `[a, b]`, and `∫_a^b φ g = 0` whenever `φ` is moreover supported in `(a, b)`,
+then `g t₀ = 0`. -/
 theorem eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero {g : ℝ → ℝ} {a b t₀ δ : ℝ}
     (hab : a < b) (ht₀ : t₀ ∈ Icc a b) (hδ : 0 < δ)
     (hcont : ∀ {c : ℝ} (φ : ContDiffBump c), tsupport φ ⊆ ball t₀ δ →
-      Continuous fun t ↦ φ t * g t)
+      ContinuousOn (fun t ↦ φ t * g t) (Icc a b))
     (hint : ∀ {c : ℝ} (φ : ContDiffBump c), tsupport φ ⊆ ball t₀ δ ∩ Ioo a b →
       ∫ t in a..b, φ t * g t = 0) :
     g t₀ = 0 := by

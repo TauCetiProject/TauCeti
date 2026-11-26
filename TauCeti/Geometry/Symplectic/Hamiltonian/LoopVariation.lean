@@ -403,8 +403,8 @@ theorem curveVelocity_eq_hamiltonianVectorField_of_forall_integral_mul_eq_zero [
   -- `φ g` is continuous for the bumps `φ` near `t₀`, with `∫₀¹ φ g = 0` for those supported in
   -- `(0, 1)`, so `g t₀ = 0`; but `g t₀ > 0`
   refine he.ne' (eq_zero_of_intervalIntegral_contDiffBump_mul_eq_zero (g := g) zero_lt_one ht₀ hδ
-    (fun φ hφ ↦ h.continuous_mul_apply_curveVelocity_sub hH hn Metric.isOpen_ball
-      (hJ subset_rfl) (hT φ subset_rfl) φ.contDiff hφ hγ)
+    (fun φ hφ ↦ (h.continuous_mul_apply_curveVelocity_sub hH hn Metric.isOpen_ball
+      (hJ subset_rfl) (hT φ subset_rfl) φ.contDiff hφ hγ).continuousOn)
     fun φ hφ ↦ hint (Metric.isOpen_ball.inter isOpen_Ioo) inter_subset_right
       (hJ inter_subset_left) (hT φ inter_subset_left) φ.contDiff hφ)
 
