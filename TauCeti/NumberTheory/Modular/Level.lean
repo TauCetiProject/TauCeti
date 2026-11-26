@@ -52,7 +52,9 @@ subgroup whose index does not divide that number is therefore not a congruence s
 * `TauCeti.ModularGroup.strictLevel_eq_generalLevel_or_eq_two_mul`: the strict level of
   `Γ ≤ SL(2, ℤ)` is the general level of its image or twice it.
 * `TauCeti.ModularGroup.generalLevel_map_Gamma`: the image of `Γ(N)` has general level `N`.
-* `TauCeti.ModularGroup.isCongruenceSubgroup_liftSL_iff`: Wohlfahrt's theorem for `±Γ'`.
+* `TauCeti.ModularGroup.isCongruenceSubgroup_liftSL_iff`,
+  `TauCeti.ModularGroup.isCongruenceSubgroup_liftSL_iff_Gamma_le_of_dvd`: Wohlfahrt's theorem for
+  `±Γ'`, at the general level and at any nonzero multiple of it.
 * `TauCeti.ModularGroup.map_Gamma_generalLevel_le_normalCore`: for congruence `±Γ'`, the image of
   `Γ(N)` lies in the normal core of `Γ'`.
 * `TauCeti.ModularGroup.dvd_index_map_Gamma_generalLevel`,
@@ -264,6 +266,14 @@ theorem isCongruenceSubgroup_liftSL_iff :
     infer_instance
   rw [generalLevel_eq_strictLevel_liftSL]
   exact isCongruenceSubgroup_iff_Gamma_strictLevel_le _
+
+variable {Γ' e} in
+/-- **Wohlfahrt's theorem for the full preimage, at a multiple of the level**: for `M ≠ 0` a
+multiple of the general level of `Γ'`, `±Γ'` is a congruence subgroup exactly when it contains
+`Γ(M)`. -/
+theorem isCongruenceSubgroup_liftSL_iff_Gamma_le_of_dvd {M : ℕ} [NeZero M]
+    (hM : generalLevel Γ' e ∣ M) : IsCongruenceSubgroup Γ'.liftSL ↔ Gamma M ≤ Γ'.liftSL :=
+  isCongruenceSubgroup_iff_Gamma_le_of_dvd (generalLevel_eq_strictLevel_liftSL Γ' e ▸ hM)
 
 /-- If `±Γ'` is a congruence subgroup, the image of `Γ(N)` in `PSL(2, ℤ)`, for `N` the general
 level, lies in the normal core of `Γ'`. -/

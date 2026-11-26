@@ -33,6 +33,7 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_replicate_zero`: the positive-degree elementary symmetric functions of a
   multiset of zeros vanish.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
+* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables.
 * `Multiset.esymm_map`: elementary symmetric functions commute with ring homomorphisms.
 * `Multiset.esymm_nonneg`, `Multiset.esymm_eq_zero_of_le`: for a multiset of nonnegative elements
   of an ordered semiring, every `eₙ(s)` is nonnegative, and once one vanishes so do all those of
@@ -182,6 +183,12 @@ theorem Multiset.sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R
   refine congrArg Multiset.sum (Multiset.map_congr rfl fun k _ ↦ ?_)
   rw [← Multiset.sum_map_mul_left]
   exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by ring)
+
+/-- The elementary symmetric polynomial whose degree is the number of variables is the product of
+all the variables: `e_n(X₁, …, X_n) = X₁ ⋯ X_n`. -/
+theorem MvPolynomial.esymm_card (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R] :
+    MvPolynomial.esymm σ R (Fintype.card σ) = ∏ i, MvPolynomial.X i := by
+  rw [MvPolynomial.esymm, ← Finset.card_univ, Finset.powersetCard_self, Finset.sum_singleton]
 
 namespace TauCeti
 

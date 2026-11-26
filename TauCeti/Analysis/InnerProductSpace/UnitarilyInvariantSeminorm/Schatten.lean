@@ -41,6 +41,9 @@ rectangular factors `C`. Its endpoints are the nuclear seminorm (`p = 1`), the F
   `TauCeti.UnitarilyInvariantSeminorm.schatten_comp_comp_le`: the ideal inequalities.
 * `TauCeti.UnitarilyInvariantSeminorm.schatten_one`, `schatten_two`, `schatten_top`: the
   nuclear, Frobenius and operator-norm endpoints.
+* `LinearMap.norm_toContinuousLinearMap_le_frobenius`,
+  `LinearMap.frobenius_le_sqrt_finrank_mul_norm_toContinuousLinearMap`:
+  `‖A‖ ≤ ‖A‖_F ≤ √(dim E) ‖A‖`.
 
 ## References
 
@@ -121,6 +124,25 @@ theorem schatten_two : schatten 𝕜 E F 2 = frobenius 𝕜 E F := by
   rw [schatten_apply_of_ne_top 2 ENNReal.ofNat_ne_top,
     frobenius_apply_eq_sqrt_sum_sq_singularValues, Real.sqrt_eq_rpow]
   simp
+
+/-- The operator norm is at most the Frobenius norm: `‖A‖ ≤ ‖A‖_F`. -/
+theorem _root_.LinearMap.norm_toContinuousLinearMap_le_frobenius (A : E →ₗ[𝕜] F) :
+    ‖LinearMap.toContinuousLinearMap A‖ ≤ frobenius 𝕜 E F A := by
+  simpa [opNorm_apply] using opNorm_apply_le_schatten_apply 2 A
+
+/-- The Frobenius norm is at most `√(dim E)` times the operator norm: `‖A‖_F ≤ √(dim E) ‖A‖`. -/
+theorem _root_.LinearMap.frobenius_le_sqrt_finrank_mul_norm_toContinuousLinearMap
+    (A : E →ₗ[𝕜] F) :
+    frobenius 𝕜 E F A ≤ √(finrank 𝕜 E : ℝ) * ‖LinearMap.toContinuousLinearMap A‖ := by
+  rw [A.frobenius_apply_eq_sqrt_sum_range_sq_singularValues,
+    A.norm_toContinuousLinearMap_eq_singularValues_zero,
+    ← Real.sqrt_sq (A.singularValues_nonneg 0), ← Real.sqrt_mul (Nat.cast_nonneg _)]
+  refine Real.sqrt_le_sqrt ?_
+  calc ∑ i ∈ Finset.range (finrank 𝕜 E), A.singularValues i ^ 2
+      ≤ ∑ _i ∈ Finset.range (finrank 𝕜 E), A.singularValues 0 ^ 2 :=
+        Finset.sum_le_sum fun i _ ↦ pow_le_pow_left₀ (A.singularValues_nonneg i)
+          (A.singularValues_antitone (Nat.zero_le i)) 2
+    _ = _ := by simp
 
 /-- At `p = ∞`, the Schatten seminorm is the operator norm `σ₀(A)`. -/
 @[simp]

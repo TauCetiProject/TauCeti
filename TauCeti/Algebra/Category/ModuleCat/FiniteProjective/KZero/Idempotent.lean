@@ -184,9 +184,7 @@ theorem objectCodeAddEquiv_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R)
 /-- **`K₀(R)` is the group completion of the idempotent monoid `V(R)`.** Sends `[e]` to `[eRⁿ]`
 (`TauCeti.IdempotentMonoid.kZeroEquiv_of_mk`). -/
 def kZeroEquiv : GrothendieckAddGroup (IdempotentMonoid R) ≃+ KZero R :=
-  ((AddLocalization.addMonoidOf ⊤).addEquivOfAddEquiv
-    (AddLocalization.addMonoidOf (M := ObjectCode.{u} (FiniteProjectiveRight R)) ⊤)
-    (j := objectCodeAddEquiv R) (AddSubmonoid.map_equiv_top (objectCodeAddEquiv R))).trans
+  (GrothendieckAddGroup.congr (objectCodeAddEquiv R)).trans
     (SplitK0.grothendieckAddGroupEquiv.{u} (FiniteProjectiveRight R))
 
 variable {R} {ι : Type*} [Fintype ι]
@@ -195,11 +193,8 @@ variable {R} {ι : Type*} [Fintype ι]
 theorem kZeroEquiv_of_mk {e : Matrix ι ι R} (he : IsIdempotentElem e) (X : FiniteProjectiveRight R)
     (θ : X.obj ≃ₗ[Rᵐᵒᵖ] range (mulVecBilin R Rᵐᵒᵖ e)) :
     kZeroEquiv R (GrothendieckAddGroup.of (mk e he)) = SplitK0.of.{u} X := by
-  refine (congrArg (SplitK0.grothendieckAddGroupEquiv.{u} (FiniteProjectiveRight R))
-    ((AddLocalization.addMonoidOf ⊤).addEquivOfAddEquiv_eq
-      (k := AddLocalization.addMonoidOf (M := ObjectCode.{u} (FiniteProjectiveRight R)) ⊤)
-      (AddSubmonoid.map_equiv_top (objectCodeAddEquiv R)) (mk e he))).trans ?_
-  rw [objectCodeAddEquiv_mk_eq_of_linearEquiv he θ]
+  rw [kZeroEquiv, AddEquiv.trans_apply, GrothendieckAddGroup.congr_of,
+    objectCodeAddEquiv_mk_eq_of_linearEquiv he θ]
   exact SplitK0.grothendieckAddGroupEquiv_of_objectCode.{u} X
 
 -- Not `@[simp]`: the simp normal form of `GrothendieckAddGroup.of x` is
@@ -451,9 +446,7 @@ the image `Aⁿe` of its action on row vectors (`TauCeti.IdempotentMonoid.splitK
 def splitK0Equiv :
     GrothendieckAddGroup (IdempotentMonoid A) ≃+
       SplitK0.{u} (finiteProjectiveModules A).FullSubcategory :=
-  (((AddLocalization.addMonoidOf ⊤).addEquivOfAddEquiv (AddLocalization.addMonoidOf ⊤)
-    (j := opEquiv A) (AddSubmonoid.map_equiv_top (opEquiv A))).trans
-    (kZeroEquiv Aᵐᵒᵖ)).trans
+  ((GrothendieckAddGroup.congr (opEquiv A)).trans (kZeroEquiv Aᵐᵒᵖ)).trans
     (SplitK0.mapEquiv
       (ModuleCat.restrictScalarsEquivalenceOfRingEquiv
         (RingEquiv.opOp A)).finiteProjectiveModulesEquivalence)
@@ -479,10 +472,6 @@ matrix `e` to the class of any module isomorphic to the image `Aⁿe` of its act
 theorem splitK0Equiv_of_mk {ι : Type*} [Fintype ι] {e : Matrix ι ι A} (he : IsIdempotentElem e)
     (X : (finiteProjectiveModules A).FullSubcategory) (θ : X.obj ≃ₗ[A] range e.vecMulLinear) :
     splitK0Equiv A (GrothendieckAddGroup.of (mk e he)) = SplitK0.of.{u} X := by
-  have hop : (AddLocalization.addMonoidOf ⊤).addEquivOfAddEquiv (AddLocalization.addMonoidOf ⊤)
-      (AddSubmonoid.map_equiv_top (opEquiv A)) (GrothendieckAddGroup.of (mk e he)) =
-        GrothendieckAddGroup.of (opEquiv A (mk e he)) :=
-    AddSubmonoid.LocalizationMap.addEquivOfAddEquiv_eq _ _ _
   let E₀ := ModuleCat.restrictScalarsEquivalenceOfRingEquiv (RingEquiv.opOp A)
   let E := E₀.finiteProjectiveModulesEquivalence
   let Y : FiniteProjectiveRight Aᵐᵒᵖ := E.inverse.obj X
@@ -499,7 +488,8 @@ theorem splitK0Equiv_of_mk {ι : Type*} [Fintype ι] {e : Matrix ι ι A} (he : 
     (e.rangeVecMulLinearEquiv (RingEquiv.opOp A)).trans (LinearEquiv.ofEq _ _ (by rw [← heOp]))
   let θ' : Y.obj ≃ₗ[Aᵐᵒᵖᵐᵒᵖ] range ((eᵀ.map op).mulVecBilin Aᵐᵒᵖ Aᵐᵒᵖᵐᵒᵖ) :=
     ((eY.trans θ).trans eOp).trans (rangeVecMulLinearTransposeMapOpEquiv (eᵀ.map op))
-  rw [splitK0Equiv, AddEquiv.trans_apply, AddEquiv.trans_apply, hop, opEquiv_mk,
+  rw [splitK0Equiv, AddEquiv.trans_apply, AddEquiv.trans_apply, GrothendieckAddGroup.congr_of,
+    opEquiv_mk,
     kZeroEquiv_of_mk he.matrix_transpose_map_op Y θ', SplitK0.mapEquiv_of]
   exact SplitK0.of_congr (E.counitIso.app X)
 
