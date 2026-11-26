@@ -63,6 +63,8 @@ in a maximal abelian subspace of `𝔭`, by Zorn's lemma.
   centralizer in `𝔭`.
 * `LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_sup`: `𝔤_0 = 𝔪 + 𝔞` with
   `𝔪 = 𝔤_0 ∩ 𝔨`.
+* `LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_iff`: `𝔤_0 = 𝔞` exactly when
+  `𝔪 = 0`.
 * `LieEquiv.IsMaximalAbelianInP.map`: the image of a maximal abelian subspace of `𝔭` under an
   isomorphism `e` is maximal abelian in the `𝔭` of `e ∘ θ ∘ e⁻¹`.
 
@@ -321,9 +323,9 @@ theorem restrictedRootSpace_zero_inf_cartanP (h𝔞 : θ.IsMaximalAbelianInP �
     (mem_sup_right (mem_span_singleton_self x))
 
 /-- The centralizer `𝔤_0` of a maximal abelian subspace `𝔞` of `𝔭` is the sum of `𝔞` and
-`𝔪 = 𝔤_0 ∩ 𝔨`, for an involution when `2` is a unit. This states only the sum; that it is
-direct, as `𝔞 ⊆ 𝔭` and `𝔨` and `𝔭` are complementary
-(`LieEquiv.isCompl_fixedSubalgebra_cartanP`), is not proved here. -/
+`𝔪 = 𝔤_0 ∩ 𝔨`, for an involution when `2` is a unit. The sum is direct, as `𝔞 ⊆ 𝔭` and `𝔨` and
+`𝔭` are complementary (`LieEquiv.isCompl_fixedSubalgebra_cartanP`); see
+`LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_iff`. -/
 theorem restrictedRootSpace_zero_eq_sup (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ)
     (h𝔞 : θ.IsMaximalAbelianInP 𝔞) :
     𝔞.restrictedRootSpace 0 =
@@ -343,6 +345,21 @@ theorem restrictedRootSpace_zero_eq_sup (h2 : IsUnit (2 : R)) (hθ : Function.In
   · rw [← h𝔞.restrictedRootSpace_zero_inf_cartanP]
     refine ⟨smul_mem _ _ (sub_mem hx hθx), smul_mem _ _ (mem_cartanP.mpr ?_)⟩
     rw [map_sub, hθ x, neg_sub]
+
+/-- **`𝔤_0 = 𝔞` exactly when `𝔪 = 0`**: the centralizer of a maximal abelian subspace `𝔞` of
+`𝔭` is `𝔞` itself exactly when `𝔪 = 𝔤_0 ∩ 𝔨` vanishes. -/
+theorem restrictedRootSpace_zero_eq_iff (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ)
+    (h𝔞 : θ.IsMaximalAbelianInP 𝔞) :
+    𝔞.restrictedRootSpace 0 = 𝔞 ↔
+      𝔞.restrictedRootSpace 0 ⊓ θ.toLieHom.fixedSubalgebra.toSubmodule = ⊥ := by
+  constructor
+  · intro h
+    rw [h, eq_bot_iff]
+    refine le_trans (inf_le_inf_right _ h𝔞.le_cartanP) ?_
+    rw [inf_comm]
+    exact (θ.isCompl_fixedSubalgebra_cartanP h2 hθ).disjoint.le_bot
+  · intro h
+    rw [h𝔞.restrictedRootSpace_zero_eq_sup h2 hθ, h, bot_sup_eq]
 
 variable {L' : Type*} [LieRing L'] [LieAlgebra R L'] in
 /-- The image under `e` of a maximal abelian subspace of the `-1`-eigenspace of `θ` is a maximal
