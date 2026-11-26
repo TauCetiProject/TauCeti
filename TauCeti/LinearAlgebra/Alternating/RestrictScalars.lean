@@ -19,6 +19,7 @@ and `N`, `AlternatingMap.restrictScalars R f` reinterprets `f` as an `R`-alterna
 
 * `AlternatingMap.instIsScalarTower`: pointwise `IsScalarTower` instance on `M [⋀^ι]→ₗ[R] N`.
 * `AlternatingMap.restrictScalars`: scalar restriction `M [⋀^ι]→ₗ[A] N → M [⋀^ι]→ₗ[R] N`.
+* `AlternatingMap.restrictScalarsₗ`: `AlternatingMap.restrictScalars` bundled as a linear map.
 * `AlternatingMap.ofRestrictScalars`: upgrade an `R`-alternating map that is `A`-homogeneous in
   each coordinate to an `A`-alternating map `M [⋀^ι]→ₗ[A] N`.
 -/
@@ -77,6 +78,19 @@ theorem restrictScalars_add (f g : M [⋀^ι]→ₗ[A] N) :
 theorem restrictScalars_smul {S : Type*} [Monoid S] [DistribMulAction S N]
     [SMulCommClass A S N] [SMulCommClass R S N] (c : S) (f : M [⋀^ι]→ₗ[A] N) :
     (c • f).restrictScalars R = c • f.restrictScalars R := ext fun _ ↦ rfl
+
+/-- `AlternatingMap.restrictScalars` as an `S`-linear map. -/
+def restrictScalarsₗ (S : Type*) [Semiring S] [Module S N]
+    [SMulCommClass A S N] [SMulCommClass R S N] :
+    (M [⋀^ι]→ₗ[A] N) →ₗ[S] M [⋀^ι]→ₗ[R] N where
+  toFun := restrictScalars R
+  map_add' := restrictScalars_add R
+  map_smul' := restrictScalars_smul R
+
+@[simp]
+theorem restrictScalarsₗ_apply (S : Type*) [Semiring S] [Module S N]
+    [SMulCommClass A S N] [SMulCommClass R S N] (f : M [⋀^ι]→ₗ[A] N) :
+    restrictScalarsₗ R S f = f.restrictScalars R := (rfl)
 
 end Semiring
 

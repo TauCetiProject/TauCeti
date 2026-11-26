@@ -34,9 +34,9 @@ bundle `Bundle.Trivial M 𝕜`). This file provides the algebraic and calculus o
   `ContMDiffSection.eq_of_evalAlternating_eq` for `n ≤ ∞`);
 * the degree-zero `C^n(M)`-linear equivalence `ContMDiffSection.constOfIsEmptyEquiv` between scalar
   functions `C^n⟮I, M; 𝕜⟯` and sections of `fun x ↦ V x [⋀^ι]→L[𝕜] 𝕜` for `[IsEmpty ι]`;
-* the interior product `ContMDiffSection.interiorProd` contracting the first slot of a
+* the interior product `ContMDiffSection.interior` contracting the first slot of a
   bundle-valued alternating section with a section of `V`, intertwining evaluation with
-  `AlternatingMap.curryLeft`, together with `ContMDiffSection.apply_eq_interiorProd_tail`;
+  `AlternatingMap.curryLeft`, together with `ContMDiffSection.apply_eq_interior_tail`;
 * the smooth fibrewise wedge product `ContMDiffSection.wedge` of real scalar alternating sections,
   together with its graded commutativity, associativity, and interior-product antiderivation laws
   on sections via `LinearEquiv.cast`;
@@ -218,7 +218,7 @@ end General
 
 /-! ### Interior product -/
 
-noncomputable section InteriorProd
+noncomputable section Interior
 
 variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
@@ -241,9 +241,17 @@ theorem cast_apply {k l : ℕ} (h : k = l) (φ : Ω₂[k]) (x : M) (v : Fin l �
       φ x (v ∘ Fin.cast h) := by
   subst h; rfl
 
+/-- Pointwise evaluation of `LinearEquiv.cast h φ + c • ψ`. -/
+theorem add_cast_smul_apply {k l : ℕ} (h : k = l) (φ : Ω₂[k]) (c : 𝕜) (ψ : Ω₂[l])
+    (x : M) (v : Fin l → V x) :
+    (LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯) (M := fun q : ℕ ↦ Ω₂[q]) h φ + c • ψ) x v =
+      φ x (v ∘ Fin.cast h) + c • ψ x v := by
+  simp only [coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply, cast_apply,
+    coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
+
 /-- Contract the first argument of a `C^n` section of `fun x ↦ V x [⋀^Fin (k + 1)]→L[𝕜] V₂ x`
 with a `C^n` section `a` of `V`. -/
-def interiorProd {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) : Ω₂[k] where
+def interior {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) : Ω₂[k] where
   toFun x := (φ x).curryLeftTopological (a x)
   contMDiff_toFun x₀ := by
     have hφ := (contMDiffAt_continuousAlternatingMap_bundle
@@ -267,107 +275,107 @@ def interiorProd {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) : Ω₂
     simp [ContinuousAlternatingMap.inCoordinates, Function.comp_def, e₁, hcons]
 
 @[simp]
-theorem interiorProd_apply {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) (x : M) (v : Fin k → V x) :
-    φ.interiorProd a x v = φ x (Matrix.vecCons (a x) v) :=
+theorem interior_apply {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) (x : M) (v : Fin k → V x) :
+    φ.interior a x v = φ x (Matrix.vecCons (a x) v) :=
   ContinuousAlternatingMap.curryLeftTopological_apply_apply (φ x) (a x) v
 
 /-- Evaluating a `C^n` alternating section at `x` on `v : Fin (k + 1) → V x` equals contracting
 first with any `C^n` section `a` satisfying `a x = v 0` and evaluating on `Fin.tail v`. -/
-theorem apply_eq_interiorProd_tail {k : ℕ} (φ : Ω₂[k + 1]) {a : Cₛ^n⟮I; F, V⟯}
+theorem apply_eq_interior_tail {k : ℕ} (φ : Ω₂[k + 1]) {a : Cₛ^n⟮I; F, V⟯}
     {x : M} {v : Fin (k + 1) → V x} (ha : a x = v 0) :
-    φ x v = φ.interiorProd a x (Fin.tail v) := by
-  rw [interiorProd_apply]
+    φ x v = φ.interior a x (Fin.tail v) := by
+  rw [interior_apply]
   exact congrArg (φ x) (funext fun i ↦ Fin.cases ha.symm (fun _ ↦ rfl) i)
 
 /-- Interior product commutes with degree transport. -/
-theorem interiorProd_cast {k l : ℕ} (h : k + 1 = l + 1) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    (LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯) (M := fun q : ℕ ↦ Ω₂[q]) h φ).interiorProd a =
+theorem interior_cast {k l : ℕ} (h : k + 1 = l + 1) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    (LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯) (M := fun q : ℕ ↦ Ω₂[q]) h φ).interior a =
       LinearEquiv.cast (R := C^n⟮I, M; 𝕜⟯) (M := fun q : ℕ ↦ Ω₂[q]) (Nat.succ.inj h)
-        (φ.interiorProd a) := by
+        (φ.interior a) := by
   obtain rfl : k = l := Nat.succ.inj h
   rfl
 
 @[simp]
-theorem interiorProd_zero_left {k : ℕ} (a : Cₛ^n⟮I; F, V⟯) :
-    (0 : Ω₂[k + 1]).interiorProd a = 0 := by ext x v; simp
+theorem interior_zero_left {k : ℕ} (a : Cₛ^n⟮I; F, V⟯) :
+    (0 : Ω₂[k + 1]).interior a = 0 := by ext x v; simp
 
 @[simp]
-theorem interiorProd_zero_right {k : ℕ} (φ : Ω₂[k + 1]) : φ.interiorProd 0 = 0 := by
+theorem interior_zero_right {k : ℕ} (φ : Ω₂[k + 1]) : φ.interior 0 = 0 := by
   ext x v; exact congr($((φ x).curryLeftTopological.map_zero) v)
 
 @[simp]
-theorem interiorProd_add_left {k : ℕ} (φ ψ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    (φ + ψ).interiorProd a = φ.interiorProd a + ψ.interiorProd a := by ext x v; simp
+theorem interior_add_left {k : ℕ} (φ ψ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    (φ + ψ).interior a = φ.interior a + ψ.interior a := by ext x v; simp
 
 @[simp]
-theorem interiorProd_add_right {k : ℕ} (φ : Ω₂[k + 1]) (a b : Cₛ^n⟮I; F, V⟯) :
-    φ.interiorProd (a + b) = φ.interiorProd a + φ.interiorProd b := by
+theorem interior_add_right {k : ℕ} (φ : Ω₂[k + 1]) (a b : Cₛ^n⟮I; F, V⟯) :
+    φ.interior (a + b) = φ.interior a + φ.interior b := by
   ext x v; exact congr($((φ x).curryLeftTopological.map_add (a x) (b x)) v)
 
 @[simp]
-theorem interiorProd_smul_left {k : ℕ} (f : C^n⟮I, M; 𝕜⟯) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    (f • φ).interiorProd a = f • φ.interiorProd a := by ext x v; simp
+theorem interior_smul_left {k : ℕ} (f : C^n⟮I, M; 𝕜⟯) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    (f • φ).interior a = f • φ.interior a := by ext x v; simp
 
 @[simp]
-theorem interiorProd_smul_right {k : ℕ} (f : C^n⟮I, M; 𝕜⟯) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    φ.interiorProd (f • a) = f • φ.interiorProd a := by
+theorem interior_smul_right {k : ℕ} (f : C^n⟮I, M; 𝕜⟯) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    φ.interior (f • a) = f • φ.interior a := by
   ext x v
-  simpa only [ContinuousAlternatingMap.curryLeftTopological_apply_apply, interiorProd_apply,
+  simpa only [ContinuousAlternatingMap.curryLeftTopological_apply_apply, interior_apply,
     smul_apply, ContinuousAlternatingMap.smul_apply] using
     congr($((φ x).curryLeftTopological.map_smul (f x) (a x)) v)
 
 @[simp]
-theorem interiorProd_const_smul_left {k : ℕ} (c : 𝕜) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    (c • φ).interiorProd a = c • φ.interiorProd a := by ext x v; simp
+theorem interior_const_smul_left {k : ℕ} (c : 𝕜) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    (c • φ).interior a = c • φ.interior a := by ext x v; simp
 
 @[simp]
-theorem interiorProd_const_smul_right {k : ℕ} (c : 𝕜) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    φ.interiorProd (c • a) = c • φ.interiorProd a := by
+theorem interior_const_smul_right {k : ℕ} (c : 𝕜) (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    φ.interior (c • a) = c • φ.interior a := by
   ext x v; exact congr($((φ x).curryLeftTopological.map_smul c (a x)) v)
 
 @[simp]
-theorem interiorProd_neg_left {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    (-φ).interiorProd a = -φ.interiorProd a := by ext x v; simp
+theorem interior_neg_left {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    (-φ).interior a = -φ.interior a := by ext x v; simp
 
 @[simp]
-theorem interiorProd_neg_right {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    φ.interiorProd (-a) = -φ.interiorProd a := by
+theorem interior_neg_right {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    φ.interior (-a) = -φ.interior a := by
   ext x v; exact congr($((φ x).curryLeftTopological.map_neg (a x)) v)
 
 @[simp]
-theorem interiorProd_sub_left {k : ℕ} (φ ψ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    (φ - ψ).interiorProd a = φ.interiorProd a - ψ.interiorProd a := by ext x v; simp
+theorem interior_sub_left {k : ℕ} (φ ψ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) :
+    (φ - ψ).interior a = φ.interior a - ψ.interior a := by ext x v; simp
 
 @[simp]
-theorem interiorProd_sub_right {k : ℕ} (φ : Ω₂[k + 1]) (a b : Cₛ^n⟮I; F, V⟯) :
-    φ.interiorProd (a - b) = φ.interiorProd a - φ.interiorProd b := by
-  rw [sub_eq_add_neg, interiorProd_add_right, interiorProd_neg_right, sub_eq_add_neg]
+theorem interior_sub_right {k : ℕ} (φ : Ω₂[k + 1]) (a b : Cₛ^n⟮I; F, V⟯) :
+    φ.interior (a - b) = φ.interior a - φ.interior b := by
+  rw [sub_eq_add_neg, interior_add_right, interior_neg_right, sub_eq_add_neg]
 
 /-- Contracting twice with the same section gives zero. -/
 @[simp]
-theorem interiorProd_interiorProd_self {k : ℕ} (φ : Ω₂[k + 2]) (a : Cₛ^n⟮I; F, V⟯) :
-    (φ.interiorProd a).interiorProd a = 0 := by
+theorem interior_interior_self {k : ℕ} (φ : Ω₂[k + 2]) (a : Cₛ^n⟮I; F, V⟯) :
+    (φ.interior a).interior a = 0 := by
   ext x v; exact congr($((φ x).curryLeftTopological_curryLeftTopological (a x)) v)
 
 /-- Interior products anticommute: `ι_b (ι_a φ) = -ι_a (ι_b φ)`. -/
-theorem interiorProd_interiorProd_comm {k : ℕ} (φ : Ω₂[k + 2]) (a b : Cₛ^n⟮I; F, V⟯) :
-    (φ.interiorProd a).interiorProd b = -(φ.interiorProd b).interiorProd a := by
-  have h := interiorProd_interiorProd_self φ (a + b)
-  simp only [interiorProd_add_left, interiorProd_add_right, interiorProd_interiorProd_self,
+theorem interior_interior_comm {k : ℕ} (φ : Ω₂[k + 2]) (a b : Cₛ^n⟮I; F, V⟯) :
+    (φ.interior a).interior b = -(φ.interior b).interior a := by
+  have h := interior_interior_self φ (a + b)
+  simp only [interior_add_left, interior_add_right, interior_interior_self,
     zero_add, add_zero] at h
   exact eq_neg_of_add_eq_zero_right h
 
-/-- Evaluation intertwines `ContMDiffSection.interiorProd` with `AlternatingMap.curryLeft`. -/
+/-- Evaluation intertwines `ContMDiffSection.interior` with `AlternatingMap.curryLeft`. -/
 @[simp]
-theorem evalAlternating_interiorProd {k : ℕ}
+theorem evalAlternating_interior {k : ℕ}
     (φ : Cₛ^n⟮I; F [⋀^Fin (k + 1)]→L[𝕜] 𝕜, fun x ↦ V x [⋀^Fin (k + 1)]→L[𝕜] 𝕜⟯)
     (a : Cₛ^n⟮I; F, V⟯) :
-    (φ.interiorProd a).evalAlternating = φ.evalAlternating.curryLeft a := by
+    (φ.interior a).evalAlternating = φ.evalAlternating.curryLeft a := by
   ext s x
-  simp only [evalAlternating_apply, interiorProd_apply, AlternatingMap.curryLeft_apply_apply]
+  simp only [evalAlternating_apply, interior_apply, AlternatingMap.curryLeft_apply_apply]
   exact congrArg (φ x) (funext fun i ↦ Fin.cases rfl (fun _ ↦ rfl) i)
 
-end InteriorProd
+end Interior
 
 section
 
@@ -564,8 +572,7 @@ theorem wedge_comm {k l : ℕ} (φ : Ω[k]) (ψ : Ω[l]) :
         LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q]) (Nat.add_comm l k)
           (ψ.wedge φ) := by
   ext x v
-  rw [coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply, cast_apply]
-  exact wedge_comm_apply φ ψ x v
+  simpa [-LinearEquiv.cast_apply, cast_apply] using wedge_comm_apply φ ψ x v
 
 /-- Pointwise associativity of the fibrewise wedge product up to
 `Fin.cast (Nat.add_assoc k l m).symm`. -/
@@ -589,46 +596,45 @@ theorem wedge_assoc {k l m : ℕ} (φ : Ω[k]) (ψ : Ω[l]) (θ : Ω[m]) :
 
 /-- Contracting a wedge whose left factor has degree zero multiplies by that scalar function:
 `ι_a (φ ∧ ψ) = φ ∧ (ι_a ψ)`. -/
-theorem interiorProd_wedge_zero_left {l : ℕ}
+theorem interior_wedge_zero_left {l : ℕ}
     (φ : Ω[0]) (ψ : Ω[l + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    (φ.wedge ψ).interiorProd a = φ.wedge (ψ.interiorProd a) := by
+    (φ.wedge ψ).interior a = φ.wedge (ψ.interior a) := by
   ext x w
-  rw [interiorProd_apply, wedge_apply_zero_left, wedge_apply_zero_left, interiorProd_apply]
+  rw [interior_apply, wedge_apply_zero_left, wedge_apply_zero_left, interior_apply]
   exact congrArg (_ * ψ x ·) (funext fun j ↦ Fin.cases (by simp) (fun i ↦ by simp) j)
 
 /-- Contracting a wedge whose right factor has degree zero multiplies by that scalar function:
 `ι_a (φ ∧ ψ) = (ι_a φ) ∧ ψ`. -/
-theorem interiorProd_wedge_zero_right {k : ℕ}
+theorem interior_wedge_zero_right {k : ℕ}
     (φ : Ω[k + 1]) (ψ : Ω[0]) (a : Cₛ^n⟮I; F, V⟯) :
-    (φ.wedge ψ).interiorProd a = (φ.interiorProd a).wedge ψ := by
-  rw [wedge_eq_smul_right, wedge_eq_smul_right, interiorProd_smul_left]
+    (φ.wedge ψ).interior a = (φ.interior a).wedge ψ := by
+  rw [wedge_eq_smul_right, wedge_eq_smul_right, interior_smul_left]
 
-/-- Pointwise graded antiderivation law for `ContMDiffSection.interiorProd` across a fibrewise
+/-- Pointwise graded antiderivation law for `ContMDiffSection.interior` across a fibrewise
 wedge of two sections of positive degree:
 `ι_a (φ ∧ ψ) = ι_a φ ∧ ψ + (-1)^(k + 1) φ ∧ ι_a ψ` up to
 `Fin.cast (Nat.add_right_comm k 1 l).symm`. -/
-theorem interiorProd_wedge_succ_apply {k l : ℕ}
+theorem interior_wedge_succ_apply {k l : ℕ}
     (φ : Ω[k + 1]) (ψ : Ω[l + 1]) (a : Cₛ^n⟮I; F, V⟯) (x : M) (w : Fin (k + 1 + l) → V x) :
-    (φ.wedge ψ).interiorProd a x w =
-      (φ.interiorProd a).wedge ψ x (w ∘ Fin.cast (Nat.add_right_comm k 1 l).symm) +
-        (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.interiorProd a) x w :=
+    (φ.wedge ψ).interior a x w =
+      (φ.interior a).wedge ψ x (w ∘ Fin.cast (Nat.add_right_comm k 1 l).symm) +
+        (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.interior a) x w :=
   ContinuousAlternatingMap.curryLeftTopological_pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
     (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (φ x) (ψ x) (a x) w
 
-/-- Graded antiderivation law for `ContMDiffSection.interiorProd` across a fibrewise wedge of two
+/-- Graded antiderivation law for `ContMDiffSection.interior` across a fibrewise wedge of two
 sections of positive degree:
 `ι_a (φ ∧ ψ) = LinearEquiv.cast ... (Nat.add_right_comm k 1 l).symm (ι_a φ ∧ ψ)`
 `  + (-1)^(k + 1) • (φ ∧ ι_a ψ)`. -/
-theorem interiorProd_wedge_succ {k l : ℕ}
+theorem interior_wedge_succ {k l : ℕ}
     (φ : Ω[k + 1]) (ψ : Ω[l + 1]) (a : Cₛ^n⟮I; F, V⟯) :
-    (φ.wedge ψ).interiorProd a =
+    (φ.wedge ψ).interior a =
       LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯) (M := fun q : ℕ ↦ Ω[q])
-          (Nat.add_right_comm k 1 l).symm ((φ.interiorProd a).wedge ψ) +
-        (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.interiorProd a) := by
+          (Nat.add_right_comm k 1 l).symm ((φ.interior a).wedge ψ) +
+        (-1 : ℝ) ^ (k + 1) • φ.wedge (ψ.interior a) := by
   ext x w
-  rw [coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply, cast_apply,
-    coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
-  exact interiorProd_wedge_succ_apply φ ψ a x w
+  rw [add_cast_smul_apply]
+  exact interior_wedge_succ_apply φ ψ a x w
 
 end Wedge
 
@@ -650,8 +656,8 @@ theorem eq_of_evalAlternating_eq {ι : Type*} [Fintype ι]
     {φ ψ : Cₛ^n⟮I; F [⋀^ι]→L[ℝ] ℝ, fun x ↦ V x [⋀^ι]→L[ℝ] ℝ⟯}
     (h : φ.evalAlternating = ψ.evalAlternating) : φ = ψ := by
   ext x v
-  choose s hs using fun i ↦ evalLinearMap_surjective (I := I) (F := F) (V := V) n x (v i)
-  have hs' : (fun i ↦ s i x) = v := funext fun i ↦ by simpa [evalLinearMap_apply] using hs i
+  choose s hs using fun i ↦ exists_apply_eq (I := I) (F := F) (V := V) n x (v i)
+  have hs' : (fun i ↦ s i x) = v := funext hs
   simpa only [evalAlternating_apply, hs'] using congr($h s x)
 
 end EvalExt
@@ -788,9 +794,9 @@ theorem evalAlternatingEquiv_symm_apply {ι : Type*} [Fintype ι] (hn : 1 ≤ n)
     (evalAlternatingEquiv I F n V ι hn).symm Φ = ofAlternating Φ hn := (rfl)
 
 @[simp]
-theorem interiorProd_ofAlternating {k : ℕ} (Φ : Alt[Fin (k + 1)]) (hn : 1 ≤ n)
+theorem interior_ofAlternating {k : ℕ} (Φ : Alt[Fin (k + 1)]) (hn : 1 ≤ n)
     (a : Cₛ^n⟮I; F, V⟯) :
-    (ofAlternating Φ hn).interiorProd a = ofAlternating (Φ.curryLeft a) hn :=
+    (ofAlternating Φ hn).interior a = ofAlternating (Φ.curryLeft a) hn :=
   eq_of_evalAlternating_eq (by simp)
 
 end Tensoriality

@@ -46,7 +46,7 @@ the smooth bundle sections with:
   (with component identification `TauCeti.LieAlgebroid.cochainComplexXIso` and successor
   differential `TauCeti.LieAlgebroid.cochainComplex_d_succ`) and its cohomology
   `TauCeti.LieAlgebroid.cohomology`;
-* the Cartan calculus identities relating `ContMDiffSection.interiorProd`, `lieDeriv`, and
+* the Cartan calculus identities relating `ContMDiffSection.interior`, `lieDeriv`, and
   `extDeriv`, together with degree transport commutation (`TauCeti.LieAlgebroid.extDeriv_cast`)
   and the graded derivation laws of `lieDeriv` and `extDeriv` across the fibrewise wedge product
   `ContMDiffSection.wedge` (`TauCeti.LieAlgebroid.lieDeriv_wedge`,
@@ -112,18 +112,18 @@ theorem evalAlternating_cochainEquiv_symm (k : ℕ)
     ((A.cochainEquiv k).symm Φ).evalAlternating s = Φ (A.sectionsEquiv.symm ∘ s) := by
   simp [cochainEquiv, Function.comp_def]
 
-/-- `cochainEquiv` intertwines `ContMDiffSection.interiorProd` with `AlternatingMap.curryLeft`. -/
+/-- `cochainEquiv` intertwines `ContMDiffSection.interior` with `AlternatingMap.curryLeft`. -/
 @[simp]
 theorem curryLeft_cochainEquiv {k : ℕ} (φ : Ω[k + 1]) (s : A.Sections) :
     (A.cochainEquiv (k + 1) φ).curryLeft s =
-      A.cochainEquiv k (φ.interiorProd (A.sectionsEquiv s)) := by
+      A.cochainEquiv k (φ.interior (A.sectionsEquiv s)) := by
   simp [cochainEquiv, AlternatingMap.curryLeft_compLinearMap]
 
 /-- Contracting `A.cochainEquiv (k + 1) φ` with `A.sectionsEquiv.symm a` corresponds to
-`ContMDiffSection.interiorProd`. -/
+`ContMDiffSection.interior`. -/
 theorem curryLeft_cochainEquiv_symm {k : ℕ} (φ : Ω[k + 1]) (a : Cₛ^∞⟮I; F, V⟯) :
     (A.cochainEquiv (k + 1) φ).curryLeft (A.sectionsEquiv.symm a) =
-      A.cochainEquiv k (φ.interiorProd a) := by
+      A.cochainEquiv k (φ.interior a) := by
   rw [A.curryLeft_cochainEquiv, A.sectionsEquiv.apply_symm_apply]
 
 @[simp]
@@ -136,13 +136,11 @@ theorem cochainEquiv_zero_constOfIsEmptyEquiv (f : C^∞⟮I, M; ℝ⟯) :
 of `A.Sections` with coefficients in `C^∞⟮I, M; ℝ⟯`. -/
 private def toLieCochain (k : ℕ) :
     Ω[k] →ₗ[ℝ] (A.Sections [⋀^Fin k]→ₗ[ℝ] C^∞⟮I, M; ℝ⟯) :=
-  { toFun := AlternatingMap.restrictScalars ℝ
-    map_add' := AlternatingMap.restrictScalars_add ℝ
-    map_smul' := AlternatingMap.restrictScalars_smul ℝ } ∘ₗ
-      (A.cochainEquiv k).toLinearMap.restrictScalars ℝ
+  AlternatingMap.restrictScalarsₗ ℝ ℝ ∘ₗ (A.cochainEquiv k).toLinearMap.restrictScalars ℝ
 
 private theorem toLieCochain_def (k : ℕ) (φ : Ω[k]) :
-    A.toLieCochain k φ = (A.cochainEquiv k φ).restrictScalars ℝ := rfl
+    A.toLieCochain k φ = (A.cochainEquiv k φ).restrictScalars ℝ := by
+  simp [toLieCochain]
 
 @[simp]
 private theorem toLieCochain_apply (k : ℕ) (φ : Ω[k]) (s : Fin k → A.Sections) :
@@ -150,11 +148,12 @@ private theorem toLieCochain_apply (k : ℕ) (φ : Ω[k]) (s : Fin k → A.Secti
   rw [toLieCochain_def, AlternatingMap.restrictScalars_apply, A.cochainEquiv_apply]
 
 private theorem toLieCochain_injective (k : ℕ) : Injective (A.toLieCochain k) :=
-  (AlternatingMap.restrictScalars_injective ℝ).comp (A.cochainEquiv k).injective
+  fun _ _ h ↦ (A.cochainEquiv k).injective
+    ((AlternatingMap.restrictScalars_injective ℝ) (by simpa [toLieCochain_def] using h))
 
 private theorem curryLeft_toLieCochain {k : ℕ} (φ : Ω[k + 1]) (a : Cₛ^∞⟮I; F, V⟯) :
     (A.toLieCochain (k + 1) φ).curryLeft (A.sectionsEquiv.symm a) =
-      A.toLieCochain k (φ.interiorProd a) := by
+      A.toLieCochain k (φ.interior a) := by
   rw [toLieCochain_def, AlternatingMap.curryLeft_restrictScalars, A.curryLeft_cochainEquiv_symm,
     toLieCochain_def]
 
@@ -286,14 +285,14 @@ private theorem d_toLieCochain_map_update_smul :
         rw [Matrix.vecCons, Fin.cons_update, Fin.cons_self_tail]
       let a₀ : Cₛ^∞⟮I; F, V⟯ := A.sectionsEquiv (u 0)
       let ψ : A.Sections [⋀^Fin (k + 1)]→ₗ[C^∞⟮I, M; ℝ⟯] C^∞⟮I, M; ℝ⟯ :=
-        A.cochainEquiv (k + 1) (A.lieDeriv (k + 1) a₀ φ) - D (φ.interiorProd a₀)
+        A.cochainEquiv (k + 1) (A.lieDeriv (k + 1) a₀ φ) - D (φ.interior a₀)
       have hψ (r : Fin (k + 1) → A.Sections) :
           LieModule.Cohomology.d ℝ A.Sections C^∞⟮I, M; ℝ⟯ (k + 1) (A.toLieCochain (k + 1) φ)
               (Matrix.vecCons (u 0) r) = ψ r := by
         have hu₀ : u 0 = A.sectionsEquiv.symm a₀ := (A.sectionsEquiv.symm_apply_apply (u 0)).symm
         rw [← AlternatingMap.curryLeft_apply_apply, LieModule.Cohomology.curryLeft_d_succ,
           sub_apply, hu₀, A.curryLeft_toLieCochain]
-        dsimp only [toLieCochain_def]
+        simp only [toLieCochain_def]
         rw [← A.restrictScalars_cochainEquiv_lieDeriv]
         simp only [ψ, D, sub_apply, toLieCochain_def, AlternatingMap.restrictScalars_apply,
           AlternatingMap.ofRestrictScalars_apply]
@@ -368,8 +367,7 @@ theorem evalAlternating_extDeriv_zero_constOfIsEmptyEquiv
 @[simp]
 theorem extDeriv_zero_apply (φ : Ω[0]) (x : M) (v : Fin 1 → V x) :
     A.extDeriv 0 φ x v = mvfderiv I (fun y ↦ φ y 0) x (A.anchor x (v 0)) := by
-  obtain ⟨a, ha⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v 0)
-  rw [ContMDiffSection.evalLinearMap_apply] at ha
+  obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ x (v 0)
   have hv : v = fun i ↦ (![a] : Fin 1 → Cₛ^∞⟮I; F, V⟯) i x :=
     funext fun i ↦ Fin.eq_zero i ▸ ha.symm
   have hφ0 : ⇑(φ.evalAlternating ![]) = fun y ↦ φ y 0 :=
@@ -472,21 +470,21 @@ abbrev cohomology (k : ℕ) : ModuleCat ℝ :=
 
 /-- Cartan's formula in degree zero: `ι_a (d_A φ) = L_a φ`. -/
 @[simp]
-theorem interiorProd_extDeriv_zero (φ : Ω[0]) (a : Cₛ^∞⟮I; F, V⟯) :
-    (A.extDeriv 0 φ).interiorProd a = A.lieDeriv 0 a φ :=
+theorem interior_extDeriv_zero (φ : Ω[0]) (a : Cₛ^∞⟮I; F, V⟯) :
+    (A.extDeriv 0 φ).interior a = A.lieDeriv 0 a φ :=
   A.toLieCochain_injective 0 <| by
-    dsimp only [toLieCochain_def]
+    simp only [toLieCochain_def]
     rw [← A.curryLeft_cochainEquiv_symm, ← AlternatingMap.curryLeft_restrictScalars,
       A.restrictScalars_cochainEquiv_extDeriv, LieModule.Cohomology.curryLeft_d_zero,
       A.restrictScalars_cochainEquiv_lieDeriv]
 
 /-- **Cartan's magic formula** `ι_a (d_A φ) = L_a φ - d_A (ι_a φ)` on Lie algebroid cochains. -/
 @[simp]
-theorem interiorProd_extDeriv_succ {k : ℕ} (φ : Ω[k + 1]) (a : Cₛ^∞⟮I; F, V⟯) :
-    (A.extDeriv (k + 1) φ).interiorProd a =
-      A.lieDeriv (k + 1) a φ - A.extDeriv k (φ.interiorProd a) :=
+theorem interior_extDeriv_succ {k : ℕ} (φ : Ω[k + 1]) (a : Cₛ^∞⟮I; F, V⟯) :
+    (A.extDeriv (k + 1) φ).interior a =
+      A.lieDeriv (k + 1) a φ - A.extDeriv k (φ.interior a) :=
   A.toLieCochain_injective (k + 1) <| by
-    dsimp only [toLieCochain_def]
+    simp only [toLieCochain_def]
     rw [← A.curryLeft_cochainEquiv_symm, ← AlternatingMap.curryLeft_restrictScalars,
       A.restrictScalars_cochainEquiv_extDeriv, LieModule.Cohomology.curryLeft_d_succ,
       map_sub, AlternatingMap.restrictScalars_sub, A.restrictScalars_cochainEquiv_lieDeriv,
@@ -494,26 +492,26 @@ theorem interiorProd_extDeriv_succ {k : ℕ} (φ : Ω[k + 1]) (a : Cₛ^∞⟮I;
       A.curryLeft_cochainEquiv_symm]
 
 /-- Cartan's magic formula solved for the Lie derivative: `L_a φ = ι_a (d_A φ) + d_A (ι_a φ)`. -/
-theorem lieDeriv_eq_interiorProd_extDeriv_add_extDeriv_interiorProd {k : ℕ}
+theorem lieDeriv_eq_interior_extDeriv_add_extDeriv_interior {k : ℕ}
     (a : Cₛ^∞⟮I; F, V⟯) (φ : Ω[k + 1]) :
     A.lieDeriv (k + 1) a φ =
-      (A.extDeriv (k + 1) φ).interiorProd a + A.extDeriv k (φ.interiorProd a) := by
-  rw [A.interiorProd_extDeriv_succ, sub_add_cancel]
+      (A.extDeriv (k + 1) φ).interior a + A.extDeriv k (φ.interior a) := by
+  rw [A.interior_extDeriv_succ, sub_add_cancel]
 
 /-- Scaling the differentiating section by a smooth function `f` in degree `0` scales `L_a φ`. -/
 @[simp]
 theorem lieDeriv_smul_left_zero (f : C^∞⟮I, M; ℝ⟯) (a : Cₛ^∞⟮I; F, V⟯) (φ : Ω[0]) :
     A.lieDeriv 0 (f • a) φ = f • A.lieDeriv 0 a φ := by
-  rw [← A.interiorProd_extDeriv_zero, ContMDiffSection.interiorProd_smul_right,
-    A.interiorProd_extDeriv_zero]
+  rw [← A.interior_extDeriv_zero, ContMDiffSection.interior_smul_right,
+    A.interior_extDeriv_zero]
 
 /-- Scaling the differentiating section by a smooth function `f` in positive degree satisfies
 `L_{f • a} φ = f • ι_a (d_A φ) + d_A (f • ι_a φ)`. -/
 theorem lieDeriv_smul_left_succ {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (a : Cₛ^∞⟮I; F, V⟯) (φ : Ω[k + 1]) :
     A.lieDeriv (k + 1) (f • a) φ =
-      f • (A.extDeriv (k + 1) φ).interiorProd a + A.extDeriv k (f • φ.interiorProd a) := by
-  rw [A.lieDeriv_eq_interiorProd_extDeriv_add_extDeriv_interiorProd,
-    ContMDiffSection.interiorProd_smul_right, ContMDiffSection.interiorProd_smul_right]
+      f • (A.extDeriv (k + 1) φ).interior a + A.extDeriv k (f • φ.interior a) := by
+  rw [A.lieDeriv_eq_interior_extDeriv_add_extDeriv_interior,
+    ContMDiffSection.interior_smul_right, ContMDiffSection.interior_smul_right]
 
 /-- Leibniz rule for `A.lieDeriv` under scalar multiplication of a cochain by a smooth function:
 `L_a (f • φ) = (ρ(a) f) • φ + f • L_a φ`. -/
@@ -528,14 +526,14 @@ theorem lieDeriv_smul_right (k : ℕ) (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I
 
 /-- Commutation of the Lie derivative with interior product:
 `ι_b (L_a φ) = L_a (ι_b φ) - ι_{[a, b]} φ`. -/
-theorem interiorProd_lieDeriv {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (φ : Ω[k + 1]) :
-    (A.lieDeriv (k + 1) a φ).interiorProd b =
-      A.lieDeriv k a (φ.interiorProd b) - φ.interiorProd (A.bracket a b) :=
+theorem interior_lieDeriv {k : ℕ} (a b : Cₛ^∞⟮I; F, V⟯) (φ : Ω[k + 1]) :
+    (A.lieDeriv (k + 1) a φ).interior b =
+      A.lieDeriv k a (φ.interior b) - φ.interior (A.bracket a b) :=
   A.toLieCochain_injective k <| by
     have hbr : ⁅A.sectionsEquiv.symm a, A.sectionsEquiv.symm b⁆ =
         A.sectionsEquiv.symm (A.bracket a b) :=
       A.sectionsEquiv.injective (by simp [sectionsEquiv_lie])
-    dsimp only [toLieCochain_def]
+    simp only [toLieCochain_def]
     rw [← A.curryLeft_cochainEquiv_symm, ← AlternatingMap.curryLeft_restrictScalars,
       A.restrictScalars_cochainEquiv_lieDeriv, AlternatingMap.curryLeft_lie, map_sub,
       AlternatingMap.restrictScalars_sub, A.restrictScalars_cochainEquiv_lieDeriv,
@@ -626,8 +624,8 @@ private theorem extDeriv_succ_apply_eq_sub {m : ℕ} (η : Ω[m + 1])
     {a : Cₛ^∞⟮I; F, V⟯} {x : M} {v : Fin (m + 2) → V x} (ha : a x = v 0) :
     A.extDeriv (m + 1) η x v =
       A.lieDeriv (m + 1) a η x (Fin.tail v) -
-        A.extDeriv m (η.interiorProd a) x (Fin.tail v) := by
-  rw [ContMDiffSection.apply_eq_interiorProd_tail _ ha, A.interiorProd_extDeriv_succ]; simp
+        A.extDeriv m (η.interior a) x (Fin.tail v) := by
+  rw [ContMDiffSection.apply_eq_interior_tail _ ha, A.interior_extDeriv_succ]; simp
 
 /-- Pointwise expansion of the derivation law `L_a (φ ∧ ψ) = L_a φ ∧ ψ + φ ∧ L_a ψ`. -/
 private theorem lieDeriv_wedge_apply {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : Ω[k]) (ψ : Ω[l])
@@ -642,41 +640,40 @@ private theorem extDeriv_wedge_succ_right_apply {k l : ℕ} (φ : Ω[k]) (ψ : �
     A.extDeriv (k + (l + 1)) (φ.wedge ψ) x v =
       (A.lieDeriv k a φ).wedge ψ x (Fin.tail v) +
         φ.wedge (A.lieDeriv (l + 1) a ψ) x (Fin.tail v) -
-        A.extDeriv (k + l) ((φ.wedge ψ).interiorProd a) x (Fin.tail v) :=
+        A.extDeriv (k + l) ((φ.wedge ψ).interior a) x (Fin.tail v) :=
   (A.extDeriv_succ_apply_eq_sub (m := k + l) (φ.wedge ψ) ha).trans <|
     congrArg (· - _) (A.lieDeriv_wedge_apply a φ ψ x (Fin.tail v))
 
 /-- Pointwise Cartan expansion of `(ι_a (d_A φ)) ∧ ψ` in positive degree `k + 1`. -/
-private theorem interiorProd_extDeriv_succ_wedge_left {k l : ℕ}
+private theorem interior_extDeriv_succ_wedge_left {k l : ℕ}
     (φ : Ω[k + 1]) (ψ : Ω[l]) (a : Cₛ^∞⟮I; F, V⟯) (x : M) (u : Fin (k + 1 + l) → V x) :
-    ((A.extDeriv (k + 1) φ).interiorProd a).wedge ψ x u =
+    ((A.extDeriv (k + 1) φ).interior a).wedge ψ x u =
       (A.lieDeriv (k + 1) a φ).wedge ψ x u -
-        (A.extDeriv k (φ.interiorProd a)).wedge ψ x u := by
-  rw [A.interiorProd_extDeriv_succ, ContMDiffSection.wedge_sub_left]; simp
+        (A.extDeriv k (φ.interior a)).wedge ψ x u := by
+  rw [A.interior_extDeriv_succ, ContMDiffSection.wedge_sub_left]; simp
 
 /-- Pointwise Cartan expansion of `φ ∧ (ι_a (d_A ψ))` in positive degree `l + 1`. -/
-private theorem wedge_interiorProd_extDeriv_succ_right {k l : ℕ}
+private theorem wedge_interior_extDeriv_succ_right {k l : ℕ}
     (φ : Ω[k]) (ψ : Ω[l + 1]) (a : Cₛ^∞⟮I; F, V⟯) (x : M) (u : Fin (k + (l + 1)) → V x) :
-    φ.wedge ((A.extDeriv (l + 1) ψ).interiorProd a) x u =
+    φ.wedge ((A.extDeriv (l + 1) ψ).interior a) x u =
       φ.wedge (A.lieDeriv (l + 1) a ψ) x u -
-        φ.wedge (A.extDeriv l (ψ.interiorProd a)) x u := by
-  rw [A.interiorProd_extDeriv_succ, ContMDiffSection.wedge_sub_right]; simp
+        φ.wedge (A.extDeriv l (ψ.interior a)) x u := by
+  rw [A.interior_extDeriv_succ, ContMDiffSection.wedge_sub_right]; simp
 
 private theorem extDeriv_wedge_zero_zero (φ ψ : Ω[0]) (x : M) (v : Fin 1 → V x) :
     A.extDeriv 0 (φ.wedge ψ) x v =
       (A.extDeriv 0 φ).wedge ψ x (v ∘ Fin.cast (Nat.succ_add 0 0)) +
         (-1 : ℝ) ^ 0 • (φ.wedge (A.extDeriv 0 ψ)) x v := by
-  obtain ⟨a, ha⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v 0)
-  rw [ContMDiffSection.evalLinearMap_apply] at ha
+  obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ x (v 0)
   simp only [Fin.cast_refl, Function.comp_id]
-  rw [ContMDiffSection.apply_eq_interiorProd_tail _ ha, A.interiorProd_extDeriv_zero,
+  rw [ContMDiffSection.apply_eq_interior_tail _ ha, A.interior_extDeriv_zero,
     A.lieDeriv_wedge_apply (k := 0) (l := 0)]
   conv_rhs =>
-    lhs; rw [ContMDiffSection.apply_eq_interiorProd_tail (k := 0) _ ha,
-      ContMDiffSection.interiorProd_wedge_zero_right, A.interiorProd_extDeriv_zero]
+    lhs; rw [ContMDiffSection.apply_eq_interior_tail (k := 0) _ ha,
+      ContMDiffSection.interior_wedge_zero_right, A.interior_extDeriv_zero]
   conv_rhs =>
-    rhs; arg 2; rw [ContMDiffSection.apply_eq_interiorProd_tail (k := 0) _ ha,
-      ContMDiffSection.interiorProd_wedge_zero_left, A.interiorProd_extDeriv_zero]
+    rhs; arg 2; rw [ContMDiffSection.apply_eq_interior_tail (k := 0) _ ha,
+      ContMDiffSection.interior_wedge_zero_left, A.interior_extDeriv_zero]
   simp
 
 private theorem extDeriv_wedge_succ_zero {k : ℕ} (φ : Ω[k + 1]) (ψ : Ω[0])
@@ -687,17 +684,16 @@ private theorem extDeriv_wedge_succ_zero {k : ℕ} (φ : Ω[k + 1]) (ψ : Ω[0])
     A.extDeriv (k + 1) (φ.wedge ψ) x v =
       (A.extDeriv (k + 1) φ).wedge ψ x (v ∘ Fin.cast (Nat.succ_add (k + 1) 0)) +
         (-1 : ℝ) ^ (k + 1) • (φ.wedge (A.extDeriv 0 ψ)) x v := by
-  obtain ⟨a, ha⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v 0)
-  rw [ContMDiffSection.evalLinearMap_apply] at ha
+  obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ x (v 0)
   rw [A.extDeriv_succ_apply_eq_sub (m := k) (φ.wedge ψ) ha,
-    A.lieDeriv_wedge_apply (k := k + 1) (l := 0), ContMDiffSection.interiorProd_wedge_zero_right,
-    ih (φ.interiorProd a) (Fin.tail v)]
+    A.lieDeriv_wedge_apply (k := k + 1) (l := 0), ContMDiffSection.interior_wedge_zero_right,
+    ih (φ.interior a) (Fin.tail v)]
   simp only [Fin.cast_refl, Function.comp_id]
-  rw [ContMDiffSection.apply_eq_interiorProd_tail (k := k + 1) ((A.extDeriv (k + 1) φ).wedge ψ) ha,
-    ContMDiffSection.interiorProd_wedge_zero_right, A.interiorProd_extDeriv_succ_wedge_left,
-    ContMDiffSection.apply_eq_interiorProd_tail (k := k + 1) (φ.wedge (A.extDeriv 0 ψ)) ha,
-    ContMDiffSection.interiorProd_wedge_succ_apply, Fin.cast_refl, Function.comp_id,
-    A.interiorProd_extDeriv_zero]
+  rw [ContMDiffSection.apply_eq_interior_tail (k := k + 1) ((A.extDeriv (k + 1) φ).wedge ψ) ha,
+    ContMDiffSection.interior_wedge_zero_right, A.interior_extDeriv_succ_wedge_left,
+    ContMDiffSection.apply_eq_interior_tail (k := k + 1) (φ.wedge (A.extDeriv 0 ψ)) ha,
+    ContMDiffSection.interior_wedge_succ_apply, Fin.cast_refl, Function.comp_id,
+    A.interior_extDeriv_zero]
   rcases neg_one_pow_eq_or ℝ k with hk | hk <;>
     simp only [smul_eq_mul, pow_succ (-1 : ℝ), hk] <;> ring
 
@@ -709,33 +705,33 @@ private theorem extDeriv_wedge_zero_succ {l : ℕ} (φ : Ω[0]) (ψ : Ω[l + 1])
     A.extDeriv (0 + (l + 1)) (φ.wedge ψ) x v =
       (A.extDeriv 0 φ).wedge ψ x (v ∘ Fin.cast (Nat.succ_add 0 (l + 1))) +
         (-1 : ℝ) ^ 0 • (φ.wedge (A.extDeriv (l + 1) ψ)) x v := by
-  obtain ⟨a, ha⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v 0)
-  rw [ContMDiffSection.evalLinearMap_apply] at ha
+  obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ x (v 0)
   set v₀ : Fin ((0 + 1) + (l + 1)) → V x := v ∘ Fin.cast (Nat.succ_add 0 (l + 1))
   have ha₀ : a x = v₀ 0 := ha
   have htail₁ : Fin.tail v₀ ∘ Fin.cast (Nat.add_right_comm 0 1 l).symm = Fin.tail v := by
     ext i; simp [v₀, Fin.tail]
   have htail₂ : Fin.tail v₀ = Fin.tail v ∘ Fin.cast (Nat.succ_add 0 l) := by
     ext i; simp [v₀, Fin.tail]
-  rw [A.extDeriv_wedge_succ_right_apply φ ψ ha, ContMDiffSection.interiorProd_wedge_zero_left,
-    ih (ψ.interiorProd a) (Fin.tail v),
-    ContMDiffSection.apply_eq_interiorProd_tail (k := 0 + 1 + l) ((A.extDeriv 0 φ).wedge ψ) ha₀,
-    ContMDiffSection.interiorProd_wedge_succ_apply, htail₁, htail₂, A.interiorProd_extDeriv_zero,
-    ContMDiffSection.apply_eq_interiorProd_tail (k := 0 + (l + 1))
+  rw [A.extDeriv_wedge_succ_right_apply φ ψ ha, ContMDiffSection.interior_wedge_zero_left,
+    ih (ψ.interior a) (Fin.tail v),
+    ContMDiffSection.apply_eq_interior_tail (k := 0 + 1 + l) ((A.extDeriv 0 φ).wedge ψ) ha₀,
+    ContMDiffSection.interior_wedge_succ_apply, htail₁, htail₂, A.interior_extDeriv_zero,
+    ContMDiffSection.apply_eq_interior_tail (k := 0 + (l + 1))
       (φ.wedge (A.extDeriv (l + 1) ψ)) ha,
-    ContMDiffSection.interiorProd_wedge_zero_left, A.wedge_interiorProd_extDeriv_succ_right]
+    ContMDiffSection.interior_wedge_zero_left, A.wedge_interior_extDeriv_succ_right]
   simp only [pow_zero, smul_eq_mul]; ring
 
-private theorem extDeriv_interiorProd_wedge_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l + 1])
+private theorem extDeriv_interior_wedge_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l + 1])
     (a : Cₛ^∞⟮I; F, V⟯) (x : M) (u : Fin (k + 1 + l + 1) → V x) :
-    A.extDeriv (k + 1 + l) ((φ.wedge ψ).interiorProd a) x u =
-      A.extDeriv (k + (l + 1)) ((φ.interiorProd a).wedge ψ) x
+    A.extDeriv (k + 1 + l) ((φ.wedge ψ).interior a) x u =
+      A.extDeriv (k + (l + 1)) ((φ.interior a).wedge ψ) x
           (u ∘ Fin.cast (congrArg (· + 1) (Nat.add_right_comm k 1 l).symm)) +
-        (-1 : ℝ) ^ (k + 1) • A.extDeriv (k + 1 + l) (φ.wedge (ψ.interiorProd a)) x u := by
-  rw [ContMDiffSection.interiorProd_wedge_succ, map_add, map_smul, A.extDeriv_cast,
-    ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    ContMDiffSection.cast_apply, ContMDiffSection.coe_smul, Pi.smul_apply,
-    ContinuousAlternatingMap.smul_apply]; rfl
+        (-1 : ℝ) ^ (k + 1) • A.extDeriv (k + 1 + l) (φ.wedge (ψ.interior a)) x u := by
+  rw [ContMDiffSection.interior_wedge_succ, map_add, map_smul, A.extDeriv_cast,
+    ContMDiffSection.add_cast_smul_apply]
+  -- `k + 1 + l` and `k + (l + 1)` are definitionally equal, and the `Fin.cast` proof on `u`
+  -- matches the stated one up to proof irrelevance.
+  rfl
 
 private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l + 1])
     (x : M) (v : Fin ((k + 1) + (l + 1) + 1) → V x)
@@ -750,8 +746,7 @@ private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l
     A.extDeriv ((k + 1) + (l + 1)) (φ.wedge ψ) x v =
       (A.extDeriv (k + 1) φ).wedge ψ x (v ∘ Fin.cast (Nat.succ_add (k + 1) (l + 1))) +
         (-1 : ℝ) ^ (k + 1) • (φ.wedge (A.extDeriv (l + 1) ψ)) x v := by
-  obtain ⟨a, ha⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x (v 0)
-  rw [ContMDiffSection.evalLinearMap_apply] at ha
+  obtain ⟨a, ha⟩ := ContMDiffSection.exists_apply_eq (I := I) (F := F) ∞ x (v 0)
   set v₀ : Fin ((k + 1 + 1) + (l + 1)) → V x := v ∘ Fin.cast (Nat.succ_add (k + 1) (l + 1))
   let w₂ : Fin (k + (l + 1) + 1) → V x :=
     Fin.tail v ∘ Fin.cast (congrArg (· + 1) (Nat.add_right_comm k 1 l).symm)
@@ -760,15 +755,15 @@ private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l
   have ht₂ : Fin.tail v₀ ∘ Fin.cast (Nat.add_right_comm (k + 1) 1 l).symm = Fin.tail v := by
     ext i; simp [v₀, Fin.tail]
   have ht₃ : Fin.tail v₀ = w₃ := by ext i; simp [v₀, w₃, Fin.tail]
-  rw [A.extDeriv_wedge_succ_right_apply φ ψ ha, A.extDeriv_interiorProd_wedge_succ,
-    ih₁ (φ.interiorProd a) w₂, ht₁, ih₂ (ψ.interiorProd a) (Fin.tail v),
-    ContMDiffSection.apply_eq_interiorProd_tail (k := k + 1 + 1 + l)
+  rw [A.extDeriv_wedge_succ_right_apply φ ψ ha, A.extDeriv_interior_wedge_succ,
+    ih₁ (φ.interior a) w₂, ht₁, ih₂ (ψ.interior a) (Fin.tail v),
+    ContMDiffSection.apply_eq_interior_tail (k := k + 1 + 1 + l)
       ((A.extDeriv (k + 1) φ).wedge ψ) ha,
-    ContMDiffSection.interiorProd_wedge_succ_apply, ht₂, ht₃,
-    A.interiorProd_extDeriv_succ_wedge_left,
-    ContMDiffSection.apply_eq_interiorProd_tail (k := (k + 1) + (l + 1))
+    ContMDiffSection.interior_wedge_succ_apply, ht₂, ht₃,
+    A.interior_extDeriv_succ_wedge_left,
+    ContMDiffSection.apply_eq_interior_tail (k := (k + 1) + (l + 1))
       (φ.wedge (A.extDeriv (l + 1) ψ)) ha,
-    ContMDiffSection.interiorProd_wedge_succ_apply, A.wedge_interiorProd_extDeriv_succ_right]
+    ContMDiffSection.interior_wedge_succ_apply, A.wedge_interior_extDeriv_succ_right]
   rcases neg_one_pow_eq_or ℝ k with hk | hk <;>
     simp only [smul_eq_mul, pow_succ (-1 : ℝ), hk] <;> ring
 
@@ -805,9 +800,7 @@ theorem extDeriv_wedge {k l : ℕ} (φ : Ω[k]) (ψ : Ω[l]) :
           ((A.extDeriv k φ).wedge ψ) +
         (-1 : ℝ) ^ k • φ.wedge (A.extDeriv l ψ) := by
   ext x v
-  rw [ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    ContMDiffSection.cast_apply, ContMDiffSection.coe_smul, Pi.smul_apply,
-    ContinuousAlternatingMap.smul_apply]
+  rw [ContMDiffSection.add_cast_smul_apply]
   exact A.extDeriv_wedge_apply φ ψ x v
 
 /-- Leibniz rule for `A.extDeriv` under scalar multiplication by a smooth function `f`:
@@ -835,10 +828,8 @@ theorem extDeriv_smul_apply {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (φ : Ω[k]) (x
       f x • A.extDeriv k φ x v +
         (A.extDeriv 0 (ContMDiffSection.constOfIsEmptyEquiv I F ∞ V (Fin 0) f)).wedge φ x
           (v ∘ Fin.cast (Nat.add_comm 1 k)) := by
-  have h := congr($(A.extDeriv_smul f φ) x v)
-  rw [ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    ContMDiffSection.smul_apply, ContMDiffSection.cast_apply] at h
-  exact h
+  simpa [-LinearEquiv.cast_apply, ContMDiffSection.cast_apply] using
+    congr($(A.extDeriv_smul f φ) x v)
 
 end General
 
@@ -906,27 +897,6 @@ theorem tangent_extDeriv_toContMDiffSection (k : ℕ) (φ : SmoothForm I M ℝ k
       zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, pow_succ (-1 : ℝ), mul_neg_one,
       neg_mul, Finset.sum_neg_distrib, ← sub_eq_add_neg]
 
-private def tangentFormEquiv (k : ℕ) :
-    Cₛ^∞⟮I; E [⋀^Fin k]→L[ℝ] ℝ, fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ⟯ ≃ₗ[ℝ]
-      SmoothForm I M ℝ k where
-  toFun := SmoothForm.ofContMDiffSection
-  invFun := SmoothForm.toContMDiffSection
-  left_inv := SmoothForm.toContMDiffSection_ofContMDiffSection
-  right_inv := SmoothForm.ofContMDiffSection_toContMDiffSection
-  map_add' _ _ := SmoothForm.toContMDiffSection_injective (by simp)
-  map_smul' _ _ := SmoothForm.toContMDiffSection_injective (by simp)
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
-@[simp]
-private theorem tangentFormEquiv_apply (k : ℕ)
-    (s : Cₛ^∞⟮I; E [⋀^Fin k]→L[ℝ] ℝ, fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ⟯) :
-    tangentFormEquiv (I := I) (M := M) k s = SmoothForm.ofContMDiffSection s := (rfl)
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
-@[simp]
-private theorem tangentFormEquiv_symm_apply (k : ℕ) (φ : SmoothForm I M ℝ k) :
-    (tangentFormEquiv (I := I) (M := M) k).symm φ = SmoothForm.toContMDiffSection φ := (rfl)
-
 variable (I M) in
 /-- The Chevalley–Eilenberg cochain complex of the tangent Lie algebroid `tangent I M` is
 canonically isomorphic to the de Rham complex `deRhamComplex I M`, via
@@ -934,18 +904,18 @@ canonically isomorphic to the de Rham complex `deRhamComplex I M`, via
 def tangentCochainComplexIso : (tangent I M).cochainComplex ≅ deRhamComplex I M :=
   HomologicalComplex.Hom.isoOfComponents
     (fun k ↦ (tangent I M).cochainComplexXIso k ≪≫
-      (tangentFormEquiv (I := I) (M := M) k).toModuleIso ≪≫
+      (SmoothForm.toContMDiffSectionEquiv I M ℝ k).symm.toModuleIso ≪≫
       (deRhamComplexXIso I k).symm) <| by
     rintro k _ rfl
     have hcomm :
-        (tangentFormEquiv (I := I) (M := M) k).toModuleIso.hom ≫
+        (SmoothForm.toContMDiffSectionEquiv I M ℝ k).symm.toModuleIso.hom ≫
             ModuleCat.ofHom (mextDerivₗ I (F := ℝ) k) =
           ModuleCat.ofHom ((tangent I M).extDeriv k) ≫
-            (tangentFormEquiv (I := I) (M := M) (k + 1)).toModuleIso.hom := by
+            (SmoothForm.toContMDiffSectionEquiv I M ℝ (k + 1)).symm.toModuleIso.hom := by
       ext s : 2
       apply SmoothForm.toContMDiffSection_injective
       simp only [ModuleCat.hom_comp, LinearEquiv.toModuleIso_hom, LinearMap.comp_apply,
-        ModuleCat.hom_ofHom, LinearEquiv.coe_coe, tangentFormEquiv_apply]
+        ModuleCat.hom_ofHom, LinearEquiv.coe_coe, SmoothForm.toContMDiffSectionEquiv_symm_apply]
       rw [← tangent_extDeriv_toContMDiffSection, SmoothForm.toContMDiffSection_ofContMDiffSection,
         SmoothForm.toContMDiffSection_ofContMDiffSection]
     rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d I (M := M) k),

@@ -681,6 +681,47 @@ theorem sub_toContMDiffSection {k : ℕ} (φ ψ : SmoothForm I M F k) :
     (φ - ψ).toContMDiffSection = φ.toContMDiffSection - ψ.toContMDiffSection :=
   SmoothBundleForm.sub_toContMDiffSection φ ψ
 
+end SmoothForm
+
+section
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+
+/-- The `ℝ`-linear equivalence between fixed-coefficient smooth forms and smooth sections of the
+alternating tangent bundle. -/
+def SmoothForm.toContMDiffSectionEquiv (I : ModelWithCorners ℝ E H) (M : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] (F : Type*)
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (k : ℕ) :
+    SmoothForm I M F k ≃ₗ[ℝ]
+      ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+        (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F) where
+  toFun := SmoothForm.toContMDiffSection
+  invFun := SmoothForm.ofContMDiffSection
+  map_add' := SmoothForm.add_toContMDiffSection
+  map_smul' := SmoothForm.smul_toContMDiffSection
+  left_inv := SmoothForm.ofContMDiffSection_toContMDiffSection
+  right_inv := SmoothForm.toContMDiffSection_ofContMDiffSection
+
+@[simp]
+theorem SmoothForm.toContMDiffSectionEquiv_apply {I : ModelWithCorners ℝ E H} {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ} (φ : SmoothForm I M F k) :
+    SmoothForm.toContMDiffSectionEquiv I M F k φ = φ.toContMDiffSection := (rfl)
+
+@[simp]
+theorem SmoothForm.toContMDiffSectionEquiv_symm_apply {I : ModelWithCorners ℝ E H} {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+    (s : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+      (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] F)) :
+    (SmoothForm.toContMDiffSectionEquiv I M F k).symm s = SmoothForm.ofContMDiffSection s := (rfl)
+
+end
+
+namespace SmoothForm
+
+variable {I : ModelWithCorners ℝ E H} [IsManifold I 1 M]
+
 /-- The rough form underlying a sum of smooth forms is the sum of their rough forms. -/
 theorem add_toRoughForm {k : ℕ} (φ ψ : SmoothForm I M F k) :
     (φ + ψ).val = φ.val + ψ.val :=

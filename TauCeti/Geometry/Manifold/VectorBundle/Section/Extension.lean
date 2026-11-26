@@ -279,6 +279,14 @@ theorem evalLinearMap_surjective (n : ℕ∞ω) [ENat.LEInfty n] [IsManifold I n
   obtain ⟨s, hs, hsx⟩ := FiberBundle.exists_contMDiff_section_eq I F n v
   exact ⟨⟨s, hs⟩, by simpa using hsx⟩
 
+/-- In a `C^n` vector bundle over a `C^n` manifold, `n ≤ ∞`, every fibre vector is the value at
+its base point of a global `C^n` section. -/
+theorem exists_apply_eq (n : ℕ∞ω) [ENat.LEInfty n] [IsManifold I n M]
+    [ContMDiffVectorBundle n F V I] (x : M) (v : V x) :
+    ∃ a : Cₛ^n⟮I; F, V⟯, a x = v := by
+  obtain ⟨s, hs, hsx⟩ := FiberBundle.exists_contMDiff_section_eq I F n v
+  exact ⟨⟨s, hs⟩, hsx⟩
+
 section LiftModel
 
 open scoped Topology
