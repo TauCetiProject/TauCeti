@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.Analysis.Normed.Module.Span
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
@@ -57,8 +58,13 @@ diffeomorphisms.
 * `LinearIsometry.apply_eq_of_map_single`: a linear isometry of Euclidean spaces sending the `i`-th
   standard basis vector to the `j`-th one reads the `i`-th coordinate off as the `j`-th coordinate
   of the image.
-* `LinearMap.eq_of_apply_eq_of_eqOn_orthogonal`: linear maps agreeing on a vector and
-  its orthogonal complement are equal, without a unit-norm assumption.
+* `LinearMap.eq_of_apply_eq_of_eqOn_orthogonal`: linear maps are determined by their value on a
+  vector and its orthogonal complement, without a unit-norm assumption.
+* `LinearMap.eq_of_map_one_of_map_I`, `LinearMap.forall_map_eq_of_map_one_of_map_I`,
+  `LinearMap.map_range_eq_of_forall_map_eq`,
+  `LinearMap.map_eq_neg_conj_of_map_one_eq_neg_of_map_I`,
+  `LinearMap.map_range_eq_of_map_one_eq_neg_of_map_I`: intertwining and range-equality criteria for
+  `ℝ`-linear maps out of `ℂ`.
 * `LinearIsometryEquiv.eq_extendOrthogonalComplement_iff`: a linear isometry equals the
   extension if and only if it agrees with it on the unit vector and its orthogonal complement.
 * `LinearIsometryEquiv.inner_toLinearEquiv_conj_apply`: the matrix entries of an operator
@@ -72,6 +78,9 @@ diffeomorphisms.
   orthonormal families is invariant under conjugation by a linear isometry equivalence.
 * `LinearIsometryEquiv.inner_map_left_eq_of_involutive`: an involutive linear isometry equivalence
   is self-adjoint.
+* `TauCeti.nonempty_linearIsometry_iff_finrank_le`, `TauCeti.nonempty_linearIsometry_complex`:
+  dimension criteria for the existence of linear isometries between finite-dimensional inner
+  product spaces, and of isometric planes `ℂ →ₗᵢ[ℝ] E`.
 * `ContDiff.linearIsometryEquiv_symm_apply`: the inverses along a smooth family of linear
   isometries of a finite-dimensional space form a smooth family.
 -/
@@ -168,6 +177,55 @@ theorem eq_of_apply_eq_of_eqOn_orthogonal {f g : E →ₗ[𝕜] F} (hx : f x = g
   · exact eqOn_span' (by simpa only [Set.eqOn_singleton] using hx)
   · intro v hv
     exact h ⟨v, hv⟩
+
+/-- A linear map `l` intertwining `f` and `g` maps the range of `f` onto the range of `g`. -/
+theorem map_range_eq_of_forall_map_eq {R M₁ M₂ M₃ : Type*} [Semiring R]
+    [AddCommMonoid M₁] [AddCommMonoid M₂] [AddCommMonoid M₃]
+    [Module R M₁] [Module R M₂] [Module R M₃]
+    {f : M₁ →ₗ[R] M₂} {g : M₁ →ₗ[R] M₃} {l : M₂ →ₗ[R] M₃}
+    (hl : ∀ w, l (f w) = g w) :
+    (LinearMap.range f).map l = LinearMap.range g := by
+  rw [← LinearMap.range_comp]
+  exact congrArg LinearMap.range (LinearMap.ext hl)
+
+section Complex
+
+variable {M N N' : Type*} [AddCommMonoid M] [Module ℝ M] [AddCommMonoid N] [Module ℝ N]
+  [AddCommGroup N'] [Module ℝ N']
+
+/-- Two `ℝ`-linear maps out of `ℂ` agreeing on `1` and `i` are equal. -/
+theorem eq_of_map_one_of_map_I {f g : ℂ →ₗ[ℝ] M} (h1 : f 1 = g 1)
+    (hI : f Complex.I = g Complex.I) : f = g :=
+  Complex.basisOneI.ext (Fin.forall_fin_two.2 ⟨by simpa using h1, by simpa using hI⟩)
+
+/-- If an `ℝ`-linear map `l` sends `f 1` to `g 1` and `f i` to `g i`, then `l (f w) = g w` for all
+`w : ℂ`. -/
+theorem forall_map_eq_of_map_one_of_map_I {f : ℂ →ₗ[ℝ] M} {g : ℂ →ₗ[ℝ] N} {l : M →ₗ[ℝ] N}
+    (h1 : l (f 1) = g 1) (hI : l (f Complex.I) = g Complex.I) (w : ℂ) :
+    l (f w) = g w :=
+  DFunLike.congr_fun (eq_of_map_one_of_map_I (f := l.comp f) h1 hI) w
+
+/-- If an `ℝ`-linear map `l` sends `f 1` to `-g 1` and `f i` to `g i`, then
+`l (f w) = g (-conj w)` for all `w : ℂ`. -/
+theorem map_eq_neg_conj_of_map_one_eq_neg_of_map_I {f : ℂ →ₗ[ℝ] M} {g : ℂ →ₗ[ℝ] N'}
+    {l : M →ₗ[ℝ] N'} (h1 : l (f 1) = -g 1) (hI : l (f Complex.I) = g Complex.I) (w : ℂ) :
+    l (f w) = g (-starRingEnd ℂ w) :=
+  forall_map_eq_of_map_one_of_map_I (g := g.comp (-Complex.conjAe.toLinearMap))
+    (by simpa using h1) (by simpa using hI) w
+
+/-- If an `ℝ`-linear map `l` sends `f 1` to `-g 1` and `f i` to `g i`, it maps the range of `f`
+onto the range of `g`. -/
+theorem map_range_eq_of_map_one_eq_neg_of_map_I {f : ℂ →ₗ[ℝ] M} {g : ℂ →ₗ[ℝ] N'}
+    {l : M →ₗ[ℝ] N'} (h1 : l (f 1) = -g 1) (hI : l (f Complex.I) = g Complex.I) :
+    (LinearMap.range f).map l = LinearMap.range g := by
+  have hsurj : Function.Surjective (-Complex.conjAe.toLinearMap : ℂ →ₗ[ℝ] ℂ) := fun w =>
+    ⟨-starRingEnd ℂ w, by simp⟩
+  rw [← LinearMap.range_comp,
+    show l.comp f = g.comp (-Complex.conjAe.toLinearMap) from
+      LinearMap.ext (map_eq_neg_conj_of_map_one_eq_neg_of_map_I h1 hI),
+    LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 hsurj)]
+
+end Complex
 
 end LinearMap
 
@@ -379,6 +437,24 @@ theorem inner_add_smul (e : E) (he : ‖e‖ = 1) (y : (ℝ ∙ e)ᗮ) (t : ℝ)
     ⟪e, (y : E) + t • e⟫ = t := by
   rw [← orthogonalLineEquiv_apply e he, ← orthogonalLineEquiv_symm_snd e he,
     ContinuousLinearEquiv.symm_apply_apply]
+
+/-- A finite-dimensional inner product space admits a linear isometry into another if and only if
+its dimension is at most the target's dimension. -/
+theorem nonempty_linearIsometry_iff_finrank_le {𝕜 F G : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+    [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [FiniteDimensional 𝕜 G] :
+    Nonempty (F →ₗᵢ[𝕜] G) ↔ Module.finrank 𝕜 F ≤ Module.finrank 𝕜 G := by
+  refine ⟨fun ⟨L⟩ => LinearMap.finrank_le_finrank_of_injective L.injective, fun h => ?_⟩
+  exact ⟨(stdOrthonormalBasis 𝕜 G).repr.symm.toLinearIsometry.comp
+    ((LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb h)).comp
+      (stdOrthonormalBasis 𝕜 F).repr.toLinearIsometry)⟩
+
+/-- Every real inner product space of finite dimension at least `2` admits a linear isometric
+embedding of `ℂ`. -/
+theorem nonempty_linearIsometry_complex (hE : 2 ≤ Module.finrank ℝ E) :
+    Nonempty (ℂ →ₗᵢ[ℝ] E) := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
+  exact nonempty_linearIsometry_iff_finrank_le.2 (by simpa [Complex.finrank_real_complex] using hE)
 
 end TauCeti
 

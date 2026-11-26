@@ -150,6 +150,22 @@ theorem unitSphereDiffeomorph_symm (e : E ≃ₗᵢ[ℝ] F) :
       unitSphereDiffeomorph_toEquiv,
       unitSphereEquiv_symm]) x
 
+/-- The identity linear isometry restricts to the identity diffeomorphism of the unit sphere. -/
+@[simp]
+theorem unitSphereDiffeomorph_refl :
+    unitSphereDiffeomorph (n := n) (k := n) (_root_.LinearIsometryEquiv.refl ℝ E) m =
+      _root_.Diffeomorph.refl (𝓡 n) (sphere (0 : E) 1) m :=
+  _root_.Diffeomorph.toEquiv_injective unitSphereEquiv_refl
+
+/-- Composing linear isometries composes the induced diffeomorphisms of unit spheres. -/
+-- Not `@[simp]`: the intermediate dimension `k` cannot be inferred from the left-hand side.
+theorem unitSphereDiffeomorph_trans {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+    {l : ℕ} [Fact (finrank ℝ G = l + 1)] (e : E ≃ₗᵢ[ℝ] F) (e' : F ≃ₗᵢ[ℝ] G) :
+    unitSphereDiffeomorph (n := n) (k := l) (e.trans e') m =
+      (unitSphereDiffeomorph (n := n) (k := k) e m).trans
+        (unitSphereDiffeomorph (n := k) (k := l) e' m) :=
+  _root_.Diffeomorph.toEquiv_injective (unitSphereEquiv_trans e e')
+
 /-- The antipodal map of the unit sphere is the diffeomorphism induced by `-1`, the element of
 `O(n + 1)` given by `LinearIsometryEquiv.neg`. In particular Mathlib's `contMDiff_neg_sphere` is
 the case `e = -1` of `contMDiff_unitSphereEquiv`. -/
@@ -164,12 +180,8 @@ its unit sphere. For `E = EuclideanSpace ℝ (Fin (n + 1))` this is the referenc
 def unitSphereDiffHom (m : ℕ∞ω) :
     (E ≃ₗᵢ[ℝ] E) →* TauCeti.Diff (𝓡 n) (sphere (0 : E) 1) m where
   toFun e := unitSphereDiffeomorph e m
-  map_one' := _root_.Diffeomorph.ext fun x => by
-    apply Subtype.ext
-    simp
-  map_mul' _ _ := _root_.Diffeomorph.ext fun x => by
-    apply Subtype.ext
-    simp
+  map_one' := unitSphereDiffeomorph_refl
+  map_mul' e₁ e₂ := unitSphereDiffeomorph_trans e₂ e₁
 
 @[simp]
 theorem unitSphereDiffHom_apply (e : E ≃ₗᵢ[ℝ] E) :

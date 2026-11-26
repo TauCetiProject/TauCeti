@@ -179,11 +179,16 @@ conjugation. -/
 def reverse (f : SmoothCircleEmbedding I M) : SmoothCircleEmbedding I M :=
   f.compDiffeomorph circleReflection
 
+/-- Orientation reversal is source reparametrization by `TauCeti.circleReflection`. -/
+theorem reverse_def (f : SmoothCircleEmbedding I M) :
+    f.reverse = f.compDiffeomorph circleReflection := by
+  rfl
+
 /-- Reversing a smooth circle presentation sends the parameter `x` to `x⁻¹`. -/
 @[simp]
 theorem reverse_apply (f : SmoothCircleEmbedding I M) (x : Circle) :
     f.reverse x = f x⁻¹ := by
-  rw [reverse.eq_def, SmoothEmbedding.compDiffeomorph_apply, circleReflection_apply]
+  rw [reverse_def, SmoothEmbedding.compDiffeomorph_apply, circleReflection_apply]
 
 /-- Reversing a smooth circle presentation twice gives the original presentation. -/
 @[simp]

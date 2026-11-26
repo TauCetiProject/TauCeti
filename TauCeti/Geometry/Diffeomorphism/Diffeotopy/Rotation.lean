@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Analysis.InnerProductSpace.Reflection
+import Mathlib.Analysis.Complex.Isometry
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.Complex.Inner
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
@@ -26,9 +29,10 @@ A linear isometry `e` acts on a point `x` of the sphere and on a vector `v` tang
 `x` by `(x, v) ↦ (e x, e v)`. Composing the plane rotations of
 `TauCeti.exists_contDiff_path_apply_eq`, the rotations reached by diffeotopies of a sphere of
 dimension at least two act transitively on the pairs `(x, v)` with `x` and `v` orthonormal
-(`TauCeti.exists_diffeotopy_final_apply_eq_and_apply_eq`). So the diffeotopies of such a sphere
-can move a point and a unit tangent vector there to any other point and unit tangent vector, as
-needed to match the first-order data of two curves in the sphere. On the circle this fails: a
+(`TauCeti.exists_diffeotopy_final_apply_eq_and_apply_eq`), and therefore on linear isometric copies
+of `ℂ` (`TauCeti.exists_diffeotopy_final_apply_eq_and_forall_map_eq`). So the diffeotopies of such a
+sphere can move a point and a unit tangent vector there to any other point and unit tangent vector,
+as needed to match the first-order data of two curves in the sphere. On the circle this fails: a
 rotation of the circle cannot reverse the direction of a tangent vector.
 
 More globally, every linear isometry of determinant `1` is reached: such an isometry is joined to
@@ -36,12 +40,16 @@ the identity by an analytic path of linear isometries
 (`LinearIsometryEquiv.exists_contDiff_path_of_det_eq_one`), so its restriction to the sphere is the
 final map of a rotation diffeotopy
 (`TauCeti.exists_diffeotopy_final_apply_eq_of_det_eq_one`). Two linear isometries of the same
-determinant therefore induce diffeotopic diffeomorphisms of the sphere.
+determinant therefore induce diffeotopic diffeomorphisms of the sphere. On the unit circle `S¹ ⊆ ℂ`
+the explicit path `t ↦ rotation (Circle.exp (θ * t))` gives the exponential rotation diffeotopy
+`TauCeti.circleExpDiffeotopy θ`.
 
 ## Main definitions
 
 * `TauCeti.unitSphereDiffeotopy R hR hR₀`: the diffeotopy of the unit sphere applying the linear
   isometry `R t` at time `t`.
+* `TauCeti.circleExpDiffeotopy θ`: the rotation diffeotopy of `Circle` multiplying by
+  `Circle.exp (θ * t)` at time `t`.
 
 ## Main results
 
@@ -50,8 +58,13 @@ determinant therefore induce diffeotopic diffeomorphisms of the sphere.
 * `TauCeti.exists_diffeotopy_final_apply_eq_and_apply_eq`: in a sphere of dimension at least two,
   any orthonormal pair `(x, v)` is carried to any other orthonormal pair `(y, w)` by a linear
   isometry which is the final map of a diffeotopy of the sphere.
+* `TauCeti.exists_diffeotopy_final_apply_eq_and_forall_map_eq`: in a sphere of dimension at least
+  two, any two linear isometries `ι₁ ι₂ : ℂ →ₗᵢ[ℝ] E` are intertwined by a linear isometry whose
+  sphere restriction is the final map of a diffeotopy.
 * `TauCeti.exists_diffeotopy_final_apply_eq_of_det_eq_one`: every linear isometry of determinant
   `1` is the final map of a rotation diffeotopy of the sphere.
+* `TauCeti.circleExpDiffeotopy_apply`, `TauCeti.circleExpDiffeotopy_final_apply`: at time `t` the
+  circle rotation diffeotopy multiplies by `Circle.exp (θ * t)`, ending at `Circle.exp θ`.
 
 ## References
 
@@ -180,6 +193,21 @@ theorem exists_diffeotopy_final_apply_eq_and_apply_eq (hn : 2 ≤ n) {x v y w : 
   · obtain ⟨g, hg, hgv, hgy⟩ := exists_isFinalRotation_apply_eq (n := n) (m := m) hv₁ hw h
     exact ⟨g, hg, hgy y (by rwa [real_inner_comm]) (by rwa [real_inner_comm]), hgv⟩
 
+/-- **Diffeotopies of a sphere act transitively on linear isometric planes.** In a unit sphere of
+dimension at least two, for any two linear isometries `ι₁ ι₂ : ℂ →ₗᵢ[ℝ] E` there is a diffeotopy
+of the sphere whose final map is the restriction of a linear isometry `e` intertwining `ι₁` and
+`ι₂`. -/
+theorem exists_diffeotopy_final_apply_eq_and_forall_map_eq (hn : 2 ≤ n) (ι₁ ι₂ : ℂ →ₗᵢ[ℝ] E) :
+    ∃ (Φ : Diffeotopy (𝓡 n) m (sphere (0 : E) 1)) (e : E ≃ₗᵢ[ℝ] E),
+      (∀ z, (Φ.final z : E) = e z) ∧ ∀ w, e (ι₁ w) = ι₂ w := by
+  have h1 (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι 1‖ = 1 := by simp
+  have hI (ι : ℂ →ₗᵢ[ℝ] E) : ‖ι Complex.I‖ = 1 := by simp
+  have hperp (ι : ℂ →ₗᵢ[ℝ] E) : ⟪ι 1, ι Complex.I⟫ = 0 := by simp [ι.inner_map_map, Complex.inner]
+  obtain ⟨Φ, e, hΦ, he1, heI⟩ := exists_diffeotopy_final_apply_eq_and_apply_eq (m := m) hn
+    (h1 ι₁) (hI ι₁) (hperp ι₁) (h1 ι₂) (hI ι₂) (hperp ι₂)
+  exact ⟨Φ, e, hΦ, LinearMap.forall_map_eq_of_map_one_of_map_I (f := ι₁.toLinearMap)
+    (g := ι₂.toLinearMap) (l := e.toLinearEquiv.toLinearMap) he1 heI⟩
+
 /-! ### Isometries of determinant one -/
 
 /-- **Rotations of a sphere are diffeotopic to the identity.** A linear isometry of determinant `1`
@@ -191,5 +219,40 @@ theorem exists_diffeotopy_final_apply_eq_of_det_eq_one {e : E ≃ₗᵢ[ℝ] E}
   obtain ⟨R, hR, hR₀, hR₁⟩ := e.exists_contDiff_path_of_det_eq_one he
   exact ⟨unitSphereDiffeotopy R (hR.of_le le_top) hR₀, fun z => by
     rw [coe_unitSphereDiffeotopy_final_apply, hR₁]⟩
+
+section Circle
+
+attribute [local instance] finrank_real_complex_fact'
+
+/-- The **exponential rotation diffeotopy** of the unit circle: at time `t` it multiplies by
+`Circle.exp (θ * t)`. `Circle` is by definition the unit sphere of `ℂ` with the charted-space
+structure of that sphere, so this is `TauCeti.unitSphereDiffeotopy` along
+`t ↦ rotation (Circle.exp (θ * t))`. -/
+def circleExpDiffeotopy (θ : ℝ) : Diffeotopy (𝓡 1) m Circle :=
+  unitSphereDiffeotopy (E := ℂ) (fun t => rotation (Circle.exp (θ * t)))
+    (by
+      simp only [rotation_apply, Circle.coe_exp]
+      exact (((Complex.ofRealCLM.contDiff.comp (contDiff_const.mul contDiff_fst)).mul
+        contDiff_const).cexp).mul contDiff_snd)
+    (fun z => by simp)
+
+/-- At time `t` the exponential rotation diffeotopy multiplies by `Circle.exp (θ * t)`. -/
+@[simp]
+theorem circleExpDiffeotopy_apply (θ : ℝ) (p : I × Circle) :
+    circleExpDiffeotopy (m := m) θ p = Circle.exp (θ * p.1) * p.2 :=
+  Subtype.ext (coe_unitSphereDiffeotopy_apply (E := ℂ) (n := 1) _ _ _ p)
+
+/-- Coerced to `ℂ`, at time `t` the exponential rotation diffeotopy multiplies by
+`Circle.exp (θ * t)`. -/
+theorem coe_circleExpDiffeotopy_apply (θ : ℝ) (p : I × Circle) :
+    (circleExpDiffeotopy (m := m) θ p : ℂ) = Circle.exp (θ * p.1) * p.2 := by
+  simp
+
+/-- The exponential rotation diffeotopy ends at multiplication by `Circle.exp θ`. -/
+theorem circleExpDiffeotopy_final_apply (θ : ℝ) (z : Circle) :
+    (circleExpDiffeotopy (m := m) θ).final z = Circle.exp θ * z := by
+  rw [Diffeotopy.final_apply, circleExpDiffeotopy_apply, Set.Icc.coe_one, mul_one]
+
+end Circle
 
 end TauCeti

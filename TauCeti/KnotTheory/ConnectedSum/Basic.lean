@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Reflection
 public import TauCeti.KnotTheory.Mirror
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 
 /-!
 # The connected sum of knots
@@ -48,27 +49,28 @@ splits it into the two knotted arcs: the sign of `⟪(K₁ # K₂) z, ι i⟫` i
 The great circle is a right unit on the nose
 (`TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`), and a left unit up to replacing the
 knot by `TauCeti.SmoothCircleEmbedding.turnOver`, which moves it by the half-turn and rotates its
-parametrization by `-1` (`TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`). An isometry
-fixing the plane `ι ℂ` pointwise preserves connected-sum position and commutes with the connected
-sum; in particular the mirror image of a connected sum of knots in `S³ ⊆ ℝ⁴`, in position for the
-unknot, is the connected sum of the mirror images
-(`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
+parametrization by `-1` (`TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`). Any linear
+isometry `e : E ≃ₗᵢ[ℝ] E'` intertwining `ι` and `ι'` transports connected-sum position and commutes
+with the connected sum (`TauCeti.SmoothCircleEmbedding.transDiffeomorph_connectedSum`); in
+particular the mirror image of a connected sum of knots in `S³ ⊆ ℝ⁴`, in position for the unknot, is
+the connected sum of the mirror images (`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
 
 The reverse mirror image `TauCeti.SmoothCircleEmbedding.reverseMirror ι K`, the candidate inverse
-of `K` in the concordance group, is a turned-over copy of the reverse of `K` moved by a reflection
-(`TauCeti.SmoothCircleEmbedding.reverseMirror_eq_turnOver`). For knots in the unit sphere of
-`ℝⁿ⁺¹` it is therefore smoothly concordant to the mirror image of the reverse,
-`K.reverse.mirror`, whatever the great circle `ι`
-(`TauCeti.SmoothCircleEmbedding.concordant_reverseMirror_reverse_mirror`).
+of `K` in the concordance group, is an involution fixing `greatCircle ι` and distributing on the
+nose over `connectedSum` (`reverseMirror_reverseMirror`, `reverseMirror_greatCircle`,
+`reverseMirror_connectedSum`). It is a turned-over copy of the reverse of `K` moved by a reflection
+(`TauCeti.SmoothCircleEmbedding.reverseMirror_eq_turnOver`), so it is smoothly concordant to
+`K.reverse` moved by any reflection (`concordant_reverseMirror_of_det_eq_neg_one`), and in `ℝⁿ⁺¹`
+to `K.reverse.mirror` (`TauCeti.SmoothCircleEmbedding.concordant_reverseMirror_reverse_mirror`).
 
 Concordances in connected-sum position can themselves be summed, giving a concordance between
 the connected sums (`TauCeti.KnotTheory.ConnectedSum.Concordance`), and in a sphere of dimension
 at least two every knot is concordant to one in connected-sum position
 (`TauCeti.KnotTheory.ConnectedSum.Position`). In fact every knot in a sphere of dimension at
 least two is smoothly ambient isotopic to one in that position
-(`TauCeti.KnotTheory.ConnectedSum.Isotopy`). Not formalized here: that the resulting operation on
-isotopy or concordance classes does not depend on the choices. The latter is the remaining step
-from this construction to the knot concordance group.
+(`TauCeti.KnotTheory.ConnectedSum.Isotopy`). Independence of the positioned representatives and of
+the great circle up to smooth concordance is proved in
+`TauCeti.KnotTheory.ConnectedSum.Congruence`.
 
 ## Main definitions
 
@@ -94,10 +96,16 @@ from this construction to the knot concordance group.
 * `TauCeti.SmoothCircleEmbedding.connectedSum_greatCircle`,
   `TauCeti.SmoothCircleEmbedding.greatCircle_connectedSum`: the great circle is a unit.
 * `TauCeti.SmoothCircleEmbedding.transDiffeomorph_connectedSum`,
-  `TauCeti.SmoothCircleEmbedding.mirror_connectedSum`: compatibility with isometries fixing `ι ℂ`,
-  and with mirroring.
-* `TauCeti.SmoothCircleEmbedding.concordant_reverseMirror_reverse_mirror`: the reverse mirror
-  image is smoothly concordant to the mirror image of the reverse.
+  `TauCeti.SmoothCircleEmbedding.transDiffeomorph_reverse_rotate_connectedSum`,
+  `TauCeti.SmoothCircleEmbedding.mirror_connectedSum`: compatibility with linear isometries
+  intertwining great circles (or negating `ι 1` and preserving `ι i`), and with mirroring.
+* `TauCeti.SmoothCircleEmbedding.reverseMirror_reverseMirror`,
+  `TauCeti.SmoothCircleEmbedding.reverseMirror_greatCircle`,
+  `TauCeti.SmoothCircleEmbedding.reverseMirror_connectedSum`: involutivity, unit preservation, and
+  distributivity of `reverseMirror`.
+* `TauCeti.SmoothCircleEmbedding.concordant_reverseMirror_of_det_eq_neg_one`,
+  `TauCeti.SmoothCircleEmbedding.concordant_reverseMirror_reverse_mirror`: the reverse mirror image
+  is smoothly concordant to the reversed knot moved by any reflection.
 
 ## References
 
@@ -165,18 +173,29 @@ theorem isConnectedSumPosition_greatCircle :
   eventuallyEq_greatCircle _ := EventuallyEq.rfl
   inner_pos {z} hz := by simpa [ι.inner_map_map, Complex.inner] using hz
 
-/-- An isometry of `E` fixing the plane `ι ℂ` pointwise preserves connected-sum position. -/
-theorem IsConnectedSumPosition.transDiffeomorph (h : IsConnectedSumPosition ι K)
-    {e : E ≃ₗᵢ[ℝ] E} (he : ∀ w, e (ι w) = ι w) :
-    IsConnectedSumPosition ι
+/-- A linear isometry equivalence intertwining `ι` and `ι'` transports `greatCircle ι` to
+`greatCircle ι'`. -/
+theorem transDiffeomorph_unitSphereDiffeomorph_greatCircle
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [Fact (finrank ℝ E' = n + 1)]
+    {ι' : ℂ →ₗᵢ[ℝ] E'} {e : E ≃ₗᵢ[ℝ] E'} (he : ∀ w, e (ι w) = ι' w) :
+    (greatCircle (n := n) ι).transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) =
+      greatCircle (n := n) ι' :=
+  SmoothEmbedding.ext fun z => Subtype.ext <| by simp [he]
+
+/-- A linear isometry equivalence intertwining `ι` and `ι'` transports connected-sum position for
+`ι` to connected-sum position for `ι'`. -/
+theorem IsConnectedSumPosition.transDiffeomorph
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [Fact (finrank ℝ E' = n + 1)]
+    {ι' : ℂ →ₗᵢ[ℝ] E'} (h : IsConnectedSumPosition ι K)
+    {e : E ≃ₗᵢ[ℝ] E'} (he : ∀ w, e (ι w) = ι' w) :
+    IsConnectedSumPosition ι'
       (K.transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞)) where
   eventuallyEq_greatCircle {z} hz := by
     filter_upwards [h.eventuallyEq_greatCircle hz] with w hw
-    ext
-    simp [hw, he]
+    exact Subtype.ext (by simp [hw, he])
   inner_pos {z} hz := by
     rw [SmoothEmbedding.transDiffeomorph_apply, LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply,
-      ← he, LinearIsometryEquiv.inner_map_map]
+      ← he Complex.I, LinearIsometryEquiv.inner_map_map]
     exact h.inner_pos hz
 
 /-! ### The turned-over second summand -/
@@ -393,10 +412,12 @@ theorem greatCircle_connectedSum (h₀ : IsConnectedSumPosition ι (greatCircle 
       (h₂.eventuallyEq_turnOver hz).eq_of_nhds]
   · rw [coe_connectedSum_apply_of_im_neg _ _ hz]
 
-/-! ### Isometries fixing the plane of the great circle, and mirroring -/
+/-! ### Isometries intertwining great circles, and mirroring -/
 
-/-- An isometry of `E` fixing the plane `ι ℂ` pointwise commutes with the connected sum. -/
-theorem transDiffeomorph_connectedSum {e : E ≃ₗᵢ[ℝ] E} (he : ∀ w, e (ι w) = ι w) :
+/-- A linear isometry equivalence intertwining `ι` and `ι'` commutes with the connected sum. -/
+theorem transDiffeomorph_connectedSum
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [Fact (finrank ℝ E' = n + 1)]
+    {ι' : ℂ →ₗᵢ[ℝ] E'} {e : E ≃ₗᵢ[ℝ] E'} (he : ∀ w, e (ι w) = ι' w) :
     (connectedSum K₁ K₂ h₁ h₂).transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) =
       connectedSum (K₁.transDiffeomorph (e.unitSphereDiffeomorph ∞))
         (K₂.transDiffeomorph (e.unitSphereDiffeomorph ∞)) (h₁.transDiffeomorph he)
@@ -406,12 +427,88 @@ theorem transDiffeomorph_connectedSum {e : E ≃ₗᵢ[ℝ] E} (he : ∀ w, e (�
   · rw [connectedSum_apply_of_im_nonneg _ _ hz, SmoothEmbedding.transDiffeomorph_apply,
       SmoothEmbedding.transDiffeomorph_apply, connectedSum_apply_of_im_nonneg _ _ hz]
   · ext
+    have hrange : (LinearMap.range ι.toLinearMap).map (e.toLinearEquiv : E →ₗ[ℝ] E') =
+        LinearMap.range ι'.toLinearMap :=
+      LinearMap.map_range_eq_of_forall_map_eq (f := ι.toLinearMap) (g := ι'.toLinearMap)
+        (l := (e.toLinearEquiv : E →ₗ[ℝ] E')) he
     rw [coe_connectedSum_apply_of_im_neg _ _ hz, SmoothEmbedding.transDiffeomorph_apply,
       LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, coe_connectedSum_apply_of_im_neg _ _ hz,
       SmoothEmbedding.transDiffeomorph_apply, LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply,
-      Submodule.reflection_orthogonal_apply_of_eqOn _ (by
-        rintro _ ⟨w, rfl⟩
-        exact he w)]
+      Submodule.reflection_orthogonal_apply_of_map_eq _ hrange]
+
+/-- A linear isometry equivalence sending `ι 1` to `-ι' 1` and `ι i` to `ι' i` transports
+`(greatCircle ι).reverse.rotate (-1)` to `greatCircle ι'`. -/
+theorem transDiffeomorph_reverse_rotate_greatCircle
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [Fact (finrank ℝ E' = n + 1)]
+    {ι' : ℂ →ₗᵢ[ℝ] E'} {e : E ≃ₗᵢ[ℝ] E'}
+    (h1 : e (ι 1) = -ι' 1) (hI : e (ι Complex.I) = ι' Complex.I) :
+    ((greatCircle (n := n) ι).reverse.rotate (-1)).transDiffeomorph
+        (e.unitSphereDiffeomorph (n := n) (k := n) ∞) =
+      greatCircle (n := n) ι' := by
+  ext z : 2
+  rw [SmoothEmbedding.transDiffeomorph_apply, LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply,
+    rotate_apply, neg_one_mul, reverse_apply, coe_greatCircle_apply, coe_greatCircle_apply]
+  refine (LinearMap.map_eq_neg_conj_of_map_one_eq_neg_of_map_I
+    (f := ι.toLinearMap) (g := ι'.toLinearMap) (l := (e.toLinearEquiv : E →ₗ[ℝ] E')) h1 hI _).trans
+    (congrArg ι' ?_)
+  rw [Circle.coe_inv_eq_conj, Circle.coe_neg, map_neg, map_neg, Complex.conj_conj, neg_neg]
+
+/-- A linear isometry equivalence sending `ι 1` to `-ι' 1` and `ι i` to `ι' i` carries a knot `K`
+in connected-sum position for `ι` to
+`(K.reverse.rotate (-1)).transDiffeomorph (e.unitSphereDiffeomorph ∞)` in connected-sum position
+for `ι'`. -/
+theorem IsConnectedSumPosition.transDiffeomorph_reverse_rotate
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [Fact (finrank ℝ E' = n + 1)]
+    {ι' : ℂ →ₗᵢ[ℝ] E'} (h : IsConnectedSumPosition ι K) {e : E ≃ₗᵢ[ℝ] E'}
+    (h1 : e (ι 1) = -ι' 1) (hI : e (ι Complex.I) = ι' Complex.I) :
+    IsConnectedSumPosition ι'
+      ((K.reverse.rotate (-1)).transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞)) where
+  eventuallyEq_greatCircle {z} hz := by
+    have hneg : (((-z)⁻¹ : Circle) : ℂ).im ≤ 0 := by
+      simpa [Circle.coe_inv_eq_conj] using hz
+    rw [← transDiffeomorph_reverse_rotate_greatCircle (n := n) h1 hI]
+    filter_upwards [((continuous_inv.comp continuous_neg).tendsto z).eventually
+      (h.eventuallyEq_greatCircle hneg)] with w hw
+    -- `filter_upwards` states `hw` through a composite of functions.
+    have hw : K (-w)⁻¹ = greatCircle ι (-w)⁻¹ := hw
+    simp only [SmoothEmbedding.transDiffeomorph_apply, rotate_apply, neg_one_mul, reverse_apply, hw]
+  inner_pos {z} hz := by
+    simp only [SmoothEmbedding.transDiffeomorph_apply,
+      LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, rotate_apply, neg_one_mul, reverse_apply,
+      ← hI, LinearIsometryEquiv.inner_map_map]
+    exact h.inner_pos (by simpa [Circle.coe_inv_eq_conj] using hz)
+
+/-- A linear isometry equivalence sending `ι 1` to `-ι' 1` and `ι i` to `ι' i` distributes
+`.reverse.rotate (-1)` moved along `e` over the connected sum. -/
+theorem transDiffeomorph_reverse_rotate_connectedSum
+    {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [Fact (finrank ℝ E' = n + 1)]
+    {ι' : ℂ →ₗᵢ[ℝ] E'} {e : E ≃ₗᵢ[ℝ] E'}
+    (h1 : e (ι 1) = -ι' 1) (hI : e (ι Complex.I) = ι' Complex.I) :
+    ((connectedSum K₁ K₂ h₁ h₂).reverse.rotate (-1)).transDiffeomorph
+        (e.unitSphereDiffeomorph (n := n) (k := n) ∞) =
+      connectedSum
+        ((K₁.reverse.rotate (-1)).transDiffeomorph (e.unitSphereDiffeomorph ∞))
+        ((K₂.reverse.rotate (-1)).transDiffeomorph (e.unitSphereDiffeomorph ∞))
+        (h₁.transDiffeomorph_reverse_rotate h1 hI)
+        (h₂.transDiffeomorph_reverse_rotate h1 hI) := by
+  ext z : 1
+  rcases le_or_gt 0 (z : ℂ).im with hz | hz
+  · have hz' : 0 ≤ (((-z)⁻¹ : Circle) : ℂ).im := by
+      simpa [Circle.coe_inv_eq_conj] using hz
+    simp only [SmoothEmbedding.transDiffeomorph_apply, rotate_apply, neg_one_mul, reverse_apply,
+      connectedSum_apply_of_im_nonneg _ _ hz, connectedSum_apply_of_im_nonneg _ _ hz']
+  · ext
+    have hz' : (((-z)⁻¹ : Circle) : ℂ).im < 0 := by
+      simpa [Circle.coe_inv_eq_conj] using hz
+    have hrange : (LinearMap.range ι.toLinearMap).map (e.toLinearEquiv : E →ₗ[ℝ] E') =
+        LinearMap.range ι'.toLinearMap :=
+      LinearMap.map_range_eq_of_map_one_eq_neg_of_map_I
+        (f := ι.toLinearMap) (g := ι'.toLinearMap) (l := (e.toLinearEquiv : E →ₗ[ℝ] E')) h1 hI
+    have hneg : -((-z)⁻¹) = (-(-z))⁻¹ := Subtype.ext (by simp [inv_neg])
+    simp only [SmoothEmbedding.transDiffeomorph_apply,
+      LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, rotate_apply, neg_one_mul, reverse_apply,
+      coe_connectedSum_apply_of_im_neg _ _ hz, coe_connectedSum_apply_of_im_neg _ _ hz', hneg,
+      Submodule.reflection_orthogonal_apply_of_map_eq _ hrange]
 
 /-! ### The reverse mirror image -/
 
@@ -438,30 +535,23 @@ theorem coe_reverseMirror_apply (z : Circle) :
       (LinearMap.range ι.toLinearMap)ᗮ.reflection ((ℝ ∙ ι Complex.I)ᗮ.reflection (K (-z)⁻¹)) := by
   simp [reverseMirror]
 
+private theorem reverseMirror_reflection_map_one :
+    ((ℝ ∙ ι Complex.I)ᗮ.reflection.trans (LinearMap.range ι.toLinearMap)ᗮ.reflection) (ι 1) =
+      -ι 1 := by
+  rw [LinearIsometryEquiv.trans_apply, ι.reflection_orthogonal_singleton_map_I, map_one,
+    ι.reflection_orthogonal_range_apply]
+
+private theorem reverseMirror_reflection_map_I :
+    ((ℝ ∙ ι Complex.I)ᗮ.reflection.trans (LinearMap.range ι.toLinearMap)ᗮ.reflection)
+        (ι Complex.I) = ι Complex.I := by
+  rw [LinearIsometryEquiv.trans_apply, ι.reflection_orthogonal_singleton_map_I,
+    Complex.conj_I, map_neg, map_neg, ι.reflection_orthogonal_range_apply, neg_neg]
+
 /-- The reverse mirror image of a knot in connected-sum position is in connected-sum position. -/
 theorem IsConnectedSumPosition.reverseMirror (h : IsConnectedSumPosition ι K) :
-    IsConnectedSumPosition ι (reverseMirror ι K) where
-  eventuallyEq_greatCircle {z} hz := by
-    have hneg : (((-z)⁻¹ : Circle) : ℂ).im ≤ 0 := by
-      simpa [Circle.coe_inv_eq_conj] using hz
-    filter_upwards [((continuous_inv.comp continuous_neg).tendsto z).eventually
-      (h.eventuallyEq_greatCircle hneg)] with w hw
-    -- `filter_upwards` states `hw` through a composite of functions.
-    have hw : K (-w)⁻¹ = greatCircle ι (-w)⁻¹ := hw
-    ext
-    rw [coe_reverseMirror_apply, hw, coe_greatCircle_apply, ι.reflection_orthogonal_singleton_map_I,
-      Submodule.reflection_mem_subspace_orthogonal_precomplement_eq_neg
-        (K := LinearMap.range ι.toLinearMap) (v := ι _) (LinearMap.mem_range_self _ _),
-      coe_greatCircle_apply, ← map_neg]
-    congr 1
-    simp only [Circle.coe_inv, Circle.coe_neg, map_inv₀, map_neg, inv_neg, neg_neg]
-    rw [← Circle.coe_inv_eq_conj, Circle.coe_inv, inv_inv]
-  inner_pos {z} hz := by
-    rw [coe_reverseMirror_apply,
-      Submodule.inner_reflection_orthogonal_of_mem (LinearMap.range ι.toLinearMap) _
-        (v := ι Complex.I) (LinearMap.mem_range_self _ Complex.I), real_inner_comm,
-      inner_reflection_orthogonal_singleton, neg_neg, real_inner_comm]
-    exact h.inner_pos (by simpa using hz)
+    IsConnectedSumPosition ι (reverseMirror ι K) :=
+  h.transDiffeomorph_reverse_rotate
+    reverseMirror_reflection_map_one reverseMirror_reflection_map_I
 
 variable (ι) in
 /-- The reverse mirror image is the turned-over copy of the reversed knot reflected in the great
@@ -470,6 +560,58 @@ theorem reverseMirror_eq_turnOver (K : SmoothCircleEmbedding (𝓡 n) (sphere (0
     reverseMirror ι K = turnOver ι (K.reverse.transDiffeomorph
       ((ℝ ∙ ι Complex.I)ᗮ.reflection.unitSphereDiffeomorph (n := n) (k := n) ∞)) :=
   SmoothEmbedding.ext fun z => Subtype.ext <| by simp
+
+variable (ι) in
+/-- Applying `reverseMirror` twice returns the original knot. -/
+@[simp]
+theorem reverseMirror_reverseMirror (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    reverseMirror ι (reverseMirror ι K) = K := by
+  have hsub : (ℝ ∙ ι Complex.I).map
+      (((LinearMap.range ι.toLinearMap)ᗮ.reflection).toLinearEquiv : E →ₗ[ℝ] E) =
+      ℝ ∙ ι Complex.I := by
+    rw [Submodule.map_span, Set.image_singleton, LinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toLinearEquiv, ι.reflection_orthogonal_range_apply,
+      show -ι Complex.I = (-1 : ℝ) • ι Complex.I from (neg_one_smul ℝ _).symm,
+      Submodule.span_singleton_smul_eq isUnit_one.neg]
+  ext z : 2
+  have hzz : (-((-z)⁻¹))⁻¹ = z := Subtype.ext (by simp)
+  rw [coe_reverseMirror_apply, coe_reverseMirror_apply, hzz,
+    ← Submodule.reflection_orthogonal_apply_of_map_eq (ℝ ∙ ι Complex.I) hsub,
+    Submodule.reflection_reflection, Submodule.reflection_reflection]
+
+variable (ι) in
+/-- The reverse mirror image of the great circle `ι` is `greatCircle ι` itself. -/
+@[simp]
+theorem reverseMirror_greatCircle :
+    reverseMirror ι (greatCircle (n := n) ι) = greatCircle (n := n) ι :=
+  transDiffeomorph_reverse_rotate_greatCircle
+    reverseMirror_reflection_map_one reverseMirror_reflection_map_I
+
+/-- The reverse mirror image distributes over the connected sum. -/
+@[simp]
+theorem reverseMirror_connectedSum :
+    reverseMirror ι (connectedSum K₁ K₂ h₁ h₂) =
+      connectedSum (reverseMirror ι K₁) (reverseMirror ι K₂)
+        h₁.reverseMirror h₂.reverseMirror :=
+  transDiffeomorph_reverse_rotate_connectedSum h₁ h₂
+    reverseMirror_reflection_map_one reverseMirror_reflection_map_I
+
+variable (ι) in
+/-- **The reverse mirror image is smoothly concordant to the reversed knot moved by any
+orientation-reversing linear isometry.** For any `e : E ≃ₗᵢ[ℝ] E` of determinant `-1`,
+`reverseMirror ι K` is smoothly concordant to `K.reverse` transported along `e`. -/
+theorem concordant_reverseMirror_of_det_eq_neg_one {e : E ≃ₗᵢ[ℝ] E}
+    (he : (LinearEquiv.det e.toLinearEquiv : ℝ) = -1)
+    (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    SmoothEmbedding.Concordant (reverseMirror ι K)
+      (K.reverse.transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞)) := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  rw [reverseMirror_eq_turnOver]
+  refine (concordant_turnOver ι _).symm.trans
+    ((SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_unitSphereDiffeomorph
+      K.reverse ?_).concordant le_rfl)
+  rw [linearEquiv_det_reflection_orthogonal_singleton
+    ((map_ne_zero_iff ι ι.injective).2 Complex.I_ne_zero), he]
 
 end General
 
@@ -488,11 +630,9 @@ reflection, and the mirror image does not depend on the reflection up to ambient
 theorem concordant_reverseMirror_reverse_mirror
     (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) :
     SmoothEmbedding.Concordant (reverseMirror ι K) K.reverse.mirror := by
-  rw [reverseMirror_eq_turnOver]
-  exact (concordant_turnOver ι _).symm.trans
-    ((K.reverse.smoothAmbientIsotopic_mirror_of_det_eq_neg_one
-      (linearEquiv_det_reflection_orthogonal_singleton
-        ((map_ne_zero_iff ι ι.injective).2 Complex.I_ne_zero))).concordant le_rfl)
+  rw [K.reverse.mirror_def]
+  exact concordant_reverseMirror_of_det_eq_neg_one ι
+    (linearEquiv_det_reflection_orthogonal_singleton (by simp)) K
 
 end ReverseMirror
 

@@ -23,6 +23,7 @@ import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Geometry.Manifold.Instances.ClosedBall.Collar
 import TauCeti.Geometry.Manifold.Instances.ClosedBall.Immersion
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.LocallyFlat.Concordance.Smooth
 
 /-!
 # Sliceness and concordance
@@ -38,8 +39,11 @@ embedding `K₀ : S¹ → Sⁿ` in the unit sphere of an `(n + 1)`-dimensional r
 `E` bounds a locally flat disc in the closed unit ball (`TauCeti.IsTopologicallySlice`), and is
 topologically concordant (`TauCeti.TopologicallyConcordant`) to `K`, then `K` bounds one too. The
 concordance may use any real normed model spaces of the right dimensions, `1` for the circle and
-`n - 1` for its normal directions. Taking for `K₀` a great circle `ι S¹`, which bounds the flat
-disc `ι D²`, a knot concordant to a great circle is topologically slice.
+`n - 1` for its normal directions. Since every smooth concordance is a topological concordance,
+topological sliceness is also invariant under smooth concordance
+(`TauCeti.SmoothEmbedding.Concordant.isTopologicallySlice_iff`). Taking for `K₀` a great circle
+`ι S¹`, which bounds the flat disc `ι D²`, a knot concordant to a great circle is topologically
+slice.
 
 The new disc is built in polar coordinates. A topological concordance is a locally flat collared
 track `Φ : S¹ × ℝ → Sⁿ × ℝ`: it is the product of `K₀` with the identity for times close to `0` and
@@ -113,6 +117,8 @@ point.
 * `TauCeti.IsTopologicallySlice.of_topologicallyConcordant`: a knot topologically concordant to a
   topologically slice knot is topologically slice.
 * `TauCeti.TopologicallyConcordant.isTopologicallySlice_iff`: topologically concordant knots are
+  topologically slice together.
+* `TauCeti.SmoothEmbedding.Concordant.isTopologicallySlice_iff`: smoothly concordant knots are
   topologically slice together.
 * `TauCeti.TopologicallyConcordant.isTopologicallySlice`: a knot topologically concordant to a
   great circle is topologically slice.
@@ -842,6 +848,18 @@ theorem TopologicallyConcordant.isTopologicallySlice_iff (hF : finrank ℝ F = 1
     IsTopologicallySlice K₀ ↔ IsTopologicallySlice K :=
   ⟨fun h₀ => h₀.of_topologicallyConcordant hF hF' h,
     fun h₁ => h₁.of_topologicallyConcordant hF hF' h.symm⟩
+
+/-- **Topological sliceness is invariant under smooth concordance** in every sphere dimension
+`n`. -/
+theorem SmoothEmbedding.Concordant.isTopologicallySlice_iff
+    (h : SmoothEmbedding.Concordant K₀ K) :
+    IsTopologicallySlice K₀ ↔ IsTopologicallySlice K := by
+  obtain ⟨Φ⟩ := SmoothEmbedding.concordant_iff_nonempty.1 h
+  let himm := Φ.toSmoothEmbedding.isImmersion
+  have := himm.finiteDimensional_complement
+  have hdim := himm.finrank_add_finrank_complement
+  simp [Module.finrank_prod] at hdim
+  exact Φ.topologicallyConcordant.isTopologicallySlice_iff (by simp) (by omega)
 
 /-- **A knot topologically concordant to a great circle is topologically slice.** If `K` is
 topologically concordant to the great circle `ι S¹` of `Sⁿ`, for real normed model spaces `F` of

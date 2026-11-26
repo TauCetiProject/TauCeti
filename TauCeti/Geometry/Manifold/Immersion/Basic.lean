@@ -55,6 +55,10 @@ both sides, in order to apply the rule to `e.symm` as well.
   `N × M` is an immersion when the preferred chart of `N` at `c` sends `c` to `0`.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
+* `Manifold.IsImmersion.finiteDimensional_complement`,
+  `Manifold.IsImmersion.finrank_add_finrank_complement`: for an immersion of a nonempty manifold
+  into a finite-dimensional target model, the complement is finite-dimensional and the dimensions
+  of the source model and the complement add up to the target dimension.
 * `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for nonempty manifolds
   modelled on `ℝᵏ` and `ℝᵐ`, the complement of an immersion is a copy of `ℝᵐ⁻ᵏ`.
 * `Manifold.IsImmersion.of_le`, together with its `Manifold.IsImmersionAt`,
@@ -340,11 +344,34 @@ theorem isImmersion_prodMkRight_of_extChartAt_eq_zero [IsManifold I n M] [IsMani
 
 section FiniteDimensional
 
-variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E']
+variable [FiniteDimensional 𝕜 E']
+
+/-- For an immersion of a nonempty manifold into a finite-dimensional target model, the immersion's
+complement is finite-dimensional. -/
+theorem _root_.Manifold.IsImmersion.finiteDimensional_complement [Nonempty M]
+    (h : IsImmersion I J n f) : FiniteDimensional 𝕜 h.complement := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  let L := (h.isImmersionOfComplement_complement x).equiv
+  have : FiniteDimensional 𝕜 (E × h.complement) := L.symm.toLinearEquiv.finiteDimensional
+  exact Module.Finite.of_surjective (LinearMap.snd 𝕜 E h.complement) Prod.snd_surjective
+
+/-- For an immersion of a nonempty manifold into a finite-dimensional target model, the dimensions
+of the source model and of the immersion's complement add up to the dimension of the target
+model. -/
+theorem _root_.Manifold.IsImmersion.finrank_add_finrank_complement [Nonempty M]
+    (h : IsImmersion I J n f) :
+    Module.finrank 𝕜 E + Module.finrank 𝕜 h.complement = Module.finrank 𝕜 E' := by
+  obtain ⟨x⟩ := ‹Nonempty M›
+  let L := (h.isImmersionOfComplement_complement x).equiv
+  have : FiniteDimensional 𝕜 (E × h.complement) := L.symm.toLinearEquiv.finiteDimensional
+  have : FiniteDimensional 𝕜 E :=
+    Module.Finite.of_surjective (LinearMap.fst 𝕜 E h.complement) Prod.fst_surjective
+  have : FiniteDimensional 𝕜 h.complement := h.finiteDimensional_complement
+  simpa only [Module.finrank_prod] using L.toLinearEquiv.finrank_eq
 
 /-- For a finite-dimensional target model, being an immersion is a pointwise condition: the
 complements at different points are isomorphic, so they can be replaced by a single one. -/
-theorem isImmersion_iff_forall_isImmersionAt :
+theorem isImmersion_iff_forall_isImmersionAt [CompleteSpace 𝕜] :
     IsImmersion I J n f ↔ ∀ x, IsImmersionAt I J n f x := by
   refine ⟨fun h x => h.isImmersionAt x, fun h => ?_⟩
   rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
@@ -370,17 +397,10 @@ immersion's normal form at any point splits `ℝᵐ` as `ℝᵏ` times the compl
 theorem _root_.Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv [Nonempty M]
     (h : IsImmersion I J n f) {j : ℕ} (hj : m - k = j) :
     Nonempty (h.complement ≃L[ℝ] EuclideanSpace ℝ (Fin j)) := by
-  obtain ⟨x⟩ := ‹Nonempty M›
-  let L := (h.isImmersionOfComplement_complement x).equiv
-  have : FiniteDimensional ℝ (EuclideanSpace ℝ (Fin k) × h.complement) :=
-    L.symm.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℝ h.complement :=
-    Module.Finite.of_surjective (LinearMap.snd ℝ (EuclideanSpace ℝ (Fin k)) _) Prod.snd_surjective
-  refine ⟨ContinuousLinearEquiv.ofFinrankEq ?_⟩
-  have := L.toLinearEquiv.finrank_eq
-  rw [Module.finrank_prod, finrank_euclideanSpace_fin, finrank_euclideanSpace_fin] at this
-  rw [finrank_euclideanSpace_fin]
-  omega
+  have := h.finiteDimensional_complement
+  have hdim := h.finrank_add_finrank_complement
+  rw [finrank_euclideanSpace_fin, finrank_euclideanSpace_fin] at hdim
+  exact ⟨ContinuousLinearEquiv.ofFinrankEq (by rw [finrank_euclideanSpace_fin]; omega)⟩
 
 end Euclidean
 

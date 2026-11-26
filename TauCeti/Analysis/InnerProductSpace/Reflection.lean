@@ -21,7 +21,9 @@ import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
 reflection across `K`, as a bounded operator, as `2 P_K - 1`, and a linear isometry mapping `K`
-onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`).
+onto `K'` intertwines their reflections (`Submodule.reflection_apply_of_map_eq`) and the
+reflections across their orthogonal complements
+(`Submodule.reflection_orthogonal_apply_of_map_eq`).
 Equal-norm vectors with the same inner product against a fixed vector are related by a linear
 isometry fixing that vector (`TauCeti.exists_linearIsometryEquiv_apply_eq_self_and_apply_eq`).
 This fixed-vector isometry theorem is adapted from Giada Franz's local formalization and builds on
@@ -96,14 +98,26 @@ theorem coe_reflection (K : Submodule 𝕜 E) [K.HasOrthogonalProjection] :
   ext x
   simp [reflection_apply]
 
-/-- A linear isometry equivalence mapping `K` onto itself commutes with the reflection across
-`K`. -/
-theorem reflection_apply_of_map_eq (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
-    {e : E ≃ₗᵢ[𝕜] E} (he : K.map (e.toLinearEquiv : E →ₗ[𝕜] E) = K) (x : E) :
-    K.reflection (e x) = e (K.reflection x) := by
+/-- A linear isometry equivalence mapping `K` onto `K'` intertwines the reflections across `K` and
+`K'`. -/
+theorem reflection_apply_of_map_eq {F : Type*} [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    (K : Submodule 𝕜 E) {K' : Submodule 𝕜 F} [K.HasOrthogonalProjection]
+    [K'.HasOrthogonalProjection] {e : E ≃ₗᵢ[𝕜] F}
+    (he : K.map (e.toLinearEquiv : E →ₗ[𝕜] F) = K') (x : E) :
+    K'.reflection (e x) = e (K.reflection x) := by
   have h := reflection_map_apply e K (e x)
   simp only [he, LinearIsometryEquiv.symm_apply_apply] at h
   exact h
+
+/-- A linear isometry equivalence mapping `K` onto `K'` intertwines the reflections across `Kᗮ`
+and `K'ᗮ`. -/
+theorem reflection_orthogonal_apply_of_map_eq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (K : Submodule 𝕜 E) {K' : Submodule 𝕜 F}
+    [K.HasOrthogonalProjection] [K'.HasOrthogonalProjection] {e : E ≃ₗᵢ[𝕜] F}
+    (he : K.map (e.toLinearEquiv : E →ₗ[𝕜] F) = K') (x : E) :
+    K'ᗮ.reflection (e x) = e (Kᗮ.reflection x) := by
+  rw [reflection_orthogonal_apply, reflection_apply_of_map_eq K he,
+    reflection_orthogonal_apply, map_neg]
 
 /-- A linear isometry equivalence fixing `K` pointwise commutes with reflection across `K`. -/
 theorem reflection_apply_of_eqOn (K : Submodule 𝕜 E) [K.HasOrthogonalProjection]
