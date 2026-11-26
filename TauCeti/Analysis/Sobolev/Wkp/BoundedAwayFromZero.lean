@@ -25,11 +25,16 @@ set of `v` with `c ≤ dist u v` is closed, so the bound passes to the closure o
 Constants lie in `W^{k,∞}(Ω)` for every `k`, the constant `c` with norm at most `|c|`
 (`TauCeti.Wkp.exists_value_ae_eq_const`), so its distance to `W^{k,∞}_0(Ω)` is exactly `|c|`
 (`TauCeti.Wkp.infDist_wkp0Submodule_eq_abs`). In particular `W^{k,∞}_0(Ω) ≠ W^{k,∞}(Ω)` for every
-nonempty open `Ω` and every order `k` (`TauCeti.wkp0Submodule_ne_top`), the whole space `E`
+nonempty open `Ω` and every order `k` (`TauCeti.wkp0Submodule_infty_ne_top`), the whole space `E`
 included. This is the endpoint counterpart of `TauCeti.wkp0Submodule_top_eq_top`, by which
 `W^{k,p}_0(E) = W^{k,p}(E)` for finite `p`; there the constant `1` is no counterexample, because
-it is not even in `Lᵖ(E)` (`TauCeti.Wkp.not_value_ae_eq_const`). The hypothesis that `E` is
-nontrivial is needed: on the zero space the constant `1` is itself a test function.
+it is not even in `Lᵖ(E)` (`TauCeti.Wkp.not_value_ae_eq_const_top_of_ne_top`). The hypothesis that
+`E` is nontrivial is needed: on the zero space the constant `1` is itself a test function.
+
+The argument for `TauCeti.Wkp.le_dist_of_le_abs_value` adapts the proof of
+`TauCeti.W1p.one_le_dist_of_value_ae_eq_infDist_compl` (in `W1p/Infinity.lean`), which bounds the
+`W^{1,∞}` distance of the distance function to `W^{1,∞}_0(Ω)` for `Ω ≠ E`, to the value of a
+`W^{k,∞}` function and to domains that may be all of `E`.
 
 ## References
 
@@ -61,16 +66,12 @@ theorem Wkp.le_dist_of_le_abs_value [Nontrivial E] (hne : (Omega : Set E).Nonemp
     (isClosed_le continuous_const (continuous_const.dist continuous_id)) (fun φ ↦ ?_) hv
   set w := Wkp.ofTestFunctionₗ (mu := mu) (p := ∞) k φ
   -- Outside the support of `φ` the value of `u - w` is that of `u`. That region of `Ω` is a
-  -- nonempty open set, since otherwise `Ω` would be a nonempty compact clopen set, hence the whole
-  -- noncompact space.
+  -- nonempty open set, since `Ω` is not compact: otherwise it would be a nonempty compact clopen
+  -- set, hence the whole noncompact space.
   set U := (Omega : Set E) \ tsupport φ
   have hUΩ : U ⊆ Omega := sdiff_subset
-  have hUne : U.Nonempty := by
-    refine sdiff_nonempty.2 fun hsub ↦ ?_
-    have hΩ : (Omega : Set E) = tsupport φ := subset_antisymm hsub φ.tsupport_subset
-    have huniv : (Omega : Set E) = univ :=
-      IsClopen.eq_univ ⟨hΩ ▸ isClosed_tsupport _, Omega.isOpen⟩ hne
-    exact noncompact_univ E (huniv ▸ hΩ ▸ φ.hasCompactSupport.isCompact)
+  have hUne : U.Nonempty := φ.sdiff_tsupport_nonempty_of_not_isCompact fun hc ↦
+    noncompact_univ E (IsClopen.eq_univ ⟨hc.isClosed, Omega.isOpen⟩ hne ▸ hc)
   have : (ae (mu.restrict U)).NeBot := ae_restrict_neBot.2
     ((Omega.isOpen.sdiff (isClosed_tsupport _)).measure_ne_zero mu hUne)
   have hsub : (value k (u - w) : E → ℝ) =ᵐ[mu.restrict Omega] value k u - value k w := by
@@ -100,36 +101,6 @@ theorem Wkp.notMem_wkp0Submodule_of_le_abs_value [Nontrivial E] (hne : (Omega : 
     (hu : ∀ᵐ x ∂mu.restrict Omega, c ≤ |value k u x|) : u ∉ wkp0Submodule mu Omega ∞ k :=
   fun h ↦ by simpa [hc.not_ge] using Wkp.le_dist_of_le_abs_value hne hu h
 
-/-- **Constants are `W^{k,∞}` functions.** On every open set `Ω`, the constant function `c`
-represents an element of `W^{k,∞}(Ω)` of norm at most `|c|`. -/
-theorem Wkp.exists_value_ae_eq_const (k : ℕ) (c : ℝ) :
-    ∃ u : Wkp mu Omega ∞ k, (value k u : E → ℝ) =ᵐ[mu.restrict Omega] (fun _ ↦ c) ∧ ‖u‖ ≤ |c| := by
-  have hf : ContDiffOn ℝ k (fun _ : E ↦ c) Omega := contDiffOn_const
-  obtain ⟨u, hu⟩ := Wkp.exists_value_ae_eq_of_contDiffOn (mu := mu) (p := ∞) k hf fun i _ ↦ by
-    rcases eq_or_ne i 0 with rfl | hi
-    · rw [iteratedFDeriv_zero_eq_comp]
-      exact memLp_top_const _
-    · rw [iteratedFDeriv_const_of_ne hi]
-      exact memLp_top_const _
-  refine ⟨u, hu, ?_⟩
-  rcases (Omega : Set E).eq_empty_or_nonempty with hempty | hne
-  · rw [Subsingleton.elim u 0 (h := Wkp.subsingleton_of_eq_empty k hempty), norm_zero]
-    exact abs_nonneg c
-  have hμ : mu.restrict Omega ≠ 0 := by
-    rw [Ne, Measure.restrict_eq_zero]
-    exact Omega.isOpen.measure_ne_zero mu hne
-  -- The jet of `c` is `c` in degree zero and `0` in every positive degree, so the sum of the
-  -- `L^∞` norms of its components is `|c|`.
-  have hjet : ∀ i, lpNorm (iteratedFDeriv ℝ i fun _ : E ↦ c) ∞ (mu.restrict Omega) =
-      if i = 0 then |c| else 0 := fun i ↦ by
-    split_ifs with hi
-    · subst hi
-      rw [iteratedFDeriv_zero_eq_comp]
-      simp [Function.comp_def, lpNorm_const ENNReal.top_ne_zero hμ]
-    · simp [iteratedFDeriv_const_of_ne hi]
-  refine (Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k u hf hu).trans_eq ?_
-  simp [hjet, Finset.sum_ite_eq']
-
 /-- **A constant is at distance exactly its modulus from `W^{k,∞}_0(Ω)`.** On a nonempty open set
 in a space of positive dimension, every `u ∈ W^{k,∞}(Ω)` represented by the constant `c` has
 `infDist u W^{k,∞}_0(Ω) = |c|`. -/
@@ -147,22 +118,12 @@ theorem Wkp.infDist_wkp0Submodule_eq_abs [Nontrivial E] (hne : (Omega : Set E).N
 /-- **`W^{k,∞}_0(Ω) ≠ W^{k,∞}(Ω)`.** On every nonempty open set `Ω` in a space of positive
 dimension, including the whole space, the closure of the test functions in `W^{k,∞}(Ω)` is a
 proper subspace: it misses the constant `1`. -/
-theorem wkp0Submodule_ne_top [Nontrivial E] (hne : (Omega : Set E).Nonempty) (k : ℕ) :
+theorem wkp0Submodule_infty_ne_top [Nontrivial E] (hne : (Omega : Set E).Nonempty) (k : ℕ) :
     wkp0Submodule mu Omega ∞ k ≠ ⊤ := by
   obtain ⟨u, hu, -⟩ := Wkp.exists_value_ae_eq_const (mu := mu) (Omega := Omega) k 1
   refine fun h ↦ Wkp.notMem_wkp0Submodule_of_le_abs_value hne one_pos
     (hu.mono fun x hx ↦ by rw [hx, abs_one]) ?_
   rw [h]
   exact ClosedSubmodule.mem_top
-
-/-- **For finite `p` no nonzero constant is a Sobolev function on the whole space.** In a space of
-positive dimension, no `u ∈ W^{k,p}(E)` with `p < ∞` is represented by a constant `c ≠ 0`, since
-the Haar measure of `E` is infinite. -/
-theorem Wkp.not_value_ae_eq_const [Nontrivial E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
-    (u : Wkp mu ⊤ p k) {c : ℝ} (hc : c ≠ 0) : ¬(value k u : E → ℝ) =ᵐ[mu] fun _ ↦ c :=
-  fun hu ↦ by
-    have hmem : MemLp (fun _ : E ↦ c) p mu := (Wkp.memLp_value k u).ae_eq hu
-    rw [memLp_const_iff (zero_lt_one.trans_le Fact.out).ne' hp] at hmem
-    simp [hc, measure_univ_of_isAddLeftInvariant mu] at hmem
 
 end TauCeti
