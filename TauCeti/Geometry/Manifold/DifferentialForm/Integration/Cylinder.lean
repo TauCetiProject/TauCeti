@@ -115,9 +115,9 @@ even when it vanishes on spheres: for `f = id` on a torus, the loop of seamed pa
 * `TauCeti.rectangleIntegral_rectangleTrans`: the integral over a concatenation.
 * `TauCeti.rectangleIntegral_rectangleTrans_comp_prodMap_one_sub`: the integral over two maps
   glued along their common start.
-* `TauCeti.loopwiseTrans_congr`, `TauCeti.loopwiseTrans_const`, `TauCeti.apply_loopwiseTrans`: a
-  loopwise concatenation only depends on its maps over `t ∈ [0, 1]`, is constant for constant
-  maps, and commutes with composition.
+* `TauCeti.loopwiseTrans_congr`, `TauCeti.loopwiseTrans_mem`, `TauCeti.apply_loopwiseTrans`: a
+  loopwise concatenation only depends on its maps over `t ∈ [0, 1]`, lies in every set containing
+  their values there, and commutes with composition.
 * `TauCeti.contMDiff_loopwiseTrans`, `TauCeti.rectangleIntegral_loopwiseTrans`: smoothness of and
   the integral over a loopwise concatenation.
 * `TauCeti.IsSmoothSeamedCylinder.trans`, `TauCeti.IsSmoothCylinder.trans`: the concatenation of
@@ -539,14 +539,17 @@ theorem loopwiseTrans_congr {u₁ u₂ v₁ v₂ : ℝ × ℝ → M} {s s' t : �
     exact h₂ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
 
 omit [TopologicalSpace M] in
-/-- The loopwise concatenation of two constant maps with the same value is constant. -/
-@[simp]
-theorem loopwiseTrans_const (x : M) (z : ℝ × ℝ) :
-    loopwiseTrans (fun _ ↦ x) (fun _ ↦ x) z = x := by
+/-- The loopwise concatenation at `(s, t)` lies in a set `A` if the two loops `r ↦ u₁ (s, r)` and
+`r ↦ u₂ (s, r)` lie in `A` at parameters `r ∈ [0, 1]`. -/
+theorem loopwiseTrans_mem {u₁ u₂ : ℝ × ℝ → M} {A : Set M} {s t : ℝ}
+    (h₁ : ∀ r ∈ Icc (0 : ℝ) 1, u₁ (s, r) ∈ A) (h₂ : ∀ r ∈ Icc (0 : ℝ) 1, u₂ (s, r) ∈ A) :
+    loopwiseTrans u₁ u₂ (s, t) ∈ A := by
   rw [loopwiseTrans]
-  rcases le_or_gt (Int.fract z.2) 2⁻¹ with h | h
+  rcases le_or_gt (Int.fract t) 2⁻¹ with h | h
   · rw [curveConcat_of_le h]
+    exact h₁ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
   · rw [curveConcat_of_lt h]
+    exact h₂ _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
 
 omit [TopologicalSpace M] in
 /-- A map applied to a loopwise concatenation is the loopwise concatenation of the composites. -/

@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Cylinder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 import TauCeti.MeasureTheory.Integral.PolarCoord
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
+import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -45,12 +47,15 @@ The **core chart** `TauCeti.Floer.pairOfPantsCoreChart` is the loopwise concaten
 (`TauCeti.loopwiseTrans`) of these two halves. It is a smooth map of the cylinder `ℝ × ℝ / ℤ`
 (`TauCeti.Floer.contDiff_pairOfPantsCoreChart`,
 `TauCeti.Floer.pairOfPantsCoreChart_apply_add_one`) into `S₀`
-(`TauCeti.Floer.pairOfPantsCoreChart_mem_preimage_truncation`). For `s ≤ 0` it runs through the
-collared concatenation of the end loops of the inputs `0` and `1` at height `0`, both starting at
-`1/2` (`TauCeti.Floer.pairOfPantsCoreChart_mk_zero`), and for `s ≥ 1` it lies on the output
-circle `‖w‖ = 2` (`TauCeti.Floer.norm_symm_pairOfPantsCoreChart_mk_one`). By construction it runs
-once clockwise around that circle, like the end loop of the output at height `0`, but at the speed
-of the angle about `1/2` rather than about `0`; this file does not compare the two loops.
+(`TauCeti.Floer.pairOfPantsCoreChart_mem_preimage_truncation`). It is constant in `s` for
+`s ≤ 0` and for `s ≥ 1` (`TauCeti.Floer.pairOfPantsCoreChart_mk_of_nonpos`,
+`TauCeti.Floer.pairOfPantsCoreChart_mk_of_one_le`). At `s = 0` it runs through the collared
+concatenation of the end loops of the inputs `0` and `1` at height `0`, both starting at `1/2`
+(`TauCeti.Floer.pairOfPantsCoreChart_mk_zero`), and at `s = 1` through the points of the output
+circle `‖w‖ = 2` on the same rays from `1/2` (`TauCeti.Floer.pairOfPantsCoreChart_mk_one`,
+`TauCeti.Floer.norm_symm_pairOfPantsCoreChart_mk_one`). It thus runs once clockwise around that
+circle, like the end loop of the output at height `0`, but at the speed of the angle about `1/2`
+rather than about `0`; this file does not compare the two loops.
 
 For a map `u` of the pair of pants into a manifold `M`:
 
@@ -75,9 +80,10 @@ of the cap of the output obtained by gluing them to `u`.
 The area formula is proved in polar coordinates about `1/2`: by Fubini's theorem with the angle
 outermost (`Complex.integral_comp_polarCoord_symm`), the integral over `S₀` is an iterated
 integral over the angle and over the segment of radii of `S₀` on each ray, and rescaling the radius
-and the angle of each half to `[0, 1]` turns it into the integral over the core chart. The
-determinant identity `AlternatingMap.apply_finTwoProd` reads the pulled-back form along the chart
-as its Jacobian times the area density of `u`.
+and the angle of each half to `[0, 1]` turns it into the integral over the core chart
+(`TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg`). The module-valued
+basis-determinant identity `AlternatingMap.eq_basis_det_smulRight`, at the standard basis of
+`ℝ × ℝ`, reads the pulled-back form along the chart as its Jacobian times the area density of `u`.
 
 ## References
 
@@ -512,6 +518,26 @@ private theorem coreLobe_three_quarters_one (s : ℝ) :
   rw [hR, hc]
   simp
 
+/-- On the ray from `1/2` at the angle `θ`, the point at the signed distance `cos θ` is
+`1 + e^{2iθ}/2`, on the circle of radius `1/2` about `1`. -/
+private theorem circleMap_half_cos (θ : ℝ) :
+    circleMap (1 / 2 : ℂ) (Real.cos θ) θ = 1 + Complex.exp (2 * θ * Complex.I) / 2 := by
+  have h : Complex.exp (-θ * Complex.I) * Complex.exp (θ * Complex.I) = 1 := by
+    rw [← Complex.exp_add, neg_mul, neg_add_cancel, Complex.exp_zero]
+  rw [circleMap, Complex.ofReal_cos, Complex.cos,
+    show (2 : ℂ) * θ * Complex.I = θ * Complex.I + θ * Complex.I by ring, Complex.exp_add]
+  linear_combination h / 2
+
+/-- On the ray from `1/2` at the angle `θ`, the point at the signed distance `-cos θ` is
+`-e^{2iθ}/2`, on the circle of radius `1/2` about `0`. -/
+private theorem circleMap_half_neg_cos (θ : ℝ) :
+    circleMap (1 / 2 : ℂ) (-Real.cos θ) θ = -(Complex.exp (2 * θ * Complex.I) / 2) := by
+  have h : Complex.exp (-θ * Complex.I) * Complex.exp (θ * Complex.I) = 1 := by
+    rw [← Complex.exp_add, neg_mul, neg_add_cancel, Complex.exp_zero]
+  rw [circleMap, Complex.ofReal_neg, Complex.ofReal_cos, Complex.cos,
+    show (2 : ℂ) * θ * Complex.I = θ * Complex.I + θ * Complex.I by ring, Complex.exp_add]
+  linear_combination -h / 2
+
 /-- At `s = 0` the lobe of the input end `0` is its end chart at height `0`. -/
 private theorem coreLobe_quarter_mk_zero {r : ℝ} (hr : r ∈ Icc 0 1) :
     coreLobe (1 / 4) (0, r) = endChart Puncture.zero (0, r) := by
@@ -520,20 +546,13 @@ private theorem coreLobe_quarter_mk_zero {r : ℝ} (hr : r ∈ Icc 0 1) :
   congr 1
   have he : Complex.equivRealProdCLM.symm ((0 : ℝ), r) = r * Complex.I := by
     apply Complex.ext <;> simp
-  rw [he, Puncture.cylindricalEndLift_zero]
-  dsimp only
-  rw [show -(2 * (π : ℂ)) * (r * Complex.I) = ((-(2 * π * r) : ℝ) : ℂ) * Complex.I by
-    push_cast; ring]
-  have h₁ : lobeAngle (1 / 4) r = -(π * r) + -(π / 2) := by rw [lobeAngle]; ring
-  have h₂ : 2 * π * r = 2 * (π * r) := by ring
-  have h₃ := Real.sin_sq_add_cos_sq (π * r)
-  apply Complex.ext <;>
-  simp only [circleMap, h₁, Complex.add_re, Complex.add_im, Complex.re_ofReal_mul,
-    Complex.im_ofReal_mul, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im,
-    Complex.div_ofNat_re, Complex.div_ofNat_im, Complex.one_re, Complex.one_im,
-    Real.cos_add, Real.sin_add, Real.cos_neg, Real.sin_neg, Real.cos_pi_div_two,
-    Real.sin_pi_div_two, h₂, Real.cos_two_mul, Real.sin_two_mul] <;>
-  nlinarith
+  rw [he, Puncture.cylindricalEndLift_zero, ← neg_neg (Real.sin (π * r)),
+    ← cos_lobeAngle_quarter, circleMap_half_neg_cos]
+  -- The doubled angle is `-2πr - π`, and `e^{iπ} = -1`.
+  rw [show 2 * (lobeAngle (1 / 4) r : ℂ) * Complex.I =
+      -(2 * π) * (r * Complex.I) - π * Complex.I by rw [lobeAngle]; push_cast; ring,
+    Complex.exp_sub, Complex.exp_pi_mul_I]
+  ring
 
 /-- At `s = 0` the lobe of the input end `1` is its end chart at height `0`. -/
 private theorem coreLobe_three_quarters_mk_zero {r : ℝ} (hr : r ∈ Icc 0 1) :
@@ -543,20 +562,13 @@ private theorem coreLobe_three_quarters_mk_zero {r : ℝ} (hr : r ∈ Icc 0 1) :
   congr 1
   have he : Complex.equivRealProdCLM.symm ((0 : ℝ), r) = r * Complex.I := by
     apply Complex.ext <;> simp
-  rw [he, Puncture.cylindricalEndLift_one]
-  dsimp only
-  rw [show -(2 * (π : ℂ)) * (r * Complex.I) = ((-(2 * π * r) : ℝ) : ℂ) * Complex.I by
-    push_cast; ring]
-  have h₁ : lobeAngle (3 / 4) r = -(π * r) + -(π / 2) + -π := by rw [lobeAngle]; ring
-  have h₂ : 2 * π * r = 2 * (π * r) := by ring
-  have h₃ := Real.sin_sq_add_cos_sq (π * r)
-  apply Complex.ext <;>
-  simp only [circleMap, h₁, Complex.add_re, Complex.add_im, Complex.sub_re, Complex.sub_im,
-    Complex.re_ofReal_mul, Complex.im_ofReal_mul, Complex.exp_ofReal_mul_I_re,
-    Complex.exp_ofReal_mul_I_im, Complex.div_ofNat_re, Complex.div_ofNat_im, Complex.one_re,
-    Complex.one_im, Real.cos_add, Real.sin_add, Real.cos_neg, Real.sin_neg, Real.cos_pi_div_two,
-    Real.sin_pi_div_two, Real.cos_pi, Real.sin_pi, h₂, Real.cos_two_mul, Real.sin_two_mul] <;>
-  nlinarith
+  rw [he, Puncture.cylindricalEndLift_one, ← cos_lobeAngle_three_quarters, circleMap_half_cos]
+  -- The doubled angle is `-2πr - π - 2π`, `e^{iπ} = -1` and `e^{2πi} = 1`.
+  rw [show 2 * (lobeAngle (3 / 4) r : ℂ) * Complex.I =
+      -(2 * π) * (r * Complex.I) - π * Complex.I - 2 * π * Complex.I by
+        rw [lobeAngle]; push_cast; ring,
+    Complex.exp_sub, Complex.exp_sub, Complex.exp_pi_mul_I, Complex.exp_two_pi_mul_I]
+  ring
 
 private theorem norm_symm_coreLobe_mk_one (a : ℝ) {r : ℝ} (hr : r ∈ Icc 0 1) :
     ‖Complex.equivRealProdCLM.symm (coreLobe a (1, r))‖ = 2 := by
@@ -584,15 +596,8 @@ theorem contDiff_pairOfPantsCoreChart {n : ℕ∞} : ContDiff ℝ n pairOfPantsC
 theorem pairOfPantsCoreChart_mem_preimage_truncation (z : ℝ × ℝ) :
     pairOfPantsCoreChart z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation 0 := by
   obtain ⟨s, t⟩ := z
-  have h := apply_loopwiseTrans (fun w ↦ Complex.equivRealProdCLM.symm w ∈ truncation 0)
-    (coreLobe (1 / 4)) (coreLobe (3 / 4)) (s, t)
-  have hT : loopwiseTrans ((fun w ↦ Complex.equivRealProdCLM.symm w ∈ truncation 0) ∘
-      coreLobe (1 / 4)) ((fun w ↦ Complex.equivRealProdCLM.symm w ∈ truncation 0) ∘
-        coreLobe (3 / 4)) (s, t) = loopwiseTrans (fun _ ↦ True) (fun _ ↦ True) (s, t) :=
-    loopwiseTrans_congr (fun _ hr ↦ eq_true (symm_coreLobe_mem_truncation (.inl rfl) hr))
-      (fun _ hr ↦ eq_true (symm_coreLobe_mem_truncation (.inr rfl) hr))
-  rw [mem_preimage, pairOfPantsCoreChart, h, hT, loopwiseTrans_const]
-  trivial
+  exact loopwiseTrans_mem (fun _ hr ↦ symm_coreLobe_mem_truncation (.inl rfl) hr)
+    (fun _ hr ↦ symm_coreLobe_mem_truncation (.inr rfl) hr)
 
 /-- **The input loop of the core chart.** For `s = 0` the core chart runs through the collared
 concatenation of the end charts of the input ends `0` and `1` at height `0`, the circles of
@@ -603,18 +608,47 @@ theorem pairOfPantsCoreChart_mk_zero (t : ℝ) :
   loopwiseTrans_congr (fun _ hr ↦ coreLobe_quarter_mk_zero hr)
     (fun _ hr ↦ coreLobe_three_quarters_mk_zero hr)
 
+/-- For `s ≤ 0` the core chart is constant in `s`: it runs through its input loop. -/
+theorem pairOfPantsCoreChart_mk_of_nonpos {s : ℝ} (hs : s ≤ 0) (t : ℝ) :
+    pairOfPantsCoreChart (s, t) = pairOfPantsCoreChart (0, t) := by
+  have h (a r : ℝ) : coreLobe a (s, r) = coreLobe a (0, r) := by
+    simp only [coreLobe, lobeChart, smoothTransition.zero_of_nonpos hs, smoothTransition.zero]
+  exact loopwiseTrans_congr (fun r _ ↦ h _ r) (fun r _ ↦ h _ r)
+
+/-- For `s ≥ 1` the core chart is constant in `s`: it runs through its output loop. -/
+theorem pairOfPantsCoreChart_mk_of_one_le {s : ℝ} (hs : 1 ≤ s) (t : ℝ) :
+    pairOfPantsCoreChart (s, t) = pairOfPantsCoreChart (1, t) := by
+  have h (a r : ℝ) : coreLobe a (s, r) = coreLobe a (1, r) := by
+    simp only [coreLobe, lobeChart, smoothTransition.one_of_one_le hs, smoothTransition.one]
+  exact loopwiseTrans_congr (fun r _ ↦ h _ r) (fun r _ ↦ h _ r)
+
 /-- **The output loop of the core chart.** For `s = 1` the core chart runs through the circle
 `‖w‖ = 2` of the output end at height `0`. -/
 theorem norm_symm_pairOfPantsCoreChart_mk_one (t : ℝ) :
-    ‖Complex.equivRealProdCLM.symm (pairOfPantsCoreChart (1, t))‖ = 2 := by
-  have h := apply_loopwiseTrans (fun w ↦ ‖Complex.equivRealProdCLM.symm w‖)
-    (coreLobe (1 / 4)) (coreLobe (3 / 4)) (1, t)
-  have hT : loopwiseTrans ((fun w ↦ ‖Complex.equivRealProdCLM.symm w‖) ∘ coreLobe (1 / 4))
-      ((fun w ↦ ‖Complex.equivRealProdCLM.symm w‖) ∘ coreLobe (3 / 4)) (1, t) =
-        loopwiseTrans (fun _ ↦ (2 : ℝ)) (fun _ ↦ 2) (1, t) :=
-    loopwiseTrans_congr (fun _ hr ↦ norm_symm_coreLobe_mk_one _ hr)
-      (fun _ hr ↦ norm_symm_coreLobe_mk_one _ hr)
-  rw [pairOfPantsCoreChart, h, hT, loopwiseTrans_const]
+    ‖Complex.equivRealProdCLM.symm (pairOfPantsCoreChart (1, t))‖ = 2 :=
+  loopwiseTrans_mem (A := {w | ‖Complex.equivRealProdCLM.symm w‖ = 2})
+    (fun _ hr ↦ norm_symm_coreLobe_mk_one _ hr) (fun _ hr ↦ norm_symm_coreLobe_mk_one _ hr)
+
+/-- **The output loop of the core chart, explicitly.** For `s = 1` the core chart runs through
+the points `1/2 + R e^{iθ}` of the circle `‖w‖ = 2` on the rays from `1/2` at the angles
+`θ = -π/2 - π r` on the side of the input end `0`, and `θ = -3π/2 - π r` on the side of the input
+end `1`, for `r ∈ [0, 1]`. Here `R = (-cos θ + √(cos² θ + 15)) / 2` is the distance from `1/2` to
+that circle along the ray, where `-cos θ` is `sin (π r)` on the side of the input end `0` and
+`-sin (π r)` on the side of the input end `1`. -/
+theorem pairOfPantsCoreChart_mk_one (t : ℝ) :
+    pairOfPantsCoreChart (1, t) = loopwiseTrans
+      (fun z ↦ Complex.equivRealProdCLM (circleMap (1 / 2)
+        ((Real.sin (π * z.2) + √(Real.sin (π * z.2) ^ 2 + 15)) / 2) (-(π / 2) - π * z.2)))
+      (fun z ↦ Complex.equivRealProdCLM (circleMap (1 / 2)
+        ((-Real.sin (π * z.2) + √(Real.sin (π * z.2) ^ 2 + 15)) / 2) (-(3 * π / 2) - π * z.2)))
+      (1, t) := by
+  refine loopwiseTrans_congr (fun r hr ↦ ?_) (fun r hr ↦ ?_) <;>
+    rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
+      add_sub_cancel, coreOuterRadius]
+  · rw [cos_lobeAngle_quarter, neg_neg, neg_sq,
+      show lobeAngle (1 / 4) r = -(π / 2) - π * r by rw [lobeAngle]; ring]
+  · rw [cos_lobeAngle_three_quarters,
+      show lobeAngle (3 / 4) r = -(3 * π / 2) - π * r by rw [lobeAngle]; ring]
 
 /-! ### The Jacobian of a lobe -/
 
@@ -701,7 +735,13 @@ private theorem mpullback_comp_lobeChart_apply (a : ℝ) {u : ℝ × ℝ → M} 
       ![fderiv ℝ (lobeChart a) z (1, 0), fderiv ℝ (lobeChart a) z (0, 1)] := by
     funext i
     fin_cases i <;> simp
-  refine (congrArg ψ hv).trans ((ψ.toAlternatingMap.apply_finTwoProd _ _).trans ?_)
+  -- An alternating map of two vectors of `ℝ × ℝ` is their determinant times its value on the
+  -- standard basis vectors.
+  have hdet := congrArg (· ![fderiv ℝ (lobeChart a) z (1, 0), fderiv ℝ (lobeChart a) z (0, 1)])
+    (ψ.toAlternatingMap.eq_basis_det_smulRight (Module.Basis.finTwoProd ℝ))
+  rw [AlternatingMap.smulRight_apply, Module.Basis.det_finTwoProd_apply,
+    Module.Basis.coe_finTwoProd] at hdet
+  refine (congrArg ψ hv).trans (hdet.trans ?_)
   refine congrArg (· • ψ ![(1, 0), (0, 1)]) ?_
   rw [fderiv_lobeChart_apply_one_zero, fderiv_lobeChart_apply_zero_one]
   set e := Complex.exp (lobeAngle a z.2 * Complex.I)
@@ -716,33 +756,6 @@ private theorem mpullback_comp_lobeChart_apply (a : ℝ) {u : ℝ × ℝ → M} 
     lobeRadius a (smoothTransition z.1) z.2)) * he
 
 /-! ### The area of the core -/
-
-/-- Exchanging the two integrals over the square and substituting `σ = β s` for the smooth
-transition `β` in the inner one. -/
-private theorem integral_integral_deriv_smoothTransition_smul {K : ℝ → ℝ → F}
-    (hK : ContinuousOn (fun p : ℝ × ℝ ↦ K p.1 p.2) (Icc 0 1 ×ˢ Icc 0 1)) :
-    ∫ s in (0 : ℝ)..1, ∫ r in (0 : ℝ)..1, deriv smoothTransition s • K r (smoothTransition s) =
-      ∫ r in (0 : ℝ)..1, ∫ σ in (0 : ℝ)..1, K r σ := by
-  have hβ' : Continuous (deriv smoothTransition) :=
-    (smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
-  have hc : ContinuousOn (fun p : ℝ × ℝ ↦ deriv smoothTransition p.1 •
-      K p.2 (smoothTransition p.1)) (Icc 0 1 ×ˢ Icc 0 1) := by
-    refine (hβ'.comp continuous_fst).continuousOn.smul (ContinuousOn.comp
-      (g := fun p : ℝ × ℝ ↦ K p.1 p.2) (f := fun p : ℝ × ℝ ↦ (p.2, smoothTransition p.1)) hK ?_
-      fun p hp ↦ ?_)
-    · exact (continuous_snd.prodMk (smoothTransition.continuous.comp continuous_fst)).continuousOn
-    · exact ⟨hp.2, smoothTransition.nonneg _, smoothTransition.le_one _⟩
-  rw [intervalIntegral_intervalIntegral_swap
-    (F := fun s r ↦ deriv smoothTransition s • K r (smoothTransition s))
-    ((hc.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)).mono_set (by
-      simp only [uIoc_of_le zero_le_one]
-      exact prod_mono Ioc_subset_Icc_self Ioc_subset_Icc_self))]
-  refine intervalIntegral.integral_congr fun r _ ↦ ?_
-  have h := intervalIntegral.integral_deriv_smul_comp_of_deriv_nonneg (a := 0) (b := 1)
-    (g := K r) smoothTransition.continuous.continuousOn
-    (fun s _ ↦ (smoothTransition.contDiff (n := 1).differentiable one_ne_zero s).hasDerivAt)
-    (fun s _ ↦ smoothTransition.monotone.deriv_nonneg)
-  rwa [smoothTransition.zero, smoothTransition.one] at h
 
 private theorem lobeChart_mem_thricePuncturedSphereReal {a : ℝ} (ha : a = 1 / 4 ∨ a = 3 / 4)
     {z : ℝ × ℝ} (hz : z.2 ∈ Icc 0 1) : lobeChart a z ∈ thricePuncturedSphereReal := by
@@ -805,10 +818,20 @@ private theorem rectangleIntegral_comp_lobeChart [IsManifold I 1 M] {a : ℝ}
   dsimp only
   rw [intervalIntegral.integral_congr fun s _ ↦ intervalIntegral.integral_congr fun r hr ↦
     hpt s r hr]
-  refine (integral_integral_deriv_smoothTransition_smul (K := fun r σ ↦
-    (-(π * (coreOuterRadius (lobeAngle a r) - Real.sin (π * r)) * lobeRadius a σ r)) •
-      areaDensity φ u (Complex.equivRealProdCLM (lobePoint a σ r)))
-    (continuousOn_lobeIntegrand ha hφ hu)).trans ?_
+  -- Exchange the two integrals and substitute `σ = β s` for the smooth transition `β`.
+  have hsub := TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg
+    (K := fun r σ ↦
+      (-(π * (coreOuterRadius (lobeAngle a r) - Real.sin (π * r)) * lobeRadius a σ r)) •
+        areaDensity φ u (Complex.equivRealProdCLM (lobePoint a σ r)))
+    (c := 0) (d := 1) zero_le_one
+    (fun s _ ↦ (smoothTransition.contDiff (n := 1).differentiable one_ne_zero s).hasDerivAt)
+    ((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).continuousOn
+    (fun _ _ ↦ smoothTransition.monotone.deriv_nonneg)
+    (by
+      rw [smoothTransition.zero, smoothTransition.one, uIcc_of_le zero_le_one]
+      exact continuousOn_lobeIntegrand ha hφ hu)
+  rw [smoothTransition.zero, smoothTransition.one] at hsub
+  refine hsub.trans ?_
   simp only [neg_smul, intervalIntegral.integral_neg, mul_assoc, ← smul_smul,
     intervalIntegral.integral_smul]
 
