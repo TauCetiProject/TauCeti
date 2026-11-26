@@ -116,8 +116,7 @@ theorem opNorm_le_of_forall_norm_ofMatrix_sliceRight_le
     rw [equivFinsuppOfBasisRight_symm_apply, Finsupp.sum_fintype _ _ (by simp), map_sum]
     simp only [tensorSum, e, LinearMap.lTensor_tmul, Submodule.subtype_apply,
       OrthonormalBasis.coe_toBasis]
-    -- the coercion into the completion is additive
-    exact map_sum (Completion.toCompl (α := H ⊗[ℂ] F)) _ _
+    simp only [← UniformSpace.Completion.toCompl_apply, map_sum]
   set ζ := equivFinsuppOfBasisRight b.toBasis z'
   set ξ := equivFinsuppOfBasisRight b.toBasis x'
   rw [← Completion.norm_coe (V.subtype.lTensor H z'),

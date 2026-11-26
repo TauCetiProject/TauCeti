@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import TauCeti.Analysis.CStarAlgebra.SpatialNorm
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import TauCeti.Analysis.CStarAlgebra.Matrix.Slice
@@ -31,10 +32,11 @@ Theorem IV.4.9), and it bounds that norm for every pair of representations
 (`NonUnitalStarSubalgebra.norm_spatialTensorLinearMap_map_le_spatialNorm`).
 
 The proof treats one factor at a time. For `y ∈ A ⊗ B(F)` and a finite orthonormal family
-`e₁, …, eₙ` in `F`, slicing the second factor by the vector functionals `b ↦ ⟪eₖ, b eₗ⟫`
-(`TauCeti.vectorSlice`) gives a matrix `S ∈ Mₙ(A)`, and `π(S) ∈ Mₙ(B(H))` is the matrix of right
-slices `TensorProduct.sliceRight (eₗ) (eₖ)` of the operator `(π ⊗ 1)(y)`
-(`TauCeti.sliceRight_spatialTensorLinearMap_rTensor`). The norm of an operator on `H ⊗₂ F` is the
+`e₁, …, eₙ` in `F`, contracting the second factor against the vector functionals `b ↦ ⟪eₖ, b eₗ⟫`
+(`LinearMap.tensorComponent`) gives a matrix `S ∈ Mₙ(A)`, and `π(S) ∈ Mₙ(B(H))` is the matrix of
+right slices `TensorProduct.sliceRight (eₗ) (eₖ)` of the operator `(π ⊗ 1)(y)`
+(`TauCeti.sliceRight_spatialTensorLinearMap`,
+`TauCeti.sliceRight_spatialTensorLinearMap_rTensor`). The norm of an operator on `H ⊗₂ F` is the
 supremum of the norms of these slice matrices over all finite orthonormal families
 (`TensorProduct.norm_ofMatrix_sliceRight_le`,
 `TensorProduct.opNorm_le_of_forall_norm_ofMatrix_sliceRight_le`). The matrix amplification of a
@@ -66,40 +68,32 @@ noncomputable section
 open UniformSpace TensorProduct ContinuousLinearMap
 open scoped InnerProductSpace ComplexOrder
 
-/-! ### Slicing the second factor by vector functionals -/
+/-! ### Right slices as contractions against vector functionals -/
 
 namespace TauCeti
 
 variable {A H F : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [NormedAddCommGroup F] [InnerProductSpace ℂ F] [AddCommGroup A] [Module ℂ A]
 
-/-- The **vector slice** `A ⊗ B(F) → A`, `a ⊗ b ↦ ⟪f, b g⟫ • a`: the identity on the first factor
-tensored with the vector functional `b ↦ ⟪f, b g⟫` on the second. -/
-def vectorSlice (f g : F) : A ⊗[ℂ] (F →L[ℂ] F) →ₗ[ℂ] A :=
-  (TensorProduct.rid ℂ A).toLinearMap ∘ₗ
-    ((vectorFunctional g f : (F →L[ℂ] F) →L[ℂ] ℂ) : (F →L[ℂ] F) →ₗ[ℂ] ℂ).lTensor A
-
-/-- Unfolding `TauCeti.vectorSlice`. -/
-theorem vectorSlice_def (f g : F) :
-    vectorSlice (A := A) f g = (TensorProduct.rid ℂ A).toLinearMap ∘ₗ
-      ((vectorFunctional g f : (F →L[ℂ] F) →L[ℂ] ℂ) : (F →L[ℂ] F) →ₗ[ℂ] ℂ).lTensor A :=
-  (rfl)
-
-/-- The vector slice sends `a ⊗ b` to `⟪f, b g⟫ • a`. -/
+/-- The right slice of the operator `spatialTensorLinearMap y` at `(g, f)` is the contraction of
+`y` against the vector functional `b ↦ ⟪f, b g⟫` on its second factor. -/
 @[simp]
-theorem vectorSlice_tmul (f g : F) (a : A) (b : F →L[ℂ] F) :
-    vectorSlice f g (a ⊗ₜ b) = ⟪f, b g⟫_ℂ • a := by
-  simp [vectorSlice, vectorFunctional_apply]
-
-/-- The right slice of `(π ⊗ 1)(y)` at `(g, f)` is `π` applied to the vector slice of `y` at
-`(f, g)`. -/
-@[simp]
-theorem sliceRight_spatialTensorLinearMap_rTensor [CompleteSpace H] (π : A →ₗ[ℂ] H →L[ℂ] H)
-    (y : A ⊗[ℂ] (F →L[ℂ] F)) (f g : F) :
-    sliceRight g f (spatialTensorLinearMap ℂ H F H F (π.rTensor _ y)) = π (vectorSlice f g y) := by
+theorem sliceRight_spatialTensorLinearMap [CompleteSpace H] (y : (H →L[ℂ] H) ⊗[ℂ] (F →L[ℂ] F))
+    (g f : F) :
+    sliceRight g f (spatialTensorLinearMap ℂ H F H F y) =
+      LinearMap.tensorComponent (vectorFunctional g f : (F →L[ℂ] F) →L[ℂ] ℂ).toLinearMap y := by
   induction y using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul a b => simp
+
+/-- The right slice of `(π ⊗ 1)(y)` at `(g, f)` is `π` applied to the contraction of `y` against
+the vector functional `b ↦ ⟪f, b g⟫` on its second factor. -/
+theorem sliceRight_spatialTensorLinearMap_rTensor [CompleteSpace H] (π : A →ₗ[ℂ] H →L[ℂ] H)
+    (y : A ⊗[ℂ] (F →L[ℂ] F)) (g f : F) :
+    sliceRight g f (spatialTensorLinearMap ℂ H F H F (π.rTensor _ y)) =
+      π (LinearMap.tensorComponent (vectorFunctional g f : (F →L[ℂ] F) →L[ℂ] ℂ).toLinearMap y) := by
+  rw [sliceRight_spatialTensorLinearMap, LinearMap.rTensor, LinearMap.tensorComponent_map,
+    LinearMap.comp_id]
 
 /-! ### Representation independence -/
 
@@ -118,7 +112,8 @@ theorem norm_spatialTensorLinearMap_rTensor_le (π : A →⋆ₙₐ[ℂ] (H →L
   have := CStarAlgebra.spectralOrderedRing A
   refine opNorm_le_of_forall_norm_ofMatrix_sliceRight_le _ fun n e he ↦ ?_
   let S : CStarMatrix (Fin n) (Fin n) A :=
-    CStarMatrix.ofMatrix fun k l ↦ vectorSlice (e k) (e l) y
+    CStarMatrix.ofMatrix fun k l ↦
+      LinearMap.tensorComponent (vectorFunctional (e l) (e k) : (F →L[ℂ] F) →L[ℂ] ℂ).toLinearMap y
   simp only [sliceRight_spatialTensorLinearMap_rTensor]
   calc ‖CStarMatrix.mapₙₐ π S‖ ≤ ‖S‖ := NonUnitalStarAlgHom.norm_apply_le _ _
     _ = ‖CStarMatrix.mapₙₐ σ S‖ :=

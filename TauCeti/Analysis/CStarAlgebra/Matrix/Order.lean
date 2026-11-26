@@ -104,8 +104,7 @@ theorem norm_le_iff_forall_sum_norm_sq_le {n H : Type*} [Fintype n]
     simp only [CStarMatrix.sub_apply, _root_.sub_apply, inner_sub_right,
       Finset.sum_sub_distrib, sum_inner_algebraMap_apply, sum_inner_star_mul_self_apply]
     refine Iff.trans ?_ (Complex.zero_le_real.trans sub_nonneg)
-    push_cast
-    rfl
+    norm_cast
   rw [← sq_le_sq₀ (norm_nonneg _) hC, sq, ← CStarRing.norm_star_mul_self,
     CStarAlgebra.norm_le_iff_le_algebraMap _ (sq_nonneg C) (star_mul_self_nonneg M),
     ← sub_nonneg, nonneg_iff_forall_sum_inner_nonneg]
