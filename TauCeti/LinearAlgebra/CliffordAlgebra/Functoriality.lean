@@ -42,6 +42,8 @@ Clifford algebra is faithful.
   generators along a map `f` forces `f` to preserve the quadratic forms.
 * `CliffordAlgebra.mul_eq_map_involute_mul_of_forall_ι`: an element that moves past each
   generator by an isometry `f` up to sign moves past every `a` by `map f ∘ involute`.
+* `CliffordAlgebra.equivOfIsometry_toAlgHom`: the algebra homomorphism underlying
+  `equivOfIsometry e` is `map e.toIsometry`.
 * `CliffordAlgebra.equivOfIsometry_injective`: when the generator map is injective, for instance
   when `2` is invertible, different isometry equivalences induce different algebra equivalences.
 * `CliffordAlgebra.map_evenOdd_equivOfIsometry` proves that an isometry equivalence preserves the
@@ -230,6 +232,13 @@ theorem mul_eq_map_involute_mul_of_forall_ι (f : Q₁ →qᵢ Q₁) {u : Cliffo
   | ι m => rw [involute_ι, map_neg, map_apply_ι, neg_mul, hu]
   | mul a b ha hb => rw [← mul_assoc, ha, mul_assoc, hb, map_mul, map_mul, mul_assoc]
   | add a b ha hb => rw [mul_add, ha, hb, map_add, map_add, add_mul]
+
+/-- The algebra homomorphism underlying `CliffordAlgebra.equivOfIsometry e` is
+`CliffordAlgebra.map e.toIsometry`. -/
+@[simp]
+theorem equivOfIsometry_toAlgHom (e : Q₁.IsometryEquiv Q₂) :
+    (equivOfIsometry e).toAlgHom = map e.toIsometry :=
+  AlgHom.ext fun x ↦ equivOfIsometry_apply e x
 
 /-- An isometry equivalence maps the even Clifford subalgebra onto the even Clifford subalgebra. -/
 theorem map_equivOfIsometry_even (e : Q₁.IsometryEquiv Q₂) :
