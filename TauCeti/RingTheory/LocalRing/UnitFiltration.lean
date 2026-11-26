@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
 
 /-!
 # The unit filtration of a local ring

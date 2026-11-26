@@ -48,7 +48,10 @@ isomorphism between the points of two limit bicones of one family carries inclus
 (`CategoryTheory.Limits.Bicone.ι_comp_conePointUniqueUpToIso_hom`).
 An additive functor which
 kills one summand of a binary biproduct inverts the projection onto the other
-(`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`). The biproduct comparison
+(`CategoryTheory.Functor.isIso_map_biprod_fst_of_isZero`), and its comparison
+`F.obj (X ⊞ Y) ≅ F.obj X ⊞ F.obj Y` with the sign `-1` on the second component turns the image of a
+Mayer–Vietoris sequence into a Mayer–Vietoris sequence (`CategoryTheory.Functor.mapBiprodNegIso`).
+The biproduct comparison
 `F.obj (X ⊞ Y) ⟶ F.obj X ⊞ F.obj Y` is natural (`CategoryTheory.Functor.biprodComparison_natural`)
 and compatible with lifts. Unlike the `Functor.mapBiprod` lemmas, these statements need no
 preservation hypothesis. For a functor preserving a binary biproduct, the inverse of
@@ -597,6 +600,28 @@ theorem isIso_map_biprod_fst_of_isZero (X Y : C) [HasBinaryBiproduct X Y]
   · rw [← F.map_comp, eq_sub_of_add_eq biprod.total]
     simp [hY.eq_zero_of_tgt (F.map biprod.snd)]
   · rw [← F.map_comp, biprod.inl_fst, F.map_id]
+
+/-- The comparison `F.obj (X ⊞ Y) ≅ F.obj X ⊞ F.obj Y` for an additive functor `F`, with the sign
+`-1` on the second component. It carries the image of `biprod.lift f (-g)` to
+`biprod.lift (F.map f) (F.map g)`, the first map of a Mayer–Vietoris sequence. -/
+noncomputable def mapBiprodNegIso (X Y : C) [HasBinaryBiproduct X Y]
+    [HasBinaryBiproduct (F.obj X) (F.obj Y)] : F.obj (X ⊞ Y) ≅ F.obj X ⊞ F.obj Y where
+  hom := biprod.lift (F.map biprod.fst) (-F.map biprod.snd)
+  inv := biprod.desc (F.map biprod.inl) (-F.map biprod.inr)
+  hom_inv_id := by simp [← F.map_id, ← biprod.total]
+  inv_hom_id := by apply biprod.hom_ext' <;> apply biprod.hom_ext <;> simp [← F.map_comp]
+
+@[simp]
+theorem mapBiprodNegIso_hom (X Y : C) [HasBinaryBiproduct X Y]
+    [HasBinaryBiproduct (F.obj X) (F.obj Y)] :
+    (F.mapBiprodNegIso X Y).hom = biprod.lift (F.map biprod.fst) (-F.map biprod.snd) :=
+  (rfl)
+
+@[simp]
+theorem mapBiprodNegIso_inv (X Y : C) [HasBinaryBiproduct X Y]
+    [HasBinaryBiproduct (F.obj X) (F.obj Y)] :
+    (F.mapBiprodNegIso X Y).inv = biprod.desc (F.map biprod.inl) (-F.map biprod.inr) :=
+  (rfl)
 
 /-- Commutative squares `a₁ ≫ F.map x = y ≫ a₂` and `a₁ ≫ F.map x' = y' ≫ a₃` combine into a
 commutative square through the maps `biprod.lift x x'` and `biprod.lift y y'` into binary

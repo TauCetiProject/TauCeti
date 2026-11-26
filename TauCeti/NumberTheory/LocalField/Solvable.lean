@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.ResidueCorrespondence
+public import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 import Mathlib.GroupTheory.Nilpotent
-import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 
 /-!
 # The Galois group of a finite extension of local fields is solvable
@@ -19,9 +19,9 @@ Let `L/K` be a finite extension of nonarchimedean local fields, with automorphis
 * `G / G_0` embeds, through the action on the residue field, into the Galois group of the finite
   residue field extension, so it is cyclic;
 * the tame quotient `G_0 / G_1` embeds into `𝓀[L]ˣ` through the tame character, so it is cyclic
-  (`TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroupGraded_zero`);
+  (`TauCeti.isCyclic_ramificationGroupGraded_zero`);
 * the wild inertia group `G_1` is a `p`-group for the residue characteristic `p`
-  (`TauCeti.IsDiscreteValuationRing.isPGroup_ramificationGroup`), hence nilpotent.
+  (`TauCeti.isPGroup_ramificationGroup`), hence nilpotent.
 
 Consequently `G` is solvable. Solvability is what lets a statement about the cohomology of a
 finite local Galois group be proved by induction along a chain of normal subgroups with cyclic
@@ -54,11 +54,9 @@ instance isSolvable_algEquiv : Group.IsSolvable (L ≃ₐ[K] L) := by
   -- Wild inertia `G_1` is a `p`-group, hence nilpotent. It is spelled `G_{0 + 1}`, the subgroup
   -- by which `RamificationGroupGraded _ _ 0` is the quotient of `G_0`.
   have : Group.IsNilpotent (ramificationGroup (L ≃ₐ[K] L) 𝒪[L] (0 + 1)) :=
-    (TauCeti.IsDiscreteValuationRing.isPGroup_ramificationGroup
-      _ 𝒪[K] _ (ringChar 𝓀[L]) (by omega)).isNilpotent
+    (isPGroup_ramificationGroup _ (ringChar 𝓀[L]) (by omega)).isNilpotent
   -- The tame quotient `G_0 / G_1` is cyclic, so inertia `G_0` is solvable.
-  have := TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroupGraded_zero
-    (L ≃ₐ[K] L) 𝒪[K] 𝒪[L]
+  have := isCyclic_ramificationGroupGraded_zero L (L ≃ₐ[K] L)
   have hG₀ : Group.IsSolvable (ramificationGroup (L ≃ₐ[K] L) 𝒪[L] 0) :=
     Group.isSolvable_of_ker_le_range
       (Subgroup.inclusion

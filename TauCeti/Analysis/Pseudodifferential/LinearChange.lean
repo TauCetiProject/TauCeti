@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 public import TauCeti.Analysis.Pseudodifferential.Symbol.LineSpatialDeriv
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.Analysis.Fourier.Continuous

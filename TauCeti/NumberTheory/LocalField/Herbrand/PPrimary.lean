@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Herbrand.UpperQuotient
 import TauCeti.GroupTheory.Elementary
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.CoprimePart
-import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
+import TauCeti.NumberTheory.LocalField.UnitFiltration.RamificationGroup
 
 /-!
 # The p-primary part of upper ramification
@@ -79,8 +79,7 @@ theorem isPGroup_upperRamificationGroup_of_pos {u : RamificationIndexDomain}
     (p : ℕ) [CharP 𝓀[L] p] (hu : 0 < (u : ℝ)) :
     IsPGroup p (upperRamificationGroup K L u) := by
   have hle := upperRamificationGroup_le_lowerRamificationGroup_one K L hu
-  have hp := TauCeti.IsDiscreteValuationRing.isPGroup_ramificationGroup
-    (L ≃ₐ[K] L) 𝒪[K] 𝒪[L] p (i := 1) (by omega)
+  have hp := TauCeti.isPGroup_ramificationGroup (L ≃ₐ[K] L) p (L := L) (i := 1) (by omega)
   rw [← lowerRamificationGroup_def K L] at hp
   intro σ
   obtain ⟨n, hn⟩ := hp ⟨σ, hle σ.property⟩

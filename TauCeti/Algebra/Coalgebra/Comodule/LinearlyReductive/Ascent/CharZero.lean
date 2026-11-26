@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.BaseChange
 public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 public import TauCeti.Algebra.Coalgebra.Comodule.Convolution.Module
-public import TauCeti.RingTheory.Jacobson.BaseChange
+public import TauCeti.RingTheory.Semisimple.BaseChange
 public import TauCeti.RingTheory.SimpleModule.Subalgebra
 import TauCeti.Algebra.Coalgebra.Comodule.Convolution.BaseChange
 import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
@@ -25,7 +25,8 @@ finite-dimensional, so it suffices to treat finite-dimensional `M`. Then the con
 `C^∨` acts on `M` through a finite-dimensional subalgebra `B` of `End_k(M)`. Complete
 reducibility makes `M` a semisimple `B`-module, and `B` embeds in a finite power of `M`, so `B`
 is a semisimple algebra (`Subalgebra.isSemisimpleRing_of_isSemisimpleModule`). In characteristic
-zero `K ⊗[k] B` is again semisimple (`TauCeti.isSemisimpleRing_tensorProduct`), so `K ⊗[k] M` is a
+zero, as over any perfect field, `K ⊗[k] B` is again semisimple
+(`TauCeti.isSemisimpleRing_tensorProduct_of_perfectField`), so `K ⊗[k] M` is a
 semisimple `K ⊗[k] B`-module. Its `K ⊗[k] B`-submodules are exactly its subcomodules: a
 subcomodule is stable under the base changes of the `C^∨`-action, and conversely a subspace stable
 under them is stable under every `K`-linear functional on `K ⊗[k] C`, because the base changes of

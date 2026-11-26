@@ -365,6 +365,25 @@ abbrev UnitFiltrationGraded (K : Type*) [Field K] [ValuativeRel K] [TopologicalS
     [IsNonarchimedeanLocalField K] (i : ℕ) :=
   unitFiltration K i ⧸ (unitFiltration K (i + 1)).subgroupOf (unitFiltration K i)
 
+private theorem map_subgroupOf_unitFiltrationEquivInteger (i : ℕ) :
+    ((unitFiltration K (i + 1)).subgroupOf (unitFiltration K i)).map
+        (unitFiltrationEquivInteger i).toMonoidHom =
+      (TauCeti.IsLocalRing.unitFiltration 𝒪[K] (i + 1)).subgroupOf
+        (TauCeti.IsLocalRing.unitFiltration 𝒪[K] i) := by
+  ext u
+  simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
+  constructor
+  · rintro ⟨x, hx, hxu⟩
+    obtain ⟨v, hv, hvx⟩ := Subgroup.mem_map.mp hx
+    have hEq : (u : 𝒪[K]ˣ) = v :=
+      Units.map_injective (f := (Subring.subtype 𝒪[K]).toMonoidHom)
+        Subtype.val_injective (by simpa [← hxu] using hvx.symm)
+    exact hEq ▸ hv
+  · intro hu
+    refine ⟨(unitFiltrationEquivInteger i).symm u, ?_,
+      (unitFiltrationEquivInteger i).apply_symm_apply u⟩
+    exact Subgroup.mem_map_of_mem _ hu
+
 /-- The `i`-th graded piece `U(K,i) / U(K,i+1)` of the unit filtration of a local field `K`,
 identified with `TauCeti.IsLocalRing.UnitFiltrationGraded 𝒪[K] i`. -/
 def unitFiltrationGradedEquivInteger (i : ℕ) :
@@ -374,20 +393,7 @@ def unitFiltrationGradedEquivInteger (i : ℕ) :
     ((TauCeti.IsLocalRing.unitFiltration 𝒪[K] (i + 1)).subgroupOf
       (TauCeti.IsLocalRing.unitFiltration 𝒪[K] i))
     (unitFiltrationEquivInteger i)
-    (by
-      ext u
-      simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
-      constructor
-      · rintro ⟨x, hx, hxu⟩
-        obtain ⟨v, hv, hvx⟩ := Subgroup.mem_map.mp hx
-        have hEq : (u : 𝒪[K]ˣ) = v :=
-          Units.map_injective (f := (Subring.subtype 𝒪[K]).toMonoidHom)
-            Subtype.val_injective (by simpa [← hxu] using hvx.symm)
-        exact hEq ▸ hv
-      · intro hu
-        refine ⟨(unitFiltrationEquivInteger i).symm u, ?_,
-          (unitFiltrationEquivInteger i).apply_symm_apply u⟩
-        exact Subgroup.mem_map_of_mem _ hu)
+    (map_subgroupOf_unitFiltrationEquivInteger i)
 
 /-- Evaluates `unitFiltrationGradedEquivInteger` on the class of `x`. -/
 @[simp]
@@ -501,8 +507,9 @@ instance : T2Space Kˣ := IsTopologicalGroup.t2Space_iff_one_closed.mpr <| by
   rw [← Subgroup.coe_bot, ← iInf_unitFiltration, Subgroup.coe_iInf]
   exact isClosed_iInter fun i ↦ (unitFiltration K i).isClosed_of_isOpen (isOpen_unitFiltration i)
 
-/-- The image in `K` of the depth-zero step of the unit filtration. -/
-private theorem image_unitFiltration_zero :
+/-- The image in `K` of the depth-zero step of the unit filtration is the set of elements of
+valuation one. -/
+theorem image_unitFiltration_zero :
     Units.val '' (unitFiltration K 0 : Set Kˣ) = {y : K | valuation K y = 1} := by
   ext y
   constructor
