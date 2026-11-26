@@ -157,8 +157,9 @@ theorem isFriendly_iff_inertiaDeg_eq_two [IsCMField K] (hK : Module.finrank ℚ 
     rw [Ideal.inertiaDeg_tower (v.asIdeal.under (𝓞 (maximalRealOrCMSubfield K))) v.asIdeal,
       Ideal.inertiaDeg_eq_one_of_surjective (RingOfIntegers.algebraMap_surjective_of_eq_top
         maximalRealOrCMSubfield_eq_top_of_isCMField) v.asIdeal, mul_one]
+  rw [isFriendly_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, fun _ ↦ ?_⟩⟩
-  · have := h.inertiaDeg_eq isCMField_maximalRealOrCMSubfield_of_isCMField
+  · have := h.2 isCMField_maximalRealOrCMSubfield_of_isCMField
     omega
   · rw [h] at hv
     omega
