@@ -67,6 +67,7 @@ of the unit ideal of a Euclidean domain, by the Euclidean algorithm.
 * `Ideal.IsMennickeSymbol.map_eq_one_of_dvd_fst_sub`,
   `Ideal.IsMennickeSymbol.map_eq_one_of_dvd_snd_sub`: near-unit pairs have trivial symbol.
 * `Ideal.IsMennickeSymbol.map_eq_of_snd_eq_mul_one_sub`: `[b (1 - a) / a] = [b/a]`.
+* `Ideal.IsMennickeSymbol.map_eq_of_snd_eq_neg`: `[-b/a] = [b/a]`.
 * `Ideal.MennickeGroup.subsingleton_iff`: `C_I` is trivial exactly when every generator is.
 * `Ideal.MennickeGroup.subsingleton_bot`: the universal group of the zero ideal is trivial.
 * `Ideal.IsMennickeSymbol.map_eq_one_of_euclideanDomain`,
@@ -258,6 +259,14 @@ theorem map_eq_of_fst_eq (hs : IsMennickeSymbol s) {p q : MennickePair I} (t : A
   congr 1
   ext <;> simp [hfst, hsnd]
 
+/-- The third Mennicke relation in coordinates: `[b/a] = [b₁/a] [b₂/a]` when `b = b₁ b₂`. -/
+theorem map_eq_mul_of_snd_eq_mul (hs : IsMennickeSymbol s) {p₁ p₂ q : MennickePair I}
+    (h₁ : p₁.fst = q.fst) (h₂ : p₂.fst = q.fst) (hsnd : q.snd = p₁.snd * p₂.snd) :
+    s q = s p₁ * s p₂ := by
+  rw [← hs.map_mulSnd p₁ p₂ (h₁.trans h₂.symm)]
+  congr 1
+  ext <;> simp [h₁, hsnd]
+
 /-- A pair whose second entry is zero has trivial symbol: `[0/a] = 1`. -/
 theorem map_eq_one_of_snd_eq_zero (hs : IsMennickeSymbol s) {p : MennickePair I}
     (hp : p.snd = 0) : s p = 1 := by
@@ -310,6 +319,21 @@ This is the first Mennicke relation with coefficient `-b ∈ I`. -/
 theorem map_eq_of_snd_eq_mul_one_sub (hs : IsMennickeSymbol s) {p q : MennickePair I}
     (hfst : q.fst = p.fst) (hsnd : q.snd = p.snd * (1 - p.fst)) : s q = s p :=
   hs.map_eq_of_snd_eq hfst (I.neg_mem p.snd_mem) (by rw [hsnd]; ring)
+
+/-- The sign of the second entry does not matter: `[-b/a] = [b/a]`. -/
+theorem map_eq_of_snd_eq_neg (hs : IsMennickeSymbol s) {p q : MennickePair I}
+    (hfst : q.fst = p.fst) (hsnd : q.snd = -p.snd) : s q = s p := by
+  -- Both `[-b/a] [(1 - a)/a]` and `[b/a] [(a - 1)/a]` are `[-b (1 - a)/a]`, and the two auxiliary
+  -- symbols are trivial because `a ≡ 1` modulo `1 - a`.
+  let r : MennickePair I := ⟨p.fst, 1 - p.fst, p.fst_sub_one_mem,
+    by rw [← neg_sub]; exact I.neg_mem p.fst_sub_one_mem, ⟨1, 1, by ring⟩⟩
+  let r' : MennickePair I := ⟨p.fst, p.fst - 1, p.fst_sub_one_mem, p.fst_sub_one_mem,
+    ⟨1, -1, by ring⟩⟩
+  have hr : s r = 1 := hs.map_eq_one_of_dvd_fst_sub isUnit_one ⟨-1, by simp [r]⟩
+  have hr' : s r' = 1 := hs.map_eq_one_of_dvd_fst_sub isUnit_one dvd_rfl
+  have h := hs.map_eq_mul_of_snd_eq_mul (q := q.mulSnd r hfst) (p₁ := p) (p₂ := r') hfst.symm
+    hfst.symm (by simp [r, r', hsnd]; ring)
+  rwa [hs.map_mulSnd, hr, hr', mul_one, mul_one] at h
 
 /-- Composing a Mennicke symbol with a group homomorphism gives a Mennicke symbol. -/
 theorem monoidHom_comp (hs : IsMennickeSymbol s) (φ : C →* E) : IsMennickeSymbol (φ ∘ s) where
