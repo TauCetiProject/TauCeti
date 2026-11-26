@@ -116,7 +116,7 @@ theorem classifyingSpaceFirstHomologyAddEquiv_map_torusLoop (n : ι → ℤ) :
     classifyingSpaceFirstHomologyAddEquiv (ι → Multiplicative ℤ)
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (torusHomotopyEquivClassifyingSpace p hp).toFun)) 1).hom
-          (H₁AddEquivHomology _ (loopClass (torusLoop p n)))) =
+          (H₁AddEquivHomology ℤ _ (loopClass ℤ (torusLoop p n)))) =
       Additive.ofMul (Group.Abelianization.of (fun i ↦ Multiplicative.ofAdd (n i))) := by
   rw [← hurewiczHomologyAddEquiv_ofMul_of_mk,
     classifyingSpaceFirstHomologyAddEquiv_homologyMap_hurewiczHomologyAddEquiv _
@@ -145,7 +145,7 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_map_torusLoop (n : ι
     classifyingSpaceFirstHomologyAddEquivGroupHomology (ι → Multiplicative ℤ)
       ((HomologicalComplex.homologyMap ((singularChains ℤ).map
         (TopCat.ofHom (torusHomotopyEquivClassifyingSpace p hp).toFun)) 1).hom
-          (H₁AddEquivHomology _ (loopClass (torusLoop p n)))) =
+          (H₁AddEquivHomology ℤ _ (loopClass ℤ (torusLoop p n)))) =
       groupHomology.H1π (Rep.trivial ℤ (ι → Multiplicative ℤ) ℤ)
         ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ (ι → Multiplicative ℤ) ℤ)).inv
           (Finsupp.single (fun i ↦ Multiplicative.ofAdd (n i)) 1)) := by

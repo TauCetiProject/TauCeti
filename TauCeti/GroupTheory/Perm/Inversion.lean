@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.GroupTheory.Perm.Fin
+public import TauCeti.Data.Fin.Sum
 public import TauCeti.Data.Finset.Inversions
+public import TauCeti.GroupTheory.Perm.Fin
 
 import TauCeti.Data.Fin.Basic
 
@@ -25,12 +27,21 @@ rotating index blocks.
 
 ## Main results
 
+* `Equiv.Perm.inversions_univ_consFin_comp_succ`: deleting the first position of
+  `Equiv.Perm.consFin j π` leaves the inversions of `π`.
+* `Equiv.Perm.prod_univ_inversions_consFin`: a product over the inversions of
+  `Equiv.Perm.consFin j π`, weighted by the permuted values, splits into the factors at the values
+  `i < j` and the product over the inversions of `π`.
 * `Equiv.Perm.card_inversion_decomposeFin'Symm`: inserting `i` at the first position adds `i`
   inversions.
+* `Equiv.Perm.inversions_univ_swap_castSucc_succ`: the only inversion of an adjacent
+  transposition is the exchanged pair.
 * `TauCeti.sign_eq_neg_one_pow_card_inversion`: the sign of a permutation `σ` of `Fin n` is
   `(-1)` to the number of its inversions `Finset.univ.inversions σ`.
 * `Fin.sign_revPerm`: reversing `Fin n` has sign `(-1) ^ n.choose 2`.
 * `TauCeti.sign_shuffle`: the sign of a shuffle permutation is a power of `-1`.
+* `TauCeti.sign_finSumFinEquivInterleave`: the perfect shuffle of `Fin (n + n)`, which interleaves
+  its two halves, has sign `(-1) ^ n.choose 2`.
 * `TauCeti.sign_finAddFlip_trans_finCongr`: the block swap of `Fin (m + n)`, which exchanges the
   first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
 * `Equiv.Perm.blockPerm` and `Equiv.Perm.sign_blockPerm`: the permutation of consecutive blocks of
@@ -59,6 +70,38 @@ namespace Equiv.Perm
 
 open _root_.Finset
 
+/-- Deleting the first position of `consFin j π` leaves the inversions of `π`: the remaining
+entries `j.succAbove (π k)` are listed in the order of `π`. -/
+@[simp]
+theorem inversions_univ_consFin_comp_succ {n : ℕ} (j : Fin (n + 1)) (π : Perm (Fin n)) :
+    univ.inversions (consFin j π ∘ Fin.succ) = univ.inversions π := by
+  simp [inversions_univ, Function.comp_def, Fin.succAbove_lt_succAbove_iff]
+
+/-- Listing `j` first and the remaining values in the order of `π` splits a product over the
+inversions of `consFin j π`, with weights on the permuted values, into the factors `w j i` for the
+values `i < j` that `j` precedes and the product over the inversions of `π`. -/
+@[to_additive /-- Listing `j` first and the remaining values in the order of `π` splits a sum over
+the inversions of `consFin j π`, with weights on the permuted values, into the terms `w j i` for the
+values `i < j` that `j` precedes and the sum over the inversions of `π`. -/]
+theorem prod_univ_inversions_consFin {M : Type*} [CommMonoid M] {n : ℕ} (j : Fin (n + 1))
+    (π : Perm (Fin n)) (w : Fin (n + 1) → Fin (n + 1) → M) :
+    ∏ p ∈ univ.inversions (consFin j π), w (consFin j π p.1) (consFin j π p.2) =
+      (∏ i ∈ Iio j, w j i) *
+        ∏ p ∈ univ.inversions π, w (j.succAbove (π p.1)) (j.succAbove (π p.2)) := by
+  -- Delete the first position: the remaining values are listed in the order of `π`.
+  rw [prod_univ_inversions_eq_comp_succAbove _ 0
+    fun a b ↦ w (consFin j π a) (consFin j π b), Fin.succAbove_zero,
+    inversions_univ_consFin_comp_succ]
+  simp only [Fin.not_lt_zero, false_and, filter_false, prod_empty, mul_one, consFin_zero,
+    consFin_succ]
+  rw [mul_comm]
+  congr 1
+  -- The inversions `(0, x)` are the positions `x` of the values `consFin j π x < j`.
+  refine prod_equiv (consFin j π) (fun x ↦ ?_) fun _ _ ↦ rfl
+  simp only [mem_filter, mem_univ, true_and, mem_Iio, and_iff_right_iff_imp, Fin.pos_iff_ne_zero]
+  rintro h rfl
+  simp at h
+
 /-- Inserting `i` at the first position creates exactly `i` additional inversions. -/
 @[simp]
 theorem card_inversion_decomposeFin'Symm {n : ℕ} (σ : Perm (Fin (n + 1)))
@@ -67,21 +110,23 @@ theorem card_inversion_decomposeFin'Symm {n : ℕ} (σ : Perm (Fin (n + 1)))
       p.1 < p.2 ∧ decomposeFin'Symm i σ p.2 < decomposeFin'Symm i σ p.1).card =
       i.val + (univ.filter fun p : Fin (n + 1) × Fin (n + 1) =>
         p.1 < p.2 ∧ σ p.2 < σ p.1).card := by
-  have hcount : (univ.filter fun j : Fin (n + 1) => j.castSucc < i).card = i.val := by
-    simp only [Fin.lt_def, Fin.val_castSucc]
-    rw [Fin.card_filter_val_lt, Nat.min_eq_right (by omega)]
-  have hfirst : (∑ j : Fin (n + 1), if i.succAbove (σ j) < i then 1 else 0) = i.val := by
-    simp only [Fin.succAbove_lt_iff]
-    rw [Equiv.sum_comp σ (fun j => if j.castSucc < i then (1 : ℕ) else 0), sum_boole]
-    exact hcount
-  have h := card_univ_inversions_eq_comp_succAbove (decomposeFin'Symm i σ) 0
-  simp only [inversions_univ, card_filter] at h
-  simp only [Function.comp_apply, Fin.zero_succAbove, decomposeFin'Symm_succ,
-    decomposeFin'Symm_zero, Fin.succAbove_lt_succAbove_iff, Fin.not_lt_zero, false_and,
-    ite_false, sum_const_zero, add_zero] at h
-  rw [Fin.sum_univ_succ] at h
-  simpa only [card_filter, lt_self_iff_false, false_and, ite_false, zero_add, add_zero,
-    Fin.succ_pos, true_and, decomposeFin'Symm_succ, hfirst, add_comm] using h
+  have h := sum_univ_inversions_consFin i σ fun _ _ ↦ 1
+  simp only [← card_eq_sum_ones, Fin.card_Iio, consFin_eq_decomposeFin'Symm, inversions_univ] at h
+  exact h
+
+/-- The only inversion of the adjacent transposition of `i.castSucc` and `i.succ` is the
+exchanged pair. -/
+@[simp]
+theorem inversions_univ_swap_castSucc_succ {n : ℕ} (i : Fin n) :
+    univ.inversions (swap i.castSucc i.succ) = {(i.castSucc, i.succ)} := by
+  ext ⟨a, b⟩
+  simp only [inversions_univ, mem_filter, mem_univ, true_and, mem_singleton, Prod.mk.injEq]
+  constructor
+  · rintro ⟨hab, h⟩
+    rw [swap_apply_def, swap_apply_def] at h
+    split_ifs at h <;> grind [Fin.le_castSucc_iff]
+  · rintro ⟨rfl, rfl⟩
+    simp
 
 end Equiv.Perm
 
@@ -229,6 +274,27 @@ theorem sign_shuffle {m : ℕ} (h : k + m = n) (e : Fin k ⊕ Fin m ≃ Fin n)
   simp [prod_ite, prod_pow_eq_pow_sum]
 
 end
+
+/-- The perfect shuffle of `Fin (n + n)`, sending the `i`-th index of the first half to position
+`2 i` and the `i`-th index of the second half to position `2 i + 1`, has sign
+`(-1) ^ n.choose 2`. -/
+theorem sign_finSumFinEquivInterleave (n : ℕ) :
+    Equiv.Perm.sign (finSumFinEquiv.symm.trans (finSumFinEquivInterleave n)) =
+      (-1) ^ n.choose 2 := by
+  have h := sign_shuffle (k := n) (m := n) (n := n + n) rfl (finSumFinEquivInterleave n)
+    (fun i j hij ↦ by
+      have : (i : ℕ) < j := hij
+      simp only [Function.comp_apply, Fin.lt_def, val_finSumFinEquivInterleave_inl]
+      omega)
+    (fun i j hij ↦ by
+      have : (i : ℕ) < j := hij
+      simp only [Function.comp_apply, Fin.lt_def, val_finSumFinEquivInterleave_inr]
+      omega)
+  simp only [finCongr_refl, Equiv.trans_refl] at h
+  rw [h]
+  simp only [val_finSumFinEquivInterleave_inl, ← Finset.mul_sum, Fin.sum_val_eq_choose_two]
+  -- `(-1) ^ (2 s + s) = ((-1) ^ 3) ^ s = (-1) ^ s`.
+  rw [← add_one_mul, pow_mul, Odd.neg_one_pow (by decide)]
 
 /-- Reindexing a signed sum over permutations by `τ ↦ c.permCongr τ * B` contributes the sign of
 `B`. -/

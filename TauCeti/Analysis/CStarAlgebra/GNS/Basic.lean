@@ -23,6 +23,7 @@ transported to the GNS space. Composed with the embedding into the completion, i
 continuous linear class map `f.toGNS : A →L[ℂ] f.GNS`, `a ↦ [a]`, which has dense range.
 Its norm is at most the square root of the norm of `f`, so for a norm-one functional
 `‖[a]‖ ≤ ‖a‖`. If `A` is separable, this dense continuous image makes `f.GNS` separable.
+The GNS representation acts on classes by left multiplication, `π(a)[b] = [a * b]`.
 
 For a unital algebra, `PositiveLinearMap.gnsVector` is the class of the unit. Its orbit under
 Mathlib's GNS representation is dense and its vector functional recovers the original positive
@@ -76,6 +77,16 @@ theorem denseRange_toGNS (f : A →ₚ[ℂ] ℂ) : DenseRange f.toGNS :=
   UniformSpace.Completion.denseRange_coe.comp f.toPreGNS.surjective.denseRange
     (UniformSpace.Completion.continuous_coe _)
 
+/-- Two continuous semilinear maps from the GNS space to a Hausdorff space are equal when they
+agree on the classes of the pre-GNS space, which are dense. -/
+theorem gns_continuousLinearMap_ext (f : A →ₚ[ℂ] ℂ) {R : Type*} [Semiring R] {σ : ℂ →+* R}
+    {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E] [Module R E]
+    {T S : f.GNS →SL[σ] E} (h : ∀ c : f.PreGNS, T c = S c) : T = S := by
+  ext x
+  induction x using UniformSpace.Completion.induction_on with
+  | hp => apply isClosed_eq <;> fun_prop
+  | ih c => exact h c
+
 /-- A separable C⋆-algebra has separable GNS Hilbert spaces for all its positive functionals. -/
 instance (f : A →ₚ[ℂ] ℂ) [TopologicalSpace.SeparableSpace A] :
     TopologicalSpace.SeparableSpace f.GNS :=
@@ -100,6 +111,12 @@ theorem toGNS_eq_zero_iff (f : A →ₚ[ℂ] ℂ) (a : A) :
   rw [← f.norm_toGNS_sq, ← Complex.ofReal_pow, Complex.ofReal_eq_zero, sq_eq_zero_iff,
     norm_eq_zero]
 
+/-- The GNS representation acts on classes by left multiplication: `π(a)[b] = [a * b]`. -/
+-- Not a simp lemma: `toGNS_apply` already rewrites the class map to the completion embedding.
+theorem gnsNonUnitalStarAlgHom_apply_toGNS (f : A →ₚ[ℂ] ℂ) (a b : A) :
+    f.gnsNonUnitalStarAlgHom a (f.toGNS b) = f.toGNS (a * b) := by
+  simp
+
 section Unital
 
 variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
@@ -111,6 +128,9 @@ noncomputable def gnsVector (f : B →ₚ[ℂ] ℂ) : f.GNS :=
 
 /-- The canonical GNS vector is the class of the unit. -/
 theorem gnsVector_def (f : B →ₚ[ℂ] ℂ) : f.gnsVector = (f.toPreGNS 1 : f.GNS) := (rfl)
+
+/-- The canonical GNS vector is the image of the unit under the class map `f.toGNS`. -/
+theorem gnsVector_eq_toGNS_one (f : B →ₚ[ℂ] ℂ) : f.gnsVector = f.toGNS 1 := (rfl)
 
 /-- Acting on the canonical GNS vector produces the class of the acting element. -/
 @[simp]

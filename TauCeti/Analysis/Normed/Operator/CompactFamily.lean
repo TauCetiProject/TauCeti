@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Topology.Order.Compact
+import TauCeti.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # Uniform inverse bounds near compact families
@@ -16,9 +17,20 @@ A continuous family of bounded operators which is invertible on a compact parame
 remains invertible on a common neighborhood of that slice, with a uniform operator-norm bound
 on its inverses. Only the domain of the operators needs to be complete.
 
+A continuous family of bounded operators is uniformly bounded on a compact parameter set
+(`IsCompact.exists_forall_norm_apply_le_mul_norm`).
+
 A continuous family of bounded operators with a continuous family of left inverses moves norms
 by a uniformly bounded factor in both directions on a compact parameter set
 (`IsCompact.exists_norm_apply_le_and_norm_le`).
+
+Invertibility at the zeros of a map `d` is uniform on a compact set: if `A x` is invertible
+wherever `d x = 0` on a compact `K`, with `d` and `A` continuous on `K`, then every operator close
+to `A x` at a point `x ∈ K` where `d x` is small is invertible
+(`IsCompact.exists_pos_forall_isInvertible_of_norm_le`). This is the case of the open set of
+invertible operators from a Banach space in `IsCompact.exists_pos_forall_mem_of_norm_le`. This
+drives the persistence of nondegenerate critical points and fixed points under small
+perturbations.
 -/
 
 public section
@@ -93,10 +105,33 @@ theorem exists_pos_isInvertible_map_sub_smul_norm_inverse_le
 
 end IsCompact
 
+/-- **Invertibility near the zeros of a map is uniform on a compact set.**
+
+Let `d` and `A` be continuous on a compact set `K`, where `A` takes values in the operators from a
+Banach space, and let `A x` be invertible at every zero `x ∈ K` of `d`. Then there is `δ > 0` such
+that, at every point `x ∈ K` with `‖d x‖ ≤ δ`, every operator within `δ` of `A x` is invertible. -/
+theorem IsCompact.exists_pos_forall_isInvertible_of_norm_le {𝕜 X F E G : Type*}
+    [NontriviallyNormedField 𝕜] [TopologicalSpace X] [NormedAddCommGroup F] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup G] [NormedSpace 𝕜 G] {K : Set X}
+    (hK : IsCompact K) {d : X → F} {A : X → E →L[𝕜] G} (hd : ContinuousOn d K)
+    (hA : ContinuousOn A K) (h : ∀ x ∈ K, d x = 0 → (A x).IsInvertible) :
+    ∃ δ > 0, ∀ x ∈ K, ∀ T : E →L[𝕜] G, ‖d x‖ ≤ δ → ‖T - A x‖ ≤ δ → T.IsInvertible := by
+  obtain ⟨δ, hδ, hO⟩ := hK.exists_pos_forall_mem_of_norm_le hd hA
+    ContinuousLinearMap.isOpen_setOfPred_isInvertible h
+  exact ⟨δ, hδ, fun x hx T hdx hT ↦ hO x hx T hdx (by rwa [dist_eq_norm])⟩
+
 namespace IsCompact
 
 variable {𝕜 X E F : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- On a compact parameter set, a continuous family of operators is uniformly bounded: some
+`A ≥ 0` has `‖L x v‖ ≤ A ‖v‖` for every `x ∈ K` and every `v`. -/
+theorem exists_forall_norm_apply_le_mul_norm {K : Set X} (hK : IsCompact K)
+    {L : X → E →L[𝕜] F} (hL : ContinuousOn L K) :
+    ∃ A, 0 ≤ A ∧ ∀ x ∈ K, ∀ v, ‖L x v‖ ≤ A * ‖v‖ := by
+  obtain ⟨A, hA⟩ := hK.exists_bound_of_continuousOn hL
+  exact ⟨|A|, abs_nonneg A, fun x hx v ↦ (L x).le_of_opNorm_le ((hA x hx).trans (le_abs_self A)) v⟩
 
 /-- On a compact parameter set, a continuous family of operators `L x` with a continuous family of
 left inverses `Linv x` changes norms by a uniformly bounded factor: `‖L x v‖` and `‖v‖` are

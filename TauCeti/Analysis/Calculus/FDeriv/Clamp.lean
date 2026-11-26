@@ -19,7 +19,9 @@ clamped function agrees with `w` nearby, and off the closed band it is locally c
 levels `0` and `η` the clamped function attains a local extremum, so its `fderiv` is zero there
 either because it is differentiable with zero derivative or because `fderiv` is zero by
 convention at a point of non-differentiability; the identity does not assert differentiability
-there, and the clamped function is in general not differentiable at those levels.
+there, and the clamped function is in general not differentiable at those levels. Likewise, for any
+`w : E → ℝ` and `c : ℝ` (with no continuity hypothesis), `fderiv` of the lower clamp `max w c`
+equals `fderiv w` on `{w > c}` and zero elsewhere (`TauCeti.fderiv_max_const_eq_indicator`).
 
 Clamped functions of this form are the standard test functions for integration by parts against
 the indicator of a superlevel set. The clamped function differs from `η` times the indicator of
@@ -98,5 +100,26 @@ theorem fderiv_max_min_eq_indicator {w : E → ℝ} (hw : Continuous w) {η : �
     refine (Filter.EventuallyEq.fderiv_eq (f := fun _ => η) ?_).trans (fderiv_const_apply _)
     filter_upwards [hw.continuousAt.eventually (lt_mem_nhds h')] with y hy
     rw [min_eq_right hy.le, max_eq_right hη.le]
+
+/-- Lean's totalized `fderiv` of the lower-clamped function `max w c` equals `fderiv w` on
+`{w > c}` and zero elsewhere, with no continuity or differentiability hypothesis on `w`. -/
+theorem fderiv_max_const_eq_indicator (w : E → ℝ) (c : ℝ) (x : E) :
+    fderiv ℝ (fun y ↦ max (w y) c) x = (w ⁻¹' Ioi c).indicator (fderiv ℝ w) x := by
+  rcases le_or_gt (w x) c with hxc | hcx
+  · rw [indicator_of_notMem (s := w ⁻¹' Ioi c) hxc.not_gt]
+    refine IsLocalMin.fderiv_eq_zero (Eventually.of_forall fun y ↦ ?_)
+    simp [max_eq_right hxc]
+  · rw [indicator_of_mem (s := w ⁻¹' Ioi c) hcx]
+    by_cases hw : DifferentiableAt ℝ w x
+    · refine EventuallyEq.fderiv_eq ?_
+      filter_upwards [hw.continuousAt.eventually (lt_mem_nhds hcx)] with y hy
+      exact max_eq_left hy.le
+    · rw [fderiv_zero_of_not_differentiableAt hw]
+      refine fderiv_zero_of_not_differentiableAt fun hm ↦ hw ?_
+      have hmx : c < max (w x) c := by rwa [max_eq_left hcx.le]
+      have hev : (fun y ↦ max (w y) c) =ᶠ[nhds x] w := by
+        filter_upwards [hm.continuousAt.eventually (lt_mem_nhds hmx)] with y hy
+        exact max_eq_left (le_of_not_gt fun hyc ↦ hy.ne' (max_eq_right hyc.le))
+      exact hm.congr_of_eventuallyEq hev.symm
 
 end TauCeti

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Pi
 public import TauCeti.Geometry.Manifold.Orientation.AddCircle
 public import TauCeti.Geometry.Manifold.Orientation.Sign
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
+import TauCeti.LinearAlgebra.Basis.Fin
 
 /-!
 # The orientation of a torus
@@ -173,22 +174,14 @@ theorem isOrientationPreservingAt_piAddCases_torusOrientation (p : Fin (m + k) �
       (torusOrientation p)
       (Diffeomorph.piAddCases (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) n) x := by
   -- The differential concatenates the components, so it sends the ordered product of the two
-  -- coordinate bases to the coordinate basis of the concatenated torus.
-  have hb (i : Fin (m + k)) :
-      Fin.addCases (motive := fun _ ↦ ℝ)
-        (((Pi.basisFun ℝ (Fin m)).prod (Pi.basisFun ℝ (Fin k))).reindex finSumFinEquiv i).1
-        (((Pi.basisFun ℝ (Fin m)).prod (Pi.basisFun ℝ (Fin k))).reindex finSumFinEquiv i).2 =
-        Pi.basisFun ℝ (Fin (m + k)) i := by
-    funext l
-    induction i using Fin.addCases <;> induction l using Fin.addCases <;>
-      simp [Module.Basis.prod_apply, Pi.single_apply, Fin.ext_iff] <;> omega
-  -- The tangent spaces of the tori are their model spaces `Fin _ → ℝ`, so the coordinate bases
-  -- are tangent bases; both are positive, by the coordinate description of the orientations.
+  -- coordinate bases to the coordinate basis of the concatenated torus. The tangent spaces of the
+  -- tori are their model spaces `Fin _ → ℝ`, so the coordinate bases are tangent bases; both are
+  -- positive, by the coordinate description of the orientations.
   refine (isOrientationPreservingAt_iff_of_basis
     (((Pi.basisFun ℝ (Fin m)).prod (Pi.basisFun ℝ (Fin k))).reindex finSumFinEquiv)
     (Pi.basisFun ℝ (Fin (m + k)))
     fun i ↦ (Diffeomorph.mfderiv_piAddCases_apply (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) n x
-      _ _).trans (hb i)).2
+      _ _).trans (Module.Basis.addCases_basisFun_prod_reindex_finSumFinEquiv i)).2
     (iff_of_true ((orientation_eq_orientationAt_prod_iff _ _ (Pi.basisFun ℝ (Fin m))
       (Pi.basisFun ℝ (Fin k))).2 (iff_of_true (orientationAt_torusOrientation _ _).symm
         (orientationAt_torusOrientation _ _).symm)) (orientationAt_torusOrientation p _).symm)

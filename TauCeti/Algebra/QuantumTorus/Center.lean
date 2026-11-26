@@ -21,10 +21,11 @@ subgroup. The restricted torus always embeds in the center; this embedding is an
 equivalence when nonzero scalar coefficients cancel. These results specialize arbitrary-factor-set
 twisted group algebras.
 
-The central exponent subgroup is defined by equality of opposite powers of the parameter,
-using equalizers of additive homomorphisms. This definition makes sense for units in any
-monoid, without constructing a torus. For alternating forms its condition is
-`u ^ (2 * Λ a b) = 1` for every `b`, including finite-order parameters.
+The central exponent subgroup is defined in
+`TauCeti.Algebra.QuantumTorus.CentralExponents`. When the twist on this subgroup is
+trivial, the center is equivalent to its ordinary group algebra. For alternating
+forms whose parameter square has infinite order, the radical gives the corresponding
+group-algebra presentation of the center.
 
 ## References
 

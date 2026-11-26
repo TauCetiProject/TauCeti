@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.RingTheory.Algebraic.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 import TauCeti.RingTheory.Valuation.ValuationSubring
@@ -28,10 +29,13 @@ over `O`.
 Separating elements turn into a bound on the number of such extensions through the linear
 independence criterion `Valuation.linearIndependent_of_map_lt`. Together these bound the number of
 points of a valuation spectrum lying over a given point along a finite ring map by the dimension
-of the fibre.
+of the fibre. Along a purely inseparable extension there is at most one extension, since some
+`p`-power of each element of `L` lies in `K`.
 
 ## Main results
 
+* `ValuationSubring.comap_injective_of_isPurelyInseparable`: along a purely inseparable extension
+  a valuation subring is determined by its restriction.
 * `ValuationSubring.eq_of_le_of_comap_eq`: two comparable valuation subrings of an algebraic
   extension with the same restriction to the base are equal.
 * `ValuationSubring.exists_mem_nonunits_valuation_eq_one`: two distinct valuation subrings with
@@ -154,6 +158,21 @@ private theorem exists_of_mem_of_notMem {O : ValuationSubring K} {A B : Valuatio
     · rw [hus]
       exact W.neg_mem _ (W.sum_mem fun i _ ↦ W.mul_mem _ _ (hW (haO' i)) (W.pow_mem hxW _))
     · exact W.sum_mem fun i _ ↦ W.mul_mem _ _ (hW (haO' i)) (W.pow_mem htW _)
+
+/-- **A valuation subring extends at most once along a purely inseparable extension**: valuation
+subrings of `L` are determined by their restrictions to `K`, since some `p`-power of each element
+of `L` lies in `K`. -/
+theorem comap_injective_of_isPurelyInseparable [IsPurelyInseparable K L] :
+    Function.Injective fun A : ValuationSubring L ↦ A.comap (algebraMap K L) := by
+  intro A B h
+  dsimp only at h
+  ext x
+  obtain ⟨n, a, ha⟩ := IsPurelyInseparable.pow_mem K (ringExpChar K) x
+  have hq : ringExpChar K ^ n ≠ 0 := pow_ne_zero _ (expChar_ne_zero K _)
+  have key (C : ValuationSubring L) : x ∈ C ↔ a ∈ C.comap (algebraMap K L) := by
+    rw [mem_comap, ha, ← valuation_le_one_iff, ← valuation_le_one_iff, map_pow,
+      pow_le_one_iff_of_nonneg zero_le hq]
+  rw [key, key, h]
 
 variable [Algebra.IsAlgebraic K L]
 

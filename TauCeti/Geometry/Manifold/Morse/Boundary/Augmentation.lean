@@ -169,7 +169,7 @@ theorem exists_morseTrajectorySlice_eq_image_of_add_one_eq_finrank {q : M}
     simp [hW, hy, Fin.exists_fin_two]
   have hyq (i : Fin 2) : y i ≠ q := by fin_cases i <;> simp [hy, hy₁, hy₂]
   -- Each orbit starts at a critical point `a i`, which has index `n` by the Morse–Smale condition.
-  choose a ha hlim using fun i ↦ hX.exists_tendsto_atBot hf (y i)
+  choose a ha hlim using fun i ↦ hX.exists_tendsto_atBot (y i)
   have hmem (i : Fin 2) : y i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q :=
     ⟨Flow.mem_unstableSet.2 (hlim i),
       hW' ▸ mem_insert_of_mem _ (mem_iUnion.2 ⟨i, Flow.mem_orbit_self _ _⟩)⟩

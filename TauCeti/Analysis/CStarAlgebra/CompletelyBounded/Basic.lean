@@ -122,9 +122,7 @@ theorem norm_map_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded
     [Fintype κ] (x : CStarMatrix κ κ A) : ‖x.map φ‖ ≤ cbNorm φ * ‖x‖ := by
   classical
   let e := Fintype.equivFin κ
-  have hmap : CStarMatrix.reindexₐ ℂ B e (x.map φ) = (CStarMatrix.reindexₐ ℂ A e x).map φ := by
-    simpa using CStarMatrix.mapₗ_reindexₐ (M := x) (e := e) φ
-  rw [← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ B e), hmap,
+  rw [← CStarMatrix.norm_map_reindexₐ_linearMap x e φ,
     ← StarAlgEquiv.norm_map (CStarMatrix.reindexₐ ℂ A e) x]
   exact norm_map_le_cbNorm_mul_fin hφ _
 
@@ -144,18 +142,8 @@ theorem isCompletelyBounded_iff_exists_bound {φ : A →ₗ[ℂ] B} :
 /-- The level-one comparison `‖φ a‖ ≤ ‖φ‖_cb ‖a‖` for a completely bounded map. -/
 theorem norm_apply_le_cbNorm_mul {φ : A →ₗ[ℂ] B} (hφ : IsCompletelyBounded φ) (a : A) :
     ‖φ a‖ ≤ cbNorm φ * ‖a‖ := by
-  let eA := (CStarMatrix.toOneByOne (Fin 1) ℂ A).toNonUnitalStarAlgHom
-  let eB := (CStarMatrix.toOneByOne (Fin 1) ℂ B).toNonUnitalStarAlgHom
-  have hmap : eB (φ a) = (eA a).map φ := by
-    ext i j
-    -- Mathlib's `StarAlgEquiv.toNonUnitalStarAlgHom_apply` does not rewrite here: the
-    -- `Add`/`Mul`/`SMul` instances `toOneByOne` is stated with differ syntactically from those
-    -- `toNonUnitalStarAlgHom` expects, so we unfold the coercion definitionally.
-    change CStarMatrix.toOneByOne (Fin 1) ℂ B (φ a) i j =
-      φ (CStarMatrix.toOneByOne (Fin 1) ℂ A a i j)
-    simp
-  rw [← NonUnitalStarAlgHom.norm_map eB (CStarMatrix.toOneByOne (Fin 1) ℂ B).injective, hmap,
-    ← NonUnitalStarAlgHom.norm_map eA (CStarMatrix.toOneByOne (Fin 1) ℂ A).injective a]
+  rw [← CStarMatrix.norm_map_toOneByOne_linearMap (ι := Fin 1) a φ,
+    ← CStarMatrix.norm_toOneByOne (ι := Fin 1) a]
   exact norm_map_le_cbNorm_mul hφ _
 
 section Zero
@@ -316,21 +304,11 @@ section Transpose
 
 variable {m n : Type*} [Fintype m] [Fintype n]
 
-/-- The matrix unit `E i j` of `M_n(ℂ)`. -/
-private def matrixUnit [DecidableEq n] (i j : n) : CStarMatrix n n ℂ :=
-  ofMatrix (Matrix.single i j 1)
-
-omit [Fintype n] in
-private theorem star_matrixUnit [DecidableEq n] (i j : n) :
-    star (matrixUnit i j) = matrixUnit j i := by
-  ext r s
-  simp [matrixUnit, star_apply, Matrix.single_apply, and_comm, apply_ite]
-
 /-- The transpose on `M_n(ℂ)` is `y ↦ ∑ E i j * y * E i j`. -/
 private theorem transposeₗ_eq_sum [DecidableEq n] (y : CStarMatrix n n ℂ) :
     transposeₗ ℂ y = ∑ p : n × n, matrixUnit p.1 p.2 * y * matrixUnit p.1 p.2 := by
   ext r s
-  simp [sum_apply, mul_apply, matrixUnit, Matrix.single_apply, Fintype.sum_prod_type, ite_and]
+  simp [sum_apply, mul_apply, matrixUnit_apply, Fintype.sum_prod_type, ite_and]
 
 /-- The block-diagonal matrix `diag(E i j, …, E i j)` in `M_m(M_n(ℂ))`. -/
 private def blockMatrixUnit (m : Type*) [Fintype m] [DecidableEq m] [DecidableEq n] (i j : n) :
@@ -350,7 +328,7 @@ private theorem star_blockMatrixUnit [DecidableEq m] [DecidableEq n] (i j : n) :
 private theorem blockMatrixUnit_apply_apply [DecidableEq m] [DecidableEq n] (i j : n) (k l : m)
     (r s : n) : blockMatrixUnit m i j k l r s = if k = l ∧ i = r ∧ j = s then 1 else 0 := by
   rw [blockMatrixUnit_apply]
-  split_ifs <;> simp_all [matrixUnit, zero_apply]
+  split_ifs <;> simp_all [zero_apply]
 
 /-- The amplification of the transpose is `x ↦ ∑ diag(E i j) * x * diag(E i j)`. -/
 private theorem map_transposeₗ_eq_sum [DecidableEq m] [DecidableEq n]
@@ -401,7 +379,7 @@ private def flipMatrix (n : Type*) [DecidableEq n] :
 omit [Fintype n] in
 private theorem flipMatrix_apply_apply [DecidableEq n] (k l r s : n) :
     flipMatrix n k l r s = if l = r ∧ k = s then 1 else 0 := by
-  simp [flipMatrix, matrixUnit, Matrix.single_apply]
+  simp [flipMatrix, matrixUnit_apply]
 
 private theorem flipMatrix_mem_unitary [DecidableEq n] :
     flipMatrix n ∈ unitary (CStarMatrix n n (CStarMatrix n n ℂ)) := by

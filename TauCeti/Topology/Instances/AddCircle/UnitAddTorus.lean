@@ -27,6 +27,8 @@ functions on the torus are the same as continuous `ℤ^d`-periodic functions on 
   quotient map.
 * `TauCeti.UnitAddTorus.coe_eq_coe_iff`: two points have the same image exactly when they differ by
   an integer vector.
+* `TauCeti.UnitAddTorus.coe_add_single`: translating by a coordinate vector does not move a point
+  of the torus.
 * `TauCeti.UnitAddTorus.periodic_comp_coe`: the lift of a function on the torus is `ℤ^d`-periodic.
 * `TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq`: a continuous `ℤ^d`-periodic function on
   `d → ℝ` descends to a continuous function on the torus.
@@ -64,6 +66,13 @@ theorem coe_eq_coe_iff {x y : d → ℝ} :
   · rintro ⟨m, rfl⟩
     ext i
     simp
+
+/-- Translating a point of `d → ℝ` by a coordinate vector does not move its image on the torus. -/
+theorem coe_add_single [DecidableEq d] (x : d → ℝ) (i : d) :
+    ((fun j ↦ ((x + Pi.single i 1 : d → ℝ) j : UnitAddCircle)) : UnitAddTorus d) =
+      fun j ↦ (x j : UnitAddCircle) :=
+  (coe_eq_coe_iff.2 ⟨Pi.single i 1, funext fun j ↦ by
+    by_cases h : j = i <;> simp [Pi.single_apply, h]⟩).symm
 
 /-- The lift `x ↦ f (fun i ↦ (x i : UnitAddCircle))` of a function on the torus is periodic with
 every integer vector as a period. -/

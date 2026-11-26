@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.Analysis.Normed.Module.StrictGenerators
 import TauCeti.Analysis.Normed.Ring.Approximation
+import TauCeti.Order.WellFounded.Set
 import Mathlib.Data.Finsupp.MonomialOrder
 import Mathlib.Data.Finsupp.PWO
 import Mathlib.Data.Finsupp.WellFounded
@@ -178,21 +179,16 @@ private theorem exists_finset_isLeadingIndex [Finite σ] (m : MonomialOrder σ) 
   classical
   let P : Set ((σ →₀ ℕ) × ℕ) := {p | ∃ f ∈ H, f ≠ 0 ∧ IsLeadingIndex m f p.1 ∧
     deg (coeff p.1 (f : MvPowerSeries σ R)) = p.2}
-  have hpwo : P.IsPWO := Set.isPWO_of_wellQuasiOrderedLE P
-  have hfin : {p | Minimal (· ∈ P) p}.Finite :=
-    (setOfPred_minimal_antichain _).finite_of_partiallyWellOrderedOn
-      (hpwo.mono (setOfPred_minimal_subset _))
+  obtain ⟨t, htP, hcov⟩ := (Set.isPWO_of_wellQuasiOrderedLE P).exists_finset_subset_biUnion_Ici
   choose! g hg using fun p (hp : p ∈ P) ↦ hp
-  refine ⟨hfin.toFinset.image g, ?_, fun y hy hy0 J hJ ↦ ?_⟩
-  · simp only [Finset.mem_image, Set.Finite.mem_toFinset]
+  refine ⟨t.image g, ?_, fun y hy hy0 J hJ ↦ ?_⟩
+  · simp only [Finset.mem_image]
     rintro _ ⟨p, hp, rfl⟩
-    exact ⟨(hg p hp.1).1, (hg p hp.1).2.1⟩
-  · obtain ⟨p, hp, hpmin⟩ :=
-      hpwo.exists_le_minimal (a := (J, deg (coeff J (y : MvPowerSeries σ R))))
-        ⟨y, hy, hy0, hJ, rfl⟩
-    obtain ⟨-, -, hpI, hpdeg⟩ := hg p hpmin.1
-    exact ⟨g p, Finset.mem_image_of_mem _ (hfin.mem_toFinset.mpr hpmin), p.1, hpI, hp.1,
-      hpdeg ▸ hp.2⟩
+    exact ⟨(hg p (htP hp)).1, (hg p (htP hp)).2.1⟩
+  · have hyP : (J, deg (coeff J (y : MvPowerSeries σ R))) ∈ P := ⟨y, hy, hy0, hJ, rfl⟩
+    obtain ⟨p, hpt, hp⟩ := Set.mem_iUnion₂.mp (hcov hyP)
+    obtain ⟨-, -, hpI, hpdeg⟩ := hg p (htP hpt)
+    exact ⟨g p, Finset.mem_image_of_mem _ hpt, p.1, hpI, hp.1, hpdeg ▸ hp.2⟩
 
 /-- **A uniform gap.** For finitely many restricted series there is `ε < 1` such that each of
 their weighted coefficient norms smaller than the Gauss norm is at most `ε` times it. -/

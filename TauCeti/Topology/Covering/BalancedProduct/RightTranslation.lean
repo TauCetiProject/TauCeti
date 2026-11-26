@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Topology.Covering.BalancedProduct.Basic
 
+import TauCeti.Order.Filter.Ultrafilter
+
 /-!
 # The balanced product `G ×_K Z` of a group with a space acted on by a subgroup
 
@@ -35,15 +37,26 @@ leave it:
   of `G` on `G ×_K Z` is `Z ⧸ K`
   (`TauCeti.BalancedProduct.orbitRelQuotientEquivRightTranslation`).
 
+For a point `z₀` of `Z` fixed by `K`, the zero section `g K ↦ [g, z₀]`
+(`TauCeti.BalancedProduct.zeroSectionRightTranslation`) is a `G`-equivariant section of the
+projection onto `G ⧸ K`, whose image is the `G`-orbit of `[1, z₀]`.
+
 For a topological group `G`, right translation by `K` is continuous, and it is proper when `K` is
 closed: it is the restriction of Mathlib's proper action of `Gᵐᵒᵖ` on `G` along the closed
-embedding `h ↦ op h⁻¹`. The smooth structure of `G ×_K Z` for a Lie group `G` is in
-`TauCeti.Geometry.Lie.Subgroup.BalancedProduct`.
+embedding `h ↦ op h⁻¹`. The action of `G` on `G ×_K Z` is continuous when `K` acts on `Z` by
+homeomorphisms, and **proper when `K` acts properly on `Z`**, with no closedness assumption on
+`K`. Together with freeness this is what the quotient manifold theorem needs to make
+`(G ×_K Z) ⧸ G` a manifold, diffeomorphic to `Z ⧸ K`. The smooth structure of `G ×_K Z` for a
+Lie group `G` is in `TauCeti.Geometry.Lie.Subgroup.BalancedProduct`.
 
 ## Main definitions
 
 * `Subgroup.RightTranslation K`: the group `G` as a `K`-space under `h • g = g h⁻¹`.
 * `TauCeti.BalancedProduct.liftRightTranslation`: the map `[g, z] ↦ g • ι z`.
+* `TauCeti.BalancedProduct.zeroSectionRightTranslation`: the zero section `g K ↦ [g, z₀]` at a
+  `K`-fixed point `z₀`.
+* `TauCeti.BalancedProduct.liftProjRightTranslation`: the map `[g, z] ↦ (g • ι z, g K)` to
+  `M × G ⧸ K`.
 
 ## Main results
 
@@ -52,9 +65,21 @@ embedding `h ↦ op h⁻¹`. The smooth structure of `G ×_K Z` for a Lie group 
 * `TauCeti.BalancedProduct.orbitProj_eq_orbitProj_iff`,
   `TauCeti.BalancedProduct.orbitRelQuotientEquivRightTranslation`: the fibres of the projection
   onto `Z ⧸ K` are the `G`-orbits.
+* `TauCeti.BalancedProduct.proj_zeroSectionRightTranslation`,
+  `TauCeti.BalancedProduct.range_zeroSectionRightTranslation`: the zero section is a section of
+  the projection onto `G ⧸ K`, with image the `G`-orbit of `[1, z₀]`.
 * `TauCeti.BalancedProduct.eq_liftRightTranslation`,
   `TauCeti.BalancedProduct.liftEquivRightTranslation`: `G`-equivariant maps out of `G ×_K Z`
   correspond to `K`-equivariant maps out of `Z`.
+* `TauCeti.BalancedProduct.liftProjRightTranslation_injective`,
+  `TauCeti.BalancedProduct.mem_range_liftProjRightTranslation_iff`: for injective `ι`, the map
+  `[g, z] ↦ (g • ι z, g K)` is a bijection onto the pairs `(m, g K)` with `g⁻¹ • m` in the image of
+  `ι`.
+* `TauCeti.BalancedProduct.isOpenQuotientMap_mk_toRightTranslation`: `(g, z) ↦ [g, z]` is an open
+  quotient map.
+* `TauCeti.BalancedProduct.instContinuousSMulRightTranslation`,
+  `TauCeti.BalancedProduct.instProperSMulRightTranslation`: `G` acts continuously on `G ×_K Z`,
+  and properly when `K` acts properly on `Z`.
 
 ## References
 
@@ -245,6 +270,49 @@ theorem proj_smul_rightTranslation (k : G) (y : BalancedProduct K K.RightTransla
       k • proj Z Subgroup.RightTranslation.quotientMk_smul y :=
   y.induction_on_toRightTranslation fun g z ↦ by simp [proj_mk]
 
+/-! ### The zero section -/
+
+section ZeroSection
+
+variable {z₀ : Z} (hz₀ : z₀ ∈ MulAction.fixedPoints K Z)
+
+/-- The zero section `g K ↦ [g, z₀]` of the projection of `G ×_K Z` onto `G ⧸ K`, for a point
+`z₀` of `Z` fixed by `K`. It is the orbit map `g ↦ g • [1, z₀]`, which descends to `G ⧸ K` because
+`K` stabilizes `[1, z₀]`: `h • [1, z₀] = [1, h • z₀] = [1, z₀]` for `h ∈ K`. -/
+def zeroSectionRightTranslation : G ⧸ K → BalancedProduct K K.RightTranslation Z :=
+  MulAction.ofQuotientStabilizer G (mk K (K.toRightTranslation 1) z₀) ∘
+    Subgroup.quotientMapOfLE fun h hh ↦ by
+      simpa [hz₀ ⟨h, hh⟩] using (mk_toRightTranslation_one_smul ⟨h, hh⟩ z₀).symm
+
+/-- The zero section sends `g K` to `[g, z₀]`. -/
+@[simp]
+theorem zeroSectionRightTranslation_mk (g : G) :
+    zeroSectionRightTranslation hz₀ (g : G ⧸ K) = mk K (K.toRightTranslation g) z₀ := by
+  simp [zeroSectionRightTranslation]
+
+/-- The zero section is a section of the projection onto `G ⧸ K`. -/
+@[simp]
+theorem proj_zeroSectionRightTranslation (x : G ⧸ K) :
+    proj Z Subgroup.RightTranslation.quotientMk_smul (zeroSectionRightTranslation hz₀ x) = x := by
+  induction x using QuotientGroup.induction_on with
+  | H g => simp [proj_mk]
+
+/-- The zero section is `G`-equivariant. -/
+@[simp]
+theorem zeroSectionRightTranslation_smul (k : G) (x : G ⧸ K) :
+    zeroSectionRightTranslation hz₀ (k • x) = k • zeroSectionRightTranslation hz₀ x := by
+  induction x using QuotientGroup.induction_on with
+  | H g => simp
+
+/-- **The image of the zero section is the `G`-orbit of `[1, z₀]`.** -/
+theorem range_zeroSectionRightTranslation :
+    Set.range (zeroSectionRightTranslation hz₀) =
+      MulAction.orbit G (mk K (K.toRightTranslation 1) z₀) := by
+  rw [← QuotientGroup.mk_surjective.range_comp]
+  exact congrArg Set.range (funext fun g ↦ by simp)
+
+end ZeroSection
+
 /-! ### The action map to a `G`-space -/
 
 section Lift
@@ -266,6 +334,13 @@ theorem liftRightTranslation_mk (g : G) (z : Z) :
 theorem liftRightTranslation_mk_one (z : Z) :
     liftRightTranslation ι (mk K (K.toRightTranslation 1) z) = ι z := by
   simp
+
+/-- On representatives `(g, z)` of `G ×_K Z`, the action map is `(g, z) ↦ g • ι z`. -/
+theorem liftRightTranslation_comp_quotientMk :
+    liftRightTranslation ι ∘ Quotient.mk (MulAction.orbitRel K (K.RightTranslation × Z)) =
+      fun x ↦ K.toRightTranslation.symm x.1 • ι x.2 :=
+  funext fun x ↦ by
+    rw [Function.comp_apply, quotientMk_eq_mk_toRightTranslation, liftRightTranslation_mk]
 
 /-- The action map is `G`-equivariant. -/
 @[simp]
@@ -309,6 +384,73 @@ theorem liftEquivRightTranslation_symm_apply_apply
     (f : BalancedProduct K K.RightTranslation Z →[G] M) (z : Z) :
     (liftEquivRightTranslation K Z M).symm f z = f (mk K (K.toRightTranslation 1) z) :=
   (rfl)
+
+/-- The map `[g, z] ↦ (g • ι z, g K)` from `G ×_K Z` to `M × G ⧸ K`, which pairs the action map
+`TauCeti.BalancedProduct.liftRightTranslation ι` with the projection onto `G ⧸ K`. It is
+`G`-equivariant, injective when `ι` is
+(`TauCeti.BalancedProduct.liftProjRightTranslation_injective`), and its image consists of the
+pairs `(m, g K)` with `g⁻¹ • m` in the image of `ι`
+(`TauCeti.BalancedProduct.mem_range_liftProjRightTranslation_iff`). -/
+def liftProjRightTranslation (y : BalancedProduct K K.RightTranslation Z) : M × G ⧸ K :=
+  (liftRightTranslation ι y, proj Z Subgroup.RightTranslation.quotientMk_smul y)
+
+@[simp]
+theorem fst_liftProjRightTranslation (y : BalancedProduct K K.RightTranslation Z) :
+    (liftProjRightTranslation ι y).1 = liftRightTranslation ι y :=
+  (rfl)
+
+@[simp]
+theorem snd_liftProjRightTranslation (y : BalancedProduct K K.RightTranslation Z) :
+    (liftProjRightTranslation ι y).2 = proj Z Subgroup.RightTranslation.quotientMk_smul y :=
+  (rfl)
+
+@[simp]
+theorem liftProjRightTranslation_mk (g : G) (z : Z) :
+    liftProjRightTranslation ι (mk K (K.toRightTranslation g) z) = (g • ι z, (g : G ⧸ K)) := by
+  rw [liftProjRightTranslation, liftRightTranslation_mk, proj_mk,
+    Subgroup.RightTranslation.quotientMk_toRightTranslation]
+
+/-- The map `[g, z] ↦ (g • ι z, g K)` is `G`-equivariant for the diagonal action on
+`M × G ⧸ K`. -/
+@[simp]
+theorem liftProjRightTranslation_smul (k : G) (y : BalancedProduct K K.RightTranslation Z) :
+    liftProjRightTranslation ι (k • y) = k • liftProjRightTranslation ι y :=
+  Prod.ext (liftRightTranslation_smul ι k y) (proj_smul_rightTranslation k y)
+
+/-- **The image of `[g, z] ↦ (g • ι z, g K)`.** A pair `(m, o)` of `M × G ⧸ K` lies in the image
+exactly when `g⁻¹ • m` lies in the image of `ι`, for any representative `g` of `o`. -/
+theorem mem_range_liftProjRightTranslation_iff {p : M × G ⧸ K} {g : G} (hg : (g : G ⧸ K) = p.2) :
+    p ∈ Set.range (liftProjRightTranslation ι) ↔ g⁻¹ • p.1 ∈ Set.range ι := by
+  constructor
+  · rintro ⟨y, rfl⟩
+    induction y using induction_on_toRightTranslation with
+    | h g' z =>
+      rw [liftProjRightTranslation_mk] at hg
+      -- `g = g' h⁻¹` for the element `h = g⁻¹ g'` of `K`, so `g⁻¹ • g' • ι z = ι (h • z)`.
+      have hK : g⁻¹ * g' ∈ K := QuotientGroup.eq.1 hg
+      refine ⟨(⟨g⁻¹ * g', hK⟩ : K) • z, ?_⟩
+      rw [map_smulₛₗ, liftProjRightTranslation_mk, smul_smul]
+  · rintro ⟨z, hz⟩
+    refine ⟨mk K (K.toRightTranslation g) z, ?_⟩
+    rw [liftProjRightTranslation_mk, hz, smul_inv_smul, hg]
+
+/-- **`[g, z] ↦ (g • ι z, g K)` is injective when `ι` is.** If `g K = g' K`, then `g' = g h` for
+some `h ∈ K`, and `g • ι z = g h • ι z'` forces `z = h • z'`, so `[g', z'] = [g, h • z'] = [g, z]`.
+-/
+theorem liftProjRightTranslation_injective (hι : Function.Injective ι) :
+    Function.Injective (liftProjRightTranslation ι) := by
+  intro y y' hyy'
+  induction y using induction_on_toRightTranslation with
+  | h g z =>
+  induction y' using induction_on_toRightTranslation with
+  | h g' z' =>
+    rw [liftProjRightTranslation_mk, liftProjRightTranslation_mk, Prod.mk.injEq] at hyy'
+    obtain ⟨hm, ho⟩ := hyy'
+    let h : K := ⟨g⁻¹ * g', QuotientGroup.eq.1 ho⟩
+    have hg' : g' = g * h := by simp [h]
+    have hz : z = h • z' := hι <| by
+      rw [map_smulₛₗ, ← smul_left_cancel_iff g, hm, hg', mul_smul]
+    rw [hg', mk_toRightTranslation_mul, hz]
 
 end Lift
 
@@ -368,5 +510,90 @@ theorem orbitRelQuotientEquivRightTranslation_symm_mk (z : Z) :
     (orbitRelQuotientEquivRightTranslation K Z).symm (Quotient.mk _ z) =
       Quotient.mk _ (mk K (K.toRightTranslation 1) z) :=
   (rfl)
+
+/-! ### Continuity and properness of the action of `G` -/
+
+section Topology
+
+open Filter Topology
+
+variable [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace Z]
+
+/-- The map `(g, z) ↦ [g, z]` from `G × Z` onto `G ×_K Z` is an open quotient map when `K` acts
+on `Z` by homeomorphisms. -/
+theorem isOpenQuotientMap_mk_toRightTranslation [ContinuousConstSMul K Z] :
+    IsOpenQuotientMap fun p : G × Z ↦ mk K (K.toRightTranslation p.1) p.2 :=
+  MulAction.isOpenQuotientMap_quotientMk.comp
+    (({ toEquiv := K.toRightTranslation
+        continuous_toFun := Subgroup.RightTranslation.continuous_toRightTranslation
+        continuous_invFun := Subgroup.RightTranslation.continuous_toRightTranslation_symm } :
+      G ≃ₜ K.RightTranslation).prodCongr (Homeomorph.refl Z)).isOpenQuotientMap
+
+/-- **`G` acts continuously on `G ×_K Z`** when `K` acts on `Z` by homeomorphisms. -/
+instance instContinuousSMulRightTranslation [ContinuousConstSMul K Z] :
+    ContinuousSMul G (BalancedProduct K K.RightTranslation Z) where
+  continuous_smul := by
+    have hρ := isOpenQuotientMap_mk_toRightTranslation (K := K) (Z := Z)
+    rw [← (IsOpenQuotientMap.id.prodMap hρ).continuous_comp_iff]
+    -- On representatives the action is left multiplication on the first factor.
+    have hcomp : (fun p : G × BalancedProduct K K.RightTranslation Z ↦ p.1 • p.2) ∘
+        Prod.map id (fun p : G × Z ↦ mk K (K.toRightTranslation p.1) p.2) =
+        (fun p : G × Z ↦ mk K (K.toRightTranslation p.1) p.2) ∘
+          fun p : G × (G × Z) ↦ (p.1 * p.2.1, p.2.2) :=
+      funext fun _ ↦ smul_mk_toRightTranslation _ _ _
+    rw [hcomp]
+    exact hρ.continuous.comp (by fun_prop)
+
+/-- **`G` acts properly on `G ×_K Z` when `K` acts properly on `Z`.** No closedness of `K` in
+`G` is needed. -/
+instance instProperSMulRightTranslation [ProperSMul K Z] :
+    ProperSMul G (BalancedProduct K K.RightTranslation Z) := by
+  -- Suppose that along an ultrafilter `(k • [g, z], [g, z])` converges to `([g₁, z₁], [g₂, z₂])`.
+  -- Lifting the ultrafilter along the open quotient map `(g, z) ↦ [g, z]`, we may assume that
+  -- `(g, z) → (g₂, z₂)` and that `(k g h⁻¹, h • z) → (g₁, z₁)` for labels `h ∈ K`. Properness of
+  -- `K` on `Z` makes `h` converge to some `h₀` with `h₀ • z₂ = z₁`, and then
+  -- `k = (k g h⁻¹) h g⁻¹` converges to `g₁ h₀ g₂⁻¹`.
+  have hρ := isOpenQuotientMap_mk_toRightTranslation (K := K) (Z := Z)
+  refine properSMul_iff_continuousSMul_ultrafilter_tendsto.2 ⟨inferInstance, fun 𝒰 y₁ y₂ h𝒰 ↦ ?_⟩
+  obtain ⟨⟨g₁, z₁⟩, rfl⟩ := hρ.surjective y₁
+  obtain ⟨⟨g₂, z₂⟩, rfl⟩ := hρ.surjective y₂
+  -- A point `(k, (g, z), h)` records `k • [g, z] = [k g h⁻¹, h • z]`.
+  let Φ : G × (G × Z) × K → (G × Z) × (G × Z) :=
+    fun v ↦ ((v.1 * v.2.1.1 * (v.2.2 : G)⁻¹, v.2.2 • v.2.1.2), v.2.1)
+  obtain ⟨𝒱, h𝒱, rfl⟩ := 𝒰.exists_le_map_eq
+    (f := fun v : G × (G × Z) × K ↦ (v.1, mk K (K.toRightTranslation v.2.1.1) v.2.1.2))
+    (l := comap Φ (𝓝 ((g₁, z₁), (g₂, z₂)))) (by
+      intro s hs
+      obtain ⟨t, ht, hts⟩ := mem_comap.1 hs
+      obtain ⟨U₁, hU₁, U₂, hU₂, hU⟩ := mem_nhds_prod_iff.1 ht
+      refine 𝒰.mem_of_superset (h𝒰 (prod_mem_nhds (hρ.isOpenMap.image_mem_nhds hU₁)
+        (hρ.isOpenMap.image_mem_nhds hU₂))) ?_
+      rintro ⟨k, -⟩ ⟨⟨q, hq, hqy⟩, ⟨p, hp, rfl⟩⟩
+      obtain ⟨h, hg, hz⟩ := mk_toRightTranslation_eq_mk_toRightTranslation_iff.1
+        (hqy.trans (smul_mk_toRightTranslation _ _ _))
+      refine ⟨(k, p, h), hts (hU ⟨?_, hp⟩), rfl⟩
+      simpa [Φ, hg, hz] using hq)
+  have hΦ : Tendsto Φ 𝒱 (𝓝 ((g₁, z₁), (g₂, z₂))) := tendsto_iff_comap.2 h𝒱
+  -- Properness of `K` on `Z` makes the labels `h` converge.
+  have hK : Tendsto (fun p : K × Z ↦ (p.1 • p.2, p.2)) (𝒱.map fun v ↦ (v.2.2, v.2.1.2))
+      (𝓝 (z₁, z₂)) := by
+    rw [Ultrafilter.coe_map, tendsto_map'_iff]
+    exact ((continuous_snd.prodMap continuous_snd).tendsto _).comp hΦ
+  obtain ⟨h₀, hh₀, hh⟩ := (properSMul_iff_continuousSMul_ultrafilter_tendsto.1 ‹_›).2 _ _ _ hK
+  rw [Ultrafilter.coe_map, tendsto_map'_iff] at hh
+  refine ⟨g₁ * h₀ * g₂⁻¹, ?_, ?_⟩
+  · simp [← hh₀, ← mk_toRightTranslation_mul]
+  · rw [Ultrafilter.coe_map, tendsto_map'_iff]
+    have h₁ : Tendsto (fun v : G × (G × Z) × K ↦ v.1 * v.2.1.1 * (v.2.2 : G)⁻¹) 𝒱 (𝓝 g₁) :=
+      ((continuous_fst.comp continuous_fst).tendsto _).comp hΦ
+    have h₂ : Tendsto (fun v : G × (G × Z) × K ↦ v.2.1.1) 𝒱 (𝓝 g₂) :=
+      ((continuous_fst.comp continuous_snd).tendsto _).comp hΦ
+    have h₃ : Tendsto (fun v : G × (G × Z) × K ↦ (v.2.2 : G)) 𝒱 (𝓝 (h₀ : G)) :=
+      (continuous_subtypeVal.tendsto _).comp hh
+    convert (h₁.mul h₃).mul h₂.inv using 1
+    funext v
+    simp [mul_assoc]
+
+end Topology
 
 end TauCeti.BalancedProduct

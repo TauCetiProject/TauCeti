@@ -14,7 +14,8 @@ For subgroups `H ≤ G` and `K ≤ G'`, the direct product `H.prod K ≤ G × G'
 infima and suprema, and `H₁.prod H₂ = K₁.prod K₂` holds componentwise. Mapping along the factor
 inclusions `MonoidHom.inl` and `MonoidHom.inr` produces `H.prod ⊥` and `⊥.prod K`, while pulling
 back along the inclusions or pushing forward along `MonoidHom.fst` and `MonoidHom.snd` recovers
-the factors. All statements carry `@[to_additive]` for additive subgroups.
+the factors. The ranges of the factor inclusions are `⊤.prod ⊥` and `⊥.prod ⊤`, the kernels of the
+opposite projections. All statements carry `@[to_additive]` for additive subgroups.
 -/
 
 public section
@@ -114,3 +115,23 @@ theorem prod_sup_prod (H₁ K₁ : Subgroup G) (H₂ K₂ : Subgroup G') :
   ac_rfl
 
 end Subgroup
+
+namespace MonoidHom
+
+variable {G G' : Type*} [Group G] [Group G']
+
+/-- The range of the left factor inclusion is the product subgroup `⊤.prod ⊥`, the kernel of the
+second projection (`MonoidHom.ker_snd`). -/
+@[to_additive /-- The range of the left factor inclusion is the product of additive subgroups
+`⊤.prod ⊥`, the kernel of the second projection (`AddMonoidHom.ker_snd`). -/]
+theorem range_inl : (inl G G').range = (⊤ : Subgroup G).prod ⊥ := by
+  rw [range_eq_map, Subgroup.map_inl]
+
+/-- The range of the right factor inclusion is the product subgroup `⊥.prod ⊤`, the kernel of the
+first projection (`MonoidHom.ker_fst`). -/
+@[to_additive /-- The range of the right factor inclusion is the product of additive subgroups
+`⊥.prod ⊤`, the kernel of the first projection (`AddMonoidHom.ker_fst`). -/]
+theorem range_inr : (inr G G').range = (⊥ : Subgroup G).prod ⊤ := by
+  rw [range_eq_map, Subgroup.map_inr]
+
+end MonoidHom

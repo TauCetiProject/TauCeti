@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 public import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.Inversion
@@ -62,9 +62,13 @@ the position and the frequency.
   `a # b = ∑_{k < N} sharpTerm a b k + sharpRemainder a b hb N`, for every `N`.
 * `TauCeti.Symbol.sharp_eq_comp_add_sharpRemainder_one`: in particular `a # b` agrees with the
   pointwise composition `a ∘ b` up to a symbol of order `m' + m - 1`.
-* `TauCeti.Symbol.coefficient_sharp_eq_sum_of_mixedDeriv_eq_zero`: if `a` is polynomial of degree
-  less than `N` in the frequency, as the symbol of a differential operator is, the expansion is
-  exact: `a # b = ∑_{k < N} sharpTerm a b k`.
+* `TauCeti.Symbol.sharp_eq_sum_sharpTerm_of_mixedDeriv_nil_eq_zero`: **exact composition**. If
+  `a(x, ξ)` is a polynomial of degree less than `N` in `ξ`, in the sense that its frequency
+  derivatives of order `N` vanish, as for the symbol of a differential operator, then
+  `a # b = ∑_{k < N} sharpTerm a b k` with no remainder
+  (`TauCeti.Symbol.sharpRemainder_eq_zero_of_mixedDeriv_nil_eq_zero`; on coefficients,
+  `TauCeti.Symbol.coefficient_sharp_eq_sum_of_mixedDeriv_eq_zero`); the terms of index `k ≥ N`
+  vanish (`TauCeti.Symbol.sharpTerm_eq_zero_of_mixedDeriv_nil_eq_zero`).
 * `TauCeti.Symbol.IsUniform.sharpTerm`, `TauCeti.Symbol.IsUniform.sharpRemainder`: **the uniform
   expansion**. If the estimates of `a` and `b` hold uniformly in the position, then so do those of
   every term of the expansion. If those of `a` do and `b` has compact spatial support (hence is
@@ -115,6 +119,8 @@ integral sign, and using `2π ηⱼ b̂ = -i (∂_{xⱼ} b)^`,
 matching identity for the polynomial `∑_{k < N} t^k sharpTerm a b k`. So the derivative of the
 remainder `a #_t b - ∑_{k < N + 1} t^k sharpTerm a b k` is `-i` times the sum over `j` of the
 remainders with `N` terms of `(∂_{ξⱼ} a, ∂_{xⱼ} b)`, and this remainder vanishes at `t = 0`.
+When the frequency derivatives of `a` of order `N` vanish, the same recursion shows that the
+remainder with `N` terms vanishes identically, so the expansion is then exact.
 By induction on `N` and the mean value inequality on `[0, 1]`, the remainder is bounded by
 `C ⟨ξ⟩ ^ (m' + m - N)`, locally uniformly in the position, and uniformly if the estimates of `a`
 are: each step lowers the order of `a` by one. The base case is the bound
@@ -396,6 +402,25 @@ theorem sharpTerm_const_succ (a : Symbol n W U m') (T : V →L[ℂ] W) (k : ℕ)
     ext1
     funext ⟨x, ξ⟩
     simp [coefficient_const, coordinateDeriv_const _ (List.cons_ne_nil j [])]) a k
+
+/-- **The expansion terminates for a symbol polynomial in the frequency.** If the frequency
+derivatives of `a` of order `N` vanish, so that `a(x, ξ)` is a polynomial of degree less than `N`
+in `ξ`, then the terms of index `k ≥ N` of the composition expansion vanish. -/
+theorem sharpTerm_eq_zero_of_mixedDeriv_nil_eq_zero {a : Symbol n W U m'} {N : ℕ}
+    (ha : ∀ β : List (Fin n), β.length = N → ∀ x ξ, mixedDeriv [] β a.coefficient x ξ = 0)
+    (b : Symbol n V W m) {k : ℕ} (hk : N ≤ k) : a.sharpTerm b k = 0 := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_sharpTerm, coefficient_zero, Pi.zero_apply,
+    Finset.sum_eq_zero fun w _ ↦ ?_, smul_zero]
+  -- The frequency derivative along `w` is a derivative of one along the last `N` letters of `w`.
+  set γ := (List.ofFn w).drop (k - N)
+  have hγ : ∀ η, coordinateDeriv γ (fun η ↦ a.coefficient (x, η)) η = 0 := fun η ↦ by
+    simpa [mixedDeriv_def] using ha γ (by simp [γ]; omega) x η
+  have hw : coordinateDeriv (List.ofFn w) (fun η ↦ a.coefficient (x, η)) ξ = 0 := by
+    rw [← List.take_append_drop (k - N) (List.ofFn w), coordinateDeriv_append, funext hγ,
+      ← Pi.zero_def, coordinateDeriv_zero, Pi.zero_apply]
+  rw [mixedDeriv_def, coordinateDeriv_nil, hw, ContinuousLinearMap.zero_comp]
 
 /-- **Leibniz rule in the position** for the terms of the composition expansion. -/
 theorem spatialDeriv_sharpTerm (l : Fin n) (a : Symbol n W U m') (b : Symbol n V W m) (k : ℕ) :
@@ -890,6 +915,28 @@ theorem IsUniform.exists_norm_mixedDeriv_sharpRemainder_le {ι : Type*}
     (fun ha hc ↦ (hQbound ha hc).imp fun _ hC ↦ ⟨hC.1, fun i s hs x _ ξ ↦ hC.2 i s hs x ξ⟩) ha
     hc N α β
   exact ⟨C, hC0, fun i x ξ ↦ hC i x (Set.mem_univ x) ξ⟩
+
+/-- If the frequency derivatives of `a` of order `N` vanish, so that `a(x, ξ)` is a polynomial of
+degree less than `N` in `ξ`, then the remainder of the composition expansion after `N` terms
+vanishes. -/
+theorem sharpRemainder_eq_zero_of_mixedDeriv_nil_eq_zero {N : ℕ}
+    (ha : ∀ β : List (Fin n), β.length = N → ∀ x ξ, mixedDeriv [] β a.coefficient x ξ = 0)
+    (hb : b.HasCompactSpatialSupport) : a.sharpRemainder b hb N = 0 := by
+  ext1
+  funext ⟨x, ξ⟩
+  simpa [remainderAt, scaledSharp_one hb] using
+    remainderAt_eq_zero N ha hb 1 ⟨zero_le_one, le_rfl⟩ x ξ
+
+/-- **Exact composition with a symbol polynomial in the frequency.** If the frequency derivatives
+of `a` of order `N` vanish, so that `a(x, ξ)` is a polynomial of degree less than `N` in `ξ`, as for
+the symbol of a differential operator of order less than `N`, then the composition expansion is
+exact after `N` terms: `a # b = ∑_{k < N} sharpTerm a b k`, with no remainder. -/
+theorem sharp_eq_sum_sharpTerm_of_mixedDeriv_nil_eq_zero {N : ℕ}
+    (ha : ∀ β : List (Fin n), β.length = N → ∀ x ξ, mixedDeriv [] β a.coefficient x ξ = 0)
+    (hb : b.HasCompactSpatialSupport) :
+    a.sharp b hb = ∑ k ∈ range N, inclusion (sub_le_self _ (Nat.cast_nonneg k)) (a.sharpTerm b k) :=
+  by rw [sharp_eq_sum_sharpTerm_add_sharpRemainder hb N,
+    sharpRemainder_eq_zero_of_mixedDeriv_nil_eq_zero ha hb, map_zero, add_zero]
 
 /-- **Uniform remainders.** If the estimates of `a` hold uniformly in the position, then so do
 those of every remainder `a # b - ∑_{k < N} sharpTerm a b k` of the composition expansion. -/

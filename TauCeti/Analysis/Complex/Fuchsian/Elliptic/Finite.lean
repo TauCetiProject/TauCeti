@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Basic
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.Topology.Algebra.GroupAction.FreeLocus
 import TauCeti.Analysis.Complex.Fuchsian.ProperAction
 import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
@@ -85,6 +86,27 @@ theorem quotientMk_mem_ellipticOrbits_iff (z : ℍ) :
     exact (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ heq).not.mp hw
   · intro hz
     exact ⟨z, hz, rfl⟩
+
+omit [DiscreteTopology Γ] in
+/-- The orbits that are not elliptic are the orbits of the free locus: removing the elliptic
+orbits from the coarse quotient leaves the image of the points with trivial stabilizer. -/
+theorem compl_ellipticOrbits :
+    Γ.ellipticOrbitsᶜ = Quotient.mk (orbitRel Γ ℍ) '' (freeLocus Γ ℍ : Set ℍ) := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | h z =>
+    rw [mem_compl_iff, quotientMk_mem_ellipticOrbits_iff, not_not]
+    exact ⟨fun hz ↦ ⟨z, hz, rfl⟩, fun ⟨w, hw, heq⟩ ↦
+      (mem_freeLocus_iff_of_quotientMk_eq Γ ℍ heq).mp hw⟩
+
+omit [DiscreteTopology Γ] in
+/-- An orbit is elliptic exactly when its stabilizer order is not `1`. -/
+theorem mem_ellipticOrbits_iff_cardStabilizerOnOrbit_ne_one (e : orbitRel.Quotient Γ ℍ) :
+    e ∈ Γ.ellipticOrbits ↔ cardStabilizerOnOrbit e ≠ 1 := by
+  induction e using Quotient.inductionOn' with
+  | _ z =>
+    rw [quotientMk_mem_ellipticOrbits_iff, mem_freeLocus, cardStabilizerOnOrbit_mk, ne_eq,
+      Subgroup.card_eq_one]
 
 /-- The elliptic points of the compactification are precisely the coarse orbits with
 nontrivial stabilizer. -/

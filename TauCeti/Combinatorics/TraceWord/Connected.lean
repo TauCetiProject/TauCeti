@@ -12,29 +12,31 @@ public import TauCeti.Data.Fintype.SmallRange
 # Connected pairs of trace words
 
 In the moment expansion of the covariance of two matrix traces `trace (H ^ k₁)` and
-`trace (H ^ k₂)` with independent centered entries, pairs of closed walks `(w₁, w₂)` whose
-unordered cyclic edge sets are disjoint cancel by independence, while pairs whose combined edge
-multiset contains a singleton edge vanish by centering. Every remaining pair shares at least one
-unordered cyclic edge and traverses each unordered cyclic edge at least twice across the pair.
+`trace (H ^ k₂)` with independent coordinates and centered off-diagonal entries, pairs of closed
+walks `(w₁, w₂)` whose unordered cyclic edge sets are disjoint cancel by independence, while pairs
+whose combined edge multiset contains a singleton nonloop edge vanish by off-diagonal centering.
+Every remaining pair shares at least one unordered cyclic edge and traverses each nonloop unordered
+cyclic edge at least twice across the pair (loop edges may occur once).
 
-This file bounds the combined vertex set and cardinality of such connected singleton-free pairs
-`(w₁, w₂)` of lengths `k₁` and `k₂`: their union visits at most `(k₁ + k₂) / 2` vertices, so over a
-finite alphabet `β` there are at most
-`|β| ^ ((k₁ + k₂) / 2) * ((k₁ + k₂) / 2) ^ (k₁ + k₂)` such pairs. For `n × n` Wigner matrices with
-`n⁻¹/²`-scaled entries, the factor `n ^ ((k₁ + k₂) / 2)` is absorbed by the entry scaling
-`((√n)⁻¹) ^ (k₁ + k₂)`, leaving `O(n⁻²)` after the two `n⁻¹` trace normalizations.
+This file bounds the combined vertex set and cardinality of such connected pairs `(w₁, w₂)` of
+lengths `k₁` and `k₂`: their union visits at most `(k₁ + k₂) / 2` vertices, so over a finite
+alphabet `β` there are at most `|β| ^ ((k₁ + k₂) / 2) * ((k₁ + k₂) / 2) ^ (k₁ + k₂)` such pairs.
+For `n × n` Wigner matrices with `n⁻¹/²`-scaled entries, the factor `n ^ ((k₁ + k₂) / 2)` is
+absorbed by the entry scaling `((√n)⁻¹) ^ (k₁ + k₂)`, leaving `O(n⁻²)` after the two `n⁻¹` trace
+normalizations, without requiring diagonal entries to be centered.
 
 ## Main results
 
 * `TauCeti.two_mul_card_sum_cyclic_edges_le_of_no_singleton_edge`: a pair of cyclic words with no
   singleton unordered edge across `Fin k₁ ⊕ Fin k₂` uses at most `(k₁ + k₂) / 2` distinct
   unordered edges.
-* `TauCeti.card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge`: if two cyclic
-  words of lengths `k₁` and `k₂` share an unordered cyclic edge and have no singleton unordered
-  edge across `Fin k₁ ⊕ Fin k₂`, their union visits at most `(k₁ + k₂) / 2` vertices.
-* `TauCeti.card_filter_shared_edge_and_no_singleton_edge_le`: over a finite alphabet `β`, at
-  most `|β|^((k₁ + k₂) / 2) * ((k₁ + k₂) / 2)^(k₁ + k₂)` word pairs share an unordered cyclic
-  edge and have no singleton unordered edge across the pair.
+* `TauCeti.card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_nonloop_edge`: if two
+  cyclic words of lengths `k₁` and `k₂` share an unordered cyclic edge and have no singleton
+  nonloop unordered edge across `Fin k₁ ⊕ Fin k₂`, their union visits at most `(k₁ + k₂) / 2`
+  vertices.
+* `TauCeti.card_filter_shared_edge_and_no_singleton_nonloop_edge_le`: over a finite alphabet `β`,
+  at most `|β|^((k₁ + k₂) / 2) * ((k₁ + k₂) / 2)^(k₁ + k₂)` word pairs share an unordered cyclic
+  edge and have no singleton nonloop unordered edge across the pair.
 
 ## References
 
@@ -111,23 +113,6 @@ private theorem exists_concat_path_of_eq {k₁ k₂ : ℕ} (w₁ : Fin k₁ → 
       · exact ⟨(i - a₀).val, by omega, by simpa only [hhit] using hstep₁ (i - a₀).isLt⟩
       · exact ⟨k₁ + 1 + (j - b₀).val, by omega, by simpa only [hhit] using hstep₂ (j - b₀).val⟩
 
-private theorem two_le_card_sum_edge_fiber_of_no_singleton_edge {k₁ k₂ : ℕ}
-    (w₁ : Fin k₁ → α) (w₂ : Fin k₂ → α)
-    (h : ∀ t : Fin k₁ ⊕ Fin k₂, ∃ t' ≠ t,
-      Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
-        (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t' =
-      Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
-        (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t)
-    (e : Sym2 α)
-    (he : e ∈ univ.image (Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
-      (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))))) :
-    2 ≤ #{t : Fin k₁ ⊕ Fin k₂ |
-      Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
-        (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t = e} := by
-  obtain ⟨t, -, rfl⟩ := mem_image.mp he
-  obtain ⟨t', htt', ht'⟩ := h t
-  exact one_lt_card.mpr ⟨t, by simp, t', mem_filter.mpr ⟨mem_univ _, ht'⟩, htt'.symm⟩
-
 /-- A pair of cyclic words with no singleton unordered cyclic edge across `Fin k₁ ⊕ Fin k₂`
 traverses at most `(k₁ + k₂) / 2` distinct unordered edges in total. Loops count as edges. -/
 theorem two_mul_card_sum_cyclic_edges_le_of_no_singleton_edge {k₁ k₂ : ℕ}
@@ -141,80 +126,125 @@ theorem two_mul_card_sum_cyclic_edges_le_of_no_singleton_edge {k₁ k₂ : ℕ}
       (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))))) ≤ k₁ + k₂ := by
   simpa only [card_univ, Fintype.card_sum, Fintype.card_fin] using
     mul_card_image_le_card (univ : Finset (Fin k₁ ⊕ Fin k₂)) 2
-      (two_le_card_sum_edge_fiber_of_no_singleton_edge w₁ w₂ h)
+      (two_le_card_filter_eq_of_no_singleton_fiber h)
+
+private theorem two_le_card_nonloop_sum_cyclic_edge_fiber {k₁ k₂ : ℕ}
+    (w₁ : Fin k₁ → α) (w₂ : Fin k₂ → α)
+    (h : ∀ t : Fin k₁ ⊕ Fin k₂,
+      Sum.elim w₁ w₂ t ≠
+        Sum.elim (fun i ↦ w₁ (finRotate k₁ i)) (fun j ↦ w₂ (finRotate k₂ j)) t →
+        ∃ t' ≠ t,
+          Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
+            (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t' =
+          Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
+            (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t) :
+    let stepEdge := Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
+      (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j)))
+    let NL : Finset (Fin k₁ ⊕ Fin k₂) := {t | ¬ (stepEdge t).IsDiag}
+    ∀ e ∈ NL.image stepEdge, 2 ≤ #{t ∈ NL | stepEdge t = e} :=
+  two_le_card_filter_eq_of_no_singleton_fiber_on _ fun t ht ↦
+    let ⟨t', ht'ne, ht'eq⟩ := h t (by cases t <;> simpa using (mem_filter.mp ht).2)
+    ⟨t', ht'ne, mem_filter.mpr ⟨mem_univ _, ht'eq.symm ▸ (mem_filter.mp ht).2⟩, ht'eq⟩
+
+private theorem card_nonloop_sum_steps_add_two_le_of_isDiag {k₁ k₂ : ℕ}
+    {w₁ : Fin k₁ → α} {w₂ : Fin k₂ → α} {i₀ : Fin k₁} {j₀ : Fin k₂}
+    (hij₀ : s(w₁ i₀, w₁ (finRotate k₁ i₀)) = s(w₂ j₀, w₂ (finRotate k₂ j₀)))
+    (he₀ : (s(w₁ i₀, w₁ (finRotate k₁ i₀))).IsDiag) :
+    #({t : Fin k₁ ⊕ Fin k₂ |
+        ¬ (Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
+          (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t).IsDiag} : Finset _) + 2 ≤ k₁ + k₂ := by
+  set NL : Finset (Fin k₁ ⊕ Fin k₂) :=
+    {t | ¬ (Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
+      (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t).IsDiag}
+  have hi₀ : Sum.inl i₀ ∉ NL := fun h ↦ (mem_filter.mp h).2 he₀
+  have hj₀ : Sum.inr j₀ ∉ NL := fun h ↦ (mem_filter.mp h).2 (by dsimp; rwa [← hij₀])
+  have hle := card_le_card (s := NL) (t := (univ.erase (.inl i₀)).erase (.inr j₀)) fun t ht ↦
+    mem_erase.mpr ⟨fun h ↦ hj₀ (h ▸ ht), mem_erase.mpr ⟨fun h ↦ hi₀ (h ▸ ht), mem_univ t⟩⟩
+  have := i₀.pos; have := j₀.pos
+  rw [card_erase_of_mem (mem_erase.mpr ⟨by simp, mem_univ _⟩), card_erase_of_mem (mem_univ _),
+    card_univ, Fintype.card_sum, Fintype.card_fin, Fintype.card_fin] at hle
+  omega
 
 /-- **Connected two-trace vertex bound.** If two cyclic words `w₁` and `w₂` of lengths `k₁` and
-`k₂` share at least one unordered cyclic edge and have no singleton unordered cyclic edge across
-`Fin k₁ ⊕ Fin k₂`, then their union visits at most `(k₁ + k₂) / 2` vertices. Both even and odd
-total lengths `k₁ + k₂`, as well as loops, are allowed. -/
-theorem card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge {k₁ k₂ : ℕ}
+`k₂` share at least one unordered cyclic edge and have no singleton nonloop unordered cyclic edge
+across `Fin k₁ ⊕ Fin k₂`, then their union visits at most `(k₁ + k₂) / 2` vertices. Both even and
+odd total lengths `k₁ + k₂`, as well as singleton loops, are allowed. -/
+theorem card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_nonloop_edge {k₁ k₂ : ℕ}
     (w₁ : Fin k₁ → α) (w₂ : Fin k₂ → α)
     (hshare : ∃ i j, s(w₁ i, w₁ (finRotate k₁ i)) = s(w₂ j, w₂ (finRotate k₂ j)))
-    (h : ∀ t : Fin k₁ ⊕ Fin k₂, ∃ t' ≠ t,
-      Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
-        (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t' =
-      Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
-        (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t) :
+    (h : ∀ t : Fin k₁ ⊕ Fin k₂,
+      Sum.elim w₁ w₂ t ≠
+        Sum.elim (fun i ↦ w₁ (finRotate k₁ i)) (fun j ↦ w₂ (finRotate k₂ j)) t →
+        ∃ t' ≠ t,
+          Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
+            (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t' =
+          Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
+            (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j))) t) :
     #(univ.image w₁ ∪ univ.image w₂) ≤ (k₁ + k₂) / 2 := by
   obtain ⟨i₀, j₀, hij₀⟩ := hshare
-  obtain ⟨b₀, hab₀⟩ : ∃ b₀ : Fin k₂, w₁ i₀ = w₂ b₀ := by
-    rcases Sym2.mem_iff.mp (hij₀ ▸ Sym2.mem_mk_left _ _) with h1 | h2
-    · exact ⟨j₀, h1⟩
-    · exact ⟨finRotate k₂ j₀, h2⟩
+  obtain ⟨b₀, hab₀⟩ : ∃ b₀ : Fin k₂, w₁ i₀ = w₂ b₀ :=
+    (Sym2.mem_iff.mp (hij₀ ▸ Sym2.mem_mk_left _ _)).elim (⟨j₀, ·⟩) (⟨finRotate k₂ j₀, ·⟩)
   obtain ⟨p, hpV, hpE, hpw₁, hpw₂⟩ := exists_concat_path_of_eq w₁ w₂ i₀ b₀ hab₀
   set stepEdge := Sum.elim (fun i ↦ s(w₁ i, w₁ (finRotate k₁ i)))
     (fun j ↦ s(w₂ j, w₂ (finRotate k₂ j)))
-  set E := univ.image stepEdge
+  set NL : Finset (Fin k₁ ⊕ Fin k₂) := {t | ¬ (stepEdge t).IsDiag}
+  set E := NL.image stepEdge
   set N := ((range (k₁ + k₂)).filter fun r ↦ p r ≠ p (r + 1)).image fun r ↦ s(p r, p (r + 1))
+  have hNleE : #N ≤ #E := card_le_card fun e he ↦ by
+    obtain ⟨r, hr, rfl⟩ := mem_image.mp he; obtain ⟨t, -, hte⟩ := mem_image.mp (hpE he)
+    exact mem_image.mpr ⟨t, mem_filter.mpr ⟨mem_univ _,
+      by rw [hte, Sym2.mk_isDiag_iff]; exact (mem_filter.mp hr).2⟩, hte⟩
   have hVleN : #(univ.image w₁ ∪ univ.image w₂) ≤ #N + 1 :=
     hpV ▸ card_image_range_le_card_nonloop_edges_add_one p (k₁ + k₂)
-  have hNleE : #N ≤ #E := card_le_card hpE
-  have h2E : 2 * #E ≤ k₁ + k₂ := two_mul_card_sum_cyclic_edges_le_of_no_singleton_edge w₁ w₂ h
-  by_contra hgt
-  -- Exceeding `(k₁ + k₂) / 2` forces `#V = #N + 1` and `N = E`, so the shared edge `e₀` is nonloop.
-  have hNE : N = E := eq_of_subset_of_card_le hpE (by omega)
+  have h2E : 2 * #E ≤ #NL :=
+    mul_card_image_le_card NL 2 (two_le_card_nonloop_sum_cyclic_edge_fiber w₁ w₂ h)
   set e₀ := s(w₁ i₀, w₁ (finRotate k₁ i₀))
-  have he₀E : e₀ ∈ E := mem_image.mpr ⟨.inl i₀, mem_univ _, rfl⟩
-  have hEpos : 1 ≤ #E := card_pos.mpr ⟨e₀, he₀E⟩
-  have he₀_noloop : ¬ e₀.IsDiag := by
-    obtain ⟨r, hr, hre⟩ := mem_image.mp (hNE.symm ▸ he₀E)
-    rw [← hre, Sym2.mk_isDiag_iff]
-    exact (mem_filter.mp hr).2
-  have hVN : #((range (k₁ + k₂ + 1)).image p) = #N + 1 := by rw [hpV]; omega
-  obtain ⟨c, hc⟩ := exists_mod_two_color_of_card_image_eq p (k₁ + k₂) e₀ he₀_noloop hVN
-  -- Both closed walks traverse `e₀` a positive even number of times, giving fiber size ≥ 4.
-  have hmod₁ := card_filter_cyclic_edge_mod_two_eq_zero w₁ c e₀ fun i ↦
-    let ⟨r, hr, h1, h2⟩ := hpw₁ i; by simpa only [h1, h2] using hc r hr
-  have hmod₂ := card_filter_cyclic_edge_mod_two_eq_zero w₂ c e₀ fun j ↦
-    let ⟨r, hr, h1, h2⟩ := hpw₂ j; by simpa only [h1, h2] using hc r hr
-  have hpos₁ : 1 ≤ #{i | s(w₁ i, w₁ (finRotate k₁ i)) = e₀} := card_pos.mpr ⟨i₀, by simp [e₀]⟩
-  have hpos₂ : 1 ≤ #{j | s(w₂ j, w₂ (finRotate k₂ j)) = e₀} :=
-    card_pos.mpr ⟨j₀, by simp [e₀, hij₀]⟩
-  have hsplit : #{t : Fin k₁ ⊕ Fin k₂ | stepEdge t = e₀} =
-      #{i | s(w₁ i, w₁ (finRotate k₁ i)) = e₀} + #{j | s(w₂ j, w₂ (finRotate k₂ j)) = e₀} := by
-    simp only [card_filter, Fintype.sum_sum_type, stepEdge, Sum.elim_inl, Sum.elim_inr]; congr 1
-  have htotal : k₁ + k₂ = #{t | stepEdge t = e₀} + ∑ e ∈ E.erase e₀, #{t | stepEdge t = e} := by
-    have hcard := card_eq_sum_card_image stepEdge (univ : Finset (Fin k₁ ⊕ Fin k₂))
-    simpa only [card_univ, Fintype.card_sum, Fintype.card_fin, E] using
-      hcard.trans (add_sum_erase _ _ he₀E).symm
-  have herase : 2 * (#E - 1) ≤ ∑ e ∈ E.erase e₀, #{t | stepEdge t = e} := by
-    simpa only [sum_const, smul_eq_mul, card_erase_of_mem he₀E, mul_comm] using
-      sum_le_sum (s := E.erase e₀) fun e he ↦
-        two_le_card_sum_edge_fiber_of_no_singleton_edge w₁ w₂ h e (mem_of_mem_erase he)
-  omega
+  by_cases he₀_diag : e₀.IsDiag
+  · have : #NL + 2 ≤ k₁ + k₂ := card_nonloop_sum_steps_add_two_le_of_isDiag hij₀ he₀_diag
+    omega
+  · -- A shared nonloop edge forces `#V = #N + 1` and traversal multiplicity ≥ 4 on `e₀`.
+    have hNL_le : #NL ≤ k₁ + k₂ := (card_le_univ NL).trans_eq (by simp [Fintype.card_sum])
+    by_contra hgt
+    have he₀E : e₀ ∈ E := mem_image.mpr ⟨.inl i₀, mem_filter.mpr ⟨mem_univ _, he₀_diag⟩, rfl⟩
+    obtain ⟨c, hc⟩ := exists_mod_two_color_of_card_image_eq p (k₁ + k₂) e₀ he₀_diag
+      (by rw [hpV]; dsimp only [N] at hVleN hNleE; omega)
+    have hmod₁ := card_filter_cyclic_edge_mod_two_eq_zero w₁ c e₀ fun i ↦
+      let ⟨r, hr, h1, h2⟩ := hpw₁ i; by simpa only [h1, h2] using hc r hr
+    have hmod₂ := card_filter_cyclic_edge_mod_two_eq_zero w₂ c e₀ fun j ↦
+      let ⟨r, hr, h1, h2⟩ := hpw₂ j; by simpa only [h1, h2] using hc r hr
+    have hpos₁ : 1 ≤ #{i | s(w₁ i, w₁ (finRotate k₁ i)) = e₀} := card_pos.mpr ⟨i₀, by simp [e₀]⟩
+    have hpos₂ : 1 ≤ #{j | s(w₂ j, w₂ (finRotate k₂ j)) = e₀} :=
+      card_pos.mpr ⟨j₀, by simp [e₀, hij₀]⟩
+    have hsplit : #{t ∈ NL | stepEdge t = e₀} =
+        #{i | s(w₁ i, w₁ (finRotate k₁ i)) = e₀} + #{j | s(w₂ j, w₂ (finRotate k₂ j)) = e₀} := by
+      rw [filter_filter, filter_congr fun _ _ ↦ and_iff_right_of_imp (· ▸ he₀_diag)]
+      simp only [card_filter, Fintype.sum_sum_type, stepEdge, Sum.elim_inl, Sum.elim_inr]
+      congr 1
+    have htotal : #NL = #{t ∈ NL | stepEdge t = e₀} +
+        ∑ e ∈ E.erase e₀, #{t ∈ NL | stepEdge t = e} :=
+      (card_eq_sum_card_image stepEdge NL).trans (add_sum_erase _ _ he₀E).symm
+    have herase : 2 * (#E - 1) ≤ ∑ e ∈ E.erase e₀, #{t ∈ NL | stepEdge t = e} := by
+      simpa only [sum_const, smul_eq_mul, card_erase_of_mem he₀E, mul_comm] using
+        sum_le_sum (s := E.erase e₀) fun e he ↦
+          two_le_card_nonloop_sum_cyclic_edge_fiber w₁ w₂ h e (mem_of_mem_erase he)
+    have : 1 ≤ #E := card_pos.mpr ⟨e₀, he₀E⟩
+    omega
 
 /-- Over a finite alphabet `β`, at most `|β|^((k₁ + k₂) / 2) * ((k₁ + k₂) / 2)^(k₁ + k₂)`
 pairs of cyclic words of lengths `k₁` and `k₂` share an unordered cyclic edge and have no
-singleton unordered cyclic edge across `Fin k₁ ⊕ Fin k₂`. -/
-theorem card_filter_shared_edge_and_no_singleton_edge_le {β : Type*} [Fintype β]
+singleton nonloop unordered cyclic edge across `Fin k₁ ⊕ Fin k₂`. -/
+theorem card_filter_shared_edge_and_no_singleton_nonloop_edge_le {β : Type*} [Fintype β]
     [DecidableEq β] (k₁ k₂ : ℕ) :
     #{p : (Fin k₁ → β) × (Fin k₂ → β) |
         (∃ i j, s(p.1 i, p.1 (finRotate k₁ i)) = s(p.2 j, p.2 (finRotate k₂ j))) ∧
-          ∀ t : Fin k₁ ⊕ Fin k₂, ∃ t' ≠ t,
-            Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k₁ i)))
-              (fun j ↦ s(p.2 j, p.2 (finRotate k₂ j))) t' =
-            Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k₁ i)))
-              (fun j ↦ s(p.2 j, p.2 (finRotate k₂ j))) t} ≤
+          ∀ t : Fin k₁ ⊕ Fin k₂,
+            Sum.elim p.1 p.2 t ≠
+              Sum.elim (fun i ↦ p.1 (finRotate k₁ i)) (fun j ↦ p.2 (finRotate k₂ j)) t →
+              ∃ t' ≠ t,
+                Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k₁ i)))
+                  (fun j ↦ s(p.2 j, p.2 (finRotate k₂ j))) t' =
+                Sum.elim (fun i ↦ s(p.1 i, p.1 (finRotate k₁ i)))
+                  (fun j ↦ s(p.2 j, p.2 (finRotate k₂ j))) t} ≤
       Fintype.card β ^ ((k₁ + k₂) / 2) * ((k₁ + k₂) / 2) ^ (k₁ + k₂) := by
   cases isEmpty_or_nonempty β with
   | inl hempty =>
@@ -229,6 +259,7 @@ theorem card_filter_shared_edge_and_no_singleton_edge_le {β : Type*} [Fintype �
     refine (card_le_card fun p hp ↦ ?_).trans hbound
     obtain ⟨-, hshare, hno⟩ := mem_filter.mp hp
     exact mem_filter.mpr ⟨mem_univ _,
-      card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_edge p.1 p.2 hshare hno⟩
+      card_image_union_le_add_div_two_of_shared_edge_of_no_singleton_nonloop_edge p.1 p.2
+        hshare hno⟩
 
 end TauCeti

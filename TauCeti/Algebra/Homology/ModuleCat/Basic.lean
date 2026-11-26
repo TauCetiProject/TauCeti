@@ -35,6 +35,8 @@ and the square of the differential vanishes, on elements (`HomologicalComplex.Ho
 constructor directly returns an element of `K.cycles n` for modules over a ring in any universe,
 whereas Mathlib's `HomologicalComplex.cyclesMk` returns an element of
 `(forget₂ C Ab).obj (K.cycles n)`.
+A chain map that is a monomorphism in degree `j` reflects the vanishing of the differential into
+degree `j` (`HomologicalComplex.d_apply_eq_zero_of_d_f_apply_eq_zero`).
 A linear map into `K.X n` whose values are cycles induces a class map into the homology,
 `HomologicalComplex.moduleCatHomologyClass`; it is surjective when every cycle is a value, its
 kernel consists of the elements sent to boundaries, and chain maps act on it compatibly.
@@ -56,7 +58,8 @@ Cycles are elements of the kernel of the outgoing differential
 (`HomologicalComplex.moduleCatKerHomologyClass`), surjective and compatible with chain maps
 (`HomologicalComplex.homologyMap_moduleCatKerHomologyClass`), and the image of the incoming
 differential, the kernel and the homology form an exact sequence
-(`HomologicalComplex.exact_inclusion_moduleCatKerHomologyClass`).
+(`HomologicalComplex.exact_inclusion_moduleCatKerHomologyClass`). So the homology vanishes where
+the outgoing differential is injective (`HomologicalComplex.isZero_homology_of_injective_d`).
 Given concrete cocycle and coboundary submodules identified with the terms of a cochain complex,
 `HomologicalComplex.moduleCatCohomologyClassOfIso` specializes this class map to the cocycles,
 with its surjectivity and its kernel described by the coboundaries.  When the differential is a
@@ -102,7 +105,7 @@ subspace, such as fundamental chains of a manifold with boundary.
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace HomologicalComplex
 
@@ -342,6 +345,12 @@ lemma moduleCat_iCycles_cyclesMap_apply {L : HomologicalComplex (ModuleCat R) c}
     (z : K.cycles n) : L.iCycles n (cyclesMap φ n z) = φ.f n (K.iCycles n z) := by
   rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply]
 
+/-- A chain map of complexes of modules sends the boundary `K.toCycles m n y` to the boundary of
+the image of `y`, on elements: the element form of `HomologicalComplex.toCycles_cyclesMap`. -/
+lemma moduleCat_cyclesMap_toCycles_apply {L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L)
+    (m : ι) (y : K.X m) : cyclesMap φ n (K.toCycles m n y) = L.toCycles m n (φ.f m y) :=
+  ConcreteCategory.congr_hom (toCycles_cyclesMap φ m n) y
+
 variable {n} in
 /-- A degree-`n` cycle of a homological complex of modules has zero homology class exactly when it
 is a boundary, the image of an element of the term of degree `c.prev n`. -/
@@ -490,6 +499,19 @@ lemma moduleCatKerHomologyClass_surjective :
     Function.Surjective (K.moduleCatKerHomologyClass hm) := by
   rw [moduleCatKerHomologyClass]
   exact K.moduleCatHomologyClass_surjective hm _ _ fun x hx ↦ ⟨⟨x, hx⟩, rfl⟩
+
+include hm in
+/-- If the outgoing differential `K.d n m` is injective, the homology in degree `n` vanishes: the
+only cycle is zero. -/
+theorem isZero_homology_of_injective_d (h : Function.Injective (K.d n m).hom) :
+    IsZero (K.homology n) := by
+  rw [ModuleCat.isZero_iff_subsingleton]
+  refine ⟨fun a b ↦ ?_⟩
+  obtain ⟨a, rfl⟩ := K.moduleCatKerHomologyClass_surjective hm a
+  obtain ⟨b, rfl⟩ := K.moduleCatKerHomologyClass_surjective hm b
+  congr 1
+  exact Subtype.ext <| h <|
+    (LinearMap.mem_ker.1 a.property).trans (LinearMap.mem_ker.1 b.property).symm
 
 variable {K} in
 /-- A chain map `φ` sends the homology class of an element `z` of the kernel of `K.d n m` to the
@@ -749,6 +771,13 @@ lemma homologyMap_homologyπ_moduleCatCyclesMk {L : HomologicalComplex (ModuleCa
   apply L.moduleCat_iCycles_injective
   rw [moduleCat_iCycles_cyclesMap_apply, iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk]
 
+variable {K} in
+/-- A chain map of complexes of modules that is a monomorphism in degree `j` reflects the vanishing
+of the differential `K.X i ⟶ K.X j`: `x` is killed by it as soon as its image is. -/
+lemma d_apply_eq_zero_of_d_f_apply_eq_zero {L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L)
+    {i j : ι} [Mono (φ.f j)] {x : K.X i} (hx : L.d i j ((φ.f i).hom x) = 0) : K.d i j x = 0 :=
+  (ModuleCat.mono_iff_injective (φ.f j)).1 inferInstance (by rw [map_zero, ← Hom.comm_apply, hx])
+
 /-- **Local nilpotence passes to homology.** Let `φ` be a family of chain endomorphisms of a
 complex of modules. If every element of the degree-`n` term is killed by all sufficiently long
 composites of the maps `(φ i).f n`, then every degree-`n` homology class is killed by all
@@ -764,6 +793,30 @@ theorem iSup_wordKer_homologyMap_eq_top {κ : Type*} (φ : κ → (K ⟶ K))
   exact Module.End.iSup_wordKer_eq_top_of_injective
     (fun i ↦ by rw [← ModuleCat.hom_comp, cyclesMap_i, ModuleCat.hom_comp])
     (K.moduleCat_iCycles_injective n) h
+
+/-- Components of a biproduct cochain lift have the prescribed coboundaries and difference. -/
+lemma moduleCat_exists_components_of_biprod_lift {R : Type*} [Ring R]
+    {A B C D : CochainComplex (ModuleCat R) ℕ}
+    (r : A ⟶ C) (b : A ⟶ D) (t : C ⟶ B) (l : D ⟶ B)
+    (p : ℕ) (x : (C ⊞ D).X p) (z : A.X (p + 1)) (a : B.X p)
+    (hx : ((C ⊞ D).d p (p + 1)).hom x = ((biprod.lift r b).f (p + 1)).hom z)
+    (ha : ((biprod.desc t (-l)).f p).hom x = a) :
+    ∃ (u : C.X p) (v : D.X p),
+      (C.d p (p + 1)).hom u = (r.f (p + 1)).hom z ∧
+      (D.d p (p + 1)).hom v = (b.f (p + 1)).hom z ∧
+      (t.f p).hom u - (l.f p).hom v = a := by
+  refine ⟨((biprod.fst : C ⊞ D ⟶ C).f p).hom x,
+    ((biprod.snd : C ⊞ D ⟶ D).f p).hom x, ?_, ?_, ?_⟩
+  · have h := congrArg (((biprod.fst : C ⊞ D ⟶ C).f (p + 1)).hom) hx
+    simpa only [← ConcreteCategory.comp_apply, ← HomologicalComplex.Hom.comm,
+      ← HomologicalComplex.comp_f, biprod.lift_fst] using h
+  · have h := congrArg (((biprod.snd : C ⊞ D ⟶ D).f (p + 1)).hom) hx
+    simpa only [← ConcreteCategory.comp_apply, ← HomologicalComplex.Hom.comm,
+      ← HomologicalComplex.comp_f, biprod.lift_snd] using h
+  · simpa only [biprod.desc_eq, Preadditive.comp_neg, ← sub_eq_add_neg,
+      HomologicalComplex.sub_f_apply, ModuleCat.hom_sub, LinearMap.sub_apply,
+      HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] using ha
+
 
 end HomologicalComplex
 
