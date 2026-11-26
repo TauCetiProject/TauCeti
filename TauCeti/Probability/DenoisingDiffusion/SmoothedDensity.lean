@@ -110,7 +110,7 @@ private theorem measurable_pdf_sub_smul (y : EuclideanSpace ℝ ι) :
   (measurable_multivariateGaussianPDFReal _ _).comp (by fun_prop)
 
 /-- Against a finite measure the integrand of the smoothed density is integrable. -/
-private theorem integrable_pdf_sub_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
+theorem integrable_pdf_sub_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
     Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x)) μ₀ := by
   obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le
