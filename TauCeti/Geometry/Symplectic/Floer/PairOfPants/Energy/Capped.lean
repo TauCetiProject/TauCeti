@@ -72,7 +72,12 @@ family over compact windows of `R` in the plane chart follows (in the namespace 
 interior compactness at the long-neck end `R → ∞` on the pair of pants and the caps of the PSS
 planes (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`, and in a closed
 manifold `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck.Closed`).
-Compactness near the pole `∞` is still to be proved.
+Compactness near the pole `∞`, in the chart `y ↦ y⁻¹`, is proved in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capped`
+(in the namespace `SymplecticForm`,
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison_inv`,
+and in a closed manifold, in the namespace `SmoothTwoForm.IsNondegenerate`,
+`exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappedComparison_inv`).
 
 ## Main results
 

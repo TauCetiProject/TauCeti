@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck
-import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Closed
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Manifold
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
