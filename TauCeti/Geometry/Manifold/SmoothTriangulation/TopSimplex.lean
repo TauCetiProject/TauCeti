@@ -34,6 +34,9 @@ the inverse function theorem only asks for an interior point of the source, here
 
 ## Main results
 
+* `TauCeti.IsSimplexImmersion.exists_isLocalDiffeomorphAt`: a `Cⁿ` immersion of a simplex with
+  `dim E + 1` vertices, read on the plane of the simplex through a point of its open simplex, is a
+  `Cⁿ` local diffeomorphism at that point.
 * `TauCeti.IsSmoothTriangulation.isOpen_image_setOf_support_eq`: the image `κ(σ°)` of the open
   simplex of a top simplex is open.
 * `TauCeti.IsSmoothTriangulation.exists_isLocalDiffeomorphAt`: read on the plane of a top simplex
@@ -54,15 +57,6 @@ variable {ι : Type*}
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞}
   {K : AbstractSimplicialComplex ι} {κ : Realization K ≃ₜ M}
-
-namespace IsSmoothTriangulation
-
-/-- In a smooth triangulation of a manifold modelled on a finite-dimensional space `E`, the image
-of the open simplex of a face with `dim E + 1` vertices is open. -/
-theorem isOpen_image_setOf_support_eq (h : IsSmoothTriangulation I n κ) {σ : Finset ι}
-    (hσ : σ ∈ K) (hcard : σ.card = finrank ℝ E + 1) :
-    IsOpen (κ '' {x : Realization K | x.val.support = σ}) :=
-  κ.isOpenMap _ (K.isOpen_setOf_support_eq_of_maximal (h.maximal_of_card_eq hσ hcard))
 
 /-- The points of the plane through `w₀` parallel to the simplex on `σ` with positive
 coordinates form an open set of directions. -/
@@ -87,30 +81,23 @@ private theorem contMDiff_const_add_coe {σ : Finset ι} (w₀ : σ → ℝ) :
       (fun v : singleParityCheckCode ℝ σ => w₀ + (v : σ → ℝ)) :=
   ContDiff.contMDiff (contDiff_const.add (singleParityCheckCode ℝ σ).subtypeL.contDiff)
 
-/-- The barycentric coordinates of a point of the open simplex on `σ` are positive on `σ` and
-sum to one there. -/
-private theorem coordinates_pos_and_sum_eq_one {σ : Finset ι} {x₀ : Realization K}
-    (hx₀ : x₀.val.support = σ) :
-    (∀ a : σ, 0 < x₀.val a) ∧ ∑ a : σ, x₀.val a = 1 :=
-  ⟨fun a => Realization.pos_of_mem_support K x₀ (hx₀ ▸ a.property),
-    (Finset.sum_coe_sort σ (fun a => x₀.val a)).trans
-      (Realization.sum_eq_one_of_support_subset K x₀ hx₀.le)⟩
+namespace IsSimplexImmersion
 
-/-- A map from the open simplex on `σ` to a manifold modelled on `E`, `Cⁿ` within the closed
-simplex with derivatives injective on the directions of the simplex, is a `Cⁿ` local
-diffeomorphism at each point of the open simplex when `|σ| = dim E + 1`, read on the plane of the
-simplex through that point. -/
-private theorem isLocalDiffeomorphAt_comp_add [IsManifold I n M] {σ : Finset ι}
-    {F : (σ → ℝ) → M}
-    (hF : ContMDiffOn 𝓘(ℝ, σ → ℝ) I n F (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights))
-    (hF' : ∀ t : Convexity.StdSimplex ℝ σ, ∃ F' : (σ → ℝ) →L[ℝ] E,
-      HasMFDerivWithinAt 𝓘(ℝ, σ → ℝ) I F
-        (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) t.weights F' ∧
-        ∀ v : σ → ℝ, ∑ a, v a = 0 → F' v = 0 → v = 0)
-    (hn : 1 ≤ n) (hcard : σ.card = finrank ℝ E + 1) {w₀ : σ → ℝ} (hpos : ∀ a, 0 < w₀ a)
+/-- **A top-dimensional simplex immersion is a local diffeomorphism on its open simplex.** Let
+`g` be a `Cⁿ` immersion (`1 ≤ n`) of the closed simplex on `σ` into a manifold modelled on `E`,
+with `|σ| = dim E + 1`, and let `w₀` be a point of the open simplex (positive coordinates summing
+to one). Then `g` has a coordinate form `F` on the closed simplex such that `v ↦ F (w₀ + v)`, on
+the directions `v` of the plane of `σ` (the vectors of `σ → ℝ` with coordinate sum zero), is a
+`Cⁿ` local diffeomorphism at `0`. -/
+theorem exists_isLocalDiffeomorphAt [IsManifold I n M] {σ : Finset ι}
+    {g : StandardSimplex σ → M} (h : IsSimplexImmersion I n g) (hn : 1 ≤ n)
+    (hcard : σ.card = finrank ℝ E + 1) {w₀ : σ → ℝ} (hpos : ∀ a, 0 < w₀ a)
     (hw₀ : ∑ a, w₀ a = 1) :
-    IsLocalDiffeomorphAt 𝓘(ℝ, singleParityCheckCode ℝ σ) I n
-      (fun v : singleParityCheckCode ℝ σ => F (w₀ + (v : σ → ℝ))) 0 := by
+    ∃ F : (σ → ℝ) → M, (∀ x : StandardSimplex σ, F (fun a => x.val a) = g x) ∧
+      IsLocalDiffeomorphAt 𝓘(ℝ, singleParityCheckCode ℝ σ) I n
+        (fun v : singleParityCheckCode ℝ σ => F (w₀ + (v : σ → ℝ))) 0 := by
+  obtain ⟨F, hFg, hF, hF'⟩ := isSimplexImmersion_iff.mp h
+  refine ⟨F, hFg, ?_⟩
   set V := singleParityCheckCode ℝ σ
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   have h0U : (0 : V) ∈ {v : V | ∀ a, 0 < (w₀ + v) a} := by simpa using hpos
@@ -142,6 +129,26 @@ private theorem isLocalDiffeomorphAt_comp_add [IsManifold I n M] {σ : Finset ι
   · rw [finrank_singleParityCheckCode, Fintype.card_coe]
     omega
 
+end IsSimplexImmersion
+
+namespace IsSmoothTriangulation
+
+/-- In a smooth triangulation of a manifold modelled on a finite-dimensional space `E`, the image
+of the open simplex of a face with `dim E + 1` vertices is open. -/
+theorem isOpen_image_setOf_support_eq (h : IsSmoothTriangulation I n κ) {σ : Finset ι}
+    (hσ : σ ∈ K) (hcard : σ.card = finrank ℝ E + 1) :
+    IsOpen (κ '' {x : Realization K | x.val.support = σ}) :=
+  κ.isOpenMap _ (K.isOpen_setOf_support_eq_of_maximal (h.maximal_of_card_eq hσ hcard))
+
+/-- The barycentric coordinates of a point of the open simplex on `σ` are positive on `σ` and
+sum to one there. -/
+private theorem coordinates_pos_and_sum_eq_one {σ : Finset ι} {x₀ : Realization K}
+    (hx₀ : x₀.val.support = σ) :
+    (∀ a : σ, 0 < x₀.val a) ∧ ∑ a : σ, x₀.val a = 1 :=
+  ⟨fun a => Realization.pos_of_mem_support K x₀ (hx₀ ▸ a.property),
+    (Finset.sum_coe_sort σ (fun a => x₀.val a)).trans
+      (Realization.sum_eq_one_of_support_subset K x₀ hx₀.le)⟩
+
 /-- **A smooth triangulation is a local diffeomorphism on each open top simplex.** In a `Cⁿ`
 triangulation `κ` (`1 ≤ n`) of a manifold modelled on a finite-dimensional space `E`, let `σ` be
 a face with `dim E + 1` vertices and `x₀` a point of its open simplex. Then `κ` has a coordinate
@@ -155,9 +162,8 @@ theorem exists_isLocalDiffeomorphAt [IsManifold I n M] (h : IsSmoothTriangulatio
       (∀ x : StandardSimplex σ, F (fun a => x.val a) = κ (faceInclusion K ⟨σ, hσ⟩ x)) ∧
         IsLocalDiffeomorphAt 𝓘(ℝ, singleParityCheckCode ℝ σ) I n
           (fun v : singleParityCheckCode ℝ σ => F ((fun a : σ => x₀.val a) + (v : σ → ℝ))) 0 := by
-  obtain ⟨F, hFg, hF, hF'⟩ := isSimplexImmersion_iff.mp (isSmoothTriangulation_iff.mp h ⟨σ, hσ⟩)
   obtain ⟨hpos, hw₀⟩ := coordinates_pos_and_sum_eq_one hx₀
-  exact ⟨F, hFg, isLocalDiffeomorphAt_comp_add hF hF' hn hcard hpos hw₀⟩
+  exact (isSmoothTriangulation_iff.mp h ⟨σ, hσ⟩).exists_isLocalDiffeomorphAt hn hcard hpos hw₀
 
 /-- The barycentric coordinates of `κ⁻¹` invert the coordinate form `F` of `κ` on a closed
 simplex. -/
