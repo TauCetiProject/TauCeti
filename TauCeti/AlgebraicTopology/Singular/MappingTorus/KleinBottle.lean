@@ -41,8 +41,10 @@ conjugation, so the equivalence involves no choice. Loops `t ↦ [t, 1]` land in
 `ℤ × 0`
 (`TauCeti.KleinBottle.singularHomologyOneLinearEquiv_singularHomologyMap_of_apply_eq_mk_one`).
 The `ℤ` coordinate of a class is the Wang class of its projection to the base circle
-(`TauCeti.KleinBottle.singularHomologyOneLinearEquiv_apply_fst`), and the fibre circle carries the
-torsion summand `0 × ℤ/2` (`TauCeti.KleinBottle.map_range_singularHomologyMap_mk_zero`).
+(`TauCeti.KleinBottle.singularHomologyOneLinearEquiv_apply_fst`). The fibre circle carries the
+torsion summand `0 × ℤ/2` (`TauCeti.KleinBottle.map_range_singularHomologyMap_mk_zero`): a class of
+`H₁(S¹; ℤ) ≅ ℤ` with value `n` goes to `(0, n mod 2)`
+(`TauCeti.KleinBottle.singularHomologyOneLinearEquiv_singularHomologyMap_mk_zero`).
 
 In degree two, `𝟙 - φ_*` is injective on `H₁(S¹; ℤ)`, so the Wang connecting morphism vanishes and
 `H₂(K; ℤ)` is a quotient of `H₂(S¹; ℤ) = 0`.
@@ -371,12 +373,17 @@ private theorem singularHomologyOneLinearEquiv_apply (x) :
           isoMappingTorus.hom).hom x) :=
   rfl
 
-/-- The fibre circle `z ↦ [0, z]` of the Klein bottle, read in `H₁(K; ℤ) ≃ ℤ × ℤ/2`. -/
-private theorem singularHomologyOneLinearEquiv_singularHomologyMap_mk_zero (y) :
-    singularHomologyOneLinearEquiv (((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
+/-- **The fibre circle of the Klein bottle in `H₁`.** Under `H₁(K; ℤ) ≃ ℤ × ℤ/2`, the image of
+`y ∈ H₁(S¹; ℤ)` under the fibre inclusion `z ↦ [0, z]` is `(0, n mod 2)`, where `n ∈ ℤ` is the
+class of `y` under `H₁(S¹; ℤ) ≅ ℤ`
+(`ContinuousMap.HomotopyEquiv.singularHomologySphereIso`). -/
+@[simp]
+theorem singularHomologyOneLinearEquiv_singularHomologyMap_mk_zero (y) :
+    singularHomologyOneLinearEquiv ((((singularHomologyFunctor (ModuleCat.{0} ℤ) 1).obj
         (ModuleCat.of ℤ ℤ)).map (TopCat.ofHom ⟨mk 0,
-          (SmoothMappingTorus.isClosedEmbedding_mk _ 0).continuous⟩) y) =
-      (0, (circleHomologyOneLinearEquiv y : ZMod 2)) := by
+          (SmoothMappingTorus.isClosedEmbedding_mk _ 0).continuous⟩)).hom y) =
+      (0, (((ContinuousMap.HomotopyEquiv.refl _).singularHomologySphereIso (ModuleCat.of ℤ ℤ)
+        Complex.finrank_real_complex le_rfl).hom.hom y : ZMod 2)) := by
   have h : TopCat.ofHom ⟨mk 0, (SmoothMappingTorus.isClosedEmbedding_mk _ 0).continuous⟩ ≫
       isoMappingTorus.hom =
         TopCat.ofHom (MappingTorus.incl conjCircleDiffeomorph.toHomeomorph.symm) :=
@@ -465,7 +472,9 @@ theorem map_range_singularHomologyMap_mk_zero :
   · rintro ⟨c, h⟩
     obtain ⟨n, rfl⟩ := ZMod.intCast_surjective c
     exact ⟨_, ⟨circleHomologyOneLinearEquiv.symm n, rfl⟩,
-      (singularHomologyOneLinearEquiv_singularHomologyMap_mk_zero _).trans (by simp [h])⟩
+      (singularHomologyOneLinearEquiv_singularHomologyMap_mk_zero _).trans <|
+        (congrArg (fun m : ℤ ↦ ((0 : ℤ), (m : ZMod 2)))
+          (circleHomologyOneLinearEquiv.apply_symm_apply n)).trans h⟩
 
 /-- **Higher homology of the Klein bottle.** `Hₖ(K; ℤ) = 0` for `k ≥ 2`. -/
 theorem isZero_singularHomology_of_two_le {k : ℕ} (hk : 2 ≤ k) :
