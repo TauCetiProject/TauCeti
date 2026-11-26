@@ -232,8 +232,8 @@ theorem blockDiagonalGL_mul_mul_inv_mem (g : ι → GL n R) {u : GL (n × ι) R}
     (hu : u ∈ unitriangularSubgroup (Prod.snd : n × ι → ι) R) :
     blockDiagonalGL n ι R g * u * (blockDiagonalGL n ι R g)⁻¹ ∈
       unitriangularSubgroup (Prod.snd : n × ι → ι) R := by
-  have hd : (blockDiagonalGL n ι R g)⁻¹ ∈ blockTriangularSubgroup (Prod.snd : n × ι → ι) :=
-    inv_mem (by simpa [mem_blockTriangularSubgroup] using blockTriangular_blockDiagonal _)
+  have hd : (blockDiagonalGL n ι R g)⁻¹ ∈ blockTriangularGroup R (Prod.snd : n × ι → ι) :=
+    inv_mem (by simpa [mem_blockTriangularGroup_iff] using blockTriangular_blockDiagonal _)
   simpa using conj_mem_unitriangularSubgroup hd hu
 
 theorem blockDiagonalGL_mem_normalizer (g : ι → GL n R) :

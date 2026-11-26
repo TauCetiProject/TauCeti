@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.GroupTheory.Index
 -- `Matrix.GeneralLinearGroup.map_surjective` lifts invertible matrices modulo `I`.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lift
+-- `TauCeti.parahoricSubgroup` gives the general parahoric congruence subgroup.
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Triangular
 -- `TauCeti.UpperTriangularGroup.map_surjective` lifts invertible upper-triangular matrices.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Lift
 

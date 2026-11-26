@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Triangular
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ColumnRowFixing
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 
 /-!
@@ -231,15 +232,16 @@ def besselU : Subgroup (unitaryGroupOf (splitGram ϱ T)) :=
 
 /-- The isometries of the split form of `T` that fix each vector of the frame. -/
 def frameFixingSubgroup : Subgroup (unitaryGroupOf (splitGram ϱ T)) :=
-  (agreeWithOneOn (fun _ j : BesselIndex ϱ κ ↦ j ∈ Set.range besselFrame) R
-    fun _ _ _ hj ↦ Or.inr hj).subgroupOf _
+  (columnRowFixingSubgroup R (Set.range besselFrame) ∅).subgroupOf _
 
 @[simp] theorem mem_frameFixingSubgroup {g : unitaryGroupOf (splitGram ϱ T)} :
     g ∈ frameFixingSubgroup ϱ T ↔
       ∀ i j : BesselIndex ϱ κ, j ∈ Set.range besselFrame →
         ((g : GL (BesselIndex ϱ κ) R) : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) i j =
           (1 : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) i j := by
-  simp only [frameFixingSubgroup, Subgroup.mem_subgroupOf, mem_agreeWithOneOn]
+  simp only [frameFixingSubgroup, Subgroup.mem_subgroupOf, mem_columnRowFixingSubgroup_iff,
+    Set.notMem_empty, false_implies, implies_true, and_true]
+  exact ⟨fun h i j hj ↦ h j hj i, fun h j hj i ↦ h i j hj⟩
 
 /-- The elements of the unipotent Bessel group `𝖴` that fix each vector of the frame. -/
 def besselU0 : Subgroup (unitaryGroupOf (splitGram ϱ T)) :=
@@ -251,15 +253,16 @@ def besselU0 : Subgroup (unitaryGroupOf (splitGram ϱ T)) :=
 /-- The group `H_l` of the isometries of the split form of `T` that fix every basis vector of
 floor `< l`. -/
 def floorFixingSubgroup (l : ℕ) : Subgroup (unitaryGroupOf (splitGram ϱ T)) :=
-  (agreeWithOneOn (fun _ j : BesselIndex ϱ κ ↦ besselFloor j < l) R
-    fun _ _ _ hj ↦ Or.inr hj).subgroupOf _
+  (columnRowFixingSubgroup R {j | besselFloor j < l} ∅).subgroupOf _
 
 @[simp] theorem mem_floorFixingSubgroup {l : ℕ} {g : unitaryGroupOf (splitGram ϱ T)} :
     g ∈ floorFixingSubgroup ϱ T l ↔
       ∀ i j : BesselIndex ϱ κ, besselFloor j < l →
         ((g : GL (BesselIndex ϱ κ) R) : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) i j =
           (1 : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) i j := by
-  simp only [floorFixingSubgroup, Subgroup.mem_subgroupOf, mem_agreeWithOneOn]
+  simp only [floorFixingSubgroup, Subgroup.mem_subgroupOf, mem_columnRowFixingSubgroup_iff,
+    Set.mem_ofPred_eq, Set.notMem_empty, false_implies, implies_true, and_true]
+  exact ⟨fun h i j hj ↦ h j hj i, fun h j hj i ↦ h i j hj⟩
 
 theorem besselU0_le_besselU : besselU0 ϱ T ≤ besselU ϱ T := inf_le_left
 

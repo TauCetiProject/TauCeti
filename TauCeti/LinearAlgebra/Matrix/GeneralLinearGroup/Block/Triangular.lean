@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 public import TauCeti.LinearAlgebra.Matrix.LDU
 
 /-!
@@ -19,8 +20,6 @@ standard subgroups of `GL n R` cut out by entry conditions.
 
 ## Main definitions
 
-* `TauCeti.blockTriangularSubgroup lev`: the subgroup of `GL n R` of block upper triangular
-  matrices for a level function `lev`.
 * `TauCeti.agreeWithOneOn r R h_split`: the subgroup of invertible matrices agreeing with `1` at
   the entries `(i, j)` with `r i j`, for a relation `r` such that `r i j` implies `r i k` or
   `r k j`.
@@ -34,7 +33,7 @@ standard subgroups of `GL n R` cut out by entry conditions.
 
 ## Main results
 
-* `TauCeti.unitriangularSubgroup_le_blockTriangularSubgroup`: block upper unitriangular matrices
+* `TauCeti.unitriangularSubgroup_le_blockTriangularGroup`: block upper unitriangular matrices
   are block upper triangular.
 * `TauCeti.conj_mem_unitriangularSubgroup`: block upper triangular matrices normalize the block
   upper unitriangular subgroup.
@@ -64,16 +63,6 @@ section Triangular
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {α : Type*} [LinearOrder α] (lev : n → α)
 
-/-- The subgroup of `GL n R` of block upper triangular matrices for the level function `lev`. -/
-def blockTriangularSubgroup : Subgroup (GL n R) where
-  carrier := {g | (g : Matrix n n R).BlockTriangular lev}
-  mul_mem' := BlockTriangular.mul
-  one_mem' := blockTriangular_one
-  inv_mem' := by simp_all [blockTriangular_inv_of_blockTriangular]
-
-@[simp] theorem mem_blockTriangularSubgroup {g : GL n R} :
-    g ∈ blockTriangularSubgroup lev ↔ (g : Matrix n n R).BlockTriangular lev := .rfl
-
 open scoped Classical in
 /-- For a relation `r` such that `r i j` implies `r i k` or `r k j` for every `k`, the subgroup
 of invertible matrices that agree with the identity matrix at every entry `(i, j)` with
@@ -85,8 +74,11 @@ def agreeWithOneOn (r : n → n → Prop) (R : Type*) [CommRing R]
     -- otherwise `y⁻¹ k j = 0`, as `y` is block triangular for the level function that is `0`
     -- where `r i ·` holds and `1` elsewhere.
     intro x hx y hy i j hij
-    have hy_inv : y⁻¹ ∈ blockTriangularSubgroup fun k : n ↦ if r i k then 0 else 1 := by
-      refine (blockTriangularSubgroup _).inv_mem fun a b hab ↦ ?_
+    have hy_inv : ((y⁻¹ : GL n R) : Matrix n n R).BlockTriangular
+        fun k : n ↦ if r i k then (0 : ℕ) else 1 := by
+      refine mem_blockTriangularGroup_iff.1 ((blockTriangularGroup R
+          (fun k : n ↦ if r i k then (0 : ℕ) else 1)).inv_mem
+        (mem_blockTriangularGroup_iff.2 fun a b hab ↦ ?_))
       obtain ⟨hib, hia⟩ : r i b ∧ ¬ r i a := by grind
       have hab_ne : a ≠ b := fun h_eq ↦ hia (by rwa [h_eq])
       exact (hy a b ((h_split i a b hib).resolve_left hia)).trans (one_apply_ne hab_ne)
@@ -115,26 +107,29 @@ def unitriangularSubgroup (R : Type*) [CommRing R] : Subgroup (GL n R) where
 @[simp] theorem mem_unitriangularSubgroup {g : GL n R} :
     g ∈ unitriangularSubgroup lev R ↔ (g : Matrix n n R).BlockUnitriangular lev := .rfl
 
-theorem unitriangularSubgroup_le_blockTriangularSubgroup :
-    unitriangularSubgroup lev R ≤ blockTriangularSubgroup lev := fun _ h ↦ h.blockTriangular
+theorem unitriangularSubgroup_le_blockTriangularGroup :
+    unitriangularSubgroup lev R ≤ blockTriangularGroup R lev :=
+  fun _ h ↦ mem_blockTriangularGroup_iff.2 h.blockTriangular
 
 variable {lev}
 
 /-- If `d` is block upper triangular and `u` is block upper unitriangular for `lev`, then
 `d⁻¹ * u * d` is block upper unitriangular for `lev`. -/
-theorem conj_mem_unitriangularSubgroup {u d : GL n R} (hd : d ∈ blockTriangularSubgroup lev)
+theorem conj_mem_unitriangularSubgroup {u d : GL n R} (hd : d ∈ blockTriangularGroup R lev)
     (hu : u ∈ unitriangularSubgroup lev R) : d⁻¹ * u * d ∈ unitriangularSubgroup lev R := by
   -- In a nonzero term `d⁻¹ i k * u k l * d l j` with `lev j ≤ lev i` we have
   -- `lev l ≤ lev j ≤ lev i ≤ lev k`, so `u k l` is the entry of `1`.
   refine blockUnitriangular_of_apply_eq_one_apply_of_not_lt fun i j hij ↦ ?_
-  have hd_inv := (blockTriangularSubgroup lev).inv_mem hd
+  have hd_bt : (d : Matrix n n R).BlockTriangular lev := mem_blockTriangularGroup_iff.1 hd
+  have hd_inv : ((d⁻¹ : GL n R) : Matrix n n R).BlockTriangular lev :=
+    mem_blockTriangularGroup_iff.1 ((blockTriangularGroup R lev).inv_mem hd)
   have hu_entry : ∀ k l : n, lev l ≤ lev k → u.val k l = (1 : Matrix n n R) k l := fun k l h ↦ by
     rcases h.lt_or_eq with hlt | heq
     · rw [hu.blockTriangular hlt, one_apply_ne fun hkl ↦ hlt.ne (congrArg lev hkl.symm)]
     · exact hu.apply_of_eq heq.symm
   have h_term : ∀ k l : n, d⁻¹.val i k * u.val k l * d.val l j =
       d⁻¹.val i k * (1 : Matrix n n R) k l * d.val l j := fun k l ↦ by
-    grind [@hd_inv i k, @hd l j, hu_entry k l, not_le, not_lt]
+    grind [@hd_inv i k, @hd_bt l j, hu_entry k l, not_le, not_lt]
   calc (d⁻¹ * u * d).val i j = (d⁻¹.val * (1 : Matrix n n R) * d.val) i j := by
         simp only [Units.val_mul, Matrix.mul_apply, Finset.sum_mul, h_term]
     _ = (1 : Matrix n n R) i j := by simp
@@ -164,7 +159,7 @@ the invertible matrices whose entry `(i, j)` lies in `I` whenever `τ i < τ j`.
 integers of a non-archimedean local field and its maximal ideal this is the standard parahoric
 subgroup attached to `τ`. -/
 def parahoricSubgroup [LinearOrder α] (I : Ideal R) : Subgroup (GL n R) :=
-  (blockTriangularSubgroup (OrderDual.toDual ∘ τ)).comap
+  (blockTriangularGroup (R ⧸ I) (OrderDual.toDual ∘ τ)).comap
     (GeneralLinearGroup.map (Ideal.Quotient.mk I))
 
 @[simp] theorem mem_parahoricSubgroup [LinearOrder α] (I : Ideal R) {g : GL n R} :
