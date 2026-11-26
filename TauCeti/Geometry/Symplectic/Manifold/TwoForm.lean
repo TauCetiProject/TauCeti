@@ -72,6 +72,9 @@ example.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv`: such a map with
   surjective differential carries a tamed almost complex structure to one tamed by the constant
   form.
+* `TauCeti.SmoothTwoForm.isNondegenerate_const_iff`: the constant two-form of an alternating
+  continuous bilinear form `B`, in any dimension, is nondegenerate exactly when `B` separates
+  points on the left.
 * `TauCeti.SymplecticForm.constSmooth`: a symplectic form as a constant smooth two-form, which is
   symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`), together with its `mvfderiv` and
   partial-diffeomorphism pullback characterizations
@@ -449,6 +452,28 @@ theorem IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv (h : form.IsNondege
 
 end Chart
 
+section Const
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
+
+/-- The constant two-form of an alternating continuous bilinear form `B` is nondegenerate exactly
+when `B` separates points on the left: no nonzero vector is `B`-orthogonal to everything. The
+tangent spaces are identified with `V` by `NormedSpace.fromTangentSpace`. -/
+theorem isNondegenerate_const_iff (B : V →L[ℝ] V →L[ℝ] ℝ) (hB : ∀ v, B v v = 0) :
+    (const B).IsNondegenerate ↔ ∀ v, (∀ w, B v w = 0) → v = 0 := by
+  rw [isNondegenerate_iff_separatingLeft]
+  refine ⟨fun h v hv ↦ ?_, fun h x v hv ↦ ?_⟩
+  · simpa using h 0 ((NormedSpace.fromTangentSpace 0).symm v) fun w ↦ by
+      rw [const_apply B hB, ContinuousLinearEquiv.apply_symm_apply]
+      exact hv _
+  · refine (NormedSpace.fromTangentSpace x).injective ?_
+    rw [map_zero]
+    exact h _ fun w ↦ by
+      simpa only [const_apply B hB, ContinuousLinearEquiv.apply_symm_apply] using
+        hv ((NormedSpace.fromTangentSpace x).symm w)
+
+end Const
+
 end SmoothTwoForm
 
 namespace SymplecticForm
@@ -496,18 +521,10 @@ theorem eval₂_constSmooth_mfderiv_eq (omegaForm : SymplecticForm V) (f : M →
 /-- A constant smooth symplectic form is fiberwise nondegenerate. -/
 @[simp]
 lemma isNondegenerate_constSmooth (omegaForm : SymplecticForm V) :
-    omegaForm.constSmooth.IsNondegenerate := fun x => by
-  have hrefl := (SmoothForm.isAlt_bilinFormAt omegaForm.constSmooth x).isRefl
-  apply (LinearMap.IsRefl.nondegenerate_iff_separatingLeft hrefl).mpr
-  intro v hv
-  apply (NormedSpace.fromTangentSpace x).injective
-  rw [(NormedSpace.fromTangentSpace x).map_zero]
-  apply (LinearMap.IsRefl.nondegenerate_iff_separatingLeft omegaForm.isRefl).mp
-    omegaForm.nondegenerate
-  intro w
-  have hw := hv ((NormedSpace.fromTangentSpace x).symm w)
-  simpa only [SmoothForm.bilinFormAt_apply, fromTangentSpace_constSmooth_apply,
-    ContinuousLinearEquiv.apply_symm_apply] using hw
+    omegaForm.constSmooth.IsNondegenerate :=
+  (SmoothTwoForm.isNondegenerate_const_iff omegaForm.toBilinForm.toContinuousBilinearMap
+    omegaForm.isAlt).2 fun v hv ↦ omegaForm.nondegenerate.1 v fun w ↦ by
+      simpa only [LinearMap.toContinuousBilinearMap_apply] using hv w
 
 /-- On every tangent fiber, the symplectic form of a constant smooth symplectic form is the
 defining algebraic form. -/

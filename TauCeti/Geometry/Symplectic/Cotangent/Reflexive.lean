@@ -61,7 +61,10 @@ is not reflexive (`ZeroAtInftyContinuousMap.not_surjective_inclusionInDoubleDual
 basic example: the canonical form on `c₀ × c₀*` is not strongly nondegenerate
 (`TauCeti.not_surjective_flat_strongDualCotangentSmoothForm_zeroAtInfty`), and its fields
 `(ω♭)⁻¹ df` all vanish
-(`TauCeti.hamiltonianVectorField_strongDualCotangentSmoothForm_zeroAtInfty_eq_zero`).
+(`TauCeti.hamiltonianVectorField_strongDualCotangentSmoothForm_zeroAtInfty_eq_zero`); in
+particular the field `(ω♭)⁻¹ df` of a coordinate `f(q, α) = q(i)` is not a Hamiltonian vector
+field of `f`
+(`TauCeti.not_isHamiltonianVectorField_strongDualCotangentSmoothForm_zeroAtInfty`).
 
 ## Main definitions
 
@@ -306,6 +309,20 @@ theorem hamiltonianVectorField_strongDualCotangentSmoothForm_zeroAtInfty_eq_zero
     (strongDualCotangentSmoothForm C₀(ι, ℝ)).hamiltonianVectorField f = 0 :=
   hamiltonianVectorField_strongDualCotangentSmoothForm_eq_zero
     (ZeroAtInftyContinuousMap.not_surjective_inclusionInDoubleDual (𝕜 := ℝ) (ι := ι)) f
+
+/-- On `c₀ = C₀(ι, ℝ)`, over an infinite discrete index type, the field `(ω♭)⁻¹ df` of the
+coordinate `f(q, α) = q(i)` is not a Hamiltonian vector field of `f`. -/
+theorem not_isHamiltonianVectorField_strongDualCotangentSmoothForm_zeroAtInfty
+    (i : ι) :
+    ¬ (strongDualCotangentSmoothForm C₀(ι, ℝ)).IsHamiltonianVectorField (fun z ↦ z.1 i)
+      ((strongDualCotangentSmoothForm C₀(ι, ℝ)).hamiltonianVectorField fun z ↦ z.1 i) := by
+  classical
+  have ha : ZeroAtInftyContinuousMap.evalCLM ℝ i ≠ (0 : StrongDual ℝ C₀(ι, ℝ)) := fun h ↦ by
+    simpa [ZeroAtInftyContinuousMap.single_apply] using
+      congrArg (fun φ ↦ φ (ZeroAtInftyContinuousMap.single i (1 : ℝ))) h
+  simpa only [ZeroAtInftyContinuousMap.evalCLM_apply] using
+    not_isHamiltonianVectorField_hamiltonianVectorField_strongDualCotangentSmoothForm
+      (ZeroAtInftyContinuousMap.not_surjective_inclusionInDoubleDual (𝕜 := ℝ) (ι := ι)) ha
 
 end ZeroAtInfty
 
