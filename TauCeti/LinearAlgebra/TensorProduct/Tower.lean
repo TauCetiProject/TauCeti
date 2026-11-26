@@ -44,8 +44,8 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
 * `TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor`: cancelling the base
   change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` sends `b ⊗ x` to `b` times the image of `x` in
   `B ⊗[R] M`.
-* `LinearMap.injective_lTensor_baseChange_iff`: direct and iterated scalar extension along a tower
-  give the same injectivity test.
+* `LinearMap.injective_lTensor_baseChange_iff`: tensoring with a module over an `R`-algebra gives
+  the same injectivity test before and after extending scalars to that algebra.
 * `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange`: the
   comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` is natural in `M` and `N`, with
   its pure-tensor form
@@ -114,11 +114,12 @@ theorem TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor 
   | tmul a m => simp [smul_tmul', Algebra.smul_def, mul_comm]
   | add x y hx hy => simp only [tmul_add, map_add, hx, hy, smul_add]
 
-/-- Along a scalar tower `R → A → B`, a linear map becomes injective over `B` if and only if it
-becomes injective after first extending scalars to `A` and then tensoring with `B`. -/
+/-- For an `A`-module `B` with compatible `R`-action, tensoring an `R`-linear map with `B` over
+`R` gives an injective map if and only if extending scalars to `A` and then tensoring with `B`
+over `A` does. -/
 theorem LinearMap.injective_lTensor_baseChange_iff {R M N : Type*} [CommSemiring R]
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
-    (A B : Type*) [CommSemiring A] [Algebra R A] [Semiring B] [Algebra A B] [Algebra R B]
+    (A B : Type*) [CommSemiring A] [Algebra R A] [AddCommMonoid B] [Module A B] [Module R B]
     [IsScalarTower R A B] :
     Function.Injective ((f.baseChange A).lTensor B) ↔ Function.Injective (f.lTensor B) := by
   let eM := AlgebraTensorModule.cancelBaseChange R A A B M
