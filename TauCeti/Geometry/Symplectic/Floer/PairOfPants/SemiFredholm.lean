@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
@@ -433,7 +434,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ J' z (u z))
     fun z hz ↦ ((hJ z (hKS hz)).continuousAt.comp₂ continuousAt_id
       (hu z (hKS hz)).continuousAt).continuousWithinAt
-  obtain ⟨M, hMq, hMc⟩ := exists_forall_norm_fderiv_le hK
+  obtain ⟨M, hMq, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun q z hz ↦ contDiffAt_endCutoff R₀ q (hKS hz)) fun z hz ↦ fderiv_coreCutoff R₀ (hKS hz)
   -- The estimate on the compact core `K`.
   have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
@@ -782,7 +783,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ J' z (u z))
     fun z hz ↦ ((hJ z (hKS hz)).continuousAt.comp₂ continuousAt_id
       (hu z (hKS hz)).continuousAt).continuousWithinAt
-  obtain ⟨M, hMq, hMc⟩ := exists_forall_norm_fderiv_le hK
+  obtain ⟨M, hMq, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun q z hz ↦ contDiffAt_endCutoff R₀ q (hKS hz)) fun z hz ↦ fderiv_coreCutoff R₀ (hKS hz)
   obtain ⟨Λ, hΛ₀, hΛ⟩ := exists_forall_le_and_inv_le hw hwc hwS R₀
   -- The estimate on the compact core `K`.

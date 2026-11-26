@@ -19,8 +19,6 @@ records the steps of the patching that do not depend on the domain.
 
 * `TauCeti.Floer.setIntegral_sobolevDensity_le_setIntegral_sobolevDensity_smul`: where a cutoff
   `f` is `1` to first order, a section `ξ` and its cut-off `f ξ` have the same energy density.
-* `TauCeti.Floer.exists_forall_norm_fderiv_le`: one constant bounds, on a compact set, the
-  derivatives of finitely many end cutoffs `β_e` and of the core cutoff `1 - ∑_e β_e`.
 * `TauCeti.SymplecticForm.integral_norm_floerLinearization_fun_smul_sq_le`: for a function `f`
   smooth on an open set `S` with `|f| ≤ 1` there, whose derivative is supported in a compact set
   `K` and bounded by `M` there, and for `‖J‖ ≤ B` along `u` on `K`, a `C²` section `ξ` with compact
@@ -70,24 +68,6 @@ theorem setIntegral_sobolevDensity_le_setIntegral_sobolevDensity_smul {W : Type*
     _ ≤ _ := setIntegral_mono_set
         ((continuous_sobolevDensity hfξ).continuousOn.integrableOn_compact hK)
         (ae_of_all _ fun z ↦ sobolevDensity_nonneg _ z) (.of_forall fun _ hz ↦ hK₀K hz)
-
-/-- **Bounding the derivatives of the cutoffs.** For a finite family of functions `β e`, `C¹` at
-the points of a compact set `K`, and a function `g` with `D g = -∑_e D β_e` on `K` (such as the
-core cutoff `1 - ∑_e β_e`), one constant `M` bounds `‖D β_e‖` for every `e` and `‖D g‖` on `K`. -/
-theorem exists_forall_norm_fderiv_le {E F ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [Fintype ι] {K : Set E} (hK : IsCompact K)
-    {β : ι → E → F} (hβ : ∀ e, ∀ z ∈ K, ContDiffAt ℝ 1 (β e) z) {g : E → F}
-    (hg : ∀ z ∈ K, fderiv ℝ g z = -∑ e, fderiv ℝ (β e) z) :
-    ∃ M, (∀ e, ∀ z ∈ K, ‖fderiv ℝ (β e) z‖ ≤ M) ∧ ∀ z ∈ K, ‖fderiv ℝ g z‖ ≤ M := by
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ ∑ e, ‖fderiv ℝ (β e) z‖) <|
-    continuousOn_finsetSum _ fun e _ z hz ↦
-      ((hβ e z hz).continuousAt_fderiv one_ne_zero).norm.continuousWithinAt
-  have hMs (z : E) (hz : z ∈ K) : ∑ e, ‖fderiv ℝ (β e) z‖ ≤ M :=
-    (Real.le_norm_self _).trans (hM z hz)
-  refine ⟨M, fun e z hz ↦ (Finset.single_le_sum (fun e' _ ↦ norm_nonneg (fderiv ℝ (β e') z))
-    (Finset.mem_univ e)).trans (hMs z hz), fun z hz ↦ ?_⟩
-  rw [hg z hz, norm_neg]
-  exact (norm_sum_le _ _).trans (hMs z hz)
 
 end TauCeti.Floer
 

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.InteriorEstimate
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.EndEstimate
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
 import TauCeti.Topology.Separation.Basic
@@ -672,7 +673,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ J' z (u z))
     fun z hz ↦ ((hJ z (hKU hz)).continuousAt.comp₂ continuousAt_id
       (hu z (hKU hz)).continuousAt).continuousWithinAt
-  obtain ⟨M, hMe, hMc⟩ := exists_forall_norm_fderiv_le hK
+  obtain ⟨M, hMe, hMc⟩ := hK.exists_forall_norm_fderiv_le
     (fun e z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e (hKU hz))
     fun z hz ↦ fderiv_movingCoreCutoff ha (by linarith) (hKU hz)
   -- The estimate on the compact core `K`.
