@@ -52,12 +52,7 @@ theorem isNilpotent_restrict_iSup_ker_pow [IsNoetherian R M]
     (h : ∀ x ∈ ⨆ n, ker (f ^ n), f x ∈ ⨆ n, ker (f ^ n) := f.mapsTo_iSup_ker_pow) :
     IsNilpotent (f.restrict h) := by
   obtain ⟨n, hn⟩ := f.eventually_iSup_ker_pow_eq.exists
-  refine ⟨n, LinearMap.ext fun x ↦ Subtype.ext ?_⟩
-  rw [Module.End.pow_restrict n]
-  have hx : (x : M) ∈ ker (f ^ n) := by
-    rw [← hn]
-    exact x.property
-  exact mem_ker.1 hx
+  exact Module.End.isNilpotent_restrict_of_le hn.le ⟨n, f.pow_restrict_ker_pow_eq_zero n⟩
 
 end Module
 

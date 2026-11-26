@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.LinearAlgebra.ExteriorPower.Basis
+import TauCeti.LinearAlgebra.LinearIndependent.Fin
 
 /-!
 # Further results on exterior powers
@@ -330,13 +331,9 @@ product when both families are linearly independent and `p`, `q` are disjoint. -
 theorem ιMulti_append_subtype_ne_zero {p q : Submodule K V} (hpq : Disjoint p q) {m n : ℕ}
     {a : Fin m → p} {b : Fin n → q} (ha : LinearIndependent K a) (hb : LinearIndependent K b) :
     ιMulti K (m + n) (Fin.append (p.subtype ∘ a) (q.subtype ∘ b)) ≠ 0 := by
-  rw [ιMulti_ne_zero_iff, ← linearIndependent_equiv finSumFinEquiv]
-  have : Fin.append (p.subtype ∘ a) (q.subtype ∘ b) ∘ finSumFinEquiv =
-      Sum.elim (p.subtype ∘ a) (q.subtype ∘ b) := by
-    funext i
-    cases i <;> simp
-  rw [this]
-  refine (ha.map' _ p.ker_subtype).sum_type (hb.map' _ q.ker_subtype) (hpq.mono ?_ ?_)
+  rw [ιMulti_ne_zero_iff]
+  refine TauCeti.linearIndependent_fin_append.2
+    ⟨ha.map' _ p.ker_subtype, hb.map' _ q.ker_subtype, hpq.mono ?_ ?_⟩
   · exact Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact (a i).property)
   · exact Submodule.span_le.2 (by rintro _ ⟨i, rfl⟩; exact (b i).property)
 
