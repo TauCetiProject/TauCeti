@@ -616,7 +616,7 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ z‖ ^ 2) := by
   obtain ⟨C', hC', T, hT, h⟩ := exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
-    isCompact_preimage_truncation (fun _ _ h ↦ preimage_mono (truncation_mono h)) one_pos
+    isCompact_preimage_truncation (fun _ _ h ↦ preimage_mono (truncation_mono h)) (r := 1)
     (G := fun q ξ ↦ ξ ∘ positiveEndChart q) fun _ hR₀ hR ↦
       ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs hKt hu hc hend hR₀ hR
   exact ⟨C', hC', T, by linarith, h⟩
@@ -961,7 +961,7 @@ theorem
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖η z‖ ^ 2) := by
   obtain ⟨C', hC', T, hT, h⟩ := exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
-    isCompact_preimage_truncation (fun _ _ h ↦ preimage_mono (truncation_mono h)) one_pos
+    isCompact_preimage_truncation (fun _ _ h ↦ preimage_mono (truncation_mono h)) (r := 1)
     (G := fun q η ↦ covectorPullback (positiveEndChart q)
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) fun _ hR₀ hR ↦
       ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint_aux hJ hKs hKt hu hc

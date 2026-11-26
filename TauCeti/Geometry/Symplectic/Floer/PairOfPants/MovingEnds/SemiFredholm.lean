@@ -159,12 +159,26 @@ private theorem equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none {z : �
     (by rw [h0, norm_zero]; positivity)
   linarith
 
+/-- A point beyond the height `0` of an end is not `0` if the end is the output end. -/
+private theorem equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord {e : Option ι} {z : ℝ × ℝ}
+    (h : 0 < movingEndCoord c a e z) : e = none → Complex.equivRealProdCLM.symm z ≠ 0 := by
+  rintro rfl
+  exact equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none h
+
 /-- Away from `0`, the longitudinal coordinate of the output end exceeds `r` exactly off the disc
 `‖w‖ ≤ 2 exp (2πr)`. -/
 private theorem lt_movingEndCoord_none_iff {r : ℝ} {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ 0) :
     r < movingEndCoord c a none z ↔ 2 * Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖ :=
   lt_fst_positiveEndCoord_inf_iff hz
+
+/-- Away from the center `c i`, the point read in the input end `i` is not the center of the end
+at `0` of the pair of pants. -/
+private theorem sub_div_ne_endCenter_zero (ha : ∀ i, a i ≠ 0) {i : ι} {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ c i) :
+    (Complex.equivRealProdCLM.symm z - c i) / a i ≠ zero.endCenter := by
+  rw [endCenter_zero]
+  exact div_ne_zero (sub_ne_zero.2 hz) (ha i)
 
 /-- Away from its center, the longitudinal coordinate of the input end `i` is at most `r` exactly
 off the open disc `‖w - c i‖ < ‖a i‖ exp (-2πr) / 2`. -/
@@ -173,12 +187,9 @@ private theorem movingEndCoord_some_le_iff (ha : ∀ i, a i ≠ 0) {i : ι} {r :
     movingEndCoord c a (some i) z ≤ r ↔
       ‖a i‖ * Real.exp (-(2 * π * r)) / 2 ≤ ‖Complex.equivRealProdCLM.symm z - c i‖ := by
   have hapos := norm_pos_iff.2 (ha i)
-  have hv : (Complex.equivRealProdCLM.symm z - c i) / a i ≠ zero.endCenter := by
-    rw [endCenter_zero]
-    exact div_ne_zero (sub_ne_zero.2 hz) (ha i)
   simp only [movingEndCoord]
-  rw [re_endCoord_le_iff (by decide) hv, endCenter_zero, sub_zero, norm_div,
-    le_div_iff₀ hapos]
+  rw [re_endCoord_le_iff (by decide) (sub_div_ne_endCenter_zero ha hz), endCenter_zero, sub_zero,
+    norm_div, le_div_iff₀ hapos]
   constructor <;> intro h <;> linarith
 
 /-- The longitudinal coordinate of an end is smooth away from the center of the end. -/
@@ -189,12 +200,9 @@ private theorem contDiffAt_movingEndCoord {e : Option ι} {z : ℝ × ℝ}
   cases e with
   | none => exact contDiffAt_fst_positiveEndCoord inf (by rw [endCenter_inf]; exact h₀ rfl)
   | some i =>
-    have hv : (Complex.equivRealProdCLM.symm z - c i) / a i ≠ zero.endCenter := by
-      rw [endCenter_zero]
-      exact div_ne_zero (sub_ne_zero.2 (hz i rfl)) (ha i)
     have haff : ContDiffAt ℝ n (fun w : ℝ × ℝ ↦ (Complex.equivRealProdCLM.symm w - c i) / a i) z :=
       ((Complex.equivRealProdCLM.symm.contDiff.contDiffAt).sub contDiffAt_const).div_const _
-    exact (contDiffAt_re_endCoord zero hv).comp z haff
+    exact (contDiffAt_re_endCoord zero (sub_div_ne_endCenter_zero ha (hz i rfl))).comp z haff
 
 /-- The longitudinal coordinate of an input end is continuous away from its center. -/
 private theorem continuousAt_movingEndCoord_some (ha : ∀ i, a i ≠ 0) {i : ι} {z : ℝ × ℝ}
@@ -211,11 +219,11 @@ private theorem movingEndCoord_le_one_of_ne (ha : ∀ i, a i ≠ 0)
     (hz : z ∈ movingEndsDomain c) {e e' : Option ι} (hee' : e ≠ e')
     (h : 1 < movingEndCoord c a e z) : movingEndCoord c a e' z ≤ 1 := by
   set w := Complex.equivRealProdCLM.symm z
+  have hexp : Real.exp (-(2 * π * 1)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
   -- An input coordinate is nonpositive off the disc of radius `‖a j‖ / 2` about the center.
   have hin (j : ι) (hj : ‖a j‖ / 2 ≤ ‖w - c j‖) : movingEndCoord c a (some j) z ≤ 1 := by
     refine (movingEndCoord_some_le_iff ha (hz j)).2 (le_trans ?_ hj)
     have := norm_nonneg (a j)
-    have : Real.exp (-(2 * π * 1)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
     nlinarith
   cases e with
   | none =>
@@ -233,7 +241,6 @@ private theorem movingEndCoord_le_one_of_ne (ha : ∀ i, a i ≠ 0)
     have hi : ‖w - c i‖ < ‖a i‖ / 2 := by
       have h' := (not_congr (movingEndCoord_some_le_iff (r := 1) ha (hz i))).1 h.not_ge
       push Not at h'
-      have : Real.exp (-(2 * π * 1)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
       nlinarith
     obtain _ | j := e'
     · refine movingEndCoord_none_le zero_le_one ?_
@@ -327,9 +334,7 @@ private theorem exists_movingEndChart_eq (ha : ∀ i, a i ≠ 0) {e : Option ι}
       positiveEndChart_endBandCoord inf h0⟩
   | some i =>
     set v := (Complex.equivRealProdCLM.symm z - c i) / a i
-    have hv : v ≠ zero.endCenter := by
-      rw [endCenter_zero]
-      exact div_ne_zero (sub_ne_zero.2 (hz i)) (ha i)
+    have hv : v ≠ zero.endCenter := sub_div_ne_endCenter_zero ha (hz i)
     refine ⟨Complex.equivRealProdCLM (zero.endCoord v), by simp [movingEndCoord, v], ?_⟩
     simp only [movingEndChart, TauCeti.Complex.realChart_apply,
       ContinuousLinearEquiv.symm_apply_apply, zero.cylindricalEndLift_endCoord hv, v,
@@ -369,6 +374,17 @@ private theorem movingEndCutoff_none_eventuallyEq_zero {R₀ : ℝ} (hR₀ : 0 �
   rw [mul_zero, Real.exp_zero, mul_one]
   exact hw.le
 
+/-- For `R₀ ≥ 0`, near every point either the cutoff of the end `e` vanishes, or the point is not
+`0` when `e` is the output end, so that the coordinate of the end is smooth there. -/
+private theorem movingEndCutoff_eventuallyEq_zero_or_ne_zero {R₀ : ℝ} (hR₀ : 0 ≤ R₀)
+    (e : Option ι) (z : ℝ × ℝ) :
+    movingEndCutoff c a R₀ e =ᶠ[𝓝 z] 0 ∨ (e = none → Complex.equivRealProdCLM.symm z ≠ 0) := by
+  by_cases h₀ : e = none ∧ Complex.equivRealProdCLM.symm z = 0
+  · obtain ⟨rfl, h₀⟩ := h₀
+    exact .inl (movingEndCutoff_none_eventuallyEq_zero hR₀ h₀)
+  · push Not at h₀
+    exact .inr h₀
+
 /-- The derivative of the cutoff of the end `e` at a point of the sphere, away from `0` if `e` is
 the output end. -/
 private theorem hasFDerivAt_movingEndCutoff (ha : ∀ i, a i ≠ 0) (R₀ : ℝ) {e : Option ι}
@@ -385,12 +401,9 @@ the output end is not smooth, the cutoff of the output end vanishes near the poi
 private theorem contDiffAt_movingEndCutoff (ha : ∀ i, a i ≠ 0) {R₀ : ℝ} (hR₀ : 0 ≤ R₀)
     (e : Option ι) {z : ℝ × ℝ} (hz : z ∈ movingEndsDomain c) {n : ℕ∞} :
     ContDiffAt ℝ n (movingEndCutoff c a R₀ e) z := by
-  by_cases h₀ : e = none ∧ Complex.equivRealProdCLM.symm z = 0
-  · obtain ⟨rfl, h₀⟩ := h₀
-    exact contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq
-      (movingEndCutoff_none_eventuallyEq_zero hR₀ h₀)
-  · push Not at h₀
-    exact Real.smoothTransition.contDiff.contDiffAt.comp z
+  rcases movingEndCutoff_eventuallyEq_zero_or_ne_zero hR₀ e z with h₀ | h₀
+  · exact contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq h₀
+  · exact Real.smoothTransition.contDiff.contDiffAt.comp z
       ((contDiffAt_const.mul ((contDiffAt_movingEndCoord (fun i _ ↦ hz i) h₀ ha).sub
         contDiffAt_const)).sub contDiffAt_const)
 
@@ -399,12 +412,8 @@ private theorem mem_Icc_of_fderiv_movingEndCutoff_ne_zero (ha : ∀ i, a i ≠ 0
     (hR₀ : 0 ≤ R₀) {e : Option ι} {z : ℝ × ℝ} (hz : z ∈ movingEndsDomain c)
     (h : fderiv ℝ (movingEndCutoff c a R₀ e) z ≠ 0) :
     movingEndCoord c a e z ∈ Icc R₀ (R₀ + 1) := by
-  by_cases h₀ : e = none ∧ Complex.equivRealProdCLM.symm z = 0
-  · exfalso
-    obtain ⟨rfl, h₀⟩ := h₀
-    exact h (HasFDerivAt.fderiv ((hasFDerivAt_const (0 : ℝ) z).congr_of_eventuallyEq
-      (movingEndCutoff_none_eventuallyEq_zero hR₀ h₀)))
-  push Not at h₀
+  rcases movingEndCutoff_eventuallyEq_zero_or_ne_zero hR₀ e z with h₀ | h₀
+  · exact absurd (((hasFDerivAt_const (0 : ℝ) z).congr_of_eventuallyEq h₀).fderiv) h
   rw [(hasFDerivAt_movingEndCutoff ha R₀ hz h₀).fderiv] at h
   refine ⟨?_, ?_⟩ <;> by_contra! h'
   · exact h (by rw [Real.smoothTransition.deriv_of_nonpos (by linarith), zero_smul])
@@ -500,9 +509,8 @@ private theorem movingCoreCutoff_eq_one_and_fderiv_eq_zero {R₀ : ℝ} (hR₀ :
   obtain ⟨h₁, -⟩ := mem_Icc_of_fderiv_movingEndCutoff_ne_zero ha (by linarith) hU h
   -- On the collar the cutoff has derivative `ψ'(2 (s - R₀) - 1) = ψ'(-1) = 0` at `s = R₀`.
   have hs : movingEndCoord c a e z = R₀ := le_antisymm (hle e) h₁
-  have h₀ : e = none → Complex.equivRealProdCLM.symm z ≠ 0 := by
-    rintro rfl
-    exact equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none (by linarith)
+  have h₀ :=
+    equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord ((by linarith : (0 : ℝ) < R₀).trans_le h₁)
   exact h (by rw [(hasFDerivAt_movingEndCutoff ha R₀ hU h₀).fderiv, hs,
     Real.smoothTransition.deriv_of_nonpos (by linarith), zero_smul])
 
@@ -518,12 +526,10 @@ private theorem tsupport_movingEndCutoff_smul_subset {R₀ R : ℝ} (hR₀ : 0 <
   -- The cut-off section vanishes near every point where `s_e < R₀`.
   have hle : R₀ ≤ movingEndCoord c a e z := by
     refine le_of_not_gt fun h ↦ notMem_tsupport_iff_eventuallyEq.2 ?_ hz
-    by_cases h₀ : e = none ∧ Complex.equivRealProdCLM.symm z = 0
-    · obtain ⟨rfl, h₀⟩ := h₀
-      filter_upwards [movingEndCutoff_none_eventuallyEq_zero hR₀.le h₀] with w hw
+    rcases movingEndCutoff_eventuallyEq_zero_or_ne_zero hR₀.le e z with h₀ | h₀
+    · filter_upwards [h₀] with w hw
       rw [hw, Pi.zero_apply, zero_smul]
       rfl
-    push Not at h₀
     filter_upwards [(contDiffAt_movingEndCoord (n := 0) (fun i _ ↦ hzU i) h₀
       ha).continuousAt.eventually (Iio_mem_nhds h)] with w hw
     rw [movingEndCutoff_eq_zero (le_of_lt hw), zero_smul]
@@ -541,9 +547,8 @@ private theorem tsupport_movingCoreCutoff_smul_subset {R₀ : ℝ} (hR₀ : 1 �
   refine (mem_movingEndsTruncation_iff ha (by linarith)).2 ⟨hzU, fun e ↦ le_of_not_gt fun h ↦
     notMem_tsupport_iff_eventuallyEq.2 ?_ hz⟩
   -- Beyond `R₀ + 1 > 0` on the output end, the point is not `0`.
-  have h₀ : e = none → Complex.equivRealProdCLM.symm z ≠ 0 := by
-    rintro rfl
-    exact equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none (by linarith)
+  have h₀ :=
+    equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord ((by linarith : (0 : ℝ) < R₀ + 1).trans h)
   filter_upwards [(contDiffAt_movingEndCoord (n := 0) (fun i _ ↦ hzU i) h₀
       ha).continuousAt.eventually (Ioi_mem_nhds h),
     (isOpen_movingEndsDomain c).mem_nhds hzU] with w hw hwU
@@ -895,7 +900,7 @@ theorem
     | some i => exact hend i hξ hξc hξR
   obtain ⟨C', hC', T, hT, hest⟩ := exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
     (K := movingEndsTruncation c a) (isCompact_movingEndsTruncation c a)
-    (fun _ _ h ↦ movingEndsTruncation_mono c a h) two_pos (S := movingEndsDomain c) (R := Re)
+    (fun _ _ h ↦ movingEndsTruncation_mono c a h) (r := 2) (S := movingEndsDomain c) (R := Re)
     (G := fun e ξ ↦ ξ ∘ movingEndChart c a e) fun _ hR₀ hR ↦
       ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_aux ha hsep hout hJ hKs hKt
         hu hc hend' (by linarith) hR

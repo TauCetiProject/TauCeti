@@ -87,16 +87,16 @@ end TauCeti.SymplecticForm
 namespace TauCeti.Floer
 
 /-- **Patching at two heights.** Let `K T` be a monotone family of compact truncations of a
-domain `S`, let `G q ξ` be a field `ξ` read on the end `q`, and let `r > 0`. Suppose that for
-every height `R₀ ≥ r` above the heights `R q`, the energy of `G q ξ` beyond `R₀ + 1` on the ends
-plus the energy of `ξ` on `K R₀` is at most `C' (X ξ + ∫_{K (R₀ + 1)} ‖ξ‖²)`. Then at a single
-height `T ≥ r` the ends beyond `T` and the truncation `K T` are bounded by
-`C (X ξ + ∫_{K (T + 1)} ‖ξ‖²)`: the bound at `R₀` controls the ends and the bound at `R₀ + 1` the
-truncation. -/
+domain `S`, let `G q ξ` be a field `ξ` read on the end `q`, and let `r` be a lower bound for the
+heights. Suppose that for every height `R₀ ≥ r` above the heights `R q`, the energy of `G q ξ`
+beyond `R₀ + 1` on the ends plus the energy of `ξ` on `K R₀` is at most
+`C' (X ξ + ∫_{K (R₀ + 1)} ‖ξ‖²)`. Then at a single height `T ≥ r` the ends beyond `T` and the
+truncation `K T` are bounded by `C (X ξ + ∫_{K (T + 1)} ‖ξ‖²)`: the bound at `R₀` controls the
+ends and the bound at `R₀ + 1` the truncation. -/
 theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
     {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {ι : Type*} [Fintype ι]
     {S : Set (ℝ × ℝ)} {K : ℝ → Set (ℝ × ℝ)} (hK : ∀ T, IsCompact (K T)) (hKm : Monotone K)
-    {r : ℝ} (hr : 0 < r) {R : ι → ℝ} {G : ι → (ℝ × ℝ → W) → ℝ × ℝ → W}
+    {r : ℝ} {R : ι → ℝ} {G : ι → (ℝ × ℝ → W) → ℝ × ℝ → W}
     {X : (ℝ × ℝ → W) → ℝ}
     (h : ∀ R₀, r ≤ R₀ → (∀ q, R q < R₀) → ∃ C', 0 ≤ C' ∧ ∀ ⦃ξ : ℝ × ℝ → W⦄, ContDiff ℝ 2 ξ →
       HasCompactSupport ξ → tsupport ξ ⊆ S →
@@ -109,12 +109,13 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
         ∫ z in K T, sobolevDensity ξ z ≤ C' * (X ξ + ∫ z in K (T + 1), ‖ξ z‖ ^ 2) := by
   -- Patch at the heights `R₀` and `R₀ + 1`: the first controls the ends beyond `R₀ + 1`, the
   -- second the truncation `K (R₀ + 1)`.
-  set R₀ := r + ∑ q, |R q|
+  set R₀ := |r| + ∑ q, |R q| + 1
   have hsum : 0 ≤ ∑ q, |R q| := Finset.sum_nonneg fun q _ ↦ abs_nonneg _
+  have hr := le_abs_self r
   have hR (q : ι) : R q < R₀ := by
     have := (le_abs_self (R q)).trans
       (Finset.single_le_sum (fun r _ ↦ abs_nonneg (R r)) (Finset.mem_univ q))
-    linarith
+    linarith [abs_nonneg r]
   obtain ⟨C₁, hC₁, h₁⟩ := h R₀ (by linarith) hR
   obtain ⟨C₂, hC₂, h₂⟩ := h (R₀ + 1) (by linarith) fun q ↦ (hR q).trans (lt_add_one _)
   refine ⟨C₁ + C₂, by positivity, R₀ + 1, by linarith, fun ξ hξ hξc hξS ↦ ?_⟩
