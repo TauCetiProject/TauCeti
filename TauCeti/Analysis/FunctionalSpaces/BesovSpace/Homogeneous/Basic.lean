@@ -82,6 +82,8 @@ low-frequency blocks sum in `L^∞`
   elements carry their tempered distribution `toDistr` and weighted blocks `weightedBlocks`. The
   weighted blocks form a linear isometry `TauCeti.HomogeneousBesovSpace.weightedBlocksₗᵢ` into
   `ℓ^q(ℤ, Lᵖ)`, and `TauCeti.HomogeneousBesovSpace.block` is the block `Pⱼ u` as an `Lᵖ` function.
+* `TauCeti.HomogeneousBesovSpace.tsum_eNorm_weightedBlocks`: for `q = 1` the seminorm is the sum
+  of the weighted block norms.
 * `TauCeti.HomogeneousBesovSpace.norm_eq_zero_iff` and
   `TauCeti.HomogeneousBesovSpace.inseparable_iff`: the seminorm vanishes exactly on the
   distributions with spectrum at the origin.
@@ -535,6 +537,12 @@ theorem norm_weightedBlocks_apply (u : HomogeneousBesovSpace F φ s p q) (j : �
     ‖u.weightedBlocks j‖ = 2 ^ (s * j) * ‖u.block j‖ := by
   rw [weightedBlocks_apply, norm_smul, Complex.norm_of_nonneg (by positivity)]
 
+/-- The weighted block norm `2^{js} ‖Pⱼ u‖_p` is the extended norm of the `j`-th weighted block. -/
+theorem ofReal_mul_eNorm_block (u : HomogeneousBesovSpace F φ s p q) (j : ℤ) :
+    ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) * ‖u.block j‖ₑ = ‖u.weightedBlocks j‖ₑ := by
+  rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (by positivity),
+    norm_weightedBlocks_apply, ← Real.rpow_intCast, ← Real.rpow_mul zero_le_two, mul_comm s]
+
 @[simp]
 theorem block_zero (j : ℤ) : (0 : HomogeneousBesovSpace F φ s p q).block j = 0 := by
   simp [block]
@@ -638,6 +646,17 @@ theorem norm_eq_tsum_rpow (hq : q ≠ ∞) (u : HomogeneousBesovSpace F φ s p q
   rw [← norm_weightedBlocks, lp.norm_eq_tsum_rpow
     (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq)]
   simp_rw [norm_weightedBlocks_apply]
+
+/-- For `q = 1`, the homogeneous Besov seminorm is the sum of the weighted block norms, as an
+extended real number. -/
+theorem tsum_eNorm_weightedBlocks (u : HomogeneousBesovSpace F φ s p 1) :
+    ∑' j, ‖u.weightedBlocks j‖ₑ = ‖u‖ₑ := by
+  have hsum : Summable fun j ↦ ‖u.weightedBlocks j‖ := by
+    simpa using (memℓp_gen_iff (by simp)).1 u.weightedBlocks.prop
+  rw [← ofReal_norm, ← norm_weightedBlocks, lp.norm_eq_tsum_rpow (by simp)]
+  simp only [ENNReal.toReal_one, Real.rpow_one, div_one]
+  rw [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ norm_nonneg _) hsum]
+  simp_rw [ofReal_norm]
 
 /-- For `q = ∞`, the homogeneous Besov seminorm is the supremum of the weighted block norms. -/
 theorem norm_eq_ciSup (u : HomogeneousBesovSpace F φ s p ∞) :
