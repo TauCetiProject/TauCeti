@@ -9,24 +9,28 @@ public import Mathlib.Data.List.Perm.Basic
 public import TauCeti.CategoryTheory.Monoidal.Braided.Basic
 public import TauCeti.CategoryTheory.Monoidal.ListTensor
 public import TauCeti.Data.List.Sort
+import Mathlib.Order.Extension.Linear
 
 /-!
 # Reordering ordered tensor products in a symmetric monoidal category
 
 Let `X : ι → C` be a family of objects of a symmetric monoidal category. For a permutation
 `h : l ~ l'` of lists of indices, `TauCeti.listTensorPermIso X h` is the canonical isomorphism
-`listTensor X l ≅ listTensor X l'` between the ordered tensor products over the two lists. It is
-the symmetric coherence theorem for these tensor products: the isomorphism depends only on the
-two lists, it is functorial in the permutation (`listTensorPermIso_self`, `listTensorPermIso_trans`,
-`listTensorPermIso_symm`), it acts on the tail of a list by whiskering (`listTensorPermIso_cons`),
-and on two distinct neighbouring factors it is their braiding (`listTensorPermIso_swap`). Any
-assignment of maps to permutations with these properties agrees with it
-(`eq_listTensorPermIso_hom`); this is the statement that two structural maps built from braidings
-agree when their permutations agree.
+`listTensor X l ≅ listTensor X l'` between the ordered tensor products over the two lists. It
+depends only on the two lists, it is functorial in the permutation (`listTensorPermIso_self`,
+`listTensorPermIso_trans`, `listTensorPermIso_symm`), it acts on the tail of a list by whiskering
+(`listTensorPermIso_cons`), and on two distinct neighbouring factors it is their braiding
+(`listTensorPermIso_swap`). These properties characterize it: any assignment of maps to the
+permutations of lists with them agrees with it (`eq_listTensorPermIso_hom`). This is uniqueness of
+the canonical reordering. Since a `List.Perm` records only the two lists, not which occurrences of
+a repeated label are exchanged, it does not express coherence for structural maps indexed by
+permutations of positions; that form of the coherence theorem is not formalized here.
 
-The isomorphism is constructed by sorting: for a linear order on `ι`, the tensor product over `l`
-is identified with the tensor product over the sorted list `l.insertionSort (· ≤ ·)` by inserting
-the factors one at a time into the sorted tail, braiding each past the smaller ones. Two lists
+The isomorphism is constructed by sorting: for an auxiliary linear order on `ι`, which by the
+uniqueness theorem does not affect the result and does not appear in the statements, the tensor
+product over `l` is identified with the tensor product over the sorted list
+`l.insertionSort (· ≤ ·)` by inserting the factors one at a time into the sorted tail, braiding
+each past the smaller ones. Two lists
 which are permutations of each other have the same sorted list. Sorting is invariant under
 exchanging two neighbouring distinct factors; this uses the hexagon identities, through the
 Yang–Baxter equation, and the symmetry `β_ Y X ≫ β_ X Y = 𝟙`.
@@ -231,39 +235,82 @@ private lemma listTensorSwapIso_hom_sortIso_hom {a b : ι} (hab : a ≠ b) (l : 
     insertIso_insertIso_assoc X hab]
   simp
 
+/-- Reordering the factors by sorting both lists, for the linear order of `ι`. -/
+private def sortPermIso {l l' : List ι} (h : l.Perm l') : listTensor X l ≅ listTensor X l' :=
+  sortIso X l ≪≫ eqToIso (congrArg (listTensor X) h.insertionSort_eq) ≪≫ (sortIso X l').symm
+
+@[reassoc]
+private lemma sortPermIso_hom_sortIso_hom {l l' : List ι} (h : l.Perm l') :
+    (sortPermIso X h).hom ≫ (sortIso X l').hom =
+      (sortIso X l).hom ≫ eqToHom (congrArg (listTensor X) h.insertionSort_eq) := by
+  simp [sortPermIso]
+
+private lemma sortPermIso_self {l : List ι} (h : l.Perm l) : sortPermIso X h = Iso.refl _ := by
+  ext
+  simp [sortPermIso]
+
+private lemma sortPermIso_hom_sortPermIso_hom {l₁ l₂ l₃ : List ι} (h₁ : l₁.Perm l₂)
+    (h₂ : l₂.Perm l₃) :
+    (sortPermIso X h₁).hom ≫ (sortPermIso X h₂).hom = (sortPermIso X (h₁.trans h₂)).hom := by
+  simp [sortPermIso]
+
+private lemma sortPermIso_symm {l l' : List ι} (h : l.Perm l') :
+    (sortPermIso X h).symm = sortPermIso X h.symm := by
+  ext
+  simp [sortPermIso]
+
+private lemma sortPermIso_cons (a : ι) {l l' : List ι} (h : l.Perm l') :
+    sortPermIso X (h.cons a) = whiskerLeftIso (X a) (sortPermIso X h) := by
+  ext
+  rw [← cancel_mono (sortIso X (a :: l')).hom, sortPermIso_hom_sortIso_hom,
+    sortIso_cons_hom, sortIso_cons_hom, whiskerLeftIso_hom,
+    ← MonoidalCategory.whiskerLeft_comp_assoc, sortPermIso_hom_sortIso_hom,
+    insertIso_hom_of_eq X a h.insertionSort_eq]
+  simp
+
+private lemma sortPermIso_swap {a b : ι} (hab : a ≠ b) (l : List ι) :
+    sortPermIso X (List.Perm.swap b a l) = listTensorSwapIso X a b l := by
+  ext
+  rw [← cancel_mono (sortIso X (b :: a :: l)).hom, sortPermIso_hom_sortIso_hom,
+    listTensorSwapIso_hom_sortIso_hom X hab]
+
 end Sorting
 
 /-! ### The reordering isomorphisms -/
 
-variable [LinearOrder ι]
+variable (ι) in
+/-- An auxiliary linear order on `ι`, used only to construct `TauCeti.listTensorPermIso`: a linear
+extension of the discrete order. By `TauCeti.eq_listTensorPermIso_hom`, the choice is
+immaterial. -/
+@[instance_reducible]
+private noncomputable def auxLinearOrder : LinearOrder ι :=
+  letI : PartialOrder ι := PartialOrder.lift (fun i : ι ↦ ({i} : Set ι)) Set.singleton_injective
+  inferInstanceAs (LinearOrder (LinearExtension ι))
 
-/-- **Symmetric coherence for ordered tensor products.** The canonical isomorphism between the
-ordered tensor products over two lists which are permutations of each other: both are sorted,
-for the linear order of `ι`, by braiding factors past each other. It does not depend on the order
-(`TauCeti.eq_listTensorPermIso_hom`). -/
-def listTensorPermIso {l l' : List ι} (h : l.Perm l') : listTensor X l ≅ listTensor X l' :=
-  sortIso X l ≪≫ eqToIso (congrArg (listTensor X) h.insertionSort_eq) ≪≫
-    (sortIso X l').symm
-
-@[reassoc]
-private lemma listTensorPermIso_hom_sortIso_hom {l l' : List ι} (h : l.Perm l') :
-    (listTensorPermIso X h).hom ≫ (sortIso X l').hom =
-      (sortIso X l).hom ≫ eqToHom (congrArg (listTensor X) h.insertionSort_eq) := by
-  simp [listTensorPermIso]
+/-- **The canonical reordering of ordered tensor products.** The isomorphism between the ordered
+tensor products over two lists which are permutations of each other: both are sorted, for an
+auxiliary linear order of `ι`, by braiding factors past each other. It is characterized by its
+basic properties (`TauCeti.eq_listTensorPermIso_hom`), so the order used is immaterial. -/
+noncomputable def listTensorPermIso {l l' : List ι} (h : l.Perm l') :
+    listTensor X l ≅ listTensor X l' :=
+  letI := auxLinearOrder ι
+  sortPermIso X h
 
 /-- Reordering a list into itself is the identity. -/
 @[simp]
-lemma listTensorPermIso_self {l : List ι} (h : l.Perm l) : listTensorPermIso X h = Iso.refl _ := by
-  ext
-  simp [listTensorPermIso]
+lemma listTensorPermIso_self {l : List ι} (h : l.Perm l) :
+    listTensorPermIso X h = Iso.refl _ :=
+  letI := auxLinearOrder ι
+  sortPermIso_self X h
 
 /-- Reorderings compose. -/
 @[reassoc (attr := simp)]
 lemma listTensorPermIso_hom_listTensorPermIso_hom {l₁ l₂ l₃ : List ι} (h₁ : l₁.Perm l₂)
     (h₂ : l₂.Perm l₃) :
     (listTensorPermIso X h₁).hom ≫ (listTensorPermIso X h₂).hom =
-      (listTensorPermIso X (h₁.trans h₂)).hom := by
-  simp [listTensorPermIso]
+      (listTensorPermIso X (h₁.trans h₂)).hom :=
+  letI := auxLinearOrder ι
+  sortPermIso_hom_sortPermIso_hom X h₁ h₂
 
 /-- Reorderings compose. -/
 @[simp]
@@ -275,9 +322,9 @@ lemma listTensorPermIso_trans {l₁ l₂ l₃ : List ι} (h₁ : l₁.Perm l₂)
 /-- The inverse of a reordering is the reverse reordering. -/
 @[simp]
 lemma listTensorPermIso_symm {l l' : List ι} (h : l.Perm l') :
-    (listTensorPermIso X h).symm = listTensorPermIso X h.symm := by
-  ext
-  simp [listTensorPermIso]
+    (listTensorPermIso X h).symm = listTensorPermIso X h.symm :=
+  letI := auxLinearOrder ι
+  sortPermIso_symm X h
 
 /-- Reordering along an equality of lists is the transport along it. -/
 lemma listTensorPermIso_of_eq {l l' : List ι} (h : l = l') (h' : l.Perm l') :
@@ -288,20 +335,15 @@ lemma listTensorPermIso_of_eq {l l' : List ι} (h : l = l') (h' : l.Perm l') :
 /-- Reordering the tail of a list. -/
 @[simp]
 lemma listTensorPermIso_cons (a : ι) {l l' : List ι} (h : l.Perm l') :
-    listTensorPermIso X (h.cons a) = whiskerLeftIso (X a) (listTensorPermIso X h) := by
-  ext
-  rw [← cancel_mono (sortIso X (a :: l')).hom, listTensorPermIso_hom_sortIso_hom,
-    sortIso_cons_hom, sortIso_cons_hom, whiskerLeftIso_hom,
-    ← MonoidalCategory.whiskerLeft_comp_assoc, listTensorPermIso_hom_sortIso_hom,
-    insertIso_hom_of_eq X a h.insertionSort_eq]
-  simp
+    listTensorPermIso X (h.cons a) = whiskerLeftIso (X a) (listTensorPermIso X h) :=
+  letI := auxLinearOrder ι
+  sortPermIso_cons X a h
 
 /-- On two distinct neighbouring factors, reordering is their braiding. -/
 lemma listTensorPermIso_swap {a b : ι} (hab : a ≠ b) (l : List ι) :
-    listTensorPermIso X (List.Perm.swap b a l) = listTensorSwapIso X a b l := by
-  ext
-  rw [← cancel_mono (sortIso X (b :: a :: l)).hom, listTensorPermIso_hom_sortIso_hom,
-    listTensorSwapIso_hom_sortIso_hom X hab]
+    listTensorPermIso X (List.Perm.swap b a l) = listTensorSwapIso X a b l :=
+  letI := auxLinearOrder ι
+  sortPermIso_swap X hab l
 
 /-- Reordering is natural in the family. -/
 @[reassoc]
@@ -459,7 +501,7 @@ lemma listTensorPermIso_perm_append_comm_assoc_hom {l₁ l₂ : List ι} (h : l�
 /-- Reordering the groups of a grouped ordered tensor product, when the groups with distinct
 labels share no factor. -/
 @[reassoc]
-lemma listTensorPermIso_flatMap_right_hom [LinearOrder κ] (L : κ → List ι) {M M' : List κ}
+lemma listTensorPermIso_flatMap_right_hom (L : κ → List ι) {M M' : List κ}
     (h : M.Perm M') (hL : ∀ j ∈ M, ∀ k ∈ M, j ≠ k → (L j).Disjoint (L k)) :
     (listTensorPermIso X (h.flatMap_right L)).hom ≫ (listTensorFlatMapIso X L M').hom =
       (listTensorFlatMapIso X L M).hom ≫
@@ -523,8 +565,8 @@ lemma listTensorPermIso_flatMap_left_hom {A B : κ → List ι} (h : ∀ j, (A j
 /-- **Uniqueness of the reorderings.** An assignment of maps to the permutations of lists that is
 the identity on the empty list, acts on the tail of a list by whiskering, is the braiding on two
 distinct neighbouring factors, and is compatible with composition of permutations, agrees with
-`listTensorPermIso`. In particular the reorderings do not depend on the linear order of `ι` used to
-construct them. -/
+`listTensorPermIso`. In particular the reorderings do not depend on the auxiliary linear order of
+`ι` used to construct them. -/
 theorem eq_listTensorPermIso_hom
     (F : ∀ {l l' : List ι}, l.Perm l' → (listTensor X l ⟶ listTensor X l'))
     (nil : F List.Perm.nil = 𝟙 _)
