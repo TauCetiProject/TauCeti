@@ -326,6 +326,20 @@ def gaugeFixedZerothOrder :
       WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w i j * v j :=
   (rfl)
 
+/-- The adjoint of the zeroth-order part `Z(w, ·)` at a value `w` is multiplication by the
+transpose of the matrix `gaugeFixedZerothOrderMatrix w`. -/
+@[simp] theorem adjoint_gaugeFixedZerothOrder_apply (w y : EuclideanSpace ℝ (Fin 4)) :
+    ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w) y =
+      WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * y j := by
+  ext i
+  have h := EuclideanSpace.inner_single_right i (1 : ℝ)
+    (ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w) y)
+  simp only [one_mul, conj_trivial] at h
+  rw [← h, ContinuousLinearMap.adjoint_inner_left]
+  simp only [gaugeFixedZerothOrder_apply, PiLp.single_apply, mul_comm, ite_mul, one_mul, zero_mul,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, PiLp.inner_apply, RCLike.inner_apply,
+    conj_trivial]
+
 /-- The first-order part of the gauge-fixed operator `L_x`, as a linear map of the gradients
 `g j = ∇y_j` of the four coordinates of the variation. Along the frame `(∂₁, ∂₂) = (1, i)`,
 `∂_k y_j = ⟪g j, e_k⟫`, and the rows are `∂₁y₀ + ∂₂y₁`, `∂₂y₀ - ∂₁y₁`, `∂₁y₂ - ∂₂y₃` and
