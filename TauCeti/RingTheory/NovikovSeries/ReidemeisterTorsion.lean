@@ -65,13 +65,13 @@ variable (R : Type*) {H : Type*} [CommRing R] [IsDomain R] [IsNoetherianRing R] 
 
 /-- **Torsion under a finite cover containing the torsion.** Let `K` be a subgroup of finite index
 of `H` containing its torsion subgroup, and let `β` be an ordered basis of `Nov(R, H, N)` over
-`Nov(R, K, N|K)`, such as the coset monomials `TauCeti.NovikovSeries.cosetBasis`. Let `(D, e)` be
-the restriction of scalars of a based complex `(C, c)` over `Nov(R, H, N)` to `Nov(R, K, N|K)`,
-based by the vectors `β a • c i k` as in `HomologicalComplex.norm_reidemeisterTorsion`. Then the
-componentwise torsion of `D` in the total ring of fractions `QA` of `Nov(R, K, N|K)` is the norm of
-the componentwise torsion of `C` in the total ring of fractions `QB` of `Nov(R, H, N)`. Both total
-rings of fractions are Artinian (`TauCeti.NovikovSeries.isArtinianRing_of_isFractionRing`), and
-they are reduced over `R = ℤ`. -/
+`Nov(R, K, N|K)`, such as the coset monomials `TauCeti.NovikovSeries.cosetBasis` reindexed along
+an equivalence `H ⧸ K ≃ Fin m`. Let `(D, e)` be the restriction of scalars of a based complex
+`(C, c)` over `Nov(R, H, N)` to `Nov(R, K, N|K)`, based by the vectors `β a • c i k` as in
+`HomologicalComplex.norm_reidemeisterTorsion`. Then the componentwise torsion of `D` in the total
+ring of fractions `QA` of `Nov(R, K, N|K)` is the norm of the componentwise torsion of `C` in the
+total ring of fractions `QB` of `Nov(R, H, N)`. Both total rings of fractions are Artinian
+(`TauCeti.NovikovSeries.isArtinianRing_of_isFractionRing`), and they are reduced over `R = ℤ`. -/
 theorem fractionNorm_componentwiseReidemeisterTorsion_of_torsion_le
     (hK : AddCommGroup.torsion H ≤ K) {m : ℕ}
     (β : Module.Basis (Fin m) (NovikovSeries R K (N.comp K.subtype)) (NovikovSeries R H N))
