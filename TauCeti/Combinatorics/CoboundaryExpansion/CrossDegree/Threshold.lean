@@ -225,7 +225,7 @@ theorem ciInf₂_sum_distErr_three_eq_ciInf_sum_movedNorm_div_three_of_card_eq
       (hle.trans (by
         rw [Fintype.card_product_filter_lt, hcard]
         exact sq_mul_mul_add_one_le_three_mul_choose_two_div_four q t))
-  simpa only [Nat.cast_ofNat] using h
+  rwa [Nat.cast_ofNat] at h
 
 end StaircaseGraph
 
@@ -259,9 +259,9 @@ theorem ciInf_costErr_le_of_le_card_div_add_one (α : Cochain X (Perm (Fin n)))
 theorem gaugeDistErr_eq_ciInf_costErr_of_le (α : Cochain X (Perm (Fin n))) (hn : 2 ≤ n)
     (hle : (⨅ β : V → Perm (Fin n), α.costErr β) ≤ (#X.edges : ℝ) / (n + 1)) :
     α.gaugeDistErr = ⨅ β : V → Perm (Fin n), α.costErr β := by
-  refine le_antisymm (α.gaugeDistErr_le_ciInf_costErr hn) ?_
-  rw [gaugeDistErr_def]
-  exact le_ciInf fun m => α.ciInf_costErr_le_of_le_card_div_add_one hle (m + 2)
+  simp_rw [gaugeDistErr_def, costErr_def, ← X.orientedEdges_def] at hle ⊢
+  rw [← X.card_orientedEdges] at hle
+  exact X.orientedEdges.ciInf₂_sum_distErr_mul_inv_eq_ciInf_of_le_card_div_add_one α hn hle
 
 /-- When `2 ≤ n` and the equal-degree `movedNorm (Fin n)` unoriented edge-sum infimum on `X` is at
 most `n * #X.edges / (n + 1)`, `α.gaugeDistErr` equals `1 / n` times that infimum. -/
@@ -314,7 +314,7 @@ theorem gaugeDistErr_eq_gaugeDist_div_three_of_card_eq
     (hle.trans (by
       rw [card_edges_complete, hcard]
       exact sq_mul_mul_add_one_le_three_mul_choose_two_div_four q t))
-  simpa only [Nat.cast_ofNat] using h
+  rwa [Nat.cast_ofNat] at h
 
 end CochainStaircase
 

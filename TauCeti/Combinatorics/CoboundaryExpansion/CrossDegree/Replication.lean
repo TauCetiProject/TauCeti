@@ -86,12 +86,8 @@ theorem card_sq_mul_ciInf_costErr_le_replicate
     (α : Cochain (complete V) (Perm (Fin n))) (m : ℕ) :
     (Fintype.card ι : ℝ) ^ 2 * (⨅ β₀ : V → Perm (Fin m), α.costErr β₀) ≤
       ⨅ β : (V ×ₗ ι) → Perm (Fin m), (α.replicate ι).costErr β := by
-  have hnonneg : 0 ≤ 1 - (min n m : ℝ) / max n m := by
-    rw [sub_nonneg]
-    exact div_le_one_of_le₀
-      (by exact_mod_cast (min_le_left n m).trans (le_max_left n m)) (Nat.cast_nonneg _)
-  rw [α.ciInf_costErr_replicate m]
-  exact le_add_of_nonneg_left (mul_nonneg (Nat.cast_nonneg _) hnonneg)
+  simp_rw [costErr_replicate, costErr_complete]
+  exact card_sq_mul_ciInf_le_ciInf_sum_distErr_lex (V := V) (ι := ι) α m
 
 /-- In equal nonzero degree `n`, balanced replication multiplies the `costErr` infimum by
 `Fintype.card ι ^ 2`. -/
@@ -99,8 +95,8 @@ theorem ciInf_costErr_replicate_eq [NeZero n]
     (α : Cochain (complete V) (Perm (Fin n))) :
     (⨅ β : (V ×ₗ ι) → Perm (Fin n), (α.replicate ι).costErr β) =
       (Fintype.card ι : ℝ) ^ 2 * ⨅ β₀ : V → Perm (Fin n), α.costErr β₀ := by
-  have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
-  rw [α.ciInf_costErr_replicate n, min_self, max_self, div_self hn, sub_self, mul_zero, zero_add]
+  simp_rw [costErr_replicate, costErr_complete]
+  exact ciInf_sum_distErr_lex_eq_card_sq_mul_ciInf (V := V) (ι := ι) α
 
 /-- Whenever a degree-`n` cochain (`2 ≤ n`) on `complete V` attains its `gaugeDistErr` at its own
 degree `n`, its replication `α.replicate ι` also attains `gaugeDistErr` at degree `n`, with value
@@ -110,18 +106,14 @@ theorem gaugeDistErr_replicate_of_forall_le
     (hmin : ∀ m : ℕ,
       (⨅ β₀ : V → Perm (Fin n), α.costErr β₀) ≤ ⨅ β₀ : V → Perm (Fin (m + 2)), α.costErr β₀) :
     (α.replicate ι).gaugeDistErr = (Fintype.card ι : ℝ) ^ 2 * α.gaugeDistErr := by
-  have : NeZero n := ⟨by omega⟩
   have hα : α.gaugeDistErr = ⨅ β₀ : V → Perm (Fin n), α.costErr β₀ := by
     refine le_antisymm (α.gaugeDistErr_le_ciInf_costErr hn) ?_
     rw [gaugeDistErr_def]
     exact le_ciInf hmin
   rw [hα]
-  refine le_antisymm ?_ ?_
-  · exact ((α.replicate ι).gaugeDistErr_le_ciInf_costErr hn).trans_eq α.ciInf_costErr_replicate_eq
-  · rw [gaugeDistErr_def]
-    refine le_ciInf fun m => ?_
-    exact (mul_le_mul_of_nonneg_left (hmin m) (sq_nonneg _)).trans
-      (α.card_sq_mul_ciInf_costErr_le_replicate (m + 2))
+  simp_rw [gaugeDistErr_def, costErr_replicate, costErr_complete]
+  simp_rw [costErr_complete] at hmin
+  exact ciInf₂_sum_distErr_lex_eq_card_sq_mul_ciInf_of_le_of_forall_le (V := V) (ι := ι) α hn hmin
 
 /-- Exact degree-`m` `costErr` infimum for a normalised (`α 0 v = 1` for `0 < v`)
 three-transposition cochain on `complete (Fin 4)`. -/
@@ -247,7 +239,8 @@ theorem ciInf₂_sum_filter_lt_distErr_prod_eq_card_sq_mul_ciInf_of_le_of_forall
   have hmin' : ∀ m : ℕ,
       (⨅ β₀ : U → Perm (Fin n), (completeOfFn α hα).costErr β₀) ≤
         ⨅ β₀ : U → Perm (Fin (m + 2)), (completeOfFn α hα).costErr β₀ := by
-    simpa only [← costErr_completeOfFn α hα] using hmin
+    simp_rw [costErr_completeOfFn α hα]
+    exact hmin
   have hbase_gd : (completeOfFn α hα).gaugeDistErr =
       ⨅ β₀ : U → Perm (Fin n), (completeOfFn α hα).costErr β₀ :=
     le_antisymm ((completeOfFn α hα).gaugeDistErr_le_ciInf_costErr hn)
