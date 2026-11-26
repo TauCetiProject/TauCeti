@@ -128,7 +128,8 @@ theorem isSheaf_bigPresheaf_fpqcTopology :
 the Zariski, étale and fppf topologies. -/
 theorem isSheaf_bigPresheaf_of_le {J : GrothendieckTopology Scheme.{u}} (hJ : J ≤ fpqcTopology) :
     Presheaf.IsSheaf (J.over S) F.bigPresheaf.presheaf :=
-  fun E ↦ Presieve.isSheaf_of_le _ (fun _ _ hR ↦ hJ _ hR) (isSheaf_bigPresheaf_fpqcTopology F E)
+  fun E ↦ Presieve.isSheaf_of_le _ (GrothendieckTopology.over_mono hJ S)
+    (isSheaf_bigPresheaf_fpqcTopology F E)
 
 /-- The module `F^a : (T, h) ↦ Γ(T, h^* F)` on the big fpqc site of `S` attached to a
 quasi-coherent `𝒪_S`-module `F`, a module over the big structure sheaf `T ↦ Γ(T, 𝒪_T)`. -/

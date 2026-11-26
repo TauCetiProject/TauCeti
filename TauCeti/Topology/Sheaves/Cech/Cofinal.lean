@@ -39,7 +39,9 @@ cover. No separation axiom is assumed.
   a finite cover of a given kind, and refinements between such covers induce isomorphisms on Čech
   cohomology, then every such cover computes the Čech cohomology.
 * `TauCeti.Topology.isIso_toCechCohomology_app_zero`: for a sheaf, `toCechCohomology` is an
-  isomorphism in degree `0` for every cover.
+  isomorphism in degree `0` for every cover; through the augmentation of the Čech complex of the
+  cover it is the identification of global sections with `H⁰(X, F)`
+  (`TauCeti.Topology.cechCohomologyZeroIso_hom_eq_toCechCohomology`).
 * `TauCeti.Topology.toCechCohomology_comp_finiteCechCohomologyIso_inv`: the inverse of
   `finiteCechCohomologyIso` on the image of the Čech cohomology of a small open cover.
 
@@ -188,26 +190,40 @@ theorem isIso_toCechCohomology_app_of_forall_isIso [HasColimitsOfSize.{u, u} A]
       (inferInstance : IsIso ((TauCeti.CategoryTheory.cechCohomologyι E hE n j₀).app P))
       (inferInstance : IsIso (c.hom.app P)))
 
+/-- **`toCechCohomology` in degree `0` for a sheaf.** For a sheaf `F` and any `u`-small open cover
+`U`, the identification `cechCohomologyZeroIso` of the global sections `F(X)` with `H⁰(X, F)` is
+the map `F(X) ⟶ H⁰(Č(U, F))` induced by the augmentation of the Čech complex of `U`, followed by
+the map `H⁰(Č(U, F)) ⟶ H⁰(X, F)`. For a point-neighborhood cover this is
+`TauCeti.Topology.cechCohomologyZeroIso_hom`. -/
+theorem cechCohomologyZeroIso_hom_eq_toCechCohomology [HasZeroObject A] {ι : Type u}
+    (U : ι → Opens X) (hU : IsOpenCover U) (F : Sheaf (Opens.grothendieckTopology X) A) :
+    (cechCohomologyZeroIso F).hom =
+      (HomologicalComplex.singleObjHomologySelfIso _ 0 _).inv ≫
+        HomologicalComplex.homologyMap
+          (TauCeti.CategoryTheory.cechAugmentation U isTerminalTop F.obj) 0 ≫
+            (toCechCohomology A 0 U hU).app F.obj := by
+  obtain ⟨V, ⟨ψ⟩⟩ := PointOpenCover.exists_refinement U hU
+  have e := NatTrans.congr_app (toCechCohomology_eq A 0 U hU V ψ) F.obj
+  -- the composite is one of natural transformations between functors whose source is a wrapped
+  -- homology functor, which `rw` does not see through
+  erw [NatTrans.comp_app] at e
+  rw [cechCohomologyZeroIso_hom F V, e, TauCeti.CategoryTheory.cechComplexHomologyMap_app,
+    ← HomologicalComplex.homologyMap_comp_assoc,
+    TauCeti.CategoryTheory.cechAugmentation_comp_cechComplexMap]
+
 /-- **Every cover computes degree `0` Čech cohomology of a sheaf.** For a sheaf `F` and any
 `u`-small open cover `U`, the map `H⁰(Č(U, F)) ⟶ H⁰(X, F)` to the cover-colimit Čech cohomology is
 an isomorphism: both sides are the global sections of `F`. -/
 theorem isIso_toCechCohomology_app_zero [HasZeroObject A] {ι : Type u} (U : ι → Opens X)
     (hU : IsOpenCover U) (F : Sheaf (Opens.grothendieckTopology X) A) :
     IsIso ((toCechCohomology A 0 U hU).app F.obj) := by
-  obtain ⟨V, ⟨ψ⟩⟩ := PointOpenCover.exists_refinement U hU
   have := quasiIsoAt_cechAugmentation_zero_of_iSup_eq_top U hU.iSup_eq_top F
-  have e := NatTrans.congr_app (toCechCohomology_eq A 0 U hU V ψ) F.obj
-  -- the composite is one of natural transformations between functors whose source is a wrapped
-  -- homology functor, which `rw` does not see through
-  erw [NatTrans.comp_app] at e
   -- through the augmentation, `toCechCohomology` is the identification with global sections
   let f := (HomologicalComplex.singleObjHomologySelfIso _ 0 _).inv ≫
     HomologicalComplex.homologyMap (TauCeti.CategoryTheory.cechAugmentation U isTerminalTop F.obj) 0
-  have h : f ≫ (toCechCohomology A 0 U hU).app F.obj = (cechCohomologyZeroIso F).hom := by
-    rw [cechCohomologyZeroIso_hom F V, e, TauCeti.CategoryTheory.cechComplexHomologyMap_app,
-      Category.assoc, ← HomologicalComplex.homologyMap_comp_assoc,
-      TauCeti.CategoryTheory.cechAugmentation_comp_cechComplexMap]
-  have : IsIso (f ≫ (toCechCohomology A 0 U hU).app F.obj) := h ▸ inferInstance
+  have : IsIso (f ≫ (toCechCohomology A 0 U hU).app F.obj) := by
+    rw [Category.assoc, ← cechCohomologyZeroIso_hom_eq_toCechCohomology A U hU F]
+    infer_instance
   exact IsIso.of_isIso_comp_left f _
 
 variable (X) [CompactSpace X] [HasColimitsOfShape (FiniteOpenCover X) A]

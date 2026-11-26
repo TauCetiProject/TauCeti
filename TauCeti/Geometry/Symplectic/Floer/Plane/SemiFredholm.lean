@@ -138,24 +138,16 @@ private theorem exists_setIntegral_comp_realChart_le_of_end (ω : SymplecticForm
             ‖ξ z‖ ^ 2) := by
   have hlt : Real.exp (2 * π * Re) < Real.exp (2 * π * (Re + 1)) :=
     Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
-  -- A cutoff `β = 1 - ψ` vanishing near `‖w‖ ≤ exp (2π Re)` and equal to `1` near
+  -- A cutoff `β` vanishing near `‖w‖ ≤ exp (2π Re)` and equal to `1` near
   -- `‖w‖ ≥ exp (2π (Re + 1))`.
-  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ :=
-    (isCompact_setOf_norm_equivRealProdCLM_symm_le _).exists_contDiff_cutoff_sublevel
+  obtain ⟨β, hβ, hβ01, hβ0, hβ1, hβK⟩ :=
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le _).exists_contDiff_cutoff_superlevel
       Complex.equivRealProdCLM.symm.continuous.norm hlt
-  set β : ℝ × ℝ → ℝ := fun z ↦ 1 - ψ z
-  have hβ : ContDiff ℝ 2 β := (contDiff_const.sub hψ).of_le (by simp)
-  have hβ01 (z : ℝ × ℝ) : β z ∈ Icc 0 1 := ⟨by simp [β, (hψ01 z).2], by simp [β, (hψ01 z).1]⟩
-  have hβ0 (z : ℝ × ℝ) (hz : _ ≤ Real.exp (2 * π * Re)) : β =ᶠ[𝓝 z] 0 :=
-    (hψ1 z hz).mono fun z' h ↦ by simp [β, show ψ z' = 1 from h]
-  have hβ1 (z : ℝ × ℝ) (hz : Real.exp (2 * π * (Re + 1)) ≤ _) : β =ᶠ[𝓝 z] 1 :=
-    (hψ0 z hz).mono fun z' h ↦ by simp [β, show ψ z' = 0 from h]
-  have hdβ (z : ℝ × ℝ) : fderiv ℝ β z = -fderiv ℝ ψ z :=
-    fderiv_const_sub 1
+  replace hβ : ContDiff ℝ 2 β := hβ.of_le (by simp)
   obtain ⟨C₁, -, herr⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le
     (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
     (hβ.of_le one_le_two) hβ01 (isCompact_setOf_norm_equivRealProdCLM_symm_le _)
-    fun z hz ↦ by rw [hdβ, hψK z (not_le.1 hz), neg_zero]
+    fun z hz ↦ hβK z (not_le.1 hz)
   refine ⟨max Ce 0 * max 2 C₁, by positivity, fun ξ hξ hξc ↦ ?_⟩
   -- The cut-off section `β ξ` is supported in the part `‖w‖ > exp (2π Re)` of the end.
   have hξ₁c : HasCompactSupport fun w ↦ β w • ξ w := hξc.smul_left

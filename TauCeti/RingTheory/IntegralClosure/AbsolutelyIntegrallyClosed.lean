@@ -35,6 +35,8 @@ be stable under the quotients and localizations used to cut a valuation ring int
 * `TauCeti.IsAbsolutelyIntegrallyClosed.splits` and
   `TauCeti.isAbsolutelyIntegrallyClosed_iff_forall_splits`: `A` is absolutely integrally closed if
   and only if every monic polynomial over `A` is a product of monic linear factors.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.exists_pow_nat_eq`: every element has `n`-th roots for
+  all `n > 0`.
 * `TauCeti.isAbsolutelyIntegrallyClosed_iff_isAlgClosed`: for a field, the notion is
   `IsAlgClosed`.
 * `TauCeti.IsAbsolutelyIntegrallyClosed.of_surjective` and
@@ -67,6 +69,7 @@ degree over `A` has a root in `A`. The positive-degree restriction excludes the 
 have no root in a nontrivial ring; the zero ring qualifies vacuously, since no polynomial over it
 has positive degree. See `IsAbsolutelyIntegrallyClosed.splits` for the equivalent formulation
 that every monic polynomial is a product of linear factors. -/
+@[stacks 0DCL "in the equivalent form of 0DCM (2)"]
 class IsAbsolutelyIntegrallyClosed (A : Type*) [CommRing A] : Prop where
   /-- Every monic polynomial of positive degree has a root. -/
   exists_root (p : A[X]) (hp : p.Monic) (hdeg : 0 < p.natDegree) : ∃ x, p.IsRoot x
@@ -90,12 +93,22 @@ theorem splits [IsAbsolutelyIntegrallyClosed A] {p : A[X]} (hp : p.Monic) : p.Sp
     exact hq ▸ (Splits.X_sub_C a).mul
       (ih ((monic_X_sub_C a).of_mul_monic_left (hq.symm ▸ hp)) hqdeg)
 
+/-- In an absolutely integrally closed ring every element has an `n`-th root for every `n > 0`. -/
+theorem exists_pow_nat_eq [IsAbsolutelyIntegrallyClosed A] (x : A) {n : ℕ} (hn : 0 < n) :
+    ∃ z, z ^ n = x := by
+  obtain _ | _ := subsingleton_or_nontrivial A
+  · exact ⟨0, Subsingleton.elim _ _⟩
+  obtain ⟨z, hz⟩ := exists_root (X ^ n - C x) (monic_X_pow_sub_C x hn.ne')
+    (by rwa [natDegree_X_pow_sub_C])
+  exact ⟨z, by simpa [sub_eq_zero] using hz⟩
+
 /-- The zero ring is absolutely integrally closed: no polynomial over it has positive degree. -/
 theorem of_subsingleton [Subsingleton A] : IsAbsolutelyIntegrallyClosed A where
   exists_root p _ hdeg := by simp [natDegree_of_subsingleton] at hdeg
 
 /-- The image of an absolutely integrally closed ring under a surjective ring homomorphism is
 absolutely integrally closed. -/
+@[stacks 0DCN "first assertion"]
 theorem of_surjective [IsAbsolutelyIntegrallyClosed A] (f : A →+* B)
     (hf : Function.Surjective f) : IsAbsolutelyIntegrallyClosed B where
   exists_root q hq hdeg := by
@@ -111,6 +124,7 @@ instance quotient [IsAbsolutelyIntegrallyClosed A] (I : Ideal A) :
   of_surjective _ Ideal.Quotient.mk_surjective
 
 /-- A localization of an absolutely integrally closed ring is absolutely integrally closed. -/
+@[stacks 0DCN "second assertion"]
 theorem of_isLocalization [IsAbsolutelyIntegrallyClosed A] [Algebra A B] (M : Submonoid A)
     [IsLocalization M B] : IsAbsolutelyIntegrallyClosed B where
   exists_root q hq hdeg := by

@@ -65,8 +65,11 @@ for the statements here.
   `DJ · e` of the coefficient are locally `Lᵖ`; `TauCeti.IsSobolevCRCoefficients.add_zeroth`
   changes the zeroth-order coefficient by a locally `Lᵖ` field, which adds its adjoint to the
   formal adjoint (`TauCeti.crFormalAdjoint_add_zeroth`).
-* Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`),
-  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`), changing the exponent
+* Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`), and
+  moving a locally `Lᵖ` term `A ξ` into the zeroth-order coefficient
+  (`TauCeti.IsWeakCRSolution.add_zeroth`),
+  restriction to open subsets (`TauCeti.IsWeakCRSolution.mono`,
+  `TauCeti.IsSobolevCRCoefficients.mono`), changing the exponent
   (`TauCeti.IsWeakCRSolution.mono_exponent`, `TauCeti.IsWeakCRSolution.of_memLpLoc`) and
   invariance under changes of `J`, `DJ`, `S`, `ξ` and `η` on null subsets of `Ω`
   (`TauCeti.isWeakCRSolution_congr_ae`).
@@ -270,6 +273,13 @@ theorem IsSobolevCRCoefficients.memLpLoc_deriv_apply
   hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
 
 omit [CompleteSpace V] in
+/-- Sobolev coefficients on `Ω` are Sobolev coefficients on every open subset of `Ω`. -/
+theorem IsSobolevCRCoefficients.mono (hc : IsSobolevCRCoefficients p Ω J DJ S) (hΩ : Ω' ≤ Ω) :
+    IsSobolevCRCoefficients p Ω' J DJ S :=
+  ⟨hc.hasWeakFDerivOn.mono hΩ, hc.memLpLoc_coeff.mono_set hΩ, hc.memLpLoc_deriv.mono_set hΩ,
+    hc.memLpLoc_zeroth.mono_set hΩ⟩
+
+omit [CompleteSpace V] in
 /-- Adding a locally `Lᵖ` field to the zeroth-order coefficient preserves Sobolev coefficients. -/
 theorem IsSobolevCRCoefficients.add_zeroth (hc : IsSobolevCRCoefficients p Ω J DJ S)
     {A : ℂ → V →L[ℝ] V} (hA : MemLpLoc p Ω A) :
@@ -449,6 +459,21 @@ theorem add (h : IsWeakCRSolution q Ω J DJ S ξ η) (h' : IsWeakCRSolution q Ω
 theorem sub (h : IsWeakCRSolution q Ω J DJ S ξ η) (h' : IsWeakCRSolution q Ω J DJ S ξ' η') :
     IsWeakCRSolution q Ω J DJ S (ξ - ξ') (η - η') := by
   simpa [sub_eq_add_neg] using h.add h'.neg
+
+/-- **Moving a term into the zeroth-order coefficient.** If `ξ` is a weak solution of
+`∂_s ξ + J ∂_t ξ + S ξ = η` and `A` is locally `Lᵖ` with `1/p + 1/q ≤ 1`, then `ξ` is a weak
+solution of `∂_s ξ + J ∂_t ξ + (S + A) ξ = η + A ξ`. -/
+theorem add_zeroth (h : IsWeakCRSolution q Ω J DJ S ξ η) {p : ℝ≥0∞} {A : ℂ → V →L[ℝ] V}
+    (hA : MemLpLoc p Ω A) (hpq : p⁻¹ + q⁻¹ ≤ 1) :
+    IsWeakCRSolution q Ω J DJ (fun z => S z + A z) ξ (fun z => η z + A z (ξ z)) := by
+  have hAξ := hA.locallyIntegrableOn_clm_apply h.memLpLoc hpq Ω.isOpen.isLocallyClosed
+  refine ⟨h.memLpLoc, h.locallyIntegrableOn.add hAξ, fun φ => ⟨?_, ?_⟩⟩
+  · simp only [inner_crFormalAdjoint_add_zeroth]
+    exact (h.integrable_inner_crFormalAdjoint φ).add (φ.integrable_inner hAξ)
+  · simp only [inner_crFormalAdjoint_add_zeroth, inner_add_right]
+    rw [integral_add (h.integrable_inner_crFormalAdjoint φ) (φ.integrable_inner hAξ),
+      integral_add (φ.integrable_inner h.locallyIntegrableOn) (φ.integrable_inner hAξ),
+      h.integral_inner_crFormalAdjoint φ]
 
 end IsWeakCRSolution
 

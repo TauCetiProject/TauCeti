@@ -20,6 +20,8 @@ With the multiplicity `mult w`, `1` at a real and `2` at a complex place, this r
 
 ## Main results
 
+* `TauCeti.NumberField.algebraMap_trace_eq_sum_embeddings`: `Tr_{K/ℚ} x = ∑_φ φ x` over the complex
+  embeddings `φ`.
 * `TauCeti.NumberField.sum_re_embeddings_eq_trace`: `∑_σ Re (σ x) = Tr_{K/ℚ} x`, over the complex
   embeddings `σ`.
 * `TauCeti.NumberField.InfinitePlace.sum_mult_mul_re_embedding_eq_trace`:
@@ -34,14 +36,19 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- The trace of a number field over `ℚ` is the sum of its images under the complex
+embeddings. -/
+theorem algebraMap_trace_eq_sum_embeddings (x : K) :
+    algebraMap ℚ ℂ (Algebra.trace ℚ K x) = ∑ φ : K →+* ℂ, φ x := by
+  rw [trace_eq_sum_embeddings (E := ℂ)]
+  exact (Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) _ _ fun _ ↦ rfl).symm
+
 /-- **The trace as a sum over the complex embeddings**: `∑_σ Re (σ x)` is the trace `Tr_{K/ℚ} x`,
-the real part of Mathlib's `trace_eq_sum_embeddings`. -/
+the real part of `algebraMap_trace_eq_sum_embeddings`. -/
 theorem sum_re_embeddings_eq_trace (x : K) :
     ∑ σ : K →+* ℂ, (σ x).re = Algebra.trace ℚ K x := by
-  have h := congr(Complex.re $(_root_.trace_eq_sum_embeddings ℂ (K := ℚ) (x := x)))
-  rw [Complex.re_sum, ← Fintype.sum_equiv (RingHom.equivRatAlgHom K ℂ) (fun φ ↦ (φ x).re)
-    (fun σ ↦ (σ x).re) fun _ ↦ by simp [RingHom.equivRatAlgHom_apply], eq_ratCast,
-    Complex.ratCast_re] at h
+  have h := congr(Complex.re $(algebraMap_trace_eq_sum_embeddings x))
+  rw [Complex.re_sum, eq_ratCast, Complex.ratCast_re] at h
   exact h.symm
 
 namespace InfinitePlace

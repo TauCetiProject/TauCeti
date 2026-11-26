@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
@@ -16,6 +17,13 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 A family of continuous bilinear maps gives a continuous bilinear map into the product
 (`ContinuousLinearMap.piBilin`), with coordinatewise evaluation.
+
+Evaluating continuous linear maps at a fixed vector `v` (`ContinuousLinearMap.apply 𝕜 G v`) has
+operator norm at most `‖v‖` (`ContinuousLinearMap.opNorm_apply_apply_le`). Every continuous
+`R`-linear endomorphism of a commutative semiring `R` is its value at `1` times the identity
+(`ContinuousLinearMap.eq_apply_one_smul_id`), and every continuous `𝕜`-bilinear map
+`𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜` on a nontrivially normed field `𝕜` is its value at `(1, 1)` times
+`ContinuousLinearMap.mul 𝕜 𝕜` (`ContinuousLinearMap.eq_apply_one_one_smul_mul`).
 
 A continuous linear map `u : W →L[𝕜] V` pulls a continuous bilinear map `B` on `V` back to the
 bilinear map `B (u ·) (u ·)` on `W`. This operation is itself continuous and linear in `B`
@@ -40,6 +48,11 @@ scalar homomorphisms (for instance sesquilinear), the sum `∑ i ∈ s, A (u i) 
 orthonormal basis taken twice, this is the dimension times `‖A‖`. Every value satisfies the
 Young-type bound `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
+
+For a continuous bilinear map `B : G × V → H`, the expression `B(A ∘ D, v)` is linear in each of
+`A`, `D` and `v`; `ContinuousLinearMap.compPrecompL E F B` is the continuous bilinear map
+`(D, v) ↦ (A ↦ B(A ∘ D, v))` that treats `A` as a separate factor
+(`ContinuousLinearMap.compPrecompL_apply`).
 
 Composing a bilinear map `f` with linear maps `g` and `h` gives a bilinear map of norm at most
 `‖f‖ ‖g‖ ‖h‖` (`ContinuousLinearMap.norm_bilinearComp_le`), and the bilinear map
@@ -77,9 +90,28 @@ noncomputable section
 
 namespace ContinuousLinearMap
 
+/-- Every continuous `R`-linear endomorphism of a commutative semiring `R` with continuous scalar
+multiplication is its value at `1` times `ContinuousLinearMap.id R R`. -/
+theorem eq_apply_one_smul_id {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [ContinuousConstSMul R R] (D : R →L[R] R) :
+    D = D 1 • ContinuousLinearMap.id R R :=
+  ext_ring <| by simp
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Every continuous `𝕜`-bilinear map `𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜` on a nontrivially normed field `𝕜` is its
+value at `(1, 1)` times `ContinuousLinearMap.mul 𝕜 𝕜`. -/
+theorem eq_apply_one_one_smul_mul (H : 𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜) :
+    H = H 1 1 • ContinuousLinearMap.mul 𝕜 𝕜 :=
+  ext_ring <| ext_ring <| by simp
+
+/-- Evaluating continuous linear maps at a fixed vector `v : V` has operator norm at most
+`‖v‖`. -/
+theorem opNorm_apply_apply_le (v : V) : ‖apply 𝕜 G v‖ ≤ ‖v‖ :=
+  opNorm_le_bound _ (norm_nonneg v) fun L ↦ by
+    simpa only [apply_apply, mul_comm] using L.le_opNorm v
 
 /-- A family of continuous bilinear maps is a continuous bilinear map into the product. -/
 def piBilin {ι : Type*} {G : ι → Type*}
@@ -114,6 +146,29 @@ theorem bilinearCompL_apply (e : V' →L[𝕜] V) (f : W' →L[𝕜] W)
   simp only [bilinearCompL, comp_apply, compL_apply, flip_apply, bilinearComp_apply]
 
 end BilinearComp
+
+section CompPrecompL
+
+variable {E F H : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+variable (E F) in
+/-- For a continuous bilinear map `B : G × V → H`, the continuous bilinear map
+`(D, v) ↦ (A ↦ B.precompL E (A ∘L D) v)`. It writes the expression `B(A ∘ D, v)`, which is linear
+in each of `A`, `D` and `v`, as `compPrecompL E F B D v` applied to `A`, so that `A` can be
+treated as one factor of a product and `(D, v)` as the other. In the chain rule
+`D B(g ∘ u, v) = B(Dg(u) ∘ Du, v) + B(g ∘ u, Dv)` this separates `Dg(u)` from `Du` and `v`. -/
+def compPrecompL (B : G →L[𝕜] V →L[𝕜] H) :
+    (E →L[𝕜] F) →L[𝕜] V →L[𝕜] (F →L[𝕜] G) →L[𝕜] E →L[𝕜] H :=
+  (((compL 𝕜 (F →L[𝕜] G) (E →L[𝕜] G) (E →L[𝕜] H)).comp (B.precompL E).flip).flip).comp
+    (compL 𝕜 E F G).flip
+
+@[simp]
+theorem compPrecompL_apply (B : G →L[𝕜] V →L[𝕜] H) (D : E →L[𝕜] F) (v : V)
+    (A : F →L[𝕜] G) : compPrecompL E F B D v A = B.precompL E (A.comp D) v :=
+  (rfl)
+
+end CompPrecompL
 
 /-- Pulling a continuous bilinear map back along a continuous linear map `u`,
 `B ↦ B (u ·) (u ·)`, as a continuous linear map in `B`. -/

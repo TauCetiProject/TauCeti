@@ -60,6 +60,8 @@ element (`TauCeti.diagGL_const`).
 
 ## Main statements
 
+* `TauCeti.diagGL_mul_mul_inv_apply`: conjugation by `diagGL t` acts on the `(i, j)` entry by
+  `x ↦ tᵢ x tⱼ⁻¹`.
 * `TauCeti.isUnit_apply_of_isDiag`: the diagonal entries of an invertible diagonal matrix are
   units.
 * `TauCeti.coe_inv_of_coe_eq_diagonal`: over a division ring, the inverse of an invertible
@@ -83,6 +85,7 @@ element (`TauCeti.diagGL_const`).
   centralizer is the whole group.
 * `TauCeti.diagGL_const` and `TauCeti.notMem_range_scalar_diagGL`: the diagonal embedding sends a
   constant family to the corresponding scalar element, and it is scalar *only* there.
+* `TauCeti.diagGL_const_mul`: scaling all diagonal entries by `a` multiplies by the scalar `a`.
 
 ## References
 
@@ -120,6 +123,17 @@ theorem diagGL_apply (t : ι → kˣ) (i j : ι) :
     diagGL t i j = if i = j then (t i : k) else 0 := by
   rw [diagGL_coe, Matrix.diagonal_apply]
 
+/-- Conjugation by a diagonal matrix `t` acts on the `(i, j)` entry of a matrix by
+`x ↦ tᵢ x tⱼ⁻¹`. -/
+theorem diagGL_mul_mul_inv_apply (t : ι → kˣ) (g : GL ι k) (i j : ι) :
+    ((diagGL t * g * (diagGL t)⁻¹ : GL ι k) : Matrix ι ι k) i j =
+      ((t i : kˣ) : k) * ((g : GL ι k) : Matrix ι ι k) i j * (((t j)⁻¹ : kˣ) : k) := by
+  have hval : (((diagGL t)⁻¹ : GL ι k) : Matrix ι ι k) =
+      Matrix.diagonal fun a => (((t a)⁻¹ : kˣ) : k) := by
+    rw [← map_inv diagGL t, diagGL_coe]
+    simp
+  simp only [Units.val_mul, diagGL_coe, hval, Matrix.diagonal_mul, Matrix.mul_diagonal]
+
 /-- The trace of a diagonal element of the general linear group is the sum of its diagonal
 entries. -/
 theorem trace_diagGL (t : ι → kˣ) :
@@ -148,6 +162,12 @@ scalar exactly on the constant families. -/
 theorem diagGL_const (a : kˣ) :
     diagGL (fun _ : ι => a) = Matrix.GeneralLinearGroup.scalar ι a :=
   Units.ext <| by rw [diagGL_coe, Matrix.GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
+
+/-- Multiplying every diagonal entry by the same unit `a` multiplies the diagonal element by the
+scalar element `a`. -/
+theorem diagGL_const_mul (a : kˣ) (t : ι → kˣ) :
+    diagGL (fun i => a * t i) = Matrix.GeneralLinearGroup.scalar ι a * diagGL t := by
+  rw [← diagGL_const, ← map_mul, Pi.mul_def]
 
 /-- An invertible diagonal matrix with two distinct diagonal entries is not scalar. -/
 theorem notMem_range_scalar_diagGL {t : ι → kˣ} {i j : ι} (ht : t i ≠ t j) :
