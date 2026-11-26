@@ -8,8 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.Coxeter
 public import TauCeti.LinearAlgebra.RootSystem.AffineRealization
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Affine.Alcove
-import TauCeti.GroupTheory.Coxeter.Geometric.Basic
-import TauCeti.GroupTheory.Coxeter.Parabolic
+import TauCeti.GroupTheory.Coxeter.Matsumoto
 import TauCeti.LinearAlgebra.Matrix.Cartan.Realization.Weyl.TitsCone
 
 /-!
@@ -232,6 +231,8 @@ private lemma eq_one_of_intertwines_one {f : N ≃ᵃ[R] N} (h : Intertwines b 1
     simpa [levelPoint, levelShift] using congr(($hc) (m, 0, 0)).symm
   exact (LinearMap.IsPerfPair.bijective_right P.toLinearMap).injective this
 
+section DecidableComparison
+
 variable [DecidableEq ι]
 
 /-- The Coxeter system of the Weyl group of the affine realization. -/
@@ -349,6 +350,10 @@ private lemma toAffineWeylGroup_surjective : Function.Surjective b.toAffineWeylG
 private lemma toAffineWeylGroup_bijective : Function.Bijective b.toAffineWeylGroup :=
   ⟨b.toAffineWeylGroup_injective, b.toAffineWeylGroup_surjective⟩
 
+end DecidableComparison
+
+variable [P.IsReduced] [P.IsIrreducible]
+
 /-- **The affine Weyl group is the Weyl group of the affine Cartan matrix.** For every realization
 `R'` of the affine Cartan matrix over a field of characteristic zero, for instance
 `RootPairing.Base.affineRealization`, the affine Weyl group is isomorphic to the Weyl group of
@@ -358,8 +363,9 @@ and the `s_{αᵢ,0}`, to the simple reflection at the corresponding node of the
 `RootPairing.Base.affineWeylGroupEquiv_toAffineEquiv_coreflection`). -/
 noncomputable def affineWeylGroupEquiv {K H : Type*} [Field K] [CharZero K] [AddCommGroup H]
     [Module K H] (R' : CartanRealization (b.affineCartanMatrix.map (Int.cast : ℤ → K)) H) :
-    P.affineWeylGroup ≃* R'.weylGroup (diag_map_intCast b.affineCartanMatrix_apply_same) :=
-  (MulEquiv.ofBijective b.toAffineWeylGroup b.toAffineWeylGroup_bijective).symm.trans
+    P.affineWeylGroup ≃* R'.weylGroup (diag_map_intCast b.affineCartanMatrix_apply_same) := by
+  classical
+  exact (MulEquiv.ofBijective b.toAffineWeylGroup b.toAffineWeylGroup_bijective).symm.trans
     (b.affineRealization.weylGroupEquiv R' b.affineCartanMatrix_apply_same
       (fun _ _ ↦ b.affineCartanMatrix_le_zero_of_ne)
       (fun _ _ ↦ b.affineCartanMatrix_apply_eq_zero_iff_symm))
@@ -370,6 +376,7 @@ private lemma affineWeylGroupEquiv_wallReflection {K H : Type*} [Field K] [CharZ
     (k : Option b.support) :
     b.affineWeylGroupEquiv R' ⟨b.wallReflection k, b.wallReflection_mem k⟩ =
       R'.weylSimple (diag_map_intCast b.affineCartanMatrix_apply_same) k := by
+  classical
   rw [affineWeylGroupEquiv, MulEquiv.trans_apply, ← b.toAffineWeylGroup_weylSimple,
     ← MulEquiv.ofBijective_apply _ b.toAffineWeylGroup_bijective, MulEquiv.symm_apply_apply,
     CartanRealization.weylGroupEquiv_weylSimple]
@@ -397,6 +404,8 @@ lemma affineWeylGroupEquiv_toAffineEquiv_coreflection {K H : Type*} [Field K] [C
       R'.weylSimple (diag_map_intCast b.affineCartanMatrix_apply_same) (some i) := by
   simp_rw [← affineCoreflection_zero]
   exact b.affineWeylGroupEquiv_wallReflection R' (some i)
+
+variable [DecidableEq ι]
 
 /-- **The affine Weyl group is a Coxeter group.** For a finite, reduced, irreducible,
 crystallographic root pairing over a linearly ordered field, the affine Weyl group is
@@ -483,26 +492,29 @@ theorem affineWeylCoxeterSystem_length {x : N} (hx : x ∈ fundamentalAlcove P b
     b.affineWeylCoxeterSystem.length f = (P.separatingAffineRoots x ((f : N ≃ᵃ[R] N) x)).ncard := by
   set cs := b.affineWeylCoxeterSystem
   refine le_antisymm ?_ ?_
-  · -- Descend through the walls separating `f x` from the alcove.
-    induction hn : (P.separatingAffineRoots x ((f : N ≃ᵃ[R] N) x)).ncard
-      using Nat.strong_induction_on generalizing f with
-    | _ n ih =>
-    have hy := P.root'_apply_ne_intCast_of_mem_affineWeylGroup f.property
-      (root'_ne_intCast_of_mem_fundamentalAlcove hx)
-    by_cases hf : (f : N ≃ᵃ[R] N) x ∈ closedFundamentalAlcove P b
-    · have : f = 1 := Subtype.ext <| eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove
-        b f.property hx (mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove.mpr ⟨hf, hy⟩)
-      simp [this]
-    obtain ⟨k, hk⟩ : ∃ k, b.affineSimpleRoot k ((f : N ≃ᵃ[R] N) x) < 0 := by
-      by_contra! h
-      exact hf ((mem_closedFundamentalAlcove_iff_forall_affineSimpleRoot_nonneg b).mpr h)
-    have h₁ := b.ncard_separatingAffineRoots_wallReflection_add_one hx
-      (b.exists_intCast_lt_root'_apply hx f.property) hk
-    have h₂ := ih (P.separatingAffineRoots x (b.wallReflection k ((f : N ≃ᵃ[R] N) x))).ncard
-      (by omega) (cs.simple k * f) (by
-      rw [Subgroup.coe_mul, AffineEquiv.coe_mul, Function.comp_apply,
-        b.coe_affineWeylCoxeterSystem_simple])
-    have h₃ := cs.length_simple_mul f k
+  · -- Use the same wall word as the subgroup-generation descent.
+    have hprod (ω : List (Option b.support)) : (cs.wordProd ω : N ≃ᵃ[R] N) =
+        (ω.map fun k ↦ k.elim (P.affineCoreflection b.highestRoot 1)
+          (fun i ↦ P.affineCoreflection i 0)).prod := by
+      induction ω with
+      | nil => simp
+      | cons k ω ih =>
+        dsimp only [cs] at ih ⊢
+        simp only [CoxeterSystem.wordProd_cons, Subgroup.coe_mul,
+          coe_affineWeylCoxeterSystem_simple, wallReflection, List.map_cons, List.prod_cons, ih]
+        cases k <;> rfl
+    obtain ⟨ω, hω, hcount⟩ := exists_wallWord_apply_mem_closedFundamentalAlcove b hx
+      (b.exists_intCast_lt_root'_apply hx f.property)
+    have hgf : cs.wordProd ω * f = 1 := Subtype.ext <|
+      eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove b (cs.wordProd ω * f).property hx
+        (mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove.mpr
+          ⟨by simpa only [Subgroup.coe_mul, AffineEquiv.coe_mul, Function.comp_apply, hprod]
+              using hω,
+            P.root'_apply_ne_intCast_of_mem_affineWeylGroup (cs.wordProd ω * f).property
+              (root'_ne_intCast_of_mem_fundamentalAlcove hx)⟩)
+    have hlen : cs.length f ≤ ω.length := by
+      rw [eq_inv_of_mul_eq_one_right hgf, cs.length_inv]
+      exact cs.length_wordProd_le ω
     omega
   · -- Each simple reflection in a reduced word adds at most one separating affine root.
     have key (ω : List (Option b.support)) :
@@ -523,11 +535,12 @@ section TypeA₁
 
 variable {b} (hθ : b.highestRoot ∈ b.support)
 
+omit [P.IsReduced] [P.IsIrreducible] in
 include hθ in
 /-- In type `A₁`, where the highest root is the simple root, the Coxeter matrix of the affine
 Cartan matrix has the entry `0`, that is `∞`, at its two nodes: the affine Weyl group is the
 infinite dihedral group. -/
-example :
+private lemma affineCoxeterMatrix_none_highestRoot :
     coxeterMatrixOfGeneralizedCartanMatrix b.affineCartanMatrix none (some ⟨_, hθ⟩) = 0 := by
   rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne _ (Option.some_ne_none _).symm]
   simp
@@ -549,8 +562,7 @@ include hθ in
 example : orderOf (b.affineWeylCoxeterSystem.simple none *
     b.affineWeylCoxeterSystem.simple (some ⟨_, hθ⟩)) = 0 := by
   rw [b.affineWeylCoxeterSystem.orderOf_simple_mul_simple,
-    coxeterMatrixOfGeneralizedCartanMatrix_apply_of_ne _ (Option.some_ne_none _).symm]
-  simp
+    affineCoxeterMatrix_none_highestRoot hθ]
 
 include hθ in
 /-- In type `A₁` the translation by the coroot has length `2`. -/
@@ -558,18 +570,9 @@ example : b.affineWeylCoxeterSystem.length
     ⟨AffineEquiv.constVAdd R N (P.coroot b.highestRoot),
       P.constVAdd_coroot_mem_affineWeylGroup _⟩ = 2 := by
   rw [← constVAdd_coroot_eq_simple_mul_simple hθ]
-  set cs := b.affineWeylCoxeterSystem
-  have hle := cs.length_mul_le (cs.simple none) (cs.simple (some ⟨_, hθ⟩))
-  have hmod := cs.length_mul_mod_two (cs.simple none) (cs.simple (some ⟨_, hθ⟩))
-  have hne : cs.length (cs.simple none * cs.simple (some ⟨_, hθ⟩)) ≠ 0 := by
-    rw [ne_eq, cs.length_eq_zero_iff, constVAdd_coroot_eq_simple_mul_simple hθ]
-    intro h
-    have h0 := congr(((($h : P.affineWeylGroup) : N ≃ᵃ[R] N)) 0)
-    simp only [AffineEquiv.constVAdd_apply, vadd_eq_add, add_zero, OneMemClass.coe_one,
-      AffineEquiv.coe_one, id_eq] at h0
-    exact P.ne_zero' b.highestRoot h0
-  rw [cs.length_simple, cs.length_simple] at hle hmod
-  omega
+  have hred := b.affineWeylCoxeterSystem.isReduced_alternatingWord
+    (m := 2) (.inr (affineCoxeterMatrix_none_highestRoot hθ))
+  simpa [CoxeterSystem.alternatingWord, CoxeterSystem.wordProd_cons] using hred.eq
 
 end TypeA₁
 
