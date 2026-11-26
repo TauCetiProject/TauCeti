@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
+import Mathlib.InformationTheory.KullbackLeibler.KLFun
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
@@ -56,7 +57,7 @@ of two labels `a`, `b` is the pair label `x ↦ (a x, b x)`.
 
 public section
 
-open MeasureTheory ProbabilityTheory Real
+open MeasureTheory ProbabilityTheory Real InformationTheory
 open scoped ENNReal
 
 namespace TauCeti
@@ -272,8 +273,8 @@ end ChainRule
 variable [Countable κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
 /-- The per-cell inequality behind `H(a | b) ≤ H(a)`: for `0 ≤ p ≤ q` and `p ≤ r`,
-`p * log (r / p) + p ≤ p * (-log q) + q * r`, read in `ℝ≥0∞`. In `ℝ` it is `log y ≤ y - 1` at
-`y = q * r / p`. -/
+`p * log (r / p) + p ≤ p * (-log q) + q * r`, read in `ℝ≥0∞`. In `ℝ` the gap is
+`q * r * klFun (p / (q * r))`, nonnegative by Mathlib's `InformationTheory.klFun_nonneg`. -/
 private theorem ofReal_mul_log_div_add_le {p q r : ℝ} (hp : 0 ≤ p) (hpq : p ≤ q) (hpr : p ≤ r) :
     ENNReal.ofReal (p * log (r / p)) + ENNReal.ofReal p ≤
       ENNReal.ofReal p * ENNReal.ofReal (-log q) + ENNReal.ofReal q * ENNReal.ofReal r := by
@@ -282,10 +283,12 @@ private theorem ofReal_mul_log_div_add_le {p q r : ℝ} (hp : 0 ≤ p) (hpq : p 
   have hq0 := hp.trans_le hpq
   have hr := hp.trans_le hpr
   have hreal : p * log (r / p) + p ≤ p * (-log q) + q * r := by
-    have hy := log_le_sub_one_of_pos (show 0 < q * r / p by positivity)
-    rw [log_div (by positivity) hp.ne', log_mul hq0.ne' hr.ne'] at hy
-    have h := mul_le_mul_of_nonneg_left hy hp.le
-    rw [show p * (q * r / p - 1) = q * r - p by field_simp] at h
+    have h : q * r * klFun (p / (q * r)) = p * (log p - log q - log r) + q * r - p := by
+      rw [klFun_apply, log_div hp.ne' (by positivity), log_mul hq0.ne' hr.ne']
+      field_simp
+      ring
+    have h0 : 0 ≤ q * r * klFun (p / (q * r)) :=
+      mul_nonneg (by positivity) (klFun_nonneg (by positivity))
     rw [log_div hr.ne' hp.ne']
     linarith
   have hlog : 0 ≤ p * log (r / p) := mul_nonneg hp.le (log_nonneg ((one_le_div hp).mpr hpr))

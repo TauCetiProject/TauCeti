@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 public import Mathlib.Probability.Independence.Basic
 import Mathlib.Analysis.Convex.Jensen
+import Mathlib.InformationTheory.KullbackLeibler.KLFun
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.MeasureTheory.Measure.Real
+import TauCeti.Probability.Independence.Basic
 
 /-!
 # Entropy of a finite label
@@ -30,19 +32,28 @@ measurable structure of `Ω` (standard Borel, countably generated) is needed.
 * `TauCeti.labelEntropy_nonneg_le_log_card`: for a probability measure and a measurable `X`,
   `0 ≤ H(X) ≤ log |A|`.
 * `TauCeti.labelEntropy_pair_of_indepFun`: independent labels have additive entropy.
+* `TauCeti.labelEntropy_pair_eq_add_iff_indepFun`: conversely, under a probability (or zero)
+  measure, measurable labels with `H((X, Y)) = H(X) + H(Y)` are independent
+  (`TauCeti.indepFun_of_labelEntropy_pair_eq_add`).
 * `TauCeti.labelEntropy_comp_of_injective`: relabeling by an injection, in particular enlarging
   the alphabet by unused values, leaves the entropy unchanged.
 * `TauCeti.condLabelEntropy_self`: a label conditioned on itself has entropy zero.
 
+Writing `p_ab`, `P_a`, `Q_b` for the masses of the cells `X ⁻¹' {a} ∩ Y ⁻¹' {b}` and of the
+atoms `X ⁻¹' {a}`, `Y ⁻¹' {b}`, the gap `H(X) + H(Y) - H((X, Y))` is the sum over the cells of
+`P_a Q_b * klFun (p_ab / (P_a Q_b))`, with Mathlib's `InformationTheory.klFun`. Each term is
+nonnegative and vanishes only when `p_ab = P_a Q_b`, which is the equality case.
+
 ## References
 
+* O. Sarig, *Lecture Notes on Ergodic Theory*, 2023, Proposition 4.3, p. 106.
 * T. Tao, The logarithmically averaged Chowla and Elliott conjectures for two-point
   correlations, Forum Math. Pi 4 (2016), arXiv:1509.05422, §3, (3.1)–(3.5).
 -/
 
 public section
 
-open MeasureTheory ProbabilityTheory Real
+open MeasureTheory ProbabilityTheory Real InformationTheory
 
 namespace TauCeti
 
@@ -234,6 +245,82 @@ theorem labelEntropy_pair_of_indepFun [IsProbabilityMeasure μ] [MeasurableSpace
     sum_measureReal_preimage_singleton_eq_one (hX <| measurableSet_singleton ·),
     sum_measureReal_preimage_singleton_eq_one (hY <| measurableSet_singleton ·),
     one_mul]
+
+/-- The per-cell gap in subadditivity is a scaled `klFun` value: for `0 ≤ p ≤ P` and `p ≤ Q`,
+`p log p - p log P - p log Q - p + P Q = P Q klFun (p / (P Q))`. -/
+private theorem cellGap_eq_mul_klFun {p P Q : ℝ} (hp : 0 ≤ p) (hpP : p ≤ P) (hpQ : p ≤ Q) :
+    p * log p - p * log P - p * log Q - p + P * Q = P * Q * klFun (p / (P * Q)) := by
+  rcases hp.eq_or_lt with rfl | hp
+  · simp [klFun_zero]
+  have hP := hp.trans_le hpP
+  have hQ := hp.trans_le hpQ
+  rw [klFun_apply, log_div hp.ne' (by positivity), log_mul hP.ne' hQ.ne']
+  field_simp
+  ring
+
+/-- **Equality in subadditivity.** Under a probability measure (or the zero measure), measurable
+labels with `H((X, Y)) = H(X) + H(Y)` are independent. -/
+theorem indepFun_of_labelEntropy_pair_eq_add [IsZeroOrProbabilityMeasure μ] [MeasurableSpace B]
+    [MeasurableSingletonClass B] {X : Ω → A} {Y : Ω → B} (hX : Measurable X) (hY : Measurable Y)
+    (h : labelEntropy μ (fun ω ↦ (X ω, Y ω)) = labelEntropy μ X + labelEntropy μ Y) :
+    IndepFun X Y μ := by
+  obtain rfl | _ := eq_zero_or_isProbabilityMeasure (μ := μ)
+  · exact Probability.indepFun_of_measureReal_preimage_singleton_inter_eq_mul hX hY
+      fun _ _ ↦ by simp
+  set p : A → B → ℝ := fun a b ↦ μ.real (X ⁻¹' {a} ∩ Y ⁻¹' {b})
+  set P : A → ℝ := fun a ↦ μ.real (X ⁻¹' {a})
+  set Q : B → ℝ := fun b ↦ μ.real (Y ⁻¹' {b})
+  have hpP : ∀ a b, p a b ≤ P a := fun _ _ ↦ measureReal_mono Set.inter_subset_left
+  have hpQ : ∀ a b, p a b ≤ Q b := fun _ _ ↦ measureReal_mono Set.inter_subset_right
+  have hreal : ∑ a, ∑ b, negMulLog (p a b) = ∑ a, negMulLog (P a) + ∑ b, negMulLog (Q b) := by
+    rwa [labelEntropy_pair, labelEntropy_def, labelEntropy_def] at h
+  -- The cell gaps `P Q klFun (p / (P Q))` are nonnegative and sum to
+  -- `H(X) + H(Y) - H((X, Y)) = 0`, so each vanishes.
+  have hnn : ∀ a b, 0 ≤ P a * Q b * klFun (p a b / (P a * Q b)) := fun _ _ ↦
+    mul_nonneg (by positivity) (klFun_nonneg (by positivity))
+  have hgap : ∑ a, ∑ b, P a * Q b * klFun (p a b / (P a * Q b)) = 0 := by
+    have hA : ∀ a, MeasurableSet (X ⁻¹' {a}) := fun a ↦ hX (measurableSet_singleton a)
+    have hB : ∀ b, MeasurableSet (Y ⁻¹' {b}) := fun b ↦ hY (measurableSet_singleton b)
+    have hrow : ∀ a, ∑ b, p a b = P a := fun a ↦ by
+      simp only [p, P, Set.inter_comm (X ⁻¹' _)]
+      exact sum_measureReal_preimage_singleton_inter hB _
+    have hcol : ∀ b, ∑ a, p a b = Q b := fun b ↦ sum_measureReal_preimage_singleton_inter hA _
+    have hPsum : ∑ a, P a = 1 := sum_measureReal_preimage_singleton_eq_one hA
+    have hQsum : ∑ b, Q b = 1 := sum_measureReal_preimage_singleton_eq_one hB
+    have e1 : ∑ a, ∑ b, p a b * log (P a) = ∑ a, P a * log (P a) := by
+      simp_rw [← Finset.sum_mul, hrow]
+    have e2 : ∑ a, ∑ b, p a b * log (Q b) = ∑ b, Q b * log (Q b) := by
+      rw [Finset.sum_comm]
+      simp_rw [← Finset.sum_mul, hcol]
+    have e3 : ∑ a, ∑ b, P a * Q b = 1 := by
+      simp_rw [← Finset.mul_sum, hQsum, mul_one, hPsum]
+    have hcell : ∀ a b, p a b * log (p a b) - p a b * log (P a) - p a b * log (Q b) - p a b +
+        P a * Q b = P a * Q b * klFun (p a b / (P a * Q b)) := fun a b ↦
+      cellGap_eq_mul_klFun measureReal_nonneg (hpP a b) (hpQ a b)
+    simp only [← hcell, Finset.sum_add_distrib, Finset.sum_sub_distrib, e1, e2, e3, hrow, hPsum]
+    simp only [negMulLog, neg_mul, Finset.sum_neg_distrib] at hreal
+    linarith
+  refine Probability.indepFun_of_measureReal_preimage_singleton_inter_eq_mul hX hY fun a b ↦ ?_
+  have hab := (Finset.sum_eq_zero_iff_of_nonneg fun b _ ↦ hnn a b).mp
+    ((Finset.sum_eq_zero_iff_of_nonneg fun a _ ↦ Finset.sum_nonneg fun b _ ↦ hnn a b).mp hgap a
+      (Finset.mem_univ a)) b (Finset.mem_univ b)
+  rcases eq_or_ne (P a * Q b) 0 with h0 | h0
+  · have : 0 ≤ p a b := measureReal_nonneg
+    rcases mul_eq_zero.mp h0 with h1 | h1 <;> rw [h0] <;> linarith [hpP a b, hpQ a b]
+  · exact (div_eq_one_iff_eq h0).mp
+      ((klFun_eq_zero_iff (by positivity)).mp ((mul_eq_zero.mp hab).resolve_left h0))
+
+/-- **Equality in subadditivity.** Under a probability measure (or the zero measure), measurable
+labels satisfy `H((X, Y)) = H(X) + H(Y)` exactly when they are independent. -/
+theorem labelEntropy_pair_eq_add_iff_indepFun [IsZeroOrProbabilityMeasure μ] [MeasurableSpace B]
+    [MeasurableSingletonClass B] {X : Ω → A} {Y : Ω → B} (hX : Measurable X)
+    (hY : Measurable Y) :
+    labelEntropy μ (fun ω ↦ (X ω, Y ω)) = labelEntropy μ X + labelEntropy μ Y ↔
+      IndepFun X Y μ := by
+  refine ⟨indepFun_of_labelEntropy_pair_eq_add hX hY, fun hXY ↦ ?_⟩
+  obtain rfl | _ := eq_zero_or_isProbabilityMeasure (μ := μ)
+  · simp
+  · exact labelEntropy_pair_of_indepFun hX hY hXY
 
 end Additivity
 

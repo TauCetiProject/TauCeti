@@ -30,6 +30,10 @@ everywhere at each index, preserving independence and identical distribution
 sets under the coordinates of an independent family are independent events, whether or not the
 coordinates are measurable (`ProbabilityTheory.iIndepFun.iIndepSet_preimage`).
 
+Under a finite measure, two measurable random variables with countably many values are independent
+as soon as every cell `f ⁻¹' {a} ∩ g ⁻¹' {b}` has the product mass of `f ⁻¹' {a}` and `g ⁻¹' {b}`
+(`TauCeti.Probability.indepFun_of_measureReal_preimage_singleton_inter_eq_mul`).
+
 Independence within rows also gives a union bound for row counts. For a finite array of events
 whose rows consist of independent events of measure at most `p`, the measure that some row
 contains at least `q` occurring events is at most `p ^ q` times the sum over rows of the number of
@@ -240,5 +244,29 @@ theorem measure_exists_le_card_filter_lt_norm_le {κ : ι → Type*} [Fintype ι
       gcongr with i
       exact_mod_cast (Nat.choose_le_pow _ _).trans (Nat.pow_le_pow_left (hN i) q)
     _ = _ := by simp [mul_assoc]
+
+end TauCeti.Probability
+
+namespace TauCeti.Probability
+
+variable {Ω α β : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
+  [Countable α] [MeasurableSpace α] [MeasurableSingletonClass α]
+  [Countable β] [MeasurableSpace β] [MeasurableSingletonClass β]
+
+/-- Two measurable random variables with countably many values are independent when the mass of
+each cell `f ⁻¹' {a} ∩ g ⁻¹' {b}` is the product of the masses of `f ⁻¹' {a}` and `g ⁻¹' {b}`. -/
+theorem indepFun_of_measureReal_preimage_singleton_inter_eq_mul {f : Ω → α} {g : Ω → β}
+    (hf : Measurable f) (hg : Measurable g)
+    (h : ∀ a b, μ.real (f ⁻¹' {a} ∩ g ⁻¹' {b}) = μ.real (f ⁻¹' {a}) * μ.real (g ⁻¹' {b})) :
+    IndepFun f g μ := by
+  rw [indepFun_iff_map_prod_eq_prod_map_map hf.aemeasurable hg.aemeasurable,
+    Measure.ext_iff_singleton]
+  rintro ⟨a, b⟩
+  rw [Measure.map_apply (hf.prodMk hg) (measurableSet_singleton _), ← singleton_prod_singleton,
+    Measure.prod_prod, Measure.map_apply hf (measurableSet_singleton _),
+    Measure.map_apply hg (measurableSet_singleton _), mk_preimage_prod]
+  -- The cell identity `h a b` holds in `ℝ`; lift it to `ℝ≥0∞` through the finite masses.
+  rw [← ofReal_measureReal, h, ENNReal.ofReal_mul measureReal_nonneg, ofReal_measureReal,
+    ofReal_measureReal]
 
 end TauCeti.Probability
