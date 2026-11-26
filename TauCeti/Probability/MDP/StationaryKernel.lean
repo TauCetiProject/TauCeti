@@ -91,14 +91,10 @@ theorem stationaryKernel_apply_singleton (π : S → PMF A) (s s' : S) :
 values over the actions drawn from `π s`. -/
 theorem integral_stationaryKernel (π : S → PMF A) (v : BoundedFn S) (s : S) :
     ∫ s', v s' ∂(M.stationaryKernel π s) = ∑ a, (π s a).toReal * M.expect v s a := by
-  have hμ : M.stationaryKernel π s = Measure.sum fun a ↦ π s a • (M.trans s a).toMeasure := by
-    ext t ht
-    rw [stationaryKernel_apply, PMF.toMeasure_bind_apply _ _ _ ht, Measure.sum_apply _ ht]
-    simp only [smul_apply, smul_eq_mul]
   have hv : Integrable v (M.stationaryKernel π s) :=
     Integrable.of_bound (measurable_of_countable v).aestronglyMeasurable ‖v‖
       (Filter.Eventually.of_forall fun t ↦ lp.norm_apply_le_norm ENNReal.top_ne_zero v t)
-  rw [hμ] at hv ⊢
+  rw [stationaryKernel_apply, PMF.toMeasure_bind_eq_sum] at hv ⊢
   rw [integral_sum_measure hv, tsum_fintype]
   simp only [integral_smul_measure, smul_eq_mul, expect_eq_integral]
 
