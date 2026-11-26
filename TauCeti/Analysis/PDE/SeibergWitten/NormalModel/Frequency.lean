@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Basic
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Coercivity
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Tangent
-import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.SlowFamily
 import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
 import TauCeti.Analysis.PDE.Vortex.SpectralGap
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
