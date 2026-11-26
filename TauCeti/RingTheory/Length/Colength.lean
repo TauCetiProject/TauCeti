@@ -21,8 +21,9 @@ bounds the colength `length ((cM + Θ) ⧸ Θ)` of `Θ` in `cM + Θ`, the length
 The proof filters the image of `cM` by the image of `cM ⊓ U` (the colength identity
 `TauCeti.length_map_mkQ_eq_add_length_quotient`), bounds the latter through a submodule `N`
 containing `cM ⊓ U` and a linear map `ρ` on `N` (the colength inequality
-`TauCeti.length_map_mkQ_le_length_quotient` and the subadditivity
-`TauCeti.length_map_mkQ_le_add_length_quotient`), and bounds the rest by a quotient of `M`.
+`TauCeti.length_map_mkQ_le_length_quotient`, then `TauCeti.length_quotient_sup_le` and
+`TauCeti.length_quotient_sup_le_of_ker_le`), and bounds the rest by a quotient of `M`
+(`TauCeti.length_quotient_smul_le`).
 
 ## Main results
 
@@ -49,89 +50,9 @@ open scoped Pointwise
 
 namespace TauCeti
 
-section Ring
-
-variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
-
-/-- The term `length (N ⧸ (N₁ + Z))` of the descent lemma is at most
-`length (Z' ⧸ Z) + length (N ⧸ (N₁ + Z'))`. -/
-private theorem length_quotient_sup_le (N N₁ Z Z' : Submodule R V) :
-    Module.length R (↥N ⧸ (N₁ ⊔ Z).comap N.subtype) ≤
-      Module.length R (↥Z' ⧸ Z.comap Z'.subtype) +
-        Module.length R (↥N ⧸ (N₁ ⊔ Z').comap N.subtype) := by
-  have hmap : (N₁ ⊔ Z').map (N₁ ⊔ Z).mkQ ≤ Z'.map (N₁ ⊔ Z).mkQ := by
-    rw [Submodule.map_sup]
-    refine sup_le (Submodule.map_le_iff_le_comap.2 ?_) le_rfl
-    rw [Submodule.comap_map_mkQ]
-    exact le_sup_left.trans le_sup_left
-  rw [← length_map_mkQ]
-  refine (length_map_mkQ_le_add_length_quotient N (N₁ ⊔ Z') (N₁ ⊔ Z)).trans (add_le_add ?_ le_rfl)
-  calc Module.length R ((N₁ ⊔ Z').map (N₁ ⊔ Z).mkQ)
-      ≤ Module.length R (Z'.map (N₁ ⊔ Z).mkQ) :=
-        Module.length_le_of_injective _ (Submodule.inclusion_injective hmap)
-    _ ≤ _ := by
-        rw [length_map_mkQ]
-        exact length_quotient_anti (Submodule.comap_mono le_sup_right)
-
-/-- The term `length (N ⧸ (N₁ + Z'))` of the descent lemma is at most
-`length (A' ⧸ A) + length (A ⧸ ρ(N₁))`, for `ρ : N → W` with kernel in `Z'` and image in `A'`. -/
-private theorem length_quotient_sup_le_of_ker_le {W : Type*} [AddCommGroup W] [Module R W]
-    {N N₁ Z' : Submodule R V} {ρ : ↥N →ₗ[R] W} {A A' : Submodule R W}
-    (hker : LinearMap.ker ρ ≤ Z'.comap N.subtype) (hρ : LinearMap.range ρ ≤ A') :
-    Module.length R (↥N ⧸ (N₁ ⊔ Z').comap N.subtype) ≤
-      Module.length R (↥A' ⧸ A.comap A'.subtype) +
-        Module.length R (↥A ⧸ ((N₁.comap N.subtype).map ρ).comap A.subtype) := by
-  set B := (N₁.comap N.subtype).map ρ
-  have hk : LinearMap.ker (B.mkQ ∘ₗ ρ) ≤ (N₁ ⊔ Z').comap N.subtype := by
-    rw [LinearMap.ker_comp, Submodule.ker_mkQ, Submodule.comap_map_eq]
-    exact sup_le (Submodule.comap_mono le_sup_left)
-      (hker.trans (Submodule.comap_mono le_sup_right))
-  have hr : LinearMap.range (B.mkQ ∘ₗ ρ) ≤ A'.map B.mkQ := by
-    rw [LinearMap.range_comp]
-    exact Submodule.map_mono hρ
-  calc Module.length R (↥N ⧸ (N₁ ⊔ Z').comap N.subtype)
-      ≤ Module.length R (↥N ⧸ LinearMap.ker (B.mkQ ∘ₗ ρ)) := length_quotient_anti hk
-    _ = Module.length R (LinearMap.range (B.mkQ ∘ₗ ρ)) :=
-        (LinearMap.quotKerEquivRange _).length_eq
-    _ ≤ Module.length R (A'.map B.mkQ) :=
-        Module.length_le_of_injective _ (Submodule.inclusion_injective hr)
-    _ ≤ Module.length R (A.map B.mkQ) + Module.length R (↥A' ⧸ A.comap A'.subtype) :=
-        length_map_mkQ_le_add_length_quotient A' A B
-    _ = _ := by rw [length_map_mkQ, add_comm]
-
-end Ring
-
 section CommRing
 
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
-
-/-- Multiplication by `c` maps `M ⧸ (M ⊓ U + M ⊓ Θ)` onto `cM ⧸ (cM ⊓ U + cM ⊓ Θ)`. -/
-private theorem length_quotient_smul_le (c : R) (M U Θ : Submodule R V) :
-    Module.length R (↥(c • M) ⧸ ((c • M) ⊓ U ⊔ (c • M) ⊓ Θ).comap (c • M).subtype) ≤
-      Module.length R (↥M ⧸ (M ⊓ U ⊔ M ⊓ Θ).comap M.subtype) := by
-  let g : ↥M →ₗ[R] ↥(c • M) := (LinearMap.lsmul R V c).restrict
-    fun x hx ↦ Submodule.smul_mem_pointwise_smul x c M hx
-  have hg : Function.Surjective g := by
-    rintro ⟨y, hy⟩
-    obtain ⟨x, hx, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1 hy
-    -- `g` is `x ↦ c • x` on `M`, by definition of `LinearMap.restrict`
-    exact ⟨⟨x, hx⟩, rfl⟩
-  have hle : (M ⊓ U ⊔ M ⊓ Θ).comap M.subtype ≤
-      (((c • M) ⊓ U ⊔ (c • M) ⊓ Θ).comap (c • M).subtype).comap g := by
-    intro x hx
-    obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.1 hx
-    -- `g x` is `c • x`, so membership of `g x` is membership of `c • x`
-    change c • (x : V) ∈ (c • M) ⊓ U ⊔ (c • M) ⊓ Θ
-    rw [← M.subtype_apply x, ← hab, smul_add]
-    exact add_mem
-      (Submodule.mem_sup_left (Submodule.mem_inf.2
-        ⟨Submodule.smul_mem_pointwise_smul _ c M ha.1, U.smul_mem c ha.2⟩))
-      (Submodule.mem_sup_right (Submodule.mem_inf.2
-        ⟨Submodule.smul_mem_pointwise_smul _ c M hb.1, Θ.smul_mem c hb.2⟩))
-  refine Module.length_le_of_surjective (Submodule.mapQ _ _ g hle) fun y ↦ ?_
-  obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
-  obtain ⟨x, rfl⟩ := hg y
-  exact ⟨Submodule.Quotient.mk x, Submodule.mapQ_apply _ _ _ x⟩
 
 variable {W : Type*} [AddCommGroup W] [Module R W]
 
