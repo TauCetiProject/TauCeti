@@ -358,6 +358,13 @@ def horizontalLiftOne :
   complementLiftOne I K hK (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
     (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal.symm
 
+/-- The horizontal lift at the identity is the lift through the complement `𝔨^⊥`. -/
+theorem horizontalLiftOne_eq_complementLiftOne :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    horizontalLiftOne I K hK = complementLiftOne I K hK (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
+      (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal.symm :=
+  (rfl)
+
 /-- The horizontal lift at the identity is horizontal. -/
 theorem horizontalLiftOne_mem :
     letI := quotientChartedSpaceOfIsClosed I hK
@@ -395,6 +402,15 @@ def horizontalInnerOne :
   complementForm I K hK (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
     (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal.symm
     (innerSL ℝ : TangentSpace I (1 : G) →L[ℝ] TangentSpace I (1 : G) →L[ℝ] ℝ)
+
+/-- The horizontal inner product is the form transported from the inner product at the identity
+through the complement `𝔨^⊥`. -/
+theorem horizontalInnerOne_eq_complementForm :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    horizontalInnerOne I K hK = complementForm I K hK (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
+      (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal.symm
+      (innerSL ℝ : TangentSpace I (1 : G) →L[ℝ] TangentSpace I (1 : G) →L[ℝ] ℝ) :=
+  (rfl)
 
 /-- The horizontal inner product is the inner product at the identity of the horizontal lifts. -/
 @[simp]
@@ -444,8 +460,8 @@ theorem horizontalLiftOne_mfderiv_smul
         (fun y : G ⧸ K ↦ k • y) ((1 : G) : G ⧸ K) u) =
       (Lie.adjointContinuousLinearMap (I := I) k :
           TangentSpace I (1 : G) →L[ℝ] TangentSpace I (1 : G)) (horizontalLiftOne I K hK u) :=
-  complementLiftOne_mfderiv_smul
-    (adjointContinuousLinearMap_mem_orthogonal_ker_mfderiv_quotientMk hK hAd) hk
+  complementLiftOne_mfderiv_smul hk
+    (adjointContinuousLinearMap_mem_orthogonal_ker_mfderiv_quotientMk hK hAd k hk)
 
 /-- **Isotropy invariance of the horizontal inner product.** If the inner product at the identity
 of `G` is invariant under `Ad(K)`, then the horizontal inner product at the base point of `G ⧸ K`

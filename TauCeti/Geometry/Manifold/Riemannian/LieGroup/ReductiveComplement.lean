@@ -19,7 +19,8 @@ Let `K` be a closed subgroup of a finite-dimensional Lie group `G`, with project
 metric on `G ⧸ K`. Conversely, given a reductive complement `𝔪`, every `G`-invariant metric on
 `G ⧸ K` is the metric of the `Ad(K)`-invariant inner product it induces on `𝔪`. For `𝔪 = 𝔨^⊥` and
 the inner product of a Riemannian metric on `G` this is the metric of the horizontal inner product
-`Subgroup.horizontalInnerOne`.
+`Subgroup.horizontalInnerOne`
+(`Subgroup.reductiveHomogeneousMetric_orthogonal_eq_homogeneousMetric`).
 
 ## Main definitions
 
@@ -147,8 +148,8 @@ theorem inner_mfderiv_quotientMk_self_pos
 variable (h𝔪) in
 /-- **A `G`-invariant metric is the metric of a reductive complement.** Let `𝔪` be an
 `Ad(K)`-stable complement of `𝔨`, and `b` a form on `T_1 G` that is symmetric, positive definite
-and `Ad(K)`-invariant on `𝔪` and agrees with the pullback `(a, c) ↦ ⟪dπ_1 a, dπ_1 c⟫_o` of a
-Riemannian metric on `G ⧸ K` for which `G` acts by isometries. Then that metric is
+and `Ad(K)`-invariant on `𝔪` and agrees on `𝔪` with the pullback `(a, c) ↦ ⟪dπ_1 a, dπ_1 c⟫_o` of
+a Riemannian metric on `G ⧸ K` for which `G` acts by isometries. Then that metric is
 `Subgroup.reductiveHomogeneousMetric` of `b`. The pullback itself satisfies these hypotheses
 (`ContMDiffRiemannianMetric.symm`, `Subgroup.inner_mfderiv_quotientMk_self_pos` and
 `Subgroup.mfderiv_quotientMk_adjoint_of_mfderiv_smul`). -/
@@ -172,7 +173,7 @@ theorem eq_reductiveHomogeneousMetric (hsymm : ∀ a ∈ 𝔪, ∀ c ∈ 𝔪, b
             (fun y : G ⧸ K ↦ g • y) x w) = m.inner x v w)
     (hmb : letI := quotientChartedSpaceOfIsClosed I hK
       haveI := isManifold_quotientOfIsClosed (I := I) hK
-      ∀ a c : TangentSpace I (1 : G),
+      ∀ a ∈ 𝔪, ∀ c ∈ 𝔪,
         m.inner ((1 : G) : G ⧸ K)
           (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 a)
           (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 c) =
@@ -184,8 +185,31 @@ theorem eq_reductiveHomogeneousMetric (hsymm : ∀ a ∈ 𝔪, ∀ c ∈ 𝔪, b
   have := isManifold_quotientOfIsClosed (I := I) hK
   refine eq_homogeneousMetric _ _ _ m hm ?_
   ext u v
-  rw [complementForm_apply, ← hmb, mfderiv_quotientMk_complementLiftOne,
-    mfderiv_quotientMk_complementLiftOne]
+  rw [complementForm_apply, ← hmb _ (complementLiftOne_mem u) _ (complementLiftOne_mem v),
+    mfderiv_quotientMk_complementLiftOne, mfderiv_quotientMk_complementLiftOne]
+
+variable [RiemannianBundle (fun g : G ↦ TangentSpace I g)]
+
+/-- **The horizontal homogeneous metric is the metric of the reductive complement `𝔨^⊥`.** If the
+inner product at the identity of `G` is `Ad(K)`-invariant, then the homogeneous metric of the
+complement `𝔨^⊥` and the inner product at the identity is the homogeneous metric of the horizontal
+inner product `Subgroup.horizontalInnerOne`. -/
+theorem reductiveHomogeneousMetric_orthogonal_eq_homogeneousMetric
+    (hAd : ∀ k ∈ K, ∀ a c : TangentSpace I (1 : G),
+      inner ℝ (E := TangentSpace I (1 : G)) (Lie.adjointContinuousLinearMap (I := I) k a)
+        (Lie.adjointContinuousLinearMap (I := I) k c) = inner ℝ a c) :
+    letI := quotientChartedSpaceOfIsClosed I hK
+    haveI := isManifold_quotientOfIsClosed (I := I) hK
+    reductiveHomogeneousMetric hK (mfderiv I 𝓘(ℝ, QuotientModelSpace I K)
+        (QuotientGroup.mk : G → G ⧸ K) 1).ker.isCompl_orthogonal.symm
+        (b := innerSL ℝ) (fun a _ c _ ↦ real_inner_comm c a)
+        (fun _ _ ha ↦ real_inner_self_pos.2 ha)
+        (adjointContinuousLinearMap_mem_orthogonal_ker_mfderiv_quotientMk hK hAd)
+        (fun k hk a _ c _ ↦ hAd k hk a c) =
+      homogeneousMetric hK (horizontalInnerOne_comm (I := I) hK)
+        (horizontalInnerOne_pos (I := I) hK) (horizontalInnerOne_mfderiv_smul (I := I) hK hAd) :=
+  eq_homogeneousMetric _ _ _ _ (reductiveHomogeneousMetric_inner_mfderiv_smul (I := I) (hK := hK))
+    (reductiveHomogeneousMetric_inner_one.trans (horizontalInnerOne_eq_complementForm hK).symm)
 
 end Metric
 

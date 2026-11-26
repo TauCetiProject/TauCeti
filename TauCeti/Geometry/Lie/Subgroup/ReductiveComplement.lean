@@ -145,11 +145,11 @@ theorem complementLiftOne_mfderiv_quotientMk {a : TangentSpace I (1 : G)} (ha : 
   refine congrArg Subtype.val (?_ : _ = Subtype.mk a ha)
   rw [LinearEquiv.symm_apply_eq, complementEquivOne_apply]
 
-/-- **Equivariance of the lift through a reductive complement.** If `𝔪` is `Ad(K)`-stable, then for
-`k ∈ K` the lift of the isotropy translate `d(k •)_o u` is `Ad_k` applied to the lift of `u`. -/
-theorem complementLiftOne_mfderiv_smul
-    (hAd : ∀ k ∈ K, ∀ a ∈ 𝔪, Lie.adjointContinuousLinearMap (I := I) k a ∈ 𝔪)
-    {k : G} (hk : k ∈ K) :
+/-- **Equivariance of the lift through a reductive complement.** If `k ∈ K` and `𝔪` is
+`Ad_k`-stable, then the lift of the isotropy translate `d(k •)_o u` is `Ad_k` applied to the lift
+of `u`. -/
+theorem complementLiftOne_mfderiv_smul {k : G} (hk : k ∈ K)
+    (hAd : ∀ a ∈ 𝔪, Lie.adjointContinuousLinearMap (I := I) k a ∈ 𝔪) :
     letI := quotientChartedSpaceOfIsClosed I hK
     ∀ u, complementLiftOne I K hK h𝔪
       (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
@@ -161,7 +161,7 @@ theorem complementLiftOne_mfderiv_smul
   have h := mfderiv_smul_mfderiv_quotientMk_one hK hk (complementLiftOne I K hK h𝔪 u)
   rw [mfderiv_quotientMk_complementLiftOne] at h
   rw [h]
-  exact complementLiftOne_mfderiv_quotientMk (hAd k hk _ (complementLiftOne_mem u))
+  exact complementLiftOne_mfderiv_quotientMk (hAd _ (complementLiftOne_mem u))
 
 end Lift
 
@@ -245,7 +245,8 @@ theorem complementForm_mfderiv_smul
   -- The arguments on the left live in the fibre at `k • o`, the fibre at `o` only up to defeq.
   change b (complementLiftOne I K hK h𝔪 _) (complementLiftOne I K hK h𝔪 _) =
     b (complementLiftOne I K hK h𝔪 u) (complementLiftOne I K hK h𝔪 v)
-  rw [complementLiftOne_mfderiv_smul hAd hk, complementLiftOne_mfderiv_smul hAd hk]
+  rw [complementLiftOne_mfderiv_smul hk (hAd k hk),
+    complementLiftOne_mfderiv_smul hk (hAd k hk)]
   exact hb k hk _ (complementLiftOne_mem u) _ (complementLiftOne_mem v)
 
 /-- **Every form on `T_o(G ⧸ K)` comes from `𝔪`.** A bilinear form `β` on `T_o(G ⧸ K)` is the
@@ -264,18 +265,19 @@ theorem complementForm_comp_mfderiv_quotientMk
   simp only [complementForm_apply, ContinuousLinearMap.coe_comp, comp_apply,
     ContinuousLinearMap.precomp_apply, mfderiv_quotientMk_complementLiftOne]
 
-/-- The pullback along `dπ_1` of an isotropy-invariant form on `T_o(G ⧸ K)` is `Ad(K)`-invariant
-on all of `T_1 G`. -/
+/-- For `k ∈ K`, the pullback along `dπ_1` of a form on `T_o(G ⧸ K)` invariant under the isotropy
+action of `k` is `Ad_k`-invariant on all of `T_1 G`. -/
 theorem mfderiv_quotientMk_adjoint_of_mfderiv_smul
     {β : letI := quotientChartedSpaceOfIsClosed I hK
       TangentSpace 𝓘(ℝ, QuotientModelSpace I K) ((1 : G) : G ⧸ K) →L[ℝ]
         TangentSpace 𝓘(ℝ, QuotientModelSpace I K) ((1 : G) : G ⧸ K) →L[ℝ] ℝ}
+    {k : G} (hk : k ∈ K)
     (hβ : letI := quotientChartedSpaceOfIsClosed I hK
-      ∀ k ∈ K, ∀ u v, β (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
+      ∀ u v, β (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
           (fun y : G ⧸ K ↦ k • y) ((1 : G) : G ⧸ K) u)
           (mfderiv 𝓘(ℝ, QuotientModelSpace I K) 𝓘(ℝ, QuotientModelSpace I K)
           (fun y : G ⧸ K ↦ k • y) ((1 : G) : G ⧸ K) v) = β u v)
-    {k : G} (hk : k ∈ K) (a c : TangentSpace I (1 : G)) :
+    (a c : TangentSpace I (1 : G)) :
     letI := quotientChartedSpaceOfIsClosed I hK
     β (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1
         (Lie.adjointContinuousLinearMap (I := I) k a))
@@ -285,7 +287,7 @@ theorem mfderiv_quotientMk_adjoint_of_mfderiv_smul
       (mfderiv I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) 1 c) := by
   let _ := quotientChartedSpaceOfIsClosed I hK
   rw [← mfderiv_smul_mfderiv_quotientMk_one hK hk, ← mfderiv_smul_mfderiv_quotientMk_one hK hk]
-  exact hβ k hk _ _
+  exact hβ _ _
 
 end Form
 
