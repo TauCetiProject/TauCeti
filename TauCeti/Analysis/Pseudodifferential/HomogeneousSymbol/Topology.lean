@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Parametric
+import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol.IteratedFDeriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -246,32 +247,6 @@ end Topology
 
 section Family
 
-/-- At a nonzero frequency, the mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)` of a homogeneous symbol is
-bounded by the norm of its Fréchet derivative of order `|α| + |β|` in `(x, ξ)`. -/
-theorem norm_mixedDeriv_coefficient_le
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (α β : List (Fin n))
-    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
-    ‖mixedDeriv α β a.coefficient x ξ‖ ≤
-      ‖iteratedFDeriv ℝ (α.length + β.length) a.coefficient (x, ξ)‖ := by
-  -- Both sides only depend on the germ of the coefficient at `(x, ξ)`, which is smooth.
-  obtain ⟨f, hf, hfa⟩ := a.exists_contDiff_eventuallyEq_coefficient hξ
-  rw [← (hfa x).mixedDeriv_eq, ← ((hfa x).iteratedFDeriv ℝ _).eq_of_nhds]
-  exact norm_mixedDeriv_le α β (contDiff_infty.1 hf _) x ξ
-
-/-- At a nonzero frequency, the Fréchet derivative of order `k` of a homogeneous symbol in
-`(x, ξ)` is bounded by the sum of the norms of its mixed derivatives along the words of length `k`
-in position and frequency letters. -/
-theorem norm_iteratedFDeriv_coefficient_le_sum
-    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) (k : ℕ)
-    (x : CoordinateSpace n) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
-    ‖iteratedFDeriv ℝ k a.coefficient (x, ξ)‖ ≤ ∑ w : Fin k → Fin n ⊕ Fin n,
-      ‖mixedDeriv ((List.ofFn w).filterMap Sum.getLeft?) ((List.ofFn w).filterMap Sum.getRight?)
-        a.coefficient x ξ‖ := by
-  -- Both sides only depend on the germ of the coefficient at `(x, ξ)`, which is smooth.
-  obtain ⟨f, hf, hfa⟩ := a.exists_contDiff_eventuallyEq_coefficient hξ
-  simp only [← (hfa x).mixedDeriv_eq, ← ((hfa x).iteratedFDeriv ℝ k).eq_of_nhds]
-  exact norm_iteratedFDeriv_le_sum_mixedDeriv (contDiff_infty.1 hf k) (x, ξ)
-
 /-- Near a nonzero frequency `ξ₀`, frequencies are nonzero and every power of their norm is
 bounded by the same power of `‖ξ₀‖ / 2` plus that of `3 ‖ξ₀‖ / 2`. -/
 private theorem eventually_rpow_norm_le {ξ₀ : CoordinateSpace n} (hξ₀ : ξ₀ ≠ 0) :
@@ -332,9 +307,7 @@ private theorem continuousOn_iteratedFDeriv_of_continuous {Y : Type*} [Topologic
   rw [zero_add] at h
   refine h.congr' ?_
   filter_upwards [hnear] with p ⟨_, hp0, _⟩
-  rw [coefficient_sub, iteratedFDeriv_sub_apply
-    (contDiffAt_infty.1 ((a p.1).contDiffAt_coefficient hp0) _)
-    (contDiffAt_infty.1 ((a y₀).contDiffAt_coefficient hp0) _), sub_add_cancel]
+  rw [iteratedFDeriv_coefficient_sub _ _ _ hp0, sub_add_cancel]
 
 /-- Families of homogeneous symbols with jointly continuous jets are continuous: as `y` tends to
 `y₀`, every mixed derivative of `a y` converges to that of `a y₀` uniformly on compact sets of
@@ -363,9 +336,7 @@ private theorem continuous_of_continuousOn_iteratedFDeriv {Y : Type*} [Topologic
     (half_lt_self hε)
   have hξ0 : ξ ≠ 0 := ne_zero_of_norm_ne_zero (by simp [hξ])
   refine (norm_mixedDeriv_coefficient_le _ α β x hξ0).trans ?_
-  rw [coefficient_sub,
-    iteratedFDeriv_sub_apply (contDiffAt_infty.1 ((a y).contDiffAt_coefficient hξ0) _)
-      (contDiffAt_infty.1 ((a y₀).contDiffAt_coefficient hξ0) _), ← dist_eq_norm]
+  rw [iteratedFDeriv_coefficient_sub _ _ _ hξ0, ← dist_eq_norm]
   exact (hvε y hy (x, ξ) ⟨hx, mem_sphere_zero_iff_norm.2 hξ⟩).le
 
 /-- **The topology of the homogeneous symbols is that of joint continuity of jets.** A family
@@ -395,8 +366,8 @@ theorem continuous_of_contDiffOn {P : Type*} [NormedAddCommGroup P] [NormedSpace
   refine continuous_iff_forall_continuousOn_iteratedFDeriv.2 fun k p hp ↦ ?_
   have hU : {q : P × CoordinateSpace n × CoordinateSpace n | q.2.2 ≠ 0} ∈ 𝓝 p :=
     (isOpen_ne_fun (continuous_snd.comp continuous_snd) continuous_const).mem_nhds hp.2
-  exact (contDiffAt_iteratedFDeriv_snd (f := fun t ↦ (a t).coefficient) (m := 0)
-    (ha.contDiffAt hU) (by simp)).continuousAt.continuousWithinAt
+  exact ((ha.contDiffAt hU).iteratedFDeriv_snd (f := fun t ↦ (a t).coefficient) (m := 0)
+    (by simp)).continuousAt.continuousWithinAt
 
 end Family
 
