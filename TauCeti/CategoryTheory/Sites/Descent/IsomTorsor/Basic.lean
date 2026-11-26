@@ -33,6 +33,8 @@ sheaf-level torsor of isomorphisms is not constructed here.
 * `CategoryTheory.Pseudofunctor.AbelianBanding.principalEquiv`: the bijection
   `(x ≅ y) × A(U) ≃ (x ≅ y) × (x ≅ y)`, `(p, a) ↦ (p, p • a)`, which needs no isomorphism to
   exist.
+* `CategoryTheory.Pseudofunctor.AbelianBanding.isomMulAction`: the action of `A(U)` on the
+  isomorphisms `x ≅ y`, which needs no isomorphism to exist.
 * `CategoryTheory.Pseudofunctor.AbelianBanding.isomTorsor`: the isomorphisms `x ≅ y` form a
   torsor under `A(U)` when they are nonempty.
 * `CategoryTheory.Pseudofunctor.AbelianBanding.coordinateEquiv`: the identification of `A(U)` with
@@ -203,14 +205,26 @@ lemma principalEquiv_symm_apply (pq : (x ≅ y) × (x ≅ y)) :
   (rfl)
 
 variable (x y) in
-/-- When there is an isomorphism `x ≅ y`, the isomorphisms `x ≅ y` form a torsor under the
-coefficients `A(U)`, acting by `AbelianBanding.act` (Olsson, Lemma 31.3 and Remark 31.5). The
-division of `p` by `q` is the difference of `q` and `p`. -/
-@[implicit_reducible]
-def isomTorsor (h : Nonempty (x ≅ y)) : Torsor (Multiplicative (A.obj.obj (op U))) (x ≅ y) where
+/-- The action of `A(U)` on the isomorphisms `x ≅ y`: `a • p = act p a`, the composite of `p` with
+the band automorphism of `a` at `y`. It needs no isomorphism `x ≅ y` to exist. -/
+@[expose, reducible]
+def isomMulAction : MulAction (Multiplicative (A.obj.obj (op U))) (x ≅ y) where
   smul a p := b.act p a
   one_smul := b.act_one
   mul_smul a c p := b.act_mul p a c
+
+lemma isomMulAction_smul (a : Multiplicative (A.obj.obj (op U))) (p : x ≅ y) :
+    letI := b.isomMulAction x y
+    a • p = b.act p a :=
+  (rfl)
+
+variable (x y) in
+/-- When there is an isomorphism `x ≅ y`, the isomorphisms `x ≅ y` form a torsor under the
+coefficients `A(U)`, acting by `AbelianBanding.isomMulAction` (Olsson, Lemma 31.3 and
+Remark 31.5). The division of `p` by `q` is the difference of `q` and `p`. -/
+@[implicit_reducible]
+def isomTorsor (h : Nonempty (x ≅ y)) : Torsor (Multiplicative (A.obj.obj (op U))) (x ≅ y) where
+  __ := b.isomMulAction x y
   sdiv p q := b.difference q p
   sdiv_smul' p q := b.act_difference q p
   smul_sdiv' a p := b.difference_act p a
