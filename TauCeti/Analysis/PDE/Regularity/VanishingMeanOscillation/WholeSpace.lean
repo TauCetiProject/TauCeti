@@ -7,12 +7,12 @@ module
 
 public import TauCeti.Analysis.PDE.DirichletProblem.HomogeneousSobolev
 public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
-import TauCeti.Analysis.Matrix.EuclideanLin
-import TauCeti.Analysis.Matrix.EuclideanLin.Measurable
+import TauCeti.Analysis.Matrix.EuclideanLin.BoundedMeanOscillation
 import TauCeti.Analysis.PDE.Regularity.VanishingMeanOscillation.Regularity
 import TauCeti.Analysis.Sobolev.D1p0.Restriction
 import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.Duality
+import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 
 /-!
 # The whole-space `W^{1,p}` estimate for coefficients of small BMO seminorm, `1 < p < ∞`
@@ -34,8 +34,9 @@ where `C` and `δ > 0` depend only on `n`, `p`, `λ` and `Λ`
 (`exists_memLp_and_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_bmoSeminorm_le`, in the
 namespace `TauCeti.PDE`).
 Nothing is assumed about the integrability of `∇u` beyond `L²`: membership in `Lᵖ` is part of the
-conclusion. This is the full range of Di Fazio's and Auscher–Qafsaoui's `W^{1,p}` theory in the
-whole space, on both sides of `p = 2`. The a priori estimate
+conclusion. This is the small-BMO whole-space form of Di Fazio's and Auscher–Qafsaoui's `W^{1,p}`
+estimate, on both sides of `p = 2`; coefficients of vanishing mean oscillation, whose oscillation
+is small only below some radius, are not covered. The a priori estimate
 `TauCeti.PDE.exists_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_setAverage_le` covers
 `2 < p < ∞` only, and only for solutions already known to have `∇u ∈ Lᵖ`.
 
@@ -48,7 +49,7 @@ whole space, on both sides of `p = 2`. The a priori estimate
   radius, since the VMO modulus of `a` is at most its BMO seminorm, and gives
   `‖∇u‖_{Lᵖ(B(0, R/2))} ≤ C (‖G‖_{Lᵖ} + |B(0, R)|^(1/p - 1/2) ‖∇u‖_{L²})`.
   The exponent `1/p - 1/2` is negative, so the last term vanishes as `R → ∞`, and Fatou's lemma
-  gives the global estimate.
+  gives the global estimate (`TauCeti.eLpNorm_le_of_forall_eLpNorm_restrict_ball_le`).
 * **`p = 2`.** This is the energy estimate `λ ‖∇u‖_{L²} ≤ ‖G‖_{L²}`
   (`TauCeti.PDE.mul_norm_le_of_forall_integral_matrixBilinearForm_eq_integral_inner`).
 * **`1 < p < 2`, by duality.** Let `p'` be the Hölder conjugate exponent, so `p' > 2`. A bounded
@@ -56,7 +57,8 @@ whole space, on both sides of `p = 2`. The a priori estimate
   `-∂ᵢ((aᵀ)ⁱʲ ∂ⱼw) = -div H` has a solution `w ∈ D^{1,2}(ℝ^{n+1})`
   (`TauCeti.PDE.existsUnique_forall_integral_matrixBilinearForm_eq_integral_inner`). The
   transposed coefficients are uniformly elliptic with the same constants, and their BMO seminorm is
-  at most twice that of `a`, since the operator of `Aᵀ` is the adjoint of that of `A`. So the case
+  at most twice that of `a`, since the operator of `Aᵀ` is the adjoint of that of `A`
+  (`Matrix.bmoSeminorm_toEuclideanCLM_conjTranspose_le`). So the case
   `p' > 2` gives `‖∇w‖_{L^{p'}} ≤ C ‖H‖_{L^{p'}}`. Testing the two equations with each other
   (`TauCeti.PDE.integral_matrixBilinearForm_eq_integral_inner_of_forall`),
   `∫ ⟨∇u, H⟩ = ∫ ⟨aᵀ ∇w, ∇u⟩ = ∫ ⟨a ∇u, ∇w⟩ = ∫ ⟨G, ∇w⟩`,
@@ -87,30 +89,6 @@ namespace PDE
 
 variable {n : ℕ}
 
-/-- The exponent conjugate to `p < 2` is greater than `2`. -/
-private theorem two_lt_of_lt_two {p q : ℝ≥0∞} [p.HolderConjugate q] (hp : p < 2) : 2 < q := by
-  by_contra hq
-  have h := ENNReal.add_lt_add_of_lt_of_le (ENNReal.inv_ne_top.2 two_ne_zero)
-    (ENNReal.inv_lt_inv.2 hp) (ENNReal.inv_le_inv.2 (not_lt.1 hq))
-  rw [ENNReal.HolderConjugate.inv_add_inv_eq_one p q, ENNReal.inv_two_add_inv_two] at h
-  exact lt_irrefl _ h
-
-/-- Transposing the coefficients at most doubles the BMO seminorm of their operators: the operator
-of `Aᵀ` is the adjoint of the operator of `A`, and taking adjoints is a linear isometry. -/
-private theorem bmoSeminorm_toEuclideanCLM_transpose_le
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    (ha : AEStronglyMeasurable a volume) :
-    bmoSeminorm (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)ᵀ) volume ≤
-      2 * bmoSeminorm (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)) volume := by
-  have h := (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := EuclideanSpace ℝ (Fin (n + 1)))
-    (F := EuclideanSpace ℝ (Fin (n + 1)))).lipschitzWith.bmoSeminorm_comp_le
-      (aestronglyMeasurable_toEuclideanCLM_iff.2 ha)
-  convert h using 2
-  · ext x
-    simp only [Function.comp_apply, adjoint_toEuclideanCLM,
-      conjTranspose_eq_transpose_of_trivial]
-  · simp
-
 /-- The gradient field of an element of `D^{1,2}(ℝ^{n+1})` is a.e. strongly measurable, and has
 finite `L²` norm, for Lebesgue measure. -/
 private theorem aestronglyMeasurable_and_eLpNorm_ne_top_coe_d1p0
@@ -129,48 +107,14 @@ private theorem aestronglyMeasurable_and_eLpNorm_ne_top_coe_d1p0
         Set (EuclideanSpace ℝ (Fin (n + 1)))))))
   simpa only [Opens.coe_top, Measure.restrict_univ] using h
 
-/-- **From balls to the whole space.** Let `e < 0` and `B < ∞`. If for every `R > 0` the `Lᵖ` norm
-of `g` on `B(0, R/2)` is at most `C (A + |B(0, R)|^e B)`, then `‖g‖_{Lᵖ} ≤ C A`: the factor
-`|B(0, R)|^e` tends to zero as `R → ∞`, and Fatou's lemma along the balls `B(0, k + 1)` passes the
-bound to the whole space. -/
-private theorem eLpNorm_le_of_forall_eLpNorm_restrict_ball_le {F : Type*} [NormedAddCommGroup F]
-    {g : EuclideanSpace ℝ (Fin (n + 1)) → F} (hg : AEStronglyMeasurable g volume) {p : ℝ≥0∞}
-    {e : ℝ} (he : e < 0) {A B C : ℝ≥0∞} (hB : B ≠ ∞) (hC : C ≠ ∞)
-    (h : ∀ R : ℝ, 0 < R → eLpNorm g p (volume.restrict (ball 0 (R / 2))) ≤
-      C * (A + volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) R) ^ e * B)) :
-    eLpNorm g p volume ≤ C * A := by
-  have hV : Tendsto (fun k : ℕ => volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
-      (2 * ((k : ℝ) + 1))) ^ e) atTop (𝓝 0) := by
-    have hmono : Monotone fun k : ℕ =>
-        ball (0 : EuclideanSpace ℝ (Fin (n + 1))) (2 * ((k : ℝ) + 1)) :=
-      fun k l hkl => ball_subset_ball (by gcongr)
-    have hunion : (⋃ k : ℕ, ball (0 : EuclideanSpace ℝ (Fin (n + 1))) (2 * ((k : ℝ) + 1))) =
-        univ := by
-      refine eq_univ_of_forall fun x => mem_iUnion.2 ?_
-      obtain ⟨k, hk⟩ := exists_nat_gt ‖x‖
-      exact ⟨k, mem_ball_zero_iff.2 (by linarith)⟩
-    have hvol := tendsto_measure_iUnion_atTop (μ := volume) hmono
-    rw [hunion, measure_univ_of_isAddLeftInvariant] at hvol
-    have h := (ENNReal.continuous_rpow_const (y := e)).tendsto ∞ |>.comp hvol
-    rwa [Function.comp_def, ENNReal.top_rpow_of_neg he] at h
-  have hlim : Tendsto (fun k : ℕ => C * (A + volume (ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
-      (2 * ((k : ℝ) + 1))) ^ e * B)) atTop (𝓝 (C * A)) := by
-    have h := ENNReal.Tendsto.const_mul (a := C) ((tendsto_const_nhds (x := A)).add
-      (ENNReal.Tendsto.mul_const hV (Or.inr hB))) (Or.inr hC)
-    simpa only [zero_mul, add_zero] using h
-  refine (Lp.eLpNorm_lim_le_liminf_eLpNorm
-    (f := fun k : ℕ => (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) ((k : ℝ) + 1)).indicator g)
-    (fun k => hg.indicator (measurableSet_ball (x := (0 : EuclideanSpace ℝ (Fin (n + 1))))
-      (ε := (k : ℝ) + 1))) g hg (ae_of_all _ fun x => ?_)).trans ?_
-  · obtain ⟨N, hN⟩ := exists_nat_gt ‖x‖
-    refine tendsto_const_nhds.congr' ((eventually_ge_atTop N).mono fun k hk => ?_)
-    have hk' : (N : ℝ) ≤ k := by exact_mod_cast hk
-    exact (indicator_of_mem (mem_ball_zero_iff.2 (by linarith)) g).symm
-  · rw [← hlim.liminf_eq]
-    refine liminf_le_liminf (Eventually.of_forall fun k => ?_)
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_ball.nullMeasurableSet]
-    have hk := h (2 * ((k : ℝ) + 1)) (by positivity)
-    rwa [mul_div_cancel_left₀ _ two_ne_zero] at hk
+/-- A weak formulation over the whole space, stated for Lebesgue measure, is the same as its form
+over the open set `⊤`, in which the Dirichlet-problem API on `D^{1,2}` states it. -/
+private theorem forall_setIntegral_top_iff {ι : Type*}
+    {f g : ι → EuclideanSpace ℝ (Fin (n + 1)) → ℝ} :
+    (∀ i, ∫ x in (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), f i x =
+        ∫ x in (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), g i x) ↔
+      ∀ i, ∫ x, f i x = ∫ x, g i x := by
+  simp only [Opens.coe_top, Measure.restrict_univ]
 
 /-- **Whole-space `W^{1,p}` regularity, `2 < p < ∞`.** For coefficients of small BMO seminorm, a
 finite-energy weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` with `G ∈ Lᵖ` has `∇u ∈ Lᵖ`, with
@@ -215,13 +159,14 @@ private theorem exists_memLp_and_eLpNorm_le_of_two_lt {p : ℝ≥0∞} (hp : 2 <
     isBounded_ball u
   have hvB := energyFormH1_ofTestFunctionₗ_eq_integral_inner_of_gradient_ae_eq
     (le_top : B ≤ ⊤)
-    (fun φ => by simpa only [Opens.coe_top, Measure.restrict_univ] using hu φ) hv
+    (forall_setIntegral_top_iff.2 hu) hv
   have hle := (hreg (r₀ := 4 * R) ha hell ((vmoModulus_le_bmoSeminorm _ _ _).trans hbmo)
     (Ω := B) (x₀ := 0) hR le_rfl subset_rfl v G hvB (hG.restrict _)).2
   have hvR : W1p.gradient v =ᵐ[volume.restrict (ball 0 R)]
       (u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
         (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
-          Set (EuclideanSpace ℝ (Fin (n + 1)))))) := hv
+          Set (EuclideanSpace ℝ (Fin (n + 1)))))) := by
+    simpa only [B, Opens.coe_mk] using hv
   rw [eLpNorm_congr_ae (ae_restrict_of_ae_restrict_of_subset
     (ball_subset_ball (half_le_self hR.le)) hvR), eLpNorm_congr_ae hvR] at hle
   refine hle.trans ?_
@@ -259,14 +204,13 @@ private theorem integral_inner_eq_integral_inner_of_transpose
   have haT : AEStronglyMeasurable (fun x => (a x)ᵀ) volume :=
     (continuous_id.matrix_transpose).comp_aestronglyMeasurable ha
   have e1 := integral_matrixBilinearForm_eq_integral_inner_of_forall (Omega := ⊤)
-    (a := fun x => (a x)ᵀ) (by simpa only [Opens.coe_top, Measure.restrict_univ] using haT)
+    (a := fun x => (a x)ᵀ) haT.restrict
     (fun x _ => (norm_matrixBilinearForm_transpose (a x)).trans_le (hbd x))
-    (by simpa only [Opens.coe_top, Measure.restrict_univ] using hH)
-    (fun φ => by simpa only [Opens.coe_top, Measure.restrict_univ] using hw φ) u
+    (hH.restrict _)
+    (forall_setIntegral_top_iff.2 hw) u
   have e2 := integral_matrixBilinearForm_eq_integral_inner_of_forall (Omega := ⊤)
-    (by simpa only [Opens.coe_top, Measure.restrict_univ] using ha) (fun x _ => hbd x)
-    (by simpa only [Opens.coe_top, Measure.restrict_univ] using hG)
-    (fun φ => by simpa only [Opens.coe_top, Measure.restrict_univ] using hu φ) w
+    ha.restrict (fun x _ => hbd x)
+    (hG.restrict _) (forall_setIntegral_top_iff.2 hu) w
   simp only [Opens.coe_top, Measure.restrict_univ, matrixBilinearForm_transpose_apply] at e1 e2
   rw [← e2, e1]
   exact integral_congr_ae (ae_of_all _ fun x => real_inner_comm _ _)
@@ -296,13 +240,15 @@ private theorem exists_memLp_and_eLpNorm_le_of_lt_two {p : ℝ≥0∞} (hp : 1 <
   set q := p.conjExponent
   have : p.HolderConjugate q := ENNReal.HolderConjugate.conjExponent hp.le
   obtain ⟨C, δ, hδ, hreg⟩ := exists_memLp_and_eLpNorm_le_of_two_lt (n := n)
-    (two_lt_of_lt_two hp2) (ENNReal.conjExponent_ne_top hp) lam Lam
+    (ENNReal.HolderConjugate.two_lt hp2) (ENNReal.conjExponent_ne_top hp) lam Lam
   refine ⟨C, δ / 2, half_pos hδ, fun {a} ha hell hbmo u G hu hG2 => ?_⟩
   have haT : AEStronglyMeasurable (fun x => (a x)ᵀ) volume :=
     (continuous_id.matrix_transpose).comp_aestronglyMeasurable ha
   have hbmoT : bmoSeminorm (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)ᵀ) volume ≤
       ENNReal.ofReal δ := by
-    refine (bmoSeminorm_toEuclideanCLM_transpose_le ha).trans ?_
+    have h := bmoSeminorm_toEuclideanCLM_conjTranspose_le ha
+    simp only [conjTranspose_eq_transpose_of_trivial] at h
+    refine h.trans ?_
     calc 2 * bmoSeminorm (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)) volume ≤
           2 * ENNReal.ofReal (δ / 2) := by gcongr
       _ = ENNReal.ofReal δ := by
@@ -315,9 +261,8 @@ private theorem exists_memLp_and_eLpNorm_le_of_lt_two {p : ℝ≥0∞} (hp : 1 <
   -- The adjoint problem `-∂ᵢ((aᵀ)ⁱʲ ∂ⱼw) = -div H` has a finite-energy solution `w`.
   obtain ⟨w, hw, -⟩ := existsUnique_forall_integral_matrixBilinearForm_eq_integral_inner
     (Omega := ⊤) (hell.transpose.mono_set (subset_univ _))
-    (by simpa only [Opens.coe_top, Measure.restrict_univ] using haT)
-    (by simpa only [Opens.coe_top, Measure.restrict_univ] using hH2)
-  have hw' := fun φ => by simpa only [Opens.coe_top, Measure.restrict_univ] using hw φ
+    haT.restrict (hH2.restrict _)
+  have hw' := forall_setIntegral_top_iff.1 hw
   rw [integral_inner_eq_integral_inner_of_transpose ha
     (fun x => hell.opNorm_matrixBilinearForm_le (mem_univ x)) hG2 hH2 hu hw']
   calc _ ≤ eLpNorm G p volume * eLpNorm (w : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
@@ -350,9 +295,7 @@ private theorem eLpNorm_coe_d1p0_le_of_uniformlyEllipticOn {lam Lam : ℝ}
   have hlam := hell.pos
   have hen := mul_norm_le_of_forall_integral_matrixBilinearForm_eq_integral_inner
     (Omega := ⊤) (hell.mono_set (subset_univ _))
-    (by simpa only [Opens.coe_top, Measure.restrict_univ] using ha)
-    (by simpa only [Opens.coe_top, Measure.restrict_univ] using hG)
-    (fun φ => by simpa only [Opens.coe_top, Measure.restrict_univ] using hu φ)
+    ha.restrict (hG.restrict _) (forall_setIntegral_top_iff.2 hu)
   simp only [Opens.coe_top, Measure.restrict_univ] at hen
   have h : ENNReal.ofReal ‖u‖ = eLpNorm (u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
       (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
@@ -361,8 +304,7 @@ private theorem eLpNorm_coe_d1p0_le_of_uniformlyEllipticOn {lam Lam : ℝ}
         Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
     rw [← Submodule.norm_coe, Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top _)]
   simp only [Opens.coe_top, Measure.restrict_univ] at h
-  change _ ≤ ENNReal.ofReal lam⁻¹ * _
-  rw [← h]
+  rw [ENNReal.ofNNReal_toNNReal, ← h]
   calc ENNReal.ofReal ‖u‖ ≤ ENNReal.ofReal (lam⁻¹ * (eLpNorm G 2 volume).toReal) :=
         ENNReal.ofReal_le_ofReal ((le_inv_mul_iff₀ hlam).2 hen)
     _ = ENNReal.ofReal lam⁻¹ * ENNReal.ofReal (eLpNorm G 2 volume).toReal :=

@@ -16,8 +16,9 @@ Elementary facts about Hölder exponents: the missing exponent `r` of a triple w
 exponents below by `1` and the conjugate exponent of `p` above by `q`; the conjugate exponent
 is antitone, finite for `p > 1` and greater than `1` for finite `p`; and the exponent
 conjugate to `p > 2` is less than `2`, as for the supercritical exponents of planar Sobolev and
-Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most `2`. An exponent
-`p > 2` satisfies `1/p + 1/p < 1`. In `ℝ≥0`, the only exponent conjugate to `2` is `2`.
+Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most `2` and the exponent
+conjugate to `p < 2` is greater than `2`. An exponent `p > 2` satisfies `1/p + 1/p < 1`. In `ℝ≥0`,
+the only exponent conjugate to `2` is `2`.
 
 ## Main declarations
 
@@ -34,6 +35,7 @@ Cauchy-transform estimates, while the exponent conjugate to `p ≥ 2` is at most
   is finite with `1/p' = 1 - 1/p` when `p > 1`, and decreases as `p` increases.
 * `ENNReal.HolderConjugate.lt_two`: the conjugate of an exponent `p > 2` is less than `2`.
 * `ENNReal.HolderConjugate.le_two`: the conjugate of an exponent `p ≥ 2` is at most `2`.
+* `ENNReal.HolderConjugate.two_lt`: the conjugate of an exponent `p < 2` is greater than `2`.
 * `ENNReal.HolderConjugate.le_inv_one_sub_inv`,
   `ENNReal.HolderConjugate.inv_toReal_sub_inv_toReal_inv_one_sub_inv`: for `1 ≤ p ≤ q`, the
   conjugate `q'` of `q` is at most the conjugate `p' = (1 - 1/p)⁻¹` of `p`, and
@@ -130,6 +132,14 @@ theorem le_two {p q : ℝ≥0∞} [p.HolderConjugate q] (hp : 2 ≤ p) : q ≤ 2
   by_contra hq
   have h := ENNReal.add_lt_add_of_le_of_lt (ENNReal.inv_ne_top.2 (ne_zero p q))
     (ENNReal.inv_le_inv.2 hp) (ENNReal.inv_lt_inv.2 (not_le.1 hq))
+  rw [inv_add_inv_eq_one p q, ENNReal.inv_two_add_inv_two] at h
+  exact lt_irrefl _ h
+
+/-- The exponent conjugate to `p < 2` is greater than `2`. -/
+theorem two_lt {p q : ℝ≥0∞} [p.HolderConjugate q] (hp : p < 2) : 2 < q := by
+  by_contra hq
+  have h := ENNReal.add_lt_add_of_lt_of_le (ENNReal.inv_ne_top.2 two_ne_zero)
+    (ENNReal.inv_lt_inv.2 hp) (ENNReal.inv_le_inv.2 (not_lt.1 hq))
   rw [inv_add_inv_eq_one p q, ENNReal.inv_two_add_inv_two] at h
   exact lt_irrefl _ h
 
