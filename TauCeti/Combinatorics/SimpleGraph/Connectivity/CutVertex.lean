@@ -183,13 +183,13 @@ theorem not_isCutVertex_induce_sUnion_of_directedOn {S : Set (Set V)}
     ¬(G.induce (⋃₀ S)).IsCutVertex x := by
   rw [isCutVertex_iff_exists_forall_walk_mem_support]
   rintro ⟨a, b, hax, hbx, ⟨p⟩, hall⟩
-  have ha : (Embedding.induce (⋃₀ S) (G := G)).toHom a = (a : V) := by simp
-  have hb : (Embedding.induce (⋃₀ S) (G := G)).toHom b = (b : V) := by simp
-  let q : G.Walk a b := (p.map (Embedding.induce (⋃₀ S)).toHom).copy ha hb
+  have hinduce (v : ↑(⋃₀ S)) : (Embedding.induce (⋃₀ S) (G := G)).toHom v = (v : V) := by
+    simp
+  set q : G.Walk a b := (p.map (Embedding.induce (⋃₀ S)).toHom).copy (hinduce a) (hinduce b)
+    with hq_def
   have hq : ∀ y ∈ q.support, y ∈ ⋃₀ S := by
     intro y hy
-    change y ∈ ((p.map (Embedding.induce (⋃₀ S)).toHom).copy ha hb).support at hy
-    rw [Walk.support_copy, Walk.support_map] at hy
+    rw [hq_def, Walk.support_copy, Walk.support_map] at hy
     obtain ⟨z, -, rfl⟩ := List.mem_map.mp hy
     simp
   obtain ⟨B, hB, -⟩ := Set.mem_sUnion.mp x.property
@@ -201,21 +201,18 @@ theorem not_isCutVertex_induce_sUnion_of_directedOn {S : Set (Set V)}
       · exact x.property
       · exact hq y hy)
   let xD : D := ⟨x, hsub (Set.mem_insert _ _)⟩
+  have hcutD : ¬(G.induce D).IsCutVertex xD := hcut D hD xD.property
   have hqD := (q.induce D fun y hy ↦ hsub (Set.mem_insert_of_mem _ hy)).reachable
-  obtain ⟨r, hr⟩ := hqD.exists_walk_notMem_support_of_not_isCutVertex (hcut D hD xD.property)
+  obtain ⟨r, hr⟩ := hqD.exists_walk_notMem_support_of_not_isCutVertex hcutD
     (fun h ↦ hax (Subtype.ext (congrArg (Subtype.val : D → V) h)))
     (fun h ↦ hbx (Subtype.ext (congrArg (Subtype.val : D → V) h)))
+  have hval (v : D) : ((G.induceHomOfLE (Set.subset_sUnion_of_mem hD)).toHom v : V) = v := by
+    simp only [Embedding.coe_toHom, induceHomOfLE_apply, Set.coe_inclusion]
   have hx := hall ((r.map (G.induceHomOfLE (Set.subset_sUnion_of_mem hD)).toHom).copy
-    (Subtype.ext (by simp only [Embedding.coe_toHom, induceHomOfLE_apply,
-      Set.inclusion_mk]))
-    (Subtype.ext (by simp only [Embedding.coe_toHom, induceHomOfLE_apply,
-      Set.inclusion_mk])))
+    (Subtype.ext (hval _)) (Subtype.ext (hval _)))
   simp only [Walk.support_copy, Walk.support_map, List.mem_map] at hx
   obtain ⟨y, hy, hyx⟩ := hx
-  have hyD : y = xD := Subtype.ext (by
-    simpa only [Embedding.coe_toHom, induceHomOfLE_apply, Set.coe_inclusion] using
-      congrArg Subtype.val hyx)
-  change xD ∉ r.support at hr
+  have hyD : y = xD := Subtype.ext ((hval y).symm.trans (congrArg Subtype.val hyx))
   exact hr (hyD ▸ hy)
 
 /-- **Adding an ear.** If a vertex set induces a connected graph without cut vertices, then adding
