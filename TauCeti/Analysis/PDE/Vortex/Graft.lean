@@ -49,12 +49,12 @@ of the defect, with one constant for all cutoffs with bounded derivatives
 For the dilated cutoff `z ↦ φ (z / R)` of a bump function `φ`, one on the closed ball of radius
 `φ.rIn` and zero outside the ball of radius `φ.rOut`, the graft is the vortex on the disc of
 radius `φ.rIn R` and the vacuum outside the disc of radius `φ.rOut R`, and it is an exact solution
-on both (`TauCeti.Vortex.equation_vortexGraft_comp_smul_eventuallyEq_zero`). On the annulus
-between them every derivative of its defect is `O(exp (-c φ.rIn R))`, uniformly over a bounded
-window of coefficients
-(`TauCeti.Vortex.exists_norm_iteratedFDeriv_equation_vortexGraft_comp_smul_le_mul_exp`), so the
-defect is smaller than every power of `R`. This is the plane model of inserting a vortex into a
-normal disc of radius `φ.rOut R`, measured in the coordinate in which the vortex has unit size.
+on both (`TauCeti.Vortex.equation_vortexGraft_bump_comp_inv_smul_eventuallyEq_zero`). On the
+annulus between them every derivative of its defect is `O(exp (-c φ.rIn R))`, uniformly over a
+bounded window of coefficients, so the defect is smaller than every power of `R`
+(`TauCeti.Vortex.exists_norm_iteratedFDeriv_equation_vortexGraft_bump_comp_inv_smul_le_mul_exp`).
+This is the plane model of inserting a vortex into a normal disc of radius `φ.rOut R`, measured
+in the coordinate in which the vortex has unit size.
 
 ## References
 
@@ -273,9 +273,10 @@ function on `ℂ`, one on the closed ball of radius `φ.rIn` and zero outside th
 `φ.rOut`, and `R > 0` with `f.rOut < (φ.rIn R)²`. For the cutoff `z ↦ φ (z / R)`, the graft is the
 normalized vortex on the disc `‖z‖ < φ.rIn R` and the reference field outside the closed disc of
 radius `φ.rOut R`, so near every point of either region its vortex defect vanishes. -/
-theorem equation_vortexGraft_comp_smul_eventuallyEq_zero (hm : 0 < m) (f : ContDiffBump (0 : ℝ))
-    (φ : ContDiffBump (0 : ℂ)) {R : ℝ} (hR : 0 < R) (hrOut : f.rOut < (φ.rIn * R) ^ 2)
-    (a : Fin m → ℂ) {z : ℂ} (hz : ‖z‖ < φ.rIn * R ∨ φ.rOut * R < ‖z‖) :
+theorem equation_vortexGraft_bump_comp_inv_smul_eventuallyEq_zero (hm : 0 < m)
+    (f : ContDiffBump (0 : ℝ)) (φ : ContDiffBump (0 : ℂ)) {R : ℝ} (hR : 0 < R)
+    (hrOut : f.rOut < (φ.rIn * R) ^ 2) (a : Fin m → ℂ) {z : ℂ}
+    (hz : ‖z‖ < φ.rIn * R ∨ φ.rOut * R < ‖z‖) :
     equation (vortexGraft f (fun w ↦ φ (R⁻¹ • w)) a) =ᶠ[𝓝 z] 0 := by
   rcases hz with hz | hz
   · have hU : IsOpen {w : ℂ | ‖w‖ < φ.rIn * R} := isOpen_lt continuous_norm continuous_const
@@ -307,8 +308,9 @@ set of divisor coefficients, `φ` a bump function on `ℂ`, one on the closed ba
 `f.rOut < (φ.rIn R)²`, every `a ∈ S` and every `z ∈ ℂ`, the `n`-th derivative of the vortex
 defect of the graft of `y_a` with the dilated cutoff `z ↦ φ (z / R)` satisfies
 `‖Dⁿ equation (z)‖ ≤ K exp (-c φ.rIn R)`. The defect vanishes off the annulus
-`φ.rIn R ≤ ‖z‖ ≤ φ.rOut R` (`TauCeti.Vortex.equation_vortexGraft_comp_smul_eventuallyEq_zero`). -/
-theorem exists_norm_iteratedFDeriv_equation_vortexGraft_comp_smul_le_mul_exp (hm : 0 < m)
+`φ.rIn R ≤ ‖z‖ ≤ φ.rOut R`
+(`TauCeti.Vortex.equation_vortexGraft_bump_comp_inv_smul_eventuallyEq_zero`). -/
+theorem exists_norm_iteratedFDeriv_equation_vortexGraft_bump_comp_inv_smul_le_mul_exp (hm : 0 < m)
     (f : ContDiffBump (0 : ℝ)) (φ : ContDiffBump (0 : ℂ)) {S : Set (Fin m → ℂ)}
     (hS : Bornology.IsBounded S) (n : ℕ) {c : ℝ} (hc : c < 1 / 2) :
     ∃ K, ∀ R, 0 < R → f.rOut < (φ.rIn * R) ^ 2 → ∀ a ∈ S, ∀ z,
@@ -325,7 +327,7 @@ theorem exists_norm_iteratedFDeriv_equation_vortexGraft_comp_smul_le_mul_exp (hm
   refine ⟨K, fun R hR₀ hrOut a ha z ↦ ?_⟩
   rcases lt_or_ge ‖z‖ (φ.rIn * R) with hz | hz
   · -- Inside the disc where the cutoff is one, the defect vanishes near `z`.
-    rw [((equation_vortexGraft_comp_smul_eventuallyEq_zero hm f φ hR₀ hrOut a
+    rw [((equation_vortexGraft_bump_comp_inv_smul_eventuallyEq_zero hm f φ hR₀ hrOut a
       (Or.inl hz)).iteratedFDeriv ℝ n).eq_of_nhds, iteratedFDeriv_zero, Pi.zero_apply,
       norm_zero]
     positivity
