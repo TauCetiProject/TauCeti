@@ -74,11 +74,11 @@ open scoped Classical in
 noncomputable def gammaPoleOffset : ℝ := if χ.Even then 2 else 1
 
 /-- The first strictly negative gamma pole of an even character is at `-2`. -/
-theorem gammaPoleOffset_of_even (he : χ.Even) : χ.gammaPoleOffset = 2 := by
+@[simp] theorem gammaPoleOffset_of_even (he : χ.Even) : χ.gammaPoleOffset = 2 := by
   simp [gammaPoleOffset, he]
 
 /-- The first strictly negative gamma pole of an odd character is at `-1`. -/
-theorem gammaPoleOffset_of_odd (ho : χ.Odd) : χ.gammaPoleOffset = 1 := by
+@[simp] theorem gammaPoleOffset_of_odd (ho : χ.Odd) : χ.gammaPoleOffset = 1 := by
   simp [gammaPoleOffset, ho.not_even]
 
 /-- The offset to the first strictly negative gamma pole is positive. -/
