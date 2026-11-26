@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ExternalProductBlock.Completion
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 public import TauCeti.RepresentationTheory.Continuous.WithLpProd
-import Mathlib.Topology.MetricSpace.UniformConvergence
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # External tensor products of representations on completed tensor products
@@ -25,16 +25,16 @@ completion. This is the *external tensor product* `π ⊠̂ ρ`
 (`ContRepresentation.IsUnitary.externalTensorCompletion`), and when they are strongly continuous
 with uniformly bounded operators, so is `π ⊠̂ ρ`
 (`ContRepresentation.continuous_externalTensorCompletion_apply`). Strong continuity is not
-inherited for free: the orbits of the pure tensors are continuous, and the operators `π g ⊗ ρ h` are
-uniformly Lipschitz, so the vectors with continuous orbits form a closed subspace
-(`Equicontinuous.isClosed_setOfPred_tendsto`) containing the dense span of the pure tensors.
+inherited for free: the orbits of the pure tensors are continuous, the pure tensors span a dense
+subspace, and the operators `π g ⊗ ρ h` are uniformly bounded
+(`ContinuousLinearMap.continuous_apply_of_dense_span`).
 
 For compact groups `G` and `H` acting on Hermitian bundles over closed manifolds `X` and `Y`, the
 `L²` sections of the external product bundle over `X × Y` are identified, by a unitary, with the
 completed tensor product of the two `L²` section spaces, and `G × H` acts on it in this way.
 
 Intertwining maps of the factors give intertwining maps of the completed tensor products
-(`ContIntertwiningMap.mapLCompletion`). In particular, for intertwining maps
+(`ContIntertwiningMap.externalTensorCompletion`). In particular, for intertwining maps
 `A : π₀ →ⁱL π₁` and `B : ρ₀ →ⁱL ρ₁` between unitary representations of groups `G` and `H` on
 Hilbert spaces, the external product block
 
@@ -43,15 +43,16 @@ Hilbert spaces, the external product block
 of `ContinuousLinearMap.externalProductBlockCompletion` intertwines the Hilbert direct sums
 `(π₀ ⊠̂ ρ₀) ⊕ (π₁ ⊠̂ ρ₁)` and `(π₁ ⊠̂ ρ₀) ⊕ (π₀ ⊠̂ ρ₁)` of representations of `G × H`
 (`ContIntertwiningMap.externalProductBlockCompletion`). This is the operator whose index is the
-product of the indices of `A` and `B` (`ContinuousLinearMap.index_externalProductBlockCompletion`);
-being equivariant, it has an equivariant index in the representation ring of `G × H`.
+product of the indices of `A` and `B` (`ContinuousLinearMap.index_externalProductBlockCompletion`).
+When `A` and `B` are Fredholm and the representations are strongly continuous, its equivariant
+index (`ContIntertwiningMap.equivariantIndex`) in the representation ring of `G × H` is defined.
 
 ## Main definitions
 
 * `ContRepresentation.externalTensorCompletion`: the external tensor product `π ⊠̂ ρ` on the
   completed tensor product.
-* `ContIntertwiningMap.mapLCompletion`: the tensor product `A ⊗ B` of two intertwining maps, an
-  intertwining map of the external tensor products.
+* `ContIntertwiningMap.externalTensorCompletion`: the tensor product `A ⊗ B` of two intertwining
+  maps, an intertwining map of the external tensor products.
 * `ContIntertwiningMap.externalProductBlockCompletion`: the external product block of two
   intertwining maps between unitary representations, as an intertwining map of representations of
   `G × H`.
@@ -126,43 +127,22 @@ theorem IsUnitary.externalTensorCompletion (hπ : π.IsUnitary) (hρ : ρ.IsUnit
 
 /-- **The external tensor product of strongly continuous representations is strongly continuous**,
 when the operators of both factors are uniformly bounded, for instance for unitary
-representations (`ContRepresentation.IsUnitary.exists_norm_le`). The orbits of pure tensors are
-continuous, and the uniform bound makes the operators `π g ⊗ ρ h` equicontinuous, so the vectors
-with a continuous orbit form a closed subspace containing the pure tensors. -/
+representations (`ContRepresentation.IsUnitary.exists_norm_le`). -/
 theorem continuous_externalTensorCompletion_apply [TopologicalSpace G] [TopologicalSpace H]
     (hπ : ∀ v, Continuous fun g ↦ π g v) (hρ : ∀ w, Continuous fun h ↦ ρ h w)
     (hπb : ∃ C, ∀ g, ‖π g‖ ≤ C) (hρb : ∃ C, ∀ h, ‖ρ h‖ ≤ C) (u : Completion (V ⊗[𝕜] W)) :
     Continuous fun p ↦ π.externalTensorCompletion ρ p u := by
   obtain ⟨C, hC⟩ := hπb
   obtain ⟨D, hD⟩ := hρb
-  set T := π.externalTensorCompletion ρ
-  have hT : ∀ p, ‖T p‖₊ ≤ Real.toNNReal (C * D) := fun p ↦ by
-    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal']
-    refine le_max_of_le_left ((norm_mapLCompletion_le _ _).trans ?_)
-    exact mul_le_mul (hC _) (hD _) (norm_nonneg _) ((norm_nonneg _).trans (hC p.1))
-  have heq : Equicontinuous fun p ↦ ⇑(T p) :=
-    (LipschitzWith.uniformEquicontinuous _ _ fun p ↦
-      (T p).lipschitzWith.weaken (hT p)).equicontinuous
-  refine continuous_iff_continuousAt.mpr fun p₀ ↦ ?_
-  -- The vectors whose orbit is continuous at `p₀` form a closed subspace.
-  let S : Submodule 𝕜 (Completion (V ⊗[𝕜] W)) :=
-    { carrier := {u | Tendsto (fun p ↦ T p u) (𝓝 p₀) (𝓝 (T p₀ u))}
-      add_mem' := fun {u u'} hu hu' ↦ by simpa only [Set.mem_ofPred_eq, map_add] using hu.add hu'
-      zero_mem' := by simpa only [Set.mem_ofPred_eq, map_zero] using tendsto_const_nhds
-      smul_mem' := fun c u hu ↦ by
-        simpa only [Set.mem_ofPred_eq, map_smul] using hu.const_smul c }
-  have hmem (u) : u ∈ S ↔ Tendsto (fun p ↦ T p u) (𝓝 p₀) (𝓝 (T p₀ u)) := Iff.rfl
-  have hS : IsClosed (S : Set (Completion (V ⊗[𝕜] W))) :=
-    heq.isClosed_setOfPred_tendsto (T p₀).continuous
-  -- It contains the pure tensors, whose orbits are continuous.
-  refine (hmem u).mp <| apply_mem_of_forall_apply_coe_tmul_mem (T := .id 𝕜 _) hS
-    (fun v w ↦ ?_) u
-  have hcont : Continuous fun p : G × H ↦
-      ((π p.1 v ⊗ₜ[𝕜] ρ p.2 w : V ⊗[𝕜] W) : Completion (V ⊗[𝕜] W)) :=
-    ((Completion.continuous_coe _).comp continuous_tmul).comp
-      (((hπ v).comp continuous_fst).prodMk ((hρ w).comp continuous_snd))
-  rw [ContinuousLinearMap.id_apply, hmem]
-  simpa only [T, externalTensorCompletion_apply_coe_tmul] using hcont.tendsto p₀
+  refine ContinuousLinearMap.continuous_apply_of_dense_span
+    (Submodule.dense_iff_topologicalClosure_eq_top.mpr (dense_span_coe_tmul 𝕜 V W))
+    (fun p ↦ (norm_mapLCompletion_le _ _).trans
+      (mul_le_mul (hC _) (hD _) (norm_nonneg _) ((norm_nonneg _).trans (hC p.1))))
+    ?_ u
+  rintro _ ⟨⟨v, w⟩, rfl⟩
+  exact (((Completion.continuous_coe (V ⊗[𝕜] W)).comp continuous_tmul).comp
+    (((hπ v).comp continuous_fst).prodMk ((hρ w).comp continuous_snd))).congr
+    fun p ↦ (externalTensorCompletion_apply_coe_tmul p v w).symm
 
 end ContRepresentation
 
@@ -181,25 +161,26 @@ variable {𝕜 G H V₀ V₁ W₀ W₁ : Type*} [RCLike 𝕜] [Monoid G] [Monoid
 /-- **The tensor product of two intertwining maps** `A : π₀ →ⁱL π₁` and `B : ρ₀ →ⁱL ρ₁`, the
 operator `A ⊗ B` of `TensorProduct.mapLCompletion` on the completed tensor products, intertwines
 the external tensor products `π₀ ⊠̂ ρ₀` and `π₁ ⊠̂ ρ₁`. -/
-def mapLCompletion (A : π₀ →ⁱL π₁) (B : ρ₀ →ⁱL ρ₁) :
+def externalTensorCompletion (A : π₀ →ⁱL π₁) (B : ρ₀ →ⁱL ρ₁) :
     π₀.externalTensorCompletion ρ₀ →ⁱL π₁.externalTensorCompletion ρ₁ where
   toContinuousLinearMap :=
     TensorProduct.mapLCompletion A.toContinuousLinearMap B.toContinuousLinearMap
   isIntertwining' g := by
-    simp only [externalTensorCompletion_apply, ← mapLCompletion_comp, A.isIntertwining',
-      B.isIntertwining']
+    simp only [ContRepresentation.externalTensorCompletion_apply, ← mapLCompletion_comp,
+      A.isIntertwining', B.isIntertwining']
 
 /-- The underlying operator of `A ⊗ B` is the tensor product of the underlying operators. -/
 @[simp]
-theorem toContinuousLinearMap_mapLCompletion (A : π₀ →ⁱL π₁) (B : ρ₀ →ⁱL ρ₁) :
-    (A.mapLCompletion B).toContinuousLinearMap =
+theorem toContinuousLinearMap_externalTensorCompletion (A : π₀ →ⁱL π₁) (B : ρ₀ →ⁱL ρ₁) :
+    (A.externalTensorCompletion B).toContinuousLinearMap =
       TensorProduct.mapLCompletion A.toContinuousLinearMap B.toContinuousLinearMap :=
   (rfl)
 
 /-- The intertwining map `A ⊗ B` applies as the tensor product of the underlying operators. -/
 @[simp]
-theorem mapLCompletion_apply (A : π₀ →ⁱL π₁) (B : ρ₀ →ⁱL ρ₁) (u : Completion (V₀ ⊗[𝕜] W₀)) :
-    A.mapLCompletion B u =
+theorem externalTensorCompletion_apply (A : π₀ →ⁱL π₁) (B : ρ₀ →ⁱL ρ₁)
+    (u : Completion (V₀ ⊗[𝕜] W₀)) :
+    A.externalTensorCompletion B u =
       TensorProduct.mapLCompletion A.toContinuousLinearMap B.toContinuousLinearMap u :=
   (rfl)
 
@@ -209,9 +190,9 @@ theorem rTensorCompletion_comp_externalTensorCompletion (A : π₀ →ⁱL π₁
     (ρ : ContRepresentation 𝕜 H W₀) (g : G × H) :
     A.toContinuousLinearMap.rTensorCompletion W₀ ∘L π₀.externalTensorCompletion ρ g =
       π₁.externalTensorCompletion ρ g ∘L A.toContinuousLinearMap.rTensorCompletion W₀ := by
-  simpa only [toContinuousLinearMap_mapLCompletion, toContinuousLinearMap_id,
+  simpa only [toContinuousLinearMap_externalTensorCompletion, toContinuousLinearMap_id,
     ← ContinuousLinearMap.rTensorCompletion_eq_mapLCompletion] using
-    (A.mapLCompletion (ContIntertwiningMap.id : ρ →ⁱL ρ)).isIntertwining' g
+    (A.externalTensorCompletion (ContIntertwiningMap.id : ρ →ⁱL ρ)).isIntertwining' g
 
 /-- The amplification `1 ⊗ B` of an intertwining map `B : ρ₀ →ⁱL ρ₁` intertwines `π ⊠̂ ρ₀` and
 `π ⊠̂ ρ₁`. -/
@@ -219,9 +200,9 @@ theorem lTensorCompletion_comp_externalTensorCompletion (B : ρ₀ →ⁱL ρ₁
     (π : ContRepresentation 𝕜 G V₀) (g : G × H) :
     B.toContinuousLinearMap.lTensorCompletion V₀ ∘L π.externalTensorCompletion ρ₀ g =
       π.externalTensorCompletion ρ₁ g ∘L B.toContinuousLinearMap.lTensorCompletion V₀ := by
-  simpa only [toContinuousLinearMap_mapLCompletion, toContinuousLinearMap_id,
+  simpa only [toContinuousLinearMap_externalTensorCompletion, toContinuousLinearMap_id,
     ← ContinuousLinearMap.lTensorCompletion_eq_mapLCompletion] using
-    ((ContIntertwiningMap.id : π →ⁱL π).mapLCompletion B).isIntertwining' g
+    ((ContIntertwiningMap.id : π →ⁱL π).externalTensorCompletion B).isIntertwining' g
 
 end Monoid
 
@@ -261,7 +242,7 @@ def externalProductBlockCompletion (A : π₀ →ⁱL π₁) (B : ρ₀ →ⁱL 
     simp only [ContinuousLinearMap.comp_apply, toContinuousLinearMap_adjoint] at hA hA' hB hB'
     ext w : 1
     simp [ContinuousLinearMap.externalProductBlockCompletion_apply, hA, hA', hB, hB',
-      -externalTensorCompletion_apply]
+      -ContRepresentation.externalTensorCompletion_apply]
 
 /-- The underlying operator of the equivariant external product block is
 `ContinuousLinearMap.externalProductBlockCompletion`. -/
