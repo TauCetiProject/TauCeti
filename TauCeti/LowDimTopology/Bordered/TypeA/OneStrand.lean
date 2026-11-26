@@ -184,7 +184,7 @@ private theorem tailWeight_relation (y z : A) (L : List A) :
       rw [List.length_cons, sum_range_succ', add_comm, mul_sum]
       congr 1
       exact sum_congr rfl fun l _ ↦ tailWeight_cons_of_ne_nil q r y (contractAt_cons_ne_nil l z _)
-    rw [hA, hB, hq, show tailWeight q r (z :: w :: L) = q z * tailWeight q r (w :: L) from rfl]
+    rw [hA, hB, hq, tailWeight.eq_3]
     linear_combination q y * ih z w + (f y * q z + r y * p z) * tailWeight q r (w :: L) * h2
 
 include he hp hq hr in
@@ -229,9 +229,7 @@ private theorem wordWeight_relation (L : List A) :
       have hrel := tailWeight_relation f hq hr y z L
       rw [show (z :: L).length + 1 = L.length + 2 by simp,
         show (z :: L).length = L.length + 1 by simp]
-      rw [show wordWeight e p q r (y :: z :: L) = p y * tailWeight q r (z :: L) from rfl,
-        show wordWeight e p q r ((x * y) :: z :: L) = p (x * y) * tailWeight q r (z :: L) from rfl,
-        hp]
+      rw [wordWeight.eq_3, wordWeight.eq_3, hp]
       linear_combination p x * hrel + e x * p y * tailWeight q r (z :: L) * h2
 
 end Word
@@ -367,8 +365,7 @@ private theorem threePointAct_stasheff [CharP R 2] (N : ℕ) (a : Fin N → matc
       (matchedSummandDifferential R M 1) N a x = 0 := by
     rw [ungradedStasheffDiff_apply]
     refine sum_eq_zero fun l _ ↦ ?_
-    rw [(threePointAct R M hki hij N).map_coord_zero l (by simp)]
-    rfl
+    rw [(threePointAct R M hki hij N).map_coord_zero l (by simp), LinearMap.zero_apply]
   have hcomp : ungradedStasheffComp (threePointAct R M hki hij) N a x =
       (∑ s ∈ range (N + 1), wordWeight (oneStrandIdemCoord R M ⟨M i, i, rfl⟩)
           (oneStrandChordCoord R M hij) (oneStrandChordCoord R M (hki.trans hij))
@@ -378,6 +375,7 @@ private theorem threePointAct_stasheff [CharP R 2] (N : ℕ) (a : Fin N → matc
           (oneStrandChordCoord R M hki) ((List.ofFn a).take s)) * x := by
     rw [ungradedStasheffComp_def, sum_mul, ← Fin.sum_univ_eq_sum_range]
     refine sum_congr rfl fun s _ ↦ ?_
+    -- The inner inputs `fun l ↦ a ⟨l, _⟩` are `Fin.take s _ a` by the definition of `Fin.take`.
     rw [threePointAct_apply, threePointAct_apply, ofFn_drop,
       show List.ofFn (fun l : Fin s ↦ a ⟨l, by omega⟩) = (List.ofFn a).take s from
         Fin.ofFn_take_eq_take_ofFn (Nat.lt_succ_iff.1 s.isLt) a, mul_assoc]
@@ -414,11 +412,15 @@ def threePointTypeA [CharP R 2] :
 
 variable [CharP R 2]
 
+/-- The operations of the module of three points are `threePointAct`. -/
+private theorem threePointTypeA_act :
+    (threePointTypeA R M hki hij hM hbetween).act = threePointAct R M hki hij :=
+  rfl
+
 /-- The operation `m₁` of the module of three points vanishes. -/
 @[simp]
 theorem threePointTypeA_act_zero : (threePointTypeA R M hki hij hM hbetween).act 0 = 0 := by
-  change threePointAct R M hki hij 0 = 0
-  rfl
+  rw [threePointTypeA_act, threePointAct]
 
 /-- **The operation `m₂`** of the module of three points multiplies by the coordinate of the
 idempotent `I(i)`. -/
@@ -443,7 +445,7 @@ theorem threePointTypeA_act_add_two_apply (n : ℕ) (a : Fin (n + 2) → matched
       oneStrandChordCoord R M hij (a 0) *
         (∏ l : Fin n, oneStrandChordCoord R M (hki.trans hij) (a l.succ.castSucc)) *
         oneStrandChordCoord R M hki (a (Fin.last (n + 1))) * x := by
-  change threePointAct R M hki hij (n + 2) a x = _
+  rw [threePointTypeA_act]
   have h0 : threePointCoord R M hki hij (n + 2) 0 = oneStrandChordCoord R M hij := by
     simp [threePointCoord]
   have hlast : threePointCoord R M hki hij (n + 2) (Fin.last n).succ =
@@ -478,7 +480,7 @@ theorem isStrictlyUnital_threePointTypeA :
   refine (UngradedAInfinityRightModule.isStrictlyUnital_iff _).2 fun n hn a l p hl ↦ ?_
   obtain ⟨n, rfl⟩ : ∃ n', n = n' + 1 := ⟨n - 1, by omega⟩
   refine LinearMap.ext fun x ↦ ?_
-  change threePointAct R M hki hij (n + 1) a x = 0
+  rw [threePointTypeA_act, LinearMap.zero_apply]
   rw [threePointAct_succ_apply, Finset.prod_eq_zero (Finset.mem_univ l), zero_mul]
   rw [hl, threePointCoord]
   split_ifs <;> first | omega | simp

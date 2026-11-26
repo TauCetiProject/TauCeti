@@ -20,9 +20,9 @@ are `ι₀ = I({0, 2})` and `ι₁ = I({1, 3})`.
 The one-generator type `A` modules of bordered Floer homology for solid tori have a generator `x`
 with `m₂(x, ι) = x` for one idempotent `ι` and a single family of higher operations of the shape
 `m_{n+3}(x, σ, τ, …, τ, ρ) = x`, where `σ`, `τ` and `ρ` are three chords with `ρ σ = τ`. Over a
-ring of characteristic two this file realizes the two such families of the torus algebra whose
-middle chord `τ` has length two, as instances of the module of three points
-`TauCeti.StrandsAlgebra.threePointTypeA`:
+ring of characteristic two this file realizes the two such families given by three consecutive
+points of the genus-one circle whose outer points are matched, as instances of the module of three
+points `TauCeti.StrandsAlgebra.threePointTypeA`:
 
 * `TauCeti.StrandsAlgebra.torusRho₃Rho₂TypeA`, for the points `1 < 2 < 3`, with
   `m₂(x, ι₀) = x` and `m_{n+3}(x, ρ₃, ρ₂₃, …, ρ₂₃, ρ₂) = x`
