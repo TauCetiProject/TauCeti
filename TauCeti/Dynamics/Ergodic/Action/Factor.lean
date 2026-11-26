@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.PUnit
 public import Mathlib.Dynamics.Ergodic.Action.Basic
-public import Mathlib.MeasureTheory.Measure.Dirac.Basic
-public import Mathlib.MeasureTheory.Measure.Prod
+public import TauCeti.Dynamics.Ergodic.Factor
 
 /-!
 # Factor maps of measure-preserving actions
@@ -26,6 +25,8 @@ of `TauCeti.IsFactorMap`, which is the case of a single map; the additive versio
 
 ## Main results
 
+* `TauCeti.IsFactorMapSMul.toIsFactorMap`: each parameter of a factor map of actions gives a
+  factor map of single systems.
 * `TauCeti.IsFactorMapSMul.id`, `TauCeti.IsFactorMapSMul.comp`: factor maps contain the identity
   and compose.
 * `TauCeti.IsFactorMapSMul.of_map_smul`: an equivariant measure-preserving map is a factor map.
@@ -37,7 +38,13 @@ of `TauCeti.IsFactorMap`, which is the case of a single map; the additive versio
 * `TauCeti.IsFactorMapSMul.of_smul_eq`: restriction of the parameters along a map `f : N → M`
   with `f n • x = n • x`, for instance a monoid homomorphism.
 * `TauCeti.IsFactorMapSMul.smulInvariantMeasure`, `TauCeti.IsFactorMapSMul.ergodicSMul`:
-  invariance of the measure and ergodicity pass to factors.
+  invariance of the measure and ergodicity pass to factors;
+  `TauCeti.IsFactorMapSMul.aeconst_of_forall_preimage_smul_ae_eq` is the zero-one part of the
+  latter, which needs no measurability of the target action.
+
+The descent of ergodicity adapts the proof of `ErgodicSMul.map`
+(`TauCeti/Dynamics/Ergodic/Action/Map.lean`) from everywhere-equivariant maps to
+almost-everywhere intertwiners; `ErgodicSMul.map` is derived from it there.
 -/
 
 public section
@@ -76,6 +83,14 @@ section SMul
 
 variable [SMul M X] [SMul M Y] [SMul M Z]
 
+/-- A factor map of actions is, for each parameter `m`, a factor map from the system `(m • ·)` on
+`(X, μ)` to the system `(m • ·)` on `(Y, ν)`. -/
+@[to_additive /-- A factor map of additive actions is, for each parameter `m`, a factor map from
+the system `(m +ᵥ ·)` on `(X, μ)` to the system `(m +ᵥ ·)` on `(Y, ν)`. -/]
+theorem toIsFactorMap (h : IsFactorMapSMul M π μ ν) (m : M) :
+    IsFactorMap π (m • ·) (m • ·) μ ν :=
+  ⟨h.measurePreserving, h.comp_smul_ae_eq m⟩
+
 /-- The identity is a factor map from any action to itself. -/
 @[to_additive /-- The identity is a factor map from any additive action to itself. -/]
 protected theorem id (μ : Measure X) : IsFactorMapSMul M id μ μ :=
@@ -90,12 +105,9 @@ theorem of_map_smul (hπ : MeasurePreserving π μ ν) (h : ∀ (m : M) (x : X),
 /-- Factor maps compose. -/
 @[to_additive /-- Factor maps compose. -/]
 protected theorem comp (hσ : IsFactorMapSMul M σ ν ρ) (hπ : IsFactorMapSMul M π μ ν) :
-    IsFactorMapSMul M (σ ∘ π) μ ρ := by
-  refine ⟨hσ.measurePreserving.comp hπ.measurePreserving, fun m ↦ ?_⟩
-  have h₁ : σ ∘ (π ∘ (m • ·)) =ᵐ[μ] σ ∘ ((m • ·) ∘ π) := (hπ.comp_smul_ae_eq m).fun_comp σ
-  have h₂ : (σ ∘ (m • ·)) ∘ π =ᵐ[μ] ((m • ·) ∘ σ) ∘ π :=
-    hπ.measurePreserving.quasiMeasurePreserving.ae_eq_comp (hσ.comp_smul_ae_eq m)
-  exact h₁.trans h₂
+    IsFactorMapSMul M (σ ∘ π) μ ρ :=
+  ⟨hσ.measurePreserving.comp hπ.measurePreserving,
+    fun m ↦ ((hσ.toIsFactorMap m).comp (hπ.toIsFactorMap m)).comp_ae_eq⟩
 
 /-- The constant map to a point is a factor map from an action on a probability space onto the
 trivial action on a point. -/
@@ -135,6 +147,22 @@ theorem smulInvariantMeasure [SMulInvariantMeasure M X μ] [MeasurableConstSMul 
           measure_preimage_smul_of_nullMeasurableSet
             (hs.preimage hπ.measurable).nullMeasurableSet m
 
+/-- **The zero-one law passes to factors.** If `π` is a factor map of actions and the source
+action is ergodic, then every measurable set of the target that is almost invariant under every
+parameter is null or conull. -/
+@[to_additive /-- **The zero-one law passes to factors.** If `π` is a factor map of additive
+actions and the source action is ergodic, then every measurable set of the target that is almost
+invariant under every parameter is null or conull. -/]
+theorem aeconst_of_forall_preimage_smul_ae_eq [ErgodicSMul M X μ] (h : IsFactorMapSMul M π μ ν)
+    {s : Set Y} (hs : MeasurableSet s) (hinv : ∀ m : M, (m • ·) ⁻¹' s =ᵐ[ν] s) :
+    EventuallyEmptyOrUniv s (ae ν) := by
+  have hπ := h.measurePreserving
+  rw [← hπ.aeconst_preimage hs.nullMeasurableSet]
+  refine MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq M
+    (hs.preimage hπ.measurable).nullMeasurableSet fun m ↦ ?_
+  exact ((h.comp_smul_ae_eq m).preimage s).trans
+    (hπ.quasiMeasurePreserving.preimage_ae_eq (hinv m))
+
 /-- **Ergodicity passes to factors.** If `π` is a factor map of actions, the target action is
 measurable and the source action is ergodic, then the target action is ergodic. -/
 @[to_additive /-- **Ergodicity passes to factors.** If `π` is a factor map of additive actions,
@@ -143,13 +171,7 @@ ergodic. -/]
 theorem ergodicSMul [ErgodicSMul M X μ] [MeasurableConstSMul M Y]
     (h : IsFactorMapSMul M π μ ν) : ErgodicSMul M Y ν where
   toSMulInvariantMeasure := h.smulInvariantMeasure
-  aeconst_of_forall_preimage_smul_ae_eq {s} hs hinv := by
-    have hπ := h.measurePreserving
-    rw [← hπ.aeconst_preimage hs.nullMeasurableSet]
-    refine aeconst_of_forall_preimage_smul_ae_eq M (hs.preimage hπ.measurable).nullMeasurableSet
-      fun m ↦ ?_
-    exact ((h.comp_smul_ae_eq m).preimage s).trans
-      (hπ.quasiMeasurePreserving.preimage_ae_eq (hinv m))
+  aeconst_of_forall_preimage_smul_ae_eq := h.aeconst_of_forall_preimage_smul_ae_eq
 
 end SMul
 
