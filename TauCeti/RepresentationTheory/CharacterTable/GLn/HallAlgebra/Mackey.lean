@@ -13,6 +13,7 @@ import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Quotient.Card
 import TauCeti.Algebra.BigOperators.Expect
+import TauCeti.LinearAlgebra.Quotient.Lift
 
 /-!
 # Block averages in the Hall algebra and Mackey's formula
@@ -56,8 +57,9 @@ subspaces `W` of `V_a`.
   `New.Hall.blockAverage`, `New.Hall.IsCuspidal`, `New.Hall.blockAverage_simClassOf`,
   `New.Hall.blockAverage_mul` and `New.Hall.blockAverage_of_dim_eq_zero`, here with the
   invariant block first. The block maps `TauCeti.blockTriangularEnd` (`New.blockTriangularEnd`)
-  and the lifting lemma `Submodule.exists_restrict_eq_and_mapQ_eq`
-  (`New.Hall.exists_restrict_eq_and_mapQ_eq`) are in `TauCeti.LinearAlgebra.End.Invariant`.
+  and the shears `TauCeti.shear` are in `TauCeti.LinearAlgebra.End.Invariant`, and the lifting
+  lemma `Submodule.exists_restrict_eq_and_mapQ_eq` (`New.Hall.exists_restrict_eq_and_mapQ_eq`) is
+  in `TauCeti.LinearAlgebra.Quotient.Lift`.
 -/
 
 public section
@@ -161,20 +163,6 @@ private local instance finite_quotient {M : Type*} [AddCommGroup M] [Module k M]
   Finite.of_surjective _ p.mkQ_surjective
 
 attribute [local instance low] Fintype.ofFinite
-
-/-- The shear `(v, w) ↦ (v + s w, w)` of `V × W`. -/
-private def shear (s : W →ₗ[k] V) : (V × W) ≃ₗ[k] (V × W) where
-  toFun p := (p.1 + s p.2, p.2)
-  invFun p := (p.1 - s p.2, p.2)
-  map_add' p q := by simp [add_add_add_comm]
-  map_smul' c p := by simp
-  left_inv p := by simp
-  right_inv p := by simp
-
-omit [Fintype k] [Module.Finite k V] [Module.Finite k W] in
-@[simp]
-private theorem shear_apply (s : W →ₗ[k] V) (p : V × W) : shear s p = (p.1 + s p.2, p.2) :=
-  rfl
 
 /-- The maps `W → V` that take `B` into `A`, for a pair `P = (A, B)` of invariant subspaces. -/
 private abbrev compat (P : a.invtSubmodule × b.invtSubmodule) : Submodule k (W →ₗ[k] V) :=

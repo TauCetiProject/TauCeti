@@ -11,8 +11,6 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
-import Mathlib.Algebra.Module.Projective
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.RingTheory.Finiteness.Cardinality
 
@@ -26,13 +24,15 @@ matches the invariant submodules containing its kernel with those in its range.
 The annihilator of a `g`-invariant subspace is invariant under the transpose of `g`.
 
 The block upper triangular endomorphism `(v, w) ↦ (a v + x w, b w)` of `V × W` has `V × 0` as an
-invariant subspace; it restricts to `a` there and induces `b` on the quotient.
+invariant subspace; it restricts to `a` there and induces `b` on the quotient. Conjugating it by
+the shear `(v, w) ↦ (v + s w, w)` changes its upper right block.
 
 ## Main definitions
 
 * `Module.End.invtRestrict g hW`, `Module.End.invtQuot g hW`: the endomorphisms that `g` induces on
   a `g`-invariant submodule `W` and on `M ⧸ W`.
 * `TauCeti.blockTriangularEnd a b x`: the endomorphism `(v, w) ↦ (a v + x w, b w)` of `V × W`.
+* `TauCeti.shear s`: the linear automorphism `(v, w) ↦ (v + s w, w)` of `V × W`.
 
 ## Main results
 
@@ -43,18 +43,16 @@ invariant subspace; it restricts to `a` there and induces `b` on the quotient.
 * `Submodule.dualAnnihilator_mem_invtSubmodule`,
   `Submodule.dualCoannihilator_mem_invtSubmodule`: annihilators exchange the submodules invariant
   under `g` and under its transpose.
-* `Submodule.exists_restrict_eq_and_mapQ_eq`: over a division ring, any maps `B → A` and
-  `W ⧸ B → V ⧸ A` are induced by a single map `W → V` taking `B` into `A`.
 
 ## References
 
 * Adapted from `src/Lib/LocalGL/Green/HallAlgebra.lean` in grh-lean
   (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC):
   `New.StableSubspace.endOnSub`, `New.StableSubspace.endOnQuot`, `New.StableSubspace.comap`,
-  `New.StableSubspace.sum_comap`, `New.fintypeStableSubspace`, `New.blockTriangularEnd` and
-  `New.Hall.exists_restrict_eq_and_mapQ_eq`, here stated for `Mathlib`'s `Module.End.invtSubmodule`
-  and with the invariant block first. The annihilator lemmas are the invariance steps of the
-  commutativity proof of the `CommRing` instance on `New.Hall` there.
+  `New.StableSubspace.sum_comap`, `New.fintypeStableSubspace` and `New.blockTriangularEnd`, here
+  stated for `Mathlib`'s `Module.End.invtSubmodule` and with the invariant block first. The
+  annihilator lemmas are the invariance steps of the commutativity proof of the `CommRing`
+  instance on `New.Hall` there.
 -/
 
 public section
@@ -158,30 +156,6 @@ theorem Submodule.dualCoannihilator_mem_invtSubmodule {W : Submodule R (Dual R M
 
 end Dual
 
-/-! ### Lifting maps of subspaces and quotients -/
-
-section Lift
-
-variable {K V W : Type*} [DivisionRing K] [AddCommGroup V] [Module K V] [AddCommGroup W]
-  [Module K W]
-
-/-- Any maps `B → A` and `W ⧸ B → V ⧸ A` are induced by one map `W → V` that takes `B` into
-`A`. -/
-theorem Submodule.exists_restrict_eq_and_mapQ_eq {A : Submodule K V} {B : Submodule K W}
-    (α : B →ₗ[K] A) (β : W ⧸ B →ₗ[K] V ⧸ A) :
-    ∃ (y : W →ₗ[K] V) (hy : B ≤ A.comap y), y.restrict hy = α ∧ B.mapQ A y hy = β := by
-  -- Extend `α` to `c : W → A`, lift `β` to `r : W ⧸ B → V`, and add.
-  obtain ⟨c, rfl⟩ : ∃ c : W →ₗ[K] A, c ∘ₗ B.subtype = α := α.exists_extend
-  obtain ⟨r, rfl⟩ := Module.projective_lifting_property _ β A.mkQ_surjective
-  refine ⟨A.subtype ∘ₗ c + r ∘ₗ B.mkQ, fun w hw ↦ ?_, ?_, ?_⟩
-  · simp [(Submodule.Quotient.mk_eq_zero B).2 hw]
-  · ext w
-    simp [(Submodule.Quotient.mk_eq_zero B).2 w.prop]
-  · ext w
-    simp [(Submodule.Quotient.mk_eq_zero A).2 (c w).prop]
-
-end Lift
-
 /-! ### Block upper triangular endomorphisms -/
 
 namespace TauCeti
@@ -204,5 +178,30 @@ theorem blockTriangularEnd_apply (a : Module.End R V) (b : Module.End R W) (x : 
   simp [blockTriangularEnd]
 
 end BlockEnd
+
+section Shear
+
+variable {R V W : Type*} [Ring R] [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
+
+/-- The shear `(v, w) ↦ (v + s w, w)` of `V × W`, with inverse the shear by `-s`. -/
+def shear (s : W →ₗ[R] V) : (V × W) ≃ₗ[R] (V × W) where
+  toFun p := (p.1 + s p.2, p.2)
+  invFun p := (p.1 - s p.2, p.2)
+  map_add' p q := by simp [add_add_add_comm]
+  map_smul' c p := by simp
+  left_inv p := by simp
+  right_inv p := by simp
+
+/-- The shear by `s` sends `(v, w)` to `(v + s w, w)`. -/
+@[simp]
+theorem shear_apply (s : W →ₗ[R] V) (p : V × W) : shear s p = (p.1 + s p.2, p.2) :=
+  (rfl)
+
+/-- The inverse of the shear by `s` sends `(v, w)` to `(v - s w, w)`. -/
+@[simp]
+theorem shear_symm_apply (s : W →ₗ[R] V) (p : V × W) : (shear s).symm p = (p.1 - s p.2, p.2) :=
+  (rfl)
+
+end Shear
 
 end TauCeti

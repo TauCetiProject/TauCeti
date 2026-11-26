@@ -46,6 +46,8 @@ subgroups is not proved here.
   annihilators exchange the roles of `W` and `V ⧸ W`.
 * `TauCeti.HallAlgebra.isUnit_constOne`: `𝟙` is invertible, since `(1 - 𝟙)^m` vanishes on the
   classes of size less than `m`, so the geometric series in `1 - 𝟙` is finite on each class.
+* `TauCeti.HallAlgebra.greenCuspidal_ofEnd`: `C_η` at the class of `g` is the sum of `β_η · μ` at
+  the classes of `g` on the `g`-invariant subspaces.
 
 ## References
 
@@ -534,6 +536,21 @@ noncomputable def greenCuspidal [Finite k] (η : K → ℂ) : HallAlgebra k :=
   -- `HallAlgebra k` is by definition `SimilarityClass k → ℂ`, so the pointwise product is a
   -- function into `ℂ`; the `show` makes `*` the induction product rather than the pointwise one.
   (show HallAlgebra k from fun c ↦ eigenvalueSum K η c * moebius c) * constOne
+
+/-- Green's cuspidal function is `F ∗ 𝟙` for the pointwise product `F = β_η · μ`. -/
+theorem greenCuspidal_eq_mul_constOne [Finite k] (η : K → ℂ) {F : HallAlgebra k}
+    (hF : ∀ c, F c = eigenvalueSum K η c * moebius c) : greenCuspidal K η = F * constOne := by
+  rw [ext hF, greenCuspidal]
+
+/-- Green's cuspidal function at the class of `g` is the sum, over the `g`-invariant subspaces `W`,
+of `β_η · μ` at the class of `g` on `W`. -/
+theorem greenCuspidal_ofEnd [Finite k] (η : K → ℂ) {V : Type*} [AddCommGroup V] [Module k V]
+    [Module.Finite k V] (g : Module.End k V) :
+    greenCuspidal K η (ofEnd g) =
+      ∑ᶠ W : g.invtSubmodule, eigenvalueSum K η (ofEnd (g.invtRestrict W.prop)) *
+        moebius (ofEnd (g.invtRestrict W.prop)) := by
+  simp [greenCuspidal_eq_mul_constOne K η (F := fun c ↦ eigenvalueSum K η c * moebius c)
+    fun _ ↦ rfl, mul_ofEnd, constOne_apply]
 
 end Green
 

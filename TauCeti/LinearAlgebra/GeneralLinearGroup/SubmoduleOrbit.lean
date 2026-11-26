@@ -32,7 +32,8 @@ one of them. Every dimension up to `dim V` occurs.
 * `Submodule.mem_orbit_units_iff`: the orbit of `U` is the set of subspaces of the dimension of `U`.
 * `Submodule.card_stabilizer_mul_card_finrank_eq`: `|Stab(U)|` times the number of subspaces of
   the dimension of `U` is `|GL(V)|`.
-* `Submodule.range_finrank`: the dimensions of the subspaces of `V` are `0, …, dim V`.
+* `Submodule.range_finrank`: the dimensions of the subspaces of `V` are `0, …, dim V`;
+  `Submodule.image_finrank_eq_range` is its `Finset` form.
 
 ## References
 
@@ -48,22 +49,25 @@ open scoped Pointwise
 
 namespace Submodule
 
-variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
-
 /-- An automorphism stabilising `U` leaves `U` invariant. -/
-theorem mem_invtSubmodule_of_mem_stabilizer {g : (Module.End K V)ˣ} {U : Submodule K V}
-    (hg : g ∈ stabilizer (Module.End K V)ˣ U) : U ∈ (g : Module.End K V).invtSubmodule :=
+theorem mem_invtSubmodule_of_mem_stabilizer {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] {g : (Module.End R M)ˣ} {U : Submodule R M}
+    (hg : g ∈ stabilizer (Module.End R M)ˣ U) : U ∈ (g : Module.End R M).invtSubmodule :=
   (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun v hv ↦ by
     rw [← mem_stabilizer_iff.1 hg]
     exact Submodule.mem_map_of_mem hv
 
-variable [FiniteDimensional K V]
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
-/-- An automorphism mapping `U` into a subspace `Y` of the same dimension maps `U` onto `Y`. -/
+/-- An automorphism mapping `U` into a finite-dimensional subspace `Y` of the same dimension maps
+`U` onto `Y`. -/
 theorem units_smul_eq_of_forall_mem (g : (Module.End K V)ˣ) {U Y : Submodule K V}
-    (h : ∀ x ∈ U, (g : Module.End K V) x ∈ Y) (hd : finrank K Y = finrank K U) : g • U = Y :=
+    [FiniteDimensional K Y] (h : ∀ x ∈ U, (g : Module.End K V) x ∈ Y)
+    (hd : finrank K Y = finrank K U) : g • U = Y :=
   Submodule.eq_of_le_of_finrank_eq (Submodule.map_le_iff_le_comap.2 h)
     (((LinearMap.GeneralLinearGroup.generalLinearEquiv K V) g).finrank_map_eq U |>.trans hd.symm)
+
+variable [FiniteDimensional K V]
 
 /-- The subspaces in the orbit of `U` under `GL(V)` are those of the dimension of `U`. -/
 theorem mem_orbit_units_iff {U Y : Submodule K V} :
@@ -99,5 +103,12 @@ theorem range_finrank :
   · obtain ⟨f, hf⟩ : ∃ f : (Fin p → K) →ₗ[K] V, Function.Injective f :=
       finrank_le_iff_exists_linearMap.1 (by simpa using hp)
     exact ⟨_, (LinearMap.finrank_range_of_inj hf).trans (finrank_fin_fun K)⟩
+
+/-- `range_finrank` for finitely many subspaces: the image of `Finset.univ` under the dimension is
+`{0, 1, …, dim V}`. -/
+theorem image_finrank_eq_range [Fintype (Submodule K V)] :
+    Finset.univ.image (fun U : Submodule K V ↦ finrank K U) = Finset.range (finrank K V + 1) := by
+  ext p
+  simpa [Nat.lt_succ_iff] using Set.ext_iff.1 (range_finrank (K := K) (V := V)) p
 
 end Submodule

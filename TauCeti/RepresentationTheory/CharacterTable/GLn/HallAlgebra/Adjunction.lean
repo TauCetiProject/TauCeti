@@ -11,6 +11,7 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.GroupTheory.GroupAction.Quotient
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.LinearAlgebra.Projection
+import TauCeti.LinearAlgebra.GeneralLinearGroup.Basic
 import TauCeti.LinearAlgebra.GeneralLinearGroup.SubmoduleOrbit
 
 /-!
@@ -70,12 +71,20 @@ noncomputable def rankInner (n : ℕ) (F H : HallAlgebra k) : ℂ :=
   𝔼 g : GL (Fin n) k, conj (F (ofEnd (Matrix.toLin' (g : Matrix (Fin n) (Fin n) k)))) *
     H (ofEnd (Matrix.toLin' (g : Matrix (Fin n) (Fin n) k)))
 
+/-- The inner product `⟨A, A′⟩_n` is the mean over `g ∈ GL_n(k)` of `conj (A g) · A′ g`. -/
+theorem rankInner_def (n : ℕ) (F H : HallAlgebra k) :
+    rankInner n F H =
+      𝔼 g : GL (Fin n) k, conj (F (ofEnd (Matrix.toLin' (g : Matrix (Fin n) (Fin n) k)))) *
+        H (ofEnd (Matrix.toLin' (g : Matrix (Fin n) (Fin n) k))) :=
+  (rfl)
+
 /-- The function `∂_{d,f} A : a ↦ ⟨f, δA(a, ·)⟩_d`, pairing `f` in rank `d` with the block average
 of `A`. -/
 noncomputable def mulAdjoint (d : ℕ) (f F : HallAlgebra k) : HallAlgebra k :=
   fun a ↦ rankInner d f (blockAverage F a)
 
 /-- The value of `∂_{d,f} A` at `a` is `⟨f, δA(a, ·)⟩_d`. -/
+@[simp]
 theorem mulAdjoint_apply (d : ℕ) (f F : HallAlgebra k) (a : SimilarityClass k) :
     mulAdjoint d f F a = rankInner d f (blockAverage F a) :=
   (rfl)
@@ -130,16 +139,6 @@ attribute [local instance low] Fintype.ofFinite
 
 variable {V : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
 
-omit [Fintype k] [DecidableEq k] in
-private theorem units_inv_apply_apply {M : Type*} [AddCommGroup M] [Module k M]
-    (a : (Module.End k M)ˣ) (m : M) : (↑a⁻¹ : Module.End k M) ((a : Module.End k M) m) = m := by
-  rw [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
-
-omit [Fintype k] [DecidableEq k] in
-private theorem units_apply_inv_apply {M : Type*} [AddCommGroup M] [Module k M]
-    (a : (Module.End k M)ˣ) (m : M) : (a : Module.End k M) ((↑a⁻¹ : Module.End k M) m) = m := by
-  rw [← mul_apply_eq_comp, Units.mul_inv, one_apply_eq_self]
-
 variable {U Z : Submodule k V} (hUZ : IsCompl U Z)
 
 /-- The automorphism of `V = U ⊕ Z` with diagonal blocks `a`, `b` and upper right block `x`. -/
@@ -150,8 +149,8 @@ private noncomputable def blockUnit (a : (Module.End k U)ˣ) (b : (Module.End k 
       { blockTriangularEnd (a : Module.End k U) (b : Module.End k Z) x with
         invFun := blockTriangularEnd (↑a⁻¹ : Module.End k U) (↑b⁻¹ : Module.End k Z)
           (-((↑a⁻¹ : Module.End k U) ∘ₗ x ∘ₗ (↑b⁻¹ : Module.End k Z)))
-        left_inv p := by ext <;> simp [units_inv_apply_apply]
-        right_inv p := by ext <;> simp [units_apply_inv_apply] } ≪≫ₗ
+        left_inv p := by ext <;> simp
+        right_inv p := by ext <;> simp } ≪≫ₗ
       U.prodEquivOfIsCompl Z hUZ)
 
 omit [Fintype k] [DecidableEq k] [Module.Finite k V] in
@@ -262,7 +261,7 @@ include hUZ in
 `p = dim U` and `q = dim Z`. -/
 private theorem expect_stabilizer (A B X : HallAlgebra k) :
     𝔼 g : stabilizer (Module.End k V)ˣ U,
-        pairTerm A B X g (Submodule.mem_invtSubmodule_of_mem_stabilizer (V := V) (U := U) g.prop) =
+        pairTerm A B X g (Submodule.mem_invtSubmodule_of_mem_stabilizer (M := V) (U := U) g.prop) =
       rankInner (finrank k U) A (mulAdjoint (finrank k Z) B X) := by
   have : Finite (Z →ₗ[k] U) := Module.finite_of_finite k
   rw [← Fintype.expect_bijective (blockParam hUZ)
@@ -286,32 +285,11 @@ attribute [local instance low] Fintype.ofFinite
 
 variable {V : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
 
-omit [Fintype k] [DecidableEq k] in
-open scoped Classical in
-/-- Orbit-stabiliser: `|Stab(U)| / |GL(V)|` is one over the number of subspaces of the dimension
-of `U`. -/
-private theorem card_stabilizer_div_card [Finite k] (U : Submodule k V) :
-    (Fintype.card (stabilizer (Module.End k V)ˣ U) : ℂ) / Fintype.card (Module.End k V)ˣ =
-      1 / (Finset.univ.filter fun Y : Submodule k V ↦ finrank k Y = finrank k U).card := by
-  have h := U.card_stabilizer_mul_card_finrank_eq
-  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
-    Fintype.card_subtype (p := fun Y : Submodule k V ↦ finrank k Y = finrank k U)] at h
-  have h_pos : 0 < Fintype.card (stabilizer (Module.End k V)ˣ U) := Fintype.card_pos
-  rw [← h, Nat.cast_mul, div_mul_cancel_left₀ (Nat.cast_ne_zero.2 h_pos.ne'), one_div]
-
-omit [Fintype k] [DecidableEq k] in
-open scoped Classical in
-/-- Every dimension up to `dim V` is the dimension of a subspace. -/
-private theorem image_finrank_eq_range [Finite k] :
-    Finset.univ.image (fun U : Submodule k V ↦ finrank k U) = Finset.range (finrank k V + 1) := by
-  ext p
-  simpa [Nat.lt_succ_iff] using Set.ext_iff.1 (Submodule.range_finrank (K := k) (V := V)) p
-
 /-- The sum over the stabiliser of `U` of the term of `(g, U)` is `|Stab(U)|` times
 `⟨A, ∂_{q,B} X⟩_p`, with `p = dim U` and `q = dim V - p`. -/
 private theorem sum_stabilizer_pairTerm (A B X : HallAlgebra k) (U : Submodule k V) :
     ∑ g : stabilizer (Module.End k V)ˣ U,
-        pairTerm A B X g (Submodule.mem_invtSubmodule_of_mem_stabilizer (V := V) (U := U) g.prop) =
+        pairTerm A B X g (Submodule.mem_invtSubmodule_of_mem_stabilizer (M := V) (U := U) g.prop) =
       Fintype.card (stabilizer (Module.End k V)ˣ U) *
         rankInner (finrank k U) A (mulAdjoint (finrank k V - finrank k U) B X) := by
   obtain ⟨Z, hZ⟩ := U.exists_isCompl
@@ -352,13 +330,20 @@ private theorem rankInner_mul_finrank (A B X : HallAlgebra k) :
     refine Finset.sum_congr rfl fun U _ ↦
       (congrArg (· / (Fintype.card (Module.End k V)ˣ : ℂ))
         (sum_stabilizer_pairTerm A B X U)).trans ?_
-    rw [mul_comm, mul_div_assoc, card_stabilizer_div_card, mul_one_div]
+    -- Orbit-stabiliser: `|GL(V)|` is `|Stab(U)|` times the number of subspaces of dimension
+    -- `dim U`.
+    have h := U.card_stabilizer_mul_card_finrank_eq
+    rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
+      Fintype.card_subtype (p := fun Y : Submodule k V ↦ finrank k Y = finrank k U)] at h
+    rw [mul_comm, mul_div_assoc, ← h, Nat.cast_mul,
+      div_mul_cancel_left₀ (Nat.cast_ne_zero.2 Fintype.card_ne_zero), div_eq_mul_inv]
   -- Group the subspaces by dimension.
   rw [h_lhs, Finset.sum_comp (fun p ↦ rankInner p A (mulAdjoint (finrank k V - p) B X) /
-    (Finset.univ.filter fun Y : Submodule k V ↦ finrank k Y = p).card), image_finrank_eq_range]
+    (Finset.univ.filter fun Y : Submodule k V ↦ finrank k Y = p).card),
+    Submodule.image_finrank_eq_range]
   refine Finset.sum_congr rfl fun p hp ↦ ?_
   have h_ne : (Finset.univ.filter fun Y : Submodule k V ↦ finrank k Y = p).card ≠ 0 := by
-    rw [← image_finrank_eq_range] at hp
+    rw [← Submodule.image_finrank_eq_range] at hp
     obtain ⟨U, -, hU⟩ := Finset.mem_image.1 hp
     exact Finset.card_ne_zero.2 ⟨U, by simpa using hU⟩
   rw [nsmul_eq_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 h_ne)]
@@ -377,16 +362,19 @@ theorem rankInner_mul_eq_sum_mulAdjoint (n : ℕ) (A B X : HallAlgebra k) :
   simpa using rankInner_mul_finrank (V := Fin n → k) A B X
 
 /-- Conjugating the inner product exchanges its arguments. -/
+@[simp]
 theorem conj_rankInner (n : ℕ) (F H : HallAlgebra k) :
     conj (rankInner n F H) = rankInner n H F := by
   simp [rankInner, map_expect, mul_comm]
 
 /-- The inner product is linear in its second argument. -/
+@[simp]
 theorem rankInner_smul_right (n : ℕ) (F H : HallAlgebra k) (a : ℂ) :
     rankInner n F (a • H) = a * rankInner n F H := by
   simp [rankInner, Finset.mul_expect, mul_left_comm]
 
 /-- The inner product is additive in its second argument. -/
+@[simp]
 theorem rankInner_add_right (n : ℕ) (F H H' : HallAlgebra k) :
     rankInner n F (H + H') = rankInner n F H + rankInner n F H' := by
   simp [rankInner, mul_add, Finset.expect_add_distrib]
