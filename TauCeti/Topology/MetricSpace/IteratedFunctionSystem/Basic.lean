@@ -146,6 +146,7 @@ theorem wordMap_nil : F.wordMap [] = id :=
 theorem wordMap_cons (i : ι) (w : List ι) : F.wordMap (i :: w) = F i ∘ F.wordMap w :=
   (rfl)
 
+@[simp]
 theorem wordMap_append (v w : List ι) : F.wordMap (v ++ w) = F.wordMap v ∘ F.wordMap w := by
   induction v with
   | nil => simp
@@ -159,6 +160,7 @@ theorem wordRatio_nil : F.wordRatio [] = 1 :=
 theorem wordRatio_cons (i : ι) (w : List ι) : F.wordRatio (i :: w) = F.ratio i * F.wordRatio w :=
   List.prod_cons
 
+@[simp]
 theorem wordRatio_append (v w : List ι) : F.wordRatio (v ++ w) = F.wordRatio v * F.wordRatio w := by
   simp [wordRatio]
 

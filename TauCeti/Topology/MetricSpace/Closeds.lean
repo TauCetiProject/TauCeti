@@ -22,6 +22,9 @@ eventually arbitrarily close to a point of `F i` (`Filter.Tendsto.eventually_exi
 This is how Hausdorff convergence of a sequence of zero sets is used: on a compact set away from
 the limit, the sets of the sequence eventually keep a fixed distance, so estimates that hold at
 a definite distance from the zeros apply uniformly there.
+
+The extended distance on `TopologicalSpace.NonemptyCompacts X` is likewise the Hausdorff extended
+distance (`TopologicalSpace.NonemptyCompacts.edist_eq`).
 -/
 
 public section
@@ -58,3 +61,13 @@ theorem Filter.Tendsto.eventually_exists_dist_lt {ι : Type*} {l : Filter ι}
   rw [edist_comm, Closeds.edist_eq] at hi
   obtain ⟨y, hy, hxy⟩ := exists_edist_lt_of_hausdorffEDist_lt hx hi
   exact ⟨y, hy, by rwa [edist_dist, ENNReal.ofReal_lt_ofReal_iff hε] at hxy⟩
+
+namespace TopologicalSpace.NonemptyCompacts
+
+/-- The extended distance on `NonemptyCompacts α` is the Hausdorff extended distance, by
+construction of its emetric space instance. -/
+theorem edist_eq {α : Type*} [EMetricSpace α] {s t : NonemptyCompacts α} :
+    edist s t = hausdorffEDist (s : Set α) t :=
+  rfl
+
+end TopologicalSpace.NonemptyCompacts

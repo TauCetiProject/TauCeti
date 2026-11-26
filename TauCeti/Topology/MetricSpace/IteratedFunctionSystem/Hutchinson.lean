@@ -9,6 +9,7 @@ public import TauCeti.Topology.MetricSpace.IteratedFunctionSystem.Basic
 public import Mathlib.Topology.MetricSpace.Closeds
 public import Mathlib.Topology.UniformSpace.Closeds
 
+import TauCeti.Topology.MetricSpace.Closeds
 import TauCeti.Topology.MetricSpace.HausdorffDistance
 
 /-!
@@ -30,7 +31,7 @@ Consequently, with no completeness assumption:
   (`TauCeti.IFS.IsAttractor.hausdorffDist_le_hausdorffDist_hutchinson_div`), and with it
   `d_H(Sⁿ A, K) ≤ d_H(A, S A) · rⁿ / (1 - r)`
   (`TauCeti.IFS.IsAttractor.hausdorffDist_hutchinson_iterate_le_mul_div`);
-* a nonempty closed bounded set `A` with `closure (⋃ i, F i '' A) = A` is the attractor
+* a nonempty bounded set `A` with `closure (⋃ i, F i '' A) = A` is the attractor
   (`TauCeti.IFS.IsAttractor.eq_of_closure_iUnion_image_eq`).
 
 On a nonempty complete metric space the contraction mapping theorem, applied on the complete space
@@ -81,6 +82,7 @@ theorem coe_hutchinson (A : NonemptyCompacts X) :
     (F.hutchinson A : Set X) = ⋃ i, F i '' A :=
   (rfl)
 
+@[simp]
 theorem mem_hutchinson {A : NonemptyCompacts X} {x : X} :
     x ∈ F.hutchinson A ↔ ∃ i, ∃ y ∈ A, F i y = x := by
   simp [← SetLike.mem_coe]
@@ -88,9 +90,8 @@ theorem mem_hutchinson {A : NonemptyCompacts X} {x : X} :
 /-- The Hutchinson operator is Lipschitz for the Hausdorff distance, with constant the largest
 ratio (Hutchinson 1981, 3.2(1)). -/
 theorem lipschitzWith_hutchinson : LipschitzWith F.maxRatio F.hutchinson := fun A B ↦ by
-  rw [← NonemptyCompacts.isometry_toCloseds.edist_eq, Closeds.edist_eq,
-    ← NonemptyCompacts.isometry_toCloseds.edist_eq A B, Closeds.edist_eq]
-  simpa using F.hausdorffEDist_iUnion_image_le A B
+  simp only [NonemptyCompacts.edist_eq, coe_hutchinson]
+  exact F.hausdorffEDist_iUnion_image_le A B
 
 /-- The Hutchinson operator is a contraction for the Hausdorff distance. -/
 theorem contractingWith_hutchinson : ContractingWith F.maxRatio F.hutchinson :=
@@ -169,11 +170,11 @@ theorem hausdorffDist_hutchinson_iterate_le_mul_div (hK : F.IsAttractor K)
 
 end IsAttractor
 
-/-- *Uniqueness among closed bounded sets.* If `K` is an attractor, every nonempty closed bounded
-set `A` with `closure (⋃ i, F i '' A) = A` equals `K`: the Hausdorff distance between `A` and `K`
-is finite and at most the largest ratio times itself. -/
+/-- *Uniqueness among bounded sets.* If `K` is an attractor, every nonempty bounded set `A` with
+`closure (⋃ i, F i '' A) = A` equals `K`: such an `A` is closed, and the Hausdorff distance between
+`A` and `K` is finite and at most the largest ratio times itself. -/
 theorem IsAttractor.eq_of_closure_iUnion_image_eq [Finite ι] {K A : Set X} (hK : F.IsAttractor K)
-    (hA : IsClosed A) (hne : A.Nonempty) (hb : Bornology.IsBounded A)
+    (hne : A.Nonempty) (hb : Bornology.IsBounded A)
     (h : closure (⋃ i, F i '' A) = A) : A = K := by
   have hd : hausdorffEDist A K ≠ ∞ :=
     hausdorffEDist_ne_top_of_nonempty_of_bounded hne hK.nonempty hb hK.isCompact.isBounded
@@ -183,6 +184,7 @@ theorem IsAttractor.eq_of_closure_iUnion_image_eq [Finite ι] {K A : Set X} (hK 
           rw [h, hK.iUnion_image_eq]
       _ = hausdorffEDist (⋃ i, F i '' A) (⋃ i, F i '' K) := hausdorffEDist_closure_left
       _ ≤ F.maxRatio * hausdorffEDist A K := F.hausdorffEDist_iUnion_image_le A K
+  have hA : IsClosed A := h ▸ isClosed_closure
   refine (hA.hausdorffEDist_zero_iff hK.isCompact.isClosed).1 ?_
   by_contra h0
   refine (ENNReal.mul_lt_of_lt_div ?_).not_ge hle
