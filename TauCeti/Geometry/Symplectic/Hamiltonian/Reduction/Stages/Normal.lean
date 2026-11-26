@@ -47,7 +47,8 @@ surjective submersions out of the regular levels, with the submanifold structure
 orbits of `G`, of `K` and of `R`, and the forms are related by `π^* η = i^* σ`, `π₁^* η₁ = i₁^* σ`
 and `π₂^* η₂ = i₂^* η₁` for the inclusions `i`, `i₁`, `i₂` of the levels. The first-stage moment
 map `μ₁` and the action of `R` on `Q₁` are data of the statement, required to be compatible with
-`π₁`. When `p ∘ ι = 1`, the action of `R` determines `μ₁` uniquely
+`π₁`. When `p ∘ ι = 1`, there is a unique `μ₁` with `μ₁ (π₁ z) ∘ dp = μ z`, and it is a
+coadjoint-equivariant moment map of the action of `R`
 (`IsEquivariantMomentMap.existsUnique_comp_groupLieAlgebraMap_eq_and_isEquivariantMomentMap` in
 `TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Stages.Residual`). Regularity is assumed only
 at the two stages: regularity of `0` for `μ` follows

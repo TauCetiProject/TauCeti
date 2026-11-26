@@ -250,6 +250,7 @@ theorem existsUnique_comp_groupLieAlgebraMap_eq_and_isEquivariantMomentMap
   rcases subsingleton_or_nontrivial ER with hER | hER
   · -- If `𝔯 = 0`, then `𝔯*` is a point, and `μ = 0` on the level since it factors through `dp`.
     intro _ _
+    -- `GroupLieAlgebra IR R` is the tangent space at `1`, which unfolds to the model space `ER`.
     have : Subsingleton (GroupLieAlgebra IR R) := hER
     refine ⟨0, ⟨fun z ↦ ?_, ?_⟩, fun _ _ ↦ Subsingleton.elim _ _⟩
     · obtain ⟨ν, hν⟩ := (hμ.mem_levelSubMulAction_comp_monoidHom_iff hι hsmul hpι hker).1
