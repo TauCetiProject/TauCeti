@@ -87,13 +87,6 @@ namespace Distribution
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {Ω : Opens E}
 
-/-- A smooth function on `E` supported in the support of a test function on `Ω` is a test function
-on `Ω`. -/
-private theorem exists_coe_eq {f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} {φ : 𝓓(Ω, ℝ)}
-    (h : tsupport f ⊆ tsupport φ) : ∃ ψ : 𝓓(Ω, ℝ), ⇑ψ = f :=
-  ⟨⟨f, contMDiff_iff_contDiff.1 f.contMDiff,
-    φ.hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) h, h.trans φ.tsupport_subset⟩, rfl⟩
-
 /-- The operator `D` on `C^∞(E)` does not enlarge supports and acts on the distributions on `Ω`
 by transposition without enlarging their wave front sets: every `S` has a transpose `R` with
 `R φ = S (D φ)` for every test function `φ`, microlocally smooth wherever `S` is. -/
@@ -123,7 +116,8 @@ private theorem comp {D₁ D₂ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^
   obtain ⟨R, hR, hR'⟩ := h₂.2 R₁
   refine ⟨R, fun φ ψ f hf hψ ↦ ?_, fun x ξ hS ↦ hR' x ξ (hR₁' x ξ hS)⟩
   -- The intermediate test function `D₂ φ`.
-  obtain ⟨χ, hχ⟩ := exists_coe_eq (hf ▸ h₂.1 f)
+  obtain ⟨χ, hχ⟩ := TestFunction.exists_coe_eq_of_tsupport_subset
+    (contMDiff_iff_contDiff.1 (D₂ f).contMDiff) (hf ▸ h₂.1 f)
   rw [hR φ χ f hf hχ, hR₁ χ ψ (D₂ f) hχ.symm hψ]
 
 variable [FiniteDimensional ℝ E]
@@ -135,8 +129,10 @@ private theorem add {D₁ D₂ : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^�
   obtain ⟨R₁, hR₁, hR₁'⟩ := h₁.2 S
   obtain ⟨R₂, hR₂, hR₂'⟩ := h₂.2 S
   refine ⟨R₁ + R₂, fun φ ψ f hf hψ ↦ ?_, fun x ξ hS ↦ (hR₁' x ξ hS).add (hR₂' x ξ hS)⟩
-  obtain ⟨ψ₁, hψ₁⟩ := exists_coe_eq (hf ▸ h₁.1 f)
-  obtain ⟨ψ₂, hψ₂⟩ := exists_coe_eq (hf ▸ h₂.1 f)
+  obtain ⟨ψ₁, hψ₁⟩ := TestFunction.exists_coe_eq_of_tsupport_subset
+    (contMDiff_iff_contDiff.1 (D₁ f).contMDiff) (hf ▸ h₁.1 f)
+  obtain ⟨ψ₂, hψ₂⟩ := TestFunction.exists_coe_eq_of_tsupport_subset
+    (contMDiff_iff_contDiff.1 (D₂ f).contMDiff) (hf ▸ h₂.1 f)
   have hψ' : ψ = ψ₁ + ψ₂ := TestFunction.ext fun x ↦ by simp [hψ, hψ₁, hψ₂]
   simp [hR₁ φ ψ₁ f hf hψ₁, hR₂ φ ψ₂ f hf hψ₂, hψ']
 
@@ -279,13 +275,14 @@ private theorem localOperatorCLM_chartTestCLM
   · -- The left side is `P σ x` with the `let`-bound section `σ` unfolded; `change` folds it back.
     change P σ x = _
     -- The coefficients of the right side are `χ (c x)` times those of `P σ x` in the frame `tW`.
-    have hψx (i : ι) :
-        ψ i (c x) = χ (c x) * b.repr (tW.continuousLinearMapAt ℝ x (P σ x)) i := by
-      rw [hψ i, c.sectionChartCompression_apply, c.left_inv hx, hpull]
+    have hframe : ∑ i, ψ i (c x) • b i = χ (c x) • tW.continuousLinearMapAt ℝ x (P σ x) := by
+      rw [← b.sum_repr (tW.continuousLinearMapAt ℝ x (P σ x)), Finset.smul_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [smul_smul, hψ i, c.sectionChartCompression_apply, c.left_inv hx, hpull]
       simp [LinearMap.coe_toContinuousLinearMap']
-    simp_rw [chartTestCLM_apply_of_mem _ _ _ _ _ hx, TestFunction.postcompCLM_apply,
-      Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply, ← map_sum, hψx, mul_smul,
-      ← Finset.smul_sum, b.sum_repr, map_smul, tW.symmL_continuousLinearMapAt (hW hx)]
+    simp only [chartTestCLM_apply_of_mem _ _ _ _ _ hx, TestFunction.postcompCLM_apply,
+      Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply]
+    rw [← map_sum, hframe, map_smul, tW.symmL_continuousLinearMapAt (hW hx)]
     by_cases h0 : P σ x = 0
     · simp [h0]
     · obtain ⟨y, hy, rfl⟩ :=
@@ -303,7 +300,6 @@ operator `P`. -/
 private theorem isMicrolocallySmoothAt_chartComponent_localOperatorDualCLM {r : ℕ}
     (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
       Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
-    (hloc : ∀ (s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
     {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
     {tV : Trivialization F (π F V)} [MemTrivializationAtlas tV] (hV : c.source ⊆ tV.baseSet)
     {tW : Trivialization F' (π F' W)} [MemTrivializationAtlas tW] (hW : c.source ⊆ tW.baseSet)
@@ -311,8 +307,12 @@ private theorem isMicrolocallySmoothAt_chartComponent_localOperatorDualCLM {r : 
     (hT : ∀ w, (tW.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hW T w)
       |>.IsMicrolocallySmoothAt y η) (v : F) :
     (tV.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hV
-      (localOperatorDualCLM P hloc T) v).IsMicrolocallySmoothAt y η := by
+      (localOperatorDualCLM P
+        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) v)
+      |>.IsMicrolocallySmoothAt y η := by
   have hc := contMDiffOn_of_mem_maximalAtlas he
+  have hloc : ∀ (s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0 :=
+    fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP
   -- A cutoff `χ` equal to `1` on a neighbourhood `B` of `y` in the chart target.
   obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhds (n := ⊤)
     (Ω := ⟨c.target, c.open_target⟩) hy
@@ -341,7 +341,8 @@ private theorem isMicrolocallySmoothAt_chartComponent_localOperatorDualCLM {r : 
       rw [show ⇑(D i f) = fun z ↦ χ z * _ from
         funext (c.sectionChartCompression_apply he tV hV tW hW χ χ _ v P _)]
       exact tsupport_mul_subset_left
-    choose ψ hψ using fun i ↦ Distribution.exists_coe_eq (hD i)
+    choose ψ hψ using fun i ↦ TestFunction.exists_coe_eq_of_tsupport_subset
+      (contMDiff_iff_contDiff.1 (D i f).contMDiff) (hD i)
     rw [Distribution.restrictCLM_apply, chartComponent_apply, localOperatorDualCLM_apply,
       localOperatorCLM_chartTestCLM hloc he hV hW hφχ rfl v b ψ hψ]
     simp only [map_sum, Complex.ofReal_sum, _root_.sum_apply, Distribution.restrictCLM_apply]
@@ -357,10 +358,10 @@ differential operator `P : Γ(V) → Γ(W)`. -/
 theorem IsMicrolocallySmoothAt.localOperatorDualCLM {r : ℕ}
     (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
       Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
-    (hloc : ∀ (s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
     {T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ} {x : M} {ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ}
     (h : IsMicrolocallySmoothAt T x ξ) :
-    IsMicrolocallySmoothAt (localOperatorDualCLM P hloc T) x ξ := by
+    IsMicrolocallySmoothAt (localOperatorDualCLM P
+      (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
   let tV := trivializationAt F V x
   let tW := trivializationAt F' W x
@@ -376,7 +377,7 @@ theorem IsMicrolocallySmoothAt.localOperatorDualCLM {r : ℕ}
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- Microlocal smoothness is read on the components in this chart and these frames.
   exact (isMicrolocallySmoothAt_iff _ hc hcs hV hxc ξ).2
-    (isMicrolocallySmoothAt_chartComponent_localOperatorDualCLM hP hloc he hV hW
+    (isMicrolocallySmoothAt_chartComponent_localOperatorDualCLM hP he hV hW
       (c.map_source hxc) ((isMicrolocallySmoothAt_iff T hc hcs hW hxc ξ).1 h))
 
 /-- **Differential operators do not enlarge wave front sets** (Hörmander I, §8.1 and §8.2). The
@@ -385,11 +386,12 @@ differential operator `P : Γ(V) → Γ(W)` lies in the wave front set of `T`. -
 theorem waveFrontSet_localOperatorDualCLM_subset {r : ℕ}
     (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
       Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
-    (hloc : ∀ (s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
     (T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ) :
-    waveFrontSet 𝓘(ℝ, E) (localOperatorDualCLM P hloc T) ⊆ waveFrontSet 𝓘(ℝ, E) T :=
+    waveFrontSet 𝓘(ℝ, E) (localOperatorDualCLM P
+        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) ⊆
+      waveFrontSet 𝓘(ℝ, E) T :=
   fun _ hp ↦ mem_waveFrontSet_iff.2 ⟨(mem_waveFrontSet_iff.1 hp).1,
-    fun h ↦ (mem_waveFrontSet_iff.1 hp).2 (h.localOperatorDualCLM hP hloc)⟩
+    fun h ↦ (mem_waveFrontSet_iff.1 hp).2 (h.localOperatorDualCLM hP)⟩
 
 /-- **Differential operators do not enlarge singular supports.** The singular support of the
 transpose `T ∘ P` of a functional `T` on the bundle tests of `W` by a differential operator
@@ -397,10 +399,11 @@ transpose `T ∘ P` of a functional `T` on the bundle tests of `W` by a differen
 theorem singularSupport_localOperatorDualCLM_subset [MeasurableSpace E] [BorelSpace E] {r : ℕ}
     (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
       Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
-    (hloc : ∀ (s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
     (T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ) :
-    singularSupport 𝓘(ℝ, E) (localOperatorDualCLM P hloc T) ⊆ singularSupport 𝓘(ℝ, E) T := by
+    singularSupport 𝓘(ℝ, E) (localOperatorDualCLM P
+        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) ⊆
+      singularSupport 𝓘(ℝ, E) T := by
   rw [← proj_image_waveFrontSet, ← proj_image_waveFrontSet]
-  exact image_mono (waveFrontSet_localOperatorDualCLM_subset hP hloc T)
+  exact image_mono (waveFrontSet_localOperatorDualCLM_subset hP T)
 
 end TauCeti.BundleTest

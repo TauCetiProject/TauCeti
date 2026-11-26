@@ -47,8 +47,9 @@ terms of differential operators.
 
 * `TauCeti.differentialOperators_section_apply_eq_zero_of_eventuallyEq`: differential operators
   between sections are local.
-* `TauCeti.tsupport_differentialOperators_section_apply_subset`: hence they do not enlarge the
-  closed supports of sections.
+* `TauCeti.tsupport_apply_subset_of_local`: local operators do not enlarge the closed supports of
+  sections; in particular differential operators do not
+  (`TauCeti.tsupport_differentialOperators_section_apply_subset`).
 * `TauCeti.tsupport_smulCommutator_section_apply_subset`: commutators with multiplication by
   smooth functions preserve the property of not enlarging supports.
 * `TauCeti.mem_differentialOperators_section_iff_forall_apply_eq_zero`: a linear map between
@@ -124,16 +125,24 @@ theorem differentialOperators_section_apply_eq_zero_of_eventuallyEq
   apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top (apply_mem_smul_top_of_mem_pow_smul_top hP _
     (mem_smoothVanishingIdeal_pow_smul_top_of_eventuallyEq_zero hs (r + 1)))
 
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+/-- A local operator does not enlarge closed supports: if `(P s) x = 0` whenever `s` vanishes near
+`x`, then the closed support of `P s` lies in that of `s`. -/
+theorem tsupport_apply_subset_of_local {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
+    (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
+    (s : Cₛ^∞⟮I; F, V⟯) : (P s).tsupport ⊆ s.tsupport :=
+  ((P s).tsupport_subset_iff s.isClosed_tsupport).2 fun _ hx ↦ hP s _ <|
+    Filter.mem_of_superset (s.isClosed_tsupport.isOpen_compl.mem_nhds hx) fun _ hy ↦
+      s.eq_zero_of_notMem_tsupport hy
+
 /-- Differential operators between sections do not enlarge supports: the closed support of `P s`
 lies in that of `s`. -/
 theorem tsupport_differentialOperators_section_apply_subset
     {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯} {r : ℕ}
     (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r)
     (s : Cₛ^∞⟮I; F, V⟯) : (P s).tsupport ⊆ s.tsupport :=
-  ((P s).tsupport_subset_iff s.isClosed_tsupport).2 fun _ hx ↦
-    differentialOperators_section_apply_eq_zero_of_eventuallyEq hP <|
-      Filter.mem_of_superset (s.isClosed_tsupport.isOpen_compl.mem_nhds hx) fun _ hy ↦
-        s.eq_zero_of_notMem_tsupport hy
+  tsupport_apply_subset_of_local
+    (fun _ _ hs ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP hs) s
 
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
 /-- If a linear map `Q : Γ(V) → Γ(W)` does not enlarge supports, neither does its commutator

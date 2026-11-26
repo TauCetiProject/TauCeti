@@ -30,10 +30,12 @@ of `P` on `u`.
 
 ## Main declarations
 
-* `TauCeti.tsupport_apply_subset_of_local`: a local operator does not enlarge closed supports.
 * `TauCeti.BundleTest.localOperatorCLM`: a local operator acting on bundle tests, as a continuous
-  linear map, with `TauCeti.BundleTest.localOperatorCLM_apply`.
-* `TauCeti.BundleTest.localOperatorDualCLM`: its transpose on functionals on bundle tests.
+  linear map, with `TauCeti.BundleTest.localOperatorCLM_apply`. It sends the identity to the
+  identity, composites to composites and sums to sums (`TauCeti.BundleTest.localOperatorCLM_id`,
+  `TauCeti.BundleTest.localOperatorCLM_comp`, `TauCeti.BundleTest.localOperatorCLM_add`).
+* `TauCeti.BundleTest.localOperatorDualCLM`: its transpose on functionals on bundle tests, with
+  the same algebraic API, composites in the reverse order.
 
 ## References
 
@@ -62,17 +64,11 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {W : M → Type*} [TopologicalSpace (TotalSpace F' W)]
   [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
   [FiberBundle F' W] [VectorBundle ℝ F' W] [ContMDiffVectorBundle ∞ F' W I]
-  {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [LindelofSpace M]
-  [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V I] [ContMDiffVectorBundle ∞ F' W I] in
-/-- A local operator does not enlarge closed supports. -/
-theorem tsupport_apply_subset_of_local
-    (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
-    (s : Cₛ^∞⟮I; F, V⟯) : (P s).tsupport ⊆ s.tsupport :=
-  ((P s).tsupport_subset_iff s.isClosed_tsupport).2 fun _ hx ↦ hP s _ <|
-    mem_of_superset (s.isClosed_tsupport.isOpen_compl.mem_nhds hx) fun _ hy ↦
-      s.eq_zero_of_notMem_tsupport hy
+  {F'' : Type*} [NormedAddCommGroup F''] [NormedSpace ℝ F'']
+  {U : M → Type*} [TopologicalSpace (TotalSpace F'' U)]
+  [∀ x, AddCommGroup (U x)] [∀ x, Module ℝ (U x)] [∀ x, TopologicalSpace (U x)]
+  [FiberBundle F'' U] [VectorBundle ℝ F'' U] [ContMDiffVectorBundle ∞ F'' U I]
+  {P P' : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
 
 namespace BundleTest
 
@@ -111,6 +107,32 @@ theorem localOperatorCLM_apply
     localOperatorCLM P hP s x = P ((ofCompactlySupported I F V).symm s).val x := by
   simp [localOperatorCLM, LinearMap.restrict_apply]
 
+@[simp]
+theorem localOperatorCLM_id
+    (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → LinearMap.id s x = 0 :=
+      fun _ _ hs ↦ hs.self_of_nhds) :
+    localOperatorCLM LinearMap.id hP = ContinuousLinearMap.id ℝ (BundleTest I F V) := by
+  ext; simp [localOperatorCLM, LinearMap.restrict_apply]
+
+/-- The action on bundle tests of a composite of local operators is the composite of their
+actions. -/
+theorem localOperatorCLM_comp [FiniteDimensional ℝ F'] {Q : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F'', U⟯}
+    (hQ : ∀ (s : Cₛ^∞⟮I; F', W⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → Q s x = 0)
+    (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
+    (hQP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → (Q ∘ₗ P) s x = 0 :=
+      fun s x hs ↦ hQ _ x (hs.eventually_nhds.mono fun y hy ↦ hP s y hy)) :
+    localOperatorCLM (Q ∘ₗ P) hQP = (localOperatorCLM Q hQ).comp (localOperatorCLM P hP) := by
+  ext; simp [localOperatorCLM, LinearMap.restrict_apply]
+
+/-- The action on bundle tests of a sum of local operators is the sum of their actions. -/
+theorem localOperatorCLM_add
+    (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
+    (hP' : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P' s x = 0)
+    (hPP' : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → (P + P') s x = 0 :=
+      fun s x hs ↦ (congrArg₂ (· + ·) (hP s x hs) (hP' s x hs)).trans (add_zero 0)) :
+    localOperatorCLM (P + P') hPP' = localOperatorCLM P hP + localOperatorCLM P' hP' := by
+  ext; simp [localOperatorCLM, LinearMap.restrict_apply]
+
 section Dual
 
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G] [IsTopologicalAddGroup G]
@@ -131,6 +153,36 @@ theorem localOperatorDualCLM_apply
     (T : BundleTest I F' W →L_c[ℝ] G) (s : BundleTest I F V) :
     localOperatorDualCLM P hP T s = T (localOperatorCLM P hP s) :=
   (rfl)
+
+@[simp]
+theorem localOperatorDualCLM_id
+    (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → LinearMap.id s x = 0 :=
+      fun _ _ hs ↦ hs.self_of_nhds) :
+    localOperatorDualCLM (G := G) LinearMap.id hP =
+      ContinuousLinearMap.id ℝ (BundleTest I F V →L_c[ℝ] G) := by
+  ext; simp
+
+/-- The transpose of a composite of local operators is the composite of their transposes, in the
+reverse order. -/
+theorem localOperatorDualCLM_comp [FiniteDimensional ℝ F']
+    {Q : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F'', U⟯}
+    (hQ : ∀ (s : Cₛ^∞⟮I; F', W⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → Q s x = 0)
+    (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
+    (hQP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → (Q ∘ₗ P) s x = 0 :=
+      fun s x hs ↦ hQ _ x (hs.eventually_nhds.mono fun y hy ↦ hP s y hy)) :
+    localOperatorDualCLM (G := G) (Q ∘ₗ P) hQP =
+      (localOperatorDualCLM P hP).comp (localOperatorDualCLM Q hQ) := by
+  ext; simp [localOperatorCLM_comp hQ hP]
+
+/-- The transpose of a sum of local operators is the sum of their transposes. -/
+theorem localOperatorDualCLM_add
+    (hP : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0)
+    (hP' : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P' s x = 0)
+    (hPP' : ∀ (s : Cₛ^∞⟮I; F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → (P + P') s x = 0 :=
+      fun s x hs ↦ (congrArg₂ (· + ·) (hP s x hs) (hP' s x hs)).trans (add_zero 0)) :
+    localOperatorDualCLM (G := G) (P + P') hPP' =
+      localOperatorDualCLM P hP + localOperatorDualCLM P' hP' := by
+  ext; simp [localOperatorCLM_add hP hP']
 
 end Dual
 
