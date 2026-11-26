@@ -11,9 +11,9 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.ZMod.QuotientRing
 public import Mathlib.GroupTheory.Index
 public import Mathlib.NumberTheory.Harmonic.Defs
+public import TauCeti.Data.ZMod.FinEquiv
 
 import Mathlib.NumberTheory.Harmonic.Bounds
-import TauCeti.Data.ZMod.FinEquiv
 import TauCeti.Data.ZMod.LocalRing
 import TauCeti.GroupTheory.Coset.Fiber
 
@@ -44,7 +44,6 @@ of the representatives sum to the harmonic number `H_{n-1}`.
 
 * `ZMod.mul_card_filter_natCast_val`: counting a condition on the reduction modulo `m ∣ n`.
 * `ZMod.sum_comp_natCast_val`: summing a function of the reduction modulo `m ∣ n`.
-* `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
 * `ZMod.sum_val_filter_castHom_eq_sum_range`: summing a function of the representatives over a
   fibre of the reduction `ZMod (k * m) → ZMod m`.
 * `ZMod.sum_inv_val_eq_harmonic`: the reciprocals of the representatives sum to `H_{n-1}`.
@@ -94,13 +93,6 @@ theorem mul_card_filter_natCast_val [NeZero m] [NeZero n] (hmn : m ∣ n)
     m * #{x : ZMod n | Q (x.val : ZMod m)} = n * #{y : ZMod m | Q y} := by
   rw [card_filter, card_filter, sum_comp_natCast_val hmn fun y ↦ if Q y then 1 else 0,
     smul_eq_mul, ← mul_assoc, Nat.mul_div_cancel' hmn]
-
-/-- **Summing over the representatives.** A function of the least nonnegative representative
-summed over the residues modulo `n` is its sum over `range n`. -/
-theorem sum_val_eq_sum_range {M : Type*} [AddCommMonoid M] [NeZero n] (f : ℕ → M) :
-    ∑ x : ZMod n, f x.val = ∑ i ∈ range n, f i := by
-  rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
-  simp
 
 /-- **Summing over a fibre of the reduction.** The residues modulo `k * m` that reduce to
 `x : ZMod m` have the representatives `x.val + m * j` for `j < k`, so a function of the

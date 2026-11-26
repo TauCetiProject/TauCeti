@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Data.ZMod.Basic
 
 /-!
@@ -19,6 +20,7 @@ indexed by `Fin n` rewrites into `ZMod n` arithmetic instead of being unfolded a
 * `ZMod.finEquiv_apply`: `ZMod.finEquiv n j` is the natural cast of `j.val`.
 * `ZMod.finEquiv_symm_apply_val`: the canonical `Fin n` representative
   `(ZMod.finEquiv n).symm z` of `z : ZMod n` has natural value `z.val`.
+* `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
 * `TauCeti.mulModEquiv`: multiplication by `d` modulo `p` as a permutation of `Fin p`, for `d`
   coprime to `p`, with its evaluation rule `TauCeti.mulModEquiv_apply_val`. These take a modulus
   rather than a `ZMod` value, so they are not dot notation on `ZMod` and live in `TauCeti`.
@@ -54,6 +56,13 @@ lemma finEquiv_symm_apply_val {n : ℕ} [NeZero n] (z : ZMod n) :
   -- identifies with `finEquiv` applied to it, that is with `z`.
   rw [← ZMod.val_natCast_of_lt ((ZMod.finEquiv n).symm z).isLt, ← finEquiv_apply,
     RingEquiv.apply_symm_apply]
+
+/-- **Summing over the representatives.** A function of the least nonnegative representative
+summed over the residues modulo `n` is its sum over `range n`. -/
+theorem sum_val_eq_sum_range {M : Type*} [AddCommMonoid M] {n : ℕ} [NeZero n] (f : ℕ → M) :
+    ∑ x : ZMod n, f x.val = ∑ i ∈ Finset.range n, f i := by
+  rw [Finset.sum_range, ← (finEquiv n).symm.toEquiv.sum_comp]
+  simp
 
 end ZMod
 

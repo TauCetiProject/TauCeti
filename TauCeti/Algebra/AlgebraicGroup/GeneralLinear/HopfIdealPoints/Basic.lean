@@ -63,6 +63,17 @@ noncomputable def hopfIdealPointsSubgroup
       (coordinateHopfAlgebra R n) I (CommAlgCat.of R A)).map
     (pointsMulEquiv n).toMonoidHom
 
+/-- Membership in the general-linear point subgroup cut out by a Hopf ideal is membership of the
+corresponding point in the subgroup of points cut out by that ideal. -/
+theorem mem_hopfIdealPointsSubgroup_iff_symm_mem
+    (I : HopfIdeal R (coordinateHopfAlgebra R n)) (A : Type w)
+    [CommRing A] [Algebra R A] (g : Matrix.GeneralLinearGroup (Fin n) A) :
+    g ∈ hopfIdealPointsSubgroup n I A ↔
+      (pointsMulEquiv (R := R) n).symm g ∈ CommHopfAlgCat.quotientPointsSubgroup
+        (coordinateHopfAlgebra R n) I (CommAlgCat.of R A) := by
+  unfold hopfIdealPointsSubgroup
+  exact Subgroup.mem_map_equiv
+
 /-- Membership in the general-linear point subgroup cut out by a Hopf ideal is vanishing on
 that ideal. -/
 @[simp]
@@ -71,8 +82,7 @@ theorem mem_hopfIdealPointsSubgroup_iff
     [CommRing A] [Algebra R A] (g : Matrix.GeneralLinearGroup (Fin n) A) :
     g ∈ hopfIdealPointsSubgroup n I A ↔
       ∀ x ∈ I, ((pointsMulEquiv (R := R) n).symm g).ofConv x = 0 := by
-  unfold hopfIdealPointsSubgroup
-  rw [Subgroup.mem_map_equiv, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  rw [mem_hopfIdealPointsSubgroup_iff_symm_mem, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
 
 /-- A general-linear point lying in the subgroup cut out by a Hopf ideal remains in that
 subgroup after transport to its matrix representation. -/
@@ -84,7 +94,7 @@ theorem pointsMulEquiv_mem_hopfIdealPointsSubgroup
     (hq : q ∈ CommHopfAlgCat.quotientPointsSubgroup
       (coordinateHopfAlgebra R n) I (CommAlgCat.of R A)) :
     pointsMulEquiv n q ∈ hopfIdealPointsSubgroup n I A := by
-  exact ⟨q, hq, rfl⟩
+  rwa [mem_hopfIdealPointsSubgroup_iff_symm_mem, MulEquiv.symm_apply_apply]
 
 /-- A point pulled back along a coordinate morphism that kills a Hopf ideal lies in the
 general-linear subgroup cut out by that ideal. -/
