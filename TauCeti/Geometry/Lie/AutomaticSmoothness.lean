@@ -46,6 +46,8 @@ The linear map `L` is not exposed: once `f` is known to be smooth, it is the dif
   (`TauCeti.Lie.contMDiff_of_surjective_groupLieAlgebraMap`).
 * `ContinuousMonoidHom.toContMDiffMonoidMorphism`: a continuous homomorphism of such Lie groups,
   bundled as a smooth monoid morphism.
+* `ContinuousMulEquiv.toDiffeomorph`: an isomorphism of topological groups between such Lie groups,
+  bundled as a diffeomorphism.
 
 ## References
 
@@ -195,3 +197,28 @@ theorem coe_toContMDiffMonoidMorphism (f : G →ₜ* G') :
   (rfl)
 
 end ContinuousMonoidHom
+
+namespace ContinuousMulEquiv
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [LieGroup I' ∞ G']
+
+variable (I I') in
+/-- **A topological group isomorphism of Lie groups is a diffeomorphism.** An isomorphism of
+topological groups between finite-dimensional real Lie groups is smooth in both directions
+(`TauCeti.Lie.contMDiff_of_continuous_monoidHom`), so any two Lie group structures on one
+topological group have the same smooth maps. -/
+def toDiffeomorph (e : G ≃ₜ* G') : G ≃ₘ⟮I, I'⟯ G' where
+  toEquiv := e.toEquiv
+  contMDiff_toFun := TauCeti.Lie.contMDiff_of_continuous_monoidHom e e.continuous
+  contMDiff_invFun := TauCeti.Lie.contMDiff_of_continuous_monoidHom e.symm e.symm.continuous
+
+@[simp]
+theorem coe_toDiffeomorph (e : G ≃ₜ* G') : ⇑(e.toDiffeomorph I I') = e :=
+  (rfl)
+
+@[simp]
+theorem toDiffeomorph_symm (e : G ≃ₜ* G') :
+    (e.toDiffeomorph I I').symm = e.symm.toDiffeomorph I' I :=
+  (rfl)
+
+end ContinuousMulEquiv
