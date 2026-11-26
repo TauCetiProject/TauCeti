@@ -54,7 +54,7 @@ nonzero `s`, so the index `Submodule.cardQuot` is multiplicative along this chai
   by images (`Submodule.coe_subtypeCardQuotEquiv_apply`) and preimages
   (`Submodule.coe_subtypeCardQuotEquiv_symm_apply`).
 * `Submodule.natCast_cardQuot_mem`: a left ideal of finite index contains its index.
-* `Ideal.cardQuot_map_ringEquiv`: a ring isomorphism preserves the index of an ideal.
+* `Ideal.cardQuot_map_of_ringEquiv`: a ring isomorphism preserves the index of an ideal.
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
@@ -170,7 +170,7 @@ namespace Ideal
 
 /-- A ring isomorphism preserves the index of an ideal. -/
 @[simp]
-theorem cardQuot_map_ringEquiv {R S : Type*} [CommRing R] [CommRing S] (e : R ≃+* S)
+theorem cardQuot_map_of_ringEquiv {R S : Type*} [CommRing R] [CommRing S] (e : R ≃+* S)
     (I : Ideal R) : (I.map e).cardQuot = I.cardQuot := by
   rw [Submodule.cardQuot_apply, Submodule.cardQuot_apply]
   exact (Nat.card_congr (Ideal.quotientEquiv I _ e rfl).toEquiv).symm

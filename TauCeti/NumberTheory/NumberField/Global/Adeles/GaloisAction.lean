@@ -249,6 +249,7 @@ theorem finiteAdeleEquiv_mem_integralAdeles (e : K ≃+* L) {x : FiniteAdeleRing
 
 variable {K L} in
 /-- Transport of finite adeles along a field isomorphism preserves integrality. -/
+@[simp]
 theorem finiteAdeleEquiv_mem_integralAdeles_iff (e : K ≃+* L) {x : FiniteAdeleRing (𝓞 K) K} :
     finiteAdeleEquiv K L e x ∈ FiniteAdeleRing.integralAdeles (𝓞 L) L ↔
       x ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K := by

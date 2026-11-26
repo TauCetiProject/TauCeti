@@ -121,12 +121,15 @@ theorem genIndex_eq_cardQuot {g : integralAdeles (𝓞 K) K} (hg : IsUnit (g : �
     Units.ext (by rw [FractionalIdeal.coe_mk0, hN])
   have h_span : Ideal.span {g} = completedIdeal K N := by
     rw [completedIdeal_eq_span_singleton hN0 ht]
-    congr
-  have : Finite (𝓞 K ⧸ N) := Ring.HasFiniteQuotients.finiteQuotient hN0
-  rw [h_span, Submodule.cardQuot_apply, ← Nat.card_congr
-      (quotientEquivQuotientCompletedIdeal K hN0).toEquiv, ← Submodule.cardQuot_apply,
-    ← Ideal.absNorm_apply, ← FractionalIdeal.coeIdeal_absNorm (K := K), hN,
-    ← genIndex_units hg.unit, IsUnit.unit_spec]
+    exact congrArg (fun y ↦ Ideal.span {y}) (Subtype.ext hg.unit_spec.symm)
+  calc genIndex K g
+    _ = FractionalIdeal.absNorm (N : FractionalIdeal (𝓞 K)⁰ K) := by
+      rw [hN, ← genIndex_units, IsUnit.unit_spec]
+    _ = Nat.card (𝓞 K ⧸ N) := by
+      rw [FractionalIdeal.coeIdeal_absNorm, Ideal.absNorm_apply, Submodule.cardQuot_apply]
+    _ = (Ideal.span {g}).cardQuot := by
+      rw [h_span, Submodule.cardQuot_apply,
+        Nat.card_congr (quotientEquivQuotientCompletedIdeal K hN0).toEquiv]
 
 /-- Some positive integer multiple of a finite adele is integral. -/
 theorem exists_natCast_mul_mem_integralAdeles (a : 𝔸ᶠ[K]) :
@@ -158,7 +161,7 @@ theorem genIndex_map (σ : 𝔸ᶠ[K] ≃+* 𝔸ᶠ[K])
   have h_int : genIndex K (σ ((m : 𝔸ᶠ[K]) * a)) = genIndex K ((m : 𝔸ᶠ[K]) * a) := by
     have h₁ := genIndex_eq_cardQuot (g := τ ⟨_, hma⟩) ((isUnit_map_iff σ _).2 (hm'.mul ha))
     have h₂ := genIndex_eq_cardQuot (g := ⟨_, hma⟩) (hm'.mul ha)
-    rw [← Set.image_singleton, ← Ideal.map_span, Ideal.cardQuot_map_ringEquiv] at h₁
+    rw [← Set.image_singleton, ← Ideal.map_span, Ideal.cardQuot_map_of_ringEquiv] at h₁
     exact h₁.trans h₂.symm
   rw [map_mul, map_natCast, map_mul, map_mul] at h_int
   exact mul_left_cancel₀ ((genIndex_units_pos hm'.unit).ne') h_int
