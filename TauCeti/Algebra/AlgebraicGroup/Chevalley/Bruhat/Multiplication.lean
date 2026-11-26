@@ -51,17 +51,6 @@ universe v
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 variable (K : Type v) [Field K]
 
-/-- Inverse conjugation by a Weyl lift `n` maps elements of a root subgroup into the root subgroup
-indexed by `(D.weylProjection K n)⁻¹` applied to that root. -/
-private theorem inv_conj_mem_range_rootSubgroupPoints
-    (n : D.weylSubgroup K) {γ : Fin t.numRoots} {x : D.points K}
-    (hx : x ∈ (D.rootSubgroupPoints γ K).range) :
-    (n : D.points K)⁻¹ * x * (n : D.points K) ∈
-      (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).weylGroupToPerm
-        (D.weylProjection K n)⁻¹ γ) K).range := by
-  rw [← map_inv (D.weylProjection K), ← D.map_range_rootSubgroupPoints_conj K n⁻¹]
-  exact Subgroup.mem_map.mpr ⟨x, hx, by simp⟩
-
 /-- When `w⁻¹(αᵢ)` is positive, `nᵢ(1) * x_{αᵢ}(a) * n` lies in `B (nᵢ(1) n) B`. -/
 private theorem weylElement_mul_rootSubgroup_mul_mem_doubleCoset_of_mem_posRoots
     (i : Fin t.rank) (n : D.weylSubgroup K) (a : K)
@@ -72,8 +61,14 @@ private theorem weylElement_mul_rootSubgroup_mul_mem_doubleCoset_of_mem_posRoots
       DoubleCoset.doubleCoset (D.weylElement (t.simpleIndex ht i) K 1 * (n : D.points K))
         (D.borelSubgroup K) (D.borelSubgroup K) := by
   let x : D.points K := D.rootSubgroupPoints (t.simpleIndex ht i) K (ofAdd a)
-  obtain ⟨u', hu'⟩ :=
-    D.inv_conj_mem_range_rootSubgroupPoints K n (x := x) ⟨ofAdd a, rfl⟩
+  have hconj_mem :
+      (n : D.points K)⁻¹ * x * (n : D.points K) ∈
+        (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).weylGroupToPerm
+          (D.weylProjection K n)⁻¹ (t.simpleIndex ht i)) K).range := by
+    simpa only [MulAut.conj_apply, Subgroup.coe_inv, inv_inv,
+      (D.weylProjection K).map_inv] using
+      D.conj_mem_range_rootSubgroupPoints K n⁻¹ (x := x) ⟨ofAdd a, rfl⟩
+  obtain ⟨u', hu'⟩ := hconj_mem
   have hb₂ : (n : D.points K)⁻¹ * x * (n : D.points K) ∈ D.borelSubgroup K := by
     rw [← hu']
     exact D.positivePoints_le_borelSubgroup K (D.rootSubgroupPoints_mem_positivePoints K hpos u')
@@ -106,7 +101,12 @@ private theorem weylElement_mul_rootSubgroup_mul_mem_doubleCoset_of_mem_negRoots
   let P := t.simplyConnectedRootDatum ht
   have hy_range : y ∈ (D.rootSubgroupPoints (P.reflectionPerm α α) K).range :=
     ⟨_, (D.weylElement_conj_rootSubgroupPoints i α K (-((u₀⁻¹ : Kˣ) : K))).symm⟩
-  have hconj_mem := D.inv_conj_mem_range_rootSubgroupPoints K n hy_range
+  have hconj_mem :
+      (n : D.points K)⁻¹ * y * (n : D.points K) ∈
+        (D.rootSubgroupPoints (P.weylGroupToPerm (D.weylProjection K n)⁻¹
+          (P.reflectionPerm α α)) K).range := by
+    simpa only [P, MulAut.conj_apply, Subgroup.coe_inv, inv_inv,
+      (D.weylProjection K).map_inv] using D.conj_mem_range_rootSubgroupPoints K n⁻¹ hy_range
   have hβ_pos :
       P.weylGroupToPerm (D.weylProjection K n)⁻¹ (P.reflectionPerm α α) ∈
         posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
@@ -151,9 +151,9 @@ private theorem exists_weylElement_mul_borelSubgroup_mul_eq
   obtain ⟨v, hv, u₀, rfl⟩ := (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints K i u).mp hu
   have hv' : r * v * r⁻¹ ∈ D.borelSubgroup K :=
     D.positivePoints_le_borelSubgroup K
-      (D.iSup_rootSubgroupPoints_diff_singleton_le_positivePoints K i
+      (D.puncturedPositivePoints_le_positivePoints K i
         ((Subgroup.mem_normalizer_iff.mp
-          (D.weylElement_mem_normalizer_positivePoints_diff_singleton K i 1) v).mp hv))
+          (D.weylElement_mem_normalizer_puncturedPositivePoints K i 1) v).mp hv))
   have hts' : (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K) ∈ D.borelSubgroup K :=
     D.weylSubgroup_inv_conj_torusPoints_mem_borelSubgroup K n s
   refine ⟨r * v * r⁻¹, hv', (n : D.points K)⁻¹ * D.torusPoints K s * (n : D.points K), hts',

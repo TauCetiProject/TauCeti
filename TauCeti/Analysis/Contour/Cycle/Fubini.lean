@@ -36,7 +36,7 @@ open scoped Interval
 namespace TauCeti.Contour.Cycle
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {F : ℂ → ℂ → E} {C D : Cycle}
-  {γ η : PiecewiseC1ClosedCurve}
+  {γ η : AbsolutelyContinuousClosedCurve}
 
 /-- For curves `γ` and `η` in the supports of `C` and `D`, the double contour integrand of a
 function continuous on the product of the traces is integrable on the product of the parameter

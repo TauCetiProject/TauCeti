@@ -71,6 +71,10 @@ is invariant under permutations and, with countably many symbols on a countable 
   `V`), injective and equivariant.
 * `TauCeti.FunctionalConfiguration.isoSetoid_graphCode_iff`: graph codes are isomorphic exactly
   when the functional configurations are.
+* `TauCeti.FunctionalConfiguration.isoSetoid_iff_isoSetoid_rel` and
+  `TauCeti.FunctionalConfiguration.isomorphismInvariant_preimage_rel`: for a relational language,
+  isomorphism is isomorphism of relational parts, so the preimage of an invariant class under the
+  relational part is invariant.
 * `TauCeti.FunctionalConfiguration.range_graphCode`,
   `TauCeti.FunctionalConfiguration.isEmbedding_graphCode`,
   `TauCeti.FunctionalConfiguration.isGδ_setOf_isGraphCode`,
@@ -421,6 +425,45 @@ theorem isomorphismInvariant_iUnion {ι : Sort*} {K : ι → Set (FunctionalConf
   fun _ _ h hF => by
     obtain ⟨i, hi⟩ := mem_iUnion.1 hF
     exact mem_iUnion.2 ⟨i, hK i h hi⟩
+
+/-! ### Relational languages -/
+
+section Relational
+
+variable [L.IsRelational]
+
+/-- For a relational language there are no function arguments. -/
+instance isEmpty_arg : IsEmpty (Arg L V) :=
+  inferInstanceAs (IsEmpty (Σ f : (Σ l, L.Functions l), Fin f.1 → V))
+
+/-- For a relational language a functional configuration is determined by its relational part. -/
+theorem rel_injective : Function.Injective (rel : FunctionalConfiguration L V → _) :=
+  fun _ _ h => ext (funext isEmptyElim) h
+
+/-- For a relational language every relational configuration is the relational part of the
+functional configuration with the empty table. -/
+theorem rel_surjective : Function.Surjective (rel : FunctionalConfiguration L V → _) :=
+  fun c => ⟨mk isEmptyElim c, rel_mk _ _⟩
+
+/-- For a relational language two functional configurations are isomorphic exactly when their
+relational parts are. -/
+theorem isoSetoid_iff_isoSetoid_rel {F G : FunctionalConfiguration L V} :
+    isoSetoid L V F G ↔ RelationalConfiguration.isoSetoid L V F.rel G.rel := by
+  rw [isoSetoid_iff_exists_perm_smul_eq, RelationalConfiguration.isoSetoid_iff_exists_perm_smul_eq]
+  refine exists_congr fun σ => ⟨fun h => h ▸ (rel_perm_smul σ F).symm, fun h => ?_⟩
+  exact rel_injective ((rel_perm_smul σ F).trans h)
+
+/-- For a relational language, the functional configurations whose relational part lies in an
+invariant class form an invariant class. -/
+theorem isomorphismInvariant_preimage_rel {K : Set (RelationalConfiguration L V)}
+    (hK : RelationalConfiguration.IsomorphismInvariant K) :
+    IsomorphismInvariant (rel ⁻¹' K : Set (FunctionalConfiguration L V)) := by
+  rw [isomorphismInvariant_iff]
+  intro F G h hF
+  exact RelationalConfiguration.isomorphismInvariant_iff.1 hK
+    (isoSetoid_iff_isoSetoid_rel.1 h) hF
+
+end Relational
 
 /-! ### The graph code -/
 

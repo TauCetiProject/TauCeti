@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Comodule
 import TauCeti.Algebra.Bialgebra.Primitive
 
 /-!
@@ -54,6 +55,8 @@ some `d`, the `(d + 1)`-st power of the difference vanishes.
 * `TauCeti.AdditiveGroup.smoothUnipotentCommHopfAlgProperty_coordinateHopfAlgebra`: **`𝔾ₐ` over a
   field is a smooth unipotent affine group**, together with the geometric-point form
   `TauCeti.AdditiveGroup.geometricallyUnipotentPointsCommHopfAlgProperty_coordinateHopfAlgebra`.
+* `TauCeti.AdditiveGroup.unipotentCommHopfAlgProperty_coordinateHopfAlgebra`: **`𝔾ₐ` over a field
+  is unipotent** in the comodule sense, every nonzero representation having a nonzero fixed vector.
 
 ## Implementation notes
 
@@ -451,6 +454,15 @@ theorem smoothUnipotentCommHopfAlgProperty_coordinateHopfAlgebra (k : Type u) [F
       (FiniteTypeCommHopfAlgCat.of k (SymmetricAlgebra k k)) := by
   rw [smoothUnipotentCommHopfAlgProperty_iff]
   exact ⟨inferInstance, fun g => isUnipotentPoint k g⟩
+
+/-- **The additive group is unipotent** over every field: every nonzero comodule over its
+coordinate algebra `k[x]` has a nonzero fixed vector. -/
+theorem unipotentCommHopfAlgProperty_coordinateHopfAlgebra (k : Type u) [Field k] :
+    unipotentCommHopfAlgProperty k (coordinateHopfAlgebra k) :=
+  (unipotentCommHopfAlgProperty_iff k _).mpr fun M _ _ _ _ _ => by
+    obtain ⟨m, hm⟩ := exists_ne (0 : M)
+    exact (Comodule.hasNonzeroFixedVector_iff (k := k)).mpr
+      (exists_ne_zero_coact_eq_tmul_one k hm)
 
 end AffineGroup
 

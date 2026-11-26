@@ -88,7 +88,7 @@ private lemma finiteDimensional_cohomology_pullback_toFixedRankOne {L : Invertib
       (Cohomology ((InvertibleSheaf.pullback I.subschemeι).obj L).obj i)) :
     ∀ i < 2, FiniteDimensional k (Cohomology ((FiniteLocallyFreeSheaf.pullback I.subschemeι).obj
       ((InvertibleSheaf.toFixedRankOne X).obj L).obj).obj i) := fun i hi ↦ by
-  rw [InvertibleSheaf.pullback_toFixedRankOne_obj_obj]
+  rw [InvertibleSheaf.toFixedRankOne_obj_obj, InvertibleSheaf.pullback_toFiniteLocallyFree_obj_obj]
   exact hI i hi
 
 namespace InvertibleSheaf
@@ -107,7 +107,8 @@ theorem finiteDimensional_cohomology_pullback_subschemeι_inf (L : InvertibleShe
     L).finiteDimensional_cohomology_pullback_subschemeι_inf k I J
       (finiteDimensional_cohomology_pullback_toFixedRankOne I hI)
       (finiteDimensional_cohomology_pullback_toFixedRankOne J hJ) hi
-  rwa [InvertibleSheaf.pullback_toFixedRankOne_obj_obj] at h
+  rwa [InvertibleSheaf.toFixedRankOne_obj_obj,
+    InvertibleSheaf.pullback_toFiniteLocallyFree_obj_obj] at h
 
 end InvertibleSheaf
 
@@ -131,7 +132,8 @@ theorem intersectionNumber_subschemeι_inf
       L).eulerCharBelow_pullback_subschemeι_inf_add k I J
         (finiteDimensional_cohomology_pullback_toFixedRankOne I (hI L))
         (finiteDimensional_cohomology_pullback_toFixedRankOne J (hJ L)) default
-    simp only [InvertibleSheaf.pullback_toFixedRankOne_obj_obj] at h
+    simp only [InvertibleSheaf.toFixedRankOne_obj_obj,
+      InvertibleSheaf.pullback_toFiniteLocallyFree_obj_obj] at h
     exact h
   have hL := key L
   have hT := key (InvertibleSheaf.trivial X)

@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.NumberTheory.LocalField.Padic
+import TauCeti.MeasureTheory.Measure.Haar.DistribChar
+import TauCeti.NumberTheory.LocalField.Topology
 
 /-!
 # Form measures on the multiplicative group need convergence factors
@@ -18,7 +20,10 @@ local measure `|ω| = |x|_K⁻¹ μ`, the measure with density `|x|_K⁻¹` with
 units `𝒪[K]ˣ = {x | v(x) = 1}` the density is `1`, and the maximal ideal `ϖ 𝒪[K]` has mass `q⁻¹`,
 so the units have mass `1 - q⁻¹` for both `μ`
 (`MeasureTheory.Measure.addHaar_setOf_valuation_eq_one`) and `|ω|`
-(`MeasureTheory.Measure.withDensity_inv_normalizedAbsoluteValue_setOf_valuation_eq_one`).
+(`MeasureTheory.Measure.withDensity_inv_normalizedAbsoluteValue_setOf_valuation_eq_one`). The
+measure `|ω|` is invariant under multiplication by every nonzero scalar
+(`MeasureTheory.Measure.map_smul_withDensity_inv_normalizedAbsoluteValue`): multiplication by `c`
+scales `μ` by `|c|_K⁻¹` and the density by `|c|_K`.
 
 For `K = ℚ_[p]` this mass is `1 - p⁻¹`, and the product of these local masses over all primes is
 `0`: the partial products `∏_{p ≤ n} (1 - p⁻¹)` tend to `0`, because the sum of the reciprocals of
@@ -30,12 +35,15 @@ Separately, since `1 - q⁻¹ ≠ 1`, the local measures `|ω|_p` do not give th
 (`TauCeti.not_eventually_smul_withDensity_setOf_valuation_eq_one`). This is the analogue, for these
 measures on the additive field `K`, of the normalization hypothesis of the restricted product of
 Haar measures (`TauCeti.restrictedHaar`). The multiplicative Haar measure on `Kˣ` that `|ω|`
-restricts to, and the application to `TauCeti.restrictedHaar`, are not formalized here.
+restricts to is `TauCeti.unitsFormMeasure`; the application to `TauCeti.restrictedHaar` is not
+formalized here.
 
 ## Main declarations
 
 * `MeasureTheory.Measure.withDensity_inv_normalizedAbsoluteValue_setOf_valuation_eq_one`: the
   form measure `|x|_K⁻¹ μ` gives the units of `𝒪[K]` mass `(1 - q⁻¹) μ 𝒪[K]`.
+* `MeasureTheory.Measure.map_smul_withDensity_inv_normalizedAbsoluteValue`: the form measure
+  `|x|_K⁻¹ μ` is invariant under multiplication by every nonzero scalar.
 * `TauCeti.withDensity_inv_nnnorm_setOf_norm_eq_one`: over `ℚ_[p]`, the form measure of `ℤ_p^×` is
   `1 - p⁻¹`.
 * `TauCeti.not_eventually_smul_withDensity_setOf_valuation_eq_one`: for local fields each of whose
@@ -73,9 +81,33 @@ theorem withDensity_inv_normalizedAbsoluteValue_setOf_valuation_eq_one :
       simp [(normalizedAbsoluteValue_eq_one_iff x).2 hx],
     setLIntegral_one, addHaar_setOf_valuation_eq_one]
 
+/-- **Invariance of the form measure.** The measure `|x|_K⁻¹ μ` on `K` is invariant under
+multiplication by every nonzero scalar `c`. -/
+theorem map_smul_withDensity_inv_normalizedAbsoluteValue {c : K} (hc : c ≠ 0) :
+    (μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹).map (c • ·) =
+      μ.withDensity fun x ↦ ((normalizedAbsoluteValue K x : ℝ≥0) : ℝ≥0∞)⁻¹ := by
+  have hc' : ((normalizedAbsoluteValue K c : ℝ≥0) : ℝ≥0∞) ≠ 0 := by simpa using hc
+  refine map_smul_withDensity μ (Units.mk0 c hc) fun x ↦ ?_
+  rw [distribHaarChar_eq_normalizedAbsoluteValue, Units.smul_def, Units.val_mk0, smul_eq_mul,
+    map_mul, NNRat.cast_mul, ENNReal.coe_mul,
+    ENNReal.mul_inv (Or.inl hc') (Or.inl ENNReal.coe_ne_top), ← mul_assoc,
+    ENNReal.mul_inv_cancel hc' ENNReal.coe_ne_top, one_mul]
+
 end MeasureTheory.Measure
 
 namespace TauCeti
+
+section ResidueField
+
+variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+
+/-- The local convergence factor `1 - q⁻¹` of a nonarchimedean local field is nonzero, since its
+residue field has `q > 1` elements. -/
+theorem one_sub_inv_natCard_residueField_ne_zero : 1 - (Nat.card 𝓀[K] : ℝ≥0∞)⁻¹ ≠ 0 :=
+  (tsub_pos_iff_lt.2 (ENNReal.inv_lt_one.2 (by exact_mod_cast Finite.one_lt_card))).ne'
+
+end ResidueField
 
 section Padic
 

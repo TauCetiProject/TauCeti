@@ -146,6 +146,14 @@ theorem mem_unitaryGroupOf_iff {g : GL n R} :
     g ∈ unitaryGroupOf A ↔ star (g : Matrix n n R) * A * g = A :=
   Iff.rfl
 
+omit [DecidableEq n] in
+/-- An isometry `x` of the form `A`, that is `star x * A * x = A`, does not change the Gram
+matrix of a family of vectors: `(x F)ᴴ A (x F) = Fᴴ A F`. -/
+theorem conjTranspose_mul_mul_mul_of_star_mul_mul_eq {m : Type*} {x : Matrix n n R}
+    (hx : star x * A * x = A) (F : Matrix n m R) : (x * F)ᴴ * A * (x * F) = Fᴴ * A * F := by
+  conv_rhs => rw [← hx]
+  simp only [conjTranspose_mul, star_eq_conjTranspose, Matrix.mul_assoc]
+
 /-- Two elements of `unitaryGroupOf A` are equal when their matrices are. -/
 @[ext]
 theorem unitaryGroupOf.ext {g h : unitaryGroupOf A}

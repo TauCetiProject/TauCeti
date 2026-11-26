@@ -24,6 +24,37 @@ public noncomputable section
 
 open Filter Topology
 
+namespace TauCeti.Contour
+
+variable {f : ℂ → ℂ} {a : ℂ}
+
+/-- For a function with at most a simple pole, vanishing residue is equivalent to
+removability. -/
+theorem residue_eq_zero_iff_of_neg_one_le (hf : MeromorphicAt f a)
+    (hbound : -1 ≤ meromorphicOrderAt f a) : residue f a = 0 ↔ 0 ≤ meromorphicOrderAt f a := by
+  constructor
+  · intro hr
+    have hlim := tendsto_sub_mul_nhds_residue hf hbound
+    rw [hr] at hlim
+    have hid : MeromorphicAt (fun z : ℂ ↦ z - a) a :=
+      (MeromorphicAt.id a).sub (.const a a)
+    have hpos := (tendsto_zero_iff_meromorphicOrderAt_pos (hid.mul hf)).mp hlim
+    rw [meromorphicOrderAt_mul hid hf, meromorphicOrderAt_id_sub_const] at hpos
+    cases ho : meromorphicOrderAt f a with
+    | top => exact le_top
+    | coe j =>
+      rw [ho] at hpos
+      have hj : 0 < 1 + j := by exact_mod_cast hpos
+      exact_mod_cast (by omega : 0 ≤ j)
+  · exact residue_eq_zero_of_meromorphicOrderAt_nonneg
+
+/-- A function with at most a simple pole has a pole exactly when its residue is nonzero. -/
+theorem meromorphicOrderAt_lt_zero_iff_residue_ne_zero (hf : MeromorphicAt f a)
+    (hbound : -1 ≤ meromorphicOrderAt f a) : meromorphicOrderAt f a < 0 ↔ residue f a ≠ 0 := by
+  rw [Ne, residue_eq_zero_iff_of_neg_one_le hf hbound, not_le]
+
+end TauCeti.Contour
+
 namespace TauCeti.meromorphicGerms
 
 variable {a : ℂ}
@@ -77,23 +108,8 @@ theorem residue_eq_zero_iff_of_mem_orderGE_neg_one (φ : meromorphicGerms ℂ a)
     (hφ : φ ∈ orderGE a (-1)) : residue a φ = 0 ↔ φ ∈ orderGE a 0 := by
   obtain ⟨f, hf, rfl⟩ := exists_mk φ
   rw [residue_mk, mem_orderGE, order_mk, WithTop.coe_zero]
-  constructor
-  · intro hr
-    have hbound : -1 ≤ meromorphicOrderAt f a := by
-      have hneg : ((-1 : ℤ) : WithTop ℤ) = -1 := by norm_cast
-      simpa only [mem_orderGE, order_mk, hneg] using hφ
-    have hlim := Contour.tendsto_sub_mul_nhds_residue hf hbound
-    rw [hr] at hlim
-    have hid : MeromorphicAt (fun z : ℂ ↦ z - a) a :=
-      (MeromorphicAt.id a).sub (.const a a)
-    have hpos := (tendsto_zero_iff_meromorphicOrderAt_pos (hid.mul hf)).mp hlim
-    rw [meromorphicOrderAt_mul hid hf, meromorphicOrderAt_id_sub_const] at hpos
-    cases ho : meromorphicOrderAt f a with
-    | top => exact le_top
-    | coe j =>
-      rw [ho] at hpos
-      have hj : 0 < 1 + j := by exact_mod_cast hpos
-      exact_mod_cast (by omega : 0 ≤ j)
-  · exact Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg
+  have hneg : ((-1 : ℤ) : WithTop ℤ) = -1 := by norm_cast
+  exact Contour.residue_eq_zero_iff_of_neg_one_le hf
+    (by simpa only [mem_orderGE, order_mk, hneg] using hφ)
 
 end TauCeti.meromorphicGerms

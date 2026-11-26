@@ -55,6 +55,8 @@ induction on the number of members.
   vanishing theorem on the affine opens of a scheme.
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffine`: the same on an
   affine scheme, for example on `Spec R`, as an instance.
+* `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomologyOn_top_succ_of_isAffine`: the same for
+  the cohomology of the open subset `⊤` of an affine scheme, as an instance.
 * `AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_succ_of_isAffineHom`: the same on the
   source of an affine morphism (for example a finite morphism) to an affine scheme.
 
@@ -252,6 +254,12 @@ instance subsingleton_cohomology_succ_of_isAffine [IsAffine X] (n : ℕ) :
   have := subsingleton_cohomologyOn_succ_of_isAffineOpen_of_isQuasicoherent M
     (isAffineOpen_top X) n
   exact (cohomologyOnTopIso M (n + 1)).symm.addCommGroupIsoToAddEquiv.toEquiv.subsingleton
+
+/-- **Serre's vanishing theorem on affine schemes**, for the cohomology of the open subset `⊤`: a
+quasi-coherent sheaf of modules on an affine scheme has no cohomology on `⊤` in positive degrees. -/
+instance subsingleton_cohomologyOn_top_succ_of_isAffine [IsAffine X] (n : ℕ) :
+    Subsingleton (cohomologyOn M (n + 1) ⊤) :=
+  subsingleton_cohomologyOn_succ_of_isAffineOpen_of_isQuasicoherent M (isAffineOpen_top X) n
 
 include hU in
 omit [M.IsQuasicoherent] in

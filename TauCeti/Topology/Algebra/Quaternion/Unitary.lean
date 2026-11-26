@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Algebra.Quaternion.NormForm
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
+public import TauCeti.Analysis.Matrix.UnitaryGroup.Quaternion
 public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 public import Mathlib.Analysis.Quaternion
+public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import Mathlib.Analysis.Normed.Module.FiniteDimension
@@ -23,18 +25,24 @@ The algebraic equivalence `Quaternion.unitaryEquivSpecialUnitaryGroup` with the 
 group of degree two is an isomorphism of topological groups. Reading off the unique entry of a
 `1 × 1` quaternionic unitary matrix extends both identifications to the rank-one compact symplectic
 group `Sp(1) = unitary (Matrix ι ι ℍ)` for any singleton index type `ι`.
-The group of unit Hamilton quaternions is simply connected.
+The group of unit Hamilton quaternions is simply connected. The circle of unit complex quaternions
+and the presentation `Sp(1) × U(1) → U(2)`, `(q, w) ↦ w • q`, of the unitary group are continuous.
 
 ## Main definitions and results
 
 * `Quaternion.unitaryHomeomorphSphere` identifies the unitary Hamilton quaternions with their unit
   sphere.
+* `Quaternion.unitaryHomeomorphEuclideanSphere` identifies them with the unit sphere `S³` of
+  `EuclideanSpace ℝ (Fin 4)`.
 * `Quaternion.unitaryContinuousMulEquivSpecialUnitaryGroup` identifies the unit quaternions with
   the special unitary group of degree two as topological groups.
 * `Quaternion.instSimplyConnectedSpaceUnitary`: the unit Hamilton quaternions are simply
   connected.
 * `Matrix.instSimplyConnectedSpaceSpecialUnitaryGroupFinTwoComplex`: the complex special
   unitary group of degree two is simply connected.
+* `Quaternion.continuous_circleToUnitary` and
+  `Quaternion.continuous_unitaryProdCircleToUnitaryGroup`: the circle `U(1) → Sp(1)` and the
+  surjection `Sp(1) × U(1) → U(2)` are continuous.
 * `TauCeti.specialUnitaryGroupTwoHomeomorphSphere`: `SU(2)` is homeomorphic to the unit sphere
   `S³ ⊆ ℍ`.
 * `TauCeti.unitaryMatrixQuaternionUniqueHomeomorphSphere`: for a singleton index type `ι`, the
@@ -91,6 +99,33 @@ theorem coe_unitaryHomeomorphSphere_symm_apply (q : sphere (0 : ℍ[ℝ]) 1) :
   rw [unitaryHomeomorphSphere]
   rfl
 
+/-- **The unit Hamilton quaternions are the unit sphere `S³` of `ℝ⁴`**, through the coordinates
+`(re, imI, imJ, imK)` of `Quaternion.linearIsometryEquivTuple`. -/
+noncomputable def unitaryHomeomorphEuclideanSphere :
+    unitary ℍ[ℝ] ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 4)) 1 :=
+  unitaryHomeomorphSphere.trans (linearIsometryEquivTuple.toHomeomorph.subtype fun q ↦ by
+    simp [-linearIsometryEquivTuple_apply])
+
+/-- The point of `S³` attached to a unit quaternion is its coordinate vector. -/
+@[simp]
+theorem coe_unitaryHomeomorphEuclideanSphere_apply (q : unitary ℍ[ℝ]) :
+    (unitaryHomeomorphEuclideanSphere q : EuclideanSpace ℝ (Fin 4)) =
+      linearIsometryEquivTuple (q : ℍ[ℝ]) :=
+  (rfl)
+
+/-- The unit quaternion attached to a point of `S³` has that point as coordinate vector. -/
+@[simp]
+theorem coe_unitaryHomeomorphEuclideanSphere_symm_apply
+    (x : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :
+    (unitaryHomeomorphEuclideanSphere.symm x : ℍ[ℝ]) = linearIsometryEquivTuple.symm x :=
+  (rfl)
+
+/-- Antipodal points of `S³` correspond to opposite unit quaternions. -/
+@[simp]
+theorem unitaryHomeomorphEuclideanSphere_symm_neg (x : sphere (0 : EuclideanSpace ℝ (Fin 4)) 1) :
+    unitaryHomeomorphEuclideanSphere.symm (-x) = -unitaryHomeomorphEuclideanSphere.symm x :=
+  Subtype.ext (by simp [Unitary.coe_neg, -linearIsometryEquivTuple_symm_apply])
+
 /-- The group of unit Hamilton quaternions is simply connected. -/
 instance instSimplyConnectedSpaceUnitary : SimplyConnectedSpace (unitary ℍ[ℝ]) := by
   let _ : SimplyConnectedSpace (sphere (0 : ℍ[ℝ]) 1) := by
@@ -135,6 +170,27 @@ instance _root_.Matrix.instSimplyConnectedSpaceSpecialUnitaryGroupFinTwoComplex 
     SimplyConnectedSpace (Matrix.specialUnitaryGroup (Fin 2) ℂ) := by
   let e := unitaryContinuousMulEquivSpecialUnitaryGroup.symm.toHomeomorph
   exact e.toHomotopyEquiv.simplyConnectedSpace
+
+/-- The circle `U(1) → Sp(1)` of unit complex quaternions is continuous. -/
+@[fun_prop]
+theorem continuous_circleToUnitary : Continuous circleToUnitary :=
+  continuous_induced_rng.mpr
+    ((ofComplex.toLinearMap.continuous_of_finiteDimensional.comp continuous_subtypeVal).congr
+      fun w ↦ by
+        simp only [Function.comp_apply, AlgHom.toLinearMap_apply, coe_ofComplex]
+        exact (coe_circleToUnitary w).symm)
+
+/-- The surjection `Sp(1) × U(1) → U(2)`, `(q, w) ↦ w • q`, is continuous. -/
+@[fun_prop]
+theorem continuous_unitaryProdCircleToUnitaryGroup :
+    Continuous unitaryProdCircleToUnitaryGroup := by
+  refine continuous_induced_rng.mpr ?_
+  have h : Continuous fun p : unitary ℍ[ℝ] × Circle ↦
+      ((p.2 : ℂ) • toComplexMatrix (p.1 : ℍ[ℝ])) :=
+    (continuous_subtypeVal.comp continuous_snd).smul
+      (toComplexMatrix.toLinearMap.continuous_of_finiteDimensional.comp
+        (continuous_subtypeVal.comp continuous_fst))
+  exact h.congr fun p ↦ (coe_unitaryProdCircleToUnitaryGroup_apply p).symm
 
 end Quaternion
 

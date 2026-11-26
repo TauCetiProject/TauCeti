@@ -22,10 +22,14 @@ nontrivially. Dually, the preimage of a subspace `W` under a linear map out of a
 codimension (the rank of the quotient) of a preimage is at most that of the submodule, and the
 codimension of an intersection is at most the sum of the codimensions. A set spans a subspace of
 dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
-of rank at least `k` contains a subspace of rank exactly `k`. Two disjoint subspaces of a
-finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+of rank at least `k` contains a subspace of rank exactly `k`; for `1 ≤ k ≤ rank E`, every
+vector lies in a subspace of rank exactly `k`. Two disjoint subspaces of a
+finite-dimensional subspace `U` have dimensions adding to at most that of `U`, with equality
+when every element of `U` is a sum of elements of the two
+(`Submodule.finrank_inf_add_finrank_inf_eq`).
 A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
-`span 𝕜 {a, x}`.
+`span 𝕜 {a, x}`. A proper subspace of a proper finite-dimensional subspace `P` can be enlarged to a
+distinct subspace of the same dimension as `P`.
 A finite-dimensional subspace spanning the whole space together with `V`, of dimension at most the
 codimension of `V`, is a complement of `V`; here `V` itself may be infinite-dimensional.
 
@@ -43,7 +47,22 @@ dimension, and the preimage of a submodule `p` inside another submodule `q` has 
 finite-dimensional subspace `p` under a map `f` with finite-dimensional kernel has dimension
 `dim (range f ⊓ p) + dim (ker f)` (`LinearMap.finrank_comap`). An `R`-submodule of
 rank less than `ℵ₀` has finite-dimensional `K`-span over any division ring `K` receiving `R`
-faithfully (`Submodule.finiteDimensional_span_of_rank_lt_aleph0`).
+faithfully (`Submodule.finiteDimensional_span_of_rank_lt_aleph0`). Two finite-dimensional subspaces
+of equal dimension are exchanged by a linear automorphism of the ambient space
+(`Submodule.exists_linearEquiv_mem_iff`), which need not itself be finite-dimensional.
+
+The span `⨆ i ∈ t, M i` of finitely many finite-dimensional subspaces is finite-dimensional
+(`Submodule.finiteDimensional_biSup`, an instance) of dimension at most `∑ i ∈ t, dim M i`
+(`Submodule.finrank_biSup_le_sum`); in particular the images of a subspace `C` under maps `B s`,
+`s ∈ t`, span at most `#t dim C` dimensions (`Submodule.finrank_biSup_map_le`), so restricting
+the maps to a subspace `U` lowers the dimension of the span of their images by at most
+`#t (dim E - dim U)` (`TauCeti.finrank_biSup_range_le`). Adding the image
+of `A : V → W` to a subspace `F` adds `dim V - dim A⁻¹(F)` dimensions
+(`LinearMap.finrank_sup_range_add_finrank_comap`).
+
+`TauCeti.finrank_biSup_range_le` is adapted from grh-lean (https://github.com/lsernau/grh-lean,
+Apache 2.0, Copyright 2026 Anthropic PBC), file `src/New/Spanning/SecondMoment/FewTranslates.lean`,
+`New.finrank_biSup_range_le`.
 -/
 
 public section
@@ -96,6 +115,21 @@ theorem finrank_add_finrank_le_of_disjoint_of_le {S T U : Submodule 𝕜 E} [Fin
   have := finiteDimensional_of_le hT
   rw [← finrank_sup_add_finrank_inf_eq, h.eq_bot, finrank_bot, add_zero]
   exact finrank_mono (sup_le hS hT)
+
+/-- The equality case of `Submodule.finrank_add_finrank_le_of_disjoint_of_le`: if `A` and `B` are
+disjoint and every element of a finite-dimensional subspace `P` is the sum of an element of
+`P ⊓ A` and one of `P ⊓ B`, the dimensions of these two pieces add up to that of `P`. -/
+theorem finrank_inf_add_finrank_inf_eq {P A B : Submodule 𝕜 E} [FiniteDimensional 𝕜 P]
+    (hAB : Disjoint A B) (h : ∀ x ∈ P, ∃ a ∈ P ⊓ A, ∃ b ∈ P ⊓ B, a + b = x) :
+    finrank 𝕜 ↥(P ⊓ A) + finrank 𝕜 ↥(P ⊓ B) = finrank 𝕜 P := by
+  have := finiteDimensional_of_le (inf_le_left : P ⊓ A ≤ P)
+  have := finiteDimensional_of_le (inf_le_left : P ⊓ B ≤ P)
+  have hsup : P ⊓ A ⊔ P ⊓ B = P := le_antisymm (sup_le inf_le_left inf_le_left) fun x hx ↦ by
+    obtain ⟨a, ha, b, hb, rfl⟩ := h x hx
+    exact add_mem_sup ha hb
+  have hinf : P ⊓ A ⊓ (P ⊓ B) = ⊥ :=
+    eq_bot_iff.2 fun x hx ↦ hAB.le_bot ⟨hx.1.2, hx.2.2⟩
+  rw [← finrank_sup_add_finrank_inf_eq, hsup, hinf, finrank_bot, add_zero]
 
 /-- Three subspaces whose dimensions sum to more than twice the dimension of the ambient
 space have nontrivial common intersection. -/
@@ -168,6 +202,25 @@ theorem exists_le_rank_eq {M : Submodule 𝕜 E} {k : ℕ} (hk : (k : Cardinal) 
     span_le.mpr (Set.range_subset_iff.mpr fun i ↦ (v i).property), ?_⟩
   rw [← Module.finrank_eq_rank, finrank_span_eq_card hv', Fintype.card_fin]
 
+/-- Every vector `v` of `E` lies in a subspace of rank exactly `k`, for each `1 ≤ k ≤ rank E`;
+the rank of `E` may be an infinite cardinal. -/
+theorem exists_mem_rank_eq (v : E) {k : ℕ} (hk : k ≠ 0)
+    (hkE : (k : Cardinal) ≤ Module.rank 𝕜 E) :
+    ∃ N : Submodule 𝕜 E, v ∈ N ∧ Module.rank 𝕜 N = k := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · obtain ⟨N, -, hN⟩ := exists_le_rank_eq (M := ⊤) (by rwa [rank_top 𝕜 E])
+    exact ⟨N, N.zero_mem, hN⟩
+  -- Extend `{v}` to an independent set `t` of cardinality `rank E`, then take the span of a
+  -- `k`-element subset of `t` containing `v`.
+  obtain ⟨t, hvt, ht, hti⟩ :=
+    exists_linearIndepOn_of_lt_rank ((linearIndepOn_singleton_iff 𝕜 (v := id)).2 hv)
+  obtain ⟨r, hvr, hrt, hr⟩ := Set.exists_superset_subset_encard_eq hvt
+    (s := {v}) (k := k) (by simpa using Nat.one_le_iff_ne_zero.2 hk) <| by
+      rw [← Set.toENat_cardinalMk, ht]
+      simpa using Cardinal.toENat.monotone' hkE
+  refine ⟨span 𝕜 r, subset_span (hvr rfl), ?_⟩
+  rw [rank_span_set (hti.mono hrt), ← Cardinal.toENat_eq_natCast, Set.toENat_cardinalMk, hr]
+
 /-- The linear-algebra core of the transverse level disc, kernel part. If `T` has dimension
 `dim G + 1`, `T` and the kernel of a surjection `π` span the space, and some `v ∈ T` with
 `dg v ≠ 0` for a linear form `dg` lies in the kernel of `π`, then `T ⊓ ker dg` meets `ker π`
@@ -215,6 +268,93 @@ theorem exists_mem_notMem_span_pair {V : Submodule 𝕜 E} (a : E) (h : 3 ≤ fi
   have := Set.ncard_insert_le a ({x} : Set E)
   rw [Set.ncard_singleton] at this
   omega
+
+/-- A proper subspace `K₀ < P` of a proper finite-dimensional subspace `P < ⊤` can be enlarged
+to a subspace `Q ≠ P` of the same dimension as `P`. -/
+theorem exists_finrank_eq_and_le_and_ne {P K₀ : Submodule 𝕜 E} [FiniteDimensional 𝕜 P]
+    (hK₀ : K₀ < P) (hP : P ≠ ⊤) :
+    ∃ Q : Submodule 𝕜 E, finrank 𝕜 Q = finrank 𝕜 P ∧ K₀ ≤ Q ∧ Q ≠ P := by
+  obtain ⟨v, hvP⟩ : ∃ v : E, v ∉ P := by by_contra! h; exact hP (eq_top_iff.mpr fun x _ => h x)
+  obtain ⟨W, hW⟩ := exists_isCompl K₀
+  have hmod : K₀ ⊔ (P ⊓ W) = P := by
+    rw [inf_comm P W, ← sup_inf_assoc_of_le W hK₀.le, hW.sup_eq_top, top_inf_eq]
+  have hdisj : Disjoint K₀ (P ⊓ W) := hW.disjoint.mono_right inf_le_right
+  have : FiniteDimensional 𝕜 K₀ := finiteDimensional_of_le hK₀.le
+  have : FiniteDimensional 𝕜 ↥(P ⊓ W) := finiteDimensional_of_le inf_le_left
+  have hsum := finrank_sup_add_finrank_inf_eq K₀ (P ⊓ W)
+  rw [hmod, hdisj.eq_bot, finrank_bot, add_zero] at hsum
+  obtain ⟨M, hMPW, hMr⟩ := exists_le_rank_eq (M := P ⊓ W) (k := finrank 𝕜 ↥(P ⊓ W) - 1)
+    (by rw [← Module.finrank_eq_rank]; exact_mod_cast Nat.sub_le _ _)
+  have : FiniteDimensional 𝕜 M := finiteDimensional_of_le hMPW
+  have hMd : finrank 𝕜 M = finrank 𝕜 ↥(P ⊓ W) - 1 := by
+    rw [← Module.finrank_eq_rank] at hMr; exact_mod_cast hMr
+  have h1 := (hdisj.mono_right hMPW).eq_bot ▸ finrank_sup_add_finrank_inf_eq K₀ M
+  have h2 := (disjoint_span_singleton_of_notMem fun hv =>
+    hvP (sup_le hK₀.le (hMPW.trans inf_le_left) hv)).eq_bot ▸
+      finrank_sup_add_finrank_inf_eq (K₀ ⊔ M) (𝕜 ∙ v)
+  simp only [finrank_bot, add_zero, finrank_span_singleton fun (h : v = 0) => hvP (h ▸ P.zero_mem)]
+    at h1 h2
+  have := finrank_lt_finrank_of_lt hK₀
+  exact ⟨(K₀ ⊔ M) ⊔ (𝕜 ∙ v), by omega, le_sup_left.trans le_sup_left,
+    fun hQP => hvP (hQP ▸ mem_sup_right (mem_span_singleton_self v))⟩
+
+/-- **Subspaces of equal finite dimension are exchanged by a linear automorphism.** In any
+vector space `E` over a division ring `𝕜`, two finite-dimensional subspaces of the same dimension
+are mapped onto each other by a linear automorphism of `E` (`E` itself need not be
+finite-dimensional). -/
+theorem exists_linearEquiv_mem_iff (V L : Submodule 𝕜 E) [FiniteDimensional 𝕜 V]
+    [FiniteDimensional 𝕜 L] (h : finrank 𝕜 V = finrank 𝕜 L) :
+    ∃ g : E ≃ₗ[𝕜] E, ∀ z, z ∈ V ↔ g z ∈ L := by
+  let f := LinearEquiv.ofFinrankEq V L h
+  obtain ⟨g, hg⟩ := V.exists_linearEquiv_restrict_eq f
+  refine ⟨g, fun z ↦ ⟨fun hz ↦ ?_, fun hz ↦ ?_⟩⟩
+  · simp [← hg ⟨z, hz⟩]
+  · set w := f.symm ⟨g z, hz⟩
+    have hw : g w = g z := by rw [← hg w, LinearEquiv.apply_symm_apply]
+    exact g.injective hw ▸ w.property
+
+/-- The span of finitely many finite-dimensional subspaces is finite-dimensional. -/
+instance finiteDimensional_biSup {ι : Type*} (M : ι → Submodule 𝕜 E)
+    [∀ i, FiniteDimensional 𝕜 (M i)] (t : Finset ι) : FiniteDimensional 𝕜 ↥(⨆ i ∈ t, M i) := by
+  rw [← Finset.sup_eq_iSup]
+  infer_instance
+
+/-- The span of finitely many finite-dimensional subspaces has dimension at most the sum of their
+dimensions. -/
+theorem finrank_biSup_le_sum {ι : Type*} (M : ι → Submodule 𝕜 E) [∀ i, FiniteDimensional 𝕜 (M i)]
+    (t : Finset ι) : finrank 𝕜 ↥(⨆ i ∈ t, M i) ≤ ∑ i ∈ t, finrank 𝕜 (M i) := by
+  classical
+  induction t using Finset.induction_on with
+  | empty => rw [← Finset.sup_eq_iSup, Finset.sup_empty, finrank_bot, Finset.sum_empty]
+  | insert s t hs ih =>
+    rw [Finset.iSup_insert, Finset.sum_insert hs]
+    exact (finrank_add_le_finrank_add_finrank _ _).trans (Nat.add_le_add_left ih _)
+
+open Finset in
+/-- The images of a subspace `C` under the maps `B s`, `s ∈ t`, span at most `#t dim C`
+dimensions. -/
+theorem finrank_biSup_map_le {Θ G : Type*} [AddCommGroup G] [Module 𝕜 G] (B : Θ → E →ₗ[𝕜] G)
+    (t : Finset Θ) (C : Submodule 𝕜 E) [FiniteDimensional 𝕜 C] :
+    finrank 𝕜 ↥(⨆ s ∈ t, C.map (B s)) ≤ #t * finrank 𝕜 C :=
+  (finrank_biSup_le_sum _ t).trans <| by
+    simpa using Finset.sum_le_sum fun s (_ : s ∈ t) ↦ finrank_map_le (B s) C
+
+open Finset in
+/-- **Restricting a few maps to a subspace.** Restricting the maps `B s`, `s ∈ t`, to a subspace
+`U` lowers the dimension of the span of their images by at most `#t (dim E - dim U)`. -/
+theorem _root_.TauCeti.finrank_biSup_range_le [FiniteDimensional 𝕜 E] {Θ G : Type*}
+    [AddCommGroup G] [Module 𝕜 G] (B : Θ → E →ₗ[𝕜] G) (t : Finset Θ) (U : Submodule 𝕜 E) :
+    finrank 𝕜 ↥(⨆ s ∈ t, LinearMap.range (B s)) ≤
+      finrank 𝕜 ↥(⨆ s ∈ t, U.map (B s)) + #t * (finrank 𝕜 E - finrank 𝕜 U) := by
+  obtain ⟨C, hC⟩ : ∃ C : Submodule 𝕜 E, IsCompl U C := U.exists_isCompl
+  have h_dim : finrank 𝕜 E - finrank 𝕜 U = finrank 𝕜 C := by
+    rw [← finrank_add_eq_of_isCompl hC, Nat.add_sub_cancel_left]
+  have h_split : ⨆ s ∈ t, LinearMap.range (B s) =
+      (⨆ s ∈ t, U.map (B s)) ⊔ ⨆ s ∈ t, C.map (B s) := by
+    simp only [← iSup_sup_eq, ← map_sup, hC.sup_eq_top, map_top]
+  rw [h_dim, h_split]
+  exact (finrank_add_le_finrank_add_finrank _ _).trans
+    (Nat.add_le_add_left (finrank_biSup_map_le B t C) _)
 
 end DivisionRing
 
@@ -367,6 +507,18 @@ theorem finrank_comap_of_surjective {K : Type*} {M : Type u} {N : Type v} [Divis
     [FiniteDimensional K (ker f)] :
     Module.finrank K (p.comap f) = Module.finrank K p + Module.finrank K (ker f) := by
   rw [finrank_comap, range_eq_top.mpr hf, top_inf_eq]
+
+/-- **Adding the image of a map.** Adding `range A` to `F` adds `dim V - dim A⁻¹(F)` dimensions:
+`dim (F + A V) + dim A⁻¹(F) = dim F + dim V`. -/
+theorem finrank_sup_range_add_finrank_comap {K V W : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [AddCommGroup W] [Module K W] [FiniteDimensional K V] (A : V →ₗ[K] W)
+    (F : Submodule K W) [FiniteDimensional K F] :
+    finrank K ↥(F ⊔ range A) + finrank K (F.comap A) = finrank K F + finrank K V := by
+  have h_comap := A.finrank_comap F
+  rw [inf_comm] at h_comap
+  have h_sup := Submodule.finrank_sup_add_finrank_inf_eq F (range A)
+  have h_rank := A.finrank_range_add_finrank_ker
+  omega
 
 end LinearMap
 

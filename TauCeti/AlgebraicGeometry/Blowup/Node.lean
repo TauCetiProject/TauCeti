@@ -375,7 +375,7 @@ theorem locallyOfFinitePresentation_blowup (hπ : π ∈ nonZeroDivisors R) :
     (Q := RingHom.FinitePresentation)
   refine IsZariskiLocalAtSource.of_openCover (blowupOpenCover a hπ) fun j ↦ ?_
   rw [blowupOpenCover_f_blowupToSpec a hπ j]
-  exact locallyOfFinitePresentation_spec _
+  exact locallyOfFinitePresentation_SpecMap_algebraMap _ _
 
 /-- **The blowup of a node has pure relative dimension one.** For a nonzerodivisor `π` of `R`,
 every fibre of the blowup of `R[x, y] ⧸ (xy - π²a)` along `(π, x, y)` over `Spec R` is a curve

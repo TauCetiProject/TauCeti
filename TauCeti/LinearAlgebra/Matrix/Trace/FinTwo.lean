@@ -53,6 +53,10 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two`: the Cayley–Hamilton identity in size two.
 * `Matrix.pow_add_two_fin_two`, `Matrix.trace_pow_add_two_fin_two`: the Cayley–Hamilton recurrence
   for the powers of a `2 × 2` matrix and for their traces.
+* `Matrix.mul_add_mul_eq_fin_two`: the polarized Cayley–Hamilton identity, expressing the
+  anticommutator `A * B + B * A` through traces; hence
+  `Matrix.mul_eq_neg_mul_of_trace_eq_zero_fin_two`: traceless matrices with traceless product
+  anticommute.
 * `Matrix.two_lt_trace_pow`, `Matrix.two_lt_abs_trace_pow`: the nonzero powers of a
   determinant-one matrix of trace (respectively absolute trace) greater than `2` again have that
   property.
@@ -130,6 +134,23 @@ theorem trace_pow_eq_two_of_trace_eq_two {A : Matrix (Fin 2) (Fin 2) R} (hdet : 
   | zero => norm_num [trace_one]
   | one => simpa using htr
   | more n h₀ h₁ => rw [trace_pow_add_two_fin_two, h₀, h₁, htr, hdet]; ring
+
+/-- **Polarized Cayley–Hamilton in size two**: for `2 × 2` matrices `A` and `B`,
+`A * B + B * A = trace A • B + trace B • A + (trace (A * B) - trace A * trace B) • 1`. -/
+theorem mul_add_mul_eq_fin_two (A B : Matrix (Fin 2) (Fin 2) R) :
+    A * B + B * A =
+      A.trace • B + B.trace • A + ((A * B).trace - A.trace * B.trace) • (1 : Matrix _ _ R) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two] <;> ring
+
+/-- Two traceless `2 × 2` matrices whose product is traceless anticommute. -/
+theorem mul_eq_neg_mul_of_trace_eq_zero_fin_two {A B : Matrix (Fin 2) (Fin 2) R}
+    (hA : A.trace = 0) (hB : B.trace = 0) (hAB : (A * B).trace = 0) : A * B = -(B * A) := by
+  have h := mul_add_mul_eq_fin_two A B
+  rw [hA, hB, hAB] at h
+  simp only [zero_smul, add_zero, mul_zero, sub_zero] at h
+  exact eq_neg_of_add_eq_zero_left h
 
 /-- Every power of a `2 × 2` matrix `A` is a linear combination `a • A - b • 1` of `A` and `1`, by
 the Cayley–Hamilton identity in size two. -/

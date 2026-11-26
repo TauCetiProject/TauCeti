@@ -66,6 +66,8 @@ bounds.
   for operators bounded by `c` applied to `f`.
 * `LipschitzWith.tendsto_integral_norm_sub_sq`: if `∫ ‖f i - g‖² → 0` with eventually integrable
   integrands, then the Bochner integrals `∫ ‖T (f i) - T g‖²` tend to `0` for Lipschitz `T`.
+* `MeasureTheory.Lp.dist_le_of_ae_dist_le_top`: an almost everywhere bound of the pointwise
+  distance of two `L∞` classes bounds their `L∞` distance.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
   everywhere class.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
@@ -105,6 +107,8 @@ bounds.
   `measureUnivNNReal μ ^ p.toReal⁻¹ * C`.
 * `MeasureTheory.MemLp.norm_toLp_le_of_eLpNorm_le`: an `eLpNorm` bound `‖g‖_p ≤ B ‖u‖_p` against
   a representative `u` of `v ∈ Lᵖ` is the norm bound `‖g‖ ≤ B ‖v‖`.
+* `MeasureTheory.memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul`: a bound `‖g‖_p ≤ K ‖f‖_p` with
+  `‖f‖_p ≤ N` puts `g` in `Lᵖ`, with `‖g‖_p ≤ K N` as a real number.
 * `TauCeti.Lp.isBounded_range_of_ae_bound` and `TauCeti.isBounded_range_toLp_of_ae_bound`: on a
   finite measure space, a family in `Lᵖ` (`1 ≤ p`) with a uniform almost-everywhere pointwise norm
   bound has bounded range.
@@ -356,6 +360,16 @@ theorem Lp.norm_toLp_memLp_top_const_le {alpha F : Type*} [MeasurableSpace alpha
   refine Lp.norm_le_of_ae_bound_top (norm_nonneg c) ?_
   filter_upwards [(memLp_top_const (μ := m) c).coeFn_toLp] with x hx
   rw [hx]
+
+/-- The `L∞` distance of two classes is at most any almost everywhere bound of the pointwise
+distance. -/
+theorem Lp.dist_le_of_ae_dist_le_top {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {m : Measure alpha} {f g : Lp F ∞ m} {δ : ℝ} (hδ : 0 ≤ δ)
+    (h : ∀ᵐ x ∂m, dist (f x) (g x) ≤ δ) : dist f g ≤ δ := by
+  rw [_root_.dist_eq_norm]
+  refine Lp.norm_le_of_ae_bound_top hδ ?_
+  filter_upwards [Lp.coeFn_sub f g, h] with x hx h
+  rwa [hx, Pi.sub_apply, ← _root_.dist_eq_norm]
 
 /-- A representative `g` of a real `L∞` class `f` agrees almost everywhere with its truncation to
 `[-‖f‖, ‖f‖]`. The truncation is bounded everywhere by `‖f‖` (`TauCeti.abs_max_min_le`). -/
@@ -646,6 +660,19 @@ theorem MemLp.norm_toLp_le_of_eLpNorm_le {α E F : Type*} [MeasurableSpace α]
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
     ((eLpNorm_congr_ae hv).trans_ne (Lp.eLpNorm_ne_top v))) h
+
+/-- A bound `‖g‖_p ≤ K ‖f‖_p` with `‖f‖_p ≤ N` puts `g` in `Lᵖ`, with `‖g‖_p ≤ K N` as a real
+number. -/
+theorem memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul {α ε ε' : Type*} [MeasurableSpace α]
+    [TopologicalSpace ε] [ENorm ε] [TopologicalSpace ε'] [ENorm ε'] {μ : Measure α} {p : ℝ≥0∞}
+    {g : α → ε} {f : α → ε'} {K : ℝ≥0} {N : ℝ} (hN : 0 ≤ N)
+    (hgf : eLpNorm g p μ ≤ K * eLpNorm f p μ) (hf : eLpNorm f p μ ≤ ENNReal.ofReal N) :
+    MemLp g p μ ∧ (eLpNorm g p μ).toReal ≤ K * N := by
+  have h : eLpNorm g p μ ≤ ENNReal.ofReal (K * N) := by
+    rw [ENNReal.ofReal_mul K.coe_nonneg, ENNReal.ofReal_coe_nnreal]
+    exact hgf.trans (by gcongr)
+  exact ⟨memLp_iff.2 (h.trans_lt ENNReal.ofReal_lt_top),
+    ENNReal.toReal_le_of_le_ofReal (by positivity) h⟩
 
 section Restrict
 

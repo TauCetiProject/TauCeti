@@ -60,14 +60,51 @@ theorem standardMap_symm_apply (ε : ℝ) (p : ℝ × ℝ) :
     (standardMap ε).symm p = (p.1 - p.2, p.2 - ε * sin (2 * π * (p.1 - p.2))) :=
   (rfl)
 
+/-- The standard map as an explicit function. -/
+theorem coe_standardMap (ε : ℝ) :
+    ⇑(standardMap ε) = fun p => (p.1 + p.2 + ε * sin (2 * π * p.1), p.2 + ε * sin (2 * π * p.1)) :=
+  funext (standardMap_apply ε)
+
+/-- The inverse of the standard map as an explicit function. -/
+theorem coe_standardMap_symm (ε : ℝ) :
+    ⇑(standardMap ε).symm = fun p => (p.1 - p.2, p.2 - ε * sin (2 * π * (p.1 - p.2))) :=
+  funext (standardMap_symm_apply ε)
+
+/-- The derivative of the standard map at `(x, y)` is
+`(u, v) ↦ ((1 + 2πε cos 2πx) u + v, 2πε cos 2πx · u + v)`. -/
+theorem hasFDerivAt_standardMap (ε : ℝ) (p : ℝ × ℝ) :
+    HasFDerivAt (standardMap ε)
+      (((1 + ε * (cos (2 * π * p.1) * (2 * π))) • ContinuousLinearMap.fst ℝ ℝ ℝ +
+        ContinuousLinearMap.snd ℝ ℝ ℝ).prod
+        ((ε * (cos (2 * π * p.1) * (2 * π))) • ContinuousLinearMap.fst ℝ ℝ ℝ +
+          ContinuousLinearMap.snd ℝ ℝ ℝ)) p := by
+  have hfst : HasFDerivAt (Prod.fst : ℝ × ℝ → ℝ) (ContinuousLinearMap.fst ℝ ℝ ℝ) p :=
+    hasFDerivAt_fst
+  have hsnd : HasFDerivAt (Prod.snd : ℝ × ℝ → ℝ) (ContinuousLinearMap.snd ℝ ℝ ℝ) p :=
+    hasFDerivAt_snd
+  have hsin := ((hfst.const_mul (2 * π)).sin).const_mul ε
+  rw [coe_standardMap]
+  refine (((hfst.add hsnd).add hsin).prodMk (hsnd.add hsin)).congr_fderiv
+    (ContinuousLinearMap.ext fun v => ?_)
+  ext <;> simp <;> ring
+
+/-- The first component of the derivative of the standard map is
+`(1 + 2πε cos 2πx) dx + dy`. -/
+theorem fst_comp_fderiv_standardMap (ε : ℝ) (p : ℝ × ℝ) :
+    (ContinuousLinearMap.fst ℝ ℝ ℝ).comp (fderiv ℝ (standardMap ε) p) =
+      (1 + ε * (cos (2 * π * p.1) * (2 * π))) • ContinuousLinearMap.fst ℝ ℝ ℝ +
+        ContinuousLinearMap.snd ℝ ℝ ℝ := by
+  rw [(hasFDerivAt_standardMap ε p).fderiv]
+  exact ContinuousLinearMap.fst_comp_prod _ _
+
 /-- The standard map is a monotone twist map of the plane with period `1`, for every `ε`. -/
 theorem isMonotoneTwistMap_standardMap (ε : ℝ) :
     IsMonotoneTwistMap 1 univ (standardMap ε).toOpenPartialHomeomorph := by
   have hs : ContDiff ℝ 1 (standardMap ε) := by
-    rw [show ⇑(standardMap ε) = _ from funext (standardMap_apply ε)]
+    rw [coe_standardMap]
     fun_prop
   have hsymm : ContDiff ℝ 1 (standardMap ε).symm := by
-    rw [show ⇑(standardMap ε).symm = _ from funext (standardMap_symm_apply ε)]
+    rw [coe_standardMap_symm]
     fun_prop
   have hbound (x : ℝ) : |ε * sin (2 * π * x)| ≤ |ε| := by
     rw [abs_mul]
@@ -97,19 +134,7 @@ theorem isMonotoneTwistMap_standardMap (ε : ℝ) :
     linarith [(abs_le.1 (hbound x)).2]
   · simp only [Homeomorph.toOpenPartialHomeomorph_apply, standardMap_apply]
     linarith [(abs_le.1 (hbound x)).1]
-  · have h1 : HasDerivAt (fun x : ℝ => x + ε * sin (2 * π * x))
-        (1 + ε * (cos (2 * π * p.1) * (2 * π))) p.1 := by
-      convert (hasDerivAt_id' p.1).add
-        (((hasDerivAt_id' p.1).const_mul (2 * π)).sin.const_mul ε) using 1
-      ring
-    have hL : HasFDerivAt (fun q => (standardMap ε q).1) (ContinuousLinearMap.snd ℝ ℝ ℝ +
-        (1 + ε * (cos (2 * π * p.1) * (2 * π))) • ContinuousLinearMap.fst ℝ ℝ ℝ) p := by
-      convert hasFDerivAt_snd.add (h1.comp_hasFDerivAt p (hasFDerivAt_fst (𝕜 := ℝ))) using 1
-      ext q
-      simp only [standardMap_apply, Pi.add_apply, Function.comp_apply]
-      ring
-    rw [Homeomorph.toOpenPartialHomeomorph_apply,
-      fderiv_apply_fst (hs.differentiable one_ne_zero p) hL]
+  · rw [Homeomorph.toOpenPartialHomeomorph_apply, (hasFDerivAt_standardMap ε p).fderiv]
     simp
 
 /-- The map `(x, y) ↦ (x + log y, y)` as a homeomorphism of the strip `ℝ × (0, ∞)`, with inverse

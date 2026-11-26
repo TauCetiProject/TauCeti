@@ -22,15 +22,16 @@ instead: its columns are indexed by the mutable indices `K`, its rows by all ind
 embedding `row : K ↪ I` singles out the mutable rows, which form the skew-symmetrizable
 *principal block*.
 
-This file introduces skew-symmetrizers and the type of extended exchange matrices with a chosen
+This file introduces skew-symmetrizers, over any linearly ordered ring so that rational
+matrices are covered too, and the type of extended exchange matrices with a chosen integer
 symmetrizer, zero extension of frozen boundaries, and amalgamation along shared frozen
 vertices. It derives the sign pattern a skew-symmetrizer forces: the diagonal vanishes, and
 entries in transposed positions have opposite signs.
 
 ## Main definitions
 
-* `Matrix.IsSkewSymmetrizer B s`: the positive family `s` skew-symmetrizes the square integer
-  matrix `B`, that is, `s i * B i j = -(s j * B j i)`.
+* `Matrix.IsSkewSymmetrizer B s`: the positive family `s` skew-symmetrizes the square matrix `B`
+  over an ordered ring, that is, `s i * B i j = -(s j * B j i)`.
 * `TauCeti.ExchangeMatrix row`: an integer matrix with rows `I` and columns `K`, together with a
   skew-symmetrizer of its principal block along `row : K ↪ I`. Square exchange matrices are the
   case `row = Function.Embedding.refl K`.
@@ -80,12 +81,15 @@ variable {I I' I'' K K' K'' I₁ I₂ K₁ K₂ : Type*}
 
 namespace Matrix
 
-/-- The family `s` is a *skew-symmetrizer* of the square integer matrix `B`: its entries are
-positive and `(s i * B i j)` is skew-symmetric. A matrix admitting one is called
-skew-symmetrizable. In the theory of cluster algebras, where `B` is an exchange matrix, `s` is
-called a symmetrizer of `B`. -/
+variable {R : Type*}
+
+/-- The family `s` is a *skew-symmetrizer* of the square matrix `B` over an ordered ring: its
+entries are positive and `(s i * B i j)` is skew-symmetric. A matrix admitting one is called
+skew-symmetrizable. In the theory of cluster algebras, where `B` is an integer exchange matrix,
+`s` is called a symmetrizer of `B`; rational coefficients occur for the full matrices of weighted
+ice quivers. -/
 @[mk_iff]
-structure IsSkewSymmetrizer (B : Matrix K K ℤ) (s : K → ℤ) : Prop where
+structure IsSkewSymmetrizer [Ring R] [PartialOrder R] (B : Matrix K K R) (s : K → R) : Prop where
   /-- The entries of a skew-symmetrizer are positive. -/
   pos : ∀ i, 0 < s i
   /-- Scaling the rows by a skew-symmetrizer gives a skew-symmetric matrix. -/
@@ -93,26 +97,60 @@ structure IsSkewSymmetrizer (B : Matrix K K ℤ) (s : K → ℤ) : Prop where
 
 namespace IsSkewSymmetrizer
 
-variable {B : Matrix K K ℤ} {s : K → ℤ}
+section PartialOrder
 
-/-- A skew-symmetrizable matrix has zero diagonal. -/
-theorem apply_self (h : B.IsSkewSymmetrizer s) (i : K) : B i i = 0 := by
-  have h2 : s i * B i i = 0 := by
-    have := h.mul_apply i i
-    omega
-  exact (mul_eq_zero.mp h2).resolve_left (h.pos i).ne'
+variable [Ring R] [PartialOrder R] {B : Matrix K K R} {s : K → R}
 
-/-- In a skew-symmetrizable matrix, an entry is positive exactly when the entry in the
-transposed position is negative. -/
-theorem apply_pos_iff (h : B.IsSkewSymmetrizer s) {i j : K} : 0 < B i j ↔ B j i < 0 := by
-  rw [← mul_pos_iff_of_pos_left (h.pos i), h.mul_apply, ← mul_neg,
-    mul_pos_iff_of_pos_left (h.pos j), neg_pos]
+/-- A skew-symmetrizer of `B` is a skew-symmetrizer of `-B`. -/
+protected theorem neg (h : B.IsSkewSymmetrizer s) : (-B).IsSkewSymmetrizer s :=
+  ⟨h.pos, fun i j ↦ by simp [h.mul_apply i j]⟩
+
+/-- A skew-symmetrizer restricts along any map of index types, to a skew-symmetrizer of the
+corresponding submatrix. -/
+protected theorem submatrix (h : B.IsSkewSymmetrizer s) (e : K' → K) :
+    (B.submatrix e e).IsSkewSymmetrizer (s ∘ e) :=
+  ⟨fun i ↦ h.pos (e i), fun i j ↦ h.mul_apply (e i) (e j)⟩
+
+/-- Skew-symmetrizers of two matrices assemble into a skew-symmetrizer of their block diagonal
+sum. -/
+protected theorem fromBlocks {B₁ : Matrix K₁ K₁ R} {B₂ : Matrix K₂ K₂ R} {s₁ : K₁ → R}
+    {s₂ : K₂ → R} (h₁ : B₁.IsSkewSymmetrizer s₁) (h₂ : B₂.IsSkewSymmetrizer s₂) :
+    (fromBlocks B₁ 0 0 B₂).IsSkewSymmetrizer (Sum.elim s₁ s₂) where
+  pos := by rintro (i | i) <;> simp [h₁.pos, h₂.pos]
+  mul_apply := by
+    rintro (i | i) (j | j)
+    · simpa using h₁.mul_apply i j
+    · simp
+    · simp
+    · simpa using h₂.mul_apply i j
+
+end PartialOrder
+
+section NoZeroDivisors
+
+variable [Ring R] [PartialOrder R] [NoZeroDivisors R] {B : Matrix K K R} {s : K → R}
+
+/-- A skew-symmetrizable matrix over an additively torsion-free ring has zero diagonal. -/
+theorem apply_self [IsAddTorsionFree R] (h : B.IsSkewSymmetrizer s) (i : K) : B i i = 0 :=
+  (mul_eq_zero.mp (self_eq_neg.mp (h.mul_apply i i))).resolve_left (h.pos i).ne'
 
 /-- In a skew-symmetrizable matrix, an entry vanishes exactly when the entry in the transposed
 position does. -/
 theorem apply_eq_zero_iff (h : B.IsSkewSymmetrizer s) {i j : K} : B i j = 0 ↔ B j i = 0 := by
   rw [← mul_right_inj' (h.pos i).ne', h.mul_apply, mul_zero, neg_eq_zero, mul_eq_zero,
     or_iff_right (h.pos j).ne']
+
+end NoZeroDivisors
+
+section Order
+
+variable [Ring R] [LinearOrder R] [IsStrictOrderedRing R] {B : Matrix K K R} {s : K → R}
+
+/-- In a skew-symmetrizable matrix, an entry is positive exactly when the entry in the
+transposed position is negative. -/
+theorem apply_pos_iff (h : B.IsSkewSymmetrizer s) {i j : K} : 0 < B i j ↔ B j i < 0 := by
+  rw [← mul_pos_iff_of_pos_left (h.pos i), h.mul_apply, ← mul_neg,
+    mul_pos_iff_of_pos_left (h.pos j), neg_pos]
 
 /-- A skew-symmetrizer exchanges the positive part of an entry with the negative part of the
 entry in the transposed position. -/
@@ -127,28 +165,7 @@ theorem mul_negPart (h : B.IsSkewSymmetrizer s) (i j : K) :
     s i * (B i j)⁻ = s j * (B j i)⁺ :=
   (h.mul_posPart j i).symm
 
-/-- A skew-symmetrizer of `B` is a skew-symmetrizer of `-B`. -/
-protected theorem neg (h : B.IsSkewSymmetrizer s) : (-B).IsSkewSymmetrizer s :=
-  ⟨h.pos, fun i j ↦ by simp [h.mul_apply i j]⟩
-
-/-- A skew-symmetrizer restricts along any map of index types, to a skew-symmetrizer of the
-corresponding submatrix. -/
-protected theorem submatrix (h : B.IsSkewSymmetrizer s) (e : K' → K) :
-    (B.submatrix e e).IsSkewSymmetrizer (s ∘ e) :=
-  ⟨fun i ↦ h.pos (e i), fun i j ↦ h.mul_apply (e i) (e j)⟩
-
-/-- Skew-symmetrizers of two matrices assemble into a skew-symmetrizer of their block diagonal
-sum. -/
-protected theorem fromBlocks {B₁ : Matrix K₁ K₁ ℤ} {B₂ : Matrix K₂ K₂ ℤ} {s₁ : K₁ → ℤ}
-    {s₂ : K₂ → ℤ} (h₁ : B₁.IsSkewSymmetrizer s₁) (h₂ : B₂.IsSkewSymmetrizer s₂) :
-    (fromBlocks B₁ 0 0 B₂).IsSkewSymmetrizer (Sum.elim s₁ s₂) where
-  pos := by rintro (i | i) <;> simp [h₁.pos, h₂.pos]
-  mul_apply := by
-    rintro (i | i) (j | j)
-    · simpa using h₁.mul_apply i j
-    · simp
-    · simp
-    · simpa using h₂.mul_apply i j
+end Order
 
 end IsSkewSymmetrizer
 

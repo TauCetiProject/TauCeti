@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.OffDiagonalKernel
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Dyadic
 import TauCeti.Analysis.SpecificLimits.DyadicSum
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Calderón–Zygmund estimates for the kernels of uniform symbols
@@ -34,11 +34,7 @@ Lipschitz case `δ = 1` is not proved here.
 The Littlewood–Paley pieces `aⱼ(x, ξ) = ψⱼ(ξ) a(x, ξ)` (`TauCeti.Symbol.littlewoodPaleyPiece`)
 have bounded frequency support, so their kernels `Kⱼ = TauCeti.quantizationKernel aⱼ` are
 absolutely convergent integrals. Off the diagonal the kernel of `a` is their sum
-(`TauCeti.Symbol.IsUniform.hasSum_quantizationKernel_littlewoodPaleyPiece`): the pieces sum to the
-symbol, so the partial sums of the quantizations `Op(aⱼ) u (x)` converge to `Op(a) u (x)`, and the
-partial sums of the kernels converge locally uniformly away from `x`. Both sides therefore
-represent `u ↦ Op(a) u (x)` on test functions supported away from `x`, and the uniqueness of the
-off-diagonal kernel (`TauCeti.Symbol.eqOn_offDiagonalKernel_of_forall`) identifies them.
+(`TauCeti.Symbol.hasSum_quantizationKernel_littlewoodPaleyPiece`).
 
 The piece `aⱼ` lives at frequencies of size `2^j`, where it is of size `(2^j)^m` and each
 frequency derivative gains a factor `2^{-j}`. Integration by parts in the frequency
@@ -60,8 +56,6 @@ the two bounds, and `min(A, B) ≤ A^δ B^(1 - δ)` sums in the same way
 * `TauCeti.Symbol.IsUniform.exists_norm_quantizationKernel_littlewoodPaleyPiece_sub_right_le` and
   `TauCeti.Symbol.IsUniform.exists_norm_quantizationKernel_littlewoodPaleyPiece_sub_left_le`: the
   increments of the piece kernels in each variable.
-* `TauCeti.Symbol.IsUniform.hasSum_quantizationKernel_littlewoodPaleyPiece`: off the diagonal the
-  kernel of `a` is the sum of the piece kernels.
 * `TauCeti.Symbol.IsUniform.exists_norm_offDiagonalKernel_le`: the size estimate.
 * `TauCeti.Symbol.IsUniform.exists_norm_offDiagonalKernel_sub_right_le` and
   `TauCeti.Symbol.IsUniform.exists_norm_offDiagonalKernel_sub_left_le`: the smoothness estimates.
@@ -235,42 +229,23 @@ private theorem IsUniform.exists_integral_norm_coefficient_littlewoodPaleyPiece_
           (a.littlewoodPaleyPiece φ j).coefficient (x', ξ)‖ ≤
         G * ((2 : ℝ) ^ j) ^ (m + n) * ‖x - x'‖ := by
   obtain ⟨G, hG0, hG⟩ := ha.exists_norm_fderiv_coefficient_littlewoodPaleyPiece_le φ
-  set v := (volume : Measure (CoordinateSpace n)).real (ball 0 1)
-  refine ⟨G * φ.rOut ^ n * v, by have := φ.rOut_pos; positivity, fun j x x' ↦ ?_⟩
-  set R := (2 : ℝ) ^ j * φ.rOut
-  have hR : 0 ≤ R := by have := φ.rOut_pos; positivity
-  set c := G * ((2 : ℝ) ^ j) ^ m * ‖x - x'‖
-  -- The increment is at most `c` by the mean value theorem, and vanishes off the ball of radius
-  -- `R` that carries the piece.
-  have hle (ξ : CoordinateSpace n) : ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ) -
-      (a.littlewoodPaleyPiece φ j).coefficient (x', ξ)‖ ≤
-        (closedBall (0 : CoordinateSpace n) R).indicator (fun _ ↦ c) ξ := by
-    by_cases hξ : ξ ∈ closedBall (0 : CoordinateSpace n) R
-    · rw [indicator_of_mem hξ]
-      have hd : Differentiable ℝ fun w ↦ (a.littlewoodPaleyPiece φ j).coefficient (w, ξ) :=
-        ((a.littlewoodPaleyPiece φ j).contDiff_coefficient_slice ξ).differentiable (by simp)
-      exact convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun w _ ↦ hd w)
-        (fun w _ ↦ hG j w ξ) (mem_univ x') (mem_univ x)
-    · rw [indicator_of_notMem hξ]
-      have hξ' : R ≤ ‖ξ‖ := by
-        rw [mem_closedBall_zero_iff, not_le] at hξ
-        exact hξ.le
-      rw [a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x hξ',
-        a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x' hξ', sub_self, norm_zero]
-  have hint : Integrable ((closedBall (0 : CoordinateSpace n) R).indicator fun _ ↦ c) :=
-    (integrableOn_const (measure_closedBall_lt_top (x := (0 : CoordinateSpace n))).ne
-      ).integrable_indicator measurableSet_closedBall
-  calc ∫ ξ, ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ) -
-        (a.littlewoodPaleyPiece φ j).coefficient (x', ξ)‖
-      ≤ ∫ ξ, (closedBall (0 : CoordinateSpace n) R).indicator (fun _ ↦ c) ξ :=
-        integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ norm_nonneg _) hint
-          (Eventually.of_forall hle)
-    _ = R ^ n * v * c := by
-        rw [integral_indicator_const _ measurableSet_closedBall,
-          Measure.addHaar_real_closedBall _ _ hR, finrank_euclideanSpace_fin, smul_eq_mul]
-    _ = G * φ.rOut ^ n * v * ((2 : ℝ) ^ j) ^ (m + n) * ‖x - x'‖ := by
-        rw [Real.rpow_add (by positivity), Real.rpow_natCast, mul_pow]
-        ring
+  have := φ.rOut_pos
+  refine ⟨G * φ.rOut ^ n * (volume : Measure (CoordinateSpace n)).real (ball 0 1),
+    by positivity, fun j x x' ↦ ?_⟩
+  -- The increment is at most `G (2^j)^m ‖x - x'‖` by the mean value theorem, and vanishes off the
+  -- ball of radius `2^j φ.rOut` that carries the piece.
+  refine (integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall (by positivity) φ.rOut_pos.le
+    (mu := volume) (s := 2 ^ j) (K := G * ‖x - x'‖) (μ := m) (fun ξ _ ↦ ?_) fun ξ hξ ↦ ?_).trans_eq
+    (by rw [finrank_euclideanSpace_fin]; ring)
+  · have hd : Differentiable ℝ fun w ↦ (a.littlewoodPaleyPiece φ j).coefficient (w, ξ) :=
+      ((a.littlewoodPaleyPiece φ j).contDiff_coefficient_slice ξ).differentiable (by simp)
+    exact (convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun w _ ↦ hd w)
+      (fun w _ ↦ hG j w ξ) (mem_univ x') (mem_univ x)).trans_eq (by ring)
+  · have hξ' : (2 : ℝ) ^ j * φ.rOut ≤ ‖ξ‖ := by
+      rw [mem_closedBall_zero_iff, not_le] at hξ
+      exact hξ.le
+    rw [a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x hξ',
+      a.coefficient_littlewoodPaleyPiece_eq_zero_of_le_norm φ x' hξ', sub_self]
 
 /-- **Increments of the piece kernels in the first variable.** For a uniform symbol `a` of order
 `m`, `‖K_{aⱼ}(x, y) - K_{aⱼ}(x', y)‖ ≤ D (2^j)^(m + n + 1) ‖x - x'‖`. -/
@@ -301,194 +276,7 @@ theorem IsUniform.exists_norm_quantizationKernel_littlewoodPaleyPiece_sub_left_l
         · exact (hG j x x').trans (by gcongr)
     _ = ((2 * π) ^ n)⁻¹ * (M + G) * T * ‖x - x'‖ := by ring
 
-/-- Away from the diagonal the piece kernels of a uniform symbol decay geometrically in `j`:
-`‖K_{aⱼ}(x, z)‖ ≤ C δ^(-N) qʲ` when `‖x - z‖ ≥ δ > 0`, for some `N` and some `q < 1`. -/
-private theorem IsUniform.exists_norm_quantizationKernel_littlewoodPaleyPiece_le_geometric
-    {a : Symbol n V W m} (ha : a.IsUniform) :
-    ∃ (N : ℕ) (C q : ℝ), 0 ≤ C ∧ 0 ≤ q ∧ q < 1 ∧ ∀ (j : ℕ) {δ : ℝ} (x z : CoordinateSpace n),
-      0 < δ → δ ≤ ‖x - z‖ →
-        ‖quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x z‖ ≤
-          C * δ ^ (-(N : ℝ)) * q ^ j := by
-  obtain ⟨N, hN⟩ := exists_nat_gt (m + n)
-  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_quantizationKernel_littlewoodPaleyPiece_le φ N
-  refine ⟨N, C, (2 : ℝ) ^ (m + n - N), hC0, by positivity,
-    Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (by linarith), fun j δ x z hδ hxz ↦ ?_⟩
-  refine (hC j x z).trans ?_
-  rw [mul_assoc, mul_assoc]
-  exact mul_le_mul_of_nonneg_left (rpow_mul_one_add_rpow_neg_le hδ hxz j) hC0
-
 end Pieces
-
-/-! ### The kernel as a sum of the piece kernels -/
-
-section Sum
-
-variable (φ : ContDiffBump (0 : CoordinateSpace n))
-
-/-- The quantizations of the pieces `j ≤ J` at `x` converge to the quantization of `a` as
-`J → ∞`: their sum is the quantization of `φ(2^{-J} ξ) a(x, ξ)`, and the cutoff tends to `1`. -/
-private theorem tendsto_sum_quantizeSchwartzValue_littlewoodPaleyPiece (a : Symbol n V W m)
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    Tendsto (fun J ↦ ∑ j ∈ Finset.range (J + 1),
-        quantizeSchwartzValue (a.littlewoodPaleyPiece φ j).coefficient u x) atTop
-      (𝓝 (quantizeSchwartzValue a.coefficient u x)) := by
-  set g : CoordinateSpace n → W := fun ζ ↦ 𝐞 ⟪ζ, x⟫ • a.coefficient (x, (2 * π) • ζ) (𝓕 u ζ)
-  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
-  have hg : Integrable g := integrable_quantizeSchwartzValue_integrand
-    (a.continuous_coefficient_slice x).aestronglyMeasurable hC (𝓕 u)
-  -- The integrand of each piece is `ψⱼ(2πζ) g(ζ)`.
-  have hpiece (j : ℕ) : quantizeSchwartzValue (a.littlewoodPaleyPiece φ j).coefficient u x =
-      ∫ ζ, φ.inhomogeneousLittlewoodPaley j ((2 * π) • ζ) • g ζ := by
-    rw [quantizeSchwartzValue_def]
-    congr 1 with ζ
-    simp only [g, coefficient_littlewoodPaleyPiece, smul_apply]
-    exact smul_comm _ _ _
-  have hint (j : ℕ) : Integrable fun ζ ↦ φ.inhomogeneousLittlewoodPaley j ((2 * π) • ζ) • g ζ :=
-    hg.norm.mono' ((((φ.contDiff_inhomogeneousLittlewoodPaley (n := 0) j).continuous.comp
-      (continuous_const_smul _)).aestronglyMeasurable).smul hg.1)
-      (ae_of_all _ fun ζ ↦ by
-        rw [norm_smul]
-        exact mul_le_of_le_one_left (norm_nonneg _)
-          (by simpa using φ.abs_inhomogeneousLittlewoodPaley_le_one j ((2 * π) • ζ)))
-  have hsum (J : ℕ) : ∑ j ∈ Finset.range (J + 1),
-      quantizeSchwartzValue (a.littlewoodPaleyPiece φ j).coefficient u x =
-        ∫ ζ, φ (((2 : ℝ) ^ J)⁻¹ • (2 * π) • ζ) • g ζ := by
-    simp_rw [hpiece]
-    rw [← integral_finsetSum _ fun j _ ↦ hint j]
-    congr 1 with ζ
-    rw [← Finset.sum_smul, φ.sum_inhomogeneousLittlewoodPaley_range]
-  simp_rw [hsum]
-  rw [quantizeSchwartzValue_def]
-  refine tendsto_integral_of_dominated_convergence (fun ζ ↦ ‖g ζ‖)
-    (fun J ↦ ((φ.continuous.comp ((continuous_const_smul _).comp
-      (continuous_const_smul _))).aestronglyMeasurable).smul hg.1) hg.norm
-    (fun J ↦ ae_of_all _ fun ζ ↦ ?_) (ae_of_all _ fun ζ ↦ ?_)
-  · rw [norm_smul, Real.norm_of_nonneg φ.nonneg]
-    exact mul_le_of_le_one_left (norm_nonneg _) φ.le_one
-  · -- For `2^J ≥ ‖2πζ‖ / φ.rIn` the cutoff equals `1`.
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [(tendsto_pow_atTop_atTop_of_one_lt one_lt_two).eventually_ge_atTop
-      (‖(2 * π) • ζ‖ / φ.rIn)] with J hJ
-    rw [φ.one_of_mem_closedBall, one_smul]
-    rw [mem_closedBall_zero_iff, norm_smul, norm_inv, Real.norm_of_nonneg (by positivity),
-      inv_mul_le_iff₀ (by positivity)]
-    exact (div_le_iff₀ φ.rIn_pos).1 hJ
-
-/-- The quantizations of the pieces at `x` are given by their kernels. -/
-private theorem sum_quantizeSchwartzValue_littlewoodPaleyPiece_eq_integral [CompleteSpace V]
-    [CompleteSpace W] (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n)
-    (J : ℕ) :
-    ∑ j ∈ Finset.range J, quantizeSchwartzValue (a.littlewoodPaleyPiece φ j).coefficient u x =
-      ∫ z, (∑ j ∈ Finset.range J,
-        quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x z) (u z) := by
-  have hint (j : ℕ) : Integrable fun z ↦
-      quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x z (u z) := by
-    have hK := (a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x
-    refine (u.integrable.norm.const_mul (((2 * π) ^ n)⁻¹ *
-      ∫ ξ, ‖(a.littlewoodPaleyPiece φ j).coefficient (x, ξ)‖)).mono'
-      ((continuous_quantizationKernel_right hK).clm_apply u.continuous).aestronglyMeasurable
-      (ae_of_all _ fun z ↦ ?_)
-    refine (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
-    simpa only [finrank_euclideanSpace_fin] using
-      norm_quantizationKernel_le (a.littlewoodPaleyPiece φ j).coefficient x z
-  simp_rw [sum_apply]
-  rw [integral_finsetSum _ fun j _ ↦ hint j]
-  exact Finset.sum_congr rfl fun j _ ↦ quantizeSchwartzValue_eq_integral_quantizationKernel
-    ((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x) u
-
-/-- The kernel of a uniform symbol is represented, on test functions supported away from `x`, by
-the sum of the piece kernels: the partial sums converge with a bound `B ‖u z‖`. -/
-private theorem IsUniform.quantizeSchwartzValue_eq_integral_tsum [CompleteSpace V]
-    [CompleteSpace W] {a : Symbol n V W m} (ha : a.IsUniform) {x : CoordinateSpace n}
-    {u : 𝓢(CoordinateSpace n, V)} (hx : x ∉ tsupport u) :
-    quantizeSchwartzValue a.coefficient u x = ∫ z, (∑' j,
-      quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x z) (u z) := by
-  set K : ℕ → CoordinateSpace n → V →L[ℂ] W :=
-    fun j ↦ quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x
-  obtain ⟨N, C, q, hC0, hq0, hq1, hK⟩ :=
-    ha.exists_norm_quantizationKernel_littlewoodPaleyPiece_le_geometric φ
-  -- The support of `u` is at a distance `δ > 0` from `x`.
-  obtain ⟨δ, hδ, hball⟩ := Metric.isOpen_iff.1 (isClosed_tsupport u).isOpen_compl x hx
-  have hdist {z : CoordinateSpace n} (hz : z ∈ tsupport u) : δ ≤ ‖x - z‖ := by
-    have := mt (@hball z) (not_not.2 hz)
-    rwa [mem_ball, not_lt, dist_comm, dist_eq_norm] at this
-  have hgeo := summable_geometric_of_lt_one hq0 hq1
-  set B := C * δ ^ (-(N : ℝ)) * (1 - q)⁻¹
-  have hpartial (J : ℕ) {z : CoordinateSpace n} (hz : z ∈ tsupport u) :
-      ∑ j ∈ Finset.range J, ‖K j z‖ ≤ B := by
-    calc ∑ j ∈ Finset.range J, ‖K j z‖ ≤ ∑ j ∈ Finset.range J, C * δ ^ (-(N : ℝ)) * q ^ j :=
-          Finset.sum_le_sum fun j _ ↦ hK j x z hδ (hdist hz)
-      _ ≤ ∑' j, C * δ ^ (-(N : ℝ)) * q ^ j :=
-          (hgeo.mul_left _).sum_le_tsum _ fun j _ ↦ by positivity
-      _ = B := by rw [tsum_mul_left, tsum_geometric_of_lt_one hq0 hq1]
-  have hlim : Tendsto (fun J ↦ ∫ z, (∑ j ∈ Finset.range J, K j z) (u z)) atTop
-      (𝓝 (∫ z, (∑' j, K j z) (u z))) := by
-    refine tendsto_integral_of_dominated_convergence (fun z ↦ B * ‖u z‖)
-      (fun J ↦ ((continuous_finsetSum _ fun j _ ↦ continuous_quantizationKernel_right
-        ((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x)).clm_apply
-          u.continuous).aestronglyMeasurable)
-      (u.integrable.norm.const_mul B) (fun J ↦ ae_of_all _ fun z ↦ ?_) (ae_of_all _ fun z ↦ ?_)
-    · by_cases hz : z ∈ tsupport u
-      · refine (ContinuousLinearMap.le_opNorm _ _).trans
-          (mul_le_mul_of_nonneg_right ((norm_sum_le _ _).trans (hpartial J hz)) (norm_nonneg _))
-      · simp [image_eq_zero_of_notMem_tsupport hz]
-    · by_cases hz : z ∈ tsupport u
-      · have hs : Summable fun j ↦ K j z :=
-          Summable.of_norm_bounded (hgeo.mul_left (C * δ ^ (-(N : ℝ))))
-            fun j ↦ hK j x z hδ (hdist hz)
-        exact ((ContinuousLinearMap.apply ℂ W (u z)).continuous.tendsto _).comp
-          hs.hasSum.tendsto_sum_nat
-      · simp [image_eq_zero_of_notMem_tsupport hz]
-  refine tendsto_nhds_unique (tendsto_sum_quantizeSchwartzValue_littlewoodPaleyPiece φ a u x) ?_
-  simp_rw [sum_quantizeSchwartzValue_littlewoodPaleyPiece_eq_integral φ a u x]
-  exact hlim.comp (tendsto_add_atTop_nat 1)
-
-/-- The sum of the piece kernels of a uniform symbol is continuous off the diagonal, by locally
-uniform convergence. -/
-private theorem IsUniform.continuousOn_tsum_quantizationKernel_littlewoodPaleyPiece
-    [CompleteSpace W] {a : Symbol n V W m} (ha : a.IsUniform) (x : CoordinateSpace n) :
-    ContinuousOn (fun z ↦ ∑' j, quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x z)
-      {x}ᶜ := by
-  obtain ⟨N, C, q, -, hq0, hq1, hK⟩ :=
-    ha.exists_norm_quantizationKernel_littlewoodPaleyPiece_le_geometric φ
-  intro z₀ hz₀
-  have hδ : 0 < ‖x - z₀‖ / 2 := half_pos (norm_pos_iff.2 (sub_ne_zero.2 (Ne.symm hz₀)))
-  -- On the closed set `{z | ‖x - z₀‖ / 2 ≤ ‖x - z‖}`, a neighbourhood of `z₀`, the series
-  -- converges uniformly.
-  have hs : {z | ‖x - z₀‖ / 2 ≤ ‖x - z‖} ∈ 𝓝 z₀ := by
-    refine mem_of_superset (ball_mem_nhds z₀ hδ) fun z hz ↦ ?_
-    rw [mem_ball, dist_eq_norm] at hz
-    have := norm_add_le (x - z) (z - z₀)
-    rw [sub_add_sub_cancel] at this
-    simp only [mem_ofPred_eq]
-    linarith
-  exact ((continuousOn_tsum (fun j ↦ (continuous_quantizationKernel_right
-    ((a.isSmoothing_littlewoodPaleyPiece φ j).integrable_coefficient x)).continuousOn)
-    ((summable_geometric_of_lt_one hq0 hq1).mul_left (C * (‖x - z₀‖ / 2) ^ (-(N : ℝ))))
-    fun j z hz ↦ hK j x z hδ (by simpa only [mem_ofPred_eq] using hz)).continuousAt hs
-    ).continuousWithinAt
-
-/-- **The kernel as a sum of the piece kernels.** Off the diagonal, the kernel of a uniform symbol
-is the sum of the absolutely convergent kernels of its Littlewood–Paley pieces. -/
-theorem IsUniform.hasSum_quantizationKernel_littlewoodPaleyPiece [CompleteSpace V]
-    [CompleteSpace W] {a : Symbol n V W m} (ha : a.IsUniform) {x y : CoordinateSpace n}
-    (hxy : x ≠ y) :
-    HasSum (fun j ↦ quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y)
-      (offDiagonalKernel a x y) := by
-  obtain ⟨N, C, q, -, hq0, hq1, hK⟩ :=
-    ha.exists_norm_quantizationKernel_littlewoodPaleyPiece_le_geometric φ
-  have hy : 0 < ‖x - y‖ := norm_pos_iff.2 (sub_ne_zero.2 hxy)
-  have hs : Summable fun j ↦ quantizationKernel (a.littlewoodPaleyPiece φ j).coefficient x y :=
-    Summable.of_norm_bounded ((summable_geometric_of_lt_one hq0 hq1).mul_left _)
-      fun j ↦ hK j x y hy le_rfl
-  have heq := eqOn_offDiagonalKernel_of_forall a isOpen_compl_singleton (by simp)
-    (ha.continuousOn_tsum_quantizationKernel_littlewoodPaleyPiece φ x)
-    (fun u _ hu ↦ ha.quantizeSchwartzValue_eq_integral_tsum φ fun hx ↦ hu hx rfl)
-    (Ne.symm hxy : y ≠ x)
-  exact heq ▸ hs.hasSum
-
-end Sum
 
 /-! ### The size and smoothness estimates -/
 
@@ -497,8 +285,8 @@ private def standardBump : ContDiffBump (0 : CoordinateSpace n) := ⟨1, 2, one_
 
 /-- **The size estimate.** The kernel of a uniform symbol `a` of order `m` on `ℝⁿ` with
 `m + n > 0` satisfies `‖K(x, y)‖ ≤ C ‖x - y‖^(-(m + n))` off the diagonal. -/
-theorem IsUniform.exists_norm_offDiagonalKernel_le [CompleteSpace V] [CompleteSpace W]
-    {a : Symbol n V W m} (ha : a.IsUniform) (hm : 0 < m + n) :
+theorem IsUniform.exists_norm_offDiagonalKernel_le {a : Symbol n V W m} (ha : a.IsUniform)
+    (hm : 0 < m + n) :
     ∃ C, 0 ≤ C ∧ ∀ x y : CoordinateSpace n, x ≠ y →
       ‖offDiagonalKernel a x y‖ ≤ C * ‖x - y‖ ^ (-(m + n)) := by
   obtain ⟨N, hN⟩ := exists_nat_gt (m + n)
@@ -506,7 +294,7 @@ theorem IsUniform.exists_norm_offDiagonalKernel_le [CompleteSpace V] [CompleteSp
   obtain ⟨E, hE0, hE⟩ := exists_tsum_rpow_mul_one_add_rpow_neg_le hm hN
   refine ⟨C * E, mul_nonneg hC0 hE0, fun x y hxy ↦ ?_⟩
   obtain ⟨hsum, hle⟩ := hE _ (norm_pos_iff.2 (sub_ne_zero.2 hxy))
-  rw [← (ha.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump hxy).tsum_eq]
+  rw [← (a.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump hxy).tsum_eq]
   refine (tsum_of_norm_bounded (hsum.mul_left C).hasSum fun j ↦ (hC j x y).trans_eq
     (mul_assoc _ _ _)).trans ?_
   rw [tsum_mul_left, mul_assoc]
@@ -516,8 +304,8 @@ theorem IsUniform.exists_norm_offDiagonalKernel_le [CompleteSpace V] [CompleteSp
 between `(x, y)` and `(x', y')` are at most `D (2^j)^(m + n + 1) d`, and both points are at
 distance at least `r / 2` from the diagonal, then the increment of the kernel is at most
 `C d^δ r^(-(m + n + δ))`. -/
-private theorem IsUniform.exists_norm_offDiagonalKernel_sub_le_of_increment [CompleteSpace V]
-    [CompleteSpace W] {a : Symbol n V W m} (ha : a.IsUniform) {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ < 1)
+private theorem IsUniform.exists_norm_offDiagonalKernel_sub_le_of_increment
+    {a : Symbol n V W m} (ha : a.IsUniform) {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ < 1)
     (hm : 0 < m + n + δ) {D : ℝ} (hD0 : 0 ≤ D) :
     ∃ C, 0 ≤ C ∧ ∀ {x y x' y' : CoordinateSpace n} {d r : ℝ}, 0 ≤ d → 0 < r →
       r / 2 ≤ ‖x - y‖ → r / 2 ≤ ‖x' - y'‖ →
@@ -539,8 +327,8 @@ private theorem IsUniform.exists_norm_offDiagonalKernel_sub_le_of_increment [Com
       (by gcongr) (by simp)) (by positivity))
   have hne {w z : CoordinateSpace n} (hwz : r / 2 ≤ ‖w - z‖) : w ≠ z :=
     sub_ne_zero.1 (norm_pos_iff.1 (hr2.trans_le hwz))
-  have hL := (ha.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump (hne hxy)).sub
-    (ha.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump (hne hxy'))
+  have hL := (a.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump (hne hxy)).sub
+    (a.hasSum_quantizationKernel_littlewoodPaleyPiece standardBump (hne hxy'))
   refine (hE hL (by positivity : (0 : ℝ) ≤ 2 * C) hD0 hd hr2 hD (fun j ↦ ?_)).trans_eq ?_
   · refine (norm_sub_le _ _).trans ?_
     rw [two_mul, add_mul, add_mul]
@@ -552,7 +340,7 @@ private theorem IsUniform.exists_norm_offDiagonalKernel_sub_le_of_increment [Com
 order `m` on `ℝⁿ` satisfies, for `0 < δ < 1` with `m + n + δ > 0`,
 `‖K(x, y) - K(x, y')‖ ≤ C ‖y - y'‖^δ ‖x - y'‖^(-(m + n + δ))` whenever
 `2 ‖y - y'‖ < ‖x - y'‖`. -/
-theorem IsUniform.exists_norm_offDiagonalKernel_sub_right_le [CompleteSpace V] [CompleteSpace W]
+theorem IsUniform.exists_norm_offDiagonalKernel_sub_right_le
     {a : Symbol n V W m} (ha : a.IsUniform) {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ < 1)
     (hm : 0 < m + n + δ) :
     ∃ C, 0 ≤ C ∧ ∀ x y y' : CoordinateSpace n, 2 * ‖y - y'‖ < ‖x - y'‖ →
@@ -574,7 +362,7 @@ theorem IsUniform.exists_norm_offDiagonalKernel_sub_right_le [CompleteSpace V] [
 `m` on `ℝⁿ` satisfies, for `0 < δ < 1` with `m + n + δ > 0`,
 `‖K(x, y) - K(x', y)‖ ≤ C ‖x - x'‖^δ ‖x' - y‖^(-(m + n + δ))` whenever
 `2 ‖x - x'‖ < ‖x' - y‖`. -/
-theorem IsUniform.exists_norm_offDiagonalKernel_sub_left_le [CompleteSpace V] [CompleteSpace W]
+theorem IsUniform.exists_norm_offDiagonalKernel_sub_left_le
     {a : Symbol n V W m} (ha : a.IsUniform) {δ : ℝ} (hδ0 : 0 < δ) (hδ1 : δ < 1)
     (hm : 0 < m + n + δ) :
     ∃ C, 0 ≤ C ∧ ∀ x x' y : CoordinateSpace n, 2 * ‖x - x'‖ < ‖x' - y‖ →

@@ -25,8 +25,9 @@ twisted coefficients `TauCeti.ZModTwist` and the prescription property
 `TauCeti.HasPrescriptionProperty` take. It factors through the topological abelianization as
 `abelianizedLocalCyclotomicCharacter p K`, which is how it is evaluated on Artin symbols.
 The character is natural along field extensions (`localCyclotomicCharacter_mapOfAlgebra`,
-`localCyclotomicCharacter_map`), so the image of `G_L` lies in that of `G_K` for every extension
-`L/K` (`range_localCyclotomicCharacter_le_range`).
+`continuousLocalCyclotomicCharacter_comp_mapOfAlgebra`, `localCyclotomicCharacter_map`), so the
+image of `G_L` lies in that of `G_K` for every extension `L/K`
+(`range_localCyclotomicCharacter_le_range`).
 -/
 
 public section
@@ -96,6 +97,17 @@ theorem localCyclotomicCharacter_mapOfAlgebra (g : Field.absoluteGaloisGroup L) 
     (algebraMap (AlgebraicClosure K) (AlgebraicClosure L)).injective
     (fun _ x _ ↦ (absoluteGaloisGroup_mapOfAlgebra_commutes K L g x).symm)
     fun H i ↦ let ⟨_, hζ⟩ := H i; hζ.exists_isPrimitiveRoot_of_isSepClosed K).symm
+
+/-- **The continuous cyclotomic character along a field extension**: precomposed with
+`Field.absoluteGaloisGroup.mapOfAlgebra K L : G_L → G_K`, the cyclotomic character of `G_K` is
+that of `G_L`. -/
+@[simp]
+theorem continuousLocalCyclotomicCharacter_comp_mapOfAlgebra :
+    (continuousLocalCyclotomicCharacter p K).comp (Field.absoluteGaloisGroup.mapOfAlgebra K L) =
+      continuousLocalCyclotomicCharacter p L := by
+  refine ContinuousMonoidHom.ext fun σ ↦ ?_
+  rw [ContinuousMonoidHom.comp_toFun, continuousLocalCyclotomicCharacter_apply,
+    continuousLocalCyclotomicCharacter_apply, localCyclotomicCharacter_mapOfAlgebra]
 
 end Naturality
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Teichmuller
 public import TauCeti.NumberTheory.LocalField.Henselian
 public import TauCeti.NumberTheory.LocalField.GaloisAction
-public import TauCeti.RingTheory.Henselian.Teichmuller
+public import TauCeti.RingTheory.Henselian.Teichmuller.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!

@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Injective
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
+import Mathlib.LinearAlgebra.Matrix.Unique
 
 /-!
 # General linear stability theorems and finite-rank descriptions of `K₁`
@@ -22,6 +23,8 @@ Over a possibly noncommutative ring `R` of Bass stable range at most `s`
   `AlgebraicK1.mk R n : GL (Fin n) R →* K₁(R)` is surjective, yielding
   `GL (Fin n) R ⧸ (AlgebraicK1.mk R n).ker ≃* K₁(R)` already at the boundary `n = s` where
   injective stability need not yet hold.
+  In stable range at most `1` this says that every class of `K₁(R)` is the class of an
+  invertible `1 × 1` matrix.
 * **Injective `K₁`-stability (`s + 1 ≤ n`).** The kernel of `AlgebraicK1.mk R n` equals
   `elementarySubgroup (Fin n) R`, yielding
   `GL (Fin n) R ⧸ elementarySubgroup (Fin n) R ≃* K₁(R)` and
@@ -43,6 +46,8 @@ Over a possibly noncommutative ring `R` of Bass stable range at most `s`
 
 * `TauCeti.AlgebraicK1.mk_surjective`, `TauCeti.AlgebraicK1.ker_mk_eq_elementarySubgroup`:
   finite-rank surjectivity and kernel identification for `AlgebraicK1.mk` in the stable range.
+* `TauCeti.AlgebraicK1.ofUnits_surjective`: if `R` has stable range at most `1`, every class
+  in `K₁(R)` is represented by a unit of `R`.
 * `TauCeti.commutator_le_elementarySubgroup_of_hasStableRangeLE`,
   `TauCeti.elementarySubgroup_eq_commutator_of_hasStableRangeLE`: finite-rank commutator
   descriptions in the stable range.
@@ -90,6 +95,24 @@ theorem mk_surjective {R : Type*} [Ring R] {s n : ℕ} (hR : HasStableRangeLE R 
     refine ⟨h, ?_⟩
     rw [hu, map_mul, mk_stabilizeGL hnm h,
       elementarySubgroup_le_ker_mk m ((φ.reindexGL_mem_elementarySubgroup_iff).mpr he), mul_one]
+
+/-- Over a ring of Bass stable range at most one, every algebraic `K₁` class comes from a unit.
+This is the size-one case of surjective stability (Weibel, Chapter III, Remark 1.2.5). -/
+theorem ofUnits_surjective {R : Type*} [Ring R] (hR : HasStableRangeLE R 1) :
+    Function.Surjective (ofUnits R) := by
+  intro x
+  obtain ⟨g, hg⟩ := mk_surjective hR (n := 1) le_rfl x
+  let e := Matrix.uniqueRingEquiv (m := Fin 1) (A := R)
+  refine ⟨Units.map e.toMonoidHom g, ?_⟩
+  rw [ofUnits_apply, ← hg]
+  congr 1
+  apply Units.ext
+  ext i j
+  have hi : i = default := Subsingleton.elim _ _
+  have hj : j = default := Subsingleton.elim _ _
+  simp only [hi, hj, Matrix.GeneralLinearGroup.coe_scalar, Units.coe_map,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Matrix.scalar_apply]
+  exact Matrix.uniqueRingEquiv_apply _
 
 /-- When `R` has Bass stable range at most `s` and `s ≤ n` (including at the boundary `n = s` where
 injective stability need not yet hold), `K₁(R)` is the quotient of `GL (Fin n) R` by the actual

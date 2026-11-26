@@ -23,6 +23,8 @@ holds for every index set, the empty case being `1 ≤ 1`.
 
 `Finset.prod_le_pow_card_sdiff_mul_prod` bounds a product over `t ⊆ B` by its product over `B`:
 if `1 ≤ C * f k` for every `k ∈ B \ t`, dropping these factors costs at most `C ^ #(B \ t)`.
+`Finset.prod_eq_prod_iff_of_le₀` is the equality case of `Finset.prod_le_prod₀` for positive
+factors: if `0 < f i ≤ g i` on `s`, the two products agree exactly when `f = g` on `s`.
 -/
 
 public section
@@ -43,8 +45,11 @@ end Nat
 
 namespace Finset
 
-variable {ι R : Type*} [CommMonoidWithZero R] [Preorder R] [PosMulMono R] {s : Finset ι}
-  {f g : ι → R}
+variable {ι R : Type*} [CommMonoidWithZero R] {s : Finset ι} {f g : ι → R}
+
+section PosMulMono
+
+variable [Preorder R] [PosMulMono R]
 
 /-- A product of nonnegative terms over a nonempty finset is nonnegative, without
 `ZeroLEOneClass`. -/
@@ -80,5 +85,24 @@ theorem prod_le_pow_card_sdiff_mul_prod [ZeroLEOneClass R] [DecidableEq ι] {t B
         mul_le_mul_of_nonneg_right (one_le_prod₀ hC) (prod_nonneg hf)
     _ = C ^ #(B \ t) * ((∏ k ∈ B \ t, f k) * ∏ k ∈ t, f k) := by
         rw [prod_mul_distrib, prod_const, mul_assoc]
+
+end PosMulMono
+
+section PosMulStrictMono
+
+variable [PartialOrder R] [ZeroLEOneClass R] [PosMulStrictMono R] [Nontrivial R]
+
+/-- If `0 < f i ≤ g i` on a finset `s`, then `∏ i ∈ s, f i = ∏ i ∈ s, g i` exactly when
+`f i = g i` for every `i ∈ s`: the analogue of `Finset.prod_eq_prod_iff_of_le` for positive
+factors in an ordered semiring. -/
+theorem prod_eq_prod_iff_of_le₀ (hf : ∀ i ∈ s, 0 < f i) (hfg : ∀ i ∈ s, f i ≤ g i) :
+    ∏ i ∈ s, f i = ∏ i ∈ s, g i ↔ ∀ i ∈ s, f i = g i := by
+  refine ⟨fun h ↦ ?_, prod_congr rfl⟩
+  by_contra hne
+  push Not at hne
+  obtain ⟨i, hi, hfgi⟩ := hne
+  exact (prod_lt_prod₀ hf hfg ⟨i, hi, (hfg i hi).lt_of_ne hfgi⟩).ne h
+
+end PosMulStrictMono
 
 end Finset
