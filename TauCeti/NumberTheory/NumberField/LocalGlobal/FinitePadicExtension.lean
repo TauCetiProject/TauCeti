@@ -21,7 +21,7 @@ Let `K` be a number field and `v` a finite place of `K`, lying over the prime `p
 canonical continuous map `ℚ_{(p)} → K_v`
 (`IsDedekindDomain.HeightOneSpectrum.adicCompletionExtension`).
 The composite `ℚ_p → K_v` is the unique continuous ring homomorphism, since `ℚ` is dense in
-`ℚ_p`.
+`ℚ_p` (`RingHom.ext_padic_of_continuous`).
 
 Through this map `K_v` is a finite extension of `ℚ_p` compatible with the valuative relations,
 that is, a `TauCeti.FinitePadicExtension`. Results proved over a finite extension of `ℚ_p` —
@@ -38,9 +38,7 @@ structure of `K_v` as data, which a consumer activates locally.
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.continuous_padicRingHom` and
-  `IsDedekindDomain.HeightOneSpectrum.eq_padicRingHom_of_continuous`: `padicRingHom` is
-  continuous, and it is the only continuous ring homomorphism `ℚ_p → K_v`.
+* `IsDedekindDomain.HeightOneSpectrum.continuous_padicRingHom`: `padicRingHom` is continuous.
 * `IsDedekindDomain.HeightOneSpectrum.finite_padicRingHom`: `K_v` is finite-dimensional over
   `ℚ_p`.
 
@@ -73,14 +71,6 @@ theorem continuous_padicRingHom : Continuous v.padicRingHom :=
   have : v.asIdeal.LiesOver (v.under (𝓞 ℚ)).asIdeal := ⟨rfl⟩
   (continuous_adicCompletionExtension ℚ K (v.under (𝓞 ℚ)) v).comp
     (Homeomorph.ofClass (adicCompletion.padicEquiv (v.under (𝓞 ℚ)))).symm.continuous
-
-/-- **Uniqueness of the embedding `ℚ_p → K_v`**: every continuous ring homomorphism
-`ℚ_p → K_v` is `padicRingHom`, since both agree on the dense subfield `ℚ`. -/
-theorem eq_padicRingHom_of_continuous
-    {f : ℚ_[primesEquiv (v.under (𝓞 ℚ))] →+* v.adicCompletion K} (hf : Continuous f) :
-    f = v.padicRingHom :=
-  RingHom.ext <| congrFun <| (Padic.denseRange_ratCast _).equalizer hf v.continuous_padicRingHom
-    (funext fun x ↦ by simp [map_ratCast])
 
 /-- The embedding `ℚ_p → K_v` is finite: `K_v` is a finite-dimensional `ℚ_p`-vector space. -/
 theorem finite_padicRingHom : v.padicRingHom.Finite := by
