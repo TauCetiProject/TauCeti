@@ -21,8 +21,8 @@ equivalence relation on a scheme.
 
 The quotient sheaf `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf s t` takes values in
 `Type (u + 1)`, where Mathlib's sheafification for the big fppf site lands, while `F` takes values
-in `Type u`. The comparison is therefore with `F ⋙ uliftFunctor`, the sheaf
-`TauCeti.AlgebraicGeometry.Spaces.uliftSheaf hF`.
+in `Type u`. The comparison is therefore with the image of `F` under Mathlib's
+`sheafCompose _ uliftFunctor`, the sheaf `TauCeti.AlgebraicGeometry.Spaces.uliftSheaf hF`.
 
 The proof is `TauCeti.CategoryTheory.quotientSheaf.isIso_desc_of_isKernelPair`: the atlas, as a
 morphism of sheaves `h_U ⟶ F`, is locally surjective for the fppf topology, because its base
@@ -44,10 +44,12 @@ pair is `h_R` (`TauCeti.AlgebraicGeometry.Spaces.isKernelPair_atlasSheafHom`).
 * `TauCeti.AlgebraicGeometry.Spaces.π_spacePresentation_hom`: the projection `h_U ⟶ U/R`
   followed by `spacePresentation` is the atlas.
 * `TauCeti.AlgebraicGeometry.Spaces.IsAlgebraicSpace.exists_presentation`: every algebraic space
-  is the quotient sheaf of an étale equivalence relation on a scheme.
-* `TauCeti.AlgebraicGeometry.Spaces.fst'_eq_snd_of_mono`: for a monomorphism `a`, for instance
-  the identity atlas of a scheme, the two projections of `U ×_F U` agree and are isomorphisms,
-  so the presentation is `(U, Δ)`.
+  is the quotient sheaf of an étale equivalence relation on a scheme, through its étale atlas.
+
+For a monomorphism `a`, for instance the identity atlas of a scheme, the presentation is the
+diagonal relation `(U, Δ)`: see
+`CategoryTheory.Functor.relativelyRepresentable.fst'_self_eq_snd_of_mono` and
+`CategoryTheory.Functor.relativelyRepresentable.isIso_snd_self_of_mono`.
 
 ## References
 
@@ -68,20 +70,28 @@ universe u
 variable {F : SchemePresheaf.{u}}
 
 /-- An fppf sheaf `F` of `Type u` on schemes, viewed as a sheaf of `Type (u + 1)` through
-`uliftFunctor`, the universe of `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf`. -/
+`sheafCompose _ uliftFunctor`, in the universe of `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf`.
+-/
 noncomputable abbrev uliftSheaf (hF : Presheaf.IsSheaf Scheme.fppfTopology F) :
     Sheaf Scheme.fppfTopology.{u} (Type (u + 1)) :=
-  ⟨F ⋙ uliftFunctor.{u + 1, u}, (isSheaf_iff_isSheaf_of_type _ _).2
-    ((Presieve.isSheaf_comp_uliftFunctor_iff _).2 ((isSheaf_iff_isSheaf_of_type _ _).1 hF))⟩
+  (sheafCompose Scheme.fppfTopology uliftFunctor.{u + 1, u}).obj ⟨F, hF⟩
+
+/-- The sections of `uliftSheaf hF` restrict as those of `F`. -/
+@[simp]
+theorem uliftSheaf_map_down (hF : Presheaf.IsSheaf Scheme.fppfTopology F) {T T' : Scheme.{u}}
+    (f : T' ⟶ T) (x : (uliftSheaf hF).obj.obj (op T)) :
+    ((uliftSheaf hF).obj.map f.op x).down = F.map f.op x.down :=
+  rfl
 
 variable {U : Scheme.{u}}
 
 /-- A morphism `a : h_U ⟶ F` from a scheme to an fppf sheaf, as a morphism of sheaves of
-`Type (u + 1)` from the representable sheaf `h_U` to `uliftSheaf hF`. -/
+`Type (u + 1)` from the representable sheaf `h_U` to `uliftSheaf hF`: the image of `a` under
+`sheafCompose _ uliftFunctor`. -/
 noncomputable abbrev atlasSheafHom (hF : Presheaf.IsSheaf Scheme.fppfTopology F)
     (a : yoneda.obj U ⟶ F) :
     Scheme.fppfTopology.uliftYoneda.{u + 1}.obj U ⟶ uliftSheaf hF :=
-  ObjectProperty.homMk (Functor.whiskerRight a uliftFunctor.{u + 1, u})
+  (sheafCompose Scheme.fppfTopology uliftFunctor.{u + 1, u}).map (ObjectProperty.homMk a)
 
 /-- The component of `atlasSheafHom hF a` at a scheme `T` sends a `T`-point `x` of `U` to the
 image of `x` under `a`. -/
@@ -92,10 +102,17 @@ theorem atlasSheafHom_hom_app_down (hF : Presheaf.IsSheaf Scheme.fppfTopology F)
 
 /-- A morphism of schemes `f : V ⟶ U` followed by `atlasSheafHom hF a` is
 `atlasSheafHom hF (yoneda.map f ≫ a)`. -/
+@[reassoc (attr := simp)]
 theorem uliftYoneda_map_atlasSheafHom (hF : Presheaf.IsSheaf Scheme.fppfTopology F)
     (a : yoneda.obj U ⟶ F) {V : Scheme.{u}} (f : V ⟶ U) :
     Scheme.fppfTopology.uliftYoneda.{u + 1}.map f ≫ atlasSheafHom hF a =
       atlasSheafHom hF (yoneda.map f ≫ a) :=
+  ((sheafCompose _ _).map_comp _ _).symm
+
+/-- The underlying morphism of presheaves of `Scheme.fppfTopology.uliftYoneda.map f`. -/
+private theorem sheafToPresheaf_map_uliftYoneda_map {V : Scheme.{u}} (f : V ⟶ U) :
+    (sheafToPresheaf _ _).map (Scheme.fppfTopology.uliftYoneda.{u + 1}.map f) =
+      Functor.whiskerRight (yoneda.map f) uliftFunctor.{u + 1, u} :=
   rfl
 
 variable {a : yoneda.obj U ⟶ F}
@@ -114,6 +131,7 @@ theorem isLocallySurjective_atlasSheafHom (hF : Presheaf.IsSheaf Scheme.fppfTopo
       (hr.snd g).singleton_mem_fppfPrecoverage)
     rintro T' f ⟨W, b, c, ⟨⟩, rfl⟩
     refine ⟨ULift.up (b ≫ hr.fst' g), ULift.ext ?_⟩
+    rw [atlasSheafHom_hom_app_down, uliftSheaf_map_down]
     have hw := congrArg (fun φ ↦ yonedaEquiv (yoneda.map b ≫ φ)) (hr.isPullback' g).w
     simp only [← Functor.map_comp_assoc, yonedaEquiv_comp, yonedaEquiv_yoneda_map] at hw
     exact hw.trans (yonedaEquiv_symm_app_apply _ _ _)
@@ -124,10 +142,12 @@ the square `h_R ⇉ h_U ⟶ F` is a kernel pair in fppf sheaves of `Type (u + 1)
 theorem isKernelPair_atlasSheafHom (hF : Presheaf.IsSheaf Scheme.fppfTopology F)
     (hr : yoneda.relativelyRepresentable a) :
     IsKernelPair (atlasSheafHom hF a) (Scheme.fppfTopology.uliftYoneda.{u + 1}.map (hr.fst' a))
-      (Scheme.fppfTopology.uliftYoneda.{u + 1}.map (hr.snd a)) :=
-  IsPullback.of_map (sheafToPresheaf _ _)
-    (by rw [uliftYoneda_map_atlasSheafHom, uliftYoneda_map_atlasSheafHom, (hr.isPullback' a).w])
-    ((hr.isPullback' a).map ((Functor.whiskeringRight _ _ _).obj uliftFunctor.{u + 1, u}))
+      (Scheme.fppfTopology.uliftYoneda.{u + 1}.map (hr.snd a)) := by
+  refine IsPullback.of_map (sheafToPresheaf _ _)
+    (by rw [uliftYoneda_map_atlasSheafHom, uliftYoneda_map_atlasSheafHom, (hr.isPullback' a).w]) ?_
+  rw [sheafToPresheaf_map_uliftYoneda_map, sheafToPresheaf_map_uliftYoneda_map,
+    ObjectProperty.ι_map, sheafCompose_map_hom, ObjectProperty.homMk_hom]
+  exact (hr.isPullback' a).map ((Functor.whiskeringRight _ _ _).obj uliftFunctor.{u + 1, u})
 
 /-- **Every space with an étale atlas is a quotient of a scheme by an étale equivalence relation**
 (Stacks, Spaces, Lemma 65.9.1 (0262)). For an fppf sheaf `F` with an étale atlas `a : h_U ⟶ F`,
@@ -162,25 +182,15 @@ theorem atlasSheafHom_spacePresentation_inv (ha : EtaleAtlas a) :
 
 /-- **Every algebraic space has a presentation** (Stacks, Spaces, Lemma 65.9.1 (0262) and
 Definition 65.9.3 (0263)): an algebraic space `F` is the quotient sheaf `U/R` of an étale
-equivalence relation `s, t : R ⟶ U` on a scheme, with an étale atlas `h_U ⟶ F`. -/
+equivalence relation `s, t : R ⟶ U` on a scheme, through an étale atlas `a : h_U ⟶ F`: the
+isomorphism `U/R ≅ F` composed with the projection `h_U ⟶ U/R` is `a`. -/
 theorem IsAlgebraicSpace.exists_presentation (hF : IsAlgebraicSpace F) :
     ∃ (U R : Scheme.{u}) (s t : R ⟶ U) (a : yoneda.obj U ⟶ F),
-      EtaleAtlas a ∧ EtaleEquivRel s t ∧ Nonempty (quotientSheaf s t ≅ uliftSheaf hF.isSheaf) := by
+      EtaleAtlas a ∧ EtaleEquivRel s t ∧ ∃ e : quotientSheaf s t ≅ uliftSheaf hF.isSheaf,
+        TauCeti.CategoryTheory.quotientSheaf.π Scheme.fppfTopology s t ≫ e.hom =
+          atlasSheafHom hF.isSheaf a := by
   obtain ⟨U, a, ha⟩ := hF.exists_etaleAtlas
-  exact ⟨U, _, _, _, a, ha, EtaleEquivRel.of_etaleAtlas ha, ⟨spacePresentation hF.isSheaf ha⟩⟩
-
-/-- For a monomorphism `a : h_U ⟶ F` representable by schemes, such as the identity atlas of a
-scheme or the atlas of an open subfunctor, the two projections of `U ×_F U` to `U` agree: the
-presentation of `spacePresentation` is the diagonal relation `(U, Δ)`. -/
-theorem fst'_eq_snd_of_mono [Mono a] (hr : yoneda.relativelyRepresentable a) :
-    hr.fst' a = hr.snd a :=
-  yoneda.map_injective ((cancel_mono a).1 (hr.isPullback' a).w)
-
-/-- For a monomorphism `a : h_U ⟶ F` representable by schemes, the projections of `U ×_F U` to
-`U` are isomorphisms. -/
-theorem isIso_snd_of_mono [Mono a] (hr : yoneda.relativelyRepresentable a) :
-    IsIso (hr.snd a) :=
-  have := (hr.isPullback' a).flip.isIso_fst_of_mono
-  Yoneda.fullyFaithful.isIso_of_isIso_map _
+  exact ⟨U, _, _, _, a, ha, EtaleEquivRel.of_etaleAtlas ha, spacePresentation hF.isSheaf ha,
+    π_spacePresentation_hom ha⟩
 
 end TauCeti.AlgebraicGeometry.Spaces
