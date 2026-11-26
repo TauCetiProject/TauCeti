@@ -20,12 +20,14 @@ The squared norm `z ↦ ‖z‖ ^ 2` on a real inner product space is the model 
 minimum. Its second derivative is the constant bilinear form `2 ⟪v, w⟫`
 (`TauCeti.fderiv_fderiv_norm_sq_apply`), so its Hessian quadratic form is `v ↦ 2 * ‖v‖ ^ 2` at
 every point and its Morse index vanishes everywhere. The hemisphere height `x ↦ √(a - ‖x‖²)`, a
-scalar reparametrization of it, has Hessian `-‖v‖² / √a` at the origin. More generally, a radial
-function `z ↦ U ‖z‖` has, at `q ≠ 0` and in the radial direction `q`, the Hessian
-`U''(‖q‖) ‖q‖²` of its profile `U` along the ray.
+scalar reparametrization of it, has Hessian `-‖v‖² / √a` at the origin.
 
 These are the real inputs for the Levi form and the inertia of the squared norm of a complex inner
 product space, the basic strictly plurisubharmonic function.
+
+Separately, a radial function `z ↦ U ‖z‖` has, at `q ≠ 0` and in the radial direction `q`, the
+Hessian `U''(‖q‖) ‖q‖²` of its profile `U` along the ray; this is used for the radial Hessian of
+central-force Hamiltonians.
 
 The origin is the only critical point of the squared norm, and it is nondegenerate in finite
 dimensions; the negated squared norm `z ↦ -‖z‖ ^ 2` has Morse index the dimension. On a product
