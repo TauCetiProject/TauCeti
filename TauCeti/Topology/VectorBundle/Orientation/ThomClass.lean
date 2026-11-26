@@ -712,10 +712,13 @@ theorem exists_isThomClass (hι : Fintype.card ι = finrank ℝ F)
   -- and transport the orientation along the identity of the fibres.
   obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_ulift_fin.{w} F (𝕜 := ℝ) (E := E)
   have hF : finrank ℝ F = finrank ℝ (ULift.{w} (Fin (finrank ℝ F) → ℝ)) := by simp
+  have hφ : Continuous fun v : TotalSpace (ULift.{w} (Fin (finrank ℝ F) → ℝ)) E ↦
+      TotalSpace.mk' F (ContinuousMap.id B v.proj)
+        (ContinuousLinearEquiv.refl ℝ (E v.proj) v.snd) := by
+    simpa using h_ind.continuous
   exact (exists_isThomClass_iff_of_isInducing h_ind hF.symm).2
     (exists_isThomClass_of_univ (hι.trans hF)
-      (o.comap (g := ContinuousMap.id B) (φ := fun b ↦ .refl ℝ (E b)) (hι.trans hF)
-        h_ind.continuous) K)
+      (o.comap (g := ContinuousMap.id B) (φ := fun b ↦ .refl ℝ (E b)) (hι.trans hF) hφ) K)
 
 end ExistsThomClassOfModel
 

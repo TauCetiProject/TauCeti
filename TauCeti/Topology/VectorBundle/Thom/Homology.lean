@@ -483,10 +483,9 @@ theorem isIso_homologyThomMap (p m : ℕ) (h : finrank ℝ F + p = m)
   rw [CategoryTheory.Functor.map_id, Category.comp_id] at hφ
   have : IsIso (homologyThomMap F' E (ModuleCat.of K K) (finrank ℝ F) p m h
       (TopPair.singularCohomologyMap φ.hom _ u)) :=
-    isIso_homologyThomMap_of_finrank_eq hF' h fun b ↦ by
-      rw [← TopPair.singularCohomologyMap_comp_apply,
-        fiberThomPairMap_comp_thomPairModelFiberIso_hom]
-      exact hgen b
+    isIso_homologyThomMap_of_finrank_eq hF' h
+      (span_singularCohomologyMap_fiberThomPairMap_eq_top_of_comp_eq φ.hom
+        (fiberThomPairMap_comp_thomPairModelFiberIso_hom h_ind) hgen)
   rw [hφ, ← TopPair.singularHomologyMapIso_hom] at this
   exact IsIso.of_isIso_comp_left (TopPair.singularHomologyMapIso (ModuleCat.of K K) φ m).hom _
 

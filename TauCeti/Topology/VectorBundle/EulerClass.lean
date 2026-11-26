@@ -623,6 +623,22 @@ section ModelThomClass
 variable {B : Type w} [TopologicalSpace B] {E : B → Type w} [∀ b, Zero (E b)]
   [∀ b, TopologicalSpace (E b)]
 
+/-- A class `u` of `Hⁿ(E, E₀)` for the model fibre `F₂` restricting to a generator of the
+cohomology of every fibre pair pulls back, along a map of Thom pairs `φ` for a second model fibre
+`F₁` which is the identity on the fibres, to a class with the same property, in any degree `n`. -/
+theorem span_singularCohomologyMap_fiberThomPairMap_eq_top_of_comp_eq {F₁ F₂ : Type*}
+    [TopologicalSpace F₁] [TopologicalSpace F₂] [TopologicalSpace (TotalSpace F₁ E)]
+    [TopologicalSpace (TotalSpace F₂ E)] [FiberBundle F₁ E] [FiberBundle F₂ E]
+    (φ : thomPair F₁ E ⟶ thomPair F₂ E)
+    (hφ : ∀ b, fiberThomPairMap F₁ E b ≫ φ = fiberThomPairMap F₂ E b) {n : ℕ}
+    {u : (thomPair F₂ E).singularCohomology R k M n}
+    (hu : ∀ b, Submodule.span k {TopPair.singularCohomologyMap (fiberThomPairMap F₂ E b) n u} = ⊤)
+    (b : B) :
+    Submodule.span k {(TopPair.singularCohomologyMap (fiberThomPairMap F₁ E b) n
+      (TopPair.singularCohomologyMap φ n u))} = ⊤ := by
+  rw [← TopPair.singularCohomologyMap_comp_apply, hφ]
+  exact hu b
+
 /-- A Thom class transported along a map of Thom pairs which is the identity on the fibres, for
 two model-fibre parameters of the same rank. -/
 private theorem exists_isThomClass_of_fiberThomPairMap_comp {F₁ F₂ : Type*}
@@ -634,14 +650,11 @@ private theorem exists_isThomClass_of_fiberThomPairMap_comp {F₁ F₂ : Type*}
     (hF : finrank ℝ F₂ = finrank ℝ F₁) {u : (thomPair F₂ E).singularCohomology R k M (finrank ℝ F₂)}
     (hu : IsThomClass F₂ E u) :
     ∃ v : (thomPair F₁ E).singularCohomology R k M (finrank ℝ F₁), IsThomClass F₁ E v := by
-  suffices ∀ n, finrank ℝ F₂ = n → ∃ v : (thomPair F₁ E).singularCohomology R k M n,
-      ∀ b, Submodule.span k {TopPair.singularCohomologyMap (fiberThomPairMap F₁ E b) _ v} = ⊤ from
-    let ⟨v, hv⟩ := this _ hF
-    ⟨v, isThomClass_iff.2 ⟨inferInstance, hv⟩⟩
-  rintro n rfl
-  refine ⟨TopPair.singularCohomologyMap φ _ u, fun b ↦ ?_⟩
-  rw [← TopPair.singularCohomologyMap_comp_apply, hφ]
-  exact (isThomClass_iff.1 hu).2 b
+  -- The pulled-back class lives in degree `finrank ℝ F₂`; move it to degree `finrank ℝ F₁`.
+  obtain ⟨v, hv⟩ : ∃ v : (thomPair F₁ E).singularCohomology R k M (finrank ℝ F₁),
+      ∀ b, Submodule.span k {TopPair.singularCohomologyMap (fiberThomPairMap F₁ E b) _ v} = ⊤ :=
+    hF ▸ ⟨_, span_singularCohomologyMap_fiberThomPairMap_eq_top_of_comp_eq φ hφ hu.2⟩
+  exact ⟨v, isThomClass_iff.2 ⟨inferInstance, hv⟩⟩
 
 /-- **Thom classes for two model fibres.** For a topology on `TotalSpace F' E` making the identity
 of points to `TotalSpace F E` inducing, and model fibres `F` and `F'` of the same finite dimension,
