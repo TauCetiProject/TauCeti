@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.Combinatorics.SimpleGraph.LapMatrix
+import Mathlib.Combinatorics.SimpleGraph.Acyclic
 import TauCeti.Analysis.Matrix.Eigenvalues.Basic
+import TauCeti.Combinatorics.SimpleGraph.Connectivity.Connected
 
 /-!
 # The sorted Laplacian eigenvalues of a finite simple graph
@@ -19,7 +21,8 @@ Mathlib's `Matrix.IsHermitian.eigenvalues₀` of the Laplacian.
 
 The Laplacian is positive semidefinite, so all its eigenvalues are nonnegative. Its kernel has
 one dimension for every connected component, so its rank is `n` minus the number `c` of
-components (`SimpleGraph.rank_lapMatrix_add_card_connectedComponent`). The positive eigenvalues
+components (`SimpleGraph.rank_lapMatrix_add_card_connectedComponent`), and at most the number of
+edges (`SimpleGraph.rank_lapMatrix_le_card_edgeFinset`). The positive eigenvalues
 of a positive-semidefinite matrix are the first `rank` entries of the sorted list, so the
 eigenvalue at index `i` vanishes exactly when `n ≤ i + c`
 (`SimpleGraph.lapEigenvalues_eq_zero_iff`), and the eigenvalue `0` occurs exactly `c` times
@@ -53,6 +56,20 @@ theorem rank_lapMatrix_add_card_connectedComponent :
     (G.lapMatrix ℝ).rank + Fintype.card G.ConnectedComponent = Fintype.card V := by
   rw [card_connectedComponent_eq_finrank_ker_toLin'_lapMatrix, ← finrank_range_mulVecLin,
     ← toLin'_apply', LinearMap.finrank_range_add_finrank_ker, Module.finrank_fintype_fun_eq_card]
+
+/-- The rank of the Laplacian is at most the number of edges. -/
+theorem rank_lapMatrix_le_card_edgeFinset : (G.lapMatrix ℝ).rank ≤ #G.edgeFinset := by
+  -- A spanning forest `F` has the components of `G` and at most its edges, and a forest on `n`
+  -- vertices with `c` components has `n - c` edges.
+  obtain ⟨F, hFG, hF, hFr⟩ := G.exists_isAcyclic_reachable_eq_le
+  have hF' := hF.ncard_edgeSet_add_card_connectedComponent
+  rw [Nat.card_congr (F.connectedComponentEquivOfReachableEq hFr), Nat.card_eq_fintype_card,
+    Nat.card_eq_fintype_card] at hF'
+  have hE : F.edgeSet.ncard ≤ #G.edgeFinset := by
+    rw [← Set.ncard_coe_finset, coe_edgeFinset]
+    exact Set.ncard_le_ncard (edgeSet_mono hFG) (Set.toFinite _)
+  have := G.rank_lapMatrix_add_card_connectedComponent
+  omega
 
 /-! ### The sorted eigenvalues -/
 

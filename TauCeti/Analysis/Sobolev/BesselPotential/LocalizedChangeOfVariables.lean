@@ -28,8 +28,8 @@ The pullback along a bijection `Φ` of `E` with bounded derivatives is an isomor
 (`BesselPotentialSpace.compCLE`), and multiplication by a Schwartz function is bounded on `H^s`
 (`BesselPotentialSpace.smulLeftCLM`). A partition of unity writes `θ · (u ∘ e)` as a finite sum
 `∑ᵢ φᵢ · (u ∘ Φᵢ)` of such pullbacks multiplied by Schwartz functions
-(`TauCeti.exists_sum_smul_comp_eq_smul_comp`), which is the image of `u` under a bounded operator
-on `H^s`.
+(`TauCeti.exists_sum_smul_comp_eq_smul_comp`), so `u ↦ θ · (u ∘ e)` is bounded in every norm in
+which these pullbacks and multiplications are bounded (`TauCeti.exists_norm_le_of_eq_smul_comp`).
 
 ## References
 
@@ -63,32 +63,17 @@ theorem exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp {e : OpenPartia
     ∃ C, ∀ u v : 𝓢(E, F), (∀ x, v x = θ x • u (e x)) →
       ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 v‖ ≤
         C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 u‖ := by
-  obtain ⟨t, Φ, φ, hΦ, hsum⟩ :=
-    TauCeti.exists_sum_smul_comp_eq_smul_comp (F := F) he he' hθ hθc hθe
-  choose hΦs hΨs hΦb hΨb using hΦ
-  have hΦt (x : e.source) :=
-    Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_of_pos (hΦs x) (hΦb x)
-  have hΨt (x : e.source) :=
-    Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_of_pos (hΨs x) (hΨb x)
-  -- `v` is the image of `u` under the bounded operator `∑ x, φ x · Φ x^*`.
-  let T : H^{s}(E, F) →L[ℂ] H^{s}(E, F) := ∑ x ∈ t, smulLeftCLM s (φ x) ∘L
-    (compCLE F ENNReal.one_lt_two ENNReal.ofNat_ne_top s (Φ x) (hΦt x) (hΨt x)
-      (fun k hk _ ↦ hΦb x k hk) (fun k hk _ ↦ hΨb x k hk) : H^{s}(E, F) →L[ℂ] H^{s}(E, F))
-  refine ⟨‖T‖, fun u v hv ↦ ?_⟩
-  have hvT : v = ∑ x ∈ t, SchwartzMap.smulLeftCLM F (φ x : E → ℂ)
-      (SchwartzMap.compCLM ℂ (hΦt x) ((hΨt x).exists_norm_le_of_leftInverse (Φ x).left_inv)
-        u) := by
-    ext y
-    simp only [sum_apply, SchwartzMap.smulLeftCLM_apply_apply
-      (SchwartzMap.hasTemperateGrowth _), SchwartzMap.compCLM_apply, Function.comp_apply, hv,
-      hsum]
-  have hT : T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
-      SchwartzMap.toBesselPotentialSpaceCLM s 2 v := by
-    simp only [T, hvT, sum_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, compCLE_toBesselPotentialSpaceCLM, map_sum]
-    refine Finset.sum_congr rfl fun x _ ↦ ext ?_
-    simp [smulLeftCLM_toTemperedDistributionCLM_eq]
-  rw [← hT]
-  exact T.le_opNorm _
+  refine TauCeti.exists_norm_le_of_eq_smul_comp (SchwartzMap.toBesselPotentialSpaceCLM s 2)
+    (fun Φ hΦ hΨ hΦb hΨb ↦ ?_) (fun φ ↦ ?_) he he' hθ hθc hθe
+  · let T : H^{s}(E, F) →L[ℂ] H^{s}(E, F) := compCLE F ENNReal.one_lt_two ENNReal.ofNat_ne_top s Φ
+      hΦ hΨ (fun k hk _ ↦ hΦb k hk) (fun k hk _ ↦ hΨb k hk)
+    exact ⟨‖T‖, fun u ↦ by
+      simpa [T] using T.le_opNorm (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)⟩
+  · refine ⟨‖smulLeftCLM (F := F) s φ‖, fun u ↦ ?_⟩
+    have h : smulLeftCLM s φ (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
+        SchwartzMap.toBesselPotentialSpaceCLM s 2 (SchwartzMap.smulLeftCLM F (φ : E → ℂ) u) :=
+      ext (by simp [smulLeftCLM_toTemperedDistributionCLM_eq])
+    rw [← h]
+    exact (smulLeftCLM s φ).le_opNorm _
 
 end BesselPotentialSpace

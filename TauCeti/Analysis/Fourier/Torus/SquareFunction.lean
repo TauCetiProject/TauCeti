@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fourier.Torus.LittlewoodPaley
 import TauCeti.Algebra.BigOperators.Finset.BoundedOverlap
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Analysis.Fourier.Torus.Projection
 import TauCeti.Analysis.Fourier.Torus.Uniqueness
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.MeasureTheory.Function.Lp.SquareFunction
@@ -105,13 +106,6 @@ local instance instIsProbabilityMeasureVolumeUnitAddCircleSquareFunction :
 private def cube (r : ℝ) : Set (EuclideanSpace ℝ d) :=
   WithLp.ofLp ⁻¹' univ.pi fun _ ↦ Ioc (-r) r
 
-/-- The projection of `ℝᵈ` onto the torus `ℝᵈ / ℤᵈ`. -/
-private def proj (x : EuclideanSpace ℝ d) : UnitAddTorus d := fun i ↦ (x i : UnitAddCircle)
-
-omit [Fintype d] in
-private theorem continuous_proj : Continuous (proj (d := d)) :=
-  continuous_euclidean_coe
-
 omit [Fintype d] in
 private theorem measurableSet_cube [Finite d] (r : ℝ) : MeasurableSet (cube (d := d) r) := by
   have := Fintype.ofFinite d
@@ -127,7 +121,8 @@ private theorem map_proj_restrict_cube (N : ℕ) :
       (volume : Measure (d → ℝ)).restrict (univ.pi fun _ ↦ Ioc (-(N : ℝ)) N) :=
     ((PiLp.volume_preserving_ofLp d).restrict_preimage
       (MeasurableSet.univ_pi fun _ ↦ measurableSet_Ioc)).map_eq
-  have h2 : proj (d := d) = (fun (y : d → ℝ) i ↦ (y i : UnitAddCircle)) ∘ WithLp.ofLp := rfl
+  have h2 : ⇑(proj (d := d)) = (fun (y : d → ℝ) i ↦ (y i : UnitAddCircle)) ∘ WithLp.ofLp :=
+    funext fun y ↦ funext (proj_apply y)
   have h3 : Ioc (-(N : ℝ)) N = Ioc (-(N : ℝ)) (-(N : ℝ) + ((2 * N : ℕ) : ℝ)) := by
     push_cast
     ring_nf
@@ -148,7 +143,7 @@ private def lift (s : Finset (d → ℤ)) (c : (d → ℤ) → ℂ) (x : Euclide
 private theorem sum_mul_mFourier_proj (s : Finset (d → ℤ)) (c : (d → ℤ) → ℂ)
     (x : EuclideanSpace ℝ d) :
     ∑ n ∈ s, c n * mFourier n (proj x) = lift s c x := by
-  exact Finset.sum_congr rfl fun n _ ↦ congrArg _ (mFourier_euclidean_apply n x)
+  exact Finset.sum_congr rfl fun n _ ↦ congrArg _ (mFourier_proj n x)
 
 private theorem continuous_lift (s : Finset (d → ℤ)) (c : (d → ℤ) → ℂ) :
     Continuous (lift s c) := by
@@ -182,7 +177,7 @@ private theorem integral_fourierInv_sub_mul_lift (σ : 𝓢(EuclideanSpace ℝ d
 private theorem volume_cube (N : ℕ) :
     volume (cube (d := d) N) = ((2 * N : ℝ≥0) ^ Fintype.card d : ℝ≥0) := by
   have h := congrArg (fun μ : Measure (UnitAddTorus d) ↦ μ univ) (map_proj_restrict_cube (d := d) N)
-  simp only [Measure.map_apply continuous_proj.measurable MeasurableSet.univ, preimage_univ,
+  simp only [Measure.map_apply (map_continuous proj).measurable MeasurableSet.univ, preimage_univ,
     Measure.restrict_apply_univ, smul_apply, measure_univ, ENNReal.smul_def, smul_eq_mul,
     mul_one] at h
   exact h
@@ -201,8 +196,9 @@ private theorem eLpNorm_comp_proj_restrict_cube {ε : Type*} [TopologicalSpace �
       (((2 * N : ℝ≥0) ^ Fintype.card d : ℝ≥0) : ℝ≥0∞) • volume := by
     ext s
     simp [ENNReal.smul_def]
-  rw [← eLpNorm_map_measure hg' continuous_proj.measurable.aemeasurable, map_proj_restrict_cube,
-    hsmul, eLpNorm_smul_measure_of_ne_top hp _ _ hg, smul_eq_mul, ENNReal.coe_pow]
+  rw [← eLpNorm_map_measure hg' (map_continuous proj).measurable.aemeasurable,
+    map_proj_restrict_cube, hsmul, eLpNorm_smul_measure_of_ne_top hp _ _ hg, smul_eq_mul,
+    ENNReal.coe_pow]
 
 /-- A point of `(-r, r]ᵈ` is at distance at least `r` from every point outside
 `(-2r, 2r]ᵈ`. -/
@@ -388,7 +384,7 @@ private theorem eLpNorm_sum_sq_rpow_le_add (σ : ℕ → 𝓢(EuclideanSpace ℝ
         (eLpNorm_comp_proj_restrict_cube hTm.aestronglyMeasurable hp_top N).symm
     _ ≤ eLpNorm (fun x ↦ SU x + E) p (volume.restrict (cube N)) := by
         refine eLpNorm_mono_eNorm_ae
-          (hTm.comp continuous_proj.measurable).aestronglyMeasurable ?_
+          (hTm.comp (map_continuous proj).measurable).aestronglyMeasurable ?_
         filter_upwards [ae_sum_enorm_lift_sq_rpow_le σ s c hu J] with x hx
         simpa only [T, Function.comp_apply, eNorm_eq_self, sum_mul_mFourier_proj] using hx
     _ ≤ eLpNorm SU p (volume.restrict (cube N)) +
@@ -458,21 +454,6 @@ private theorem eLpNorm_sum_littlewoodPaleyBlock_le_of_mFourierCoeff_eq_zero {p 
 
 /-! ### The square function inequality on the torus -/
 
-/-- **The window identity.** The block `Δⱼ` only sees the blocks `Δₖ` with `k` within `L` of `j`:
-`Δⱼ f = ∑_{|k - j| < L} Δₖ Δⱼ f`, where `L` separates the supports of the pieces. -/
-private theorem littlewoodPaleyBlock_eq_sum_Ico_littlewoodPaleyBlock {L : ℕ}
-    (hL : ∀ j k : ℕ, j + L ≤ k → ∀ ξ : EuclideanSpace ℝ d,
-      φ.inhomogeneousLittlewoodPaley j ξ * φ.inhomogeneousLittlewoodPaley k ξ = 0)
-    (j : ℕ) (f : L²(UnitAddTorus d)) :
-    littlewoodPaleyBlock φ j f = ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
-      littlewoodPaleyBlock φ k (littlewoodPaleyBlock φ j f) := by
-  refine mFourierBasis.repr.injective (lp.ext (funext fun n ↦ ?_))
-  simp only [map_sum, lp.coeFn_sum, Finset.sum_apply, mFourierBasis_repr,
-    mFourierCoeff_littlewoodPaleyBlock]
-  have h := φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL j (latticePoint n)
-  rw [φ.enlargedLittlewoodPaley_apply] at h
-  simp_rw [← mul_assoc, ← Finset.sum_mul, ← Complex.ofReal_sum, ← Complex.ofReal_mul, h]
-
 /-- The low-pass truncation `∑_{k ≤ N} Δₖ` leaves the block `Δⱼ` unchanged once `j + L ≤ N + 1`,
 where pieces of the partition whose indices differ by at least `L` have disjoint supports. -/
 private theorem littlewoodPaleyBlock_sum_range {L : ℕ}
@@ -481,7 +462,7 @@ private theorem littlewoodPaleyBlock_sum_range {L : ℕ}
     {j N : ℕ} (hjN : j + L ≤ N + 1) (f : L²(UnitAddTorus d)) :
     littlewoodPaleyBlock φ j ((∑ k ∈ Finset.range (N + 1), littlewoodPaleyBlock φ k) f) =
       littlewoodPaleyBlock φ j f := by
-  conv_rhs => rw [littlewoodPaleyBlock_eq_sum_Ico_littlewoodPaleyBlock φ hL]
+  conv_rhs => rw [← sum_littlewoodPaleyBlock_littlewoodPaleyBlock φ hL j f]
   refine mFourierBasis.repr.injective (lp.ext (funext fun n ↦ ?_))
   simp only [_root_.sum_apply, map_sum, lp.coeFn_sum, Finset.sum_apply,
     mFourierBasis_repr, mFourierCoeff_littlewoodPaleyBlock]
@@ -541,14 +522,7 @@ theorem exists_eLpNorm_tsum_enorm_littlewoodPaleyBlock_sq_rpow_le {p : ℝ≥0�
   -- Replace `f` by its low-pass truncation `g`, a trigonometric polynomial with the same blocks
   -- `Δⱼ`, `j < J`.
   set g := (∑ k ∈ Finset.range (J + L + 1), littlewoodPaleyBlock φ k) f
-  have hgs : ∀ n ∉ (finite_setOf_norm_latticePoint_le (ι := d)
-      (2 ^ (J + L) * φ.rOut)).toFinset, mFourierCoeff g n = 0 := fun n hn ↦ by
-    simp only [Set.Finite.mem_toFinset, mem_ofPred_eq, not_le] at hn
-    rw [mFourierCoeff_sum_littlewoodPaleyBlock_range, φ.zero_of_le_dist, Complex.ofReal_zero,
-      zero_mul]
-    rw [dist_zero_right, norm_smul, norm_inv, Real.norm_of_nonneg (by positivity),
-      inv_mul_eq_div, le_div_iff₀ (by positivity), mul_comm]
-    exact hn.le
+  have hgs := mFourierCoeff_sum_littlewoodPaleyBlock_range_eq_zero φ (J + L) f
   have hgf : ∀ j ∈ Finset.range J, littlewoodPaleyBlock φ j g = littlewoodPaleyBlock φ j f :=
     fun j hj ↦ littlewoodPaleyBlock_sum_range φ hL (by rw [Finset.mem_range] at hj; omega) f
   calc eLpNorm (fun z ↦ (∑ j ∈ Finset.range J, ‖littlewoodPaleyBlock φ j f z‖ₑ ^ 2) ^
@@ -574,7 +548,7 @@ private theorem inner_littlewoodPaleyBlock_eq_sum {L : ℕ}
     (j : ℕ) (f g : L²(UnitAddTorus d)) :
     ⟪littlewoodPaleyBlock φ j f, g⟫_ℂ = ∑ k ∈ Finset.Ico (j + 1 - L) (j + L),
       ⟪littlewoodPaleyBlock φ j f, littlewoodPaleyBlock φ k g⟫_ℂ := by
-  conv_lhs => rw [littlewoodPaleyBlock_eq_sum_Ico_littlewoodPaleyBlock φ hL]
+  conv_lhs => rw [← sum_littlewoodPaleyBlock_littlewoodPaleyBlock φ hL j f]
   rw [sum_inner]
   exact Finset.sum_congr rfl fun k _ ↦ (isSelfAdjoint_littlewoodPaleyBlock φ k).isSymmetric _ _
 

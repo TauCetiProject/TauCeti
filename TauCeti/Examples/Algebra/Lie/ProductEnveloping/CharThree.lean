@@ -78,7 +78,7 @@ noncomputable def weylRep [NeZero (2 : K)] : U K sl₂ →ₐ[K] Module.End K K[
     ((Sl2.isSl2Triple_of_weyl
       (by simpa only [map_ofNat] using ((isUnit_iff_ne_zero.mpr (two_ne_zero : (2 : K) ≠ 0)).map
         (algebraMap K (Module.End K K[X]))).isRegular.left)
-      (derivative_mul_mulLeft_X (R := K))).toLieHom K)
+      (derivative_mul_mulLeft_X (R := K))).isSl2TripleOrZero.toLieHom K)
 
 /-- The values of `weylRep` on the standard basis `e, f, h`. -/
 theorem weylRep_ι [NeZero (2 : K)] (i : Fin 3) :
@@ -86,7 +86,8 @@ theorem weylRep_ι [NeZero (2 : K)] (i : Fin 3) :
       ![(LinearMap.mulLeft K X : Module.End K K[X]),
         -(LinearMap.mulLeft K X * derivative * derivative),
         2 * (LinearMap.mulLeft K X * derivative)] i := by
-  rw [weylRep, _root_.UniversalEnvelopingAlgebra.lift_ι_apply, IsSl2Triple.toLieHom_slFinTwoBasis]
+  rw [weylRep, _root_.UniversalEnvelopingAlgebra.lift_ι_apply,
+    IsSl2TripleOrZero.toLieHom_slFinTwoBasis]
 
 /-- `weylRep` sends `e` to multiplication by `x`. -/
 theorem weylRep_ι_zero [NeZero (2 : K)] :

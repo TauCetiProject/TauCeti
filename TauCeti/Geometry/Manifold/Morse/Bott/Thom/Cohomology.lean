@@ -35,9 +35,9 @@ cohomology of `S`, shifted up by the index.
   `K = ℤ`, and with no orientation when `2 = 0` in `K`, as for `K = ZMod 2`
   (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero`).
 * For a non-orientable negative normal bundle the cohomology of `S` must be twisted by the
-  orientation local system `o(ν⁻)`. For every commutative ring `K` and every injective `K`-module
-  `N`, for instance `K = ℤ` and `N = ℚ`, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` with
-  no orientation of `ν⁻` (`nonempty_singularCohomology_sublevelPair_iso_twistedCohomology`), by the
+  orientation local system `o(ν⁻)`. For every commutative ring `K` and every `K`-module `N`, for
+  instance `K = N = ℤ`, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` with no orientation
+  of `ν⁻` (`nonempty_singularCohomology_sublevelPair_iso_twistedCohomology`), by the
   twisted Thom isomorphism in cohomology
   (`nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`, in the namespace
   `TauCeti.VectorBundleOrientationCover`).
@@ -46,8 +46,7 @@ These are the cohomology forms of the homology statements in
 `TauCeti.Geometry.Manifold.Morse.Bott.Thom.Class`, and the actual-negative-bundle forms of
 `TauCeti.nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_isThomClass` and its
 corollaries, which assume that `f` is already in a quadratic normal form on a tube and that the
-negative disc bundle is parametrized by the disc bundle of some vector bundle. With twisted
-coefficients the cohomology across the level is computed here only with injective values.
+negative disc bundle is parametrized by the disc bundle of some vector bundle.
 
 The Thom isomorphism needs the model fibre `Fin r → ℝ` of `ν⁻` in the universe of its base, so the
 manifolds, their models and the coefficient ring here live in `Type`.
@@ -63,8 +62,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
 * `nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_eq_zero`: the same for
   every `ν⁻` when `2 = 0` in `K`.
 * `nonempty_singularCohomology_sublevelPair_iso_twistedCohomology`: for every `ν⁻`, oriented or
-  not, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` for every commutative ring `K` when `N`
-  is injective.
+  not, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` for every commutative ring `K` and
+  every `K`-module `N`.
 
 ## References
 
@@ -225,11 +224,9 @@ negative normal bundle.** Under the hypotheses of
 normal bundle `ν⁻` of rank `r` be orientable or not, with orientation local system `o(ν⁻)`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). Then
 `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` in every degree `p`, for every commutative
-ring `K` and every injective `K`-module `N`; for instance `K = ℤ` and `N = ℚ`, or any vector space
-`N` over a field `K`. -/
+ring `K` and every `K`-module `N`, for instance `K = N = ℤ`. -/
 theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology
-    (K : Type) [CommRing K] (N : ModuleCat.{0} K) [Injective N] {p m : ℕ}
-    (hm : r + p = m) :
+    (K : Type) [CommRing K] (N : ModuleCat.{0} K) {p m : ℕ} (hm : r + p = m) :
     letI := i.normalSpaceFiberBundle hn hdim
     haveI := i.normalSpaceVectorBundle hn hdim
     letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)

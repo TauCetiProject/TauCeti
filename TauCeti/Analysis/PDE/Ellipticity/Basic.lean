@@ -16,6 +16,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.Analysis.Matrix.Contraction
+public import TauCeti.Analysis.PDE.Ellipticity.SymmetricPart
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
@@ -94,7 +95,8 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs`: the operator norm of the attached bilinear
   form is at most the sum of the absolute values of the entries.
 * `TauCeti.PDE.norm_matrixBilinearForm_eq_norm_toEuclideanCLM`: the operator norm of the attached
-  bilinear form is the operator norm of the matrix on Euclidean space.
+  bilinear form is the operator norm of the matrix on Euclidean space;
+  `TauCeti.PDE.norm_matrixBilinearForm_sub_eq_norm_toEuclideanCLM_sub` is its form for differences.
 * `TauCeti.PDE.norm_toEuclideanCLM_apply_le`: the operator norm of the attached bilinear form
   bounds the action of the matrix on Euclidean space.
 * `TauCeti.PDE.abs_sum_mul_apply_single_mul_apply_single_le`: a bilinear upper bound controls
@@ -131,8 +133,6 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.UniformlyEllipticOn.add_bounded`: adding a bounded coefficient
   perturbation preserves uniform ellipticity with lower constant `λ - μ` when the
   perturbation size `μ` is smaller than `λ`.
-* `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `(A + Aᵀ) / 2` of a
-  coefficient matrix.
 * `TauCeti.PDE.UniformlyEllipticOn.transpose` and
   `TauCeti.PDE.UniformlyEllipticOn.coefficientSymmetricPart`: transposing or replacing a
   coefficient field by its symmetric part preserves uniform ellipticity with the same
@@ -150,41 +150,6 @@ namespace TauCeti
 namespace PDE
 
 open Matrix
-
-/-! ### Symmetric part of a coefficient matrix -/
-
-section SymmetricPart
-
-variable {n : Type*}
-
-/-- The symmetric part `(A + Aᵀ) / 2` of a coefficient matrix.
-
-For energy estimates the diagonal quadratic form of `A` agrees with that of
-`coefficientSymmetricPart A`, while the resulting matrix is symmetric. This is the
-finite-dimensional bookkeeping needed before the integrated energy form is specialized to
-self-adjoint elliptic operators. -/
-noncomputable def coefficientSymmetricPart (A : Matrix n n ℝ) : Matrix n n ℝ :=
-  (1 / 2 : ℝ) • (A + Aᵀ)
-
-/-- The symmetric part of a coefficient matrix is symmetric. -/
-lemma coefficientSymmetricPart_isSymm (A : Matrix n n ℝ) : (coefficientSymmetricPart A).IsSymm :=
-  (isSymm_add_transpose_self A).smul (1 / 2 : ℝ)
-
-/-- The entries of the symmetric part are the averages of opposite entries. -/
-@[simp]
-lemma coefficientSymmetricPart_apply (A : Matrix n n ℝ) (i j : n) :
-    coefficientSymmetricPart A i j = (A i j + A j i) / 2 := by
-  simp [coefficientSymmetricPart, div_eq_mul_inv, mul_comm]
-
-/-- A symmetric coefficient matrix is unchanged by taking its symmetric part. -/
-@[simp]
-lemma coefficientSymmetricPart_eq_self_of_isSymm {A : Matrix n n ℝ} (hA : A.IsSymm) :
-    coefficientSymmetricPart A = A := by
-  ext i j
-  rw [coefficientSymmetricPart_apply, hA.apply i j]
-  ring
-
-end SymmetricPart
 
 /-! ### The matrix bilinear form -/
 
@@ -246,7 +211,7 @@ lemma matrixBilinearForm_coefficientSymmetricPart_apply (A : Matrix n n ℝ)
     (η ξ : EuclideanSpace ℝ n) :
     matrixBilinearForm (coefficientSymmetricPart A) η ξ =
       (matrixBilinearForm A η ξ + matrixBilinearForm A ξ η) / 2 := by
-  rw [coefficientSymmetricPart, matrixBilinearForm_smul_apply, matrixBilinearForm_add_apply,
+  rw [coefficientSymmetricPart_def, matrixBilinearForm_smul_apply, matrixBilinearForm_add_apply,
     matrixBilinearForm_transpose_apply]
   ring
 
@@ -418,6 +383,13 @@ lemma norm_matrixBilinearForm_eq_norm_toEuclideanCLM [DecidableEq n] (A : Matrix
   exact (abs_real_inner_le_norm _ _).trans
     (mul_le_mul_of_nonneg_left ((toEuclideanCLM (n := n) (𝕜 := ℝ) A).le_opNorm ξ) (norm_nonneg _))
 
+/-- The bilinear forms of two matrices are as far apart as their operators on Euclidean space. -/
+lemma norm_matrixBilinearForm_sub_eq_norm_toEuclideanCLM_sub [DecidableEq n]
+    (A B : Matrix n n ℝ) :
+    ‖matrixBilinearForm A - matrixBilinearForm B‖ =
+      ‖toEuclideanCLM (n := n) (𝕜 := ℝ) A - toEuclideanCLM (n := n) (𝕜 := ℝ) B‖ := by
+  rw [← matrixBilinearForm_sub, ← map_sub, norm_matrixBilinearForm_eq_norm_toEuclideanCLM]
+
 /-- A pointwise bilinear upper bound gives a radius-restricted estimate for the bundled
 matrix bilinear form. -/
 lemma matrixBilinearForm_apply_norm_le_of_upper_bound {A : Matrix n n ℝ} {Lam R S : ℝ}
@@ -558,8 +530,8 @@ lemma toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (A : Matrix n n ℝ)
 @[simp]
 lemma toQuadraticForm'_coefficientSymmetricPart (A : Matrix n n ℝ) (ξ : EuclideanSpace ℝ n) :
     (coefficientSymmetricPart A).toQuadraticForm' ξ = A.toQuadraticForm' ξ := by
-  rw [coefficientSymmetricPart, toQuadraticForm'_smul, toQuadraticForm'_add_transpose, smul_smul,
-    one_div_mul_cancel two_ne_zero, one_smul]
+  rw [coefficientSymmetricPart_def, toQuadraticForm'_smul, toQuadraticForm'_add_transpose,
+    smul_smul, one_div_mul_cancel two_ne_zero, one_smul]
 
 /-- A pointwise absorption estimate for matrix bilinear forms. If the quadratic form is
 bounded below at `g` by `λ ‖g‖²` and the bilinear form at `(q, g)` is bounded by

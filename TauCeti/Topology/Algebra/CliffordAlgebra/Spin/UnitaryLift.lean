@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
-import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Four
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Neg
 import TauCeti.Topology.Algebra.Quaternion.Unitary
@@ -115,11 +114,7 @@ variable {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace �
 /-- The `Spinᶜ` lift of the unitary group of `ℝ⁴` is continuous. -/
 @[fun_prop]
 theorem continuous_unitarySpinCLift : Continuous (unitarySpinCLift hJ₀ e h₀ h₂) := by
-  have hQ (v : EuclideanSpace ℝ (Fin 4)) :
-      (-LinearMap.BilinMap.toQuadraticMap (innerₗ (EuclideanSpace ℝ (Fin 4)))) v = -‖v‖ ^ 2 := by
-    simp
-  rw [unitarySpinCLift_eq_comp hJ₀ e h₀ h₂ hQ
-    (QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ).ne_zero]
+  rw [unitarySpinCLift_eq_comp hJ₀ e h₀ h₂ negNormSqForm_apply negNormSqForm_ne_zero]
   exact ((EuclideanSpace.basisFun (Fin 4) ℝ).continuous_realSpinCGroupEquiv_symm _ _ _).comp
     (e.continuous_centralizerSpinCLift hJ₀ h₀ h₂ _ _)
 

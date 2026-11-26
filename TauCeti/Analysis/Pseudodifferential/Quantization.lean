@@ -298,6 +298,19 @@ theorem quantizeSchwartzValue_add_left {b : E × E → V →L[ℂ] W} {C' m' : �
   exact integral_add (integrable_quantizeSchwartzValue_integrand hmeas hC _)
     (integrable_quantizeSchwartzValue_integrand hmeas' hC' _)
 
+/-- The quantization is subtractive in the coefficient at every point `x` where both
+`ξ ↦ a (x, ξ)` and `ξ ↦ b (x, ξ)` are a.e. strongly measurable and have growth bounds. -/
+theorem quantizeSchwartzValue_sub_left {b : E × E → V →L[ℂ] W} {C' m' : ℝ}
+    (hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)))
+    (hC : ∀ ξ, ‖a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (hmeas' : AEStronglyMeasurable (fun ξ ↦ b (x, ξ)))
+    (hC' : ∀ ξ, ‖b (x, ξ)‖ ≤ C' * (1 + ‖ξ‖ ^ 2) ^ (m' / 2)) (u : 𝓢(E, V)) :
+    quantizeSchwartzValue (a - b) u x = quantizeSchwartzValue a u x - quantizeSchwartzValue b u x
+    := by
+  simp only [quantizeSchwartzValue_def, Pi.sub_apply, sub_apply, smul_sub]
+  exact integral_sub (integrable_quantizeSchwartzValue_integrand hmeas hC _)
+    (integrable_quantizeSchwartzValue_integrand hmeas' hC' _)
+
 /-- The quantization is homogeneous in the coefficient. -/
 @[simp]
 theorem quantizeSchwartzValue_smul_left (c : ℂ) (a : E × E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
@@ -305,6 +318,14 @@ theorem quantizeSchwartzValue_smul_left (c : ℂ) (a : E × E → V →L[ℂ] W)
   simp only [quantizeSchwartzValue_def, Pi.smul_apply, smul_apply,
     smul_comm (𝐞 _) c]
   exact integral_smul c _
+
+/-- Multiplying the coefficient by a function `ψ` of the position multiplies the quantization at
+`x` by `ψ x`: `Op(ψ(x) a) u (x) = ψ(x) Op(a) u (x)`. -/
+theorem quantizeSchwartzValue_comp_fst_smul_left (ψ : E → ℂ) (a : E × E → V →L[ℂ] W)
+    (u : 𝓢(E, V)) (x : E) :
+    quantizeSchwartzValue (fun q ↦ ψ q.1 • a q) u x = ψ x • quantizeSchwartzValue a u x := by
+  rw [quantizeSchwartzValue_congr_left (a := fun q ↦ ψ q.1 • a q) (b := ψ x • a) (fun _ ↦ rfl),
+    quantizeSchwartzValue_smul_left]
 
 /-- The quantization with the zero coefficient vanishes. -/
 @[simp]
@@ -1057,15 +1078,43 @@ theorem quantizeSchwartzValue_map_singleEntryMap [CompleteSpace V] [CompleteSpac
   rw [coefficient_map_eq_comp_comp _ K (singleEntryMap_apply K w),
     quantizeSchwartzValue_comp_comp, ContinuousLinearMap.toSpanSingleton_apply]
 
+/-- Quantizing the scalar entry `ℓ ∘ a ∘ v` of a symbol (`TauCeti.Symbol.entryMap ℓ v`) on a
+scalar Schwartz function `u` gives `ℓ` of the quantization of `a` on `u v`. -/
+theorem quantizeSchwartzValue_map_entryMap [CompleteSpace V] [CompleteSpace W]
+    (a : Symbol n V W m) (ℓ : W →L[ℂ] ℂ) (v : V) (u : 𝓢(CoordinateSpace n, ℂ))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (a.map (entryMap ℓ v)).coefficient u x =
+      ℓ (quantizeSchwartzValue a.coefficient
+        (u.postcompCLM (ContinuousLinearMap.toSpanSingleton ℂ v)) x) := by
+  rw [coefficient_map_eq_comp_comp ℓ _ (entryMap_apply ℓ v), quantizeSchwartzValue_comp_comp]
+
+/-- **Components of a matrix-valued quantization.** For a functional `ℓ` on `W` and a basis
+`(bᵢ)` of `V` with coordinate functionals `bᵢ*`, the component `ℓ (Op(a) u)` of the quantization
+of a symbol `a` with values in `V →L[ℂ] W` is the sum over `i` of the scalar quantizations of the
+entries `ℓ ∘ a ∘ bᵢ`, applied to the coordinates `bᵢ* ∘ u`. -/
+theorem apply_quantizeSchwartzValue_eq_sum [FiniteDimensional ℂ V] [CompleteSpace W]
+    (a : Symbol n V W m) {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ V) (ℓ : W →L[ℂ] ℂ)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    ℓ (quantizeSchwartzValue a.coefficient u x) =
+      ∑ i, quantizeSchwartzValue (a.map (entryMap ℓ (b i))).coefficient
+        (u.postcompCLM (b.coord i).toContinuousLinearMap) x := by
+  have := FiniteDimensional.completeSpace ℂ V
+  have hu : u = ∑ i, (u.postcompCLM (b.coord i).toContinuousLinearMap).postcompCLM
+      (ContinuousLinearMap.toSpanSingleton ℂ (b i)) := by
+    ext y
+    simp [b.sum_repr]
+  conv_lhs => rw [hu, quantizeSchwartzValue_sum_right, map_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ (quantizeSchwartzValue_map_entryMap a ℓ (b i) _ x).symm
+
 open scoped ContDiff in
 /-- **Multiplication by a smooth function of the position.** The quantization of the symbol
 `ψ(x) a(x, ξ)` is `ψ Op(a)`: `Op(ψ a) u (x) = ψ(x) Op(a) u (x)`. -/
 theorem quantizeSchwartzValue_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ)
     (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
     quantizeSchwartzValue (smulLeft hψ a).coefficient u x =
-      ψ x • quantizeSchwartzValue a.coefficient u x := by
-  rw [quantizeSchwartzValue_congr_left (b := ψ x • a.coefficient)
-    (fun ξ ↦ coefficient_smulLeft hψ a (x, ξ)), quantizeSchwartzValue_smul_left]
+      ψ x • quantizeSchwartzValue a.coefficient u x :=
+  (quantizeSchwartzValue_congr_left (fun ξ ↦ coefficient_smulLeft hψ a (x, ξ)) u).trans
+    (quantizeSchwartzValue_comp_fst_smul_left ψ a.coefficient u x)
 
 open scoped ContDiff in
 /-- The symbol `f(x)` of multiplication by `f` quantizes to multiplication: `Op(f) u = f u`. -/

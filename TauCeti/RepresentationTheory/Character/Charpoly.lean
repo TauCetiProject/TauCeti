@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 public import TauCeti.RepresentationTheory.Character.Pow
+import TauCeti.LinearAlgebra.Charpoly.FinrankTwo
+import TauCeti.LinearAlgebra.Charpoly.Trace
 
 /-!
 # Characters determine characteristic polynomials
@@ -17,13 +19,16 @@ powers of `ρ g` are character values: `tr (ρ g ^ j) = χ_ρ (g ^ j)`. Newton's
 traces of the powers of an endomorphism therefore express the coefficients of `det (1 - X ρ g)`
 through the character values `χ_ρ (g), χ_ρ (g ^ 2), …`. In characteristic zero the recurrence can
 be solved, so the dimension of `ρ` together with the values `χ_ρ (g ^ j)` for `0 < j ≤ dim ρ`
-determines the characteristic polynomial of `ρ g`.
+determines the characteristic polynomial of `ρ g`. In dimension two it is enough that `2 ≠ 0`:
+`det (ρ g) = (χ_ρ (g) ^ 2 - χ_ρ (g ^ 2)) / 2`.
 
 ## Main results
 
 * `Representation.mul_coeff_reverse_charpoly_eq_neg_sum`: **Newton's identities** in character
   form, `r c_r = -(c_(r-1) χ(g) + c_(r-2) χ(g ^ 2) + ⋯ + c_0 χ(g ^ r))` for the coefficients `c_r`
   of `det (1 - X ρ g)`, in every characteristic.
+* `Representation.charpoly_eq_of_character_eq_of_finrank_eq_two`: when `2 ≠ 0`, the character
+  values on `g` and `g ^ 2` determine the characteristic polynomial of `ρ g` in dimension two.
 * `Representation.charpoly_eq_of_character_pow_eq`,
   `Representation.charpoly_eq_iff_character_pow_eq`: in characteristic zero, the dimension and the
   character values on `g, g ^ 2, …, g ^ d` determine the characteristic polynomial of `ρ g`. The
@@ -66,6 +71,23 @@ theorem character_pow_eq_of_charpoly_eq {g : G} {h : H} (hgh : (ρ g).charpoly =
   rw [← trace_pow_eq_character_pow, ← trace_pow_eq_character_pow,
     LinearMap.trace_pow_eq_of_charpoly_eq hgh j]
 
+/-- **Characters determine characteristic polynomials in dimension two** when `2 ≠ 0`: the
+determinant of `ρ g` is `(χ_ρ (g) ^ 2 - χ_ρ (g ^ 2)) / 2`. The two representations may be of
+different monoids. -/
+theorem charpoly_eq_of_character_eq_of_finrank_eq_two (hk : (2 : k) ≠ 0)
+    (hV : finrank k V = 2) (hW : finrank k W = 2) {g : G} {h : H}
+    (h₁ : ρ.character g = σ.character h) (h₂ : ρ.character (g ^ 2) = σ.character (h ^ 2)) :
+    (ρ g).charpoly = (σ h).charpoly := by
+  simp only [character] at h₁ h₂
+  have hdet : LinearMap.det (ρ g) = LinearMap.det (σ h) := by
+    have hρ := LinearMap.trace_mul_self_of_finrank_eq_two hV (ρ g)
+    have hσ := LinearMap.trace_mul_self_of_finrank_eq_two hW (σ h)
+    rw [← map_mul, ← sq] at hρ hσ
+    refine mul_left_cancel₀ hk ?_
+    linear_combination hρ - hσ - h₂ + (LinearMap.trace k V (ρ g) +
+      LinearMap.trace k W (σ h)) * h₁
+  rw [LinearMap.charpoly_of_finrank_eq_two hV, LinearMap.charpoly_of_finrank_eq_two hW, h₁, hdet]
+
 variable [CharZero k]
 
 /-- In characteristic zero, the dimension of `ρ` and the character values `χ_ρ (g ^ j)` for
@@ -97,8 +119,7 @@ theorem det_eq_det_pow_of_character_eq (ρ' : Representation k G W) {x : G} {j :
   have hcp : (ρ' x).charpoly = (ρ (x ^ j)).charpoly :=
     charpoly_eq_of_character_pow_eq hdim fun i _ _ ↦ by
       rw [h _ (pow_mem (Submonoid.mem_powers x) i), ← pow_mul, ← pow_mul, mul_comm]
-  rw [LinearMap.det_eq_sign_charpoly_coeff, hcp, hdim, ← LinearMap.det_eq_sign_charpoly_coeff,
-    map_pow, map_pow]
+  rw [LinearMap.det_eq_of_charpoly_eq hcp, map_pow, map_pow]
 
 /-- In characteristic zero, if `g ^ 2 = 1`, then the characteristic polynomial of `ρ g` is
 `(X - 1) ^ a * (X + 1) ^ b` for any `a` and `b` with `a + b = dim ρ` and `a - b = χ_ρ (g)`. -/

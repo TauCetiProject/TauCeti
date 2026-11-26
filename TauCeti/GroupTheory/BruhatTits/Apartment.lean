@@ -144,6 +144,11 @@ theorem equipollent_val (x : Apartment φ) : φ.Equipollent x.val := by
   rw [val_def]
   exact φ.equipollent_shift x.displacement
 
+/-- The valuation of a point of the apartment of `φ` is discrete exactly when `φ` is. -/
+@[simp]
+theorem isDiscrete_val (x : Apartment φ) : x.val.IsDiscrete ↔ φ.IsDiscrete := by
+  rw [val_def, Valuation.isDiscrete_shift_iff]
+
 /-- The valuations of the points of the apartment of `φ` are exactly the valuations equipollent
 to `φ`: the reduced apartment is the image of the apartment. -/
 theorem range_val : Set.range (val (φ := φ)) = {ψ | φ.Equipollent ψ} := by
@@ -171,6 +176,12 @@ theorem val_eq_val_iff {x y : Apartment φ} : x.val = y.val ↔ ∀ i, P.root' i
 theorem filtration_val (x : Apartment φ) (i : ι) (r : ℝ) :
     x.val.filtration i r = φ.filtration i (r - P.root' i x.displacement) := by
   rw [val_def, Valuation.filtration_shift]
+
+/-- The strict filtration at an apartment point uses the base valuation with the threshold
+decreased by the root evaluated on the point's displacement. -/
+theorem filtrationGT_val (x : Apartment φ) (i : ι) (r : ℝ) :
+    x.val.filtrationGT i r = φ.filtrationGT i (r - P.root' i x.displacement) := by
+  rw [val_def, Valuation.filtrationGT_shift]
 
 /-! ### Change of base point -/
 

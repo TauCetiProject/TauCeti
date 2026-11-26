@@ -80,6 +80,12 @@ of the kernel are `-Q (T'' (π e) + T'_v (π'_w e) + T'_w (π'_v e))` and
 Second derivatives are stated as derivatives of first derivatives applied to fixed vectors, such
 as `fderiv ℝ (fun x ↦ fderiv ℝ Q x v y) x₀ w`, which take values in `E` or `F`.
 
+When `F` is a Hilbert space as well, `ι ∘ Q x` is an operator between Hilbert spaces with an
+adjoint `(ι ∘ Q x)†`, formally the operator `(T x T x*)⁻¹ T x` on `H`. On the `ι`-orthogonal
+complement of `ker (T x₀)` the derivative of these adjoints is
+`(ι ∘ Q')† g = -(T' ∘ Q)† ((ι ∘ Q)† g)`: the kernel component of `Q' y` pairs to zero with such a
+`g`, and the complement component is `-Q T' Q y`.
+
 ## Main results
 
 * `ContinuousLinearMap.rightInverse_sub_comp` and
@@ -143,6 +149,9 @@ as `fderiv ℝ (fun x ↦ fderiv ℝ Q x v y) x₀ w`, which take values in `E` 
   `IsFredholm.sub_orthogonalKerProjection_fderiv_fun_fderiv_orthogonalRightInverse_apply` and
   `ContinuousLinearMap.IsFredholm.inner_fderiv_fun_fderiv_orthogonalRightInverse_apply`: the
   same for the orthogonal right inverses.
+* `ContinuousLinearMap.IsFredholm.adjoint_comp_fderiv_orthogonalRightInverse_apply`: on the
+  `ι`-orthogonal complement of the kernel, the derivative of the adjoints `(ι ∘ Q x)†` is
+  `-(T' ∘ Q)† ∘ (ι ∘ Q)†`.
 
 ## References
 
@@ -1168,5 +1177,42 @@ theorem IsFredholm.inner_fderiv_fun_fderiv_orthogonalKerProjection_apply (hι : 
   linarith
 
 end SecondDerivative
+
+section AdjointDerivative
+
+/-! ### The derivative of the adjoints of the orthogonal right inverses -/
+
+variable {E F H X : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+  [NormedAddCommGroup X] [NormedSpace ℝ X] {ι : E →L[ℝ] H} {T : X → E →L[ℝ] F} {x₀ : X}
+
+/-- **The derivative of the adjoints of the orthogonal right inverses.** In the setting of
+`ContinuousLinearMap.IsFredholm.apply_fderiv_orthogonalRightInverse_apply`, with `F` a Hilbert
+space, let `Q x` be the right inverse of `T x` with values `ι`-orthogonal to `ker (T x)`, read as
+the operator `ι ∘ Q x` between Hilbert spaces. If `g` is orthogonal to `ι` of the kernel of `T x₀`,
+then `(ι ∘ Q')† g = -(T' ∘ Q)† ((ι ∘ Q)† g)`, where `Q'` and `T'` are the derivatives of `Q` and
+`T` at `x₀` along `v`. -/
+theorem IsFredholm.adjoint_comp_fderiv_orthogonalRightInverse_apply (hι : Injective ι)
+    (hT : IsFredholm (T x₀)) (hsurj : Surjective (T x₀)) (hd : DifferentiableAt ℝ T x₀)
+    (v : X) {g : H} (hg : ∀ k ∈ (T x₀).ker, ⟪g, ι k⟫_ℝ = 0) :
+    adjoint (ι ∘L fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v) g =
+      -adjoint (fderiv ℝ T x₀ v ∘L orthogonalRightInverse ι (T x₀))
+        (adjoint (ι ∘L orthogonalRightInverse ι (T x₀)) g) := by
+  have := hT.finite_ker
+  have hπ := isOrthogonalKerProjection_orthogonalKerProjection hι (T x₀)
+  refine ext_inner_right ℝ fun y ↦ ?_
+  -- `Q' y` is `-Q (T' (Q y))` plus a kernel element, which pairs to zero with `g`.
+  have hQ' : fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y =
+      -orthogonalRightInverse ι (T x₀) (fderiv ℝ T x₀ v (orthogonalRightInverse ι (T x₀) y)) +
+        orthogonalKerProjection ι (T x₀)
+          (fderiv ℝ (fun x ↦ orthogonalRightInverse ι (T x)) x₀ v y) :=
+    eq_add_of_sub_eq (hT.sub_orthogonalKerProjection_fderiv_orthogonalRightInverse_apply hι hsurj
+      hd v y)
+  rw [adjoint_inner_left, comp_apply, hQ']
+  simp [adjoint_inner_left, inner_add_right, hg _ (hπ.mem_ker _)]
+
+end AdjointDerivative
 
 end ContinuousLinearMap
