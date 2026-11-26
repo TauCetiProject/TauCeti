@@ -9,9 +9,7 @@ public import Mathlib.AlgebraicGeometry.OrderOfVanishing.Basic
 public import TauCeti.AlgebraicGeometry.ResidueDegree
 public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
-import Mathlib.RingTheory.QuasiFinite.Basic
 import TauCeti.AlgebraicGeometry.AffineScheme.PrimesOver
-import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.AlgebraicGeometry.Morphisms.CodimensionOne.Basic
 import TauCeti.RingTheory.Length.Norm.PrimesOver
 
@@ -54,20 +52,21 @@ variable [IsIntegral X] [IsIntegral Y] [IsLocallyNoetherian X] [IsLocallyNoether
 -- identity indexed by points of the fibre. This also detects that the norm is nonzero.
 private theorem ord_norm_eq_finsum_of_prod (f : X ⟶ Y) [IsDominant f] {y : Y}
     (hy1 : coheight y = 1) {I : Type u} [Fintype I] (e : (f ⁻¹' {y} : Set X) ≃ I)
-    (x : I → X) (hex : ∀ i, (e.symm i).val = x i) (r : X.functionField)
+    (r : X.functionField)
     (H : letI := f.functionFieldMap.hom.toAlgebra
       letI := krullDimLE_of_coheight_le hy1.le
       Ring.ordFrac (Y.presheaf.stalk y) (Algebra.norm Y.functionField r) =
-        ∏ i, ((Multiplicative.ofAdd (f.residueDegree (x i) • X.ord r (x i)) :
+        ∏ i, ((Multiplicative.ofAdd (f.residueDegree (e.symm i).val • X.ord r (e.symm i).val) :
           Multiplicative ℤ) : WithZero (Multiplicative ℤ))) :
     letI := f.functionFieldMap.hom.toAlgebra
     Y.ord (Algebra.norm Y.functionField r) y =
       ∑ᶠ x ∈ f ⁻¹' {y}, X.ord r x * f.residueDegree x := by
   let _ := f.functionFieldMap.hom.toAlgebra
   let _ := krullDimLE_of_coheight_le hy1.le
-  have hprod : ∏ i, ((Multiplicative.ofAdd (f.residueDegree (x i) • X.ord r (x i)) :
-      Multiplicative ℤ) : WithZero (Multiplicative ℤ)) =
-      ↑(∏ i, Multiplicative.ofAdd (f.residueDegree (x i) • X.ord r (x i))) :=
+  have hprod :
+      ∏ i, ((Multiplicative.ofAdd (f.residueDegree (e.symm i).val • X.ord r (e.symm i).val) :
+        Multiplicative ℤ) : WithZero (Multiplicative ℤ)) =
+      ↑(∏ i, Multiplicative.ofAdd (f.residueDegree (e.symm i).val • X.ord r (e.symm i).val)) :=
     (map_prod (WithZero.coeMonoidHom : Multiplicative ℤ →* WithZero (Multiplicative ℤ)) _ _).symm
   rw [hprod, ← ofAdd_sum] at H
   have hN : Algebra.norm Y.functionField r ≠ 0 := by
@@ -79,39 +78,15 @@ private theorem ord_norm_eq_finsum_of_prod (f : X ⟶ Y) [IsDominant f] {y : Y}
   refine H.trans ?_
   congr 2
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [hex, nsmul_eq_mul, mul_comm]
-
--- A point over `y` has codimension one: the restriction `f ∣_ V` is locally quasi-finite, being
--- finite on affine sections, so coheight one pulls back along it and the two open immersions.
-omit [IsIntegral Y] [IsLocallyNoetherian X] [IsLocallyNoetherian Y] in
-private theorem coheight_eq_one_of_isAffineOpen (f : X ⟶ Y) [IsDominant f] {V : Y.Opens}
-    (hV : IsAffineOpen V) (hU : IsAffineOpen (f ⁻¹ᵁ V))
-    (hfin : (f.appLE V (f ⁻¹ᵁ V) le_rfl).hom.Finite) {y : Y} (hy : y ∈ V)
-    (hy1 : coheight y = 1) {x : X} (hfx : f x = y) :
-    coheight x = 1 := by
-  have : Nonempty V := ⟨⟨y, hy⟩⟩
-  algebraize [(f.appLE V (f ⁻¹ᵁ V) le_rfl).hom]
-  have hxU : x ∈ f ⁻¹ᵁ V := show f x ∈ V from hfx ▸ hy
-  have : LocallyQuasiFinite (f ∣_ V) := by
-    rw [← Scheme.Hom.resLE_eq_morphismRestrict]
-    apply (HasRingHomProperty.resLE_iff @LocallyQuasiFinite hV hU le_rfl).mpr
-    exact RingHom.quasiFinite_algebraMap.mpr
-      (inferInstance : Algebra.QuasiFinite Γ(Y, V) Γ(X, f ⁻¹ᵁ V))
-  have : IsDominant (f ∣_ V) := IsZariskiLocalAtTarget.restrict ‹IsDominant f› V
-  have hmap : (f ∣_ V) ⟨x, hxU⟩ = ⟨y, hy⟩ :=
-    Subtype.ext ((morphismRestrict_base_coe f V _).trans hfx)
-  have hy' := (coheight_eq_of_isOpenImmersion
-    (U := V.toScheme) (x := ⟨y, hy⟩) V.ι).symm.trans hy1
-  have hx' := (f ∣_ V).coheight_eq_one_of_coheight_apply_eq_one ⟨x, hxU⟩ (hmap ▸ hy')
-  exact (coheight_eq_of_isOpenImmersion
-    (U := (f ⁻¹ᵁ V).toScheme) (x := ⟨x, hxU⟩) (f ⁻¹ᵁ V).ι).trans hx'
+  rw [nsmul_eq_mul, mul_comm]
 
 -- The affine calculation keeps the chosen section, stalk and function-field algebras in one
 -- scope: all the scalar towers passed to the ring-theoretic norm formula must use those same
 -- structures. Its stages: (1) the finite extension `Γ(Y, V) → Γ(X, f⁻¹ V)` and the localization
 -- `𝒪_{Y,y}` with its function-field towers; (2) the fibre points `x q` for primes `q` over `y`,
 -- their stalks and stalk towers; (3) Fulton's Appendix A.3, rewritten into orders and residue
--- degrees. The codimension and multiplicative-to-additive arguments are the two lemmas above.
+-- degrees. Codimension is supplied by `coheight_eq_one_of_isAffineOpen`; the lemma above
+-- converts the multiplicative identity to an additive one.
 private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
     (f : X ⟶ Y) [IsDominant f] {V : Y.Opens}
     (hV : IsAffineOpen V) (hU : IsAffineOpen (f ⁻¹ᵁ V))
@@ -140,7 +115,8 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
       (algebraMap Γ(Y, V) (Y.presheaf.stalk y))).toAlgebra
   have : IsScalarTower Γ(Y, V) (Y.presheaf.stalk y) X.functionField := .of_algebraMap_eq' rfl
   have : IsScalarTower Γ(Y, V) Γ(X, f ⁻¹ᵁ V) X.functionField := .of_algebraMap_eq' <| by
-    have h := functionField_isScalarTower Y V ⟨y, hy⟩
+    have : IsScalarTower Γ(Y, V) (Y.presheaf.stalk y) Y.functionField :=
+      functionField_isScalarTower Y V ⟨y, hy⟩
     -- Reassociate the chosen composite algebra maps before applying germ naturality.
     change (algebraMap Y.functionField X.functionField).comp
       ((algebraMap (Y.presheaf.stalk y) Y.functionField).comp (algebraMap Γ(Y, V) _)) = _
@@ -174,13 +150,15 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
   have (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) :
       IsScalarTower Γ(Y, V) (Y.presheaf.stalk y) (X.presheaf.stalk (x q)) :=
     .of_algebraMap_eq' <| by
-      -- Express the section algebras as germ maps to use naturality of germs.
+      have hnat : f.appLE V (f ⁻¹ᵁ V) le_rfl ≫
+          X.presheaf.germ (f ⁻¹ᵁ V) (x q) (hxU q) =
+          Y.presheaf.germ V y hy ≫
+            Y.presheaf.stalkSpecializes ((hfx q).symm ▸ specializes_refl y) ≫
+              f.stalkMap (x q) := by
+        rw [TopCat.Presheaf.germ_stalkSpecializes_assoc, Scheme.Hom.germ_stalkMap,
+          Scheme.Hom.appLE_eq_app]
       rw [f.algebraMap_stalkAlgebraOfApplyEq (hfx q)]
-      change (X.presheaf.germ _ (x q) (hxU q)).hom.comp (f.appLE V (f ⁻¹ᵁ V) le_rfl).hom =
-        RingHom.comp _ (Y.presheaf.germ V y hy).hom
-      rw [← CommRingCat.hom_comp, ← CommRingCat.hom_comp,
-        TopCat.Presheaf.germ_stalkSpecializes_assoc, Scheme.Hom.germ_stalkMap,
-        Scheme.Hom.appLE_eq_app]
+      exact congrArg CommRingCat.Hom.hom hnat
   have hq1 (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : coheight (x q) = 1 :=
     coheight_eq_one_of_isAffineOpen f hV hU hfin hy hy1 (hfx q)
   have (q : p.primesOver Γ(X, f ⁻¹ᵁ V)) : Ring.KrullDimLE 1 (X.presheaf.stalk (x q)) :=
@@ -195,7 +173,8 @@ private theorem ord_norm_eq_finsum_of_isAffineOpen_of_ne_zero
   have : Fintype (p.primesOver Γ(X, f ⁻¹ᵁ V)) := (Algebra.QuasiFinite.finite_primesOver p).fintype
   simp only [hord, Scheme.Hom.toNat_length_residueField_eq_residueDegree f (hfx _),
     ← WithZero.coe_pow, ← ofAdd_nsmul, finprod_eq_prod_of_fintype] at H
-  exact ord_norm_eq_finsum_of_prod f hy1 e x hex r H
+  apply ord_norm_eq_finsum_of_prod f hy1 e r
+  simpa only [hex] using H
 
 /-- **The order of a norm at a point of codimension one** (Fulton, *Intersection Theory*,
 Proposition 1.4(b) and Appendix A.3). Let `f : X ⟶ Y` be a dominant morphism of locally

@@ -9,6 +9,8 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
 public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
+import Mathlib.RingTheory.QuasiFinite.Basic
+import TauCeti.AlgebraicGeometry.Restrict
 
 /-!
 # Codimension-one points under quasi-finite morphisms
@@ -86,6 +88,33 @@ theorem coheight_eq_one_of_coheight_apply_eq_one [LocallyQuasiFinite f] [IsDomin
     rw [himage] at hx
     exact zero_ne_one hx
   exact le_antisymm hle (Order.one_le_iff_ne_zero.mpr hne)
+
+/-- For a dominant morphism from an irreducible scheme that is finite on the sections of an
+affine open neighbourhood with affine preimage, every point over a point of coheight one in
+that neighbourhood has coheight one. -/
+theorem coheight_eq_one_of_isAffineOpen [IrreducibleSpace X] [IsDominant f] {V : Y.Opens}
+    (hV : IsAffineOpen V) (hU : IsAffineOpen (f ⁻¹ᵁ V))
+    (hfin : (f.appLE V (f ⁻¹ᵁ V) le_rfl).hom.Finite) {y : Y} (hy : y ∈ V)
+    (hy1 : coheight y = 1) {x : X} (hfx : f x = y) :
+    coheight x = 1 := by
+  have : Nonempty V := ⟨⟨y, hy⟩⟩
+  algebraize [(f.appLE V (f ⁻¹ᵁ V) le_rfl).hom]
+  have hxU : x ∈ f ⁻¹ᵁ V := f.mem_preimage.mpr (hfx ▸ hy)
+  have : Nonempty (f ⁻¹ᵁ V) := ⟨⟨x, hxU⟩⟩
+  have : IrreducibleSpace (f ⁻¹ᵁ V) := (f ⁻¹ᵁ V).ι.isOpenEmbedding.irreducibleSpace
+  have : LocallyQuasiFinite (f ∣_ V) := by
+    rw [← Scheme.Hom.resLE_eq_morphismRestrict]
+    apply (HasRingHomProperty.resLE_iff @LocallyQuasiFinite hV hU le_rfl).mpr
+    exact RingHom.quasiFinite_algebraMap.mpr
+      (inferInstance : Algebra.QuasiFinite Γ(Y, V) Γ(X, f ⁻¹ᵁ V))
+  have : IsDominant (f ∣_ V) := IsZariskiLocalAtTarget.restrict ‹IsDominant f› V
+  have hmap : (f ∣_ V) ⟨x, hxU⟩ = ⟨y, hy⟩ :=
+    Subtype.ext ((morphismRestrict_base_coe f V _).trans hfx)
+  have hy' := (coheight_eq_of_isOpenImmersion
+    (U := V.toScheme) (x := ⟨y, hy⟩) V.ι).symm.trans hy1
+  have hx' := (f ∣_ V).coheight_eq_one_of_coheight_apply_eq_one ⟨x, hxU⟩ (hmap ▸ hy')
+  exact (coheight_eq_of_isOpenImmersion
+    (U := (f ⁻¹ᵁ V).toScheme) (x := ⟨x, hxU⟩) (f ⁻¹ᵁ V).ι).trans hx'
 
 /-- The map on codimension-one points induced by a morphism `f` that sends points of coheight
 one to points of coheight one. -/

@@ -258,7 +258,7 @@ theorem germToFunctionField_functionFieldMap (f : X ⟶ Y) [IsDominant f] (U : Y
 
 /-- Pulling a section back to a smaller nonempty open and then taking its germ in the function
 field agrees with taking its germ first and pulling back along the dominant morphism. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem appLE_germToFunctionField (f : X ⟶ Y) [IsDominant f]
     (U : Y.Opens) (V : X.Opens) [Nonempty U] [Nonempty V] (e : V ≤ f ⁻¹ᵁ U) :
     f.appLE U V e ≫ X.germToFunctionField V =
@@ -285,8 +285,10 @@ theorem appLE_injective_of_isDominant [IsIntegral Y] (f : X ⟶ Y) [IsDominant f
     Function.Injective (f.appLE U V e) := by
   have : Nonempty U := ⟨⟨_, e (Classical.arbitrary V).property⟩⟩
   refine .of_comp (f := X.germToFunctionField V) ?_
-  rw [← RingHom.coe_comp, ← CommRingCat.hom_comp, f.appLE_germToFunctionField,
-    CommRingCat.hom_comp, RingHom.coe_comp]
+  have h := congrArg (fun g : Γ(Y, U) ⟶ X.functionField ↦ (g : Γ(Y, U) → X.functionField))
+    (f.appLE_germToFunctionField U V e)
+  simp only [ConcreteCategory.coe_comp] at h
+  rw [h]
   exact f.functionFieldMap.hom.injective.comp (Y.germToFunctionField_injective U)
 
 /-- The pullback of rational functions along the identity is the identity. -/
