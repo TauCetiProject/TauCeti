@@ -34,8 +34,9 @@ this action carries the splitting of `H` induced by `C`.
 * `TauCeti.GTree.subtree`: the restriction of a `G`-tree to a nonempty convex invariant set of
   vertices.
 * `TauCeti.GTree.restrict`: the action of a subgroup on an invariant subtree.
-* `TauCeti.GTree.map_stabilizer_restrict_vertex`, `TauCeti.GTree.map_stabilizer_restrict_dart`:
-  its stabilizers are the intersections of the subgroup with the stabilizers in `G`.
+* `TauCeti.GTree.stabilizer_restrict_vertex`, `TauCeti.GTree.map_stabilizer_restrict_vertex`
+  (and the `_dart` versions): its stabilizers are the intersections of the subgroup with the
+  stabilizers in `G`.
 
 ## References
 
@@ -241,21 +242,29 @@ theorem restrict_dart_val_mem (e : (T.restrict H C hC hne hinv).E) :
     Subtype.val (h • e) = (h : G) • (Subtype.val e : T.E) :=
   (T.comap H.subtype).subtree_smul_dart_val hC hne _ h e
 
+/-- The stabilizer in `H` of a vertex of an invariant subtree is the preimage of its stabilizer
+in `G`. -/
+@[simp] theorem stabilizer_restrict_vertex (v : (T.restrict H C hC hne hinv).V) :
+    stabilizer H v = (stabilizer G (Subtype.val v : T.V)).comap H.subtype :=
+  ((T.comap H.subtype).stabilizer_subtree_vertex hC hne _ v).trans (stabilizer_comap_vertex _ _ _)
+
+/-- The stabilizer in `H` of a dart of an invariant subtree is the preimage of its stabilizer
+in `G`. -/
+@[simp] theorem stabilizer_restrict_dart (e : (T.restrict H C hC hne hinv).E) :
+    stabilizer H e = (stabilizer G (Subtype.val e : T.E)).comap H.subtype :=
+  ((T.comap H.subtype).stabilizer_subtree_dart hC hne _ e).trans (stabilizer_comap_dart _ _ _)
+
 /-- The stabilizer in `H` of a vertex of an invariant subtree is the intersection of `H` with its
 stabilizer in `G`. -/
 theorem map_stabilizer_restrict_vertex (v : (T.restrict H C hC hne hinv).V) :
     (stabilizer H v).map H.subtype = H ⊓ stabilizer G (Subtype.val v : T.V) := by
-  have hstab : stabilizer H v = (stabilizer G (Subtype.val v : T.V)).comap H.subtype :=
-    ((T.comap H.subtype).stabilizer_subtree_vertex hC hne _ v).trans (stabilizer_comap_vertex _ _ _)
-  rw [hstab, Subgroup.map_comap_eq, Subgroup.range_subtype]
+  rw [stabilizer_restrict_vertex, Subgroup.map_comap_eq, Subgroup.range_subtype]
 
 /-- The stabilizer in `H` of a dart of an invariant subtree is the intersection of `H` with its
 stabilizer in `G`. -/
 theorem map_stabilizer_restrict_dart (e : (T.restrict H C hC hne hinv).E) :
     (stabilizer H e).map H.subtype = H ⊓ stabilizer G (Subtype.val e : T.E) := by
-  have hstab : stabilizer H e = (stabilizer G (Subtype.val e : T.E)).comap H.subtype :=
-    ((T.comap H.subtype).stabilizer_subtree_dart hC hne _ e).trans (stabilizer_comap_dart _ _ _)
-  rw [hstab, Subgroup.map_comap_eq, Subgroup.range_subtype]
+  rw [stabilizer_restrict_dart, Subgroup.map_comap_eq, Subgroup.range_subtype]
 
 end GTree
 

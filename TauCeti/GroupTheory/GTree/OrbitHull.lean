@@ -52,6 +52,8 @@ fixes `x`, the orbit tree is the single vertex `x`, without darts.
 * `TauCeti.GTree.IsMinimal.finite_quotient_V`, `TauCeti.GTree.IsMinimal.finite_quotient_E`: the
   quotient graph of a minimal action of a finitely generated group is finite.
 * `TauCeti.GTree.orbitTree`: the action of a subgroup on the convex hull of an orbit.
+* `TauCeti.GTree.stabilizer_orbitTree_vertex`, `TauCeti.GTree.stabilizer_orbitTree_dart`: its
+  stabilizers are the preimages of the stabilizers in `G`.
 * `TauCeti.GTree.finite_quotient_V_orbitTree`, `TauCeti.GTree.finite_quotient_E_orbitTree`: for
   a finitely generated subgroup its quotient graph is finite.
 * `TauCeti.GTree.subsingleton_orbitTree_V`, `TauCeti.GTree.isEmpty_orbitTree_E`: the orbit tree
@@ -306,6 +308,13 @@ end Generators
 
 section Minimal
 
+/-- A point of the translates of a set `K` under a subgroup `H` is moved into `K` by an element
+of `H`. -/
+private theorem exists_smul_mem_of_mem_smul {α : Type*} [MulAction G α] {K : Set α} {a : α}
+    (ha : a ∈ (H : Set G) • K) : ∃ g ∈ H, g • a ∈ K := by
+  obtain ⟨g, hg, k, hk, rfl⟩ := Set.mem_smul.mp ha
+  exact ⟨g⁻¹, H.inv_mem hg, by simpa using hk⟩
+
 /-- A finitely generated group acting minimally on a tree has a quotient graph with finitely many
 vertices. -/
 theorem IsMinimal.finite_quotient_V [Group.FG G] (hT : T.IsMinimal) : Finite T.quotient.V := by
@@ -313,8 +322,8 @@ theorem IsMinimal.finite_quotient_V [Group.FG G] (hT : T.IsMinimal) : Finite T.q
   obtain ⟨K, hK, -, -, hV, -⟩ := exists_finite_orbitHull_eq_smul ⊤ x (Group.fg_def.mp ‹_›)
   refine finite_quotient_V_of_forall_exists_smul_mem hK fun v => ?_
   have hv : v ∈ T.orbitHull ⊤ x := by simp [hT.orbitHull_top x]
-  obtain ⟨g, -, k, hk, rfl⟩ := Set.mem_smul.mp (hV.subset hv)
-  exact ⟨g⁻¹, by simpa using hk⟩
+  obtain ⟨g, -, hg⟩ := exists_smul_mem_of_mem_smul (hV.subset hv)
+  exact ⟨g, hg⟩
 
 /-- A finitely generated group acting minimally on a tree has a quotient graph with finitely many
 darts. -/
@@ -324,8 +333,8 @@ theorem IsMinimal.finite_quotient_E [Group.FG G] (hT : T.IsMinimal) : Finite T.q
   refine finite_quotient_E_of_forall_exists_smul_mem (T.isAcyclic.finite_inducedDarts hK)
     fun e => ?_
   have he : e ∈ T.inducedDarts (T.orbitHull ⊤ x) := by simp [hT.orbitHull_top x]
-  obtain ⟨g, -, k, hk, rfl⟩ := Set.mem_smul.mp (hE.subset he)
-  exact ⟨g⁻¹, by simpa using hk⟩
+  obtain ⟨g, -, hg⟩ := exists_smul_mem_of_mem_smul (hE.subset he)
+  exact ⟨g, hg⟩
 
 end Minimal
 
@@ -365,6 +374,18 @@ tree. -/
     Subtype.val (h • e) = (h : G) • (Subtype.val e : T.E) :=
   restrict_smul_dart_val _ _ _ h e
 
+/-- The stabilizer in `H` of a vertex of the convex hull of an `H`-orbit is the preimage of its
+stabilizer in `G`. -/
+@[simp] theorem stabilizer_orbitTree_vertex (v : (T.orbitTree H x).V) :
+    stabilizer H v = (stabilizer G (Subtype.val v : T.V)).comap H.subtype :=
+  stabilizer_restrict_vertex _ _ _ v
+
+/-- The stabilizer in `H` of a dart of the convex hull of an `H`-orbit is the preimage of its
+stabilizer in `G`. -/
+@[simp] theorem stabilizer_orbitTree_dart (e : (T.orbitTree H x).E) :
+    stabilizer H e = (stabilizer G (Subtype.val e : T.E)).comap H.subtype :=
+  stabilizer_restrict_dart _ _ _ e
+
 variable (H) in
 /-- The quotient of the convex hull of an orbit of a finitely generated subgroup has finitely
 many vertices. -/
@@ -373,10 +394,8 @@ theorem finite_quotient_V_orbitTree (hH : H.FG) (x : T.V) :
   obtain ⟨K, hK, -, -, hV, -⟩ := exists_finite_orbitHull_eq_smul H x hH
   refine finite_quotient_V_of_forall_exists_smul_mem
     (hK.preimage Subtype.val_injective.injOn) fun v => ?_
-  obtain ⟨g, hg, k, hk, hgk⟩ := Set.mem_smul.mp (hV.subset (orbitTree_vertex_val_mem v))
-  refine ⟨⟨g⁻¹, H.inv_mem hg⟩, Set.mem_preimage.mpr ?_⟩
-  rw [orbitTree_smul_vertex_val, ← hgk, Subgroup.coe_mk, inv_smul_smul]
-  exact hk
+  obtain ⟨g, hg, hk⟩ := exists_smul_mem_of_mem_smul (hV.subset (orbitTree_vertex_val_mem v))
+  exact ⟨⟨g, hg⟩, Set.mem_preimage.mpr ((orbitTree_smul_vertex_val _ v).symm ▸ hk)⟩
 
 variable (H) in
 /-- The quotient of the convex hull of an orbit of a finitely generated subgroup has finitely
@@ -386,10 +405,8 @@ theorem finite_quotient_E_orbitTree (hH : H.FG) (x : T.V) :
   obtain ⟨K, hK, -, -, -, hE⟩ := exists_finite_orbitHull_eq_smul H x hH
   refine finite_quotient_E_of_forall_exists_smul_mem
     ((T.isAcyclic.finite_inducedDarts hK).preimage Subtype.val_injective.injOn) fun e => ?_
-  obtain ⟨g, hg, k, hk, hgk⟩ := Set.mem_smul.mp (hE.subset (orbitTree_dart_val_mem e))
-  refine ⟨⟨g⁻¹, H.inv_mem hg⟩, Set.mem_preimage.mpr ?_⟩
-  rw [orbitTree_smul_dart_val, ← hgk, Subgroup.coe_mk, inv_smul_smul]
-  exact hk
+  obtain ⟨g, hg, hk⟩ := exists_smul_mem_of_mem_smul (hE.subset (orbitTree_dart_val_mem e))
+  exact ⟨⟨g, hg⟩, Set.mem_preimage.mpr ((orbitTree_smul_dart_val _ e).symm ▸ hk)⟩
 
 /-- The convex hull of the orbit of a vertex fixed by the subgroup is that vertex. -/
 theorem subsingleton_orbitTree_V (h : H ≤ stabilizer G x) :
