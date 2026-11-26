@@ -194,15 +194,17 @@ for `α < 1`. -/
 def littleHolderCutoffSMulL :
     littleHolder k α Ω F →L[ℝ] CkHolderSpace.littleHolder k α E F :=
   ((cutoffSMulL hχ hδ hχΩ hα.le hχb).comp (littleHolder k α Ω F).subtypeL).codRestrict _
-    fun f ↦ cutoffSMulL_mem_littleHolder hχ hδ hχΩ hα hχb f.property
+    fun f ↦ by
+      rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
+      exact cutoffSMulL_mem_littleHolder hχ hδ hχΩ hα hχb f.property
 
 /-- The cutoff map on little Hölder spaces is the cutoff map on Hölder spaces. -/
 @[simp]
 theorem coe_littleHolderCutoffSMulL_apply (f : littleHolder k α Ω F) :
     (littleHolderCutoffSMulL hχ hδ hχΩ hα hχb f : CkHolderSpace k α E F) =
       cutoffSMulL hχ hδ hχΩ hα.le hχb f := by
-  rw [littleHolderCutoffSMulL]
-  exact ContinuousLinearMap.coe_codRestrict_apply _ _ _ _
+  rw [littleHolderCutoffSMulL, ContinuousLinearMap.coe_codRestrict_apply,
+    ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
 
 /-- **Multiplication by a cutoff preserves `h^{k,α}(Ω)`** for `α < 1`. -/
 theorem cutoffSMulOnL_mem_littleHolder {f : CkHolderSpaceOn k α Ω F}
