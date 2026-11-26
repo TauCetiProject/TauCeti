@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Basic
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.BaseChange
 
@@ -22,6 +23,9 @@ Hopf ideal of `C'`.
 From this transport of the defining Hopf ideal, the file builds the base-change isomorphism
 from the scalar extension of the coordinate Hopf algebra of the subgroup scheme preserving `C` to
 that of the subgroup scheme preserving `C'`, compatibly with the quotient maps from `O(GLₙ)`.
+Its scheme-side form, the instance of `TauCeti.GeneralLinear.hopfIdealBaseChangeIso` at the
+defining Hopf ideals, identifies the base change of the subgroup scheme preserving `C` with the
+subgroup scheme preserving `C'`, compatibly with the inclusions into `GLₙ`.
 
 ## Main declarations
 
@@ -32,6 +36,10 @@ that of the subgroup scheme preserving `C'`, compatibly with the quotient maps f
   Hopf ideal.
 * `TauCeti.ConstantForm.coordinateHopfAlgebraBaseChangeIso`: base change of the coordinate Hopf
   algebra of the subgroup scheme preserving `C`, compatibly with the quotient maps from `O(GLₙ)`.
+* `TauCeti.ConstantForm.groupSchemeBaseChangeIso`: base change of the subgroup scheme preserving
+  `C`.
+* `TauCeti.ConstantForm.map_inclusion_comp_groupSchemeBaseChangeIso_hom`: compatibility with the
+  inclusions into `GLₙ` and `TauCeti.GeneralLinear.groupSchemeBaseChangeIso`.
 
 ## References
 
@@ -45,12 +53,14 @@ is the specialization of this one to `Jₘ`.
 
 public section
 
-open CategoryTheory Matrix
+open AlgebraicGeometry CategoryTheory Matrix
 open scoped TensorProduct
 
 namespace TauCeti.ConstantForm
 
 universe u v
+
+section Coordinate
 
 variable (R : Type u) (K : Type max u v) [CommRing R] [CommRing K] [Algebra R K]
 variable (n : ℕ)
@@ -163,5 +173,46 @@ theorem coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv
         CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R n C) := by
   rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraBaseChangeIso]
   exact CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv _ _ _ _
+
+end Coordinate
+
+/-! ### Base change of the subgroup scheme -/
+
+section GroupScheme
+
+variable {R K : Type u} [CommRing R] [CommRing K] [Algebra R K] {n : ℕ}
+variable {C : Matrix (Fin n) (Fin n) R} {C' : Matrix (Fin n) (Fin n) K}
+
+/-- **Base change of a constant-form subgroup scheme.** If `C` maps to `C'` over `K`, the base
+change to `K` of the subgroup scheme of `GLₙ` preserving `C` is the subgroup scheme preserving
+`C'`: the Hopf-ideal base-change comparison of `GLₙ` at the defining Hopf ideals. -/
+noncomputable def groupSchemeBaseChangeIso (hC : C.map (algebraMap R K) = C') :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.obj
+        (groupScheme R n C) ≅ groupScheme K n C' :=
+  GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n C) (definingHopfIdeal K n C')
+    (coordinateHopfAlgebraBaseChangeIso hC).symm
+
+/-- The base-change isomorphism is the Hopf-ideal base-change comparison of `GLₙ` for the inverse
+base-change isomorphism of coordinate Hopf algebras. -/
+theorem groupSchemeBaseChangeIso_def (hC : C.map (algebraMap R K) = C') :
+    groupSchemeBaseChangeIso hC =
+      GeneralLinear.hopfIdealBaseChangeIso R K n (definingHopfIdeal R n C)
+        (definingHopfIdeal K n C') (coordinateHopfAlgebraBaseChangeIso hC).symm :=
+  (rfl)
+
+/-- **Base change of a constant-form subgroup scheme is compatible with the inclusions.** Along
+the base-change isomorphisms, the base change of the inclusion of the subgroup scheme preserving
+`C` into `GLₙ` is the inclusion of the subgroup scheme preserving `C'`. -/
+@[reassoc]
+theorem map_inclusion_comp_groupSchemeBaseChangeIso_hom (hC : C.map (algebraMap R K) = C') :
+    (Over.pullback (Spec.map (CommRingCat.ofHom (algebraMap R K)))).mapGrp.map
+          (inclusion R n C) ≫ (GeneralLinear.groupSchemeBaseChangeIso R K n).hom =
+      (groupSchemeBaseChangeIso hC).hom ≫ inclusion K n C' := by
+  have he := coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv hC
+  rw [coordinateMap_def, coordinateMap_def] at he
+  rw [inclusion_def, inclusion_def, groupSchemeBaseChangeIso_def]
+  exact GeneralLinear.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso R K n _ _ _ he
+
+end GroupScheme
 
 end TauCeti.ConstantForm

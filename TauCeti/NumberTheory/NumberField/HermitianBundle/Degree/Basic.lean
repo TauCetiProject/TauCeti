@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
 public import Mathlib.RingTheory.FractionalIdeal.Norm
 
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.NumberTheory.NumberField.FractionalIdeal
 import TauCeti.RingTheory.FractionalIdeal.Norm
 
@@ -45,8 +46,10 @@ counting the embeddings inducing `v`. It is `TauCeti.sectionDegreeOfNorms` for t
 ## References
 
 * P. Deligne, *Preuves des conjectures de Tate et de Shafarevitch*, Séminaire Bourbaki 616,
-  §1.1, pp. 25–26.
+  §1.1, pp. 25–26, and §2.1, p. 36.
 * L. Szpiro, *Degrés, intersections, hauteurs*, Astérisque 127, §1.1–1.2, Corollaire, p. 14.
+* J.-B. Bost, *Périodes et isogénies des variétés abéliennes sur les corps de nombres*,
+  Séminaire Bourbaki 795, Appendice A.3, p. 147.
 -/
 
 public noncomputable section
@@ -97,12 +100,8 @@ with `s`. -/
 @[simp]
 theorem _root_.TauCeti.HermitianMetric.IsometryEquiv.sectionDegree_map {h' : HermitianMetric K F}
     (e : IsometryEquiv h h') (s : E) : h'.sectionDegree (e s) = h.sectionDegree s := by
-  have hcard : (Submodule.span (𝓞 K) {e s}).cardQuot = (Submodule.span (𝓞 K) {s}).cardQuot := by
-    rw [Submodule.cardQuot, Submodule.cardQuot,
-      ← AddSubgroup.index_map_equiv _ e.toLinearEquiv.toAddEquiv]
-    congr 1
-    ext x
-    simp [Submodule.mem_span_singleton]
+  have hcard : (Submodule.span (𝓞 K) {e s}).cardQuot = (Submodule.span (𝓞 K) {s}).cardQuot :=
+    Submodule.cardQuot_span_singleton_map_equiv e.toLinearEquiv s
   simp only [sectionDegree_def, hcard, e.norm_tmul_map]
 
 /-- The degree of `Ō_K` computed with the section `1` is zero. -/

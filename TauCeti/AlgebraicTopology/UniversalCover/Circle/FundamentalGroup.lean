@@ -57,6 +57,10 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
   `AddCircle p` (based at any point with a chosen lift) is `Multiplicative ℤ`.
 * `AddCircle.fundamentalGroupMulEquivZero`: the basepoint-`0` specialisation, using the lift
   `0 : ℝ`.
+* `AddCircle.fundamentalGroupMulEquiv_fromPath_zsmulLoop`: for `p ≠ 0` Mathlib's loop
+  `AddCircle.zsmulLoop p x n`, `t ↦ n • t p + x`, is sent to `ofAdd n` with the lift `x`; for
+  `n = 1` this is the generator. `AddCircle.fundamentalGroupMulEquivZero_fromPath_zsmulLoop` is
+  its basepoint-`0` specialisation.
 * `AddCircle.fundamentalGroupMulEquiv_eq_windingNumberIso`: for positive periods the
   chosen-lift computation agrees with Mathlib, including the sign of the generator.
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
@@ -267,6 +271,31 @@ lemma fundamentalGroupMulEquivZero_eq_one_iff (hp : p ≠ 0) (γ : FundamentalGr
       (AddCircle.isCoveringMap_coe p).monodromy γ.toPath ⟨0, by simp⟩ = ⟨0, by simp⟩ := by
   rw [fundamentalGroupMulEquivZero]
   exact fundamentalGroupMulEquiv_eq_one_iff p hp ⟨0, by simp⟩ γ
+
+/-- **The winding loops of the circle.** For `p ≠ 0`, the class of Mathlib's loop
+`AddCircle.zsmulLoop p x n`, `t ↦ n • t p + x`, is sent to `n` by
+`π₁(AddCircle p, x) ≃* Multiplicative ℤ` with the lift `x`; for `n = 1` it is the generator. For
+`0 < p` this is also Mathlib's `AddCircle.windingNumber_zsmulLoop`. -/
+theorem fundamentalGroupMulEquiv_fromPath_zsmulLoop (hp : p ≠ 0) (x : ℝ) (n : ℤ) :
+    fundamentalGroupMulEquiv p hp ⟨x, rfl⟩
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (zsmulLoop p x n))) =
+      Multiplicative.ofAdd n := by
+  rw [fundamentalGroupMulEquiv_apply_eq_iff, toAdd_ofAdd]
+  have h := (isCoveringMap_coe p).monodromy_eq_apply_one
+    (γ := zsmulLoop p x n) (e := ⟨x, rfl⟩)
+    (Γ := ⟨fun t : unitInterval ↦ n • ((t : ℝ) * p) + x, by fun_prop⟩)
+    (by funext t; exact (zsmulLoop_apply p x n t).symm) (by simp)
+  simpa [add_comm] using h
+
+/-- The basepoint-`0` case of `AddCircle.fundamentalGroupMulEquiv_fromPath_zsmulLoop`: the class
+of `AddCircle.zsmulLoop p 0 n`, `t ↦ n • t p`, is sent to `n` by
+`π₁(AddCircle p, 0) ≃* Multiplicative ℤ`. -/
+theorem fundamentalGroupMulEquivZero_fromPath_zsmulLoop (hp : p ≠ 0) (n : ℤ) :
+    fundamentalGroupMulEquivZero p hp
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (zsmulLoop p 0 n))) =
+      Multiplicative.ofAdd n := by
+  rw [fundamentalGroupMulEquivZero_apply]
+  exact fundamentalGroupMulEquiv_fromPath_zsmulLoop p hp 0 n
 
 /-- For positive periods, the chosen-lift equivalence agrees with Mathlib's winding-number
 isomorphism. In particular it is independent of the chosen lift and has the same orientation. -/

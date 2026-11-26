@@ -47,6 +47,7 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 
 * `LaurentPolynomial.T_sum`: the monomial of a finite sum of exponents is the product of the
   monomials.
+* `LaurentPolynomial.T_mul_mul_T_neg`: multiplying by `Tⁿ` and by `T⁻ⁿ` cancel.
 * `LaurentPolynomial.mapDomainAlgHom_mulRight_T` and
   `LaurentPolynomial.mapDomainAlgHom_mulRight_comp_toAlgHom`: the substitution `T ↦ Tⁿ` sends
   `Tᵐ` to `T^{mn}` and fixes constants.
@@ -103,6 +104,11 @@ theorem T_sub_T_ne_zero {R : Type*} [Ring R] [Nontrivial R] {m n : ℤ} (h : m �
   intro hzero
   have hc := congrArg (fun p : R[T;T⁻¹] => p.coeff m) hzero
   simp [AddMonoidAlgebra.coeff_sub, h.symm] at hc
+
+/-- Multiplying by `Tⁿ` and by `T⁻ⁿ` cancel. -/
+theorem T_mul_mul_T_neg {R : Type*} [Semiring R] (n : ℤ) (f : R[T;T⁻¹]) :
+    T n * f * T (-n) = f := by
+  rw [T_mul, mul_T_assoc, add_neg_cancel, T_zero, mul_one]
 
 /-- The substitution `T ↦ Tⁿ` sends the Laurent monomial `Tᵐ` to `T^{mn}`. -/
 theorem mapDomainAlgHom_mulRight_T (n m : ℤ) :

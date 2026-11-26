@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import Mathlib.LinearAlgebra.Basis.Defs
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import TauCeti.RepresentationTheory.GroupAlgebra.RelativeTrace
 
 /-!
@@ -16,13 +17,14 @@ For a subgroup `H` of a group `G`, conjugation by `H` partitions `G` into orbits
 (`TauCeti.conjOrbitRel H`). When `H` is finite, the **orbit sum** of an orbit `O` is the element
 `∑_{g ∈ O} g` of `R[G]` (`TauCeti.conjOrbitSum`), and the orbit sums form a basis of the fixed
 points `R[G]^H` of conjugation by `H` (`TauCeti.conjInvariantsBasis`): an element of `R[G]^H` has
-coefficients constant on the orbits.
+coefficients constant on the orbits. So `R[G]^H` is a free `R`-module, finite when `G` is.
 
 A ring homomorphism `π : R →+* S` (for instance the reduction `O → k` of a `p`-modular system)
 induces `R[G]^H → S[G]^H` (`TauCeti.conjInvariantsMap`), which commutes with the relative traces
 `Tr_Q^P` (`TauCeti.conjInvariantsMap_relTrace`), sends orbit sums to orbit sums
 (`TauCeti.conjInvariantsMap_conjInvariantsBasis`), and is onto when `π` is onto
-(`TauCeti.conjInvariantsMap_surjective`).
+(`TauCeti.conjInvariantsMap_surjective`). Its kernel lies in `(ker π) • R[G]^H`
+(`TauCeti.mem_smul_top_of_conjInvariantsMap_eq_zero`).
 
 ## Main definitions
 
@@ -37,6 +39,8 @@ induces `R[G]^H → S[G]^H` (`TauCeti.conjInvariantsMap`), which commutes with t
 * `TauCeti.conjInvariantsMap_relTrace`: reduction commutes with `Tr_Q^P`.
 * `TauCeti.conjInvariantsMap_surjective`: for surjective `π`, reduction maps `R[G]^H` onto
   `S[G]^H`.
+* `TauCeti.mem_smul_top_of_conjInvariantsMap_eq_zero`: an element of `R[G]^H` with zero reduction
+  is a combination of elements of `R[G]^H` with coefficients in `ker π`.
 
 ## References
 
@@ -177,6 +181,14 @@ theorem conjInvariantsBasis_repr_mk (x : conjInvariants R H) (g : G) :
     Finsupp.ofSupportFinite_coe]
   exact coeff_eq_of_conjOrbitRel x.property (Quotient.mk_out g)
 
+/-- `R[G]^H` is a free `R`-module, with the orbit sums as basis. -/
+instance : Module.Free R (conjInvariants R H) :=
+  .of_basis (conjInvariantsBasis R H)
+
+/-- `R[G]^H` is a finite `R`-module when `G` is finite. -/
+instance [Finite G] : Module.Finite R (conjInvariants R H) :=
+  .of_basis (conjInvariantsBasis R H)
+
 end OrbitSum
 
 section Reduction
@@ -247,6 +259,16 @@ theorem conjInvariantsBasis_repr_conjInvariantsMap {H : Subgroup G} [Finite H]
       π ((conjInvariantsBasis R H).repr x O) := by
   induction O using Quotient.inductionOn with
   | h g => simp [coeff_mapRingHom]
+
+/-- An element of `R[G]^H` whose reduction along `π` vanishes lies in `(ker π) • R[G]^H`: its
+coordinates in the basis of orbit sums lie in `ker π`. -/
+theorem mem_smul_top_of_conjInvariantsMap_eq_zero {H : Subgroup G} [Finite H]
+    {x : conjInvariants R H} (hx : conjInvariantsMap π H x = 0) :
+    x ∈ RingHom.ker π • (⊤ : Submodule R (conjInvariants R H)) := by
+  rw [← (conjInvariantsBasis R H).linearCombination_repr x, Finsupp.linearCombination_apply]
+  refine Submodule.sum_mem _ fun O _ => Submodule.smul_mem_smul ?_ Submodule.mem_top
+  rw [RingHom.mem_ker, ← conjInvariantsBasis_repr_conjInvariantsMap, hx, map_zero,
+    Finsupp.zero_apply]
 
 /-- **Reduction maps `R[G]^H` onto `S[G]^H`** when `π` is surjective. -/
 theorem conjInvariantsMap_surjective (hπ : Function.Surjective π) (H : Subgroup G) :
