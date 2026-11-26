@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.K2
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.Weyl
 import TauCeti.GroupTheory.Commutator
 
 /-!
@@ -31,6 +32,8 @@ symbols.
   elementary.
 * `TauCeti.coe_steinbergSymbol_eq_commutatorElement`: `{u, v}` is the commutator of any lifts of
   `diag(u, u⁻¹, 1)` and `diag(v, 1, v⁻¹)`.
+* `TauCeti.coe_steinbergSymbol_eq_commutatorElement_h`: `{u, v} = ⁅h₀₁(u), h₀₂(v)⁆` for the
+  diagonal lift words `TauCeti.IndexedSteinbergGroup.h`.
 * `TauCeti.AlgebraicK2.map_steinbergSymbol`: Steinberg symbols are natural in ring
   homomorphisms.
 
@@ -149,6 +152,29 @@ theorem coe_steinbergSymbol_eq_commutatorElement {u v : Rˣ} (h : Commute u v)
     (steinbergSymbol u v h : SteinbergGroup R) = ⁅a, b⁆ :=
   MonoidHom.commutatorElement_eq_of_ker_le_center SteinbergGroup.ker_toStableGL_le_center
     ((toStableGL_diagInvOneLift u).trans ha.symm) ((toStableGL_diagOneInvLift v).trans hb.symm)
+
+/-- **The Steinberg symbol is a commutator of diagonal lift words**: `{u, v}` is the commutator
+`⁅h₀₁(u), h₀₂(v)⁆` in `St(R)` of the diagonal lift words `TauCeti.IndexedSteinbergGroup.h` at the
+index pairs `(0, 1)` and `(0, 2)`, which overlap in exactly one index. -/
+theorem coe_steinbergSymbol_eq_commutatorElement_h {u v : Rˣ} (h : Commute u v) :
+    (steinbergSymbol u v h : SteinbergGroup R) =
+      ⁅IndexedSteinbergGroup.h (by decide : (0 : ℕ) ≠ 1) u,
+        IndexedSteinbergGroup.h (by decide : (0 : ℕ) ≠ 2) v⁆ := by
+  refine coe_steinbergSymbol_eq_commutatorElement h ?_ ?_
+  · rw [show IndexedSteinbergGroup.h (by decide : (0 : ℕ) ≠ 1) u =
+        SteinbergGroup.ofFin R 3 (IndexedSteinbergGroup.h (by decide : (0 : Fin 3) ≠ 1) u) by
+      simp,
+      SteinbergGroup.toStableGL_ofFin, IndexedSteinbergGroup.toGL_h]
+    congr 2
+    ext m : 1
+    fin_cases m <;> simp
+  · rw [show IndexedSteinbergGroup.h (by decide : (0 : ℕ) ≠ 2) v =
+        SteinbergGroup.ofFin R 3 (IndexedSteinbergGroup.h (by decide : (0 : Fin 3) ≠ 2) v) by
+      simp,
+      SteinbergGroup.toStableGL_ofFin, IndexedSteinbergGroup.toGL_h]
+    congr 2
+    ext m : 1
+    fin_cases m <;> simp
 
 /-- The Steinberg symbol `{1, v}` is trivial. -/
 @[simp]
