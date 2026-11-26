@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+import TauCeti.Analysis.Normed.Module.Finite.Dual
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -96,16 +97,9 @@ theorem isEmbedding_coe_ringHom : Topology.IsEmbedding (Coe.ringHom (p := p)) :=
 absolute value at most `r` on the whole `ℤ_[p]`-span of `s`, by the ultrametric inequality. -/
 theorem norm_apply_le_of_mem_span_subring {V : Type*} [AddCommGroup V] [Module ℚ_[p] V]
     {f : V →ₗ[ℚ_[p]] ℚ_[p]} {s : Set V} {r : ℝ} (hr : 0 ≤ r) (hf : ∀ y ∈ s, ‖f y‖ ≤ r) {x : V}
-    (hx : x ∈ Submodule.span (subring p) s) : ‖f x‖ ≤ r := by
-  induction hx using Submodule.span_induction with
-  | mem x hx => exact hf x hx
-  | zero => simpa using hr
-  | add x y _ _ hx hy =>
-    rw [map_add]
-    exact (Padic.nonarchimedean _ _).trans (max_le hx hy)
-  | smul c x _ hx =>
-    rw [Subring.smul_def, map_smul, smul_eq_mul, norm_mul]
-    exact (mul_le_of_le_one_left (norm_nonneg _) ((mem_subring_iff p).mp c.property)).trans hx
+    (hx : x ∈ Submodule.span (subring p) s) : ‖f x‖ ≤ r :=
+  (f.restrictScalars (subring p)).norm_le_of_mem_span
+    (fun c ↦ (mem_subring_iff p).mp c.property) hr hf hx
 
 end PadicInt
 

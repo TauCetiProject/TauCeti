@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Field.Ultra
+public import TauCeti.Analysis.Normed.Field.Ultra
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 
@@ -26,17 +26,6 @@ and the formalization is independent of that source.
 -/
 
 public section
-
-namespace TauCeti
-
-/-- A normed field is ultrametric if an algebra's scalars lie in its closed unit ball. -/
-theorem isUltrametricDist_of_norm_algebraMap_le_one {R C : Type*}
-    [CommSemiring R] [NormedField C] [Algebra R C]
-    (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) : IsUltrametricDist C :=
-  IsUltrametricDist.isUltrametricDist_of_forall_norm_natCast_le_one fun n ↦ by
-    simpa using hR (n : R)
-
-end TauCeti
 
 namespace LinearMap
 
@@ -78,7 +67,7 @@ at most one. The bound must be nonnegative, to include the span of the empty set
 theorem norm_le_of_mem_span (f : M →ₗ[R] C)
     (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) {s : Set M} {r : ℝ} (hr : 0 ≤ r)
     (hs : ∀ m ∈ s, ‖f m‖ ≤ r) {m : M} (hm : m ∈ Submodule.span R s) : ‖f m‖ ≤ r := by
-  have := TauCeti.isUltrametricDist_of_norm_algebraMap_le_one hR
+  have := IsUltrametricDist.isUltrametricDist_of_forall_norm_algebraMap_le_one hR
   induction hm using Submodule.span_induction with
   | mem m hm => exact hs m hm
   | zero => simpa using hr
@@ -166,7 +155,7 @@ theorem exists_norm_eq_supNorm (f : M →ₗ[R] C)
 theorem supNorm_add_le_max (f g : M →ₗ[R] C)
     (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
     (f + g).supNorm ≤ max f.supNorm g.supNorm := by
-  have := TauCeti.isUltrametricDist_of_norm_algebraMap_le_one hR
+  have := IsUltrametricDist.isUltrametricDist_of_forall_norm_algebraMap_le_one hR
   apply ((f + g).supNorm_le_iff hR).mpr
   intro m
   exact (IsUltrametricDist.norm_add_le_max (f m) (g m)).trans

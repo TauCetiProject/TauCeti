@@ -14,8 +14,9 @@ public import Mathlib.RingTheory.Bialgebra.TensorProduct
 Precomposition by a coalgebra homomorphism is linear over the coefficient algebra,
 not just over the base ring. In particular, transposing bialgebra multiplication
 is a homomorphism of convolution algebras over the coefficients.
-Tensoring with either counit gives two more such homomorphisms. Their products
-recover the exterior product of arbitrary linear maps.
+Tensoring with either counit gives two more such homomorphisms, the exterior products
+with the convolution unit; by `WithConv.mulTensor_convMul` and `WithConv.mulTensor_one_one`
+their products recover the exterior product of arbitrary linear maps.
 
 ## References
 
@@ -52,15 +53,6 @@ variable {R C M N : Type*} [CommSemiring R] [CommSemiring C] [Algebra R C]
   [AddCommMonoid M] [Module R M] [Coalgebra R M]
   [AddCommMonoid N] [Module R N] [Coalgebra R N]
 
-/-- The exterior product of the two counits is the counit of the tensor product. -/
-@[simp]
-theorem mulTensor_one_one :
-    mulTensor (1 : WithConv (M →ₗ[R] C)) (1 : WithConv (N →ₗ[R] C)) = 1 := by
-  apply ofConv_injective
-  apply TensorProduct.ext
-  ext m n
-  simp [mul_comm]
-
 /-- Tensoring a convolution-algebra element with the counit on the right. -/
 def tensorCounitRight (R C M N : Type*) [CommSemiring R] [CommSemiring C] [Algebra R C]
     [AddCommMonoid M] [Module R M] [Coalgebra R M]
@@ -95,12 +87,6 @@ theorem tensorCounitLeft_apply (f : WithConv (N →ₗ[R] C)) :
   ext m n
   simp [tensorCounitLeft, Algebra.smul_def]
 
-/-- Multiplying the right- and left-counit images recovers the exterior product. -/
-theorem tensorCounitRight_mul_tensorCounitLeft (f : WithConv (M →ₗ[R] C))
-    (g : WithConv (N →ₗ[R] C)) :
-    tensorCounitRight R C M N f * tensorCounitLeft R C M N g = mulTensor f g := by
-  simp
-
 end WithConv
 
 namespace TauCeti
@@ -120,7 +106,8 @@ theorem convolutionDelta_def :
 /-- The transposed multiplication evaluates at the product on a pure tensor. -/
 @[simp]
 theorem convolutionDelta_apply_tmul (f : WithConv (A →ₗ[R] C)) (a b : A) :
-    (convolutionDelta R C A f).ofConv (a ⊗ₜ[R] b) = f.ofConv (a * b) := (rfl)
+    (convolutionDelta R C A f).ofConv (a ⊗ₜ[R] b) = f.ofConv (a * b) := by
+  simp [convolutionDelta]
 
 end Bialgebra
 end TauCeti
