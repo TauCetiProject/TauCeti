@@ -204,6 +204,15 @@ theorem toContMDiff_toEndomorphism_apply (J : SmoothAlmostComplexStructure I M) 
 theorem toContMDiff_apply (J : SmoothAlmostComplexStructure I M) (n : ℕ∞) (x : M)
     (v : TangentSpace I x) : J.toContMDiff n x v = J x v := (rfl)
 
+/-- Changing the regularity of a smooth structure leaves its pointwise almost complex structures
+unchanged. -/
+@[simp]
+theorem toContMDiff_almostComplexStructureAt (J : SmoothAlmostComplexStructure I M) (n : ℕ∞) :
+    (J.toContMDiff n).almostComplexStructureAt = J.almostComplexStructureAt := by
+  ext x v
+  rw [ContMDiffAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
+    almostComplexStructureAt_toLinearMap, toContMDiff_toEndomorphism_apply]
+
 @[simp]
 theorem toContMDiff_ofLE (J : SmoothAlmostComplexStructure I M) {m n : ℕ∞} (h : m ≤ n) :
     (J.toContMDiff n).ofLE h = J.toContMDiff m := by

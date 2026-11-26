@@ -19,6 +19,7 @@ import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Atlas
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered.Atlas.Higher
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered.Morrey
 import TauCeti.Geometry.Manifold.Sobolev.LocalMap.Locality
+import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Bordered.Comparison
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 
 /-!
@@ -62,8 +63,14 @@ pushed-forward structure is only `C^(ℓ-1)`. Moving back along the inverse tran
 * `TauCeti.IsWeakPseudoholomorphicOnBordered.contMDiffOn_infty_of_mapsTo`,
   `TauCeti.IsWeakPseudoholomorphicBordered.contMDiff_infty_of_mapsBoundaryInto`: smoothness up to
   the boundary for a smooth structure and a smooth totally real embedding.
+* `TauCeti.IsPseudoholomorphicOn.contMDiffOn_of_mapsTo`,
+  `TauCeti.IsPseudoholomorphic.contMDiff_of_mapsBoundaryInto`: a pseudoholomorphic map of class
+  `C¹` for a smooth structure, sending the boundary into the image of a smooth totally real
+  embedding, is smooth up to the boundary. This is the smooth case read through the comparison
+  `TauCeti.isWeakPseudoholomorphicOnBordered_iff_isPseudoholomorphicOn`.
 * Check: the inclusion of the closed upper half-plane into `ℂ`, with boundary in the totally real
-  line `ℝ`, satisfies the hypotheses for every `ℓ`, and the smooth case applies to it.
+  line `ℝ`, satisfies the hypotheses for every `ℓ`, and the smooth case and the `C¹` criterion
+  apply to it.
 
 ## Implementation notes
 
@@ -414,6 +421,38 @@ theorem IsWeakPseudoholomorphicBordered.contMDiff_infty_of_mapsBoundaryInto [IsM
     ContMDiff closedUpperHalfPlaneModel I ∞ u := by
   simpa using h.contMDiff_of_mapsBoundaryInto hp hι (by simpa using hk) hb
 
+/-- **`C¹` pseudoholomorphic maps are smooth up to a totally real boundary** (McDuff–Salamon,
+Theorem B.4.1 and Remark B.4.3, smooth case). Let `J` be a smooth almost complex structure on `M`
+and `ι : N → M` a `C^k` totally real embedding for `J` with `k ≥ ∞`. A map `u` of class `C¹` on an
+open set `s` of a Riemann surface with boundary `X`, pseudoholomorphic on `s` for the structure of
+`X` and `J`, which maps the boundary points of `X` in `s` into `ι (N)`, is smooth on `s` up to the
+boundary. -/
+theorem IsPseudoholomorphicOn.contMDiffOn_of_mapsTo [IsManifold I' k N]
+    {J : SmoothAlmostComplexStructure I M}
+    (h : IsPseudoholomorphicOn (SmoothAlmostComplexStructure.ofBorderedHolomorphic X) J u s)
+    (hs : IsOpen s) (hu : ContMDiffOn closedUpperHalfPlaneModel I 1 u s)
+    (hι : IsTotallyRealEmbedding I' I k J.almostComplexStructureAt ι) (hk : ∞ ≤ k)
+    (hb : MapsTo u (s ∩ closedUpperHalfPlaneModel.boundary X) (range ι)) :
+    ContMDiffOn closedUpperHalfPlaneModel I ∞ u s :=
+  ((isWeakPseudoholomorphicOnBordered_iff_isPseudoholomorphicOn (ℓ := ⊤) (p := 3) J hs hu).2
+    h).contMDiffOn_infty_of_mapsTo hs (by norm_num)
+      (by rwa [SmoothAlmostComplexStructure.toContMDiff_almostComplexStructureAt]) hk hb
+
+/-- **`C¹` pseudoholomorphic maps are smooth up to a totally real boundary, on the whole
+surface** (McDuff–Salamon, Theorem B.4.1 and Remark B.4.3, smooth case). A map of class `C¹` from
+a Riemann surface with boundary `X`, pseudoholomorphic for the structure of `X` and a smooth
+almost complex structure `J` on `M`, which maps the boundary of `X` into the image of a `C^k`
+totally real embedding for `J` with `k ≥ ∞`, is smooth up to the boundary. -/
+theorem IsPseudoholomorphic.contMDiff_of_mapsBoundaryInto [IsManifold I' k N]
+    {J : SmoothAlmostComplexStructure I M}
+    (h : IsPseudoholomorphic (SmoothAlmostComplexStructure.ofBorderedHolomorphic X) J u)
+    (hu : ContMDiff closedUpperHalfPlaneModel I 1 u)
+    (hι : IsTotallyRealEmbedding I' I k J.almostComplexStructureAt ι) (hk : ∞ ≤ k)
+    (hb : MapsBoundaryInto closedUpperHalfPlaneModel u ι) :
+    ContMDiff closedUpperHalfPlaneModel I ∞ u :=
+  contMDiffOn_univ.1 ((isPseudoholomorphicOn_univ.2 h).contMDiffOn_of_mapsTo isOpen_univ
+    hu.contMDiffOn hι hk (hb.mapsTo.mono_left inter_subset_right))
+
 end Regularity
 
 /-! ### Checks -/
@@ -421,8 +460,9 @@ end Regularity
 /-- The inclusion of the closed upper half-plane into `ℂ` is weakly pseudoholomorphic up to the
 boundary for the complex structure of `ℂ`, and maps the boundary into the real line, which is
 totally real for it; so it lies in `W^{k,3}_loc` up to the boundary for every `k`, and is smooth
-up to the boundary. -/
+up to the boundary. Being `C¹` and pseudoholomorphic, it is also smooth by the `C¹` criterion. -/
 example : (∀ k : ℕ, MemWkpLocMapBordered 𝓘(ℝ, ℂ) 3 k ((↑) : ClosedUpperHalfPlane → ℂ)) ∧
+    ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) ∞ ((↑) : ClosedUpperHalfPlane → ℂ) ∧
     ContMDiff closedUpperHalfPlaneModel 𝓘(ℝ, ℂ) ∞ ((↑) : ClosedUpperHalfPlane → ℂ) := by
   have hι : IsTotallyRealEmbedding 𝓘(ℝ, ℝ) 𝓘(ℝ, ℂ) ⊤
       ((SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ).toContMDiff ⊤).almostComplexStructureAt
@@ -437,6 +477,11 @@ example : (∀ k : ℕ, MemWkpLocMapBordered 𝓘(ℝ, ℂ) 3 k ((↑) : ClosedU
   have h := isWeakPseudoholomorphicBordered_coe (ℓ := ⊤) (p := 3)
   exact ⟨fun k ↦ h.memWkpLocMapBordered_of_mapsBoundaryInto (by norm_num) (by norm_num) hι le_top
     mapsBoundaryInto_coe_ofReal le_top, h.contMDiff_infty_of_mapsBoundaryInto (by norm_num) hι
-      le_top mapsBoundaryInto_coe_ofReal⟩
+      le_top mapsBoundaryInto_coe_ofReal,
+    IsPseudoholomorphic.contMDiff_of_mapsBoundaryInto
+      SmoothAlmostComplexStructure.isPseudoholomorphic_coe_ofBorderedHolomorphic
+        ClosedUpperHalfPlane.contMDiff_coe
+        (by rwa [SmoothAlmostComplexStructure.toContMDiff_almostComplexStructureAt] at hι) le_top
+        mapsBoundaryInto_coe_ofReal⟩
 
 end TauCeti
