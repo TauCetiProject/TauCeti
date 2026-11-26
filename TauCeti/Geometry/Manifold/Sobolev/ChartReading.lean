@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication.Basic
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Schwartz
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft

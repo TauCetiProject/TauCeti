@@ -23,7 +23,7 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication.Basic
+import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
 
 /-!
