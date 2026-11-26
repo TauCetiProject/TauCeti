@@ -5,21 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdjoinRoot
-public import TauCeti.Algebra.AlgebraicGroup.AdditiveFrobeniusKernel.Basic
+public import TauCeti.Algebra.AlgebraicGroup.AdditiveFrobeniusKernel.PowerBasis
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Unipotent
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Morphism
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.RankOne
 import TauCeti.Algebra.Bialgebra.Primitive
 
 /-!
 # The Frobenius kernel `αₚ` is unipotent
 
 Over a base ring `R` of prime characteristic `p`, the coordinate Hopf algebra of `αₚ` is
-`R[x] / (xᵖ)` (`TauCeti.AlphaP.CoordinateRing`). Write `[x]` for the class of `x`. This file shows
-that the coordinate ring is free with basis `1, [x], …, [x]ᵖ⁻¹` (`TauCeti.AlphaP.powerBasis`,
-transported from `AdjoinRoot (Xᵖ)`), and that the `R`-linear map `R[x] / (xᵖ) → R[x]` sending
-`[x]ⁱ` to `xⁱ` for `i < p` (`TauCeti.AlphaP.truncation`) is an injective coalgebra map sending `1`
+`R[x] / (xᵖ)` (`TauCeti.AlphaP.CoordinateRing`), free with basis `1, [x], …, [x]ᵖ⁻¹`
+(`TauCeti.AlphaP.powerBasis`), where `[x]` is the class of `x`. This file shows that the
+`R`-linear map `R[x] / (xᵖ) → R[x]` sending `[x]ⁱ` to `xⁱ` for `i < p`
+(`TauCeti.AlphaP.truncation`, reduction modulo `xᵖ`) is an injective coalgebra map sending `1`
 to `1` (`TauCeti.AlphaP.truncationCoalgHom`). It is not multiplicative, but it preserves the
 comultiplication because `Δ(xⁿ) = ∑ (n choose i) xⁱ ⊗ xⁿ⁻ⁱ` only involves exponents at most `n`.
 
@@ -28,12 +26,11 @@ Over a field `k` of characteristic `p`, every `αₚ`-comodule is then a `𝔾�
 same fixed vectors, and since `𝔾ₐ` is unipotent
 (`TauCeti.AdditiveGroup.unipotentCommHopfAlgProperty_coordinateHopfAlgebra`), so is `αₚ`
 (`TauCeti.AlphaP.unipotentCommHopfAlgProperty_coordinateRing`). Together with
-`TauCeti.AlphaP.coordinateRing_not_isReduced` this is the roadmap Check that `αₚ` is unipotent
-and not smooth.
+`TauCeti.AlphaP.coordinateRing_not_isReduced`, this shows that `αₚ` is unipotent but not smooth.
 
 ## Main definitions
 
-* `TauCeti.AlphaP.powerBasis`: the power basis `1, [x], …, [x]ᵖ⁻¹` of `R[x] / (xᵖ)`.
+* `TauCeti.AlphaP.truncation`: the linear map `R[x] / (xᵖ) → R[x]`, `[x]ⁱ ↦ xⁱ`.
 * `TauCeti.AlphaP.truncationCoalgHom`: the coalgebra map `R[x] / (xᵖ) → R[x]`, `[x]ⁱ ↦ xⁱ`.
 
 ## Main results
@@ -55,93 +52,85 @@ universe u
 
 variable {R : Type u} [CommRing R] (p : ℕ) [Fact p.Prime] [CharP R p]
 
-/-- The coordinate ring of `αₚ` is `AdjoinRoot (Xᵖ)`, through the identification of the
-coordinate ring of `𝔾ₐ` with the polynomial ring. -/
-noncomputable def coordinateRingEquivAdjoinRoot :
-    CoordinateRing (R := R) p ≃ₐ[R] AdjoinRoot (X ^ p : R[X]) :=
-  Ideal.quotientEquivAlg _ _ SymmetricAlgebra.equivPolynomial <| by
-    rw [hopfIdeal_toIdeal, Ideal.map_span, Set.image_singleton, map_pow]
-    change Ideal.span {X ^ p} = _
-    rw [← equivPolynomial_ι_one (R := R)]
-    rfl
-
-/-- **The power basis `1, [x], …, [x]ᵖ⁻¹` of the coordinate ring of `αₚ`.** -/
-noncomputable def powerBasis : PowerBasis R (CoordinateRing (R := R) p) :=
-  (AdjoinRoot.powerBasis' (monic_X_pow p)).map (coordinateRingEquivAdjoinRoot p).symm
-
-/-- The generator of `TauCeti.AlphaP.powerBasis` is the class of `x`. -/
-theorem powerBasis_gen :
-    (powerBasis (R := R) p).gen =
-      Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal (ι R R 1 : SymmetricAlgebra R R) := by
-  rw [powerBasis, PowerBasis.map_gen, AdjoinRoot.powerBasis'_gen, AlgEquiv.symm_apply_eq]
-  change AdjoinRoot.root _ = AdjoinRoot.mk _ (equivPolynomial (ι R R 1))
-  rw [equivPolynomial_ι_one, AdjoinRoot.mk_X]
-
-/-- The power basis of the coordinate ring of `αₚ` has `p` elements. -/
-theorem powerBasis_dim : (powerBasis (R := R) p).dim = p := by
-  have := CharP.nontrivial_of_char_ne_one (R := R) (Fact.out (p := p.Prime)).ne_one
-  rw [powerBasis, PowerBasis.map_dim, AdjoinRoot.powerBasis'_dim, natDegree_X_pow]
-
-/-- The class of `xⁿ`, for `n < p`, is a vector of the power basis. -/
-private theorem mk_pow_eq_basis {n : ℕ} (hn : n < p) :
-    Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal ((ι R R 1 : SymmetricAlgebra R R) ^ n) =
-      (powerBasis (R := R) p).basis ⟨n, (powerBasis_dim (R := R) p).symm ▸ hn⟩ := by
-  rw [PowerBasis.coe_basis, map_pow, powerBasis_gen]
-
-/-- The `R`-linear map `R[x] / (xᵖ) → R[x]` sending `[x]ⁱ` to `xⁱ` for `i < p`. -/
+/-- The `R`-linear map `R[x] / (xᵖ) → R[x]` sending `[x]ⁱ` to `xⁱ` for `i < p`: the class of `f`
+goes to the remainder of `f` modulo `xᵖ` (`AdjoinRoot.modByMonicHom`). -/
 noncomputable def truncation : CoordinateRing (R := R) p →ₗ[R] SymmetricAlgebra R R :=
-  (powerBasis (R := R) p).basis.constr R fun i ↦ (ι R R 1 : SymmetricAlgebra R R) ^ (i : ℕ)
+  equivPolynomial.symm.toLinearMap ∘ₗ AdjoinRoot.modByMonicHom (monic_X_pow p) ∘ₗ
+    (coordinateRingEquivAdjoinRoot (R := R) p).toLinearMap
 
-/-- The truncation map sends the class of `xⁿ`, for `n < p`, to `xⁿ`. -/
+/-- The truncation map sends `[x]ⁿ`, for `n < p`, to `xⁿ`.
+
+The class is taken modulo `Ideal.span {x ^ p}`, the `simp` normal form of
+`(hopfIdeal p).toIdeal`, as in `TauCeti.AlphaP.mk_ι_pow_eq_zero`. -/
+@[simp]
 theorem truncation_mk_pow {n : ℕ} (hn : n < p) :
-    truncation p (Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal
-      ((ι R R 1 : SymmetricAlgebra R R) ^ n)) = (ι R R 1 : SymmetricAlgebra R R) ^ n := by
-  rw [mk_pow_eq_basis p hn, truncation, Module.Basis.constr_basis]
+    truncation p (Ideal.Quotient.mk (Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p})
+      (ι R R 1 : SymmetricAlgebra R R) ^ n) = (ι R R 1 : SymmetricAlgebra R R) ^ n := by
+  have := CharP.nontrivial_of_char_ne_one (R := R) (Fact.out (p := p.Prime)).ne_one
+  -- Unfold `truncation`. The argument is stated over `Ideal.span {x ^ p}`, which is only
+  -- definitionally the ideal of `CoordinateRing p`, so `rw` cannot unfold the composition.
+  change equivPolynomial.symm (AdjoinRoot.modByMonicHom (monic_X_pow p)
+    (coordinateRingEquivAdjoinRoot p
+      (Ideal.Quotient.mk (Ideal.span {(ι R R 1 : SymmetricAlgebra R R) ^ p}) (ι R R 1 ^ n)))) = _
+  rw [coordinateRingEquivAdjoinRoot_mk, map_pow, equivPolynomial_ι_one,
+    AdjoinRoot.modByMonicHom_mk, (modByMonic_eq_self_iff (monic_X_pow p)).mpr (by
+      rw [degree_X_pow, degree_X_pow]; exact_mod_cast hn), map_pow, equivPolynomial_symm_X]
+
+/-- The truncation map sends the `i`-th vector `[x]ⁱ` of the power basis to `xⁱ`. -/
+theorem truncation_powerBasis_basis (i : Fin (powerBasis (R := R) p).dim) :
+    truncation p ((powerBasis (R := R) p).basis i) =
+      (ι R R 1 : SymmetricAlgebra R R) ^ (i : ℕ) := by
+  rw [PowerBasis.coe_basis, powerBasis_gen]
+  exact truncation_mk_pow p (i.isLt.trans_eq (powerBasis_dim p))
 
 /-- The truncation map is a section of the quotient map `R[x] → R[x] / (xᵖ)`. -/
 theorem mk_truncation (a : CoordinateRing (R := R) p) :
     Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal (truncation p a) = a := by
-  refine LinearMap.congr_fun ((powerBasis (R := R) p).basis.ext
-    (f₁ := (Ideal.Quotient.mkₐ R (hopfIdeal (R := R) p).toIdeal).toLinearMap ∘ₗ truncation p)
-    (f₂ := LinearMap.id) fun i ↦ ?_) a
-  have hi : (i : ℕ) < p := i.isLt.trans_eq (powerBasis_dim (R := R) p)
-  rw [LinearMap.comp_apply, LinearMap.id_apply, ← mk_pow_eq_basis p hi, AlgHom.toLinearMap_apply,
-    truncation_mk_pow p hi, Ideal.Quotient.mkₐ_eq_mk]
+  apply (coordinateRingEquivAdjoinRoot (R := R) p).injective
+  refine (coordinateRingEquivAdjoinRoot_mk p _).trans ?_
+  rw [truncation, LinearMap.comp_apply, LinearMap.comp_apply,
+    AlgEquiv.toLinearMap_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.apply_symm_apply,
+    AdjoinRoot.mk_leftInverse]
 
 /-- The truncation map is injective. -/
 theorem truncation_injective : Function.Injective (truncation (R := R) p) :=
   Function.LeftInverse.injective (g := Ideal.Quotient.mk _) (mk_truncation p)
 
 /-- The truncation map sends `1` to `1`. -/
+@[simp]
 theorem truncation_one : truncation (R := R) p 1 = 1 := by
-  have h := truncation_mk_pow (R := R) p (n := 0) (Fact.out (p := p.Prime)).pos
-  rwa [pow_zero, map_one] at h
+  calc truncation p 1
+      = truncation p (Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal (ι R R 1) ^ 0) :=
+        congrArg (truncation p) (pow_zero _).symm
+    _ = (ι R R 1 : SymmetricAlgebra R R) ^ 0 :=
+        truncation_mk_pow p (Fact.out (p := p.Prime)).pos
+    _ = 1 := pow_zero _
 
 /-- **The coalgebra of `αₚ` is a subcoalgebra of the coalgebra of `𝔾ₐ`**: the truncation map
 `R[x] / (xᵖ) → R[x]`, `[x]ⁱ ↦ xⁱ` for `i < p`, preserves the counit and the comultiplication. -/
-@[expose] noncomputable def truncationCoalgHom :
+noncomputable def truncationCoalgHom :
     CoordinateRing (R := R) p →ₗc[R] SymmetricAlgebra R R where
   toLinearMap := truncation p
   counit_comp := (powerBasis (R := R) p).basis.ext fun i ↦ by
-    have hi : (i : ℕ) < p := i.isLt.trans_eq (powerBasis_dim (R := R) p)
-    rw [LinearMap.comp_apply, ← mk_pow_eq_basis p hi, truncation_mk_pow p hi,
+    rw [LinearMap.comp_apply, truncation_powerBasis_basis, powerBasis_basis_apply,
       Bialgebra.Quotient.counit_mk]
   map_comp_comul := (powerBasis (R := R) p).basis.ext fun i ↦ by
-    have hi : (i : ℕ) < p := i.isLt.trans_eq (powerBasis_dim (R := R) p)
-    rw [LinearMap.comp_apply, LinearMap.comp_apply, ← mk_pow_eq_basis p hi,
-      truncation_mk_pow p hi, Bialgebra.Quotient.comul_mk, ← LinearMap.comp_apply
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, truncation_powerBasis_basis,
+      powerBasis_basis_apply, Bialgebra.Quotient.comul_mk, ← LinearMap.comp_apply
         (TensorProduct.map _ _), ← TensorProduct.map_comp,
       TauCeti.Bialgebra.comul_pow_of_primitive _ (SymmetricAlgebra.comul_ι R R 1)]
     simp only [map_sum, map_nsmul, TensorProduct.map_tmul, LinearMap.comp_apply,
-      AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+      AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk, map_pow]
     refine Finset.sum_congr rfl fun mn hmn ↦ ?_
     have hmn' := Finset.mem_antidiagonal.mp hmn
-    rw [truncation_mk_pow p (by omega), truncation_mk_pow p (by omega)]
+    have hi : (i : ℕ) < p := i.isLt.trans_eq (powerBasis_dim (R := R) p)
+    exact congrArg₂ (fun a b ↦ (i : ℕ).choose mn.1 • a ⊗ₜ[R] b) (truncation_mk_pow p (by omega))
+      (truncation_mk_pow p (by omega))
 
 @[simp]
 theorem truncationCoalgHom_apply (a : CoordinateRing (R := R) p) :
     truncationCoalgHom p a = truncation p a :=
-  rfl
+  (rfl)
 
 /-- The coalgebra map `R[x] / (xᵖ) → R[x]` is injective. -/
 theorem truncationCoalgHom_injective : Function.Injective (truncationCoalgHom (R := R) p) :=

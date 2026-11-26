@@ -67,13 +67,13 @@ include hH
 
 /-- **Unipotence pulls back along injective unital coalgebra maps.** If `f : A → H` is an injective
 morphism of coalgebras with `f 1 = 1` between commutative Hopf algebras, and `H` is unipotent, then
-so is `A`: an `A`-comodule is an `H`-comodule through `f`, a vector fixed by `H` is fixed by `A`
-since tensoring with `M` over a field preserves the injectivity of `f`, and the fixed condition
-`v ↦ v ⊗ 1` is preserved since `f 1 = 1`. The map need not be multiplicative: this applies to
-the inclusion of the coalgebra `k[x]/(xᵖ)` of `αₚ` into `k[x]` as `span {1, x, …, xᵖ⁻¹}`. -/
+so is `A`. The map need not be multiplicative: this applies to the inclusion of the coalgebra
+`k[x]/(xᵖ)` of `αₚ` into `k[x]` as `span {1, x, …, xᵖ⁻¹}`. -/
 theorem of_coalgHom_injective {A : Type w} [CommRing A] [HopfAlgebra k A] (f : A →ₗc[k] H)
     (hf : Function.Injective f) (h1 : f 1 = 1) :
     unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k A) := by
+  -- An `A`-comodule is an `H`-comodule through `f`; a vector fixed by `H` is fixed by `A`, since
+  -- tensoring with `M` over a field preserves the injectivity of `f` and `f 1 = 1`.
   refine (unipotentCommHopfAlgProperty_iff k _).mpr fun M _ _ _ _ _ ↦ ?_
   let _ : Comodule k H M := Corestrict f
   obtain ⟨v, hv, hvc⟩ :=
