@@ -144,6 +144,13 @@ noncomputable def flowDiffeomorph (t : ℝ) :
     M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M :=
   hX.isBottAdaptedPseudoGradient.flowDiffeomorph t
 
+/-- The time-`t` diffeomorphism of the flow is the one of the flow as a pseudo-gradient adapted in
+the Morse–Bott sense. -/
+@[simp]
+theorem isBottAdaptedPseudoGradient_flowDiffeomorph (t : ℝ) :
+    hX.isBottAdaptedPseudoGradient.flowDiffeomorph t = hX.flowDiffeomorph t := by
+  rw [flowDiffeomorph]
+
 /-- The diffeomorphism `flowDiffeomorph t` is the time-`t` map of the flow. -/
 @[simp]
 theorem flowDiffeomorph_apply (t : ℝ) (y : M) : hX.flowDiffeomorph t y = hX.flow t y := by

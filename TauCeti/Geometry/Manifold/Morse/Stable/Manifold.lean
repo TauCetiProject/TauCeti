@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
-public import TauCeti.Geometry.Manifold.Morse.Bott.Chart.StableSubspace
-public import TauCeti.Geometry.Manifold.LinearSlice
+public import TauCeti.Geometry.Manifold.Morse.Bott.StableManifold
 public import TauCeti.LinearAlgebra.ExtendByZero
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -274,15 +273,11 @@ theorem exists_isSliceChart_stableSet_flow (hX : IsAdaptedPseudoGradient f X)
   set D := φ.toChart.source ∩ φ.toChart ⁻¹' {v : E | ‖φ.coord v‖ < ε}
   have hD : IsOpen D := φ.toChart.continuousOn.isOpen_inter_preimage φ.toChart.open_source
     (isOpen_lt (continuous_norm.comp φ.continuous_coord) continuous_const)
-  refine ⟨D, hD, ⟨φ.mem_source, by simpa using hε⟩, inter_subset_left,
-    fun T ↦ isSliceChart_iff.2 fun z hz ↦ ?_⟩
-  simp only [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
-    hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply] at hz
-  have hzD : hX.flow T z ∈ D := hz.2
-  simp only [Homeomorph.transOpenPartialHomeomorph_apply, OpenPartialHomeomorph.restr_apply,
-    Diffeomorph.coe_toHomeomorph, comp_apply, flowDiffeomorph_apply, SetLike.mem_coe,
-    φ.mem_stableSubspace]
-  rw [← hloc _ hzD.1 hzD.2, Flow.apply_mem_stableSet_iff]
+  refine ⟨D, hD, ⟨φ.mem_source, by simpa using hε⟩, inter_subset_left, fun T ↦ ?_⟩
+  rw [← hX.isBottAdaptedPseudoGradient_flowDiffeomorph]
+  exact hX.isBottAdaptedPseudoGradient.isSliceChart_flowDiffeomorph_trans_restr φ.toMorseBottChart
+    (fun t y ↦ by rw [hX.isBottAdaptedPseudoGradient_flow, Flow.apply_mem_stableSet_iff]) hD
+    (fun y hy ↦ (hloc y hy.1 hy.2).trans φ.mem_stableSubspace.symm) T
 
 /-- **Slice charts for the stable manifold.** Let `φ` be a Morse chart at `x` in which `X` is
 linear. Every point of `W^s(x)` lies in the source of a chart of the maximal atlas that flattens
@@ -297,12 +292,10 @@ theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
       ∀ z ∈ q.source, z ∈ hX.flow.stableSet x ↔ q z ∈ φ.stableSubspace := by
   obtain ⟨D, hD, hxD, hDs, hslice⟩ := hX.exists_isSliceChart_stableSet_flow φ hφ
   obtain ⟨T, hT⟩ := ((Flow.mem_stableSet.1 hp).eventually (hD.mem_nhds hxD)).exists
-  refine ⟨(hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph (φ.toChart.restr D),
-    ?_, (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
-      (restr_mem_maximalAtlas _ φ.mem_maximalAtlas hD), isSliceChart_iff.1 (hslice T)⟩
-  rw [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
-    hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply]
-  exact ⟨hDs hT, hT⟩
+  obtain ⟨q, hpq, hq, hs⟩ := hX.isBottAdaptedPseudoGradient.exists_isSliceChart_of_flow_mem
+    φ.mem_maximalAtlas hD hDs (hX.isBottAdaptedPseudoGradient_flowDiffeomorph T ▸ hslice T)
+    (hX.isBottAdaptedPseudoGradient_flow ▸ hT)
+  exact ⟨q, hpq, hq, isSliceChart_iff.1 hs⟩
 
 /-- **Slice charts for the stable manifold of a critical point.** Every point of the stable
 manifold of a critical point `x` lies in the source of a chart of the maximal atlas that flattens
