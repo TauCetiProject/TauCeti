@@ -79,6 +79,9 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
+* `integrable_inner_gaugeFixedAdjoint` and `integral_inner_gaugeFixedAdjoint_eq_zero`: the
+  pairing `⟪y, L_x* η⟫` with a compactly supported `C¹` field `η` is integrable, and it integrates
+  to zero when `L_x y = 0`.
 * `gaugeFixedOperator_ae_eq_of_integral_inner_gaugeFixedAdjoint_eq`: a `C¹` weak solution of
   `L_x y = g`, tested against smooth compactly supported fields, solves it almost everywhere, by
   integration by parts and the fundamental lemma of the calculus of variations
@@ -300,6 +303,13 @@ theorem gaugeFixedAdjoint_smul (x η : ℂ → EuclideanSpace ℝ (Fin 4)) (t : 
     congrFun (fderiv_const_smul_field t) z
   ext i
   fin_cases i <;> simp [hd] <;> ring
+
+/-- `L_x*` sends zero to zero. -/
+@[simp]
+theorem gaugeFixedAdjoint_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedAdjoint x 0 = 0 := by
+  funext z
+  simpa using gaugeFixedAdjoint_smul x 0 0 z
 
 /-- The coefficient matrix of the zeroth-order part of the gauge-fixed operator at a field with
 value `w`. It is linear in `w`, and `L_x - L₀` is multiplication by the matrix at
@@ -1167,6 +1177,24 @@ theorem integral_inner_gaugeFixedOperator {x y η : ℂ → EuclideanSpace ℝ (
     intro hn
     exact hmain (((hn.sub (hint V₂ hV₂ hV₂c I)).sub (hint V₁ hV₁ hV₁c 1)).congr
       (ae_of_all _ fun z ↦ by simp only [Pi.sub_apply]; ring))
+
+/-- For a continuous field `x`, the pairing `⟪y, L_x* η⟫` of a continuous field `y` with `L_x*` of
+a compactly supported `C¹` field `η` is integrable. -/
+theorem integrable_inner_gaugeFixedAdjoint {x y η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hx : Continuous x) (hy : Continuous y) (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η) :
+    Integrable (fun z ↦ ⟪y z, gaugeFixedAdjoint x η z⟫) μ :=
+  (hy.inner (continuous_gaugeFixedAdjoint hx hη)).integrable_of_hasCompactSupport
+    ((hasCompactSupport_gaugeFixedAdjoint (x := x) hηc).mono fun z hz h0 ↦
+      hz (by simp only [h0, inner_zero_right]))
+
+/-- If `L_x y = 0`, then `∫ ⟪y, L_x* η⟫ = 0` for `C¹` fields `y`, `η`, one of which is compactly
+supported: by `integral_inner_gaugeFixedOperator`, the integral equals `∫ ⟪L_x y, η⟫`. -/
+theorem integral_inner_gaugeFixedAdjoint_eq_zero {x y η : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hy : ContDiff ℝ 1 y) (hη : ContDiff ℝ 1 η) (hc : HasCompactSupport y ∨ HasCompactSupport η)
+    (hLy : ∀ z, gaugeFixedOperator x y z = 0) :
+    ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ ∂μ = 0 := by
+  rw [← integral_inner_gaugeFixedOperator hy hη hc]
+  simp [hLy]
 
 open scoped ContDiff in
 /-- **`C¹` weak solutions are classical.** Let `x` be continuous, `y` a `C¹` field and `g` locally
