@@ -23,6 +23,7 @@ import Mathlib.Algebra.Order.Star.Unitization
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Data.Matrix.Composition
 import TauCeti.LinearAlgebra.Matrix.PartialIsometry
+import TauCeti.LinearAlgebra.Trace.Idempotent
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -63,9 +64,11 @@ embeddings into block-diagonal matrices.
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub`, `ofMatrix_symm_smul`, `ofMatrix_symm_sum`,
-  `CStarMatrix.ofMatrixL_symm_apply`, `CStarMatrix.trace_ofMatrix_symm_unitary_conj`, and
-  `CStarMatrix.continuous_trace_ofMatrix_symm` do the same for the other algebraic operations,
-  `CStarMatrix.ofMatrixL.symm`, and unitary invariance and continuity of the matrix trace.
+  `CStarMatrix.ofMatrixL_symm_apply`, `CStarMatrix.trace_ofMatrix_symm_unitary_conj`,
+  `CStarMatrix.continuous_trace_ofMatrix_symm`, and
+  `CStarMatrix.eq_zero_of_isIdempotentElem_of_trace_eq_zero` do the same for the other algebraic
+  operations, `CStarMatrix.ofMatrixL.symm`, and unitary invariance, continuity, and the idempotent
+  vanishing criterion of the matrix trace.
 * `Matrix.GeneralLinearGroup.toCStarMatrixUnits`: invertible matrices over a unital C⋆-algebra
   `A` as the invertible elements of `CStarMatrix n n A`, an isomorphism of topological groups.
 * `CStarMatrix.isStarProjection_ofMatrix_symm_iff`, `CStarMatrix.isStarProjection_ofMatrix_iff`:
@@ -1210,6 +1213,15 @@ theorem trace_ofMatrix_symm_unitary_conj {n A : Type*} [Fintype n] [DecidableEq 
 theorem continuous_trace_ofMatrix_symm {n A : Type*} [Fintype n] [NonUnitalCStarAlgebra A] :
     Continuous fun x : CStarMatrix n n A ↦ Matrix.trace (ofMatrix.symm x) := by
   simpa only [← ofMatrixL_symm_apply] using ofMatrixL.symm.continuous.matrix_trace
+
+/-- Over a field of characteristic zero, an idempotent C⋆-matrix of trace zero is zero. -/
+theorem eq_zero_of_isIdempotentElem_of_trace_eq_zero {n K : Type*} [Fintype n] [Field K]
+    [CharZero K] {P : CStarMatrix n n K} (hP : IsIdempotentElem P)
+    (htr : Matrix.trace (ofMatrix.symm P) = 0) : P = 0 := by
+  apply ofMatrix.symm.injective
+  rw [ofMatrix_symm_zero]
+  refine Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero ?_ htr
+  rw [IsIdempotentElem, ← ofMatrix_symm_mul, hP.eq]
 
 end CStarMatrix
 

@@ -288,19 +288,11 @@ theorem sum_multiplicityMatrix_mul_card_le [Fintype ι]
   rw [sum_multiplicityMatrix_mul_card_eq_rank_map_one φ j]
   exact Matrix.rank_le_card_width _
 
-private theorem eq_zero_of_isIdempotentElem_of_trace_eq_zero {M : Type*} [Fintype M]
-    {P : CStarMatrix M M ℂ} (hP : IsIdempotentElem P)
-    (htr : Matrix.trace (CStarMatrix.ofMatrix.symm P) = 0) : P = 0 := by
-  apply CStarMatrix.ofMatrix.symm.injective
-  rw [CStarMatrix.ofMatrix_symm_zero]
-  refine Matrix.IsIdempotentElem.eq_zero_of_trace_eq_zero ?_ htr
-  rw [IsIdempotentElem, ← CStarMatrix.ofMatrix_symm_mul, hP.eq]
-
 private theorem map_eq_zero_of_trace_eq_zero
     (φ : (∀ i, CStarMatrix (n i) (n i) ℂ) →⋆ₙₐ[ℂ] (∀ j, CStarMatrix (m j) (m j) ℂ))
     {x : ∀ i, CStarMatrix (n i) (n i) ℂ} (j : κ) (hx : IsIdempotentElem x)
     (htr : Matrix.trace (CStarMatrix.ofMatrix.symm (φ x j)) = 0) : φ x j = 0 :=
-  eq_zero_of_isIdempotentElem_of_trace_eq_zero (isIdempotentElem_map_apply φ hx j) htr
+  CStarMatrix.eq_zero_of_isIdempotentElem_of_trace_eq_zero (isIdempotentElem_map_apply φ hx j) htr
 
 /-- **Unitality criterion**: `φ` preserves the unit (`φ 1 = 1`) if and only if equality holds in
 the block-size inequality at every target block `j`. -/
@@ -313,7 +305,7 @@ theorem map_one_eq_one_iff_sum_multiplicityMatrix_eq [Fintype ι]
     rw [Pi.one_apply, CStarMatrix.ofMatrix_symm_one, Matrix.rank_one]
   · rw [Pi.one_apply]
     have hP : IsIdempotentElem (φ 1 j) := isIdempotentElem_map_apply φ .one j
-    have hzero := eq_zero_of_isIdempotentElem_of_trace_eq_zero hP.one_sub <| by
+    have hzero := CStarMatrix.eq_zero_of_isIdempotentElem_of_trace_eq_zero hP.one_sub <| by
       rw [CStarMatrix.ofMatrix_symm_sub, CStarMatrix.ofMatrix_symm_one, Matrix.trace_sub,
         Matrix.trace_one, trace_map_one_eq_sum φ j, ← Nat.cast_sum, h j, sub_self]
     exact (sub_eq_zero.mp hzero).symm
