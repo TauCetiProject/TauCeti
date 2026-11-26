@@ -47,40 +47,20 @@ For a contact structure `D` these are the contact vector fields. -/
 def preservesDistributionLieSubalgebra : LieSubalgebra ℝ (LieAlgebroid.tangent I M).Sections where
   carrier := {X | PreservesDistribution I D ((LieAlgebroid.tangent I M).sectionsEquiv X)}
   add_mem' {X Y} hX hY := by
-    have h : ⇑((LieAlgebroid.tangent I M).sectionsEquiv (X + Y)) =
-        ⇑((LieAlgebroid.tangent I M).sectionsEquiv X) +
-          ⇑((LieAlgebroid.tangent I M).sectionsEquiv Y) := by
-      rw [map_add, ContMDiffSection.coe_add]
-    have hXY := PreservesDistribution.add hX hY
-      ((LieAlgebroid.tangent I M).sectionsEquiv X).mdifferentiable
+    simp only [Set.mem_ofPred_eq, map_add, ContMDiffSection.coe_add] at hX hY ⊢
+    exact hX.add hY ((LieAlgebroid.tangent I M).sectionsEquiv X).mdifferentiable
       ((LieAlgebroid.tangent I M).sectionsEquiv Y).mdifferentiable
-    rw [← h] at hXY
-    exact hXY
   zero_mem' := by
-    have h : ⇑((LieAlgebroid.tangent I M).sectionsEquiv 0) = 0 := by
-      rw [map_zero, ContMDiffSection.coe_zero]
-    have h0 : PreservesDistribution I D (0 : Π x : M, TangentSpace I x) :=
-      preservesDistribution_zero
-    rw [← h] at h0
-    exact h0
+    simp only [Set.mem_ofPred_eq, map_zero, ContMDiffSection.coe_zero]
+    exact preservesDistribution_zero
   smul_mem' c X hX := by
-    have h : ⇑((LieAlgebroid.tangent I M).sectionsEquiv (c • X)) =
-        c • ⇑((LieAlgebroid.tangent I M).sectionsEquiv X) := by
-      rw [LinearMapClass.map_smul_of_tower, ContMDiffSection.coe_smul]
-    have hcX := PreservesDistribution.const_smul hX c
-    rw [← h] at hcX
-    exact hcX
+    rw [Set.mem_ofPred_eq] at hX ⊢
+    rw [LinearMapClass.map_smul_of_tower, ContMDiffSection.coe_smul]
+    exact hX.const_smul c
   lie_mem' {X Y} hX hY := by
-    -- The bracket of the sections is the Lie bracket of the underlying vector fields.
-    have h : ⇑((LieAlgebroid.tangent I M).sectionsEquiv ⁅X, Y⁆) =
-        mlieBracket I ((LieAlgebroid.tangent I M).sectionsEquiv X)
-          ((LieAlgebroid.tangent I M).sectionsEquiv Y) :=
-      funext fun x ↦ by rw [LieAlgebroid.sectionsEquiv_lie, LieAlgebroid.tangent_bracket_apply]
-    have hXY := PreservesDistribution.mlieBracket hX hY
-      ((LieAlgebroid.tangent I M).sectionsEquiv X).contMDiff
+    simp only [Set.mem_ofPred_eq, LieAlgebroid.coe_tangent_sectionsEquiv_lie] at hX hY ⊢
+    exact hX.mlieBracket hY ((LieAlgebroid.tangent I M).sectionsEquiv X).contMDiff
       ((LieAlgebroid.tangent I M).sectionsEquiv Y).contMDiff
-    rw [← h] at hXY
-    exact hXY
 
 /-- A smooth vector field lies in the Lie algebra of vector fields preserving `D` exactly when it
 preserves `D`. -/

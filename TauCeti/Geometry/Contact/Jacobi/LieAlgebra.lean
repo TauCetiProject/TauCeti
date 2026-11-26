@@ -230,23 +230,21 @@ def contactHamiltonianLieHom (hα : α.IsContactForm) :
   toFun := contactHamiltonianSection hα
   map_add' f g := (LieAlgebroid.tangent I M).sectionsEquiv.injective <|
     ContMDiffSection.ext fun x ↦ by
-      rw [map_add, ContMDiffSection.coe_add, Pi.add_apply, contactHamiltonianSection_apply,
-        contactHamiltonianSection_apply, contactHamiltonianSection_apply, map_add,
-        ContMDiffMap.coe_add, contactHamiltonianVectorField_add
-          (JacobiLieAlgebra.mdifferentiableAt f x) (JacobiLieAlgebra.mdifferentiableAt g x)]
+      simp only [map_add, ContMDiffSection.coe_add, Pi.add_apply, contactHamiltonianSection_apply,
+        ContMDiffMap.coe_add]
+      exact contactHamiltonianVectorField_add (JacobiLieAlgebra.mdifferentiableAt f x)
+        (JacobiLieAlgebra.mdifferentiableAt g x)
   map_smul' c f := (LieAlgebroid.tangent I M).sectionsEquiv.injective <|
     ContMDiffSection.ext fun x ↦ by
-      rw [RingHom.id_apply, LinearMapClass.map_smul_of_tower, ContMDiffSection.coe_smul,
-        Pi.smul_apply, contactHamiltonianSection_apply, contactHamiltonianSection_apply, map_smul,
-        ContMDiffMap.coe_smul, contactHamiltonianVectorField_const_smul]
+      rw [RingHom.id_apply, LinearMapClass.map_smul_of_tower]
+      simp only [ContMDiffSection.coe_smul, Pi.smul_apply, contactHamiltonianSection_apply,
+        map_smul, ContMDiffMap.coe_smul, contactHamiltonianVectorField_const_smul]
   map_lie' {f g} := (LieAlgebroid.tangent I M).sectionsEquiv.injective <|
     ContMDiffSection.ext fun x ↦ by
-      have hX : ∀ u, ⇑((LieAlgebroid.tangent I M).sectionsEquiv (contactHamiltonianSection hα u)) =
-          α.contactHamiltonianVectorField (α.jacobiLieAlgebraEquiv hα u) :=
-        fun u ↦ funext (contactHamiltonianSection_apply hα u)
-      rw [LieAlgebroid.sectionsEquiv_lie, LieAlgebroid.tangent_bracket_apply, hX, hX, hX,
-        coe_jacobiLieAlgebraEquiv_lie, hα.contactHamiltonianVectorField_jacobiBracket
-          (JacobiLieAlgebra.contMDiff_two f) (JacobiLieAlgebra.contMDiff_two g)]
+      simp only [LieAlgebroid.coe_tangent_sectionsEquiv_lie,
+        funext (contactHamiltonianSection_apply hα _), coe_jacobiLieAlgebraEquiv_lie]
+      rw [hα.contactHamiltonianVectorField_jacobiBracket (JacobiLieAlgebra.contMDiff_two f)
+        (JacobiLieAlgebra.contMDiff_two g)]
 
 /-- The vector field of `f ↦ X_f` is the contact Hamiltonian vector field. -/
 @[simp]
