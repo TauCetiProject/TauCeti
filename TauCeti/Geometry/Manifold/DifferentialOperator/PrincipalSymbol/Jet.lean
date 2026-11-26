@@ -49,9 +49,9 @@ On these jets the jet factor of an operator `P` of order at most `r` is its comm
 `x` exactly when its jet factor kills the jets of top order there
 (`TauCeti.sectionCommutatorSymbol_eq_zero_iff_ker_truncate_le`), and it has order at
 most `k` exactly when its jet factors all factor through the truncation to `k`-jets
-(`TauCeti.mem_differentialOperators_iff_forall_ker_truncate_le`); the jet factor of order
-`k + 1` of an operator of order at most `k` is its jet factor of order `k` composed with the
-truncation (`LinearMap.jetFactorOfMemDifferentialOperators_succ`).
+(`TauCeti.mem_differentialOperators_iff_forall_ker_truncate_le`); for `r' ≤ r`, the jet factor of
+order `r` of an operator of order at most `r'` is its jet factor of order `r'` composed with the
+truncation (`LinearMap.jetFactorOfMemDifferentialOperators_eq_comp_truncate`).
 
 ## Main definitions
 
@@ -115,6 +115,12 @@ def jetSymbol (x : M) :
   sectionCommutatorSymbol I BoundarylessManifold.isInteriorPoint
     ⟨jetProlongation I F V r, jetProlongation_mem_differentialOperators⟩
 
+theorem jetSymbol_def (x : M) :
+    jetSymbol I F V r x =
+      sectionCommutatorSymbol I BoundarylessManifold.isInteriorPoint
+        ⟨jetProlongation I F V r, jetProlongation_mem_differentialOperators⟩ :=
+  (rfl)
+
 /-- **The symbol of the jet prolongation on differentials.** For smooth functions `f₁, …, fᵣ`
 vanishing at `x` and a smooth section `s`, the symbol at `(df₁(x), …, dfᵣ(x))` sends `s(x)` to the
 `r`-jet at `x` of `f₁ ⋯ fᵣ • s`. -/
@@ -122,14 +128,15 @@ theorem jetSymbol_mvfderiv {x : M} {f : Fin r → C^∞⟮I, M; ℝ⟯} (hf : �
     (s : Cₛ^∞⟮I; F, V⟯) :
     jetSymbol I F V r x (fun i ↦ mvfderiv I (f i) x) (s x) =
       jet I F r ((∏ i, f i) • s : Cₛ^∞⟮I; F, V⟯) x := by
-  rw [jetSymbol, sectionCommutatorSymbol_mvfderiv_of_forall_apply_eq_zero _ _ hf s]
+  rw [jetSymbol_def, sectionCommutatorSymbol_mvfderiv_of_forall_apply_eq_zero _ _ hf s]
   exact jetProlongation_apply _ x
 
 /-- The symbol of the jet prolongation is symmetric. -/
 theorem jetSymbol_comp_perm (x : M) (ξ : Fin r → TangentSpace I x →L[ℝ] ℝ)
     (σ : Equiv.Perm (Fin r)) :
-    jetSymbol I F V r x (ξ ∘ σ) = jetSymbol I F V r x ξ :=
-  sectionCommutatorSymbol_comp_perm _ _ ξ σ
+    jetSymbol I F V r x (ξ ∘ σ) = jetSymbol I F V r x ξ := by
+  rw [jetSymbol_def]
+  exact sectionCommutatorSymbol_comp_perm _ _ ξ σ
 
 omit [I.Boundaryless] [FiniteDimensional ℝ F] in
 /-- Covectors at `x` and a vector of `V_x` are the differentials at `x` of smooth functions
@@ -229,17 +236,16 @@ theorem _root_.LinearMap.jetFactorOfMemDifferentialOperators_jetSymbol_const
   rw [LinearMap.jetFactorOfMemDifferentialOperators_jetSymbol, sectionPrincipalSymbol_def,
     LinearMap.smul_apply, smul_inv_smul₀ (by exact_mod_cast r.factorial_ne_zero)]
 
-/-- **The jet factor of an operator of lower order.** The jet factor at `x` of order `k + 1` of a
-differential operator of order at most `k` is its jet factor of order `k` composed with the
-truncation of `(k + 1)`-jets to `k`-jets. -/
-theorem _root_.LinearMap.jetFactorOfMemDifferentialOperators_succ {k : ℕ}
-    {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
-    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ k)
-    (hP' : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ (k + 1))
+/-- **The jet factor of an operator of lower order.** For `r' ≤ r`, the jet factor at `x` of order
+`r` of a differential operator of order at most `r'` is its jet factor of order `r'` composed with
+the truncation of `r`-jets to `r'`-jets. -/
+theorem _root_.LinearMap.jetFactorOfMemDifferentialOperators_eq_comp_truncate {r' : ℕ}
+    (hr : r' ≤ r) {P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r')
+    (hP' : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ r)
     (x : M) :
     P.jetFactorOfMemDifferentialOperators hP' x =
-      P.jetFactorOfMemDifferentialOperators hP x ∘ₗ
-        (truncate (Nat.le_add_right k 1) x).toLinearMap :=
+      P.jetFactorOfMemDifferentialOperators hP x ∘ₗ (truncate hr x).toLinearMap :=
   (LinearMap.eq_jetFactorOfMemDifferentialOperators hP' fun s ↦ by
     rw [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, truncate_jet,
       LinearMap.jetFactorOfMemDifferentialOperators_jet]).symm

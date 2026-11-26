@@ -289,19 +289,15 @@ theorem _root_.LinearMap.eq_jetFactorSection {P : Cₛ^∞⟮I; F, V⟯ →ₗ[�
 private def jetOperator
     (A : Cₛ^∞⟮I; SymmetricJet ℝ E F r →L[ℝ] F', fun x ↦ JetBundle I F V r x →L[ℝ] W x⟯) :
     Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯ where
-  toFun s := ⟨fun x ↦ A x (jet I F r s x), A.contMDiff.clm_bundle_apply
-    (contMDiff_infty_jet s.contMDiff)⟩
+  toFun s := ⟨fun x ↦ A x (JetBundle.jetProlongation I F V r s x),
+    A.contMDiff.clm_bundle_apply (JetBundle.jetProlongation I F V r s).contMDiff⟩
   map_add' s t := by
     ext x
-    simp only [ContMDiffSection.coeFn_mk, ContMDiffSection.coe_add, Pi.add_apply]
-    rw [← ContMDiffSection.coe_add, ← jetLinearMap_apply, ← jetLinearMap_apply,
-      ← jetLinearMap_apply, map_add, map_add]
+    simp only [ContMDiffSection.coeFn_mk, ContMDiffSection.coe_add, Pi.add_apply, map_add]
   map_smul' c s := by
     ext x
     simp only [ContMDiffSection.coeFn_mk, ContMDiffSection.coe_smul, Pi.smul_apply,
-      RingHom.id_apply]
-    rw [← ContMDiffSection.coe_smul, ← jetLinearMap_apply, ← jetLinearMap_apply, map_smul,
-      map_smul]
+      RingHom.id_apply, map_smul]
 
 omit [FiniteDimensional ℝ E] [T2Space M] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle ∞ F' W I] in
