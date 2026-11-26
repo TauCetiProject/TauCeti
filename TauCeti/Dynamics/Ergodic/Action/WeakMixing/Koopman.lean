@@ -134,9 +134,8 @@ private theorem inner_one_right (g : Lp ℂ 2 μ) :
   rw [← inner_conj_symm, inner_one_left]
 
 private theorem coeFn_one : (one : Lp ℂ 2 μ) =ᵐ[μ] fun _ => (1 : ℂ) := by
-  filter_upwards [indicatorConstLp_coeFn (p := 2) (μ := μ) (hs := MeasurableSet.univ)
-    (hμs := measure_ne_top μ univ) (c := (1 : ℂ))] with x hx
-  rw [one, hx, indicator_univ]
+  rw [one, indicatorConstLp_univ]
+  exact Lp.coeFn_const 2 μ 1
 
 private theorem inner_one_one [IsProbabilityMeasure μ] : ⟪(one : Lp ℂ 2 μ), one⟫_ℂ = 1 := by
   rw [inner_one_left, integral_congr_ae coeFn_one]

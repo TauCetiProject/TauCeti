@@ -20,6 +20,8 @@ complex generator, just as for the real generator.
 * `StronglyContinuousGroup.reflect_isComplexLinear`: time reversal preserves complex linearity.
 * `StronglyContinuousGroup.map_smul_of_isComplexLinear`: forward complex linearity extends to all
   real times.
+* `StronglyContinuousGroup.complexLinearOperator`: the operator at a real time, bundled as a
+  complex continuous linear map.
 * `StronglyContinuousGroup.reflect_complexGenerator`: time reversal negates the complex generator.
 -/
 
@@ -50,6 +52,22 @@ theorem map_smul_of_isComplexLinear (U : StronglyContinuousGroup X)
   · have hneg : 0 ≤ -t := neg_nonneg.mpr ht.le
     have h := (U.reflect_isComplexLinear hU).realOperator_map_smul (-t) z x
     rwa [U.reflect.toSemigroup_realOperator_of_nonneg hneg, reflect_apply, neg_neg] at h
+
+/-- The operator `U t` of a complex-linear strongly continuous group at a real time `t`, bundled
+as a complex continuous linear map. -/
+noncomputable def complexLinearOperator (U : StronglyContinuousGroup X)
+    (hU : U.toSemigroup.IsComplexLinear) (t : ℝ) : X →L[ℂ] X where
+  toFun := U t
+  map_add' := (U t).map_add
+  map_smul' := U.map_smul_of_isComplexLinear hU t
+  cont := (U t).continuous
+
+/-- The complex-linear bundle has the same pointwise action as the group operator. -/
+@[simp]
+theorem complexLinearOperator_apply (U : StronglyContinuousGroup X)
+    (hU : U.toSemigroup.IsComplexLinear) (t : ℝ) (x : X) :
+    U.complexLinearOperator hU t x = U t x :=
+  (rfl)
 
 /-- Time reversal negates the complex generator of a complex-linear strongly continuous group.
 The generator domain is preserved. -/

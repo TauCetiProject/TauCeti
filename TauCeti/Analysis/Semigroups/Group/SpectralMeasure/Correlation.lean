@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Semigroups.Group.SpectralMeasure.Atoms
 public import TauCeti.Analysis.Semigroups.Group.SpectralMeasure.Basic
 import TauCeti.MeasureTheory.Measure.CharacteristicFunction.Wiener
 import TauCeti.Analysis.SpecificLimits.Cesaro.Integral
+import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 
 /-!
 # Time averages of correlations of a unitary group
@@ -36,8 +37,8 @@ For vectors `f`, `g` orthogonal to every common eigenspace the Cesàro averages 
 correlations vanish too: `T⁻¹ ∫₀ᵀ |⟪g, U_t f⟫| dt → 0`
 (`IsUnitary.tendsto_average_norm_inner_of_forall_mem_orthogonal`).
 The diagonal case follows from the squared one since `x ≤ x² / ε + ε` for `x ≥ 0` and `ε > 0`,
-and polarization (Mathlib's `inner_map_polarization'`) bounds `|⟪g, U_t f⟫|` by the sum of the
-four diagonal correlations of `f ± g` and `f ± i g`. If `U` fixes a unit vector `e` and every
+and polarization (`LinearMap.norm_inner_le_add`) bounds `|⟪g, U_t f⟫|` by a quarter of the sum
+of the four diagonal correlations of `f ± g` and `f ± i g`. If `U` fixes a unit vector `e` and every
 eigenvector is a multiple of `e`, the centered correlations `⟪g, U_t f⟫ - ⟪e, f⟫ ⟪g, e⟫` therefore
 vanish in Cesàro mean for all `f`, `g`
 (`IsUnitary.tendsto_average_norm_inner_sub_of_forall_mem_eigenspace`).
@@ -89,25 +90,6 @@ theorem tendsto_average_norm_inner_sq_zero_iff (hU : U.IsUnitary) (v : H) :
     ← hU.norm_starProjection_eigenspace_sq_eq_measureReal_singleton ω v hσ]
   exact pow_eq_zero_iff two_ne_zero
 
-omit [CompleteSpace H] in
-/-- Polarization bound: for a complex-linear map `T`, `‖⟪g, T f⟫‖` is at most the sum of the
-diagonal terms `‖⟪v, T v⟫‖` for `v = f + g`, `f - g`, `f + i g` and `f - i g`. -/
-private theorem norm_inner_map_le_add (T : H →ₗ[ℂ] H) (f g : H) :
-    ‖⟪g, T f⟫_ℂ‖ ≤ ‖⟪f + g, T (f + g)⟫_ℂ‖ + ‖⟪f - g, T (f - g)⟫_ℂ‖ +
-      ‖⟪f + Complex.I • g, T (f + Complex.I • g)⟫_ℂ‖ +
-      ‖⟪f - Complex.I • g, T (f - Complex.I • g)⟫_ℂ‖ := by
-  rw [← norm_inner_symm, inner_map_polarization' T f g, norm_div, RCLike.norm_ofNat,
-    norm_inner_symm (f + g), norm_inner_symm (f - g), norm_inner_symm (f + Complex.I • g),
-    norm_inner_symm (f - Complex.I • g)]
-  generalize ⟪T (f + g), f + g⟫_ℂ = a, ⟪T (f - g), f - g⟫_ℂ = b,
-    ⟪T (f + Complex.I • g), f + Complex.I • g⟫_ℂ = c,
-    ⟪T (f - Complex.I • g), f - Complex.I • g⟫_ℂ = d
-  have h₁ := norm_add_le (a - b - Complex.I * c) (Complex.I * d)
-  have h₂ := norm_sub_le (a - b) (Complex.I * c)
-  have h₃ := norm_sub_le a b
-  rw [norm_mul, Complex.norm_I, one_mul] at h₁ h₂
-  linarith [norm_nonneg a, norm_nonneg b, norm_nonneg c, norm_nonneg d]
-
 /-- **Vanishing averaged correlations.** For a unitary C₀-group `U` on a complete complex Hilbert
 space and `v ∈ H` orthogonal to every common eigenspace of `U`, `T⁻¹ ∫₀ᵀ ‖⟪v, U_t v⟫‖ dt → 0`. -/
 theorem tendsto_average_norm_inner_self_of_forall_mem_orthogonal (hU : U.IsUnitary) {v : H}
@@ -155,11 +137,12 @@ theorem tendsto_average_norm_inner_of_forall_mem_orthogonal (hU : U.IsUnitary) {
     (fun _ ↦ norm_nonneg _) fun ε hε ↦ ⟨_,
       fun T ↦ ((((hc _).add (hc _)).add (hc _)).add (hc _)).intervalIntegrable 0 T, hsum,
       fun t ↦ ?_⟩
-  have hpol := norm_inner_map_le_add
-    { toFun := U t, map_add' := (U t).map_add, map_smul' := hU.map_smul t } f g
-  simp only [LinearMap.coe_mk, AddHom.coe_mk] at hpol
+  have hpol := (U.complexLinearOperator hU.isComplexLinear t : H →ₗ[ℂ] H).norm_inner_le_add g f
+  simp only [ContinuousLinearMap.coe_coe, complexLinearOperator_apply] at hpol
   simp only [Pi.add_apply]
-  linarith
+  linarith [norm_nonneg ⟪f + g, U t (f + g)⟫_ℂ, norm_nonneg ⟪f - g, U t (f - g)⟫_ℂ,
+    norm_nonneg ⟪f + Complex.I • g, U t (f + Complex.I • g)⟫_ℂ,
+    norm_nonneg ⟪f - Complex.I • g, U t (f - Complex.I • g)⟫_ℂ]
 
 /-- **Vanishing averaged centered correlations.** Let `U` be a unitary C₀-group on a complete
 complex Hilbert space, fixing a unit vector `e`, whose eigenvectors at every frequency are
@@ -175,14 +158,14 @@ theorem tendsto_average_norm_inner_sub_of_forall_mem_eigenspace (hU : U.IsUnitar
   have horth (v : H) (ω : ℝ) : v - ⟪e, v⟫_ℂ • e ∈ (U.eigenspace hU.isComplexLinear ω)ᗮ := by
     refine (Submodule.mem_orthogonal _ _).2 fun u hu ↦ ?_
     obtain ⟨c, rfl⟩ := heig ω u hu
-    rw [inner_smul_left, inner_sub_right, inner_smul_right, he, mul_one, sub_self, mul_zero]
+    simp only [inner_smul_left, inner_sub_right, inner_smul_right, he, mul_one]
+    ring
   have hcorr (t : ℝ) : ⟪g, U t f⟫_ℂ - ⟪e, f⟫_ℂ * ⟪g, e⟫_ℂ =
       ⟪g - ⟪e, g⟫_ℂ • e, U t (f - ⟪e, f⟫_ℂ • e)⟫_ℂ := by
     have hinv : ⟪e, U t f⟫_ℂ = ⟪e, f⟫_ℂ := by
       rw [← hU.inner_map_map t e f, hUe]
-    rw [map_sub, hU.map_smul, hUe, inner_sub_left, inner_sub_right, inner_sub_right,
-      inner_smul_left, inner_smul_left, inner_smul_right, inner_smul_right, hinv, he,
-      inner_conj_symm]
+    simp only [map_sub, hU.map_smul, hUe, inner_sub_left, inner_sub_right, inner_smul_left,
+      inner_smul_right, hinv, he, inner_conj_symm]
     ring
   simpa only [hcorr] using
     hU.tendsto_average_norm_inner_of_forall_mem_orthogonal (horth f) (horth g)
