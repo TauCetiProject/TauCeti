@@ -33,7 +33,11 @@ Pulling back along a continuous map `f : B → X` gives a **frame of `E` along `
 linear isomorphisms `φ y : F ≃ E (f y)` for which `(y, v) ↦ φ y v` is continuous into the total
 space of `E` (`TauCeti.exists_continuous_frame`). Read in a linear trivialization `e`, such a
 frame is a family `e ∘ φ y` of endomorphisms of `F`, continuous where `e` is defined when `F` is
-finite-dimensional (`TauCeti.continuousOn_continuousLinearMapAt_comp`).
+finite-dimensional (`TauCeti.continuousOn_continuousLinearMapAt_comp`). In such a frame, a
+continuous map `s` to the total space over `f` has the continuous coordinate `y ↦ (φ y)⁻¹ (s y)`
+(`TauCeti.continuous_frame_symm_apply`), so every continuous map from a contractible paracompact R₁
+space to the total space is a frame applied to a continuous coordinate
+(`TauCeti.exists_continuous_frame_coordinate`).
 
 For a finite-rank real bundle with a continuous fibre metric, Gram–Schmidt applied to such a
 global trivialization (`Bundle.Trivialization.orthonormal`) makes it isometric on every fibre
@@ -60,6 +64,11 @@ needed.
   contractible paracompact R₁ base has a linear trivialization over the whole base.
 * `TauCeti.exists_continuous_frame`: a vector bundle has a frame along every continuous map from
   a contractible paracompact R₁ space.
+* `TauCeti.continuous_frame_symm_apply`: the coordinates of a continuous lift in a continuous frame
+  of a finite-rank bundle are continuous.
+* `TauCeti.exists_continuous_frame_coordinate`: a continuous map from a contractible paracompact
+  R₁ space to the total space of a finite-rank bundle is a frame applied to a continuous
+  coordinate.
 * `TauCeti.continuous_trans_symm_of_continuous_frame`: two continuous frames of a finite-rank
   bundle along the same map differ by a continuous family of automorphisms of their common
   source, for instance the model fibre.
@@ -287,6 +296,40 @@ theorem continuous_trans_symm_of_continuous_frame [CompleteSpace 𝕜] [FiniteDi
   ext v
   simp
 
+/-- **Coordinates in a frame.** If `φ` is a continuous frame of a finite-rank vector bundle along
+`f` and `s` is a continuous lift of `f` to the total space, the coordinate `(φ y)⁻¹ (s y)` of `s`
+in the frame is a continuous function into the model fibre. -/
+theorem continuous_frame_symm_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [VectorBundle 𝕜 F E]
+    {φ : ∀ y, F ≃L[𝕜] E (f y)}
+    (hφ : Continuous fun q : B × F ↦ TotalSpace.mk' F (f q.1) (φ q.1 q.2)) {s : ∀ y, E (f y)}
+    (hs : Continuous fun y ↦ TotalSpace.mk' F (f y) (s y)) :
+    Continuous fun y ↦ (φ y).symm (s y) := by
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
+  refine continuous_iff_continuousAt.2 fun y₀ ↦ ?_
+  -- Read the frame and the lift in the trivialization `e` at `f y₀`.
+  let e := trivializationAt F E (f y₀)
+  have hy₀ : f y₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' (f y₀)
+  have hU : f ⁻¹' e.baseSet ∈ nhds y₀ :=
+    (continuous_of_continuous_frame hφ).continuousAt.preimage_mem_nhds
+      (e.open_baseSet.mem_nhds hy₀)
+  have hcoord {y : B} (hy : f y ∈ e.baseSet) :
+      (e.continuousLinearMapAt 𝕜 (f y)).comp (φ y : F →L[𝕜] E (f y)) =
+        ((φ y).trans (e.continuousLinearEquivAt 𝕜 (f y) hy) : F →L[𝕜] F) := by
+    rw [← ContinuousLinearEquiv.comp_coe, e.coe_continuousLinearEquivAt_eq' (R := 𝕜) hy]
+  -- The coordinate of the frame is invertible at `y₀`, so its inverse is continuous there.
+  have hinv : ContinuousAt (fun y ↦ Ring.inverse
+      ((e.continuousLinearMapAt 𝕜 (f y)).comp (φ y : F →L[𝕜] E (f y)))) y₀ := by
+    refine (NormedRing.inverse_continuousAt ((φ y₀).trans
+      (e.continuousLinearEquivAt 𝕜 (f y₀) hy₀)).toUnit).comp_of_eq ?_ (hcoord hy₀)
+    exact (continuousOn_continuousLinearMapAt_comp hφ e).continuousAt hU
+  have hsec : ContinuousAt (fun y ↦ (e (TotalSpace.mk' F (f y) (s y))).2) y₀ :=
+    continuous_snd.continuousAt.comp ((e.continuousOn.continuousAt
+      (e.open_source.mem_nhds (e.mem_source.2 hy₀))).comp hs.continuousAt)
+  refine (hinv.clm_apply hsec).congr_of_eventuallyEq ?_
+  filter_upwards [hU] with y (hy : f y ∈ e.baseSet)
+  rw [hcoord hy, ContinuousLinearMap.ringInverse_equiv, ContinuousLinearMap.inverse_equiv]
+  simp [e.symm_apply_apply_mk hy]
+
 /-- **Transitions between frames along equal maps.** Let `φ` and `ψ` be continuous frames of a
 finite-rank vector bundle along maps `f` and `g` that agree pointwise. Then `ψ y ∘ A y` is `φ y`,
 as maps to the total space, for automorphisms `A y` of `F` that depend continuously on `y`. -/
@@ -325,6 +368,22 @@ theorem exists_continuous_frame [NormedAlgebra ℝ 𝕜] [CompleteSpace F] [Vect
     e.continuousOn_symm.comp_continuous continuous_id fun q ↦ ⟨hb q.1, mem_univ _⟩
   -- `Pullback.lift` and the inverse of `continuousLinearEquivAt` are the identity on fibres.
   exact (Pullback.continuous_lift F E g).comp hsymm
+
+/-- **Coordinates of a map to the total space.** A continuous map `s` from a contractible
+paracompact R₁ space to the total space of a finite-rank vector bundle has a continuous coordinate
+`c` in a continuous frame `φ` along its projection: `s y = φ y (c y)`. -/
+theorem exists_continuous_frame_coordinate [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 F] [VectorBundle 𝕜 F E]
+    [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousSMul 𝕜 (E x)]
+    [R1Space B] [ParacompactSpace B] [ContractibleSpace B] (s : C(B, TotalSpace F E)) :
+    ∃ (φ : ∀ y, F ≃L[𝕜] E (s y).proj) (c : C(B, F)),
+      (Continuous fun q : B × F ↦ TotalSpace.mk' F (s q.1).proj (φ q.1 q.2)) ∧
+        ∀ y, TotalSpace.mk' F (s y).proj (φ y (c y)) = s y := by
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
+  obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := 𝕜) (F := F) (E := E)
+    ((FiberBundle.continuous_proj F E).comp s.continuous)
+  exact ⟨φ, ⟨fun y ↦ (φ y).symm (s y).snd, continuous_frame_symm_apply hφ s.continuous⟩, hφ,
+    fun y ↦ by simp⟩
 
 end Frame
 
