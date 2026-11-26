@@ -10,12 +10,14 @@ public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 /-!
 # The energy form under a small drift, and splitting off the mass term
 
-Two facts about the energy form `TauCeti.PDE.energyFormH1` of
+Facts about the energy form `TauCeti.PDE.energyFormH1` of
 `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`, used to treat the drift and the mass term separately.
 
 * `TauCeti.PDE.energyFormH1_eq_energyFormH1_zero_add_setIntegral`: with bounded coefficients,
   `a_{b,c}(u, v) = a_{b,0}(u, v) + ∫_Ω c u v`, so the mass term can be moved to the right-hand
   side of an equation.
+* `TauCeti.PDE.energyFormH1_add_const_left_eq_add_setIntegral`: consequently, on a domain of
+  finite measure, `a_{b,c}(u + δ, v) = a_{b,c}(u, v) + ∫_Ω c δ v` for every constant `δ`.
 * `TauCeti.PDE.UniformlyEllipticOn.mul_norm_gradient_sq_le_energyFormH1_self_of_small_drift`:
   Gårding's inequality absorbs a drift that is small against the gradient,
   `2β ‖u‖_{L²} ≤ λ ‖∇u‖_{L²}`, giving `(λ/4) ‖∇u‖²_{L²} ≤ a(u, u)`. On `H¹₀` of a ball of radius
@@ -60,6 +62,35 @@ theorem energyFormH1_eq_energyFormH1_zero_add_setIntegral {a : EuclideanSpace �
   simp only [energyIntegrand_apply, jetField_apply, driftForm_apply, massForm_apply,
     Pi.zero_apply]
   ring
+
+/-- **Shifting by a constant in the presence of a mass term.** On a domain of finite measure, with
+an essentially bounded energy density for the principal and drift coefficients and a bounded mass
+coefficient `c`, adding a constant `δ` to the left argument of the energy form adds the pairing of
+`c δ` with the right argument:
+
+`a_{b,c}(u + δ, v) = a_{b,c}(u, v) + ∫_Ω c δ v`.
+
+Without a mass term this is `TauCeti.PDE.energyFormH1_add_const_left`. -/
+theorem energyFormH1_add_const_left_eq_add_setIntegral [IsFiniteMeasure (mu.restrict Omega)]
+    (hab : MemLp (fun x => energyIntegrand (a x) (b x) 0) ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) (u v : W1p mu Omega 2) (δ : ℝ) :
+    energyFormH1 a b c (u + W1p.const δ) v =
+      energyFormH1 a b c u v + ∫ x in Omega, c x * δ * W1p.value v x ∂mu := by
+  have hint : ∀ w : W1p mu Omega 2,
+      Integrable (fun x => c x * W1p.value w x * W1p.value v x) (mu.restrict Omega) :=
+    fun w => by
+      have hC : MemLp (fun x => c x * W1p.value w x) 2 (mu.restrict Omega) :=
+        hc.fun_mul (Lp.memLp _)
+      exact hC.integrable_mul (Lp.memLp _)
+  rw [energyFormH1_eq_energyFormH1_zero_add_setIntegral hab hc (u + W1p.const δ),
+    energyFormH1_eq_energyFormH1_zero_add_setIntegral hab hc u, energyFormH1_add_const_left,
+    add_assoc, ← integral_add (hint u) ((hint (W1p.const δ)).congr ?_)]
+  · refine congrArg _ (integral_congr_ae ?_)
+    filter_upwards [W1p.value_add_const_ae u δ] with x hx
+    rw [hx]
+    ring
+  · filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) δ] with x hx
+    rw [hx]
 
 namespace UniformlyEllipticOn
 
