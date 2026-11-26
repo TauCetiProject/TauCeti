@@ -32,12 +32,13 @@ This file defines the state space `TauCeti.stateSpace A` as a subset of the weak
 * `TauCeti.pullbackFunctional`: precomposition with a star homomorphism, as a continuous
   complex-linear map of weak-* duals, injective along surjective star homomorphisms
   (`TauCeti.pullbackFunctional_injective_of_surjective`). By
-  `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective`,
-  `TauCeti.pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero`, and
-  `TauCeti.mapsTo_pullbackFunctional_stateSpace` it restricts to states along surjective star
-  homomorphisms, norm-attaining star homomorphisms, and unital star homomorphisms (affinely along
-  surjective and unital star homomorphisms). Along a surjective `f`, its image on states consists of
-  the states vanishing on the kernel of `f`, `TauCeti.mem_image_pullbackFunctional_stateSpace_iff`.
+  `TauCeti.mapsTo_pullbackFunctional_stateSpace_of_surjective` and
+  `TauCeti.mapsTo_pullbackFunctional_stateSpace` it restricts affinely to states along surjective
+  and unital star homomorphisms, and by
+  `TauCeti.pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero` a particular state
+  `ψ` pulls back to a state whenever `‖ψ (f a)‖ = ‖a‖` for some nonzero `a`. Along a surjective
+  `f`, its image on states consists of the states vanishing on the kernel of `f`,
+  `TauCeti.mem_image_pullbackFunctional_stateSpace_iff`.
 * `TauCeti.pullbackFunctional_comp_of_apply` and `TauCeti.pullbackFunctional_eq_id_of_apply`:
   restriction of functionals along star homomorphisms is a contravariant functor.
 * `TauCeti.mem_stateSpace_of_pullbackFunctional_mem_stateSpace`: a positive functional of norm at
@@ -182,7 +183,7 @@ theorem toContinuousLinearMap_ofClass_toPositiveLinearMap (φ : stateSpace A) :
 /-- `StateSpace.toPositiveLinearMap` is injective. -/
 theorem toPositiveLinearMap_injective :
     Function.Injective (toPositiveLinearMap (A := A)) := fun _ _ h =>
-  Subtype.ext <| DFunLike.ext _ _ fun a => by simpa using DFunLike.congr_fun h a
+  Subtype.ext (WeakDual.toPositiveLinearMap_inj.mp h)
 
 /-- Two states define the same `PositiveLinearMap` if and only if they are equal. -/
 @[simp]
@@ -366,10 +367,10 @@ theorem pullbackFunctional_mem_stateSpace_iff (f : F) {φ : WeakDual ℂ B}
   mem_stateSpace_iff.trans
     (and_iff_right fun _ ha => map_nonneg_pullbackFunctional_of_mem_stateSpace f hφ ha)
 
-/-- **Pullback of states along a norm-attaining star homomorphism.** Pulling a state `ψ` of `B`
-back along a star homomorphism `f : A → B` produces a contractive positive functional on `A`; if
-`ψ` attains `‖a‖` at `f a` for some nonzero `a : A`, then the pullback has norm one and is a state
-of `A`. -/
+/-- **Pullback of a norm-attaining state.** Pulling a particular state `ψ` of `B` back along a
+star homomorphism `f : A → B` produces a contractive positive functional on `A`; if
+`‖ψ (f a)‖ = ‖a‖` for some nonzero `a : A`, then `pullbackFunctional A f ψ` has norm one and is
+a state of `A`. -/
 theorem pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero (f : F)
     {ψ : WeakDual ℂ B} (hψ : ψ ∈ stateSpace B) {a : A} (ha : a ≠ 0)
     (hnorm : ‖ψ (f a)‖ = ‖a‖) : pullbackFunctional A f ψ ∈ stateSpace A := by

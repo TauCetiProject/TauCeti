@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Positive
 public import TauCeti.Analysis.CStarAlgebra.State.Space
 import Mathlib.Analysis.CStarAlgebra.Unitization
+import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.Analysis.CStarAlgebra.Multiplier.Basic
 import TauCeti.Analysis.CStarAlgebra.State.Extension
 
@@ -158,11 +159,8 @@ private theorem exists_positiveContinuousLinearMap_of_ne_zero {x : A} (hx : 0 �
     (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A))
     (ω₀.toWeakDual_mem_stateSpace_iff.2 hω₀_norm) hx0
     (by simpa [ω] using congrArg norm h1)
-  have hω_eq : StrongDual.toWeakDual (ω : A →L[ℂ] ℂ) =
-      pullbackFunctional A (DoubleCentralizer.coeHom (𝕜 := ℂ) : A →⋆ₙₐ[ℂ] 𝓜(ℂ, A))
-        (StrongDual.toWeakDual (ω₀ : 𝓜(ℂ, A) →L[ℂ] ℂ)) :=
-    DFunLike.ext _ _ fun a => by simp [ω]
-  exact ⟨ω, ω.toWeakDual_mem_stateSpace_iff.1 (hω_eq ▸ hω_mem), h1, h2⟩
+  exact ⟨ω, ω.toWeakDual_mem_stateSpace_iff.1
+    (by simpa only [pullbackFunctional_toWeakDual, ω] using hω_mem), h1, h2⟩
 
 /-- On a nontrivial C⋆-algebra, every nonnegative element `a` admits a positive continuous linear
 functional `ω` of norm `1` satisfying `ω a = ‖a‖` and `ω (a * a) = ‖a‖ ^ 2`. -/
@@ -193,14 +191,6 @@ private theorem exists_mem_stateSpace_apply_eq_of_isStarNormal_of_mem_spectrum (
   exact ⟨StrongDual.toWeakDual (ω : B →L[ℂ] ℂ), ω.toWeakDual_mem_stateSpace_iff.2 hnorm,
     by simpa using hp 0 1⟩
 
-private theorem isUnit_of_isUnit_mul_of_isUnit_mul {M : Type*} [Monoid M] {x y : M}
-    (h₁ : IsUnit (y * x)) (h₂ : IsUnit (x * y)) : IsUnit x := by
-  obtain ⟨u, hu⟩ := h₁
-  obtain ⟨v, hv⟩ := h₂
-  exact isUnit_iff_exists_and_exists.2
-    ⟨⟨y * ↑v⁻¹, by rw [← mul_assoc, ← hv, v.mul_inv]⟩,
-     ⟨↑u⁻¹ * y, by rw [mul_assoc, ← hu, u.inv_mul]⟩⟩
-
 private theorem exists_mem_stateSpace_apply_eq_zero_of_not_isUnit_star_mul_self {y : B}
     (hy : ¬ IsUnit (star y * y)) : ∃ φ ∈ stateSpace B, φ y = 0 := by
   have : IsStarNormal (star y * y) := (star_mul_self_nonneg y).isSelfAdjoint.isStarNormal
@@ -228,8 +218,7 @@ theorem exists_mem_stateSpace_apply_eq_of_mem_spectrum (b : B) {z : ℂ}
     · exact exists_mem_stateSpace_apply_eq_zero_of_not_isUnit_star_mul_self h₁
   refine ⟨φ, hφ, ?_⟩
   have hsub : z - φ b = 0 := by
-    simpa [x, map_sub, Algebra.algebraMap_eq_smul_one, map_smul, map_one_of_mem_stateSpace hφ]
-      using hφx
+    simpa [x, map_sub, map_algebraMap_of_mem_stateSpace hφ] using hφx
   exact (sub_eq_zero.1 hsub).symm
 
 end UnitalStateSpace
@@ -272,18 +261,16 @@ theorem exists_mem_stateSpace_apply_star_mul_self_eq_norm_sq_of_ne_zero {a : A} 
 nonunital C⋆-algebra `A`, there is a state `φ ∈ stateSpace A` with `‖φ a‖ = ‖a‖`. -/
 theorem exists_mem_stateSpace_norm_apply_eq_norm_of_isStarNormal_of_ne_zero {a : A}
     [IsStarNormal a] (ha : a ≠ 0) : ∃ φ ∈ stateSpace A, ‖φ a‖ = ‖a‖ := by
-  obtain ⟨z, hz, hz_norm⟩ := spectrum.exists_eNorm_eq_spectralRadius (a : A⁺¹)
-  have hz_eq : ‖z‖ = ‖a‖ := by
-    have hspec : (‖z‖₊ : ℝ≥0∞) = ‖(a : A⁺¹)‖₊ :=
-      hz_norm.trans (IsStarNormal.spectralRadius_eq_nnNorm (a : A⁺¹))
-    simpa [coe_nnNorm, Unitization.norm_inr] using
-      congr_arg NNReal.toReal (ENNReal.coe_inj.1 hspec)
-  obtain ⟨ψ, hψ, hψa⟩ := exists_mem_stateSpace_apply_eq_of_mem_spectrum (a : A⁺¹) hz
-  have hψ_norm : ‖ψ (a : A⁺¹)‖ = ‖a‖ := by rw [hψa, hz_eq]
-  exact ⟨pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A) ψ,
+  obtain ⟨ω, -, hω_norm, hωa⟩ :=
+    CStarAlgebra.exists_positiveContinuousLinearMap_norm_apply_eq_norm (a : A⁺¹)
+  have hωa' : ‖StrongDual.toWeakDual (ω : A⁺¹ →L[ℂ] ℂ) (a : A⁺¹)‖ = ‖a‖ := by
+    simpa [Unitization.norm_inr] using hωa
+  exact ⟨pullbackFunctional A (Unitization.inrNonUnitalStarAlgHom ℂ A)
+      (StrongDual.toWeakDual (ω : A⁺¹ →L[ℂ] ℂ)),
     pullbackFunctional_mem_stateSpace_of_norm_apply_eq_norm_of_ne_zero
-      (Unitization.inrNonUnitalStarAlgHom ℂ A) hψ ha hψ_norm,
-    by simpa using hψ_norm⟩
+      (Unitization.inrNonUnitalStarAlgHom ℂ A)
+      (ω.toWeakDual_mem_stateSpace_iff.2 hω_norm) ha hωa',
+    by simpa using hωa'⟩
 
 /-- On a nontrivial C⋆-algebra, every normal element `a` (including `0`) has a state attaining
 `‖a‖` in modulus. -/
