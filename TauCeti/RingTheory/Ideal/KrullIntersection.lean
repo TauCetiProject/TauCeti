@@ -20,7 +20,9 @@ For a finite module over a noetherian commutative ring:
   essential because the powers of one maximal ideal need not separate a nonlocal ring;
 * every submodule `N` is closed in the `I`-adic topology for any ideal `I` contained in the
   Jacobson radical (`Ideal.iInf_sup_pow_smul_eq_of_le_jacobson`), and in particular every ideal `J`
-  satisfies `⨅ n, J ⊔ I ^ n = J` (`Ideal.iInf_sup_pow_eq_of_le_jacobson`).
+  satisfies `⨅ n, J ⊔ I ^ n = J` (`Ideal.iInf_sup_pow_eq_of_le_jacobson`);
+* for an arbitrary ideal `I`, an element `x` lies in the `I`-adic closure `⨅ n, J ⊔ I ^ n` of an
+  ideal `J` exactly when `(1 - r) * x ∈ J` for some `r ∈ I` (`Ideal.mem_iInf_sup_pow_iff`).
 
 For an algebra `A` over a noetherian commutative ring `R`, finite as an `R`-module but not
 necessarily commutative, the powers of the two-sided ideal of `A` extended from an ideal `I` of
@@ -96,6 +98,30 @@ theorem iInf_sup_pow_eq_of_le_jacobson (I : Ideal R) (hI : I ≤ Ring.jacobson R
     (⨅ n : ℕ, J ⊔ I ^ n) = J := by
   simpa only [Ideal.smul_eq_mul, Ideal.mul_top] using
     I.iInf_sup_pow_smul_eq_of_le_jacobson (M := R) hI J
+
+/-- **The `I`-adic closure of an ideal.** In a noetherian ring, `x` lies in every `J ⊔ I ^ n`
+exactly when `(1 - r) * x ∈ J` for some `r ∈ I`. -/
+theorem mem_iInf_sup_pow_iff (I J : Ideal R) (x : R) :
+    x ∈ ⨅ n : ℕ, J ⊔ I ^ n ↔ ∃ r ∈ I, (1 - r) * x ∈ J := by
+  refine ⟨fun hx ↦ ?_, fun ⟨r, hr, hx⟩ ↦ mem_iInf.mpr fun n ↦ ?_⟩
+  · -- The class of `x` in `R ⧸ J` lies in every `I ^ n • (R ⧸ J)`; apply Krull's theorem there.
+    have hmem : (Submodule.Quotient.mk x : R ⧸ J) ∈ (⨅ n : ℕ, I ^ n • ⊤ : Submodule R (R ⧸ J)) := by
+      refine (Submodule.mem_iInf _).mpr fun n ↦ ?_
+      obtain ⟨u, hu, v, hv, rfl⟩ := Submodule.mem_sup.mp (mem_iInf.mp hx n)
+      rw [Submodule.Quotient.mk_add, (Submodule.Quotient.mk_eq_zero J).mpr hu, zero_add,
+        ← J.mkQ_apply]
+      exact Submodule.smul_top_le_comap_smul_top (I ^ n) J.mkQ (by simpa using hv)
+    obtain ⟨⟨r, hr⟩, hrx⟩ := (I.mem_iInf_smul_pow_eq_bot_iff _).mp hmem
+    refine ⟨r, hr, (Submodule.Quotient.mk_eq_zero J).mp ?_⟩
+    rw [sub_mul, one_mul, Submodule.Quotient.mk_sub, ← smul_eq_mul, Submodule.Quotient.mk_smul, hrx,
+      sub_self]
+  · -- `x = (1 + r + ⋯ + r ^ (n - 1)) (1 - r) x + r ^ n x`.
+    have hx' : x = (∑ i ∈ Finset.range n, r ^ i) * ((1 - r) * x) + r ^ n * x := by
+      rw [← mul_assoc, geom_sum_mul_neg]
+      ring
+    rw [hx']
+    exact add_mem (mem_sup_left (J.mul_mem_left _ hx))
+      (mem_sup_right (mul_mem_right _ _ (pow_mem_pow hr n)))
 
 end Module
 
