@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.TopPower
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Trace
-import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 
 /-!
 # Checks: the form identities in complex dimension two
@@ -19,9 +18,9 @@ relative to the inner product satisfies
 * `α ∧ ω = ((λ₁ + λ₂) / 2) ω²` (`wedge_wedgePow_one_eq`), the trace identity at `n = 2`;
 * `α² = λ₁ λ₂ ω²` (`wedgePow_two_eq`), the top-power identity at `n = 2`.
 
-For `α = ω` the Hermitian form is the inner product (`hermitianSesqForm_kahlerForm`), so
-`λ[ω] = (1, 1)` (`relEigenvalues_kahlerForm`) and `σ₁ = 2` gives `ω ∧ ω = ω²`
-(`wedge_wedgePow_one_kahlerForm`).
+For `α = ω` the eigenvalues are `λ[ω] = (1, 1)`
+(`TauCeti.AlmostComplexStructure.relEigenvalues_alternatingFormEquiv_kahlerForm`), so `σ₁ = 2`
+gives `ω ∧ ω = ω²` (`wedge_wedgePow_one_alternatingFormEquiv_kahlerForm`).
 -/
 
 public section
@@ -60,42 +59,13 @@ theorem wedgePow_two_eq (hE : finrank ℂ E = 2) :
 
 end
 
-/-- The Kähler form `ω(u, v) = Re ⟪i u, v⟫` is of type (1,1). -/
-theorem kahlerForm_I_smul (u v : E) :
-    alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm ![I • u, I • v] =
-      alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm ![u, v] := by
-  simp only [alternatingFormEquiv_kahlerForm_apply real_inner_ofComplexModule_ofComplexModule,
-    Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [show I • v = ofComplexModule E v by simp [ofComplexModule_apply],
-    show I • u = ofComplexModule E u by simp [ofComplexModule_apply],
-    real_inner_ofComplexModule_ofComplexModule]
-
-/-- The Hermitian form of the Kähler form is the inner product. -/
-theorem hermitianSesqForm_kahlerForm :
-    (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).hermitianSesqForm
-      kahlerForm_I_smul = innerₛₗ ℂ := by
-  ext u v
-  simp only [hermitianSesqForm_apply, hermitianForm_def,
-    alternatingFormEquiv_kahlerForm_apply real_inner_ofComplexModule_ofComplexModule,
-    Matrix.cons_val_zero, Matrix.cons_val_one, ofComplexModule_apply, innerₛₗ_apply_apply,
-    real_inner_eq_re_inner]
-  apply Complex.ext <;> simp [inner_smul_left, inner_smul_right]
-
-/-- The eigenvalues of the Kähler form relative to the inner product are all `1`. -/
-theorem relEigenvalues_kahlerForm {n : ℕ} (hE : finrank ℂ E = n) :
-    (isSymm_hermitianSesqForm kahlerForm_I_smul).relEigenvalues hE = 1 := by
-  have key : ∀ (a : E →ₗ⋆[ℂ] E →ₗ[ℂ] ℂ) (h : a.IsSymm), a = innerₛₗ ℂ →
-      h.relEigenvalues hE = 1 := by
-    rintro a h rfl
-    exact LinearMap.IsSymm.relEigenvalues_innerₛₗ h hE
-  exact key _ _ hermitianSesqForm_kahlerForm
-
 /-- In complex dimension two, `σ₁(λ[ω]) = 2` gives `ω ∧ ω = ω²`. -/
-theorem wedge_wedgePow_one_kahlerForm (hE : finrank ℂ E = 2) :
+theorem wedge_wedgePow_one_alternatingFormEquiv_kahlerForm (hE : finrank ℂ E = 2) :
     wedge ((alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow 1)
         (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm) =
       (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow 2 := by
-  rw [wedge_wedgePow_one_eq kahlerForm_I_smul hE, relEigenvalues_kahlerForm]
+  rw [wedge_wedgePow_one_eq alternatingFormEquiv_kahlerForm_apply_I_smul hE,
+    relEigenvalues_alternatingFormEquiv_kahlerForm]
   norm_num
 
 end TauCeti.Examples.KahlerDimensionTwo
