@@ -204,13 +204,10 @@ theorem specialAlgebraicK1_circleRing_ne_bot {k : Type*} [CommRing k] (f : k →
 /-- The determinant homomorphism `K₁(CircleRing k) →* (CircleRing k)ˣ` is not injective
 whenever `k` admits a ring homomorphism `k →+* ℝ`. -/
 theorem not_det_circleRing_injective {k : Type*} [CommRing k] (f : k →+* ℝ) :
-    ¬ Function.Injective (AlgebraicK1.det (CircleRing k)) := by
-  rw [← MonoidHom.ker_eq_bot_iff]
-  have hker : (AlgebraicK1.det (CircleRing k)).ker = specialAlgebraicK1 (CircleRing k) := by
-    ext x
-    exact mem_specialAlgebraicK1_iff.symm
-  rw [hker]
-  exact specialAlgebraicK1_circleRing_ne_bot f
+    ¬ Function.Injective (AlgebraicK1.det (CircleRing k)) :=
+  fun h ↦ circle_rotation_not_stably_elementary f <| h <| by
+    rw [map_one, ← mem_specialAlgebraicK1_iff]
+    exact circleRotation_mk_mem_specialAlgebraicK1 k
 
 end
 

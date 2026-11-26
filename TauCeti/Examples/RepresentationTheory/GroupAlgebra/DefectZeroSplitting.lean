@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block
+public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block.Basic
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Algebra
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
