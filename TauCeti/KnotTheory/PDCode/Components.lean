@@ -7,7 +7,6 @@ module
 
 public import TauCeti.KnotTheory.PDCode.Basic
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
-import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Cycle.Reversal
 import TauCeti.GroupTheory.Perm.SumCongr
 
