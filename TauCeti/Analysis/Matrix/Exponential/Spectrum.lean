@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
+public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import TauCeti.Analysis.Normed.Operator.Exponential
 import Mathlib.Analysis.Normed.Algebra.Spectrum
+import TauCeti.Analysis.Matrix.Exponential.EuclideanCLM
 import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 import TauCeti.LinearAlgebra.Matrix.OfReal
 
@@ -19,7 +23,8 @@ import TauCeti.LinearAlgebra.Matrix.OfReal
 For a complex square matrix `Y`, the eigenvalues of `exp Y` are the exponentials of the eigenvalues
 of `Y` (`Matrix.spectrum_exp`): this is the spectral mapping theorem for the exponential of an
 operator on a finite-dimensional complex space, `ContinuousLinearMap.spectrum_exp`, read through
-the star algebra equivalence `Matrix.toEuclideanCLM`.
+the star algebra equivalence `Matrix.toEuclideanCLM`, which commutes with the exponential
+(`Matrix.toEuclideanCLM_exp`).
 
 The eigenvalues of `exp Y` are therefore the values `exp ν` at eigenvalues `ν` of `Y`, and these
 satisfy `‖ν‖ ≤ ‖Y‖` for the `ℓ²` operator norm (`Matrix.exists_norm_le_exp_eq_of_mem_spectrum`).
@@ -38,6 +43,9 @@ such an eigenvalue forces `ν ∈ 2π i ℤ`, respectively `ν ∈ π i (2 ℤ +
   has no eigenvalue `1`; `Matrix.isUnit_exp_sub_one_real` is the real case.
 * `Matrix.isUnit_exp_add_one`: if a complex matrix `Y` has `‖Y‖ < π`, then `exp Y` has no
   eigenvalue `-1`; `Matrix.isUnit_exp_add_one_real` is the real case.
+* `Matrix.IsHermitian.star_eigenvectorUnitary_mul_exp_smul_mul_eigenvectorUnitary`: in a unitary
+  eigenbasis of a Hermitian matrix `X`, `exp (c • X)` is the diagonal matrix of the
+  `exp (c * d i)` for the eigenvalues `d i` of `X`.
 -/
 
 public section
@@ -52,11 +60,9 @@ variable {m : Type*} [Fintype m] [DecidableEq m]
 /-- **Spectral mapping for the matrix exponential.** The spectrum of the exponential of a complex
 square matrix is the image under the exponential of its spectrum. -/
 theorem spectrum_exp (Y : Matrix m m ℂ) : spectrum ℂ (exp Y) = exp '' spectrum ℂ Y := by
-  let +nondep : NormedAlgebra ℚ (Matrix m m ℂ) := .restrictScalars ℚ ℂ _
   let e := (toEuclideanCLM (n := m) (𝕜 := ℂ)).toAlgEquiv
-  have he : Continuous e := LinearMap.continuous_of_finiteDimensional e.toLinearMap
-  rw [← AlgEquiv.spectrum_eq e, ← AlgEquiv.spectrum_eq e Y, ← ContinuousLinearMap.spectrum_exp,
-    NormedSpace.map_exp e he Y]
+  rw [← AlgEquiv.spectrum_eq e, ← AlgEquiv.spectrum_eq e Y, ← ContinuousLinearMap.spectrum_exp]
+  exact congrArg (spectrum ℂ) (toEuclideanCLM_exp Y)
 
 /-- Taking the exponential of a real matrix commutes with viewing it as a complex matrix. -/
 theorem exp_map_ofReal (Y : Matrix m m ℝ) :
@@ -105,7 +111,7 @@ theorem isUnit_exp_add_one {Y : Matrix m m ℂ} (hYπ : ‖Y‖ < Real.pi) : IsU
 theorem isUnit_exp_sub_one_real {Y : Matrix m m ℝ} (hY : IsUnit Y) (hY2π : ‖Y‖ < 2 * Real.pi) :
     IsUnit (exp Y - 1) := by
   rw [← isUnit_map_ofReal_iff, Matrix.map_sub _ Complex.ofReal_sub,
-    Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one, ← exp_map_ofReal]
+    map_ofReal_one, ← exp_map_ofReal]
   exact isUnit_exp_sub_one (isUnit_map_ofReal_iff.2 hY) (by rwa [l2_opNorm_map_ofReal])
 
 /-- The real case of `Matrix.isUnit_exp_add_one`: if a real matrix `Y` has `‖Y‖ < π`, then
@@ -113,7 +119,31 @@ theorem isUnit_exp_sub_one_real {Y : Matrix m m ℝ} (hY : IsUnit Y) (hY2π : �
 theorem isUnit_exp_add_one_real {Y : Matrix m m ℝ} (hYπ : ‖Y‖ < Real.pi) :
     IsUnit (exp Y + 1) := by
   rw [← isUnit_map_ofReal_iff, Matrix.map_add _ Complex.ofReal_add,
-    Matrix.map_one _ Complex.ofReal_zero Complex.ofReal_one, ← exp_map_ofReal]
+    map_ofReal_one, ← exp_map_ofReal]
   exact isUnit_exp_add_one (by rwa [l2_opNorm_map_ofReal])
+
+namespace IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+
+/-- In a unitary eigenbasis of a Hermitian matrix `X`, the exponential of `c • X` is the diagonal
+matrix of the `exp (c * d i)`, for the eigenvalues `d i` of `X`. -/
+theorem star_eigenvectorUnitary_mul_exp_smul_mul_eigenvectorUnitary {X : Matrix m m 𝕜}
+    (hX : X.IsHermitian) (c : ℝ) :
+    star (hX.eigenvectorUnitary : Matrix m m 𝕜) * NormedSpace.exp (c • X) *
+        hX.eigenvectorUnitary =
+      diagonal fun i ↦ (Real.exp (c * hX.eigenvalues i) : 𝕜) := by
+  have h := exp_units_conj' (Unitary.toUnits hX.eigenvectorUnitary) (c • X)
+  have hinv : ((Unitary.toUnits hX.eigenvectorUnitary)⁻¹ : (Matrix m m 𝕜)ˣ) =
+      star (hX.eigenvectorUnitary : Matrix m m 𝕜) :=
+    Units.inv_eq_of_mul_eq_one_left (Unitary.star_mul_self_of_mem hX.eigenvectorUnitary.property)
+  simp only [hinv, Unitary.val_toUnits_apply, Matrix.mul_smul, Matrix.smul_mul,
+    hX.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary] at h
+  rw [← h, ← diagonal_smul, exp_diagonal]
+  congr 1
+  funext i
+  simp [RCLike.real_smul_eq_coe_mul, ← RCLike.exp_ofReal]
+
+end IsHermitian
 
 end Matrix

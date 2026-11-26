@@ -8,7 +8,10 @@ module
 public import Mathlib.RingTheory.Perfectoid.FontaineTheta
 public import TauCeti.RingTheory.Perfectoid.Untilt
 public import TauCeti.RingTheory.Teichmuller
-public import TauCeti.RingTheory.WittVector.TeichmullerCoeff
+public import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
+
+import Mathlib.NumberTheory.Basic
+import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
 # Functoriality of the tilt, the sharp map and Fontaine's map
@@ -42,6 +45,9 @@ the corresponding constructions on the rings themselves.
 * `PreTilt.coeff_map`: the coordinates of `PreTilt.map p f x` are the reductions of those of `x`.
 * `PreTilt.map_id`, `PreTilt.map_comp`: functoriality.
 * `PreTilt.untilt_natural`: naturality of the sharp map, `(PreTilt.map p f x)♯ = f (x♯)`.
+* `PreTilt.apply_untilt_eq_of_map_eq`: for `f : A →+* C` and `g : B →+* C` with `C` only
+  `p`-adically Hausdorff, elements of `A♭` and `B♭` with the same image in `C♭` have sharps with the
+  same image in `C`.
 * `WittVector.theta_natural`: naturality of Fontaine's map.
 
 ## References
@@ -122,6 +128,26 @@ theorem untilt_natural [IsAdicComplete (span {(p : A)}) A] [IsAdicComplete (span
     ext n
     simp [ModP.map]
   · rw [← Ideal.map_le_iff_le_comap, Ideal.map_span, Set.image_singleton, map_natCast]
+
+/-- Let `f : A →+* C` and `g : B →+* C` be ring homomorphisms out of `p`-adically complete rings
+into a `p`-adically Hausdorff ring `C`, which need not be complete. If `u ∈ A♭` and `v ∈ B♭` have
+the same image in `C♭`, then `f (u♯) = g (v♯)`. -/
+theorem apply_untilt_eq_of_map_eq [IsAdicComplete (span {(p : A)}) A]
+    [IsAdicComplete (span {(p : B)}) B] [IsHausdorff (span {(p : C)}) C] {f : A →+* C}
+    {g : B →+* C} {u : PreTilt A p} {v : PreTilt B p} (h : map p f u = map p g v) :
+    f u.untilt = g v.untilt := by
+  refine (IsHausdorff.eq_iff_smodEq (I := span {(p : C)})).mpr fun k ↦ ?_
+  rw [TauCeti.sModEq_span_singleton_pow_iff]
+  -- `u♯` and `v♯` are the `p ^ k`-th powers of the sharps of the `p ^ k`-th roots of `u` and `v`,
+  -- whose images under `f` and `g` agree modulo `p`
+  have hdvd : (p : C) ∣ f (untilt ((frobeniusEquiv (PreTilt A p) p).symm^[k] u)) -
+      g (untilt ((frobeniusEquiv (PreTilt B p) p).symm^[k] v)) := by
+    have hk := congr(coeff k $h)
+    rwa [coeff_map, coeff_map, coeff_eq_mk_untilt_iterate, coeff_eq_mk_untilt_iterate,
+      ModP.map_mk, ModP.map_mk, Ideal.Quotient.eq, Ideal.mem_span_singleton] at hk
+  rw [← untilt_iterate_frobeniusEquiv_symm_pow u k, ← untilt_iterate_frobeniusEquiv_symm_pow v k,
+    map_pow, map_pow]
+  exact (pow_dvd_pow _ k.le_succ).trans (dvd_sub_pow_of_dvd_sub hdvd k)
 
 end PreTilt
 

@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Abelianization
 import Mathlib.Topology.Algebra.Group.OpenMapping
 import Mathlib.Topology.Baire.LocallyCompactRegular
-import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.Topology.Algebra.Group.Profinite.ZHat.Decomposition
 
 /-!

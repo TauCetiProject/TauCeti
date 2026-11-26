@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.LineBundle.Basic
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
@@ -31,6 +32,8 @@ proper schemes is a separate prerequisite.
 
 * `AlgebraicGeometry.Scheme.genus k X`, the genus `dim_k H¹(X, 𝒪_X)` of a scheme, and its
   defining formula `AlgebraicGeometry.Scheme.genus_def`;
+* `TauCeti.AlgebraicGeometry.genus_eq_of_isIso`: the genus is invariant under isomorphisms over
+  `k`;
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_zero_trivial_eq_one_of_surjective`:
   `dim_k H⁰(X, 𝒪_X) = 1` when all global functions are constants;
 * `TauCeti.AlgebraicGeometry.eulerCharBelow_trivial_eq_one_sub_genus_of_surjective`:
@@ -74,6 +77,18 @@ lemma _root_.AlgebraicGeometry.Scheme.genus_def (X : Scheme.{u}) [X.Over (Spec (
     [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)] :
     X.genus k = finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) :=
   Scheme.genus.eq_def k X
+
+/-- **The genus is invariant under isomorphisms over the base field.** No properness is needed:
+an isomorphism over `k` identifies the cohomology of the structure sheaves as `k`-vector spaces,
+so finite-dimensionality of `H¹` transports from `X₁` to `X₂`. -/
+theorem genus_eq_of_isIso {X₁ X₂ : Scheme.{u}} [X₁.Over (Spec (.of k))] [X₂.Over (Spec (.of k))]
+    (f : X₁ ⟶ X₂) [IsIso f] [f.IsOver (Spec (.of k))]
+    [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X₁).obj 1)] :
+    letI : FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X₂).obj 1) :=
+      (f.cohomologyTrivialBaseLinearEquivOfIsIso k 1).finiteDimensional
+    X₁.genus k = X₂.genus k := by
+  rw [Scheme.genus_def, Scheme.genus_def]
+  exact f.finrank_cohomology_trivial_of_isIso k 1
 
 variable {X : Scheme.{u}} [X.Over (Spec (.of k))]
 

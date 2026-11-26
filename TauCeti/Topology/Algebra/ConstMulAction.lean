@@ -15,6 +15,7 @@ public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.LocallyFinite
+public import Mathlib.Topology.OpenPartialHomeomorph.Basic
 
 import TauCeti.Topology.Compactness.Compact
 
@@ -27,6 +28,7 @@ A trivial action, fixing every point, is jointly continuous for any topologies.
 A continuous monoid action on a Hausdorff space has closed fixed sets, both of single elements and
 of the whole monoid, and a group action with continuous orbit maps on a `T₁` space has closed
 point stabilisers. If every orbit of a group action is open, then every orbit is also closed.
+Scaling by a nonzero element of a group with zero commutes with taking the frontier.
 A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
@@ -35,7 +37,8 @@ Conversely, for a scalar action of a `T₁` topological space `G` with continuou
 finiteness of the translates of any nonempty set forces the topology on `G` to be discrete.
 Likewise, a nonempty open set disjoint from all of its nontrivial translates forces the acting
 group, with any topology for which the orbit maps are continuous, to be discrete, and on such a
-set the orbit projection is an open embedding.
+set the orbit projection is an open embedding. More generally, on any open set where it is
+injective, the orbit projection is an open partial homeomorphism onto its image.
 
 ## Main results
 
@@ -47,6 +50,8 @@ set the orbit projection is an open embedding.
   every invariant subspace.
 * `Function.Injective.properlyDiscontinuousSMul`: proper discontinuity pulls back along an
   injective map of acting types that is compatible with the actions.
+* `Function.Surjective.properlyDiscontinuousSMul`: proper discontinuity pushes forward along a
+  surjective map of acting types that is compatible with the actions.
 * `TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq`: a conjugate `g H g⁻¹` of a
   properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
@@ -55,6 +60,7 @@ set the orbit projection is an open embedding.
   space is closed.
 * `TauCeti.isClosed_orbit_of_forall_isOpen_orbit`: if every orbit of a group action is open,
   then every orbit is closed.
+* `TauCeti.frontier_smul₀`: `frontier (c • s) = c • frontier s` for `c ≠ 0`.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 * `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
@@ -67,6 +73,8 @@ set the orbit projection is an open embedding.
   under such an action of a group is closed.
 * `TauCeti.isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul`: the orbit projection is an
   open embedding on an open set disjoint from its nontrivial translates.
+* `TauCeti.quotientMkOn`: the orbit projection restricted to an open set on which it is
+  injective, as an open partial homeomorphism onto its image.
 * `TauCeti.discreteTopology_of_disjoint_smul`: the existence of a nonempty such open set makes the
   acting group discrete.
 -/
@@ -128,6 +136,13 @@ theorem isClosed_orbit_of_forall_isOpen_orbit {G X : Type*} [Group G] [MulAction
   rw [← (MulAction.orbit_eq_iff.2 hw).symm.trans (MulAction.orbit_eq_iff.2 hwx)]
   exact MulAction.mem_orbit_self z
 
+/-- Scaling by a nonzero element of a group with zero commutes with taking the frontier, as
+Mathlib's `interior_smul₀` and `closure_smul₀'` do for interior and closure. -/
+theorem frontier_smul₀ {G₀ X : Type*} [GroupWithZero G₀] [MulAction G₀ X] [TopologicalSpace X]
+    [ContinuousConstSMul G₀ X] {c : G₀} (hc : c ≠ 0) (s : Set X) :
+    frontier (c • s) = c • frontier s :=
+  ((Homeomorph.smulOfNeZero c hc).image_frontier s).symm
+
 section DisjointTranslates
 
 open Set
@@ -162,6 +177,45 @@ theorem isOpenEmbedding_quotientMk_domRestrict_of_disjoint_smul (hU_open : IsOpe
   exact Subtype.ext (injOn_quotientMk_of_disjoint_smul hU x.property y.property hxy)
 
 end DisjointTranslates
+
+section QuotientMkOn
+
+open Set
+
+variable {G X : Type*} [Group G] [MulAction G X] [TopologicalSpace X] [ContinuousConstSMul G X]
+  [Nonempty X] {s : Set X} (hs : IsOpen s)
+  (hinj : InjOn (Quotient.mk (MulAction.orbitRel G X)) s)
+
+/-- The orbit projection restricted to an open set on which it is injective, as an open partial
+homeomorphism onto the image. -/
+noncomputable def quotientMkOn :
+    OpenPartialHomeomorph X (MulAction.orbitRel.Quotient G X) :=
+  OpenPartialHomeomorph.ofContinuousOpen (hinj.toPartialEquiv _ s) continuous_quot_mk.continuousOn
+    isOpenMap_quotient_mk'_mul hs
+
+/-- The source of `TauCeti.quotientMkOn` is the given open set. -/
+@[simp]
+theorem quotientMkOn_source : (quotientMkOn hs hinj).source = s :=
+  (rfl)
+
+/-- The target of `TauCeti.quotientMkOn` is the image of the open set in the orbit space. -/
+@[simp]
+theorem quotientMkOn_target :
+    (quotientMkOn hs hinj).target = Quotient.mk (MulAction.orbitRel G X) '' s :=
+  (rfl)
+
+/-- `TauCeti.quotientMkOn` is the orbit projection. -/
+@[simp]
+theorem coe_quotientMkOn : ⇑(quotientMkOn hs hinj) = Quotient.mk (MulAction.orbitRel G X) :=
+  (rfl)
+
+/-- The inverse of `TauCeti.quotientMkOn` picks the representative in the open set. -/
+@[simp]
+theorem coe_quotientMkOn_symm :
+    ⇑(quotientMkOn hs hinj).symm = Function.invFunOn (Quotient.mk (MulAction.orbitRel G X)) s :=
+  (rfl)
+
+end QuotientMkOn
 
 section DisjointTranslatesAdd
 
@@ -342,6 +396,24 @@ theorem Function.Injective.properlyDiscontinuousSMul {M N X : Type*} [Topologica
       hf.injOn).subset ?_
     rintro m ⟨_, ⟨x, hx, rfl⟩, hxL⟩
     exact ⟨m • x, ⟨x, hx, hsmul m x⟩, hxL⟩
+
+/-- **Proper discontinuity pushes forward along surjective maps of acting types.** If
+`f : M → N` is surjective, each `f m` acts as `m` does, and `M` acts properly discontinuously on
+`X`, then so does `N`: the elements of `N` moving a compact `K` to meet a compact `L` are images
+of the finitely many such elements of `M`. -/
+@[to_additive
+/-- **Proper discontinuity pushes forward along surjective maps of acting types.** If
+`f : M → N` is surjective, each `f m` acts as `m` does, and `M` acts properly discontinuously on
+`X`, then so does `N`. -/]
+theorem Function.Surjective.properlyDiscontinuousSMul {M N X : Type*} [TopologicalSpace X]
+    [SMul M X] [SMul N X] [ProperlyDiscontinuousSMul M X] {f : M → N} (hf : Surjective f)
+    (hsmul : ∀ (m : M) (x : X), f m • x = m • x) : ProperlyDiscontinuousSMul N X where
+  finite_disjoint_inter_image {K L} hK hL := by
+    refine ((ProperlyDiscontinuousSMul.finite_disjoint_inter_image (Γ := M) hK hL).image
+      f).subset ?_
+    intro n hn
+    obtain ⟨m, rfl⟩ := hf n
+    exact ⟨m, by simpa only [Set.mem_ofPred_eq, hsmul] using hn, rfl⟩
 
 namespace SubMulAction
 

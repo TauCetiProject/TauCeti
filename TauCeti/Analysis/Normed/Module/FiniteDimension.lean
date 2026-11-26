@@ -10,6 +10,7 @@ public import Mathlib.Analysis.LocallyConvex.Polar
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Analysis.Normed.Module.Span
 
 /-!
 # Finite-dimensional normed spaces
@@ -27,7 +28,8 @@ space and is in `TauCeti.Topology.Algebra.Module.FiniteDimension`.
 Two complements of the same space in a finite-dimensional space are continuously linearly
 isomorphic. This allows pointwise choices of complements to be identified with a single model.
 In real dimension one, equal-norm vectors agree up to sign; in particular, a nonzero-radius
-sphere consists of two antipodal points.
+sphere consists of two antipodal points. A one-dimensional normed space over `ℝ` or `ℂ` is
+linearly isometric to its scalars.
 
 A linear endomorphism of a finite-dimensional normed space that is bounded below by `c > 0` is
 injective, hence invertible, and its inverse is bounded by `c⁻¹`.
@@ -149,6 +151,18 @@ theorem eq_or_eq_neg_of_norm_eq_of_finrank_eq_one
     simpa [norm_smul, Real.norm_eq_abs, norm_ne_zero_iff.mpr hy] using hn
   rcases (abs_eq (by positivity : (0 : ℝ) ≤ 1)).mp hc with hc | hc <;>
     simp [hc]
+
+/-- A one-dimensional normed space over `𝕜 = ℝ` or `ℂ` is linearly isometric to `𝕜`: the span of
+a unit vector is everything. -/
+theorem nonempty_linearIsometryEquiv_of_finrank_eq_one {𝕜 V : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] (h : Module.finrank 𝕜 V = 1) :
+    Nonempty (𝕜 ≃ₗᵢ[𝕜] V) := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ h
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  have hu : ‖(‖v‖⁻¹ : 𝕜) • v‖ = 1 := by simp [norm_smul, hv]
+  exact ⟨(LinearIsometryEquiv.toSpanUnitSingleton _ hu).trans (LinearIsometryEquiv.ofTop _ _
+    ((Submodule.span_singleton_eq_top_iff 𝕜 _).2
+      (exists_smul_eq_of_finrank_eq_one h (by simpa using hv))))⟩
 
 /-- **Continuous families of vectors spanning subspaces of constant dimension.** Let `Y y` be `r`
 vectors of a subspace `W y` of `E`, depending continuously on `y` in an open set `U₀`, where every

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Formal
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hom.Component
-public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop
+public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Loop.Basic
 
 /-!
 # Gauge-trivial quartic loop deformations of a zigzag algebra
@@ -309,21 +309,21 @@ private theorem zigzagBacktrackCochain_koszulTwist_one_zero
     (x y z : nonisolatedZigzagQuotient k G) :
     zigzagBacktrackCochain hns P a ![𝒢.koszulTwist 1 x, y, z] =
       -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBasis_coord_dart_koszulTwist_one h𝒢]
+  simp [zigzagBasis_coord_koszulTwist h𝒢]
 
 /-- Twisting the second input of the backtrack cochain negates it. -/
 private theorem zigzagBacktrackCochain_koszulTwist_one_one
     (x y z : nonisolatedZigzagQuotient k G) :
     zigzagBacktrackCochain hns P a ![x, 𝒢.koszulTwist 1 y, z] =
       -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBasis_coord_dart_koszulTwist_one h𝒢]
+  simp [zigzagBasis_coord_koszulTwist h𝒢]
 
 /-- Twisting the third input of the backtrack cochain negates it. -/
 private theorem zigzagBacktrackCochain_koszulTwist_one_two
     (x y z : nonisolatedZigzagQuotient k G) :
     zigzagBacktrackCochain hns P a ![x, y, 𝒢.koszulTwist 1 z] =
       -zigzagBacktrackCochain hns P a ![x, y, z] := by
-  simp [zigzagBasis_coord_dart_koszulTwist_one h𝒢]
+  simp [zigzagBasis_coord_koszulTwist h𝒢]
 
 /-- **The coboundary identity with suspension signs**: the form of
 `TauCeti.zigzagBacktrackCochain_coboundary` met in the arity-four component equation, where the

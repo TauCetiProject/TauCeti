@@ -56,8 +56,8 @@ fixing the face sign convention `δ₀ σ` = endpoint, `δ₁ σ` = initial poin
   `TauCeti.SmoothSimplex.integral_mextDeriv_eq_sub`,
   `TauCeti.SmoothSimplex.integral_eq_zero_of_mem_exactForms_of_eq`: degree-`0` fundamental theorem
   of calculus on smooth `1`-simplices.
-* `TauCeti.d_comp_integrationCochain`: Stokes' theorem for smooth singular chains, as an identity
-  of cochains.
+* `TauCeti.d_comp_integrationCochain`, `TauCeti.integrationCochain_d_apply`: Stokes' theorem for
+  smooth singular chains, as an identity of cochains and evaluated on a chain.
 * `TauCeti.d_comp_integrationCochain_eq_zero`: the integration cochain of a closed form is a
   cocycle.
 * `TauCeti.integrationCochain_mextDeriv_apply_eq_zero`: an exact form integrates to zero over
@@ -313,6 +313,16 @@ theorem d_comp_integrationCochain {φ : RoughForm I M F p} (hφ : IsSmoothForm I
     ← Int.cast_smul_eq_zsmul ℝ]
   simp
 
+/-- Element form of `TauCeti.d_comp_integrationCochain`: integrating a `C¹` form over the boundary
+of a smooth singular chain `c` is integrating its exterior derivative over `c`. -/
+theorem integrationCochain_d_apply {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ)
+    (c : ((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).X (p + 1)) :
+    (integrationCochain φ).hom
+        ((((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).d
+          (p + 1) p).hom c) =
+      (integrationCochain (mextDeriv φ)).hom c := by
+  rw [← d_comp_integrationCochain hφ, ModuleCat.hom_comp, LinearMap.comp_apply]
+
 /-- The integration cochain of a closed `C¹` form is a cocycle. -/
 theorem d_comp_integrationCochain_eq_zero {φ : RoughForm I M F p} (hφ : IsSmoothForm I 1 φ)
     (hdφ : mextDeriv φ = 0) :
@@ -328,7 +338,7 @@ theorem integrationCochain_mextDeriv_apply_eq_zero {φ : RoughForm I M F p}
     (hc : (((smoothSingularSubcomplex I M : SSet).chainComplex (ModuleCat.of R R)).d
       (p + 1) p).hom c = 0) :
     (integrationCochain (mextDeriv φ)).hom c = 0 := by
-  rw [← d_comp_integrationCochain hφ, ModuleCat.hom_comp, LinearMap.comp_apply, hc, map_zero]
+  rw [← integrationCochain_d_apply hφ, hc, map_zero]
 
 end Cochain
 

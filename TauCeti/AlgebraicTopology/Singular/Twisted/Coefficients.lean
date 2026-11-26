@@ -177,6 +177,27 @@ lemma twistedHomologyCoefficientMap_neg
   (congrArg (HomologicalComplex.homologyMap · k)
     (twistedChainComplexCoefficientMap_neg η)).trans (HomologicalComplex.homologyMap_neg _ k)
 
+/-- An isomorphism of local coefficient systems induces an isomorphism on relative twisted
+homology. -/
+def twistedHomologyCoefficientIso {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+    (e : L ≅ K) (k : ℕ) :
+    P.twistedHomology L k ≅ P.twistedHomology K k :=
+  (HomologicalComplex.homologyFunctor _ _ k).mapIso (P.twistedChainComplexCoefficientIso e)
+
+@[simp]
+lemma twistedHomologyCoefficientIso_hom {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+    (e : L ≅ K) (k : ℕ) :
+    (P.twistedHomologyCoefficientIso e k).hom = P.twistedHomologyCoefficientMap e.hom k := by
+  simp only [twistedHomologyCoefficientIso, Functor.mapIso_hom,
+    HomologicalComplex.homologyFunctor_map, twistedChainComplexCoefficientIso_hom]
+
+@[simp]
+lemma twistedHomologyCoefficientIso_inv {L K : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+    (e : L ≅ K) (k : ℕ) :
+    (P.twistedHomologyCoefficientIso e k).inv = P.twistedHomologyCoefficientMap e.inv k := by
+  simp only [twistedHomologyCoefficientIso, Functor.mapIso_inv,
+    HomologicalComplex.homologyFunctor_map, twistedChainComplexCoefficientIso_inv]
+
 end TopPair
 
 namespace TauCeti.LocalCoefficientSystem
@@ -210,7 +231,6 @@ coefficient monomorphism stays injective on chains, without any flatness assumpt
 instance : PreservesFiniteLimits (twistedChainComplexFunctor.{u, v, w} R X) where
   preservesFiniteLimits J _ _ :=
     HomologicalComplex.preservesLimitsOfShape_of_eval _ fun n ↦ by
-      have : AB4OfSize.{v} (ModuleCat.{max v w} R) := AB4OfSize_shrink.{v, w} _
       have : PreservesFiniteLimits (twistedChainComplexFunctor R X ⋙
           HomologicalComplex.eval (ModuleCat.{max v w} R) (.down ℕ) n) :=
         preservesFiniteLimits_of_natIso (twistedChainComplexFunctorEvalIso.{u, v, w} n).symm
