@@ -25,10 +25,11 @@ model of the dual Weyl module `∇_R(ν)` of `GL_N` of highest weight `ν`, the 
 rows. Over a field of characteristic zero `∇(ν)` is the irreducible polynomial representation of
 highest weight `ν`; in positive characteristic it need not be irreducible.
 
-The operations are evaluated through `TauCeti.DualWeylModule.aeval_columnScale` and
-`TauCeti.DualWeylModule.aeval_columnAdd`: in every commutative `R`-algebra `S` and at every matrix
-over `S`, scaling a column by `c` multiplies a member by `c` to the power of the degree of that
-column, and adding `c` times an earlier column to a later one does not change its value.
+The operations are evaluated through `TauCeti.DualWeylModule.aeval_ite_mul_eq_pow_mul_aeval`
+and `TauCeti.DualWeylModule.aeval_add_ite_mul_eq_aeval`: in every commutative `R`-algebra `S` and
+at every matrix over `S`, scaling a column by `c` multiplies a member by `c` to the power of the
+degree of that column, and adding `c` times an earlier column to a later one does not change its
+value.
 
 The minor of `x` on any `k` rows and the first `k` columns lies in the module of the column degrees
 `(1, …, 1, 0, …, 0)` (`k` ones), and the modules form a graded monoid. So the **bideterminant**
@@ -48,8 +49,9 @@ lengths of `μ` (`TauCeti.DualWeylModule.bideterminant_mem_dualWeylModule`).
 
 * `TauCeti.mem_dualWeylModule`: the defining conditions, as two statements about the monomials
   and about the column operations.
-* `TauCeti.DualWeylModule.aeval_columnScale` and `TauCeti.DualWeylModule.aeval_columnAdd`: the
-  conditions specialised to any matrix over any commutative algebra.
+* `TauCeti.DualWeylModule.aeval_ite_mul_eq_pow_mul_aeval` and
+  `TauCeti.DualWeylModule.aeval_add_ite_mul_eq_aeval`: the conditions specialised to any matrix
+  over any commutative algebra.
 * `TauCeti.DualWeylModule.map_mem_dualWeylModule_iff`: saturation, `∇_R(d) = ∇_S(d) ∩ R[x]` for
   an injective change of coefficients `R → S`.
 * `TauCeti.DualWeylModule.mvPolynomialMinor_mem_dualWeylModule`: minors on initial columns are
@@ -154,8 +156,8 @@ variable {S : Type*} [CommSemiring S] [Algebra R S]
 /-- **Scaling a column.** If every monomial of `f` has degree `d t` in the column `t`, then
 multiplying the column `t` of a matrix `M` over a commutative `R`-algebra by `c` multiplies the
 value of `f` at `M` by `c ^ d t`. -/
-theorem aeval_columnScale {t : Fin n} (hf : ∀ m ∈ f.support, ∑ a, m (a, t) = d t)
-    (M : Fin N × Fin n → S) (c : S) :
+theorem aeval_ite_mul_eq_pow_mul_aeval {t : Fin n}
+    (hf : ∀ m ∈ f.support, ∑ a, m (a, t) = d t) (M : Fin N × Fin n → S) (c : S) :
     aeval (fun p => (if p.2 = t then c else 1) * M p) f = c ^ d t * aeval M f := by
   classical
   conv_lhs => rw [f.as_sum]
@@ -174,7 +176,7 @@ theorem aeval_columnScale {t : Fin n} (hf : ∀ m ∈ f.support, ∑ a, m (a, t)
 /-- **Adding a multiple of a column.** If the column operation `x ↦ x·(1 + T·e_{st})` fixes `f`,
 then adding `c` times the column `s` of a matrix `M` over a commutative `R`-algebra to its column
 `t` does not change the value of `f` at `M`. -/
-theorem aeval_columnAdd {s t : Fin n} (hf : columnOperation R s t f = Polynomial.C f)
+theorem aeval_add_ite_mul_eq_aeval {s t : Fin n} (hf : columnOperation R s t f = Polynomial.C f)
     (M : Fin N × Fin n → S) (c : S) :
     aeval (fun p => M p + if p.2 = t then c * M (p.1, s) else 0) f = aeval M f := by
   -- Evaluate the identity `hf` in `R[x][T]` at `x = M` and `T = c`.
@@ -387,7 +389,7 @@ theorem columnMinor_def (μ : YoungDiagram) (hμ : μ.colLen 0 ≤ n)
   (rfl)
 
 /-- The minor of a filling at a column outside the Young diagram is the empty minor `1`. -/
-theorem columnMinor_of_rowLen_le (μ : YoungDiagram) (hμ : μ.colLen 0 ≤ n)
+theorem columnMinor_eq_one_of_rowLen_le (μ : YoungDiagram) (hμ : μ.colLen 0 ≤ n)
     (T : ∀ i j : ℕ, (i, j) ∈ μ → Fin N) {j : ℕ} (hj : μ.rowLen 0 ≤ j) :
     columnMinor R μ hμ T j = 1 := by
   have h0 : μ.colLen j = 0 := by
@@ -413,7 +415,7 @@ theorem bideterminant_eq_prod_range (μ : YoungDiagram) (hμ : μ.colLen 0 ≤ n
     (T : ∀ i j : ℕ, (i, j) ∈ μ → Fin N) {K : ℕ} (hK : μ.rowLen 0 ≤ K) :
     bideterminant R μ hμ T = ∏ j ∈ range K, columnMinor R μ hμ T j := by
   rw [bideterminant, ← Finset.prod_range_mul_prod_Ico _ hK,
-    Finset.prod_eq_one (s := Ico _ _) (fun j hj => columnMinor_of_rowLen_le R μ hμ T
+    Finset.prod_eq_one (s := Ico _ _) (fun j hj => columnMinor_eq_one_of_rowLen_le R μ hμ T
       (Finset.mem_Ico.mp hj).1), mul_one]
 
 /-- **Bideterminants are dual Weyl vectors.** The bideterminant of a filling of a Young diagram

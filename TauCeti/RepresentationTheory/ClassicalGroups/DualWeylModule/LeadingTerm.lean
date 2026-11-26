@@ -352,8 +352,8 @@ theorem coeff_columnOperation_eq_zero {f : MvPolynomial (Fin N × Fin n) R} {d :
   let M₁ := fun p : Fin N × Fin n => (if p.2 = j then Polynomial.X else 1) * M p
   have h_scale : aeval M₁ f = Polynomial.X ^ d j * columnOperation R j i f := by
     rw [columnOperation_def]
-    exact aeval_columnScale (fun m hm => sum_apply_eq_of_mem_support hf hm j) M _
-  have h_add := aeval_columnAdd (columnOperation_eq_C hf hij) M₁ (-1)
+    exact aeval_ite_mul_eq_pow_mul_aeval (fun m hm => sum_apply_eq_of_mem_support hf hm j) M _
+  have h_add := aeval_add_ite_mul_eq_aeval (columnOperation_eq_C hf hij) M₁ (-1)
   have h_deg := natDegree_aeval_le (i := i) (fun m hm => sum_apply_eq_of_mem_support hf hm i)
     (fun p => M₁ p + if p.2 = j then -1 * M₁ (p.1, i) else 0) fun p => by
       by_cases hpi : p.2 = i
