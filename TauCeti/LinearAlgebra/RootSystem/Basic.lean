@@ -12,7 +12,13 @@ import Mathlib.RingTheory.Finiteness.Basic
 /-!
 # Basic facts about root systems
 
-Elementary consequences of the definition of a root system that need no further theory.
+Elementary consequences of the definition of a root pairing or root system that need no further
+theory.
+
+## Main definitions
+
+* `RootPairing.corootKer`: the central kernel `⨅ i, LinearMap.ker (P.coroot' i)` of a root
+  pairing.
 
 ## Main results
 
@@ -21,6 +27,8 @@ Elementary consequences of the definition of a root system that need no further 
   generated.
 * `RootPairing.not_isOfFinAddOrder_root`: in characteristic zero, a root has infinite additive
   order.
+* `RootPairing.reflection_apply_eq_self_of_mem_corootKer`: every root reflection fixes `P.corootKer`
+  pointwise.
 -/
 
 public section
@@ -56,5 +64,33 @@ theorem not_isOfFinAddOrder_root [CharZero R] (P : RootPairing ι R M N) (i : ι
   have h' : ((n * 2 : ℕ) : R) = 0 := by exact_mod_cast h
   rw [Nat.cast_eq_zero] at h'
   omega
+
+section CorootKer
+
+variable (P : RootPairing ι R M N)
+
+/-- The **central kernel** of a root pairing: the common kernel of all coroot functionals
+`P.coroot' i`. -/
+def corootKer : Submodule R M :=
+  ⨅ i, LinearMap.ker (P.coroot' i)
+
+/-- The defining equation of `RootPairing.corootKer` as an infimum of kernels. -/
+theorem corootKer_def : P.corootKer = ⨅ i, LinearMap.ker (P.coroot' i) :=
+  (rfl)
+
+variable {P} in
+/-- Membership in the central kernel means vanishing under every coroot functional. -/
+@[simp]
+theorem mem_corootKer {x : M} : x ∈ P.corootKer ↔ ∀ i, P.coroot' i x = 0 := by
+  simp [corootKer_def]
+
+variable {P}
+
+/-- Every root reflection fixes `P.corootKer` pointwise. -/
+theorem reflection_apply_eq_self_of_mem_corootKer {x : M} (hx : x ∈ P.corootKer) (i : ι) :
+    P.reflection i x = x := by
+  rw [reflection_apply, mem_corootKer.mp hx i, zero_smul, sub_zero]
+
+end CorootKer
 
 end RootPairing
