@@ -31,7 +31,9 @@ complex coordinates `(⟪b₀, v⟫ + ⟪b₁, v⟫ i, ⟪b₂, v⟫ + ⟪b₃, 
 multiplication by `i`. Then `OrthonormalBasis.spinCUnitary b : U(2) →* Spinᶜ(Q)` satisfies:
 
 * the rotation of `spinCUnitary g` acts on `V` as the matrix `g` in these coordinates
-  (`OrthonormalBasis.complexCoords_toSpecialOrthogonal_spinCUnitary_apply`);
+  (`OrthonormalBasis.complexCoords_toSpecialOrthogonal_spinCUnitary_apply`, and as an equality in
+  `SO(V)` with `OrthonormalBasis.unitaryGroupFrameEquiv` in
+  `OrthonormalBasis.toSpecialOrthogonal_spinCUnitary_eq_unitaryGroupFrameEquiv`);
 * its determinant character is `det g` (`OrthonormalBasis.det_spinCUnitary`);
 * it is the only homomorphism with these two properties (`OrthonormalBasis.eq_spinCUnitary`);
 * on the circle of matrices `diag (1, z)`, which turn the plane `⟨b₂, b₃⟩` by `z`, it is the lift
@@ -256,6 +258,18 @@ theorem complexCoords_toSpecialOrthogonal_spinCUnitary_apply (g : unitaryGroup (
     toSpecialOrthogonal_spinCOfPair_coordVec]
   simp only [quaternionFrame_negRealCliffordFormIsometryEquiv_coordVec,
     LinearEquiv.apply_symm_apply]
+
+/-- **The rotation of `spinCUnitary g` is `unitaryGroupFrameEquiv g`** for a unitary frame `b`
+(`J (b 0) = b 1`, `J (b 2) = b 3`) of an almost complex structure `J`. -/
+theorem toSpecialOrthogonal_spinCUnitary_eq_unitaryGroupFrameEquiv
+    {J : AlmostComplexStructure V} (h₀ : J (b 0) = b 1) (h₂ : J (b 2) = b 3)
+    (g : unitaryGroup (Fin 2) ℂ) :
+    spinCGroup.toSpecialOrthogonal Q hQ₀ (b.spinCUnitary hQ hQ₀ g) =
+      AlmostComplexStructure.unitaryGroupFrameEquiv hQ h₀ h₂ g := by
+  ext v
+  exact (b.complexCoords 2).injective
+    ((b.complexCoords_toSpecialOrthogonal_spinCUnitary_apply hQ hQ₀ g v).trans
+      (AlmostComplexStructure.complexCoords_unitaryGroupFrameEquiv_apply hQ h₀ h₂ g v).symm)
 
 /-- **The determinant character of `spinCUnitary g` is `det g`.** -/
 @[simp]

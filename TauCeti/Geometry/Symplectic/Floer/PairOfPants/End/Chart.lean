@@ -15,6 +15,7 @@ import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Shift
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Function.Floor
+import Mathlib.Analysis.Normed.Module.Connected
 
 /-!
 # The pair of pants and its end charts in real coordinates
@@ -77,6 +78,8 @@ apply to all three ends.
   differentiable in the target point for `C¹` Hamiltonians.
 * `TauCeti.Floer.contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt`: a datum
   which is `C¹` on `S × M` has `C¹` components in the real coordinates of `S`.
+* `TauCeti.Floer.contMDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the components
+  of the perturbation are `Cⁿ` on `S × M` for `Cⁿ` Hamiltonians on a manifold.
 * `TauCeti.Floer.differentiableAt_pairOfPantsPerturbation_domain`,
   `TauCeti.Floer.mdifferentiableAt_pairOfPantsPerturbation_target`: for `C¹` Hamiltonians on a
   manifold, the components of the perturbation are differentiable at points of `S` in the domain
@@ -138,7 +141,10 @@ apply to all three ends.
 * `TauCeti.Floer.positiveEndChartScale`, `TauCeti.Floer.sq_positiveEndChartScale`,
   `TauCeti.Floer.sq_positiveEndChartScale_eq_sq_add_sq`: the derivative of the positive end chart
   at `ζ` is a rotation followed by multiplication by the conformal scale `2π |φ'_q(ζ) - c_q|`,
-  whose square is the Jacobian.
+  whose square is the Jacobian; in particular it vanishes nowhere
+  (`TauCeti.Floer.fderiv_positiveEndChart_ne_zero`).
+* `TauCeti.Floer.norm_equivRealProdCLM_symm_positiveEndChart_inf`: the output end, read in the
+  positive end chart, lies at the norm `2 exp (2πs)`.
 * `TauCeti.Floer.fderiv_positiveEndChart_add_fst`, `TauCeti.Floer.positiveEndChartScale_add_fst`,
   `TauCeti.Floer.positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq`: translating
   `ζ` by `L` along the end multiplies both `dφ'_q(ζ)` and the conformal scale by `e^{-2π (±L)}`, so
@@ -157,8 +163,10 @@ apply to all three ends.
   point lies in the truncation `S_T`, or in the truncation at heights `R`, exactly when it lies in
   `S` and its longitudinal positive end coordinate on each end `q` is at most `T`, or at most
   `R q`.
-* `TauCeti.Floer.exists_forall_comp_positiveEndChart_eventuallyEq_zero`: a function with compact
-  support in `S` vanishes in the positive end chart beyond some height.
+* `TauCeti.Floer.comp_positiveEndChart_eventuallyEq_zero_of_le`,
+  `TauCeti.Floer.exists_forall_comp_positiveEndChart_eventuallyEq_zero`: a function vanishes in the
+  positive end chart beyond a bound of the height on its support, so beyond some height when its
+  support is compact and avoids the center of the end.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
   `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineImag_of_le`: where a
   perturbation is `H_q(t) dt` on the end `q`, its pullback along the positive end chart is
@@ -192,15 +200,13 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture �
 /-- The defining equation of `S` in real coordinates, for rewriting between `S` and the set of
 points that are neither `0` nor `1` as complex numbers. -/
 theorem thricePuncturedSphereReal_def : thricePuncturedSphereReal =
-    {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1} :=
-  (rfl)
+    {z | Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1} := (rfl)
 
 /-- A point lies in `S` when, as a complex number, it is neither `0` nor `1`. -/
 @[simp]
 theorem mem_thricePuncturedSphereReal_iff {z : ℝ × ℝ} :
     z ∈ thricePuncturedSphereReal ↔
-      Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 :=
-  Iff.rfl
+      Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 := Iff.rfl
 
 /-- A point at distance at least `2` from `0` lies in `S`. -/
 theorem mem_thricePuncturedSphereReal_of_two_le_norm {z : ℝ × ℝ}
@@ -215,6 +221,18 @@ theorem mem_thricePuncturedSphereReal_of_two_le_norm {z : ℝ × ℝ}
 theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
+
+/-- The pair of pants `S = ℂ ∖ {0, 1}` is connected in real coordinates: it is the complement of
+two points in the plane. -/
+theorem isConnected_thricePuncturedSphereReal : IsConnected thricePuncturedSphereReal := by
+  have hS : thricePuncturedSphereReal =
+      ({Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1} : Set (ℝ × ℝ))ᶜ := by
+    ext z
+    simp [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_eq, Prod.mk_zero_zero]
+  rw [hS]
+  refine (Set.toFinite _).countable.isConnected_compl_of_one_lt_rank ?_
+  rw [rank_prod', Module.rank_self, one_add_one_eq_two]
+  exact Cardinal.one_lt_two
 
 /-- The signed longitudinal coordinate `±s` of the end `q` is continuous in real coordinates away
 from the center of the end. -/
@@ -248,8 +266,7 @@ noncomputable def positiveEndCoord (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ 
 
 theorem positiveEndCoord_apply (q : Puncture) (z : ℝ × ℝ) :
     positiveEndCoord q z =
-      q.endSign • Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)) :=
-  (rfl)
+      q.endSign • Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)) := (rfl)
 
 /-- The first positive end coordinate is the signed longitudinal coordinate `±s`. -/
 theorem fst_positiveEndCoord (q : Puncture) (z : ℝ × ℝ) :
@@ -285,10 +302,7 @@ theorem measurable_positiveEndCoord (q : Puncture) : Measurable (positiveEndCoor
     simp_rw [endCoord_def]
     exact ((Complex.measurable_log.comp ((Complex.equivRealProdCLM.symm.continuous.sub
       continuous_const).div_const _).measurable).neg.div_const _)
-  have he : positiveEndCoord q =
-      fun z ↦ q.endSign • Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)) :=
-    funext (positiveEndCoord_apply q)
-  rw [he]
+  rw [funext (positiveEndCoord_apply q)]
   exact (Complex.equivRealProdCLM.continuous.measurable.comp h).const_smul q.endSign
 
 /-- A `Cⁿ` function `F` on the cylinder of period one in the angular coordinate, read in the
@@ -425,8 +439,7 @@ theorem setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation {E : Typ
   obtain ⟨q, hq⟩ := exists_lt_fst_positiveEndCoord_of_notMem_truncation hz.1 hz.2
   exact hf z hz.1 q hq
 
-/-- Almost every point of the plane lies in the pair of pants: the two punctures form a null
-set. -/
+/-- Almost every point of the plane lies in the pair of pants: the two punctures form a null set. -/
 theorem ae_mem_thricePuncturedSphereReal : ∀ᵐ z : ℝ × ℝ, z ∈ thricePuncturedSphereReal := by
   refine measure_mono_null (t := {Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1})
     (fun z hz ↦ ?_) ?_
@@ -492,6 +505,18 @@ theorem contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
   exact (((hK ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
     contMDiffAt_const).contMDiffWithinAt
 
+/-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
+jointly in the domain point and the target point of a manifold, for `Cⁿ` Hamiltonians. -/
+theorem contMDiffAt_uncurry_pairOfPantsPerturbation {H : Puncture → ℝ → M → ℝ} {n : ℕ∞}
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v) (z, x) :=
+  ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
+    (z, x) ((Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+      contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const
+
 /-- The components of the perturbation in real coordinates are differentiable in the domain
 point, at points of `S`, for `C¹` Hamiltonians on a manifold. -/
 theorem differentiableAt_pairOfPantsPerturbation_domain {H : Puncture → ℝ → M → ℝ}
@@ -530,8 +555,7 @@ noncomputable def endChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
 
 theorem endChart_apply (q : Puncture) (z : ℝ × ℝ) :
     endChart q z =
-      Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) :=
-  (rfl)
+      Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) := (rfl)
 
 /-- The end chart is the end lift read in the real coordinates. -/
 theorem endChart_eq_realChart (q : Puncture) :
@@ -591,15 +615,13 @@ noncomputable def endStrip (q : Puncture) : Set (ℝ × ℝ) :=
   {s | 1 / 2 < q.endSign * s} ×ˢ Ico (-1 / 2) (1 / 2)
 
 theorem endStrip_def (q : Puncture) :
-    endStrip q = {s | 1 / 2 < q.endSign * s} ×ˢ Ico (-1 / 2) (1 / 2) :=
-  (rfl)
+    endStrip q = {s | 1 / 2 < q.endSign * s} ×ˢ Ico (-1 / 2) (1 / 2) := (rfl)
 
 /-- A point lies in the strip of the end `q` when its signed longitudinal coordinate exceeds `1/2`
 and its angular coordinate lies in `[-1/2, 1/2)`. -/
 @[simp]
 theorem mem_endStrip_iff {q : Puncture} {z : ℝ × ℝ} :
-    z ∈ endStrip q ↔ 1 / 2 < q.endSign * z.1 ∧ z.2 ∈ Ico (-1 / 2) (1 / 2) :=
-  Iff.rfl
+    z ∈ endStrip q ↔ 1 / 2 < q.endSign * z.1 ∧ z.2 ∈ Ico (-1 / 2) (1 / 2) := Iff.rfl
 
 /-- Points of the strip of an end have positive signed longitudinal coordinate. -/
 theorem endSign_mul_pos_of_mem_endStrip {q : Puncture} {z : ℝ × ℝ}
@@ -885,8 +907,7 @@ noncomputable def positiveEndChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ 
   endChart q (q.endSign • z)
 
 theorem positiveEndChart_apply (q : Puncture) (z : ℝ × ℝ) :
-    positiveEndChart q z = endChart q (q.endSign • z) :=
-  (rfl)
+    positiveEndChart q z = endChart q (q.endSign • z) := (rfl)
 
 theorem positiveEndChart_mk (q : Puncture) (s t : ℝ) :
     positiveEndChart q (s, t) = endChart q (q.endSign * s, q.endSign * t) := by
@@ -1012,6 +1033,14 @@ theorem equivRealProdCLM_symm_positiveEndChart_ne_endCenter (q : Puncture) (ζ :
   rw [positiveEndChart_apply]
   exact equivRealProdCLM_symm_endChart_ne_endCenter q _
 
+/-- The output end, read in the positive end chart `φ'_∞`, lies at the norm `2 exp (2πs)`. -/
+theorem norm_equivRealProdCLM_symm_positiveEndChart_inf (s t : ℝ) :
+    ‖Complex.equivRealProdCLM.symm (positiveEndChart inf (s, t))‖ = 2 * exp (2 * π * s) := by
+  have h := norm_cylindricalEndLift_sub_endCenter inf
+    (Complex.equivRealProdCLM.symm (inf.endSign • (s, t)))
+  rw [positiveEndChart_apply, equivRealProdCLM_symm_endChart]
+  simpa using h
+
 /-- The **conformal scale** `2π |φ'_q(ζ) - c_q|` of the positive end chart `φ'_q` at `ζ`, where
 `c_q` is the center of the end: the derivative of `φ'_q` at `ζ` is a rotation followed by
 multiplication by this scale, whose square is the Jacobian (`sq_positiveEndChartScale`). -/
@@ -1020,8 +1049,7 @@ noncomputable def positiveEndChartScale (q : Puncture) (ζ : ℝ × ℝ) : ℝ :
 
 theorem positiveEndChartScale_apply (q : Puncture) (ζ : ℝ × ℝ) :
     positiveEndChartScale q ζ =
-      2 * π * ‖Complex.equivRealProdCLM.symm (positiveEndChart q ζ) - q.endCenter‖ :=
-  (rfl)
+      2 * π * ‖Complex.equivRealProdCLM.symm (positiveEndChart q ζ) - q.endCenter‖ := (rfl)
 
 theorem positiveEndChartScale_pos (q : Puncture) (ζ : ℝ × ℝ) : 0 < positiveEndChartScale q ζ := by
   have h := sub_ne_zero.2 (equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ)
@@ -1057,6 +1085,12 @@ theorem sq_positiveEndChartScale_eq_sq_add_sq (q : Puncture) (ζ : ℝ × ℝ) :
   rw [sq_positiveEndChartScale, ContinuousLinearMap.det,
     (isComplexLinearMap_fderiv_positiveEndChart q ζ).det_eq_sq_add_sq, ContinuousLinearMap.coe_coe,
     stdComplexLineReal_eq]
+
+/-- The derivative of the positive end chart vanishes nowhere. -/
+theorem fderiv_positiveEndChart_ne_zero (q : Puncture) (ζ : ℝ × ℝ) :
+    fderiv ℝ (positiveEndChart q) ζ ≠ 0 := fun h ↦
+  (pow_pos (positiveEndChartScale_pos q ζ) 2).ne' <| by
+    simpa [h] using sq_positiveEndChartScale_eq_sq_add_sq q ζ
 
 /-- The first coordinate of the image of `(1, 0)` under the derivative of the positive end chart
 is at most the conformal scale in absolute value. -/
@@ -1180,8 +1214,7 @@ theorem injOn_positiveEndChart (q : Puncture) (t₀ : ℝ) :
 
 /-! ### The positive end coordinates invert the positive end chart -/
 
-/-- Away from the center of the end, the positive end chart inverts the positive end
-coordinates. -/
+/-- Away from the center of the end, the positive end chart inverts the positive end coordinates. -/
 theorem positiveEndChart_positiveEndCoord (q : Puncture) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
     positiveEndChart q (positiveEndCoord q z) = z := by
@@ -1229,8 +1262,7 @@ noncomputable def endBandCoord (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
   ((positiveEndCoord q z).1, Int.fract (positiveEndCoord q z).2)
 
 theorem endBandCoord_apply (q : Puncture) (z : ℝ × ℝ) :
-    endBandCoord q z = ((positiveEndCoord q z).1, Int.fract (positiveEndCoord q z).2) :=
-  (rfl)
+    endBandCoord q z = ((positiveEndCoord q z).1, Int.fract (positiveEndCoord q z).2) := (rfl)
 
 /-- The band coordinates lie in the band `ℝ × [0, 1)`. -/
 theorem endBandCoord_mem (q : Puncture) (z : ℝ × ℝ) :
@@ -1310,34 +1342,33 @@ theorem subset_preimage_truncation_union_iUnion_image_positiveEndChart (T : ℝ)
   exact positiveEndChart_positiveEndCoord q
     (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
 
-/-- A function with compact support in `S` vanishes, in the positive end chart of `q`, near every
-point beyond some height. -/
+/-- A function vanishes in the positive end chart of `q` beyond a height bound on its support. -/
+theorem comp_positiveEndChart_eventuallyEq_zero_of_le {M : Type*} [Zero M] {f : ℝ × ℝ → M}
+    {q : Puncture} {N : ℝ} (hN : ∀ z ∈ tsupport f, (positiveEndCoord q z).1 ≤ N) {ζ : ℝ × ℝ}
+    (hζ : N < ζ.1) : f ∘ positiveEndChart q =ᶠ[nhds ζ] 0 := by
+  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
+  refine image_eq_zero_of_notMem_tsupport (f := f) fun h ↦ absurd hζ' (not_lt.2 ?_)
+  simpa only [fst_positiveEndCoord_positiveEndChart] using hN _ h
+
+/-- A function with compact support avoiding the center of the end `q`, for instance with compact
+support in `S`, vanishes, in the positive end chart of `q`, near every point beyond some height. -/
 theorem exists_forall_comp_positiveEndChart_eventuallyEq_zero {M : Type*} [Zero M]
-    {f : ℝ × ℝ → M} (hfc : HasCompactSupport f) (hfS : tsupport f ⊆ thricePuncturedSphereReal)
-    (q : Puncture) :
+    {f : ℝ × ℝ → M} {q : Puncture} (hfc : HasCompactSupport f)
+    (hf : ∀ z ∈ tsupport f, Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
     ∃ N, ∀ ζ : ℝ × ℝ, N < ζ.1 → f ∘ positiveEndChart q =ᶠ[nhds ζ] 0 := by
   -- The longitudinal positive end coordinate is bounded on the support of `f`.
-  obtain ⟨N, hN⟩ :=
-    hfc.isCompact.exists_bound_of_continuousOn (f := fun w ↦ (positiveEndCoord q w).1) fun z hz ↦
-      (continuousAt_fst_positiveEndCoord q
-        (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 (hfS hz)) q)).continuousWithinAt
-  refine ⟨N, fun ζ hζ ↦ ?_⟩
-  filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζ] with ζ' hζ'
-  rw [Pi.zero_apply, Function.comp_apply]
-  refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
-  have := (Real.le_norm_self _).trans (hN _ h)
-  rw [fst_positiveEndCoord_positiveEndChart] at this
-  exact absurd hζ' (not_lt.2 this)
+  obtain ⟨N, hN⟩ := hfc.isCompact.exists_bound_of_continuousOn fun z hz ↦
+    (continuousAt_fst_positiveEndCoord q (hf z hz)).continuousWithinAt
+  exact ⟨N, fun _ ↦ comp_positiveEndChart_eventuallyEq_zero_of_le fun z hz ↦
+    (Real.le_norm_self _).trans (hN z hz)⟩
 
 /-- The Hamiltonian of the end `q` in its positive end chart: `H'_q(t, x) = ±H_q(±t, x)` with the
 sign of the end. It is `H_q` on the input ends and `(t, x) ↦ -H_∞(-t, x)` on the output end. -/
 noncomputable def positiveEndHamiltonian {X : Type*} (H : Puncture → ℝ → X → ℝ) (q : Puncture)
-    (t : ℝ) (x : X) : ℝ :=
-  q.endSign * H q (q.endSign * t) x
+    (t : ℝ) (x : X) : ℝ := q.endSign * H q (q.endSign * t) x
 
 theorem positiveEndHamiltonian_apply {X : Type*} (H : Puncture → ℝ → X → ℝ) (q : Puncture)
-    (t : ℝ) (x : X) : positiveEndHamiltonian H q t x = q.endSign * H q (q.endSign * t) x :=
-  (rfl)
+    (t : ℝ) (x : X) : positiveEndHamiltonian H q t x = q.endSign * H q (q.endSign * t) x := (rfl)
 
 /-- On an input end, the end Hamiltonian in the positive end chart is `H_q`. -/
 theorem positiveEndHamiltonian_of_endSign_eq_one {X : Type*} (H : Puncture → ℝ → X → ℝ)

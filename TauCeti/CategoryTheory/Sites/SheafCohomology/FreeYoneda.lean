@@ -59,6 +59,8 @@ naturally both in the object of the site and in the coefficient sheaf.
 The equivalence composes the sheafification adjunction, the free-forgetful adjunction for abelian
 groups, and the Yoneda equivalence. This is the same model of the free abelian sheaf used
 definitionally by Mathlib's `Sheaf.cohomologyPresheafFunctor`.
+
+The free-Yoneda section representation is compatible with the actual sheaf adjunction.
 -/
 
 public section
@@ -414,3 +416,29 @@ instance : IsIso (u.freeYonedaSheafToSheafPullback J K) :=
 end
 
 end CategoryTheory.Functor
+
+/-! ### Evaluation through the actual free-abelian-sheaf adjunction -/
+
+namespace TauCeti.CategoryTheory
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  {D : Type u'} [Category.{v} D] (K : GrothendieckTopology D)
+  [HasSheafify J AddCommGrpCat.{v}] [HasSheafify K AddCommGrpCat.{v}]
+  (t : C ⥤ D) [t.IsContinuous J K]
+  [(t.sheafPushforwardContinuous AddCommGrpCat.{v} J K).IsRightAdjoint]
+/-- The sheaf adjunction identifies the free-Yoneda morphism with its represented section. -/
+lemma freeYonedaSheafAdjunction_sectionsEquiv (V : C) (F : Sheaf K AddCommGrpCat.{v})
+    (g : (t.sheafPullback AddCommGrpCat.{v} J K).obj ((freeYonedaSheafFunctor J).obj V) ⟶ F) :
+    freeYonedaSheafSectionsEquiv K (t.obj V) F
+      ((t.freeYonedaSheafToSheafPullback J K).app V ≫ g) =
+      freeYonedaSheafSectionsEquiv J V
+        ((t.sheafPushforwardContinuous AddCommGrpCat.{v} J K).obj F)
+        ((t.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).homEquiv _ _ g) := by
+  rw [freeYonedaSheafSectionsEquiv_naturality_right,
+    Functor.freeYonedaSheafSectionsEquiv_freeYonedaSheafToSheafPullback_app,
+    Adjunction.homEquiv_unit,
+    ← Category.id_comp ((t.sheafAdjunctionContinuous AddCommGrpCat.{v} J K).unit.app _ ≫ _),
+    freeYonedaSheafSectionsEquiv_naturality_right]
+  simp only [Functor.id_obj, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    Functor.sheafPushforwardContinuous_map_hom_app]
+  exact (ConcreteCategory.comp_apply _ _ _).symm
+end TauCeti.CategoryTheory

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.DGAlgebra
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
+import TauCeti.Order.WellFounded.Basic
 
 /-!
 # Relative classes in the algebra of cubical chains
@@ -43,6 +44,10 @@ differential `b`.
   condition, a family of chains with prescribed boundaries representing prescribed relative
   classes exists, when the prescribed boundary of each chain only depends on the chains of
   smaller dimension.
+* `TauCeti.exists_forall_cubicalChainDifferential_eq_of_injective`: when the prescribed
+  boundaries are cycles `a - a' + b` with `a`, `a'` representing the same relative class and `b`
+  a chain of the subspace, and the maps `Hₙ(X) → Hₙ(X, A)` are injective, a family of chains with
+  these boundaries exists.
 -/
 
 public section
@@ -268,6 +273,36 @@ variable {P Q : Type*} [Finite P] [Finite Q] {N : P → Q → TopCat.{u}} {k : T
     ∀ x y, normalizedCubicalChainAlgebra (N x y) k}
   {μ : ∀ x y, ((TopPair.ofSubset (A x y)).cubicalChainComplex k).homology (n x y)}
 
+/-- Families of chains of prescribed degrees are built one degree at a time, downwards from the
+largest, when the condition `V s x y c` on the chain `c` of the pair `(x, y)` only depends on the
+chains of `s` at the pairs of larger degree and can be met there once it holds at those pairs. -/
+private theorem exists_forall_of_forall_exists_of_lt
+    (V : (∀ x y, normalizedCubicalChainAlgebra (N x y) k) → ∀ x y,
+      normalizedCubicalChainAlgebra (N x y) k → Prop)
+    (hV : ∀ (s s' : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y c,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x y, s' x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x' y', deg x y < deg x' y' → s x' y' = s' x' y') → V s x y c → V s' x y c)
+    (hex : ∀ (s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x' y', deg x y < deg x' y' → V s x' y' (s x' y')) →
+      ∃ c ∈ cubicalChainGrading (N x y) k (deg x y), V s x y c) :
+    ∃ s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧ ∀ x y, V s x y (s x y) := by
+  -- Recursion along the relation `q` precedes `p` when `q` has the larger degree, which is
+  -- well-founded on the finite type of pairs; the chains are taken in the graded pieces.
+  let r : P × Q → P × Q → Prop := fun q p ↦ deg p.1 p.2 < deg q.1 q.2
+  have : IsTrans (P × Q) r := ⟨fun _ _ _ h₁ h₂ ↦ h₂.trans h₁⟩
+  have : Std.Irrefl r := ⟨fun _ ↦ lt_irrefl _⟩
+  obtain ⟨G, hG⟩ := (Finite.wellFounded_of_trans_of_irrefl r).exists_forall_of_forall_exists
+    (X := fun p ↦ cubicalChainGrading (N p.1 p.2) k (deg p.1 p.2))
+    (fun G p c ↦ V (fun x y ↦ G (x, y)) p.1 p.2 c)
+    (fun p _ G G' hGG' ↦ hV _ _ p.1 p.2 _ (fun x y ↦ (G (x, y)).property)
+      (fun x y ↦ (G' (x, y)).property) fun x' y' h ↦ congrArg Subtype.val (hGG' (x', y') h))
+    fun p G hG ↦ (hex _ p.1 p.2 (fun x y ↦ (G (x, y)).property) fun x' y' h ↦ hG (x', y') h).elim
+      fun c hc ↦ ⟨⟨c, hc.1⟩, hc.2⟩
+  exact ⟨fun x y ↦ G (x, y), fun x y ↦ (G (x, y)).property, fun x y ↦ hG (x, y)⟩
+
 /-- **Families of chains with prescribed boundaries representing prescribed classes.** Let
 `deg x y` be the cohomological degree of the chain of the pair `(x, y)`, so that it is a chain of
 dimension `-deg x y`, and let `μ x y` be a class of the relative cubical homology
@@ -299,60 +334,73 @@ theorem exists_forall_cubicalChainDifferential_eq_and_isRepresentingChain
       (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧
       ∀ x y, cubicalChainDifferential (N x y) k (s x y) = F s x y ∧
         (deg x y ≤ 0 → IsRepresentingChain (s x y) (μ x y)) := by
-  -- Induction on `d`: the conditions hold at the pairs of degree at least `1 - d`.
-  have key (d : ℕ) : ∃ s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k,
+  refine exists_forall_of_forall_exists_of_lt
+    (fun s x y c ↦ cubicalChainDifferential (N x y) k c = F s x y ∧
+      (deg x y ≤ 0 → IsRepresentingChain c (μ x y)))
+    (fun s s' x y c hs hs' hss' hc ↦ by rwa [← hF s s' x y hs hs' hss']) fun s x y hs hd ↦ ?_
+  by_cases hpos : 0 < deg x y
+  · -- In positive degree the chain vanishes, and so does the prescribed boundary.
+    refine ⟨0, zero_mem _, ?_, fun h ↦ by omega⟩
+    rw [hF₀ s x y hs hpos.le]
+    exact map_zero _
+  have hdeg := hn x y (by omega)
+  by_cases h₀ : n x y = 0
+  · -- In dimension zero the prescribed boundary vanishes, and so does that of any chain.
+    obtain ⟨c, hc⟩ := exists_isRepresentingChain (A x y) (μ x y)
+    have hmem : c ∈ cubicalChainGrading (N x y) k (deg x y) := hdeg ▸ hc.mem_cubicalChainGrading
+    refine ⟨c, hmem, ?_, fun _ ↦ hc⟩
+    rw [cubicalChainDifferential_eq_zero_of_nonneg _ _ (by omega) hmem, hF₀ s x y hs (by omega)]
+  · obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero h₀
+    obtain ⟨c, hc, hdc⟩ := IsRepresentingCycle.exists_isRepresentingChain hm.symm
+      (hglue s x y m hm (by omega) hs hd)
+    exact ⟨c, hdeg ▸ hc.mem_cubicalChainGrading, hdc, fun _ ↦ hc⟩
+
+/-- **Families of chains bounding cycles with vanishing relative classes.** Let `deg x y` be the
+cohomological degree of the chain of the pair `(x, y)`, and let `μ x y` be a class of the relative
+cubical homology `H_{n x y}(N x y, A x y)`, where `n x y + 1 = -deg x y` whenever `deg x y < 0`.
+Let `F s x y` be the prescribed boundary of the chain of `(x, y)` for a family `s` of chains of
+these degrees, depending only on the chains of the pairs of smaller dimension and vanishing in
+dimension at most zero. Suppose that, whenever `s` has the prescribed boundaries at the pairs of
+smaller dimension and `deg x y < 0`, `F s x y` is a cycle of the form `a - a' + b` with `a` and
+`a'` representing `μ x y` and `b` an `n x y`-chain of `A x y`, and that the maps
+`H_{n x y}(N x y) → H_{n x y}(N x y, A x y)` are injective. Then some family of chains of these
+degrees has the prescribed boundaries: each cycle `F s x y` has vanishing relative class, so it
+is a boundary by `TauCeti.IsRepresentingChain.exists_cubicalChainDifferential_eq_sub_add`. -/
+theorem exists_forall_cubicalChainDifferential_eq_of_injective
+    (hn : ∀ x y, deg x y < 0 → deg x y = -((n x y + 1 : ℕ) : ℤ))
+    (hF : ∀ (s s' : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x y, s' x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x' y', deg x y < deg x' y' → s x' y' = s' x' y') → F s x y = F s' x y)
+    (hF₀ : ∀ (s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y,
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) → 0 ≤ deg x y → F s x y = 0)
+    (hinj : ∀ x y, deg x y < 0 → Function.Injective (HomologicalComplex.homologyMap
+      (cokernel.π ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (A x y)).map))
+        (n x y)).hom)
+    (hcycle : ∀ (s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k) x y, deg x y < 0 →
+      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) →
+      (∀ x' y', deg x y < deg x' y' →
+        cubicalChainDifferential (N x' y') k (s x' y') = F s x' y') →
+      cubicalChainDifferential (N x y) k (F s x y) = 0 ∧
+        ∃ (a a' : normalizedCubicalChainAlgebra (N x y) k)
+          (b : normalizedCubicalChainAlgebra (A x y) k),
+          IsRepresentingChain a (μ x y) ∧ IsRepresentingChain a' (μ x y) ∧
+          b ∈ cubicalChainGrading (A x y) k (-(n x y : ℤ)) ∧
+          F s x y = a - a' + cubicalChainSumMap k (ContinuousMap.subtypeVal (A x y)) b) :
+    ∃ s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k,
       (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧
-      ∀ x y, 1 - (d : ℤ) ≤ deg x y →
-        cubicalChainDifferential (N x y) k (s x y) = F s x y ∧
-          (deg x y ≤ 0 → IsRepresentingChain (s x y) (μ x y)) := by
-    induction d with
-    | zero =>
-      refine ⟨0, fun _ _ ↦ zero_mem _, fun x y hxy ↦ ⟨?_, fun h ↦ by omega⟩⟩
-      rw [hF₀ 0 x y (fun _ _ ↦ zero_mem _) (by omega)]
-      exact map_zero _
-    | succ d ih =>
-      obtain ⟨s, hs, hd⟩ := ih
-      -- At the pairs of degree `-d`, choose chains with the prescribed boundary and class.
-      have hnew (x : P) (y : Q) (hxy : deg x y = -d) :
-          ∃ c : normalizedCubicalChainAlgebra (N x y) k,
-            c ∈ cubicalChainGrading (N x y) k (deg x y) ∧
-            cubicalChainDifferential (N x y) k c = F s x y ∧ IsRepresentingChain c (μ x y) := by
-        have hdeg := hn x y (by omega)
-        by_cases h₀ : n x y = 0
-        · -- In dimension zero the prescribed boundary vanishes, and so does that of any chain.
-          obtain ⟨c, hc⟩ := exists_isRepresentingChain (A x y) (μ x y)
-          have hmem : c ∈ cubicalChainGrading (N x y) k (deg x y) :=
-            hdeg ▸ hc.mem_cubicalChainGrading
-          refine ⟨c, hmem, ?_, hc⟩
-          rw [cubicalChainDifferential_eq_zero_of_nonneg _ _ (by omega) hmem,
-            hF₀ s x y hs (by omega)]
-        · obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero h₀
-          obtain ⟨c, hc, hdc⟩ := IsRepresentingCycle.exists_isRepresentingChain hm.symm
-            (hglue s x y m hm (by omega) hs fun x' y' h ↦ hd x' y' (by omega))
-          exact ⟨c, hdeg ▸ hc.mem_cubicalChainGrading, hdc, hc⟩
-      classical
-      let s' : ∀ x y, normalizedCubicalChainAlgebra (N x y) k := fun x y ↦
-        if hxy : deg x y = -d then (hnew x y hxy).choose else s x y
-      have hs'new (x : P) (y : Q) (hxy : deg x y = -d) : s' x y = (hnew x y hxy).choose :=
-        dite_eq_left hxy
-      have hs's (x : P) (y : Q) (hxy : deg x y ≠ -d) : s' x y = s x y := dite_eq_right hxy
-      have hs' (x : P) (y : Q) : s' x y ∈ cubicalChainGrading (N x y) k (deg x y) := by
-        by_cases hxy : deg x y = -d
-        · exact hs'new x y hxy ▸ (hnew x y hxy).choose_spec.1
-        · exact hs's x y hxy ▸ hs x y
-      refine ⟨s', hs', fun x y hxy ↦ ?_⟩
-      -- The new chains only change the pairs of degree `-d`, which do not enter the prescribed
-      -- boundaries of the pairs of degree at least `-d`.
-      rw [hF s' s x y hs' hs fun x' y' h ↦ hs's x' y' (by omega)]
-      by_cases hxy' : deg x y = -d
-      · rw [hs'new x y hxy']
-        exact ⟨(hnew x y hxy').choose_spec.2.1, fun _ ↦ (hnew x y hxy').choose_spec.2.2⟩
-      · rw [hs's x y hxy']
-        exact hd x y (by omega)
-  -- The degrees of the finitely many pairs are bounded below.
-  obtain ⟨L, hL⟩ := (Set.finite_range fun p : P × Q ↦ deg p.1 p.2).bddBelow
-  obtain ⟨s, hs, h⟩ := key (1 - L).toNat
-  exact ⟨s, hs, fun x y ↦ h x y (by have : L ≤ deg x y := hL ⟨(x, y), rfl⟩; omega)⟩
+      ∀ x y, cubicalChainDifferential (N x y) k (s x y) = F s x y := by
+  refine exists_forall_of_forall_exists_of_lt
+    (fun s x y c ↦ cubicalChainDifferential (N x y) k c = F s x y)
+    (fun s s' x y c hs hs' hss' hc ↦ hc.trans (hF s s' x y hs hs' hss')) fun s x y hs hd ↦ ?_
+  by_cases h₀ : 0 ≤ deg x y
+  · -- In nonnegative degree the prescribed boundary vanishes.
+    exact ⟨0, zero_mem _, (map_zero _).trans (hF₀ s x y hs h₀).symm⟩
+  obtain ⟨hc, a, a', b, ha, ha', hb, hFs⟩ := hcycle s x y (by omega) hs hd
+  rw [hFs] at hc ⊢
+  obtain ⟨e, he, hde⟩ := ha.exists_cubicalChainDifferential_eq_sub_add ha' hb hc
+    (hinj x y (by omega))
+  exact ⟨e, by rwa [hn x y (by omega)], hde⟩
 
 end Induction
 

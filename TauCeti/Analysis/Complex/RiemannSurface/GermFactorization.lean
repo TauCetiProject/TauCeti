@@ -34,6 +34,8 @@ for maps into any type.
 * `TauCeti.RiemannSurface.GermFactorsThrough.refl`,
   `TauCeti.RiemannSurface.GermFactorsThrough.trans`: the relation is reflexive and transitive.
 * `TauCeti.RiemannSurface.GermFactorsThrough.apply_eq`: related points have the same value.
+* `TauCeti.RiemannSurface.GermFactorsThrough.exists_eventually_germFactorsThrough`: a
+  factorization `u₁ = u₀ ∘ φ` near `b` relates every point `y` near `b` to `φ y`.
 * `TauCeti.RiemannSurface.GermFactorsThrough.eventually_mem_image`,
   `TauCeti.RiemannSurface.GermFactorsThrough.frequently_mem_image`: if the germ of `u₁` at `b`
   factors through the germ of `u₀` at `a`, then every point near `b` is mapped by `u₁` into the
@@ -90,6 +92,18 @@ theorem GermFactorsThrough.trans (h₂₁ : GermFactorsThrough u₂ c u₁ b)
   · filter_upwards [hψu, ht.eventually hφu] with z hz hφz
     rw [hz]
     exact hφz
+
+/-- A holomorphic factorization of germs propagates to nearby points: if the germ of `u₁` at `b`
+factors through the germ of `u₀` at `a`, then there is a map `φ`, continuous at `b` with `φ b = a`,
+such that for every `y` near `b` the germ of `u₁` at `y` factors through the germ of `u₀` at
+`φ y`. -/
+theorem GermFactorsThrough.exists_eventually_germFactorsThrough
+    (h : GermFactorsThrough u₁ b u₀ a) :
+    ∃ φ : Y → X, φ b = a ∧ ContinuousAt φ b ∧ ∀ᶠ y in 𝓝 b, GermFactorsThrough u₁ y u₀ (φ y) := by
+  obtain ⟨φ, hφb, hφd, hφu⟩ := h
+  refine ⟨φ, hφb, hφd.self_of_nhds.continuousAt, ?_⟩
+  filter_upwards [hφd.eventually_nhds, hφu.eventually_nhds] with y hyd hyu
+  exact ⟨φ, rfl, hyd, hyu⟩
 
 /-- If the germ of `u₁` at `b` factors through the germ of `u₀` at `a`, then near `b` the map `u₁`
 takes its values in the image under `u₀` of any neighbourhood of `a`. -/

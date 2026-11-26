@@ -37,6 +37,8 @@ assumption.
 * `TauCeti.AlmostComplexStructure.exists_linearEquiv_I_smul`: an almost complex structure on a
   finite-dimensional real module is the transport of multiplication by `i` from any complex vector
   space of half the dimension.
+* `TauCeti.AlmostComplexStructure.exists_conjugation`: a complex structure on a
+  finite-dimensional real space admits a real-linear involution anticommuting with it.
 * `TauCeti.AlmostComplexStructure.even_finrank_real`: the real dimension of a module carrying an
   almost complex structure is even.
 * `TauCeti.AlmostComplexStructure.even_finrank_of_forall_mem`: a `J`-invariant subspace has even
@@ -111,6 +113,33 @@ theorem exists_linearEquiv_I_smul [FiniteDimensional ℝ V] (J : AlmostComplexSt
   let ψ : G ≃ₗ[ℂ] V := LinearEquiv.ofFinrankEq G V hrank
   exact ⟨ψ.restrictScalars ℝ, fun z ↦ by
     simpa only [LinearEquiv.restrictScalars_apply, map_smul] using J.complexModule_I_smul (ψ z)⟩
+
+/-- **Conjugations exist.** A complex structure `J` on a finite-dimensional real vector space
+admits a *conjugation*: a real-linear involution `K` that anticommutes with `J`, such as
+coordinatewise complex conjugation under an identification of `(V, J)` with `ℂⁿ`. -/
+theorem exists_conjugation [FiniteDimensional ℝ V] (J : AlmostComplexStructure V) :
+    ∃ K : V ≃ₗ[ℝ] V, (∀ v, K (K v) = v) ∧ ∀ v, K (J v) = -J (K v) := by
+  obtain ⟨φ, hφ⟩ := J.exists_linearEquiv_I_smul (G := Fin J.complexFinrank → ℂ) (by
+    rw [Module.finrank_fin_fun, J.finrank_real_eq_two_mul_complexFinrank])
+  let c : (Fin J.complexFinrank → ℂ) →ₗ[ℝ] (Fin J.complexFinrank → ℂ) :=
+    { toFun := fun z i ↦ star (z i)
+      map_add' := fun z w ↦ funext fun i ↦ star_add (z i) (w i)
+      map_smul' := fun r z ↦ funext fun i ↦ by
+        simp only [Pi.smul_apply, star_smul, star_trivial, RingHom.id_apply] }
+  have hc : Function.Involutive c := fun z ↦ by
+    ext i
+    simp only [c, LinearMap.coe_mk, AddHom.coe_mk, Complex.star_def, Complex.conj_conj]
+  have hcI (z : Fin J.complexFinrank → ℂ) : c (Complex.I • z) = -(Complex.I • c z) := by
+    ext i
+    simp only [c, LinearMap.coe_mk, AddHom.coe_mk, Pi.smul_apply, Pi.neg_apply, smul_eq_mul,
+      Complex.star_def, map_mul, Complex.conj_I]
+    ring
+  refine ⟨φ.symm.trans ((LinearEquiv.ofInvolutive c hc).trans φ), fun v ↦ ?_, fun v ↦ ?_⟩
+  · simp only [LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply,
+      LinearEquiv.coe_ofInvolutive, hc (φ.symm v), LinearEquiv.apply_symm_apply]
+  obtain ⟨z, rfl⟩ := φ.surjective v
+  simp only [LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, ← hφ,
+    LinearEquiv.coe_ofInvolutive, hcI, map_neg]
 
 /-- The real dimension of a module carrying an almost complex structure is even. -/
 theorem even_finrank_real (J : AlmostComplexStructure V) :

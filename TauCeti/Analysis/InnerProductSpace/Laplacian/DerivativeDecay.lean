@@ -11,9 +11,11 @@ import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
 # Exponential decay of all derivatives of solutions of screened equations
@@ -44,6 +46,12 @@ and of `exp ℓ - 1` decays like `exp (-c ‖x‖)`
 involves only derivatives of order below `n`, so each step of the induction is an instance of the
 derivative estimate above. The rate is not lost along the induction.
 
+Two solutions `ℓ₁`, `ℓ₂` of `Δ ℓ = κ (exp ℓ - 1)` outside a ball, tending to `0` at infinity,
+approach each other at the rate `c` wherever `κ exp ℓᵢ ≥ c²`: their difference solves
+`Δ u = V u` with `V` the difference quotient of `κ exp`, which is at least `c²`, so both `u` and
+`-u` are subsolutions of `-Δ + V`, and `|u|` is at most its supremum on the boundary sphere times
+`exp (-c (‖x‖ - R))` (`TauCeti.abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one`).
+
 ## Main results
 
 * `TauCeti.isBigO_fderiv_of_laplacian_eq_smul_add`: exponential decay of the derivative of a
@@ -52,6 +60,9 @@ derivative estimate above. The rate is not lost along the induction.
   derivatives of a decaying solution of `Δ ℓ = κ (exp ℓ - 1)`.
 * `TauCeti.isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one`: the same for
   `exp ℓ - 1`.
+* `TauCeti.abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one`: two solutions of
+  `Δ ℓ = κ (exp ℓ - 1)` with `κ exp ℓᵢ ≥ c²` outside the ball of radius `R`, within `M` of each
+  other on its boundary, are within `M exp (-c (‖x‖ - R))` of each other outside it.
 
 ## References
 
@@ -523,5 +534,82 @@ theorem isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one {ℓ : E �
       (by simpa using isBigO_exp_neg_mul_norm_of_le hc.le (cocompact E)) (hP n).1
   refine h.congr' (hagree.mono fun x hx ↦ ?_) EventuallyEq.rfl
   exact (((hx.fun_comp Real.exp).sub EventuallyEq.rfl).iteratedFDeriv ℝ n).eq_of_nhds
+
+/-! ### Comparison of two solutions of `Δ ℓ = κ (exp ℓ - 1)` -/
+
+/-- Where two `C²` functions solve `Δ ℓ = κ (exp ℓ - 1)`, their difference satisfies
+`Δ (ℓ₁ - ℓ₂) = κ (exp ℓ₁ - exp ℓ₂)`. -/
+theorem laplacian_sub_eq_of_laplacian_eq_exp_sub_one {ℓ₁ ℓ₂ : E → ℝ} {κ : ℝ} {x : E}
+    (h₁ : ContDiffAt ℝ 2 ℓ₁ x) (h₂ : ContDiffAt ℝ 2 ℓ₂ x)
+    (hΔ₁ : Δ ℓ₁ x = κ * (Real.exp (ℓ₁ x) - 1)) (hΔ₂ : Δ ℓ₂ x = κ * (Real.exp (ℓ₂ x) - 1)) :
+    Δ (ℓ₁ - ℓ₂) x = κ * (Real.exp (ℓ₁ x) - Real.exp (ℓ₂ x)) := by
+  rw [h₁.laplacian_sub h₂, hΔ₁, hΔ₂]
+  ring
+
+/-- One side of `TauCeti.abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one`. -/
+private theorem sub_le_mul_exp_of_laplacian_eq_exp_sub_one {ℓ₁ ℓ₂ : E → ℝ} {κ R c M : ℝ}
+    (hR : 0 < R) (hc : 0 ≤ c) (hM : 0 ≤ M) (h₁ : ∀ x, R ≤ ‖x‖ → ContDiffAt ℝ 2 ℓ₁ x)
+    (h₂ : ∀ x, R ≤ ‖x‖ → ContDiffAt ℝ 2 ℓ₂ x)
+    (hΔ₁ : ∀ x, R ≤ ‖x‖ → Δ ℓ₁ x = κ * (Real.exp (ℓ₁ x) - 1))
+    (hΔ₂ : ∀ x, R ≤ ‖x‖ → Δ ℓ₂ x = κ * (Real.exp (ℓ₂ x) - 1))
+    (hc₁ : ∀ x, R ≤ ‖x‖ → c ^ 2 ≤ κ * Real.exp (ℓ₁ x))
+    (hc₂ : ∀ x, R ≤ ‖x‖ → c ^ 2 ≤ κ * Real.exp (ℓ₂ x))
+    (hlim₁ : Tendsto ℓ₁ (cocompact E) (𝓝 0)) (hlim₂ : Tendsto ℓ₂ (cocompact E) (𝓝 0))
+    (hbd : ∀ x, ‖x‖ = R → ℓ₁ x - ℓ₂ x ≤ M) {x : E} (hx : R ≤ ‖x‖) :
+    ℓ₁ x - ℓ₂ x ≤ M * Real.exp (-(c * (‖x‖ - R))) := by
+  -- `Δ (ℓ₁ - ℓ₂) = V (ℓ₁ - ℓ₂)` for the difference quotient `V` of `κ exp`, and `V ≥ c²`.
+  set V : E → ℝ := fun w ↦ if ℓ₁ w = ℓ₂ w then c ^ 2 else
+    κ * ((Real.exp (ℓ₁ w) - Real.exp (ℓ₂ w)) / (ℓ₁ w - ℓ₂ w))
+  have hV (w : E) (hw : R < ‖w‖) : c ^ 2 ≤ V w := by
+    by_cases h : ℓ₁ w = ℓ₂ w
+    · simp [V, h]
+    · simp only [V, h, ↓reduceIte]
+      have hκ : 0 ≤ κ :=
+        nonneg_of_mul_nonneg_left ((sq_nonneg c).trans (hc₁ w hw.le)) (Real.exp_pos _)
+      have hq := Real.le_sub_div_log_sub_log (Real.exp_pos _) (Real.exp_pos _)
+        (min_le_left (Real.exp (ℓ₁ w)) (Real.exp (ℓ₂ w))) (min_le_right _ _)
+        (by rwa [Real.log_exp, Real.log_exp, sub_ne_zero])
+      rw [Real.log_exp, Real.log_exp] at hq
+      calc c ^ 2 ≤ κ * min (Real.exp (ℓ₁ w)) (Real.exp (ℓ₂ w)) := by
+            rw [mul_min_of_nonneg _ _ hκ]
+            exact le_min (hc₁ w hw.le) (hc₂ w hw.le)
+        _ ≤ _ := mul_le_mul_of_nonneg_left hq hκ
+  have hsub (w : E) (hw : R < ‖w‖) : V w * (ℓ₁ - ℓ₂) w ≤ Δ (ℓ₁ - ℓ₂) w := by
+    rw [laplacian_sub_eq_of_laplacian_eq_exp_sub_one (h₁ w hw.le) (h₂ w hw.le) (hΔ₁ w hw.le)
+      (hΔ₂ w hw.le), Pi.sub_apply]
+    by_cases h : ℓ₁ w = ℓ₂ w
+    · simp [V, h]
+    · simp only [V, h, ↓reduceIte]
+      exact le_of_eq (by field_simp [sub_ne_zero.2 h])
+  exact le_mul_exp_of_mul_le_laplacian hR hc hM
+    (fun w hw ↦ ((h₁ w hw).sub (h₂ w hw)).continuousAt.continuousWithinAt)
+    (fun w hw ↦ (h₁ w hw.le).sub (h₂ w hw.le)) hV hsub hbd (by simpa using hlim₁.sub hlim₂) hx
+
+/-- **Comparison of two solutions of `Δ ℓ = κ (exp ℓ - 1)` outside a ball.** Let `ℓ₁` and `ℓ₂`
+be `C²` solutions of `Δ ℓ = κ (exp ℓ - 1)` outside the ball of radius `R > 0`, tending to `0` at
+infinity, with `κ exp ℓᵢ ≥ c²` there for a rate `c ≥ 0`. If `|ℓ₁ - ℓ₂| ≤ M` on the boundary
+sphere, then for `‖x‖ ≥ R`,
+
+`|ℓ₁ x - ℓ₂ x| ≤ M exp (-c (‖x‖ - R))`.
+
+The difference solves `Δ u = V u` for the difference quotient `V` of `κ exp`, which is at least
+`c²`, so `u` and `-u` are subsolutions of `-Δ + V`. -/
+theorem abs_sub_le_mul_exp_of_laplacian_eq_exp_sub_one {ℓ₁ ℓ₂ : E → ℝ} {κ R c M : ℝ}
+    (hR : 0 < R) (hc : 0 ≤ c) (h₁ : ∀ x, R ≤ ‖x‖ → ContDiffAt ℝ 2 ℓ₁ x)
+    (h₂ : ∀ x, R ≤ ‖x‖ → ContDiffAt ℝ 2 ℓ₂ x)
+    (hΔ₁ : ∀ x, R ≤ ‖x‖ → Δ ℓ₁ x = κ * (Real.exp (ℓ₁ x) - 1))
+    (hΔ₂ : ∀ x, R ≤ ‖x‖ → Δ ℓ₂ x = κ * (Real.exp (ℓ₂ x) - 1))
+    (hc₁ : ∀ x, R ≤ ‖x‖ → c ^ 2 ≤ κ * Real.exp (ℓ₁ x))
+    (hc₂ : ∀ x, R ≤ ‖x‖ → c ^ 2 ≤ κ * Real.exp (ℓ₂ x))
+    (hlim₁ : Tendsto ℓ₁ (cocompact E) (𝓝 0)) (hlim₂ : Tendsto ℓ₂ (cocompact E) (𝓝 0))
+    (hbd : ∀ x, ‖x‖ = R → |ℓ₁ x - ℓ₂ x| ≤ M) {x : E} (hx : R ≤ ‖x‖) :
+    |ℓ₁ x - ℓ₂ x| ≤ M * Real.exp (-(c * (‖x‖ - R))) := by
+  have : Nontrivial E := ⟨⟨x, 0, norm_pos_iff.1 (hR.trans_le hx)⟩⟩
+  have hM : 0 ≤ M := nonneg_of_forall_norm_eq_abs_le hR.le hbd
+  refine abs_le.2 ⟨?_, sub_le_mul_exp_of_laplacian_eq_exp_sub_one hR hc hM h₁ h₂ hΔ₁ hΔ₂ hc₁ hc₂
+    hlim₁ hlim₂ (fun w hw ↦ (le_abs_self _).trans (hbd w hw)) hx⟩
+  have h := sub_le_mul_exp_of_laplacian_eq_exp_sub_one hR hc hM h₂ h₁ hΔ₂ hΔ₁ hc₂ hc₁ hlim₂ hlim₁
+    (fun w hw ↦ (le_abs_self _).trans ((abs_sub_comm _ _).trans_le (hbd w hw))) hx
+  linarith
 
 end TauCeti

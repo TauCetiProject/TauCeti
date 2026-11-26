@@ -24,10 +24,14 @@ built on one Haar measure, typically `volume`, to be compared with the one built
 
 ## Main declarations
 
-* `TauCeti.HasWeakLineDerivOn.smul_measure` and `TauCeti.HasWeakFDerivOn.smul_measure`: weak
-  derivatives are preserved by multiplying the measure by a finite constant.
-* `TauCeti.HasWeakFDerivOn.of_isAddHaarMeasure`: weak Fréchet derivatives do not depend on the
-  choice of additive Haar measure.
+* `TauCeti.HasWeakLineDerivOn.smul_measure`, `TauCeti.HasWeakFDerivOn.smul_measure`,
+  `TauCeti.hasWeakLineDerivOn_smul_measure_iff`, and `TauCeti.hasWeakFDerivOn_smul_measure_iff`:
+  weak derivatives are preserved by multiplying the measure by a finite constant, and reflected when
+  the constant is also nonzero.
+* `TauCeti.HasWeakLineDerivOn.of_isAddHaarMeasure`, `TauCeti.HasWeakFDerivOn.of_isAddHaarMeasure`,
+  `TauCeti.hasWeakLineDerivOn_iff_of_isAddHaarMeasure`, and
+  `TauCeti.hasWeakFDerivOn_iff_of_isAddHaarMeasure`: weak derivatives do not depend on the choice of
+  additive Haar measure.
 -/
 
 public section
@@ -55,6 +59,41 @@ theorem HasWeakFDerivOn.smul_measure {U : E → E →L[ℝ] F} (h : HasWeakFDeri
     {c : ENNReal} (hc : c ≠ ⊤) : HasWeakFDerivOn (c • μ) Ω u U :=
   hasWeakFDerivOn_iff.2 fun v => (hasWeakFDerivOn_iff.1 h v).smul_measure hc
 
+/-- Multiplying the measure by a finite nonzero constant preserves and reflects weak directional
+derivatives. -/
+theorem hasWeakLineDerivOn_smul_measure_iff {u' : E → F} {v : E} {c : ENNReal}
+    (hc₀ : c ≠ 0) (hc : c ≠ ⊤) :
+    HasWeakLineDerivOn (c • μ) Ω u u' v ↔ HasWeakLineDerivOn μ Ω u u' v :=
+  ⟨fun h => by
+      simpa only [smul_smul, ENNReal.inv_mul_cancel hc₀ hc, one_smul] using
+        h.smul_measure (ENNReal.inv_ne_top.2 hc₀),
+    fun h => h.smul_measure hc⟩
+
+/-- Multiplying the measure by a finite nonzero constant preserves and reflects weak Fréchet
+derivatives. -/
+theorem hasWeakFDerivOn_smul_measure_iff {U : E → E →L[ℝ] F} {c : ENNReal}
+    (hc₀ : c ≠ 0) (hc : c ≠ ⊤) :
+    HasWeakFDerivOn (c • μ) Ω u U ↔ HasWeakFDerivOn μ Ω u U :=
+  ⟨fun h => by
+      simpa only [smul_smul, ENNReal.inv_mul_cancel hc₀ hc, one_smul] using
+        h.smul_measure (ENNReal.inv_ne_top.2 hc₀),
+    fun h => h.smul_measure hc⟩
+
+/-- On a finite-dimensional real normed space with its Borel σ-algebra, a weak directional
+derivative relative to one additive Haar measure is one relative to every other. -/
+theorem HasWeakLineDerivOn.of_isAddHaarMeasure [FiniteDimensional ℝ E] [BorelSpace E]
+    [μ.IsAddHaarMeasure] {u' : E → F} {v : E} (ν : Measure E) [ν.IsAddHaarMeasure]
+    (h : HasWeakLineDerivOn μ Ω u u' v) : HasWeakLineDerivOn ν Ω u u' v := by
+  rw [Measure.isAddLeftInvariant_eq_smul ν μ]
+  exact h.smul_measure ENNReal.coe_ne_top
+
+/-- On a finite-dimensional real normed space with its Borel σ-algebra, weak directional
+differentiability does not depend on the choice of additive Haar measure. -/
+theorem hasWeakLineDerivOn_iff_of_isAddHaarMeasure [FiniteDimensional ℝ E] [BorelSpace E]
+    (μ ν : Measure E) [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure] {u' : E → F} {v : E} :
+    HasWeakLineDerivOn μ Ω u u' v ↔ HasWeakLineDerivOn ν Ω u u' v :=
+  ⟨fun h => h.of_isAddHaarMeasure ν, fun h => h.of_isAddHaarMeasure μ⟩
+
 /-- **Weak derivatives do not depend on the choice of Haar measure.** On a finite-dimensional real
 normed space with its Borel σ-algebra, a weak Fréchet derivative relative to one additive Haar
 measure is one relative to every other. -/
@@ -63,5 +102,12 @@ theorem HasWeakFDerivOn.of_isAddHaarMeasure [FiniteDimensional ℝ E] [BorelSpac
     (h : HasWeakFDerivOn μ Ω u U) : HasWeakFDerivOn ν Ω u U := by
   rw [Measure.isAddLeftInvariant_eq_smul ν μ]
   exact h.smul_measure ENNReal.coe_ne_top
+
+/-- On a finite-dimensional real normed space with its Borel σ-algebra, weak Fréchet
+differentiability does not depend on the choice of additive Haar measure. -/
+theorem hasWeakFDerivOn_iff_of_isAddHaarMeasure [FiniteDimensional ℝ E] [BorelSpace E]
+    (μ ν : Measure E) [μ.IsAddHaarMeasure] [ν.IsAddHaarMeasure] {U : E → E →L[ℝ] F} :
+    HasWeakFDerivOn μ Ω u U ↔ HasWeakFDerivOn ν Ω u U :=
+  ⟨fun h => h.of_isAddHaarMeasure ν, fun h => h.of_isAddHaarMeasure μ⟩
 
 end TauCeti

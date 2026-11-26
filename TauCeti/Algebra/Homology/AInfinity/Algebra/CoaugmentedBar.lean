@@ -58,6 +58,9 @@ co-Leibniz identity itself, the letterwise maps, and the total-letter-degree pie
   of `Tᶜ(sA) ⊗ M` squares to zero when `d` does.
 * `TauCeti.AInfinityAlgebra.isGradedCoderivation_coaugmentedBarDifferential`: it is a
   twist-parameter-one graded coderivation of the coaugmented tensor coalgebra.
+* `TauCeti.AInfinityAlgebra.letter_reducedProjection_coaugmentedBarDifferential` and
+  `TauCeti.AInfinityAlgebra.taylor_reducedProjection_coaugmentedBarDifferential`: its letter
+  component is the Taylor map, which vanishes after it.
 
 ## References
 
@@ -145,6 +148,24 @@ theorem map_koszulTwist_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A)
 theorem isGradedCoderivation_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A) :
     TensorWords.IsGradedCoderivation (𝒜.grading.shift 1) 1 𝒜.coaugmentedBarDifferential :=
   isGradedCoderivation_extendReduced 𝒜.isGradedCoderivation_barDifferential
+
+/-- The letter component of the extension is the Taylor map. -/
+@[simp]
+theorem letter_reducedProjection_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A)
+    (w : TensorWords R A) :
+    ReducedTensorWords.letter R A (reducedProjection R A (𝒜.coaugmentedBarDifferential w)) =
+      𝒜.taylor (reducedProjection R A w) := by
+  rw [coaugmentedBarDifferential_def, extendReduced_apply, reducedProjection_reducedInclusion,
+    ← LinearMap.comp_apply (ReducedTensorWords.letter R A), letter_comp_barDifferential]
+
+/-- The Taylor map vanishes after the extension. -/
+theorem taylor_reducedProjection_coaugmentedBarDifferential (𝒜 : AInfinityAlgebra R A)
+    (w : TensorWords R A) :
+    𝒜.taylor (reducedProjection R A (𝒜.coaugmentedBarDifferential w)) = 0 := by
+  -- It is the letter component of the square of the extension, which vanishes.
+  rw [← letter_reducedProjection_coaugmentedBarDifferential,
+    ← LinearMap.comp_apply 𝒜.coaugmentedBarDifferential]
+  simp
 
 /-! ### The bar differential tensored with a differential -/
 

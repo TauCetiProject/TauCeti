@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Degree.Operations
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.Algebra.Polynomial.Monic
+public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Algebra.Star.Basic
 import Mathlib.Algebra.Star.BigOperators
 
@@ -36,6 +37,10 @@ a *free* tuple rather than as the data of a polynomial subtype.
   two constructions are mutually inverse.
 * `TauCeti.Polynomial.monicOfCoeff_add_single_zero`: moving the constant coefficient by `t` adds
   the constant `t`.
+* `TauCeti.Polynomial.translateCoeff a c`: the lower coefficients of
+  `P_c(· + a) = Polynomial.taylor a P_c`, where `P_c = monicOfCoeff c`
+  (`TauCeti.Polynomial.monicOfCoeff_translateCoeff`). These translations
+  compose (`TauCeti.Polynomial.translateCoeff_zero`, `TauCeti.Polynomial.translateCoeff_add`).
 
 Mathlib writes the same polynomial in the same shape one universe up: `Polynomial.freeMonic R n`,
 in `Mathlib/RingTheory/Polynomial/UniversalFactorizationRing.lean`, is
@@ -156,6 +161,49 @@ theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
       coeff_eq_zero_of_natDegree_lt (by rwa [hdeg])]
 
 end OfCoeff
+
+section Translate
+
+variable {R : Type*} [CommSemiring R] {n : ℕ}
+
+/-- **The translated coefficients**: the lower coefficients of the monic polynomial
+`P_c(· + a) = taylor a P_c`, where `P_c = TauCeti.Polynomial.monicOfCoeff c`
+(`TauCeti.Polynomial.monicOfCoeff_translateCoeff`). -/
+noncomputable def translateCoeff (a : R) (c : Fin n → R) (i : Fin n) : R :=
+  (taylor a (monicOfCoeff c)).coeff i
+
+/-- The `i`-th translated coefficient is the `i`-th coefficient of `taylor a P_c`. -/
+theorem translateCoeff_apply (a : R) (c : Fin n → R) (i : Fin n) :
+    translateCoeff a c i = (taylor a (monicOfCoeff c)).coeff i :=
+  (rfl)
+
+/-- The polynomial with translated coefficients is the translated polynomial
+`taylor a P_c = P_c(· + a)`. -/
+theorem monicOfCoeff_translateCoeff (a : R) (c : Fin n → R) :
+    monicOfCoeff (translateCoeff a c) = taylor a (monicOfCoeff c) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact Subsingleton.elim _ _
+  exact monicOfCoeff_coeff (by rw [Monic, leadingCoeff_taylor, monic_monicOfCoeff])
+    (by rw [natDegree_taylor, natDegree_monicOfCoeff])
+
+/-- The polynomial with translated coefficients at `z` is `P_c(z + a)`. -/
+@[simp]
+theorem eval_monicOfCoeff_translateCoeff (a : R) (c : Fin n → R) (z : R) :
+    (monicOfCoeff (translateCoeff a c)).eval z = (monicOfCoeff c).eval (z + a) := by
+  rw [monicOfCoeff_translateCoeff, taylor_eval]
+
+/-- The zero translation fixes the coefficients. -/
+@[simp]
+theorem translateCoeff_zero (c : Fin n → R) : translateCoeff 0 c = c := by
+  rw [← monicOfCoeff_inj, monicOfCoeff_translateCoeff, taylor_zero]
+
+/-- Translating by `a + b` is translating by `a` and then by `b`. -/
+theorem translateCoeff_add (a b : R) (c : Fin n → R) :
+    translateCoeff (a + b) c = translateCoeff b (translateCoeff a c) := by
+  rw [← monicOfCoeff_inj, monicOfCoeff_translateCoeff, monicOfCoeff_translateCoeff,
+    monicOfCoeff_translateCoeff, taylor_taylor, add_comm]
+
+end Translate
 
 end Polynomial
 

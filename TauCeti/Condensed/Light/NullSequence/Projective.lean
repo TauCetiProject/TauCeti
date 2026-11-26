@@ -29,7 +29,7 @@ namespace TauCeti
 variable (R : Type u) [CommRing R]
 
 /-- Internal Hom out of the null-sequence module preserves epimorphisms. -/
-theorem internallyProjective_nullSeq : InternallyProjective (nullSeq R) := by
+instance internallyProjective_nullSeq : InternallyProjective (nullSeq R) := by
   have : InternallyProjective
       ((lightProfiniteToLightCondSet ⋙ free R).obj (Under.mk inftyPoint.{u}).right) :=
     internallyProjective_free_liftedSequence R

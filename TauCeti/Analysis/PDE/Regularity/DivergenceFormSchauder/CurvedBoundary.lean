@@ -15,6 +15,7 @@ import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
+import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 
 /-!
@@ -224,9 +225,7 @@ private theorem norm_preciseRepresentative_le_of_holderOnWith {H B : Opens
     hAt ((Lp.memLp (W1p.gradient v)).mono_measure
       (Measure.restrict_mono (hAB'.trans inter_subset_left) le_rfl))
     (ae_restrict_of_ae_restrict_of_subset hAB'
-      (MeasureTheory.ae_eq_restrict_inter_preciseRepresentative_restrict B.isOpen
-        (((Lp.memLp (W1p.gradient v)).mono_measure
-          (Measure.restrict_mono inter_subset_left le_rfl)).locallyIntegrable (by norm_num))))
+      (W1p.gradient_ae_eq_preciseRepresentative_restrict v B.isOpen inter_subset_left))
     (y := y) (M := K * R ^ (β : ℝ)) (C := ‖W1p.gradient v‖ ^ 2)
     (fun z hz => by
       rw [← dist_eq_norm]
@@ -819,9 +818,7 @@ theorem exists_holderOnWith_gradient_of_isChangeOfVariables
     hsubD x ⟨hx.1, hρ'U hx.2⟩ (ball_subset_ball (by linarith : r / 4 ≤ r) (hΨball hx.2))
   exact ae_restrict_of_ae_restrict_of_subset hsub
     (ae_gradient_eq_adjoint_fderiv_apply hΦ hΨ hΨΦ hΦΨ hVW hD'U hΦB hΨD u
-      (MeasureTheory.ae_eq_restrict_inter_preciseRepresentative_restrict B.isOpen
-        (((Lp.memLp (W1p.gradient v)).mono_measure
-          (Measure.restrict_mono inter_subset_left le_rfl)).locallyIntegrable (by norm_num))))
+      (W1p.gradient_ae_eq_preciseRepresentative_restrict v B.isOpen inter_subset_left))
 
 /-- **Schauder estimate near a `C^{1,α}` boundary for divergence-form equations.** Suppose that in
 rigid coordinates `e` centred at `x₀ = e⁻¹ 0`, inside the normal cylinder of half-height `h₀` and

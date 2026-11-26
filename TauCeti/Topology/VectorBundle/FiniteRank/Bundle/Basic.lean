@@ -91,6 +91,19 @@ abbrev StratumFiber (n : ℕ) (x : {x : X // E.rank x = n}) : Type w := E.Fiber 
 noncomputable def fiberContinuousLinearEquiv (x : X) : E.Fiber x ≃L[𝕜] (Fin (E.rank x) → 𝕜) :=
   VectorBundle.continuousLinearEquivAt 𝕜 (Fin (E.rank x) → 𝕜) (E.StratumFiber (E.rank x)) ⟨x, rfl⟩
 
+/-- The preferred fibre equivalence is the preferred trivialization of the rank stratum. -/
+theorem fiberContinuousLinearEquiv_apply (x : X) (v : E.Fiber x) :
+    E.fiberContinuousLinearEquiv x v =
+      (trivializationAt (Fin (E.rank x) → 𝕜) (E.StratumFiber (E.rank x)) ⟨x, rfl⟩
+        ⟨⟨x, rfl⟩, v⟩).2 := (rfl)
+
+/-- The inverse of the preferred fibre equivalence is the inverse of the preferred trivialization
+of the rank stratum. -/
+theorem fiberContinuousLinearEquiv_symm_apply (x : X) (v : Fin (E.rank x) → 𝕜) :
+    (E.fiberContinuousLinearEquiv x).symm v =
+      (trivializationAt (Fin (E.rank x) → 𝕜) (E.StratumFiber (E.rank x)) ⟨x, rfl⟩).symm
+        ⟨x, rfl⟩ v := (rfl)
+
 /-- Each fibre `E.Fiber x` is a topological additive group via its stratum vector bundle chart. -/
 instance (x : X) : IsTopologicalAddGroup (E.Fiber x) :=
   VectorBundle.isTopologicalAddGroup 𝕜 (Fin (E.rank x) → 𝕜) (E.StratumFiber (E.rank x)) ⟨x, rfl⟩

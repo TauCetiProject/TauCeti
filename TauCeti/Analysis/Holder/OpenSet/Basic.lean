@@ -9,11 +9,13 @@ public import TauCeti.Analysis.Holder.Iterated
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 import TauCeti.Analysis.Holder.IsBigO
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Topology.ContinuousMap.Bounded.Normed
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The Hölder spaces `C^{k,α}(Ω)` on an open set
@@ -63,7 +65,9 @@ domain `Ω`, shared with `TauCeti.CkHolderSpace`.
 * `TauCeti.CkHolderSpaceOn.instCompleteSpace`: completeness when the codomain is complete.
 * `TauCeti.CkHolderSpaceOn.exists_apply_eq_of_contDiffOn_of_isCompact`: for `α ≤ 1`, a function
   that is `C^{k+1}` on a neighbourhood of a compact set containing `Ω` defines an element of
-  `C^{k,α}(Ω)`.
+  `C^{k,α}(Ω)`. `TauCeti.CkHolderSpaceOn.exists_apply_eq_of_differentiableOn_of_holderOnWith`:
+  for `α > 0` and bounded `Ω`, a bounded function that is differentiable on `Ω` with an `α`-Hölder
+  derivative on `Ω` defines an element of `C^{1,α}(Ω)`.
 * `TauCeti.CkHolderSpaceOn.restrictL`: restriction to a smaller open set, of operator norm at
   most one, and `TauCeti.CkHolderSpace.restrictOnL`: restriction of a bounded `C^{k,α}` map on the
   whole space to an open set, also of operator norm at most one.
@@ -547,6 +551,23 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) : ⇑(c • f) = c �
     Pi.smul_apply]
   simp
 
+/-- The underlying function of a difference is the difference of the underlying functions. -/
+@[simp]
+theorem coe_sub (f g : CkHolderSpaceOn k α Ω F) : ⇑(f - g) = f - g := by
+  rw [eq_sub_iff_add_eq, ← coe_add, sub_add_cancel]
+
+/-- The underlying function of a finite sum is the sum of the underlying functions. -/
+@[simp]
+theorem coe_sum {ι : Type*} (s : Finset ι) (f : ι → CkHolderSpaceOn k α Ω F) :
+    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
+  map_sum (⟨⟨(⇑), coe_zero⟩, coe_add⟩ : CkHolderSpaceOn k α Ω F →+ Ω → F) f s
+
+/-- The value of a finite sum at a point is the sum of the values. -/
+@[simp]
+theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → CkHolderSpaceOn k α Ω F) (x : Ω) :
+    (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
+  rw [coe_sum, Finset.sum_apply]
+
 /-- The derivative field of order zero has the norm of the underlying function at each point. -/
 theorem norm_iteratedFDeriv_zero (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
     ‖f.iteratedFDeriv 0 x‖ = ‖f x‖ := by
@@ -579,10 +600,25 @@ def extend (f : CkHolderSpaceOn k α Ω F) : E → F :=
 theorem extend_apply (f : CkHolderSpaceOn k α Ω F) (x : Ω) : f.extend x = f x :=
   Subtype.val_injective.extend_apply _ _ x
 
+/-- The extension by zero agrees with the element at each point of `Ω`. -/
+theorem extend_apply_of_mem (f : CkHolderSpaceOn k α Ω F) {x : E} (hx : x ∈ Ω) :
+    f.extend x = f ⟨x, hx⟩ :=
+  f.extend_apply ⟨x, hx⟩
+
+/-- The extension by zero vanishes outside `Ω`. -/
+theorem extend_apply_of_notMem (f : CkHolderSpaceOn k α Ω F) {x : E} (hx : x ∉ Ω) :
+    f.extend x = 0 :=
+  Function.extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hx (hy ▸ y.property)
+
 /-- The extension by zero of an element of `C^{k,α}(Ω)` is `k` times continuously differentiable
 on `Ω`. -/
 theorem contDiffOn_extend (f : CkHolderSpaceOn k α Ω F) : ContDiffOn ℝ k f.extend Ω :=
   f.contDiffOn f.extend_apply
+
+/-- From order one on, the extension by zero is differentiable at each point of `Ω`. -/
+theorem differentiableAt_extend (f : CkHolderSpaceOn (k + 1) α Ω F) {x : E} (hx : x ∈ Ω) :
+    DifferentiableAt ℝ f.extend x :=
+  (f.contDiffOn_extend.differentiableOn (by simp)).differentiableAt (Ω.isOpen.mem_nhds hx)
 
 /-- The iterated derivatives of the extension by zero at points of `Ω` are the derivative fields. -/
 theorem iteratedFDeriv_extend (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1)) (x : Ω) :
@@ -1011,6 +1047,36 @@ theorem exists_apply_eq_of_contDiffOn_of_isCompact {g : E → F} {U K : Set E} (
     hholder, ofContDiffOn_apply g _ hbdd hholder⟩
 
 end isCompact
+
+/-- **A criterion for `C^{1,α}(Ω)`.** Let `α > 0`. On a bounded open set `Ω`, a function that is
+differentiable and bounded on `Ω`, with derivative equal on `Ω` to a map `g'` which is `α`-Hölder
+on `Ω`, defines an element of `C^{1,α}(Ω)`. -/
+theorem exists_apply_eq_of_differentiableOn_of_holderOnWith (hα : 0 < α) {g : E → F}
+    {g' : E → E →L[ℝ] F} {K : ℝ≥0} (hΩ : Bornology.IsBounded (Ω : Set E))
+    (hg : DifferentiableOn ℝ g Ω) (hgb : ∃ C, ∀ x ∈ Ω, ‖g x‖ ≤ C) (hg' : HolderOnWith K α g' Ω)
+    (hfd : ∀ x ∈ Ω, fderiv ℝ g x = g' x) : ∃ f : CkHolderSpaceOn 1 α Ω F, ∀ x : Ω, f x = g x := by
+  have hc : ContDiffOn ℝ 1 g Ω := by
+    rw [← zero_add 1, contDiffOn_succ_iff_fderiv_of_isOpen Ω.isOpen]
+    refine ⟨hg, by simp, ?_⟩
+    rw [contDiffOn_zero]
+    exact (hg'.continuousOn hα).congr hfd
+  obtain ⟨C', hC'⟩ := (hg'.isBounded_image hΩ).exists_norm_le
+  have hbdd : ∀ i ≤ 1, ∃ C, ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C := by
+    intro i hi
+    obtain ⟨C, hC⟩ := hgb
+    rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hi with rfl | rfl
+    · exact ⟨C, fun x ↦ by simpa using hC x x.property⟩
+    · exact ⟨C', fun x ↦ by
+        rw [norm_iteratedFDeriv_one (𝕜 := ℝ), hfd x x.property]
+        exact hC' _ ⟨x, x.property, rfl⟩⟩
+  -- The first iterated derivative is the derivative, uncurried by a linear isometry.
+  have hholder : MemHolder α fun x : Ω ↦ _root_.iteratedFDeriv ℝ 1 g x := by
+    refine ⟨K, HolderOnWith.holderWith ?_⟩
+    refine ((continuousMultilinearCurryFin1 ℝ E F).symm.isometry.comp_holderOnWith hg').congr
+      fun x hx ↦ ?_
+    exact (LinearIsometryEquiv.symm_apply_eq _).2
+      ((continuousMultilinearCurryFin1_iteratedFDeriv_one g x).trans (hfd x hx)).symm
+  exact ⟨ofContDiffOn g hc hbdd hholder, ofContDiffOn_apply g hc hbdd hholder⟩
 
 end CkHolderSpaceOn
 

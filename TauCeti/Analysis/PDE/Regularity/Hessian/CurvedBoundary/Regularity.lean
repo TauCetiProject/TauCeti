@@ -10,6 +10,8 @@ public import TauCeti.Analysis.PDE.Regularity.Hessian.ContinuousCoefficient.Regu
 public import TauCeti.Analysis.PDE.Regularity.Hessian.HalfSpace.Regularity
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Flattening
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
+import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
+import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.Embedding
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.Gluing
 
@@ -22,8 +24,8 @@ open. This file proves Gilbarg–Trudinger's Lemma 9.16 up to a curved boundary:
 
 `tr (A D²u) = f` in `Ω`, `u = 0` on `∂Ω`,
 
-whose principal coefficient `A` is continuous up to the boundary and elliptic there, and with `f`,
-`u` and the weak gradient `∇u` in `L^q(Ω)`, lies in `W^{2,q}`:
+whose principal coefficient `A` is continuous up to the boundary and elliptic there, and with
+`f ∈ L^q(Ω)`, lies in `W^{2,q}`:
 
 * `TauCeti.exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_continuousWithinAt_of_isChangeOfVariables`:
   near every point `x₀` of an open set `U` on which a change of variables of order two straightens
@@ -37,9 +39,11 @@ whose principal coefficient `A` is continuous up to the boundary and elliptic th
   solving `tr (A D²u) + ⟪b, ∇u⟫ + c u = f` with bounded measurable `b` and `c`.
 
 The exponents `p` and `q` are unrelated: the statements improve integrability when `q > p`. The
-membership of `u` and `∇u` in `L^q(Ω)` is a hypothesis, as in the interior and flat statements. The
-global statement is the regularity input of the solvability of the Dirichlet problem in
-`W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` (Gilbarg–Trudinger, Theorem 9.15), whose a priori estimate is
+two local statements also assume that `u` and `∇u` lie in `L^q(Ω)`, as do the interior and flat
+statements. The global statement does not: on a bounded domain the integrability of `u` and `∇u`
+is recovered from the equation by the Sobolev embedding. It is the regularity input of the
+solvability of the Dirichlet problem in `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` (Gilbarg–Trudinger,
+Theorem 9.15), whose a priori estimate is
 `TauCeti.exists_norm_iteratedGradient_le_of_continuousWithinAt_of_contDiff_graph`.
 
 ## The argument
@@ -58,7 +62,13 @@ global statement is the regularity input of the solvability of the Dirichlet pro
 * **Gluing.** Interior points are covered by the interior statement
   (`TauCeti.exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_continuousOn`), and the
   local pieces near the points of the compact closure of `Ω` glue
-  (`TauCeti.Wkp.exists_value_ae_eq_of_isCompact`).
+  (`TauCeti.Wkp.exists_value_ae_eq_of_isCompact`). This gives the global statement when `u` and
+  `∇u` lie in `L^q(Ω)`.
+* **Bootstrap.** A bounded domain with `C²` boundary is a Lipschitz domain, on which
+  `W^{2,r₀}(Ω)` embeds into `W^{1,r}(Ω)` for `1/r₀ - 1/n ≤ 1/r ≤ 1/r₀`, `n = dim (ℝ × E)`
+  (`TauCeti.Wkp.exists_w1pEmbeddingL_of_isLipschitzDomainWith`). So `u ∈ W^{2,r₀}(Ω)` puts `u` and
+  `∇u` in `L^r(Ω)`, and then `u ∈ W^{2,r}(Ω)` whenever `r ≤ q`. Starting from `r₀ = p`, at most
+  `n` steps, each lowering the reciprocal exponent by at most `1/n`, reach `r = q`.
 
 ## References
 
@@ -412,19 +422,10 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_continuousWithinAt_of_cont
       (fun ψ hψ hψc hψs => hu0 ψ hψ hψc fun x hx => (hψs hx).2) hf huq hgq htr
   exact ⟨ρ, hρ, fun y hy => (hρU hy).2, hv⟩
 
-/-- **Global `W^{2,q}` regularity on a bounded `C²` domain for continuous principal coefficients**
-(Gilbarg–Trudinger, Lemma 9.16). Let `1 < p, q < ∞` and let `Ω ⊆ ℝ × E` be a bounded open set with
-`C²` boundary: at every boundary point `x`, in rigid coordinates `e` with `e x = 0`, inside a normal
-cylinder, `Ω` is the region above the graph of a `C²` function `φ` with `φ 0 = 0`. Let `A` be a
-field of endomorphisms of `ℝ × E`, continuous within `Ω` and elliptic at every
-point of the closure of `Ω`, and let `b` and `c` be measurable with `‖b x‖ ≤ β` and `|c x| ≤ γ`
-for almost every `x ∈ Ω`. Let `u ∈ W^{2,p}(Ω)` with `u ∈ W^{1,p}_0(Ω)` solve
-
-`tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u = f` almost everywhere on `Ω`,
-
-where `f`, the value of `u` and its weak gradient lie in `L^q(Ω)`. Then `u ∈ W^{2,q}(Ω)`: some
-`v ∈ W^{2,q}(Ω)` has the value and the weak Hessian of `u`. -/
-theorem exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_contDiff_graph
+/-- Global `W^{2,q}` regularity on a bounded `C²` domain, under the additional hypothesis that the
+value and the weak gradient of `u` lie in `L^q(Ω)`: the local statements at interior and boundary
+points, glued along a finite subcover of the compact closure of `Ω`. -/
+private theorem exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_memLp
     (hp : 1 < p) (hp_top : p ≠ ⊤) (hq : 1 < q) (hq_top : q ≠ ⊤)
     {Omega : Opens (WithLp 2 (ℝ × E))}
     (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
@@ -505,6 +506,197 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_contDiff
       exact ⟨⟨ball (e.symm 0) ρ, isOpen_ball⟩, hx₀ ▸ mem_ball_self hρ, w, hw⟩
   -- The local pieces glue along a finite subcover of the compact closure of `Ω`.
   obtain ⟨v, hv⟩ := Wkp.exists_value_ae_eq_of_isCompact hΩ.isCompact_closure subset_closure 2 hloc
+  exact ⟨v, hv, iteratedGradient_ae_eq_of_value_ae_eq 1 hv⟩
+
+omit [Fact (1 ≤ q)] in
+/-- One step of the bootstrap behind
+`TauCeti.exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_contDiff_graph`. If the
+value of `u` is that of some `v₀ ∈ W^{2,r₀}(Ω)`, then `u ∈ W^{2,r}(Ω)` for every `1 < r ≤ q` with
+`1/r₀ ≤ 1/r + 1/n`, `n = dim (ℝ × E)`. The Sobolev embedding `W^{2,r₀}(Ω) → W^{1,r}(Ω)` when
+`r₀ ≤ r`, and the inclusion `L^{r₀}(Ω) ⊆ L^r(Ω)` when `r ≤ r₀`, place the value and the weak
+gradient of `u` in `L^r(Ω)`. -/
+private theorem exists_wkp_value_ae_eq_of_value_ae_eq_of_inv_le (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hq_top : q ≠ ⊤)
+    {Omega : Opens (WithLp 2 (ℝ × E))}
+    (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
+    (hbdry : ∀ x ∈ frontier (Omega : Set (WithLp 2 (ℝ × E))),
+      ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (h₀ r₀ : ℝ),
+        e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ φ 0 = 0 ∧ ContDiff ℝ 2 φ ∧
+          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst))
+    {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    (hcont : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))), ContinuousWithinAt A Omega x)
+    (hell : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))),
+      ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)
+    {b : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} {β : ℝ}
+    (hb : AEStronglyMeasurable b (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (hbβ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), ‖b x‖ ≤ β)
+    {c : WithLp 2 (ℝ × E) → ℝ} {γ : ℝ}
+    (hc : AEStronglyMeasurable c (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (hcγ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), |c x| ≤ γ)
+    (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2)
+    (hu : firstOrder 1 u ∈ w1p0Submodule volume Omega p) {f : WithLp 2 (ℝ × E) → ℝ}
+    (hf : MemLp f q (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (heq : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
+      traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L Wkp.iteratedGradient 1 u x) +
+        ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫_ℝ + c x * Wkp.value 2 u x = f x)
+    {r₀ r : ℝ≥0∞} [Fact (1 ≤ r₀)] [Fact (1 ≤ r)] (hr : 1 < r) (hrq : r ≤ q)
+    (hr₀ : r₀⁻¹ ≤ r⁻¹ + (Module.finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞)⁻¹)
+    (v₀ : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega r₀ 2)
+    (hv₀ : (Wkp.value 2 v₀ : WithLp 2 (ℝ × E) → ℝ)
+      =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] Wkp.value 2 u) :
+    ∃ v : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega r 2,
+      (Wkp.value 2 v : WithLp 2 (ℝ × E) → ℝ)
+        =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] Wkp.value 2 u := by
+  have hr_top : r ≠ ⊤ := ne_top_of_le_ne_top hq_top hrq
+  have : IsFiniteMeasure (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
+    isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
+  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_of_isBounded_of_contDiff one_le_two hΩ hbdry
+  -- The value and the weak gradient of `u` lie in `L^r(Ω)`.
+  obtain ⟨huq, hgq⟩ : MemLp (Wkp.value 2 u) r (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) ∧
+      MemLp (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)) r
+        (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) := by
+    rcases le_total r⁻¹ r₀⁻¹ with h | h
+    · obtain ⟨T, hT⟩ := Wkp.exists_w1pEmbeddingL_of_isLipschitzDomainWith 1 hr_top
+        (by simpa using hr₀) h hL hΩ
+      have hTu := (hT v₀).trans hv₀
+      -- `T v₀ ∈ W^{1,r}(Ω)` is a first-order Sobolev function, whose value is `W1p.value`.
+      have h₁ : (Wkp.value 1 (T v₀ : Wkp volume Omega r 1) : WithLp 2 (ℝ × E) → ℝ)
+          =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] Wkp.value 2 u := by
+        have h1 : Wkp.value (p := r) 1 (T v₀) = W1p.value (T v₀) := Wkp.value_one (T v₀)
+        rw [h1]
+        exact hTu
+      have hg := iteratedGradient_ae_eq_of_value_ae_eq 0 (z₁ := (T v₀ : Wkp volume Omega r 1))
+        (z₂ := lowerOrder 1 u) (h₁.trans (by rw [value_one, value_lowerOrder_one]))
+      exact ⟨(Lp.memLp _).ae_eq hTu, (Lp.memLp _).ae_eq hg⟩
+    · have hg := iteratedGradient_ae_eq_of_value_ae_eq 0 (z₁ := lowerOrder 1 v₀)
+        (z₂ := lowerOrder 1 u)
+        (by rwa [value_one, value_one, value_lowerOrder_one, value_lowerOrder_one])
+      exact ⟨((Lp.memLp _).ae_eq hv₀).mono_exponent (ENNReal.inv_le_inv.1 h),
+        ((Lp.memLp _).ae_eq hg).mono_exponent (ENNReal.inv_le_inv.1 h)⟩
+  obtain ⟨v, hv, -⟩ := exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_memLp hp
+    hp_top hr hr_top hΩ hbdry hcont hell hb hbβ hc hcγ u hu (hf.mono_exponent hrq) huq hgq heq
+  exact ⟨v, hv⟩
+
+omit [Fact (1 ≤ q)] in
+/-- The bootstrap ladder behind
+`TauCeti.exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_contDiff_graph`:
+`u ∈ W^{2,r}(Ω)` for every `1 < r ≤ q` with `1/p ≤ 1/r + k/n`, `n = dim (ℝ × E)`, by induction on
+`k`. Each step lowers the reciprocal exponent by at most `1/n`, through
+`exists_wkp_value_ae_eq_of_value_ae_eq_of_inv_le`. -/
+private theorem exists_wkp_value_ae_eq_of_inv_le_add_mul (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hq_top : q ≠ ⊤)
+    {Omega : Opens (WithLp 2 (ℝ × E))}
+    (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
+    (hbdry : ∀ x ∈ frontier (Omega : Set (WithLp 2 (ℝ × E))),
+      ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (h₀ r₀ : ℝ),
+        e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ φ 0 = 0 ∧ ContDiff ℝ 2 φ ∧
+          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst))
+    {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    (hcont : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))), ContinuousWithinAt A Omega x)
+    (hell : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))),
+      ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)
+    {b : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} {β : ℝ}
+    (hb : AEStronglyMeasurable b (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (hbβ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), ‖b x‖ ≤ β)
+    {c : WithLp 2 (ℝ × E) → ℝ} {γ : ℝ}
+    (hc : AEStronglyMeasurable c (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (hcγ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), |c x| ≤ γ)
+    (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2)
+    (hu : firstOrder 1 u ∈ w1p0Submodule volume Omega p) {f : WithLp 2 (ℝ × E) → ℝ}
+    (hf : MemLp f q (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (heq : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
+      traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L Wkp.iteratedGradient 1 u x) +
+        ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫_ℝ + c x * Wkp.value 2 u x = f x) :
+    ∀ (k : ℕ) (r : ℝ≥0∞) [Fact (1 ≤ r)], 1 < r → r ≤ q →
+      p⁻¹ ≤ r⁻¹ + k * (Module.finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞)⁻¹ →
+      ∃ v : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega r 2,
+        (Wkp.value 2 v : WithLp 2 (ℝ × E) → ℝ)
+          =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] Wkp.value 2 u := by
+  set n : ℝ≥0∞ := (Module.finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞)
+  intro k
+  induction k with
+  | zero =>
+    intro r _ hr hrq hk
+    refine exists_wkp_value_ae_eq_of_value_ae_eq_of_inv_le hp hp_top hq_top hΩ hbdry hcont hell
+      hb hbβ hc hcγ u hu hf heq hr hrq ?_ u ae_eq_rfl
+    simp only [CharP.cast_eq_zero, zero_mul, add_zero] at hk
+    exact hk.trans le_self_add
+  | succ k ih =>
+    intro r _ hr hrq hk
+    rcases le_or_gt r p with hrp | hpr
+    · -- For `r ≤ p` the start `r₀ = p` suffices.
+      exact exists_wkp_value_ae_eq_of_value_ae_eq_of_inv_le hp hp_top hq_top hΩ hbdry hcont hell
+        hb hbβ hc hcγ u hu hf heq hr hrq ((ENNReal.inv_le_inv.2 hrp).trans le_self_add) u
+        ae_eq_rfl
+    · -- Otherwise go through `r₀` with `1/r₀ = min (1/p) (1/r + 1/n)`.
+      set r₀ : ℝ≥0∞ := (min p⁻¹ (r⁻¹ + n⁻¹))⁻¹
+      have hr₀ : r₀⁻¹ = min p⁻¹ (r⁻¹ + n⁻¹) := inv_inv _
+      have h₁ : 1 < r₀ :=
+        ENNReal.one_lt_inv.2 ((min_le_left _ _).trans_lt (ENNReal.inv_lt_one.2 hp))
+      have : Fact (1 ≤ r₀) := ⟨h₁.le⟩
+      have hr₀q : r₀ ≤ q := by
+        rw [← ENNReal.inv_le_inv, hr₀]
+        exact le_min (ENNReal.inv_le_inv.2 (hpr.trans_le hrq).le)
+          ((ENNReal.inv_le_inv.2 hrq).trans le_self_add)
+      have hk₀ : p⁻¹ ≤ r₀⁻¹ + k * n⁻¹ := by
+        rw [hr₀]
+        rcases le_total p⁻¹ (r⁻¹ + n⁻¹) with h | h
+        · rw [min_eq_left h]
+          exact le_self_add
+        · rw [min_eq_right h]
+          convert hk using 1
+          push_cast
+          ring
+      obtain ⟨v₀, hv₀⟩ := ih r₀ h₁ hr₀q hk₀
+      exact exists_wkp_value_ae_eq_of_value_ae_eq_of_inv_le hp hp_top hq_top hΩ hbdry hcont hell
+        hb hbβ hc hcγ u hu hf heq hr hrq (hr₀ ▸ min_le_right _ _) v₀ hv₀
+
+/-- **Global `W^{2,q}` regularity on a bounded `C²` domain for continuous principal coefficients**
+(Gilbarg–Trudinger, Lemma 9.16). Let `1 < p, q < ∞` and let `Ω ⊆ ℝ × E` be a bounded open set with
+`C²` boundary: at every boundary point `x`, in rigid coordinates `e` with `e x = 0`, inside a normal
+cylinder, `Ω` is the region above the graph of a `C²` function `φ` with `φ 0 = 0`. Let `A` be a
+field of endomorphisms of `ℝ × E`, continuous within `Ω` and elliptic at every
+point of the closure of `Ω`, and let `b` and `c` be measurable with `‖b x‖ ≤ β` and `|c x| ≤ γ`
+for almost every `x ∈ Ω`. Let `u ∈ W^{2,p}(Ω)` with `u ∈ W^{1,p}_0(Ω)` solve
+
+`tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u = f` almost everywhere on `Ω`,
+
+where `f ∈ L^q(Ω)`. Then `u ∈ W^{2,q}(Ω)`: some `v ∈ W^{2,q}(Ω)` has the value and the weak
+Hessian of `u`. -/
+theorem exists_wkp_value_ae_eq_of_traceCLM_comp_add_inner_add_mul_eq_of_contDiff_graph
+    (hp : 1 < p) (hp_top : p ≠ ⊤) (hq : 1 < q) (hq_top : q ≠ ⊤)
+    {Omega : Opens (WithLp 2 (ℝ × E))}
+    (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
+    (hbdry : ∀ x ∈ frontier (Omega : Set (WithLp 2 (ℝ × E))),
+      ∃ (e : WithLp 2 (ℝ × E) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (φ : E → ℝ) (h₀ r₀ : ℝ),
+        e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ φ 0 = 0 ∧ ContDiff ℝ 2 φ ∧
+          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Omega ↔ φ z.snd < z.fst))
+    {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    (hcont : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))), ContinuousWithinAt A Omega x)
+    (hell : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))),
+      ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)
+    {b : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} {β : ℝ}
+    (hb : AEStronglyMeasurable b (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (hbβ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), ‖b x‖ ≤ β)
+    {c : WithLp 2 (ℝ × E) → ℝ} {γ : ℝ}
+    (hc : AEStronglyMeasurable c (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (hcγ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), |c x| ≤ γ)
+    (u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2)
+    (hu : firstOrder 1 u ∈ w1p0Submodule volume Omega p) {f : WithLp 2 (ℝ × E) → ℝ}
+    (hf : MemLp f q (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (heq : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
+      traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L Wkp.iteratedGradient 1 u x) +
+        ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫_ℝ + c x * Wkp.value 2 u x = f x) :
+    ∃ v : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega q 2,
+      (Wkp.value 2 v : WithLp 2 (ℝ × E) → ℝ)
+          =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] Wkp.value 2 u ∧
+        (Wkp.iteratedGradient 1 v : WithLp 2 (ℝ × E) → IteratedGradient (WithLp 2 (ℝ × E)) 1)
+          =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] Wkp.iteratedGradient 1 u := by
+  -- `k = n` steps reach `r = q`, since `1/p ≤ 1 = n · 1/n`.
+  obtain ⟨v, hv⟩ := exists_wkp_value_ae_eq_of_inv_le_add_mul hp hp_top hq_top hΩ hbdry hcont hell
+    hb hbβ hc hcγ u hu hf heq (Module.finrank ℝ (WithLp 2 (ℝ × E))) q hq le_rfl (by
+      rw [ENNReal.mul_inv_cancel (by simp [Module.finrank_pos.ne']) (ENNReal.natCast_ne_top _)]
+      exact (ENNReal.inv_le_one.2 Fact.out).trans le_add_self)
   exact ⟨v, hv, iteratedGradient_ae_eq_of_value_ae_eq 1 hv⟩
 
 end TauCeti
