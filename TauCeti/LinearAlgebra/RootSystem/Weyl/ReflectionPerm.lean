@@ -84,41 +84,39 @@ variable {ι₁ ι₂ R M N₁ N₂ : Type*} [CommRing R]
   [AddCommGroup N₁] [Module R N₁]
   [AddCommGroup N₂] [Module R N₂]
 
+private theorem weylGroup_weightHom_injective {ι R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (P : RootPairing ι R M N) :
+    Function.Injective ((Equiv.weightHom P).domRestrict P.weylGroup) :=
+  (Equiv.weightHom_injective P).comp Subtype.val_injective
+
 /-- Two root pairings on the same weight space whose sets of reflections agree have canonically
 isomorphic Weyl groups. -/
 noncomputable def weylGroupEquivOfRangeReflectionEq
     (P : RootPairing ι₁ R M N₁) (Q : RootPairing ι₂ R M N₂)
     (h : Set.range P.reflection = Set.range Q.reflection) :
     P.weylGroup ≃* Q.weylGroup :=
-  (MonoidHom.ofInjective
-      (f := (Equiv.weightHom P).domRestrict P.weylGroup)
-      ((Equiv.weightHom_injective P).comp Subtype.val_injective)).trans
+  (MonoidHom.ofInjective (weylGroup_weightHom_injective P)).trans
     ((MulEquiv.subgroupCongr (by
       rw [range_weylGroup_weightHom, range_weylGroup_weightHom, h])).trans
-      (MonoidHom.ofInjective
-        (f := (Equiv.weightHom Q).domRestrict Q.weylGroup)
-        ((Equiv.weightHom_injective Q).comp Subtype.val_injective)).symm)
+      (MonoidHom.ofInjective (weylGroup_weightHom_injective Q)).symm)
+
+/-- The reflection-range comparison preserves the weight-space automorphism in `GL(M)`. -/
+theorem weightHom_weylGroupEquivOfRangeReflectionEq
+    (P : RootPairing ι₁ R M N₁) (Q : RootPairing ι₂ R M N₂)
+    (h : Set.range P.reflection = Set.range Q.reflection) (w : P.weylGroup) :
+    (Equiv.weightHom Q).domRestrict Q.weylGroup (weylGroupEquivOfRangeReflectionEq P Q h w) =
+      (Equiv.weightHom P).domRestrict P.weylGroup w := by
+  simp only [weylGroupEquivOfRangeReflectionEq, MulEquiv.trans_apply,
+    MonoidHom.apply_ofInjective_symm, MulEquiv.subgroupCongr_apply,
+    MonoidHom.ofInjective_apply]
 
 /-- The reflection-range comparison intertwines the Weyl-group actions on the weight space. -/
 @[simp]
 theorem weylGroupEquivOfRangeReflectionEq_smul
     (P : RootPairing ι₁ R M N₁) (Q : RootPairing ι₂ R M N₂)
     (h : Set.range P.reflection = Set.range Q.reflection) (w : P.weylGroup) (x : M) :
-    weylGroupEquivOfRangeReflectionEq P Q h w • x = w • x := by
-  have hmem :
-      ((Equiv.weightHom Q).domRestrict Q.weylGroup)
-          (weylGroupEquivOfRangeReflectionEq P Q h w) =
-        ((Equiv.weightHom P).domRestrict P.weylGroup) w := by
-    have h' := (MonoidHom.ofInjective
-        (f := (Equiv.weightHom Q).domRestrict Q.weylGroup)
-        ((Equiv.weightHom_injective Q).comp Subtype.val_injective)).apply_symm_apply
-      ((MulEquiv.subgroupCongr (by
-          rw [range_weylGroup_weightHom, range_weylGroup_weightHom, h]))
-        (MonoidHom.ofInjective
-          (f := (Equiv.weightHom P).domRestrict P.weylGroup)
-          ((Equiv.weightHom_injective P).comp Subtype.val_injective) w))
-    exact congrArg Subtype.val h'
-  exact congrArg (fun f : M ≃ₗ[R] M ↦ f x) hmem
+    weylGroupEquivOfRangeReflectionEq P Q h w • x = w • x :=
+  congrArg (fun f : M ≃ₗ[R] M ↦ f x) (weightHom_weylGroupEquivOfRangeReflectionEq P Q h w)
 
 end RangeReflection
 

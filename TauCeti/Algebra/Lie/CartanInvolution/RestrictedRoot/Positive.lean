@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.RootSystem
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
+import Mathlib.Algebra.Module.Submodule.Union
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
 
 /-!
 # Positive restricted root systems, Weyl chambers, and simple restricted roots
@@ -30,9 +32,10 @@ open Weyl chambers of `Σ` in `𝔞` are the open dominant chambers
 * the explicit bijection between positive restricted root systems `Σ⁺` and bases `b` of
   `Σ_indiv` (`LieEquiv.IsCartanInvolution.baseEquivPositiveRestrictedRootSystem`), with every `H₀`
   in the open dominant chamber of `b.flip` in `𝔞` inducing `Σ⁺(b)`;
-* the basis of simple restricted roots `Π` (`RootPairing.Base.toWeightBasis`) such that every
-  restricted root is an integer linear combination of `Π` with all coefficients `≥ 0` (when
-  `λ ∈ Σ⁺`) or all coefficients `≤ 0` (when `-λ ∈ Σ⁺`);
+* integrality and sign of restricted root coordinates: every restricted root is a `ℤ`-linear
+  combination of the simple restricted roots `b.support` with all coefficients `≥ 0` (when
+  `λ ∈ Σ⁺(b)`) or all coefficients `≤ 0` (when `λ ∉ Σ⁺(b)`)
+  (`LieEquiv.IsCartanInvolution.exists_int_nonneg_or_nonpos_of_mem_restrictedRoots`);
 * the transitive and simply transitive action of the restricted Weyl group `W(Σ)` on positive
   restricted root systems
   (`LieEquiv.IsCartanInvolution.existsUnique_weylGroup_smul_positiveRestrictedRoots`), obtained by
@@ -172,44 +175,22 @@ end Positive
 
 section RegularExists
 
-/-- **Existence of regular elements in `𝔞`**: over an infinite domain `R`, if `L` is
-torsion-free and Noetherian over `R`, there exists `H₀ ∈ 𝔞` such that `λ(H₀) ≠ 0` for every
-restricted root `λ ∈ Σ`. -/
-theorem exists_regular_restrictedRoots {R L : Type*} [CommRing R] [IsDomain R] [Infinite R]
-    [LieRing L] [LieAlgebra R L] [IsTorsionFree R L] [IsNoetherian R L] (𝔞 : Submodule R L) :
+/-- **Existence of regular elements in `𝔞`**: over an infinite field `K`, if `L` is
+Noetherian over `K`, there exists `H₀ ∈ 𝔞` such that `λ(H₀) ≠ 0` for every restricted root
+`λ ∈ Σ`. -/
+theorem exists_regular_restrictedRoots {K L : Type*} [Field K] [Infinite K]
+    [LieRing L] [LieAlgebra K L] [IsNoetherian K L] (𝔞 : Submodule K L) :
     ∃ H₀ : 𝔞, ∀ μ ∈ 𝔞.restrictedRoots, μ H₀ ≠ 0 := by
-  classical
-  have hex : ∀ s : Finset (Dual R 𝔞), (∀ μ ∈ s, μ ≠ 0) →
-      ∃ H₀ : 𝔞, ∀ μ ∈ s, μ H₀ ≠ 0 := by
-    intro s hs
-    induction s using Finset.induction with
-    | empty => exact ⟨0, fun _ h ↦ absurd h (Finset.notMem_empty _)⟩
-    | insert μ s hμ ih =>
-      obtain ⟨y, hy⟩ := ih fun ν hν ↦ hs ν (Finset.mem_insert_of_mem hν)
-      obtain ⟨x, hx⟩ := DFunLike.ne_iff.mp (hs μ (Finset.mem_insert_self μ s))
-      have hfin : (⋃ ν ∈ insert μ s, {t : R | ν (y + t • x) = 0}).Finite :=
-        (insert μ s).finite_toSet.biUnion fun ν hν ↦
-          Set.Subsingleton.finite fun t₁ ht₁ t₂ ht₂ ↦ by
-            simp only [Set.mem_ofPred_eq, map_add, map_smul, smul_eq_mul] at ht₁ ht₂
-            have hsub : (t₁ - t₂) * ν x = 0 := by linear_combination ht₁ - ht₂
-            rcases mul_eq_zero.mp hsub with h | h
-            · exact sub_eq_zero.mp h
-            · exfalso
-              rcases Finset.mem_insert.mp hν with rfl | hνs
-              · exact hx h
-              · exact hy ν hνs (by simpa [h] using ht₁)
-      obtain ⟨t, _, ht⟩ := Set.infinite_univ.exists_notMem_finite hfin
-      exact ⟨y + t • x, fun ν hν h0 ↦ ht (Set.mem_biUnion hν h0)⟩
-  obtain ⟨H₀, hH₀⟩ := hex (finite_restrictedRoots (𝔞 := 𝔞)).toFinset fun μ hμ ↦
-    (mem_restrictedRoots.mp ((finite_restrictedRoots (𝔞 := 𝔞)).mem_toFinset.mp hμ)).left
-  exact ⟨H₀, fun μ hμ ↦ hH₀ μ ((finite_restrictedRoots (𝔞 := 𝔞)).mem_toFinset.mpr hμ)⟩
+  have : Finite 𝔞.restrictedRoots := finite_restrictedRoots.to_subtype
+  simpa using Module.Dual.exists_forall_ne_zero_of_forall_exists
+    (fun μ : 𝔞.restrictedRoots ↦ (μ : Dual K 𝔞))
+    fun μ ↦ DFunLike.ne_iff.mp (mem_restrictedRoots.mp μ.property).left
 
-/-- Over an infinite ordered domain `R`, if `L` is torsion-free and Noetherian over `R`, there
-exists at least one positive restricted root system for `𝔞`. -/
-theorem exists_isPositiveRestrictedRootSystem {R L : Type*} [CommRing R] [IsDomain R]
-    [Infinite R] [LT R] [LieRing L] [LieAlgebra R L] [IsTorsionFree R L] [IsNoetherian R L]
-    (𝔞 : Submodule R L) :
-    ∃ S : Set (Dual R 𝔞), 𝔞.IsPositiveRestrictedRootSystem S := by
+/-- Over an infinite ordered field `K`, if `L` is Noetherian over `K`, there exists at least one
+positive restricted root system for `𝔞`. -/
+theorem exists_isPositiveRestrictedRootSystem {K L : Type*} [Field K] [Infinite K] [LT K]
+    [LieRing L] [LieAlgebra K L] [IsNoetherian K L] (𝔞 : Submodule K L) :
+    ∃ S : Set (Dual K 𝔞), 𝔞.IsPositiveRestrictedRootSystem S := by
   obtain ⟨H₀, hreg⟩ := 𝔞.exists_regular_restrictedRoots
   exact ⟨𝔞.positiveRestrictedRoots H₀, H₀, hreg, rfl⟩
 
@@ -345,6 +326,8 @@ section BasesAndChambers
 variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] {θ : L ≃ₗ⁅ℝ⁆ L}
   {𝔞 : Submodule ℝ L} (hθ : θ.IsCartanInvolution) (h𝔞 : θ.IsMaximalAbelianInP 𝔞)
 
+/-- `H ∈ 𝔞` is a regular weight of the flipped indivisible root system iff no restricted root
+(including the divisible ones) vanishes at `H`. -/
 theorem isRegularWeight_flip_indivisible_iff (H : 𝔞) :
     (hθ.indivisibleRestrictedRootPairing h𝔞).flip.IsRegularWeight H ↔
       ∀ μ ∈ 𝔞.restrictedRoots, μ H ≠ 0 := by
@@ -355,9 +338,10 @@ theorem isRegularWeight_flip_indivisible_iff (H : 𝔞) :
       hindiv | ⟨γ, hγ, rfl⟩
     · simpa only [indivisibleRestrictedRootPairing_flip_coroot'_apply] using
         h ⟨μ, hindiv⟩
-    · simpa only [indivisibleRestrictedRootPairing_flip_coroot'_apply, LinearMap.smul_apply,
-        smul_eq_mul, mul_ne_zero_iff, OfNat.ofNat_ne_zero, ne_eq, not_false_eq_true,
-        true_and] using h ⟨γ, hγ⟩
+    · have h0 := h ⟨γ, hγ⟩
+      rw [indivisibleRestrictedRootPairing_flip_coroot'_apply] at h0
+      rw [LinearMap.smul_apply, smul_eq_mul]
+      exact mul_ne_zero two_ne_zero h0
   · intro h γ
     rw [indivisibleRestrictedRootPairing_flip_coroot'_apply]
     exact h γ.val (mem_indivisibleRestrictedRoots.mp γ.property).left
@@ -380,18 +364,14 @@ theorem mem_dominantChamber_flip_indivisible_iff
   simp only [RootPairing.mem_dominantChamber, RootPairing.Base.flip_support,
     indivisibleRestrictedRootPairing_flip_coroot'_apply]
 
-/-- The open Weyl chamber of every base of `Σ_indiv` is nonempty. -/
-theorem exists_mem_openDominantChamber_flip_indivisible
-    (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) :
-    ∃ H₀ : 𝔞,
-      H₀ ∈ (hθ.indivisibleRestrictedRootPairing h𝔞).flip.openDominantChamber b.flip := by
-  obtain ⟨H₀, hH₀⟩ := b.exists_forall_root'_eq fun _ ↦ (1 : ℝ)
-  refine ⟨H₀,
-    (hθ.mem_openDominantChamber_flip_indivisible_iff h𝔞 b H₀).mpr fun α hα ↦ ?_⟩
-  have hval := hH₀ α hα
-  rw [indivisibleRestrictedRootPairing_root'_apply] at hval
-  rw [hval]
-  exact zero_lt_one
+private theorem root'_pos_of_mem_openDominantChamber_flip
+    {b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base} {H₀ : 𝔞}
+    (hH₀ :
+      H₀ ∈ (hθ.indivisibleRestrictedRootPairing h𝔞).flip.openDominantChamber b.flip) :
+    ∀ α ∈ b.support, 0 < (hθ.indivisibleRestrictedRootPairing h𝔞).root' α H₀ := by
+  intro α hα
+  rw [indivisibleRestrictedRootPairing_root'_apply]
+  exact (hθ.mem_openDominantChamber_flip_indivisible_iff h𝔞 b H₀).mp hH₀ α hα
 
 /-- Every `H₀` in the open Weyl chamber of `b.flip` in `𝔞` is regular for `Σ`: no restricted root
 vanishes at `H₀`. -/
@@ -415,12 +395,8 @@ theorem isPos_of_pos_of_mem_openDominantChamber
     b.IsPos γ := by
   have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
   by_contra hnot
-  have hpos : ∀ α ∈ b.support,
-      0 < (hθ.indivisibleRestrictedRootPairing h𝔞).root' α H₀ := by
-    intro α hα
-    rw [indivisibleRestrictedRootPairing_root'_apply]
-    exact (hθ.mem_openDominantChamber_flip_indivisible_iff h𝔞 b H₀).mp hH₀ α hα
-  have hlt := RootPairing.root'_neg_of_not_isPos hpos hnot
+  have hlt := RootPairing.root'_neg_of_not_isPos
+    (hθ.root'_pos_of_mem_openDominantChamber_flip h𝔞 hH₀) hnot
   rw [indivisibleRestrictedRootPairing_root'_apply] at hlt
   exact hγ.not_gt hlt
 
@@ -469,16 +445,11 @@ theorem positiveRestrictedRootsOfBase_eq_positiveRestrictedRoots_of_mem_openDomi
       H₀ ∈ (hθ.indivisibleRestrictedRootPairing h𝔞).flip.openDominantChamber b.flip) :
     hθ.positiveRestrictedRootsOfBase h𝔞 b = 𝔞.positiveRestrictedRoots H₀ := by
   have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  have hpos : ∀ α ∈ b.support,
-      0 < (hθ.indivisibleRestrictedRootPairing h𝔞).root' α H₀ := by
-    intro α hα
-    rw [indivisibleRestrictedRootPairing_root'_apply]
-    exact (hθ.mem_openDominantChamber_flip_indivisible_iff h𝔞 b H₀).mp hH₀ α hα
   ext μ
   simp only [mem_positiveRestrictedRootsOfBase, mem_positiveRestrictedRoots]
   refine ⟨fun ⟨hμ, hcone⟩ ↦ ⟨hμ, ?_⟩, fun ⟨hμ, hgt⟩ ↦ ⟨hμ, ?_⟩⟩
   · have hnonneg := RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone
-      (fun α hα ↦ (hpos α hα).le) hcone
+      (fun α hα ↦ (hθ.root'_pos_of_mem_openDominantChamber_flip h𝔞 hH₀ α hα).le) hcone
     rw [indivisibleRestrictedRootPairing_toLinearMap_apply] at hnonneg
     exact lt_of_le_of_ne hnonneg
       (Ne.symm (hθ.ne_zero_of_mem_openDominantChamber_flip_indivisible h𝔞 hH₀ hμ))
@@ -503,7 +474,8 @@ theorem isPositiveRestrictedRootSystem_positiveRestrictedRootsOfBase
     (b : (hθ.indivisibleRestrictedRootPairing h𝔞).Base) :
     𝔞.IsPositiveRestrictedRootSystem (hθ.positiveRestrictedRootsOfBase h𝔞 b) := by
   have := hθ.finite_indivisibleRestrictedRoots_subtype 𝔞
-  obtain ⟨H₀, hH₀⟩ := hθ.exists_mem_openDominantChamber_flip_indivisible h𝔞 b
+  obtain ⟨H₀, hH₀⟩ :=
+    TauCeti.openDominantChamber_nonempty (hθ.indivisibleRestrictedRootPairing h𝔞).flip b.flip
   exact ⟨H₀, fun _ hμ ↦ hθ.ne_zero_of_mem_openDominantChamber_flip_indivisible h𝔞 hH₀ hμ,
     hθ.positiveRestrictedRootsOfBase_eq_positiveRestrictedRoots_of_mem_openDominantChamber
       h𝔞 hH₀⟩
@@ -656,40 +628,16 @@ theorem smul_positiveRestrictedRootsOfBase (w : (hθ.restrictedRootPairing h𝔞
       hθ.positiveRestrictedRootsOfBase h𝔞
         (b.map (hθ.restrictedWeylGroupEquiv h𝔞 w :
           (hθ.indivisibleRestrictedRootPairing h𝔞).Aut)) := by
-  classical
-  let w' := hθ.restrictedWeylGroupEquiv h𝔞 w
-  have hcone :
-      TauCeti.posRootCone (hθ.indivisibleRestrictedRootPairing h𝔞)
-          (b.map (w' : (hθ.indivisibleRestrictedRootPairing h𝔞).Aut)) =
-        (TauCeti.posRootCone (hθ.indivisibleRestrictedRootPairing h𝔞) b).map
-          (DistribSMul.toAddMonoidHom (Dual ℝ 𝔞) w') := by
-    rw [TauCeti.posRootCone_def, TauCeti.posRootCone_def, AddMonoidHom.map_mclosure]
-    congr 1
-    ext ν
-    rw [RootPairing.Base.support_map_eq]
-    simp only [Set.mem_image, Finset.mem_coe, Finset.mem_image]
-    constructor
-    · rintro ⟨β, ⟨α, hα, rfl⟩, rfl⟩
-      refine ⟨(hθ.indivisibleRestrictedRootPairing h𝔞).root α, ⟨α, hα, rfl⟩, ?_⟩
-      rw [DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def,
-        RootPairing.Equiv.root_indexEquiv_eq_smul]
-    · rintro ⟨_, ⟨α, hα, rfl⟩, rfl⟩
-      refine ⟨(w' : (hθ.indivisibleRestrictedRootPairing h𝔞).Aut).indexEquiv α,
-        ⟨α, hα, rfl⟩, ?_⟩
-      rw [DistribSMul.toAddMonoidHom_apply, Subgroup.smul_def,
-        RootPairing.Equiv.root_indexEquiv_eq_smul]
   ext μ
   rw [Set.mem_smul_set_iff_inv_smul_mem, mem_positiveRestrictedRootsOfBase,
-    mem_positiveRestrictedRootsOfBase, hθ.smul_mem_restrictedRoots_iff h𝔞 w⁻¹, hcone]
-  refine and_congr Iff.rfl ?_
-  rw [AddSubmonoid.mem_map]
-  constructor
-  · intro hmem
-    refine ⟨w⁻¹ • μ, hmem, ?_⟩
-    rw [DistribSMul.toAddMonoidHom_apply, hθ.restrictedWeylGroupEquiv_smul, smul_inv_smul]
-  · rintro ⟨ν, hν, rfl⟩
-    rw [DistribSMul.toAddMonoidHom_apply, hθ.restrictedWeylGroupEquiv_smul, inv_smul_smul]
-    exact hν
+    mem_positiveRestrictedRootsOfBase, hθ.smul_mem_restrictedRoots_iff h𝔞 w⁻¹,
+    TauCeti.posRootCone_map, AddSubmonoid.mem_map]
+  refine and_congr Iff.rfl ⟨fun hmem ↦ ⟨w⁻¹ • μ, hmem, ?_⟩, ?_⟩
+  · change hθ.restrictedWeylGroupEquiv h𝔞 w • (w⁻¹ • μ) = μ
+    rw [hθ.restrictedWeylGroupEquiv_smul, smul_inv_smul]
+  · rintro ⟨ν, hν, hEq⟩
+    change hθ.restrictedWeylGroupEquiv h𝔞 w • ν = μ at hEq
+    rwa [← hEq, hθ.restrictedWeylGroupEquiv_smul, inv_smul_smul]
 
 /-- **Simple transitivity of `W(Σ)` on positive restricted root systems.** For any two positive
 restricted root systems `S₁` and `S₂`, there exists a unique `w ∈ W(Σ)` such that
