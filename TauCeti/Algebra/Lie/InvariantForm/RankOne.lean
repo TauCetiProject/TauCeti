@@ -60,6 +60,8 @@ nontrivial compact connected semisimple Lie group, receives an injective homomor
 
 * `LinearMap.BilinForm.exists_injective_lieHom_soThree_of_lie_eq_smul`: the injective homomorphism
   `so(3) → L` of a root pair, normalized by the root.
+* `LinearMap.BilinForm.exists_soThree_triple_of_lie_eq_smul`: the images `c x`, `c y`, `c² ⁅x, y⁆`
+  of the standard basis of `so(3)` under that homomorphism, with `c² α(⁅x, y⁆) = 1`.
 * `TauCeti.IsRootPlane.exists_injective_lieHom_soThree`: the same for a root plane.
 * `LinearMap.BilinForm.exists_lie_eq_smul_of_not_isLieAbelian`: every maximal commutative subspace
   of a non-abelian finite-dimensional real Lie algebra with a symmetric positive definite
@@ -140,6 +142,28 @@ theorem exists_injective_lieHom_soThree_of_lie_eq_smul (B : LinearMap.BilinForm 
       Subtype.ext (by simp)
     refine ⟨t.smul_mem _ hxy, ?_⟩
     rw [hsmul, map_smul, smul_eq_mul, ← hμ, inv_mul_cancel₀ hμpos.ne']
+
+/-- **The normalized `so(3)`-triple of a root pair.** Under the hypotheses of
+`LinearMap.BilinForm.exists_injective_lieHom_soThree_of_lie_eq_smul`, there are `c > 0` and
+`a : Fin 3 → L` satisfying the cyclic bracket relations of the standard basis of `so(3)`, with
+`a 0 = c x`, `a 1 = c y` and `a 2 = c² ⁅x, y⁆`, where `c² α(⁅x, y⁆) = 1`. So `a 2` is the element of
+`t` on which `α` takes the value `1`. -/
+theorem exists_soThree_triple_of_lie_eq_smul (B : LinearMap.BilinForm ℝ L)
+    (hBs : B.IsSymm) (hBp : B.toQuadraticMap.PosDef) (hB : B.lieInvariant L) {t : Submodule ℝ L}
+    {α : Dual ℝ t} (hα : α ≠ 0) {x y : L} (hx0 : x ≠ 0) (hx : ∀ H : t, ⁅(H : L), x⁆ = α H • y)
+    (hy : ∀ H : t, ⁅(H : L), y⁆ = -(α H • x)) (hxy : ⁅x, y⁆ ∈ t) :
+    ∃ (a : Fin 3 → L) (c : ℝ), 0 < c ∧ ⁅a 0, a 1⁆ = a 2 ∧ ⁅a 1, a 2⁆ = a 0 ∧ ⁅a 2, a 0⁆ = a 1 ∧
+      a 0 = c • x ∧ a 1 = c • y ∧ a 2 = (c * c) • ⁅x, y⁆ ∧ c * c * α ⟨⁅x, y⁆, hxy⟩ = 1 := by
+  obtain ⟨f, -, ⟨c, hc, hf₀, hf₁⟩, hK, hαK⟩ :=
+    B.exists_injective_lieHom_soThree_of_lie_eq_smul hBs hBp hB hα hx0 hx hy hxy
+  let a : Fin 3 → L := fun i ↦ f (soThreeEquiv ℝ (Pi.single i 1))
+  have h₀ : ⁅a 0, a 1⁆ = a 2 := by simp only [a, ← LieHom.map_lie, lie_soThreeEquiv_single_zero_one]
+  have hKZ : a 2 = (c * c) • ⁅x, y⁆ := by
+    simp only [← h₀, a, hf₀, hf₁, smul_lie, lie_smul, smul_smul]
+  refine ⟨a, c, hc, h₀, by simp only [a, ← LieHom.map_lie, lie_soThreeEquiv_single_one_two],
+    by simp only [a, ← LieHom.map_lie, lie_soThreeEquiv_single_two_zero], hf₀, hf₁, hKZ, ?_⟩
+  rw [← hαK, ← smul_eq_mul, ← map_smul]
+  exact congrArg α (Subtype.ext hKZ.symm)
 
 /-- A maximal commutative subspace `t` of a non-abelian finite-dimensional real Lie algebra with a
 symmetric positive definite invariant form has a root pair with nonzero root. -/

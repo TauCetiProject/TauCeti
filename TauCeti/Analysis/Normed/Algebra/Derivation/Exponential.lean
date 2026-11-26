@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.Exponential
+import TauCeti.Analysis.Normed.Operator.Exponential
 
 /-!
-# The exponential of a bounded derivation is multiplicative
+# Exponentials of operators satisfying a bilinear Leibniz rule
 
 Let `β : E × F → G` be a continuous bilinear map between Banach spaces over `𝕜 = ℝ` or `ℂ`, and
 let `D₁`, `D₂`, `D₃` be bounded operators on `E`, `F`, `G` satisfying the Leibniz rule
@@ -32,8 +33,8 @@ operators, satisfy
 * For the bracket of a finite-dimensional real Lie algebra and a derivation `D = ad X`, it says
   that `exp (ad X)` is a Lie algebra automorphism; for an invariant bilinear form `B` with values
   in `ℝ`, `D₃ = 0` and `D₁ = D₂ = ad X`, it says that `exp (ad X)` preserves `B`. These are the
-  inner automorphisms realizing the root reflections of a compact Lie algebra in
-  `TauCeti.Algebra.Lie.InvariantForm.Reflection`.
+  inner automorphisms `exp (s ad X)` of `TauCeti.Algebra.Lie.InvariantForm.Exponential`, which
+  realize the root reflections of a compact Lie algebra.
 
 The proof differentiates `t ↦ exp (-t D₃) (β (exp (t D₁) x) (exp (t D₂) y))`, whose derivative
 vanishes by the Leibniz rule, so that it is constant.
@@ -66,18 +67,6 @@ section Bilinear
 variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
-
-/-- The orbit `t ↦ exp (t • A) z` of a bounded operator has derivative `exp (t • A) (A z)`. -/
-private theorem hasDerivAt_exp_smul_apply (A : E →L[𝕜] E) (t : 𝕜) (z : E) :
-    HasDerivAt (fun s : 𝕜 ↦ exp (s • A) z) (exp (t • A) (A z)) t := by
-  simpa [mul_apply_eq_comp] using
-    (hasDerivAt_exp_smul_const A t).clm_apply (hasDerivAt_const t z)
-
-omit [CompleteSpace E] in
-/-- A bounded operator commutes with the exponentials of its scalar multiples. -/
-private theorem apply_exp_smul_apply (A : E →L[𝕜] E) (t : 𝕜) (z : E) :
-    A (exp (t • A) z) = exp (t • A) (A z) := by
-  simpa [mul_apply_eq_comp] using congr($(((Commute.refl A).smul_right t).exp_right) z)
 
 /-- **Exponentials of operators satisfying the Leibniz rule for a bilinear map.** If a continuous
 bilinear map `β` and bounded operators `D₁`, `D₂`, `D₃` satisfy

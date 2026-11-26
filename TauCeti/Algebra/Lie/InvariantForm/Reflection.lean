@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.InvariantForm.RankOne
-import Mathlib.Topology.Algebra.Module.FiniteDimension
-import TauCeti.Analysis.Normed.Algebra.Derivation.Exponential
-import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.Algebra.Lie.InvariantForm.Exponential
 
 /-!
 # Root reflections of a compact Lie algebra
@@ -40,15 +38,14 @@ root `β` to a nonzero root plane with root `s_α(β)`
 `LinearMap.BilinForm.exists_int_two_mul_root_apply_lie_eq_mul_of_lie_eq_smul`.
 
 The automorphism is the inner automorphism `θ = exp (π ad X)` for an element `X` of the rank-one
-subalgebra of the root pair
-(`LinearMap.BilinForm.exists_injective_lieHom_soThree_of_lie_eq_smul`). With `X = x / √α(Z)`,
-`Y = y / √α(Z)` and `K = Z / α(Z)`, the elements `X, Y, K` satisfy the bracket relations of the
-standard basis of `so(3)`, so `ad X` rotates the plane of `K` and `Y`, and the
+subalgebra of the root pair (`LinearMap.BilinForm.exists_soThree_triple_of_lie_eq_smul`). With
+`X = x / √α(Z)`, `Y = y / √α(Z)` and `K = Z / α(Z)`, the elements `X, Y, K` satisfy the bracket
+relations of the standard basis of `so(3)`, so `ad X` rotates the plane of `K` and `Y`, and the
 rotation through the angle `π` sends `K` to `-K`. On the other hand `ad X` kills the kernel of `α`
-in `t`, which `θ` therefore fixes. The exponential of the derivation `ad X` preserves the bracket
-and the invariant form (`ContinuousLinearMap.exp_apply_apply_of_leibniz`); it is computed for an
-auxiliary norm on `L`, which does not appear in the statements. This is the Lie-algebra form of the
-Weyl group element `exp (π X)` of the subgroup `SU(2)` or `SO(3)` attached to the root.
+in `t`, which `θ` therefore fixes. The exponential `exp (π ad X)` preserves the bracket and the
+invariant form (`LinearMap.BilinForm.exists_lieEquiv_apply_eq_cos_smul_add_sin_smul`). This is the
+Lie-algebra form of the Weyl group element `exp (π X)` of the subgroup `SU(2)` or `SO(3)` attached
+to the root.
 
 ## Main results
 
@@ -68,7 +65,7 @@ Weyl group element `exp (π X)` of the subgroup `SU(2)` or `SO(3)` attached to t
 
 public section
 
-open LieAlgebra.Orthogonal Module NormedSpace Real
+open Module
 
 namespace LinearMap.BilinForm
 
@@ -76,54 +73,6 @@ variable {L : Type*} [LieRing L] [LieAlgebra ℝ L] [FiniteDimensional ℝ L]
   {t : Submodule ℝ L} {α β : Dual ℝ t} {x y u w : L}
 
 open TauCeti
-
-/-- **The inner automorphism `exp (π ad X)`.** For an element `X` of a finite-dimensional real Lie
-algebra `L` and an invariant bilinear form `B`, there is a Lie algebra automorphism `θ` of `L`,
-namely `exp (π ad X)` for any norm on `L`, which preserves `B`, fixes every element commuting with
-`X`, and sends `p` to `-p` whenever `⁅X, p⁆ = q` and `⁅X, q⁆ = -p`. -/
-private theorem exists_lieEquiv_of_lieInvariant (B : LinearMap.BilinForm ℝ L)
-    (hB : B.lieInvariant L) (X : L) :
-    ∃ θ : L ≃ₗ⁅ℝ⁆ L, (∀ v w, B (θ v) (θ w) = B v w) ∧ (∀ v, ⁅X, v⁆ = 0 → θ v = v) ∧
-      ∀ p q : L, ⁅X, p⁆ = q → ⁅X, q⁆ = -p → θ p = -p := by
-  -- The exponential is computed for an auxiliary norm on `L`, transported from coordinates.
-  let e := (Module.finBasis ℝ L).equivFun
-  let _ : NormedAddCommGroup L := NormedAddCommGroup.induced L _ e e.injective
-  let _ : NormedSpace ℝ L := NormedSpace.induced ℝ L _ e
-  have : CompleteSpace L := FiniteDimensional.completeSpace ℝ L
-  let D : L →L[ℝ] L := π • LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ L X)
-  have hD (v : L) : D v = π • ⁅X, v⁆ := by simp [D]
-  -- The bracket and the form, as continuous bilinear maps.
-  let br : L →L[ℝ] L →L[ℝ] L := LinearMap.toContinuousLinearMap
-    ((LinearMap.toContinuousLinearMap : Module.End ℝ L ≃ₗ[ℝ] (L →L[ℝ] L)).toLinearMap ∘ₗ
-      (LieAlgebra.ad ℝ L : L →ₗ[ℝ] Module.End ℝ L))
-  have hbr (v w : L) : br v w = ⁅v, w⁆ := by simp [br]
-  let bB : L →L[ℝ] L →L[ℝ] ℝ :=
-    LinearMap.toContinuousLinearMap
-      ((LinearMap.toContinuousLinearMap : (L →ₗ[ℝ] ℝ) ≃ₗ[ℝ] (L →L[ℝ] ℝ)).toLinearMap ∘ₗ B)
-  have hbB (v w : L) : bB v w = B v w := by simp [bB]
-  let θ₀ := ContinuousLinearMap.expEquiv D
-  have hθ₀ (v : L) : θ₀ v = exp D v := D.expEquiv_apply v
-  -- `ad X` is a derivation of the bracket, by the Jacobi identity, so `exp D` preserves it.
-  have hlie (v w : L) : θ₀ ⁅v, w⁆ = ⁅θ₀ v, θ₀ w⁆ := by
-    have h := ContinuousLinearMap.exp_apply_apply_of_leibniz br (D₁ := D) (D₂ := D) (D₃ := D)
-      (fun a b ↦ by rw [hbr, hbr, hbr, hD, hD, hD, leibniz_lie, smul_add, smul_lie, lie_smul]) v w
-    rwa [hbr, hbr, ← hθ₀, ← hθ₀, ← hθ₀] at h
-  let θ : L ≃ₗ⁅ℝ⁆ L := { θ₀.toLinearEquiv with map_lie' := fun {v w} ↦ hlie v w }
-  -- By construction, the underlying map of `θ` is that of `θ₀`.
-  have hθ (v : L) : θ v = exp D v := hθ₀ v
-  refine ⟨θ, fun v w ↦ ?_, fun v hv ↦ ?_, fun p q hp hq ↦ ?_⟩
-  · -- `ad X` is skew for the invariant form, so `exp D` preserves it.
-    have h := ContinuousLinearMap.exp_apply_apply_of_leibniz bB (D₁ := D) (D₂ := D) (D₃ := 0)
-      (fun a b ↦ by simp [hD, hbB, hB X a b]) v w
-    rw [hbB, hbB, NormedSpace.exp_zero, one_apply_eq_self] at h
-    rw [hθ, hθ, h]
-  · rw [hθ]
-    exact ContinuousLinearMap.exp_apply_of_apply_eq_zero (by simp [hD, hv])
-  · -- `D` rotates the pair `p, q` at the speed `π`.
-    have h := D.exp_apply_eq_cos_smul_add_sin_smul (x := p) (y := q) (a := π) (by rw [hD, hp])
-      (by rw [hD, hq, smul_neg])
-    rw [hθ, h, Real.cos_pi, Real.sin_pi]
-    simp
 
 omit [FiniteDimensional ℝ L] in
 /-- If a Lie algebra automorphism `θ` acts on `t` as the reflection
@@ -165,29 +114,23 @@ theorem exists_lieEquiv_apply_eq_sub_smul_of_lie_eq_smul (B : LinearMap.BilinFor
   · exact ⟨LieEquiv.refl, fun _ _ ↦ rfl, fun H ↦ by simp [hα]⟩
   by_cases hx0 : x = 0
   · exact ⟨LieEquiv.refl, fun _ _ ↦ rfl, fun H ↦ by simp [hx0]⟩
-  -- The rank-one subalgebra of `x, y`: its third basis vector `K` lies in `t`, with `α(K) = 1`.
-  obtain ⟨f, -, ⟨c, -, hf₀, hf₁⟩, hK, hαK⟩ :=
-    B.exists_injective_lieHom_soThree_of_lie_eq_smul hBs hBp hB hα hx0 hx hy hxy
-  let a : Fin 3 → L := fun i ↦ f (soThreeEquiv ℝ (Pi.single i 1))
-  have h₀ : ⁅a 0, a 1⁆ = a 2 := by simp only [a, ← LieHom.map_lie, lie_soThreeEquiv_single_zero_one]
-  have h₂ : ⁅a 2, a 0⁆ = a 1 := by simp only [a, ← LieHom.map_lie, lie_soThreeEquiv_single_two_zero]
-  -- `K = c² ⁅x, y⁆`, so `α(K) = 1` gives `c² α(⁅x, y⁆) = 1`.
-  have hKZ : a 2 = (c * c) • ⁅x, y⁆ := by
-    simp only [← h₀, a, hf₀, hf₁, smul_lie, lie_smul, smul_smul]
-  have hcZ : c * c * α Z = 1 := by
-    rw [← hαK, ← smul_eq_mul, ← map_smul]
-    exact congrArg α (Subtype.ext hKZ.symm)
+  -- The rank-one subalgebra of `x, y`: its third basis vector is `K = c² ⁅x, y⁆`, with
+  -- `α(K) = c² α(⁅x, y⁆) = 1`.
+  obtain ⟨a, c, -, h₀, -, h₂, hf₀, hf₁, hKZ, hcZ⟩ :=
+    B.exists_soThree_triple_of_lie_eq_smul hBs hBp hB hα hx0 hx hy hxy
   -- `θ = exp (π ad X)` for `X = a 0`.
-  obtain ⟨θ, hθB, hθ0, hθrot⟩ := exists_lieEquiv_of_lieInvariant B hB (a 0)
+  obtain ⟨θ, hθB, hθ0, hθrot⟩ := B.exists_lieEquiv_apply_eq_cos_smul_add_sin_smul hB (a 0) Real.pi
   refine ⟨θ, hθB, fun H ↦ ?_⟩
   -- `ad X` kills `H - α(H) K` and rotates the plane of `K` and `Y = a 1`.
   have hHX : ⁅(H : L), a 0⁆ = α H • a 1 := by
-    simp only [a, hf₀, hf₁, lie_smul, hx, smul_comm c]
+    simp only [hf₀, hf₁, lie_smul, hx, smul_comm c]
   have hker : ⁅a 0, (H : L) - α H • a 2⁆ = 0 := by
     rw [lie_sub, lie_smul, ← lie_skew, hHX, ← lie_skew (a 0) (a 2), h₂]
     simp
-  have hK' : θ (a 2) = -a 2 :=
-    hθrot (a 2) (-a 1) (by rw [← lie_skew, h₂]) (by rw [lie_neg, h₀])
+  have hK' : θ (a 2) = -a 2 := by
+    rw [hθrot (a 2) (-a 1) (by rw [← lie_skew, h₂]) (by rw [lie_neg, h₀]), Real.cos_pi,
+      Real.sin_pi]
+    simp
   have hθH : θ H = (H : L) - (α H + α H) • a 2 := by
     calc θ H = θ (((H : L) - α H • a 2) + α H • a 2) := by rw [sub_add_cancel]
       _ = _ := by rw [map_add, hθ0 _ hker, map_smul, hK']; module
@@ -229,7 +172,8 @@ definite invariant form on a finite-dimensional real Lie algebra `L` and `t` a s
 every element that commutes with it, such as a maximal commutative subspace. Let `E` and `E'` be
 nonzero root planes of `t` with roots `α` and `β`, and let `a ∈ t` represent `α` through `B`. Then
 there is a nonzero root plane with root `s_α(β) = β - (2 β(a) / α(a)) α`, the reflection of `β` in
-the root `α`. It is the image of `E'` under a Lie algebra automorphism preserving `B`. -/
+the root `α`. The proof constructs it as the image of `E'` under a Lie algebra automorphism
+preserving `B`. -/
 theorem exists_isRootPlane_sub_smul (hE : IsRootPlane B t α E J)
     (hE' : IsRootPlane B t β E' J') (hBs : B.IsSymm) (hBp : B.toQuadraticMap.PosDef)
     (hB : B.lieInvariant L) (ht : ∀ z : L, (∀ H : t, ⁅(H : L), z⁆ = 0) → z ∈ t) (hE0 : E ≠ ⊥)
@@ -261,8 +205,9 @@ theorem exists_isRootPlane_sub_smul (hE : IsRootPlane B t α E J)
       (hE.injective ((Subtype.ext h : J ⟨v, hv⟩ = 0).trans (map_zero J).symm)))
     exact (by simpa using hBp y hy0 : 0 < B y y).ne'
   have hratio : 2 * β ⟨⁅v, y⁆, hxy⟩ / α ⟨⁅v, y⁆, hxy⟩ = 2 * β a / α a := by
-    rw [hZa, map_smul, map_smul, smul_eq_mul, smul_eq_mul, mul_left_comm,
-      mul_div_mul_left _ _ hyy]
+    rw [hZa]
+    simp only [map_smul, smul_eq_mul]
+    field_simp
   -- The image of `E'` under `θ`, with the conjugated complex structure.
   let e : E' ≃ₗ[ℝ] E'.map (θ.toLinearEquiv : L →ₗ[ℝ] L) := θ.toLinearEquiv.submoduleMap E'
   have he (z : E') : (e z : L) = θ z := θ.toLinearEquiv.submoduleMap_apply E' z
