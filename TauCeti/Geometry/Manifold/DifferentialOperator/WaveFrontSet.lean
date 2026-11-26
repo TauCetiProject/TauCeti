@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.WaveFrontSet.DifferentialOperator
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
+import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
 
 /-!
 # Differential operators on bundles and wave front sets
@@ -265,16 +266,23 @@ private theorem isMicrolocallySmoothAt_chartComponent_localOperatorDualCLM {r : 
   exact Distribution.IsMicrolocallySmoothAt.sum _ hyB fun i _ ↦
     (Distribution.isMicrolocallySmoothAt_restrictCLM_iff hBt hyB).2 (hR' i _ _ (hT _))
 
-omit [FiniteDimensional ℝ E] [T2Space M] [LindelofSpace M] in
-/-- A chart of the maximal atlas at `x` whose source lies in a given open neighbourhood `U` of `x`,
-for instance the intersection of the base sets of two trivializations. -/
-private theorem exists_mem_maximalAtlas_source_subset {x : M} {U : Set M} (hU : IsOpen U)
-    (hx : x ∈ U) :
-    ∃ c : OpenPartialHomeomorph M E,
-      c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧ x ∈ c.source ∧ c.source ⊆ U := by
-  refine ⟨_, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x) hU, ?_⟩
-  rw [OpenPartialHomeomorph.restr_source' _ _ hU]
-  exact ⟨⟨mem_chart_source E x, hx⟩, fun _ hy ↦ hy.2⟩
+variable (E F V F' W) in
+omit [FiniteDimensional ℝ E] [T2Space M] [LindelofSpace M] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
+  [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] [NormedSpace ℝ F'] [FiniteDimensional ℝ F']
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [VectorBundle ℝ F' W]
+  [ContMDiffVectorBundle ∞ F' W 𝓘(ℝ, E)] in
+/-- A chart of the maximal atlas at `x` over which both bundles `V` and `W` are trivial: its source
+lies in the base sets of the trivializations of `V` and `W` at `x`. -/
+private theorem exists_mem_maximalAtlas_source_subset_baseSets (x : M) :
+    ∃ c : OpenPartialHomeomorph M E, c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧ x ∈ c.source ∧
+      c.source ⊆ (trivializationAt F V x).baseSet ∧
+        c.source ⊆ (trivializationAt F' W x).baseSet := by
+  obtain ⟨c, he, hxc, hVW⟩ := OpenPartialHomeomorph.exists_mem_maximalAtlas_source_subset
+    (I := 𝓘(ℝ, E)) (n := ∞)
+    ((trivializationAt F V x).open_baseSet.inter (trivializationAt F' W x).open_baseSet)
+    ⟨FiberBundle.mem_baseSet_trivializationAt' x, FiberBundle.mem_baseSet_trivializationAt' x⟩
+  exact ⟨c, he, hxc, hVW.trans inter_subset_left, hVW.trans inter_subset_right⟩
 
 /-- **Differential operators do not enlarge wave front sets.** If a functional `T` on the bundle
 tests of `W` is microlocally smooth at a covector `ξ`, then so is its transpose `T ∘ P` by a
@@ -287,11 +295,7 @@ theorem IsMicrolocallySmoothAt.localOperatorDualCLM {r : ℕ}
     IsMicrolocallySmoothAt (localOperatorDualCLM P
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
-  obtain ⟨c, he, hxc, hVW⟩ := exists_mem_maximalAtlas_source_subset (E := E)
-    ((trivializationAt F V x).open_baseSet.inter (trivializationAt F' W x).open_baseSet)
-    ⟨FiberBundle.mem_baseSet_trivializationAt' x, FiberBundle.mem_baseSet_trivializationAt' x⟩
-  have hV := hVW.trans inter_subset_left
-  have hW := hVW.trans inter_subset_right
+  obtain ⟨c, he, hxc, hV, hW⟩ := exists_mem_maximalAtlas_source_subset_baseSets E F V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- Microlocal smoothness is read on the components in this chart and these frames.
@@ -356,10 +360,8 @@ private theorem isMicrolocallySobolevAt_chartComponent_localOperatorDualCLM {r :
       (hD i) (tW.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hW T
         (Module.finBasis ℝ F' i))
   rw [← Distribution.isMicrolocallySobolevAt_restrictCLM_iff hBt hyB, hsum R hR]
-  exact Finset.sum_induction _ (fun S : 𝓓'(B, ℂ) ↦ S.IsMicrolocallySobolevAt (s - r) y η)
-    (fun _ _ ↦ Distribution.IsMicrolocallySobolevAt.add)
-    ((Distribution.isMicrolocallySmoothAt_zero hyB η).isMicrolocallySobolevAt _) fun i _ ↦
-      (Distribution.isMicrolocallySobolevAt_restrictCLM_iff hBt hyB).2 (hR' i s y η (hT _))
+  exact Distribution.IsMicrolocallySobolevAt.sum _ hyB fun i _ ↦
+    (Distribution.isMicrolocallySobolevAt_restrictCLM_iff hBt hyB).2 (hR' i s y η (hT _))
 
 /-- **A differential operator in a chart costs its order in local Sobolev regularity.** In a chart
 `c` of the maximal atlas with frames `tV` and `tW` over its source, if every component of the local
@@ -400,11 +402,7 @@ theorem IsMicrolocallySobolevAt.localOperatorDualCLM {r : ℕ}
     IsMicrolocallySobolevAt (s - r) (localOperatorDualCLM P
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
-  obtain ⟨c, he, hxc, hVW⟩ := exists_mem_maximalAtlas_source_subset (E := E)
-    ((trivializationAt F V x).open_baseSet.inter (trivializationAt F' W x).open_baseSet)
-    ⟨FiberBundle.mem_baseSet_trivializationAt' x, FiberBundle.mem_baseSet_trivializationAt' x⟩
-  have hV := hVW.trans inter_subset_left
-  have hW := hVW.trans inter_subset_right
+  obtain ⟨c, he, hxc, hV, hW⟩ := exists_mem_maximalAtlas_source_subset_baseSets E F V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- Microlocal Sobolev regularity is read on the components in this chart and these frames.
@@ -436,11 +434,7 @@ theorem IsLocallySobolevAt.localOperatorDualCLM {r : ℕ}
     IsLocallySobolevAt (s - r) (localOperatorDualCLM P
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
-  obtain ⟨c, he, hxc, hVW⟩ := exists_mem_maximalAtlas_source_subset (E := E)
-    ((trivializationAt F V x).open_baseSet.inter (trivializationAt F' W x).open_baseSet)
-    ⟨FiberBundle.mem_baseSet_trivializationAt' x, FiberBundle.mem_baseSet_trivializationAt' x⟩
-  have hV := hVW.trans inter_subset_left
-  have hW := hVW.trans inter_subset_right
+  obtain ⟨c, he, hxc, hV, hW⟩ := exists_mem_maximalAtlas_source_subset_baseSets E F V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- Local Sobolev regularity is read on the components in this chart and these frames.
