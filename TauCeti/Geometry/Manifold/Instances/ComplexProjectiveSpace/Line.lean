@@ -219,9 +219,6 @@ same class the first Chern number of the tangent bundle is `n + 2`
 (`TauCeti.ComplexProjectiveSpace.clutchingNumber_tangentSpace_lineSquare`). -/
 theorem sphereIntegral_fubiniStudyForm_lineSquare :
     sphereIntegral (fubiniStudyForm (n + 1)).val (affineParam 1 0) ⟦lineSquare n⟧ = 1 := by
-  have hφ : IsSmoothForm 𝓘(ℝ, Fin (n + 1) → ℂ) 1 (fubiniStudyForm (n + 1)).val :=
-    (fubiniStudyForm (n + 1)).isSmoothForm.of_le (by simp)
-  have hdφ := (SmoothForm.isClosed_def _).1 (isSymplectic_fubiniStudyForm (n := n + 1)).isClosed
   -- The line sphere is the image of the standard sphere of the Riemann sphere.
   have hmap : (⟦lineSquare n⟧ : HomotopyGroup (Fin 2) (ComplexProjectiveSpace (n + 1))
       (affineParam 1 0)) =
@@ -236,7 +233,8 @@ theorem sphereIntegral_fubiniStudyForm_lineSquare :
           (fubiniStudyForm (n + 1))).val ∞ ⟦riemannSphereSquare⟧ := by
     rintro _ rfl
     rw [SmoothForm.coe_mpullback]
-    exact (sphereIntegral_mpullback contMDiff_coordinateLine_real hφ hdφ _).symm
+    exact (sphereIntegral_mpullback contMDiff_coordinateLine_real
+      (isSmoothForm_fubiniStudyForm (n + 1)) (mextDeriv_fubiniStudyForm (n + 1)) _).symm
   rw [hmap, hnat _ coordinateLine_infty, mpullback_coordinateLine_fubiniStudyForm,
     OnePoint.sphereIntegral_fubiniStudyForm_riemannSphereSquare]
 
