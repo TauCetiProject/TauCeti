@@ -114,10 +114,9 @@ theorem bijective_cohomologyMap_loopChainMap_sq_add_mul {R : Type} [CommRing R] 
   -- The class of the counterclockwise loop has degree `-1`, which is odd.
   have hg : Odd (Circle.fundamentalGroupMulEquiv 1
       (MooreLoopSpace.fundamentalGroupHom 1 Circle.expLoop.toMooreLoop)).toAdd := by
-    rw [MooreLoopSpace.fundamentalGroupHom_apply, Path.toPath_toMooreLoop, map_inv,
-      Circle.fundamentalGroupMulEquiv_fromPath, Circle.degree_expLoop, toAdd_inv,
-      toAdd_ofAdd]
-    exact odd_neg.2 odd_one
+    rw [MooreLoopSpace.fundamentalGroupHom_toMooreLoop, map_inv,
+      Circle.fundamentalGroupMulEquiv_expLoop]
+    simp
   -- Through the identification of `H(Ω S¹; R)` with the group ring, the map is the one of
   -- `bijective_mapDomain_mapOfEq_sq_add_mul_single`.
   convert E.bijective.comp ((bijective_mapDomain_mapOfEq_sq_add_mul_single (R := R) hg).comp
