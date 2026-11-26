@@ -24,9 +24,9 @@ associated to the twist with those of `s` tensored with powers of `E`:
 (`TauCeti.SpinCStructure.determinantLineTwistEquiv`,
 `TauCeti.SpinCStructure.halfSpinorBundleTwistEquiv`), as fibrewise continuous linear equivalences
 which are continuous on total spaces. So twisting by a line `E` multiplies the determinant line by
-`E²` and each half-spinor bundle by `E`. Combined with the identification of the determinant line
-of the canonical `Spinᶜ` structure of an almost complex four-manifold with the anticanonical line
-`K⁻¹`, this gives the determinant line `K⁻¹ ⊗ E²` of its twist by `E`.
+`E²` and each half-spinor bundle by `E`. Once the determinant line of the canonical `Spinᶜ`
+structure of an almost complex four-manifold is identified with the anticanonical line `K⁻¹`
+(not yet available), this gives the determinant line `K⁻¹ ⊗ E²` of its twist by `E`.
 
 In frames, the comparisons read
 
