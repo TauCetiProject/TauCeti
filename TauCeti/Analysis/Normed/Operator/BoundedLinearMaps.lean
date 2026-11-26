@@ -18,6 +18,14 @@ scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuou
 The evaluation action of bounded operators on a seminormed space is bounded
 (`ContinuousLinearMap.isBoundedSMul_apply`) and hence jointly continuous
 (`IsBoundedSMul.continuousSMul`), as is every submonoid such as the unitary group.
+Likewise, a commuting normed-field scalar action on the codomain induces a bounded scalar action on
+continuous semilinear maps (`ContinuousLinearMap.instIsBoundedSMul`), a scalar-tower action induces
+a jointly continuous scalar action in the bounded-convergence topology
+(`ContinuousLinearMap.instContinuousSMulOfIsScalarTower`), bounded linear endomorphisms form a
+topological ring directly (`ContinuousLinearMap.instIsTopologicalRing`), and a compatible
+normed-field action on a seminormed space makes its continuous linear endomorphisms a normed algebra
+(`ContinuousLinearMap.instNormedAlgebraOfSMulCommClass`) matching
+`ContinuousLinearMap.toNormedSpace` and `ContinuousLinearMap.algebra`.
 
 A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`, tends
 to `(a, 0)` at `(a, 0)` (`ContinuousAt.tendsto_prodMk_clm_apply`).
@@ -59,6 +67,56 @@ and of submonoids such as the unitary group. -/
 instance ContinuousLinearMap.isBoundedSMul_apply {𝕜 V : Type*} [NontriviallyNormedField 𝕜]
     [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] : IsBoundedSMul (V →L[𝕜] V) V :=
   .of_norm_smul_le ContinuousLinearMap.le_opNorm
+
+namespace ContinuousLinearMap
+
+/-- A commuting normed-field scalar action on the codomain induces a bounded scalar action on
+continuous semilinear maps. -/
+instance (priority := 950) instIsBoundedSMul
+    {𝕜 𝕜₂ 𝕜' E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F] {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂]
+    [NormedField 𝕜'] [NormedSpace 𝕜' F] [SMulCommClass 𝕜₂ 𝕜' F] :
+    IsBoundedSMul 𝕜' (E →SL[σ₁₂] F) :=
+  .of_norm_smul_le opNorm_smul_le
+
+/-- A scalar action factoring continuously through the codomain scalar field `𝕜₂` acts jointly
+continuously on `E →SL[σ] F` in the bounded-convergence topology. -/
+instance (priority := 950) instContinuousSMulOfIsScalarTower
+    {𝕜₁ 𝕜₂ S E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
+    [RingHomSurjective σ] [RingHomIsometric σ]
+    [AddCommGroup E] [Module 𝕜₁ E] [TopologicalSpace E]
+    [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    [ContinuousSMul 𝕜₂ F]
+    [Monoid S] [TopologicalSpace S] [DistribMulAction S F] [SMulCommClass 𝕜₂ S F]
+    [ContinuousConstSMul S F] [SMul S 𝕜₂] [IsScalarTower S 𝕜₂ F] [ContinuousSMul S 𝕜₂] :
+    ContinuousSMul S (E →SL[σ] F) where
+  continuous_smul := by
+    have h : (fun p : S × (E →SL[σ] F) ↦ p.1 • p.2) = fun p ↦ (p.1 • (1 : 𝕜₂)) • p.2 := by
+      ext p x; exact (smul_one_smul 𝕜₂ p.1 (p.2 x)).symm
+    rw [h]
+    exact continuous_smul.comp (((continuous_fst.smul continuous_const).prodMk continuous_snd :
+      Continuous fun p : S × (E →SL[σ] F) ↦ (p.1 • (1 : 𝕜₂), p.2)))
+
+/-- Continuous linear endomorphisms of a seminormed space form a topological ring for the
+bounded-convergence / operator-norm topology without unfolding the seminormed-ring coercion
+chain. -/
+instance (priority := 950) instIsTopologicalRing
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] :
+    IsTopologicalRing (E →L[𝕜] E) :=
+  NonUnitalSeminormedRing.toIsTopologicalRing
+
+/-- Continuous `𝕜`-linear endomorphisms of a seminormed space `E` form a normed `𝕜'`-algebra for
+any normed field `𝕜'` acting compatibly on `E`, with underlying `NormedSpace` and `Algebra`
+structures `ContinuousLinearMap.toNormedSpace` and `ContinuousLinearMap.algebra`. -/
+noncomputable instance (priority := 950) instNormedAlgebraOfSMulCommClass
+    {𝕜 𝕜' E : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedField 𝕜'] [NormedSpace 𝕜' E] [SMulCommClass 𝕜 𝕜' E] [SMul 𝕜' 𝕜]
+    [IsScalarTower 𝕜' 𝕜 E] :
+    NormedAlgebra 𝕜' (E →L[𝕜] E) :=
+  { toNormedSpace, algebra with }
+
+end ContinuousLinearMap
 
 /-- If the action of `R` on an `R`-algebra `S` is bounded, `‖r • s‖ ≤ C * ‖r‖ * ‖s‖`, then so is
 the structure map: `‖algebraMap R S r‖ ≤ C * ‖1‖ * ‖r‖`. -/

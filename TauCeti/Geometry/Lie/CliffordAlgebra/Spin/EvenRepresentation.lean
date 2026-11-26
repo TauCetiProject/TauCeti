@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.LieAlgebra
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Representation
 public import TauCeti.RepresentationTheory.Spin.Representation
 
@@ -24,10 +25,12 @@ the units of the real even subalgebra and then reuses `AlgHom.unitsSmoothHom`.
 
 ## Main results
 
-* `AlgHom.realCliffordSpinEvenSmoothHom`: the smooth compact-Spin action induced by an algebra
+* `AlgHom.realCliffordSpinEvenSmoothHom` and `AlgHom.realSpinEvenSmoothHom`: the smooth
+  compact-Spin actions on the embedded units range and on native `Spin(n)` induced by an algebra
   homomorphism out of the even Clifford algebra.
-* `AlgHom.unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinEvenSmoothHom`: the differential is the
-  action of the corresponding quadratic Clifford element.
+* `AlgHom.unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinEvenSmoothHom` and
+  `AlgHom.unitsLieAlgebraLieEquiv_lieMap_realSpinEvenSmoothHom`: their differentials evaluate the
+  even action on the corresponding quadratic Clifford coordinate.
 * `AlgHom.lieMap_realCliffordSpinEvenSmoothHom_eq`: the corresponding equality of Lie-algebra
   homomorphisms.
 
@@ -269,5 +272,40 @@ theorem lieMap_realCliffordSpinEvenSmoothHom_eq
     unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinEvenSmoothHom,
     LieEquiv.apply_symm_apply, AlgHom.toLieHom_apply,
     CliffordAlgebra.realQuadraticLieSubalgebraEvenIncl_apply]
+
+/-- The smooth native compact-Spin action `Spin(n) → Aˣ` induced by an action of the real even
+Clifford algebra, transported from the embedded units range along
+`TauCeti.CliffordAlgebra.realSpinContMDiffMonoidMorphismUnitsRange`. -/
+def realSpinEvenSmoothHom
+    (f : CliffordAlgebra.even (realCliffordForm n 0) →ₐ[ℝ] A) :
+    ContMDiffMonoidMorphism 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, A) ∞
+      (spinGroup (realCliffordForm n 0)) Aˣ :=
+  f.realCliffordSpinEvenSmoothHom.comp (realSpinContMDiffMonoidMorphismUnitsRange n)
+
+/-- Evaluating `realSpinEvenSmoothHom` on a Spin element applies the given even Clifford action to
+its image in the even subalgebra. -/
+@[simp]
+theorem coe_realSpinEvenSmoothHom_apply
+    (f : CliffordAlgebra.even (realCliffordForm n 0) →ₐ[ℝ] A)
+    (s : spinGroup (realCliffordForm n 0)) :
+    ((f.realSpinEvenSmoothHom s : Aˣ) : A) = f (spinGroupToEven (realCliffordForm n 0) s) := by
+  rw [realSpinEvenSmoothHom, ContMDiffMonoidMorphism.coe_comp, Function.comp_apply,
+    realCliffordSpinEvenSmoothHom_apply]
+  exact congrArg f <| Subtype.ext <| by
+    simp [spinGroup.val_toUnits_apply, coe_spinGroupToEven_apply]
+
+/-- The differential of `realSpinEvenSmoothHom` evaluates the even Clifford action on the quadratic
+Clifford coordinate of `realSpinLieEquivUnitsRange n X`. -/
+@[simp↓ high]
+theorem unitsLieAlgebraLieEquiv_lieMap_realSpinEvenSmoothHom
+    (f : CliffordAlgebra.even (realCliffordForm n 0) →ₐ[ℝ] A)
+    (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
+    TauCeti.Lie.unitsLieAlgebraLieEquiv (lieMap f.realSpinEvenSmoothHom X) =
+      f ⟨realCliffordSpinLieEquivQuadratic n (realSpinLieEquivUnitsRange n X),
+        quadraticLieSubalgebra_le_even _
+          (realCliffordSpinLieEquivQuadratic n (realSpinLieEquivUnitsRange n X)).property⟩ := by
+  simp only [realSpinEvenSmoothHom, lieMap_comp, LieHom.comp_apply,
+    ← realSpinLieEquivUnitsRange_apply,
+    unitsLieAlgebraLieEquiv_lieMap_realCliffordSpinEvenSmoothHom]
 
 end AlgHom
