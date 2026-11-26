@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Basic
+public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Dilation
 public import TauCeti.Probability.Determinantal.Count
 public import TauCeti.Probability.RandomMatrices.BetaEnsemble.Hermite
 import Mathlib.Data.Nat.Factorial.SuperFactorial
-import TauCeti.Analysis.SpecialFunctions.Hermite.Function.MemLp
-import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Orthonormal
 
 /-!
 # The Hermite ensemble at `β = 2` is determinantal
@@ -34,13 +32,17 @@ where `sf(n) = 1! 2! ⋯ n!` is the superfactorial.
 ## Main definitions
 
 * `TauCeti.Probability.hermiteEnsembleFunction n k`: the Hermite function `ψₖ` dilated to the
-  scale of the size `n` ensemble, `x ↦ (n / 2) ^ (1 / 4) ψₖ(√(n / 2) x)`.
+  scale of the size `n` ensemble, `x ↦ (n / 2) ^ (1 / 4) ψₖ(√(n / 2) x)`; this is
+  `TauCeti.dilatedHermiteFunction` at the scale `√(n / 2)`.
 * `TauCeti.Probability.hermiteKernel n`: the Hermite kernel `∑_{k<n} φₖ(x) φₖ(y)`.
 
 ## Main results
 
-* `TauCeti.Probability.integral_hermiteEnsembleFunction_mul`: for `n ≠ 0` the functions
-  `hermiteEnsembleFunction n k` are orthonormal in `L²(ℝ)`.
+* `TauCeti.Probability.integral_hermiteEnsembleFunction_mul_hermiteEnsembleFunction`: for `n ≠ 0`
+  the functions `hermiteEnsembleFunction n k` are orthonormal in `L²(ℝ)`.
+* `TauCeti.Probability.integral_hermiteKernel_mul_hermiteKernel` and
+  `TauCeti.Probability.integral_hermiteKernel_mul_hermiteEnsembleFunction`: the Hermite kernel is
+  the kernel of the orthogonal projection onto the span of the `φₖ`, `k < n`.
 * `TauCeti.Probability.hermiteBetaPartition_two`: the partition function at `β = 2` is
   `sf(n) (2π) ^ (n / 2) / n ^ (n² / 2)`.
 * `TauCeti.Probability.hermiteBetaPDFReal_two_eq_determinantalDensity` and
@@ -74,14 +76,15 @@ variable {n : ℕ}
 /-- The `k`th **Hermite function at the scale of the size `n` Hermite ensemble**,
 `x ↦ (n / 2) ^ (1 / 4) ψₖ(√(n / 2) x)`, where `ψₖ` is `TauCeti.hermiteFunction`. Up to a
 positive constant it is `Hₖ(√n x) exp (-(n / 4) x²)` for the probabilists' Hermite polynomial
-`Hₖ` (`TauCeti.Probability.hermiteEnsembleFunction_eq`). For `n ≠ 0` these functions are
-orthonormal in `L²(ℝ)`. -/
+`Hₖ` (`TauCeti.Probability.hermiteEnsembleFunction_eq`). It is `TauCeti.dilatedHermiteFunction`
+at the scale `√(n / 2)`, so for `n ≠ 0` these functions are orthonormal in `L²(ℝ)`. -/
 def hermiteEnsembleFunction (n k : ℕ) (x : ℝ) : ℝ :=
-  √(√(n / 2)) * hermiteFunction k (√(n / 2) * x)
+  dilatedHermiteFunction √(n / 2) k x
 
 /-- Defining formula for `TauCeti.Probability.hermiteEnsembleFunction`. -/
 theorem hermiteEnsembleFunction_def (n k : ℕ) (x : ℝ) :
-    hermiteEnsembleFunction n k x = √(√(n / 2)) * hermiteFunction k (√(n / 2) * x) := (rfl)
+    hermiteEnsembleFunction n k x = √(√(n / 2)) * hermiteFunction k (√(n / 2) * x) :=
+  dilatedHermiteFunction_def _ k x
 
 /-- The dilated Hermite function is a normalized Hermite polynomial in `√n x` times the
 Gaussian factor `exp (-(n / 4) x²)`. -/
@@ -99,42 +102,26 @@ theorem hermiteEnsembleFunction_eq (n k : ℕ) (x : ℝ) :
 /-- The dilated Hermite functions are continuous. -/
 theorem continuous_hermiteEnsembleFunction (n k : ℕ) :
     Continuous (hermiteEnsembleFunction n k) :=
-  continuous_const.mul ((continuous_hermiteFunction k).comp (continuous_const.mul continuous_id))
+  continuous_dilatedHermiteFunction _ k
 
 /-- The dilated Hermite functions are square integrable. -/
 theorem memLp_two_hermiteEnsembleFunction (n k : ℕ) :
-    MemLp (hermiteEnsembleFunction n k) 2 volume := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · have h0 : hermiteEnsembleFunction 0 k = 0 := funext fun x ↦ by
-      simp [hermiteEnsembleFunction_def]
-    rw [h0]
-    exact MemLp.zero
-  have hs : √((n : ℝ) / 2) ≠ 0 := (sqrt_pos.2 (by positivity)).ne'
-  refine (memLp_two_iff_integrable_sq
-    (continuous_hermiteEnsembleFunction n k).aestronglyMeasurable).2 ?_
-  refine (((memLp_two_hermiteFunction k).integrable_sq.comp_mul_left' hs).const_mul
-    (√(√((n : ℝ) / 2)) ^ 2)).congr (.of_forall fun x ↦ ?_)
-  simp [hermiteEnsembleFunction_def, mul_pow]
+    MemLp (hermiteEnsembleFunction n k) 2 volume :=
+  memLp_two_dilatedHermiteFunction _ k
 
 /-- **Orthonormality** of the dilated Hermite functions: for `n ≠ 0`,
 `∫ φᵢ φⱼ = if i = j then 1 else 0`. -/
-theorem integral_hermiteEnsembleFunction_mul (hn : n ≠ 0) (i j : ℕ) :
+theorem integral_hermiteEnsembleFunction_mul_hermiteEnsembleFunction (hn : n ≠ 0) (i j : ℕ) :
     ∫ x, hermiteEnsembleFunction n i x * hermiteEnsembleFunction n j x =
-      if i = j then 1 else 0 := by
-  have hs : 0 < √((n : ℝ) / 2) := sqrt_pos.2 (by positivity)
-  have h := Measure.integral_comp_mul_left
-    (fun y ↦ hermiteFunction i y * hermiteFunction j y) (√((n : ℝ) / 2))
-  simp only [hermiteEnsembleFunction_def, mul_mul_mul_comm (√(√((n : ℝ) / 2))),
-    mul_self_sqrt (sqrt_nonneg _)]
-  rw [integral_const_mul, h, integral_hermiteFunction_mul_hermiteFunction, abs_inv,
-    abs_of_pos hs, smul_eq_mul, ← mul_assoc, mul_inv_cancel₀ hs.ne', one_mul]
+      if i = j then 1 else 0 :=
+  integral_dilatedHermiteFunction_mul_dilatedHermiteFunction (sqrt_pos.2 (by positivity)) i j
 
 /-- Orthonormality of the first `n` dilated Hermite functions, in the form taken by the
 determinantal ensemble API. -/
-private theorem integral_hermiteEnsembleFunction_mul_star (i j : Fin n) :
+private theorem integral_hermiteEnsembleFunction_mul_star_hermiteEnsembleFunction (i j : Fin n) :
     ∫ x, hermiteEnsembleFunction n i x * star (hermiteEnsembleFunction n j x) =
       if i = j then 1 else 0 := by
-  simp [integral_hermiteEnsembleFunction_mul (Fin.pos i).ne', Fin.val_inj]
+  simp [integral_hermiteEnsembleFunction_mul_hermiteEnsembleFunction (Fin.pos i).ne', Fin.val_inj]
 
 /-- The **Hermite kernel** of size `n`, `Kₙ(x, y) = ∑_{k<n} φₖ(x) φₖ(y)` for the dilated Hermite
 functions `φₖ = TauCeti.Probability.hermiteEnsembleFunction n k`. It is the kernel of the
@@ -157,12 +144,34 @@ theorem hermiteKernel_eq_sum (n : ℕ) (x y : ℝ) :
   exact Fin.sum_univ_eq_sum_range (fun k ↦ hermiteEnsembleFunction n k x *
     hermiteEnsembleFunction n k y) n
 
+/-- The Hermite kernel is symmetric. -/
+theorem hermiteKernel_comm (n : ℕ) (x y : ℝ) : hermiteKernel n x y = hermiteKernel n y x := by
+  simpa [hermiteKernel_def] using
+    star_finiteRankKernel (fun k : Fin n ↦ hermiteEnsembleFunction n k) x y
+
+/-- **The reproducing identity** of the Hermite kernel: `∫ Kₙ(x, z) Kₙ(z, y) dz = Kₙ(x, y)`. -/
+theorem integral_hermiteKernel_mul_hermiteKernel (n : ℕ) (x y : ℝ) :
+    ∫ z, hermiteKernel n x z * hermiteKernel n z y = hermiteKernel n x y := by
+  simp_rw [hermiteKernel_def]
+  exact integral_finiteRankKernel_mul_finiteRankKernel
+    (fun k : Fin n ↦ memLp_two_hermiteEnsembleFunction n k)
+    integral_hermiteEnsembleFunction_mul_star_hermiteEnsembleFunction x y
+
+/-- The Hermite kernel fixes the dilated Hermite functions it is built from:
+`∫ Kₙ(x, y) φₖ(y) dy = φₖ(x)` for `k < n`. -/
+theorem integral_hermiteKernel_mul_hermiteEnsembleFunction {k : ℕ} (hk : k < n) (x : ℝ) :
+    ∫ y, hermiteKernel n x y * hermiteEnsembleFunction n k y = hermiteEnsembleFunction n k x := by
+  simp_rw [hermiteKernel_def]
+  exact integral_finiteRankKernel_mul_generator
+    (fun k : Fin n ↦ memLp_two_hermiteEnsembleFunction n k)
+    integral_hermiteEnsembleFunction_mul_star_hermiteEnsembleFunction x ⟨k, hk⟩
+
 /-- The diagonal of the Hermite kernel integrates to the number of particles. -/
 theorem integral_hermiteKernel_self (n : ℕ) : ∫ x, hermiteKernel n x x = n := by
   simp_rw [hermiteKernel_def]
   simpa using integral_finiteRankKernel_self
     (fun k : Fin n ↦ memLp_two_hermiteEnsembleFunction n k)
-    fun i ↦ by simpa using integral_hermiteEnsembleFunction_mul_star i i
+    fun i ↦ by simpa using integral_hermiteEnsembleFunction_mul_star_hermiteEnsembleFunction i i
 
 /-! ### The determinantal density -/
 
@@ -245,7 +254,7 @@ theorem hermiteBetaPartition_two (n : ℕ) :
     hermiteBetaPartition 2 n = n.superFactorial * √(2 * π) ^ n / √n ^ (n ^ 2) := by
   have h := integral_determinantalDensity (μ := volume)
     (fun k : Fin n ↦ memLp_two_hermiteEnsembleFunction n k)
-    integral_hermiteEnsembleFunction_mul_star
+    integral_hermiteEnsembleFunction_mul_star_hermiteEnsembleFunction
   simp_rw [determinantalDensity_hermiteEnsembleFunction] at h
   rw [integral_const_mul, ← volume_pi, ← hermiteBetaPartition_def] at h
   rw [eq_inv_of_mul_eq_one_right h, inv_div, mul_comm]
@@ -286,6 +295,6 @@ theorem measureReal_hermiteBetaEnsemble_two_particleCount_eq_zero (n : ℕ) {B :
   rw [hermiteBetaEnsemble_two_eq_determinantalEnsemble]
   simpa using measureReal_determinantalEnsemble_particleCount_eq_zero
     (fun k : Fin n ↦ memLp_two_hermiteEnsembleFunction n k)
-    integral_hermiteEnsembleFunction_mul_star hB
+    integral_hermiteEnsembleFunction_mul_star_hermiteEnsembleFunction hB
 
 end TauCeti.Probability

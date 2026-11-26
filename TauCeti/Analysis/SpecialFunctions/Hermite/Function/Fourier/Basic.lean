@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.FourierTransformDeriv
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.Fourier.Continuous
+public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Dilation
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.Ladder
 public import TauCeti.Analysis.SpecialFunctions.Hermite.Function.MemLp
 
@@ -18,10 +19,11 @@ Mathlib's Fourier transform uses the character `exp (-2πixξ)`, whereas the Her
 `TauCeti.hermiteFunction` use the angular-frequency normalization. This file introduces the
 unitarily rescaled family
 
-`Φₙ(x) = √(√(2π)) ψₙ(√(2π)x)`
+`Φₙ(x) = √(√(2π)) ψₙ(√(2π)x)`,
 
-and proves that `𝓕 Φₙ = (-i)ⁿ Φₙ`. The dilation is load-bearing: the unscaled Gaussian
-`exp (-x² / 2)` is not self-dual for Mathlib's Fourier convention, while `exp (-πx²)` is.
+the dilated Hermite function `TauCeti.dilatedHermiteFunction` at the scale `√(2π)`, and proves
+that `𝓕 Φₙ = (-i)ⁿ Φₙ`. The dilation is load-bearing: the unscaled Gaussian `exp (-x² / 2)` is
+not self-dual for Mathlib's Fourier convention, while `exp (-πx²)` is.
 
 ## Main statements
 
@@ -45,17 +47,22 @@ open MeasureTheory Real
 open scoped FourierTransform
 
 /-- The Hermite function rescaled to Mathlib's `exp (-2πixξ)` Fourier convention:
-`Φₙ(x) = √(√(2π)) ψₙ(√(2π)x)`. The outer factor makes the dilation unitary on `L²`. -/
+`Φₙ(x) = √(√(2π)) ψₙ(√(2π)x)`, the dilated Hermite function at the scale `√(2π)`. The outer
+factor makes the dilation unitary on `L²`. -/
 noncomputable def twoPiHermiteFunction (n : ℕ) (x : ℝ) : ℝ :=
-  Real.sqrt (Real.sqrt (2 * Real.pi)) *
-    hermiteFunction n (Real.sqrt (2 * Real.pi) * x)
+  dilatedHermiteFunction (Real.sqrt (2 * Real.pi)) n x
+
+/-- The rescaled Hermite function is the dilated Hermite function at the scale `√(2π)`. -/
+theorem twoPiHermiteFunction_eq_dilatedHermiteFunction (n : ℕ) :
+    twoPiHermiteFunction n = dilatedHermiteFunction (Real.sqrt (2 * Real.pi)) n :=
+  (rfl)
 
 /-- The defining equation for the Hermite function rescaled to Mathlib's Fourier convention. -/
 theorem twoPiHermiteFunction_def (n : ℕ) (x : ℝ) :
     twoPiHermiteFunction n x =
       Real.sqrt (Real.sqrt (2 * Real.pi)) *
         hermiteFunction n (Real.sqrt (2 * Real.pi) * x) :=
-  twoPiHermiteFunction.eq_1 n x
+  dilatedHermiteFunction_def _ n x
 
 private lemma hermiteFourierScale_pos : 0 < Real.sqrt (2 * Real.pi) :=
   Real.sqrt_pos.2 (mul_pos two_pos Real.pi_pos)
@@ -85,10 +92,8 @@ theorem twoPiHermiteFunction_zero (x : ℝ) :
 /-- The rescaled Hermite functions are continuous. -/
 @[fun_prop]
 theorem continuous_twoPiHermiteFunction (n : ℕ) :
-    Continuous (twoPiHermiteFunction n) := by
-  unfold twoPiHermiteFunction
-  exact continuous_const.mul
-    ((continuous_hermiteFunction n).comp (continuous_const.mul continuous_id))
+    Continuous (twoPiHermiteFunction n) :=
+  continuous_dilatedHermiteFunction _ n
 
 /-- The position ladder relation after the `√(2π)` dilation. -/
 theorem mul_twoPiHermiteFunction (n : ℕ) (x : ℝ) :
@@ -145,7 +150,7 @@ theorem hasDerivAt_twoPiHermiteFunction (n : ℕ) (x : ℝ) :
               hermiteFunction (n + 1) (Real.sqrt (2 * Real.pi) * x)) *
           Real.sqrt (2 * Real.pi))) x := by
     apply hsimp.congr_of_eventuallyEq
-    exact Filter.Eventually.of_forall fun y => (twoPiHermiteFunction_def n y).symm
+    exact Filter.Eventually.of_forall fun y => twoPiHermiteFunction_def n y
   have hval :
       Real.sqrt (Real.sqrt (2 * Real.pi)) *
           ((Real.sqrt ((n : ℝ) / 2) *
