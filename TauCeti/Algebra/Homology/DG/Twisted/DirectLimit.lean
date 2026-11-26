@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Twisted.ActionSequence
 public import TauCeti.Algebra.Homology.DG.Twisted.Equivalence
-public import TauCeti.Algebra.Homology.HomologicalComplex.HomotopyCoherent
+public import TauCeti.Algebra.Homology.HomologicalComplex.HomologyFunctorOfHomotopy
 public import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.HasExactLimitsOfShape
 
@@ -198,6 +198,7 @@ theorem homologyFunctor_const_map (n : ℤ) {i j : ι} (g : i ⟶ j) :
   have hn := congrArg (HomologicalComplex.homologyMap · n)
     (ContinuationCocycle.continuationHom_refl (mP := m) hM)
   rw [HomologicalComplex.homologyMap_id] at hn
+  rw [homologyFunctor_map, const_ν]
   exact hn
 
 end Const
@@ -370,6 +371,7 @@ noncomputable def homologyι (n : ℤ) :
       (ContinuationCocycle.ofRestrict_continuationHom_comp h (S.ν (leOfHom g)) _ (T.m_eq_zero _) _
         (T.m_eq_zero _) (T.ν_eq_zero (leOfHom g)) hM)
     rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp] at hn
+    rw [homologyFunctor_map, homologyFunctor_map, toSub_ν]
     exact hn.symm
 
 @[simp]
@@ -391,6 +393,7 @@ noncomputable def homologyπ (n : ℤ) :
       (ContinuationCocycle.toRestrict_continuationHom_comp h (S.ν (leOfHom g)) hM _
         (T.compl_m_eq_zero _) _ (T.compl_m_eq_zero _) (T.compl_ν_eq_zero (leOfHom g)))
     rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp] at hn
+    rw [homologyFunctor_map, homologyFunctor_map, toQuotient_ν]
     exact hn.symm
 
 @[simp]
@@ -405,9 +408,10 @@ subcomplexes, natural in `i`. -/
 noncomputable def homologyδ (n : ℤ) :
     T.toQuotient.homologyFunctor hM n ⟶ T.toSub.homologyFunctor hM (n + 1) where
   app i := (T.shortExact hM i).δ n (n + 1) rfl
-  naturality _ _ g :=
-    ((S.ν (leOfHom g)).restrictShortComplexMap_δ h hM _ _ _ _ _ _ _ _ (T.ν_eq_zero (leOfHom g)) n
-      (n + 1) rfl).symm
+  naturality _ _ g := by
+    rw [homologyFunctor_map, homologyFunctor_map, toQuotient_ν, toSub_ν]
+    exact ((S.ν (leOfHom g)).restrictShortComplexMap_δ h hM _ _ _ _ _ _ _ _
+      (T.ν_eq_zero (leOfHom g)) n (n + 1) rfl).symm
 
 @[simp]
 theorem homologyδ_app (n : ℤ) (i : ι) :
@@ -421,6 +425,7 @@ theorem homologyι_comp_homologyπ (n : ℤ) : T.homologyι hM n ≫ T.homology�
     ((S.m i).ofRestrict_continuationHom_comp_toRestrict_continuationHom hM (T.carrier i)
       (T.carrier i)ᶜ (T.m_eq_zero i) fun _ ↦ Iff.rfl)
   rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_zero] at hn
+  rw [NatTrans.comp_app, homologyι_app, homologyπ_app, NatTrans.app_zero]
   exact hn
 
 @[reassoc (attr := simp)]
