@@ -27,20 +27,15 @@ the radical.
 
 The two halves of the flag are built separately.
 
-* Below `N` no assumption on the characteristic is needed. A Lie subalgebra `T` strictly inside a
-  nilpotent ideal `I` is normalized by an element of `I` outside `T`
-  (`LieIdeal.exists_mem_notMem_lie_mem_of_lt`), and adjoining it raises the dimension by one
-  (`LieSubalgebra.finrank_lieSpan_insert`), so `T` is joined to `I` by a flag of codimension-one
-  steps (`TauCeti.LieAlgebra.exists_flag_of_forall_lt`, `LieIdeal.exists_flag_of_le`).
+* Below `N` no assumption on the characteristic is needed: a Lie subalgebra of a nilpotent ideal
+  `I` is joined to `I` by a flag of codimension-one steps (`LieIdeal.exists_flag_of_le`).
 * Above `N`, `⁅L, R⁆ ≤ N` (`TauCeti.LieAlgebra.lie_radical_le_nilradical`) makes every subspace
   between `N` and `R` an ideal of `L`, so an ordinary flag of subspaces is a flag of ideals
   (`TauCeti.LieAlgebra.exists_flag_nilradical_radical`). The nilradical of each of these ideals is
-  `N` (`LieIdeal.map_incl_nilradical`).
+  `N` (`LieIdeal.map_incl_nilradical_of_le`).
 
 ## Main results
 
-* `LieIdeal.exists_flag_of_le`: a Lie subalgebra of a finite-dimensional nilpotent ideal `I` is
-  joined to `I` by a flag of Lie subalgebras, each an ideal of codimension one in the next.
 * `TauCeti.LieAlgebra.exists_flag_nilradical_radical`: in characteristic zero, the nilradical is
   joined to the radical by a flag of ideals of `L`, each of codimension one in the next.
 * `TauCeti.LieAlgebra.exists_flag_center_nilradical_radical`: **the flag lemma**.
@@ -55,37 +50,6 @@ The two halves of the flag are built separately.
 public section
 
 open LieAlgebra Module
-
-namespace LieIdeal
-
-open TauCeti.LieAlgebra
-
-variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
-
-/-- **A flag inside a nilpotent ideal.** A Lie subalgebra `T` of a finite-dimensional nilpotent
-ideal `I` of a Lie algebra is joined to `I` by a flag of Lie subalgebras
-`T = S 0 ≤ S 1 ≤ ⋯ ≤ S n = I` inside `I`, each an ideal of codimension one in the next. No
-assumption on the characteristic is needed. -/
-theorem exists_flag_of_le (I : LieIdeal K L) [LieRing.IsNilpotent I] [FiniteDimensional K I]
-    {T : LieSubalgebra K L} (hTI : T ≤ I) :
-    ∃ (S : ℕ → LieSubalgebra K L) (n : ℕ), S 0 = T ∧ S n = I ∧
-      (∀ i < n, S i ≤ S (i + 1) ∧ S (i + 1) ≤ (S i).normalizer ∧
-        finrank K (S (i + 1)) = finrank K (S i) + 1) ∧
-      ∀ i ≤ n, S i ≤ I := by
-  have hstep (T' : LieSubalgebra K L) (hT'I : T' ≤ I) (hlt : T' < I) :
-      ∃ x ∈ (I : LieSubalgebra K L), x ∉ T' ∧ x ∈ T'.normalizer ∧
-        LieSubalgebra.lieSpan K L (insert x (T' : Set L)) ≤ I := by
-    obtain ⟨y, hyI, hyT⟩ := IsConcreteLE.exists_of_lt hlt
-    have hlt' : T'.toSubmodule < I.toSubmodule :=
-      IsConcreteLE.lt_iff_le_and_exists.mpr ⟨fun z hz ↦ hT'I hz, y, hyI, hyT⟩
-    obtain ⟨x, hxI, hxT, hx⟩ := I.exists_mem_notMem_lie_mem_of_lt hlt'
-    have hxnorm : x ∈ T'.normalizer := (T'.mem_normalizer_iff x).mpr fun y hy ↦ hx y (hT'I hy)
-    exact ⟨x, hxI, hxT, hxnorm, LieSubalgebra.lieSpan_le.mpr (Set.insert_subset hxI hT'I)⟩
-  have : FiniteDimensional K (I : LieSubalgebra K L) := ‹FiniteDimensional K I›
-  obtain ⟨S, n, hS0, hSn, hSI, hS⟩ := exists_flag_of_forall_lt (fun T' ↦ T' ≤ I) hstep hTI hTI
-  exact ⟨S, n, hS0, hSn, hS, hSI⟩
-
-end LieIdeal
 
 namespace TauCeti
 
@@ -174,7 +138,7 @@ theorem exists_flag_center_nilradical_radical :
   · rw [hS_le hi]
     exact (LieSubalgebra.inclusion_injective (hS₁N i hi)).lieAlgebra_isNilpotent
   · obtain ⟨J, hJS, hNJ⟩ := hJ (i - a) (by omega)
-    exact ⟨J, by rw [hJS, hS_ge hai], LieIdeal.map_incl_nilradical hNJ⟩
+    exact ⟨J, by rw [hJS, hS_ge hai], LieIdeal.map_incl_nilradical_of_le hNJ⟩
 
 end LieAlgebra
 
