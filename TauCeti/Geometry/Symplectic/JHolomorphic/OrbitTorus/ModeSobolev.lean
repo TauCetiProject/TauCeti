@@ -639,7 +639,7 @@ theorem antiperiodicModeFrequency_apply (ℓ : ℝ) (k : ℕ) :
     antiperiodicModeFrequency ℓ k = (2 * k + 1) * π / ℓ :=
   (rfl)
 
-theorem antiperiodicModeFrequency_eq (ℓ : ℝ) :
+theorem antiperiodicModeFrequency_def (ℓ : ℝ) :
     antiperiodicModeFrequency ℓ = fun k : ℕ ↦ (2 * k + 1) * π / ℓ :=
   (rfl)
 
@@ -655,7 +655,7 @@ theorem periodicModeFrequency_apply (ℓ : ℝ) (k : ℕ) :
     periodicModeFrequency ℓ k = 2 * (k + 1) * π / ℓ :=
   (rfl)
 
-theorem periodicModeFrequency_eq (ℓ : ℝ) :
+theorem periodicModeFrequency_def (ℓ : ℝ) :
     periodicModeFrequency ℓ = fun k : ℕ ↦ 2 * (k + 1) * π / ℓ :=
   (rfl)
 
