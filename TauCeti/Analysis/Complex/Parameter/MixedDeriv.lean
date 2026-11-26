@@ -9,14 +9,12 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Analysis.Complex.Parameter.Deriv
-import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 
 /-!
 # Parameter derivatives of families of holomorphic functions
@@ -25,15 +23,13 @@ Let `H : X × ℂ → G` be a map from the product of a real normed space `X` of
 complex plane into a complex normed space `G`. Suppose that `H` is jointly `C^n` on an open
 product `W ×ˢ V`, and that `z ↦ H (x, z)` is holomorphic on `V` for every `x ∈ W`.
 
-If `H` is `C²`, then its total real derivative `z ↦ fderiv ℝ H (x, z)` is holomorphic on `V`
-(`ContDiffOn.differentiableOn_fderiv_comp_prodMk`). This is the symmetry of the second derivative:
-the Cauchy–Riemann equation `DH(p) (0, I) = I • DH(p) (0, 1)` holds at every point `p` of
-`W ×ˢ V`, and differentiating it in any direction gives the Cauchy–Riemann equation for
-`z ↦ DH(x, z)`. Restricting `DH` to the second factor, the complex derivative `deriv (H (x, ·))`
-is holomorphic in `z` as well (`ContDiffOn.differentiableOn_deriv_snd`), and it is jointly `C^m`
-for `m + 1 ≤ n` (`ContDiffOn.contDiffOn_deriv_snd`). For a
-single function, the complex derivative of a real `C²` holomorphic function is holomorphic without
-any completeness of `G` (`ContDiffOn.differentiableOn_deriv`).
+The complex derivative of a real `C²` holomorphic function is holomorphic without any
+completeness of `G` (`ContDiffOn.differentiableOn_deriv`). This is the holomorphy of parameter
+derivatives (`TauCeti.differentiableAt_fderiv_slice`) applied to the family of translates
+`(y, w) ↦ f (y + w)`, whose parameter derivative at `0` is the real derivative of `f`. Applied to
+the slices of `H`, the complex derivative `deriv (H (x, ·))` is holomorphic in `z`
+(`ContDiffOn.differentiableOn_deriv_snd`), and it is jointly `C^m` for `m + 1 ≤ n`
+(`ContDiffOn.contDiffOn_deriv_snd`).
 
 Every parameter derivative of order `k < n` is again holomorphic in `z`
 (`ContDiffOn.differentiableOn_iteratedFDeriv_slice`), and it commutes with the complex derivative
@@ -77,64 +73,27 @@ variable {X G : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddComm
 
 /-! ### Holomorphy of derivatives in the parameters and in the complex variable -/
 
-/-- **Holomorphy of the total derivative.** If `H : X × ℂ → G` is `C²` on an open product
-`W ×ˢ V` and holomorphic in its complex variable on `V`, then its total real derivative
-`z ↦ fderiv ℝ H (x, z)` is holomorphic on `V` for every `x ∈ W`. -/
-theorem differentiableOn_fderiv_comp_prodMk (hH : ContDiffOn ℝ 2 H (W ×ˢ V)) (hW : IsOpen W)
-    (hV : IsOpen V) (hhol : ∀ x ∈ W, DifferentiableOn ℂ (fun z ↦ H (x, z)) V) {x : X}
-    (hx : x ∈ W) :
-    DifferentiableOn ℂ (fun z ↦ fderiv ℝ H (x, z)) V := by
-  intro z hz
-  have hU : IsOpen (W ×ˢ V) := hW.prod hV
-  have hH2 : ContDiffAt ℝ 2 H (x, z) := hH.contDiffAt (hU.mem_nhds ⟨hx, hz⟩)
-  have hDH : DifferentiableAt ℝ (fderiv ℝ H) (x, z) :=
-    (hH2.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-  have hslice : HasFDerivAt (fun z' ↦ fderiv ℝ H (x, z'))
-      ((fderiv ℝ (fderiv ℝ H) (x, z)).comp (ContinuousLinearMap.inr ℝ X ℂ)) z :=
-    hDH.hasFDerivAt.comp z (hasFDerivAt_prodMk_right x z)
-  refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
-    hslice.differentiableAt).2 ?_).differentiableWithinAt
-  -- The Cauchy–Riemann expression `DH(p)(0, 1) + I • DH(p)(0, I)` vanishes near `(x, z)`.
-  have hcr : (fun p : X × ℂ ↦ fderiv ℝ H p (0, 1) + I • fderiv ℝ H p (0, I)) =ᶠ[𝓝 (x, z)]
-      fun _ ↦ (0 : G) := by
-    filter_upwards [hU.mem_nhds ⟨hx, hz⟩] with p hp
-    have hpd : DifferentiableAt ℝ H p :=
-      (hH.contDiffAt (hU.mem_nhds hp)).differentiableAt (by norm_num)
-    have hphol : DifferentiableAt ℂ (fun w ↦ H (p.1, w)) p.2 :=
-      (hhol p.1 hp.1).differentiableAt (hV.mem_nhds hp.2)
-    have hsr (w : ℂ) : fderiv ℝ H p (0, w) = w • deriv (fun w' ↦ H (p.1, w')) p.2 := by
-      have := congrArg (fun L : ℂ →L[ℝ] G ↦ L w) (fderiv_slice_right (a := p.1) (b := p.2) hpd)
-      simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
-        ContinuousLinearMap.inr_apply] at this
-      rw [← this, hphol.fderiv_restrictScalars_eq_smul_deriv ℝ]
-    rw [hsr, hsr, smul_smul, I_mul_I, neg_one_smul, one_smul, add_neg_cancel]
-  -- Differentiating it in a direction `v` and using symmetry of `D²H` gives the claim.
-  have hDcr := ((ContinuousLinearMap.apply ℝ G ((0 : X), (1 : ℂ))).hasFDerivAt.comp (x, z)
-    hDH.hasFDerivAt).add (((ContinuousLinearMap.apply ℝ G ((0 : X), I)).hasFDerivAt.comp (x, z)
-      hDH.hasFDerivAt).const_smul I)
-  have h0 := (hDcr.congr_of_eventuallyEq hcr.symm).unique (hasFDerivAt_const (0 : G) (x, z))
-  have hsymm := hH2.isSymmSndFDerivAt (by simp)
-  rw [conjWirtingerDeriv_apply, hslice.fderiv]
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  have hv := congrArg (fun L : X × ℂ →L[ℝ] G ↦ L v) h0
-  simp only [add_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
-    ContinuousLinearMap.apply_apply, smul_apply, zero_apply] at hv
-  simpa [hsymm (0, 1) v, hsymm (0, I) v] using congrArg ((2 : ℂ)⁻¹ • ·) hv
-
 /-- **Holomorphy of the complex derivative.** If `f : ℂ → G` is real `C²` and holomorphic on an
 open set `V`, then its complex derivative `deriv f` is holomorphic on `V`. Unlike
 `DifferentiableOn.deriv`, this needs no completeness of `G`. -/
 theorem differentiableOn_deriv {f : ℂ → G} (hf : ContDiffOn ℝ 2 f V) (hV : IsOpen V)
     (hhol : DifferentiableOn ℂ f V) : DifferentiableOn ℂ (deriv f) V := by
-  -- View `f` as a family over the parameter space `ℝ`, constant in the parameter.
-  have hH : ContDiffOn ℝ 2 (fun p : ℝ × ℂ ↦ f p.2) (univ ×ˢ V) :=
-    hf.comp contDiffOn_snd fun p hp ↦ hp.2
-  refine ((ContinuousLinearMap.apply ℝ G ((0 : ℝ), (1 : ℂ))).comp_differentiableOn_of_map_smul
-    (fun c L ↦ by simp) (differentiableOn_fderiv_comp_prodMk hH isOpen_univ hV
-      (fun _ _ ↦ hhol) (mem_univ 0))).congr fun z hz ↦ ?_
-  exact deriv_slice_right_eq_fderiv_apply_zero_one (f := fun p : ℝ × ℂ ↦ f p.2)
-    ((hH.contDiffAt ((isOpen_univ.prod hV).mem_nhds ⟨mem_univ _, hz⟩)).differentiableAt
-      (by norm_num)) (hhol.differentiableAt (hV.mem_nhds hz))
+  intro z hz
+  have hV' : ∀ᶠ y : ℂ in 𝓝 0, y + z ∈ V :=
+    (continuous_id.add continuous_const).continuousAt.preimage_mem_nhds
+      (by simpa using hV.mem_nhds hz)
+  -- The family of translates `y ↦ f (y + ·)` has parameter derivative `fderiv ℝ f` at `0`.
+  have hD : DifferentiableAt ℂ (fun w ↦ fderiv ℝ (fun y : ℂ ↦ f (y + w)) 0) z := by
+    refine differentiableAt_fderiv_slice (h := fun y w ↦ f (y + w)) ?_ ?_
+    · exact (hf.contDiffAt (by simpa using hV.mem_nhds hz)).comp (0, z)
+        (contDiffAt_fst.add contDiffAt_snd)
+    · filter_upwards [hV'] with y hy
+      exact (hhol.differentiableAt (hV.mem_nhds hy)).comp z (differentiableAt_id.const_add y)
+  simp_rw [fderiv_comp_add_right, zero_add] at hD
+  refine (((ContinuousLinearMap.apply ℝ G (1 : ℂ)).differentiableAt_comp_of_map_smul
+    (fun c L ↦ by simp) hD).congr_of_eventuallyEq ?_).differentiableWithinAt
+  filter_upwards [hV.mem_nhds hz] with w hw
+  simp [(hhol.differentiableAt (hV.mem_nhds hw)).fderiv_restrictScalars_eq_smul_deriv ℝ]
 
 /-- **Holomorphy of the complex derivative of a family.** If `H : X × ℂ → G` is `C²` on
 `W ×ˢ V` with `V` open, and `x ∈ W` is such that `z ↦ H (x, z)` is holomorphic on `V`, then the
