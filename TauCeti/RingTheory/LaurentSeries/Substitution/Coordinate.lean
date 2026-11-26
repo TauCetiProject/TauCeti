@@ -279,7 +279,8 @@ variable (k : Type*) [CommSemiring k] [Algebra k R]
 `k`-algebra `R` and the coefficientwise `k`-algebra structure `HahnSeries.instAlgebra` of `R⸨X⸩`,
 the one carried by the loop groups `G(R⸨X⸩)`. Since `substAlgEquiv φ` is `R`-linear for the
 structure inherited from `R⟦X⟧`, which agrees with the coefficientwise one only propositionally,
-`AlgEquiv.restrictScalars` does not apply directly. -/
+`AlgEquiv.restrictScalars` does not apply directly. Statements using it select the
+coefficientwise structure with `attribute [local instance 1100] HahnSeries.instAlgebra`. -/
 noncomputable def substAlgEquivRestrictScalars (φ : FormalCoordinate R) : R⸨X⸩ ≃ₐ[k] R⸨X⸩ :=
   -- `substAlgEquiv φ` is stated for the `R`-algebra structure inherited from `R⟦X⟧`, which the
   -- local instance would otherwise replace by the coefficientwise one.

@@ -29,10 +29,11 @@ coordinate turns this right action into a left one,
 so that `ρ_(φ ∘ ψ) = ρ_φ ∘ ρ_ψ` and `ρ_X = id`. Since `ρ_φ` is post-composition with an algebra
 automorphism of the coefficients, it is multiplicative for the convolution product when `H` is a
 bialgebra. This file records `ρ` as a `MulAction` of `FormalCoordinate R` on the convolution
-points, and for a bialgebra as a `MulDistribMulAction`; Mathlib's
-`MulDistribMulAction.toMulAut` then makes each `ρ_φ` a group automorphism, and the
-semidirect product `G(R⟦X⟧) ⋊ FormalCoordinate R` has the multiplication
-`(g, φ) (h, ψ) = (g ρ_φ (h), φ ∘ ψ)`.
+points, and for a bialgebra as a `MulDistribMulAction`, an action by monoid automorphisms of the
+convolution monoid. When `H` is a Hopf algebra the convolution monoid is a group, Mathlib's
+`MulDistribMulAction.toMulAut` makes each `ρ_φ` a group automorphism, and the semidirect product
+`WithConv (H →ₐ[k] R⟦X⟧) ⋊ FormalCoordinate R`, the group `G(R⟦X⟧) ⋊ FormalCoordinate R` for a
+commutative Hopf algebra `H`, has the multiplication `(g, φ) (h, ψ) = (g ρ_φ (h), φ ∘ ψ)`.
 
 The action is natural in the coefficient algebra `R`, along `PowerSeries.mapAlgHom f` on arcs
 and `TauCeti.FormalCoordinate.map f` on coordinates, and in the bialgebra `H`, along

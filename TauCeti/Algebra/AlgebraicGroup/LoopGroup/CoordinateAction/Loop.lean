@@ -27,6 +27,10 @@ automorphism, and the semidirect product `WithConv (H →ₐ[k] R⸨X⸩) ⋊ Fo
 multiplication `(g, φ) (h, ψ) = (g ρ_φ (h), φ ∘ ψ)`. When `H` is a commutative Hopf algebra, the
 convolution points are the loops `G(R⸨X⸩)` of `G = Spec H`, the loop group `LG(R)`.
 
+The Laurent series `R⸨X⸩` carry several `k`-algebra structures that agree only propositionally;
+the action uses the coefficientwise one, `HahnSeries.instAlgebra`, which callers select with
+`attribute [local instance 1100] HahnSeries.instAlgebra`, as this file does.
+
 The action is natural in the coefficient algebra `R`, along `HahnSeries.mapAlgHom f` on loops and
 `TauCeti.FormalCoordinate.map f` on coordinates, and in the bialgebra `H`, along pre-composition
 with bialgebra maps. The inclusion `R⟦X⟧ → R⸨X⸩` carries the action on arcs to the action on
@@ -48,14 +52,14 @@ it is the same substitution on units, and the homothety `φ = a X` sends the loo
 * `TauCeti.LaurentSeries.mapDomain_smul`: naturality in the bialgebra.
 * `TauCeti.LaurentSeries.mapValue_ofPowerSeriesAlg_smul`: the inclusion of arcs into loops is
   equivariant, and `TauCeti.LaurentSeries.smul_mrange_mapValue_ofPowerSeriesAlg`: the action maps
-  the positive loops onto themselves.
+  the image of the arcs, the positive loops for a commutative Hopf algebra, onto itself.
 * `TauCeti.LaurentSeries.smul_toConv_toAlgHom_comp`: constant loops are fixed.
 * `TauCeti.LaurentSeries.toAdd_gaPointsMulEquiv_smul` and
   `TauCeti.LaurentSeries.pointsMulEquiv_smul`: the action for `𝔾ₐ` and `𝔾ₘ`;
-  `TauCeti.LaurentSeries.pointsMulEquiv_homothety_smul_symm_unitX_zpow`: the homothety `a X`
-  sends the loop `X ^ n` of `𝔾ₘ` to `a ^ (-n) X ^ n`, and
-  `TauCeti.LaurentSeries.homothety_smul_symm_unitX_zpow_eq_iff`: the homothety `a X` fixes the
-  loop `X ^ n` of `𝔾ₘ` exactly when `a ^ n = 1`.
+  `TauCeti.LaurentSeries.pointsMulEquiv_homothety_smul_pointsMulEquiv_symm_unitX_zpow`: the
+  homothety `a X` sends the loop `X ^ n` of `𝔾ₘ` to `a ^ (-n) X ^ n`, and
+  `TauCeti.LaurentSeries.homothety_smul_pointsMulEquiv_symm_unitX_zpow_eq_iff_zpow_eq_one`: the
+  homothety `a X` fixes the loop `X ^ n` of `𝔾ₘ` exactly when `a ^ n = 1`.
 
 ## References
 
@@ -151,35 +155,38 @@ theorem mapDomain_smul {H' : Type*} [Semiring H'] [Bialgebra k H'] (ψ : H' →�
   rw [smul_def, smul_def, ← MonoidHom.comp_apply, BialgHom.mapValue_mapDomain,
     MonoidHom.comp_apply]
 
-/-- The inclusion `G(R⟦X⟧) → G(R⸨X⸩)` of arcs into loops is equivariant for the actions of formal
-coordinates: substitution of power series is the restriction of substitution of Laurent
-series. -/
+/-- The inclusion `WithConv (H →ₐ[k] R⟦X⟧) → WithConv (H →ₐ[k] R⸨X⸩)` of convolution monoids
+is equivariant for the actions of formal coordinates: substitution of power series is the
+restriction of substitution of Laurent series. For a commutative Hopf algebra `H` this is the
+inclusion `G(R⟦X⟧) → G(R⸨X⸩)` of arcs into loops of `G = Spec H`. -/
 theorem mapValue_ofPowerSeriesAlg_smul (φ : FormalCoordinate R) (g : WithConv (H →ₐ[k] R⟦X⟧)) :
     AlgHom.mapValue (ofPowerSeriesAlg ℤ k) (φ • g) =
       φ • AlgHom.mapValue (ofPowerSeriesAlg ℤ k) g := by
   refine ofConv_injective <| AlgHom.ext fun h ↦ ?_
   simp [FormalCoordinate.substAlgEquiv_apply]
 
-/-- A loop is the image of an arc exactly when its image under a coordinate change is. -/
-theorem smul_mem_mrange_mapValue_ofPowerSeriesAlg_iff (φ : FormalCoordinate R)
-    {g : WithConv (H →ₐ[k] R⸨X⸩)} :
-    φ • g ∈ MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) ↔
-      g ∈ MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) := by
-  have key (φ : FormalCoordinate R) {g : WithConv (H →ₐ[k] R⸨X⸩)}
-      (hg : g ∈ MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R)))) :
-      φ • g ∈ MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) := by
-    obtain ⟨a, rfl⟩ := hg
-    exact ⟨φ • a, mapValue_ofPowerSeriesAlg_smul φ a⟩
-  exact ⟨fun hg ↦ by simpa using key φ⁻¹ hg, key φ⟩
-
-/-- Each coordinate change maps the positive loops `L⁺G(R)`, the image of the arcs `G(R⟦X⟧)` in
-the loops `G(R⸨X⸩)`, onto themselves. -/
+/-- Each coordinate change maps the image of `WithConv (H →ₐ[k] R⟦X⟧)` in the convolution monoid
+`WithConv (H →ₐ[k] R⸨X⸩)` onto itself. For a commutative Hopf algebra `H` this image is the
+positive loop group `L⁺G(R)`, the image of the arcs `G(R⟦X⟧)` in the loops `G(R⸨X⸩)` of
+`G = Spec H`. -/
 @[simp]
 theorem smul_mrange_mapValue_ofPowerSeriesAlg (φ : FormalCoordinate R) :
     φ • MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) =
       MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) := by
-  ext g
-  rw [Submonoid.mem_pointwise_smul_iff_inv_smul_mem, smul_mem_mrange_mapValue_ofPowerSeriesAlg_iff]
+  refine SetLike.coe_injective ?_
+  rw [Submonoid.coe_pointwise_smul, MonoidHom.coe_mrange, Set.smul_set_range]
+  simp_rw [← mapValue_ofPowerSeriesAlg_smul]
+  exact (MulAction.toPerm φ).surjective.range_comp _
+
+/-- An element of `WithConv (H →ₐ[k] R⸨X⸩)` lies in the image of `WithConv (H →ₐ[k] R⟦X⟧)`, the
+positive loops for a commutative Hopf algebra `H`, exactly when its image under a coordinate
+change does. -/
+theorem smul_mem_mrange_mapValue_ofPowerSeriesAlg_iff (φ : FormalCoordinate R)
+    {g : WithConv (H →ₐ[k] R⸨X⸩)} :
+    φ • g ∈ MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) ↔
+      g ∈ MonoidHom.mrange (AlgHom.mapValue (H := H) (ofPowerSeriesAlg ℤ k (A := R))) := by
+  conv_lhs => rw [← smul_mrange_mapValue_ofPowerSeriesAlg φ]
+  exact Submonoid.smul_mem_pointwise_smul_iff
 
 end Bialgebra
 
@@ -220,7 +227,7 @@ theorem pointsMulEquiv_smul (φ : FormalCoordinate R) (g : WithConv (k[T;T⁻¹]
 
 /-- For the multiplicative group, the homothety `X ↦ a X` sends the loop `X ^ n` to
 `a ^ (-n) X ^ n`. -/
-theorem pointsMulEquiv_homothety_smul_symm_unitX_zpow (a : Rˣ) (n : ℤ) :
+theorem pointsMulEquiv_homothety_smul_pointsMulEquiv_symm_unitX_zpow (a : Rˣ) (n : ℤ) :
     (MultiplicativeGroup.pointsMulEquiv
         (FormalCoordinate.homothety a •
           (MultiplicativeGroup.pointsMulEquiv (R := k) (A := R⸨X⸩)).symm (unitX ^ n)) : R⸨X⸩) =
@@ -232,13 +239,13 @@ theorem pointsMulEquiv_homothety_smul_symm_unitX_zpow (a : Rˣ) (n : ℤ) :
 
 /-- The homothety `X ↦ a X` fixes the loop `X ^ n` of the multiplicative group exactly when
 `a ^ n = 1`. -/
-theorem homothety_smul_symm_unitX_zpow_eq_iff (a : Rˣ) (n : ℤ) :
+theorem homothety_smul_pointsMulEquiv_symm_unitX_zpow_eq_iff_zpow_eq_one (a : Rˣ) (n : ℤ) :
     FormalCoordinate.homothety a •
         (MultiplicativeGroup.pointsMulEquiv (R := k) (A := R⸨X⸩)).symm (unitX ^ n) =
       (MultiplicativeGroup.pointsMulEquiv (R := k) (A := R⸨X⸩)).symm (unitX ^ n) ↔
       a ^ n = 1 := by
   rw [← (MultiplicativeGroup.pointsMulEquiv (R := k) (A := R⸨X⸩)).injective.eq_iff,
-    ← Units.val_inj, pointsMulEquiv_homothety_smul_symm_unitX_zpow]
+    ← Units.val_inj, pointsMulEquiv_homothety_smul_pointsMulEquiv_symm_unitX_zpow]
   simp [(single_injective n).eq_iff]
 
 end Examples

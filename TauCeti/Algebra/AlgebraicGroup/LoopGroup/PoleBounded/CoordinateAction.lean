@@ -17,8 +17,12 @@ a family `x : ι → H`. Substitution of a formal coordinate preserves every lat
 `X^(-N) R⟦X⟧` of Laurent series, so the action `ρ_φ (g) = σ_(φ⁻¹) ∘ g` of formal coordinate
 changes on the convolution points `WithConv (H →ₐ[k] R⸨X⸩)` maps the set
 `TauCeti.HopfAlgebra.poleBoundedLoops k x R N` of loops pole-bounded of level `N` for `x` onto
-itself, for every family `x` and every `N`. For a finite generating family `x` these sets are the
-pieces `LG_(≤N)(R)` of the ind-affine presentation of the loop group.
+itself, for every family `x` and every `N`. When `k` is a commutative ring, `H` is a commutative
+Hopf algebra and `x` is a finite generating family, these sets are the pieces `LG_(≤N)(R)` of the
+ind-affine presentation of the loop group of `G = Spec H`.
+
+As for the action on loops, `R⸨X⸩` carries its coefficientwise `k`-algebra structure
+`HahnSeries.instAlgebra`, selected with `attribute [local instance 1100] HahnSeries.instAlgebra`.
 
 ## Main results
 
@@ -56,8 +60,9 @@ theorem smul_mem_poleBoundedLoops_iff {N : ℕ} (φ : FormalCoordinate R)
     substAlgEquiv_mem_lattice_iff]
 
 /-- Each coordinate change maps the set of loops pole-bounded of level `N` for the family `x`
-onto itself; for a finite generating family `x` this set is the piece `LG_(≤N)(R)` of the
-ind-affine presentation of the loop group. -/
+onto itself. When `k` is a commutative ring, `H` is a commutative Hopf algebra and `x` is a finite
+generating family, this set is the piece `LG_(≤N)(R)` of the ind-affine presentation of the loop
+group of `G = Spec H`. -/
 @[simp]
 theorem smul_poleBoundedLoops (N : ℕ) (φ : FormalCoordinate R) :
     φ • HopfAlgebra.poleBoundedLoops k x R N = HopfAlgebra.poleBoundedLoops k x R N := by

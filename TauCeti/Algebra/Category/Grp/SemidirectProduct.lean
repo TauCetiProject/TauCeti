@@ -20,7 +20,9 @@ and `G`, and its functor laws are those of `N` and `G`.
 Natural transformations `N ⟶ N'` and `G ⟶ G'` compatible with the actions induce a natural
 transformation of the semidirect products. The projections `N(X) ⋊ G(X) → G(X)` and the sections
 `g ↦ (1, g)` are natural; as `N(X) ⋊ G(X)` lives in the larger of the two universes, they are
-stated for `G` lifted along `GrpCat.uliftFunctor`.
+stated for `G` lifted along `GrpCat.uliftFunctor`. The inclusions `n ↦ (n, 1)` of the normal
+factor are natural as well, and commute with the induced maps of semidirect products; they are
+stated for `N` valued in a universe containing that of `G`, so that `N` needs no lift.
 
 ## Main definitions
 
@@ -31,6 +33,8 @@ stated for `G` lifted along `GrpCat.uliftFunctor`.
 * `TauCeti.GrpCat.semidirectProductRightHom N G φ hφ`: the natural projection to `G`.
 * `TauCeti.GrpCat.semidirectProductInr N G φ hφ`: the natural section `g ↦ (1, g)`, with
   `TauCeti.GrpCat.semidirectProductInr_comp_rightHom`.
+* `TauCeti.GrpCat.semidirectProductInl N G φ hφ`: the natural inclusion `n ↦ (n, 1)` of the normal
+  factor, with `TauCeti.GrpCat.semidirectProductInl_comp_map`.
 -/
 
 public section
@@ -80,8 +84,7 @@ variable {N G φ hφ} {N' : C ⥤ _root_.GrpCat.{u₁}} {G' : C ⥤ _root_.GrpCa
 
 /-- The natural transformation `N ⋊ G ⟶ N' ⋊ G'` induced by natural transformations `α : N ⟶ N'`
 and `β : G ⟶ G'` compatible with the actions. -/
--- The components must unfold, so that they are seen as maps of semidirect products.
-@[expose] def semidirectProductMap (α : N ⟶ N') (β : G ⟶ G')
+def semidirectProductMap (α : N ⟶ N') (β : G ⟶ G')
     (h : ∀ X (g : G.obj X) (n : N.obj X), α.app X (φ X g n) = φ' X (β.app X g) (α.app X n)) :
     semidirectProductFunctor N G φ hφ ⟶ semidirectProductFunctor N' G' φ' hφ' where
   app X := _root_.GrpCat.ofHom <| SemidirectProduct.map (α.app X).hom (β.app X).hom
@@ -112,7 +115,9 @@ semidirect product. -/
 def semidirectProductRightHom :
     semidirectProductFunctor N G φ hφ ⟶ G ⋙ _root_.GrpCat.uliftFunctor.{u₁} where
   app _ := _root_.GrpCat.ofHom <| MulEquiv.ulift.symm.toMonoidHom.comp SemidirectProduct.rightHom
-  naturality _ _ _ := (rfl)
+  naturality _ _ f := _root_.GrpCat.ext fun x ↦ congrArg ULift.up <| DFunLike.congr_fun
+    (SemidirectProduct.rightHom_comp_map (N.map f).hom (G.map f).hom
+      fun g ↦ MonoidHom.ext fun n ↦ hφ f g n) x
 
 /-- The projection to `G` sends `(n, g)` to `g`. -/
 lemma semidirectProductRightHom_app_apply (X : C) (x : N.obj X ⋊[φ X] G.obj X) :
@@ -122,9 +127,11 @@ lemma semidirectProductRightHom_app_apply (X : C) (x : N.obj X ⋊[φ X] G.obj X
 /-- The sections `g ↦ (1, g)` of the projections `N(X) ⋊ G(X) → G(X)`, natural in `X`. -/
 def semidirectProductInr :
     G ⋙ _root_.GrpCat.uliftFunctor.{u₁} ⟶ semidirectProductFunctor N G φ hφ where
-  app _ := _root_.GrpCat.ofHom <| SemidirectProduct.inr.comp MulEquiv.ulift.toMonoidHom
+  app X := _root_.GrpCat.ofHom <| SemidirectProduct.inr.comp
+    (MulEquiv.ulift : ULift.{u₁} (G.obj X) ≃* G.obj X).toMonoidHom
   naturality _ _ f :=
-    _root_.GrpCat.ext fun _ ↦ SemidirectProduct.ext (map_one (N.map f).hom).symm rfl
+    _root_.GrpCat.ext fun g ↦ (SemidirectProduct.map_inr (N.map f).hom (G.map f).hom
+      (fun g ↦ MonoidHom.ext fun n ↦ hφ f g n) g.down).symm
 
 /-- The section of the projection to `G` sends `g` to `(1, g)`. -/
 lemma semidirectProductInr_app_apply (X : C) (g : ULift.{u₁} (G.obj X)) :
@@ -135,6 +142,48 @@ lemma semidirectProductInr_app_apply (X : C) (g : ULift.{u₁} (G.obj X)) :
 @[simp]
 theorem semidirectProductInr_comp_rightHom :
     semidirectProductInr N G φ hφ ≫ semidirectProductRightHom N G φ hφ = 𝟙 _ :=
+  NatTrans.ext <| funext fun X ↦ _root_.GrpCat.ext fun (g : ULift.{u₁} (G.obj X)) ↦
+    congrArg ULift.up (SemidirectProduct.rightHom_inr (φ := φ X) g.down)
+
+section Inl
+
+/-! ### The inclusion of the normal factor
+
+The normal factor `N` is taken valued in `GrpCat.{max u₁ u₂}`, the universe of the semidirect
+product, so that the inclusions `n ↦ (n, 1)` are natural transformations out of `N` itself. -/
+
+variable (N : C ⥤ _root_.GrpCat.{max u₁ u₂}) (G : C ⥤ _root_.GrpCat.{u₂})
+  (φ : ∀ X, G.obj X →* MulAut (N.obj X))
+  (hφ : ∀ ⦃X Y : C⦄ (f : X ⟶ Y) (g : G.obj X) (n : N.obj X),
+    N.map f (φ X g n) = φ Y (G.map f g) (N.map f n))
+
+/-- The inclusions `n ↦ (n, 1)` of the normal factor `N(X)` into `N(X) ⋊ G(X)`, natural in `X`. -/
+def semidirectProductInl : N ⟶ semidirectProductFunctor N G φ hφ where
+  app _ := _root_.GrpCat.ofHom SemidirectProduct.inl
+  naturality _ _ f :=
+    _root_.GrpCat.ext fun n ↦ (SemidirectProduct.map_inl (N.map f).hom (G.map f).hom
+      (fun g ↦ MonoidHom.ext fun n ↦ hφ f g n) n).symm
+
+/-- The inclusion of the normal factor sends `n` to `(n, 1)`. -/
+lemma semidirectProductInl_app_apply (X : C) (n : N.obj X) :
+    (semidirectProductInl N G φ hφ).app X n = SemidirectProduct.inl n :=
   (rfl)
+
+variable {N G φ hφ} {N' : C ⥤ _root_.GrpCat.{max u₁ u₂}} {G' : C ⥤ _root_.GrpCat.{u₂}}
+  {φ' : ∀ X, G'.obj X →* MulAut (N'.obj X)}
+  {hφ' : ∀ ⦃X Y : C⦄ (f : X ⟶ Y) (g : G'.obj X) (n : N'.obj X),
+    N'.map f (φ' X g n) = φ' Y (G'.map f g) (N'.map f n)}
+
+/-- The induced map of semidirect products restricts to `α` on the normal factors. -/
+@[reassoc]
+theorem semidirectProductInl_comp_map (α : N ⟶ N') (β : G ⟶ G')
+    (h : ∀ X (g : G.obj X) (n : N.obj X), α.app X (φ X g n) = φ' X (β.app X g) (α.app X n)) :
+    semidirectProductInl N G φ hφ ≫ semidirectProductMap α β h =
+      α ≫ semidirectProductInl N' G' φ' hφ' :=
+  NatTrans.ext <| funext fun X ↦ _root_.GrpCat.ext fun n ↦
+    SemidirectProduct.map_inl (α.app X).hom (β.app X).hom
+      (fun g ↦ MonoidHom.ext fun n ↦ h X g n) n
+
+end Inl
 
 end TauCeti.GrpCat
