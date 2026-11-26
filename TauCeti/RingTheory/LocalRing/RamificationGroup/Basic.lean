@@ -801,6 +801,12 @@ theorem ramificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ} (hleft 
     (hright : u ≤ i) : ramificationGroupReal G S u = ramificationGroup G S i := by
   rw [ramificationGroupReal_def, Int.ceil_eq_iff.2 ⟨hleft, hright⟩]
 
+/-- For `u ≤ -1`, the real-indexed ramification group is the whole group. -/
+theorem ramificationGroupReal_eq_top_of_le_neg_one {u : ℝ} (hu : u ≤ -1) :
+    ramificationGroupReal G S u = ⊤ := by
+  rw [ramificationGroupReal_def]
+  exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by simpa using hu))
+
 variable {G S} in
 /-- A ring isomorphism equivariant along a group homomorphism pulls back `ramificationGroupReal`. -/
 theorem ramificationGroupReal_eq_comap_of_ringEquiv {H T : Type*} [Group H] [CommRing T]
@@ -834,11 +840,9 @@ theorem lowerJump_iff (u : ℝ) :
 /-- Every lower jump is at least `-1`, since `G_u = ⊤` for `u ≤ -1`. -/
 theorem neg_one_le_of_lowerJump {u : ℝ} (h : LowerJump G S u) : -1 ≤ u := by
   by_contra hlt
-  replace hlt : u < ((-1 : ℤ) : ℝ) := by simpa using not_le.1 hlt
-  have hstrict := h ((-1 : ℤ) : ℝ) hlt
-  rw [ramificationGroupReal_intCast, ramificationGroup_eq_top_of_le_neg_one G S le_rfl,
-    ramificationGroupReal_def, ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 hlt.le)]
-    at hstrict
+  have hstrict := h (-1) (not_le.1 hlt)
+  rw [ramificationGroupReal_eq_top_of_le_neg_one G S le_rfl,
+    ramificationGroupReal_eq_top_of_le_neg_one G S (not_le.1 hlt).le] at hstrict
   exact lt_irrefl _ hstrict
 
 /-- Every lower jump occurs at an integer `i ≥ -1`. -/

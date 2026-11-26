@@ -302,9 +302,8 @@ theorem herbrandFun_neg_one : herbrandFun G S (-1) = -1 :=
 theorem herbrandFun_of_le_neg_one {u : ℝ} (hu : u ≤ -1) :
     herbrandFun G S u =
       -1 + (u + 1) * ((Nat.card G : ℝ) / Nat.card (ramificationGroup G S 0)) := by
-  have h := herbrandFun_sub_herbrandFun_of_forall_eq G S (H := ⊤) hu fun _ _ ht₂ ↦ by
-    rw [ramificationGroupReal_def]
-    exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by exact_mod_cast ht₂))
+  have h := herbrandFun_sub_herbrandFun_of_forall_eq G S (H := ⊤) hu fun _ _ ht₂ ↦
+    ramificationGroupReal_eq_top_of_le_neg_one G S ht₂
   rw [herbrandFun_neg_one, Subgroup.card_top] at h
   linarith
 
@@ -613,10 +612,8 @@ theorem upperRamificationGroup_of_le_zero {v : ℝ} (hv : v ≤ 0) :
     upperRamificationGroup G S v = ramificationGroupReal G S v := by
   rcases le_total (-1) v with hv₁ | hv₁
   · rw [upperRamificationGroup_def, inverseHerbrandFun_eq_self_of_mem_Icc G S ⟨hv₁, hv⟩]
-  have htop {w : ℝ} (hw : w ≤ -1) : ramificationGroupReal G S w = ⊤ := by
-    rw [ramificationGroupReal_def]
-    exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by simpa using hw))
-  rw [upperRamificationGroup_def, htop hv₁, htop ?_]
+  rw [upperRamificationGroup_def, ramificationGroupReal_eq_top_of_le_neg_one G S hv₁,
+    ramificationGroupReal_eq_top_of_le_neg_one G S ?_]
   rw [← inverseHerbrandFun_neg_one G S]
   exact (inverseHerbrandFun_strictMono G S).monotone hv₁
 
@@ -629,8 +626,8 @@ theorem upperRamificationGroup_zero :
 /-- For `v ≤ -1`, `G^v = ⊤`. -/
 theorem upperRamificationGroup_eq_top_of_le_neg_one {v : ℝ} (hv : v ≤ -1) :
     upperRamificationGroup G S v = ⊤ := by
-  rw [upperRamificationGroup_of_le_zero G S (hv.trans (by norm_num)), ramificationGroupReal_def]
-  exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by simpa using hv))
+  rw [upperRamificationGroup_of_le_zero G S (hv.trans (by norm_num))]
+  exact ramificationGroupReal_eq_top_of_le_neg_one G S hv
 
 /-- At `n : ℕ`, `G^n = G_{ψℕ(n)}`. -/
 @[simp]

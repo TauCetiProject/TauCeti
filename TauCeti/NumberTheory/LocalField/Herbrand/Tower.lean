@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Herbrand.Quotient
-import TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Tower
+import TauCeti.RingTheory.LocalRing.Herbrand.Tower
 
 /-!
 # Transitivity of the Herbrand functions
@@ -23,7 +23,7 @@ identity on `[-1, 0]`, this gives the **transitivity of the Herbrand functions**
 `φ_{M/K} = φ_{L/K} ∘ φ_{M/L}`   and   `ψ_{M/K} = ψ_{M/L} ∘ ψ_{L/K}`,
 
 together with its integral form `ψℕ_{M/K} = ψℕ_{M/L} ∘ ψℕ_{L/K}`. All proofs specialize the
-local-ring results of `TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Tower`.
+local-ring results of `TauCeti.RingTheory.LocalRing.Herbrand.Tower`.
 
 ## Main results
 

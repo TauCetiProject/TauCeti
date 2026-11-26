@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Ring.Action.End
+public import Mathlib.GroupTheory.QuotientGroup.Basic
 
 /-!
 # The kernel of the automorphism representation of a group acting on a ring
@@ -15,8 +16,10 @@ public import Mathlib.Algebra.Ring.Action.End
 A group `G` acting on a semiring `S` by ring automorphisms is represented by
 `MulSemiringAction.toRingAut G S`. This file reads off the kernel of that representation: an
 element lies in it exactly when it fixes every element of `S`, so a faithful action has trivial
-kernel. When `S` is moreover generated over a base ring `R` by a single element `ξ` and a monoid
-acts faithfully by `R`-algebra maps, the action is already determined by where it sends `ξ`.
+kernel, and dividing `G` by that kernel yields a faithful `MulSemiringAction` on `S` preserving
+scalar commutativity. When `S` is moreover generated over a base ring `R` by a single element `ξ`
+and a monoid acts faithfully by `R`-algebra maps, the action is already determined by where it
+sends `ξ`.
 
 ## Main results
 
@@ -24,6 +27,12 @@ acts faithfully by `R`-algebra maps, the action is already determined by where i
   on every element.
 * `TauCeti.MulSemiringAction.ker_toRingAut_eq_bot`: a faithful action is a faithful
   representation.
+* `TauCeti.MulSemiringAction.instMulSemiringActionQuotientKerToRingAut`,
+  `TauCeti.MulSemiringAction.quotientKerToRingAut_mk_smul`,
+  `TauCeti.MulSemiringAction.instFaithfulSMulQuotientKerToRingAut`, and
+  `TauCeti.MulSemiringAction.instSMulCommClassQuotientKerToRingAut`: the quotient
+  `G ⧸ (MulSemiringAction.toRingAut G S).ker` acts faithfully on `S` by ring automorphisms, acting
+  on representatives as `G` does and commuting with any scalar action that commutes with `G`.
 * `TauCeti.smul_left_injective_of_adjoin_singleton_eq_top`: for a faithful action of a monoid by
   `R`-algebra maps, distinct elements move a single generator of `S` over `R` to distinct elements.
 * `TauCeti.eq_one_of_smul_eq_of_adjoin_singleton_eq_top`: under the same hypotheses, only the
@@ -47,6 +56,34 @@ theorem ker_toRingAut_eq_bot [FaithfulSMul G S] :
     MonoidHom.ker (_root_.MulSemiringAction.toRingAut G S) = ⊥ :=
   (Subgroup.eq_bot_iff_forall _).2 fun σ hσ ↦ eq_of_smul_eq_smul fun x : S ↦ by
     rw [mem_ker_toRingAut_iff.1 hσ x, one_smul]
+
+/-- The quotient of `G` by the kernel of its ring-automorphism representation acts on `S` by ring
+automorphisms. -/
+instance instMulSemiringActionQuotientKerToRingAut (G S : Type*) [Group G] [Semiring S]
+    [MulSemiringAction G S] :
+    MulSemiringAction (G ⧸ (_root_.MulSemiringAction.toRingAut G S).ker) S :=
+  _root_.MulSemiringAction.compHom S
+    (QuotientGroup.kerLift (_root_.MulSemiringAction.toRingAut G S))
+
+/-- A coset represented by `g` acts on `S` in the same way as `g`. -/
+@[simp]
+theorem quotientKerToRingAut_mk_smul (g : G) (x : S) :
+    (QuotientGroup.mk g : G ⧸ (_root_.MulSemiringAction.toRingAut G S).ker) • x = g • x :=
+  (rfl)
+
+/-- Dividing by the kernel of `MulSemiringAction.toRingAut G S` makes the action faithful. -/
+instance instFaithfulSMulQuotientKerToRingAut (G S : Type*) [Group G] [Semiring S]
+    [MulSemiringAction G S] :
+    FaithfulSMul (G ⧸ (_root_.MulSemiringAction.toRingAut G S).ker) S where
+  eq_of_smul_eq_smul h :=
+    QuotientGroup.kerLift_injective (_root_.MulSemiringAction.toRingAut G S) (RingEquiv.ext h)
+
+/-- If the action of `G` on `S` commutes with `R`, so does the action of its faithful quotient
+`G ⧸ ker(G → Aut(S))`. -/
+instance instSMulCommClassQuotientKerToRingAut (G R S : Type*) [Group G] [SMul R S] [Semiring S]
+    [MulSemiringAction G S] [SMulCommClass G R S] :
+    SMulCommClass (G ⧸ (_root_.MulSemiringAction.toRingAut G S).ker) R S where
+  smul_comm q r x := QuotientGroup.induction_on q fun g ↦ smul_comm g r x
 
 end TauCeti.MulSemiringAction
 

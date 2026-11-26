@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.Monogenic
 public import TauCeti.RingTheory.Invariant.Basic
+public import TauCeti.RingTheory.Invariant.Galois
 import TauCeti.RingTheory.LocalRing.RingHom
 
 /-!
@@ -27,6 +28,9 @@ element.
 * `TauCeti.FixedPoints.isDiscreteValuationRing_subalgebra` and
   `TauCeti.FixedPoints.isDiscreteValuationRing_subring`: the invariants `B^G` form a discrete
   valuation ring.
+* `TauCeti.isDiscreteValuationRing_integralClosure_fixedField`: if `integralClosure A L` is a
+  discrete valuation ring and `H ≤ Gal(L/K)` is finite, then
+  `integralClosure A (IntermediateField.fixedField H)` is also a discrete valuation ring.
 * `TauCeti.FixedPoints.exists_adjoin_eq_top`: for a finite local homomorphism `A → B` from a
   Noetherian local ring with separable residue extension, `B^G` is generated over `A` by a single
   element.
@@ -96,3 +100,17 @@ theorem exists_adjoin_eq_top :
   exact TauCeti.IsLocalRing.exists_adjoin_eq_top_of_span_eq_maximalIdeal hπ.maximalIdeal_eq.symm
 
 end TauCeti.FixedPoints
+
+namespace TauCeti
+
+/-- If `integralClosure A L` is a DVR and `H ≤ Gal(L/K)` is finite, then
+`integralClosure A (IntermediateField.fixedField H)` is also a DVR. -/
+instance isDiscreteValuationRing_integralClosure_fixedField
+    (A K L : Type*) [CommRing A] [Field K] [Field L]
+    [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
+    [IsDiscreteValuationRing (integralClosure A L)] (H : Subgroup (L ≃ₐ[K] L)) [Finite H] :
+    IsDiscreteValuationRing (integralClosure A (IntermediateField.fixedField H)) :=
+  IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+    (fixedPointsIntegralClosureEquivFixedField A K L H)
+
+end TauCeti

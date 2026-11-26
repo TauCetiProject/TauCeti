@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.DiscreteValuationRing.LowerIndex
 public import TauCeti.RingTheory.LocalRing.Herbrand
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.LocalRing.ResidueField.Separable
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.NumberTheory.RamificationInertia.Galois
 import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 import TauCeti.RingTheory.LocalRing.ResidueField.Instances
@@ -208,38 +209,6 @@ end Faithful
 
 section General
 
-/-- The faithful quotient `G ⧸ ker(G → Aut(B))` acts on `B` via `QuotientGroup.kerLift`. -/
-@[instance_reducible]
-private def faithfulQuotientAction (B G : Type*) [CommRing B] [Group G] [MulSemiringAction G B] :
-    MulSemiringAction (G ⧸ (MulSemiringAction.toRingAut G B).ker) B :=
-  MulSemiringAction.compHom B (QuotientGroup.kerLift (MulSemiringAction.toRingAut G B))
-
-/-- Identifying `FixedPoints.subalgebra A B H` with the invariants of the image of `H` in the
-faithful quotient over `B^G`. -/
-private def fixedPointsSubalgebraEquivFaithful (A B G : Type*) [CommRing A] [CommRing B]
-    [Algebra A B] [Group G] [MulSemiringAction G B] [SMulCommClass G A B] (H : Subgroup G) :
-    let := faithfulQuotientAction B G
-    have : SMulCommClass (G ⧸ (MulSemiringAction.toRingAut G B).ker)
-        (FixedPoints.subalgebra A B G) B :=
-      ⟨fun q r b ↦ QuotientGroup.induction_on q fun g ↦ by
-        rw [Algebra.smul_def, Algebra.smul_def]
-        exact (smul_mul' g r.val b).trans (by rw [r.property g]; rfl)⟩
-    FixedPoints.subalgebra A B H ≃+*
-      FixedPoints.subalgebra (FixedPoints.subalgebra A B G) B
-        (H.map (QuotientGroup.mk' (MulSemiringAction.toRingAut G B).ker)) :=
-  let := faithfulQuotientAction B G
-  have : SMulCommClass (G ⧸ (MulSemiringAction.toRingAut G B).ker)
-      (FixedPoints.subalgebra A B G) B :=
-    ⟨fun q r b ↦ QuotientGroup.induction_on q fun g ↦ by
-      rw [Algebra.smul_def, Algebra.smul_def]
-      exact (smul_mul' g r.val b).trans (by rw [r.property g]; rfl)⟩
-  { toFun := fun x ↦ ⟨x.val, by rintro ⟨_, g, hg, rfl⟩; exact x.property ⟨g, hg⟩⟩
-    invFun := fun y ↦ ⟨y.val, fun g ↦ y.property ⟨QuotientGroup.mk g.val, g.val, g.property, rfl⟩⟩
-    left_inv := fun _ ↦ rfl
-    right_inv := fun _ ↦ rfl
-    map_mul' := fun _ _ ↦ rfl
-    map_add' := fun _ _ ↦ rfl }
-
 /-- **Herbrand's theorem in the lower numbering** for `FixedPoints.subalgebra A B H`:
 `(G ⧸ H)_{φ_H(u)} = G_u H / H` for every `u : ℝ`. Neither completeness of `B`, finiteness of the
 residue field, faithfulness of the `G`-action, nor `A = B^G` is required. -/
@@ -253,24 +222,16 @@ theorem ramificationGroupReal_quotient_herbrandFun_eq_map
     ramificationGroupReal (G ⧸ H) (FixedPoints.subalgebra A B H) (herbrandFun H B u) =
       (ramificationGroupReal G B u).map (QuotientGroup.mk' H) := by
   set K := (MulSemiringAction.toRingAut G B).ker
-  let := faithfulQuotientAction B G
-  have : FaithfulSMul (G ⧸ K) B :=
-    ⟨fun h ↦ QuotientGroup.kerLift_injective _ (RingEquiv.ext h)⟩
   set A₀ := FixedPoints.subalgebra A B G
-  have : SMulCommClass (G ⧸ K) A₀ B :=
-    ⟨fun q r b ↦ QuotientGroup.induction_on q fun g ↦ by
-      rw [Algebra.smul_def, Algebra.smul_def]
-      exact (smul_mul' g r.val b).trans (by rw [r.property g]; rfl)⟩
-  have : Algebra.IsInvariant A₀ B (G ⧸ K) :=
-    ⟨fun b hb ↦ ⟨⟨b, fun g ↦ hb (QuotientGroup.mk g)⟩, rfl⟩⟩
   have := Algebra.isSeparable_tower_top_of_isSeparable
     (_root_.IsLocalRing.ResidueField A) (_root_.IsLocalRing.ResidueField A₀)
     (_root_.IsLocalRing.ResidueField B)
   set q := QuotientGroup.mk' K
-  have hq : Function.Surjective q := QuotientGroup.mk'_surjective K
   set H' := H.map q
-  have : H'.Normal := Subgroup.Normal.map inferInstance q hq
+  have : H'.Normal := Subgroup.Normal.map inferInstance q (QuotientGroup.mk'_surjective K)
   let f : G ⧸ H →* (G ⧸ K) ⧸ H' := QuotientGroup.map H H' q (Subgroup.le_comap_map q H)
+  have hq_smul : ∀ (g : G) (b : B), q g • b = g • b :=
+    fun g b ↦ TauCeti.MulSemiringAction.quotientKerToRingAut_mk_smul g b
   have hH_surj : Function.Surjective (q.subgroupMap H) := by
     rintro ⟨_, g, hg, rfl⟩; exact ⟨⟨g, hg⟩, rfl⟩
   have hφH : herbrandFun H B u = herbrandFun H' B u :=
@@ -281,19 +242,13 @@ theorem ramificationGroupReal_quotient_herbrandFun_eq_map
         (herbrandFun H' B u)).comap f := by
     rw [hφH]
     exact ramificationGroupReal_eq_comap_of_ringEquiv f
-      (fixedPointsSubalgebraEquivFaithful A B G H)
-      (fun r _ ↦ QuotientGroup.induction_on r fun _ ↦ rfl) _
+      (TauCeti.FixedPoints.subalgebraEquivMap A A₀ hq_smul H)
+      (TauCeti.FixedPoints.subalgebraEquivMap_smul hq_smul H) _
   have hG : ramificationGroupReal G B u = (ramificationGroupReal (G ⧸ K) B u).comap q :=
-    ramificationGroupReal_eq_comap_of_ringEquiv q (RingEquiv.refl B) (fun _ _ ↦ rfl) u
-  rw [hQ, hG, ramificationGroupReal_quotient_herbrandFun_eq_map_of_faithful A₀ B (G ⧸ K) H' u]
-  apply Subgroup.comap_injective (QuotientGroup.mk'_surjective H)
-  have hcomm : f.comp (QuotientGroup.mk' H) = (QuotientGroup.mk' H').comp q := by ext; rfl
-  have hker : q.ker ≤ (ramificationGroupReal (G ⧸ K) B u).comap q := fun _ hx ↦ by
-    simp [Subgroup.mem_comap, MonoidHom.mem_ker.1 hx]
-  rw [Subgroup.comap_comap, hcomm, ← Subgroup.comap_comap, Subgroup.comap_map_eq,
-    QuotientGroup.ker_mk', Subgroup.comap_map_eq, QuotientGroup.ker_mk']
-  conv_lhs => rw [← Subgroup.map_comap_eq_self_of_surjective hq (ramificationGroupReal (G ⧸ K) B u)]
-  rw [← Subgroup.map_sup, Subgroup.comap_map_eq, sup_eq_left.2 (hker.trans le_sup_left)]
+    ramificationGroupReal_eq_comap_of_ringEquiv q (RingEquiv.refl B)
+      (fun g b ↦ (hq_smul g b).symm) u
+  rw [hQ, hG, ramificationGroupReal_quotient_herbrandFun_eq_map_of_faithful A₀ B (G ⧸ K) H' u,
+    Subgroup.comap_quotientGroupMap_map_mk' _ q (Subgroup.le_comap_map q H) le_rfl]
 
 /-- Base-free form of **Herbrand's theorem in the lower numbering** on `FixedPoints.subring B H`:
 `(G ⧸ H)_{φ_H(u)} = G_u H / H` for every `u : ℝ`. -/

@@ -94,12 +94,22 @@ def fixedPointsIntegralClosureEquivFixedField (H : Subgroup (L ≃ₐ[K] L)) :
   map_mul' _ _ := rfl
   map_add' _ _ := rfl
 
+/-- `fixedPointsIntegralClosureEquivFixedField` preserves the underlying element of `L`. -/
 @[simp]
 theorem coe_fixedPointsIntegralClosureEquivFixedField (H : Subgroup (L ≃ₐ[K] L))
     (x : FixedPoints.subring (integralClosure R L) H) :
     ((fixedPointsIntegralClosureEquivFixedField R K L H x :
         integralClosure R (IntermediateField.fixedField H)) : L) =
       ((x : integralClosure R L) : L) :=
+  (rfl)
+
+/-- The inverse of `fixedPointsIntegralClosureEquivFixedField` preserves the underlying element of
+`L`. -/
+@[simp]
+theorem coe_fixedPointsIntegralClosureEquivFixedField_symm (H : Subgroup (L ≃ₐ[K] L))
+    (y : integralClosure R (IntermediateField.fixedField H)) :
+    (((fixedPointsIntegralClosureEquivFixedField R K L H).symm y : integralClosure R L) : L) =
+      (y : L) :=
   (rfl)
 
 /-- `fixedPointsIntegralClosureEquivFixedField` is equivariant along
