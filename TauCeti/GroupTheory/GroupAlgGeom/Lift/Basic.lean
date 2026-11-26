@@ -253,16 +253,17 @@ agree: the two coordinate groups are the same quotient of `G[X]`. -/
 private theorem HasLift.of_Rad_eq (hR : Rad ι S = Rad κ S) (h : HasLift ι S T) :
     HasLift κ S T :=
   hasLift_iff.2 <| h.exists_sumElim_mem_V_of_gHom
-    ⟨(CoordGroup.equivOfRadEq hR).toMonoidHom, CoordGroup.equivOfRadEq_coeff hR⟩
-    (funext (CoordGroup.equivOfRadEq_genericPoint hR))
+    ⟨(QuotientGroup.quotientMulEquivOfEq hR).toMonoidHom, CoordGroup.quotientMulEquivOfEq_coeff hR⟩
+    (funext (CoordGroup.quotientMulEquivOfEq_genericPoint hR))
 
 /-- A lift of `T = 1 ∧ W ≠ 1` through `ι` is one through `κ` when the radicals of `S` over `H`
 and over `K` agree. -/
 private theorem HasLiftNe.of_Rad_eq (hR : Rad ι S = Rad κ S) (h : HasLiftNe ι S T W) :
     HasLiftNe κ S T W :=
   hasLiftNe_iff.2 <| h.exists_sumElim_mem_V_of_gHom
-    ⟨(CoordGroup.equivOfRadEq hR).toMonoidHom, CoordGroup.equivOfRadEq_coeff hR⟩
-    (CoordGroup.equivOfRadEq hR).injective (funext (CoordGroup.equivOfRadEq_genericPoint hR))
+    ⟨(QuotientGroup.quotientMulEquivOfEq hR).toMonoidHom, CoordGroup.quotientMulEquivOfEq_coeff hR⟩
+    (QuotientGroup.quotientMulEquivOfEq hR).injective
+    (funext (CoordGroup.quotientMulEquivOfEq_genericPoint hR))
 
 /-- A system admits a lift to the generic point of `S` over `H` exactly when it admits one over
 `K`, if `S` has the same radical over `H` and over `K`. -/

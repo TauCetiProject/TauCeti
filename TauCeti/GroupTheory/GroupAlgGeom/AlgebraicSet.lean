@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Basic
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.GroupTheory.Subgroup.Centralizer
-public import Mathlib.GroupTheory.QuotientGroup.Defs
+public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Data.ZMod.Defs
 public import TauCeti.GroupTheory.GroupAlgGeom.Basic
 import Mathlib.Data.ZMod.Basic
@@ -62,8 +62,6 @@ system `{a, b, x}` has no solutions; its radical and its normal closure are both
 * `TauCeti.GroupAlgGeom.CoordGroup.homOfVSubset`: the surjection `G_{R(T)} →* G_{R(S)}` induced by
   the identity on the variables when `V_H(S) ⊆ V_H(T)`, an isomorphism when the solution sets are
   equal.
-* `TauCeti.GroupAlgGeom.CoordGroup.equivOfRadEq`: the isomorphism `G_{R(S)} ≅ G_{R(T)}` of
-  coordinate groups over two groups in which `S` and `T` have the same radical.
 
 ## Main results
 
@@ -1188,24 +1186,18 @@ theorem evalGHom_comp_homOfVSubset (h : V ι S ⊆ V ι T) (hv : v ∈ V ι S) :
 
 variable {K : Type*} [Group K] {κ : G →* K} (h : Rad ι S = Rad κ T)
 
-/-- Coordinate groups `G[X] ⧸ Rad_H(S)` and `G[X] ⧸ Rad_K(T)` with the same radical, over groups
-`H` and `K` receiving `G`, are isomorphic over `G` by the identity on the classes of words. -/
-noncomputable def equivOfRadEq : CoordGroup ι S ≃* CoordGroup κ T :=
-  QuotientGroup.quotientMulEquivOfEq h
+/-- The isomorphism `QuotientGroup.quotientMulEquivOfEq` of coordinate groups with the same
+radical, over groups `H` and `K` receiving `G`, fixes the coefficients. -/
+theorem quotientMulEquivOfEq_coeff (g : G) :
+    QuotientGroup.quotientMulEquivOfEq h (coeff ι S g) = coeff κ T g :=
+  QuotientGroup.quotientMulEquivOfEq_mk h _
 
+/-- The isomorphism `QuotientGroup.quotientMulEquivOfEq` of coordinate groups with the same
+radical, over groups `H` and `K` receiving `G`, fixes the generic point. -/
 @[simp]
-theorem equivOfRadEq_mk (w : GX G X) : equivOfRadEq h (w : CoordGroup ι S) = (w : CoordGroup κ T) :=
-  QuotientGroup.quotientMulEquivOfEq_mk h w
-
-/-- The isomorphism of coordinate groups with the same radical fixes the coefficients. -/
-theorem equivOfRadEq_coeff (g : G) : equivOfRadEq h (coeff ι S g) = coeff κ T g :=
-  equivOfRadEq_mk h _
-
-/-- The isomorphism of coordinate groups with the same radical fixes the generic point. -/
-@[simp]
-theorem equivOfRadEq_genericPoint (x : X) :
-    equivOfRadEq h (genericPoint ι S x) = genericPoint κ T x :=
-  equivOfRadEq_mk h _
+theorem quotientMulEquivOfEq_genericPoint (x : X) :
+    QuotientGroup.quotientMulEquivOfEq h (genericPoint ι S x) = genericPoint κ T x :=
+  QuotientGroup.quotientMulEquivOfEq_mk h _
 
 end CoordGroup
 

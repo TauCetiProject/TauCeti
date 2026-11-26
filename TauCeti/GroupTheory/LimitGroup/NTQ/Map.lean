@@ -194,14 +194,19 @@ theorem equations_map {Y : Type v} (U : System G Y) :
         (Monoid.Coprod.map f (FreeGroup.map id)) =
         (Monoid.Coprod.map f (FreeGroup.map id)).comp
           (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr)) := by
-      ext <;> simp
+      rw [map_comp_map, map_comp_map, MonoidHom.id_comp, MonoidHom.comp_id]
+      congr 1
+      exact MonoidHom.ext fun w =>
+        (FreeGroup.map.comp id Sum.inr w).trans (FreeGroup.map.comp Sum.inr id w).symm
     have h₂ : (eval (Monoid.Coprod.map (.id G') (FreeGroup.map (Sum.inr : Z → X ⊕ Z)))
           fun x ↦ inr (FreeGroup.of (Sum.inl x))).comp
         (Monoid.Coprod.map (Monoid.Coprod.map f (FreeGroup.map id)) (FreeGroup.map id)) =
         (Monoid.Coprod.map f (FreeGroup.map id)).comp
           (eval (Monoid.Coprod.map (.id G) (FreeGroup.map Sum.inr))
             fun x ↦ inr (FreeGroup.of (Sum.inl x))) := by
-      ext <;> simp
+      rw [eval_comp_map, MonoidHom.comp_eval, h₁, Function.comp_id]
+      refine congrArg _ (funext fun x => ?_)
+      rw [Function.comp_apply, map_apply_inr, FreeGroup.map.of, id_eq]
     simp only [map_cons, equations_cons, ih, Level.equations_map, Set.image_union,
       ← Set.image_comp, ← MonoidHom.coe_comp, h₁, h₂]
 
@@ -212,7 +217,9 @@ theorem map_id {Y : Type v} (U : System G Y) : U.map (.id G) Function.injective_
   | nil => rfl
   | @cons Z S X _ L ih =>
     have h : Monoid.Coprod.map (.id G) (FreeGroup.map (id : Z → Z)) = .id _ := by
-      ext <;> simp
+      rw [← map_id_id]
+      congr 1
+      exact MonoidHom.ext FreeGroup.map.id
     simp [ih, h]
 
 /-- Changing the coefficients of a system along `f` and then along `g` is changing them along
@@ -226,7 +233,9 @@ theorem map_map {G'' : Type*} [Group G''] (g : G' →* G'') (hg : Function.Injec
     have h : (Monoid.Coprod.map g (FreeGroup.map (id : Z → Z))).comp
         (Monoid.Coprod.map f (FreeGroup.map id)) =
           Monoid.Coprod.map (g.comp f) (FreeGroup.map id) := by
-      ext <;> simp
+      rw [map_comp_map]
+      congr 1
+      exact MonoidHom.ext (FreeGroup.map.comp _ _)
     simp [ih, h]
 
 variable {f}

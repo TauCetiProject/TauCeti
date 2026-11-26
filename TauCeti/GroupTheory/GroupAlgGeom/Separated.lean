@@ -471,7 +471,9 @@ theorem CoordGroup.isSeparatedBy_mapCoeff (hf : IsSeparatedBy f (.id G)) :
     QuotientGroup.map_mk _ _ _ _ u
   have hψf : (Monoid.Coprod.map (ψ : G' →* G) (FreeGroup.map id)).comp
       (Monoid.Coprod.map f (FreeGroup.map (id : X → X))) = .id _ := by
-    ext <;> simp
+    rw [Monoid.Coprod.map_comp_map, ψ.comp_coeff, ← Monoid.Coprod.map_id_id]
+    congr 1
+    exact MonoidHom.ext fun w => (FreeGroup.map.comp _ _ w).trans (FreeGroup.map.id w)
   refine ⟨⟨ρ, fun c => ?_⟩, ?_⟩
   · induction c using QuotientGroup.induction_on with | H w₀ => ?_
     simp only [OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe, MonoidHom.coe_ofClass, mapCoeff_mk,

@@ -259,8 +259,9 @@ theorem isRegular_comp_map_iff (hf : Function.Injective f) (hsep : IsSeparatedBy
     Rad_eq_of_isSeparatedBy hf (by simpa using hsep) E
   rw [← isRegular_congr (ι := QuotientGroup.mk' (Rad ((MonoidHom.id G').comp f) E))
     (ιK := QuotientGroup.mk' (Rad (.id G) E))
-    ⟨(CoordGroup.equivOfRadEq hRad).toMonoidHom, CoordGroup.equivOfRadEq_mk hRad⟩
-    (CoordGroup.equivOfRadEq hRad).bijective]
+    ⟨(QuotientGroup.quotientMulEquivOfEq hRad).toMonoidHom,
+      QuotientGroup.quotientMulEquivOfEq_mk hRad⟩
+    (QuotientGroup.quotientMulEquivOfEq hRad).bijective]
   -- and it embeds in the coordinate group of the image, which is separated by it over it
   have hκ : (CoordGroup.mapCoeff f (.id G') E : _ →* _).comp
       (QuotientGroup.mk' (Rad ((MonoidHom.id G').comp f) E)) =
