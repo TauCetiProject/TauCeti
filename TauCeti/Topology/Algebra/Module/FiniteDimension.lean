@@ -21,7 +21,7 @@ public import Mathlib.Topology.Algebra.Module.Star
 public import TauCeti.LinearAlgebra.Basis.Semilinear
 -- Private: `Subspace.dual_finrank_eq` is used only inside proofs.
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import TauCeti.LinearAlgebra.Multilinear.Basis
+import TauCeti.Topology.Algebra.Module.Multilinear.ModuleTopology
 
 /-!
 # Finite-dimensional topological vector spaces
@@ -294,19 +294,10 @@ variable {𝕜 ι : Type*} {M : ι → Type*} {N : Type*} [NontriviallyNormedFie
 /-- A multilinear map on finitely many finite-dimensional Hausdorff topological vector spaces
 over a complete nontrivially normed field is continuous when its codomain is an additive
 commutative monoid with continuous addition and scalar multiplication. No bound is required. -/
-theorem continuous_of_finiteDimensional (f : MultilinearMap (RingHom.id 𝕜) M N) : Continuous f := by
-  classical
-  cases nonempty_fintype ι
-  set b : ∀ i, Module.Basis (Fin (Module.finrank 𝕜 (M i))) 𝕜 (M i) :=
-    fun i ↦ Module.finBasis 𝕜 (M i) with _
-  have key : ⇑f = fun m : ∀ i, M i ↦ ∑ r : ∀ i, Fin (Module.finrank 𝕜 (M i)),
-      (∏ i, (b i).repr (m i) (r i)) • f fun i ↦ b i (r i) :=
-    funext (f.apply_eq_sum_prod_repr_smul b)
-  rw [key]
-  refine continuous_finsetSum _ fun r _ ↦ Continuous.smul ?_ continuous_const
-  refine continuous_finsetProd _ fun i _ ↦ ?_
-  exact (((b i).coord (r i)).continuous_of_finiteDimensional.comp
-    (continuous_apply i)).congr fun m ↦ Module.Basis.coord_apply _ _ _
+theorem continuous_of_finiteDimensional (f : MultilinearMap (RingHom.id 𝕜) M N) :
+    Continuous f :=
+  have := fun i ↦ isModuleTopologyOfFiniteDimensional (𝕜 := 𝕜) (E := M i)
+  IsModuleTopology.continuous_multilinearMap f
 
 end MultilinearMap
 
