@@ -15,6 +15,8 @@ import Mathlib.Analysis.Calculus.DSlope
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.Calculus.Deriv.Second
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
+import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.Analysis.SpecialFunctions.OrdinaryHypergeometric
 
 /-!
@@ -390,10 +392,6 @@ theorem descendedInverseEquation_minus_of_hasDerivAt {N : ℕ} (hN : 2 ≤ N) {g
     (natCast_ne_neg_two_mul_minus hN) hx]
   ring
 
-/-- `1 - x` lies in the slit plane inside the unit disc. -/
-private theorem one_sub_mem_slitPlane {x : ℂ} (hx : ‖x‖ < 1) : 1 - x ∈ slitPlane := by
-  simpa [sub_eq_add_neg] using mem_slitPlane_of_norm_lt_one (z := -x) (by simpa using hx)
-
 /-- The principal branch of `√(1 - w) w^(1/N)` has logarithmic derivative
 `1 / (N w) - 1 / (2 (1 - w))` on the slit unit disc. -/
 private theorem hasDerivAt_sqrt_one_sub_mul_cpow {N : ℕ} {w : ℂ} (hw : w ∈ slitPlane)
@@ -421,7 +419,7 @@ theorem descendedInverseEquation_plus {N : ℕ} (hN : N ≠ 0) {x : ℂ} (hx₀ 
   have hev : ∀ᶠ w in 𝓝 x, w ∈ slitPlane ∧ 1 - w ∈ slitPlane :=
     Filter.Eventually.and (isOpen_slitPlane.mem_nhds hx₀) <|
       ((continuous_const.sub continuous_id).continuousAt (x := x)).eventually_mem
-        (isOpen_slitPlane.mem_nhds (one_sub_mem_slitPlane hx))
+        (isOpen_slitPlane.mem_nhds (one_sub_mem_slitPlane_of_norm_lt_one hx))
   exact descendedInverseEquation_plus_of_hasDerivAt hN (slitPlane_ne_zero hx₀) hx
     (hev.mono fun w hw ↦ hasDerivAt_sqrt_one_sub_mul_cpow hw.1 hw.2)
 
@@ -435,7 +433,7 @@ theorem descendedInverseEquation_minus {N : ℕ} (hN : 2 ≤ N) {x : ℂ} (hx : 
       (1 / 4 + (x - 1) / (4 * N ^ 2)) * y x = 0 := by
   have hev : ∀ᶠ w in 𝓝 x, 1 - w ∈ slitPlane :=
     ((continuous_const.sub continuous_id).continuousAt (x := x)).eventually_mem
-      (isOpen_slitPlane.mem_nhds (one_sub_mem_slitPlane hx))
+      (isOpen_slitPlane.mem_nhds (one_sub_mem_slitPlane_of_norm_lt_one hx))
   refine descendedInverseEquation_minus_of_hasDerivAt hN hx (hev.mono fun w hw ↦ ?_)
   have hw₀ : 1 - w ≠ 0 := slitPlane_ne_zero hw
   refine (((hasDerivAt_id' w).const_sub 1).cpow_const hw).congr_deriv ?_
@@ -493,7 +491,7 @@ theorem inverseRatioDen_zero {N : ℕ} (hN : N ≠ 0) : inverseRatioDen N 0 = 1 
 theorem inverseRatioNum_div_inverseRatioDen {N : ℕ} {u : ℂ} (hu : ‖u ^ N‖ < 1) :
     inverseRatioNum N u / inverseRatioDen N u = inverseRatio N u := by
   have hs : (1 - u ^ N) ^ (1 / 2 : ℂ) ≠ 0 := (cpow_ne_zero_iff_of_exponent_ne_zero
-    (by norm_num)).mpr (slitPlane_ne_zero (one_sub_mem_slitPlane hu))
+    (by norm_num)).mpr (slitPlane_ne_zero (one_sub_mem_slitPlane_of_norm_lt_one hu))
   rw [inverseRatioNum_def, inverseRatioDen_def, inverseRatio_def, mul_assoc,
     mul_div_mul_left _ _ hs]
 
@@ -512,15 +510,16 @@ theorem inverseRatioDen_mul_of_pow_eq_one {N : ℕ} {ζ : ℂ} (hζ : ζ ^ N = 1
 private theorem analyticAt_sqrt_one_sub_pow {N : ℕ} {u : ℂ} (hu : ‖u ^ N‖ < 1) :
     AnalyticAt ℂ (fun w : ℂ ↦ (1 - w ^ N) ^ (1 / 2 : ℂ)) u :=
   AnalyticAt.cpow (f := fun w : ℂ ↦ 1 - w ^ N) (by fun_prop) analyticAt_const
-    (one_sub_mem_slitPlane hu)
+    (one_sub_mem_slitPlane_of_norm_lt_one hu)
 
 /-- `w ↦ √(1 - w ^ N)` has logarithmic derivative `-N w ^ (N - 1) / (2 (1 - w ^ N))` where
 `‖w ^ N‖ < 1`. -/
 private theorem hasDerivAt_sqrt_one_sub_pow (N : ℕ) {u : ℂ} (hu : ‖u ^ N‖ < 1) :
     HasDerivAt (fun w : ℂ ↦ (1 - w ^ N) ^ (1 / 2 : ℂ))
       ((1 - u ^ N) ^ (1 / 2 : ℂ) * (-(N * u ^ (N - 1)) / (2 * (1 - u ^ N)))) u := by
-  have h₀ : 1 - u ^ N ≠ 0 := slitPlane_ne_zero (one_sub_mem_slitPlane hu)
-  refine (((hasDerivAt_pow N u).const_sub 1).cpow_const (one_sub_mem_slitPlane hu)).congr_deriv ?_
+  have h₀ : 1 - u ^ N ≠ 0 := slitPlane_ne_zero (one_sub_mem_slitPlane_of_norm_lt_one hu)
+  refine (((hasDerivAt_pow N u).const_sub 1).cpow_const
+    (one_sub_mem_slitPlane_of_norm_lt_one hu)).congr_deriv ?_
   rw [cpow_sub _ _ h₀, cpow_one]
   field_simp
 
@@ -547,7 +546,7 @@ private theorem hasDerivAt_deriv_sqrt_one_sub_pow (N : ℕ) {u : ℂ} (hu : ‖u
         ((-(N * (((N - 1 : ℕ) : ℂ) * u ^ (N - 1 - 1)))) * (2 * (1 - u ^ N)) -
           -(N * u ^ (N - 1)) * (2 * -(N * u ^ (N - 1)))) / (2 * (1 - u ^ N)) ^ 2)) u := by
   have h₀ : 2 * (1 - u ^ N) ≠ 0 :=
-    mul_ne_zero two_ne_zero (slitPlane_ne_zero (one_sub_mem_slitPlane hu))
+    mul_ne_zero two_ne_zero (slitPlane_ne_zero (one_sub_mem_slitPlane_of_norm_lt_one hu))
   have hev : ∀ᶠ w in 𝓝 u, ‖w ^ N‖ < 1 :=
     (continuous_norm.comp (continuous_pow N)).continuousAt.eventually_lt continuousAt_const hu
   refine hasDerivAt_deriv_of_eventually_hasDerivAt_mul
@@ -556,6 +555,51 @@ private theorem hasDerivAt_deriv_sqrt_one_sub_pow (N : ℕ) {u : ℂ} (hu : ‖u
   exact (((hasDerivAt_pow (N - 1) u).const_mul (N : ℂ)).neg.fun_div
     (((hasDerivAt_pow N u).const_sub 1).const_mul 2) h₀).congr_deriv (by simp only [Pi.neg_apply])
 
+/-- The operator identity behind the two solutions of the inverse-cover equation: for `N ≥ 2`,
+`ρ ∈ {0, 1}` and `a = (N - 1 + 2ρ) / (2N)`, the inverse-cover operator applied to
+`y(w) = √(1 - w ^ N) w ^ ρ F(w ^ N)` at `u` is `4N² (1 - u ^ N) √(1 - u ^ N) u ^ (N - 2 + ρ)` times
+Gauss's operator with `a = b` and `c = 2a` applied to `F` at `u ^ N`. -/
+private theorem inverseCover_residual_eq {N ρ : ℕ} (hN : 2 ≤ N) (hρ : ρ ≤ 1) {a : ℂ}
+    (ha : a = ((N : ℂ) - 1 + 2 * ρ) / (2 * N)) {F : ℂ → ℂ} {u : ℂ} (hu : ‖u ^ N‖ < 1)
+    (hF : AnalyticAt ℂ F (u ^ N)) :
+    4 * (u ^ N - 1) ^ 2 *
+        deriv (deriv fun w ↦ (1 - w ^ N) ^ (1 / 2 : ℂ) * w ^ ρ * F (w ^ N)) u +
+      (((N : ℂ) ^ 2 - 1) * u ^ (N - 2) + u ^ (2 * N - 2)) *
+        ((1 - u ^ N) ^ (1 / 2 : ℂ) * u ^ ρ * F (u ^ N)) =
+      4 * N ^ 2 * (1 - u ^ N) * (1 - u ^ N) ^ (1 / 2 : ℂ) * u ^ (N - 2 + ρ) *
+        (u ^ N * (1 - u ^ N) * deriv (deriv F) (u ^ N) +
+          (2 * a - (a + a + 1) * u ^ N) * deriv F (u ^ N) - a * a * F (u ^ N)) := by
+  have hs := analyticAt_sqrt_one_sub_pow hu
+  have hq : AnalyticAt ℂ (fun w : ℂ ↦ w ^ ρ) u := by fun_prop
+  -- The first two derivatives of the prefactor `p(w) = √(1 - w ^ N) w ^ ρ` at `u`.
+  have hd := (hs.fun_mul hq).hasDerivAt_deriv_mul_comp («φ» := fun w : ℂ ↦ w ^ N)
+    (analyticAt_id.pow N) hF
+  have hp₂ := hs.hasDerivAt_deriv_mul_comp (F := id) hq analyticAt_id
+  simp only [id_eq, deriv_id', deriv_id, deriv_const'] at hd hp₂
+  have hp₁ := ((hasDerivAt_sqrt_one_sub_pow N hu).fun_mul (hasDerivAt_pow ρ u)).deriv
+  have hψ₁ (n : ℕ) : deriv (fun w : ℂ ↦ w ^ n) = fun w ↦ (n : ℂ) * w ^ (n - 1) :=
+    funext fun w ↦ (hasDerivAt_pow n w).deriv
+  have hψ₂ (n : ℕ) : deriv (fun w : ℂ ↦ (n : ℂ) * w ^ (n - 1)) u =
+      n * (((n - 1 : ℕ) : ℂ) * u ^ (n - 1 - 1)) :=
+    ((hasDerivAt_pow (n - 1) u).const_mul _).deriv
+  have h₀ : 1 - u ^ N ≠ 0 := slitPlane_ne_zero (one_sub_mem_slitPlane_of_norm_lt_one hu)
+  rw [hd.deriv, hp₁, hp₂.deriv, (hasDerivAt_sqrt_one_sub_pow N hu).deriv,
+    (hasDerivAt_deriv_sqrt_one_sub_pow N hu).deriv, hψ₁, hψ₁, hψ₂, hψ₂]
+  generalize deriv (deriv F) (u ^ N) = F₂
+  generalize deriv F (u ^ N) = F₁
+  generalize F (u ^ N) = F₀
+  generalize (1 - u ^ N) ^ (1 / 2 : ℂ) = S
+  obtain ⟨M, rfl⟩ : ∃ M, N = M + 2 := ⟨N - 2, by omega⟩
+  have hM : (M : ℂ) + 2 ≠ 0 := by norm_cast
+  subst ha
+  obtain rfl | rfl : ρ = 0 ∨ ρ = 1 := by omega
+  all_goals
+    simp only [show M + 2 - 1 = M + 1 by omega, show M + 1 - 1 = M by omega,
+      show M + 2 - 2 = M by omega, show 2 * (M + 2) - 2 = 2 * M + 2 by omega] at h₀ ⊢
+    push_cast at h₀ ⊢
+    field_simp
+    ring
+
 /-- **The second solution of the inverse-cover equation.** For `N ≥ 2` and `‖u ^ N‖ < 1`,
 `η₂(u) = √(1 - u ^ N) ₂F₁(a₋, a₋; 2a₋; u ^ N)` satisfies
 `4 (u ^ N - 1)² η₂'' + ((N² - 1) u ^ (N - 2) + u ^ (2N - 2)) η₂ = 0` at `u`. -/
@@ -563,34 +607,13 @@ theorem inverseRatioDen_inverseCoverEquation {N : ℕ} (hN : 2 ≤ N) {u : ℂ} 
     4 * (u ^ N - 1) ^ 2 * deriv (deriv (inverseRatioDen N)) u +
       (((N : ℂ) ^ 2 - 1) * u ^ (N - 2) + u ^ (2 * N - 2)) * inverseRatioDen N u = 0 := by
   set a : ℂ := ((N : ℂ) - 1) / (2 * N) with ha
-  have hF := analyticOnNhd_ordinaryHypergeometric ℂ a a (2 * a) (u ^ N) (mem_ball_zero_iff.mpr hu)
-  have hd := (analyticAt_sqrt_one_sub_pow hu).hasDerivAt_deriv_mul_comp
-    («φ» := fun w : ℂ ↦ w ^ N) (analyticAt_id.pow N) hF
-  have hφ₁ : deriv (fun w : ℂ ↦ w ^ N) = fun w ↦ (N : ℂ) * w ^ (N - 1) :=
-    funext fun w ↦ (hasDerivAt_pow N w).deriv
-  have hφ₂ : deriv (fun w : ℂ ↦ (N : ℂ) * w ^ (N - 1)) u =
-      N * (((N - 1 : ℕ) : ℂ) * u ^ (N - 1 - 1)) :=
-    ((hasDerivAt_pow (N - 1) u).const_mul _).deriv
-  have hG := ordinaryHypergeometric_gaussEquation_of_norm_lt_one a a (2 * a)
-    (natCast_ne_neg_two_mul_minus hN) hu
-  have h₀ : 1 - u ^ N ≠ 0 := slitPlane_ne_zero (one_sub_mem_slitPlane hu)
-  rw [show inverseRatioDen N = fun w ↦ (1 - w ^ N) ^ (1 / 2 : ℂ) * ₂F₁ a a (2 * a) (w ^ N) from
-    funext (inverseRatioDen_def N), hd.deriv, (hasDerivAt_sqrt_one_sub_pow N hu).deriv,
-    (hasDerivAt_deriv_sqrt_one_sub_pow N hu).deriv, hφ₁, hφ₂]
-  obtain ⟨M, rfl⟩ : ∃ M, N = M + 2 := ⟨N - 2, by omega⟩
-  simp only [show M + 2 - 1 = M + 1 by omega, show M + 1 - 1 = M by omega,
-    show M + 2 - 2 = M by omega, show 2 * (M + 2) - 2 = 2 * M + 2 by omega] at hG h₀ ⊢
-  generalize ₂F₁ a a (2 * a) (u ^ (M + 2)) = F₀ at hG ⊢
-  generalize deriv (₂F₁ a a (2 * a)) (u ^ (M + 2)) = F₁ at hG ⊢
-  generalize deriv (deriv (₂F₁ a a (2 * a))) (u ^ (M + 2)) = F₂ at hG ⊢
-  generalize (1 - u ^ (M + 2)) ^ (1 / 2 : ℂ) = S
-  have hM : (M : ℂ) + 2 ≠ 0 := by norm_cast
-  rw [ha] at hG
-  push_cast at hG ⊢
-  -- After clearing denominators, the inverse-cover operator applied to `η₂` is
-  -- `u ^ (N - 2) (1 - u ^ N) √(1 - u ^ N)` times Gauss's operator, up to the cleared factors.
-  field_simp at hG ⊢
-  linear_combination 4 * (1 - u ^ (M + 2)) ^ 3 * u ^ M * S * hG
+  have hη : inverseRatioDen N =
+      fun w ↦ (1 - w ^ N) ^ (1 / 2 : ℂ) * w ^ 0 * ₂F₁ a a (2 * a) (w ^ N) :=
+    funext fun w ↦ by rw [inverseRatioDen_def, pow_zero, mul_one]
+  rw [hη, inverseCover_residual_eq hN zero_le_one (a := a) (by rw [ha]; push_cast; ring) hu
+    (analyticOnNhd_ordinaryHypergeometric ℂ a a (2 * a) (u ^ N) (mem_ball_zero_iff.mpr hu)),
+    ordinaryHypergeometric_gaussEquation_of_norm_lt_one a a (2 * a)
+      (natCast_ne_neg_two_mul_minus hN) hu, mul_zero]
 
 /-- **The first solution of the inverse-cover equation.** For `N ≥ 2` and `‖u ^ N‖ < 1`,
 `η₁(u) = √(1 - u ^ N) u ₂F₁(a₊, a₊; 2a₊; u ^ N)` satisfies
@@ -599,42 +622,13 @@ theorem inverseRatioNum_inverseCoverEquation {N : ℕ} (hN : 2 ≤ N) {u : ℂ} 
     4 * (u ^ N - 1) ^ 2 * deriv (deriv (inverseRatioNum N)) u +
       (((N : ℂ) ^ 2 - 1) * u ^ (N - 2) + u ^ (2 * N - 2)) * inverseRatioNum N u = 0 := by
   set a : ℂ := ((N : ℂ) + 1) / (2 * N) with ha
-  have hF := analyticOnNhd_ordinaryHypergeometric ℂ a a (2 * a) (u ^ N) (mem_ball_zero_iff.mpr hu)
-  have hs := analyticAt_sqrt_one_sub_pow hu
-  -- The prefactor `p(w) = √(1 - w ^ N) w` and its first two derivatives at `u`.
-  have hd := (hs.fun_mul analyticAt_id).hasDerivAt_deriv_mul_comp
-    («φ» := fun w : ℂ ↦ w ^ N) (analyticAt_id.pow N) hF
-  simp only [id_eq] at hd
-  have hp₂ := hs.hasDerivAt_deriv_mul_comp («φ» := id) (F := id) analyticAt_id analyticAt_id
-  simp only [id_eq, deriv_id', deriv_id, deriv_const', mul_one, one_pow, mul_zero,
-    add_zero] at hp₂
-  have hp₁ := ((hasDerivAt_sqrt_one_sub_pow N hu).fun_mul (hasDerivAt_id' u)).deriv
-  have hφ₁ : deriv (fun w : ℂ ↦ w ^ N) = fun w ↦ (N : ℂ) * w ^ (N - 1) :=
-    funext fun w ↦ (hasDerivAt_pow N w).deriv
-  have hφ₂ : deriv (fun w : ℂ ↦ (N : ℂ) * w ^ (N - 1)) u =
-      N * (((N - 1 : ℕ) : ℂ) * u ^ (N - 1 - 1)) :=
-    ((hasDerivAt_pow (N - 1) u).const_mul _).deriv
-  have hG := ordinaryHypergeometric_gaussEquation_of_norm_lt_one a a (2 * a)
-    (natCast_ne_neg_two_mul_plus (by omega)) hu
-  have h₀ : 1 - u ^ N ≠ 0 := slitPlane_ne_zero (one_sub_mem_slitPlane hu)
-  rw [show inverseRatioNum N = fun w ↦ (1 - w ^ N) ^ (1 / 2 : ℂ) * w * ₂F₁ a a (2 * a) (w ^ N)
-    from funext (inverseRatioNum_def N), hd.deriv, hp₁, hp₂.deriv,
-    (hasDerivAt_sqrt_one_sub_pow N hu).deriv, (hasDerivAt_deriv_sqrt_one_sub_pow N hu).deriv, hφ₁,
-    hφ₂]
-  obtain ⟨M, rfl⟩ : ∃ M, N = M + 2 := ⟨N - 2, by omega⟩
-  simp only [show M + 2 - 1 = M + 1 by omega, show M + 1 - 1 = M by omega,
-    show M + 2 - 2 = M by omega, show 2 * (M + 2) - 2 = 2 * M + 2 by omega] at hG h₀ ⊢
-  generalize ₂F₁ a a (2 * a) (u ^ (M + 2)) = F₀ at hG ⊢
-  generalize deriv (₂F₁ a a (2 * a)) (u ^ (M + 2)) = F₁ at hG ⊢
-  generalize deriv (deriv (₂F₁ a a (2 * a))) (u ^ (M + 2)) = F₂ at hG ⊢
-  generalize (1 - u ^ (M + 2)) ^ (1 / 2 : ℂ) = S
-  have hM : (M : ℂ) + 2 ≠ 0 := by norm_cast
-  rw [ha] at hG
-  push_cast at hG ⊢
-  -- After clearing denominators, the inverse-cover operator applied to `η₁` is
-  -- `u ^ (N - 1) (1 - u ^ N) √(1 - u ^ N)` times Gauss's operator, up to the cleared factors.
-  field_simp at hG ⊢
-  linear_combination 4 * (1 - u ^ (M + 2)) ^ 3 * u ^ M * S * u * hG
+  have hη : inverseRatioNum N =
+      fun w ↦ (1 - w ^ N) ^ (1 / 2 : ℂ) * w ^ 1 * ₂F₁ a a (2 * a) (w ^ N) :=
+    funext fun w ↦ by rw [inverseRatioNum_def, pow_one]
+  rw [hη, inverseCover_residual_eq hN le_rfl (a := a) (by rw [ha]; push_cast; ring) hu
+    (analyticOnNhd_ordinaryHypergeometric ℂ a a (2 * a) (u ^ N) (mem_ball_zero_iff.mpr hu)),
+    ordinaryHypergeometric_gaussEquation_of_norm_lt_one a a (2 * a)
+      (natCast_ne_neg_two_mul_plus (by omega)) hu, mul_zero]
 
 /-- `η₁'(0) = 1`. -/
 @[simp]
@@ -662,11 +656,6 @@ theorem deriv_inverseRatioDen_zero {N : ℕ} (hN : 2 ≤ N) : deriv (inverseRati
   rw [funext (inverseRatioDen_def N), h.eq_of_nhds, (hasDerivAt_sqrt_one_sub_pow N hu).deriv,
     (hasDerivAt_pow N (0 : ℂ)).deriv]
   simp [show N - 1 ≠ 0 by omega]
-
-/-- For `N ≠ 0`, `‖u ^ N‖ < 1` exactly when `‖u‖ < 1`. -/
-private theorem norm_pow_lt_one_iff {N : ℕ} (hN : N ≠ 0) {u : ℂ} : ‖u ^ N‖ < 1 ↔ ‖u‖ < 1 := by
-  rw [norm_pow]
-  exact pow_lt_one_iff_of_nonneg (norm_nonneg u) hN
 
 /-- **The Wronskian of `η₁` and `η₂`.** For `N ≥ 2`, `η₁ η₂' - η₁' η₂ = -1` on the unit disc: the
 inverse-cover equation has no first-derivative term, so the Wronskian is constant on the disc,
