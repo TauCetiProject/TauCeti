@@ -17,7 +17,50 @@ import Mathlib.Analysis.SpecialFunctions.Exponential
 /-!
 # Polynomial vectors in the Fock model
 
-DOCSTRING
+For signs `ε : ι → ℤˣ` and a complex polynomial `P` in variables indexed by `ι`, the function
+`v_P(x) = P(ζ(x)) e(x)`, with `ζ` the holomorphic coordinates and `e` the Gaussian, is a vector of
+the Fock space `𝓕(ε)` (roadmap WeilRepresentationsOnBanachSpacesOfData §2.1 (c)). The map
+`P ↦ v_P` is injective, and the Heisenberg operators differentiate polynomial vectors into
+polynomial vectors: `t ↦ ϱ(t x) v_P` (`t ∈ ℝ`) is differentiable at `0` in `𝓕(ε)` with derivative
+`v_{D_x P}`, where `D_x = ∑ i, (x i • A_i - conj (x i * ε i) • B_i)` and `A_i`, `B_i` are the
+raising and lowering operators (`X_i` and `∂_i` for `ε i = 1`, `-∂_i` and `X_i` for `ε i = -1`).
+
+The proof shows both statements together, by induction on `P`. If `u = v_P` lies in `𝓕(ε)`, then
+`ϱ(t x) u = ∫ (ϱ(t x) u)(y) • ϱ(y) e dy` (superposition), and `(ϱ(t x) u)(y)` is
+`e(y) P(ζ(y) - t ζ(x)) exp (t S(x, y) - t² |x|² / 2)` with `S(x, y) = ∑ i, conj (ζ(x) i) ζ(y) i`.
+Its `t`-derivative is bounded by `K exp (k ‖y‖) |e(y)|` for `|t| < 1`, which is integrable, so the
+integral may be differentiated under the integral sign in `𝓕(ε)`; evaluating at points identifies
+the derivative with `v_{D_x P}`, which therefore lies in `𝓕(ε)`. Taking `x = ζ(eᵢ)` and
+`x = ζ(I eᵢ)` gives `v_{Xᵢ P}`.
+
+## Main definitions
+
+* `TauCeti.Fock.raiseOp`, `TauCeti.Fock.lowerOp`, `TauCeti.Fock.heisenbergDeriv`: `A_i`, `B_i` and
+  `D_x`.
+* `TauCeti.Fock.polyVector`: the linear map `P ↦ v_P`.
+
+## Main results
+
+* `TauCeti.Fock.polyVector_apply`, `TauCeti.Fock.polyVector_injective`,
+  `TauCeti.Fock.hasDerivAt_heisenbergRep_polyVector`: 2.1 (c).
+* `TauCeti.Fock.exists_norm_eval_le_exp`, `TauCeti.Fock.integrable_exp_mul_norm_gaussian`: the
+  exponential bounds behind the domination.
+
+## Provenance
+
+Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
+PBC), file `src/Lib/Weil/Fock/Basic.lean` (`New.Fock.raiseOp`, `New.Fock.lowerOp`,
+`New.Fock.heisenbergDeriv`, `New.Fock.exists_norm_eval_le_exp`,
+`New.Fock.integrable_exp_mul_realVac`, `New.Fock.exists_hasDerivAt_realHeisenbergOp`,
+`New.Fock.polyVector`, `New.Fock.polyVector_injective`, `New.Fock.hasDerivAt_realHeisenbergOp`).
+The source differentiates in a complex parameter with Cauchy estimates; here the derivative is
+bounded directly and Mathlib's `hasDerivAt_integral_of_dominated_loc_of_deriv_le` is used.
+
+## References
+
+* V. Bargmann, *On a Hilbert space of analytic functions and an associated integral transform,
+  part I*, Comm. Pure Appl. Math. 14 (1961), 187–214.
+* G. B. Folland, *Harmonic analysis in phase space*, Ann. of Math. Stud. 122 (1989), Chapter 1.
 -/
 
 public noncomputable section
@@ -48,6 +91,12 @@ variable (ε) in
 along `x` on polynomial vectors (`TauCeti.Fock.hasDerivAt_heisenbergRep_polyVector`). -/
 def heisenbergDeriv (x : ι → ℂ) : MvPolynomial ι ℂ →ₗ[ℂ] MvPolynomial ι ℂ :=
   ∑ i, (x i • raiseOp ε i - conj (x i * ((ε i : ℤ) : ℂ)) • lowerOp ε i)
+
+omit [DecidableEq ι] in
+theorem heisenbergDeriv_apply (x : ι → ℂ) (P : MvPolynomial ι ℂ) :
+    heisenbergDeriv ε x P =
+      ∑ i, (x i • raiseOp ε i P - conj (x i * ((ε i : ℤ) : ℂ)) • lowerOp ε i P) := by
+  simp [heisenbergDeriv]
 
 omit [DecidableEq ι] in
 /-- The value of `D_v P` at `l`: `(∑ i, conj (ζ(v) i) * l i) P(l) - ∑ i, ζ(v) i (∂_i P)(l)`. -/

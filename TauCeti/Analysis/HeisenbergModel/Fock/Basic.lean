@@ -17,7 +17,63 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 /-!
 # The Fock model of `U(ε)`: datum, vacuum and multiplier
 
-DOCSTRING
+For a finite type `ι` and signs `ε : ι → ℤˣ`, let `U(ε)` be the unitary group of the hermitian form
+`star x ⬝ᵥ diag(ε) *ᵥ y` on `ι → ℂ` (`Matrix.unitaryGroupOf (signMatrix ε)`, which is `U(p, q)` for
+`p` positive and `q` negative signs). This file builds the Fock model of the Weil representation of
+`U(ε)` as a reproducing model in the sense of `TauCeti.ReproducingModel`.
+
+The Heisenberg datum on `ι → ℂ` is `β_ε(x, y) = exp ((y* ε x - x* ε y) / 2)`, the measure is
+`π^{-|ι|} dx`, and the Gaussian `e(x) = exp (-|x|² / 2)` is a vacuum: with the holomorphic
+coordinates `ζ(x) i = conj (x i)` for `ε i = 1` and `ζ(x) i = x i` for `ε i = -1`, a translate of
+the vacuum is `β_ε(y, x) e(x - y) = e(x) e(y) exp (∑ i, conj (ζ(y) i) ζ(x) i)`, so the vacuum
+identity is the Gaussian reproducing formula `TauCeti.integral_cexp_reproducing`.
+
+The group `U(ε)` acts on `ι → ℂ` by matrices, preserving `β_ε` and the measure, and
+`Δ_∞(u) = conj (det u₋₋)`, for the block `u₋₋` of `u` on the indices of sign `-1`, is a multiplier.
+Its cocycle is trivial: the double integral defining it is the Gaussian `exp (-z* A z)` on
+`(ι → ℂ)²` of the strictly accretive matrix `A = ½ (J* J + (1, 1 + ε; 1 - ε, 1))`,
+`J = diag(h, g h)`, whose integral is `π^{2|ι|} / det A`
+(`TauCeti.integral_cexp_neg_star_dotProduct_mulVec`), and `A` factors into three block matrices
+whose determinants give `det A = Δ_∞(g) Δ_∞(h) Δ_∞((g h)⁻¹)`. So the Weil operators of `Δ_∞` form a
+jointly continuous representation `ω_ε` of `U(ε)` on the Fock space `𝓕(ε) = M(β_ε, e)` preserving
+`⟨·, ·⟩`, with `‖ω_ε(u)‖ ≤ ‖e‖ ‖u‖^{|ι|}` for the operator norm of the standard hermitian norm.
+
+## Main definitions
+
+* `TauCeti.Fock.unitaryGroup`: the group `U(ε)`.
+* `TauCeti.Fock.heisenbergDatum`, `TauCeti.Fock.gaussian`, `TauCeti.Fock.measure`: `β_ε`, `e` and
+  `π^{-|ι|} dx`.
+* `TauCeti.Fock.holomorphicCoord`: the holomorphic coordinates `ζ`.
+* `TauCeti.Fock.multiplier`: the multiplier `Δ_∞`.
+* `TauCeti.Fock.FockSpace`, `TauCeti.Fock.weilRep`: the Fock space `𝓕(ε)` and the Weil
+  representation `ω_ε`.
+
+## Main results
+
+* `TauCeti.Fock.heisenbergDatum_mul_gaussian`, `TauCeti.Fock.isVacuum_gaussian`: 2.1 (a).
+* `TauCeti.Fock.cocycle_multiplier`: the cocycle of `Δ_∞` is trivial, 2.1 (b).
+* `TauCeti.Fock.norm_multiplier_le`, `TauCeti.Fock.norm_weilRep_le`,
+  `TauCeti.Fock.continuous_weilRep`: the bounds and the continuity of 2.1 (b).
+
+## Provenance
+
+Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic,
+PBC), file `src/Lib/Weil/Fock/Basic.lean` (`New.Fock.realHeisenberg`, `New.Fock.realVac`,
+`New.Fock.posProj`, `New.Fock.holomorphicCoord`, `New.Fock.principalMinor_sign_eq_det`,
+`New.Fock.realMultiplier`, `New.Fock.norm_realMultiplier_le`, `New.Fock.beta_mul_realVac`,
+`New.Fock.isVacuum_realVac`, `New.Fock.realMultiplier_mul_integral_eq_one`, `New.Fock.realAction`,
+`New.Fock.fockSpace`, `New.Fock.realWeil`), with `New.Fock.norm_realWeil_le` from
+`src/Lib/Weil/Fock/OscillatorPair.lean`. The vacuum identity uses Tau Ceti's Gaussian reproducing
+formula in place of the source's accretive Gaussian integral.
+
+## References
+
+* V. Bargmann, *On a Hilbert space of analytic functions and an associated integral transform,
+  part I*, Comm. Pure Appl. Math. 14 (1961), 187–214.
+* M. Kashiwara, M. Vergne, *On the Segal–Shale–Weil representations and harmonic polynomials*,
+  Invent. Math. 44 (1978), 1–48.
+* R. Howe, *Transcending classical invariant theory*, J. Amer. Math. Soc. 2 (1989), 535–552.
+* G. B. Folland, *Harmonic analysis in phase space*, Ann. of Math. Stud. 122 (1989), Chapter 1.
 -/
 
 public noncomputable section
@@ -250,6 +306,11 @@ variable (ε) in
 /-- The block `u₋₋` of a square matrix on the indices of sign `-1`. -/
 def negBlock (u : Matrix ι ι ℂ) : Matrix {i // ε i = -1} {i // ε i = -1} ℂ :=
   u.submatrix Subtype.val Subtype.val
+
+omit [Fintype ι] [DecidableEq ι] in
+@[simp]
+theorem negBlock_apply (u : Matrix ι ι ℂ) (i j : {i // ε i = -1}) : negBlock ε u i j = u i j :=
+  (rfl)
 
 /-- The negative block of `g⁻¹` is the conjugate transpose of that of `g`, for `g ∈ U(ε)`. -/
 theorem negBlock_inv (g : unitaryGroup ε) :
