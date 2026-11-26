@@ -21,7 +21,8 @@ maximal totally real subbundle, and conversely a core real along `A` is the way 
 
 `FiniteRankBundleCore.doubleAlong` glues `C` on the first sheet of `TauCeti.DoubleAlong A` to the
 conjugate core on the second sheet. Its transition between charts at `z` and `w` is the transition
-of `C` at the folded points on the first sheet and its intrinsic conjugate on the second sheet;
+of `C` at the folded points on the first sheet and its intrinsic conjugate on the second sheet
+(`TauCeti.DoubleAlong.conjExtend`, the extension of an operator-valued function by conjugation);
 the two agree on the common image of `A` because `C` is real there. In terms of the bundles, the
 fibre of `C` at a point of `A` is identified with the fibre of the conjugate bundle by the
 antilinear involution of `C` over `A` with fixed set `F`, which in the coordinates of the conjugate
@@ -36,9 +37,17 @@ exactly the vectors with real coordinates over the image of `A` (`doubleAlongSwa
 double is again trivial (`doubleAlongTrivialIso`); there the involution is
 `(z, v) ↦ (swap z, conj v)`.
 
+Doubling is functorial for bundle maps whose fibre maps over `A` commute with coordinatewise
+conjugation, that is, which carry the real subbundle of the source into that of the target:
+`doubleAlongMap` is the bundle map on the first sheet and its intrinsic conjugate on the second
+sheet. It preserves identities and composites (`doubleAlongMap_id`, `doubleAlongMap_comp`),
+commutes with the lifted swaps (`doubleAlongMap_totalSpaceMap_doubleAlongSwap`), restricts to the
+given map and its conjugate on the two sheets, and doubles isomorphisms to isomorphisms
+(`doubleAlongIso`).
+
 No closedness of `A` is needed. For the boundary of a Riemann surface with boundary this is the
-topological doubled bundle over the Schottky double. Smoothness of the double via collars, and
-independence of the choices up to isomorphism, are not treated here.
+topological doubled bundle over the Schottky double. Smoothness of the double via collars is not
+treated here.
 
 ## References
 
@@ -49,6 +58,114 @@ independence of the choices up to isomorphism, are not treated here.
 public section
 
 open Bundle CategoryTheory Set Topology WithConv Filter
+
+namespace TauCeti.DoubleAlong
+
+universe u
+
+variable {X : Type u} [TopologicalSpace X] (A : Set X)
+  {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [StarAddMonoid E] [StarModule ℂ E]
+  [ContinuousStar E] [NormedAddCommGroup F] [NormedSpace ℂ F] [StarAddMonoid F] [StarModule ℂ F]
+  [ContinuousStar F] [NormedAddCommGroup G] [NormedSpace ℂ G] [StarAddMonoid G] [StarModule ℂ G]
+  [ContinuousStar G]
+
+open Classical in
+/-- The extension of an operator-valued function `g` on `X` to the double along `A` by
+conjugation: `g` at the folded point on the first sheet, and its intrinsic conjugate
+`star ∘ g ∘ star` on the second sheet. Where `g` is real, at the points of `A`, the two
+prescriptions agree (`conjExtend_inr`). -/
+noncomputable def conjExtend (g : X → E →L[ℂ] F) : DoubleAlong A → E →L[ℂ] F :=
+  (range (inl A)).piecewise (fun y => g (fold A y))
+    fun y => (star (toConv (g (fold A y)))).ofConv
+
+/-- On the first sheet the extension is `g` at the folded point. -/
+theorem conjExtend_of_mem (g : X → E →L[ℂ] F) {y : DoubleAlong A} (hy : y ∈ range (inl A)) :
+    conjExtend A g y = g (fold A y) := by
+  classical
+  exact piecewise_eq_of_mem _ _ _ hy
+
+/-- Off the first sheet the extension is the conjugate of `g` at the folded point. -/
+theorem conjExtend_of_notMem (g : X → E →L[ℂ] F) {y : DoubleAlong A} (hy : y ∉ range (inl A)) :
+    conjExtend A g y = (star (toConv (g (fold A y)))).ofConv := by
+  classical
+  exact piecewise_eq_of_notMem _ _ _ hy
+
+@[simp] theorem conjExtend_inl (g : X → E →L[ℂ] F) (x : X) : conjExtend A g (inl A x) = g x := by
+  rw [conjExtend_of_mem A g (mem_range_self x), fold_inl]
+
+/-- On the second sheet, away from `A`, the extension is the conjugate of `g`. -/
+theorem conjExtend_inr_of_notMem (g : X → E →L[ℂ] F) {x : X} (hx : x ∉ A) :
+    conjExtend A g (inr A x) = (star (toConv (g x))).ofConv := by
+  have : inr A x ∉ range (inl A) := by
+    rintro ⟨y, hy⟩
+    obtain ⟨rfl, hyA⟩ := (inl_eq_inr_iff A).1 hy
+    exact hx hyA
+  rw [conjExtend_of_notMem A g this, fold_inr]
+
+/-- On the second sheet the extension is the conjugate of `g`, at points where `g` is real if they
+lie in `A`. -/
+theorem conjExtend_inr (g : X → E →L[ℂ] F) {x : X} (hx : x ∈ A → IsSelfAdjoint (toConv (g x))) :
+    conjExtend A g (inr A x) = (star (toConv (g x))).ofConv := by
+  by_cases hxA : x ∈ A
+  · rw [← inl_coe_eq_inr A ⟨x, hxA⟩, conjExtend_inl]
+    exact congrArg ofConv (hx hxA).star_eq.symm
+  · exact conjExtend_inr_of_notMem A g hxA
+
+/-- The extension at a point depends only on the value of `g` at the folded point. -/
+theorem conjExtend_congr {g g' : X → E →L[ℂ] F} {y : DoubleAlong A}
+    (h : g (fold A y) = g' (fold A y)) : conjExtend A g y = conjExtend A g' y := by
+  by_cases hy : y ∈ range (inl A)
+  · rw [conjExtend_of_mem A g hy, conjExtend_of_mem A g' hy, h]
+  · rw [conjExtend_of_notMem A g hy, conjExtend_of_notMem A g' hy, h]
+
+/-- Pointwise, the extension of a composite is the composite of the extensions. -/
+theorem conjExtend_comp (g : X → F →L[ℂ] G) (f : X → E →L[ℂ] F) (y : DoubleAlong A) :
+    conjExtend A (fun x => (g x).comp (f x)) y = (conjExtend A g y).comp (conjExtend A f y) := by
+  by_cases hy : y ∈ range (inl A)
+  · simp only [conjExtend_of_mem A _ hy]
+  · simp only [conjExtend_of_notMem A _ hy]
+    exact congrArg ofConv (ContinuousLinearMap.intrinsicStar_comp' (g (fold A y)) (f (fold A y)))
+
+/-- The extension of the constant identity is the identity. -/
+@[simp] theorem conjExtend_id (y : DoubleAlong A) :
+    conjExtend A (fun _ => ContinuousLinearMap.id ℂ E) y = ContinuousLinearMap.id ℂ E := by
+  by_cases hy : y ∈ range (inl A)
+  · simp only [conjExtend_of_mem A _ hy]
+  · simp only [conjExtend_of_notMem A _ hy, ContinuousLinearMap.intrinsicStar_id, ofConv_toConv]
+
+/-- If `g` is real at the points of `A`, its extension at the swapped point is the conjugate of its
+extension. -/
+theorem conjExtend_swap {g : X → E →L[ℂ] F} (hg : ∀ x ∈ A, IsSelfAdjoint (toConv (g x)))
+    (y : DoubleAlong A) :
+    conjExtend A g (swap A y) = (star (toConv (conjExtend A g y))).ofConv := by
+  induction y using induction_on with
+  | hl x => rw [swap_inl, conjExtend_inr A g (hg x), conjExtend_inl]
+  | hr x => rw [swap_inr, conjExtend_inl, conjExtend_inr A g (hg x), toConv_ofConv, star_star,
+      ofConv_toConv]
+
+/-- If `g` is continuous on an open set `U` and real at the points of `A` in `U`, its extension is
+continuous on the preimage of `U` under the fold. -/
+theorem continuousOn_conjExtend [FiniteDimensional ℂ E] {g : X → E →L[ℂ] F} {U : Set X}
+    (hU : IsOpen U) (hg : ContinuousOn g U)
+    (hgA : ∀ x ∈ A ∩ U, IsSelfAdjoint (toConv (g x))) :
+    ContinuousOn (conjExtend A g) (fold A ⁻¹' U) := by
+  have hs : IsOpen (fold A ⁻¹' U) := hU.preimage (fold A).continuous
+  -- Check continuity on each sheet of `X ⊕ X`, through the quotient map onto the double.
+  rw [(isQuotientMap_quotientMap A).continuousOn_isOpen_iff hs,
+    (hs.preimage (quotientMap A).continuous).continuousOn_iff]
+  rintro (x | x) hx
+  · rw [mem_preimage, quotientMap_inl, mem_preimage, fold_inl] at hx
+    rw [← IsOpenEmbedding.inl.continuousAt_iff]
+    refine (hg.continuousAt (hU.mem_nhds hx)).congr (Eventually.of_forall fun y => ?_)
+    simp [quotientMap_inl]
+  · rw [mem_preimage, quotientMap_inr, mem_preimage, fold_inr] at hx
+    rw [← IsOpenEmbedding.inr.continuousAt_iff]
+    refine (ContinuousLinearMap.continuous_intrinsicStar.continuousAt.comp
+      (hg.continuousAt (hU.mem_nhds hx))).congr (mem_of_superset (hU.mem_nhds hx) fun y hy => ?_)
+    simp only [Function.comp_apply, quotientMap_inr]
+    exact (conjExtend_inr A g fun hyA => hgA y ⟨hyA, hy⟩).symm
+
+end TauCeti.DoubleAlong
 
 namespace TauCeti.FiniteRankBundleCore
 
@@ -85,22 +202,17 @@ theorem IsRealAlong.coordChange_star {C : FiniteRankBundleCore ℂ X} (hC : C.Is
 theorem isRealAlong_trivial (n : ℕ) (A : Set X) : (trivial ℂ X n).IsRealAlong A :=
   isRealAlong_iff_coordChange_star.2 fun _ _ _ _ _ _ _ => rfl
 
-open Classical in
 /-- The transitions of the doubled core: those of `C` at the folded points on the first sheet, and
-their intrinsic conjugates elsewhere. -/
+their intrinsic conjugates elsewhere (`DoubleAlong.conjExtend`). -/
 noncomputable def doubleAlongCoordChange (C : FiniteRankBundleCore ℂ X) (A : Set X)
     (i j : DoubleAlong A) : DoubleAlong A → (Fin C.rank → ℂ) →L[ℂ] (Fin C.rank → ℂ) :=
-  (range (DoubleAlong.inl A)).piecewise
-    (fun y => C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j)
-      (DoubleAlong.fold A y))
-    fun y => (star (toConv (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j)
-      (DoubleAlong.fold A y)))).ofConv
+  DoubleAlong.conjExtend A (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j))
 
 @[simp] theorem doubleAlongCoordChange_inl (C : FiniteRankBundleCore ℂ X) (i j : DoubleAlong A)
     (x : X) :
     doubleAlongCoordChange C A i j (DoubleAlong.inl A x) =
-      C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j) x := by
-  simp [doubleAlongCoordChange]
+      C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j) x :=
+  DoubleAlong.conjExtend_inl A _ x
 
 /-- On the second sheet, away from the glued set, the doubled transition is the conjugate
 transition of `C`; no realness of `C` is needed there. -/
@@ -108,12 +220,8 @@ theorem doubleAlongCoordChange_inr_of_notMem (C : FiniteRankBundleCore ℂ X) (i
     {x : X} (hx : x ∉ A) :
     doubleAlongCoordChange C A i j (DoubleAlong.inr A x) =
       (star (toConv
-        (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j) x))).ofConv := by
-  have : DoubleAlong.inr A x ∉ range (DoubleAlong.inl A) := by
-    rintro ⟨y, hy⟩
-    obtain ⟨rfl, hyA⟩ := (DoubleAlong.inl_eq_inr_iff A).1 hy
-    exact hx hyA
-  simp [doubleAlongCoordChange, this]
+        (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j) x))).ofConv :=
+  DoubleAlong.conjExtend_inr_of_notMem A _ hx
 
 /-- On the second sheet the doubled transition is the conjugate transition of `C`, at points of the
 two charts. -/
@@ -122,12 +230,8 @@ theorem doubleAlongCoordChange_inr {C : FiniteRankBundleCore ℂ X} (hC : C.IsRe
     (hj : x ∈ C.core.baseSet (DoubleAlong.fold A j)) :
     doubleAlongCoordChange C A i j (DoubleAlong.inr A x) =
       (star (toConv
-        (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j) x))).ofConv := by
-  by_cases hx : x ∈ A
-  · rw [← DoubleAlong.inl_coe_eq_inr A ⟨x, hx⟩, doubleAlongCoordChange_inl]
-    exact (congrArg (fun f : WithConv ((Fin C.rank → ℂ) →L[ℂ] (Fin C.rank → ℂ)) ↦ f.ofConv)
-      (hC _ _ x hx hi hj).star_eq).symm
-  · exact doubleAlongCoordChange_inr_of_notMem C i j hx
+        (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j) x))).ofConv :=
+  DoubleAlong.conjExtend_inr A _ fun hx => hC _ _ x hx hi hj
 
 /-- The doubled transition from a chart to itself is the identity on the chart. -/
 theorem doubleAlongCoordChange_self {C : FiniteRankBundleCore ℂ X} (hC : C.IsRealAlong A)
@@ -168,25 +272,10 @@ theorem continuousOn_doubleAlongCoordChange {C : FiniteRankBundleCore ℂ X}
     ContinuousOn (doubleAlongCoordChange C A i j)
       (DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A i) ∩
         DoubleAlong.fold A ⁻¹' C.core.baseSet (DoubleAlong.fold A j)) := by
-  set U := C.core.baseSet (DoubleAlong.fold A i) ∩ C.core.baseSet (DoubleAlong.fold A j)
-  have hU : IsOpen U := (C.core.isOpen_baseSet _).inter (C.core.isOpen_baseSet _)
-  have hc : ContinuousOn (C.core.coordChange (DoubleAlong.fold A i) (DoubleAlong.fold A j)) U :=
-    C.core.continuousOn_coordChange _ _
-  have hs : IsOpen (DoubleAlong.fold A ⁻¹' U) := hU.preimage (DoubleAlong.fold A).continuous
-  -- Check continuity on each sheet of `X ⊕ X`, through the quotient map onto the double.
-  rw [← preimage_inter, (DoubleAlong.isQuotientMap_quotientMap A).continuousOn_isOpen_iff hs,
-    (hs.preimage (DoubleAlong.quotientMap A).continuous).continuousOn_iff]
-  rintro (x | x) hx
-  · rw [mem_preimage, DoubleAlong.quotientMap_inl, mem_preimage, DoubleAlong.fold_inl] at hx
-    rw [← IsOpenEmbedding.inl.continuousAt_iff]
-    refine (hc.continuousAt (hU.mem_nhds hx)).congr (Eventually.of_forall fun y => ?_)
-    simp [DoubleAlong.quotientMap_inl]
-  · rw [mem_preimage, DoubleAlong.quotientMap_inr, mem_preimage, DoubleAlong.fold_inr] at hx
-    rw [← IsOpenEmbedding.inr.continuousAt_iff]
-    refine (ContinuousLinearMap.continuous_intrinsicStar.continuousAt.comp
-      (hc.continuousAt (hU.mem_nhds hx))).congr (mem_of_superset (hU.mem_nhds hx) fun y hy => ?_)
-    simp only [Function.comp_apply, DoubleAlong.quotientMap_inr]
-    exact (doubleAlongCoordChange_inr hC hy.1 hy.2).symm
+  rw [← preimage_inter]
+  exact DoubleAlong.continuousOn_conjExtend A
+    ((C.core.isOpen_baseSet _).inter (C.core.isOpen_baseSet _))
+    (C.core.continuousOn_coordChange _ _) fun x hx => hC _ _ x hx.1 hx.2.1 hx.2.2
 
 /-- The double of a complex core along a subset `A` on which its transitions are real:
 `C` on the first sheet and its conjugate on the second sheet, glued along `A` by the identity in
@@ -421,5 +510,185 @@ noncomputable def doubleAlongTrivialIso (n : ℕ) :
     (doubleAlongTrivialIso n).inv.fiberMap z = ContinuousLinearMap.id ℂ (Fin n → ℂ) := by
   rw [doubleAlongTrivialIso]
   exact fiberMap_constIso_inv _ _ _ z
+
+
+/-! ### Functoriality -/
+
+/-- The inverse of an isomorphism whose fibre map at a point commutes with coordinatewise
+conjugation commutes with it as well. -/
+theorem fiberMap_inv_star {C C' : FiniteRankBundleCore ℂ X} (e : C ≅ C') {a : X}
+    (he : ∀ v, e.hom.fiberMap a (star v) = star (e.hom.fiberMap a v)) (v : Fin C'.rank → ℂ) :
+    e.inv.fiberMap a (star v) = star (e.inv.fiberMap a v) := by
+  have hl (w : Fin C.rank → ℂ) : e.inv.fiberMap a (e.hom.fiberMap a w) = w := by
+    rw [← ContinuousLinearMap.comp_apply, ← fiberMap_comp, e.hom_inv_id, fiberMap_id,
+      ContinuousLinearMap.id_apply]
+  have hr (w : Fin C'.rank → ℂ) : e.hom.fiberMap a (e.inv.fiberMap a w) = w := by
+    rw [← ContinuousLinearMap.comp_apply, ← fiberMap_comp, e.inv_hom_id, fiberMap_id,
+      ContinuousLinearMap.id_apply]
+  conv_lhs => rw [← hr v, ← he, hl]
+
+/-- The chart expression of a bundle map whose fibre maps over `A` commute with conjugation is real
+at the points of `A`. -/
+theorem isSelfAdjoint_inChartCoordinates {C C' : FiniteRankBundleCore ℂ X} (hC : C.IsRealAlong A)
+    (hC' : C'.IsRealAlong A) (φ : C ⟶ C')
+    (hφ : ∀ a ∈ A, ∀ v, φ.fiberMap a (star v) = star (φ.fiberMap a v)) {i j a : X} (ha : a ∈ A)
+    (hi : a ∈ C.core.baseSet i) (hj : a ∈ C'.core.baseSet j) :
+    IsSelfAdjoint (toConv (C.core.inChartCoordinates C'.core i j a (φ.fiberMap a))) := by
+  refine (ContinuousLinearMap.IntrinsicStar.isSelfAdjoint_iff_map_star _).2 fun v => ?_
+  simp only [inChartCoordinates_core_apply, hC.coordChange_star ha hi (C.mem_baseSet_self a),
+    hφ a ha, hC'.coordChange_star ha (C'.mem_baseSet_self a) hj]
+
+section Map
+
+variable {C C' C'' : FiniteRankBundleCore ℂ X} (hC : C.IsRealAlong A) (hC' : C'.IsRealAlong A)
+  (hC'' : C''.IsRealAlong A)
+
+/-- In charts of the doubles, the conjugation extension of the fibre maps of a bundle map is the
+conjugation extension of its chart expression in the folded charts. -/
+theorem inChartCoordinates_doubleAlong_conjExtend (φ : C ⟶ C') (i j y : DoubleAlong A) :
+    (C.doubleAlong hC).core.inChartCoordinates (C'.doubleAlong hC').core i j y
+        (DoubleAlong.conjExtend A φ.fiberMap y) =
+      DoubleAlong.conjExtend A (fun x => C.core.inChartCoordinates C'.core (DoubleAlong.fold A i)
+        (DoubleAlong.fold A j) x (φ.fiberMap x)) y := by
+  rw [inChartCoordinates_core, coordChange_doubleAlong, coordChange_doubleAlong]
+  -- State the identity on standard coordinates to fix the inherited fibre instances.
+  have h : (doubleAlongCoordChange C' A y j y).comp ((DoubleAlong.conjExtend A φ.fiberMap y).comp
+      (doubleAlongCoordChange C A i y y)) = DoubleAlong.conjExtend A (fun x =>
+        C.core.inChartCoordinates C'.core (DoubleAlong.fold A i) (DoubleAlong.fold A j) x
+          (φ.fiberMap x)) y := by
+    rw [doubleAlongCoordChange, doubleAlongCoordChange, ← DoubleAlong.conjExtend_comp,
+      ← DoubleAlong.conjExtend_comp]
+    exact DoubleAlong.conjExtend_congr A (inChartCoordinates_core C C' _ _ _ _).symm
+  exact h
+
+/-- The conjugation extension of the fibre maps of a bundle map real over `A` is a continuous
+section of the Hom bundle of the doubles. -/
+private theorem continuous_conjExtend_fiberMap (φ : C ⟶ C')
+    (hφ : ∀ a ∈ A, ∀ v, φ.fiberMap a (star v) = star (φ.fiberMap a v)) :
+    Continuous fun y ↦ TotalSpace.mk'
+      ((Fin (C.doubleAlong hC).rank → ℂ) →L[ℂ] (Fin (C'.doubleAlong hC').rank → ℂ))
+      (E := fun y ↦ (C.doubleAlong hC).core.Fiber y →L[ℂ] (C'.doubleAlong hC').core.Fiber y) y
+      (DoubleAlong.conjExtend A φ.fiberMap y) := by
+  refine VectorBundleCore.continuous_hom_bundle_iff_forall_continuousOn.2 fun i j ↦ ?_
+  have hS : IsOpen
+      (C.core.baseSet (DoubleAlong.fold A i) ∩ C'.core.baseSet (DoubleAlong.fold A j)) :=
+    (C.core.isOpen_baseSet _).inter (C'.core.isOpen_baseSet _)
+  refine (DoubleAlong.continuousOn_conjExtend A hS
+    (VectorBundleCore.continuousOn_inChartCoordinates φ.continuous_fiberMap.continuousOn)
+    fun a ha => isSelfAdjoint_inChartCoordinates hC hC' φ hφ ha.1 ha.2.1 ha.2.2).congr fun y _ => ?_
+  exact inChartCoordinates_doubleAlong_conjExtend hC hC' φ i j y
+
+/-- The double of a bundle map `φ : C ⟶ C'` whose fibre maps over `A` commute with coordinatewise
+conjugation: `φ` on the first sheet and its intrinsic conjugate on the second sheet. These agree
+over `A`, where `φ` preserves the real subbundles. -/
+noncomputable def doubleAlongMap (φ : C ⟶ C')
+    (hφ : ∀ a ∈ A, ∀ v, φ.fiberMap a (star v) = star (φ.fiberMap a v)) :
+    C.doubleAlong hC ⟶ C'.doubleAlong hC' :=
+  VectorBundleCore.CoordinateHom.ofContinuous (DoubleAlong.conjExtend A φ.fiberMap)
+    (continuous_conjExtend_fiberMap hC hC' φ hφ)
+
+variable (φ : C ⟶ C') (hφ : ∀ a ∈ A, ∀ v, φ.fiberMap a (star v) = star (φ.fiberMap a v))
+
+/-- The fibre maps of the doubled bundle map are the conjugation extension of those of `φ`. -/
+theorem fiberMap_doubleAlongMap (y : DoubleAlong A) :
+    (doubleAlongMap hC hC' φ hφ).fiberMap y = DoubleAlong.conjExtend A φ.fiberMap y := by
+  rw [doubleAlongMap]
+  exact congrFun (VectorBundleCore.CoordinateHom.fiberMap_ofContinuous _ _) y
+
+@[simp] theorem fiberMap_doubleAlongMap_inl (x : X) :
+    (doubleAlongMap hC hC' φ hφ).fiberMap (DoubleAlong.inl A x) = φ.fiberMap x := by
+  rw [fiberMap_doubleAlongMap, DoubleAlong.conjExtend_inl]
+
+/-- On the second sheet the doubled bundle map is the intrinsic conjugate of `φ`. -/
+@[simp] theorem fiberMap_doubleAlongMap_inr (x : X) :
+    (doubleAlongMap hC hC' φ hφ).fiberMap (DoubleAlong.inr A x) =
+      (star (toConv (φ.fiberMap x))).ofConv := by
+  rw [fiberMap_doubleAlongMap, DoubleAlong.conjExtend_inr]
+  exact fun hx => (ContinuousLinearMap.IntrinsicStar.isSelfAdjoint_iff_map_star _).2 (hφ x hx)
+
+/-- Doubling preserves identities. -/
+@[simp] theorem doubleAlongMap_id (h : ∀ a ∈ A, ∀ v, (𝟙 C : C ⟶ C).fiberMap a (star v) =
+    star ((𝟙 C : C ⟶ C).fiberMap a v)) :
+    doubleAlongMap hC hC (𝟙 C) h = 𝟙 (C.doubleAlong hC) :=
+  hom_ext fun y => by
+    rw [fiberMap_doubleAlongMap, fiberMap_id, ← DoubleAlong.conjExtend_id A y]
+    exact DoubleAlong.conjExtend_congr A (fiberMap_id C _)
+
+/-- Doubling preserves composition. -/
+theorem doubleAlongMap_comp (ψ : C' ⟶ C'')
+    (hψ : ∀ a ∈ A, ∀ v, ψ.fiberMap a (star v) = star (ψ.fiberMap a v))
+    (h : ∀ a ∈ A, ∀ v, (φ ≫ ψ).fiberMap a (star v) = star ((φ ≫ ψ).fiberMap a v)) :
+    doubleAlongMap hC hC'' (φ ≫ ψ) h = doubleAlongMap hC hC' φ hφ ≫ doubleAlongMap hC' hC'' ψ hψ :=
+  hom_ext fun y => by
+    rw [fiberMap_comp, fiberMap_doubleAlongMap, fiberMap_doubleAlongMap, fiberMap_doubleAlongMap]
+    -- State the identity on standard coordinates to fix the inherited fibre instances.
+    have h : DoubleAlong.conjExtend A (φ ≫ ψ).fiberMap y =
+        (DoubleAlong.conjExtend A ψ.fiberMap y).comp (DoubleAlong.conjExtend A φ.fiberMap y) := by
+      rw [← DoubleAlong.conjExtend_comp]
+      exact DoubleAlong.conjExtend_congr A (fiberMap_comp φ ψ _)
+    exact h
+
+/-- The doubled bundle map commutes with the lifted sheet swaps `doubleAlongSwap`. -/
+theorem doubleAlongMap_totalSpaceMap_doubleAlongSwap (p : (C.doubleAlong hC).core.TotalSpace) :
+    (doubleAlongMap hC hC' φ hφ).totalSpaceMap (C.doubleAlongSwap hC p) =
+      C'.doubleAlongSwap hC' ((doubleAlongMap hC hC' φ hφ).totalSpaceMap p) := by
+  obtain ⟨z, v⟩ := p
+  simp only [VectorBundleCore.CoordinateHom.totalSpaceMap_def]
+  refine TotalSpace.ext (by simp) (heq_of_eq ?_)
+  simp only [proj_doubleAlongSwap, snd_doubleAlongSwap]
+  -- In coordinates: the conjugation extension at the swapped point is the conjugate extension.
+  have h (w : Fin C.rank → ℂ) : DoubleAlong.conjExtend A φ.fiberMap (DoubleAlong.swap A z)
+      (star w) = star (DoubleAlong.conjExtend A φ.fiberMap z w) := by
+    rw [DoubleAlong.conjExtend_swap A fun x hx =>
+      (ContinuousLinearMap.IntrinsicStar.isSelfAdjoint_iff_map_star _).2 (hφ x hx),
+      ContinuousLinearMap.intrinsicStar_apply, star_star]
+  rw [fiberMap_doubleAlongMap, fiberMap_doubleAlongMap]
+  exact h v
+
+/-- On the first sheet the doubled bundle map is `φ`, under the identifications
+`doubleAlongInlIso`. -/
+@[reassoc] theorem pullbackMap_doubleAlongMap_inl_comp_doubleAlongInlIso_hom :
+    pullbackMap (doubleAlongMap hC hC' φ hφ) (DoubleAlong.inl A) ≫ (C'.doubleAlongInlIso hC').hom =
+      (C.doubleAlongInlIso hC).hom ≫ φ :=
+  hom_ext fun x => by
+    simp only [fiberMap_comp, fiberMap_pullbackMap, fiberMap_doubleAlongMap_inl,
+      fiberMap_doubleAlongInlIso_hom]
+    rfl
+
+/-- On the second sheet the doubled bundle map is the conjugate of `φ`, under the identifications
+`doubleAlongInrIso`. -/
+@[reassoc] theorem pullbackMap_doubleAlongMap_inr_comp_doubleAlongInrIso_hom :
+    pullbackMap (doubleAlongMap hC hC' φ hφ) (DoubleAlong.inr A) ≫ (C'.doubleAlongInrIso hC').hom =
+      (C.doubleAlongInrIso hC).hom ≫ (conjugate X).map φ :=
+  hom_ext fun x => by
+    simp only [fiberMap_comp, fiberMap_pullbackMap, fiberMap_doubleAlongMap_inr,
+      fiberMap_doubleAlongInrIso_hom, fiberMap_conjugate_map]
+    rfl
+
+/-- The double of an isomorphism `e : C ≅ C'` whose fibre maps over `A` commute with
+coordinatewise conjugation: an isomorphism of the doubles, `e` on the first sheet and its conjugate
+on the second sheet. -/
+noncomputable def doubleAlongIso (e : C ≅ C')
+    (he : ∀ a ∈ A, ∀ v, e.hom.fiberMap a (star v) = star (e.hom.fiberMap a v)) :
+    C.doubleAlong hC ≅ C'.doubleAlong hC' where
+  hom := doubleAlongMap hC hC' e.hom he
+  inv := doubleAlongMap hC' hC e.inv fun a ha => fiberMap_inv_star e (he a ha)
+  hom_inv_id := by
+    rw [← doubleAlongMap_comp _ _ _ _ _ _ _ (by simp)]
+    simp only [Iso.hom_inv_id, doubleAlongMap_id]
+  inv_hom_id := by
+    rw [← doubleAlongMap_comp _ _ _ _ _ _ _ (by simp)]
+    simp only [Iso.inv_hom_id, doubleAlongMap_id]
+
+@[simp] theorem doubleAlongIso_hom (e : C ≅ C')
+    (he : ∀ a ∈ A, ∀ v, e.hom.fiberMap a (star v) = star (e.hom.fiberMap a v)) :
+    (doubleAlongIso hC hC' e he).hom = doubleAlongMap hC hC' e.hom he := (rfl)
+
+@[simp] theorem doubleAlongIso_inv (e : C ≅ C')
+    (he : ∀ a ∈ A, ∀ v, e.hom.fiberMap a (star v) = star (e.hom.fiberMap a v)) :
+    (doubleAlongIso hC hC' e he).inv =
+      doubleAlongMap hC' hC e.inv fun a ha => fiberMap_inv_star e (he a ha) := (rfl)
+
+end Map
 
 end TauCeti.FiniteRankBundleCore
