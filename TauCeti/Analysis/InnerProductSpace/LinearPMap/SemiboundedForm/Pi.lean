@@ -21,8 +21,8 @@ sum `PiLp 2 H` with domain the product of the domains and
 A common lower bound of the `q i` is a lower bound of the sum
 (`TauCeti.SemiboundedForm.isLowerBound_pi`), so the sum keeps `γ = min γᵢ`. The form space of the
 sum for a common admissible shift is isometric to the Hilbert direct sum of the form spaces
-(`TauCeti.SemiboundedForm.formSpacePiEquiv`), so the sum of closed forms is closed
-(`TauCeti.SemiboundedForm.isClosed_pi`). The operator it represents is the direct sum of the
+(`TauCeti.SemiboundedForm.piFormSpaceEquiv`), so the sum is closed exactly when every `q i` is
+(`TauCeti.SemiboundedForm.isClosed_pi_iff`). The operator it represents is the direct sum of the
 represented operators (`TauCeti.SemiboundedForm.operator_pi`), `LinearPMap.piLpMap`: testing the
 form against vectors supported in one coordinate separates the coordinates.
 
@@ -30,9 +30,9 @@ form against vectors supported in one coordinate separates the coordinates.
 
 * `TauCeti.SemiboundedForm.pi`: the orthogonal sum of a finite family of semibounded forms.
 * `TauCeti.SemiboundedForm.isLowerBound_pi`: common lower bounds pass to the sum.
-* `TauCeti.SemiboundedForm.formSpacePiEquiv`: the form space of the sum is isometric to the
+* `TauCeti.SemiboundedForm.piFormSpaceEquiv`: the form space of the sum is isometric to the
   Hilbert direct sum of the form spaces.
-* `TauCeti.SemiboundedForm.isClosed_pi`: the sum of closed forms is closed.
+* `TauCeti.SemiboundedForm.isClosed_pi_iff`: the sum is closed if and only if every `q i` is.
 * `TauCeti.SemiboundedForm.operator_pi`: the represented operator is the direct sum.
 
 ## References
@@ -62,6 +62,23 @@ private theorem exists_common_lowerBound [Finite ι] : ∃ γ : ℝ, ∀ i, (q i
   obtain ⟨M, hM⟩ := Finite.exists_ge γ
   exact ⟨M, fun i ↦ (q i).isLowerBound_iff.2 fun u ↦
     (mul_le_mul_of_nonneg_right (hM i) (sq_nonneg _)).trans ((q i).isLowerBound_iff.1 (hγ i) u)⟩
+
+/-- A factor of a complete `L^2` product is complete: the `i`-th coordinate is a left inverse of
+the isometric embedding `PiLp.single 2 i`. -/
+private theorem completeSpace_of_completeSpace_piLp {E : ι → Type*}
+    [Finite ι] [∀ i, NormedAddCommGroup (E i)] [CompleteSpace (PiLp 2 E)] (i : ι) :
+    CompleteSpace (E i) where
+  complete {f} hf := by
+    classical
+    have := Fintype.ofFinite ι
+    have hs : Isometry (PiLp.single 2 i : E i → PiLp 2 E) :=
+      Isometry.of_dist_eq (PiLp.dist_single_same 2 E i)
+    obtain ⟨x, hx⟩ := CompleteSpace.complete (hf.map hs.uniformContinuous)
+    refine ⟨x i, ?_⟩
+    have := (((PiLp.continuous_apply 2 E i).tendsto x).mono_left hx).comp
+      (Filter.tendsto_map (f := PiLp.single 2 i))
+    simp only [Function.comp_def, PiLp.single_eq_same] at this
+    exact Filter.tendsto_id'.1 this
 
 variable [Fintype ι]
 
@@ -126,74 +143,120 @@ instance `min γᵢ`, is a lower bound of their orthogonal sum. -/
 theorem isLowerBound_pi {γ : ℝ} (hγ : ∀ i, (q i).IsLowerBound γ) : (pi q).IsLowerBound γ :=
   (isLowerBound_iff _).2 (mul_norm_sq_le_re_piForm q hγ)
 
+/-- The orthogonal sum is densely defined if and only if every `q i` is densely defined. -/
+theorem dense_pi_domain_iff :
+    Dense ((pi q).domain : Set (PiLp 2 H)) ↔ ∀ i, Dense ((q i).domain : Set (H i)) :=
+  Submodule.dense_piLp_iff
+
 /-- The orthogonal sum of densely defined forms is densely defined. -/
 theorem dense_pi_domain (hd : ∀ i, Dense ((q i).domain : Set (H i))) :
     Dense ((pi q).domain : Set (PiLp 2 H)) :=
-  Submodule.dense_piLp_iff.mpr hd
+  (dense_pi_domain_iff q).mpr hd
 
-/-- A common lower bound of the `q i` gives a shift admissible for every `q i` and for their
-orthogonal sum. -/
+/-- Pairing the orthogonal sum with a vector `w` placed in the `i`-th coordinate, and `0`
+elsewhere, gives the `i`-th form. -/
+theorem pi_form_single [DecidableEq ι] (u : (pi q).domain) (i : ι) (w : (q i).domain) :
+    (pi q).form u ⟨PiLp.single 2 i (w : H i),
+        pi_domain q ▸ Submodule.single_mem_piLp (s := fun i ↦ (q i).domain) w.property⟩ =
+      (q i).form (piCoord q i u) w := by
+  rw [pi_form_apply, Fintype.sum_eq_single i fun j hj ↦ ?_]
+  · exact congrArg _ (Subtype.ext (by simp))
+  · refine (congrArg ((q j).form (piCoord q j u)) (Subtype.ext ?_)).trans (map_zero _)
+    simp [Pi.single_eq_of_ne hj]
+
+/-- There is a shift admissible for every `q i` and for their orthogonal sum. -/
 theorem exists_isAdmissibleShift_pi :
     ∃ α, (pi q).IsAdmissibleShift α ∧ ∀ i, (q i).IsAdmissibleShift α := by
   obtain ⟨γ, hγ⟩ := exists_common_lowerBound q
   exact ⟨1 - γ, (pi q).isAdmissibleShift_iff.2 ⟨_, isLowerBound_pi q hγ, by linarith⟩,
     fun i ↦ (q i).isAdmissibleShift_iff.2 ⟨_, hγ i, by linarith⟩⟩
 
-/-- The linear equivalence underlying `TauCeti.SemiboundedForm.formSpacePiEquiv`. -/
-private def formSpacePiLinearEquiv {α : ℝ} (hα : (pi q).IsAdmissibleShift α)
+/-- The linear equivalence underlying `TauCeti.SemiboundedForm.piFormSpaceEquiv`. -/
+private def piFormSpaceLinearEquiv {α : ℝ} (hα : (pi q).IsAdmissibleShift α)
     (hαi : ∀ i, (q i).IsAdmissibleShift α) :
     (pi q).FormSpace α hα ≃ₗ[𝕜] PiLp 2 fun i ↦ (q i).FormSpace α (hαi i) :=
   -- `LinearEquiv.ofEq` along `pi_domain` retypes `(pi q).domain` as `piLp 2 _`, so that each
-  -- step of the composite rewrites with its own simp lemma in `formSpacePiLinearEquiv_apply`.
+  -- step of the composite rewrites with its own simp lemma in
+  -- `piFormSpaceLinearEquiv_toFormSpace`.
   ((pi q).toFormSpace hα).symm ≪≫ₗ LinearEquiv.ofEq _ _ (pi_domain q) ≪≫ₗ
     piLpEquiv 2 (fun i ↦ (q i).domain) ≪≫ₗ
     LinearEquiv.piCongrRight (fun i ↦ (q i).toFormSpace (hαi i)) ≪≫ₗ
     (WithLp.linearEquiv 2 𝕜 (∀ i, (q i).FormSpace α (hαi i))).symm
 
-private theorem formSpacePiLinearEquiv_apply {α : ℝ} (hα : (pi q).IsAdmissibleShift α)
+private theorem piFormSpaceLinearEquiv_toFormSpace {α : ℝ} (hα : (pi q).IsAdmissibleShift α)
     (hαi : ∀ i, (q i).IsAdmissibleShift α) (u : (pi q).domain) (i : ι) :
-    formSpacePiLinearEquiv q hα hαi ((pi q).toFormSpace hα u) i =
+    piFormSpaceLinearEquiv q hα hαi ((pi q).toFormSpace hα u) i =
       (q i).toFormSpace (hαi i) (piCoord q i u) := by
-  simp only [formSpacePiLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply,
+  simp only [piFormSpaceLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply,
     WithLp.coe_symm_linearEquiv, WithLp.ofLp_toLp, LinearEquiv.piCongrRight_apply,
     piLpEquiv_apply]
   exact congrArg _ (Subtype.ext (by rw [coe_piLpProj, LinearEquiv.coe_ofEq_apply, coe_piCoord]))
 
-private theorem inner_formSpacePiLinearEquiv {α : ℝ} (hα : (pi q).IsAdmissibleShift α)
+private theorem inner_piFormSpaceLinearEquiv {α : ℝ} (hα : (pi q).IsAdmissibleShift α)
     (hαi : ∀ i, (q i).IsAdmissibleShift α) (x y : (pi q).FormSpace α hα) :
-    ⟪formSpacePiLinearEquiv q hα hαi x, formSpacePiLinearEquiv q hα hαi y⟫_𝕜 = ⟪x, y⟫_𝕜 := by
+    ⟪piFormSpaceLinearEquiv q hα hαi x, piFormSpaceLinearEquiv q hα hαi y⟫_𝕜 = ⟪x, y⟫_𝕜 := by
   obtain ⟨u, rfl⟩ := ((pi q).toFormSpace hα).surjective x
   obtain ⟨v, rfl⟩ := ((pi q).toFormSpace hα).surjective y
-  rw [PiLp.inner_apply, inner_toFormSpace, shiftedInner_def, pi_form_apply, PiLp.inner_apply,
-    Finset.mul_sum, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [formSpacePiLinearEquiv_apply, formSpacePiLinearEquiv_apply, inner_toFormSpace,
-    shiftedInner_def, coe_piCoord, coe_piCoord]
+  simp [PiLp.inner_apply, shiftedInner_def, Finset.mul_sum, Finset.sum_add_distrib,
+    piFormSpaceLinearEquiv_toFormSpace]
 
 /-- **Form space of an orthogonal sum.** For a common admissible shift `α`, the form space of the
 orthogonal sum is isometric to the Hilbert direct sum of the form spaces of the `q i`, sending
-`u` to its coordinates `u i` (`TauCeti.SemiboundedForm.formSpacePiEquiv_apply`). -/
-def formSpacePiEquiv {α : ℝ} (hα : (pi q).IsAdmissibleShift α)
+`u` to its coordinates `u i` (`TauCeti.SemiboundedForm.piFormSpaceEquiv_toFormSpace`). -/
+def piFormSpaceEquiv {α : ℝ} (hα : (pi q).IsAdmissibleShift α)
     (hαi : ∀ i, (q i).IsAdmissibleShift α) :
     (pi q).FormSpace α hα ≃ₗᵢ[𝕜] PiLp 2 fun i ↦ (q i).FormSpace α (hαi i) :=
-  (formSpacePiLinearEquiv q hα hαi).isometryOfInner (inner_formSpacePiLinearEquiv q hα hαi)
+  (piFormSpaceLinearEquiv q hα hαi).isometryOfInner (inner_piFormSpaceLinearEquiv q hα hαi)
 
-/-- `TauCeti.SemiboundedForm.formSpacePiEquiv` sends a vector of the domain of the orthogonal sum
+section FormSpace
+
+variable {α : ℝ} (hα : (pi q).IsAdmissibleShift α) (hαi : ∀ i, (q i).IsAdmissibleShift α)
+
+/-- `TauCeti.SemiboundedForm.piFormSpaceEquiv` sends a vector of the domain of the orthogonal sum
 to its coordinates. -/
 @[simp]
-theorem formSpacePiEquiv_apply {α : ℝ} (hα : (pi q).IsAdmissibleShift α)
-    (hαi : ∀ i, (q i).IsAdmissibleShift α) (u : (pi q).domain) (i : ι) :
-    formSpacePiEquiv q hα hαi ((pi q).toFormSpace hα u) i =
+theorem piFormSpaceEquiv_toFormSpace (u : (pi q).domain) (i : ι) :
+    piFormSpaceEquiv q hα hαi ((pi q).toFormSpace hα u) i =
       (q i).toFormSpace (hαi i) (piCoord q i u) :=
-  formSpacePiLinearEquiv_apply q hα hαi u i
+  piFormSpaceLinearEquiv_toFormSpace q hα hαi u i
+
+/-- The inverse of `TauCeti.SemiboundedForm.piFormSpaceEquiv` assembles a family of vectors
+`u i` of the form domains into the vector of the domain of the orthogonal sum with coordinates
+`u i`. -/
+@[simp]
+theorem piFormSpaceEquiv_symm_toLp (u : ∀ i, (q i).domain) :
+    (piFormSpaceEquiv q hα hαi).symm (WithLp.toLp 2 fun i ↦ (q i).toFormSpace (hαi i) (u i)) =
+      (pi q).toFormSpace hα
+        ⟨WithLp.toLp 2 fun i ↦ (u i : H i), pi_domain q ▸ Submodule.toLp_mem_piLp u⟩ := by
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext i
+  rw [piFormSpaceEquiv_toFormSpace]
+  exact congrArg _ (Subtype.ext (by simp))
+
+/-- `TauCeti.SemiboundedForm.piFormSpaceEquiv` commutes with the inclusions into `H i` and
+`PiLp 2 H`. -/
+theorem inclusion_piFormSpaceEquiv (x : (pi q).FormSpace α hα) (i : ι) :
+    (q i).inclusion (hαi i) (piFormSpaceEquiv q hα hαi x i) = (pi q).inclusion hα x i := by
+  obtain ⟨u, rfl⟩ := ((pi q).toFormSpace hα).surjective x
+  rw [piFormSpaceEquiv_toFormSpace, inclusion_toFormSpace, inclusion_toFormSpace, coe_piCoord]
+
+end FormSpace
+
+/-- **Closed orthogonal sums.** The orthogonal sum is closed if and only if every `q i` is
+closed. -/
+theorem isClosed_pi_iff : (pi q).IsClosed ↔ ∀ i, (q i).IsClosed := by
+  obtain ⟨α, hα, hαi⟩ := exists_isAdmissibleShift_pi q
+  let e := piFormSpaceEquiv q hα hαi
+  rw [(pi q).isClosed_iff_completeSpace hα,
+    completeSpace_congr (e := e.toEquiv) e.isometry.isUniformEmbedding]
+  refine ⟨fun _ i ↦ ((q i).isClosed_iff_completeSpace (hαi i)).2
+    (completeSpace_of_completeSpace_piLp (E := fun i ↦ (q i).FormSpace α (hαi i)) i), fun hq ↦ ?_⟩
+  have := fun i ↦ ((q i).isClosed_iff_completeSpace (hαi i)).1 (hq i)
+  infer_instance
 
 /-- **The orthogonal sum of closed forms is closed.** -/
-theorem isClosed_pi (hq : ∀ i, (q i).IsClosed) : (pi q).IsClosed := by
-  obtain ⟨α, hα, hαi⟩ := exists_isAdmissibleShift_pi q
-  have := fun i ↦ ((q i).isClosed_iff_completeSpace (hαi i)).1 (hq i)
-  let e := formSpacePiEquiv q hα hαi
-  rw [(pi q).isClosed_iff_completeSpace hα]
-  exact (completeSpace_congr (e := e.toEquiv) e.isometry.isUniformEmbedding).mpr inferInstance
+theorem isClosed_pi (hq : ∀ i, (q i).IsClosed) : (pi q).IsClosed :=
+  (isClosed_pi_iff q).mpr hq
 
 /-- **The operator of an orthogonal sum is the direct sum of the operators.** For densely
 defined forms `q i`, the operator represented by their orthogonal sum is the direct sum
@@ -207,18 +270,11 @@ theorem operator_pi (hd : ∀ i, Dense ((q i).domain : Set (H i))) :
   simp only [mem_graph_operator_iff]
   constructor
   · rintro ⟨u, rfl, huv⟩ i
-    refine ⟨piCoord q i u, coe_piCoord q i u, fun w ↦ ?_⟩
     -- Test against the vector with `w` in the `i`-th coordinate and `0` elsewhere.
-    have hw : PiLp.single 2 i (w : H i) ∈ (pi q).domain :=
-      Submodule.single_mem_piLp w.property
-    have hci : piCoord q i ⟨_, hw⟩ = w := Subtype.ext (by simp)
-    have hcj (j : ι) (hj : j ≠ i) : piCoord q j ⟨_, hw⟩ = 0 :=
-      Subtype.ext (by simp [Pi.single_eq_of_ne hj])
-    have := huv ⟨_, hw⟩
-    rw [pi_form_apply, PiLp.inner_apply, Fintype.sum_eq_single i
-      fun j hj ↦ by rw [hcj j hj, map_zero], Fintype.sum_eq_single i
-      fun j hj ↦ by simp [Pi.single_eq_of_ne hj], hci] at this
-    simpa using this
+    refine ⟨piCoord q i u, coe_piCoord q i u, fun w ↦ ?_⟩
+    rw [← pi_form_single, huv, PiLp.inner_apply, Fintype.sum_eq_single i fun j hj ↦ by
+      simp [Pi.single_eq_of_ne hj]]
+    simp
   · intro hx
     choose u hu huv using hx
     obtain rfl : x = WithLp.toLp 2 fun i ↦ (u i : H i) := PiLp.ext fun i ↦ (hu i).symm

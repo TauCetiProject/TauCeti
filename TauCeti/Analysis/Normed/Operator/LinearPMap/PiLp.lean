@@ -235,8 +235,7 @@ theorem isClosed_piLpMap_iff : (LinearPMap.piLpMap p f).IsClosed ↔ ∀ i, (f i
     rw [LinearPMap.IsClosed, hgraph]
     exact isClosed_iInter fun i ↦ (hf i).preimage (by fun_prop)
 
-/-- The direct sum of a family of closed partial linear maps is closed: its graph is the
-intersection of the preimages of the graphs of the `f i` under the coordinate maps. -/
+/-- The direct sum of a family of closed partial linear maps is closed. -/
 theorem isClosed_piLpMap (hf : ∀ i, (f i).IsClosed) : (LinearPMap.piLpMap p f).IsClosed :=
   isClosed_piLpMap_iff.mpr hf
 
