@@ -106,20 +106,6 @@ variable (p : ℕ) [Fact p.Prime] (k : Type*) [CommRing k]
 
 local notation "W" => _root_.WittVector p k
 
-/-- Witt Frobenius on the quotient by `p^n`. This definition includes the zero quotient at
-`n = 0` and requires no perfection assumption. -/
-def frobeniusMod (n : ℕ) : W ⧸ Ideal.span {(p : W) ^ n} →+* W ⧸ Ideal.span {(p : W) ^ n} :=
-  Ideal.quotientMap _ frobenius <| by
-    rw [Ideal.span_singleton_le_iff_mem]
-    simpa only [Ideal.mem_comap, map_pow, map_natCast] using
-      (Ideal.mem_span_singleton_self ((p : W) ^ n))
-
-/-- Frobenius modulo `p^n` is induced by the full Witt Frobenius. -/
-@[simp]
-theorem frobeniusMod_mk (n : ℕ) (x : W) :
-    frobeniusMod p k n (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (frobenius x) :=
-  Ideal.quotientMap_mk
-
 /-- The additive Artin–Schreier–Witt operator `φ - 1` on `W(k)/p^n`. -/
 def artinSchreierMod (n : ℕ) :
     W ⧸ Ideal.span {(p : W) ^ n} →+ W ⧸ Ideal.span {(p : W) ^ n} :=
@@ -130,72 +116,7 @@ def artinSchreierMod (n : ℕ) :
 theorem artinSchreierMod_apply (n : ℕ) (x : W ⧸ Ideal.span {(p : W) ^ n}) :
     artinSchreierMod (p := p) (k := k) n x = frobeniusMod p k n x - x := (rfl)
 
-variable [CharP k p]
-
-/-- The canonical finite constants `ℤ/p^n → W(k)/p^n`, obtained by reducing the p-adic constants.
-This definition also applies to `n = 0`. -/
-def constantsMod (n : ℕ) : ZMod (p ^ n) →+* W ⧸ Ideal.span {(p : W) ^ n} :=
-  (Ideal.Quotient.lift (RingHom.ker (PadicInt.toZModPow n))
-    ((Ideal.Quotient.mk _).comp (padicConstants p k)) <| by
-      intro z hz
-      rw [PadicInt.ker_toZModPow, Ideal.mem_span_singleton] at hz
-      simpa only [RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem,
-        Ideal.mem_span_singleton, map_pow, map_natCast] using
-        map_dvd (padicConstants p k) hz).comp
-    (RingHom.quotientKerEquivOfSurjective
-      (ZMod.ringHom_surjective (PadicInt.toZModPow n))).symm.toRingHom
-
-/-- Finite constants commute with reduction of p-adic integers. -/
-@[simp]
-theorem constantsMod_toZModPow (n : ℕ) (z : ℤ_[p]) :
-    constantsMod p k n (PadicInt.toZModPow n z) =
-      Ideal.Quotient.mk _ (padicConstants p k z) := by
-  simp [constantsMod, RingHom.quotientKerEquivOfSurjective_symm_apply,
-    Ideal.Quotient.lift_mk]
-
-/-- Frobenius fixes the canonical finite constants. -/
-@[simp]
-theorem frobeniusMod_constantsMod (n : ℕ) (z : ZMod (p ^ n)) :
-    frobeniusMod p k n (constantsMod p k n z) = constantsMod p k n z := by
-  obtain ⟨z, rfl⟩ := ZMod.ringHom_surjective (PadicInt.toZModPow n) z
-  simp
-
-variable {p k}
-
-/-- A p-adic constant is divisible by `p^n` in `W(k)` exactly when it is divisible by `p^n`
-in `ℤ_p`. -/
-theorem padicConstants_mem_span_pow_iff (n : ℕ) (z : ℤ_[p]) :
-    padicConstants p k z ∈ Ideal.span {(p : W) ^ n} ↔
-      z ∈ Ideal.span {(p : ℤ_[p]) ^ n} := by
-  have : Nontrivial k := CharP.nontrivial_of_char_ne_one (Fact.out : p.Prime).ne_one
-  constructor
-  · intro hz
-    have he : (equiv p).symm z ∈ Ideal.span {(p : _root_.WittVector p (ZMod p)) ^ n} := by
-      obtain ⟨u, hu⟩ := Ideal.mem_span_singleton'.mp hz
-      rw [mem_span_p_pow_iff_le_coeff_eq_zero]
-      intro i hi
-      apply (ZMod.castHom dvd_rfl k).injective
-      have hz := mul_pow_charP_coeff_zero u hi
-      rw [hu] at hz
-      simpa only [padicConstants_apply, map_coeff, map_zero] using hz
-    obtain ⟨y, hy⟩ := Ideal.mem_span_singleton.mp he
-    rw [Ideal.mem_span_singleton]
-    exact ⟨equiv p y, by simpa using congrArg (equiv p) hy⟩
-  · intro hz
-    simpa only [Ideal.mem_span_singleton, map_pow, map_natCast] using
-      map_dvd (padicConstants p k) (Ideal.mem_span_singleton.mp hz)
-
-/-- Over a ring of characteristic `p`, the finite constants embed in `W(k)/p^n`. -/
-theorem constantsMod_injective (n : ℕ) :
-    Function.Injective (constantsMod p k n) := by
-  apply (injective_iff_map_eq_zero _).2
-  intro z hz
-  obtain ⟨z, rfl⟩ := ZMod.ringHom_surjective (PadicInt.toZModPow n) z
-  rw [constantsMod_toZModPow, Ideal.Quotient.eq_zero_iff_mem,
-    padicConstants_mem_span_pow_iff] at hz
-  rwa [← PadicInt.ker_toZModPow, RingHom.mem_ker] at hz
-
-variable [PerfectRing k p]
+variable {p k} [CharP k p] [PerfectRing k p]
 
 /-- In a perfect domain, every Frobenius-fixed class modulo `p^n` is a finite constant. -/
 theorem frobeniusMod_eq_self_iff [IsDomain k] (n : ℕ)

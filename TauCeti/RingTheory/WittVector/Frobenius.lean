@@ -140,6 +140,28 @@ namespace TauCeti.WittVector
 
 open _root_.WittVector
 
+noncomputable section
+
+variable (p : ℕ) [Fact p.Prime] (k : Type*) [CommRing k]
+
+local notation "W" => _root_.WittVector p k
+
+/-- Witt Frobenius on the quotient by `p^n`. This definition includes the zero quotient at
+`n = 0` and requires no perfection assumption. -/
+def frobeniusMod (n : ℕ) : W ⧸ Ideal.span {(p : W) ^ n} →+* W ⧸ Ideal.span {(p : W) ^ n} :=
+  Ideal.quotientMap _ frobenius <| by
+    rw [Ideal.span_singleton_le_iff_mem]
+    simpa only [Ideal.mem_comap, map_pow, map_natCast] using
+      (Ideal.mem_span_singleton_self ((p : W) ^ n))
+
+/-- Frobenius modulo `p^n` is induced by the full Witt Frobenius. -/
+@[simp]
+theorem frobeniusMod_mk (n : ℕ) (x : W) :
+    frobeniusMod p k n (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (frobenius x) :=
+  Ideal.quotientMap_mk
+
+end
+
 variable {p : ℕ} [hp : Fact p.Prime] {R : Type*} [CommRing R] [CharP R p]
   [TopologicalSpace (WittVector p R)] {ϖ : R}
 
