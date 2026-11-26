@@ -41,9 +41,12 @@ generating functions are invariant under the diagonal translation `(x, X) ↦ (x
 `W` is invariant under the diagonal translation `x ↦ x + 1` of configurations
 (`TauCeti.periodic_cyclicAction`), and so are its derivative and its critical set; what matters of
 a critical configuration is its image in the quotient of `ℤ/N → ℝ` by the diagonal integers
-`AddSubgroup.zmultiples 1`. On this quotient the dictionary is injective on the annulus point
-`(x_0 mod 1, y_0)`: two periodic chains have the same
-initial annulus point exactly when their positions differ by a diagonal integer translation
+`AddSubgroup.zmultiples 1`. The *block* `TauCeti.cyclicBlock W` of the configurations whose every
+edge `(x_i, x_(i+1))` lies in `W_i` is invariant under the diagonal integers too, when the sets
+`W_i` are invariant under `(x, X) ↦ (x + 1, X + 1)`
+(`TauCeti.add_zsmul_one_mem_cyclicBlock_iff`). On the quotient the dictionary is injective on the
+annulus point `(x_0 mod 1, y_0)`: two periodic chains have the same initial annulus point exactly
+when their positions differ by a diagonal integer translation
 (`TauCeti.prodMap_coe_eq_prodMap_coe_iff_mk_eq_mk_of_isStripGenerating`). Hence two distinct
 critical points of `W` on the quotient give two periodic chains whose fixed points `z_0` are
 distinct points of the annulus (`TauCeti.exists_periodic_prodMap_coe_ne_of_isStripGenerating`), so
@@ -287,15 +290,24 @@ private theorem add_zsmul_one_apply (q : ZMod N → ℝ) (k : ℤ) (i : ZMod N) 
     (q + k • (1 : ZMod N → ℝ)) i = q i + k := by
   simp
 
+/-- The **block** of configurations with edges in the sets `W_i`: the configurations `q` with
+`(q_i, q_(i+1)) ∈ W_i` for every `i`. -/
+def cyclicBlock (W : ZMod N → Set (ℝ × ℝ)) : Set (ZMod N → ℝ) :=
+  {q | ∀ i, (q i, q (i + 1)) ∈ W i}
+
 omit [NeZero N] in
-/-- An integer diagonal translate of a configuration with edges in the `W_i` has edges in the
-`W_i`, if each `W_i` is invariant under `(x, X) ↦ (x + 1, X + 1)`. -/
-private theorem mem_of_add_zsmul_one (hW : ∀ i x, x + (1, 1) ∈ W i ↔ x ∈ W i)
-    {q : ZMod N → ℝ} (hq : ∀ i, (q i, q (i + 1)) ∈ W i) (k : ℤ) (i : ZMod N) :
-    ((q + k • (1 : ZMod N → ℝ)) i, (q + k • (1 : ZMod N → ℝ)) (i + 1)) ∈ W i := by
+@[simp]
+theorem mem_cyclicBlock {q : ZMod N → ℝ} : q ∈ cyclicBlock W ↔ ∀ i, (q i, q (i + 1)) ∈ W i :=
+  Iff.rfl
+
+omit [NeZero N] in
+/-- **The block is invariant under the diagonal integers** when every `W_i` is invariant under the
+diagonal translation `(x, X) ↦ (x + 1, X + 1)`. -/
+theorem add_zsmul_one_mem_cyclicBlock_iff (hW : ∀ i x, x + (1, 1) ∈ W i ↔ x ∈ W i)
+    (q : ZMod N → ℝ) (k : ℤ) : q + k • (1 : ZMod N → ℝ) ∈ cyclicBlock W ↔ q ∈ cyclicBlock W := by
+  refine forall_congr' fun i ↦ ?_
   have hP : Function.Periodic (· ∈ W i) ((1, 1) : ℝ × ℝ) := fun x ↦ propext (hW i x)
-  have h := (hP.zsmul k (q i, q (i + 1))).mpr (hq i)
-  simpa [add_zsmul_one_apply] using h
+  simpa [add_zsmul_one_apply] using Iff.of_eq (hP.zsmul k (q i, q (i + 1)))
 
 /-- Two periodic chains whose initial states differ by an integer horizontal translation `k` have
 positions differing by the diagonal translation by `k`: the translate by `k` of the positions of
@@ -310,7 +322,8 @@ private theorem chain_fst_eq_add_of_eq_add
   obtain ⟨e, he, he'⟩ := exists_equiv_periodic_of_isStripGenerating hgen
   let r : {q : ZMod N → ℝ // (∀ i, (q i, q (i + 1)) ∈ W i) ∧
       fderiv ℝ (cyclicAction S) q = 0} :=
-    ⟨e ⟨z, hz⟩ + k • (1 : ZMod N → ℝ), mem_of_add_zsmul_one hWper (e ⟨z, hz⟩).property.1 k,
+    ⟨e ⟨z, hz⟩ + k • (1 : ZMod N → ℝ),
+      (add_zsmul_one_mem_cyclicBlock_iff hWper _ k).2 (e ⟨z, hz⟩).property.1,
       (((periodic_cyclicAction hS).zsmul k).fderiv (𝕜 := ℝ) _).trans (e ⟨z, hz⟩).property.2⟩
   -- The chain of `r` starts at `z'_0`, so by uniqueness of chains it is `z'`.
   have hr : (e.symm r).val = z' := by
