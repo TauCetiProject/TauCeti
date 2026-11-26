@@ -223,20 +223,6 @@ open scoped InnerProductSpace
 
 variable [DecidableEq ι]
 
-/-- The energy form of `-Δ + 1` is that of `-Δ` plus the `L²` pairing. -/
-private theorem energyFormH1_one_zero_one {Omega : Opens (EuclideanSpace ℝ ι)}
-    (u v : W1p volume Omega 2) :
-    energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 (fun _ => 1) u v =
-      energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 0 u v + ⟪W1p.value u, W1p.value v⟫_ℝ := by
-  have h := energyFormH1_mass_sub_const
-    (memLp_energyIntegrand_const_zero_zero (mu := volume) (Omega := Omega) 1) (-1) u v
-  have hc : (fun x : EuclideanSpace ℝ ι => (0 : EuclideanSpace ℝ ι → ℝ) x - -1) = fun _ => 1 := by
-    funext x
-    simp
-  rw [hc] at h
-  rw [h]
-  ring
-
 /-- **The resolvent of the Dirichlet semigroup of `-Δ` at `1`.** On an open set `U` where the
 energy form of `-Δ` is coercive, `R(1) z` is the value of the weak solution `w ∈ H¹₀(U)` of
 `-Δw + w = z`. -/

@@ -10,7 +10,10 @@ public import TauCeti.Analysis.Fourier.SineSeries
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.PDE.ClassicalSolution
 public import TauCeti.Analysis.PDE.Spectrum.Basic
+public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables
+import TauCeti.Analysis.Sobolev.W1p.Interval.OneEndpoint
 
 /-!
 # The Dirichlet spectrum of `-Δ` on an interval
@@ -24,7 +27,10 @@ is `(π / (b - a))²`, and by the Rayleigh principle this is the optimal constan
 inequality `C ∫_a^b u² ≤ ∫_a^b |u'|²` on `H¹₀(a, b)`.
 
 The interval is realized as the open subset `TauCeti.PDE.intervalDomain a b` of the Euclidean line
-`EuclideanSpace ℝ (Fin 1)`, the setting of the Sobolev spaces and the energy forms.
+`EuclideanSpace ℝ (Fin 1)`, the setting of the Sobolev spaces and the energy forms. Composition
+with the isometry `TauCeti.PDE.lineEquiv : t ↦ t e₀` identifies its Sobolev spaces with those of
+the real interval `(a, b)` (`TauCeti.PDE.intervalDomainEquivL`), where functions have continuous
+representatives and endpoint values.
 
 Each sine mode is `C^∞`, vanishes at `a` and `b` and satisfies `-Δw = (k π / (b - a))² w`
 classically, so it is a weak Dirichlet eigenfunction
@@ -36,6 +42,15 @@ sine mode, and it vanishes by completeness of the sine system
 ## Main declarations
 
 * `TauCeti.PDE.intervalDomain`: the interval `(a, b)` as an open subset of the Euclidean line.
+* `TauCeti.PDE.lineEquiv`: the isometry `t ↦ t e₀` of `ℝ` onto the Euclidean line.
+* `TauCeti.PDE.intervalDomainEquivL`: `W^{1,p}` of the interval domain is `W^{1,p}` of the real
+  interval, with the value, derivative, integral, boundary part and Dirichlet form transferred by
+  `TauCeti.PDE.value_intervalDomainEquivL_ae`, `TauCeti.PDE.gradient_intervalDomainEquivL_ae`,
+  `TauCeti.PDE.setIntegral_value_intervalDomainEquivL`,
+  `TauCeti.PDE.intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff` and
+  `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL`.
+* `TauCeti.PDE.norm_value_le_mul_norm_gradient_intervalDomain`: the Poincaré–Friedrichs inequality
+  `‖u‖ ≤ (b - a) ‖u'‖` on `W^{1,p}_{{a}}(a, b)`.
 * `TauCeti.PDE.exists_value_ae_eq_sin_and_energyFormH1_eq`: the sine modes are weak Dirichlet
   eigenfunctions.
 * `TauCeti.PDE.energyFormH1_eq_of_value_ae_eq_sin`, `TauCeti.PDE.norm_value_sq_of_value_ae_eq_sin`
@@ -72,7 +87,7 @@ namespace TauCeti
 
 namespace PDE
 
-open Bornology InnerProductSpace Laplacian MeasureTheory Set TopologicalSpace
+open Bornology InnerProductSpace Laplacian _root_.MeasureTheory Set TopologicalSpace
 open scoped Real InnerProductSpace
 
 /-- The open interval `(a, b)`, as an open subset of the Euclidean line `EuclideanSpace ℝ (Fin 1)`.
@@ -101,32 +116,39 @@ variable {a b : ℝ}
 
 attribute [local instance] W1p0.instNormedAddCommGroup
 
-/-- The Euclidean line is isometric to `ℝ`, with inverse `x ↦ x 0`. -/
-private def lineEquiv : ℝ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 1) :=
+/-- The Euclidean line is isometric to `ℝ`, through `t ↦ t e₀`, with inverse `x ↦ x 0`. -/
+def lineEquiv : ℝ ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 1) :=
   (OrthonormalBasis.singleton (Fin 1) ℝ).repr
 
-private theorem lineEquiv_symm_apply (x : EuclideanSpace ℝ (Fin 1)) : lineEquiv.symm x = x 0 := by
+/-- The inverse of `TauCeti.PDE.lineEquiv` is the coordinate `x ↦ x 0`. -/
+theorem lineEquiv_symm_apply (x : EuclideanSpace ℝ (Fin 1)) :
+    lineEquiv.symm x = x 0 := by
   rw [LinearIsometryEquiv.symm_apply_eq]
   ext i
   fin_cases i
   exact (OrthonormalBasis.singleton_repr (ι := Fin 1) (𝕜 := ℝ) (x 0) 0).symm
 
-private theorem measurePreserving_lineEquiv : MeasurePreserving lineEquiv volume volume :=
+/-- `TauCeti.PDE.lineEquiv` preserves Lebesgue measure. -/
+theorem measurePreserving_lineEquiv : MeasurePreserving lineEquiv volume volume :=
   (OrthonormalBasis.singleton (Fin 1) ℝ).measurePreserving_repr
 
-private theorem measurePreserving_lineEquiv_symm :
+/-- The inverse of `TauCeti.PDE.lineEquiv` preserves Lebesgue measure. -/
+theorem measurePreserving_lineEquiv_symm :
     MeasurePreserving lineEquiv.symm volume volume :=
   (OrthonormalBasis.singleton (Fin 1) ℝ).measurePreserving_repr_symm
 
-private theorem lineEquiv_apply_zero (t : ℝ) : lineEquiv t 0 = t := by
+/-- The coordinate of `TauCeti.PDE.lineEquiv t` is `t`. -/
+@[simp] theorem lineEquiv_apply_zero (t : ℝ) : lineEquiv t 0 = t := by
   rw [← lineEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
 
-private theorem coe_intervalDomain_eq_preimage :
+/-- The interval domain is the preimage of the real interval under the coordinate. -/
+theorem coe_intervalDomain_eq_preimage :
     (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = lineEquiv.symm ⁻¹' Ioo a b := by
   ext x
   simp [lineEquiv_symm_apply]
 
-private theorem preimage_lineEquiv_intervalDomain :
+/-- The real interval is the preimage of the interval domain under `TauCeti.PDE.lineEquiv`. -/
+@[simp] theorem preimage_lineEquiv_intervalDomain :
     lineEquiv ⁻¹' (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = Ioo a b := by
   rw [coe_intervalDomain_eq_preimage, ← preimage_comp]
   simp
@@ -487,6 +509,155 @@ theorem isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain (hab : a < b
   rw [← firstDirichletEigenvalue_laplacian_intervalDomain hab hcoeff hcoercive]
   exact isGreatest_firstDirichletEigenvalue hcoeff hcoercive energyFormH1_laplacian_comm
     (nonempty_intervalDomain_iff.2 hab)
+
+
+/-! ### Sobolev functions on the interval domain and on the real interval -/
+
+section Sobolev
+
+open scoped ENNReal
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+private theorem coe_Ioo_eq_preimage_intervalDomain :
+    ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ) =
+      lineEquiv.toAffineIsometryEquiv ⁻¹' (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) :=
+  preimage_lineEquiv_intervalDomain.symm
+
+private theorem coe_intervalDomain_eq_preimage_Ioo :
+    (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) =
+      lineEquiv.toAffineIsometryEquiv.symm ⁻¹' ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ) :=
+  coe_intervalDomain_eq_preimage
+
+/-- **Sobolev functions on the interval domain are Sobolev functions on the real interval.**
+Composition with `TauCeti.PDE.lineEquiv` identifies `W^{1,p}` of the interval domain `(a, b)` of
+the Euclidean line with `W^{1,p}` of the real interval `(a, b)`. -/
+def intervalDomainEquivL (a b : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    W1p volume (intervalDomain a b) p ≃L[ℝ] W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p :=
+  .ofContinuousLinearMap
+    (W1p.compAffineIsometryEquivL lineEquiv.toAffineIsometryEquiv
+      coe_Ioo_eq_preimage_intervalDomain)
+    (W1p.compAffineIsometryEquivL lineEquiv.toAffineIsometryEquiv.symm
+      coe_intervalDomain_eq_preimage_Ioo)
+    (ContinuousLinearMap.ext fun w => W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL
+      lineEquiv.toAffineIsometryEquiv.symm coe_intervalDomain_eq_preimage_Ioo
+      coe_Ioo_eq_preimage_intervalDomain w)
+    (ContinuousLinearMap.ext fun u => W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL
+      lineEquiv.toAffineIsometryEquiv coe_Ioo_eq_preimage_intervalDomain
+      coe_intervalDomain_eq_preimage_Ioo u)
+
+private theorem intervalDomainEquivL_apply (u : W1p volume (intervalDomain a b) p) :
+    intervalDomainEquivL a b p u = W1p.compAffineIsometryEquivL lineEquiv.toAffineIsometryEquiv
+      coe_Ioo_eq_preimage_intervalDomain u :=
+  rfl
+
+private theorem intervalDomainEquivL_symm_apply (w : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    (intervalDomainEquivL a b p).symm w = W1p.compAffineIsometryEquivL
+      lineEquiv.toAffineIsometryEquiv.symm coe_intervalDomain_eq_preimage_Ioo w :=
+  rfl
+
+/-- The value of the transfer of `u` to the real interval is the value of `u` along
+`TauCeti.PDE.lineEquiv`. -/
+theorem value_intervalDomainEquivL_ae (u : W1p volume (intervalDomain a b) p) :
+    W1p.value (intervalDomainEquivL a b p u) =ᵐ[volume.restrict (Ioo a b)]
+      fun t => W1p.value u (lineEquiv t) :=
+  W1p.value_compAffineIsometryEquivL_ae _ _ u
+
+/-- The weak derivative of the transfer of `u` to the real interval is the coordinate of the weak
+gradient of `u` along `TauCeti.PDE.lineEquiv`. -/
+theorem gradient_intervalDomainEquivL_ae (u : W1p volume (intervalDomain a b) p) :
+    W1p.gradient (intervalDomainEquivL a b p u) =ᵐ[volume.restrict (Ioo a b)]
+      fun t => W1p.gradient u (lineEquiv t) 0 := by
+  filter_upwards [W1p.gradient_compAffineIsometryEquivL_ae _
+    coe_Ioo_eq_preimage_intervalDomain u] with t ht
+  rw [intervalDomainEquivL_apply, ht,
+    LinearIsometryEquiv.toAffineIsometryEquiv_linearIsometryEquiv,
+    LinearIsometryEquiv.coe_toAffineIsometryEquiv, lineEquiv_symm_apply]
+
+/-- The value of the transfer of `w` back to the interval domain is the value of `w` at the
+coordinate `x 0`. -/
+theorem value_intervalDomainEquivL_symm_ae (w : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p) :
+    W1p.value ((intervalDomainEquivL a b p).symm w)
+      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        fun x => W1p.value w (x 0) := by
+  filter_upwards [W1p.value_compAffineIsometryEquivL_ae _
+    coe_intervalDomain_eq_preimage_Ioo w] with x hx
+  rw [intervalDomainEquivL_symm_apply, hx, ← lineEquiv_symm_apply]
+  rfl
+
+/-- The transfer to the real interval preserves the `Lᵖ` norm of the value. -/
+theorem norm_value_intervalDomainEquivL (u : W1p volume (intervalDomain a b) p) :
+    ‖W1p.value (intervalDomainEquivL a b p u)‖ = ‖W1p.value u‖ :=
+  W1p.norm_value_compAffineIsometryEquivL _ _ u
+
+/-- The transfer to the real interval preserves the `Lᵖ` norm of the weak gradient. -/
+theorem norm_gradient_intervalDomainEquivL (u : W1p volume (intervalDomain a b) p) :
+    ‖W1p.gradient (intervalDomainEquivL a b p u)‖ = ‖W1p.gradient u‖ :=
+  W1p.norm_gradient_compAffineIsometryEquivL _ _ u
+
+/-- **Boundary parts under the transfer to the real interval.** The transfer of `u` vanishes on
+`lineEquiv⁻¹(Γ)` exactly when `u` vanishes on `Γ`. -/
+theorem intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff
+    {Γ : Set (EuclideanSpace ℝ (Fin 1))} {u : W1p volume (intervalDomain a b) p} :
+    intervalDomainEquivL a b p u ∈
+        w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p (lineEquiv ⁻¹' Γ) ↔
+      u ∈ w1pVanishingOnSubmodule volume (intervalDomain a b) p Γ :=
+  W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff (U := ⟨Ioo a b, isOpen_Ioo⟩)
+    lineEquiv.toAffineIsometryEquiv coe_Ioo_eq_preimage_intervalDomain
+
+/-- The transfer of `u` to the real interval vanishes at `c` exactly when `u` vanishes at the
+point `TauCeti.PDE.lineEquiv c` of the Euclidean line. -/
+theorem intervalDomainEquivL_mem_w1pVanishingOnSubmodule_singleton_iff {c : ℝ}
+    {u : W1p volume (intervalDomain a b) p} :
+    intervalDomainEquivL a b p u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {c} ↔
+      u ∈ w1pVanishingOnSubmodule volume (intervalDomain a b) p {lineEquiv c} := by
+  have h : lineEquiv ⁻¹' {lineEquiv c} = {c} := by
+    ext t
+    simp
+  rw [← intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff, h]
+
+/-- **The Poincaré–Friedrichs inequality on the interval domain with `Γ = {a}`**: every
+`u ∈ W^{1,p}_{{a}}(a, b)` satisfies `‖u‖_{Lᵖ} ≤ (b - a) ‖u'‖_{Lᵖ}`. -/
+theorem norm_value_le_mul_norm_gradient_intervalDomain (hab : a < b)
+    {u : W1p volume (intervalDomain a b) p}
+    (hu : u ∈ w1pVanishingOnSubmodule volume (intervalDomain a b) p {lineEquiv a}) :
+    ‖W1p.value u‖ ≤ (b - a) * ‖W1p.gradient u‖ := by
+  rw [← norm_value_intervalDomainEquivL, ← norm_gradient_intervalDomainEquivL]
+  exact W1p.norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero hab
+    (W1p.intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton hab
+      (intervalDomainEquivL_mem_w1pVanishingOnSubmodule_singleton_iff.2 hu))
+
+/-- Integrals over the interval domain are integrals over the real interval along
+`TauCeti.PDE.lineEquiv`. -/
+theorem setIntegral_intervalDomain_eq_setIntegral_Ioo {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (F : EuclideanSpace ℝ (Fin 1) → E) :
+    ∫ x in (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))), F x =
+      ∫ t in Ioo a b, F (lineEquiv t) := by
+  rw [← setIntegral_intervalDomain]
+  simp_rw [← lineEquiv_symm_apply, LinearIsometryEquiv.apply_symm_apply]
+
+/-- The integral of `u` over the interval domain is the integral of its transfer over the real
+interval. -/
+theorem setIntegral_value_intervalDomainEquivL (u : W1p volume (intervalDomain a b) p) :
+    ∫ x in (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))), W1p.value u x =
+      ∫ t in Ioo a b, W1p.value (intervalDomainEquivL a b p u) t := by
+  rw [setIntegral_intervalDomain_eq_setIntegral_Ioo]
+  exact integral_congr_ae (value_intervalDomainEquivL_ae u).symm
+
+/-- The Dirichlet form of `-Δ` on the interval domain is `∫_a^b v' u'`, computed on the real
+interval. -/
+theorem energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL
+    (u v : W1p volume (intervalDomain a b) 2) :
+    energyFormH1 (fun _ => 1) 0 0 u v =
+      ∫ t in Ioo a b, W1p.gradient (intervalDomainEquivL a b 2 v) t *
+        W1p.gradient (intervalDomainEquivL a b 2 u) t := by
+  rw [energyFormH1_one_zero_zero_apply, setIntegral_intervalDomain_eq_setIntegral_Ioo]
+  refine integral_congr_ae ?_
+  filter_upwards [gradient_intervalDomainEquivL_ae u, gradient_intervalDomainEquivL_ae v]
+    with t hu hv
+  simp [hu, hv, dotProduct]
+
+end Sobolev
 
 end PDE
 
