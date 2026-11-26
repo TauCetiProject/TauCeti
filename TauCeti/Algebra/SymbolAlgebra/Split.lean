@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Algebra.Hom
 public import TauCeti.Algebra.SymbolAlgebra.CentralSimple
 
 /-!
@@ -51,6 +52,10 @@ hypothesis on `a` cannot be dropped: Hamilton's quaternions `(-1, -1)_(-1)` over
   `TauCeti.SymbolAlgebra.baseChangeAlgEquivMatrix_one_tmul_x`,
   `TauCeti.SymbolAlgebra.baseChangeAlgEquivMatrix_one_tmul_y`: the generators go to the diagonal
   matrix and to the shift matrix with wrap factor `b`.
+* `TauCeti.SymbolAlgebra.baseChangeAlgEquivMatrix_one_tmul_eq_algEquivMatrixOfPowEq`,
+  `TauCeti.SymbolAlgebra.baseChangeAlgEquivMatrix_one_tmul_map`: the splitting representation for
+  the identity extension is `algEquivMatrixOfPowEq`, and it is compatible with a further
+  extension carrying `α` to its image.
 * `TauCeti.SymbolAlgebra.isSplittingField_of_pow_eq`: an extension containing an `n`-th root of `a`
   splits `(a, b)_ζ`.
 * `TauCeti.SymbolAlgebra.brauerClass_eq_one_of_pow_eq`: if `a` is an `n`-th power, the Brauer class
@@ -155,11 +160,11 @@ theorem bijective_toEndAdjoinRootOfPowEq (hζ : IsPrimitiveRoot ζ n) (hα : α 
   have := isSimpleRing hζ ha hb
   have := finite (a := a) (b := b) hζ.pow_eq_one
   have := Module.Finite.of_basis (AdjoinRoot.basisXPowSubC n b)
-  have hinj := (toEndAdjoinRootOfPowEq b hζ.pow_eq_one hα).toRingHom.injective
-  refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (f := (toEndAdjoinRootOfPowEq b hζ.pow_eq_one hα).toLinearMap) ?_).1 hinj⟩
-  rw [finrank_eq hζ.pow_eq_one, Module.finrank_linearMap,
-    Module.finrank_eq_card_basis (AdjoinRoot.basisXPowSubC n b), Fintype.card_fin, sq]
+  have hfin : Module.finrank K (SymbolAlgebra n ζ a b) =
+      Module.finrank K (Module.End K (AdjoinRoot (X ^ n - C b))) := by
+    rw [finrank_eq hζ.pow_eq_one, Module.finrank_linearMap,
+      Module.finrank_eq_card_basis (AdjoinRoot.basisXPowSubC n b), Fintype.card_fin, sq]
+  exact AlgHom.bijective_of_finrank_eq _ hfin
 
 /-- **A cyclic algebra `(a, b)_ζ` with `a` an `n`-th power is a matrix algebra**: if `α ^ n = a`,
 then `(a, b)_ζ ≃ₐ[K] Mat_n(K)`, through the representation `toEndAdjoinRootOfPowEq` on
@@ -181,6 +186,21 @@ private theorem algEquivMatrixOfPowEq_apply (hζ : IsPrimitiveRoot ζ n) (hα : 
   rw [algEquivMatrixOfPowEq, AlgEquiv.trans_apply, AlgEquiv.ofBijective_apply,
     LinearMap.toMatrixAlgEquiv_apply, AdjoinRoot.basisXPowSubC_apply]
 
+/-- A scalar multiple `c X ^ k` with `k < n` has the single coordinate `c` at `k` in the basis
+`X ^ i` of `K[X]/(X ^ n - b)`. -/
+private theorem repr_algebraMap_mul_root_pow (c : K) (k : Fin n) :
+    (AdjoinRoot.basisXPowSubC n b).repr
+      (algebraMap K _ c * AdjoinRoot.root (X ^ n - C b) ^ (k : ℕ)) = Finsupp.single k c := by
+  rw [← Algebra.smul_def, ← AdjoinRoot.basisXPowSubC_apply, map_smul, Module.Basis.repr_self,
+    Finsupp.smul_single_one]
+
+/-- `X ^ n = b` has the single coordinate `b` at `0` in the basis `X ^ i` of
+`K[X]/(X ^ n - b)`. -/
+private theorem repr_root_pow_self :
+    (AdjoinRoot.basisXPowSubC n b).repr (AdjoinRoot.root (X ^ n - C b) ^ n) =
+      Finsupp.single 0 b := by
+  simpa using repr_algebraMap_mul_root_pow (n := n) b 0
+
 /-- Under `algEquivMatrixOfPowEq`, the generator `x` is the diagonal matrix with entries
 `α ζ⁻¹ ^ i`. -/
 @[simp]
@@ -188,11 +208,13 @@ theorem algEquivMatrixOfPowEq_x (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a) 
     (hb : b ≠ 0) :
     algEquivMatrixOfPowEq hζ hα ha hb x = Matrix.diagonal fun i : Fin n => α * ζ⁻¹ ^ (i : ℕ) := by
   ext i j
-  rw [algEquivMatrixOfPowEq_apply, toEndAdjoinRootOfPowEq_x, LinearMap.smul_apply,
-    AlgEquiv.toLinearMap_apply, map_pow, standardTameCoverAut_root, mul_pow, ← map_pow,
-    ← Algebra.smul_def, smul_smul, ← AdjoinRoot.basisXPowSubC_apply, map_smul,
-    Module.Basis.repr_self, Matrix.diagonal_apply, InvMemClass.coe_inv, Units.val_inv_eq_inv_val,
-    rootsOfUnity.coe_mkOfPowEq]
+  -- `x` sends `X ^ j` to `α (ζ⁻¹ X) ^ j = (α ζ⁻¹ ^ j) X ^ j`
+  have h : toEndAdjoinRootOfPowEq b hζ.pow_eq_one hα x (AdjoinRoot.root _ ^ (j : ℕ)) =
+      algebraMap K _ (α * ζ⁻¹ ^ (j : ℕ)) * AdjoinRoot.root _ ^ (j : ℕ) := by
+    rw [toEndAdjoinRootOfPowEq_x, LinearMap.smul_apply, AlgEquiv.toLinearMap_apply, map_pow,
+      standardTameCoverAut_root]
+    simp [mul_pow, Algebra.smul_def, mul_assoc, -inv_pow]
+  rw [algEquivMatrixOfPowEq_apply, h, repr_algebraMap_mul_root_pow]
   rcases eq_or_ne i j with rfl | hij
   · simp
   · simp [hij]
@@ -210,21 +232,17 @@ theorem algEquivMatrixOfPowEq_y (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a) 
     ← pow_succ', Matrix.of_apply]
   rcases (show (j : ℕ) + 1 ≤ n from j.isLt).lt_or_eq with h | h
   · -- the image `X ^ (j + 1)` of `X ^ j` is the next basis vector
-    rw [show AdjoinRoot.root (X ^ n - C b) ^ ((j : ℕ) + 1) =
-      AdjoinRoot.basisXPowSubC n b ⟨j + 1, h⟩ by simp, Module.Basis.repr_self,
-      Finsupp.single_apply]
+    rw [← one_mul (AdjoinRoot.root _ ^ _), ← map_one (algebraMap K _),
+      repr_algebraMap_mul_root_pow (k := ⟨j + 1, h⟩), Finsupp.single_apply]
     by_cases hi : (i : ℕ) = j + 1
     · simp [Fin.ext_iff, hi]
     · have h1 : (⟨j + 1, h⟩ : Fin n) ≠ i := fun h' => hi (congrArg Fin.val h').symm
       simp [h1, hi, h.ne]
   · -- the image `X ^ n = b` of `X ^ (n - 1)` is `b` times the first basis vector
-    rw [h, AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq,
-      Algebra.algebraMap_eq_smul_one,
-      show (1 : AdjoinRoot (X ^ n - C b)) = AdjoinRoot.basisXPowSubC n b 0 by simp, map_smul,
-      Module.Basis.repr_self, Finsupp.smul_apply, Finsupp.single_apply]
-    by_cases hi0 : (i : ℕ) = 0
-    · simp [Fin.ext_iff, hi0, (NeZero.ne n).symm]
-    · simp [Fin.ext_iff, hi0, i.isLt.ne, Ne.symm hi0]
+    rw [h, repr_root_pow_self, Finsupp.single_apply]
+    rcases eq_or_ne i 0 with rfl | hi
+    · simp [(NeZero.ne n).symm]
+    · simp [hi, hi.symm, i.isLt.ne]
 
 /-- **A cyclic algebra `(a, b)_ζ` with `a` an `n`-th power is split**: its Brauer class is
 trivial. -/
@@ -283,9 +301,7 @@ private theorem bijective_baseChangeToMatrix (hζ : IsPrimitiveRoot ζ n)
   have := isSimpleRing hζ ha hb
   have := finite (a := a) (b := b) hζ.pow_eq_one
   -- the scalar extension of a central simple algebra is simple, so the map is injective
-  have hinj := (baseChangeToMatrix hζ hα ha hb).toRingHom.injective
-  refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (f := (baseChangeToMatrix hζ hα ha hb).toLinearMap) ?_).1 hinj⟩
+  refine AlgHom.bijective_of_finrank_eq _ ?_
   rw [Module.finrank_baseChange, finrank_eq hζ.pow_eq_one, Module.finrank_matrix,
     Fintype.card_fin, Module.finrank_self, mul_one, sq]
 
@@ -320,6 +336,35 @@ theorem baseChangeAlgEquivMatrix_one_tmul_y (hζ : IsPrimitiveRoot ζ n)
       else if (i : ℕ) = 0 ∧ (j : ℕ) + 1 = n then algebraMap F L b else 0 := by
   rw [baseChangeAlgEquivMatrix, AlgEquiv.ofBijective_apply, baseChangeToMatrix,
     Algebra.TensorProduct.lift_tmul, map_one, one_mul, toMatrixBaseChange_y]
+
+/-- For the trivial extension `L = F`, the splitting representation `baseChangeAlgEquivMatrix` is
+`algEquivMatrixOfPowEq` on `1 ⊗ z`. -/
+theorem baseChangeAlgEquivMatrix_one_tmul_eq_algEquivMatrixOfPowEq {α : F}
+    (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = a) (ha : a ≠ 0) (hb : b ≠ 0)
+    (z : SymbolAlgebra n ζ a b) :
+    baseChangeAlgEquivMatrix (L := F) hζ hα ha hb (1 ⊗ₜ z) =
+      algEquivMatrixOfPowEq hζ hα ha hb z := by
+  have h : (baseChangeAlgEquivMatrix (L := F) hζ hα ha hb).toAlgHom.comp
+      Algebra.TensorProduct.includeRight = (algEquivMatrixOfPowEq hζ hα ha hb).toAlgHom :=
+    algHom_ext (by simp) (by simp)
+  exact AlgHom.congr_fun h z
+
+/-- The splitting representation `baseChangeAlgEquivMatrix` is compatible with a further field
+extension `L'` of `L`, carrying `α` to its image: on `1 ⊗ z`, the representation over `L'` is the
+entrywise image of the representation over `L`. -/
+theorem baseChangeAlgEquivMatrix_one_tmul_map {L' : Type*} [Field L'] [Algebra F L']
+    [Algebra L L'] [IsScalarTower F L L'] (hζ : IsPrimitiveRoot ζ n)
+    (hα : α ^ n = algebraMap F L a) (hα' : algebraMap L L' α ^ n = algebraMap F L' a)
+    (ha : a ≠ 0) (hb : b ≠ 0) (z : SymbolAlgebra n ζ a b) :
+    baseChangeAlgEquivMatrix hζ hα' ha hb (1 ⊗ₜ z) =
+      (baseChangeAlgEquivMatrix hζ hα ha hb (1 ⊗ₜ z)).map (algebraMap L L') := by
+  have h : ((baseChangeAlgEquivMatrix hζ hα' ha hb).toAlgHom.restrictScalars F).comp
+      Algebra.TensorProduct.includeRight = (IsScalarTower.toAlgHom F L L').mapMatrix.comp
+        (((baseChangeAlgEquivMatrix hζ hα ha hb).toAlgHom.restrictScalars F).comp
+          Algebra.TensorProduct.includeRight) :=
+    algHom_ext (by simp [← IsScalarTower.algebraMap_apply])
+      (by ext; simp [apply_ite (algebraMap L L'), ← IsScalarTower.algebraMap_apply])
+  exact AlgHom.congr_fun h z
 
 /-- **A field extension containing an `n`-th root of `a` splits the cyclic algebra `(a, b)_ζ`.** -/
 theorem isSplittingField_of_pow_eq (hζ : IsPrimitiveRoot ζ n) (hα : α ^ n = algebraMap F L a)
