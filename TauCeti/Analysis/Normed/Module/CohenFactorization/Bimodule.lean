@@ -71,23 +71,21 @@ theorem exists_apply_eq_of_mem_essentialSubmodule_right (R : E →L[𝕜] A →L
     (hx : x ∈ R.flip.essentialSubmodule) {ε : ℝ} (hε : 0 < ε) :
     ∃ a y, ‖a‖ ≤ C ∧ y ∈ closure (Set.range fun b ↦ R x b) ∧ ‖y - x‖ < ε ∧ R y a = x := by
   -- The opposite algebra acts on the left by `a · z = z · a.unop`.
-  let unopL : Aᵐᵒᵖ →L[𝕜] A :=
-    (MulOpposite.opContinuousLinearEquiv 𝕜 (M := A)).symm.toContinuousLinearMap
-  let Lop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := R.flip.comp unopL
+  let Lop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := R.flip.compUnop
   have hLop' : ∀ (a b : Aᵐᵒᵖ) (z : E), Lop (a * b) z = Lop a (Lop b z) := by
     intro a b z
-    simp only [Lop, unopL, comp_apply, ContinuousLinearEquiv.coe_coe,
-      MulOpposite.opContinuousLinearEquiv_symm_apply, flip_apply, MulOpposite.unop_mul]
+    simp only [Lop, compUnop_apply, flip_apply, MulOpposite.unop_mul]
     exact (hR z b.unop a.unop).symm
-  have hx' : x ∈ Lop.essentialSubmodule :=
-    (essentialSubmodule_comp_of_surjective R.flip (f := unopL)
-      MulOpposite.unop_surjective).symm ▸ hx
+  have hx' : x ∈ Lop.essentialSubmodule := by
+    simpa [Lop] using hx
   obtain ⟨a, y, ha, hy, hdist, hfac⟩ :=
     exists_apply_eq_of_mem_essentialSubmodule Lop hLop' (l := l.map MulOpposite.op)
       (Filter.eventually_map.2 hC) (TauCeti.tendsto_mul_right_map_op hl) hx' hε
-  refine ⟨a.unop, y, by rw [MulOpposite.norm_unop]; exact ha, ?_, hdist, hfac⟩
-  have hset : Set.range (fun b : Aᵐᵒᵖ ↦ Lop b x) = Set.range fun b : A ↦ R x b :=
-    MulOpposite.unop_surjective.range_comp (fun b : A ↦ R x b)
+  refine ⟨a.unop, y, by rw [MulOpposite.norm_unop]; exact ha, ?_, hdist,
+    by simpa only [Lop, compUnop_apply, flip_apply] using hfac⟩
+  have hset : Set.range (fun b : Aᵐᵒᵖ ↦ Lop b x) = Set.range fun b : A ↦ R x b := by
+    simpa only [Lop, compUnop_apply, flip_apply, Function.comp_def] using
+      MulOpposite.unop_surjective.range_comp (fun b : A ↦ R x b)
   rwa [hset] at hy
 
 /-- Over a Banach algebra with a bounded right approximate identity, the set `E · A` of products

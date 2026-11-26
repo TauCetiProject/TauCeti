@@ -158,30 +158,26 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential
     fun a x _ ↦ apply_mem_essentialSubmodule R a x
   obtain ⟨ψ, D₁, hD₁, hD₁_ER, hD_eq⟩ :=
     exists_residual_derivation_of_restrict hL hR hLR R.essentialSubmodule hL_inv hR_inv hD hER
-  let unopL : Aᵐᵒᵖ →L[𝕜] A := (MulOpposite.opContinuousLinearEquiv 𝕜 (M := A)).symm
-  let Lop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := R.comp unopL
-  let Rop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := L.comp unopL
-  let D₁op : Aᵐᵒᵖ →L[𝕜] StrongDual 𝕜 E := D₁.comp unopL
+  let Lop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := R.compUnop
+  let Rop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := L.compUnop
+  let D₁op : Aᵐᵒᵖ →L[𝕜] StrongDual 𝕜 E := D₁.compUnop
   have hD₁op (a b : Aᵐᵒᵖ) :
       D₁op (a * b) = dualAction Rop a (D₁op b) + dualAction Lop b (D₁op a) := by
     ext x
-    simp only [D₁op, Lop, Rop, unopL, comp_apply, ContinuousLinearEquiv.coe_coe,
-      MulOpposite.opContinuousLinearEquiv_symm_apply, MulOpposite.unop_mul, hD₁, add_apply,
+    simp only [D₁op, Lop, Rop, compUnop_apply, MulOpposite.unop_mul, hD₁, add_apply,
       dualAction_apply_apply]
     exact add_comm _ _
   obtain ⟨φ₁, hφ₁⟩ := exists_eq_dualAction_sub_dualAction_of_forall_apply_left_eq_zero
     (L := Lop) (R := Rop) (l := l.map MulOpposite.op) (Filter.eventually_map.2 hC)
     (tendsto_mul_left_map_op hl) D₁op hD₁op
     fun a b x ↦ by
-      simpa only [D₁op, Lop, unopL, comp_apply, ContinuousLinearEquiv.coe_coe,
-        MulOpposite.opContinuousLinearEquiv_symm_apply] using
+      simpa only [D₁op, Lop, compUnop_apply] using
         hD₁_ER a.unop (R b.unop x) (apply_mem_essentialSubmodule R b.unop x)
   refine ⟨ψ - φ₁, fun a ↦ ?_⟩
   ext x
   have hDa := congr($(hD_eq a) x)
   have hD₁a := congr($(hφ₁ (MulOpposite.op a)) x)
-  simp only [D₁op, Rop, Lop, unopL, comp_apply, ContinuousLinearEquiv.coe_coe,
-    MulOpposite.opContinuousLinearEquiv_symm_apply, MulOpposite.unop_op,
+  simp only [D₁op, Rop, Lop, compUnop_apply, MulOpposite.unop_op,
     sub_apply, add_apply, dualAction_apply_apply] at hDa hD₁a ⊢
   rw [hDa, hD₁a]
   ring
@@ -223,39 +219,15 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_essential
     exact exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential hL hR hLR hC
       hl.tendsto_mul_left D hD
       ⟨ψL, fun a ↦ by simpa only [DL, comp_apply, precomp_apply] using hψL a⟩
-  -- Step 2: reduce `EL` to its right-essential part `ELR`, which maps into
+  -- Step 2: reduce `EL` to its right-essential part `RL.essentialSubmodule`, which embeds into
   -- `essentialBimoduleSubmodule L R`.
   refine exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential hLL hRL hLRL hC
     hl.tendsto_mul_right DL hDL ?_
-  let ELR := RL.essentialSubmodule
-  have hELR_mem (x : ELR) :
-      (EL.subtypeL.comp ELR.subtypeL) x ∈ essentialBimoduleSubmodule L R :=
-    (essentialSubmodule_le_iff (M := RL) (p := (essentialBimoduleSubmodule L R).comap EL.subtype)
-      ((isClosed_essentialBimoduleSubmodule L R).preimage continuous_subtypeVal)).2
-      (fun a y ↦ by
-        simpa [RL, coe_restrictAction_apply] using
-          apply_right_mem_essentialBimoduleSubmodule_of_mem_left hLR a y.property)
-      x.property
-  let ι : ELR →L[𝕜] essentialBimoduleSubmodule L R :=
-    (EL.subtypeL.comp ELR.subtypeL).codRestrict (essentialBimoduleSubmodule L R) hELR_mem
-  have hι_coe (x : ELR) : (ι x : E) = (x.val : E) := by
-    simp only [ι, coe_codRestrict_apply, comp_apply, Submodule.subtypeL_apply]
-  have hιR (a : A) (x : ELR) :
-      ι (RL.restrictAction ELR (fun a y _ ↦ apply_mem_essentialSubmodule RL a y) a x) =
-        R.restrictAction (essentialBimoduleSubmodule L R)
-          (fun a _ hx ↦ apply_right_mem_essentialBimoduleSubmodule hR hLR a hx) a (ι x) :=
-    restrictAction_intertwine EL.subtype hι_coe
-      (fun y ↦ coe_restrictAction_apply R EL hRL_inv a y) x
-  have hιL (a : A) (x : ELR) :
-      ι (LL.restrictAction ELR (fun a _ hy ↦
-          apply_mem_essentialSubmodule_of_comm (fun b c y ↦ (hLRL c b y).symm) a hy) a x) =
-        L.restrictAction (essentialBimoduleSubmodule L R)
-          (fun a _ hx ↦ apply_left_mem_essentialBimoduleSubmodule hL a hx) a (ι x) :=
-    restrictAction_intertwine EL.subtype hι_coe
-      (fun y ↦ coe_restrictAction_apply L EL hLL_inv a y) x
+  obtain ⟨ι, hι_coe, hιR, hιL⟩ :=
+    exists_continuousLinearMap_restrictAction_essentialBimoduleSubmodule hL hR hLR
   obtain ⟨ψ₀, hψ₀⟩ := hEss
   refine ⟨precomp 𝕜 ι ψ₀, fun a ↦ ?_⟩
-  have h1 : (DL a).comp ELR.subtypeL =
+  have h1 : (DL a).comp RL.essentialSubmodule.subtypeL =
       precomp 𝕜 ι ((D a).comp (essentialBimoduleSubmodule L R).subtypeL) := by
     ext x
     simp only [DL, comp_apply, precomp_apply, Submodule.subtypeL_apply, hι_coe]
