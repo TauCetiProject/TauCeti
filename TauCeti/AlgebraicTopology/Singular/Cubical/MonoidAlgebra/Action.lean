@@ -743,6 +743,23 @@ theorem cubicalChainModuleLinearMap_linearMap (f : C(Y, Y')) (g : C(Y', Y''))
       cubicalChainModuleLinearMap R (g.comp f) x :=
   (LinearMap.congr_fun (cubicalChainModuleLinearMap_comp f g) x).symm
 
+/-- A left inverse `g` of `f` induces a left inverse of the induced map, whatever the phantom
+monoid of the middle module. -/
+theorem cubicalChainModuleLinearMap_linearMap_of_comp_eq_id {f : C(Y, Y')} {g : C(Y', Y)}
+    (h : g.comp f = .id Y) (x : cubicalChainModule Y G R) :
+    cubicalChainModuleLinearMap (G := G') R g (cubicalChainModuleLinearMap R f x) = x := by
+  rw [cubicalChainModuleLinearMap_linearMap, h, cubicalChainModuleLinearMap_id, LinearMap.id_apply]
+
+/-- A left inverse `g` of `f` induces a left inverse of the induced map on finitely supported
+vectors of chains, whatever the phantom monoid of the middle module. -/
+theorem mapRange_cubicalChainModuleLinearMap_mapRange_of_comp_eq_id {P : Type*} {f : C(Y, Y')}
+    {g : C(Y', Y)} (h : g.comp f = .id Y) (u : P →₀ cubicalChainModule Y G R) :
+    Finsupp.mapRange.linearMap (cubicalChainModuleLinearMap (G := G') R g)
+      (Finsupp.mapRange.linearMap (cubicalChainModuleLinearMap R f) u) = u :=
+  Finsupp.ext fun x ↦ by
+    simp only [Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_apply,
+      cubicalChainModuleLinearMap_linearMap_of_comp_eq_id h]
+
 variable (Y G G' R) in
 /-- The change of phantom monoid: the map induced by the identity of `Y` is a linear equivalence
 between the modules with phantom monoids `G` and `G'`, its own inverse. -/
