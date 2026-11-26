@@ -53,9 +53,11 @@ equivariantly along a homomorphism `ρ : π₁(B) →* ℤˣ` recording whether 
 preserves or reverses the lifted orientations
 (`TauCeti.VectorBundleOrientationCover.exists_lift_universalCover`). Since every local system on a
 path-connected such base is associated to its monodromy representation
-(`TauCeti.UniversalCover.associatedLocalSystemMonodromyIso`), taking for `D` the monodromy of a
-local system `L` on `B` and identifying `L_D` with `π^*L` and `L_{D ⊗ k_χ}` with `o(E) ⊗ L` turns
-this case into the Thom isomorphism `H_{q + r}(E, E₀; π^*L) ≅ H_q(B; o(E) ⊗ L)`.
+(`TauCeti.UniversalCover.associatedLocalSystemMonodromyIso`), one can take for `D` the monodromy
+of a local system `L` on `B`. Identifying `L_D` with `π^*L` and `L_{D ⊗ k_χ}` with `o(E) ⊗ L` would
+then turn this case into the Thom isomorphism `H_{q + r}(E, E₀; π^*L) ≅ H_q(B; o(E) ⊗ L)`. Those
+identifications, and the deck action on the Thom pair of the pull-back of `E` to the universal
+cover, are not carried out here.
 
 ## Main definitions and results
 
