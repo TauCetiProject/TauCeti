@@ -18,7 +18,8 @@ Let `M` be a matroid on `α` and `w : α → R` a weight with values in an order
 monoid. The weight of a finite set `X` is `∑ᶠ e ∈ X, w e`. A base of maximum weight
 is a base whose weight is at least that of every other base.
 
-For a matroid of finite rank and a base `B`, the following are equivalent:
+For a matroid of finite rank, a base `B`, and weights in an ordered cancellative commutative
+monoid, the following are equivalent:
 
 1. `B` is a base of maximum weight;
 2. *exchange*: whenever `e ∉ B`, `f ∈ B` and `insert e (B \ {f})` is a base, `w e ≤ w f`;
@@ -161,7 +162,7 @@ theorem IsBase.exists_bijOn_of_forall_exchange [M.RankFinite] (hB : M.IsBase B)
       simpa [Equiv.swap_apply_of_ne_of_ne hxe hxf] using hφw x (mem_insert_of_mem _ ⟨hx, hxe⟩)
 
 /-- The threshold criterion implies the exchange criterion. -/
-theorem le_of_forall_isBasis_inter
+private theorem le_of_forall_isBasis_inter
     (h : ∀ t, M.IsBasis (B ∩ {e | t ≤ w e}) (M.E ∩ {e | t ≤ w e})) (he : e ∉ B)
     (hB' : M.IsBase (insert e (B \ {f}))) : w e ≤ w f := by
   by_contra hlt
