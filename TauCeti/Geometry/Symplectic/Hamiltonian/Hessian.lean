@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Linearization
+public import TauCeti.Analysis.Calculus.Morse.SpectralSplitting
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
@@ -17,6 +18,11 @@ linear compatible almost complex structure `J`. Then `J X_H = ∇H`
 (`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`), and differentiating gives
 `J dX_H(x) = d(∇H)(x)`, the Hessian operator `TauCeti.hessianOperator H x` of `H`
 (`TauCeti.SymplecticForm.apply_fderiv_hamiltonianVectorField_eq_hessianOperator`).
+
+At a nondegenerate critical point `p` of `H`, `dX_H(p)` is therefore injective
+(`TauCeti.SymplecticForm.injective_fderiv_hamiltonianVectorField_of_isNondegenerateCriticalPoint`),
+and the sum of the eigenspaces of `-J dX_H(p)` at negative eigenvalues has dimension
+`dim V - ind_p(H)` (`TauCeti.SymplecticForm.finrank_pointSpectralSubspace_add_morseIndex`).
 
 For the squared norm, `X_H` is the linear field `y ↦ -2 J y`
 (`TauCeti.SymplecticForm.hamiltonianVectorField_norm_sq`), whose derivative `-2 J` is constant.
@@ -46,6 +52,36 @@ theorem apply_fderiv_hamiltonianVectorField_eq_hessianOperator (hg : ∀ v w, ω
     simp [AlmostComplexStructure.linearEquiv_apply, apply_hamiltonianVectorField_eq_gradient hg]
   rw [← fderiv_gradient, h, ContinuousLinearEquiv.comp_fderiv]
   simp [AlmostComplexStructure.linearEquiv_apply]
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)`, the derivative `dX_H(p)` of the
+Hamiltonian vector field at a nondegenerate critical point `p` of `H` is injective: `J dX_H(p)` is
+the invertible Hessian operator of `H` at `p`. -/
+theorem injective_fderiv_hamiltonianVectorField_of_isNondegenerateCriticalPoint
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {H : V → ℝ} {p : V}
+    (hp : IsNondegenerateCriticalPoint H p) :
+    Function.Injective (fderiv ℝ (ω.hamiltonianVectorField H) p) := fun v w hvw ↦
+  hp.isInvertible_hessianOperator.injective (by
+    rw [← apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg,
+      ← apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg, hvw])
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)`, then at a nondegenerate critical point
+`p` of `H` the sum of the eigenspaces of `-J dX_H(p)` at negative eigenvalues has dimension
+`dim V - ind_p(H)`: `J dX_H(p)` is the Hessian operator of `H`, whose positive spectral subspace
+complements a maximal negative definite subspace. -/
+theorem finrank_pointSpectralSubspace_add_morseIndex (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    {H : V → ℝ} {p : V} (hp : IsNondegenerateCriticalPoint H p) :
+    Module.finrank ℝ (Module.End.pointSpectralSubspace
+        ((-(J.toLinearMap.toContinuousLinearMap.comp
+          (fderiv ℝ (ω.hamiltonianVectorField H) p)) : V →L[ℝ] V) : V →ₗ[ℝ] V) (Set.Iio 0)) +
+      morseIndex H p = Module.finrank ℝ V := by
+  have hHess : ((-(J.toLinearMap.toContinuousLinearMap.comp
+      (fderiv ℝ (ω.hamiltonianVectorField H) p)) : V →L[ℝ] V) : V →ₗ[ℝ] V) =
+      -(hessianOperator H p : V →ₗ[ℝ] V) := by
+    ext v
+    simp [apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg]
+  rw [hHess, Module.End.pointSpectralSubspace_neg, Set.neg_Iio, neg_zero,
+    ← hp.contDiffAt.stableLinearSubspace_eq_pointSpectralSubspace]
+  exact hp.finrank_stableLinearSubspace_add_morseIndex
 
 /-- **The Hamiltonian vector field of the squared norm.** If the inner product of `V` is the metric
 `ω(·, J ·)`, the Hamiltonian vector field of `y ↦ ‖y‖²` is the linear field `y ↦ -2 J y`. -/
