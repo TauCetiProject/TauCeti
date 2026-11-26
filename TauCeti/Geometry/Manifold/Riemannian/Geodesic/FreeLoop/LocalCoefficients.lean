@@ -296,6 +296,12 @@ private def straightenedTimeMap (t : unitInterval) :
     (straightenArcs_target isPathInterpolation_segment m.succ_pos (fun _ _ _ ↦ trivial) t).trans
       (MooreFreeLoopSpace.mem_timeMaps.1 (vertexTimeMap hr hδ q).property).2⟩⟩
 
+private theorem coe_straightenedTimeMap_apply (t s : unitInterval) :
+    (straightenedTimeMap hr hδ q t : C(unitInterval, ℝ)) s =
+      straightenArcs (fun p : ℝ × ℝ ↦ (Path.segment p.1 p.2 : C(unitInterval, ℝ))) (m + 1)
+        (vertexTimeMap hr hδ q) t s :=
+  (rfl)
+
 /-- The straightening of the vertex time map, a loop of time maps at the vertex time map. -/
 private def straightenTimeMapPath : Path (vertexTimeMap hr hδ q) (vertexTimeMap hr hδ q) where
   toFun := straightenedTimeMap hr hδ q
@@ -304,6 +310,10 @@ private def straightenTimeMapPath : Path (vertexTimeMap hr hδ q) (vertexTimeMap
     straightenArcs_zero isPathInterpolation_segment m.succ_pos (fun _ _ _ ↦ trivial) s
   target' := Subtype.ext <| ContinuousMap.ext fun s ↦
     (straightenArcs_one _ _ _ s).trans (congrFun (brokenPath_vertexTimeMap hr hδ q) s)
+
+private theorem straightenTimeMapPath_apply (t : unitInterval) :
+    straightenTimeMapPath hr hδ q t = straightenedTimeMap hr hδ q t :=
+  (rfl)
 
 /-- **Straightening the reparametrization by the vertex time map** is reparametrizing by the
 straightened vertex time map. -/
@@ -324,8 +334,8 @@ private theorem arcStraighteningMap_reparam_vertexTimeMap
   rw [MoorePath.toUnitPath_arcStraighteningMap, MooreFreeLoopSpace.coe_toArcsWithin,
     MooreFreeLoopSpace.toUnitPath_reparam, ContinuousMap.comp_apply,
     straightenArcs_comp (ρ := fun p : ℝ × ℝ ↦ (Path.segment p.1 p.2 : C(unitInterval, ℝ))) _
-      m.succ_pos fun i hi a ↦ geodesicInterpolation_extend_vertexTimeMap hr hδ q hi a]
-  rfl
+      m.succ_pos fun i hi a ↦ geodesicInterpolation_extend_vertexTimeMap hr hδ q hi a,
+    coe_straightenedTimeMap_apply]
 
 /-! #### Changing the durations of the arcs of the reparametrization -/
 
@@ -406,6 +416,10 @@ private def durationTimeMapPath :
     rw [vertexTime_zero, zero_add, NNReal.coe_mul, unitInterval.coe_toNNReal,
       min_eq_left (mul_le_of_le_one_right (NNReal.coe_nonneg _) t.property.2)]
 
+private theorem durationTimeMapPath_apply (s : unitInterval) :
+    durationTimeMapPath hr hδ q s = durationTimeMap hr hδ q s :=
+  (rfl)
+
 /-- **Changing the durations of the arcs of the reparametrization by the vertex time map** is
 reparametrizing by the time maps of the durations. -/
 private theorem brokenPathDurationHomotopy_reparam_vertexTimeMap
@@ -423,8 +437,7 @@ private theorem brokenPathDurationHomotopy_reparam_vertexTimeMap
       unitInterval.toNNReal s *
         nndist (Λ.closedSample (m + 1) i.castSucc) (Λ.closedSample (m + 1) i.succ) =
       durationTime hr hδ q s i := fun i ↦ by
-    rw [hcs, hcs', MooreFreeLoopSpace.length_reparam]
-    rfl
+    rw [hcs, hcs', MooreFreeLoopSpace.length_reparam, durationTime]
   have hF : ∀ i : Fin (m + 1),
       geodesicInterpolation hr
         ((cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.extend (vertexTime q i.castSucc),
@@ -510,6 +523,18 @@ private theorem sample_reparam_slideTimeMapPath (u : unitInterval) (j : Fin (m +
   rw [MoorePath.sample_eq_toUnitPath_arcPoint, MooreFreeLoopSpace.toUnitPath_reparam,
     ContinuousMap.comp_apply, slideTimeMapPath_apply_arcPoint_zero, MoorePath.extend_coe]
 
+/-- The closed broken geodesic through `q` is `1`-Lipschitz, also read on `ℝ`. -/
+private theorem lipschitzWith_extend_cyclicDistanceCutBrokenGeodesic :
+    LipschitzWith 1 (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.extend := by
+  have h := (lipschitzWith_brokenGeodesicLoop hr m q.val fun i ↦
+    (mem_cyclicDistanceCut.1 q.property i).trans_lt (hδ i)).comp Real.lipschitzWith_toNNReal
+  rw [one_mul, ← cyclicDistanceCutBrokenGeodesic_apply hr hδ q] at h
+  have he : ⇑(cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.extend =
+      (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath ∘ Real.toNNReal :=
+    funext fun t ↦ MoorePath.extend_apply _ t
+  rw [he]
+  exact h
+
 /-- The reparametrizations along the slide time map have short arcs, provided that the loop is
 shorter than `(m + 1) r`. -/
 private theorem reparam_slideTimeMapPath_mem_arcsWithin
@@ -520,17 +545,8 @@ private theorem reparam_slideTimeMapPath_mem_arcsWithin
   rw [MooreFreeLoopSpace.mem_arcsWithin, MooreFreeLoopSpace.toUnitPath_reparam]
   intro i hi a
   rw [Set.mem_ofPred_eq, ContinuousMap.comp_apply, ContinuousMap.comp_apply]
-  -- The closed broken geodesic is `1`-Lipschitz, also read on `ℝ`.
-  have hlip : LipschitzWith 1 (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.extend := by
-    have h := (lipschitzWith_brokenGeodesicLoop hr m q.val fun i ↦
-      (mem_cyclicDistanceCut.1 q.property i).trans_lt (hδ i)).comp Real.lipschitzWith_toNNReal
-    rw [one_mul, ← cyclicDistanceCutBrokenGeodesic_apply hr hδ q] at h
-    have he : ⇑(cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath.extend =
-        (cyclicDistanceCutBrokenGeodesic hr hδ q).toMoorePath ∘ Real.toNNReal :=
-      funext fun t ↦ MoorePath.extend_apply _ t
-    rw [he]
-    exact h
-  refine (hlip.dist_le_mul _ _).trans_lt ?_
+  refine ((lipschitzWith_extend_cyclicDistanceCutBrokenGeodesic hr hδ q).dist_le_mul _ _).trans_lt
+    ?_
   set i' : Fin (m + 1) := ⟨i, hi⟩
   set d : ℝ := (nndist (q.val i') (q.val (i' + 1)) : ℝ)
   set L : ℝ := ((cyclicDistanceCutBrokenGeodesic hr hδ q).length : ℝ)
@@ -544,8 +560,9 @@ private theorem reparam_slideTimeMapPath_mem_arcsWithin
       ContinuousMap.smul_apply, vertexTimeMap_arcPoint hr hδ q i' b,
       MooreFreeLoopSpace.coe_mulTimeMap_apply, unitInterval.coe_arcPoint hi, smul_eq_mul,
       smul_eq_mul]
+    -- `push_cast` reads the edge `d` as a distance; unfold the abbreviations `d` and `L`.
     push_cast
-    rfl
+    simp only [d, L, coe_nndist]
   rw [hval, hval, NNReal.coe_one, one_mul, Real.dist_eq]
   have hu₀ := u.property.1
   have hu₁ := u.property.2
@@ -646,10 +663,9 @@ private theorem evalAt_sampleBrokenGeodesicLoopHomotopy_reparam_vertexTimeMap
   rw [sampleBrokenGeodesicLoopHomotopy_eq_trans, ContinuousMap.Homotopy.trans_apply,
     Path.trans_apply]
   split_ifs
-  · rw [MooreFreeLoopSpace.arcStraightening_apply, arcStraighteningMap_reparam_vertexTimeMap]
-    rfl
-  · rw [brokenPathDurationHomotopy_reparam_vertexTimeMap]
-    rfl
+  · rw [MooreFreeLoopSpace.arcStraightening_apply, arcStraighteningMap_reparam_vertexTimeMap,
+      straightenTimeMapPath_apply]
+  · rw [brokenPathDurationHomotopy_reparam_vertexTimeMap, durationTimeMapPath_apply]
 
 /-- **The square of the straightening homotopy along the slide.** The path of loops of the
 straightening homotopy at `γ` is homotopic to the path of broken geodesics through the samples of

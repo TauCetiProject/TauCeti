@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Analysis.Convex.Contractible
 public import Mathlib.Topology.ContinuousMap.Algebra
-public import Mathlib.Topology.Instances.NNReal.Lemmas
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 public import TauCeti.Topology.PathSpace.Moore.FreeLoop
 
@@ -31,7 +30,6 @@ closed broken geodesic into the broken geodesics through its samples.
 
 ## Main definitions
 
-* `TauCeti.MoorePath.extend`: a Moore path as a function on `ℝ`.
 * `TauCeti.MooreFreeLoopSpace.timeMaps`: the time maps of a duration.
 * `TauCeti.MooreFreeLoopSpace.reparam`: the reparametrization of a free Moore loop by a time map.
 
@@ -54,22 +52,6 @@ open Set unitInterval
 namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X]
-
-namespace MoorePath
-
-/-- A Moore path as a function on `ℝ`: `t ↦ γ t` for `t ≥ 0`, constant at the source for `t ≤ 0`.
--/
-def extend (γ : MoorePath X) : C(ℝ, X) :=
-  γ.toContinuousMap.comp ⟨Real.toNNReal, continuous_real_toNNReal⟩
-
-@[simp]
-theorem extend_apply (γ : MoorePath X) (t : ℝ) : γ.extend t = γ t.toNNReal :=
-  (rfl)
-
-theorem extend_coe (γ : MoorePath X) (t : ℝ≥0) : γ.extend t = γ t := by
-  rw [extend_apply, Real.toNNReal_coe]
-
-end MoorePath
 
 namespace MooreFreeLoopSpace
 
@@ -104,13 +86,6 @@ instance (L : ℝ≥0) : SimplyConnectedSpace (timeMaps L) :=
 
 variable (γ : MooreFreeLoopSpace X)
 
-/-- On a loop of duration zero, the path on `ℝ` is constant at the base point. -/
-private theorem extend_eq_basepoint_of_length_eq_zero (h : γ.length = 0) (t : ℝ) :
-    γ.toMoorePath.extend t = γ.basepoint := by
-  rw [MoorePath.extend_apply, ← source_toMoorePath, MoorePath.source_def,
-    γ.toMoorePath.apply_of_length_le (by rw [length_toMoorePath, h]; exact zero_le),
-    γ.toMoorePath.apply_of_length_le (by rw [length_toMoorePath, h])]
-
 /-- On a loop of duration zero, rescaling to its duration gives the constant path of length zero. -/
 private theorem rescale_of_length_eq_zero (h : γ.length = 0) (P : MoorePath X) :
     P.rescale γ.length = MoorePath.refl P.source := by
@@ -141,7 +116,7 @@ def reparam : C(timeMaps γ.length, MooreFreeLoopSpace X) where
       continuous_subtypeVal)).moorePath_rescale_of_forall_eq_source continuous_const
       fun g hg t ↦ ?_
     simp only [Function.comp_apply, MoorePath.ofUnitPath_apply, MoorePath.source_ofUnitPath,
-      ContinuousMap.comp_apply, extend_eq_basepoint_of_length_eq_zero γ hg]
+      ContinuousMap.comp_apply, extend_eq_basepoint_of_length_eq_zero hg]
 
 theorem toMoorePath_reparam (g : timeMaps γ.length) :
     (γ.reparam g).toMoorePath =
@@ -161,7 +136,7 @@ theorem toUnitPath_reparam (g : timeMaps γ.length) :
   · ext s
     rw [rescale_of_length_eq_zero γ h, MoorePath.toUnitPath_refl, ContinuousMap.const_apply,
       MoorePath.source_ofUnitPath, ContinuousMap.comp_apply, ContinuousMap.comp_apply,
-      extend_eq_basepoint_of_length_eq_zero γ h, extend_eq_basepoint_of_length_eq_zero γ h]
+      extend_eq_basepoint_of_length_eq_zero h, extend_eq_basepoint_of_length_eq_zero h]
   · rw [MoorePath.toUnitPath_rescale _ h, MoorePath.toUnitPath_ofUnitPath]
 
 /-- **A free Moore loop is its reparametrization by the time map `s ↦ L s`.** -/
