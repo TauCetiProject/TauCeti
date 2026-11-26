@@ -122,7 +122,8 @@ theorem IsJHolomorphicOn.contDiffOn {n : ℕ∞} {s : Set ℂ} {W : Set V}
 
 /-- **Global `C^n` regularity of `C¹` `J`-holomorphic maps from `ℂ`.** If `V` is a
 finite-dimensional real normed space, `x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap` is
-`C^n`, and `u : ℂ → V` is `C¹` and `J`-holomorphic, then `u` is `C^n`. -/
+`C^n`, and `u : ℂ → V` is `C¹` and holomorphic from the standard complex structure
+`AlmostComplexStructure.ofComplexModule ℂ` on `ℂ` to `J`, then `u` is `C^n`. -/
 theorem IsJHolomorphic.contDiff {n : ℕ∞}
     {J : V → AlmostComplexStructure V} {u : ℂ → V}
     (h : IsJHolomorphic (fun _ => AlmostComplexStructure.ofComplexModule ℂ) J u)

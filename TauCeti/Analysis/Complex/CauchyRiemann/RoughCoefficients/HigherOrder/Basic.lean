@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 public import TauCeti.Analysis.Sobolev.Local.Multiplication.Higher
-import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.PartialDerivative
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.TestFunction.Inner
@@ -43,16 +42,10 @@ hypothesis gives `∂_t ξ ∈ W^{k,q}_loc`. The `s`-derivative is then read off
 `∂_s ξ = η - J ∂_t ξ - S ξ`, whose right side is in `W^{k,q}_loc` by the mixed-exponent products
 `TauCeti.MemWkpLoc.clm_apply_succ`.
 
-Transferring across `toEuclidean` lifts this to an arbitrary finite-dimensional real normed space
-`W` for an almost-everywhere solution `ξ ∈ W^{1,q}_loc(Ω; W)`
-(`TauCeti.memWkpLoc_succ_of_ae_linearCR`).
-
 ## Main results
 
 * `TauCeti.IsWeakCRSolution.apply_I_of_hasWeakFDerivOn`: the weak equation for `∂_t ξ`.
 * `TauCeti.IsWeakCRSolution.memWkpLoc_succ`: interior `W^{k+1,q}` regularity.
-* `TauCeti.memWkpLoc_succ_of_ae_linearCR`: transfer to an arbitrary finite-dimensional real
-  normed space.
 
 ## References
 
@@ -142,63 +135,5 @@ theorem memWkpLoc_succ [FiniteDimensional ℝ V] {p q : ℝ≥0} {k : ℕ}
     exact (h1.clm_comp _).add (hTk.clm_comp _)
 
 end IsWeakCRSolution
-
-/-! ### Transfer to finite-dimensional real normed spaces -/
-
-section NormedSpace
-
-variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
-
-/-- **Higher-order interior regularity on a finite-dimensional real normed space.** Let `2 < p`,
-`1/p + 1/q < 1`, `q ≤ p`, and let `W` be a finite-dimensional real normed space. If
-`J ∈ W^{1,p}_loc(Ω; W →L[ℝ] W) ∩ W^{k,p}_loc(Ω; W →L[ℝ] W)` satisfies `J² = -1` almost
-everywhere on `Ω`, `S ∈ W^{k,p}_loc(Ω; W →L[ℝ] W)`, `ξ ∈ W^{1,q}_loc(Ω; W)` has weak derivative
-`Dξ` satisfying `Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z` almost everywhere on `Ω`, and
-`η ∈ W^{k,q}_loc(Ω; W)`, then `ξ ∈ W^{k+1,q}_loc(Ω; W)`. -/
-theorem memWkpLoc_succ_of_ae_linearCR {p q : ℝ≥0} {k : ℕ}
-    {J S : ℂ → W →L[ℝ] W} {ξ η : ℂ → W} {Dξ : ℂ → ℂ →L[ℝ] W}
-    (hp : 2 < p) (hpq : (p : ℝ≥0∞)⁻¹ + (q : ℝ≥0∞)⁻¹ < 1) (hqp : q ≤ p)
-    (hJ1 : MemWkpLoc p Ω 1 J) (hJ : MemWkpLoc p Ω k J)
-    (hJsq : ∀ᵐ z ∂volume.restrict Ω, (J z).comp (J z) = -ContinuousLinearMap.id ℝ W)
-    (hS : MemWkpLoc p Ω k S)
-    (hξ : MemWkpLoc q Ω 1 ξ) (hDξ : HasWeakFDerivOn volume Ω ξ Dξ)
-    (hae : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z)
-    (hη : MemWkpLoc q Ω k η) :
-    MemWkpLoc q Ω (k + 1) ξ := by
-  have hq1 : (1 : ℝ≥0∞) < q := ENNReal.inv_lt_one.1 (lt_of_le_of_lt le_add_self hpq)
-  let e : W ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ W)) := toEuclidean
-  let eEnd := e.arrowCongr e
-  obtain ⟨DJ, hDJ, -⟩ := hJ1.exists_weakFDeriv_of_isOpen
-  let J' := fun z => eEnd (J z)
-  let DJ' := fun z => eEnd.toContinuousLinearMap.comp (DJ z)
-  let S' := fun z => eEnd (S z)
-  let ξ' := fun z => e (ξ z)
-  let Dξ' := fun z => e.toContinuousLinearMap.comp (Dξ z)
-  let η' := fun z => e (η z)
-  have hJ1' : MemWkpLoc p Ω 1 J' := eEnd.comp_memWkpLoc_iff.2 hJ1
-  have hJ' : MemWkpLoc p Ω k J' := eEnd.comp_memWkpLoc_iff.2 hJ
-  have hDJ' : HasWeakFDerivOn volume Ω J' DJ' := hDJ.clm_comp eEnd.toContinuousLinearMap
-  have hJ'2 : ∀ᵐ z ∂volume.restrict Ω, J' z * J' z = -1 := by
-    filter_upwards [hJsq] with z hz
-    ext x
-    have hx : J z (J z (e.symm x)) = -e.symm x := by simpa using congr($hz (e.symm x))
-    simp [J', eEnd, ContinuousLinearMap.mul_def, ContinuousLinearMap.one_def, hx]
-  have hS' : MemWkpLoc p Ω k S' := eEnd.comp_memWkpLoc_iff.2 hS
-  have hξ' : MemWkpLoc q Ω 1 ξ' := e.comp_memWkpLoc_iff.2 hξ
-  have hDξ' : HasWeakFDerivOn volume Ω ξ' Dξ' := hDξ.clm_comp e.toContinuousLinearMap
-  have hη' : MemWkpLoc q Ω k η' := e.comp_memWkpLoc_iff.2 hη
-  have hη'_loc : LocallyIntegrableOn η' Ω :=
-    hη'.memLpLoc.locallyIntegrableOn hq1.le Ω.isOpen.isLocallyClosed
-  have hae' : ∀ᵐ z ∂volume.restrict Ω, Dξ' z 1 + J' z (Dξ' z I) + S' z (ξ' z) = η' z := by
-    filter_upwards [hae] with z hz
-    simpa [J', S', ξ', Dξ', η', eEnd, map_add] using congrArg e hz
-  have hc' : IsSobolevCRCoefficients p Ω J' DJ' S' :=
-    ⟨hDJ', hJ1'.memLpLoc, hJ1'.memLpLoc_of_hasWeakFDerivOn hDJ', hS'.memLpLoc⟩
-  have hsol' : IsWeakCRSolution q Ω J' DJ' S' ξ' η' :=
-    (hc'.isWeakCRSolution_iff_ae hpq.le ENNReal.coe_ne_top ENNReal.coe_ne_top hDξ'
-      hξ'.memLpLoc (hξ'.memLpLoc_of_hasWeakFDerivOn hDξ') hη'_loc).2 hae'
-  exact e.comp_memWkpLoc_iff.1 (hsol'.memWkpLoc_succ hc' hp hJ'2 hpq hqp hJ' hS' hη')
-
-end NormedSpace
 
 end TauCeti
