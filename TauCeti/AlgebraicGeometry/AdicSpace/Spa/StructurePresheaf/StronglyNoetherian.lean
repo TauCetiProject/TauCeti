@@ -46,6 +46,8 @@ homomorphisms, and hence the sheaf property
   sheafy.
 * `TauCeti.Huber.isSheafyRing_quotient_of_isStronglyNoetherian` : the quotient of a complete
   Hausdorff strongly noetherian Tate ring by a closed ideal is sheafy.
+* `TauCeti.Huber.isSheafyForEveryPresentation_quotient_of_isStronglyNoetherian` : every ring of
+  integral elements of that quotient satisfies `TauCeti.Huber.IsSheafyForEveryPresentation`.
 
 ## References
 
@@ -154,5 +156,16 @@ theorem isSheafyRing_quotient_of_isStronglyNoetherian {A : Type v} [CommRing A] 
   have _ : T1Space (A ⧸ J) := (Ideal.Quotient.t1Space_iff J).mpr hJ
   have _ := IsStronglyNoetherian.quotient J hJ
   exact isSheafyRing_of_isStronglyNoetherian
+
+/-- Every ring of integral elements of a closed-ideal quotient of a complete Hausdorff strongly
+noetherian Tate ring satisfies `TauCeti.Huber.IsSheafyForEveryPresentation`. -/
+theorem isSheafyForEveryPresentation_quotient_of_isStronglyNoetherian {A : Type v} [CommRing A]
+    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [IsTateRing A]
+    [IsStronglyNoetherian A] [CompleteSpace A] [T0Space A] (J : Ideal A)
+    (hJ : IsClosed (J : Set A)) {Qplus : Subring (A ⧸ J)}
+    (hQplus : IsRingOfIntegralElements Qplus) : IsSheafyForEveryPresentation Qplus :=
+  letI : UniformSpace (A ⧸ J) := IsTopologicalAddGroup.rightUniformSpace _
+  haveI : IsUniformAddGroup (A ⧸ J) := isUniformAddGroup_of_addCommGroup
+  (isSheafyRing_quotient_of_isStronglyNoetherian J hJ).isSheafyForEveryPresentation hQplus
 
 end TauCeti.Huber
