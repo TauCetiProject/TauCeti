@@ -154,6 +154,24 @@ theorem sliceCoords_symm_apply (hk : 2 ≤ k)
       (ofRealSubRef (by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]) u) := by
   simp [sliceCoords]
 
+/-- The slice coordinates of `y` are its real coordinates at the order `↑(k + 1)`, carried to the
+order `↑k + 1` by `realSubmoduleCongr`. -/
+theorem sliceCoords_eq_piCongrRight_realSubRef (hk : 2 ≤ k)
+    (y : SobolevFieldSpace f m (k + 1 : ℕ)) :
+    sliceCoords hk y = ContinuousLinearEquiv.piCongrRight (fun _ : Fin 4 ↦ realSubmoduleCongr ℂ
+      (Nat.cast_succ k) (Nat.cast_nonneg (k + 1)) (k.cast_add_one_pos (α := ℝ)).le)
+        (y.realSubRef (Nat.cast_nonneg (k + 1))) :=
+  (sliceCoords_apply hk y).trans (funext fun j ↦ realSubRef_congrOrder _ _ _ y j)
+
+/-- The real coordinates at the order `↑(k + 1)` of the field with slice coordinates `u` are `u`
+carried back from the order `↑k + 1` by `realSubmoduleCongr`. -/
+theorem realSubRef_sliceCoords_symm (hk : 2 ≤ k)
+    (u : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :
+    ((sliceCoords (f := f) (m := m) hk).symm u).realSubRef (Nat.cast_nonneg (k + 1)) =
+      (ContinuousLinearEquiv.piCongrRight (fun _ : Fin 4 ↦ realSubmoduleCongr ℂ
+        (Nat.cast_succ k) (Nat.cast_nonneg (k + 1)) (k.cast_add_one_pos (α := ℝ)).le)).symm u :=
+  funext fun j ↦ by simp [realSubRef_congrOrder _ (k.cast_add_one_pos (α := ℝ)).le]
+
 variable [Fact (1 < k + 1)] {hs : 1 < ((k + 1 : ℕ) : ℝ) + 1}
 
 /-- The real coordinates, at the order `↑k + 1`, of the vortices in the Coulomb slice of `x₀` that
