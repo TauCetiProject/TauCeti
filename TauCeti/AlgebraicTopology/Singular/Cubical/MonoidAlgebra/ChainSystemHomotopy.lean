@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Continuat
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.RepresentingChainSystem
 import TauCeti.Algebra.Homology.DG.Twisted.Invertible
 import TauCeti.Algebra.Ring.NegOnePow
+import TauCeti.Topology.ContinuousMap.CodRestrict
 
 /-!
 # Homotopies of twisting and continuation chain systems
@@ -267,17 +268,6 @@ end Homotopy
 
 /-! ### Existence of homotopies between representing chain systems -/
 
-/-- A continuous map with values in a subset `s`, corestricted to `s`. -/
-private def continuousMapCodRestrict {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    (f : C(X, Y)) (s : Set Y) (hs : ∀ p, f p ∈ s) : C(X, s) :=
-  ⟨s.codRestrict f hs, f.continuous.codRestrict hs⟩
-
-/-- Composing a corestricted continuous map with the inclusion of the subset recovers the map. -/
-private theorem subtypeVal_comp_continuousMapCodRestrict {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] (f : C(X, Y)) (s : Set Y) (hs : ∀ p, f p ∈ s) :
-    (ContinuousMap.subtypeVal s).comp (continuousMapCodRestrict f s hs) = f :=
-  ContinuousMap.ext fun _ ↦ rfl
-
 section Existence
 
 variable {P : Type*} [Fintype P] {ind : P → ℤ} {M : P → P → TopCat.{u}}
@@ -299,9 +289,9 @@ private theorem exists_continuationChainSum_eq_cubicalChainSumMap
       cubicalChainSumMap k (ContinuousMap.subtypeVal (A x y)) b =
         continuationChainSum ind ind ι ι k S.chain S'.chain h x y := by
   -- The composition maps, corestricted to the subspaces `A x y`.
-  let ιA (z : P) := continuousMapCodRestrict (ι x z y) (A x y) (hA x z y)
+  let ιA (z : P) := (ι x z y).codRestrict (A x y) (hA x z y)
   have hιA (z : P) : (ContinuousMap.subtypeVal (A x y)).comp (ιA z) = ι x z y :=
-    subtypeVal_comp_continuousMapCodRestrict _ _ _
+    ContinuousMap.subtypeVal_comp_codRestrict _ _ _
   refine ⟨∑ z, cubicalChainSumPairing k (ιA z) (S.chain x z) (h z y) +
     ∑ z, (ind x - ind z - 1).negOnePow • cubicalChainSumPairing k (ιA z) (h x z) (S'.chain z y),
     add_mem (Submodule.sum_mem _ fun z _ ↦ ?_) (Submodule.sum_mem _ fun z _ ↦ ?_), ?_⟩
@@ -391,12 +381,12 @@ private theorem exists_parametrizedChainSum_eq_sub_add (hB : ∀ x z y p, κ x z
         T₁.chain x y - T₀.chain x y +
           cubicalChainSumMap k (ContinuousMap.subtypeVal (B x y)) b := by
   -- The composition maps, corestricted to the subspaces `B x y`.
-  let κB (z : P) := continuousMapCodRestrict (κ x z y) (B x y) (hB x z y)
-  let κB' (z : Q) := continuousMapCodRestrict (κ' x z y) (B x y) (hB' x z y)
+  let κB (z : P) := (κ x z y).codRestrict (B x y) (hB x z y)
+  let κB' (z : Q) := (κ' x z y).codRestrict (B x y) (hB' x z y)
   have hκB (z : P) : (ContinuousMap.subtypeVal (B x y)).comp (κB z) = κ x z y :=
-    subtypeVal_comp_continuousMapCodRestrict _ _ _
+    ContinuousMap.subtypeVal_comp_codRestrict _ _ _
   have hκB' (z : Q) : (ContinuousMap.subtypeVal (B x y)).comp (κB' z) = κ' x z y :=
-    subtypeVal_comp_continuousMapCodRestrict _ _ _
+    ContinuousMap.subtypeVal_comp_codRestrict _ _ _
   refine ⟨∑ z, (ind x - ind z).negOnePow • cubicalChainSumPairing k (κB z) (S.chain x z) (h z y) +
     ∑ z, (ind x - indQ z).negOnePow • cubicalChainSumPairing k (κB' z) (h x z) (S'.chain z y),
     add_mem (Submodule.sum_mem _ fun z _ ↦ ?_) (Submodule.sum_mem _ fun z _ ↦ ?_), ?_⟩
