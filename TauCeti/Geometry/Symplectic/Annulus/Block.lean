@@ -31,9 +31,9 @@ invariant under the diagonal integer translations when the `W_i` are invariant u
 `TauCeti.quotientCyclicBlock W` in the diagonal quotient `(ℤ/N → ℝ) ⧸ ℤ 1` is compact when moreover
 the displacements `X - x` are bounded on every `W_i` (`TauCeti.isCompact_quotientCyclicBlock`),
 although the block itself is not bounded: the first position lives on a circle and the others are
-bounded relative to it. The band of a continuous
-strip map commuting with `(x, y) ↦ (x + 1, y)` satisfies all three hypotheses
-(`TauCeti.isClosed_image_stripTwistCoord_preimage_snd_Icc`,
+bounded relative to it. The band over a compact strip of a
+continuous strip map commuting with `(x, y) ↦ (x + 1, y)` satisfies all three hypotheses
+(`TauCeti.isClosed_image_stripTwistCoord_preimage_snd`,
 `TauCeti.add_mem_image_stripTwistCoord_iff`,
 `TauCeti.exists_forall_mem_image_stripTwistCoord_abs_sub_le`), so the block of the bands of lifts
 of annulus maps is compact in the diagonal quotient
@@ -177,18 +177,18 @@ theorem isCompact_quotientCyclicBlock [NeZero N] (hWc : ∀ i, IsClosed (W i))
   rw [ZMod.natCast_zmod_val] at h
   exact h.trans (mul_le_mul_of_nonneg_right (by exact_mod_cast (ZMod.val_lt i).le) hD)
 
-/-- **The block of the bands of strip maps is compact.** Let every `F_i = (X_i, Y_i)` be continuous
-on the closed strip `ℝ × [c, d]` and commute there with the deck translation
-`(x, y) ↦ (x + 1, y)`, as the lifts of annulus maps do for `[c, d] = [0, 1]`. Then the block of the
-bands `{(x, X_i(x, y)) | y ∈ [c, d]}` is compact in the diagonal quotient. -/
+/-- **The block of the bands of strip maps is compact.** Let `J` be compact and let every
+`F_i = (X_i, Y_i)` be continuous on the strip `ℝ × J` and commute there with the deck translation
+`(x, y) ↦ (x + 1, y)`, as the lifts of annulus maps do for `J = [0, 1]`. Then the block of the
+bands `{(x, X_i(x, y)) | y ∈ J}` is compact in the diagonal quotient. -/
 theorem isCompact_quotientCyclicBlock_image_stripTwistCoord [NeZero N]
-    {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {c d : ℝ}
-    (hF : ∀ i, ContinuousOn (F i) (Prod.snd ⁻¹' Icc c d))
-    (hF1 : ∀ i, ∀ q ∈ Prod.snd ⁻¹' Icc c d, F i (q + (1, 0)) = F i q + (1, 0)) :
-    IsCompact (quotientCyclicBlock fun i ↦ stripTwistCoord (F i) '' (Prod.snd ⁻¹' Icc c d)) :=
-  isCompact_quotientCyclicBlock (fun i ↦ isClosed_image_stripTwistCoord_preimage_snd_Icc (hF i))
+    {F : ZMod N → ℝ × ℝ → ℝ × ℝ} {J : Set ℝ} (hJ : IsCompact J)
+    (hF : ∀ i, ContinuousOn (F i) (Prod.snd ⁻¹' J))
+    (hF1 : ∀ i, ∀ q ∈ Prod.snd ⁻¹' J, F i (q + (1, 0)) = F i q + (1, 0)) :
+    IsCompact (quotientCyclicBlock fun i ↦ stripTwistCoord (F i) '' (Prod.snd ⁻¹' J)) :=
+  isCompact_quotientCyclicBlock (fun i ↦ isClosed_image_stripTwistCoord_preimage_snd hJ (hF i))
     (fun i ↦ add_mem_image_stripTwistCoord_iff (hF1 i))
-    fun i ↦ exists_forall_mem_image_stripTwistCoord_abs_sub_le (hF i) (hF1 i)
+    fun i ↦ exists_forall_mem_image_stripTwistCoord_abs_sub_le hJ (hF i) one_ne_zero (hF1 i)
 
 end Block
 
@@ -229,22 +229,38 @@ theorem exists_isCompleteVectorField_eventuallyEq_neg_mgradient_quotientCyclicAc
       (hSU i).contDiffAt ((hU i).mem_nhds (mem_cyclicBlock.1 hq i))).contMDiffWithinAt
   exact hK.exists_isCompleteVectorField_eventuallyEq hn (isOpen_quotientCyclicBlock hU) hgrad hKU
 
-/-- The descended cyclic action is differentiable on the block of open sets on which the generating
-functions are `C¹`, and decreases along nonnegative multiples of its negative gradient there. -/
+/-- The descended cyclic action changes along the multiple `c • (-grad W)` of its negative
+gradient at the rate `-c ‖grad W‖²`. -/
+private theorem mvfderiv_quotientCyclicAction_smul_neg_mgradient (c : ℝ)
+    (y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ)) :
+    letI := diagonalQuotientRiemannianBundle (ZMod N)
+    mvfderiv 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y
+        (c • -mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y) =
+      -(c * ‖mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y‖ ^ 2) := by
+  let := diagonalQuotientRiemannianBundle (ZMod N)
+  rw [map_smul, mvfderiv_apply_neg_mgradient, smul_eq_mul, mul_neg]
+
+/-- For a vector field `V` as in `TauCeti.antitone_quotientCyclicAction_comp`, the descended cyclic
+action is differentiable and does not increase along `V` at every point where `V` does not
+vanish: such a point lies in the block of the `U_i`, where the generating functions are `C¹`. -/
 private theorem mdifferentiableAt_quotientCyclicAction_and_mvfderiv_nonpos
     (hU : ∀ i, IsOpen (U i)) (hSU : ∀ i, ContDiffOn ℝ 1 (S i) (U i))
-    {y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ)}
-    (hy : y ∈ quotientCyclicBlock U) (c : ℝ) :
+    {V : (y : (ZMod N → ℝ) ⧸ AddSubgroup.zmultiples (1 : ZMod N → ℝ)) →
+      TangentSpace 𝓘(ℝ, ZMod N → ℝ) y}
+    (hVc : letI := diagonalQuotientRiemannianBundle (ZMod N)
+      ∀ y, ∃ c : ℝ, 0 ≤ c ∧ V y = c • -mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y)
+    (hV0 : ∀ y ∉ quotientCyclicBlock U, V y = 0) :
     letI := diagonalQuotientRiemannianBundle (ZMod N)
-    MDifferentiableAt 𝓘(ℝ, ZMod N → ℝ) 𝓘(ℝ) (quotientCyclicAction hS) y ∧
-      mvfderiv 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y
-          (c • -mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y) =
-        -(c * ‖mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y‖ ^ 2) := by
+    (∀ y, V y ≠ 0 → MDifferentiableAt 𝓘(ℝ, ZMod N → ℝ) 𝓘(ℝ) (quotientCyclicAction hS) y) ∧
+      ∀ y, V y ≠ 0 → mvfderiv 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y (V y) ≤ 0 := by
   let := diagonalQuotientRiemannianBundle (ZMod N)
-  obtain ⟨q, hq, rfl⟩ := hy
-  refine ⟨(contMDiffAt_quotientCyclicAction hS (n := 1) fun i ↦ (hSU i).contDiffAt
-    ((hU i).mem_nhds (mem_cyclicBlock.1 hq i))).mdifferentiableAt one_ne_zero, ?_⟩
-  rw [map_smul, mvfderiv_apply_neg_mgradient, smul_eq_mul, mul_neg]
+  refine ⟨fun y hy ↦ ?_, fun y _ ↦ ?_⟩
+  · obtain ⟨q, hq, rfl⟩ : y ∈ quotientCyclicBlock U := by_contra fun h ↦ hy (hV0 y h)
+    exact (contMDiffAt_quotientCyclicAction hS (n := 1) fun i ↦ (hSU i).contDiffAt
+      ((hU i).mem_nhds (mem_cyclicBlock.1 hq i))).mdifferentiableAt one_ne_zero
+  · obtain ⟨c, hc, hcy⟩ := hVc y
+    rw [hcy, mvfderiv_quotientCyclicAction_smul_neg_mgradient, neg_nonpos]
+    positivity
 
 /-- **The cyclic action is a Lyapunov function for the cut-off flow.** Let every generating
 function `S_i` be `C¹` on an open set `U_i`, and let `V` be a `C¹` vector field on the diagonal
@@ -261,16 +277,9 @@ theorem antitone_quotientCyclicAction_comp (hU : ∀ i, IsOpen (U i))
     (hVc : letI := diagonalQuotientRiemannianBundle (ZMod N)
       ∀ y, ∃ c : ℝ, 0 ≤ c ∧ V y = c • -mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) y)
     (hV0 : ∀ y ∉ quotientCyclicBlock U, V y = 0) {γ : ℝ → _} (hγ : IsMIntegralCurve γ V) :
-    Antitone (quotientCyclicAction hS ∘ γ) := by
-  let := diagonalQuotientRiemannianBundle (ZMod N)
-  have hmem (y) (hy : V y ≠ 0) : y ∈ quotientCyclicBlock U := by_contra fun h ↦ hy (hV0 y h)
-  refine hγ.antitone_comp_of_ne_zero hV
-    (fun y hy ↦ (mdifferentiableAt_quotientCyclicAction_and_mvfderiv_nonpos hS hU hSU
-      (hmem y hy) 0).1) fun y hy ↦ ?_
-  obtain ⟨c, hc, hcy⟩ := hVc y
-  rw [hcy, (mdifferentiableAt_quotientCyclicAction_and_mvfderiv_nonpos hS hU hSU
-    (hmem y hy) c).2, neg_nonpos]
-  positivity
+    Antitone (quotientCyclicAction hS ∘ γ) :=
+  have h := mdifferentiableAt_quotientCyclicAction_and_mvfderiv_nonpos hS hU hSU hVc hV0
+  hγ.antitone_comp_of_ne_zero hV h.1 h.2
 
 /-- **The cyclic action strictly decreases along nonconstant trajectories of the cut-off flow.**
 Under the hypotheses of `TauCeti.antitone_quotientCyclicAction_comp`, if `V` does not vanish at the
@@ -287,21 +296,15 @@ theorem quotientCyclicAction_lt_of_ne_zero (hU : ∀ i, IsOpen (U i))
     {s t : ℝ} (hs : V (γ s) ≠ 0) (hst : s < t) :
     quotientCyclicAction hS (γ t) < quotientCyclicAction hS (γ s) := by
   let := diagonalQuotientRiemannianBundle (ZMod N)
-  have hmem (y) (hy : V y ≠ 0) : y ∈ quotientCyclicBlock U := by_contra fun h ↦ hy (hV0 y h)
-  have hd (y) (hy : V y ≠ 0) := fun c ↦
-    mdifferentiableAt_quotientCyclicAction_and_mvfderiv_nonpos hS hU hSU (hmem y hy) c
-  refine hγ.lt_of_mvfderiv_apply_lt_zero_of_ne_zero hV (fun y hy ↦ (hd y hy 0).1)
-    (fun y hy ↦ ?_) ?_ hst
-  · obtain ⟨c, hc, hcy⟩ := hVc y
-    rw [hcy, (hd y hy c).2, neg_nonpos]
-    positivity
-  · -- at `γ s` both the multiple and the gradient are nonzero, since `V (γ s) ≠ 0`
-    obtain ⟨c, hc0, hcy⟩ := hVc (γ s)
-    have hc : c ≠ 0 := fun h ↦ hs (by rw [hcy, h, zero_smul])
-    have hg : mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) (γ s) ≠ 0 :=
-      fun h ↦ hs (by rw [hcy, h, neg_zero, smul_zero])
-    rw [hcy, (hd _ hs c).2, neg_lt_zero]
-    exact mul_pos (lt_of_le_of_ne hc0 hc.symm) (pow_pos (norm_pos_iff.2 hg) 2)
+  obtain ⟨hd, hle⟩ := mdifferentiableAt_quotientCyclicAction_and_mvfderiv_nonpos hS hU hSU hVc hV0
+  refine hγ.lt_of_mvfderiv_apply_lt_zero_of_ne_zero hV hd hle ?_ hst
+  -- at `γ s` both the multiple and the gradient are nonzero, since `V (γ s) ≠ 0`
+  obtain ⟨c, hc0, hcy⟩ := hVc (γ s)
+  have hc : c ≠ 0 := fun h ↦ hs (by rw [hcy, h, zero_smul])
+  have hg : mgradient 𝓘(ℝ, ZMod N → ℝ) (quotientCyclicAction hS) (γ s) ≠ 0 :=
+    fun h ↦ hs (by rw [hcy, h, neg_zero, smul_zero])
+  rw [hcy, mvfderiv_quotientCyclicAction_smul_neg_mgradient, neg_lt_zero]
+  exact mul_pos (lt_of_le_of_ne hc0 hc.symm) (pow_pos (norm_pos_iff.2 hg) 2)
 
 end Flow
 
