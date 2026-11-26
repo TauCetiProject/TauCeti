@@ -170,12 +170,10 @@ private theorem exists_projection (hA : Disjoint A (Submodule.span ℝ (range α
   -- Enlarge the span of the weights to a complement of `A`.
   obtain ⟨C, hsC, hC⟩ := hA.symm.exists_isCompl
   have h : IsCompl A C := hC.symm
-  let π₀ : StrongDual ℝ 𝔱 →L[ℝ] StrongDual ℝ 𝔱 :=
-    ⟨A.projection _ h, (A.projection _ h).continuous_of_finiteDimensional⟩
-  refine ⟨π₀.codRestrict A fun v ↦ Submodule.projection_apply_mem h v, fun a ↦ ?_, fun x ↦ ?_⟩
-  · exact Subtype.ext (Submodule.projection_apply_left h a)
-  · exact Subtype.ext ((Submodule.projection_apply_eq_zero_iff h).2
-      (hsC (weightMomentMap_mem_span α x)))
+  exact ⟨⟨A.projectionOnto C h,
+      continuous_induced_rng.2 (A.projection C h).continuous_of_finiteDimensional⟩,
+    Submodule.projectionOnto_apply_left h,
+    fun x ↦ (Submodule.projectionOnto_apply_eq_zero_iff h).2 (hsC (weightMomentMap_mem_span α x))⟩
 
 /-- **The slice model is open onto its image.** If `A` meets the span of the weights trivially,
 the map `(a, z) ↦ a + μ_α(z)` on `A × ℂ^ι` sends every neighbourhood of a point `y` onto a
