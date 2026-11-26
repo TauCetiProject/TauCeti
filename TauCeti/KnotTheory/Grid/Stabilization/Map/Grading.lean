@@ -44,8 +44,6 @@ invariants `τ` of a knot grid and of this stabilization.
 * `TauCeti.OddComponentGridDiagram.stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece`:
   the stabilization coefficient formula preserves the bigrading of `GC⁻` over every
   commutative ring.
-* `TauCeti.OddComponentGridDiagram.stabilizeXMap_mem_alexanderChainMinusPiece`: the chain map
-  `stabilizeXMap` preserves the Alexander grading of `GC⁻` in characteristic two.
 
 ## References
 
@@ -57,7 +55,7 @@ Section 3.2.
 
 public section
 
-open CategoryTheory MvPolynomial
+open MvPolynomial
 
 namespace TauCeti
 
@@ -67,22 +65,20 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (s : Fin n)
 
 variable (R : Type*) [CommRing R]
 
-local notation "A" => MvPolynomial (Fin n) R
-local notation "S" => MvPolynomial (Fin (n + 1)) R
-
 /-- Every monomial `V^e · x` of the image of a chain `c` under the stabilization map has the
 bidegree of some monomial `V^d · y` of `c`. -/
 private theorem exists_monomialBidegree_eq_of_mem_support {c : GridChainMinus R (n + 1)}
     {x : GridState n} {e : Fin n →₀ ℕ}
     (he : e ∈ (Finsupp.mapRange (rename s.predAbove) (map_zero _)
-      (G.1.stabilizeXOffCenterToCenter s R (G.1.stabilizeXOffCenterProjection s R c)) x).support) :
+      (G.val.stabilizeXOffCenterToCenter s R (G.val.stabilizeXOffCenterProjection s R c))
+          x).support) :
     ∃ y : GridState (n + 1), ∃ d ∈ (c y).support,
       G.monomialBidegree x e = (G.stabilizeX s).monomialBidegree y d := by
   classical
   rw [Finsupp.mapRange_apply] at he
   -- The monomial `e` is the renaming of a monomial `u` of the coefficient before renaming.
-  obtain ⟨u, hu, rfl⟩ : ∃ u ∈ (G.1.stabilizeXOffCenterToCenter s R
-      (G.1.stabilizeXOffCenterProjection s R c) x).support, u.mapDomain s.predAbove = e := by
+  obtain ⟨u, hu, rfl⟩ : ∃ u ∈ (G.val.stabilizeXOffCenterToCenter s R
+      (G.val.stabilizeXOffCenterProjection s R c) x).support, u.mapDomain s.predAbove = e := by
     by_contra! h
     exact (MvPolynomial.mem_support_iff.mp he) (coeff_rename_eq_zero _ _ _ fun u hu =>
       MvPolynomial.notMem_support_iff.mp fun hu' => h u hu' hu)
@@ -94,13 +90,13 @@ private theorem exists_monomialBidegree_eq_of_mem_support {c : GridChainMinus R 
   obtain ⟨r, hr, rfl⟩ :=
     GridDiagram.exists_mem_XHomotopyRectangles_of_mem_support_XHomotopyCoefficient _ R hd'
   rw [GridDiagram.stabilizeXOffCenterProjection_apply] at hd
-  refine ⟨y.1, d, hd, ?_⟩
-  have hM := G.1.maslovOℤ_stabilizeX_eq_of_isEmpty s x
+  refine ⟨y.val, d, hd, ?_⟩
+  have hM := G.val.maslovOℤ_stabilizeX_eq_of_isEmpty s x
     ((GridDiagram.mem_XHomotopyRectangles _ _ r).mp hr).1
-  have hA := G.1.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles s x hr
+  have hA := G.val.alexander_stabilizeX_eq_of_mem_XHomotopyRectangles s x hr
   rw [← val_stabilizeX, alexander_eq_intCast, G.alexander_eq_intCast] at hA
-  have hA' : (G.stabilizeX s).alexanderℤ y.1 = G.alexanderℤ x -
-      ((G.stabilizeX s).1.OColumns r.toGridRectangle).card := by
+  have hA' : (G.stabilizeX s).alexanderℤ y.val = G.alexanderℤ x -
+      ((G.stabilizeX s).val.OColumns r.toGridRectangle).card := by
     exact_mod_cast hA
   rw [val_stabilizeX] at hA'
   refine Prod.ext ?_ ?_ <;>
@@ -116,31 +112,12 @@ theorem stabilizeXCoefficientFormula_mem_bigradedChainMinusPiece
     {g : ℤ × ℤ} {c : GridChainMinus R (n + 1)}
     (hc : c ∈ (G.stabilizeX s).bigradedChainMinusPiece R g) :
     Finsupp.mapRange (rename s.predAbove) (map_zero _)
-      (G.1.stabilizeXOffCenterToCenter s R (G.1.stabilizeXOffCenterProjection s R c)) ∈
+      (G.val.stabilizeXOffCenterToCenter s R (G.val.stabilizeXOffCenterProjection s R c)) ∈
       G.bigradedChainMinusPiece R g := by
   rw [mem_bigradedChainMinusPiece] at hc ⊢
   intro x e he
   obtain ⟨y, d, hd, h⟩ := G.exists_monomialBidegree_eq_of_mem_support s R he
   rw [h, hc y d hd]
-
-variable [CharP R 2]
-
-/-- **The stabilization chain map preserves the Alexander grading.** The chain map
-`GC⁻(G') ⟶ GC⁻(G)` of the stabilization splitting the `X`-marking of column `s` sends a chain of
-`GC⁻(G')` of Alexander degree `a` to a chain of `GC⁻(G)` of the same Alexander degree. -/
-theorem stabilizeXMap_mem_alexanderChainMinusPiece {a : ℤ} {c : GridChainMinus R (n + 1)}
-    (hc : c ∈ (G.stabilizeX s).alexanderChainMinusPiece R a) :
-    ((ModuleCat.restrictScalars
-        (↑(rename (R := R) (Fin.succAbove (Fin.castSucc s))) : A →+* S)).map
-          (eqToHom
-            ((G.1.stabilizeX s.castSucc (G.1.X s).castSucc s).unblockedComplex_X R ()).symm) ≫
-        (G.1.stabilizeXMap s R).f () ≫ eqToHom (G.1.unblockedComplex_X R ())).hom c ∈
-      G.alexanderChainMinusPiece R a := by
-  rw [mem_alexanderChainMinusPiece] at hc ⊢
-  intro x e he
-  rw [GridDiagram.stabilizeXMap_f_apply] at he
-  obtain ⟨y, d, hd, h⟩ := G.exists_monomialBidegree_eq_of_mem_support s R he
-  rw [← monomialBidegree_snd, h, monomialBidegree_snd, hc y d hd]
 
 end OddComponentGridDiagram
 

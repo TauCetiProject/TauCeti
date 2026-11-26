@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Basic
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.DiagonalCartan
-public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD
+public import TauCeti.LinearAlgebra.RootSystem.ClassicalTypeD.Basic
 public import TauCeti.LinearAlgebra.RootSystem.DiagramPermutations.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
-import TauCeti.LinearAlgebra.Matrix.Alternating
+import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -139,6 +139,12 @@ theorem forkLeft_ne_forkRight : forkLeft n hn ≠ forkRight n hn := by
   intro h
   have := congrArg Fin.val h
   simp [forkLeft, forkRight] at this
+  omega
+
+/-- A coordinate is the terminal one exactly when it has no successor in the chain. -/
+theorem not_add_one_lt_iff_eq_forkRight (i : Fin n) :
+    ¬(i : ℕ) + 1 < n ↔ i = forkRight n hn := by
+  rw [Fin.ext_iff, forkRight_val]
   omega
 
 /-- The penultimate fork coordinate precedes the terminal one. -/
@@ -356,7 +362,7 @@ def rootGenerator {K : Type*} [CommRing K] :
 Bourbaki node `i + 1`. -/
 def cartanGenerator {K : Type*} [CommRing K] (i : Fin n) :
     LieAlgebra.Orthogonal.typeD (Fin n) K :=
-  ⟨typeDDiagonalMatrix (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)),
+  ⟨typeDDiagonalMatrix (fun j => (DynkinType.typeDSimpleRoot n (by omega) i j : K)),
     typeDDiagonalMatrix_mem_typeD _⟩
 
 /-- The underlying matrix of a raising generator is the raising matrix. -/
@@ -378,7 +384,7 @@ theorem val_rootGenerator_inr {K : Type*} [CommRing K] (i : Fin n) :
 theorem val_cartanGenerator {K : Type*} [CommRing K] (i : Fin n) :
     (cartanGenerator (K := K) n hn i :
       Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) =
-        typeDDiagonalMatrix (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)) :=
+        typeDDiagonalMatrix (fun j => (DynkinType.typeDSimpleRoot n (by omega) i j : K)) :=
   by simp [cartanGenerator]
 
 section CommRing
@@ -387,29 +393,28 @@ variable {K : Type*} [CommRing K]
 
 /-- A diagonal Cartan generator is the image of its simple-root coordinate vector under the
 coordinate equivalence for the standard diagonal Cartan. -/
-theorem cartanGenerator_eq_typeDDiagonalEquiv (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+theorem cartanGenerator_eq_typeDDiagonalEquiv (i : Fin n) :
     cartanGenerator (K := K) n hn i =
       (typeDDiagonalEquiv (K := K) (ι := Fin n)
-        (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)) :
+        (fun j => (DynkinType.typeDSimpleRoot n (by omega) i j : K)) :
         LieAlgebra.Orthogonal.typeD (Fin n) K) := by
   apply Subtype.ext
   rw [val_cartanGenerator, coe_typeDDiagonalEquiv_apply]
 
 /-- The diagonal type-D Cartan contains every explicit simple-root Cartan generator. -/
-theorem cartanGenerator_mem_typeDDiagonalCartan (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+theorem cartanGenerator_mem_typeDDiagonalCartan (i : Fin n) :
     cartanGenerator (K := K) n hn i ∈ typeDDiagonalCartan K (Fin n) := by
   rw [cartanGenerator_eq_typeDDiagonalEquiv]
   exact (typeDDiagonalEquiv (K := K) (ι := Fin n)
-    (fun j => (DynkinType.typeDSimpleRoot n hn i j : K))).2
+    (fun j => (DynkinType.typeDSimpleRoot n (by omega) i j : K))).property
 
 /-- The ambient diagonal coordinates of a lifted simple-root Cartan generator are the pinned
 type-D simple root. -/
-theorem typeDDiagonalCartanBasis_repr_cartanGenerator (n : ℕ) (hn : 4 ≤ n)
-    (i j : Fin n) :
+theorem typeDDiagonalCartanBasis_repr_cartanGenerator (i j : Fin n) :
     (typeDDiagonalCartanBasis (K := K) (ι := Fin n)).repr
         (⟨cartanGenerator (K := K) n hn i,
           cartanGenerator_mem_typeDDiagonalCartan n hn i⟩ : typeDDiagonalCartan K (Fin n)) j =
-    (DynkinType.typeDSimpleRoot n hn i j : K) := by
+    (DynkinType.typeDSimpleRoot n (by omega) i j : K) := by
   rw [typeDDiagonalCartanBasis_repr_apply, val_cartanGenerator]
   simp only [typeDDiagonalMatrix_apply, typeDDiagonalValue_inl, eq_self, ite_true]
 
@@ -479,24 +484,24 @@ theorem rootGeneratorWeight_inr_eq_neg_root_simpleIndex (i : Fin n) :
   exact hneg.trans (congrArg Neg.neg (rootGeneratorWeight_inl_eq_root_simpleIndex n hn i))
 
 private theorem chainCartanCoeff (i j : Fin n) (hi : (i : ℕ) + 1 < n) :
-    DynkinType.typeDSimpleRoot n hn j i -
-        DynkinType.typeDSimpleRoot n hn j (chainNext n i hi) = CartanMatrix.D n i j := by
-  rw [← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j,
-    DynkinType.typeDSimpleRoot_of_add_one_lt hn hi, sub_dotProduct,
+    DynkinType.typeDSimpleRoot n (by omega) j i -
+        DynkinType.typeDSimpleRoot n (by omega) j (chainNext n i hi) = CartanMatrix.D n i j := by
+  rw [← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j,
+    DynkinType.typeDSimpleRoot_of_add_one_lt (by omega) hi, sub_dotProduct,
     single_dotProduct, single_dotProduct]
   simp [chainNext]
 
 private theorem forkCartanCoeff (i j : Fin n) (hi : ¬(i : ℕ) + 1 < n) :
-    DynkinType.typeDSimpleRoot n hn j (forkLeft n hn) +
-        DynkinType.typeDSimpleRoot n hn j (forkRight n hn) = CartanMatrix.D n i j := by
-  rw [← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot hn i j,
-    DynkinType.typeDSimpleRoot_of_not_add_one_lt hn hi, add_dotProduct,
+    DynkinType.typeDSimpleRoot n (by omega) j (forkLeft n hn) +
+        DynkinType.typeDSimpleRoot n (by omega) j (forkRight n hn) = CartanMatrix.D n i j := by
+  rw [← DynkinType.typeDSimpleRoot_dotProduct_typeDSimpleRoot (by omega) i j,
+    DynkinType.typeDSimpleRoot_of_not_add_one_lt (by omega) hi, add_dotProduct,
     single_dotProduct, single_dotProduct]
   simp [forkLeft, forkRight]
 
 private theorem lie_typeDDiagonalMatrix_raisingMatrix_of_chain {K : Type*} [CommRing K]
     (i j : Fin n) (hi : (i : ℕ) + 1 < n) :
-    ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
+    ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n (by omega) j a : K)),
         raisingMatrix (K := K) n hn i⁆ =
       (CartanMatrix.D n i j : K) • raisingMatrix n hn i := by
   rw [raisingMatrix_of_chain n hn hi]
@@ -522,7 +527,7 @@ private theorem lie_typeDDiagonalMatrix_raisingMatrix_of_chain {K : Type*} [Comm
 
 private theorem lie_typeDDiagonalMatrix_raisingMatrix_of_fork {K : Type*} [CommRing K]
     (i j : Fin n) (hi : ¬(i : ℕ) + 1 < n) :
-    ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
+    ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n (by omega) j a : K)),
         raisingMatrix (K := K) n hn i⁆ =
       (CartanMatrix.D n i j : K) • raisingMatrix n hn i := by
   rw [raisingMatrix_of_fork n hn hi]
@@ -548,7 +553,7 @@ private theorem lie_typeDDiagonalMatrix_raisingMatrix_of_fork {K : Type*} [CommR
 
 private theorem lie_typeDDiagonalMatrix_raisingMatrix {K : Type*} [CommRing K]
     (i j : Fin n) :
-    ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
+    ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n (by omega) j a : K)),
         raisingMatrix (K := K) n hn i⁆ =
       (CartanMatrix.D n i j : K) • raisingMatrix n hn i := by
   by_cases hi : (i : ℕ) + 1 < n
@@ -557,7 +562,7 @@ private theorem lie_typeDDiagonalMatrix_raisingMatrix {K : Type*} [CommRing K]
 
 private theorem lie_typeDDiagonalMatrix_loweringMatrix {K : Type*} [CommRing K]
     (i j : Fin n) :
-    ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
+    ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n (by omega) j a : K)),
         loweringMatrix (K := K) n hn i⁆ =
       (-CartanMatrix.D n i j : K) • loweringMatrix n hn i := by
   ext a b
@@ -581,7 +586,7 @@ theorem lie_cartanGenerator_rootGenerator {K : Type*} [CommRing K]
         val_rootGenerator_inl, rootGeneratorWeight_inl]
       -- The subtype coercions have been rewritten away; state the resulting ambient matrix goal
       -- explicitly so that the private Cartan-action lemma applies.
-      change ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
+      change ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n (by omega) j a : K)),
           raisingMatrix n hn i⁆ = (CartanMatrix.D n i j : K) • raisingMatrix n hn i
       exact lie_typeDDiagonalMatrix_raisingMatrix n hn i j
   | inr i =>
@@ -589,7 +594,7 @@ theorem lie_cartanGenerator_rootGenerator {K : Type*} [CommRing K]
         val_rootGenerator_inr, rootGeneratorWeight_inr, Int.cast_neg]
       -- As in the raising case, this bridge exposes the ambient matrix equality hidden by the
       -- Lie-subalgebra and scalar-action coercions.
-      change ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n hn j a : K)),
+      change ⁅typeDDiagonalMatrix (fun a => (DynkinType.typeDSimpleRoot n (by omega) j a : K)),
           loweringMatrix n hn i⁆ = (-CartanMatrix.D n i j : K) • loweringMatrix n hn i
       exact lie_typeDDiagonalMatrix_loweringMatrix n hn i j
 
@@ -606,11 +611,11 @@ theorem lie_cartanGenerator_cartanGenerator {K : Type*} [CommRing K] (i j : Fin 
 
 private theorem lie_raisingMatrix_loweringMatrix_self {K : Type*} [CommRing K] (i : Fin n) :
     ⁅raisingMatrix (K := K) n hn i, loweringMatrix (K := K) n hn i⁆ =
-      typeDDiagonalMatrix (fun j => (DynkinType.typeDSimpleRoot n hn i j : K)) := by
+      typeDDiagonalMatrix (fun j => (DynkinType.typeDSimpleRoot n (by omega) i j : K)) := by
   by_cases hi : (i : ℕ) + 1 < n
   · rw [raisingMatrix_of_chain n hn hi, loweringMatrix_of_chain n hn hi,
       LieRing.of_associative_ring_bracket, Matrix.fromBlocks_multiply,
-      Matrix.fromBlocks_multiply, DynkinType.typeDSimpleRoot_of_add_one_lt hn hi]
+      Matrix.fromBlocks_multiply, DynkinType.typeDSimpleRoot_of_add_one_lt (by omega) hi]
     ext (a | a) (b | b) <;>
       by_cases hab : a = b
     all_goals simp_all [Matrix.fromBlocks, typeDDiagonalMatrix_apply,
@@ -620,11 +625,8 @@ private theorem lie_raisingMatrix_loweringMatrix_self {K : Type*} [CommRing K] (
   · rw [raisingMatrix_of_fork n hn hi, loweringMatrix_of_fork n hn hi,
       LieRing.of_associative_ring_bracket, Matrix.fromBlocks_multiply,
       Matrix.fromBlocks_multiply, Matrix.sub_mul, Matrix.mul_sub,
-      DynkinType.typeDSimpleRoot_of_not_add_one_lt hn hi]
-    have hne : (⟨n - 2, by omega⟩ : Fin n) ≠ ⟨n - 1, by omega⟩ := by
-      intro h
-      simp [Fin.ext_iff] at h
-      omega
+      DynkinType.typeDSimpleRoot_of_not_add_one_lt (by omega) hi]
+    have hne : (⟨n - 2, by omega⟩ : Fin n) ≠ ⟨n - 1, by omega⟩ := forkLeft_ne_forkRight n hn
     ext (a | a) (b | b) <;>
       by_cases hab : a = b
     all_goals simp_all [Matrix.fromBlocks, typeDDiagonalMatrix_apply, Matrix.sub_mul,
@@ -635,10 +637,7 @@ private theorem lie_raisingMatrix_loweringMatrix_self {K : Type*} [CommRing K] (
 private theorem lie_raisingMatrix_loweringMatrix_chain_fork {K : Type*} [CommRing K]
     (i j : Fin n) (hi : (i : ℕ) + 1 < n) (hj : ¬(j : ℕ) + 1 < n) :
     ⁅raisingMatrix (K := K) n hn i, loweringMatrix (K := K) n hn j⁆ = 0 := by
-  have hir : i ≠ forkRight n hn := by
-    intro h
-    simp [forkRight, Fin.ext_iff] at h
-    omega
+  have hir : i ≠ forkRight n hn := fun h => (not_add_one_lt_iff_eq_forkRight n hn i).2 h hi
   by_cases hil : i = forkLeft n hn
   · subst i
     have hne := forkLeft_ne_forkRight n hn
@@ -677,10 +676,8 @@ private theorem lie_raisingMatrix_loweringMatrix_of_ne {K : Type*} [CommRing K]
       rw [Matrix.lie_transpose]
       simpa [loweringMatrix] using
         lie_raisingMatrix_loweringMatrix_chain_fork (K := K) n hn j i hj hi
-    · exfalso
-      apply hij
-      apply Fin.ext
-      omega
+    · exact absurd ((not_add_one_lt_iff_eq_forkRight n hn i).1 hi |>.trans
+        ((not_add_one_lt_iff_eq_forkRight n hn j).1 hj).symm) hij
 
 private theorem lie_raisingMatrix_raisingMatrix_chain_chain_of_cartan_eq_zero
     {K : Type*} [CommRing K] (i j : Fin n) (hi : (i : ℕ) + 1 < n)
@@ -709,10 +706,7 @@ private theorem lie_raisingMatrix_raisingMatrix_chain_fork_of_cartan_eq_zero
     (hj : ¬(j : ℕ) + 1 < n) (hij : CartanMatrix.D n i j = 0) :
     ⁅raisingMatrix (K := K) n hn i, raisingMatrix (K := K) n hn j⁆ = 0 := by
   have hne := forkLeft_ne_forkRight n hn
-  have hjfork : j = forkRight n hn := by
-    apply Fin.ext
-    simp [forkRight]
-    omega
+  have hjfork : j = forkRight n hn := (not_add_one_lt_iff_eq_forkRight n hn j).1 hj
   by_cases hil : i = forkLeft n hn
   · subst i
     rw [raisingMatrix_of_chain n hn hi, raisingMatrix_of_fork n hn hj,
@@ -753,9 +747,8 @@ private theorem lie_raisingMatrix_raisingMatrix_of_cartan_eq_zero
         exact ((CartanMatrix.D_isSymm n).apply j i).symm.trans hij
       rw [lie_raisingMatrix_raisingMatrix_chain_fork_of_cartan_eq_zero n hn j i hj hi hji,
         neg_zero]
-    · have heq : i = j := by
-        apply Fin.ext
-        omega
+    · have heq : i = j := (not_add_one_lt_iff_eq_forkRight n hn i).1 hi |>.trans
+        ((not_add_one_lt_iff_eq_forkRight n hn j).1 hj).symm
       subst j
       simp [CartanMatrix.D] at hij
 
@@ -927,7 +920,7 @@ theorem lie_rootGenerator_inr_inl {K : Type*} [CommRing K] (i j : Fin n) :
 
 /-- **The numbered raising and lowering generators at a type-`D` node form an `sl₂` triple.** -/
 theorem isSl2Triple_rootGenerator {K : Type*} [CommRing K] [Nontrivial K]
-    (n : ℕ) (hn : 4 ≤ n) (i : Fin n) :
+    (i : Fin n) :
     _root_.IsSl2Triple (cartanGenerator (K := K) n hn i)
       (rootGenerator (K := K) n hn (.inl i))
       (rootGenerator (K := K) n hn (.inr i)) where
@@ -942,14 +935,11 @@ theorem isSl2Triple_rootGenerator {K : Type*} [CommRing K] [Nontrivial K]
     rw [val_cartanGenerator] at hentry
     simp only [typeDDiagonalMatrix_apply, typeDDiagonalValue_inl, ↓reduceIte] at hentry
     by_cases hi : (i : ℕ) + 1 < n
-    · rw [DynkinType.typeDSimpleRoot_of_add_one_lt hn hi] at hentry
+    · rw [DynkinType.typeDSimpleRoot_of_add_one_lt (by omega) hi] at hentry
       have hne : i ≠ ⟨(i : ℕ) + 1, hi⟩ := by simp [Fin.ext_iff]
       simp [hne] at hentry
-    · have hi_last : i = ⟨n - 1, by omega⟩ := by
-        apply Fin.ext
-        simp
-        omega
-      rw [hi_last, DynkinType.typeDSimpleRoot_of_not_add_one_lt hn] at hentry
+    · have hi_last : i = ⟨n - 1, by omega⟩ := (not_add_one_lt_iff_eq_forkRight n hn i).1 hi
+      rw [hi_last, DynkinType.typeDSimpleRoot_of_not_add_one_lt (by omega)] at hentry
       · have hne : n - 1 ≠ n - 2 := by omega
         simp [Fin.ext_iff, hne] at hentry
       · omega

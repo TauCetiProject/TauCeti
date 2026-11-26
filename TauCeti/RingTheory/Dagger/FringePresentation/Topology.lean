@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Completion
 public import TauCeti.RingTheory.Dagger.FringePresentation.Basic
 public import TauCeti.RingTheory.Dagger.GaussNorm
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.Module.Basic
+
+import TauCeti.RingTheory.Dagger.DaggerAlgebra.Continuity
 
 /-!
 # The fringe topology of a presentation
@@ -24,6 +27,9 @@ when its composites with all stage maps are continuous.
 The construction is attached to the presentation. Independence of presentations
 requires a comparison of the continuous maps between their stages; it is not
 asserted here. No Hausdorffness or completeness is built into the definition.
+
+For a dagger algebra `A`, the stage maps are also continuous into the completion `Â` of `A`
+(`continuous_toCompletion_comp_ofStage`).
 
 ## References
 
@@ -42,31 +48,31 @@ variable {K A : Type*} [NormedField K] [IsUltrametricDist K]
 
 /-- The quotient Gauss topology on a fringe stage. -/
 instance stageTopology (ρ : Set.Ioc (1 : ℝ) P.radius) : TopologicalSpace (P.stage ρ) := by
-  letI (_ : Fin P.n) : Fact (0 < (ρ : ℝ)) := ⟨zero_lt_one.trans ρ.2.1⟩
+  letI (_ : Fin P.n) : Fact (0 < (ρ : ℝ)) := ⟨zero_lt_one.trans ρ.property.1⟩
   exact inferInstanceAs (TopologicalSpace (_ ⧸ P.stageIdeal ρ))
 
 /-- A fringe stage is a topological additive group for its quotient Gauss topology. -/
 instance stageIsTopologicalAddGroup (ρ : Set.Ioc (1 : ℝ) P.radius) :
     IsTopologicalAddGroup (P.stage ρ) := by
-  let (_ : Fin P.n) : Fact (0 < (ρ : ℝ)) := ⟨zero_lt_one.trans ρ.2.1⟩
+  let (_ : Fin P.n) : Fact (0 < (ρ : ℝ)) := ⟨zero_lt_one.trans ρ.property.1⟩
   exact inferInstanceAs (IsTopologicalAddGroup (_ ⧸ P.stageIdeal ρ))
 
 /-- Restriction to a smaller radius is continuous for the quotient Gauss topologies. -/
 theorem continuous_stageMap {ρ ρ' : Set.Ioc (1 : ℝ) P.radius} (h : ρ ≤ ρ') :
     Continuous (P.stageMap h) := by
-  have posRadius : ∀ _ : Fin P.n, Fact (0 < (ρ : ℝ)) := fun _ ↦ ⟨zero_lt_one.trans ρ.2.1⟩
-  have posRadius' : ∀ _ : Fin P.n, Fact (0 < (ρ' : ℝ)) := fun _ ↦ ⟨zero_lt_one.trans ρ'.2.1⟩
+  have posRadius : ∀ _ : Fin P.n, Fact (0 < (ρ : ℝ)) := fun _ ↦ ⟨zero_lt_one.trans ρ.property.1⟩
+  have posRadius' : ∀ _ : Fin P.n, Fact (0 < (ρ' : ℝ)) := fun _ ↦ ⟨zero_lt_one.trans ρ'.property.1⟩
   apply (P.stageIdeal ρ').isQuotientMap_mkQ.continuous_iff.mpr
   have heq : (P.stageMap h) ∘ (P.stageIdeal ρ').mkQ =
       (P.stageIdeal ρ).mkQ ∘ TauCeti.MvPowerSeries.restrictedRadiusHom
-        (fun _ ↦ zero_le_one.trans ρ.2.1.le) (fun _ ↦ h) := by
+        (fun _ ↦ zero_le_one.trans ρ.property.1.le) (fun _ ↦ h) := by
     funext f
     exact P.stageMap_mk h f
   rw [heq]
   exact (P.stageIdeal ρ).continuous_mkQ.comp
     (@TauCeti.MvPowerSeries.continuous_restrictedRadiusHom (Fin P.n) K _ _
       (fun _ ↦ (ρ : ℝ)) (fun _ ↦ (ρ' : ℝ))
-      (fun _ ↦ zero_le_one.trans ρ.2.1.le) (fun _ ↦ h) posRadius posRadius')
+      (fun _ ↦ zero_le_one.trans ρ.property.1.le) (fun _ ↦ h) posRadius posRadius')
 
 /-- The ultrametric seminorms on `A` continuous on every stage of `P`. -/
 def fringeSeminorms : Set (Seminorm K A) :=
@@ -167,5 +173,23 @@ theorem continuous_linearMap_iff {E : Type*} [SeminormedAddCommGroup E]
     · exact fun ρ ↦ continuous_norm.comp (h ρ)
     · intro x y
       simpa using IsUltrametricDist.norm_add_le_max (f x) (f y)
+
+end TauCeti.Dagger.FringePresentation
+
+namespace TauCeti.Dagger.FringePresentation
+
+variable {K A : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  [CommRing A] [Algebra K A] [IsDaggerAlgebra K A] (P : FringePresentation K A)
+
+/-- The stage maps `A_ρ → A` of a fringe presentation of a dagger algebra are continuous for the
+topology of its completion: their composites with the completion map `A → Â` are continuous for
+the quotient Gauss norms of the stages. -/
+theorem continuous_toCompletion_comp_ofStage (ρ : Set.Ioc (1 : ℝ) P.radius) :
+    Continuous ((toCompletion K A).comp (P.ofStage ρ)) := by
+  let (_ : Fin P.n) : Fact (0 < (ρ : ℝ)) := ⟨zero_lt_one.trans ρ.property.1⟩
+  refine (QuotientAddGroup.isQuotientMap_mk (P.stageIdeal ρ).toAddSubgroup).continuous_iff.mpr ?_
+  convert continuous_toCompletion_comp_ofRestricted P.proj ρ.property.1 using 1
+  funext f
+  exact congrArg (toCompletion K A) (P.ofStage_mk ρ f)
 
 end TauCeti.Dagger.FringePresentation

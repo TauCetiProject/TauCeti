@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.CoprodI
 public import TauCeti.Topology.WedgeSum
 public import TauCeti.Topology.Circle.Punctured
 
+import Mathlib.GroupTheory.FreeGroup.CyclicallyReduced
 import TauCeti.AlgebraicTopology.FundamentalGroup.HomotopyEquiv
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
@@ -45,6 +46,7 @@ counterclockwise around the `i`-th circle.
   `TauCeti.WedgeSum.circleFundamentalGroupMulEquiv_expLoop`: **the fundamental group of a wedge
   of circles is free on the circles**, with the loop around the `i`-th circle sent to the
   generator `i`.
+* `TauCeti.WedgeSum.isMulTorsionFree_circleFundamentalGroup`: in particular it is torsion-free.
 
 ## References
 
@@ -121,7 +123,7 @@ private lemma range_subtypeVal_subset (i : ι) :
     exact base_mem_range_subtypeVal _
   | incl j a =>
     rw [subtypeVal_incl]
-    exact (incl_mem_range_subtypeVal_iff _).2 (Or.inr a.2)
+    exact (incl_mem_range_subtypeVal_iff _).2 (Or.inr a.property)
 
 /-- Two distinct open sets of the cover meet in the wedge of the neighbourhoods `V j`. -/
 private lemma range_inter_range_subset {i j : ι} (hij : i ≠ j) :
@@ -151,7 +153,8 @@ private def retraction (i : ι) :
   refine
     { toContinuousMap := liftProd
         (fun j => if hj : j = i then (incl _ j).comp ContinuousMap.snd else
-          (incl _ j).comp ⟨fun p => ⟨H j (p.1, ⟨p.2, p.2.2.resolve_left hj⟩), .inr (H j _).2⟩,
+          (incl _ j).comp ⟨fun p => ⟨H j (p.1, ⟨p.2, p.2.property.resolve_left hj⟩), .inr
+              (H j _).property⟩,
             by fun_prop⟩)
         (.const _ (base _)) fun j t => ?_
       map_zero_left := fun w => ?_
@@ -318,6 +321,12 @@ theorem circleFundamentalGroupMulEquiv_expLoop (i : ι) :
     (MulEquiv.symm_apply_eq _).2 (by simp [FreeGroup.mulEquivIntOfUnique,
       FreeGroup.equivIntOfUnique])
   simp [circleFundamentalGroupMulEquiv, h]
+
+/-- The fundamental group of a wedge of circles is torsion-free, being a free group. -/
+instance isMulTorsionFree_circleFundamentalGroup :
+    IsMulTorsionFree (FundamentalGroup (WedgeSum fun _ : ι => (1 : Circle)) (base _)) :=
+  (circleFundamentalGroupMulEquiv ι).injective.isMulTorsionFree
+    (circleFundamentalGroupMulEquiv ι).toMonoidHom
 
 end Circle
 

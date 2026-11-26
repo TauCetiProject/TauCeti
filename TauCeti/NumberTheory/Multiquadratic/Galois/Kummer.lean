@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.GroupTheory.Exponent
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.Subfield
 import TauCeti.GroupTheory.ExponentPrime
-import TauCeti.FieldTheory.Galois.SquareRoot
+import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 import Mathlib.FieldTheory.PrimitiveElement
 
 /-!
@@ -170,7 +170,7 @@ theorem exists_root_adjoin_eq_adjoin (s : Finset L)
   set e : Fin t.card ≃ {x // x ∈ t} := t.equivFin.symm
   set root : Fin t.card → L := fun i => (e i : L) with hroot_def
   have hroot_inj : Function.Injective root := fun _ _ hij => e.injective (Subtype.ext hij)
-  have hroot_mem : ∀ i, root i ∈ t := fun i => (e i).2
+  have hroot_mem : ∀ i, root i ∈ t := fun i => (e i).property
   choose d hd using fun i : Fin t.card => hssq (root i) (hts (hroot_mem i))
   have hrange : Set.range root = (t : Set L) := by
     ext x

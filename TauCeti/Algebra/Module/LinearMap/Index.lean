@@ -7,16 +7,40 @@ module
 
 public import Mathlib.Algebra.Module.LinearMap.Index
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import TauCeti.LinearAlgebra.Pi.Map
 public import TauCeti.LinearAlgebra.Quotient.Prod
+public import TauCeti.LinearAlgebra.TensorProduct.Quotient
+public import Mathlib.RingTheory.Flat.Equalizer
+
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Index of linear maps
 
-This file extends Mathlib's algebraic `LinearMap.index` API with its invariance under composing
-with a linear equivalence, its additivity under products with finite free kernels and cokernels,
-and its behaviour under restriction of scalars along a tower of division rings `K → L`: the index
-gets multiplied by `finrank K L`. For instance, the realification of a complex-linear map has
-twice its complex index.
+This file extends Mathlib's algebraic `LinearMap.index` API with its invariance under composing with
+a linear equivalence or transporting along linear equivalences (`LinearMap.index_arrowCongr`), its
+additivity under binary products and finite coordinatewise maps (`LinearMap.index_prodMap`,
+`LinearMap.index_piMap`) with finite free kernels and cokernels, and its behaviour under
+restriction of scalars along a tower of division rings `K → L`: the index gets multiplied by
+`finrank K L`. For instance, the realification of a complex-linear map has twice its complex index.
+
+It also compares the kernels, cokernels and indices of two linear maps `f : M → N` and
+`f' : M' → N'` related by injective maps `i : M' → M` and `j : N' → N` with
+`f (i x) = j (f' x)`, when every `x` with `f x` in the image of `j` lies in the image of `i`
+(and, for the cokernels and indices, `range f ⊔ range j = ⊤`)
+(`LinearMap.kerEquivOfRegularity`, `LinearMap.cokerEquivOfRegularity`,
+`LinearMap.index_eq_of_regularity`). This is the algebra behind the independence of the kernel,
+cokernel and index of an elliptic operator `H^(s+m) → H^s` from the Sobolev order `s`, where `f'`
+is the same operator `H^(t+m) → H^t` at a higher order `t` and the hypothesis is elliptic
+regularity.
+
+Finally, extending scalars from a field `K` to a nontrivial commutative `K`-algebra `A` preserves
+the dimensions of the kernel and the cokernel, and hence the index
+(`LinearMap.finrank_ker_baseChange`, `LinearMap.finrank_quotient_range_baseChange`,
+`LinearMap.index_baseChange`). The kernel of `f.baseChange A` is `A ⊗[K] ker f` because `A` is flat
+over the field `K` (`LinearMap.tensorKerEquiv`), and its cokernel is `A ⊗[K] (N ⧸ range f)` by right
+exactness (`LinearMap.cokernelBaseChangeEquiv`). For `K = ℝ` and `A = ℂ` this says that a real
+linear map and its complexification have the same index.
 
 These lemmas are absent from `Mathlib.Algebra.Module.LinearMap.Index` and support the
 continuous-linear-map results in `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -51,6 +75,18 @@ lemma index_comp_equiv (f : M →ₗ[R] N) (e : P ≃ₗ[R] M) :
   · rw [ker_comp, Submodule.comap_equiv_eq_map_symm, LinearEquiv.finrank_map_eq]
   · rw [range_comp_of_range_eq_top _ (range_eq_top.2 e.surjective)]
 
+/-- Transporting a linear map along linear equivalences of its domain and codomain leaves the
+index unchanged. -/
+@[simp]
+lemma index_arrowCongr {S M₁ M₂ N₁ N₂ : Type*} [CommRing S] [AddCommGroup M₁] [Module S M₁]
+    [AddCommGroup M₂] [Module S M₂] [AddCommGroup N₁] [Module S N₁] [AddCommGroup N₂]
+    [Module S N₂] (e₁ : M₁ ≃ₗ[S] M₂) (e₂ : N₁ ≃ₗ[S] N₂) (f : M₁ →ₗ[S] N₁) :
+    (e₁.arrowCongr e₂ f).index = f.index := by
+  have h : e₁.arrowCongr e₂ f = (e₂ : N₁ →ₗ[S] N₂) ∘ₗ f ∘ₗ (e₁.symm : M₂ →ₗ[S] M₁) := by
+    ext x
+    simp
+  rw [h, index_equiv_comp, index_comp_equiv]
+
 /-- The index is additive under Cartesian products when the kernels and cokernels are finite
 free modules. -/
 @[simp]
@@ -61,11 +97,115 @@ lemma index_prodMap {Q : Type*} [AddCommGroup Q] [Module R Q] [StrongRankConditi
     [Module.Free R (N ⧸ f.range)] [Module.Free R (Q ⧸ g.range)]
     [Module.Finite R (N ⧸ f.range)] [Module.Finite R (Q ⧸ g.range)] :
     (f.prodMap g).index = f.index + g.index := by
-  simp only [index_eq_finrank_sub]
-  rw [ker_prodMap, range_prodMap]
-  simp only [(Submodule.prodEquiv _ _).finrank_eq, Submodule.finrank_quotient_prod,
-    Module.finrank_prod]
+  simp only [index_eq_finrank_sub, finrank_ker_prodMap, finrank_quotient_range_prodMap]
   omega
+
+/-- The index is additive under finite coordinatewise maps when the kernels and cokernels are
+finite free modules. -/
+@[simp]
+lemma index_piMap {ι : Type*} [Fintype ι] {φ ψ : ι → Type*} [∀ i, AddCommGroup (φ i)]
+    [∀ i, Module R (φ i)] [∀ i, AddCommGroup (ψ i)] [∀ i, Module R (ψ i)] [StrongRankCondition R]
+    (f : ∀ i, φ i →ₗ[R] ψ i) [∀ i, Module.Free R (f i).ker] [∀ i, Module.Finite R (f i).ker]
+    [∀ i, Module.Free R (ψ i ⧸ (f i).range)] [∀ i, Module.Finite R (ψ i ⧸ (f i).range)] :
+    (piMap f).index = ∑ i, (f i).index := by
+  simp only [index_eq_finrank_sub, finrank_ker_piMap, finrank_quotient_range_piMap, Nat.cast_sum,
+    Finset.sum_sub_distrib]
+
+section Regularity
+
+/-! ### Commutative squares with a regularity property
+
+Let `f : M → N` and `f' : M' → N'` be linear maps intertwined by injective linear maps
+`i : M' → M` and `j : N' → N`, so that `f (i x) = j (f' x)`. Think of `f'` as the restriction of
+`f` to subspaces of more regular elements. The square has the *regularity property* when every
+`x` with `f x` in the image of `j` is itself in the image of `i`. Then `i` identifies the kernels
+of `f'` and `f`, and `j` embeds the cokernel of `f'` into that of `f`, onto it as soon as
+`range f ⊔ range j = ⊤`. -/
+
+variable {M' N' : Type*} [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+  {f : M →ₗ[R] N} {f' : M' →ₗ[R] N'} {i : M' →ₗ[R] M} {j : N' →ₗ[R] N}
+
+/-- If `f (i x) = j (f' x)` for all `x`, then `i` maps the kernel of `f'` into the kernel of
+`f`. -/
+theorem ker_le_comap_ker_of_apply_eq (hcomm : ∀ x, f (i x) = j (f' x)) :
+    ker f' ≤ (ker f).comap i := fun x hx ↦ by
+  simp_all [hcomm x]
+
+/-- If `f (i x) = j (f' x)` for all `x`, then `j` maps the range of `f'` into the range of
+`f`. -/
+theorem range_le_comap_range_of_apply_eq (hcomm : ∀ x, f (i x) = j (f' x)) :
+    range f' ≤ (range f).comap j := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨i x, hcomm x⟩
+
+/-- In a commutative square with the regularity property and `j` injective, every element of
+the kernel of `f` comes from the kernel of `f'`. -/
+theorem map_ker_eq_ker_of_regularity (hcomm : ∀ x, f (i x) = j (f' x))
+    (hj : Function.Injective j) (hreg : ∀ x y, f x = j y → ∃ x', i x' = x) :
+    (ker f').map i = ker f := by
+  refine le_antisymm (Submodule.map_le_iff_le_comap.2 (ker_le_comap_ker_of_apply_eq hcomm)) ?_
+  intro x hx
+  obtain ⟨x', rfl⟩ := hreg x 0 (by rw [map_zero, mem_ker.1 hx])
+  exact ⟨x', hj (by rw [← hcomm, mem_ker.1 hx, map_zero]), rfl⟩
+
+/-- In a commutative square with the regularity property and `j` injective, an element `y` lies
+in the range of `f'` exactly when `j y` lies in the range of `f`. -/
+theorem comap_range_eq_range_of_regularity (hcomm : ∀ x, f (i x) = j (f' x))
+    (hj : Function.Injective j) (hreg : ∀ x y, f x = j y → ∃ x', i x' = x) :
+    (range f).comap j = range f' := by
+  refine le_antisymm ?_ (range_le_comap_range_of_apply_eq hcomm)
+  rintro y ⟨x, hx⟩
+  obtain ⟨x', rfl⟩ := hreg x y hx
+  exact ⟨x', hj (by rw [← hcomm, hx])⟩
+
+/-- The linear equivalence between the kernels of `f'` and `f` induced by `i`, in a commutative
+square with the regularity property and `i`, `j` injective. -/
+noncomputable def kerEquivOfRegularity (hcomm : ∀ x, f (i x) = j (f' x))
+    (hi : Function.Injective i) (hj : Function.Injective j)
+    (hreg : ∀ x y, f x = j y → ∃ x', i x' = x) : ker f' ≃ₗ[R] ker f :=
+  (Submodule.equivMapOfInjective i hi (ker f')).trans
+    (LinearEquiv.ofEq _ _ (map_ker_eq_ker_of_regularity hcomm hj hreg))
+
+/-- The equivalence `kerEquivOfRegularity` is given by `i`. -/
+@[simp]
+theorem coe_kerEquivOfRegularity_apply (hcomm : ∀ x, f (i x) = j (f' x))
+    (hi : Function.Injective i) (hj : Function.Injective j)
+    (hreg : ∀ x y, f x = j y → ∃ x', i x' = x) (x : ker f') :
+    (kerEquivOfRegularity hcomm hi hj hreg x : M) = i x :=
+  (rfl)
+
+/-- The linear equivalence between the cokernels of `f'` and `f` induced by `j`, in a commutative
+square with the regularity property, `j` injective and `range f ⊔ range j = ⊤`. -/
+noncomputable def cokerEquivOfRegularity (hcomm : ∀ x, f (i x) = j (f' x))
+    (hj : Function.Injective j) (hreg : ∀ x y, f x = j y → ∃ x', i x' = x)
+    (hsup : range f ⊔ range j = ⊤) : (N' ⧸ range f') ≃ₗ[R] N ⧸ range f :=
+  LinearEquiv.ofBijective ((range f').mapQ (range f) j (range_le_comap_range_of_apply_eq hcomm))
+    ⟨by
+      rw [← ker_eq_bot, Submodule.ker_mapQ, comap_range_eq_range_of_regularity hcomm hj hreg,
+        Submodule.mkQ_map_self],
+    range_eq_top.1 (by rw [Submodule.range_mapQ, Submodule.map_mkQ_eq_top, hsup])⟩
+
+/-- The equivalence `cokerEquivOfRegularity` is induced by `j`. -/
+@[simp]
+theorem cokerEquivOfRegularity_mk (hcomm : ∀ x, f (i x) = j (f' x))
+    (hj : Function.Injective j) (hreg : ∀ x y, f x = j y → ∃ x', i x' = x)
+    (hsup : range f ⊔ range j = ⊤) (y : N') :
+    cokerEquivOfRegularity hcomm hj hreg hsup (Submodule.Quotient.mk y) =
+      Submodule.Quotient.mk (j y) :=
+  (rfl)
+
+/-- **Invariance of the index under regularity.** In a commutative square `f (i x) = j (f' x)`
+with `i`, `j` injective, the regularity property and `range f ⊔ range j = ⊤`, the maps `f'` and
+`f` have the same index. -/
+theorem index_eq_of_regularity (hcomm : ∀ x, f (i x) = j (f' x))
+    (hi : Function.Injective i) (hj : Function.Injective j)
+    (hreg : ∀ x y, f x = j y → ∃ x', i x' = x) (hsup : range f ⊔ range j = ⊤) :
+    f'.index = f.index := by
+  rw [index_eq_finrank_sub, index_eq_finrank_sub,
+    (kerEquivOfRegularity hcomm hi hj hreg).finrank_eq,
+    (cokerEquivOfRegularity hcomm hj hreg hsup).finrank_eq]
+
+end Regularity
 
 section RestrictScalars
 
@@ -91,5 +231,36 @@ lemma index_restrictScalars (f : M →ₗ[L] N) :
   ring
 
 end RestrictScalars
+
+section BaseChange
+
+open Module
+open scoped TensorProduct
+
+variable {K : Type*} (A : Type*) {M N : Type*} [Field K] [CommRing A] [Nontrivial A]
+  [Algebra K A] [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+
+/-- Extending scalars from a field preserves the dimension of the kernel: the kernel of
+`f.baseChange A` is `A ⊗[K] ker f`. No finiteness hypothesis is needed: an infinite-dimensional
+kernel has `finrank` zero on both sides. -/
+theorem finrank_ker_baseChange (f : M →ₗ[K] N) :
+    finrank A (ker (f.baseChange A)) = finrank K (ker f) :=
+  (tensorKerEquiv A A f).finrank_eq.symm.trans finrank_baseChange
+
+/-- Extending scalars from a field preserves the dimension of the cokernel: the cokernel of
+`f.baseChange A` is `A ⊗[K] (N ⧸ range f)`. No finiteness hypothesis is needed: an
+infinite-dimensional cokernel has `finrank` zero on both sides. -/
+theorem finrank_quotient_range_baseChange (f : M →ₗ[K] N) :
+    finrank A ((A ⊗[K] N) ⧸ range (f.baseChange A)) = finrank K (N ⧸ range f) :=
+  (f.cokernelBaseChangeEquiv (S := A)).finrank_eq.symm.trans finrank_baseChange
+
+/-- Extending scalars from a field to a nontrivial commutative algebra preserves the index. For
+instance a real linear map and its complexification have the same index. -/
+@[simp]
+theorem index_baseChange (f : M →ₗ[K] N) : (f.baseChange A).index = f.index := by
+  rw [index_eq_finrank_sub, index_eq_finrank_sub, finrank_ker_baseChange,
+    finrank_quotient_range_baseChange]
+
+end BaseChange
 
 end LinearMap

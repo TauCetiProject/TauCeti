@@ -64,9 +64,9 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_ofOpens_const`: a constant function
   is Morse–Bott along every open subset, a critical submanifold of full dimension.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd`: the model example, the
-  slice `M × {0}` for `(x, v) ↦ q v` with `q` nondegenerate at `0`.
+  slice `M × {y}` for `(x, v) ↦ q v` with `q` nondegenerate at `y`.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd_iff`: conversely, the slice
-  is Morse–Bott only when `q` is nondegenerate at `0`.
+  is Morse–Bott only when `q` is nondegenerate at `y`.
 * `SmoothEmbedding.IsNondegenerateCriticalSubmanifold.isNondegenerateCriticalPoint_of_snd_eq`:
   more generally, a Morse–Bott critical submanifold of `(x, v) ↦ q v` inside a slice `M × {y}`
   forces `q` to be nondegenerate at `y`.
@@ -159,7 +159,7 @@ include h
 /-- Along a critical submanifold, the tangent space of the submanifold lies in the kernel of the
 critical Hessian. -/
 theorem tangentRange_le_ker_criticalHessian (s : S) :
-    i.tangentRange s hn ≤ (criticalHessian I f (i s)).ker := by
+    i.isImmersion.tangentRange s hn ≤ (criticalHessian I f (i s)).ker := by
   rintro _ ⟨u, rfl⟩
   ext w
   exact criticalHessian_mfderiv_apply_eq_zero (h.contMDiffAt s)
@@ -168,7 +168,7 @@ theorem tangentRange_le_ker_criticalHessian (s : S) :
 /-- The tangent space of a critical submanifold lies in the kernel of the bilinear form of the
 critical Hessian. -/
 private theorem tangentRange_le_ker_toBilinForm (s : S) :
-    i.tangentRange s hn ≤ LinearMap.ker (criticalHessian I f (i s)).toBilinForm := by
+    i.isImmersion.tangentRange s hn ≤ LinearMap.ker (criticalHessian I f (i s)).toBilinForm := by
   rw [ContinuousLinearMap.ker_toBilinForm]
   exact h.tangentRange_le_ker_criticalHessian hn s
 
@@ -177,19 +177,19 @@ omit h in
 `f` at `i s`, which vanishes on the tangent space of the submanifold, descended to a bilinear form
 on the normal space `TangentSpace I (i s) ⧸ range (mfderiv J I i s)`. -/
 def normalHessian (h : i.IsCriticalSubmanifold f) (s : S) :
-    LinearMap.BilinForm ℝ (i.NormalSpace s hn) :=
+    LinearMap.BilinForm ℝ (i.isImmersion.NormalSpace s hn) :=
   -- `NormalSpace` is by definition the quotient by `tangentRange`, with its quotient structure.
-  (LinearMap.IsRefl.liftQ₂ (criticalHessian I f (i s)).toBilinForm (i.tangentRange s hn)
+  (LinearMap.IsRefl.liftQ₂ (criticalHessian I f (i s)).toBilinForm (i.isImmersion.tangentRange s hn)
     (isSymm_toBilinForm_criticalHessian (h.contMDiffAt s)).isRefl
     (h.tangentRange_le_ker_toBilinForm hn s) :
-    LinearMap.BilinForm ℝ (TangentSpace I (i s) ⧸ i.tangentRange s hn))
+    LinearMap.BilinForm ℝ (TangentSpace I (i s) ⧸ i.isImmersion.tangentRange s hn))
 
 /-- The normal Hessian evaluates on normal classes as the critical Hessian. -/
 @[simp]
 theorem normalHessian_normalClass (s : S) (v w : TangentSpace I (i s)) :
-    h.normalHessian hn s (i.normalClass s hn v) (i.normalClass s hn w) =
+    h.normalHessian hn s (i.isImmersion.normalClass s hn v) (i.isImmersion.normalClass s hn w) =
       criticalHessian I f (i s) v w := by
-  rw [normalClass_def]
+  rw [Manifold.IsImmersion.normalClass_def]
   exact LinearMap.liftQ₂_mk (h.tangentRange_le_ker_toBilinForm hn s)
     ((isSymm_toBilinForm_criticalHessian (h.contMDiffAt s)).isRefl.ker_flip ▸
       h.tangentRange_le_ker_toBilinForm hn s) v w
@@ -197,8 +197,8 @@ theorem normalHessian_normalClass (s : S) (v w : TangentSpace I (i s)) :
 /-- The normal Hessian is symmetric. -/
 theorem isSymm_normalHessian (s : S) : (h.normalHessian hn s).IsSymm := by
   refine LinearMap.BilinForm.isSymm_def.mpr fun p q ↦ ?_
-  obtain ⟨v, rfl⟩ := i.normalClass_surjective s hn p
-  obtain ⟨w, rfl⟩ := i.normalClass_surjective s hn q
+  obtain ⟨v, rfl⟩ := i.isImmersion.normalClass_surjective s hn p
+  obtain ⟨w, rfl⟩ := i.isImmersion.normalClass_surjective s hn q
   simp only [normalHessian_normalClass]
   exact criticalHessian_apply_swap (h.contMDiffAt s) v w
 
@@ -206,18 +206,18 @@ theorem isSymm_normalHessian (s : S) : (h.normalHessian hn s).IsSymm := by
 normal space. -/
 theorem ker_normalHessian (s : S) :
     LinearMap.ker (h.normalHessian hn s) =
-      (criticalHessian I f (i s)).ker.map (i.normalClass s hn) := by
+      (criticalHessian I f (i s)).ker.map (i.isImmersion.normalClass s hn) := by
   ext p
-  obtain ⟨v, rfl⟩ := i.normalClass_surjective s hn p
+  obtain ⟨v, rfl⟩ := i.isImmersion.normalClass_surjective s hn p
   simp only [LinearMap.mem_ker, Submodule.mem_map]
   constructor
   · intro hv
     refine ⟨v, ?_, rfl⟩
     ext w
-    simpa using LinearMap.congr_fun hv (i.normalClass s hn w)
+    simpa using LinearMap.congr_fun hv (i.isImmersion.normalClass s hn w)
   · rintro ⟨v', hv', hvv'⟩
     refine LinearMap.ext fun q ↦ ?_
-    obtain ⟨w, rfl⟩ := i.normalClass_surjective s hn q
+    obtain ⟨w, rfl⟩ := i.isImmersion.normalClass_surjective s hn q
     have hv'' : criticalHessian I f (i s) v' = 0 := hv'
     rw [← hvv', normalHessian_normalClass, hv'', zero_apply, LinearMap.zero_apply]
 
@@ -225,13 +225,14 @@ theorem ker_normalHessian (s : S) :
 the tangent space of the submanifold. -/
 theorem ker_normalHessian_eq_bot_iff (s : S) :
     LinearMap.ker (h.normalHessian hn s) = ⊥ ↔
-      (criticalHessian I f (i s)).ker ≤ i.tangentRange s hn := by
-  rw [h.ker_normalHessian, ← LinearMap.le_ker_iff_map, normalClass_ker]
+      (criticalHessian I f (i s)).ker ≤ i.isImmersion.tangentRange s hn := by
+  rw [h.ker_normalHessian, ← LinearMap.le_ker_iff_map, Manifold.IsImmersion.normalClass_ker]
 
 /-- The tangent space of a critical submanifold lies in the radical of the quadratic form of the
 critical Hessian. -/
 private theorem tangentRange_le_radical_criticalHessian (s : S) :
-    i.tangentRange s hn ≤ (criticalHessian I f (i s)).toBilinForm.toQuadraticMap.radical := by
+    i.isImmersion.tangentRange s hn ≤
+        (criticalHessian I f (i s)).toBilinForm.toQuadraticMap.radical := by
   have : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
   rw [LinearMap.BilinForm.radical_toQuadraticMap _
     (isSymm_toBilinForm_criticalHessian (h.contMDiffAt s))]
@@ -241,11 +242,13 @@ private theorem tangentRange_le_radical_criticalHessian (s : S) :
 descended to the quotient by the tangent space of the submanifold. -/
 private theorem toQuadraticMap_normalHessian (s : S) :
     (h.normalHessian hn s).toQuadraticMap =
-      (criticalHessian I f (i s)).toBilinForm.toQuadraticMap.lift (i.tangentRange s hn)
+      (criticalHessian I f (i s)).toBilinForm.toQuadraticMap.lift (i.isImmersion.tangentRange s hn)
         (h.tangentRange_le_radical_criticalHessian hn s) := by
   ext p
-  obtain ⟨v, rfl⟩ := i.normalClass_surjective s hn p
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, normalHessian_normalClass, normalClass_def]
+  obtain ⟨v, rfl⟩ := i.isImmersion.normalClass_surjective s hn p
+  rw
+      [LinearMap.BilinMap.toQuadraticMap_apply, normalHessian_normalClass,
+          Manifold.IsImmersion.normalClass_def]
   exact (QuadraticMap.lift_mk (h.tangentRange_le_radical_criticalHessian hn s) v).symm
 
 variable [FiniteDimensional ℝ E]
@@ -275,13 +278,14 @@ include h
 /-- At each point of a nondegenerate critical submanifold, the kernel of the critical Hessian is
 the tangent space of the submanifold. -/
 theorem ker_criticalHessian (s : S) :
-    (criticalHessian I f (i s)).ker = i.tangentRange s hn :=
+    (criticalHessian I f (i s)).ker = i.isImmersion.tangentRange s hn :=
   le_antisymm (h.ker_criticalHessian_le s) (h.tangentRange_le_ker_criticalHessian hn s)
 
 /-- At each point of a nondegenerate critical submanifold, the radical of the quadratic form of
 the critical Hessian is the tangent space of the submanifold. -/
 theorem radical_criticalHessian (s : S) :
-    (criticalHessian I f (i s)).toBilinForm.toQuadraticMap.radical = i.tangentRange s hn := by
+    (criticalHessian I f (i s)).toBilinForm.toQuadraticMap.radical =
+        i.isImmersion.tangentRange s hn := by
   have : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
   rw [LinearMap.BilinForm.radical_toQuadraticMap _
       (isSymm_toBilinForm_criticalHessian (h.contMDiffAt s)),
@@ -294,7 +298,7 @@ theorem ker_normalHessian (s : S) : LinearMap.ker (h.normalHessian hn s) = ⊥ :
 /-- A bilinear form `Q` representing the normal Hessian of a Morse–Bott critical submanifold at `s`
 through a linear equivalence `L` is nondegenerate: `u ↦ Q u` is injective. -/
 theorem injective_of_normalHessian_eq {s : S} {P : Type*} [NormedAddCommGroup P]
-    [NormedSpace ℝ P] (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
+    [NormedSpace ℝ P] (L : P ≃ₗ[ℝ] i.isImmersion.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
     (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) : Injective Q := by
   refine (injective_iff_map_eq_zero Q).mpr fun u hu ↦ ?_
   -- `L u` pairs to zero with every normal vector, so it lies in the trivial kernel.
@@ -316,7 +320,7 @@ theorem manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank (s : S) :
       Module.finrank ℝ E := by
   have hsig := QuadraticForm.sigPos_add_sigNeg_add_radical
     (Q := (criticalHessian I f (i s)).toBilinForm.toQuadraticMap)
-  have hrank : Module.finrank ℝ (i.tangentRange s hn) = Module.finrank ℝ E' :=
+  have hrank : Module.finrank ℝ (i.isImmersion.tangentRange s hn) = Module.finrank ℝ E' :=
     LinearMap.finrank_range_of_inj (i.isImmersion.mfderiv_injective hn s)
   rw [h.radical_criticalHessian hn s, hrank, ← manifoldMorseIndex_eq_sigNeg_criticalHessian,
     ← manifoldMorseIndex_neg_eq_sigPos_criticalHessian] at hsig
@@ -328,9 +332,9 @@ theorem manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank (s : S) :
 submanifold, the Morse indices of `f` and `-f` add up to the dimension of the normal space. -/
 theorem manifoldMorseIndex_add_manifoldMorseIndex_neg (s : S) :
     manifoldMorseIndex I f (i s) + manifoldMorseIndex I (-f) (i s) =
-      Module.finrank ℝ (i.NormalSpace s hn) := by
+      Module.finrank ℝ (i.isImmersion.NormalSpace s hn) := by
   have hsum := h.manifoldMorseIndex_add_manifoldMorseIndex_neg_add_finrank hn s
-  have hnormal := i.finrank_normalSpace_add_finrank s hn
+  have hnormal := i.isImmersion.finrank_normalSpace_add_finrank s hn
   -- The tangent spaces of `S` and `M` are by definition the model spaces `E'` and `E`.
   have hE : Module.finrank ℝ (TangentSpace I (i s)) = Module.finrank ℝ E := rfl
   have hE' : Module.finrank ℝ (TangentSpace J s) = Module.finrank ℝ E' := rfl
@@ -443,7 +447,8 @@ theorem isNondegenerateCriticalSubmanifold_ofOpens_const [IsManifold I n M] (hn 
     (ofOpens (I := I) (n := n) s).IsNondegenerateCriticalSubmanifold (fun _ ↦ c) where
   contMDiffAt _ := contMDiffAt_const
   mem_criticalPoints _ := mem_criticalPoints.mpr (mvfderiv_const c)
-  ker_criticalHessian_le x v _ := LinearMap.mem_range.2 <| (mem_tangentRange_iff _ x hn v).1 <| by
+  ker_criticalHessian_le x v _ := LinearMap.mem_range.2 <|
+      (Manifold.IsImmersion.mem_tangentRange_iff _ x hn v).1 <| by
     rw [tangentRange_ofOpens]
     exact Submodule.mem_top
 
@@ -451,19 +456,20 @@ section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **The model Morse–Bott function.** If `q` has a nondegenerate critical point at `0`, then the
-slice `M × {0}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v`. The slice is a
-smooth embedding for instance by `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`. -/
-theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ}
-    (hq : IsNondegenerateCriticalPoint q 0)
-    (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, (0 : V)))) :
+/-- **The model Morse–Bott function.** If `q` has a nondegenerate critical point at `y`, then the
+slice `M × {y}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v`. For `y = 0` the
+slice is a smooth embedding for instance by
+`TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`. -/
+theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ} {y : V}
+    (hq : IsNondegenerateCriticalPoint q y)
+    (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, y))) :
     (ofIsSmoothEmbedding _ h).IsNondegenerateCriticalSubmanifold (q ∘ Prod.snd) where
   contMDiffAt x := by
     rw [ofIsSmoothEmbedding_apply]
-    exact hq.contDiffAt.contMDiffAt.comp (x, 0) contMDiffAt_snd
+    exact hq.contDiffAt.contMDiffAt.comp (x, y) contMDiffAt_snd
   mem_criticalPoints x := by
     rw [ofIsSmoothEmbedding_apply, mem_criticalPoints,
-      mvfderiv_comp (x, 0) (hq.contDiffAt.differentiableAt two_ne_zero).mdifferentiableAt
+      mvfderiv_comp (x, y) (hq.contDiffAt.differentiableAt two_ne_zero).mdifferentiableAt
         mdifferentiableAt_snd, mvfderiv_eq_fderiv, hq.fderiv_eq_zero,
       ContinuousLinearMap.zero_comp, ContinuousLinearMap.zero_comp]
   ker_criticalHessian_le x v hv := by
@@ -471,9 +477,9 @@ theorem isNondegenerateCriticalSubmanifold_comp_snd {q : V → ℝ}
     have hv₂ : v.2 = 0 := hq.isInvertible.injective
       (((criticalHessian_comp_snd_apply_eq_zero_iff hq.contDiffAt x v).1 hv).trans
         (map_zero _).symm)
-    have hD : mfderiv I (I.prod 𝓘(ℝ, V)) (fun y : M ↦ (y, (0 : V))) x =
+    have hD : mfderiv I (I.prod 𝓘(ℝ, V)) (fun z : M ↦ (z, y)) x =
         (ContinuousLinearMap.id ℝ _).prod 0 :=
-      ((hasMFDerivAt_id x).prodMk (hasMFDerivAt_const (0 : V) x)).mfderiv
+      ((hasMFDerivAt_id x).prodMk (hasMFDerivAt_const y x)).mfderiv
     refine ⟨v.1, ?_⟩
     rw [coe_ofIsSmoothEmbedding, hD]
     exact Prod.ext rfl hv₂.symm
@@ -517,12 +523,12 @@ theorem IsNondegenerateCriticalSubmanifold.isNondegenerateCriticalPoint_of_snd_e
   exact (congrArg Prod.snd hu).symm.trans hu₂
 
 /-- **The model Morse–Bott function, characterized.** For a nonempty `M` and a finite-dimensional
-`V`, the slice `M × {0}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v` exactly
-when `q` has a nondegenerate critical point at `0`. -/
+`V`, the slice `M × {y}` of `M × V` is a Morse–Bott critical submanifold of `(x, v) ↦ q v` exactly
+when `q` has a nondegenerate critical point at `y`. -/
 theorem isNondegenerateCriticalSubmanifold_comp_snd_iff [FiniteDimensional ℝ V] [Nonempty M]
-    {q : V → ℝ} (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, (0 : V)))) :
+    {q : V → ℝ} {y : V} (h : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, V)) n (fun x : M ↦ (x, y))) :
     (ofIsSmoothEmbedding _ h).IsNondegenerateCriticalSubmanifold (q ∘ Prod.snd) ↔
-      IsNondegenerateCriticalPoint q 0 :=
+      IsNondegenerateCriticalPoint q y :=
   ⟨fun hq ↦ hq.isNondegenerateCriticalPoint_of_snd_eq fun x ↦
       congrArg Prod.snd (ofIsSmoothEmbedding_apply _ h x),
     fun hq ↦ isNondegenerateCriticalSubmanifold_comp_snd hq h⟩

@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.LinearAlgebra.Prod
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
 # A submodule of a topological module is a topological module
@@ -23,8 +24,8 @@ topology a module topology, Mathlib supplies **two outright** and **one under ex
 * `Submodule.isTopologicalAddGroup` gives `ContinuousAdd ↥p`, but only for a `Ring A` acting on
   an `AddCommGroup M` that is already a topological *group*.
 
-So there is exactly one gap, and it is what this file fills: **`ContinuousAdd` at the generality
-of its own class**. An `AddCommMonoid` ambient with `ContinuousAdd` is outside
+The submodule continuity instance below fills the remaining gap: **`ContinuousAdd` at the
+generality of its own class**. An `AddCommMonoid` ambient with `ContinuousAdd` is outside
 `Submodule.isTopologicalAddGroup`'s hypotheses, and `AddSubmonoid.continuousAdd`, which is at the
 right generality, is not keyed on `Submodule`.
 
@@ -38,6 +39,10 @@ right generality, is not keyed on `Submodule`.
   submodule is discrete, so that the quotient group by a lattice carries the manifold structure
   of a quotient by a discrete subgroup.
 * `Submodule.instDiscreteTopologyProd`: the product of two discrete submodules is discrete.
+* `Submodule.prodContEquiv`: a product submodule is continuously linearly equivalent to
+  the product of its submodules.
+* `ContinuousLinearEquiv.comap_topologicalClosure`: the preimage of the closure of a submodule
+  under a continuous linear equivalence is the closure of its preimage.
 -/
 
 public section
@@ -51,6 +56,32 @@ variable {A M : Type*} [Semiring A] [AddCommMonoid M] [TopologicalSpace M] [Modu
 topological group. A `ContinuousAdd` ambient is enough. -/
 instance continuousAdd [ContinuousAdd M] (p : Submodule A M) : ContinuousAdd p :=
   inferInstanceAs (ContinuousAdd p.toAddSubmonoid)
+
+variable {N : Type*} [AddCommMonoid N] [TopologicalSpace N] [Module A N]
+
+/-- The product submodule, with its subspace topology, is continuously linearly equivalent
+to the product of the two submodules. -/
+def prodContEquiv (p : Submodule A M) (q : Submodule A N) : p.prod q ≃L[A] p × q where
+  __ := p.prodEquiv q
+  continuous_toFun :=
+    (continuous_subtypeVal.fst.subtype_mk _).prodMk (continuous_subtypeVal.snd.subtype_mk _)
+  continuous_invFun :=
+    ((continuous_fst.subtypeVal).prodMk (continuous_snd.subtypeVal)).subtype_mk _
+
+/-- The first coordinate of the product-submodule comparison is the original first coordinate. -/
+@[simp]
+theorem coe_prodContEquiv_apply_fst (p : Submodule A M) (q : Submodule A N) (x : p.prod q) :
+    ((p.prodContEquiv q x).1 : M) = (x : M × N).1 := (rfl)
+
+/-- The second coordinate of the product-submodule comparison is the original second coordinate. -/
+@[simp]
+theorem coe_prodContEquiv_apply_snd (p : Submodule A M) (q : Submodule A N) (x : p.prod q) :
+    ((p.prodContEquiv q x).2 : N) = (x : M × N).2 := (rfl)
+
+/-- The inverse product-submodule comparison preserves the pair of underlying vectors. -/
+@[simp]
+theorem coe_prodContEquiv_symm_apply (p : Submodule A M) (q : Submodule A N) (x : p × q) :
+    ((p.prodContEquiv q).symm x : M × N) = ((x.1 : M), (x.2 : N)) := (rfl)
 
 end Submodule
 
@@ -73,6 +104,22 @@ instance Submodule.instDiscreteTopologyProd {R M M₂ : Type*} [Semiring R] [Add
     [Module R M] [TopologicalSpace M] [AddCommMonoid M₂] [Module R M₂] [TopologicalSpace M₂]
     (p : Submodule R M) (q : Submodule R M₂) [DiscreteTopology p] [DiscreteTopology q] :
     DiscreteTopology (p.prod q) :=
-  DiscreteTopology.of_continuous_injective (f := p.prodEquiv q)
-    ((continuous_subtype_val.fst.subtype_mk _).prodMk (continuous_subtype_val.snd.subtype_mk _))
-    (p.prodEquiv q).injective
+  DiscreteTopology.of_continuous_injective (p.prodContEquiv q).continuous
+    (p.prodContEquiv q).injective
+
+namespace ContinuousLinearEquiv
+
+variable {R R₂ M N : Type*} [Semiring R] [Semiring R₂] {σ : R →+* R₂} {σ' : R₂ →+* R}
+  [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  [AddCommMonoid M] [TopologicalSpace M] [Module R M] [ContinuousAdd M] [ContinuousConstSMul R M]
+  [AddCommMonoid N] [TopologicalSpace N] [Module R₂ N] [ContinuousAdd N]
+  [ContinuousConstSMul R₂ N]
+
+/-- The preimage of the closure of a submodule under a continuous (semi)linear equivalence is the
+closure of its preimage: the submodule form of `Homeomorph.preimage_closure`. -/
+theorem comap_topologicalClosure (e : M ≃SL[σ] N) (p : Submodule R₂ N) :
+    p.topologicalClosure.comap (e : M →ₛₗ[σ] N) =
+      (p.comap (e : M →ₛₗ[σ] N)).topologicalClosure :=
+  SetLike.coe_injective (e.toHomeomorph.preimage_closure p)
+
+end ContinuousLinearEquiv

@@ -24,8 +24,8 @@ derivative is constant.
 
 ## Main results
 
-* `TauCeti.mfderiv_comp_add_right`: the derivative of a translate of `u` is the
-  translate of the derivative of `u`.
+* `TauCeti.mfderiv_comp_add_right`, `HasMFDerivAt.comp_add_right`: the derivative of a translate
+  of `u` is the translate of the derivative of `u`.
 * `MDifferentiableAt.hasMFDerivAt_comp_add_smul`,
   `MDifferentiableAt.mfderiv_comp_add_smul_apply_one`: the derivative of `u` along the line
   `t ↦ z + t • v` is the derivative of `u` in the direction `v`.
@@ -64,6 +64,21 @@ theorem mfderiv_comp_add_right (u : E → M) (z c : E) :
   rfl
 
 end TauCeti
+
+namespace HasMFDerivAt
+
+variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H] {I : ModelWithCorners ℝ F H}
+  [TopologicalSpace M] [ChartedSpace H M]
+
+/-- A translate `w ↦ u (w + c)` has at `z` the derivative that `u` has at `z + c`. -/
+theorem comp_add_right {u : E → M} {z c : E} {f' : E →L[ℝ] F}
+    (h : HasMFDerivAt 𝓘(ℝ, E) I u (z + c) f') :
+    HasMFDerivAt 𝓘(ℝ, E) I (fun w ↦ u (w + c)) z f' :=
+  -- The translation has derivative `id`, and `f'` composed with `id` is `f'`.
+  (h.comp z ((hasFDerivAt_id z).add_const c).hasMFDerivAt).congr_mfderiv (f'.comp_id)
+
+end HasMFDerivAt
 
 namespace MDifferentiableAt
 

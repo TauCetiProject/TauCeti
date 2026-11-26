@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.D
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TopologicallyFinitelyGenerated
 public import TauCeti.NumberTheory.LocalField.Generation.AbsoluteGaloisGroup
+public import TauCeti.NumberTheory.LocalField.RatCompletion
 
 /-!
 # Finiteness of local isogeny cokernels
@@ -32,6 +33,8 @@ Galois group is topologically finitely generated.
   finitely generated.
 * `TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom_of_module_finite_padic`: the local
   cokernel of any nonzero morphism over a finite extension of `ℚ_p` is finite.
+* `TauCeti.Isogeny.finite_H1_kerCoeff_adicCompletion_rat`: over the completion of `ℚ` at a finite
+  place, `H¹` of the kernel of an isogeny is finite.
 
 ## References
 
@@ -61,7 +64,7 @@ theorem Hom.finite_kerCoeff (f : Hom W₁.toAffine W₂.toAffine) (hf : f ≠ 0)
     (fun h ↦ hf ((Hom.map_eq_zero_iff f (algebraMap K (SeparableClosure K))).1 h))
   let ι : f.KerCoeff → f.mapSeparableClosure.pointMapHom.ker := fun P ↦
     ⟨W₁.pointCoeffEquiv.symm P, by
-      have hP := P.2
+      have hP := P.property
       rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass] at hP
       rw [AddMonoidHom.mem_ker, Hom.pointMapHom_apply,
         ← Hom.pointCoeffEquiv_symm_pointCoeffMap, hP, map_zero]⟩
@@ -122,3 +125,19 @@ theorem finiteIndex_range_pointMapHom_of_module_finite_padic (hf : f ≠ 0) :
     (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K)
 
 end TauCeti.Isogeny.Hom
+
+namespace TauCeti.Isogeny
+
+open Hom (ofIsogeny)
+open scoped NumberField
+
+/-- **Finiteness of local cohomology over the completions of `ℚ`**: over the completion of `ℚ` at
+a finite place, `H¹` of the kernel of an isogeny is finite. -/
+instance finite_H1_kerCoeff_adicCompletion_rat (v : IsDedekindDomain.HeightOneSpectrum (𝓞 ℚ))
+    {E₁ E₂ : WeierstrassCurve (v.adicCompletion ℚ)} [E₁.IsElliptic] [E₂.IsElliptic]
+    (ψ : Isogeny E₁.toAffine E₂.toAffine) :
+    Finite (H1 (AbsoluteGaloisGroup (v.adicCompletion ℚ)) (ofIsogeny ψ).KerCoeff) :=
+  (ofIsogeny ψ).finite_H1_kerCoeff_of_isTopologicallyFinitelyGenerated (Hom.ofIsogeny_ne_zero ψ)
+    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup (Rat.HeightOneSpectrum.natGenerator v) _)
+
+end TauCeti.Isogeny

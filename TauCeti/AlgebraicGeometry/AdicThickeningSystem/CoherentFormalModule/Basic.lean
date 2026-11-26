@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.FormalCompletion
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation
+public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 
 /-!
 # Coherent formal modules on adic thickening systems
@@ -34,18 +35,20 @@ formal completion of a Noetherian scheme the category is nevertheless abelian
 `Scheme.formalCompletion.completionFunctor X I`, from finitely presented `𝒪_X`-modules to
 coherent formal modules on `X.formalCompletion I`, sends `M` to the system of its restrictions
 `M / I ^ (n + 1) M` to the infinitesimal neighbourhoods `V(I ^ (n + 1))`, i.e. to the pullbacks of
-`M` along the closed immersions `V(I ^ (n + 1)) ⟶ X`; it is additive. Finite presentation is the
-condition preserved by pullback along arbitrary morphisms of schemes, which is why the levels are
-required to be finitely presented rather than merely coherent.
+`M` along the closed immersions `V(I ^ (n + 1)) ⟶ X`; it is additive, and restricts to finite
+locally free sheaves as `Scheme.formalCompletion.finiteLocallyFreeCompletionFunctor X I`. Finite
+presentation is the condition preserved by pullback along arbitrary morphisms of schemes, which is
+why the levels are required to be finitely presented rather than merely coherent.
 
 Coherent formal modules pull back along morphisms `g : 𝔛 ⟶ 𝔜` of adic thickening systems, level by
-level. Pulling back along the morphism of formal completions induced by the inclusion of an open
-subscheme `U ⊆ X` restricts a coherent formal module on `X/V(I)` to `U/V(I|_U)`, and being an
-isomorphism is a local property: a morphism of coherent formal modules on `X/V(I)` is an
-isomorphism as soon as its restrictions to the members of an open cover of `X` are. This is how
-statements about the category of coherent formal modules on the formal completion of a Noetherian
-scheme reduce to affine opens, where it is described by finite modules over the completed ring
-(Stacks, Lemmas 30.23.1 and 30.23.2).
+level; along an isomorphism `g` this is an equivalence of categories, so isomorphic adic thickening
+systems carry equivalent categories of coherent formal modules. Pulling back along the morphism of
+formal completions induced by the inclusion of an open subscheme `U ⊆ X` restricts a coherent
+formal module on `X/V(I)` to `U/V(I|_U)`, and being an isomorphism is a local property: a morphism
+of coherent formal modules on `X/V(I)` is an isomorphism as soon as its restrictions to the
+members of an open cover of `X` are. This is how statements about the category of coherent formal
+modules on the formal completion of a Noetherian scheme reduce to affine opens, where it is
+described by finite modules over the completed ring (Stacks, Lemmas 30.23.1 and 30.23.2).
 
 ## Main definitions
 
@@ -62,15 +65,21 @@ scheme reduce to affine opens, where it is described by finite modules over the 
   every level (`CoherentFormalModule.epi_iff_forall_epi_app`).
 * `TauCeti.AlgebraicGeometry.AdicThickeningSystem.CoherentFormalModule.pullback`: the pullback of
   coherent formal modules along a morphism of adic thickening systems, an additive functor
-  preserving epimorphisms.
+  preserving epimorphisms, and an equivalence along an isomorphism
+  (`CoherentFormalModule.isEquivalence_pullback`).
 * `AlgebraicGeometry.Scheme.formalCompletion.completionFunctor`: the completion functor from
   finitely presented `𝒪_X`-modules to coherent formal modules on the formal completion.
+* `AlgebraicGeometry.Scheme.formalCompletion.finiteLocallyFreeCompletionFunctor`: its restriction
+  to `FiniteLocallyFreeSheaf X`.
 
 ## Main results
 
 * `CoherentFormalModule.isIso_iff_of_isOpenCover_opensRange`: a morphism of coherent formal
   modules is an isomorphism if and only if its pullbacks along a family of morphisms of adic
   thickening systems that are levelwise open covers are.
+* `AlgebraicGeometry.Scheme.formalCompletion.hom_ext_of_isFiniteLocallyFree`: under faithfulness of
+  `finiteLocallyFreeCompletionFunctor X I`, morphisms of finite locally free `𝒪_X`-modules are
+  determined by their pullbacks to all levels of `X.formalCompletion I`.
 * `AlgebraicGeometry.Scheme.formalCompletion.isIso_iff_of_isOpenCover`: a morphism of coherent
   formal modules on `X/V(I)` is an isomorphism if and only if its restrictions to the formal
   completions of the members of an open cover of `X` are.
@@ -386,8 +395,7 @@ def pullback (g : 𝔛 ⟶ 𝔜) : CoherentFormalModule 𝔜 ⥤ CoherentFormalM
     { obj n := (Scheme.Modules.pullback (g.app n)).obj (M.obj n)
       isFinitePresentation _ := inferInstance
       transitionIso n :=
-        (Scheme.Modules.pullbackComp _ _ ≪≫ Scheme.Modules.pullbackCongr (g.naturality n) ≪≫
-            (Scheme.Modules.pullbackComp _ _).symm).app (M.obj (n + 1)) ≪≫
+        (Scheme.Modules.pullbackCompIsoOfCommSq ⟨g.naturality n⟩).app (M.obj (n + 1)) ≪≫
           (Scheme.Modules.pullback (g.app n)).mapIso (M.transitionIso n) }
   map {M N} φ :=
     { app n := (Scheme.Modules.pullback (g.app n)).map (φ.app n)
@@ -404,13 +412,11 @@ theorem pullback_obj_obj (g : 𝔛 ⟶ 𝔜) (M : CoherentFormalModule 𝔜) (n 
     ((pullback g).obj M).obj n = (Scheme.Modules.pullback (g.app n)).obj (M.obj n) :=
   (rfl)
 
-@[simp]
+@[simp, reassoc]
 theorem pullback_obj_transitionIso_hom (g : 𝔛 ⟶ 𝔜) (M : CoherentFormalModule 𝔜) (n : ℕ) :
     (((pullback g).obj M).transitionIso n).hom =
-      (Scheme.Modules.pullbackComp (𝔛.ι n) (g.app (n + 1))).hom.app (M.obj (n + 1)) ≫
-        (Scheme.Modules.pullbackCongr (g.naturality n)).hom.app (M.obj (n + 1)) ≫
-          (Scheme.Modules.pullbackComp (g.app n) (𝔜.ι n)).inv.app (M.obj (n + 1)) ≫
-            (Scheme.Modules.pullback (g.app n)).map (M.transitionIso n).hom :=
+      (Scheme.Modules.pullbackCompIsoOfCommSq ⟨g.naturality n⟩).hom.app (M.obj (n + 1)) ≫
+        (Scheme.Modules.pullback (g.app n)).map (M.transitionIso n).hom :=
   (rfl)
 
 @[simp]
@@ -443,6 +449,93 @@ theorem isIso_iff_of_isOpenCover_opensRange {ι : Type*} {𝔘 : ι → AdicThic
   refine (Scheme.Modules.isIso_iff_of_isOpenCover_opensRange _ (hg n) _).mpr fun i ↦ ?_
   rw [← pullback_map_app]
   exact (isIso_iff_forall_isIso_app _).mp (h i) n
+
+section IsIso
+
+variable (g : 𝔛 ⟶ 𝔜) [IsIso g]
+
+/-- Pullback along an isomorphism is faithful: two morphisms with the same pullback agree, since
+they agree after pullback along every `g.app n`, which is faithful. -/
+private theorem pullback_faithful : (pullback g).Faithful where
+  map_injective {M N} φ ψ h := hom_ext fun n ↦
+    (Scheme.Modules.pullback (g.app n)).map_injective (by
+      rw [← pullback_map_app, ← pullback_map_app, h])
+
+/-- Pullback along an isomorphism is full: a morphism `ψ` between pullbacks is the pullback of the
+morphism whose levels are the preimages of the levels of `ψ` under pullback along `g.app n`, these
+being compatible with the reduction isomorphisms since pullback along `g.app n` is faithful. -/
+private theorem pullback_full : (pullback g).Full where
+  map_surjective {M N} ψ := by
+    refine ⟨{ app n := (Scheme.Modules.pullback (g.app n)).preimage (ψ.app n)
+              naturality n := ?_ }, hom_ext fun n ↦ Functor.map_preimage _ (ψ.app n)⟩
+    apply (Scheme.Modules.pullback (g.app n)).map_injective
+    have h := ψ.naturality n
+    rw [pullback_obj_transitionIso_hom_assoc, pullback_obj_transitionIso_hom,
+      ← Functor.map_preimage (Scheme.Modules.pullback (g.app (n + 1))) (ψ.app (n + 1)),
+      ← Functor.map_preimage (Scheme.Modules.pullback (g.app n)) (ψ.app n)] at h
+    rw [Functor.map_comp, Functor.map_comp, ← cancel_epi
+      ((Scheme.Modules.pullbackCompIsoOfCommSq ⟨g.naturality n⟩).hom.app (M.obj (n + 1)))]
+    -- `Functor.comp_map` unfolds the naturality square of the comparison definitionally.
+    exact ((Scheme.Modules.pullbackCompIsoOfCommSq _).hom.naturality_assoc _ _).symm.trans h
+
+section EssSurj
+
+variable (M : CoherentFormalModule 𝔛)
+
+/-- The identification `g n ^* (g n)⁻¹ ^* M n ≅ M n`. -/
+private def counitApp (n : ℕ) :
+    (Scheme.Modules.pullback (g.app n)).obj
+        ((Scheme.Modules.pullback (inv (g.app n))).obj (M.obj n)) ≅ M.obj n :=
+  (Scheme.Modules.pullbackCompIsoId (IsIso.hom_inv_id (g.app n))).app (M.obj n)
+
+/-- The isomorphism `g n ^* ι n ^* N (n + 1) ≅ g n ^* N n` whose preimage is the reduction
+isomorphism of the descended module `N n = (g n)⁻¹ ^* M n`. -/
+private def descentTransitionIso (n : ℕ) :
+    (Scheme.Modules.pullback (g.app n)).obj ((Scheme.Modules.pullback (𝔜.ι n)).obj
+        ((Scheme.Modules.pullback (inv (g.app (n + 1)))).obj (M.obj (n + 1)))) ≅
+      (Scheme.Modules.pullback (g.app n)).obj
+        ((Scheme.Modules.pullback (inv (g.app n))).obj (M.obj n)) :=
+  (Scheme.Modules.pullbackCompIsoOfCommSq ⟨g.naturality n⟩).symm.app _ ≪≫
+    (Scheme.Modules.pullback (𝔛.ι n)).mapIso (counitApp g M (n + 1)) ≪≫ M.transitionIso n ≪≫
+      (counitApp g M n).symm
+
+/-- The coherent formal module on `𝔜` whose pullback along the isomorphism `g` is isomorphic to
+`M`. -/
+private abbrev descent : CoherentFormalModule 𝔜 where
+  obj n := (Scheme.Modules.pullback (inv (g.app n))).obj (M.obj n)
+  isFinitePresentation _ := inferInstance
+  transitionIso n := (Scheme.Modules.pullback (g.app n)).preimageIso (descentTransitionIso g M n)
+
+private lemma counitApp_naturality (n : ℕ) :
+    (Scheme.Modules.pullback (𝔛.ι n)).map (counitApp g M (n + 1)).hom ≫ (M.transitionIso n).hom =
+      ((Scheme.Modules.pullbackCompIsoOfCommSq ⟨g.naturality n⟩).hom.app _ ≫
+        (descentTransitionIso g M n).hom) ≫ (counitApp g M n).hom := by
+  rw [descentTransitionIso, Iso.trans_hom, Iso.app_hom, Iso.symm_hom, Iso.hom_inv_id_app_assoc]
+  simp
+
+/-- The pullback of `descent g M` along `g` is isomorphic to `M`. -/
+private def pullbackDescentIso : (pullback g).obj (descent g M) ≅ M :=
+  isoMk (counitApp g M) fun n ↦ by
+    rw [pullback_obj_transitionIso_hom, Functor.preimageIso_hom, Functor.map_preimage]
+    -- The goal and `counitApp_naturality` differ only in how the levels of
+    -- `(pullback g).obj (descent g M)` are written.
+    exact counitApp_naturality g M n
+
+/-- Pullback along an isomorphism is essentially surjective: `M` is isomorphic to the pullback of
+the system `(g.app n)⁻¹ ^* M n`. -/
+private theorem pullback_essSurj : (pullback g).EssSurj where
+  mem_essImage M := ⟨descent g M, ⟨pullbackDescentIso g M⟩⟩
+
+end EssSurj
+
+/-- **Pullback along an isomorphism of adic thickening systems is an equivalence** of categories of
+coherent formal modules. -/
+instance isEquivalence_pullback : (pullback g).IsEquivalence where
+  faithful := pullback_faithful g
+  full := pullback_full g
+  essSurj := pullback_essSurj g
+
+end IsIso
 
 end
 
@@ -502,6 +595,34 @@ theorem completionFunctor_map_app {M N : FinitelyPresentedSheaf X} (φ : M ⟶ N
 /-- The completion functor is additive, since pullback of modules is additive at every level. -/
 instance completionFunctor_additive : (completionFunctor X I).Additive where
   map_add := CoherentFormalModule.hom_ext fun _ ↦ (Modules.pullback _).map_add
+
+/-- The restriction of `completionFunctor X I` to finite locally free sheaves on `X`, sending `E`
+to the coherent formal module `(E / I ^ (n + 1) E)ₙ` on `X.formalCompletion I`. Because this is an
+abbreviation for `FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙ completionFunctor X I`, `Full`
+and `Faithful` instances on `completionFunctor X I` restrict automatically to
+`finiteLocallyFreeCompletionFunctor X I`. -/
+noncomputable abbrev finiteLocallyFreeCompletionFunctor :
+    FiniteLocallyFreeSheaf X ⥤ CoherentFormalModule (X.formalCompletion I) :=
+  FiniteLocallyFreeSheaf.toFinitelyPresented X ⋙ completionFunctor X I
+
+/-- If `finiteLocallyFreeCompletionFunctor X I` is faithful, two morphisms between finite locally
+free `𝒪_X`-modules are equal as soon as their pullbacks to all levels `V(I ^ (n + 1))` of the
+formal completion agree. -/
+theorem hom_ext_of_isFiniteLocallyFree {X : Scheme.{u}} (I : X.IdealSheafData)
+    [(finiteLocallyFreeCompletionFunctor X I).Faithful]
+    {M N : X.Modules} (hM : Modules.isFiniteLocallyFree X M)
+    (hN : Modules.isFiniteLocallyFree X N) {f g : M ⟶ N}
+    (h : ∀ n, (Modules.pullback (toScheme X I n)).map f =
+      (Modules.pullback (toScheme X I n)).map g) :
+    f = g := by
+  let E : FiniteLocallyFreeSheaf X := ⟨M, hM⟩
+  let F : FiniteLocallyFreeSheaf X := ⟨N, hN⟩
+  let fE : E ⟶ F := ObjectProperty.homMk f
+  let gE : E ⟶ F := ObjectProperty.homMk g
+  have hfg : (finiteLocallyFreeCompletionFunctor X I).map fE =
+      (finiteLocallyFreeCompletionFunctor X I).map gE :=
+    CoherentFormalModule.hom_ext h
+  exact congrArg (·.hom) ((finiteLocallyFreeCompletionFunctor X I).map_injective hfg)
 
 /-- **Isomorphisms of coherent formal modules on a formal completion are local on the scheme.** For
 an open cover `U` of `X`, a morphism of coherent formal modules on `X/V(I)` is an isomorphism if

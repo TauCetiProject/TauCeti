@@ -25,7 +25,14 @@ closed-range theorem. The scalar actions need no compatibility with the norms; o
 and continuity of the map enter the argument.
 
 The file also records the form of the open mapping theorem used to invert operators pointwise:
-a bijective continuous linear map between Banach spaces is invertible.
+a bijective continuous linear map between Banach spaces is invertible. It also identifies
+Mathlib's equivalence `ContinuousLinearMap.coprodSubtypeLEquivOfIsCompl`, which the open mapping
+theorem builds from an injective map and a complement of its range, with the underlying
+coproduct map. Finally, it records the consequence of the closed graph theorem used to turn
+regularity statements into estimates: a map between Banach spaces whose values all lie in the
+range of an injective bounded map `g` is bounded after composing with `g⁻¹`. For instance, if
+every solution of an elliptic equation with data in one Banach space lies in a smaller Banach space
+of more regular functions, then the solution is bounded in the smaller space by the data.
 
 ## Main declarations
 
@@ -34,8 +41,19 @@ a bijective continuous linear map between Banach spaces is invertible.
 * `ContinuousLinearMap.exists_preimage_norm_le_of_mem_closure`: if every `y` lies in the closure of
   the image of the closed ball of radius `C * ‖y‖`, then for every `C' > C`, every `y` has a
   preimage of norm at most `C' * ‖y‖`.
+* `ContinuousLinearMap.coe_coprodSubtypeLEquivOfIsCompl`: Mathlib's equivalence
+  `f.coprodSubtypeLEquivOfIsCompl` of `E × G` with `F`, for an injective `f` whose range has
+  the complement `G`, is `f.coprod G.subtypeL` as a continuous linear map.
 * `ContinuousLinearMap.isInvertible_iff_bijective`: by the open mapping theorem, a continuous
   linear map between Banach spaces is invertible exactly when it is bijective.
+* `ContinuousLinearMap.exists_comp_eq_of_range_le_range`: by the closed graph theorem, if the
+  range of `f` lies in the range of an injective `g`, then `f` factors as `g ∘ h` with `h` a
+  continuous linear map.
+* `ContinuousLinearMap.exists_norm_le_of_range_le_range`: under the same hypotheses, the solutions
+  `y` of `g y = f x` are bounded by a constant multiple of `‖x‖`.
+* `LinearMap.continuous_of_injective_comp_eq`: by the closed graph theorem, a linear map `e`
+  between Banach spaces is continuous when `g ∘ e = f` for continuous maps `f` and `g` into a
+  Hausdorff space with `g` injective.
 * `ContinuousLinearMap.spectrum_restrictScalars`: realification preserves the spectrum of an
   operator on a Banach space.
 
@@ -152,6 +170,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 
+/-- The equivalence `f.coprodSubtypeLEquivOfIsCompl h hker` of `E × G` with `F`, given by an
+injective `f` whose range has the complement `G`, is `f.coprod G.subtypeL` as a continuous linear
+map. -/
+@[simp]
+theorem coe_coprodSubtypeLEquivOfIsCompl (f : E →L[𝕜] F) {G : Submodule 𝕜 F}
+    (h : IsCompl f.range G) [CompleteSpace G] (hker : f.ker = ⊥) :
+    (f.coprodSubtypeLEquivOfIsCompl h hker : E × G →L[𝕜] F) = f.coprod G.subtypeL :=
+  ContinuousLinearEquiv.coe_ofBijective _ _ _
+
 /-- By the open mapping theorem, a continuous linear map between Banach spaces is invertible, that
 is, a continuous linear equivalence, exactly when it is bijective. -/
 theorem isInvertible_iff_bijective {f : E →L[𝕜] F} : f.IsInvertible ↔ Bijective f :=
@@ -159,6 +186,65 @@ theorem isInvertible_iff_bijective {f : E →L[𝕜] F} : f.IsInvertible ↔ Bij
     (LinearMap.range_eq_top.2 h.2), ContinuousLinearEquiv.coe_ofBijective _ _ _⟩⟩
 
 end ContinuousLinearMap
+
+namespace ContinuousLinearMap
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [CompleteSpace G]
+
+/-- **Bounded lift through an injective map.** Let `f : E →L[𝕜] F` and `g : G →L[𝕜] F` be
+continuous linear maps out of Banach spaces, with `g` injective and the range of `f` contained in
+the range of `g`. Then the induced linear map `g⁻¹ ∘ f : E → G` is bounded, by the closed graph
+theorem: there is a continuous linear map `h : E →L[𝕜] G` with `g ∘ h = f`. -/
+theorem exists_comp_eq_of_range_le_range (f : E →L[𝕜] F) (g : G →L[𝕜] F) (hg : Injective g)
+    (hfg : f.range ≤ g.range) : ∃ h : E →L[𝕜] G, g.comp h = f := by
+  let h : E →ₗ[𝕜] G := (LinearEquiv.ofInjective (g : G →ₗ[𝕜] F) hg).symm.toLinearMap ∘ₗ
+    (f : E →ₗ[𝕜] F).codRestrict (LinearMap.range (g : G →ₗ[𝕜] F)) fun x ↦ hfg ⟨x, rfl⟩
+  have hgh (x : E) : g (h x) = f x :=
+    LinearEquiv.ofInjective_symm_apply (f := (g : G →ₗ[𝕜] F)) (h := hg) _
+  have hcont : Continuous h := h.continuous_of_seq_closed_graph fun u x y hu hy ↦ hg <| by
+    have hy' : Tendsto (f ∘ u) atTop (𝓝 (g y)) := by
+      simpa only [comp_def, hgh] using (g.continuous.tendsto y).comp hy
+    rw [hgh, tendsto_nhds_unique ((f.continuous.tendsto x).comp hu) hy']
+  exact ⟨⟨h, hcont⟩, ext hgh⟩
+
+/-- **Bounded factorization through an injective map.** Let `f : E →L[𝕜] F` and `g : G →L[𝕜] F` be
+continuous linear maps out of Banach spaces, with `g` injective and the range of `f` contained in
+the range of `g`. Then the solutions `y` of `g y = f x` are bounded: there is a constant `C ≥ 0`
+with `‖y‖ ≤ C * ‖x‖` whenever `g y = f x`
+(`ContinuousLinearMap.exists_comp_eq_of_range_le_range`). -/
+theorem exists_norm_le_of_range_le_range (f : E →L[𝕜] F) (g : G →L[𝕜] F) (hg : Injective g)
+    (hfg : f.range ≤ g.range) : ∃ C ≥ 0, ∀ x y, g y = f x → ‖y‖ ≤ C * ‖x‖ := by
+  obtain ⟨h, hgh⟩ := exists_comp_eq_of_range_le_range f g hg hfg
+  refine ⟨‖h‖, norm_nonneg _, fun x y hxy ↦ ?_⟩
+  obtain rfl : y = h x := hg (hxy.trans (DFunLike.congr_fun hgh x).symm)
+  exact h.le_opNorm x
+
+end ContinuousLinearMap
+
+namespace LinearMap
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E G X : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G] [TopologicalSpace X] [T2Space X]
+
+/-- **Continuity through an injective continuous map.** Let `e : E →ₗ[𝕜] G` be a linear map
+between Banach spaces, and let `f : E → X` and `g : G → X` be continuous maps into a Hausdorff
+space with `g` injective and `g ∘ e = f`. Then `e` is continuous: its graph is the closed set of
+pairs `(x, y)` with `g y = f x`, so the closed graph theorem applies. -/
+theorem continuous_of_injective_comp_eq (e : E →ₗ[𝕜] G) {f : E → X} {g : G → X}
+    (hf : Continuous f) (hg : Continuous g) (hg_inj : Injective g) (h : ∀ x, g (e x) = f x) :
+    Continuous e := by
+  refine e.continuous_of_isClosed_graph ?_
+  have : (e.graph : Set (E × G)) = {q | g q.2 = f q.1} := by
+    ext q
+    simp only [SetLike.mem_coe, mem_graph_iff, mem_ofPred_eq, ← h q.1, hg_inj.eq_iff]
+  rw [this]
+  exact isClosed_eq (hg.comp continuous_snd) (hf.comp continuous_fst)
+
+end LinearMap
 
 namespace ContinuousLinearMap
 

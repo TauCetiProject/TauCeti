@@ -128,7 +128,7 @@ theorem apply_mul_of_mem_coind {f : G → A} (hf : f ∈ coind G U A) (u : U) (g
 without a separate membership hypothesis. -/
 @[simp]
 theorem coind_apply_mul (f : coind G U A) (u : U) (g : G) :
-    (f : G → A) ((u : G) * g) = u • (f : G → A) g := apply_mul_of_mem_coind f.2 u g
+    (f : G → A) ((u : G) * g) = u • (f : G → A) g := apply_mul_of_mem_coind f.property u g
 
 /-- Equivariance at an element of `U`, in simp-normal form. -/
 @[simp]
@@ -146,9 +146,10 @@ variable {R G A : Type*} [Semiring R] [Group G] [TopologicalSpace G] {U : Subgro
 /-- Pointwise scalar multiplication by a ring commuting with the `U`-action. -/
 instance instSMulCoindScalar : SMul R (coind G U A) where
   smul r f :=
-    ⟨fun g => r • f.1 g,
-      mem_coind_iff.2 ⟨(isLocallyConstant_of_mem_coind f.2).comp (fun a => r • a), fun u g => by
-        rw [apply_mul_of_mem_coind f.2 u g]
+    ⟨fun g => r • f.val g,
+      mem_coind_iff.2 ⟨(isLocallyConstant_of_mem_coind f.property).comp (fun a => r • a),
+          fun u g => by
+        rw [apply_mul_of_mem_coind f.property u g]
         exact (smul_comm u r _).symm⟩⟩
 
 @[simp]
@@ -173,7 +174,7 @@ theorem rightTranslation_mem_coind {f : G → A} (hf : f ∈ coind G U A) (g : G
 
 /-- The right-translation action `(g • f) x = f (x * g)`. -/
 instance instSMulCoind : SMul G (coind G U A) where
-  smul g f := ⟨fun x => (f : G → A) (x * g), rightTranslation_mem_coind f.2 g⟩
+  smul g f := ⟨fun x => (f : G → A) (x * g), rightTranslation_mem_coind f.property g⟩
 
 @[simp]
 theorem coind_smul_apply (g : G) (f : coind G U A) (x : G) :
@@ -205,7 +206,7 @@ continuous cohomology. -/
 theorem isOpen_stabilizer_coind (f : coind G U A) :
     IsOpen (MulAction.stabilizer G f : Set G) := by
   rw [stabilizer_coind_eq]
-  exact isOpen_rightTranslationStabilizer (isLocallyConstant_of_mem_coind f.2)
+  exact isOpen_rightTranslationStabilizer (isLocallyConstant_of_mem_coind f.property)
 
 end Smooth
 
@@ -236,7 +237,7 @@ induces `Coind_U^G A →+ Coind_U^G B` by postcomposition. -/
 def coindMap (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u • a) = u • φ a) :
     coind G U A →+ coind G U B where
   toFun f := ⟨fun g => φ ((f : G → A) g),
-    ⟨(isLocallyConstant_of_mem_coind f.2).comp φ, fun u g => by simp [hφ]⟩⟩
+    ⟨(isLocallyConstant_of_mem_coind f.property).comp φ, fun u g => by simp [hφ]⟩⟩
   map_zero' := by ext g; simp
   map_add' _ _ := by ext g; simp
 
@@ -399,8 +400,8 @@ theorem coindMap_range_eq_ker (φ : A →+ B) (hφ : ∀ (u : U) (a : A), φ (u 
     have hinvFun : ∀ g : G, φ (Function.invFun φ ((F : G → B) g)) = (F : G → B) g := fun g =>
       Function.invFun_eq (hmem g)
     refine ⟨⟨fun g => Function.invFun φ ((F : G → B) g),
-      (isLocallyConstant_of_mem_coind F.2).comp (Function.invFun φ), fun u g =>
-        hinj (by rw [hinvFun, hφ, hinvFun, apply_mul_of_mem_coind F.2])⟩,
+      (isLocallyConstant_of_mem_coind F.property).comp (Function.invFun φ), fun u g =>
+        hinj (by rw [hinvFun, hφ, hinvFun, apply_mul_of_mem_coind F.property])⟩,
       Subtype.ext (funext hinvFun)⟩
 
 end Exactness
@@ -425,14 +426,14 @@ theorem coindMap_surjective (hU : IsClosed (U : Set G)) (φ : A →+ B)
     exists_continuous_rightCosetFactorization U hU
   intro F
   have hF : IsLocallyConstant fun g : G => (F : G → B) (r g) :=
-    (isLocallyConstant_of_mem_coind F.2).comp_continuous hr_cont
+    (isLocallyConstant_of_mem_coind F.property).comp_continuous hr_cont
   refine ⟨⟨fun g => w g • Function.surjInv hsurj ((F : G → B) (r g)), ?_, fun u g => ?_⟩, ?_⟩
   · exact (IsLocallyConstant.iff_continuous _).2 (continuous_smul.comp
       (hw_cont.prodMk (hF.comp (Function.surjInv hsurj)).continuous))
   · simp only [hw_mul u g, hr_mul u g, mul_smul]
   · refine Subtype.ext (funext fun g => ?_)
     rw [coindMap_apply, hφ, Function.surjInv_eq hsurj,
-      ← apply_mul_of_mem_coind F.2 (w g) (r g), hwr g]
+      ← apply_mul_of_mem_coind F.property (w g) (r g), hwr g]
 
 end Surjectivity
 
@@ -470,7 +471,7 @@ def coindEvalTopEquiv
   toFun f := (f : G → A) 1
   invFun a := ⟨_, smul_mem_coind_top (hcont a)⟩
   left_inv f := Subtype.ext (funext fun g => by
-    simpa using (apply_mul_of_mem_coind f.2 ⟨g, Subgroup.mem_top g⟩ 1).symm)
+    simpa using (apply_mul_of_mem_coind f.property ⟨g, Subgroup.mem_top g⟩ 1).symm)
   right_inv a := by
     have h : (⟨(1 : G), Subgroup.mem_top _⟩ : (⊤ : Subgroup G)) = 1 := Subtype.ext rfl
     simp [h]
