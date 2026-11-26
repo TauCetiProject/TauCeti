@@ -35,7 +35,7 @@ sequences although such modules have no finite composition series in general.
 
 ## Main results
 
-* `TauCeti.fittingIdeal_isPrincipal`: over a Bézout ring, such as a valuation ring, the Fitting
+* `TauCeti.isPrincipal_fittingIdeal`: over a Bézout ring, such as a valuation ring, the Fitting
   ideals of a finitely presented module are principal.
 * `TauCeti.fittingIdeal_eq_mul_of_exact_of_finitePresentation`: over a valuation ring,
   `Fitt₀(B) = Fitt₀(A) Fitt₀(C)` for a short exact sequence `0 → A → B → C → 0` of finite modules
@@ -59,7 +59,7 @@ variable {V M : Type*} [CommRing V] [AddCommGroup M] [Module V M]
 
 /-- Over a Bézout ring, such as a valuation ring, the Fitting ideals of a finitely presented
 module are principal. -/
-theorem fittingIdeal_isPrincipal [IsBezout V] [Module.FinitePresentation V M] (k : ℕ) :
+theorem isPrincipal_fittingIdeal [IsBezout V] [Module.FinitePresentation V M] (k : ℕ) :
     (fittingIdeal V M k).IsPrincipal :=
   IsBezout.isPrincipal_of_FG _ (fittingIdeal_fg k)
 

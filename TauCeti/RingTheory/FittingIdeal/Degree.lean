@@ -49,19 +49,21 @@ torsion, such as `V` itself, has `Fitt₀ = 0` and degree `⊤`.
 
 * `AddValuation.fittingDegree_eq_generator`, `AddValuation.fittingDegree_of_not_isPrincipal`: the
   two cases of the definition.
-* `AddValuation.fittingDegree_eq_of_fittingIdeal_eq_span`: if `Fitt₀ M = (x)`, then
-  `deg M = v x`.
-* `AddValuation.fittingDegree_quotient_span_singleton`: `deg (V ⧸ (x)) = v x`.
-* `AddValuation.fittingDegree_pi_quotient_span_singleton`: `deg (∏ i, V ⧸ (x i)) = ∑ i, v (x i)`.
-* `AddValuation.fittingDegree_eq_add_of_exact`: over a valuation ring,
+* `AddValuation.fittingDegree_eq_of_fittingIdeal_eq_span`: for `v` nonnegative on `V`, if
+  `Fitt₀ M = (x)`, then `deg M = v x`.
+* `AddValuation.fittingDegree_quotient_span_singleton`: for `v` nonnegative on `V`,
+  `deg (V ⧸ (x)) = v x`.
+* `AddValuation.fittingDegree_pi_quotient_span_singleton`: for `v` nonnegative on `V`,
+  `deg (∏ i, V ⧸ (x i)) = ∑ i, v (x i)`.
+* `AddValuation.fittingDegree_eq_add_of_exact`: over a valuation ring, for `v` nonnegative on `V`,
   `deg B = deg A + deg C` for a short exact sequence `0 → A → B → C → 0` of finitely presented
   modules.
-* `AddValuation.fittingDegree_eq_zero_iff`: over a Bézout ring, `deg M = 0` exactly when
-  `M = 0`.
-* `AddValuation.fittingDegree_ne_top_iff`: over a Bézout domain, `deg M` is finite exactly when
-  `M` is torsion.
-* `AddValuation.fittingDegree_baseChange`: the degree is invariant under extension of scalars to
-  a ring with a valuation extending `v`.
+* `AddValuation.fittingDegree_eq_zero_iff`: over a Bézout ring, for `v` nonnegative on `V` and
+  vanishing only at units, a finitely presented module `M` has `deg M = 0` exactly when `M = 0`.
+* `AddValuation.fittingDegree_ne_top_iff`: over a Bézout domain, for `v` infinite only at `0`, a
+  finitely presented module `M` has finite degree exactly when `M` is torsion.
+* `AddValuation.fittingDegree_baseChange`: the degree of a finitely presented module is invariant
+  under extension of scalars to a ring with a valuation which is nonnegative on it and extends `v`.
 
 ## References
 
@@ -85,7 +87,7 @@ variable (M) in
 open Classical in
 /-- **Fargues's degree** `deg M = v(Fitt₀ M)` of a finite `V`-module `M`: the valuation of a
 generator of the zeroth Fitting ideal `Fitt₀ M` when this ideal is principal, as it is for every
-finitely presented module over a valuation ring (`TauCeti.fittingIdeal_isPrincipal`), and `⊤`
+finitely presented module over a valuation ring (`TauCeti.isPrincipal_fittingIdeal`), and `⊤`
 otherwise. For `v` nonnegative on `V` it does not depend on the generator
 (`AddValuation.fittingDegree_eq_of_fittingIdeal_eq_span`). -/
 noncomputable def fittingDegree : Γ₀ :=
@@ -162,7 +164,7 @@ variable [IsBezout V]
 the valuation of a generator of its zeroth Fitting ideal, with no condition on the valuation. -/
 theorem exists_fittingIdeal_eq_span_and_fittingDegree_eq [Module.FinitePresentation V M] :
     ∃ x : V, fittingIdeal V M 0 = Ideal.span {x} ∧ v.fittingDegree M = v x := by
-  have := fittingIdeal_isPrincipal (V := V) (M := M) 0
+  have := isPrincipal_fittingIdeal (V := V) (M := M) 0
   exact ⟨_, (fittingIdeal V M 0).span_singleton_generator.symm, v.fittingDegree_eq_generator⟩
 
 /-- Over a Bézout ring, such as a valuation ring, with an additive valuation `v` which is
