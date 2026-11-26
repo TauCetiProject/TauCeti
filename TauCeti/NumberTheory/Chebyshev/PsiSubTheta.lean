@@ -505,10 +505,14 @@ Lumley, Ng, and Wilk 2021). -/
 noncomputable def psiSubThetaTailCoeff (x : ℝ) : ℝ :=
   ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ ((1 : ℝ) / k - 1 / 3)
 
+/-- Definitional equation for `psiSubThetaTailCoeff`. -/
+theorem psiSubThetaTailCoeff_def (x : ℝ) :
+    psiSubThetaTailCoeff x = ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ ((1 : ℝ) / k - 1 / 3) := (rfl)
+
 /-- `psiSubThetaTailCoeff x = 0` for `0 ≤ x < 8`. -/
 theorem psiSubThetaTailCoeff_eq_zero_of_lt_eight {x : ℝ} (hx0 : 0 ≤ x) (hx8 : x < 8) :
     psiSubThetaTailCoeff x = 0 := by
-  rw [psiSubThetaTailCoeff]
+  rw [psiSubThetaTailCoeff_def]
   have hlt : ⌊log x / log 2⌋₊ < 3 := by
     rw [← Real.logb, Real.natFloor_logb_lt_iff_lt_pow one_lt_two hx0 (by norm_num)]
     linarith
@@ -524,7 +528,7 @@ theorem psiSubThetaTailCoeff_eq_zero_iff {x : ℝ} (hx : 0 ≤ x) :
     rw [← Real.logb, Real.le_natFloor_logb_iff_pow_le one_lt_two hx (by norm_num)]
     linarith
   have h1 : (1 : ℝ) ≤ psiSubThetaTailCoeff x := by
-    rw [psiSubThetaTailCoeff]
+    rw [psiSubThetaTailCoeff_def]
     have hmem : (3 : ℕ) ∈ Icc 3 ⌊log x / log 2⌋₊ := mem_Icc.mpr ⟨le_rfl, h3⟩
     simpa using single_le_sum (f := fun k : ℕ ↦ x ^ ((1 : ℝ) / k - 1 / 3))
       (fun _ _ ↦ rpow_nonneg hx _) hmem
@@ -552,7 +556,7 @@ theorem psiSubThetaTailCoeff_mul_rpow {x : ℝ} (hx : 0 ≤ x) :
       ∑ k ∈ Icc 3 ⌊log x / log 2⌋₊, x ^ ((1 : ℝ) / k) := by
   rcases hx.eq_or_lt with rfl | hx0
   · simp
-  · rw [psiSubThetaTailCoeff, sum_mul]
+  · rw [psiSubThetaTailCoeff_def, sum_mul]
     refine sum_congr rfl fun k _ ↦ ?_
     rw [← rpow_add hx0, sub_add_cancel]
 
@@ -569,7 +573,7 @@ theorem psiSubThetaTailCoeff_le_max_sub_two {x : ℝ} (hx : 0 ≤ x) :
 theorem psiSubThetaTailCoeff_exp (b : ℝ) :
     psiSubThetaTailCoeff (exp b) =
       ∑ k ∈ Icc 3 ⌊b / log 2⌋₊, exp (b * ((1 : ℝ) / k - 1 / 3)) := by
-  rw [psiSubThetaTailCoeff, log_exp]
+  rw [psiSubThetaTailCoeff_def, log_exp]
   refine sum_congr rfl fun k _ ↦ ?_
   rw [← exp_mul]
 
@@ -578,7 +582,7 @@ summation limit `n`. -/
 theorem psiSubThetaTailCoeff_eq_sum_of_mem_Ico {n : ℕ} {x : ℝ}
     (hx : x ∈ Set.Ico ((2 : ℝ) ^ n) ((2 : ℝ) ^ (n + 1))) :
     psiSubThetaTailCoeff x = ∑ k ∈ Icc 3 n, x ^ ((1 : ℝ) / k - 1 / 3) := by
-  rw [psiSubThetaTailCoeff, ← Real.logb, Real.natFloor_logb_eq_of_mem_Ico one_lt_two hx]
+  rw [psiSubThetaTailCoeff_def, ← Real.logb, Real.natFloor_logb_eq_of_mem_Ico one_lt_two hx]
 
 /-- Bound on the cube-root tail `∑ k ≥ 3, θ (x ^ (1 / k))` in terms of `psiSubThetaTailCoeff`:
 if `θ y ≤ c * y` for all `y ≥ 2`, then for every `x ≥ 0`,
@@ -594,7 +598,7 @@ theorem sum_theta_rpow_le {c x : ℝ} (hx : 0 ≤ x) (hθ : ∀ y, 2 ≤ y → �
 theorem psiSubThetaTailCoeff_two_pow {n : ℕ} (hn : 3 ≤ n) :
     psiSubThetaTailCoeff ((2 : ℝ) ^ n) =
       1 + ∑ k ∈ Icc 4 n, (2 : ℝ) ^ ((n : ℝ) / k - (n : ℝ) / 3) := by
-  rw [psiSubThetaTailCoeff, ← Real.logb, Real.natFloor_logb_pow_self one_lt_two,
+  rw [psiSubThetaTailCoeff_def, ← Real.logb, Real.natFloor_logb_pow_self one_lt_two,
     ← add_sum_Ioc_eq_sum_Icc hn, ← Icc_add_one_left_eq_Ioc]
   congr 1
   · norm_num
@@ -790,13 +794,19 @@ for all `x ≥ X` once `X ≥ 2 ^ 8`. -/
 noncomputable def psiSubThetaTailBound (X : ℝ) : ℝ :=
   max (psiSubThetaTailCoeff X) (psiSubThetaTailCoeff ((2 : ℝ) ^ (⌊log X / log 2⌋₊ + 1)))
 
+/-- Definitional equation for `psiSubThetaTailBound`. -/
+theorem psiSubThetaTailBound_def (X : ℝ) :
+    psiSubThetaTailBound X =
+      max (psiSubThetaTailCoeff X) (psiSubThetaTailCoeff ((2 : ℝ) ^ (⌊log X / log 2⌋₊ + 1))) :=
+  (rfl)
+
 /-- Exponential evaluation of `psiSubThetaTailBound`:
 `psiSubThetaTailBound (exp b) = max (f (exp b)) (f (2 ^ (⌊b / log 2⌋₊ + 1)))`. -/
 theorem psiSubThetaTailBound_exp (b : ℝ) :
     psiSubThetaTailBound (exp b) =
       max (psiSubThetaTailCoeff (exp b))
         (psiSubThetaTailCoeff ((2 : ℝ) ^ (⌊b / log 2⌋₊ + 1))) := by
-  rw [psiSubThetaTailBound, log_exp]
+  rw [psiSubThetaTailBound_def, log_exp]
 
 /-- `psiSubThetaTailBound X ≥ 0` for every real `X`. -/
 @[simp]
@@ -827,7 +837,7 @@ theorem psiSubThetaTailCoeff_le_psiSubThetaTailBound {X x : ℝ} (hX : (2 : ℝ)
   have hxmem : x ∈ Set.Ico ((2 : ℝ) ^ n) ((2 : ℝ) ^ (n + 1)) :=
     ⟨Real.pow_natFloor_logb_le_self one_lt_two hx1,
       Real.lt_pow_natFloor_logb_add_one one_lt_two (by positivity)⟩
-  rw [psiSubThetaTailBound, ← Real.logb]
+  rw [psiSubThetaTailBound_def, ← Real.logb]
   rcases hmn.eq_or_lt with hEq | hLt
   · rw [← hEq] at hxmem
     exact le_max_of_le_left
@@ -847,7 +857,7 @@ theorem psiSubThetaTailBound_le_iff_forall {X u : ℝ} (hX : (2 : ℝ) ^ 8 ≤ X
     psiSubThetaTailBound X ≤ u ↔ ∀ x, X ≤ x → psiSubThetaTailCoeff x ≤ u := by
   refine ⟨fun h x hx ↦ (psiSubThetaTailCoeff_le_psiSubThetaTailBound hX hx).trans h, fun h ↦ ?_⟩
   have hXpos : 0 < X := lt_of_lt_of_le (by positivity) hX
-  rw [psiSubThetaTailBound, max_le_iff]
+  rw [psiSubThetaTailBound_def, max_le_iff]
   refine ⟨h X le_rfl, h _ ?_⟩
   rw [← Real.logb]
   exact (Real.lt_pow_natFloor_logb_add_one one_lt_two hXpos).le
@@ -925,6 +935,10 @@ Broadbent, Kadiri, Lumley, Ng, and Wilk. -/
 noncomputable def psiSubThetaCbrtCoeff (ε : ℝ → ℝ) (x₁ b : ℝ) : ℝ :=
   (1 + ε (log x₁)) * psiSubThetaTailBound (exp b)
 
+/-- Definitional equation for `psiSubThetaCbrtCoeff`. -/
+theorem psiSubThetaCbrtCoeff_def (ε : ℝ → ℝ) (x₁ b : ℝ) :
+    psiSubThetaCbrtCoeff ε x₁ b = (1 + ε (log x₁)) * psiSubThetaTailBound (exp b) := (rfl)
+
 /-- Nonnegativity of `psiSubThetaCbrtCoeff` when `0 ≤ 1 + ε (log x₁)`. -/
 theorem psiSubThetaCbrtCoeff_nonneg {ε : ℝ → ℝ} {x₁ : ℝ}
     (hε : 0 ≤ 1 + ε (log x₁)) (b : ℝ) :
@@ -950,7 +964,7 @@ theorem psi_sub_theta_le_of_psi_le_exp {ε : ℝ → ℝ} {x₁ b x : ℝ}
   have hθ_all : ∀ y, 2 ≤ y → θ y ≤ (1 + ε (log x₁)) * y := fun y hy ↦
     theta_le_of_theta_le_self_of_psi_le (by linarith) (by linarith) hθ fun t ht ↦
       hψ (log x₁) le_rfl t (by rwa [exp_log hx₁])
-  rw [psiSubThetaCbrtCoeff]
+  rw [psiSubThetaCbrtCoeff_def]
   refine psi_sub_theta_le_add_psiSubThetaTailBound hX hbx hθ_all fun y hy ↦ ?_
   rcases le_or_gt b (2 * log x₁) with hble | hblt
   · rw [psiSubThetaSqrtCoeff_of_le hble]
