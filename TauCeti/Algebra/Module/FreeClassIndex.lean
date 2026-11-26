@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.Pi
 public import Mathlib.Algebra.Module.Submodule.Equiv
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.GroupTheory.Index
+import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.Algebra.Module.LinearMap.Defs
 
 /-!
@@ -104,12 +105,7 @@ private theorem freeClassIndex_le_semilinearEquiv {S : Type*} [Ring S] {N : Type
   conv_rhs => rw [freeClassIndex_def]
   refine le_iInf fun f => ?_
   let c : (Fin e → S) ≃ₛₗ[τ] (Fin e → R) :=
-    { toFun := fun x i => τ (x i)
-      invFun := fun x i => σ (x i)
-      left_inv := fun x => funext fun i => RingHomInvPair.comp_apply_eq₂
-      right_inv := fun x => funext fun i => RingHomInvPair.comp_apply_eq
-      map_add' := fun x y => funext fun i => τ.map_add _ _
-      map_smul' := fun r x => funext fun i => τ.map_mul _ _ }
+    LinearEquiv.piCongrRightₛₗ fun _ => (RingHomInvPair.toRingEquiv τ σ).toSemilinearEquiv
   let h : (Fin e → R) →ₛₗ[σ] N := a.toLinearMap.comp f.val
   let g : (Fin e → S) →ₗ[S] N := h.comp c.toLinearMap
   have hi : (LinearMap.range g).toAddSubgroup.index =

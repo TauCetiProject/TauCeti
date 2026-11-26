@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.IntegralOrder.Basic
-public import TauCeti.Algebra.Module.Lattice
+public import TauCeti.Algebra.Algebra.Subalgebra.Basic
+public import TauCeti.Algebra.Module.Equiv.Basic
 public import TauCeti.Algebra.Module.FreeClassIndex
+public import TauCeti.Algebra.Module.Lattice
+public import TauCeti.RingTheory.IntegralOrder.Basic
 
 /-!
 # Class indices of orders
@@ -88,34 +90,52 @@ theorem classIndex_zero : O.classIndex 0 = 1 := by
     exact (Module.one_le_freeClassIndex (R := O) (e := 0) (M := M)).trans
       (le_iSup_of_le M (le_iSup_of_le hM le_rfl))
 
+/-- Coordinate transport over the image order preserves and reflects full lattices after
+restriction to the integers. -/
+theorem isFullLattice_map_piCongrRightₛₗ_iff {E : Type*} [Ring E] [Algebra ℚ E]
+    {ι : Type*} (f : D ≃ₐ[ℚ] E) (M : Submodule O (ι → D)) :
+    let r := ((f.restrictScalars ℤ).subalgebraMap O).toRingEquiv
+    have := RingHomInvPair.of_ringEquiv r
+    have := RingHomInvPair.symm (r : O →+* O.map (f.restrictScalars ℤ).toAlgHom)
+      (r.symm : O.map (f.restrictScalars ℤ).toAlgHom →+* O)
+    let a := LinearEquiv.piCongrRightₛₗ
+      (fun _ : ι => O.equivMapSemilinear (f.restrictScalars ℤ))
+    ((M.map a.toLinearMap).restrictScalars ℤ).IsFullLattice ℚ ↔
+      (M.restrictScalars ℤ).IsFullLattice ℚ := by
+  let r := ((f.restrictScalars ℤ).subalgebraMap O).toRingEquiv
+  have := RingHomInvPair.of_ringEquiv r
+  have := RingHomInvPair.symm (r : O →+* O.map (f.restrictScalars ℤ).toAlgHom)
+    (r.symm : O.map (f.restrictScalars ℤ).toAlgHom →+* O)
+  let a := LinearEquiv.piCongrRightₛₗ
+    (fun _ : ι => O.equivMapSemilinear (f.restrictScalars ℤ))
+  let c := LinearEquiv.piCongrRight (fun _ : ι => f.toLinearEquiv)
+  have heq : (M.map a.toLinearMap).restrictScalars ℤ =
+      (M.restrictScalars ℤ).map (c.toLinearMap.restrictScalars ℤ) := by
+    have h_apply (x : ι → D) : a.toLinearMap x = c.toLinearMap x := by
+      funext i
+      simp only [a, c, LinearEquiv.coe_coe, LinearEquiv.piCongrRightₛₗ_apply,
+        equivMapSemilinear_apply, LinearEquiv.piCongrRight_apply,
+        AlgEquiv.toLinearEquiv_apply, AlgEquiv.restrictScalars_apply]
+    ext x
+    simp only [Submodule.restrictScalars_mem, Submodule.mem_map,
+      LinearMap.restrictScalars_apply, h_apply]
+  -- Reduce the local transport bindings in the statement to the named maps above.
+  change ((M.map a.toLinearMap).restrictScalars ℤ).IsFullLattice ℚ ↔ _
+  rw [heq, Submodule.isFullLattice_map_iff]
+
 /-- Transporting an order by a rational algebra equivalence preserves its class index. -/
 theorem classIndex_map {E : Type*} [Ring E] [Algebra ℚ E] (f : D ≃ₐ[ℚ] E) :
     (O.map (f.restrictScalars ℤ).toAlgHom).classIndex e = O.classIndex e := by
-  let r := O.equivMapOfInjective (f.restrictScalars ℤ).toAlgHom f.injective
-  have := RingHomInvPair.of_ringEquiv r.toRingEquiv
-  have := RingHomInvPair.symm (r.toRingEquiv : O →+* (O.map (f.restrictScalars ℤ).toAlgHom))
-    (r.toRingEquiv.symm : (O.map (f.restrictScalars ℤ).toAlgHom) →+* O)
-  let c := LinearEquiv.piCongrRight (fun _ : Fin e => f.toLinearEquiv)
-  let a : (Fin e → D) ≃ₛₗ[
-      (r.toRingEquiv : O →+* (O.map (f.restrictScalars ℤ).toAlgHom))] (Fin e → E) :=
-    { c.toEquiv with
-      map_add' := c.map_add
-      map_smul' := fun b x => funext fun i => f.map_mul (b : D) (x i) }
-  have hfull (M : Submodule O (Fin e → D)) :
-      ((M.map a.toLinearMap).restrictScalars ℤ).IsFullLattice ℚ ↔
-        (M.restrictScalars ℤ).IsFullLattice ℚ := by
-    have heq : (M.map a.toLinearMap).restrictScalars ℤ =
-        (M.restrictScalars ℤ).map (c.toLinearMap.restrictScalars ℤ) := by
-      -- The semilinear order transport and the rational linear transport agree pointwise.
-      have h_apply (x : Fin e → D) : a.toLinearMap x = c.toLinearMap x := rfl
-      ext x
-      simp only [Submodule.restrictScalars_mem, Submodule.mem_map,
-        LinearMap.restrictScalars_apply, h_apply]
-    rw [heq, Submodule.isFullLattice_map_iff]
+  let r := ((f.restrictScalars ℤ).subalgebraMap O).toRingEquiv
+  have := RingHomInvPair.of_ringEquiv r
+  have := RingHomInvPair.symm (r : O →+* O.map (f.restrictScalars ℤ).toAlgHom)
+    (r.symm : O.map (f.restrictScalars ℤ).toAlgHom →+* O)
+  let a := LinearEquiv.piCongrRightₛₗ
+    (fun _ : Fin e => O.equivMapSemilinear (f.restrictScalars ℤ))
   rw [classIndex_def, classIndex_def]
   rw [← (Submodule.orderIsoMapComapOfBijective a.toLinearMap a.bijective).toEquiv.iSup_comp]
   refine iSup_congr fun M => ?_
-  exact iSup_congr_Prop (hfull M) fun _ =>
+  exact iSup_congr_Prop (O.isFullLattice_map_piCongrRightₛₗ_iff f M) fun _ =>
     (Module.freeClassIndex_equiv (a.submoduleMap M)).symm
 
 end Subalgebra
@@ -140,19 +160,20 @@ theorem IsOrder.exists_injective_index_ne_zero (hO : IsOrder ℚ O)
     (M.restrictScalars ℤ) (Submodule.IsFullLattice.span_eq_top (A := ℚ))
     (Submodule.IsLattice.fg ℚ N)
   let g : (Fin e → O) →ₗ[O] (Fin e → D) :=
-    { toFun := fun x i => (x i : D)
-      map_add' := fun _ _ => rfl
-      map_smul' := fun _ _ => rfl }
-  let f : (Fin e → O) →ₗ[O] M :=
-    { toFun := fun x => ⟨n • g x, hmem _ (by intro i _; exact (x i).property)⟩
-      map_add' := fun x y => Subtype.ext (by simp)
-      map_smul' := fun a x => Subtype.ext (by simp [smul_comm]) }
+    (LinearMap.toSpanSingleton O D 1).compLeft (Fin e)
+  have hg_apply (x : Fin e → O) : g x = fun i => (x i : D) := by
+    ext i
+    simp [g, Subalgebra.smul_def, smul_eq_mul]
+  have hg_mem (x : Fin e → O) : g x ∈ N := by
+    rw [hg_apply]
+    exact fun i _ => (x i).property
+  let f := (n • g).codRestrict M (fun x => hmem _ (hg_mem x))
   have hf : Function.Injective f := by
     intro x y hxy
     have h : n • g x = n • g y := congrArg (fun z : M => (z : Fin e → D)) hxy
     have hg : g x = g y := smul_right_injective (R := ℚ)
       (M := Fin e → D) (Int.cast_ne_zero.mpr hn) (by simpa only [Int.cast_smul_eq_zsmul] using h)
-    exact funext fun i => Subtype.ext (congrFun hg i)
+    exact funext fun i => Subtype.ext (by simpa only [hg_apply] using congrFun hg i)
   let u : ℚˣ := Units.mk0 (n : ℚ) (Int.cast_ne_zero.mpr hn)
   let P : Submodule ℤ (Fin e → D) := u • N
   have : P.IsFullLattice ℚ := inferInstance
@@ -170,14 +191,15 @@ theorem IsOrder.exists_injective_index_ne_zero (hO : IsOrder ℚ O)
       LinearMap.toAddMonoidHom_coe, Submodule.subtype_apply, hP]
     constructor
     · rintro ⟨y, rfl⟩
-      exact ⟨g y, (by intro i _; exact (y i).property), (hf_apply y).symm⟩
+      exact ⟨g y, hg_mem y, (hf_apply y).symm⟩
     · rintro ⟨y, hy, hxy⟩
-      exact ⟨fun i => ⟨y i, hy i (Set.mem_univ _)⟩, Subtype.ext ((hf_apply _).trans hxy)⟩
+      refine ⟨fun i => ⟨y i, hy i (Set.mem_univ _)⟩, Subtype.ext ?_⟩
+      rw [hf_apply, hg_apply]
+      exact hxy
   refine ⟨f, hf, ?_⟩
   rw [hgroup, AddSubgroup.index_comap]
-  have hM : M.subtype.toAddMonoidHom.range = (M.restrictScalars ℤ).toAddSubgroup := by
-    rw [← LinearMap.range_toAddSubgroup, Submodule.range_subtype,
-      ← Submodule.toIntSubmodule_toAddSubgroup, AddSubgroup.toIntSubmodule_toAddSubgroup]
+  have hM : M.subtype.toAddMonoidHom.range = (M.restrictScalars ℤ).toAddSubgroup :=
+    M.toAddSubgroup.range_subtype
   rw [hM]
   exact Submodule.IsFullLattice.relIndex_ne_zero
 

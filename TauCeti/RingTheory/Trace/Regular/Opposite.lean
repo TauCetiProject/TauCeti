@@ -33,17 +33,16 @@ theorem trace_lmul_op (hB : (regularTraceForm K A).Nondegenerate) (a : A) :
     LinearMap.trace K Aᵐᵒᵖ (lmul K Aᵐᵒᵖ (op a)) = LinearMap.trace K A (lmul K A a) := by
   let e := (regularTraceForm K A).toDual hB
   let eop := (opLinearEquiv K : A ≃ₗ[K] Aᵐᵒᵖ).symm.trans e
+  have heop (x : Aᵐᵒᵖ) : eop x = e (unop x) := by simp [eop]
+  -- The regular trace pairs right multiplication with left multiplication by associativity.
+  have hadj (x y : A) : e (x * a) y = e x (a * y) := by
+    simp [e, BilinForm.toDual_def hB, mul_assoc]
   have hc : eop.conj (lmul K Aᵐᵒᵖ (op a)) = Module.Dual.transpose (lmul K A a) := by
     ext f y
-    obtain ⟨x, rfl⟩ := e.surjective f
-    have hs : eop.symm (e x) = op x := by
-      apply eop.injective
-      simp only [LinearEquiv.apply_symm_apply, eop, LinearEquiv.trans_apply,
-        coe_opLinearEquiv_symm, unop_op]
-    simp only [LinearEquiv.conj_apply_apply, hs, Module.Dual.transpose_apply,
-      LinearMap.comp_apply, Algebra.coe_lmul_eq_mul, mul_apply',
-      ← op_mul, eop, LinearEquiv.trans_apply, coe_opLinearEquiv_symm, unop_op, e,
-      BilinForm.toDual_def hB, regularTraceForm_apply, mul_assoc]
+    obtain ⟨x, rfl⟩ := eop.surjective f
+    rw [LinearEquiv.conj_apply_apply, eop.symm_apply_apply]
+    simpa [heop, Module.Dual.transpose_apply, Algebra.coe_lmul_eq_mul, mul_apply', unop_mul]
+      using hadj (unop x) y
   rw [← trace_conj' _ eop, hc, trace_transpose']
 
 /-- Passing to the opposite algebra preserves the regular trace form. -/
