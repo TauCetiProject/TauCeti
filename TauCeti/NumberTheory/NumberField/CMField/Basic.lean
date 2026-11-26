@@ -174,3 +174,19 @@ theorem exists_mem_maximalRealSubfield_div_eq_pow_iff {x : Kˣ} {n : ℕ} :
 end Pow
 
 end NumberField.IsCMField
+
+/-- In an imaginary quadratic field the only nonidentity rational automorphism is complex
+conjugation. -/
+theorem AlgEquiv.eq_complexConj_of_ne_one {K : Type*} [Field K] [NumberField K]
+    [NumberField.IsCMField K] [Algebra.IsQuadraticExtension ℚ K]
+    (σ : K ≃ₐ[ℚ] K) (hσ : σ ≠ 1) :
+    σ = (NumberField.IsCMField.complexConj K).restrictScalars ℚ := by
+  have hcard : Nat.card (K ≃ₐ[ℚ] K) = 2 := by
+    rw [IsGalois.card_aut_eq_finrank, Algebra.IsQuadraticExtension.finrank_eq_two]
+  have hc : (NumberField.IsCMField.complexConj K).restrictScalars ℚ ≠ 1 := by
+    intro h
+    apply NumberField.IsCMField.complexConj_ne_one K
+    ext x
+    simpa using DFunLike.congr_fun h x
+  obtain ⟨a, _, ha⟩ := (Nat.card_eq_two_iff' (1 : K ≃ₐ[ℚ] K)).mp hcard
+  exact (ha σ hσ).trans (ha _ hc).symm

@@ -169,6 +169,17 @@ theorem restrictNormalHom_prod_autToPow_injective {ζ : M} (hζ : IsPrimitiveRoo
   rw [htop, IntermediateField.fixingSubgroup_top, Subgroup.mem_bot] at hmem
   exact hmem
 
+variable {K L M m} in
+/-- An automorphism of `M = L(ζ)` over `K` is determined by its restriction to `L` and by the
+image of the primitive root `ζ`. -/
+theorem _root_.IsPrimitiveRoot.algEquiv_eq_of_restrictNormal_eq_of_apply_eq {ζ : M}
+    (hζ : IsPrimitiveRoot ζ m) {σ τ : M ≃ₐ[K] M}
+    (hL : σ.restrictNormal L = τ.restrictNormal L) (h : σ ζ = τ ζ) : σ = τ := by
+  apply restrictNormalHom_prod_autToPow_injective K L M m hζ
+  refine Prod.ext hL (Units.ext (ZMod.val_injective m ?_))
+  apply hζ.pow_inj (ZMod.val_lt _) (ZMod.val_lt _)
+  simpa only [MonoidHom.prod_apply, hζ.autToPow_spec K] using h
+
 end Faithful
 
 variable [IsGalois K L]
