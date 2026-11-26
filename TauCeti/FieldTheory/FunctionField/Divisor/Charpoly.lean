@@ -32,7 +32,7 @@ coefficients in `𝒪_P`. Since `ord_P N(w) = N(D)(P)`, every coefficient has or
 
 This is the device behind the monotonicity of the gonality along finite extensions: a
 transcendental `z ∈ F'` has a coefficient transcendental over `k`, which then has at most
-`deg N(D) = deg D` poles.
+`deg N(D) = [k' : k] · deg D` poles, that is `deg D` poles when `k' = k`.
 
 ## Main results
 
