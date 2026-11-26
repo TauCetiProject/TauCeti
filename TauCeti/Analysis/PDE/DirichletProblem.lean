@@ -345,6 +345,23 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
   rw [← energyFormH1L_apply hcoeff, ← hforce v]
   exact hmem
 
+/-- A homogeneous weak equation holding for smooth compactly supported tests holds for every
+`H¹₀` test when the energy density is essentially bounded. No boundary condition is imposed on
+the solution. -/
+theorem forall_energyFormH1_eq_zero_of_forall_testFunction
+    {U : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ} {u : W1p mu U 2}
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict U))
+    (htest : ∀ φ : 𝓓(U, ℝ), energyFormH1 a b c u (W1p.ofTestFunctionₗ mu U 2 φ) = 0) :
+    ∀ w : W1p0 mu U 2, energyFormH1 a b c u (w : W1p mu U 2) = 0 := by
+  have hzero (f : EuclideanSpace ℝ ι → ℝ) :
+      ∫ x in U, (0 : Lp ℝ 2 (mu.restrict U)) x * f x ∂mu = 0 :=
+    integral_eq_zero_of_ae ((Lp.coeFn_zero ℝ 2 (mu.restrict U)).mono fun _ hx ↦ by
+      simp only [hx, Pi.zero_apply, zero_mul])
+  have h := forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff 0 u
+  simp only [hzero] at h
+  exact h.mpr htest
+
 /-- A weak solution satisfies the weak equation `a(u, φ) = ∫_Ω f φ` against every test function
 `φ ∈ C_c^∞(Ω)`. Unlike the converse in
 `TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`, this needs no bound on the
