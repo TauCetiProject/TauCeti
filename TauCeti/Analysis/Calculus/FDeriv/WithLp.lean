@@ -53,8 +53,8 @@ derivative of the graph parametrization `x ↦ (x, φ x)` of `φ : V → W` is t
 * `TauCeti.hasFDerivAt_mul_fst_snd`, `TauCeti.contDiff_mul_fst_snd`: a product
   `x ↦ A x.fst * B x.snd` of functions of the two coordinates of `WithLp p (𝕜 × 𝕜)` is
   differentiable, with partial derivatives `A' B` and `A B'`, and is `Cⁿ` when `A` and `B` are.
-* `TauCeti.gradient_eq_toLp`: on the Euclidean plane, a function with partial derivatives `a` and
-  `b` has gradient `(a, b)`.
+* `TauCeti.gradient_eq_toLp`: on the Euclidean plane, a function differentiable at `x` with
+  derivative `a • fst + b • snd` (partial derivatives `a` and `b`) has gradient `(a, b)`.
 * `DifferentiableAt.fderiv_withLp_snd`: the derivative of the second component of a map into
   the product is the second component of its derivative.
 * `HasFDerivWithinAt.normalGraphEmbedding`, `HasFDerivAt.normalGraphEmbedding`: the derivative
@@ -193,7 +193,8 @@ theorem hasFDerivAt_mul_fst_snd {A B : 𝕜 → 𝕜} {A' B' : 𝕜} {x : WithLp
   have h2 := hB.comp_hasFDerivAt x (WithLp.sndL p 𝕜 𝕜 𝕜).hasFDerivAt
   refine (h1.mul h2).congr_fderiv ?_
   ext w
-  simp
+  simp only [Function.comp_apply, add_apply, smul_apply, WithLp.fstL_apply, WithLp.sndL_apply,
+    smul_eq_mul]
   ring
 
 /-- A product `x ↦ A x.fst * B x.snd` of `Cⁿ` functions of the two coordinates of
@@ -202,8 +203,9 @@ theorem contDiff_mul_fst_snd {n : WithTop ℕ∞} {A B : 𝕜 → 𝕜} (hA : Co
     (hB : ContDiff 𝕜 n B) : ContDiff 𝕜 n (fun y : WithLp p (𝕜 × 𝕜) ↦ A y.fst * B y.snd) :=
   (hA.comp (WithLp.fstL p 𝕜 𝕜 𝕜).contDiff).mul (hB.comp (WithLp.sndL p 𝕜 𝕜 𝕜).contDiff)
 
-/-- On the Euclidean plane `WithLp 2 (ℝ × ℝ)`, a function with partial derivatives `a` and `b` at
-`x` has gradient `(a, b)` there. -/
+/-- On the Euclidean plane `WithLp 2 (ℝ × ℝ)`, a function differentiable at `x` with derivative
+`a • fst + b • snd` (partial derivatives `a` and `b`) has gradient `(a, b)` there. Partial
+derivatives alone do not suffice: the hypothesis is full differentiability at `x`. -/
 theorem gradient_eq_toLp {f : WithLp 2 (ℝ × ℝ) → ℝ} {a b : ℝ} {x : WithLp 2 (ℝ × ℝ)}
     (h : HasFDerivAt f (a • WithLp.fstL 2 ℝ ℝ ℝ + b • WithLp.sndL 2 ℝ ℝ ℝ) x) :
     ∇ f x = WithLp.toLp 2 (a, b) := by

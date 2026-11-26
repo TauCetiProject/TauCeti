@@ -15,11 +15,12 @@ import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 /-!
 # The divergence theorem on a rectangle of the Euclidean plane
 
-Mathlib's divergence theorem on a rectangle, `MeasureTheory.integral_divergence_prod_Icc_of_le`
-and its variants, is stated on `ℝ × ℝ`, whose norm is the sup norm. Functions on the Euclidean
-plane, the inner product space `WithLp 2 (ℝ × ℝ)`, have gradients and Sobolev derivatives, and are
-the setting of the Laplacian on planar domains. This file transports the rectangle theorem to them
-along the measure-preserving map `WithLp.toLp 2 : ℝ × ℝ → WithLp 2 (ℝ × ℝ)`.
+Mathlib's divergence theorem on a rectangle,
+`MeasureTheory.integral_divergence_prod_Icc_of_hasFDerivAt_of_le` and its variants, is stated on
+`ℝ × ℝ`, whose norm is the sup norm. Functions on the Euclidean plane, the inner product space
+`WithLp 2 (ℝ × ℝ)`, have gradients and Sobolev derivatives, and are the setting of the Laplacian
+on planar domains. This file transports the rectangle theorem to them along the
+measure-preserving map `WithLp.toLp 2 : ℝ × ℝ → WithLp 2 (ℝ × ℝ)`.
 
 ## Main declarations
 
@@ -77,8 +78,9 @@ theorem setIntegral_divergence_withLp_prod_Ioo {Φ₁ Φ₂ : WithLp 2 (ℝ × �
   rw [← key]
   -- Transport the integral over the open rectangle to the closed rectangle `[a, b]` of `ℝ × ℝ`.
   have hpre : WithLp.toLp 2 ⁻¹' {x : WithLp 2 (ℝ × ℝ) | x.fst ∈ Ioo a.1 b.1 ∧ x.snd ∈ Ioo a.2 b.2} =
-      Ioo a.1 b.1 ×ˢ Ioo a.2 b.2 :=
-    rfl
+      Ioo a.1 b.1 ×ˢ Ioo a.2 b.2 := by
+    ext y
+    simp [Set.mem_prod]
   rw [← (WithLp.volume_preserving_toLp ℝ ℝ).setIntegral_preimage_emb
     (MeasurableEquiv.toLp 2 (ℝ × ℝ)).measurableEmbedding, hpre]
   rw [Icc_prod_eq, Measure.volume_eq_prod,

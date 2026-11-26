@@ -113,8 +113,9 @@ the form of `TauCeti.setIntegral_divergence_withLp_prod_Ioo`. -/
 private theorem coe_openUnitSquareOpens_eq_setOf :
     (openUnitSquareOpens : Set (WithLp 2 (ℝ × ℝ))) =
       {x | x.fst ∈ Ioo ((0 : ℝ), (0 : ℝ)).1 ((1 : ℝ), (1 : ℝ)).1 ∧
-        x.snd ∈ Ioo ((0 : ℝ), (0 : ℝ)).2 ((1 : ℝ), (1 : ℝ)).2} :=
-  Set.ext fun _ => mem_openUnitSquareOpens
+        x.snd ∈ Ioo ((0 : ℝ), (0 : ℝ)).2 ((1 : ℝ), (1 : ℝ)).2} := by
+  ext x
+  simp
 
 /-- `t ↦ sin (a t)` has derivative `a cos (a t)`. -/
 private theorem hasDerivAt_sin_mul (a t : ℝ) :
@@ -161,8 +162,9 @@ private theorem fderiv_mul_squareModeDx_add_fderiv_mul_squareModeDy (m l : ℕ)
       ((hasDerivAt_sin_mul _ x.snd).const_mul _))).fderiv
   rw [e₁, e₂, gradient_squareMode, real_inner_comm, inner_gradient_left, hv, map_add, map_smul,
     map_smul]
-  simp only [squareMode, squareModeDx, squareModeDy]
-  simp
+  simp only [squareMode, squareModeDx, squareModeDy, neg_mul, mul_neg, neg_smul, smul_add, smul_neg,
+    add_apply, neg_apply, smul_apply, WithLp.fstL_apply, WithLp.toLp_fst, WithLp.sndL_apply,
+    WithLp.toLp_snd, smul_eq_mul, mul_one, mul_zero, neg_zero, add_zero, zero_add]
   ring
 
 /-- **Green's identity for a separated mode.** Let `ψ` be continuously differentiable on the plane
