@@ -24,8 +24,8 @@ sends `(α, β)` to `(∫ α, ∫ β)`, where `α` is a form on `M` and `β` a f
 (`TauCeti.relativeCoordinates_relativeDeRhamIntegration_f`).
 
 A relative smooth cycle of degree `k + 1` is a smooth `(k + 1)`-chain `c` of `M` whose boundary
-lies in `W`: `∂c = c'` for a smooth `k`-chain `c'` of `W`, read in `M`. A relative smooth cochain
-with coordinates `(a, b)` takes the value `a(c) - b(c')` on it
+lies in `W`: `∂c = c'` for a smooth `k`-chain `c'` of `W`, read in `M`. A cochain of the mapping
+cocone of restriction with coordinates `(a, b)` takes the value `a(c) - b(c')` on it
 (`TauCeti.relativeSmoothCochainComplex.eval`). This pairing vanishes on coboundaries
 (`TauCeti.relativeSmoothCochainComplex.eval_d`): in coordinates `d (a, b) = (da, a|_W - db)`, and
 `da(c) = a(∂c) = a(c')` cancels `a|_W (c')`, while `db(c') = b(∂c') = 0`. On the relative
@@ -55,8 +55,8 @@ The cochain-level construction needs no finite dimensionality, separation or cou
 * `TauCeti.relativeSmoothCochainComplex I W`: its mapping cocone.
 * `TauCeti.relativeDeRhamIntegration I W`: relative integration, a cochain map from the relative de
   Rham complex to the mapping cocone of the restriction of smooth cochains.
-* `TauCeti.relativeSmoothCochainComplex.eval`: the pairing of relative smooth cochains with pairs
-  of smooth chains.
+* `TauCeti.relativeSmoothCochainComplex.eval`: the pairing of cochains of the mapping cocone of
+  restriction with pairs of smooth chains.
 * `TauCeti.relativeDeRhamCohomology.integral`: the integral of relative de Rham classes over a
   relative smooth cycle.
 
@@ -164,9 +164,9 @@ theorem relativeDeRhamIntegration_fst :
 
 namespace relativeSmoothCochainComplex
 
-/-- **The pairing of relative smooth cochains with pairs of chains.** For a smooth
-`(k + 1)`-chain `c` of `M` and a smooth `k`-chain `c'` of `W`, a relative smooth cochain of degree
-`k + 1` with relative coordinates `(a, b)` takes the value `a(c) - b(c')`. On relative cycles,
+/-- **The pairing of cocone cochains with pairs of chains.** For a smooth `(k + 1)`-chain `c` of
+`M` and a smooth `k`-chain `c'` of `W`, a cochain of degree `k + 1` of the mapping cocone of
+restriction with relative coordinates `(a, b)` takes the value `a(c) - b(c')`. On relative cycles,
 `∂c = c'` read in `M`, it vanishes on coboundaries (`eval_d`). -/
 def eval (k : ℕ)
     (c : 𝒮[M].X (k + 1))
@@ -248,7 +248,7 @@ private theorem hom_extendXIso_hom_extend_d_apply_eq_zero (k : ℕ) {c : 𝒮[M]
 
 omit [IsManifold I 2 M] in
 /-- **Relative cycles annihilate coboundaries.** If `∂c = c'` in `M`, the pairing with `(c, c')`
-vanishes on the differential of every relative smooth cochain. -/
+vanishes on the differential of every cochain of the mapping cocone of restriction. -/
 theorem eval_d (k : ℕ)
     {c : 𝒮[M].X (k + 1)}
     {c' : 𝒮[W].X k}

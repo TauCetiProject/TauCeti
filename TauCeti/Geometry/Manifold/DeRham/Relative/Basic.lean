@@ -686,20 +686,33 @@ theorem ofHom_π (n : ℕ) :
 theorem fst_mem_closedForms {k : ℕ} (z : cocycles I W k) : z.val.1 ∈ closedForms I M (k + 1) :=
   (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mpr ((mem_cocycles_iff I W z.val).mp z.property).1
 
+/-- The map to absolute cohomology sends the class of a cycle `x` of the relative de Rham complex
+to the class of the closed form `α` that the first projection of the relative de Rham complex reads
+off `x`. -/
+theorem π_homologyπ_moduleCatCyclesMk (n : ℕ) (x : (relativeDeRhamComplex I W).X n) {j : ℤ}
+    (hj : (ComplexShape.up ℤ).next n = j) (hx : (relativeDeRhamComplex I W).d n j x = 0)
+    (α : closedForms I M n)
+    (hxα : (CochainComplex.mappingCocone.fst (deRhamRestriction I W)).f n x =
+      (deRhamComplexExtendXEquiv I M n n rfl).symm α) :
+    π I W n ((relativeDeRhamComplex I W).homologyπ n
+        ((relativeDeRhamComplex I W).moduleCatCyclesMk x j hj hx)) =
+      deRhamCohomology.mk I n α := by
+  rw [π, ModuleCat.hom_comp, LinearMap.comp_apply, homologyMap_homologyπ_moduleCatCyclesMk,
+    ← ModuleCat.comp_apply, homologyπ_extendHomologyIso_hom, ModuleCat.comp_apply,
+    deRhamCohomology.mk_eq_moduleCatHomologyClass, moduleCatHomologyClass_apply]
+  congr 1
+  apply moduleCat_iCycles_injective
+  rw [← ModuleCat.comp_apply, extendCyclesIso_hom_iCycles, ModuleCat.comp_apply,
+    iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk, hxα]
+  simp [deRhamComplexExtendXEquiv_symm_apply]
+
 /-- The map to absolute cohomology sends the class of a relative cocycle `(α, β)` to the class of
 the closed form `α`. -/
 theorem π_mk (k : ℕ) (z : cocycles I W k) :
     π I W (k + 1) (mk I W k z) =
       deRhamCohomology.mk I (k + 1) ⟨z.val.1, fst_mem_closedForms I W z⟩ := by
-  rw [π, ModuleCat.hom_comp, LinearMap.comp_apply, mk_apply,
-    homologyMap_homologyπ_moduleCatCyclesMk, ← ModuleCat.comp_apply,
-    homologyπ_extendHomologyIso_hom, ModuleCat.comp_apply,
-    deRhamCohomology.mk_eq_moduleCatHomologyClass, moduleCatHomologyClass_apply]
-  congr 1
-  apply moduleCat_iCycles_injective
-  rw [← ModuleCat.comp_apply, extendCyclesIso_hom_iCycles, ModuleCat.comp_apply,
-    iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk, fst_f_coord_symm]
-  simp [deRhamComplexExtendXEquiv_symm_apply]
+  rw [mk_apply]
+  exact π_homologyπ_moduleCatCyclesMk I W (k + 1) _ _ _ _ (fst_f_coord_symm I W k z.val)
 
 /-- The relative cocycles of degree `0`: the smooth functions on `M` with zero differential and
 zero restriction to `W`. -/
@@ -758,15 +771,8 @@ theorem π_classZero (α : cocyclesZero I W) :
     π I W 0 (classZero I W α) =
       deRhamCohomology.mk I 0 ⟨α, (mem_closedForms_iff_mextDerivₗ_eq_zero I _).mpr
         ((mem_cocyclesZero_iff I W α).mp α.property).1⟩ := by
-  rw [π, ModuleCat.hom_comp, LinearMap.comp_apply, classZero_apply,
-    homologyMap_homologyπ_moduleCatCyclesMk, ← ModuleCat.comp_apply,
-    homologyπ_extendHomologyIso_hom, ModuleCat.comp_apply,
-    deRhamCohomology.mk_eq_moduleCatHomologyClass, moduleCatHomologyClass_apply]
-  congr 1
-  apply moduleCat_iCycles_injective
-  rw [← ModuleCat.comp_apply, extendCyclesIso_hom_iCycles, ModuleCat.comp_apply,
-    iCycles_moduleCatCyclesMk, iCycles_moduleCatCyclesMk, relativeDeRhamComplex.fst_f_inl]
-  simp [deRhamComplexExtendXEquiv_symm_apply]
+  rw [classZero_apply]
+  exact π_homologyπ_moduleCatCyclesMk I W 0 _ _ _ _ (fst_f_inl I W 0 α)
 
 /-- In degree `0` the relative de Rham cohomology is the space of smooth functions on `M` with zero
 differential and zero restriction to `W`. -/
