@@ -478,21 +478,29 @@ section Naturality
 
 variable {D : CochainComplex (ModuleCat.{v} R) ℤ} (hD : ∀ n, IsSMulRegular (D.X n) f)
 
+/-- The identification of the cocycles of `E_f(C)` with those of `C` is natural in `C`. -/
+@[reassoc]
+lemma cyclesMap_comp_principalDecalageCyclesIso_inv (φ : C ⟶ D) (n : ℤ) :
+    HomologicalComplex.cyclesMap φ n ≫ (D.principalDecalageCyclesIso f hD n).inv =
+      (C.principalDecalageCyclesIso f hC n).inv ≫
+        HomologicalComplex.cyclesMap (principalDecalageMap hC hD φ) n := by
+  ext z
+  refine (D.principalDecalage f hD).moduleCat_iCycles_injective n (Subtype.ext ?_)
+  rw [ModuleCat.comp_apply, ModuleCat.comp_apply, iCycles_principalDecalageCyclesIso_inv_apply,
+    HomologicalComplex.moduleCat_iCycles_cyclesMap_apply,
+    HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, principalDecalageMap_f_apply,
+    iCycles_principalDecalageCyclesIso_inv_apply]
+
 /-- The map `Hⁿ(C) ⟶ Hⁿ(E_f(C))` is natural in `C`. -/
 @[reassoc, elementwise]
 lemma homologyMap_comp_homologyToPrincipalDecalage (φ : C ⟶ D) (n : ℤ) :
     HomologicalComplex.homologyMap φ n ≫ D.homologyToPrincipalDecalage f hD n =
       C.homologyToPrincipalDecalage f hC n ≫
         HomologicalComplex.homologyMap (principalDecalageMap hC hD φ) n := by
-  have h (z : C.cycles n) : (principalDecalageMap hC hD φ).f n (cyclesToDecalage f n z) =
-      cyclesToDecalage f n (HomologicalComplex.cyclesMap φ n z) :=
-    Subtype.ext (C.moduleCat_iCycles_cyclesMap_apply n φ z).symm
-  rw [← cancel_epi (C.homologyπ n), HomologicalComplex.homologyπ_naturality_assoc]
-  ext z
-  rw [ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply,
-    homologyToPrincipalDecalage_homologyπ, homologyToPrincipalDecalage_homologyπ,
-    cyclesToHomologyPrincipalDecalage, cyclesToHomologyPrincipalDecalage,
-    HomologicalComplex.homologyMap_moduleCatHomologyClass _ _ _ _ _ (d_cyclesToDecalage hD n) _ h]
+  rw [← cancel_epi (C.homologyπ n), HomologicalComplex.homologyπ_naturality_assoc,
+    homologyπ_homologyToPrincipalDecalage, homologyπ_homologyToPrincipalDecalage_assoc,
+    cyclesMap_comp_principalDecalageCyclesIso_inv_assoc hC hD,
+    HomologicalComplex.homologyπ_naturality]
 
 /-- The principal décalage preserves quasi-isomorphisms in each degree. -/
 instance quasiIsoAt_principalDecalageMap (φ : C ⟶ D) (n : ℤ) [QuasiIsoAt φ n] :
