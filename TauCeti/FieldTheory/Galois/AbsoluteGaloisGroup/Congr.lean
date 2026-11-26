@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Codex
 module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Extension
+public import TauCeti.FieldTheory.KrullTopology
 
 /-!
 # Absolute Galois groups of isomorphic fields
@@ -29,6 +30,8 @@ groups and identifies the corresponding fixing subgroups.
   field isomorphism.
 * `RingEquiv.absoluteGaloisGroupCongr`: the continuous group equivalence induced by a field
   isomorphism.
+* `IsSepClosure.galEquivAbsoluteGaloisGroup`: the Galois group of any separable closure `Ω` of `K`
+  is isomorphic to `AbsoluteGaloisGroup K` as a topological group.
 -/
 
 public noncomputable section
@@ -310,3 +313,33 @@ theorem fixingSubgroup_separableClosureCongr :
     rwa [RingEquiv.absoluteGaloisGroupCongr_apply, RingEquiv.symm_apply_apply] at this
 
 end IntermediateField
+
+namespace IsSepClosure
+
+variable (K Ω : Type*) [Field K] [Field Ω] [Algebra K Ω] [IsSepClosure K Ω]
+
+/-- **The Galois group of any separable closure is the absolute Galois group.** For a separable
+closure `Ω` of `K`, conjugation by the `K`-isomorphism `IsSepClosure.equiv` between
+`SeparableClosure K` and `Ω` identifies `Gal(Ω/K)` with `AbsoluteGaloisGroup K` as topological
+groups. This lets results stated for `AbsoluteGaloisGroup K` be used for a concrete separable
+closure, such as `ℂ` over `ℝ`. -/
+def galEquivAbsoluteGaloisGroup : Gal(Ω/K) ≃ₜ* AbsoluteGaloisGroup K :=
+  (equiv K (SeparableClosure K) Ω).symm.autCongrContinuousMulEquiv
+
+/-- `galEquivAbsoluteGaloisGroup K Ω σ` acts on `SeparableClosure K` as `σ` conjugated by
+`IsSepClosure.equiv`. -/
+@[simp]
+theorem galEquivAbsoluteGaloisGroup_apply (σ : Gal(Ω/K)) (x : SeparableClosure K) :
+    galEquivAbsoluteGaloisGroup K Ω σ x =
+      (equiv K (SeparableClosure K) Ω).symm (σ (equiv K (SeparableClosure K) Ω x)) := by
+  simp [galEquivAbsoluteGaloisGroup]
+
+/-- The inverse of `galEquivAbsoluteGaloisGroup K Ω` acts on `Ω` as `τ` conjugated by the inverse
+of `IsSepClosure.equiv`. -/
+@[simp]
+theorem galEquivAbsoluteGaloisGroup_symm_apply (τ : AbsoluteGaloisGroup K) (x : Ω) :
+    (galEquivAbsoluteGaloisGroup K Ω).symm τ x =
+      equiv K (SeparableClosure K) Ω (τ ((equiv K (SeparableClosure K) Ω).symm x)) := by
+  simp [galEquivAbsoluteGaloisGroup]
+
+end IsSepClosure

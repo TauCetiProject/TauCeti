@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+import TauCeti.RingTheory.DedekindDomain.Localization.AtPrime
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
 
 /-!

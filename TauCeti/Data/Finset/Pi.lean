@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.Finset.Pi
 
 /-!
-# Dependent functions on a disjoint union of finite sets
+# Dependent functions on finite sets: restriction, extension by zero and gluing
 
 For disjoint finite sets `s` and `t`, Mathlib's `Equiv.piFinsetUnion` identifies pairs of
 dependent functions on `s` and on `t` with dependent functions on `s ∪ t`. This file describes it
@@ -23,9 +23,18 @@ as `f` with the gluing of `g` and `k`, or as the gluing of `f` and `g` with `k`,
 function once `s ∪ (t ∪ u)` is identified with `(s ∪ t) ∪ u`
 (`Equiv.restrict₂_piFinsetUnion_assoc`).
 
+In the other direction, `Finset.extendByZero₂ t f` extends a function `f` on `s` by zero to a
+function on `t`. For `s ⊆ t` it is a right inverse of `Finset.restrict₂`
+(`Finset.restrict₂_extendByZero₂`), and a left inverse on the functions vanishing off `s`
+(`Finset.extendByZero₂_restrict₂`). It preserves nonnegativity (`Finset.extendByZero₂_nonneg`),
+positivity (`Finset.extendByZero₂_pos_iff`) and vanishing off a finite set
+(`Finset.extendByZero₂_eq_zero_of_forall`).
+
 ## Main results
 
 * `Finset.restrict₂_union_ext`: a function on `s ∪ t` is determined by its restrictions.
+* `Finset.restrict₂_extendByZero₂` and `Finset.extendByZero₂_restrict₂`: extension by zero and
+  restriction are inverse on the functions vanishing off `s`.
 * `Equiv.restrict₂_piFinsetUnion_left` and `Equiv.restrict₂_piFinsetUnion_right`: the two
   restrictions of a glued function.
 * `Equiv.piFinsetUnion_symm_apply`: the inverse of `Equiv.piFinsetUnion` takes restrictions.
@@ -57,6 +66,69 @@ theorem restrict₂_union_ext [DecidableEq ι] {f g : ∀ i : (s ∪ t : Finset 
   rcases mem_union.1 hi with h | h
   · exact congr_fun hs ⟨i, h⟩
   · exact congr_fun ht ⟨i, h⟩
+
+section ExtendByZero
+
+variable [DecidableEq ι] [∀ i, Zero (π i)]
+
+/-- Extension by zero of a dependent function on `s` to a dependent function on `t`: it agrees
+with `f` at the indices in `s` and vanishes at the others. For `s ⊆ t` it is a right inverse of
+`Finset.restrict₂` (`Finset.restrict₂_extendByZero₂`). -/
+def extendByZero₂ (t : Finset ι) (f : ∀ i : s, π i) (i : t) : π i :=
+  if h : i.val ∈ s then f ⟨i, h⟩ else 0
+
+@[simp]
+theorem extendByZero₂_of_mem (f : ∀ i : s, π i) (i : t) (h : i.val ∈ s) :
+    extendByZero₂ t f i = f ⟨i, h⟩ :=
+  dite_eq_left h
+
+@[simp]
+theorem extendByZero₂_of_notMem (f : ∀ i : s, π i) (i : t) (h : i.val ∉ s) :
+    extendByZero₂ t f i = 0 :=
+  dite_eq_right h
+
+/-- Extending by zero from `s` to `t ⊇ s` and restricting back to `s` is the identity. -/
+@[simp]
+theorem restrict₂_extendByZero₂ (h : s ⊆ t) (f : ∀ i : s, π i) :
+    restrict₂ h (extendByZero₂ t f) = f :=
+  funext fun i ↦ extendByZero₂_of_mem f _ i.property
+
+/-- A function on `t` vanishing off `s ⊆ t` is the extension by zero of its restriction to `s`. -/
+theorem extendByZero₂_restrict₂ (h : s ⊆ t) {f : ∀ i : t, π i}
+    (hf : ∀ i : t, i.val ∉ s → f i = 0) : extendByZero₂ t (restrict₂ h f) = f :=
+  funext fun i ↦ by
+    by_cases hi : i.val ∈ s
+    · rw [extendByZero₂_of_mem _ _ hi, restrict₂]
+    · rw [extendByZero₂_of_notMem _ _ hi, hf i hi]
+
+/-- The extension by zero of a function vanishing off `u` vanishes off `u`. -/
+theorem extendByZero₂_eq_zero_of_forall {u : Finset ι} {f : ∀ i : s, π i}
+    (hf : ∀ i : s, i.val ∉ u → f i = 0) {i : t} (hi : i.val ∉ u) : extendByZero₂ t f i = 0 := by
+  by_cases h : i.val ∈ s
+  · rw [extendByZero₂_of_mem _ _ h, hf _ hi]
+  · rw [extendByZero₂_of_notMem _ _ h]
+
+end ExtendByZero
+
+section ExtendByZeroPreorder
+
+variable [DecidableEq ι] [∀ i, Zero (π i)] [∀ i, Preorder (π i)] {f : ∀ i : s, π i}
+
+/-- The extension by zero of a nonnegative function is nonnegative. -/
+theorem extendByZero₂_nonneg (hf : ∀ i, 0 ≤ f i) (i : t) : 0 ≤ extendByZero₂ t f i := by
+  by_cases h : i.val ∈ s
+  · rw [extendByZero₂_of_mem _ _ h]
+    exact hf ⟨i, h⟩
+  · rw [extendByZero₂_of_notMem _ _ h]
+
+/-- The extension by zero of `f` is positive exactly at the indices of `s` where `f` is. -/
+theorem extendByZero₂_pos_iff {i : t} :
+    0 < extendByZero₂ t f i ↔ ∃ h : i.val ∈ s, 0 < f ⟨i, h⟩ := by
+  by_cases h : i.val ∈ s
+  · simp only [extendByZero₂_of_mem _ _ h, h, exists_true_left]
+  · simp only [extendByZero₂_of_notMem _ _ h, lt_irrefl, h, IsEmpty.exists_iff]
+
+end ExtendByZeroPreorder
 
 end Finset
 
