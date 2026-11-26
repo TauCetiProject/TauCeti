@@ -68,8 +68,8 @@ Dixmier 1963, Lemme 3, p. 226:
 * `TauCeti.IsDenselyDefined.dense_domain`,
   `TauCeti.IsTrace.dense_sqIntegrable_of_isDenselyDefined`: `𝔪_τ` and `𝔫_τ` are dense when `τ`
   is densely defined.
-* `TauCeti.domain_eq_top_of_lt_top`, `TauCeti.PositiveTracialFunctional.linearMap_toTrace`:
-  bounded traces.
+* `TauCeti.domain_eq_top_of_lt_top`, `TauCeti.mem_domain_of_lt_top`,
+  `TauCeti.PositiveTracialFunctional.linearMap_toTrace`: bounded traces.
 
 ## References
 
@@ -547,6 +547,11 @@ theorem domain_eq_top_of_lt_top (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) : dom
   rw [eq_top_iff, ← CStarAlgebra.span_nonneg]
   exact Submodule.span_mono fun x hx ↦ mem_finitePart.2 ⟨hx, hfin x hx⟩
 
+/-- Every element lies in the domain of a trace that is finite on `B₊`. -/
+theorem mem_domain_of_lt_top (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) (x : B) : x ∈ domain τ := by
+  rw [domain_eq_top_of_lt_top hfin]
+  exact Submodule.mem_top
+
 namespace PositiveTracialFunctional
 
 /-- The trace of a positive tracial functional is defined everywhere. -/
@@ -562,10 +567,7 @@ theorem linearMap_toTrace (ω : PositiveTracialFunctional B) (z : domain ω.toTr
   have hψ : ∀ x (hx : x ∈ finitePart ω.toTrace),
       ψ ⟨x, finitePart_subset_domain hx⟩ = (ω.toTrace x).toReal := by
     intro x hx
-    have hω := map_nonneg ω (mem_finitePart.1 hx).1
-    simp only [ψ, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
-      LinearMap.coe_ofClass, toTrace_apply, ENNReal.toReal_ofReal (Complex.nonneg_iff.mp hω).1]
-    exact Complex.eq_re_of_ofReal_le hω
+    exact ω.apply_eq_toReal_toTrace (mem_finitePart.1 hx).1
   simp [← ω.isTrace_toTrace.eq_linearMap hψ, ψ]
 
 end PositiveTracialFunctional
