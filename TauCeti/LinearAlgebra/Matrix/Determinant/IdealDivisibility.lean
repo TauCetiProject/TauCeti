@@ -55,6 +55,9 @@ column `j` from some `G (f j)` has determinant in `P`.
 
 * S. Treil, *Linear Algebra Done Wrong*, Chapter 3, formula (4.2): every term of the expansion
   contains exactly one entry from each row and each column.
+* The row-span determinant divisibility theorem is adapted from `grh-lean`,
+  `src/Lib/General/Algebra/SharpMinors.lean`
+  (Copyright 2026 Anthropic, PBC, Apache 2.0).
 -/
 
 public section

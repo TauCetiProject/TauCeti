@@ -191,9 +191,9 @@ variable {ι : Type*} {O K : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuati
 acting on `(K/O)^ι`, the orthogonal of the rows of `M`, has length the valuation of `det M`, both
 sides infinite when `det M = 0`. -/
 theorem length_ker_eq_addVal_det (M : Matrix ι ι O) :
-    Module.length O (M.matrixKernel (K ⧸ range (Algebra.linearMap O K))) =
+    Module.length O (M.ker (K ⧸ range (Algebra.linearMap O K))) =
       addVal O M.det := by
-  rw [matrixKernel_eq_orthogonalBilin, length_orthogonalBilin,
+  rw [ker_eq_orthogonalBilin, length_orthogonalBilin,
     length_quotient_span_range_eq_addVal_det]
 
 end Matrix

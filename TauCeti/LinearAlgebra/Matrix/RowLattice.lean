@@ -15,14 +15,14 @@ public import TauCeti.LinearAlgebra.Pi.Orthogonal
 
 For a matrix `A` over a commutative semiring, `Matrix.rowLattice A a` is the span of the rows of
 `A` together with the rows of `a • 1`. Its generators characterize containment in a submodule.
-`Matrix.matrixKernel A B` consists of the vectors in `k → B` annihilated by every row of `A`.
+`Matrix.ker A B` consists of the vectors in `k → B` annihilated by every row of `A`.
 
-Over a commutative ring, `Matrix.maximalMinors A a` records the determinants of all full-column
+Over a commutative ring, `Matrix.rowLatticeMinors A a` records the determinants of all full-column
 row selections from `A.fromRows (a • 1)`. In contrast,
 `TauCeti.LinearAlgebra.Matrix.MaximalMinor` treats full-row minors selected by column embeddings.
 
 The kernel on `(O ⧸ Ideal.span {a}) ^ k` has the same length as the linear maps from the quotient
-by `A.rowLattice a` to `O ⧸ Ideal.span {a}` (`Matrix.length_matrixKernel_eq_length_linearMap`).
+by `A.rowLattice a` to `O ⧸ Ideal.span {a}` (`Matrix.length_ker_eq_length_linearMap`).
 This relates systems of linear equations modulo `a` to row-span colengths; the valuation formula
 for these lengths is developed in `TauCeti.RingTheory.DiscreteValuationRing.KernelLength`.
 
@@ -44,25 +44,25 @@ variable {O r k : Type*} [CommSemiring O] [Fintype k]
 
 /-- The kernel of `A` on `k → B`, for an `O`-module `B`: the vectors `w` such that
 `∑ j, A i j • w j = 0` for every row index `i`. -/
-def matrixKernel (A : Matrix r k O) (B : Type*) [AddCommMonoid B] [Module O B] :
+def ker (A : Matrix r k O) (B : Type*) [AddCommMonoid B] [Module O B] :
     Submodule O (k → B) :=
   ⨅ i : r, LinearMap.ker (∑ j : k, A i j • LinearMap.proj j : (k → B) →ₗ[O] B)
 
-/-- A vector lies in `A.matrixKernel B` exactly when every row of `A` sends it to `0`. -/
+/-- A vector lies in `A.ker B` exactly when every row of `A` sends it to `0`. -/
 @[simp]
-theorem mem_matrixKernel {A : Matrix r k O} {B : Type*} [AddCommMonoid B] [Module O B]
+theorem mem_ker {A : Matrix r k O} {B : Type*} [AddCommMonoid B] [Module O B]
     {w : k → B} :
-    w ∈ A.matrixKernel B ↔ ∀ i : r, ∑ j : k, A i j • w j = 0 := by
-  simp [matrixKernel]
+    w ∈ A.ker B ↔ ∀ i : r, ∑ j : k, A i j • w j = 0 := by
+  simp [ker]
 
 /-- The kernel of a matrix on `k → B` is the orthogonal of its row span under the pairing
 `⟨v, w⟩ = ∑ j, v j • w j`. -/
-theorem matrixKernel_eq_orthogonalBilin (A : Matrix r k O) (B : Type*)
+theorem ker_eq_orthogonalBilin (A : Matrix r k O) (B : Type*)
     [AddCommMonoid B] [Module O B] :
-    A.matrixKernel B =
+    A.ker B =
       (span O (Set.range A.row)).orthogonalBilin (Fintype.bilinearCombination O O).flip := by
   ext w
-  rw [mem_matrixKernel, Submodule.mem_orthogonalBilin_span, Set.forall_mem_range]
+  rw [mem_ker, Submodule.mem_orthogonalBilin_span, Set.forall_mem_range]
   simp [Fintype.linearCombination_apply]
 
 /-- The submodule of `k → O` spanned by the rows of `A` and of `a • 1`. -/
@@ -82,10 +82,19 @@ theorem row_mem_rowLattice [DecidableEq k] (A : Matrix r k O) (a : O) (i : r) :
   subset_span ⟨.inl i, rfl⟩
 
 omit [Fintype k] in
+/-- The row indexed by `Sum.inr j` in `A.fromRows (a • 1)` is the scaled standard basis vector. -/
+@[simp]
+theorem row_fromRows_smul_one_inr {R : Type*} [MulZeroOneClass R] [DecidableEq k]
+    (A : Matrix r k R) (a : R) (j : k) :
+    (A.fromRows (a • (1 : Matrix k k R))).row (.inr j) = a • Pi.single j (1 : R) := by
+  ext i
+  simp [Matrix.one_apply, Pi.single_apply, eq_comm]
+
+omit [Fintype k] in
 /-- Every `a`-scaled standard basis vector lies in `A.rowLattice a`. -/
 theorem smul_single_mem_rowLattice [DecidableEq k] (A : Matrix r k O) (a : O) (j : k) :
     a • Pi.single j (1 : O) ∈ A.rowLattice a :=
-  subset_span ⟨.inr j, by ext i; simp [Matrix.one_apply, Pi.single_apply, eq_comm]⟩
+  subset_span ⟨.inr j, A.row_fromRows_smul_one_inr a j⟩
 
 omit [Fintype k] in
 /-- `A.rowLattice a` is contained in a submodule `N` if and only if `N` contains every row of `A`
@@ -96,9 +105,7 @@ theorem rowLattice_le_iff [DecidableEq k] {A : Matrix r k O} {a : O} {N : Submod
       fun j ↦ h (A.smul_single_mem_rowLattice a j)⟩, fun ⟨hA, ha⟩ ↦ span_le.2 ?_⟩
   rintro _ ⟨i | j, rfl⟩
   · exact hA i
-  · have h : (A.fromRows (a • (1 : Matrix k k O))).row (.inr j) = a • Pi.single j (1 : O) := by
-      ext i; simp [Matrix.one_apply, Pi.single_apply, eq_comm]
-    simpa [h] using ha j
+  · simpa only [row_fromRows_smul_one_inr, SetLike.mem_coe] using ha j
 
 omit [Fintype k] in
 /-- Every multiple of `a` lies in `A.rowLattice a`. -/
@@ -119,35 +126,42 @@ variable {Λ O r k : Type*} [CommRing Λ] [CommRing O] [Fintype k] [DecidableEq 
 /-- The minors of size `card k` of the matrix formed by the rows of `A` and of `a • 1`, where `k`
 indexes the columns. The family of rows of `A` may be infinite. A choice of rows with a repetition
 is allowed; it contributes the minor `0`. -/
-def maximalMinors (A : Matrix r k Λ) (a : Λ) : Set Λ :=
+def rowLatticeMinors (A : Matrix r k Λ) (a : Λ) : Set Λ :=
   Set.range fun f : k → r ⊕ k ↦ ((A.fromRows (a • 1)).submatrix f id).det
 
-/-- An element lies in `A.maximalMinors a` exactly when it is the determinant of a `card k`-row
+/-- The row-lattice minors are the determinants of all full-column row selections from
+`A.fromRows (a • 1)`. -/
+theorem rowLatticeMinors_eq_range (A : Matrix r k Λ) (a : Λ) :
+    A.rowLatticeMinors a =
+      Set.range (fun f : k → r ⊕ k ↦ ((A.fromRows (a • 1)).submatrix f id).det) :=
+  (rfl)
+
+/-- An element lies in `A.rowLatticeMinors a` exactly when it is the determinant of a `card k`-row
 selection from `A.fromRows (a • 1)`. -/
 @[simp]
-theorem mem_maximalMinors_iff {A : Matrix r k Λ} {a x : Λ} :
-    x ∈ A.maximalMinors a ↔ ∃ f : k → r ⊕ k, ((A.fromRows (a • 1)).submatrix f id).det = x :=
+theorem mem_rowLatticeMinors_iff {A : Matrix r k Λ} {a x : Λ} :
+    x ∈ A.rowLatticeMinors a ↔ ∃ f : k → r ⊕ k, ((A.fromRows (a • 1)).submatrix f id).det = x :=
   Iff.rfl
 
 /-- A ring homomorphism `ev` maps the maximal minors of the rows of `A` and `a • 1` onto those of
 the rows of `A.map ev` and `ev a • 1`. -/
-theorem image_maximalMinors (A : Matrix r k Λ) (a : Λ) (ev : Λ →+* O) :
-    ev '' A.maximalMinors a = (A.map ev).maximalMinors (ev a) := by
+theorem image_rowLatticeMinors (A : Matrix r k Λ) (a : Λ) (ev : Λ →+* O) :
+    ev '' A.rowLatticeMinors a = (A.map ev).rowLatticeMinors (ev a) := by
   have h_map : (A.fromRows (a • (1 : Matrix k k Λ))).map ev = (A.map ev).fromRows (ev a • 1) := by
     ext (i | i) j <;> simp [Matrix.one_apply, apply_ite ev]
-  simp [maximalMinors, ← Set.range_comp, Function.comp_def, ev.map_det, ← h_map, submatrix_map]
+  simp [rowLatticeMinors, ← Set.range_comp, Function.comp_def, ev.map_det, ← h_map, submatrix_map]
 
 /-- The kernel of `A` on `(O ⧸ Ideal.span {a}) ^ k` has the length of the module of `O`-linear maps
 from `(k → O) ⧸ A.rowLattice a` to `O ⧸ Ideal.span {a}`, since it is the orthogonal of
 `A.rowLattice a`. -/
-theorem length_matrixKernel_eq_length_linearMap (A : Matrix r k O) (a : O) :
-    length O (A.matrixKernel (O ⧸ Ideal.span {a})) =
+theorem length_ker_eq_length_linearMap (A : Matrix r k O) (a : O) :
+    length O (A.ker (O ⧸ Ideal.span {a})) =
       length O (((k → O) ⧸ A.rowLattice a) →ₗ[O] O ⧸ Ideal.span {a}) := by
-  have h_orth : A.matrixKernel (O ⧸ Ideal.span {a}) =
+  have h_orth : A.ker (O ⧸ Ideal.span {a}) =
       (A.rowLattice a).orthogonalBilin (Fintype.bilinearCombination O O).flip := by
-    rw [rowLattice_eq_span, ← matrixKernel_eq_orthogonalBilin]
+    rw [rowLattice_eq_span, ← ker_eq_orthogonalBilin]
     ext w
-    simp only [mem_matrixKernel, Sum.forall, Matrix.fromRows_apply_inl,
+    simp only [mem_ker, Sum.forall, Matrix.fromRows_apply_inl,
       Matrix.fromRows_apply_inr, Matrix.smul_apply, smul_eq_mul]
     refine ⟨fun h ↦ ⟨h, fun i ↦ Finset.sum_eq_zero fun j _ ↦ ?_⟩, And.left⟩
     simp [Algebra.smul_def, (Ideal.Quotient.eq_zero_iff_dvd a _).2 (dvd_mul_right a _)]

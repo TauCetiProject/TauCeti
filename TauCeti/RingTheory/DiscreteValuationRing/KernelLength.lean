@@ -38,9 +38,9 @@ The general matrix definitions and the kernel/Hom length identity live in
 ## Main results
 
 * `Matrix.isLeast_length_quotient_rowLattice`: specialization to `M = A.fromRows (a • 1)`.
-* `Matrix.isLeast_length_matrixKernel`: for a ring homomorphism `ev : Λ →+* O` into a discrete
-  valuation ring with `ev a ≠ 0`, the length of `(A.map ev).matrixKernel (O ⧸ Ideal.span {ev a})`
-  is the least `addVal O (ev P)` for `P ∈ A.maximalMinors a`.
+* `Matrix.isLeast_length_ker`: for a ring homomorphism `ev : Λ →+* O` into a discrete
+  valuation ring with `ev a ≠ 0`, the length of `(A.map ev).ker (O ⧸ Ideal.span {ev a})`
+  is the least `addVal O (ev P)` for `P ∈ A.rowLatticeMinors a`.
 
 ## References
 
@@ -64,23 +64,20 @@ variable {Λ O r k : Type*} [CommRing Λ] [CommRing O] [IsDomain O] [IsDiscreteV
   [Fintype k] [DecidableEq k]
 
 /-- Over a discrete valuation ring `O`, the quotient of `k → O` by `A.rowLattice a` has length
-equal to the least valuation of a maximal minor in `A.maximalMinors a`. -/
+equal to the least valuation of a maximal minor in `A.rowLatticeMinors a`. -/
 theorem isLeast_length_quotient_rowLattice (A : Matrix r k O) (a : O) :
-    IsLeast (addVal O '' A.maximalMinors a) (length O ((k → O) ⧸ A.rowLattice a)) := by
+    IsLeast (addVal O '' A.rowLatticeMinors a) (length O ((k → O) ⧸ A.rowLattice a)) := by
   have : Nonempty (k → r ⊕ k) := ⟨.inr⟩
-  have hmin : A.maximalMinors a =
-      Set.range (fun f : k → r ⊕ k ↦ ((A.fromRows (a • 1)).submatrix f id).det) :=
-    Set.ext fun _ ↦ mem_maximalMinors_iff
-  rw [hmin, rowLattice_eq_span]
+  rw [rowLatticeMinors_eq_range, rowLattice_eq_span]
   exact isLeast_length_quotient_span_range_row (A.fromRows (a • (1 : Matrix k k O)))
 
 /-- For a matrix `A` over a commutative ring `Λ` with columns indexed by a finite type `k`, and a
 ring homomorphism `ev : Λ →+* O` into a discrete valuation ring with `ev a ≠ 0`, the length of
-`(A.map ev).matrixKernel (O ⧸ Ideal.span {ev a})` is the least `addVal O (ev P)` as `P` ranges
-over `A.maximalMinors a`. -/
-theorem isLeast_length_matrixKernel (A : Matrix r k Λ) (a : Λ) (ev : Λ →+* O) (ha : ev a ≠ 0) :
-    IsLeast ((fun P : Λ ↦ addVal O (ev P)) '' A.maximalMinors a)
-      (length O ((A.map ev).matrixKernel (O ⧸ Ideal.span {ev a}))) := by
+`(A.map ev).ker (O ⧸ Ideal.span {ev a})` is the least `addVal O (ev P)` as `P` ranges
+over `A.rowLatticeMinors a`. -/
+theorem isLeast_length_ker (A : Matrix r k Λ) (a : Λ) (ev : Λ →+* O) (ha : ev a ≠ 0) :
+    IsLeast ((fun P : Λ ↦ addVal O (ev P)) '' A.rowLatticeMinors a)
+      (length O ((A.map ev).ker (O ⧸ Ideal.span {ev a}))) := by
   let Q := (k → O) ⧸ (A.map ev).rowLattice (ev a)
   let K := FractionRing O
   let KO := K ⧸ LinearMap.range (Algebra.linearMap O K)
@@ -91,17 +88,15 @@ theorem isLeast_length_matrixKernel (A : Matrix r k Λ) (a : Λ) (ev : Λ →+* 
   let e₁ := IsDiscreteValuationRing.quotientEquivTorsionBySet (K := K) ha
   let eHom : (Q →ₗ[O] O ⧸ Ideal.span {ev a}) ≃ₗ[O] (Q →ₗ[O] KO) :=
     (LinearEquiv.congrRight e₁).trans
-    { toFun := fun φ ↦ (Submodule.subtype _).comp φ
-      map_add' := fun _ _ ↦ by ext; simp
-      map_smul' := fun _ _ ↦ by ext; simp
-      invFun := fun ψ ↦ ψ.codRestrict _ fun x ↦ by
-        rw [Submodule.torsionBySet_span_singleton_eq, Submodule.mem_torsionBy_iff, ← map_smul,
-          h_kill, map_zero]
-      left_inv := fun φ ↦ by ext; rfl
-      right_inv := fun ψ ↦ by ext x; simp }
-  rw [length_matrixKernel_eq_length_linearMap, eHom.length_eq,
+    (LinearEquiv.ofBijective (LinearMap.llcomp O Q _ KO (Submodule.subtype _))
+      ⟨fun φ ψ h ↦ (LinearMap.cancel_left (Submodule.subtype_injective _)).1 h,
+        fun ψ ↦ ⟨ψ.codRestrict _ (fun x ↦ by
+          rw [Submodule.torsionBySet_span_singleton_eq, Submodule.mem_torsionBy_iff,
+            ← map_smul, h_kill, map_zero]),
+          by simp only [LinearMap.llcomp_apply', LinearMap.subtype_comp_codRestrict]⟩⟩)
+  rw [length_ker_eq_length_linearMap, eHom.length_eq,
     IsDiscreteValuationRing.length_linearMap_fractionRing_quotient (K := K),
-    ← Set.image_image (addVal O) ev, image_maximalMinors]
+    ← Set.image_image (addVal O) ev, image_rowLatticeMinors]
   exact (A.map ev).isLeast_length_quotient_rowLattice (ev a)
 
 end DVR

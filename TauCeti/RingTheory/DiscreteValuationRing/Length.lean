@@ -36,6 +36,14 @@ a submodule of colength `v(det M)`, infinite when `det M = 0`
 (`Matrix.length_quotient_span_range_eq_addVal_det`). For an arbitrary rectangular matrix with a
 nonempty family of full-column row selections, the row-span colength is the least valuation of
 such a minor (`Matrix.isLeast_length_quotient_span_range_row`).
+
+## References
+
+* N. Bourbaki, *Algebra*, Chapter VII, §4 (Elementary divisors).
+* S. Lang, *Algebra*, Chapter III, §7 (Modules over principal ideal domains).
+* The rectangular row-span colength theorem is adapted from `grh-lean`,
+  `src/Lib/General/Algebra/SharpMinors.lean`
+  (Copyright 2026 Anthropic, PBC, Apache 2.0).
 -/
 
 public section
