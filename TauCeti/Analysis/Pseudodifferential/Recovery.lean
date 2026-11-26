@@ -544,7 +544,7 @@ theorem tendsto_integral_smul_inner_quantizeSchwartzValue_cutoffExponential
   have hlim : ∀ x, ((w x : ℂ) * φ x) • innerSLFlip ℂ v (a.principal.coefficient (x, ξ) (φ x • v)) =
       (w x * ‖φ x‖ ^ 2) • ⟪a.principal.coefficient (x, ξ) v, v⟫_ℂ := by
     intro x
-    rw [innerSLFlip_apply_apply, map_smul, inner_smul_left, smul_eq_mul, Complex.real_smul,
+    simp only [innerSLFlip_apply_apply, map_smul, inner_smul_left, smul_eq_mul, Complex.real_smul,
       Complex.ofReal_mul, Complex.ofReal_pow, ← Complex.mul_conj']
     ring
   have hwφ : Continuous fun x ↦ (w x : ℂ) * φ x :=

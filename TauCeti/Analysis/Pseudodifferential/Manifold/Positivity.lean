@@ -154,7 +154,7 @@ theorem classicalPrincipalSymbol_nonneg
   -- The density `w` of `μ` in the chart.
   obtain ⟨w, hwc, hwpos, hw⟩ := (isPositiveDensityMeasure_iff_of_isAddHaarMeasure volume).1 hμ x
   have hext : extChartAt 𝓘(ℝ, CoordinateSpace n) x = e.toPartialEquiv := by
-    simp [extChartAt, OpenPartialHomeomorph.extend, modelWithCornersSelf_partialEquiv, e]
+    rw [extChartAt, OpenPartialHomeomorph.extend_modelWithCornersSelf]
   -- `Op(a)` is positive near `e x` for the pairing weighted by `w`: it is the pairing of `P` with
   -- `u ∘ e`, a function supported in `U`.
   have hpos' : ∀ u : 𝓢(CoordinateSpace n, ℂ), HasCompactSupport u →
@@ -179,10 +179,8 @@ theorem classicalPrincipalSymbol_nonneg
     (Metric.mem_ball_self hr) (hwpos _ hxV.1) ((InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
       (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse))
   have hprin := coefficient_principal_apply_eq_classicalPrincipalSymbol hP he χ χ ha hxe ξ
-  rw [hχ1 _ (Metric.mem_closedBall_self hr.le), mul_one, Complex.ofReal_one, one_mul] at hprin
-  have h := hσ.inner_nonneg_left 1
-  rw [RCLike.inner_apply, one_mul, starRingEnd_apply, star_nonneg_iff, hprin] at h
-  exact h
+  simp [hχ1 _ (Metric.mem_closedBall_self hr.le)] at hprin
+  simpa [RCLike.inner_apply, hprin] using hσ.inner_nonneg_right 1
 
 /-- **A positive operator elliptic at a point has a positive principal symbol there.** Let `μ` be
 a positive continuous density measure on `M`, `U` an open set and `P` an operator on `C^∞(M, ℂ)`
