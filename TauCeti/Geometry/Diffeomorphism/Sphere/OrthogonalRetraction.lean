@@ -69,7 +69,7 @@ fixing a neighbourhood of its boundary.
 * `TauCeti.orthogonalToDiffSphere_diffSphereToOrthogonal_apply_self`: it agrees with `f` at `p`.
 * `TauCeti.diffSphereToOrthogonal_eq_one_iff`: `f` lies in the fibre over `1` exactly when its
   frame is the frame of the identity times an upper triangular matrix with positive diagonal; in
-  particular it fixes `p` (`TauCeti.apply_self_eq_of_diffSphereToOrthogonal_eq_one`).
+  particular it fixes `p` (`TauCeti.apply_eq_self_of_diffSphereToOrthogonal_eq_one`).
 
 ## References
 
@@ -109,10 +109,12 @@ private theorem col_frameMatrix (f : sphere (0 : EuclideanSpace ℝ (Fin (n + 1)
 
 private theorem isUnit_frameMatrix (hm : 1 ≤ m)
     (f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :
-    IsUnit (frameMatrix p f) :=
-  linearIndependent_col_iff_isUnit.mp
-    ((linearIndependent_sphereFrame_diffeomorph p hm f).map'
-      (WithLp.linearEquiv 2 ℝ (Fin (n + 1) → ℝ)).toLinearMap (WithLp.linearEquiv 2 ℝ _).ker)
+    IsUnit (frameMatrix p f) := by
+  have hcol : (frameMatrix p f).col =
+      (WithLp.linearEquiv 2 ℝ (Fin (n + 1) → ℝ)).toLinearMap ∘ sphereFrame p f :=
+    funext fun j ↦ (col_frameMatrix p f j).trans (WithLp.linearEquiv_apply 2 ℝ _ _).symm
+  rw [← linearIndependent_col_iff_isUnit, hcol]
+  exact (linearIndependent_sphereFrame_diffeomorph p hm f).map' _ (WithLp.linearEquiv 2 ℝ _).ker
 
 /-- The frame matrix of a diffeomorphism, as an invertible matrix. -/
 private noncomputable def frameGL (hm : 1 ≤ m)
@@ -127,6 +129,7 @@ private theorem coe_frameGL (hm : 1 ≤ m)
 private theorem continuous_frameGL (hm : 1 ≤ m) : Continuous (frameGL (m := m) p hm) := by
   refine IsOpenUnits.isOpenEmbedding_unitsVal.isEmbedding.isInducing.continuous_iff.mpr
     (continuous_matrix fun i j ↦ ?_)
+  simp only [Function.comp_apply, coe_frameGL, frameMatrix_apply]
   exact (continuous_apply i).comp
     ((PiLp.continuous_ofLp 2 _).comp (continuous_sphereFrame_diffeomorph p hm j))
 
@@ -220,7 +223,7 @@ theorem orthogonalToDiffSphere_diffSphereToOrthogonal_apply_self
     mulVec_single_one, col_zero_iwasawaUnitaryFactor_frameGL]
 
 /-- A diffeomorphism in the fibre of the orthogonal retraction over `1` fixes the base point. -/
-theorem apply_self_eq_of_diffSphereToOrthogonal_eq_one
+theorem apply_eq_self_of_diffSphereToOrthogonal_eq_one
     {f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m}
     (hf : diffSphereToOrthogonal p hm f = 1) : f p = p := by
   rw [← orthogonalToDiffSphere_diffSphereToOrthogonal_apply_self p hm f, hf, map_one,
@@ -247,37 +250,40 @@ private theorem frameMatrix_eq_mul_iff
 /-- **The fibre of the orthogonal retraction.** A diffeomorphism `f` is sent to `1` exactly when
 its frame at `p` is obtained from the frame of the identity by an upper triangular matrix with
 positive diagonal, that is, when the two frames have the same Gram–Schmidt orthonormalisation.
-In particular `f p = p` (`TauCeti.apply_self_eq_of_diffSphereToOrthogonal_eq_one`). -/
+In particular `f p = p` (`TauCeti.apply_eq_self_of_diffSphereToOrthogonal_eq_one`). -/
 theorem diffSphereToOrthogonal_eq_one_iff
     (f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :
     diffSphereToOrthogonal p hm f = 1 ↔
       ∃ b ∈ posUpperTriangularGroup (Fin (n + 1)) ℝ, ∀ j,
         sphereFrame p f j =
           ∑ i, (b : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) i j • sphereFrame p id i := by
-  set K₁ := ((iwasawaHomeomorph ℝ (n + 1)).symm (frameGL p hm 1)).1
-  have hK₁ : (K₁ : GL (Fin (n + 1)) ℝ) ∈ unitarySubgroup (GL (Fin (n + 1)) ℝ) := K₁.property
-  -- `r f = 1` says that `f` and the identity have the same orthogonal factor `K₁`.
+  set U₁ := (frameGL p hm 1).iwasawaUnitaryFactor
+  -- In `GL`, left multiplication by `k = U₁⁻¹` is left multiplication by `star U₁`.
+  set k : GL (Fin (n + 1)) ℝ := Unitary.toUnits U₁⁻¹
+  have hk (g : GL (Fin (n + 1)) ℝ) :
+      ((k * g : GL (Fin (n + 1)) ℝ) : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) =
+        star (U₁ : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) * g := by
+    rw [Units.val_mul, Unitary.val_toUnits_apply, ← Unitary.star_eq_inv, Unitary.coe_star]
+  -- `r f = 1` says that `f` and the identity have the same orthogonal factor `U₁`.
   have hr : diffSphereToOrthogonal p hm f = 1 ↔
-      (((iwasawaHomeomorph ℝ (n + 1)).symm (frameGL p hm f)).1 : GL (Fin (n + 1)) ℝ) = K₁ := by
-    rw [diffSphereToOrthogonal, mul_inv_eq_one, Subtype.ext_iff,
-      GeneralLinearGroup.coe_iwasawaUnitaryFactor, GeneralLinearGroup.coe_iwasawaUnitaryFactor,
-      Units.val_inj]
+      k * frameGL p hm f ∈ posUpperTriangularGroup (Fin (n + 1)) ℝ := by
+    rw [diffSphereToOrthogonal, mul_inv_eq_one, GeneralLinearGroup.iwasawaUnitaryFactor_eq_iff,
+      PosUpperTriangularGroup.mem_iff, hk]
   -- The triangular factor of the identity's frame.
-  have hb₁ : (K₁ : GL (Fin (n + 1)) ℝ)⁻¹ * frameGL p hm 1 ∈
-      posUpperTriangularGroup (Fin (n + 1)) ℝ :=
-    PosUpperTriangularGroup.mem_iff.mpr
-      ((iwasawaHomeomorph_symm_unitary_eq_iff (frameGL p hm 1) K₁ hK₁).mp rfl)
+  have hb₁ : k * frameGL p hm 1 ∈ posUpperTriangularGroup (Fin (n + 1)) ℝ := by
+    rw [PosUpperTriangularGroup.mem_iff, hk]
+    exact (GeneralLinearGroup.iwasawaUnitaryFactor_eq_iff _ _).mp rfl
   have hframe (b : GL (Fin (n + 1)) ℝ) : frameGL p hm f = frameGL p hm 1 * b ↔
       ∀ j, sphereFrame p f j = ∑ i, (b : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) i j •
         sphereFrame p id i := by
     rw [← frameMatrix_eq_mul_iff, ← Units.val_inj, Units.val_mul, coe_frameGL, coe_frameGL,
       Diffeomorph.coe_one]
-  rw [hr, iwasawaHomeomorph_symm_unitary_eq_iff _ _ hK₁, ← PosUpperTriangularGroup.mem_iff]
+  rw [hr]
   constructor
   · intro h
     refine ⟨(frameGL p hm 1)⁻¹ * frameGL p hm f, ?_, (hframe _).mp (mul_inv_cancel_left _ _).symm⟩
     have := mul_mem (inv_mem hb₁) h
-    rwa [_root_.mul_inv_rev, inv_inv, mul_assoc, mul_inv_cancel_left] at this
+    rwa [_root_.mul_inv_rev, mul_assoc, inv_mul_cancel_left] at this
   · rintro ⟨b, hb, hfb⟩
     rw [(hframe b).mpr hfb, ← mul_assoc]
     exact mul_mem hb₁ hb
