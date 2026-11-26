@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Trace.Matrix
-public import TauCeti.Examples.Analysis.CStarAlgebra.TracePairing
+public import TauCeti.Examples.Analysis.CStarAlgebra.TracePairing.Basic
 
 /-!
 # Checks for the matrix amplification of a trace
