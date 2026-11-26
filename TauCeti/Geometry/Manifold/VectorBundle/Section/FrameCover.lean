@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Restriction
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CLMApply
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
@@ -20,7 +21,10 @@ frame system. Changes of frame act by the actual smooth transition matrix, inclu
 higher derivatives. Open-cover locality is taken in the existing weak Whitney topology.
 Restriction to an open subset and multiplication by a smooth scalar function are continuous
 (`ContMDiffSection.continuous_restrict_frameTopology`,
-`ContMDiffSection.continuous_smul_function_frameTopology`).
+`ContMDiffSection.continuous_smul_function_frameTopology`). On a trivial bundle the frame topology
+is the weak Whitney topology of the corresponding maps: the identification of sections with maps
+is continuous in both directions (`ContMDiffSection.continuous_trivialEquiv`,
+`ContMDiffSection.continuous_trivialEquiv_symm`).
 -/
 
 public noncomputable section
@@ -206,5 +210,60 @@ theorem continuous_smul_function_frameTopology (f : C^n⟮I, M; 𝕜⟯) :
     fun i s ↦ ContMDiffMap.ext fun x ↦ ?_
   rw [ContMDiffMap.clmApplyLinearMap_apply]
   simp [A, ← (e i).continuousLinearMapAt_apply_of_mem 𝕜 (hU i x.property)]
+
+/-! ### Trivial bundles -/
+
+section Trivial
+
+omit [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [ContMDiffVectorBundle n F V I]
+
+variable (M F) in
+/-- The preferred frames of the trivial bundle with fibre `F` over `M`. -/
+private abbrev trivialFrameTopology : TopologicalSpace Cₛ^n⟮I; F, Bundle.Trivial M F⟯ :=
+  frameTopology (I := I) (n := n) (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x)
+    (fun x ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩) fun _ ↦ subset_rfl
+
+/-- On the sections of a trivial bundle, the identification with maps (`trivialEquiv`) is
+continuous from the frame topology to the weak Whitney topology. -/
+theorem continuous_trivialEquiv :
+    letI := frameTopology (I := I) (n := n) (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x)
+      (fun x ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩) fun _ ↦ subset_rfl
+    Continuous (fun s : Cₛ^n⟮I; F, Bundle.Trivial M F⟯ ↦
+      (trivialEquiv s : C^n⟮I, M; 𝓘(𝕜, F), F⟯)) := by
+  let _ := trivialFrameTopology (I := I) (n := n) M F
+  refine ContMDiffMap.continuous_of_forall_continuous_restrict
+    (fun x : M ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩)
+    (fun x ↦ ⟨x, mem_baseSet_trivializationAt F (Bundle.Trivial M F) x⟩) fun x ↦ ?_
+  -- On a frame domain the restricted map is the frame coordinate function.
+  convert continuous_frameCoordinates (I := I) (n := n)
+    (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x)
+    (fun x ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩) (fun _ ↦ subset_rfl) x
+    using 1
+  funext s
+  ext y
+  simp [Bundle.Trivialization.frameCoordinates_apply]
+
+/-- On the sections of a trivial bundle, the identification with maps (`trivialEquiv`) has an
+inverse which is continuous from the weak Whitney topology to the frame topology. -/
+theorem continuous_trivialEquiv_symm :
+    letI := frameTopology (I := I) (n := n) (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x)
+      (fun x ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩) fun _ ↦ subset_rfl
+    Continuous (fun g : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦
+      (trivialEquiv.symm g : Cₛ^n⟮I; F, Bundle.Trivial M F⟯)) := by
+  let _ := trivialFrameTopology (I := I) (n := n) M F
+  refine (continuous_frameTopology_iff_frameCoordinates (I := I) (n := n)
+    (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x)
+    (fun x ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩)
+    (fun _ ↦ subset_rfl)).2 fun x ↦ ?_
+  -- The frame coordinate function of a map is its restriction to the frame domain.
+  convert ContMDiffMap.continuous_restrict (I := I) (J := 𝓘(𝕜, F)) (n := n)
+    ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩ using 1
+  funext g
+  ext y
+  simp [Bundle.Trivialization.frameCoordinates_apply]
+
+end Trivial
 
 end ContMDiffSection
