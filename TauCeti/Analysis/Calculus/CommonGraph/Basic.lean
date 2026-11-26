@@ -5,10 +5,9 @@ Authors: Riccardo Brasca
 -/
 module
 
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 
 /-!
 # Common local graph presentations of touching hypersurfaces
@@ -33,7 +32,7 @@ order of two graph heights over a common domain, the form in which comparison pr
   locally the graph of a `Cᵏ` height, for `k ≠ 0`.
 * `TauCeti.eventually_le_of_hasStrictFDerivAt`: graph heights lying in `{ρ ≤ 0}` and in
   `{0 ≤ ρ}` are ordered near a contact point.
-* `TauCeti.exists_common_isGraphPresentation_of_le`: two touching hypersurfaces, the first
+* `TauCeti.exists_common_isGraphPresentation_le`: two touching hypersurfaces, the first
   in `{ρ ≤ 0}` and the second in `{0 ≤ ρ}`, are graphs of ordered `Cᵏ` heights over a common
   open set, for `k ≠ 0`.
 -/
@@ -63,7 +62,7 @@ variable {f : F → WithLp 2 (E × ℝ)} {V : Set F} {D : Set E} {u : E → ℝ}
 component. -/
 theorem eq_toLp (h : IsGraphPresentation f V D u) {x : F} (hx : x ∈ V) :
     f x = WithLp.toLp 2 ((WithLp.ofLp (f x)).1, u (WithLp.ofLp (f x)).1) := by
-  rw [← h.snd_eq x hx]
+  rw [← h.snd_eq x hx, Prod.mk.eta, WithLp.toLp_ofLp]
 
 /-- Every graph point over `D` is attained in `V`. -/
 theorem exists_eq_toLp (h : IsGraphPresentation f V D u) {y : E} (hy : y ∈ D) :
@@ -146,37 +145,18 @@ theorem exists_isGraphPresentation [CompleteSpace E] [CompleteSpace F]
   have hL₀ : HasFDerivAt g (L₀ : F →L[ℝ] E) a := by
     rw [ContinuousLinearEquiv.coe_ofBijective]
     exact hfd ha
-  have hga : ContDiffAt ℝ k g a := hg.contDiffAt (hU.mem_nhds ha)
-  let φ := hga.toOpenPartialHomeomorph g hL₀ hk
-  have hφ : (φ : F → E) = g := hga.toOpenPartialHomeomorph_coe hL₀ hk
-  let V : Set F := (φ.source ∩ U) ∩
-    fderiv ℝ g ⁻¹' range ((↑) : (F ≃L[ℝ] E) → F →L[ℝ] E)
   have hk1 : 1 ≤ k := ENat.one_le_iff_ne_zero_withTop.mpr hk
-  have hVo : IsOpen V :=
-    ((hg.continuousOn_fderiv_of_isOpen hU hk1).mono inter_subset_right).isOpen_inter_preimage
-      (φ.open_source.inter hU) ContinuousLinearEquiv.isOpen
-  have haV : a ∈ V :=
-    ⟨⟨hga.mem_toOpenPartialHomeomorph_source hL₀ hk, ha⟩, L₀, hL₀.fderiv.symm⟩
-  have hVs : V ⊆ φ.source := fun x hx ↦ hx.1.1
-  refine ⟨V, fun x hx ↦ hx.1.2, hVo, haV, φ '' V, φ.isOpen_image_of_subset_source hVo hVs,
-    fun y ↦ ν (f (φ.symm y)), ?_, ⟨φ.injOn.mono hVs, rfl, fun x hx ↦ ?_⟩⟩
-  · rintro _ ⟨x, hx, rfl⟩
-    obtain ⟨L, hL⟩ := hx.2
-    have hxU : x ∈ U := hx.1.2
-    have hleft : φ.symm (φ x) = x := φ.left_inv (hVs hx)
-    have hsymm : ContDiffAt ℝ k φ.symm (φ x) := by
-      apply φ.contDiffAt_symm (f₀' := L) (φ.map_source (hVs hx))
-      · rw [hleft, hφ, hL]
-        exact (hfd hxU).differentiableAt.hasFDerivAt
-      · rw [hleft]
-        exact hg.contDiffAt (hU.mem_nhds hxU)
-    have hνf : ContDiffAt ℝ k (fun z ↦ ν (f z)) (φ.symm (φ x)) := by
-      rw [hleft]
-      exact ν.contDiff.contDiffAt.comp x (hf.contDiffAt (hU.mem_nhds hxU))
-    exact (hνf.comp (φ x) hsymm).contDiffWithinAt
-  · have hgx : (WithLp.ofLp (f x)).1 = φ x := by
-      simp only [hφ, g, Function.comp_apply, π, WithLp.fstL_apply, WithLp.fst]
-    simp only [hgx, φ.left_inv (hVs hx), ν, WithLp.sndL_apply, WithLp.snd]
+  obtain ⟨φ, hφ, haφ, hφU, hφc⟩ := ContDiffOn.exists_openPartialHomeomorph hg hU ha hk1
+    (e := L₀) hL₀.fderiv.symm
+  refine ⟨φ.source, hφU, φ.open_source, haφ, φ.target, φ.open_target,
+    fun y ↦ ν (f (φ.symm y)), ?_, ⟨?_, ?_, fun x hx ↦ ?_⟩⟩
+  · exact (ν.contDiff.comp_contDiffOn hf).comp hφc (φ.mapsTo_symm.mono_right hφU)
+  · intro x hx y hy hxy
+    apply φ.injOn hx hy
+    simpa [hφ, g, π] using hxy
+  · simpa [hφ, g, π] using φ.image_source_eq_target
+  · have hgx : (f x).fst = φ x := by simp [hφ, g, π]
+    simp [hgx, φ.left_inv hx, ν]
 
 /-- **One-sidedness gives ordered heights.** Let `ρ` be strictly differentiable at
 `(x₀, t₀)`, with derivative positive on the vertical direction. If the graph of `u₂` lies in
@@ -231,7 +211,7 @@ for a function `ρ` strictly differentiable at `p` with derivative positive on t
 direction, and that `f₁` takes values in `{ρ ≤ 0}`. Then there are an open set `D` containing
 the base point of `p` and open neighbourhoods `Vᵢ ⊆ Uᵢ` of `aᵢ` such that `fᵢ` maps `Vᵢ` bijectively
 onto the graph of a `Cᵏ` height `uᵢ` over `D`, and `u₁ ≤ u₂` on `D`. -/
-theorem exists_common_isGraphPresentation_of_le [CompleteSpace E] [CompleteSpace F]
+theorem exists_common_isGraphPresentation_le [CompleteSpace E] [CompleteSpace F]
     {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [CompleteSpace F₂]
     {f₁ : F → WithLp 2 (E × ℝ)} {f₂ : F₂ → WithLp 2 (E × ℝ)} {U₁ : Set F} {U₂ : Set F₂}
     {a₁ : F} {a₂ : F₂}
@@ -269,7 +249,8 @@ theorem exists_common_isGraphPresentation_of_le [CompleteSpace E] [CompleteSpace
     intro y hy
     obtain ⟨x, hx, -, hfx⟩ := hG₂.exists_eq_toLp hy
     exact hfx ▸ hρ₂ x (hV₂U hx)
-  have hρp : HasStrictFDerivAt ρ ρ' (WithLp.toLp 2 (x₀, t₀)) := hρ
+  have hρp : HasStrictFDerivAt ρ ρ' (WithLp.toLp 2 (x₀, t₀)) := by
+    rwa [hx₀, ht₀, Prod.mk.eta, WithLp.toLp_ofLp]
   have hle := eventually_le_of_hasStrictFDerivAt hρp hρv
     ((hu₁.continuousOn.continuousAt (hD₁.mem_nhds hx₀D₁)))
     ((hu₂.continuousOn.continuousAt (hD₂.mem_nhds hx₀D₂))) hu₁₀ hu₂₀
