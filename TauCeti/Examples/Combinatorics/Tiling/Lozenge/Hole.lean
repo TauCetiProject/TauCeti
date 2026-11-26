@@ -36,7 +36,8 @@ example : ∃ g : TriFace, ∃ e ∈ (⟨(0, 0), true⟩ : TriFace).edges, e ∈
   ⟨⟨(1, 0), false⟩, ⟨(1, 0), 1⟩, by simp, by simp, by simp, by simp⟩
 
 /-- The five faces at the origin other than `W(0)` are simply connected, by shelling in the order
-`B(0)`, `W(−e₁)`, `B(−e₃)`, `W(−e₃)`, `B(−e₂)`, one new edge and vertex each time. -/
+`B(0)`, `W(−e₁)`, `B(−e₃)`, `W(−e₃)`, `B(−e₂)`, each glued along one edge, adding one new
+vertex. -/
 example : IsSimplyConnectedRegion fiveFaces := by
   have h1 := isSimplyConnectedRegion_singleton (⟨(0, 0), false⟩ : TriFace)
   have h2 := h1.insert_of_notMem_regionVertices (f := ⟨(-1, 0), true⟩) (i := 1) (p := (-1, 0))
