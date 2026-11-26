@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.PartitionOfUnity.ChartCutoffs
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
 
 /-!
 # Chart localization of bundle tests
@@ -372,12 +373,11 @@ theorem exists_mem_maximalAtlas_source_subset_baseSet {n : ℕ∞ω} [IsManifold
     ∃ c : OpenPartialHomeomorph M H, c ∈ IsManifold.maximalAtlas I n M ∧ x ∈ c.source ∧
       c.source ⊆ (trivializationAt F V x).baseSet ∧
         c.source ⊆ (trivializationAt F' W x).baseSet := by
-  have hopen : IsOpen ((trivializationAt F V x).baseSet ∩ (trivializationAt F' W x).baseSet) :=
-    (trivializationAt F V x).open_baseSet.inter (trivializationAt F' W x).open_baseSet
-  refine ⟨_, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x) hopen, ?_⟩
-  rw [OpenPartialHomeomorph.restr_source' _ _ hopen]
-  exact ⟨⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x,
-    FiberBundle.mem_baseSet_trivializationAt' x⟩, fun _ hy ↦ hy.2.1, fun _ hy ↦ hy.2.2⟩
+  obtain ⟨c, he, hxc, hVW⟩ := OpenPartialHomeomorph.exists_mem_maximalAtlas_source_subset
+    (I := I) (n := n)
+    ((trivializationAt F V x).open_baseSet.inter (trivializationAt F' W x).open_baseSet)
+    ⟨FiberBundle.mem_baseSet_trivializationAt' x, FiberBundle.mem_baseSet_trivializationAt' x⟩
+  exact ⟨c, he, hxc, hVW.trans inter_subset_left, hVW.trans inter_subset_right⟩
 
 end TauCeti
 

@@ -270,11 +270,8 @@ theorem IsMicrolocallySobolevAt.sum_smul_smulLeftCLM_iteratedLineDerivOp {s : �
     (m : ∀ i, Fin (n i) → E) {k : ℕ} (hk : ∀ i ∈ t, n i ≤ k) :
     (∑ i ∈ t, c i • Distribution.smulLeftCLM (hg i) (∂^{m i} T)).IsMicrolocallySobolevAt
       (s - k) x ξ :=
-  Finset.sum_induction _ (fun S : 𝓓'(Ω, ℂ) ↦ S.IsMicrolocallySobolevAt (s - k) x ξ)
-    (fun _ _ ↦ IsMicrolocallySobolevAt.add)
-    (zero_smul ℂ T ▸ (h.mono (sub_le_self _ k.cast_nonneg)).smul 0)
-    fun i hi ↦ (((h.iteratedLineDerivOp (m i)).mono (by gcongr; exact hk i hi)).smulLeftCLM
-      (hg i)).smul (c i)
+  IsMicrolocallySobolevAt.sum t h.mem fun i hi ↦
+    (((h.iteratedLineDerivOp (m i)).mono (by gcongr; exact hk i hi)).smulLeftCLM (hg i)).smul (c i)
 
 /-- **Differential operators shift the Sobolev wave front set by their order.** A linear
 differential operator `P = ∑ i ∈ t, c i g i ∂^{m i}` of order at most `k`, with smooth real
