@@ -31,7 +31,7 @@ which is `n χ(D) + μ` for rank `n = 1`, Euler characteristic `χ(D) = 1` and M
 as the Riemann–Roch formula for discs predicts.
 
 * **Surjectivity.** For `k ≥ -1` every `α`-Hölder forcing is `∂u/∂(conj z)` for some `u ∈ X_k`
-  (`TauCeti.surjective_rotatingLineConjWirtingerDerivL`), by the solution of the inhomogeneous
+  (`TauCeti.rotatingLineConjWirtingerDerivL_surjective`), by the solution of the inhomogeneous
   problem with Hölder forcing
   (`TauCeti.exists_conjWirtingerDeriv_eq_and_eq_zpow_mul_conj_of_holderOnWith`).
 * **The kernel.** The values on the closed disc identify the kernel with the space
@@ -75,7 +75,7 @@ boundary marked point `1`: the kernel of `∂/∂(conj z)` is the constant maps 
 
 ## Main results
 
-* `TauCeti.surjective_rotatingLineConjWirtingerDerivL`: surjectivity for `k ≥ -1`.
+* `TauCeti.rotatingLineConjWirtingerDerivL_surjective`: surjectivity for `k ≥ -1`.
 * `TauCeti.finrank_ker_rotatingLineConjWirtingerDerivL`: the kernel has dimension
   `(k + 1).toNat`.
 * `TauCeti.isFredholm_rotatingLineConjWirtingerDerivL`: the operator is Fredholm for `k ≥ -1`.
@@ -126,7 +126,7 @@ theorem mem_ker_rotatingLineConjWirtingerDerivL_iff {u : rotatingLineSubspace k 
 /-- **Surjectivity for Maslov index at least `-1`.** For `k ≥ -1` and `0 < α < 1`, every
 `α`-Hölder forcing on the open unit disc is `∂u/∂(conj z)` for some `u ∈ C^{1,α}(D)` with boundary
 values on the rotating lines `e^{ikθ/2} ℝ`. -/
-theorem surjective_rotatingLineConjWirtingerDerivL (hk : -1 ≤ k) (hα0 : 0 < α) (hα1 : α < 1) :
+theorem rotatingLineConjWirtingerDerivL_surjective (hk : -1 ≤ k) (hα0 : 0 < α) (hα1 : α < 1) :
     Function.Surjective (rotatingLineConjWirtingerDerivL k α) := by
   intro f
   -- The forcing, extended to the closed disc as an `α`-Hölder function.
@@ -142,15 +142,6 @@ theorem surjective_rotatingLineConjWirtingerDerivL (hk : -1 ≤ k) (hα0 : 0 < �
 
 /-! ### The kernel -/
 
-/-- On the open disc, the Cauchy–Riemann operator of `C^{1,α}(D)` is the conjugate Wirtinger
-derivative of the continuous extension to the closed disc. -/
-private theorem conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend
-    (u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ) {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
-    conjWirtingerDerivL α (unitBallOpens ℂ) ℂ u ⟨z, mem_unitBallOpens_iff_mem_ball.2 hz⟩ =
-      conjWirtingerDeriv u.closureExtend z 1 :=
-  conjWirtingerDerivL_apply u _
-    (u.closureExtend_eventuallyEq_extend (mem_unitBallOpens_iff_mem_ball.2 hz)).symm
-
 /-- An element of the kernel of the Cauchy–Riemann operator on `X_k` extends to a function
 holomorphic on the open disc and continuous on its closure. -/
 private theorem diffContOnCl_closureExtend_of_mem_ker {u : rotatingLineSubspace k α}
@@ -163,9 +154,9 @@ private theorem diffContOnCl_closureExtend_of_mem_ker {u : rotatingLineSubspace 
         (isOpen_ball.mem_nhds hz)
     refine ((differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero hd).2 ?_
       ).differentiableWithinAt
-    rw [← conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend v hz]
-    exact congr($(mem_ker_rotatingLineConjWirtingerDerivL_iff.1 hu)
-      ⟨z, mem_unitBallOpens_iff_mem_ball.2 hz⟩)
+    have hz' := mem_unitBallOpens_iff_mem_ball.2 hz
+    exact (conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend v ⟨z, hz'⟩).symm.trans
+      congr($(mem_ker_rotatingLineConjWirtingerDerivL_iff.1 hu) ⟨z, hz'⟩)
   · rw [closure_ball 0 one_ne_zero, ← closure_unitBallOpens ℂ]
     exact v.continuousOn_closureExtend (convex_unitBallOpens ℂ)
 
@@ -266,7 +257,7 @@ and `0 < α < 1`, the operator `∂/∂(conj z) : X_k → C^{0,α}(D)` is a Fred
 theorem isFredholm_rotatingLineConjWirtingerDerivL (hk : -1 ≤ k) (hα0 : 0 < α) (hα1 : α < 1) :
     (rotatingLineConjWirtingerDerivL k α).IsFredholm :=
   have := finiteDimensional_ker_rotatingLineConjWirtingerDerivL (k := k) hα0 hα1.le
-  .of_surjective (surjective_rotatingLineConjWirtingerDerivL hk hα0 hα1)
+  .of_surjective (rotatingLineConjWirtingerDerivL_surjective hk hα0 hα1)
 
 /-- **The Riemann–Roch formula on the disc in rank one.** For `k ≥ -1` and `0 < α < 1`, the
 Fredholm index of `∂/∂(conj z) : X_k → C^{0,α}(D)` is `k + 1 = χ(D) + μ`, for the Maslov index
@@ -274,7 +265,7 @@ Fredholm index of `∂/∂(conj z) : X_k → C^{0,α}(D)` is `k + 1 = χ(D) + μ
 theorem index_rotatingLineConjWirtingerDerivL (hk : -1 ≤ k) (hα0 : 0 < α) (hα1 : α < 1) :
     (rotatingLineConjWirtingerDerivL k α).index = k + 1 := by
   rw [ContinuousLinearMap.index_of_surjective _
-      (surjective_rotatingLineConjWirtingerDerivL hk hα0 hα1),
+      (rotatingLineConjWirtingerDerivL_surjective hk hα0 hα1),
     finrank_ker_rotatingLineConjWirtingerDerivL hα0 hα1.le]
   exact Int.toNat_of_nonneg (by omega)
 
@@ -362,7 +353,7 @@ def rotatingLineZeroEvalEquiv (hα0 : 0 < α) (hα1 : α < 1) :
       simpa using hx)
     (LinearMap.range_eq_top.2 fun y ↦ by
       obtain ⟨f, c⟩ := y
-      obtain ⟨u, rfl⟩ := surjective_rotatingLineConjWirtingerDerivL (k := 0) (by norm_num) hα0 hα1 f
+      obtain ⟨u, rfl⟩ := rotatingLineConjWirtingerDerivL_surjective (k := 0) (by norm_num) hα0 hα1 f
       -- Correct the value at `1` by a real constant, which lies in the kernel.
       obtain ⟨v, hv, hv1⟩ := exists_mem_ker_closureExtend_one_eq hα0 hα1.le
         (c - ((u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) ℂ).closureExtend 1).re)

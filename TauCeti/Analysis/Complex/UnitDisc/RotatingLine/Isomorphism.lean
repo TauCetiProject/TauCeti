@@ -228,11 +228,10 @@ theorem injOn_augmentedConjWirtingerDerivL :
   have h0' := mem_ball_self (x := (0 : ℂ)) one_pos
   have heq := eqOn_of_conjWirtingerDeriv_eq_of_eq_zpow_mul_conj_of_eq_of_fderiv_eq (hc u) (hc v)
     (hdiff u) (hdiff v) (fun z hz ↦ by
-      rw [(hcl hz).conjWirtingerDeriv_eq, (hcl hz).conjWirtingerDeriv_eq,
-        ← conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_extend u
-          ⟨z, mem_unitBallOpens_iff_mem_ball.2 hz⟩,
-        ← conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_extend v
-          ⟨z, mem_unitBallOpens_iff_mem_ball.2 hz⟩, hd])
+      have hz' := mem_unitBallOpens_iff_mem_ball.2 hz
+      exact (conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend u ⟨z, hz'⟩).symm.trans
+        (congr($hd ⟨z, hz'⟩).trans
+          (conjWirtingerDerivL_apply_eq_conjWirtingerDeriv_closureExtend v ⟨z, hz'⟩)))
     (mem_rotatingLineSubspace_iff.1 hu) (mem_rotatingLineSubspace_iff.1 hv)
     (by rw [(hcl h0').eq_of_nhds, (hcl h0').eq_of_nhds, h0])
     (by rw [(hcl h0').fderiv_eq, (hcl h0').fderiv_eq, h1])
