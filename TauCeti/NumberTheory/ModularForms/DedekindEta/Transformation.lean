@@ -495,12 +495,11 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
       Matrix.SpecialLinearGroup.denom_mapGL, Matrix.SpecialLinearGroup.denom_mapGL] at hcoc
     simp only [algebraMap_int_eq, eq_intCast] at hcoc
     exact eq_inv_of_mul_eq_one_left hcoc.symm
-  -- An upper-triangular matrix in `SL(2, ℤ)` is `±T ^ n`, so its diagonal entries agree (`±1`).
+  -- An upper-triangular matrix in `SL(2, ℤ)` has `a * d = 1`, so its diagonal entries agree (`±1`).
   have hdiag (hc : γ 1 0 = 0) :
-      (γ 0 0 = 1 ∧ γ 1 1 = 1) ∨ (γ 0 0 = -1 ∧ γ 1 1 = -1) := by
-    rcases TauCeti.ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with hγ | hγ <;>
-      [left; right] <;>
-      exact ⟨by rw [hγ]; simp [coe_T_zpow], by rw [hγ]; simp [coe_T_zpow]⟩
+      (γ 0 0 = 1 ∧ γ 1 1 = 1) ∨ (γ 0 0 = -1 ∧ γ 1 1 = -1) :=
+    Int.mul_eq_one_iff_eq_one_or_neg_one.mp
+      (Matrix.SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)
   have harg : z.arg = π ↔ γ 1 0 = 0 ∧ γ 1 1 < 0 := by
     have hz_re : z.re = (γ 0 0 : ℝ) := by simp [z]
     have hz_im : z.im = -(γ 1 0 : ℝ) := by simp [z]
@@ -513,14 +512,9 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
     · have ha : γ 0 0 = -1 := by rcases hdiag h.1 with ⟨_, h1⟩ | ⟨h0, _⟩ <;> omega
       have hz : z = -1 := by simp [z, h.1, ha]
       rw [ite_eq_left h, hw, hz, inv_neg, inv_one, Complex.sqrt_neg_one, I_mul_I]
-    · have hz_ne : z ≠ 0 := by
-        have hne := UpperHalfPlane.denom_ne_zero (Matrix.SpecialLinearGroup.mapGL ℝ γ⁻¹)
-          UpperHalfPlane.I
-        rw [Matrix.SpecialLinearGroup.denom_mapGL] at hne
-        simpa [z] using hne
-      rw [ite_eq_right h, hw, Complex.sqrt, Complex.sqrt, Complex.inv_cpow z _ (harg.not.mpr h),
+    · rw [ite_eq_right h, hw, Complex.sqrt, Complex.sqrt, Complex.inv_cpow z _ (harg.not.mpr h),
         ← Complex.sqrt]
-      exact inv_mul_cancel₀ (Complex.sqrt_eq_zero_iff.not.mpr hz_ne)
+      exact inv_mul_cancel₀ (UpperHalfPlane.sqrt_denom_ne_zero γ⁻¹ UpperHalfPlane.I)
   have hprod : etaMultiplier γ * etaMultiplier γ⁻¹ *
       (if γ 1 0 = 0 ∧ γ 1 1 < 0 then -1 else 1) = 1 := by
     apply mul_right_cancel₀ (_root_.ModularForm.eta_ne_zero UpperHalfPlane.I.coe_im_pos)
