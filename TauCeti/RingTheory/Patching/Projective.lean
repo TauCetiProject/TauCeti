@@ -529,6 +529,20 @@ theorem baseChangeFstEquiv_apply (x : BalancedExtension p₁ (PatchedModule h α
 theorem baseChangeSndEquiv_apply (x : BalancedExtension p₂ (PatchedModule h α.toLinearMap)) :
     baseChangeSndEquiv h α hD hπ x = baseChangeSnd h α.toLinearMap x := (rfl)
 
+/-- The inverse of `baseChangeFstEquiv` sends the first component of `m ∈ M(P₁, P₂, α)` to
+`1 ⊗ m`. -/
+@[simp]
+theorem baseChangeFstEquiv_symm_fst (m : PatchedModule h α.toLinearMap) :
+    (baseChangeFstEquiv h α hD hπ).symm m.fst = tmul p₁ 1 m :=
+  (LinearEquiv.symm_apply_eq _).2 (by simp)
+
+/-- The inverse of `baseChangeSndEquiv` sends the second component of `m ∈ M(P₁, P₂, α)` to
+`1 ⊗ m`. -/
+@[simp]
+theorem baseChangeSndEquiv_symm_snd (m : PatchedModule h α.toLinearMap) :
+    (baseChangeSndEquiv h α hD hπ).symm m.snd = tmul p₂ 1 m :=
+  (LinearEquiv.symm_apply_eq _).2 (by simp)
+
 end PatchedModule
 
 end Patching
