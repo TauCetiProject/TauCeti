@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Pareto.Basic
-public import Mathlib.Probability.HasLaw
 import TauCeti.Probability.Distributions.Affine
 
 /-!
