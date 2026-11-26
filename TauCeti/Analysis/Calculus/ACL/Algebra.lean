@@ -28,9 +28,10 @@ Constant maps, in particular the zero map, are `ACL` on every set (`TauCeti.isAC
 `TauCeti.isACLOn_zero`).
 
 For `F`, `F'` real normed spaces, the operations that commute with the formal derivative pointwise
-(`TauCeti.formalDeriv_const`, `TauCeti.formalDeriv_const_smul`, `TauCeti.formalDeriv_neg`,
-`ContinuousLinearEquiv.comp_formalDeriv`) also preserve the class `ACL^p` (`TauCeti.IsACLpOn`):
-constant maps (`TauCeti.isACLpOn_const`), multiplication by a real constant
+(`TauCeti.formalDeriv_const`, `TauCeti.formalDeriv_zero`, `TauCeti.formalDeriv_const_smul`,
+`TauCeti.formalDeriv_neg`, `ContinuousLinearEquiv.comp_formalDeriv`) also preserve the class
+`ACL^p` (`TauCeti.IsACLpOn`): constant maps, in particular the zero map
+(`TauCeti.isACLpOn_const`, `TauCeti.isACLpOn_zero`), multiplication by a real constant
 (`TauCeti.IsACLpOn.const_smul`), negation (`TauCeti.IsACLpOn.neg`) and composition with a
 continuous linear equivalence (`ContinuousLinearEquiv.comp_isACLpOn`). For sums and compositions
 with continuous linear maps that are not equivalences, the closure of `ACL^p` needs the
@@ -147,22 +148,25 @@ variable [NormedSpace ℝ F] [NormedSpace ℝ F'] {p : ENNReal}
 theorem isACLpOn_const (c : F) : IsACLpOn (fun _ : EuclideanSpace ℝ (Fin n) ↦ c) p Ω where
   isACLOn := isACLOn_const c
   memLp_formalDeriv _ _ _ := by
-    rw [show formalDeriv (fun _ : EuclideanSpace ℝ (Fin n) ↦ c) = 0 from
-      funext (formalDeriv_const c)]
+    rw [formalDeriv_const]
     exact MemLp.zero (ε := EuclideanSpace ℝ (Fin n) →L[ℝ] F)
+
+/-- The zero map is `ACL^p` on every set, for every exponent. -/
+theorem isACLpOn_zero : IsACLpOn (0 : EuclideanSpace ℝ (Fin n) → F) p Ω :=
+  isACLpOn_const 0
 
 /-- A real multiple of an `ACL^p` map is `ACL^p`. -/
 theorem IsACLpOn.const_smul (hu : IsACLpOn u p Ω) (c : ℝ) : IsACLpOn (c • u) p Ω where
   isACLOn := hu.isACLOn.const_smul c
   memLp_formalDeriv K hKΩ hK := by
-    rw [show formalDeriv (c • u) = c • formalDeriv u from funext (formalDeriv_const_smul c u)]
+    rw [formalDeriv_const_smul]
     exact (hu.memLp_formalDeriv K hKΩ hK).const_smul c
 
 /-- The negative of an `ACL^p` map is `ACL^p`. -/
 theorem IsACLpOn.neg (hu : IsACLpOn u p Ω) : IsACLpOn (-u) p Ω where
   isACLOn := hu.isACLOn.neg
   memLp_formalDeriv K hKΩ hK := by
-    rw [show formalDeriv (-u) = -formalDeriv u from funext (formalDeriv_neg u)]
+    rw [formalDeriv_neg]
     exact (hu.memLp_formalDeriv K hKΩ hK).neg
 
 /-- The composition of an `ACL^p` map with a continuous linear equivalence is `ACL^p`. -/
@@ -170,13 +174,9 @@ theorem _root_.ContinuousLinearEquiv.comp_isACLpOn (L : F ≃L[ℝ] F') (hu : Is
     IsACLpOn (L ∘ u) p Ω where
   isACLOn := (L : F →L[ℝ] F').comp_isACLOn hu.isACLOn
   memLp_formalDeriv K hKΩ hK := by
-    rw [show formalDeriv (L ∘ u) =
-        ContinuousLinearMap.compL ℝ (EuclideanSpace ℝ (Fin n)) F F' (L : F →L[ℝ] F') ∘
-          formalDeriv u from
-      funext fun x ↦ by
-        rw [Function.comp_apply, ContinuousLinearMap.compL_apply, L.comp_formalDeriv]]
-    exact (ContinuousLinearMap.compL ℝ (EuclideanSpace ℝ (Fin n)) F F'
-      (L : F →L[ℝ] F')).comp_memLp' (hu.memLp_formalDeriv K hKΩ hK)
+    simpa [L.comp_formalDeriv, Function.comp_def] using
+      (ContinuousLinearMap.compL ℝ (EuclideanSpace ℝ (Fin n)) F F' L).comp_memLp'
+        (hu.memLp_formalDeriv K hKΩ hK)
 
 end ACLp
 

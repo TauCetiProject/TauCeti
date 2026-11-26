@@ -155,9 +155,11 @@ theorem lineDeriv_neg_left {E : Type*} [AddCommGroup E] [Module 𝕜 E] (f : E �
   simp only [lineDeriv, Pi.neg_apply]
   exact deriv.fun_neg
 
+-- Allow `to_fun` to eta-expand `L ∘ f`, as Mathlib does for `fderiv_comp`.
+attribute [local push ←] Function.comp_def in
 /-- The directional derivative of `L ∘ f`, for a continuous linear equivalence `L`, is `L` applied
 to that of `f`, whether or not the latter exists. -/
-@[simp]
+@[to_fun (attr := simp)]
 theorem _root_.ContinuousLinearEquiv.comp_lineDeriv {E F' : Type*} [AddCommGroup E] [Module 𝕜 E]
     [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] (L : F ≃L[𝕜] F') (f : E → F) (x v : E) :
     lineDeriv 𝕜 (L ∘ f) x v = L (lineDeriv 𝕜 f x v) := by
