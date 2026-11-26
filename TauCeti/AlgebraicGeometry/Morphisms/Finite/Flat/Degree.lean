@@ -39,6 +39,9 @@ structure on `K(X)` over `K(Y)`, which would clash with `Algebra.id` for an endo
 
 * `TauCeti.AlgebraicGeometry.finrank_SpecMap_eq_finrank_fractionRing`: the affine statement, for
   any compatible fraction rings.
+* `AlgebraicGeometry.Scheme.Hom.finrank_fromSpec_eq_finrank_SpecMap_appLE`: over an affine open
+  `U` of the target, the rank of a finite flat morphism is that of the spectrum of its map of
+  coordinate rings over `U`.
 * `AlgebraicGeometry.Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap`: the rank of a
   finite flat dominant morphism of integral schemes is the degree `[K(X) : f^* K(Y)]` at every
   point.
@@ -80,6 +83,18 @@ open CategoryTheory
 
 variable {X Y : Scheme.{u}}
 
+/-- Over an affine open `U` of `Y`, a finite flat morphism `f : X ⟶ Y` is the spectrum of the map
+of coordinate rings `Γ(Y, U) ⟶ Γ(X, f⁻¹ U)`, so the rank of `f` at the point of `U` given by a
+prime `p` of `Γ(Y, U)` is the rank of that spectrum at `p`. -/
+theorem Scheme.Hom.finrank_fromSpec_eq_finrank_SpecMap_appLE (f : X ⟶ Y) [IsFinite f] [Flat f]
+    {U : Y.Opens} (hU : IsAffineOpen U) (p : PrimeSpectrum Γ(Y, U)) :
+    f.finrank (hU.fromSpec p) = (Spec.map (f.appLE U (f ⁻¹ᵁ U) le_rfl)).finrank p := by
+  have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
+  have H : IsPullback (Spec.map (f.appLE U (f ⁻¹ᵁ U) le_rfl)) hV.fromSpec hU.fromSpec f :=
+    IsOpenImmersion.isPullback _ _ _ _ (IsAffineOpen.SpecMap_appLE_fromSpec f hU hV le_rfl).symm
+      (by rw [hU.opensRange_fromSpec, hV.opensRange_fromSpec])
+  exact (finrank_of_isPullback _ _ _ _ H.flip p).symm
+
 /-- **The rank of a finite flat morphism is its function-field degree.** For a finite flat
 dominant morphism `f : X ⟶ Y` of integral schemes, the rank of `f` at every point of `Y` is the
 degree `[K(X) : f^* K(Y)]` of the function field of `X` over the image of the pullback of
@@ -90,15 +105,13 @@ theorem Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap (f : X ⟶ Y) 
   obtain ⟨U, hU, hyU, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top y)
   have : Nonempty U := ⟨⟨y, hyU⟩⟩
   have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
-  -- Over `U`, the morphism `f` is the spectrum of the map of coordinate rings `φ`.
+  -- Over `U`, the morphism `f` is the spectrum of the finite flat map of coordinate rings `φ`.
+  have : (f.appLE U (f ⁻¹ᵁ U) le_rfl).hom.Finite := by
+    rw [← f.app_eq_appLE]; exact f.finite_app U hU
+  have : (f.appLE U (f ⁻¹ᵁ U) le_rfl).hom.Flat := f.flat_appLE hU hV le_rfl
   set φ := f.appLE U (f ⁻¹ᵁ U) le_rfl
-  have H : IsPullback (Spec.map φ) hV.fromSpec hU.fromSpec f :=
-    IsOpenImmersion.isPullback _ _ _ _ (IsAffineOpen.SpecMap_appLE_fromSpec f hU hV le_rfl).symm
-      (by rw [hU.opensRange_fromSpec, hV.opensRange_fromSpec])
-  have hfin : IsFinite (Spec.map φ) := MorphismProperty.of_isPullback H.flip ‹_›
-  have hflat : Flat (Spec.map φ) := MorphismProperty.of_isPullback H.flip ‹_›
   obtain ⟨p, rfl⟩ : y ∈ Set.range hU.fromSpec := by rwa [hU.range_fromSpec]
-  rw [← finrank_of_isPullback _ _ _ _ H.flip]
+  rw [f.finrank_fromSpec_eq_finrank_SpecMap_appLE hU p]
   -- The coordinate rings are domains with fraction fields `K(Y)` and `K(X)`, and `f^*` extends
   -- `φ`.
   have := functionField_isFractionRing_of_isAffineOpen Y U hU
@@ -111,8 +124,6 @@ theorem Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap (f : X ⟶ Y) 
     have := congr($(f.germToFunctionField_functionFieldMap U).hom a)
     simp only [CommRingCat.hom_comp, RingHom.comp_apply, Scheme.Hom.app_eq_appLE] at this
     exact this.symm
-  have : Module.Finite Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := by rwa [IsFinite.SpecMap_iff] at hfin
-  have : Module.Flat Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := by rwa [Flat.SpecMap_iff] at hflat
   -- `φ` is the `algebraMap` of the algebra structure it defines, so `Spec.map φ` is the morphism
   -- of the affine statement.
   refine (TauCeti.AlgebraicGeometry.finrank_SpecMap_eq_finrank_fractionRing

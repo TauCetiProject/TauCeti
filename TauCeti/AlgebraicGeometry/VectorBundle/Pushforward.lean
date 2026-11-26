@@ -17,9 +17,11 @@ import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Tilde.Pushforward
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
 import TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal
 import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Basic
 import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
+import TauCeti.AlgebraicGeometry.VectorBundle.Stalk
 
 /-!
 # Pushforward of finite locally free sheaves along finite locally free morphisms
@@ -71,8 +73,10 @@ and its additivity and identity and composition comparisons.
   `pullbackPushforwardAdjunction`, `pushforwardId`, and `pushforwardComp`;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rank_pushforward_unit_apply`: the rank of
   `f_* 𝒪_X` at `y` is Mathlib's rank `Scheme.Hom.finrank f y` of `f`, which is defined through
-  the rank of the coordinate ring of `f⁻¹ U` over that of an affine open `U ∋ y`; a local frame of
-  `f_* 𝒪_X` over `U` is a basis of that algebra.
+  the rank of the coordinate ring of `f⁻¹ U` over that of an affine open `U ∋ y`
+  (`Scheme.Hom.finrank_fromSpec_eq_finrank_SpecMap_appLE`); that coordinate ring is the module of
+  sections of `f_* 𝒪_X` over `U`, whose rank is that of `f_* 𝒪_X`
+  (`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rankAtStalk_sections`).
 
 ## References
 
@@ -513,43 +517,28 @@ theorem rank_pushforward_unit_apply (f : X ⟶ Y) [IsFinite f] [Flat f]
     [LocallyOfFinitePresentation f] (y : Y) :
     ((pushforward f).obj (𝟙_ (FiniteLocallyFreeSheaf X))).rank y = f.finrank y := by
   set E := (pushforward f).obj (𝟙_ (FiniteLocallyFreeSheaf X))
-  -- A local frame of `f_* 𝒪_X` near `y`, restricted to an affine open `U ∋ y`, is a basis of
-  -- `Γ(X, f⁻¹ U)` over `Γ(Y, U)`.
-  obtain ⟨ι, _, hι, V, hyV, t, ht⟩ := E.exists_bijective_linearCombination y
-  obtain ⟨U, hU, hyU, hUV⟩ := exists_isAffineOpen_mem_and_subset hyV
-  have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
-  -- Over `U`, the morphism `f` is the spectrum of the ring map `φ = f.app U`.
-  let φ := f.app U
-  have H : IsPullback (Spec.map φ) hV.fromSpec hU.fromSpec f :=
-    IsOpenImmersion.isPullback _ _ _ _
-      (by
-        rw [show φ = _ from f.app_eq_appLE]
-        exact (IsAffineOpen.SpecMap_appLE_fromSpec f hU hV le_rfl).symm)
-      (by rw [hU.opensRange_fromSpec, hV.opensRange_fromSpec])
-  have hfin : IsFinite (Spec.map φ) := MorphismProperty.of_isPullback H.flip ‹_›
-  have hflat : Flat (Spec.map φ) := MorphismProperty.of_isPullback H.flip ‹_›
+  obtain ⟨U, hU, hyU, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top y)
   obtain ⟨p, rfl⟩ : y ∈ Set.range hU.fromSpec := by rwa [hU.range_fromSpec]
-  rw [← Scheme.Hom.finrank_of_isPullback _ _ _ _ H.flip]
-  algebraize [φ.hom]
-  have : Module.Finite Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := by rwa [IsFinite.SpecMap_iff] at hfin
-  have : Module.Flat Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := by rwa [Flat.SpecMap_iff] at hflat
-  have : Nonempty U := ⟨⟨_, hyU⟩⟩
-  let v : ι → Γ(X, f ⁻¹ᵁ U) := fun k ↦ E.obj.presheaf.map (homOfLE hUV).op (t k)
-  -- A function `r` on `U` acts on sections of `f_* 𝒪_X` over `U` as multiplication by `φ r`
-  -- (`Scheme.Modules.pushforward_obj_smul`), which is the scalar action of the algebra
-  -- structure defined by `φ`; so the two linear combinations of the frame are the same map.
-  have hv : (⇑(Fintype.linearCombination Γ(Y, U) v) : (ι → Γ(Y, U)) → Γ(X, f ⁻¹ᵁ U)) =
-      ⇑(Fintype.linearCombination Γ(Y, U) fun k ↦ E.obj.presheaf.map (homOfLE hUV).op (t k)) :=
-    funext fun _ ↦ rfl
-  let e : (ι → Γ(Y, U)) ≃ₗ[Γ(Y, U)] Γ(X, f ⁻¹ᵁ U) :=
-    .ofBijective (Fintype.linearCombination Γ(Y, U) v) (hv ▸ ht U (homOfLE hUV))
-  -- `φ` is the `algebraMap` of the algebra structure it defines.
-  rw [show (Spec.map φ).finrank p = Module.rankAtStalk Γ(X, f ⁻¹ᵁ U) p from
-      Scheme.Hom.finrank_SpecMap_algebraMap _ _ p, ← Module.rankAtStalk_eq_of_equiv e,
-    Module.rankAtStalk_eq_finrank_of_free, Module.finrank_fintype_fun_eq_card, hι]
-  -- The right side is the constant function `rank E y` evaluated at `p`; `Pi.natCast_apply` does
-  -- not apply because `p` is a point of `Spec Γ(Y, U)` rather than of `PrimeSpectrum Γ(Y, U)`.
-  rfl
+  -- Over the affine open `U ∋ y`, `f` is the spectrum of the finite flat map
+  -- `φ : Γ(Y, U) ⟶ Γ(X, f⁻¹ U)`, and the rank of `E` is that of its sections over `U`.
+  have : (f.appLE U (f ⁻¹ᵁ U) le_rfl).hom.Finite := by
+    rw [← f.app_eq_appLE]; exact f.finite_app U hU
+  have : (f.appLE U (f ⁻¹ᵁ U) le_rfl).hom.Flat := f.flat_appLE hU (hU.preimage f) le_rfl
+  rw [f.finrank_fromSpec_eq_finrank_SpecMap_appLE hU p, ← E.rankAtStalk_sections hU p]
+  algebraize [(f.appLE U (f ⁻¹ᵁ U) le_rfl).hom]
+  -- The sections of `f_* 𝒪_X` over `U` are `Γ(X, f⁻¹ U)`, on which a function `r` on `U` acts
+  -- as multiplication by `f.app U r` (`pushforward_obj_smul`), that is, by `φ r`.
+  let e : Γ(E.obj, U) ≃ₗ[Γ(Y, U)] Γ(X, f ⁻¹ᵁ U) :=
+    { AddEquiv.refl _ with
+      map_smul' r x := (TauCeti.AlgebraicGeometry.pushforward_obj_smul f _ r x).trans <| by
+        -- Both sides are now the product `φ r * x` in `Γ(X, f⁻¹ U)`: on the left by the
+        -- module structure of `𝒪_X` over itself, on the right by `Algebra.smul_def` for the
+        -- algebra structure defined by `φ`. The two sides are stated over the defeq carriers
+        -- `Γ(E, U)` and `Γ(X, f⁻¹ U)`, so `rw [Algebra.smul_def]` cannot match them.
+        rw [f.app_eq_appLE]
+        rfl }
+  rw [Module.rankAtStalk_eq_of_equiv e]
+  exact (Scheme.Hom.finrank_SpecMap_algebraMap _ _ p).symm
 
 end TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf
 
