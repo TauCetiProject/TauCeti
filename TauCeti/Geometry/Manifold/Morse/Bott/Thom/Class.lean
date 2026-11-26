@@ -77,8 +77,9 @@ This is the form of Bott's computation that produces the first page of the criti
 sequence (`TauCeti.Geometry.Manifold.Morse.Bott.SpectralSequence`).
 
 The Thom isomorphism needs the model fibre `Fin r → ℝ` of `ν⁻` in the universe of its base, so in
-all statements below the base `S`, the model space `E` of `M` and the coefficient ring `K` live in
-`Type`, and in the band statements so does `M`.
+the Thom class statements below the base `S`, the model space `E` of `M` and the coefficient ring
+`K` live in `Type`, and in the band statements so does `M`. The type of orientations of `ν⁻` and
+its nonemptiness over a simply connected base take every universe.
 
 ## Main results
 
@@ -239,7 +240,9 @@ end IsCriticalSubmanifold
 
 namespace IsNondegenerateCriticalSubmanifold
 
-variable {E : Type} {H M E' H' P : Type*} {S : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+section Orientation
+
+variable {E H M E' H' P S : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [NormedAddCommGroup E']
   [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
@@ -265,6 +268,38 @@ abbrev NegativeNormalBundleOrientation :=
   haveI := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
   VectorBundleOrientation (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
     (Fin r)
+
+/-- **The negative normal bundle of a simply connected critical submanifold is orientable.** A
+real vector bundle over a simply connected manifold is orientable
+(`TauCeti.VectorBundleOrientation.nonempty_of_simplyConnectedSpace`), so when `S` is simply
+connected, for instance a point, the negative normal bundle `ν⁻` relative to any smooth fibre
+metric has an orientation. -/
+theorem nonempty_negativeNormalBundleOrientation [SimplyConnectedSpace S] :
+    Nonempty (h.NegativeNormalBundleOrientation hn hfs hdim g hr) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
+  have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
+  have := J.locallyPathConnectedSpace_of_chartedSpace S
+  exact VectorBundleOrientation.nonempty_of_simplyConnectedSpace (by simp)
+
+end Orientation
+
+section ThomClass
+
+variable {E : Type} {H M E' H' P : Type*} {S : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J ∞ S] [NormedAddCommGroup P]
+  [NormedSpace ℝ P] [FiniteDimensional ℝ P] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
+  (hn : (∞ : ℕ∞ω) ≠ 0) (h : i.IsNondegenerateCriticalSubmanifold f)
+  (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
+  (g : letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
+  (hr : ∀ s, manifoldMorseIndex I f (i s) = r)
 
 /-- **The negative normal bundle has a Thom class.** Let `i` be a nondegenerate critical
 submanifold of a smooth function `f`, with Morse index `r` at every point, and let `g` be a smooth
@@ -318,21 +353,6 @@ theorem hasNegativeNormalThomClass_of_two_eq_zero (K : Type) [CommRing K] (h2 : 
   have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
   exact exists_isThomClass_of_two_eq_zero K h2
 
-/-- **The negative normal bundle of a simply connected critical submanifold is orientable.** A
-real vector bundle over a simply connected manifold is orientable
-(`TauCeti.VectorBundleOrientation.nonempty_of_simplyConnectedSpace`), so when `S` is simply
-connected, for instance a point, the negative normal bundle `ν⁻` relative to any smooth fibre
-metric has an orientation. -/
-theorem nonempty_negativeNormalBundleOrientation [SimplyConnectedSpace S] :
-    Nonempty (h.NegativeNormalBundleOrientation hn hfs hdim g hr) := by
-  let := i.normalSpaceFiberBundle hn hdim
-  let := i.normalSpaceVectorBundle hn hdim
-  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
-  let := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).fiberBundle
-  have := (h.hasLocalSubbundleFrames_negativeNormalSpace hn hfs hdim g hr).vectorBundle
-  have := J.locallyPathConnectedSpace_of_chartedSpace S
-  exact VectorBundleOrientation.nonempty_of_simplyConnectedSpace (by simp)
-
 /-- **The negative normal bundle of a simply connected critical submanifold has a Thom class**
 with coefficients in every commutative ring `K`, since it is orientable
 (`nonempty_negativeNormalBundleOrientation`). -/
@@ -340,6 +360,8 @@ theorem hasNegativeNormalThomClass_of_simplyConnectedSpace [SimplyConnectedSpace
     [CommRing K] : h.HasNegativeNormalThomClass hn hfs hdim g hr K :=
   h.hasNegativeNormalThomClass_of_orientation hn hfs hdim g hr
     (h.nonempty_negativeNormalBundleOrientation hn hfs hdim g hr).some K
+
+end ThomClass
 
 end IsNondegenerateCriticalSubmanifold
 
