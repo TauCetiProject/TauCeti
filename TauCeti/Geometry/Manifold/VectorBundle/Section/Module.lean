@@ -57,6 +57,10 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω} {V : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
 
+/-- On an empty base manifold, `C^n` sections form a subsingleton. -/
+instance subsingleton_of_isEmpty [IsEmpty M] : Subsingleton Cₛ^n⟮I; F, V⟯ :=
+  coe_injective.subsingleton
+
 section Module
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
@@ -250,6 +254,11 @@ theorem restrict_zero (U : Opens M) : (0 : Cₛ^n⟮I; F, V⟯).restrict U = 0 :
 theorem restrict_add (s t : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (s + t).restrict U = s.restrict U + t.restrict U :=
   pullback_add s t _
+
+@[simp]
+theorem restrict_sub (s t : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
+    (s - t).restrict U = s.restrict U - t.restrict U :=
+  map_sub (pullbackLinearMap I F n V (⟨Subtype.val, contMDiff_subtypeVal⟩ : C^n⟮I, U; I, M⟯)) s t
 
 @[simp]
 theorem restrict_smul (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :

@@ -100,15 +100,9 @@ variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 module to the space of coefficient families vanishing at infinity on the discrete exponent set. -/
 noncomputable def restrictedCoeffLinearIsometryEquiv :
     IsRestricted.subring (R := R) (fun _ : σ ↦ 1) ≃ₗᵢ[R]
-      C₀(WithDiscreteTopology (σ →₀ ℕ), R) where
-  toLinearEquiv := (IsRestrictedFamily.subringLinearEquiv.restrictScalars R).trans
-    ((IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv R).symm.trans
-      (IsRestrictedFamily.Gauss.coeffLinearIsometryEquiv (σ := σ) (E := R) R).toLinearEquiv)
-  norm_map' f := by
-    simp only [LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
-      LinearIsometryEquiv.coe_toLinearEquiv,
-      IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv_symm_apply,
-      LinearIsometryEquiv.norm_map, IsRestrictedFamily.Gauss.norm_subringLinearEquiv]
+      C₀(WithDiscreteTopology (σ →₀ ℕ), R) :=
+  (IsRestrictedFamily.Gauss.subringLinearIsometryEquiv R).trans
+    (IsRestrictedFamily.Gauss.coeffLinearIsometryEquiv R)
 
 /-- The coefficient isometry evaluates a restricted series at each exponent by taking that
 coefficient. -/
@@ -117,12 +111,9 @@ theorem restrictedCoeffLinearIsometryEquiv_apply
     (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
     restrictedCoeffLinearIsometryEquiv f (.toTopology ⊥ t) =
       coeff t (f : _root_.MvPowerSeries σ R) := by
-  rw [← LinearIsometryEquiv.coe_toLinearEquiv]
-  simp only [restrictedCoeffLinearIsometryEquiv, LinearEquiv.trans_apply,
-    LinearEquiv.restrictScalars_apply, LinearIsometryEquiv.coe_toLinearEquiv,
+  simp only [restrictedCoeffLinearIsometryEquiv, LinearIsometryEquiv.trans_apply,
     IsRestrictedFamily.Gauss.coeffLinearIsometryEquiv_apply,
-    IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv_symm_apply,
-    IsRestrictedFamily.coe_subringLinearEquiv]
+    IsRestrictedFamily.Gauss.subringLinearIsometryEquiv_apply]
 
 /-- The inverse coefficient isometry builds the restricted series with the prescribed null
 coefficient family. -/

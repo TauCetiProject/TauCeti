@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.Hausdorff
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.Isodiametric
@@ -71,7 +72,18 @@ hyperplane itself has infinite `μHE[n - 1]` measure
 inequality holds on the hyperplane (`TauCeti.euclideanHausdorffMeasure_inter_setOf_inner_eq_le`).
 
 Isometries carry restricted Euclidean Hausdorff measure to its restriction on the image
-(`Isometry.map_euclideanHausdorffMeasure_restrict`).
+(`Isometry.map_euclideanHausdorffMeasure_restrict`), and an isometric equivalence carries it
+restricted to the frontier of a preimage to its restriction to the frontier of the set
+(`IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier`).
+
+For a linear subspace `T` of dimension `k` of a finite-dimensional real inner product space,
+`μHE[k]⌞T` is the image of the Lebesgue measure of `T` under the inclusion
+(`Submodule.euclideanHausdorffMeasure_restrict_eq_map`). It is locally finite, gives balls about
+points of `T` the volume of the balls of the same radius in `EuclideanSpace ℝ (Fin k)`
+(`Submodule.euclideanHausdorffMeasure_restrict_apply_ball`,
+`Submodule.euclideanHausdorffMeasure_restrict_apply_closedBall`) and spheres of nonzero radius about
+them measure zero (`Submodule.euclideanHausdorffMeasure_restrict_apply_sphere`), and determines `T`
+(`Submodule.eq_of_euclideanHausdorffMeasure_restrict_eq`).
 
 ## References
 
@@ -137,6 +149,18 @@ theorem Isometry.map_euclideanHausdorffMeasure_restrict {X Y : Type*} [EMetricSp
   rw [Measure.map_apply hf.continuous.measurable ht,
     Measure.restrict_apply (hf.continuous.measurable ht), Measure.restrict_apply ht,
     ← image_preimage_inter, hf.euclideanHausdorffMeasure_image]
+
+/-- An isometric equivalence `e` with `s = e⁻¹ t` carries Euclidean Hausdorff measure restricted
+to `frontier s` to Euclidean Hausdorff measure restricted to `frontier t`, in every dimension. -/
+theorem IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier
+    {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X] [EMetricSpace Y]
+    [MeasurableSpace Y] [BorelSpace Y] (e : X ≃ᵢ Y) {s : Set X} {t : Set Y} (hst : s = e ⁻¹' t)
+    (d : ℕ) :
+    MeasurePreserving e ((μHE[d] : Measure X).restrict (frontier s))
+      ((μHE[d] : Measure Y).restrict (frontier t)) := by
+  rw [hst, ← e.coe_toHomeomorph, ← Homeomorph.preimage_frontier]
+  exact (e.measurePreserving_euclideanHausdorffMeasure d).restrict_preimage
+    isClosed_frontier.measurableSet
 
 namespace TauCeti
 
@@ -433,6 +457,86 @@ theorem euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul (s : AffineSubs
   · exact (TauCeti.volume_ball_eq_of_finrank_eq (finrank_euclideanSpace_fin).symm _ _ _).le
 
 end AffineSubspace
+
+namespace Submodule
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- The Euclidean Hausdorff measure of the dimension of a subspace `T`, restricted to `T`, is the
+image of the Lebesgue measure of `T` under the inclusion. -/
+theorem euclideanHausdorffMeasure_restrict_eq_map (T : Submodule ℝ E) :
+    μHE[finrank ℝ T].restrict (T : Set E) = (volume : Measure T).map Subtype.val := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
+    isometry_subtypeVal.map_euclideanHausdorffMeasure, Subtype.range_coe]
+
+/-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, of a measurable set `s` is
+the volume of the part of `s` in `T`. -/
+theorem euclideanHausdorffMeasure_restrict_apply (T : Submodule ℝ E) {s : Set E}
+    (hs : MeasurableSet s) :
+    μHE[finrank ℝ T].restrict (T : Set E) s = volume (Subtype.val ⁻¹' s : Set T) := by
+  rw [T.euclideanHausdorffMeasure_restrict_eq_map, Measure.map_apply measurable_subtypeVal hs]
+
+/-- The Euclidean Hausdorff measure of the dimension of a subspace, restricted to the subspace, is
+locally finite. -/
+instance isLocallyFiniteMeasure_euclideanHausdorffMeasure_restrict (T : Submodule ℝ E) :
+    IsLocallyFiniteMeasure (μHE[finrank ℝ T].restrict (T : Set E)) := by
+  have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap (volume : Measure T)
+    T.isClosed_of_finiteDimensional.isClosedEmbedding_subtypeVal.isProperMap
+  rw [T.euclideanHausdorffMeasure_restrict_eq_map]
+  infer_instance
+
+/-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives a sphere of nonzero
+radius about a point of `T` measure zero. -/
+theorem euclideanHausdorffMeasure_restrict_apply_sphere {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
+    {r : ℝ} (hr : r ≠ 0) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.sphere x r) = 0 := by
+  rw [T.euclideanHausdorffMeasure_restrict_apply Metric.isClosed_sphere.measurableSet,
+    ← Subtype.coe_mk x hx, isometry_subtypeVal.preimage_sphere,
+    Measure.addHaar_sphere_of_ne_zero volume _ hr]
+
+/-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives an open ball about a
+point of `T` the volume of the ball of the same radius in `k`-dimensional Euclidean space. -/
+theorem euclideanHausdorffMeasure_restrict_apply_ball {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
+    (r : ℝ) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.ball x r) =
+      volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r) := by
+  rw [T.euclideanHausdorffMeasure_restrict_apply measurableSet_ball,
+    ← Subtype.coe_mk x hx, isometry_subtypeVal.preimage_ball,
+    TauCeti.volume_ball_eq_of_finrank_eq finrank_euclideanSpace_fin.symm _ 0 r]
+
+/-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives a closed ball about a
+point of `T` the volume of the closed ball of the same radius in `k`-dimensional Euclidean
+space. -/
+theorem euclideanHausdorffMeasure_restrict_apply_closedBall {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
+    (r : ℝ) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.closedBall x r) =
+      volume (Metric.closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r) := by
+  rw [T.euclideanHausdorffMeasure_restrict_apply measurableSet_closedBall,
+    ← Subtype.coe_mk x hx, isometry_subtypeVal.preimage_closedBall,
+    TauCeti.volume_closedBall_eq_of_finrank_eq finrank_euclideanSpace_fin.symm _ 0 r]
+
+/-- If `μHE[k]` restricts to the same measure on a subspace `T₁` of dimension `k` and on a
+subspace `T₂`, then `T₁ ≤ T₂`: every ball about a point of `T₁` has positive mass. -/
+theorem le_of_euclideanHausdorffMeasure_restrict_eq {T₁ T₂ : Submodule ℝ E} {k : ℕ}
+    (h : μHE[k].restrict (T₁ : Set E) = μHE[k].restrict (T₂ : Set E)) (h₁ : finrank ℝ T₁ = k) :
+    T₁ ≤ T₂ := by
+  intro v hv
+  by_contra hv₂
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 T₂.isClosed_of_finiteDimensional.isOpen_compl v hv₂
+  have h0 : μHE[k].restrict (T₂ : Set E) (Metric.ball v ε) = 0 := by
+    rw [Measure.restrict_apply measurableSet_ball, disjoint_iff_inter_eq_empty.1
+      (subset_compl_iff_disjoint_right.1 hball), measure_empty]
+  subst h₁
+  rw [← h, euclideanHausdorffMeasure_restrict_apply_ball hv] at h0
+  exact (Metric.measure_ball_pos volume _ hε).ne' h0
+
+/-- **The restricted Euclidean Hausdorff measure determines the subspace.** Two subspaces of
+dimension `k` on which `μHE[k]` restricts to the same measure are equal. -/
+theorem eq_of_euclideanHausdorffMeasure_restrict_eq {T₁ T₂ : Submodule ℝ E} {k : ℕ}
+    (h : μHE[k].restrict (T₁ : Set E) = μHE[k].restrict (T₂ : Set E)) (h₁ : finrank ℝ T₁ = k)
+    (h₂ : finrank ℝ T₂ = k) : T₁ = T₂ :=
+  (le_of_euclideanHausdorffMeasure_restrict_eq h h₁).antisymm
+    (le_of_euclideanHausdorffMeasure_restrict_eq h.symm h₂)
+
+end Submodule
 
 namespace TauCeti
 

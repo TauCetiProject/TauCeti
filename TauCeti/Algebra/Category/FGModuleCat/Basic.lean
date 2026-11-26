@@ -245,6 +245,7 @@ theorem _root_.FGModuleCat.span_singleton_subtype_comp_eq_zero_iff (X : FGModule
 
 variable {R} in
 /-- The inclusion of the cyclic submodule `R ∙ x` into `X` is zero exactly when `x` is. -/
+@[simp]
 theorem _root_.FGModuleCat.span_singleton_subtype_eq_zero_iff (X : FGModuleCat.{v} R)
     (x : X.obj) :
     (ObjectProperty.homMk (ModuleCat.ofHom (R ∙ x).subtype) : FGModuleCat.of R (R ∙ x) ⟶ X) =

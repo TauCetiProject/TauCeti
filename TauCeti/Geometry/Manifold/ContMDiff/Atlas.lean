@@ -38,7 +38,8 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
 * `TauCeti.contMDiffAt_prodMap_id_of_mem_maximalAtlas`,
   `TauCeti.contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas`: a chart times the identity, and its
   inverse, are smooth.
-* `ContMDiffOn.contDiffOn_comp_symm_of_mem_maximalAtlas`: a `C^n` map into a normed space, read
+* `ContMDiffOn.contDiffOn_comp_symm_of_mem_maximalAtlas`,
+  `ContMDiffAt.contDiffAt_comp_symm_of_mem_maximalAtlas`: a `C^n` map into a normed space, read
   through the inverse of a chart of the maximal atlas, is `C^n`.
 * `TauCeti.conj_chartAt_source` and `TauCeti.comp_conj_chartAt`: the domain of that chart is
   where the extended chart lands in the domain of `c`, and in the model vector space it reads as
@@ -154,6 +155,14 @@ theorem _root_.ContMDiffOn.contDiffOn_comp_symm_of_mem_maximalAtlas {f : M' → 
     ContDiffOn 𝕜 n (f ∘ φ.symm) (φ.target ∩ φ.symm ⁻¹' S) :=
   contMDiffOn_iff_contDiffOn.1 (hf.comp
     ((contMDiffOn_symm_of_mem_maximalAtlas hφ).mono Set.inter_subset_left) Set.inter_subset_right)
+
+/-- A map `f` that is `C^n` at a point `z` of the source of a chart `φ` of the maximal atlas, read
+through the inverse of `φ`, is `C^n` at `φ z`. -/
+theorem _root_.ContMDiffAt.contDiffAt_comp_symm_of_mem_maximalAtlas {f : M' → F} {z : M'}
+    (hf : ContMDiffAt 𝓘(𝕜, E) 𝓘(𝕜, F) n f z) (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M')
+    (hz : z ∈ φ.source) : ContDiffAt 𝕜 n (f ∘ φ.symm) (φ z) :=
+  contMDiffAt_iff_contDiffAt.1 (hf.comp_of_eq
+    (contMDiffAt_symm_of_mem_maximalAtlas hφ (φ.map_source hz)) (φ.left_inv hz))
 
 end CompSymm
 

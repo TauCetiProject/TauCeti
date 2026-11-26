@@ -39,7 +39,9 @@ As `h → 0⁺`, a positive power `h ^ θ` tends to zero, so every function `f =
 particular every multiple `A * h ^ θ`, falls below any positive constant. This is how polynomial
 rates in a small scale `h` become inequalities for all small `h`. Power laws multiply: if
 `f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`, and a bound
-`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`.
+`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`. Likewise, near a point `w` of a normed
+group, a bound `f = O(‖x - w‖ ^ a)` within a set avoiding `w` weakens to `f = O(‖x - w‖ ^ c)` for
+every `c ≤ a`.
 
 ## Complex powers of a positive real variable
 
@@ -300,6 +302,18 @@ theorem IsBigO.nhdsGT_zero_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c 
   filter_upwards [Ioo_mem_nhdsGT one_pos] with t ht
   rw [Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le a)]
   exact Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2.le h
+
+/-- Power laws in the distance weaken near a point: if `f = O(‖x - w‖ ^ a)` as `x → w` within a
+set `s` that does not contain `w`, then `f = O(‖x - w‖ ^ c)` there for every `c ≤ a`. -/
+theorem IsBigO.nhdsWithin_norm_sub_rpow_of_le {E R : Type*} [NormedAddCommGroup E] [Norm R]
+    {f : E → R} {s : Set E} {w : E} {a c : ℝ} (hf : f =O[𝓝[s] w] fun x ↦ ‖x - w‖ ^ a)
+    (hw : w ∉ s) (h : c ≤ a) : f =O[𝓝[s] w] fun x ↦ ‖x - w‖ ^ c := by
+  refine hf.trans (Eventually.isBigO ?_)
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Metric.ball_mem_nhds w one_pos)]
+    with x hxs hx
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) a)]
+  exact Real.rpow_le_rpow_of_exponent_ge (norm_pos_iff.2 (sub_ne_zero.2 fun hxw ↦ hw (hxw ▸ hxs)))
+    (mem_ball_iff_norm.1 hx).le h
 
 end Asymptotics
 

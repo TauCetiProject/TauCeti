@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.RingedSpace
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.SmoothComparison
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
 import TauCeti.Geometry.RingedSpace.LocallyRingedSpace.Basic
@@ -15,7 +16,8 @@ import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 
 Any complex charted space `(X, I)` carries a sheafed space `sheafedSpace I X` and a locally ringed
 space `locallyRingedSpace I X` with underlying carrier `X` and structure sheaf
-`holomorphicStructureSheaf I X`. Every analytic map `f : X → Y` induces a morphism
+`holomorphicStructureSheaf I X` (defined in `StructureSheaf.RingedSpace`). Every analytic map
+`f : X → Y` induces a morphism
 `locallyRingedSpaceMap f hf : locallyRingedSpace I X ⟶ locallyRingedSpace J Y` by precomposition of
 sections, functorially in `f`, commuting with restriction to open subsets
 (`restrictLocallyRingedSpaceIso`), and — on finite-dimensional boundaryless complex manifolds —
@@ -48,19 +50,6 @@ section LocallyRingedSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [TopologicalSpace H]
   (I : ModelWithCorners ℂ E H) (X : Type) [TopologicalSpace X] [ChartedSpace H X]
-
-/-- A complex charted space equipped with its sheaf of holomorphic functions, as a sheafed space of
-commutative rings. -/
-abbrev sheafedSpace : SheafedSpace CommRingCat where
-  carrier := TopCat.of X
-  presheaf := (holomorphicStructureSheaf I X).presheaf
-  IsSheaf := (holomorphicStructureSheaf I X).property
-
-/-- A complex charted space equipped with its sheaf of holomorphic functions, as a locally ringed
-space. No manifold, boundaryless, or Hausdorffness assumption is required. -/
-abbrev locallyRingedSpace : LocallyRingedSpace where
-  toSheafedSpace := sheafedSpace I X
-  isLocalRing x := instIsLocalRingStalk I X x
 
 variable {I X}
 

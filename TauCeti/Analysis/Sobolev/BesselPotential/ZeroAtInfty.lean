@@ -26,10 +26,13 @@ when `s > k + n / 2` (`TemperedDistribution.MemSobolev.exists_zeroAtInftyContinu
 bounded operators.
 
 * `BesselPotentialSpace.toZeroAtInfty`: the **Sobolev embedding** `H^s(E, F) →L[ℂ] C₀(E, F)` for
-  `s > n / 2`, sending `u` to its continuous representative. Its image is `C^k` for
+  `s > n / 2`, sending `u` to its continuous representative, and `BesselPotentialSpace.toBCF` is
+  the same embedding into the bounded continuous functions. Its image is `C^k` for
   `s > k + n / 2`, with derivatives of order at most `k` bounded by a constant times `‖u‖_{H^s}`.
   It turns multiplication by a Schwartz function `φ` into pointwise multiplication
-  (`BesselPotentialSpace.toZeroAtInfty_smulLeftCLM_apply`).
+  (`BesselPotentialSpace.toZeroAtInfty_smulLeftCLM_apply`). A continuous function representing
+  `u` is bounded by the sup norm of this embedding
+  (`BesselPotentialSpace.norm_le_norm_toZeroAtInfty_of_ae_eq`).
 * `BesselPotentialSpace.smulLeftContDiffMapSupportedIn`: for a Schwartz function `φ` with
   topological support in a compact set `K` and `s > k + n / 2`, the bounded operator
   `H^s(E, F) →L[ℂ] 𝓓^{k}_{K}(E, F)` sending `u` to the continuous representative of `φ u`. The
@@ -56,7 +59,7 @@ public section
 noncomputable section
 
 open MeasureTheory Module Set TemperedDistribution Filter TopologicalSpace
-open scoped SchwartzMap BesselPotentialSpace ZeroAtInfty Distributions
+open scoped SchwartzMap BesselPotentialSpace ZeroAtInfty Distributions BoundedContinuousFunction
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
@@ -127,6 +130,29 @@ function `u`. -/
 theorem toZeroAtInfty_eq_iff (h0 : 0 ≤ s) (u : H^{s}(E, F)) (g : C₀(E, F)) :
     toZeroAtInfty hs u = g ↔ inclusionLp h0 u =ᵐ[volume] g :=
   TauCeti.zeroAtInftyRepresentativeₗ_eq_iff (exists_inclusionLp_ae_eq h0 hs) _ _ u g
+
+/-- If the `L²` function of `u ∈ H^s` is almost everywhere a continuous function `g`, then `g` is
+the Sobolev embedding of `u`, so it is bounded by the sup norm of that embedding. -/
+theorem norm_le_norm_toZeroAtInfty_of_ae_eq (h0 : 0 ≤ s) {u : H^{s}(E, F)} {g : E → F}
+    (hg : Continuous g) (hu : inclusionLp h0 u =ᵐ[volume] g) (x : E) :
+    ‖g x‖ ≤ ‖toZeroAtInfty hs u‖ := by
+  have h : ⇑(toZeroAtInfty hs u) = g :=
+    (Continuous.ae_eq_iff_eq volume (toZeroAtInfty hs u).continuous hg).1
+      ((coeFn_inclusionLp_ae_eq_toZeroAtInfty h0 u).symm.trans hu)
+  exact h ▸ ZeroAtInftyContinuousMap.norm_coe_le_norm (toZeroAtInfty hs u) x
+
+variable (hs) in
+/-- The **Sobolev embedding** of `H^s(E, F)`, `s > dim E / 2`, into the bounded continuous
+functions: `toZeroAtInfty` followed by the inclusion of `C₀(E, F)` into `E →ᵇ F`. -/
+def toBCF : H^{s}(E, F) →L[ℂ] E →ᵇ F :=
+  (ZeroAtInftyContinuousMap.toBCFₗᵢ ℂ).toContinuousLinearMap.comp (toZeroAtInfty hs)
+
+/-- The Sobolev embedding into bounded continuous functions is the continuous representative given
+by `toZeroAtInfty`. -/
+@[simp]
+theorem coe_toBCF (u : H^{s}(E, F)) : ⇑(toBCF hs u) = ⇑(toZeroAtInfty hs u) := by
+  ext x
+  simp [toBCF]
 
 /-- The tempered distribution `u ∈ H^s`, `s > dim E / 2`, is integration against its Sobolev
 embedding. -/
