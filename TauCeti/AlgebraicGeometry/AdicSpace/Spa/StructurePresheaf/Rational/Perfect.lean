@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.SheafyRi
 public import TauCeti.RingTheory.Perfectoid.RationalLocalization.CharP
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.StableUniform
+import TauCeti.RingTheory.Perfect.Basic
 
 /-!
 # The structure sheaf of a perfect Tate ring
@@ -51,9 +52,7 @@ theorem perfectRing_presentationLimit_of_mem_spaRationalOpens (P : PairOfDefinit
   let f : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s) →+* Completion S :=
     (eqToHom (completionLocObj_obj P T s S d.hasDenominatorPower)).val.comp e.hom.hom.val
   have hf : Function.Bijective f := bijective_presentationLimitRationalIso_hom Aplus hAplus d hT
-  have hpow := (P.perfectRing_completion_locTopology T s S d.hasDenominatorPower
-    hp0).bijective_frobenius
-  have hcomm : f ∘ (· ^ p) = (· ^ p) ∘ f := funext fun x ↦ map_pow f x p
-  exact ⟨(hf.of_comp_iff' (· ^ p)).mp (hcomm ▸ hpow.comp hf)⟩
+  have := P.perfectRing_completion_locTopology T s S d.hasDenominatorPower hp0
+  exact (RingEquiv.ofBijective f hf).symm.toMulEquiv.perfectRing p
 
 end TauCeti.ValuationSpectrum

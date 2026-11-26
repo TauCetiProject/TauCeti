@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Plus
 public import TauCeti.RingTheory.Huber.StableUniform
 public import TauCeti.RingTheory.Perfectoid.PerfectRing
 
+import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.Huber.LocalizationTopology.Restriction
 import TauCeti.RingTheory.Huber.Perfect
 
@@ -92,8 +93,7 @@ theorem perfectRing_completion_locTopology (hp0 : (p : A) = 0) :
   · exact ⟨Function.bijective_of_subsingleton _⟩
   have := ρ.domain_nontrivial
   have : CharP A p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr hp0
-  have : CharP (Completion S) p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr
-    (by rw [← map_natCast ρ, hp0, map_zero])
+  have : CharP (Completion S) p := charP_of_ringHom_of_prime ρ p
   obtain ⟨g, hg, hgρ⟩ := P.exists_continuous_root_completion_locTopology T s S hden (p := p)
   let F := frobenius (Completion S) p
   have hF : Continuous F := continuous_pow p
@@ -129,13 +129,15 @@ theorem isPerfectoidTateRing_completion_locTopology (hp0 : (p : A) = 0) :
   have := P.isTateRing_completion_locTopology_of_isTateRing T s S hden
   rcases subsingleton_or_nontrivial (Completion S) with _ | _
   · exact Perfectoid.isPerfectoidTateRing_of_subsingleton p _
+  let ρ := P.toCompletionLoc T s S hden
+  have := ρ.domain_nontrivial
+  have : CharP A p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr hp0
   have := P.perfectRing_completion_locTopology T s S hden hp0
-  have : CharP (Completion S) p := (CharP.charP_iff_prime_eq_zero Fact.out).mpr
-    (by rw [← map_natCast (P.toCompletionLoc T s S hden), hp0, map_zero])
+  have : CharP (Completion S) p := charP_of_ringHom_of_prime ρ p
   exact Perfectoid.IsPerfectoidTateRing.of_perfectRing
 
 /-- The plus ring of a completed rational localization is perfect if the base Tate ring is
-perfect and `p = 0` in it. -/
+perfect, `p = 0` in it, and `Aplus` contains the image of the ideal of definition of `P`. -/
 theorem perfectRing_completedPlusSubring (hp0 : (p : A) = 0) {Aplus : Subring A}
     (hIplus : ∀ j : P.ringOfDefinition, j ∈ P.idealOfDefinition → (j : A) ∈ Aplus) :
     letI := P.locUniformSpace T s S hden
