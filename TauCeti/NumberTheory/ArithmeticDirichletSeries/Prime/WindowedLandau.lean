@@ -84,8 +84,9 @@ theorem zeroFreeRightOf_dedekindZetaC_of_primePsi_window_integral {θ L : ℝ}
   · exact (frequently_integral_mul_rpow_le_rpow_iff
       (fun x ↦ max (x - primePsi K univ x) 0) L θ η).mp (hwin η hη)
 
-/-- A lower bound `ψ_K(x) - x ≥ -C * x ^ θ` on arbitrarily far-out power windows of fixed
-ratio `L > 1` gives a zero-free half-plane `Re s > θ` for the Dedekind zeta function. -/
+/-- A lower bound `ψ_K(x) - x ≥ -C * x ^ θ` on windows `[Y, Y ^ L]` at arbitrarily large
+scales `Y`, for a fixed exponent `L > 1`, gives a zero-free half-plane `Re s > θ` for the
+Dedekind zeta function. -/
 theorem zeroFreeRightOf_dedekindZetaC_of_primePsi_hasWindows_lower {θ L C : ℝ}
     (hθ : 0 ≤ θ) (hL : 1 < L)
     (hwin : HasWindows {x | -(C * x ^ θ) ≤ primePsi K univ x - x} L) :
