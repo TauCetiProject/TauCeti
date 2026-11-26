@@ -37,17 +37,20 @@ theorem IsProP.apply_eq_zero_of_mem_Z1 {G M : Type*} [Group G] [TopologicalSpace
     (c : Z1 G M) {g : G} (hg : g ∈ P) :
     (c : G → M) g = 0 := by
   have hc := mem_Z1_iff.1 c.property
-  let cRes : Z1 P M := ⟨fun x ↦ (c : G → M) x.val, mem_Z1_iff.2
-    ⟨hc.1.comp continuous_subtypeVal, fun x y ↦ hc.2 x.val y.val⟩⟩
-  let f : ContinuousMonoidHom P (Multiplicative M) :=
-    Additive.toMul (Z1EquivOfSmulEqSelf (fun x m ↦ htriv x.val x.property m) cRes)
+  set cRes : Z1 P M := ⟨fun x ↦ (c : G → M) x.val, mem_Z1_iff.2
+    ⟨hc.1.comp continuous_subtypeVal, fun x y ↦ hc.2 x.val y.val⟩⟩ with hcRes
+  have hcRes_apply (x : P) : (cRes : P → M) x = (c : G → M) x.val := by rw [hcRes]
+  set f : ContinuousMonoidHom P (Multiplicative M) :=
+    Additive.toMul (Z1EquivOfSmulEqSelf (fun x m ↦ htriv x.val x.property m) cRes) with hf
+  have hf_apply (x : P) : f x = Multiplicative.ofAdd ((c : G → M) x.val) := by
+    rw [hf, ← hcRes_apply x]
+    exact Z1EquivOfSmulEqSelf_apply _ cRes x
   have hf_ker_open : IsOpen (f.toMonoidHom.ker : Set P) :=
     (isOpen_discrete ({1} : Set (Multiplicative M))).preimage f.continuous
   have hpg : IsPGroup p f.toMonoidHom.range := hP.isPGroup_range f.toMonoidHom hf_ker_open
   obtain ⟨k, hk⟩ := hpg ⟨f ⟨g, hg⟩, ⟨⟨g, hg⟩, rfl⟩⟩
-  have h1 : f ⟨g, hg⟩ ^ p ^ k = 1 := congrArg Subtype.val hk
-  rw [Z1EquivOfSmulEqSelf_apply] at h1
-  rw [← ofAdd_nsmul, ← ofAdd_zero] at h1
+  have h1 : f ⟨g, hg⟩ ^ p ^ k = 1 := by simpa using congrArg Subtype.val hk
+  rw [hf_apply, ← ofAdd_nsmul, ← ofAdd_zero] at h1
   exact eq_zero_of_pow_nsmul_eq_zero hM (Multiplicative.ofAdd.injective h1)
 
 end TauCeti
