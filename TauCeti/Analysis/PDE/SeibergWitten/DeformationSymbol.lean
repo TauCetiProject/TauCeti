@@ -124,6 +124,13 @@ def deformationSymbol (ξ : V) : V →ₗ[ℝ] ℝ × ⋀[ℝ]^2 V :=
 theorem deformationSymbol_apply_fst (ξ a : V) : (deformationSymbol o hkl ξ a).1 = ⟪ξ, a⟫ :=
   (rfl)
 
+/-- The second component of `deformationSymbol o hkl ξ a` is the underlying two-vector of
+`o.selfDualWedge hkl ξ a`. -/
+theorem deformationSymbol_apply_snd_eq_selfDualWedge (ξ a : V) :
+    (deformationSymbol o hkl ξ a).2 = (o.selfDualWedge hkl ξ a : ⋀[ℝ]^2 V) := by
+  simp only [deformationSymbol, LinearMap.prod_apply, Function.prod_apply, LinearMap.comp_apply,
+    Submodule.subtype_apply]
+
 @[simp]
 theorem deformationSymbol_apply_snd (ξ a : V) :
     (deformationSymbol o hkl ξ a).2 =
@@ -167,8 +174,8 @@ theorem deformationSymbol_injective {ξ : V} (hξ : ξ ≠ 0) :
 @[simp]
 theorem deformationSymbol_self (ξ : V) : deformationSymbol o hkl ξ ξ = (‖ξ‖ ^ 2, 0) :=
   Prod.ext (by simp) (by
-    change ((o.selfDualWedge hkl ξ ξ : _) : ⋀[ℝ]^2 V) = 0
-    simp)
+    rw [deformationSymbol_apply_snd_eq_selfDualWedge, Orientation.selfDualWedge_self,
+      ZeroMemClass.coe_zero])
 
 /-- **The principal symbol of `δ₀` valued in `ℝ × Λ⁺`**: restricting the two-form component of
 `deformationSymbol` to the `+1` eigenspace of the Hodge star. -/
@@ -333,8 +340,8 @@ theorem deformationSymbol_apply_two :
     deformationSymbol o hkl (e 0) (e 2) =
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3])) := by
   refine Prod.ext (by simp) ?_
-  change (o.selfDualWedge hkl (e 0) (e 2) : ⋀[ℝ]^2 V) = _
-  rw [← AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge (he := he),
+  rw [deformationSymbol_apply_snd_eq_selfDualWedge,
+    ← AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge (he := he),
     AlmostComplexStructure.coe_antiInvariantSelfDual₁]
 
 /-- At `ξ = e₀` the symbol sends `e₃` to `(0, ρ₂)`, `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`, since
@@ -343,8 +350,8 @@ theorem deformationSymbol_apply_three :
     deformationSymbol o hkl (e 0) (e 3) =
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2])) := by
   refine Prod.ext (by simp) ?_
-  change (o.selfDualWedge hkl (e 0) (e 3) : ⋀[ℝ]^2 V) = _
-  rw [← AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge (he := he),
+  rw [deformationSymbol_apply_snd_eq_selfDualWedge,
+    ← AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge (he := he),
     AlmostComplexStructure.coe_antiInvariantSelfDual₂]
 
 end Coframe

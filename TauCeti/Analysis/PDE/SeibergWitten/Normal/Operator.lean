@@ -68,12 +68,10 @@ theorem normalDomainEquiv_apply_normalCoord (y η : ℂ → EuclideanSpace ℝ (
     normalDomainEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁
         (y (normalCoord e p), η (normalCoord e p)) =
       (normalModelConnection e y (-η) p, normalModelSpinor e u₀ y (-η) p) := by
-  refine Prod.ext (ContinuousAlternatingMap.ext fun v ↦ ?_) ?_
-  · rw [show v = fun _ ↦ v 0 from funext fun i ↦ by rw [Subsingleton.elim i 0]]
-    simp [normalDomainEquiv_apply, normalFrameForm_apply, normalModelConnection_apply]
-  · simp [normalDomainEquiv_apply, normalFrameSpinor_def, normalModelSpinor_apply,
-      Vortex.sectionValue_apply, sub_eq_add_neg]
-    module
+  rw [normalDomainEquiv_apply]
+  refine Prod.ext (normalFrameForm_eq_of_apply (by simp) (by simp) (by simp) (by simp)) ?_
+  simp [normalFrameSpinor_def, normalModelSpinor_apply, Vortex.sectionValue_apply, sub_eq_add_neg]
+  module
 
 /-- **Eight-real-component normal intertwining theorem**: for any plane field `x : ℂ → ℝ⁴` (with no
 PDE hypothesis on `x`), `gaugeFixedFlatOperator` at the pulled-back background
