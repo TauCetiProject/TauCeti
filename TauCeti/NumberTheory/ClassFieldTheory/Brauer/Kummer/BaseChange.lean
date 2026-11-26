@@ -86,11 +86,8 @@ theorem brBaseChange_h2MuToBr_muNRepH2Equiv
         (explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K n) (AbsoluteGaloisGroup L)
           (KummerCoeff L n) (absoluteGaloisGroupMap τ) (kummerCoeffBaseChange n τ)
           continuous_of_discreteTopology (kummerCoeffBaseChange_smul n τ) x)) := by
-  rw [brBaseChange_h2MuToBr_muNRepH2Equiv_of_dvd n τ (dvd_refl n)]
-  have hmap : kummerCoeffBaseChangeOfDvd τ (dvd_refl n) = kummerCoeffBaseChange n τ := by
-    refine AddMonoidHom.ext fun y ↦ Additive.toMul.injective (Subtype.ext ?_)
-    rw [toMul_kummerCoeffBaseChangeOfDvd, toMul_kummerCoeffBaseChange]
-  rw [explicitMap2_congr_of_eq _ _ _ _ _ _ _ _ rfl hmap]
+  rw [brBaseChange_h2MuToBr_muNRepH2Equiv_of_dvd n τ (dvd_refl n),
+    explicitMap2_congr_of_eq _ _ _ _ _ _ _ _ rfl (kummerCoeffBaseChangeOfDvd_refl n τ)]
 
 /-- Transporting roots of unity preserves the coefficient pairing selected by a primitive root,
 provided that root is transported along the field map as well. -/

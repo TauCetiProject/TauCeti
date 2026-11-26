@@ -764,6 +764,13 @@ theorem toMul_kummerCoeffBaseChangeOfDvd {m : ℕ} (h : m ∣ n) (x : KummerCoef
       Units.map (τ : SeparableClosure K →* SeparableClosure L) x.toMul :=
   (rfl)
 
+/-- When the exponents agree, the divisible-exponent map is the fixed-exponent base change. -/
+@[simp]
+theorem kummerCoeffBaseChangeOfDvd_refl :
+    kummerCoeffBaseChangeOfDvd τ (dvd_refl n) = kummerCoeffBaseChange n τ := by
+  refine AddMonoidHom.ext fun x ↦ Additive.toMul.injective (Subtype.ext ?_)
+  rw [toMul_kummerCoeffBaseChangeOfDvd, toMul_kummerCoeffBaseChange]
+
 variable {n} in
 /-- Base change to a multiple of the exponent is equivariant along the induced Galois map. -/
 @[simp]
