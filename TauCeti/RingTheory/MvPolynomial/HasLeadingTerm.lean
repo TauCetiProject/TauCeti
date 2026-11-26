@@ -162,7 +162,9 @@ theorem linearIndependent_of_hasLeadingTerm {A S : Type*} [CommRing A] [CommRing
   have h_coeff : ∑ a : ι i.1, g ⟨i.1, a⟩ • q i.1 a = 0 := by
     have h₀ := congrArg (fun P => P.coeff (e i.1)) hg
     simp only [coeff_sum, Fintype.sum_sigma] at h₀
-    simp only [AddMonoidAlgebra.coeff_smul, AddMonoidAlgebra.coeff_zero, Finsupp.smul_apply,
+    -- `MvPolynomial.coeff` is `AddMonoidAlgebra.coeff` (Mathlib deprecated the `MvPolynomial`
+    -- copies of these lemmas in its favour); `coeff 0` is the zero `Finsupp`.
+    simp only [AddMonoidAlgebra.coeff_smul_apply, AddMonoidAlgebra.coeff_zero,
       Finsupp.coe_zero, Pi.zero_apply] at h₀
     rw [← h₀, Finset.sum_eq_single i.1 (fun k _ hk => Finset.sum_eq_zero fun a _ => ?_)
       (by simp)]
