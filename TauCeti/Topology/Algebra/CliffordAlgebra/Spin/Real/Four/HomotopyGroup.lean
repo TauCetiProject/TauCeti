@@ -182,7 +182,7 @@ theorem subsingleton_homotopyGroup_realSpin_four {N : Type*} (hN : Nat.card N < 
   have : Subsingleton (HomotopyGroup N (realCliffordSpinGroupZero 4) 1) :=
     (HomotopyGroup.homeomorphEquivOfEq realSpinFourCalibratedHomeomorphQuaternionSphereProd
       realSpinFourCalibratedHomeomorphQuaternionSphereProd_one).subsingleton
-  exact (HomotopyGroup.homeomorphEquivOfEq (Homeomorph.mulLeft g) (mul_one g)).symm.subsingleton
+  exact HomotopyGroup.subsingleton_of_subsingleton_one g
 
 section Nontrivial
 
@@ -281,7 +281,7 @@ theorem subsingleton_homotopyGroup_realSpecialOrthogonal_four {N : Type*} (hN : 
   have : Subsingleton
       (HomotopyGroup N (QuadraticMap.specialOrthogonalGroup (realCliffordForm 4 0)) 1) :=
     (realCliffordSpinProjectionZeroHomotopyGroupMulEquiv 4).symm.toEquiv.subsingleton
-  exact (HomotopyGroup.homeomorphEquivOfEq (Homeomorph.mulLeft g) (mul_one g)).symm.subsingleton
+  exact HomotopyGroup.subsingleton_of_subsingleton_one g
 
 end
 

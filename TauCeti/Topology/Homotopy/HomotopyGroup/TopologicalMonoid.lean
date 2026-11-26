@@ -9,6 +9,7 @@ public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Product
 
 import TauCeti.Topology.Homotopy.Homotopic.Conjugation
+import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 import TauCeti.Topology.Homotopy.HomotopyGroup.Homotopy
 
 /-!
@@ -38,9 +39,12 @@ image of `φ` by the image of `g_*`, as for the loop space of a quaternionic pro
 For loops, `f = g = id`, the formula is the first half of the Eckmann--Hilton argument, the
 fundamental-group case of which is `FundamentalGroup.cast_map_prod_mul`.
 
-In a topological group `G`, path-connected elements induce homotopic inner automorphisms relative
-to `{1}` (`Joined.homotopicRel_conj`), hence equal actions on `π_N(G, 1)`. Inner conjugation by an
-element joined to `1` therefore acts trivially on `π_N(G, 1)` in every dimension `N`.
+In a group `G` with separately continuous multiplication, left translation identifies `π_N(G, 1)`
+with `π_N(G, g)`, so triviality at `1` transfers to every base point
+(`HomotopyGroup.subsingleton_of_subsingleton_one`). In a topological group `G`, path-connected
+elements induce homotopic inner automorphisms relative to `{1}` (`Joined.homotopicRel_conj`), hence
+equal actions on `π_N(G, 1)`. Inner conjugation by an element joined to `1` therefore acts
+trivially on `π_N(G, 1)` in every dimension `N`.
 
 ## Main results
 
@@ -51,6 +55,8 @@ element joined to `1` therefore acts trivially on `π_N(G, 1)` in every dimensio
 * `HomotopyGroup.bijective_map_mul_of_bijective_comp`: the pointwise product is bijective on a
   homotopy group if `g_*` is injective with image the kernel of a homomorphism `φ`, and
   `φ ∘ f_*` is bijective.
+* `HomotopyGroup.subsingleton_of_subsingleton_one`: if `π_N(G, 1)` is trivial in a group with
+  separately continuous multiplication, then `π_N(G, g)` is trivial at every `g : G`.
 * `HomotopyGroup.map_conj_eq_of_joined`, `HomotopyGroup.map_conj_eq_id_of_joined`,
   `HomotopyGroup.map_conj_eq_id`, `HomotopyGroup.mapHom_conj_eq_id`: inner conjugation along paths
   and in path-connected groups acts trivially on `π_N(G, 1)`.
@@ -172,6 +178,13 @@ theorem bijective_map_mul_of_subsingleton_of_bijective [Nonempty N] {f : C(X, M)
   exact bijective_map_mul_of_bijective_comp hf hg (1 : HomotopyGroup N M 1 →* Unit)
     (Function.bijective_of_subsingleton' _) hgb.1
     fun c ↦ iff_of_true (Subsingleton.elim _ _) (hgb.2 c)
+
+/-- In a group with separately continuous multiplication, if `π_N(G, 1)` is a subsingleton then
+`π_N(G, g)` is a subsingleton at every base point `g`. -/
+theorem subsingleton_of_subsingleton_one {G : Type*} [TopologicalSpace G] [Group G]
+    [SeparatelyContinuousMul G] [Subsingleton (HomotopyGroup N G 1)] (g : G) :
+    Subsingleton (HomotopyGroup N G g) :=
+  (homeomorphEquivOfEq (Homeomorph.mulLeft g) (mul_one g)).symm.subsingleton
 
 section Conjugation
 

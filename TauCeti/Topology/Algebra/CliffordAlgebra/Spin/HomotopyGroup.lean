@@ -12,6 +12,8 @@ public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Covering
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 
+import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalMonoid
+
 /-!
 # Higher homotopy groups of `SO(n)` through the Spin double cover
 
@@ -114,7 +116,7 @@ theorem subsingleton_homotopyGroup_realSpin_three {N : Type*} (hN : Nat.card N <
   have : Subsingleton (HomotopyGroup N (realCliffordSpinGroupZero 3) 1) :=
     (HomotopyGroup.homeomorphEquivOfEq realSpinThreeHomeomorphQuaternionSphere
       realSpinThreeHomeomorphQuaternionSphere_one).subsingleton
-  exact (HomotopyGroup.homeomorphEquivOfEq (Homeomorph.mulLeft g) (mul_one g)).symm.subsingleton
+  exact HomotopyGroup.subsingleton_of_subsingleton_one g
 
 section HigherHomotopy
 
@@ -192,7 +194,7 @@ theorem subsingleton_homotopyGroup_realSpecialOrthogonal_three {N : Type*} (hN :
   have : Subsingleton
       (HomotopyGroup N (QuadraticMap.specialOrthogonalGroup (realCliffordForm 3 0)) 1) :=
     realSpecialOrthogonalThreeHomotopyGroupMulEquivSphere.toEquiv.subsingleton
-  exact (HomotopyGroup.homeomorphEquivOfEq (Homeomorph.mulLeft g) (mul_one g)).symm.subsingleton
+  exact HomotopyGroup.subsingleton_of_subsingleton_one g
 
 end CliffordAlgebra
 

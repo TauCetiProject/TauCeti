@@ -112,10 +112,7 @@ theorem spinGroupContinuousMulEquivQuaternionUnitaryProd_apply (s : spinGroup Q)
   have h1 : (((spinGroupContinuousMulEquivQuaternionUnitaryProd Q hQ hV e he s).1 : ℍ[K,a,0,b]),
       ((spinGroupContinuousMulEquivQuaternionUnitaryProd Q hQ hV e he s).2 : ℍ[K,a,0,b])) =
       e (evenUnitaryGroupEvenPart Q (spinGroupToEvenUnitary Q s)) := by
-    rw [spinGroupContinuousMulEquivQuaternionUnitaryProd, ContinuousMulEquiv.trans_apply,
-      Unitary.prodContinuousMulEquiv_apply,
-      spinGroupContinuousMulEquivUnitaryOfAlgEquivOfFinrankLeFour_apply,
-      Unitary.coe_prodEquiv_apply, coe_spinGroupEquivUnitaryOfAlgEquivOfFinrankLeFour_apply]
+    simp [spinGroupContinuousMulEquivQuaternionUnitaryProd]
   have h := h1.trans (coe_spinGroupEquivQuaternionUnitaryProd_apply Q hQ hV e he s).symm
   exact Prod.ext (Subtype.ext (congrArg Prod.fst h)) (Subtype.ext (congrArg Prod.snd h))
 
