@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.GroupAction.LocallyFree
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
 import TauCeti.Geometry.Lie.Adjoint.Basic
-import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Critical
 import TauCeti.Geometry.Symplectic.Manifold.Invariants
 import TauCeti.Topology.Algebra.ConstMulAction
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.FiniteOrder
@@ -41,7 +41,7 @@ The argument is linear algebra at `x`.
 
 By the moment-map differential identity, `𝔤_x = 0` exactly when `dμ_x` is surjective, so the action
 is free exactly over the regular points of `μ`
-(`TauCeti.SmoothTwoForm.IsMomentMap.stabilizer_eq_bot_iff_surjective_differential`), and it is free
+(`TauCeti.SmoothTwoForm.IsMomentMap.stabilizer_eq_bot_iff_differential_surjective`), and it is free
 on a dense open set
 (`TauCeti.SmoothTwoForm.IsMomentMap.exists_isOpen_dense_forall_stabilizer_eq_bot`).
 
@@ -53,11 +53,9 @@ is not fixed, but `-1` fixes that point.
 
 All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 
-* `momentCocycle_eq_zero_of_isLieAbelian`: a moment map of an abelian Lie algebra action on a
-  compact connected manifold, for a closed form, is infinitesimally equivariant.
 * `stabilizer_eq_bot_of_isotropy_eq_bot`, `stabilizer_eq_bot_iff_isotropy_eq_bot`: on a symplectic
   toric manifold the action is free exactly where it is locally free.
-* `stabilizer_eq_bot_iff_surjective_differential`: the action is free exactly at the points where
+* `stabilizer_eq_bot_iff_differential_surjective`: the action is free exactly at the points where
   `dμ_x` is surjective.
 * `exists_isOpen_dense_forall_stabilizer_eq_bot`: the action is free on a dense open set.
 
@@ -81,33 +79,6 @@ namespace TauCeti
 namespace SmoothTwoForm
 
 namespace IsMomentMap
-
-section Abelian
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I ∞ M] [BoundarylessManifold I M] [CompactSpace M] [PreconnectedSpace M]
-  {𝔤 : Type*} [LieRing 𝔤] [LieAlgebra ℝ 𝔤] [IsLieAbelian 𝔤]
-  {σ : SmoothTwoForm I M} {a : InfinitesimalAction 𝔤 I M} {μ : M → Module.Dual ℝ 𝔤}
-
-/-- **Moment maps of abelian actions on compact manifolds are infinitesimally equivariant.** For a
-closed form on a compact connected manifold without boundary, the cocycle
-`σ(Z_M, Z'_M) - μ_{⁅Z, Z'⁆}` of a moment map of an abelian Lie algebra vanishes: it is constant,
-and at a maximum `p` of `μ_Z` it is `σ_p(Z_M, Z'_M) = dμ_Z(Z'_M) = 0`. -/
-theorem momentCocycle_eq_zero_of_isLieAbelian (h : σ.IsMomentMap a μ) (hσ : σ.IsClosed)
-    (x : M) : σ.momentCocycle a μ x = 0 := by
-  have : Nonempty M := ⟨x⟩
-  refine momentCocycle_eq_zero_iff.2 fun Z Z' ↦ ?_
-  obtain ⟨p, -, hp⟩ :=
-    isCompact_univ.exists_isMaxOn univ_nonempty (h.contMDiff Z).continuous.continuousOn
-  have hcrit : mvfderiv I (fun y ↦ μ y Z) p = 0 :=
-    mem_criticalPoints.1 (hp.mem_criticalPoints BoundarylessManifold.isInteriorPoint)
-  have hc := congr($(h.momentCocycle_eq hσ x p) Z Z')
-  simp only [momentCocycle_apply, EmbeddingLike.apply_eq_iff_eq, trivial_lie_zero, map_zero,
-    sub_zero] at hc
-  rw [hc, h.eval₂_apply, hcrit, trivial_lie_zero, map_zero, zero_apply]
-
-end Abelian
 
 section Toric
 
@@ -152,7 +123,8 @@ theorem stabilizer_eq_bot_of_isotropy_eq_bot
     rw [← h.ker_differential x, h.ker_differential_eq_orbitTangent
       (hσ.isNondegenerate.nondegenerate_bilinFormAt x)
       (h.momentCocycle_eq_zero_of_isLieAbelian hσ.isClosed x) (lieAnnihilator_eq_top ℝ _ _)
-      (by rw [InfinitesimalAction.finrank_orbitTangent_of_isotropy_eq_bot _ x hx, hdim]; rfl)]
+      (by rw [InfinitesimalAction.finrank_orbitTangent_of_isotropy_eq_bot _ x hx, hdim,
+        finrank_tangentSpace (I := I) (1 : G)])]
   -- Each element of the stabilizer acts on `T_x M` by a linear isometry of `σ_x` of finite order
   -- fixing `L` pointwise, hence trivially, and the tangent representation is faithful.
   have hs (g : G) (_ : g ∈ MulAction.stabilizer G x) : ContMDiff I' I' 1 fun y : M ↦ g • y :=
@@ -191,7 +163,7 @@ theorem stabilizer_eq_bot_iff_isotropy_eq_bot
 /-- **A symplectic toric manifold is free exactly over the regular points of its moment map.** For
 a symplectic toric manifold, the stabilizer of `x` is trivial exactly when the differential
 `dμ_x : T_x M → 𝔤*` of the moment map is surjective. -/
-theorem stabilizer_eq_bot_iff_surjective_differential
+theorem stabilizer_eq_bot_iff_differential_surjective
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsSymplectic)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
       (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)

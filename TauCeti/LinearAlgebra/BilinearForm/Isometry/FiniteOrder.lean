@@ -11,7 +11,8 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 /-!
 # Isometries of finite order fixing a coisotropic subspace
 
-Let `B` be a bilinear form on a torsion-free module `M` and let `L` be a submodule containing its
+Let `B` be a bilinear form on a module `M` in which `n • v = 0` with `n : ℕ` nonzero forces `v = 0`
+(`HasUniqueDiv M`), e.g. any `ℚ`- or `ℝ`-vector space, and let `L` be a submodule containing its
 `B`-orthogonal, `B.orthogonal L ≤ L`; for a symplectic form this says that `L` is coisotropic, and
 a Lagrangian subspace is the main example. This file proves that an isometry `f` of `B` which fixes
 `L` pointwise and has finite order is the identity
@@ -19,7 +20,7 @@ a Lagrangian subspace is the main example. This file proves that an isometry `f`
 
 Write `N = f - 1`. For `n ∈ L` and any `v`, `B n (N v) = B (f n) (f v) - B n v = 0`, so `N` maps
 `M` into `B.orthogonal L ≤ L`, which `N` kills; hence `N² = 0` and `f ^ k = 1 + k N` for every
-`k`. If `f ^ m = 1` with `m ≠ 0`, then `m N = 0`, and `N = 0` since `M` is torsion-free.
+`k`. If `f ^ m = 1` with `m ≠ 0`, then `m N = 0`, and `N = 0` by `HasUniqueDiv M`.
 
 The geometric use is a symplectic toric manifold: the differential at `x` of an element of the
 stabilizer of `x` is a linear symplectic map fixing the orbit tangent space, which is Lagrangian
@@ -39,7 +40,8 @@ variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [HasUniqueDiv 
   {B : LinearMap.BilinForm R M} {f : Module.End R M} {L : Submodule R M}
 
 /-- **Isometries of finite order fixing a coisotropic subspace are trivial.** Let `B` be a bilinear
-form on a torsion-free module and `L` a submodule containing its `B`-orthogonal. An isometry of `B`
+form on a module in which `n • v = 0` with `n : ℕ` nonzero forces `v = 0` (`HasUniqueDiv`), e.g.
+any `ℚ`- or `ℝ`-vector space, and `L` a submodule containing its `B`-orthogonal. An isometry of `B`
 of finite order which fixes every vector of `L` is the identity. -/
 theorem eq_one_of_isOfFinOrder (hf : B.IsOrthogonal f) (hL : B.orthogonal L ≤ L)
     (hfL : ∀ v ∈ L, f v = v) (hfin : IsOfFinOrder f) : f = 1 := by
