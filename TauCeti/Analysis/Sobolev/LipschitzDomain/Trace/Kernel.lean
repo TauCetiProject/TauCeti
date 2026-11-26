@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.PartitionOfUnity
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Basic
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -21,9 +20,10 @@ boundary values.
 The key step is local. If the trace of `u ∈ W^{1,p}(Ω)` through one chart, localized by a cutoff
 `ψ`, vanishes, then `ψ u ∈ W^{1,p}_0(Ω)`. In chart coordinates the localized function lies above a
 Lipschitz graph and has zero graph trace, so it lies in `W^{1,p}_0` of the epigraph
-(`TauCeti.W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero`). A second cutoff, equal to one
-near the support of `ψ` and supported in the chart cylinder, carries it back to `W^{1,p}_0(Ω)`,
-because `Ω` and the epigraph agree inside the cylinder. Writing `u = ψ₀ u + ∑ ψᵢ u` with `ψ₀`
+(`TauCeti.W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero`). Undoing the chart localization
+(`TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_lipschitzChartLocalizeL_mem`, with the
+frontiers as boundary parts) carries it back to `W^{1,p}_0(Ω)`, because `Ω` and the epigraph agree
+inside the cylinder. Writing `u = ψ₀ u + ∑ ψᵢ u` with `ψ₀`
 compactly supported in `Ω` then gives `u ∈ W^{1,p}_0(Ω)` whenever every chart trace vanishes.
 
 Every bounded Lipschitz domain carries such a partition of unity
@@ -78,31 +78,16 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero (hp : 
     (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Ω p}
     (hu : W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u = 0) :
     W1p.contDiffSMul ψ hψ hM hψM hgM u ∈ w1p0Submodule volume Ω p := by
-  let V := chartEpigraph e h.lipschitzWith.continuous
-  let G := normalEpigraph ⟨φ, h.lipschitzWith.continuous⟩
-  let w := W1p.lipschitzChartLocalizeL h ψ hψ hM hψM hgM hs u
   -- In chart coordinates the localized function has zero graph trace, so it lies in `W^{1,p}_0`.
-  have hw : w ∈ w1p0Submodule volume G p :=
-    (W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero hp _ _).2
-      (by rwa [W1p.lipschitzChartTrace_apply] at hu)
-  -- Return to the original coordinates, on the chart epigraph `V = e⁻¹' G`.
-  have hVG := coe_chartEpigraph e h.lipschitzWith.continuous
-  have hw' : W1p.compAffineIsometryEquivL e hVG w ∈ w1p0Submodule volume V p :=
-    W1p.compAffineIsometryEquivL_mem_w1p0Submodule e hVG hw
-  -- A cutoff `χ`, equal to one near `tsupport ψ` and supported in the chart cylinder.
-  have hK : IsCompact (tsupport ψ) :=
-    Metric.isCompact_of_isClosed_isBounded (isClosed_tsupport ψ)
-      ((e.antilipschitzWith.isBounded_preimage (isBounded_normalCylinder a b)).subset hs)
-  obtain ⟨χ, N, hχ, -, hχ1, -, hχs, hN, hχN, hgN⟩ :=
-    hK.exists_contDiff_cutoff_with_bounds
-      ((isOpen_normalCylinder (E := E) a b).preimage e.continuous) hs
-  -- Inside the cylinder `Ω` and `V` agree, so `χ` carries `w'` from `W^{1,p}_0(V)` back to `ψ u`
-  -- in `W^{1,p}_0(Ω)`.
-  rw [← W1p.localizeL_restrictL_compAffineIsometryEquivL_lipschitzChartLocalizeL h hψ hM hψM hgM
-    hs hχ hN hχN hgN hχs (fun x hx => interior_subset (hχ1 hx)) u]
-  exact W1p.localizeL_restrictL_mem_w1p0Submodule (Ω := V) (V := Ω)
-    hχ hN (fun x _ => hχN x) (fun x _ => hgN x)
-    (inter_tsupport_subset_chartEpigraph h hχs) (chartEpigraph_inter_tsupport_subset h hχs) hw'
+  have hw := (W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero hp _ _).2
+    (by rwa [W1p.lipschitzChartTrace_apply] at hu)
+  rw [← w1pVanishingOnSubmodule_frontier] at hw ⊢
+  refine W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_lipschitzChartLocalizeL_mem h hψ hM hψM
+    hgM hs (fun x hx => ?_) hw
+  -- Inside the chart cylinder the frontier of `Ω` is the graph, the frontier of the epigraph.
+  simp only [mem_preimage, coe_normalEpigraph, ContinuousMap.coe_mk,
+    frontier_setOf_lt_fst h.lipschitzWith.continuous]
+  exact h.toIsLipschitzChart.fst_apply_eq_of_mem_frontier hx.1 hx.2
 
 end Chart
 

@@ -92,6 +92,7 @@ half-spinors being the square of the twisting circle.
   `conj (det (χ g) w) = det g (conj w)`.
 * `Orientation.HalfSpinModel.conjEquiv_smul`, `Orientation.HalfSpinModel.cliffordMul_conjEquiv`:
   `j (g • ψ) = χ(g) • j ψ` and `c(v) (j ψ) = j (c(v) ψ)` on the model half-spinors.
+* `Orientation.HalfSpinModel.conjEquiv_conjEquiv`: if `j² = -1`, so is its restriction.
 * `TauCeti.SpinCStructure.finrank_determinantLine`: `L` is a line bundle.
 * `TauCeti.SpinCStructure.mk_ofCircle_smul_determinantLine`,
   `TauCeti.SpinCStructure.mk_ofCircle_smul_halfSpinorBundle`: the central circle acts with weight
@@ -354,6 +355,13 @@ theorem cliffordMul_conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W') (hj : ∀ v w, j (ρ 
   apply toEigenspace.injective
   apply Subtype.ext
   simp [hj]
+
+/-- If `j : W ≃ W` is a quaternionic structure, `j (j w) = -w`, then so is its restriction to the
+model half-spinors `S^ε` for a real eigenvalue `ε`. -/
+theorem conjEquiv_conjEquiv (j : W ≃ₗᵢ⋆[ℂ] W) (hj : ∀ v w, j (ρ (ι Q v) w) = ρ (ι Q v) (j w))
+    (hε : starRingEnd ℂ ε = ε) (hj₂ : ∀ w, j (j w) = -w) (ψ : HalfSpinModel o hQ b ρ hρ ε) :
+    conjEquiv hρ hρ j hj hε (conjEquiv hρ hρ j hj hε ψ) = -ψ :=
+  toEigenspace.injective <| Subtype.ext <| by simp [hj₂]
 
 end ChargeConjugation
 

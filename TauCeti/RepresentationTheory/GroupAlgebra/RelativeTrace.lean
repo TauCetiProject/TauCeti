@@ -504,6 +504,13 @@ theorem relTraceIdeal_mono (hSQ : S ≤ Q) [(S.subgroupOf Q).FiniteIndex]
   rintro _ ⟨a, rfl⟩
   exact ⟨relTrace R S Q a, relTrace_relTrace hSQ hQP a⟩
 
+/-- `R[G]^P_Q` depends on `Q` only through its value: for `Q = Q'`, `R[G]^P_Q = R[G]^P_{Q'}`. -/
+theorem relTraceIdeal_congr {Q' : Subgroup G} (h : Q = Q') (hQ'P : Q' ≤ P)
+    [(Q'.subgroupOf P).FiniteIndex] :
+    relTraceIdeal R hQP = relTraceIdeal R hQ'P := by
+  subst h
+  rfl
+
 end RelTrace
 
 section Conj

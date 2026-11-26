@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
 public import TauCeti.Algebra.Module.ZMod.TensorProduct
+import TauCeti.Algebra.Group.PowMonoidHom
 
 /-!
 # Uniquely two-divisible abelian groups
@@ -29,6 +30,11 @@ the mod-two Hurewicz theorem.
   two-divisible group with `ZMod 2` gives the zero group.
 * `TauCeti.IsUniquelyTwoDivisible.subsingleton_tensorProduct_zmod_two`: the same conclusion with
   the tensor factors in the opposite order.
+* `TauCeti.isUniquelyTwoDivisible_iff_isUnit`: a ring is uniquely two-divisible exactly when `2`
+  is a unit; so `ℤ` is not (`TauCeti.not_isUniquelyTwoDivisible_int`), and `ℤ/n` is exactly for
+  odd `n` (`TauCeti.isUniquelyTwoDivisible_zmod_iff`).
+* `TauCeti.isUniquelyTwoDivisible_iff_odd_natCard`: a finite abelian group is uniquely
+  two-divisible exactly when its order is odd.
 
 ## References
 
@@ -89,6 +95,38 @@ theorem subsingleton_tensorProduct_zmod_two (h : IsUniquelyTwoDivisible G) :
   exact h.2
 
 end IsUniquelyTwoDivisible
+
+/-! ### Examples -/
+
+/-- A ring is uniquely two-divisible, as an additive group, exactly when `2` is a unit. -/
+theorem isUniquelyTwoDivisible_iff_isUnit (R : Type*) [Ring R] :
+    IsUniquelyTwoDivisible R ↔ IsUnit (2 : R) := by
+  have h : (fun x : R ↦ (2 : ℤ) • x) = ((2 : R) * ·) := funext fun x ↦ by
+    rw [zsmul_eq_mul, Int.cast_ofNat]
+  rw [isUniquelyTwoDivisible_iff, h, IsUnit.isUnit_iff_mulLeft_bijective]
+
+/-- The integers are not uniquely two-divisible: `1` is not twice an integer. -/
+@[simp]
+theorem not_isUniquelyTwoDivisible_int : ¬ IsUniquelyTwoDivisible ℤ := by
+  rw [isUniquelyTwoDivisible_iff_isUnit, Int.isUnit_iff]
+  decide
+
+/-- The cyclic group `ℤ/n` is uniquely two-divisible exactly when `n` is odd. For `n = 0`, where
+`ZMod 0 = ℤ`, both sides fail. -/
+@[simp]
+theorem isUniquelyTwoDivisible_zmod_iff (n : ℕ) : IsUniquelyTwoDivisible (ZMod n) ↔ Odd n := by
+  rw [isUniquelyTwoDivisible_iff_isUnit, ← Nat.cast_ofNat, ZMod.isUnit_iff_coprime,
+    Nat.coprime_two_left]
+
+/-- A finite abelian group is uniquely two-divisible exactly when its order is odd: multiplication
+by two is onto, hence bijective, exactly when two is prime to the order
+(`TauCeti.nsmulAddMonoidHom_range_eq_top_iff_coprime`). -/
+theorem isUniquelyTwoDivisible_iff_odd_natCard (G : Type*) [AddCommGroup G] [Finite G] :
+    IsUniquelyTwoDivisible G ↔ Odd (Nat.card G) := by
+  have h : (fun x : G ↦ (2 : ℤ) • x) = nsmulAddMonoidHom 2 := funext fun x ↦ by
+    rw [nsmulAddMonoidHom_apply, ← natCast_zsmul, Nat.cast_ofNat]
+  rw [isUniquelyTwoDivisible_iff, h, ← Finite.surjective_iff_bijective,
+    ← AddMonoidHom.range_eq_top, nsmulAddMonoidHom_range_eq_top_iff_coprime, Nat.coprime_two_right]
 
 end TauCeti
 

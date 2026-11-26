@@ -14,7 +14,7 @@ import TauCeti.Analysis.Sobolev.W1p.ChainRule
 import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.LevelSet
 import TauCeti.Analysis.Sobolev.W1p.Restriction
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 
 /-!
 # De Giorgi's theorem and failure of `H²` regularity for a coefficient with a jump

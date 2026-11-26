@@ -988,12 +988,6 @@ theorem coe_normalEpigraph_eq_preimage (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)
   ext x
   simp [chartEpigraph]
 
-/-- The chart epigraph is the preimage under the chart of the epigraph in chart coordinates. -/
-theorem coe_chartEpigraph (e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (hφ : Continuous φ) :
-    (chartEpigraph e hφ : Set F) = e ⁻¹' normalEpigraph ⟨φ, hφ⟩ := by
-  ext x
-  simp
-
 /-- On a cutoff supported in the chart cylinder, the chart epigraph lies in the domain. -/
 theorem chartEpigraph_inter_tsupport_subset
     (h : Omega.IsLipschitzChartWith L e φ a b) {ψ : F → ℝ}
