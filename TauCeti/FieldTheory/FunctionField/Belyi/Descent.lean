@@ -192,16 +192,21 @@ private theorem ringEquiv_algebraMap (σ : L ≃ₐ[K] L) (a : L) :
     ← IsScalarTower.algebraMap_apply]
 
 /-- The subgroup of `Gal(L/K)` fixing an element `x : X` under the descent datum. -/
-private noncomputable abbrev stabSubgroup (x : X) : Subgroup (L ≃ₐ[K] L) :=
+private noncomputable def stabSubgroup (x : X) : Subgroup (L ≃ₐ[K] L) :=
   (MulAction.stabilizer (Equiv.Perm X) x).comap D.permHom
 
-private theorem mem_stabSubgroup {x : X} {σ : L ≃ₐ[K] L} :
-    σ ∈ D.stabSubgroup x ↔ D.iso σ (conjRingEquiv (σ : L ≃+* L) X x) = x :=
-  Iff.rfl
-
 private theorem mem_stabSubgroup_iff_ringEquiv {x : X} {σ : L ≃ₐ[K] L} :
-    σ ∈ D.stabSubgroup x ↔ D.ringEquiv σ x = x :=
-  Iff.rfl
+    σ ∈ D.stabSubgroup x ↔ D.ringEquiv σ x = x := by
+  simp [stabSubgroup, permHom, Equiv.Perm.smul_def]
+
+private theorem mem_stabSubgroup {x : X} {σ : L ≃ₐ[K] L} :
+    σ ∈ D.stabSubgroup x ↔ D.iso σ (conjRingEquiv (σ : L ≃+* L) X x) = x := by
+  rw [D.mem_stabSubgroup_iff_ringEquiv, D.ringEquiv_apply]
+
+private theorem coe_stabSubgroup (x : X) :
+    (D.stabSubgroup x : Set (L ≃ₐ[K] L)) =
+      {σ : L ≃ₐ[K] L | D.iso σ (conjRingEquiv (σ : L ≃+* L) X x) = x} :=
+  Set.ext fun _ ↦ D.mem_stabSubgroup
 
 variable [Algebra K X] [IsScalarTower K L X]
 
@@ -223,14 +228,14 @@ theorem semilinearAction_apply (σ : L ≃ₐ[K] L) (x : X) :
 @[simp]
 theorem semilinearAction_algebraMap_ratFunc (σ : L ≃ₐ[K] L) (r : RatFunc L) :
     D.semilinearAction σ (algebraMap (RatFunc L) X r) =
-      algebraMap (RatFunc L) X (RatFunc.mapRingEquiv (σ : L ≃+* L) r) :=
-  D.ringEquiv_algebraMap_ratFunc σ r
+      algebraMap (RatFunc L) X (RatFunc.mapRingEquiv (σ : L ≃+* L) r) := by
+  rw [semilinearAction_apply, ← ringEquiv_apply, D.ringEquiv_algebraMap_ratFunc]
 
 /-- The semilinear action of a descent datum acts on the constants `L` by `σ`. -/
 @[simp]
 theorem semilinearAction_algebraMap (σ : L ≃ₐ[K] L) (a : L) :
-    D.semilinearAction σ (algebraMap L X a) = algebraMap L X (σ a) :=
-  D.ringEquiv_algebraMap σ a
+    D.semilinearAction σ (algebraMap L X a) = algebraMap L X (σ a) := by
+  rw [semilinearAction_apply, ← ringEquiv_apply, D.ringEquiv_algebraMap]
 
 end Action
 
@@ -243,9 +248,8 @@ private theorem isLocallyConstant_iff_isOpen_stabSubgroup (x : X) :
       IsOpen (D.stabSubgroup x : Set (L ≃ₐ[K] L)) := by
   rw [IsLocallyConstant.iff_isOpen_fiber_apply]
   refine ⟨fun h ↦ ?_, fun h τ ↦ ?_⟩
-  · have h1 := h 1
-    rw [D.iso_one_conjRingEquiv] at h1
-    exact h1
+  · rw [D.coe_stabSubgroup]
+    simpa only [D.iso_one_conjRingEquiv, Set.preimage, Set.mem_singleton_iff] using h 1
   · have hpre : ((fun σ : L ≃ₐ[K] L ↦ D.iso σ (conjRingEquiv (σ : L ≃+* L) X x)) ⁻¹'
         {D.iso τ (conjRingEquiv (τ : L ≃+* L) X x)}) =
         (fun σ : L ≃ₐ[K] L ↦ τ⁻¹ * σ) ⁻¹' (D.stabSubgroup x : Set (L ≃ₐ[K] L)) := by
@@ -283,9 +287,10 @@ instance [FiniteDimensional K L] : D.IsContinuous :=
 `σ ↦ f_σ(x)` on `Gal(L/K)` is locally constant. -/
 theorem isContinuous_iff_isLocallyConstant :
     D.IsContinuous ↔
-      ∀ x : X, IsLocallyConstant fun σ : L ≃ₐ[K] L ↦ D.iso σ (conjRingEquiv (σ : L ≃+* L) X x) :=
-  D.isContinuous_iff.trans <|
-    forall_congr' fun x ↦ (D.isLocallyConstant_iff_isOpen_stabSubgroup x).symm
+      ∀ x : X, IsLocallyConstant fun σ : L ≃ₐ[K] L ↦ D.iso σ (conjRingEquiv (σ : L ≃+* L) X x) := by
+  rw [D.isContinuous_iff]
+  refine forall_congr' fun x ↦ ?_
+  rw [← D.coe_stabSubgroup, D.isLocallyConstant_iff_isOpen_stabSubgroup]
 
 /-- Over an algebraic extension `L / K`, a descent datum is continuous as soon as the stabilizers
 of a set of `L`-field generators of `X` are open. -/
@@ -295,7 +300,9 @@ theorem IsContinuous.of_adjoin_eq_top [Algebra.IsAlgebraic K L] {S : Set X}
     D.IsContinuous := by
   let : Algebra K X := ((algebraMap L X).comp (algebraMap K L)).toAlgebra
   have : IsScalarTower K L X := .of_algebraMap_eq fun _ ↦ rfl
-  exact ⟨GaloisDescent.isOpen_of_adjoin_eq_top D.semilinearAction_algebraMap hopen hS⟩
+  refine ⟨fun x ↦ ?_⟩
+  simp_rw [← D.semilinearAction_apply] at hopen ⊢
+  exact GaloisDescent.isOpen_of_adjoin_eq_top D.semilinearAction_algebraMap hopen hS x
 
 /-- Relative to any model `M₀` of `X` over a subfield `E₀` of `L` with `L / K` algebraic, a
 descent datum is continuous if and only if each orbit map `σ ↦ f_σ(y)` on elements `y` of `M₀` is
@@ -310,6 +317,7 @@ theorem isContinuous_iff_isLocallyConstant_embedding
   refine ⟨fun h y ↦ (D.isContinuous_iff_isLocallyConstant.mp h) (M₀.embedding y), fun h ↦ ?_⟩
   refine IsContinuous.of_adjoin_eq_top D M₀.adjoin_range_embedding ?_
   rintro _ ⟨y, rfl⟩
+  rw [← D.coe_stabSubgroup]
   exact (D.isLocallyConstant_iff_isOpen_stabSubgroup (M₀.embedding y)).mp (h y)
 
 /-- If an open subgroup `U` of `Gal(L/K)` fixes the image of a model `M₀` of `X` pointwise under
@@ -322,8 +330,9 @@ theorem IsContinuous.of_openSubgroup_fixes_embedding
     D.IsContinuous := by
   refine IsContinuous.of_adjoin_eq_top D M₀.adjoin_range_embedding ?_
   rintro _ ⟨y, rfl⟩
+  rw [← D.coe_stabSubgroup]
   exact Subgroup.isOpen_mono (H₁ := U) (H₂ := D.stabSubgroup (M₀.embedding y))
-    (fun σ hσ ↦ hfix σ hσ y) hU
+    (fun σ hσ ↦ D.mem_stabSubgroup.mpr (hfix σ hσ y)) hU
 
 /-- **Open-subgroup criterion for continuity.** Relative to a model `M₀` of `X` over a finite
 intermediate extension `E₀ / K` inside an algebraic extension `L / K`, a descent datum `D` is
@@ -343,7 +352,7 @@ theorem isContinuous_iff_exists_openSubgroup_fixes_embedding
   obtain ⟨S, hS⟩ := fg_top E₀ M₀.pair
   let U : Subgroup (L ≃ₐ[K] L) := E₀.fixingSubgroup ⊓ ⨅ s ∈ S, D.stabSubgroup (M₀.embedding s)
   have hU_open : IsOpen (U : Set (L ≃ₐ[K] L)) := by
-    simp only [U, Subgroup.coe_inf, Subgroup.coe_iInf]
+    simp only [U, Subgroup.coe_inf, Subgroup.coe_iInf, D.coe_stabSubgroup]
     exact E₀.fixingSubgroup_isOpen.inter
       (S.finite_toSet.isOpen_biInter fun s _ ↦ h.isOpen_iso_eq (M₀.embedding s))
   refine ⟨U, hU_open, inf_le_left, fun σ hσ y ↦ ?_⟩
@@ -358,7 +367,8 @@ theorem isContinuous_iff_exists_openSubgroup_fixes_embedding
         M₀.embedding_algebraMap, D.ringEquiv_algebraMap, IntermediateField.algebraMap_apply,
         (mem_fixingSubgroup_iff E₀ σ).mp hσE c c.property]
     · exact hσS z hz
-  exact DFunLike.congr_fun heq y
+  simpa only [RingHom.coe_comp, Function.comp_apply, RingEquiv.coe_toRingHom,
+    D.ringEquiv_apply] using DFunLike.congr_fun heq y
 
 /-- **Finite-level criterion for continuity.** Relative to a model `M₀` of `X` over a finite
 intermediate extension `E₀ / K` inside a normal extension `L / K`, a descent datum `D` is
@@ -390,14 +400,16 @@ variable {X : AlgebraicBelyiPair L} [Algebra K X] [IsScalarTower K L X] (D : Des
 /-- For a continuous descent datum, every element of `X` has open stabilizer under
 `semilinearAction`. -/
 theorem IsContinuous.isOpen_semilinearAction [D.IsContinuous] (x : X) :
-    IsOpen {σ : L ≃ₐ[K] L | D.semilinearAction σ x = x} :=
-  IsContinuous.isOpen_iso_eq x
+    IsOpen {σ : L ≃ₐ[K] L | D.semilinearAction σ x = x} := by
+  simp_rw [D.semilinearAction_apply]
+  exact IsContinuous.isOpen_iso_eq x
 
 /-- A descent datum is continuous if and only if each orbit map `σ ↦ D.semilinearAction σ x` on
 `Gal(L/K)` is locally constant. -/
 theorem isContinuous_iff_isLocallyConstant_semilinearAction :
-    D.IsContinuous ↔ ∀ x : X, IsLocallyConstant (D.semilinearAction · x) :=
-  D.isContinuous_iff_isLocallyConstant
+    D.IsContinuous ↔ ∀ x : X, IsLocallyConstant (D.semilinearAction · x) := by
+  simp_rw [D.semilinearAction_apply]
+  exact D.isContinuous_iff_isLocallyConstant
 
 /-- The Belyi function `t`, as an element of the fixed field of the semilinear action. -/
 private noncomputable def gen : fixedField D.semilinearAction.range :=

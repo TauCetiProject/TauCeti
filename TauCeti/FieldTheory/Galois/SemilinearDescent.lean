@@ -9,11 +9,11 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.FieldTheory.Galois.Infinite
-import Mathlib.RepresentationTheory.Stabilizer
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.TensorProduct.BaseChange
 import TauCeti.RepresentationTheory.GaloisDescent.Discrete
 import TauCeti.RepresentationTheory.GaloisDescent.Span
+import TauCeti.RepresentationTheory.Stabilizer
 
 /-!
 # Galois descent of a field along a semilinear action
@@ -106,32 +106,57 @@ namespace TauCeti.GaloisDescent
 variable {k L F : Type*} [Field k] [Field L] [Field F] [Algebra k L] [Algebra k F]
 
 /-- The `k`-linear representation of `Gal(L/k)` on `F` underlying a semilinear action. -/
-private noncomputable abbrev toRepresentation (ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)) :
+private noncomputable def toRepresentation (ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)) :
     Representation k (L ≃ₐ[k] L) F :=
   (AlgEquiv.toLinearMapHom k F).comp ρ
 
-private theorem invariants_toRepresentation_eq_fixedField (ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)) :
-    ((toRepresentation ρ).invariants : Set F) = fixedField ρ.range := by
-  ext x
+@[simp]
+private theorem toRepresentation_apply (ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F))
+    (σ : L ≃ₐ[k] L) (x : F) :
+    toRepresentation ρ σ x = ρ σ x :=
+  rfl
+
+private theorem mem_invariants_toRepresentation_iff {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)} {x : F} :
+    x ∈ (toRepresentation ρ).invariants ↔ x ∈ fixedField ρ.range := by
   simp [Representation.mem_invariants, mem_fixedField_iff]
+
+private theorem invariants_toRepresentation_eq_fixedField (ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)) :
+    ((toRepresentation ρ).invariants : Set F) = fixedField ρ.range :=
+  Set.ext fun _ ↦ mem_invariants_toRepresentation_iff
+
+private theorem mem_stabilizer_toRepresentation {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+    {x : F} {σ : L ≃ₐ[k] L} :
+    σ ∈ (toRepresentation ρ).stabilizer x ↔ ρ σ x = x := by
+  rw [Representation.mem_stabilizer, toRepresentation_apply]
+
+private theorem coe_stabilizer_toRepresentation (ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)) (x : F) :
+    ((toRepresentation ρ).stabilizer x : Set (L ≃ₐ[k] L)) = {σ : L ≃ₐ[k] L | ρ σ x = x} := by
+  simp_rw [(toRepresentation ρ).coe_stabilizer, toRepresentation_apply]
 
 /-- If every automorphism in an open subgroup `H` fixes `z` under `ρ`, then the stabilizer of `z`
 is open. -/
 private theorem isOpen_stabilizer_of_forall_eq {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     {H : Subgroup (L ≃ₐ[k] L)} (hH : IsOpen (H : Set (L ≃ₐ[k] L))) {z : F}
     (hz : ∀ σ ∈ H, ρ σ z = z) :
-    IsOpen {σ : L ≃ₐ[k] L | ρ σ z = z} :=
-  Subgroup.isOpen_mono (H₂ := (toRepresentation ρ).stabilizer z) hz hH
+    IsOpen {σ : L ≃ₐ[k] L | ρ σ z = z} := by
+  rw [← coe_stabilizer_toRepresentation]
+  exact Subgroup.isOpen_mono (H₂ := (toRepresentation ρ).stabilizer z)
+    (fun σ hσ ↦ mem_stabilizer_toRepresentation.mpr (hz σ hσ)) hH
 
 /-- If `ρ σ z = z` whenever `ρ σ x = x` and `ρ σ y = y`, and `x` and `y` have open stabilizers,
 then so does `z`. -/
 private theorem isOpen_stabilizer_of_inter {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)} {x y z : F}
     (hx : IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) (hy : IsOpen {σ : L ≃ₐ[k] L | ρ σ y = y})
     (hz : ∀ σ, ρ σ x = x → ρ σ y = y → ρ σ z = z) :
-    IsOpen {σ : L ≃ₐ[k] L | ρ σ z = z} :=
-  isOpen_stabilizer_of_forall_eq
-    (H := (toRepresentation ρ).stabilizer x ⊓ (toRepresentation ρ).stabilizer y)
-    (hx.inter hy) fun σ ⟨hσx, hσy⟩ ↦ hz σ hσx hσy
+    IsOpen {σ : L ≃ₐ[k] L | ρ σ z = z} := by
+  refine isOpen_stabilizer_of_forall_eq
+    (H := (toRepresentation ρ).stabilizer x ⊓ (toRepresentation ρ).stabilizer y) ?_
+    fun σ hσ ↦ ?_
+  · rw [Subgroup.coe_inf, coe_stabilizer_toRepresentation, coe_stabilizer_toRepresentation]
+    exact hx.inter hy
+  · obtain ⟨hσx, hσy⟩ := Subgroup.mem_inf.mp hσ
+    exact hz σ (mem_stabilizer_toRepresentation.mp hσx)
+      (mem_stabilizer_toRepresentation.mp hσy)
 
 variable [Algebra L F]
 
@@ -141,6 +166,11 @@ private theorem apply_smul {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (x : F) : ρ σ (a • x) = σ a • ρ σ x := by
   rw [Algebra.smul_def, map_mul, hρ, ← Algebra.smul_def]
 
+private theorem toRepresentation_apply_smul {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+    (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) (σ : L ≃ₐ[k] L) (a : L)
+    (x : F) : toRepresentation ρ σ (a • x) = σ a • toRepresentation ρ σ x := by
+  simp_rw [toRepresentation_apply, apply_smul hρ]
+
 /-- **The fixed field spans.** For a semilinear action `ρ` of the automorphism group of `L / k`
 on `F`, every element of `F` is an `L`-linear combination of elements fixed by the action. Only
 finiteness of the automorphism group of `L / k` is used. -/
@@ -148,7 +178,8 @@ theorem span_fixedField_eq_top [Finite (L ≃ₐ[k] L)] {ρ : (L ≃ₐ[k] L) �
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) :
     Submodule.span L (fixedField ρ.range : Set F) = ⊤ := by
   rw [← invariants_toRepresentation_eq_fixedField]
-  exact span_invariants_eq_top (apply_smul hρ)
+  exact span_invariants_eq_top fun σ a x ↦ by
+    rw [AlgEquiv.smul_def, toRepresentation_apply_smul hρ]
 
 /-- Over an algebraic extension `L / k`, if `F` is spanned over `L` by the fixed field of a
 semilinear action `ρ`, then every element of `F` has an open stabilizer in `Gal(L/k)`. -/
@@ -158,7 +189,8 @@ theorem isOpen_of_span_fixedField_eq_top [Algebra.IsIntegral k L]
     (hspan : Submodule.span L (fixedField ρ.range : Set F) = ⊤) (x : F) :
     IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x} := by
   rw [← invariants_toRepresentation_eq_fixedField] at hspan
-  exact isOpen_of_span_invariants_eq_top (apply_smul hρ) hspan x
+  simpa only [toRepresentation_apply] using
+    isOpen_of_span_invariants_eq_top (toRepresentation_apply_smul hρ) hspan x
 
 /-- The intermediate field over `L` of elements of `F` whose stabilizer in `Gal(L/k)` is open for
 the Krull topology under a semilinear action `ρ`. -/
@@ -166,7 +198,10 @@ def openStabilizerSubfield [Algebra.IsIntegral k L]
     {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) :
     IntermediateField L F :=
-  have hmem := mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ)
+  have hmem (x : F) :
+      x ∈ openStabilizerSubmodule (toRepresentation_apply_smul hρ) ↔
+        IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x} := by
+    simp_rw [mem_openStabilizerSubmodule, toRepresentation_apply]
   have h1 : IsOpen {σ : L ≃ₐ[k] L | ρ σ 1 = 1} :=
     isOpen_stabilizer_of_forall_eq (H := ⊤) isOpen_univ fun σ _ ↦ map_one (ρ σ)
   { carrier := {x : F | IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}}
@@ -211,7 +246,8 @@ theorem span_fixedField_eq_top_of_isOpen [IsGalois k L] {ρ : (L ≃ₐ[k] L) �
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) :
     Submodule.span L (fixedField ρ.range : Set F) = ⊤ := by
   rw [← invariants_toRepresentation_eq_fixedField]
-  exact span_invariants_eq_top_of_isOpen (apply_smul hρ) hopen
+  refine span_invariants_eq_top_of_isOpen (toRepresentation_apply_smul hρ) fun x ↦ ?_
+  simpa only [toRepresentation_apply] using hopen x
 
 /-- For a Galois extension `L / k` and a semilinear action `ρ` of `Gal(L/k)` on `F`, the fixed
 field `fixedField ρ.range` spans `F` over `L` if and only if every element of `F` has an open
@@ -253,18 +289,22 @@ theorem liftEquiv_fixedField_bijective {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) :
     Function.Bijective
       (AlgHom.liftEquiv k L (fixedField ρ.range) F (fixedField ρ.range).val) := by
-  let f := AlgHom.liftEquiv k L (fixedField ρ.range) F (fixedField ρ.range).val
-  refine ⟨?_, ?_⟩
-  · have h := liftBaseChange_injective_of_invariant_of_isGalois (L := L)
-      (ρ := toRepresentation ρ) (f := (fixedField ρ.range).val.toLinearMap)
-      Subtype.val_injective fun σ a x ↦ by
-        simp [apply_smul hρ, (mem_fixedField_iff _ _).mp x.property (ρ σ) ⟨σ, rfl⟩]
-    rwa [← AlgHom.liftEquiv_toLinearMap] at h
-  · apply (LinearMap.range_eq_top (f := f.toLinearMap)).mp
-    refine top_unique ?_
-    rw [← span_fixedField_eq_top_of_isOpen hρ hopen, Submodule.span_le]
-    intro x hx
-    exact ⟨1 ⊗ₜ[k] ⟨x, hx⟩, by simp [f]⟩
+  let e : (toRepresentation ρ).invariants ≃ₗ[k] fixedField ρ.range :=
+    { Equiv.subtypeEquivRight fun _ ↦ mem_invariants_toRepresentation_iff with
+      map_add' := fun _ _ ↦ by ext; simp
+      map_smul' := fun _ _ ↦ by ext; simp }
+  have hval : (fixedField ρ.range).val.toLinearMap.comp e.toLinearMap =
+      (toRepresentation ρ).invariants.subtype := by
+    ext x
+    simp [e]
+  have hcomp := congrArg (LinearMap.liftBaseChange L) hval
+  rw [LinearMap.liftBaseChange_comp, ← AlgHom.liftEquiv_toLinearMap,
+    ← LinearEquiv.coe_baseChange] at hcomp
+  refine (Function.Bijective.of_comp_iff _ (e.baseChange k L _ _).bijective).mp ?_
+  have hbij := liftBaseChange_invariants_bijective_of_isOpen (toRepresentation_apply_smul hρ)
+    fun x ↦ by simpa only [toRepresentation_apply] using hopen x
+  simpa only [← AlgHom.coe_toLinearMap, ← LinearEquiv.coe_toLinearMap, ← LinearMap.coe_comp,
+    hcomp] using hbij
 
 /-- **Discrete Galois descent of a field.** A semilinear action `ρ` of `Gal(L/k)` on `F` with open
 stabilizers exhibits its fixed field as a `k`-form of `F`: extending scalars from `k` to `L`
@@ -373,10 +413,13 @@ theorem fixedField_baseChangeAction (hE : Function.Bijective (AlgHom.liftEquiv k
     fixedField (baseChangeAction hE).range = E := by
   have h := range_eq_invariants_of_liftBaseChange_surjective_of_isGalois
     (ρ := toRepresentation (baseChangeAction hE)) (f := E.val.toLinearMap)
-    (apply_smul (baseChangeAction_algebraMap hE)) (fun σ x ↦ baseChangeAction_apply_coe hE σ x)
+    (toRepresentation_apply_smul (baseChangeAction_algebraMap hE))
+    (fun (σ : L ≃ₐ[k] L) (x : E) ↦ by
+      rw [AlgHom.toLinearMap_apply, IntermediateField.coe_val, toRepresentation_apply]
+      exact baseChangeAction_apply_coe hE σ x)
     (by rw [← AlgHom.liftEquiv_toLinearMap, AlgHom.coe_toLinearMap]; exact hE.2)
   ext x
-  simpa [Representation.mem_invariants] using (SetLike.ext_iff.mp h x).symm
+  simpa [mem_invariants_toRepresentation_iff] using (SetLike.ext_iff.mp h x).symm
 
 /-- **A discrete semilinear action is the action of its fixed field.** -/
 theorem baseChangeAction_fixedField {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}

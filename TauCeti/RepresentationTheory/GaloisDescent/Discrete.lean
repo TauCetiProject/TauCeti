@@ -8,13 +8,13 @@ module
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RingTheory.TensorProduct.Basic
-import Mathlib.RepresentationTheory.Stabilizer
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.LinearAlgebra.TensorProduct.FiniteExtension
 import TauCeti.RepresentationTheory.GaloisDescent.Injective
 import TauCeti.RepresentationTheory.GaloisDescent.Range
 import TauCeti.RepresentationTheory.GaloisDescent.Span
 import TauCeti.RepresentationTheory.Quotient
+import TauCeti.RepresentationTheory.Stabilizer
 import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
@@ -348,14 +348,22 @@ def openStabilizerSubmodule [Algebra.IsIntegral k L]
     (hsemi : ∀ (g : Gal(L/k)) (a : L) (v : V), ρ g (a • v) = g a • ρ g v) :
     Submodule L V where
   carrier := {v : V | IsOpen {g : Gal(L/k) | ρ g v = v}}
-  zero_mem' := Subgroup.isOpen_mono (H₁ := ⊤) (H₂ := ρ.stabilizer 0)
-    (ρ.stabilizer_zero ▸ le_rfl) isOpen_univ
-  add_mem' {x y} hx hy := Subgroup.isOpen_mono (ρ.le_stabilizer_add x y) (hx.inter hy)
-  smul_mem' c {x} hx := Subgroup.isOpen_mono
-    (H₁ := MulAction.stabilizer Gal(L/k) c ⊓ ρ.stabilizer x) (H₂ := ρ.stabilizer (c • x))
-    (fun g ⟨hgc, hgx⟩ ↦ (hsemi g c x).trans
-      (by rw [← AlgEquiv.smul_def, MulAction.mem_stabilizer_iff.mp hgc, ρ.mem_stabilizer.mp hgx]))
-    ((stabilizer_isOpen_of_isIntegral c).inter hx)
+  zero_mem' := by
+    rw [Set.mem_ofPred_eq, ← ρ.coe_stabilizer, ρ.stabilizer_zero, Subgroup.coe_top]
+    exact isOpen_univ
+  add_mem' {x y} hx hy := by
+    rw [Set.mem_ofPred_eq, ← ρ.coe_stabilizer] at hx hy ⊢
+    exact Subgroup.isOpen_mono (ρ.le_stabilizer_add x y)
+      (by rw [Subgroup.coe_inf]; exact hx.inter hy)
+  smul_mem' c {x} hx := by
+    rw [Set.mem_ofPred_eq, ← ρ.coe_stabilizer] at hx ⊢
+    refine Subgroup.isOpen_mono
+      (H₁ := MulAction.stabilizer Gal(L/k) c ⊓ ρ.stabilizer x) (H₂ := ρ.stabilizer (c • x))
+      (fun g hg ↦ ?_)
+      (by rw [Subgroup.coe_inf]; exact (stabilizer_isOpen_of_isIntegral c).inter hx)
+    obtain ⟨hgc, hgx⟩ := Subgroup.mem_inf.mp hg
+    rw [ρ.mem_stabilizer, hsemi, ← AlgEquiv.smul_def,
+      MulAction.mem_stabilizer_iff.mp hgc, ρ.mem_stabilizer.mp hgx]
 
 omit [IsScalarTower k L V] in
 /-- Membership in `openStabilizerSubmodule hsemi` is openness of the stabilizer in `Gal(L/k)`. -/
@@ -376,10 +384,12 @@ theorem isOpen_of_span_invariants_eq_top [Algebra.IsIntegral k L]
     (hspan : Submodule.span L (ρ.invariants : Set V) = ⊤) (v : V) :
     IsOpen {g : Gal(L/k) | ρ g v = v} := by
   refine (mem_openStabilizerSubmodule hsemi v).mp
-    (Submodule.span_le.mpr ?_ (hspan ▸ Submodule.mem_top))
+    (Submodule.span_le.mpr ?_ (by rw [hspan]; exact Submodule.mem_top))
   intro x hx
+  rw [SetLike.mem_coe, mem_openStabilizerSubmodule, ← ρ.coe_stabilizer]
   exact Subgroup.isOpen_mono (H₁ := ⊤) (H₂ := ρ.stabilizer x)
-    (fun g _ ↦ (ρ.mem_invariants x).mp hx g) isOpen_univ
+    (fun g _ ↦ ρ.mem_stabilizer.mpr ((ρ.mem_invariants x).mp hx g))
+    (by rw [Subgroup.coe_top]; exact isOpen_univ)
 
 /-- **Characterization of discrete semilinear Galois representations.** For a Galois extension
 `L / k` and a semilinear representation `ρ` of `Gal(L/k)` on an `L`-vector space `V`, the invariant
