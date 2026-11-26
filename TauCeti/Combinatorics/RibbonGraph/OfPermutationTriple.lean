@@ -52,9 +52,38 @@ graph of a concrete triple evaluate by `decide` and `#eval`.
 
 open Equiv Equiv.Perm
 
+universe u
+
 public section
 
 namespace TauCeti
+
+namespace BipartiteRibbonGraph
+
+/-- The finite bipartite ribbon graph with edges `E` and rotations `σ` and `τ`: its black and
+white vertices are the cycles of `σ` and of `τ`, the cyclic orders around them being `σ` and `τ`
+themselves. -/
+@[expose] def ofPerms (E : Type u) [Fintype E] [DecidableEq E] (σ τ : Perm E) :
+    BipartiteRibbonGraph.{u} where
+  E := E
+  B := Quotient (SameCycle.setoid σ)
+  W := Quotient (SameCycle.setoid τ)
+  fintypeE := inferInstance
+  fintypeB := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (SameCycle σ)))
+  fintypeW := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (SameCycle τ)))
+  decidableEqE := inferInstance
+  decidableEqB := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle σ)))
+  decidableEqW := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle τ)))
+  blackEnd := Quotient.mk (SameCycle.setoid σ)
+  whiteEnd := Quotient.mk (SameCycle.setoid τ)
+  rotB := σ
+  rotW := τ
+  blackEnd_surjective := Quotient.mk_surjective
+  whiteEnd_surjective := Quotient.mk_surjective
+  isCycleOn_rotB := Equiv.Perm.isCycleOn_preimage_quotientMk σ
+  isCycleOn_rotW := Equiv.Perm.isCycleOn_preimage_quotientMk τ
+
+end BipartiteRibbonGraph
 
 namespace PermutationTriple
 
@@ -64,24 +93,8 @@ variable {n : ℕ} (t : PermutationTriple n)
 black and white vertices are the cycles of `σ0` and of `σ1`, and the cyclic orders around them
 are `σ0` and `σ1` themselves. For a connected triple this is the dessin d'enfants of the
 associated three-point cover. -/
-@[expose] def ribbonGraph : BipartiteRibbonGraph where
-  E := Fin n
-  B := Quotient (SameCycle.setoid t.σ0)
-  W := Quotient (SameCycle.setoid t.σ1)
-  fintypeE := inferInstance
-  fintypeB := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ0)))
-  fintypeW := @Quotient.fintype _ _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ1)))
-  decidableEqE := inferInstance
-  decidableEqB := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ0)))
-  decidableEqW := @Quotient.decidableEq _ _ (inferInstanceAs (DecidableRel (SameCycle t.σ1)))
-  blackEnd := Quotient.mk (SameCycle.setoid t.σ0)
-  whiteEnd := Quotient.mk (SameCycle.setoid t.σ1)
-  rotB := t.σ0
-  rotW := t.σ1
-  blackEnd_surjective := Quotient.mk_surjective
-  whiteEnd_surjective := Quotient.mk_surjective
-  isCycleOn_rotB := Equiv.Perm.isCycleOn_preimage_quotientMk t.σ0
-  isCycleOn_rotW := Equiv.Perm.isCycleOn_preimage_quotientMk t.σ1
+@[expose] def ribbonGraph : BipartiteRibbonGraph :=
+  BipartiteRibbonGraph.ofPerms (Fin n) t.σ0 t.σ1
 
 /-- The cyclic order of the sheets around a black vertex is `σ0`. -/
 @[simp] theorem rotB_ribbonGraph : t.ribbonGraph.rotB = t.σ0 := (rfl)
