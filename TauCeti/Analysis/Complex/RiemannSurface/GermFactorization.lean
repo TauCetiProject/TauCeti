@@ -36,6 +36,10 @@ for maps into any type.
 * `TauCeti.RiemannSurface.GermFactorsThrough.apply_eq`: related points have the same value.
 * `TauCeti.RiemannSurface.GermFactorsThrough.exists_eventually_germFactorsThrough`: a
   factorization `u₁ = u₀ ∘ φ` near `b` relates every point `y` near `b` to `φ y`.
+* `TauCeti.RiemannSurface.GermFactorsThrough.eq_of_dense`: if no point of a dense set has its germ
+  factoring through the germ of `u` at another point, then no point does.
+* `TauCeti.RiemannSurface.exists_apply_ne_of_forall_germFactorsThrough_imp_eq`: a map from a
+  nontrivial Riemann surface whose germs factor through no germ at another point is not constant.
 * `TauCeti.RiemannSurface.GermFactorsThrough.eventually_mem_image`,
   `TauCeti.RiemannSurface.GermFactorsThrough.frequently_mem_image`: if the germ of `u₁` at `b`
   factors through the germ of `u₀` at `a`, then every point near `b` is mapped by `u₁` into the
@@ -110,6 +114,35 @@ theorem GermFactorsThrough.exists_eventually_germFactorsThrough
   refine ⟨φ, hφb, hφd.self_of_nhds.continuousAt, ?_⟩
   filter_upwards [hφd.eventually_nhds, hφu.eventually_nhds] with y hyd hyu
   exact ⟨φ, rfl, hyd, hyu⟩
+
+/-- **Branch degree one on a dense set gives branch degree one everywhere.** Let `u : X → N` be a
+map from a Hausdorff Riemann surface, and let `s` be a dense set of points of `X` at each of which
+the germ of `u` factors holomorphically through the germ of `u` at no other point. Then the germ of
+`u` at any point `z` factors holomorphically through the germ of `u` at no other point. -/
+theorem GermFactorsThrough.eq_of_dense [T2Space X] {u : X → N} {s : Set X} (hs : Dense s)
+    (hd : ∀ z ∈ s, ∀ ζ, GermFactorsThrough u z u ζ → ζ = z)
+    {z ζ : X} (h : GermFactorsThrough u z u ζ) : ζ = z := by
+  by_contra hne
+  -- A factorization `u = u ∘ φ` near `z` with `φ z = ζ` relates each `w` near `z` to `φ w`.
+  obtain ⟨φ, hφz, hφc, hφr⟩ := h.exists_eventually_germFactorsThrough
+  -- Since `φ z = ζ ≠ z`, also `φ w ≠ w` for `w` near `z`.
+  obtain ⟨U, V, hU, hV, hζU, hzV, hUV⟩ := t2_separation hne
+  have hφU : ∀ᶠ w in 𝓝 z, φ w ∈ U := hφc.preimage_mem_nhds (hφz ▸ hU.mem_nhds hζU)
+  -- Some such `w` lies in `s`, where it can only be related to itself.
+  obtain ⟨w, hws, hwr, hwU, hwV⟩ := (mem_closure_iff_frequently.1 (hs.closure_eq ▸ mem_univ z)
+    |>.and_eventually (hφr.and (hφU.and (hV.mem_nhds hzV)))).exists
+  rw [hd w hws (φ w) hwr] at hwU
+  exact disjoint_left.1 hUV hwU hwV
+
+/-- A map from a Riemann surface with two points, whose germ at a point factors holomorphically
+through its germ at no other point, is not constant: the germs of a constant map all factor
+through each other by constant changes of coordinate. -/
+theorem exists_apply_ne_of_forall_germFactorsThrough_imp_eq [Nontrivial X] {u : X → N}
+    (hd : ∀ z ζ, GermFactorsThrough u z u ζ → ζ = z) : ∃ x₁ x₂, u x₁ ≠ u x₂ := by
+  by_contra! h
+  obtain ⟨a, b, hab⟩ := exists_pair_ne X
+  exact hab (hd b a (germFactorsThrough_iff.2 ⟨fun _ ↦ a, rfl,
+    .of_forall fun _ ↦ mdifferentiableAt_const, .of_forall fun y ↦ h y a⟩))
 
 /-- If the germ of `u₁` at `b` factors through the germ of `u₀` at `a`, then near `b` the map `u₁`
 takes its values in the image under `u₀` of any neighbourhood of `a`. -/

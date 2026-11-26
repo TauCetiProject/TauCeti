@@ -63,8 +63,6 @@ is immersed.
 
 ## Main results
 
-* `TauCeti.RiemannSurface.GermFactorsThrough.eq_of_dense`: if no point of a dense set, such as the
-  complement of `u⁻¹(u(Crit u))`, has a coincident branch at another point, then no point does.
 * `TauCeti.IsSomewhereInjective.eq_of_germFactorsThrough`: on a somewhere injective closed curve,
   coincident branches occur only at the same point.
 * `TauCeti.eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq`,
@@ -100,40 +98,6 @@ variable {S : Type*} [TopologicalSpace S] [ChartedSpace ℂ S] [IsManifold 𝓘(
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ N]
   {J : SmoothAlmostComplexStructure I N} {u : S → N}
-
-omit [IsManifold 𝓘(ℂ) ∞ S] [TopologicalSpace N] in
-/-- **Branch degree one on a dense set gives branch degree one everywhere.** Let `u : S → N` be a
-map from a Hausdorff Riemann surface, and let `s` be a dense set of points of `S`, such as the
-complement of the preimage `B = u⁻¹(u(Crit u))` of the critical values of `u`, at each of which
-the branch of `u` factors holomorphically through the branch of `u` at no other point. Then the
-branch of `u` at any point `z` factors holomorphically through the branch of `u` at no other
-point. -/
-theorem RiemannSurface.GermFactorsThrough.eq_of_dense [T2Space S] {s : Set S} (hs : Dense s)
-    (hd : ∀ z ∈ s, ∀ ζ, GermFactorsThrough u z u ζ → ζ = z)
-    {z ζ : S} (h : GermFactorsThrough u z u ζ) : ζ = z := by
-  by_contra hne
-  -- A factorization `u = u ∘ φ` near `z` with `φ z = ζ` relates each `w` near `z` to `φ w`.
-  obtain ⟨φ, hφz, hφc, hφr⟩ := h.exists_eventually_germFactorsThrough
-  -- Since `φ z = ζ ≠ z`, also `φ w ≠ w` for `w` near `z`.
-  obtain ⟨U, V, hU, hV, hζU, hzV, hUV⟩ := t2_separation hne
-  have hφU : ∀ᶠ w in 𝓝 z, φ w ∈ U := hφc.preimage_mem_nhds (hφz ▸ hU.mem_nhds hζU)
-  -- Some such `w` lies in `s`, where it can only be related to itself.
-  obtain ⟨w, hws, hwr, hwU, hwV⟩ := (mem_closure_iff_frequently.1 (hs.closure_eq ▸ mem_univ z)
-    |>.and_eventually (hφr.and (hφU.and (hV.mem_nhds hzV)))).exists
-  rw [hd w hws (φ w) hwr] at hwU
-  exact disjoint_left.1 hUV hwU hwV
-
-omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [TopologicalSpace N]
-  [IsManifold I ∞ N] in
-/-- A map from a Riemann surface with two points, whose branch at a point factors holomorphically
-through its branch at no other point, is not constant: the branches of a constant map all factor
-through each other by constant changes of coordinate. -/
-private theorem exists_apply_ne_of_forall_germFactorsThrough_imp_eq [Nontrivial S]
-    (hd : ∀ z ζ, GermFactorsThrough u z u ζ → ζ = z) : ∃ x₁ x₂, u x₁ ≠ u x₂ := by
-  by_contra! h
-  obtain ⟨a, b, hab⟩ := exists_pair_ne S
-  exact hab (hd b a (germFactorsThrough_iff.2 ⟨fun _ ↦ a, rfl,
-    .of_forall fun _ ↦ mdifferentiableAt_const, .of_forall fun y ↦ h y a⟩))
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 /-- An injective point `x` of a map `u : S → N` from a Riemann surface lies outside the preimage
