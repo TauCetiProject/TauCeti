@@ -9,7 +9,6 @@ public import TauCeti.RepresentationTheory.Continuous.Determinant.Basic
 public import TauCeti.RepresentationTheory.OfGL
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.Topology.Algebra.Group.Matrix
-public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Basic
 
 /-!
 # Framed continuous representations
@@ -30,7 +29,8 @@ changes the coefficients of a framed representation entrywise (`TauCeti.Continuo
 functorially in `f`.
 
 For a group with continuous inversion, a homomorphism `Γ →* GL_n(A)` is continuous, hence framed,
-exactly when its matrix entries are continuous (`MonoidHom.continuous_iff_continuous_matrix_elem`).
+exactly when its matrix entries are continuous (`MonoidHom.continuous_iff_continuous_matrix_elem`
+in `TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Basic`).
 
 ## Main definitions
 
