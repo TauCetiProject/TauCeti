@@ -64,6 +64,10 @@ depends on the cutoffs only through their values at the point.
   `TauCeti.classicalPrincipalSymbolLinearMap` is the principal symbol as a linear map from the
   operators of order `m` to it, with kernel the operators of order `m - 1`
   (`TauCeti.ker_classicalPrincipalSymbolLinearMap`).
+* `TauCeti.mul_inv_mem_homogeneousCotangentSymbols`, `TauCeti.inv_mem_homogeneousCotangentSymbols`:
+  the inverse of a smooth homogeneous function of degree `m` on the cotangent bundle, where it
+  vanishes at no nonzero covector, is smooth and homogeneous of degree `-m`; outside that set it
+  may be cut off by a smooth function of the base point.
 * `TauCeti.classicalPrincipalSymbol_complexifyLinearMap`: the principal symbol of the
   complexification of a differential operator `D` of order at most `m` is `i ^ m` times its
   geometric principal symbol (`TauCeti.smoothPrincipalSymbol`) at nonzero covectors, the
@@ -280,6 +284,52 @@ theorem mem_homogeneousCotangentSymbols_iff
           s (e.symm p.1) ((innerSL ℝ p.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm p.1))))
           (e.target ×ˢ {η | η ≠ 0}) :=
   Iff.rfl
+
+omit [T2Space M] in
+/-- **The cut-off inverse of a homogeneous symbol.** Let `s` be a smooth positively homogeneous
+function of degree `m` on the cotangent bundle and `σ` a smooth real function on `M` such that `s`
+vanishes at no nonzero covector over the support of `σ`. Then `(x, ξ) ↦ σ(x) s(x, ξ)⁻¹` is a smooth
+positively homogeneous function of degree `-m`. Off the support of `σ` the inverse of `s` need not
+be smooth, but there it is multiplied by `0`. -/
+theorem mul_inv_mem_homogeneousCotangentSymbols
+    {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
+    (hs : s ∈ homogeneousCotangentSymbols n M m) {σ : M → ℝ}
+    (hσ : ContMDiff 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ) ∞ σ)
+    (hs0 : ∀ x ∈ tsupport σ, ∀ ξ, ξ ≠ 0 → s x ξ ≠ 0) :
+    (fun x ξ ↦ (σ x : ℂ) * (s x ξ)⁻¹) ∈ homogeneousCotangentSymbols n M (-m) := by
+  obtain ⟨h0, hhom, hsmooth⟩ := mem_homogeneousCotangentSymbols_iff.1 hs
+  refine mem_homogeneousCotangentSymbols_iff.2 ⟨fun x ↦ by simp [h0 x], fun x ξ t ht ↦ ?_,
+    fun e he p hp ↦ ?_⟩
+  · rw [hhom x ξ t ht, mul_inv, Real.rpow_neg ht.le, Complex.ofReal_inv, mul_left_comm]
+  by_cases hpσ : e.symm p.1 ∈ tsupport σ
+  · -- Over the support of `σ`, the symbol `s` does not vanish at the nonzero covector of `p`.
+    have hξ := (innerSL_comp_mvfderiv_eq_zero_iff
+      (IsManifold.maximalAtlas_subset_of_le (by simp) he) (e.map_target hp.1)).not.2 hp.2
+    have hσe : ContDiffOn ℝ ∞ (σ ∘ e.symm) e.target :=
+      contMDiffOn_iff_contDiffOn.1 (hσ.comp_contMDiffOn (contMDiffOn_symm_of_mem_maximalAtlas he))
+    exact (Complex.ofRealCLM.contDiff.contDiffAt.comp_contDiffWithinAt p
+      ((hσe.comp contDiffOn_fst mapsTo_fst_prod) p hp)).mul
+      ((hsmooth e he p hp).fun_inv (hs0 _ hpσ _ hξ))
+  · -- Off the support of `σ`, the function vanishes near `p`.
+    have hc : ∀ᶠ q in 𝓝 p, σ (e.symm (q : CoordinateSpace n × CoordinateSpace n).1) = 0 := by
+      filter_upwards [((e.continuousAt_symm hp.1).comp continuousAt_fst).preimage_mem_nhds
+        ((isClosed_tsupport σ).isOpen_compl.mem_nhds hpσ)] with q hq
+      exact image_eq_zero_of_notMem_tsupport hq
+    exact (contDiffWithinAt_const (c := (0 : ℂ))).congr_of_eventuallyEq
+      (eventually_nhdsWithin_of_eventually_nhds (hc.mono fun q hq ↦ by simp [hq]))
+      (by simp [image_eq_zero_of_notMem_tsupport hpσ])
+
+omit [T2Space M] in
+/-- **The inverse of a nonvanishing homogeneous symbol.** If `s` is a smooth positively
+homogeneous function of degree `m` on the cotangent bundle that vanishes at no nonzero covector,
+then its pointwise inverse `(x, ξ) ↦ s(x, ξ)⁻¹`, which is `0` at the zero covector, is a smooth
+positively homogeneous function of degree `-m`. -/
+theorem inv_mem_homogeneousCotangentSymbols
+    {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
+    (hs : s ∈ homogeneousCotangentSymbols n M m) (hs0 : ∀ x ξ, ξ ≠ 0 → s x ξ ≠ 0) :
+    (fun x ξ ↦ (s x ξ)⁻¹) ∈ homogeneousCotangentSymbols n M (-m) := by
+  simpa using mul_inv_mem_homogeneousCotangentSymbols hs (σ := fun _ ↦ 1) contMDiff_const
+    fun x _ ↦ hs0 x
 
 /-! ### The principal symbol on the cotangent bundle -/
 
