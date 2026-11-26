@@ -96,8 +96,9 @@ theorem firstChernClass_orthogonalSpanFamily
   have := FiberBundle.t2Space F V
   have := VectorBundle.finiteDimensional ℂ ((ι → ℂ) × (Fin r → ℂ)) P
   let φ (x : B) : P x ≃L[ℂ] V x := (LinearEquiv.ofBijective (ϕ x) (hbij x)).toContinuousLinearEquiv
-  exact firstChernClass_eq_of_fiberwise_trivialProd (φ := φ)
-    (D.continuous.congr fun v ↦ hD v.proj v.snd)
+  refine firstChernClass_eq_of_fiberwise_trivialProd (φ := φ) (D.continuous.congr fun v ↦ ?_)
+  simp only [φ, LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.ofBijective_apply]
+  exact hD v.proj v.snd
 
 include hs in
 /-- **The line summand of a smooth splitting has the first Chern class of the bundle.** If the

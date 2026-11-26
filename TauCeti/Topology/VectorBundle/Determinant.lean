@@ -878,11 +878,11 @@ theorem congrModelEquiv_ιMulti (e : ∀ x, E₁ x ≃L[K] E' x) (x : B)
         (exteriorPower.ιMulti K _ fun j ↦ e x (v (Fin.cast h.symm j))) := by
   apply (linearEquiv K F' E' x).injective
   apply Subtype.ext
-  rw [coe_congrModelEquiv, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply,
-    exteriorPower.ιMulti_apply_coe, exteriorPower.ιMulti_apply_coe,
-    ExteriorAlgebra.map_apply_ιMulti, ExteriorAlgebra.ιMulti_apply, ExteriorAlgebra.ιMulti_apply,
-    List.ofFn_congr h]
-  simp only [Function.comp_apply, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
+  simp only [coe_congrModelEquiv, LinearEquiv.apply_symm_apply, exteriorPower.ιMulti_apply_coe,
+    ExteriorAlgebra.map_apply_ιMulti]
+  -- The two exterior products differ only by the reindexing `Fin.cast h`.
+  rw [ExteriorAlgebra.ιMulti_apply, ExteriorAlgebra.ιMulti_apply, List.ofFn_congr h]
+  simp
 
 end ModelCongr
 
@@ -933,11 +933,8 @@ private theorem continuousAt_chartCoord_congrModelEquiv (e : ∀ x, E₁ x ≃L[
     rw [LinearEquiv.apply_symm_apply, map_smul, chartCoord_ιMulti]
     have hb : (Module.finBasis K F₁).det (fun i ↦ b i) = 1 := b.det_self
     simp only [t.apply_mk_symm hx, smul_eq_mul, hb, mul_one]
-  rw [h₁, map_smul, congrModelEquiv_ιMulti e x hr, map_smul, chartCoord_ιMulti, smul_eq_mul,
-    mul_comm]
-  congr 1
-  simp only [D, T, Module.Basis.continuousDet_apply, ContinuousLinearMap.coe_comp,
-    Function.comp_apply, t.symmL_apply hx, ContinuousLinearEquiv.coe_coe, t',
+  rw [h₁, map_smul, congrModelEquiv_ιMulti e x hr, map_smul, chartCoord_ιMulti]
+  simp [mul_comm, D, T, t.symmL_apply hx, t',
     Trivialization.continuousLinearMapAt_apply_of_mem K t' hx']
 
 /-- **Functoriality of the determinant line across model presentations.** A continuous fibrewise
