@@ -46,6 +46,8 @@ It remains to bound `‖K‖₁`. By Poisson summation the lift of `K` to `ℝ�
 
 ## Main declarations
 
+* `SchwartzMap.summable_norm_apply_latticePoint`: a Schwartz function is absolutely summable over
+  the integer points.
 * `SchwartzMap.periodicKernel`: the periodic kernel `∑ₙ σ(n) eₙ` of a Schwartz symbol.
 * `SchwartzMap.mFourierCoeff_periodicKernel`: its Fourier coefficients are the values `σ(n)`.
 * `SchwartzMap.eLpNorm_periodicKernel_le`: its `L¹` norm is at most `‖𝓕⁻ σ‖_{L¹(ℝᵈ)}`.
@@ -76,14 +78,14 @@ variable {d : Type*} [Fintype d]
 /-! ### The periodic kernel -/
 
 /-- A Schwartz function is absolutely summable over the integer points. -/
-private theorem summable_norm_apply_latticePoint (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
+theorem _root_.SchwartzMap.summable_norm_apply_latticePoint (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
     Summable fun n : d → ℤ ↦ ‖σ (latticePoint n)‖ := by
   simpa only [← latticePoint_eq_sum] using
     σ.summable_norm_apply_sum_intCast_smul (EuclideanSpace.basisFun d ℝ)
 
 private theorem summable_smul_mFourier (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) :
     Summable fun n : d → ℤ ↦ σ (latticePoint n) • mFourier n :=
-  .of_norm <| (summable_norm_apply_latticePoint σ).congr fun n ↦ by
+  .of_norm <| σ.summable_norm_apply_latticePoint.congr fun n ↦ by
     rw [norm_smul, mFourier_norm, mul_one]
 
 /-- The periodic kernel `K = ∑ₙ σ(n) eₙ` of the multiplier with symbol `σ`. -/
@@ -105,7 +107,7 @@ theorem _root_.SchwartzMap.mFourierCoeff_periodicKernel (σ : 𝓢(EuclideanSpac
   have h : ⇑σ.periodicKernel = fun z ↦ ∑' m : d → ℤ, σ (latticePoint m) • mFourier m z :=
     funext fun z ↦ by simp only [SchwartzMap.periodicKernel_apply, smul_eq_mul]
   rw [h]
-  exact mFourierCoeff_tsum_smul_mFourier (summable_norm_apply_latticePoint σ) n
+  exact mFourierCoeff_tsum_smul_mFourier σ.summable_norm_apply_latticePoint n
 
 /-- **The `L¹` norm of the periodic kernel** is at most the `L¹` norm of `𝓕⁻ σ` on `ℝᵈ`: the
 kernel is the periodization of `𝓕⁻ σ`. -/
@@ -171,7 +173,7 @@ private theorem _root_.UnitAddTorus.periodicKernel_convolution_apply (f : L²(Un
       (c := ‖σ (latticePoint n)‖)
       ((continuous_const.mul (mFourier n).continuous).aestronglyMeasurable)
       (Filter.Eventually.of_forall fun t ↦ by simp)
-  · refine ((summable_norm_apply_latticePoint σ).mul_right (∫ t, ‖f (x - t)‖)).congr fun n ↦ ?_
+  · refine (σ.summable_norm_apply_latticePoint.mul_right (∫ t, ‖f (x - t)‖)).congr fun n ↦ ?_
     simp only [norm_mul, norm_mFourier_apply, mul_one]
     rw [integral_const_mul]
 
@@ -183,7 +185,7 @@ private theorem fourierMultiplier_ae_eq_convolution (hm : ∀ n, m n = σ (latti
       σ.periodicKernel ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f := by
   set c : (d → ℤ) → ℂ := fun n ↦ m n * mFourierCoeff f n
   have hc : Summable fun n ↦ c n • mFourier n := .of_norm <|
-    ((summable_norm_apply_latticePoint σ).mul_right ‖f‖).of_nonneg_of_le
+    (σ.summable_norm_apply_latticePoint.mul_right ‖f‖).of_nonneg_of_le
       (fun _ ↦ norm_nonneg _) fun n ↦ by
         rw [norm_smul, mFourier_norm, mul_one, norm_mul, hm]
         exact mul_le_mul_of_nonneg_left (norm_mFourierCoeff_le_norm f n) (norm_nonneg _)

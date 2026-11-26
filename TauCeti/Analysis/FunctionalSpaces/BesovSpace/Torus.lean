@@ -145,7 +145,7 @@ variable {φ}
 
 /-- `ψⱼ` vanishes outside the finite set of frequencies of norm at most `2^j φ.rOut`, the
 frequencies summed over in the definition of `littlewoodPaleyBlockLp`. -/
-private theorem inhomogeneousLittlewoodPaley_eq_zero_of_notMem (j : ℕ) {n : d → ℤ}
+theorem inhomogeneousLittlewoodPaley_eq_zero_of_notMem (j : ℕ) {n : d → ℤ}
     (hn : n ∉ (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ j * φ.rOut)).toFinset) :
     φ.inhomogeneousLittlewoodPaley j (latticePoint n) = 0 := by
   simp only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_le] at hn
