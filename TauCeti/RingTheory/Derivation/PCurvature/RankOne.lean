@@ -7,10 +7,10 @@ module
 
 public import Mathlib.RingTheory.LocalRing.Basic
 public import TauCeti.RingTheory.Derivation.PPow
-import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Lie.Restricted.Jacobson
+import TauCeti.Data.Nat.Factorial.NatCast
 import TauCeti.RingTheory.Derivation.Basic
 import TauCeti.RingTheory.Derivation.FirstOrder
 
@@ -77,7 +77,8 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 variable {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R A]
 
 /-- The coefficients of Jacobson's polynomial at `D` and multiplication by `a`: the only nonzero
-iterated commutator of length `k + 1` is `⁅a, ⁅D, … ⁅D, D⁆ …⁆⁆`, namely `-D^[k + 1] a`. -/
+iterated commutator of length `k + 1` is `⁅D, … ⁅D, ⁅a, D⁆⁆ …⁆`, with `k` copies of `D` outside
+`⁅a, D⁆`, namely `-D^[k + 1] a`. -/
 private theorem jacobsonCoeff_toLinearMap_mulLeft (D : Derivation R A A) (a : A) (k j : ℕ) :
     TauCeti.LieAlgebra.jacobsonCoeff D.toLinearMap (LinearMap.mulLeft R a) (k + 1) j =
       if j = k then -LinearMap.mulLeft R (D^[k + 1] a) else 0 := by
@@ -123,14 +124,19 @@ theorem add_mulLeft_pow_char (D : Derivation R A A) (a : A) :
     rw [this, ZMod.inv_neg_one]
     exact ZMod.val_neg_one (q + 1)
   have hq : (q : A) + 2 = 0 := by exact_mod_cast CharP.cast_eq_zero A (q + 2)
+  -- Jacobson's sum collapses to its only nonzero term, indexed by `j = q`.
+  have hcollapse : TauCeti.LieAlgebra.jacobson (q + 2) D.toLinearMap (LinearMap.mulLeft R a) =
+      (q + 1) • -LinearMap.mulLeft R (D^[q + 1] a) := by
+    rw [TauCeti.LieAlgebra.jacobson_def, show q + 2 - 1 = q + 1 from rfl,
+      sum_eq_single_of_mem q (by simp) fun j _ hj ↦ by
+        simp [jacobsonCoeff_toLinearMap_mulLeft, hj],
+      jacobsonCoeff_toLinearMap_mulLeft, hinv]
+    simp only [↓reduceIte]
   rw [TauCeti.LieAlgebra.add_pow_eq_jacobson, LinearMap.pow_mulLeft, ← toLinearMap_pPow,
-    TauCeti.LieAlgebra.jacobson_def, show q + 2 - 1 = q + 1 by omega,
-    Finset.sum_eq_single_of_mem q (by simp) fun j _ hj ↦ by
-      simp [jacobsonCoeff_toLinearMap_mulLeft, hj],
-    jacobsonCoeff_toLinearMap_mulLeft, hinv, add_assoc]
+    hcollapse, add_assoc, show q + 2 - 1 = q + 1 from rfl]
   congr 1
   ext b
-  simp only [↓reduceIte, LinearMap.add_apply, LinearMap.mulLeft_apply, LinearMap.smul_apply,
+  simp only [LinearMap.add_apply, LinearMap.mulLeft_apply, LinearMap.smul_apply,
     LinearMap.neg_apply]
   rw [nsmul_eq_mul, Nat.cast_add, Nat.cast_one]
   linear_combination (-(D^[q + 1] a * b)) * hq
@@ -190,8 +196,7 @@ private theorem add_mulLeft_apply_sum_projector (D : Derivation R A A) {x : A} (
   induction n with
   | zero => simp
   | succ n ih =>
-    have hn' : IsUnit (n ! : A) :=
-      isUnit_of_dvd_unit (Nat.cast_dvd_cast (Nat.factorial_dvd_factorial n.le_succ)) hn
+    have hn' : IsUnit (n ! : A) := hn.natCast_factorial_of_le n.le_succ
     have hd : D ((-1) ^ (n + 1) * (Ring.inverse ((n + 1)! : A) * x ^ (n + 1))) =
         (-1) ^ (n + 1) * (Ring.inverse (n ! : A) * x ^ n) := by
       -- `leibniz_ringInverse_factorial_mul_pow_succ` is stated over a commutative ring of
@@ -205,30 +210,6 @@ private theorem add_mulLeft_apply_sum_projector (D : Derivation R A A) {x : A} (
       rw [pow_succ', Module.End.mul_eq_comp, LinearMap.comp_apply]
     rw [sum_range_succ, map_add, ih hn', hN, hd, ← hsucc]
     ring
-
-/-- The coefficients in Taylor's formula: for `n! ` a unit,
-`∑_{i ≤ n} (-1) ^ (n - i) / (i! (n - i)!)` is `1` for `n = 0` and `0` otherwise. -/
-private theorem sum_range_neg_one_pow_mul_ringInverse_factorial {n : ℕ} (hn : IsUnit (n ! : A)) :
-    ∑ i ∈ range (n + 1),
-        (-1) ^ (n - i) * (Ring.inverse (i ! : A) * Ring.inverse ((n - i)! : A)) =
-      if n = 0 then 1 else 0 := by
-  have hunit {i : ℕ} (hi : i ≤ n) : IsUnit (i ! : A) :=
-    isUnit_of_dvd_unit (Nat.cast_dvd_cast (Nat.factorial_dvd_factorial hi)) hn
-  -- Multiply by the unit `n!`: the summands become `(-1) ^ (n - i) * n.choose i`.
-  have hchoose (i : ℕ) (hi : i ∈ range (n + 1)) :
-      (n ! : A) * ((-1) ^ (n - i) * (Ring.inverse (i ! : A) * Ring.inverse ((n - i)! : A))) =
-        1 ^ i * (-1) ^ (n - i) * (n.choose i : A) := by
-    have hi : i ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hi)
-    rw [← Nat.choose_mul_factorial_mul_factorial hi, Nat.cast_mul, Nat.cast_mul, one_pow, one_mul]
-    have h₁ := Ring.mul_inverse_cancel _ (hunit hi)
-    have h₂ := Ring.mul_inverse_cancel _ (hunit (Nat.sub_le n i))
-    linear_combination ((-1) ^ (n - i) * (n.choose i : A) * ((i ! : A) * Ring.inverse (i ! : A)))
-      * h₂ + (-1) ^ (n - i) * (n.choose i : A) * h₁
-  apply hn.mul_left_cancel
-  rw [mul_sum, sum_congr rfl hchoose, ← add_pow, add_neg_cancel, zero_pow_eq]
-  split_ifs with h
-  · simp [h]
-  · simp
 
 /-- **Taylor's formula.** If `D x = 1` and `∇ = D + a` satisfies `∇ ^ p = 0` with `(p - 1)!` a
 unit, every `m` is recovered from the values of Katz's projector
@@ -248,8 +229,6 @@ private theorem sum_projector_eq (D : Derivation R A A) (x a m : A) {p : ℕ}
     rw [add_comm, pow_add, Module.End.mul_eq_comp, LinearMap.comp_apply]
   have hzero {n : ℕ} (hn : p ≤ n) : (N ^ n) m = 0 := by
     rw [← Nat.add_sub_cancel' hn, pow_add, hN, zero_mul, LinearMap.zero_apply]
-  have hunit {n : ℕ} (hn : n < p) : IsUnit (n ! : A) :=
-    isUnit_of_dvd_unit (Nat.cast_dvd_cast (Nat.factorial_dvd_factorial (by omega))) hp
   -- The summand indexed by `(j, k)` only depends on `n = j + k`, and vanishes once `p ≤ n`.
   let F (j k : ℕ) : A :=
     (-1) ^ k * (Ring.inverse (j ! : A) * Ring.inverse (k ! : A)) * (x ^ (j + k) * (N ^ (j + k)) m)
@@ -271,7 +250,8 @@ private theorem sum_projector_eq (D : Derivation R A A) (x a m : A) {p : ℕ}
   have hdiag : ∀ n ∈ range p, ∑ i ∈ range (n + 1), F i (n - i) =
       if n = 0 then m else 0 := by
     intro n hn
-    have hcoef := sum_range_neg_one_pow_mul_ringInverse_factorial (hunit (mem_range.mp hn))
+    have hcoef := TauCeti.sum_range_neg_one_pow_mul_ringInverse_factorial
+      (hp.natCast_factorial_of_lt (mem_range.mp hn))
     calc ∑ i ∈ range (n + 1), F i (n - i)
         = (∑ i ∈ range (n + 1), (-1) ^ (n - i) *
             (Ring.inverse (i ! : A) * Ring.inverse ((n - i)! : A))) * (x ^ n * (N ^ n) m) := by
