@@ -86,6 +86,7 @@ theorem tangentLatticeChange_self {e : (integralAffineGroupoid h).maximalAtlas B
 
 /-- On a triple overlap, changing the integral lattice frame twice agrees with the
 direct change. -/
+@[simp]
 theorem tangentLatticeChange_trans {e e' e'' : (integralAffineGroupoid h).maximalAtlas B} {x : B}
     (hx : x ∈ e.val.source) (hx' : x ∈ e'.val.source) (hx'' : x ∈ e''.val.source) :
     (tangentLatticeChange (h := h) ⟨hx, hx'⟩).trans

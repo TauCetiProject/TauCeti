@@ -133,6 +133,7 @@ theorem chartChangeAt_self {e : (integralAffineGroupoid h).maximalAtlas B} {x : 
 
 /-- On a triple overlap, the composition of two successive affine frame changes
 is the direct frame change. -/
+@[simp]
 theorem chartChangeAt_mul {e e' e'' : (integralAffineGroupoid h).maximalAtlas B} {x : B}
     (hx : x ∈ e.val.source) (hx' : x ∈ e'.val.source) (hx'' : x ∈ e''.val.source) :
     chartChangeAt (h := h) ⟨hx', hx''⟩ * chartChangeAt (h := h) ⟨hx, hx'⟩ =
