@@ -30,6 +30,8 @@ isotropic subspace.
   subspace of a regular space lies in one whose dimension is the Witt index.
 * `QuadraticForm.maximal_isTotallyIsotropic_iff`: a totally isotropic subspace of a regular space
   is maximal exactly when its dimension is the Witt index.
+* `QuadraticForm.wittIndex_formClass_restrict_orthogonal_span_pair_add_one`: splitting off a
+  hyperbolic plane lowers the Witt index by one.
 
 ## Implementation notes
 
@@ -139,6 +141,22 @@ private theorem maximal_comap_orthogonal_span_pair (hW : Maximal Q.IsTotallyIsot
 
 end HyperbolicPair
 
+/-- Splitting off the hyperbolic plane spanned by isotropic vectors `x, y` with `polar Q x y = 1`
+lowers the Witt index of a regular space by one. -/
+theorem _root_.QuadraticForm.wittIndex_formClass_restrict_orthogonal_span_pair_add_one
+    [Invertible (2 : K)] {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) {x y : V} (hx : Q x = 0) (hy : Q y = 0)
+    (hxy : polar Q x y = 1) :
+    RegularFormClass.wittIndex (formClass (Q.restrict
+      (LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {x, y})))
+      (hQ.nondegenerate_restrict_orthogonal_span_pair hx hy hxy)) + 1 =
+      RegularFormClass.wittIndex (formClass Q hQ) := by
+  have hclass : formClass Q hQ = 1 • hyperbolicClass K + formClass _
+      (hQ.nondegenerate_restrict_orthogonal_span_pair hx hy hxy) := by
+    rw [one_nsmul, ← formClass_hyperbolicPlane, ← formClass_prod, formClass_eq_iff]
+    exact Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hx hy hxy
+  rw [hclass, RegularFormClass.wittIndex_nsmul_hyperbolicClass_add, add_comm]
+
 /-- **Lam I.4.4**, by induction on the dimension `n` of the space. -/
 private theorem finrank_eq_wittIndex_of_maximal_aux [Invertible (2 : K)] (n : ℕ) :
     ∀ {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
@@ -162,12 +180,7 @@ private theorem finrank_eq_wittIndex_of_maximal_aux [Invertible (2 : K)] (n : �
   set U := LinearMap.BilinForm.orthogonal Q.polarBilin (Submodule.span K {w, f})
   have hequiv := Q.equivalent_hyperbolicPlane_prod_restrict_orthogonal hwQ hfQ hwf
   have hU := hQ.nondegenerate_restrict_orthogonal_span_pair hwQ hfQ hwf
-  have hindex : RegularFormClass.wittIndex (formClass Q hQ) =
-      RegularFormClass.wittIndex (formClass (Q.restrict U) hU) + 1 := by
-    have hclass : formClass Q hQ = 1 • hyperbolicClass K + formClass (Q.restrict U) hU := by
-      rw [one_nsmul, ← formClass_hyperbolicPlane, ← formClass_prod, formClass_eq_iff]
-      exact hequiv
-    rw [hclass, RegularFormClass.wittIndex_nsmul_hyperbolicClass_add, add_comm]
+  have hindex := (Q.wittIndex_formClass_restrict_orthogonal_span_pair_add_one hQ hwQ hfQ hwf).symm
   have hdim : finrank K V = finrank K U + 2 := by
     obtain ⟨e⟩ := hequiv
     rw [e.toLinearEquiv.finrank_eq, Module.finrank_prod, Module.finrank_fin_fun, add_comm]
