@@ -43,7 +43,8 @@ scalar form of the case of Finsler's lemma where the first form is positive semi
   from the left.
 
 * `TauCeti.eventually_sq_lt_one_nhdsLT_one` — eventually `x ^ 2 < 1` along `𝓝[<] 1`.
-* `TauCeti.tendsto_const_mul_nhdsGT_zero` — `x ↦ c x` maps `𝓝[>] 0` into itself for `c > 0`.
+* `TauCeti.tendsto_const_mul_nhdsGT_zero` — `x ↦ c x` maps `𝓝[>] 0` into itself for `c > 0`, in an
+  ordered field and in `ℝ≥0` alike.
 * `TauCeti.tendsto_mul_const_nhdsGT_zero` — `r * c` tends to `0` as `r` tends to `0` from
   above.
 * `IsCompact.eventually_forall_mul_add_pos` — if `f` and `g` are continuous on a compact set `K`,
@@ -171,10 +172,13 @@ theorem tendsto_div_one_sub_nhdsLT_one :
 end InvPow
 
 /-- Multiplication by a constant `c > 0` maps the right neighbourhoods of `0` into themselves. This
-is the `Tendsto` form of Mathlib's `eventually_nhdsGT_zero_mul_left`. -/
-theorem tendsto_const_mul_nhdsGT_zero {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
-    [IsStrictOrderedRing 𝕜] [TopologicalSpace 𝕜] [OrderTopology 𝕜] {c : 𝕜} (hc : 0 < c) :
+is the `Tendsto` form of Mathlib's `eventually_nhdsGT_zero_mul_left`, stated for any ordered type
+with a continuous strictly monotone multiplication, such as an ordered field or `ℝ≥0`. -/
+theorem tendsto_const_mul_nhdsGT_zero {𝕜 : Type*} [MulZeroClass 𝕜] [Preorder 𝕜]
+    [PosMulStrictMono 𝕜] [TopologicalSpace 𝕜] [ContinuousMul 𝕜] {c : 𝕜} (hc : 0 < c) :
     Tendsto (c * ·) (𝓝[>] 0) (𝓝[>] 0) :=
-  tendsto_comap.mono_left (comap_mulLeft_nhdsGT_zero hc).ge
+  tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+    (((continuous_const.mul continuous_id).tendsto' 0 0 (mul_zero c)).mono_left nhdsWithin_le_nhds)
+    (eventually_nhdsWithin_of_forall fun _ hx ↦ mul_pos hc hx)
 
 end TauCeti
