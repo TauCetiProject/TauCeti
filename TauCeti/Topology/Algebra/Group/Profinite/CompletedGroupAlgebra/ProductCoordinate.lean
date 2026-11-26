@@ -59,6 +59,10 @@ coordinate over which Labute's argument for the even-rank Demushkin groups with 
 
 ## Main results
 
+* `TauCeti.completedGroupAlgebra.prodPowerSeriesCoordinate_map_singleOneRingHom`: a series with
+  coefficients in `ℤ_p` goes to the image along `γ ↦ (1, γ)` of its procyclic coordinate; so
+  `c · (1 + X) ^ u` goes to the group element `(c, γ ^ u)`
+  (`TauCeti.completedGroupAlgebra.prodPowerSeriesCoordinate_C_single_mul_map_binomialSeries`).
 * `TauCeti.completedGroupAlgebra.proj_prodPowerSeriesCoordinate_eq_zero_iff`: a power series over
   `ℤ_p[C]` projects to zero at the level `{1} × U` exactly when `(1 + X) ^ |Γ ⧸ U| - 1` divides it.
 * `TauCeti.completedGroupAlgebra.ker_proj_comp_prodPowerSeriesCoordinate`,
@@ -158,6 +162,31 @@ theorem prodPowerSeriesCoordinate_symm_of_inr :
     (prodPowerSeriesCoordinate C hΓ hγ).symm (of ℤ_[p] (C × Γ) (1, γ)) = 1 + PowerSeries.X :=
   (prodPowerSeriesCoordinate C hΓ hγ).symm_apply_eq.mpr
     (prodPowerSeriesCoordinate_one_add_X C hΓ hγ).symm
+
+/-- **Series with coefficients in `ℤ_p`.** The coordinate sends a power series over `ℤ_p`, read
+in `ℤ_p[C]⟦X⟧` along `ℤ_p → ℤ_p[C]`, to the image along `γ ↦ (1, γ)` of its procyclic
+coordinate in `ℤ_p[[Γ]]`. -/
+@[simp]
+theorem prodPowerSeriesCoordinate_map_singleOneRingHom (φ : PowerSeries ℤ_[p]) :
+    prodPowerSeriesCoordinate C hΓ hγ (PowerSeries.map MonoidAlgebra.singleOneRingHom φ) =
+      map ℤ_[p] (MonoidHom.inr C Γ) (continuous_inr C Γ) (powerSeriesCoordinate hΓ hγ φ) := by
+  -- `mapAlgEquiv` is `mapAlgHom` on the underlying map, so Mathlib's `mapAlgHom_single` applies.
+  have hm : MonoidAlgebra.mapAlgEquiv ℤ_[p] C (powerSeriesCoordinate hΓ hγ)
+      (MonoidAlgebra.single 1 φ) = MonoidAlgebra.single 1 (powerSeriesCoordinate hΓ hγ φ) :=
+    MonoidAlgebra.mapAlgHom_single (powerSeriesCoordinate hΓ hγ).toAlgHom 1 φ
+  rw [prodPowerSeriesCoordinate, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
+    MonoidAlgebra.powerSeriesAlgEquiv_symm_map_singleOneRingHom, hm,
+    coe_monoidAlgebraProdEquiv, monoidAlgebraProdHom_single_one]
+
+/-- **Group elements in the coordinate.** The coordinate sends the product of the group element
+`c` of `ℤ_p[C]` with the binomial series `(1 + X) ^ u` to the group element `(c, γ ^ u)`. -/
+theorem prodPowerSeriesCoordinate_C_single_mul_map_binomialSeries (c : C) (u : ℤ_[p]) :
+    prodPowerSeriesCoordinate C hΓ hγ (PowerSeries.C (MonoidAlgebra.single c 1) *
+        PowerSeries.map MonoidAlgebra.singleOneRingHom (PowerSeries.binomialSeries ℤ_[p] u)) =
+      of ℤ_[p] (C × Γ) (c, hΓ.padicPow γ u) := by
+  rw [map_mul, prodPowerSeriesCoordinate_C_single_one,
+    prodPowerSeriesCoordinate_map_singleOneRingHom, powerSeriesCoordinate_binomialSeries, map_of,
+    MonoidHom.inr_apply, ← map_mul, Prod.mk_mul_mk, mul_one, one_mul]
 
 /-- **The finite levels through the coordinate.** For an open normal subgroup `U` of `Γ`, a power
 series over `ℤ_p[C]` projects to zero at the level `{1} × U` of `ℤ_p[[C × Γ]]` exactly when

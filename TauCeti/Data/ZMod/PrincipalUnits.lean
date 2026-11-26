@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.Data.Nat.Totient
+public import Mathlib.GroupTheory.PGroup
 import Mathlib.GroupTheory.Index
 import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.RingTheory.Artinian.Module
@@ -46,6 +47,8 @@ reduction differ by a principal unit whose `n`-th power is `1`.
   modulo `N` that is `1` modulo `N / p` is a square.
 * `ZMod.natCard_nthRoots_prime_pow_eq_natCard_nthRoots`: for `n` coprime to `p`, a unit `a` has
   as many `n`-th roots modulo `p ^ k` as modulo `p`.
+* `ZMod.isPGroup_units_prime_pow_iff`: for `k ≠ 0`, `(ZMod (p ^ k))ˣ` is a `p`-group exactly when
+  `p = 2`.
 
 ## References
 
@@ -173,6 +176,26 @@ theorem natCard_nthRoots_prime_pow_eq_natCard_nthRoots {p n k : ℕ} [Fact p.Pri
     exact ⟨x, by simpa using hx, by
       rw [(residue_eq_residue_iff_castHom_eq p (k + 1) x x₀).mp hxx₀,
         map_natCast, natCast_zmod_val]⟩
+
+/-- **The units modulo a prime power form a `p`-group only for `p = 2`.** For a prime `p` and
+`k ≠ 0`, the group `(ZMod (p ^ k))ˣ`, of order `p ^ (k - 1) * (p - 1)`, is a `p`-group exactly when
+`p = 2`: otherwise its order has the factor `p - 1 > 1` prime to `p`. -/
+theorem isPGroup_units_prime_pow_iff {p k : ℕ} [Fact p.Prime] (hk : k ≠ 0) :
+    IsPGroup p (ZMod (p ^ k))ˣ ↔ p = 2 := by
+  have hp := (Fact.out : p.Prime)
+  have : NeZero (p ^ k) := ⟨pow_ne_zero _ hp.ne_zero⟩
+  rw [IsPGroup.iff_card, Nat.card_eq_fintype_card, card_units_eq_totient,
+    Nat.totient_prime_pow hp (Nat.pos_of_ne_zero hk)]
+  constructor
+  · rintro ⟨n, hn⟩
+    -- `p - 1` divides a power of `p` and is prime to `p`, so it is `1`.
+    have hcop : Nat.Coprime (p - 1) p :=
+      ((Nat.coprime_self_sub_right hp.one_lt.le).mpr (Nat.coprime_one_right p)).symm
+    have h1 := (hcop.pow_right n).eq_one_of_dvd (hn ▸ dvd_mul_left (p - 1) (p ^ (k - 1)))
+    have := hp.two_le
+    omega
+  · rintro rfl
+    exact ⟨k - 1, mul_one _⟩
 
 /-! Modulo `9`, the units `4` and `7` are `2 ^ 2` and `4 ^ 2`. The hypothesis that `p` is odd is
 needed: `5` is congruent to one modulo `2` but is not a square modulo `8`. -/
