@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Normed.Operator.Surjective
 
 /-!
 # First-order operators on `L²` jets
@@ -21,14 +22,18 @@ operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication
 in `M` (`TauCeti.jetOperator_add`), and multiplying `M` by an essentially bounded scalar function
 multiplies its values pointwise (`TauCeti.coeFn_jetOperator_smul`). It depends
 Lipschitz-continuously on `M` in `L^∞` (`TauCeti.norm_jetOperator_sub_le`), hence continuously
-along families of coefficient fields continuous in `L^∞` (`TauCeti.continuousOn_jetOperator`).
+along families of coefficient fields continuous in `L^∞` (`TauCeti.continuousOn_jetOperator`), and
+a bounded right inverse of the operator of `M` on a space of jets survives every change of `M` that
+is small in `L^∞` compared with its norm
+(`TauCeti.exists_rightInverse_jetOperator_comp_subtypeL_of_norm_sub_le`).
 
 The operators `∂s + A ∂t + C` with `A, C : V →L[ℝ] V`, such as the linearized Floer operators,
 have the coefficient field `(a, b, c) ↦ b + A c + C a` on jets (`TauCeti.firstOrderJetCoeff`),
 whose norm is at most `1 + ‖A‖ + ‖C‖` (`TauCeti.norm_firstOrderJetCoeff_le`) and at least `‖A‖`
 and `‖C‖` (`TauCeti.norm_le_norm_firstOrderJetCoeff_left`,
-`TauCeti.norm_le_norm_firstOrderJetCoeff_right`), which changes by at most `‖C - C'‖` when `C`
-is replaced by `C'` (`TauCeti.norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le`), and which
+`TauCeti.norm_le_norm_firstOrderJetCoeff_right`), which changes by at most `‖A - A'‖ + ‖C - C'‖`
+when `A` and `C` are replaced by `A'` and `C'`
+(`TauCeti.norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le`), and which
 depends continuously on `A` and `C` (`TauCeti.continuousAt_firstOrderJetCoeff`).
 
 The Sobolev spaces on the cylinder (with the strip measure) and on conformally weighted domains
@@ -67,6 +72,11 @@ def jetOperator (μ : Measure (ℝ × ℝ)) (M : ℝ × ℝ → V × V × V →L
 theorem jetOperator_of_not_memLp {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : ¬ MemLp M ∞ μ) : jetOperator μ M = 0 := by
   simp [jetOperator, hM]
+
+/-- A coefficient field whose first-order operator is nonzero is essentially bounded. -/
+theorem memLp_of_jetOperator_ne_zero {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : jetOperator μ M ≠ 0) : MemLp M ∞ μ :=
+  not_not.1 (mt jetOperator_of_not_memLp hM)
 
 /-- The first-order operator of an essentially bounded coefficient field is the operator-valued
 multiplication operator `MeasureTheory.Lp.operatorMultiplication 2` by that field. -/
@@ -123,6 +133,41 @@ theorem norm_jetOperator_sub_le {μ : Measure (ℝ × ℝ)} {M M' : ℝ × ℝ �
     ← Lp.norm_toLp _ (hM.sub hM')]
   exact Lp.norm_operatorMultiplication_le _
 
+/-- **Right inverses survive small changes of the coefficient field.** Let `S` be a subspace of the
+`L²` jets, such as a Sobolev space, and suppose that the first-order operator of an essentially
+bounded coefficient field `G`, restricted to `S`, has a bounded linear right inverse `Q₀`. If the
+coefficient field `M` is almost everywhere within `δ` of `G`, with `δ ‖Q₀‖ ≤ 1 / 2`, then the
+first-order operator of `M`, restricted to `S`, has a bounded linear right inverse of norm at most
+`2 ‖Q₀‖`. -/
+theorem exists_rightInverse_jetOperator_comp_subtypeL_of_norm_sub_le [CompleteSpace W]
+    {μ : Measure (ℝ × ℝ)} {M G : ℝ × ℝ → V × V × V →L[ℝ] W} (hG : MemLp G ∞ μ)
+    (hM : AEStronglyMeasurable M μ) {δ : ℝ} (hMG : ∀ᵐ z ∂μ, ‖M z - G z‖ ≤ δ)
+    {S : Submodule ℝ (Lp (V × V × V) 2 μ)} {Q₀ : Lp W 2 μ →L[ℝ] S}
+    (hQ₀ : ((jetOperator μ G).comp S.subtypeL).comp Q₀ = ContinuousLinearMap.id ℝ _)
+    (hδ : δ * ‖Q₀‖ ≤ 1 / 2) :
+    ∃ Q : Lp W 2 μ →L[ℝ] S, ((jetOperator μ M).comp S.subtypeL).comp Q =
+      ContinuousLinearMap.id ℝ _ ∧ ‖Q‖ ≤ 2 * ‖Q₀‖ := by
+  open ContinuousLinearMap in
+  -- The operator of `M` is that of `G` plus that of the field `M - G`, bounded by `max δ 0`.
+  have hbound : ∀ᵐ z ∂μ, ‖(M - G) z‖ ≤ max δ 0 := hMG.mono fun z hz ↦ le_max_of_le_left hz
+  have hD : MemLp (M - G) ∞ μ := memLp_top_of_bound (hM.sub hG.aestronglyMeasurable) _ hbound
+  have hsplit : (jetOperator μ M).comp S.subtypeL =
+      (jetOperator μ G).comp S.subtypeL + (jetOperator μ (M - G)).comp S.subtypeL := by
+    rw [← add_comp, ← jetOperator_add hG hD, add_sub_cancel]
+  refine exists_rightInverse_of_norm_comp_sub_id_le_half _ Q₀ ?_
+  rw [hsplit, add_comp, hQ₀, add_sub_cancel_left]
+  refine opNorm_le_bound _ (by norm_num) fun η ↦ ?_
+  have hδ' : max δ 0 * ‖Q₀‖ ≤ 1 / 2 := by
+    rcases le_total δ 0 with h | h
+    · rw [max_eq_right h, zero_mul]
+      norm_num
+    · rwa [max_eq_left h]
+  calc ‖jetOperator μ (M - G) (S.subtypeL (Q₀ η))‖
+      ≤ max δ 0 * ‖S.subtypeL (Q₀ η)‖ := norm_jetOperator_apply_le hD hbound _
+    _ = max δ 0 * ‖Q₀ η‖ := by rw [Submodule.subtypeL_apply, Submodule.norm_coe]
+    _ ≤ max δ 0 * (‖Q₀‖ * ‖η‖) := by gcongr; exact Q₀.le_opNorm η
+    _ ≤ 1 / 2 * ‖η‖ := by rw [← mul_assoc]; gcongr
+
 /-- Coefficient fields depending continuously on a parameter in `L^∞` give first-order operators
 on `L²` jets depending continuously on the parameter in the operator norm. -/
 theorem continuousOn_jetOperator {μ : Measure (ℝ × ℝ)} {X : Type*} [TopologicalSpace X]
@@ -166,16 +211,23 @@ theorem norm_firstOrderJetCoeff_le (A C : V →L[ℝ] V) :
   · exact (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _)
       (norm_fst_le ℝ V (V × V)))
 
-/-- The coefficient fields of two operators `∂s + A ∂t + C` and `∂s + A ∂t + C'` with the same
-principal part differ by at most `‖C - C'‖`. -/
-theorem norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le (A C C' : V →L[ℝ] V) :
-    ‖firstOrderJetCoeff A C - firstOrderJetCoeff A C'‖ ≤ ‖C - C'‖ := by
-  have h : firstOrderJetCoeff A C - firstOrderJetCoeff A C' =
-      (C - C').comp (ContinuousLinearMap.fst ℝ V (V × V)) :=
-    ContinuousLinearMap.ext fun v ↦ by simp
+/-- The coefficient fields of two operators `∂s + A ∂t + C` and `∂s + A' ∂t + C'` differ by at
+most `‖A - A'‖ + ‖C - C'‖`. -/
+theorem norm_firstOrderJetCoeff_sub_firstOrderJetCoeff_le (A A' C C' : V →L[ℝ] V) :
+    ‖firstOrderJetCoeff A C - firstOrderJetCoeff A' C'‖ ≤ ‖A - A'‖ + ‖C - C'‖ := by
+  open ContinuousLinearMap in
+  have h : firstOrderJetCoeff A C - firstOrderJetCoeff A' C' =
+      (A - A').comp ((snd ℝ V V).comp (snd ℝ V (V × V))) + (C - C').comp (fst ℝ V (V × V)) :=
+    ContinuousLinearMap.ext fun v ↦ by simp only [firstOrderJetCoeff_apply, sub_apply, add_apply,
+      comp_apply, coe_fst', coe_snd']; abel
   rw [h]
-  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-    (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_fst_le ℝ V (V × V)))
+  open ContinuousLinearMap in
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+  · refine (opNorm_comp_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) ?_)
+    exact (opNorm_comp_le _ _).trans ((mul_le_of_le_one_left (norm_nonneg _)
+      (norm_snd_le ℝ V V)).trans (norm_snd_le ℝ V (V × V)))
+  · exact (opNorm_comp_le _ _).trans
+      (mul_le_of_le_one_right (norm_nonneg _) (norm_fst_le ℝ V (V × V)))
 
 /-- The leading coefficient `A` of `∂s + A ∂t + C` is a component of its coefficient field on
 jets: `A v` is the value of the field on `(0, 0, v)`. -/
