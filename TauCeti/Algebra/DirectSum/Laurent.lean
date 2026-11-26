@@ -57,6 +57,22 @@ theorem coeff_decomposeLaurent (x : A) (i : ℤ) :
     · simp [← LaurentPolynomial.single_eq_C_mul_T, AddMonoidAlgebra.coeff_single,
         DirectSum.of_eq_of_ne _ _ _ (Ne.symm h), h]
 
+/-- An element is homogeneous of degree `i` exactly when its decomposition Laurent polynomial is
+the single monomial in degree `i`. -/
+theorem decomposeLaurent_eq_C_mul_T_iff {x : A} {i : ℤ} :
+    decomposeLaurent ℳ x = LaurentPolynomial.C x * LaurentPolynomial.T i ↔ x ∈ ℳ i := by
+  refine ⟨fun h ↦ ?_, decomposeLaurent_of_mem ℳ⟩
+  have hi := coeff_decomposeLaurent ℳ x i
+  simp only [h, ← LaurentPolynomial.single_eq_C_mul_T, AddMonoidAlgebra.coeff_single,
+    Finsupp.single_eq_same] at hi
+  exact hi ▸ (decompose ℳ x i).property
+
+/-- If `1` is homogeneous of degree `0`, as in a graded ring, its decomposition Laurent polynomial
+is `1`. -/
+@[simp]
+theorem decomposeLaurent_one [SetLike.GradedOne ℳ] : decomposeLaurent ℳ (1 : A) = 1 := by
+  simp [decomposeLaurent_of_mem ℳ (SetLike.one_mem_graded ℳ)]
+
 variable {τ : Type*} [SetLike τ A] [AddSubmonoidClass τ A]
     (𝒜 : ℤ → τ) [Decomposition 𝒜] [SetLike.GradedSMul 𝒜 ℳ]
 
@@ -76,6 +92,23 @@ theorem decomposeLaurent_mul (a x : A) :
       rw [decomposeLaurent_of_mem ℳ hax, decomposeLaurent_of_mem 𝒜 a.property,
         decomposeLaurent_of_mem ℳ x.property]
       simp only [← LaurentPolynomial.single_eq_C_mul_T, AddMonoidAlgebra.single_mul_single]
+
+section CommSemiring
+
+variable {A σ : Type*} [CommSemiring A] [SetLike σ A] [AddSubmonoidClass σ A]
+    (ℳ : ℤ → σ) [Decomposition ℳ]
+
+/-- Evaluating the decomposition Laurent polynomial at `1` sums the homogeneous components back
+to the element. -/
+@[simp]
+theorem eval₂_one_decomposeLaurent (x : A) :
+    LaurentPolynomial.eval₂ (RingHom.id A) 1 (decomposeLaurent ℳ x) = x := by
+  induction x using Decomposition.inductionOn ℳ with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | homogeneous x => simp [decomposeLaurent_of_mem ℳ x.property, LaurentPolynomial.eval₂_C_mul_T]
+
+end CommSemiring
 
 end
 
