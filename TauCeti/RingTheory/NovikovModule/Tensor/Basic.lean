@@ -35,7 +35,14 @@ first factor, the tensor differential has the Koszul kernel
 obeys the Leibniz rule `D (a ⊗ b) = δ₁ a ⊗ b + (-1)^i a ⊗ δ₂ b`
 (`NovikovModule.kernelMap_tensorDifferential_tensor`), and if `δ₁` raises degree by one and both
 differentials square to zero then so does `D`
-(`NovikovModule.kernelMap_tensorDifferential_kernelMap_tensorDifferential_eq_zero`).
+(`NovikovModule.kernelMap_tensorDifferential_kernelMap_tensorDifferential_eq_zero`). The sign is
+needed for this: the unsigned differential `δ₁ ⊗ 1 + 1 ⊗ δ₂`, which is the tensor differential of
+the zero degree function, applied twice to `a ⊗ b` gives
+`δ₁ δ₁ a ⊗ b + 2 (δ₁ a ⊗ δ₂ b) + a ⊗ δ₂ δ₂ b`
+(`kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tensor`, in the namespace
+`TauCeti.NovikovModule`), which is `2 (δ₁ a ⊗ δ₂ b) ≠ 0` when `δ₁ δ₁ a = 0`, `δ₂ δ₂ b = 0`,
+`δ₁ a ≠ 0`, `δ₂ b ≠ 0` and the ground ring has no zero divisors and `2 ≠ 0`
+(`kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tensor_ne_zero`).
 
 Since a bilinear product is a kernel map out of the completed tensor product, a chain-level
 identity such as the Leibniz rule `δ₀ (a ⋆ b) = δ₁ a ⋆ b + (-1)^i a ⋆ δ₂ b` of a pair-of-pants
@@ -73,6 +80,12 @@ continuity, are in `TauCeti.RingTheory.NovikovModule.Tensor.Topology`.
   `TauCeti.NovikovModule.kernelMap_tensorDifferential_kernelMap_tensorDifferential_eq_zero`: on
   tensor products the cross terms of the twice-applied tensor differential cancel, so it squares
   to zero.
+* `kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tensor` and
+  `kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tensor_ne_zero`, in the
+  namespace `TauCeti.NovikovModule`: without the Koszul sign the cross terms add up, and the tensor
+  differential does not square to zero.
+* `TauCeti.NovikovModule.tensor_eq_zero_iff`: over a ring without zero divisors, a tensor product
+  vanishes exactly when one of its factors does.
 
 ## References
 
@@ -182,6 +195,19 @@ theorem tensor_mem_gradeBy {D : Type*} [Add D] {d₁ : S₁ → D} {d₂ : S₂ 
   intro q hq
   rw [tensor_apply_val] at hq
   rw [ha q.1 (left_ne_zero_of_mul hq), hb q.2 (right_ne_zero_of_mul hq)]
+
+/-- Over a ring without zero divisors, a tensor product vanishes exactly when one of its factors
+does. -/
+@[simp]
+theorem tensor_eq_zero_iff [NoZeroDivisors R] {a : NovikovModule R F₁} {b : NovikovModule R F₂} :
+    tensor a b = 0 ↔ a = 0 ∨ b = 0 := by
+  refine ⟨fun h => ?_, by rintro (rfl | rfl) <;> simp⟩
+  by_contra! hab
+  obtain ⟨p₁, hp₁⟩ := ne_zero_iff.1 hab.1
+  obtain ⟨p₂, hp₂⟩ := ne_zero_iff.1 hab.2
+  have := congrArg (fun x : NovikovModule R _ => x.val (p₁, p₂)) h
+  simp only [tensor_apply_val] at this
+  exact mul_ne_zero hp₁ hp₂ this
 
 section Universal
 
@@ -490,6 +516,51 @@ theorem kernelMap_tensorDifferential_kernelMap_tensorDifferential_eq_zero
     kernelMap_tensorDifferential_kernelMap_tensorDifferential_tensor hδ₁ hδ₁fin hδ₂ hδ₂fin hD
       hDfin hd (single_mem_gradeBy d₁ p₁ 1), hδ₁δ₁, hδ₂δ₂, map_zero, LinearMap.zero_apply,
     map_zero, add_zero]
+
+/-! ### The tensor differential without the Koszul sign -/
+
+/-- **The unsigned tensor differential applied twice to a tensor product.** For the zero degree
+function the tensor differential is `δ₁ ⊗ 1 + 1 ⊗ δ₂`, with the sign `+` whatever the degrees of
+the generators. Applied twice to `a ⊗ b` it gives `δ₁ δ₁ a ⊗ b + 2 (δ₁ a ⊗ δ₂ b) + a ⊗ δ₂ δ₂ b`:
+the two cross terms `δ₁ a ⊗ δ₂ b` add up instead of cancelling as in
+`NovikovModule.kernelMap_tensorDifferential_kernelMap_tensorDifferential_tensor`. -/
+theorem kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tensor
+    (hD₀ : ∀ p q, tensorDifferential 0 δ₁ δ₂ p q ≠ 0 → F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + C)
+    (hD₀fin : ∀ p, tensorDifferential 0 δ₁ δ₂ p ∈
+      NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2)
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
+    kernelMap hD₀ hD₀fin (kernelMap hD₀ hD₀fin (tensor a b)) =
+      tensor (kernelMap hδ₁ hδ₁fin (kernelMap hδ₁ hδ₁fin a)) b +
+        (2 : R) • tensor (kernelMap hδ₁ hδ₁fin a) (kernelMap hδ₂ hδ₂fin b) +
+        tensor a (kernelMap hδ₂ hδ₂fin (kernelMap hδ₂ hδ₂fin b)) := by
+  -- For the zero degree function every combination is homogeneous of degree `0`.
+  have h₀ (x : NovikovModule R F₁) : x ∈ gradeBy R F₁ (0 : S₁ → ℤ) 0 :=
+    mem_gradeBy_iff.2 fun _ _ => rfl
+  rw [kernelMap_tensorDifferential_tensor hδ₁ hδ₁fin hδ₂ hδ₂fin hD₀ hD₀fin (h₀ a), map_add,
+    map_smul, kernelMap_tensorDifferential_tensor hδ₁ hδ₁fin hδ₂ hδ₂fin hD₀ hD₀fin (h₀ _),
+    kernelMap_tensorDifferential_tensor hδ₁ hδ₁fin hδ₂ hδ₂fin hD₀ hD₀fin (h₀ a)]
+  simp only [Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul, two_smul]
+  abel
+
+/-- **The unsigned tensor differential does not square to zero.** Work over a ring without zero
+divisors in which `2 ≠ 0`. If `δ₁ δ₁ a = 0`, `δ₂ δ₂ b = 0`, `δ₁ a ≠ 0` and `δ₂ b ≠ 0`, then the
+tensor differential `δ₁ ⊗ 1 + 1 ⊗ δ₂` of the zero degree function, applied twice to `a ⊗ b`, gives
+`2 (δ₁ a ⊗ δ₂ b) ≠ 0`. With the Koszul sign the tensor differential squares to zero
+(`NovikovModule.kernelMap_tensorDifferential_kernelMap_tensorDifferential_eq_zero`). -/
+theorem kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tensor_ne_zero
+    [NoZeroDivisors R] (h₂ : (2 : R) ≠ 0)
+    (hD₀ : ∀ p q, tensorDifferential 0 δ₁ δ₂ p q ≠ 0 → F₁ q.1 + F₂ q.2 ≤ F₁ p.1 + F₂ p.2 + C)
+    (hD₀fin : ∀ p, tensorDifferential 0 δ₁ δ₂ p ∈
+      NovikovModule R fun q : S₁ × S₂ => F₁ q.1 + F₂ q.2)
+    {a : NovikovModule R F₁} {b : NovikovModule R F₂}
+    (hδ₁δ₁ : kernelMap hδ₁ hδ₁fin (kernelMap hδ₁ hδ₁fin a) = 0)
+    (hδ₂δ₂ : kernelMap hδ₂ hδ₂fin (kernelMap hδ₂ hδ₂fin b) = 0) (ha : kernelMap hδ₁ hδ₁fin a ≠ 0)
+    (hb : kernelMap hδ₂ hδ₂fin b ≠ 0) :
+    kernelMap hD₀ hD₀fin (kernelMap hD₀ hD₀fin (tensor a b)) ≠ 0 := by
+  rw [kernelMap_tensorDifferential_zero_kernelMap_tensorDifferential_zero_tensor hδ₁ hδ₁fin hδ₂
+      hδ₂fin hD₀ hD₀fin, hδ₁δ₁, hδ₂δ₂, map_zero, LinearMap.zero_apply, map_zero, zero_add,
+    add_zero, ← map_smul]
+  simp [h₂, ha, hb]
 
 end Differential
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 public import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 public import TauCeti.Geometry.Lie.InvariantVectorField.Commutation
 public import TauCeti.Geometry.Lie.Tangent.LeftInvariantDerivation
@@ -29,6 +30,10 @@ right-invariant vector field.
 
 ## Main results
 
+* `TauCeti.LieTestFunction.hasDerivAt_apply_mul_mulInvariantExp_smul_zero`,
+  `TauCeti.LieTestFunction.hasDerivAt_apply_mulInvariantExp_smul_mul_zero`: over a complete model
+  space, right and left differentiation are the derivatives along exponential lines,
+  `R(X) a (g) = d/dt|₀ a (g exp(tX))` and `L_X a (g) = d/dt|₀ a (exp(tX) g)`.
 * `TauCeti.LieTestFunction.tsupport_rightDeriv_subset`: right differentiation does not enlarge
   supports.
 * `TauCeti.LieTestFunction.rightDeriv_add`, `TauCeti.LieTestFunction.rightDeriv_smul`: `R(X)` is
@@ -142,6 +147,46 @@ theorem leftDerivWord_rightDeriv [CompleteSpace E] (w : List (GroupLieAlgebra I 
   induction w with
   | nil => simp
   | cons Y w ih => simp only [leftDerivWord_cons, LinearMap.comp_apply, ih, leftDeriv_rightDeriv]
+
+/-! ### Differentiation along exponential lines -/
+
+section ExponentialLine
+
+variable [CompleteSpace E]
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+
+local instance instContMDiffMulOneLieTestFunctionRightDeriv : ContMDiffMul I 1 G :=
+  ContMDiffMul.of_le (m := 1) (n := ∞) (by norm_num)
+
+local instance instBoundarylessManifoldLieTestFunctionRightDeriv : BoundarylessManifold I G :=
+  ContMDiffMul.boundarylessManifold
+
+/-- **Right differentiation is the derivative along right exponential lines**:
+`R(X) a (g) = d/dt|₀ a (g exp(tX))`. -/
+theorem hasDerivAt_apply_mul_mulInvariantExp_smul_zero (X : GroupLieAlgebra I G)
+    (a : LieTestFunction I G) (g : G) :
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
+    HasDerivAt (fun t : ℝ ↦ a (g * mulInvariantExp (I := I) (G := G) (t • X)))
+      (rightDeriv X a g) 0 := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  rw [rightDeriv_apply]
+  exact (a.contMDiff.mdifferentiableAt (x := g) (by simp)).hasMFDerivAt
+    |>.hasDerivAt_comp_mul_mulInvariantExp_smul_zero X
+
+/-- **Left differentiation is the derivative along left exponential lines**:
+`L_X a (g) = d/dt|₀ a (exp(tX) g)`. -/
+theorem hasDerivAt_apply_mulInvariantExp_smul_mul_zero (X : GroupLieAlgebra I G)
+    (a : LieTestFunction I G) (g : G) :
+    let _ : T2Space G := I.t2Space_of_lieGroup ∞
+    HasDerivAt (fun t : ℝ ↦ a (mulInvariantExp (I := I) (G := G) (t • X) * g))
+      (leftDeriv X a g) 0 := by
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  rw [leftDeriv_apply]
+  exact (a.contMDiff.mdifferentiableAt (x := g) (by simp)).hasMFDerivAt
+    |>.hasDerivAt_comp_mulInvariantExp_smul_mul_zero X
+
+end ExponentialLine
 
 end LieTestFunction
 

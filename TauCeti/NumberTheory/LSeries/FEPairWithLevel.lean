@@ -171,7 +171,8 @@ def WeakFEPair.toFEPairWithLevel (Q : WeakFEPair E) (N : ℝ) (hN : 0 < N) :
     ring
   hf_top r := (Q.hf_top r).congr' ((eventually_gt_atTop 0).mono fun _ ht ↦ by
     simp only [indicator_of_mem (mem_Ioi.mpr ht)]) EventuallyEq.rfl
-  hg_top r := ((Q.hg_top r).comp_const_mul_rpow hN).congr' ((eventually_gt_atTop 0).mono
+  hg_top r := ((Q.hg_top r).comp_mul_left_rpow hN (tendsto_id.const_mul_atTop hN)
+    (eventually_gt_atTop 0)).congr' ((eventually_gt_atTop 0).mono
     fun _ ht ↦ by simp only [indicator_of_mem (mem_Ioi.mpr ht)]) EventuallyEq.rfl
 
 namespace WeakFEPair
@@ -225,7 +226,8 @@ def toWeakFEPair : WeakFEPair E where
     ring
   hf_top := P.hf_top
   hg_top r := by
-    simpa only [div_eq_inv_mul] using (P.hg_top r).comp_const_mul_rpow (inv_pos.2 P.hN)
+    simpa only [div_eq_inv_mul] using (P.hg_top r).comp_mul_left_rpow (inv_pos.2 P.hN)
+      (tendsto_id.const_mul_atTop (inv_pos.2 P.hN)) (eventually_gt_atTop 0)
 
 @[simp] theorem toWeakFEPair_f : P.toWeakFEPair.f = P.f := (rfl)
 

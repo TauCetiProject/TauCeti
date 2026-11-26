@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.LSeries.GaussianTheta
 import TauCeti.Analysis.SpecialFunctions.Gamma.Archimedean
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 
 /-!
 # A truncated Gaussian mollifier for Dirichlet L-functions
@@ -35,14 +36,14 @@ L-function with its matching gamma factor. -/
 noncomputable def gaussianMollifier {N : ℕ} (χ : DirichletCharacter ℂ N)
     (j : ℕ) (r : ℝ) (s : ℂ) : ℂ :=
   ∫ t : ℝ in Ioi r, (t : ℂ) ^ (s - 1) *
-    gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t
+    gaussianTheta j (fun n ↦ χ n * (μ n : ℂ)) t
 
 /-- The defining truncated Mellin integral for the Gaussian mollifier. -/
 theorem gaussianMollifier_def {N : ℕ} (χ : DirichletCharacter ℂ N)
     (j : ℕ) (r : ℝ) (s : ℂ) :
     χ.gaussianMollifier j r s =
     ∫ t : ℝ in Ioi r, (t : ℂ) ^ (s - 1) *
-      gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t := (rfl)
+      gaussianTheta j (fun n ↦ χ n * (μ n : ℂ)) t := (rfl)
 
 /-- On `Re s = 2`, the completed product of a Dirichlet L-function and its Gaussian
 mollifier differs from the square of the half-gamma factor by at most `C r`. The constant
@@ -52,22 +53,16 @@ theorem exists_norm_LFunction_mul_gaussianMollifier_sub_le (j : ℕ) :
       {r : ℝ}, 0 ≤ r → ∀ {s : ℂ}, s.re = 2 →
       ‖(Gammaℝ (s + j) / 2) * χ.LFunction s * χ.gaussianMollifier j r s -
         (Gammaℝ (s + j) / 2) ^ 2‖ ≤ C * r := by
-  let Z : ℝ := ∑' n : ℕ, ‖LSeries.term 1 (2 : ℂ) n‖
   let G : ℝ := Real.pi ^ (-(2 + (j : ℝ)) / 2) * Real.Gamma ((2 + (j : ℝ)) / 2) / 2
   have hGpos : 0 < G := by dsimp [G]; positivity
-  have hZnonneg : 0 ≤ Z := tsum_nonneg fun _ ↦ norm_nonneg _
-  refine ⟨G * (Z + 1) * ((j.factorial : ℝ) * Real.exp 1),
-    mul_pos (mul_pos hGpos (by linarith [hZnonneg])) (by positivity),
+  refine ⟨G * 2 * ((j.factorial : ℝ) * Real.exp 1), mul_pos (mul_pos hGpos (by norm_num))
+    (by positivity),
     fun {N} _ χ {r} hr {s} hs ↦ ?_⟩
   have hs₁ : 1 < s.re := by linarith
-  have hχ : ‖χ.LFunction s‖ ≤ Z := by
+  have hχ : ‖χ.LFunction s‖ ≤ 2 := by
     rw [LFunction_eq_LSeries χ hs₁]
-    have h₁ : LSeriesSummable 1 (2 : ℂ) := LSeriesSummable_one_iff.mpr (by norm_num)
-    have hχsum := χ.LSeriesSummable_of_one_lt_re hs₁
-    refine (norm_tsum_le_tsum_norm hχsum.norm).trans
-      (hχsum.norm.tsum_le_tsum (fun n ↦ ?_) h₁.norm)
-    exact (LSeries.norm_term_le (g := 1) s (by simpa using χ.norm_le_one n)).trans
-      (LSeries.norm_term_le_of_re_le_re 1 (by simp [hs]) n)
+    simpa only [one_add_one_eq_two] using
+      χ.norm_LSeries_le_one_add (s := s) (A := 1) (by norm_num) (by norm_num [hs])
   have hΓ : ‖Gammaℝ (s + j) / 2‖ ≤ G := by
     have hσ : (s + (j : ℂ)).re = 2 + (j : ℝ) := by simp [hs]
     have hσ' : ((s + (j : ℂ)) / 2).re = (2 + (j : ℝ)) / 2 := by rw [div_ofNat_re, hσ]
@@ -75,10 +70,10 @@ theorem exists_norm_LFunction_mul_gaussianMollifier_sub_le (j : ℕ) :
     dsimp only [G]
     gcongr
     simpa only [hσ'] using norm_Gamma_le_Gamma_re (s := (s + j) / 2) (by rw [hσ']; positivity)
-  have hcoeff (n : ℕ) (_ : n ≠ 0) : ‖χ n * (μ n : ℂ)‖ ≤ 1 := by
+  have hcoeff (n : ℕ+) : ‖χ n * (μ n : ℂ)‖ ≤ 1 := by
     rw [norm_mul]
     refine (mul_le_of_le_one_left (norm_nonneg _) (χ.norm_le_one n)).trans ?_
-    exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := n)
+    exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := (n : ℕ))
   let γ := Gammaℝ (s + j) / 2
   have hinv : χ.LFunction s * LSeries (fun n ↦ χ n * (μ n : ℂ)) s = 1 := by
     rw [LFunction_eq_LSeries χ hs₁]
@@ -93,11 +88,10 @@ theorem exists_norm_LFunction_mul_gaussianMollifier_sub_le (j : ℕ) :
     _ = ‖γ‖ * ‖χ.LFunction s‖ *
         ‖χ.gaussianMollifier j r s - LSeries (fun n ↦ χ n * (μ n : ℂ)) s * γ‖ := by
       rw [heq, norm_mul, norm_mul]
-    _ ≤ G * (Z + 1) * (1 * (j.factorial : ℝ) * Real.exp 1 * r) := by
+    _ ≤ G * 2 * (1 * (j.factorial : ℝ) * Real.exp 1 * r) := by
       gcongr
-      · exact hχ.trans (by linarith)
-      · rw [gaussianMollifier_def]
-        exact norm_integral_gaussianDirichletTheta_sub_le j hcoeff hr hs
+      rw [gaussianMollifier_def]
+      exact norm_integral_gaussianTheta_sub_le j hcoeff hr hs
     _ = _ := by ring
 
 end DirichletCharacter
