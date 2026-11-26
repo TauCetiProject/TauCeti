@@ -61,6 +61,7 @@ potentials `TauCeti.IsSpectralFlowPotential` of the bounded spectral flow in
   (`TauCeti.domainSpectralFlow_comp_neg`).
 * A path of invertible operators `A t : D → H` has no spectral flow
   (`TauCeti.domainSpectralFlow_eq_zero_of_forall_isInvertible`): every transform is invertible.
+  Nor has a constant path (`TauCeti.domainSpectralFlow_eq_zero_of_forall_eq`).
 * It extends the bounded spectral flow: on a finite-dimensional space, with `D = H` and `ι = 1`,
   every path of self-adjoint operators qualifies, and its spectral flow is
   `TauCeti.spectralFlow A a b` (`TauCeti.domainSpectralFlow_one`). Then `τ_c A` is the image
@@ -91,6 +92,7 @@ here.
 * `TauCeti.domainSpectralFlow_comp_of_mapsTo`, `TauCeti.domainSpectralFlow_comp_of_mapsTo_of_ge`,
   `TauCeti.domainSpectralFlow_comp_neg`: reparametrization and reversal.
 * `TauCeti.domainSpectralFlow_eq_zero_of_forall_isInvertible`: paths of invertible operators.
+* `TauCeti.domainSpectralFlow_eq_zero_of_forall_eq`: constant paths.
 * `TauCeti.domainSpectralFlow_one`: comparison with the bounded spectral flow in finite
   dimensions.
 
@@ -503,6 +505,19 @@ theorem domainSpectralFlow_comp_neg {a b : ℝ} (hab : a ≤ b) (hA : Continuous
     hA hsymm h₀
   rw [neg_neg, neg_neg] at h
   exact h
+
+/-- **A constant path has no spectral flow**: if `A t = A a` for all `t ∈ [a, b]`, where `A a` is
+symmetric through `ι` with some invertible shift, the spectral flow from `a` to `b` vanishes. -/
+theorem domainSpectralFlow_eq_zero_of_forall_eq {a b : ℝ} (hab : a ≤ b)
+    (hsymm : ∀ x y, ⟪A a x, ι y⟫ = ⟪ι x, A a y⟫) (h₀ : ∃ c₀ : 𝕜, (c₀ • ι - A a).IsInvertible)
+    (hA : ∀ t ∈ Icc a b, A t = A a) : domainSpectralFlow ι A a b = 0 := by
+  obtain ⟨c₀, hc₀⟩ := h₀
+  obtain ⟨c, hc, hinv⟩ := ι.exists_mem_Ioo_isInvertible_ofReal_smul_sub hι hc₀ zero_lt_one
+  rw [domainSpectralFlow_eq_spectralFlow_shiftedResolventTransform hι hab
+    (continuousOn_const.congr hA) (fun t ht ↦ hA t ht ▸ hsymm) hc.1.ne'
+    (fun t ht ↦ hA t ht ▸ hinv)]
+  exact spectralFlow_eq_zero_of_forall_eq hab (ι.isSelfAdjoint_shiftedResolventTransform hsymm)
+    (ι.isFredholm_shiftedResolventTransform hι hc.1.ne' hinv) fun t ht ↦ by rw [hA t ht]
 
 omit hι
 
