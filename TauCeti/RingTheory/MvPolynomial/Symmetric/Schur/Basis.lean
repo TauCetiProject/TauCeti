@@ -10,6 +10,9 @@ public import Mathlib.LinearAlgebra.Matrix.Block
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Monomial
 import Mathlib.LinearAlgebra.Matrix.Nonsingular
+import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Pieri
 
 /-!
 # The monomial and Schur bases of the symmetric homogeneous polynomials
@@ -80,6 +83,9 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
   in at least `n` letters and smaller in fewer.
 * `TauCeti.linearIndependent_diagramSchurPoly`: in `N` variables, the Schur polynomials of all the
   Young diagrams with at most `N` rows, of every degree, are linearly independent.
+* `TauCeti.span_diagramSchurPoly_eq_top`: the Schur polynomials span the symmetric polynomials
+  over a commutative ring, since the dual Pieri rule expands every product of elementary
+  symmetric polynomials in them.
 
 ## References
 
@@ -399,8 +405,7 @@ private theorem linearIndependent_diagramSchurPoly_card (N d : ℕ) :
             rw [Fintype.card_fin, ← YoungDiagram.colLen_zero_ofPartition]
             simp [YoungDiagram.equivPartition, YoungDiagram.ofPartition_toPartition]
   convert hli.comp e e.injective with μ
-  simp [e, coe_schurPolyBasis, YoungDiagram.equivPartition, Equiv.subtypeSubtypeEquivSubtypeInter,
-    Equiv.subtypeSubtypeEquivSubtypeExists]
+  simp [e, coe_schurPolyBasis, YoungDiagram.equivPartition]
 
 /-- **The Schur polynomials are linearly independent**: in `N` variables, the Schur polynomials of
 the Young diagrams with at most `N` rows are linearly independent over every commutative ring.
@@ -423,6 +428,46 @@ theorem linearIndependent_diagramSchurPoly {N : ℕ} :
   exact linearIndependent_iff'.mp (linearIndependent_diagramSchurPoly_card N μ.val.card)
     (s.subtype fun ν => ν.val.card = μ.val.card) (fun ν => g ν.val) h ⟨μ, rfl⟩
     (by simpa using hμ)
+
+/-- **The Schur polynomials span the symmetric polynomials**: every symmetric polynomial in `N`
+variables is an `R`-linear combination of Schur polynomials. Products of elementary symmetric
+polynomials are such combinations by the dual Pieri rule `TauCeti.esymm_mul_diagramSchurPoly`, and
+they generate the symmetric polynomials by the fundamental theorem. -/
+theorem span_diagramSchurPoly_eq_top {N : ℕ} :
+    Submodule.span R (Set.range (symmetricDiagramSchurPoly N R)) = ⊤ := by
+  classical
+  set S := Submodule.span R (Set.range (symmetricDiagramSchurPoly N R))
+  -- Multiplication by an elementary symmetric polynomial preserves `S`, by the Pieri rule.
+  have hesymm (k : ℕ) {y : symmetricSubalgebra (Fin N) R} (hy : y ∈ S) :
+      symmetricEsymm (Fin N) R k * y ∈ S := by
+    induction hy using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨ν, rfl⟩ := hy
+      have h : symmetricEsymm (Fin N) R k * symmetricDiagramSchurPoly N R ν =
+          ∑ μ : (ν.card + k).Partition with (YoungDiagram.ofPartition μ).IsVerticalStrip ν,
+            symmetricDiagramSchurPoly N R (YoungDiagram.ofPartition μ) :=
+        Subtype.ext (by simp [esymm_mul_diagramSchurPoly])
+      rw [h]
+      exact sum_mem fun μ _ => Submodule.subset_span ⟨_, rfl⟩
+    | zero => simp
+    | add y z _ _ hy hz => simpa [mul_add] using add_mem hy hz
+    | smul r y _ hy => simpa [mul_smul_comm] using S.smul_mem r hy
+  -- Hence so does multiplication by every polynomial in the elementary symmetric polynomials.
+  have hmul (q : MvPolynomial (Fin N) R) {y : symmetricSubalgebra (Fin N) R} (hy : y ∈ S) :
+      esymmAlgHom (Fin N) R N q * y ∈ S := by
+    induction q using MvPolynomial.induction_on generalizing y with
+    | C r => simpa [Algebra.algebraMap_eq_smul_one, smul_mul_assoc] using S.smul_mem r hy
+    | add p q hp hq => simpa [add_mul] using add_mem (hp hy) (hq hy)
+    | mul_X p i hp =>
+      have hX : esymmAlgHom (Fin N) R N (X i) = symmetricEsymm (Fin N) R (i + 1) :=
+        Subtype.ext (by simp [esymmAlgHom_apply])
+      rw [map_mul, mul_assoc, hX]
+      exact hp (hesymm _ hy)
+  refine eq_top_iff.mpr fun x _ => ?_
+  obtain ⟨q, rfl⟩ := esymmAlgHom_surjective (σ := Fin N) R (n := N) (by simp) x
+  have h1 : (1 : symmetricSubalgebra (Fin N) R) ∈ S :=
+    Submodule.subset_span ⟨⊥, symmetricDiagramSchurPoly_bot N⟩
+  simpa using hmul q h1
 
 end CommRing
 

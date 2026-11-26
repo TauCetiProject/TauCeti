@@ -54,6 +54,7 @@ polynomial.
 * `TauCeti.hsymmInt`: the complete homogeneous symmetric polynomial `h_m` of an integer degree `m`,
   which is `0` for `m < 0`.
 * `TauCeti.symmetricHsymm`: `h_k` as an element of `MvPolynomial.symmetricSubalgebra`.
+* `TauCeti.symmetricEsymm`: `e_k` as an element of `MvPolynomial.symmetricSubalgebra`.
 -/
 
 public section
@@ -215,7 +216,7 @@ variable (σ : Type*) [Fintype σ] [DecidableEq σ] (R : Type*) [CommSemiring R]
 
 /-- The complete homogeneous symmetric polynomial `MvPolynomial.hsymm σ R k`, as an element of
 `MvPolynomial.symmetricSubalgebra`. -/
-@[expose] noncomputable def symmetricHsymm (k : ℕ) : MvPolynomial.symmetricSubalgebra σ R :=
+noncomputable def symmetricHsymm (k : ℕ) : MvPolynomial.symmetricSubalgebra σ R :=
   ⟨MvPolynomial.hsymm σ R k, MvPolynomial.hsymm_isSymmetric σ R k⟩
 
 variable {σ R}
@@ -223,8 +224,34 @@ variable {σ R}
 @[simp, norm_cast]
 theorem coe_symmetricHsymm (k : ℕ) :
     (symmetricHsymm σ R k : MvPolynomial σ R) = MvPolynomial.hsymm σ R k :=
-  rfl
+  (rfl)
 
 end symmetricHsymm
+
+section symmetricEsymm
+
+variable (σ : Type*) [Fintype σ] (R : Type*) [CommSemiring R]
+
+/-- The elementary symmetric polynomial `MvPolynomial.esymm σ R k`, as an element of
+`MvPolynomial.symmetricSubalgebra`. -/
+noncomputable def symmetricEsymm (k : ℕ) : MvPolynomial.symmetricSubalgebra σ R :=
+  ⟨MvPolynomial.esymm σ R k, MvPolynomial.esymm_isSymmetric σ R k⟩
+
+variable {σ R}
+
+@[simp, norm_cast]
+theorem coe_symmetricEsymm (k : ℕ) :
+    (symmetricEsymm σ R k : MvPolynomial σ R) = MvPolynomial.esymm σ R k :=
+  (rfl)
+
+/-- The elementary symmetric polynomial `e_k` in the symmetric subalgebra vanishes when `k`
+exceeds the number of variables. -/
+theorem symmetricEsymm_eq_zero_of_lt {k : ℕ} (h : Fintype.card σ < k) :
+    symmetricEsymm σ R k = 0 := by
+  ext1
+  rw [coe_symmetricEsymm, MvPolynomial.esymm_eq_multiset_esymm]
+  exact Multiset.esymm_of_card_lt (by simpa using h)
+
+end symmetricEsymm
 
 end TauCeti

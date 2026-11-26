@@ -122,18 +122,13 @@ theorem hsymm_mem_grassmannianIdeal {k : ℕ} (hk : m < k) :
     mul_one] at hsum
   have key : symmetricHsymm (Fin n) R k =
       -∑ r ∈ range k, symmetricHsymm (Fin n) R r *
-        ((-1) ^ (k - r) * ⟨esymm (Fin n) R (k - r), esymm_isSymmetric _ _ _⟩) :=
+        ((-1) ^ (k - r) * symmetricEsymm (Fin n) R (k - r)) :=
     Subtype.ext (by simpa [eq_neg_iff_add_eq_zero, add_comm] using hsum)
   rw [key]
   refine neg_mem (sum_mem fun r hr => ?_)
   by_cases hmr : m < r
   · exact Ideal.mul_mem_right _ _ (ih r (mem_range.mp hr) hmr)
-  · have hzero : esymm (Fin n) R (k - r) = 0 := by
-      rw [esymm_eq_multiset_esymm]
-      exact Multiset.esymm_of_card_lt (by simp; omega)
-    have he : (⟨esymm (Fin n) R (k - r), esymm_isSymmetric _ _ _⟩ :
-        symmetricSubalgebra (Fin n) R) = 0 := Subtype.ext hzero
-    simp [he]
+  · simp [symmetricEsymm_eq_zero_of_lt (by simp; omega : Fintype.card (Fin n) < k - r)]
 
 /-- **A Schur polynomial whose first row is longer than `m` lies in the ideal**: expanding the
 Jacobi–Trudi determinant `s_μ = det (h_{μᵢ - i + j})` along its first row writes `s_μ` as a
@@ -153,7 +148,8 @@ theorem diagramSchurPoly_mem_grassmannianIdeal {μ : YoungDiagram} (hμ : m < μ
         Fin (r + 1) => hsymmInt (Fin n) R ((μ.rowLen i : ℤ) - (i : ℕ) + (j : ℕ)) := by
       ext i j
       simp [A]
-    refine Subtype.ext ((diagramSchurPoly_eq_det_hsymmInt n μ hr.le).trans ?_)
+    refine Subtype.ext ((coe_symmetricDiagramSchurPoly n μ).trans
+      ((diagramSchurPoly_eq_det_hsymmInt n μ hr.le).trans ?_))
     rw [← hmap, ← AlgHom.map_det]
     simp
   rw [hA, Matrix.det_succ_row_zero]
@@ -186,7 +182,7 @@ theorem mem_grassmannianIdeal_iff {x : symmetricSubalgebra (Fin n) R} :
       refine (Submodule.map_span_le ((LinearMap.mulRight R (hsymm (Fin n) R k)).comp
         (symmetricSubalgebra (Fin n) R).val.toLinearMap) (Set.range (symmetricDiagramSchurPoly n R))
         J).mpr ?_ ⟨y, ?_, rfl⟩
-      · rintro _ ⟨μ, rfl⟩; exact hpieri k hk μ
+      · rintro _ ⟨μ, rfl⟩; simpa using hpieri k hk μ
       · simp [span_diagramSchurPoly_eq_top]
     intro hx
     obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp hx
@@ -197,7 +193,7 @@ theorem mem_grassmannianIdeal_iff {x : symmetricSubalgebra (Fin n) R} :
         ((grassmannianIdeal n m R).restrictScalars R) := by
       refine Submodule.span_le.mpr ?_
       rintro _ ⟨ν, hν, rfl⟩
-      exact ⟨_, diagramSchurPoly_mem_grassmannianIdeal hν, rfl⟩
+      exact ⟨_, diagramSchurPoly_mem_grassmannianIdeal hν, coe_symmetricDiagramSchurPoly n ν⟩
     obtain ⟨y, hy, hyx⟩ := hJ hx
     rwa [Subtype.ext hyx] at hy
 
@@ -251,9 +247,7 @@ private theorem top_le_span_mk_diagramSchurPoly :
     · exact Submodule.subset_span ⟨⟨μ, hrect⟩, rfl⟩
     rw [YoungDiagram.le_rect_iff, not_and_or, not_le, not_le] at hrect
     rcases hrect with hn | hm
-    · have h0 : symmetricDiagramSchurPoly n R μ = 0 :=
-        Subtype.ext (diagramSchurPoly_eq_zero_of_lt_colLen hn)
-      simp [h0]
+    · simp [symmetricDiagramSchurPoly_eq_zero_of_lt_colLen hn]
     · rw [Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem.mpr
         (diagramSchurPoly_mem_grassmannianIdeal hm)]
       exact T.zero_mem

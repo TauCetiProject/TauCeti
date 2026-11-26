@@ -166,14 +166,26 @@ theorem diagramSchurPoly_mem_symmetricSubalgebra (N : ℕ) (R : Type*) [CommSemi
 
 /-- The Schur polynomial `TauCeti.diagramSchurPoly N R μ`, as an element of
 `MvPolynomial.symmetricSubalgebra`. -/
-@[expose] noncomputable def symmetricDiagramSchurPoly (N : ℕ) (R : Type*) [CommSemiring R]
+noncomputable def symmetricDiagramSchurPoly (N : ℕ) (R : Type*) [CommSemiring R]
     (μ : YoungDiagram) : symmetricSubalgebra (Fin N) R :=
   ⟨diagramSchurPoly N R μ, diagramSchurPoly_mem_symmetricSubalgebra N R μ⟩
 
 @[simp, norm_cast]
 theorem coe_symmetricDiagramSchurPoly (N : ℕ) (μ : YoungDiagram) :
     (symmetricDiagramSchurPoly N R μ : MvPolynomial (Fin N) R) = diagramSchurPoly N R μ :=
-  rfl
+  (rfl)
+
+/-- The Schur polynomial of the empty diagram is `1` in the symmetric subalgebra. -/
+@[simp]
+theorem symmetricDiagramSchurPoly_bot (N : ℕ) :
+    symmetricDiagramSchurPoly N R ⊥ = 1 :=
+  Subtype.ext (by simp [diagramSchurPoly_bot])
+
+/-- The Schur polynomial of a diagram with more than `N` rows vanishes in the symmetric
+subalgebra of `N` variables. -/
+theorem symmetricDiagramSchurPoly_eq_zero_of_lt_colLen {N : ℕ} {μ : YoungDiagram}
+    (h : N < μ.colLen 0) : symmetricDiagramSchurPoly N R μ = 0 :=
+  Subtype.ext (by simp [diagramSchurPoly_eq_zero_of_lt_colLen h])
 
 /-- Renaming a diagram Schur polynomial along a bijection of finite alphabets preserves it. -/
 @[simp]
@@ -192,7 +204,9 @@ theorem schurPoly_fin_shapePartition (N : ℕ) (μ : YoungDiagram) :
 
 /-- The partition-indexed Schur polynomial in `Fin N` of the partition read off a Young diagram is
 its diagram-indexed Schur polynomial; this is `TauCeti.schurPoly_fin_shapePartition` for a
-diagram whose size is recorded as an arbitrary `d`. -/
+diagram whose size is recorded as an arbitrary `d`. Both lemmas are needed: `simp` rewrites
+`μ.toPartition rfl` to the opaque `TauCeti.shapePartition μ`
+(`TauCeti.toPartition_eq_shapePartition`), which this lemma no longer matches. -/
 @[simp]
 theorem schurPoly_fin_toPartition (N : ℕ) {μ : YoungDiagram} {d : ℕ} (h : μ.card = d) :
     schurPoly (Fin N) R (μ.toPartition h) = diagramSchurPoly N R μ := by
