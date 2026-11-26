@@ -35,7 +35,7 @@ measure on `M`.
   `w ↦ ∫ ⟪η, w⟫ dν` (`TauCeti.zeroOneHilbertSchmidtL`).
 * *Green's formula.* For compatible metrics, a smooth metric connection, the Riemannian volume and a
   smooth `(0,1)`-form `η`, `∫ ⟪η, D w⟫ dV = ∫ ⟪D* η, w⟫ dV` for every `w ∈ W^{1,p}`
-  (`TauCeti.IsRealCauchyRiemannOperator.zeroOneHilbertSchmidtL_sobolevL`), extending main's
+  (`TauCeti.IsRealCauchyRiemannOperator.zeroOneHilbertSchmidtL_sobolevL`), extending Green's
   formula for smooth sections
   (`TauCeti.IsRealCauchyRiemannOperator.integral_inner_formalAdjoint_of_compactSpace`). Hence
   every `(0,1)`-form in the range of `D` is `L²`-orthogonal to every smooth `η` with `D* η = 0`
@@ -51,7 +51,8 @@ measure on `M`.
 
 * `TauCeti.IsRealCauchyRiemannOperator.integralL_sobolevL`: Green's formula for Sobolev sections,
   for any continuous covector fields satisfying it on smooth sections.
-* `TauCeti.zeroOneHilbertSchmidtL_apply`: the value of the pairing.
+* `TauCeti.zeroOneHilbertSchmidtL_apply_eq_integralL`, `TauCeti.zeroOneHilbertSchmidtL_apply`: the
+  pairing as an integral functional, and its value.
 * `TauCeti.IsRealCauchyRiemannOperator.continuousOn_innerSL_formalAdjoint_comp_symmL`: the
   covector field `⟪D* η, ·⟫` of a smooth `(0,1)`-form `η` can be integrated against Sobolev
   sections.
@@ -163,19 +164,6 @@ variable [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) 0 F V]
   (A : FiniteBundleAtlas ℂ M F V) (μ : Measure ℂ) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)]
   (k : ℕ) {ν : Measure M}
 
-omit [MeasurableSpace M] [BorelSpace M] in
-/-- The Hilbert–Schmidt covector field `⟪η x, ·⟫` of a continuous `V`-valued one-form is
-continuous in the preferred trivializations of the bundle of one-forms. -/
-private theorem continuousOn_hilbertSchmidtInnerL_comp_symmL
-    {η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
-    (hη : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
-      (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x)) (x₀ : M) :
-    ContinuousOn (fun x ↦ (η x).hilbertSchmidtInnerL ∘L
-      (trivializationAt (ℂ →L[ℝ] F) (fun x ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) x₀).symmL ℝ x)
-      (trivializationAt (ℂ →L[ℝ] F) (fun x ↦ TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) x₀).baseSet :=
-  Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL _
-    (trivializationAt _ _ x₀).open_baseSet subset_rfl hη.continuousOn
-
 /-- **The `L²` pairing of `(0,1)`-forms.** For a positive continuous density measure `ν`, metrics
 on `TM` and `V` and a continuous `V`-valued one-form `η`, the continuous linear functional
 `w ↦ ∫ ⟪η x, θ x⟫ dν` on the Sobolev `(0,1)`-forms `W^{k,p}(M, Λ^{0,1} ⊗ V)`, where `θ` is any
@@ -189,10 +177,26 @@ def zeroOneHilbertSchmidtL (hν : IsPositiveDensityMeasure 𝓘(ℝ, ℂ) ν)
     zeroOneSobolevSections A μ p k →L[ℝ] ℝ :=
   ContinuousLinearMap.comp
     (SobolevSection.integralL A.tangentHom μ p k hν (L := fun x ↦ (η x).hilbertSchmidtInnerL)
-      (continuousOn_hilbertSchmidtInnerL_comp_symmL hη))
+      (fun x₀ ↦ Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL _
+        (trivializationAt _ _ x₀).open_baseSet subset_rfl hη.continuousOn))
     (zeroOneSobolevSections A μ p k).subtypeL
 
 variable {A μ p k}
+
+/-- The pairing `TauCeti.zeroOneHilbertSchmidtL` is the integral
+`TauCeti.SobolevSection.integralL` of the Hilbert–Schmidt covector field `⟪η x, ·⟫` against the
+underlying Sobolev one-form. -/
+theorem zeroOneHilbertSchmidtL_apply_eq_integralL (hν : IsPositiveDensityMeasure 𝓘(ℝ, ℂ) ν)
+    {η : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
+    (hη : Continuous fun x ↦ TotalSpace.mk' (ℂ →L[ℝ] F)
+      (E := fun y ↦ TangentSpace 𝓘(ℝ, ℂ) y →L[ℝ] V y) x (η x))
+    (w : zeroOneSobolevSections A μ p k) :
+    zeroOneHilbertSchmidtL A μ p k hν η hη w =
+      SobolevSection.integralL A.tangentHom μ p k hν (L := fun x ↦ (η x).hilbertSchmidtInnerL)
+        (fun x₀ ↦ Bundle.Trivialization.continuousOn_hilbertSchmidtInnerL_comp_symmL _
+          (trivializationAt _ _ x₀).open_baseSet subset_rfl hη.continuousOn)
+        (w : SobolevSection A.tangentHom μ p k) := by
+  rw [zeroOneHilbertSchmidtL, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
 
 /-- **The value of the pairing.** For every one-form `θ` with the chart data of the `(0,1)`-form
 `w`, `TauCeti.zeroOneHilbertSchmidtL` takes the value `∫ ⟪η x, θ x⟫ dν` at `w`. -/
@@ -205,7 +209,7 @@ theorem zeroOneHilbertSchmidtL_apply (hν : IsPositiveDensityMeasure 𝓘(ℝ, �
       ((w : SobolevSection A.tangentHom μ p k) : A.tangentHom.sectionChartData.SobolevData μ p k)
         =ᵐ[μ.restrict (A.image i)] A.tangentHom.coord i θ) :
     zeroOneHilbertSchmidtL A μ p k hν η hη w = ∫ x, (η x).hilbertSchmidtInner (θ x) ∂ν := by
-  rw [zeroOneHilbertSchmidtL, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+  rw [zeroOneHilbertSchmidtL_apply_eq_integralL,
     SobolevSection.integralL_apply (A := A.tangentHom) hν _ fun i ↦
       (ae_image_tangentHom_iff A μ i).2 (hθ i)]
   simp only [ContinuousLinearMap.hilbertSchmidtInnerL_apply]
@@ -275,8 +279,8 @@ theorem zeroOneHilbertSchmidtL_sobolevL (hp_top : p ≠ ⊤) (hcov : cov.IsMetri
         (L := fun x ↦ innerSL ℝ (hD.formalAdjoint cov η x))
         (continuousOn_innerSL_formalAdjoint_comp_symmL hD hDs cov hJ hV hη hη01) w := by
   have := A.compactSpace
-  refine hD.integralL_sobolevL A hDs hp_top _ (continuousOn_hilbertSchmidtInnerL_comp_symmL
-    hη.continuous) _ (fun σ ↦ ?_) w
+  rw [zeroOneHilbertSchmidtL_apply_eq_integralL]
+  refine hD.integralL_sobolevL A hDs hp_top _ _ _ (fun σ ↦ ?_) w
   simp only [ContinuousLinearMap.hilbertSchmidtInnerL_apply, innerSL_apply_apply]
   exact (hD.integral_inner_formalAdjoint_of_compactSpace cov hcov hDs hJ hV hη hη01
     σ.contMDiff).symm
