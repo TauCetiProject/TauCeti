@@ -48,6 +48,8 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
 * `Distribution.HasLocallyFiniteMass` and
   `Distribution.hasLocallyFiniteMass_iff_localMass_ne_top`: local finiteness of mass by order-zero
   bounds and its variational characterization.
+* `Distribution.exists_tendsto_of_mass_le`: a sequence of continuous linear maps with a common
+  finite mass bound which is Cauchy on each test has a continuous linear limit with the same bound.
 * `Distribution.HasLocallyFiniteMass.exists_nonneg_bound`: on a compact subset, an order-zero bound
   with a nonnegative constant, tested against any pointwise bound on the test function.
 * `Distribution.mass_apply_apply`: the point evaluation `φ ↦ ℓ (φ x)` has mass `‖ℓ‖`; in particular
@@ -260,6 +262,13 @@ theorem norm_apply_le_of_mass_le (T : 𝓕) {C : ℝ≥0} (hT : mass T ≤ C)
     (φ : 𝓓^{n}(Ω, F)) : ‖T φ‖ ≤ C * ‖(φ : E →ᵇ F)‖ := by
   have h := (enorm_apply_le_mass_mul T φ).trans (mul_le_mul' hT le_rfl)
   simpa using ENNReal.toReal_mono (by finiteness) h
+
+/-- A mass bound by a multiple `c M` of a finite `M` controls each evaluation by
+`c M.toReal` times the supremum norm of the test. -/
+theorem norm_apply_le_mul_toReal_mul_of_mass_le (T : 𝓕) {c : ℝ≥0} {M : ℝ≥0∞} (hM : M ≠ ⊤)
+    (hT : mass T ≤ c * M) (φ : 𝓓^{n}(Ω, F)) : ‖T φ‖ ≤ c * M.toReal * ‖(φ : E →ᵇ F)‖ := by
+  simpa [ENNReal.coe_toNNReal_eq_toReal] using norm_apply_le_of_mass_le T (C := c * M.toNNReal)
+    (hT.trans_eq (by rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hM])) φ
 
 /-- **Mass zero iff current zero.** -/
 theorem mass_eq_zero_iff (T : 𝓕) : mass T = 0 ↔ ⇑T = 0 := by
@@ -552,6 +561,20 @@ theorem HasLocallyFiniteMass.continuous {L : 𝓓^{n}(Ω, F) →ₗ[ℝ] V}
   exact (ContDiffMapSupportedIn.withSeminorms ℝ E F n K).continuous_normedSpace_rng V LK
     ⟨{0}, ⟨C, hC0⟩, hLK⟩
 
+/-- **Limits under a mass bound.** If continuous linear maps `Sⱼ` on test functions have masses
+bounded by a finite constant `C` and `Sⱼ φ` is a Cauchy sequence for every test `φ`, then the
+pointwise limit is again a continuous linear map, and its mass is at most `C`. -/
+theorem exists_tendsto_of_mass_le [CompleteSpace V] (S : ℕ → 𝓓^{n}(Ω, F) →L[ℝ] V)
+    {C : ℝ≥0∞} (hC : C ≠ ⊤) (hS : ∀ j, mass (S j) ≤ C) (h : ∀ φ, CauchySeq fun j => S j φ) :
+    ∃ S' : 𝓓^{n}(Ω, F) →L[ℝ] V, mass S' ≤ C ∧ ∀ φ, Tendsto (fun j => S j φ) atTop (𝓝 (S' φ)) := by
+  have hs (φ : 𝓓^{n}(Ω, F)) := (h φ).tendsto_limUnder
+  let L : 𝓓^{n}(Ω, F) →ₗ[ℝ] V := linearMapOfTendsto (fun φ => limUnder atTop fun j => S j φ)
+    (fun j => (S j).toLinearMap) (tendsto_pi_nhds.2 hs)
+  have hL : mass L ≤ C :=
+    (mass_le_liminf (f := L) hs).trans (liminf_le_of_frequently_le' (Frequently.of_forall hS))
+  exact ⟨⟨L, (hasLocallyFiniteMass_of_mass_ne_top L (ne_top_of_le_ne_top hC hL)).continuous⟩,
+    hL, hs⟩
+
 end LocallyFinite
 
 section Evaluation
@@ -599,12 +622,12 @@ end Evaluation
 section Integral
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {μ : Measure E}
-  [μ.IsAddHaarMeasure] {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
+  {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H]
   {G : E → H →L[ℝ] ℝ}
 
-/-- **Mass of an absolutely continuous current.** Against an additive Haar measure, integration
-against a field `G` of continuous linear functionals on a real Hilbert space, locally integrable
-on `Ω`, has mass `∫_Ω ‖G‖`; both sides may be infinite. -/
+/-- **Mass of an absolutely continuous current.** For any measure `μ`, integration against a
+field `G` of continuous linear functionals on a real Hilbert space, locally integrable on `Ω`, has
+mass `∫_Ω ‖G‖`; both sides may be infinite. -/
 theorem mass_integral_apply (hG : LocallyIntegrableOn G Ω μ) :
     mass (fun φ : 𝓓(Ω, H) => ∫ x, G x (φ x) ∂μ) = ∫⁻ x in Ω, ‖G x‖ₑ ∂μ := by
   refine le_antisymm (mass_le_iff.2 fun φ hφ => φ.enorm_integral_apply_le_setLIntegral_enorm hφ G)

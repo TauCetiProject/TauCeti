@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.Fiberwise
-import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Reductive.AlgebraicallyClosed
 import TauCeti.Algebra.AlgebraicGroup.Reductive.Product
 
@@ -81,14 +80,9 @@ theorem baseChange (hH : reductiveCommHopfAlgPropertyOver R H)
 after extension to `AlgebraicClosure k`, which is a geometric fiber. -/
 theorem fiber (hH : reductiveCommHopfAlgPropertyOver R H)
     (k : Type u) [Field k] [Algebra R k] :
-    reductiveCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.baseChange (K := k) H) := by
-  obtain ⟨hs, hk⟩ := (reductiveCommHopfAlgPropertyOver_iff k _).mp (hH.baseChange k)
-  obtain ⟨-, hconn, hrad⟩ :=
-    (reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_eq_augmentation _ _).mp
-      (hk (AlgebraicClosure k))
-  rw [reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation]
-  exact ⟨hs, geometricallyConnectedCommHopfAlgProperty.of_baseChange k (AlgebraicClosure k) _
-    hconn, hrad⟩
+    reductiveCommHopfAlgProperty k (FiniteTypeCommHopfAlgCat.baseChange (K := k) H) :=
+  reductiveCommHopfAlgProperty.of_baseChange_algebraicClosure
+    (((reductiveCommHopfAlgPropertyOver_iff k _).mp (hH.baseChange k)).2 (AlgebraicClosure k))
 
 /-- **A direct product of reductive group schemes over a ring is reductive.** The tensor product
 is the coordinate Hopf algebra of the direct product of groups. -/

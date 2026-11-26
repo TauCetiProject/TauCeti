@@ -56,6 +56,8 @@ with the markings, is canonically isomorphic to the chosen base change.
   families is an isomorphism exactly when its map of total spaces is one.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isProper_hom`: the map of total spaces of a
   morphism of pointed families is proper.
+* `TauCeti.AlgebraicGeometry.PointedPrestableFamily.Hom.hom_markingPoint`: over a field, a
+  morphism of pointed prestable families matches the marked points.
 * `TauCeti.AlgebraicGeometry.PointedPrestableFamily.isPullback_pullbackMap_hom`: the base change of
   a morphism of pointed families is a base change of its map of total spaces, so it stays
   surjective (`TauCeti.AlgebraicGeometry.PointedPrestableFamily.surjective_pullbackMap_hom`).
@@ -183,6 +185,13 @@ instance isIso_of_isIso_hom (f : P ⟶ Q) [IsIso f.hom] : IsIso f :=
 instance : (toOver (S := S) (n := n)).ReflectsIsomorphisms where
   reflects f _ :=
     (isIso_iff_isIso_hom f).2 (by simpa using inferInstanceAs (IsIso (toOver.map f).left))
+
+/-- Over a field, the map of total spaces of a morphism of pointed prestable families carries
+each marked point to the corresponding marked point. -/
+theorem Hom.hom_markingPoint {K : Type u} [Field K]
+    {P Q : PointedPrestableFamily (Spec (.of K)) n} (f : P ⟶ Q) (i : Fin n) :
+    f.hom (P.markingPoint i : P.total) = Q.markingPoint i := by
+  rw [coe_markingPoint, coe_markingPoint, ← Scheme.Hom.comp_apply, Hom.marking_comp_hom]
 
 /-- Forgetting the markings, as a group homomorphism from the automorphisms of a pointed
 prestable family to the automorphisms of its total space over `S`. -/

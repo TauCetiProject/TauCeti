@@ -49,11 +49,15 @@ hold in the degenerate cases only through those conventions.
 * `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: its case `s = 1`,
   `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` for `t ≥ 0`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
+* `TauCeti.differentiableAt_heatKernel_uncurry`: joint differentiability in time and space for
+  `t > 0`.
 * `TauCeti.hasGradientAt_heatKernel`: the gradient of `K_t` at `x` is `-(2t)⁻¹ K_t(x) x`.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
 * `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
 * `TauCeti.memLp_heatKernel`: for `t > 0`, `K_t` belongs to every `Lᵠ`, `0 ≤ q ≤ ∞`.
 * `TauCeti.laplacian_heatKernel`: `Δ K_t(x) = (‖x‖² / (4t²) - n / (2t)) K_t(x)`.
+* `TauCeti.fderiv_heatKernel_apply_self`: the radial derivative in terms of the kernel and its
+  Laplacian, `D K_t(x) x = -n K_t(x) - 2t Δ K_t(x)`.
 * `TauCeti.hasDerivAt_heatKernel`: the heat equation `∂ₜ K_t(x) = Δ K_t(x)` for `t > 0`.
 * `TauCeti.heatKernel_convolution_heatKernel`: the semigroup identity `K_t ⋆ K_s = K_{t+s}`.
 * `TauCeti.fourier_heatKernel`: `𝓕 K_t(ξ) = exp(-4π² t ‖ξ‖²)`.
@@ -114,6 +118,11 @@ theorem heatKernel_le {t : ℝ} (ht : 0 < t) (x : E) :
 theorem heatKernel_neg (t : ℝ) (x : E) : heatKernel t (-x) = heatKernel t x := by
   simp [heatKernel_apply]
 
+/-- The heat kernel is radial: it takes the same value at points of equal norm. -/
+theorem heatKernel_eq_of_norm_eq (t : ℝ) {x y : E} (h : ‖x‖ = ‖y‖) :
+    heatKernel t x = heatKernel t y := by
+  rw [heatKernel_apply, heatKernel_apply, h]
+
 /-- At a positive time the heat kernel is radially nonincreasing: it is no larger at the point
 farther from the origin. -/
 theorem heatKernel_le_heatKernel_of_norm_le {t : ℝ} (ht : 0 < t) {x y : E} (h : ‖x‖ ≤ ‖y‖) :
@@ -145,6 +154,18 @@ theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 ≤ t) (x : E) :
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=
   contDiff_const.mul (((contDiff_norm_sq ℝ).neg.div_const _).exp)
+
+/-- The heat kernel is jointly differentiable in time and space at every positive time. -/
+theorem differentiableAt_heatKernel_uncurry {p : ℝ × E} (hp : 0 < p.1) :
+    DifferentiableAt ℝ (fun q : ℝ × E ↦ heatKernel q.1 q.2) p := by
+  simp only [heatKernel_apply]
+  have hscale : DifferentiableAt ℝ (fun q : ℝ × E ↦ 4 * π * q.1) p := by fun_prop
+  have htime : DifferentiableAt ℝ (fun q : ℝ × E ↦ 4 * q.1) p := by fun_prop
+  have hradial : DifferentiableAt ℝ (fun q : ℝ × E ↦ -‖q.2‖ ^ 2 / (4 * q.1)) p := by
+    simp only [div_eq_mul_inv]
+    exact ((differentiableAt_snd (𝕜 := ℝ) (p := p)).norm_sq ℝ).neg.fun_mul
+      (htime.inv (by positivity))
+  exact (hscale.rpow_const (Or.inl (by positivity))).fun_mul hradial.exp
 
 /-- The gradient of the heat kernel: `∇ K_t(x) = -(2t)⁻¹ K_t(x) x`. The formula holds for every `t`
 (at `t = 0` both sides vanish through Mathlib's conventions for division by zero). -/
@@ -188,6 +209,22 @@ theorem laplacian_heatKernel (t : ℝ) (x : E) :
   have hρc : ContDiff ℝ 2 ρ := contDiff_const.mul ((contDiff_id.neg.div_const _).exp)
   rw [hK, hρc.contDiffAt.laplacian_comp_norm_sq, hddρ, hdρ]
   ring
+
+/-- The derivative of the heat kernel in the radial direction is determined by its value and
+Laplacian. -/
+theorem fderiv_heatKernel_apply_self (t : ℝ) (x : E) :
+    fderiv ℝ (heatKernel t) x x = -(Module.finrank ℝ E * heatKernel t x) -
+      2 * t * Δ (heatKernel t : E → ℝ) x := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · rw [(hasGradientAt_heatKernel 0 x).hasFDerivAt.fderiv]
+    by_cases h : Module.finrank ℝ E = 0
+    · simp [h]
+    · have hd : (Module.finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast h
+      simp [heatKernel_apply, Real.zero_rpow (div_ne_zero (neg_ne_zero.mpr hd) two_ne_zero)]
+  · simp only [(hasGradientAt_heatKernel t x).hasFDerivAt.fderiv, toDual_apply_apply,
+      real_inner_smul_left, real_inner_self_eq_norm_sq, laplacian_heatKernel]
+    field_simp [ht]
+    ring
 
 /-- **The heat equation.** For `t > 0`, the heat kernel solves `∂ₜ K_t(x) = Δ K_t(x)`. -/
 theorem hasDerivAt_heatKernel {t : ℝ} (ht : 0 < t) (x : E) :
