@@ -7,9 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
+public import Mathlib.LinearAlgebra.Dual.Defs
+public import Mathlib.LinearAlgebra.TensorProduct.Associator
 
 /-!
-# Contracting two slots of an indexed tensor power
+# Contracting slots of an indexed tensor power
 
 A bilinear form contracts two distinct slots of a tensor power and leaves the other slots
 unchanged. The output is indexed by the complement of those two slots, avoiding a choice of
@@ -26,6 +28,11 @@ afterwards multiplies by the pairing of the two inserted vectors
 (`LinearMap.contractTensorPair_comp_insertPair`). Inserting a copairing this way is how a cup
 re-expands two contracted slots, so a single arc of a Brauer diagram factors as an insertion after
 a contraction.
+
+For finite sets `S ⊆ T` of indices, `PiTensorProduct.contractMultilinear` contracts the slots of
+`T \ S` against linear forms and keeps the slots of `S`: a family `g` over `T` goes to the pure
+tensor of `g` on `S`, scaled by the product of the forms evaluated at `g` on `T \ S`
+(`PiTensorProduct.contractMultilinear_apply`).
 -/
 
 public section
@@ -149,3 +156,45 @@ theorem contractTensorPair_comp_insertPair (B : LinearMap.BilinForm R M) {i j : 
   simp [hij.symm, hw]
 
 end LinearMap
+
+/-! ### Contracting a block of slots against linear forms -/
+
+namespace PiTensorProduct
+
+variable {ι : Type*} [DecidableEq ι] {W : ι → Type*} (R : Type*) [CommSemiring R]
+  [∀ i, AddCommMonoid (W i)] [∀ i, Module R (W i)] {S T : Finset ι} (h : S ⊆ T)
+
+/-- Contracting the places of `T \ S` against linear forms, as a multilinear map: the tensor
+product of the pure tensor over `S` with the product of the forms over `T \ S`, followed by
+`M ⊗ R ≃ M`. -/
+noncomputable def contractMultilinear (φ : ∀ i, Module.Dual R (W i)) :
+    (Π i : T, W i) →ₘₗ[R] ⨂[R] i : S, W i :=
+  (TensorProduct.rid R _).toLinearMap.compMultilinearMap <|
+    (MultilinearMap.domDomCongrLinearEquiv' R (RingHom.id R) (fun i : T ↦ W i) _
+      (Equiv.sumCompl fun i : T ↦ i.val ∈ S).symm).symm
+      (MultilinearMap.domCoprodDep
+        ((MultilinearMap.domDomCongrLinearEquiv' R (RingHom.id R)
+          (fun i : {a : T // a.val ∈ S} ↦ W i) _
+          (Equiv.subtypeSubtypeEquivSubtype (p := (· ∈ T)) (q := (· ∈ S)) (h ·))).symm
+          (tprod R (s := fun i : S ↦ W i)))
+        ((MultilinearMap.mkPiAlgebra R {i : T // i.val ∉ S} R).compLinearMap fun i ↦ φ i))
+
+variable {R}
+
+/-- The contraction on a family of vectors. -/
+@[simp]
+theorem contractMultilinear_apply (φ : ∀ i, Module.Dual R (W i)) (g : ∀ i : T, W i) :
+    contractMultilinear R h φ g = (∏ i : {i : T // i.val ∉ S}, φ i (g i)) •
+      tprod R (fun i : S ↦ g ⟨i.val, h i.property⟩) := by
+  rw [contractMultilinear, LinearMap.compMultilinearMap_apply,
+    MultilinearMap.domDomCongrLinearEquiv'_symm_apply]
+  -- The reindexed entries are `g` at the corresponding places by definition of
+  -- `Equiv.piCongrLeft'`, `Equiv.sumCompl` and `Equiv.subtypeSubtypeEquivSubtype`, so
+  -- `domCoprodDep` evaluates to this tensor. Rewriting with
+  -- `MultilinearMap.domCoprodDep_apply` instead fails: the reindexed `tprod` has the type
+  -- expected there only up to unfolding these equivalences.
+  change TensorProduct.rid R _ (tprod R (fun i : S ↦ g ⟨i.val, h i.property⟩) ⊗ₜ
+    ∏ i : {i : T // i.val ∉ S}, φ i (g i)) = _
+  exact TensorProduct.rid_tmul _ _
+
+end PiTensorProduct

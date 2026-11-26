@@ -6,42 +6,51 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.OrderAtInfty
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Width
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.ScaledTransformation
 import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.Analysis.Complex.Sqrt
+import TauCeti.Analysis.Complex.UpperHalfPlane.QExpansion.Order
 import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt
+import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 
 /-!
 # Eta quotients: transformation under `Γ₀(N)` and orders at the cusps
 
 For a level `N` and integer exponents `r_δ` indexed by the positive divisors `δ ∣ N`, the
-**eta quotient** is `f(τ) = ∏_{δ ∣ N} η(δ τ) ^ r_δ`. This file computes the leading term of `f`
-at every cusp. For `σ = (a b; c d) ∈ SL(2, ℤ)`, representing the cusp `σ ∞ = a / c`,
+**eta quotient** is `f(τ) = ∏_{δ ∣ N} η(δ τ) ^ r_δ`. This file computes the expansion of `f`
+at every cusp in the local parameter of that cusp. For `σ = (a b; c d) ∈ SL(2, ℤ)`, representing
+the cusp `σ ∞ = a / c` of width `w = N / gcd(N, c²)` for `Γ₀(N)` (`TauCeti.cuspWidthGamma0`), with
+local parameter `q_w = e(τ / w)`,
 
-  `f(σ τ) ~ C · (√(c τ + d)) ^ (∑_δ r_δ) · e(L τ)`  as `Im τ → ∞`,
+  `f(σ τ) = C · (√(c τ + d)) ^ (∑_δ r_δ) · e(L τ) · g(q_w)`,
 
-with `C ≠ 0`, `e(x) = exp(2 π i x)`, the principal square root, and
-`L = ∑_{δ ∣ N} gcd(δ, c)² r_δ / (24 δ)`. The exponents need not have even sum, so the weight
-`k = ½ ∑_δ r_δ` may be a half-integer. When `k` is an integer, `L` is the order at `i ∞` of
-`f ∣[k] σ`, in Mathlib's normalization `UpperHalfPlane.orderAtInfty`, and its sign decides whether
-`f ∣[k] σ` is bounded, or tends to zero, at `i ∞`: these are the cusp conditions that make an eta
-quotient a modular form or a cusp form.
+with `C ≠ 0`, `e(x) = exp(2 π i x)`, the principal square root,
+`L = ∑_{δ ∣ N} gcd(δ, c)² r_δ / (24 δ)`, and `g` holomorphic and nonvanishing on the unit disc
+with `g(0) = 1`. Since `e(L τ) = exp(w L · 2 π i τ / w)` is the power `q_w ^ (w L)`, the order of
+`f` at the cusp `σ ∞` in its local parameter is `w L`. The exponents need not have even sum, so
+the weight `k = ½ ∑_δ r_δ` may be a half-integer, and `w L` need not be an integer. When `k` is an
+integer, `L` is the order at `i ∞` of `f ∣[k] σ`, in Mathlib's normalization
+`UpperHalfPlane.orderAtInfty`, and its sign decides whether `f ∣[k] σ` is bounded, or tends to
+zero, at `i ∞`: these are the cusp conditions that make an eta quotient a modular form or a cusp
+form. Moreover `f ∣[k] σ` is multiplied by `e(w L)` under
+`τ ↦ τ + w`; when `w L = n` is a natural number it has period `w`, and its `q`-expansion in `q_w`
+vanishes to order exactly `n`.
 
-For a cusp with denominator `d ∣ N`, of width `w = N / gcd(N, d²)` for `Γ₀(N)`
-(`TauCeti.conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd`), the file proves the arithmetic identity
+For a cusp with denominator `d ∣ N` the file proves the arithmetic identity
 
   `w L = (N / 24) ∑_{δ ∣ N} gcd(d, δ)² r_δ / (gcd(d, N / d) d δ)`,
 
-whose right side is Ligozat's formula. Since `L` is the order in `e(τ)`, `w L` is to be read as
-the order in the local parameter `e(τ / w)` of the cusp; that reading is an interpretation, and
-no statement about the parameter `e(τ / w)` is formalized here.
+whose right side is Ligozat's formula for the order of `f` at the cusp.
 
 Each factor is treated separately. With `A = gcd(δ, c)`, the first column `(δ a, c)` of
 `diag(δ, 1) σ` has gcd `A`, so `diag(δ, 1) σ = σ' (A B; 0 δ / A)` with `σ' ∈ SL(2, ℤ)`, and the
-transformation law of `η` at `σ'` gives `η(δ σ τ) = C √(c τ + d) η(A (A τ + B) / δ)`. Since
-`η(z) ~ e(z / 24)` as `Im z → ∞` (`TauCeti.ModularForm.tendsto_eta_div_exp`), the factor
-`η(δ σ τ)` has leading exponent `A² / (24 δ)`.
+transformation law of `η` at `σ'` gives `η(δ σ τ) = C √(c τ + d) η(A (A τ + B) / δ)`. By the
+product formula `η(z) = e(z / 24) ∏_{n ≥ 1} (1 - e(z) ^ n)`, and since `e(A² τ / δ) = q_w ^ m` for
+the positive integer `m = w A² / δ` (`TauCeti.dvd_cuspWidthGamma0_mul_gcd_sq`), the factor
+`η(δ σ τ)` is `C' √(c τ + d) e(A² τ / (24 δ))` times the Euler product
+`∏_{n ≥ 1} (1 - (ζ q_w ^ m) ^ n)` for a constant `ζ` of norm one.
 
 The file also proves the transformation of `f` under `Γ₀(N)`. For `γ = (a b; c d) ∈ Γ₀(N)` and
 `δ ∣ N`, the matrix `γ_δ = (a, δ b; c / δ, d) ∈ SL(2, ℤ)` is the conjugate of `γ` by `diag(δ, 1)`
@@ -67,12 +76,18 @@ Newman, Gordon–Hughes and Ligozat, whose cusp conditions are the orders above.
   an eta quotient is nonvanishing and holomorphic on the upper half-plane.
 * `TauCeti.ModularForm.exists_eta_natCast_mul_smul_eq`:
   `η(δ σ τ) = C √(c τ + d) η(A (A τ + B) / δ)` with `A = gcd(δ, c)`.
+* `TauCeti.ModularForm.exists_etaQuotient_smul_eq_mul_comp_qParam`: the expansion of `f(σ τ)` in
+  the local parameter `q_w` of the cusp `σ ∞`.
 * `TauCeti.ModularForm.exists_tendsto_etaQuotient_smul_div`: the leading term of `f(σ τ)`.
 * `TauCeti.ModularForm.orderAtInfty_etaQuotient_slash`: `orderAtInfty (f ∣[k] σ) = L`.
 * `TauCeti.ModularForm.isBoundedAtImInfty_etaQuotient_slash_iff`,
   `TauCeti.ModularForm.isZeroAtImInfty_etaQuotient_slash_iff`: `f ∣[k] σ` is bounded at `i ∞`
   exactly when `0 ≤ L`, and tends to zero exactly when `0 < L`.
 * `TauCeti.ModularForm.natCast_div_gcd_mul_etaQuotientOrder`: `w L` equals Ligozat's expression.
+* `TauCeti.ModularForm.etaQuotient_slash_apply_cuspWidthGamma0_vadd`: `f ∣[k] σ` is multiplied by
+  `e(w L)` under `τ ↦ τ + w`.
+* `TauCeti.ModularForm.etaQuotient_slash_qExpansion_order`: when `w L = n` is a natural number,
+  the `q`-expansion of `f ∣[k] σ` in `q_w` vanishes to order exactly `n`.
 * `TauCeti.ModularForm.etaQuotientOrder_gcd`: `L` depends on `c` only through `gcd(N, c)`, so
   `TauCeti.ModularForm.forall_etaQuotientOrder_iff` reduces a condition at every cusp to the
   divisors of `N`.
@@ -90,6 +105,10 @@ Newman, Gordon–Hughes and Ligozat, whose cusp conditions are the orders above.
 * `TauCeti.ModularForm.etaQuotientMultiplier_eq_of_etaQuotient_smul_eq`: the multiplier is
   determined by the transformation law at a single point; `etaQuotientMultiplier_ne_zero` and
   `norm_etaQuotientMultiplier` record that it is a unit of norm one.
+* `TauCeti.ModularForm.etaQuotientMultiplier_cuspGeneratorGamma0`,
+  `TauCeti.ModularForm.etaQuotientMultiplier_cuspGeneratorGamma0_eq_one_iff`: the multiplier at the
+  generator of the stabilizer of the cusp `σ ∞` is `e(w L)`, so it is `1` exactly when `w L` is
+  an integer.
 
 ## References
 
@@ -196,42 +215,56 @@ theorem exists_eta_natCast_mul_smul_eq (δ : ℕ) [NeZero δ] (σ : SL(2, ℤ)) 
   rw [← hsmul, eta_smul σ' w, hden, hsqrt, hwC]
   ring
 
-/-- `η(δ σ τ) ~ C √(c τ + d) e(gcd(δ, c)² τ / (24 δ))` as `Im τ → ∞`, with `C ≠ 0`. -/
-private theorem exists_tendsto_eta_natCast_mul_smul_div (δ : ℕ) [NeZero δ] (σ : SL(2, ℤ)) :
-    ∃ C : ℂ, C ≠ 0 ∧ Tendsto (fun τ : ℍ ↦ η (δ * ((σ • τ : ℍ) : ℂ)) /
-      (Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1) *
-        cexp (2 * π * I * ((Nat.gcd δ (σ 1 0).natAbs ^ 2 / (24 * δ) : ℚ) : ℂ) * τ)))
-      atImInfty (𝓝 C) := by
+/-- **`η(δ τ)` in the local parameter of the cusp `σ ∞`.** For `δ ∣ N` and
+`σ = (a b; c d) ∈ SL(2, ℤ)`, let `w = cuspWidthGamma0 N σ` be the width of the cusp `σ ∞` of
+`Γ₀(N)`, `q_w = e(τ / w)` its local parameter and `A = gcd(δ, c)`. Then
+`η(δ σ τ) = C √(c τ + d) e(A² τ / (24 δ)) ∏_{n ≥ 1} (1 - (ζ q_w ^ m) ^ n)` for some `C ≠ 0`, some
+`ζ` of norm one and the positive integer `m = w A² / δ`. -/
+private theorem exists_eta_natCast_mul_smul_eq_tprod {N δ : ℕ} (hδ : δ ∈ N.divisors)
+    (σ : SL(2, ℤ)) :
+    ∃ (C ζ : ℂ) (m : ℕ), C ≠ 0 ∧ ‖ζ‖ = 1 ∧ m ≠ 0 ∧ ∀ τ : ℍ,
+      η (δ * ((σ • τ : ℍ) : ℂ)) = C * Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1) *
+        cexp (2 * π * I * ((Nat.gcd δ (σ 1 0).natAbs ^ 2 / (24 * δ) : ℚ) : ℂ) * τ) *
+          ∏' n : ℕ, (1 - (ζ * Function.Periodic.qParam (cuspWidthGamma0 N σ) τ ^ m) ^ (n + 1)) := by
+  have hδ0 : 0 < δ := Nat.pos_of_mem_divisors hδ
+  have : NeZero δ := ⟨hδ0.ne'⟩
+  have : NeZero N := ⟨(Nat.mem_divisors.mp hδ).2⟩
   obtain ⟨C, B, hC, h⟩ := exists_eta_natCast_mul_smul_eq δ σ
   set A := Nat.gcd δ (σ 1 0).natAbs
-  have hA : 0 < (A : ℝ) := by exact_mod_cast Nat.gcd_pos_of_pos_left _ (NeZero.pos δ)
-  have hδ : 0 < (δ : ℝ) := by exact_mod_cast NeZero.pos δ
-  set u : ℍ → ℂ := fun τ ↦ A * (A * τ + B) / δ
-  have hu : Tendsto u atImInfty (comap im atTop) := by
-    refine tendsto_comap_iff.2 (((tendsto_comap : Tendsto UpperHalfPlane.im atImInfty atTop)
-      |>.const_mul_atTop (by positivity : 0 < (A : ℝ) * A / δ)).congr fun τ ↦ ?_)
-    simp only [Function.comp_apply, u, Complex.div_natCast_im, Complex.mul_im, Complex.add_im,
-      Complex.natCast_re, Complex.natCast_im, Complex.intCast_im, UpperHalfPlane.coe_im,
-      zero_mul, add_zero]
-    ring
-  set E : ℂ := cexp (2 * π * I * (A * B / (24 * δ)))
-  refine ⟨C * E, mul_ne_zero hC (exp_ne_zero _), ?_⟩
-  have := (tendsto_eta_div_exp.comp hu).const_mul (C * E)
-  rw [mul_one] at this
-  refine this.congr fun τ ↦ ?_
-  have hexp : cexp (2 * π * I * u τ / 24) =
-      cexp (2 * π * I * ((A ^ 2 / (24 * δ) : ℚ) : ℂ) * τ) * E := by
-    rw [← exp_add]
+  set w := cuspWidthGamma0 N σ
+  obtain ⟨m, hm⟩ := dvd_cuspWidthGamma0_mul_gcd_sq (Nat.dvd_of_mem_divisors hδ) σ
+  have hA : 0 < A := Nat.gcd_pos_of_pos_left _ hδ0
+  have hw : 0 < w := cuspWidthGamma0_pos N σ
+  have hm0 : m ≠ 0 := by
+    rintro rfl
+    exact (Nat.mul_pos hw (pow_pos hA 2)).ne' (hm.trans (mul_zero δ))
+  refine ⟨C * cexp (2 * π * I * (A * B / (24 * δ))), cexp (2 * π * I * (A * B / δ)), m,
+    mul_ne_zero hC (exp_ne_zero _), ?_, hm0, fun τ ↦ ?_⟩
+  · rw [norm_exp]
+    simp
+  -- `e(A (A τ + B) / δ) = ζ q_w ^ m`, since `m / w = A² / δ`.
+  have hm' : (m : ℂ) = w * A ^ 2 / δ := by
+    rw [eq_div_iff (by exact_mod_cast hδ0.ne')]
+    exact_mod_cast (hm.trans (mul_comm δ m)).symm
+  have hq : cexp (2 * π * I * (A * (A * τ + B) / δ)) =
+      cexp (2 * π * I * (A * B / δ)) * Function.Periodic.qParam w τ ^ m := by
+    rw [Function.Periodic.qParam, ← exp_natCast_mul, ← exp_add]
     congr 1
-    simp only [u]
+    have : (w : ℂ) ≠ 0 := by exact_mod_cast hw.ne'
+    rw [hm']
     push_cast
     field_simp
-  have key : ∀ s e x : ℂ, s ≠ 0 → e ≠ 0 → C * E * (x / (e * E)) = C * s * x / (s * e) :=
-    fun s e x hs he ↦ by
-      have hE : E ≠ 0 := exp_ne_zero _
-      field_simp
-  rw [Function.comp_apply, h τ, hexp]
-  exact key _ _ _ (sqrt_denom_ne_zero σ τ) (exp_ne_zero _)
+    ring
+  have h24 : cexp (2 * π * I * (A * (A * τ + B) / δ) / 24) =
+      cexp (2 * π * I * (A * B / (24 * δ))) *
+        cexp (2 * π * I * ((A ^ 2 / (24 * δ) : ℚ) : ℂ) * τ) := by
+    rw [← exp_add]
+    congr 1
+    push_cast
+    field_simp
+    ring
+  rw [h τ, eta_eq_exp_mul_tprod, h24, hq]
+  ring
 
 /-! ### Eta quotients -/
 
@@ -284,10 +317,10 @@ theorem etaQuotient_add_intCast (N : ℕ) (r : ℕ → ℤ) (τ : ℂ) (n : ℤ)
 /-- **The order of an eta quotient at a cusp**, `∑_{δ ∣ N} gcd(δ, c)² r δ / (24 δ)`. For
 `σ ∈ SL(2, ℤ)` with lower-left entry `c` it is the order at `i ∞`, in the parameter `e(τ)`, of
 `etaQuotient N r` transported by `σ` (`orderAtInfty_etaQuotient_slash`); this is the order of
-`etaQuotient N r` at the cusp `σ ∞`. For `c ∣ N`, `natCast_div_gcd_mul_etaQuotientOrder` shows
-that `w` times this, with `w = N / gcd(N, c²)` the width of that cusp of `Γ₀(N)`, equals
-Ligozat's expression; it is read as the order in the local parameter `e(τ / w)`, but that
-reading is not formalized. -/
+`etaQuotient N r` at the cusp `σ ∞`. With `w = N / gcd(N, c²)` the width of that cusp of `Γ₀(N)`,
+`w` times this is the order in the local parameter `e(τ / w)`
+(`exists_etaQuotient_smul_eq_mul_comp_qParam`, `etaQuotient_slash_qExpansion_order`), and for
+`c ∣ N` it equals Ligozat's expression (`natCast_div_gcd_mul_etaQuotientOrder`). -/
 def etaQuotientOrder (N : ℕ) (r : ℕ → ℤ) (c : ℤ) : ℚ :=
   ∑ δ ∈ N.divisors, (Nat.gcd δ c.natAbs ^ 2 * r δ : ℚ) / (24 * δ)
 
@@ -323,11 +356,9 @@ theorem forall_etaQuotientOrder_iff (N : ℕ) [NeZero N] (r : ℕ → ℤ) {p : 
 /-- **Ligozat's formula**, as an identity in `ℚ`. For `d ∣ N` and `w = N / gcd(N, d²)`,
 `w · etaQuotientOrder N r d = (N / 24) ∑_{δ ∣ N} gcd(d, δ)² r δ / (gcd(d, N / d) d δ)`.
 
-Interpretation (not formalized here): `etaQuotientOrder N r d` is the order of
-`∏_{δ ∣ N} η(δ τ) ^ r δ` in the parameter `e(τ)` at a cusp `a / d`
-(`orderAtInfty_etaQuotient_slash`), and `w` is the width of that cusp of `Γ₀(N)`
-(`TauCeti.conj_T_zpow_mem_Gamma0_iff_cuspWidthGamma0_dvd`), so the left side is read as the order
-in the local parameter `e(τ / w)`. -/
+Here `w` is the width `TauCeti.cuspWidthGamma0` of a cusp `a / d` of `Γ₀(N)`, and the left side
+is the order of `∏_{δ ∣ N} η(δ τ) ^ r δ` at that cusp in its local parameter `e(τ / w)`
+(`exists_etaQuotient_smul_eq_mul_comp_qParam`, `etaQuotient_slash_qExpansion_order`). -/
 theorem natCast_div_gcd_mul_etaQuotientOrder (N : ℕ) (r : ℕ → ℤ) {d : ℕ} (hd : d ∣ N) :
     ((N / Nat.gcd N (d ^ 2) : ℕ) : ℚ) * etaQuotientOrder N r d = N / 24 *
       ∑ δ ∈ N.divisors, (Nat.gcd d δ ^ 2 * r δ : ℚ) / (Nat.gcd d (N / d) * d * δ) := by
@@ -348,24 +379,45 @@ theorem natCast_div_gcd_mul_etaQuotientOrder (N : ℕ) (r : ℕ → ℤ) {d : �
   push_cast
   field_simp
 
-/-- **The leading term of an eta quotient at a cusp.** For `σ = (a b; c d) ∈ SL(2, ℤ)`,
-`f(σ τ) ~ C (√(c τ + d)) ^ (∑_δ r δ) e(L τ)` as `Im τ → ∞` for some `C ≠ 0`, where
-`f = etaQuotient N r`, `e(x) = exp(2 π i x)` and `L = etaQuotientOrder N r c`. -/
-theorem exists_tendsto_etaQuotient_smul_div (N : ℕ) (r : ℕ → ℤ) (σ : SL(2, ℤ)) :
-    ∃ C : ℂ, C ≠ 0 ∧ Tendsto (fun τ : ℍ ↦ etaQuotient N r (σ • τ : ℍ) /
-      (Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1) ^ (∑ δ ∈ N.divisors, r δ) *
-        cexp (2 * π * I * etaQuotientOrder N r (σ 1 0) * τ))) atImInfty (𝓝 C) := by
-  have key (δ : ℕ) (hδ : δ ∈ N.divisors) : ∃ C : ℂ, C ≠ 0 ∧ Tendsto (fun τ : ℍ ↦
-      η (δ * ((σ • τ : ℍ) : ℂ)) / (Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1) *
-        cexp (2 * π * I * ((Nat.gcd δ (σ 1 0).natAbs ^ 2 / (24 * δ) : ℚ) : ℂ) * τ)))
-      atImInfty (𝓝 C) :=
-    haveI : NeZero δ := ⟨(Nat.pos_of_mem_divisors hδ).ne'⟩
-    exists_tendsto_eta_natCast_mul_smul_div δ σ
-  choose! C hC hT using key
-  refine ⟨∏ δ ∈ N.divisors, C δ ^ r δ,
-    Finset.prod_ne_zero_iff.2 fun δ hδ ↦ zpow_ne_zero _ (hC δ hδ), ?_⟩
-  refine (tendsto_finsetProd _ fun δ hδ ↦ (hT δ hδ).zpow₀ (r δ) (Or.inl (hC δ hδ))).congr
-    fun τ ↦ ?_
+/-- **An eta quotient in the local parameter of a cusp.** For `σ = (a b; c d) ∈ SL(2, ℤ)`, let
+`w = cuspWidthGamma0 N σ` be the width of the cusp `σ ∞` of `Γ₀(N)` and `q_w = e(τ / w)` its
+local parameter, where `e(x) = exp(2 π i x)`. Then
+
+  `f(σ τ) = C (√(c τ + d)) ^ (∑_δ r δ) e(L τ) g(q_w)`
+
+for `f = etaQuotient N r`, `L = etaQuotientOrder N r c`, some `C ≠ 0` and some `g` holomorphic and
+nonvanishing on the unit disc with `g(0) = 1`. Since `e(L τ) = exp(w L · 2 π i τ / w)` is the
+power `q_w ^ (w L)`, the order of `f` at `σ ∞` in the local parameter `q_w` is `w L`, which for
+`c ∣ N` is Ligozat's expression of `natCast_div_gcd_mul_etaQuotientOrder`. No parity or congruence
+condition on the exponents is needed, and `w L` need not be an integer. -/
+theorem exists_etaQuotient_smul_eq_mul_comp_qParam (N : ℕ) (r : ℕ → ℤ) (σ : SL(2, ℤ)) :
+    ∃ (C : ℂ) (g : ℂ → ℂ), C ≠ 0 ∧ DifferentiableOn ℂ g (Metric.ball 0 1) ∧ g 0 = 1 ∧
+      (∀ q ∈ Metric.ball (0 : ℂ) 1, g q ≠ 0) ∧ ∀ τ : ℍ,
+        etaQuotient N r (σ • τ : ℍ) =
+          C * Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1) ^ (∑ δ ∈ N.divisors, r δ) *
+            cexp (2 * π * I * etaQuotientOrder N r (σ 1 0) * τ) *
+              g (Function.Periodic.qParam (cuspWidthGamma0 N σ) τ) := by
+  choose! C ζ m hC hζ hm hfac using fun δ (hδ : δ ∈ N.divisors) ↦
+    exists_eta_natCast_mul_smul_eq_tprod hδ σ
+  -- The Euler function `E(x) = ∏_{n ≥ 1} (1 - xⁿ)`, holomorphic and nonvanishing on the unit
+  -- disc, evaluated at `ζ_δ q ^ m_δ`, which stays in the disc.
+  set E : ℂ → ℂ := fun x ↦ ∏' n : ℕ, (1 - x ^ (n + 1))
+  have hball (δ : ℕ) (hδ : δ ∈ N.divisors) {q : ℂ} (hq : q ∈ Metric.ball (0 : ℂ) 1) :
+      ζ δ * q ^ m δ ∈ Metric.ball (0 : ℂ) 1 := by
+    rw [mem_ball_zero_iff] at hq ⊢
+    rw [norm_mul, hζ δ hδ, one_mul, norm_pow]
+    exact pow_lt_one₀ (norm_nonneg q) hq (hm δ hδ)
+  have hE {x : ℂ} (hx : x ∈ Metric.ball (0 : ℂ) 1) : E x ≠ 0 :=
+    tprod_one_sub_pow_ne_zero (mem_ball_zero_iff.mp hx)
+  refine ⟨∏ δ ∈ N.divisors, C δ ^ r δ, fun q ↦ ∏ δ ∈ N.divisors, E (ζ δ * q ^ m δ) ^ r δ,
+    Finset.prod_ne_zero_iff.2 fun δ hδ ↦ zpow_ne_zero _ (hC δ hδ), ?_, ?_, ?_, fun τ ↦ ?_⟩
+  · refine DifferentiableOn.fun_finsetProd fun δ hδ ↦ DifferentiableOn.zpow ?_
+      (Or.inl fun q hq ↦ hE (hball δ hδ hq))
+    exact _root_.ModularForm.differentiableOn_tprod_one_sub_pow.comp (by fun_prop)
+      fun q hq ↦ hball δ hδ hq
+  · refine Finset.prod_eq_one fun δ hδ ↦ ?_
+    simp [E, zero_pow (hm δ hδ)]
+  · exact fun q hq ↦ Finset.prod_ne_zero_iff.2 fun δ hδ ↦ zpow_ne_zero _ (hE (hball δ hδ hq))
   set s := Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1)
   have hs : s ≠ 0 := sqrt_denom_ne_zero σ τ
   have hexp : cexp (2 * π * I * etaQuotientOrder N r (σ 1 0) * τ) = ∏ δ ∈ N.divisors,
@@ -376,8 +428,33 @@ theorem exists_tendsto_etaQuotient_smul_div (N : ℕ) (r : ℕ → ℤ) (σ : SL
     push_cast
     ring
   rw [etaQuotient_apply, hexp, ← Finset.prod_zpow_eq_zpow_sum_of_isUnit N.divisors hs.isUnit r,
-    ← Finset.prod_mul_distrib, ← Finset.prod_div_distrib]
-  exact Finset.prod_congr rfl fun δ _ ↦ by rw [div_zpow, mul_zpow]
+    ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib, ← Finset.prod_mul_distrib]
+  refine Finset.prod_congr rfl fun δ hδ ↦ ?_
+  rw [hfac δ hδ τ, mul_zpow, mul_zpow, mul_zpow]
+
+/-- **The leading term of an eta quotient at a cusp.** For `σ = (a b; c d) ∈ SL(2, ℤ)`,
+`f(σ τ) ~ C (√(c τ + d)) ^ (∑_δ r δ) e(L τ)` as `Im τ → ∞` for some `C ≠ 0`, where
+`f = etaQuotient N r`, `e(x) = exp(2 π i x)` and `L = etaQuotientOrder N r c`. -/
+theorem exists_tendsto_etaQuotient_smul_div (N : ℕ) (r : ℕ → ℤ) (σ : SL(2, ℤ)) :
+    ∃ C : ℂ, C ≠ 0 ∧ Tendsto (fun τ : ℍ ↦ etaQuotient N r (σ • τ : ℍ) /
+      (Complex.sqrt ((σ 1 0 : ℂ) * τ + σ 1 1) ^ (∑ δ ∈ N.divisors, r δ) *
+        cexp (2 * π * I * etaQuotientOrder N r (σ 1 0) * τ))) atImInfty (𝓝 C) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · exact ⟨1, one_ne_zero, by simp [etaQuotient_apply, etaQuotientOrder]⟩
+  have : NeZero N := ⟨hN⟩
+  obtain ⟨C, g, hC, hg, hg0, -, h⟩ := exists_etaQuotient_smul_eq_mul_comp_qParam N r σ
+  refine ⟨C, hC, ?_⟩
+  -- `f(σ τ) / ((√(c τ + d)) ^ (∑_δ r δ) e(L τ)) = C g(q_w)`, and `q_w → 0` as `Im τ → ∞`.
+  have hq : Tendsto (fun τ : ℍ ↦ Function.Periodic.qParam (cuspWidthGamma0 N σ) τ) atImInfty
+      (𝓝 0) :=
+    UpperHalfPlane.qParam_tendsto_atImInfty (by exact_mod_cast cuspWidthGamma0_pos N σ)
+  have := ((hg.continuousOn.continuousAt (Metric.ball_mem_nhds 0 one_pos)).tendsto.comp hq)
+    |>.const_mul C
+  rw [hg0, mul_one] at this
+  refine this.congr fun τ ↦ ?_
+  have hs := zpow_ne_zero (∑ δ ∈ N.divisors, r δ) (sqrt_denom_ne_zero σ τ)
+  rw [Function.comp_apply, h τ]
+  field_simp
 
 /-- `τ ↦ f(σ τ) / (√(c τ + d)) ^ (∑_δ r δ)` is comparable to `e^{-2 π L Im τ}` at `i ∞`, where
 `f = etaQuotient N r` and `L = etaQuotientOrder N r c`. -/
@@ -454,6 +531,67 @@ theorem isZeroAtImInfty_etaQuotient_slash_iff (N : ℕ) (r : ℕ → ℤ) {k : �
     exact (Real.tendsto_exp_atBot.comp hlin).congr fun τ ↦ by
       simp only [neg_mul, Function.comp_apply, Real.exp_eq_exp, neg_inj]
       ring
+
+/-! ### The local parameter of a cusp -/
+
+/-- **The translation law of an eta quotient at a cusp.** For integral `k` with
+`∑_δ r δ = 2 k`, translating by the width `w` of the cusp `σ ∞` of `Γ₀(N)` multiplies
+`etaQuotient N r ∣[k] σ` by `e(w L)`, where `L = etaQuotientOrder N r c` and
+`e(x) = exp(2 π i x)`. In particular `etaQuotient N r ∣[k] σ` has period `w` when the order `w L`
+of the eta quotient in the local parameter `e(τ / w)` is an integer. -/
+theorem etaQuotient_slash_apply_cuspWidthGamma0_vadd (N : ℕ) (r : ℕ → ℤ) {k : ℤ}
+    (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (σ : SL(2, ℤ)) (τ : ℍ) :
+    ((fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] σ) ((cuspWidthGamma0 N σ : ℝ) +ᵥ τ) =
+      cexp (2 * π * I * (cuspWidthGamma0 N σ * etaQuotientOrder N r (σ 1 0))) *
+        ((fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] σ) τ := by
+  obtain ⟨C, g, -, -, -, -, h⟩ := exists_etaQuotient_smul_eq_mul_comp_qParam N r σ
+  set τ' : ℍ := (cuspWidthGamma0 N σ : ℝ) +ᵥ τ
+  have hτ' : (τ' : ℂ) = cuspWidthGamma0 N σ + τ := by
+    rw [UpperHalfPlane.coe_vadd, ofReal_natCast]
+  have hq : Function.Periodic.qParam (cuspWidthGamma0 N σ) τ' =
+      Function.Periodic.qParam (cuspWidthGamma0 N σ) τ := by
+    rw [UpperHalfPlane.coe_vadd, add_comm]
+    exact TauCeti.Periodic.periodic_qParam _ _
+  have he : cexp (2 * π * I * etaQuotientOrder N r (σ 1 0) * τ') =
+      cexp (2 * π * I * (cuspWidthGamma0 N σ * etaQuotientOrder N r (σ 1 0))) *
+        cexp (2 * π * I * etaQuotientOrder N r (σ 1 0) * τ) := by
+    rw [hτ', ← exp_add]
+    ring_nf
+  have hs := zpow_ne_zero (∑ δ ∈ N.divisors, r δ) (sqrt_denom_ne_zero σ τ)
+  have hs' := zpow_ne_zero (∑ δ ∈ N.divisors, r δ) (sqrt_denom_ne_zero σ τ')
+  simp only [etaQuotient_slash_eq N r hk σ]
+  rw [h, h, hq, he]
+  field_simp
+
+/-- **The order of an eta quotient in the local parameter of a cusp.** For integral `k` with
+`∑_δ r δ = 2 k`, let `w` be the width of the cusp `σ ∞` of `Γ₀(N)`. If `w L = n` is a natural
+number, where `L = etaQuotientOrder N r c`, then `etaQuotient N r ∣[k] σ` has period `w`
+(`etaQuotient_slash_apply_cuspWidthGamma0_vadd`), and its `q`-expansion in the local parameter
+`e(τ / w)` vanishes to order exactly `n`. For a cusp with
+denominator `d ∣ N`, `w L` is Ligozat's expression of `natCast_div_gcd_mul_etaQuotientOrder`. -/
+theorem etaQuotient_slash_qExpansion_order (N : ℕ) [NeZero N] (r : ℕ → ℤ) {k : ℤ}
+    (hk : ∑ δ ∈ N.divisors, r δ = 2 * k) (σ : SL(2, ℤ)) {n : ℕ}
+    (hn : (cuspWidthGamma0 N σ : ℚ) * etaQuotientOrder N r (σ 1 0) = n) :
+    (UpperHalfPlane.qExpansion (cuspWidthGamma0 N σ)
+      ((fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] σ)).order = n := by
+  have hw : (0 : ℝ) < cuspWidthGamma0 N σ := by exact_mod_cast cuspWidthGamma0_pos N σ
+  have hper : Function.Periodic
+      (((fun τ : ℍ ↦ etaQuotient N r τ) ∣[k] σ) ∘ UpperHalfPlane.ofComplex)
+      (cuspWidthGamma0 N σ) := by
+    refine UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ ?_
+    rw [etaQuotient_slash_apply_cuspWidthGamma0_vadd N r hk σ τ]
+    have : ((cuspWidthGamma0 N σ * etaQuotientOrder N r (σ 1 0) : ℚ) : ℂ) = n := by
+      exact_mod_cast hn
+    push_cast at this
+    rw [this, mul_comm (2 * (π : ℂ) * I), exp_nat_mul_two_pi_mul_I, one_mul]
+  have hL : (etaQuotientOrder N r (σ 1 0) : ℝ) = n / cuspWidthGamma0 N σ := by
+    rw [eq_div_iff hw.ne', mul_comm]
+    exact_mod_cast hn
+  refine TauCeti.qExpansion_order_eq_of_orderAtInfty_eq hw hper
+    (by rw [ModularForm.SL_slash]; exact (mdifferentiable_etaQuotient N r).slash k _)
+    ((isBoundedAtImInfty_etaQuotient_slash_iff N r hk σ).mpr ?_)
+    (by rw [orderAtInfty_etaQuotient_slash N r hk σ, hL])
+  exact_mod_cast hL ▸ div_nonneg n.cast_nonneg hw.le
 
 /-! ### The transformation under `Γ₀(N)` -/
 
@@ -590,5 +728,45 @@ theorem etaQuotientMultiplier_mul (N : ℕ) (r : ℕ → ℤ) (hr : Even (∑ δ
   have hI := congrFun h UpperHalfPlane.I
   simp only [Pi.smul_apply, smul_eq_mul, f] at hI
   exact mul_right_cancel₀ (etaQuotient_ne_zero N r (by simp)) hI
+
+/-- **The multiplier of an eta quotient at the generator of a cusp stabilizer.** When
+`∑_δ r δ` is even, the multiplier at the generator `σ T^w σ⁻¹` of the stabilizer of the cusp
+`σ ∞` in `Γ₀(N)` (`cuspGeneratorGamma0`) is `e(w L)`, where `w` is the width of the cusp,
+`L = etaQuotientOrder N r c` and `e(x) = exp(2 π i x)`. -/
+theorem etaQuotientMultiplier_cuspGeneratorGamma0 (N : ℕ) (r : ℕ → ℤ)
+    (hr : Even (∑ δ ∈ N.divisors, r δ)) (σ : SL(2, ℤ)) :
+    etaQuotientMultiplier N r (cuspGeneratorGamma0 N σ) =
+      cexp (2 * π * I * (cuspWidthGamma0 N σ * etaQuotientOrder N r (σ 1 0))) := by
+  obtain ⟨k, hk⟩ := hr
+  have hk' : ∑ δ ∈ N.divisors, r δ = 2 * k := by rw [hk, two_mul]
+  set f : ℍ → ℂ := fun τ ↦ etaQuotient N r τ
+  -- Slashing by `σ T^w = γ σ`, for the generator `γ = σ T^w σ⁻¹`, in both orders.
+  have h : etaQuotientMultiplier N r (cuspGeneratorGamma0 N σ) • (f ∣[k] σ) =
+      (f ∣[k] σ) ∣[k] (ModularGroup.T ^ (cuspWidthGamma0 N σ : ℤ)) := calc
+    _ = (f ∣[k] (cuspGeneratorGamma0 N σ : SL(2, ℤ))) ∣[k] σ := by
+      rw [etaQuotient_slash N r hk', ModularForm.SL_smul_slash]
+    _ = _ := by
+      rw [← SlashAction.slash_mul, ← SlashAction.slash_mul, coe_cuspGeneratorGamma0,
+        inv_mul_cancel_right]
+  have hI := congrFun h UpperHalfPlane.I
+  rw [Pi.smul_apply, smul_eq_mul, slash_T_zpow_apply, Int.cast_natCast,
+    etaQuotient_slash_apply_cuspWidthGamma0_vadd N r hk'] at hI
+  refine mul_right_cancel₀ ?_ hI
+  rw [etaQuotient_slash_eq N r hk' σ]
+  exact div_ne_zero (etaQuotient_ne_zero N r (σ • UpperHalfPlane.I).im_pos)
+    (zpow_ne_zero _ (sqrt_denom_ne_zero σ _))
+
+/-- When `∑_δ r δ` is even, the multiplier of an eta quotient at the generator of the
+stabilizer of the cusp `σ ∞` in `Γ₀(N)` is `1`, so that `etaQuotient N r ∣[k] σ` has the period
+`w` of the cusp, exactly when the order `w L` of the eta quotient in the local parameter
+`e(τ / w)` is an integer, where `L = etaQuotientOrder N r c`. -/
+theorem etaQuotientMultiplier_cuspGeneratorGamma0_eq_one_iff (N : ℕ) (r : ℕ → ℤ)
+    (hr : Even (∑ δ ∈ N.divisors, r δ)) (σ : SL(2, ℤ)) :
+    etaQuotientMultiplier N r (cuspGeneratorGamma0 N σ) = 1 ↔
+      ∃ n : ℤ, (cuspWidthGamma0 N σ : ℚ) * etaQuotientOrder N r (σ 1 0) = n := by
+  rw [etaQuotientMultiplier_cuspGeneratorGamma0 N r hr σ, exp_eq_one_iff]
+  refine exists_congr fun n ↦ ?_
+  rw [mul_comm (n : ℂ), mul_right_inj' two_pi_I_ne_zero]
+  exact_mod_cast Iff.rfl
 
 end TauCeti.ModularForm
