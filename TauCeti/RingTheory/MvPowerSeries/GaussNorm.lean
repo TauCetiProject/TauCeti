@@ -36,6 +36,8 @@ zero.
 * `MvPowerSeries.norm_coeff_mul_mul_prod_le`: the weighted coefficients of `f * g` at `n` are at
   most `r * s` when those of `f` and `g` at the exponents `m ≤ n` are at most `r` and `s`.
 * `MvPowerSeries.norm_coeff_pow_mul_prod_le`: the same for `g ^ j`, with the bound `ρ ^ j`.
+* `MvPowerSeries.norm_coeff_pow_succ_mul_prod_le`: the positive-power bound without an assumption
+  on `‖1‖`.
 * `PowerSeries.norm_coeff_subst_mul_prod_le`: the same for the substitution `f(g)`.
 * `PowerSeries.hasGaussNorm_subst`, `PowerSeries.gaussNorm_subst_le`: the Gauss-norm form.
 
@@ -91,7 +93,7 @@ theorem norm_coeff_mul_mul_prod_le (hc : 0 ≤ c) {f g : MvPowerSeries σ R} {n 
 
 /-- The bound of `norm_coeff_pow_mul_prod_le` for positive powers, which needs no assumption on
 `‖1‖`. -/
-private theorem norm_coeff_pow_succ_mul_prod_le (hc : 0 ≤ c) {g : MvPowerSeries σ R}
+theorem norm_coeff_pow_succ_mul_prod_le (hc : 0 ≤ c) {g : MvPowerSeries σ R}
     {n : σ →₀ ℕ} {ρ : ℝ} (hg : ∀ m ≤ n, ‖coeff m g‖ * m.prod (c · ^ ·) ≤ ρ) (j : ℕ) :
     ‖coeff n (g ^ (j + 1))‖ * n.prod (c · ^ ·) ≤ ρ ^ (j + 1) := by
   induction j generalizing n with

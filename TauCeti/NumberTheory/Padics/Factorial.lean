@@ -175,14 +175,18 @@ theorem div_sub_log_le_multiplicity_prod_factorial (p : ℕ) [hp : Fact p.Prime]
       multiplicity p (κ.prod fun _ k ↦ k.factorial) := by
   have hdeg : (κ.degree : ℝ) = ∑ i ∈ κ.support, (κ i : ℝ) := by
     rw [Finsupp.degree_apply, Nat.cast_sum]
-  rw [multiplicity_prod_factorial, hdeg, Finset.sum_div, ← nsmul_eq_mul, ← Finset.sum_const,
-    ← Finset.sum_sub_distrib, Nat.cast_sum]
-  -- Coordinatewise, using `κᵢ ≤ |κ|`.
-  refine Finset.sum_le_sum fun i hi ↦ (sub_le_sub_left ?_ _).trans
-    (div_sub_log_le_multiplicity_factorial p (κ i))
-  gcongr
-  rw [Finsupp.degree_apply]
-  exact Finset.single_le_sum (f := κ) (fun _ _ ↦ Nat.zero_le _) hi
+  calc
+    _ = ∑ i ∈ κ.support, ((κ i : ℝ) / ((p : ℝ) - 1) - (Nat.log p κ.degree + 1)) := by
+      simp only [Finset.sum_sub_distrib, ← Finset.sum_div, Finset.sum_const, nsmul_eq_mul,
+        ← hdeg]
+    _ ≤ ∑ i ∈ κ.support, (multiplicity p (κ i).factorial : ℝ) := by
+      -- Coordinatewise, using `κᵢ ≤ |κ|`.
+      refine Finset.sum_le_sum fun i hi ↦ (sub_le_sub_left ?_ _).trans
+        (div_sub_log_le_multiplicity_factorial p (κ i))
+      gcongr
+      rw [Finsupp.degree_apply]
+      exact Finset.single_le_sum (f := κ) (fun _ _ ↦ Nat.zero_le _) hi
+    _ = _ := by rw [multiplicity_prod_factorial, Nat.cast_sum]
 
 /-- **Legendre's bound for a multi-index, with a real logarithm.** For `κ : ι →₀ ℕ`,
 `v_p(∏ᵢ κᵢ!) ≥ |κ| / (p - 1) - #supp(κ) (log_p max(|κ|, 1) + 1)`, a weakening of
