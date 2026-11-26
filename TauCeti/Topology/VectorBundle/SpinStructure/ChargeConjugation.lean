@@ -231,7 +231,7 @@ map of the `χ`-equivariant conjugation of the determinant model
 (`TauCeti.SpinCStructure.continuous_determinantLineChargeConjEquiv`). -/
 def determinantLineChargeConjEquiv (s : SpinCStructure F V n) (x : X) :
     s.chargeConj.determinantLine x ≃L⋆[ℂ] s.determinantLine x :=
-  (Extend.associatedEquivOfEquivariant χ hχ (P := s.P) DeterminantModel.conj x).symm
+  (Extend.associatedEquivOfEquivariant χ hχ (P := s.P) DeterminantModel.conj conj_smul x).symm
 
 /-- **The comparison of determinant lines in a frame**: `[[p, h], w] ↦ [p, conj (det h w)]`. -/
 @[simp]

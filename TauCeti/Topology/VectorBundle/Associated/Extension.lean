@@ -178,10 +178,10 @@ private theorem mkContinuousLinearEquiv_inl_apply_symm_mk {b : B} (p₀ p : P b)
 
 /-- **The associated map of an equivariant model map**: a continuous semilinear equivalence
 `f : F ≃ F'` induces the fibrewise continuous semilinear equivalence
-`P ×_G F ≃ (P ×_ρ H) ×_H F'`, defined in a chosen frame. When `f (g v) = ρ(g) f v`, it is
-`[p, v] ↦ [[p, 1], f v]` in every frame
+`P ×_G F ≃ (P ×_ρ H) ×_H F'` for `f (g v) = ρ(g) f v`. It is defined in a chosen frame, and the
+equivariance makes it `[p, v] ↦ [[p, 1], f v]` in every frame
 (`TauCeti.PrincipalBundle.Extend.associatedEquivOfEquivariant_mk`). -/
-def associatedEquivOfEquivariant (b : B) :
+def associatedEquivOfEquivariant (_hf : ∀ (g : G) (v : F), f (g • v) = ρ g • f v) (b : B) :
     AssociatedBundle G P F b ≃SL[σ] AssociatedBundle H (Extend P ρ hρ) F' b :=
   have : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
   ((AssociatedBundle.mkContinuousLinearEquiv 𝕜 G (Classical.arbitrary (P b))).symm.trans f).trans
@@ -192,7 +192,7 @@ include hf in
 `b`. -/
 @[simp]
 theorem associatedEquivOfEquivariant_mk {b : B} (p : P b) (v : F) :
-    associatedEquivOfEquivariant ρ hρ f b (AssociatedBundle.mk G p v) =
+    associatedEquivOfEquivariant ρ hρ f hf b (AssociatedBundle.mk G p v) =
       AssociatedBundle.mk H (inl ρ hρ p) (f v) :=
   mkContinuousLinearEquiv_inl_apply_symm_mk ρ hρ f hf _ p v
 
@@ -200,7 +200,7 @@ include hf in
 /-- **The inverse associated map in a frame**: `[[p, h], w] ↦ [p, f⁻¹ (h w)]`. -/
 @[simp]
 theorem associatedEquivOfEquivariant_symm_mk {b : B} (p : P b) (h : H) (w : F') :
-    (associatedEquivOfEquivariant ρ hρ f b).symm (AssociatedBundle.mk H (mk ρ hρ p h) w) =
+    (associatedEquivOfEquivariant ρ hρ f hf b).symm (AssociatedBundle.mk H (mk ρ hρ p h) w) =
       AssociatedBundle.mk G p (f.symm (h • w)) := by
   rw [ContinuousLinearEquiv.symm_apply_eq, associatedEquivOfEquivariant_mk ρ hρ f hf,
     ContinuousLinearEquiv.apply_symm_apply, ← AssociatedBundle.mk_smul, smul_inl]
@@ -209,7 +209,7 @@ include hf in
 /-- **The associated map is continuous** on total spaces. -/
 theorem continuous_associatedEquivOfEquivariant :
     Continuous fun z : TotalSpace F (AssociatedBundle G P F) ↦
-      TotalSpace.mk' F' z.proj (associatedEquivOfEquivariant ρ hρ f z.proj z.snd) := by
+      TotalSpace.mk' F' z.proj (associatedEquivOfEquivariant ρ hρ f hf z.proj z.snd) := by
   -- The total space of `P ×_G F` is a quotient of `P × F`, on which the map is
   -- `(p, v) ↦ [[p, 1], f v]`.
   refine (AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk G P F).continuous_comp_iff.1 ?_
@@ -224,7 +224,7 @@ include hf in
 /-- **The inverse associated map is continuous** on total spaces. -/
 theorem continuous_associatedEquivOfEquivariant_symm :
     Continuous fun z : TotalSpace F' (AssociatedBundle H (Extend P ρ hρ) F') ↦
-      TotalSpace.mk' F z.proj ((associatedEquivOfEquivariant ρ hρ f z.proj).symm z.snd) := by
+      TotalSpace.mk' F z.proj ((associatedEquivOfEquivariant ρ hρ f hf z.proj).symm z.snd) := by
   -- The total space of `(P ×_ρ H) ×_H F'` is a quotient of `(P × H) × F'`, on which the inverse
   -- is `((p, h), w) ↦ [p, f⁻¹ (h w)]`.
   have hq := (AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk H (Extend P ρ hρ) F').comp

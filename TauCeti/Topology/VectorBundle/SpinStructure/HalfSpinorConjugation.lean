@@ -35,8 +35,11 @@ action and conjugates the central circle, `j (g • ψ) = χ(g) • j ψ`
 equivariant model map `j` (`TauCeti.PrincipalBundle.Extend.associatedEquivOfEquivariant`), a
 fibrewise conjugate-linear isometric equivalence
 `TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv : W^ε(s)_x ≃ W^ε(s.chargeConj)_x`
-(`TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv_mk`), continuous on total spaces
-(`TauCeti.SpinCStructure.continuous_halfSpinorBundleChargeConjEquiv`). The frame of `E x` at
+(`TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv_mk`), with inverse
+`[[p, h], φ] ↦ [p, j⁻¹ (h φ)]` (`TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv_symm_mk`),
+continuous on total spaces in both directions
+(`TauCeti.SpinCStructure.continuous_halfSpinorBundleChargeConjEquiv`,
+`TauCeti.SpinCStructure.continuous_halfSpinorBundleChargeConjEquiv_symm`). The frame of `E x` at
 `[p, 1]` is the frame at `p` (`TauCeti.SpinCStructure.frameAt_chargeConj_inl`), so the map
 commutes with Clifford multiplication by vectors of `E x`
 (`TauCeti.SpinCStructure.cliffordMul_halfSpinorBundleChargeConjEquiv`). The consequences for the
@@ -52,9 +55,12 @@ quadratic map of the Seiberg–Witten equations are in
 ## Main results
 
 * `Orientation.HalfSpinModel.conjEquiv_smul`: `j (g • ψ) = χ(g) • j ψ`.
-* `TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv_mk`: the formula in every frame.
-* `TauCeti.SpinCStructure.continuous_halfSpinorBundleChargeConjEquiv`: continuity on total
-  spaces.
+* `TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv_mk`,
+  `TauCeti.SpinCStructure.halfSpinorBundleChargeConjEquiv_symm_mk`: the map and its inverse in
+  every frame.
+* `TauCeti.SpinCStructure.continuous_halfSpinorBundleChargeConjEquiv`,
+  `TauCeti.SpinCStructure.continuous_halfSpinorBundleChargeConjEquiv_symm`: continuity of the map
+  and its inverse on total spaces.
 * `TauCeti.SpinCStructure.cliffordMul_halfSpinorBundleChargeConjEquiv`: `c(v) (j ψ) = j (c(v) ψ)`.
 
 ## References
@@ -187,7 +193,8 @@ multiplication and a real eigenvalue `ε` of the chirality element. It is the as
 def halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) (x : X) :
     s.halfSpinorBundle o hQ b ρ hρ ε x ≃ₗᵢ⋆[ℂ] s.chargeConj.halfSpinorBundle o hQ b ρ hρ ε x where
   toLinearEquiv := (Extend.associatedEquivOfEquivariant χ hχ
-    (Orientation.HalfSpinModel.conjEquiv j hj hε).toContinuousLinearEquiv x).toLinearEquiv
+    (Orientation.HalfSpinModel.conjEquiv j hj hε).toContinuousLinearEquiv
+    (Orientation.HalfSpinModel.conjEquiv_smul j hj hε) x).toLinearEquiv
   norm_map' ψ := by
     obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
     refine (congrArg Norm.norm (Extend.associatedEquivOfEquivariant_mk χ hχ _
@@ -209,6 +216,19 @@ theorem halfSpinorBundleChargeConjEquiv_mk (s : SpinCStructure F E 4) {x : X} (p
   Extend.associatedEquivOfEquivariant_mk χ hχ _ (Orientation.HalfSpinModel.conjEquiv_smul j hj hε)
     p ψ
 
+/-- **The inverse of charge conjugation of the half-spinors in a frame**:
+`[[p, h], φ] ↦ [p, j⁻¹ (h φ)]` for every point `[p, h]` of the principal bundle of the charge
+conjugate over `x`. -/
+@[simp]
+theorem halfSpinorBundleChargeConjEquiv_symm_mk (s : SpinCStructure F E 4) {x : X} (p : s.P x)
+    (h : SpinC) (φ : o.HalfSpinModel hQ b ρ hρ ε) :
+    (s.halfSpinorBundleChargeConjEquiv o hQ b ρ hρ j hj hε x).symm
+        (AssociatedBundle.mk (P := Extend s.P χ hχ) SpinC (Extend.mk χ hχ p h) φ) =
+      AssociatedBundle.mk SpinC p ((Orientation.HalfSpinModel.conjEquiv j hj hε).symm (h • φ)) :=
+  -- By definition, the inverse is the inverse of the associated map of `j`.
+  Extend.associatedEquivOfEquivariant_symm_mk χ hχ _
+    (Orientation.HalfSpinModel.conjEquiv_smul j hj hε) p h φ
+
 /-- The inverse of charge conjugation of the half-spinors at `[p, 1]`:
 `[[p, 1], φ] ↦ [p, j⁻¹ φ]`. -/
 @[simp]
@@ -217,8 +237,7 @@ theorem halfSpinorBundleChargeConjEquiv_symm_mk_inl (s : SpinCStructure F E 4) {
     (s.halfSpinorBundleChargeConjEquiv o hQ b ρ hρ j hj hε x).symm
         (AssociatedBundle.mk (P := Extend s.P χ hχ) SpinC (Extend.inl χ hχ p) φ) =
       AssociatedBundle.mk SpinC p ((Orientation.HalfSpinModel.conjEquiv j hj hε).symm φ) := by
-  refine (LinearIsometryEquiv.symm_apply_eq _).2 ?_
-  rw [halfSpinorBundleChargeConjEquiv_mk, LinearIsometryEquiv.apply_symm_apply]
+  rw [Extend.inl_def, halfSpinorBundleChargeConjEquiv_symm_mk, one_smul]
 
 /-- **Charge conjugation of the half-spinors is continuous** on total spaces. -/
 theorem continuous_halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) :
@@ -226,6 +245,15 @@ theorem continuous_halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) :
       TotalSpace.mk' (o.HalfSpinModel hQ b ρ hρ ε) v.proj
         (s.halfSpinorBundleChargeConjEquiv o hQ b ρ hρ j hj hε v.proj v.snd) :=
   Extend.continuous_associatedEquivOfEquivariant χ hχ _
+    (Orientation.HalfSpinModel.conjEquiv_smul j hj hε)
+
+/-- **The inverse of charge conjugation of the half-spinors is continuous** on total spaces. -/
+theorem continuous_halfSpinorBundleChargeConjEquiv_symm (s : SpinCStructure F E 4) :
+    Continuous fun v : TotalSpace (o.HalfSpinModel hQ b ρ hρ ε)
+        (s.chargeConj.halfSpinorBundle o hQ b ρ hρ ε) ↦
+      TotalSpace.mk' (o.HalfSpinModel hQ b ρ hρ ε) v.proj
+        ((s.halfSpinorBundleChargeConjEquiv o hQ b ρ hρ j hj hε v.proj).symm v.snd) :=
+  Extend.continuous_associatedEquivOfEquivariant_symm χ hχ _
     (Orientation.HalfSpinModel.conjEquiv_smul j hj hε)
 
 /-- **Charge conjugation of the half-spinors commutes with Clifford multiplication**:
