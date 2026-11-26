@@ -157,9 +157,8 @@ map `ι₊`, to the class of `momentumTest ℏ φ`. -/
 private theorem halfLineMomentum_ambientToLp (φ : 𝓓(Ω₊, ℂ)) :
     halfLineMomentum ℏ ⟨ι₊ φ, ambientToLp_mem_domain_halfLineMomentum φ⟩ =
       ι₊ (momentumTest ℏ φ) := by
-  -- This lemma and `mem_domain_halfLineMomentum_iff` are the two places where the definition of
-  -- `halfLineMomentum` as a `LinearMap.domainOperator` is unfolded; the rest of the file uses
-  -- these two lemmas instead.
+  -- This lemma, `mem_domain_halfLineMomentum_iff`, and `isFormalAdjoint_halfLineMomentum`
+  -- unfold the definition of `halfLineMomentum` as a `LinearMap.domainOperator`.
   exact (LinearMap.domainOperator_apply_mk ι₊ (ι₊ ∘ₗ momentumTest ℏ)
     TestFunction.ambientToLp_restrict_injective φ _).trans (LinearMap.comp_apply _ _ φ)
 
