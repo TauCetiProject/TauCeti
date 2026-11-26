@@ -102,8 +102,7 @@ theorem exact_rTensor_mulVecLin_map_of_mul_eq_smul_one (Φ Ψ : Matrix n n S) {F
       have : (Φ * Ψ).map π = 0 := by
         ext
         simp [hΦΨ, hπF]
-      rw [← LinearMap.rTensor_comp, ← LinearMap.restrictScalars_comp, ← Matrix.mulVecLin_mul,
-        ← Matrix.map_mul, this, Matrix.mulVecLin_zero, LinearMap.restrictScalars_zero,
-        LinearMap.rTensor_zero])
+      simp [← LinearMap.rTensor_comp, ← LinearMap.restrictScalars_comp, ← Matrix.mulVecLin_mul,
+        ← Matrix.map_mul, this])
 
 end Matrix
