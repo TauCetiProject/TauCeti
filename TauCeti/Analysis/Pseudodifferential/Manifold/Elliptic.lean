@@ -229,8 +229,7 @@ theorem isClassicalEllipticAt_iff_forall_isInvertible
     fun h ξ hξ ↦ ?_⟩
   -- The covector `ξ` is `⟪η, ·⟫ ∘ de_x` for the frequency `η` dual to `ξ ∘ (de_x)⁻¹`.
   have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv he₁ hx ξ
-  refine hηξ ▸ h _ fun hη ↦ hξ ?_
-  rw [← hηξ, hη, map_zero, ContinuousLinearMap.zero_comp]
+  exact hηξ ▸ h _ (toDual_symm_comp_inverse_mvfderiv_ne_zero he₁ hx hξ)
 
 /-- **The chart symbol of an elliptic operator.** Let `a` be the symbol of the chart compression of
 `P` by `φ`, `ψ` in a chart `e`, and let `U` be an open set on which `φ ψ` does not vanish (so `U`
