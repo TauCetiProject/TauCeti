@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Combinatorics.SimpleGraph.Basic
 public import Mathlib.Data.Int.Basic
-public import Mathlib.Data.ZMod.Defs
 public import Mathlib.Logic.Equiv.Fin.Basic
 
 import Mathlib.Data.Fintype.Perm
@@ -47,8 +46,6 @@ joins two positive triples related by a move.
 * `TauCeti.markoffVieta_comp_perm`: coordinate permutations normalise the moves.
 * `TauCeti.apply_ne_zero_of_mem_markoffSetNonzero`: over a reduced ring, a point of `X*(R)` has
   at most one vanishing coordinate.
-* `TauCeti.mem_markoffSetNonzero_zmod_two`: `X*(𝔽₂)` consists of `(1, 1, 1)` and the three
-  triples with one vanishing coordinate.
 * `TauCeti.markoffVieta_apply_self_mul_self`: the two roots in the moved coordinate multiply to
   `x_{i+1}² + x_{i+2}²`.
 * `TauCeti.markoffVieta_mem_positiveMarkoffTriples_iff`: the moves preserve `M`, in both
@@ -172,17 +169,6 @@ theorem apply_ne_zero_of_mem_markoffSetNonzero [IsReduced R] {x : Fin 3 → R}
   · exact hj
   refine eq_zero_of_pow_eq_zero (n := 2) ?_
   fin_cases i <;> fin_cases j <;> fin_cases k <;> simp_all
-
-/-- The nonzero locus `X*(𝔽₂)` consists of `(1, 1, 1)` and its three neighbours `(0, 1, 1)`,
-`(1, 0, 1)` and `(1, 1, 0)`. -/
-theorem mem_markoffSetNonzero_zmod_two {y : Fin 3 → ZMod 2} :
-    y ∈ markoffSetNonzero (ZMod 2) ↔
-      y ∈ ({![0, 1, 1], ![1, 0, 1], ![1, 1, 0], ![1, 1, 1]} : Finset (Fin 3 → ZMod 2)) := by
-  obtain ⟨a, b, c, rfl⟩ : ∃ a b c, y = ![a, b, c] :=
-    ⟨y 0, y 1, y 2, by ext i; fin_cases i <;> rfl⟩
-  simp only [mem_markoffSetNonzero, mem_markoffSet]
-  revert a b c
-  decide
 
 /-- Precomposing with `σ.symm` carries the two coordinates other than `σ i` to the two
 coordinates other than `i`, in some order, so their products agree:

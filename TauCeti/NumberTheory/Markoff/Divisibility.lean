@@ -10,6 +10,7 @@ public import Mathlib.Data.ZMod.Basic
 
 import TauCeti.Algebra.BigOperators.Finset.Involution
 import Mathlib.Algebra.Field.ZMod
+import Mathlib.Data.ZMod.ValMinAbs
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.Pi
 import Mathlib.Tactic.LinearCombination
@@ -37,6 +38,8 @@ eight points and is stable, since each move changes the sign of one coordinate.
 
 * `TauCeti.natCast_card_eq_zero_of_markoffVieta_mem`: over a field with `2 ≠ 0` and `3 ≠ 0`, a
   finite Vieta-stable subset of `X*(K)` has cardinality zero in `K`.
+* `TauCeti.mem_markoffSetNonzero_zmod_two`: `X*(𝔽₂)` consists of `(1, 1, 1)` and the three
+  triples with one vanishing coordinate.
 * `TauCeti.dvd_card_of_markoffVieta_mem`: **Chen's theorem**: for a prime `p ≠ 3`, a finite
   Vieta-stable subset of `X*(𝔽_p)` has cardinality divisible by `p`.
 
@@ -83,6 +86,17 @@ theorem natCast_card_eq_zero_of_markoffVieta_mem (h2 : (2 : K) ≠ 0) (h3 : (3 :
           simp [two_mul_sum_pennerWeight_eq_card h2 h3 _ (hstable _)]
       _ = 2 * #S := by rw [← mul_sum, htot]
   linear_combination h32
+
+/-- The nonzero locus `X*(𝔽₂)` consists of `(1, 1, 1)` and its three neighbours `(0, 1, 1)`,
+`(1, 0, 1)` and `(1, 1, 0)`. -/
+theorem mem_markoffSetNonzero_zmod_two {y : Fin 3 → ZMod 2} :
+    y ∈ markoffSetNonzero (ZMod 2) ↔
+      y ∈ ({![0, 1, 1], ![1, 0, 1], ![1, 1, 0], ![1, 1, 1]} : Finset (Fin 3 → ZMod 2)) := by
+  obtain ⟨a, b, c, rfl⟩ : ∃ a b c, y = ![a, b, c] :=
+    ⟨y 0, y 1, y 2, by ext i; fin_cases i <;> rfl⟩
+  simp only [mem_markoffSetNonzero, mem_markoffSet]
+  revert a b c
+  decide
 
 /-- Over `𝔽₂` the Vieta move `R_i` sends `(1, 1, 1)` to the triple whose `i`-th coordinate is `0`
 and whose other coordinates are `1`. -/
@@ -136,10 +150,8 @@ theorem dvd_card_of_markoffVieta_mem {p : ℕ} [Fact p.Prime] (hp : p ≠ 3)
     (hstable : ∀ i, ∀ x ∈ S, markoffVieta i x ∈ S) : p ∣ #S := by
   rcases eq_or_ne p 2 with rfl | hp2
   · exact two_dvd_card_of_markoffVieta_mem hS hstable
-  have hne : ∀ q : ℕ, q.Prime → q ≠ p → (q : ZMod p) ≠ 0 := fun q hq hqp h =>
-    hqp ((Nat.prime_dvd_prime_iff_eq (Fact.out) hq).mp ((ZMod.natCast_eq_zero_iff q p).mp h)).symm
-  have h2 : (2 : ZMod p) ≠ 0 := by exact_mod_cast hne 2 Nat.prime_two (Ne.symm hp2)
-  have h3 : (3 : ZMod p) ≠ 0 := by exact_mod_cast hne 3 Nat.prime_three (Ne.symm hp)
+  have h2 : (2 : ZMod p) ≠ 0 := by exact_mod_cast ZMod.prime_ne_zero p 2 hp2
+  have h3 : (3 : ZMod p) ≠ 0 := by exact_mod_cast ZMod.prime_ne_zero p 3 hp
   exact (ZMod.natCast_eq_zero_iff _ _).mp
     (natCast_card_eq_zero_of_markoffVieta_mem (K := ZMod p) h2 h3 hS hstable)
 
