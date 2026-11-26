@@ -8,10 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Vertex
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Lattice
 public import TauCeti.Geometry.Toric.Delzant.VertexCone
-import TauCeti.Geometry.Lie.Subgroup.Stabilizer
-import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
-import TauCeti.Geometry.Manifold.GroupAction.GermKernel
-import TauCeti.Topology.Algebra.ConstMulAction
+import TauCeti.Geometry.Manifold.GroupAction.IdentityPrinciple
 
 /-!
 # The moment polytope of a symplectic toric manifold is Delzant
@@ -36,18 +33,18 @@ This is read off the weight normal form at `p`
 `αₖ`, and `μ = μ(p) - ½ Σₖ |zₖ|² αₖ`.
 
 * **The weights are dual to a lattice basis.** An element `ξ ∈ 𝔤` which rotates every coordinate
-  by a multiple of `2π` fixes the chart pointwise. Then `exp ξ` lies in the stabilizer of a point
-  of the chart at which the action is locally free, a discrete closed subgroup of the compact
-  group `G`, so `exp ξ` has finite order. By the identity principle for elements of finite order
-  (`TauCeti.interior_fixedBy_eq_empty`) and effectiveness, `exp ξ = 1`, so `ξ ∈ 2π i(N)`. That is,
+  by a multiple of `2π` fixes the chart pointwise. By the identity principle for compact group
+  actions (`TauCeti.eq_one_of_eventuallyEq_id`) and effectiveness, `exp ξ = 1`, so
+  `ξ ∈ 2π i(N)`. That is,
   the local model is an effective action of `𝔤 / 2π i(N)`, and its `n = dim G` weights are dual to
   a `ℤ`-basis `b` of `N` (`TauCeti.exists_basis_iff_forall_weightRotation_eq_id_iff`).
 * **The corner inequalities hold globally.** For `ξ` on which every weight is positive, `μ^ξ` has a
   local maximum at `p`; when the one-parameter subgroup of `ξ` is moreover dense in `G`, `μ^ξ` is a
   Morse function with even indices, so this local maximum is global
   (`TauCeti.SmoothTwoForm.IsMomentMap.isMaxOn_of_isLocalMax`). Such `ξ` are dense in the open cone
-  of positive weights, so by continuity `μ^ξ ≤ μ^ξ(p)` on `M` for every `ξ` in its closure, in
-  particular for `ξ = i(bₖ)`. Hence `Δ` lies in the cone `{y | y(i(bₖ)) ≤ v(i(bₖ)) for all k}`.
+  of positive weights, so by continuity `μ^ξ ≤ μ^ξ(p)` on `M` for every `ξ` in its closure
+  (`TauCeti.SmoothTwoForm.IsMomentMap.apply_le_apply_of_mem_closure`), in particular for
+  `ξ = i(bₖ)`. Hence `Δ` lies in the cone `{y | y(i(bₖ)) ≤ v(i(bₖ)) for all k}`.
 * **The chart fills the cone near `v`.** The image of the weight model is exactly the simplicial
   cone of `b` (`TauCeti.range_weightMomentMap_of_basis`), and a point of the cone at distance
   `Σₖ -2 ⟨y - v, i(bₖ)⟩ < r²` from `v` is the image of a point of the chart ball of radius `r`.
@@ -67,6 +64,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
   lattice.
 * `existsUnique_isDelzant_facetPolyhedron_eq_convexHull_range`: the moment polytope of a
   symplectic toric manifold is a Delzant polytope, with a unique facet presentation.
+* `existsUnique_isDelzant_facetPolyhedron_eq_convexHull_range_periodLattice`: the same for the
+  period lattice `TauCeti.periodLatticeMap I G` of `G` itself.
 
 ## References
 
@@ -112,7 +111,7 @@ variable {p : M} {n : ℕ} {χ : Fin n → G →ₜ* Circle} {α : Fin n → Str
   {chart : PartialDiffeomorph I' 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n))
     M (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) ∞}
 
-omit [I.Boundaryless] [IsTopologicalGroup G] [PreconnectedSpace G] [CompactSpace M] in
+omit [I.Boundaryless] [PreconnectedSpace G] in
 /-- **The weight chart of an effective action is effective.** In a weight chart at a fixed point of
 an effective action of a compact commutative Lie group on a connected manifold, an element `ξ` of
 the Lie algebra rotating every coordinate by a multiple of `2π` has `exp ξ = 1`. -/
@@ -124,37 +123,16 @@ private theorem mulInvariantExp_eq_one_of_weightRotation_eq_id
     {ξ : GroupLieAlgebra I G}
     (hξ : weightRotation (fun k ↦ α k ξ) = ContinuousLinearMap.id ℝ _) :
     mulInvariantExp (I := I) ξ = 1 := by
-  have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
-  have : ContinuousSMul G M := ContMDiffSMul.continuousSMul (I := I) (I' := I') ∞
-  set g := mulInvariantExp (I := I) ξ
-  -- `g` fixes every point of the chart, since it rotates every coordinate by a multiple of `2π`.
-  have hfix : chart.source ⊆ MulAction.fixedBy M g := fun x hx ↦ by
-    obtain ⟨hgx, hchart⟩ := hequiv g x hx
-    refine chart.injOn hgx hx ?_
-    rw [hchart]
-    simp only [g, hχ, weightRotation_arg_circleExp, hξ, ContinuousLinearMap.id_apply]
-  -- `g` has finite order: it lies in the stabilizer of a point of the chart at which the action is
-  -- locally free, which is discrete and closed in the compact group `G`, hence finite.
-  obtain ⟨y, hy, hyfree⟩ := (Lie.dense_setOf_isotropy_eq_bot (I := I) (I' := I') (G := G)
-    (M := M)).inter_open_nonempty chart.source chart.open_source ⟨p, hpchart⟩
-  have : DiscreteTopology (MulAction.stabilizer G y) :=
-    Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot.2 hyfree
-  have : CompactSpace (MulAction.stabilizer G y) := isCompact_iff_compactSpace.1
-    (isClosed_stabilizer (continuous_id.smul continuous_const)).isCompact
-  have : Finite (MulAction.stabilizer G y) := finite_of_compact_of_discrete
-  have hg : IsOfFinOrder g := (MulAction.stabilizer G y).subtype.isOfFinOrder
-    (isOfFinOrder_of_finite ⟨g, hfix hy⟩)
-  -- By the identity principle and effectiveness, `g = 1`.
-  by_contra hg1
-  have hint := interior_fixedBy_eq_empty (I := I') hg hg1
-    ((ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := ∞) (M := M) g).of_le
-      (by norm_num))
-  have hsub : chart.source ⊆ interior (MulAction.fixedBy M g) :=
-    interior_maximal hfix chart.open_source
-  rw [hint] at hsub
-  exact hsub hpchart
+  -- `exp ξ` fixes every point of the chart, since it rotates every coordinate by a multiple of
+  -- `2π`; by the identity principle and effectiveness, it is `1`.
+  refine eq_one_of_eventuallyEq_id I' I (p := p)
+    (eventually_of_mem (chart.open_source.mem_nhds hpchart) fun x hx ↦ ?_)
+  obtain ⟨hgx, hchart⟩ := hequiv (mulInvariantExp (I := I) ξ) x hx
+  refine chart.injOn hgx hx ?_
+  rw [hchart]
+  simp only [hχ, weightRotation_arg_circleExp, hξ, ContinuousLinearMap.id_apply, id_eq]
 
-omit [I.Boundaryless] [IsTopologicalGroup G] [PreconnectedSpace G] [CompactSpace M] in
+omit [I.Boundaryless] [PreconnectedSpace G] in
 /-- **The weights at a fixed point are dual to a lattice basis.** In a weight chart at a fixed point
 of a symplectic toric manifold, for an integral lattice `i : N →+ 𝔤` with `exp (2π ξ) = 1` exactly
 when `ξ ∈ i(N)`, the weights `α` are dual to a `ℤ`-basis `b` of `N`. -/
@@ -201,43 +179,29 @@ private theorem apply_le_apply_of_forall_nonneg
     (hμchart : ∀ x ∈ chart.source, ∀ ξ, μ x ξ = μ p ξ + weightMomentMap α (chart x) ξ)
     {ξ : GroupLieAlgebra I G} (hξ : ∀ k, 0 ≤ α k ξ) (x : M) :
     μ x ξ ≤ μ p ξ := by
-  have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
-  have : ConnectedSpace M := { toNonempty := ⟨p⟩ }
   -- On the chart, `μ^ξ' = μ^ξ'(p) - ½ Σₖ αₖ(ξ') |zₖ|²`, so `p` is a local maximum of `μ^ξ'` for
   -- every `ξ'` in the open cone `V` of elements on which every weight is positive.
   set V : Set (GroupLieAlgebra I G) := {ξ' | ∀ k, 0 < α k ξ'}
   have hV : IsOpen V := by
     simp only [V, ofPred_forall]
     exact isOpen_iInter_of_finite fun k ↦ isOpen_lt continuous_const (α k).continuous
-  -- The set `S` of elements `ξ'` with `μ^ξ' ≤ μ^ξ'(p)` at `x` is closed and contains `V`: the
-  -- elements of `V` with dense one-parameter subgroup are dense in `V`, and for them `μ^ξ'` is a
-  -- Morse function whose local maximum `p` is global.
-  set S : Set (GroupLieAlgebra I G) := {ξ' | μ x ξ' ≤ μ p ξ'}
-  have hS : IsClosed S := isClosed_le (μ x).continuous_of_finiteDimensional
-    (μ p).continuous_of_finiteDimensional
-  have hVS : V ⊆ S := by
-    refine (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).open_subset_closure_inter hV
-      |>.trans (closure_minimal (fun ξ' ⟨hξ'V, hξ'⟩ ↦ ?_) hS)
-    have hM := h.isMorse_of_eq_top_of_faithfulSMul hσ hG hdim hξ'
-    have hmax : IsLocalMax (fun y ↦ μ y ξ') p :=
-      Filter.mem_of_superset (chart.open_source.mem_nhds hpchart) fun y hy ↦ by
-        dsimp only [mem_ofPred_eq]
-        rw [hμchart y hy ξ', add_le_iff_nonpos_right,
-          weightMomentMap_apply α (chart y) ξ']
-        refine mul_nonpos_of_nonpos_of_nonneg (by norm_num) (Finset.sum_nonneg fun k _ ↦ ?_)
-        exact mul_nonneg (hξ'V k).le (by positivity)
-    exact h.isMaxOn_of_isLocalMax hσ.isNondegenerate
-      (SmoothForm.eval₂_mfderiv_smul_of_mpullback_smul_eq (I := I) hG) hM hmax (mem_univ x)
+  have hmax (ξ' : GroupLieAlgebra I G) (hξ'V : ξ' ∈ V) : IsLocalMax (fun y ↦ μ y ξ') p :=
+    Filter.mem_of_superset (chart.open_source.mem_nhds hpchart) fun y hy ↦ by
+      dsimp only [mem_ofPred_eq]
+      rw [hμchart y hy ξ', add_le_iff_nonpos_right, weightMomentMap_apply α (chart y) ξ']
+      refine mul_nonpos_of_nonpos_of_nonneg (by norm_num) (Finset.sum_nonneg fun k _ ↦ ?_)
+      exact mul_nonneg (hξ'V k).le (by positivity)
+  -- These local maxima are global on the closure of `V`, which contains `ξ`.
+  refine h.apply_le_apply_of_mem_closure hσ hG hdim hV hmax ?_ x
   -- The weights are the coordinates of an isomorphism `𝔤 ≃ ℝⁿ`, so some `ξ₁` has all weights `1`,
   -- and `ξ + t ξ₁ ∈ V` for `t > 0` tends to `ξ`.
   set A : GroupLieAlgebra I G →ₗ[ℝ] Fin n → ℝ := LinearMap.pi fun k ↦ (α k).toLinearMap
   have hA (ξ' : GroupLieAlgebra I G) (k : Fin n) : A ξ' k = α k ξ' := LinearMap.pi_apply _ _ _
   obtain ⟨ξ₁, hξ₁⟩ : ∃ ξ₁, A ξ₁ = fun _ ↦ (1 : ℝ) :=
     (bijective_pi_of_mfderiv_eq hgen hpchart hdim).2 _
-  refine hS.mem_of_tendsto (f := fun t : ℝ ↦ ξ + t • ξ₁) (b := 𝓝[>] 0)
+  refine mem_closure_of_tendsto (f := fun t : ℝ ↦ ξ + t • ξ₁) (b := 𝓝[>] 0)
     ((Continuous.tendsto' (by fun_prop) 0 _ (by simp)).mono_left nhdsWithin_le_nhds) ?_
-  filter_upwards [self_mem_nhdsWithin] with t ht
-  refine hVS fun k ↦ ?_
+  filter_upwards [self_mem_nhdsWithin] with t ht k
   rw [← hA, map_add, map_smul, hξ₁]
   simpa [hA] using add_pos_of_nonneg_of_pos (hξ k) ht
 
@@ -344,6 +308,24 @@ theorem existsUnique_isDelzant_facetPolyhedron_eq_convexHull_range [Nonempty M]
   rw [hconv] at hv
   obtain ⟨p, hp, rfl⟩ := extremePoints_convexHull_subset hv
   exact h.exists_eventually_mem_convexHull_range_iff_of_mem_fixedPoints hσ hG hdim hi hperiod hp
+
+/-- **The moment polytope is Delzant for the period lattice.** The moment polytope `conv μ(M)` of a
+symplectic toric manifold is a Delzant polytope for the period lattice
+`Λ_ℤ = {X | exp (2π X) = 1}` of `G` (`TauCeti.periodLattice`), read in `𝔤` through the
+identification of left-invariant derivations with tangent vectors at `1`. -/
+theorem existsUnique_isDelzant_facetPolyhedron_eq_convexHull_range_periodLattice [Nonempty M]
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsSymplectic)
+    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
+    (hdim : finrank ℝ E' = 2 * finrank ℝ E) :
+    ∃! F : Set (periodLattice I G × ℝ), F.Finite ∧
+      Toric.IsDelzant (periodLatticeMap I G) (fun j : F ↦ (j : periodLattice I G × ℝ).1)
+        (fun j : F ↦ (j : periodLattice I G × ℝ).2) ∧
+      Toric.facetPolyhedron (periodLatticeMap I G) (fun j : F ↦ (j : periodLattice I G × ℝ).1)
+        (fun j : F ↦ (j : periodLattice I G × ℝ).2) =
+        convexHull ℝ (range fun x ↦ (LinearMap.toContinuousLinearMap (μ x) : StrongDual ℝ E)) :=
+  h.existsUnique_isDelzant_facetPolyhedron_eq_convexHull_range hσ hG hdim
+    (isIntegralLattice_periodLatticeMap I G) (mulInvariantExp_two_pi_smul_eq_one_iff I G)
 
 end SmoothTwoForm.IsMomentMap
 
