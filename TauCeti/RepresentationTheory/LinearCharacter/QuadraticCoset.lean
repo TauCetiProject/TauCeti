@@ -46,27 +46,19 @@ theorem apply_ne_one_iff_of_mul_self_eq_one {G K : Type*} [Monoid G] [CommRing K
     _ = 1 + -1 := by rw [← h']
     _ = 0 := add_neg_cancel 1
 
-open Classical in
-/-- Orthogonality for a `Kˣ`-valued character of a finite group: its values sum to the order
-of the group if it is trivial, and to zero otherwise. -/
-theorem sum_units_val_eq_ite {G K : Type*} [Group G] [Fintype G] [CommRing K] [IsDomain K]
-    (ψ : G →* Kˣ) : (∑ g, (ψ g : K)) = if ψ = 1 then (Fintype.card G : K) else 0 := by
-  have hiff : (Units.coeHom K).comp ψ = 1 ↔ ψ = 1 := by
-    refine ⟨fun h ↦ ext fun g ↦ Units.ext (DFunLike.congr_fun h g), ?_⟩
-    rintro rfl
-    ext
-    simp
-  simpa only [comp_apply, Units.coeHom_apply, Nat.cast_ite, Nat.cast_zero, hiff] using
-    sum_hom_units ((Units.coeHom K).comp ψ)
-
-open Classical in
 /-- The mean of a linear character off the kernel of a nontrivial quadratic character `q`.
 Only the trivial character and `q` have nonzero mean there. -/
 theorem expect_apply_off_ker_of_mul_self_eq_one {G K : Type*} [Group G] [Fintype G]
-    [Field K] [CharZero K] (q χ : G →* Kˣ) (hq : q * q = 1) (hq₁ : q ≠ 1) :
+    [Field K] [CharZero K] (q χ : G →* Kˣ) [DecidablePred fun g ↦ q g ≠ 1]
+    [Decidable (χ = 1)] [Decidable (χ = q)] (hq : q * q = 1) (hq₁ : q ≠ 1) :
     (𝔼 g with q g ≠ 1, (χ g : K)) = if χ = 1 then 1 else if χ = q then -1 else 0 := by
+  classical
+  have hcomp (ψ : G →* Kˣ) : (Units.coeHom K).comp ψ = 1 ↔ ψ = 1 := by
+    simp only [DFunLike.ext_iff, comp_apply, one_apply, Units.coeHom_apply, Units.val_eq_one]
   have htwice (ψ : G →* Kˣ) :
-      2 * (∑ g with q g ≠ 1, (ψ g : K)) = (∑ g, (ψ g : K)) - ∑ g, ((q * ψ) g : K) := by
+      2 * (∑ g with q g ≠ 1, (ψ g : K)) =
+        (∑ g, (Units.coeHom K).comp ψ g) - ∑ g, (Units.coeHom K).comp (q * ψ) g := by
+    simp only [comp_apply, Units.coeHom_apply]
     rw [Finset.mul_sum, Finset.sum_filter, ← Finset.sum_sub_distrib]
     apply Finset.sum_congr rfl
     intro g _
@@ -74,7 +66,9 @@ theorem expect_apply_off_ker_of_mul_self_eq_one {G K : Type*} [Group G] [Fintype
     · simp [hg]
     · simp [hg, (q.apply_ne_one_iff_of_mul_self_eq_one hq g).mp hg, two_mul]
   have hcard : 2 * ((Finset.univ.filter fun g ↦ q g ≠ 1).card : K) = Fintype.card G := by
-    simpa [sum_units_val_eq_ite, hq₁] using htwice 1
+    have h := htwice 1
+    rw [mul_one q, sum_hom_units_eq_zero _ ((hcomp q).not.mpr hq₁)] at h
+    simpa using h
   have hne : ((Finset.univ.filter fun g ↦ q g ≠ 1).card : K) ≠ 0 := by
     intro hz
     exact (Nat.cast_ne_zero.mpr (Fintype.card_ne_zero (α := G)) :
@@ -83,7 +77,8 @@ theorem expect_apply_off_ker_of_mul_self_eq_one {G K : Type*} [Group G] [Fintype
     ⟨fun h ↦ mul_left_cancel (h.trans hq.symm), fun h ↦ h ▸ hq⟩
   rw [Finset.expect_eq_sum_div_card, div_eq_iff hne]
   have hh := htwice χ
-  rw [sum_units_val_eq_ite, sum_units_val_eq_ite, hmul, ← hcard] at hh
+  rw [sum_hom_units, sum_hom_units] at hh
+  simp only [hcomp, hmul, Nat.cast_ite, Nat.cast_zero, ← hcard] at hh
   apply mul_left_cancel₀ (two_ne_zero : (2 : K) ≠ 0)
   rw [hh]
   by_cases h₁ : χ = 1
