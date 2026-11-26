@@ -324,8 +324,7 @@ theorem mem_formEigenspace_of_isMinOn (hu₀ : u₀ ∈ P.unitConstraint P.formK
   have h2 : inner 𝕜 (P.inclusion u₀) (P.inclusion n) = 0 :=
     Submodule.inner_left_of_mem_orthogonal (inclusion_mem_formKernelImage hn)
       (mem_unitConstraint.1 hu₀).1
-  rw [map_add, map_add, inner_add_right, mul_add, form_apply_eq_zero_of_mem_formKernel hn, h2,
-    mul_zero, zero_add, zero_add,
+  simp [inner_add_right, form_apply_eq_zero_of_mem_formKernel hn, h2,
     form_apply_eq_mul_inner_of_isMinOn hu₀ hmin (mem_kernelOrthogonal.1 hk)]
 
 /-- A minimizer `u₀` of the energy on the constrained sphere of `(j N)ᗮ` lies below every nonzero

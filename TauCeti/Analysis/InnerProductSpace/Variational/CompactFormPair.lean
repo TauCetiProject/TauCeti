@@ -388,9 +388,8 @@ theorem form_apply_eq_mul_inner_of_isMinOn {u₀ v : V} (hu₀ : u₀ ∈ P.unit
   have h := ContinuousLinearMap.apply_eq_of_forall_le_quadraticEnergy_add 0
     (ContinuousLinearMap.shiftedForm_eq_star P.inclusion P.hermitian _) hmin'
     (Submodule.mem_comap.2 hv)
-  rw [ContinuousLinearMap.shiftedForm_apply, zero_apply, RCLike.ofReal_neg,
-    neg_mul, ← sub_eq_add_neg, sub_eq_zero] at h
-  exact h
+  rw [ContinuousLinearMap.shiftedForm_apply, zero_apply, RCLike.ofReal_neg] at h
+  linear_combination h
 
 end CompactFormPair
 
