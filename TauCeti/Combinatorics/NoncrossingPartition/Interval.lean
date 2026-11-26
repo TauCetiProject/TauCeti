@@ -156,9 +156,10 @@ noncomputable def iccOrderIso {σ π : NoncrossingPartition s} (h : σ ≤ π) :
     (congrArg (fun x : Set.Iic π => x.val) (π.iicOrderIso.symm_apply_apply ⟨τ.val, τ.property.2⟩))
   right_inv Q := funext fun B => Subtype.ext <|
     congrFun (π.iicOrderIso.apply_symm_apply fun B => (Q B).val) B
-  map_rel_iff' {τ τ'} :=
-    Pi.le_def.trans (Pi.le_def.symm.trans
-      (π.iicOrderIso.le_iff_le (x := ⟨τ.val, τ.property.2⟩) (y := ⟨τ'.val, τ'.property.2⟩)))
+  map_rel_iff' {τ τ'} := by
+    have := π.iicOrderIso.le_iff_le (x := ⟨τ.val, τ.property.2⟩) (y := ⟨τ'.val, τ'.property.2⟩)
+    simp only [Pi.le_def, iicOrderIso_apply, Subtype.mk_le_mk] at this
+    simpa only [Equiv.coe_fn_mk, Pi.le_def, Subtype.mk_le_mk, ← Subtype.coe_le_coe] using this
 
 @[simp]
 theorem coe_iccOrderIso_apply {σ π : NoncrossingPartition s} (h : σ ≤ π) (τ : Set.Icc σ π)
@@ -179,14 +180,12 @@ theorem sum_Icc_prod_restrict_eq_prod_sum {M : Type*} [CommSemiring M]
     (g : (B : π.val.parts) → NoncrossingPartition B.val → M) :
     ∑ τ ∈ Icc σ π, ∏ B : π.val.parts, g B (τ.restrict (π.val.le B.property)) =
       ∏ B : π.val.parts, ∑ ρ ∈ Ici (σ.restrict (π.val.le B.property)), g B ρ := by
-  rw [prod_univ_sum]
-  refine sum_nbij' (fun τ B => τ.restrict (π.val.le B.property))
-    (fun Q => (π.iicOrderIso.symm Q).val) (fun τ hτ => ?_) (fun Q hQ => ?_) (fun τ hτ => ?_)
-    (fun Q _ => ?_) fun _ _ => rfl
-  · exact Fintype.mem_piFinset.2 fun B => mem_Ici.2 (restrict_mono _ (mem_Icc.1 hτ).1)
-  · exact mem_Icc.2 ⟨Subtype.coe_le_coe.2 ((π.iicOrderIso.le_symm_apply (x := ⟨σ, h⟩)).2
-      fun B => mem_Ici.1 (Fintype.mem_piFinset.1 hQ B)), (π.iicOrderIso.symm Q).property⟩
-  · exact congrArg Subtype.val (π.iicOrderIso.symm_apply_apply ⟨τ, (mem_Icc.1 hτ).2⟩)
-  · exact π.iicOrderIso.apply_symm_apply Q
+  rw [sum_subtype (F := inferInstance) (Icc σ π) (p := (· ∈ Set.Icc σ π))
+      fun _ => mem_Icc.trans Set.mem_Icc.symm,
+    prod_congr rfl fun B _ => sum_subtype (F := inferInstance)
+      (Ici (σ.restrict (π.val.le B.property))) (p := (· ∈ Set.Ici _))
+      (fun _ => mem_Ici.trans Set.mem_Ici.symm) (g B),
+    Fintype.prod_sum]
+  exact Fintype.sum_equiv (iccOrderIso h).toEquiv _ _ fun _ => rfl
 
 end TauCeti.NoncrossingPartition

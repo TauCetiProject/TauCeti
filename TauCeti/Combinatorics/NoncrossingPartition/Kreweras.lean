@@ -632,21 +632,21 @@ private theorem exists_strictMono_image_univ_eq (s : Finset α) :
     ∃ (k : ℕ) (f : Fin k → α), StrictMono f ∧ univ.image f = s :=
   ⟨#s, s.orderEmbOfFin rfl, (s.orderEmbOfFin rfl).strictMono, s.image_orderEmbOfFin_univ rfl⟩
 
-/-- The Kreweras complement commutes with the identification `comapOrderIso` of noncrossing
-partitions along a strictly monotone map. -/
-theorem comapOrderIso_kreweras {β : Type*} [LinearOrder β] {t : Finset β} {f : β → α}
+/-- The Kreweras complement commutes with pulling back noncrossing partitions along a strictly
+monotone map. -/
+theorem comap_kreweras {β : Type*} [LinearOrder β] {t : Finset β} {f : β → α}
     (hf : StrictMonoOn f t) (π : NoncrossingPartition (t.image f)) :
-    comapOrderIso hf (kreweras π) = kreweras (comapOrderIso hf π) :=
-  Subtype.ext <| by
-    simp only [comapOrderIso_apply, coe_comap, coe_kreweras, Finpartition.kreweras_comap hf]
+    comap hf.monotoneOn (kreweras π) = kreweras (comap hf.monotoneOn π) :=
+  Subtype.ext <| by simp only [coe_comap, coe_kreweras, Finpartition.kreweras_comap hf]
 
 /-- The Kreweras complement on `NC(s)` reverses refinement in both directions. -/
 @[simp]
 theorem kreweras_le_kreweras_iff {π σ : NoncrossingPartition s} :
     kreweras π ≤ kreweras σ ↔ σ ≤ π := by
   obtain ⟨k, f, hf, rfl⟩ := exists_strictMono_image_univ_eq s
-  set e := comapOrderIso (s := univ) (hf.strictMonoOn _)
-  rw [← e.le_iff_le, ← e.le_iff_le (x := σ), comapOrderIso_kreweras, comapOrderIso_kreweras]
+  have hf' : StrictMonoOn f (univ : Finset (Fin k)) := hf.strictMonoOn _
+  rw [← (comap hf'.monotoneOn).le_iff_le, ← (comap hf'.monotoneOn).le_iff_le (a := σ),
+    comap_kreweras hf', comap_kreweras hf']
   exact kreweras_le_kreweras_iff_fin
 
 /-- The Kreweras complement is a bijection of `NC(s)`. -/
@@ -654,10 +654,12 @@ theorem kreweras_bijective : Function.Bijective (kreweras : NoncrossingPartition
   refine ⟨fun _ _ h => le_antisymm (kreweras_le_kreweras_iff.1 h.ge)
     (kreweras_le_kreweras_iff.1 h.le), ?_⟩
   obtain ⟨k, f, hf, rfl⟩ := exists_strictMono_image_univ_eq s
-  set e := comapOrderIso (s := univ) (hf.strictMonoOn _)
+  have hf' : StrictMonoOn f (univ : Finset (Fin k)) := hf.strictMonoOn _
   intro σ
-  obtain ⟨ρ, hρ⟩ := kreweras_surjective_fin (e σ)
-  exact ⟨e.symm ρ, e.injective (by rw [comapOrderIso_kreweras, e.apply_symm_apply, hρ])⟩
+  obtain ⟨ρ, hρ⟩ := kreweras_surjective_fin (comapOrderIso hf' σ)
+  refine ⟨(comapOrderIso hf').symm ρ, (comapOrderIso hf').injective ?_⟩
+  rw [comapOrderIso_apply, comap_kreweras hf', ← comapOrderIso_apply hf', OrderIso.apply_symm_apply,
+    hρ]
 
 /-- The Kreweras complement on `NC(s)` is injective. -/
 @[simp]
@@ -678,6 +680,12 @@ noncomputable def krewerasOrderIso : NoncrossingPartition s ≃o (NoncrossingPar
 theorem krewerasOrderIso_apply (π : NoncrossingPartition s) :
     krewerasOrderIso s π = OrderDual.toDual (kreweras π) :=
   (rfl)
+
+/-- The Kreweras complement of the preimage of `σ` under `krewerasOrderIso s` is `σ`. -/
+@[simp]
+theorem kreweras_krewerasOrderIso_symm_apply (σ : (NoncrossingPartition s)ᵒᵈ) :
+    kreweras ((krewerasOrderIso s).symm σ) = OrderDual.ofDual σ :=
+  congrArg OrderDual.ofDual ((krewerasOrderIso s).apply_symm_apply σ)
 
 /-- On `NC(n)` the inverse of `krewerasOrderIso` sends `σ` to the rotation of its Kreweras
 complement. -/
@@ -703,25 +711,20 @@ theorem kreweras_inf (π σ : NoncrossingPartition s) :
 /-- The Kreweras complement maps the upper interval `[σ, 1̂]` of `NC(s)` onto the lower interval
 `[0̂, K(σ)]`, reversing the order. -/
 noncomputable def iciOrderIsoIicKreweras (σ : NoncrossingPartition s) :
-    Set.Ici σ ≃o (Set.Iic (kreweras σ))ᵒᵈ where
-  toFun τ := OrderDual.toDual ⟨kreweras τ, kreweras_antitone τ.property⟩
-  invFun ρ := ⟨(krewerasOrderIso s).symm (OrderDual.toDual (OrderDual.ofDual ρ).val), by
-    have h : kreweras ((krewerasOrderIso s).symm (OrderDual.toDual (OrderDual.ofDual ρ).val)) =
-        (OrderDual.ofDual ρ).val :=
-      congrArg OrderDual.ofDual ((krewerasOrderIso s).apply_symm_apply _)
-    rw [Set.mem_Ici, ← kreweras_le_kreweras_iff, h]
-    exact (OrderDual.ofDual ρ).property⟩
-  left_inv τ := Subtype.ext ((krewerasOrderIso s).symm_apply_apply τ.val)
-  right_inv ρ := congrArg OrderDual.toDual (Subtype.ext
-    (congrArg OrderDual.ofDual ((krewerasOrderIso s).apply_symm_apply _)))
-  map_rel_iff' {τ τ'} :=
-    (OrderDual.toDual_le_toDual (α := Set.Iic (kreweras σ))).trans
-      (Subtype.mk_le_mk.trans kreweras_le_kreweras_iff)
+    Set.Ici σ ≃o (Set.Iic (kreweras σ))ᵒᵈ :=
+  -- The upper interval of `K(σ)` in the order dual is the order dual of its lower interval.
+  ((krewerasOrderIso s).Ici σ).trans { Equiv.refl _ with map_rel_iff' := Iff.rfl }
 
 @[simp]
 theorem coe_iciOrderIsoIicKreweras_apply (σ : NoncrossingPartition s) (τ : Set.Ici σ) :
     (OrderDual.ofDual (iciOrderIsoIicKreweras σ τ)).val = kreweras τ.val :=
   (rfl)
+
+@[simp]
+theorem kreweras_coe_iciOrderIsoIicKreweras_symm_apply (σ : NoncrossingPartition s)
+    (ρ : (Set.Iic (kreweras σ))ᵒᵈ) :
+    kreweras ((iciOrderIsoIicKreweras σ).symm ρ).val = (OrderDual.ofDual ρ).val :=
+  kreweras_krewerasOrderIso_symm_apply _
 
 section Fin
 

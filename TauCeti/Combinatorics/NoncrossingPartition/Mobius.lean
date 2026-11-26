@@ -19,8 +19,9 @@ import TauCeti.Data.Finset.Basic
 The free cumulants of a word are obtained from its block moments by Möbius inversion on the
 lattice `NC(s)` of noncrossing partitions, so the values of its Möbius function `μ` are the
 coefficients expressing cumulants through moments. This file computes the values `μ(0̂, π)`,
-identifies `μ(π, 1̂)` with `μ(0̂, Kπ)` using the Kreweras complement, and so computes the values
-`μ(π, 1̂)` on the noncrossing partitions of `n` ordered positions.
+identifies `μ(π, 1̂)` with `μ(0̂, Kπ)` using the Kreweras complement, and, factoring every interval
+`[σ, π]` over the parts of `π`, computes `μ(σ, π)` on all intervals of `NC(s)` for every finite
+set `s` of positions.
 
 First, `μ(0̂, π)` is multiplicative: the lower interval `[0̂, π]` is the product of the lattices
 `NC(B)` over the parts `B` of `π`, and accordingly `μ(0̂, π) = ∏_{B ∈ π} μ_{NC(B)}(0̂, 1̂)`.
@@ -358,8 +359,9 @@ theorem mu_eq_prod_mu_restrict [CommRing 𝕜] {σ π : NoncrossingPartition s} 
 
 /-- The blockwise formula for the Möbius function of `NC(s)` on all intervals: for `σ ≤ π`,
 `μ(σ, π) = ∏_{B ∈ π} ∏_{C ∈ K_B(σ|_B)} (-1)^(|C|-1) C_(|C|-1)`, where `K_B` is the Kreweras
-complement on `NC(B)`. Unlike in the lattice of all partitions, `μ(σ, π)` is not determined by the
-block sizes of `σ` and `π`. -/
+complement on `NC(B)`. In the lattice of all partitions, `μ(σ, π)` only depends on the number of
+parts of `σ` inside each part of `π`; in `NC(s)` it also depends on how they are arranged, for
+instance `μ({1,2}{3}{4}, 1_4) = 2` while `μ({1,3}{2}{4}, 1_4) = 1`. -/
 theorem mu_eq_prod_prod_kreweras [CommRing 𝕜] {σ π : NoncrossingPartition s} (h : σ ≤ π) :
     mu 𝕜 σ π = ∏ B : π.val.parts, ∏ C ∈ (kreweras (σ.restrict (π.val.le B.property))).val.parts,
       (-1) ^ (#C - 1) * (catalan (#C - 1) : 𝕜) := by
