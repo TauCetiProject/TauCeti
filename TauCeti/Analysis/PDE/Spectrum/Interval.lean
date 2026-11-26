@@ -232,9 +232,9 @@ private theorem coe_intervalDomain_eq_ball :
     (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) =
       Metric.ball (lineEquiv ((a + b) / 2)) ((b - a) / 2) := by
   ext x
-  rw [SetLike.mem_coe, mem_intervalDomain, Metric.mem_ball, ← lineEquiv.symm.dist_map,
-    LinearIsometryEquiv.symm_apply_apply, lineEquiv_symm_apply, Real.dist_eq, abs_sub_lt_iff,
-    mem_Ioo]
+  rw [Metric.mem_ball, ← lineEquiv.symm.dist_map]
+  simp only [LinearIsometryEquiv.symm_apply_apply, Real.dist_eq, abs_sub_lt_iff, SetLike.mem_coe,
+    mem_intervalDomain, mem_Ioo, lineEquiv_symm_apply]
   constructor <;> intro h <;> constructor <;> linarith [h.1, h.2]
 
 /-- **Rellich compactness on an interval.** For `1 ≤ p ≤ ∞`, the value map
@@ -420,6 +420,15 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
     Real.sin_pi_div_two] at h1
   exact one_ne_zero h1
 
+/-- Integrals over the interval domain are integrals over the real interval of the function read
+through the isometry `t ↦ lineEquiv t` of `ℝ` onto the line. -/
+private theorem setIntegral_intervalDomain_eq_setIntegral_comp {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (F : EuclideanSpace ℝ (Fin 1) → E) :
+    ∫ x in (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))), F x =
+      ∫ t in Ioo a b, F (lineEquiv t) := by
+  rw [← setIntegral_intervalDomain]
+  simp only [← lineEquiv_symm_apply, LinearIsometryEquiv.apply_symm_apply]
+
 /-- An element of `L²(a, b)` orthogonal to a family of modes `t ↦ s k t`, `k` ranging over the
 indices with `P k`, vanishes, provided the family is complete among the integrable functions on the
 real interval `(a, b]`. Reading `f` on the real line through the isometry `x ↦ x 0` reduces the
@@ -448,8 +457,8 @@ private theorem eq_zero_of_forall_setIntegral_mul_eq_zero (hab : a < b) {P : ℕ
     exact (Lp.memLp f).comp_measurePreserving hmpΩ
   have hg0 := hs _ (hg.integrable one_le_two) fun k hk => by
     rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, ← h k hk,
-      ← setIntegral_intervalDomain]
-    simp only [← lineEquiv_symm_apply, LinearIsometryEquiv.apply_symm_apply]
+      setIntegral_intervalDomain_eq_setIntegral_comp]
+    simp only [lineEquiv_apply_zero]
   rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hg0
   refine Lp.ext ?_
   filter_upwards [hmpΩ'.quasiMeasurePreserving.ae_eq_comp hg0, Lp.coeFn_zero ℝ 2
@@ -550,15 +559,6 @@ theorem isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain (hab : a < b
 
 /-! ### The Neumann spectrum -/
 
-/-- Integrals over the interval domain are integrals over the real interval of the function read
-through the isometry `t ↦ lineEquiv t` of `ℝ` onto the line. -/
-private theorem setIntegral_intervalDomain_eq_setIntegral_comp {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] (F : EuclideanSpace ℝ (Fin 1) → E) :
-    ∫ x in (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))), F x =
-      ∫ t in Ioo a b, F (lineEquiv t) := by
-  rw [← setIntegral_intervalDomain]
-  simp only [← lineEquiv_symm_apply, LinearIsometryEquiv.apply_symm_apply]
-
 /-- **Integration by parts against a Neumann mode.** For a `C¹` function `g` on the line,
 `∫_a^b c' g' = (k π / (b - a))² ∫_a^b c g` for the cosine mode `c`: its derivative is a multiple
 of the sine mode, which vanishes at both ends, so no boundary terms appear. -/
@@ -604,8 +604,8 @@ private theorem inner_gradient_comp_lineEquiv_eq {χ : EuclideanSpace ℝ (Fin 1
       deriv (cosineMode a b k) t * deriv (ψ ∘ lineEquiv) t := by
   rw [← lineEquiv.symm.inner_map_map, ← gradient_comp_linearIsometryEquiv_right,
     ← gradient_comp_linearIsometryEquiv_right, gradient_eq_deriv', gradient_eq_deriv',
-    (comp_lineEquiv_eventuallyEq_cosineMode hχ k ht).deriv_eq, real_inner_eq_re_inner,
-    RCLike.inner_apply, conj_trivial, RCLike.re_to_real, mul_comm]
+    (comp_lineEquiv_eventuallyEq_cosineMode hχ k ht).deriv_eq]
+  simp [mul_comm]
 
 /-- **The weak Neumann identity of a cosine mode against a generator.** Let `φ` be a test function
 on the line equal to the `k`-th cosine mode near the closure of `(a, b)`, and `ψ` any test function
