@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Group.Fin.Tuple
 public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.Geometry.Manifold.Morse.Bott.Family
+public import TauCeti.Geometry.Manifold.Morse.Bott.Index.One
 public import TauCeti.Geometry.Manifold.Morse.Bott.RankDegreeHomology
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.Map
@@ -82,6 +83,17 @@ metric, the negative normal bundle of the hyperplane `ℝℙᴺ` of `ℝℙᴺ�
 (`TauCeti.nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplaneEmbedding_iff`).
 For `N = 1` this is the non-orientable Möbius line over the circle `ℝℙ¹ ⊂ ℝℙ²`.
 
+Read forwards in every degree, the same identification computes the homology of the hyperplane `ℝℙᴺ`
+with coefficients twisted by the orientation local system `o(ν⁻)` of its negative normal line:
+`Hₖ(ℝℙᴺ; o(ν⁻) ⊗ R) ≅ Hₖ₊₁(ℝℙᴺ⁺¹; R)` for every ring `R`
+(`TauCeti.nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ`). It is
+`R / 2R` in even degrees `k < N`, the `2`-torsion of `R` in odd degrees `k ≤ N`, `R` in degree `N`
+when `N` is even, and zero above `N`. With integer coefficients `H₀(ℝℙᴺ; o(ν⁻)) ≅ ℤ/2` for `N ≥ 1`,
+which is not `H₀(ℝℙᴺ; ℤ) ≅ ℤ`
+(`TauCeti.not_nonempty_twistedHomology_zero_projectiveHyperplaneEmbedding_iso_singularHomology`):
+for the Möbius line over the circle, replacing the twisted coefficients of the integral Thom
+comparison by constant ones gives the wrong group.
+
 ## Main results
 
 * `TauCeti.criticalPoints_projectiveHyperplaneMomentFunction`: the critical set is the point
@@ -112,13 +124,25 @@ For `N = 1` this is the non-orientable Möbius line over the circle `ℝℙ¹ �
 * `TauCeti.nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplaneEmbedding_iff`:
   the negative normal bundle of the hyperplane `ℝℙᴺ` of `ℝℙᴺ⁺¹` is orientable exactly when
   `N = 0`.
+* `TauCeti.nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ`: the
+  homology of the hyperplane `ℝℙᴺ` twisted by the orientation system of its negative normal line
+  is the homology of `ℝℙᴺ⁺¹` shifted down by one.
+* `TauCeti.nonempty_twistedHomology_projectiveHyperplaneEmbedding_linearEquiv_of_even`,
+  `TauCeti.nonempty_twistedHomology_projectiveHyperplaneEmbedding_int_linearEquiv_of_even`,
+  `TauCeti.nonempty_twistedHomology_projectiveHyperplaneEmbedding_linearEquiv_of_odd`,
+  `TauCeti.nonempty_twistedHomology_projectiveHyperplaneEmbedding_top_linearEquiv_of_even` and
+  `TauCeti.isZero_twistedHomology_projectiveHyperplaneEmbedding_of_lt`: this twisted homology in
+  every degree.
+* `TauCeti.not_nonempty_twistedHomology_zero_projectiveHyperplaneEmbedding_iso_singularHomology`:
+  for `N ≥ 1` its integral `H₀` is not the untwisted `H₀(ℝℙᴺ; ℤ)`.
 
 ## References
 
 * R. Bott, *Nondegenerate critical manifolds*, Annals of Mathematics 60 (1954), 248–261.
 * R. L. Cohen, K. Iga and P. Norbury, *Topics in Morse Theory*, course notes, 2006,
   Theorem 15.4, p. 146.
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Example 2.42.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Example 2.42, and Section 3.H
+  (homology with local coefficients).
 -/
 
 public section
@@ -300,6 +324,15 @@ theorem range_projectiveHyperplaneEmbedding :
   simp only [mem_inter_iff, mem_insert_iff, mem_compl_iff, mem_preimage, mem_singleton_iff,
     projectiveHyperplaneMomentFunction_eq_one_iff]
   exact ⟨And.right, fun hx ↦ ⟨.inr hx, hx⟩⟩
+
+/-- The critical hyperplane lies on the top level `f = 1` of the moment function on `ℝℙᴺ⁺¹`. -/
+@[simp]
+theorem projectiveHyperplaneMomentFunction_projectiveHyperplaneEmbedding
+    (s : ℙ ℝ (Fin (N + 1) → ℝ)) :
+    projectiveHyperplaneMomentFunction (N + 1) (projectiveHyperplaneEmbedding N s) = 1 :=
+  projectiveHyperplaneMomentFunction_eq_one_iff.2 <| by
+    rw [← mem_compl_iff, ← range_projectiveHyperplaneEmbedding]
+    exact mem_range_self s
 
 /-- **The critical hyperplane is a Morse–Bott critical submanifold.** The hyperplane
 `{v_{N+1} = 0}`, a copy of `ℝℙᴺ`, is a nondegenerate critical submanifold of the moment function
@@ -566,6 +599,23 @@ section Orientation
 
 open SmoothEmbedding.IsNondegenerateCriticalSubmanifold
 
+/-- Above a positive level the only critical points are those of the critical hyperplane: the other
+critical point, the minimum `[e_{N+1}]`, lies on the level `f = 0`. -/
+private theorem criticalPoints_inter_preimage_Icc_subset_range_projectiveHyperplaneEmbedding
+    {a b : ℝ} (ha : 0 < a) :
+    criticalPoints 𝓘(ℝ, Fin (N + 1) → ℝ) (projectiveHyperplaneMomentFunction (N + 1)) ∩
+      projectiveHyperplaneMomentFunction (N + 1) ⁻¹' Icc a b ⊆
+        range (projectiveHyperplaneEmbedding N) := by
+  rintro x ⟨hx, hxI⟩
+  rw [criticalPoints_projectiveHyperplaneMomentFunction] at hx
+  rw [range_projectiveHyperplaneEmbedding]
+  rcases hx with rfl | hx
+  · rw [mem_preimage, projectiveHyperplaneMomentFunction_def,
+      projectiveMomentFunction_mk_single] at hxI
+    norm_num at hxI
+    linarith [hxI.1]
+  · exact hx
+
 /-- **The negative normal bundle of the critical hyperplane is orientable only over a point.** Let
 `g` be a smooth fibre metric on the normal bundle of the critical hyperplane `ℝℙᴺ` of `ℝℙᴺ⁺¹`, and
 suppose that the negative normal spaces relative to `g` have continuous local frames of size `1`,
@@ -601,29 +651,14 @@ theorem nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplan
   have hc₀ : (0 : ℝ) ≤ 1 / 2 := by norm_num
   have hc₁ : (1 / 2 : ℝ) < 1 := by norm_num
   have hd : (1 : ℝ) ≤ 2 := by norm_num
-  -- The hyperplane lies on the level `f = 1`.
-  have hc (s : ℙ ℝ (Fin (N + 1) → ℝ)) :
-      projectiveHyperplaneMomentFunction (N + 1) (projectiveHyperplaneEmbedding N s) = 1 :=
-    projectiveHyperplaneMomentFunction_eq_one_iff.2 <| by
-      rw [← mem_compl_iff, ← range_projectiveHyperplaneEmbedding]
-      exact mem_range_self s
-  -- The only other critical point, the minimum `[e_{N+1}]`, lies on the level `f = 0`.
-  have hcrit : criticalPoints 𝓘(ℝ, Fin (N + 1) → ℝ) (projectiveHyperplaneMomentFunction (N + 1)) ∩
-      projectiveHyperplaneMomentFunction (N + 1) ⁻¹' Icc (1 / 2) 2 ⊆
-        range (projectiveHyperplaneEmbedding N) := by
-    rintro x ⟨hx, hxI⟩
-    rw [criticalPoints_projectiveHyperplaneMomentFunction] at hx
-    rw [range_projectiveHyperplaneEmbedding]
-    rcases hx with rfl | hx
-    · rw [mem_preimage, projectiveHyperplaneMomentFunction_def,
-        projectiveMomentFunction_mk_single] at hxI
-      norm_num at hxI
-    · exact hx
   rw [nonempty_vectorBundleOrientation_iff_nonempty_singularHomology_sublevelPair_linearEquiv
     hn isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding
-    contMDiff_projectiveHyperplaneMomentFunction hc hc₁ (one_lt_two (α := ℝ))
+    contMDiff_projectiveHyperplaneMomentFunction
+    projectiveHyperplaneMomentFunction_projectiveHyperplaneEmbedding hc₁ (one_lt_two (α := ℝ))
     ((isClosed_Icc.preimage (contMDiff_projectiveHyperplaneMomentFunction (r := 0)).continuous
-      ).isCompact) hcrit hdim g hV]
+      ).isCompact)
+    (criticalPoints_inter_preimage_Icc_subset_range_projectiveHyperplaneEmbedding (by norm_num))
+    hdim g hV]
   constructor
   · -- For `N ≥ 1` the band has `H₁ ≅ ℤ/2`.
     rintro he
@@ -638,5 +673,234 @@ theorem nonempty_vectorBundleOrientation_negativeNormalSpace_projectiveHyperplan
       RealProjectiveSpace.singularHomologyTopLinearEquivOfOdd ℤ odd_one⟩
 
 end Orientation
+
+/-! ### The twisted homology of the critical hyperplane
+
+As in the section on the critical components, the ambient space is `ℝℙᴺ⁺¹` and the critical
+hyperplane is a copy of `ℝℙᴺ`. Its negative normal bundle `ν⁻` is a real line bundle, and Bott's
+identification of the homology across the top level in index one
+(`nonempty_singularHomology_sublevelPair_succ_iso_twistedHomology`, in the namespace
+`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`) gives
+`Hₖ(ℝℙᴺ; o(ν⁻) ⊗ R) ≅ Hₖ₊₁(ℝℙᴺ⁺¹; R)` for every ring `R`. The cellular computation of the homology
+of real projective space then computes the homology of `ℝℙᴺ` twisted by the orientation local system
+`o(ν⁻)` in every degree.
+-/
+
+section TwistedHomology
+
+open SmoothEmbedding.IsNondegenerateCriticalSubmanifold VectorBundleOrientationCover
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
+  (hn : (∞ : ℕ∞ω) ≠ 0)
+  (hdim : Module.finrank ℝ W = Module.finrank ℝ (Fin (N + 1) → ℝ) - Module.finrank ℝ (Fin N → ℝ))
+  (g : letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+    Bundle.ContMDiffRiemannianMetric 𝓘(ℝ, Fin N → ℝ) ∞ W
+      fun s ↦ (projectiveHyperplaneEmbedding N).isImmersion.NormalSpace s hn)
+  (hV : letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+    HasLocalSubbundleFrames W (Fin 1)
+      (isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+        g.toRiemannianMetric))
+
+include hV
+
+/-- **The twisted homology of the critical hyperplane is the homology of `ℝℙᴺ⁺¹` shifted by one.**
+Let `g` be a smooth fibre metric on the normal bundle of the critical hyperplane `ℝℙᴺ` of `ℝℙᴺ⁺¹`,
+and suppose that the negative normal spaces relative to `g` have continuous local frames of size
+`1`, so that they form the negative normal bundle `ν⁻`, a real line bundle over `ℝℙᴺ` (such frames
+exist since the Morse index along the hyperplane is `1`,
+`IsNondegenerateCriticalSubmanifold.hasLocalContMDiffSubbundleFrames_negativeNormalSpace`). Then
+for every ring `R` and every degree `k`, the homology of `ℝℙᴺ` with coefficients in the orientation
+local system `o(ν⁻)` is `Hₖ(ℝℙᴺ; o(ν⁻) ⊗ R) ≅ Hₖ₊₁(ℝℙᴺ⁺¹; R)`. -/
+theorem nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ
+    (R : Type) [Ring R] (k : ℕ) :
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology W (F' := Fin 1 → ℝ)
+      (isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+        g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    Nonempty ((signLocalSystem (Fin 1 → ℝ) (fun s ↦
+        isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+          g.toRiemannianMetric s) R
+        ((Fintype.card_fin 1).trans (Module.finrank_fin_fun ℝ).symm)).twistedHomology k ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) (k + 1)).obj
+        (ModuleCat.of R R)).obj (TopCat.of (ℙ ℝ (Fin (N + 2) → ℝ)))) := by
+  have hc₀ : (0 : ℝ) ≤ 1 / 2 := by norm_num
+  have hc₁ : (1 / 2 : ℝ) < 1 := by norm_num
+  have hd : (1 : ℝ) ≤ 2 := by norm_num
+  -- The band `({f ≤ 2}, {f ≤ 1/2})` crosses only the top level, where the critical hyperplane
+  -- lies.
+  obtain ⟨e⟩ := nonempty_singularHomology_sublevelPair_succ_iso_twistedHomology hn
+    isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding
+    contMDiff_projectiveHyperplaneMomentFunction
+    projectiveHyperplaneMomentFunction_projectiveHyperplaneEmbedding hc₁ (one_lt_two (α := ℝ))
+    ((isClosed_Icc.preimage (contMDiff_projectiveHyperplaneMomentFunction (r := 0)).continuous
+      ).isCompact)
+    (criticalPoints_inter_preimage_Icc_subset_range_projectiveHyperplaneEmbedding (by norm_num))
+    hdim g hV R k
+  exact ⟨e.symm ≪≫ (singularHomologyIsoSublevelPairProjectiveHyperplaneMomentFunction
+    (ModuleCat.of R R) hc₀ hc₁ hd k).symm⟩
+
+/-- **The twisted homology of the critical hyperplane in even degrees.** With the negative normal
+bundle `ν⁻` as in
+`nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ`, for even
+`k < N` and every ring `R`, `Hₖ(ℝℙᴺ; o(ν⁻) ⊗ R) ≅ R / 2R`. -/
+theorem nonempty_twistedHomology_projectiveHyperplaneEmbedding_linearEquiv_of_even
+    (R : Type) [Ring R] {k : ℕ} (hk : Even k) (hkN : k < N) :
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology W (F' := Fin 1 → ℝ)
+      (isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+        g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    Nonempty ((signLocalSystem (Fin 1 → ℝ) (fun s ↦
+        isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+          g.toRiemannianMetric s) R
+        ((Fintype.card_fin 1).trans (Module.finrank_fin_fun ℝ).symm)).twistedHomology k ≃ₗ[R]
+      R ⧸ R ∙ (2 : R)) := by
+  obtain ⟨e⟩ :=
+    nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ hn hdim g hV
+      R k
+  exact ⟨e.toLinearEquiv ≪≫ₗ
+    RealProjectiveSpace.singularHomologyProjectivizationLinearEquivOfOdd (N := N + 1) R hk.add_one
+      (by omega)⟩
+
+/-- **The integral twisted homology of the critical hyperplane in even degrees.** With the negative
+normal bundle `ν⁻` as in
+`nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ`, for even
+`k < N`, `Hₖ(ℝℙᴺ; o(ν⁻)) ≅ ℤ/2` with integer coefficients. -/
+theorem nonempty_twistedHomology_projectiveHyperplaneEmbedding_int_linearEquiv_of_even {k : ℕ}
+    (hk : Even k) (hkN : k < N) :
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology W (F' := Fin 1 → ℝ)
+      (isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+        g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    Nonempty ((signLocalSystem (Fin 1 → ℝ) (fun s ↦
+        isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+          g.toRiemannianMetric s) ℤ
+        ((Fintype.card_fin 1).trans (Module.finrank_fin_fun ℝ).symm)).twistedHomology k ≃ₗ[ℤ]
+      ZMod 2) := by
+  obtain ⟨e⟩ :=
+    nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ hn hdim g hV
+      ℤ k
+  exact ⟨e.toLinearEquiv ≪≫ₗ
+    RealProjectiveSpace.singularHomologyProjectivizationIntLinearEquivOfOdd (N := N + 1) hk.add_one
+      (by omega)⟩
+
+/-- **The twisted homology of the critical hyperplane in odd degrees.** With the negative normal
+bundle `ν⁻` as in
+`nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ`, for odd
+`k ≤ N` and every ring `R`, `Hₖ(ℝℙᴺ; o(ν⁻) ⊗ R)` is the `2`-torsion `{r : R | r * 2 = 0}` of `R`.
+In particular it vanishes with integer coefficients. -/
+theorem nonempty_twistedHomology_projectiveHyperplaneEmbedding_linearEquiv_of_odd
+    (R : Type) [Ring R] {k : ℕ} (hk : Odd k) (hkN : k ≤ N) :
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology W (F' := Fin 1 → ℝ)
+      (isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+        g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    Nonempty ((signLocalSystem (Fin 1 → ℝ) (fun s ↦
+        isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+          g.toRiemannianMetric s) R
+        ((Fintype.card_fin 1).trans (Module.finrank_fin_fun ℝ).symm)).twistedHomology k ≃ₗ[R]
+      LinearMap.ker (LinearMap.toSpanSingleton R R 2)) := by
+  obtain ⟨e⟩ :=
+    nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ hn hdim g hV
+      R k
+  exact ⟨e.toLinearEquiv ≪≫ₗ
+    (RealProjectiveSpace.singularHomologyProjectivizationIso (N := N + 1) R
+      (k + 1)).symm.toLinearEquiv ≪≫ₗ
+    RealProjectiveSpace.singularHomologyLinearEquivOfEven R hk.add_one k.succ_ne_zero (by omega)⟩
+
+/-- **The top twisted homology of an even-dimensional critical hyperplane.** With the negative
+normal bundle `ν⁻` as in
+`nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ`, for even `N`
+and every ring `R`, `H_N(ℝℙᴺ; o(ν⁻) ⊗ R) ≅ R`. -/
+theorem nonempty_twistedHomology_projectiveHyperplaneEmbedding_top_linearEquiv_of_even
+    (R : Type) [Ring R] (hN : Even N) :
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology W (F' := Fin 1 → ℝ)
+      (isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+        g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    Nonempty ((signLocalSystem (Fin 1 → ℝ) (fun s ↦
+        isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+          g.toRiemannianMetric s) R
+        ((Fintype.card_fin 1).trans (Module.finrank_fin_fun ℝ).symm)).twistedHomology N ≃ₗ[R]
+      R) := by
+  obtain ⟨e⟩ :=
+    nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ hn hdim g hV
+      R N
+  exact ⟨e.toLinearEquiv ≪≫ₗ
+    (RealProjectiveSpace.singularHomologyProjectivizationIso (N := N + 1) R
+      (N + 1)).symm.toLinearEquiv ≪≫ₗ
+    RealProjectiveSpace.singularHomologyTopLinearEquivOfOdd R hN.add_one⟩
+
+/-- **The twisted homology of the critical hyperplane vanishes above its dimension.** With the
+negative normal bundle `ν⁻` as in
+`nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ`, for `k > N` and
+every ring `R`, `Hₖ(ℝℙᴺ; o(ν⁻) ⊗ R) = 0`. -/
+theorem isZero_twistedHomology_projectiveHyperplaneEmbedding_of_lt
+    (R : Type) [Ring R] {k : ℕ} (hk : N < k) :
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology W (F' := Fin 1 → ℝ)
+      (isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+        g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    IsZero ((signLocalSystem (Fin 1 → ℝ) (fun s ↦
+        isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+          g.toRiemannianMetric s) R
+        ((Fintype.card_fin 1).trans (Module.finrank_fin_fun ℝ).symm)).twistedHomology k) := by
+  obtain ⟨e⟩ :=
+    nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ hn hdim g hV
+      R k
+  exact ((RealProjectiveSpace.isZero_singularHomology_of_lt (N := N + 1) R (by omega)).of_iso
+    (RealProjectiveSpace.singularHomologyProjectivizationIso (N := N + 1) R (k + 1)).symm).of_iso e
+
+/-- **The integral twisted `H₀` of the critical hyperplane is not the untwisted one.** With the
+negative normal bundle `ν⁻` as in
+`nonempty_twistedHomology_projectiveHyperplaneEmbedding_iso_singularHomology_succ` and `N ≥ 1`, the
+group `H₀(ℝℙᴺ; o(ν⁻)) ≅ ℤ/2` is not isomorphic to `H₀(ℝℙᴺ; ℤ) ≅ ℤ`, the zeroth homology with
+constant integer coefficients. For `N = 1`, `ν⁻` is the Möbius line over the circle `ℝℙ¹ ⊂ ℝℙ²`:
+Bott's integral identification of the homology across the top level, `H₁ ≅ H₀(ℝℙ¹; o(ν⁻))`,
+cannot be stated with constant coefficients. -/
+theorem not_nonempty_twistedHomology_zero_projectiveHyperplaneEmbedding_iso_singularHomology
+    (hN : N ≠ 0) :
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceFiberBundle hn hdim
+    letI := (projectiveHyperplaneEmbedding N).normalSpaceVectorBundle hn hdim
+    letI := subbundleTopology W (F' := Fin 1 → ℝ)
+      (isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+        g.toRiemannianMetric)
+    letI := hV.fiberBundle
+    haveI := hV.vectorBundle
+    ¬ Nonempty ((signLocalSystem (Fin 1 → ℝ) (fun s ↦
+        isNondegenerateCriticalSubmanifold_projectiveHyperplaneEmbedding.negativeNormalSpace hn
+          g.toRiemannianMetric s) ℤ
+        ((Fintype.card_fin 1).trans (Module.finrank_fin_fun ℝ).symm)).twistedHomology 0 ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 0).obj
+        (ModuleCat.of ℤ ℤ)).obj (TopCat.of (ℙ ℝ (Fin (N + 1) → ℝ)))) := by
+  rintro ⟨e⟩
+  obtain ⟨e₂⟩ := nonempty_twistedHomology_projectiveHyperplaneEmbedding_int_linearEquiv_of_even hn
+    hdim g hV .zero (Nat.pos_of_ne_zero hN)
+  -- The twisted group is `ℤ/2`, while the untwisted one is `ℤ`, which is infinite.
+  have : Finite ℤ := .of_equiv _ (e₂.symm ≪≫ₗ e.toLinearEquiv ≪≫ₗ
+    (RealProjectiveSpace.singularHomologyProjectivizationIso (N := N) ℤ 0).symm.toLinearEquiv ≪≫ₗ
+      RealProjectiveSpace.singularHomologyZeroLinearEquiv ℤ).toEquiv
+  exact not_finite ℤ
+
+end TwistedHomology
 
 end TauCeti
