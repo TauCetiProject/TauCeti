@@ -22,7 +22,9 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   of nonzero measures, then `f` and `g` are almost everywhere the same constant. This is the
   uniqueness of a function of the form `f(x) + g(y)` up to one additive constant.
 * `TauCeti.measurable_setLIntegral_of_measurableSet` proves measurability of a set integral whose
-  truncating relation is jointly measurable.
+  truncating relation is jointly measurable, and
+  `TauCeti.aestronglyMeasurable_setIntegral_of_measurableSet` is its Bochner form for a jointly
+  measurable integrand, such as the retarded Duhamel integral `t ↦ ∫_{s < t} K t s ds`.
 * `TauCeti.lintegral_mul_setLIntegral_eq` exchanges a weighted integral of set integrals over an
   arbitrary parameter measure with the corresponding integral over the sections of the truncating
   relation.
@@ -45,6 +47,12 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.enorm_integral_setIntegral_le_lintegral_lintegral` bounds an iterated integral
   truncated to a region `s ∈ S t` (such as `s < t`) by the iterated integral of the norm, as used
   to pass from bilinear to retarded estimates.
+* `TauCeti.integral_setIntegral_Iio_eq_setIntegral` writes the iterated integral
+  `∫ ∫_{s < t} f(s, t) ds dt` as the integral of `f` over the region `{(s, t) | s < t}`.
+* `TauCeti.continuous_integral_of_hasCompactSupport_uncurry` and
+  `TauCeti.hasCompactSupport_integral_of_hasCompactSupport_uncurry`: integrating a continuous
+  compactly supported function of `(x, y)` in `y` gives a continuous compactly supported function
+  of `x`.
 * `TauCeti.integrable_and_integral_prod_le` deduces product-measure integrability and an integral
   bound for an a.e.-nonnegative kernel from a.e. slice integrability and an integrable slice
   majorant.
@@ -98,6 +106,21 @@ theorem measurable_setLIntegral_of_measurableSet [SFinite μ] {g : α → ℝ≥
     rfl
   simp_rw [hind]
   exact ((hg.measurable_mk.comp measurable_snd).indicator hR).lintegral_prod_right'
+
+/-- The truncated integral `t ↦ ∫ x in {x | R t x}, K t x ∂μ` of an integrand that is almost
+everywhere strongly measurable for `κ.prod μ` is almost everywhere strongly measurable when the
+truncating relation is jointly measurable. With `R t s := s < t` this is the retarded integral
+`t ↦ ∫_{s < t} K t s ds`. Where the integral does not exist it takes the value `0`. -/
+theorem aestronglyMeasurable_setIntegral_of_measurableSet [SFinite μ] {K : γ → α → E}
+    (hK : AEStronglyMeasurable (Function.uncurry K) (κ.prod μ))
+    {R : γ → α → Prop} (hR : MeasurableSet {z : γ × α | R z.1 z.2}) :
+    AEStronglyMeasurable (fun t ↦ ∫ x in {x | R t x}, K t x ∂μ) κ := by
+  refine (hK.indicator hR).integral_prod_right'.congr (ae_of_all _ fun t ↦ ?_)
+  dsimp only
+  have hRt : MeasurableSet {x | R t x} := measurable_prodMk_left hR
+  rw [← integral_indicator hRt]
+  refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
+  by_cases h : R t x <;> simp [Set.indicator, h]
 
 /-- **Tonelli for a weighted integral of truncated integrals.** For a jointly measurable
 truncating relation `R` and a.e.-measurable integrand and weight, integrating first in `x` and then
@@ -308,5 +331,47 @@ theorem enorm_integral_setIntegral_le_lintegral_lintegral {S : α → Set β} {�
     _ ≤ ∫⁻ t, ∫⁻ s in S t, ‖f s t‖ₑ ∂ρ ∂μ :=
         lintegral_mono fun _ ↦ eNorm_integral_le_lintegral_eNorm _
     _ ≤ _ := lintegral_mono fun _ ↦ setLIntegral_le_lintegral _ _
+
+/-- The iterated integral `∫ ∫_{s < t} f(s, t) ds dt` of a function integrable on the region
+`{(s, t) | s < t}` is its integral over that region. -/
+theorem integral_setIntegral_Iio_eq_setIntegral {μ ν : Measure ℝ} [SFinite μ] [SFinite ν]
+    {f : ℝ × ℝ → E} (hf : IntegrableOn f {z : ℝ × ℝ | z.1 < z.2} (μ.prod ν)) :
+    ∫ t, ∫ s in Iio t, f (s, t) ∂μ ∂ν = ∫ z in {z : ℝ × ℝ | z.1 < z.2}, f z ∂(μ.prod ν) := by
+  have hmeas : MeasurableSet {z : ℝ × ℝ | z.1 < z.2} :=
+    measurableSet_lt measurable_fst measurable_snd
+  rw [← integral_indicator hmeas, integral_prod_symm _ ((integrable_indicator_iff hmeas).2 hf)]
+  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  dsimp only
+  rw [← integral_indicator measurableSet_Iio]
+  exact integral_congr_ae (.of_forall fun s ↦ by simp [Set.indicator_apply])
+
+section CompactSupport
+
+variable [TopologicalSpace α] [TopologicalSpace β] {f : β → α → E}
+
+/-- Integrating a compactly supported function of `(x, y)` in `y` gives a compactly supported
+function of `x`. -/
+theorem hasCompactSupport_integral_of_hasCompactSupport_uncurry [R1Space β]
+    (hf : HasCompactSupport (Function.uncurry f)) : HasCompactSupport fun x ↦ ∫ y, f x y ∂μ := by
+  refine HasCompactSupport.intro (hf.image continuous_fst) fun x hx ↦ ?_
+  have h (y : α) : f x y = 0 :=
+    image_eq_zero_of_notMem_tsupport (f := Function.uncurry f) fun h ↦ hx ⟨(x, y), h, rfl⟩
+  simp [h]
+
+/-- **Parametric integrals of compactly supported functions are continuous.** Integrating a
+continuous compactly supported function of `(x, y)` in `y`, against a locally finite measure,
+gives a continuous function of `x`. -/
+theorem continuous_integral_of_hasCompactSupport_uncurry [OpensMeasurableSpace α]
+    [FirstCountableTopology β] [LocallyCompactSpace β] [SecondCountableTopologyEither α E]
+    [IsLocallyFiniteMeasure μ] (hf : Continuous (Function.uncurry f))
+    (hfc : HasCompactSupport (Function.uncurry f)) : Continuous fun x ↦ ∫ y, f x y ∂μ := by
+  -- Each slice vanishes off the compact projection of the support to the second factor.
+  have hset (x : β) : ∫ y in Prod.snd '' tsupport (Function.uncurry f), f x y ∂μ = ∫ y, f x y ∂μ :=
+    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦
+      image_eq_zero_of_notMem_tsupport (f := Function.uncurry f) fun h ↦ hy ⟨(x, y), h, rfl⟩
+  simp_rw [← hset]
+  exact continuous_parametric_integral_of_continuous hf (hfc.image continuous_snd)
+
+end CompactSupport
 
 end TauCeti

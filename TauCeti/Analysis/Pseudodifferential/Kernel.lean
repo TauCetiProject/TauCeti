@@ -68,7 +68,7 @@ the diagonal.
   **smoothness**, the kernel of a coefficient of order `m` is `C^k` when `m + k < -n`; each
   derivative of the integrand in `(x, y)` costs one power of the frequency.
 * `TauCeti.Symbol.IsSmoothing.contDiff_quantizationKernel`: the kernel of a smoothing symbol is
-  `C^∞`.
+  `C^∞`; `TauCeti.Symbol.IsSmoothing.integrable_coefficient`: its frequency slices are integrable.
 * `TauCeti.Symbol.quantizationKernel_frequencyLaplacian` and
   `TauCeti.Symbol.quantizationKernel_frequencyLaplacianPow_add`: for `m < -n` the kernel of the
   frequency Laplacian `Δ_ξ a` is `-‖x - y‖² K_a(x, y)`, and iterating, the kernel of
@@ -159,12 +159,19 @@ private theorem integral_comp_two_pi_smul (g : E → ℝ) :
     ∫ ζ, g ((2 * π) • ζ) = ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, g ξ := by
   rw [Measure.integral_comp_smul, smul_eq_mul, abs_of_pos (by positivity)]
 
+/-- The integral of the norm of the kernel integrand at `(x, y)` is `(2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ`. -/
+theorem integral_norm_quantizationKernel_integrand {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℂ F] (a : E × E → F) (x y : E) :
+    ∫ ζ, ‖𝐞 ⟪ζ, x - y⟫ • a (x, (2 * π) • ζ)‖ = ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, ‖a (x, ξ)‖ := by
+  simp_rw [Circle.norm_smul (E := F)]
+  exact integral_comp_two_pi_smul fun ξ ↦ ‖a (x, ξ)‖
+
 /-- **Uniform bound.** `‖K_a(x, y)‖ ≤ (2π)⁻ⁿ ∫ ‖a(x, ξ)‖ dξ` for every `y`. -/
 theorem norm_quantizationKernel_le (a : E × E → V →L[ℂ] W) (x y : E) :
     ‖quantizationKernel a x y‖ ≤ ((2 * π) ^ finrank ℝ E)⁻¹ * ∫ ξ, ‖a (x, ξ)‖ := by
-  rw [← integral_comp_two_pi_smul fun ξ ↦ ‖a (x, ξ)‖]
+  rw [quantizationKernel_def]
   exact (norm_integral_le_integral_norm _).trans_eq
-    (by simp_rw [Circle.norm_smul (E := V →L[ℂ] W)])
+    (integral_norm_quantizationKernel_integrand a x y)
 
 /-- The kernel is linear in the coefficient: it vanishes for the zero coefficient. -/
 @[simp]
@@ -608,6 +615,13 @@ theorem IsSmoothing.contDiff_quantizationKernel {a : Symbol n V W m} (ha : a.IsS
     obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - k - 1)
     rw [← hb]
     exact b.contDiff_quantizationKernel k (by linarith)
+
+/-- The frequency slices `ξ ↦ a(x, ξ)` of a smoothing symbol are integrable. -/
+theorem IsSmoothing.integrable_coefficient {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (x : CoordinateSpace n) : Integrable fun ξ ↦ a.coefficient (x, ξ) := by
+  obtain ⟨b, hb⟩ := isSmoothing_iff.1 ha (-n - 1)
+  rw [← hb]
+  exact b.integrable_coefficient (by linarith) x
 
 /-! ### The frequency Laplacian and multiplication by `‖x - y‖²` -/
 

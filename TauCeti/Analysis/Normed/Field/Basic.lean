@@ -27,8 +27,9 @@ strictly inside any interval `(r, s)`: `NormedField.exists_strictAnti_norm_mem_I
 If instead the norms accumulate at `1`, then for `r < 1` and any `n` some `ϖ` with `‖ϖ‖ < 1` has
 `r < ‖ϖ‖ ^ n`: `NormedField.exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt`.
 
-The same roots solve norm equations: over an algebraically closed normed field, for a multiset `s`
-containing `0` and any `c`, some `d` has `∏_{a ∈ s} max ‖d‖ ‖a‖ = ‖c‖`
+The same roots solve norm equations: over an algebraically closed normed field, every norm `‖c‖`
+is an `N`-th power `‖d‖ ^ N` for every `N > 0` (`NormedField.exists_norm_pow_eq_of_isAlgClosed`),
+and for a multiset `s` containing `0` and any `c`, some `d` has `∏_{a ∈ s} max ‖d‖ ‖a‖ = ‖c‖`
 (`NormedField.exists_prod_map_max_norm_eq_of_isAlgClosed`). For a nonarchimedean norm the left
 side is the Gauss norm at radius `‖d‖` of the polynomial with roots `s`, so `‖d‖` is a radius at
 which that Gauss norm equals `‖c‖`.
@@ -139,6 +140,13 @@ theorem exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt
   rw [norm_inv, inv_pow, lt_inv_comm₀ hr0 (by positivity)]
   calc ‖x‖ ^ n < (r⁻¹ ^ (n : ℝ)⁻¹) ^ n := pow_lt_pow_left₀ hxε hx0.le hn
     _ = r⁻¹ := Real.rpow_inv_natCast_pow (by positivity) hn
+
+/-- **Every norm is an `N`-th power of a norm over an algebraically closed field**: for every `c`
+and every `N > 0`, an `N`-th root `d` of `c` satisfies `‖d‖ ^ N = ‖c‖`. -/
+theorem exists_norm_pow_eq_of_isAlgClosed {𝕜 : Type*} [NormedField 𝕜] [IsAlgClosed 𝕜] (c : 𝕜)
+    {N : ℕ} (hN : 0 < N) : ∃ d : 𝕜, ‖d‖ ^ N = ‖c‖ := by
+  obtain ⟨d, hd⟩ := IsAlgClosed.exists_pow_nat_eq c hN
+  exact ⟨d, by rw [← norm_pow, hd]⟩
 
 /-- **Solving `∏_{a ∈ s} max ‖d‖ ‖a‖ = ‖c‖` over an algebraically closed field**: if `0 ∈ s`, then
 for every `c` some `d` satisfies this equation. For a nonarchimedean norm its left side is the

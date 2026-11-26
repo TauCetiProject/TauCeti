@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
+public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Sobolev.Wkp.Compactness
 
 /-!
@@ -29,6 +31,9 @@ compact coordinatewise, since each scalar coordinate is a `W^{1,p}(Ω)` function
   `W^{k+1,p}(Ω) → W^{k,p}(Ω)`.
 * `TauCeti.Wkp.exists_subseq_tendsto_lowerOrder_of_isLipschitzDomainWith`: a bounded sequence in
   `W^{k+1,p}(Ω)` has a subsequence converging in `W^{k,p}(Ω)`.
+* `TauCeti.Wkp.exists_pos_mul_norm_le_of_mem_w1p0Submodule`: **Peetre's argument**: an operator
+  `T : W^{2,p}(Ω) → Y` into a normed space with `‖u‖ ≤ D (‖T u‖ + ‖u‖_{Lᵖ})` that is injective on
+  functions with zero boundary values is bounded below there.
 
 ## References
 
@@ -73,6 +78,49 @@ theorem exists_subseq_tendsto_lowerOrder_of_isLipschitzDomainWith
     (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith hΩ hb k).exists_subseq_tendsto hu
   refine ⟨w, φ, hφ, ?_⟩
   simpa only [ContinuousLinearMap.coe_coe, lowerOrderL_apply k (u (φ _))] using hw
+
+/-- **Peetre's argument on `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)`.** On a bounded Lipschitz domain, an operator
+`T : W^{2,p}(Ω) → Y` into a normed space with `‖u‖ ≤ D (‖T u‖ + ‖u‖_{Lᵖ})` that is injective on
+functions with zero boundary values is bounded below there. -/
+theorem exists_pos_mul_norm_le_of_mem_w1p0Submodule
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
+    {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y] (T : Wkp volume Ω p 2 →L[ℝ] Y) {D : ℝ}
+    (hest : ∀ u, firstOrder 1 u ∈ w1p0Submodule volume Ω p → ‖u‖ ≤ D * (‖T u‖ + ‖value 2 u‖))
+    (hinj : ∀ u, firstOrder 1 u ∈ w1p0Submodule volume Ω p → T u = 0 → u = 0) :
+    ∃ κ : ℝ, 0 < κ ∧ ∀ u, firstOrder 1 u ∈ w1p0Submodule volume Ω p → κ * ‖u‖ ≤ ‖T u‖ := by
+  -- The closed subspace `M` of zero boundary values, a Banach space.
+  let M : Submodule ℝ (Wkp volume Ω p 2) :=
+    (w1p0Submodule volume Ω p).toSubmodule.comap (firstOrderL 1).toLinearMap
+  have hmemM : ∀ u, u ∈ M ↔ firstOrder 1 u ∈ w1p0Submodule volume Ω p := fun u => by
+    rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, firstOrderL_apply,
+      ClosedSubmodule.mem_toSubmodule_iff]
+  have : CompleteSpace M :=
+    ((w1p0Submodule volume Ω p).isClosed.preimage (firstOrderL 1).continuous).completeSpace_coe
+  -- On `M`, `‖u‖ ≤ D' ‖T u‖ + ‖K u‖` with `K = D' • valueL 2` compact, `D' = max D 0`.
+  have hK : IsCompactOperator ((max D 0 • valueL 2).comp M.subtypeL) :=
+    ((isCompactOperator_valueL_of_isCompactOperator_lowerOrderL
+      (isCompactOperator_lowerOrderL_of_isLipschitzDomainWith hΩ hb 1)).smul (max D 0)).comp_clm _
+  have hbound : ∀ w : M,
+      ‖w‖ ≤ max D 0 * ‖T.comp M.subtypeL w‖ + ‖(max D 0 • valueL 2).comp M.subtypeL w‖ :=
+    fun w => by
+      have hn := mul_le_mul_of_nonneg_right (le_max_left D 0) (add_nonneg (norm_nonneg (T w))
+        (norm_nonneg (value 2 (w : Wkp volume Ω p 2))))
+      simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, smul_apply,
+        valueL_apply 2 (w : Wkp volume Ω p 2), norm_smul, Real.norm_of_nonneg (le_max_right D 0),
+        ← Submodule.norm_coe]
+      linarith [hest w ((hmemM _).1 w.property)]
+  have hker : Disjoint (T.comp M.subtypeL).ker ⊤ := by
+    rw [disjoint_top, LinearMap.ker_eq_bot']
+    intro w hw
+    rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+      Submodule.subtypeL_apply] at hw
+    exact Subtype.ext (hinj w ((hmemM _).1 w.property) hw)
+  obtain ⟨κ, hκ, hκb⟩ := (T.comp M.subtypeL).exists_pos_mul_norm_le_of_compact_estimate hK hbound
+    isClosed_univ hker
+  refine ⟨κ, hκ, fun u hu0 => ?_⟩
+  simpa only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, ← Submodule.norm_coe]
+    using hκb ⟨u, (hmemM u).2 hu0⟩ trivial
 
 end Wkp
 

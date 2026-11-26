@@ -7,13 +7,14 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import TauCeti.ModelTheory.RelationalConfiguration.Structure
+public import TauCeti.ModelTheory.RelationalConfiguration.Topology
 public import Mathlib.ModelTheory.Graph
 public import Mathlib.MeasureTheory.Constructions.SimpleGraph
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 public import Mathlib.Combinatorics.SimpleGraph.Maps
 public import TauCeti.Combinatorics.SimpleGraph.Maps
 import Mathlib.Tactic.FinCases
-import TauCeti.Combinatorics.SimpleGraph.Measurable
+import TauCeti.Combinatorics.SimpleGraph.Measurable.Basic
 
 /-!
 # Simple graphs as relational configurations
@@ -41,7 +42,8 @@ is its adjacency array.
 
 * `SimpleGraph.measurableEmbedding_toRelationalConfiguration` — on a countable vertex type, the
   encoding is a measurable embedding onto the simple-graph configurations
-  (`SimpleGraph.range_toRelationalConfiguration`);
+  (`SimpleGraph.range_toRelationalConfiguration`), which is closed
+  (`TauCeti.RelationalConfiguration.isClosed_setOf_isSimpleGraph`);
 * `SimpleGraph.map_comap_toRelationalConfiguration` — a law on configurations concentrated on
   simple graphs is the encoding of its pullback to simple graphs;
 * `SimpleGraph.toRelationalConfiguration_comap` — encoding a pulled-back graph is restricting its
@@ -72,6 +74,9 @@ variable {V W : Type*}
 
 /-- The adjacency atom `adj(u, v)`. -/
 def adjAtom (u v : V) : Atom Language.graph V := atom Language.adj ![u, v]
+
+/-- The adjacency atom `adj(u, v)` is the atom of `adj` at the pair `![u, v]`. -/
+theorem adjAtom_def (u v : V) : adjAtom u v = atom Language.adj ![u, v] := (rfl)
 
 @[simp]
 theorem adjAtom_map (f : V → W) (u v : V) : (adjAtom u v).map f = adjAtom (f u) (f v) := by
@@ -122,15 +127,20 @@ theorem IsSimpleGraph.restrict {c : RelationalConfiguration Language.graph W}
     (hc : IsSimpleGraph c) (f : V → W) : IsSimpleGraph (c.restrict f) :=
   ⟨fun u v => by simpa using hc.1 (f u) (f v), fun v => by simpa using hc.2 (f v)⟩
 
-/-- On a countable vertex type, the simple-graph configurations form a measurable set: a countable
-intersection of conditions on one or two atoms. -/
-theorem measurableSet_setOf_isSimpleGraph [Countable V] :
-    MeasurableSet {c : RelationalConfiguration Language.graph V | IsSimpleGraph c} := by
+/-- The simple-graph configurations form a closed set: an intersection of conditions on one or two
+atoms. -/
+theorem isClosed_setOf_isSimpleGraph :
+    IsClosed {c : RelationalConfiguration Language.graph V | IsSimpleGraph c} := by
   simp only [IsSimpleGraph, Set.ofPred_and, Set.ofPred_forall]
-  exact (MeasurableSet.iInter fun u => MeasurableSet.iInter fun v =>
-      ((measurable_eval (adjAtom u v)).prodMk (measurable_eval (adjAtom v u)))
-        (.of_discrete : MeasurableSet {p : Bool × Bool | p.1 = p.2})).inter
-    (MeasurableSet.iInter fun v => measurable_eval (adjAtom v v) (measurableSet_singleton false))
+  exact (isClosed_iInter fun u => isClosed_iInter fun v =>
+      isClosed_eq (continuous_eval (adjAtom u v)) (continuous_eval (adjAtom v u))).inter
+    (isClosed_iInter fun v => isClosed_eq (continuous_eval (adjAtom v v)) continuous_const)
+
+/-- On a countable vertex type, the simple-graph configurations form a measurable set, since they
+form a closed set. -/
+theorem measurableSet_setOf_isSimpleGraph [Countable V] :
+    MeasurableSet {c : RelationalConfiguration Language.graph V | IsSimpleGraph c} :=
+  isClosed_setOf_isSimpleGraph.measurableSet
 
 /-- Restricting a law concentrated on simple graphs gives a law concentrated on simple graphs. -/
 theorem ae_isSimpleGraph_map_restrict [Countable V] (f : V → W)
@@ -219,6 +229,7 @@ theorem toStructure_toRelationalConfiguration (G : SimpleGraph V) :
     G.toRelationalConfiguration.toStructure = G.structure :=
   toStructure_ofStructure _
 
+@[simp]
 theorem isSimpleGraph_toRelationalConfiguration (G : SimpleGraph V) :
     IsSimpleGraph G.toRelationalConfiguration := by
   classical

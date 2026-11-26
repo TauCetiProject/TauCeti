@@ -10,6 +10,7 @@ import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Partial diffeomorphisms and open subsets
@@ -41,6 +42,11 @@ subset of the target manifold.
 ## Main declarations
 
 * `PartialDiffeomorph.restrOpen`: the restriction of a partial diffeomorphism to an open set.
+* `OpenPartialHomeomorph.contMDiffOn_subtypeRestr`,
+  `OpenPartialHomeomorph.contMDiffOn_subtypeRestr_symm`: restricting a partial homeomorphism that is
+  `C^n` on its source, or whose inverse is `C^n` on its target, to an open subset keeps that
+  property; `OpenPartialHomeomorph.mfderiv_subtypeRestr_symm_apply`: the inverse of the restriction
+  has the differential of the original inverse.
 * `PartialDiffeomorph.subtypeRestr`: the restriction of a partial diffeomorphism to a nonempty open
   subset, as a partial diffeomorphism of that subset.
 * `PartialDiffeomorph.contMDiffOn_toOpenPartialHomeomorph_restrOpen` and its `symm` version: the
@@ -48,6 +54,9 @@ subset of the target manifold.
 * `PartialDiffeomorph.toDiffeomorphSourceTarget`: a partial diffeomorphism as a diffeomorphism
   between its open source and its open target.
 * `Diffeomorph.ofTop`: an open subset equal to `⊤` is diffeomorphic to the ambient manifold.
+* `Diffeomorph.nestedOpen`: for nested open subsets `U ≤ D`, the preimage of `U` in `D` is
+  diffeomorphic to `U`. It compares structures on a restriction to `D` followed by a restriction
+  to `U` with the direct restriction to `U`.
 * `Diffeomorph.subtype`: a diffeomorphism restricts to a diffeomorphism between open subsets that
   it maps onto each other.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
@@ -59,7 +68,9 @@ subset of the target manifold.
 * `PartialDiffeomorph.subtypeVal`: the inclusion of a nonempty open subset as a partial
   diffeomorphism.
 * `PartialDiffeomorph.liftOpens`: a partial diffeomorphism between nonempty open subsets, as a
-  partial diffeomorphism between the ambient manifolds.
+  partial diffeomorphism between the ambient manifolds. On the open subset it has the values
+  (`PartialDiffeomorph.liftOpens_comp_subtypeVal`) and the differentials
+  (`PartialDiffeomorph.mfderiv_liftOpens_apply_coe`) of the original one.
 * `IsLocalDiffeomorphAt.exists_partialDiffeomorph_eqOn`: a local diffeomorphism at `x` agrees with
   a partial diffeomorphism whose source contains `x` and lies in a prescribed open set.
 * `PartialDiffeomorph.exists_diffeomorph_opens_comp_eq`: a partial diffeomorphism corrected by a
@@ -71,6 +82,46 @@ public section
 
 open Set
 open scoped Manifold
+
+namespace OpenPartialHomeomorph
+
+variable {𝕜 E H M E' H' N : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N] {n : WithTop ℕ∞} {e : OpenPartialHomeomorph M N}
+  {U : TopologicalSpace.Opens M}
+
+/-- The restriction `e|_U` of a partial homeomorphism that is `C^n` on its source to an open
+subset `U` is `C^n` on its source. -/
+theorem contMDiffOn_subtypeRestr (hU : Nonempty U) (he : ContMDiffOn I J n e e.source) :
+    ContMDiffOn I J n (e.subtypeRestr hU) (e.subtypeRestr hU).source := by
+  rw [subtypeRestr_coe, subtypeRestr_source]
+  exact he.comp contMDiff_subtypeVal.contMDiffOn fun _ hx ↦ hx
+
+/-- If the inverse of a partial homeomorphism `e` is `C^n` on its target, so is the inverse of its
+restriction `e|_U` to an open subset `U`. -/
+theorem contMDiffOn_subtypeRestr_symm (hU : Nonempty U)
+    (he : ContMDiffOn J I n e.symm e.target) :
+    ContMDiffOn J I n (e.subtypeRestr hU).symm (e.subtypeRestr hU).target := by
+  rw [← TauCeti.ContMDiffOn.subtypeVal_comp_iff]
+  exact (he.mono (e.subtypeRestr_target_subset hU)).congr (e.subtypeRestr_symm_eqOn hU).symm
+
+/-- On the target of the restriction `e|_U` of a partial homeomorphism to an open subset `U`, the
+inverse of `e|_U` has the same differential as the inverse of `e`, the tangent spaces of `U` being
+those of `M`. -/
+theorem mfderiv_subtypeRestr_symm_apply (hU : Nonempty U) {y : N}
+    (hy : y ∈ (e.subtypeRestr hU).target) (v : TangentSpace J y) :
+    mfderiv J I (e.subtypeRestr hU).symm y v = mfderiv J I e.symm y v := by
+  have hev : (Subtype.val ∘ (e.subtypeRestr hU).symm) =ᶠ[nhds y] e.symm :=
+    Filter.eventuallyEq_of_mem ((e.subtypeRestr hU).open_target.mem_nhds hy)
+      fun z hz ↦ e.subtypeRestr_symm_apply hU hz
+  rw [← TauCeti.Manifold.mfderiv_subtype_val_comp_apply, hev.mfderiv_eq]
+  -- The base points `(Subtype.val ∘ (e|_U)⁻¹) y` and `e⁻¹ y` differ syntactically, so
+  -- `mfderiv_eq` inserts a cast between their tangent spaces, which is the identity of `E`.
+  rfl
+
+end OpenPartialHomeomorph
 
 namespace PartialDiffeomorph
 
@@ -168,17 +219,9 @@ noncomputable def subtypeRestr (U : TopologicalSpace.Opens M) (hU : Nonempty U) 
   toPartialEquiv := (Φ.toOpenPartialHomeomorph.subtypeRestr hU).toPartialEquiv
   open_source := (Φ.toOpenPartialHomeomorph.subtypeRestr hU).open_source
   open_target := (Φ.toOpenPartialHomeomorph.subtypeRestr hU).open_target
-  contMDiffOn_toFun := by
-    -- The fields above are definitionally those of the restricted open partial homeomorphism;
-    -- the projection lemma is unavailable until this definition is complete.
-    change ContMDiffOn I J n (Φ.toOpenPartialHomeomorph.subtypeRestr hU)
-      (Φ.toOpenPartialHomeomorph.subtypeRestr hU).source
-    rw [OpenPartialHomeomorph.subtypeRestr_coe, OpenPartialHomeomorph.subtypeRestr_source]
-    exact Φ.contMDiffOn.comp contMDiff_subtypeVal.contMDiffOn fun _ hx ↦ hx
-  contMDiffOn_invFun := fun x hx ↦ by
-    refine (ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff ..).mp ?_
-    exact (Φ.contMDiffOn_invFun.mono (Φ.toOpenPartialHomeomorph.subtypeRestr_target_subset hU)
-      x hx).congr_of_mem (Φ.toOpenPartialHomeomorph.subtypeRestr_symm_eqOn hU).symm hx
+  contMDiffOn_toFun := Φ.toOpenPartialHomeomorph.contMDiffOn_subtypeRestr hU Φ.contMDiffOn
+  contMDiffOn_invFun :=
+    Φ.toOpenPartialHomeomorph.contMDiffOn_subtypeRestr_symm hU Φ.symm.contMDiffOn
 
 /-- The underlying open partial homeomorphism of the restriction to `U` is Mathlib's
 restriction to that open subset. -/
@@ -275,6 +318,32 @@ theorem coe_ofTop {U : TopologicalSpace.Opens M} {hU : U = ⊤} :
 @[simp]
 theorem coe_ofTop_symm_apply {U : TopologicalSpace.Opens M} {hU : U = ⊤} (x : M) :
     ((ofTop (I := I) (n := n) U hU).symm x : M) = x :=
+  (rfl)
+
+/-- For nested open subsets `U ≤ D`, the preimage of `U` in `D` is diffeomorphic to `U`. -/
+def nestedOpen {U D : TopologicalSpace.Opens M} (h : U ≤ D) :
+    (TopologicalSpace.Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U)
+      ≃ₘ^n⟮I, I⟯ U where
+  toFun x := ⟨x.val.val, x.property⟩
+  invFun u := ⟨⟨u.val, h u.property⟩, u.property⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff U _).mp
+    ((contMDiff_subtypeVal (I := I) (U := D)).comp contMDiff_subtypeVal)
+  contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff _ _).mp
+    ((TauCeti.ContMDiff.subtypeVal_comp_iff D _).mp contMDiff_subtypeVal)
+
+/-- The diffeomorphism `Diffeomorph.nestedOpen` keeps the underlying point. -/
+@[simp]
+theorem nestedOpen_apply {U D : TopologicalSpace.Opens M} (h : U ≤ D)
+    (x : TopologicalSpace.Opens.comap (⟨Subtype.val, continuous_subtypeVal⟩ : C(D, M)) U) :
+    nestedOpen (I := I) (n := n) h x = ⟨x.val.val, x.property⟩ :=
+  (rfl)
+
+/-- The inverse of `Diffeomorph.nestedOpen` views a point of `U` in `D`. -/
+@[simp]
+theorem nestedOpen_symm_apply {U D : TopologicalSpace.Opens M} (h : U ≤ D) (x : U) :
+    (nestedOpen (I := I) (n := n) h).symm x = ⟨⟨x.val, h x.property⟩, x.property⟩ :=
   (rfl)
 
 section Subtype
@@ -458,6 +527,18 @@ variable {U : TopologicalSpace.Opens M} {V : TopologicalSpace.Opens N}
 theorem liftOpens_apply_coe (x : U) : ⇑(Ψ.liftOpens hU hV) x = Ψ x := by
   simp only [liftOpens, coe_trans, Function.comp_apply, PartialDiffeomorph.symm_toPartialEquiv,
     subtypeVal_symm_apply_coe, coe_subtypeVal]
+
+/-- The lift of `Ψ` restricts to `Ψ` on `U`. -/
+theorem liftOpens_comp_subtypeVal :
+    ⇑(Ψ.liftOpens hU hV) ∘ Subtype.val = Subtype.val ∘ Ψ :=
+  funext (Ψ.liftOpens_apply_coe hU hV)
+
+/-- On `U`, the lift of `Ψ` has the differential of `Ψ`, the tangent spaces of `U` and `V` being
+those of `M` and `N`. -/
+theorem mfderiv_liftOpens_apply_coe (x : U) (v : TangentSpace I (x : M)) :
+    mfderiv I J (Ψ.liftOpens hU hV) x v = mfderiv I J Ψ x v :=
+  (TauCeti.Manifold.mfderiv_apply_of_subtype_val_comp_eq
+    (Ψ.liftOpens_comp_subtypeVal hU hV).symm v).symm
 
 /-- On `V`, the inverse of the lift of `Ψ` is the inverse of `Ψ`. -/
 @[simp]
