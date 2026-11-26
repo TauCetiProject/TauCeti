@@ -46,7 +46,8 @@ treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
   pointwise by the coefficient field (`TauCeti.SymplecticForm.coeFn_floerSobolevOperator`), and on
   the jet of a test section it is `D_u ξ`
   (`TauCeti.SymplecticForm.floerSobolevOperator_jetLp_ae_eq`), provided its coefficients are
-  essentially bounded on the cylinder.
+  essentially bounded on the cylinder. Conversely, the coefficients of a realization with a right
+  inverse are essentially bounded (`TauCeti.SymplecticForm.memLp_floerJetCoeff_of_comp_eq_id`).
 * For data cylindrical near the ends (`TauCeti.Floer.IsCylindricalNearEnds`), if the loops of `u`
   converge uniformly at both ends and the slice defects `∂t u - X_{H±_t}(u)` of the end data tend
   uniformly to zero at the corresponding end, the coefficients are bounded
@@ -215,6 +216,20 @@ theorem floerSobolevOperator_jetLp_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ
   filter_upwards [coeFn_floerSobolevOperator ω hM
       ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp ξ] with z h₁ h₂
   rw [h₁, h₂, floerJetCoeff_jet]
+
+/-- A Sobolev realization of the linearized Floer operator that has a right inverse has
+essentially bounded coefficients, as soon as `L²(ℝ × S¹, V)` is nontrivial: otherwise the
+realization is `0` by convention. -/
+theorem memLp_floerJetCoeff_of_comp_eq_id (ω : SymplecticForm V)
+    [Nontrivial (Lp V 2 stripMeasure)] {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {Q : Lp V 2 stripMeasure →L[ℝ] H1 V}
+    (hQ : (ω.floerSobolevOperator J Ks Kt u).comp Q = ContinuousLinearMap.id ℝ _) :
+    MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure := by
+  refine memLp_of_jetOperator_ne_zero fun h ↦ ?_
+  rw [floerSobolevOperator_def, h, ContinuousLinearMap.zero_comp,
+    ContinuousLinearMap.zero_comp] at hQ
+  obtain ⟨f, hf⟩ := exists_ne (0 : Lp V 2 stripMeasure)
+  exact hf (by simpa using (DFunLike.congr_fun hQ f).symm)
 
 /-- The coefficient field of the linearized Floer operator at `z` depends on the Floer data only
 through their values at `z`. -/
