@@ -35,7 +35,9 @@ on `H^{s,p}`.
 ## References
 
 * M. E. Taylor, *Partial Differential Equations I*, 2nd ed., Springer, 2011, Chapter 4, §1
-  (invariance of `H^s` under diffeomorphisms, and its localization).
+  (invariance of `H^s` under diffeomorphisms, and its localization). Taylor treats `p = 2`; for
+  general `1 < p < ∞` the same localization argument runs through `BesselPotentialSpace.compCLE`
+  and `TemperedDistribution.MemSobolev.smulLeftCLM_schwartzMap`.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985,
   Appendix B.1.
 -/

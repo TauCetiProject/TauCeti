@@ -63,11 +63,12 @@ The estimate for a partition `ψᵢ` then follows by writing `u = ∑ᵢ Ψᵢ u
 ## Main results
 
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le`: the
-  estimate between two charts.
+  estimate between two charts, in `H^{s - m,p}` and `H^{s,p}` for `1 < p < ∞`.
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`: the
-  reading of `P u` in one chart is bounded in `H^{s - m}` by the `H^s` norm of `u` for a partition.
+  reading of `P u` in one chart is bounded in `H^{s - m,p}` by the `H^{s,p}` norm of `u` for a
+  partition, `1 < p < ∞`.
 * `TauCeti.exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`: the
-  Sobolev estimate `‖P u‖_{H^{s - m}} ≤ C ‖u‖_{H^s}` in these norms.
+  Sobolev estimate `‖P u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` in these norms, for `1 < p < ∞`.
 
 ## References
 
