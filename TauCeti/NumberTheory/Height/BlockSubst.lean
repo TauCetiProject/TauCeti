@@ -57,6 +57,23 @@ section General
 
 variable {K σ κ ι : Type*} [Field K] [AdmissibleAbsValues K]
 
+private theorem logHeight_le_of_mulHeight_matrix_le [Fintype ι]
+    {P : MvPolynomial σ K} {Q : MvPolynomial τ K} (hEmpty : IsEmpty ι → IsEmpty τ)
+    (A : Matrix ι ι K) {D : ℕ} {a : ℝ} (ha : 1 ≤ a)
+    (hmul : Nonempty ι →
+      Q.mulHeight ≤ ((a * Fintype.card ι ^ 2) ^ D) ^ totalWeight K *
+        A.mulHeight ^ D * P.mulHeight) :
+    Q.logHeight ≤
+      P.logHeight + D * A.logHeight +
+        totalWeight K * D * Real.log (a * Fintype.card ι ^ 2) := by
+  have h := logHeight_le_of_mulHeight_le (x := fun q : ι × ι ↦ A q.1 q.2)
+    (c := a * (Fintype.card ι : ℝ) ^ 2)
+    (fun h ↦ hEmpty ((isEmpty_prod.mp h).elim id id))
+    (fun ⟨q⟩ ↦ have : Nonempty ι := ⟨q.1⟩; by positivity)
+    (fun h ↦ have : IsEmpty ι := (isEmpty_prod.mp h).elim id id; by simp)
+    (fun ⟨q⟩ ↦ by simpa only [← Matrix.mulHeight_def] using hmul ⟨q.1⟩)
+  simpa only [← Matrix.logHeight_def] using h
+
 /-- **The multiplicative height of a homogeneous polynomial under `linearSubst`.** For a
 homogeneous polynomial `p` of degree `n` in a nonempty finite variable type `σ`,
 `H(linearSubst M p) ≤ ((card σ ^ 2) ^ n) ^ totalWeight K * H(M) ^ n * H(p)`. -/
@@ -83,16 +100,10 @@ theorem mulHeight_linearSubst_le [Fintype σ] [Nonempty σ] {p : MvPolynomial σ
 theorem logHeight_linearSubst_le [Fintype σ] {p : MvPolynomial σ K} {n : ℕ}
     (hp : p.IsHomogeneous n) (M : Matrix σ σ K) :
     (linearSubst M p).logHeight ≤
-      p.logHeight + n * M.logHeight + 2 * totalWeight K * n * Real.log (Fintype.card σ) := by
-  have h := logHeight_le_of_mulHeight_le (x := fun q : σ × σ ↦ M q.1 q.2)
-    (c := (Fintype.card σ ^ 2 : ℝ))
-    (fun h ↦ (isEmpty_prod.mp h).elim id id)
-    (fun ⟨q⟩ ↦ have : Nonempty σ := ⟨q.1⟩; by positivity)
-    (fun h ↦ have : IsEmpty σ := (isEmpty_prod.mp h).elim id id; by simp)
-    (fun ⟨q⟩ ↦ have : Nonempty σ := ⟨q.1⟩;
-      by simpa only [← Matrix.mulHeight_def] using mulHeight_linearSubst_le hp M)
-  rw [← Matrix.logHeight_def, Real.log_pow, Nat.cast_ofNat] at h
-  linarith
+      p.logHeight + n * M.logHeight + 2 * totalWeight K * n * Real.log (Fintype.card σ) :=
+  (logHeight_le_of_mulHeight_matrix_le id M (a := 1) le_rfl
+    fun _ ↦ by simpa only [one_mul] using mulHeight_linearSubst_le hp M).trans_eq
+    (by rw [one_mul, Real.log_pow, Nat.cast_ofNat]; ring)
 
 /-- **The multiplicative height of a multihomogeneous polynomial under `blockSubst`.** For a
 multihomogeneous polynomial `P` of multidegree `d` over a nonempty block variable type `ι`,
@@ -122,16 +133,10 @@ theorem logHeight_blockSubst_le [Fintype κ] [DecidableEq κ] [Fintype ι]
     {P : MvPolynomial (κ × ι) K} {d : κ → ℕ} (hP : IsMultiHomogeneous d P) (A : Matrix ι ι K) :
     (blockSubst A P).logHeight ≤
       P.logHeight + (∑ h, d h) * A.logHeight +
-        2 * totalWeight K * (∑ h, d h) * Real.log (Fintype.card ι) := by
-  have h := logHeight_le_of_mulHeight_le (x := fun q : ι × ι ↦ A q.1 q.2)
-    (c := (Fintype.card ι ^ 2 : ℝ))
-    (fun h ↦ @Prod.isEmpty_right _ _ ((isEmpty_prod.mp h).elim id id))
-    (fun ⟨q⟩ ↦ have : Nonempty ι := ⟨q.1⟩; by positivity)
-    (fun h ↦ have : IsEmpty ι := (isEmpty_prod.mp h).elim id id; by simp)
-    (fun ⟨q⟩ ↦ have : Nonempty ι := ⟨q.1⟩;
-      by simpa only [← Matrix.mulHeight_def] using mulHeight_blockSubst_le hP A)
-  rw [← Matrix.logHeight_def, Real.log_pow, Nat.cast_ofNat] at h
-  linarith
+        2 * totalWeight K * (∑ h, d h) * Real.log (Fintype.card ι) :=
+  (logHeight_le_of_mulHeight_matrix_le (@Prod.isEmpty_right _ _) A (a := 1) le_rfl
+    fun _ ↦ by simpa only [one_mul] using mulHeight_blockSubst_le hP A).trans_eq
+    (by rw [one_mul, Real.log_pow, Nat.cast_ofNat]; ring)
 
 /-- **The multiplicative height of a Hasse derivative under `blockSubst`.** For a multihomogeneous
 polynomial `P` of multidegree `d` over a nonempty block variable type `ι` and any derivative order
@@ -178,15 +183,9 @@ theorem logHeight_blockSubst_hasseDeriv_le [Fintype κ] [DecidableEq κ] [Fintyp
     (A : Matrix ι ι K) (I : κ × ι →₀ ℕ) :
     (blockSubst A (hasseDeriv I P)).logHeight ≤
       P.logHeight + (∑ h, d h) * A.logHeight +
-        totalWeight K * (∑ h, d h) * Real.log (2 * Fintype.card ι ^ 2) := by
-  have h := logHeight_le_of_mulHeight_le (x := fun q : ι × ι ↦ A q.1 q.2)
-    (c := 2 * (Fintype.card ι : ℝ) ^ 2)
-    (fun h ↦ @Prod.isEmpty_right _ _ ((isEmpty_prod.mp h).elim id id))
-    (fun ⟨q⟩ ↦ have : Nonempty ι := ⟨q.1⟩; by positivity)
-    (fun h ↦ have : IsEmpty ι := (isEmpty_prod.mp h).elim id id; by simp)
-    (fun ⟨q⟩ ↦ have : Nonempty ι := ⟨q.1⟩;
-      by simpa only [← Matrix.mulHeight_def] using mulHeight_blockSubst_hasseDeriv_le hP A I)
-  simpa only [← Matrix.logHeight_def] using h
+        totalWeight K * (∑ h, d h) * Real.log (2 * Fintype.card ι ^ 2) :=
+  logHeight_le_of_mulHeight_matrix_le (@Prod.isEmpty_right _ _) A (a := 2) one_le_two
+    fun _ ↦ mulHeight_blockSubst_hasseDeriv_le hP A I
 
 end General
 

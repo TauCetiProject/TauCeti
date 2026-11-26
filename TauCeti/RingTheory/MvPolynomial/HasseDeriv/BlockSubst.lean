@@ -60,7 +60,7 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
 * `MvPolynomial.IsMultiHomogeneous.aeval_blockLinearForm`,
   `MvPolynomial.IsMultiHomogeneous.linearSubst_of_block`: so do block-varying linear forms and
   block-diagonal linear substitutions.
-* `MvPolynomial.blockSubst_coeff_mem_of_row`,
+* `MvPolynomial.exists_mem_support_blockSubst_inv_le_of_coeff_ne_zero_of_row_eq`,
   `MvPolynomial.coeff_blockSubst_inv_eq_zero_of_row_eq`: vanishing of `blockSubst A⁻¹ P` below a
   weighted-degree threshold along row `i'` of an invertible matrix `A` passes to row `i` of any
   matrix `B` with `A i' = B i`.
@@ -285,9 +285,9 @@ theorem blockSubst_blockSubst_inv (hA : IsUnit A.det) (P : MvPolynomial (κ × �
 invertible and row `i'` of `A` equals row `i` of `B`. Every nonzero coefficient of
 `blockSubst B⁻¹ P` at `N'` comes from some exponent vector `N` in the support of `blockSubst A⁻¹ P`
 satisfying `N (h, i') ≤ N' (h, i)` in every block `h`. -/
-theorem blockSubst_coeff_mem_of_row (hA : IsUnit A.det) {B : Matrix ι ι R} {i i' : ι}
-    (hrow : A i' = B i) {P : MvPolynomial (κ × ι) R} {N' : κ × ι →₀ ℕ}
-    (hN' : (blockSubst B⁻¹ P).coeff N' ≠ 0) :
+theorem exists_mem_support_blockSubst_inv_le_of_coeff_ne_zero_of_row_eq (hA : IsUnit A.det)
+    {B : Matrix ι ι R} {i i' : ι} (hrow : A i' = B i) {P : MvPolynomial (κ × ι) R}
+    {N' : κ × ι →₀ ℕ} (hN' : (blockSubst B⁻¹ P).coeff N' ≠ 0) :
     ∃ N ∈ (blockSubst A⁻¹ P).support, ∀ h, N (h, i') ≤ N' (h, i) := by
   classical
   by_cases hB : IsUnit B.det
@@ -325,7 +325,7 @@ theorem coeff_blockSubst_inv_eq_zero_of_row_eq [Fintype κ] (hA : IsUnit A.det) 
     {N' : κ × ι →₀ ℕ} (hN' : ∑ h, (N' (h, i) : ℝ) / d h ≤ θ) :
     (blockSubst B⁻¹ P).coeff N' = 0 := by
   by_contra hc
-  obtain ⟨N, hN, hle⟩ := blockSubst_coeff_mem_of_row hA hrow hc
+  obtain ⟨N, hN, hle⟩ := exists_mem_support_blockSubst_inv_le_of_coeff_ne_zero_of_row_eq hA hrow hc
   refine mem_support_iff.1 hN (hP N ((sum_le_sum fun h _ ↦ ?_).trans hN'))
   exact div_le_div_of_nonneg_right (Nat.cast_le.2 (hle h)) (Nat.cast_nonneg _)
 

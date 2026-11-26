@@ -9,8 +9,8 @@ public import TauCeti.NumberTheory.Height.BlockSubst
 import TauCeti.Algebra.MvPolynomial.Support
 import TauCeti.Combinatorics.Enumerative.AntidiagLargeDeviation
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.NumberTheory.NumberField.House
 import TauCeti.NumberTheory.NumberField.SiegelsLemma
-import TauCeti.RingTheory.Algebraic.Denominator
 
 /-!
 # The multihomogeneous auxiliary polynomial for the Subspace Theorem
@@ -142,19 +142,13 @@ private lemma exists_matrix_blockSubst_house_le {K ι : Type*} [Field K] [Number
     let ⟨_, hj₀⟩ := Function.ne_iff.mp (hF' f.val f.property)
     Matrix.exists_isUnit_det_row_eq i₀ (isUnit_iff_ne_zero.mpr hj₀)
   choose A_f hA_det hA_row using hA_ex
-  have hc_ex (f : F') : ∃ c : ℕ, c ≠ 0 ∧ ∀ i j : ι, IsIntegral ℤ ((c : K) * (A_f f)⁻¹ i j) := by
-    obtain ⟨c, hc0, hint⟩ := Algebra.exists_ne_zero_nsmul_isIntegral_of_isAlgebraic_rat
-      (univ : Finset (ι × ι)) (fun q ↦ (A_f f)⁻¹ q.1 q.2)
-      fun _ _ ↦ Algebra.IsAlgebraic.isAlgebraic _
-    exact ⟨c, hc0, fun i j ↦ by simpa [nsmul_eq_mul] using hint (i, j) (mem_univ _)⟩
-  choose c_f hc_ne hint using hc_ex
-  let M_f (f : F') : Matrix ι ι (𝓞 K) := fun i j ↦ ⟨(c_f f : K) * (A_f f)⁻¹ i j, hint f i j⟩
-  let B_sys : ℝ := 1 + ∑ p : F' × ι × ι, house (M_f p.1 p.2.1 p.2.2 : K)
-  have hB1 : 1 ≤ B_sys := le_add_of_nonneg_right (sum_nonneg fun _ _ ↦ house_nonneg _)
-  have hM_house (f : F') (i j : ι) : house (M_f f i j : K) ≤ B_sys :=
-    (single_le_sum (fun p _ ↦ house_nonneg (M_f p.1 p.2.1 p.2.2 : K))
-      (mem_univ (f, i, j))).trans (le_add_of_nonneg_left zero_le_one)
-  refine ⟨A_f, c_f, M_f, B_sys, hB1, fun f ↦ ⟨hA_det f, hA_row f, hc_ne f⟩,
+  obtain ⟨δ, hδ, G, hG, hx⟩ := NumberField.exists_natCast_mul_isIntegral_house_le
+    fun p : F' × ι × ι ↦ (A_f p.1)⁻¹ p.2.1 p.2.2
+  let c_f : F' → ℕ := fun _ ↦ δ
+  let M_f (f : F') : Matrix ι ι (𝓞 K) := fun i j ↦ ⟨(δ : K) * (A_f f)⁻¹ i j, (hx (f, i, j)).1⟩
+  have hG1 : 1 ≤ G := (by exact_mod_cast hδ : (1 : ℝ) ≤ δ).trans hG
+  have hM_house (f : F') (i j : ι) : house (M_f f i j : K) ≤ G := (hx (f, i, j)).2
+  refine ⟨A_f, c_f, M_f, G, hG1, fun f ↦ ⟨hA_det f, hA_row f, Nat.ne_of_gt hδ⟩,
     fun {κ} _ _ d f u N ↦ ?_⟩
   have hmap : (M_f f).map (algebraMap (𝓞 K) K) = (c_f f : K) • (A_f f)⁻¹ := by
     ext i j
@@ -170,10 +164,8 @@ private lemma exists_matrix_blockSubst_house_le {K ι : Type*} [Field K] [Number
     exact hu_hom.isHomogeneous (by simp)
   refine ⟨by rw [hcoe, hmap, hu_hom.isHomogeneous.blockSubst_smul,
     AddMonoidAlgebra.coeff_smul_apply, smul_eq_mul], ?_⟩
-  rw [house_eq_sup', ← NNReal.coe_mk ((Fintype.card ι * B_sys) ^ ∑ h, d h) (by positivity),
-    NNReal.coe_le_coe]
-  refine sup'_le univ_nonempty _ fun φ _ ↦ NNReal.coe_le_coe.mp ?_
-  rw [NNReal.coe_mk, coe_nnNorm, hcoe, ← hu_deg, ← InfinitePlace.apply, InfinitePlace.coe_apply]
+  refine house_le_of_forall_norm_embedding_le (by positivity) fun φ ↦ ?_
+  rw [hcoe, ← InfinitePlace.apply, InfinitePlace.coe_apply, ← hu_deg]
   simpa only [map_one, mul_one] using
     abv_coeff_blockSubst_monomial_le (v := (InfinitePlace.mk φ).val)
       (A := (M_f f).map (algebraMap (𝓞 K) K))
