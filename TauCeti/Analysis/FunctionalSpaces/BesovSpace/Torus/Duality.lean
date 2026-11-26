@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.MeasureTheory.Function.Holder
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
-import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Dual
@@ -106,10 +105,6 @@ attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 
 variable {φ : ContDiffBump (0 : EuclideanSpace ℝ d)}
 
-/-- The volume of the torus is a finite measure. -/
-private theorem isFiniteMeasure_volume : IsFiniteMeasure (volume : Measure (UnitAddTorus d)) :=
-  inferInstanceAs (IsFiniteMeasure (Measure.pi fun _ ↦ AddCircle.haarAddCircle))
-
 attribute [local instance] isFiniteMeasure_volume
 
 /-! ### The enlarged blocks -/
@@ -138,6 +133,12 @@ private theorem integral_littlewoodPaleyBlockLp_mul_enlargedBlockLp {p p' : ℝ�
   rw [mFourierCoeffCLM_apply, mFourierCoeff_littlewoodPaleyBlockLp,
     inhomogeneousLittlewoodPaley_latticePoint_neg]
   ring
+
+/-- The pieces `ψₖ(n)` sum to `1`, so `∑ₖ ψₖ(n) a = a`. -/
+private theorem hasSum_inhomogeneousLittlewoodPaley_latticePoint_mul (n : d → ℤ) (a : ℂ) :
+    HasSum (fun k ↦ (φ.inhomogeneousLittlewoodPaley k (latticePoint n) : ℂ) * a) a := by
+  simpa using (Complex.hasSum_ofReal.2
+    (φ.hasSum_inhomogeneousLittlewoodPaley (latticePoint n))).mul_right a
 
 namespace BesovSpace
 
@@ -305,10 +306,8 @@ theorem pairing_eq_sum_of_support_subset {t : Finset (d → ℤ)} {u : BesovSpac
     tsum_eq_sum fun n hn ↦ by rw [hu0 n hn, mul_zero, zero_mul]
   simp_rw [ht]
   refine hasSum_sum fun n _ ↦ ?_
-  have h := (Complex.hasSum_ofReal.2 (φ.hasSum_inhomogeneousLittlewoodPaley
-    (latticePoint n))).mul_right (u.coeff n * w.coeff (-n))
-  rw [Complex.ofReal_one, one_mul] at h
-  simpa only [mul_assoc] using h
+  simpa only [mul_assoc] using
+    hasSum_inhomogeneousLittlewoodPaley_latticePoint_mul n (u.coeff n * w.coeff (-n))
 
 variable (φ s) in
 /-- **Hölder's inequality for the pairing.** There is `C`, depending only on `φ` and `s`, such that
@@ -434,7 +433,7 @@ private theorem littlewoodPaleyBlockLp_sub_truncation (k N : ℕ) (u : BesovSpac
 
 variable (φ s p) in
 /-- The remainder `u - S_N u` of the smooth truncation is controlled by the weighted blocks of `u`
-of index at least `N`: there is `K`, depending only on `φ` and `s`, with
+of index at least `N`: there is `K`, depending only on `φ`, `s` and `p`, with
 `‖u - S_N u‖ ≤ K ‖b‖_{ℓ^q}`, where `bᵢ = 2^{is} ‖Δᵢ u‖_p` for `i ≥ N` and `bᵢ = 0` for `i < N`. -/
 private theorem exists_norm_sub_truncation_le :
     ∃ K : ℝ, 0 ≤ K ∧ ∀ {q : ℝ≥0∞} [Fact (1 ≤ q)] (u : BesovSpace φ s p q) (N : ℕ),
@@ -544,9 +543,7 @@ theorem pairing_monomial_right (u : BesovSpace φ s p q) (n : d → ℤ) :
       rw [coeff_monomial, Pi.single_eq_of_ne (fun h ↦ hm (by rw [← h, neg_neg])), mul_zero]]
     simp
   simp_rw [h]
-  have h' := (Complex.hasSum_ofReal.2 (φ.hasSum_inhomogeneousLittlewoodPaley
-    (latticePoint (-n)))).mul_right (u.coeff (-n))
-  rwa [Complex.ofReal_one, one_mul] at h'
+  exact hasSum_inhomogeneousLittlewoodPaley_latticePoint_mul (-n) (u.coeff (-n))
 
 /-- On a trigonometric polynomial, a continuous linear functional is determined by its values on
 the monomials: `Λ u = ∑_{n ∈ t} u(n) Λ(eₙ)` when the coefficients of `u` vanish outside `t`. -/
@@ -707,8 +704,8 @@ variable (φ s p p' q q') in
 /-- `Λ ↦ (n ↦ Λ(e₋ₙ))`, the inverse of the duality, as a linear map. -/
 private def ofStrongDual : StrongDual ℂ (BesovSpace φ s p q) →ₗ[ℂ] BesovSpace φ (-s) p' q' where
   toFun Λ := ⟨fun n ↦ Λ (monomial φ s p q (-n)), memBesov_apply_monomial_neg Λ⟩
-  map_add' _ _ := ext (rfl)
-  map_smul' _ _ := ext (rfl)
+  map_add' _ _ := ext (funext fun _ ↦ by simp)
+  map_smul' _ _ := ext (funext fun _ ↦ by simp)
 
 private theorem coeff_ofStrongDual (Λ : StrongDual ℂ (BesovSpace φ s p q)) (n : d → ℤ) :
     (ofStrongDual φ s p p' q q' Λ).coeff n = Λ (monomial φ s p q (-n)) :=

@@ -105,7 +105,8 @@ coefficients are recovered from the blocks: `c(n) = ∑_{j ≤ N} (Δⱼ c)^(n)`
   in `s` and `q` (`TauCeti.UnitAddTorus.BesovSpace.exists_norm_inclusionOfExponentLE_le`).
 
 As in `TauCeti.UnitAddTorus.littlewoodPaleyBlock`, `Lᵖ(𝕋ᵈ)` is taken for the product of the Haar
-probability measures on the circle factors.
+probability measures on the circle factors; `TauCeti.UnitAddTorus.isFiniteMeasure_volume` records
+that it is a finite measure.
 
 ## References
 
@@ -133,6 +134,15 @@ variable {d : Type*} [Fintype d]
 -- product of the Haar probability measures on the circle factors, given by this instance; use it
 -- here so that the Besov spaces are built on that same space.
 attribute [local instance 2000] instMeasureSpaceUnitAddCircle
+
+/-- The volume of the torus, for the measure given by `instMeasureSpaceUnitAddCircle` on each
+circle factor, is a finite measure. That volume is by definition the product
+`Measure.pi fun _ ↦ AddCircle.haarAddCircle` of the Haar probability measures, so the instance is
+the one Mathlib provides for that product. -/
+theorem isFiniteMeasure_volume : IsFiniteMeasure (volume : Measure (UnitAddTorus d)) :=
+  inferInstanceAs (IsFiniteMeasure (Measure.pi fun _ ↦ AddCircle.haarAddCircle))
+
+attribute [local instance] isFiniteMeasure_volume
 
 variable (φ : ContDiffBump (0 : EuclideanSpace ℝ d))
 
@@ -244,8 +254,6 @@ theorem integral_littlewoodPaleyBlockLp_mul {p r : ℝ≥0∞} [Fact (1 ≤ p)] 
     ∫ x, littlewoodPaleyBlockLp φ p j c x * g x =
       ∑' n, (φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n *
         mFourierCoeff g (-n) := by
-  have : IsFiniteMeasure (volume : Measure (UnitAddTorus d)) :=
-    inferInstanceAs (IsFiniteMeasure (Measure.pi fun _ ↦ AddCircle.haarAddCircle))
   set S := (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ j * φ.rOut)).toFinset
   have hS (n : d → ℤ) (hn : n ∉ S) : φ.inhomogeneousLittlewoodPaley j (latticePoint n) = 0 :=
     inhomogeneousLittlewoodPaley_eq_zero_of_notMem j hn
@@ -465,11 +473,9 @@ theorem exists_norm_littlewoodPaleyBlockLp_le_of_le :
   -- Nikol'skii's inequality at the radius `R = 2^j M ≥ 1`, beyond which `f̂` vanishes. It is
   -- stated for the global volume on the torus; `volume_eq_pi_haarAddCircle` rewrites that to
   -- `Measure.pi fun _ ↦ haarAddCircle`, which is by definition the file-local `volume` given by
-  -- `instMeasureSpaceUnitAddCircle`. The instance, the integrability side goal and `h` below
-  -- use this definitional identification.
+  -- `instMeasureSpaceUnitAddCircle`. The integrability side goal and `h` below use this
+  -- definitional identification.
   have hR : 1 ≤ 2 ^ j * M := one_le_mul_of_one_le_of_one_le (one_le_pow₀ one_le_two) hM
-  have : IsFiniteMeasure (volume : Measure (UnitAddTorus d)) :=
-    inferInstanceAs (IsFiniteMeasure (Measure.pi fun _ ↦ AddCircle.haarAddCircle))
   have h := hN (p := p) (q := r) Fact.out hpr hR (f := (f : UnitAddTorus d → ℂ))
     (by rw [volume_eq_pi_haarAddCircle]; exact (Lp.memLp f).integrable Fact.out)
     fun n hn ↦ by

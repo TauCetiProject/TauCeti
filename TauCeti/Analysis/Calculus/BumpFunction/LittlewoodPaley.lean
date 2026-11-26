@@ -751,10 +751,13 @@ theorem sum_Ico_inhomogeneousLittlewoodPaley_mul (k : ℕ) (ξ : E) :
     ∑ i ∈ Finset.Ico (k - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ),
       φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ =
       φ.inhomogeneousLittlewoodPaley k ξ := by
-  have h := (φ.hasSum_inhomogeneousLittlewoodPaley ξ).mul_left (φ.inhomogeneousLittlewoodPaley k ξ)
-  rw [mul_one] at h
-  exact (hasSum_sum_of_ne_finset_zero fun i hi ↦
-    φ.inhomogeneousLittlewoodPaley_mul_eq_zero_of_notMem_Ico hi ξ).unique h
+  rw [← Finset.mul_sum, mul_comm]
+  refine sum_mul_eq_right_of_mul_eq_zero (e := Nat.cast)
+    (fun i j h ↦ φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ (by exact_mod_cast h) ξ)
+    (fun _ ↦ φ.hasSum_inhomogeneousLittlewoodPaley ξ) fun i hi ↦ ?_
+  rw [abs_sub_lt_iff] at hi
+  rw [Finset.mem_Ico]
+  omega
 
 /-- **The tail of the partition seen by one piece.** For the overlap width
 `L = φ.littlewoodPaleyOverlap φ`, `ψₖ (1 - ∑_{i < N} ψᵢ) = ∑_{k - L ≤ i < k + L, N ≤ i} ψₖ ψᵢ`: the
