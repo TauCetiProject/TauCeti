@@ -75,7 +75,7 @@ theorem IsClassicalElliptic.isFredholm_chartSobolevExtension [CompactSpace M]
     (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
     (chartSobolevExtension hc ψ hc' φ P s (s - m)).IsFredholm := by
   -- A parametrix `Q` of order `-m`, inverting `P` modulo operators of order `-1`.
-  obtain ⟨Q, hQ, hPQ, hQP⟩ := hPe.exists_comp_sub_id_mem_classicalPseudodifferentialOperators hP 1
+  obtain ⟨Q, hQ, hPQ, hQP⟩ := hPe.exists_comp_sub_id_mem_classicalPseudodifferentialOperators 1
   have hs : s ≤ s - m - -m := by linarith
   have hT := chartSobolevExtension_toChartSobolevSpace_of_mem (hc' := hc') (φ := φ) hP hψ
     (le_refl (s - m))
