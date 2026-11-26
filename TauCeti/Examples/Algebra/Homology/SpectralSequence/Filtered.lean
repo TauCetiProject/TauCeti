@@ -59,7 +59,7 @@ noncomputable section
 
 namespace TauCeti.Examples.FilteredComplex
 
-open CategoryTheory Limits CochainComplex
+open CategoryTheory Limits CochainComplex HomologicalComplex
 
 variable {C : Type*} [Category* C] [Abelian C] {K : CochainComplex C ℤ}
 
@@ -102,19 +102,11 @@ abbrev twoStepSpectralSequence :=
   homologicalFiltrationSpectralSequence (twoStepFiltration A)
     (fun _ _ h ↦ monotone_twoStepFiltration A h)
 
-/-- The graded piece of a filtration between two equal stages is zero, and so is its homology. -/
-private lemma isZero_homology_cokernel_ofLE {X Y : Subobject K} (h : X ≤ Y) (hXY : X = Y)
-    (n : ℤ) : IsZero ((cokernel (Subobject.ofLE X Y h)).homology n) := by
-  subst hXY
-  refine (HomologicalComplex.homologyFunctor C _ n).map_isZero ?_
-  rw [Subobject.ofLE_refl]
-  exact isZero_cokernel_of_epi _
-
 /-- The first page of the spectral sequence of the two-step filtration vanishes outside the
 columns `p = 0` and `p = 1`, where `F_{p-1} = F_p`. -/
 lemma isZero_twoStepSpectralSequence_page_one_X {p : ℤ} (hp : p ≠ 0 ∧ p ≠ 1) (q : ℤ) :
     IsZero (((twoStepSpectralSequence A).page 1).X (p, q)) := by
-  refine (isZero_homology_cokernel_ofLE _ ?_ _).of_iso
+  refine (Subobject.isZero_homology_cokernel_ofLE_of_eq ?_ _).of_iso
     (homologicalFiltrationSpectralSequenceFirstPageXIso _ _ p q)
   rcases lt_or_gt_of_ne hp.1 with h | h
   · rw [twoStepFiltration_of_neg A h, twoStepFiltration_of_neg A (by lia)]
@@ -130,7 +122,7 @@ lemma isZero_twoStepSpectralSequence_page_X {p : ℤ} (hp : p ≠ 0 ∧ p ≠ 1)
 /-- The cokernel projection of `F_{-1} ≤ F_0` is an isomorphism, since `F_{-1} = 0`. The stages are
 written as `F (1 - 1 - 1)` and `F (1 - 1)`, the form in which the first differential out of the
 column `1` reaches the column `0`. -/
-instance isIso_cokernel_π_twoStepFiltration_ofLE :
+private instance isIso_cokernel_π_twoStepFiltration_ofLE :
     IsIso (cokernel.π (Subobject.ofLE (twoStepFiltration A (1 - 1 - 1))
       (twoStepFiltration A (1 - 1)) (monotone_twoStepFiltration A (by lia)))) :=
   cokernel.π_of_zero (IsZero.eq_of_src (((isZero_zero _).of_iso Subobject.botCoeIsoZero).of_iso
@@ -258,9 +250,8 @@ lemma isZero_trivialSpectralSequence_page_X {p : ℤ} (hp : p ≠ 0) (q r : ℤ)
   refine (trivialSpectralSequence K).isZero_page_X_of_le le_rfl ?_ r hr
   by_cases hp₁ : p = 1
   · subst hp₁
-    refine (IsZero.of_iso ?_ (twoStepFirstPageXOneIso ⊤ q))
-    refine (HomologicalComplex.homologyFunctor C _ _).map_isZero ?_
-    exact isZero_cokernel_of_epi _
+    exact (Subobject.isZero_homology_cokernel_of_eq_top ⊤ rfl _).of_iso
+      (twoStepFirstPageXOneIso ⊤ q)
   · exact isZero_twoStepSpectralSequence_page_one_X ⊤ ⟨hp, hp₁⟩ q
 
 end Trivial
@@ -281,7 +272,7 @@ homology of `K`: the graded pieces `F_p / F_{p-1} = K / K` are zero. -/
 lemma isZero_constantSpectralSequence_page_X (pq : ℤ × ℤ) (r : ℤ) (hr : 1 ≤ r) :
     IsZero (((constantSpectralSequence K).page r).X pq) :=
   (constantSpectralSequence K).isZero_page_X_of_le le_rfl
-    ((isZero_homology_cokernel_ofLE le_rfl rfl _).of_iso
+    ((Subobject.isZero_homology_cokernel_ofLE_of_eq rfl _).of_iso
       (homologicalFiltrationSpectralSequenceFirstPageXIso _ _ pq.1 pq.2)) r hr
 
 /-- **A filtration that is not bounded below need not converge to the homology.** For the complex

@@ -18,24 +18,25 @@ sequence is the connecting map `H_{p+q}(F_p/F_{p-1}) ⟶ H_{p+q-1}(F_{p-1}/F_{p-
 exact sequence of quotients `F_{p-1}/F_{p-2} ⟶ F_p/F_{p-2} ⟶ F_p/F_{p-1}`
 (`CochainComplex.homologicalFiltrationSpectralSequence_first_page_d_eq`). This file factors it
 through the connecting map `H_{p+q}(K/F_{p-1}) ⟶ H_{p+q-1}(F_{p-1})` of the pair `F_{p-1} ⊆ K`, the
-short exact sequence `F_{p-1} ⟶ K ⟶ K/F_{p-1}` (`CochainComplex.pairSequence`): `d¹` is the map
+short exact sequence `F_{p-1} ⟶ K ⟶ K/F_{p-1}` (`HomologicalComplex.pairSequence`): `d¹` is the map
 `F_p/F_{p-1} ⟶ K/F_{p-1}` induced by the inclusion of `F_p`, followed by that connecting map and the
 projection `F_{p-1} ⟶ F_{p-1}/F_{p-2}`
 (`CochainComplex.homologicalFiltrationSpectralSequence_first_page_d_eq_δ`).
 
-This holds for any subcomplexes `X ≤ Y ≤ Z` of `K`: the connecting map of `Y/X ⟶ Z/X ⟶ Z/Y` is the
-map `Z/Y ⟶ K/Y`, the connecting map of `Y ⟶ K ⟶ K/Y` and the projection `Y ⟶ Y/X`
-(`CochainComplex.δ_cokernelCompSequence_ofLE`), by naturality of connecting maps along the two
-morphisms of short exact sequences out of `Y ⟶ Z ⟶ Z/Y`. When `F_{p-2} = 0` and `F_p = K`, the two
+This holds for any subcomplexes `X ≤ Y ≤ Z` of a homological complex `K` of any shape: the
+connecting map of `Y/X ⟶ Z/X ⟶ Z/Y` is the map `Z/Y ⟶ K/Y`, the connecting map of
+`Y ⟶ K ⟶ K/Y` and the projection `Y ⟶ Y/X` (`HomologicalComplex.δ_cokernelCompSequence_ofLE`), by
+naturality of connecting maps along the two morphisms of short exact sequences out of
+`Y ⟶ Z ⟶ Z/Y`. When `F_{p-2} = 0` and `F_p = K`, the two
 outer maps are isomorphisms, and `d¹` is the connecting map of the pair itself.
 
 ## Main definitions
 
-* `CochainComplex.pairSequence`: the short exact sequence `Y ⟶ K ⟶ K/Y` of a subcomplex.
+* `HomologicalComplex.pairSequence`: the short exact sequence `Y ⟶ K ⟶ K/Y` of a subcomplex.
 
 ## Main results
 
-* `CochainComplex.δ_cokernelCompSequence_ofLE`: the connecting map of `Y/X ⟶ Z/X ⟶ Z/Y` through
+* `HomologicalComplex.δ_cokernelCompSequence_ofLE`: the connecting map of `Y/X ⟶ Z/X ⟶ Z/Y` through
   that of `Y ⟶ K ⟶ K/Y`.
 * `CochainComplex.homologicalFiltrationSpectralSequence_first_page_d_eq_δ`: the first differential
   of a filtered complex through the connecting map of the pair `F_{p-1} ⊆ K`.
@@ -50,17 +51,17 @@ public section
 
 noncomputable section
 
-namespace CochainComplex
+namespace HomologicalComplex
 
 open CategoryTheory Limits
 
-variable {C : Type*} [Category* C] [Abelian C] {K : CochainComplex C ℤ}
+variable {C ι : Type*} [Category* C] [Abelian C] {c : ComplexShape ι} {K : HomologicalComplex C c}
 
 /-- The short exact sequence `Y ⟶ K ⟶ K/Y` of a subcomplex `Y`, whose connecting maps are those of
 the long exact sequence of the pair `Y ⊆ K`. It is `ShortComplex.cokernelSequence Y.arrow`, written
 as a reducible structure so that its terms are `Y`, `K` and `cokernel Y.arrow` up to reducible
 unfolding. -/
-abbrev pairSequence (Y : Subobject K) : ShortComplex (CochainComplex C ℤ) :=
+abbrev pairSequence (Y : Subobject K) : ShortComplex (HomologicalComplex C c) :=
   ShortComplex.mk Y.arrow (cokernel.π Y.arrow) (cokernel.condition _)
 
 /-- The sequence `Y ⟶ K ⟶ K/Y` of a subcomplex is short exact. -/
@@ -72,35 +73,40 @@ lemma pairSequence_shortExact (Y : Subobject K) : (pairSequence Y).ShortExact :=
 `Z/Y ⟶ K/Y` induced by the inclusion of `Z`, followed by the connecting map of `Y ⟶ K ⟶ K/Y` and
 the projection `Y ⟶ Y/X`. -/
 theorem δ_cokernelCompSequence_ofLE {X Y Z : Subobject K} (h₁ : X ≤ Y) (h₂ : Y ≤ Z)
-    (i j : ℤ) (hij : (ComplexShape.up ℤ).Rel i j) :
+    (i j : ι) (hij : c.Rel i j) :
     (TauCeti.cokernelCompSequence_shortExact (Subobject.ofLE X Y h₁)
         (Subobject.ofLE Y Z h₂)).δ i j hij =
-      HomologicalComplex.homologyMap
-          (cokernel.map (Subobject.ofLE Y Z h₂) Y.arrow (𝟙 _) Z.arrow (by simp)) i ≫
+      homologyMap (cokernel.map (Subobject.ofLE Y Z h₂) Y.arrow (𝟙 _) Z.arrow (by simp)) i ≫
         (pairSequence_shortExact Y).δ i j hij ≫
-        HomologicalComplex.homologyMap (cokernel.π (Subobject.ofLE X Y h₁)) j := by
+        homologyMap (cokernel.π (Subobject.ofLE X Y h₁)) j := by
   -- The morphism from `Y ⟶ Z ⟶ Z/Y` to `Y/X ⟶ Z/X ⟶ Z/Y` given by the cokernel projections.
-  have h₁₂ := HomologicalComplex.HomologySequence.δ_naturality
+  have h₁₂ := HomologySequence.δ_naturality
     (TauCeti.cokernelSequenceToCokernelCompSequence (Subobject.ofLE X Y h₁)
       (Subobject.ofLE Y Z h₂)) (TauCeti.cokernelSequence_shortExact _)
     (TauCeti.cokernelCompSequence_shortExact _ _) i j hij
   simp only [TauCeti.cokernelSequenceToCokernelCompSequence_τ₁,
     TauCeti.cokernelSequenceToCokernelCompSequence_τ₃] at h₁₂
   -- The morphism from `Y ⟶ Z ⟶ Z/Y` to `Y ⟶ K ⟶ K/Y` given by the inclusion of `Z`.
-  have h₂₃ := HomologicalComplex.HomologySequence.δ_naturality
+  have h₂₃ := HomologySequence.δ_naturality
     (S₁ := ShortComplex.cokernelSequence (Subobject.ofLE Y Z h₂)) (S₂ := pairSequence Y)
-    (ShortComplex.homMk (𝟙 (Y : CochainComplex C ℤ)) Z.arrow
+    (ShortComplex.homMk (𝟙 (Y : HomologicalComplex C c)) Z.arrow
       (cokernel.map (Subobject.ofLE Y Z h₂) Y.arrow (𝟙 _) Z.arrow (by simp))
       ((Category.id_comp _).trans (Subobject.ofLE_arrow _).symm) (cokernel.π_desc _ _ _).symm)
     (TauCeti.cokernelSequence_shortExact _) (pairSequence_shortExact Y) i j hij
   -- The identity components act as identities in homology. The equations are composed as terms:
   -- the sequence `Y ⟶ Z ⟶ Z/Y` is `ShortComplex.cokernelSequence`, whose terms are reached only by
   -- unfolding its definition, so rewriting with them would need that unfolding.
-  have e₁ := h₁₂.trans ((congrArg (· ≫ _) (HomologicalComplex.homologyMap_id _ i)).trans
-    (Category.id_comp _))
-  have e₂ := ((congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_id _ j)).trans
-    (Category.comp_id _)).symm.trans h₂₃
+  have e₁ := h₁₂.trans ((congrArg (· ≫ _) (homologyMap_id _ i)).trans (Category.id_comp _))
+  have e₂ := ((congrArg (_ ≫ ·) (homologyMap_id _ j)).trans (Category.comp_id _)).symm.trans h₂₃
   exact e₁.symm.trans ((congrArg (· ≫ _) e₂).trans (Category.assoc _ _ _))
+
+end HomologicalComplex
+
+namespace CochainComplex
+
+open CategoryTheory Limits HomologicalComplex
+
+variable {C : Type*} [Category* C] [Abelian C] {K : CochainComplex C ℤ}
 
 variable (F : ℤ → Subobject K) (hF : Monotone F)
 
