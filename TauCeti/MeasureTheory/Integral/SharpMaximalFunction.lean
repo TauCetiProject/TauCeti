@@ -9,7 +9,7 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.DyadicMaximalFunction

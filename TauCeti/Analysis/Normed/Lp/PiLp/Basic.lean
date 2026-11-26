@@ -43,6 +43,7 @@ Maps into `PiLp p β` converge uniformly exactly when each coordinate does.
 
 We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
 continuous coordinate inclusion `PiLp.singleCLM`), the power identity `PiLp.norm_rpow_eq_sum`,
+coordinatewise decomposition `ContinuousLinearMap.sum_comp_piLpSingleCLM`,
 and coordinatewise submodule restriction `LinearIsometryEquiv.submodulePiLp`.
 
 For a family of operators `T i : E i →L[𝕜] F i`, the block-diagonal operator
@@ -361,6 +362,21 @@ theorem norm_singleCLM_le [Fact (1 ≤ p)] {𝕜 : Type*} [NontriviallyNormedFie
 end Single
 
 end PiLp
+
+namespace ContinuousLinearMap
+
+/-- Decomposing a continuous linear map on a finite `PiLp` product along the coordinate
+inclusions `PiLp.singleCLM`. -/
+theorem sum_comp_piLpSingleCLM {ι : Type*} [Fintype ι] [DecidableEq ι] {p : ℝ≥0∞}
+    {𝕜 M : Type*} [Semiring 𝕜] {β : ι → Type*}
+    [∀ i, TopologicalSpace (β i)] [∀ i, AddCommGroup (β i)] [∀ i, Module 𝕜 (β i)]
+    [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M]
+    (L : PiLp p β →L[𝕜] M) (v : PiLp p β) :
+    ∑ i, L.comp (PiLp.singleCLM p 𝕜 β i) (v i) = L v := by
+  simp only [ContinuousLinearMap.comp_apply, PiLp.singleCLM_apply]
+  rw [← map_sum, PiLp.univ_sum_single]
+
+end ContinuousLinearMap
 
 namespace LinearIsometry
 
