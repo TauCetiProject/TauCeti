@@ -39,6 +39,15 @@ the output datum translated by `c`. For `0 ≤ c ≤ 1`:
   translated output datum and the capped part have disjoint supports: the datum is the capped part
   near `c` (`TauCeti.Floer.cappedExchangePerturbation_of_norm_sub_le`) and the translated output
   datum away from it (`TauCeti.Floer.cappedExchangePerturbation_of_le_norm_sub`);
+* on the end at `0` the first positive end coordinate is the longitudinal coordinate `s`
+  (`TauCeti.Floer.fst_positiveEndCoord_zero`), so the parts `s > 0` of the input end at `1` and of
+  the output end lie off the disc `‖w‖ < 1/2` (`TauCeti.Floer.half_le_norm_positiveEndChart`);
+* off the disc `‖w‖ < 3/2` its member `c` at `w + c` is the pair-of-pants datum at `w`
+  (`TauCeti.Floer.cappedExchangePerturbation_add`); in real coordinates, it is the pair-of-pants
+  datum on the part `s > 0` of the input end at `1`
+  (`TauCeti.Floer.cappedExchangePerturbation_eq_of_pos_fst_positiveEndCoord_one`) and, translated
+  by `c`, beyond the height `1` of the output end
+  (`TauCeti.Floer.cappedExchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord`);
 * it is `H_1(t) dt` far out on the input end at `1`
   (`TauCeti.Floer.cappedExchangePerturbation_cylindricalEndLift`) and `H_∞(t) dt` far out on the
   output end recentred at `c`
@@ -245,6 +254,56 @@ theorem cappedExchangePerturbation_of_le_norm_sub (hL : 2 ≤ L) (hc₀ : 0 ≤ 
   rw [cappedExchangePerturbation_of_re_endCoord_le (re_endCoord_zero_le_half hL hn),
     exchangePerturbation_def, pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub hc₀ hc₁ hw,
     zero_add]
+
+/-- On the end at `0` the first positive end coordinate is the longitudinal coordinate `s`. -/
+theorem fst_positiveEndCoord_zero (z : ℝ × ℝ) :
+    (positiveEndCoord zero z).1 = (zero.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+  rw [fst_positiveEndCoord, endSign_zero, one_mul]
+
+/-- A point of the part `s > 0` of the input end at `1` or of the output end lies off the open disc
+`‖w‖ < 1/2`: the circle `s = 0` of the end at `0` bounds that disc. -/
+theorem half_le_norm_positiveEndChart {q : Puncture} (hq : q ≠ zero) {ζ : ℝ × ℝ}
+    (hζ : 0 < ζ.1) : 1 / 2 ≤ ‖Complex.equivRealProdCLM.symm (positiveEndChart q ζ)‖ := by
+  have hq₀ : 0 < (positiveEndCoord q (positiveEndChart q ζ)).1 := by
+    rwa [fst_positiveEndCoord_positiveEndChart]
+  have h0 := fst_positiveEndCoord_nonpos_of_ne hq hq₀
+  rw [fst_positiveEndCoord_zero] at h0
+  have hS := mem_thricePuncturedSphereReal_iff.1
+    (positiveEndChart_mem_thricePuncturedSphereReal (q := q) hζ)
+  have h := (re_endCoord_le_iff (q := zero) (by decide) (r := 0)
+    (by rw [endCenter_zero]; exact hS.1)).1 h0
+  simpa [endCenter_zero] using h
+
+/-- **The family near the output is a translate.** For `L ≥ 2` and `0 ≤ c ≤ 1`, off the disc
+`‖w‖ < 3/2`, the member `c` of the family at `w + c` is the pair-of-pants datum at `w`. -/
+theorem cappedExchangePerturbation_add (hL : 2 ≤ L) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {w : ℂ}
+    (hw : 3 / 2 ≤ ‖w‖) (x : M) :
+    cappedExchangePerturbation H L c (w + c) x = pairOfPantsPerturbation H w x := by
+  rw [cappedExchangePerturbation_of_le_norm_sub hL hc₀ hc₁ (by simpa using hw),
+    add_sub_cancel_right, pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation,
+    pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub le_rfl zero_le_one
+      (by simpa using hw), zero_add]
+
+/-- **The family far out on the input end at `1`.** For `L ≥ 0` and `0 ≤ c ≤ 1`, on the part
+`s > 0` of the input end at `1`, every member of the family is the pair-of-pants datum. -/
+theorem cappedExchangePerturbation_eq_of_pos_fst_positiveEndCoord_one (hL : 0 ≤ L) (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {z : ℝ × ℝ} (hz : 0 < (positiveEndCoord one z).1) (x : M) :
+    cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm z) x =
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x := by
+  have h0 := fst_positiveEndCoord_nonpos_of_ne (by decide : one ≠ zero) hz
+  rw [fst_positiveEndCoord_zero] at h0
+  rw [cappedExchangePerturbation_of_re_endCoord_le (by linarith),
+    exchangePerturbation_eq_of_pos_fst_positiveEndCoord hc₀ hc₁ (by decide : one ≠ inf) hz]
+
+/-- **The family far out on the output end.** For `L ≥ 2` and `0 ≤ c ≤ 1`, beyond the height `1`
+of the output end, the member `c` of the family at `z + (c, 0)` is the pair-of-pants datum at
+`z`. -/
+theorem cappedExchangePerturbation_add_eq_of_one_lt_fst_positiveEndCoord (hL : 2 ≤ L)
+    (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {z : ℝ × ℝ} (hz : 1 < (positiveEndCoord inf z).1) (x : M) :
+    cappedExchangePerturbation H L c (Complex.equivRealProdCLM.symm (z + (c, 0))) x =
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x := by
+  rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero, cappedExchangePerturbation_add hL hc₀
+    hc₁ (by linarith [eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf hz])]
 
 /-- **The capped disc.** For `L > 2` and `0 ≤ c ≤ 1`, the capped datum vanishes on the disc of
 radius `exp (-2π(L - 1)) / 2` about the capped puncture `0`, the image under the plumbing map of
