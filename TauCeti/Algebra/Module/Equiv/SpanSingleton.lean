@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import Mathlib.RingTheory.Ideal.Span
 
 /-!
@@ -27,6 +28,8 @@ unit of `K` and `a ↦ a • x` is bijective.
   generators.
 * `LinearEquiv.span_singleton_eq_top_iff_isUnit`: an element of a module isomorphic to the base
   ring generates it exactly when its image is a unit.
+* `LinearEquiv.span_singleton_tmul_eq_top_iff`: a pure tensor generates a tensor product of two
+  modules isomorphic to the base ring exactly when both factors generate.
 * `LinearEquiv.exists_units_smul_eq_of_span_singleton_eq_top`: any two generators of a module
   isomorphic to the base ring differ by a unit.
 * `LinearEquiv.eq_of_span_singleton_eq_top`: a module isomorphic to a Dedekind-finite semiring
@@ -37,6 +40,8 @@ unit of `K` and `a ↦ a • x` is bijective.
 * `LinearEquiv.span_singleton_bilinear_eq_top_iff_of_span_eq_top`: a bilinear map between modules
   isomorphic to `K` that sends at least one pair to a generator sends `(x, y)` to a generator iff
   `x` and `y` both generate.
+* `LinearEquiv.bijective_toSpanSingleton_of_span_eq_top`: a generator of a module isomorphic to the
+  base ring is a basis.
 * `LinearMap.span_singleton_apply_eq_top_of_leftInverse`: a linear map between modules isomorphic
   to the base ring which has a left inverse carries generators to generators.
 * `LinearMap.span_singleton_eq_top_of_span_singleton_apply_eq_top`: any linear map between
@@ -130,6 +135,28 @@ theorem span_singleton_bilinear_eq_top_iff_of_span_eq_top {K M₁ M₂ M₃ : Ty
     (IsUnit.mul_iff.1 (happly a b ▸ e₃.span_singleton_eq_top_iff_isUnit.1 hB)).2
   simp only [e₃.span_singleton_eq_top_iff_isUnit, e₁.span_singleton_eq_top_iff_isUnit,
     e₂.span_singleton_eq_top_iff_isUnit, happly x y, IsUnit.mul_iff, hunit, and_true]
+
+/-- **A generator of a module isomorphic to the base ring is a basis**: for `e : M ≃ₗ[R] R`, if
+`x` spans `M`, then `a ↦ a • x` is a bijection `R → M`. The coordinate `e x` is a unit `u`, and
+`u⁻¹ • e` takes the value `1` on `x` (`LinearEquiv.bijective_smul_of_apply_eq_one`). -/
+theorem bijective_toSpanSingleton_of_span_eq_top {R M : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (e : M ≃ₗ[R] R) {x : M} (hx : Submodule.span R {x} = ⊤) :
+    Function.Bijective (LinearMap.toSpanSingleton R M x) := by
+  obtain ⟨u, hu⟩ := e.span_singleton_eq_top_iff_isUnit.1 hx
+  exact e.bijective_smul_of_apply_eq_one ((↑u⁻¹ : R) • e.toLinearMap) (by simp [← hu])
+
+open scoped TensorProduct in
+/-- **A pure tensor generates a tensor product of modules isomorphic to the base ring exactly when
+both factors generate.** For `eM : M ≃ₗ[R] R` and `eN : N ≃ₗ[R] R`, the pure tensor `x ⊗ y` spans
+`M ⊗[R] N` if and only if `x` spans `M` and `y` spans `N`. -/
+theorem span_singleton_tmul_eq_top_iff {R M N : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid N] [Module R N] (eM : M ≃ₗ[R] R) (eN : N ≃ₗ[R] R) {x : M}
+    {y : N} :
+    Submodule.span R {x ⊗ₜ[R] y} = ⊤ ↔
+      Submodule.span R {x} = ⊤ ∧ Submodule.span R {y} = ⊤ := by
+  rw [span_singleton_eq_top_iff_isUnit ((TensorProduct.congr eM eN).trans (TensorProduct.lid R R)),
+    span_singleton_eq_top_iff_isUnit eM, span_singleton_eq_top_iff_isUnit eN]
+  simp [IsUnit.mul_iff]
 
 end LinearEquiv
 

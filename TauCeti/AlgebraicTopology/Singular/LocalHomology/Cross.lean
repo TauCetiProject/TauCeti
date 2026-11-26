@@ -5,12 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
 public import TauCeti.AlgebraicTopology.Singular.CrossProduct.Relative
+public import TauCeti.AlgebraicTopology.Singular.Kunneth.Relative
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 public import TauCeti.Data.Set.Prod
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
+import TauCeti.Algebra.Module.Equiv.SpanSingleton
 
 /-!
-# The local homology cross product
+# The local homology cross product and cross products with a local generator
 
 For `x₁ : V₁` and `x₂ : V₂`, pushing `TopCat.singularRelativeHomologyCross` forward along
 `v : R ⊗ S ⟶ T` and `(Set.compl_singleton_prodMk_eq_union x₁ x₂).superset` defines
@@ -24,11 +28,27 @@ Kronecker evaluation on `TauCeti.complSingletonPairHomologyCross` proves generat
 reflection for local cohomology cross products over arbitrary commutative rings without flatness or
 Künneth hypotheses.
 
-Every declaration assumes discrete colimit preservation for `tensorLeft`/`tensorRight`. For
-`WalkingParallelPair` colimit preservation, `TauCeti.complSingletonPairHomologyCross` assumes it for
-`tensorLeft` of `Hₚ(V₁, {x₁}ᶜ; R)` and `tensorRight` of `Z_q(V₂, {x₂}ᶜ; S)` and
-`C_{q+1}(V₂, {x₂}ᶜ; S)`, while the two naturality theorems also assume the corresponding instances
-for the target pairs `(W₁, {y₁}ᶜ)` and `(W₂, {y₂}ᶜ)` (or `(W₁, {0}ᶜ)` and `(W₂, {0}ᶜ)`).
+Every `complSingletonPairHomologyCross` declaration assumes discrete colimit preservation for
+`tensorLeft`/`tensorRight`. For `WalkingParallelPair` colimit preservation,
+`TauCeti.complSingletonPairHomologyCross` assumes it for `tensorLeft` of `Hₚ(V₁, {x₁}ᶜ; R)` and
+`tensorRight` of `Z_q(V₂, {x₂}ᶜ; S)` and `C_{q+1}(V₂, {x₂}ᶜ; S)`, while the two naturality
+theorems also assume the corresponding instances for the target pairs `(W₁, {y₁}ᶜ)` and
+`(W₂, {y₂}ᶜ)` (or `(W₁, {0}ᶜ)` and `(W₂, {0}ᶜ)`).
+
+Separately, let `x` be a point of a `T₁` space `M` in the source of an open partial homeomorphism
+to a real normed space `E` of finite dimension `r`, and let `k` be a commutative ring. The local
+homology `H_r(M, M ∖ x; k)` is a copy of `k` (`TauCeti.singularHomologyComplSingletonFinrankIso`),
+so it has a generator (`TauCeti.exists_span_singularHomology_complSingleton_eq_top`) and each
+generator `o` of it is a basis
+(`TauCeti.bijective_toSpanSingleton_singularHomology_complSingleton`). Since the local homology
+vanishes in the other degrees, the relative Künneth theorem leaves a single summand: the cross
+product `y ↦ o × y` is a bijection `H_q(C) → H_{r+q}(C(M, M ∖ x; k) ⊗ C)` for every chain complex
+`C` of `k`-modules
+(`TauCeti.bijective_homologyCross_tmul_singularChainComplex_complSingleton`). With the relative
+Eilenberg–Zilber theorem, the relative cross product `y ↦ o × y` of singular homology is a bijection
+`H_q(Y; L) → H_{r+q}(M × Y, (M ∖ x) × Y; k ⊗ L)` for every space `Y`
+(`TauCeti.bijective_singularHomologyCrossRel_tmul_complSingleton`). For `M = E` and `x = 0`, this
+is the Thom isomorphism of a product bundle with fibre `E`.
 
 ## Main definitions and results
 
@@ -40,15 +60,25 @@ for the target pairs `(W₁, {y₁}ᶜ)` and `(W₂, {y₂}ᶜ)` (or `(W₁, {0}
 * `singularHomologyMap_complZeroPairIso_hom_tensorHom_complSingletonPairHomologyCross` (in
   `ContinuousLinearEquiv`): naturality at the origin under products of continuous linear
   equivalences.
+* `TauCeti.exists_span_singularHomology_complSingleton_eq_top`,
+  `TauCeti.bijective_toSpanSingleton_singularHomology_complSingleton`: existence of a local
+  homology generator and basis property.
+* `TauCeti.bijective_homologyCross_tmul_singularChainComplex_complSingleton`,
+  `TauCeti.bijective_singularHomologyCrossRel_tmul_complSingleton`: bijectivity of cross products
+  with a generator of local homology.
 
 ## References
 
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Section 3.B.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Section 3.3 (local orientations), Section 3.B (the relative cross product and Künneth formula)
+  and Section 4.D (the Thom class of a product bundle).
 -/
 
 public section
 
 noncomputable section
+
+section PairCross
 
 open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory AlgebraicTopology
 
@@ -206,3 +236,97 @@ theorem singularHomologyMap_complZeroPairIso_hom_tensorHom_complSingletonPairHom
     v p q n h
 
 end ContinuousLinearEquiv
+
+end PairCross
+
+section GeneratorCross
+
+open CategoryTheory Limits MonoidalCategory Module
+
+universe w
+
+namespace TauCeti
+
+variable {k : Type w} [CommRing k] {M : Type w} [TopologicalSpace M] [T1Space M] {E : Type w}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  (φ : OpenPartialHomeomorph M E) {x : M} (hx : x ∈ φ.source)
+
+include hx in
+/-- **Local homology is cyclic**: at a point with a chart to a real normed space of finite
+dimension `r`, the local homology `H_r(M, M ∖ x; k)` is generated by a single class. -/
+theorem exists_span_singularHomology_complSingleton_eq_top {r : ℕ} (hr : finrank ℝ E = r) :
+    ∃ o : (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology
+      (C := ModuleCat.{w} k) (𝟙_ _) r, Submodule.span k {o} = ⊤ := by
+  subst hr
+  let e := (singularHomologyComplSingletonFinrankIso (𝟙_ (ModuleCat.{w} k)) φ hx).toLinearEquiv
+  refine ⟨e.symm 1, Submodule.eq_top_iff'.2 fun v ↦ Submodule.mem_span_singleton.2 ⟨e v, ?_⟩⟩
+  rw [← map_smul, smul_eq_mul, mul_one, e.symm_apply_apply]
+
+include hx in
+/-- **A generator of local homology is a basis.** At a point with a chart to a real normed space
+of finite dimension `r`, a generator `o` of `H_r(M, M ∖ x; k)` is a basis: `a ↦ a • o` is a
+bijection `k → H_r(M, M ∖ x; k)`, since this module is a copy of `k`. -/
+theorem bijective_toSpanSingleton_singularHomology_complSingleton {r : ℕ}
+    (hr : finrank ℝ E = r)
+    {o : (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology
+      (C := ModuleCat.{w} k) (𝟙_ _) r} (ho : Submodule.span k {o} = ⊤) :
+    Function.Bijective (LinearMap.toSpanSingleton k _ o) := by
+  subst hr
+  exact (singularHomologyComplSingletonFinrankIso (𝟙_ (ModuleCat.{w} k)) φ hx).toLinearEquiv
+    |>.bijective_toSpanSingleton_of_span_eq_top ho
+
+include hx in
+/-- **The cross product with a generator of local homology is bijective.** At a point with a chart
+to a real normed space of finite dimension `r`, let `o` generate `H_r(M, M ∖ x; k)`. Then for every
+chain complex `C` of `k`-modules, the cross product `y ↦ o × y` is a bijection
+`H_q(C) → H_{r+q}(C(M, M ∖ x; k) ⊗ C)`: the local homology of `M` at `x` is one copy of `k`, in
+degree `r`. -/
+theorem bijective_homologyCross_tmul_singularChainComplex_complSingleton
+    (C : ChainComplex (ModuleCat.{w} k) ℕ) {r : ℕ} (hr : finrank ℝ E = r)
+    {o : (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology
+      (C := ModuleCat.{w} k) (𝟙_ _) r} (ho : Submodule.span k {o} = ⊤) (q n : ℕ) (hn : r + q = n) :
+    Function.Bijective fun y : C.homology q ↦ HomologicalComplex.homologyCross
+      ((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularChainComplex
+        (𝟙_ (ModuleCat.{w} k))) C r q n hn (o ⊗ₜ y) := by
+  have hK : ∀ p ≠ r, IsZero (((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularChainComplex
+      (𝟙_ (ModuleCat.{w} k))).homology p) := fun p hp ↦
+    isZero_singularHomology_complSingleton_of_ne _ φ hx hr hp
+  -- The relative chains are a retract of the absolute chains, a sum of copies of `k`.
+  have (p : ℕ) : Module.Projective k
+      (((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularChainComplex
+        (𝟙_ (ModuleCat.{w} k))).X p) :=
+    have : Projective (𝟙_ (ModuleCat.{w} k)) :=
+      @ModuleCat.projective_of_categoryTheory_projective _ _ _
+        (inferInstanceAs (Module.Projective k k))
+    have := SSetPair.projective_chainComplex_X (𝟙_ (ModuleCat.{w} k))
+      (TopPair.toSSetPair.obj (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M)))) p
+    ModuleCat.projective_of_module_projective _
+  exact HomologicalComplex.bijective_homologyCross_tmul _ C hK
+    (bijective_toSpanSingleton_singularHomology_complSingleton φ hx hr ho) q n hn
+
+include hx in
+/-- **The relative cross product with a generator of local homology is bijective.** At a point with
+a chart to a real normed space of finite dimension `r`, let `o` generate `H_r(M, M ∖ x; k)`. Then
+for every space `Y` and every module `L`, the relative cross product `y ↦ o × y` is a bijection
+`H_q(Y; L) → H_{r+q}(M × Y, (M ∖ x) × Y; k ⊗ L)`. For `M = E` and `x = 0` this is the Thom
+isomorphism of the product bundle `E × Y → Y`. -/
+theorem bijective_singularHomologyCrossRel_tmul_complSingleton (Y : TopCat.{w})
+    (L : ModuleCat.{w} k) {r : ℕ} (hr : finrank ℝ E = r)
+    {o : (TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomology
+      (C := ModuleCat.{w} k) (𝟙_ _) r} (ho : Submodule.span k {o} = ⊤) (q n : ℕ) (hn : r + q = n) :
+    Function.Bijective fun y : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) q).obj
+        L).obj Y ↦
+      TopCat.singularHomologyCrossRel (TopCat.of M) Y {x}ᶜ (𝟙_ (ModuleCat.{w} k)) L r q n hn
+        (o ⊗ₜ y) := by
+  -- The relative cross product is the cross product of chain complexes followed by the relative
+  -- shuffle map, a quasi-isomorphism.
+  have hs := (quasiIsoAt_iff_isIso_homologyMap
+    (TopCat.shuffleRel (TopCat.of M) Y {x}ᶜ (𝟙_ (ModuleCat.{w} k)) L) n).1 inferInstance
+  simp only [TopCat.singularHomologyCrossRel_def]
+  exact ((ConcreteCategory.isIso_iff_bijective _).1 hs).comp
+    (bijective_homologyCross_tmul_singularChainComplex_complSingleton φ hx
+      ((TopCat.toSSet.obj Y).chainComplex L) hr ho q n hn)
+
+end TauCeti
+
+end GeneratorCross

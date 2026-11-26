@@ -79,25 +79,25 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 variable (i) in
 /-- The linear map `v ↦ [dφ_y v]` from `V` to the normal space at `s`. For `φ y = i s`, its
 bijectivity is the transversality of the slice `φ` to the submanifold. -/
-private def sliceNormalMap (φ : V → M) (y : V) (s : S) : V →ₗ[ℝ] i.NormalSpace s hn :=
+private def sliceNormalMap (φ : V → M) (y : V) (s : S) : V →ₗ[ℝ] i.isImmersion.NormalSpace s hn :=
   -- Every tangent space of `M` is the model space `E`, so `dφ_y` lands in `T_{i s} M`.
-  (i.normalClass s hn).comp ((mfderiv 𝓘(ℝ, V) I φ y).toLinearMap : V →ₗ[ℝ] E)
+  (i.isImmersion.normalClass s hn).comp ((mfderiv 𝓘(ℝ, V) I φ y).toLinearMap : V →ₗ[ℝ] E)
 
 omit [I.Boundaryless] [IsManifold I 2 M] in
 private theorem sliceNormalMap_apply (v : V) :
-    i.sliceNormalMap hn φ y s v = i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v) :=
+    i.sliceNormalMap hn φ y s v = i.isImmersion.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v) :=
   rfl
 
 omit [I.Boundaryless] [IsManifold I 2 M] in
 private theorem surjective_sliceNormalMap_iff :
     Surjective (i.sliceNormalMap hn φ y s) ↔
-      Surjective fun v : V ↦ i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v) :=
+      Surjective fun v : V ↦ i.isImmersion.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v) :=
   Iff.rfl
 
 omit [I.Boundaryless] [IsManifold I 2 M] in
 private theorem bijective_sliceNormalMap_iff :
     Bijective (i.sliceNormalMap hn φ y s) ↔
-      Bijective fun v : V ↦ i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v) :=
+      Bijective fun v : V ↦ i.isImmersion.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v) :=
   Iff.rfl
 
 namespace IsCriticalSubmanifold
@@ -125,8 +125,8 @@ images of its arguments under the derivative of `φ`. -/
 theorem fderiv_fderiv_comp_apply (hφy : φ y = i s) (hφ : ContMDiffAt 𝓘(ℝ, V) I 2 φ y)
     (u w : V) :
     fderiv ℝ (fderiv ℝ (f ∘ φ)) y u w =
-      h.normalHessian hn s (i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y u))
-        (i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y w)) := by
+      h.normalHessian hn s (i.isImmersion.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y u))
+        (i.isImmersion.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y w)) := by
   have key := criticalHessian_comp_apply hφy (h.contMDiffAt s) hφ (h.mem_criticalPoints s) u w
   rw [criticalHessian_modelSpace] at key
   exact key.trans (h.normalHessian_normalClass hn s _ _).symm
@@ -144,7 +144,7 @@ private theorem fderiv_fderiv_comp_apply_sliceNormalMap (hφy : φ y = i s)
 point of `f ∘ φ`, then the normal Hessian of the submanifold at `s` is nondegenerate. -/
 theorem ker_normalHessian_eq_bot_of_isNondegenerateCriticalPoint_comp (hφy : φ y = i s)
     (hφ : ContMDiffAt 𝓘(ℝ, V) I 2 φ y)
-    (hsurj : Surjective fun v : V ↦ i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v))
+    (hsurj : Surjective fun v : V ↦ i.isImmersion.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v))
     (hN : IsNondegenerateCriticalPoint (f ∘ φ) y) :
     LinearMap.ker (h.normalHessian hn s) = ⊥ := by
   obtain ⟨e, he⟩ := hN.isInvertible
@@ -166,9 +166,9 @@ variable [FiniteDimensional ℝ E]
 `v ↦ [dφ_y v]` from `V` to the normal space at `s` is bijective, then the Morse index of `f ∘ φ`
 at `y` is the Morse index of `f` at `i s`. -/
 theorem morseIndex_comp (hφy : φ y = i s) (hφ : ContMDiffAt 𝓘(ℝ, V) I 2 φ y)
-    (hbij : Bijective fun v : V ↦ i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v)) :
+    (hbij : Bijective fun v : V ↦ i.isImmersion.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v)) :
     morseIndex (f ∘ φ) y = manifoldMorseIndex I f (i s) := by
-  let L : V ≃ₗ[ℝ] i.NormalSpace s hn :=
+  let L : V ≃ₗ[ℝ] i.isImmersion.NormalSpace s hn :=
     LinearEquiv.ofBijective _ ((bijective_sliceNormalMap_iff hn).2 hbij)
   have hQ : hessianQuadraticForm (f ∘ φ) y =
       (h.normalHessian hn s).toQuadraticMap.comp L.toLinearMap := by
@@ -192,7 +192,7 @@ is bijective, then `y` is a nondegenerate critical point of `f ∘ φ`: its Hess
 nondegenerate normal Hessian read through a linear isomorphism. -/
 theorem isNondegenerateCriticalPoint_comp [FiniteDimensional ℝ V] (hφy : φ y = i s)
     (hφ : ContMDiffAt 𝓘(ℝ, V) I 2 φ y)
-    (hbij : Bijective fun v : V ↦ i.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v)) :
+    (hbij : Bijective fun v : V ↦ i.isImmersion.normalClass s hn (mfderiv 𝓘(ℝ, V) I φ y v)) :
     IsNondegenerateCriticalPoint (f ∘ φ) y := by
   have hf : ContMDiffAt I 𝓘(ℝ) 2 f (φ y) := hφy ▸ h.contMDiffAt s
   refine ⟨(hf.comp y hφ).contDiffAt,

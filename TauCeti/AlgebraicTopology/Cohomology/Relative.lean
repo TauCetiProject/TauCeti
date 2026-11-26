@@ -77,7 +77,9 @@ A map of pairs `(X, A) ⟶ (Y, B)` induces maps from the relative cochains and c
   isomorphism.
 * `TopCat.singularCohomologyComplRestrict`: the restriction `Hⁿ(X, X ∖ S) ⟶ Hⁿ(X, X ∖ T)` for
   `S ⊆ T`, with its composition lemma
-  `TopCat.singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict`.
+  `TopCat.singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict` and its
+  compatibility `TopCat.singularCohomologyπ_singularCohomologyComplRestrict_apply` with the maps to
+  absolute cohomology.
 
 ## References
 
@@ -718,5 +720,19 @@ lemma singularCohomologyComplRestrict_apply_singularCohomologyComplRestrict {S T
   rw [← TopPair.singularCohomologyMap_comp_apply,
     TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ (mapsTo_id_compl (h.trans h'))
       (Category.id_comp _)]
+
+/-- Restricting from the complement of `S` to the complement of `T` commutes with the maps to
+`Hⁿ(X)`. -/
+@[simp]
+lemma singularCohomologyπ_singularCohomologyComplRestrict_apply {S T : Set X} (h : S ⊆ T)
+    (n : ℕ) (a : (TopPair.ofSubset Sᶜ).singularCohomology R k M n) :
+    (TopPair.ofSubset Tᶜ).singularCohomologyπ R k M n
+        (singularCohomologyComplRestrict R k M h n a) =
+      (TopPair.ofSubset Sᶜ).singularCohomologyπ R k M n a := by
+  rw [← ConcreteCategory.comp_apply,
+    TopPair.singularCohomologyMap_ofSubsetMap_id_comp_singularCohomologyπ]
+  -- The sides differ only in the ambient spaces `(ofSubset Tᶜ).fst` and `(ofSubset Sᶜ).fst` of the
+  -- two maps to `Hⁿ(X)`; both are `X` by definition.
+  rfl
 
 end TopCat

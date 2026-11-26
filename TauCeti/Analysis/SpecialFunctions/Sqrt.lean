@@ -17,9 +17,9 @@ import TauCeti.Analysis.Real.Sqrt
 
 This file records a weighted form `|√t - √s| max (√t) (√s) ^ γ ≤ |t - s| ^ ((1 + γ) / 2)` for
 `0 ≤ γ ≤ 1` of the `1/2`-Hölder bound for the square root, the derivatives of `x ↦ √(x² + p)`,
-`x ↦ β x + √(x² + p)`, `t ↦ t + √(t² + p)` and `y ↦ α / (β y + √(y² + c))`, that
-`1 / √(1 + f²)` is as smooth as `f`, that `t ↦ √(1 + t²)` is smooth and `t ↦ δ √(1 + t²)` has
-slope at most `|δ|`, that the radial
+`x ↦ β x + √(x² + p)`, `t ↦ t + √(t² + p)`, `y ↦ α / (β y + √(y² + c))` and `y ↦ √(a / y)`,
+that `1 / √(1 + f²)` is as smooth as `f`, that `t ↦ √(1 + t²)` is smooth and `t ↦ δ √(1 + t²)`
+has slope at most `|δ|`, that the radial
 profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`, and the
 Gaussian normalization `√(4 / π) = 2 / √π`. The elementary square-root bounds, identities and
 limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt`.
@@ -39,6 +39,9 @@ limits that need no `rpow`, `π`, or calculus are in `TauCeti.Analysis.Real.Sqrt
   derivative wherever `t² + p > 0`.
 * `Real.hasDerivAt_div_mul_add_sqrt_sq_add`: the function `y ↦ α / (β y + √(y² + c))` has an
   explicit derivative where `y² + c` and the denominator do not vanish.
+* `Real.hasDerivAt_inv_sqrt_one_add`: the derivative of `r ↦ (√(1 + r))⁻¹` is
+  `-((√(1 + r))⁻¹ / (2 (1 + r)))` where `1 + r ≠ 0`.
+* `Real.hasDerivAt_sqrt_div`: the derivative of `y ↦ √(a / y)` wherever `y ≠ 0`.
 * `TauCeti.sqrt_four_div_pi`: `√(4/π) = 2/√π`.
 
 ## References
@@ -163,6 +166,34 @@ theorem hasDerivAt_div_mul_add_sqrt_sq_add (α β c : ℝ) {y : ℝ} (hyc : y ^ 
       (-α * (β + y / √(y ^ 2 + c)) / (β * y + √(y ^ 2 + c)) ^ 2) y := by
   have := (hasDerivAt_const y α).div (hasDerivAt_mul_add_sqrt_sq_add β y hyc) hy
   refine this.congr_deriv ?_
+  ring
+
+/-- The derivative of `r ↦ (√(1 + r))⁻¹` at a point where `1 + r` does not vanish. For
+`1 + x < 0` both sides vanish, since the square root is `0` on nonpositive reals. -/
+theorem hasDerivAt_inv_sqrt_one_add {x : ℝ} (hx : 1 + x ≠ 0) :
+    HasDerivAt (fun r ↦ (√(1 + r))⁻¹) (-((√(1 + x))⁻¹ / (2 * (1 + x)))) x := by
+  rcases hx.lt_or_gt with hx | hx
+  · rw [sqrt_eq_zero'.2 hx.le, inv_zero, zero_div, neg_zero]
+    refine (hasDerivAt_const x (0 : ℝ)).congr_of_eventuallyEq ?_
+    filter_upwards [eventually_lt_nhds (show x < -1 by linarith)] with r hr
+    rw [sqrt_eq_zero'.2 (by linarith), inv_zero]
+  · have hs : 0 < √(1 + x) := sqrt_pos.2 hx
+    refine ((((hasDerivAt_id' x).const_add 1).sqrt hx.ne').inv hs.ne').congr_deriv ?_
+    field_simp
+    rw [sq_sqrt hx.le]
+
+/-- The derivative of `y ↦ √(a / y)` at a point `x ≠ 0` is `-√(a / x) / (2x)`. Where `a / x < 0`
+the function vanishes near `x`, matching the junk value `√(a / x) = 0`. -/
+theorem hasDerivAt_sqrt_div (a : ℝ) {x : ℝ} (hx : x ≠ 0) :
+    HasDerivAt (fun y ↦ √(a / y)) (-(√(a / x) / (2 * x))) x := by
+  by_cases ha : a = 0
+  · simpa [ha] using hasDerivAt_const x (0 : ℝ)
+  refine (((hasDerivAt_const x a).div (hasDerivAt_id' x) hx).sqrt
+    (div_ne_zero ha hx)).congr_deriv ?_
+  rw [Pi.div_apply]
+  -- Both sides are `-(a / x) / √(a / x) / (2x)`, and `(a / x) / √(a / x) = √(a / x)`.
+  conv_rhs => rw [← div_sqrt (x := a / x)]
+  field_simp
   ring
 
 end Real

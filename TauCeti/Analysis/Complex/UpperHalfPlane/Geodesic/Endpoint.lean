@@ -132,11 +132,6 @@ theorem dilation_smul_eq_self_iff {s : ℝ} (hs : s ≠ 0) {η : OnePoint ℝ} :
     · rintro rfl
       simp
 
-private theorem pslS_eq_mk :
-    pslS = ((Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) ModularGroup.S : SL(2, ℝ)) :
-      PSL(2, ℝ)) := by
-  rw [pslS_def, psl2zToPSL2R_mk, sl2zToPSL2R_apply]
-
 /-- `pslS`, the class of `z ↦ -1/z`, sends the ideal point `0` to `∞`. -/
 @[simp]
 theorem pslS_smul_zero : pslS • ((0 : ℝ) : OnePoint ℝ) = ∞ := by

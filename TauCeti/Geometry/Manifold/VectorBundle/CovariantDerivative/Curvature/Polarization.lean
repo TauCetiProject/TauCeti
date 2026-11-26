@@ -96,7 +96,7 @@ theorem HasSectionalCurvatureAt.curvatureTensor_eq_smul_inner_sub
     (w u v : TangentSpace I x) :
     curvature x w u v = κ • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) := by
   set g := innerₗ (TangentSpace I x)
-  have hg : LinearMap.BilinForm.IsSymm g := isSymm_iff.mpr isSymm_inner
+  have hg : LinearMap.BilinForm.IsSymm g := TauCeti.isSymm_innerₗ
   have hκg : LinearMap.BilinForm.IsSymm ((κ / 2) • g) := isSymm_def.2 fun a b ↦ by
     simp only [LinearMap.smul_apply, hg.eq a b]
   -- The constant-curvature tensor is `(κ / 2) g ⊙ g`.
@@ -215,10 +215,8 @@ theorem exists_curvatureTensor_eq_smul_inner_sub_of_finrank_eq_two
       curvature x w u v = K • (⟪u, v⟫_ℝ • w - ⟪w, v⟫_ℝ • u) := by
   let e := (stdOrthonormalBasis ℝ (TangentSpace I x)).reindex (finCongr hx)
   set K := ⟪curvature x (e 0) (e 1) (e 1), e 0⟫_ℝ with hK
-  have hzero (w : TangentSpace I x) : ⟪curvature x (e 0) (e 1) w, w⟫_ℝ = 0 := by
-    have := hcov.inner_curvatureTensor_eq_neg x (e 0) (e 1) w w
-    rw [real_inner_comm w] at this ⊢
-    linarith
+  have hzero (w : TangentSpace I x) : ⟪curvature x (e 0) (e 1) w, w⟫_ℝ = 0 :=
+    hcov.inner_curvatureTensor_self_eq_zero x (e 0) (e 1) w
   have hswap : ⟪curvature x (e 0) (e 1) (e 0), e 1⟫_ℝ = -K := by
     rw [hcov.inner_curvatureTensor_eq_neg, real_inner_comm]
   have he := e.orthonormal

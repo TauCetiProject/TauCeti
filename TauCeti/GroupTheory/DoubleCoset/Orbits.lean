@@ -49,6 +49,8 @@ numbers, which is the group-theoretic half of the statement that the permutation
 * `TauCeti.card_fiber_orbitOfCosetTranslate_mul_card_stabilizer_coset`: that count, carried out —
   the fibre size times the order of the stabiliser of the class inside `stabilizer ℋ p` is the
   order of `stabilizer ℋ p`.
+* `TauCeti.orbitOfCosetTranslate_smul`: translating the point by `u ∈ ℋ` translates the coset
+  argument by `u⁻¹`, so a sum over the cosets depends only on the `ℋ`-orbit of the point.
 * `TauCeti.card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit`: the multiplicity identity
   behind regrouping a sum over `ℋ ⧸ 𝒢.subgroupOf ℋ` into a sum over `𝒢`-orbits — the fibre size
   times the stabiliser order on the orbit is `|stabilizer ℋ p|`, with
@@ -237,6 +239,16 @@ noncomputable def orbitOfCosetTranslate {𝒢 ℋ : Subgroup G} (p : α) (q : �
 theorem orbitOfCosetTranslate_mk {𝒢 ℋ : Subgroup G} (p : α) (h : ℋ) :
     orbitOfCosetTranslate (𝒢 := 𝒢) p (⟦h⟧ : ℋ ⧸ 𝒢.subgroupOf ℋ) = Quotient.mk'' ((h : G)⁻¹ • p) :=
   (rfl)
+
+/-- Translating the base point by `u ∈ ℋ` translates the coset argument of
+`orbitOfCosetTranslate` by `u⁻¹`. -/
+theorem orbitOfCosetTranslate_smul {𝒢 ℋ : Subgroup G} (u : ℋ) (p : α)
+    (c : ℋ ⧸ 𝒢.subgroupOf ℋ) :
+    orbitOfCosetTranslate (𝒢 := 𝒢) (u • p) c = orbitOfCosetTranslate p (u⁻¹ • c) := by
+  induction c using QuotientGroup.induction_on with
+  | H k =>
+    rw [MulAction.Quotient.smul_mk, orbitOfCosetTranslate_mk, orbitOfCosetTranslate_mk]
+    simp [Subgroup.smul_def, mul_smul]
 
 /-- **The fibres of `orbitOfCosetTranslate` are the `stabilizer ℋ p`-orbits.** Two classes have
 the same image exactly when they lie in one orbit of the stabilizer of `p`, acting on the coset

@@ -165,6 +165,14 @@ theorem mem_selmerGroup_iff {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCo
     selmerStructure_localCondition, mem_localKummerCondition_iff,
     mem_shafarevichTateGroup_iff, pointRes_kerCoeffIncl]
 
+/-- A class in `H¹(G_K, E₁(Kˢ)[φ])` is `φ`-Selmer exactly when its restriction to every `L i`
+satisfies the local Kummer condition of the base change of `φ` to `L i`. -/
+theorem mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition
+    {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff} :
+    c ∈ φ.selmerGroup τ ↔ ∀ i, φ.kerRes (τ i) c ∈ (φ.baseChange (L i)).localKummerCondition := by
+  simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
+    selmerStructure_localCondition]
+
 /-- Imposing the local conditions along a subfamily `τ ∘ f` of the localisations gives a larger
 `φ`-Selmer group. -/
 theorem selmerGroup_le_comp {κ : Type*} (f : κ → ι) :

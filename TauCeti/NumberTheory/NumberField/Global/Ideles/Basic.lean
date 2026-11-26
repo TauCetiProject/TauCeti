@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.AdeleRing
 import Mathlib.Topology.Algebra.Group.Units
 import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # Basic API for ideles
@@ -287,14 +288,9 @@ at the finite places with respect to the local integral units `𝒪_vˣ`. -/
 noncomputable def localUnitsEquiv :
     IdeleGroup R K ≃ₜ* (∀ w : InfinitePlace K, w.Completionˣ) ×
       Πʳ v : HeightOneSpectrum R,
-        [(v.adicCompletion K)ˣ, (Submonoid.ofClass (v.adicCompletionIntegers K)).units] where
-  toMulEquiv := MulEquiv.prodUnits.trans
-    (MulEquiv.prodCongr MulEquiv.piUnits (FiniteAdeleRing.unitsContinuousMulEquiv R K))
-  continuous_toFun := (ContinuousMulEquiv.piUnits.continuous.prodMap
-    (FiniteAdeleRing.unitsContinuousMulEquiv R K).continuous).comp Homeomorph.prodUnits.continuous
-  continuous_invFun := Homeomorph.prodUnits.symm.continuous.comp
-    (ContinuousMulEquiv.piUnits.symm.continuous.prodMap
-      (FiniteAdeleRing.unitsContinuousMulEquiv R K).symm.continuous)
+        [(v.adicCompletion K)ˣ, (Submonoid.ofClass (v.adicCompletionIntegers K)).units] :=
+  (ContinuousMulEquiv.prodUnits _ _).trans
+    (ContinuousMulEquiv.piUnits.prodCongr (FiniteAdeleRing.unitsContinuousMulEquiv R K))
 
 variable {R K}
 
@@ -302,15 +298,17 @@ variable {R K}
 an idele at the infinite places. -/
 @[simp]
 theorem localUnitsEquiv_apply_fst (x : IdeleGroup R K) (w : InfinitePlace K) :
-    (localUnitsEquiv R K x).1 w = w.ideleInfiniteCoord x :=
-  Units.ext (rfl)
+    (localUnitsEquiv R K x).1 w = w.ideleInfiniteCoord x := by
+  rw [localUnitsEquiv, ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.prodCongr_apply]
+  exact Units.ext (rfl)
 
 /-- The finite part of `NumberField.IdeleGroup.localUnitsEquiv` consists of the coordinates of an
 idele at the finite places. -/
 @[simp]
 theorem localUnitsEquiv_apply_snd (x : IdeleGroup R K) (v : HeightOneSpectrum R) :
-    (localUnitsEquiv R K x).2 v = v.ideleFiniteCoord x :=
-  Units.ext (FiniteAdeleRing.coe_unitsContinuousMulEquiv_apply _ v)
+    (localUnitsEquiv R K x).2 v = v.ideleFiniteCoord x := by
+  rw [localUnitsEquiv, ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.prodCongr_apply]
+  exact Units.ext (FiniteAdeleRing.coe_unitsContinuousMulEquiv_apply _ v)
 
 /-- The inverse of `NumberField.IdeleGroup.localUnitsEquiv` assembles an idele from its local
 units, as `TauCeti.GlobalNumberFields.ideleOfUnits` does. -/
