@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Holder.Leibniz
 public import TauCeti.Analysis.Holder.Iterated
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Topology.MetricSpace.Thickening
@@ -23,6 +25,10 @@ of `tsupport χ` lies in the open set, the Leibniz bound on balls of radius `δ`
 support, together with the supremum bound at larger distances, makes the top derivative of the
 cutoff product globally Hölder
 (`TauCeti.holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset`).
+
+The same cutoff lowers the Hölder exponent of a derivative: a `C¹` map whose derivative is
+`α`-Hölder on the whole space agrees on any ball with a `C¹` map whose derivative is `α'`-Hölder on
+the whole space, for every `α' ≤ min α 1` (`ContDiff.exists_eqOn_ball_and_holderWith_fderiv`).
 -/
 
 public section
@@ -162,6 +168,64 @@ theorem holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset {k : ℕ} {s 
       exact (hball y hy).dist_le (mem_ball_self (by exact_mod_cast hδ)) (by rwa [mem_ball])
     rw [hzero x hx, hzero y hy, dist_self]
     positivity
+
+/-- **Lowering the Hölder exponent of a derivative away from a ball.** Let `f` be `C¹` with
+`α`-Hölder derivative on the whole space and let `α' ≤ α` with `α' ≤ 1`. On every ball, `f` agrees
+with a `C¹` map whose derivative is `α'`-Hölder on the whole space. The derivative of `f` itself is
+`α'`-Hölder only on bounded sets; the map is the product of `f` with a cutoff equal to one on the
+ball. -/
+theorem _root_.ContDiff.exists_eqOn_ball_and_holderWith_fderiv [FiniteDimensional ℝ E]
+    {f : E → F} (hf : ContDiff ℝ 1 f) {K α α' : ℝ≥0} (hfK : HolderWith K α (fderiv ℝ f))
+    (hα' : α' ≤ α) (hα'1 : α' ≤ 1) (x₀ : E) (R : ℝ) :
+    ∃ (g : E → F) (K' : ℝ≥0), ContDiff ℝ 1 g ∧ EqOn g f (ball x₀ R) ∧
+      HolderWith K' α' (fderiv ℝ g) := by
+  set ρ : ℝ := |R| + 1
+  have hρ : 0 < ρ := by positivity
+  obtain ⟨ζ, Z, hζ⟩ := exists_forall_contDiff_cutoff_holderWith_and_norm_le (E := E)
+    (show ρ < 2 * ρ by linarith) hα'1
+  obtain ⟨hζs, hζ1, hζt, -, hζb⟩ := hζ x₀
+  -- On `s = B(x₀, 3ρ)`, which contains the `ρ`-thickening of the support of the cutoff, `f` and
+  -- `Df` are bounded and `Df` is `α'`-Hölder.
+  set s := ball x₀ (3 * ρ)
+  obtain ⟨M₀, hM₀⟩ := (isCompact_closedBall x₀ (3 * ρ)).exists_bound_of_continuousOn
+    hf.continuous.continuousOn
+  obtain ⟨M₁, hM₁⟩ := (isCompact_closedBall x₀ (3 * ρ)).exists_bound_of_continuousOn
+    (hf.continuous_fderiv one_ne_zero).continuousOn
+  have hfb : ∀ i ≤ 1, ∀ x ∈ s, ‖iteratedFDeriv ℝ i f x‖ ≤ max M₀.toNNReal M₁.toNNReal := by
+    intro i hi x hx
+    have hx' : x ∈ closedBall x₀ (3 * ρ) := ball_subset_closedBall hx
+    interval_cases i
+    · rw [norm_iteratedFDeriv_zero]
+      exact (hM₀ x hx').trans ((Real.le_coe_toNNReal _).trans (by simp))
+    · rw [norm_iteratedFDeriv_one]
+      exact (hM₁ x hx').trans ((Real.le_coe_toNNReal _).trans (by simp))
+  have hζb' : ∀ i ≤ 1 + 1, ∀ x, ‖iteratedFDeriv ℝ i (ζ x₀) x‖ ≤ Z := fun i hi x => by
+    interval_cases i
+    · simpa using (hζb x).1
+    · simpa using (hζb x).2.1
+    · rw [← norm_iteratedFDeriv_fderiv, norm_iteratedFDeriv_one]; exact (hζb x).2.2
+  have hD : ∀ x ∈ s, ∀ y ∈ s, edist x y ≤ (6 * ρ).toNNReal := fun x hx y hy => by
+    rw [edist_dist, ENNReal.ofReal_le_iff_le_toReal ENNReal.coe_ne_top, ENNReal.coe_toReal,
+      Real.coe_toNNReal _ (by positivity)]
+    linarith [dist_triangle_right x y x₀, mem_ball.1 hx, mem_ball.1 hy]
+  -- The first iterated derivative is the derivative, up to the linear isometry
+  -- `continuousMultilinearCurryFin1`.
+  have hcurry := LinearIsometryEquiv.isometry (continuousMultilinearCurryFin1 ℝ E F)
+  have hfH : HolderOnWith (K * (6 * ρ).toNNReal ^ ((α : ℝ) - α')) α' (iteratedFDeriv ℝ 1 f) s := by
+    have h := (hfK.holderOnWith s).of_le hD hα'
+    rw [fderiv_eq_continuousMultilinearCurryFin1_comp] at h
+    exact fun x hx y hy => by simpa only [Function.comp_apply, hcurry.edist_eq] using h x hx y hy
+  have hthick : thickening ((ρ.toNNReal : ℝ≥0) : ℝ) (tsupport (ζ x₀)) ⊆ s := by
+    rw [Real.coe_toNNReal _ hρ.le]
+    refine (thickening_subset_of_subset ρ hζt).trans ((Metric.thickening_ball _ _ _).trans
+      (ball_subset_ball (by linarith)))
+  have H := holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset (k := 1) hf.contDiffOn
+    (hζs.of_le (by norm_cast)) isOpen_ball (by simpa using hρ) hthick hα'1 hfb hζb' hfH
+  refine ⟨fun x => ζ x₀ x • f x, _, (hζs.of_le (by norm_cast)).smul hf, fun x hx => ?_,
+    by rwa [fderiv_eq_continuousMultilinearCurryFin1_comp, hcurry.holderWith_comp_iff]⟩
+  have h1 : ζ x₀ x = 1 := interior_subset (hζ1 (ball_subset_closedBall
+    (ball_subset_ball (by linarith [le_abs_self R]) hx)))
+  simp [h1]
 
 namespace CkHolderSpace
 
