@@ -168,6 +168,10 @@ instance isIntegral_graph [IsIntegral X] [QuasiCompact (graphLift f)] : IsIntegr
     f.representative.dense_domain.nonempty.to_subtype
   inferInstance
 
+/-- The closed immersion `Γ_f → X × Y` has the kernel of `γ_f`. -/
+theorem ker_graphι : (graphι f).ker = (graphLift f).ker := by
+  rw [graphι, Hom.imageι, IdealSheafData.ker_subschemeι]
+
 section Representative
 
 variable [IsReduced X]
