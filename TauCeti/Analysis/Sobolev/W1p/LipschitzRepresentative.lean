@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.Analysis.Sobolev.W1p.Convex
+public import TauCeti.Analysis.Sobolev.W1p.Zero
+import TauCeti.Analysis.Sobolev.W1p.Extension
 import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
@@ -27,6 +29,12 @@ characterised by agreeing almost everywhere on `Ω` with `u`
 `Ω` is needed; convexity is what makes the local Lipschitz bound global. The higher-order
 consequence `W^{k,∞} ⊆ C^{k-1,1}` is in `TauCeti.Analysis.Sobolev.Wkp.LipschitzRepresentative`.
 
+Near a boundary point the same local bound gives Lipschitz representatives of zero-trace functions
+that vanish at the point. If `u ∈ W^{1,p}_0(Ω)` has essentially bounded gradient near `x`, and `x`
+is a limit of points outside a closed set containing `Ω`, then the precise representative of the
+extension of `u` by zero is Lipschitz near `x` and vanishes at `x`
+(`TauCeti.W1p0.exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le`).
+
 ## Main declarations
 
 * `TauCeti.W1p.lipschitzRepresentativeL`: the Lipschitz representative on `closure Ω` as a
@@ -35,6 +43,10 @@ consequence `W^{k,∞} ⊆ C^{k-1,1}` is in `TauCeti.Analysis.Sobolev.Wkp.Lipsch
   `TauCeti.W1p.ae_lipschitzRepresentativeL_eq`, `TauCeti.W1p.lipschitzRepresentativeL_eq_iff`,
   `TauCeti.W1p.lipschitzWith_lipschitzRepresentativeL` (the sharp constant `‖∇u‖_∞`) and
   `TauCeti.W1p.norm_lipschitzRepresentativeL_apply_le`.
+* `TauCeti.W1p0.exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le`: a function of
+  `W^{1,p}_0(Ω)` with essentially bounded gradient near a point `x` that is a limit of points
+  outside a closed set `F ⊇ Ω` has a representative that is Lipschitz near `x` and vanishes at
+  `x`.
 
 ## References
 
@@ -182,5 +194,55 @@ theorem W1p.lipschitzWith_lipschitzRepresentativeL (u : W1p μ Ω ∞) :
 theorem W1p.norm_lipschitzRepresentativeL_apply_le (u : W1p μ Ω ∞)
     (x : closure (Ω : Set E)) : ‖W1p.lipschitzRepresentativeL hΩ u x‖ ≤ ‖W1p.value u‖ :=
   (W1p.lipschitzRepresentative_spec hΩ u).2.2 x
+
+
+omit hΩ in
+/-- **A representative vanishing at a boundary point.** Let `Ω` lie in a closed set `F` and let
+`x` be a limit of points outside `F`. If the weak gradient of `u ∈ W^{1,p}_0(Ω)` is essentially
+bounded by `M` on `Ω ∩ B(x, ρ)`, then `u` has a representative that is `M`-Lipschitz on `B(x, ρ)`
+and vanishes at `x`: the precise representative of the extension of `u` by zero, which vanishes
+outside `F`. -/
+theorem W1p0.exists_lipschitzOnWith_ae_eq_of_ae_norm_gradient_le {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {F : Set E} (hF : IsClosed F) (hΩF : (Ω : Set E) ⊆ F) (u : W1p0 μ Ω p) {x : E}
+    (hx : x ∈ closure Fᶜ) {ρ : ℝ} (hρ : 0 < ρ) {M : ℝ≥0}
+    (hM : ∀ᵐ z ∂μ, z ∈ (Ω : Set E) ∩ Metric.ball x ρ → ‖W1p.gradient (u : W1p μ Ω p) z‖ ≤ M) :
+    ∃ u' : E → ℝ, W1p.value (u : W1p μ Ω p) =ᵐ[μ.restrict Ω] u' ∧
+      LipschitzOnWith M u' (Metric.ball x ρ) ∧ u' x = 0 := by
+  set u₀ : W1p μ (⊤ : Opens E) p := (W1p0.extendByZeroL (Omega' := ⊤) le_top u).val
+  have hval : W1p.value u₀ =ᵐ[μ] (Ω : Set E).indicator (W1p.value (u : W1p μ Ω p)) :=
+    W1p0.value_extendByZeroL_top_ae u
+  have hprec : W1p.value u₀ =ᵐ[μ] preciseRepresentative μ (W1p.value u₀) := by
+    simpa only [Opens.coe_top, Measure.restrict_univ] using W1p.ae_eq_preciseRepresentative u₀
+  -- Near `x` the gradient of the extension is bounded by `M`: it vanishes off `Ω`.
+  have hgrad : ∀ᵐ z ∂μ.restrict (Metric.ball x ρ), ‖W1p.gradient u₀ z‖ ≤ M := by
+    refine (ae_restrict_iff' Metric.isOpen_ball.measurableSet).2 ?_
+    filter_upwards [W1p0.gradient_extendByZeroL_top_ae u, hM] with z h1 h2 hz
+    rw [h1]
+    by_cases hzΩ : z ∈ (Ω : Set E)
+    · rw [indicator_of_mem hzΩ]
+      exact h2 ⟨hzΩ, hz⟩
+    · rw [indicator_of_notMem hzΩ, norm_zero]
+      exact M.coe_nonneg
+  set u' := preciseRepresentative μ (W1p.value u₀)
+  have hL : LipschitzOnWith M u' (Metric.ball x ρ) :=
+    W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le u₀
+      (V := ⟨Metric.ball x ρ, Metric.isOpen_ball⟩) le_top (convex_ball x ρ) subset_rfl hgrad
+  refine ⟨u', ?_, hL, ?_⟩
+  · refine (ae_restrict_iff' Ω.isOpen.measurableSet).2 ?_
+    filter_upwards [hval, hprec] with z h1 h2 hz
+    rw [← h2, h1, indicator_of_mem hz]
+  · -- Outside `F` the representative vanishes, and `x` is a limit of such points near `x`.
+    set O : Set E := Metric.ball x ρ ∩ Fᶜ
+    have hO : IsOpen O := Metric.isOpen_ball.inter hF.isOpen_compl
+    have hzero : EqOn u' 0 O := by
+      refine Measure.eqOn_open_of_ae_eq (μ := μ) ?_ hO (hL.continuousOn.mono inter_subset_left)
+        continuousOn_const
+      refine (ae_restrict_iff' hO.measurableSet).2 ?_
+      filter_upwards [hval, hprec] with z h1 h2 hz
+      rw [← h2, h1, indicator_of_notMem fun hzΩ => hz.2 (hΩF hzΩ), Pi.zero_apply]
+    have hxO : x ∈ closure O := Metric.isOpen_ball.inter_closure ⟨Metric.mem_ball_self hρ, hx⟩
+    exact hzero.of_subset_closure
+      (hL.continuousOn.mono (insert_subset (Metric.mem_ball_self hρ) inter_subset_left))
+      continuousOn_const (subset_insert _ _) (insert_subset hxO subset_closure) (mem_insert _ _)
 
 end TauCeti
