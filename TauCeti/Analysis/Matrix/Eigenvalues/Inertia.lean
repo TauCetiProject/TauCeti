@@ -98,10 +98,8 @@ private theorem card_add_finrank_le (hG : G.IsHermitian) (P : ι → Prop) [Deci
     subst hc
     by_contra hv
     exact hW c (by rintro rfl; simp at hv) hvW
-  have h_sum := Submodule.finrank_sup_add_finrank_inf_eq V W
-  rw [h_inf, finrank_bot, add_zero, finrank_range_eigenColumns] at h_sum
-  rw [← h_sum, ← finrank_fintype_fun_eq_card 𝕜]
-  exact Submodule.finrank_le _
+  simpa [V, finrank_range_eigenColumns, finrank_fintype_fun_eq_card] using
+    Submodule.finrank_add_finrank_le_of_disjoint (disjoint_iff.2 h_inf)
 
 /-- **Positive eigenvalues against nonpositive subspaces.** If the form of the Hermitian matrix
 `G` is nonpositive on a subspace `W`, then the number of positive eigenvalues of `G` plus the
