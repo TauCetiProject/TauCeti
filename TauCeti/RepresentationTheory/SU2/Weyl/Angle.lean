@@ -8,11 +8,11 @@ module
 public import TauCeti.RepresentationTheory.SU2.Weyl.Integration
 
 /-!
-# The conjugacy angle of `SU(2)`
+# Haar probability and symmetric-power characters in the conjugacy angle
 
-The conjugacy angle parametrizes the conjugacy classes of `SU(2)` by the closed interval
-`[0, π]`. In this coordinate, Haar probability has density `(2/π) sin² θ` and the character of
-the degree-`d` symmetric power is the Chebyshev value `U_d(cos θ)`.
+In the coordinate given by `TauCeti.SU2.conjugacyAngle`, Haar probability on `SU(2)` has density
+`(2/π) sin² θ` on `[0, π]`, and the character of the degree-`d` symmetric power is the Chebyshev
+value `U_d(cos θ)`.
 
 See K. S. Kedlaya, *Notes on analytic number theory*, §24.5.
 -/
@@ -22,50 +22,6 @@ public section
 open MeasureTheory
 
 namespace TauCeti.SU2
-
-/-- The angle in `[0, π]` of the conjugacy class of an element of `SU(2)`. -/
-noncomputable def conjugacyAngle (g : SU2) : ℝ :=
-  Real.arccos ((Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re / 2)
-
-/-- The angle is the inverse cosine of half the trace. -/
-theorem conjugacyAngle_def (g : SU2) :
-    conjugacyAngle g = Real.arccos ((Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ)).re / 2) :=
-  (rfl)
-
-/-- The conjugacy angle belongs to the closed Weyl chamber. -/
-theorem conjugacyAngle_mem_Icc (g : SU2) : conjugacyAngle g ∈ Set.Icc (0 : ℝ) Real.pi :=
-  ⟨Real.arccos_nonneg _, Real.arccos_le_pi _⟩
-
-/-- The angle is continuous as a function of the group element. -/
-@[fun_prop]
-theorem continuous_conjugacyAngle : Continuous conjugacyAngle := by
-  have ht : Continuous fun g : SU2 ↦ Matrix.trace (g : Matrix (Fin 2) (Fin 2) ℂ) :=
-    Continuous.matrix_trace continuous_subtypeVal
-  exact Real.continuous_arccos.comp ((Complex.continuous_re.comp ht).div_const 2)
-
-/-- Conjugate elements have the same angle. -/
-theorem conjugacyAngle_eq_of_isConj {g h : SU2} (hgh : IsConj g h) :
-    conjugacyAngle g = conjugacyAngle h := by
-  simp only [conjugacyAngle_def, trace_eq_of_isConj hgh]
-
-/-- In the Weyl chamber, the angle of the diagonal representative is its parameter. -/
-@[simp]
-theorem conjugacyAngle_torusExp {θ : ℝ} (hθ : θ ∈ Set.Icc (0 : ℝ) Real.pi) :
-    conjugacyAngle (torusExp θ) = θ := by
-  rw [conjugacyAngle_def, trace_torusExp]
-  simpa [Complex.mul_re, Complex.cos_ofReal_re] using Real.arccos_cos hθ.1 hθ.2
-
-/-- A group element is conjugate to the diagonal representative at its angle. -/
-theorem isConj_torusExp_conjugacyAngle (g : SU2) : IsConj g (torusExp (conjugacyAngle g)) := by
-  obtain ⟨θ, hθ, hg⟩ := exists_isConj_torusExp_mem_Icc g
-  rwa [conjugacyAngle_eq_of_isConj hg, conjugacyAngle_torusExp hθ]
-
-/-- The angle is a complete conjugacy invariant. -/
-theorem conjugacyAngle_eq_iff_isConj {g h : SU2} :
-    conjugacyAngle g = conjugacyAngle h ↔ IsConj g h := by
-  refine ⟨fun he ↦ (isConj_torusExp_conjugacyAngle g).trans ?_, conjugacyAngle_eq_of_isConj⟩
-  rw [he]
-  exact (isConj_torusExp_conjugacyAngle h).symm
 
 /-- Integrating a real continuous test function of the angle against Haar probability gives the
 integral against the density `(2/π) sin² θ` on the closed Weyl chamber. -/
