@@ -12,6 +12,8 @@ public import TauCeti.Geometry.Lie.Covering
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.SimplyConnected
 public import TauCeti.Geometry.Lie.Prod
 public import TauCeti.Geometry.Lie.Subgroup.Immersed.Existence
+import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.Perfect
 import TauCeti.AlgebraicTopology.FundamentalGroup.Product
 import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
@@ -73,6 +75,13 @@ connected, not simply connected: the covering argument needs simple connectivity
   complementary Lie algebras.
 * `TauCeti.Lie.commute_integralLeafSubgroupData_center`: the integral leaf subgroup of the centre
   is commutative, by `LieSubalgebra.commute_integralLeafSubgroupData_of_isLieAbelian`.
+* `TauCeti.Lie.integralLeafSubgroupData_center_toHom_mem_center`: the subgroup integrating the
+  centre of `𝔤` is central in `G` when `𝔷 ⊕ [𝔤, 𝔤] = 𝔤`.
+* `TauCeti.Lie.center_eq_bot_integralLeafSubgroupData_derivedSeries` and
+  `TauCeti.Lie.derivedSeries_one_eq_top_integralLeafSubgroupData_derivedSeries`: the subgroup
+  integrating `[𝔤, 𝔤]` has centreless, perfect Lie algebra when `𝔷 ⊕ [𝔤, 𝔤] = 𝔤`.
+* `TauCeti.Lie.simplyConnectedSpace_integralLeafSubgroupData_derivedSeries`: it is simply
+  connected.
 
 ## References
 
@@ -261,6 +270,72 @@ theorem commute_integralLeafSubgroupData_center
       LieSubalgebra ℝ (LeftInvariantDerivation I G)) :=
     inferInstanceAs (IsLieAbelian (LieAlgebra.center ℝ (LeftInvariantDerivation I G)))
   LieSubalgebra.commute_integralLeafSubgroupData_of_isLieAbelian _ x y
+
+/-- **The subgroup integrating the centre is central.** If the centre `𝔷` and the derived algebra
+`[𝔤, 𝔤]` of the Lie algebra of a simply connected Lie group `G` are complementary, the integral leaf
+subgroup of `𝔷` lies in the centre of `G`. -/
+theorem integralLeafSubgroupData_center_toHom_mem_center
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1))
+    (a : ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X) :
+    ((LieAlgebra.center ℝ (LeftInvariantDerivation I G) :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).toHom a ∈
+      Subgroup.center G := by
+  refine Subgroup.mem_center_iff.mpr fun g ↦ ?_
+  obtain ⟨p, rfl⟩ := (centerProdDerivedContinuousMulEquiv hc).surjective g
+  rw [centerProdDerivedContinuousMulEquiv_apply]
+  exact (((commute_integralLeafSubgroupData_center p.1 a).map _).mul_left
+    (LieIdeal.commute_integralLeafSubgroupData_of_disjoint _ _ hc.disjoint a p.2).symm).eq
+
+omit [SimplyConnectedSpace G] in
+/-- The Lie map of the subgroup integrating `[𝔤, 𝔤]` has range `[𝔤, 𝔤]`. -/
+private theorem range_lieMap_integralLeafSubgroupData_derivedSeries :
+    LinearMap.range (lieMap ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData
+        (I := I)).toContMDiffMonoidMorphism).toLinearMap =
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1).toSubmodule := by
+  rw [LieSubalgebra.range_lieMap_integralLeafSubgroupData, LieIdeal.toLieSubalgebra_toSubmodule]
+
+omit [SimplyConnectedSpace G] in
+/-- **The subgroup integrating `[𝔤, 𝔤]` has centreless Lie algebra** when `𝔤 = 𝔷 ⊕ [𝔤, 𝔤]`. -/
+theorem center_eq_bot_integralLeafSubgroupData_derivedSeries
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1)) :
+    LieAlgebra.center ℝ (LeftInvariantDerivation
+      ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).I'
+      ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X) =
+      ⊥ :=
+  LieHom.center_eq_bot_of_range_eq_of_isCompl _
+    (ImmersedLieSubgroupData.injective_lieMap_toContMDiffMonoidMorphism _) _
+    range_lieMap_integralLeafSubgroupData_derivedSeries hc
+
+omit [SimplyConnectedSpace G] in
+/-- **The subgroup integrating `[𝔤, 𝔤]` has perfect Lie algebra** when `𝔤 = 𝔷 ⊕ [𝔤, 𝔤]`. -/
+theorem derivedSeries_one_eq_top_integralLeafSubgroupData_derivedSeries
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1)) :
+    LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation
+      ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).I'
+      ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+        LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X) 1 =
+      ⊤ :=
+  LieHom.derivedSeries_one_eq_top_of_range_eq_of_sup_eq_top _
+    (ImmersedLieSubgroupData.injective_lieMap_toContMDiffMonoidMorphism _)
+    range_lieMap_integralLeafSubgroupData_derivedSeries hc.sup_eq_top
+
+/-- **The subgroup integrating `[𝔤, 𝔤]` is simply connected** when `𝔤 = 𝔷 ⊕ [𝔤, 𝔤]`, as the second
+factor of `TauCeti.Lie.centerProdDerivedContinuousMulEquiv`. -/
+theorem simplyConnectedSpace_integralLeafSubgroupData_derivedSeries
+    (hc : IsCompl (LieAlgebra.center ℝ (LeftInvariantDerivation I G))
+      (LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1)) :
+    SimplyConnectedSpace ((LieAlgebra.derivedSeries ℝ (LeftInvariantDerivation I G) 1 :
+      LieSubalgebra ℝ (LeftInvariantDerivation I G)).integralLeafSubgroupData (I := I)).X :=
+  (simplyConnectedSpace_prod_iff.mp
+    (centerProdDerivedContinuousMulEquiv hc).toHomeomorph.toHomotopyEquiv.simplyConnectedSpace).2
 
 /-! ### The centre factor is the centre of the Lie algebra -/
 
