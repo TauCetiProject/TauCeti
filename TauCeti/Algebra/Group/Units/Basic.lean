@@ -50,7 +50,8 @@ namespace Units
 /-- `Units.map (Units.coeHom M) : Mˣˣ →* Mˣ` is bijective, being the inverse of Mathlib's
 `toUnits : Mˣ ≃* Mˣˣ`: the units of the group `Mˣ` are the units of `M`. -/
 theorem map_coeHom_bijective (M : Type*) [Monoid M] : Function.Bijective (map (coeHom M)) := by
-  have h : ⇑(map (coeHom M)) = (toUnits (G := Mˣ)).symm := funext fun _ => Units.ext rfl
+  have h : ⇑(map (coeHom M)) = (toUnits (G := Mˣ)).symm := funext fun x => by
+    ext; simp [toUnits_symm_apply]
   exact h ▸ (toUnits (G := Mˣ)).symm.bijective
 
 /-- For an element `z` commuting with a unit `u`, the conjugate of `a` by `u` equals `z` exactly
