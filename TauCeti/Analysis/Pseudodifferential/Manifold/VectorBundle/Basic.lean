@@ -285,6 +285,23 @@ theorem sectionEntry_apply_eq_cutoffFrameCoeff
       t'.cutoffFrameCoeff χ hχ ℓ (P (f • t.cutoffFrameSection ψ hψ v)) :=
   (rfl)
 
+/-- **Entries of scalar operators tensored with cut-off frames.** For an operator `A` on the
+complex-valued smooth functions, a cut-off frame coefficient `ρ ℓ₀(e s)` of the sections `s` of `E`
+and a smooth section `σ` of `F`, the matrix entry of `s ↦ A (ρ ℓ₀(e s)) σ` is `A` multiplied on the
+left by the coefficient `χ ℓ(t' σ)` and on the right by the coefficient `ρ ℓ₀(e (ψ t⁻¹ v))`. -/
+theorem sectionEntry_toSpanSingleton_comp_comp_cutoffFrameCoeff
+    (A : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (e : Trivialization V (π V E)) [MemTrivializationAtlas e]
+    (ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hρ : tsupport ρ ⊆ e.baseSet) (ℓ₀ : V →L[ℂ] ℂ)
+    (σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    sectionEntry t ψ hψ v t' χ hχ ℓ
+        ((LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ e.cutoffFrameCoeff ρ hρ ℓ₀) =
+      LinearMap.mulLeft ℂ (t'.cutoffFrameCoeff χ hχ ℓ σ) ∘ₗ A ∘ₗ
+        LinearMap.mulLeft ℂ (e.cutoffFrameCoeff ρ hρ ℓ₀ (t.cutoffFrameSection ψ hψ v)) := by
+  ext f x
+  simp [mul_comm, mul_assoc]
+
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry
     {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
@@ -466,12 +483,6 @@ theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodif
     (σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
     (LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ t.cutoffFrameCoeff ρ hρ ℓ ∈
       sectionClassicalPseudodifferentialOperators m := by
-  -- The cut-off frame coefficient of `f s` is `f` times that of `s`.
-  have hC (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
-      (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
-      t.cutoffFrameCoeff ρ hρ ℓ (f • s) = t.cutoffFrameCoeff ρ hρ ℓ s * f := by
-    ext x
-    simp [mul_comm]
   refine mem_sectionClassicalPseudodifferentialOperators_iff.2
     ⟨isSectionProperlySupported_iff.2 fun K hK ↦ ?_, fun T _ ψ hψ v T' _ χ hχ ℓ' ↦ ?_⟩
   · obtain ⟨K', hK', hA₁, hA₂⟩ :=
@@ -485,13 +496,7 @@ theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodif
         (inter_subset_left.trans (hA₁ _ hCs))
     · have h0 := hA₂ (t.cutoffFrameCoeff ρ hρ ℓ s) (hs.mono fun y hy ↦ by simp [hy]) x hx
       simp [h0]
-  · have hentry : sectionEntry T ψ hψ v T' χ hχ ℓ'
-        ((LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ t.cutoffFrameCoeff ρ hρ ℓ) =
-        LinearMap.mulLeft ℂ (T'.cutoffFrameCoeff χ hχ ℓ' σ) ∘ₗ A ∘ₗ
-          LinearMap.mulLeft ℂ (t.cutoffFrameCoeff ρ hρ ℓ (T.cutoffFrameSection ψ hψ v)) := by
-      ext f x
-      simp [hC, mul_comm, mul_assoc]
-    rw [hentry]
+  · rw [sectionEntry_toSpanSingleton_comp_comp_cutoffFrameCoeff]
     exact mulLeft_comp_mem_classicalPseudodifferentialOperators
       (comp_mulLeft_mem_classicalPseudodifferentialOperators hA _) _
 
