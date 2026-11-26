@@ -70,12 +70,7 @@ theorem nonempty_homologicalOrientation_of_ne_zero (hn : finrank ℝ E = n)
     (ModuleCat.of ℤ (ULift.{0} ℤ)) ULift.moduleEquiv hn x hμ z.val
   refine Subtype.ext ?_
   rw [coe_localOrientationTransport, ← hν]
-  refine (mem_range_localHomologySystemCone_π_app_iff _ hn (FundamentalGroupoid.mk x) _).1
-    ⟨((TopPair.ofSubset ((Set.univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
-      (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom ν, ?_⟩
-    γ.asHom
-  rw [localHomologySystemCone_π_app]
-  exact (singularHomologyToLocalHomology_apply _ x ν).symm
+  exact localHomologyTransport_singularHomologyToLocalHomology _ hn x ν γ.asHom
 
 /-- **The integral top homology of a nonorientable manifold vanishes.** For a compact connected
 manifold of dimension `n` without a homological orientation, `Hₙ(M; ℤ) = 0`. -/
