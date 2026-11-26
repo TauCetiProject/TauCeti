@@ -290,6 +290,18 @@ def toRepFunctor (w : NonemptyInterval ℤ) (d : StepDirection) : InWindow w d �
     exact LinearMap.IsHomogeneous.restrict_comp g.isHomogeneous f.isHomogeneous _
       (hcomp := (f ≫ g : Hom _ _).isHomogeneous)
 
+/-- Forgetting finite dimensionality recovers the representation on the window grades. -/
+@[simp]
+theorem toRepFunctor_obj_obj (P : InWindow w d) :
+    ((toRepFunctor w d).obj P).obj = P.toRep :=
+  (rfl)
+
+/-- The underlying representation morphism is the restriction to the window grades. -/
+@[simp]
+theorem toRepFunctor_map_hom (f : P ⟶ Q) :
+    ((toRepFunctor w d).map f).hom = toRepMap f :=
+  (rfl)
+
 private theorem eq_zero_of_notMem (P : InWindow w d) {a : ℤ} (ha : a ∉ w)
     (x : P.space.grade a) : (x : P.space.Carrier) = 0 :=
   (Submodule.mem_bot ℂ).mp (P.grade_eq_bot ha ▸ x.property)
@@ -708,13 +720,32 @@ theorem windowDegree_windowEmbedding_obj (d : StepDirection) (h : w ≤ W) (i : 
     (NonemptyInterval.coe_subset_coe.mpr h (d.windowDegree_mem w i))).choose_spec
 
 /-- Include a graded pair supported in a smaller window into the category for the larger window.
-The carrier, operator, and intertwining maps are preserved. -/
-@[implicit_reducible]
+The carrier is definitionally the same, so operators and intertwiners act on the original
+coordinate spaces. -/
+@[expose, implicit_reducible]
 def enlargeFunctor (d : StepDirection) (h : w ≤ W) : InWindow w d ⥤ InWindow W d where
   obj P := ⟨P.space, P.pair, fun i ↦ NonemptyInterval.coe_subset_coe.mpr h (P.degree_mem i)⟩
   map f := ⟨f.toLinearMap, f.isHomogeneous, f.intertwines⟩
   map_id _ := Hom.ext rfl
   map_comp _ _ := Hom.ext rfl
+
+/-- Enlarging the window preserves the graded coordinate space. -/
+@[simp]
+theorem enlargeFunctor_obj_space (h : w ≤ W) (P : InWindow w d) :
+    ((enlargeFunctor d h).obj P).space = P.space :=
+  (rfl)
+
+/-- Enlarging the window preserves the homogeneous operator. -/
+@[simp]
+theorem enlargeFunctor_obj_pair_operator (h : w ≤ W) (P : InWindow w d) :
+    ((enlargeFunctor d h).obj P).pair.operator = P.pair.operator :=
+  (rfl)
+
+/-- The enlargement of a morphism has the same underlying linear map. -/
+@[simp]
+theorem enlargeFunctor_map_toLinearMap (h : w ≤ W) (f : P ⟶ Q) :
+    ((enlargeFunctor d h).map f).toLinearMap = f.toLinearMap :=
+  (rfl)
 
 /-- The new vertices of an enlarged window have zero space. -/
 theorem enlargeFunctor_grade_eq_bot (h : w ≤ W) (P : InWindow w d) (j : WindowVertex W)
@@ -735,14 +766,38 @@ theorem enlargeFunctor_arrowMap_eq_zero (h : w ≤ W) (P : InWindow w d) {i j : 
     rfl
   · exact P.eq_zero_of_notMem hj (((enlargeFunctor d h).obj P).arrowMap e x)
 
-/-- Restrict representations along the inclusion of a smaller window. -/
-@[implicit_reducible]
+/-- Restrict representations along the inclusion of a smaller window. The vertex spaces reduce
+to the original spaces at the included vertices, so the component maps have the original types. -/
+@[expose, implicit_reducible]
 def restrictRepFunctor (d : StepDirection) (h : w ≤ W) : FiniteRep W ⥤ FiniteRep w :=
   let F := Paths.lift ((windowEmbedding d h).toPrefunctor ⋙q Paths.of (WindowVertex W))
   let G := (Functor.whiskeringLeft (Paths (WindowVertex w)) (Paths (WindowVertex W))
     (ModuleCat ℂ)).obj F
   ObjectProperty.lift _ (ObjectProperty.ι (IsFinDim ℂ (WindowVertex W)) ⋙ G)
     (fun M ↦ isFinDim_iff.2 fun i ↦ isFinDim_iff.1 M.property (F.obj i))
+
+/-- A vertex of the restriction has the space of its image in the larger window. -/
+@[simp]
+theorem restrictRepFunctor_obj_obj_obj (d : StepDirection) (h : w ≤ W) (M : FiniteRep W)
+    (i : Paths (WindowVertex w)) :
+    ((restrictRepFunctor d h).obj M).obj.obj i = M.obj.obj ((windowEmbedding d h).obj i) :=
+  (rfl)
+
+/-- The restriction sends an arrow to the map of its image in the larger window. -/
+@[simp]
+theorem restrictRepFunctor_obj_obj_map_arrow (d : StepDirection) (h : w ≤ W) (M : FiniteRep W)
+    {i j : WindowVertex w} (e : i ⟶ j) :
+    ((restrictRepFunctor d h).obj M).obj.map e.toPath =
+      M.obj.map ((windowEmbedding d h).map e).toPath :=
+  congrArg (fun p ↦ M.obj.map p)
+    (Paths.lift_toPath ((windowEmbedding d h).toPrefunctor ⋙q Paths.of (WindowVertex W)) e)
+
+/-- A restricted morphism acts by the original component at the image vertex. -/
+@[simp]
+theorem restrictRepFunctor_map_hom_app (d : StepDirection) (h : w ≤ W) {M N : FiniteRep W}
+    (f : M ⟶ N) (i : Paths (WindowVertex w)) :
+    ((restrictRepFunctor d h).map f).hom.app i = f.hom.app ((windowEmbedding d h).obj i) :=
+  (rfl)
 
 private def gradeIso (S : GradedCoordSpace) {a b : ℤ} (hab : a = b) :
     ModuleCat.of ℂ (S.grade a) ≅ ModuleCat.of ℂ (S.grade b) :=
@@ -759,13 +814,7 @@ private def enlargeRestrictRepIso (h : w ≤ W) (P : InWindow w d) :
       P.toRep :=
   Paths.liftNatIso (fun i ↦ gradeIso P.space (windowDegree_windowEmbedding_obj d h i))
     (fun {i j} e ↦ by
-      -- Unbundle the restricted path map to apply the one-arrow formula for `Paths.lift`.
-      let inclusion :=
-        Paths.lift ((windowEmbedding d h).toPrefunctor ⋙q Paths.of (WindowVertex W))
-      change ((enlargeFunctor d h).obj P).toRep.map (inclusion.map e.toPath)
-          ≫ (gradeIso P.space (windowDegree_windowEmbedding_obj d h j)).hom =
-        (gradeIso P.space (windowDegree_windowEmbedding_obj d h i)).hom ≫ P.toRep.map e.toPath
-      simp only [inclusion, Paths.lift_toPath, Prefunctor.comp_map, Paths.of_map, toRep_map_arrow]
+      simp only [restrictRepFunctor_obj_obj_map_arrow, toRep_map_arrow]
       apply ModuleCat.hom_ext
       apply LinearMap.ext
       intro x
