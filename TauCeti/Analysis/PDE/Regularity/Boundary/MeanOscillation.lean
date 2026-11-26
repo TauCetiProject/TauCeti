@@ -71,10 +71,10 @@ zero extension of `u - w` from `u` (`TauCeti.PDE.exists_restrictL_eq_of_sub_mem_
 The decay estimates for constant coefficients at a flat boundary
 (`TauCeti.PDE.exists_setIntegral_ball_inter_norm_gradient_sq_le` and
 `TauCeti.PDE.exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smul_sq_le`)
-apply to the extension, and transfer to `u` up to the energy distance `∫_{B_r⁺} ‖∇u - ∇w‖²`
-(`TauCeti.MeasureTheory.setIntegral_norm_sub_sq_le_add_of_le`). Since `u` solves the frozen
-equation on `B_r⁺` with the field `G - c + (A - a) ∇u`, that distance is at most `(2 / λ²) E`
-(`TauCeti.PDE.UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le`).
+apply to the extension, and transfer to `u` up to the energy distance
+`∫_{B_r⁺} ‖∇u - ∇w‖²` (`TauCeti.PDE.setIntegral_ball_inter_norm_gradient_sub_sq_le_add_of_le`).
+Since `u` solves the frozen equation on `B_r⁺` with the field `G - c + (A - a) ∇u`, that distance
+is at most `(2 / λ²) E` (`TauCeti.PDE.UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le`).
 
 ## References
 
@@ -105,12 +105,11 @@ variable {n : ℕ}
 `u ∈ H¹(U)` vanish on `U ∖ H` and solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly on `U ∩ H`, and let
 `ball z r ⊆ U`. Let `A` be a constant matrix, uniformly elliptic with lower constant `λ` on
 `B_r⁺ = B(z, r) ∩ H`, such that `θ(x) = ‖a(x) - A‖`, in the operator norm of the attached bilinear
-forms, is bounded on `B_r⁺`. Then there is `W ∈ H¹(B(z, r))` vanishing on `B(z, r) ∖ H` and
-solving the frozen problem `-∂ᵢ(Aⁱʲ ∂ⱼW) = 0` weakly on `B_r⁺`, with
+forms, is bounded on `B_r⁺`, and let `c` be a constant vector with `G - c ∈ L²(B_r⁺)`. Then there
+is `W ∈ H¹(B(z, r))` vanishing on `B(z, r) ∖ H` and solving the frozen problem
+`-∂ᵢ(Aⁱʲ ∂ⱼW) = 0` weakly on `B_r⁺`, with
 
-`∫_{B_r⁺} ‖∇u - ∇W‖² ≤ (2 / λ²) (∫_{B_r⁺} θ² ‖∇u‖² + ∫_{B_r⁺} ‖G - c‖²)`
-
-for every constant vector `c` with `G - c ∈ L²(B_r⁺)`. -/
+`∫_{B_r⁺} ‖∇u - ∇W‖² ≤ (2 / λ²) (∫_{B_r⁺} θ² ‖∇u‖² + ∫_{B_r⁺} ‖G - c‖²)`. -/
 theorem exists_frozen_ball_inter_of_norm_matrixBilinearForm_sub_le
     {U H : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {u : W1p volume U 2}
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
@@ -205,21 +204,9 @@ private theorem setIntegral_ball_inter_le_mul_add_mul_of_frozen
     ∫ x in ball z ρ ∩ H, ‖W1p.gradient u x - b‖ ^ 2 ≤
       (4 * D + 2) * (1 + 2 / lam ^ 2) * q * (∫ x in ball z r ∩ H, ‖W1p.gradient u x - c‖ ^ 2) +
         (4 * D + 2) * (1 + 2 / lam ^ 2) * e := by
+  have hX := setIntegral_ball_inter_norm_gradient_sub_sq_le_add_of_le hball hρr hD hq0 hq1 hbest
+    hdecay
   set S := ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))
-  have hS : volume S ≠ ⊤ := measure_ball_inter_ne_top
-  have hsS : ball z ρ ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) ⊆ S :=
-    inter_subset_inter_left _ (ball_subset_ball hρr)
-  have hfm : MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1))) 2 (volume.restrict S) :=
-    (Lp.memLp (W1p.gradient u)).mono_measure
-      (Measure.restrict_mono (inter_subset_left.trans hball) le_rfl)
-  have hWm : MemLp (W1p.gradient W : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1))) 2 (volume.restrict S) :=
-    (Lp.memLp (W1p.gradient W)).mono_measure (Measure.restrict_mono inter_subset_left le_rfl)
-  have hX := setIntegral_norm_sub_sq_le_add_of_le hsS hD hq0 hq1
-    (hfm.integrableOn_norm_sub_sq_of_subset subset_rfl hS c)
-    (hWm.integrableOn_norm_sub_sq_of_subset hsS (ne_top_of_le_ne_top hS (measure_mono hsS)) k)
-    ((hfm.sub hWm).integrable_norm_pow two_ne_zero) hbest hdecay
   -- Collect the constants `4 D ≤ C` and `(4 D + 2) (2 / λ²) ≤ C`.
   have hY : 0 ≤ ∫ x in S, ‖W1p.gradient u x - c‖ ^ 2 :=
     setIntegral_nonneg (measurableSet_ball.inter H.isOpen.measurableSet) fun _ _ => by positivity
@@ -352,24 +339,6 @@ theorem exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smu
         (Measure.restrict_mono (inter_subset_left.trans ((ball_subset_ball hρr).trans hball))
           le_rfl)) ν _) hd hE
 
-/-- The half-balls centred on the boundary hyperplane have positive measure, scaling like the
-balls: for `0 < ρ` and `0 < r`, `|B(z, ρ) ∩ H| = (ρ / r)^(n + 1) |B(z, r) ∩ H|`. -/
-private theorem measureReal_ball_inter_pos_and_eq {H : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    {ν z : EuclideanSpace ℝ (Fin (n + 1))} {c₀ : ℝ} (hν : ν ≠ 0)
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hzc : ⟪z, ν⟫_ℝ = c₀) {r ρ : ℝ} (hρ : 0 < ρ) (hr : 0 < r) :
-    0 < volume.real (ball z r ∩ H) ∧
-      volume.real (ball z ρ ∩ H) = (ρ / r) ^ (n + 1) * volume.real (ball z r ∩ H) := by
-  have hHs : (H : Set (EuclideanSpace ℝ (Fin (n + 1)))) = {y | c₀ < ⟪y, ν⟫_ℝ} := Set.ext hH
-  have half : ∀ t : ℝ, volume.real (ball z t ∩ H) = volume.real (ball z t) / 2 := fun t => by
-    rw [measureReal_def, inter_comm, hHs, Measure.addHaar_setOf_lt_inner_inter_ball volume hν hzc,
-      ENNReal.toReal_div, ← measureReal_def]
-    simp
-  simp only [half, Measure.addHaar_real_ball_of_pos _ _ hρ,
-    Measure.addHaar_real_ball_of_pos _ _ hr, finrank_euclideanSpace_fin, div_pow]
-  refine ⟨half_pos (mul_pos (pow_pos hr _) (ENNReal.toReal_pos
-    (measure_ball_pos volume 0 one_pos).ne' measure_ball_lt_top.ne)), ?_⟩
-  field_simp
-
 /-- **Krylov's mean oscillation estimate for the gradient at a flat boundary, averaged form.** Let
 `0 < λ`. There is `C > 0`, depending only on `n`, `λ` and `Λ`, with the following property. Let
 `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `z` lie on the boundary hyperplane, and write
@@ -419,6 +388,11 @@ theorem exists_setAverage_ball_inter_norm_gradient_sub_inner_setAverage_div_smul
   refine ⟨C, hC, ?_⟩
   intro U H u a A G ν z c c₀ r ρ K q q' hA ha haK hν hH hzc hball hu0 hu hGc hq hgq hρ hρr t
   have hr : 0 < r := hρ.trans_le hρr
+  -- The half-balls have positive measure and scale like the balls.
+  have hHs (t : ℝ) : {y | c₀ < ⟪y, ν⟫_ℝ} ∩ ball z t = ball z t ∩ H := by ext; simp [hH, and_comm]
+  have hV := volume.addHaar_real_setOf_lt_inner_inter_ball_pos hν hzc hr
+  have hVρ := volume.addHaar_real_setOf_lt_inner_inter_ball_eq_div_pow_mul hν hzc hρ.le hr
+  simp only [hHs, finrank_euclideanSpace_fin] at hV hVρ
   set S := ball z r ∩ (H : Set (EuclideanSpace ℝ (Fin (n + 1))))
   set μr := volume.restrict S
   have : IsFiniteMeasure μr := isFiniteMeasure_restrict.2 measure_ball_inter_ne_top
@@ -436,7 +410,6 @@ theorem exists_setAverage_ball_inter_norm_gradient_sub_inner_setAverage_div_smul
   have key := hest hA ha haK hν hH hzc hball hu0 hu hGc hρ hρr t
   -- Pass to averages, using `|B_ρ⁺| = (ρ / r)^(n + 1) |B_r⁺|`.
   set V : ℝ := volume.real S
-  obtain ⟨hV, hVρ⟩ := measureReal_ball_inter_pos_and_eq hν hH hzc hρ hr
   have havg : ∀ (s : Set (EuclideanSpace ℝ (Fin (n + 1)))) (f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ),
       ⨍ x in s, f x = (volume.real s)⁻¹ * ∫ x in s, f x :=
     fun s f => by rw [setAverage_eq, smul_eq_mul]
