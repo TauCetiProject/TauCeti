@@ -19,7 +19,7 @@ model space `E` and cuts functions off with a partition of unity subordinate to 
 `TauCeti.ChartCutoffs I P n ι` packages this data: charts `cᵢ : P → E`, `C^n` with `C^n` inverses,
 and `C^n` cutoffs `ρᵢ` summing to `1` with compact `tsupport ρᵢ` in the source of `cᵢ`, finitely
 many of which meet any compact set. The image of `tsupport ρᵢ` under `cᵢ` is a compact subset of the
-target (`TauCeti.ChartCutoffs.box`).
+target (`TauCeti.ChartCutoffs.chartSupport`).
 
 On a Hausdorff `σ`-compact manifold with finite-dimensional model, every family of such charts
 indexed by the points of `P`, each containing its point, carries cutoffs
@@ -75,24 +75,25 @@ variable {ι : Type*}
 
 /-- The image `cᵢ '' tsupport ρᵢ` of the support of a cutoff under its chart, a compact subset of
 the chart target. -/
-def box (A : ChartCutoffs I P n ι) (i : ι) : Compacts E :=
+def chartSupport (A : ChartCutoffs I P n ι) (i : ι) : Compacts E :=
   ⟨A.chart i '' tsupport (A.cutoff i), (A.isCompact_tsupport i).image_of_continuousOn
     ((A.chart i).continuousOn.mono (A.tsupport_subset i))⟩
 
 @[simp]
-theorem coe_box (A : ChartCutoffs I P n ι) (i : ι) :
-    (A.box i : Set E) = A.chart i '' tsupport (A.cutoff i) :=
+theorem coe_chartSupport (A : ChartCutoffs I P n ι) (i : ι) :
+    (A.chartSupport i : Set E) = A.chart i '' tsupport (A.cutoff i) :=
   (rfl)
 
 /-- Each compact set `cᵢ '' tsupport ρᵢ` lies in the target of its chart. -/
-theorem box_subset (A : ChartCutoffs I P n ι) (i : ι) : (A.box i : Set E) ⊆ (A.chart i).target := by
-  rw [coe_box]
+theorem chartSupport_subset_target (A : ChartCutoffs I P n ι) (i : ι) :
+    (A.chartSupport i : Set E) ⊆ (A.chart i).target := by
+  rw [coe_chartSupport]
   exact image_subset_iff.2 fun _ hz ↦ (A.chart i).map_source (A.tsupport_subset i hz)
 
 /-- Each chart maps the support of its cutoff into its compact set. -/
 theorem mapsTo (A : ChartCutoffs I P n ι) (i : ι) :
-    MapsTo (A.chart i) (tsupport (A.cutoff i)) (A.box i) := by
-  rw [coe_box]
+    MapsTo (A.chart i) (tsupport (A.cutoff i)) (A.chartSupport i) := by
+  rw [coe_chartSupport]
   exact mapsTo_image _ _
 
 /-- The indices of the cutoffs meeting a compact set. -/

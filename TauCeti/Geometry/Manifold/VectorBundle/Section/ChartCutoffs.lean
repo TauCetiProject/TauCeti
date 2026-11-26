@@ -54,23 +54,24 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCo
 in the trivialization `tᵢ`, for the cutoff `ρᵢ`. -/
 def localize (i : ι) :
     BundleTest I F V →L[ℝ] 𝓓(⟨(A.chart i).target, (A.chart i).open_target⟩, F) where
-  toLinearMap := (TestFunction.ofSupportedInCLM ℝ (A.box_subset i)).toLinearMap ∘ₗ
-    (t i).chartLocalization (A.chart i) (A.contMDiffOn_chart_symm i) (ht i) (A.cutoff i) (A.box i)
-      (A.box_subset i) (A.mapsTo i) ∘ₗ (compactlySupported I F ∞ V).subtype ∘ₗ
+  toLinearMap := (TestFunction.ofSupportedInCLM ℝ (A.chartSupport_subset_target i)).toLinearMap ∘ₗ
+    (t i).chartLocalization (A.chart i) (A.contMDiffOn_chart_symm i) (ht i) (A.cutoff i)
+      (A.chartSupport i) (A.chartSupport_subset_target i) (A.mapsTo i) ∘ₗ
+      (compactlySupported I F ∞ V).subtype ∘ₗ
     (BundleTest.ofCompactlySupported I F V).symm.toLinearMap
   cont := by
     let := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
       (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
-    exact (TestFunction.ofSupportedInCLM ℝ (A.box_subset i)).continuous.comp
+    exact (TestFunction.ofSupportedInCLM ℝ (A.chartSupport_subset_target i)).continuous.comp
       ((Bundle.Trivialization.continuous_chartLocalization _ _ _ _ _ _ _ _ _ _ _
         fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩).comp
       (continuous_val_compactlySupportedTopology (I := I) (n := ∞) _ _ _))
 
 /-- The localization of `Φ` is the chart localization of the underlying section of `Φ`. -/
 theorem localize_apply (i : ι) (Φ : BundleTest I F V) :
-    A.localize t ht i Φ = TestFunction.ofSupportedIn (A.box_subset i)
+    A.localize t ht i Φ = TestFunction.ofSupportedIn (A.chartSupport_subset_target i)
       ((t i).chartLocalization (A.chart i) (A.contMDiffOn_chart_symm i) (ht i) (A.cutoff i)
-        (A.box i) (A.box_subset i) (A.mapsTo i)
+        (A.chartSupport i) (A.chartSupport_subset_target i) (A.mapsTo i)
         ((BundleTest.ofCompactlySupported I F V).symm Φ).val) :=
   (rfl)
 
