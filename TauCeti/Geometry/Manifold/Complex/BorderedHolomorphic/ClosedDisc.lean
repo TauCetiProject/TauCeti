@@ -40,7 +40,8 @@ structures on separate types.
 * `Complex.UnitClosedDisc.instChartedSpace`: the atlas of Cayley charts.
 * `Complex.UnitClosedDisc.instHasGroupoid`: the Cayley charts have bordered holomorphic
   transition maps, so the closed disc is a Riemann surface with boundary.
-* `Complex.UnitClosedDisc.mem_borderedInterior_iff` and
+* `Complex.UnitClosedDisc.mem_borderedInterior_iff`,
+  `Complex.UnitClosedDisc.notMem_borderedInterior_iff` and
   `Complex.UnitClosedDisc.compl_borderedInterior`: the interior is the open disc and its
   complement is the unit circle, which
   `Complex.UnitClosedDisc.image_homeomorphClosedBall_compl_borderedInterior` identifies with
@@ -279,6 +280,12 @@ theorem mem_borderedInterior_iff {z : 𝕔𝔻} : z ∈ borderedInterior 𝕔�
 theorem coe_borderedInterior :
     (borderedInterior 𝕔𝔻 : Set 𝕔𝔻) = {z : 𝕔𝔻 | ‖(z : ℂ)‖ < 1} :=
   Set.ext fun _ ↦ mem_borderedInterior_iff
+
+/-- A point of the closed unit disc lies outside its interior exactly when it lies on the unit
+circle. -/
+theorem notMem_borderedInterior_iff {z : 𝕔𝔻} : z ∉ borderedInterior 𝕔𝔻 ↔ ‖(z : ℂ)‖ = 1 := by
+  rw [mem_borderedInterior_iff, not_lt]
+  exact ⟨fun h ↦ le_antisymm z.norm_le_one h, fun h ↦ h.ge⟩
 
 /-- The complement of the interior of the closed unit disc is the unit circle. -/
 theorem compl_borderedInterior :

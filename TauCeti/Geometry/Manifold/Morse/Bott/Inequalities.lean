@@ -397,8 +397,8 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_finrank_thomPair
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
   -- The band has the homology of the sum of the Thom pairs of the pieces on the level `c`, a
   -- finite-dimensional space, so each summand is finite-dimensional.
-  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn hac hcb hcrit hdim g
-    hr (ModuleCat.of K K) n
+  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair hn hac hcb
+    (isClosed_Icc.preimage h.contMDiff.continuous).isCompact hcrit hdim g hr (ModuleCat.of K K) n
   let V (j : {j // ∀ s, f (i j s) = c}) : ModuleCat K := (thomPair (Fin (r j) → ℝ) fun s ↦
     (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s
     ).singularHomology (ModuleCat.of K K) n

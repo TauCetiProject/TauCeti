@@ -107,7 +107,8 @@ private theorem exists_mem_range_value_ae {i : Fin A.n} {ψ : M → ℝ}
   let s : Cₛ^∞⟮closedUpperHalfPlaneModel; F, V⟯ :=
     ⟨fun x ↦ ψ x • A.chartSection i (fun y : ClosedUpperHalfPlane ↦ G y) x,
       A.contMDiff_smul_chartSection_coe hψ hψi hG.contDiffOn⟩
-  have hs : ⇑s = fun x ↦ ψ x • A.chartSection i (fun y : ClosedUpperHalfPlane ↦ G y) x := rfl
+  have hs : ⇑s = fun x ↦ ψ x • A.chartSection i (fun y : ClosedUpperHalfPlane ↦ G y) x :=
+    ContMDiffSection.coeFn_mk _ _
   have has (j : Fin A.n) := chartValueL_ofContMDiffSection_ae A p k
     (ContMDiffSection.ofLE ENat.LEInfty.out s) j
   simp only [ContMDiffSection.coe_ofLE] at has

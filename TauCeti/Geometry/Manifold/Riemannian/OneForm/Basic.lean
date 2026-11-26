@@ -132,8 +132,7 @@ theorem IsPrimitiveOn.metricDual_eq_mgradient {α : RoughForm I M ℝ 1}
 theorem IsPrimitiveOn.mvfderiv_neg_metricDual {α : RoughForm I M ℝ 1}
     {f : M → ℝ} {U : Set M} (hf : IsPrimitiveOn α f U) {x : M} (hx : x ∈ U) :
     mvfderiv I f x (-α.metricDual x) = -‖α.metricDual x‖ ^ 2 := by
-  rw [hf.metricDual_eq_mgradient hx, map_neg, Manifold.mvfderiv_apply_mgradient,
-    real_inner_self_eq_norm_sq]
+  rw [hf.metricDual_eq_mgradient hx, Manifold.mvfderiv_apply_neg_mgradient]
 
 /-- For a `Cⁿ` metric a `Cⁿ` real one-form has a `Cⁿ` metric-dual vector field. -/
 theorem IsSmoothForm.contMDiff_metricDual {n : ℕ∞ω} [IsManifold I (n + 1) M]

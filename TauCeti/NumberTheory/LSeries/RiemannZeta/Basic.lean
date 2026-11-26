@@ -7,9 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
+public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.LSeries.SumCoeff
 import Mathlib.Analysis.PSeriesComplex
-import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Algebra.BigOperators.Intervals
@@ -49,6 +49,8 @@ Siegel's theorem on real zeros.
 * `TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re`: `∑ (n + 1) ^ (-s) = Re ζ(s)` for `s > 1`;
 * `TauCeti.hasSum_nat_rpow_neg_riemannZeta_re`: the same series indexed from `n = 0` with the
   vanishing term `0 ^ (-s)`;
+* `TauCeti.hasSum_pnat_rpow_neg_inv_sub_one_add_riemannZeta₀_re`: the same series over the
+  positive integers, with the pole at `s = 1` split off as `(s - 1)⁻¹ + Re ζ₀(s)`;
 * `TauCeti.norm_riemannZeta_le`, `TauCeti.norm_riemannZeta_le_two`, and
   `TauCeti.riemannZeta_re_le_two`: `‖ζ(s)‖ ≤ Re ζ(Re s)` for `Re s > 1`, and `‖ζ(s)‖ ≤ 2` and
   `Re ζ(s) ≤ 2` for `Re s ≥ 2`;
@@ -107,6 +109,15 @@ theorem hasSum_nat_rpow_neg_riemannZeta_re {s : ℝ} (hs : 1 < s) :
   rw [← hasSum_nat_add_iff' 1]
   simpa [Real.zero_rpow (by linarith : -s ≠ 0)] using
     hasSum_nat_add_one_rpow_neg_riemannZeta_re hs
+
+/-- For real `s > 1`, the real series `∑_{m ≥ 1} m ^ (-s)` over the positive integers sums to
+`(s - 1)⁻¹ + Re ζ₀(s)`, the pole of `riemannZeta` at `1` split off with `riemannZeta₀`. -/
+theorem hasSum_pnat_rpow_neg_inv_sub_one_add_riemannZeta₀_re {s : ℝ} (hs : 1 < s) :
+    HasSum (fun m : ℕ+ ↦ (m : ℝ) ^ (-s)) ((s - 1)⁻¹ + (riemannZeta₀ s).re) := by
+  have h := hasSum_nat_add_one_rpow_neg_riemannZeta_re hs
+  rw [riemannZeta_eq_inv_sub_add (by exact_mod_cast hs.ne'), add_re, ← ofReal_one, ← ofReal_sub,
+    ← ofReal_inv, ofReal_re] at h
+  exact Equiv.pnatEquivNat.symm.hasSum_iff.mp (by simpa [Function.comp_def] using h)
 
 /-- On `Re s > 1`, `‖ζ(s)‖` is bounded by `Re ζ(Re s)`. -/
 theorem norm_riemannZeta_le {s : ℂ} (hs : 1 < s.re) :
