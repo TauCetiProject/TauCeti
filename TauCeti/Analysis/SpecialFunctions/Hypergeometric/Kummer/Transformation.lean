@@ -32,10 +32,13 @@ is `∑ₖ (−1)ᵏ C(n, k) (b − a)ₖ (b + k)ₙ₋ₖ / (n! Γ(b + n))`. Th
 * `Complex.sum_regularizedHGFunCoeff_singleton_mul_neg_one_pow`: the coefficient identity
   `∑ₖ (−1)ᵏ 𝐌ₖ(b − a, b) / (n − k)! = 𝐌ₙ(a, b)` for the coefficients `𝐌ₙ` of the series.
 * `Complex.regularizedHGFun_singleton_eq_exp_mul`: DLMF 13.2.39.
+* `Complex.regularizedHGFun_singleton_self`: its case `a = b`, `𝐌(a, a, z) = e^z / Γ(a)`
+  (DLMF 13.6.1).
 
 ## References
 
-* NIST Digital Library of Mathematical Functions, 13.2.39, <https://dlmf.nist.gov/13.2.E39>.
+* NIST Digital Library of Mathematical Functions, 13.2.39, <https://dlmf.nist.gov/13.2.E39>, and
+  13.6.1, <https://dlmf.nist.gov/13.6.E1>.
 -/
 
 public section
@@ -95,5 +98,13 @@ theorem regularizedHGFun_singleton_eq_exp_mul (a b z : ℂ) :
   simp only [hsum] at h
   rw [mul_comm]
   exact (hasSum_regularizedHGFun (by simp) z).unique h
+
+/-- **DLMF 13.6.1** in regularized form: `𝐌(a, a, z) = e^z / Γ(a)` for all complex `a` and `z`,
+including the poles of `Γ`, where both sides vanish. -/
+theorem regularizedHGFun_singleton_self (a z : ℂ) :
+    regularizedHGFun {a} {a} z = exp z / Gamma a := by
+  rw [regularizedHGFun_singleton_eq_exp_mul, sub_self,
+    regularizedHGFun_of_zero_mem (Multiset.mem_singleton_self 0)]
+  simp [div_eq_mul_inv]
 
 end Complex
