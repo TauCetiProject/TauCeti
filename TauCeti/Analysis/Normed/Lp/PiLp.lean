@@ -26,7 +26,9 @@ positive `Lᵖ` norm (`PiLp.norm_toLp_pos`), and for `1 ≤ q < ∞` rescaling a
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
 distance is at most the square root of the number of coordinates times the sup distance.
 These estimates give inclusions between balls in the two metrics. The corresponding
-Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm.
+Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm;
+conversely, for `p ≥ 1` the `Lᵖ` norm is at most the sum of coordinate norms
+(`PiLp.norm_le_sum_norm`).
 The coordinate spaces may be different seminormed groups, or pseudometric spaces for the
 distance comparisons. A squared-norm bound of `(k + 1) * t²` for a vector of `L²`
 also bounds the number of coordinates with norm exceeding a nonnegative `t` by `k`
@@ -176,6 +178,14 @@ variable {p E}
     singleLI (𝕜 := 𝕜) p E i v = single p i v := by simp [singleLI]
 
 end SingleLI
+
+/-- For `p ≥ 1`, the `Lᵖ` norm of a vector is at most the sum of the norms of its coordinates, by
+the triangle inequality for its decomposition into coordinate vectors. -/
+theorem norm_le_sum_norm [Fact (1 ≤ p)] (x : PiLp p E) : ‖x‖ ≤ ∑ i, ‖x i‖ := by
+  classical
+  calc ‖x‖ = ‖∑ i, single p i (x i)‖ := by rw [univ_sum_single]
+    _ ≤ ∑ i, ‖single p i (x i)‖ := norm_sum_le _ _
+    _ = ∑ i, ‖x i‖ := by simp only [norm_single]
 
 /-- The sum of coordinate norms of a vector is at most `√(card ι)` times its `L²` norm. -/
 theorem sum_norm_le_sqrt_card_mul_norm (x : PiLp 2 E) :
