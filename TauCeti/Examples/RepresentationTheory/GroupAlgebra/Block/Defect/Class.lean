@@ -121,13 +121,7 @@ theorem isDefectGroup_eOne_iff_sylow_centralizer_r (hα : α ^ 2 + α + 1 = 0)
       D = (S : Subgroup (Subgroup.centralizer {r})).map (Subgroup.subtype _) := by
   rw [← coe_toCenter (eOne α),
     (isDefectClass_eOne_r hα hφ).isDefectGroup_iff (isBlockIdempotent_eOne hα) hφ]
-  constructor
-  · rintro ⟨x, hx, S, rfl⟩
-    obtain rfl : x = r := by
-      rwa [ConjClasses.mk_eq_mk_iff_isConj, isConj_iff_eq] at hx
-    exact ⟨S, rfl⟩
-  · rintro ⟨S, rfl⟩
-    exact ⟨r, rfl, S, rfl⟩
+  simp only [ConjClasses.mk_eq_mk_iff_isConj, isConj_iff_eq, exists_eq_left]
 
 end C₃
 
@@ -176,12 +170,6 @@ theorem isDefectGroup_blockOneS₃_iff_sylow_centralizer_one {D : Subgroup S₃}
   have hφ : centerAugmentation (ZMod 2) S₃ blockOneS₃ = 1 := by
     rw [blockOneS₃_eq_principalBlockIdempotent, centerAugmentation_principalBlockIdempotent]
   rw [isDefectClass_blockOneS₃_one.isDefectGroup_iff isBlockIdempotent_blockOneS₃ hφ]
-  constructor
-  · rintro ⟨x, hx, S, rfl⟩
-    obtain rfl : x = 1 := by
-      rwa [ConjClasses.mk_eq_mk_iff_isConj, isConj_one_left] at hx
-    exact ⟨S, rfl⟩
-  · rintro ⟨S, rfl⟩
-    exact ⟨1, rfl, S, rfl⟩
+  simp only [ConjClasses.mk_eq_mk_iff_isConj, isConj_one_left, exists_eq_left]
 
 end TauCeti.Examples.DefectClass
