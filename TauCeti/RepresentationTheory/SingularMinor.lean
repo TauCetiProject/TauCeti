@@ -12,7 +12,7 @@ public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.InformationTheory.Coding.CharacterSum
 public import TauCeti.LinearAlgebra.Matrix.Determinant.LeftKernel
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Translate
-public import TauCeti.RepresentationTheory.PositiveType.Basic
+public import TauCeti.GroupTheory.PositiveDefinite.GramSum
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.NumberTheory.LegendreSymbol.Complex
 
@@ -54,7 +54,7 @@ Adapted from grh-lean (https://github.com/lsernau/grh-lean at commit `72fead1`, 
 Copyright 2026 Anthropic, PBC), file `src/New/Spanning/SecondMoment/PositiveType.lean`,
 declarations `New.re_sum_addChar_dotProduct_mul_le`, `New.inner_addChar_invTranspose_smul_single`
 and `New.card_mul_sum_det_eq_zero_le`. The general helpers adapted from the same file live in
-`TauCeti.RepresentationTheory.PositiveType.Basic`, `TauCeti.InformationTheory.Coding.CharacterSum`
+`TauCeti.GroupTheory.PositiveDefinite.GramSum`, `TauCeti.InformationTheory.Coding.CharacterSum`
 and `TauCeti.LinearAlgebra.Matrix.Determinant.LeftKernel`, each with its own provenance note. Here
 the contragredient stabiliser is written as the row condition `x ᵥ* π s = x` (see
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Translate`) in place of grh-lean's

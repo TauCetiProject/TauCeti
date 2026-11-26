@@ -37,7 +37,7 @@ namespace MonoidHom
 
 variable {G : Type*} [Group G]
 
-variable {n k : Type*} [Fintype n] [DecidableEq n] [CommRing k]
+variable {n k : Type*} [Fintype n] [DecidableEq n] [Semiring k]
 
 /-- The translates `x π(a)⁻¹` of a row agree exactly when `π(a⁻¹ b)` fixes the row. -/
 theorem vecMul_inv_eq_vecMul_inv_iff (π : G →* GL n k) (x : n → k) (a b : G) :
