@@ -5,134 +5,47 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-import Mathlib.Analysis.Matrix.Order
-import Mathlib.Analysis.Matrix.Spectrum
-import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
-import Mathlib.MeasureTheory.Integral.Pi
-import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Module
+public import TauCeti.Analysis.Matrix.Accretive
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Reproducing
-import TauCeti.LinearAlgebra.Complex.Determinant
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
-# Complex Gaussian integral for accretive matrices
+# Complex Gaussian integral for strictly accretive matrices
 
-A complex square matrix `A : Matrix ι ι ℂ` is *strictly accretive* (`Matrix.IsAccretive A`) if its
-Hermitian part `A + Aᴴ` is positive definite. Every strictly accretive matrix is invertible and
-congruent to a diagonal matrix whose entries have positive real part
-(`Matrix.IsAccretive.exists_eq_conjTranspose_mul_diagonal_mul`).
-
-Using this congruence together with the complex change-of-variables formula for additive Haar
-measures (`TauCeti.map_mulVec_addHaar_eq_smul`), we evaluate the multivariate complex Gaussian
-integral with linear shift:
+For a strictly accretive matrix `A`, we compute the complex Gaussian integral with linear
+shift `a` against Lebesgue measure:
 `∫ x : ι → ℂ, exp (-(star x ⬝ᵥ A *ᵥ (x - a))) = π ^ Fintype.card ι * A.det⁻¹`
-(`TauCeti.integral_cexp_neg_star_dotProduct_mulVec`). After the substitution the integrand is a
-diagonal complex Gaussian, evaluated by `TauCeti.integral_cexp_neg_sum_mul_norm_sq_add`.
+(`TauCeti.integral_cexp_neg_star_dotProduct_mulVec`). Congruence to diagonal form and the
+Haar change of variables reduce it to `TauCeti.integral_cexp_neg_sum_mul_norm_sq_add`.
 
-## Main results
+## Provenance
 
-* `Matrix.IsAccretive`: predicate `(A + Aᴴ).PosDef`.
-* `Matrix.PosDef.isAccretive`: every positive definite complex matrix is accretive.
-* `Matrix.IsAccretive.det_ne_zero`: every accretive matrix has nonzero determinant.
-* `Matrix.IsAccretive.exists_eq_conjTranspose_mul_diagonal_mul`: congruence of an accretive matrix
-  to a diagonal matrix with entries in the open right half-plane.
-* `TauCeti.map_mulVec_addHaar_eq_smul`: pushforward of an additive Haar measure on `ι → ℂ` by an
-  invertible complex matrix `u` scales the measure by `‖u.det‖⁻²`.
-* `TauCeti.lintegral_eq_norm_det_sq_mul_lintegral_mulVec`: Lebesgue change of variables on `ι → ℂ`.
-* `TauCeti.integral_cexp_neg_star_dotProduct_mulVec`: multivariate complex Gaussian integral for an
-  accretive matrix `A` with linear shift `a`.
+This result adapts `New.Fock.integral_gauss` from
+`src/Lib/General/Analysis/GaussianIntegral.lean` in grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
+The proof uses Lebesgue measure and Tau Ceti's diagonal Gaussian formula. The underlying
+matrix results adapt `Matrix.IsAccretive`, `Matrix.PosDef.isAccretive`,
+`Matrix.IsAccretive.det_ne_zero` and `New.Fock.exists_eq_conjTranspose_mul_diagonal_mul`.
+The change of variables adapts `New.Fock.map_mulVec_addHaar_eq_smul` and
+`New.lintegral_eq_norm_det_sq_mul_lintegral_mulVec` using Mathlib's Haar pushforward and
+Tau Ceti's real determinant formula for complex-linear maps.
 -/
 
 public section
 
-open MeasureTheory Matrix Complex Finset CStarAlgebra
-open scoped ComplexConjugate ComplexOrder MatrixOrder NNReal
-
-namespace Matrix
-
-variable {ι : Type*} {A : Matrix ι ι ℂ}
-
-/-- A complex square matrix `A` is strictly accretive if `A + Aᴴ` is positive definite. -/
-def IsAccretive (A : Matrix ι ι ℂ) : Prop := (A + Aᴴ).PosDef
-
-/-- Every positive definite complex matrix is strictly accretive. -/
-theorem PosDef.isAccretive (hA : A.PosDef) : A.IsAccretive := hA.add hA.conjTranspose
-
-/-- Every strictly accretive matrix has nonzero determinant. -/
-theorem IsAccretive.det_ne_zero [Fintype ι] [DecidableEq ι] (hA : A.IsAccretive) :
-    A.det ≠ 0 := by
-  intro hdet
-  obtain ⟨v, hv_ne, hv⟩ := (Matrix.exists_mulVec_eq_zero_iff (M := A)).mpr hdet
-  have hpos : 0 < star v ⬝ᵥ (A + Aᴴ) *ᵥ v := hA.dotProduct_mulVec_pos hv_ne
-  have hzero : star v ⬝ᵥ (A + Aᴴ) *ᵥ v = 0 := by
-    rw [add_mulVec, dotProduct_add, hv, dotProduct_zero, zero_add, mulVec_conjTranspose,
-      dotProduct_star, ← dotProduct_mulVec, star_star, hv, dotProduct_zero, star_zero]
-  exact hpos.ne' hzero
-
-/-- A strictly accretive matrix `A` is congruent to a diagonal matrix whose entries have strictly
-positive real part. -/
-theorem IsAccretive.exists_eq_conjTranspose_mul_diagonal_mul [Fintype ι] [DecidableEq ι]
-    (hA : A.IsAccretive) :
-    ∃ (p : GL ι ℂ) (d : ι → ℂ),
-      A = (p : Matrix ι ι ℂ)ᴴ * diagonal d * (p : Matrix ι ι ℂ) ∧ ∀ i : ι, 0 < (d i).re := by
-  obtain ⟨b, hb_unit, hb : A + Aᴴ = star b * b⟩ :=
-    isStrictlyPositive_iff_eq_star_mul_self.mp hA.isStrictlyPositive
-  lift b to GL ι ℂ using hb_unit with B
-  set H : Matrix ι ι ℂ := star (B : Matrix ι ι ℂ)⁻¹ * imaginaryPart A * (B : Matrix ι ι ℂ)⁻¹
-  have hH : H.IsHermitian := ((imaginaryPart A).prop.conjugate' B⁻¹).isHermitian
-  set U : Matrix ι ι ℂ := ↑hH.eigenvectorUnitary
-  have h_spectral : U * diagonal (ofReal ∘ hH.eigenvalues) * star U = H := by
-    simpa using hH.spectral_theorem.symm
-  let d : ι → ℂ := fun i ↦ I * hH.eigenvalues i + 2⁻¹
-  have hd : diagonal d = I • diagonal (ofReal ∘ hH.eigenvalues) + (2⁻¹ : ℂ) • 1 := by
-    simp [smul_one_eq_diagonal, ← diagonal_smul, d]
-  refine ⟨Unitary.toUnits hH.eigenvectorUnitary⁻¹ * B, d, ?_, by simp [d]⟩
-  calc
-    A = I • (imaginaryPart A : Matrix ι ι ℂ) + (2⁻¹ : ℂ) • (A + Aᴴ) := by
-      rw [imaginaryPart_apply_coe, smul_smul, mul_neg, I_mul_I, neg_neg, star_eq_conjTranspose]
-      module
-    _ = star (B : Matrix ι ι ℂ) * (I • H + (2⁻¹ : ℂ) • 1) * B := by
-      simp [mul_add, add_mul, hb, H, ← mul_assoc, ← star_mul]
-    _ = star (B : Matrix ι ι ℂ) * (U * diagonal d * star U) * B := by
-      simp [hd, mul_add, add_mul, h_spectral, U]
-    _ = _ := by simp [U, star_eq_conjTranspose, mul_assoc]
-
-end Matrix
+open MeasureTheory Matrix Complex Finset
+open scoped ComplexConjugate
 
 namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The pushforward of an additive Haar measure `μ` on `ι → ℂ` under an invertible complex matrix
-`u` is `‖u.det‖⁻² • μ`. -/
-theorem map_mulVec_addHaar_eq_smul [DecidableEq ι] {μ : Measure (ι → ℂ)} [μ.IsAddHaarMeasure]
-    {u : Matrix ι ι ℂ} (hu : u.det ≠ 0) :
-    μ.map (fun x : ι → ℂ ↦ u *ᵥ x) = (ENNReal.ofReal (‖u.det‖ ^ 2))⁻¹ • μ := by
-  let f : (ι → ℂ) →ₗ[ℝ] (ι → ℂ) := u.toLin'.restrictScalars ℝ
-  have h_det : LinearMap.det f = ‖u.det‖ ^ 2 := by
-    rw [LinearMap.det_restrictScalars_eq_normSq, LinearMap.det_toLin', Complex.normSq_eq_norm_sq]
-  change μ.map f = _
-  simp [μ.map_linearMap_addHaar_eq_smul_addHaar, h_det, hu]
-
-/-- Change of variables on `ι → ℂ` for any additive Haar measure `μ`: for an invertible complex
-matrix `u` and any `g : (ι → ℂ) → ENNReal`,
-`∫⁻ y, g y ∂μ = ‖u.det‖² * ∫⁻ y, g (u *ᵥ y) ∂μ`. -/
-theorem lintegral_eq_norm_det_sq_mul_lintegral_mulVec [DecidableEq ι] {μ : Measure (ι → ℂ)}
-    [μ.IsAddHaarMeasure] {u : Matrix ι ι ℂ} (hu : u.det ≠ 0) (g : (ι → ℂ) → ENNReal) :
-    ∫⁻ y : ι → ℂ, g y ∂μ = ENNReal.ofReal (‖u.det‖ ^ 2) * ∫⁻ y : ι → ℂ, g (u *ᵥ y) ∂μ := by
-  have h_emb : MeasurableEmbedding (fun y : ι → ℂ ↦ u *ᵥ y) :=
-    Continuous.measurableEmbedding (by fun_prop) (mulVec_injective_of_det_ne_zero hu)
-  rw [← h_emb.lintegral_map, map_mulVec_addHaar_eq_smul hu]
-  simp [ENNReal.mul_inv_cancel_left, hu]
-
 /-- Multivariate complex Gaussian integral for a strictly accretive matrix `A`:
 `∫ x : ι → ℂ, exp (-(star x ⬝ᵥ A *ᵥ (x - a))) = π ^ Fintype.card ι * A.det⁻¹`. -/
 theorem integral_cexp_neg_star_dotProduct_mulVec [DecidableEq ι] {A : Matrix ι ι ℂ}
-    (hA : A.IsAccretive) (a : ι → ℂ) :
+    (hA : A.IsStrictlyAccretive) (a : ι → ℂ) :
     ∫ x : ι → ℂ, exp (-(star x ⬝ᵥ A *ᵥ (x - a))) = (Real.pi : ℂ) ^ Fintype.card ι * A.det⁻¹ := by
   obtain ⟨p, d, rfl, hd⟩ := hA.exists_eq_conjTranspose_mul_diagonal_mul
   set P : Matrix ι ι ℂ := (p : Matrix ι ι ℂ)
