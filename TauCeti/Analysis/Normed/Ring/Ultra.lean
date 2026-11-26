@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.ForwardDiff
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Analysis.Normed.Ring.Ultra
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
+public import Mathlib.RingTheory.Multiplicity
 import Mathlib.Data.Nat.Choose.Factorization
 import Mathlib.RingTheory.Ideal.Operations
 import Mathlib.RingTheory.Ideal.Quotient.Defs
@@ -163,6 +164,23 @@ theorem IsUltrametricDist.norm_natCast_eq_one_of_coprime {R : Type*} [Seminormed
     [NormOneClass R] [IsUltrametricDist R] {n m : ℕ} (hnR : ‖(n : R)‖ < 1) (hnm : n.Coprime m) :
     ‖(m : R)‖ = 1 := by
   simpa using norm_mul_natCast_eq_of_coprime hnR hnm (1 : R)
+
+namespace TauCeti
+
+/-- A prime of norm less than one determines the norm of every nonzero natural number. -/
+theorem norm_natCast_eq_pow_multiplicity {C : Type*} [SeminormedRing C]
+    [NormOneClass C] [NormMulClass C] [IsUltrametricDist C] {p : ℕ}
+    (hp : p.Prime) (hpC : ‖(p : C)‖ < 1)
+    {m : ℕ} (hm : m ≠ 0) : ‖(m : C)‖ = ‖(p : C)‖ ^ multiplicity p m := by
+  have hfin : FiniteMultiplicity p m :=
+    Nat.finiteMultiplicity_iff.mpr ⟨hp.ne_one, Nat.pos_of_ne_zero hm⟩
+  obtain ⟨u, hu, hpu⟩ := hfin.exists_eq_pow_mul_and_not_dvd
+  conv_lhs => rw [hu]
+  rw [Nat.cast_mul, Nat.cast_pow, norm_mul, norm_pow,
+    IsUltrametricDist.norm_natCast_eq_one_of_coprime hpC (hp.coprime_iff_not_dvd.mpr hpu),
+    mul_one]
+
+end TauCeti
 
 /-- In an ultrametric seminormed ring with `‖1‖ = 1` in which a prime `p` has norm less than one,
 the binomial coefficient `(p ^ (k + 1)).choose (p ^ k)`, which is exactly divisible by `p`, has the
