@@ -430,7 +430,7 @@ def cyclesZeroIso :
       exact_locallyConstantToCochains locallyConstantToCochains_injective)
 
 /-- The cocycle of a locally constant function `ψ` is the class of `y ↦ ψ (y 0)`. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 lemma cyclesZeroIso_inv_iCycles :
     (cyclesZeroIso R X M).inv ≫ (cochainComplex R X M).iCycles 0 =
       ModuleCat.ofHom (locallyConstantToCochains R X M) :=
@@ -472,9 +472,7 @@ lemma cyclesZeroIso_hom_apply {z : (cochainComplex R X M).cycles 0} {φ : (Fin 1
     (cyclesZeroIso R X M).hom.hom z x = φ fun _ ↦ x := by
   set ψ := (cyclesZeroIso R X M).hom.hom z
   have hz' : (cyclesZeroIso R X M).inv.hom ψ = z := Iso.hom_inv_id_apply (cyclesZeroIso R X M) z
-  rw [← hz', ← LinearMap.comp_apply, ← ModuleCat.hom_comp, cyclesZeroIso_inv_iCycles,
-    ModuleCat.hom_ofHom,
-    locallyConstantToCochains_apply, cochainClass_zero_inj] at hz
+  rw [← hz', cyclesZeroIso_inv_iCycles_apply, cochainClass_zero_inj] at hz
   exact congrFun hz fun _ ↦ x
 
 variable {R X M} in
