@@ -18,9 +18,9 @@ its initial rank from the chain length, control the final definite rank and the 
 compare the tower exponent with the logarithmic scale of the second prime-sum cutoff. They depend
 only on numerical rank and scale inequalities, not on the cyclotomic field or the prime levels.
 
-The exact rank identity follows from `Nat.sub_add_cancel` using rank separation. The parity
-of the other ranks follows from `Even.pow_of_ne_zero`, `Odd.pow` and `Odd.mul`. The lower bound
-`x^40 ≤ r^8` for the half-gap follows by applying `Nat.pow_le_pow_left` to `x^5 ≤ r`.
+For a dyadic chain length `m = 2^e` with `e ≠ 0` and a ternary target rank `r = 3^j`, the initial
+rank is even, as needed for indexing the derivative rows. When `r ≥ 2`, the half-gap is at least
+the initial rank plus one rank increment. At the dyadic chain length, `m^594 ≤ 2 ^ l₀ (22 * e)`.
 
 The normalization and constants are those of `New.Data` in `New/Reduction/Data/Magnitudes.lean`
 and `New/Reduction/Data/Sizes.lean` in the `grh` folder of
