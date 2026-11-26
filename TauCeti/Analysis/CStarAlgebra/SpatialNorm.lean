@@ -22,14 +22,18 @@ give the bounded operator `a ⊗ b = TensorProduct.mapLCompletion a b` on `E ⊗
 operator algebras `A ⊆ B(E)` and `B ⊆ B(F)` (non-unital star subalgebras), these operators form
 the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)`, `a ⊗ b ↦ a ⊗ b`
 (`NonUnitalStarSubalgebra.spatialTensorHom A B`): it is the product of the amplifications `a ⊗ 1`
-and `1 ⊗ b`, which commute.
+and `1 ⊗ b`, which commute. More generally, star homomorphisms `π : A → B(E)` and `ρ : B → B(F)`
+from arbitrary star algebras give the star homomorphism `a ⊗ b ↦ π a ⊗ ρ b`
+(`NonUnitalStarAlgHom.spatialTensorHom π ρ`); the concrete version is the one for the inclusions.
 
-This homomorphism is **injective** (`NonUnitalStarSubalgebra.spatialTensorHom_injective`). Already
-the linear map `B(E, E') ⊗[𝕜] B(F, F') → B(E ⊗₂ F, E' ⊗₂ F')` is injective
+These homomorphisms are **injective** for injective `π` and `ρ`
+(`NonUnitalStarAlgHom.spatialTensorHom_injective`), in particular for concrete operator algebras
+(`NonUnitalStarSubalgebra.spatialTensorHom_injective`). Already the linear map
+`B(E, E') ⊗[𝕜] B(F, F') → B(E ⊗₂ F, E' ⊗₂ F')` is injective
 (`TauCeti.spatialTensorLinearMap_injective`): write `x = Σᵢ aᵢ ⊗ cᵢ` along a basis `(cᵢ)` of
 `B(F, F')`; testing `x` on vectors `ξ ⊗ η` against `ξ' ⊗ η'` gives
-`⟪η', (Σᵢ ⟪ξ', aᵢ ξ⟫ cᵢ) η⟫ = 0`, so every `⟪ξ', aᵢ ξ⟫` vanishes and so does every `aᵢ`. For
-subalgebras, the inclusion `A ⊗[𝕜] B → B(E) ⊗[𝕜] B(F)` is injective because vector spaces are
+`⟪η', (Σᵢ ⟪ξ', aᵢ ξ⟫ cᵢ) η⟫ = 0`, so every `⟪ξ', aᵢ ξ⟫` vanishes and so does every `aᵢ`. The
+map `A ⊗[𝕜] B → B(E) ⊗[𝕜] B(F)`, `a ⊗ b ↦ π a ⊗ ρ b`, is injective because vector spaces are
 flat.
 
 So `‖x‖_min = ‖(spatialTensorHom A B) x‖` is a norm on `A ⊗[𝕜] B`
@@ -55,6 +59,9 @@ smallest C*-norm on `A ⊗[𝕜] B`; the subscript `min` is only the conventiona
 * `TauCeti.spatialTensorLinearMap`: the linear map `B(E, E') ⊗[𝕜] B(F, F') → B(E ⊗₂ F, E' ⊗₂ F')`,
   with its matrix coefficients `TauCeti.inner_spatialTensorLinearMap` and
   `TauCeti.spatialTensorLinearMap_injective`.
+* `NonUnitalStarAlgHom.spatialTensorHom π ρ`: the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)` of
+  representations, with `NonUnitalStarAlgHom.spatialTensorHom_tmul` and
+  `NonUnitalStarAlgHom.spatialTensorHom_injective`.
 * `NonUnitalStarSubalgebra.spatialTensorHom A B`: the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)`,
   with `NonUnitalStarSubalgebra.spatialTensorHom_tmul` and
   `NonUnitalStarSubalgebra.spatialTensorHom_injective`.
@@ -148,6 +155,64 @@ theorem spatialTensorLinearMap_injective :
 
 end TauCeti
 
+/-! ### Representations -/
+
+namespace NonUnitalStarAlgHom
+
+open TauCeti
+
+variable {𝕜 A B E F : Type*} [RCLike 𝕜] [NonUnitalRing A] [StarRing A] [Module 𝕜 A]
+  [NonUnitalRing B] [StarRing B] [Module 𝕜 B]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [CompleteSpace E] [CompleteSpace F]
+
+variable [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [StarModule 𝕜 A] [SMulCommClass 𝕜 B B]
+  [IsScalarTower 𝕜 B B] [StarModule 𝕜 B]
+
+/-- The **spatial tensor homomorphism** of representations `π : A → B(E)` and `ρ : B → B(F)`:
+the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)`, `a ⊗ b ↦ π a ⊗ ρ b`, the product of the commuting
+amplifications `π a ⊗ 1` and `1 ⊗ ρ b`. -/
+def spatialTensorHom (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) :
+    A ⊗[𝕜] B →⋆ₙₐ[𝕜] (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F)) :=
+  Algebra.TensorProduct.liftNonUnitalStarAlgHom (π.rTensorCompletion F) (ρ.lTensorCompletion E)
+    (π.commute_rTensorCompletion_lTensorCompletion ρ)
+
+/-- Unfolding `NonUnitalStarAlgHom.spatialTensorHom`. -/
+theorem spatialTensorHom_def (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) :
+    π.spatialTensorHom ρ =
+      Algebra.TensorProduct.liftNonUnitalStarAlgHom (π.rTensorCompletion F)
+        (ρ.lTensorCompletion E) (π.commute_rTensorCompletion_lTensorCompletion ρ) :=
+  (rfl)
+
+/-- The spatial tensor homomorphism of `π` and `ρ` sends `a ⊗ b` to the operator `π a ⊗ ρ b`. -/
+@[simp]
+theorem spatialTensorHom_tmul (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) (a : A)
+    (b : B) : π.spatialTensorHom ρ (a ⊗ₜ b) = mapLCompletion (π a) (ρ b) := by
+  simp [spatialTensorHom_def, ContinuousLinearMap.mul_def,
+    rTensorCompletion_comp_lTensorCompletion]
+
+/-- The spatial tensor homomorphism of `π` and `ρ` factors through the full operator algebras. -/
+theorem spatialTensorHom_apply (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F))
+    (x : A ⊗[𝕜] B) :
+    π.spatialTensorHom ρ x =
+      spatialTensorLinearMap 𝕜 E F E F
+        (TensorProduct.map (π : A →ₗ[𝕜] E →L[𝕜] E) (ρ : B →ₗ[𝕜] F →L[𝕜] F) x) := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
+  | tmul a b => simp
+
+/-- **For faithful representations, the spatial tensor homomorphism is injective.** -/
+theorem spatialTensorHom_injective {π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)} {ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)}
+    (hπ : Function.Injective π) (hρ : Function.Injective ρ) :
+    Function.Injective (π.spatialTensorHom ρ) := by
+  have h := spatialTensorLinearMap_injective.comp (TensorProduct.map_injective_of_flat_flat
+    (π : A →ₗ[𝕜] E →L[𝕜] E) (ρ : B →ₗ[𝕜] F →L[𝕜] F) hπ hρ)
+  intro x y hxy
+  rw [spatialTensorHom_apply, spatialTensorHom_apply] at hxy
+  exact h hxy
+
+end NonUnitalStarAlgHom
+
 /-! ### Concrete operator algebras -/
 
 namespace NonUnitalStarSubalgebra
@@ -159,23 +224,24 @@ variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSp
   (A : NonUnitalStarSubalgebra 𝕜 (E →L[𝕜] E)) (B : NonUnitalStarSubalgebra 𝕜 (F →L[𝕜] F))
 
 /-- The **spatial tensor homomorphism** of concrete operator algebras `A ⊆ B(E)` and
-`B ⊆ B(F)`: the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)`, `a ⊗ b ↦ a ⊗ b`, the product of the
-commuting amplifications `a ⊗ 1` and `1 ⊗ b`. -/
+`B ⊆ B(F)`: the star homomorphism `A ⊗[𝕜] B → B(E ⊗₂ F)`, `a ⊗ b ↦ a ⊗ b`, the spatial tensor
+homomorphism of the two inclusions. -/
 def spatialTensorHom :
     A ⊗[𝕜] B →⋆ₙₐ[𝕜] (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F)) :=
-  Algebra.TensorProduct.liftNonUnitalStarAlgHom
-    ((rTensorCompletionStarAlgHom 𝕜 E F).toNonUnitalStarAlgHom.comp
-      (NonUnitalStarSubalgebraClass.subtype A))
-    ((lTensorCompletionStarAlgHom 𝕜 E F).toNonUnitalStarAlgHom.comp
-      (NonUnitalStarSubalgebraClass.subtype B))
-    fun a b ↦ by
-      simpa using commute_rTensorCompletion_lTensorCompletion (a : E →L[𝕜] E) (b : F →L[𝕜] F)
+  (NonUnitalStarSubalgebraClass.subtype A).spatialTensorHom (NonUnitalStarSubalgebraClass.subtype B)
+
+/-- Unfolding `NonUnitalStarSubalgebra.spatialTensorHom`. -/
+theorem spatialTensorHom_def :
+    spatialTensorHom A B =
+      (NonUnitalStarSubalgebraClass.subtype A).spatialTensorHom
+        (NonUnitalStarSubalgebraClass.subtype B) :=
+  (rfl)
 
 /-- The spatial tensor homomorphism sends `a ⊗ b` to the operator `a ⊗ b`. -/
 @[simp]
 theorem spatialTensorHom_tmul (a : A) (b : B) :
     spatialTensorHom A B (a ⊗ₜ b) = mapLCompletion (a : E →L[𝕜] E) (b : F →L[𝕜] F) := by
-  simp [spatialTensorHom, ContinuousLinearMap.mul_def, rTensorCompletion_comp_lTensorCompletion]
+  simp [spatialTensorHom_def]
 
 /-- The spatial tensor homomorphism factors through the full operator algebras. -/
 theorem spatialTensorHom_apply (x : A ⊗[𝕜] B) :
@@ -183,19 +249,12 @@ theorem spatialTensorHom_apply (x : A ⊗[𝕜] B) :
       spatialTensorLinearMap 𝕜 E F E F
         (TensorProduct.map (NonUnitalStarSubalgebraClass.subtype A : A →ₗ[𝕜] E →L[𝕜] E)
           (NonUnitalStarSubalgebraClass.subtype B : B →ₗ[𝕜] F →L[𝕜] F) x) := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy => rw [map_add, map_add, map_add, hx, hy]
-  | tmul a b => simp
+  rw [spatialTensorHom_def, NonUnitalStarAlgHom.spatialTensorHom_apply]
 
 /-- **The spatial tensor homomorphism is injective.** -/
 theorem spatialTensorHom_injective : Function.Injective (spatialTensorHom A B) := by
-  have h := spatialTensorLinearMap_injective.comp (TensorProduct.map_injective_of_flat_flat
-    (NonUnitalStarSubalgebraClass.subtype A : A →ₗ[𝕜] E →L[𝕜] E)
-    (NonUnitalStarSubalgebraClass.subtype B : B →ₗ[𝕜] F →L[𝕜] F)
-    Subtype.val_injective Subtype.val_injective)
-  intro x y hxy
-  rw [spatialTensorHom_apply, spatialTensorHom_apply] at hxy
-  exact h hxy
+  rw [spatialTensorHom_def]
+  exact NonUnitalStarAlgHom.spatialTensorHom_injective Subtype.val_injective Subtype.val_injective
 
 /-! ### The spatial norm -/
 

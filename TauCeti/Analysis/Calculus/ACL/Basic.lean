@@ -32,7 +32,9 @@ normed space. Openness of `Ω` is assumed only for the `C¹` result.
   (`TauCeti.volume_coordinateBox`).
   For `x` in a box and `t ∈ [aᵢ, bᵢ]`, the point `x + (t - xᵢ) eᵢ` stays in the box
   (`TauCeti.add_sub_smul_single_mem_coordinateBox`), and the line function depends only on the
-  coordinates of `x` other than the `i`-th (`TauCeti.lineFunction_add_smul_single`).
+  coordinates of `x` other than the `i`-th (`TauCeti.lineFunction_add_smul_single`). Taking line
+  functions commutes with the pointwise operations and with composition
+  (`TauCeti.lineFunction_add`, `TauCeti.lineFunction_smul`, `TauCeti.lineFunction_comp`, ...).
 * `TauCeti.IsACLOn u Ω`: `u` is continuous on `Ω` and, for every closed coordinate box `Q ⊆ Ω` with
   `aⱼ < bⱼ` for all `j` and every `i`, the line function through `x` is absolutely continuous on
   `[aᵢ, bᵢ]` for almost every `x ∈ Q`.
@@ -172,6 +174,76 @@ omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
 @[simp]
 theorem lineFunction_self (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n))
     (i : Fin n) : lineFunction u x i (x i) = u x := by
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a constant map is constant. -/
+@[simp]
+theorem lineFunction_const (c : F) (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (fun _ ↦ c) x i = fun _ ↦ c := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of the zero map is zero. -/
+@[simp]
+theorem lineFunction_zero [Zero F] (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (0 : EuclideanSpace ℝ (Fin n) → F) x i = 0 := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a sum is the sum of the line functions. -/
+@[simp]
+theorem lineFunction_add [Add F] (u v : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (u + v) x i = lineFunction u x i + lineFunction v x i := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a negative is the negative of the line function. -/
+@[simp]
+theorem lineFunction_neg [Neg F] (u : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (-u) x i = -lineFunction u x i := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a difference is the difference of the line functions. -/
+@[simp]
+theorem lineFunction_sub [Sub F] (u v : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (u - v) x i = lineFunction u x i - lineFunction v x i := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a constant multiple is the constant multiple of the line function. -/
+@[simp]
+theorem lineFunction_const_smul {M : Type*} [SMul M F] (c : M) (u : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (c • u) x i = c • lineFunction u x i := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a pointwise product `g • u` is the product of the line functions. -/
+@[simp]
+theorem lineFunction_smul {M : Type*} [SMul M F] (g : EuclideanSpace ℝ (Fin n) → M)
+    (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (g • u) x i = lineFunction g x i • lineFunction u x i := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of `L ∘ u` is `L` composed with the line function of `u`. -/
+@[simp]
+theorem lineFunction_comp {F' : Type*} (L : F → F') (u : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (L ∘ u) x i = L ∘ lineFunction u x i := by
+  funext
   simp [lineFunction]
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
