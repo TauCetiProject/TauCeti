@@ -9,7 +9,6 @@ public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 public import Mathlib.LinearAlgebra.Coevaluation
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Algebra.Category.FiniteIsocrystal.Monoidal
-public import TauCeti.LinearAlgebra.FiniteDimensional.Semilinear
 
 /-!
 # The dual of a finite isocrystal
@@ -80,14 +79,10 @@ section DualFrobenius
 variable (D : FiniteIsocrystal.{u} σ)
 
 /-- The Frobenius of the dual of a finite isocrystal: the `σ`-semilinear map
-`ℓ ↦ σ ∘ ℓ ∘ Φ⁻¹` on `Dual L D`. -/
-noncomputable def dualFrobenius : Module.Dual L D →ₛₗ[(σ : L →+* L)] Module.Dual L D where
-  toFun ℓ :=
-    { toFun x := σ (ℓ (D.frobeniusEquiv.symm x))
-      map_add' x y := by simp
-      map_smul' c x := by rw [map_smulₛₗ, map_smul, smul_eq_mul, map_mul]; simp }
-  map_add' ℓ ℓ' := by ext; simp
-  map_smul' c ℓ := by ext; simp
+`ℓ ↦ σ ∘ ℓ ∘ Φ⁻¹` on `Dual L D`, which is Mathlib's `LinearEquiv.arrowCongr` of `Φ` and `σ`. -/
+noncomputable def dualFrobenius : Module.Dual L D →ₛₗ[(σ : L →+* L)] Module.Dual L D :=
+  (LinearEquiv.arrowCongr D.frobeniusEquiv σ.toRingEquiv.toSemilinearEquiv :
+    Module.Dual L D ≃ₛₗ[(σ : L →+* L)] Module.Dual L D).toLinearMap
 
 /-- The dual Frobenius is `ℓ ↦ σ ∘ ℓ ∘ Φ⁻¹`. -/
 theorem dualFrobenius_apply (ℓ : Module.Dual L D) (x : D) :
@@ -107,12 +102,9 @@ theorem eq_dualFrobenius_iff (ℓ ℓ' : Module.Dual L D) :
   rw [h, dualFrobenius_apply_frobenius]
 
 /-- The dual Frobenius is bijective. -/
-theorem dualFrobenius_bijective : Function.Bijective D.dualFrobenius := by
-  have hinj : Function.Injective D.dualFrobenius := fun ℓ ℓ' h =>
-    LinearMap.ext fun x => σ.injective (by
-      rw [← dualFrobenius_apply_frobenius, ← dualFrobenius_apply_frobenius, h])
-  have : RingHomSurjective (σ : L →+* L) := ⟨σ.surjective⟩
-  exact ⟨hinj, LinearMap.surjective_of_injectiveₛₗ hinj⟩
+theorem dualFrobenius_bijective : Function.Bijective D.dualFrobenius :=
+  (LinearEquiv.arrowCongr D.frobeniusEquiv σ.toRingEquiv.toSemilinearEquiv :
+    Module.Dual L D ≃ₛₗ[(σ : L →+* L)] Module.Dual L D).bijective
 
 /-- The dual of a finite isocrystal: `Dual L D` with Frobenius `ℓ ↦ σ ∘ ℓ ∘ Φ⁻¹`. -/
 noncomputable abbrev dual : FiniteIsocrystal.{u} σ :=
