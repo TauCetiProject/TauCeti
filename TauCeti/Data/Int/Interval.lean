@@ -21,7 +21,8 @@ This bound is independent of the endpoints, including when the interval is empty
 vanishing relative boundary for intervals whose lengths tend to infinity.
 
 For a cutoff `Y` in an ordered ring with a floor, the integers `c` with `|c| < Y` form the
-interval `(-⌈Y⌉, ⌈Y⌉)` (`TauCeti.setOf_abs_intCast_lt_eq_Ioo`). They are therefore finitely many,
+interval `(-⌈Y⌉, ⌈Y⌉)` (`TauCeti.setOf_abs_intCast_lt_eq_Ioo`, with the membership form
+`TauCeti.mem_Ioo_neg_ceil_ceil_iff`). They are therefore finitely many,
 and at most `3 Y` of them once `Y ≥ 1`. This is the one-coefficient count behind boxes of integer
 polynomials with real coefficient bounds.
 -/
@@ -69,11 +70,16 @@ section Ring
 
 variable {K : Type*} [Ring K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing K]
 
+/-- An integer has absolute value less than `Y` exactly when it lies in `(-⌈Y⌉, ⌈Y⌉)`. -/
+theorem mem_Ioo_neg_ceil_ceil_iff {c : ℤ} {Y : K} :
+    c ∈ Finset.Ioo (-⌈Y⌉) ⌈Y⌉ ↔ |(c : K)| < Y := by
+  simp [abs_lt, Int.lt_ceil, neg_lt]
+
 /-- The integers of absolute value less than `Y` are the interval `(-⌈Y⌉, ⌈Y⌉)`. -/
 theorem setOf_abs_intCast_lt_eq_Ioo (Y : K) :
     {c : ℤ | |(c : K)| < Y} = ↑(Finset.Ioo (-⌈Y⌉) ⌈Y⌉) := by
   ext c
-  simp [abs_lt, Int.lt_ceil, neg_lt]
+  exact mem_Ioo_neg_ceil_ceil_iff.symm
 
 /-- There are finitely many integers of absolute value less than `Y`. -/
 theorem finite_setOf_abs_intCast_lt (Y : K) : {c : ℤ | |(c : K)| < Y}.Finite := by
