@@ -23,15 +23,15 @@ distribution is involutive if and only if its pullback by a diffeomorphism is in
 The vector-field pullback and Lie-bracket naturality APIs are provided by Mathlib.
 
 `TauCeti.IsDistributionFrameOn.comap_mfderivWithin` pulls a local frame back through partial
-coordinates. `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global specialization, and
-`TauCeti.IsContMDiffDistribution.comap_mfderiv` pulls back a smooth distribution.
+coordinates, and `TauCeti.IsDistributionFrameOn.comap_mfderiv` is its global specialization.
 `TauCeti.IsContMDiffDistribution.exists_isDistributionFrameOn_of_eventually_eq_comap` is the local
-version: a distribution that a local diffeomorphism pulls back from a `C^m` one near a point has a
-`C^m` local frame there. Hence pullbacks along local diffeomorphisms of `C^m` distributions are
-`C^m` (`TauCeti.IsContMDiffDistribution.comap_mfderiv_of_isLocalDiffeomorph`), and conversely a
-distribution whose pullback along a surjective local diffeomorphism is `C^m` is itself `C^m`
-(`TauCeti.IsContMDiffDistribution.of_comap_mfderiv_of_isLocalDiffeomorph`), as local inverses pull
-the pullback back to it.
+version for distributions: a distribution that a local diffeomorphism pulls back from a `C^m` one
+near a point has a `C^m` local frame there. Hence pullbacks along local diffeomorphisms of `C^m`
+distributions are `C^m` (`TauCeti.IsContMDiffDistribution.comap_mfderiv_of_isLocalDiffeomorph`,
+with the special case `TauCeti.IsContMDiffDistribution.comap_mfderiv` of a diffeomorphism), and
+conversely a distribution whose pullback along a surjective local diffeomorphism is `C^m` is itself
+`C^m` (`TauCeti.IsContMDiffDistribution.of_comap_mfderiv_of_isLocalDiffeomorph`), as local
+inverses pull the pullback back to it.
 When `D x` is the preimage of `D' (f x)` under the differential of a local diffeomorphism `f` at
 `x`, the differential restricts to a linear equivalence `D x ≃ D' (f x)`
 (`IsLocalDiffeomorphAt.mfderivRestrictEquiv`) and induces one of normal spaces
@@ -137,18 +137,6 @@ theorem IsDistributionFrameOn.comap_mfderiv {m : ℕ∞ω} {ι : Type*}
       (fun x _ ↦ by simpa only [mfderivWithin_univ] using h.isInvertible_mfderiv hn0)
       uniqueMDiffOn_univ hmn
 
-/-- The pullback of a `C^m` distribution through a `C^n` diffeomorphism is a `C^m`
-distribution of the same rank when `m + 1 ≤ n`. -/
-theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
-    (hD' : IsContMDiffDistribution J m k D') (h : M ≃ₘ^n⟮I, J⟯ N) (hmn : m + 1 ≤ n) :
-    IsContMDiffDistribution I m k
-      (fun x ↦ (D' (h x)).comap (mfderiv I J h x).toLinearMap) := by
-  rw [isContMDiffDistribution_iff] at hD' ⊢
-  intro x
-  obtain ⟨U, hU, hx, X, hX⟩ := hD' (h x)
-  exact ⟨h ⁻¹' U, hU.preimage h.continuous, hx, fun i ↦ mpullback I J h (X i),
-    hX.comap_mfderiv h hmn⟩
-
 open Filter in
 open scoped Topology in
 /-- **Local frames of a pulled-back distribution.** If a `C^n` local diffeomorphism `f` at `x`
@@ -193,6 +181,14 @@ theorem IsContMDiffDistribution.comap_mfderiv_of_isLocalDiffeomorph {m : ℕ∞�
       (fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap) :=
   .of_mem_nhds fun x ↦ hD'.exists_isDistributionFrameOn_of_eventually_eq_comap (hf x) hmn
     (.of_forall fun _ ↦ rfl)
+
+/-- The pullback of a `C^m` distribution through a `C^n` diffeomorphism is a `C^m`
+distribution of the same rank when `m + 1 ≤ n`. -/
+theorem IsContMDiffDistribution.comap_mfderiv {m : ℕ∞ω} {k : ℕ}
+    (hD' : IsContMDiffDistribution J m k D') (h : M ≃ₘ^n⟮I, J⟯ N) (hmn : m + 1 ≤ n) :
+    IsContMDiffDistribution I m k
+      (fun x ↦ (D' (h x)).comap (mfderiv I J h x).toLinearMap) :=
+  hD'.comap_mfderiv_of_isLocalDiffeomorph h.isLocalDiffeomorph hmn
 
 omit [CompleteSpace E] in
 open Filter in

@@ -135,6 +135,13 @@ theorem mfderiv_prodMap_id_coe (x : E × ℝ) :
   exact Prod.ext (ContinuousLinearMap.id_apply (R₁ := ℝ) (v.1 : E))
     (ContinuousLinearMap.id_apply (R₁ := ℝ) (v.2 : ℝ))
 
+/-- For a real normed space `E`, the differential of the quotient map `E × ℝ → E × AddCircle p`
+sends each tangent vector to itself, the tangent spaces of the circle being read in its charts. -/
+theorem mfderiv_prodMap_id_coe_apply (x : E × ℝ) (v : TangentSpace 𝓘(ℝ, E × ℝ) x) :
+    mfderiv 𝓘(ℝ, E × ℝ) (𝓘(ℝ, E).prod 𝓘(ℝ))
+      (Prod.map (id : E → E) ((↑) : ℝ → AddCircle p)) x v = v :=
+  congr($(mfderiv_prodMap_id_coe p x) v)
+
 /-- The product quotient map onto the circle cylinder has derivative the identity in the real
 plane model of its tangent spaces. -/
 @[simp]

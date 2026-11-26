@@ -279,6 +279,11 @@ variable {F H' N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDime
   [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J 2 N] {D' : Π y : N, Submodule ℝ (TangentSpace J y)} {f : M → N} {m : ℕ∞ω}
 
+/-- A local diffeomorphism of class `m ≥ n + 1` with `1 ≤ n` is at least `C²`. -/
+private theorem two_le_of_one_le_of_add_one_le {n m : ℕ∞ω} (hn : 1 ≤ n) (hnm : n + 1 ≤ m) :
+    2 ≤ m :=
+  le_trans (by rw [← one_add_one_eq_two]; exact add_le_add hn le_rfl) hnm
+
 /-- **Contact structures pull back along local diffeomorphisms.** The pullback
 `x ↦ (df_x)⁻¹ (D' (f x))` of a `C^n` contact structure `D'` along a `C^m` local diffeomorphism `f`,
 with `1 ≤ n` and `n + 1 ≤ m`, is a `C^n` contact structure. -/
@@ -286,7 +291,7 @@ theorem IsContactDistribution.comap_mfderiv_of_isLocalDiffeomorph
     (hD' : IsContactDistribution J n D') (hn : 1 ≤ n) (hf : IsLocalDiffeomorph I J m f)
     (hnm : n + 1 ≤ m) :
     IsContactDistribution I n (fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap) := by
-  have hm : 2 ≤ m := le_trans (by rw [← one_add_one_eq_two]; exact add_le_add hn le_rfl) hnm
+  have hm : 2 ≤ m := two_le_of_one_le_of_add_one_le hn hnm
   have hm0 : m ≠ 0 := (zero_lt_two.trans_le hm).ne'
   refine ⟨?_, fun x ↦ ?_, fun x ↦ ?_⟩
   · rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩
@@ -308,7 +313,7 @@ theorem IsContactDistribution.of_comap_mfderiv_of_isLocalDiffeomorph
     (hD : IsContactDistribution I n (fun x ↦ (D' (f x)).comap (mfderiv I J f x).toLinearMap))
     (hn : 1 ≤ n) (hf : IsLocalDiffeomorph I J m f) (hnm : n + 1 ≤ m) (hsurj : Surjective f) :
     IsContactDistribution J n D' := by
-  have hm : 2 ≤ m := le_trans (by rw [← one_add_one_eq_two]; exact add_le_add hn le_rfl) hnm
+  have hm : 2 ≤ m := two_le_of_one_le_of_add_one_le hn hnm
   have hm0 : m ≠ 0 := (zero_lt_two.trans_le hm).ne'
   have hsmooth : IsContMDiffDistribution J n (finrank ℝ F - 1) D' := by
     rcases isEmpty_or_nonempty M with hM | ⟨⟨x⟩⟩

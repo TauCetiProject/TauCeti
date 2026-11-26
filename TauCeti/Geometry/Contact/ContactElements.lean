@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Coorientation
 public import TauCeti.Geometry.Contact.Transition
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Cover
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -289,13 +290,13 @@ theorem comap_mfderiv_contactElementDistribution :
         (Prod.map id ((↑) : ℝ → AddCircle π)) p).toLinearMap) =
       contactElementForm.kerDistribution := by
   ext p v
-  rw [Submodule.mem_comap, AddCircle.mfderiv_prodMap_id_coe, SmoothForm.mem_kerDistribution,
-    contactElementForm_apply]
-  exact mem_contactElementLine_coe
+  rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, AddCircle.mfderiv_prodMap_id_coe_apply,
+    SmoothForm.mem_kerDistribution, contactElementForm_apply]
+  exact mem_contactElementDistribution.trans mem_contactElementLine_coe
 
 /-- **The space of contact elements of the plane is a contact manifold.** The hyperplane field of
 tangent vectors whose `ℝ²`-component lies on the contact element at their base point is a contact
-structure on `ℝ² × AddCircle π`, of every class `C^n`. -/
+structure on `ℝ² × AddCircle π`, of every class `C^n` with `n ≤ ∞`. -/
 theorem isContactDistribution_contactElementDistribution {n : ℕ∞ω} [ENat.LEInfty n] :
     IsContactDistribution (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) n contactElementDistribution := by
   have h : IsContactDistribution (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) ∞ contactElementDistribution := by
@@ -322,17 +323,13 @@ theorem not_exists_smoothForm_ker_eq_contactElementDistribution :
   set β' := SmoothForm.mpullback c hcs β
   have hβ' (p : (ℝ × ℝ) × ℝ) (v : TangentSpace 𝓘(ℝ, (ℝ × ℝ) × ℝ) p) :
       β'.val p ![v] = β.val (c p) ![v] := by
-    rw [SmoothForm.mpullback_apply_one, hc, AddCircle.mfderiv_prodMap_id_coe]
-    rfl
+    rw [SmoothForm.mpullback_apply_one, hc, AddCircle.mfderiv_prodMap_id_coe_apply]
   -- It has the same kernel as `α = cos τ dx + sin τ dy`, so `β' = f α` with `f` vanishing nowhere.
+  have hβD : β.kerDistribution = contactElementDistribution :=
+    funext fun z ↦ (SmoothForm.kerDistribution_eq_ker ..).trans (hβ z).2
   have hker : β'.kerDistribution = contactElementForm.kerDistribution := by
-    rw [← comap_mfderiv_contactElementDistribution]
-    ext p v
-    have hmem (w : TangentSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) (c p)) :
-        β.val (c p) ![w] = 0 ↔ w ∈ contactElementDistribution (c p) := by
-      rw [← (hβ (c p)).2, RoughForm.mem_ker]
-    rw [SmoothForm.mem_kerDistribution, hβ', Submodule.mem_comap, AddCircle.mfderiv_prodMap_id_coe]
-    exact hmem v
+    rw [← comap_mfderiv_contactElementDistribution, ← hβD]
+    exact funext (SmoothForm.kerDistribution_mpullback c hcs β)
   obtain ⟨f, ⟨hf, hf₀, hβf⟩, -⟩ :=
     (SmoothForm.kerDistribution_eq_iff_existsUnique_fun_smul contactElementForm_apply_ne_zero).1
       hker
