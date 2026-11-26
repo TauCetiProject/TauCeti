@@ -59,7 +59,7 @@ theorem neg_comp_fderiv_hamiltonianVectorField_eq_hessianOperator_neg
     -(J.toLinearMap.toContinuousLinearMap ∘L fderiv ℝ (ω.hamiltonianVectorField H) x) =
       hessianOperator (-H) x := by
   ext v
-  simp [hessianOperator_neg, apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg]
+  simp [apply_fderiv_hamiltonianVectorField_eq_hessianOperator hg]
 
 /-- **The Hamiltonian vector field of the squared norm.** If the inner product of `V` is the metric
 `ω(·, J ·)`, the Hamiltonian vector field of `y ↦ ‖y‖²` is the linear field `y ↦ -2 J y`. -/

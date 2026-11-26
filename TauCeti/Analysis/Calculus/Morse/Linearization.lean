@@ -177,6 +177,7 @@ theorem hessianOperator_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
 
 /-- The Hessian operator of `-f` is the negative of the Hessian operator of `f`, with no regularity
 assumption: both sides use Mathlib's totalized derivatives. -/
+@[simp]
 theorem hessianOperator_neg (f : E → ℝ) (x : E) :
     hessianOperator (-f) x = -hessianOperator f x := by
   have h : fderiv ℝ (-f) = -fderiv ℝ f := funext fun _ ↦ fderiv_neg
