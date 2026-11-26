@@ -117,9 +117,7 @@ theorem setIntegral_boxDomain_eq_intervalIntegral {a b : Fin 2 → ℝ} (hab : �
     ∫ x in boxDomain a b, F x =
       ∫ s in a 0..b 0, ∫ t in a 1..b 1, F (WithLp.toLp 2 ![s, t]) := by
   have hG : Continuous fun p : ℝ × ℝ => F (WithLp.toLp 2 ![p.1, p.2]) :=
-    hF.comp ((PiLp.continuous_toLp 2 _).comp (continuous_pi fun i => by
-      fin_cases i
-      exacts [continuous_fst, continuous_snd]))
+    (hF.comp euclideanPlaneCLEquivProd.symm.continuous).congr fun p => by simp
   have hFE : (fun x => F x) = fun x => F (WithLp.toLp 2
       ![(euclideanPlaneEquivProd x).1, (euclideanPlaneEquivProd x).2]) := by
     funext x

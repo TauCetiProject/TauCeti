@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Spectrum.Box
-public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
+public import TauCeti.Analysis.PDE.Spectrum.Mixed
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
@@ -15,7 +15,6 @@ import TauCeti.Analysis.Fourier.SineCosineSeries
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
@@ -98,25 +97,6 @@ variable {a b : Fin 2 → ℝ}
 
 /-! ### Integrals over a rectangle -/
 
-/-- The coordinates `(s, t) ↦ (s, t)` of the Euclidean plane, as a continuous linear map. -/
-private def planeL : ℝ × ℝ →L[ℝ] EuclideanSpace ℝ (Fin 2) :=
-  (EuclideanSpace.equiv (Fin 2) ℝ).symm.toContinuousLinearMap ∘L
-    (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm.toContinuousLinearMap
-
-private theorem planeL_apply (p : ℝ × ℝ) : planeL p = WithLp.toLp 2 ![p.1, p.2] := by
-  ext i
-  fin_cases i <;> simp [planeL]
-
-private theorem toLp_one_zero :
-    (WithLp.toLp 2 ![(1 : ℝ), 0] : EuclideanSpace ℝ (Fin 2)) = EuclideanSpace.single 0 1 := by
-  ext i
-  fin_cases i <;> simp
-
-private theorem toLp_zero_one :
-    (WithLp.toLp 2 ![(0 : ℝ), 1] : EuclideanSpace ℝ (Fin 2)) = EuclideanSpace.single 1 1 := by
-  ext i
-  fin_cases i <;> simp
-
 /-- The gradient pairing of a separated function `s (x 0) k (x 1)` with `φ` in coordinates. -/
 private theorem inner_gradient_mul_eq {s s' k k' : ℝ → ℝ} (hs : ∀ t, HasDerivAt s (s' t) t)
     (hk : ∀ t, HasDerivAt k (k' t) t) (φ : EuclideanSpace ℝ (Fin 2) → ℝ)
@@ -147,24 +127,30 @@ private theorem fderiv_flux_add_fderiv_flux {s s' k k' : ℝ → ℝ} {c d : ℝ
     (hs : ∀ t, HasDerivAt s (s' t) t) (hs' : ∀ t, HasDerivAt s' (-c * s t) t)
     (hk : ∀ t, HasDerivAt k (k' t) t) (hk' : ∀ t, HasDerivAt k' (-d * k t) t)
     {φ : EuclideanSpace ℝ (Fin 2) → ℝ} (hφ : ContDiff ℝ 1 φ) (p : ℝ × ℝ) :
-    fderiv ℝ (fun p : ℝ × ℝ => φ (planeL p) * (s' p.1 * k p.2)) p (1, 0) +
-        fderiv ℝ (fun p : ℝ × ℝ => φ (planeL p) * (s p.1 * k' p.2)) p (0, 1) =
-      s' p.1 * k p.2 * fderiv ℝ φ (planeL p) (EuclideanSpace.single 0 1) +
-        s p.1 * k' p.2 * fderiv ℝ φ (planeL p) (EuclideanSpace.single 1 1) -
-        (c + d) * (s p.1 * k p.2 * φ (planeL p)) := by
-  have hφL : HasFDerivAt (fun q => φ (planeL q)) ((fderiv ℝ φ (planeL p)).comp planeL) p :=
-    ((hφ.differentiable one_ne_zero) (planeL p)).hasFDerivAt.comp p planeL.hasFDerivAt
-  have hfd : HasFDerivAt (fun p : ℝ × ℝ => φ (planeL p) * (s' p.1 * k p.2)) _ p :=
+    fderiv ℝ (fun p : ℝ × ℝ => φ (euclideanPlaneCLEquivProd.symm p) * (s' p.1 * k p.2)) p (1, 0) +
+        fderiv ℝ (fun p : ℝ × ℝ => φ (euclideanPlaneCLEquivProd.symm p) * (s p.1 * k' p.2)) p
+          (0, 1) =
+      s' p.1 * k p.2 * fderiv ℝ φ (euclideanPlaneCLEquivProd.symm p) (EuclideanSpace.single 0 1) +
+        s p.1 * k' p.2 * fderiv ℝ φ (euclideanPlaneCLEquivProd.symm p) (EuclideanSpace.single 1 1) -
+        (c + d) * (s p.1 * k p.2 * φ (euclideanPlaneCLEquivProd.symm p)) := by
+  have hφL : HasFDerivAt (fun q => φ (euclideanPlaneCLEquivProd.symm q))
+      ((fderiv ℝ φ (euclideanPlaneCLEquivProd.symm p)).comp
+        (euclideanPlaneCLEquivProd.symm : ℝ × ℝ →L[ℝ] EuclideanSpace ℝ (Fin 2))) p :=
+    ((hφ.differentiable one_ne_zero) (euclideanPlaneCLEquivProd.symm p)).hasFDerivAt.comp p
+      euclideanPlaneCLEquivProd.symm.hasFDerivAt
+  have hfd : HasFDerivAt (fun p : ℝ × ℝ => φ (euclideanPlaneCLEquivProd.symm p) * (s' p.1 * k p.2))
+      _ p :=
     hφL.mul (((hs' p.1).comp_hasFDerivAt p (hasFDerivAt_fst)).mul
       ((hk p.2).comp_hasFDerivAt p (hasFDerivAt_snd)))
-  have hgd : HasFDerivAt (fun p : ℝ × ℝ => φ (planeL p) * (s p.1 * k' p.2)) _ p :=
+  have hgd : HasFDerivAt (fun p : ℝ × ℝ => φ (euclideanPlaneCLEquivProd.symm p) * (s p.1 * k' p.2))
+      _ p :=
     hφL.mul (((hs p.1).comp_hasFDerivAt p (hasFDerivAt_fst)).mul
       ((hk' p.2).comp_hasFDerivAt p (hasFDerivAt_snd)))
   rw [hfd.fderiv, hgd.fderiv]
-  simp only [planeL_apply, Function.comp_apply, smul_add, add_apply,
+  simp only [euclideanPlaneCLEquivProd_symm_apply, Function.comp_apply, smul_add, add_apply,
     smul_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
-    ContinuousLinearMap.comp_apply, smul_eq_mul, mul_zero, mul_one, zero_add, add_zero,
-    toLp_one_zero, toLp_zero_one]
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, smul_eq_mul, mul_zero, mul_one,
+    zero_add, add_zero, EuclideanSpace.toLp_one_zero, EuclideanSpace.toLp_zero_one]
   ring
 
 /-- The two parts of Green's formula for a separated mode, the divergence of the flux
@@ -216,22 +202,21 @@ private theorem setIntegral_flux_divergence_eq_zero (hab : ∀ i, a i ≤ b i)
   rw [setIntegral_boxDomain_eq_intervalIntegral hab
     (continuous_flux_divergence_and_continuous_mul c d hs hs'c hk hk'c hφ).1]
   -- The two components `φ s' k` and `φ s k'` of the flux, read on `ℝ × ℝ`.
-  set f : ℝ × ℝ → ℝ := fun p => φ (planeL p) * (s' p.1 * k p.2) with hf_def
-  set g : ℝ × ℝ → ℝ := fun p => φ (planeL p) * (s p.1 * k' p.2) with hg_def
+  set f : ℝ × ℝ → ℝ := fun p => φ (euclideanPlaneCLEquivProd.symm p) * (s' p.1 * k p.2)
+  set g : ℝ × ℝ → ℝ := fun p => φ (euclideanPlaneCLEquivProd.symm p) * (s p.1 * k' p.2)
   have hdiv (p : ℝ × ℝ) : fderiv ℝ f p (1, 0) + fderiv ℝ g p (0, 1) =
-      s' p.1 * k p.2 * fderiv ℝ φ (planeL p) (EuclideanSpace.single 0 1) +
-        s p.1 * k' p.2 * fderiv ℝ φ (planeL p) (EuclideanSpace.single 1 1) -
-        (c + d) * (s p.1 * k p.2 * φ (planeL p)) :=
+      s' p.1 * k p.2 * fderiv ℝ φ (euclideanPlaneCLEquivProd.symm p) (EuclideanSpace.single 0 1) +
+        s p.1 * k' p.2 * fderiv ℝ φ (euclideanPlaneCLEquivProd.symm p) (EuclideanSpace.single 1 1) -
+        (c + d) * (s p.1 * k p.2 * φ (euclideanPlaneCLEquivProd.symm p)) :=
     fderiv_flux_add_fderiv_flux hs hs' hk hk' hφ p
-  have := planeL.differentiable
-  have hL := planeL.continuous
+  have := euclideanPlaneCLEquivProd.symm.differentiable
   have (v : EuclideanSpace ℝ (Fin 2)) : Continuous fun x => fderiv ℝ φ x v :=
     (hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const
   have := hφ.continuous
   have hdivc : Continuous fun p : ℝ × ℝ =>
-      s' p.1 * k p.2 * fderiv ℝ φ (planeL p) (EuclideanSpace.single 0 1) +
-        s p.1 * k' p.2 * fderiv ℝ φ (planeL p) (EuclideanSpace.single 1 1) -
-        (c + d) * (s p.1 * k p.2 * φ (planeL p)) := by
+      s' p.1 * k p.2 * fderiv ℝ φ (euclideanPlaneCLEquivProd.symm p) (EuclideanSpace.single 0 1) +
+        s p.1 * k' p.2 * fderiv ℝ φ (euclideanPlaneCLEquivProd.symm p) (EuclideanSpace.single 1 1) -
+        (c + d) * (s p.1 * k p.2 * φ (euclideanPlaneCLEquivProd.symm p)) := by
     fun_prop
   have hi : IntegrableOn (fun p => fderiv ℝ f p (1, 0) + fderiv ℝ g p (0, 1))
       ([[a 0, b 0]] ×ˢ [[a 1, b 1]]) := by
@@ -242,15 +227,18 @@ private theorem setIntegral_flux_divergence_eq_zero (hab : ∀ i, a i ≤ b i)
     (fun p _ => (by fun_prop : DifferentiableAt ℝ f p).hasFDerivAt)
     (fun p _ => (by fun_prop : DifferentiableAt ℝ g p).hasFDerivAt) hi
   -- Each boundary integral vanishes.
-  rw [intervalIntegral.integral_eq_zero_of_forall_mem_uIcc (F := fun t => g (t, b 1)) fun t ht => by
-      simp only [hg_def, planeL_apply]; linear_combination s t * htop t ht,
-    intervalIntegral.integral_eq_zero_of_forall_mem_uIcc (F := fun t => g (t, a 1)) fun t ht => by
-      simp only [hg_def, planeL_apply]; linear_combination s t * hbot t ht,
-    intervalIntegral.integral_eq_zero_of_forall_mem_uIcc (F := fun t => f (b 0, t)) fun t ht => by
-      simp only [hf_def, planeL_apply]; linear_combination k t * hright t ht,
-    intervalIntegral.integral_eq_zero_of_forall_mem_uIcc (F := fun t => f (a 0, t)) fun t ht => by
-      simp only [hf_def, planeL_apply]; linear_combination k t * hleft t ht] at hgreen
-  simp_rw [hdiv, planeL_apply] at hgreen
+  have hz {F : ℝ → ℝ} {u v : ℝ} (h : ∀ t ∈ [[u, v]], F t = 0) : ∫ t in u..v, F t = 0 :=
+    intervalIntegral.integral_zero_ae (ae_of_all _ fun t ht => h t (uIoc_subset_uIcc ht))
+  rw [hz (F := fun t => g (t, b 1)) fun t ht => by
+      simp only [g, euclideanPlaneCLEquivProd_symm_apply]; linear_combination s t * htop t ht,
+    hz (F := fun t => g (t, a 1)) fun t ht => by
+      simp only [g, euclideanPlaneCLEquivProd_symm_apply]; linear_combination s t * hbot t ht,
+    hz (F := fun t => f (b 0, t)) fun t ht => by
+      simp only [f, euclideanPlaneCLEquivProd_symm_apply]; linear_combination k t * hright t ht,
+    hz (F := fun t => f (a 0, t)) fun t ht => by
+      simp only [f, euclideanPlaneCLEquivProd_symm_apply]; linear_combination k t * hleft t ht]
+    at hgreen
+  simp_rw [hdiv, euclideanPlaneCLEquivProd_symm_apply] at hgreen
   simpa using hgreen
 
 /-- **Green's formula for a separated mode on a rectangle.** Let `s'' = -c s` and `k'' = -d k` on
@@ -355,9 +343,10 @@ private theorem toLp_mem_closure_left (hab : ∀ i, a i < b i) {t : ℝ} (ht : t
     (WithLp.toLp 2 ![a 0, t] : EuclideanSpace ℝ (Fin 2)) ∈
       closure {x : EuclideanSpace ℝ (Fin 2) | x 0 = a 0 ∧ x 1 ∈ Ioo (a 1) (b 1)} := by
   have he : Continuous fun t : ℝ => (WithLp.toLp 2 ![a 0, t] : EuclideanSpace ℝ (Fin 2)) := by
-    have : Continuous fun t : ℝ => planeL (a 0, t) :=
-      planeL.continuous.comp (continuous_const.prodMk continuous_id)
-    simpa [planeL_apply] using this
+    have : Continuous fun t : ℝ => euclideanPlaneCLEquivProd.symm (a 0, t) :=
+      euclideanPlaneCLEquivProd.symm.continuous.comp
+        (continuous_const.prodMk continuous_id)
+    simpa [euclideanPlaneCLEquivProd_symm_apply] using this
   refine closure_mono ?_ (image_closure_subset_closure_image he
     ⟨t, by rwa [closure_Ioo (hab 1).ne], rfl⟩)
   rintro _ ⟨s, hs, rfl⟩
@@ -662,7 +651,8 @@ theorem exists_value_ae_eq_mul_sin_of_forall_inner_gradient_eq_boxDomain_left
   refine ⟨r, ?_⟩
   have hfe : f - r • e = 0 := by
     refine eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero _ fun m l => ?_
-    rw [setIntegral_mul_eq_inner_value_of_ae_eq (hwv m l), inner_sub_left, real_inner_smul_left]
+    rw [W1p.setIntegral_mul_eq_inner_value_of_ae_eq (hwv m l), inner_sub_left,
+      real_inner_smul_left]
     by_cases hml : (m, l) = (0, 0)
     · obtain ⟨rfl, rfl⟩ := Prod.mk.inj hml
       rw [div_mul_cancel₀ _ (inner_self_ne_zero.2 he), sub_self]
