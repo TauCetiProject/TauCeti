@@ -44,7 +44,7 @@ the local uniqueness and the regularity of such a branch all fail.
   critical point at all for `t < 0`.
 * **Critical points near `(0, 0)` are not locally unique.** No function `ψ` describes the critical
   points of the family near `(0, 0)` as its graph
-  (`TauCeti.not_eventually_mem_criticalPoints_pow_three_sub_mul_iff`): for small `t > 0` the two
+  (`TauCeti.not_eventually_mem_criticalPoints_pow_three_sub_mul_iff_eq`): for small `t > 0` the two
   critical points `±√(t / 3)` are both close to `0`.
 * **No branch is differentiable, even from one side.** A choice `ψ t` of critical points of `f_t`
   for all small `t > 0` satisfies `|ψ t| = √(t / 3)`, so no extension of `ψ` to `t = 0` is
@@ -205,7 +205,7 @@ theorem not_exists_eventually_mem_criticalPoints_pow_three_sub_mul :
 /-- **The critical points near `(0, 0)` are not the graph of a function.** For no function `ψ`
 are the critical points `x` of `x³ - t x`, for `(t, x)` near `(0, 0)`, exactly the points with
 `x = ψ t`: for small `t > 0` the two critical points `±√(t / 3)` are both near `0`. -/
-theorem not_eventually_mem_criticalPoints_pow_three_sub_mul_iff (ψ : ℝ → ℝ) :
+theorem not_eventually_mem_criticalPoints_pow_three_sub_mul_iff_eq (ψ : ℝ → ℝ) :
     ¬∀ᶠ q : ℝ × ℝ in 𝓝 (0, 0),
       (q.2 ∈ criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - q.1 * y) ↔ ψ q.1 = q.2) := by
   intro h
