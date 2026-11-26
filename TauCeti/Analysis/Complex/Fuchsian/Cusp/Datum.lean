@@ -208,6 +208,13 @@ theorem scaling_smul_cusp : D.scaling • D.cusp = ∞ := by
   rwa [(isParabolic_upperRightHom_iff.mpr D.width_pos.ne').smul_eq_self_iff,
     parabolicFixedPoint_upperRightHom] at hfix
 
+/-- The inverse of a lift of the scaling of a cusp datum carries `∞` to the cusp, so that
+it can be used as a scaling matrix for the cusp. -/
+theorem mapGL_inv_smul_infty {D : Γ.CuspDatum} {s : SL(2, ℝ)}
+    (hs : (s : PSL(2, ℝ)) = D.scaling) :
+    Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹ • (OnePoint.infty : OnePoint ℝ) = D.cusp := by
+  rw [OnePoint.mapGL_smul, QuotientGroup.mk_inv, hs, inv_smul_eq_iff, D.scaling_smul_cusp]
+
 /-- Cusp data with the same scaling represent the same boundary point. -/
 theorem cusp_eq_of_scaling_eq {Δ : Subgroup PSL(2, ℝ)} (D : Δ.CuspDatum) (E : Γ.CuspDatum)
     (hσ : D.scaling = E.scaling) : D.cusp = E.cusp :=
