@@ -169,6 +169,7 @@ variable {hX : IsAdaptedPseudoGradient (sphereHeight v ∘ Prod.fst + sphereHeig
 /-- Every coefficient of the integral Morse boundary of the sum of two height functions on a
 product `Sⁿ × Sᵐ` of spheres of positive dimensions vanishes, for every adapted pseudo-gradient and
 whatever the orientations of the unstable manifolds. -/
+@[simp]
 theorem signedMorseBoundaryCoeff_sphereHeight_comp_fst_add_comp_snd (hn : n ≠ 0) (hm : m ≠ 0)
     (p q : criticalPoints 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin m))
       (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd)) :
@@ -225,7 +226,7 @@ theorem signedMorseBoundary_sphereHeight_comp_fst_add_comp_snd (hn : n ≠ 0) (h
       (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd))
     (R : Type*) [Ring R] : hX.signedMorseBoundary 𝔬 hf R = 0 := by
   ext p q
-  simp [signedMorseBoundaryCoeff_sphereHeight_comp_fst_add_comp_snd 𝔬 hn hm]
+  simp [hn, hm]
 
 /-- **The integral Morse homology of a product of spheres is free.** For every pseudo-gradient
 adapted to the sum of two height functions on a product `Sⁿ × Sᵐ` of spheres of positive dimensions
