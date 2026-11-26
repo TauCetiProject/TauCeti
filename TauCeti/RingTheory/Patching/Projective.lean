@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Patching.PatchedModule
 
 import Mathlib.RingTheory.Finiteness.Prod
+import TauCeti.Logic.Function.Basic
 
 /-!
 # Milnor patching of finitely generated projective modules
@@ -203,16 +204,6 @@ private theorem map_map_of_comp_eq_id {R S M N : Type*} [Ring R] [Ring S] [AddCo
   rw [← LinearMap.comp_apply, ← BalancedExtension.map_comp, hri, BalancedExtension.map_id,
     LinearMap.id_apply]
 
-/-- A map that is a retract of a bijection, through two naturality squares, is a bijection. -/
-private theorem bijective_of_retract {X Y Z W : Type*} {f : X → Z} {f' : Y → W} {a : X → Y}
-    {b : Y → X} {c : Z → W} {d : W → Z} (hba : ∀ x, b (a x) = x) (hdc : ∀ z, d (c z) = z)
-    (ha : ∀ x, f' (a x) = c (f x)) (hb : ∀ y, f (b y) = d (f' y)) (hf' : Function.Bijective f') :
-    Function.Bijective f := by
-  refine ⟨fun x x' hxx' ↦ ?_, fun z ↦ ?_⟩
-  · simpa [hba] using congrArg b (hf'.1 ((ha x).trans ((congrArg c hxx').trans (ha x').symm)))
-  · obtain ⟨y, hy⟩ := hf'.2 (c z)
-    exact ⟨b y, by rw [hb, hy, hdc]⟩
-
 /-- The conclusions of Milnor's patching theorem pass to retracts of patching triples. -/
 private theorem IsPatched.of_retract {α : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
     {E₁ E₂ : Type*} [AddCommGroup E₁] [Module A₁ E₁] [AddCommGroup E₂] [Module A₂ E₂]
@@ -230,14 +221,10 @@ private theorem IsPatched.of_retract {α : BalancedExtension π₁ P₁ →ₗ[Q
     (by simpa [i, r] using LinearMap.congr_fun hrg₁ m.fst)
     (by simpa [i, r] using LinearMap.congr_fun hrg₂ m.snd)
   refine ⟨.of_surjective r fun x ↦ ⟨i x, LinearMap.congr_fun hri x⟩, .of_split i r hri, ?_, ?_⟩
-  · exact bijective_of_retract (f' := baseChangeFst h β) (c := g₁) (d := r₁)
-      (map_map_of_comp_eq_id hri)
-      (LinearMap.congr_fun hrg₁) (baseChangeFst_map_map h α g₁ g₂ hg)
-      (baseChangeFst_map_map h β r₁ r₂ hr) hβ.bijective_fst
-  · exact bijective_of_retract (f' := baseChangeSnd h β) (c := g₂) (d := r₂)
-      (map_map_of_comp_eq_id hri)
-      (LinearMap.congr_fun hrg₂) (baseChangeSnd_map_map h α g₁ g₂ hg)
-      (baseChangeSnd_map_map h β r₁ r₂ hr) hβ.bijective_snd
+  · exact Function.bijective_of_retract hβ.bijective_fst (baseChangeFst_map_map h α g₁ g₂ hg)
+      (baseChangeFst_map_map h β r₁ r₂ hr) (map_map_of_comp_eq_id hri) (LinearMap.congr_fun hrg₁)
+  · exact Function.bijective_of_retract hβ.bijective_snd (baseChangeSnd_map_map h α g₁ g₂ hg)
+      (baseChangeSnd_map_map h β r₁ r₂ hr) (map_map_of_comp_eq_id hri) (LinearMap.congr_fun hrg₂)
 
 variable (hD : ∀ a₁ a₂, π₁ a₁ = π₂ a₂ → ∃! d, p₁ d = a₁ ∧ p₂ d = a₂)
 
