@@ -31,9 +31,10 @@ values in the determinant representation `CliffordAlgebra.spinCGroup.DetFiber`, 
 (`Orientation.SpinCHalfSpinor.alternatingMap_apply_smul`). When the Clifford generators act
 skew-adjointly the action is isometric (`Orientation.SpinCHalfSpinor.isIsometricSMul`).
 
-Viewing the smooth half-spin action as a unit-valued homomorphism via
-`AlgHom.realSpinCEvenSmoothHom` differentiates it to `Orientation.realSpinCHalfSpinLieLinearMap` on
-`𝔰𝔭𝔦𝔫ᶜ(4)`: it generates the exponential rays (`Orientation.exp_smul_realSpinCHalfSpinLieLinearMap`,
+Viewing the framed even Clifford action `Orientation.realEvenHalfSpinAction` as a unit-valued
+smooth homomorphism via `AlgHom.realSpinCEvenSmoothHom` differentiates it to
+`Orientation.realSpinCHalfSpinLieLinearMap` on `𝔰𝔭𝔦𝔫ᶜ(4)`: it generates the exponential rays
+(`Orientation.exp_smul_realSpinCHalfSpinLieLinearMap`,
 `Orientation.hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_zero`), preserves commutators and
 `Spinᶜ(4)` conjugation, splits `(Ω, a) ∈ 𝔰𝔬(4) × ℝ` into the lifted orthogonal half-spin operator of
 `Ω` plus `(ia / 2) • 1` with `Spinᶜ(4) → SO(4)` equivariance and affine determinant shift, and
@@ -304,70 +305,88 @@ theorem alternatingMap_apply_smul (h₂ : finrank ℂ (SpinCHalfSpinor o hQ b ρ
 
 end SpinCHalfSpinor
 
+end Normed
+
 /-! ### Differentiated Lie-algebra action -/
+
+section DifferentiatedAction
+
+/-- Completeness of a finite-dimensional chirality eigenspace. -/
+local instance instCompleteSpaceHalfSpin {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+    [FiniteDimensional ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ) :
+    CompleteSpace (eigenspace (ρ (chirality Q o)) ε) :=
+  FiniteDimensional.completeSpace ℂ _
+
+/-- Real normed-algebra structure on half-spin endomorphisms compatible with
+`ContinuousLinearMap.toNormedSpace`. -/
+local instance instNormedAlgebraRealHalfSpin {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ) :
+    NormedAlgebra ℝ (eigenspace (ρ (chirality Q o)) ε →L[ℂ] eigenspace (ρ (chirality Q o)) ε) :=
+  { ContinuousLinearMap.toNormedSpace, ContinuousLinearMap.algebra with }
 
 section LieRepresentation
 
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] [FiniteDimensional ℂ W]
+  (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ)
+
+local notation "S" => eigenspace (ρ (chirality Q o)) ε
 local notation "ISO" => 𝓘(ℝ, realSpecialOrthogonalLieModel 4)
 local notation "SORange" =>
   MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
     (realCliffordForm 4 0 : QuadraticForm ℝ (Fin 4 → ℝ)))
 
-/-- Completeness of the finite-dimensional chirality eigenspace `S`. -/
-local instance instCompleteSpaceHalfSpinLie : CompleteSpace S := FiniteDimensional.completeSpace ℂ S
 /-- Operator-norm ring structure on half-spin endomorphisms. -/
 local instance instNormedRingHalfSpinLie : NormedRing (S →L[ℂ] S) :=
   ContinuousLinearMap.toNormedRing
-/-- Real normed-algebra structure on half-spin endomorphisms compatible with
-`ContinuousLinearMap.toNormedSpace`. -/
-local instance instNormedAlgebraRealHalfSpinLie : NormedAlgebra ℝ (S →L[ℂ] S) :=
-  { ContinuousLinearMap.toNormedSpace, ContinuousLinearMap.algebra with }
 
-private def framedSpinCHalfSpinAction : even (realCliffordForm 4 0) →ₐ[ℝ] (S →L[ℂ] S) :=
+/-- The framed even Clifford action on the `ε`-eigenspace `S` of the chirality element, valued in
+continuous linear endomorphisms after comparing `CliffordAlgebra.even (realCliffordForm 4 0)` with
+`CliffordAlgebra.even Q` in the orthonormal frame `b`. -/
+def realEvenHalfSpinAction : even (realCliffordForm 4 0) →ₐ[ℝ] (S →L[ℂ] S) :=
   ((Module.End.toContinuousLinearMap (𝕜 := ℂ) S).toAlgHom.restrictScalars ℝ).comp
     ((evenHalfSpinAction o ρ ε).comp (b.realEvenCliffordEquiv hQ).toAlgHom)
 
-private theorem framedSpinCHalfSpinAction_apply (u : even (realCliffordForm 4 0)) :
-    framedSpinCHalfSpinAction o hQ b ρ ε u =
+/-- `realEvenHalfSpinAction` evaluates `evenHalfSpinAction` after the frame comparison
+`OrthonormalBasis.realEvenCliffordEquiv`, as a continuous linear endomorphism. -/
+@[simp]
+theorem realEvenHalfSpinAction_apply (u : even (realCliffordForm 4 0)) :
+    realEvenHalfSpinAction o hQ b ρ ε u =
       LinearMap.toContinuousLinearMap
         ((evenHalfSpinAction o ρ ε) (b.realEvenCliffordEquiv hQ u)) := (rfl)
 
-private theorem coe_framedSpinCHalfSpinAction_realSpinCEvenSmoothHom (x : SpinC) :
-    ((framedSpinCHalfSpinAction o hQ b ρ ε).realSpinCEvenSmoothHom hpos x : S →L[ℂ] S) =
+/-- The unit-valued smooth homomorphism induced by `realEvenHalfSpinAction` via
+`AlgHom.realSpinCEvenSmoothHom` coerces pointwise to `realSpinCHalfSpinSmoothHom`. -/
+theorem coe_realEvenHalfSpinAction_realSpinCEvenSmoothHom (x : SpinC) :
+    ((realEvenHalfSpinAction o hQ b ρ ε).realSpinCEvenSmoothHom hpos x : S →L[ℂ] S) =
       realSpinCHalfSpinSmoothHom o hQ b ρ ε x :=
   -- `Exists.elim` + congruence avoids costly motive/`isDefEq` unfolding on `realSpinLieModel 4`.
   (spinCGroup.mk_surjective (realCliffordForm 4 0) hpos x).elim fun p hx ↦ by
-    have hmk : (p.2 : ℂ) • framedSpinCHalfSpinAction o hQ b ρ ε
+    have hmk : (p.2 : ℂ) • realEvenHalfSpinAction o hQ b ρ ε
           (spinGroupToEven (realCliffordForm 4 0) p.1) =
         realSpinCHalfSpinSmoothHom o hQ b ρ ε
           (spinCGroup.mk (realCliffordForm 4 0) hpos (p.1, p.2)) := by
       ext ψ
-      simp only [framedSpinCHalfSpinAction_apply, realSpinCHalfSpinSmoothHom_mk, smul_apply,
+      simp only [realEvenHalfSpinAction_apply, realSpinCHalfSpinSmoothHom_mk, smul_apply,
         LinearMap.coe_toContinuousLinearMap', spinCHalfSpinRep_apply, LinearMap.smul_apply,
         halfSpinRep_apply, OrthonormalBasis.spinGroupToEven_realSpinGroupEquiv]
     exact (congrArg (fun y ↦
-      ((framedSpinCHalfSpinAction o hQ b ρ ε).realSpinCEvenSmoothHom hpos y : S →L[ℂ] S))
+      ((realEvenHalfSpinAction o hQ b ρ ε).realSpinCEvenSmoothHom hpos y : S →L[ℂ] S))
         hx.symm).trans <|
       (AlgHom.coe_realSpinCEvenSmoothHom_mk (A := S →L[ℂ] S)
-        (framedSpinCHalfSpinAction o hQ b ρ ε) hpos (p.1, p.2)).trans <|
+        (realEvenHalfSpinAction o hQ b ρ ε) hpos (p.1, p.2)).trans <|
         hmk.trans (congrArg (realSpinCHalfSpinSmoothHom o hQ b ρ ε) hx)
-
-private theorem inv_coe_framedSpinCHalfSpinAction_realSpinCEvenSmoothHom (x : SpinC) :
-    ((((framedSpinCHalfSpinAction o hQ b ρ ε).realSpinCEvenSmoothHom hpos x)⁻¹ :
-        (S →L[ℂ] S)ˣ) : S →L[ℂ] S) = realSpinCHalfSpinSmoothHom o hQ b ρ ε x⁻¹ :=
-  (congrArg Units.val
-    (map_inv ((framedSpinCHalfSpinAction o hQ b ρ ε).realSpinCEvenSmoothHom hpos) x)).symm.trans
-    (coe_framedSpinCHalfSpinAction_realSpinCEvenSmoothHom o hQ b ρ ε x⁻¹)
 
 /-- The differentiated `ℝ`-linear half-spin representation `𝔰𝔭𝔦𝔫ᶜ(4) →ₗ[ℝ] (S →L[ℂ] S)` on a
 chirality eigenspace `S` in the orthonormal frame `b`. -/
 def realSpinCHalfSpinLieLinearMap : LeftInvariantDerivation I SpinC →ₗ[ℝ] (S →L[ℂ] S) :=
-  AlgHom.realSpinCEvenLieLinearMap (A := S →L[ℂ] S) (framedSpinCHalfSpinAction o hQ b ρ ε) hpos
+  AlgHom.realSpinCEvenLieLinearMap (A := S →L[ℂ] S) (realEvenHalfSpinAction o hQ b ρ ε) hpos
 
-private theorem realSpinCHalfSpinLieLinearMap_eq (X : LeftInvariantDerivation I SpinC) :
+/-- `realSpinCHalfSpinLieLinearMap` is `AlgHom.realSpinCEvenLieLinearMap` applied to
+`realEvenHalfSpinAction`. -/
+theorem realSpinCHalfSpinLieLinearMap_eq (X : LeftInvariantDerivation I SpinC) :
     realSpinCHalfSpinLieLinearMap o hQ b ρ ε X =
       AlgHom.realSpinCEvenLieLinearMap (A := S →L[ℂ] S)
-        (framedSpinCHalfSpinAction o hQ b ρ ε) hpos X := (rfl)
+        (realEvenHalfSpinAction o hQ b ρ ε) hpos X := (rfl)
 
 /-- The operator-norm exponential of `t • realSpinCHalfSpinLieLinearMap o hQ b ρ ε X` equals the
 smooth half-spin action on `lieExp (t • X)`. -/
@@ -376,7 +395,7 @@ theorem exp_smul_realSpinCHalfSpinLieLinearMap
     NormedSpace.exp (t • realSpinCHalfSpinLieLinearMap o hQ b ρ ε X) =
       realSpinCHalfSpinSmoothHom o hQ b ρ ε (lieExp (t • X)) := by
   simp only [realSpinCHalfSpinLieLinearMap_eq, AlgHom.exp_smul_realSpinCEvenLieLinearMap,
-    coe_framedSpinCHalfSpinAction_realSpinCEvenSmoothHom]
+    coe_realEvenHalfSpinAction_realSpinCEvenSmoothHom]
 
 /-- Differentiating the smooth half-spin action along a Lie-group exponential ray at `t = 0`
 recovers `realSpinCHalfSpinLieLinearMap o hQ b ρ ε X`. -/
@@ -385,9 +404,9 @@ theorem hasDerivAt_realSpinCHalfSpinSmoothHom_lieExp_smul_zero
     HasDerivAt (fun t : ℝ ↦ realSpinCHalfSpinSmoothHom o hQ b ρ ε (lieExp (t • X)))
       (realSpinCHalfSpinLieLinearMap o hQ b ρ ε X) 0 := by
   simpa only [realSpinCHalfSpinLieLinearMap_eq,
-    coe_framedSpinCHalfSpinAction_realSpinCEvenSmoothHom] using
+    coe_realEvenHalfSpinAction_realSpinCEvenSmoothHom] using
     AlgHom.hasDerivAt_realSpinCEvenSmoothHom_lieExp_smul_zero
-      (A := S →L[ℂ] S) (framedSpinCHalfSpinAction o hQ b ρ ε) hpos X
+      (A := S →L[ℂ] S) (realEvenHalfSpinAction o hQ b ρ ε) hpos X
 
 /-- `realSpinCHalfSpinLieLinearMap` sends the Lie bracket on `𝔰𝔭𝔦𝔫ᶜ(4)` to the operator
 commutator on `S`. -/
@@ -406,9 +425,8 @@ theorem realSpinCHalfSpinLieLinearMap_Ad (g : SpinC) (X : LeftInvariantDerivatio
     realSpinCHalfSpinLieLinearMap o hQ b ρ ε (TauCeti.Lie.Ad g X) =
       realSpinCHalfSpinSmoothHom o hQ b ρ ε g * realSpinCHalfSpinLieLinearMap o hQ b ρ ε X *
         realSpinCHalfSpinSmoothHom o hQ b ρ ε g⁻¹ := by
-  simp only [realSpinCHalfSpinLieLinearMap_eq, AlgHom.realSpinCEvenLieLinearMap_Ad,
-    coe_framedSpinCHalfSpinAction_realSpinCEvenSmoothHom,
-    inv_coe_framedSpinCHalfSpinAction_realSpinCEvenSmoothHom]
+  simp only [realSpinCHalfSpinLieLinearMap_eq, AlgHom.realSpinCEvenLieLinearMap_Ad, ← map_inv,
+    coe_realEvenHalfSpinAction_realSpinCEvenSmoothHom]
 
 /-- The central determinant lift `realDetLieLift 4 hpos a` acts infinitesimally on half-spinors by
 `(ia / 2) • 1`. -/
@@ -440,7 +458,7 @@ theorem realSpinCHalfSpinLieLinearMap_realSpinOrthogonalLieLift
             (realCliffordSpinLieEquivQuadratic 4
               ((realCliffordSpinToSpecialOrthogonalRangeLieEquiv 4).symm Ω)).property⟩)) := by
   simp only [realSpinCHalfSpinLieLinearMap_eq,
-    AlgHom.realSpinCEvenLieLinearMap_realSpinOrthogonalLieLift, framedSpinCHalfSpinAction_apply]
+    AlgHom.realSpinCEvenLieLinearMap_realSpinOrthogonalLieLift, realEvenHalfSpinAction_apply]
 
 /-- In skew-symmetric matrix coordinates `M ∈ so(4, ℝ)`, the lifted orthogonal action on
 half-spinors evaluates the framed even Clifford representation on the normalized exterior bivector
@@ -458,7 +476,7 @@ theorem realSpinCHalfSpinLieLinearMap_realSoLieLift (M : LieAlgebra.Orthogonal.s
   let _ := bivectorLieRing Q₀
   let _ := bivectorLieAlgebra Q₀
   simp only [realSpinCHalfSpinLieLinearMap_eq, AlgHom.realSpinCEvenLieLinearMap_realSoLieLift,
-    framedSpinCHalfSpinAction_apply]
+    realEvenHalfSpinAction_apply]
 
 /-- **Connection and curvature splitting on half-spinors.** Under `𝔰𝔭𝔦𝔫ᶜ(4) ≃ₗ[ℝ] 𝔰𝔬(4) × ℝ`, an
 orthogonal-plus-determinant Lie element `(Ω, a)` acts by the lifted orthogonal half-spin operator
@@ -498,8 +516,6 @@ theorem conj_realSpinCHalfSpinSmoothHom_realSpinOrthogonalLieLift
   simp only [← realSpinCHalfSpinLieLinearMap_Ad, spinCGroup.Ad_realSpinOrthogonalLieLift]
 
 end LieRepresentation
-
-end Normed
 
 variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℂ W] [FiniteDimensional ℂ W]
   (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W) (ε : ℂ)
@@ -548,14 +564,6 @@ theorem SpinCHalfSpinor.isIsometricSMul (hρ : ∀ v, LinearMap.adjoint (ρ (ι 
 
 section SkewAdjoint
 
-/-- Completeness of the finite-dimensional chirality eigenspace `S`. -/
-local instance instCompleteSpaceHalfSpinSkewAdjoint : CompleteSpace S :=
-  FiniteDimensional.completeSpace ℂ S
-/-- Real normed-algebra structure on half-spin endomorphisms compatible with
-`ContinuousLinearMap.toNormedSpace`. -/
-local instance instNormedAlgebraRealHalfSpinSkewAdjoint : NormedAlgebra ℝ (S →L[ℂ] S) :=
-  { ContinuousLinearMap.toNormedSpace, ContinuousLinearMap.algebra with }
-
 /-- On a Hermitian Clifford module with skew-adjoint vector generators, the descended smooth
 half-spin operators lie in the unitary group of `S →L[ℂ] S`. -/
 theorem realSpinCHalfSpinSmoothHom_mem_unitary
@@ -576,8 +584,8 @@ theorem adjoint_realSpinCHalfSpinLieLinearMap
   have : ContinuousStar (S →L[ℂ] S) := ⟨ContinuousLinearMap.adjoint.continuous⟩
   simp only [← ContinuousLinearMap.star_eq_adjoint, realSpinCHalfSpinLieLinearMap_eq]
   exact AlgHom.star_realSpinCEvenLieLinearMap (A := S →L[ℂ] S)
-    (framedSpinCHalfSpinAction o hQ b ρ ε) hpos
-    (fun g ↦ by simpa only [coe_framedSpinCHalfSpinAction_realSpinCEvenSmoothHom] using
+    (realEvenHalfSpinAction o hQ b ρ ε) hpos
+    (fun g ↦ by simpa only [coe_realEvenHalfSpinAction_realSpinCEvenSmoothHom] using
       realSpinCHalfSpinSmoothHom_mem_unitary o hQ b ρ ε hρ g) X
 
 /-- Infinitesimal unitarity of the differentiated half-spin representation on a Hermitian Clifford
@@ -591,5 +599,7 @@ theorem inner_realSpinCHalfSpinLieLinearMap_add_inner_right
     adjoint_realSpinCHalfSpinLieLinearMap o hQ b ρ ε hρ, neg_apply, inner_neg_right, neg_add_cancel]
 
 end SkewAdjoint
+
+end DifferentiatedAction
 
 end Orientation

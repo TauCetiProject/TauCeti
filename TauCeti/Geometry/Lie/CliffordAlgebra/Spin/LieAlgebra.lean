@@ -115,30 +115,6 @@ theorem realSpinLieEquivUnitsRange_apply (n : ℕ)
     realSpinLieEquivUnitsRange n X = lieMap (realSpinContMDiffMonoidMorphismUnitsRange n) X :=
   lieEquivOfIsLocalDiffeomorphAt_apply _ _ X
 
-/-- The Lie homomorphism underlying `realSpinLieEquivUnitsRange` is `lieMap`. -/
-@[simp]
-theorem realSpinLieEquivUnitsRange_toLieHom (n : ℕ) :
-    (realSpinLieEquivUnitsRange n).toLieHom =
-      lieMap (realSpinContMDiffMonoidMorphismUnitsRange n) :=
-  lieEquivOfIsLocalDiffeomorphAt_toLieHom _ _
-
-/-- The inverse of `realSpinLieEquivUnitsRange` cancels `lieMap` of the smooth comparison. -/
-@[simp]
-theorem realSpinLieEquivUnitsRange_symm_apply_lieMap (n : ℕ)
-    (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
-    (realSpinLieEquivUnitsRange n).symm
-      (lieMap (realSpinContMDiffMonoidMorphismUnitsRange n) X) = X :=
-  lieEquivOfIsLocalDiffeomorphAt_symm_apply_lieMap _ _ X
-
-/-- Applying `lieMap` of the smooth comparison cancels `(realSpinLieEquivUnitsRange n).symm`. -/
-@[simp]
-theorem lieMap_realSpinLieEquivUnitsRange_symm_apply (n : ℕ)
-    (Y : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n)
-      (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0)))) :
-    lieMap (realSpinContMDiffMonoidMorphismUnitsRange n)
-      ((realSpinLieEquivUnitsRange n).symm Y) = Y :=
-  lieMap_lieEquivOfIsLocalDiffeomorphAt_symm_apply _ _ Y
-
 /-- The smooth projection from native compact Spin to the embedded special-orthogonal carrier. -/
 def realSpinToSpecialOrthogonalSmoothRange (n : ℕ) :
     ContMDiffMonoidMorphism 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpecialOrthogonalLieModel n) ∞
@@ -181,40 +157,6 @@ theorem realSpinToSpecialOrthogonalRangeLieEquiv_apply (n : ℕ)
   simp [realSpinToSpecialOrthogonalRangeLieEquiv, realSpinToSpecialOrthogonalSmoothRange,
     realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap]
 
-/-- The inverse of `realSpinToSpecialOrthogonalRangeLieEquiv` cancels `lieMap` of the smooth Spin
-projection. -/
-@[simp]
-theorem realSpinToSpecialOrthogonalRangeLieEquiv_symm_apply_lieMap (n : ℕ)
-    (X : LeftInvariantDerivation 𝓘(ℝ, realSpinLieModel n) (spinGroup (realCliffordForm n 0))) :
-    (realSpinToSpecialOrthogonalRangeLieEquiv n).symm
-      (lieMap (realSpinToSpecialOrthogonalSmoothRange n) X) = X := by
-  -- Congruence avoids costly `isDefEq` unfolding across the Spin/SO Lie-subalgebra models.
-  calc
-    (realSpinToSpecialOrthogonalRangeLieEquiv n).symm
-        (lieMap (realSpinToSpecialOrthogonalSmoothRange n) X)
-      = (realSpinToSpecialOrthogonalRangeLieEquiv n).symm
-          (realSpinToSpecialOrthogonalRangeLieEquiv n X) :=
-      congrArg (realSpinToSpecialOrthogonalRangeLieEquiv n).symm
-        (realSpinToSpecialOrthogonalRangeLieEquiv_apply n X).symm
-    _ = X := (realSpinToSpecialOrthogonalRangeLieEquiv n).symm_apply_apply X
-
-/-- Applying `lieMap` of the smooth Spin projection cancels
-`(realSpinToSpecialOrthogonalRangeLieEquiv n).symm`. -/
-@[simp]
-theorem lieMap_realSpinToSpecialOrthogonalRangeLieEquiv_symm_apply (n : ℕ)
-    (Ω : LeftInvariantDerivation 𝓘(ℝ, realSpecialOrthogonalLieModel n)
-      (MonoidHom.range (QuadraticMap.specialOrthogonalToGeneralLinear
-        (realCliffordForm n 0 : QuadraticForm ℝ (Fin n → ℝ))))) :
-    lieMap (realSpinToSpecialOrthogonalSmoothRange n)
-      ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω) = Ω := by
-  calc
-    lieMap (realSpinToSpecialOrthogonalSmoothRange n)
-        ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω)
-      = realSpinToSpecialOrthogonalRangeLieEquiv n
-          ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω) :=
-      (realSpinToSpecialOrthogonalRangeLieEquiv_apply n _).symm
-    _ = Ω := (realSpinToSpecialOrthogonalRangeLieEquiv n).apply_symm_apply Ω
-
 /-- Pushing forward the native Spin inverse lift to the units range recovers the units-range
 inverse lift. -/
 theorem realSpinLieEquivUnitsRange_realSpinToSpecialOrthogonalRangeLieEquiv_symm (n : ℕ)
@@ -224,13 +166,6 @@ theorem realSpinLieEquivUnitsRange_realSpinToSpecialOrthogonalRangeLieEquiv_symm
     realSpinLieEquivUnitsRange n ((realSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω) =
       (realCliffordSpinToSpecialOrthogonalRangeLieEquiv n).symm Ω := by
   simp [realSpinToSpecialOrthogonalRangeLieEquiv]
-
-/-- The Lie homomorphism underlying `realSpinToSpecialOrthogonalRangeLieEquiv` is `lieMap`. -/
-@[simp]
-theorem realSpinToSpecialOrthogonalRangeLieEquiv_toLieHom (n : ℕ) :
-    (realSpinToSpecialOrthogonalRangeLieEquiv n).toLieHom =
-      lieMap (realSpinToSpecialOrthogonalSmoothRange n) :=
-  LieHom.ext <| realSpinToSpecialOrthogonalRangeLieEquiv_apply n
 
 /-- The smooth projection from native compact Spin to the embedded special-orthogonal carrier is a
 local diffeomorphism in every dimension. -/
