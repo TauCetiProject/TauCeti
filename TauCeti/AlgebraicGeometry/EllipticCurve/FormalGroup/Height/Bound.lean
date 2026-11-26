@@ -23,10 +23,11 @@ characteristic, Noetherian, or reducedness assumptions on `R` (including rings w
 the zero ring):
 
 * For every `p > 1` and `n ≥ 3`, `I_n(Ê) = R` if and only if `(p, c₄, Δ) = R`
-  (`WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff`). Equivalently, for every `p ≠ 0`, the
-  coefficient of `T ^ (p ^ 2)` in `[p]_Ê(T)` (Landweber's `v₂` when `p` is prime) is a unit
-  modulo `I₂(Ê)` if and only if `(p, c₄, Δ) = R`
-  (`WeierstrassCurve.isUnit_mk_coeff_nsmulSeries_formalGroup_iff`).
+  (`WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff`).
+* For every `p ≠ 0`, the coefficient of `T ^ (p ^ 2)` in `[p]_Ê(T)` (Landweber's `v₂` when `p`
+  is prime) is a unit modulo `I₂(Ê)` if and only if `(p, c₄, Δ) = R`
+  (`WeierstrassCurve.isUnit_mk_coeff_nsmulSeries_formalGroup_iff`); for `p > 1`, this is
+  equivalent to `I_n(Ê) = R` for `n ≥ 3`.
 * In particular, for any smooth-or-nodal Weierstrass family (`(c₄, Δ) = R`) — and hence for every
   elliptic Weierstrass curve (`IsUnit Δ`) — every height ideal `I_n(Ê)` with `n ≥ 3` is the unit
   ideal for all `p > 1`, and the `T ^ (p ^ 2)` coefficient of `[p]_Ê` is a unit modulo `I₂(Ê)`
@@ -35,8 +36,8 @@ the zero ring):
   (`W.Δ ∈ (Ideal.span {(p : R)}).radical`, including singular families `Δ = 0`, nilpotent
   thickenings `IsNilpotent Δ`, and families singular over all primes dividing `p`), every `p > 1`,
   and every `n ≥ 2`, `I_n(Ê) = R` if and only if `(p, c₄) = R`
-  (`WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff_of_Δ_mem_radical`). Equivalently, at every
-  prime `p`, the Hasse invariant `coeff (p - 1) ω` is a unit modulo `p` if and only if `c₄` is a
+  (`WeierstrassCurve.heightIdeal_formalGroup_eq_top_iff_of_Δ_mem_radical`). When `p` is prime,
+  equivalently the Hasse invariant `coeff (p - 1) ω` is a unit modulo `p` if and only if `c₄` is a
   unit modulo `p`
   (`WeierstrassCurve.isUnit_mk_coeff_invariantDifferential_formalGroup_iff_of_Δ_mem_radical`). In
   particular, on any family singular modulo `p` with `c₄` a unit modulo `p`, the Hasse invariant
@@ -85,21 +86,19 @@ namespace WeierstrassCurve
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R) {p n : ℕ}
 
 private theorem nat_le_order_nsmulSeries_formalGroup_iff {K : Type*} [Field K]
-    (W : WeierstrassCurve K) {p N : ℕ} (hp : p ≠ 0) (hN : p ^ 2 < N ∨ W.Δ = 0 ∧ p < N) :
+    (W : WeierstrassCurve K) {p N : ℕ} (hp : p ≠ 0) (h1 : 1 < N)
+    (hN : (p : K) = 0 → p ^ 2 < N ∨ W.Δ = 0 ∧ p < N) :
     ((N : ℕ) : ℕ∞) ≤ ((formalGroup W).nsmulSeries p).order ↔
       (p : K) = 0 ∧ W.c₄ = 0 ∧ W.Δ = 0 := by
   constructor
   · intro hord
-    have h1 : 1 < N := hN.elim
-      (lt_of_le_of_lt (Nat.one_le_pow 2 p (Nat.pos_of_ne_zero hp)))
-      (fun h ↦ lt_of_le_of_lt (Nat.pos_of_ne_zero hp) h.2)
     have hpK : (p : K) = 0 := by
       simpa [FormalGroup.coeff_one_nsmulSeries] using
         PowerSeries.coeff_of_lt_order 1 (lt_of_lt_of_le (by exact_mod_cast h1) hord)
     have hzero : W.c₄ = 0 ∧ W.Δ = 0 := by
       by_contra hne
       rw [not_and_or] at hne
-      rcases hN with hN | ⟨hΔ, hN⟩
+      rcases hN hpK with hN | ⟨hΔ, hN⟩
       · exact not_lt_of_ge (hord.trans (W.order_nsmulSeries_formalGroup_le_sq hp hne))
           (by exact_mod_cast hN)
       · exact not_lt_of_ge
@@ -126,25 +125,24 @@ private theorem span_coeff_nsmulSeries_eq_top_iff {N : ℕ} (hp : p ≠ 0)
       Ideal.span ((fun k ↦ PowerSeries.coeff k ((formalGroup W).nsmulSeries p)) '' Set.Iio N) ≤ m ↔
         Ideal.span {(p : R), W.c₄, W.Δ} ≤ m := by
     let _ := Ideal.Quotient.field m
-    rw [← Ideal.mk_ker (I := m), PowerSeries.span_coeff_le_ker_iff, FormalGroup.map_nsmulSeries,
-      ← map_formalGroup, Ideal.span_le, Set.insert_subset_iff, Set.insert_subset_iff,
-      Set.singleton_subset_iff, SetLike.mem_coe, SetLike.mem_coe, SetLike.mem_coe]
-    simp only [Ideal.mk_ker, ← Ideal.Quotient.eq_zero_iff_mem, map_natCast,
-      ← map_c₄ W (Ideal.Quotient.mk m), ← map_Δ W (Ideal.Quotient.mk m)]
-    refine ⟨fun hord ↦ ?_, fun ⟨hp0, hc₄0, hΔ0⟩ ↦ ?_⟩
-    · have hp0 : ((p : R) : R ⧸ m) = 0 := by
-        simpa [FormalGroup.coeff_one_nsmulSeries] using
-          PowerSeries.coeff_of_lt_order 1 (lt_of_lt_of_le (by exact_mod_cast h1) hord)
-      have hNm : p ^ 2 < N ∨ (W.map (Ideal.Quotient.mk m)).Δ = 0 ∧ p < N :=
-        hN.imp_right fun ⟨hΔ, hlt⟩ ↦ ⟨by
-          rw [map_Δ, Ideal.Quotient.eq_zero_iff_mem]
-          exact hm.isPrime.radical_le_iff.mpr ((Ideal.span_singleton_le_iff_mem m).mpr
-            (Ideal.Quotient.eq_zero_iff_mem.mp hp0)) hΔ, hlt⟩
-      have h := (nat_le_order_nsmulSeries_formalGroup_iff _ hp hNm).mp hord
-      exact ⟨h.1, h.2.1, h.2.2⟩
-    · rw [(W.map (Ideal.Quotient.mk m)).nsmulSeries_formalGroup_eq_zero_of_Δ_eq_zero_of_c₄_eq_zero
-        hΔ0 hc₄0 hp0, PowerSeries.order_zero]
-      exact le_top
+    let π := Ideal.Quotient.mk m
+    have hcoeff :
+        Ideal.span ((fun k ↦ PowerSeries.coeff k ((formalGroup W).nsmulSeries p)) '' Set.Iio N) ≤
+            m ↔
+          ((N : ℕ) : ℕ∞) ≤ ((formalGroup (W.map π)).nsmulSeries p).order := by
+      nth_rw 1 [← Ideal.mk_ker (I := m)]
+      rw [PowerSeries.span_coeff_le_ker_iff, FormalGroup.map_nsmulSeries, ← map_formalGroup]
+    have hgen :
+        Ideal.span {(p : R), W.c₄, W.Δ} ≤ m ↔
+          (p : R ⧸ m) = 0 ∧ (W.map π).c₄ = 0 ∧ (W.map π).Δ = 0 := by
+      simp [π, Ideal.span_le, Set.subset_def, ← Ideal.Quotient.eq_zero_iff_mem, map_c₄, map_Δ]
+    have hNm : ((p : R ⧸ m) = 0) → p ^ 2 < N ∨ (W.map π).Δ = 0 ∧ p < N :=
+      fun hp0 ↦ hN.imp_right fun ⟨hΔ, hlt⟩ ↦ ⟨by
+        rw [map_Δ, Ideal.Quotient.eq_zero_iff_mem]
+        exact hm.isPrime.radical_le_iff.mpr ((Ideal.span_singleton_le_iff_mem m).mpr
+          (Ideal.Quotient.eq_zero_iff_mem.mp (by simpa [π] using hp0))) hΔ, hlt⟩
+    exact hcoeff.trans <|
+      (nat_le_order_nsmulSeries_formalGroup_iff (W.map π) hp h1 hNm).trans hgen.symm
   rw [← not_iff_not]
   simp_rw [← ne_eq, Ideal.ne_top_iff_exists_maximal]
   exact exists_congr fun m ↦ and_congr_right fun hm ↦ hmax m

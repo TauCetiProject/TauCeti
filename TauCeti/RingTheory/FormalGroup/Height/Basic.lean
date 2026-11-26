@@ -214,7 +214,7 @@ theorem height_eq_top_iff : F.height p = ⊤ ↔ F.nsmulSeries p = 0 := by
   unfold height
   split_ifs with h <;> simp [h]
 
-/-- Every formal group law has infinite `0`-height, since `[0]_F = 0`. -/
+/-- Every formal group law over a field has infinite `0`-height, since `[0]_F = 0`. -/
 @[simp]
 theorem height_zero : F.height 0 = ⊤ :=
   F.height_eq_top_iff.mpr (F.nsmulSeries_zero)
