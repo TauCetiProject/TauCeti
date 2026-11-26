@@ -9,9 +9,10 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Homology.Ext.Presentation
-public import TauCeti.Algebra.OreExtension.Basic
+public import TauCeti.Algebra.OreExtension.SkewModule
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.Algebra.Ring.GeomSum
+import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 
 /-!
 # Ext out of the unit module of a skew polynomial ring
@@ -43,8 +44,6 @@ statements would need a separate comparison.
 
 ## Main definitions
 
-* `TauCeti.OreExtension.SkewModule F`: an `R`-module `N`, as an `R[X; σ]`-module in which `X`
-  acts by a `σ`-semilinear map `F`.
 * `TauCeti.OreExtension.unitModuleCat σ`: the unit module `R`, with `X` acting by `σ`.
 * `TauCeti.OreExtension.unitShortComplex σ`: the resolution `A → A → R` of the unit module.
 * `TauCeti.OreExtension.homUnitLinearEquiv`: `Hom_A(R, N)` is the group of vectors of `N` fixed by
@@ -78,69 +77,6 @@ universe u v
 
 variable {k : Type u} {R : Type v} [CommSemiring k] [Ring R] [Algebra k R] (σ : R →ₐ[k] R)
 
-section SkewModule
-
-variable {N : Type*} [AddCommGroup N] [Module R N] (F : N →ₛₗ[(σ : R →+* R)] N)
-
-/-- The action of the skew polynomial ring `R[X; σ]` on an `R`-module `N` in which `X` acts by the
-`σ`-semilinear map `F`, as a ring homomorphism to the additive endomorphisms of `N`. -/
-def semilinearEndHom : OreExtension σ 0 →+* Module.End ℤ N :=
-  lift (Module.toModuleEnd ℤ N) F.toAddMonoidHom.toIntLinearMap fun a ↦ LinearMap.ext fun n ↦ by
-    simp [SigmaDerivation.coe_zero]
-
-/-- The constants act through the `R`-module structure. -/
-@[simp]
-theorem semilinearEndHom_C (a : R) (n : N) : semilinearEndHom σ F (C a) n = a • n := by
-  simp [semilinearEndHom]
-
-/-- The variable acts by `F`. -/
-@[simp]
-theorem semilinearEndHom_X (n : N) : semilinearEndHom σ F X n = F n := by
-  simp [semilinearEndHom]
-
-variable {σ}
-
-/-- A type synonym for an `R`-module `N` with a `σ`-semilinear endomorphism `F`, regarded as a left
-module over the skew polynomial ring `R[X; σ]` in which `X` acts by `F` and the constants act
-through `R`. -/
-@[expose]
-def SkewModule (_F : N →ₛₗ[(σ : R →+* R)] N) : Type _ :=
-  N
-
-namespace SkewModule
-
-instance : AddCommGroup (SkewModule F) :=
-  inferInstanceAs (AddCommGroup N)
-
-instance : Module (OreExtension σ 0) (SkewModule F) :=
-  Module.compHom N (semilinearEndHom σ F)
-
-/-- The identification of `N` with the skew module `SkewModule F`. -/
-def of : N ≃+ SkewModule F :=
-  AddEquiv.refl N
-
-/-- `R[X; σ]` acts on `SkewModule F` through `semilinearEndHom σ F`. -/
-theorem smul_of (p : OreExtension σ 0) (n : N) : p • of F n = of F (semilinearEndHom σ F p n) :=
-  (rfl)
-
-/-- The constants act on `SkewModule F` through the `R`-module structure of `N`. -/
-@[simp]
-theorem C_smul_of (a : R) (n : N) : (C a : OreExtension σ 0) • of F n = of F (a • n) :=
-  congrArg (of F) (semilinearEndHom_C σ F a n)
-
-/-- The variable acts on `SkewModule F` by `F`. -/
-@[simp]
-theorem X_smul_of (n : N) : (X : OreExtension σ 0) • of F n = of F (F n) :=
-  congrArg (of F) (semilinearEndHom_X σ F n)
-
-/-- `X - 1` acts on `SkewModule F` by `F - 1`. -/
-theorem X_sub_one_smul_of (n : N) : (X - 1 : OreExtension σ 0) • of F n = of F (F n - n) := by
-  rw [sub_smul, one_smul, X_smul_of, map_sub]
-
-end SkewModule
-
-end SkewModule
-
 /-- The *unit module* of the skew polynomial ring `R[X; σ]`: the ring `R`, with the constants
 acting by left multiplication and `X` acting by `σ`. -/
 abbrev unitModuleCat : ModuleCat.{v} (OreExtension σ 0) :=
@@ -152,8 +88,9 @@ theorem X_pow_smul_of_one (n : ℕ) :
       SkewModule.of (σ : R →+* R).toSemilinearMap 1 := by
   induction n with
   | zero => exact one_smul _ _
-  | succ n ih => rw [pow_succ, mul_smul, SkewModule.X_smul_of, RingHom.coe_toSemilinearMap,
-      AlgHom.coe_toRingHom, map_one, ih]
+  | succ n ih =>
+    rw [pow_succ, mul_smul, SkewModule.X_smul_of]
+    simp [ih]
 
 section Resolution
 
@@ -232,10 +169,9 @@ one by right multiplication by `X - 1`. -/
 theorem unitShortComplex_shortExact : (unitShortComplex σ).ShortExact := by
   refine ModuleCat.shortComplex_shortExact _ (fun (p : OreExtension σ 0) ↦ ⟨fun hp ↦ ?_, ?_⟩)
     (mulXSubOne_injective σ)
-    fun a ↦ ⟨C ((SkewModule.of (σ : R →+* R).toSemilinearMap).symm a), augmentation_C σ _⟩
-  · have h := sub_C_mem_range_mulXSubOne σ p
-    rw [(hp : (augmentation σ).hom p = 0), map_zero, map_zero, sub_zero] at h
-    exact h
+    fun a ↦ ⟨C ((SkewModule.of (σ : R →+* R).toSemilinearMap).symm a),
+      (augmentation_C σ _).trans (AddEquiv.apply_symm_apply _ a)⟩
+  · simpa [hp] using sub_C_mem_range_mulXSubOne σ p
   · rintro ⟨q, rfl⟩
     exact augmentation_mulXSubOne σ q
 
@@ -261,11 +197,10 @@ def homOfMemKer (n : LinearMap.ker (DistribSMul.toLinearMap ℤ N (X - 1 : OreEx
   (Cofork.IsColimit.desc' (unitShortComplex_shortExact σ).gIsCokernel
     (ModuleCat.ofHom (LinearMap.toSpanSingleton _ N n)) <| by
       have hn : (X - 1 : OreExtension σ 0) • (n : N) = 0 := LinearMap.mem_ker.mp n.property
-      have h : mulXSubOne σ ≫ ModuleCat.ofHom (LinearMap.toSpanSingleton _ N n) = 0 :=
-        ModuleCat.hom_ext (LinearMap.ext fun p ↦ by
-          rw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom,
-            LinearMap.toSpanSingleton_apply, mulXSubOne_apply, mul_smul, hn, smul_zero,
-            ModuleCat.hom_zero, LinearMap.zero_apply])
+      have h : mulXSubOne σ ≫ ModuleCat.ofHom (LinearMap.toSpanSingleton _ N n) = 0 := by
+        rw [mulXSubOne,
+          ModuleCat.ofHom_toSpanSingleton_comp (M := ModuleCat.of _ (OreExtension σ 0))]
+        simp [hn]
       rw [h, zero_comp]).val
 
 /-- The morphism `homOfMemKer σ N n` sends the class of `p` to `p • n`. -/
@@ -273,6 +208,16 @@ theorem augmentation_comp_homOfMemKer
     (n : LinearMap.ker (DistribSMul.toLinearMap ℤ N (X - 1 : OreExtension σ 0))) :
     augmentation σ ≫ homOfMemKer σ N n = ModuleCat.ofHom (LinearMap.toSpanSingleton _ N n) :=
   (Cofork.IsColimit.desc' (unitShortComplex_shortExact σ).gIsCokernel _ _).property
+
+/-- The morphism `homOfMemKer σ N n` sends `a` to `C a • n`. -/
+@[simp]
+theorem homOfMemKer_apply
+    (n : LinearMap.ker (DistribSMul.toLinearMap ℤ N (X - 1 : OreExtension σ 0))) (a : R) :
+    homOfMemKer σ N n (SkewModule.of (σ : R →+* R).toSemilinearMap a) =
+      (C a : OreExtension σ 0) • (n : N) := by
+  have h := ConcreteCategory.congr_hom (augmentation_comp_homOfMemKer σ N n) (C a)
+  rw [ConcreteCategory.comp_apply, augmentation_C] at h
+  simpa using h
 
 /-- Evaluation at `1` identifies the morphisms from the unit module to `N` with the vectors of `N`
 fixed by `X`, the kernel of the action of `X - 1`. -/
@@ -288,11 +233,7 @@ def homUnitLinearEquiv : (unitModuleCat σ ⟶ N) ≃ₗ[ℤ]
   left_inv f := Cofork.IsColimit.hom_ext (unitShortComplex_shortExact σ).gIsCokernel <| by
     rw [Cofork.π_ofπ, augmentation_comp_homOfMemKer]
     exact ModuleCat.hom_ext (LinearMap.ext fun p ↦ (map_smul f.hom p _).symm)
-  right_inv n := Subtype.ext <| by
-    have h := LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (augmentation_comp_homOfMemKer σ N n))
-      (C 1)
-    rwa [ModuleCat.hom_comp, LinearMap.comp_apply, augmentation_C, ModuleCat.hom_ofHom,
-      LinearMap.toSpanSingleton_apply, C_one, one_smul] at h
+  right_inv n := Subtype.ext <| by simpa using homOfMemKer_apply σ N n 1
 
 /-- A morphism from the unit module corresponds to its value at `1`. -/
 @[simp]
@@ -323,20 +264,17 @@ theorem coe_extZeroAddEquiv_mk₀ (f : unitModuleCat σ ⟶ N) :
 `X - 1` becomes the action of `X - 1` under `Hom(R[X; σ], N) ≃ N`. -/
 def extOneAddEquiv : Ext.{v} (unitModuleCat σ) N 1 ≃+
     N ⧸ LinearMap.range (DistribSMul.toLinearMap ℤ N (X - 1 : OreExtension σ 0)) :=
-  -- `e` is evaluation at `1`, the identification `Hom(R[X; σ], N) ≃ N`.
-  let e : (ModuleCat.of (OreExtension σ 0) (OreExtension σ 0) ⟶ N) ≃ₗ[ℤ] N :=
-    ModuleCat.homLinearEquiv.trans (LinearMap.ringLmapEquivSelf _ ℤ N)
   AddEquiv.trans (AddEquiv.symm (homCokernelEquivExt ℤ (unitShortComplex_shortExact σ) N :
     HomCokernel ℤ (mulXSubOne σ) N ≃+ Ext.{v} (unitModuleCat σ) N 1)) <|
-    (Submodule.Quotient.equiv _ _ e <| by
-      -- Under `e`, precomposition with right multiplication by `X - 1` is the action of `X - 1`.
-      have h : e.toLinearMap ∘ₗ Linear.leftComp ℤ N (mulXSubOne σ) =
-          DistribSMul.toLinearMap ℤ N (X - 1 : OreExtension σ 0) ∘ₗ e.toLinearMap := by
+    (Submodule.Quotient.equiv _ _ (ModuleCat.homSelfLinearEquiv ℤ N) <| by
+      -- Under evaluation at `1`, precomposition with right multiplication by `X - 1` is the action
+      -- of `X - 1`.
+      have h : (ModuleCat.homSelfLinearEquiv ℤ N).toLinearMap ∘ₗ
+            Linear.leftComp ℤ N (mulXSubOne σ) =
+          DistribSMul.toLinearMap ℤ N (X - 1 : OreExtension σ 0) ∘ₗ
+            (ModuleCat.homSelfLinearEquiv ℤ N).toLinearMap := by
         refine LinearMap.ext fun g ↦ ?_
-        simp only [e, LinearMap.comp_apply, Linear.leftComp_apply, LinearEquiv.coe_coe,
-          LinearEquiv.trans_apply, LinearMap.ringLmapEquivSelf_apply, DistribSMul.toLinearMap_apply]
-        rw [← map_smul, smul_eq_mul, mul_one]
-        exact congrArg g.hom ((mulXSubOne_apply σ 1).trans (one_mul _))
+        simp [← map_smul, mulXSubOne]
       rw [← LinearMap.range_comp, h,
         LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]).toAddEquiv
 
@@ -346,8 +284,9 @@ resolution `unitShortComplex σ` along the morphism `R[X; σ] → N`, `p ↦ p �
 theorem extOneAddEquiv_symm_mk (n : N) :
     (extOneAddEquiv σ N).symm (Submodule.Quotient.mk n) =
       (unitShortComplex_shortExact σ).extClass.comp
-        (Ext.mk₀ (ModuleCat.ofHom (LinearMap.toSpanSingleton _ N n))) (add_zero 1) :=
-  homCokernelEquivExt_mk ℤ (unitShortComplex_shortExact σ) N _
+        (Ext.mk₀ (ModuleCat.ofHom (LinearMap.toSpanSingleton _ N n))) (add_zero 1) := by
+  rw [← ModuleCat.homSelfLinearEquiv_symm_apply (S := ℤ)]
+  exact homCokernelEquivExt_mk ℤ (unitShortComplex_shortExact σ) N _
 
 end Ext
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.FrobeniusModuleCat.Cohomology
+public import TauCeti.Algebra.Category.FrobeniusModuleCat.SkewModule
 public import TauCeti.Algebra.OreExtension.UnitResolution
 
 /-!
@@ -31,10 +32,6 @@ the differential `F - 1` of the Frobenius cohomology complex.
 
 ## Main definitions
 
-* `TauCeti.FrobeniusModuleCat.skewFrobenius`: the Frobenius, as a semilinear map over the twist
-  of `S{F}`.
-* `TauCeti.FrobeniusModuleCat.toSkewModuleCat`: a linearized Frobenius module as a left module
-  over the skew polynomial ring `S{F}`.
 * `TauCeti.FrobeniusModuleCat.extZeroAddEquiv` and `TauCeti.FrobeniusModuleCat.extOneAddEquiv`:
   `Ext⁰_{S{F}}(S, M) ≃ ker (F - 1)` and `Ext¹_{S{F}}(S, M) ≃ M ⧸ (F - 1) M`.
 * `TauCeti.FrobeniusModuleCat.extZeroAddEquivHomology` and
@@ -47,6 +44,10 @@ the differential `F - 1` of the Frobenius cohomology complex.
   corresponds to the fixed vector `f 1`.
 * `TauCeti.FrobeniusModuleCat.extOneAddEquiv_symm_mk`: the class of `m` in `Ext¹` is the pushout of
   the extension class of the resolution along `p ↦ p • m`.
+* `TauCeti.FrobeniusModuleCat.homologyZeroIso_hom_extZeroAddEquivHomology` and
+  `TauCeti.FrobeniusModuleCat.extOneAddEquivHomology_symm_homologyOneIso_inv`: the identifications
+  with the cohomology agree with `extZeroAddEquiv` and `extOneAddEquiv` under `homologyZeroIso`
+  and `homologyOneIso`.
 
 ## References
 
@@ -68,20 +69,6 @@ open OreExtension
 
 variable {S : Type u} [CommRing S] {σ : S →+* S} (M : FrobeniusModuleCat σ)
 
-/-- The Frobenius of `M`, as a semilinear map over the ring endomorphism underlying
-`σ.toIntAlgHom`, the twist of the skew polynomial ring `S{F}`. -/
-def skewFrobenius : M.carrier →ₛₗ[(σ.toIntAlgHom : S →+* S)] M.carrier :=
-  M.frobenius
-
-@[simp]
-theorem skewFrobenius_apply (m : M.carrier) : M.skewFrobenius m = M.frobenius m :=
-  (rfl)
-
-/-- A linearized Frobenius module as a left module over the skew polynomial ring
-`S{F} = S[F; σ]`, in which `F` acts by the Frobenius. -/
-abbrev toSkewModuleCat : ModuleCat.{u} (OreExtension σ.toIntAlgHom 0) :=
-  ModuleCat.of _ (SkewModule M.skewFrobenius)
-
 /-- `F - 1` on `M.toSkewModuleCat` is `F - 1` on `M`. -/
 private theorem symm_of_X_sub_one_smul (y : SkewModule M.skewFrobenius) :
     (SkewModule.of M.skewFrobenius).symm ((X - 1 : OreExtension σ.toIntAlgHom 0) • y) =
@@ -90,23 +77,24 @@ private theorem symm_of_X_sub_one_smul (y : SkewModule M.skewFrobenius) :
     AddEquiv.symm_apply_apply, AddEquiv.symm_apply_apply, frobeniusSubOne_apply,
     skewFrobenius_apply]
 
+/-- The vectors of `M.toSkewModuleCat` killed by `F - 1` are the Frobenius-fixed vectors of `M`. -/
+private theorem map_ker_X_sub_one :
+    (LinearMap.ker (DistribSMul.toLinearMap ℤ M.toSkewModuleCat
+        (X - 1 : OreExtension σ.toIntAlgHom 0))).map
+        ((SkewModule.of M.skewFrobenius).symm.toIntLinearEquiv :
+          M.toSkewModuleCat →ₗ[ℤ] M.carrier) =
+      (LinearMap.ker M.frobeniusSubOne).restrictScalars ℤ := by
+  ext m
+  rw [Submodule.mem_map_equiv, LinearMap.mem_ker, DistribSMul.toLinearMap_apply,
+    ← (SkewModule.of M.skewFrobenius).symm.map_eq_zero_iff, symm_of_X_sub_one_smul]
+  simp
+
 /-- The Frobenius-fixed vectors of `M` are the vectors of `M.toSkewModuleCat` killed by `F - 1`. -/
 private def kerAddEquiv :
     LinearMap.ker
         (DistribSMul.toLinearMap ℤ M.toSkewModuleCat (X - 1 : OreExtension σ.toIntAlgHom 0)) ≃+
-      LinearMap.ker M.frobeniusSubOne where
-  toFun x := ⟨(SkewModule.of M.skewFrobenius).symm x, by
-    have hx := LinearMap.mem_ker.mp x.property
-    rw [DistribSMul.toLinearMap_apply, ← (SkewModule.of M.skewFrobenius).apply_symm_apply x.val,
-      SkewModule.X_sub_one_smul_of, AddEquiv.map_eq_zero_iff, skewFrobenius_apply] at hx
-    rwa [LinearMap.mem_ker, frobeniusSubOne_apply]⟩
-  invFun y := ⟨SkewModule.of M.skewFrobenius y, by
-    rw [LinearMap.mem_ker, DistribSMul.toLinearMap_apply, SkewModule.X_sub_one_smul_of,
-      AddEquiv.map_eq_zero_iff, skewFrobenius_apply, ← frobeniusSubOne_apply]
-    exact LinearMap.mem_ker.mp y.property⟩
-  left_inv x := Subtype.ext ((SkewModule.of M.skewFrobenius).apply_symm_apply x.val)
-  right_inv y := Subtype.ext ((SkewModule.of M.skewFrobenius).symm_apply_apply y.val)
-  map_add' x y := Subtype.ext (map_add (SkewModule.of M.skewFrobenius).symm x.val y.val)
+      LinearMap.ker M.frobeniusSubOne :=
+  (LinearEquiv.ofSubmodules _ _ _ (map_ker_X_sub_one M)).toAddEquiv
 
 private theorem coe_kerAddEquiv_apply
     (x : LinearMap.ker
@@ -176,5 +164,21 @@ def extZeroAddEquivHomology :
 def extOneAddEquivHomology :
     Ext.{u} (unitModuleCat σ.toIntAlgHom) M.toSkewModuleCat 1 ≃+ M.cochainComplex.homology 1 :=
   M.extOneAddEquiv.trans M.homologyOneIso.toLinearEquiv.symm.toAddEquiv
+
+/-- Under `homologyZeroIso`, the degree `0` cohomology class of `e : Ext⁰_{S{F}}(S, M)` is the
+Frobenius-fixed vector `extZeroAddEquiv M e`. -/
+@[simp]
+theorem homologyZeroIso_hom_extZeroAddEquivHomology
+    (e : Ext.{u} (unitModuleCat σ.toIntAlgHom) M.toSkewModuleCat 0) :
+    M.homologyZeroIso.hom (M.extZeroAddEquivHomology e) = M.extZeroAddEquiv e :=
+  M.homologyZeroIso.toLinearEquiv.apply_symm_apply (M.extZeroAddEquiv e)
+
+/-- The degree `1` cohomology class corresponding under `homologyOneIso` to `x ∈ M ⧸ (F - 1) M` is
+the class in `Ext¹_{S{F}}(S, M)` corresponding to `x` under `extOneAddEquiv`. -/
+@[simp]
+theorem extOneAddEquivHomology_symm_homologyOneIso_inv
+    (x : M.carrier ⧸ LinearMap.range M.frobeniusSubOne) :
+    M.extOneAddEquivHomology.symm (M.homologyOneIso.inv x) = M.extOneAddEquiv.symm x :=
+  congrArg M.extOneAddEquiv.symm (M.homologyOneIso.toLinearEquiv.apply_symm_apply x)
 
 end TauCeti.FrobeniusModuleCat
