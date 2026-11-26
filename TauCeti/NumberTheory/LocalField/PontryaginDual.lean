@@ -79,9 +79,14 @@ end SingleField
 
 section Extension
 
-variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L] [Algebra.IsSeparable K L]
+
+local instance : Module.Finite K L := finite_of_valuativeExtension K L
+local instance : IsIntegralClosure 𝒪[L] 𝒪[K] L := isIntegralClosure_integerRing K L
+
+variable (K L)
 
 /-- Transport a linear equivalence between linear maps to a continuous linear equivalence on
 `ModulePontryaginDual`, given continuous-map realizations of both directions. -/
@@ -121,8 +126,6 @@ private def pontryaginDualEquivOfLinearEquiv {R₁ R₂ S E₁ E₂ M : Type*}
 `traceDualLinearMapEquiv` as a continuous map on `C(M, L ⧸ 𝒪[L]ᵛ)`. -/
 private theorem exists_continuousMap_traceDualLinearMapEquiv (M : Type*) [AddCommGroup M]
     [Module 𝒪[L] M] [Module 𝒪[K] M] [IsScalarTower 𝒪[K] 𝒪[L] M] [TopologicalSpace M] :
-    haveI := finite_of_valuativeExtension K L
-    haveI := isIntegralClosure_integerRing K L
     ∃ F : C(M, L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) →
         C(M, K ⧸ (1 : Submodule 𝒪[K] K)),
       Continuous F ∧
@@ -130,7 +133,6 @@ private theorem exists_continuousMap_traceDualLinearMapEquiv (M : Type*) [AddCom
             (L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) M) (m : M),
           traceDualLinearMapEquiv 𝒪[K] K 𝒪[L] L M φ.toContinuousLinearMap.toLinearMap m =
             F φ.toContinuousMap m := by
-  have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
   let trCM : C(L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L),
       K ⧸ (1 : Submodule 𝒪[K] K)) :=
     ⟨traceDualQuotientMap 𝒪[K] K 𝒪[L] L, continuous_of_discreteTopology⟩
@@ -142,15 +144,12 @@ private theorem exists_continuousMap_traceDualLinearMapEquiv (M : Type*) [AddCom
 private theorem exists_continuousMap_traceDualLinearMapEquiv_symm (M : Type*) [AddCommGroup M]
     [Module 𝒪[L] M] [Module 𝒪[K] M] [IsScalarTower 𝒪[K] 𝒪[L] M] [TopologicalSpace M]
     [ContinuousConstSMul 𝒪[L] M] :
-    haveI := finite_of_valuativeExtension K L
-    haveI := isIntegralClosure_integerRing K L
     ∃ G : C(M, K ⧸ (1 : Submodule 𝒪[K] K)) →
         C(M, L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)),
       Continuous G ∧
         ∀ (ψ : ModulePontryaginDual 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) M) (m : M),
           (traceDualLinearMapEquiv 𝒪[K] K 𝒪[L] L M).symm ψ.toContinuousLinearMap.toLinearMap m =
             G ψ.toContinuousMap m := by
-  have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
   obtain ⟨n, b, y, hy, hsum⟩ := exists_sum_trace_mul_smul_eq 𝒪[K] K (B := 𝒪[L]) (L := L)
   let mulCM (i : Fin n) :
       C(K ⧸ (1 : Submodule 𝒪[K] K), L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) :=
@@ -172,8 +171,6 @@ def traceDualPontryaginEquiv (M : Type*) [AddCommGroup M] [Module 𝒪[L] M] [Mo
     [IsScalarTower 𝒪[K] 𝒪[L] M] [TopologicalSpace M] [ContinuousConstSMul 𝒪[L] M] :
     ModulePontryaginDual 𝒪[L] (L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) M ≃L[𝒪[K]]
       ModulePontryaginDual 𝒪[K] (K ⧸ (1 : Submodule 𝒪[K] K)) M :=
-  haveI := finite_of_valuativeExtension K L
-  haveI := isIntegralClosure_integerRing K L
   pontryaginDualEquivOfLinearEquiv (traceDualLinearMapEquiv 𝒪[K] K 𝒪[L] L M)
     (exists_continuousMap_traceDualLinearMapEquiv K L M)
     (exists_continuousMap_traceDualLinearMapEquiv_symm K L M)
@@ -185,9 +182,8 @@ variable {M : Type*} [AddCommGroup M] [Module 𝒪[L] M] [Module 𝒪[K] M] [IsS
 
 @[simp] theorem traceDualPontryaginEquiv_apply
     (φ : ModulePontryaginDual 𝒪[L] (L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) M)
-    (m : M) : traceDualPontryaginEquiv K L M φ m = traceDualQuotientMap 𝒪[K] K 𝒪[L] L (φ m) := by
-  have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
-  exact traceDualLinearMapEquiv_apply 𝒪[K] K 𝒪[L] L _ m
+    (m : M) : traceDualPontryaginEquiv K L M φ m = traceDualQuotientMap 𝒪[K] K 𝒪[L] L (φ m) :=
+  traceDualLinearMapEquiv_apply 𝒪[K] K 𝒪[L] L _ m
 
 /-- Compatibility of `traceDualPontryaginEquiv` with the `𝒪[L]`-action on `M`. -/
 theorem traceDualPontryaginEquiv_smul_apply (b : 𝒪[L])

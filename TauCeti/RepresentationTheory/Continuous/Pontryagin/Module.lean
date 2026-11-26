@@ -185,6 +185,21 @@ private theorem contragredient_bijective_of_pontryaginDualMap_bijective
     ContIntertwiningMap.toContinuousLinearMap_apply] at h1 h2 h3 ⊢
   exact (h1.trans (h3.trans h2.symm)).symm
 
+/-- Lift a continuous biduality equivalence `N ≃L[R] (N^∨)^∨` whose underlying map is evaluation
+to a `G`-equivariant equivalence `ρ.Equiv ((ρ.contragredient E).contragredient E)`. -/
+private noncomputable def evalEquivRepOfEvalEquiv
+    {P : Type*} [AddCommGroup P] [Module R P] [TopologicalSpace P] [IsTopologicalAddGroup P]
+    (ρ : ContRepresentation R G P)
+    (e : P ≃L[R] ModulePontryaginDual R E (ModulePontryaginDual R E P))
+    (he : ∀ x φ, e x φ = φ x) :
+    ρ.Equiv ((ρ.contragredient E).contragredient E) :=
+  ContRepresentation.Equiv.mk e fun g ↦ by
+    have heval (y : P) : (e : P → ModulePontryaginDual R E _) y = eval R E P y :=
+      ext fun φ ↦ (he y φ).trans (eval_apply y φ).symm
+    refine ContinuousLinearMap.ext fun x ↦ ?_
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, heval]
+    exact (ρ.contragredient_contragredient_eval E g x).symm
+
 end Basic
 
 section CompactBiduality
@@ -202,13 +217,7 @@ noncomputable def evalEquivOfCompactRep
     {N : Type w} [AddCommGroup N] [Module R N] [TopologicalSpace N] [IsTopologicalAddGroup N]
     (hN : IsCompactModule R N) (ρ : ContRepresentation R G N) :
     ρ.Equiv ((ρ.contragredient E).contragredient E) :=
-  ContRepresentation.Equiv.mk (evalEquivOfCompact (E := E) hE hN) fun g ↦ by
-    have heval (y : N) :
-        (evalEquivOfCompact (E := E) hE hN : N → ModulePontryaginDual R E _) y = eval R E N y :=
-      ext fun φ ↦ (evalEquivOfCompact_apply hE hN y φ).trans (eval_apply y φ).symm
-    refine ContinuousLinearMap.ext fun x ↦ ?_
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, heval]
-    exact (ρ.contragredient_contragredient_eval E g x).symm
+  evalEquivRepOfEvalEquiv E ρ (evalEquivOfCompact (E := E) hE hN) (evalEquivOfCompact_apply hE hN)
 
 @[simp] theorem evalEquivOfCompactRep_apply
     {N : Type w} [AddCommGroup N] [Module R N] [TopologicalSpace N] [IsTopologicalAddGroup N]
@@ -246,13 +255,7 @@ noncomputable def evalEquivOfDiscreteRep
     {M : Type w} [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
     [ContinuousSMul R M] (ρ : ContRepresentation R G M) :
     ρ.Equiv ((ρ.contragredient E).contragredient E) :=
-  ContRepresentation.Equiv.mk (evalEquivOfDiscrete (E := E) hE) fun g ↦ by
-    have heval (y : M) :
-        (evalEquivOfDiscrete (E := E) hE : M → ModulePontryaginDual R E _) y = eval R E M y :=
-      ext fun φ ↦ (evalEquivOfDiscrete_apply hE y φ).trans (eval_apply y φ).symm
-    refine ContinuousLinearMap.ext fun x ↦ ?_
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, heval]
-    exact (ρ.contragredient_contragredient_eval E g x).symm
+  evalEquivRepOfEvalEquiv E ρ (evalEquivOfDiscrete (E := E) hE) (evalEquivOfDiscrete_apply hE)
 
 @[simp] theorem evalEquivOfDiscreteRep_apply
     {M : Type w} [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]

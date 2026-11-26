@@ -39,16 +39,19 @@ open ValuativeRel IsLocalRing
 
 namespace TauCeti
 
-variable (K L : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
+variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
+local instance : Module.Finite K L := finite_of_valuativeExtension K L
+local instance : IsIntegralClosure 𝒪[L] 𝒪[K] L := isIntegralClosure_integerRing K L
+
+variable (K L)
+
 /-- The inverse different `𝒪[L]ᵛ` is an open `𝒪[L]`-submodule of `L`. -/
 theorem isOpen_traceDual_one :
-    IsOpen (Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L) : Set L) := by
-  have := finite_of_valuativeExtension K L
-  have := isIntegralClosure_integerRing K L
-  exact Submodule.isOpen_mono Submodule.one_le_traceDual_one (isOpen_one_submodule_integerRing L)
+    IsOpen (Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L) : Set L) :=
+  Submodule.isOpen_mono Submodule.one_le_traceDual_one (isOpen_one_submodule_integerRing L)
 
 /-- The quotient `L ⧸ 𝒪[L]ᵛ` carries the discrete topology. -/
 instance instDiscreteTopologyQuotientTraceDual :
@@ -61,9 +64,8 @@ variable [Algebra.IsSeparable K L]
 equivalence `(L ⧸ 𝒪[L]) ≃L[𝒪[L]] (L ⧸ 𝒪[L]ᵛ)`. -/
 def quotientEquivTraceDualQuotientOfUniformizer {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) :
     (L ⧸ (1 : Submodule 𝒪[L] L)) ≃L[𝒪[L]]
-      (L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) := by
-  have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
-  exact ⟨quotientEquivTraceDualQuotientOfDifferentIdealEqSpan 𝒪[K] K 𝒪[L] L
+      (L ⧸ Submodule.traceDual 𝒪[K] K (1 : Submodule 𝒪[L] L)) :=
+  ⟨quotientEquivTraceDualQuotientOfDifferentIdealEqSpan 𝒪[K] K 𝒪[L] L
       (differentIdeal_eq_span_pow_uniformizer K L hϖ),
     continuous_of_discreteTopology, continuous_of_discreteTopology⟩
 
@@ -71,7 +73,6 @@ def quotientEquivTraceDualQuotientOfUniformizer {ϖ : 𝒪[L]} (hϖ : Irreducibl
     (x : L) :
     quotientEquivTraceDualQuotientOfUniformizer K L hϖ (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk (x / ((ϖ : L) ^ differentExponent K L)) := by
-  have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
   simp only [quotientEquivTraceDualQuotientOfUniformizer, ContinuousLinearEquiv.coe_mk,
     quotientEquivTraceDualQuotientOfDifferentIdealEqSpan_mk, map_pow,
     Algebra.algebraMap_ofSubsemiring_apply]
@@ -79,22 +80,16 @@ def quotientEquivTraceDualQuotientOfUniformizer {ϖ : 𝒪[L]} (hϖ : Irreducibl
 /-- **Exact criterion for the naive trace pairing**: `directTracePairing` is injective if and only
 if `L / K` is unramified. -/
 theorem ker_directTracePairing_eq_bot_iff_isUnramified :
-    haveI := finite_of_valuativeExtension K L
-    haveI := isIntegralClosure_integerRing K L
-    LinearMap.ker (directTracePairing 𝒪[K] K 𝒪[L] L) = ⊥ ↔ IsUnramified K L := by
-  have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
-  exact (ker_directTracePairing_eq_bot_iff_differentIdeal_eq_top 𝒪[K] K 𝒪[L] L).trans
+    LinearMap.ker (directTracePairing 𝒪[K] K 𝒪[L] L) = ⊥ ↔ IsUnramified K L :=
+  (ker_directTracePairing_eq_bot_iff_differentIdeal_eq_top 𝒪[K] K 𝒪[L] L).trans
     (differentIdeal_eq_top_iff K L)
 
 /-- **Explicit witness in the kernel of the naive trace pairing**: whenever `L / K` is ramified
 and `ϖ` is a uniformizer of `𝒪[L]`, `[ϖ⁻¹]` lies in `ker(directTracePairing 𝒪[K] K 𝒪[L] L)`. -/
 theorem mk_inv_uniformizer_mem_ker_directTracePairing (hram : ¬ IsUnramified K L)
     {ϖ : 𝒪[L]} (hϖ : Irreducible ϖ) :
-    haveI := finite_of_valuativeExtension K L
-    haveI := isIntegralClosure_integerRing K L
     Submodule.Quotient.mk (p := (1 : Submodule 𝒪[L] L)) ((ϖ : L)⁻¹) ∈
       LinearMap.ker (directTracePairing 𝒪[K] K 𝒪[L] L) := by
-  have := finite_of_valuativeExtension K L; have := isIntegralClosure_integerRing K L
   rw [mem_ker_directTracePairing_iff,
     mem_traceDual_one_iff_mul_of_differentIdeal_eq_span
       (differentIdeal_eq_span_pow_uniformizer K L hϖ)]
