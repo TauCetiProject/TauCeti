@@ -911,14 +911,12 @@ lemma edge_mem_joinFiber_zero {v w : (join K L) _⦋0⦌} (e : (join K L).Edge v
     (hw : w ∈ (joinFiber (univ K L).p 0).obj _) :
     e.edge ∈ (joinFiber (univ K L).p 0).obj _ := by
   rw [univ_p, mem_joinFiber_iff] at hw ⊢
+  -- The target of the edge is its face opposite to the vertex `0`.
   have h1 : (π K L).app (op ⦋1⦌) e.edge 1 = 0 := by
-    -- The target of the edge is its face opposite to the vertex `0`.
-    refine Eq.trans ?_ ((congrArg (fun t ↦ (π K L).app (op ⦋0⦌) t 0) e.tgt_eq).trans (hw 0))
-    have hnat := ConcreteCategory.congr_hom
-      (SimplicialObject.δ_naturality (π K L) (0 : Fin 2)) e.edge
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hnat
-    rw [hnat, stdSimplex.δ_apply]
-    rfl
+    have h := hw 0
+    rw [← e.tgt_eq, δ_naturality_apply, stdSimplex.δ_apply, Fin.succAbove_zero,
+      Fin.succ_zero_eq_one] at h
+    exact h
   exact fun j ↦ le_antisymm (h1 ▸ stdSimplex.monotone_apply _ (Fin.le_last j)) (Fin.zero_le _)
 
 /-- An edge of the join `K ⋆ L` whose source lies over the vertex `1` lies over `1`, since the
@@ -927,14 +925,12 @@ lemma edge_mem_joinFiber_one {v w : (join K L) _⦋0⦌} (e : (join K L).Edge v 
     (hv : v ∈ (joinFiber (univ K L).p 1).obj _) :
     e.edge ∈ (joinFiber (univ K L).p 1).obj _ := by
   rw [univ_p, mem_joinFiber_iff] at hv ⊢
+  -- The source of the edge is its face opposite to the vertex `1`.
   have h0 : (π K L).app (op ⦋1⦌) e.edge 0 = 1 := by
-    -- The source of the edge is its face opposite to the vertex `1`.
-    refine Eq.trans ?_ ((congrArg (fun t ↦ (π K L).app (op ⦋0⦌) t 0) e.src_eq).trans (hv 0))
-    have hnat := ConcreteCategory.congr_hom
-      (SimplicialObject.δ_naturality (π K L) (1 : Fin 2)) e.edge
-    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hnat
-    rw [hnat, stdSimplex.δ_apply]
-    rfl
+    have h := hv 0
+    rw [← e.src_eq, δ_naturality_apply, stdSimplex.δ_apply,
+      Fin.succAbove_ne_zero_zero one_ne_zero] at h
+    exact h
   exact fun j ↦ le_antisymm (Fin.le_last _) (h0 ▸ stdSimplex.monotone_apply _ (Fin.zero_le j))
 
 /-- The map from a standard simplex given by the join data of a simplex `s` of the join is the map
