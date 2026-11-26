@@ -18,6 +18,8 @@ In particular, a finite graph admits a colouring with one more colour than its m
 
 See Bondy–Murty, *Graph Theory with Applications*, Exercise 8.1.5 and Corollary 8.1.2,
 and Diestel, *Graph Theory*, Proposition 5.2.2.
+Mathlib's compactness theorem `SimpleGraph.nonempty_hom_of_forall_finite_subgraph_hom`
+extends the finite colouring argument to arbitrary vertex types.
 -/
 
 public section
