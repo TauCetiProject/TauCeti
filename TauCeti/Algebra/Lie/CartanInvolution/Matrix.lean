@@ -10,7 +10,9 @@ public import TauCeti.Algebra.Lie.CartanInvolution.Basic
 public import TauCeti.Algebra.Lie.Matrix.NegConjTranspose
 public import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Algebra.Lie.AdjointAction.Basic
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.BilinearForm.SkewAdjoint
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # Cartan involutions of matrix Lie algebras
@@ -88,14 +90,12 @@ theorem reTraceForm_apply (x y : L) :
 
 /-- `Re tr(X Yᴴ)` is symmetric on a real Lie subalgebra of `𝔤𝔩_n(𝕜)`. -/
 theorem isSymm_reTraceForm : L.reTraceForm.IsSymm :=
-  ⟨fun y z ↦ by
-    rw [reTraceForm_apply, reTraceForm_apply]
-    exact (TauCeti.isSymm_reTraceForm 𝕜 n n).eq y z⟩
+  (TauCeti.isSymm_reTraceForm 𝕜 n n).compl₁₂ L.incl.toLinearMap
 
 /-- `Re tr(X Yᴴ)` is positive definite on a real Lie subalgebra of `𝔤𝔩_n(𝕜)`. -/
-theorem posDef_reTraceForm : L.reTraceForm.toQuadraticMap.PosDef := fun y hy ↦ by
-  simpa only [LinearMap.BilinMap.toQuadraticMap_apply, reTraceForm_apply] using
-    TauCeti.posDef_reTraceForm 𝕜 n n (y : Matrix n n 𝕜) (by simpa using hy)
+theorem posDef_reTraceForm : L.reTraceForm.toQuadraticMap.PosDef :=
+  LinearMap.BilinForm.posDef_toQuadraticMap_compl₁₂ _ (TauCeti.posDef_reTraceForm 𝕜 n n)
+    L.incl.toLinearMap Subtype.val_injective
 
 /-- For `x` in `L` with `xᴴ` in `L`, the adjoint of `ad x` for `Re tr(X Yᴴ)` on `L` is `ad xᴴ`. -/
 theorem isAdjointPair_reTraceForm_ad (x : L) (hx : (x : Matrix n n 𝕜)ᴴ ∈ L) :

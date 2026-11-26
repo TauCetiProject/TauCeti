@@ -89,21 +89,12 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 private def reindexSumEmpty : Matrix ι ι ℂ ≃ₐ[ℝ] Matrix (ι ⊕ Empty) (ι ⊕ Empty) ℂ :=
   reindexAlgEquiv ℝ ℂ (Equiv.sumEmpty ι Empty).symm
 
-omit [Fintype ι] in
-private theorem indefiniteDiagonal_empty : indefiniteDiagonal ι Empty ℂ = 1 := by
-  rw [indefiniteDiagonal, ← diagonal_one]
-  congr 1
-  funext i
-  rcases i with i | i
-  · rfl
-  · exact i.elim
-
 private theorem map_unitaryLieAlgebra :
     (unitaryLieAlgebra ι).map (reindexSumEmpty (ι := ι)).toLieEquiv.toLieHom =
       indefiniteUnitaryLieAlgebra ι Empty := by
   ext Y
-  simp only [LieSubalgebra.mem_map, mem_indefiniteUnitaryLieAlgebra_iff, indefiniteDiagonal_empty,
-    Matrix.mul_one, Matrix.one_mul]
+  simp only [LieSubalgebra.mem_map, mem_indefiniteUnitaryLieAlgebra_iff,
+    indefiniteDiagonal_of_isEmpty, Matrix.mul_one, Matrix.one_mul]
   constructor
   · rintro ⟨X, hX, rfl⟩
     rw [mem_unitaryLieAlgebra_iff] at hX
