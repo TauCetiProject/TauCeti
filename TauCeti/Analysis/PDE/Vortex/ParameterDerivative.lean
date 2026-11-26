@@ -146,21 +146,6 @@ private theorem eLpNorm_exp_mul_smul_holderL_le (c : ℝ) (b : Lp (EuclideanSpac
     (.of_forall fun _ ↦ gaugeFixedZerothOrder.le_opNorm₂ _ _)).trans_eq ?_
   rw [← Lp.eNorm_def, eNorm_eq_nnNorm]
 
-/-- **The weak equation of the realization.** At a continuous field `x` with `L∞` class `a`, the
-values of every `e ∈ H¹(ℂ)⁴` are a weak solution of `L_x y = L_a e`: tested against compactly
-supported `C²` fields, `∫ ⟪e, L_x* η⟫ = ∫ ⟪L_a e, η⟫`. -/
-theorem integral_inner_sobolevFieldValues_gaugeFixedAdjoint
-    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
-    (hax : a =ᵐ[μ⊤] x) (e : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)
-    {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
-    ∫ z, ⟪sobolevFieldValues e z, gaugeFixedAdjoint x η z⟫ =
-      ∫ z, ⟪sobolevGaugeFixedOperator a e z, η z⟫ := by
-  rw [integral_inner_sobolevGaugeFixedOperator hx hax e (hη.of_le (by simp)) hηc]
-  refine integral_congr_ae ?_
-  filter_upwards [(sobolevFieldValues_ae_eq e).filter_mono
-    (ae_mono (Measure.restrict_coe_opens_top _).ge)] with z hz
-  rw [hz]
-
 /-! ### The splitting at a vortex of a window -/
 
 /-- At a smooth plane vortex with the degree-`m` end framing, the realization at its `L∞` class is
@@ -902,14 +887,16 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjec
 
 /-- **The `L∞` norm of a coefficient with bounded derivatives.** If `b` is the class of a field
 `β` whose coordinates have derivatives bounded by `M` through order `k`, as in the hypotheses of
-the weighted Sobolev estimates below, then `0 ≤ M` and `‖b‖∞ ≤ 2 M`. -/
+the weighted Sobolev estimates below, then `0 ≤ M` and `‖b‖∞ ≤ 2 M`. Only the order-zero bound
+is used; the general coordinatewise bound is
+`MeasureTheory.Lp.norm_le_sqrt_card_mul_of_ae_norm_apply_le`. -/
 theorem nonneg_and_norm_le_two_mul_of_ae_eq_of_forall_norm_iteratedFDeriv_le {k : ℕ}
     {b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {β : ℂ → EuclideanSpace ℝ (Fin 4)} {M : ℝ}
     (hb : b =ᵐ[μ⊤] β) (hβb : ∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ β z i) z‖ ≤ M) :
     0 ≤ M ∧ ‖b‖ ≤ 2 * M := by
   have hM : 0 ≤ M := (norm_nonneg _).trans (hβb 0 0 (Nat.zero_le k) 0)
-  refine ⟨hM, (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hM hb fun i z ↦ by
-    simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z).trans_eq ?_⟩
+  refine ⟨hM, (Lp.norm_le_sqrt_card_mul_of_ae_norm_apply_le hM (hb.mono fun z hz i ↦ hz ▸ by
+    simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z)).trans_eq ?_⟩
   norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos]
 
 /-- **The coordinates of the zeroth-order term.** For every order `k` there is a constant `C` with

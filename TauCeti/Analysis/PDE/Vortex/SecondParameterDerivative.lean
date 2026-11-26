@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.ParameterDerivative
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Function.Lp.PiLp
 import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!

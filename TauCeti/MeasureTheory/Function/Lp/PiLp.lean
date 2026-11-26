@@ -21,9 +21,7 @@ on the fibres), together with `MeasureTheory.Lp.piLpSingleLI`,
 `MeasureTheory.Lp.eq_sum_piLpSingleLI`, `MeasureTheory.Lp.piLpEquiv_apply_eq_compLpL`,
 `MeasureTheory.Lp.piLpSingleLI_apply_eq_compLpL`, and `MeasureTheory.Lp.piLpEquiv_lpSMul`.
 It also bounds the norm of an `L∞` class of `PiLp 2`-valued functions by `√(card ι)` times a bound
-on its coordinates (`MeasureTheory.Lp.norm_le_sqrt_card_mul_of_ae_norm_apply_le`, and
-`MeasureTheory.Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le` for a class given by an
-everywhere bounded representative).
+on its coordinates (`MeasureTheory.Lp.norm_le_sqrt_card_mul_of_ae_norm_apply_le`).
 -/
 
 public noncomputable section
@@ -190,13 +188,5 @@ theorem norm_le_sqrt_card_mul_of_ae_norm_apply_le {E : ι → Type*}
   have h := PiLp.dist_le_sqrt_card_mul_dist_ofLp (f x) 0
   rw [dist_zero_right, WithLp.ofLp_zero, dist_zero_right] at h
   exact h.trans (by gcongr; exact (pi_norm_le_iff_of_nonneg hM).2 hx)
-
-/-- An `L∞` class of `PiLp 2`-valued functions equal almost everywhere to a function whose
-coordinates are everywhere bounded by `M ≥ 0` has norm at most `√(card ι) * M`. -/
-theorem norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le {E : ι → Type*}
-    [∀ i, NormedAddCommGroup (E i)] {μ : Measure α} {f : Lp (PiLp 2 E) ∞ μ} {g : α → PiLp 2 E}
-    {M : ℝ} (hM : 0 ≤ M) (hfg : f =ᵐ[μ] g) (hg : ∀ i x, ‖g x i‖ ≤ M) :
-    ‖f‖ ≤ √(Fintype.card ι) * M :=
-  norm_le_sqrt_card_mul_of_ae_norm_apply_le hM (hfg.mono fun x hx i ↦ hx ▸ hg i x)
 
 end MeasureTheory.Lp
