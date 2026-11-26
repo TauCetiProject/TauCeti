@@ -7,7 +7,6 @@ module
 
 public import TauCeti.ModelTheory.BackAndForth.Interval
 public import TauCeti.SetTheory.Ordinal.Principal
-public import Mathlib.Order.Hom.Lex
 public import Mathlib.SetTheory.Ordinal.Exponential
 
 /-!
@@ -42,19 +41,13 @@ type a nonzero multiple of `ω ^ (γ + 1)`, by the induction hypothesis.
 
 public section
 
-universe u o
+universe u
 
 namespace TauCeti
 
 open FirstOrder FirstOrder.Language Fin Ordinal Order
 
 attribute [local instance] orderStructure
-
-/-- Well-orders of the same order type are back-and-forth equivalent at every level. -/
-private theorem bfEquiv_of_typeLT_eq {A B : Type u} [LinearOrder A] [LinearOrder B]
-    [WellFoundedLT A] [WellFoundedLT B] (h : typeLT A = typeLT B) (γ : Ordinal.{o}) :
-    BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → A) (Fin.elim0 : Fin 0 → B) :=
-  (BFEquiv.refl γ _).orderIso_congr (OrderIso.refl A) (OrderIso.ofRelIsoLT (type_eq.1 h).some)
 
 /-- Well-orders of types `ω ^ γ * δ` and `ω ^ γ * ε`, with `δ` and `ε` nonzero, are back-and-forth
 equivalent at level `γ`. -/
@@ -83,11 +76,8 @@ private theorem exists_typeLT_Ioi_eq {γ δ : Ordinal.{u}} (hM : typeLT M = ω ^
   have hne : Nonempty (Set.Ioi m) := ⟨⟨Ordinal.enum (α := M) (· < ·) ⟨_, hsucc⟩,
     (typein_lt_typein (· < ·)).1 <| (typein_enum (· < ·) hsucc).symm ▸ lt_succ _⟩⟩
   -- The final segment of a multiple of the additively principal `ω ^ (γ + 1)` is a multiple.
-  have hdvd : ω ^ (γ + 1) ∣ typeLT (Set.Ioi m) := by
-    refine (isPrincipal_add_omega0_opow (γ + 1)).dvd_of_dvd_add (b := typeLT (Set.Iic m)) ?_
-    rw [← type_lt_sum_lex, (OrderIso.sumLexIicIoi m).ordinalType_congr, hM]
-    exact dvd_mul_right _ _
-  obtain ⟨θ, hθ⟩ := hdvd
+  obtain ⟨θ, hθ⟩ := (isPrincipal_add_omega0_opow (γ + 1)).dvd_type_lt_Ioi
+    (hM ▸ dvd_mul_right _ _) m
   refine ⟨ω * θ, mul_ne_zero omega0_ne_zero ?_, by rw [hθ, opow_add_one, mul_assoc]⟩
   rintro rfl
   rw [mul_zero] at hθ
@@ -119,7 +109,8 @@ private theorem OmegaPowMul.forth {γ : Ordinal.{u}} (ih : OmegaPowMul γ) {δ �
     · exact hlt
   refine ⟨Ordinal.enum (· < ·) ⟨_, hν⟩, (bfEquiv_snoc_elim0_iff γ _ _).2 ⟨?_, ?_⟩⟩
   · have hn : typeLT (Set.Iio (Ordinal.enum (α := N) (· < ·) ⟨_, hν⟩)) =
-        if μ = 0 then ρ else ω ^ γ + ρ := typein_enum _ _
+        if μ = 0 then ρ else ω ^ γ + ρ := by
+      rw [type_Iio_lt, typein_enum]
     split_ifs at hn with hμ
     · exact bfEquiv_of_typeLT_eq (by rw [hm, hn, hμ, mul_zero, zero_add]) γ
     · -- Both initial segments are ordered sums of a nonzero multiple of `ω ^ γ` and `ρ`.
