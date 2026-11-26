@@ -71,10 +71,12 @@ pulls the volume form back to a positive multiple of itself, so it preserves the
   preserves orientation from the product orientation.
 * `TauCeti.isOrientationPreservingAt_piSnoc_torusOrientation`: appending a circle preserves
   orientation from the product of the torus orientation with `AddCircle.orientation`.
-* `TauCeti.isOrientationPreservingAt_piCons_torusOrientation`,
-  `TauCeti.isOrientationPreservingAt_piCons_symm_torusOrientation`: prepending a circle, and the
-  association map splitting off the first circle, preserve orientation from the product of
-  `AddCircle.orientation` with the torus orientation.
+* `TauCeti.isOrientationPreservingAt_piCons_torusOrientation`: prepending a circle preserves
+  orientation from the product of `AddCircle.orientation` with the torus orientation, read in
+  degree `m + 1`, to the torus orientation.
+* `TauCeti.isOrientationPreservingAt_piCons_symm_torusOrientation`: the association map
+  splitting off the first circle preserves orientation from the torus orientation to that
+  product.
 * `TauCeti.isOrientationPreservingAt_piUnique_torusOrientation`: the one-factor torus is its
   circle.
 * `TauCeti.orientationAt_torusOrientation_fin_zero`: the empty torus carries the positive
