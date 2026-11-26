@@ -11,7 +11,6 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Complex.Wirtinger.Precompact
 import TauCeti.Analysis.Polynomial.SymmetricPower
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Order.Filter.AtTopBot
@@ -227,17 +226,6 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_of_esymm_of_eq {m : ℕ} {p 
 
 /-! ### The limits solve the equation -/
 
-/-- The zeroth-order term `∑_{V ∈ s} \bar V e_{j-1}(s ∖ V)` of the equation of the elementary
-symmetric functions is continuous on the symmetric power: by `Multiset.sum_map_mul_esymm_erase`
-it is a polynomial in the elementary symmetric functions of `s` and the sums
-`∑_{V ∈ s} Vᵏ \bar V`. -/
-private theorem continuous_sum_map_conj_mul_esymm_erase (m j : ℕ) :
-    Continuous fun s : Sym ℂ m ↦
-      ((s : Multiset ℂ).map fun w ↦ conj w * ((s : Multiset ℂ).erase w).esymm (j - 1)).sum := by
-  simp_rw [Multiset.sum_map_mul_esymm_erase]
-  exact continuous_finsetSum _ fun k _ ↦ (continuous_const.mul (Sym.continuous_esymm _)).mul
-    (Sym.continuous_sum_map ((continuous_pow k).mul Complex.continuous_conj))
-
 /-- The zeroth-order term `(j e_j ν + ∑_{V ∈ R} \bar V e_{j-1}(R ∖ V) μ)(1)` of the equation of
 the `j`-th elementary symmetric function, as a function of the coefficients `e₁, …, e_m` of the
 tuple `R` (`Sym.ofEsymm`) and of the forms `ν`, `μ`. -/
@@ -249,7 +237,8 @@ private noncomputable def esymmZerothOrder (m j : ℕ)
 
 private theorem continuous_esymmZerothOrder (m j : ℕ) : Continuous (esymmZerothOrder m j) := by
   have h₁ := (Sym.continuous_esymm (R := ℂ) (n := m) j).comp Sym.continuous_ofEsymm
-  have h₂ := (continuous_sum_map_conj_mul_esymm_erase m j).comp Sym.continuous_ofEsymm
+  have h₂ := (Sym.continuous_sum_map_mul_esymm_erase (n := m) Complex.continuous_conj (j - 1)).comp
+    Sym.continuous_ofEsymm
   exact (continuous_eval_const 1).comp
     (((continuous_const.mul (h₁.comp continuous_fst)).smul (continuous_fst.comp continuous_snd)).add
       ((h₂.comp continuous_fst).smul (continuous_snd.comp continuous_snd)))

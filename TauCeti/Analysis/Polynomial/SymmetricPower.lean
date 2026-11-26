@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Polynomial
 public import TauCeti.RingTheory.Polynomial.SymmetricPower
 public import TauCeti.Topology.Algebra.Polynomial.Basic
 public import TauCeti.Topology.Sym.Disjoint
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
 import Mathlib.Analysis.Analytic.Polynomial
@@ -46,6 +47,8 @@ Both halves are elementary, but neither is formal:
   an ordered tuple is bounded by one more than the norm of its coefficient tuple.
 * `Sym.continuous_esymm`: the elementary symmetric functions of an unordered tuple depend
   continuously on it, over any topological semiring.
+* `Sym.continuous_sum_map_mul_esymm_erase`: so does the weighted sum
+  `∑_{w ∈ s} f(w) e_k(s ∖ w)`, for a continuous weight `f`, over any topological ring.
 * `Sym.isProperMap_coeffEquiv_comp_ofFn`: consequently the coefficient map
   `(Fin n → K) → (Fin n → K)` is proper.
 * `Sym.coeffHomeomorph`: the **elementary symmetric chart** `Sym K n ≃ₜ (Fin n → K)`.
@@ -188,6 +191,19 @@ theorem continuous_esymm {R : Type*} [CommSemiring R] [TopologicalSpace R]
       ← MvPolynomial.aeval_esymm_eq_multiset_esymm (Fin n) R k f, MvPolynomial.aeval_eq_eval]
   rw [h]
   exact MvPolynomial.continuous_eval _
+
+/-- For a continuous weight `f`, the sum `∑_{w ∈ s} f(w) e_k(s ∖ w)` over the points of an
+unordered tuple `s` depends continuously on `s`: by `Multiset.sum_map_mul_esymm_erase` it is a
+polynomial in the elementary symmetric functions of `s` and the weighted power sums
+`∑_{w ∈ s} wⁱ f(w)`. -/
+@[continuity, fun_prop]
+theorem continuous_sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R]
+    [TopologicalSpace R] [IsTopologicalRing R] {n : ℕ} {f : R → R} (hf : Continuous f) (k : ℕ) :
+    Continuous fun s : Sym R n =>
+      ((s : Multiset R).map fun w => f w * ((s : Multiset R).erase w).esymm k).sum := by
+  simp_rw [Multiset.sum_map_mul_esymm_erase]
+  exact continuous_finsetSum _ fun i _ => (continuous_const.mul (continuous_esymm _)).mul
+    (continuous_sum_map ((continuous_pow i).mul hf))
 
 section Chart
 
