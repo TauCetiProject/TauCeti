@@ -149,7 +149,7 @@ theorem IsRankOne.comp_powMonoidHom [Fact p.Prime] {D : DeltaLogStructure p α}
 
 /-- The trivial log structure `Aˣ → A`: the monoid Frobenius of the units of a `δ`-ring is the
 Frobenius of `A` restricted to the units. The bijectivity hypothesis holds by
-`Units.bijective_map_coeHom`. -/
+`Units.map_coeHom_bijective`. -/
 @[simp]
 theorem monoidFrobenius_units [Fact p.Prime] (hp : (p : A) ∈ Ring.jacobson A)
     (hα : Function.Bijective (Units.map (Units.coeHom A))) (u : Aˣ) :
