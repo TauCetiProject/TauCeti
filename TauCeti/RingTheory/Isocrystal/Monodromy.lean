@@ -157,8 +157,9 @@ theorem eq_zero_of_frobenius_mul_p_pow_eq {a : K(p, k)} {n : ℕ} (hn : n ≠ 0)
     simp at ha0
   have hinj := IsFractionRing.injective (WittVector p k) K(p, k)
   have hσ (z : WittVector p k) : φ(p, k) (algebraMap (WittVector p k) K(p, k) z) =
-      algebraMap (WittVector p k) K(p, k) (frobenius z) :=
-    IsFractionRing.ringEquivOfRingEquiv_algebraMap (frobeniusEquiv p k) z
+      algebraMap (WittVector p k) K(p, k) (frobenius z) := by
+    -- `φ(p, k)` is the ring map underlying the extension of `frobeniusEquiv p k` to `K(p, k)`.
+    simp [FractionRing.frobeniusRingHom, FractionRing.frobenius]
   have hAy : algebraMap (WittVector p k) K(p, k) y ≠ 0 := by simpa using hinj.ne hy0
   have hAFy : algebraMap (WittVector p k) K(p, k) (frobenius y) ≠ 0 := by
     have : frobenius y ≠ 0 := by simpa using (frobenius_bijective p k).injective.ne hy0
