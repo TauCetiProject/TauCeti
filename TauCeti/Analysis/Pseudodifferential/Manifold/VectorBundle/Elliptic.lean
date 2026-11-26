@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Principa
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Elliptic pseudodifferential operators between vector bundles in charts
@@ -259,15 +260,8 @@ theorem IsSectionClassicalEllipticAt.eventually {x : M}
   refine hPx.mem_or_subsingleton.elim (fun hP ↦ ?_)
     fun ⟨_, _⟩ ↦ .of_forall isSectionClassicalEllipticAt_of_subsingleton_fiber
   -- A chart `e` of the maximal atlas at `x` over which both bundles are trivial.
-  obtain ⟨e, he, hx, hE, hF⟩ : ∃ e : OpenPartialHomeomorph M (CoordinateSpace n),
-      e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M ∧ x ∈ e.source ∧
-        e.source ⊆ (trivializationAt V E x).baseSet ∧
-          e.source ⊆ (trivializationAt W F x).baseSet := by
-    have hopen := (trivializationAt V E x).open_baseSet.inter (trivializationAt W F x).open_baseSet
-    refine ⟨_, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x) hopen, ?_⟩
-    rw [OpenPartialHomeomorph.restr_source' _ _ hopen]
-    exact ⟨⟨mem_chart_source _ x, FiberBundle.mem_baseSet_trivializationAt' x,
-      FiberBundle.mem_baseSet_trivializationAt' x⟩, fun _ hy ↦ hy.2.1, fun _ hy ↦ hy.2.2⟩
+  obtain ⟨e, he, hx, hE, hF⟩ :=
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, CoordinateSpace n) ∞ V E W F x
   -- A cutoff `χ` equal to `1` near `e x`, and the symbol `a` of the compression by `χ`, `χ`.
   obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (Ω := ⟨e.target, e.open_target⟩)
     isCompact_singleton (singleton_subset_iff.2 (e.map_source hx))

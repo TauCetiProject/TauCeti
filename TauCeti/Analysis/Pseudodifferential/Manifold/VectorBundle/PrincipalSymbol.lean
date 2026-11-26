@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -676,10 +677,8 @@ theorem isSectionClassicalEllipticAt_of_subsingleton [Subsingleton (CoordinateSp
 every linear map between the trivial fibres is bijective. -/
 theorem isSectionClassicalEllipticAt_of_subsingleton_fiber [Subsingleton V] [Subsingleton W]
     (x : M) : IsSectionClassicalEllipticAt m P x := fun _ _ ↦ by
-  have : Subsingleton (E x) := ((trivializationAt V E x).continuousLinearEquivAt ℂ x
-    (FiberBundle.mem_baseSet_trivializationAt V E x)).toEquiv.subsingleton
-  have : Subsingleton (F x) := ((trivializationAt W F x).continuousLinearEquivAt ℂ x
-    (FiberBundle.mem_baseSet_trivializationAt W F x)).toEquiv.subsingleton
+  have := subsingleton_fiber_of_subsingleton V E x
+  have := subsingleton_fiber_of_subsingleton W F x
   exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
 omit [FiniteDimensional ℂ W] in
