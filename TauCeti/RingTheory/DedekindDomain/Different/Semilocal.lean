@@ -226,27 +226,28 @@ theorem map_differentIdeal_semilocal
     ((differentIdeal R S).map
         (Algebra.TensorProduct.includeRight : S →ₐ[R] R' ⊗[R] S)).map eInt =
       Ideal.pi fun i ↦ differentIdeal R' (S' i) := by
+  let f : S →+* ∀ i, S' i :=
+    eInt.toRingEquiv.toRingHom.comp
+      (Algebra.TensorProduct.includeRight : S →ₐ[R] R' ⊗[R] S).toRingHom
   have hmap : ((differentIdeal R S).map
         (Algebra.TensorProduct.includeRight : S →ₐ[R] R' ⊗[R] S)).map eInt =
-      (differentIdeal R S).map
-        (eInt.toRingEquiv.toRingHom.comp
-          (Algebra.TensorProduct.includeRight : S →ₐ[R] R' ⊗[R] S).toRingHom) :=
+      (differentIdeal R S).map f :=
     Ideal.map_map (Algebra.TensorProduct.includeRight : S →ₐ[R] R' ⊗[R] S).toRingHom
       eInt.toRingEquiv.toRingHom
-  rw [hmap]
   have hproj (i : ι) :
-      ((differentIdeal R S).map
-          (eInt.toRingEquiv.toRingHom.comp
-            (Algebra.TensorProduct.includeRight : S →ₐ[R] R' ⊗[R] S).toRingHom)).map
-        (Pi.evalRingHom S' i) = differentIdeal R' (S' i) := by
+      ((differentIdeal R S).map f).map (Pi.evalRingHom S' i) = differentIdeal R' (S' i) := by
     rw [Ideal.map_map, ← hLocal i]
     congr 1
     ext x
-    simpa using heInt 1 x i
-  -- `Ideal.piOrderIso` is `.symm { toFun := Ideal.pi, invFun I i := I.map (Pi.evalRingHom _ i) }`
-  -- (Mathlib's `@[simps!]` on `OrderIso` generates no projection lemma), so `symm_apply_apply`
-  -- expresses any ideal of `∀ i, S' i` as `Ideal.pi` of its coordinate projections.
-  exact (Ideal.piOrderIso.symm_apply_apply _).symm.trans (congrArg Ideal.pi (funext hproj))
+    simpa [f] using heInt 1 x i
+  have hJ : (differentIdeal R S).map f = Ideal.pi (Ideal.piOrderIso ((differentIdeal R S).map f)) :=
+    SetLike.coe_injective <| by
+      conv_lhs => rw [← Ideal.piOrderIso.symm_apply_apply ((differentIdeal R S).map f)]
+      exact (Ideal.coe_piOrderIso_symm_apply _).trans (Set.ext fun _ ↦ by simp [Ideal.mem_pi])
+  rw [hmap, hJ]
+  refine congrArg Ideal.pi (funext fun i ↦ ?_)
+  rw [← Ideal.map_evalRingHom_pi (I := Ideal.piOrderIso ((differentIdeal R S).map f)) i, ← hJ,
+    hproj i]
 
 end SemilocalIdeal
 

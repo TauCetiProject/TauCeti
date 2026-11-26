@@ -7,11 +7,11 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Powers of the maximal ideal of a discrete valuation ring
@@ -42,6 +42,11 @@ extension of a ring of dimension at most one in it is injective.
   has cardinality `Nat.card (ResidueField S) ^ n`.
 * `Ideal.eq_maximalIdeal_pow_multiplicity`: every nonzero ideal `I` of a discrete valuation ring is
   `𝔪 ^ multiplicity 𝔪 I`.
+* `TauCeti.IsDiscreteValuationRing.cardQuot_span_pow`,
+  `TauCeti.IsDiscreteValuationRing.cardQuot_eq_pow_iff`: for a uniformizer `ϖ`, the ideal
+  `ϖ^c S` has index `Nat.card (ResidueField S) ^ c`, and it is the only ideal of that index.
+* `TauCeti.IsDiscreteValuationRing.exists_eq_span_pow_of_cardQuot_ne_zero`: an ideal of finite
+  index is `ϖ^c S` for some `c`.
 * `TauCeti.IsDiscreteValuationRing.hasFiniteQuotients`: if the residue field is finite, so is
   the quotient by any nonzero ideal.
 * `TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add`: `𝔪 ^ (k + e)` has index
@@ -105,6 +110,13 @@ theorem natCard_quotient_maximalIdeal_pow (n : ℕ) :
     (_root_.IsDiscreteValuationRing.not_a_field S), Submodule.cardQuot_apply]
   -- The residue field is defined as the quotient by the maximal ideal.
   rfl
+
+/-- In a discrete valuation ring with uniformizer `ϖ` and residue field of `q` elements, the
+ideal `ϖ^c S` has index `q ^ c`. -/
+theorem cardQuot_span_pow {ϖ : S} (hϖ : Irreducible ϖ) (c : ℕ) :
+    (Ideal.span {ϖ ^ c}).cardQuot = Nat.card (ResidueField S) ^ c := by
+  rw [← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, Submodule.cardQuot_apply,
+    natCard_quotient_maximalIdeal_pow]
 
 /-- Every nonzero ideal of a discrete valuation ring is the power of the maximal ideal given by
 its multiplicity at the maximal ideal. -/
@@ -203,6 +215,24 @@ ring is not. -/
 instance infinite : Infinite S :=
   not_finite_iff_infinite.mp fun _ ↦
     _root_.IsDiscreteValuationRing.not_isField S (Finite.isField_of_domain S)
+
+/-- An ideal of finite index in a discrete valuation ring with uniformizer `ϖ` is `ϖ^c S` for
+some `c`. -/
+theorem exists_eq_span_pow_of_cardQuot_ne_zero {ϖ : S} (hϖ : Irreducible ϖ) {I : Ideal S}
+    (hI : I.cardQuot ≠ 0) : ∃ c : ℕ, I = Ideal.span {ϖ ^ c} :=
+  _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
+    (fun h ↦ hI (by rw [h, Submodule.cardQuot_bot])) hϖ
+
+/-- In a discrete valuation ring with uniformizer `ϖ` and residue field of `q` elements, the
+only ideal of index `q ^ c` is `ϖ^c S`. -/
+theorem cardQuot_eq_pow_iff [Finite (ResidueField S)] {ϖ : S} (hϖ : Irreducible ϖ)
+    {I : Ideal S} {c : ℕ} :
+    I.cardQuot = Nat.card (ResidueField S) ^ c ↔ I = Ideal.span {ϖ ^ c} := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ cardQuot_span_pow hϖ c⟩
+  have hq : 1 < Nat.card (ResidueField S) := Finite.one_lt_card
+  obtain ⟨n, rfl⟩ := exists_eq_span_pow_of_cardQuot_ne_zero hϖ (by rw [h]; positivity)
+  rw [cardQuot_span_pow hϖ] at h
+  rw [Nat.pow_right_injective hq h]
 
 section Map
 

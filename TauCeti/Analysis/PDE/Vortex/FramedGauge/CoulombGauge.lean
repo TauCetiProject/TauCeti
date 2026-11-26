@@ -38,10 +38,10 @@ together the two halves give the slice charts of the quotient `A_m^k / G_(k+1)` 
 
 The gauge is in fact smooth. In the real chart of `A_m^k`
 (`TauCeti.Vortex.SobolevFieldSpace.realSubRef`), `g y = exp (i Φ y)` for a real phase `Φ` of
-`H^(k+1)` that is smooth on an open neighbourhood of the coordinates of `x`
-(`SobolevFieldSpace.exists_isOpen_contDiffOn_forall_expGauge_smul_mem_coulombSlice`). Since the
-gauge action is smooth, so is the projection sending the coordinates of `y` to those of
-`g y · y` in the Coulomb slice
+`H^(k+1)` that is smooth on an open neighbourhood of the coordinates of `x` and vanishes at the
+fields already in the Coulomb slice
+(`SobolevFieldSpace.exists_isOpen_contDiffOn_coulombPhase`). Since the gauge action is smooth, so
+is the projection sending the coordinates of `y` to those of `g y · y` in the Coulomb slice
 (`SobolevFieldSpace.exists_isOpen_contDiffOn_forall_realSubRef_smul_eq`).
 This is the smoothness a comparison of two slice charts of the vortex moduli needs: a change of
 slice is the projection onto the new slice.
@@ -80,8 +80,9 @@ and all terms are continuous, so the Coulomb condition holds at every point.
 
 ## Main results
 
-* `TauCeti.Vortex.SobolevFieldSpace.exists_isOpen_contDiffOn_forall_expGauge_smul_mem_coulombSlice`:
-  the Coulomb gauge is `exp (i Φ)` for a real phase `Φ` smooth in the real coordinates of the field.
+* `TauCeti.Vortex.SobolevFieldSpace.exists_isOpen_contDiffOn_coulombPhase`:
+  the Coulomb gauge is `exp (i Φ)` for a real phase `Φ` smooth in the real coordinates of the field,
+  with `Φ = 0` on the Coulomb slice.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_isOpen_contDiffOn_forall_realSubRef_smul_eq`: the
   projection of nearby fields onto the Coulomb slice is smooth in the real coordinates.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_mem_nhds_continuousOn_forall_smul_mem_coulombSlice`:
@@ -621,17 +622,19 @@ private theorem contDiff_coulombMap (x : SobolevFieldSpace f m ((j + 2 : ℕ) : 
         contDiff_snd)
 
 /-- **The Coulomb phase.** Near the real coordinates of a continuous field `x` of `A_m^(j+2)`, the
-Coulomb map has a smooth branch of zeros `u ↦ (u, Φ u)` through `(x, 0)`, on an open set. This is
-the inverse function theorem for `(u, F) ↦ (u, coulombMap x (u, F))`, whose derivative at `(x, 0)`
-is invertible because the gauge Laplacian is (`realGaugeLaplacian`); the map is smooth
-(`contDiff_coulombMap`), so its local inverse is smooth on its whole target
+Coulomb map has a smooth branch of zeros `u ↦ (u, Φ u)` through `(x, 0)`, on an open set `U`. It
+is the only branch of zeros near `(x, 0)`: if `u ∈ U` and `(u, 0)` is already a zero, then
+`Φ u = 0`. This is the inverse function theorem for `(u, F) ↦ (u, coulombMap x (u, F))`, whose
+derivative at `(x, 0)` is invertible because the gauge Laplacian is (`realGaugeLaplacian`); the map
+is smooth (`contDiff_coulombMap`), so its local inverse is smooth on its whole target
 (`HasStrictFDerivAt.contDiffOn_toOpenPartialHomeomorph_symm`). -/
 private theorem exists_coulombPhase (x : SobolevFieldSpace f m ((j + 2 : ℕ) : ℝ)) :
     ∃ U : Set (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ))),
       IsOpen U ∧ x.realSubRef (Nat.cast_nonneg (j + 2)) ∈ U ∧
       ∃ Φ : (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ))) →
         realSubmodule ℂ (natCast_add_two_add_one_nonneg j),
-      ContDiffOn ℝ ∞ Φ U ∧ Φ (x.realSubRef _) = 0 ∧ ∀ u ∈ U, coulombMap x (u, Φ u) = 0 := by
+      ContDiffOn ℝ ∞ Φ U ∧ Φ (x.realSubRef _) = 0 ∧ (∀ u ∈ U, coulombMap x (u, Φ u) = 0) ∧
+        ∀ u ∈ U, coulombMap x (u, 0) = 0 → Φ u = 0 := by
   set V := Fin 4 → realSubmodule ℂ (Nat.cast_nonneg (j + 2) : (0 : ℝ) ≤ ((j + 2 : ℕ) : ℝ))
   set P := realSubmodule ℂ (natCast_add_two_add_one_nonneg j)
   set T := realSubmodule ℂ (Nat.cast_nonneg (j + 1) : (0 : ℝ) ≤ ((j + 1 : ℕ) : ℝ))
@@ -644,26 +647,36 @@ private theorem exists_coulombPhase (x : SobolevFieldSpace f m ((j + 2 : ℕ) : 
       (ContinuousLinearMap.ext fun p ↦ ?_)
     simp [e, add_comm]
   set H := hΨ.toOpenPartialHomeomorph Ψ
+  -- `H` is `Ψ` as a function (`HasStrictFDerivAt.toOpenPartialHomeomorph_coe`).
+  have hHΨ : ⇑H = Ψ := hΨ.toOpenPartialHomeomorph_coe
   set q₀ : V × T := (x.realSubRef _, 0)
   have hΨ₀ : Ψ p₀ = q₀ := Prod.ext rfl (coulombMap_self x)
   have hmem : q₀ ∈ H.target := hΨ₀ ▸ hΨ.image_mem_toOpenPartialHomeomorph_target
   have hι : ContDiff ℝ ∞ fun u : V ↦ ((u, 0) : V × T) := contDiff_id.prodMk contDiff_const
+  have hι' : Continuous fun u : V ↦ ((u, 0) : V × P) := continuous_id.prodMk continuous_const
   -- `Ψ` is smooth, so the inverse of `H` is smooth on the target of `H`.
   have hinv : ContDiffOn ℝ ∞ H.symm H.target :=
     hΨ.contDiffOn_toOpenPartialHomeomorph_symm
       (contDiff_fst.prodMk (contDiff_coulombMap x)).contDiffOn
-  refine ⟨(fun u : V ↦ ((u, 0) : V × T)) ⁻¹' H.target, H.open_target.preimage hι.continuous,
-    hmem, fun u ↦ (H.symm (u, 0)).2, ?_, ?_, fun u hu ↦ ?_⟩
-  · exact contDiff_snd.comp_contDiffOn (hinv.comp hι.contDiffOn fun _ hu ↦ hu)
+  refine ⟨(fun u : V ↦ ((u, 0) : V × T)) ⁻¹' H.target ∩ (fun u : V ↦ ((u, 0) : V × P)) ⁻¹' H.source,
+    (H.open_target.preimage hι.continuous).inter (H.open_source.preimage hι'),
+    ⟨hmem, hΨ.mem_toOpenPartialHomeomorph_source⟩, fun u ↦ (H.symm (u, 0)).2, ?_, ?_,
+    fun u hu ↦ ?_, fun u hu h0 ↦ ?_⟩
+  · exact (contDiff_snd.comp_contDiffOn (hinv.comp hι.contDiffOn fun _ hu ↦ hu)).mono
+      Set.inter_subset_left
   · have h : H.symm q₀ = p₀ := by
-      rw [← hΨ₀]
+      rw [← hΨ₀, ← hHΨ]
       exact H.left_inv hΨ.mem_toOpenPartialHomeomorph_source
     exact congrArg Prod.snd h
-  · -- `H` is `Ψ` as a function (`HasStrictFDerivAt.toOpenPartialHomeomorph_coe`).
-    have h := H.right_inv hu
-    rw [hΨ.toOpenPartialHomeomorph_coe] at h
+  · have h := H.right_inv hu.1
+    rw [hHΨ] at h
     obtain ⟨h₁, h₂⟩ := Prod.mk.inj h
     rwa [show H.symm (u, 0) = (u, (H.symm (u, 0)).2) from Prod.ext h₁ rfl] at h₂
+  · -- `(u, 0)` is a zero in the source of `H`, so `H` fixes it and its inverse returns it.
+    have h : H (u, 0) = (u, 0) := by rw [hHΨ]; exact Prod.ext rfl h0
+    have h' := H.left_inv hu.2
+    rw [h] at h'
+    exact congrArg Prod.snd h'
 
 /-! ### The Coulomb map computes the Coulomb defect -/
 
@@ -890,6 +903,20 @@ private theorem gaugeAdjoint_phaseGauge_sub_eq_zero_of_coulombMap_eq_zero (hj : 
     gaugeAdjoint_phaseGauge x (hdy 0 z) (hdy 1 z) hφ.contDiffAt]
   linear_combination hLap - hyx
 
+/-- **The phase `0` is a zero of the Coulomb map at a field of the Coulomb slice.** For continuous
+fields `x, y` of `A_m^(j+2)`, `j ≥ 1`, with `d₀* (y - x) = 0` at every point,
+`coulombMap x (y, 0) = 0`. -/
+private theorem coulombMap_realSubRef_zero_eq_zero (hj : 1 ≤ j)
+    (x y : SobolevFieldSpace f m ((j + 2 : ℕ) : ℝ)) (hy : ∀ z, gaugeAdjoint x (⇑y - ⇑x) z = 0) :
+    coulombMap x (y.realSubRef (Nat.cast_nonneg (j + 2)), 0) = 0 := by
+  refine Subtype.ext (inclusionLp_injective (Nat.cast_nonneg (j + 1)) ?_)
+  rw [ZeroMemClass.coe_zero, map_zero]
+  refine Lp.ext ?_
+  filter_upwards [coeFn_inclusionLp_coulombMap hj x y 0, Lp.coeFn_zero ℂ 2 (volume : Measure ℂ)]
+    with z h₁ h₂
+  simp only [h₁, h₂, map_zero, Pi.zero_apply, hy z, Real.sin_zero, Real.cos_zero]
+  norm_num
+
 end CoulombMap
 
 /-! ### Existence of the Coulomb gauge -/
@@ -920,21 +947,26 @@ variable (hs) in
 /-- **The Coulomb gauge depends smoothly on the field.** Let `x` be a continuous field of `A_m^k`,
 `k ≥ 3`. In the real chart of `A_m^k` (`TauCeti.Vortex.SobolevFieldSpace.realSubRef`), there are an
 open neighbourhood `U` of the coordinates of `x` and a real phase `Φ` of `H^(k+1)`, smooth on `U`
-with `Φ x = 0`, such that the gauge `exp (i Φ y)` moves every field `y` with coordinates in `U`
-into the Coulomb slice `coulombSlice x` of `x`: `d₀* (exp (i Φ y) · y - x) = 0`. -/
-theorem exists_isOpen_contDiffOn_forall_expGauge_smul_mem_coulombSlice (hk : 3 ≤ k)
-    (x : SobolevFieldSpace f m k) :
+with `Φ x = 0`, such that for every field `y` with coordinates in `U`:
+
+* the gauge `exp (i Φ y)` moves `y` into the Coulomb slice `coulombSlice x` of `x`:
+  `d₀* (exp (i Φ y) · y - x) = 0`;
+* if `y` already lies in the Coulomb slice of `x`, then `Φ y = 0`. -/
+theorem exists_isOpen_contDiffOn_coulombPhase (hk : 3 ≤ k) (x : SobolevFieldSpace f m k) :
     ∃ U : Set (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)), IsOpen U ∧
       x.realSubRef (Nat.cast_nonneg k) ∈ U ∧
       ∃ Φ : (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)) →
           realSubmodule ℂ (zero_le_one.trans hs.le),
         ContDiffOn ℝ ∞ Φ U ∧ Φ (x.realSubRef (Nat.cast_nonneg k)) = 0 ∧
+        (∀ y : SobolevFieldSpace f m k, y.realSubRef (Nat.cast_nonneg k) ∈ U →
+          expGauge hs (Φ (y.realSubRef (Nat.cast_nonneg k))) • y ∈ coulombSlice x) ∧
         ∀ y : SobolevFieldSpace f m k, y.realSubRef (Nat.cast_nonneg k) ∈ U →
-          expGauge hs (Φ (y.realSubRef (Nat.cast_nonneg k))) • y ∈ coulombSlice x := by
+          y ∈ coulombSlice x → Φ (y.realSubRef (Nat.cast_nonneg k)) = 0 := by
   obtain ⟨j, rfl⟩ : ∃ j, k = j + 2 := ⟨k - 2, by omega⟩
   have hj : 1 ≤ j := by omega
-  obtain ⟨U, hUo, hxU, Φ, hΦd, hΦ0, hΦ⟩ := exists_coulombPhase x
-  refine ⟨U, hUo, hxU, Φ, hΦd, hΦ0, fun y hy z ↦ ?_⟩
+  obtain ⟨U, hUo, hxU, Φ, hΦd, hΦ0, hΦ, huniq⟩ := exists_coulombPhase x
+  refine ⟨U, hUo, hxU, Φ, hΦd, hΦ0, fun y hy z ↦ ?_, fun y hy hyS ↦
+    huniq _ hy (coulombMap_realSubRef_zero_eq_zero hj x y (mem_coulombSlice.1 hyS))⟩
   rw [coe_expGauge_smul]
   exact gaugeAdjoint_phaseGauge_sub_eq_zero_of_coulombMap_eq_zero hj x y (hΦ _ hy) z
 
@@ -957,8 +989,7 @@ theorem exists_isOpen_contDiffOn_forall_realSubRef_smul_eq (hk : 3 ≤ k)
             (g • y).realSubRef (Nat.cast_nonneg k) = π (y.realSubRef (Nat.cast_nonneg k)) := by
   -- Take `g = exp (i Φ y)` with the smooth phase `Φ`; `π` is smooth because the gauge action is
   -- smooth in real coordinates (`contDiff_realSubRef_expGauge_smul_ofRealSubRef`).
-  obtain ⟨U, hUo, hxU, Φ, hΦd, hΦ0, hΦ⟩ :=
-    exists_isOpen_contDiffOn_forall_expGauge_smul_mem_coulombSlice hs hk x
+  obtain ⟨U, hUo, hxU, Φ, hΦd, hΦ0, hΦ, -⟩ := exists_isOpen_contDiffOn_coulombPhase hs hk x
   have hk1 : (1 : ℝ) < k := Nat.one_lt_cast.2 Fact.out
   refine ⟨U, hUo, hxU, fun u ↦ (expGauge hs (Φ u) • ofRealSubRef (f := f) (m := m) hk1 u).realSubRef
     (Nat.cast_nonneg k), ?_, ?_, fun y hy ↦ ⟨expGauge hs (Φ (y.realSubRef (Nat.cast_nonneg k))),
@@ -977,12 +1008,8 @@ theorem exists_mem_nhds_continuousOn_forall_smul_mem_coulombSlice (hk : 3 ≤ k)
     (x : SobolevFieldSpace f m k) :
     ∃ U ∈ 𝓝 x, ∃ g : SobolevFieldSpace f m k → SobolevTopologicalGaugeGroup hs,
       ContinuousOn g U ∧ g x = 1 ∧ ∀ y ∈ U, g y • y ∈ coulombSlice x := by
-  have hs₀ : 1 < (k : ℝ) := by exact_mod_cast (by omega : 1 < k)
-  obtain ⟨U, hUo, hxU, Φ, hΦd, hΦ0, hΦ⟩ :=
-    exists_isOpen_contDiffOn_forall_expGauge_smul_mem_coulombSlice hs hk x
-  have hc : Continuous (realSubRef (f := f) (m := m) (Nat.cast_nonneg k)) := by
-    simpa using
-      (realSubRefHomeomorph (f := f) (m := m) hs₀ (h := Nat.cast_nonneg k)).continuous
+  obtain ⟨U, hUo, hxU, Φ, hΦd, hΦ0, hΦ, -⟩ := exists_isOpen_contDiffOn_coulombPhase hs hk x
+  have hc := continuous_realSubRef (f := f) (m := m) (Nat.cast_nonneg k)
   refine ⟨realSubRef (Nat.cast_nonneg k) ⁻¹' U, hc.continuousAt.preimage_mem_nhds
     (hUo.mem_nhds hxU), fun y ↦ expGauge hs (Φ (y.realSubRef (Nat.cast_nonneg k))), ?_, ?_,
     fun y hy ↦ hΦ y hy⟩

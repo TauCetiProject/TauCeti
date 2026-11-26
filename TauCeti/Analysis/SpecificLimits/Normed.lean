@@ -38,7 +38,8 @@ power series `f(z) = ∑_{k ≥ 0} c(k) z^(k + 1)` whose coefficients grow slowl
 to `z / (1 - z)²`, `z² / (1 - z)³` and `z / (1 - z)³`, whose coefficients are binomial.
 
 The geometric weights `(1 - q) qᵏ` sum to `1` and have mean `q / (1 - q)`, so over a normed
-field they average an affine function `c k + B` of `k` to `c q / (1 - q) + B`.
+field they average an affine function `c k + B` of `k` to `c q / (1 - q) + B`. For `‖d‖ > 1` the
+shifted series `∑ₘ C d⁻⁽ᵐ⁺¹⁾` sums to `C / (d - 1)`, the bound behind Tate's limit.
 
 Dirichlet's test `Filter.Tendsto.cauchySeq_series_smul_of_summable_norm_sub` is adapted from the
 lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
@@ -431,6 +432,19 @@ theorem hasSum_one_sub_mul_geometric_mul_affine {q : K} (hq : ‖q‖ < 1) (c B 
   · ext k; ring
   · field_simp
     ring
+
+/-- For `‖d‖ > 1` the shifted geometric series `∑ₘ C d⁻⁽ᵐ⁺¹⁾` sums to `C / (d - 1)`. -/
+theorem hasSum_mul_inv_pow_succ_of_one_lt_norm {d : K} (hd : 1 < ‖d‖) (C : K) :
+    HasSum (fun m : ℕ ↦ C * d⁻¹ ^ (m + 1)) (C / (d - 1)) := by
+  have hd0 : d ≠ 0 := norm_pos_iff.mp (one_pos.trans hd)
+  have hd1 : d - 1 ≠ 0 := sub_ne_zero.2 fun h ↦ by simp [h] at hd
+  have hinv : ‖d⁻¹‖ < 1 := by
+    rw [norm_inv]
+    exact inv_lt_one_of_one_lt₀ hd
+  convert (hasSum_geometric_of_norm_lt_one hinv).mul_left (C * d⁻¹) using 1
+  · ext m
+    ring
+  · field_simp
 
 variable [CompleteSpace K]
 

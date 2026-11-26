@@ -310,10 +310,7 @@ and does not require that the coalgebra be linearly reductive. -/
 theorem sSupIndep_simpleCoefficientSubmodules :
     sSupIndep (simpleCoefficientSubmodules k C) := by
   let D := WithConv (C →ₗ[k] k)
-  have hind : iSupIndep fun P : isotypicComponents D C ↦ P.val.restrictScalars k := fun P ↦ by
-    simpa only [← Submodule.restrictScalars_iSup, Submodule.disjoint_restrictScalars_iff]
-      using (sSupIndep_iff _).mp (sSupIndep_isotypicComponents D C) P
-  apply hind.sSupIndep_range.mono
+  apply (iSupIndep_isotypicComponents_restrictScalars k (R := D) (M := C)).sSupIndep_range.mono
   rintro P ⟨M, hM, rfl⟩
   let := hM
   exact ⟨⟨_, isotypicComponent_convolution_mem_isotypicComponents (C := C) (M := M)⟩,

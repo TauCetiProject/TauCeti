@@ -11,6 +11,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Data.Sym.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Substitution
 public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import TauCeti.RingTheory.Polynomial.Vieta
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
@@ -207,16 +208,9 @@ the unordered tuple of those roots: a full set of simple roots pins the polynomi
 theorem toMonic_ofFn_eq_of_forall_isRoot {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n)
     {w : Fin n → R} (hw : Function.Injective w) (hroot : ∀ i, (p : R[X]).IsRoot (w i)) :
     (toMonic (Sym.ofFn w) : R[X]) = p := by
-  have hle : (Sym.ofFn w : Multiset R) ≤ p.roots := by
-    refine (Multiset.le_iff_subset (by rw [Sym.coe_ofFn]; simpa using List.nodup_ofFn.2 hw)).2
-      fun a ha => ?_
-    obtain ⟨i, rfl⟩ := Sym.mem_ofFn.1 (by simpa using ha)
-    exact (mem_roots' (p := p)).2 ⟨hp.ne_zero, hroot i⟩
-  have hcard : Multiset.card (Sym.ofFn w : Multiset R) = n := Sym.card_coe
-  have hroots : (Sym.ofFn w : Multiset R) = p.roots :=
-    Multiset.eq_of_le_of_card_le hle (by rw [hcard, ← hdeg]; exact p.card_roots')
-  rw [coe_toMonic, ofMultiset_apply, hroots]
-  exact prod_multiset_X_sub_C_of_monic_of_roots_card_eq hp (by rw [← hroots, hcard, hdeg])
+  rw [eq_prod_X_sub_C_of_monic_of_isRoot (s := Finset.univ) hp (by simp [hdeg]) hw.injOn
+    fun i _ => hroot i]
+  simp [coe_toMonic, ofMultiset_apply, Sym.coe_ofFn, List.prod_ofFn]
 
 end Domain
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder.Slice.Average
 public import TauCeti.Analysis.Sobolev.GraphStep.Basic
+import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Analysis.Sobolev.GraphStep.Density
 import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
 
@@ -33,7 +34,10 @@ weak-derivative graph `TauCeti.WeakDerivStep` over `L²(ℝ, V)`.
 * **Its range is the zero mode.** An element `x` of `W^{1,2}(ℝ × S¹, V)` is its own slice average
   exactly when it lies in the range of `zeroModeL`
   (`TauCeti.CylinderSobolev.sliceAverageL_eq_self_iff`): the slice average of the jet of a test
-  section is the jet of a section that does not depend on `t`, and these jets are dense.
+  section is the jet of a section that does not depend on `t`, and these jets are dense. Likewise
+  an element of `L²(ℝ × S¹, V)` is its own slice average exactly when it lies in the range of
+  `zeroModeLp` (`TauCeti.CylinderSobolev.sliceAverageLp_eq_self_iff`): the slice average of `x` is
+  the zero mode of `s ↦ ∫₀¹ x(s, t) dt`.
 
 Through this identification, a first-order operator on the cylinder whose coefficients do not
 depend on `t` restricts on the zero mode to an operator on the line; for the linearized Floer
@@ -300,5 +304,49 @@ theorem sliceAverageL_eq_self_iff {x : H1 V} :
   refine ⟨fun h ↦ h ▸ sliceAverageL_mem_range_zeroModeL x, ?_⟩
   rintro ⟨u, rfl⟩
   exact sliceAverageL_zeroModeL u
+
+/-! ### The zero mode of `L²` is the image of the slice average -/
+
+/-- The zero mode of a map on the line does not depend on `t`: it is its own `L²` slice
+average. -/
+theorem sliceAverageLp_zeroModeLp (f : Lp V 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))) :
+    sliceAverageLp (zeroModeLp V f) = zeroModeLp V f := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_sliceAverageLp (zeroModeLp V f),
+    sliceAverage_congr_ae (coeFn_zeroModeLp f), coeFn_zeroModeLp f] with z h₁ h₂ h₃
+  rw [h₁, h₂, h₃, sliceAverage_apply]
+  simp
+
+omit [CompleteSpace V] in
+/-- The `L²` slice average of a section of the strip is the zero mode of a map on the line,
+`s ↦ ∫₀¹ x(s, t) dt`. -/
+theorem sliceAverageLp_mem_range_zeroModeLp (x : Lp V 2 stripMeasure) :
+    sliceAverageLp x ∈ range (zeroModeLp V) := by
+  set f : ℝ → V := fun s ↦ sliceAverage x (s, 0)
+  have hff : f ∘ Prod.fst = sliceAverage x := funext fun z ↦ (sliceAverage_mk _ z.1 z.2).symm
+  have hfm : AEStronglyMeasurable f (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
+    have h : AEStronglyMeasurable (x : ℝ × ℝ → V)
+        ((volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1))) := by
+      rw [← stripMeasure_eq_prod]
+      exact Lp.aestronglyMeasurable x
+    rw [Opens.coe_top, Measure.restrict_univ]
+    exact h.integral_prod_right'.congr
+      (.of_forall fun s ↦ (sliceAverage_eq_integral _ (s, 0)).symm)
+  have hf : MemLp f 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)) := by
+    rw [← measurePreserving_fst_stripMeasure.map_eq] at hfm ⊢
+    rw [memLp_map_measure_iff hfm measurable_fst.aemeasurable, hff]
+    exact memLp_sliceAverage (Lp.memLp x)
+  refine ⟨hf.toLp f, Lp.ext ?_⟩
+  filter_upwards [coeFn_zeroModeLp (hf.toLp f), ae_eq_comp_fst hf.coeFn_toLp,
+    coeFn_sliceAverageLp x] with z h₁ h₂ h₃
+  rw [h₁, h₂, h₃, ← hff, Function.comp_apply]
+
+/-- **The zero mode of `L²` is the range of `zeroModeLp`.** An element of `L²(ℝ × S¹, V)` is its
+own slice average exactly when it is the zero mode of a map in `L²(ℝ, V)`. -/
+theorem sliceAverageLp_eq_self_iff {x : Lp V 2 stripMeasure} :
+    sliceAverageLp x = x ↔ x ∈ range (zeroModeLp V) := by
+  refine ⟨fun h ↦ h ▸ sliceAverageLp_mem_range_zeroModeLp x, ?_⟩
+  rintro ⟨f, rfl⟩
+  exact sliceAverageLp_zeroModeLp f
 
 end TauCeti.CylinderSobolev
