@@ -32,8 +32,6 @@ cocharacter's unit tangent differential (`BialgHom.adjointWeightSpace_cocharacte
 `BialgHom.lieSubalgebra_parabolicDefiningHopfIdeal_eq_iSup_eigenspace`,
 `BialgHom.lieSubalgebra_unipotentDefiningHopfIdeal_eq_iSup_eigenspace`,
 `BialgHom.lieSubalgebra_leviDefiningHopfIdeal_eq_eigenspace`).
-In addition, `BialgHom.basePointsRepresentation_pointsHom_of_mem_weightSpace` evaluates the action
-of `Cocharacter.pointsHom` on any `m`-weight vector as multiplication by `s ^ m`.
 
 ## References
 
@@ -47,30 +45,6 @@ open LieAlgebra TauCeti TauCeti.Cocharacter WithConv
 open scoped TensorProduct DirectSum LaurentPolynomial
 
 namespace BialgHom
-
-/-- A point `l(s)` of a cocharacter `l : H →ₐc[R] R[T;T⁻¹]` acts on the `m`-weight space of `l`
-by multiplication by `s ^ m`. -/
-theorem basePointsRepresentation_pointsHom_of_mem_weightSpace
-    {R H V : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
-    [AddCommMonoid V] [Module R V] [Comodule R H V]
-    (l : H →ₐc[R] LaurentPolynomial R) (s : Rˣ) {m : ℤ} {v : V}
-    (hv : v ∈ DiagonalizableGroup.weightSpace V
-      (((AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ).toBialgHom.comp l).toCoalgHom)
-      (Multiplicative.ofAdd m)) :
-    Comodule.basePointsRepresentation (H := H) V (Cocharacter.pointsHom R l s) v =
-      ((s ^ m : Rˣ) : R) • v := by
-  let eMult := AddMonoidAlgebra.toMultiplicativeBialgEquiv R R ℤ
-  let f : MonoidAlgebra R (Multiplicative ℤ) →ₐ[R] R :=
-    (laurentEval (R := R) s).comp eMult.symm.toAlgEquiv.toAlgHom
-  have hmap : (Cocharacter.pointsHom R l s).ofConv = f.comp (eMult.toBialgHom.comp l).toAlgHom := by
-    ext a; simp [Cocharacter.pointsHom_apply, BialgHom.mapDomain_apply, f, eMult]
-  have ht : eMult.symm (MonoidAlgebra.single (Multiplicative.ofAdd m) (1 : R)) =
-      LaurentPolynomial.T m :=
-    eMult.symm_apply_eq.mpr
-      (AddMonoidAlgebra.toMultiplicativeBialgEquiv_single (R := R) (A := R) (M := ℤ) m 1).symm
-  rw [Comodule.basePointsRepresentation_apply, hmap,
-    DiagonalizableGroup.endOfPoint_tmul_of_mem_weightSpace V _ f 1 hv]
-  simp [f, ht]
 
 universe u
 

@@ -450,15 +450,10 @@ private theorem piCoact_counit (c : ∀ i, Comodule R C (B i)) :
       (TensorProduct.mk R (∀ i, B i) R).flip 1 := by
   ext i x; let _ : Comodule R C (B i) := c i
   simp only [LinearMap.comp_apply, LinearMap.flip_apply, TensorProduct.mk_apply, piCoact_single]
-  have h := congrArg (TensorProduct.map (LinearMap.single R B i) (LinearMap.id : R →ₗ[R] R))
-    (lTensor_counit_coact (R := R) (C := C) (M := B i) x)
-  have hl : Coalgebra.counit.lTensor (∀ j, B j)
-      (TensorProduct.map (LinearMap.single R B i) LinearMap.id
-        (coact (R := R) (C := C) (M := B i) x)) =
-      TensorProduct.map (LinearMap.single R B i) LinearMap.id
-        (Coalgebra.counit.lTensor (B i) (coact (R := R) (C := C) (M := B i) x)) := by
-    induction coact (R := R) (C := C) (M := B i) x using TensorProduct.inductionOn <;> simp [*]
-  rw [hl, h]; simp
+  rw [← LinearMap.rTensor_def, ← LinearMap.comp_apply, LinearMap.lTensor_comp_rTensor,
+    ← LinearMap.rTensor_comp_lTensor, LinearMap.comp_apply, LinearMap.rTensor_def,
+    lTensor_counit_coact]
+  simp
 
 /-- The direct-sum comodule structure on a finite Pi-product `∀ i, B i`.
 
@@ -487,11 +482,10 @@ def piProj (c : ∀ i, Comodule R C (B i)) (i : ι) :
       ext f; simp only [LinearMap.comp_apply, pi_coact, piCoact_apply, map_sum,
         TensorProduct.map_map, LinearMap.comp_id, LinearMap.proj_apply]
       rw [Finset.sum_eq_single i]
-      · rw [show (LinearMap.proj (R := R) (φ := B) i).comp (LinearMap.single R B i) = LinearMap.id
-          from LinearMap.ext fun x ↦ by simp, TensorProduct.map_id, LinearMap.id_apply]
-      · intro j _ hji; rw [show (LinearMap.proj (R := R) (φ := B) i).comp (LinearMap.single R B j) =
-          0 from LinearMap.ext fun x ↦ by simp [Pi.single_eq_of_ne (Ne.symm hji)],
-          TensorProduct.map_zero_left, LinearMap.zero_apply]
+      · rw [LinearMap.proj_comp_single_same, TensorProduct.map_id, LinearMap.id_apply]
+      · intro j _ hji
+        rw [LinearMap.proj_comp_single_ne _ _ _ _ hji.symm, TensorProduct.map_zero_left,
+          LinearMap.zero_apply]
       · exact (absurd (Finset.mem_univ i) ·) }
 
 /-- The underlying linear map of `Comodule.piProj` is `LinearMap.proj`. -/

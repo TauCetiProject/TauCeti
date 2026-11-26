@@ -10,7 +10,6 @@ public import TauCeti.Algebra.AlgebraicGroup.MultiplicativeGroup.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Basic
 import TauCeti.Algebra.AlgebraicGroup.Dynamic.Tangent.Weights
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Order
-import TauCeti.Algebra.AlgebraicGroup.Tangent.Map
 
 /-!
 # Dynamic Levi subgroups and centralizers of cocharacter differentials
@@ -18,7 +17,8 @@ import TauCeti.Algebra.AlgebraicGroup.Tangent.Map
 Let `l : H →ₐc[R] R[T;T⁻¹]` be a cocharacter of an affine group scheme `G = Spec H`. Differentiating
 `l` at a tangent vector `b` of `𝔾ₘ` yields a tangent vector of `G` whose associated dual-number
 point is `l(1 + ε b)`
-(`BialgHom.derivationMulEquivTangentKer_derivationComp_tangentLinearEquiv_symm`).
+(`BialgHom.derivationMulEquivTangentKer_derivationComp_tangentLinearEquiv_symm` in
+`MultiplicativeGroup.Tangent`).
 
 Over a field `k` where `H` has finite-dimensional augmentation cotangent space, this tangent-point
 compatibility shows that every algebra-valued point of the dynamic Levi subgroup `Z_G(l)` commutes
@@ -30,8 +30,6 @@ In characteristic zero, both closed subgroup schemes have the same Lie algebra `
 
 ## Main declarations
 
-* `BialgHom.derivationMulEquivTangentKer_derivationComp_tangentLinearEquiv_symm`: the dual-number
-  tangent point of a cocharacter's differential at `b` is `Cocharacter.pointsHom` at `1 + ε b`.
 * `BialgHom.centralizerHopfIdeal_le_leviDefiningHopfIdeal`: the dynamic Levi subgroup `Z_G(l)` is a
   closed subgroup scheme of the centralizer `C_G(dl(1))`.
 * `BialgHom.lieSubalgebra_leviDefiningHopfIdeal_eq_centralizerHopfIdeal`: in characteristic zero,
@@ -48,36 +46,6 @@ public section
 open TauCeti TauCeti.Cocharacter WithConv
 
 namespace BialgHom
-
-section TangentPoint
-
-variable {R H B : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
-  [CommRing B] [Algebra R B]
-
-/-- The dual-number tangent point attached to the differential of a cocharacter `l` on a tangent
-vector `b` of `𝔾ₘ` is the image of the dual-number unit `1 + ε b` under `l`. -/
-theorem derivationMulEquivTangentKer_derivationComp_tangentLinearEquiv_symm
-    (l : H →ₐc[R] LaurentPolynomial R) (b : B) :
-    (derivationMulEquivTangentKer R H B
-        (Multiplicative.ofAdd (derivationComp (B := B) l
-          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm b)))).val =
-      Cocharacter.pointsHom (DualNumber (Bialgebra.CounitAlgebra R H B)) l
-        (dualNumberUnit ((Bialgebra.CounitAlgebra.algEquivSelf R H B).symm b)) := by
-  have hmap := congrArg Subtype.val <|
-    tangentKerMap_derivationMulEquivTangentKer (B := B) l
-      (Multiplicative.ofAdd ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm b))
-  rw [toAdd_ofAdd] at hmap; rw [← hmap, tangentKerMap_apply_val, Cocharacter.pointsHom_apply]
-  have hgm :=
-    MultiplicativeGroup.derivationMulEquivTangentKer_tangentLinearEquiv_symm (R := R) (B := B) b
-  have hb : ((Bialgebra.CounitAlgebra.algEquivSelf R (LaurentPolynomial R) B).symm b :
-      Bialgebra.CounitAlgebra R H B) = (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm b := by
-    rw [Bialgebra.CounitAlgebra.algEquivSelf_symm_apply,
-      Bialgebra.CounitAlgebra.algEquivSelf_symm_apply]
-  exact (congrArg
-    (BialgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R H B)) l) hgm).trans
-    (by rw [hb]; rfl)
-
-end TangentPoint
 
 section Centralizer
 

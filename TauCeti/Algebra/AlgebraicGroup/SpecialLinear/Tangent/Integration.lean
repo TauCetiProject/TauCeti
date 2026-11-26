@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 import TauCeti.Algebra.AlgebraicGroup.Representation.Fixed
 import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
 import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Connected
+import TauCeti.Algebra.Coalgebra.Comodule.Inverse
 import TauCeti.Algebra.Coalgebra.Comodule.Product
 import TauCeti.Algebra.Coalgebra.Comodule.Transport
 import TauCeti.Algebra.Lie.Sl2.Decomposition
@@ -182,13 +183,8 @@ noncomputable def sl2StdToBinaryFormsComoduleHom (k : Type u) [Field k] [CharZer
     Comodule.Hom k (coordinateHopfAlgebra k 2) (Sl2Std k d) (binaryForms k d) :=
   letI := comoduleOfLieModule k (Sl2Std k d)
   ⟨(binaryFormsEquivSl2Std k d).symm.toLinearMap,
-    (LinearMap.map_coact_iff_map_differential_of_geometricallyConnected
-      (f := (binaryFormsEquivSl2Std k d).symm.toLinearMap)
-      (geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2)).mpr fun x v ↦
-        (binaryFormsEquivSl2Std k d).injective <| by
-          rw [LinearEquiv.coe_toLinearMap, binaryFormsEquivSl2Std_differential,
-            LinearEquiv.apply_symm_apply, differential_comoduleOfLieModule,
-            LinearEquiv.apply_symm_apply]⟩
+    Comodule.Hom.map_coact_of_comp_eq_id (binaryFormsToSl2StdComoduleHom k d)
+      (binaryFormsEquivSl2Std k d).symm_comp (binaryFormsEquivSl2Std k d).comp_symm⟩
 
 @[simp] theorem binaryFormsToSl2StdComoduleHom_toLinearMap (d : ℕ) :
     letI := comoduleOfLieModule k (Sl2Std k d)

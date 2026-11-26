@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.HopfAlgebra.MonoidAlgebra
+public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Naturality
 public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.Algebra.Polynomial.Laurent.Basic
+import TauCeti.Algebra.AlgebraicGroup.Tangent.Map
 
 /-!
 # The tangent Lie algebra of the multiplicative group
@@ -30,6 +32,8 @@ even when `B` is noncommutative. For commutative `B`, the tangent Lie bracket va
   `TauCeti.MultiplicativeGroup.derivationMulEquivTangentKer_tangentLinearEquiv_symm`: the
   dual-number point attached to `tangentLinearEquiv.symm b` is Laurent evaluation at the
   dual-number unit `1 + ε b`.
+* `BialgHom.derivationMulEquivTangentKer_derivationComp_tangentLinearEquiv_symm`: the dual-number
+  tangent point of a cocharacter's differential at `b` is `Cocharacter.pointsHom` at `1 + ε b`.
 * `TauCeti.MultiplicativeGroup.tangent_bracket_eq_zero`: the tangent Lie bracket of `𝔾ₘ`
   vanishes.
 * `TauCeti.MultiplicativeGroup.mapValue_derivationComp_tangentLinearEquiv_symm_one`:
@@ -255,3 +259,35 @@ end
 end MultiplicativeGroup
 
 end TauCeti
+
+namespace BialgHom
+
+open TauCeti TauCeti.Cocharacter WithConv
+
+variable {R H B : Type*} [CommSemiring R] [CommSemiring H] [HopfAlgebra R H]
+  [CommRing B] [Algebra R B]
+
+/-- The dual-number tangent point attached to the differential of a cocharacter `l` on a tangent
+vector `b` of `𝔾ₘ` is the image of the dual-number unit `1 + ε b` under `l`. -/
+theorem derivationMulEquivTangentKer_derivationComp_tangentLinearEquiv_symm
+    (l : H →ₐc[R] LaurentPolynomial R) (b : B) :
+    (derivationMulEquivTangentKer R H B
+        (Multiplicative.ofAdd (derivationComp (B := B) l
+          ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm b)))).val =
+      Cocharacter.pointsHom (DualNumber (Bialgebra.CounitAlgebra R H B)) l
+        (dualNumberUnit ((Bialgebra.CounitAlgebra.algEquivSelf R H B).symm b)) := by
+  have hmap := congrArg Subtype.val <|
+    tangentKerMap_derivationMulEquivTangentKer (B := B) l
+      (Multiplicative.ofAdd ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm b))
+  rw [toAdd_ofAdd] at hmap; rw [← hmap, tangentKerMap_apply_val, Cocharacter.pointsHom_apply]
+  have hgm :=
+    MultiplicativeGroup.derivationMulEquivTangentKer_tangentLinearEquiv_symm (R := R) (B := B) b
+  have hb : ((Bialgebra.CounitAlgebra.algEquivSelf R (LaurentPolynomial R) B).symm b :
+      Bialgebra.CounitAlgebra R H B) = (Bialgebra.CounitAlgebra.algEquivSelf R H B).symm b := by
+    rw [Bialgebra.CounitAlgebra.algEquivSelf_symm_apply,
+      Bialgebra.CounitAlgebra.algEquivSelf_symm_apply]
+  exact (congrArg
+    (BialgHom.mapDomain (A := DualNumber (Bialgebra.CounitAlgebra R H B)) l) hgm).trans
+    (by rw [hb]; rfl)
+
+end BialgHom
