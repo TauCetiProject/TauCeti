@@ -13,8 +13,11 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular
 /-!
 # Upper-triangular general linear groups
 
-For a commutative ring `R`, the upper-triangular general linear group consists of the invertible
-upper-triangular matrices over `R`. Reading off the diagonal defines a group homomorphism
+For a commutative ring `R` and a ranking `b : m → α` of the indices by a linear order, the
+invertible matrices that are block upper triangular for `b` (`Matrix.BlockTriangular`) form a
+subgroup of `GL m R`. The upper-triangular general linear group is the case `b = id`: it consists
+of the invertible upper-triangular matrices over `R`. Reading off the diagonal defines a group
+homomorphism
 
 ```text
 B_m(R) → (m → Rˣ).
@@ -26,7 +29,10 @@ defined in `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel`.
 
 ## Main declarations
 
-* `TauCeti.upperTriangularGroup`: the subgroup of upper-triangular elements of `GL m R`.
+* `TauCeti.blockTriangularGroup`: the subgroup of block upper triangular elements of `GL m R`
+  for a ranking `b : m → α`.
+* `TauCeti.upperTriangularGroup`: the subgroup of upper-triangular elements of `GL m R`, the
+  block triangular group of the identity ranking.
 * `TauCeti.UpperTriangularGroup.mem_comap_toGL_iff`: its preimage in `SL m R` consists of the
   upper-triangular determinant-one matrices.
 * `TauCeti.UpperTriangularGroup.diag`: the diagonal homomorphism to `m → Rˣ`.
@@ -52,19 +58,35 @@ open Matrix
 
 universe u v
 
-variable (m : Type*) [Fintype m] [LinearOrder m] (R : Type u) [CommRing R]
+section BlockTriangular
 
-/-- The upper-triangular subgroup of `GL_m(R)` for a finite linearly ordered index type `m`. -/
-def upperTriangularGroup : Subgroup (GL m R) where
-  carrier := {g | (g : Matrix m m R).IsUpperTriangular}
+variable {m α : Type*} [Fintype m] [DecidableEq m] [LinearOrder α] (R : Type*) [CommRing R]
+
+/-- The subgroup of `GL m R` of matrices that are block upper triangular for the ranking
+`b : m → α`: the `(i, j)` entry vanishes whenever `b j < b i`. -/
+def blockTriangularGroup (b : m → α) : Subgroup (GL m R) where
+  carrier := {g | (g : Matrix m m R).BlockTriangular b}
   one_mem' := Matrix.blockTriangular_one
-  mul_mem' := by
-    intro g h hg hh
-    simpa only [Set.mem_ofPred_eq, Units.val_mul] using hg.mul hh
-  inv_mem' := by
-    intro g hg
+  mul_mem' hg hh := hg.mul hh
+  inv_mem' {g} hg := by
     simpa only [Set.mem_ofPred_eq, Matrix.coe_units_inv] using
       Matrix.blockTriangular_inv_of_blockTriangular hg
+
+variable {R} in
+/-- Membership in the block triangular group: the matrix is block upper triangular. -/
+@[simp]
+theorem mem_blockTriangularGroup_iff {b : m → α} {g : GL m R} :
+    g ∈ blockTriangularGroup R b ↔ (g : Matrix m m R).BlockTriangular b :=
+  Iff.rfl
+
+end BlockTriangular
+
+variable (m : Type*) [Fintype m] [LinearOrder m] (R : Type u) [CommRing R]
+
+/-- The upper-triangular subgroup of `GL_m(R)` for a finite linearly ordered index type `m`: the
+block triangular group of the identity ranking. -/
+def upperTriangularGroup : Subgroup (GL m R) :=
+  blockTriangularGroup R (id : m → m)
 
 namespace UpperTriangularGroup
 

@@ -574,22 +574,6 @@ theorem quadraticPoissonBracket_hessianQuadraticForm_comp_sphericalPendulumUpper
     hamiltonianEnd_hessianQuadraticForm_angularMomentum]
   exact (commute_swapEnd_rotEnd.smul_left _).smul_right _
 
-/-- The halved coordinate functionals of `ℝ × ℝ` span its dual. -/
-private theorem span_range_half_fst_half_snd :
-    Submodule.span ℝ (range ![(1 / 2 : ℝ) • ContinuousLinearMap.fst ℝ ℝ ℝ,
-      (1 / 2 : ℝ) • ContinuousLinearMap.snd ℝ ℝ ℝ]) = ⊤ := by
-  refine eq_top_iff.2 fun ℓ _ ↦ (Submodule.mem_span_range_iff_exists_fun ℝ).2
-    ⟨![2 * ℓ (1, 0), 2 * ℓ (0, 1)], ?_⟩
-  ext <;>
-  simp only [one_div, Fin.sum_univ_two, Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, ContinuousLinearMap.add_comp, ContinuousLinearMap.smul_comp,
-    ContinuousLinearMap.fst_comp_inl, ContinuousLinearMap.snd_comp_inl,
-    ContinuousLinearMap.fst_comp_inr, ContinuousLinearMap.snd_comp_inr, smul_zero, add_zero,
-    zero_add, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul, mul_one,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
-    ContinuousLinearMap.inr_apply] <;>
-  ring
-
 /-- **The unstable equilibrium of the spherical pendulum is a nondegenerate rank-zero point.**
 Read in the canonical coordinates `TauCeti.sphericalPendulumUpperParam`, a symplectic
 parametrization of the phase space near the north pole `(e₃, 0)`, the energy–momentum map
@@ -610,23 +594,15 @@ theorem
   set QH := hessianQuadraticForm (sphericalPendulumHamiltonian ∘ sphericalPendulumUpperParam) 0
   set QJ := hessianQuadraticForm (angularMomentum (EuclideanSpace.single 0 1)
     (EuclideanSpace.single 1 1) ∘ sphericalPendulumUpperParam) 0
-  -- The Hessians of `ℓ ∘ F` for all functionals `ℓ` span the same space as `½ QH` and `½ QJ`,
-  -- the Hessians of `(½ fst) ∘ F` and `(½ snd) ∘ F`.
-  let L : Fin 2 → ℝ × ℝ →L[ℝ] ℝ :=
-    ![(1 / 2 : ℝ) • ContinuousLinearMap.fst ℝ ℝ ℝ, (1 / 2 : ℝ) • ContinuousLinearMap.snd ℝ ℝ ℝ]
-  have hL : Submodule.span ℝ (range L) = ⊤ := span_range_half_fst_half_snd
-  have hQ : (fun i ↦ hessianQuadraticForm (L i ∘ (sphericalPendulumEnergyMomentum ∘
-      sphericalPendulumUpperParam)) 0) = ![(1 / 2 : ℝ) • QH, (1 / 2 : ℝ) • QJ] := by
-    funext i
-    fin_cases i <;>
-    · simp only [Fin.zero_eta, Fin.mk_one, Matrix.cons_val_zero, Matrix.cons_val_one, QH, QJ]
-      rw [← hessianQuadraticForm_smul]
-      congr 1
-      funext z
-      simp [L]
+  -- The Hessians of `ℓ ∘ F` for all functionals `ℓ` span the same space as `QH` and `QJ`, hence
+  -- as `½ QH` and `½ QJ`.
   rw [SymplecticForm.isNondegenerateRankZeroPoint_iff_of_span_eq
     (Q := ![(1 / 2 : ℝ) • QH, (1 / 2 : ℝ) • QJ])
-    fun hF _ ↦ by rw [span_range_hessianQuadraticForm_comp_left hF hL, hQ]]
+    fun hF _ ↦ by
+      rw [span_range_hessianQuadraticForm_prod hF, ← Matrix.smul_vec2, Pi.smul_def,
+        Set.range_smul, Submodule.span_smul_eq_of_isUnit _ _ (by norm_num)]
+      simp only [QH, QJ, Function.comp_def, fst_sphericalPendulumEnergyMomentum,
+        snd_sphericalPendulumEnergyMomentum]]
   refine ⟨hF, fderiv_sphericalPendulumEnergyMomentum_comp_sphericalPendulumUpperParam_zero, ?_⟩
   -- `½ A_H` and `½ A_J` are commuting square roots of `1` and `-1`: a focus–focus pair.
   have h4 : (4 : Module.End ℝ (EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2))) =
