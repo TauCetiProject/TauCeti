@@ -46,8 +46,8 @@ one-parameter subgroup `T_μ`, the closure of `{exp (t μ) | t ∈ ℝ}`
 * `TauCeti.Lie.isClosed_stabilizer_continuousAdjointRepresentation`: `Z_G(Y)` is closed.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation`: the Lie algebra
   of `Z_G(Y)` is the centralizer of `Y`.
-* `TauCeti.Lie.lieExp_smul_mem_connectedComponentIn_stabilizer`: the one-parameter subgroup of
-  an `X` with `⁅X, Y⁆ = 0` lies in the identity component `Z_G(Y)⁰`.
+* `TauCeti.Lie.lieExp_smul_mem_connectedComponentIn_stabilizer_continuousAdjointRepresentation`:
+  the one-parameter subgroup of an `X` with `⁅X, Y⁆ = 0` lies in the identity component `Z_G(Y)⁰`.
 * `TauCeti.Lie.le_stabilizer_continuousAdjointRepresentation`: a commutative subgroup lies in the
   adjoint stabilizer of each element of its Lie algebra.
 * `TauCeti.Lie.stabilizer_continuousAdjointRepresentation_eq_stabilizer_adjointRepresentation`:
@@ -130,8 +130,8 @@ theorem lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation
 /-- **One-parameter subgroups of the centralizer lie in the identity component of the adjoint
 stabilizer.** If `⁅X, Y⁆ = 0`, then every `exp (t X)` lies in the identity component `Z_G(Y)⁰`
 of `Z_G(Y) = {g | Ad_g Y = Y}`. -/
-theorem lieExp_smul_mem_connectedComponentIn_stabilizer {X Y : LeftInvariantDerivation I G}
-    (h : ⁅X, Y⁆ = 0) (t : ℝ) :
+theorem lieExp_smul_mem_connectedComponentIn_stabilizer_continuousAdjointRepresentation
+    {X Y : LeftInvariantDerivation I G} (h : ⁅X, Y⁆ = 0) (t : ℝ) :
     lieExp (I := I) (t • X) ∈ connectedComponentIn
       ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y :
         Set G) 1 := by

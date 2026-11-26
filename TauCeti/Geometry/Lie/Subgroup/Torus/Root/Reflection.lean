@@ -42,12 +42,12 @@ which fixes `ker α` and sends the coroot `α^∨` (with `α(α^∨) = 2`) to it
 (`TauCeti.Lie.Ad_lieExp_pi_smul_apply_of_lie_eq_smul`). So `n_α = exp (π x)` is a group element
 realizing the reflection of the root `α`:
 
-* when `t` is the Lie algebra of a closed connected commutative subgroup `T`, such as a torus,
-  `n_α` normalizes `T` (`TauCeti.Lie.lieExp_pi_smul_mem_normalizer_of_lie_eq_smul`), since a
-  closed connected commutative subgroup is the exponential image of its Lie algebra;
+* when `t` is the Lie algebra of a closed connected subgroup `T`, such as a torus, `n_α`
+  normalizes `T` (`TauCeti.Lie.lieExp_pi_smul_mem_normalizer_of_lie_eq_smul`), since an element
+  normalizes such a subgroup once its adjoint action maps the Lie algebra into itself;
 * for every `X ∈ t` with `α(X) = 0`, `ad x` kills `X`, so the whole one-parameter subgroup of `x`,
   and with it `n_α`, lies in the identity component `Z_G(X)⁰` of the adjoint stabilizer of `X`
-  (`TauCeti.Lie.lieExp_smul_mem_connectedComponentIn_stabilizer`).
+  (`TauCeti.Lie.lieExp_smul_mem_connectedComponentIn_stabilizer_continuousAdjointRepresentation`).
 
 For a maximal torus `T` of a compact Lie group and a symmetric positive definite invariant form `B`
 on `𝔤`, every nonzero real root plane of `T` (`TauCeti.IsRootPlane`) with nonzero root `α` contains
@@ -70,7 +70,7 @@ exponential.
 * `TauCeti.Lie.Ad_lieExp_pi_smul_apply_of_lie_eq_smul`: `exp (π x)` acts on `t` by the root
   reflection `H ↦ H - α(H) (2 Z)`.
 * `TauCeti.Lie.lieExp_pi_smul_mem_normalizer_of_lie_eq_smul`: `exp (π x)` normalizes a closed
-  connected commutative subgroup with Lie algebra `t`.
+  connected subgroup with Lie algebra `t`.
 * `TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_eq_reflection`: every real root
   of a maximal torus of a compact Lie group has a representative in the normalizer acting on `𝔱`
   by the orthogonal reflection in the root, lying in `Z_G(X)⁰` whenever `α(X) = 0`.
@@ -159,10 +159,10 @@ theorem Ad_lieExp_pi_smul_apply_of_lie_eq_smul
   rw [Ad_lieExp_smul_apply_of_lie_eq_smul hx hxy hα, cos_pi, sin_pi]
   module
 
-/-- **`exp (π x)` normalizes `T`.** Let `T` be a closed preconnected commutative subgroup, such as
-a torus, with Lie algebra `𝔱`. If `⁅X, x⁆ = α(X) y` for every `X ∈ 𝔱`, and `⁅x, y⁆` lies in `𝔱`
+/-- **`exp (π x)` normalizes `T`.** Let `T` be a closed preconnected subgroup, such as a torus,
+with Lie algebra `𝔱`. If `⁅X, x⁆ = α(X) y` for every `X ∈ 𝔱`, and `⁅x, y⁆` lies in `𝔱`
 with `α(⁅x, y⁆) = 1`, then `exp (π x)` lies in the normalizer of `T`. -/
-theorem lieExp_pi_smul_mem_normalizer_of_lie_eq_smul {T : Subgroup G} [IsMulCommutative T]
+theorem lieExp_pi_smul_mem_normalizer_of_lie_eq_smul {T : Subgroup G}
     (hT : IsClosed (T : Set G)) (hconn : IsPreconnected (T : Set G))
     {α : Dual ℝ (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
     (hx : ∀ X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule,
@@ -183,6 +183,17 @@ end RootPair
 section MaximalTorus
 
 variable [CompactSpace G]
+
+/-- For a positive definite form `B`, an element `c` of a subspace `t` that is `B`-orthogonal to
+`ker α` is determined by `α c`: `c - c'` lies in `ker α` and is `B`-orthogonal to itself. -/
+private theorem eq_of_forall_apply_eq_zero_of_posDef {L : Type*} [AddCommGroup L] [Module ℝ L]
+    {B : LinearMap.BilinForm ℝ L} (hBp : B.toQuadraticMap.PosDef) {t : Submodule ℝ L}
+    {α : Dual ℝ t} {c c' : t} (hcc' : α c = α c') (hc : ∀ X, α X = 0 → B (X : L) c = 0)
+    (hc' : ∀ X, α X = 0 → B (X : L) c' = 0) : c = c' := by
+  have hd : α (c - c') = 0 := by rw [map_sub, hcc', sub_self]
+  have hdd : B (c - c' : t) ((c : L) - c') = 0 := by rw [map_sub, hc _ hd, hc' _ hd, sub_zero]
+  rw [← Submodule.coe_sub, ← LinearMap.BilinMap.toQuadraticMap_apply] at hdd
+  exact sub_eq_zero.mp (Submodule.coe_eq_zero.mp (hBp.anisotropic _ hdd))
 
 /-- A nonzero root plane of a maximal torus with nonzero root contains a normalized root pair: the
 images `x, y` of `ê₀, ê₁` under its rank-one homomorphism `so(3) → 𝔤`. -/
@@ -220,8 +231,7 @@ positive definite invariant form on `𝔤`, and let `V` be a nonzero real root p
 nonzero root `α`. Then there are a coroot `α^∨ ∈ 𝔱`, the unique element with `α(α^∨) = 2` that is
 `B`-orthogonal to `ker α`, and an element `n` of the normalizer of `T` whose class in the Weyl
 group `N(T) / T` acts on `𝔱` by the reflection `X ↦ X - α(X) α^∨`; moreover `n` lies in the
-identity component of the adjoint stabilizer `Z_G(X)` of every `X ∈ 𝔱` with `α(X) = 0`. The
-element `n` is `exp (π x)` for a suitable rescaling `x` of any nonzero vector of `V`. -/
+identity component of the adjoint stabilizer `Z_G(X)` of every `X ∈ 𝔱` with `α(X) = 0`. -/
 theorem IsMaximalTorus.exists_weylAdjointRepresentation_eq_reflection {T : Subgroup G}
     [IsMulCommutative T] (hT : IsMaximalTorus T)
     {B : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)} (hBs : B.IsSymm)
@@ -252,22 +262,14 @@ theorem IsMaximalTorus.exists_weylAdjointRepresentation_eq_reflection {T : Subgr
   have hn := lieExp_pi_smul_mem_normalizer_of_lie_eq_smul hT.isTorus.isClosed
     hT.isTorus.isConnected.isPreconnected hx hxy hα₁
   refine ⟨c, hc, hcB, fun c' hc' hc'B ↦ ?_, ⟨_, hn⟩, ?_, fun X hX ↦ ?_⟩
-  · -- `c - c'` lies in `ker α` and is `B`-orthogonal to both `c` and `c'`, so it is isotropic.
-    have hd : α (c - c') = 0 := by rw [map_sub, hc, hc', sub_self]
-    have hdd : B ((c - c' : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
-        LeftInvariantDerivation I G) (c - c' : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) =
-          B (c - c' : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) c -
-            B (c - c' : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) c' := by
-      rw [← map_sub, ← Submodule.coe_sub]
-    rw [hcB _ hd, hc'B _ hd, sub_zero, ← LinearMap.BilinMap.toQuadraticMap_apply] at hdd
-    exact (sub_eq_zero.mp (Submodule.coe_eq_zero.mp (hBp.anisotropic _ hdd))).symm
+  · exact eq_of_forall_apply_eq_zero_of_posDef hBp (hc'.trans hc.symm) hc'B hcB
   · refine LinearMap.ext fun X ↦ Subtype.ext ?_
     rw [LinearEquiv.coe_coe, Module.reflection_apply,
       Subgroup.coe_weylAdjointRepresentation_mk_apply,
       Ad_lieExp_pi_smul_apply_of_lie_eq_smul hx hxy hα₁, hcdef]
     simp
   · -- `ad x` kills `X ∈ ker α`, so the one-parameter subgroup of `x` fixes `X`.
-    exact lieExp_smul_mem_connectedComponentIn_stabilizer (I := I)
+    exact lieExp_smul_mem_connectedComponentIn_stabilizer_continuousAdjointRepresentation (I := I)
       (by rw [← lie_skew, hx X, hX, zero_smul, neg_zero]) π
 
 /-- **The reflection of a real root is a well-defined element of the Weyl group.** Let `T` be a
