@@ -20,6 +20,7 @@ import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LocalExtr
 import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.OrthonormalBasis
+import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Basic
 
 /-!
 # The flat Weitzenböck formula for the Seiberg–Witten Dirac operator
@@ -36,7 +37,12 @@ for any orthonormal basis `(eₖ)` (`flatDirac_eq_sum`). Without a basis, `D ψ`
 trace of the Clifford pairing `(v, w) ↦ c(v) ∇_w ψ` (`AlgHom.cliffordPairing`, `flatDirac_def`).
 This is the Dirac operator of the twisted spinors on a flat chart in which the background
 connection is trivial. For `ψ = α u₀` with `u₀` constant it is the operator of the flat limiting
-equations of `TauCeti.Analysis.PDE.SeibergWitten.FlatLimit` (`flatDirac_smul_const`). Since the
+equations of `TauCeti.Analysis.PDE.SeibergWitten.FlatLimit` (`flatDirac_smul_const`). The operator
+is additive in fields differentiable at the point (`flatDirac_add`) and affine in the connection,
+`D_{b + b'} ψ = D_b ψ + i c(b') ψ` (`flatDirac_add_connection`), where the Clifford multiplication
+`i c(b') φ` is the flat Dirac operator of the constant field `φ` for the connection `b'`; it has
+norm `‖b'‖ ‖φ‖` (`norm_flatDirac_const`) and is locally Lipschitz in `(b', φ)`
+(`norm_flatDirac_const_sub_flatDirac_const_le`). Since the
 `c(eₖ)` satisfy the Clifford relations and the commutator of covariant derivatives is the
 curvature, `∇_v ∇_w ψ - ∇_w ∇_v ψ = i db(v, w) ψ` (`covariantDeriv_sub_swap`), the square of `D` is
 
@@ -277,7 +283,84 @@ theorem flatDirac_smul_const {α : V → ℂ} (hα : DifferentiableAt ℝ α x) 
     flatDirac ρ b (fun y ↦ α y • u₀) x = ∑ k, covariantDeriv b α x (e k) • ρ (ι Q (e k)) u₀ := by
   simp [flatDirac_eq_sum ρ e, covariantDeriv_smul_const hα]
 
+/-- **The flat Dirac operator is affine in the connection**: changing `b` by `b'` adds the
+Clifford multiplication `i c(b') ψ`, which is the flat Dirac operator of the constant field with
+value `ψ x` for the connection `b'`. -/
+theorem flatDirac_add_connection (b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ) (ψ : V → W) (x : V) :
+    flatDirac ρ (b + b') ψ x = flatDirac ρ b ψ x + flatDirac ρ b' (fun _ ↦ ψ x) x := by
+  simp only [flatDirac_eq_sum ρ (stdOrthonormalBasis ℝ V), covariantDeriv_apply, fderiv_fun_const,
+    Pi.zero_apply, zero_apply, zero_add, Pi.add_apply,
+    ContinuousAlternatingMap.add_apply, add_smul, map_add, Finset.sum_add_distrib, add_assoc]
+
+/-- The flat Dirac operator is additive in fields differentiable at the point. -/
+theorem flatDirac_add {ζ : V → W} (hψ : DifferentiableAt ℝ ψ x) (hζ : DifferentiableAt ℝ ζ x) :
+    flatDirac ρ b (ψ + ζ) x = flatDirac ρ b ψ x + flatDirac ρ b ζ x := by
+  simp only [flatDirac_eq_sum ρ (stdOrthonormalBasis ℝ V), covariantDeriv_apply,
+    fderiv_add hψ hζ, add_apply, Pi.add_apply, smul_add, map_add,
+    Finset.sum_add_distrib]
+  abel
+
+/-- The flat Dirac operator commutes with real scalars acting on the field. -/
+theorem flatDirac_smul (c : ℝ) :
+    flatDirac ρ b (c • ψ) x = c • flatDirac ρ b ψ x := by
+  simp only [flatDirac_eq_sum ρ (stdOrthonormalBasis ℝ V), covariantDeriv_apply,
+    fderiv_const_smul_field, smul_apply, Pi.smul_apply, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [← LinearMap.map_smul_of_tower, smul_add, smul_comm c (b x _), smul_comm I c]
+
+/-- The Clifford multiplication `i c(b) φ`, the flat Dirac operator of a constant field, is
+linear in the connection form. -/
+theorem flatDirac_smul_connection_const (c : ℝ) (φ : W) :
+    flatDirac ρ (c • b) (fun _ ↦ φ) x = c • flatDirac ρ b (fun _ ↦ φ) x := by
+  simp only [flatDirac_eq_sum ρ (stdOrthonormalBasis ℝ V), covariantDeriv_apply, fderiv_fun_const,
+    Pi.zero_apply, zero_apply, zero_add, Pi.smul_apply,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul, mul_smul, Finset.smul_sum,
+    LinearMap.map_smul_of_tower]
+
 variable [FiniteDimensional ℂ W]
+
+/-- **The norm of the Clifford multiplication by a connection form**: for the negative-definite
+form `Q v = -‖v‖²` and skew-adjoint generators, the flat Dirac operator of a constant field `φ`,
+which is `i c(b) φ` with `b` read as a vector through the inner product, has norm
+`‖b x‖ ‖φ‖`. -/
+theorem norm_flatDirac_const (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (φ : W) :
+    ‖flatDirac ρ b (fun _ ↦ φ) x‖ = ‖b x‖ * ‖φ‖ := by
+  let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
+    (0 : Fin 1)).symm (b x)
+  let v := (InnerProductSpace.toDual ℝ V).symm L
+  have hv (w : V) : b x (fun _ ↦ w) = ⟪v, w⟫ := by
+    simp [v, L, InnerProductSpace.toDual_symm_apply]
+  have key : flatDirac ρ b (fun _ ↦ φ) x = I • ρ (ι Q v) φ := by
+    let e := stdOrthonormalBasis ℝ V
+    rw [flatDirac_eq_sum ρ e]
+    conv_rhs => rw [← e.sum_repr' v]
+    simp [covariantDeriv_apply, hv, map_sum, Finset.smul_sum, real_inner_comm,
+      LinearMap.map_smul_of_tower, smul_comm I]
+  rw [key, norm_smul, norm_I, one_mul, CliffordAlgebra.norm_map_ι_apply hQ hρ,
+    LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map]
+
+/-- **The Clifford multiplication by a connection form is locally Lipschitz**: the bilinear map
+`(b, φ) ↦ i c(b) φ`, the flat Dirac operator of a constant field, satisfies
+`‖i c(b₁) φ₁ - i c(b₂) φ₂‖ ≤ ‖b₁ - b₂‖ ‖φ₁‖ + ‖b₂‖ ‖φ₁ - φ₂‖` at every point. -/
+theorem norm_flatDirac_const_sub_flatDirac_const_le (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+    (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) (b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ)
+    (φ₁ φ₂ : W) :
+    ‖flatDirac ρ b₁ (fun _ ↦ φ₁) x - flatDirac ρ b₂ (fun _ ↦ φ₂) x‖ ≤
+      ‖b₁ x - b₂ x‖ * ‖φ₁‖ + ‖b₂ x‖ * ‖φ₁ - φ₂‖ := by
+  have hb : flatDirac ρ b₁ (fun _ ↦ φ₁) x =
+      flatDirac ρ b₂ (fun _ ↦ φ₁) x + flatDirac ρ (b₁ - b₂) (fun _ ↦ φ₁) x := by
+    rw [← flatDirac_add_connection, add_sub_cancel]
+  have hφ : flatDirac ρ b₂ (fun _ ↦ φ₁) x =
+      flatDirac ρ b₂ (fun _ ↦ φ₂) x + flatDirac ρ b₂ (fun _ ↦ φ₁ - φ₂) x := by
+    rw [← flatDirac_add ρ (differentiableAt_const _) (differentiableAt_const _)]
+    congr 1
+    ext
+    simp
+  rw [hb, hφ, add_sub_right_comm, add_sub_cancel_left]
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_flatDirac_const ρ hQ hρ, norm_flatDirac_const ρ hQ hρ, Pi.sub_apply]
+  linarith
 
 /-- **The Weitzenböck formula for the flat Dirac operator**: for a `C²` spinor field and a
 differentiable connection form `b`, in any orthonormal basis `(eₖ)`,
