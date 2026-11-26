@@ -5,11 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.Functor
 public import Mathlib.CategoryTheory.Sites.Abelian
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Homology of complexes of sheaves
+
+With only zero morphisms in the coefficient category, `J.complexToPresheaf A c`
+regards a complex of sheaves of any shape as its presheaf of section complexes.
+The abbreviation `HomologicalComplex.sheafPresheaf` and its characteristic equations
+retain the caller's section functors and degreewise sheaves.
 
 Let `A` be an abelian category and `(C, J)` a site on which `A`-valued presheaves can be
 sheafified. Homology in the abelian category of `A`-valued sheaves is not computed objectwise:
@@ -33,6 +39,26 @@ open CategoryTheory Limits
 
 namespace CategoryTheory.GrothendieckTopology
 
+section SectionComplexes
+
+variable {C : Type*} [Category* C] (J : GrothendieckTopology C)
+  (A : Type*) [Category* A] [HasZeroMorphisms A] {ι : Type*} (c : ComplexShape ι)
+
+/-- Complexes of sheaves give presheaves of section complexes, functorially in the complex.
+This composes the existing forgetful and complex-of-functors functors. -/
+@[expose]
+def complexToPresheaf : HomologicalComplex (Sheaf J A) c ⥤
+    Cᵒᵖ ⥤ HomologicalComplex A c :=
+  (sheafToPresheaf J A).mapHomologicalComplex c ⋙
+    HomologicalComplex.complexOfFunctorsToFunctorToComplex
+
+/-- The induced map on section complexes evaluates the original sheaf map in each degree. -/
+lemma complexToPresheaf_map_app_f {K L : HomologicalComplex (Sheaf J A) c}
+    (f : K ⟶ L) (U : Cᵒᵖ) (q : ι) :
+    (((J.complexToPresheaf A c).map f).app U).f q = (f.f q).hom.app U := rfl
+
+end SectionComplexes
+
 variable {C : Type*} [Category* C] (J : GrothendieckTopology C)
   (A : Type*) [Category* A] [Abelian A] [HasSheafify J A] {ι : Type*} (c : ComplexShape ι) (i : ι)
 
@@ -51,6 +77,32 @@ noncomputable def homologyFunctorIsoSheafify :
     Functor.isoWhiskerLeft _ ((presheafToSheaf J A).mapHomologicalComplexCompHomologyFunctorIso c i)
 
 end CategoryTheory.GrothendieckTopology
+
+namespace HomologicalComplex
+
+variable {C : Type*} [Category* C] {J : GrothendieckTopology C}
+  {A : Type*} [Category* A] [HasZeroMorphisms A] {ι : Type*} {c : ComplexShape ι}
+
+/-- The presheaf of section complexes of a complex of sheaves on an arbitrary site. -/
+abbrev sheafPresheaf (K : HomologicalComplex (Sheaf J A) c) :
+    Cᵒᵖ ⥤ HomologicalComplex A c :=
+  (J.complexToPresheaf A c).obj K
+
+/-- The section complex is obtained by applying the native sheaf-sections functor. -/
+@[simp]
+lemma sheafPresheaf_obj (K : HomologicalComplex (Sheaf J A) c) (U : Cᵒᵖ) :
+    (sheafPresheaf K).obj U = (((sheafSections J A).obj U).mapHomologicalComplex c).obj K := by
+  rw [sheafPresheaf, GrothendieckTopology.complexToPresheaf]
+  rfl
+
+/-- Evaluation in one degree recovers precisely the caller's sheaf in that degree. -/
+@[simp]
+lemma sheafPresheaf_comp_eval (K : HomologicalComplex (Sheaf J A) c) (q : ι) :
+    sheafPresheaf K ⋙ HomologicalComplex.eval A c q = (K.X q).obj := by
+  rw [sheafPresheaf, GrothendieckTopology.complexToPresheaf]
+  rfl
+
+end HomologicalComplex
 
 namespace CategoryTheory.ShortComplex.ShortExact
 

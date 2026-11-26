@@ -230,6 +230,18 @@ lemma cechTotalComplexHomologyMap_comp {ν : Type w} {W : ν → C}
   rw [cechTotalComplexHomologyMap_app, cechTotalComplexMap_comp]
   exact HomologicalComplex.homologyMap_comp _ _ n
 
+/-- Refinements in both directions identify total Čech cohomology. Their composites
+induce identity maps by independence of the raw refinement functions. -/
+lemma isIso_cechTotalComplexHomologyMap_of_reverse
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ U) :
+    IsIso (cechTotalComplexHomologyMap A n φ) := by
+  refine ⟨⟨cechTotalComplexHomologyMap A n ψ, ?_, ?_⟩⟩
+  · rw [← cechTotalComplexHomologyMap_comp,
+      cechTotalComplexHomologyMap_eq A n (ψ ≫ φ) (𝟙 _), cechTotalComplexHomologyMap_id]
+  · rw [← cechTotalComplexHomologyMap_comp,
+      cechTotalComplexHomologyMap_eq A n (φ ≫ ψ) (𝟙 _), cechTotalComplexHomologyMap_id]
+
 end Homology
 
 end TauCeti.CategoryTheory
