@@ -52,19 +52,20 @@ discriminant `D ≠ 1`, or a squarefree radicand `d ≠ 1`.
   nonprincipal quadratic `χ`.
 * `DirichletCharacter.mul_rpow_conductor_neg_half_sub_le_one_sub_of_LFunction_eq_zero`,
   `DirichletCharacter.mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero`,
-  `DirichletCharacter.exists_pos_mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero`, and
+  `TauCeti.exists_pos_mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero`, and
   `DirichletCharacter.div_level_le_one_sub_of_LFunction_eq_zero`: explicit `q ^ (-1/2 - ε)`,
   `N ^ (-1/2 - ε)`, and `N⁻¹` zero-distance bounds for any nonprincipal quadratic `χ`.
 * `TauCeti.Multiquadratic.mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero`,
   `TauCeti.Multiquadratic.mul_rpow_neg_half_sub_le_one_sub_of_squarefree_of_LFunction_eq_zero`,
-  and `TauCeti.Multiquadratic.exists_pos_mul_rpow_le_one_sub_of_squarefree_of_LFunction_eq_zero`:
+  and its existential form
+  `exists_pos_mul_rpow_neg_half_sub_le_one_sub_of_squarefree_of_LFunction_eq_zero`:
   effective real-zero distance bounds in terms of a fundamental discriminant `D ≠ 1` and of a
   squarefree radicand `d ≠ 1`.
 
 ## References
 
-* P. Koymans and C. Pagano, *A sharp upper bound for the 2-torsion of class groups of
-  multiquadratic fields*, Mathematika **68** (2022), §7.2, proof of Proposition 7.6.
+* P. Koymans and C. Pagano, *On Stevenhagen's conjecture*, arXiv:2201.13424v1 (2022), §7.2,
+  proof of Proposition 7.6, p. 62.
 * D. Koukoulopoulos, *The Distribution of Prime Numbers*, Graduate Studies in Mathematics 203,
   American Mathematical Society, 2019, (12.12), p. 124.
 * M. A. Bennett, G. Martin, K. O'Bryant, and A. Rechnitzer, *Explicit bounds for primes in
@@ -195,7 +196,8 @@ theorem mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero
 
 /-- **Uniform existential `N ^ (-1/2 - ε)` zero-gap bound** across all levels and nonprincipal
 quadratic characters. -/
-theorem exists_pos_mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero {ε : ℝ} (hε : 0 < ε) :
+theorem _root_.TauCeti.exists_pos_mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero {ε : ℝ}
+    (hε : 0 < ε) :
     ∃ c > 0, ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N),
       χ.IsQuadratic → χ ≠ 1 → ∀ β : ℝ, χ.LFunction β = 0 →
         c * (N : ℝ) ^ (-(1 / 2 : ℝ) - ε) ≤ 1 - β :=
@@ -238,8 +240,8 @@ theorem mul_rpow_neg_half_sub_le_one_sub_of_LFunction_eq_zero
       (fundamentalDiscriminantCharCast_isQuadratic hD) hχ hε hβ
 
 /-- **Effective distance of a quadratic real zero from one for a squarefree radicand `d ≠ 1`**
-(Koymans–Pagano, §7.2, proof of Proposition 7.6). For any squarefree integer `d ≠ 1`, any `ε > 0`,
-and any real zero `β` of the continued `L`-function of
+(Koymans–Pagano, §7.2, proof of Proposition 7.6, p. 62). For any squarefree integer `d ≠ 1`, any
+`ε > 0`, and any real zero `β` of the continued `L`-function of
 `fundamentalDiscriminantCharCast ℂ (fundamentalDiscriminant d)`,
 `(log φ · ε ^ 2 / (256 · 4 ^ ε)) |d| ^ (-1/2 - ε) ≤ 1 - β`. -/
 theorem mul_rpow_neg_half_sub_le_one_sub_of_squarefree_of_LFunction_eq_zero
@@ -286,7 +288,7 @@ theorem mul_rpow_neg_half_sub_le_one_sub_of_squarefree_of_LFunction_eq_zero
 
 /-- **Uniform existential `|d| ^ (-1/2 - ε)` zero-gap bound** across all squarefree integers
 `d ≠ 1`. -/
-theorem exists_pos_mul_rpow_le_one_sub_of_squarefree_of_LFunction_eq_zero
+theorem exists_pos_mul_rpow_neg_half_sub_le_one_sub_of_squarefree_of_LFunction_eq_zero
     {ε : ℝ} (hε : 0 < ε) :
     ∃ c > 0, ∀ (d : ℤ) [NeZero (fundamentalDiscriminant d).natAbs] (hd : Squarefree d),
       d ≠ 1 → ∀ β : ℝ,

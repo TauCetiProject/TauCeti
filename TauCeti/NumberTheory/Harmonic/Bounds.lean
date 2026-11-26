@@ -19,7 +19,7 @@ Near the line `σ = 1`, for any `c ≥ 0` and `σ ≥ 1 - c / log n`, each term 
 `k^{-σ} ≤ k^{-1} * n^{c / log n} = exp c / k`, giving
 `∑_{k=1}^n (log k) k^{-σ} ≤ exp c * (log n)²` for every `n : ℕ` (the cases `n = 0, 1` reduce to
 `0 ≤ 0`). These bounds control the finite initial Dirichlet polynomial of `L'(σ, χ)` after
-partial summation up to the conductor.
+partial summation up to the level `N`.
 
 ## Main results
 

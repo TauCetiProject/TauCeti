@@ -111,35 +111,6 @@ theorem integrableOn_sum_Icc_mul_one_sub_mul_log_mul_cpow (hχ : χ ≠ 1) {s : 
 
 /-! ### Level-split partial summation on `(1, N]` and `(N, ∞)` -/
 
-omit [NeZero N] in
-/-- Integrating a continuous derivative `g'` against the partial-sum step function of a
-nonprincipal character `χ` over `(1, N]` gives `-∑_{k=1}^N χ(k) g(k)`, since `S(N) = 0` cancels the
-boundary term at `N` in Abel's summation formula. -/
-private theorem integral_Ioc_one_level_sum_mul_eq (hχ : χ ≠ 1) {g g' : ℝ → ℂ}
-    (hg : ∀ t : ℝ, 1 ≤ t → HasDerivAt g (g' t) t) (hcont : ContinuousOn g' (Set.Ici 1)) :
-    ∫ t in Set.Ioc (1 : ℝ) (N : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * g' t =
-      -∑ k ∈ Icc 1 N, χ k * g (k : ℕ) := by
-  let c : ℕ → ℂ := fun k ↦ if k = 0 then 0 else χ k
-  have hsum (w : ℕ → ℂ) (m : ℕ) : ∑ k ∈ Icc 0 m, w k * c k = ∑ k ∈ Icc 1 m, χ k * w k := by
-    rw [Icc_eq_cons_Ioc (Nat.zero_le m), sum_cons, ← Icc_add_one_left_eq_Ioc]
-    simp only [c, ↓reduceIte, mul_zero, zero_add]
-    refine sum_congr rfl fun k hk ↦ ?_
-    simp [Nat.ne_of_gt (mem_Icc.mp hk).1, mul_comm]
-  have hsum1 (m : ℕ) : ∑ k ∈ Icc 0 m, c k = ∑ k ∈ Icc 1 m, χ k := by
-    simpa using hsum (fun _ ↦ 1) m
-  have hdiff : ∀ t ∈ Set.Icc (1 : ℝ) N, DifferentiableAt ℝ g t :=
-    fun t ht ↦ (hg t ht.1).differentiableAt
-  have hderiv_eq : Set.EqOn (deriv g) g' (Set.Icc (1 : ℝ) N) :=
-    fun t ht ↦ (hg t ht.1).deriv
-  have hint : IntegrableOn (deriv g) (Set.Icc (1 : ℝ) N) :=
-    (hcont.mono Set.Icc_subset_Ici_self).integrableOn_Icc.congr_fun hderiv_eq.symm measurableSet_Icc
-  have habel := sum_mul_eq_sub_integral_mul₀' c rfl N hdiff hint
-  rw [hsum, hsum1, ← χ.intervalSum_zero_eq_sum_Icc, χ.intervalSum_level_eq_zero hχ, mul_zero,
-    zero_sub] at habel
-  refine (setIntegral_congr_fun measurableSet_Ioc fun t ht ↦ ?_).trans
-    (neg_eq_iff_eq_neg.mp habel.symm)
-  rw [(hg t ht.1.le).deriv, hsum1, mul_comm]
-
 /-- **Level-split partial summation for `L(s, χ)`.** For a nonprincipal character `χ` of level `N`
 and `Re(s) > 0`, `L(s, χ)` is the finite Dirichlet polynomial up to `N` plus `s` times the tail
 integral over `(N, ∞)`. -/
