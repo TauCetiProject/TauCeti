@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Herbrand.Quotient
+import TauCeti.RingTheory.LocalRing.Herbrand.Tower
 
 /-!
 # Transitivity of the Herbrand functions
@@ -21,7 +22,8 @@ identity on `[-1, 0]`, this gives the **transitivity of the Herbrand functions**
 
 `φ_{M/K} = φ_{L/K} ∘ φ_{M/L}`   and   `ψ_{M/K} = ψ_{M/L} ∘ ψ_{L/K}`,
 
-together with its integral form `ψℕ_{M/K} = ψℕ_{M/L} ∘ ψℕ_{L/K}`.
+together with its integral form `ψℕ_{M/K} = ψℕ_{M/L} ∘ ψℕ_{L/K}`. All proofs specialize the
+local-ring results of `TauCeti.RingTheory.LocalRing.Herbrand.Tower`.
 
 ## Main results
 
@@ -74,14 +76,17 @@ theorem natCard_lowerRamificationGroupReal_herbrand_mul [Normal K L] [IsGalois L
         Nat.card (lowerRamificationGroupReal L M u) =
       Nat.card (lowerRamificationGroupReal K M u) := by
   have : Module.Finite K M := Module.Finite.trans L M
-  rw [← map_restrictNormalHom_lowerRamificationGroupReal (K := K) (L := L) (M := M) u,
-    ← MonoidHom.domRestrict_range,
-    ← Subgroup.card_map_of_injective (K := lowerRamificationGroupReal L M u)
-      (AlgEquiv.restrictScalarsHom_injective K),
-    map_restrictScalarsHom_lowerRamificationGroupReal K M L u,
-    AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M,
-    ← Subgroup.subgroupOf_map_subtype, Subgroup.card_subtype, ← MonoidHom.ker_domRestrict,
-    mul_comm, Subgroup.card_ker_mul_card_range]
+  have hu := map_restrictNormalHom_lowerRamificationGroupReal (K := K) (L := L) (M := M) u
+  rw [lowerRamificationGroupReal_eq_ramificationGroupReal,
+    lowerRamificationGroupReal_eq_ramificationGroupReal, coe_herbrand_eq_herbrandFun] at hu
+  rw [lowerRamificationGroupReal_eq_ramificationGroupReal,
+    lowerRamificationGroupReal_eq_ramificationGroupReal,
+    lowerRamificationGroupReal_eq_ramificationGroupReal, coe_herbrand_eq_herbrandFun]
+  exact TauCeti.IsLocalRing.natCard_ramificationGroupReal_herbrandFun_mul_of_map_eq
+    (AlgEquiv.restrictNormalHom L) (AlgEquiv.restrictScalarsHom K)
+    (AlgEquiv.restrictScalarsHom_injective K)
+    (fun τ x ↦ AlgEquiv.restrictScalars_smul_integerRing τ x)
+    (AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M) hu
 
 /-- Through Herbrand's theorem, the lower filtration of `L/K` is constant on the interval
 `(φ_{M/L}(a), φ_{M/L}(b)]` as soon as that of `M/K` is constant on `(a, b]`. -/
@@ -94,17 +99,17 @@ theorem lowerRamificationGroupReal_eq_of_forall_eq_of_herbrand_lt_of_le_herbrand
     lowerRamificationGroupReal K L t = lowerRamificationGroupReal K L (herbrand L M b) := by
   have : Module.Finite K M := Module.Finite.trans L M
   intro h
-  set s : RamificationIndexDomain := ⟨t, Set.mem_Ici.2 ((herbrand L M a).property.trans ht₁.le)⟩
-  -- `t = φ_{M/L}(ψ_{M/L}(t))` with `a < ψ_{M/L}(t) ≤ b`.
-  have hs₁ : a < inverseHerbrand L M s := by
-    rw [← inverseHerbrand_herbrand L M a]
-    exact inverseHerbrand_strictMono L M (Subtype.coe_lt_coe.1 ht₁)
-  have hs₂ : inverseHerbrand L M s ≤ b := by
-    rw [← inverseHerbrand_herbrand L M b]
-    exact (inverseHerbrand_strictMono L M).monotone (Subtype.coe_le_coe.1 ht₂)
-  have ht : t = herbrand L M (inverseHerbrand L M s) := by rw [herbrand_inverseHerbrand]
-  rw [ht, ← map_restrictNormalHom_lowerRamificationGroupReal,
-    ← map_restrictNormalHom_lowerRamificationGroupReal, h _ hs₁ hs₂]
+  simp_rw [lowerRamificationGroupReal_eq_ramificationGroupReal] at h
+  rw [coe_herbrand_eq_herbrandFun] at ht₁ ht₂
+  rw [lowerRamificationGroupReal_eq_ramificationGroupReal,
+    lowerRamificationGroupReal_eq_ramificationGroupReal, coe_herbrand_eq_herbrandFun]
+  exact TauCeti.IsLocalRing.ramificationGroupReal_eq_of_forall_eq_of_map_eq
+    (AlgEquiv.restrictNormalHom L)
+    (fun w hw ↦ by
+      simpa only [lowerRamificationGroupReal_eq_ramificationGroupReal,
+        coe_herbrand_eq_herbrandFun] using
+        map_restrictNormalHom_lowerRamificationGroupReal (K := K) (L := L) (M := M) ⟨w, hw⟩)
+    ht₁ ht₂ h
 
 /-! ### Transitivity of the Herbrand functions
 
@@ -115,84 +120,6 @@ recover `IsGalois L M` from `[IsGalois K M]`; the statements below therefore ins
 
 variable [IsGalois K L] [IsGalois K M]
 
-/-- The transitivity `φ_{M/K}(u) = φ_{L/K}(φ_{M/L}(u))` propagates from the left endpoint `m` of
-an interval `[m, m + 1]`, `m : ℕ`, to every point `u` of that interval: both sides are affine
-there, and Herbrand's theorem in counting form identifies their slopes. -/
-private theorem herbrand_tower_of_mem_Icc_of_eq (m : ℕ) {u : RamificationIndexDomain}
-    (h₁ : (m : ℝ) ≤ u) (h₂ : (u : ℝ) ≤ m + 1) :
-    haveI : Module.Finite K M := Module.Finite.trans L M
-    haveI := IsGalois.tower_top_of_isGalois K L M
-    herbrand K M ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩ =
-        herbrand K L (herbrand L M ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩) →
-      herbrand K M u = herbrand K L (herbrand L M u) := by
-  have : Module.Finite K M := Module.Finite.trans L M
-  have := IsGalois.tower_top_of_isGalois K L M
-  intro hm
-  set a : RamificationIndexDomain := ⟨m, Nat.cast_mem_ramificationIndexDomain m⟩
-  have hau : a ≤ u := Subtype.coe_le_coe.1 h₁
-  -- The lower filtrations of `M/K` and `M/L` are constant on `(m, u] ⊆ (m, m + 1]`.
-  have hGM : ∀ t : ℝ, (a : ℝ) < t → t ≤ u →
-      lowerRamificationGroupReal K M t = lowerRamificationGroupReal K M u := fun t ht₁ ht₂ ↦ by
-    rw [lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K M (i := m + 1) (by push_cast; linarith)
-        (by push_cast; linarith),
-      lowerRamificationGroupReal_eq_of_sub_one_lt_of_le K M (i := m + 1) (by push_cast; linarith)
-        (by push_cast; linarith)]
-  have hHM : ∀ t : ℝ, (a : ℝ) < t → t ≤ u →
-      lowerRamificationGroupReal L M t = lowerRamificationGroupReal L M u := fun t ht₁ ht₂ ↦ by
-    rw [lowerRamificationGroupReal_eq_of_sub_one_lt_of_le L M (i := m + 1) (by push_cast; linarith)
-        (by push_cast; linarith),
-      lowerRamificationGroupReal_eq_of_sub_one_lt_of_le L M (i := m + 1) (by push_cast; linarith)
-        (by push_cast; linarith)]
-  -- The three affine formulas and the two counting identities.
-  have hMK := coe_herbrand_sub_coe_herbrand_of_forall_eq K M hau hGM
-  have hML := coe_herbrand_sub_coe_herbrand_of_forall_eq L M hau hHM
-  have hLK := coe_herbrand_sub_coe_herbrand_of_forall_eq K L
-    ((herbrand_strictMono L M).monotone hau) fun _ ht₁ ht₂ ↦
-      lowerRamificationGroupReal_eq_of_forall_eq_of_herbrand_lt_of_le_herbrand K L M ht₁ ht₂ hGM
-  have hcard : (Nat.card (lowerRamificationGroupReal K L (herbrand L M u)) : ℝ) *
-      Nat.card (lowerRamificationGroupReal L M u) =
-        Nat.card (lowerRamificationGroupReal K M u) := by
-    exact_mod_cast natCard_lowerRamificationGroupReal_herbrand_mul K L M u
-  have hcard₀ : (Nat.card (lowerRamificationGroup K L 0) : ℝ) *
-      Nat.card (lowerRamificationGroup L M 0) = Nat.card (lowerRamificationGroup K M 0) := by
-    rw [natCard_lowerRamificationGroup_zero, natCard_lowerRamificationGroup_zero,
-      natCard_lowerRamificationGroup_zero, ramificationIndex_tower (K := K) (L := L) M]
-    push_cast
-    ring
-  -- The slopes agree: `#G_u / #G_0 = (#H_u / #H_0) · (#(G/H)_{φ(u)} / #(G/H)_0)`.
-  have hslope : (Nat.card (lowerRamificationGroupReal K M u) : ℝ) /
-      Nat.card (lowerRamificationGroup K M 0) =
-        (Nat.card (lowerRamificationGroupReal L M u) / Nat.card (lowerRamificationGroup L M 0)) *
-          (Nat.card (lowerRamificationGroupReal K L (herbrand L M u)) /
-            Nat.card (lowerRamificationGroup K L 0)) := by
-    rw [div_mul_div_comm, ← hcard, ← hcard₀,
-      mul_comm (Nat.card (lowerRamificationGroupReal L M u) : ℝ),
-      mul_comm (Nat.card (lowerRamificationGroup L M 0) : ℝ)]
-  have hm' : (herbrand K M a : ℝ) = herbrand K L (herbrand L M a) := congrArg Subtype.val hm
-  apply Subtype.ext
-  rw [hslope] at hMK
-  rw [hML] at hLK
-  linear_combination hMK - hLK + hm'
-
-/-- `φ_{M/K} = φ_{L/K} ∘ φ_{M/L}` on `[m, m + 1]`, by induction on `m : ℕ`. -/
-private theorem herbrand_tower_of_mem_Icc (m : ℕ) :
-    haveI : Module.Finite K M := Module.Finite.trans L M
-    haveI := IsGalois.tower_top_of_isGalois K L M
-    ∀ u : RamificationIndexDomain, (m : ℝ) ≤ u → (u : ℝ) ≤ m + 1 →
-      herbrand K M u = herbrand K L (herbrand L M u) := by
-  have : Module.Finite K M := Module.Finite.trans L M
-  have := IsGalois.tower_top_of_isGalois K L M
-  induction m with
-  | zero =>
-    intro u h₁ h₂
-    refine herbrand_tower_of_mem_Icc_of_eq K L M 0 h₁ h₂ ?_
-    rw [herbrand_of_coe_le_zero L M (by simp), herbrand_of_coe_le_zero K L (by simp),
-      herbrand_of_coe_le_zero K M (by simp)]
-  | succ m ih =>
-    intro u h₁ h₂
-    exact herbrand_tower_of_mem_Icc_of_eq K L M (m + 1) h₁ h₂
-      (ih _ (by push_cast; linarith) (by push_cast; linarith))
-
 /-- **Transitivity of the Herbrand function** in a tower `M/L/K` of Galois extensions:
 `φ_{M/K} = φ_{L/K} ∘ φ_{M/L}`, as an identity of the bundled order isomorphisms of
 `RamificationIndexDomain`. -/
@@ -202,13 +129,19 @@ theorem herbrand_tower :
     herbrandOrderIso K M = (herbrandOrderIso L M).trans (herbrandOrderIso K L) := by
   have : Module.Finite K M := Module.Finite.trans L M
   have := IsGalois.tower_top_of_isGalois K L M
-  refine OrderIso.ext <| funext fun u ↦ ?_
-  rw [OrderIso.trans_apply, herbrandOrderIso_apply, herbrandOrderIso_apply, herbrandOrderIso_apply]
-  rcases le_or_gt (u : ℝ) 0 with hu | hu
-  · rw [herbrand_of_coe_le_zero L M hu, herbrand_of_coe_le_zero K L hu,
-      herbrand_of_coe_le_zero K M hu]
-  · exact herbrand_tower_of_mem_Icc K L M ⌊(u : ℝ)⌋₊ u (Nat.floor_le hu.le)
-      (Nat.lt_floor_add_one _).le
+  refine OrderIso.ext <| funext fun u ↦ Subtype.ext ?_
+  rw [OrderIso.trans_apply, herbrandOrderIso_apply, herbrandOrderIso_apply, herbrandOrderIso_apply,
+    coe_herbrand_eq_herbrandFun, coe_herbrand_eq_herbrandFun, coe_herbrand_eq_herbrandFun]
+  exact TauCeti.IsLocalRing.herbrandFun_eq_comp_of_map_ramificationGroupReal_eq
+    (AlgEquiv.restrictNormalHom L) (AlgEquiv.restrictScalarsHom K)
+    (AlgEquiv.restrictScalarsHom_injective K)
+    (fun τ x ↦ AlgEquiv.restrictScalars_smul_integerRing τ x)
+    (AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M)
+    (fun w hw ↦ by
+      simpa only [lowerRamificationGroupReal_eq_ramificationGroupReal,
+        coe_herbrand_eq_herbrandFun] using
+        map_restrictNormalHom_lowerRamificationGroupReal (K := K) (L := L) (M := M) ⟨w, hw⟩)
+    u
 
 /-- **Transitivity of the inverse Herbrand function** in a tower `M/L/K` of Galois extensions:
 `ψ_{M/K} = ψ_{M/L} ∘ ψ_{L/K}`, as an identity of the inverse order isomorphisms. Inverting the

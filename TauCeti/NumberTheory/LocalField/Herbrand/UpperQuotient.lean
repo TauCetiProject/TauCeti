@@ -9,6 +9,7 @@ import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Tower
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 public import TauCeti.NumberTheory.LocalField.Herbrand.Jump
 import TauCeti.NumberTheory.LocalField.Herbrand.Tower
+import TauCeti.RingTheory.LocalRing.Herbrand.Tower
 
 /-!
 # The upper numbering in a Galois tower
@@ -102,8 +103,6 @@ theorem map_restrictNormalHom_upperRamificationGroup (v : RamificationIndexDomai
       upperRamificationGroup K L v := by
   have : Module.Finite K M := Module.Finite.trans L M
   have := IsGalois.tower_top_of_isGalois K L M
-  -- `G^v = G_{ψ_{M/K}(v)}` restricts onto `(G/H)_{φ_{M/L}(ψ_{M/K}(v))}`, and
-  -- `φ_{M/L}(ψ_{M/K}(v)) = φ_{M/L}(ψ_{M/L}(ψ_{L/K}(v))) = ψ_{L/K}(v)`.
   rw [upperRamificationGroup_def, map_restrictNormalHom_lowerRamificationGroupReal,
     upperRamificationGroup_def, ← herbrandOrderIso_symm_apply K M, inverseHerbrand_tower K L M,
     OrderIso.trans_apply, herbrandOrderIso_symm_apply, herbrandOrderIso_symm_apply,
@@ -122,12 +121,11 @@ theorem UpperJump.of_tower {v : RamificationIndexDomain} (h : UpperJump K L v) :
     have h := algebraicExtension_valuativeExtension_tower K L M
     rw [algebraicExtensionValuativeRel_eq K M] at h
     exact h
-  refine (upperJump_iff K M v).2 fun w hvw ↦ ?_
-  -- If `G^w = G^v`, then their images `(G/H)^w` and `(G/H)^v` would agree.
-  refine lt_of_le_of_ne (upperRamificationGroup_antitone K M hvw.le) fun heq ↦
-    ((upperJump_iff K L v).1 h w hvw).ne ?_
-  rw [← map_restrictNormalHom_upperRamificationGroup K L M, heq,
-    map_restrictNormalHom_upperRamificationGroup]
+  rw [upperJump_iff_isLocalRing_upperJump] at h ⊢
+  refine h.of_map_upperRamificationGroup_eq (π := AlgEquiv.restrictNormalHom L) fun w hw ↦ ?_
+  have hw' : (-1 : ℝ) ≤ w := v.property.trans hw
+  simpa only [upperRamificationGroup_eq_isLocalRing_upperRamificationGroup] using
+    map_restrictNormalHom_upperRamificationGroup K L M ⟨w, hw'⟩
 
 /-- **The upper numbering of a normal subgroup.** For a tower `M/L/K` of Galois extensions, the
 upper filtration of `H = Gal(M/L)` is the trace of that of `G = Gal(M/K)`, reindexed by the
@@ -140,7 +138,6 @@ theorem comap_restrictScalarsHom_upperRamificationGroup (v : RamificationIndexDo
       upperRamificationGroup L M (inverseHerbrand K L v) := by
   have : Module.Finite K M := Module.Finite.trans L M
   have := IsGalois.tower_top_of_isGalois K L M
-  -- `H ∩ G_{ψ_{M/K}(v)} = H_{ψ_{M/K}(v)}`, and `ψ_{M/K}(v) = ψ_{M/L}(ψ_{L/K}(v))`.
   rw [upperRamificationGroup_def, comap_restrictScalarsHom_lowerRamificationGroupReal K M L,
     upperRamificationGroup_def, ← herbrandOrderIso_symm_apply K M, inverseHerbrand_tower K L M,
     OrderIso.trans_apply, herbrandOrderIso_symm_apply, herbrandOrderIso_symm_apply]
@@ -165,55 +162,18 @@ theorem upperJump_iff_upperJump_or_upperJump_inverseHerbrand (v : RamificationIn
     UpperJump K M v ↔ UpperJump K L v ∨ UpperJump L M (inverseHerbrand K L v) := by
   have : Module.Finite K M := Module.Finite.trans L M
   have := IsGalois.tower_top_of_isGalois K L M
-  constructor
-  · intro hv
-    refine or_iff_not_imp_left.2 fun hL ↦ (upperJump_iff L M _).2 fun x hx ↦ ?_
-    -- Since `v` is not an upper break of `L/K`, the filtration of `L/K` is constant on some
-    -- `[v, w₀]` with `v < w₀`.
-    obtain ⟨w₀, hvw₀, hw₀⟩ : ∃ w₀, v < w₀ ∧
-        upperRamificationGroup K L w₀ = upperRamificationGroup K L v := by
-      simp only [upperJump_iff, not_forall] at hL
-      obtain ⟨w₀, hvw₀, hlt⟩ := hL
-      exact ⟨w₀, hvw₀, (upperRamificationGroup_antitone K L hvw₀.le).eq_of_not_lt hlt⟩
-    set w := min w₀ (herbrand K L x)
-    have hvw : v < w := lt_min hvw₀ <| by
-      simpa only [herbrand_inverseHerbrand] using herbrand_strictMono K L hx
-    have hw : upperRamificationGroup K L w = upperRamificationGroup K L v :=
-      le_antisymm (upperRamificationGroup_antitone K L hvw.le)
-        (hw₀ ▸ upperRamificationGroup_antitone K L (min_le_left _ _))
-    have hxw : inverseHerbrand K L w ≤ x := by
-      simpa only [inverseHerbrand_herbrand] using
-        (inverseHerbrand_strictMono K L).monotone (min_le_right w₀ (herbrand K L x))
-    refine (upperRamificationGroup_antitone L M hxw).trans_lt ?_
-    rw [← comap_restrictScalarsHom_upperRamificationGroup,
-      ← comap_restrictScalarsHom_upperRamificationGroup]
-    refine lt_of_le_of_ne (Subgroup.comap_mono (upperRamificationGroup_antitone K M hvw.le))
-      fun heq ↦ ((upperJump_iff K M v).1 hv w hvw).not_ge fun σ hσ ↦ ?_
-    -- `G^w` and `G^v` have the same image `(G/H)^w = (G/H)^v` and the same trace on `H`, so the
-    -- smaller one contains the larger: `σ = τ ρ` with `τ ∈ G^w` and `ρ ∈ H ∩ G^v = H ∩ G^w`.
-    obtain ⟨τ, hτ, hτσ⟩ : AlgEquiv.restrictNormalHom L σ ∈
-        (upperRamificationGroup K M w).map (AlgEquiv.restrictNormalHom L) := by
-      rw [map_restrictNormalHom_upperRamificationGroup, hw,
-        ← map_restrictNormalHom_upperRamificationGroup K L M]
-      exact Subgroup.mem_map_of_mem _ hσ
-    obtain ⟨ρ, hρ⟩ : τ⁻¹ * σ ∈ (AlgEquiv.restrictScalarsHom (S := L) K).range := by
-      rw [AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M, MonoidHom.mem_ker,
-        map_mul, map_inv, hτσ, inv_mul_cancel]
-    have hρw : ρ ∈ (upperRamificationGroup K M w).comap
-        (AlgEquiv.restrictScalarsHom (S := L) K) := by
-      rw [heq, Subgroup.mem_comap, hρ]
-      exact mul_mem (inv_mem (upperRamificationGroup_antitone K M hvw.le hτ)) hσ
-    rw [Subgroup.mem_comap, hρ] at hρw
-    simpa only [mul_inv_cancel_left] using mul_mem hτ hρw
-  · rintro (hL | hM)
-    · exact hL.of_tower
-    -- A strict drop `H ∩ G^w < H ∩ G^v` of the traces forces a strict drop `G^w < G^v`.
-    refine (upperJump_iff K M v).2 fun w hvw ↦
-      lt_of_le_of_ne (upperRamificationGroup_antitone K M hvw.le) fun heq ↦ ?_
-    have hlt := (upperJump_iff L M _).1 hM _ (inverseHerbrand_strictMono K L hvw)
-    rw [← comap_restrictScalarsHom_upperRamificationGroup,
-      ← comap_restrictScalarsHom_upperRamificationGroup, heq] at hlt
-    exact hlt.ne rfl
+  rw [upperJump_iff_isLocalRing_upperJump, upperJump_iff_isLocalRing_upperJump,
+    upperJump_iff_isLocalRing_upperJump, coe_inverseHerbrand_eq_inverseHerbrandFun]
+  exact TauCeti.IsLocalRing.upperJump_iff_or_of_map_ramificationGroupReal_eq
+    (AlgEquiv.restrictNormalHom L) (AlgEquiv.restrictScalarsHom K)
+    (AlgEquiv.restrictScalarsHom_injective K)
+    (fun τ x ↦ AlgEquiv.restrictScalars_smul_integerRing τ x)
+    (AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom K L M)
+    (fun w hw ↦ by
+      simpa only [lowerRamificationGroupReal_eq_ramificationGroupReal,
+        coe_herbrand_eq_herbrandFun] using
+        map_restrictNormalHom_lowerRamificationGroupReal (K := K) (L := L) (M := M) ⟨w, hw⟩)
+    v
 
 end Tower
 
@@ -280,7 +240,6 @@ theorem upperRamificationGroup_fixedField [Module.Finite K M]
       upperRamificationGroup K (fixedField H) v := by
   have : ValuativeExtension (fixedField H) M :=
     _root_.IntermediateField.valuativeExtension_of_isNonarchimedeanLocalField (fixedField H)
-  -- Under `G ⧸ H ≃* Gal(M^H/K)`, the class of `σ` is the restriction of `σ` to `M^H`.
   have hcomp : (IsGalois.normalAutEquivQuotient H : _ →* _).comp (QuotientGroup.mk' H) =
       AlgEquiv.restrictNormalHom (fixedField H) :=
     MonoidHom.ext (IsGalois.normalAutEquivQuotient_apply H)

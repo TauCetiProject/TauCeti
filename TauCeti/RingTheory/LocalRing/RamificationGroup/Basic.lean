@@ -87,7 +87,12 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow`: along an
   equivariant homomorphism of local rings inducing isomorphisms `S ⧸ 𝔪 ^ n ≃ T ⧸ 𝔪 ^ n`, such as
   the inclusion of a discrete valuation ring into its completion, the ramification groups are the
-  preimages of each other.
+  preimages of each other; `ramificationGroup_eq_comap_of_ringEquiv`,
+  `ramificationGroup_map_of_ringEquiv`, `ramificationGroupReal_eq_comap_of_ringEquiv`, and
+  `ramificationGroupReal_map_of_ringEquiv` specialize this to equivariant ring isomorphisms.
+* `TauCeti.IsLocalRing.LowerJump`, `TauCeti.IsLocalRing.lowerJump_eq_intCast`, and
+  `TauCeti.IsLocalRing.lowerJump_intCast_iff`: breaks of the real-indexed lower filtration occur at
+  integers `≥ -1` where `G_{i+1} < G_i`.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_lowerIndex_eq` and
   `TauCeti.IsLocalRing.mem_ramificationGroupReal_iff_of_lowerIndex_eq`: when `i_G(σ) = n` is
   finite, `σ ∈ G_i ↔ i + 1 ≤ n` and `σ ∈ G_u ↔ u ≤ n - 1`.
@@ -727,6 +732,24 @@ theorem ramificationGroup_eq_comap_of_comap_maximalIdeal_pow (φ : G →* H) (f 
   · rw [← hcomap, Ideal.mem_comap, map_sub, hf]
     exact h (f x)
 
+/-- A ring isomorphism equivariant along a group homomorphism pulls back `ramificationGroup`. -/
+theorem ramificationGroup_eq_comap_of_ringEquiv (φ : G →* H) (eS : S ≃+* T)
+    (he : ∀ (g : G) (x : S), eS (g • x) = φ g • eS x) (i : ℤ) :
+    ramificationGroup G S i = (ramificationGroup H T i).comap φ := by
+  have hmax : (maximalIdeal S).map eS.toRingHom = maximalIdeal T :=
+    map_ringEquiv_maximalIdeal eS
+  have hpow (n : ℕ) : (maximalIdeal T ^ n).comap eS.toRingHom = maximalIdeal S ^ n := by
+    rw [← hmax, ← Ideal.map_pow, Ideal.comap_map_of_bijective eS.toRingHom eS.bijective]
+  exact ramificationGroup_eq_comap_of_comap_maximalIdeal_pow φ eS.toRingHom he hpow
+    (fun _ y ↦ ⟨eS.symm y, by simp⟩) i
+
+/-- An equivariant isomorphism of local rings transports `ramificationGroup`. -/
+theorem ramificationGroup_map_of_ringEquiv (eG : G ≃* H) (eS : S ≃+* T)
+    (he : ∀ (g : G) (x : S), eS (g • x) = eG g • eS x) (i : ℤ) :
+    (ramificationGroup G S i).map eG.toMonoidHom = ramificationGroup H T i := by
+  rw [ramificationGroup_eq_comap_of_ringEquiv eG.toMonoidHom eS he i,
+    Subgroup.map_comap_eq_self_of_surjective eG.surjective]
+
 end Comap
 
 section Real
@@ -777,6 +800,74 @@ theorem ramificationGroupReal_intCast (i : ℤ) :
 theorem ramificationGroupReal_eq_of_sub_one_lt_of_le {i : ℤ} {u : ℝ} (hleft : (i : ℝ) - 1 < u)
     (hright : u ≤ i) : ramificationGroupReal G S u = ramificationGroup G S i := by
   rw [ramificationGroupReal_def, Int.ceil_eq_iff.2 ⟨hleft, hright⟩]
+
+/-- For `u ≤ -1`, the real-indexed ramification group is the whole group. -/
+theorem ramificationGroupReal_eq_top_of_le_neg_one {u : ℝ} (hu : u ≤ -1) :
+    ramificationGroupReal G S u = ⊤ := by
+  rw [ramificationGroupReal_def]
+  exact ramificationGroup_eq_top_of_le_neg_one G S (Int.ceil_le.2 (by simpa using hu))
+
+variable {G S} in
+/-- A ring isomorphism equivariant along a group homomorphism pulls back `ramificationGroupReal`. -/
+theorem ramificationGroupReal_eq_comap_of_ringEquiv {H T : Type*} [Group H] [CommRing T]
+    [IsLocalRing T] [MulSemiringAction H T] (φ : G →* H) (eS : S ≃+* T)
+    (he : ∀ (g : G) (x : S), eS (g • x) = φ g • eS x) (u : ℝ) :
+    ramificationGroupReal G S u = (ramificationGroupReal H T u).comap φ := by
+  rw [ramificationGroupReal_def, ramificationGroupReal_def]
+  exact ramificationGroup_eq_comap_of_ringEquiv φ eS he ⌈u⌉
+
+variable {G S} in
+/-- An equivariant isomorphism of local rings transports `ramificationGroupReal`. -/
+theorem ramificationGroupReal_map_of_ringEquiv {H T : Type*} [Group H] [CommRing T]
+    [IsLocalRing T] [MulSemiringAction H T] (eG : G ≃* H) (eS : S ≃+* T)
+    (he : ∀ (g : G) (x : S), eS (g • x) = eG g • eS x) (u : ℝ) :
+    (ramificationGroupReal G S u).map eG.toMonoidHom = ramificationGroupReal H T u := by
+  rw [ramificationGroupReal_def, ramificationGroupReal_def]
+  exact ramificationGroup_map_of_ringEquiv eG eS he ⌈u⌉
+
+/-! ### Breaks of the lower filtration -/
+
+/-- A **lower jump** (break) of the lower ramification filtration: an index `u` at which `G_u`
+strictly contains `G_v` for every `v > u`. -/
+def LowerJump (u : ℝ) : Prop :=
+  ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u
+
+/-- Unfolding criterion for `LowerJump`. -/
+theorem lowerJump_iff (u : ℝ) :
+    LowerJump G S u ↔ ∀ v : ℝ, u < v → ramificationGroupReal G S v < ramificationGroupReal G S u :=
+  Iff.rfl
+
+/-- Every lower jump is at least `-1`, since `G_u = ⊤` for `u ≤ -1`. -/
+theorem neg_one_le_of_lowerJump {u : ℝ} (h : LowerJump G S u) : -1 ≤ u := by
+  by_contra hlt
+  have hstrict := h (-1) (not_le.1 hlt)
+  rw [ramificationGroupReal_eq_top_of_le_neg_one G S le_rfl,
+    ramificationGroupReal_eq_top_of_le_neg_one G S (not_le.1 hlt).le] at hstrict
+  exact lt_irrefl _ hstrict
+
+/-- Every lower jump occurs at an integer `i ≥ -1`. -/
+theorem lowerJump_eq_intCast {u : ℝ} (h : LowerJump G S u) :
+    ∃ i : ℤ, -1 ≤ i ∧ u = (i : ℝ) := by
+  have hi : -1 ≤ ⌈u⌉ := by
+    exact_mod_cast (by simpa using (neg_one_le_of_lowerJump G S h).trans (Int.le_ceil u) :
+      ((-1 : ℤ) : ℝ) ≤ (⌈u⌉ : ℝ))
+  refine ⟨⌈u⌉, hi, ?_⟩
+  rcases eq_or_lt_of_le (Int.le_ceil u) with heq | hlt
+  · exact heq
+  · have hstrict := h ⌈u⌉ hlt
+    rw [ramificationGroupReal_intCast, ramificationGroupReal_def] at hstrict
+    exact absurd hstrict (lt_irrefl _)
+
+/-- At an integer `i`, a lower jump is a strict drop from `G_i` to `G_{i+1}`. -/
+@[simp]
+theorem lowerJump_intCast_iff {i : ℤ} :
+    LowerJump G S (i : ℝ) ↔ ramificationGroup G S (i + 1) < ramificationGroup G S i := by
+  refine ⟨fun h ↦ by
+      simpa only [ramificationGroupReal_intCast] using
+        h ((i + 1 : ℤ) : ℝ) (Int.cast_lt.2 (lt_add_one i)),
+    fun h v hv ↦ ?_⟩
+  rw [ramificationGroupReal_intCast, ramificationGroupReal_def]
+  exact (ramificationGroup_antitone G S (by have := Int.lt_ceil.2 hv; omega)).trans_lt h
 
 end Real
 

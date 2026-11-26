@@ -373,6 +373,12 @@ filtration of `K`. -/
 def psiNat (n : ℕ) : ℕ :=
   ⌊(inverseHerbrand K L ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩ : ℝ)⌋₊
 
+/-- `psiNat K L` agrees with `TauCeti.IsLocalRing.psiNat` for `Gal(L/K)` acting on `𝒪[L]`. -/
+theorem psiNat_eq_isLocalRing_psiNat (n : ℕ) :
+    psiNat K L n = TauCeti.IsLocalRing.psiNat (L ≃ₐ[K] L) 𝒪[L] n := by
+  rw [psiNat, coe_inverseHerbrand_eq_inverseHerbrandFun, Subtype.coe_mk,
+    TauCeti.IsLocalRing.psiNat_def]
+
 /-- The integral inverse Herbrand function computes the inverse Herbrand function:
 `ψℕ_{L/K}(n) = ψ_{L/K}(n)`. -/
 @[simp]
@@ -387,27 +393,22 @@ theorem psiNat_eq_iff {n m : ℕ} :
     psiNat K L n = m ↔
       ∑ i ∈ Finset.Icc 1 m, Nat.card (lowerRamificationGroup K L i) =
         n * Nat.card (lowerRamificationGroup K L 0) := by
-  rw [← Nat.cast_inj (R := ℝ), coe_psiNat, coe_inverseHerbrand_eq_inverseHerbrandFun,
-    Subtype.coe_mk, TauCeti.IsLocalRing.inverseHerbrandFun_natCast_eq_natCast_iff]
+  rw [psiNat_eq_isLocalRing_psiNat, TauCeti.IsLocalRing.psiNat_eq_iff]
   simp only [lowerRamificationGroup_def]
 
 /-- `ψℕ_{L/K}(0) = 0`. -/
 @[simp]
-theorem psiNat_zero : psiNat K L 0 = 0 :=
-  (psiNat_eq_iff K L).2 (by simp)
+theorem psiNat_zero : psiNat K L 0 = 0 := by
+  rw [psiNat_eq_isLocalRing_psiNat, TauCeti.IsLocalRing.psiNat_zero]
 
 /-- The integral inverse Herbrand function is strictly increasing. -/
-theorem psiNat_strictMono : StrictMono (psiNat K L) := fun a b h ↦ by
-  have hlt : (⟨(a : ℝ), Nat.cast_mem_ramificationIndexDomain a⟩ : RamificationIndexDomain) <
-      ⟨(b : ℝ), Nat.cast_mem_ramificationIndexDomain b⟩ :=
-    Subtype.mk_lt_mk.2 (by exact_mod_cast h)
-  have := inverseHerbrand_strictMono K L hlt
-  exact_mod_cast (coe_psiNat K L a).trans_lt
-    ((Subtype.coe_lt_coe.2 this).trans_eq (coe_psiNat K L b).symm)
+theorem psiNat_strictMono : StrictMono (psiNat K L) := by
+  simpa only [funext (psiNat_eq_isLocalRing_psiNat K L)] using
+    TauCeti.IsLocalRing.psiNat_strictMono (L ≃ₐ[K] L) 𝒪[L]
 
 /-- `n ≤ ψℕ_{L/K}(n)`: the inverse Herbrand function never lowers a unit depth. -/
-theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
-  exact (psiNat_strictMono K L).id_le n
+theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n :=
+  (psiNat_strictMono K L).id_le n
 
 /-- `ψℕ_{L/K}(n) ≤ i` exactly when `n ≤ ⌊φ_{L/K}(i)⌋`: on natural numbers the integral inverse
 Herbrand function is the lower adjoint of `i ↦ ⌊φ_{L/K}(i)⌋`. In particular
@@ -417,46 +418,16 @@ unshifted ones. -/
 theorem psiNat_le_iff_le_floor_herbrand {n i : ℕ} :
     psiNat K L n ≤ i ↔
       n ≤ ⌊(herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ : ℝ)⌋₊ := by
-  have h0 : (0 : ℝ) ≤ herbrand K L ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ := by
-    have hle : (⟨(0 : ℕ), Nat.cast_mem_ramificationIndexDomain 0⟩ : RamificationIndexDomain) ≤
-        ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩ :=
-      Subtype.mk_le_mk.2 (Nat.cast_le.2 i.zero_le)
-    have h := (herbrand_strictMono K L).monotone hle
-    rw [herbrand_of_coe_le_zero K L (by simp)] at h
-    simpa using Subtype.coe_le_coe.2 h
-  have h := (herbrandOrderIso K L).symm_apply_le (y := ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩)
-    (x := ⟨i, Nat.cast_mem_ramificationIndexDomain i⟩)
-  rw [herbrandOrderIso_apply, herbrandOrderIso_symm_apply, ← Subtype.coe_le_coe,
-    ← Subtype.coe_le_coe] at h
-  rw [Nat.le_floor_iff h0, ← Nat.cast_le (α := ℝ), coe_psiNat]
-  exact h
+  rw [psiNat_eq_isLocalRing_psiNat, coe_herbrand_eq_herbrandFun, Subtype.coe_mk,
+    TauCeti.IsLocalRing.psiNat_le_iff_le_floor_herbrandFun]
 
 /-- `ψℕ_{L/K}(v) = v` exactly when `G_v = G_0`, that is when the lower filtration is constant
 through `v`. -/
 @[simp]
 theorem psiNat_eq_self_iff {v : ℕ} :
     psiNat K L v = v ↔ lowerRamificationGroup K L v = lowerRamificationGroup K L 0 := by
-  have hle : ∀ i : ℕ, lowerRamificationGroup K L i ≤ lowerRamificationGroup K L 0 := fun i ↦
-    lowerRamificationGroup_antitone K L (Int.natCast_nonneg i)
-  rw [psiNat_eq_iff]
-  constructor
-  · intro h
-    rcases v with _ | k
-    · simp
-    -- `#G_1 + ⋯ + #G_k ≤ k #G_0`, so `#G_{k+1} ≥ #G_0`.
-    have hk := Finset.sum_le_card_nsmul (Finset.Icc 1 k)
-      (fun i : ℕ ↦ Nat.card (lowerRamificationGroup K L i)) _
-      fun i _ ↦ Subgroup.card_le_of_le (hle i)
-    rw [Finset.sum_Icc_succ_top (by omega)] at h
-    simp only [Nat.card_Icc, Nat.add_sub_cancel, smul_eq_mul] at hk
-    exact Subgroup.eq_of_le_of_card_ge (hle _) (by rw [add_mul, one_mul] at h; omega)
-  · intro hv
-    calc ∑ i ∈ Finset.Icc 1 v, Nat.card (lowerRamificationGroup K L i)
-        = ∑ _i ∈ Finset.Icc 1 v, Nat.card (lowerRamificationGroup K L 0) := by
-          refine Finset.sum_congr rfl fun i hi ↦ ?_
-          have hi : (i : ℤ) ≤ v := by have := (Finset.mem_Icc.1 hi).2; omega
-          rw [le_antisymm (hle i) (hv.symm.le.trans (lowerRamificationGroup_antitone K L hi))]
-      _ = v * Nat.card (lowerRamificationGroup K L 0) := by simp
+  rw [psiNat_eq_isLocalRing_psiNat, TauCeti.IsLocalRing.psiNat_eq_self_iff,
+    lowerRamificationGroup_def, lowerRamificationGroup_def]
 
 /-- If the lower filtration is constant through `t` and trivial after `t`, that is `G_t = G_0`
 and `G_{t+1} = 1`, then `ψℕ_{L/K}(v) = t + #G_0 · (v - t)` for every `v ≥ t`. For a totally
@@ -466,23 +437,10 @@ theorem psiNat_eq_add_card_mul_sub {t v : ℕ}
     (ht : lowerRamificationGroup K L t = lowerRamificationGroup K L 0)
     (ht' : lowerRamificationGroup K L (t + 1 : ℕ) = ⊥) (hv : t ≤ v) :
     psiNat K L v = t + Nat.card (lowerRamificationGroup K L 0) * (v - t) := by
-  set g₀ := Nat.card (lowerRamificationGroup K L 0)
-  -- `#G_1 + ⋯ + #G_m = t #G_0 + (m - t)` for `m ≥ t`.
-  have hsum : ∀ m, t ≤ m →
-      ∑ i ∈ Finset.Icc 1 m, Nat.card (lowerRamificationGroup K L i) = t * g₀ + (m - t) := by
-    intro m hm
-    induction m, hm using Nat.le_induction with
-    | base =>
-      rw [(psiNat_eq_iff K L).1 ((psiNat_eq_self_iff K L).2 ht), Nat.sub_self, add_zero]
-    | succ m hm ih =>
-      have hbot : lowerRamificationGroup K L (m + 1 : ℕ) = ⊥ := le_bot_iff.1 <|
-        (lowerRamificationGroup_antitone K L (by push_cast; omega)).trans ht'.le
-      rw [Finset.sum_Icc_succ_top (by omega), ih, hbot, Subgroup.card_bot]
-      omega
-  refine (psiNat_eq_iff K L).2 ((hsum _ (by omega)).trans ?_)
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hv
-  simp only [Nat.add_sub_cancel_left]
-  ring
+  rw [lowerRamificationGroup_def, lowerRamificationGroup_def] at ht
+  rw [lowerRamificationGroup_def] at ht'
+  rw [psiNat_eq_isLocalRing_psiNat, lowerRamificationGroup_def]
+  exact TauCeti.IsLocalRing.psiNat_eq_add_card_mul_sub (L ≃ₐ[K] L) 𝒪[L] ht ht' hv
 
 /-- At a natural number `n`, the upper ramification group is the lower ramification group at the
 natural number `ψℕ_{L/K}(n)`: `G^n = G_{ψ(n)}`. -/

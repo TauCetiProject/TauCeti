@@ -62,8 +62,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   preimage.
 * `Subgroup.normal_subgroupOf_map_range`, `AddSubgroup.normal_addSubgroupOf_map_range`: the image
   of a normal subgroup is normal in the range of the homomorphism.
-* `Subgroup.map_quotientGroupMap_map_mk'`: taking images in quotients commutes with the maps
-  induced on quotients.
+* `Subgroup.map_quotientGroupMap_map_mk'`, `Subgroup.comap_quotientGroupMap_map_mk'`: taking images
+  and preimages in quotients along the maps induced on quotients.
 * `QuotientGroup.map_mk'_eq_top`, `QuotientAddGroup.map_mk'_eq_top`: the image of `K` in `G ⧸ N`
   is everything exactly when `N ⊔ K = ⊤`.
 * `TauCeti.QuotientGroup.injective_mapComap`, `TauCeti.QuotientGroup.surjective_mapComap_iff`:
@@ -422,6 +422,29 @@ theorem _root_.Subgroup.map_quotientGroupMap_map_mk' (R : Subgroup G) {N : Subgr
       (QuotientGroup.mk' M).comp f :=
     MonoidHom.ext fun x ↦ QuotientGroup.map_mk' N M f h x
   rw [Subgroup.map_map, Subgroup.map_map, hf]
+
+/-- Pulling back the image in `H ⧸ M` of a subgroup `R ≤ H` along `QuotientGroup.map N M f h` gives
+the image in `G ⧸ N` of `R.comap f`, provided `M ≤ N.map f` (so `N.map f = M`). -/
+@[to_additive /-- Pulling back the image in `H ⧸ M` of an additive subgroup `R ≤ H` along
+`QuotientAddGroup.map N M f h` gives the image in `G ⧸ N` of `R.comap f`, provided `M ≤ N.map f`
+(so `N.map f = M`). -/]
+theorem _root_.Subgroup.comap_quotientGroupMap_map_mk' (R : Subgroup H) {N : Subgroup G}
+    {M : Subgroup H} [N.Normal] [M.Normal] (f : G →* H) (h : N ≤ M.comap f)
+    (hM : M ≤ N.map f) :
+    (R.map (QuotientGroup.mk' M)).comap (QuotientGroup.map N M f h) =
+      (R.comap f).map (QuotientGroup.mk' N) := by
+  ext x
+  induction x using QuotientGroup.induction_on with | H g =>
+  simp only [Subgroup.mem_comap, QuotientGroup.map_mk, Subgroup.mem_map, QuotientGroup.mk'_apply,
+    QuotientGroup.eq]
+  refine ⟨?_, fun ⟨g₁, hg₁, hgg₁⟩ ↦
+    ⟨f g₁, hg₁, by simpa only [Subgroup.mem_comap, map_mul, map_inv] using h hgg₁⟩⟩
+  rintro ⟨r, hr, hrg⟩
+  obtain ⟨k, hk, hfk⟩ := hM hrg
+  refine ⟨g * k⁻¹, ?_, by simpa [mul_assoc] using hk⟩
+  have hfr : f (g * k⁻¹) = r := by
+    rw [map_mul, map_inv, hfk, mul_inv_rev, inv_inv, mul_inv_cancel_left]
+  rwa [hfr]
 
 /-- The image of `K` in `G ⧸ N` is everything exactly when `N` and `K` together generate `G`.
 The group analogue of Mathlib's `Submodule.map_mkQ_eq_top`. -/
