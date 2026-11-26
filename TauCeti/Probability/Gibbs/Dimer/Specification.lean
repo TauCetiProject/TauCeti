@@ -427,8 +427,9 @@ theorem IsDimerGibbs.lintegral_dimerBoltzmann_setOf_forall_mem_eq {w : G.edgeSet
   classical
   have hC : MeasurableSet {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e} := by
     convert SymbolicDynamics.FullShift.measurableSet_cylinder (E \ F) ω using 1
+    rw [SymbolicDynamics.FullShift.cylinder_eq_setOf]
     ext θ
-    simp [SymbolicDynamics.FullShift.cylinder]
+    simp [Finset.mem_sdiff]
   calc ∫⁻ η, G.dimerBoltzmann w F η.val {ζ | ∀ e ∈ E, ζ e = ω e} ∂μ.comap Subtype.val
       = ∫⁻ η, {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e}.indicator
           (fun _ => ENNReal.ofReal (G.dimerWeight w F ω / G.dimerPartitionFunction w F ω))
@@ -484,7 +485,7 @@ theorem IsDimerGibbs.isGibbs_comap_val {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < 
   · -- no dimer configuration has the pattern `p`: both sides vanish
     have hnull : MeasureTheory.cylinder (α := fun _ : G.edgeSet => Bool) E {p} ⊆
         {ω | ¬ G.IsDimerConfiguration ω} :=
-      fun η hη hD => hp ⟨η, hD, hη⟩
+      fun η hη hD => hp ⟨η, hD, by simpa [mem_cylinder] using hη⟩
     rw [measure_mono_null hnull hμ.measure_setOf_not_isDimerConfiguration]
     exact (lintegral_congr fun η : G.dimerSubshift Γ hΓ => measure_mono_null hnull
       (dimerBoltzmann_setOf_not_isDimerConfiguration w F η.val)).trans lintegral_zero
