@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.NumberTheory.LSeries.Injectivity
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.Meromorphic.Order
 
@@ -51,6 +52,8 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   everywhere a positive meromorphic order `n` is the same as `analyticOrderNatAt` equal to `n`.
 * `DirichletCharacter.re_lt_one_of_LFunction_eq_zero`: every zero of `χ.LFunction` away from the
   simple pole `(s = 1, χ = 1)` satisfies `s.re < 1`.
+* `DirichletCharacter.eq_of_LFunction_eq`: a Dirichlet character is determined by its
+  `L`-function on `Re s > 1`.
 
 ## References
 
@@ -248,5 +251,24 @@ theorem meromorphicOrderAt_LFunction_eq_natCast_iff {s : ℂ} {n : ℕ} (hn : n 
 theorem re_lt_one_of_LFunction_eq_zero {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) (h : χ.LFunction s = 0) :
     s.re < 1 :=
   not_le.mp fun hs ↦ χ.LFunction_ne_zero_of_one_le_re h1.symm hs h
+
+/-- **A Dirichlet character is determined by its `L`-function.** Two Dirichlet characters of the
+same level whose `L`-functions agree on `Re s > 1` are equal, since a Dirichlet series determines
+its coefficients. -/
+theorem eq_of_LFunction_eq {ψ : DirichletCharacter ℂ N}
+    (h : ∀ s : ℂ, 1 < s.re → χ.LFunction s = ψ.LFunction s) : χ = ψ := by
+  have hcoef (n : ℕ) (hn : n ≠ 0) : χ n = ψ n := by
+    refine LSeries.eq_of_LSeries_eventually_eq (f := fun n ↦ χ n) (g := fun n ↦ ψ n) ?_ ?_ ?_ hn
+    · rw [abscissaOfAbsConv_eq_one (NeZero.ne N)]
+      exact EReal.coe_lt_top 1
+    · rw [abscissaOfAbsConv_eq_one (NeZero.ne N)]
+      exact EReal.coe_lt_top 1
+    · filter_upwards [eventually_gt_atTop 1] with x hx
+      rw [← LFunction_eq_LSeries _ (by simpa using hx),
+        ← LFunction_eq_LSeries _ (by simpa using hx), h _ (by simpa using hx)]
+  refine MulChar.ext' fun a ↦ ?_
+  have ha : ((a.val + N : ℕ) : ZMod N) = a := by simp
+  rw [← ha]
+  exact hcoef _ (by have := NeZero.pos N; omega)
 
 end DirichletCharacter

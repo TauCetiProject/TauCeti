@@ -21,6 +21,7 @@ import TauCeti.MeasureTheory.Function.Lp.FrechetKolmogorov
 import TauCeti.MeasureTheory.Integral.Rectangle
 import TauCeti.MeasureTheory.Measure.Haar.Prod
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
+import TauCeti.Topology.Algebra.Order.Floor
 
 /-!
 # The Sobolev space `W^{1,2}` on the cylinder and Peetre's argument
@@ -85,6 +86,11 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   `TauCeti.StripSobolev.finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le`.
   The estimate is stated in the form proved for the linearized Floer operator in
   `TauCeti.Geometry.Symplectic.Floer.SemiFredholm`.
+* **Periodization.** A `C²` map with compact support in the open strip `ℝ × (0, 1)`, read through
+  the fractional part of `t`, is a test section
+  (`TauCeti.CylinderSobolev.comp_fract_mem_testSection`) that agrees with the map near every point
+  of the open strip (`TauCeti.apply_fract_snd_eventuallyEq_self`). The open strip carries the
+  strip measure (`TauCeti.StripSobolev.stripMeasure_eq_restrict_univ_prod_Ioo`).
 * **Translation in `s`.** Translation in `s` commutes with a first-order operator, the coefficient
   field being translated too (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so its right
   inverses on `W^{1,2}` translate with the same norm
@@ -233,6 +239,31 @@ theorem comp_add_right_mem_testSection (hξ : ξ ∈ testSection V) (a : ℝ) :
   have := abs_add_le (s + a) (-a)
   rw [add_neg_cancel_right, abs_neg] at this
   simpa using hR (s + a) t (by linarith)
+
+/-- **Periodizing a map supported in the open strip.** A `C²` map `ξ` with compact support in the
+open strip `ℝ × (0, 1)`, read through the fractional part `Int.fract` of `t`, is a test section.
+On the open strip it agrees with `ξ` near every point
+(`TauCeti.apply_fract_snd_eventuallyEq_self`). -/
+theorem comp_fract_mem_testSection (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
+    (hξS : tsupport ξ ⊆ univ ×ˢ Ioo (0 : ℝ) 1) :
+    (fun z : ℝ × ℝ ↦ ξ (z.1, Int.fract z.2)) ∈ testSection V := by
+  -- `ξ` vanishes within `δ` of the two boundary lines of the strip, for some `δ > 0`, so it is
+  -- periodic in `t` near `0`.
+  obtain ⟨δ, hδ, hδS⟩ := hξc.isCompact.exists_cthickening_subset_open
+    (isOpen_univ.prod isOpen_Ioo) hξS
+  have hper (s : ℝ) {t : ℝ} (ht₀ : -δ < t) (ht : t < 0) : ξ (s, t + 1) = ξ (s, t) := by
+    have h₁ : (s, t + 1) ∉ tsupport ξ := fun h ↦ lt_irrefl (1 : ℝ)
+      (hδS (mem_cthickening_of_dist_le (s, 1) (s, t + 1) δ _ h (by
+        simpa [Prod.dist_eq, Real.dist_eq, abs_of_neg ht] using ⟨hδ.le, by linarith⟩))).2.2
+    have h₂ : (s, t) ∉ tsupport ξ := fun h ↦ (hξS h).2.1.not_gt ht
+    rw [image_eq_zero_of_notMem_tsupport h₁, image_eq_zero_of_notMem_tsupport h₂]
+  obtain ⟨R, -, hR⟩ := hξc.exists_pos_le_norm
+  refine ⟨contDiff_iff_contDiffAt.2 fun z ↦ ?_, fun s t ↦ by simp only [Int.fract_add_one], R,
+    fun s t hs ↦ hR _ ?_⟩
+  · exact (hξ.comp (contDiff_fst.prodMk (contDiff_snd.sub contDiff_const))).contDiffAt
+      |>.congr_of_eventuallyEq (apply_fract_snd_eventuallyEq hδ hper z)
+  · rw [Prod.norm_def, Real.norm_eq_abs]
+    exact hs.trans (le_max_left _ _)
 
 /-- The test sections are invariant under translation in the `s` direction. -/
 instance : IsTranslationInvariant (testSection V) :=

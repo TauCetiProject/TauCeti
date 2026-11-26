@@ -85,10 +85,11 @@ diagonal matrix `diag(w)` the quadratic form `x ↦ ⟪x, diag(w) x⟫` is `x �
 * the actions of the unitary and special unitary groups on the unit sphere of Euclidean space by
   matrix-vector multiplication (`Matrix.UnitaryGroup.coe_smul_unitSphere`,
   `Matrix.coe_specialUnitaryGroup_smul_unitSphere`), which are jointly continuous;
-* `Matrix.toEuclideanCLM_apply_apply`, `Matrix.toEuclideanLin_single_basisFun`,
-  `Matrix.toEuclideanCLM_single_basisFun` — the coordinate and matrix-unit formulas for the
-  continuous linear map of a matrix, which depends continuously on the matrix
-  (`Matrix.continuous_toEuclideanCLM`) and conversely (`Matrix.continuous_toEuclideanCLM_symm`);
+* `Matrix.toEuclideanCLM_apply_apply`, `Matrix.toEuclideanCLM_apply_single`,
+  `Matrix.toEuclideanLin_single_basisFun`, `Matrix.toEuclideanCLM_single_basisFun` — the coordinate,
+  column, and matrix-unit formulas for the continuous linear map of a matrix, which depends
+  continuously on the matrix (`Matrix.continuous_toEuclideanCLM`) and conversely
+  (`Matrix.continuous_toEuclideanCLM_symm`);
 * `Matrix.toEuclideanCLM_apply_toEuclideanCLM_nonsing_inv_apply` — the map of an invertible
   matrix undoes the map of its inverse;
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
@@ -119,6 +120,13 @@ theorem toEuclideanCLM_symm_eq_toMatrix {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype
   apply Matrix.toEuclideanLin.injective
   rw [← Matrix.coe_toEuclideanCLM_eq_toEuclideanLin, StarAlgEquiv.apply_symm_apply,
     Matrix.toEuclideanLin_eq_toLin_orthonormal, Matrix.toLin_toMatrix]
+
+/-- The matrix of a continuous linear map has entries given by its action on coordinate units. -/
+@[simp] theorem toEuclideanCLM_symm_apply_single {ι 𝕜 : Type*} [RCLike 𝕜] [Fintype ι]
+    [DecidableEq ι] (T : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) (i j : ι) :
+    (Matrix.toEuclideanCLM (𝕜 := 𝕜)).symm T i j = T (EuclideanSpace.single j 1) i := by
+  rw [toEuclideanCLM_symm_eq_toMatrix, LinearMap.toMatrix_apply]
+  simp
 
 end ContinuousLinearMap
 
@@ -234,6 +242,13 @@ theorem toEuclideanCLM_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι
 theorem toEuclideanCLM_apply_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι) (i : ι) :
     toEuclideanCLM (𝕜 := 𝕜) A x i = ∑ j, A i j * x j := by
   simp [mulVec, dotProduct]
+
+/-- A matrix operator sends a coordinate unit vector to the corresponding column. -/
+theorem toEuclideanCLM_apply_single (A : Matrix ι ι 𝕜) (j : ι) :
+    toEuclideanCLM (𝕜 := 𝕜) A (EuclideanSpace.single j 1) =
+      WithLp.toLp 2 (fun i => A i j) := by
+  rw [toEuclideanCLM_apply, toLpLin_apply, PiLp.ofLp_single,
+    Matrix.mulVec_single_one, Matrix.col_apply']
 
 /-- The Euclidean linear map of a matrix unit `Matrix.single i j c` sends the standard orthonormal
 basis vector `e_k` to `c • e_i` when `k = j` and `0` otherwise. -/

@@ -23,7 +23,7 @@ the group-scheme isomorphism `TauCeti.ConstantForm.groupSchemeCongr` along the b
 isomorphisms `TauCeti.ConstantForm.groupSchemeBaseChangeIso`
 (`TauCeti.ConstantForm.map_groupSchemeCongr_hom_comp_groupSchemeBaseChangeIso_hom`), obtained
 from the coordinate form by
-`TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality`.
+`TauCeti.AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality_inv`.
 
 The proof specializes the naturality of quotient isomorphisms under base change
 (`TauCeti.CommHopfAlgCat.baseChangeMap_quotientIsoOfComapEq_hom_comp`)
@@ -93,13 +93,7 @@ theorem map_groupSchemeCongr_hom_comp_groupSchemeBaseChangeIso_hom (P : GL (Fin 
   rw [groupSchemeCongr_def, groupSchemeCongr_def, groupSchemeBaseChangeIso_def,
     groupSchemeBaseChangeIso_def, GeneralLinear.hopfIdealBaseChangeIso_def,
     GeneralLinear.hopfIdealBaseChangeIso_def]
-  refine AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality
-    (coordinateHopfAlgebraCongr P hP).inv
-    (coordinateHopfAlgebraCongr (GeneralLinearGroup.map (algebraMap R K) P) hP').inv
-    (coordinateHopfAlgebraBaseChangeIso h₁) (coordinateHopfAlgebraBaseChangeIso h₂) ?_
-  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_hom] at hS
-  rw [← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.mapIso_inv]
-  exact (CommSq.horiz_inv ⟨hS⟩).w
+  exact AffineGroupSchemeCat.hopfSpecBaseChangeGrpIso_trans_hom_naturality_inv _ _ _ _ hS
 
 end GroupScheme
 
