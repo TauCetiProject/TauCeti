@@ -21,6 +21,9 @@ In any semiring, multiplication by a positive integer `n` is injective if and on
 multiplication by each prime factor of `n` is
 (`TauCeti.isSMulRegular_natCast_iff_forall_mem_primeFactors`). So torsion-freeness at finitely many
 primes gives torsion-freeness at every integer built from them.
+
+On a module over a semiring `R`, multiplication by the image `(n : R)` of a natural number is
+multiplication by `n`, so the two are injective together (`TauCeti.isSMulRegular_natCast_iff`).
 -/
 
 public section
@@ -49,5 +52,11 @@ theorem isSMulRegular_natCast_iff_forall_mem_primeFactors {R : Type*} [Semiring 
       fun p hp ↦ ?_
     rw [Nat.cast_pow]
     exact (h p hp).pow _
+
+/-- On an `R`-module, multiplication by `(n : R)` is injective if and only if multiplication by the
+natural number `n` is. -/
+theorem isSMulRegular_natCast_iff {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {n : ℕ} : IsSMulRegular M (n : R) ↔ IsSMulRegular M n :=
+  Iff.of_eq (congrArg Function.Injective (funext fun m ↦ Nat.cast_smul_eq_nsmul R n m))
 
 end TauCeti
