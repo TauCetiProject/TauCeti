@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequence
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.AlexanderSpanier.Basic
 
 /-!
@@ -25,8 +26,9 @@ cohomology is the **relative Alexander–Spanier cohomology** `H^n(X, A; M)`
 
 The short exact sequence `0 ⟶ C^*(X, A; M) ⟶ C^*(X; M) ⟶ C^*(A; M) ⟶ 0`
 (`TauCeti.AlexanderSpanier.shortExact_shortComplex`) gives the connecting morphism
-`H^n(A; M) ⟶ H^{n+1}(X, A; M)` (`TauCeti.AlexanderSpanier.connectingHom`) and the **long exact
-sequence of the pair**
+`H^n(A; M) ⟶ H^{n+1}(X, A; M)` (`TauCeti.AlexanderSpanier.connectingHom`), computed on
+cocycles by the coboundary of a lift (`TauCeti.AlexanderSpanier.connectingHom_homologyπ`), and the
+**long exact sequence of the pair**
 
 `⋯ ⟶ H^n(X, A; M) ⟶ H^n(X; M) ⟶ H^n(A; M) ⟶ H^{n+1}(X, A; M) ⟶ ⋯`,
 
@@ -83,11 +85,11 @@ instance : Epi (restriction R M A) :=
 
 /-- The **relative Alexander–Spanier cochain complex** `C^*(X, A; M)`: the kernel of the
 restriction `C^*(X; M) ⟶ C^*(A; M)`. -/
-@[expose] def relativeCochainComplex : CochainComplex (ModuleCat.{max u v} R) ℕ :=
+def relativeCochainComplex : CochainComplex (ModuleCat.{max u v} R) ℕ :=
   kernel (restriction R M A)
 
 /-- The inclusion `C^*(X, A; M) ⟶ C^*(X; M)` of the relative cochains. -/
-@[expose] def relativeCochainComplexι : relativeCochainComplex R M A ⟶ cochainComplex R X M :=
+def relativeCochainComplexι : relativeCochainComplex R M A ⟶ cochainComplex R X M :=
   kernel.ι (restriction R M A)
 
 instance : Mono (relativeCochainComplexι R M A) :=
@@ -138,8 +140,36 @@ abbrev relativeCohomologyMap (n : ℕ) : relativeCohomology R M A n ⟶ cohomolo
   HomologicalComplex.homologyMap (relativeCochainComplexι R M A) n
 
 /-- The **connecting morphism** `H^n(A; M) ⟶ H^{n+1}(X, A; M)` of the pair `(X, A)`. -/
-@[expose] def connectingHom (n : ℕ) : cohomology R A M n ⟶ relativeCohomology R M A (n + 1) :=
+def connectingHom (n : ℕ) : cohomology R A M n ⟶ relativeCohomology R M A (n + 1) :=
   (shortExact_shortComplex R M A).δ n (n + 1) (by simp)
+
+/-- Restricting to `A` and then applying the connecting morphism is zero. -/
+@[reassoc (attr := simp)]
+lemma cohomologyMap_subtypeVal_comp_connectingHom (n : ℕ) :
+    cohomologyMap R M (ContinuousMap.subtypeVal A) n ≫ connectingHom R M A n = 0 :=
+  (shortExact_shortComplex R M A).comp_δ n (n + 1) (by simp)
+
+/-- The connecting morphism followed by the map to `H^{n+1}(X; M)` is zero. -/
+@[reassoc (attr := simp)]
+lemma connectingHom_comp_relativeCohomologyMap (n : ℕ) :
+    connectingHom R M A n ≫ relativeCohomologyMap R M A (n + 1) = 0 :=
+  (shortExact_shortComplex R M A).δ_comp n (n + 1) (by simp)
+
+variable {R M A} in
+/-- The **connecting morphism on cocycles**. Let `z` be an `n`-cocycle on `A`, `x` an `n`-cochain on
+`X` restricting to `z` (for instance an extension by zero, see `restriction_f_surjective`), and `z'`
+a relative `(n + 1)`-cocycle whose image in `C^{n+1}(X; M)` is the coboundary of `x`. Then the
+connecting morphism sends the class of `z` to the class of `z'`. -/
+lemma connectingHom_homologyπ {n : ℕ} (z : (cochainComplex R A M).cycles n)
+    (x : (cochainComplex R X M).X n)
+    (hx : ((restriction R M A).f n).hom x = ((cochainComplex R A M).iCycles n).hom z)
+    (z' : (relativeCochainComplex R M A).cycles (n + 1))
+    (hz' : ((relativeCochainComplexι R M A).f (n + 1)).hom
+        (((relativeCochainComplex R M A).iCycles (n + 1)).hom z') =
+      ((cochainComplex R X M).d n (n + 1)).hom x) :
+    (connectingHom R M A n).hom (((cochainComplex R A M).homologyπ n).hom z) =
+      ((relativeCochainComplex R M A).homologyπ (n + 1)).hom z' :=
+  (shortExact_shortComplex R M A).moduleCat_δ_homologyπ n (n + 1) (by simp) z x hx z' hz'
 
 /-- **Exactness at `H^n(X; M)`** of the long exact sequence of the pair: the kernel of restriction
 to `A` is the image of the relative cohomology. -/
@@ -154,14 +184,14 @@ theorem exact_cohomologyMap_subtypeVal (n : ℕ) :
 connecting morphism is the image of restriction from `X`. -/
 theorem exact_connectingHom (n : ℕ) :
     (ShortComplex.mk (cohomologyMap R M (ContinuousMap.subtypeVal A) n) (connectingHom R M A n)
-      ((shortExact_shortComplex R M A).comp_δ n (n + 1) (by simp))).Exact :=
+      (cohomologyMap_subtypeVal_comp_connectingHom R M A n)).Exact :=
   (shortExact_shortComplex R M A).homology_exact₃ n (n + 1) (by simp)
 
 /-- **Exactness at `H^{n+1}(X, A; M)`** of the long exact sequence of the pair: the kernel of the
 map to `H^{n+1}(X; M)` is the image of the connecting morphism. -/
 theorem exact_relativeCohomologyMap (n : ℕ) :
     (ShortComplex.mk (connectingHom R M A n) (relativeCohomologyMap R M A (n + 1))
-      ((shortExact_shortComplex R M A).δ_comp n (n + 1) (by simp))).Exact :=
+      (connectingHom_comp_relativeCohomologyMap R M A n)).Exact :=
   (shortExact_shortComplex R M A).homology_exact₁ n (n + 1) (by simp)
 
 end TauCeti.AlexanderSpanier

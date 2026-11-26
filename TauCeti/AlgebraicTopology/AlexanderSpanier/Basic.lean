@@ -243,13 +243,13 @@ lemma cochainComplex_linearMap_ext {n : ℕ} {N : Type*} [AddCommGroup N] [Modul
     (h : ∀ φ, f (cochainClass R X M n φ) = g (cochainClass R X M n φ)) : f = g :=
   Submodule.linearMap_qext _ (LinearMap.ext h)
 
-variable (R X M) in
-/-- The differential of the Alexander–Spanier cochain complex is the alternating sum of the cofaces
-of the Alexander–Spanier cosimplicial module. -/
-lemma cochainComplex_d (n : ℕ) :
-    (cochainComplex R X M).d n (n + 1) =
-      ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • (cosimplicialModule R X M).δ i :=
-  AlternatingCofaceMapComplex.obj_d_eq _ n
+/-- The coface `δⁱ` of the Alexander–Spanier cosimplicial module sends the class of `φ` to the class
+of `(x₀, …, x_{n+1}) ↦ φ(x₀, …, xᵢ₋₁, xᵢ₊₁, …, x_{n+1})`. -/
+@[simp]
+lemma cosimplicialModule_δ_cochainClass {n : ℕ} (i : Fin (n + 2)) (φ : (Fin (n + 1) → X) → M) :
+    ((cosimplicialModule R X M).δ i).hom (cochainClass R X M n φ) =
+      cochainClass R X M (n + 1) fun y ↦ φ (y ∘ Fin.succAbove i) :=
+  (rfl)
 
 /-- The **differential** of the Alexander–Spanier cochain complex on the class of a function `φ`
 is the class of `(x₀, …, x_{n+1}) ↦ ∑ᵢ (-1)ⁱ φ(x₀, …, xᵢ₋₁, xᵢ₊₁, …, x_{n+1})`. -/
@@ -267,11 +267,10 @@ theorem cochainComplex_d_cochainClass (n : ℕ) (φ : (Fin (n + 1) → X) → M)
         ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • ((cosimplicialModule R X M).δ i).hom x := by
     simp
   rw [hφ, map_sum]
-  simp_rw [map_zsmul]
-  -- The degree `n` cochains of the complex are by definition the cosimplicial degree `n` module,
-  -- on which the cofaces act on representatives by precomposition with `Fin.succAbove i`.
-  exact (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (cochainComplex_d R X M n)) _).trans
-    (hsum _)
+  simp_rw [map_zsmul, ← cosimplicialModule_δ_cochainClass]
+  -- The degree `n` cochains of the complex are by definition the cosimplicial degree `n` module.
+  exact (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
+    (AlternatingCofaceMapComplex.obj_d_eq (cosimplicialModule R X M) n)) _).trans (hsum _)
 
 variable (R X M) in
 /-- **Alexander–Spanier cohomology** `H^n(X; M)`. -/
@@ -452,15 +451,16 @@ lemma cohomologyMap_zero_comp_cohomologyZeroIso_hom {Y : Type u} [TopologicalSpa
     (f : C(Y, X)) :
     cohomologyMap R M f 0 ≫ (cohomologyZeroIso R Y M).hom =
       (cohomologyZeroIso R X M).hom ≫ ModuleCat.ofHom (LocallyConstant.comapₗ R f) := by
-  rw [← Iso.inv_comp_eq, ← Category.assoc, ← Iso.eq_comp_inv, cohomologyZeroIso_inv,
-    cohomologyZeroIso_inv, Category.assoc, HomologicalComplex.homologyπ_naturality,
-    ← Category.assoc, ← Category.assoc]
-  congr 1
-  rw [← cancel_mono ((cochainComplex R Y M).iCycles 0)]
-  simp only [Category.assoc, HomologicalComplex.cyclesMap_i, cyclesZeroIso_inv_iCycles,
-    cyclesZeroIso_inv_iCycles_assoc]
-  ext ψ
-  rfl
+  have h : (cyclesZeroIso R X M).inv ≫ HomologicalComplex.cyclesMap (cochainComplexMap R M f) 0 =
+      ModuleCat.ofHom (LocallyConstant.comapₗ R f) ≫ (cyclesZeroIso R Y M).inv := by
+    rw [← cancel_mono ((cochainComplex R Y M).iCycles 0)]
+    simp only [Category.assoc, HomologicalComplex.cyclesMap_i, cyclesZeroIso_inv_iCycles,
+      cyclesZeroIso_inv_iCycles_assoc]
+    ext ψ
+    simp [cochainComplexMap_f_cochainClass, locallyConstantToCochains_apply]
+  rw [← Iso.inv_comp_eq, ← Category.assoc, ← Iso.eq_comp_inv]
+  simp only [cohomologyZeroIso_inv, Category.assoc, HomologicalComplex.homologyπ_naturality,
+    reassoc_of% h]
 
 end DegreeZero
 
