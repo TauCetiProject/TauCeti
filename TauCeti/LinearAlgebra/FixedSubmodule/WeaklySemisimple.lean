@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RingTheory.OrzechProperty
 public import TauCeti.LinearAlgebra.FixedSubmodule
+public import TauCeti.LinearAlgebra.Pi
+public import TauCeti.LinearAlgebra.Pi.Map
 public import TauCeti.LinearAlgebra.Semisimple
 
 /-!
@@ -208,31 +210,11 @@ is. The index type need not be finite. -/
 theorem isWeaklySemisimple_piMap_iff {ι : Type*} {W : ι → Type*} [∀ i, AddCommGroup (W i)]
     [∀ i, Module R (W i)] (g : ∀ i, End R (W i)) :
     IsWeaklySemisimple (LinearMap.piMap g) ↔ ∀ i, (g i).IsWeaklySemisimple := by
-  classical
-  have hsub (w : ∀ i, W i) (i : ι) : (LinearMap.piMap g - 1) w i = (g i - 1) (w i) := by
+  have hsub : LinearMap.piMap g - 1 = LinearMap.piMap fun i ↦ g i - 1 := by
+    ext
     simp
-  simp only [isWeaklySemisimple_iff_isCompl, isCompl_iff, Submodule.disjoint_def,
-    codisjoint_iff_exists_add_eq, mem_fixedSubmodule_iff, LinearMap.mem_range, forall_and]
-  refine and_congr ⟨fun h i x hx ⟨y, hy⟩ ↦ ?_, fun h w hw ⟨y, hy⟩ ↦ ?_⟩
-    ⟨fun h i x ↦ ?_, fun h w ↦ ?_⟩
-  · -- A fixed vector in the range of `g i - 1` gives one for the product, supported at `i`.
-    have hfix : LinearMap.piMap g (Pi.single i x) = Pi.single i x := funext fun j ↦ by
-      rcases eq_or_ne j i with rfl | hj
-      · simpa using hx
-      · simp [hj]
-    have := h (Pi.single i x) hfix ⟨Pi.single i y, funext fun j ↦ ?_⟩
-    · simpa using congrFun this i
-    · rcases eq_or_ne j i with rfl | hj
-      · simpa [hsub] using hy
-      · simp [hsub, hj]
-  · exact funext fun i ↦ h i (w i) (congrFun hw i) ⟨y i, by rw [← hsub, hy]⟩
-  · obtain ⟨u, v, hu, ⟨y, rfl⟩, huv⟩ := h (Pi.single i x)
-    exact ⟨u i, (g i - 1) (y i), congrFun hu i, ⟨y i, rfl⟩, by
-      simpa [hsub] using congrFun huv i⟩
-  · choose u v hu hv huv using fun i ↦ h i (w i)
-    choose y hy using hv
-    exact ⟨u, LinearMap.piMap g y - y, funext hu, ⟨y, rfl⟩, funext fun i ↦ by
-      simpa [← hy] using huv i⟩
+  simp only [isWeaklySemisimple_iff_isCompl, fixedSubmodule_eq_ker, ← one_eq_id, hsub, ker_piMap,
+    range_piMap, Submodule.isCompl_pi_univ_iff]
 
 end Ring
 
