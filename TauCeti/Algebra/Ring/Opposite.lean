@@ -34,3 +34,15 @@ instance opOpRingHomInvPairSymm (A : Type*) [Semiring A] :
   RingHomInvPair.of_ringEquiv_symm (RingEquiv.opOp A)
 
 end TauCeti
+
+namespace RingHom
+
+/-- A ring homomorphism is surjective on opposite rings exactly when it is surjective
+on the original rings. -/
+@[simp]
+theorem surjective_op_iff {R S : Type*} [Semiring R] [Semiring S] (f : R →+* S) :
+    Function.Surjective f.op ↔ Function.Surjective f :=
+  ⟨fun h ↦ MulOpposite.unop_surjective.comp (h.comp MulOpposite.op_surjective),
+    fun h ↦ MulOpposite.op_surjective.comp (h.comp MulOpposite.unop_surjective)⟩
+
+end RingHom
