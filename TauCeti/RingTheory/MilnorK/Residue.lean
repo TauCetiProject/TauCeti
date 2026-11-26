@@ -77,6 +77,9 @@ since `Π y = (-1) ^ (n - 1) y Π` for `y ∈ K_{n-1}ᴹ(k)`, his residue is `(-
 
 * C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, Graduate Studies in
   Mathematics 145 (2013), Theorem III.7.3 and its proof, Exercises III.7.1 and III.7.10.
+* C. A. Weibel, *Corrections to The K-book*, errata list for the published version, entry for
+  p. 280, Exercise III.7.1: the residue is independent of the uniformizer, the specialization is
+  not.
 * J. Milnor, *Algebraic K-theory and quadratic forms*, Invent. Math. 9 (1970), 318–344, Lemma 2.1,
   where the construction is attributed to Serre.
 -/
@@ -326,8 +329,9 @@ theorem milnorResidue_eq_milnorResidue : v.milnorResidue t' ht' = v.milnorResidu
 
 /-- **The specialization depends on the uniformizer**: if `t' = c t` with `c` a unit of the
 valuation ring, then `λ_{t'}(x) = λ_t(x) - ∂_v(x) {γ}`, where `γ`, the residue of `c`, is the
-reduced unit part of `t'` relative to `t`. Weibel's Exercise III.7.1 asserts that the
-specialization does not depend on the uniformizer; this formula corrects it: over `ℚ` at `5`,
+reduced unit part of `t'` relative to `t`. As printed, Weibel's Exercise III.7.1 asserts that
+the specialization does not depend on the uniformizer; Weibel's errata to the K-book correct this
+to the statement that only the residue is independent of it. For instance, over `ℚ` at `5`,
 `λ_5{5} = {1} = 0` but `λ_{10}{5} = {2⁻¹} = {3} ≠ 0` in `K_1ᴹ(𝔽₅)`. -/
 theorem milnorSpecialization_eq_sub_milnorResidue_mul (x : MilnorK F) :
     v.milnorSpecialization t' ht' x =
@@ -350,9 +354,9 @@ uniformizer `-t`; on degree one it sends `{u tᵐ}` to `{(-1)ᵐ ū}`. -/
 theorem rho_serreMap (x : MilnorK F) :
     SerreAlgebra.rho (v.serreMap t ht x) =
       v.milnorSpecialization (-t) (by simpa using ht) x := by
-  rw [v.milnorSpecialization_eq_sub_milnorResidue_mul t ht, SerreAlgebra.rho_apply,
-    milnorSpecialization_apply, milnorResidue_apply, unitPartResidue_neg, unitPartResidue_self,
-    sub_eq_add_neg, ← mul_neg, neg_ofUnit_neg_one]
+  rw [v.milnorSpecialization_eq_sub_milnorResidue_mul t ht]
+  simp [SerreAlgebra.rho_apply, milnorSpecialization_apply, milnorResidue_apply,
+    unitPartResidue_neg, sub_eq_add_neg, ← mul_neg, neg_ofUnit_neg_one]
 
 /-- **The product formula for the residue**:
 `∂_v(x y) = λ_t(x) ∂_v(y) + ∂_v(x) σ(ρ_t(y))`, where `σ` is the grade involution and
@@ -417,9 +421,8 @@ theorem milnorResidue_symbol_cons {l : List Fˣ} (hl : ∀ f ∈ l, v.ord (f : F
     List.map_congr_left fun f hf ↦ by
       rw [unitPartResidue_of_ord_eq_zero _ _ _ (hl f hf),
         unitPartResidue_of_ord_eq_zero _ _ _ (hl f hf)]
-  rw [symbol_cons, milnorResidue_mul, v.milnorResidue_symbol_of_forall_ord_eq_zero t ht hl,
-    mul_zero, zero_add, milnorResidue_ofUnit, ht, milnorSpecialization_symbol, hmap,
-    involute_symbol, List.length_map, Int.cast_one, one_mul]
+  rw [symbol_cons, milnorResidue_mul, v.milnorResidue_symbol_of_forall_ord_eq_zero t ht hl]
+  simp [milnorResidue_ofUnit, ht, milnorSpecialization_symbol, hmap, involute_symbol]
 
 /-! ### Surjectivity -/
 
