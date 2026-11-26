@@ -37,8 +37,8 @@ nilpotent, and an idempotent of this form is `0` or `F(e)`
 * `TauCeti.IsPrimitiveIdempotent.isNilpotent_mul_of_apply_eq_zero`: for a primitive idempotent
   `e` of a commutative Artinian `k`-algebra and a `k`-algebra homomorphism `φ` with `φ(e) = 1`,
   `x e` is nilpotent whenever `φ(x) = 0`.
-* `IsIdempotentElem.eq_zero_or_eq_of_eq_algebraMap_mul_add`: an idempotent `c β + m`, with `β` a
-  nonzero idempotent and `m` nilpotent with `m β = m`, is `0` or `β`.
+* `IsIdempotentElem.eq_zero_or_eq_of_eq_algebraMap_mul_add`: an idempotent `c β + m`, with `β`
+  idempotent and `m` nilpotent with `m β = m`, is `0` or `β`.
 * `TauCeti.IsPrimitiveIdempotent.map_of_span_eq_top`: such an `e` stays
   primitive under a ring homomorphism `F`, compatible with a field homomorphism `k → k'`, whose
   image spans the target over `k'`, provided `F e ≠ 0`.
@@ -95,12 +95,17 @@ theorem IsPrimitiveIdempotent.isNilpotent_mul_of_apply_eq_zero [IsArtinianRing A
   rw [mul_pow, he.isIdempotentElem.pow_succ_eq, pow_succ', mul_assoc, hxn, mul_zero]
 
 /-- **Idempotents of a corner with nilpotent radical.** In a commutative `K`-algebra `A`, let `β`
-be a nonzero idempotent and `e` an idempotent of the form `e = c β + m` with `c ∈ K`, `m`
+be an idempotent and `e` an idempotent of the form `e = c β + m` with `c ∈ K`, `m`
 nilpotent and `m β = m`. Then `e` is `0` or `β`. -/
 theorem _root_.IsIdempotentElem.eq_zero_or_eq_of_eq_algebraMap_mul_add {K : Type*} [Field K]
-    [Algebra K A] {β e m : A} (hβ : IsIdempotentElem β) (hβ0 : β ≠ 0) (he : IsIdempotentElem e)
+    [Algebra K A] {β e m : A} (hβ : IsIdempotentElem β) (he : IsIdempotentElem e)
     {c : K} (hm : IsNilpotent m) (hmβ : m * β = m) (he' : e = algebraMap K A c * β + m) :
     e = 0 ∨ e = β := by
+  -- If `β = 0`, then `m = m β = 0`, so `e = 0`.
+  obtain rfl | hβ0 := eq_or_ne β 0
+  · left
+    rw [he', ← hmβ]
+    simp
   -- `(c² - c) β = m (1 - 2c - m)` is nilpotent, so `c² = c`, and idempotents differing by a
   -- nilpotent element are equal.
   have hcβ : IsNilpotent (algebraMap K A (c * c - c) * β) := by
@@ -171,6 +176,6 @@ theorem IsPrimitiveIdempotent.map_of_span_eq_top [IsArtinianRing A]
   refine isPrimitiveIdempotent_of_eq_zero_or_eq hβ h0 fun x hx hβx _ => ?_
   obtain ⟨c, m, hm, hmβ, hxc⟩ := key x
   rw [hβx] at hxc
-  exact hβ.eq_zero_or_eq_of_eq_algebraMap_mul_add h0 hx hm hmβ hxc
+  exact hβ.eq_zero_or_eq_of_eq_algebraMap_mul_add hx hm hmβ hxc
 
 end TauCeti
