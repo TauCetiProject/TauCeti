@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Ray
 public import TauCeti.Analysis.Contour.Residue.Basic
 import Mathlib.Analysis.Convex.TriangleEquality
 import TauCeti.Analysis.Contour.Residue.Germ
+import TauCeti.Analysis.Meromorphic.Basic
 import TauCeti.Analysis.Meromorphic.Order
 
 /-!
@@ -39,7 +40,8 @@ theorem meromorphicOrderAt_sum_lt_zero_iff_of_pairwise_sameRay {ι : Type*} {s :
     meromorphicOrderAt (∑ i ∈ s, f i) z < 0 ↔ ∃ i ∈ s, meromorphicOrderAt (f i) z < 0 := by
   have hpole i (hi : i ∈ s) := meromorphicOrderAt_lt_zero_iff_residue_ne_zero (hf i hi) (hord i hi)
   rw [meromorphicOrderAt_lt_zero_iff_residue_ne_zero (MeromorphicAt.sum hf)
-    (le_meromorphicOrderAt_sum hf hord), residue_sum s hf]
+    (le_meromorphicOrderAt_sum hf hord),
+    residue_sum s fun i hi ↦ (hf i hi).eventually_differentiableAt]
   constructor
   · intro hsum
     obtain ⟨i, hi, hres⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum

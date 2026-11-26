@@ -118,13 +118,12 @@ theorem argumentPrinciple_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {U :
     ∫ t in a..b, deriv γ t • logDeriv f (γ t)
       = 2 * (Real.pi : ℂ) * Complex.I * ∑ z ∈ S, windingNumber γ a b z * (ord z : ℂ) := by
   -- Off `S` the function is analytic and non-vanishing, so its logarithmic derivative is
-  -- holomorphic there; at a point of `S` it is meromorphic, being `deriv f / f`.
+  -- holomorphic there.
   have hdiff : DifferentiableOn ℂ (logDeriv f) (U \ (↑S : Set ℂ)) := fun z hz =>
     ((hoff z hz.1 hz.2).1.logDeriv
       (hoff z hz.1 hz.2).2).differentiableAt.differentiableWithinAt
-  have hmeroL : ∀ s ∈ S, s ∈ U → MeromorphicAt (logDeriv f) s := fun s hs hsU =>
-    (hmero s hs hsU).deriv.div (hmero s hs hsU)
-  rw [classicalResidueTheorem_nullHomologous hU hdiff hmeroL hγ hγU hclosed hγoff hnull]
+  rw [classicalResidueTheorem_nullHomologous hU hdiff hγ hγU hclosed hγoff hnull]
+  simp only [smul_eq_mul]
   congr 1
   refine Finset.sum_congr rfl fun s hs => ?_
   by_cases hsU : s ∈ U

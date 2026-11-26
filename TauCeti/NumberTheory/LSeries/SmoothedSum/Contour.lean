@@ -102,14 +102,12 @@ private lemma contour_hypotheses {G : ℂ → ℂ} {r : ℂ} {x σ₀ σ₁ T : 
       (hpole s hs.2).differentiableAt).mul (hM s hs.1.1.1.le).differentiableAt).mul
       (hpow s hs.1.1.1.le)).differentiableWithinAt
 
-/-- The integrand `(G(s) + r/(s - 1)) · mellin χ_ε s · xˢ` is meromorphic at `1`, with residue
-`r · mellin χ_ε 1 · x`, when `G` is complex differentiable on an open rectangle containing `1`. -/
+/-- The integrand `(G(s) + r/(s - 1)) · mellin χ_ε s · xˢ` has residue `r · mellin χ_ε 1 · x` at `1`
+when `G` is complex differentiable on an open rectangle containing `1`. -/
 private lemma residue_one {G : ℂ → ℂ} {r : ℂ} {x σ₀ σ₁ T : ℝ}
     (hνs : Function.support ν ∩ Ioi 0 ⊆ Icc (1 / 2) 2)
     (hνi : IntegrableOn (fun x ↦ ν x / x) (Ioi 0)) (hε : 0 < ε)
     (hGd : DifferentiableOn ℂ G (Ioo σ₁ σ₀ ×ℂ Ioo (-T) T)) (h1 : 1 ∈ Ioo σ₁ σ₀ ×ℂ Ioo (-T) T) :
-    MeromorphicAt (fun s ↦ (G s + r / (s - 1)) *
-      mellin (fun y ↦ (smoothCutoff ν ε y : ℂ)) s * (x : ℂ) ^ s) 1 ∧
     Contour.residue (fun s ↦ (G s + r / (s - 1)) *
       mellin (fun y ↦ (smoothCutoff ν ε y : ℂ)) s * (x : ℂ) ^ s) 1 =
       r * mellin (fun y ↦ (smoothCutoff ν ε y : ℂ)) 1 * x := by
@@ -119,8 +117,6 @@ private lemma residue_one {G : ℂ → ℂ} {r : ℂ} {x σ₀ σ₁ T : ℝ}
   have hpd : DifferentiableOn ℂ (fun s : ℂ ↦ (x : ℂ) ^ s) {s : ℂ | 0 < s.re} := fun s hs ↦
     (differentiableAt_id.const_cpow (Or.inr fun h ↦ by simp_all)).differentiableWithinAt
   have hpow := hpd.analyticAt hH
-  have hp : MeromorphicAt (fun s : ℂ ↦ r / (s - 1)) 1 := by fun_prop
-  refine ⟨((hG.meromorphicAt.add hp).mul hM.meromorphicAt).mul hpow.meromorphicAt, ?_⟩
   have h := Contour.residue_add_div_sub_mul_of_analyticAt (r := r) hG (hM.mul hpow)
   simpa only [Pi.mul_apply, mul_assoc, cpow_one] using h
 
@@ -173,11 +169,10 @@ theorem tsum_mul_smoothCutoff_eq_residue_add_contour {a : ℕ → ℂ} {G f : �
     (Continuous.aestronglyMeasurable (by fun_prop)) (c := x ^ σ₀)
     (Eventually.of_forall fun t ↦ by simp [norm_cpow_eq_rpow_re_of_pos hx])).congr
     (Eventually.of_forall hline)
-  obtain ⟨hmer, hres⟩ := residue_one (r := r) (x := x) hνs hνi hε hGd h1
+  have hres := residue_one (r := r) (x := x) hνs hνi hε hGd h1
   have hshift := Contour.integral_vertical_eq_uShaped_symm_add_two_pi_mul_sum_residue
     (P := {1}) (hσ₁1.trans hσ₀).le hT.le (by simpa using h1)
-    (by rw [Finset.coe_singleton]; exact hc) (by rw [Finset.coe_singleton]; exact hd)
-    (by simpa using hmer) hint
+    (by rw [Finset.coe_singleton]; exact hc) (by rw [Finset.coe_singleton]; exact hd) hint
   rw [Finset.sum_singleton, hres] at hshift
   -- the smoothed sum is `(2π)⁻¹` times the integral over the line `Re s = σ₀`
   have hcpow (t : ℝ) : ((x⁻¹ : ℝ) : ℂ) ^ (-((σ₀ : ℂ) + t * I)) = (x : ℂ) ^ ((σ₀ : ℂ) + t * I) := by

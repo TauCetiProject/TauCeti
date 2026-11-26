@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Meromorphic.OrderFiltration
 public import TauCeti.Analysis.Contour.Residue.SimplePole
+import TauCeti.Analysis.Meromorphic.Basic
 
 /-!
 # Residues on meromorphic germs
@@ -46,7 +47,7 @@ theorem residue_eq_zero_iff_of_neg_one_le (hf : MeromorphicAt f a)
       rw [ho] at hpos
       have hj : 0 < 1 + j := by exact_mod_cast hpos
       exact_mod_cast (by omega : 0 ≤ j)
-  · exact residue_eq_zero_of_meromorphicOrderAt_nonneg
+  · exact residue_eq_zero_of_meromorphicOrderAt_nonneg hf
 
 /-- A function with at most a simple pole has a pole exactly when its residue is nonzero. -/
 theorem meromorphicOrderAt_lt_zero_iff_residue_ne_zero (hf : MeromorphicAt f a)
@@ -67,7 +68,7 @@ def residue (a : ℂ) : meromorphicGerms ℂ a →ₗ[ℂ] ℂ where
     obtain ⟨f, hf, rfl⟩ := exists_mk φ
     obtain ⟨g, hg, rfl⟩ := exists_mk ψ
     rw [← mk_add hf hg, coe_mk, coe_mk, coe_mk]
-    exact Contour.residue_add hf hg
+    exact Contour.residue_add hf.eventually_differentiableAt hg.eventually_differentiableAt
   map_smul' c φ := by
     obtain ⟨f, hf, rfl⟩ := exists_mk φ
     rw [← mk_smul c hf, coe_mk, coe_mk]

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Contour.Argument.Cycle
 public import TauCeti.Analysis.Contour.Argument.CyclePV
 public import TauCeti.Analysis.Contour.Cauchy.HomologyFormula
 public import TauCeti.Analysis.Contour.Cycle.HungerbuhlerWasem
-public import TauCeti.Analysis.Contour.Cycle.Residue
 public import TauCeti.Analysis.Contour.Winding.StarConvex
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.StarConvex
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
@@ -34,8 +33,8 @@ in which star-shapedness of the domain discharges the null-homology hypothesis:
   `Metric.ball` case;
 * Cauchy's integral formula `n_z(γ) · f(z) = (2πi)⁻¹ ∮_γ f/(· − z)` in every derivative order, for
   a curve, and its `Metric.ball` case;
-* the classical residue theorem `∮_γ f = 2πi · Σ_s n_s(γ) · Res_s f` for poles off the curve, for a
-  curve and for a cycle;
+* the classical residue theorem `∮_γ f = 2πi · Σ_s n_s(γ) · Res_s f` for isolated singularities
+  off the curve, for a curve and for a cycle;
 * the argument principle, in the ordinary and the principal-value (zeros **on** the curve) forms,
   for a curve;
 * the Hungerbühler–Wasem generalized residue theorem in its unconditional simple-pole regime,
@@ -195,22 +194,22 @@ theorem cauchyIntegralFormula_ball {c : ℂ} {r : ℝ} {z : ℂ}
     Metric.isOpen_ball hf hγ hγr hclosed hoff
 
 /-- **The classical residue theorem on a star-shaped open set.** Let `Ω` be open and star-shaped
-about `x`, `S` a finite set, `f` holomorphic on `Ω ∖ S` and meromorphic at each point of `S` lying
-in `Ω`, and let `γ` be a closed absolutely continuous curve in `Ω` avoiding `S`. Then
+about `x`, `S` a finite set, `f` holomorphic on `Ω ∖ S` with values in a complex normed space, and
+let `γ` be a closed absolutely continuous curve in `Ω` avoiding `S`. Then
 
 `∫ t in a..b, γ' t • f (γ t) = 2πi · ∑_{s ∈ S} n_s(γ) · Res_s f`.
 
 Unlike `TauCeti.Contour.classicalResidueTheorem_circle`, the curve is arbitrary and the poles need
 not be enclosed: a pole in a component of the complement that `γ` does not wind around simply gets
 weight `0`. -/
-theorem classicalResidueTheorem_starConvex {S : Finset ℂ} (hstar : StarConvex ℝ x Ω)
+theorem classicalResidueTheorem_starConvex {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℂ → E} {S : Finset ℂ} (hstar : StarConvex ℝ x Ω)
     (hopen : IsOpen Ω) (hf : DifferentiableOn ℂ f (Ω \ (↑S : Set ℂ)))
-    (hmero : ∀ s ∈ S, s ∈ Ω → MeromorphicAt f s)
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω)
     (hclosed : γ a = γ b) (hoff : ∀ t ∈ uIcc a b, γ t ∉ (↑S : Set ℂ)) :
     ∫ t in a..b, deriv γ t • f (γ t)
-      = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber γ a b s * residue f s :=
-  classicalResidueTheorem_nullHomologous hopen hf hmero hγ hγΩ hclosed hoff
+      = (2 * (Real.pi : ℂ) * Complex.I) • ∑ s ∈ S, windingNumber γ a b s • residue f s :=
+  classicalResidueTheorem_nullHomologous hopen hf hγ hγΩ hclosed hoff
     (hγ.isNullHomologous_of_starConvex hstar hclosed hγΩ)
 
 /-- **The argument principle on a star-shaped open set.** For `f` analytic and non-vanishing on an
@@ -304,16 +303,16 @@ theorem cauchyTheorem_starConvex (hstar : StarConvex ℝ x Ω) (hopen : IsOpen �
   homologyCauchyTheorem hopen hCΩ hf (isNullHomologous_of_starConvex hstar hCΩ)
 
 /-- **The classical residue theorem for a cycle in a star-shaped open set.** For `f` holomorphic on
-`Ω ∖ S` and meromorphic at each point of `S` lying in the open, star-shaped `Ω`, and a contour
-cycle `C` in `Ω` whose trace avoids `S`,
+`Ω ∖ S`, with `Ω` open and star-shaped and `S` finite, and a contour cycle `C` in `Ω` whose trace
+avoids `S`,
 
 `∮_C f = 2πi · ∑_{s ∈ S} n_s(C) · Res_s f`. -/
-theorem classicalResidueTheorem_starConvex {S : Finset ℂ} (hstar : StarConvex ℝ x Ω)
+theorem classicalResidueTheorem_starConvex {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : ℂ → E} {S : Finset ℂ} (hstar : StarConvex ℝ x Ω)
     (hopen : IsOpen Ω) (hf : DifferentiableOn ℂ f (Ω \ (↑S : Set ℂ)))
-    (hmero : ∀ s ∈ S, s ∈ Ω → MeromorphicAt f s)
     (hCΩ : IsIn C Ω) (hoff : ∀ s ∈ S, s ∉ trace C) :
-    integral f C = 2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s :=
-  TauCeti.Contour.Cycle.classicalResidueTheorem_nullHomologous hopen hf hmero hCΩ hoff
+    integral f C = (2 * (Real.pi : ℂ) * Complex.I) • ∑ s ∈ S, windingNumber s C • residue f s :=
+  TauCeti.Contour.Cycle.classicalResidueTheorem_nullHomologous hopen hf hCΩ hoff
     (isNullHomologous_of_starConvex hstar hCΩ)
 
 /-- **The generalized residue theorem for a cycle in a star-shaped open set, simple-pole regime.**

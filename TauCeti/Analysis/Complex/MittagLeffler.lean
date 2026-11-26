@@ -9,9 +9,9 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.NormalForm
 public import TauCeti.Analysis.Meromorphic.PrincipalPart
 import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Complex.Runge.Laurent
+import TauCeti.Analysis.Meromorphic.Basic
 import TauCeti.Analysis.Normed.Module.Exhaustion
 import TauCeti.Topology.Codiscrete
 
@@ -567,7 +567,7 @@ theorem exists_meromorphic_prescribed_principal_parts
         ∀ᶠ z in 𝓝[≠] a.val, f z - P a z = g z) ∧
       DifferentiableOn ℂ f (Ω \ E) := by
   have hP' : ∀ a : E, ∀ᶠ z in 𝓝[≠] a.val, DifferentiableAt ℂ (P a) z :=
-    fun a => (hP a).eventually_analyticAt.mono fun _ hz => hz.differentiableAt
+    fun a => (hP a).eventually_differentiableAt
   obtain ⟨Ω₀, hΩ₀, hΩΩ₀, hE₀⟩ := exists_isOpen_superset_compl_mem_codiscreteWithin hEΩ hE
   obtain ⟨f, hf⟩ := exists_hasPrescribedSingularities_of_isOpen hΩ₀ (hEΩ.trans hΩΩ₀) hE₀ P hP'
   exact ⟨f, (hf.meromorphicOn hΩ₀ hE₀ hP).mono_set hΩΩ₀, hf.2,

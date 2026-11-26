@@ -75,7 +75,8 @@ the window bound, cannot have positive real residue. The real-centred coefficien
 real: only the real part of the reflected coefficient is bounded. -/
 theorem residue_re_nonpos_of_window_taylor_bound {F : ℂ → ℂ}
     {x β r R : ℝ} (hF : DifferentiableOn ℂ F (ball (x : ℂ) r \ {(β : ℂ)}))
-    (hβ : β < x) (hd : x - β < min r R) (hp : -1 ≤ meromorphicOrderAt F (β : ℂ))
+    (hβ : β < x) (hd : x - β < min r R) (hm : MeromorphicAt F β)
+    (hp : -1 ≤ meromorphicOrderAt F (β : ℂ))
     (hupper : ∀ η : ℝ, 0 < η → ∃ C : ℝ, ∀ U₀ : ℝ, ∃ U ≥ U₀, ∃ k : ℕ,
       U ≤ (k : ℝ) ∧
         ((-1) ^ k * (iteratedDeriv k F x / (k ! : ℂ))).re ≤ C * Real.exp (η * U) / R ^ k) :
@@ -84,7 +85,7 @@ theorem residue_re_nonpos_of_window_taylor_bound {F : ℂ → ℂ}
   obtain ⟨hdr, hdR⟩ := lt_min_iff.1 hd
   have hnegative : meromorphicOrderAt F (β : ℂ) < 0 := by
     by_contra! hnonneg
-    simp [Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg hnonneg] at hc
+    simp [Contour.residue_eq_zero_of_meromorphicOrderAt_nonneg hm hnonneg] at hc
   have hord : meromorphicOrderAt F (β : ℂ) = -1 := by
     obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 hnegative.ne_top
     rw [← hn] at hp hnegative ⊢

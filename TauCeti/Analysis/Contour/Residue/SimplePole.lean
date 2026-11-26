@@ -162,7 +162,7 @@ theorem tendsto_sub_mul_nhds_residue (hf : MeromorphicAt f z₀)
     Tendsto (fun z => (z - z₀) * f z) (𝓝[≠] z₀) (𝓝 (residue f z₀)) := by
   rcases eq_neg_one_or_zero_le hord with hpole | hge
   · exact tendsto_sub_mul_nhds_residue_of_order_eq_neg_one hpole
-  · rw [residue_eq_zero_of_meromorphicOrderAt_nonneg hge]
+  · rw [residue_eq_zero_of_meromorphicOrderAt_nonneg hf hge]
     obtain ⟨c, hc⟩ := tendsto_nhds_of_meromorphicOrderAt_nonneg hf hge
     have hsub : Tendsto (fun z : ℂ => z - z₀) (𝓝[≠] z₀) (𝓝 0) := by
       have h0 : Tendsto (fun z : ℂ => z - z₀) (𝓝 z₀) (𝓝 0) := by

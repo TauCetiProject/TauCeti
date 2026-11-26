@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Argument.Principle
 public import TauCeti.Analysis.Contour.Residue.SimplePole
+import TauCeti.Analysis.Meromorphic.Basic
 
 /-!
 # The residue of the logarithmic derivative is the meromorphic order
@@ -73,7 +74,9 @@ theorem residue_logDeriv_eq_meromorphicOrderAt {f : ℂ → ℂ} {z₀ : ℂ} {n
   rw [residue_congr_nhdsNE hgerm,
     show (fun z => (n : ℂ) * (z - z₀)⁻¹ + logDeriv g z)
         = (fun z => (n : ℂ) * (z - z₀)⁻¹) + logDeriv g from rfl,
-    residue_add hA hB, residue_const_mul_sub_inv, residue_eq_zero_of_analyticAt hlogg_an, add_zero]
+    residue_add hA.eventually_differentiableAt hB.eventually_differentiableAt,
+    residue_const_mul_sub_inv,
+    residue_eq_zero_of_analyticAt hlogg_an, add_zero]
 
 end TauCeti.Contour
 

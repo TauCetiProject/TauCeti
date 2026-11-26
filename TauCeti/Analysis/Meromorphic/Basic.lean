@@ -8,14 +8,15 @@ module
 public import Mathlib.Analysis.Meromorphic.Basic
 
 /-!
-# Basic properties of domain-restricted meromorphic functions
+# Basic properties of meromorphic functions
 
 `Mathlib.Analysis.Meromorphic.Basic` proves `Meromorphic.measurable` for functions meromorphic on
 the whole field `𝕜`. Functions meromorphic only on a subset `s : Set 𝕜`—such as an open disc or an
 interior circle where boundary singularities prevent a global meromorphic extension—still restrict
 to Borel-measurable maps on `s`: the analytic locus in `s` is open in the subspace topology and its
 complement in `s` is countable by `MeromorphicOn.countable_compl_analyticAt_inter`. This file
-records domain-restricted measurability and sphere-restriction helpers for `MeromorphicOn`.
+records domain-restricted measurability and sphere-restriction helpers for `MeromorphicOn`, and that
+a function meromorphic at a point is differentiable on a punctured neighbourhood of it.
 
 ## Main results
 
@@ -25,11 +26,19 @@ records domain-restricted measurability and sphere-restriction helpers for `Mero
   landing in `s` yields a measurable function.
 * `MeromorphicOn.sphere_abs_of_closedBall`: if `f` is meromorphic on `Metric.closedBall c r` with
   `0 ≤ r`, then `f` is meromorphic on `Metric.sphere c |r|`.
+* `MeromorphicAt.eventually_differentiableAt`: a function meromorphic at `x` is differentiable on a
+  punctured neighbourhood of `x`.
 -/
 
 public section
 
-open Set
+open Set Topology
+
+/-- A function meromorphic at `x` is differentiable on a punctured neighbourhood of `x`. -/
+theorem MeromorphicAt.eventually_differentiableAt {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E] {f : 𝕜 → E} {x : 𝕜}
+    (hf : MeromorphicAt f x) : ∀ᶠ z in 𝓝[≠] x, DifferentiableAt 𝕜 f z :=
+  hf.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt
 
 /-- If `f` is meromorphic on `s`, its restriction `s.domRestrict f` to the subtype `s` is
 measurable. Adapts `Meromorphic.measurable` in `Mathlib.Analysis.Meromorphic.Basic` from the whole

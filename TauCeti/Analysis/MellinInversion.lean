@@ -145,16 +145,15 @@ theorem norm_mellinInv_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
         simp_rw [hnorm, integral_const_mul]
         ring
 
-/-- **Shifting a Mellin inversion contour across poles.** Let `σ₀ ≤ σ₁` and `x ≥ 0`. Suppose `f` is
-analytic on `σ₀ ≤ Re z ≤ σ₁` away from a finite set `S` contained in `σ₀ < Re z < σ₁`, meromorphic
-at each point of `S`, and vertically integrable on `Re z = σ₀` and `Re z = σ₁`. If the horizontal
+/-- **Shifting a Mellin inversion contour across singularities.** Let `σ₀ ≤ σ₁` and `x ≥ 0`.
+Suppose `f` is analytic on `σ₀ ≤ Re z ≤ σ₁` away from a finite set `S` contained in
+`σ₀ < Re z < σ₁`, and vertically integrable on `Re z = σ₀` and `Re z = σ₁`. If the horizontal
 segment integrals of `z ↦ x^{-z} f(z)` at heights `±T` tend to `0` as `T → +∞`, then
 `mellinInv σ₁ f x - mellinInv σ₀ f x` equals the sum of the residues of `z ↦ x^{-z} f(z)` over
 `S`. -/
 theorem mellinInv_sub_mellinInv_eq_sum_residue
     {f : ℂ → ℂ} {S : Finset ℂ} {σ₀ σ₁ x : ℝ} (hσ : σ₀ ≤ σ₁) (hx : 0 ≤ x)
     (hf : ∀ z : ℂ, z.re ∈ Icc σ₀ σ₁ → z ∉ S → AnalyticAt ℂ f z)
-    (hmero : ∀ s ∈ S, MeromorphicAt f s)
     (hS : ∀ s ∈ S, s.re ∈ Ioo σ₀ σ₁)
     (hint₀ : VerticalIntegrable f σ₀) (hint₁ : VerticalIntegrable f σ₁)
     (hbot : Tendsto
@@ -180,7 +179,6 @@ theorem mellinInv_sub_mellinInv_eq_sum_residue
     (fun z hz ↦ ((hcpow z).mul (hf z hz.1 hz.2)).continuousAt.continuousWithinAt)
     (fun z hz ↦ ((hcpow z).mul
       (hf z (Ioo_subset_Icc_self hz.1) hz.2)).differentiableAt.differentiableWithinAt)
-    (fun s hs ↦ (hcpow s).meromorphicAt.mul (hmero s hs))
     (by simpa only [smul_eq_mul] using hint₁.integrable_cpow_smul hx)
     (by simpa only [smul_eq_mul] using hint₀.integrable_cpow_smul hx)
     htop hbot'
@@ -196,7 +194,6 @@ integrals vanish and
 theorem mellinInv_eq_mellinInv_add_sum_residue_of_norm_le
     {f : ℂ → ℂ} {S : Finset ℂ} {σ₀ σ₁ x : ℝ} {B : ℝ → ℝ} (hσ : σ₀ ≤ σ₁) (hx : 0 ≤ x)
     (hf : ∀ z : ℂ, z.re ∈ Icc σ₀ σ₁ → z ∉ S → AnalyticAt ℂ f z)
-    (hmero : ∀ s ∈ S, MeromorphicAt f s)
     (hS : ∀ s ∈ S, s.re ∈ Ioo σ₀ σ₁)
     (hint₀ : VerticalIntegrable f σ₀) (hint₁ : VerticalIntegrable f σ₁)
     (hB : Tendsto B atTop (𝓝 0))
@@ -227,7 +224,7 @@ theorem mellinInv_eq_mellinInv_add_sum_residue_of_norm_le
         exact mul_le_mul (hcpow (by simpa [hre T u] using hu') (hTim u)) (hTB u hu')
           (norm_nonneg _) hM0
   rw [← sub_eq_iff_eq_add']
-  refine mellinInv_sub_mellinInv_eq_sum_residue hσ hx hf hmero hS hint₀ hint₁ ?_ ?_
+  refine mellinInv_sub_mellinInv_eq_sum_residue hσ hx hf hS hint₀ hint₁ ?_ ?_
   · simpa only [sub_eq_add_neg] using hseg (s := fun T ↦ -(T * I)) (by simp)
       ((eventually_ne_atTop (0 : ℝ)).mono fun T hT u ↦ by simpa using hT)
       (hbound.mono fun T hT u hu ↦ (hT u hu).2)

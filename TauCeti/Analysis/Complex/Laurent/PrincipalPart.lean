@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Laurent.Expansion
-public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.RegularEval
-import TauCeti.Analysis.Contour.Residue.PrincipalPart
 import TauCeti.Topology.Algebra.Polynomial.HasSum
 
 /-!
@@ -18,8 +16,7 @@ This file bridges analytic Laurent series expansions on concentric annuli and pu
 (`TauCeti.HasLaurentSeriesOnAnnulus`, `TauCeti.circleLaurentCoeff`, `TauCeti.laurentPosPart`,
 `TauCeti.laurentNegPart`) with the algebraic principal-part / regular-part decomposition of
 meromorphic germs over `ℂ` (`TauCeti.meromorphicGerms.principalPart`,
-`TauCeti.holomorphicStructureSheaf.regularPart`, `TauCeti.holomorphicStructureSheaf.regularEval`)
-and contour residues (`TauCeti.Contour.residue`).
+`TauCeti.holomorphicStructureSheaf.regularPart`, `TauCeti.holomorphicStructureSheaf.regularEval`).
 
 While `TauCeti.meromorphicGerms.coeff_principalPart_succ_eq_circleIntegral` computes negative
 Laurent coefficients on sufficiently small circles around `c`, this file establishes the full
@@ -28,7 +25,6 @@ complex-differentiable on `Metric.eball c R \ {c}` and any interior circle radiu
 
 * the negative circle Laurent coefficients `circleLaurentCoeff f c ρ (-(k + 1))` agree with
   `(principalPart φ).coeff (k + 1)`;
-* the `(-1)`-st circle Laurent coefficient equals `Contour.residue f c`;
 * the `0`-th circle Laurent coefficient equals the stalk evaluation at `c` of `regularPart c φ`
   (and `regularEval c φ` when `φ` is regular), both on `Metric.eball c R \ {c}` and on sufficiently
   small circles around `c`;
@@ -45,8 +41,6 @@ complex-differentiable on `Metric.eball c R \ {c}` and any interior circle radiu
 * `TauCeti.meromorphicGerms.circleLaurentCoeff_neg_add_one_eq_coeff_principalPart`: negative circle
   Laurent coefficients on punctured disks compute the coefficients of
   `meromorphicGerms.principalPart`.
-* `TauCeti.circleLaurentCoeff_neg_one_eq_residue`: the `(-1)`-st circle Laurent coefficient on a
-  punctured disk computes `Contour.residue`.
 * `TauCeti.meromorphicGerms.circleLaurentCoeff_zero_eq_eval_regularPart`,
   `TauCeti.meromorphicGerms.eventually_circleLaurentCoeff_zero_eq_eval_regularPart`,
   `TauCeti.holomorphicStructureSheaf.circleLaurentCoeff_zero_eq_regularEval`, and
@@ -265,19 +259,6 @@ theorem laurentPosPart_circleLaurentCoeff_eq_sub_principalPart
   exact eq_sub_of_add_eq hsplit.symm
 
 end meromorphicGerms
-
-/-- If `f` is complex-differentiable on `Metric.eball c R \ {c}` and meromorphic at `c`, then on
-every interior circle of radius `ρ ∈ (0, R)` the `(-1)`-st circle Laurent coefficient equals
-`Contour.residue f c`. -/
-theorem circleLaurentCoeff_neg_one_eq_residue {f : ℂ → ℂ} {c : ℂ} {ρ : ℝ} {R : ℝ≥0∞}
-    (hf : DifferentiableOn ℂ f (eball c R \ {c})) (hm : MeromorphicAt f c)
-    (hρ : 0 < ρ) (hρR : ENNReal.ofReal ρ < R) :
-    circleLaurentCoeff f c ρ (-1) = Contour.residue f c := by
-  let φ : meromorphicGerms ℂ c := ⟨(f : Germ (𝓝[≠] c) ℂ), coe_mem_meromorphicGerms.2 hm⟩
-  have hφ : (φ : Germ (𝓝[≠] c) ℂ) = f := (rfl)
-  have h0 := meromorphicGerms.circleLaurentCoeff_neg_add_one_eq_coeff_principalPart hf hφ hρ hρR 0
-  rw [Nat.cast_zero, zero_add, meromorphicGerms.coeff_principalPart_one_eq_residue hφ] at h0
-  exact h0
 
 namespace holomorphicStructureSheaf
 

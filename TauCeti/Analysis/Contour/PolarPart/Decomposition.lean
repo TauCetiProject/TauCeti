@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Contour.HomologyCauchy
 public import TauCeti.Analysis.Contour.MeromorphicLaurent
 import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
-import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
 # Polar-part decompositions
@@ -271,7 +270,7 @@ noncomputable def ofMeromorphic {f : ℂ → ℂ} {S : Finset ℂ} {U : Set ℂ}
   residue_eq s := by
     rcases Nat.eq_zero_or_pos (meromorphicPolarOrderAt f s) with h0 | hpos
     · rw [dite_eq_right (by omega)]
-      refine residue_eq_zero_of_meromorphicOrderAt_nonneg ?_
+      refine residue_eq_zero_of_meromorphicOrderAt_nonneg (hMero s s.property) ?_
       have hle := neg_meromorphicPolarOrderAt_le f (s : ℂ)
       rw [h0] at hle
       simpa using hle

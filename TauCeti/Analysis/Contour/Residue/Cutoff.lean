@@ -74,12 +74,12 @@ theorem contDiffAt_one_sub_mul_smul_dzForm {n : WithTop ℕ∞} (hχ : ContDiffA
   · exact contDiffAt_const.congr_of_eventuallyEq (one_sub_mul_smul_dzForm_eventuallyEq_zero hχz)
 
 /-- **The residue as the integral of the exterior derivative of a cutoff `1`-form.** Let `f` be
-meromorphic at a point `z₀` of the open disc of radius `R` about `c` and holomorphic at every other
-point of the closed disc, and let `χ` be a real function, `C¹` at every point of the closed disc,
-equal to `1` near `z₀` and vanishing on the boundary circle. Then the integral of
+holomorphic at every point of the closed disc of radius `R` about `c` other than a point `z₀` of the
+open disc, a singularity of any kind, and let `χ` be a real function, `C¹` at every point of the
+closed disc, equal to `1` near `z₀` and vanishing on the boundary circle. Then the integral of
 `d((1 - χ) f dz)` over the disc is `2πi · Res_{z₀} f`. -/
 theorem integral_extDeriv_one_sub_mul_smul_dzForm_closedBall_eq_residue (hz₀ : z₀ ∈ ball c R)
-    (hf : MeromorphicAt f z₀) (hfa : ∀ z ∈ closedBall c R, z ≠ z₀ → AnalyticAt ℂ f z)
+    (hfa : ∀ z ∈ closedBall c R, z ≠ z₀ → AnalyticAt ℂ f z)
     (hχ : ∀ z ∈ closedBall c R, ContDiffAt ℝ 1 χ z) (hχz₀ : χ =ᶠ[𝓝 z₀] 1)
     (hχR : ∀ z ∈ sphere c R, χ z = 0) :
     (∫ z in closedBall c R,
@@ -92,7 +92,7 @@ theorem integral_extDeriv_one_sub_mul_smul_dzForm_closedBall_eq_residue (hz₀ :
     by_cases hzz₀ : z = z₀
     · exact .inr (hzz₀ ▸ hχz₀)
     · exact .inl ((hfa z hz hzz₀).contDiffAt.restrict_scalars ℝ)
-  rw [integral_extDeriv_closedBall hR hω, ← circleIntegral_eq_residue hz₀ hf hfa,
+  rw [integral_extDeriv_closedBall hR hω, ← circleIntegral_eq_residue hz₀ hfa,
     ← integral_neg_pi_pi_eq_circleIntegral]
   refine intervalIntegral.integral_congr fun θ _ ↦ ?_
   simp [hχR _ (circleMap_mem_sphere c hR θ), mul_comm]
@@ -126,12 +126,12 @@ theorem extDeriv_one_sub_mul_smul_dzForm_apply (hχ : DifferentiableAt ℝ χ z)
 `∫_{|z - c| ≤ R} f · (i ∂ₓχ - ∂_yχ) = -2πi · Res_{z₀} f`. Only the region where `χ` is not locally
 constant contributes. -/
 theorem integral_mul_fderiv_sub_fderiv_closedBall_eq_neg_residue (hz₀ : z₀ ∈ ball c R)
-    (hf : MeromorphicAt f z₀) (hfa : ∀ z ∈ closedBall c R, z ≠ z₀ → AnalyticAt ℂ f z)
+    (hfa : ∀ z ∈ closedBall c R, z ≠ z₀ → AnalyticAt ℂ f z)
     (hχ : ∀ z ∈ closedBall c R, ContDiffAt ℝ 1 χ z) (hχz₀ : χ =ᶠ[𝓝 z₀] 1)
     (hχR : ∀ z ∈ sphere c R, χ z = 0) :
     (∫ z in closedBall c R, f z * (I * fderiv ℝ χ z 1 - fderiv ℝ χ z I)) =
       -(2 * π * I * residue f z₀) := by
-  rw [← integral_extDeriv_one_sub_mul_smul_dzForm_closedBall_eq_residue hz₀ hf hfa hχ hχz₀ hχR,
+  rw [← integral_extDeriv_one_sub_mul_smul_dzForm_closedBall_eq_residue hz₀ hfa hχ hχz₀ hχR,
     ← integral_neg]
   refine setIntegral_congr_fun measurableSet_closedBall fun z hz ↦ ?_
   have hfz : DifferentiableAt ℂ f z ∨ χ =ᶠ[𝓝 z] 1 := by
