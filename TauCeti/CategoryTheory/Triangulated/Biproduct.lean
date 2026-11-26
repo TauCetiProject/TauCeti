@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.ObjectProperty.Retract
+public import Mathlib.CategoryTheory.Triangulated.Functor
 public import Mathlib.CategoryTheory.Triangulated.Pretriangulated
+public import TauCeti.CategoryTheory.Triangulated.TriangleIso
 
 /-!
 # Direct summands and sums of triangles in a pretriangulated category
@@ -22,9 +24,13 @@ Facts about binary biproducts in a pretriangulated category `C`.
 * Distinguished triangles are closed under binary direct sums, up to isomorphism of vertices: for
   distinguished `T₁` and `T₂` there is a distinguished triangle whose vertices are the biproducts
   of the corresponding vertices of `T₁` and `T₂`. It is the product triangle of the pair.
+* A distinguished triangle `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧` whose second morphism is invertible on one
+  summand identifies `K` with the other summand: it is isomorphic to a split triangle. The same
+  holds after applying a triangulated functor. This is how a glued object is identified with its
+  pieces.
 
-Both are used to manipulate objects up to direct summands in a dense triangulated subcategory,
-where every object is a summand of an object of the subcategory.
+The first two are used to manipulate objects up to direct summands in a dense triangulated
+subcategory, where every object is a summand of an object of the subcategory.
 
 ## Main results
 
@@ -38,6 +44,16 @@ where every object is a summand of an object of the subcategory.
   property.
 * `CategoryTheory.Pretriangulated.exists_distTriang_iso_biprod`: there is a distinguished triangle
   whose vertices are isomorphic to the vertexwise biproducts of two distinguished triangles.
+* `CategoryTheory.Pretriangulated.isIso_comp_biprod_fst`: in a distinguished triangle
+  `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧` whose second morphism is invertible on `X₂`, the projection
+  `K ⟶ X₁` is an isomorphism; `CategoryTheory.Pretriangulated.isIso_comp_biprod_snd` is the
+  symmetric statement.
+* `CategoryTheory.Functor.map_distTriang_biprod`: the image under a triangulated functor of a
+  distinguished triangle `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧`, with middle vertex rewritten to
+  `F X₁ ⊞ F X₂` through `F.mapBiprod`, is distinguished.
+* `CategoryTheory.Functor.isIso_map_comp_biprod_fst` and
+  `CategoryTheory.Functor.isIso_map_comp_biprod_snd`: the same after applying a triangulated
+  functor, when only the image of the second morphism is invertible on a summand.
 -/
 
 public section
@@ -98,6 +114,98 @@ theorem exists_distTriang_iso_biprod (T₁ T₂ : Triangle C) (h₁ : T₁ ∈ d
   rintro (_ | _)
   exacts [h₁, h₂]
 
+/-- **A distinguished triangle with an invertible summand of its second morphism**: in a
+distinguished triangle `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧` whose second morphism is invertible on the
+summand `X₂`, the first morphism followed by the projection to `X₁` is an isomorphism
+`K ≅ X₁`. The triangle is isomorphic to the split triangle `X₁ ⟶ X₁ ⊞ X₂ ⟶ X₂ ⟶ X₁⟦1⟧`. -/
+theorem isIso_comp_biprod_fst {K X₁ X₂ Y : C} {k : K ⟶ X₁ ⊞ X₂} {Φ : X₁ ⊞ X₂ ⟶ Y}
+    {δ : Y ⟶ K⟦(1 : ℤ)⟧} (hT : Triangle.mk k Φ δ ∈ distTriang C) [IsIso (biprod.inr ≫ Φ)] :
+    IsIso (k ≫ biprod.fst) := by
+  -- The automorphism `b` of `X₁ ⊞ X₂` turns `Φ` into the projection to `X₂`, up to `inr ≫ Φ`.
+  let b : X₁ ⊞ X₂ ⟶ X₁ ⊞ X₂ :=
+    biprod.lift biprod.fst (biprod.snd - biprod.fst ≫ biprod.inl ≫ Φ ≫ inv (biprod.inr ≫ Φ))
+  have hb : IsIso b := ⟨biprod.lift biprod.fst
+    (biprod.snd + biprod.fst ≫ biprod.inl ≫ Φ ≫ inv (biprod.inr ≫ Φ)), by ext <;> simp [b],
+    by ext <;> simp [b]⟩
+  have hΦ : b ≫ Φ = biprod.snd ≫ biprod.inr ≫ Φ := by
+    have : Φ = biprod.fst ≫ biprod.inl ≫ Φ + biprod.snd ≫ biprod.inr ≫ Φ := by
+      simp only [← Category.assoc, ← Preadditive.add_comp, biprod.total, Category.id_comp]
+    conv_lhs => rw [this]
+    simp [b, Preadditive.comp_add, Preadditive.sub_comp]
+  have hT₁ : Triangle.mk biprod.inl (biprod.snd ≫ biprod.inr ≫ Φ) 0 ∈ distTriang C :=
+    isomorphic_distinguished _ (binaryBiproductTriangle_distinguished X₁ X₂) _
+      (Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (asIso (biprod.inr ≫ Φ)).symm (by simp)
+        (by simp [binaryBiproductTriangle]) (by simp [binaryBiproductTriangle]))
+  have hcomm : (biprod.snd ≫ biprod.inr ≫ Φ) ≫ 𝟙 Y = b ≫ Φ := by simpa using hΦ.symm
+  obtain ⟨a, ha, ha'⟩ := complete_distinguished_triangle_morphism₁ _ _ hT₁ hT b (𝟙 Y) hcomm
+  have : IsIso a := isIso₁_of_isIso₂₃ (Triangle.homMk _ _ a b (𝟙 Y) ha hcomm ha') hT₁ hT hb
+    (inferInstanceAs (IsIso (𝟙 Y)))
+  have hfst : k ≫ biprod.fst = inv a := by
+    refine IsIso.eq_inv_of_hom_inv_id ?_
+    dsimp at ha
+    rw [← Category.assoc, ← ha]
+    simp [b]
+  rw [hfst]
+  infer_instance
+
+/-- **A distinguished triangle with an invertible summand of its second morphism**: in a
+distinguished triangle `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧` whose second morphism is invertible on the
+summand `X₁`, the first morphism followed by the projection to `X₂` is an isomorphism
+`K ≅ X₂`. -/
+theorem isIso_comp_biprod_snd {K X₁ X₂ Y : C} {k : K ⟶ X₁ ⊞ X₂} {Φ : X₁ ⊞ X₂ ⟶ Y}
+    {δ : Y ⟶ K⟦(1 : ℤ)⟧} (hT : Triangle.mk k Φ δ ∈ distTriang C) [IsIso (biprod.inl ≫ Φ)] :
+    IsIso (k ≫ biprod.snd) := by
+  have hT' : Triangle.mk (k ≫ (biprod.braiding X₁ X₂).hom) ((biprod.braiding X₁ X₂).inv ≫ Φ) δ ∈
+      distTriang C :=
+    isomorphic_distinguished _ hT _ (Triangle.isoMk _ _ (Iso.refl _)
+      (biprod.braiding X₁ X₂).symm (Iso.refl _) (by simp) (by simp) (by simp))
+  have : IsIso (biprod.inr ≫ (biprod.braiding X₁ X₂).inv ≫ Φ) := by
+    rw [← Category.assoc,
+      show biprod.inr ≫ (biprod.braiding X₁ X₂).inv = biprod.inl by ext <;> simp]
+    infer_instance
+  simpa using isIso_comp_biprod_fst hT'
+
 end Pretriangulated
+
+section Functor
+
+-- An additive functor, such as a triangulated functor, preserves binary biproducts.
+attribute [local instance] preservesBinaryBiproducts_of_preservesBiproducts
+
+variable {D : Type*} [Category* D] [Preadditive D] [HasZeroObject D] [HasShift D ℤ]
+  [∀ n : ℤ, (shiftFunctor D n).Additive] [Pretriangulated D] (F : C ⥤ D) [F.CommShift ℤ]
+  [F.IsTriangulated] {K X₁ X₂ Y : C} {k : K ⟶ X₁ ⊞ X₂} {Φ : X₁ ⊞ X₂ ⟶ Y} {δ : Y ⟶ K⟦(1 : ℤ)⟧}
+
+/-- The image of a distinguished triangle `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧` under a triangulated functor
+`F`, with middle vertex `F X₁ ⊞ F X₂`, is distinguished. -/
+theorem Functor.map_distTriang_biprod (hT : Triangle.mk k Φ δ ∈ distTriang C) :
+    Triangle.mk (F.map k ≫ (F.mapBiprod X₁ X₂).hom) ((F.mapBiprod X₁ X₂).inv ≫ F.map Φ)
+      (F.map δ ≫ (F.commShiftIso (1 : ℤ)).hom.app K) ∈ distTriang D := by
+  simpa using distinguished_mk_of_iso (F.map_distinguished _ hT) (Iso.refl _) (F.mapBiprod _ _)
+    (Iso.refl _)
+
+/-- **A triangulated functor and an invertible summand of the second morphism**: for a
+triangulated functor `F` and a distinguished triangle `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧` whose second
+morphism becomes invertible on the summand `X₂` after applying `F`, the image under `F` of the
+first morphism followed by the projection to `X₁` is an isomorphism `F K ≅ F X₁`. -/
+theorem Functor.isIso_map_comp_biprod_fst (hT : Triangle.mk k Φ δ ∈ distTriang C)
+    [IsIso (F.map (biprod.inr ≫ Φ))] : IsIso (F.map (k ≫ biprod.fst)) := by
+  have : IsIso (biprod.inr ≫ (F.mapBiprod X₁ X₂).inv ≫ F.map Φ) := by
+    rwa [mapBiprod_inv, biprod.inr_desc_assoc, ← F.map_comp]
+  simpa only [Category.assoc, mapBiprod_hom, biprod.lift_fst, ← F.map_comp] using
+    isIso_comp_biprod_fst (F.map_distTriang_biprod hT)
+
+/-- **A triangulated functor and an invertible summand of the second morphism**: for a
+triangulated functor `F` and a distinguished triangle `K ⟶ X₁ ⊞ X₂ ⟶ Y ⟶ K⟦1⟧` whose second
+morphism becomes invertible on the summand `X₁` after applying `F`, the image under `F` of the
+first morphism followed by the projection to `X₂` is an isomorphism `F K ≅ F X₂`. -/
+theorem Functor.isIso_map_comp_biprod_snd (hT : Triangle.mk k Φ δ ∈ distTriang C)
+    [IsIso (F.map (biprod.inl ≫ Φ))] : IsIso (F.map (k ≫ biprod.snd)) := by
+  have : IsIso (biprod.inl ≫ (F.mapBiprod X₁ X₂).inv ≫ F.map Φ) := by
+    rwa [mapBiprod_inv, biprod.inl_desc_assoc, ← F.map_comp]
+  simpa only [Category.assoc, mapBiprod_hom, biprod.lift_snd, ← F.map_comp] using
+    isIso_comp_biprod_snd (F.map_distTriang_biprod hT)
+
+end Functor
 
 end CategoryTheory

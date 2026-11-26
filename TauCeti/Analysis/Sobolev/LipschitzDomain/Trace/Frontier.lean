@@ -37,7 +37,9 @@ restrictions of test functions are dense in `W^{1,p}(Ω)`
 
 The same density argument shows that the trace commutes with multiplication by smooth bounded
 functions, and that the frontier version of each local chart trace is the trace of the cutoff
-product. Hence a function of zero trace has zero local trace in every chart, and the chart
+product. Hence a function whose trace vanishes on a set `Γ` has local chart traces vanishing over
+the tangential parameters of `Γ`; in particular a function of zero trace has zero local trace in
+every chart, and the chart
 characterization of `W^{1,p}_0(Ω)`
 (`TauCeti.W1p.mem_w1p0Submodule_iff_forall_lipschitzChartTrace_eq_zero`) identifies the kernel
 of the trace with `W^{1,p}_0(Ω)`.
@@ -62,6 +64,8 @@ be continuous up to the boundary, with its boundary datum.
   Lipschitz constant used to construct it.
 * `TauCeti.W1p.w1p0Submodule_le_ker_frontierTrace`: functions in `W^{1,p}_0(Ω)` have zero trace.
 * `TauCeti.W1p.frontierTrace_contDiffSMul_ae`: the trace of `ψ u` is `ψ` times the trace of `u`.
+* `TauCeti.W1p.lipschitzChartTrace_ae_eq_zero_of_frontierTrace_ae_eq_zero`: if the trace vanishes
+  on a set `Γ`, every local chart trace vanishes over the tangential parameters of `Γ`.
 * `TauCeti.W1p.mem_w1p0Submodule_iff_frontierTrace_eq_zero` and `TauCeti.W1p.ker_frontierTrace`:
   the kernel of the trace is `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.mem_w1p0Submodule_iff_frontierTrace_compAffineIsometryEquivL_eq_zero` and
@@ -423,6 +427,56 @@ theorem W1p.lipschitzChartTrace_ae_eq_zero_of_notMem (hp : p ≠ (∞ : ℝ≥0�
   exact (ae_restrict_iff' h.measurableSet_normalGraphEmbedding_preimage_normalCylinder.compl).1
     ((hR u).1 hu)
 
+/-- **Zero trace on a set gives zero local chart trace over it.** On a bounded Lipschitz domain, for
+`1 ≤ p < ∞`, if the trace of `u ∈ W^{1,p}(Ω)` vanishes almost everywhere on a set `Γ` for surface
+measure, then the local trace of `u` through every Lipschitz boundary chart vanishes at almost
+every tangential parameter whose graph point corresponds to a point of `Γ`. No regularity or
+measurability of `Γ` is assumed. -/
+theorem W1p.lipschitzChartTrace_ae_eq_zero_of_frontierTrace_ae_eq_zero (hp : p ≠ (∞ : ℝ≥0∞))
+    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) {L' : ℝ≥0}
+    (h : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzChartWith L' e φ a b)
+    (hψ : ContDiff ℝ ∞ ψ) (hM : 0 ≤ M)
+    (hψM : ∀ x ∈ Ω, |ψ x| ≤ M) (hgM : ∀ x ∈ Ω, ‖∇ ψ x‖ ≤ M)
+    (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {Γ : Set (WithLp 2 (ℝ × E))}
+    {u : W1p volume Ω p}
+    (hu : W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+      (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] 0) :
+    ∀ᵐ y ∂(volume : Measure E), e.symm (normalGraphEmbedding φ y) ∈ Γ →
+      W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u y = 0 := by
+  -- The frontier version of the local trace is the trace of `ψ u`, which is `ψ` times the trace of
+  -- `u`, hence zero on `Γ`.
+  have hF : ∀ᵐ x ∂(μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
+      (frontier (Ω : Set (WithLp 2 (ℝ × E)))),
+      x ∈ Γ → W1p.lipschitzChartFrontierTrace hp h ψ hψ hM hψM hgM hs u x = 0 := by
+    rw [W1p.lipschitzChartFrontierTrace_eq_frontierTrace_comp hp hΩ hb,
+      ContinuousLinearMap.comp_apply, W1p.contDiffSMulL_apply]
+    filter_upwards [W1p.frontierTrace_contDiffSMul_ae hp hΩ hb hψ hM hψM hgM u,
+      ae_imp_of_ae_restrict hu] with x hx h0 hxΓ
+    rw [hx, h0 hxΓ, Pi.zero_apply, mul_zero]
+  -- Hence the local trace vanishes at almost every tangential parameter in the chart cylinder whose
+  -- graph point corresponds to a point of `Γ`.
+  have hP : ∀ᵐ y ∂(volume : Measure E).restrict (normalGraphEmbedding φ ⁻¹' normalCylinder a b),
+      e.symm (normalGraphEmbedding φ y) ∈ Γ →
+        W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u y = 0 := by
+    refine h.ae_restrict_frontier_inter_iff.1 ?_
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_left
+        ((W1p.lipschitzChartFrontierTrace_ae_eq hp h hψ hM hψM hgM hs u).symm),
+      ae_restrict_of_ae_restrict_of_subset inter_subset_left hF,
+      ae_restrict_mem (measurableSet_frontier_inter_preimage_normalCylinder _ e a b)]
+      with x hx hFx hxP hxΓ
+    -- The frontier point `x` is the graph point of its tangential coordinate.
+    have hxg : e.symm (normalGraphEmbedding φ (e x).snd) = x := by
+      rw [AffineIsometryEquiv.symm_apply_eq]
+      simp [WithLp.ext_iff, Prod.ext_iff, normalGraphEmbedding_apply,
+        h.toIsLipschitzChart.fst_apply_eq_of_mem_frontier hxP.1 hxP.2]
+    rw [hxg] at hxΓ
+    simpa [← hx, indicator_of_mem hxP] using hFx hxΓ
+  filter_upwards [W1p.lipschitzChartTrace_ae_eq_zero_of_notMem hp hΩ hb h hψ hM hψM hgM hs u,
+    (ae_restrict_iff' h.measurableSet_normalGraphEmbedding_preimage_normalCylinder).1 hP]
+    with y hy hy' hyΓ
+  exact (em _).elim (fun hyC => hy' hyC hyΓ) hy
+
 /-- **Zero trace gives zero local chart traces.** On a bounded Lipschitz domain, for
 `1 ≤ p < ∞`, if the trace of `u ∈ W^{1,p}(Ω)` vanishes, then so does its local trace through
 every Lipschitz boundary chart. -/
@@ -435,27 +489,10 @@ theorem W1p.lipschitzChartTrace_eq_zero_of_frontierTrace_eq_zero (hp : p ≠ (�
     (hs : tsupport ψ ⊆ e ⁻¹' normalCylinder a b) {u : W1p volume Ω p}
     (hu : W1p.frontierTrace hp hΩ hb u = 0) :
     W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u = 0 := by
-  -- The frontier version of the local trace is the trace of `ψ u`, which is `ψ` times zero.
-  have hF : W1p.lipschitzChartFrontierTrace hp h ψ hψ hM hψM hgM hs u = 0 := by
-    rw [W1p.lipschitzChartFrontierTrace_eq_frontierTrace_comp hp hΩ hb,
-      ContinuousLinearMap.comp_apply, W1p.contDiffSMulL_apply, Lp.eq_zero_iff_ae_eq_zero]
-    filter_upwards [W1p.frontierTrace_contDiffSMul_ae hp hΩ hb hψ hM hψM hgM u,
-      Lp.eq_zero_iff_ae_eq_zero.1 hu] with x hx h0
-    rw [hx, h0, Pi.zero_apply, mul_zero]
-  -- Hence the local trace vanishes at almost every tangential parameter in the chart cylinder.
-  have hP : ∀ᵐ y ∂(volume : Measure E).restrict (normalGraphEmbedding φ ⁻¹' normalCylinder a b),
-      W1p.lipschitzChartTrace hp h ψ hψ hM hψM hgM hs u y = 0 := by
-    refine h.ae_restrict_frontier_inter_iff.1 ?_
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_left
-        ((W1p.lipschitzChartFrontierTrace_ae_eq hp h hψ hM hψM hgM hs u).symm.trans
-          (Lp.eq_zero_iff_ae_eq_zero.1 hF)),
-      ae_restrict_mem (measurableSet_frontier_inter_preimage_normalCylinder _ e a b)] with x hx hxP
-    rwa [indicator_of_mem hxP] at hx
   refine Lp.eq_zero_iff_ae_eq_zero.2 ?_
-  filter_upwards [W1p.lipschitzChartTrace_ae_eq_zero_of_notMem hp hΩ hb h hψ hM hψM hgM hs u,
-    (ae_restrict_iff' h.measurableSet_normalGraphEmbedding_preimage_normalCylinder).1 hP]
-    with y hy hy'
-  exact (em _).elim hy' hy
+  filter_upwards [W1p.lipschitzChartTrace_ae_eq_zero_of_frontierTrace_ae_eq_zero hp hΩ hb h hψ hM
+    hψM hgM hs (Γ := univ) (ae_restrict_of_ae (Lp.eq_zero_iff_ae_eq_zero.1 hu))] with y hy
+  exact hy (mem_univ _)
 
 /-- **The functions of zero trace on a bounded Lipschitz domain are those of `W^{1,p}_0`.** For
 `1 ≤ p < ∞`, `u ∈ W^{1,p}(Ω)` lies in `W^{1,p}_0(Ω)` exactly when its trace on the frontier

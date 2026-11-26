@@ -117,6 +117,11 @@ theorem condAtomProb_mem_Icc (a : X → ι) (i : ι) :
     (Eventually.of_forall fun x ↦ ?_)
   by_cases hx : x ∈ a ⁻¹' {i} <;> simp [hx]
 
+/-- The integral of `negMulLog` of the conditional probability of an atom is nonnegative. -/
+theorem integral_negMulLog_condAtomProb_nonneg (m : MeasurableSpace X) (a : X → ι) (i : ι) :
+    0 ≤ ∫ x, negMulLog (condAtomProb μ m a i x) ∂μ :=
+  integral_nonneg_of_ae <| (condAtomProb_mem_Icc a i).mono fun _ hx ↦ negMulLog_nonneg hx.1 hx.2
+
 /-- The integral of the conditional probability of a null-measurable atom, given a sub-σ-algebra,
 is the mass of the atom. -/
 theorem integral_condAtomProb (hm : m ≤ mX) [SigmaFinite (μ.trim hm)] {a : X → ι} {i : ι}
@@ -203,8 +208,7 @@ theorem condExpPartitionEntropy_anti (h₁₂ : m₁ ≤ m₂) (a : X → ι) :
   rw [condExpPartitionEntropy_eq_sum, condExpPartitionEntropy_eq_sum]
   refine Finset.sum_le_sum fun i _ ↦ ?_
   rcases condAtomProb_eq_zero_or (μ := μ) (m := m₂) a i with h | ⟨hm₂, -, -⟩
-  · simpa [h] using integral_nonneg_of_ae <| (condAtomProb_mem_Icc (m := m₁) a i).mono
-      fun x hx ↦ negMulLog_nonneg hx.1 hx.2
+  · simpa [h] using integral_negMulLog_condAtomProb_nonneg m₁ a i
   -- Tower property and conditional Jensen for the concave `negMulLog` on `[0, 1]`.
   have hJ := (strictConcaveOn_negMulLog.concaveOn.subset Icc_subset_Ici_self
     (convex_Icc 0 1)).condExp_map_le (μ := μ) (h₁₂.trans hm₂)

@@ -28,6 +28,8 @@ particular of a measurable finite label, is at most the Kolmogorov–Sinai entro
   a quasi-measure-preserving map, hence `TauCeti.partitionEntropyRate_congr_ae`.
 * `TauCeti.partitionEntropyRate_comp_of_injective`: relabeling by an injection does not change
   the entropy rate.
+* `TauCeti.partitionEntropyRate_comp_le`: coarsening a countable label does not increase its
+  entropy rate.
 * `TauCeti.partitionEntropyRate_le_measureEntropy_of_countable` and
   `TauCeti.partitionEntropyRate_le_measureEntropy_of_finite`: the rate of a measurable countable
   label of finite entropy, or of a measurable finite label, is at most the measure entropy.
@@ -82,6 +84,14 @@ theorem partitionEntropyRate_comp_of_injective (T : X → X) (a : X → ι) {e :
     partitionEntropyRate μ T (e ∘ a) = partitionEntropyRate μ T a := by
   simp only [partitionEntropyRate_def,
     countablePartitionEntropy_iteratedPartitionLabel_comp_of_injective T a he]
+
+/-- **Coarsening.** Coarsening a countable label does not increase its entropy rate, for every
+measure and every map. -/
+theorem partitionEntropyRate_comp_le [Countable ι] (T : X → X) (a : X → ι) (f : ι → ι') :
+    partitionEntropyRate μ T (f ∘ a) ≤ partitionEntropyRate μ T a := by
+  simp only [partitionEntropyRate_def, iteratedPartitionLabel_comp]
+  gcongr
+  exact countablePartitionEntropy_comp_le _ _
 
 /-- The entropy rate of a measurable countable label of finite entropy is at most the
 Kolmogorov–Sinai entropy: embed the alphabet into `ℕ`. -/
