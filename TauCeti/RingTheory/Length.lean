@@ -204,9 +204,8 @@ theorem length_map_mkQ_eq_add_length_quotient {S X : Submodule A M} (P : Submodu
     Module.length A (X.map P.mkQ) = Module.length A (S.map P.mkQ) +
       Module.length A (↥X ⧸ (S ⊔ X ⊓ P).comap X.subtype) := by
   have hsup : P.comap X.subtype ⊔ S.comap X.subtype = (S ⊔ X ⊓ P).comap X.subtype := by
-    refine Submodule.map_injective_of_injective X.injective_subtype ?_
-    simp [Submodule.map_sup, Submodule.map_comap_subtype, inf_eq_right.2 h,
-      inf_eq_right.2 (sup_le h inf_le_left), sup_comm]
+    rw [Submodule.comap_sup_of_injective X.injective_subtype (by simpa using h) (by simp)]
+    simp [Submodule.comap_inf, sup_comm]
   rw [length_map_mkQ X P, length_quotient_eq_length_map_add_length_quotient_sup
     (S.comap X.subtype) (P.comap X.subtype), length_map_mkQ, length_map_mkQ S P, hsup]
   congr 1
@@ -241,19 +240,15 @@ theorem length_quotient_sup_le (N N₁ Z Z' : Submodule A M) :
     Module.length A (↥N ⧸ (N₁ ⊔ Z).comap N.subtype) ≤
       Module.length A (↥Z' ⧸ Z.comap Z'.subtype) +
         Module.length A (↥N ⧸ (N₁ ⊔ Z').comap N.subtype) := by
-  have hmap : (N₁ ⊔ Z').map (N₁ ⊔ Z).mkQ ≤ Z'.map (N₁ ⊔ Z).mkQ := by
-    rw [Submodule.map_sup]
-    refine sup_le (Submodule.map_le_iff_le_comap.2 ?_) le_rfl
-    rw [Submodule.comap_map_mkQ]
-    exact le_sup_left.trans le_sup_left
+  -- `N₁` dies modulo `N₁ ⊔ Z`, so `N₁ ⊔ Z'` and `Z'` have the same image there
+  have hmap : (N₁ ⊔ Z').map (N₁ ⊔ Z).mkQ = Z'.map (N₁ ⊔ Z).mkQ := by
+    rw [Submodule.map_sup, sup_eq_right]
+    exact (Submodule.map_mono (le_sup_left : N₁ ≤ N₁ ⊔ Z)).trans
+      ((Submodule.mkQ_map_self _).le.trans bot_le)
   rw [← length_map_mkQ]
   refine (length_map_mkQ_le_add_length_quotient N (N₁ ⊔ Z') (N₁ ⊔ Z)).trans (add_le_add ?_ le_rfl)
-  calc Module.length A ((N₁ ⊔ Z').map (N₁ ⊔ Z).mkQ)
-      ≤ Module.length A (Z'.map (N₁ ⊔ Z).mkQ) :=
-        Module.length_le_of_injective _ (Submodule.inclusion_injective hmap)
-    _ ≤ _ := by
-        rw [length_map_mkQ]
-        exact length_quotient_anti (Submodule.comap_mono le_sup_right)
+  rw [hmap]
+  exact length_map_mkQ_le_length_quotient le_sup_right le_rfl
 
 /-- If `ρ : N → W` has kernel in `Z'` and image in `T'`, then for any submodules `N₁` of `M` and
 `T` of `W`, `length (N ⧸ (N₁ + Z')) ≤ length (T' ⧸ T) + length (T ⧸ ρ(N₁))`, where `ρ(N₁)` is the
@@ -401,21 +396,19 @@ theorem length_quotient_smul_le (c : A) (N U Θ : Submodule A M) :
   have hgx (x : ↥N) : (g x : M) = c • (x : M) :=
     (LinearMap.submoduleMap_coe_apply _ x).trans (DistribSMul.toLinearMap_apply ..)
   have hg : Function.Surjective g := LinearMap.submoduleMap_surjective _ N
+  have hK : c • (N ⊓ U ⊔ N ⊓ Θ) ≤ (c • N) ⊓ U ⊔ (c • N) ⊓ Θ := by
+    rw [Submodule.smul_sup']
+    exact sup_le_sup
+      (le_inf (smul_mono_right c inf_le_left)
+        ((smul_mono_right c inf_le_right).trans (Submodule.smul_le_self_of_tower c U)))
+      (le_inf (smul_mono_right c inf_le_left)
+        ((smul_mono_right c inf_le_right).trans (Submodule.smul_le_self_of_tower c Θ)))
   have hle : (N ⊓ U ⊔ N ⊓ Θ).comap N.subtype ≤
-      (((c • N) ⊓ U ⊔ (c • N) ⊓ Θ).comap (c • N).subtype).comap g := by
-    intro x hx
-    obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.1 hx
-    rw [Submodule.mem_comap, Submodule.mem_comap, Submodule.subtype_apply, hgx,
-      ← N.subtype_apply x, ← hab, smul_add]
-    exact add_mem
-      (Submodule.mem_sup_left (Submodule.mem_inf.2
-        ⟨Submodule.smul_mem_pointwise_smul _ c N ha.1, U.smul_mem c ha.2⟩))
-      (Submodule.mem_sup_right (Submodule.mem_inf.2
-        ⟨Submodule.smul_mem_pointwise_smul _ c N hb.1, Θ.smul_mem c hb.2⟩))
-  refine Module.length_le_of_surjective (Submodule.mapQ _ _ g hle) fun y ↦ ?_
-  obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
-  obtain ⟨x, rfl⟩ := hg y
-  exact ⟨Submodule.Quotient.mk x, Submodule.mapQ_apply _ _ _ x⟩
+      (((c • N) ⊓ U ⊔ (c • N) ⊓ Θ).comap (c • N).subtype).comap g := fun x hx ↦ by
+    rw [Submodule.mem_comap, Submodule.mem_comap, Submodule.subtype_apply, hgx]
+    exact hK (Submodule.smul_mem_pointwise_smul _ c _ hx)
+  refine Module.length_le_of_surjective (Submodule.mapQ _ _ g hle) (LinearMap.range_eq_top.1 ?_)
+  rw [Submodule.range_mapQ, LinearMap.range_eq_top.2 hg, Submodule.map_top, Submodule.range_mkQ]
 
 /-- **Reduction of the length of `M ⧸ aM` to finitely generated submodules.** -/
 theorem length_quotient_lsmul_le_of_forall_fg {a : A} {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG →
