@@ -74,7 +74,7 @@ theorem HasWeakDivergenceOn.pullback_continuousLinearEquiv (hu : HasWeakDivergen
         (hu.locallyIntegrableOn.comp_continuousLinearEquiv_of_mapsTo e hV)
   have hdiv := hu.locallyIntegrableOn_divergence.comp_continuousLinearEquiv_of_mapsTo e hV
   refine hasWeakDivergenceOn_iff.mpr ⟨hfield, hdiv, fun φ ↦ ?_⟩
-  let ψ := e.transportTestFunction hV φ
+  let ψ := e.transportTestFunction ℝ hV φ
   let J := |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹
   have hleft :
       ∫ x, ⟪e.symm (u (e x)), ∇ (φ : E → ℝ) x⟫_ℝ ∂μ =
