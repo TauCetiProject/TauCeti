@@ -30,10 +30,6 @@ classical specialization, so the isomorphism is the only module map sending `v�
 
 ## Main results
 
-* `TauCeti.UqSl2.ClassicalLadder.map_basis`: a module map `φ` out of the classical specialization
-  sends `v_j` to `(j!)⁻¹ F^j φ(v₀)`.
-* `TauCeti.UqSl2.ClassicalLadder.lieModuleHom_ext`: a module map out of the classical
-  specialization is determined by its value on `v₀`.
 * `TauCeti.UqSl2.ClassicalLadder.equivIrreducibleQuotient_basis_zero` and
   `equivIrreducibleQuotient_basis`: the isomorphism sends `v₀` to `v⁺` and `v_j` to
   `(j!)⁻¹ F^j v⁺`.
@@ -57,28 +53,6 @@ namespace ClassicalLadder
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {K : Type*} [Field K] [CharZero K] {m : ℕ}
-
-/-- **A module map out of the classical specialization is determined by the image of `v₀`**: it
-sends the ladder vector `v_j` to `(j!)⁻¹ F^j φ(v₀)`, since `F^j v₀ = j! v_j`. -/
-theorem map_basis {M : Type*} [AddCommGroup M] [Module K M]
-    [LieRingModule (SpecialLinear.sl (Fin 2) K) M] [LieModule K (SpecialLinear.sl (Fin 2) K) M]
-    (φ : ClassicalLadder K m →ₗ⁅K,SpecialLinear.sl (Fin 2) K⁆ M) (j : Fin (m + 1)) :
-    φ (basis K m j) = ((j : ℕ).factorial : K)⁻¹ •
-      (toEnd K (SpecialLinear.sl (Fin 2) K) M (slFinTwoBasis K 1) ^ (j : ℕ)) (φ (basis K m 0)) := by
-  rw [toEnd_pow_apply_map, toEnd_slFinTwoBasis_one, lower_pow_basis_zero, map_smul,
-    inv_smul_smul₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))]
-
-/-- **Two module maps out of the classical specialization that agree on `v₀` are equal**: by
-`TauCeti.UqSl2.ClassicalLadder.map_basis` both are determined on the ladder basis by their value
-on `v₀`. -/
-@[ext]
-theorem lieModuleHom_ext {M : Type*} [AddCommGroup M] [Module K M]
-    [LieRingModule (SpecialLinear.sl (Fin 2) K) M] [LieModule K (SpecialLinear.sl (Fin 2) K) M]
-    {φ ψ : ClassicalLadder K m →ₗ⁅K,SpecialLinear.sl (Fin 2) K⁆ M}
-    (h : φ (basis K m 0) = ψ (basis K m 0)) : φ = ψ := by
-  have hlin : (φ : ClassicalLadder K m →ₗ[K] M) = ψ := (basis K m).ext fun j => by
-    simp only [LieModuleHom.coe_toLinearMap, map_basis φ j, map_basis ψ j, h]
-  exact LieModuleHom.ext fun v => LinearMap.congr_fun hlin v
 
 variable (K m) in
 /-- **The classical specialization of `L_m^+` is the irreducible highest weight module `L(m)`**
