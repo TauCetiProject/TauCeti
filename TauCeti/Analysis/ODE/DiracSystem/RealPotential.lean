@@ -78,19 +78,9 @@ private theorem diracFundamentalMatrix_spectralParam_zero_mulVec_single
       have hs' : s ∈ uIcc 0 t := uIcc_subset_uIcc_left hr hs
       rw [hexp s hs', mulVec_smul, hc s hs', smul_smul, mul_comm]
     simp only [X]
-    rw [hint, intervalIntegral.integral_same, Real.exp_zero, Complex.ofReal_one, one_smul, hsol,
-      add_smul, one_smul]
-  -- Uniqueness for the propagator of the coefficient on `EuclideanSpace ℂ (Fin 2)`.
-  have key := eq_propagator_apply (integrableOn_toEuclideanCLM_diracCoeff hq 0)
-    left_mem_uIcc right_mem_uIcc (x := fun r ↦ WithLp.toLp 2 (X r))
-    ((PiLp.continuous_toLp 2 _).comp_continuousOn hcont) fun r hr ↦ by
-      rw [WithLp.ext_iff, WithLp.ofLp_add, PiLp.ofLp_intervalIntegral]
-      simpa using hX r hr
-  have h0 : X 0 = Pi.single i 1 := by simp [X]
-  have := congrArg WithLp.ofLp key
-  rw [← toEuclideanCLM_diracFundamentalMatrix, ofLp_toEuclideanCLM, WithLp.ofLp_toLp,
-    WithLp.ofLp_toLp, h0] at this
-  exact this.symm
+    rw [hint, hsol]
+    simp [add_smul]
+  simpa [X] using (eq_diracFundamentalMatrix_mulVec_of_eq_add_integral hq hcont hX).symm
 
 /-- **A real potential at `z = 0`.** For a potential `q`, integrable and real between `0` and
 `t` (in either order), `M_q(t, 0) = diag(e^{F(t)}, e^{-F(t)})` with `F(t) = ∫₀ᵗ Re q`. -/
