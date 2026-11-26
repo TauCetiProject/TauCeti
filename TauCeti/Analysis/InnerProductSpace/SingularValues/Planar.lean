@@ -227,10 +227,9 @@ theorem sq_singularValues_toLin_shear_fin_two (e : OrthonormalBasis (Fin 2) ℝ 
     rw [← e.coe_toBasis, toLin_self]
     simp [Fin.sum_univ_two]
   have htr : RCLike.re (LinearMap.trace ℝ E (adjoint A ∘ₗ A)) = 2 + t ^ 2 := by
-    rw [A.trace_adjoint_comp_self_eq_sum_norm_apply_sq e, Fin.sum_univ_two, hA0, hA1,
-      norm_add_sq_real, norm_smul, real_inner_smul_left, e.orthonormal.1 0, e.orthonormal.1 1,
-      e.orthonormal.inner_eq_zero (by decide : (0 : Fin 2) ≠ 1), Real.norm_eq_abs]
-    norm_num [sq_abs]
+    rw [A.trace_adjoint_comp_self_eq_sum_norm_apply_sq e, Fin.sum_univ_two, hA0, hA1]
+    simp [norm_add_sq_real, norm_smul, real_inner_smul_left, e.orthonormal.1,
+      e.orthonormal.inner_eq_zero]
     ring
   have hdet : RCLike.re (adjoint A ∘ₗ A).det = 1 := by
     rw [det_comp, det_adjoint, det_toLin, det_fin_two_of]

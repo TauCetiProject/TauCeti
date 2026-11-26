@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearDistortion
+import TauCeti.Analysis.InnerProductSpace.LinearDistortion.Comparison
 import TauCeti.Analysis.InnerProductSpace.SingularValues.Planar
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.EckartYoung
 
@@ -65,17 +66,11 @@ theorem outerDistortion_shear [Fact (finrank ℝ E = 2)] (t : ℝ) :
 theorem innerDistortion_shear [Fact (finrank ℝ E = 2)] (t : ℝ) :
     e.toBasis.orientation.innerDistortion e.toBasis.orientation
       (toLin e.toBasis e.toBasis !![1, t; 0, 1]) = (2 + t ^ 2 + |t| * √(t ^ 2 + 4)) / 2 := by
-  have hJ := orientedJacobian_shear e t
-  have hs : (|t| * √(t ^ 2 + 4)) ^ 2 = t ^ 2 * (t ^ 2 + 4) := by
-    rw [mul_pow, sq_abs, Real.sq_sqrt (by positivity)]
-  have hs0 : 0 ≤ |t| * √(t ^ 2 + 4) := by positivity
-  have hlt : |t| * √(t ^ 2 + 4) < 2 + t ^ 2 := by nlinarith
-  have hE : finrank ℝ E = 2 := Fact.out
-  rw [Orientation.innerDistortion_of_pos _ _ (by rw [hJ]; exact one_pos), hJ]
-  simp only [minimalStretch_def, hE, Nat.reduceSub]
-  rw [(sq_singularValues_toLin_shear_fin_two e t).2,
-    div_eq_div_iff (by linarith : (0 : ℝ) < (2 + t ^ 2 - |t| * √(t ^ 2 + 4)) / 2).ne' two_ne_zero]
-  nlinarith
+  have h := e.toBasis.orientation.outerDistortion_eq_ofReal_innerDistortion_of_fin_two
+    e.toBasis.orientation (by rw [orientedJacobian_shear e t]; exact one_pos)
+  rw [outerDistortion_shear] at h
+  exact ((ENNReal.ofReal_eq_ofReal_iff (by positivity)
+    (Orientation.innerDistortion_nonneg _ _ _)).mp h).symm
 
 end Shear
 
