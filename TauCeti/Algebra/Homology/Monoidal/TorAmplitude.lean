@@ -48,18 +48,41 @@ def HasTorAmplitude (K : DerivedCategory C) (a b : ℤ) : Prop :=
   ∀ M : C, (((TauCeti.derivedTensor C).obj K).obj ((singleFunctor C 0).obj M)).IsGE a ∧
     (((TauCeti.derivedTensor C).obj K).obj ((singleFunctor C 0).obj M)).IsLE b
 
+/-- Tor-amplitude is equivalent to the lower and upper bounds on every derived tensor test. -/
+lemma hasTorAmplitude_def {K : DerivedCategory C} {a b : ℤ} :
+    K.HasTorAmplitude a b ↔
+      ∀ M : C, (((TauCeti.derivedTensor C).obj K).obj ((singleFunctor C 0).obj M)).IsGE a ∧
+        (((TauCeti.derivedTensor C).obj K).obj ((singleFunctor C 0).obj M)).IsLE b := Iff.rfl
+
 /-- A cohomological test for Tor-amplitude. -/
 lemma hasTorAmplitude_iff {K : DerivedCategory C} {a b : ℤ} :
     K.HasTorAmplitude a b ↔ ∀ (M : C) (i : ℤ), i < a ∨ b < i →
       IsZero ((homologyFunctor C i).obj
         (((TauCeti.derivedTensor C).obj K).obj ((singleFunctor C 0).obj M))) := by
-  simp only [HasTorAmplitude, isGE_iff, isLE_iff]
+  simp only [hasTorAmplitude_def, isGE_iff, isLE_iff]
   exact ⟨fun h M i hi ↦ hi.elim ((h M).1 i) ((h M).2 i),
     fun h M ↦ ⟨fun i hi ↦ h M i (.inl hi), fun i hi ↦ h M i (.inr hi)⟩⟩
 
 namespace HasTorAmplitude
 
 variable {a b : ℤ} {K L : DerivedCategory C}
+
+/-- Separate lower and upper bounds on all derived tensor tests give a Tor-amplitude bound. -/
+lemma of_isGE_isLE
+    (ha : ∀ M : C, (((TauCeti.derivedTensor C).obj K).obj ((singleFunctor C 0).obj M)).IsGE a)
+    (hb : ∀ M : C, (((TauCeti.derivedTensor C).obj K).obj ((singleFunctor C 0).obj M)).IsLE b) :
+    K.HasTorAmplitude a b :=
+  hasTorAmplitude_def.mpr fun M ↦ ⟨ha M, hb M⟩
+
+/-- A Tor-amplitude bound gives a lower bound on the derived tensor test at `M`. -/
+lemma isGE_derivedTensor (h : K.HasTorAmplitude a b) (M : C) :
+    (((TauCeti.derivedTensor C).obj K).obj ((singleFunctor C 0).obj M)).IsGE a :=
+  (hasTorAmplitude_def.mp h M).1
+
+/-- A Tor-amplitude bound gives an upper bound on the derived tensor test at `M`. -/
+lemma isLE_derivedTensor (h : K.HasTorAmplitude a b) (M : C) :
+    (((TauCeti.derivedTensor C).obj K).obj ((singleFunctor C 0).obj M)).IsLE b :=
+  (hasTorAmplitude_def.mp h M).2
 
 /-- Tor-amplitude is invariant under isomorphisms in the derived category. -/
 lemma of_iso (h : K.HasTorAmplitude a b) (e : K ≅ L) : L.HasTorAmplitude a b :=
@@ -76,13 +99,13 @@ lemma mono (h : K.HasTorAmplitude a b) {a' b' : ℤ} (ha : a' ≤ a) (hb : b ≤
 /-- A Tor-amplitude bound gives a lower cohomology bound by testing with the tensor unit. -/
 lemma isGE (h : K.HasTorAmplitude a b) : K.IsGE a := by
   have : (((TauCeti.derivedTensor C).flip.obj ((singleFunctor C 0).obj (𝟙_ C))).obj K).IsGE a :=
-    (h (𝟙_ C)).1
+    h.isGE_derivedTensor (𝟙_ C)
   exact TStructure.t.isGE_of_iso ((TauCeti.derivedTensorRightUnitor C).app K) a
 
 /-- A Tor-amplitude bound gives an upper cohomology bound by testing with the tensor unit. -/
 lemma isLE (h : K.HasTorAmplitude a b) : K.IsLE b := by
   have : (((TauCeti.derivedTensor C).flip.obj ((singleFunctor C 0).obj (𝟙_ C))).obj K).IsLE b :=
-    (h (𝟙_ C)).2
+    h.isLE_derivedTensor (𝟙_ C)
   exact TStructure.t.isLE_of_iso ((TauCeti.derivedTensorRightUnitor C).app K) b
 
 end HasTorAmplitude
@@ -93,7 +116,7 @@ lemma hasTorAmplitude_Q_obj_iff (P : CochainComplex C ℤ) [P.IsKFlat] (a b : �
     (Q.obj P).HasTorAmplitude a b ↔
       ∀ M : C, CochainComplex.IsGE (((tensorLeft M).mapHomologicalComplex (.up ℤ)).obj P) a ∧
         CochainComplex.IsLE (((tensorLeft M).mapHomologicalComplex (.up ℤ)).obj P) b := by
-  unfold HasTorAmplitude
+  rw [hasTorAmplitude_def]
   refine forall_congr' fun M ↦ ?_
   let S := (CochainComplex.singleFunctor C 0).obj M
   let e := CochainComplex.derivedTensorKFlatLeftIso P S ≪≫

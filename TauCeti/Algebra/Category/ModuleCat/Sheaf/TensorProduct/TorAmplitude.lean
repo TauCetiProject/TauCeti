@@ -5,16 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.KFlat
 public import TauCeti.Algebra.Homology.Monoidal.TorAmplitude
-public import TauCeti.AlgebraicGeometry.Modules.Derived.Tensor
 
 /-!
 # Flat representatives for complexes of module sheaves
 
-An object of `D(𝒪_X)` has Tor-amplitude in `[a, b]` if and only if it has a representative
-by flat `𝒪_X`-modules whose terms vanish outside `[a, b]`.
+On a small ringed site, an object of the derived category of module sheaves has Tor-amplitude
+in `[a, b]` if and only if it has a representative by flat module sheaves whose terms vanish
+outside `[a, b]`.
 The lower truncation of a bounded-above flat resolution works because the Tor-amplitude
 hypothesis makes the quotient in its new lowest degree flat.
+For a scheme `X`, specialize to `R := X.sheaf` with the `HasDerivedCategory` instance written
+on `SheafOfModules X.ringCatSheaf`.
 
 ## References
 
@@ -25,38 +28,36 @@ hypothesis makes the quotient in its new lowest degree flat.
 public section
 
 open CategoryTheory CategoryTheory.Limits MonoidalCategory
+open TauCeti.SheafOfModules
 
 universe u v
 
 namespace DerivedCategory
 
-variable {X : AlgebraicGeometry.Scheme.{u}} [HasDerivedCategory.{v} X.Modules]
+variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
+  [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
+  [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+  {R : Sheaf J CommRingCat.{u}} [HasDerivedCategory.{v} (SheafOfModules.{u} (ringCatSheaf R))]
 
-/-- An object of the unbounded derived category of `𝒪_X`-modules has Tor-amplitude in
-`[a, b]` if and only if it is represented by flat module sheaves in degrees `a` through `b`. -/
-theorem hasTorAmplitude_iff_exists_flat_model {K : DerivedCategory X.Modules} {a b : ℤ} :
+/-- An object of the unbounded derived category of module sheaves on a small ringed site has
+Tor-amplitude in `[a, b]` if and only if it is represented by flat module sheaves in degrees
+`a` through `b`. -/
+theorem hasTorAmplitude_iff_exists_flat_model
+    {K : DerivedCategory (SheafOfModules.{u} (ringCatSheaf R))} {a b : ℤ} :
     K.HasTorAmplitude a b ↔
-      ∃ P : CochainComplex X.Modules ℤ, P.IsStrictlyGE a ∧ P.IsStrictlyLE b ∧
-        (∀ i, PreservesFiniteLimits (tensorLeft (P.X i))) ∧ Nonempty (Q.obj P ≅ K) := by
+      ∃ P : CochainComplex (SheafOfModules.{u} (ringCatSheaf R)) ℤ,
+        P.IsStrictlyGE a ∧ P.IsStrictlyLE b ∧
+          (∀ i, PreservesFiniteLimits (tensorLeft (P.X i))) ∧ Nonempty (Q.obj P ≅ K) := by
   constructor
   · intro hK
     have := hK.isLE
     obtain ⟨L, hL, ⟨e⟩⟩ := K.exists_iso_Q_obj_of_isLE b
-    obtain ⟨P', π', hπ, hflat, hKFlat, hPb⟩ :=
-      @CochainComplex.exists_quasiIso_isKFlat_sheafOfModules_of_isStrictlyLE
-        _ _ _ _ _ _ X.sheaf L b hL
-    -- The resolution theorem is stated on the underlying category of sheaves of modules.
-    -- Rebind its output so that derived-category instances are found on `X.Modules`.
-    let P : CochainComplex X.Modules ℤ := P'
-    let π : P ⟶ L := π'
-    have : QuasiIso π := hπ
-    have : P.IsKFlat := hKFlat
-    have : P.IsStrictlyLE b := hPb
-    have (i : ℤ) : PreservesFiniteLimits (tensorLeft (P.X i)) := hflat i
+    obtain ⟨P, π, hπ, hflat, hKFlat, hPb⟩ :=
+      CochainComplex.exists_quasiIso_isKFlat_sheafOfModules_of_isStrictlyLE (R := R) L b
     let eP : Q.obj P ≅ K := asIso (Q.map π) ≪≫ e.symm
     have hP := hK.of_iso eP.symm
     have : P.IsGE a := (isGE_Q_obj_iff P a).mp hP.isGE
-    have h (M : X.Modules) :
+    have h (M : SheafOfModules.{u} (ringCatSheaf R)) :
         (((tensorLeft M).mapHomologicalComplex (.up ℤ)).obj P).ExactAt (a - 1) :=
       (CochainComplex.isGE_iff _ a).mp ((hasTorAmplitude_Q_obj_iff P a b).mp hP M).1
         (a - 1) (by omega)
