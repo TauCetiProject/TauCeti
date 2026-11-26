@@ -117,15 +117,10 @@ theorem exists_perm_mem_iff_val_lt_card {n : ℕ} (S : Finset (Fin n)) :
   have h₁ : Fintype.card {i : Fin n // (i : ℕ) < #S} = Fintype.card {i : Fin n // i ∈ S} := by
     rw [Fintype.card_subtype, Fin.card_filter_val_lt, Fintype.card_coe,
       min_eq_right (by simpa using S.card_le_univ)]
-  have h₂ : Fintype.card {i : Fin n // ¬(i : ℕ) < #S} = Fintype.card {i : Fin n // i ∉ S} := by
-    rw [Fintype.card_subtype_compl, Fintype.card_subtype_compl, h₁]
-  -- Match the indices below `#S` with `S`, and the others with its complement.
-  set e₁ := Fintype.equivOfCardEq h₁
-  set e₂ := Fintype.equivOfCardEq h₂
-  refine ⟨(Equiv.sumCompl _).symm.trans ((e₁.sumCongr e₂).trans (Equiv.sumCompl _)), fun i ↦ ?_⟩
-  by_cases hi : (i : ℕ) < #S
-  · simp [hi, (e₁ ⟨i, hi⟩).property]
-  · simp [hi, (e₂ ⟨i, hi⟩).property]
+  -- Match the indices below `#S` with `S`; the others go to its complement.
+  exact ⟨(Fintype.equivOfCardEq h₁).extendSubtype, fun i ↦
+    ⟨fun h ↦ by_contra fun hi ↦ Equiv.extendSubtype_not_mem _ i hi h,
+      fun hi ↦ Equiv.extendSubtype_mem _ i hi⟩⟩
 
 end Fin
 

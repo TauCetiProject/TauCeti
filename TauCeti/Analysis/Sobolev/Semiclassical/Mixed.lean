@@ -39,8 +39,8 @@ from them.
 `‖f‖_{j,h,V} = h^(-dim V / 2) ∑_{n ≤ j} ∑_{a ≤ n} h^(n - a) ‖∂^{a, n - a} f‖₂`
 
 (`Submodule.mixedSemiclassicalSobolevNorm`): each normal derivative costs a factor `h`, each
-horizontal one none. It is a seminorm on fields with square-integrable mixed derivatives
-(`Submodule.mixedSemiclassicalSobolevNorm_neg`,
+horizontal one none. At scales `h ≥ 0` it is a seminorm on fields of class `Cʲ` with
+square-integrable mixed derivatives (`Submodule.mixedSemiclassicalSobolevNorm_neg`,
 `Submodule.mixedSemiclassicalSobolevNorm_const_smul`,
 `Submodule.mixedSemiclassicalSobolevNorm_add_le`,
 `Submodule.mixedSemiclassicalSobolevNorm_sum_le`). The normal dilation by `h` reads a field in
