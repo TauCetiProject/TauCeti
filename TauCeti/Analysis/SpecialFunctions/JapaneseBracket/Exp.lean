@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Analysis.Real.Sqrt
+import TauCeti.MeasureTheory.Function.Lp.Adjoint
 
 /-!
 # Smooth radial exponential weights
@@ -25,7 +27,10 @@ The weights `exp(c √(b + ‖z‖²))` and `exp(-c √(b + ‖z‖²))` are rec
 across the `L²` pairing: `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`
 (`abs_inner_le_of_memLp_exp_mul_smul`). So if `‖u‖₂² ≤ |⟪e, A⟫|`, where the weight `exp(-c ρ)`
 costs at most `q ‖u‖₂` on `e` and the weight `exp(c ρ)` at most `a` on `u`, then
-`‖exp(c ρ) u‖₂ ≤ a q ‖exp(c ρ) A‖₂` (`eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner`).
+`‖exp(c ρ) u‖₂ ≤ a q ‖exp(c ρ) A‖₂` (`eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner`). By the
+same duality, an operator on `L²` that preserves decay at the rate `-c` has an adjoint that
+preserves decay at the rate `c`, with the same constant
+(`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`).
 -/
 
 public section
@@ -258,3 +263,32 @@ theorem eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner {c : ℝ} {u e A : Lp F 2 μ}
 end L2
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+open MeasureTheory TauCeti
+open scoped ENNReal
+
+variable {b : ℝ} {X F : Type*} [NormedAddCommGroup X] [MeasurableSpace X]
+  [OpensMeasurableSpace X] {μ : Measure X} [SigmaFinite μ]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- **Exponentially weighted estimates pass to the adjoint.** Let `ρ(z) = √(b + ‖z‖²)` and let
+`T` be a bounded operator on `L²(μ; F)` with `‖exp(-c ρ) T f‖₂ ≤ C ‖exp(-c ρ) f‖₂` for every `f`.
+Then its Hilbert space adjoint satisfies `‖exp(c ρ) T† g‖₂ ≤ C ‖exp(c ρ) g‖₂` for every `g`, where
+either side may be infinite. -/
+theorem eLpNorm_exp_mul_smul_adjoint_apply_le {c : ℝ} {C : ℝ≥0∞} (T : Lp F 2 μ →L[ℝ] Lp F 2 μ)
+    (hT : ∀ f, eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • T f z) 2 μ ≤
+      C * eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • f z) 2 μ)
+    (g : Lp F 2 μ) :
+    eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint T g z) 2 μ ≤
+      C * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) 2 μ := by
+  have h := eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
+    (ContinuousLinearMap.adjoint T) (p := 2) (p' := 2) (q := 2) (q' := 2)
+    (ae_of_all _ fun z ↦ (Real.exp_pos (c * √(b + ‖z‖ ^ 2))).ne')
+    (continuous_exp_mul_sqrt_add_norm_sq (b := b) c).aestronglyMeasurable (C := C) (fun f ↦ ?_) g
+  · simpa using h
+  · -- `T†† = T`, and `exp(c ρ)⁻¹ = exp(-c ρ)`.
+    simpa [ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using hT f
+
+end ContinuousLinearMap
