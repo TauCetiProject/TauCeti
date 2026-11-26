@@ -39,6 +39,9 @@ not required.
   the derived algebra has negative-definite Killing form.
 * `TauCeti.Lie.exists_injective_lieHom_soThree_of_compactSpace`: a non-abelian Lie algebra of a
   compact Lie group receives an injective homomorphism from `so(3) ≅ 𝔰𝔲(2)`.
+* `TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra`: the Lie algebra carries a
+  separating invariant form and a root-plane decomposition, with two-dimensional planes, over an
+  abelian subspace containing a regular element.
 
 ## References
 
@@ -160,8 +163,7 @@ theorem exists_injective_lieHom_soThree_of_compactSpace
 /-- **A root-plane decomposition of the Lie algebra of a compact Lie group.** The Lie algebra `𝔤`
 of a compact Lie group carries a separating invariant form `B` and a root-plane decomposition
 `𝔤 = t + Σ F_k` for `B`, with planes of dimension two, over an abelian subspace `t` containing a
-regular element, at which no root vanishes. The proof takes for `B` an `Ad`-invariant inner product
-and for `t` a maximal abelian subspace (`TauCeti.exists_isRootPlaneDecomposition`). -/
+regular element, at which no root vanishes. -/
 theorem _root_.TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra :
     ∃ (B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)) (t : Submodule ℝ (GroupLieAlgebra I G))
       (r : ℕ) (α : Fin r → Module.Dual ℝ t) (F : Fin r → Submodule ℝ (GroupLieAlgebra I G))
