@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # The conjugate Wirtinger derivative and the Laplacian
@@ -17,9 +20,14 @@ For a real `C²` function `φ` on the plane, the complex function `ψ = ∂ₛφ
 in the form used to pass from the weak equation `bar∂ u = h` to a weak Laplace equation for
 `Re u`.
 
+For a holomorphic factor `J` the product rule takes the form `Δ (J H) = J ΔH + 4 J' bar∂H`, since
+`J` is harmonic and its partial derivatives are `J'` and `i J'`.
+
 ## Main results
 
 * `TauCeti.conjWirtingerDeriv_fderiv_sub_I_mul_fderiv_apply_one`: `bar∂ (∂ₛφ - i ∂ₜφ) = Δφ / 2`.
+* `TauCeti.laplacian_fun_mul_eq_mul_laplacian_add_deriv_mul_conjWirtingerDeriv`: the product rule
+  `Δ (J H) = J ΔH + 4 J' bar∂H` for a holomorphic factor `J`.
 -/
 
 public section
@@ -50,5 +58,19 @@ theorem conjWirtingerDeriv_fderiv_sub_I_mul_fderiv_apply_one {φ : ℂ → ℝ} 
     Matrix.cons_val_zero, Matrix.cons_val_one, mul_one, ofReal_add]
   rw [hsymm]
   linear_combination (-(2 : ℂ)⁻¹ * (fderiv ℝ (fderiv ℝ φ) w I I : ℂ)) * I_sq
+
+/-- **The Laplacian of a product with a holomorphic factor.** If `J` is holomorphic (complex `C²`)
+at `z` and `H` is real `C²` at `z`, then `Δ (J H) z = J z ΔH z + 4 J' z bar∂H z`, where
+`bar∂H z = (∂ₓH z + i ∂ᵧH z) / 2` is the conjugate Wirtinger derivative. -/
+theorem laplacian_fun_mul_eq_mul_laplacian_add_deriv_mul_conjWirtingerDeriv {J H : ℂ → ℂ} {z : ℂ}
+    (hJ : ContDiffAt ℂ 2 J z) (hH : ContDiffAt ℝ 2 H z) :
+    Δ (fun w ↦ J w * H w) z = J z * Δ H z + 4 * deriv J z * conjWirtingerDeriv H z 1 := by
+  have hd (v : ℂ) : fderiv ℝ J z v = v * deriv J z :=
+    (hJ.differentiableAt (by norm_num)).fderiv_restrictScalars_eq_smul_deriv ℝ v
+  have h := fderiv_apply_one_add_I_smul_fderiv_apply_I H z
+  rw [smul_eq_mul, smul_eq_mul] at h
+  rw [(hJ.restrict_scalars ℝ).laplacian_fun_mul_complex hH, hJ.harmonicAt.2.self_of_nhds, hd, hd,
+    Pi.zero_apply]
+  linear_combination (2 * deriv J z) * h
 
 end TauCeti

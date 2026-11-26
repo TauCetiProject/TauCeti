@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.SpecialFunctions.GramSchmidt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 
 /-!
 # Measurable projections onto finite-dimensional ranges

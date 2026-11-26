@@ -13,6 +13,7 @@ public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.Topology.Sheaves.Presheaf
 import Mathlib.Analysis.Complex.ReImTopology
+import Mathlib.Topology.Separation.Regular
 
 /-!
 # One-dimensional hyperfunctions as boundary values of holomorphic functions
@@ -33,13 +34,17 @@ complex differentiable on `U` and vanish outside `U`
 (`TauCeti.Hyperfunction.holomorphicSections`). The extension by zero is only a device for using
 one ambient module of functions; no continuity across the boundary of `U` is imposed or used.
 Restriction to a smaller open multiplies by the indicator function
-(`TauCeti.Hyperfunction.holomorphicRestrict`).
+(`TauCeti.Hyperfunction.holomorphicRestrict`). A section over `U` is a restriction from `V ⊇ U`
+exactly when it agrees on `U` with a section over `V`
+(`TauCeti.Hyperfunction.mem_range_holomorphicRestrict_iff`).
 
 ## Main declarations
 
 * `TauCeti.Hyperfunction.nonRealOpen`: the open set `ℂ ∖ ℝ`, which is dense
   (`TauCeti.Hyperfunction.dense_nonRealOpen`);
 * `TauCeti.Hyperfunction.complexNeighborhood U`: the open set `W(U) = ℂ ∖ (ℝ ∖ U)`;
+* `TauCeti.Hyperfunction.realAxis`: the real axis as a closed subset of `ℂ`, whose complement is
+  `ℂ ∖ ℝ` (`TauCeti.Hyperfunction.compl_realAxis`);
 * `TauCeti.Hyperfunction.throughReal U`: the holomorphic functions on `ℂ ∖ ℝ` that extend
   holomorphically to `W(U)`;
 * `TauCeti.Hyperfunction.OneDimBoundaryQuotient U`: the quotient `O(ℂ ∖ ℝ) / O(W(U))`, and
@@ -58,6 +63,9 @@ Restriction to a smaller open multiplies by the indicator function
   uniqueness half of the sheaf property. The existence half needs the vanishing of the first
   cohomology of the sheaf of holomorphic functions on open subsets of `ℂ` (a Cousin problem) and is
   not proved here.
+* `TauCeti.Hyperfunction.eq_of_forall_oneDimBoundaryRestrict_eq`: a one-dimensional hyperfunction
+  on `U` is determined by its restrictions to the open sets whose closure is a compact subset
+  of `U`.
 
 ## References
 
@@ -91,11 +99,16 @@ theorem mem_holomorphicSections_iff {U : Opens ℂ} {f : ℂ → ℂ} :
     f ∈ holomorphicSections U ↔ DifferentiableOn ℂ f U ∧ ∀ z, z ∉ U → f z = 0 :=
   Iff.rfl
 
+/-- The indicator function of `U` turns a function holomorphic on `U` into a holomorphic section
+over `U`. -/
+theorem indicator_mem_holomorphicSections_of_differentiableOn {U : Opens ℂ} {f : ℂ → ℂ}
+    (hf : DifferentiableOn ℂ f U) : (U : Set ℂ).indicator f ∈ holomorphicSections U :=
+  ⟨hf.congr fun _ hz => indicator_of_mem hz f, fun _ hz => indicator_of_notMem hz f⟩
+
 /-- The indicator function of a smaller open set restricts holomorphic sections. -/
 theorem indicator_mem_holomorphicSections {U V : Opens ℂ} (h : U ≤ V) {f : ℂ → ℂ}
     (hf : f ∈ holomorphicSections V) : (U : Set ℂ).indicator f ∈ holomorphicSections U :=
-  ⟨(hf.1.mono h).congr fun _ hz => indicator_of_mem hz f,
-    fun _ hz => indicator_of_notMem hz f⟩
+  indicator_mem_holomorphicSections_of_differentiableOn (hf.1.mono h)
 
 /-- Restriction of holomorphic sections to a smaller open set. -/
 def holomorphicRestrict {U V : Opens ℂ} (h : U ≤ V) :
@@ -109,6 +122,16 @@ theorem coe_holomorphicRestrict {U V : Opens ℂ} (h : U ≤ V) (f : holomorphic
     (holomorphicRestrict h f : ℂ → ℂ) = (U : Set ℂ).indicator f :=
   (rfl)
 
+/-- The restriction to `U` agrees with the section at points of `U`. -/
+theorem holomorphicRestrict_apply_of_mem {U V : Opens ℂ} (h : U ≤ V) (f : holomorphicSections V)
+    {z : ℂ} (hz : z ∈ U) : (holomorphicRestrict h f : ℂ → ℂ) z = (f : ℂ → ℂ) z :=
+  indicator_of_mem hz (f : ℂ → ℂ)
+
+/-- The restriction to `U` vanishes at points outside `U`. -/
+theorem holomorphicRestrict_apply_of_notMem {U V : Opens ℂ} (h : U ≤ V)
+    (f : holomorphicSections V) {z : ℂ} (hz : z ∉ U) : (holomorphicRestrict h f : ℂ → ℂ) z = 0 :=
+  indicator_of_notMem hz (f : ℂ → ℂ)
+
 @[simp]
 theorem holomorphicRestrict_self (U : Opens ℂ) (f : holomorphicSections U) :
     holomorphicRestrict le_rfl f = f :=
@@ -121,6 +144,27 @@ theorem holomorphicRestrict_holomorphicRestrict {U V W : Opens ℂ} (h₁ : U �
     holomorphicRestrict h₁ (holomorphicRestrict h₂ f) = holomorphicRestrict (h₁.trans h₂) f :=
   Subtype.ext <| by
     simp [indicator_indicator, inter_eq_left.mpr (SetLike.coe_subset_coe.mpr h₁)]
+
+/-- A holomorphic section over `U` is the restriction of a holomorphic section over `V ⊇ U`
+exactly when it agrees on `U` with a holomorphic section over `V`. -/
+theorem mem_range_holomorphicRestrict_iff {U V : Opens ℂ} (h : U ≤ V)
+    {f : holomorphicSections U} :
+    f ∈ LinearMap.range (holomorphicRestrict h) ↔ ∃ g ∈ holomorphicSections V, EqOn g f U := by
+  refine ⟨fun ⟨g, hg⟩ => ⟨g, g.property, fun z hz => ?_⟩, fun ⟨g, hg, hgf⟩ => ⟨⟨g, hg⟩, ?_⟩⟩
+  · rw [← hg, holomorphicRestrict_apply_of_mem h g hz]
+  · refine Subtype.ext (funext fun z => ?_)
+    by_cases hz : z ∈ U
+    · exact (holomorphicRestrict_apply_of_mem h _ hz).trans (hgf hz)
+    · exact (holomorphicRestrict_apply_of_notMem h _ hz).trans (f.property.2 z hz).symm
+
+/-- Restriction along a commuting square of inclusions `U' ≤ U`, `V' ≤ V`, `U ≤ V`, `U' ≤ V'`
+maps the restrictions from `V` to `U` into the restrictions from `V'` to `U'`. -/
+theorem range_holomorphicRestrict_le_comap {U U' V V' : Opens ℂ} (hUV : U ≤ V) (hUV' : U' ≤ V')
+    (hU : U' ≤ U) (hV : V' ≤ V) :
+    LinearMap.range (holomorphicRestrict hUV) ≤
+      (LinearMap.range (holomorphicRestrict hUV')).comap (holomorphicRestrict hU) := by
+  rintro _ ⟨g, rfl⟩
+  exact ⟨holomorphicRestrict hV g, by simp only [holomorphicRestrict_holomorphicRestrict]⟩
 
 /-! ### The open sets `ℂ ∖ ℝ` and `W(U)` -/
 
@@ -155,6 +199,25 @@ theorem nonRealOpen_le_complexNeighborhood (U : Opens ℝ) :
 theorem complexNeighborhood_mono : Monotone complexNeighborhood := fun _ _ h =>
   sup_le_sup_left (fun _ hz => h hz) _
 
+/-- The real axis `{z | z.im = 0}`, as a closed subset of `ℂ`. -/
+def realAxis : Closeds ℂ :=
+  ⟨{z | z.im = 0}, isClosed_eq Complex.continuous_im continuous_const⟩
+
+@[simp]
+theorem mem_realAxis_iff {z : ℂ} : z ∈ realAxis ↔ z.im = 0 :=
+  Iff.rfl
+
+/-- The complement of the real axis is `ℂ ∖ ℝ`. -/
+theorem compl_realAxis : realAxis.compl = nonRealOpen := by
+  ext z
+  simp [Closeds.compl]
+
+/-- Removing the real axis from `W(U) = ℂ ∖ (ℝ ∖ U)` leaves `ℂ ∖ ℝ`. -/
+theorem complexNeighborhood_inf_compl_realAxis (U : Opens ℝ) :
+    complexNeighborhood U ⊓ realAxis.compl = nonRealOpen := by
+  rw [compl_realAxis]
+  exact inf_eq_right.2 (nonRealOpen_le_complexNeighborhood U)
+
 /-! ### Functions extending across a real open set -/
 
 /-- The holomorphic functions on `ℂ ∖ ℝ` that extend holomorphically across the open set
@@ -166,24 +229,18 @@ def throughReal (U : Opens ℝ) : Submodule ℂ (holomorphicSections nonRealOpen
 a holomorphic function on `W(U)`. -/
 theorem mem_throughReal_iff {U : Opens ℝ} {f : holomorphicSections nonRealOpen} :
     f ∈ throughReal U ↔
-      ∃ g ∈ holomorphicSections (complexNeighborhood U), EqOn g f nonRealOpen := by
-  refine ⟨fun ⟨g, hg⟩ => ⟨g, g.property, fun z hz => ?_⟩, fun ⟨g, hg, hgf⟩ => ⟨⟨g, hg⟩, ?_⟩⟩
-  · rw [← hg, coe_holomorphicRestrict, indicator_of_mem hz]
-  · refine Subtype.ext (funext fun z => ?_)
-    by_cases hz : z ∈ nonRealOpen
-    · simp [indicator_of_mem hz, hgf hz]
-    · simp [indicator_of_notMem hz, f.property.2 z hz]
+      ∃ g ∈ holomorphicSections (complexNeighborhood U), EqOn g f nonRealOpen :=
+  mem_range_holomorphicRestrict_iff _
 
 /-- A function extending across `V` extends across every smaller `U`. -/
-theorem throughReal_antitone : Antitone throughReal := fun U V h f hf => by
-  obtain ⟨g, hg, hgf⟩ := mem_throughReal_iff.mp hf
-  exact mem_throughReal_iff.mpr ⟨_, indicator_mem_holomorphicSections
-    (complexNeighborhood_mono h) hg, fun z hz => by
-      rw [indicator_of_mem (nonRealOpen_le_complexNeighborhood U hz), hgf hz]⟩
+theorem throughReal_antitone : Antitone throughReal := fun _ _ h f hf => by
+  have := range_holomorphicRestrict_le_comap _ (nonRealOpen_le_complexNeighborhood _) le_rfl
+    (complexNeighborhood_mono h) hf
+  rwa [Submodule.mem_comap, holomorphicRestrict_self] at this
 
 /-- Two functions continuous on open sets containing `ℂ ∖ ℝ` that agree on `ℂ ∖ ℝ` agree on the
 intersection of the two open sets: the real points there are limits of non-real ones. -/
-private theorem eqOn_inf_of_eqOn_nonRealOpen {V₁ V₂ : Opens ℂ} {g₁ g₂ : ℂ → ℂ}
+theorem eqOn_inf_of_eqOn_nonRealOpen {V₁ V₂ : Opens ℂ} {g₁ g₂ : ℂ → ℂ}
     (h₁ : ContinuousOn g₁ V₁) (h₂ : ContinuousOn g₂ V₂) (hV₁ : nonRealOpen ≤ V₁)
     (hV₂ : nonRealOpen ≤ V₂) (h : EqOn g₁ g₂ nonRealOpen) : EqOn g₁ g₂ (V₁ ⊓ V₂ : Opens ℂ) :=
   h.of_subset_closure (h₁.mono inter_subset_left) (h₂.mono inter_subset_right)
@@ -286,6 +343,22 @@ theorem eq_of_oneDimBoundaryRestrict_eq {ι : Sort*} {U : ι → Opens ℝ} {V :
     q₁ = q₂ :=
   sub_eq_zero.mp <| eq_zero_of_oneDimBoundaryRestrict_eq_zero hUV hV fun i => by
     rw [map_sub, hq i, sub_self]
+
+/-- **Hyperfunctions are determined on relatively compact open sets.** Two one-dimensional
+hyperfunctions on `U` with the same restrictions to all open sets whose closure is a compact
+subset of `U` are equal. -/
+theorem eq_of_forall_oneDimBoundaryRestrict_eq {U : Opens ℝ} {q₁ q₂ : OneDimBoundaryQuotient U}
+    (h : ∀ (V : Opens ℝ) (hVU : V ≤ U), IsCompact (closure (V : Set ℝ)) →
+      closure (V : Set ℝ) ⊆ U → oneDimBoundaryRestrict hVU q₁ = oneDimBoundaryRestrict hVU q₂) :
+    q₁ = q₂ := by
+  let ι := {V : Opens ℝ // IsCompact (closure (V : Set ℝ)) ∧ closure (V : Set ℝ) ⊆ U}
+  have hle (V : ι) : V.val ≤ U := fun _ hx ↦ V.property.2 (subset_closure hx)
+  refine eq_of_oneDimBoundaryRestrict_eq (U := fun V : ι ↦ V.val) hle (fun x hx ↦ ?_)
+    fun V ↦ h V.val (hle V) V.property.1 V.property.2
+  obtain ⟨V, hV, hxV, hVU, hVc⟩ :=
+    exists_open_between_and_isCompact_closure isCompact_singleton U.isOpen
+      (singleton_subset_iff.2 hx)
+  exact Opens.mem_iSup.2 ⟨⟨⟨V, hV⟩, hVc, hVU⟩, hxV rfl⟩
 
 /-- The presheaf of complex vector spaces `U ↦ O(ℂ ∖ ℝ) / O(W(U))` on `ℝ`, whose sections are the
 one-dimensional hyperfunctions. -/

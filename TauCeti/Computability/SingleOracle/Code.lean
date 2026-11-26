@@ -37,7 +37,16 @@ program uniformly in the oracle.
   of programs and its inverse, packaged as a `Denumerable` instance.
 * `TauCeti.Oracle.Single.Code.eval`: the partial function computed by a program relative to an
   oracle.
+* `TauCeti.Oracle.Single.Code.interList`, `TauCeti.Oracle.Single.Code.restrictId`: direct
+  domain combinators valid relative to every partial oracle.
 * `Nat.Partrec.Code.toSingleOracleCode`: the query-free program of an ordinary Mathlib code.
+* `TauCeti.Oracle.Single.Code.toPartrecCode`: the ordinary Mathlib code obtained by replacing every
+  `oracle` instruction by `zero`.
+* `TauCeti.Oracle.Single.Code.curry`: the program that specializes the first input of a program
+  to a parameter.
+* `TauCeti.Oracle.Single.Code.fixInput`: the program that runs a program on a fixed input,
+  ignoring its own input.
+* `TauCeti.Oracle.Single.Code.haltingIndex`: the number of such a fixed-input program.
 
 ## Main results
 
@@ -50,9 +59,22 @@ program uniformly in the oracle.
   values of a pairing, and one step of a search.
 * `TauCeti.Oracle.Single.Code.eval_toSingleOracleCode`: a query-free program computes the same
   function as the ordinary code it comes from, relative to every oracle.
+* `TauCeti.Oracle.Single.Code.eval_toPartrecCode`,
+  `TauCeti.Oracle.Single.Code.eval_toPartrecCode_zero`,
+  `TauCeti.Oracle.Single.Code.primrec_toPartrecCode`: specializing an oracle program to an
+  always-zero oracle is primitive recursive and preserves evaluation.
+* `TauCeti.Oracle.Single.Code.eval_curry`, `TauCeti.Oracle.Single.Code.eval_fixInput`:
+  specialization and fixing an input preserve evaluation, relative to every oracle.
+* `TauCeti.Oracle.Single.Code.curry_inj`, `TauCeti.Oracle.Single.Code.fixInput_inj`,
+  `TauCeti.Oracle.Single.Code.haltingIndex_inj`: these compilers retain both the source program and
+  the parameter or input.
 * `TauCeti.Oracle.Single.Code.exists_forall_eval_eq_of_partrec`: every partial recursive function
   is computed by one program relative to every oracle.
-* `TauCeti.Oracle.Single.Code.exists_code`: adequacy, `Nat.RecursiveIn {O} f ↔ ∃ c, eval O c = f`.
+* `TauCeti.Oracle.Single.Code.exists_code_of_computable`: in particular, every computable function
+  is computed by one program relative to every oracle.
+* `TauCeti.Oracle.Single.Code.exists_code`,
+  `TauCeti.Oracle.Single.Code.recursiveIn_decode_restrict`: adequacy for `Nat.RecursiveIn {O}`
+  and restricting partial decoding to a program's domain.
 * `TauCeti.Oracle.Single.Code.turingReducible_iff_exists_code`: the same for Turing
   reducibility.
 
@@ -62,6 +84,7 @@ program uniformly in the oracle.
 * M. Carneiro, *Formalizing computability theory via partial recursive functions*, ITP 2019. The
   numbering, the evaluation and the adequacy proof follow Mathlib's `Nat.Partrec.Code`,
   `Nat.Partrec.Code.eval` and `Nat.Partrec.Code.exists_code`, extended by the oracle instruction.
+  Parameter specialization follows Mathlib's `Nat.Partrec.Code.curry`.
 * The namespace and constructors follow the shape of the single-oracle code proposed by Edwin Park
   in Mathlib pull request 38973.
 -/
@@ -364,6 +387,99 @@ theorem eval_comp (cf cg : Code) (n : ℕ) :
     eval O (comp cf cg) n = eval O cg n >>= eval O cf :=
   (rfl)
 
+/-- Evaluation of a composed program is partial-function composition. -/
+theorem eval_comp_eq (O : ℕ →. ℕ) (cf cg : Code) :
+    eval O (comp cf cg) = (eval O cf).comp (eval O cg) :=
+  funext fun x => (eval_comp cf cg x).trans (PFun.comp_apply (eval O cf) (eval O cg) x).symm
+
+/-- The domain of a paired program is the intersection of the two domains, relative to every
+partial oracle. -/
+@[simp]
+theorem dom_eval_pair (O : ℕ →. ℕ) (cf cg : Code) :
+    (eval O (pair cf cg)).Dom = (eval O cf).Dom ∩ (eval O cg).Dom := by
+  ext x
+  simp [PFun.Dom, Seq.seq]
+
+/-- The domain of a composed program is the partial preimage of the outer domain under the inner
+program, relative to every partial oracle. -/
+@[simp]
+theorem dom_eval_comp (O : ℕ →. ℕ) (cf cg : Code) :
+    (eval O (comp cf cg)).Dom = (eval O cg).preimage (eval O cf).Dom := by
+  rw [eval_comp_eq, PFun.dom_comp]
+
+/-- Uniform finite-intersection compiler for a list of oracle programs. -/
+def interList (cs : List Code) : Code :=
+  cs.foldr pair zero
+
+/-- The empty intersection is the everywhere-defined program `zero`. -/
+@[simp]
+theorem interList_nil : interList [] = zero :=
+  (rfl)
+
+/-- Consing a program intersects its domain with the rest of the list. -/
+@[simp]
+theorem interList_cons (c : Code) (cs : List Code) :
+    interList (c :: cs) = pair c (interList cs) :=
+  (rfl)
+
+/-- Finite intersection of program lists is primitive recursive. -/
+theorem primrec_interList : Primrec interList :=
+  (Primrec.list_foldr (h := fun (_ : List Code) (p : Code × Code) => pair p.1 p.2)
+    Primrec.id (Primrec.const zero) <|
+      Primrec₂.mk (primrec₂_pair.comp (Primrec.fst.comp Primrec.snd)
+        (Primrec.snd.comp Primrec.snd))).of_eq
+    fun _ => rfl
+
+/-- The domain of `interList cs` is the intersection of the domains of its entries, relative to
+every partial oracle. -/
+@[simp]
+theorem dom_eval_interList (O : ℕ →. ℕ) (cs : List Code) :
+    (eval O (interList cs)).Dom = ⋂ c ∈ cs, (eval O c).Dom := by
+  induction cs with
+  | nil =>
+    ext x
+    simp [PFun.Dom]
+  | cons c cs ih =>
+    simp [ih]
+
+/-- Restrict the identity function on `ℕ` to the domain of `c`. -/
+def restrictId (c : Code) : Code :=
+  comp left (pair (pair left right) c)
+
+/-- Unfolding equation for `restrictId`. -/
+theorem restrictId_def (c : Code) :
+    restrictId c = comp left (pair (pair left right) c) :=
+  (rfl)
+
+/-- Domain restriction of the identity is primitive recursive on programs. -/
+theorem primrec_restrictId : Primrec restrictId :=
+  primrec₂_comp.comp (Primrec.const left)
+    (primrec₂_pair.comp (Primrec.const (pair left right)) Primrec.id)
+
+/-- `restrictId c` outputs its input `x` whenever `c` halts on `x`, and diverges otherwise,
+relative to every partial oracle. -/
+@[simp]
+theorem eval_restrictId (O : ℕ →. ℕ) (c : Code) (x : ℕ) :
+    eval O (restrictId c) x = (eval O c x).map fun _ => x := by
+  have hleft : eval O left = fun p => Part.some p.unpair.1 := funext eval_left
+  rw [restrictId, eval_comp, eval_pair_of_left_eq_some (eval_pair_left_right x), hleft]
+  simp [Part.bind_some_eq_map, Part.map_map, Function.comp_def]
+
+/-- `restrictId c` has the same domain as `c`, relative to every partial oracle. -/
+@[simp]
+theorem dom_eval_restrictId (O : ℕ →. ℕ) (c : Code) :
+    (eval O (restrictId c)).Dom = (eval O c).Dom := by
+  ext x
+  simp [PFun.Dom]
+
+/-- The range of `restrictId c` is the domain of `c`, relative to every partial oracle. -/
+@[simp]
+theorem ran_eval_restrictId (O : ℕ →. ℕ) (c : Code) :
+    (eval O (restrictId c)).ran = (eval O c).Dom := by
+  have hrestrict : eval O (restrictId c) = fun x => (eval O c x).map fun _ => x :=
+    funext (eval_restrictId O c)
+  rw [hrestrict, PFun.ran_map_const]
+
 /-- Primitive recursion at zero. -/
 @[simp]
 theorem eval_prec_zero (cf cg : Code) (a : ℕ) :
@@ -483,6 +599,27 @@ theorem turingReducible_iff_exists_code {f g : ℕ →. ℕ} :
     TuringReducible f g ↔ ∃ c, eval g c = f := by
   rw [TuringReducible, RecursiveIn.iff_nat, exists_code]
 
+/-- Restricting partial decoding `ℕ →. α` to the domain of an oracle program `c` on encoded
+inputs is recursive in the oracle. -/
+theorem recursiveIn_decode_restrict {α : Type*} [Primcodable α] (O : ℕ →. ℕ) (c : Code) :
+    RecursiveIn {O} fun n =>
+      (Part.ofOption (decode (α := α) n)).bind fun x =>
+        (eval O c (encode x)).map fun _ => x := by
+  have hdec : Nat.RecursiveIn {O} fun n => Part.ofOption ((decode (α := α) n).map encode) :=
+    (Partrec.nat_iff.1 (Computable.ofOption
+      (Computable.decode.option_map (Computable.encode.comp Computable.snd).to₂))).recursiveIn
+  have heq : ∀ n : ℕ,
+      ((Part.ofOption ((decode (α := α) n).map encode)).bind fun k =>
+        eval O (restrictId c) k) =
+      ((Part.ofOption (decode (α := α) n)).bind fun x =>
+        (eval O c (encode x)).map fun _ => x).map encode := by
+    intro n
+    cases decode (α := α) n with
+    | none => simp [Part.bind_none]
+    | some x => simp [Part.bind_some, Part.map_map, Function.comp_def]
+  exact RecursiveIn.iff_nat_map_encode.2
+    (((recursiveIn_eval O (restrictId c)).comp hdec).of_eq heq)
+
 end Code
 
 end Oracle.Single
@@ -503,6 +640,55 @@ def toSingleOracleCode : Nat.Partrec.Code → TauCeti.Oracle.Single.Code
   | comp cf cg => .comp cf.toSingleOracleCode cg.toSingleOracleCode
   | prec cf cg => .prec cf.toSingleOracleCode cg.toSingleOracleCode
   | rfind' cf => .rfind' cf.toSingleOracleCode
+
+/-- Translation to single-oracle code preserves each constructor of an ordinary program. -/
+theorem toSingleOracleCode_def (c : Nat.Partrec.Code) :
+    c.toSingleOracleCode = match c with
+      | zero => .zero
+      | succ => .succ
+      | left => .left
+      | right => .right
+      | pair cf cg => .pair cf.toSingleOracleCode cg.toSingleOracleCode
+      | comp cf cg => .comp cf.toSingleOracleCode cg.toSingleOracleCode
+      | prec cf cg => .prec cf.toSingleOracleCode cg.toSingleOracleCode
+      | rfind' cf => .rfind' cf.toSingleOracleCode := by
+  cases c <;> rfl
+
+/-- `toSingleOracleCode` maps `Nat.Partrec.Code.zero` to `zero`. -/
+@[simp] theorem toSingleOracleCode_zero : toSingleOracleCode .zero = .zero := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` maps `Nat.Partrec.Code.succ` to `succ`. -/
+@[simp] theorem toSingleOracleCode_succ : toSingleOracleCode .succ = .succ := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` maps `Nat.Partrec.Code.left` to `left`. -/
+@[simp] theorem toSingleOracleCode_left : toSingleOracleCode .left = .left := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` maps `Nat.Partrec.Code.right` to `right`. -/
+@[simp] theorem toSingleOracleCode_right : toSingleOracleCode .right = .right := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` distributes over `pair`. -/
+@[simp] theorem toSingleOracleCode_pair (cf cg : Nat.Partrec.Code) :
+    toSingleOracleCode (.pair cf cg) = .pair cf.toSingleOracleCode cg.toSingleOracleCode := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` distributes over `comp`. -/
+@[simp] theorem toSingleOracleCode_comp (cf cg : Nat.Partrec.Code) :
+    toSingleOracleCode (.comp cf cg) = .comp cf.toSingleOracleCode cg.toSingleOracleCode := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` distributes over `prec`. -/
+@[simp] theorem toSingleOracleCode_prec (cf cg : Nat.Partrec.Code) :
+    toSingleOracleCode (.prec cf cg) = .prec cf.toSingleOracleCode cg.toSingleOracleCode := by
+  rw [toSingleOracleCode]
+
+/-- `toSingleOracleCode` distributes over `rfind'`. -/
+@[simp] theorem toSingleOracleCode_rfind' (cf : Nat.Partrec.Code) :
+    toSingleOracleCode (.rfind' cf) = .rfind' cf.toSingleOracleCode := by
+  rw [toSingleOracleCode]
 
 /-- `Nat.Partrec.Code.toSingleOracleCode` is injective: distinct ordinary codes give distinct
 programs. -/
@@ -552,11 +738,225 @@ theorem eval_toSingleOracleCode (O : ℕ →. ℕ) (c : Nat.Partrec.Code) :
     rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
   | rfind' cf ihf => rw [Nat.Partrec.Code.toSingleOracleCode, eval, Nat.Partrec.Code.eval, ihf]
 
+/-- Specialize a program's first input to `a`, leaving the second input free. -/
+def curry (c : Code) (a : ℕ) : Code :=
+  comp c (pair (Nat.Partrec.Code.const a).toSingleOracleCode (pair left right))
+
+/-- Specialization composes the program with the pairing of the ordinary constant program for
+the parameter and the identity program. -/
+theorem curry_def (c : Code) (a : ℕ) :
+    c.curry a = comp c (pair (Nat.Partrec.Code.const a).toSingleOracleCode (pair left right)) :=
+  (rfl)
+
+/-- Parameter specialization preserves evaluation, uniformly for every partial oracle. -/
+@[simp]
+theorem eval_curry (O : ℕ →. ℕ) (c : Code) (a x : ℕ) :
+    eval O (curry c a) x = eval O c (Nat.pair a x) := by
+  simp [curry, Nat.Partrec.Code.eval_const, Seq.seq, PFun.some_bind]
+
+/-- The parameter compiler is primitive recursive on programs and parameters. -/
+theorem primrec₂_curry : Primrec₂ curry :=
+  primrec₂_comp.comp Primrec.fst <| primrec₂_pair.comp
+    (Nat.Partrec.Code.primrec_toSingleOracleCode.comp
+      (Nat.Partrec.Code.primrec_const.comp Primrec.snd))
+    (Primrec.const (pair left right))
+
+/-- Specialization retains both the source program and the parameter in its syntax. -/
+@[simp]
+theorem curry_inj {c d : Code} {a b : ℕ} : c.curry a = d.curry b ↔ c = d ∧ a = b := by
+  constructor
+  · intro h
+    simp only [curry, Code.comp.injEq, Code.pair.injEq] at h
+    exact ⟨h.1, Nat.Partrec.Code.const_inj
+      (Nat.Partrec.Code.toSingleOracleCode_injective h.2.1)⟩
+  · rintro ⟨rfl, rfl⟩
+    rfl
+
+/-- Run `c` on the fixed input `x`, ignoring the input of the compiled program. -/
+def fixInput (c : Code) (x : ℕ) : Code :=
+  comp c (Nat.Partrec.Code.const x).toSingleOracleCode
+
+/-- Fixing an input composes the program with the ordinary constant program for that input. -/
+theorem fixInput_def (c : Code) (x : ℕ) :
+    c.fixInput x = comp c (Nat.Partrec.Code.const x).toSingleOracleCode :=
+  (rfl)
+
+/-- Fixing an input retains both the source program and the input in its syntax. -/
+@[simp]
+theorem fixInput_inj {c d : Code} {x y : ℕ} : c.fixInput x = d.fixInput y ↔ c = d ∧ x = y := by
+  constructor
+  · intro h
+    rw [fixInput, fixInput, Code.comp.injEq] at h
+    exact ⟨h.1, Nat.Partrec.Code.const_inj
+      (Nat.Partrec.Code.toSingleOracleCode_injective h.2)⟩
+  · rintro ⟨rfl, rfl⟩
+    rfl
+
+/-- Fixing an input is primitive recursive in the program and the input. -/
+theorem primrec₂_fixInput : Primrec₂ fixInput :=
+  primrec₂_comp.comp Primrec.fst <|
+    Nat.Partrec.Code.primrec_toSingleOracleCode.comp
+      (Nat.Partrec.Code.primrec_const.comp Primrec.snd)
+
+/-- The compiled program runs its source on the fixed input for every partial oracle. -/
+@[simp]
+theorem eval_fixInput (O : ℕ →. ℕ) (c : Code) (x y : ℕ) :
+    eval O (c.fixInput x) y = eval O c x := by
+  rw [fixInput, eval_comp, eval_toSingleOracleCode, Nat.Partrec.Code.eval_const]
+  exact Part.bind_some x (fun n => eval O c n)
+
+/-- The index of a program that runs `c` on the fixed input `x`, ignoring its own input. -/
+def haltingIndex (c : Code) (x : ℕ) : ℕ :=
+  encode (c.fixInput x)
+
+/-- Decoding a halting index recovers the fixed-input program. -/
+@[simp]
+theorem ofNat_haltingIndex (c : Code) (x : ℕ) :
+    ofNat Code (c.haltingIndex x) = c.fixInput x := by
+  rw [haltingIndex, ofNat_encode]
+
+/-- Computing the index of a fixed-input program is primitive recursive. -/
+theorem primrec₂_haltingIndex : Primrec₂ haltingIndex :=
+  Primrec.encode.comp primrec₂_fixInput
+
+/-- The halting index retains both the program and its fixed input. -/
+@[simp]
+theorem haltingIndex_inj {c d : Code} {x y : ℕ} :
+    haltingIndex c x = haltingIndex d y ↔ c = d ∧ x = y := by
+  rw [haltingIndex, haltingIndex, encode_inj, fixInput_inj]
+
 /-- Every partial recursive function is computed by one program relative to every oracle: the
 query-free program of an ordinary code computing it. -/
 theorem exists_forall_eval_eq_of_partrec {f : ℕ →. ℕ} (hf : Nat.Partrec f) :
     ∃ c : Code, ∀ O, eval O c = f := by
   obtain ⟨c, rfl⟩ := Nat.Partrec.Code.exists_code.1 hf
   exact ⟨c.toSingleOracleCode, fun O => eval_toSingleOracleCode O c⟩
+
+/-- A computable function is computed by one program relative to every oracle. -/
+theorem exists_code_of_computable {g : ℕ → ℕ} (hg : Computable g) :
+    ∃ c : Code, ∀ O n, eval O c n = Part.some (g n) :=
+  (exists_forall_eval_eq_of_partrec (Partrec.nat_iff.1 hg)).imp fun _ h O n => by simp [h O]
+
+/-! ### Specializing oracle programs to the constant-zero oracle -/
+
+/-- Replace every `oracle` instruction by `zero`, turning an oracle program into an ordinary
+Mathlib code. Relative to the constant-zero oracle (in particular the empty set oracle), the
+resulting ordinary code computes the same partial function. -/
+def toPartrecCode : Code → Nat.Partrec.Code
+  | zero => .zero
+  | succ => .succ
+  | left => .left
+  | right => .right
+  | oracle => .zero
+  | pair cf cg => .pair cf.toPartrecCode cg.toPartrecCode
+  | comp cf cg => .comp cf.toPartrecCode cg.toPartrecCode
+  | prec cf cg => .prec cf.toPartrecCode cg.toPartrecCode
+  | rfind' cf => .rfind' cf.toPartrecCode
+
+/-- `toPartrecCode` maps `zero` to `Nat.Partrec.Code.zero`. -/
+@[simp] theorem toPartrecCode_zero : toPartrecCode zero = .zero := by rw [toPartrecCode]
+
+/-- `toPartrecCode` maps `succ` to `Nat.Partrec.Code.succ`. -/
+@[simp] theorem toPartrecCode_succ : toPartrecCode succ = .succ := by rw [toPartrecCode]
+
+/-- `toPartrecCode` maps `left` to `Nat.Partrec.Code.left`. -/
+@[simp] theorem toPartrecCode_left : toPartrecCode left = .left := by rw [toPartrecCode]
+
+/-- `toPartrecCode` maps `right` to `Nat.Partrec.Code.right`. -/
+@[simp] theorem toPartrecCode_right : toPartrecCode right = .right := by rw [toPartrecCode]
+
+/-- `toPartrecCode` replaces `oracle` by `Nat.Partrec.Code.zero`. -/
+@[simp] theorem toPartrecCode_oracle : toPartrecCode oracle = .zero := by rw [toPartrecCode]
+
+/-- `toPartrecCode` distributes over `pair`. -/
+@[simp] theorem toPartrecCode_pair (cf cg : Code) :
+    toPartrecCode (pair cf cg) = .pair cf.toPartrecCode cg.toPartrecCode := by rw [toPartrecCode]
+
+/-- `toPartrecCode` distributes over `comp`. -/
+@[simp] theorem toPartrecCode_comp (cf cg : Code) :
+    toPartrecCode (comp cf cg) = .comp cf.toPartrecCode cg.toPartrecCode := by rw [toPartrecCode]
+
+/-- `toPartrecCode` distributes over `prec`. -/
+@[simp] theorem toPartrecCode_prec (cf cg : Code) :
+    toPartrecCode (prec cf cg) = .prec cf.toPartrecCode cg.toPartrecCode := by rw [toPartrecCode]
+
+/-- `toPartrecCode` distributes over `rfind'`. -/
+@[simp] theorem toPartrecCode_rfind' (cf : Code) :
+    toPartrecCode (rfind' cf) = .rfind' cf.toPartrecCode := by rw [toPartrecCode]
+
+/-- Specializing a query-free program recovers the original ordinary code. -/
+@[simp]
+theorem toPartrecCode_toSingleOracleCode (c : Nat.Partrec.Code) :
+    c.toSingleOracleCode.toPartrecCode = c := by
+  induction c <;> simp [Nat.Partrec.Code.toSingleOracleCode, *]
+
+/-- Relative to any oracle that always answers `0` (such as the empty set oracle), every oracle
+program computes the same partial function as its ordinary specialization `toPartrecCode`. -/
+theorem eval_toPartrecCode {O : ℕ →. ℕ} (hO : ∀ n, O n = Part.some 0) (c : Code) :
+    eval O c = c.toPartrecCode.eval := by
+  induction c with
+  | zero | succ | left | right => rfl
+  | oracle => exact funext hO
+  | pair cf cg ihf ihg => rw [toPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
+  | comp cf cg ihf ihg => rw [toPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
+  | prec cf cg ihf ihg => rw [toPartrecCode, eval, Nat.Partrec.Code.eval, ihf, ihg]
+  | rfind' cf ihf => rw [toPartrecCode, eval, Nat.Partrec.Code.eval, ihf]
+
+/-- An ordinary specialization `c.toPartrecCode` computes the same partial function as `c`
+relative to the constant-zero oracle. -/
+@[simp]
+theorem eval_toPartrecCode_zero (c : Code) :
+    c.toPartrecCode.eval = eval (((fun _ : ℕ => 0) : ℕ → ℕ) : ℕ →. ℕ) c :=
+  (eval_toPartrecCode (fun n => PFun.coe_val (fun _ : ℕ => 0) n) c).symm
+
+/-- One strong-recursion step for `toPartrecCode`, building the ordinary code of
+`ofNat Code L.length` from the table `L` of already-translated smaller codes. -/
+private def toPartrecCodeStep (L : List Nat.Partrec.Code) : Nat.Partrec.Code :=
+  let lup (c : Code) : Nat.Partrec.Code := (L[encode c]?).getD .zero
+  Code.casesOn (motive := fun _ => Nat.Partrec.Code) (ofNat Code L.length)
+    .zero .succ .left .right .zero
+    (fun cf cg => .pair (lup cf) (lup cg))
+    (fun cf cg => .comp (lup cf) (lup cg))
+    (fun cf cg => .prec (lup cf) (lup cg))
+    (fun cf => .rfind' (lup cf))
+
+private theorem primrec_toPartrecCodeStep : Primrec toPartrecCodeStep := by
+  open Primrec in
+  let lup (L : List Nat.Partrec.Code) (c : Code) : Nat.Partrec.Code :=
+    (L[encode c]?).getD .zero
+  have hlup {β : Type} [Primcodable β] {L : β → List Nat.Partrec.Code} {c : β → Code}
+      (hL : Primrec L) (hc : Primrec c) : Primrec fun b => lup (L b) (c b) :=
+    option_getD.comp (list_getElem?.comp hL (encode_iff.2 hc)) (const Nat.Partrec.Code.zero)
+  have hL : Primrec fun x : List Nat.Partrec.Code × Code × Code => x.1 := fst
+  have hcf : Primrec fun x : List Nat.Partrec.Code × Code × Code => x.2.1 := fst.comp snd
+  have hcg : Primrec fun x : List Nat.Partrec.Code × Code × Code => x.2.2 := snd.comp snd
+  exact primrec_casesOn ((Primrec.ofNat Code).comp list_length)
+    (const Nat.Partrec.Code.zero) (const Nat.Partrec.Code.succ) (const Nat.Partrec.Code.left)
+    (const Nat.Partrec.Code.right) (const Nat.Partrec.Code.zero)
+    (pr := fun L cs => .pair (lup L cs.1) (lup L cs.2))
+    (Primrec₂.mk (Nat.Partrec.Code.primrec₂_pair.comp (hlup hL hcf) (hlup hL hcg)))
+    (co := fun L cs => .comp (lup L cs.1) (lup L cs.2))
+    (Primrec₂.mk (Nat.Partrec.Code.primrec₂_comp.comp (hlup hL hcf) (hlup hL hcg)))
+    (pc := fun L cs => .prec (lup L cs.1) (lup L cs.2))
+    (Primrec₂.mk (Nat.Partrec.Code.primrec₂_prec.comp (hlup hL hcf) (hlup hL hcg)))
+    (rf := fun L cf => .rfind' (lup L cf))
+    (Primrec₂.mk (Nat.Partrec.Code.primrec_rfind'.comp (hlup fst snd)))
+
+/-- Specializing oracle programs to ordinary Mathlib codes is primitive recursive. -/
+theorem primrec_toPartrecCode : Primrec toPartrecCode := by
+  open Primrec in
+  have hstep : Primrec₂ fun (_ : Unit) (L : List Nat.Partrec.Code) => some (toPartrecCodeStep L) :=
+    option_some.comp (primrec_toPartrecCodeStep.comp snd)
+  have hrec : Primrec₂ fun (_ : Unit) n => (ofNat Code n).toPartrecCode := by
+    refine nat_strong_rec (fun (_ : Unit) n => (ofNat Code n).toPartrecCode) hstep fun _ n => ?_
+    set c := ofNat Code n
+    have hn : n = encode c := (encode_ofNat n).symm
+    cases hc : c with
+    | zero | succ | left | right | oracle => simp [toPartrecCodeStep, hn, hc, toPartrecCode]
+    | pair cf cg => simp [toPartrecCodeStep, hn, hc, toPartrecCode, encode_lt_pair]
+    | comp cf cg => simp [toPartrecCodeStep, hn, hc, toPartrecCode, encode_lt_comp]
+    | prec cf cg => simp [toPartrecCodeStep, hn, hc, toPartrecCode, encode_lt_prec]
+    | rfind' cf => simp [toPartrecCodeStep, hn, hc, toPartrecCode, encode_lt_rfind']
+  exact (hrec.comp (Primrec.const ()) (Primrec.encode_iff.2 Primrec.id)).of_eq fun c => by simp
 
 end TauCeti.Oracle.Single.Code

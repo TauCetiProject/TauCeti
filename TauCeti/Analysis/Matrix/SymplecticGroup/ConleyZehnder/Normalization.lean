@@ -29,8 +29,10 @@ nondegenerate symmetric matrix `S` with `‖S‖ < 2π` in the `ℓ²` operator 
 `t ↦ exp (t J S)`, `t ∈ [0, 1]`, has index `-signature(S) / 2`
 (`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_div_two`). Its filter form, for every
 sufficiently small nondegenerate symmetric `S`, is
-`TauCeti.GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two`. For nondegenerate
-`S = diag (α, α)` this agrees with the computation on rotations
+`TauCeti.GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two`; for a fixed
+nondegenerate `S`, the paths `t ↦ exp (t J (ε S))` have this index for small `ε > 0`
+(`TauCeti.GLSymplectic.eventually_conleyZehnderIndex_exp_smul_eq_neg_signature_div_two`). For
+nondegenerate `S = diag (α, α)` this agrees with the computation on rotations
 `TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`; here `S` is an
 arbitrary nondegenerate symmetric matrix, in particular a Hessian that is not diagonalized by a
 symplectic basis.
@@ -154,16 +156,14 @@ private theorem realImage_diagonalStraightening_mul_graphFrame {Ψ : Matrix (n �
     (isUnit_iff_isUnit_det _).2 (by
       rw [det_smul]
       exact ((IsUnit.mk0 _ (by positivity)).pow _).mul h)
-  have hm (X Y : Matrix (n ⊕ n) (n ⊕ n) ℝ) : (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
   have heq : diagonalStraightening n * graphFrame Ψ =
       (1 + Complex.I • (graphSymm Ψ).map ((↑) : ℝ → ℂ)) *
         ((((√2 : ℝ)⁻¹) • (Ψ + 1)).map ((↑) : ℝ → ℂ)) := by
     have hs : (((√2 : ℝ)⁻¹) • (Ψ + 1)).map ((↑) : ℝ → ℂ) = ((√2 : ℝ) : ℂ)⁻¹ • (Ψ + 1).map (↑) := by
       ext i j
       simp [mul_add]
-    rw [diagonalStraightening_mul_graphFrame_eq, ← graphSymm_mul hΨ h, hm, hs, Matrix.add_mul,
-      Matrix.one_mul, Matrix.smul_mul, Matrix.mul_smul]
+    rw [diagonalStraightening_mul_graphFrame_eq, ← graphSymm_mul hΨ h, map_ofReal_mul, hs,
+      Matrix.add_mul, Matrix.one_mul, Matrix.smul_mul, Matrix.mul_smul]
     module
   rw [heq, realImage_mul_map_ofReal _ hu]
 
@@ -434,6 +434,24 @@ theorem eventually_conleyZehnderIndex_eq_neg_signature_div_two :
   exact conleyZehnderIndex_eq_neg_signature_div_two hS hSdet hS2π γ hγ
 
 end SignatureAxiom
+
+/-- **Normalization of the Conley–Zehnder index for small multiples.** For a nondegenerate
+symmetric matrix `S` and every small `ε > 0`, the path `t ↦ exp (t J (ε S))`, `t ∈ [0, 1]`, of
+symplectic matrices has Conley–Zehnder index `-signature(S) / 2`. -/
+theorem eventually_conleyZehnderIndex_exp_smul_eq_neg_signature_div_two
+    {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hS : S.IsHermitian) (hSdet : IsUnit S.det) :
+    ∀ᶠ ε in 𝓝[>] (0 : ℝ), ∀ {A B : GLSymplectic n ℝ} (γ : Path A B),
+      (∀ t : I, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+        NormedSpace.exp ((t : ℝ) • (J n ℝ * (ε • S)))) →
+      conleyZehnderIndex γ = -(signature S : ℝ) / 2 := by
+  have ht : Tendsto (fun ε : ℝ ↦ ε • S) (𝓝[>] 0) (𝓝 0) := by
+    simpa using ((tendsto_id.smul_const S).mono_left nhdsWithin_le_nhds :
+      Tendsto (fun ε : ℝ ↦ ε • S) (𝓝[>] 0) (𝓝 ((0 : ℝ) • S)))
+  filter_upwards [ht.eventually eventually_conleyZehnderIndex_eq_neg_signature_div_two,
+    self_mem_nhdsWithin] with ε hε hε0 A B γ hγ
+  rw [hε (hS.smul (IsSelfAdjoint.all ε))
+      (by rw [det_smul]; exact ((IsUnit.mk0 ε (ne_of_gt hε0)).pow _).mul hSdet) γ hγ,
+    signature_smul_of_pos hε0]
 
 end GLSymplectic
 
