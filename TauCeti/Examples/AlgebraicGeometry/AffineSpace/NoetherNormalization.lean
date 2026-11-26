@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AffineSpace.NoetherNormalization
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 import TauCeti.Examples.RingTheory.NoetherNormalization
+import TauCeti.RingTheory.MvPolynomial.Basic
 import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
@@ -105,11 +106,10 @@ example (k : Type u) [Field k] :
       (TauCeti.NoetherNormalizationExamples.algebraicIndependent_mk_span_X_one_sq k)).map'
       (f := q.toAlgHom) q.injective
   have hfin : (aeval (R := k) y).Finite := by
-    rw [← hqy, Function.comp_def, ← MvPolynomial.comp_aeval, ← MvPolynomial.aeval_comp_rename]
-    exact AlgHom.Finite.comp (AlgHom.Finite.of_surjective _ q.surjective)
-      (AlgHom.Finite.comp
-        (TauCeti.NoetherNormalizationExamples.finite_aeval_mk_span_X_one_sq k)
-        (AlgHom.Finite.of_surjective _ (MvPolynomial.rename_surjective _ Equiv.ulift.surjective)))
+    rw [← hqy, Function.comp_def, ← MvPolynomial.comp_aeval]
+    exact (AlgHom.Finite.of_surjective _ q.surjective).comp <|
+      (TauCeti.NoetherNormalizationExamples.finite_aeval_mk_span_X_one_sq
+        k).aeval_comp_of_surjective Equiv.ulift.surjective
   rw [hπ]
   exact ⟨isClosedImmersion_homOfAlgebra_iff.mpr I.adjoin_range_quotient_mk_X_eq_top,
     isFinite_homOfAlgebra_iff.mpr hfin, surjective_homOfAlgebra hind hfin.to_isIntegral⟩

@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.AffineSpace.Linear
 public import TauCeti.RingTheory.NoetherNormalization
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
+import TauCeti.RingTheory.MvPolynomial.Basic
 
 /-!
 # Geometric linear Noether normalization
@@ -81,10 +82,8 @@ theorem exists_linear_normalization_of_finite {k A : Type u} [Field k] [Infinite
     homOfAlgebra_linearMap x C
   have hy_ind' : AlgebraicIndependent k (y ∘ ULift.down : ULift.{u} (Fin d) → A) :=
     (algebraicIndependent_equiv Equiv.ulift).mpr hy_ind
-  have hy_fin' : (MvPolynomial.aeval (R := k) (y ∘ ULift.down : ULift.{u} (Fin d) → A)).Finite := by
-    rw [← MvPolynomial.aeval_comp_rename]
-    exact AlgHom.Finite.comp hy_fin
-      (AlgHom.Finite.of_surjective _ (MvPolynomial.rename_surjective _ Equiv.ulift.surjective))
+  have hy_fin' : (MvPolynomial.aeval (R := k) (y ∘ ULift.down : ULift.{u} (Fin d) → A)).Finite :=
+    hy_fin.aeval_comp_of_surjective Equiv.ulift.surjective
   have hfin : IsFinite (homOfAlgebra k (y ∘ ULift.down)) :=
     isFinite_homOfAlgebra_iff.mpr hy_fin'
   refine ⟨d, hd, C, ?_⟩
@@ -127,19 +126,7 @@ theorem exists_linear_normalization_of_isFinite {k : Type u} [Field k] [Infinite
         topologicalKrullDim Z = (d : WithBot ℕ∞) := by
   have : IsAffine Z := isAffine_of_isAffineHom ι
   have : Nontrivial Γ(Z, ⊤) := Z.component_nontrivial ⊤
-  obtain ⟨φ, hφ⟩ := Spec.map_surjective (Z.isoSpec.inv ≫ ι ≫ (SpecIso n (.of k)).hom)
-  let : Algebra k Γ(Z, ⊤) := (φ.hom.comp MvPolynomial.C).toAlgebra
-  let x : n → Γ(Z, ⊤) := fun j ↦ φ.hom (MvPolynomial.X j)
-  have haeval : (MvPolynomial.aeval (R := k) x).toRingHom = φ.hom := by
-    refine MvPolynomial.ringHom_ext' ?_ fun j ↦ ?_
-    · ext c
-      simp [RingHom.algebraMap_toAlgebra]
-    · simp [x]
-  have hφ_eq : CommRingCat.ofHom (MvPolynomial.aeval (R := k) x).toRingHom = φ :=
-    CommRingCat.hom_ext haeval
-  have hι : ι = Z.isoSpec.hom ≫ homOfAlgebra k x := by
-    rw [homOfAlgebra_def, hφ_eq, hφ]
-    simp
+  obtain ⟨_, x, hι⟩ := exists_eq_isoSpec_hom_comp_homOfAlgebra ι
   have hx_fin : (MvPolynomial.aeval (R := k) x).Finite := by
     have hhom : homOfAlgebra k x = Z.isoSpec.inv ≫ ι := by simp [hι]
     rw [← isFinite_homOfAlgebra_iff, hhom]

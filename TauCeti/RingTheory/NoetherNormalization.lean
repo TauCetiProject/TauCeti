@@ -15,6 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.BlockSucc
 import TauCeti.LinearAlgebra.Matrix.LastRowTransvection
 import TauCeti.RingTheory.AlgebraicIndependent.BaseChange
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
+import TauCeti.RingTheory.MvPolynomial.Basic
 import TauCeti.RingTheory.MvPolynomial.GenericShear
 import TauCeti.RingTheory.MvPolynomial.LineRestriction
 import TauCeti.RingTheory.TensorProduct.MvPolynomial
@@ -282,12 +283,9 @@ theorem exists_linear_normalization_of_finite [Nontrivial A] {ι : Type*} [Finty
       let y : Fin d → A := fun i ↦ ∑ j, C i j • x j
       AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
   let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
-  have hx' : (aeval (R := k) (x ∘ e)).Finite := by
-    rw [← aeval_comp_rename]
-    exact AlgHom.Finite.comp hx
-      (AlgHom.Finite.of_surjective _ (rename_surjective _ e.surjective))
   obtain ⟨d, hd, M, hy_ind, hy_fin, hdim⟩ :=
-    exists_linear_normalization_units_of_finite (x ∘ e) hx'
+    exists_linear_normalization_units_of_finite (x ∘ e)
+      (hx.aeval_comp_of_surjective e.surjective)
   refine ⟨d, hd, (M : Matrix _ _ k).submatrix (Fin.castLE hd) e.symm, ?_⟩
   have hy : (fun i : Fin d ↦
       ∑ j : ι, (M : Matrix _ _ k).submatrix (Fin.castLE hd) e.symm i j • x j) =
