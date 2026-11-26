@@ -30,8 +30,9 @@ regularity to the regularity of the integral of the first parameter derivative.
 For a compactly supported `C¹` function `Φ` on a product `H × Y` of normed spaces, the derivative
 of `t ↦ ∫ y, Φ (t, y)` is the integral of the derivative of `t ↦ Φ (t, y)`
 (`hasFDerivAt_integral_of_contDiff_of_hasCompactSupport`,
-`fderiv_integral_apply_of_contDiff_of_hasCompactSupport`). For a real inner product space, the
-same holds for the pairing `t ↦ ∫ y, ⟪κ y, Φ (t, y)⟫` with a `C¹` field `κ`
+`fderiv_integral_apply_of_contDiff_of_hasCompactSupport`), and these slice derivatives are
+integrable (`integrable_fderiv_of_contDiff_of_hasCompactSupport`). For a real inner product
+space, the same holds for the pairing `t ↦ ∫ y, ⟪κ y, Φ (t, y)⟫` with a `C¹` field `κ`
 (`fderiv_integral_inner_apply_of_contDiff_of_hasCompactSupport`), whose integrand is integrable
 (`integrable_inner_fderiv_apply_of_contDiff_of_hasCompactSupport`).
 
@@ -269,8 +270,9 @@ variable [MeasurableSpace Y] [OpensMeasurableSpace Y] {ν : Measure Y} [IsFinite
 omit [NormedSpace ℝ E] in
 /-- The derivatives of the slices `t ↦ Φ (t, y)` of a compactly supported `C¹` function `Φ` on a
 product are integrable. -/
-private theorem integrable_fderiv_slice_left (hΦ : ContDiff 𝕜 1 Φ) (hΦc : HasCompactSupport Φ)
-    (t₀ : H) : Integrable (fun y ↦ fderiv 𝕜 (fun t ↦ Φ (t, y)) t₀) ν := by
+theorem integrable_fderiv_of_contDiff_of_hasCompactSupport (hΦ : ContDiff 𝕜 1 Φ)
+    (hΦc : HasCompactSupport Φ) (t₀ : H) :
+    Integrable (fun y ↦ fderiv 𝕜 (fun t ↦ Φ (t, y)) t₀) ν := by
   have hΦd := hΦ.differentiable one_ne_zero
   rw [funext fun y ↦ (hasFDerivAt_slice_left hΦd t₀ y).fderiv]
   exact integrable_of_hasFDerivAt_of_compact_support (D := fun t y ↦ Φ (t, y)) univ_mem
@@ -303,7 +305,8 @@ theorem fderiv_integral_apply_of_contDiff_of_hasCompactSupport (hΦ : ContDiff �
     (hΦc : HasCompactSupport Φ) (t₀ v : H) :
     fderiv 𝕜 (fun t ↦ ∫ y, Φ (t, y) ∂ν) t₀ v = ∫ y, fderiv 𝕜 (fun t ↦ Φ (t, y)) t₀ v ∂ν := by
   rw [(hasFDerivAt_integral_of_contDiff_of_hasCompactSupport hΦ hΦc t₀).fderiv,
-    ContinuousLinearMap.integral_apply (integrable_fderiv_slice_left hΦ hΦc t₀)]
+    ContinuousLinearMap.integral_apply
+      (integrable_fderiv_of_contDiff_of_hasCompactSupport hΦ hΦc t₀)]
 
 end Product
 

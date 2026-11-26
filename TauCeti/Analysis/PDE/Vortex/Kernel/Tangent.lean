@@ -77,7 +77,7 @@ The isomorphism is complex linear for the complex structure `J` of the kernel
 (`TauCeti.Vortex.gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure`). Followed by
 the coefficients of polynomials of degree less than `m`, it gives divisor coordinates
 `TauCeti.Vortex.gaugeFixedKernelEquivCoeff : ker L_x ≃ ℂ^m`, in which `J` is multiplication by `i`
-(`TauCeti.Vortex.coe_gaugeFixedKernelEquivCoeff_symm_smul_I`).
+(`TauCeti.Vortex.gaugeFixedKernelEquivCoeff_symm_smul_I`).
 
 ## Main definitions
 
@@ -96,6 +96,8 @@ the coefficients of polynomials of degree less than `m`, it gives divisor coordi
   translation `y_v` to `v P_D'`.
 * `TauCeti.Vortex.gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure`: it is
   complex linear for the complex structure `J` of the kernel.
+* `TauCeti.Vortex.gaugeFixedKernelEquivCoeff_symm_smul_I`: in divisor coordinates `J` is
+  multiplication by `i`.
 
 ## References
 
@@ -427,22 +429,37 @@ theorem gaugeFixedKernelEquivCoeff_gaugeFixedKernelAlmostComplexStructure
     gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure, map_smul,
     gaugeFixedKernelEquivCoeff_apply]
 
+/-- The inverse of `gaugeFixedKernelEquivDegreeLT` is complex linear: the kernel element with
+divisor variation `i • R` is `J` applied to the kernel element with divisor variation `R`. -/
+@[simp]
+theorem gaugeFixedKernelEquivDegreeLT_symm_smul_I (R : degreeLT ℂ m) :
+    (gaugeFixedKernelEquivDegreeLT hx hhol hlim hD).symm (I • R) =
+      gaugeFixedKernelAlmostComplexStructure x
+        ((gaugeFixedKernelEquivDegreeLT hx hhol hlim hD).symm R) := by
+  rw [LinearEquiv.symm_apply_eq,
+    gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure,
+    LinearEquiv.apply_symm_apply]
+
 /-- In divisor coordinates `J` is multiplication by `i`: the kernel element with coordinates
 `i • v` is `J` applied to the kernel element with coordinates `v`. -/
 @[simp]
+theorem gaugeFixedKernelEquivCoeff_symm_smul_I (v : Fin m → ℂ) :
+    (gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm (I • v) =
+      gaugeFixedKernelAlmostComplexStructure x
+        ((gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm v) := by
+  rw [LinearEquiv.symm_apply_eq,
+    gaugeFixedKernelEquivCoeff_gaugeFixedKernelAlmostComplexStructure,
+    LinearEquiv.apply_symm_apply]
+
+/-- In divisor coordinates `J` is multiplication by `i`, pointwise: the kernel element with
+coordinates `i • v` is `J` applied pointwise to the kernel element with coordinates `v`. -/
 theorem coe_gaugeFixedKernelEquivCoeff_symm_smul_I (v : Fin m → ℂ) (z : ℂ) :
     ((gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm (I • v) :
         ℂ → EuclideanSpace ℝ (Fin 4)) z =
       variationComplexStructure
         (((gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm v :
           ℂ → EuclideanSpace ℝ (Fin 4)) z) := by
-  have h : (gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm (I • v) =
-      gaugeFixedKernelAlmostComplexStructure x
-        ((gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm v) := by
-    rw [LinearEquiv.symm_apply_eq,
-      gaugeFixedKernelEquivCoeff_gaugeFixedKernelAlmostComplexStructure,
-      LinearEquiv.apply_symm_apply]
-  rw [h, coe_gaugeFixedKernelAlmostComplexStructure_apply]
+  rw [gaugeFixedKernelEquivCoeff_symm_smul_I, coe_gaugeFixedKernelAlmostComplexStructure_apply]
 
 /-- **Covariant translations move the divisor rigidly.** At a smooth vortex with `|α|² → 1` at
 infinity and zero divisor `D ∈ Sym^m ℂ`, the isomorphism `gaugeFixedKernelEquivDegreeLT` sends the
