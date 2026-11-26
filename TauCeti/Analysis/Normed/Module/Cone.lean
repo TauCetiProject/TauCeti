@@ -92,6 +92,11 @@ transported along the transpose of an injective linear map, such as the inclusio
 * `TauCeti.exists_cone_decay_mul`: if `g` decays rapidly on an open cone around `a ζ₀ ≠ 0` and `h`
   grows at most polynomially, then `ζ ↦ g (a ζ) * h (b ζ)` decays rapidly on an open cone around
   `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
+* `TauCeti.exists_isOpen_cone_forall_notMem`: a set `Γ` of covectors, conic and closed away from
+  the zero covectors, which misses the nonzero covectors of a closed cone over a compact set of base
+  points, also misses an open cone around them over a neighbourhood of that set.
+* `TauCeti.norm_inv_smul_sub_inv_smul_mul_norm_le`: the directions of two nonzero vectors `a`, `b`
+  are within `2 ‖a - b‖ / ‖b‖` of each other.
 * `TauCeti.exists_finset_diff_singleton_subset_biUnion`: if every unit vector of a closed cone `V`
   lies in an open cone, finitely many of these cones cover the nonzero vectors of `V`;
   `TauCeti.exists_finset_compl_singleton_subset_biUnion` is the case `V = E`.
@@ -832,6 +837,60 @@ theorem forall_smul_mem_insert_zero [Module ℝ E] {Γ : Set E}
   rintro t ht ξ (rfl | hξ)
   · simp
   · exact Set.mem_insert_of_mem _ (hc t ht ξ hξ)
+
+/-- **Separating a compact set of base points from a closed cone.** Let `Γ` be a set of covectors
+`(p, ζ)` closed under positive dilations of `ζ`, and closed in `W × (X \ {0})`. If no covector
+`(p, ζ)` with `p` in a compact set `K ⊆ W` and `ζ ≠ 0` in a closed cone `C` lies in `Γ`, then the
+same holds for `p` in an open neighbourhood `G` of `K` and `ζ` in an open cone `O` containing the
+nonzero vectors of `C`. -/
+theorem exists_isOpen_cone_forall_notMem {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    [ProperSpace X] {W : Set X} {Γ : Set (X × X)} (hΓ : IsOpen ((W ×ˢ {0}ᶜ) \ Γ))
+    (hcone : ∀ p ζ, (p, ζ) ∈ Γ → ∀ t : ℝ, 0 < t → (p, t • ζ) ∈ Γ) {K : Set X} (hK : IsCompact K)
+    (hKW : K ⊆ W) {C : Set X} (hC : IsClosed C) (hCcone : ∀ t : ℝ, 0 < t → ∀ ζ ∈ C, t • ζ ∈ C)
+    (hKC : ∀ p ∈ K, ∀ ζ ∈ C, ζ ≠ 0 → (p, ζ) ∉ Γ) :
+    ∃ G : Set X, IsOpen G ∧ K ⊆ G ∧ ∃ O : Set X, IsOpen O ∧ (∀ ζ ∈ C, ζ ≠ 0 → ζ ∈ O) ∧
+      (∀ t : ℝ, 0 < t → ∀ ζ ∈ O, t • ζ ∈ O) ∧ ∀ p ∈ G, ∀ ζ ∈ O, (p, ζ) ∉ Γ := by
+  -- The tube lemma around `K × (C ∩ sphere 0 1)`, then the cone over the open set of directions.
+  obtain ⟨G, v, hG, hv, hKG, hCv, hGv⟩ := generalized_tube_lemma hK
+    ((isCompact_sphere (0 : X) 1).inter_left hC) hΓ fun ⟨p, ζ⟩ ⟨hp, hζC, hζ⟩ ↦
+      ⟨⟨hKW hp, ne_zero_of_mem_unit_sphere ⟨ζ, hζ⟩⟩, hKC p hp ζ hζC
+        (ne_zero_of_mem_unit_sphere ⟨ζ, hζ⟩)⟩
+  -- The unit direction `u ζ = ‖ζ‖⁻¹ • ζ` of a nonzero vector.
+  set u : X → X := fun ζ ↦ ‖ζ‖⁻¹ • ζ
+  have hu : ContinuousOn u {0}ᶜ :=
+    (continuous_norm.continuousOn.inv₀ fun ζ hζ ↦ norm_ne_zero_iff.2 hζ).smul continuousOn_id
+  have hupos {ζ : X} (hζ : ζ ≠ 0) : 0 < ‖ζ‖⁻¹ := inv_pos.2 (norm_pos_iff.2 hζ)
+  have hus {ζ : X} (hζ : ζ ≠ 0) : u ζ ∈ sphere 0 1 := by
+    simp [u, norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.2 hζ)]
+  have hut (t : ℝ) (ht : 0 < t) (ζ : X) : u (t • ζ) = u ζ := by
+    simp only [u, norm_smul, Real.norm_of_nonneg ht.le, mul_inv, smul_smul]
+    rw [mul_right_comm, inv_mul_cancel₀ ht.ne', one_mul]
+  refine ⟨G, hG, hKG, {0}ᶜ ∩ u ⁻¹' v, hu.isOpen_inter_preimage isOpen_compl_singleton hv,
+    fun ζ hζC hζ ↦ ⟨hζ, hCv ⟨hCcone _ (hupos hζ) ζ hζC, hus hζ⟩⟩,
+    fun t ht ζ ⟨hζ, hζv⟩ ↦ ⟨smul_ne_zero ht.ne' hζ, by rwa [mem_preimage, hut t ht]⟩,
+    fun p hp ζ ⟨hζ, hζv⟩ hpζ ↦ ?_⟩
+  exact (hGv (mk_mem_prod hp hζv)).2 (hcone p ζ hpζ _ (hupos hζ))
+
+
+/-- The directions `‖a‖⁻¹ • a` and `‖b‖⁻¹ • b` of two nonzero vectors are within
+`2 ‖a - b‖ / ‖b‖` of each other. -/
+theorem norm_inv_smul_sub_inv_smul_mul_norm_le {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    {a b : X} (ha : a ≠ 0) (hb : b ≠ 0) :
+    ‖‖a‖⁻¹ • a - ‖b‖⁻¹ • b‖ * ‖b‖ ≤ 2 * ‖a - b‖ := by
+  have hb' : 0 < ‖b‖ := norm_pos_iff.2 hb
+  have ha' : 0 < ‖a‖ := norm_pos_iff.2 ha
+  have h1 : ‖a‖⁻¹ • a - ‖b‖⁻¹ • b = ‖b‖⁻¹ • ((‖b‖ * ‖a‖⁻¹ - 1) • a + (a - b)) := by
+    rw [sub_smul, one_smul, smul_add, smul_sub, smul_sub, smul_smul, ← mul_assoc,
+      inv_mul_cancel₀ hb'.ne', one_mul]
+    abel
+  rw [h1, norm_smul, norm_inv, norm_norm, mul_comm, ← mul_assoc, mul_inv_cancel₀ hb'.ne',
+    one_mul]
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_smul, Real.norm_eq_abs, show ‖b‖ * ‖a‖⁻¹ - 1 = (‖b‖ - ‖a‖) / ‖a‖ by
+    field_simp, abs_div, abs_of_pos ha', div_mul_cancel₀ _ ha'.ne', two_mul]
+  gcongr
+  rw [← norm_neg (a - b), neg_sub]
+  exact abs_norm_sub_norm_le b a
 
 end TauCeti
 

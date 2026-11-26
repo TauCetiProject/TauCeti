@@ -67,6 +67,9 @@ opposite wave front covectors over a common point is defined (Hörmander I, Theo
   functions.
 * `Distribution.pullbackInl_ofFun`: for a continuous function satisfying the hypothesis it is the
   restriction to `E × {0}`.
+* `Distribution.complexPairing_pullbackInl_eq_tsum`: the pullback paired with a complex test
+  function `ψ` is the lattice series `∑ m, c 𝓕 ψ (m.fst) T (χ e_(-m))`, for a cutoff `χ` equal to
+  one near `tsupport ψ × {0}` (`TestFunction.exists_eq_one_prod_closedBall_tsupport_subset`).
 * `Distribution.isMicrolocallySmoothAt_pullbackInl`, `Distribution.waveFrontSet_pullbackInl_subset`:
   the wave front set of the pullback lies in the image of that of `T` under `ιᵀ`.
 * `Distribution.pullbackInl_add`, `Distribution.pullbackInl_smul`,
@@ -146,8 +149,9 @@ private theorem exists_pos_forall_norm_fst_lt_imp_mem {Γ : Set (WithLp 2 (E × 
 
 /-- Around `K × {0}`, for a compact set `K` with `K × {0} ⊆ G ∩ W`, there is a cutoff `χ` supported
 in `G`, equal to one on `K × closedBall 0 δ` for some `δ > 0`. -/
-private theorem exists_cutoff {K : Set E} (hK : IsCompact K) {G : Set (WithLp 2 (E × D))}
-    (hG : IsOpen G) (hKG : ∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ G ∩ W) :
+theorem _root_.TestFunction.exists_eq_one_prod_closedBall_tsupport_subset {K : Set E}
+    (hK : IsCompact K) {G : Set (WithLp 2 (E × D))} (hG : IsOpen G)
+    (hKG : ∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ G ∩ W) :
     ∃ δ > 0, ∃ χ : 𝓓(W, ℂ), (∀ x ∈ K, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1) ∧
       tsupport χ ⊆ G := by
   obtain ⟨δ, hδ, htube⟩ := hK.exists_pos_forall_toLp_mem (hG.inter W.isOpen) hKG
@@ -300,7 +304,8 @@ private theorem exists_cutoff_decay (T : 𝓓'(W, ℂ)) {K : Set E} (hK : IsComp
         exact isMicrolocallySmoothAt_of_fst_eq_zero T (hKW x hx) (h x hx) hζ0 hζ)
   obtain ⟨c, hc, hcΓ⟩ := exists_pos_forall_norm_fst_lt_imp_mem hΓ hcone fun b hb ↦
     hVΓ _ (by simp) fun h0 ↦ hb (by simpa using congrArg WithLp.snd h0)
-  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := exists_cutoff hK hG fun x hx ↦ ⟨hKG ⟨x, hx, rfl⟩, hKW x hx⟩
+  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := TestFunction.exists_eq_one_prod_closedBall_tsupport_subset hK hG
+    fun x hx ↦ ⟨hKG ⟨x, hx, rfl⟩, hKW x hx⟩
   exact ⟨δ, hδ, χ, hχ1, c, hc, fun N ↦ (hdecay χ (hχG.trans subset_union_left) N).imp
     fun _ hC ζ hζ ↦ hC ζ (hcΓ ζ hζ)⟩
 
@@ -668,9 +673,12 @@ private theorem pullbackInl_apply_eq_tsum [MeasurableSpace E] [BorelSpace E] [Me
     (tendsto_apply_tsum T hδ hχ L hL hc hdecay hM h1 (Eventually.of_forall hρr) hr
       (Eventually.of_forall hf))
 
-/-- `Distribution.pullbackInl_apply_eq_tsum` for a complex test function `ψ`, through its real and
-imaginary parts. -/
-private theorem complexPairing_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpace E]
+/-- **The pullback as a lattice series.** For a complex test function `ψ` on `U` and a cutoff `χ`
+equal to one on `tsupport ψ × closedBall 0 δ` whose localized Fourier transform decays rapidly on a
+cone `‖ζ.fst‖ < c ‖ζ.snd‖`, the pullback of `T` paired with `ψ` is the lattice series
+`∑ m, (covolume L)⁻¹ 𝓕 ψ (m.fst) T (χ e_(-m))`, for a lattice `L` separating `tsupport χ` from
+its translates. -/
+theorem complexPairing_pullbackInl_eq_tsum [MeasurableSpace E] [BorelSpace E]
     [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ))
     (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
@@ -839,8 +847,9 @@ theorem isMicrolocallySmoothAt_pullbackInl (T : 𝓓'(W, ℂ))
     fun x hx ↦ by
       rw [mem_singleton_iff.1 hx]
       exact ⟨hp₀G (mem_singleton _), hU hx₀⟩
-  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := exists_cutoff (isCompact_closedBall x₀ (r / 2)) hG fun x hx ↦
-    htube x₀ rfl x 0 ((mem_closedBall.1 hx).trans_lt (half_lt_self hr)) (by simpa using hr)
+  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := TestFunction.exists_eq_one_prod_closedBall_tsupport_subset
+    (isCompact_closedBall x₀ (r / 2)) hG fun x hx ↦
+      htube x₀ rfl x 0 ((mem_closedBall.1 hx).trans_lt (half_lt_self hr)) (by simpa using hr)
   obtain ⟨φ, -, hφ1, hφ⟩ := exists_cutoff_tsupport_subset (Ω := U) (n := ⊤)
     (isCompact_singleton (x := x₀)) (isOpen_ball.inter U.isOpen)
     (singleton_subset_iff.2 ⟨mem_ball_self (half_pos hr), hx₀⟩) inter_subset_right

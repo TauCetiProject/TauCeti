@@ -193,7 +193,7 @@ theorem localFourier_at_zero (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
   localFourier_eq T φ fun x ↦ by simp
 
 /-- Modulating a cutoff by Fourier atoms `η ↦ φ e_η` depends continuously on the frequency. -/
-private theorem continuous_bilinLeftCLM_fourierAtom (φ : 𝓓(Ω, ℂ)) :
+theorem _root_.TestFunction.continuous_bilinLeftCLM_fourierAtom (φ : 𝓓(Ω, ℂ)) :
     Continuous fun η : E ↦
       bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ := by
   refine continuous_of_contDiff_uncurry
@@ -206,7 +206,7 @@ private theorem continuous_bilinLeftCLM_fourierAtom (φ : 𝓓(Ω, ℂ)) :
 /-- The localized Fourier transform `η ↦ T (φ e_η)` is continuous in the frequency. -/
 theorem continuous_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
     Continuous (T.localFourier φ) :=
-  T.complexPairing.continuous.comp (continuous_bilinLeftCLM_fourierAtom φ)
+  T.complexPairing.continuous.comp (TestFunction.continuous_bilinLeftCLM_fourierAtom φ)
 
 /-- Convergence of distributions in `𝓓'(Ω, ℂ)` gives uniform convergence of localized Fourier
 transforms on compact sets of frequencies. -/
@@ -215,7 +215,7 @@ theorem tendstoUniformlyOn_localFourier {α : Type*} {l : Filter α} {f : α →
     TendstoUniformlyOn (fun a η ↦ (f a).localFourier φ η) (T.localFourier φ) l K := by
   set ψ : E → 𝓓(Ω, ℂ) := fun η ↦
     bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ
-  have hψ : Continuous ψ := continuous_bilinLeftCLM_fourierAtom φ
+  have hψ : Continuous ψ := TestFunction.continuous_bilinLeftCLM_fourierAtom φ
   have hcomp (L : ℂ →L[ℝ] ℝ) :
       TendstoUniformlyOn (fun a η ↦ f a (postcompCLM (𝕜 := ℝ) L (ψ η)))
         (fun η ↦ T (postcompCLM (𝕜 := ℝ) L (ψ η))) l K :=

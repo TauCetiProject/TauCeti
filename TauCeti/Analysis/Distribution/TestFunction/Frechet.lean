@@ -39,6 +39,10 @@ sets, `LinearMap.exists_schwartzKernel_supportedIn`.
 * `ContDiffMapSupportedIn.instBaireSpace`: with the countably generated uniformity
   (`ContDiffMapSupportedIn.instIsCountablyGeneratedUniformity`), completeness makes
   `𝓓^{n}_{K}(E, F)` completely metrizable, hence a Baire space and barrelled.
+* `ContDiffMapSupportedIn.summable_of_forall_summable_seminorm`,
+  `ContDiffMapSupportedIn.seminorm_tsum_le`: by completeness, a family whose seminorms `N_i` are
+  summable for every `i` is summable, and the seminorms of its sum are at most the sums of the
+  seminorms.
 * `ContDiffMapSupportedIn.supSeminorm_apply_eq_of_scalars`: the seminorms `N_{≤i}` do not depend
   on the field of scalars.
 * `ContDiffMapSupportedIn.supSeminorm_mono`: the seminorms `N_{≤i}` increase with `i`.
@@ -125,6 +129,34 @@ instance instCompleteSpace [CompleteSpace F] : CompleteSpace 𝓓^{n}_{K}(E, F) 
 barrelled (`BaireSpace.instBarrelledSpace`), so the Banach–Steinhaus theorem applies to it. -/
 instance instBaireSpace [CompleteSpace F] : BaireSpace 𝓓^{n}_{K}(E, F) :=
   BaireSpace.of_completelyPseudoMetrizable
+
+/-- **Absolutely summable families of functions supported in `K`.** A family in
+`𝓓^{n}_{K}(E, F)` whose seminorms `N_i` are summable for every `i` is summable. -/
+theorem summable_of_forall_summable_seminorm [CompleteSpace F] {ι : Type*}
+    {f : ι → 𝓓^{n}_{K}(E, F)}
+    (hf : ∀ i, Summable fun j ↦ ContDiffMapSupportedIn.seminorm ℝ E F n K i (f j)) :
+    Summable f := by
+  rw [summable_iff_cauchySeq_finset, CauchySeq,
+    ← (isUniformEmbedding_pi_structureMapCLM ℝ).isUniformInducing.cauchy_map_iff, Filter.map_map]
+  -- Each structure map of the partial sums is Cauchy, being absolutely summable.
+  refine (cauchy_pi_iff' _).2 fun i ↦ ?_
+  have h := cauchySeq_finset_of_norm_bounded (f := fun j ↦ structureMapCLM ℝ n i (f j)) (hf i)
+    fun j ↦ (ContDiffMapSupportedIn.seminorm_apply ℝ i (f j)).ge
+  simpa only [CauchySeq, Filter.map_map, Function.comp_def, ContinuousLinearMap.pi_apply,
+    map_sum, Finset.sum_apply, Function.eval] using h
+
+/-- The seminorms `N_i` of the sum of an absolutely summable family in `𝓓^{n}_{K}(E, F)` are at
+most the sums of the seminorms. -/
+theorem seminorm_tsum_le [CompleteSpace F] {ι : Type*} {f : ι → 𝓓^{n}_{K}(E, F)}
+    (hf : ∀ i, Summable fun j ↦ ContDiffMapSupportedIn.seminorm ℝ E F n K i (f j)) (i : ℕ) :
+    ContDiffMapSupportedIn.seminorm ℝ E F n K i (∑' j, f j) ≤
+      ∑' j, ContDiffMapSupportedIn.seminorm ℝ E F n K i (f j) := by
+  -- The seminorm is continuous, and bounded along the partial sums.
+  refine le_of_tendsto (((ContDiffMapSupportedIn.withSeminorms ℝ E F n K).continuous_seminorm
+    i).tendsto _ |>.comp (summable_of_forall_summable_seminorm hf).hasSum) <|
+    Eventually.of_forall fun s ↦ ?_
+  exact (Finset.le_sum_of_subadditive _ (map_zero _).le (map_add_le_add _) _ _).trans
+    ((hf i).sum_le_tsum s fun _ _ ↦ apply_nonneg _ _)
 
 section Scalars
 
