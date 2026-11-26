@@ -14,7 +14,6 @@ public import Mathlib.Data.Nat.Factorial.Basic
 import Mathlib.Data.Int.Cast.Basic
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Data.Nat.Factorial.NatCast
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Factorials vanishing in a semiring
@@ -22,7 +21,7 @@ import Mathlib.Tactic.LinearCombination
 If a positive natural number `m` vanishes in a semiring `R`, then so does the factorial of every
 natural number `k ≥ m`, since `m ∣ k !`. Conversely, if `d !` is nonzero in a ring, then the
 integers `0, …, d` are distinct in it, since their differences are positive and at most `d`.
-When `n !` is a unit in a commutative ring, the alternating sum of the products of the inverse
+When `n !` is a unit in a ring, the alternating sum of the products of the inverse
 factorials `1 / (i ! (n - i)!)` over `i ≤ n` vanishes for `n ≠ 0`, being `(1 - 1) ^ n / n !`.
 
 ## Main results
@@ -65,10 +64,10 @@ theorem injective_natCast_fin_of_factorial_ne_zero {R : Type*} [Ring R] {d : ℕ
       (by rw [Nat.cast_sub (Nat.le_of_lt h), hab, sub_self]) (by omega))
 
 open Finset in
-/-- **The alternating sum of inverse factorials.** If `n !` is a unit in a commutative ring `A`,
-then `∑_{i ≤ n} (-1) ^ (n - i) / (i ! (n - i)!)` is `1` for `n = 0` and `0` otherwise: multiplied
+/-- **The alternating sum of inverse factorials.** If `n !` is a unit in a ring `A`, then
+`∑_{i ≤ n} (-1) ^ (n - i) / (i ! (n - i)!)` is `1` for `n = 0` and `0` otherwise: multiplied
 by `n !` it is the binomial expansion of `(1 - 1) ^ n`. -/
-theorem sum_range_neg_one_pow_mul_ringInverse_factorial {A : Type*} [CommRing A] {n : ℕ}
+theorem sum_range_neg_one_pow_mul_ringInverse_factorial {A : Type*} [Ring A] {n : ℕ}
     (hn : IsUnit (n.factorial : A)) :
     ∑ i ∈ range (n + 1), (-1) ^ (n - i) *
         (Ring.inverse (i.factorial : A) * Ring.inverse ((n - i).factorial : A)) =
@@ -79,14 +78,16 @@ theorem sum_range_neg_one_pow_mul_ringInverse_factorial {A : Type*} [CommRing A]
           (Ring.inverse (i.factorial : A) * Ring.inverse ((n - i).factorial : A))) =
         1 ^ i * (-1) ^ (n - i) * (n.choose i : A) := by
     have hi : i ≤ n := Nat.lt_succ_iff.mp (mem_range.mp hi)
-    rw [← Nat.choose_mul_factorial_mul_factorial hi, Nat.cast_mul, Nat.cast_mul, one_pow, one_mul]
-    have h₁ := Ring.mul_inverse_cancel _ (hn.natCast_factorial_of_le hi)
-    have h₂ := Ring.mul_inverse_cancel _ (hn.natCast_factorial_of_le (Nat.sub_le n i))
-    linear_combination ((-1) ^ (n - i) * (n.choose i : A) *
-        ((i.factorial : A) * Ring.inverse (i.factorial : A))) * h₂ +
-      (-1) ^ (n - i) * (n.choose i : A) * h₁
+    -- The sign `(-1) ^ (n - i)` is central and the casts commute, so the factorials cancel.
+    rw [← Nat.choose_mul_factorial_mul_factorial hi, Nat.cast_mul, Nat.cast_mul, one_pow, one_mul,
+      mul_assoc (n.choose i : A), (Nat.cast_commute (α := A) i.factorial (n - i).factorial).eq,
+      ((Commute.neg_one_right _).pow_right _).left_comm]
+    simp only [mul_assoc]
+    rw [Ring.mul_inverse_cancel_left _ _ (hn.natCast_factorial_of_le hi),
+      Ring.mul_inverse_cancel _ (hn.natCast_factorial_of_le (Nat.sub_le n i)), mul_one]
   apply hn.mul_left_cancel
-  rw [mul_sum, sum_congr rfl hchoose, ← add_pow, add_neg_cancel, zero_pow_eq]
+  rw [mul_sum, sum_congr rfl hchoose, ← (Commute.one_left (-1 : A)).add_pow, add_neg_cancel,
+    zero_pow_eq]
   split_ifs with h
   · simp [h]
   · simp
