@@ -224,10 +224,9 @@ theorem card_mul_one_sub_re_inducedFun {s : G ⧸ H → G} (hs : ∀ x, (s x : G
     Subtype.val_injective.extend_apply φ 0 ⟨_, inv_mul_mul_mem_of_section hs g x⟩
   have hre : RCLike.re (inducedFun s φ g) = (Fintype.card (G ⧸ H) : ℝ)⁻¹ *
       ∑ x : G ⧸ H, RCLike.re (φ ⟨_, inv_mul_mul_mem_of_section hs g x⟩) := by
-    rw [inducedFun_apply]
-    simp_rw [hext]
-    rw [← RCLike.ofReal_natCast, ← RCLike.ofReal_inv, RCLike.re_ofReal_mul, map_sum]
-  rw [hre, mul_sub, mul_one, mul_inv_cancel_left₀ hpos.ne', Finset.sum_sub_distrib]
+    simp [inducedFun_apply, hext, map_sum, RCLike.normSq_apply, div_eq_mul_inv, hpos.ne']
+  rw [hre, Finset.sum_sub_distrib]
+  field_simp [hpos.ne']
   simp
 
 /-- For a normalized positive-definite function `φ` on a finite-index subgroup `H` and a section
@@ -237,22 +236,18 @@ theorem one_sub_re_le_card_mul_one_sub_re_inducedFun {s : G ⧸ H → G}
     (hs : ∀ x, (s x : G ⧸ H) = x) (hs1 : s ((1 : G) : G ⧸ H) = 1) {φ : H → 𝕜}
     (hφ : (of fun a b : H ↦ φ (a⁻¹ * b)).PosSemidef) (h1 : φ 1 = 1) (h : H) :
     1 - RCLike.re (φ h) ≤ (Fintype.card (G ⧸ H) : ℝ) * (1 - RCLike.re (inducedFun s φ h)) := by
-  let x₀ : G ⧸ H := ((1 : G) : G ⧸ H)
-  have hsmul : (h : G) • x₀ = x₀ := by
-    dsimp only [x₀]
+  have hsmul : (h : G) • ((1 : G) : G ⧸ H) = ((1 : G) : G ⧸ H) := by
     rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
     exact QuotientGroup.eq.mpr (by simp)
-  have hx₀ : (⟨(s ((h : G) • x₀))⁻¹ * (h : G) * s x₀,
-      inv_mul_mul_mem_of_section hs h x₀⟩ : H) = h := by
+  have hx₀ : (⟨(s ((h : G) • ((1 : G) : G ⧸ H)))⁻¹ * (h : G) * s ((1 : G) : G ⧸ H),
+      inv_mul_mul_mem_of_section hs h ((1 : G) : G ⧸ H)⟩ : H) = h := by
     ext
-    dsimp only
-    rw [hsmul, show s x₀ = 1 from hs1]
-    simp
+    simp [hsmul, hs1]
   rw [card_mul_one_sub_re_inducedFun hs φ h]
   simpa only [hx₀] using Finset.single_le_sum (f := fun x : G ⧸ H ↦
       1 - RCLike.re (φ ⟨(s ((h : G) • x))⁻¹ * (h : G) * s x,
         inv_mul_mul_mem_of_section hs h x⟩))
-    (fun x _ ↦ hφ.one_sub_re_nonneg h1 _) (Finset.mem_univ x₀)
+    (fun x _ ↦ hφ.one_sub_re_nonneg h1 _) (Finset.mem_univ ((1 : G) : G ⧸ H))
 
 end FintypeQuotient
 
