@@ -158,9 +158,10 @@ theorem exists_norm_le_mul_norm_of_isCompact_closure (hT : T.IsClosed) {s : Set 
       exact hlt.not_ge (by positivity)
     have hpos : 0 < ‖(u : E)‖ := norm_pos_iff.2 hu0
     refine ⟨(‖(u : E)‖⁻¹ : 𝕜) • u, Submodule.smul_mem _ _ hu, norm_smul_inv_norm hu0, ?_⟩
-    rw [map_smul, norm_smul, norm_inv, RCLike.norm_ofReal, abs_norm, inv_mul_lt_iff₀ hpos,
-      mul_one_div, lt_div_iff₀ (by positivity), mul_comm]
-    exact hlt
+    simp only [map_smul, norm_smul, norm_inv, RCLike.norm_ofReal, abs_norm]
+    rw [inv_mul_lt_iff₀ hpos]
+    field_simp
+    linarith [hlt]
   choose w hw hw1 hwT using hseq
   have hTw : Tendsto (fun n ↦ T (w n)) atTop (𝓝 0) :=
     squeeze_zero_norm (fun n ↦ (hwT n).le) tendsto_one_div_add_atTop_nhds_zero_nat
@@ -184,7 +185,7 @@ section Adjoint
 
 variable [InnerProductSpace 𝕜 F] [CompleteSpace F] {T : E →ₗ.[𝕜] F}
 
-/-- **A Poincaré inequality for the adjoint gives one for the operator.** If the adjoint of a
+/-- **A closed range for the adjoint gives a Poincaré inequality.** If the adjoint of a
 closed densely defined partial linear map `T` between Hilbert spaces has closed range, then for
 some `c > 0`, `‖u‖ ≤ c ‖T u‖` for every `u` in the domain of `T` orthogonal to its kernel. -/
 theorem exists_norm_le_mul_norm_of_isClosed_range_adjoint (hT : T.IsClosed)
