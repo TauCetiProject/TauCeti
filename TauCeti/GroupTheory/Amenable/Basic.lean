@@ -24,7 +24,8 @@ left-invariant mean is invariant under translation by the range of `φ`, and, by
 `k ↦ m ((L_k f) ∘ φ)`, by its closure. So the pushforward along a homomorphism with dense range is
 left invariant. Hence amenability passes to the target of a continuous homomorphism with dense
 range, in particular to images under surjective continuous homomorphisms, and is invariant under
-isomorphisms of topological groups.
+isomorphisms of topological groups. Left translation also induces a contragredient left action
+`(g • m) f = m (L_{g⁻¹} f)` of `G` on `Mean G` whose fixed points are the left-invariant means.
 
 ## Main definitions
 
@@ -32,6 +33,8 @@ isomorphisms of topological groups.
   and `f`.
 * `TauCeti.Mean.map φ`, `TauCeti.AddMean.map φ`: the pushforward of means along a continuous
   homomorphism `φ`.
+* `TauCeti.Mean.instMulAction`: the contragredient left action `(g • m) f = m (L_{g⁻¹} f)` of `G`
+  on `Mean G`.
 * `TauCeti.Amenable G`: `UCB G` carries a left-invariant mean.
 
 ## Main results
@@ -40,6 +43,8 @@ isomorphisms of topological groups.
   means form a convex set.
 * `TauCeti.Mean.IsLeftInvariant.map`, `TauCeti.AddMean.IsLeftInvariant.map`: pushforward along a
   continuous homomorphism with dense range preserves left invariance.
+* `TauCeti.Mean.isLeftInvariant_iff_forall_smul_eq`, `TauCeti.Mean.mem_fixedPoints_iff`: a mean is
+  left invariant if and only if it is fixed by every `g : G`.
 * `TauCeti.Amenable.of_denseRange`: amenability passes to the target of a continuous homomorphism
   with dense range, in particular to images under surjective continuous homomorphisms.
 * `TauCeti.Amenable.of_le`: amenability passes from a finer to a coarser group topology.
@@ -184,6 +189,54 @@ theorem IsLeftInvariant.map {m : Mean G} (hm : m.IsLeftInvariant) {φ : G →ₜ
     (map_continuous (m.map φ)).comp (UCB.continuous_leftTranslation_apply f)
   exact hφ.induction_on (p := fun k => m.map φ (UCB.leftTranslation k f) = m.map φ f) h
     (isClosed_eq hc continuous_const) fun g => hm.map_apply_leftTranslation φ g f
+
+/-- Left action of `G` on `Mean G` dual to left translation: `(g • m) f = m (L_{g⁻¹} f)`. -/
+instance instSMul : SMul G (Mean G) where
+  smul g m := mk₀
+    (m.toPositiveLinearMap.toLinearMap ∘ₗ (UCB.leftTranslation g⁻¹).toLinearMap)
+    (fun f hf => map_nonneg m <| by
+      have h := (UCB.leftTranslation_le_leftTranslation_iff (g := g⁻¹) (f := 0) (f' := f)).2 hf
+      rwa [map_zero] at h)
+    (by
+      rw [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv,
+        UCB.leftTranslation_apply_one]
+      exact m.map_one)
+
+@[simp]
+theorem smul_apply (g : G) (m : Mean G) (f : UCB G) :
+    (g • m) f = m (UCB.leftTranslation g⁻¹ f) :=
+  mk₀_apply _ _ _ f
+
+/-- Multiplicative left action of `G` on `Mean G` dual to left translation on `UCB G`. -/
+instance instMulAction : MulAction G (Mean G) where
+  one_smul m := ext fun f => by
+    rw [smul_apply]
+    exact congrArg m (by ext x; simp)
+  mul_smul g h m := ext fun f => by
+    rw [smul_apply, smul_apply, smul_apply]
+    exact congrArg m (by ext x; simp)
+
+/-- Left action of `g : G` on the point-evaluation mean `eval G x` shifts the basepoint to
+`g * x`. -/
+@[simp]
+theorem smul_eval (g x : G) : g • eval G x = eval G (g * x) :=
+  ext fun f => by rw [smul_apply, eval_apply, eval_apply, UCB.leftTranslation_apply, inv_inv]
+
+/-- A left-invariant mean is fixed by every element of `G` under the contragredient action. -/
+theorem IsLeftInvariant.smul_eq {m : Mean G} (hm : m.IsLeftInvariant) (g : G) : g • m = m :=
+  ext fun f => by rw [smul_apply, hm.apply_leftTranslation]
+
+/-- A mean is left invariant if and only if it is fixed by every `g : G`. -/
+theorem isLeftInvariant_iff_forall_smul_eq {m : Mean G} :
+    m.IsLeftInvariant ↔ ∀ g : G, g • m = m := by
+  refine ⟨fun hm => hm.smul_eq, fun h g f => ?_⟩
+  have hg := DFunLike.congr_fun (h g⁻¹) f
+  rwa [smul_apply, inv_inv] at hg
+
+/-- A mean is fixed by the left `G`-action on `Mean G` if and only if it is left invariant. -/
+theorem mem_fixedPoints_iff {m : Mean G} :
+    m ∈ MulAction.fixedPoints G (Mean G) ↔ m.IsLeftInvariant := by
+  rw [MulAction.mem_fixedPoints, isLeftInvariant_iff_forall_smul_eq]
 
 end Mean
 

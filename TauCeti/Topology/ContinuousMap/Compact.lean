@@ -47,6 +47,8 @@ uniform positive distance from every point outside its range.
 * `ContinuousMap.exists_pos_le_norm_sub_of_notMem_range`: the normed-group form `δ ≤ ‖f x - y‖`.
 * `ContinuousMap.norm_evalCLM_le_one`, `ContinuousMap.norm_evalCLM`: point evaluation on `C(K, E)`
   for compact `K` has operator norm at most `1`, and exactly `1` when `E` has nontrivial topology.
+* `ContinuousMap.eventually_forall_dist_smul_lt`: when a monoid `M` acts jointly continuously on a
+  compact space `X`, `dist (f (u • x)) (f x) < ε` holds uniformly in `x : X` for `u` near `1 : M`.
 * `LinearMap.apply_nonpos_of_forall_uniformlyPositive_lt`: a linear functional on `C(X, 𝕜)` that
   stays strictly below some `u` on the uniformly positive functions is nonpositive on the
   nonnegative functions.
@@ -54,7 +56,8 @@ uniform positive distance from every point outside its range.
 
 public section
 
-open Metric
+open Filter Metric
+open scoped Topology
 
 variable {X : Type*} [TopologicalSpace X]
 
@@ -130,6 +133,19 @@ theorem norm_evalCLM {K 𝕜 E : Type*} [TopologicalSpace K] [CompactSpace K]
     ((norm_le _ (norm_nonneg v)).2 fun _ ↦ le_rfl).antisymm ((const K v).norm_coe_le_norm x)
   simpa only [evalCLM_apply, const_apply, hc, div_self hv] using
     (evalCLM 𝕜 (M := E) x).ratio_le_opNorm (const K v)
+
+/-- If a monoid `M` acts jointly continuously on a compact space `X`, then for any continuous map
+`f : C(X, β)` into a pseudometric space and `ε > 0`, `dist (f (u • x)) (f x) < ε` holds uniformly
+for all `x : X` when `u` is in a neighborhood of `1 : M`. -/
+theorem eventually_forall_dist_smul_lt {M β : Type*} [Monoid M] [TopologicalSpace M]
+    [CompactSpace X] [MulAction M X] [ContinuousSMul M X]
+    [PseudoMetricSpace β] (f : C(X, β)) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ u in 𝓝 (1 : M), ∀ x : X, dist (f (u • x)) (f x) < ε := by
+  simpa using isCompact_univ.eventually_forall_of_forall_eventually (x₀ := (1 : M)) fun x _ => by
+    have hc : Continuous fun p : M × X => dist (f (p.fst • p.snd)) (f p.snd) :=
+      (f.continuous.comp (continuous_fst.smul continuous_snd)).dist
+        (f.continuous.comp continuous_snd)
+    exact hc.continuousAt (Iio_mem_nhds (by simpa using hε))
 
 end ContinuousMap
 

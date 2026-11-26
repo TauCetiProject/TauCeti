@@ -24,6 +24,8 @@ infinite-order elements, such as those used for Euclidean triangle groups.
 * `AffineEquiv.semidirectSubgroup`: for a group `W` of linear automorphisms of a module `V` and a
   `W`-stable additive subgroup `L`, the affine automorphisms with linear part in `W` and
   translation part in `L`, a copy of the semidirect product `L ⋊ W` in the affine group.
+* `AffineEquiv.toAffineMapHom`: `AffineEquiv.toAffineMap` on affine self-equivalences as a monoid
+  homomorphism `(P ≃ᵃ[k] P) →* (P →ᵃ[k] P)`.
 * `AffineEquiv.fixingSubgroup`: the affine automorphisms of an affine space fixing each point of
   a set.
 * `AffineEquiv.toGL`: the embedding of the affine group of a commutative ring `R` into
@@ -91,6 +93,16 @@ theorem mem_semidirectSubgroup_iff {W : Subgroup (V₁ ≃ₗ[k] V₁)} {L : Add
 section FixingSubgroup
 
 variable {V P : Type*} [AddCommGroup V] [Module k V] [AddTorsor V P]
+
+/-- `AffineEquiv.toAffineMap` on affine self-equivalences as a `MonoidHom`. -/
+def toAffineMapHom : (P ≃ᵃ[k] P) →* (P →ᵃ[k] P) where
+  toFun := toAffineMap
+  map_one' := rfl
+  map_mul' _ _ := rfl
+
+@[simp]
+theorem toAffineMapHom_apply (e : P ≃ᵃ[k] P) : toAffineMapHom e = (e : P →ᵃ[k] P) :=
+  (rfl)
 
 variable (k) in
 /-- The subgroup of affine automorphisms of `P` fixing each point of `s`. This is the analogue of
