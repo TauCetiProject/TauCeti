@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
+public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import Mathlib.Data.Finset.Interval
 import TauCeti.Combinatorics.SimpleGraph.Basic
@@ -32,6 +33,8 @@ an interval of the Boolean lattice `Finset (Sym2 V)`, where the finset interval 
   graph it generates.
 * `SimpleGraph.edgeFinset_symmDiff` — the edge finset of `G₁ ∆ G₂` is
   `G₁.edgeFinset ∆ G₂.edgeFinset`.
+* `SimpleGraph.indicator_edgeSet_eq_ite_mem_edgeFinset` — `G.edgeSet.indicator c` agrees with
+  `fun e ↦ if e ∈ G.edgeFinset then c e else 0`.
 * `SimpleGraph.prod_filter_le_le_eq_prod_Icc_edgeFinset` and its additive version
   `SimpleGraph.sum_filter_le_le_eq_sum_Icc_edgeFinset` — a product (sum) over the graphs between
   `F` and `H` of a function of their edge finsets is the product (sum) of that function over
@@ -103,6 +106,16 @@ theorem edgeFinset_symmDiff {G₁ G₂ : SimpleGraph V} [Fintype G₁.edgeSet] [
     (G₁ ∆ G₂).edgeFinset = G₁.edgeFinset ∆ G₂.edgeFinset := by
   ext e
   simp only [mem_edgeFinset, edgeSet_symmDiff, Finset.mem_symmDiff, Set.mem_symmDiff]
+
+/-- On a graph with finitely many edges and decidable equality on vertices, `G.edgeSet.indicator c`
+equals the `if`-`then`-`else` expression testing membership in `G.edgeFinset`. -/
+theorem indicator_edgeSet_eq_ite_mem_edgeFinset (G : SimpleGraph V) [Fintype G.edgeSet]
+    [DecidableEq V] [Zero K] (c : Sym2 V → K) :
+    G.edgeSet.indicator c = fun e ↦ if e ∈ G.edgeFinset then c e else 0 := by
+  funext e
+  by_cases he : e ∈ G.edgeSet
+  · simp [Set.indicator_of_mem he, mem_edgeFinset.mpr he]
+  · simp [he]
 
 variable [Fintype V] [DecidableEq V] [CommMonoid M]
 

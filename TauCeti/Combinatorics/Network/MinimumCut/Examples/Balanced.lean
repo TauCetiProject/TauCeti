@@ -10,6 +10,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Star
 public import TauCeti.Combinatorics.Network.MinimumCut.CutTree
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 import Mathlib.Tactic.Linarith
+import TauCeti.Combinatorics.SimpleGraph.PathGraph.Basic
 
 /-!
 # A symmetric submodular cut function not induced by pair capacities
@@ -137,22 +138,9 @@ theorem not_isCutTree_pathGraph_balancedCut :
     ¬IsCutTree balancedCut (pathGraph 4) fun _ ↦ 1 := by
   intro hT
   have h12 : (pathGraph 4).Adj 1 2 := by simp [pathGraph_adj]
-  have hbridge : (pathGraph 4).IsBridge s(1, 2) :=
-    isAcyclic_iff_forall_adj_isBridge.mp (isAcyclic_pathGraph 4) h12
-  have hside : (pathGraph 4).edgeSide 1 2 = {0, 1} := by
-    have h0 : (0 : Fin 4) ∈ (pathGraph 4).edgeSide 1 2 :=
-      mem_edgeSide.mpr (deleteEdges_adj.mpr ⟨by simp [pathGraph_adj], by decide⟩).reachable
-    have h3 : (3 : Fin 4) ∈ (pathGraph 4).edgeSide 2 1 :=
-      mem_edgeSide.mpr (deleteEdges_adj.mpr ⟨by simp [pathGraph_adj], by decide⟩).reachable
-    have h2 := hbridge.notMem_edgeSide
-    ext x
-    fin_cases x
-    · simpa using h0
-    · simp
-    · simpa using h2
-    · simpa using fun h ↦ Finset.disjoint_left.mp hbridge.disjoint_edgeSide h h3
   have := hT.apply_edgeSide h12
-  rw [hside, balancedCut_pair (by decide)] at this
+  rw [edgeSide_pathGraph_eq_Iic (by decide),
+    show (Finset.Iic (1 : Fin 4)) = {0, 1} by decide, balancedCut_pair (by decide)] at this
   omega
 
 /-- The balanced cut function is not induced by real pair capacities, even when signed capacities

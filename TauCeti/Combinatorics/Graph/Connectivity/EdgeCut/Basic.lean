@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Combinatorics.Graph.Connected.EdgeCut
 public import Mathlib.Combinatorics.Graph.Simple
+public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
 public import TauCeti.Combinatorics.Graph.EdgeEnds
 public import TauCeti.Data.Sym.Crosses
 
 import all Mathlib.Combinatorics.Graph.Connected.EdgeCut
+import TauCeti.Combinatorics.Graph.Connectivity.Walk.OfSimpleGraph
 
 /-!
 # Walks and edge cuts
@@ -29,8 +31,8 @@ set of actual vertices.
 These facts are the interface between cut-based and walk-based descriptions of connectivity,
 used for instance to characterize bridges by deletion.
 
-For a simple graph, an edge of `Graph.ofSimpleGraph G` crosses a vertex set exactly when the
-corresponding unordered pair crosses it.
+For a simple graph, the edge cut of `S` in `Graph.ofSimpleGraph G` consists of the edges of `G`
+crossing `S`, and deleting those crossing edges leaves no path from inside `S` to outside `S`.
 
 ## Implementation notes
 
@@ -173,5 +175,26 @@ theorem mem_edgeCut_ofSimpleGraph_iff_crosses (he : e ∈ G.edgeSet) :
     have hlink : (Graph.ofSimpleGraph G).IsLink s(x, y) x y := by
       simpa using he
     simpa only [Sym2.crosses_mk_iff] using hlink.mem_edgeCut_iff
+
+/-- The edge cut of `S` in `Graph.ofSimpleGraph G` consists of the edges of `G` crossing `S`. -/
+theorem edgeCut_ofSimpleGraph (G : SimpleGraph V) (S : Set V) :
+    (Graph.ofSimpleGraph G).edgeCut S = {e ∈ G.edgeSet | e.Crosses S} := by
+  ext e
+  constructor
+  · intro he
+    have heG : e ∈ G.edgeSet := by
+      simpa using (Graph.ofSimpleGraph G).edgeCut_subset_edgeSet he
+    exact ⟨heG, (mem_edgeCut_ofSimpleGraph_iff_crosses heG).mp he⟩
+  · rintro ⟨heG, hcross⟩
+    exact (mem_edgeCut_ofSimpleGraph_iff_crosses heG).mpr hcross
+
+/-- Deleting every edge of a simple graph that crosses `S` leaves no walk from inside `S` to
+outside `S`. -/
+theorem not_reachable_deleteEdges_crossing (G : SimpleGraph V) {S : Set V} {x y : V}
+    (hx : x ∈ S) (hy : y ∉ S) :
+    ¬(G.deleteEdges {e ∈ G.edgeSet | e.Crosses S}).Reachable x y := by
+  have h := (Graph.ofSimpleGraph G).not_reachable_deleteEdges_edgeCut hx hy
+  rwa [G.edgeCut_ofSimpleGraph, Graph.ofSimpleGraph_deleteEdges,
+    reachable_ofSimpleGraph_iff] at h
 
 end SimpleGraph

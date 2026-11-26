@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Connectivity.CutCapacity
 public import TauCeti.Combinatorics.Graph.Connectivity.EdgeConnectivity
 public import Mathlib.Data.Set.Card
+import TauCeti.Combinatorics.SimpleGraph.Connectivity.CutCapacity
 
 /-!
 # Edge reachability and unit-capacity minimum cuts
@@ -21,6 +22,11 @@ loops never contribute to a cut.
 The threshold form is useful without choosing a minimum cut. The numerical form lets results about
 minimum cut values, such as cut trees, apply to the deletion-based invariant.
 
+For a simple graph `G : SimpleGraph V`, equating local edge reachability with minimum
+`G.unitCutCapacity` cut values directly on `V` yields threshold and numerical characterizations of
+`G.IsEdgeReachable`, `G.edgeReachability`, `G.IsEdgeConnected`, and `G.edgeConnectivity`, together
+with complete-graph values.
+
 ## Main results
 
 * `Graph.isEdgeReachable_iff_le_pairMinimumValue`: edge reachability at threshold `k` is
@@ -29,8 +35,12 @@ minimum cut values, such as cut trees, apply to the deletion-based invariant.
   minimum unit cut value, viewed in `ℕ∞`.
 * `Graph.edgeReachability_eq_pairMinimumValue_pairCapacity`: aggregating parallel unit edges by
   their unordered endpoint pairs preserves this value.
-* `SimpleGraph.edgeReachability_eq_pairMinimumValue_unitCutCapacity`: the native simple-graph
-  specialization.
+* `SimpleGraph.edgeReachability_eq_pairMinimumValue_unitCutCapacity`,
+  `SimpleGraph.isEdgeReachable_iff_le_pairMinimumValue_unitCutCapacity`, and
+  `SimpleGraph.edgeConnectivity_eq_iInf_pairMinimumValue_unitCutCapacity`: native simple-graph local
+  edge reachability and global edge connectivity in terms of `G.unitCutCapacity` minimum cut values.
+* `SimpleGraph.edgeReachability_top` and `SimpleGraph.edgeConnectivity_top`: local edge
+  reachability and global edge connectivity `|V| - 1` of complete graphs.
 
 ## References
 
@@ -194,5 +204,86 @@ theorem edgeReachability_eq_iInf_pairMinimumValue_unitCutCapacity [Finite V]
   · subst t
     simp
   · simp [hst, G.edgeReachability_eq_pairMinimumValue_unitCutCapacity hst]
+
+section
+
+variable (G : SimpleGraph V)
+
+/-- For distinct vertices of a finite simple graph, local edge reachability at threshold
+`k : ℕ∞` holds exactly when `k` is at most the minimum unit cut value between `s` and `t`. -/
+theorem isEdgeReachable_iff_le_pairMinimumValue_unitCutCapacity [Finite V] {s t : V}
+    (hst : s ≠ t) (k : ℕ∞) :
+    G.IsEdgeReachable k s t ↔
+      k ≤ ((TerminalCut.pairMinimumValue G.unitCutCapacity s t : ℕ) : ℕ∞) := by
+  rw [G.isEdgeReachable_iff_le_edgeReachability,
+    G.edgeReachability_eq_pairMinimumValue_unitCutCapacity hst]
+
+/-- Distinct vertices have minimum unit cut value zero exactly when they are not reachable. -/
+theorem pairMinimumValue_unitCutCapacity_eq_zero_iff [Finite V] {s t : V} (hst : s ≠ t) :
+    TerminalCut.pairMinimumValue G.unitCutCapacity s t = 0 ↔ ¬G.Reachable s t := by
+  rw [← SimpleGraph.isEdgeReachable_one,
+    G.isEdgeReachable_iff_le_pairMinimumValue_unitCutCapacity hst 1]
+  norm_cast
+  omega
+
+/-- Every edge separator between `s` and `t` has cardinality at least their minimum unit cut
+value. -/
+theorem pairMinimumValue_unitCutCapacity_le_encard_of_not_reachable [Finite V]
+    {s t : V} {F : Set (Sym2 V)} (hF : ¬(G.deleteEdges F).Reachable s t) :
+    ((TerminalCut.pairMinimumValue G.unitCutCapacity s t : ℕ) : ℕ∞) ≤ F.encard := by
+  rcases eq_or_ne s t with rfl | hst
+  · exact (hF .rfl).elim
+  · by_contra hlt
+    push Not at hlt
+    have hreach : G.IsEdgeReachable
+        ((TerminalCut.pairMinimumValue G.unitCutCapacity s t : ℕ) : ℕ∞) s t :=
+      (G.isEdgeReachable_iff_le_pairMinimumValue_unitCutCapacity hst _).mpr le_rfl
+    exact hF (hreach hlt)
+
+/-- On the complete graph `⊤` over a finite vertex type, any two distinct vertices have local edge
+reachability `|V| - 1`. -/
+theorem edgeReachability_top [Fintype V] {s t : V} (hst : s ≠ t) :
+    (⊤ : SimpleGraph V).edgeReachability s t = ((Fintype.card V - 1 : ℕ) : ℕ∞) := by
+  rw [edgeReachability_eq_pairMinimumValue_unitCutCapacity _ hst,
+    pairMinimumValue_unitCutCapacity_top hst]
+
+/-- The global edge connectivity of the complete graph on a finite nontrivial vertex type `V` is
+`|V| - 1`. -/
+theorem edgeConnectivity_top [Fintype V] [Nontrivial V] :
+    (⊤ : SimpleGraph V).edgeConnectivity = ((Fintype.card V - 1 : ℕ) : ℕ∞) := by
+  obtain ⟨u, v, huv⟩ := exists_pair_ne V
+  refine le_antisymm ?_ ?_
+  · exact ((⊤ : SimpleGraph V).edgeConnectivity_le_edgeReachability u v).trans_eq
+      (edgeReachability_top huv)
+  · rw [(⊤ : SimpleGraph V).edgeConnectivity_eq_iInf_edgeReachability]
+    refine le_iInf fun x ↦ le_iInf fun y ↦ ?_
+    rcases eq_or_ne x y with rfl | hxy
+    · simp
+    · exact (edgeReachability_top hxy).ge
+
+/-- A finite simple graph is `k`-edge-connected iff every pair of distinct vertices has minimum
+unit cut value at least `k`. -/
+theorem isEdgeConnected_iff_forall_le_pairMinimumValue_unitCutCapacity [Finite V] (k : ℕ∞) :
+    G.IsEdgeConnected k ↔
+      ∀ s t : V, s ≠ t →
+        k ≤ ((TerminalCut.pairMinimumValue G.unitCutCapacity s t : ℕ) : ℕ∞) := by
+  constructor
+  · intro h s t hst
+    exact (G.isEdgeReachable_iff_le_pairMinimumValue_unitCutCapacity hst k).mp (h s t)
+  · intro h s t
+    rcases eq_or_ne s t with rfl | hst
+    · exact .rfl
+    · exact (G.isEdgeReachable_iff_le_pairMinimumValue_unitCutCapacity hst k).mpr (h s t hst)
+
+/-- The global edge connectivity of a finite simple graph is the infimum of pairwise minimum unit
+cut values over distinct vertices. On empty and singleton types both sides are `⊤`. -/
+theorem edgeConnectivity_eq_iInf_pairMinimumValue_unitCutCapacity [Finite V] :
+    G.edgeConnectivity =
+      ⨅ (s : V) (t : V) (_ : s ≠ t),
+        ((TerminalCut.pairMinimumValue G.unitCutCapacity s t : ℕ) : ℕ∞) := by
+  rw [G.edgeConnectivity_eq_iInf_edgeReachability]
+  simp_rw [G.edgeReachability_eq_iInf_pairMinimumValue_unitCutCapacity]
+
+end
 
 end SimpleGraph

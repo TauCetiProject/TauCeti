@@ -8,6 +8,8 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import Mathlib.Combinatorics.SimpleGraph.Hamiltonian
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
+public import Mathlib.Order.Interval.Finset.Fin
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.EdgeSide
 
 /-!
 # A finite tree of maximum degree two is a path graph
@@ -33,6 +35,8 @@ of `p`. The subgraph spanned by `p` is therefore all of `G`, and Mathlib's
 * `SimpleGraph.neighborFinset_pathGraph`, `SimpleGraph.prod_neighborFinset_pathGraph`,
   `SimpleGraph.sum_neighborFinset_pathGraph`: the neighbour finset of a vertex of `pathGraph n` and
   products or sums over it.
+* `SimpleGraph.edgeSide_pathGraph_eq_Iic`, `SimpleGraph.edgeSide_pathGraph_eq_Ici`: deleting an edge
+  between consecutive vertices of `pathGraph n` splits the path into `Finset.Iic` and `Finset.Ici`.
 * `SimpleGraph.IsTree.nonempty_iso_pathGraph_of_degree_le_two`: a finite tree of maximum degree two
   is isomorphic to the path graph on its vertices.
 * `SimpleGraph.Iso.adj_iff_of_pathGraph`: adjacency read through such a numbering is
@@ -69,7 +73,7 @@ end TauCeti
 
 namespace SimpleGraph
 
-/-! ## Neighbours in a path graph -/
+/-! ## Neighbours and edge sides in a path graph -/
 
 /-- **Neighbours of a vertex in a path graph**: `v` is joined to `v - 1` when `0 < v` and to
 `v + 1` when `v + 1 < n`. -/
@@ -95,6 +99,36 @@ theorem prod_neighborFinset_pathGraph {M : Type*} [CommMonoid M] {n : ℕ} (f : 
   rw [neighborFinset_pathGraph, Finset.prod_union]
   · congr 1 <;> split_ifs <;> simp
   · split_ifs <;> simp [Fin.ext_iff]
+
+/-- Deleting the edge from `u` to its successor `v` in `pathGraph n` leaves the initial segment
+`Finset.Iic u` on the side of `u`. -/
+theorem edgeSide_pathGraph_eq_Iic {n : ℕ} {u v : Fin n} (h : (u : ℕ) + 1 = v) :
+    (pathGraph n).edgeSide u v = Finset.Iic u := by
+  rcases n with _ | m
+  · exact u.elim0
+  refine edgeSide_eq_of_forall_adj (isTree_pathGraph_add_one m).connected.preconnected
+    (Finset.mem_Iic.mpr le_rfl) (by rw [Finset.mem_Iic, Fin.le_iff_val_le_val]; omega) ?_
+  intro y z hyz hne
+  rw [pathGraph_adj] at hyz
+  have hne' : ¬(y = u ∧ z = v) ∧ ¬(y = v ∧ z = u) := by
+    simpa only [ne_eq, Sym2.eq_iff, not_or] using hne
+  simp only [Finset.mem_Iic, Fin.le_iff_val_le_val, Fin.ext_iff] at hne' ⊢
+  omega
+
+/-- Deleting the edge from `u` to its predecessor `v` in `pathGraph n` leaves the final segment
+`Finset.Ici u` on the side of `u`. -/
+theorem edgeSide_pathGraph_eq_Ici {n : ℕ} {u v : Fin n} (h : (v : ℕ) + 1 = u) :
+    (pathGraph n).edgeSide u v = Finset.Ici u := by
+  rcases n with _ | m
+  · exact u.elim0
+  refine edgeSide_eq_of_forall_adj (isTree_pathGraph_add_one m).connected.preconnected
+    (Finset.mem_Ici.mpr le_rfl) (by rw [Finset.mem_Ici, Fin.le_iff_val_le_val]; omega) ?_
+  intro y z hyz hne
+  rw [pathGraph_adj] at hyz
+  have hne' : ¬(y = u ∧ z = v) ∧ ¬(y = v ∧ z = u) := by
+    simpa only [ne_eq, Sym2.eq_iff, not_or] using hne
+  simp only [Finset.mem_Ici, Fin.le_iff_val_le_val, Fin.ext_iff] at hne' ⊢
+  omega
 
 variable {V : Type*} {G : SimpleGraph V}
 

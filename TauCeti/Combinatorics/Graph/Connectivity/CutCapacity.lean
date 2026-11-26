@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut.Basic
-public import TauCeti.Combinatorics.Network.MinimumCut.Basic
-public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Data.Set.Card
+public import TauCeti.Combinatorics.Graph.Connectivity.EdgeCut.Basic
+public import TauCeti.Combinatorics.Graph.Simple
+public import TauCeti.Combinatorics.Network.MinimumCut.Basic
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 
 /-!
 # Capacities of undirected cuts
@@ -41,8 +42,14 @@ For a simple graph, the multigraph cut capacity of `Graph.ofSimpleGraph G` agree
 * `Graph.isSubmodular_edgeCutCapacity`: an edge-capacity function nonnegative on nonloop edges has
   a submodular cut function.
 * `Graph.isSymmSubmodular_edgeCutCapacity`: the bundled symmetric-submodular result.
-* `SimpleGraph.edgeCutCapacity_eq_pairCutCapacity`: the simple-graph and multigraph cut-capacity
+* `SimpleGraph.edgeCutCapacity_eq_pairCutCapacity` (with indicator and constant specializations
+  `SimpleGraph.edgeCutCapacity_ofSimpleGraph_indicator` and
+  `SimpleGraph.edgeCutCapacity_ofSimpleGraph_const`): the simple-graph and multigraph cut-capacity
   interfaces agree.
+* `SimpleGraph.isMinimum_ofSimpleGraph_iff` and `SimpleGraph.pairMinimumValue_ofSimpleGraph` (with
+  indicator and constant specializations `SimpleGraph.pairMinimumValue_ofSimpleGraph_indicator` and
+  `SimpleGraph.pairMinimumValue_ofSimpleGraph_const`): weighted minimum cuts and pairwise minimum
+  cut values on `Graph.ofSimpleGraph G` agree with those of `TauCeti.pairCutCapacity` on `V`.
 * `SimpleGraph.unitCutCapacity_eq_edgeCutCapacity`: the native simple-graph unit cut agrees with
   unit edge capacity on its multigraph realization.
 -/
@@ -282,6 +289,22 @@ theorem ofSimpleGraphCapacity_apply (c : Sym2 V → K)
     (e : (Graph.ofSimpleGraph G).edgeSet) : G.ofSimpleGraphCapacity c e = c e.val :=
   (rfl)
 
+/-- Restricting a constant pair capacity to `Graph.ofSimpleGraph G` yields the constant edge
+capacity. -/
+@[simp]
+theorem ofSimpleGraphCapacity_const (a : K) :
+    G.ofSimpleGraphCapacity (fun _ ↦ a) = fun _ ↦ a :=
+  (rfl)
+
+/-- Restricting a pair capacity to `G.edgeSet` via `Set.indicator` does not change its restriction
+to actual edges of `Graph.ofSimpleGraph G`. -/
+@[simp]
+theorem ofSimpleGraphCapacity_indicator_edgeSet [Zero K] (c : Sym2 V → K) :
+    G.ofSimpleGraphCapacity (G.edgeSet.indicator c) = G.ofSimpleGraphCapacity c := by
+  funext e
+  rw [ofSimpleGraphCapacity_apply, ofSimpleGraphCapacity_apply]
+  exact Set.indicator_of_mem (by simpa using e.property) c
+
 /-- Restricting pair capacities that are nonnegative on the edges of `G` produces nonnegative edge
 capacities on `Graph.ofSimpleGraph G`. Diagonal and non-edge values play no role. -/
 theorem ofSimpleGraphCapacity_nonneg [Zero K] [LE K] {c : Sym2 V → K}
@@ -290,25 +313,6 @@ theorem ofSimpleGraphCapacity_nonneg [Zero K] [LE K] {c : Sym2 V → K}
   intro e
   rw [Pi.zero_apply, ofSimpleGraphCapacity_apply]
   exact hc e.val (by simpa using e.property)
-
-/-- The canonical equivalence between the vertices of a simple graph and the full vertex set of
-its multigraph realization. -/
-def ofSimpleGraphVertexEquiv : V ≃ (Graph.ofSimpleGraph G).vertexSet where
-  toFun := fun x ↦ ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩
-  invFun := Subtype.val
-  left_inv := fun _ ↦ rfl
-  right_inv := fun _ ↦ Subtype.ext rfl
-
-@[simp]
-theorem ofSimpleGraphVertexEquiv_apply_val (x : V) :
-    (G.ofSimpleGraphVertexEquiv x).val = x :=
-  (rfl)
-
-@[simp]
-theorem ofSimpleGraphVertexEquiv_symm_apply
-    (x : (Graph.ofSimpleGraph G).vertexSet) :
-    G.ofSimpleGraphVertexEquiv.symm x = x.val :=
-  (rfl)
 
 /-- Include a finite vertex set in the full vertex set of `Graph.ofSimpleGraph G`. -/
 def toOfSimpleGraphFinset (S : Finset V) :
@@ -388,6 +392,82 @@ theorem edgeCutCapacity_eq_pairCutCapacity [Fintype V] [AddCommMonoid K]
         · simp [hp, hcross, hc p hcross.not_isDiag hp]
         · simp [hp, hcross]
 
+/-- The multigraph cut capacity of `Graph.ofSimpleGraph G` with weights `c` equals the pair cut
+capacity of `G.edgeSet.indicator c`. -/
+theorem edgeCutCapacity_ofSimpleGraph_indicator [Fintype V] [AddCommMonoid K]
+    (c : Sym2 V → K) (S : Finset V) :
+    (Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c)
+        (G.toOfSimpleGraphFinset S) =
+      TauCeti.pairCutCapacity (G.edgeSet.indicator c) S := by
+  rw [← G.ofSimpleGraphCapacity_indicator_edgeSet c]
+  exact G.edgeCutCapacity_eq_pairCutCapacity (G.edgeSet.indicator c)
+    (fun p _ hp ↦ Set.indicator_of_notMem hp c) S
+
+/-- Constant edge weights on `Graph.ofSimpleGraph G` agree with the corresponding indicator pair
+cut capacity on `V`. -/
+theorem edgeCutCapacity_ofSimpleGraph_const [Fintype V] [AddCommMonoid K] (a : K) (S : Finset V) :
+    (Graph.ofSimpleGraph G).edgeCutCapacity (fun _ ↦ a) (G.toOfSimpleGraphFinset S) =
+      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ a) S := by
+  rw [← G.ofSimpleGraphCapacity_const a]
+  exact G.edgeCutCapacity_ofSimpleGraph_indicator (fun _ ↦ a) S
+
+/-- Minimum cuts of `Graph.ofSimpleGraph G` correspond to minimum cuts of `TauCeti.pairCutCapacity`
+whenever off-diagonal weights vanish away from the edges of `G`. -/
+theorem isMinimum_ofSimpleGraph_iff [Fintype V] [AddCommMonoid K] [Preorder K]
+    (c : Sym2 V → K) (hsupport : ∀ p, ¬p.IsDiag → p ∉ G.edgeSet → c p = 0)
+    {A B S : Finset V} :
+    TauCeti.TerminalCut.IsMinimum
+        ((Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c))
+        (G.toOfSimpleGraphFinset A) (G.toOfSimpleGraphFinset B) (G.toOfSimpleGraphFinset S) ↔
+      TauCeti.TerminalCut.IsMinimum (TauCeti.pairCutCapacity c) A B S := by
+  simpa only [toOfSimpleGraphFinset_eq_map] using
+    TauCeti.TerminalCut.isMinimum_map_iff (f := TauCeti.pairCutCapacity c)
+      G.ofSimpleGraphVertexEquiv
+      (g := (Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c))
+      (fun T ↦ by
+        rw [← G.toOfSimpleGraphFinset_eq_map T]
+        exact G.edgeCutCapacity_eq_pairCutCapacity c hsupport T)
+
+/-- Pairwise minimum cut values of `Graph.ofSimpleGraph G` equal those of `TauCeti.pairCutCapacity`
+whenever off-diagonal weights vanish away from the edges of `G`. -/
+theorem pairMinimumValue_ofSimpleGraph [Fintype V] [AddCommMonoid K] [LinearOrder K]
+    (c : Sym2 V → K) (hsupport : ∀ p, ¬p.IsDiag → p ∉ G.edgeSet → c p = 0) (s t : V) :
+    TauCeti.TerminalCut.pairMinimumValue
+        ((Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c))
+        (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t) =
+      TauCeti.TerminalCut.pairMinimumValue (TauCeti.pairCutCapacity c) s t :=
+  TauCeti.TerminalCut.pairMinimumValue_map (TauCeti.pairCutCapacity c)
+    G.ofSimpleGraphVertexEquiv
+    ((Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c))
+    (fun S ↦ by
+      rw [← G.toOfSimpleGraphFinset_eq_map S]
+      exact G.edgeCutCapacity_eq_pairCutCapacity c hsupport S) s t
+
+/-- Pairwise minimum cut values of `Graph.ofSimpleGraph G` with weights `c` equal those of
+`TauCeti.pairCutCapacity (G.edgeSet.indicator c)`. -/
+theorem pairMinimumValue_ofSimpleGraph_indicator [Fintype V] [AddCommMonoid K] [LinearOrder K]
+    (c : Sym2 V → K) (s t : V) :
+    TauCeti.TerminalCut.pairMinimumValue
+        ((Graph.ofSimpleGraph G).edgeCutCapacity (G.ofSimpleGraphCapacity c))
+        (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t) =
+      TauCeti.TerminalCut.pairMinimumValue
+        (TauCeti.pairCutCapacity (G.edgeSet.indicator c)) s t := by
+  rw [← G.ofSimpleGraphCapacity_indicator_edgeSet c]
+  exact G.pairMinimumValue_ofSimpleGraph (G.edgeSet.indicator c)
+    (fun p _ hp ↦ Set.indicator_of_notMem hp c) s t
+
+/-- Pairwise minimum cut values of `Graph.ofSimpleGraph G` with constant weight `a` equal those of
+`TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ a)`. -/
+theorem pairMinimumValue_ofSimpleGraph_const [Fintype V] [AddCommMonoid K] [LinearOrder K]
+    (a : K) (s t : V) :
+    TauCeti.TerminalCut.pairMinimumValue
+        ((Graph.ofSimpleGraph G).edgeCutCapacity fun _ ↦ a)
+        (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t) =
+      TauCeti.TerminalCut.pairMinimumValue
+        (TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ a)) s t := by
+  rw [← G.ofSimpleGraphCapacity_const a]
+  exact G.pairMinimumValue_ofSimpleGraph_indicator (fun _ ↦ a) s t
+
 /-- The native unit cut capacity agrees with unit edge capacity on the multigraph realization of
 the simple graph. -/
 theorem unitCutCapacity_eq_edgeCutCapacity
@@ -396,35 +476,16 @@ theorem unitCutCapacity_eq_edgeCutCapacity
     G.unitCutCapacity S =
       (Graph.ofSimpleGraph G).edgeCutCapacity (fun _ ↦ (1 : ℕ))
         (G.toOfSimpleGraphFinset S) := by
-  classical
   rw [unitCutCapacity_eq_ncard, Graph.edgeCutCapacity_one,
-    image_val_toOfSimpleGraphFinset]
-  congr 1
-  ext e
-  constructor
-  · rintro ⟨heG, heS⟩
-    exact (G.mem_edgeCut_ofSimpleGraph_iff_crosses heG).2 heS
-  · intro he
-    have heG : e ∈ G.edgeSet := by
-      rw [← Graph.edgeSet_ofSimpleGraph]
-      exact (Graph.ofSimpleGraph G).edgeCut_subset_edgeSet he
-    exact ⟨heG, (G.mem_edgeCut_ofSimpleGraph_iff_crosses heG).1 he⟩
+    image_val_toOfSimpleGraphFinset, G.edgeCut_ofSimpleGraph]
+  rfl
 
 /-- Unit cut capacity as the pair cut capacity of the edge-set indicator. -/
 theorem unitCutCapacity_apply_eq_pairCutCapacity [Fintype V]
     (G : SimpleGraph V) (S : Finset V) :
     G.unitCutCapacity S =
-      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) S := by
-  have hcap :
-      G.ofSimpleGraphCapacity (G.edgeSet.indicator fun _ ↦ 1) =
-        fun _ ↦ (1 : ℕ) := by
-    funext e
-    have he : e.val ∈ G.edgeSet := by
-      rw [← Graph.edgeSet_ofSimpleGraph]
-      exact e.property
-    simp [ofSimpleGraphCapacity, he]
-  rw [G.unitCutCapacity_eq_edgeCutCapacity, ← hcap]
-  exact G.edgeCutCapacity_eq_pairCutCapacity _ (by simp) S
+      TauCeti.pairCutCapacity (G.edgeSet.indicator fun _ ↦ 1) S :=
+  (G.unitCutCapacity_eq_edgeCutCapacity S).trans (G.edgeCutCapacity_ofSimpleGraph_const 1 S)
 
 /-- Unit cut capacity is pair cut capacity for the indicator of the graph's edge set. -/
 theorem unitCutCapacity_eq_pairCutCapacity [Fintype V] (G : SimpleGraph V) :

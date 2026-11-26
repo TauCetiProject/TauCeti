@@ -39,6 +39,8 @@ predicates, simplicity, and edge-set finiteness, along with canonical isomorphis
   simple graph.
 * `Graph.ofSimpleGraphEdgeSetEquiv`: actual edges of the multigraph built from a simple graph
   are the edges of that simple graph.
+* `SimpleGraph.ofSimpleGraphVertexEquiv`: canonical equivalence
+  `V ≃ (Graph.ofSimpleGraph G).vertexSet`.
 * `Graph.ofSimpleGraphToSimpleGraphIso`: the canonical multigraph isomorphism from the graph
   reconstructed from the underlying simple graph to the original simple multigraph.
 * `Graph.Iso.toSimpleGraphIso`: an arbitrary multigraph isomorphism induces an isomorphism of
@@ -609,6 +611,25 @@ end Graph
 namespace SimpleGraph
 
 variable {V : Type u}
+
+/-- The canonical equivalence between the vertices of a simple graph and the full vertex set of
+its multigraph realization. -/
+def ofSimpleGraphVertexEquiv (G : SimpleGraph V) : V ≃ (Graph.ofSimpleGraph G).vertexSet where
+  toFun := fun x ↦ ⟨x, by rw [Graph.vertexSet_ofSimpleGraph]; exact Set.mem_univ x⟩
+  invFun := Subtype.val
+  left_inv := fun _ ↦ rfl
+  right_inv := fun _ ↦ Subtype.ext rfl
+
+@[simp]
+theorem ofSimpleGraphVertexEquiv_apply_val (G : SimpleGraph V) (x : V) :
+    (G.ofSimpleGraphVertexEquiv x).val = x :=
+  (rfl)
+
+@[simp]
+theorem ofSimpleGraphVertexEquiv_symm_apply (G : SimpleGraph V)
+    (x : (Graph.ofSimpleGraph G).vertexSet) :
+    G.ofSimpleGraphVertexEquiv.symm x = x.val :=
+  (rfl)
 
 /-- Subgraphs `S : G.Subgraph` of a simple graph `G` are order-isomorphic to multigraph subgraphs
 `K ≤ Graph.ofSimpleGraph G`. -/

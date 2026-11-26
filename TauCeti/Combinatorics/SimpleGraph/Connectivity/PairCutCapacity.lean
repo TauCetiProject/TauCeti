@@ -12,6 +12,7 @@ public import Mathlib.Data.Set.Card
 public import TauCeti.Data.Sym.Crosses
 public import TauCeti.Order.Lattice.Submodular
 import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
+import TauCeti.Data.Sym.Sym2
 
 /-!
 # Capacities of undirected cuts on unordered pairs
@@ -30,6 +31,8 @@ support graph. Diagonal pairs never contribute to a cut and are ignored by the s
 * `TauCeti.isSubmodular_pairCutCapacity`: a pair-capacity function nonnegative off the diagonal
   has a submodular cut function.
 * `TauCeti.isSymmSubmodular_pairCutCapacity`: the same cut function is symmetric submodular.
+* `TauCeti.pairCutCapacity_mono` and `TauCeti.pairCutCapacity_map`: monotonicity in off-diagonal
+  capacities and invariance under vertex relabelling.
 -/
 
 public section
@@ -132,6 +135,39 @@ theorem pairCutCapacity_eq_of_offDiagonal_eq [Fintype V] [AddCommMonoid K]
       split_ifs with hxy
       · exact h x y fun hEq ↦ by subst y; simp at hxy
       · rfl
+
+/-- Pair cut capacity is monotone in off-diagonal capacities. -/
+theorem pairCutCapacity_mono [Fintype V] [AddCommMonoid K] [Preorder K] [AddLeftMono K]
+    {c d : Sym2 V → K} (hcd : ∀ x y, x ≠ y → c s(x, y) ≤ d s(x, y)) (S : Finset V) :
+    pairCutCapacity c S ≤ pairCutCapacity d S := by
+  classical
+  rw [pairCutCapacity_def, pairCutCapacity_def]
+  refine Finset.sum_le_sum fun p _ ↦ ?_
+  induction p using Sym2.inductionOn with
+  | _ x y =>
+    split_ifs with hxy
+    · exact hcd x y fun hEq ↦ by subst y; simp at hxy
+    · exact le_rfl
+
+/-- Relabelling vertices preserves pair cut capacity when off-diagonal capacities agree. -/
+theorem pairCutCapacity_map {W : Type*} [Fintype V] [Fintype W] [AddCommMonoid K]
+    (e : V ≃ W) (c : Sym2 V → K) (d : Sym2 W → K)
+    (hcd : ∀ x y, x ≠ y → d s(e x, e y) = c s(x, y)) (S : Finset V) :
+    pairCutCapacity d (S.map e.toEmbedding) = pairCutCapacity c S := by
+  classical
+  rw [pairCutCapacity_def, pairCutCapacity_def]
+  symm
+  refine Fintype.sum_equiv (Sym2.equivCongr e) _ _ fun p ↦ ?_
+  induction p using Sym2.inductionOn with
+  | _ x y =>
+    have hcross :
+        s(e x, e y).Crosses (S.map e.toEmbedding : Set W) ↔ s(x, y).Crosses (S : Set V) := by
+      simp [Finset.coe_map]
+    simp only [Sym2.equivCongr_apply, Sym2.map_mk]
+    by_cases hp : s(x, y).Crosses (S : Set V)
+    · have hxy : x ≠ y := fun hEq ↦ by subst y; simp at hp
+      simp only [hp, hcross.mpr hp, ↓reduceIte, hcd x y hxy]
+    · simp only [hp, mt hcross.mp hp, ↓reduceIte]
 
 /-- The sum of the two singleton cut capacities is the capacity of their union plus twice the
 capacity of the pair joining them. -/
