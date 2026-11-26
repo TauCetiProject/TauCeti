@@ -25,7 +25,8 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 
 * `TauCeti.negOnePowCast_eq_of_even_sub`: exponents of the same parity give the same sign.
 * `TauCeti.negOnePowCast_sum`: the sign of a finite sum is the product of the signs of its terms.
-* `TauCeti.negOnePowCast_mul_finsum`: a sign can be moved into a `finsum` with infinite support.
+* `TauCeti.negOnePowCast_mul_finsum`: a sign can be moved into a `finsum`, with no finiteness
+  assumption on the support.
 * `TauCeti.sum_range_negOnePowCast_telescope`: an alternating sum of products, in which one
   factor is replaced by a two-term correction, telescopes.
 * `TauCeti.negOnePow_smul_eq_negOnePowCast_smul`: the unit-valued sign and its ground-ring cast
