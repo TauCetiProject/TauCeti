@@ -10,8 +10,8 @@ public import Mathlib.CategoryTheory.ObjectProperty.Extensions
 public import TauCeti.Condensed.Light.Solid.Basic
 
 import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+import Mathlib.CategoryTheory.Abelian.DiagramLemmas.Four
 import TauCeti.CategoryTheory.Abelian.Projective.Internal
-import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Kernels
 import TauCeti.Condensed.Light.NullSequence.Projective
 
 /-!
@@ -50,10 +50,18 @@ instance : (IsLightSolid (R := R)).IsClosedUnderKernels where
 instance : (IsLightSolid (R := R)).IsClosedUnderCokernels where
   cokernels_le := by
     rintro _ ⟨f, c, hc, hX, hY⟩
-    rw [isLightSolid_iff, ← lightSolidDifferenceNatTrans_app] at hX hY ⊢
-    have := Functor.PreservesHomology.preservesCokernel (ihom (nullSeq R)) f
+    let S := ShortComplex.mk f c.π (CokernelCofork.condition c)
     have := Cofork.IsColimit.epi hc
-    exact (lightSolidDifferenceNatTrans R).isIso_app_of_isColimit_cokernelCofork hc
+    have hF := (S.exact_of_g_is_cokernel (hc.ofIsoColimit c.isoCoforkOfπ)).map (ihom (nullSeq R))
+    rw [isLightSolid_iff, ← lightSolidDifferenceNatTrans_app] at hX hY ⊢
+    let φ := S.mapNatTrans (lightSolidDifferenceNatTrans R)
+    have : Epi φ.τ₁ := by rw [ShortComplex.mapNatTrans_τ₁]; infer_instance
+    have : IsIso φ.τ₂ := by rwa [ShortComplex.mapNatTrans_τ₂]
+    have : Epi (S.map (ihom (nullSeq R))).g := (ihom (nullSeq R)).map_epi c.π
+    have : Mono φ.τ₃ := ShortComplex.mono_of_epi_of_epi_of_mono φ hF inferInstance inferInstance
+      inferInstance
+    have : Epi φ.τ₃ := epi_of_epi_fac φ.comm₂₃.symm
+    simpa only [φ, ShortComplex.mapNatTrans_τ₃] using isIso_of_mono_of_epi φ.τ₃
 
 /-- Solid modules are closed under extensions. -/
 instance : (IsLightSolid (R := R)).IsClosedUnderExtensions where
