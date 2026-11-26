@@ -64,9 +64,10 @@ a face. Combining the two orders along a maximal cyclic run of momenta on one fa
   (`TauCeti.eventually_nhdsGT_exists_stripGeneratingSource_snd_notMem_Icc_iff`): `L` is the exit
   set of the block, in the sense of the index pairs of Conley's theory.
 * A critical configuration, at which `Y_(k-1) = y_k` for every `k`, has no momentum on a face
-  unless all momenta are on it
-  (`TauCeti.stripGeneratingSource_snd_ne_of_forall_stripGeneratingTarget_eq`), so the rest points
-  of the flow in the block lie in its interior.
+  `c` unless all momenta are on it, provided `Y_k = c` forces `y_k = c`
+  (`TauCeti.stripGeneratingSource_snd_ne_of_forall_stripGeneratingTarget_eq`). So a rest point of
+  the flow in the block lies in its interior unless all its momenta are on one face, the full-cycle
+  case excluded above.
 
 The statements concern solutions of `dq_k/dt = y_k - Y_(k-1)` on the configuration space, near
 the time `t₀` of the boundary point; they project to the diagonal quotient, where the cut-off
@@ -382,8 +383,8 @@ private theorem hasDerivAt_stripGeneratingSource_snd {t : ℝ} {k : ZMod N}
   simp only [momentumVelocity, edgeVelocity, stripGeneratingSource_snd,
     stripGeneratingTarget_snd]
   rw [(fderiv ℝ (fderiv ℝ (S k)) _).apply_mk_eq_smul_add_smul]
-  simp only [add_apply, smul_apply, smul_eq_mul]
-  ring_nf
+  simp only [add_apply, smul_apply, smul_eq_mul, sub_add_cancel]
+  ring
 
 /-- The momenta along a trajectory of the negative gradient flow of the cyclic action satisfy the
 face data at each face `c ∈ {0, 1}` of the block, with the side `ε = 1 - 2c`. -/
@@ -442,10 +443,38 @@ private theorem exists_faceData
     linarith
   · intro k hk
     simp only [momentumVelocity, edgeVelocity, stripGeneratingSource_snd,
-      stripGeneratingTarget_snd] at *
+      stripGeneratingTarget_snd]
     rw [hBface k (hk ▸ hc), (fderiv ℝ (fderiv ℝ (S k)) _).apply_mk_eq_smul_add_smul]
-    simp only [add_apply, smul_apply, smul_eq_mul]
-    ring_nf
+    simp only [add_apply, smul_apply, smul_eq_mul, sub_add_cancel]
+    ring
+
+/-- In the setting of `TauCeti.eventually_nhdsGT_forall_stripGeneratingSource_snd_mem_Ioo`, a
+momentum on a face `c ∈ {0, 1}` at `t₀` lies strictly on the block side `0 < (1 - 2c)(y_k - c)` of
+the face just after `t₀`. -/
+private theorem eventually_nhdsGT_mul_stripGeneratingSource_snd_sub_pos
+    (hS : ∀ k, ContDiffAt ℝ 2 (S k) (γ t₀ k, γ t₀ (k + 1)))
+    (hγ : ∀ᶠ t in 𝓝 t₀, HasDerivAt γ (fun i ↦ (stripGeneratingSource (S i) (γ t i, γ t (i + 1))).2 -
+      (stripGeneratingTarget (S (i - 1)) (γ t (i - 1), γ t i)).2) t)
+    (hsrc : ∀ k, (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ Icc (0 : ℝ) 1)
+    (htgt : ∀ k, (stripGeneratingTarget (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ Icc (0 : ℝ) 1)
+    (hiff : ∀ k, ∀ c ∈ ({0, 1} : Set ℝ),
+      (stripGeneratingTarget (S k) (γ t₀ k, γ t₀ (k + 1))).2 = c ↔
+        (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 = c)
+    (hface : ∀ k, (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ ({0, 1} : Set ℝ) →
+      ∃ B, 0 < B ∧ ∀ v, B * fderiv ℝ (fderiv ℝ (S k)) (γ t₀ k, γ t₀ (k + 1)) v (0, 1) =
+        -fderiv ℝ (fderiv ℝ (S k)) (γ t₀ k, γ t₀ (k + 1)) v (1, 0))
+    (hpos : ∀ k ∈ P, (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ ({0, 1} : Set ℝ) →
+      fderiv ℝ (fderiv ℝ (S k)) (γ t₀ k, γ t₀ (k + 1)) (0, 1) (1, 0) < 0)
+    (hP : ∀ k ∈ P, k + 1 ∉ P)
+    (hall : ∀ k, (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ ({0, 1} : Set ℝ) →
+      k ∈ P)
+    {k : ZMod N} (hk : (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ ({0, 1} : Set ℝ)) :
+    ∀ᶠ t in 𝓝[>] t₀, 0 < (1 - 2 * (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2) *
+      ((stripGeneratingSource (S k) (γ t k, γ t (k + 1))).2 -
+        (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2) := by
+  obtain ⟨Y', B, h⟩ := exists_faceData hS hγ hsrc htgt hiff hface hk
+  exact h.eventually_nhdsGT_mul_sub_pos rfl (h.mul_momentumVelocity_pos_of_forall_mem hP
+    (fun j hjP hj ↦ neg_pos.2 (hpos j hjP (hj ▸ hk))) (fun j hj ↦ hall j (hj ▸ hk)) rfl)
 
 end Trajectory
 
@@ -523,28 +552,16 @@ theorem eventually_nhdsGT_forall_stripGeneratingSource_snd_mem_Ioo
   refine eventually_all.2 fun k ↦ ?_
   obtain ⟨Y', B, h⟩ := exists_faceData hS hγ hsrc htgt hiff hface (c := 0) (by simp)
   have hcont := (h.hasDerivAt.self_of_nhds k).continuousAt
-  rcases (hsrc k).1.eq_or_lt with h0 | h0
-  · -- the lower face: the momentum moves up into the block
-    have hface0 (j : ZMod N) (hj : (stripGeneratingSource (S j) (γ t₀ j, γ t₀ (j + 1))).2 = 0) :
-        (stripGeneratingSource (S j) (γ t₀ j, γ t₀ (j + 1))).2 ∈ ({0, 1} : Set ℝ) := Or.inl hj
-    have hv := h.mul_momentumVelocity_pos_of_forall_mem hP
-      (fun j hjP hj ↦ neg_pos.2 (hpos j hjP (hface0 j hj))) (fun j hj ↦ hall j (hface0 j hj))
-      h0.symm
-    filter_upwards [h.eventually_nhdsGT_mul_sub_pos h0.symm hv,
-      nhdsWithin_le_nhds (hcont.eventually (gt_mem_nhds (h0 ▸ zero_lt_one)))] with t h1 h2
-    exact ⟨by simpa using h1, h2⟩
-  rcases (hsrc k).2.eq_or_lt with h1 | h1
-  · -- the upper face: the momentum moves down into the block
-    obtain ⟨Y', B, h⟩ := exists_faceData hS hγ hsrc htgt hiff hface (c := 1) (by simp)
-    have hface1 (j : ZMod N) (hj : (stripGeneratingSource (S j) (γ t₀ j, γ t₀ (j + 1))).2 = 1) :
-        (stripGeneratingSource (S j) (γ t₀ j, γ t₀ (j + 1))).2 ∈ ({0, 1} : Set ℝ) := Or.inr hj
-    have hv := h.mul_momentumVelocity_pos_of_forall_mem hP
-      (fun j hjP hj ↦ neg_pos.2 (hpos j hjP (hface1 j hj))) (fun j hj ↦ hall j (hface1 j hj)) h1
-    filter_upwards [h.eventually_nhdsGT_mul_sub_pos h1 hv,
-      nhdsWithin_le_nhds (hcont.eventually (lt_mem_nhds (h1 ▸ zero_lt_one)))] with t h2 h3
-    exact ⟨h3, by linarith⟩
+  by_cases hk : (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ ({0, 1} : Set ℝ)
+  · -- a momentum on a face moves into the block, and stays within distance `1` of the face
+    filter_upwards [eventually_nhdsGT_mul_stripGeneratingSource_snd_sub_pos hS hγ hsrc htgt hiff
+      hface hpos hP hall hk, nhdsWithin_le_nhds (hcont.eventually
+        (Ioo_mem_nhds (sub_one_lt _) (lt_add_one _)))] with t h1 h2
+    rcases hk with h0 | h0 <;> rw [h0] at h1 h2 <;> exact ⟨by linarith [h2.1], by linarith [h2.2]⟩
   · -- a momentum inside `(0, 1)` stays there
-    exact nhdsWithin_le_nhds (hcont.eventually (isOpen_Ioo.mem_nhds ⟨h0, h1⟩))
+    exact nhdsWithin_le_nhds (hcont.eventually (isOpen_Ioo.mem_nhds
+      ⟨(hsrc k).1.lt_of_ne fun h0 ↦ hk (Or.inl h0.symm),
+        (hsrc k).2.lt_of_ne fun h1 ↦ hk (Or.inr h1)⟩))
 
 /-- **Trajectories through the rest of the boundary come from outside the block.** In the
 setting of `TauCeti.eventually_nhdsGT_forall_stripGeneratingSource_snd_mem_Ioo`, a momentum on a
@@ -611,12 +628,12 @@ theorem eventually_nhdsGT_exists_stripGeneratingSource_snd_notMem_Icc_iff
 /-- **Critical configurations are off the faces.** If at every vertex of a configuration `q` the
 target point of the `(i-1)`-th map is the source point of the `i`-th map, as at a critical point
 of the cyclic action (`TauCeti.fderiv_cyclicAction_eq_zero_iff`), and each output momentum `Y_k`
-equals `c` exactly when the input momentum `y_k` does, then no input momentum equals `c` unless all
-of them do. -/
+equal to `c` forces the input momentum `y_k` to equal `c`, then no input momentum equals `c` unless
+all of them do. -/
 theorem stripGeneratingSource_snd_ne_of_forall_stripGeneratingTarget_eq {q : ZMod N → ℝ} {c : ℝ}
     (hcrit : ∀ i, stripGeneratingTarget (S (i - 1)) (q (i - 1), q i) =
       stripGeneratingSource (S i) (q i, q (i + 1)))
-    (hiff : ∀ k, (stripGeneratingTarget (S k) (q k, q (k + 1))).2 = c ↔
+    (htgt : ∀ k, (stripGeneratingTarget (S k) (q k, q (k + 1))).2 = c →
       (stripGeneratingSource (S k) (q k, q (k + 1))).2 = c)
     (hfull : ∃ k, (stripGeneratingSource (S k) (q k, q (k + 1))).2 ≠ c) (k : ZMod N) :
     (stripGeneratingSource (S k) (q k, q (k + 1))).2 ≠ c := by
@@ -625,7 +642,7 @@ theorem stripGeneratingSource_snd_ne_of_forall_stripGeneratingTarget_eq {q : ZMo
   -- `y_i = c` forces `Y_(i-1) = c`, hence `y_(i-1) = c`: the face propagates backwards
   have hstep (i : ZMod N) (hi : (stripGeneratingSource (S i) (q i, q (i + 1))).2 = c) :
       (stripGeneratingSource (S (i - 1)) (q (i - 1), q (i - 1 + 1))).2 = c := by
-    refine (hiff (i - 1)).1 ?_
+    refine htgt (i - 1) ?_
     rw [sub_add_cancel, ← hi, hcrit i]
   have key (n : ℕ) : (stripGeneratingSource (S (k - n)) (q (k - n), q (k - n + 1))).2 = c := by
     induction n with
