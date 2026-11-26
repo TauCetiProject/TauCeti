@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
+import Mathlib.NumberTheory.Padics.RingHoms
+import Mathlib.Topology.Algebra.Algebra
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -17,9 +19,10 @@ its field structure, and an instance expressing that `2` is invertible. These in
 finite-dimensional constructions and algebraic trace and norm calculations over the `p`-adic field.
 
 It also records that the scalar action of `ℤ_[p]` on `ℚ_[p]` multiplies norms,
-`‖a • x‖ = ‖a‖ * ‖x‖`. In particular the action is contractive, so `ℚ_[p]` itself is a
-coefficient ring for Mathlib's Mahler isometry `PadicInt.mahlerEquiv` and for the Amice transform
-of measures on `ℤ_p`.
+`‖a • x‖ = ‖a‖ * ‖x‖`, and that `(p : ℤ_[p])` is scalar-regular on every module over both `ℤ_[p]`
+and `ℚ_[p]` (`TauCeti.isSMulRegular_padicInt_prime`). In particular the action is contractive, so
+`ℚ_[p]` itself is a coefficient ring for Mathlib's Mahler isometry `PadicInt.mahlerEquiv` and for
+the Amice transform of measures on `ℤ_p`.
 
 Finally, it records that the inclusion `PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]` is the structure
 map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding of norm at most `1` whose
@@ -32,12 +35,13 @@ by `r` on a set is bounded by `r` on its `ℤ_[p]`-span
 (`PadicInt.norm_apply_le_of_mem_span_subring`).
 
 For a `ℚ_[p]`-algebra `K`, the composite structure map
-`TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is injective when `K` is nontrivial, and continuous
-when the structure map `ℚ_[p] → K` is. For a seminormed `ℚ_[p]`-algebra `K` with `‖1‖ ≤ 1`
-(including the zero seminorm) it maps `ℤ_[p]` into the closed unit ball of `K`; when `‖1‖ = 1` it
-is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the norm of a natural number in `K` is its
-`p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), so `p` itself has norm `p⁻¹`
-(`TauCeti.norm_natCast_p`), and a nonzero integer `n` has norm at least
+`TauCeti.padicIntAlgebraMap p K : ℤ_[p] →+* K` is injective when `K` is nontrivial, continuous
+when the structure map `ℚ_[p] → K` is, and agrees with any continuous `ℤ_[p]`-algebra structure
+on a Hausdorff `K` (`TauCeti.algebraMap_padicInt_eq_padicIntAlgebraMap`). For a seminormed
+`ℚ_[p]`-algebra `K` with `‖1‖ ≤ 1` (including the zero seminorm) it maps `ℤ_[p]` into the closed
+unit ball of `K`; when `‖1‖ = 1` it is an isometry (`TauCeti.isometry_padicIntAlgebraMap`), the
+norm of a natural number in `K` is its `p`-adic norm (`TauCeti.norm_natCast_eq_norm_padic`), so
+`p` itself has norm `p⁻¹` (`TauCeti.norm_natCast_p`), and a nonzero integer `n` has norm at least
 `1 / |n|` in `K` (`TauCeti.inv_abs_le_norm_intCast`).
 
 Two continuous ring homomorphisms from `ℚ_[p]` to a Hausdorff semiring are equal
@@ -151,6 +155,19 @@ theorem continuous_padicIntAlgebraMap [TopologicalSpace K] (h : Continuous (alge
   rw [padicIntAlgebraMap_def, RingHom.coe_comp]
   exact h.comp PadicInt.isEmbedding_coe_ringHom.continuous
 
+/-- In a Hausdorff `ℚ_p`-algebra whose `ℚ_p`- and `ℤ_p`-algebra structures have continuous scalar
+actions, the two structure maps `ℤ_p →+* K` agree by density of `ℕ` in `ℤ_p`, without assuming
+`IsScalarTower ℤ_[p] ℚ_[p] K`. -/
+theorem algebraMap_padicInt_eq_padicIntAlgebraMap [TopologicalSpace K] [T2Space K]
+    [ContinuousSMul ℚ_[p] K] [Algebra ℤ_[p] K] [ContinuousSMul ℤ_[p] K] :
+    algebraMap ℤ_[p] K = padicIntAlgebraMap p K := by
+  ext z
+  refine congrFun (PadicInt.denseRange_natCast.equalizer
+    (continuous_algebraMap ℤ_[p] K)
+    (continuous_padicIntAlgebraMap (continuous_algebraMap ℚ_[p] K)) ?_) z
+  funext n
+  simp
+
 end Algebra
 
 section NormedAlgebra
@@ -191,6 +208,18 @@ theorem inv_abs_le_norm_intCast (p : ℕ) [Fact (Nat.Prime p)] {K : Type*} [Semi
   exact Padic.inv_natCast_le_norm_natCast n.natAbs
 
 end NormedAlgebra
+
+/-- On any module over both `ℤ_p` and `ℚ_p`, scalar multiplication by `(p : ℤ_p)` is injective:
+both `(p : ℤ_p)` and `(p : ℚ_p)` act as `p`-fold addition (`Nat.cast_smul_eq_nsmul`), and
+`(p : ℚ_p)` is invertible in `ℚ_p`. No `IsScalarTower ℤ_[p] ℚ_[p] M` hypothesis is needed. -/
+theorem isSMulRegular_padicInt_prime {p : ℕ} [hp : Fact (Nat.Prime p)] {M : Type*}
+    [AddCommMonoid M] [Module ℤ_[p] M] [Module ℚ_[p] M] :
+    IsSMulRegular M (p : ℤ_[p]) := by
+  intro x y h
+  have hp0 : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr hp.out.ne_zero
+  have h' : (p : ℚ_[p]) • x = (p : ℚ_[p]) • y := by
+    simpa only [Nat.cast_smul_eq_nsmul] using h
+  simpa [inv_smul_smul₀ hp0] using congrArg ((p : ℚ_[p])⁻¹ • ·) h'
 
 end TauCeti
 

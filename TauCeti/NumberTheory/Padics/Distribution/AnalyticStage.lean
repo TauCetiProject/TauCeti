@@ -67,6 +67,10 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 ## Main definitions
 
 * `TauCeti.AnalyticStage p h E`: the analytic stage `C₀(ZMod (pʰ) × ℕ, E)`.
+* `TauCeti.AnalyticStage.rowsEquiv p h S`: the isometric identification
+  `LA_h(E) ≃ₗᵢ[S] (ZMod (pʰ) → C₀(ℕ, E))` with families of disc coefficient sequences.
+* `TauCeti.AnalyticStage.levelZeroEquiv p S`: the level-`0` isometric identification
+  `LA_0(E) ≃ₗᵢ[S] C₀(ℕ, E)`.
 * `TauCeti.AnalyticStage.eval S`: evaluation `LA_h(E) →L[S] C(ℤ_p, E)`.
 * `TauCeti.AnalyticStage.reexpand s t c`: the coefficients of `∑ₙ (s + t v)ⁿ • cₙ` in powers
   of `v`.
@@ -78,8 +82,9 @@ The disc decomposition itself is the homeomorphism `PadicInt.discHomeomorph` of
 ## Main results
 
 * `TauCeti.AnalyticStage.eval_natCast_val_add_mul`: on the disc of `a`, the evaluation of `c` is
-  `∑ₙ wⁿ • c(a, n)`; `TauCeti.AnalyticStage.eval_apply_zero` specializes to `0`, and
-  `TauCeti.AnalyticStage.eval_single` evaluates a single coordinate vector.
+  `∑ₙ wⁿ • c(a, n)`; at level `0` this is `∑ₙ xⁿ • cₙ`
+  (`TauCeti.AnalyticStage.eval_levelZeroEquiv_symm_apply`), `TauCeti.AnalyticStage.eval_apply_zero`
+  specializes to `0`, and `TauCeti.AnalyticStage.eval_single` evaluates a single coordinate vector.
 * `TauCeti.AnalyticStage.norm_eval_le`, `TauCeti.AnalyticStage.opNorm_eval_le_one`: evaluation
   does not increase norms.
 * `TauCeti.AnalyticStage.eval_compLeft`: evaluation commutes with uniformly bounded coefficient maps
@@ -914,6 +919,79 @@ theorem transitionLE_indicatorCLM (hhk : h ≤ k) (U : Set (ZMod (p ^ h)))
       ZMod.cast_cast_of_dvd (pow_dvd_pow p hhk) (pow_dvd_pow p k.le_succ)]
 
 end IndicatorCLM
+
+end AnalyticStage
+
+namespace AnalyticStage
+
+/-! ### Row decomposition and level-`0` stages -/
+
+section Coords
+
+variable {E : Type*} [NormedAddCommGroup E] (S : Type*) [Semiring S] [Module S E]
+  [ContinuousConstSMul S E]
+
+variable (p) in
+/-- **Disc-row decomposition of an analytic stage.** A coefficient vector in `LA_h(E)` is
+isometrically a finite family `ZMod (p ^ h) → C₀(ℕ, E)` of null sequences, one per disc. -/
+noncomputable def rowsEquiv (h : ℕ) : AnalyticStage p h E ≃ₗᵢ[S] (ZMod (p ^ h) → C₀(ℕ, E)) :=
+  have : NeZero (p ^ h) := ⟨pow_ne_zero h hp.out.ne_zero⟩
+  (ZeroAtInftyContinuousMap.curryEquiv S E).trans
+    (ZeroAtInftyContinuousMap.equivFunOnFintype S C₀(ℕ, E))
+
+/-- Evaluating `rowsEquiv p S h c` at `(a, n)` reads the coefficient `c (a, n)`. -/
+@[simp] theorem rowsEquiv_apply {h : ℕ} (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (n : ℕ) :
+    rowsEquiv p S h c a n = c (a, n) := by simp [rowsEquiv]
+
+/-- Assembling rows via `(rowsEquiv p S h).symm` evaluates `f` at `(i.1, i.2)`. -/
+@[simp] theorem rowsEquiv_symm_apply {h : ℕ} (f : ZMod (p ^ h) → C₀(ℕ, E)) (i : ZMod (p ^ h) × ℕ) :
+    (rowsEquiv p S h).symm f i = f i.1 i.2 := by simp [rowsEquiv]
+
+omit hp in
+variable (p) in
+/-- **At level `0` there is a single disc (`ZMod 1` is a singleton)**, so `LA_0(E)` is
+isometrically `C₀(ℕ, E)`. -/
+noncomputable def levelZeroEquiv : AnalyticStage p 0 E ≃ₗᵢ[S] C₀(ℕ, E) :=
+  ZeroAtInftyContinuousMap.congrLeft S E
+    { toFun := Prod.snd, invFun := fun n ↦ (0, n)
+      left_inv := fun ⟨_, _⟩ ↦ by
+        have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
+        exact Prod.ext (Subsingleton.elim _ _) rfl
+      right_inv := fun _ ↦ rfl
+      continuous_toFun := continuous_snd
+      continuous_invFun := Continuous.prodMk continuous_const continuous_id }
+
+omit hp in
+/-- At level `0`, `levelZeroEquiv` reads the coefficient on the unique disc `0`. -/
+@[simp] theorem levelZeroEquiv_apply (c : AnalyticStage p 0 E) (n : ℕ) :
+    levelZeroEquiv p S c n = c (0, n) := by
+  rw [levelZeroEquiv, ZeroAtInftyContinuousMap.congrLeft_apply]; rfl
+
+omit hp in
+/-- Evaluating `(levelZeroEquiv p S).symm c` at `i` projects onto the degree `i.2`. -/
+-- Apply before `simp` normalizes the dependent index `p ^ 0` in the function coercion.
+@[simp↓] theorem levelZeroEquiv_symm_apply (c : C₀(ℕ, E)) (i : ZMod (p ^ 0) × ℕ) :
+    (levelZeroEquiv p S).symm c i = c i.2 := by
+  rw [levelZeroEquiv, ZeroAtInftyContinuousMap.congrLeft_symm,
+    ZeroAtInftyContinuousMap.congrLeft_apply]; rfl
+
+variable [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E] [IsUltrametricDist E] [CompleteSpace E]
+  [SMulCommClass ℤ_[p] S E]
+
+/-- At level `0`, `(levelZeroEquiv p S).symm c` evaluates at `x : ℤ_p` as `∑ₙ xⁿ • cₙ`. -/
+theorem hasSum_eval_levelZeroEquiv_symm (c : C₀(ℕ, E)) (x : ℤ_[p]) :
+    HasSum (fun n ↦ x ^ n • c n) (eval S ((levelZeroEquiv p S).symm c) x) := by
+  have : NeZero (p ^ 0) := ⟨by simp⟩
+  have hx : ((0 : ZMod (p ^ 0)).val : ℤ_[p]) + (p : ℤ_[p]) ^ 0 * x = x := by rw [pow_zero]; simp
+  simpa only [levelZeroEquiv_symm_apply, hx] using
+    hasSum_eval_natCast_val_add_mul S ((levelZeroEquiv p S).symm c) 0 x
+
+/-- At level `0`, `eval S ((levelZeroEquiv p S).symm c) x = ∑' n, x ^ n • c n`. -/
+theorem eval_levelZeroEquiv_symm_apply (c : C₀(ℕ, E)) (x : ℤ_[p]) :
+    eval S ((levelZeroEquiv p S).symm c) x = ∑' n, x ^ n • c n :=
+  (hasSum_eval_levelZeroEquiv_symm S c x).tsum_eq.symm
+
+end Coords
 
 end AnalyticStage
 

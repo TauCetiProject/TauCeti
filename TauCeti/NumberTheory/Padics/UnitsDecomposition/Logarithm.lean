@@ -47,7 +47,8 @@ At `p = 2` the modulus `q = 4` cannot be lowered to `2`: `-1` has order two, so
 
 ## Main declarations
 
-* `TauCeti.padicUnitsDepth p`: the exponent `k` with `q = p ^ k`.
+* `TauCeti.padicUnitsDepth p`: the exponent `k` with `q = p ^ k`, with
+  `TauCeti.padicUnitsDepth_add_ne_zero` and `TauCeti.one_lt_sub_one_mul_padicUnitsDepth_add`.
 * `TauCeti.unitsPrincipalLogEquiv p`: the logarithm `1 + qℤ_p ≃ₜ* ℤ_p`, `u ↦ log u / q`.
 * `TauCeti.padicUnitsGenerator p`: the unit `γ = exp q`, with
   `TauCeti.topologicalClosure_zpowers_padicUnitsGenerator`,
@@ -92,6 +93,10 @@ theorem padicUnitsDepth_pos : 0 < padicUnitsDepth p := by
   unfold padicUnitsDepth
   split_ifs <;> omega
 
+/-- Every depth `padicUnitsDepth p + j` above `padicUnitsDepth p` is nonzero. -/
+theorem padicUnitsDepth_add_ne_zero (j : ℕ) : padicUnitsDepth p + j ≠ 0 :=
+  Nat.ne_of_gt (Nat.add_pos_left (padicUnitsDepth_pos p) j)
+
 /-- For `p = 2` the depth is at least `2`, the range in which the principal units of `ℤ_2` are
 procyclic and torsion-free. -/
 theorem two_le_padicUnitsDepth {p : ℕ} (h : p = 2) : 2 ≤ padicUnitsDepth p := by
@@ -102,7 +107,7 @@ variable {p} [hp : Fact p.Prime]
 
 /-- The depths `k + j` are in the convergence range `1 < (p - 1) * i` of the exponential and the
 logarithm on `ℚ_[p]`. -/
-private theorem one_lt_sub_one_mul_padicUnitsDepth_add (j : ℕ) :
+theorem one_lt_sub_one_mul_padicUnitsDepth_add (j : ℕ) :
     1 < (p - 1) * (padicUnitsDepth p + j) := by
   have := hp.out.two_le
   by_cases h : p = 2

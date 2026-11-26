@@ -35,10 +35,16 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   `TauCeti.PowerSeries.isRestrictedSubring_le_of_abs_le` is the resulting containment of subrings.
 * `TauCeti.PowerSeries.isRestricted_polynomial`: every polynomial is restricted, in particular
   `X - a` (`TauCeti.PowerSeries.isRestricted_X_sub_C`).
+* `PowerSeries.tendsto_coeff_cofinite_iff_isRestricted_one` and
+  `PowerSeries.tendsto_coeff_atTop_iff_isRestricted_one`: `f` is restricted at radius `1` if and
+  only if its coefficients tend to `0`.
 * `PowerSeries.IsRestricted.summable_norm_coeff_mul_pow`: weighted coefficient norms are
   summable strictly inside the radius of restrictedness.
 * `PowerSeries.IsRestricted.mul_of_abs_lt`: over any normed ring, a product of series restricted
   at `c'` is restricted at every `c` with `|c| < |c'|`.
+* `PowerSeries.norm_coeff_mul_le`, `PowerSeries.norm_coeff_pow_le`,
+  `PowerSeries.norm_coeff_pow_le_one`: ultrametric uniform coefficient bounds for products and
+  positive powers over a seminormed ring.
 * `PowerSeries.IsRestricted.subring_zero` and `PowerSeries.IsRestricted.subring_abs`: the
   restricted subring is everything at the radius `0`, and depends only on `|c|`.
 * `TauCeti.PowerSeries.not_isRestricted_mk_pow`: for `a ≠ 0` and a multiplicative norm, `∑ aⁿ Xⁿ`
@@ -257,6 +263,39 @@ namespace PowerSeries
 open Filter
 open scoped Topology
 
+section CoeffBounds
+
+variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
+
+/-- Over an ultrametric seminormed ring, uniform bounds `r` and `s` on the coefficients of `f` and
+`g` bound every coefficient of `f * g` by `r * s`. -/
+theorem norm_coeff_mul_le {f g : PowerSeries R} {r s : ℝ} (hf : ∀ k, ‖coeff k f‖ ≤ r)
+    (hg : ∀ k, ‖coeff k g‖ ≤ s) (k : ℕ) : ‖coeff k (f * g)‖ ≤ r * s := by
+  have hr0 : 0 ≤ r := (norm_nonneg _).trans (hf 0)
+  rw [coeff_mul]
+  exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg
+    (mul_nonneg hr0 ((norm_nonneg _).trans (hg 0))) fun p _ ↦
+      (norm_mul_le _ _).trans (mul_le_mul (hf p.1) (hg p.2) (norm_nonneg _) hr0)
+
+/-- Over an ultrametric seminormed ring, if every coefficient of `g` has norm at most `r`, then
+every coefficient of a positive power `g ^ n` (`n ≠ 0`) has norm at most `r ^ n`. -/
+theorem norm_coeff_pow_le {g : PowerSeries R} {r : ℝ} (hgn : ∀ k, ‖coeff k g‖ ≤ r) {n : ℕ}
+    (hn : n ≠ 0) (k : ℕ) : ‖coeff k (g ^ n)‖ ≤ r ^ n := by
+  induction n generalizing k with
+  | zero => exact absurd rfl hn
+  | succ n ih =>
+    rcases eq_or_ne n 0 with rfl | hn0
+    · simpa using hgn k
+    · rw [pow_succ, pow_succ]; exact norm_coeff_mul_le (ih hn0) hgn k
+
+/-- Over an ultrametric seminormed ring, every positive power of a power series whose coefficients
+have norm at most `1` also has coefficients of norm at most `1`. -/
+theorem norm_coeff_pow_le_one {g : PowerSeries R} (hgn : ∀ k, ‖coeff k g‖ ≤ 1) {n : ℕ}
+    (hn : n ≠ 0) (k : ℕ) : ‖coeff k (g ^ n)‖ ≤ 1 := by
+  simpa only [one_pow] using norm_coeff_pow_le hgn hn k
+
+end CoeffBounds
+
 variable {R : Type*} [NormedRing R] {c c' : ℝ} {f g : PowerSeries R}
 
 section Subring
@@ -285,6 +324,18 @@ theorem IsRestricted.subring_abs (c : ℝ) :
   Subring.ext fun f ↦ by simp only [IsRestricted.mem_subring, isRestricted_abs_iff]
 
 end Subring
+
+/-- The coefficients of `f` tend to `0` along `cofinite` if and only if `f` is restricted at
+radius `1`. -/
+theorem tendsto_coeff_cofinite_iff_isRestricted_one :
+    Tendsto (fun n ↦ coeff n f) cofinite (𝓝 0) ↔ f.IsRestricted 1 := by
+  simp [isRestricted_iff, tendsto_zero_iff_norm_tendsto_zero]
+
+/-- The coefficients of `f` tend to `0` along `atTop` if and only if `f` is restricted at
+radius `1`. -/
+theorem tendsto_coeff_atTop_iff_isRestricted_one :
+    Tendsto (fun n ↦ coeff n f) atTop (𝓝 0) ↔ f.IsRestricted 1 := by
+  rw [← Nat.cofinite_eq_atTop, tendsto_coeff_cofinite_iff_isRestricted_one]
 
 /-- The weighted coefficient norms of a restricted series are summable at every strictly
 smaller radius. No completeness or ultrametric hypothesis is needed. -/
