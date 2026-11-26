@@ -8,7 +8,8 @@ module
 public import TauCeti.SetTheory.Cardinal.Partition.EndHomogeneous
 public import TauCeti.SetTheory.Cardinal.Partition.Pigeonhole
 public import Mathlib.SetTheory.Cardinal.Aleph
-import TauCeti.Order.Fin.Basic
+import TauCeti.Order.Fin.Tuple
+import TauCeti.Order.Hom.Basic
 
 /-!
 # The Erdős–Rado theorem
@@ -21,8 +22,8 @@ linear order of cardinality `ℶₙ(κ)⁺` by at most `κ` colours has a homoge
 
 Indexed by beth numbers, `ℶ_ (α + n) = ℶₙ(ℶ_ α)`, the theorem reads
 `ℶ_ (α + n)⁺ → (ℶ_ α⁺)ⁿ⁺¹_ℶ_α`; since `ℶ_ (α + n)⁺ ≤ ℶ_ (α + n + 1)`, it then also holds from
-`ℶ_ (α + n + 1)` by `Cardinal.PartitionRel.mono`. This is the form in which Morley's proof of the
-Hanf number bound for `Lω₁ω` applies it at every level `α`.
+`ℶ_ (α + n + 1)` (`Cardinal.erdos_rado_beth_add_one`). This is the form in which Morley's proof
+of the Hanf number bound for `Lω₁ω` applies it at every level `α`.
 
 ## Main definitions
 
@@ -33,6 +34,7 @@ Hanf number bound for `Lω₁ω` applies it at every level `α`.
 * `Cardinal.iteratedTwoPow_beth`: `ℶₙ(ℶ_ α) = ℶ_ (α + n)`.
 * `Cardinal.erdos_rado`: `ℶₙ(κ)⁺ → (κ⁺)ⁿ⁺¹_κ` for infinite `κ`.
 * `Cardinal.erdos_rado_beth`: `ℶ_ (α + n)⁺ → (ℶ_ α⁺)ⁿ⁺¹_ℶ_α`.
+* `Cardinal.erdos_rado_beth_add_one`: `ℶ_ (α + n + 1) → (ℶ_ α⁺)ⁿ⁺¹_ℶ_α`.
 
 ## Implementation notes
 
@@ -103,20 +105,17 @@ private theorem exists_isHomogeneousOn_of_isEndHomogeneousOn {J D : Type u} [Lin
   -- The colour of a tuple from `G` is that of its first `n + 1` entries, extended by `ext`.
   have key (s : Fin (n + 2) ↪o J) (hs : ∀ k, s k ∈ Subtype.val '' G) :
       ∃ s₀ : Fin (n + 1) ↪o H', (∀ k, s₀ k ∈ G) ∧ c s = c (ext s₀) := by
-    choose g hgG hg using fun k : Fin (n + 1) ↦ hs k.castSucc
-    obtain ⟨s₀, hs₀⟩ : ∃ s₀ : Fin (n + 1) ↪o H', ∀ k, s₀ k = g k :=
-      ⟨.ofStrictMono g fun a b hab ↦ by
-        rw [← Subtype.coe_lt_coe, hg, hg]
-        exact s.strictMono (Fin.castSucc_lt_castSucc_iff.2 hab), fun _ ↦ rfl⟩
+    obtain ⟨s₀, hs₀G, hs₀⟩ := (OrderEmbedding.subtype (· ∈ H')).exists_trans_eq_of_forall_mem_image
+      (Fin.castSuccOrderEmb.trans s) fun k ↦ hs k.castSucc
     have hsH (k : Fin (n + 2)) : s k ∈ H := by
       obtain ⟨x, -, hx⟩ := hs k
       exact hx ▸ x.property.1
-    refine ⟨s₀, fun k ↦ hs₀ k ▸ hgG k, isEndHomogeneousOn_def.1 hc _ _ hsH (fun k ↦ ?_) ?_⟩
+    refine ⟨s₀, hs₀G, isEndHomogeneousOn_def.1 hc _ _ hsH (fun k ↦ ?_) ?_⟩
     · induction k using Fin.lastCases with
       | last => simpa [ext] using hupH _ (s₀ (Fin.last n)).property
       | cast k => simpa [ext] using (s₀ k).property.1
     · intro k
-      simp [ext, hs₀, hg]
+      simpa [ext] using (DFunLike.congr_fun hs₀ k).symm
   refine ⟨Subtype.val '' G, by rwa [mk_image_eq Subtype.val_injective],
     isHomogeneousOn_def.2 fun s t hs ht ↦ ?_⟩
   obtain ⟨s₀, hs₀G, hs₀⟩ := key s hs
@@ -156,5 +155,11 @@ theorem erdos_rado {κ : Cardinal.{u}} (hκ : ℵ₀ ≤ κ) :
 theorem erdos_rado_beth (α : Ordinal.{u}) (n : ℕ) :
     PartitionRel (Order.succ (ℶ_ (α + n))) (Order.succ (ℶ_ α)) (n + 1) (ℶ_ α) := by
   simpa [iteratedTwoPow_beth] using erdos_rado (aleph0_le_beth α) n
+
+/-- **The Erdős–Rado theorem for beth numbers**, from a set of cardinality at least
+`ℶ_ (α + n + 1)`: `ℶ_ (α + n + 1) → (ℶ_ α⁺)ⁿ⁺¹_ℶ_α`. -/
+theorem erdos_rado_beth_add_one (α : Ordinal.{u}) (n : ℕ) :
+    PartitionRel (ℶ_ (α + n + 1)) (Order.succ (ℶ_ α)) (n + 1) (ℶ_ α) :=
+  (erdos_rado_beth α n).mono (Order.succ_le_of_lt (beth_lt_beth.2 (lt_add_one _))) le_rfl le_rfl
 
 end Cardinal

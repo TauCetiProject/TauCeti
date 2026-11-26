@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.SetTheory.Cardinal.Partition.Basic
+import Mathlib.Order.Interval.Set.InitialSeg
 import Mathlib.SetTheory.Cardinal.Arithmetic
-import TauCeti.Order.Fin.Basic
+import TauCeti.Order.Fin.Tuple
+import TauCeti.Order.Hom.Basic
 
 /-!
 # End-homogeneous sets
@@ -24,6 +26,8 @@ The end-homogeneity is with respect to the order of `J`, not to an order of cons
 
 * `TauCeti.exists_isEndHomogeneousOn`: from `(2 ^ lam)⁺ ≤ #J`, an end-homogeneous set of
   cardinality at least `lam⁺`.
+* `TauCeti.exists_forall_eq_of_apply_zero_eq`: the pair form, a set of cardinality at least
+  `lam⁺` on which the colour of an increasing pair depends only on its smaller point.
 
 ## Implementation notes
 
@@ -99,7 +103,9 @@ private theorem mem_treePred_iff :
         (∀ k : Fin (n + 1), s k.castSucc = t k.castSucc) →
         (∀ k : Fin (n + 1), s k.castSucc ∈ treePred c x) → c s = c t := by
   rw [treePred, mem_ofPred_eq, WellFounded.fix_eq]
-  rfl
+  -- After one unfolding of the recursion, the recursive call `IH (s k.castSucc) _` is the term
+  -- `wellFounded_lt.fix _ (s k.castSucc)`, which is membership in `treePred c x` by definition.
+  exact Iff.rfl
 
 private theorem lt_of_mem_treePred (hy : y ∈ treePred c x) : y < x :=
   (mem_treePred_iff.1 hy).1
@@ -184,27 +190,20 @@ private theorem eq_of_comp_eq {T : Type*} [LinearOrder T] [WellFoundedLT T] {e e
   have himage : e '' Iio v = e' '' Iio v := image_congr fun u hu ↦ IH u hu
   refine eq_of_treePred_eq (by rw [he, he', himage]) fun s t hs ht hst hsP ↦ ?_
   -- Pull `s` back along `e`: its entries are `e v` and points of `e '' Iio v`.
-  have hmem (k : Fin (n + 2)) : ∃ w, e w = s k := by
+  have hmem (k : Fin (n + 2)) : s k ∈ e '' Iic v := by
     induction k using Fin.lastCases with
-    | last => exact ⟨v, hs.symm⟩
+    | last => exact ⟨v, self_mem_Iic, hs.symm⟩
     | cast k =>
-      obtain ⟨w, -, hwk⟩ := he v ▸ hsP k
-      exact ⟨w, hwk⟩
-  choose σ hσ using hmem
-  obtain ⟨σ', hσ'⟩ : ∃ σ' : Fin (n + 2) ↪o T, ∀ k, σ' k = σ k :=
-    ⟨.ofStrictMono σ fun a b hab ↦ by
-      rw [← e.lt_iff_lt, hσ, hσ]
-      exact s.strictMono hab, fun _ ↦ rfl⟩
-  have hσs : σ'.trans e = s := RelEmbedding.ext fun k ↦ by simp [hσ', hσ]
-  have hσt : σ'.trans e' = t := by
+      obtain ⟨w, hw, hwk⟩ := he v ▸ hsP k
+      exact ⟨w, Iio_subset_Iic_self hw, hwk⟩
+  obtain ⟨σ, -, rfl⟩ := e.exists_trans_eq_of_forall_mem_image s hmem
+  have hl : σ (Fin.last _) = v := e.injective hs
+  have hσt : σ.trans e' = t := by
     refine RelEmbedding.ext <| Fin.lastCases ?_ fun k ↦ ?_
-    · have hl : σ (Fin.last _) = v := e.injective (by rw [hσ, hs])
-      simp [hσ', hl, ht]
-    · have hk : σ k.castSucc < v := by
-        rw [← e.lt_iff_lt, hσ, ← hs]
-        exact s.strictMono (Fin.castSucc_lt_last k)
-      simp [hσ', ← IH _ hk, hσ, hst]
-  rw [← hσs, ← hσt, hc]
+    · simp [hl, ht]
+    · have hk : σ k.castSucc < v := hl ▸ σ.strictMono (Fin.castSucc_lt_last k)
+      simpa [← IH _ hk] using hst k
+  rw [← hσt, hc]
 
 /-- Each point of the branch `insert x (treePred c x)` has as tree predecessors the points of
 the branch below it. -/
@@ -239,13 +238,10 @@ private theorem exists_orderEmbedding_Iio (c : (Fin (n + 2) ↪o J) → D) (hlam
     ∃ (w : (Order.succ lam).ord.ToType) (e : Iio w ↪o J), range e = insert x (treePred c x) := by
   set Q := insert x (treePred c x)
   have hQ : typeLT Q < typeLT (Order.succ lam).ord.ToType := by
-    rw [Ordinal.type_toType, lt_ord, Ordinal.card_type, Order.lt_succ_iff]
-    exact mk_insert_le.trans ((add_le_add hx le_rfl).trans (add_one_eq hlam).le)
+    simpa [lt_ord, Order.lt_succ_iff] using
+      mk_insert_le.trans ((add_le_add hx le_rfl).trans (add_one_eq hlam).le)
   obtain ⟨f⟩ := Ordinal.type_lt_iff.1 hQ
-  let g : Q ↪o (Order.succ lam).ord.ToType :=
-    RelEmbedding.orderEmbeddingOfLTEmbedding f.toRelEmbedding
-  have hg : range g = Iio f.top := f.range_eq_Iio
-  let iso : Q ≃o Iio f.top := g.orderIso.trans (orderIsoOfEq _ _ hg)
+  let iso : Q ≃o Iio f.top := f.orderIsoIio
   refine ⟨f.top, iso.symm.toOrderEmbedding.trans (OrderEmbedding.subtype (· ∈ Q)), ?_⟩
   ext z
   refine ⟨?_, fun hz ↦ ⟨iso ⟨z, hz⟩, by simp⟩⟩
@@ -282,8 +278,7 @@ private theorem exists_lt_mk_treePred (hlam : ℵ₀ ≤ lam) (hJ : Order.succ (
       simpa using mk_Iio_lt v (by simp)
     have htup : #(Fin (n + 2) ↪o Iio v) ≤ lam := by
       refine (mk_le_of_injective DFunLike.coe_injective).trans ?_
-      rw [mk_arrow, mk_fin, lift_natCast, lift_uzero, power_natCast]
-      exact (power_le_power_right hv).trans (power_nat_le hlam)
+      simpa using (power_le_power_right hv).trans (power_nat_le hlam (n := n + 2))
     rw [← power_def, ← power_self_eq hlam]
     exact (power_le_power_right hD).trans (power_le_power_left (aleph0_pos.trans_le hlam).ne' htup)
   have h2 : ℵ₀ ≤ 2 ^ lam := hlam.trans (cantor lam).le
@@ -308,5 +303,18 @@ theorem exists_isEndHomogeneousOn {lam : Cardinal.{u}} (hlam : ℵ₀ ≤ lam) {
     ∃ H : Set J, Order.succ lam ≤ #H ∧ IsEndHomogeneousOn c H := by
   obtain ⟨x, hx⟩ := exists_lt_mk_treePred hlam hJ hD c
   exact ⟨treePred c x, Order.succ_le_of_lt hx, isEndHomogeneousOn_treePred c x⟩
+
+/-- **End-homogeneous sets for pairs**, the case `n = 0` of `exists_isEndHomogeneousOn`. Let `lam`
+be infinite and `J` a well-order of cardinality at least `(2 ^ lam)⁺`. Every colouring of the
+increasing pairs of `J` by at most `lam` colours has a set `H` of cardinality at least `lam⁺` on
+which the colour of a pair depends only on its smaller point. -/
+theorem exists_forall_eq_of_apply_zero_eq {lam : Cardinal.{u}} (hlam : ℵ₀ ≤ lam) {J : Type u}
+    [LinearOrder J] [WellFoundedLT J] (hJ : Order.succ (2 ^ lam) ≤ #J) {D : Type u}
+    (hD : #D ≤ lam) (c : (Fin 2 ↪o J) → D) :
+    ∃ H : Set J, Order.succ lam ≤ #H ∧
+      ∀ s t : Fin 2 ↪o J, (∀ k, s k ∈ H) → (∀ k, t k ∈ H) → s 0 = t 0 → c s = c t := by
+  obtain ⟨H, hH, hc⟩ := exists_isEndHomogeneousOn hlam hJ hD (n := 0) c
+  exact ⟨H, hH, fun s t hs ht h0 ↦
+    isEndHomogeneousOn_def.1 hc s t hs ht (Fin.forall_fin_one.2 h0)⟩
 
 end TauCeti
