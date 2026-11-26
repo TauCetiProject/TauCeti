@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.Analysis.SpecialFunctions.Gaussian.Mellin
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 import TauCeti.NumberTheory.LSeries.Dilation
 
 /-!

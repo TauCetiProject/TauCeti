@@ -7,15 +7,13 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Analysis.MellinTransform
-import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Analysis.MellinTransform
 
 /-!
 # Mellin integrals of weighted Gaussians
 
-A monomial times `exp(-π t²)` has an explicit exponential majorant. Its Mellin transform is
-half the archimedean gamma factor at the shifted argument. These facts give the elementary
-bounds and the normalization of Mellin integrals of Gaussian theta sums.
+The Mellin transform of a monomial times `exp(-π t²)` is half the archimedean gamma factor at
+the shifted argument. This gives the normalization of Mellin integrals of Gaussian theta sums.
 -/
 
 public section
@@ -23,24 +21,6 @@ public section
 open Complex
 
 namespace TauCeti
-
-/-- The monomial of degree `j` times the standard Gaussian is bounded in absolute value by
-`j! exp(1 - |x|)`. -/
-theorem abs_pow_mul_exp_neg_pi_mul_sq_le (j : ℕ) (x : ℝ) :
-    |x ^ j * Real.exp (-Real.pi * x ^ 2)| ≤ (j.factorial : ℝ) * Real.exp 1 * Real.exp (-|x|) := by
-  rw [abs_mul, abs_pow, Real.abs_exp, ← sq_abs x]
-  calc
-    _ ≤ (j.factorial : ℝ) * Real.exp |x| * Real.exp (-Real.pi * |x| ^ 2) := by
-      gcongr
-      simpa [mul_comm] using (div_le_iff₀ (by positivity : 0 < (j.factorial : ℝ))).mp
-        (Real.pow_div_factorial_le_exp |x| (abs_nonneg x) j)
-    _ = (j.factorial : ℝ) * Real.exp (|x| - Real.pi * |x| ^ 2) := by
-      rw [mul_assoc, ← Real.exp_add, neg_mul, sub_eq_add_neg]
-    _ ≤ (j.factorial : ℝ) * Real.exp (1 + -|x|) := by
-      gcongr
-      have hπ : 0 ≤ Real.pi - 1 := by linarith [Real.pi_gt_three]
-      nlinarith [sq_nonneg (|x| - 1), mul_nonneg hπ (sq_nonneg |x|)]
-    _ = _ := by rw [Real.exp_add, mul_assoc]
 
 /-- The Mellin transform of a Gaussian times `t^j` is `Γℝ(s+j)/2` when `Re(s+j) > 0`. -/
 theorem hasMellin_pow_mul_exp_neg_pi_mul_sq (j : ℕ) {s : ℂ} (hs : 0 < s.re + j) :
