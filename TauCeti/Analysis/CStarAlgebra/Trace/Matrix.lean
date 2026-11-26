@@ -122,11 +122,12 @@ theorem isDenselyDefined_matrixTrace (hτ : IsTrace τ) (hd : IsDenselyDefined �
       CStarMatrix.ofMatrixL.symm.toHomeomorph.isOpenMap
   have hcont : Continuous fun S : CStarMatrix n n B ↦ star S * S :=
     continuous_star.mul continuous_id
-  -- `CStarMatrix.ofMatrixL` keeps the entries (`CStarMatrix.ofMatrix_symm_apply`), so the entries
-  -- of each `S` in the preimage lie in `𝔫_τ`.
-  exact map_mem_closure (f := fun S : CStarMatrix n n B ↦ star S * S) hcont (hS R) fun S hSmem ↦
-    star_mul_self_mem_finitePart_iff.2
-      (hτ.mem_sqIntegrable_matrixTrace_iff.2 (Set.mem_matrix.1 hSmem))
+  -- `CStarMatrix.ofMatrixL` keeps the entries, so the entries of each `S` in the preimage lie
+  -- in `𝔫_τ`.
+  refine map_mem_closure (f := fun S : CStarMatrix n n B ↦ star S * S) hcont (hS R) fun S hSmem ↦
+    star_mul_self_mem_finitePart_iff.2 (hτ.mem_sqIntegrable_matrixTrace_iff.2 ?_)
+  simpa only [CStarMatrix.ofMatrixL_symm_apply, CStarMatrix.ofMatrix_symm_apply] using
+    Set.mem_matrix.1 hSmem
 
 end IsTrace
 
