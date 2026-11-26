@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Restriction
 public import TauCeti.Analysis.PDE.Parabolic.Holder.One
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Basic
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.TimeReversal
 public import TauCeti.Analysis.Holder.Iterated
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import Mathlib.Tactic.IntervalCases
@@ -50,8 +51,9 @@ Cauchy problem at every derivative order.
 * `TauCeti.ParabolicCkHolderSpace.spatialTraceL`: the trace `C_{par,b}^{k+α} → C_b^{k,α}` at a
   time of the slab, of norm at most one, with the spatial derivatives of the trace given by
   `TauCeti.ParabolicCkHolderSpace.iteratedFDeriv_spatialTrace`.
-* `TauCeti.ParabolicC2HolderSpace.spatialTrace_timeReverseLIE` and
-  `TauCeti.ParabolicC1HolderSpace.spatialTrace_timeReverseLIE`: the traces of a time reversal.
+* `TauCeti.ParabolicC2HolderSpace.spatialTrace_timeReverseLIE`,
+  `TauCeti.ParabolicC1HolderSpace.spatialTrace_timeReverseLIE` and
+  `TauCeti.ParabolicCkHolderSpace.spatialTrace_timeReverseLIE`: the traces of a time reversal.
 
 ## References
 
@@ -631,5 +633,32 @@ theorem spatialTrace_zero (t : Icc a b) :
 theorem norm_spatialTraceL_le_one (t : Icc a b) :
     ‖spatialTraceL (k := k) (α := α) (E := E) (F := F) (hab := hab) t‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
+
+/-! ### Traces of a time reversal -/
+
+section TimeReversal
+
+variable {a' b' T : ℝ} {ha : a' = T - b} {hb : b' = T - a}
+
+/-- The spatial trace of the time reversal `u ∘ R` at time `t` is the spatial trace of `u` at
+time `T - t`. -/
+@[simp]
+theorem spatialTrace_timeReverseLIE (f : ParabolicCkHolderSpace k α E F hab) (t : Icc a' b') :
+    (timeReverseLIE T ha hb f).spatialTrace t = f.spatialTrace (iccTimeReverse T ha hb t) := by
+  ext x
+  simp
+
+/-- The initial trace of the time reversal `u ∘ R`, at `T - b`, is the terminal trace of `u`
+at `b`. -/
+theorem spatialTrace_timeReverseLIE_left (f : ParabolicCkHolderSpace k α E F hab) :
+    (timeReverseLIE T ha hb f).spatialTrace
+        ⟨a', left_mem_Icc.2 (ha ▸ hb ▸ sub_lt_sub_left hab T).le⟩ =
+      f.spatialTrace ⟨b, right_mem_Icc.2 hab.le⟩ := by
+  rw [spatialTrace_timeReverseLIE]
+  congr 1
+  ext
+  simp [ha]
+
+end TimeReversal
 
 end TauCeti.ParabolicCkHolderSpace

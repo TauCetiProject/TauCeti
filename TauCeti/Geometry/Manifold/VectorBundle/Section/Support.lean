@@ -37,13 +37,20 @@ These lemmas allow arbitrary topological module targets `G`.
 The smoothness of multiplication is supplied by Mathlib's `ContMDiff.smul_section`.
 
 Over a base without isolated points, two sections that agree off a point are equal
-(`ContMDiffSection.eq_of_forall_ne`).
+(`ContMDiffSection.eq_of_forall_ne`). Any section vanishes off the closure of its nonzero locus
+(`Bundle.apply_eq_zero_of_notMem_closure`).
 -/
 
 public section
 
 open Set Bundle TopologicalSpace
 open scoped Manifold ContDiff Topology
+
+/-- A section vanishes off the closure of its nonzero locus. -/
+theorem Bundle.apply_eq_zero_of_notMem_closure {M : Type*} [TopologicalSpace M] {V : M → Type*}
+    [∀ x, Zero (V x)] {σ : Π x, V x} {y : M} (hy : y ∉ closure {x | σ x ≠ 0}) : σ y = 0 := by
+  by_contra h
+  exact hy (subset_closure h)
 
 namespace ContMDiffSection
 
@@ -89,11 +96,15 @@ theorem tsupport_def (s : Cₛ^n⟮I; F, V⟯) : s.tsupport = closure {x | s x �
 theorem isClosed_tsupport (s : Cₛ^n⟮I; F, V⟯) : IsClosed s.tsupport :=
   isClosed_closure
 
+/-- A point where a section is nonzero lies in its closed support. -/
+theorem mem_tsupport_of_ne_zero (s : Cₛ^n⟮I; F, V⟯) {x : M} (hx : s x ≠ 0) :
+    x ∈ s.tsupport :=
+  subset_closure hx
+
 /-- A section vanishes off its closed support. -/
 theorem eq_zero_of_notMem_tsupport (s : Cₛ^n⟮I; F, V⟯) {x : M}
-    (hx : x ∉ s.tsupport) : s x = 0 := by
-  by_contra h
-  exact hx (subset_closure h)
+    (hx : x ∉ s.tsupport) : s x = 0 :=
+  Bundle.apply_eq_zero_of_notMem_closure hx
 
 /-- Containment of closed support in a closed set is equivalent to vanishing outside it. -/
 theorem tsupport_subset_iff {s : Cₛ^n⟮I; F, V⟯} {K : Set M} (hK : IsClosed K) :

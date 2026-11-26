@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Algebra.CharP.Lemmas
+import TauCeti.Algebra.Polynomial.LinearFactor
 import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
@@ -78,12 +79,17 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
   `Polynomial.le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero`: `(X - r) ^ n` divides `p`
   (and for `p ≠ 0`, `n ≤ p.rootMultiplicity r`) if and only if the Hasse derivatives of `p` of
   order less than `n` vanish at `r`.
+* `Polynomial.coeff_taylor_map_algebraMap`, `Polynomial.aeval_hasseDeriv_eq_zero_of_pow_dvd`: the
+  Taylor coefficients at a point `ζ` of an `R`-algebra are the values at `ζ` of Hasse derivatives,
+  and those of order less than `m` vanish on multiples of `g ^ m` when `g(ζ) = 0`.
 * `Polynomial.eval_hasseDeriv_X_sub_C_pow`: the Hasse derivatives of `(X - r) ^ m` at `r`, over any
   ring.
 * `Polynomial.X_sub_C_pow_dvd_iff_forall_eval_iterate_derivative_eq_zero`: characteristic-zero
   ordinary-derivative form of the divisibility criterion over a ring with no zero divisors.
 * `Polynomial.exists_taylor_X_pow_sub_C_eq_C_mul_add_X_pow`: Taylor expansion of `X ^ p - C b` at
   `a` modulo `p` when `p ∣ a ^ p - b`.
+* `Polynomial.taylor_comp_C_mul_X`, `Polynomial.eval_hasseDeriv_comp_C_mul_X`: the Taylor
+  expansion and the Hasse derivatives of a rescaled polynomial `p(a X)`.
 * `Polynomial.nextCoeff_taylor`: the subleading coefficient of the Taylor expansion of `p` at `r`
   is `p.nextCoeff + p.natDegree * p.leadingCoeff * r`, over any semiring.
 * `TauCeti.taylorJet_sum_smul_X_sub_C_pow`, `TauCeti.taylorJet_surjective`: the coordinates `c`
@@ -188,6 +194,20 @@ theorem taylor_neg_taylor {R : Type*} [Ring R] (r : R) (p : R[X]) :
     rw [taylor_monomial, ← smul_eq_C_mul, map_smul, h, taylor_X_sub_C_pow, smul_eq_C_mul,
       C_mul_X_pow_eq_monomial]
 
+/-- Taylor expansion commutes with rescaling the variable: the expansion of `p(a X)` at `r` is
+the expansion of `p` at `a r`, rescaled. -/
+@[simp]
+theorem taylor_comp_C_mul_X {R : Type*} [CommSemiring R] (p : R[X]) (a r : R) :
+    taylor r (p.comp (C a * X)) = (taylor (a * r) p).comp (C a * X) := by
+  simp only [taylor_apply, comp_assoc, mul_comp, C_comp, X_comp, add_comp, mul_add, C_mul]
+
+/-- The Hasse derivatives of the rescaled polynomial `p(a X)`: the `k`-th one at `r` is
+`a ^ k` times the `k`-th Hasse derivative of `p` at `a r`. -/
+@[simp]
+theorem eval_hasseDeriv_comp_C_mul_X {R : Type*} [CommSemiring R] (p : R[X]) (a r : R)
+    (k : ℕ) : (hasseDeriv k (p.comp (C a * X))).eval r = a ^ k * (hasseDeriv k p).eval (a * r) := by
+  rw [← taylor_coeff, ← taylor_coeff, taylor_comp_C_mul_X, comp_C_mul_X_coeff, mul_comm]
+
 /-- The subleading coefficient of the Taylor expansion `p(X + r)` is that of `p` plus
 `p.natDegree * p.leadingCoeff * r`. -/
 theorem nextCoeff_taylor {R : Type*} [Semiring R] (p : R[X]) (r : R) :
@@ -225,6 +245,21 @@ theorem mem_span_X_sub_C_pow_iff_forall_eval_hasseDeriv_eq_zero {R : Type*} [Rin
     refine ⟨taylor (-r) g, taylor_injective r ?_⟩
     rw [taylor_mul_X_sub_C_pow, hg, (commute_X_pow g n).eq]
     simpa using congr_arg (· * X ^ n) (taylor_neg_taylor (-r) g)
+
+/-- The Taylor coefficients at `ζ` of the image of `p` in an `R`-algebra are the values at `ζ` of
+the Hasse derivatives of `p`. -/
+theorem coeff_taylor_map_algebraMap {R B : Type*} [CommSemiring R] [CommSemiring B] [Algebra R B]
+    (ζ : B) (p : R[X]) (k : ℕ) :
+    (taylor ζ (p.map (algebraMap R B))).coeff k = aeval ζ (hasseDeriv k p) := by
+  rw [taylor_coeff, hasseDeriv_map, eval_map_algebraMap]
+
+/-- If `ζ` is a root of `g` in an `R`-algebra and `g ^ m ∣ p`, then the Hasse derivatives of `p` of
+order less than `m` vanish at `ζ`. -/
+theorem aeval_hasseDeriv_eq_zero_of_pow_dvd {R B : Type*} [CommSemiring R] [CommSemiring B]
+    [Algebra R B] {ζ : B} {g p : R[X]} (hg : aeval ζ g = 0) {m : ℕ} (h : g ^ m ∣ p) {k : ℕ}
+    (hk : k < m) : aeval ζ (hasseDeriv k p) = 0 := by
+  obtain ⟨c, hc⟩ := pow_sub_dvd_hasseDeriv_of_pow_dvd k h
+  rw [hc, map_mul, map_pow, hg, zero_pow (by omega), zero_mul]
 
 variable {R : Type*} [CommRing R]
 

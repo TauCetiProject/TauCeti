@@ -15,9 +15,8 @@ import TauCeti.Topology.Sheaves.Cech.Functoriality
 /-!
 # Riemann surfaces of analytic genus zero are the Riemann sphere
 
-A compact connected Riemann surface `X` whose holomorphic structure sheaf has finite-dimensional
-first Čech cohomology has analytic genus `g_an = dim H¹(X, 𝒪)` equal to `0` exactly when it is
-biholomorphic to the Riemann sphere `OnePoint ℂ`
+A compact connected Hausdorff Riemann surface `X` has analytic genus `g_an = dim H¹(X, 𝒪)`
+equal to `0` exactly when it is biholomorphic to the Riemann sphere `OnePoint ℂ`
 (`TauCeti.RiemannSurface.analyticGenus_eq_zero_iff_nonempty_diffeomorph_onePoint`).
 
 * **Genus zero gives the sphere.** For a point `p`, Riemann–Roch for divisor sheaves
@@ -39,9 +38,7 @@ biholomorphic to the Riemann sphere `OnePoint ℂ`
 The biholomorphism to the sphere can be normalized at three distinct marked points, which it then
 sends to `0`, `1` and `∞` in exactly one way (`Diffeomorph.existsUnique_apply_eq_zero_one_infty`).
 
-The finiteness of `H¹(X, 𝒪)` is an analytic theorem which is not proved in this library; as in
-`TauCeti.Analysis.Complex.RiemannSurface.Divisor.RiemannRoch` it is an explicit instance
-argument. The comparison of the analytic genus with the topological genus
+The comparison of the analytic genus with the topological genus
 `TauCeti.RiemannSurface.genus` is not made here.
 
 ## Main results
@@ -49,7 +46,7 @@ argument. The comparison of the analytic genus with the topological genus
 * `Diffeomorph.analyticGenus_eq`: biholomorphic Riemann surfaces have the same analytic genus.
 * `TauCeti.RiemannSurface.analyticGenus_onePoint`: the Riemann sphere has analytic genus `0`.
 * `TauCeti.RiemannSurface.analyticGenus_eq_zero_iff_nonempty_diffeomorph_onePoint`: a compact
-  connected Riemann surface with finite-dimensional `H¹(X, 𝒪)` has analytic genus `0` exactly when
+  connected Riemann surface has analytic genus `0` exactly when
   it is biholomorphic to the Riemann sphere.
 
 ## References
@@ -114,11 +111,9 @@ theorem analyticGenus_onePoint : analyticGenus (OnePoint ℂ) = 0 :=
   analyticGenus_eq_finrank_divisorCechCohomology.trans finrank_divisorCechCohomology_zero_one_sphere
 
 variable [CompactSpace X] [T2Space X] [ConnectedSpace X]
-  [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
-  (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
 
 /-- **Riemann surfaces of genus zero are the Riemann sphere.** A compact connected Riemann surface
-with finite-dimensional `H¹(X, 𝒪)` has analytic genus `0` exactly when it is biholomorphic to the
+has analytic genus `0` exactly when it is biholomorphic to the
 Riemann sphere `OnePoint ℂ`. -/
 theorem analyticGenus_eq_zero_iff_nonempty_diffeomorph_onePoint :
     analyticGenus X = 0 ↔ Nonempty (X ≃ₘ⟮𝓘(ℂ), 𝓘(ℂ)⟯ OnePoint ℂ) := by

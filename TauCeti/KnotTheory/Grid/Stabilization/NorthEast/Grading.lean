@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.KnotTheory.Grid.Homology.Bigraded.Basic
+public import TauCeti.KnotTheory.Grid.Stabilization.Components
+public import TauCeti.KnotTheory.Grid.Stabilization.Map.Grading
 public import TauCeti.KnotTheory.Grid.Stabilization.NorthEast.Basic
 
 /-!
@@ -17,8 +20,8 @@ preserves total monomial degree. Consequently the specified north-east chain map
 `(0, 0)`, with each coefficient variable in bidegree `(-2, -1)`.
 
 Chain-level bigrading preservation holds over any commutative ring. In characteristic two,
-the Alexander comparison descends to the specified bijective semilinear map on unblocked
-homology. An odd component count is required only to use integer Alexander degrees.
+the bigrading descends to the specified bijective semilinear map on unblocked homology. An odd
+component count is required only to use integer Alexander degrees.
 
 ## References
 
@@ -66,37 +69,15 @@ theorem stabilizeXSuccChainMap_mem_bigradedChainMinusPiece {g : ℤ × ℤ}
 
 variable [CharP R 2]
 
-/-- The north-east stabilization chain map preserves the integer Alexander grading. -/
-theorem stabilizeXSuccChainMap_mem_alexanderChainMinusPiece {a : ℤ}
-    {c : GridChainMinus R (n + 1)}
-    (hc : c ∈ (G.stabilizeXSucc s).alexanderChainMinusPiece R a) :
-    G.val.stabilizeXSuccChainMap s R c ∈ G.alexanderChainMinusPiece R a := by
-  have hturn := (G.stabilizeXSucc s).halfTurnRenameEquiv_mem_alexanderChainMinusPiece R hc
-  rw [rotate_stabilizeXSucc] at hturn
-  have hmap := G.rotate.stabilizeXMap_mem_alexanderChainMinusPiece s.rev R hturn
-  rw [GridDiagram.stabilizeXMap_f_apply] at hmap
-  have hout := G.rotate.halfTurnRenameEquiv_mem_alexanderChainMinusPiece R hmap
-  rw [rotate_rotate] at hout
-  rw [GridDiagram.stabilizeXSuccChainMap_apply, GridDiagram.stabilizeXChainMap_apply]
-  exact hout
-
-/-- The specified north-east stabilization comparison preserves Alexander degree on `GH⁻`. -/
-theorem stabilizeXSuccHomologyMap_mem_alexanderUnblockedHomologyGrading_piece {a : ℤ}
+/-- The specified north-east stabilization comparison preserves the `O`-Maslov--Alexander
+bigrading on `GH⁻`. -/
+theorem stabilizeXSuccHomologyMap_mem_bigradedUnblockedHomologyPiece {g : ℤ × ℤ}
     {y : (G.stabilizeXSucc s).val.unblockedHomology R}
-    (hy : y ∈ ((G.stabilizeXSucc s).alexanderUnblockedHomologyGrading R).piece a) :
-    G.val.stabilizeXSuccHomologyMap s R y ∈
-      (G.alexanderUnblockedHomologyGrading R).piece a := by
-  rw [mem_alexanderUnblockedHomologyGrading_piece_iff, mem_alexanderHomologyGrading_piece_iff]
-    at hy ⊢
-  obtain ⟨w, hw, heq⟩ := hy
-  obtain rfl : y = (G.stabilizeXSucc s).val.unblockedHomologyClass R w := by
-    apply (ModuleCat.mono_iff_injective
-      ((G.stabilizeXSucc s).val.unblockedHomologyIso R).hom).mp inferInstance
-    rw [GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass, heq]
+    (hy : y ∈ (G.stabilizeXSucc s).bigradedUnblockedHomologyPiece R g) :
+    G.val.stabilizeXSuccHomologyMap s R y ∈ G.bigradedUnblockedHomologyPiece R g := by
+  obtain ⟨z, hz, rfl⟩ := ((G.stabilizeXSucc s).mem_bigradedUnblockedHomologyPiece_iff R).mp hy
   rw [GridDiagram.stabilizeXSuccHomologyMap_unblockedHomologyClass]
-  refine ⟨⟨G.val.stabilizeXSuccChainMap s R w,
-    G.val.stabilizeXSuccChainMap_mem_ker s R w.property⟩,
-    G.stabilizeXSuccChainMap_mem_alexanderChainMinusPiece s R hw, ?_⟩
-  exact (GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass _ _ _).symm
+  exact G.unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece R
+    (G.stabilizeXSuccChainMap_mem_bigradedChainMinusPiece s R hz)
 
 end TauCeti.OddComponentGridDiagram

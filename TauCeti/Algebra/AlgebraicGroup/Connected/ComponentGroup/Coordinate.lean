@@ -327,10 +327,10 @@ private theorem algHom_comp_map_comp_comulAlgHom_componentCoordinateMap
     simp [q, h, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight]
   have htarget : f.comp (Bialgebra.comulAlgHom k H) = (g * h).ofConv := by
     apply WithConv.toConv_injective
-    rw [Bialgebra.toConv_comp_comulAlgHom]
+    rw [AlgHom.toConv_comp_comulAlgHom]
   rw [htarget, eval_componentCoordinateMap, map_mul]
   apply WithConv.toConv_injective
-  rw [Bialgebra.toConv_comp_comulAlgHom, hqleft, hqright,
+  rw [AlgHom.toConv_comp_comulAlgHom, hqleft, hqright,
     eval_componentCoordinateMap, eval_componentCoordinateMap]
   exact (ConstantGroup.eval_mul k C _ _).symm
 

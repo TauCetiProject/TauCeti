@@ -11,15 +11,14 @@ import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Data.Nat.Choose.Vandermonde
-import Mathlib.FieldTheory.Perfect
+public import Mathlib.FieldTheory.Perfect
 import Mathlib.Tactic.NormDet
 import Mathlib.Tactic.NormNum.IsSquare
-public import Mathlib.FieldTheory.Separable
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.RingTheory.Polynomial.GaussLemma
+import TauCeti.RingTheory.Polynomial.Localization
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.PowerBasis
 public import TauCeti.RingTheory.Polynomial.RootEnumeration
@@ -92,10 +91,10 @@ depressed specialization of that formula is used to compare a quartic with its c
   exactly when `R` has a repeated element.
 * `Finset.prod_prod_erase_sub_eq_neg_one_pow_mul_discr`: the same product formula for
   `∏_{w ∈ s} (X - g w)`, indexed by a finite set.
-* `Squarefree.discr_ne_zero`, `Polynomial.resultant_deriv_eq`,
-  `Squarefree.resultant_deriv_ne_zero`: in characteristic zero, the default and explicitly
-  padded derivative resultants agree, and a squarefree polynomial over a GCD domain has nonzero
-  discriminant and nonzero derivative resultant.
+* `Squarefree.discr_ne_zero`, `Squarefree.resultant_derivative_ne_zero`: a squarefree polynomial
+  over a domain whose polynomials form a decomposition monoid and whose fraction field is perfect
+  (such as a GCD domain of characteristic zero) has nonzero discriminant, and nonzero resultant with
+  its derivative.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.separable_map_zmod_iff_not_dvd_discr`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
@@ -786,35 +785,31 @@ theorem separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
   rw [← discr_ne_zero_iff hn,
     discr_map_of_natDegree_eq φ (natDegree_map_of_leadingCoeff_ne_zero φ hlc)]
 
-/-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero discriminant. -/
+/-- A squarefree polynomial over a domain whose polynomials form a decomposition monoid and whose
+fraction field is perfect (such as a GCD domain of characteristic zero) has nonzero discriminant. -/
 theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
-    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) : p.discr ≠ 0 := by
+    [DecompositionMonoid D[X]] [PerfectField (FractionRing D)] {p : D[X]} (hp : Squarefree p) :
+    p.discr ≠ 0 := by
   have hinj := IsFractionRing.injective D (FractionRing D)
-  have : CharZero (FractionRing D) := charZero_of_injective_algebraMap hinj
   apply (map_ne_zero_iff (algebraMap D (FractionRing D)) hinj).mp
   apply (p.separable_map_iff_map_discr_ne_zero _ ?_).mp
-  · exact PerfectField.separable_iff_squarefree.mpr hp.map_fraction_map
+  · exact PerfectField.separable_iff_squarefree.mpr (hp.map_localization_map (nonZeroDivisors D))
   · exact (map_ne_zero_iff _ hinj).mpr (leadingCoeff_ne_zero.mpr hp.ne_zero)
 
-/-- When the base ring has no `ℕ`-torsion (in particular, in characteristic zero), the default
-resultant `f.resultant f.derivative` equals the resultant at degree bounds `f.natDegree` and
-`f.natDegree - 1`. -/
-theorem resultant_deriv_eq {f : R[X]} [HasUniqueDiv R] :
-    f.resultant f.derivative = f.resultant f.derivative f.natDegree (f.natDegree - 1) :=
-  congrArg (fun n ↦ f.resultant f.derivative f.natDegree n) (natDegree_derivative f)
-
-/-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero resultant with its
+/-- A squarefree polynomial over a domain whose polynomials form a decomposition monoid and whose
+fraction field is perfect (such as a GCD domain of characteristic zero) has nonzero resultant with
+its derivative: over the fraction field the polynomial is separable, that is, coprime to its
 derivative. -/
-theorem _root_.Squarefree.resultant_deriv_ne_zero {D : Type*} [CommRing D] [IsDomain D]
-    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) :
-    p.resultant p.derivative ≠ 0 := by
-  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hdeg
-  · rw [eq_C_of_natDegree_eq_zero h0]
-    simp [resultant]
-  · rw [resultant_deriv_eq, resultant_deriv (natDegree_pos_iff_degree_pos.mp hdeg)]
-    exact mul_ne_zero
-      (mul_ne_zero (pow_ne_zero _ (by norm_num)) (leadingCoeff_ne_zero.mpr hp.ne_zero))
-      hp.discr_ne_zero
+theorem _root_.Squarefree.resultant_derivative_ne_zero {D : Type*} [CommRing D] [IsDomain D]
+    [DecompositionMonoid D[X]] [PerfectField (FractionRing D)] {p : D[X]} (hp : Squarefree p) :
+    resultant p (derivative p) ≠ 0 := by
+  have hinj := IsFractionRing.injective D (FractionRing D)
+  have hsep : (p.map (algebraMap D (FractionRing D))).Separable :=
+    PerfectField.separable_iff_squarefree.mpr (hp.map_localization_map (nonZeroDivisors D))
+  have h := resultant_ne_zero _ _ hsep
+  rw [derivative_map, natDegree_map_eq_of_injective hinj, natDegree_map_eq_of_injective hinj,
+    resultant_map_map] at h
+  exact (map_ne_zero_iff _ hinj).mp h
 
 /-- An integral polynomial whose leading coefficient is not divisible by a prime `p` has separable
 reduction modulo `p` exactly when `p` does not divide its discriminant. -/

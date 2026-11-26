@@ -6,36 +6,42 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Bivariate
-public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.FieldDivision
+import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.RingTheory.Polynomial.Content
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
 import TauCeti.Algebra.Polynomial.Bivariate
 import TauCeti.Algebra.Polynomial.Bivariate.SchwartzZippel
-import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
-# Resultant degree bounds and bivariate root multiplicities
+# Multiplicities of a plane curve along its fibres, bounded by a resultant
 
-For bivariate polynomials `f, g : R[X][X]` whose coefficients in the inner indeterminate have
-degrees at most `df` and `dg`, the resultant `f.resultant g m n` has degree at most
-`m * dg + n * df`. In particular, for `Q : R[X][X]` of outer degree `d₁` and inner degree `d₂`,
-`Q.resultant Q.derivative` has degree at most `2 * d₁ * d₂`.
+Let `F(z, z')` be a polynomial in two variables, viewed as a polynomial in `z` whose coefficients
+are polynomials in `z'`, so `F : R[X][X]`. Freezing `z' = b` gives the one-variable polynomial
+`F(·, b) = F.map (evalRingHom b)`. If `F(·, b)` has a root `a` of multiplicity `k + 1`, then
+`F(·, b)` and its derivative share the root `a` with multiplicity `k`, and the discriminant-type
+resultant `Res_z(F, ∂_z F) ∈ R[X]` vanishes to order at least `k` at `z' = b`.
 
-Over an integral domain `R`, if `Q : R[X][X]` has nonzero formal derivative resultant
-`Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)`, then at every point `(α, β) ∈ R × R`
-the fiber multiplicity `(Q.map (evalRingHom β)).rootMultiplicity α` is bounded by
-`1 + (Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)).rootMultiplicity β`. After shifting
-the outer coordinate by `C α`, a fiber root of multiplicity `m ≥ 2` makes `X - C β` divide the
-first `m` coefficients of the shifted polynomial and hence the first `m - 1` coefficients of its
-derivative, so `X - C β` divides each of the first `m - 1` rows of the Sylvester matrix, and hence
-`(X - C β) ^ (m - 1)` divides its determinant.
+Summed over points with *distinct* second coordinates, the excess multiplicities
+`mult_a F(·, b) - 1` are therefore bounded by the degree of `Res_z(F, ∂_z F)` in `z'`, which is
+at most `(2 deg_z F - 1) deg_{z'} F`. For a squarefree `F` over a characteristic-zero GCD domain
+(for instance an irreducible `F` over `K[z']`, `K` a field of characteristic zero) the resultant
+is nonzero by `Squarefree.resultant_derivative_ne_zero`, so the bound applies.
+
+This is the resultant multiplicity bound of the determinant method for real zeros of quadratic
+Dirichlet `L`-functions (Ben Green, *On Landau–Siegel zeros*, Hexagon 2610.00311, 2026,
+Proposition 4.1 and Appendix A): it controls how often an irreducible curve can vanish to high
+order in `z` at the points of a grid.
+
+The underlying general fact is that the Sylvester matrix has `k` rows divisible by `t` as soon as
+the coefficients of index below `k` of both polynomials are divisible by `t`; translating the root
+to the origin (`Polynomial.resultant_taylor`) puts us in this situation with `t = X - C b`.
 
 Over a characteristic-zero field `K`, unique factorization in `K[X][X]` combines this resultant
 bound with a point-set zero bound to estimate high-order vanishing along fibers with distinct
@@ -45,165 +51,168 @@ specialization to planar grids via the Schwartz–Zippel lemma
 
 ## Main results
 
-* `Polynomial.natDegree_resultant_le`, `Polynomial.natDegree_resultant_deriv_of_le`,
-  `Polynomial.natDegree_resultant_deriv_natDegree_le`, `Polynomial.natDegree_resultant_deriv_le`:
-  degree bounds for resultants of bivariate polynomials.
-* `Polynomial.rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero`: the Sylvester-row
-  bound on fiber root multiplicities over any integral domain.
-* `Squarefree.rootMultiplicity_map_evalRingHom_le`,
-  `Irreducible.rootMultiplicity_map_evalRingHom_le`: fiber multiplicity bounds in characteristic
-  zero.
+* `Polynomial.pow_dvd_resultant_of_dvd_coeff`: if `t` divides the coefficients of index below `k`
+  of `f` and `g`, then `t ^ k` divides `resultant f g m n`.
+* `Polynomial.pow_dvd_resultant_derivative`: if `(X - C a) ^ (k + 1)` divides `F(·, b) ≠ 0`, then
+  `(X - C b) ^ k` divides `Res_z(F, ∂_z F)`.
+* `Polynomial.rootMultiplicity_map_sub_one_le_rootMultiplicity_resultant_derivative`: the same in
+  terms of root multiplicities.
+* `Polynomial.natDegree_resultant_le`: the degree of a resultant of bivariate polynomials in the
+  coefficient variable is at most `m b + n a`, where `a` and `b` bound the coefficient degrees of
+  the two polynomials and `m` and `n` are the degree bounds used for the Sylvester matrix.
+* `Polynomial.sum_rootMultiplicity_map_sub_one_le`: over a domain, for points with distinct
+  second coordinates the excess multiplicities sum to at most `(2 deg_z F - 1) d` when every
+  coefficient of `F` has degree at most `d` and `Res_z(F, ∂_z F) ≠ 0`.
+* `Polynomial.sum_rootMultiplicity_map_le`: the same bound for the multiplicities themselves,
+  plus the number of the points lying on the curve `F = 0`.
 * `Polynomial.sum_cappedRootMultiplicity_map_evalRingHom_le`,
   `Polynomial.card_mul_le_of_pow_dvd_map_evalRingHom`: summed capped bivariate multiplicity
   bound along fibers with injective base coordinates, and its uniform-order specialization.
 * `Polynomial.eq_zero_of_pow_dvd_map_evalRingHom_of_lt_card_cube`: vanishing criterion on
   planar grids under an invertible linear or affine change of coordinates.
-
-## References
-
-* B. Green, *On Landau–Siegel zeros*, Hexagon **2610.00311** (2026), Proposition 4.1 and
-  Appendix A.
 -/
 
 public section
 
-open scoped Finset
+open Finset
 
 namespace Polynomial
 
-section DegreeBounds
+section
 
-/-- **Degree bound for bivariate resultants.** If the coefficients of `f, g : R[X][X]` have
-degrees at most `df` and `dg`, then `f.resultant g m n` has degree at most `m * dg + n * df`. -/
-theorem natDegree_resultant_le {R : Type*} [CommRing R] (f g : R[X][X]) (m n df dg : ℕ)
-    (hf : ∀ i, (f.coeff i).natDegree ≤ df) (hg : ∀ i, (g.coeff i).natDegree ≤ dg) :
-    (f.resultant g m n).natDegree ≤ m * dg + n * df := by
-  let e : Fin (m + n) → ℕ := fun j ↦ if (j : ℕ) < m then dg else df
-  have hcol (i j : Fin (m + n)) : (sylvester f g m n i j).natDegree ≤ e j := by
-    have h := sylvester_of_coeff (P := fun p : R[X] ↦ p.natDegree ≤ df)
-      (Q := fun p : R[X] ↦ p.natDegree ≤ dg) (f := f) (g := g) (m := m) (n := n) (i := i) (j := j)
-      (by simp) (by simp) (fun r _ ↦ hf r) (fun r _ ↦ hg r)
-    by_cases hj : (j : ℕ) < m <;> simpa [e, hj] using h
-  refine (Matrix.natDegree_det_le_of_natDegree_le (sylvester f g m n) e hcol).trans ?_
-  have hsum : ∑ j : Fin (m + n), e j = m * dg + n * df := by
-    rw [Fin.sum_univ_add]
-    have hleft : ∑ j : Fin m, e (Fin.castAdd n j) = m * dg := by simp [e]
-    have hright : ∑ j : Fin n, e (Fin.natAdd m j) = n * df := by
-      simp [e, Nat.not_lt.mpr (Nat.le_add_right m _)]
-    rw [hleft, hright]
-  exact hsum.le
+variable {R : Type*} [CommRing R]
 
-/-- For any `n ≤ Q.natDegree`, the resultant `Q.resultant Q.derivative Q.natDegree n` has degree
-at most `2 * Q.natDegree * (Bivariate.swap Q).natDegree`. -/
-theorem natDegree_resultant_deriv_of_le {R : Type*} [CommRing R] (Q : R[X][X]) {n : ℕ}
-    (hn : n ≤ Q.natDegree) :
-    (Q.resultant Q.derivative Q.natDegree n).natDegree ≤
-      2 * Q.natDegree * (Bivariate.swap Q).natDegree := by
-  set d := (Bivariate.swap Q).natDegree
-  have hQ : ∀ i, (Q.coeff i).natDegree ≤ d := Bivariate.natDegree_coeff_le_natDegree_swap Q
-  have hQ' (i : ℕ) : (Q.derivative.coeff i).natDegree ≤ d := by
-    rw [coeff_derivative]
-    exact (natDegree_mul_le.trans (by simp)).trans (hQ (i + 1))
-  calc (Q.resultant Q.derivative Q.natDegree n).natDegree
-      ≤ Q.natDegree * d + n * d :=
-        natDegree_resultant_le Q Q.derivative _ _ d d hQ hQ'
-    _ ≤ Q.natDegree * d + Q.natDegree * d := by gcongr
-    _ = 2 * Q.natDegree * d := by ring
-
-/-- The resultant `Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)` of `Q : R[X][X]` and
-its outer derivative has degree at most `2 * Q.natDegree * (Bivariate.swap Q).natDegree`. -/
-theorem natDegree_resultant_deriv_natDegree_le {R : Type*} [CommRing R] (Q : R[X][X]) :
-    (Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)).natDegree ≤
-      2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
-  natDegree_resultant_deriv_of_le Q (Nat.sub_le _ _)
-
-/-- The resultant of `Q : R[X][X]` and its outer derivative has degree at most
-`2 * Q.natDegree * (Bivariate.swap Q).natDegree`. -/
-theorem natDegree_resultant_deriv_le {R : Type*} [CommRing R] (Q : R[X][X]) :
-    (Q.resultant Q.derivative).natDegree ≤
-      2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
-  natDegree_resultant_deriv_of_le Q ((natDegree_derivative_le Q).trans (Nat.sub_le _ _))
-
-end DegreeBounds
-
-section ResultantMultiplicity
-
-/-- **Resultant bound on fiber root multiplicities.** Over an integral domain `R`, if `Q : R[X][X]`
-has nonzero formal derivative resultant `Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)`,
-then the multiplicity of `α` as a root of the specialized polynomial `Q.map (evalRingHom β)` is at
-most one more than the multiplicity of `β` as a root of that resultant. -/
-theorem rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero {R : Type*} [CommRing R]
-    [IsDomain R] {Q : R[X][X]}
-    (hres : Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1) ≠ 0) (α β : R) :
-    (Q.map (evalRingHom β)).rootMultiplicity α ≤
-      1 + (Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)).rootMultiplicity β := by
-  set φ : R[X] →+* R := evalRingHom β
-  set m := (Q.map φ).rootMultiplicity α
-  rcases le_or_gt m 1 with hm1 | hm1
-  · omega
-  have hmap0 : Q.map φ ≠ 0 := by
-    rintro h0
-    simp [m, h0] at hm1
-  set d := Q.natDegree
-  have hmd : m ≤ d := by
-    have hdvd := pow_rootMultiplicity_dvd (Q.map φ) α
-    have hm_deg := natDegree_le_of_dvd hdvd hmap0
-    rw [natDegree_pow, natDegree_X_sub_C, mul_one] at hm_deg
-    exact hm_deg.trans natDegree_map_le
-  -- Shift the outer variable by `C α` so the multiple root moves to `0`.
-  set P : R[X][X] := taylor (C α) Q
-  have htrail : (P.map φ).natTrailingDegree = m := by
-    simp only [P, map_taylor, φ, coe_evalRingHom, eval_C]
-    exact natTrailingDegree_taylor (Q.map (evalRingHom β)) α
-  have hdvd_P {k : ℕ} (hk : k < m) : X - C β ∣ P.coeff k := by
-    rw [dvd_iff_isRoot, IsRoot.def]
-    have hk0 := coeff_eq_zero_of_lt_natTrailingDegree (htrail.symm ▸ hk)
-    rwa [coeff_map] at hk0
-  have hdvd_P' {k : ℕ} (hk : k < m - 1) : X - C β ∣ P.derivative.coeff k := by
-    rw [coeff_derivative]
-    exact dvd_mul_of_dvd_left (hdvd_P (by omega)) _
-  -- Every entry in the first `m - 1` rows of `sylvester P P.derivative d (d - 1)` is a multiple
-  -- of `X - C β`.
-  let s : Finset (Fin (d + (d - 1))) :=
-    Finset.univ.image (Fin.castLE (by omega : m - 1 ≤ d + (d - 1)))
-  have hs_card : s.card = m - 1 := by
-    rw [Finset.card_image_of_injective _ (Fin.castLE_injective _), Finset.card_fin]
-  have hdvd_res : (X - C β) ^ (m - 1) ∣ Q.resultant Q.derivative d (d - 1) := by
-    rw [← resultant_taylor_deriv Q (C α), resultant, ← hs_card]
-    have hprod : (X - C β) ^ s.card =
-        ∏ i : Fin (d + (d - 1)), if i ∈ s then X - C β else 1 := by
-      rw [Fintype.prod_ite_mem]
-      simp
-    rw [hprod]
-    refine Matrix.prod_dvd_det_of_dvd_row _ _ fun i j ↦ ?_
+/-- If `t` divides every coefficient of index below `k` of both `f` and `g`, then `t ^ k` divides
+the resultant `resultant f g m n`, for any degree bounds with `k ≤ m + n`: the first `k` rows of the
+Sylvester matrix only involve those coefficients. -/
+theorem pow_dvd_resultant_of_dvd_coeff {f g : R[X]} {m n k : ℕ} {t : R} (hk : k ≤ m + n)
+    (hf : ∀ l < k, t ∣ f.coeff l) (hg : ∀ l < k, t ∣ g.coeff l) :
+    t ^ k ∣ resultant f g m n := by
+  have hrow : ∀ i j : Fin (m + n), (if (i : ℕ) < k then t else 1) ∣ sylvester f g m n i j := by
+    intro i j
     split_ifs with hi
-    · rcases Finset.mem_image.mp hi with ⟨i₀, -, rfl⟩
-      exact dvd_sylvester_of_dvd_coeff (fun _ hk ↦ hdvd_P (by omega)) (fun _ hk ↦ hdvd_P' hk)
-        i₀.isLt
+    · by_cases hj : (j : ℕ) < m
+      · rw [sylvester_apply_of_lt _ _ _ _ hj]
+        split_ifs
+        exacts [hg _ (by omega), dvd_zero t]
+      · rw [sylvester_apply_of_le _ _ _ _ (not_lt.mp hj)]
+        split_ifs
+        exacts [hf _ (by omega), dvd_zero t]
     · exact one_dvd _
-  have hle := (le_rootMultiplicity_iff hres).mpr hdvd_res
-  omega
+  have hcard : #{i : Fin (m + n) | (i : ℕ) < k} = k := by
+    rw [Fin.card_filter_val_lt, min_eq_right hk]
+  simpa [resultant, prod_ite, hcard] using Matrix.prod_dvd_det_of_dvd_row _ _ hrow
 
-/-- **Resultant multiplicity bound for squarefree bivariate polynomials.** Over a GCD domain `R`
-of characteristic zero, if `Q : R[X][X]` is squarefree, then
-`(Q.map (evalRingHom β)).rootMultiplicity α ≤ 1 + (Q.resultant Q.derivative).rootMultiplicity β`
-for all `α, β : R`. -/
-theorem _root_.Squarefree.rootMultiplicity_map_evalRingHom_le {R : Type*} [CommRing R]
-    [IsDomain R] [IsGCDMonoid R] [CharZero R] {Q : R[X][X]} (hQ : Squarefree Q) (α β : R) :
-    (Q.map (evalRingHom β)).rootMultiplicity α ≤
-      1 + (Q.resultant Q.derivative).rootMultiplicity β := by
-  rw [resultant_deriv_eq]
-  exact rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero
-    (Q.resultant_deriv_eq ▸ hQ.resultant_deriv_ne_zero) α β
+/-- **The resultant multiplicity bound, pointwise.** Let `F : R[X][X]` be a polynomial in `z` with
+coefficients in `R[z']`. If the fibre `F(·, b)` is nonzero and has a root `a` of multiplicity at
+least `k + 1`, then `(z' - b) ^ k` divides the resultant `Res_z(F, ∂_z F)`. -/
+theorem pow_dvd_resultant_derivative {F : R[X][X]} {a b : R} {k : ℕ}
+    (hF : F.map (evalRingHom b) ≠ 0) (h : (X - C a) ^ (k + 1) ∣ F.map (evalRingHom b)) :
+    (X - C b) ^ k ∣ resultant F (derivative F) := by
+  have : Nontrivial R := by
+    by_contra hR
+    rw [not_nontrivial_iff_subsingleton] at hR
+    exact hF (Subsingleton.elim _ _)
+  have hkF : k + 1 ≤ F.natDegree := by
+    have := ((monic_X_sub_C a).pow (k + 1)).natDegree_le_of_dvd hF h
+    rw [(monic_X_sub_C a).natDegree_pow, natDegree_X_sub_C, mul_one] at this
+    exact this.trans natDegree_map_le
+  -- Translate the root `a` to the origin: the resultant is unchanged.
+  set G := F.taylor (C a)
+  have hres : resultant G (derivative G) = resultant F (derivative F) := by
+    rw [← taylor_derivative, resultant_taylor]
+  -- The coefficients of `G` of index at most `k` vanish at `z' = b`.
+  obtain ⟨q, hq⟩ := h
+  have hG : ∀ l ≤ k, X - C b ∣ G.coeff l := by
+    intro l hl
+    have hmap : G.map (evalRingHom b) = X ^ (k + 1) * q.taylor a := by
+      simp only [G, map_taylor, coe_evalRingHom, eval_C, hq, taylor_mul, taylor_pow, map_sub,
+        taylor_X, taylor_C, add_sub_cancel_right]
+    have := congrArg (fun p : R[X] ↦ p.coeff l) hmap
+    simp only [coeff_map, coe_evalRingHom, coeff_X_pow_mul'] at this
+    exact dvd_iff_isRoot.2 (this.trans (ite_eq_right (by omega)))
+  rw [← hres]
+  refine pow_dvd_resultant_of_dvd_coeff (by simp [G]; omega) (fun l hl ↦ hG l hl.le)
+    fun l hl ↦ ?_
+  rw [coeff_derivative]
+  exact (hG (l + 1) hl).mul_right _
 
-/-- **Resultant multiplicity bound for irreducible bivariate polynomials** (Green, Appendix A). -/
-theorem _root_.Irreducible.rootMultiplicity_map_evalRingHom_le {R : Type*} [CommRing R]
-    [IsDomain R] [IsGCDMonoid R] [CharZero R] {Q : R[X][X]} (hQ : Irreducible Q) (α β : R) :
-    (Q.map (evalRingHom β)).rootMultiplicity α ≤
-      1 + (Q.resultant Q.derivative).rootMultiplicity β :=
-  hQ.squarefree.rootMultiplicity_map_evalRingHom_le α β
+/-- **The resultant multiplicity bound, multiplicity form.** If `Res_z(F, ∂_z F)` is nonzero, the
+multiplicity of a root `a` of the fibre `F(·, b)` exceeds the order of vanishing of
+`Res_z(F, ∂_z F)` at `z' = b` by at most one. -/
+theorem rootMultiplicity_map_sub_one_le_rootMultiplicity_resultant_derivative {F : R[X][X]}
+    (hF : resultant F (derivative F) ≠ 0) (a b : R) :
+    (F.map (evalRingHom b)).rootMultiplicity a - 1 ≤
+      (resultant F (derivative F)).rootMultiplicity b := by
+  by_cases h0 : F.map (evalRingHom b) = 0
+  · simp [h0]
+  rcases Nat.eq_zero_or_pos ((F.map (evalRingHom b)).rootMultiplicity a) with hμ | hμ
+  · simp [hμ]
+  rw [le_rootMultiplicity_iff hF]
+  refine pow_dvd_resultant_derivative (a := a) h0 ?_
+  rw [Nat.sub_add_cancel hμ]
+  exact pow_rootMultiplicity_dvd _ _
 
-end ResultantMultiplicity
+/-- **Degree of a bivariate resultant.** If every coefficient of `F : R[X][X]` has degree at most
+`a` and every coefficient of `G` has degree at most `b` in the coefficient variable, then the
+resultant `resultant F G m n` has degree at most `m * b + n * a`: the Sylvester matrix has `m`
+columns of coefficients of `G` and `n` columns of coefficients of `F`. -/
+theorem natDegree_resultant_le {F G : R[X][X]} {a b : ℕ} (hF : ∀ i, (F.coeff i).natDegree ≤ a)
+    (hG : ∀ i, (G.coeff i).natDegree ≤ b) (m n : ℕ) :
+    (resultant F G m n).natDegree ≤ m * b + n * a := by
+  have h := Matrix.natDegree_det_le_of_natDegree_le (sylvester F G m n)
+    (fun j ↦ if (j : ℕ) < m then b else a) fun i j ↦ by
+      split_ifs with hj
+      · rw [sylvester_apply_of_lt _ _ _ _ hj]
+        split_ifs <;> simp [hG]
+      · rw [sylvester_apply_of_le _ _ _ _ (not_lt.mp hj)]
+        split_ifs <;> simp [hF]
+  simpa [resultant, Fin.sum_univ_add] using h
+
+/-- **The resultant multiplicity bound.** Let `F : R[X][X]` be a polynomial in `z` over `R[z']`
+whose coefficients have degree at most `d` in `z'`, with `Res_z(F, ∂_z F) ≠ 0`. For finitely
+many points `(a i, b i)` with pairwise distinct second coordinates, the excess multiplicities
+`mult_{a i} F(·, b i) - 1` sum to at most `(2 deg_z F - 1) d`. -/
+theorem sum_rootMultiplicity_map_sub_one_le [IsDomain R] {ι : Type*} {s : Finset ι}
+    {a b : ι → R} (hb : Set.InjOn b s) {F : R[X][X]} (hF : resultant F (derivative F) ≠ 0)
+    {d : ℕ} (hd : ∀ i, (F.coeff i).natDegree ≤ d) :
+    ∑ i ∈ s, ((F.map (evalRingHom (b i))).rootMultiplicity (a i) - 1) ≤
+      (2 * F.natDegree - 1) * d := by
+  classical
+  have hd' : ∀ i, ((derivative F).coeff i).natDegree ≤ d := fun i ↦ by
+    rw [coeff_derivative]
+    exact natDegree_mul_le.trans (by simpa using hd (i + 1))
+  calc ∑ i ∈ s, ((F.map (evalRingHom (b i))).rootMultiplicity (a i) - 1)
+      ≤ ∑ i ∈ s, (resultant F (derivative F)).rootMultiplicity (b i) := sum_le_sum fun i _ ↦
+        rootMultiplicity_map_sub_one_le_rootMultiplicity_resultant_derivative hF _ _
+    _ = ∑ x ∈ s.image b, (resultant F (derivative F)).rootMultiplicity x := by
+        rw [sum_image hb]
+    _ ≤ (resultant F (derivative F)).natDegree := sum_rootMultiplicity_le_natDegree _ _
+    _ ≤ F.natDegree * d + (derivative F).natDegree * d := natDegree_resultant_le hd hd' _ _
+    _ ≤ (2 * F.natDegree - 1) * d := by
+      rw [← add_mul]
+      exact Nat.mul_le_mul_right _ (by have := natDegree_derivative_le F; omega)
+
+/-- **The resultant multiplicity bound, counting form.** Under the hypotheses of
+`Polynomial.sum_rootMultiplicity_map_sub_one_le`, the multiplicities `mult_{a i} F(·, b i)` sum
+to at most the number of the points `(a i, b i)` on the curve `F = 0` plus
+`(2 deg_z F - 1) d`. -/
+theorem sum_rootMultiplicity_map_le [IsDomain R] [DecidableEq R] {ι : Type*} {s : Finset ι}
+    {a b : ι → R} (hb : Set.InjOn b s) {F : R[X][X]} (hF : resultant F (derivative F) ≠ 0)
+    {d : ℕ} (hd : ∀ i, (F.coeff i).natDegree ≤ d) :
+    ∑ i ∈ s, (F.map (evalRingHom (b i))).rootMultiplicity (a i) ≤
+      #{i ∈ s | (F.map (evalRingHom (b i))).IsRoot (a i)} +
+        (2 * F.natDegree - 1) * d := by
+  calc ∑ i ∈ s, (F.map (evalRingHom (b i))).rootMultiplicity (a i)
+      ≤ ∑ i ∈ s, ((if (F.map (evalRingHom (b i))).IsRoot (a i) then 1 else 0) +
+          ((F.map (evalRingHom (b i))).rootMultiplicity (a i) - 1)) := sum_le_sum fun i _ ↦ by
+        have := (rootMultiplicity_pos' (p := F.map (evalRingHom (b i))) (x := a i)).1
+        split_ifs <;> grind
+    _ ≤ _ := by
+      rw [sum_add_distrib, sum_boole, Nat.cast_id]
+      exact Nat.add_le_add_left (sum_rootMultiplicity_map_sub_one_le hb hF hd) _
+
+end
 
 section BivariateMultiplicityBound
 
@@ -269,24 +278,28 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
     have hne (i : ι) : Q.map (evalRingHom (β i)) ≠ 0 := hQ.map_evalRingHom_ne_zero hdeg _
     have hout (i : ι) (hi : i ∉ Z) : cappedFiberMult (α i) (β i) N Q = 0 :=
       cappedRootMultiplicity_eq_zero_of_not_isRoot (by simpa [Z, IsRoot.def] using hi) N
-    have hin (i : ι) : cappedFiberMult (α i) (β i) N Q ≤
-        1 + (Q.resultant Q.derivative).rootMultiplicity (β i) := by
+    have hin (i : ι) :
+        cappedFiberMult (α i) (β i) N Q ≤ (Q.map (evalRingHom (β i))).rootMultiplicity (α i) := by
       rw [cappedFiberMult, cappedRootMultiplicity_of_ne_zero (hne i)]
-      exact (min_le_right _ _).trans (hQ.rootMultiplicity_map_evalRingHom_le (α i) (β i))
+      exact min_le_right _ _
+    have hsum := sum_rootMultiplicity_map_le (s := Z) (a := α) (b := β) hβ.injOn
+      hQ.squarefree.resultant_derivative_ne_zero (Bivariate.natDegree_coeff_le_natDegree_swap Q)
+    have hZ_roots :
+        #{i ∈ Z | (Q.map (evalRingHom (β i))).IsRoot (α i)} ≤
+          N * (Q.natDegree + (Bivariate.swap Q).natDegree) :=
+      (Finset.card_le_card (Finset.filter_subset _ _)).trans (hzero Q hQ.ne_zero)
+    have hdeg_mul : (2 * Q.natDegree - 1) * (Bivariate.swap Q).natDegree ≤
+        2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
+      Nat.mul_le_mul_right _ (Nat.sub_le _ _)
     calc ∑ i : ι, cappedFiberMult (α i) (β i) N Q
         = ∑ i ∈ Z, cappedFiberMult (α i) (β i) N Q :=
           (Finset.sum_subset (Finset.subset_univ Z) fun i _ hi ↦ hout i hi).symm
-      _ ≤ ∑ i ∈ Z, (1 + (Q.resultant Q.derivative).rootMultiplicity (β i)) :=
+      _ ≤ ∑ i ∈ Z, (Q.map (evalRingHom (β i))).rootMultiplicity (α i) :=
           Finset.sum_le_sum fun i _ ↦ hin i
-      _ = Z.card + ∑ i ∈ Z, (Q.resultant Q.derivative).rootMultiplicity (β i) := by
-          rw [Finset.sum_add_distrib, Finset.sum_const, smul_eq_mul, mul_one]
+      _ ≤ #{i ∈ Z | (Q.map (evalRingHom (β i))).IsRoot (α i)} +
+            (2 * Q.natDegree - 1) * (Bivariate.swap Q).natDegree := hsum
       _ ≤ N * (Q.natDegree + (Bivariate.swap Q).natDegree) +
-            (Q.resultant Q.derivative).natDegree :=
-          add_le_add (hzero Q hQ.ne_zero)
-            ((Q.resultant Q.derivative).sum_rootMultiplicity_comp_le_natDegree Z hβ.injOn)
-      _ ≤ N * (Q.natDegree + (Bivariate.swap Q).natDegree) +
-            2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
-          Nat.add_le_add_left (natDegree_resultant_deriv_le Q) _
+            2 * Q.natDegree * (Bivariate.swap Q).natDegree := add_le_add hZ_roots hdeg_mul
 
 /-- Private form of `sum_cappedRootMultiplicity_map_evalRingHom_le` phrased via `cappedFiberMult`
 for prime-factorization induction with an explicit nonzero premise. -/

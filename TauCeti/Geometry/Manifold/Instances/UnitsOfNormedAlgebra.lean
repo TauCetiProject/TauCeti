@@ -22,6 +22,8 @@ transpose on invertible real or complex matrices, viewed as a real smooth map.
 ## Main results
 
 * `Units.mvfderiv_val`: the vector-valued derivative of the units inclusion is the identity.
+* `Units.hasMFDerivAt_val`: the units inclusion has the identity as derivative.
+* `Units.isInvertible_mfderiv_val`: the derivative of the units inclusion is invertible.
 * `Units.contMDiff_star`: star is smooth on the group of units.
 
 ## References
@@ -54,6 +56,22 @@ theorem mvfderiv_val (u : Rˣ) :
   ext v
   rw [mvfderiv_apply_eq_mfderiv_apply, ← hc, mfderiv_extChartAt_self]
   exact ContinuousLinearMap.id_apply v
+
+/-- The units inclusion has the identity as derivative at every unit. -/
+theorem hasMFDerivAt_val (u : Rˣ) :
+    HasMFDerivAt 𝓘(𝕜, R) 𝓘(𝕜, R) (val : Rˣ → R) u (ContinuousLinearMap.id 𝕜 R) := by
+  refine ((contMDiff_val (n := 1)).mdifferentiableAt one_ne_zero (x := u)).hasMFDerivAt
+    |>.congr_mfderiv (ContinuousLinearMap.ext fun v ↦ ?_)
+  -- The tangent space `TangentSpace 𝓘(𝕜, R) u` is `R`, so both sides are `v`.
+  rw [← mvfderiv_apply_eq_mfderiv_apply, mvfderiv_val]
+  rfl
+
+/-- The derivative of the units inclusion is invertible at every unit. -/
+theorem isInvertible_mfderiv_val (u : Rˣ) :
+    (mfderiv 𝓘(𝕜, R) 𝓘(𝕜, R) (val : Rˣ → R) u).IsInvertible := by
+  have hc : (extChartAt 𝓘(𝕜, R) u : Rˣ → R) = val := funext fun _ ↦ by simp
+  rw [← hc]
+  exact isInvertible_mfderiv_extChartAt (mem_extChartAt_source u)
 
 end Deriv
 
