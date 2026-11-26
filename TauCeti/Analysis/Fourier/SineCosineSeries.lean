@@ -304,8 +304,8 @@ private theorem intervalIntegrable_reflect_right (hab : a ≤ b) {g : ℝ → �
     simp [not_le.2 hx.1]
 
 /-- Against the `j`-th sine of `(a, 2b - a)`, the even reflection of `g` about `b` integrates to
-`1 - (-1)^j` times the integral of `g` over `(a, b)`: the reflected sine is `-(-1)^j` times the
-sine. -/
+`1 - (-1)^j` times the integral of `g` against the same sine over `(a, b)`: the reflected sine
+is `-(-1)^j` times the sine. -/
 private theorem integral_reflect_right_mul_sin (hab : a < b) {g : ℝ → ℝ}
     (hg : IntervalIntegrable g volume a b) (j : ℕ) :
     ∫ x in a..(2 * b - a), (if x ≤ b then g x else g (2 * b - x)) *
