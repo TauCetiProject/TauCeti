@@ -60,6 +60,10 @@ at a constant loop they are again the Hurewicz classes of `π₂(Q, x)`
 class (`TauCeti.cubicalFreeLoopTorusClassHom_map_eq_zero_of_forall_const`,
 `TauCeti.MooreFreeLoopSpace.torusClassHom_mapOfEq_constMap`).
 
+The torus class is natural: if a loop of free loops of `Q'` is the image of a loop `Λ` of free
+loops of `Q` under a map `f : Q → Q'`, its torus class is the push-forward along `f` of the torus
+class of `Λ` (`TauCeti.cubicalFreeLoopTorusClassHom_mk_eq_homologyMap`).
+
 ## Main definitions
 
 * `TauCeti.uliftCircleGenLoop`: the standard loop of the circle as a generalized loop.
@@ -84,6 +88,8 @@ class (`TauCeti.cubicalFreeLoopTorusClassHom_map_eq_zero_of_forall_const`,
   torus class.
 * `TauCeti.MooreFreeLoopSpace.range_torusClassHom_const`: at a constant free Moore loop, the torus
   classes are the Hurewicz classes of `π₂(Q, x)`.
+* `TauCeti.cubicalFreeLoopTorusClassHom_mk_eq_homologyMap`: the torus class is natural, so the
+  image of a loop of free loops under `f : Q → Q'` has the pushed-forward torus class.
 
 ## References
 

@@ -95,37 +95,13 @@ theorem viterboTwist_def (γ : MooreFreeLoopSpace M) :
     viterboTwist R hd c γ = torusSign R c γ * viterboOrientationTwist R hd γ :=
   (rfl)
 
-/-- The Viterbo twist is the tensor product `σ ⊗ ev₀^*(o_M^{-1}) ⊗ ev₀^*(o_M^{-w(γ)})` of the torus
-sign with two pullbacks of the orientation local system along the evaluation at the base point. -/
-theorem viterboTwist_eq_mul_mul (γ : MooreFreeLoopSpace M) :
-    viterboTwist R hd c γ =
-      torusSign R c γ *
-        pullback (basepointMap M) (basepointMap_apply γ) (orientation R hd γ.basepoint)⁻¹ *
-          pullback (basepointMap M) (basepointMap_apply γ)
-            (orientation R hd γ.basepoint ^ (-signExponent (orientationCharacter hd) γ)) := by
-  rw [viterboTwist_def, viterboOrientationTwist_def, mul_assoc]
-
-/-- **The action on the Viterbo twist**: a Moore loop of free loops acts by the product of its
-actions on the torus sign and on the orientation part. -/
-theorem viterboTwist_ρ_apply (γ : MooreFreeLoopSpace M)
-    (Λ : MooreLoopSpace (MooreFreeLoopSpace M) γ) :
-    (viterboTwist R hd c γ).ρ Λ = (torusSign R c γ).ρ Λ * (viterboOrientationTwist R hd γ).ρ Λ :=
-  (rfl)
-
-/-- The monodromy of the Viterbo twist is the product of the monodromies of the torus sign and of
-the orientation part. -/
-theorem monodromy_viterboTwist (γ : MooreFreeLoopSpace M) :
-    (viterboTwist R hd c γ).monodromy =
-      (torusSign R c γ).monodromy * (viterboOrientationTwist R hd γ).monodromy :=
-  monodromy_mul _ _
-
 /-- **The Viterbo twist is trivial along the rotation of every loop**: the torus sign is, since the
 torus swept out by the rotation factors through the circle, and so is the orientation part. -/
 @[simp]
 theorem viterboTwist_ρ_rotationLoop (γ : MooreFreeLoopSpace M) :
     (viterboTwist R hd c γ).ρ γ.rotationLoop = 1 := by
-  rw [viterboTwist_ρ_apply, torusSign_ρ_rotationLoop, viterboOrientationTwist_ρ_rotationLoop,
-    mul_one]
+  rw [viterboTwist_def, mul_ρ, MonoidHom.mul_apply, torusSign_ρ_rotationLoop,
+    viterboOrientationTwist_ρ_rotationLoop, mul_one]
 
 /-- **Along the constant loops the Viterbo twist is the orientation local system**: its pullback
 along the inclusion `M → 𝓛M` of the constant loops is `o_M`. -/

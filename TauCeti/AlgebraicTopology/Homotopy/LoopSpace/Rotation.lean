@@ -81,11 +81,11 @@ theorem freeLoopTorusClassHom_eq_zero_of_forall_apply_eq_mul {f : C(Circle, Q)}
     ModuleCat.isZero_iff_subsingleton.1 <|
       (isZero_singularHomology_circle_of_two_le (ModuleCat.of ℤ ℤ) le_rfl).of_iso
         (singularCubicalHomologyIso ℤ (TopCat.of Circle) 2).symm
-  rw [freeLoopTorusClassHom_apply, h,
-    Subsingleton.elim (cubicalFreeLoopTorusClassHom Circle ℤ _ _) 0, map_zero, map_zero]
-  -- The two zeros are those of the homology of `singularChains` and of `singularHomologyFunctor`,
-  -- which agree by definition.
-  rfl
+  have hcub : cubicalFreeLoopTorusClassHom Q ℤ f
+      (Additive.ofMul (⟦Λ⟧ : HomotopyGroup (Fin 1) C(Circle, Q) f)) = 0 := by
+    rw [h, Subsingleton.elim (cubicalFreeLoopTorusClassHom Circle ℤ _ _) 0, map_zero]
+  rw [freeLoopTorusClassHom_apply, hcub]
+  exact (singularCubicalHomologyIso ℤ (TopCat.of Q) 2).inv.hom.map_zero
 
 namespace MooreFreeLoopSpace
 
@@ -95,9 +95,7 @@ theorem torusClassHom_fundamentalGroupHom_rotationLoop (γ : MooreFreeLoopSpace 
     γ.torusClassHom (Additive.ofMul (MooreLoopSpace.fundamentalGroupHom γ γ.rotationLoop)) = 0 := by
   rw [torusClassHom_fundamentalGroupHom, neg_eq_zero]
   refine freeLoopTorusClassHom_eq_zero_of_forall_apply_eq_mul _ fun t z ↦ ?_
-  rw [GenLoop.genLoopEquivOfUnique_symm_apply, Path.map_coe, Function.comp_apply,
-    MooreLoopSpace.toPath_apply, rotationLoop_apply, MooreLoopSpace.length_toMoorePath,
-    length_rotationLoop, toCircleMap_rotate, Fin.default_eq_zero]
+  simp [rotationLoop_apply, length_rotationLoop, toCircleMap_rotate]
 
 end MooreFreeLoopSpace
 
