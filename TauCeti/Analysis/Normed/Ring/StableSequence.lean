@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Basic
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.Order.Filter.AtTopBot.Basic
+import TauCeti.Algebra.GroupWithZero.Action.Units
 import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
@@ -97,24 +98,6 @@ theorem conditionNumber_ringInverse (a : R) :
 theorem conditionNumber_star [StarRing R] [NormedStarGroup R] (a : R) :
     conditionNumber (star a) = conditionNumber a := by
   simp [conditionNumber, Ring.inverse_star]
-
-private theorem ringInverse_smul {G₀ M₀ : Type*} [GroupWithZero G₀] [MonoidWithZero M₀]
-    [MulActionWithZero G₀ M₀] [IsScalarTower G₀ M₀ M₀] [SMulCommClass G₀ M₀ M₀]
-    (c : G₀) (a : M₀) : Ring.inverse (c • a) = c⁻¹ • Ring.inverse a := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp
-  by_cases ha : IsUnit a
-  · obtain ⟨u, rfl⟩ := ha
-    let v : M₀ˣ :=
-      { val := c • (u : M₀)
-        inv := c⁻¹ • (↑u⁻¹ : M₀)
-        val_inv := by rw [smul_mul_smul_comm, Units.mul_inv, mul_inv_cancel₀ hc, one_smul]
-        inv_val := by rw [smul_mul_smul_comm, Units.inv_mul, inv_mul_cancel₀ hc, one_smul] }
-    simpa [v] using Ring.inverse_unit v
-  · have hca : ¬IsUnit (c • a) := by
-      rw [← Units.val_mk0 hc, ← Units.smul_def, isUnit_smul_iff]
-      exact ha
-    simp [Ring.inverse_non_unit _ ha, Ring.inverse_non_unit _ hca]
 
 /-- Scaling by a nonzero scalar over a normed field leaves the condition number unchanged. -/
 theorem conditionNumber_smul {𝕜 : Type*} [NormedField 𝕜] [Module 𝕜 R] [NormSMulClass 𝕜 R]

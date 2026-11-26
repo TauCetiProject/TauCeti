@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Corn
 public import TauCeti.Analysis.InnerProductSpace.StableSequence
 public import TauCeti.Analysis.Normed.Lp.StableSequence
 import Mathlib.Data.Nat.Bitwise
+import TauCeti.Algebra.GroupWithZero.Action.Units
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -389,8 +390,7 @@ theorem finiteInverseExtension_one (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
 @[simp]
 theorem finiteInverseExtension_smul (c : 𝕜) (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (c • T).finiteInverseExtension b n = c⁻¹ • T.finiteInverseExtension b n := by
-  simp only [finiteInverseExtension, finiteSection_smul, ringInverse_eq_inverse, inverse_smul,
-    map_smul]
+  simp only [finiteInverseExtension, finiteSection_smul, ringInverse_smul, map_smul]
 
 /-- Transporting a Hilbert basis across a linear isometric equivalence conjugates
 `ContinuousLinearMap.finiteInverseExtension`. -/

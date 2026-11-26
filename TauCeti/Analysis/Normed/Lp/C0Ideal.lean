@@ -203,25 +203,20 @@ by the `c₀` ideal is nonzero. -/
 instance nontrivial_quotient_c0Ideal [Infinite ι] : Nontrivial (lp A ∞ ⧸ c0Ideal A) :=
   NormOneClass.nontrivial
 
+private theorem mk_mul_eq_one_iff {x y : lp A ∞} :
+    TwoSidedIdeal.Quotient.mk (c0Ideal A) x * TwoSidedIdeal.Quotient.mk (c0Ideal A) y = 1 ↔
+      Tendsto (fun i ↦ ‖(1 : A i) - x i * y i‖) cofinite (𝓝 0) := by
+  rw [eq_comm, ← map_mul, ← TwoSidedIdeal.Quotient.mk_one (c0Ideal A), TwoSidedIdeal.Quotient.eq,
+    mem_c0Ideal]
+  simp only [lp.coeFn_sub, lp.infty_coeFn_one, lp.infty_coeFn_mul, Pi.sub_apply, Pi.one_apply,
+    Pi.mul_apply]
+
 private theorem mk_mul_eq_one_of_eventually {x y : lp A ∞}
     (h : ∀ᶠ i in cofinite, x i * y i = 1) :
-    TwoSidedIdeal.Quotient.mk (c0Ideal A) x * TwoSidedIdeal.Quotient.mk (c0Ideal A) y = 1 := by
-  rw [← map_mul, ← TwoSidedIdeal.Quotient.mk_one (c0Ideal A), TwoSidedIdeal.Quotient.eq,
-    mem_c0Ideal]
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [h] with i hi
-  have h0 : (x * y - 1) i = 0 := by
-    rw [lp.coeFn_sub, lp.infty_coeFn_mul, lp.infty_coeFn_one, Pi.sub_apply, Pi.mul_apply,
-      Pi.one_apply, hi, sub_self]
-  simp [h0]
-
-private theorem one_sub_mul_mem_c0Ideal_of_mk_mul_eq_one {x y : lp A ∞}
-    (h : TwoSidedIdeal.Quotient.mk (c0Ideal A) x *
-      TwoSidedIdeal.Quotient.mk (c0Ideal A) y = 1) :
-    1 - x * y ∈ c0Ideal A := by
-  rw [← neg_sub]
-  refine (c0Ideal A).neg_mem (TwoSidedIdeal.Quotient.eq.mp ?_)
-  rwa [map_mul, TwoSidedIdeal.Quotient.mk_one]
+    TwoSidedIdeal.Quotient.mk (c0Ideal A) x * TwoSidedIdeal.Quotient.mk (c0Ideal A) y = 1 :=
+  mk_mul_eq_one_iff.mpr <| tendsto_const_nhds.congr' <| by
+    filter_upwards [h] with i hi
+    simp [hi]
 
 /-- Build a bounded representative of the inverse and the corresponding quotient unit from an
 eventual inverse-norm bound along `cofinite`. -/
@@ -268,21 +263,13 @@ theorem isUnit_mk_c0Ideal_iff [∀ i, HasSummableGeomSeries (A i)] {a : lp A ∞
   refine ⟨fun hu ↦ ?_, isUnit_mk_c0Ideal_of_eventually⟩
   obtain ⟨q, hq₁, hq₂⟩ := isUnit_iff_exists.mp hu
   obtain ⟨b, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (c0Ideal A) q
-  have hab := one_sub_mul_mem_c0Ideal_of_mk_mul_eq_one hq₁
-  have hba := one_sub_mul_mem_c0Ideal_of_mk_mul_eq_one hq₂
-  have hr_ev : ∀ᶠ i in cofinite, ‖(1 - a * b) i‖ < 1 / 2 :=
-    (tendsto_order.mp (mem_c0Ideal.mp hab)).2 (1 / 2) (by norm_num)
-  have hl_ev : ∀ᶠ i in cofinite, ‖(1 - b * a) i‖ < 1 / 2 :=
-    (tendsto_order.mp (mem_c0Ideal.mp hba)).2 (1 / 2) (by norm_num)
+  have hr_ev : ∀ᶠ i in cofinite, ‖(1 : A i) - a i * b i‖ < 1 / 2 :=
+    (tendsto_order.mp (mk_mul_eq_one_iff.mp hq₁)).2 (1 / 2) (by norm_num)
+  have hl_ev : ∀ᶠ i in cofinite, ‖(1 : A i) - b i * a i‖ < 1 / 2 :=
+    (tendsto_order.mp (mk_mul_eq_one_iff.mp hq₂)).2 (1 / 2) (by norm_num)
   refine ⟨2 * ‖b‖, (hr_ev.and hl_ev).mono fun i ⟨hr, hl⟩ ↦ ?_⟩
-  have hr' : ‖(1 : A i) - a i * b i‖ < 1 / 2 := by
-    simpa only [lp.coeFn_sub, lp.infty_coeFn_one, lp.infty_coeFn_mul, Pi.sub_apply, Pi.one_apply,
-      Pi.mul_apply] using hr
-  have hl' : ‖(1 : A i) - b i * a i‖ < 1 / 2 := by
-    simpa only [lp.coeFn_sub, lp.infty_coeFn_one, lp.infty_coeFn_mul, Pi.sub_apply, Pi.one_apply,
-      Pi.mul_apply] using hl
   obtain ⟨hu_i, hnorm_i⟩ :=
-    NormedRing.isUnit_and_norm_inverse_le_two_mul_of_norm_one_sub_mul_lt hr' hl'
+    NormedRing.isUnit_and_norm_inverse_le_two_mul_of_norm_one_sub_mul_lt hr hl
   exact ⟨hu_i, hnorm_i.trans (mul_le_mul_of_nonneg_left
     (norm_apply_le_norm ENNReal.top_ne_zero b i) zero_le_two)⟩
 
