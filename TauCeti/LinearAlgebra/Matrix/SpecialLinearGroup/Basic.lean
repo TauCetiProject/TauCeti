@@ -20,11 +20,11 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Conjugation
 
 The natural reduction map `SL₂(ℤ) → SL₂(ℤ/dℤ)` is surjective (strong approximation for
 `SL₂`; Shimura §1.6, Serre Ch. VII) — jointly so at two coprime moduli, by the Chinese
-remainder theorem — and the base-change map `SL(n, R) → GL(n, S)` sends
-`-I` to `-I`. Basic coordinate descriptions for `SL₂` and its image under `mapGL` are also
-recorded here for downstream matrix computations, together with what the determinant says about
-a matrix with a prescribed bottom row `(c, d)`: it is the Bézout relation `a d - b c = 1` for
-the top row `(a, b)`.
+remainder theorem — and the base-change map `SL(n, R) → GL(n, S)` commutes with
+negation, sending `-I` to `-I`. Basic coordinate descriptions for `SL₂` and its image under
+`mapGL` are also recorded here for downstream matrix computations, together with what the
+determinant says about a matrix with a prescribed bottom row `(c, d)`: it is the Bézout relation
+`a d - b c = 1` for the top row `(a, b)`.
 
 `mem_center_iff_eq_one_or_eq_neg_one` pins down `±I` itself, which is what the base-change
 statement moves around:
@@ -36,7 +36,8 @@ specializing Mathlib's finite-index-type equivalence to `Fin n`.
 
 For any finite index type `ι`, the kernel of reduction `SL(ι, ℤ) → SL(ι, ℤ/Nℤ)`, the principal
 congruence subgroup of level `N`, is described entrywise: it consists of the matrices congruent
-to the identity modulo `N`.
+to the identity modulo `N`. The same description holds for reduction `SL(ι, A) → SL(ι, A ⧸ I)`
+modulo an ideal of a commutative ring.
 
 The surjectivity is ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck). It realizes every unit of
@@ -54,11 +55,18 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`: strong approximation for `SL₂`,
   with `Matrix.SpecialLinearGroup.map_intCast_zmod_prod_surjective` its two-modulus form:
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
+* `Matrix.SpecialLinearGroup.mem_ker_map_iff`, `Matrix.SpecialLinearGroup.ker_map_mono`: an
+  element of `SL(ι, R)` lies in the kernel of base change along `f : R →+* S` iff it is congruent
+  to the identity modulo `RingHom.ker f` entrywise, and these kernels grow with `RingHom.ker f`.
 * `Matrix.SpecialLinearGroup.mem_ker_map_intCast_zmod_iff`: an element of `SL(ι, ℤ)` lies in
   the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
+* `Matrix.SpecialLinearGroup.mem_ker_map_quotientMk_iff`,
+  `Matrix.SpecialLinearGroup.ker_map_quotientMk_mono`: the same entrywise description modulo an
+  ideal `I`, and monotonicity of these kernels in `I`.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
-* `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
+* `Matrix.SpecialLinearGroup.mapGL_neg` and `Matrix.SpecialLinearGroup.mapGL_neg_one`:
+  `mapGL S (-g) = -mapGL S g`, in particular `mapGL S (-1) = -1`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
@@ -333,13 +341,19 @@ theorem coe_centerMulEquivRootsOfUnityFin_symm_apply (n : ℕ) (hn : 0 < n)
   rw [coe_centerMulEquivRootsOfUnityFin_apply] at h
   exact h
 
-/-- `-I` maps to `-I` under `SL(n, R) → GL(n, S)`. -/
+/-- The base-change map `SL(n, R) → GL(n, S)` commutes with negation. -/
 @[simp]
+lemma mapGL_neg {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
+    [Algebra R S] [Fact (Even (Fintype.card n))] (g : SpecialLinearGroup n R) :
+    mapGL S (-g) = -mapGL S g := by
+  ext i j
+  simp [mapGL]
+
+/-- `-I` maps to `-I` under `SL(n, R) → GL(n, S)`. -/
 lemma mapGL_neg_one {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
     [Algebra R S] [Fact (Even (Fintype.card n))] :
     mapGL S (-1 : SpecialLinearGroup n R) = -1 := by
-  ext i j
-  rcases eq_or_ne i j with h | h <;> simp [mapGL, h]
+  rw [mapGL_neg, map_one]
 
 variable {R : Type*} [CommRing R]
 
@@ -697,6 +711,22 @@ theorem map_intCast_zmod_prod_surjective {d d' : ℕ} (hcop : d.Coprime d') :
   rw [← h, MonoidHom.coe_comp, MulEquiv.coe_toMonoidHom]
   exact E.surjective.comp map_intCast_zmod_surjective
 
+/-- **Entrywise kernel test**: `γ ∈ SL(ι, R)` lies in the kernel of base change along a ring
+hom `f : R →+* S` iff it is congruent to the identity modulo `RingHom.ker f` entrywise. -/
+theorem mem_ker_map_iff {ι : Type*} [Fintype ι] [DecidableEq ι] {R S : Type*} [CommRing R]
+    [CommRing S] {f : R →+* S} {γ : SpecialLinearGroup ι R} :
+    γ ∈ (map f).ker ↔ ∀ i j, (γ : Matrix ι ι R) i j - (1 : Matrix ι ι R) i j ∈ RingHom.ker f := by
+  rw [MonoidHom.mem_ker, SpecialLinearGroup.ext_iff]
+  simp only [map_apply_coe, coe_one, ← Matrix.map_one f (map_zero _) (map_one _),
+    Matrix.map_apply, RingHom.mem_ker, map_sub, sub_eq_zero]
+
+/-- The kernels of base change on `SL(ι, -)` grow with the kernel of the ring hom:
+`ker f ≤ ker g` gives `ker (map f) ≤ ker (map g)`. -/
+theorem ker_map_mono {ι : Type*} [Fintype ι] [DecidableEq ι] {R S T : Type*} [CommRing R]
+    [CommRing S] [CommRing T] {f : R →+* S} {g : R →+* T} (h : RingHom.ker f ≤ RingHom.ker g) :
+    (map (n := ι) f).ker ≤ (map g).ker := fun _ hγ ↦
+  mem_ker_map_iff.2 fun i j ↦ h (mem_ker_map_iff.1 hγ i j)
+
 /-- **Entrywise kernel test**: `γ ∈ SL(ι, ℤ)` lies in the principal congruence subgroup of level
 `N`, the kernel of reduction modulo `N`, iff it is congruent to the identity modulo `N`
 entrywise. -/
@@ -704,7 +734,22 @@ theorem mem_ker_map_intCast_zmod_iff {ι : Type*} [Fintype ι] [DecidableEq ι] 
     {γ : SpecialLinearGroup ι ℤ} :
     γ ∈ (map (Int.castRingHom (ZMod N))).ker ↔
       ∀ i j, (N : ℤ) ∣ (γ : Matrix ι ι ℤ) i j - if i = j then 1 else 0 := by
-  simp [SpecialLinearGroup.ext_iff, Matrix.one_apply, apply_ite,
-    ← ZMod.intCast_zmod_eq_zero_iff_dvd, sub_eq_zero]
+  simp only [mem_ker_map_iff, RingHom.mem_ker, eq_intCast, ZMod.intCast_zmod_eq_zero_iff_dvd,
+    Matrix.one_apply]
+
+/-- **Entrywise kernel test modulo an ideal**: `γ ∈ SL(ι, A)` lies in the principal congruence
+subgroup of level `I`, the kernel of reduction modulo `I`, iff it is congruent to the identity
+modulo `I` entrywise. -/
+theorem mem_ker_map_quotientMk_iff {ι : Type*} [Fintype ι] [DecidableEq ι] {A : Type*}
+    [CommRing A] {I : Ideal A} {γ : SpecialLinearGroup ι A} :
+    γ ∈ (map (Ideal.Quotient.mk I)).ker ↔
+      ∀ i j, (γ : Matrix ι ι A) i j - (1 : Matrix ι ι A) i j ∈ I := by
+  rw [mem_ker_map_iff, Ideal.mk_ker]
+
+/-- Principal congruence subgroups decrease with the level: `I ≤ J` gives `Γ(I) ≤ Γ(J)`. -/
+theorem ker_map_quotientMk_mono {ι : Type*} [Fintype ι] [DecidableEq ι] {A : Type*}
+    [CommRing A] {I J : Ideal A} (h : I ≤ J) :
+    (map (n := ι) (Ideal.Quotient.mk I)).ker ≤ (map (Ideal.Quotient.mk J)).ker :=
+  ker_map_mono (by rwa [Ideal.mk_ker, Ideal.mk_ker])
 
 end Matrix.SpecialLinearGroup

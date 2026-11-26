@@ -46,14 +46,17 @@ noncomputable def simplyBlockedHalfTurnEquiv :
       GridChainHat R n (Fin.revPerm i) :=
   (Finsupp.mapRange.linearEquiv
     (simplyBlockedRenameEquiv R (Fin.revPerm (n := n)) i).toRingEquiv.toSemilinearEquiv).trans
-    (Finsupp.domLCongr (Function.Involutive.toPerm _ GridState.halfTurn_involutive))
+    (halfTurnEquiv (MvPolynomial {c : Fin n // c ≠ Fin.revPerm i} R))
 
 /-- A coefficient of a half-turned specialized chain is the renamed coefficient at the half-turned
 state. -/
 @[simp]
 theorem simplyBlockedHalfTurnEquiv_apply (c : GridChainHat R n i) (y : GridState n) :
     simplyBlockedHalfTurnEquiv R i c y =
-      simplyBlockedRenameEquiv R (Fin.revPerm (n := n)) i (c y.halfTurn) := (rfl)
+      simplyBlockedRenameEquiv R (Fin.revPerm (n := n)) i (c y.halfTurn) := by
+  rw [simplyBlockedHalfTurnEquiv, LinearEquiv.trans_apply, halfTurnEquiv_apply,
+    Finsupp.mapRange.linearEquiv_apply, Finsupp.mapRange_apply]
+  exact RingEquiv.toSemilinearEquiv_apply _ _
 
 /-- The inverse half-turn reads coefficients at half-turned states and undoes the variable
 renaming. -/
