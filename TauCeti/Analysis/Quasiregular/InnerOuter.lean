@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Quasiregular.Euclidean
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
+import TauCeti.Analysis.InnerProductSpace.Projection.Trace
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!

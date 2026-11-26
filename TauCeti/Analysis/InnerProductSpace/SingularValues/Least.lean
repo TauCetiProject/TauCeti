@@ -56,8 +56,8 @@ unit vectors therefore assume `Nontrivial E`.
 * `LinearMap.lipschitzWith_minimalStretch`: `ℓ` is `1`-Lipschitz for the operator norm, by
   Weyl's perturbation bound `LinearMap.abs_singularValues_sub_singularValues_le`; hence it is
   continuous and Borel measurable.
-* `Submodule.det_starProjection_eq_zero`, `Submodule.minimalStretch_starProjection_eq_zero`: the
-  orthogonal projection onto a proper subspace has determinant `0` and minimal stretch `0`.
+* `Submodule.minimalStretch_starProjection_eq_zero`: the orthogonal projection onto a proper
+  subspace has minimal stretch `0`.
 
 ## References
 
@@ -310,13 +310,6 @@ namespace Submodule
 
 variable {𝕜 E : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] {V : Submodule 𝕜 E}
-
-/-- The orthogonal projection onto a proper subspace `V` has determinant zero: its kernel is
-`Vᗮ ≠ 0`. -/
-theorem det_starProjection_eq_zero (hV : V ≠ ⊤) :
-    LinearMap.det ((V.starProjection : E →L[𝕜] E) : E →ₗ[𝕜] E) = 0 :=
-  LinearMap.det_eq_zero_iff_ker_ne_bot.2 <|
-    V.ker_starProjection.trans_ne (orthogonal_eq_bot_iff.not.2 hV)
 
 /-- The orthogonal projection onto a proper subspace `V` has minimal stretch zero: it is not
 injective. -/
