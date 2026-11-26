@@ -285,6 +285,13 @@ noncomputable def restrict (S : Set A)
     obtain ⟨I, hIS, hy⟩ := mem_iUnion₂.1 (hS.ge (mem_univ y))
     exact mem_iUnion.2 ⟨I.subtype (· ∈ S), by rwa [subtype_map_of_mem fun α hα ↦ hIS hα]⟩
 
+/-- The subatlas on `S` is the relabelling of `𝒜` along the inclusion `S ↪ A`. -/
+theorem restrict_eq_relabel (S : Set A)
+    (hS : ⋃ (I : Finset A) (_ : (I : Set A) ⊆ S), 𝒜.footprint I = univ)
+    (hS' : ⋃ I : Finset S, 𝒜.footprint (I.map (.subtype (· ∈ S))) = univ) :
+    𝒜.restrict S hS = 𝒜.relabel (.subtype (· ∈ S)) hS' :=
+  (rfl)
+
 /-- The footprints of the subatlas on `S` are those of `𝒜`. -/
 @[simp]
 theorem footprint_restrict (S : Set A)
