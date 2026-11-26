@@ -11,7 +11,6 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Hessian
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson
 import TauCeti.Analysis.Calculus.Deriv.OperatorCurve
 import TauCeti.Geometry.Manifold.Riemannian.Invariant
-import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
 
 /-!
@@ -37,7 +36,10 @@ embedded submanifold `M^{T_ξ}_d` whose tangent space at each point is that fixe
 (`TauCeti.exists_isSmoothEmbedding_fixedPointsOfFinrank`), and these sets partition `M^{T_ξ}`
 (`TauCeti.iUnion_fixedPointsOfFinrank`, `TauCeti.pairwise_disjoint_fixedPointsOfFinrank`).
 Comparing the two descriptions of the fixed tangent subspace, each `M^{T_ξ}_d` is a nondegenerate
-critical submanifold of `μ^ξ` (`exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank`).
+critical submanifold of `μ^ξ` (`exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank`),
+and so is every subset of `M^{T_ξ}_d` which is open in `M^{T_ξ}`, such as a connected component of
+the critical set or a union of orbits of a group commuting with `T_ξ`
+(`exists_isNondegenerateCriticalSubmanifold_of_subset_fixedPointsOfFinrank`).
 The comparison itself holds for every smooth embedding into `M^{T_ξ}` whose tangent images contain
 the fixed tangent subspaces (`isNondegenerateCriticalSubmanifold_of_fixedTangentSubspace_le`).
 
@@ -70,10 +72,13 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
   critical submanifold of `μ^ξ`.
 * `criticalPoints_eq_iUnion_fixedPointsOfFinrank`: the critical set of `μ^ξ` is the union of the
   sets `M^{T_ξ}_d`.
-* `exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank`: if `T_ξ` acts by isometries of
-  a smooth metric, each `M^{T_ξ}_d` is a Morse–Bott critical submanifold of `μ^ξ`, with tangent
-  spaces the fixed tangent subspaces.
-* `exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compactSpace`: the same for
+* `exists_isNondegenerateCriticalSubmanifold_of_subset_fixedPointsOfFinrank`: if `T_ξ` acts by
+  isometries of a smooth metric, each subset of `M^{T_ξ}_d` open in `M^{T_ξ}` is a Morse–Bott
+  critical submanifold of `μ^ξ`, with tangent spaces the fixed tangent subspaces.
+* `exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank`: in particular so is each
+  `M^{T_ξ}_d`.
+* `exists_isNondegenerateCriticalSubmanifold_of_subset_fixedPointsOfFinrank_of_compactSpace`,
+  `exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compactSpace`: the same for
   a compact group acting on a σ-compact manifold, without a metric.
 * `even_manifoldMorseIndex`, `even_manifoldMorseIndex_neg`: for a compact group acting by
   symplectomorphisms on a σ-compact manifold, the index and the coindex of `μ^ξ` at every critical
@@ -263,6 +268,41 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {σ : SmoothTwoForm 𝓘(ℝ, E') M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
   {ξ : GroupLieAlgebra I G}
 
+/-- **Open parts of the critical set of a single dimension are Morse–Bott.** Suppose that the
+closure `T_ξ` of `{exp (t ξ) | t ∈ ℝ}` acts by isometries of a smooth Riemannian metric. Let `s` be
+a subset of the fixed set `M^{T_ξ}`, the critical set of `μ^ξ`, which is open in it and at whose
+points the fixed tangent subspace of `T_ξ` has dimension `d`. For every subspace `L` of the model of
+dimension `d`, `s` is a smooth manifold modelled on `L` whose inclusion into `M` is a smooth
+embedding and a nondegenerate critical submanifold of the component `μ^ξ`, with tangent image at
+each point the fixed tangent subspace of `T_ξ`. -/
+theorem exists_isNondegenerateCriticalSubmanifold_of_subset_fixedPointsOfFinrank
+    [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E') x)]
+    [IsContMDiffRiemannianBundle 𝓘(ℝ, E') ∞ E' (fun x : M ↦ TangentSpace 𝓘(ℝ, E') x)]
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M) μ)
+    (hσ : σ.IsNondegenerate)
+    (hK : ∀ g ∈ Lie.closedOneParameterSubgroup ξ, ∀ (x : M) (u w : TangentSpace 𝓘(ℝ, E') x),
+      inner ℝ (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') (g • ·) x u) (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') (g • ·) x w) =
+        inner ℝ u w)
+    {s : Set M} {d : ℕ} {L : Submodule ℝ E'} (hL : Module.finrank ℝ L = d)
+    (hsd : s ⊆ fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d)
+    (hs : IsOpen ((↑) ⁻¹' s : Set (MulAction.fixedPoints (Lie.closedOneParameterSubgroup ξ) M))) :
+    ∃ C : ChartedSpace L s, letI := C
+      IsManifold 𝓘(ℝ, L) ∞ s ∧
+        ∃ hi : IsSmoothEmbedding 𝓘(ℝ, L) 𝓘(ℝ, E') ∞ (Subtype.val : s → M),
+          (SmoothEmbedding.ofIsSmoothEmbedding _ hi).IsNondegenerateCriticalSubmanifold
+              (fun y ↦ μ y ξ) ∧
+            ∀ y : s, LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E') Subtype.val y).toLinearMap =
+              fixedTangentSubspace 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) (y : M) := by
+  have : ContMDiffConstSMul 𝓘(ℝ, E') ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
+  obtain ⟨C, hman, hemb, hrange⟩ :=
+    exists_isSmoothEmbedding_of_subset_fixedPointsOfFinrank (K := Lie.closedOneParameterSubgroup ξ)
+      (fun g ↦ hK g g.property) hL hsd hs
+  let := C
+  refine ⟨C, hman, hemb, h.isNondegenerateCriticalSubmanifold_of_fixedTangentSubspace_le hσ
+    (fun y ↦ ?_) (fun y ↦ ?_), hrange⟩ <;> rw [SmoothEmbedding.coe_ofIsSmoothEmbedding]
+  · exact (mem_fixedPointsOfFinrank.1 (hsd y.property)).1
+  · exact (hrange y).ge
+
 /-- **The components of a moment map are Morse–Bott.** Suppose that the closure `T_ξ` of
 `{exp (t ξ) | t ∈ ℝ}` acts by isometries of a smooth Riemannian metric. For every subspace `L` of
 the model of dimension `d`, the set `M^{T_ξ}_d` of points fixed by `T_ξ` whose fixed tangent
@@ -290,16 +330,37 @@ theorem exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank
               (fun y ↦ μ y ξ) ∧
             ∀ y : fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d,
               LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E') Subtype.val y).toLinearMap =
-                fixedTangentSubspace 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) (y : M) := by
+                fixedTangentSubspace 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) (y : M) :=
   have : ContMDiffConstSMul 𝓘(ℝ, E') ∞ G M := ⟨ContMDiffSMul.contMDiff_const_smul (I := I)⟩
-  obtain ⟨C, hman, hemb, hrange⟩ :=
-    exists_isSmoothEmbedding_fixedPointsOfFinrank (K := Lie.closedOneParameterSubgroup ξ)
-      (fun g ↦ hK g g.property) hL
-  let := C
-  refine ⟨C, hman, hemb, h.isNondegenerateCriticalSubmanifold_of_fixedTangentSubspace_le hσ
-    (fun y ↦ ?_) (fun y ↦ ?_), hrange⟩ <;> rw [SmoothEmbedding.coe_ofIsSmoothEmbedding]
-  · exact (mem_fixedPointsOfFinrank.1 y.property).1
-  · exact (hrange y).ge
+  h.exists_isNondegenerateCriticalSubmanifold_of_subset_fixedPointsOfFinrank hσ hK hL subset_rfl
+    (isOpen_preimage_val_fixedPointsOfFinrank (K := Lie.closedOneParameterSubgroup ξ)
+      (fun g ↦ hK g g.property) d)
+
+/-- **Open parts of the critical set of a compact group action are Morse–Bott.** For a compact Lie
+group `G` acting smoothly on a σ-compact manifold with a nondegenerate two-form `σ` and moment map
+`μ`, let `s` be a subset of the fixed set `M^{T_ξ}` of the closure `T_ξ` of
+`{exp (t ξ) | t ∈ ℝ}`, the critical set of `μ^ξ`, which is open in it and at whose points the fixed
+tangent subspace of `T_ξ` has dimension `d`. For every subspace `L` of the model of dimension `d`,
+`s` is a smooth manifold modelled on `L` whose inclusion into `M` is a smooth embedding and a
+nondegenerate critical submanifold of the component `μ^ξ`, with tangent image at each point the
+fixed tangent subspace of `T_ξ`. -/
+theorem exists_isNondegenerateCriticalSubmanifold_of_subset_fixedPointsOfFinrank_of_compactSpace
+    [CompactSpace G] [SigmaCompactSpace M]
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M) μ)
+    (hσ : σ.IsNondegenerate) {s : Set M} {d : ℕ} {L : Submodule ℝ E'}
+    (hL : Module.finrank ℝ L = d)
+    (hsd : s ⊆ fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d)
+    (hs : IsOpen ((↑) ⁻¹' s : Set (MulAction.fixedPoints (Lie.closedOneParameterSubgroup ξ) M))) :
+    ∃ C : ChartedSpace L s, letI := C
+      IsManifold 𝓘(ℝ, L) ∞ s ∧
+        ∃ hi : IsSmoothEmbedding 𝓘(ℝ, L) 𝓘(ℝ, E') ∞ (Subtype.val : s → M),
+          (SmoothEmbedding.ofIsSmoothEmbedding _ hi).IsNondegenerateCriticalSubmanifold
+              (fun y ↦ μ y ξ) ∧
+            ∀ y : s, LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E') Subtype.val y).toLinearMap =
+              fixedTangentSubspace 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) (y : M) :=
+  of_forall_riemannianBundle_inner_mfderiv I G fun hG ↦
+    h.exists_isNondegenerateCriticalSubmanifold_of_subset_fixedPointsOfFinrank hσ
+      (fun a _ ↦ hG a) hL hsd hs
 
 /-- **The components of the moment map of a compact group action are Morse–Bott.** For a compact
 Lie group `G` acting smoothly on a σ-compact manifold with a nondegenerate two-form `σ` and moment
@@ -323,19 +384,9 @@ theorem exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank_of_compac
               (fun y ↦ μ y ξ) ∧
             ∀ y : fixedPointsOfFinrank 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) M d,
               LinearMap.range (mfderiv 𝓘(ℝ, L) 𝓘(ℝ, E') Subtype.val y).toLinearMap =
-                fixedTangentSubspace 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) (y : M) := by
-  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := 𝓘(ℝ, E')) (n := ⊤) (F := E')
-    (E := fun x : M ↦ TangentSpace 𝓘(ℝ, E') x)
-  -- Haar averaging needs the action to be `C^(n + 1)` for a `C^n` metric; for `n = ∞` this is
-  -- smoothness.
-  have : ContMDiffSMul I 𝓘(ℝ, E') (∞ + 1) G M := by
-    rwa [ENat.coe_top_add_one]
-  obtain ⟨g', hg'⟩ := exists_contMDiffRiemannianMetric_inner_mfderiv (G := G) (n := ⊤) I g
-  let : RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E') x) := ⟨g'.toRiemannianMetric⟩
-  let : IsContMDiffRiemannianBundle 𝓘(ℝ, E') ∞ E' (fun x : M ↦ TangentSpace 𝓘(ℝ, E') x) :=
-    Bundle.instIsContMDiffRiemannianBundle g'
-  exact h.exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank hσ
-    (fun a _ x u w ↦ hg' a x u w) hL
+                fixedTangentSubspace 𝓘(ℝ, E') (Lie.closedOneParameterSubgroup ξ) (y : M) :=
+  of_forall_riemannianBundle_inner_mfderiv I G fun hG ↦
+    h.exists_isNondegenerateCriticalSubmanifold_fixedPointsOfFinrank hσ (fun a _ ↦ hG a) hL
 
 end Model
 
