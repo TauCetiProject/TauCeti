@@ -243,6 +243,34 @@ theorem wedgeCovector_alternatingFormEquiv (u : V) (k : ℕ) (x : ⋀[ℝ]^k V) 
       alternatingFormEquiv V (k + 1) (ExteriorAlgebra.wedgeLeft u k x) := by
   rw [wedgeCovector_apply, LinearEquiv.symm_apply_apply]
 
+/-- Exterior multiplication by a covector is additive in the covector:
+`ε_{u + w} = ε_u + ε_w`. -/
+theorem wedgeCovector_add (u w : V) (k : ℕ) :
+    wedgeCovector (u + w) k = wedgeCovector u k + wedgeCovector w k := by
+  ext1 α
+  have h := LinearMap.congr_fun ((ExteriorAlgebra.wedgeLeftₗ ℝ V k).map_add u w)
+    ((alternatingFormEquiv V k).symm α)
+  simp only [ExteriorAlgebra.wedgeLeftₗ_apply, LinearMap.add_apply] at h
+  rw [add_apply, wedgeCovector_apply, wedgeCovector_apply, wedgeCovector_apply,
+    h, map_add]
+
+/-- Exterior multiplication by a covector is homogeneous in the covector: `ε_{c u} = c ε_u`. -/
+theorem wedgeCovector_smul (c : ℝ) (u : V) (k : ℕ) :
+    wedgeCovector (c • u) k = c • wedgeCovector u k := by
+  ext1 α
+  have h := LinearMap.congr_fun ((ExteriorAlgebra.wedgeLeftₗ ℝ V k).map_smul c u)
+    ((alternatingFormEquiv V k).symm α)
+  simp only [ExteriorAlgebra.wedgeLeftₗ_apply, LinearMap.smul_apply] at h
+  rw [smul_apply, wedgeCovector_apply, wedgeCovector_apply, h, map_smul]
+
+/-- **Exterior multiplication by a covector in an orthonormal frame**:
+`ε_u = ∑ᵢ ⟪eᵢ, u⟫ ε_{eᵢ}`. -/
+theorem wedgeCovector_eq_sum {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ V) (u : V)
+    (k : ℕ) : wedgeCovector u k = ∑ i, ⟪b i, u⟫ • wedgeCovector (b i) k := by
+  have h := map_sum (AddMonoidHom.mk' (fun u : V ↦ wedgeCovector u k) fun u w ↦
+    wedgeCovector_add u w k) (fun i ↦ ⟪b i, u⟫ • b i) Finset.univ
+  simpa only [AddMonoidHom.mk'_apply, b.sum_repr', wedgeCovector_smul] using h
+
 /-- The interior product by `u` of the form of `x` is the form of the contraction of `x` by
 `⟪u, ·⟫`. -/
 theorem curryLeftFlipL_alternatingFormEquiv (u : V) (k : ℕ) (x : ⋀[ℝ]^(k + 1) V) :
@@ -308,6 +336,20 @@ theorem alternatingFormEquiv_symm_alternatizeUncurryFin {ι : Type*} [Fintype ι
   simp only [map_sum, map_smul, ContinuousAlternatingMap.sum_apply,
     ContinuousAlternatingMap.smul_apply, smul_eq_mul, zsmul_eq_mul, Int.cast_pow, Int.cast_neg,
     Int.cast_one, Finset.mul_sum]
+
+/-- **Exterior multiplication as an alternation**: the alternation of `v ↦ ⟪u, v⟫ α` is the
+exterior product `⟪u, ·⟫ ∧ α = ε_u α`. -/
+theorem alternatizeUncurryFin_innerSL_smulRight (u : V) {k : ℕ} (α : V [⋀^Fin k]→L[ℝ] ℝ) :
+    ContinuousAlternatingMap.alternatizeUncurryFin ((innerSL ℝ u).smulRight α) =
+      wedgeCovector u k α := by
+  set b := stdOrthonormalBasis ℝ V
+  apply (alternatingFormEquiv V (k + 1)).symm.injective
+  rw [alternatingFormEquiv_symm_alternatizeUncurryFin b, wedgeCovector_eq_sum b,
+    sum_apply, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [ContinuousLinearMap.smulRight_apply, innerSL_apply_apply, real_inner_comm,
+    smul_apply, map_smul, map_smul, map_smul, wedgeCovector_apply,
+    LinearEquiv.symm_apply_apply]
 
 end WedgeCovector
 
