@@ -40,9 +40,11 @@ where `X_f` is the Hamiltonian vector field of `f`, normalized by `ι_{X_f} σ =
   `Q_f Q_g s - Q_g Q_f s = -iℏ Q_{{f, g}} s`
 
   at `x` (`TauCeti.SmoothTwoForm.prequantumOperator_commutator`). The proof combines the
-  curvature with `[X_f, X_g] = -X_{{f, g}}`
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_poissonBracket`) and the
-  Leibniz rule.
+  Leibniz rule with the curvature along Hamiltonian vector fields,
+  `∇_{X_f} ∇_{X_g} s - ∇_{X_g} ∇_{X_f} s + ∇_{X_{{f, g}}} s = -({f, g}/ℏ) i s`
+  (`TauCeti.SmoothTwoForm.covariantDerivative_hamiltonianVectorField_curvature`), which follows
+  from `[X_f, X_g] = -X_{{f, g}}`
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_poissonBracket`).
 
 For an exact form `σ = -dθ`, the connection `d + iθ/ℏ` (`TauCeti.exactPrequantumConnection`) has
 these properties, giving the commutator on the exact prequantum line
@@ -181,6 +183,31 @@ private theorem prequantumOperator_covariantDerivative
     ContinuousLinearMap.smulRight_apply, smul_eq_mul, Complex.real_smul]
   ring
 
+/-- **Curvature along Hamiltonian vector fields.** Let `σ` be symplectic and let `∇` have curvature
+`R(X, Y) s = -(i/ℏ) σ(X, Y) s` at `x`. Since `[X_f, X_g] = -X_{{f, g}}` for `C²` functions `f`, `g`,
+
+`∇_{X_f} ∇_{X_g} s - ∇_{X_g} ∇_{X_f} s + ∇_{X_{{f, g}}} s = -({f, g}/ℏ) i s`
+
+at `x`. -/
+theorem covariantDerivative_hamiltonianVectorField_curvature [FiniteDimensional ℝ E]
+    (hσ : σ.IsSymplectic)
+    (hR : ∀ X Y : Π y : M, TangentSpace I y, MDiffAt (T% X) x → MDiffAt (T% Y) x →
+      cov.curvatureOperator X Y s x = -(σ.val x ![X x, Y x] / ℏ) • (Complex.I * s x))
+    (hf : ContMDiff I 𝓘(ℝ) 2 f) (hg : ContMDiff I 𝓘(ℝ) 2 g) :
+    cov (fun y ↦ cov s y (σ.hamiltonianVectorField g y)) x (σ.hamiltonianVectorField f x) -
+        cov (fun y ↦ cov s y (σ.hamiltonianVectorField f y)) x (σ.hamiltonianVectorField g x) +
+        cov s x (σ.hamiltonianVectorField (σ.poissonBracket f g) x) =
+      -(σ.poissonBracket f g x / ℏ) • (Complex.I * s x) := by
+  have hXf := hσ.isNondegenerate.contMDiff_hamiltonianVectorField (n := 1) (f := f) (by simp)
+    (by norm_num [hf])
+  have hXg := hσ.isNondegenerate.contMDiff_hamiltonianVectorField (n := 1) (f := g) (by simp)
+    (by norm_num [hg])
+  have h := hR _ _ ((hXf x).mdifferentiableAt one_ne_zero) ((hXg x).mdifferentiableAt one_ne_zero)
+  rw [CovariantDerivative.curvatureOperator_apply] at h
+  rw [hσ.isNondegenerate.hamiltonianVectorField_poissonBracket hσ.isClosed hf hg, Pi.neg_apply,
+    map_neg, poissonBracket_def, SmoothBundleForm.eval₂_apply]
+  linear_combination h
+
 /-- **The commutator of prequantum operators.** Let `σ` be symplectic and let `∇` be a `C¹`
 connection on the trivial complex line which commutes with complex scalars and has curvature
 `R(X, Y) s = -(i/ℏ) σ(X, Y) s` at `x`. For `C²` functions `f`, `g` and a `C²` section `s`,
@@ -201,28 +228,24 @@ theorem prequantumOperator_commutator [FiniteDimensional ℝ E] (hσ : σ.IsSymp
     (by norm_num [hf])
   have hXg := hσ.isNondegenerate.contMDiff_hamiltonianVectorField (n := 1) (f := g) (by simp)
     (by norm_num [hg])
-  -- The curvature of `∇` along `X_f`, `X_g`, with `[X_f, X_g] = -X_{{f, g}}`.
-  have hcurv := hR _ _ ((hXf x).mdifferentiableAt one_ne_zero)
-    ((hXg x).mdifferentiableAt one_ne_zero)
-  rw [CovariantDerivative.curvatureOperator_apply,
-    ← neg_neg (mlieBracket I _ _ x), ← Pi.neg_apply (f := mlieBracket I _ _),
-    ← hσ.isNondegenerate.hamiltonianVectorField_poissonBracket hσ.isClosed hf hg, map_neg,
-    ← SmoothBundleForm.eval₂_apply, ← poissonBracket_def] at hcurv
-  simp only [prequantumOperator_def, σ.prequantumOperator_covariantDerivative cov ℏ hc hXg hg hs,
-    σ.prequantumOperator_covariantDerivative cov ℏ hc hXf hf hs]
-  rw [← σ.poissonBracket_eq_mvfderiv f g x, ← neg_neg (mvfderiv I g x _),
-    ← σ.poissonBracket_eq_neg_mvfderiv f g x]
+  have hcurv := σ.covariantDerivative_hamiltonianVectorField_curvature cov ℏ hσ hR hf hg
+  rw [Complex.real_smul] at hcurv
+  -- The first-order terms of the commutator are `dg(X_f) = -{f, g}` and `df(X_g) = {f, g}`.
+  have hgf : (mvfderiv I g x (σ.hamiltonianVectorField f x) : ℂ) = -σ.poissonBracket f g x := by
+    rw [poissonBracket_eq_neg_mvfderiv, Complex.ofReal_neg, neg_neg]
+  have hfg : (mvfderiv I f x (σ.hamiltonianVectorField g x) : ℂ) = σ.poissonBracket f g x := by
+    rw [poissonBracket_eq_mvfderiv]
   have hℏ : (ℏ : ℂ) ^ 2 * (σ.poissonBracket f g x / ℏ) = ℏ * σ.poissonBracket f g x := by
     rcases eq_or_ne (ℏ : ℂ) 0 with h | h
     · simp [h]
     · field_simp
-  simp only [Complex.real_smul, Complex.ofReal_neg, Complex.ofReal_div] at hcurv
-  push_cast
-  linear_combination (-(ℏ : ℂ) ^ 2) * hcurv + Complex.I * s x * hℏ +
-    (ℏ : ℂ) ^ 2 * (cov (fun y ↦ cov s y (σ.hamiltonianVectorField g y)) x
-      (σ.hamiltonianVectorField f x) -
-      cov (fun y ↦ cov s y (σ.hamiltonianVectorField f y)) x (σ.hamiltonianVectorField g x) +
-      cov s x (σ.hamiltonianVectorField (σ.poissonBracket f g) x)) * Complex.I_sq
+  simp only [prequantumOperator_def, σ.prequantumOperator_covariantDerivative cov ℏ hc hXg hg hs,
+    σ.prequantumOperator_covariantDerivative cov ℏ hc hXf hf hs]
+  push_cast at hcurv ⊢
+  -- Both sides differ by `(iℏ)²` times the curvature identity `hcurv` and `iℏ s` times the
+  -- first-order terms; `i² = -1` and `ℏ² ({f, g}/ℏ) = ℏ {f, g}` (also when `ℏ = 0`) then close it.
+  linear_combination (Complex.I * ℏ) ^ 2 * hcurv + Complex.I * ℏ * s x * (hgf - hfg) +
+    Complex.I * s x * hℏ - Complex.I * ℏ ^ 2 * (σ.poissonBracket f g x / ℏ) * s x * Complex.I_sq
 
 /-! ### The exact prequantum line -/
 
@@ -266,10 +289,15 @@ theorem prequantumOperator_exactPrequantumConnection_neg_commutator [FiniteDimen
           (σ.prequantumOperator (exactPrequantumConnection (-θ) ℏ) (-ℏ) f s) x =
       Complex.I * ℏ * σ.prequantumOperator (exactPrequantumConnection (-θ) ℏ) (-ℏ)
         (σ.poissonBracket f g) s x := by
+  -- The conjugate primitive `-θ` is a primitive of `-σ`: `d(-θ) = σ = -(-σ)` at `x`.
+  have hθ' : mextDeriv (-θ).val x = -(-σ).val x := by
+    rw [NegMemClass.coe_neg, NegMemClass.coe_neg, mextDeriv_neg, Pi.neg_apply, Pi.neg_apply, hθ]
   have h := σ.prequantumOperator_commutator _ (-ℏ) hσ
     (fun c t ↦ exactPrequantumConnection_const_smul (-θ) ℏ t c) (fun X Y hX hY ↦ by
-      rw [curvatureOperator_exactPrequantumConnection (-θ) ℏ hX hY (hs x), NegMemClass.coe_neg,
-        mextDeriv_neg, Pi.neg_apply, hθ, neg_neg, div_neg, neg_neg]) hf hg hs
+      rw [curvatureOperator_exactPrequantumConnection_of_mextDeriv_eq_neg (-θ) (-σ) ℏ hθ' hX hY
+        (hs x), NegMemClass.coe_neg, Pi.neg_apply, ContinuousAlternatingMap.neg_apply, neg_div,
+        div_neg])
+    hf hg hs
   rw [h, Complex.ofReal_neg, mul_neg, neg_neg]
 
 end SmoothTwoForm
