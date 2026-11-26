@@ -266,15 +266,6 @@ lemma edge_mapOfFunctor {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Cat
   rw [edge_apply, Path.cast_coe, Path.map_coe, Function.comp_apply, edge_apply,
     mapOfFunctor_toTopObjMk, Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_mk₁]
 
-/-- Pushing `edge f` forward along `F.classifyingSpaceMap` gives `edge (F.map f)` up to
-`Path.cast`. -/
-lemma edge_map (F : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
-    edge (F.map f) =
-      ((edge f).map F.classifyingSpaceMap.hom.continuous).cast
-        (F.classifyingSpaceMap_vertex X).symm (F.classifyingSpaceMap_vertex Y).symm := by
-  ext t
-  simpa [mapOfFunctor_eq_classifyingSpaceMap] using congrArg (· t) (edge_mapOfFunctor F f)
-
 /-- Naturality isomorphism comparing `toFundamentalGroupoid` along `F : C ⥤ D` with
 `FundamentalGroupoid.map F.classifyingSpaceMap.hom`. -/
 noncomputable def toFundamentalGroupoidNatIso (F : C ⥤ D) :
@@ -288,7 +279,7 @@ noncomputable def toFundamentalGroupoidNatIso (F : C ⥤ D) :
       exact _root_.FundamentalGroupoid.fromPath_naturality_eqToHom
         (φ := F.classifyingSpaceMap.hom)
         (F.classifyingSpaceMap_vertex _) (F.classifyingSpaceMap_vertex _)
-        (edge f) (edge (F.map f)) (edge_map F f)
+        (edge f) (edge (F.map f)) (by ext t; exact congrArg (· t) (map_edge F f).symm)
 
 @[simp] lemma toFundamentalGroupoidNatIso_inv_app (F : C ⥤ D) (X : C) :
     (toFundamentalGroupoidNatIso F).inv.app X = eqToHom (by ext; simp) := (rfl)
