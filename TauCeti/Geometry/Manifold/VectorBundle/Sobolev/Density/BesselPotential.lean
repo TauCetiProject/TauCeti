@@ -34,9 +34,8 @@ are `H^t` with respect to `A` for every `t`
 `s ↦ ∑ᵢⱼ Re ∫ fᵢⱼ sᵢⱼ`, integrals of the chart readings of `s` against smooth rapidly decreasing
 functions. Consequently, for `r ≤ s`, the
 inclusion `H^s ⊆ H^r` has dense range
-(`TauCeti.SquareChartPartition.denseRange_inclusion`). This is the density of smooth elements in
-the compact-bundle Sobolev scale, which lets a bounded operator be determined by its values on
-them.
+(`TauCeti.SquareChartPartition.denseRange_inclusion`). Identifying these reconstructions with
+the functionals given by smooth sections of `V` is not done here.
 
 ## The argument
 
@@ -104,57 +103,6 @@ variable {ι : Type*} [Fintype ι]
 variable (A : SquareChartPartition ι I F V)
 
 /-! ### Reconstructing a single localization -/
-
-omit [T2Space M] in
-/-- The reconstruction of a tuple with a single nonzero entry `w`, in the slot `(i, j)`, is the
-functional `s ↦ Re w (sᵢⱼ)`. -/
-theorem reconstruction_single_apply [DecidableEq ι] (k : ι × Fin (Module.finrank ℝ F))
-    (w : 𝓢'(E, ℂ)) (s : BundleTest I F V) :
-    A.reconstruction (Pi.single k w) s = (w (A.testLocalization k.1 k.2 s)).re := by
-  rw [reconstruction_apply, Finset.sum_eq_single k (fun l _ hl ↦ by simp [hl]) (by simp)]
-  simp
-
-/-- The localization, in the slot `(i, j)`, of the test `φ • v` extended through the `i`-th chart
-and frame is `bⱼ*(v) χᵢ φ`, where `χᵢ` is read in the chart and `(bⱼ*)` is the dual basis of the
-fixed basis of the model fibre. -/
-theorem testLocalization_chartTestCLM (i : ι) (j : Fin (Module.finrank ℝ F))
-    (φ : 𝓓(⟨(A.chartData i).chart.target, (A.chartData i).chart.open_target⟩, ℝ)) (v : F) :
-    A.testLocalization i j ((A.chartData i).trivialization.chartTestCLM (A.chartData i).chart
-        (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
-        (TestFunction.postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ)) =
-      ((Module.finBasis ℝ F).repr v j : ℂ) •
-        SchwartzMap.smulLeftCLM ℂ (A.chartCutoff i : E → ℂ)
-          (TestFunction.toSchwartzMapCLM ℝ (TestFunction.postcompCLM ofRealCLM φ)) := by
-  have hχ := (A.chartCutoff i).hasCompactSupport.hasTemperateGrowth (A.chartCutoff i).contDiff
-  ext y
-  rw [_root_.smul_apply, SchwartzMap.smulLeftCLM_apply_apply hχ]
-  by_cases hy : y ∈ (A.chartData i).chart.target
-  · have hs := (A.chartData i).chart.map_target hy
-    rw [A.testLocalization_apply_of_mem _ _ _ hy,
-      Bundle.Trivialization.chartTestCLM_apply_of_mem _ _ _ _ _ hs,
-      (A.chartData i).chart.right_inv hy,
-      Bundle.Trivialization.symmL_apply _ ((A.chartData i).source_subset hs),
-      Bundle.Trivialization.apply_mk_symm _ ((A.chartData i).source_subset hs),
-      A.chartCutoff_apply_of_mem hy]
-    simp
-    ring
-  · simp [A.testLocalization_apply_of_notMem _ _ _ hy, A.chartCutoff_apply_of_notMem hy]
-
-omit [T2Space M] in
-/-- A bundle test vanishing wherever `χᵢ` does not has zero localization in the `i`-th chart. -/
-theorem testLocalization_eq_zero (i : ι) (j : Fin (Module.finrank ℝ F)) {s : BundleTest I F V}
-    (hs : ∀ z, A.cutoff i z ≠ 0 → s z = 0) : A.testLocalization i j s = 0 := by
-  ext y
-  by_cases hy : y ∈ (A.chartData i).chart.target
-  · rw [A.testLocalization_apply_of_mem _ _ _ hy, zero_apply]
-    by_cases hz : A.cutoff i ((A.chartData i).chart.symm y) = 0
-    · simp [hz]
-    have hzb := (A.chartData i).source_subset ((A.chartData i).chart.map_target hy)
-    have h0 := (A.chartData i).trivialization.apply_mk_symm hzb 0
-    rw [← Bundle.Trivialization.symmL_apply (R := ℝ) _ hzb, map_zero] at h0
-    rw [hs _ hz, h0]
-    simp
-  · simp [A.testLocalization_apply_of_notMem _ _ _ hy]
 
 /-- The component along `v`, in the `i`-th chart and frame, of the functional `s ↦ Re w (sᵢⱼ)`
 reconstructed from `w` in the slot `(i, j)`: the real part of the tempered distribution
@@ -264,21 +212,17 @@ private def reconstructionLinearMap :
     (PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)) →ₗ[ℝ] A.sobolevSpace s where
   toFun u := A.ofMemSobolev s (A.memSobolev_reconstruction fun k ↦ (u k).memSobolev_toDistr)
   map_add' u u' := A.toDistribution_injective s <| by
-    simp only [toDistribution_ofMemSobolev, map_add, PiLp.add_apply,
-      BesselPotentialSpace.toDistr_add]
-    rw [← map_add]
-    rfl
+    ext φ
+    simp [reconstruction_apply, Finset.sum_add_distrib]
   map_smul' a u := A.toDistribution_injective s <| by
-    simp only [toDistribution_ofMemSobolev, map_smul, PiLp.smul_apply,
-      BesselPotentialSpace.toDistr_real_smul, RingHom.id_apply]
-    rw [← map_smul]
-    rfl
+    ext φ
+    simp [reconstruction_apply, Finset.mul_sum, BesselPotentialSpace.toDistr_real_smul]
 
 /-- The **reconstruction** of a tuple `u` in the Hilbert sum `⨁ᵢⱼ H^s(E, ℂ)`, as a bounded
 operator into the Sobolev space `H^s` of `A`: the element of `H^s` representing the functional
 `s ↦ ∑ᵢⱼ Re uᵢⱼ (sᵢⱼ)` (`TauCeti.SquareChartPartition.toDistribution_sobolevReconstruction`). It
 fixes the elements of `H^s` (`TauCeti.SquareChartPartition.sobolevReconstruction_coe`), so it is a
-bounded projection of the Hilbert sum onto `H^s`. Continuity comes from the closed graph theorem. -/
+bounded projection of the Hilbert sum onto `H^s`. -/
 def sobolevReconstruction :
     (PiLp 2 fun _ : ι × Fin (Module.finrank ℝ F) ↦ H^{s}(E, ℂ)) →L[ℝ] A.sobolevSpace s :=
   ⟨A.reconstructionLinearMap s, (A.reconstructionLinearMap s).continuous_of_injective_comp_eq
@@ -306,13 +250,14 @@ theorem sobolevReconstruction_coe (u : A.sobolevSpace s) : A.sobolevReconstructi
   A.toDistribution_injective s (by rw [toDistribution_sobolevReconstruction, toDistribution_apply])
 
 /-- The reconstruction maps the Hilbert sum `⨁ᵢⱼ H^s(E, ℂ)` onto the Sobolev space `H^s`. -/
-theorem surjective_sobolevReconstruction : Function.Surjective (A.sobolevReconstruction s) :=
+theorem sobolevReconstruction_surjective : Function.Surjective (A.sobolevReconstruction s) :=
   fun u ↦ ⟨u, A.sobolevReconstruction_coe s u⟩
 
 /-! ### Density -/
 
-/-- **Reconstructions of Schwartz tuples are smooth.** The functional `s ↦ ∑ᵢⱼ Re ∫ fᵢⱼ sᵢⱼ`
-reconstructed from Schwartz functions `fᵢⱼ` is `H^t` with respect to `A` for every `t`. -/
+/-- **Reconstructions of Schwartz tuples lie in every `H^t`.** The functional
+`s ↦ ∑ᵢⱼ Re ∫ fᵢⱼ sᵢⱼ` reconstructed from Schwartz functions `fᵢⱼ` is `H^t` with respect to `A`
+for every `t`. -/
 theorem memSobolev_reconstruction_schwartzMap (t : ℝ)
     (f : ι × Fin (Module.finrank ℝ F) → 𝓢(E, ℂ)) :
     A.MemSobolev t (A.reconstruction fun k ↦ (f k : 𝓢'(E, ℂ))) :=
@@ -328,8 +273,8 @@ theorem sobolevReconstruction_toBesselPotentialSpaceCLM
       A.ofMemSobolev s (A.memSobolev_reconstruction_schwartzMap s f) :=
   A.toDistribution_injective s (by simp)
 
-/-- **Density of smooth functionals.** The functionals reconstructed from tuples of Schwartz
-functions are dense in the Sobolev space `H^s` of `A`. -/
+/-- **Density of reconstructions of Schwartz tuples.** The functionals reconstructed from tuples
+of Schwartz functions are dense in the Sobolev space `H^s` of `A`. -/
 theorem denseRange_sobolevReconstruction_toBesselPotentialSpaceCLM :
     DenseRange fun f : ι × Fin (Module.finrank ℝ F) → 𝓢(E, ℂ) ↦
       A.sobolevReconstruction s
@@ -341,7 +286,7 @@ theorem denseRange_sobolevReconstruction_toBesselPotentialSpaceCLM :
       (DenseRange.piMap fun _ ↦ SchwartzMap.denseRange_toBesselPotentialSpaceCLM s
         ENNReal.ofNat_ne_top)
       (PiLp.homeomorph 2 _).symm.continuous
-  exact (A.surjective_sobolevReconstruction s).denseRange.comp hpi
+  exact (A.sobolevReconstruction_surjective s).denseRange.comp hpi
     (A.sobolevReconstruction s).continuous
 
 /-- **Density of the smaller Sobolev spaces.** For `r ≤ s`, the inclusion `H^s ⊆ H^r` of the
