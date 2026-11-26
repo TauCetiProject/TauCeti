@@ -63,7 +63,7 @@ Jacobian. The other is bounded by a weight `ρ` with `det dψ ≤ ρ ∘ ψ`, so
 
 `∫_{(R₁, ∞) × [0, 1]} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) ≤ C ∫ ρ ‖D_u^* η‖²`.
 
-For the end chart `w = c + b e^{∓2πz}` of a puncture `c` the Jacobian is `4π² |w - c|²`, the weight
+For the end chart `w = c + λ e^{∓2πz}` of a puncture `c` the Jacobian is `4π² |w - c|²`, the weight
 of the dual of `W^{1,2}` near the puncture. The adjoint estimate on the half-cylinder needs `η'` to
 be `C²`, so here the structures `J_e(t)` and `u` are `C²` far out on the end, `J` is compatible
 along `u` there, and `ψ` is `C³`.
@@ -435,10 +435,7 @@ for the formal adjoint `D_u^*` of the linearized Floer operator of the data `(J,
 `η' = η (ψ ·) ∘ (a + b J)` is `η` read in the chart as a `(0, 1)`-form
 (`TauCeti.Floer.covectorPullback`).
 
-The formal adjoint of the end data on `η'` is the Jacobian of `ψ` times `D_u^* η`
-(`TauCeti.SymplecticForm.floerLinearizationAdjoint_perturbationPullback`), and the change of
-variables along `ψ` absorbs one factor of the Jacobian; the weight `ρ` bounds the other. This is
-the adjoint counterpart of
+This is the adjoint counterpart of
 `TauCeti.SymplecticForm.exists_forall_setIntegral_comp_le_mul_integral_floerLinearization_of_chart`.
 -/
 theorem

@@ -59,11 +59,11 @@ times `D_u^* η`. If moreover the end structures `J_e(t)` and `u` are `C²` far 
 `J` is compatible along `u` there, the `W^{1,2}` energy beyond `s = 2` of `η'`, for `η` supported
 far out on the end, is controlled by the integral of `D_u^* η` against a weight, the Jacobian of
 the chart up to `4π²`: `∫ |z - c i|² ‖D_u^* η‖²` on the input end `i`
-(`exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_of_inputEnd`)
-and `∫ |z|² ‖D_u^* η‖²` on the output end
-(`exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_of_outputEnd`),
-both in the namespace `TauCeti.SymplecticForm`. They are instances of the adjoint end estimate in
-a holomorphic end chart,
+(`exists_forall_setIntegral_realChart_le_mul_integral_floerLinearizationAdjoint_of_movingEnds`)
+and `∫ |z|² ‖D_u^* η‖²` on the output end, both in the namespace `TauCeti.SymplecticForm`. The
+output-end estimate is
+`exists_forall_setIntegral_positiveEndChart_le_mul_integral_floerLinearizationAdjoint_of_movingEnds`
+and both are instances of the adjoint end estimate in a holomorphic end chart,
 `exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_of_chart`.
 The weights are those of the dual of `W^{1,2}` near the punctures, as for the pair of pants.
 
@@ -95,6 +95,33 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ}
 
 /-- Let `ψ` be a chart of an end of a sphere with moving input ends that avoids the centers of the
+input ends beyond the height `r`, where `u` and `J` along `u` are `C¹`. Then on the image
+`ψ ((r, ∞) × ℝ)` the structures along `u` and `u` are `C¹`, and the components of the datum
+`TauCeti.Floer.puncturedSpherePerturbation c a H Hout` are `C²` along `u`. -/
+private theorem regularity_puncturedSpherePerturbation_of_image (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContDiff ℝ 2 (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContDiff ℝ 2 (uncurry Hout)) (ha : ∀ i, a i ≠ 0) {ψ : ℝ × ℝ → ℝ × ℝ} {r : ℝ}
+    (hψ : ∀ ζ : ℝ × ℝ, r < ζ.1 → ∀ j, Complex.equivRealProdCLM.symm (ψ ζ) ≠ c j)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
+    (hJ : ∀ ζ : ℝ × ℝ, r < ζ.1 → ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (ψ ζ, u (ψ ζ)))
+    (hu : ∀ ζ : ℝ × ℝ, r < ζ.1 → ContDiffAt ℝ 1 u (ψ ζ)) :
+    (∀ z ∈ ψ '' (Ioi r ×ˢ univ), ContDiffAt ℝ 1
+      (uncurry fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (z, u z)) ∧
+    (∀ z ∈ ψ '' (Ioi r ×ˢ univ), ContDiffAt ℝ 2 (uncurry fun z x ↦
+      puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1) (z, u z)) ∧
+    (∀ z ∈ ψ '' (Ioi r ×ˢ univ), ContDiffAt ℝ 2 (uncurry fun z x ↦
+      puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (z, u z)) ∧
+    ∀ z ∈ ψ '' (Ioi r ×ˢ univ), ContDiffAt ℝ 1 u z := by
+  refine ⟨?_, ?_, ?_, ?_⟩ <;> rintro _ ⟨ζ, hζ, rfl⟩
+  · simpa only [uncurry_def] using hJ ζ hζ.1
+  · exact contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha (hψ ζ hζ.1) _ 1
+  · exact contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha (hψ ζ hζ.1) _
+      Complex.I
+  · exact hu ζ hζ.1
+
+/-- Let `ψ` be a chart of an end of a sphere with moving input ends that avoids the centers of the
 input ends beyond the height `r`, where `u` and `J` along `u` are `C¹`. Then the linearized
 operator of the datum `TauCeti.Floer.puncturedSpherePerturbation c a H Hout`, in the direction of
 a `C²` section with compact support in `ψ ((r, ∞) × ℝ)`, has integrable square norm. -/
@@ -113,17 +140,11 @@ private theorem integrable_norm_floerLinearization_sq_puncturedSpherePerturbatio
       (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
         Complex.I) u ξ z‖ ^ 2 := by
-  refine ω.integrable_norm_floerLinearization_sq
-    (ω.continuous_floerLinearization_of_tsupport_subset ?_ ?_ ?_ ?_ (hξ.of_le one_le_two) hξU) hξc
-  · rintro _ ⟨ζ, hζ, rfl⟩
-    exact hJ ζ hζ.1
-  · rintro _ ⟨ζ, hζ, rfl⟩
-    exact contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha (hψ ζ hζ.1) _ 1
-  · rintro _ ⟨ζ, hζ, rfl⟩
-    exact contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha (hψ ζ hζ.1) _
-      Complex.I
-  · rintro _ ⟨ζ, hζ, rfl⟩
-    exact hu ζ hζ.1
+  obtain ⟨hJ', hKs, hKt, hu'⟩ :=
+    regularity_puncturedSpherePerturbation_of_image (V := V) hH hHs hHout hHouts ha hψ hJ hu
+  exact ω.integrable_norm_floerLinearization_sq
+    (ω.continuous_floerLinearization_of_tsupport_subset hJ' hKs hKt hu' (hξ.of_le one_le_two) hξU)
+    hξc
 
 /-- A function with compact support in the image `ψ ((R, ∞) × ℝ)` of the chart
 `ψ = realChart (z ↦ c + a φ₀(z))` of an input end with nonzero scale vanishes along `ψ` outside a
@@ -177,6 +198,17 @@ private theorem exists_forall_notMem_Ioo_positiveEndChart_inf_eq_zero {F : Type*
     (g := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖) (by fun_prop) hmono
     norm_equivRealProdCLM_symm_positiveEndChart_inf hf hfR
     fun z _ ↦ (hlim.eventually_gt_atTop _).exists
+
+omit [Fintype ι] in
+/-- Beyond `s = 0` the input end `i`, read in the chart `realChart (z ↦ c i + a i φ₀(z))`, avoids
+the centers of the input ends when their discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint. -/
+private theorem equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne
+    (ha : ∀ i, a i ≠ 0) (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖) (i : ι)
+    {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) (j : ι) :
+    Complex.equivRealProdCLM.symm
+      (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j := by
+  rw [equivRealProdCLM_symm_realChart]
+  exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
 
 omit [Fintype ι] in
 /-- Beyond `s = 1` the output end, read in the positive end chart `φ'_∞`, lies outside the disc
@@ -249,14 +281,9 @@ theorem
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
             Complex.I) u ξ z‖ ^ 2 := by
-  set ψ := realChart fun z ↦ c i + a i * zero.cylindricalEndLift z with hψ
   have hpb (ζ : ℝ × ℝ) (hζ : 2 < ζ.1) :=
     Floer.perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le (Hout := Hout) hH ha
       hsep hout i hζ.le
-  -- The chart avoids the centers of the input ends.
-  have hψne (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm (ψ ζ) ≠ c j := by
-    rw [hψ, equivRealProdCLM_symm_realChart]
-    exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
   obtain ⟨C, R, hR, hest⟩ :=
     ω.exists_forall_setIntegral_comp_le_mul_integral_floerLinearization_of_chart (R₁ := 2) hX
       (hHs i) hx hnd hJe hJex (fun ζ _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)
@@ -272,7 +299,9 @@ theorem
   obtain ⟨b, hb⟩ :=
     exists_forall_notMem_Ioo_realChart_add_mul_cylindricalEndLift_eq_zero (ha i) hξc hξR
   exact hest hξ hb (ω.integrable_norm_floerLinearization_sq_puncturedSpherePerturbation hH hHs
-    hHout hHouts ha (fun ζ hζ ↦ hψne ζ (by linarith)) hJ hu hξ hξc
+    hHout hHouts ha (fun ζ hζ ↦
+      equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne ha hsep i (by linarith))
+    hJ hu hξ hξc
     (hξR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))
 
 /-- **The end estimate on the output end of a sphere with moving input ends.** Let the discs
@@ -367,23 +396,13 @@ private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSphere
       (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
         Complex.I) u η z‖ ^ 2 := by
-  have hD := ω.continuous_floerLinearizationAdjoint_of_tsupport_subset
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-    (Ks := fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-    (Kt := fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-      Complex.I) (u := u) ?_ ?_ ?_ ?_ (hη.of_le one_le_two) hηU
-  · refine (hρ.mul (hD.norm.pow 2)).integrable_of_hasCompactSupport
-      (hηc.mono' fun z hz ↦ by_contra fun hz' ↦ hz ?_)
-    simp [floerLinearizationAdjoint_of_notMem_tsupport hz']
-  · rintro _ ⟨ζ, hζ, rfl⟩
-    simpa only [uncurry_def] using hJ ζ hζ.1
-  · rintro _ ⟨ζ, hζ, rfl⟩
-    exact contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha (hψ ζ hζ.1) _ 1
-  · rintro _ ⟨ζ, hζ, rfl⟩
-    exact contDiffAt_uncurry_puncturedSpherePerturbation hH hHs hHout hHouts ha (hψ ζ hζ.1) _
-      Complex.I
-  · rintro _ ⟨ζ, hζ, rfl⟩
-    exact hu ζ hζ.1
+  obtain ⟨hJ', hKs, hKt, hu'⟩ :=
+    regularity_puncturedSpherePerturbation_of_image (V := V) hH hHs hHout hHouts ha hψ hJ hu
+  have hD := ω.continuous_floerLinearizationAdjoint_of_tsupport_subset hJ' hKs hKt hu'
+    (hη.of_le one_le_two) hηU
+  refine (hρ.mul (hD.norm.pow 2)).integrable_of_hasCompactSupport
+    (hηc.mono' fun z hz ↦ by_contra fun hz' ↦ hz ?_)
+  simp [floerLinearizationAdjoint_of_notMem_tsupport hz']
 
 /-- **The end estimate of the formal adjoint on an input end of a sphere with moving input ends.**
 Let the discs `‖w - c j‖ < ‖a j‖ / 2` be pairwise disjoint and lie in the disc
@@ -404,7 +423,7 @@ for the formal adjoint `D_u^*` of the linearized Floer operator of these data, w
 (`TauCeti.Floer.covectorPullback`). The weight `|z - c i|²` is, up to `4π²`, the Jacobian of the
 chart (`TauCeti.ThricePuncturedSphere.det_fderiv_realChart_add_mul_cylindricalEndLift`). -/
 theorem
-    exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_of_inputEnd
+    exists_forall_setIntegral_realChart_le_mul_integral_floerLinearizationAdjoint_of_movingEnds
     (ω : SymplecticForm V) (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContDiff ℝ 2 (uncurry (H i)))
     (hHout : Periodic Hout 1) (hHouts : ContDiff ℝ 2 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
     (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
@@ -451,14 +470,9 @@ theorem
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
             Complex.I) u η z‖ ^ 2 := by
-  set ψ := realChart fun z ↦ c i + a i * zero.cylindricalEndLift z with hψ
   have hpb (ζ : ℝ × ℝ) (hζ : 2 < ζ.1) :=
     Floer.perturbationPullback_realChart_puncturedSpherePerturbation_of_two_le (Hout := Hout) hH ha
       hsep hout i hζ.le
-  -- The chart avoids the centers of the input ends.
-  have hψne (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm (ψ ζ) ≠ c j := by
-    rw [hψ, equivRealProdCLM_symm_realChart]
-    exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
   -- The Jacobian of the chart is the weight `4π² ‖w - c i‖²` at the image point.
   obtain ⟨C, R, hR, hest⟩ :=
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_of_chart
@@ -479,7 +493,8 @@ theorem
   obtain ⟨b, hb⟩ :=
     exists_forall_notMem_Ioo_realChart_add_mul_cylindricalEndLift_eq_zero (ha i) hηc hηR
   refine (hest hη hb (ω.integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
-    hH hHs hHout hHouts ha (fun ζ hζ ↦ hψne ζ (by linarith)) hJ
+    hH hHs hHout hHouts ha (fun ζ hζ ↦
+      equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne ha hsep i (by linarith)) hJ
     (fun ζ hζ ↦ (hu ζ hζ).of_le one_le_two) (by fun_prop) hη hηc
     (hηR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))).trans_eq ?_
   simp_rw [mul_assoc, integral_const_mul]
@@ -503,7 +518,7 @@ for the formal adjoint `D_u^*` of the linearized Floer operator of these data, w
 (`TauCeti.Floer.covectorPullback`). The weight `|z|²` is, up to `4π²`, the Jacobian of the chart
 (`TauCeti.Floer.det_fderiv_positiveEndChart`). -/
 theorem
-    exists_forall_setIntegral_sobolevDensity_le_mul_integral_floerLinearizationAdjoint_of_outputEnd
+  exists_forall_setIntegral_positiveEndChart_le_mul_integral_floerLinearizationAdjoint_of_movingEnds
     (ω : SymplecticForm V) (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContDiff ℝ 2 (uncurry (H i)))
     (hHout : Periodic Hout 1) (hHouts : ContDiff ℝ 2 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
     (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {L : ℝ≥0}
