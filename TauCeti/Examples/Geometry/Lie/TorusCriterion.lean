@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.HomotopyEquiv
-public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Torus.EilenbergMacLane
 public import TauCeti.RepresentationTheory.SU2.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HomotopyGroup
-public import TauCeti.Topology.Algebra.Quaternion.Unitary
-public import TauCeti.Topology.Homotopy.HomotopyGroup.Product
+public import TauCeti.Topology.Algebra.Quaternion.Unitary.HomotopyGroup
 
 /-!
 # Checks of the torus criterion on tori, `SU(2)` and `SO(3)`
@@ -27,7 +25,8 @@ on the groups `SU(2)`, `SU(2) × SU(2)` and `SO(3)`.
   (`TauCeti.specialUnitaryGroupTwoHomeomorphSphere`), so `π₃(SU(2)) ≅ ℤ`
   (`TauCeti.nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int`), and
   `π₃(SU(2) × SU(2)) ≅ ℤ²`
-  (`TauCeti.nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv`).
+  (`TauCeti.nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv`). Both are
+  proved in `TauCeti.Topology.Algebra.Quaternion.Unitary.HomotopyGroup`.
 * **`SO(3)`.** The finite cover of `SO(3)` by a torus times a simply connected group is the double
   cover `SU(2) → SO(3)` (`TauCeti.SU2.isCoveringMap_toSO3`), with a trivial torus factor. A
   covering map is bijective on the homotopy groups in degrees at least two, so
@@ -35,8 +34,7 @@ on the groups `SU(2)`, `SU(2) × SU(2)` and `SO(3)`.
   (`TauCeti.nonempty_homotopyGroup_three_specialOrthogonalGroup_three_mulEquiv_int`), while
   `π₂(SO(3)) = 0` (`TauCeti.subsingleton_homotopyGroup_specialOrthogonalGroup_three`). Hence
   `SO(3)` is not aspherical (`TauCeti.not_isAspherical_specialOrthogonalGroup_three`), and it is
-  not a torus, since tori are aspherical
-  (`TauCeti.not_exists_continuousMulEquiv_torus_specialOrthogonalGroup_three`): both sides fail.
+  not a torus, since tori are aspherical: both sides fail.
   The computation of `π₃(SO(3))` and the failure of asphericity are proved with the other
   homotopy groups of `SO(3)` in `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.HomotopyGroup`.
 
@@ -79,18 +77,14 @@ example (r : ℕ) : Subsingleton (π_ 3 (Fin r → Circle) 1) :=
 
 /-- **`π₃(SU(2)) ≅ ℤ`**, at every base point: `SU(2)` is the three-sphere, the unit sphere of the
 quaternions. -/
-theorem nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int (g : SU2) :
-    Nonempty (π_ 3 SU2 g ≃* Multiplicative ℤ) :=
-  ⟨(HomotopyGroup.homeomorphMulEquiv specialUnitaryGroupTwoHomeomorphSphere g).trans
-    (homotopyGroupSphereQuaternionMulEquiv _)⟩
+example (g : SU2) : Nonempty (π_ 3 SU2 g ≃* Multiplicative ℤ) :=
+  nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int g
 
 /-- **`π₃(SU(2) × SU(2)) ≅ ℤ²`**, at every base point: the homotopy groups of a product are the
 products of the homotopy groups of the factors. -/
-theorem nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv (g h : SU2) :
-    Nonempty (π_ 3 (SU2 × SU2) (g, h) ≃* Multiplicative ℤ × Multiplicative ℤ) := by
-  obtain ⟨e₁⟩ := nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int g
-  obtain ⟨e₂⟩ := nonempty_homotopyGroup_three_specialUnitaryGroup_two_mulEquiv_int h
-  exact ⟨(HomotopyGroup.prodMulEquiv g h).trans (e₁.prodCongr e₂)⟩
+example (g h : SU2) :
+    Nonempty (π_ 3 (SU2 × SU2) (g, h) ≃* Multiplicative ℤ × Multiplicative ℤ) :=
+  nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv g h
 
 /-! ### The rotation group `SO(3)` -/
 
@@ -98,7 +92,7 @@ theorem nonempty_homotopyGroup_three_prod_specialUnitaryGroup_two_mulEquiv (g h 
 `Fin r → Circle`, since tori are aspherical and `SO(3)` is not. With
 `TauCeti.not_isAspherical_specialOrthogonalGroup_three`, both sides of the torus criterion fail
 for `SO(3)`. -/
-theorem not_exists_continuousMulEquiv_torus_specialOrthogonalGroup_three :
+example :
     ¬∃ r : ℕ, Nonempty (specialOrthogonalGroup (Fin 3) ℝ ≃ₜ* (Fin r → Circle)) := by
   rintro ⟨r, ⟨e⟩⟩
   exact not_isAspherical_specialOrthogonalGroup_three 1
