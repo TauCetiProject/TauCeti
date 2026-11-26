@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.UniversalCover.Action
-public import TauCeti.AlgebraicTopology.UniversalCover.Covering
 public import TauCeti.Topology.VectorBundle.FiberCast
-public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character
 public import TauCeti.Topology.VectorBundle.Thom.FiberwiseEquiv
 public import TauCeti.Topology.VectorBundle.Thom.Orientation.TwistedLift
 
@@ -60,7 +57,8 @@ since the universal cover is simply connected its projection lifts to the orient
 equivariantly along the orientation character `w₁ : π₁(B) →* ℤˣ` of `E`
 (`TauCeti.VectorBundleOrientationCover.orientationCharacter`), which records whether a deck
 transformation preserves or reverses the lifted orientations
-(`TauCeti.VectorBundleOrientationCover.exists_lift_universalCover`). Since every local system on a
+(`TauCeti.VectorBundleOrientationCover.exists_lift_universalCover`, in
+`TauCeti.Topology.VectorBundle.Orientation.Cover.UniversalCover`). Since every local system on a
 path-connected such base is associated to its monodromy representation
 (`TauCeti.UniversalCover.associatedLocalSystemMonodromyIso`), one can take for `D` the monodromy
 of a local system `L` on `B`. Identifying `L_D` with `π^*L` and `L_{D ⊗ k_χ}` with `o(E) ⊗ L` would
@@ -83,8 +81,6 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   `H_{q + r}(Q, Q₀; L_D) ≅ H_q(Z; L_{D ⊗ k_χ})` for quotients `(Q, Q₀)` of the Thom pair of `f^*E`
   and `Z` of `X` by quotient covering maps for `G`; the intended case is `(Q, Q₀) = (E, E₀)` and
   `Z = B`, once the caller supplies a `G`-action under which the canonical maps are such maps.
-* `exists_lift_universalCover`: the projection of the universal cover lifts to the orientation
-  cover, equivariantly along the orientation character `π₁(B) →* ℤˣ` of `E`.
 
 ## References
 
@@ -321,57 +317,5 @@ theorem nonempty_twistedHomology_iso_twistedHomology_of_lift {G : Type u} [Group
   exact ⟨quotientTwistedHomologyThomIso hfst hsnd hp hP hp₀ _ hφ hu D q⟩
 
 end ThomIsomorphism
-
-/-! ### The universal cover -/
-
-section UniversalCover
-
-variable [Fintype ι] [FiniteDimensional ℝ F] (hι : Fintype.card ι = finrank ℝ F)
-
-include hι in
-/-- **The universal cover lifts equivariantly to the orientation cover.** Let `B` be locally
-path-connected and semilocally simply connected, with a base point `b₀`. The projection of the
-universal cover `UniversalCover b₀ → B` lifts to a continuous map `s` to the orientation double
-cover `B'` of `E` with `s(g • x) = w₁(g) • s(x)` for every deck transformation `g`, where
-`w₁ : π₁(B, b₀) →* ℤˣ` is the orientation character of `E`: a deck transformation preserves all
-the lifted orientations or reverses all of them, according to `w₁`. -/
-theorem exists_lift_universalCover [LocallyPathConnectedSpace B]
-    [SemilocallySimplyConnectedSpace B] (b₀ : B) :
-    ∃ s : C(UniversalCover b₀, VectorBundleOrientationCover F E ι),
-      (∀ x, (s x).proj = x.proj) ∧
-        ∀ (g : FundamentalGroup B b₀) x, s (g • x) = orientationCharacter F E hι b₀ g • s x := by
-  have hq := isCoveringMap_proj (F := F) (E := E) hι
-  -- the universal cover is simply connected, so its projection lifts to the orientation cover
-  let x₀ : UniversalCover b₀ := UniversalCover.basepointLift b₀
-  obtain ⟨e₀, he₀⟩ := surjective_proj (F := F) (E := E) hι b₀
-  obtain ⟨s, ⟨-, hs⟩, -⟩ := hq.existsUnique_continuousMap_lifts
-    ⟨UniversalCover.proj, UniversalCover.continuous_proj b₀⟩ x₀ e₀
-    (he₀.trans (UniversalCover.proj_basepointLift b₀).symm :)
-  have hf : proj ∘ ⇑s = UniversalCover.proj := hs
-  have hs' (x : UniversalCover b₀) : (s x).proj = x.proj := congrFun hs x
-  -- `s` carries the monodromy of the universal cover along `g⁻¹`, which moves `x₀` to `g • x₀`,
-  -- to the monodromy of the orientation cover, which the orientation character reads off
-  have hx₀ (g : FundamentalGroup B b₀) : s (g • x₀) = orientationCharacter F E hι b₀ g • s x₀ := by
-    let e := Function.fiberMap s hf b₀ (UniversalCover.basepointLift b₀)
-    have he : (e : VectorBundleOrientationCover F E ι) = s x₀ :=
-      Function.fiberMap_apply_coe s hf b₀ _
-    have h := congrArg Subtype.val ((UniversalCover.isCoveringMap b₀).fiberMap_monodromy hq s hf
-      (g⁻¹).toPath (UniversalCover.basepointLift b₀))
-    rw [Function.fiberMap_apply_coe, UniversalCover.monodromy_basepointLift, inv_inv] at h
-    have hχ : orientationCharacter F E hι b₀ g⁻¹ = orientationCharacter F E hι b₀ g := by
-      rw [map_inv, Int.units_inv_eq_self]
-    rcases Int.units_eq_one_or (orientationCharacter F E hι b₀ g) with h1 | h1
-    · rw [h1, one_smul, h, (orientationCharacter_eq_one_iff_monodromy_eq hι _ e).1 (hχ.trans h1),
-        he]
-    · rw [h1, h, (orientationCharacter_eq_neg_one_iff hι _ e).1 (hχ.trans h1), he,
-        neg_one_smul_eq_deck]
-  -- `x ↦ s (g • x)` and `x ↦ w₁ g • s x` lift the same map and agree at `x₀`, so they are equal
-  refine ⟨s, hs', fun g x ↦ congrFun (hq.eq_of_comp_eq
-    (g₁ := fun x ↦ s (g • x)) (g₂ := fun x ↦ orientationCharacter F E hι b₀ g • s x)
-    (s.continuous.comp (continuous_const_smul g)) ((continuous_const_smul _).comp s.continuous)
-    (funext fun x ↦ (hs' _).trans ((UniversalCover.proj_smul g x).trans
-      ((hs' x).symm.trans (proj_smul _ _).symm))) x₀ (hx₀ g)) x⟩
-
-end UniversalCover
 
 end TauCeti.VectorBundleOrientationCover
