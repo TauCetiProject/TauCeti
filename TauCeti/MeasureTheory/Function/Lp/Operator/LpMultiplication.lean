@@ -361,7 +361,7 @@ variable {α E F G : Type*} {mα : MeasurableSpace α} {μ : Measure α} [Normed
 `B : E →L[ℝ] F →L[ℝ] G` into real Hilbert spaces and `b ∈ L^∞(μ; E)`, the Hilbert space adjoint
 of multiplication `f ↦ B(b, f)` from `L²(μ; F)` to `L²(μ; G)` is multiplication by the pointwise
 adjoints `B(b x, ·)†`. -/
-theorem adjoint_holderL_apply (B : E →L[ℝ] F →L[ℝ] G) (b : Lp E ∞ μ) (h : Lp G 2 μ) :
+@[simp] theorem adjoint_holderL_apply (B : E →L[ℝ] F →L[ℝ] G) (b : Lp E ∞ μ) (h : Lp G 2 μ) :
     adjoint (B.holderL μ ∞ 2 2 b) h = (adjointRealCLM ∘L B).holderL μ ∞ 2 2 b h := by
   refine ext_inner_right ℝ fun f ↦ ?_
   rw [adjoint_inner_left, L2.inner_def, L2.inner_def, holderL_apply_apply, holderL_apply_apply]

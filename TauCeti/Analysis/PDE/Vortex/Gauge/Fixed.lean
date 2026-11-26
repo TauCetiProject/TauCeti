@@ -328,7 +328,7 @@ def gaugeFixedZerothOrder :
 
 /-- The adjoint of the zeroth-order part `Z(w, ·)` at a value `w` is multiplication by the
 transpose of the matrix `gaugeFixedZerothOrderMatrix w`. -/
-theorem adjoint_gaugeFixedZerothOrder_apply (w y : EuclideanSpace ℝ (Fin 4)) :
+@[simp] theorem adjoint_gaugeFixedZerothOrder_apply (w y : EuclideanSpace ℝ (Fin 4)) :
     ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w) y =
       WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * y j := by
   ext i

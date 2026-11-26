@@ -93,17 +93,6 @@ namespace TauCeti.Vortex
 
 /-! ### Coordinates and matrix coefficients -/
 
-/-- Coordinates in `H^s(ℂ)` of a field also serve, through the inclusion, at every lower order
-`r`, with no larger norm. -/
-theorem norm_inclusion_le_and_ae_eq {r s : ℝ} (h : r ≤ s) (hr : 0 ≤ r)
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} {u : Fin 4 → H^{s}(ℂ)}
-    (hu : ∀ a, ⇑(inclusionLp (hr.trans h) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) :
-    ‖fun a ↦ inclusion h (u a)‖ ≤ ‖u‖ ∧
-      ∀ a, ⇑(inclusionLp hr (inclusion h (u a))) =ᵐ[volume] fun z ↦ (y z a : ℂ) :=
-  ⟨(pi_norm_le_iff_of_nonneg (norm_nonneg u)).2 fun a ↦
-      (norm_inclusion_apply_le h _).trans (norm_le_pi_norm u a),
-    fun a ↦ by rw [inclusionLp_inclusion]; exact hu a⟩
-
 /-- Coordinates in `H^s(ℂ)` serve, through the inclusion, at an equal order `r = s`, with the same
 norm. This moves coordinates between the orders `((n + 1 : ℕ) : ℝ)` and `(n : ℝ) + 1`. -/
 private theorem norm_inclusion_eq_and_ae_eq {r s : ℝ} (h : r = s) (hr : 0 ≤ r)
