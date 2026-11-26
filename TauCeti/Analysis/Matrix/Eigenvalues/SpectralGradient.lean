@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction
+public import TauCeti.Analysis.Matrix.Eigenvalues.SpectralFunction.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Pow
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic

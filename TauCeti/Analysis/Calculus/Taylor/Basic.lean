@@ -11,6 +11,8 @@ import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.UniformSpace.HeineCantor
+import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.Asymptotics.TruncatedPowerSeries
 import TauCeti.Topology.MetricSpace.Lebesgue
 
 /-!
@@ -32,6 +34,9 @@ The file provides:
   on `(x, y)`, this derivative is nonnegative there, so the Taylor polynomial of order `n`
   expanded at `y` and evaluated at the left endpoint `x` dominates `f x`: the Taylor remainder
   has a sign.
+* **Leading coefficient.** A function that is `C^(m+1)` at `0` and `O(hᵐ)` there is
+  `hᵐ Φ^(m)(0) / m! + O(h^(m+1))`: its Taylor terms of lower order vanish, by the uniqueness of
+  finite power expansions.
 * **Derivatives of `f(x) / x`.** By the Leibniz rule and `dᵐ/dxᵐ x⁻¹ = (-1)ᵐ m! x⁻ᵐ⁻¹`,
 
   `dⁿ/dtⁿ (f(t) / t) = (-1)ⁿ n! t⁻ⁿ⁻¹ · Σ_{k ≤ n} f⁽ᵏ⁾(t) (0 - t)ᵏ / k!`,
@@ -59,6 +64,8 @@ function divided by its parameter is completely monotone.
 * `TauCeti.le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg`: if
   `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`, then `f x` is at most the Taylor polynomial of order `n` at `y`,
   evaluated at `x`.
+* `TauCeti.isBigO_sub_pow_smul_iteratedDeriv`: a `C^(m+1)` function that is `O(hᵐ)` is
+  `hᵐ Φ^(m)(0) / m! + O(h^(m+1))`.
 * `TauCeti.iteratedDeriv_div_id`: the formula for the `n`-th derivative of `t ↦ f t / t`.
 
 ## References
@@ -268,5 +275,53 @@ theorem iteratedDeriv_div_id {f : ℝ → ℝ} {s : Set ℝ} {n : ℕ} {t : ℝ}
     pow_add (-1 : ℝ) k m]
   field_simp
   simp [pow_right_comm _ k 2]
+
+section LeadingCoefficient
+
+open Asymptotics
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **The leading coefficient of a function vanishing to order `m`.** If `Φ` is `C^(m+1)` at `0`
+and `Φ h = O(hᵐ)`, then `Φ h = hᵐ c + O(h^(m+1))`, where `c = Φ^(m)(0) / m!`. -/
+theorem isBigO_sub_pow_smul_iteratedDeriv {Φ : ℝ → E} {m : ℕ}
+    (hΦ : ContDiffAt ℝ (m + 1) Φ 0) (hm : Φ =O[𝓝 0] fun h ↦ h ^ m) :
+    (fun h ↦ Φ h - h ^ m • ((m ! : ℝ)⁻¹ • iteratedDeriv m Φ 0)) =O[𝓝 0]
+      fun h ↦ h ^ (m + 1) := by
+  have hconst (j : ℕ) (c : E) : (fun h : ℝ ↦ h ^ j • c) =O[𝓝 0] fun h ↦ h ^ j :=
+    isBigO_smul_const_self _ c (norm_smul_le · c)
+  obtain ⟨u, hu, hΦu⟩ := hΦ.contDiffOn le_rfl (by simp)
+  obtain ⟨ε, hε, hεu⟩ := Metric.mem_nhds_iff.1 hu
+  have hs : Metric.ball (0 : ℝ) ε ∈ 𝓝 (0 : ℝ) := Metric.ball_mem_nhds 0 hε
+  -- Taylor's theorem to order `m + 1` on the ball.
+  have hT := taylor_isLittleO (convex_ball (0 : ℝ) ε) (Metric.mem_ball_self hε)
+    (n := m + 1) (by exact_mod_cast hΦu.mono hεu)
+  rw [nhdsWithin_eq_nhds.2 hs] at hT
+  simp only [sub_zero] at hT
+  set a : ℕ → E := fun k ↦ (k ! : ℝ)⁻¹ • iteratedDerivWithin k Φ (Metric.ball 0 ε) 0
+  have hTa (h : ℝ) : taylorWithinEval Φ (m + 1) (Metric.ball 0 ε) 0 h =
+      ∑ k ∈ Finset.range m, h ^ k • a k + h ^ m • a m + h ^ (m + 1) • a (m + 1) := by
+    rw [taylor_within_apply, Finset.sum_range_succ, Finset.sum_range_succ]
+    simp [a, smul_smul, mul_comm]
+  -- The Taylor terms below order `m` form a polynomial that is `O(hᵐ)`, hence zero.
+  have hlow : (fun h : ℝ ↦ ∑ k ∈ Finset.range m, h ^ k • a k) =O[𝓝 0] fun h ↦ h ^ m := by
+    have hhigh := (hconst (m + 1) (a (m + 1))).trans
+      (isLittleO_pow_pow (𝕜 := ℝ) (Nat.lt_succ_self m)).isBigO
+    refine (((hm.sub (hconst m (a m))).sub hhigh).sub
+      (hT.isBigO.trans (isLittleO_pow_pow (𝕜 := ℝ) (Nat.lt_succ_self m)).isBigO)).congr_left
+      fun h ↦ ?_
+    rw [hTa]
+    abel
+  have ha := eq_zero_of_isBigO_sum_pow_smul (hlow.mono nhdsWithin_le_nhds)
+  have hzero (h : ℝ) : ∑ k ∈ Finset.range m, h ^ k • a k = 0 :=
+    Finset.sum_eq_zero fun k hk ↦ by rw [ha k (Finset.mem_range.1 hk), smul_zero]
+  have ham : a m = (m ! : ℝ)⁻¹ • iteratedDeriv m Φ 0 := by
+    simp only [a, iteratedDerivWithin_of_isOpen Metric.isOpen_ball (Metric.mem_ball_self hε)]
+  rw [← ham]
+  refine (hT.isBigO.add (hconst (m + 1) (a (m + 1)))).congr_left fun h ↦ ?_
+  rw [hTa, hzero]
+  abel
+
+end LeadingCoefficient
 
 end TauCeti

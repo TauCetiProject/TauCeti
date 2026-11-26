@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Module.FinitePresentation
-public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
+public import TauCeti.Algebra.Category.ModuleCat.CartanMap.FiniteBiproducts
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.RestrictedYoneda
 
 /-!
