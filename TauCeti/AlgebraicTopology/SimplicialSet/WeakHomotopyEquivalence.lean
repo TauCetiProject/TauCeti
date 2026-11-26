@@ -40,6 +40,7 @@ Kerodon's definition of weak contractibility.
   complexes, weak homotopy equivalences are homotopy equivalences.
 * `SSet.IsWeakHomotopyEquivalence.of_precomp`, `SSet.IsWeakHomotopyEquivalence.of_postcomp`:
   two out of three.
+* `SSet.isWeaklyContractible_op_iff`: opposite preserves and reflects weak contractibility.
 * `SSet.isWeaklyContractible_iff_isWeakHomotopyEquivalence`: `K` is weakly contractible exactly
   when `K ⟶ Δ[0]` is a weak homotopy equivalence.
 
@@ -225,5 +226,43 @@ lemma isWeaklyContractible_iff_isWeakHomotopyEquivalence {K : SSet.{u}} (p : K �
 instance {K : SSet.{u}} [IsWeaklyContractible K] (p : K ⟶ Δ[0]) :
     IsWeakHomotopyEquivalence p :=
   (isWeaklyContractible_iff_isWeakHomotopyEquivalence p).1 ‹_›
+
+/-- Opposite preserves weak contractibility, by testing homotopy classes of maps into Kan
+complexes and reversing their homotopies. -/
+lemma IsWeaklyContractible.op (K : SSet.{u}) [IsWeaklyContractible K] :
+    IsWeaklyContractible K.op := by
+  let p := stdSimplex.isTerminalObj₀.from K.op
+  apply (isWeaklyContractible_iff_isWeakHomotopyEquivalence p).2
+  rw [isWeakHomotopyEquivalence_iff_homotopy]
+  intro Z _
+  obtain ⟨x⟩ := IsWeaklyContractible.nonempty (K := K)
+  refine ⟨fun g ↦ ?_, fun h h' ⟨H⟩ ↦ ?_⟩
+  · let ε := opFunctorCompOpFunctorIso
+    obtain ⟨z, ⟨H⟩⟩ := IsWeaklyContractible.exists_homotopy_const (K := K)
+      (ε.inv.app K ≫ opFunctor.map g)
+    have H' := H.op.postcomp (ε.hom.app Z)
+    have h₀ : opFunctor.map (ε.inv.app K ≫ opFunctor.map g) ≫ ε.hom.app Z = g := by
+      ext m y
+      rfl
+    have h₁ : opFunctor.map (const z : K ⟶ Z.op) ≫ ε.hom.app Z =
+        const (opObjEquiv z) := by
+      ext m y
+      rfl
+    rw [h₀, h₁] at H'
+    obtain ⟨H'⟩ := Homotopy.nonempty_symm (Z := Z) H'
+    exact ⟨const (opObjEquiv z), by simpa only [comp_const] using Nonempty.intro H'⟩
+  · have hx : (const (opObjEquiv.symm x) : Δ[0] ⟶ K.op) ≫ p = 𝟙 _ :=
+      stdSimplex.isTerminalObj₀.hom_ext _ _
+    have H' := H.precomp (const (opObjEquiv.symm x) : Δ[0] ⟶ K.op)
+    rw [← Category.assoc, ← Category.assoc, hx, Category.id_comp, Category.id_comp] at H'
+    exact ⟨H'⟩
+
+/-- A simplicial set is weakly contractible exactly when its opposite is. -/
+theorem isWeaklyContractible_op_iff (K : SSet.{u}) :
+    IsWeaklyContractible K.op ↔ IsWeaklyContractible K := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ IsWeaklyContractible.op K⟩
+  have := IsWeaklyContractible.op K.op
+  exact IsWeaklyContractible.of_iso (K := K.op.op) (L := K)
+    (opFunctorCompOpFunctorIso.app K)
 
 end SSet

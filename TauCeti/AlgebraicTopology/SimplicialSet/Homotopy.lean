@@ -33,6 +33,7 @@ simplicial homotopies `SSet.Homotopy`, and defines homotopies of morphisms of pa
 * `SSet.Homotopy.precomp`, `SSet.Homotopy.postcomp`: composition of a homotopy with a map.
 * `SSet.Homotopy.curry`, `SSet.Homotopy.uncurry`: homotopies correspond under the tensor-hom
   adjunction.
+* `SSet.Homotopy.op`: opposite reverses a simplicial homotopy.
 * `SSet.Homotopy.ulift`, `SSet.Homotopy.ofUlift`, `SSet.Homotopy.uliftEquiv`: homotopies
   transport bijectively along `SSet.uliftFunctor`.
 * `SSet.ihomEdgeEquiv`: the vertices of the simplicial set `Fun(X, Z) = (ihom X).obj Z` are the
@@ -407,6 +408,31 @@ lemma map_mkOfLe_toSimplicialObjectHomotopy_h_zero (H : SSet.Homotopy f g) {n : 
     fin_cases k <;> rfl
   · ext k : 1
     fin_cases k <;> rfl
+
+/-- Opposite reverses the direction of a simplicial homotopy. -/
+noncomputable def op (H : SSet.Homotopy f g) :
+    SSet.Homotopy (SSet.opFunctor.map g) (SSet.opFunctor.map f) := by
+  -- Tensor products are pointwise, so opposite commutes definitionally with the cylinder product.
+  have he (i : Fin 2) : lift (𝟙 X.op) (SSet.const (SSet.stdSimplex.obj₀Equiv.symm i)) ≫
+      X.op ◁ (SSet.stdSimplex.opIso ⦋1⦌).inv =
+      SSet.opFunctor.map (lift (𝟙 X) (SSet.const (SSet.stdSimplex.obj₀Equiv.symm i.rev))) := by
+    apply NatTrans.ext
+    funext ⟨m⟩
+    apply ConcreteCategory.hom_ext
+    intro x
+    induction m using SimplexCategory.rec with | _ m
+    apply Prod.ext
+    · rfl
+    · apply SSet.opObjEquiv.injective
+      ext j
+      fin_cases i <;> rfl
+  refine mk' (X.op ◁ (SSet.stdSimplex.opIso ⦋1⦌).inv ≫ SSet.opFunctor.map H.h) ?_ ?_
+  · exact (Category.assoc _ _ _).symm.trans
+      ((congrArg (· ≫ SSet.opFunctor.map H.h) (he 0)).trans
+        ((SSet.opFunctor.map_comp _ _).symm.trans (congrArg _ H.h₁)))
+  · exact (Category.assoc _ _ _).symm.trans
+      ((congrArg (· ≫ SSet.opFunctor.map H.h) (he 1)).trans
+        ((SSet.opFunctor.map_comp _ _).symm.trans (congrArg _ H.h₀)))
 
 end SSet.Homotopy
 

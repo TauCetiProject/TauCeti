@@ -49,9 +49,6 @@ map `b`, let `y` be the image under `b` of the initial vertex, and compose the c
   contractible is a trivial fibration.
 * `SSet.rlp_monomorphisms_iff_fibration_and_isWeaklyContractible_fiber`: the resulting
   characterization of trivial fibrations.
-* `SSet.rlp_monomorphisms_opFunctor_map_iff`, `SSet.isWeaklyContractible_op_iff`: through the
-  boundary reversal `SSet.boundary.opIso`, the opposite functor preserves and reflects trivial
-  fibrations, and hence weakly contractible Kan complexes.
 
 ## References
 
@@ -147,31 +144,5 @@ theorem rlp_monomorphisms_iff_fibration_and_isWeaklyContractible_fiber {p : X �
   rw [fiber_eq_preimage]
   exact ((rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
     (Subcomplex.isTerminalOfSimplex y) _).1 this).2
-
-/-- The opposite of a map `p` has the right lifting property with respect to `∂Δ[n] ⟶ Δ[n]`
-exactly when `p` has it. -/
-theorem hasLiftingProperty_boundary_ι_opFunctor_map_iff (p : X ⟶ Y) (n : ℕ) :
-    HasLiftingProperty ∂Δ[n].ι (opFunctor.map p) ↔ HasLiftingProperty ∂Δ[n].ι p :=
-  (opEquivalence.toAdjunction.hasLiftingProperty_iff ∂Δ[n].ι p).symm.trans
-    (HasLiftingProperty.iff_of_arrow_iso_left
-      (Arrow.isoMk (boundary.opIso n) (stdSimplex.opIso ⦋n⦌) (boundary.opIso_hom_ι n)) p)
-
-/-- The opposite functor preserves and reflects trivial fibrations. -/
-theorem rlp_monomorphisms_opFunctor_map_iff (p : X ⟶ Y) :
-    (monomorphisms SSet.{u}).rlp (opFunctor.map p) ↔ (monomorphisms SSet.{u}).rlp p := by
-  rw [SSet.rlp_monomorphisms]
-  exact ⟨fun h _ _ _ ⟨n⟩ ↦ (hasLiftingProperty_boundary_ι_opFunctor_map_iff p n).1 (h _ ⟨n⟩),
-    fun h _ _ _ ⟨n⟩ ↦ (hasLiftingProperty_boundary_ι_opFunctor_map_iff p n).2 (h _ ⟨n⟩)⟩
-
-/-- A Kan complex is weakly contractible exactly when its opposite is: both say that its map to
-`Δ[0]` is a trivial fibration. -/
-theorem isWeaklyContractible_op_iff (K : SSet.{u}) [KanComplex K] :
-    IsWeaklyContractible K.op ↔ IsWeaklyContractible K := by
-  have h := rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
-    stdSimplex.isTerminalOpObj₀ (opFunctor.map (stdSimplex.isTerminalObj₀.from K))
-  rw [rlp_monomorphisms_opFunctor_map_iff,
-    rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
-      stdSimplex.isTerminalObj₀] at h
-  exact ⟨fun hK ↦ (h.2 ⟨inferInstance, hK⟩).2, fun hK ↦ (h.1 ⟨inferInstance, hK⟩).2⟩
 
 end SSet

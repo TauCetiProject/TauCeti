@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Parametrized
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration.Fiber
+public import TauCeti.AlgebraicTopology.SimplicialSet.WeakHomotopyEquivalence
 
 /-!
 # Right and left fibrations over Kan complexes
@@ -42,7 +43,7 @@ over a simplex `b : Δ[n] ⟶ Y`, contract `Δ[n]` onto its initial vertex.
 
 Both results pass to left fibrations along the opposite functor `SSet.opFunctor`, which exchanges
 left and right fibrations (`SSet.leftFibration_opFunctor_map_iff`) and preserves and reflects Kan
-fibrations, Kan complexes, trivial fibrations and weakly contractible Kan complexes.
+fibrations, Kan complexes, trivial fibrations and weak contractibility.
 
 ## Main results
 
@@ -111,41 +112,6 @@ private noncomputable def boundaryEdgeZero : (∂Δ[n + 1] : SSet.{u}) _⦋1⦌ 
   ⟨stdSimplex.const (n + 1) 0 _, (mem_boundary_iff_notMem_range _).2
     ⟨Fin.last _, by rintro ⟨k, hk⟩; simp at hk⟩⟩
 
-/-- **Extension along a prism over a boundary with an invertible initial vertical edge**, in
-cylinder form. Let `C` be a quasicategory, `g : Δ[n + 1] ⟶ C` and `L : ∂Δ[n + 1] ⊗ Δ[1] ⟶ C` a
-homotopy starting at the restriction of `g`. When `L` sends the vertical edge `{0} ⊗ Δ[1]` to an
-equivalence, `g` and `L` extend to a homotopy `Δ[n + 1] ⊗ Δ[1] ⟶ C`. This is
-`SSet.prodStdSimplex.exists_ext_unionProd_horn_zero` for `Λ[1, 0]`, transported along the
-braiding `Δ[1] ⊗ Δ[n + 1] ≅ Δ[n + 1] ⊗ Δ[1]`. -/
-private lemma exists_ext_cylinder_boundary [Quasicategory C] (g : Δ[n + 1] ⟶ C)
-    (L : (∂Δ[n + 1] : SSet.{u}) ⊗ Δ[1] ⟶ C) (hgL : ∂Δ[n + 1].ι ≫ g = ι₀ ≫ L)
-    (hL : (Edge.mk' (L.app _
-      (boundaryEdgeZero, stdSimplex.edge 1 0 1 (Fin.zero_le _)))).IsEquivalence) :
-    ∃ L' : Δ[n + 1] ⊗ Δ[1] ⟶ C, ι₀ ≫ L' = g ∧ ∂Δ[n + 1].ι ▷ Δ[1] ≫ L' = L := by
-  have hpush := Subcomplex.unionProd.isPushout Λ[1, 0] ∂Δ[n + 1]
-  have hw : Λ[1, 0].ι ▷ (∂Δ[n + 1] : SSet.{u}) ≫ (β_ _ _).hom ≫ L =
-      (Λ[1, 0] : SSet.{u}) ◁ ∂Δ[n + 1].ι ≫ snd _ _ ≫ g := by
-    rw [BraidedCategory.braiding_naturality_left_assoc, whiskerLeft_horn_one_zero_ι,
-      Category.assoc, braiding_hom_fst_assoc, ← hgL, whiskerLeft_snd_assoc]
-  let a := hpush.desc ((β_ _ _).hom ≫ L) (snd _ _ ≫ g) hw
-  have hmem : (stdSimplex.edge 1 0 1 (Fin.zero_le _), stdSimplex.const (n + 1) 0 _) ∈
-      (Subcomplex.unionProd Λ[1, 0] ∂Δ[n + 1]).obj (Opposite.op ⦋1⦌) :=
-    ((Subcomplex.unionProd.ι₁ _ _).app _
-      (stdSimplex.edge 1 0 1 (Fin.zero_le _), boundaryEdgeZero)).property
-  obtain ⟨E, hE⟩ := prodStdSimplex.exists_ext_unionProd_horn_zero a hmem (by
-    have h := congrArg (fun f ↦ f.app _ (stdSimplex.edge 1 0 1 (Fin.zero_le _), boundaryEdgeZero))
-      (hpush.inl_desc _ _ hw)
-    exact (isEquivalence_iff_of_edge_eq (e := Edge.mk' _) (e' := Edge.mk' _) h.symm).1 hL)
-  refine ⟨(β_ _ _).hom ≫ E, ?_, ?_⟩
-  · -- The start of the cylinder is the image of `Λ[1, 0] ⊗ Δ[n + 1]`.
-    have h : ι₀ ≫ (β_ _ _).hom = lift (stdSimplex.isTerminalObj₀.from _ ≫
-        horn.ι 0 1 (by decide)) (𝟙 _) ≫ Λ[1, 0].ι ▷ Δ[n + 1] :=
-      CartesianMonoidalCategory.hom_ext _ _ (by simp [horn_one_ι_eq_const]) (by simp)
-    rw [reassoc_of% h, ← Subcomplex.unionProd.ι₂_ι, Category.assoc, hE, hpush.inr_desc,
-      lift_snd_assoc, Category.id_comp]
-  · rw [BraidedCategory.braiding_naturality_left_assoc, ← Subcomplex.unionProd.ι₁_ι,
-      Category.assoc, hE, hpush.inl_desc, SymmetricCategory.symmetry_assoc]
-
 /-- **Covering homotopies over a boundary, for right fibrations.** Let `p : X ⟶ Y` be a right
 fibration and `H = h ≫ b : Δ[n + 1] ⊗ Δ[1] ⟶ Y` a homotopy through a standard simplex `Δ[k]` which
 is constant on the vertical edge `{0} ⊗ Δ[1]`. A lift `g` of its start and a lift `L` of its
@@ -189,7 +155,7 @@ private lemma exists_lift_cylinder_boundary (p : X ⟶ Y) [RightFibration p] {k 
     rw [map_edge, map_edge, mk'_edge]
     exact (congrArg (fun f ↦ f.app _ (boundaryEdgeZero, stdSimplex.edge 1 0 1 (Fin.zero_le _)))
       (pullback.lift_snd L (∂Δ[n + 1].ι ▷ Δ[1] ≫ h) hL)).symm
-  obtain ⟨L', hL'₀, hL'₁⟩ := exists_ext_cylinder_boundary g' L₁ hgL' hL₁
+  obtain ⟨L', hL'₀, hL'₁⟩ := Quasicategory.exists_ext_cylinder_boundary g' L₁ hgL' hL₁
   refine ⟨L' ≫ pullback.fst _ _, by rw [reassoc_of% hL'₀, pullback.lift_fst],
     by rw [reassoc_of% hL'₁, pullback.lift_fst], ?_⟩
   rw [Category.assoc, pullback.condition, ← Category.assoc]

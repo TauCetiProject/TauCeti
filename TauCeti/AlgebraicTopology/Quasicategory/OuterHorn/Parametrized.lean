@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Quasicategory.FullSubcategory
 public import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Extension
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.UnionProd
-public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 
 /-!
 # Joyal's theorem on special outer horns, parametrized
@@ -38,6 +38,8 @@ inner horn filling and Joyal's theorem (`SSet.Quasicategory.exists_fill_of_ne_la
 * `SSet.prodStdSimplex.exists_ext_unionProd_horn_zero`: a map from
   `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n])` to a quasicategory which is defined on the vertical
   edge `(0, 0) ⟶ (1, 0)` and sends it to an equivalence extends to `Δ[m + 1] ⊗ Δ[n]`.
+* `SSet.Quasicategory.exists_ext_cylinder_boundary`: a cylinder on a simplex extends a given
+  start and boundary cylinder when its initial vertical edge is an equivalence.
 * `SSet.Quasicategory.exists_lift_pre_horn_zero`: over the horns whose initial edge is an
   equivalence, restriction `Fun(Δ[m + 2], C) ⟶ Fun(Λ[m + 2, 0], C)` has the right lifting property
   with respect to monomorphisms.
@@ -55,6 +57,7 @@ public section
 universe u
 
 open CategoryTheory MonoidalCategory MonoidalClosed Limits Simplicial HomotopicalAlgebra
+  CartesianMonoidalCategory
 
 namespace SSet
 
@@ -99,6 +102,48 @@ theorem exists_ext_unionProd_horn_zero [Quasicategory C] {m n : ℕ}
 end prodStdSimplex
 
 namespace Quasicategory
+
+open Edge
+
+/-- **Extension along a prism over a boundary with an invertible initial vertical edge**, in
+cylinder form. Let `C` be a quasicategory, `g : Δ[n + 1] ⟶ C` and `L : ∂Δ[n + 1] ⊗ Δ[1] ⟶ C` a
+homotopy starting at the restriction of `g`. When `L` sends the vertical edge `{0} ⊗ Δ[1]` to an
+equivalence, `g` and `L` extend to a homotopy `Δ[n + 1] ⊗ Δ[1] ⟶ C`. This is
+`SSet.prodStdSimplex.exists_ext_unionProd_horn_zero` for `Λ[1, 0]`, transported along the
+braiding `Δ[1] ⊗ Δ[n + 1] ≅ Δ[n + 1] ⊗ Δ[1]`. -/
+theorem exists_ext_cylinder_boundary [Quasicategory C] (g : Δ[n + 1] ⟶ C)
+    (L : (∂Δ[n + 1] : SSet.{u}) ⊗ Δ[1] ⟶ C) (hgL : ∂Δ[n + 1].ι ≫ g = ι₀ ≫ L)
+    (hL : (Edge.mk' (L.app _
+      (((∂Δ[n + 1] : SSet.{u}).σ 0
+        ⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩),
+        stdSimplex.edge 1 0 1 (Fin.zero_le _)))).IsEquivalence) :
+    ∃ L' : Δ[n + 1] ⊗ Δ[1] ⟶ C, ι₀ ≫ L' = g ∧ ∂Δ[n + 1].ι ▷ Δ[1] ≫ L' = L := by
+  have hpush := Subcomplex.unionProd.isPushout Λ[1, 0] ∂Δ[n + 1]
+  have hw : Λ[1, 0].ι ▷ (∂Δ[n + 1] : SSet.{u}) ≫ (β_ _ _).hom ≫ L =
+      (Λ[1, 0] : SSet.{u}) ◁ ∂Δ[n + 1].ι ≫ snd _ _ ≫ g := by
+    rw [BraidedCategory.braiding_naturality_left_assoc, whiskerLeft_horn_one_zero_ι,
+      Category.assoc, braiding_hom_fst_assoc, ← hgL, whiskerLeft_snd_assoc]
+  let a := hpush.desc ((β_ _ _).hom ≫ L) (snd _ _ ≫ g) hw
+  have hmem : (stdSimplex.edge 1 0 1 (Fin.zero_le _), stdSimplex.const (n + 1) 0 _) ∈
+      (Subcomplex.unionProd Λ[1, 0] ∂Δ[n + 1]).obj (Opposite.op ⦋1⦌) :=
+    ((Subcomplex.unionProd.ι₁ _ _).app _
+      (stdSimplex.edge 1 0 1 (Fin.zero_le _), ((∂Δ[n + 1] : SSet.{u}).σ 0
+        ⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩))).property
+  obtain ⟨E, hE⟩ := prodStdSimplex.exists_ext_unionProd_horn_zero a hmem (by
+    have h := congrArg (fun f ↦ f.app _ (stdSimplex.edge 1 0 1 (Fin.zero_le _),
+      ((∂Δ[n + 1] : SSet.{u}).σ 0
+        ⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩)))
+      (hpush.inl_desc _ _ hw)
+    exact (isEquivalence_iff_of_edge_eq (e := Edge.mk' _) (e' := Edge.mk' _) h.symm).1 hL)
+  refine ⟨(β_ _ _).hom ≫ E, ?_, ?_⟩
+  · -- The start of the cylinder is the image of `Λ[1, 0] ⊗ Δ[n + 1]`.
+    have h : ι₀ ≫ (β_ _ _).hom = lift (stdSimplex.isTerminalObj₀.from _ ≫
+        horn.ι 0 1 (by decide)) (𝟙 _) ≫ Λ[1, 0].ι ▷ Δ[n + 1] :=
+      CartesianMonoidalCategory.hom_ext _ _ (by simp [horn_one_ι_eq_const]) (by simp)
+    rw [reassoc_of% h, ← Subcomplex.unionProd.ι₂_ι, Category.assoc, hE, hpush.inr_desc,
+      lift_snd_assoc, Category.id_comp]
+  · rw [BraidedCategory.braiding_naturality_left_assoc, ← Subcomplex.unionProd.ι₁_ι,
+      Category.assoc, hE, hpush.inl_desc, SymmetricCategory.symmetry_assoc]
 
 variable {m : ℕ}
 
