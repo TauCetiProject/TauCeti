@@ -71,7 +71,7 @@ theorem integral_eq_zero_iff (P : ProjValMeasure X H) (f : BoundedBorelFunction 
 `P`-almost everywhere. -/
 theorem integral_eq_integral_iff (P : ProjValMeasure X H) (f g : BoundedBorelFunction X) :
     P.integral f = P.integral g ↔ ⇑f =ᶠ[P.ae] g := by
-  rw [← sub_eq_zero, ← map_sub, integral_eq_zero_iff, BoundedBorelFunction.coe_sub]
+  rw [← sub_eq_zero, ← map_sub, integral_eq_zero_iff, FunLike.coe_sub]
   exact eventuallyEq_iff_sub.symm
 
 /-- Bounded Borel symbols that agree `P`-almost everywhere have the same integral against `P`. -/
@@ -94,7 +94,7 @@ theorem tendsto_integral_apply_filter_of_dominated_convergence
   -- dominated convergence with the constant bound `(M + ‖f‖) ^ 2`.
   have hsq : Tendsto (fun n => ‖P.integral (F n) ξ - P.integral f ξ‖ ^ 2) l (𝓝 0) := by
     simp_rw [← sub_apply, ← map_sub, norm_sq_integral_apply,
-      BoundedBorelFunction.sub_apply]
+      _root_.sub_apply]
     simpa using tendsto_integral_filter_of_dominated_convergence (f := fun _ => (0 : ℝ))
       (fun _ => (M + ‖f‖) ^ 2)
       (Eventually.of_forall fun n =>
@@ -121,7 +121,7 @@ theorem tendsto_proj_apply_of_eventually_mem_iff (P : ProjValMeasure X H) {ι : 
   let G : BoundedBorelFunction X := BoundedBorelFunction.indicator A hA 1
   have hG_lim : ∀ᵐ t ∂P.diag ξ, Tendsto (fun i => F i t) l (𝓝 (G t)) := by
     filter_upwards [hlim] with t ht
-    simpa only [F, G, BoundedBorelFunction.coe_indicator, BoundedBorelFunction.coe_one,
+    simpa only [F, G, BoundedBorelFunction.coe_indicator, FunLike.coe_one,
       Pi.one_def, tendsto_indicator_const_apply_iff_eventually] using ht
   have hlim' : Tendsto (fun i => P.integral (F i) ξ) l (𝓝 (P.integral G ξ)) :=
     P.tendsto_integral_apply_filter_of_dominated_convergence (M := 1) ξ

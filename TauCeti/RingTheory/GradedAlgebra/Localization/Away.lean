@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import Mathlib.RingTheory.GradedAlgebra.HomogeneousLocalization
+public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Units
 
 /-!
 # The grading of a localization away from a homogeneous element
@@ -31,12 +32,21 @@ action on `D(f) = Spec A_f`.
   algebra homomorphism `𝒜 →ₐᵍ[R] awayGrading 𝒜 hf`.
 * `TauCeti.GradedAlgebra.awayGradingZeroEquiv 𝒜 hf`: the degree-zero part of `awayGrading 𝒜 hf`
   is Mathlib's `HomogeneousLocalization.Away 𝒜 f`.
+* `TauCeti.GradedAlgebra.awayLift 𝒜 hf φ hφ`: the universal property of `awayGrading`; a graded
+  ring homomorphism `φ : 𝒜 →+*ᵍ ℬ` sending `f` to a unit extends to a graded ring homomorphism
+  `awayGrading 𝒜 hf →+*ᵍ ℬ`.
 
 ## Main statements
 
 * The instance `GradedAlgebra (awayGrading 𝒜 hf)`, and `isInternal_awayGrading`.
 * `TauCeti.GradedAlgebra.coe_decompose_mk`: the degree-`d` component of `a / f ^ n` is
   `a_{d + n • e} / f ^ n`.
+* `TauCeti.GradedAlgebra.awayLift_unique`: `awayLift` is the only graded extension of `φ`.
+* `TauCeti.GradedAlgebra.awayLift_bijective`: `awayLift` is bijective when `φ` exhibits `B` as
+  the localization of `A` away from `f`. Since an injective graded ring homomorphism reflects
+  degrees, the grading of any graded ring that is such a localization is the transport of
+  `awayGrading 𝒜 hf`; this identifies `awayGrading` with gradings of localizations constructed
+  by other means, such as rings of sections of graded quasicoherent algebras over basic opens.
 -/
 
 public section
@@ -247,6 +257,66 @@ theorem coe_decompose_mk (n : ℕ) (a : A) (d : ι) :
   simpa [← Localization.mk_one_eq_algebraMap, Localization.mk_mul] using key
 
 end GradedAlgebra
+
+section Lift
+
+variable [DecidableEq ι] {B τ : Type*} [CommSemiring B] [SetLike τ B] [AddSubmonoidClass τ B]
+  {ℬ : ι → τ} [GradedRing ℬ]
+
+section GradedMonoid
+
+variable [SetLike.GradedMonoid 𝒜] (φ : 𝒜 →+*ᵍ ℬ) (hφ : IsUnit (φ f))
+
+/-- **Universal property of `awayGrading`.** A graded ring homomorphism `φ : 𝒜 →+*ᵍ ℬ` sending
+`f` to a unit extends to `Localization.Away f`, and the extension is graded for `awayGrading 𝒜 hf`:
+it sends `a / f ^ n` with `a` of degree `d + n • e` to `φ a * (φ f)⁻ⁿ`, of degree `d`. This is
+the graded form of Mathlib's `Localization.awayLift`. -/
+noncomputable def awayLift : awayGrading 𝒜 hf →+*ᵍ ℬ where
+  toRingHom := Localization.awayLift φ.toRingHom f hφ
+  map_mem := by
+    rintro d _ ⟨n, a, ha, rfl⟩
+    have h : Localization.awayLift φ.toRingHom f hφ (Localization.mk a (Submonoid.pow f n)) =
+        φ a * ↑hφ.unit⁻¹ ^ n :=
+      Localization.awayLift_mk φ.toRingHom f a _ hφ.mul_val_inv n
+    rw [h]
+    simpa using SetLike.mul_mem_graded (φ.map_mem ha)
+      (SetLike.pow_mem_graded n (hφ.unit.val_inv_mem_graded (φ.map_mem hf)))
+
+/-- `awayLift` extends `φ` along the localization map. -/
+@[simp]
+theorem awayLift_algebraMap (a : A) :
+    awayLift 𝒜 hf φ hφ (algebraMap A (Localization.Away f) a) = φ a :=
+  IsLocalization.Away.lift_eq f hφ a
+
+/-- The underlying ring homomorphism of `awayLift` is Mathlib's `Localization.awayLift`. -/
+theorem toRingHom_awayLift :
+    (awayLift 𝒜 hf φ hφ).toRingHom = Localization.awayLift φ.toRingHom f hφ :=
+  (rfl)
+
+/-- `awayLift` sends `a / f ^ n` to `φ a * (φ f)⁻ⁿ`. -/
+@[simp]
+theorem awayLift_mk (n : ℕ) (a : A) :
+    awayLift 𝒜 hf φ hφ (Localization.mk a (Submonoid.pow f n)) = φ a * ↑hφ.unit⁻¹ ^ n :=
+  Localization.awayLift_mk φ.toRingHom f a _ hφ.mul_val_inv n
+
+/-- `awayLift` is the unique graded extension of `φ` to `awayGrading 𝒜 hf`. -/
+theorem awayLift_unique (ψ : awayGrading 𝒜 hf →+*ᵍ ℬ)
+    (h : ∀ a, ψ (algebraMap A (Localization.Away f) a) = φ a) :
+    ψ = awayLift 𝒜 hf φ hφ :=
+  GradedRingHom.toRingHom_injective <| IsLocalization.ringHom_ext (Submonoid.powers f) <|
+    RingHom.ext fun a => (h a).trans (awayLift_algebraMap 𝒜 hf φ hφ a).symm
+
+/-- If `φ` exhibits `B` as the localization of `A` away from `f`, then `awayLift` is bijective. -/
+theorem awayLift_bijective (hloc : letI := φ.toRingHom.toAlgebra; IsLocalization.Away f B) :
+    Function.Bijective (awayLift 𝒜 hf φ hφ) :=
+  letI := φ.toRingHom.toAlgebra
+  haveI := hloc
+  IsLocalization.bijective (Submonoid.powers f) (awayLift 𝒜 hf φ hφ).toRingHom
+    (IsLocalization.Away.lift_comp f hφ)
+
+end GradedMonoid
+
+end Lift
 
 end Semiring
 

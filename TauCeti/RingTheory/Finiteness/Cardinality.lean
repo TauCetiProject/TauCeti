@@ -24,6 +24,8 @@ generated module is finite exactly when the quotient of the ring by its annihila
   module is finite.
 * `Module.finite_iff_finite_quotient_annihilator`: a finitely generated module is finite iff the
   quotient of the ring by its annihilator is finite.
+* `Submodule.finite_quotient_smul_top`: a finitely generated module `M` has finite quotient
+  `M ⧸ J • M` when `R ⧸ J` is finite.
 -/
 
 public section
@@ -51,3 +53,9 @@ theorem finite_iff_finite_quotient_annihilator [Module.Finite A M] :
   exact finite_of_finite (A ⧸ annihilator A M)
 
 end Module
+
+/-- A finite module over `R` has finite quotient by `J • M` when `R ⧸ J` is finite. -/
+instance Submodule.finite_quotient_smul_top {R M : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [Module.Finite R M] (J : Ideal R) [Finite (R ⧸ J)] :
+    Finite (M ⧸ (J • ⊤ : Submodule R M)) :=
+  Module.finite_of_finite (R ⧸ J)

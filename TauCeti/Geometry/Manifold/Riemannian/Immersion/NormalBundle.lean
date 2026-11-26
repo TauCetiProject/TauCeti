@@ -13,6 +13,7 @@ import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 
 /-!
 # The orthogonal normal bundle of an immersion
@@ -28,7 +29,9 @@ the second fundamental form and the normal connection of an immersion take value
 The normal spaces are closed (`TauCeti.isClosed_orthogonalNormalSpace`). When the range of the
 differential admits an orthogonal projection, for instance for a finite-dimensional source, so do
 the normal spaces, and their orthogonal complements are the tangent ranges
-(`TauCeti.orthogonal_orthogonalNormalSpace`). For a finite-dimensional source, the orthogonal
+(`TauCeti.orthogonal_orthogonalNormalSpace`). The normal space is then isometric to the quotient
+`T_{f x} N ⧸ range df_x` by `w ↦ [w]` (`TauCeti.orthogonalNormalSpaceEquivQuotient`, the inverse of
+Mathlib's `Submodule.quotientEquivOrthogonal`). For a finite-dimensional source, the orthogonal
 projection onto the normal space is `v ↦ v - df ((df* df)⁻¹ (df* v))`, where `df* df` is the
 pullback metric on `T_x M` (`TauCeti.starProjection_orthogonalNormalSpace_eq_sub_mfderiv_inverse`).
 It is a `C^m` self-map of `f *ᵖ TN` near every point where `f` is `C^n` with injective
@@ -55,7 +58,10 @@ is `C^k` (within a set) exactly when it is `C^k` into `f *ᵖ TN`
 (`TauCeti.contMDiffWithinAt_orthogonalNormalSpace_mk_iff`), or when its base point is `C^k` and it
 is `C^k` into `TN` (`TauCeti.contMDiffWithinAt_orthogonalNormalSpace_mk_iff_tangentBundle`). The
 orthogonal projection of `f *ᵖ TN` onto `ν_f` is `C^m`
-(`TauCeti.contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace`). No compactness, injectivity
+(`TauCeti.contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace`). For a continuous metric, the
+fibre norm of `ν_f` is continuous on its total space
+(`TauCeti.continuous_norm_orthogonalNormalSpace`, an instance of `TauCeti.continuous_norm_subbundle`
+for any family of subspaces of the fibres). No compactness, injectivity
 of `f`, boundarylessness or choice of normal frame is assumed. The identity map has zero normal
 spaces and a constant map has the whole ambient tangent space as normal space
 (`TauCeti.orthogonalNormalSpace_id`, `TauCeti.orthogonalNormalSpace_const`).
@@ -177,6 +183,13 @@ theorem finrank_orthogonalNormalSpace_add_finrank [FiniteDimensional ℝ V] {f :
   rw [orthogonalNormalSpace_def, add_comm]
   exact h
 
+/-- The normal spaces of an immersion of codimension one are lines. -/
+theorem finrank_orthogonalNormalSpace_eq_one [FiniteDimensional ℝ V] {f : M → N} {x : M}
+    (hinj : Function.Injective (mfderiv I J f x)) (hr : finrank ℝ V = finrank ℝ E + 1) :
+    finrank ℝ (orthogonalNormalSpace I J f x) = 1 := by
+  have := finrank_orthogonalNormalSpace_add_finrank hinj
+  omega
+
 section OrthogonalProjection
 
 variable {f : M → N} {x : M}
@@ -207,6 +220,44 @@ theorem starProjection_orthogonalNormalSpace :
   (rfl)
 
 end OrthogonalProjection
+
+section QuotientComparison
+
+variable (f : M → N) (x : M)
+  [(LinearMap.range (mfderiv I J f x).toLinearMap).HasOrthogonalProjection]
+
+/-- The normal space `(range df_x)ᗮ` of a map at `x` is isometric to the quotient
+`T_{f x} N ⧸ range df_x` by `w ↦ [w]`, whenever the range of the differential admits an orthogonal
+projection, for instance for a finite-dimensional source. It is the inverse of Mathlib's isometry
+`Submodule.quotientEquivOrthogonal` between a quotient and the orthogonal complement of the
+subspace. The inverse is the orthogonal projection onto the normal space
+(`TauCeti.orthogonalNormalSpaceEquivQuotient_symm_mk`). -/
+def orthogonalNormalSpaceEquivQuotient :
+    orthogonalNormalSpace I J f x ≃ₗᵢ[ℝ]
+      TangentSpace J (f x) ⧸ LinearMap.range (mfderiv I J f x).toLinearMap :=
+  (LinearMap.range (mfderiv I J f x).toLinearMap).quotientEquivOrthogonal.symm
+
+/-- The comparison takes a normal vector to its class. -/
+@[simp]
+theorem orthogonalNormalSpaceEquivQuotient_apply (w : orthogonalNormalSpace I J f x) :
+    orthogonalNormalSpaceEquivQuotient f x w =
+      Submodule.Quotient.mk (w : TangentSpace J (f x)) := by
+  rw [orthogonalNormalSpaceEquivQuotient]
+  exact (LinearMap.range (mfderiv I J f x).toLinearMap).quotientEquivOrthogonal_symm_eq_mk _
+    w.property
+
+/-- The inverse comparison takes the class of an ambient vector to its orthogonal projection onto
+the normal space; in particular this projection depends only on the class. -/
+@[simp]
+theorem orthogonalNormalSpaceEquivQuotient_symm_mk (v : TangentSpace J (f x)) :
+    (orthogonalNormalSpaceEquivQuotient f x).symm (Submodule.Quotient.mk v) =
+      (orthogonalNormalSpace I J f x).orthogonalProjectionOnto v := by
+  rw [LinearIsometryEquiv.symm_apply_eq, orthogonalNormalSpaceEquivQuotient_apply,
+    Submodule.Quotient.eq, Submodule.coe_orthogonalProjectionOnto_apply]
+  have h := (orthogonalNormalSpace I J f x).sub_starProjection_mem_orthogonal v
+  rwa [orthogonal_orthogonalNormalSpace] at h
+
+end QuotientComparison
 
 section FiniteDimensionalSource
 
@@ -609,5 +660,15 @@ theorem contMDiff_orthogonalProjectionOnto_orthogonalNormalSpace {r : ℕ} {f : 
       ((orthogonalNormalSpace I J f q.proj).starProjection_apply (q.snd : TangentSpace J _)).symm
   exact contMDiffAt_orthogonalNormalSpace_mk hf hinj hm hr le_rfl hw
     fun q ↦ ((orthogonalNormalSpace I J f q.proj).orthogonalProjectionOnto q.snd).property
+
+omit [FiniteDimensional ℝ V] [IsManifold I 1 M] in
+/-- The fibre norm of the normal spaces of a map `f`, the norm of the ambient metric, is
+continuous on their total space with the subspace topology of `f *ᵖ TN`, for any model fibre. -/
+theorem continuous_norm_orthogonalNormalSpace
+    [IsContinuousRiemannianBundle V (fun y : N ↦ TangentSpace J y)] (P : Type*) (f : M → N) :
+    Continuous fun v : TotalSpace P (fun x ↦ orthogonalNormalSpace I J f x) ↦ ‖v.snd‖ :=
+  continuous_norm_subbundle (F := V) (E := (f : M → N) *ᵖ (TangentSpace J))
+    (ContinuousFiberNorm.continuous_norm (F := V) (E := (f : M → N) *ᵖ (TangentSpace J))) P
+    (orthogonalNormalSpace I J f)
 
 end TauCeti

@@ -20,8 +20,8 @@ the scheme-theoretic nodal criterion is inherited by étale neighbourhoods, and 
 checked on an open cover of the source. This permits nodal affine charts to be glued,
 including the three charts of the blowup of a node.
 
-Conversely, for a curve locally of finite presentation, nodality can be checked after an étale
-surjection of the source. Syntomicity descends along that surjection
+Conversely, nodality can be checked after an étale surjection of the source. Syntomicity
+descends along that surjection
 (`TauCeti.AlgebraicGeometry.SyntomicOfRelativeDimension.of_comp_surjective`), the singular
 subscheme pulls back along it, and unramifiedness descends along the resulting flat surjection of
 singular subschemes.
@@ -32,8 +32,8 @@ singular subschemes.
   relative curve is nodal.
 * `affineAtWorstNodalOfRelativeDimensionOne_iff_of_openCover`: nodality is local on the source for
   open covers.
-* `affineAtWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_of_surjective`: for relative curves
-  locally of finite presentation, nodality is detected by étale surjections of the source.
+* `affineAtWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_of_surjective`: nodality is detected
+  by étale surjections of the source.
 
 ## References
 
@@ -123,11 +123,9 @@ theorem affineAtWorstNodalOfRelativeDimensionOne_iff_of_openCover
   ⟨fun h j ↦ h.comp_of_etale (𝒰.f j),
     AffineAtWorstNodalOfRelativeDimensionOne.of_openCover 𝒰⟩
 
-/-- For a relative curve over an affine base, locally of finite presentation, nodality descends
-along an étale surjection of the source. -/
+/-- Over an affine base, nodality descends along an étale surjection of the source. -/
 theorem AffineAtWorstNodalOfRelativeDimensionOne.of_comp_surjective
-    {f : Y ⟶ Spec (.of R)} [LocallyOfFinitePresentation f]
-    (g : X ⟶ Y) [Etale g] [Surjective g]
+    {f : Y ⟶ Spec (.of R)} (g : X ⟶ Y) [Etale g] [Surjective g]
     (h : AffineAtWorstNodalOfRelativeDimensionOne (g ≫ f)) :
     AffineAtWorstNodalOfRelativeDimensionOne f := by
   have : SyntomicOfRelativeDimension 1 (g ≫ f) := h.syntomic
@@ -153,12 +151,10 @@ theorem AffineAtWorstNodalOfRelativeDimensionOne.of_comp_surjective
   exact AffineAtWorstNodalOfRelativeDimensionOne.mk inferInstance
     (Unramified.of_comp_surjective q ((Y.singularLocus R).subschemeι ≫ f))
 
-/-- Among relative curves over an affine base locally of finite presentation, nodality can be
-checked after an étale surjection of the source. No quasi-compactness condition is imposed on the
-cover. -/
+/-- Over an affine base, nodality can be checked after an étale surjection of the source. No
+quasi-compactness condition is imposed on the cover. -/
 theorem affineAtWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_of_surjective
-    (f : Y ⟶ Spec (.of R)) [LocallyOfFinitePresentation f]
-    (g : X ⟶ Y) [Etale g] [Surjective g] :
+    (f : Y ⟶ Spec (.of R)) (g : X ⟶ Y) [Etale g] [Surjective g] :
     AffineAtWorstNodalOfRelativeDimensionOne f ↔
       AffineAtWorstNodalOfRelativeDimensionOne (g ≫ f) :=
   ⟨fun h ↦ h.comp_of_etale g, fun h ↦ h.of_comp_surjective g⟩

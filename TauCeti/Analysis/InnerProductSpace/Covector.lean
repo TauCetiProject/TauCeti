@@ -203,6 +203,16 @@ def ofCovectorL : Covector V k ≃L[ℝ] (V [⋀^Fin k]→L[ℝ] ℝ) :=
 
 variable {V k}
 
+/-- Evaluation of a Gram-normed covector on a fixed tuple of vectors, as a continuous linear
+functional. -/
+def coefficientCLM (v : Fin k → V) : Covector V k →L[ℝ] ℝ :=
+  (ContinuousAlternatingMap.apply ℝ V ℝ v).comp (ofCovectorL V k).toContinuousLinearMap
+
+/-- The coefficient functional evaluates the underlying alternating form on the fixed tuple. -/
+@[simp] theorem coefficientCLM_apply (v : Fin k → V) (α : Covector V k) :
+    coefficientCLM v α = α.ofCovector v := by
+  simp [coefficientCLM]
+
 /-- In an orthonormal basis the Gram inner product is the sum of products of coefficients. -/
 theorem inner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
     (b : OrthonormalBasis ι ℝ V) (α β : Covector V k) :
@@ -211,6 +221,14 @@ theorem inner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
         β.ofCovector (b ∘ powersetCard.ofFinEmbEquiv.symm s) := by
   rw [inner_eq_alternatingFormInner]
   exact alternatingFormInner_eq_sum b _ _
+
+/-- A covector of degree zero, the constant `c`, has Gram norm `|c|`. -/
+@[simp]
+theorem norm_toCovector_constOfIsEmpty (c : ℝ) :
+    ‖toCovector (ContinuousAlternatingMap.constOfIsEmpty ℝ V (Fin 0) c)‖ = |c| := by
+  rw [norm_eq_sqrt_alternatingFormInner, alternatingFormInner_zero_apply _ _ Fin.elim0,
+    ofCovector_toCovector]
+  simp [Real.sqrt_mul_self_eq_abs]
 
 end Hilbert
 

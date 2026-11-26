@@ -60,6 +60,9 @@ AINTLIB `LeanModularForms` project
 * `Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul`: the slash by `s⁻¹ ∈ SL(2, ℝ)`, read
   at `s • τ`, is `denom s τ ^ k * f τ`.
 * `MDifferentiableAt.slash`: the slash preserves holomorphy at a point.
+* `ModularForm.slash_comp_ofComplex_eventuallyEq`: for `det g > 0`, read through
+  `UpperHalfPlane.ofComplex`, the slash `f ∣[k] g` is locally the automorphy factor times
+  `f ∘ ofComplex` composed with the Möbius transformation.
 * `ModularForm.slash_scalar`: a real scalar matrix acts by its scalar to the power `k - 2`
   under the weight-`k` slash action.
 * `SlashAction.slash_eq_of_rightCoset_eq`: slashing a `H₁`-invariant element by `x` depends
@@ -75,6 +78,8 @@ AINTLIB `LeanModularForms` project
 * `TauCeti.ModularForm.SL_slash_neg`, `TauCeti.ModularForm.SL_slash_zpow_eq_self_of_slash_eq`:
   for `A ∈ SL(2, ℤ)`, `f ∣[k] (-A) = (-1)^k • f ∣[k] A`, and invariance under `A` passes to
   every integer power of `A`.
+* `TauCeti.ModularForm.eq_zero_of_slash_neg_one_eq`: in odd weight, a function invariant under the
+  slash action of `-1` vanishes.
 * `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
   `S² = -I`.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
@@ -214,6 +219,15 @@ theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
   -- Mathlib states the `-I` law with the constant function `(-1) ^ k`; as a scalar it is `•`.
   exact ModularForm.SL_smul_slash k A f ((-1 : ℂ) ^ k)
 
+/-- In odd weight, a function invariant under the weight-`k` slash action of `-1` vanishes,
+because `f ∣[k] (-1) = -f`. -/
+theorem eq_zero_of_slash_neg_one_eq (h : f ∣[k] (-1 : SL(2, ℤ)) = f) (hk : Odd k) : f = 0 := by
+  funext τ
+  have hneg : f ∣[k] (-1 : SL(2, ℤ)) = -f := by
+    rw [SL_slash_neg k f 1, SlashAction.slash_one, hk.neg_one_zpow, neg_one_smul]
+  have hτ : -f τ = f τ := congr_fun (hneg.symm.trans h) τ
+  simpa using (by linear_combination -hτ : (2 : ℂ) * f τ = 0)
+
 /-- The inversion `S` of `SL(2, ℤ)` acts twice by `S² = -I`, hence on the weight-`k` slash action
 by the scalar `(-1)^k`. -/
 @[simp]
@@ -304,6 +318,21 @@ theorem _root_.MDifferentiableAt.slash {f : ℍ → ℂ} {g : GL (Fin 2) ℝ} {�
       simpa using hg
     · rwa [← mul_smul, ← mul_assoc, ← sq, J_sq, one_mul]
   · exact mdifferentiableAt_slash_of_det_pos k hg hf
+
+/-- **The slash read through `ofComplex`**: near each point of `ℍ`, `(f ∣[k] g) ∘ ofComplex` is the
+product of the automorphy factor `|det g|^(k - 1) (cw + d)^(-k)` and `f ∘ ofComplex` composed with
+the Möbius transformation `w ↦ g • ofComplex w`, for `g` of positive determinant. This is the
+germ formula through which regularity of `f ∘ ofComplex` passes to the slash. -/
+theorem _root_.ModularForm.slash_comp_ofComplex_eventuallyEq {g : GL (Fin 2) ℝ}
+    (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det) (k : ℤ) (f : ℍ → ℂ) (z : ℍ) :
+    (f ∣[k] g) ∘ ofComplex =ᶠ[nhds (z : ℂ)] fun w ↦
+      ((|g.det.val| : ℝ) : ℂ) ^ (k - 1) * denom g w ^ (-k) *
+        ((f ∘ ofComplex) ∘ fun w ↦ ((g • ofComplex w : ℍ) : ℂ)) w := by
+  rw [← isOpenEmbedding_coe.map_nhds_eq, Filter.eventuallyEq_map]
+  filter_upwards with τ
+  simp only [Function.comp_apply, ofComplex_apply, ModularForm.slash_apply,
+    σ_eq_refl_of_det_pos hg, ContinuousAlgEquiv.refl_apply]
+  ring
 
 /-- **Scalars pass through the slash of a positive-determinant matrix.** Mathlib's
 `ModularForm.smul_slash` carries the twist `σ A c`, which is complex conjugation when the

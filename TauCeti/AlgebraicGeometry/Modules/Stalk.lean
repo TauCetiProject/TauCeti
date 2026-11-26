@@ -8,8 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.Algebra.Category.ModuleCat.Stalk
 public import Mathlib.Topology.Sheaves.CommRingCat
+public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 import Mathlib.Topology.Sheaves.LocallySurjective
-import TauCeti.AlgebraicGeometry.Modules.Sheaf
 
 /-!
 # Module structures on scheme-module stalks
@@ -25,11 +25,15 @@ A morphism `φ : M ⟶ N` of `𝒪_X`-modules induces, at every point `x`, an `�
 stalks `M_x → N_x` sending the germ of a section `m` to the germ of `φ m`
 (`AlgebraicGeometry.Scheme.Modules.Hom.stalkₗ`). An epimorphism of `𝒪_X`-modules is surjective on
 every stalk (`AlgebraicGeometry.Scheme.Modules.Hom.stalkₗ_surjective_of_epi`).
+
+A morphism of `𝒪_X`-modules which is surjective on sections over every open contained in `U` has
+a cokernel with zero stalks at the points of `U`
+(`AlgebraicGeometry.Scheme.Modules.Hom.subsingleton_stalk_cokernel_of_surjective_app`).
 -/
 
 public section
 
-open CategoryTheory AlgebraicGeometry Opposite
+open CategoryTheory Limits AlgebraicGeometry Opposite
 
 universe u
 
@@ -85,6 +89,36 @@ lemma germₗ_apply (m : Γ(M, U)) : M.germₗ x m = M.presheaf.germ U x x.prope
 
 end Section
 
+/-- If a morphism of `𝒪_X`-modules is surjective on sections over every open contained in `U`, its
+cokernel has zero stalks at the points of `U`. -/
+theorem Hom.subsingleton_stalk_cokernel_of_surjective_app {X : Scheme.{u}} {M N : X.Modules}
+    (φ : M ⟶ N) {U : X.Opens} {x : X} (hx : x ∈ U)
+    (hφ : ∀ W ≤ U, Function.Surjective (φ.app W)) :
+    Subsingleton ((cokernel φ).presheaf.stalk x) := by
+  refine subsingleton_of_forall_eq 0 fun a ↦ ?_
+  obtain ⟨W, hxW, τ, rfl⟩ := (cokernel φ).presheaf.exists_germ_eq a
+  -- The cokernel map is locally surjective, so near `x` the section `τ` lifts to `N`.
+  let F := TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X
+  have : Sheaf.IsLocallySurjective (F.map (cokernel.π φ)) :=
+    (Sheaf.isLocallySurjective_iff_epi' (φ := _)).mpr inferInstance
+  obtain ⟨V, j, ⟨m, hm⟩, hxV⟩ := Presheaf.imageSieve_mem (Opens.grothendieckTopology X)
+    (F.map (cokernel.π φ)).hom τ x hxW
+  -- On `V ⊓ U` the lift is in the image of `φ`, so `τ` vanishes there.
+  let k : V ⊓ U ⟶ V := homOfLE inf_le_left
+  obtain ⟨b, hb⟩ := hφ (V ⊓ U) inf_le_right (N.presheaf.map k.op m)
+  have hzero : (cokernel φ).presheaf.map (k ≫ j).op τ = 0 := by
+    have hnat : (cokernel.π φ).app (V ⊓ U) (N.presheaf.map k.op m) =
+        (cokernel φ).presheaf.map k.op ((cokernel.π φ).app V m) :=
+      (cokernel.π φ).mapPresheaf.naturality_apply k.op m
+    have hcomp : (cokernel.π φ).app (V ⊓ U) (φ.app (V ⊓ U) b) = 0 := by
+      rw [← ConcreteCategory.comp_apply, ← Hom.comp_app, cokernel.condition]
+      simp
+    rw [← hb, hcomp] at hnat
+    -- `hm` says that the lift `m` maps to the restriction of `τ` to `V`.
+    have hm' : (cokernel.π φ).app V m = (cokernel φ).presheaf.map j.op τ := hm
+    rw [op_comp, Functor.map_comp, ConcreteCategory.comp_apply, ← hm', ← hnat]
+  rw [← (cokernel φ).presheaf.germ_res_apply (k ≫ j) x ⟨hxV, hx⟩, hzero, map_zero]
+
 section Hom
 
 variable {M} {N P : X.Modules}
@@ -119,6 +153,13 @@ theorem Hom.stalkₗ_germ (φ : M ⟶ N) (U : X.Opens) (x : X) (hx : x ∈ U) (m
 /-- The stalk map of the identity is the identity. -/
 @[simp]
 theorem Hom.stalkₗ_id (x : X) : (𝟙 M : M ⟶ M).stalkₗ x = LinearMap.id := by
+  ext m
+  obtain ⟨U, hxU, m, rfl⟩ := M.presheaf.exists_germ_eq m
+  simp
+
+/-- The stalk map of the zero morphism is zero. -/
+@[simp]
+theorem Hom.stalkₗ_zero (x : X) : (0 : M ⟶ N).stalkₗ x = 0 := by
   ext m
   obtain ⟨U, hxU, m, rfl⟩ := M.presheaf.exists_germ_eq m
   simp

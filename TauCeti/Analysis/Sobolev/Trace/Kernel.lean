@@ -39,6 +39,9 @@ lies in the closed subspace `W^{1,p}_0(H)`.
 
 * `TauCeti.W1p.restrictL_mem_w1p0Submodule_normalHalfSpace`: a function in `W^{1,p}(ℝ × E)`
   vanishing off `H` restricts to a function in `W^{1,p}_0(H)`.
+* `TauCeti.W1p.restrictL_mem_w1p0Submodule_normalHalfSpace_of_odd`: a function in
+  `W^{1,p}(ℝ × E)` that is odd with respect to the reflection in the boundary hyperplane restricts
+  to a function in `W^{1,p}_0(H)`.
 * `TauCeti.W1p.mem_w1p0Submodule_normalHalfSpace_iff`: `u ∈ W^{1,p}_0(H)` if and only if its
   extension by zero lies in `W^{1,p}(ℝ × E)`.
 * `TauCeti.W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero` and
@@ -113,7 +116,7 @@ private theorem restrictL_normalTranslate_mem_w1p0Submodule (hp : p ≠ (∞ : �
     (hw : ∀ᵐ x ∂volume, x ∉ normalHalfSpace (E := E) a → W1p.value w x = 0) :
     W1p.restrictL le_top (normalTranslate s w) ∈
       w1p0Submodule volume (normalHalfSpace (E := E) a) p := by
-  obtain ⟨M, hM, hθM, hθgradM⟩ := exists_normalCutoff_bound (E := E) a (c := 2 / s) (by positivity)
+  obtain ⟨M, hM, hθM, hθgradM⟩ := exists_normalCutoff_bound (E := E) a (2 / s)
   have h := W1p.restrictL_contDiffSMul_mem_w1p0Submodule hp (contDiff_normalCutoff a (2 / s)) hM
     (fun x _ => hθM x) (fun x _ => hθgradM x) (tsupport_normalCutoff_subset a (by positivity))
     (normalTranslate s w)
@@ -127,24 +130,56 @@ theorem W1p.restrictL_mem_w1p0Submodule_normalHalfSpace (hp : p ≠ (∞ : ℝ�
     (hw : ∀ᵐ x ∂volume, x ∉ normalHalfSpace (E := E) a → W1p.value w x = 0) :
     W1p.restrictL (le_top : normalHalfSpace (E := E) a ≤ ⊤) w ∈
       w1p0Submodule volume (normalHalfSpace (E := E) a) p := by
-  -- The translates of `w` by `s` in the normal direction depend continuously on `s`.
-  have hg : Continuous fun s : ℝ => WithLp.toLp 2 (-s, (0 : E)) :=
-    (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.continuous.comp
+  -- The translates of `w` by `s` in the normal direction tend to `w` as `s → 0`.
+  have hg : Tendsto (fun s : ℝ => WithLp.toLp 2 (-s, (0 : E))) (𝓝[>] 0) (𝓝 0) := by
+    refine Continuous.tendsto' ?_ 0 0 (by simp) |>.mono_left nhdsWithin_le_nhds
+    exact (WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.continuous.comp
       (continuous_neg.prodMk continuous_const)
-  have hcont : Continuous fun s : ℝ => normalTranslate s w :=
-    ((Wkp.continuous_translate hp 1 w).comp hg).congr fun s =>
-      Wkp.translate_one_eq_W1p_translate _ w
-  have h0 : normalTranslate 0 w = w :=
-    (Wkp.translate_one_eq_W1p_translate (WithLp.toLp 2 (-(0 : ℝ), (0 : E))) w).symm.trans <| by
-      rw [neg_zero, Prod.mk_zero_zero, WithLp.toLp_zero]
-      exact Wkp.translate_zero 1 w
-  have htend := ((W1p.restrictL (U := normalHalfSpace a) le_top).continuous.comp hcont).tendsto 0
-    |>.mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-  rw [Function.comp_apply, h0] at htend
+  have htend : Tendsto (fun s => W1p.restrictL (U := normalHalfSpace a) le_top
+      (normalTranslate s w)) (𝓝[>] 0) (𝓝 (W1p.restrictL le_top w)) :=
+    ((W1p.restrictL le_top).continuous.tendsto w).comp (W1p.tendsto_translate hp hg w)
   -- For `s > 0` the translates lie in the closed subspace `W^{1,p}_0(H)`, hence so does the limit.
   exact (w1p0Submodule volume (normalHalfSpace (E := E) a) p).isClosed.mem_of_tendsto htend
     (eventually_nhdsWithin_of_forall fun s hs =>
       restrictL_normalTranslate_mem_w1p0Submodule hp hs w hw)
+
+/-- **An odd whole-space Sobolev function has zero boundary values on the half-space.** Let
+`ρ` be the reflection in the boundary hyperplane `{a} × E` of `H = {x | a < x.fst}`. If
+`w ∈ W^{1,p}(ℝ × E)`, `1 ≤ p < ∞`, is odd with respect to `ρ`, that is `w (ρ x) = -w x` almost
+everywhere, then its restriction to `H` lies in `W^{1,p}_0(H)`. -/
+theorem W1p.restrictL_mem_w1p0Submodule_normalHalfSpace_of_odd (hp : p ≠ (∞ : ℝ≥0∞)) (a : ℝ)
+    (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p)
+    (hw : ∀ᵐ x ∂volume, W1p.value w (normalReflection E a x) = -W1p.value w x) :
+    W1p.restrictL (le_top : normalHalfSpace (E := E) a ≤ ⊤) w ∈
+      w1p0Submodule volume (normalHalfSpace (E := E) a) p := by
+  set H := (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
+  set u := W1p.restrictL (le_top : normalHalfSpace (E := E) a ≤ ⊤) w
+  -- Adding the even reflection of `u` to `w` doubles `w` on `H` and cancels it off `H`.
+  set z := w + W1p.extendByReflectionL a u
+  have hH : MeasurableSet H := (normalHalfSpace (E := E) a).isOpen.measurableSet
+  have hI := (ae_eq_restrict_iff_indicator_ae_eq hH).1 (W1p.value_restrictL_ae le_top w)
+  have hadd := W1p.value_add_ae w (W1p.extendByReflectionL a u)
+  rw [Measure.ae_restrict_coe_opens_top] at hadd
+  have hz : ∀ᵐ x ∂volume, x ∉ normalHalfSpace (E := E) a → W1p.value z x = 0 := by
+    filter_upwards [hadd, W1p.value_extendByReflectionL_ae a u, hw,
+      (measurePreserving_normalReflection (E := E) a).quasiMeasurePreserving.ae_eq_comp hI]
+      with x h₁ h₂ h₃ h₄ hx
+    simp only [Function.comp_apply] at h₄
+    rw [h₁, Pi.add_apply, h₂, indicator_of_notMem hx, h₄]
+    by_cases hρx : normalReflection E a x ∈ H
+    · rw [indicator_of_mem hρx, h₃]
+      ring
+    · -- Off both `H` and its reflection, `x` lies on the hyperplane, where `ρ` fixes it.
+      have hxa : x.fst = a := by
+        rw [mem_normalHalfSpace, not_lt] at hx
+        rw [SetLike.mem_coe, normalReflection_mem_normalHalfSpace_iff, not_lt] at hρx
+        exact le_antisymm hx hρx
+      rw [(normalReflection_eq_self_iff a x).2 hxa] at h₃
+      rw [indicator_of_notMem hρx]
+      linarith
+  have hmem := W1p.restrictL_mem_w1p0Submodule_normalHalfSpace hp a z hz
+  rw [map_add, W1p.restrictL_extendByReflectionL, ← two_smul ℝ u] at hmem
+  simpa using (w1p0Submodule volume (normalHalfSpace (E := E) a) p).smul_mem (2⁻¹ : ℝ) hmem
 
 /-- **`W^{1,p}_0` of a half-space consists of the functions that extend by zero.** For
 `1 ≤ p < ∞`, a function `u ∈ W^{1,p}(H)` on `H = {x | a < x.fst}` lies in `W^{1,p}_0(H)` if and only

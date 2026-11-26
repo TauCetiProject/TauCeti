@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Center
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Basic
+import TauCeti.Algebra.AlgebraicGroup.Chevalley.Bruhat.Decomposition
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injectivity
-import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.LongestElement
 import TauCeti.GroupTheory.Subgroup.Centralizer
+import TauCeti.LinearAlgebra.RootSystem.LongestElement
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
 /-!
 # Centre of a Chevalley group
@@ -89,7 +91,8 @@ theorem extendedElementarySubgroup_inf_centralizer_elementarySubgroup :
     have hgConj : g ∈ (D.borelSubgroup K).map (MulAut.conj (n₀ : D.points K)).toMonoidHom :=
       ⟨g, hgB, by simp [MulAut.conj_apply, mul_inv_eq_iff_eq_mul.mpr hcomm.eq]⟩
     obtain ⟨s, rfl⟩ :=
-      (D.borelSubgroup_inf_map_borelSubgroup_conj_longestElement K n₀ hn₀w).le ⟨hgB, hgConj⟩
+      (D.borelSubgroup_inf_map_borelSubgroup_conj_eq_range_torusPoints K n₀
+        (hn₀w ▸ inversions_longestElement _ _)).le ⟨hgB, hgConj⟩
     refine ⟨⟨s, rfl⟩, ?_⟩
     rw [← D.extendedElementarySubgroup_eq_rootTorusSubgroup K, D.extendedElementarySubgroup_def K,
       Subgroup.sup_eq_closure, Subgroup.centralizer_closure]
