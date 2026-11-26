@@ -33,6 +33,10 @@ constant function `1` on a nonempty bounded open `Ω` lies in `W^{1,p}(Ω)` with
 * `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_subset_slab`: Poincaré on a slab-contained
   domain.
 * `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_subset_ball`: the bounded-ball corollary.
+* `TauCeti.W1p.not_value_ae_eq_const_of_mem_w1p0Submodule`: on a nonempty bounded open `Ω`, no
+  element of `W^{1,p}_0(Ω)` is a nonzero constant.
+* `TauCeti.W1p0.not_surjective_valueL`: consequently the value map
+  `W^{1,p}_0(Ω) → Lᵖ(Ω)` is not onto.
 
 ## References
 
@@ -132,5 +136,45 @@ theorem W1p.norm_value_le_mul_norm_gradient_of_subset_ball
   have hwidth : (c 0 + R) - (c 0 - R) = 2 * R := by ring
   simpa only [hwidth] using W1p.norm_value_le_mul_norm_gradient_of_subset_slab
     hslab hu
+
+/-- **Nonzero constants do not vanish on the boundary.** On a nonempty bounded open
+`Ω ⊆ ℝ^{n+1}`, no element of `W^{1,p}_0(Ω)` is almost everywhere equal to a constant `c ≠ 0`: its
+gradient would vanish, so the Poincaré inequality would force it to vanish almost everywhere on
+`Ω`, which has positive volume. -/
+theorem W1p.not_value_ae_eq_const_of_mem_w1p0Submodule
+    (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
+    (hne : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty) {c : ℝ} (hc : c ≠ 0)
+    {u : W1p volume Omega p} (hu : u ∈ w1p0Submodule volume Omega p) :
+    ¬ W1p.value u =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
+      fun _ ↦ c := by
+  intro huc
+  have : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
+    isFiniteMeasure_restrict.2 hOmega.measure_lt_top.ne
+  have hconst : u = W1p.const c := W1p.ext_value (Lp.ext (huc.trans (W1p.value_const_ae c).symm))
+  obtain ⟨R, hR⟩ := hOmega.subset_ball 0
+  have hzero : W1p.value u = 0 := by
+    have hle := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hR hu
+    rw [hconst, W1p.gradient_const, norm_zero, mul_zero] at hle
+    rw [hconst]
+    exact norm_le_zero_iff.1 hle
+  have := ae_restrict_neBot.2 (Omega.isOpen.measure_pos volume hne).ne'
+  obtain ⟨x, hx, h0⟩ := (huc.and (hzero ▸ Lp.coeFn_zero _ _ _)).exists
+  exact hc (hx.symm.trans h0)
+
+/-- **The value map of `W^{1,p}_0(Ω)` is not onto `Lᵖ(Ω)`** for a nonempty bounded open
+`Ω ⊆ ℝ^{n+1}` and every `p`: the constant `1` lies in `Lᵖ(Ω)`, since `Ω` has finite volume, but is
+not the value of a function in `W^{1,p}_0(Ω)`
+(`TauCeti.W1p.not_value_ae_eq_const_of_mem_w1p0Submodule`). -/
+theorem W1p0.not_surjective_valueL
+    (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
+    (hne : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty) :
+    ¬ Function.Surjective (W1p0.valueL (mu := volume) (Omega := Omega) (p := p)) := by
+  intro hsurj
+  have : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
+    isFiniteMeasure_restrict.2 hOmega.measure_lt_top.ne
+  obtain ⟨v, hv⟩ := hsurj ((memLp_const (1 : ℝ)).toLp _)
+  rw [W1p0.valueL_apply] at hv
+  exact W1p.not_value_ae_eq_const_of_mem_w1p0Submodule hOmega hne one_ne_zero v.property
+    (hv ▸ MemLp.coeFn_toLp _)
 
 end TauCeti
