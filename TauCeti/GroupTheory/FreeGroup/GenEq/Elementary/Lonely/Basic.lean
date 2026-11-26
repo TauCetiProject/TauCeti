@@ -386,6 +386,14 @@ theorem restoreWord_segment_removeLonely {i j : ℕ} (hi : (Ω.left (Ω.dual μ)
   simpa only [segment_removeBases, segment_moveConstBases] using
     restoreWord_segment_deleteItems h.disjoint_baseItems_removePair hS s
 
+/-- The basic equation of a base `ν` of the result, read in the items of `Ω`, is the basic equation
+of the base of `Ω` that `ν` renumbers. -/
+@[simp]
+theorem restoreEquation_basicEquation_removeLonely (ν : Fin (Ω.removeLonely μ h).numBases) :
+    restoreEquation (Ω.baseItems μ) ((Ω.removeLonely μ h).basicEquation ν) =
+      Ω.basicEquation (({μ, Ω.dual μ} : Finset (Fin Ω.numBases))ᶜ.orderEmbOfFin rfl ν) := by
+  simp [restoreEquation_basicEquation_deleteItems h.disjoint_baseItems_removePair]
+
 /-- An item `k` of a lonely base `μ` is sent by `π` to the segment of the result that replaces the
 segment of `Δ(μ)` between the boundaries tied to the end-points of `k`, formally inverted when
 `ε(μ) ≠ ε(Δμ)`. -/

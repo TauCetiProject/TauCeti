@@ -256,10 +256,9 @@ private theorem isReduced_subst_lift {W : Fin Ω.numItems → List (A × Bool)}
   obtain ⟨ν', rfl⟩ : ∃ ν', ({μ, Ω.dual μ} : Finset (Fin Ω.numBases))ᶜ.orderEmbOfFin rfl ν' = ν :=
     ⟨_, Finset.orderEmbOfFin_collapse hν⟩
   have := (hrest _ ((Ω.removeLonely μ h).basicEquation_mem_equations ν')).1
-  rwa [← substituteVars_restoreWord, ← restoreEquation_fst,
-    restoreEquation_basicEquation_deleteItems h.disjoint_baseItems_removePair,
-    basicEquation_removeBases, basicEquation_moveConstBases, basicEquation_fst,
-    isReduced_substituteVars_segment_iff] at this
+  rw [← substituteVars_restoreWord, ← restoreEquation_fst,
+    restoreEquation_basicEquation_removeLonely] at this
+  simpa [isReduced_substituteVars_segment_iff] using this
 
 /-! ### The backward transfer -/
 

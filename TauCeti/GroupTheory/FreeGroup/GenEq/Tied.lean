@@ -506,9 +506,9 @@ variable (Ω μ) in
 `-1` otherwise, where `b = Ω.tiedBoundary μ`. Since `tiedBoundary` returns an untied boundary
 unchanged, this is defined for every item. When both end-points of `k` are tied and `Ω` is formally
 consistent, it is the word `h[b(k), b(k + 1)]` of the segment of `Δ(μ)` matched with `k` when
-`ε(μ) = ε(Δμ)` (`TauCeti.GenEq.tiedSegment_of_sign_eq`), and the formal inverse
-`h[b(k + 1), b(k)]⁻¹` of the word of that segment otherwise
-(`TauCeti.GenEq.tiedSegment_of_sign_ne`). -/
+`ε(μ) = ε(Δμ)` (`TauCeti.GenEq.IsFormallyConsistent.tiedSegment_of_sign_eq`), and the formal
+inverse `h[b(k + 1), b(k)]⁻¹` of the word of that segment otherwise
+(`TauCeti.GenEq.IsFormallyConsistent.tiedSegment_of_sign_ne`). -/
 def tiedSegment (k : Fin Ω.numItems) : List ((Fin Ω.numItems ⊕ A) × Bool) :=
   Ω.segment (min (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
     (max (Ω.tiedBoundary μ k.castSucc : ℕ) (Ω.tiedBoundary μ k.succ))
