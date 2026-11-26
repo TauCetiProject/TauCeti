@@ -23,7 +23,6 @@ terms of polynomial expressions against a varying scale, as in
   common factor.
 * `Valuation.map_sub_mul_le`: the ultrametric bound on a difference, with both terms weighted by a
   common factor.
-* `Valuation.map_sub_of_distinct_val`: when `v x ≠ v y`, `v (x - y) = max (v x) (v y)`.
 -/
 
 public section
@@ -42,10 +41,6 @@ theorem map_sum_mul_le {ι : Type*} {s : Finset ι} {f : ι → R} {c B : Γ₀}
 theorem map_sub_mul_le {x y : R} {c B : Γ₀} (hx : v x * c ≤ B) (hy : v y * c ≤ B) :
     v (x - y) * c ≤ B :=
   (mul_le_mul_left (v.map_sub x y) c).trans ((max_mul ..).trans_le (max_le hx hy))
-
-/-- When `x` and `y` have distinct valuations, `v (x - y) = max (v x) (v y)`. -/
-theorem map_sub_of_distinct_val {x y : R} (h : v x ≠ v y) : v (x - y) = max (v x) (v y) := by
-  rw [sub_eq_add_neg, v.map_add_of_distinct_val (by simpa [v.map_neg] using h), v.map_neg]
 
 end Valuation
 

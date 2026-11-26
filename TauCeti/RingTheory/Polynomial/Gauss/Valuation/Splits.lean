@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Algebra.Polynomial.Splits
 public import TauCeti.RingTheory.Polynomial.Gauss.Valuation.Basic
-import TauCeti.RingTheory.Valuation.Sum
+import TauCeti.Data.Multiset.Filter
+import TauCeti.RingTheory.Valuation.Basic
 
 /-!
 # Gauss valuation of split polynomials
@@ -66,22 +67,14 @@ theorem gaussValuation_eq_gaussValuation_one_mul_prod_roots_le_one (v : Valuatio
     p.gaussValuation v r = p.gaussValuation v 1 *
       ((p.roots.filter fun α ↦ v α ≤ 1).map fun α ↦ max r (v α)).prod := by
   classical
-  rw [gaussValuation_eq_mul_prod_roots v p hp r, gaussValuation_eq_mul_prod_roots v p hp 1]
-  have hle : ((p.roots.filter fun α ↦ v α ≤ 1).map fun α ↦ max 1 (v α)).prod = 1 :=
-    Multiset.prod_eq_one fun b hb ↦ by
-      obtain ⟨α, hα, rfl⟩ := Multiset.mem_map.mp hb
-      exact max_eq_left (Multiset.mem_filter.mp hα).2
-  have hgt : ((p.roots.filter fun α ↦ ¬ v α ≤ 1).map fun α ↦ max r (v α)) =
-      (p.roots.filter fun α ↦ ¬ v α ≤ 1).map fun α ↦ max 1 (v α) :=
-    Multiset.map_congr rfl fun α hα ↦ by
-      have h1 : 1 < v α := lt_of_not_ge (Multiset.mem_filter.mp hα).2
-      rw [max_eq_right (hr.trans h1.le), max_eq_right h1.le]
-  have hsplit (t : Γ₀) : ((p.roots.filter fun α ↦ v α ≤ 1).map fun α ↦ max t (v α)).prod *
-      ((p.roots.filter fun α ↦ ¬ v α ≤ 1).map fun α ↦ max t (v α)).prod =
-      (p.roots.map fun α ↦ max t (v α)).prod := by
-    rw [← Multiset.prod_add, ← Multiset.map_add, Multiset.filter_add_not]
-  rw [← hsplit r, ← hsplit 1, hle, one_mul, hgt]
-  ac_rfl
+  rw [gaussValuation_eq_mul_prod_roots v p hp r, gaussValuation_eq_mul_prod_roots v p hp 1,
+    Multiset.prod_map_filter, mul_assoc, ← Multiset.prod_map_mul]
+  congr 1
+  refine congrArg Multiset.prod (Multiset.map_congr rfl fun α _ ↦ ?_)
+  by_cases hα : v α ≤ 1
+  · simp only [hα, ↓reduceIte, max_eq_left hα, one_mul]
+  · have h1 : 1 < v α := lt_of_not_ge hα
+    simp only [hα, ↓reduceIte, mul_one, max_eq_right (hr.trans h1.le), max_eq_right h1.le]
 
 /-- If a split polynomial `p` satisfies `v (x - α) = v x` for every root `α` with `v α = v x`,
 then `v (p.eval x)` equals the Gauss valuation `p.gaussValuation v (v x)`. -/
@@ -111,28 +104,18 @@ theorem valuation_eval_eq_gaussValuation_mul_prod_roots_eq (v : Valuation R Γ�
       ((p.roots.filter fun α ↦ v α = v x).map fun α ↦ v (x - α) / v x).prod := by
   classical
   rw [hp.eval_eq_prod_roots x, map_mul, map_multiset_prod, Multiset.map_map,
-    gaussValuation_eq_mul_prod_roots v p hp (v x)]
-  have hne : ((p.roots.filter fun α ↦ ¬ v α = v x).map fun α ↦ v (x - α)) =
-      (p.roots.filter fun α ↦ ¬ v α = v x).map fun α ↦ max (v x) (v α) :=
-    Multiset.map_congr rfl fun α hα ↦
-      v.map_sub_of_distinct_val (Ne.symm (Multiset.mem_filter.mp hα).2)
-  have heq : ((p.roots.filter fun α ↦ v α = v x).map fun α ↦ v (x - α)).prod =
-      ((p.roots.filter fun α ↦ v α = v x).map fun α ↦ max (v x) (v α)).prod *
-      ((p.roots.filter fun α ↦ v α = v x).map fun α ↦ v (x - α) / v x).prod := by
-    rw [← Multiset.prod_map_mul]
-    congr 1
-    refine Multiset.map_congr rfl fun α hα ↦ ?_
-    have hα' : v α = v x := (Multiset.mem_filter.mp hα).2
-    rcases eq_or_ne (v x) 0 with hx0 | hx0
-    · rw [v.map_sub_of_left_eq_zero hx0, hα', hx0]
-      simp
-    · rw [max_eq_left hα'.le, mul_div_cancel₀ _ hx0]
-  have hsplit (f : R → Γ₀) : ((p.roots.filter fun α ↦ v α = v x).map f).prod *
-      ((p.roots.filter fun α ↦ ¬ v α = v x).map f).prod = (p.roots.map f).prod := by
-    rw [← Multiset.prod_add, ← Multiset.map_add, Multiset.filter_add_not]
+    gaussValuation_eq_mul_prod_roots v p hp (v x), Multiset.prod_map_filter, mul_assoc,
+    ← Multiset.prod_map_mul]
+  congr 1
+  refine congrArg Multiset.prod (Multiset.map_congr rfl fun α _ ↦ ?_)
   simp only [Function.comp_def]
-  rw [← hsplit (fun α ↦ v (x - α)), ← hsplit (fun α ↦ max (v x) (v α)), hne, heq]
-  ac_rfl
+  by_cases hα : v α = v x
+  · simp only [hα, ↓reduceIte]
+    rcases eq_or_ne (v x) 0 with hx0 | hx0
+    · rw [v.map_sub_of_left_eq_zero hx0, hα, hx0]
+      simp
+    · rw [max_self, mul_div_cancel₀ _ hx0]
+  · simp only [hα, ↓reduceIte, mul_one, v.map_sub_of_distinct_val (Ne.symm hα)]
 
 end Group
 

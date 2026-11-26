@@ -5,27 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Div
-public import Mathlib.RingTheory.Valuation.LocalSubring
-public import TauCeti.RingTheory.Valuation.Sum
+public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.RingTheory.Valuation.Basic
 import TauCeti.RingTheory.Polynomial.Gauss.Valuation.Basic
 
 /-!
 # Valuations of polynomial expressions
 
 A valuation takes value at most `1` on every polynomial expression in an element of value at most
-`1`, provided the images of the coefficients also have value at most `1`. Concretely, the ring of
-integers `v.integer` is a subring containing the images of the coefficients, so it contains every
-`aeval t p` with `t` in it; the proof below is the ultrametric bound on the coefficient sum, which
-is what `Valuation` supplies directly.
-
-For the tautological valuation of a valuation subring containing a field of constants, a polynomial
-with nonzero constant term evaluated at an element of value less than `1` has value exactly `1`:
-the constant term strictly dominates all the others. This is the polynomial estimate used in
-Stichtenoth's proof that valuation rings of algebraic function fields are discrete.
+`1`, provided the images of the coefficients also have value at most `1`.
 
 Weighted coefficient bounds for products, powers, evaluation, and compositions of polynomials live
-in `TauCeti/RingTheory/Valuation/Polynomial/Weighted.lean`.
+in `TauCeti/RingTheory/Valuation/Polynomial/Weighted.lean`. The constant-term estimate for
+valuation subrings (`TauCeti.valuation_aeval_eq_one`) lives in
+`TauCeti/RingTheory/Valuation/Polynomial/LocalSubring.lean`.
 
 Over a valued field, a nonzero polynomial can be rescaled so that its coefficients have value at
 most `1`, one coefficient is `1`, and all coefficients of higher degree have value below `1`. This
@@ -36,8 +29,6 @@ algebra over a field.
 
 * `Valuation.aeval_le_one`: `v (Polynomial.aeval t p) ≤ 1` whenever `v t ≤ 1` and the images of
   the coefficients have value at most `1`.
-* `TauCeti.valuation_aeval_eq_one`: a polynomial with nonzero constant term has value `1` when
-  evaluated at an element of the maximal ideal of a valuation subring containing the coefficients.
 * `Valuation.exists_C_mul_coeff_eq_one`: a nonzero polynomial over a valued field has a scalar
   multiple with all coefficients of value at most `1`, a coefficient equal to `1`, and all
   coefficients of higher degree of value below `1`.
@@ -45,13 +36,9 @@ algebra over a field.
 ## Uses
 
 The place-at-infinity argument for isogenies in
-`AlgebraicGeometry/EllipticCurve/Isogeny/InfinityPlace/Basic.lean` needs exactly this to see that
-a pulled-back affine function of a Weierstrass curve — a polynomial in the pulled-back coordinates —
-stays in the valuation ring at infinity. The statement is about a valuation and a polynomial and
-nothing else, so it is stated here rather than there.
-
-`TauCeti.valuation_aeval_eq_one` is the constant-term estimate used in Stichtenoth, Lemma 1.1.7, on
-the path to existence of places.
+`AlgebraicGeometry/EllipticCurve/Isogeny/InfinityPlace/Basic.lean` needs `Valuation.aeval_le_one`
+to see that a pulled-back affine function of a Weierstrass curve — a polynomial in the pulled-back
+coordinates — stays in the valuation ring at infinity.
 -/
 
 public section
@@ -120,36 +107,5 @@ theorem exists_C_mul_coeff_eq_one (v : Valuation K Γ₀) {P : K[X]} (hP : P ≠
 end Field
 
 end Valuation
-
-open Polynomial
-
-namespace TauCeti
-
-universe u v
-
-variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
-  {A : ValuationSubring F}
-
-/-- A polynomial with nonzero constant term, evaluated at a nonunit of a valuation subring
-containing the constants, is a unit: the constant term dominates. -/
-theorem valuation_aeval_eq_one (hk : ∀ c : k, algebraMap k F c ∈ A) {x : F}
-    (hx : A.valuation x < 1) {p : k[X]} (hp : p.coeff 0 ≠ 0) :
-    A.valuation (aeval x p) = 1 := by
-  have hkle : ∀ c : k, A.valuation (algebraMap k F c) ≤ 1 :=
-    fun c ↦ (A.valuation_le_one_iff _).2 (hk c)
-  have : A.valuation.IsTrivialOn k := .of_le_one _ hkle
-  obtain ⟨q, hq⟩ : (X : k[X]) ∣ p - C (p.coeff 0) := X_dvd_iff.2 (by simp)
-  have hsplit : aeval x p = x * aeval x q + algebraMap k F (p.coeff 0) := by
-    have := congrArg (aeval x) hq
-    simp only [map_sub, map_mul, aeval_X, aeval_C] at this
-    linear_combination (norm := ring_nf) this
-  rw [hsplit, Valuation.map_add_eq_of_lt_right, Valuation.IsTrivialOn.eq_one _ hp]
-  rw [Valuation.IsTrivialOn.eq_one (A := k) _ hp, map_mul]
-  calc A.valuation x * A.valuation (aeval x q)
-      ≤ A.valuation x * 1 := by gcongr; exact A.valuation.aeval_le_one hkle hx.le q
-    _ = A.valuation x := mul_one _
-    _ < 1 := hx
-
-end TauCeti
 
 end

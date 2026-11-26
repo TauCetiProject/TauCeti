@@ -95,6 +95,12 @@ theorem monotone_gaussValuation (p : R[X]) : Monotone (p.gaussValuation v) :=
   fun _ _ hr ↦ (gaussValuation_le_iff v _).mpr fun i ↦
     (mul_le_mul_right (pow_le_pow_left' hr i) _).trans (le_gaussValuation v _ p i)
 
+/-- The Gauss valuation is monotone in the coefficient valuation at a fixed radius. -/
+theorem gaussValuation_mono_val {w : Valuation R Γ₀} (hwv : ∀ a, w a ≤ v a) (p : R[X]) :
+    p.gaussValuation w r ≤ p.gaussValuation v r :=
+  (gaussValuation_le_iff w r).mpr fun i ↦
+    (mul_le_mul_left (hwv (p.coeff i)) _).trans (le_gaussValuation v r p i)
+
 /-- At a nonzero radius `r`, `p.gaussValuation v r = 0` iff every coefficient of `p` has
 valuation `0`. -/
 theorem gaussValuation_eq_zero_iff {r : Γ₀} (hr : r ≠ 0) {p : R[X]} :
@@ -108,6 +114,19 @@ theorem exists_eq_gaussValuation {p : R[X]} (hp : p ≠ 0) :
   obtain ⟨i, hi, heq⟩ := Finset.exists_mem_eq_sup p.support (support_nonempty.mpr hp)
     fun i ↦ v (p.coeff i) * r ^ i
   exact ⟨i, hi, heq.symm⟩
+
+/-- The least index attaining the Gauss valuation of a polynomial has strictly smaller
+weighted coefficients at all lower indices. -/
+theorem exists_min_eq_gaussValuation (p : R[X]) :
+    ∃ i₀, v (p.coeff i₀) * r ^ i₀ = p.gaussValuation v r ∧
+      ∀ i < i₀, v (p.coeff i) * r ^ i < p.gaussValuation v r := by
+  classical
+  rcases eq_or_ne p 0 with rfl | hp
+  · exact ⟨0, by simp, fun _ h ↦ (Nat.not_lt_zero _ h).elim⟩
+  have hex : ∃ i, v (p.coeff i) * r ^ i = p.gaussValuation v r :=
+    let ⟨i, _, hi⟩ := exists_eq_gaussValuation v r hp; ⟨i, hi⟩
+  exact ⟨Nat.find hex, Nat.find_spec hex, fun i hi ↦
+    lt_of_le_of_ne (le_gaussValuation v r p i) (Nat.find_min hex hi)⟩
 
 /-- The Gauss valuation of a monomial `monomial n a` at radius `r` is `v a * r ^ n`. -/
 @[simp]
@@ -190,19 +209,6 @@ theorem gaussValuation_comp_C_mul_X (p : R[X]) (a : R) :
     (p.comp (C a * X)).gaussValuation v r = p.gaussValuation v (v a * r) :=
   eq_of_forall_ge_iff fun c ↦ by
     simp only [gaussValuation_le_iff, comp_C_mul_X_coeff, map_mul, map_pow, mul_pow, mul_assoc]
-
-/-- The least index attaining the Gauss valuation of a polynomial has strictly smaller
-weighted coefficients at all lower indices. -/
-private lemma exists_min_eq_gaussValuation (p : R[X]) :
-    ∃ i₀, v (p.coeff i₀) * r ^ i₀ = p.gaussValuation v r ∧
-      ∀ i < i₀, v (p.coeff i) * r ^ i < p.gaussValuation v r := by
-  classical
-  rcases eq_or_ne p 0 with rfl | hp
-  · exact ⟨0, by simp, fun _ h ↦ (Nat.not_lt_zero _ h).elim⟩
-  have hex : ∃ i, v (p.coeff i) * r ^ i = p.gaussValuation v r :=
-    let ⟨i, _, hi⟩ := exists_eq_gaussValuation v r hp; ⟨i, hi⟩
-  exact ⟨Nat.find hex, Nat.find_spec hex, fun i hi ↦
-    lt_of_le_of_ne (le_gaussValuation v r p i) (Nat.find_min hex hi)⟩
 
 /-- **Gauss's lemma for valuations**: the Gauss valuation of a product of polynomials is the
 product of their Gauss valuations. -/
@@ -317,10 +323,9 @@ theorem le_gauss_iff {v : Valuation R Γ₀} {r : Γ₀} {w : Valuation R[X] Γ�
   calc w p = w (p.eval₂ Polynomial.C Polynomial.X) := by rw [Polynomial.eval₂_C_X]
     _ ≤ p.gaussValuation (w.comap Polynomial.C) r :=
       Polynomial.valuation_eval₂_le_gaussValuation Polynomial.C w r p hwX
-    _ ≤ p.gaussValuation v r := (Polynomial.gaussValuation_le_iff (w.comap Polynomial.C) r).mpr
-      fun i ↦ by
-        rw [Valuation.comap_apply]
-        exact (mul_le_mul_left (hwC (p.coeff i)) _).trans (Polynomial.le_gaussValuation v r p i)
+    _ ≤ p.gaussValuation v r :=
+      Polynomial.gaussValuation_mono_val v r
+        (fun a ↦ by simpa [Valuation.comap_apply] using hwC a) p
 
 end Valuation
 
@@ -345,6 +350,7 @@ theorem gaussValuation_pow (p : R[X]) (n : ℕ) :
 most `p.gaussValuation v s`. -/
 theorem gaussValuation_comp_le (p q : R[X]) {s : Γ₀} (hq : q.gaussValuation v r ≤ s) :
     (p.comp q).gaussValuation v r ≤ p.gaussValuation v s := by
+  rw [← Valuation.gauss_apply] at hq
   simpa [Polynomial.comp, Valuation.gauss_comap_C] using
     valuation_eval₂_le_gaussValuation Polynomial.C (v.gauss r) s p hq
 

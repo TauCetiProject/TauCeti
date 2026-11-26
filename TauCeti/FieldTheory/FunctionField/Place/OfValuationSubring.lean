@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Polynomial.CommonXPower
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Adic
 public import TauCeti.RingTheory.Valuation.Polynomial.Basic
+public import TauCeti.RingTheory.Valuation.Polynomial.LocalSubring
 
 /-!
 # Valuation rings of an algebraic function field are the rings of places
