@@ -424,8 +424,7 @@ theorem hamiltonianVectorField_eq_zero_of_not_mdifferentiableAt {x : M}
 invertible, by the convention that `ContinuousLinearMap.inverse` is `0` there. -/
 theorem hamiltonianVectorField_eq_zero_of_not_isInvertible_flat {x : M}
     (hx : ¬(σ.flat x).IsInvertible) (f : M → ℝ) : σ.hamiltonianVectorField f x = 0 := by
-  rw [hamiltonianVectorField_def, ContinuousLinearMap.inverse_of_not_isInvertible hx,
-    zero_apply]
+  rw [hamiltonianVectorField_def, ContinuousLinearMap.inverse_of_not_isInvertible hx, zero_apply]
 
 /-- The Hamiltonian vector field is additive on differentiable functions. -/
 theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
@@ -507,8 +506,7 @@ function `φ` differentiable at `f x` rescales the Hamiltonian vector field at `
 theorem hamiltonianVectorField_comp {φ : ℝ → ℝ} {x : M} (hφ : DifferentiableAt ℝ φ (f x))
     (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
     σ.hamiltonianVectorField (φ ∘ f) x = deriv φ (f x) • σ.hamiltonianVectorField f x := by
-  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_scalar_comp hf hφ,
-    map_smul]
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_scalar_comp hf hφ, map_smul]
 
 /-- **The Hamiltonian vector field of a pulled-back function only depends on the differential
 downstairs.** If `p` is differentiable at `x`, and `g` and `g'` are differentiable at `p x` with
@@ -697,6 +695,14 @@ theorem eval₂_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace
 theorem apply_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I x) :
     σ.val x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v :=
   apply_hamiltonianVectorField_of_isInvertible (h.isInvertible_flat x) f v
+
+/-- **A primitive on a Hamiltonian vector field.** If the one-form `α` is the contraction `ι_z σ`
+at `x` with a tangent vector `z`, then `α(X_K) = σ(z, X_K) = -dK(z)` at `x`. -/
+theorem apply_hamiltonianVectorField_of_interior_eq {α : SmoothForm I M ℝ 1} {x : M}
+    {z : TangentSpace I x} (hzα : ∀ v, σ.val x ![z, v] = α.val x ![v]) (K : M → ℝ) :
+    α.val x ![σ.hamiltonianVectorField K x] = -mvfderiv I K x z := by
+  rw [← hzα, ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
+    h.eval₂_hamiltonianVectorField]
 
 /-- Pairing `a - X_f` with `b` under `σ`: `σ(a - X_f, b) = -σ(b, a) - df(b)`. This is the
 integrand of the first variation of the action functional. -/
@@ -1035,15 +1041,13 @@ theorem poissonBracket_add_right {k : M → ℝ} {x : M}
 
 /-- Negating the first argument negates the Poisson bracket. -/
 @[simp]
-theorem poissonBracket_neg_left (x : M) :
-    σ.poissonBracket (-f) g x = -σ.poissonBracket f g x := by
+theorem poissonBracket_neg_left (x : M) : σ.poissonBracket (-f) g x = -σ.poissonBracket f g x := by
   simp only [poissonBracket_def, hamiltonianVectorField_neg, ← SmoothForm.bilinFormAt_apply,
     map_neg, LinearMap.neg_apply]
 
 /-- Negating the second argument negates the Poisson bracket. -/
 @[simp]
-theorem poissonBracket_neg_right (x : M) :
-    σ.poissonBracket f (-g) x = -σ.poissonBracket f g x := by
+theorem poissonBracket_neg_right (x : M) : σ.poissonBracket f (-g) x = -σ.poissonBracket f g x := by
   simp only [poissonBracket_def, hamiltonianVectorField_neg, ← SmoothForm.bilinFormAt_apply,
     map_neg]
 
@@ -1077,8 +1081,7 @@ theorem poissonBracket_sub_right {k : M → ℝ} {x : M}
 `{fg, k} = f{g, k} + g{f, k}` at every point where `f` and `g` are differentiable. -/
 theorem poissonBracket_mul_left {k : M → ℝ} {x : M}
     (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
-    σ.poissonBracket (f * g) k x =
-      f x * σ.poissonBracket g k x + g x * σ.poissonBracket f k x := by
+    σ.poissonBracket (f * g) k x = f x * σ.poissonBracket g k x + g x * σ.poissonBracket f k x := by
   simp only [poissonBracket_def, hamiltonianVectorField_def, mvfderiv_mul hf hg, map_add, map_smul,
     ← SmoothForm.bilinFormAt_apply, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
 
@@ -1086,8 +1089,7 @@ theorem poissonBracket_mul_left {k : M → ℝ} {x : M}
 `{k, fg} = f{k, g} + g{k, f}` at every point where `f` and `g` are differentiable. -/
 theorem poissonBracket_mul_right {k : M → ℝ} {x : M}
     (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
-    σ.poissonBracket k (f * g) x =
-      f x * σ.poissonBracket k g x + g x * σ.poissonBracket k f x := by
+    σ.poissonBracket k (f * g) x = f x * σ.poissonBracket k g x + g x * σ.poissonBracket k f x := by
   simp only [poissonBracket_def, hamiltonianVectorField_def, mvfderiv_mul hf hg, map_add, map_smul,
     ← SmoothForm.bilinFormAt_apply, smul_eq_mul]
 
@@ -1217,8 +1219,7 @@ theorem IsHamiltonianVectorField.prod (hX : σ.IsHamiltonianVectorField f X)
     (hg p.2).comp p mdifferentiableAt_snd
   rw [eval₂_prod, Manifold.tangentSpaceProdEquiv_prodVectorField, hX, hY,
     Manifold.tangentSpaceProdEquiv_apply, mvfderiv_fun_add hf' hg', add_apply]
-  exact congrArg₂ (· + ·) (mvfderiv_comp_fst_apply f p v).symm
-    (mvfderiv_comp_snd_apply g p v).symm
+  exact congrArg₂ (· + ·) (mvfderiv_comp_fst_apply f p v).symm (mvfderiv_comp_snd_apply g p v).symm
 
 end PullbackProd
 

@@ -119,7 +119,7 @@ theorem zeroModeLp_mem_range_floerSobolevOperator_iff (hH : ContDiff ℝ 2 (Func
       fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
         (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s))))
     (f : Lp V 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))) :
-    zeroModeLp V f ∈ (ω.floerSobolevOperator
+    zeroModeLp V f ∈ (ω.floerSobolevOperator 2
         (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
         (fun z ↦ γ z.1)).range ↔
       f ∈ (WeakDerivStep.trajectoryOperator (p := 2) A).range := by
@@ -142,20 +142,20 @@ private theorem floerSobolevOperator_lineMap {G : ℝ → V → ℝ}
     (hγ : Continuous γ) {a b : ℝ}
     (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (hbγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (G s)) (γ s)‖ ≤ b) (τ : ℝ) :
-    ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+    ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
         (fun z y ↦ (1 - τ) * H z.1 y + τ * G z.1 y) (fun z ↦ γ z.1) =
       AffineMap.lineMap
-        (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun z ↦ H z.1) (fun z ↦ γ z.1))
-        (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun z ↦ G z.1) (fun z ↦ γ z.1)) τ := by
   have hHτ : ContDiff ℝ 2 (Function.uncurry fun s y ↦ (1 - τ) * H s y + τ * G s y) :=
     (contDiff_const.mul hH).add (contDiff_const.mul hG)
   have hHs (s : ℝ) : ContDiff ℝ 2 (H s) := hH.comp (contDiff_const.prodMk contDiff_id)
   have hGs (s : ℝ) : ContDiff ℝ 2 (G s) := hG.comp (contDiff_const.prodMk contDiff_id)
-  set DH := ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+  set DH := ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
     (fun z ↦ H z.1) (fun z ↦ γ z.1)
-  set DG := ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+  set DG := ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
     (fun z ↦ G z.1) (fun z ↦ γ z.1)
   ext x : 1
   rw [AffineMap.lineMap_apply_module, add_apply, smul_apply, smul_apply]
@@ -191,7 +191,7 @@ takes values with vanishing slice average. -/
 private theorem jetOperator_floerJetCoeff_mem_ker_sliceAverageLp (G : ℝ → V → ℝ)
     {x : Lp (V × V × V) 2 stripMeasure}
     (hx : x ∈ H1 V ⊓ (sliceAverageLp : Lp (V × V × V) 2 stripMeasure →L[ℝ] _).ker) :
-    jetOperator stripMeasure (ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+    jetOperator 2 stripMeasure (ω.floerJetCoeff (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun z ↦ G z.1) (fun z ↦ γ z.1)) x ∈
         (sliceAverageLp : Lp V 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure).ker := by
   have h := floerSobolevOperator_sliceAverageL ω J G γ ⟨x, hx.1⟩
@@ -204,10 +204,10 @@ private theorem jetOperator_floerJetCoeff_mem_ker_sliceAverageLp (G : ℝ → V 
 modes: it commutes with the slice average, so the preimage of a section with vanishing slice
 average has vanishing slice average. -/
 private theorem surjective_restrict_jetOperator_floerJetCoeff_of_bijective {G : ℝ → V → ℝ}
-    (hG : Function.Bijective (ω.floerSobolevOperator
+    (hG : Function.Bijective (ω.floerSobolevOperator 2
       (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ G z.1)
         (fun z ↦ γ z.1))) :
-    Function.Surjective ((jetOperator stripMeasure (ω.floerJetCoeff
+    Function.Surjective ((jetOperator 2 stripMeasure (ω.floerJetCoeff
       (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ G z.1)
       (fun z ↦ γ z.1))).restrict
         fun _ hx ↦ jetOperator_floerJetCoeff_mem_ker_sliceAverageLp G hx) := by
@@ -236,12 +236,12 @@ private theorem norm_le_mul_norm_floerSobolevOperator_of_sliceAverageL_eq_zero
     (hγ : Continuous γ) {b : ℝ} (hb : b < 2 * π)
     (hbγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ b) {x : H1 V}
     (hx : sliceAverageL x = 0) :
-    ‖x‖ ≤ ((2 * π) ^ 2 + 1) / (2 * π - b) * ‖ω.floerSobolevOperator
+    ‖x‖ ≤ ((2 * π) ^ 2 + 1) / (2 * π - b) * ‖ω.floerSobolevOperator 2
       (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
       (fun z ↦ γ z.1) x‖ := by
   have hgap := mul_sq_norm_le_mul_sq_norm_floerSobolevOperator_of_sliceAverageL_eq_zero hg hH hγ
     hb.le hbγ hx
-  set d := ‖ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+  set d := ‖ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
     (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1) x‖
   have he : 0 < 2 * π - b := by linarith
   have hK : 1 ≤ (2 * π) ^ 2 + 1 := by nlinarith [sq_nonneg (2 * π)]
@@ -282,11 +282,11 @@ private theorem ker_sliceAverageLp_le_range_floerSobolevOperator_of_bijective
     (hH : ContDiff ℝ 2 (Function.uncurry H))
     (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
     (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
-    (hQ : Function.Bijective (ω.floerSobolevOperator
+    (hQ : Function.Bijective (ω.floerSobolevOperator 2
       (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
       (fun _ ↦ fun y ↦ π / 2 * ‖y‖ ^ 2) (fun z ↦ γ z.1))) :
     (sliceAverageLp : Lp V 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure).ker ≤
-      (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+      (ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
         (fun z ↦ H z.1) (fun z ↦ γ z.1)).range := by
   set Q : V → ℝ := fun y ↦ π / 2 * ‖y‖ ^ 2
   have hQ₂ : ContDiff ℝ 2 Q := contDiff_const.mul (contDiff_norm_sq ℝ)
@@ -300,15 +300,15 @@ private theorem ker_sliceAverageLp_le_range_floerSobolevOperator_of_bijective
   set N₁ := H1 V ⊓
     (sliceAverageLp : Lp (V × V × V) 2 stripMeasure →L[ℝ] Lp (V × V × V) 2 stripMeasure).ker
   set N₂ := (sliceAverageLp : Lp V 2 stripMeasure →L[ℝ] Lp V 2 stripMeasure).ker
-  have hmaps (G : ℝ → V → ℝ) : ∀ x ∈ N₁, jetOperator stripMeasure (ω.floerJetCoeff
+  have hmaps (G : ℝ → V → ℝ) : ∀ x ∈ N₁, jetOperator 2 stripMeasure (ω.floerJetCoeff
       (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ G z.1)
       (fun z ↦ γ z.1)) x ∈ N₂ := fun _ hx ↦ jetOperator_floerJetCoeff_mem_ker_sliceAverageLp G hx
   have : CompleteSpace N₁ := ((isClosed_jetClosure 2 _).inter
     (isClosed_ker (sliceAverageLp : Lp (V × V × V) 2 stripMeasure →L[ℝ] _))).completeSpace_coe
-  set R₀ := (jetOperator stripMeasure (ω.floerJetCoeff
+  set R₀ := (jetOperator 2 stripMeasure (ω.floerJetCoeff
     (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun z ↦ H z.1)
     (fun z ↦ γ z.1))).restrict (hmaps H)
-  set R₁ := (jetOperator stripMeasure (ω.floerJetCoeff
+  set R₁ := (jetOperator 2 stripMeasure (ω.floerJetCoeff
     (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ Q)
     (fun z ↦ γ z.1))).restrict (hmaps fun _ ↦ Q)
   -- The uniform gap estimate on the nonzero modes along the segment.
@@ -316,7 +316,7 @@ private theorem ker_sliceAverageLp_le_range_floerSobolevOperator_of_bijective
       ‖x‖ ≤ ((2 * π) ^ 2 + 1) / (2 * π - b) * ‖AffineMap.lineMap R₀ R₁ τ x‖ := by
     intro τ hτ x
     have hcoe : ((AffineMap.lineMap R₀ R₁ τ x : N₂) : Lp V 2 stripMeasure) =
-        ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun z y ↦ (1 - τ) * H z.1 y + τ * Q y) (fun z ↦ γ z.1) ⟨x, x.property.1⟩ := by
       rw [floerSobolevOperator_lineMap hH hQ₂' hγ haγ hQγ τ]
       simp [AffineMap.lineMap_apply_module, R₀, R₁, floerSobolevOperator_def]
@@ -354,7 +354,7 @@ stationary cylinder operator `∂s + i ∂t - π` over the orbit `0` of `Q`. Its
 `exp (-π i) = -1`, so it is an isomorphism `W^{1,2} ≃ L²`. -/
 private theorem bijective_floerSobolevOperator_quadratic (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (γ : ℝ → F) :
-    Function.Bijective (ω.floerSobolevOperator
+    Function.Bijective (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun _ ↦ fun y ↦ π / 2 * ‖y‖ ^ 2) (fun z ↦ γ z.1)) := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
@@ -400,7 +400,7 @@ theorem ker_sliceAverageLp_le_range_floerSobolevOperator (hω : ∀ v w, ω v w 
     (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ) {a : ℝ} (ha : a < 2 * π)
     (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a) :
     (sliceAverageLp : Lp F 2 stripMeasure →L[ℝ] Lp F 2 stripMeasure).ker ≤
-      (ω.floerSobolevOperator
+      (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).range := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
@@ -416,7 +416,7 @@ private theorem sub_sliceAverageLp_mem_range_floerSobolevOperator
     (hγ : Continuous γ) {a : ℝ}
     (ha : a < 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)‖ ≤ a)
     (g : Lp F 2 stripMeasure) :
-    g - sliceAverageLp g ∈ (ω.floerSobolevOperator
+    g - sliceAverageLp g ∈ (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).range := by
   refine ker_sliceAverageLp_le_range_floerSobolevOperator hω hH hγ ha haγ ?_
@@ -436,7 +436,7 @@ theorem range_floerSobolevOperator_eq_map_sup_ker (hω : ∀ v w, ω v w = (inne
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
         (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).range =
       (WeakDerivStep.trajectoryOperator (p := 2) A).range.map (zeroModeLp F).toLinearMap ⊔
@@ -445,7 +445,7 @@ theorem range_floerSobolevOperator_eq_map_sup_ker (hω : ∀ v w, ω v w = (inne
     hω hH hγ ha haγ))
   · -- The slice average of `g = D x` is `D (P x)`, the zero mode of an element of the range of `M`.
     obtain ⟨f, hf⟩ := sliceAverageLp_mem_range_zeroModeLp g
-    have hPg : zeroModeLp F f ∈ (ω.floerSobolevOperator
+    have hPg : zeroModeLp F f ∈ (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).range := by
       obtain ⟨x, rfl⟩ := hg
@@ -474,7 +474,7 @@ theorem surjective_floerSobolevOperator_iff_surjective_trajectoryOperator
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
         (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))) :
-    Function.Surjective (ω.floerSobolevOperator
+    Function.Surjective (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)) ↔
       Function.Surjective (WeakDerivStep.trajectoryOperator (p := 2) A) := by
@@ -501,10 +501,10 @@ private theorem nonempty_linearEquiv_quotient_range (hω : ∀ v w, ω v w = (in
         (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))) :
     Nonempty ((Lp F 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) ⧸
         (WeakDerivStep.trajectoryOperator (p := 2) A).range) ≃ₗ[ℝ]
-      (Lp F 2 stripMeasure ⧸ (ω.floerSobolevOperator
+      (Lp F 2 stripMeasure ⧸ (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).range)) := by
-  set φ := (ω.floerSobolevOperator
+  set φ := (ω.floerSobolevOperator 2
     (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
     (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).range.mkQ ∘ₗ (zeroModeLp F).toLinearMap
   have hker : LinearMap.ker φ = (WeakDerivStep.trajectoryOperator (p := 2) A).range := by
@@ -537,7 +537,7 @@ theorem finrank_quotient_range_floerSobolevOperator_eq_finrank_quotient_range_tr
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
         (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))) :
-    Module.finrank ℝ (Lp F 2 stripMeasure ⧸ (ω.floerSobolevOperator
+    Module.finrank ℝ (Lp F 2 stripMeasure ⧸ (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).range) =
       Module.finrank ℝ (Lp F 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) ⧸
@@ -558,13 +558,13 @@ theorem isFredholm_floerSobolevOperator_iff_isFredholm_trajectoryOperator
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
         (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).IsFredholm ↔
       (WeakDerivStep.trajectoryOperator (p := 2) A).IsFredholm := by
   obtain ⟨e⟩ := nonempty_linearEquiv_quotient_range hω hH hγ ha haγ hA
   -- The zero mode identifies the kernels.
-  have hker : (ω.floerSobolevOperator
+  have hker : (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).ker =
         (WeakDerivStep.trajectoryOperator (p := 2) A).ker.map (zeroModeL F).toLinearMap := by
@@ -593,7 +593,7 @@ theorem index_floerSobolevOperator_eq_index_trajectoryOperator
     (hA : ⇑A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
         (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).index =
       (WeakDerivStep.trajectoryOperator (p := 2) A).index := by
@@ -622,7 +622,7 @@ theorem index_floerSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     {pminus pplus : F} (hbot : Tendsto γ atBot (𝓝 pminus)) (htop : Tendsto γ atTop (𝓝 pplus))
     (hpminus : Function.Injective (fderiv ℝ (ω.hamiltonianVectorField Hm) pminus))
     (hpplus : Function.Injective (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun z ↦ H z.1) (fun z ↦ γ z.1)).index =
       (Module.finrank ℝ (Module.End.pointSpectralSubspace

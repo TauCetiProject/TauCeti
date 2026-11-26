@@ -166,8 +166,7 @@ variable (ι : G →* H)
 
 /-- The algebraic set `V_H(S) ⊆ H^X` of a system of equations `S ⊆ G[X]`: the points `v : X → H`
 at which every equation of `S` evaluates to `1`. -/
-def V (S : Set (GX G X)) : Set (X → H) :=
-  upperPolar (fun s v => eval ι v s = 1) S
+def V (S : Set (GX G X)) : Set (X → H) := upperPolar (fun s v => eval ι v s = 1) S
 
 /-- The ideal `I_H(Y)` of a set of points `Y ⊆ H^X`: the equations of `G[X]` vanishing at every
 point of `Y`. It is a normal subgroup of `G[X]`. -/
@@ -206,36 +205,31 @@ theorem galoisConnection_V_I :
   gc_upperPolar_lowerPolar _
 
 variable (ι) in
-theorem V_antitone : Antitone (V ι : Set (GX G X) → Set (X → H)) :=
-  upperPolar_anti _
+theorem V_antitone : Antitone (V ι : Set (GX G X) → Set (X → H)) := upperPolar_anti _
 
 variable (ι) in
 theorem I_antitone : Antitone (I ι : Set (X → H) → Subgroup (GX G X)) :=
   fun _ _ h => lowerPolar_anti _ h
 
-theorem subset_V_I (Y : Set (X → H)) : Y ⊆ V ι (I ι Y) :=
-  subset_upperPolar_lowerPolar _ Y
+theorem subset_V_I (Y : Set (X → H)) : Y ⊆ V ι (I ι Y) := subset_upperPolar_lowerPolar _ Y
 
 /-- The algebraic set of the equations vanishing on an algebraic set is that algebraic set. -/
 @[simp]
-theorem V_I_V (S : Set (GX G X)) : V ι (I ι (V ι S)) = V ι S :=
-  upperPolar_lowerPolar_upperPolar _ S
+theorem V_I_V (S : Set (GX G X)) : V ι (I ι (V ι S)) = V ι S := upperPolar_lowerPolar_upperPolar _ S
 
 @[simp]
 theorem I_V_I (Y : Set (X → H)) : I ι (V ι (I ι Y)) = I ι Y :=
   SetLike.coe_injective (lowerPolar_upperPolar_lowerPolar _ Y)
 
 @[simp]
-theorem V_empty : V ι (∅ : Set (GX G X)) = Set.univ :=
-  upperPolar_empty _
+theorem V_empty : V ι (∅ : Set (GX G X)) = Set.univ := upperPolar_empty _
 
 @[simp]
 theorem I_empty : I ι (∅ : Set (X → H)) = ⊤ :=
   SetLike.coe_injective ((lowerPolar_empty _).trans coe_top.symm)
 
 @[simp]
-theorem V_union (S T : Set (GX G X)) : V ι (S ∪ T) = V ι S ∩ V ι T :=
-  upperPolar_union _ S T
+theorem V_union (S T : Set (GX G X)) : V ι (S ∪ T) = V ι S ∩ V ι T := upperPolar_union _ S T
 
 @[simp]
 theorem V_iUnion {κ : Sort*} (S : κ → Set (GX G X)) : V ι (⋃ k, S k) = ⋂ k, V ι (S k) :=
@@ -484,8 +478,7 @@ theorem Rad_def (S : Set (GX G X)) : Rad ι S = I ι (V ι S) := (rfl)
 @[simp]
 theorem mem_Rad : w ∈ Rad ι S ↔ ∀ v ∈ V ι S, eval ι v w = 1 := Iff.rfl
 
-instance (S : Set (GX G X)) : (Rad ι S).Normal :=
-  inferInstanceAs (I ι (V ι S)).Normal
+instance (S : Set (GX G X)) : (Rad ι S).Normal := inferInstanceAs (I ι (V ι S)).Normal
 
 theorem subset_Rad (S : Set (GX G X)) : S ⊆ Rad ι S := subset_I_iff.2 subset_rfl
 
@@ -1077,6 +1070,12 @@ theorem homEquiv_apply_coe (φ : GHom (coeff S) ι) (x : X) :
 
 @[simp]
 theorem homEquiv_symm_apply (v : V ι S) : (homEquiv ι S).symm v = evalGHom v v.property := (rfl)
+
+/-- Evaluation at a solution agrees with the corresponding homomorphism out of `G_S`. -/
+@[simp]
+theorem eval_homEquiv (S : Set (GX G X)) (φ : GHom (coeff S) ι) (w : GX G X) :
+    eval ι (homEquiv ι S φ) w = φ (w : SystemGroup G S) :=
+  GX.eval_quotientHomEquiv φ w
 
 /-- A `G`-homomorphism out of `G_S` is determined by its values on the variables. -/
 @[ext]

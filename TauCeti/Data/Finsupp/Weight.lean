@@ -214,6 +214,12 @@ end Finsupp
 
 namespace Finsupp
 
+/-- A weight on a product of finite types can be summed over each block first. -/
+theorem weight_prod_eq_sum {κ ι R M : Type*} [Fintype κ] [Fintype ι] [Semiring R]
+    [AddCommMonoid M] [Module R M] (n : κ × ι →₀ R) (w : κ × ι → M) :
+    weight w n = ∑ h, ∑ i, n (h, i) • w (h, i) := by
+  rw [weight_eq_sum, Fintype.sum_prod_type]
+
 /-- The indicator weight of block `b` of a finitely supported function on `ι × κ` is the sum of
 its coefficients in block `b`. -/
 theorem weight_ite_fst_eq_sum {ι κ R : Type*} [Fintype κ] [DecidableEq ι] [Semiring R]
