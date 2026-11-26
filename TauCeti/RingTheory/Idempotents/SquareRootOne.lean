@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Hom
 public import Mathlib.Algebra.Group.Action.Basic
 public import Mathlib.Algebra.Ring.Idempotent
+public import Mathlib.Algebra.Star.SelfAdjoint
 
 import Mathlib.Tactic.Abel
 
@@ -49,6 +50,10 @@ consume, but not the passage from a square root of one to the idempotent pair.
   complementary, and its difference recovers `ω`.
 * `TauCeti.halfOneAdd_smul_add_halfOneAdd_neg_smul`: in every module, each vector is the sum of
   its images under the pair.
+* `TauCeti.halfOneAdd_smul_eq_self_iff`, `TauCeti.halfOneAdd_smul_eq_zero_iff`: for any `ω`, the
+  fixed vectors of `½ (1 + ω)` are the `1`-eigenvectors of `ω` and its kernel is the
+  `-1`-eigenspace.
+* `TauCeti.isSelfAdjoint_halfOneAdd`: `½ (1 + ω)` is self-adjoint along with `ω`.
 * `TauCeti.halfOneAdd_mul_halfOneAdd_neg`, `TauCeti.isIdempotentElem_halfOneAdd`: for a square root
   of one the pair is orthogonal and idempotent.
 * `TauCeti.mul_halfOneAdd`, `TauCeti.mul_halfOneAdd_neg`: `ω` acts on the two idempotents by
@@ -107,7 +112,39 @@ theorem halfOneAdd_smul_add_halfOneAdd_neg_smul {M : Type*} [AddCommGroup M] [Mo
     (m : M) : halfOneAdd R ω • m + halfOneAdd R (-ω) • m = m := by
   rw [← add_smul, halfOneAdd_add_halfOneAdd_neg, one_smul]
 
+/-- Doubling `½ (1 + ω)` gives back `1 + ω`. -/
+theorem two_mul_halfOneAdd (ω : A) : (2 : A) * halfOneAdd R ω = 1 + ω := by
+  rw [halfOneAdd_def, mul_smul_comm, two_mul, ← two_smul R, smul_smul, invOf_mul_self, one_smul]
+
 variable {ω : A}
+
+include R in
+/-- `2` is a unit of every algebra over a ring in which `2` is invertible. -/
+private theorem isUnit_two : IsUnit (2 : A) := by
+  simpa only [map_ofNat] using (isUnit_of_invertible (2 : R)).map (algebraMap R A)
+
+/-- **The fixed vectors of `½ (1 + ω)` are the `1`-eigenvectors of `ω`**: in any `A`-module,
+`½ (1 + ω) m = m` exactly when `ω m = m`. No property of `ω` is needed. -/
+theorem halfOneAdd_smul_eq_self_iff {M : Type*} [AddCommGroup M] [Module A M] {m : M} :
+    halfOneAdd R ω • m = m ↔ ω • m = m := by
+  rw [← (isUnit_two R (A := A)).smul_left_cancel, ← mul_smul, two_mul_halfOneAdd, add_smul,
+    one_smul, two_smul, add_right_inj]
+
+/-- **The kernel of `½ (1 + ω)` is the `-1`-eigenspace of `ω`**: in any `A`-module,
+`½ (1 + ω) m = 0` exactly when `ω m = -m`. No property of `ω` is needed. -/
+theorem halfOneAdd_smul_eq_zero_iff {M : Type*} [AddCommGroup M] [Module A M] {m : M} :
+    halfOneAdd R ω • m = 0 ↔ ω • m = -m := by
+  rw [← (isUnit_two R (A := A)).smul_left_cancel, smul_zero, ← mul_smul, two_mul_halfOneAdd,
+    add_smul, one_smul, add_eq_zero_iff_eq_neg']
+
+/-- **`½ (1 + ω)` is self-adjoint along with `ω`**, in a star algebra over a star ring. -/
+theorem isSelfAdjoint_halfOneAdd [StarRing R] [StarRing A] [StarModule R A]
+    (h : IsSelfAdjoint ω) : IsSelfAdjoint (halfOneAdd R ω) := by
+  have h2 : IsSelfAdjoint (⅟2 : R) := by
+    rw [isSelfAdjoint_iff, star_invOf]
+    exact invOf_eq_right_inv (by rw [star_ofNat, mul_invOf_self])
+  rw [halfOneAdd_def]
+  exact h2.smul ((IsSelfAdjoint.one A).add h)
 
 /-- **The pair is orthogonal** when `ω` squares to `1`: `½ (1 + ω) · ½ (1 - ω) = 0`. -/
 theorem halfOneAdd_mul_halfOneAdd_neg (hsq : ω * ω = 1) :

@@ -173,11 +173,8 @@ variable {ω} in
 `C(iω) ψ = 2 ψ`. -/
 theorem cliffordProjection_apply_eq_self_iff {ψ : positiveHalfSpinors o ρ} :
     cliffordProjection o ρ ω ψ = ψ ↔ cliffordRestriction o ρ ω ψ = (2 : ℂ) • ψ := by
-  rw [cliffordRestriction_eq_cliffordProjection, sub_apply, smul_apply, smul_apply,
-    one_apply_eq_self]
-  constructor <;> intro h
-  · linear_combination (norm := module) (4 : ℂ) • h
-  · linear_combination (norm := module) (4⁻¹ : ℂ) • h
+  rw [cliffordProjection_def, ← ContinuousLinearMap.smul_def, halfOneAdd_smul_eq_self_iff,
+    ContinuousLinearMap.smul_def, smul_apply, inv_smul_eq_iff₀ two_ne_zero]
 
 variable {o ρ ω} in
 /-- **The `P_β`-component of a solution of the differentiated eigenvalue equation**: if
@@ -223,11 +220,8 @@ variable {ω} in
 `C(iω) ψ = -2 ψ`. -/
 theorem cliffordProjection_apply_eq_zero_iff {ψ : positiveHalfSpinors o ρ} :
     cliffordProjection o ρ ω ψ = 0 ↔ cliffordRestriction o ρ ω ψ = (-2 : ℂ) • ψ := by
-  rw [cliffordRestriction_eq_cliffordProjection, sub_apply, smul_apply, smul_apply,
-    one_apply_eq_self]
-  constructor <;> intro h
-  · linear_combination (norm := module) (4 : ℂ) • h
-  · linear_combination (norm := module) (4⁻¹ : ℂ) • h
+  rw [cliffordProjection_def, ← ContinuousLinearMap.smul_def, halfOneAdd_smul_eq_zero_iff,
+    ContinuousLinearMap.smul_def, smul_apply, inv_smul_eq_iff₀ two_ne_zero, smul_neg, neg_smul]
 
 variable {ω} in
 /-- On the kernel of `P_α`, the Clifford action of `ω` is multiplication by `2i`: it consists of
@@ -261,12 +255,10 @@ variable {ρ} in
 theorem isSelfAdjoint_cliffordProjection
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) :
     IsSelfAdjoint (cliffordProjection o ρ ω) := by
-  rw [ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric]
-  intro ψ φ
-  have h := (isSelfAdjoint_cliffordRestriction o hρ ω).isSymmetric ψ φ
-  simp only [ContinuousLinearMap.coe_coe] at h
-  simp [cliffordProjection_eq_smul, inner_add_left, inner_add_right, inner_smul_left,
-    inner_smul_right, h, map_ofNat]
+  have h2 : IsSelfAdjoint (2⁻¹ : ℂ) := by
+    rw [isSelfAdjoint_iff, star_inv₀, Complex.star_def, map_ofNat]
+  exact isSelfAdjoint_halfOneAdd ℂ (A := positiveHalfSpinors o ρ →L[ℂ] positiveHalfSpinors o ρ)
+    (h2.smul (isSelfAdjoint_cliffordRestriction o hρ ω))
 
 variable {ω} in
 /-- On `φ + β` with `P_α φ = φ` and `P_α β = 0`, the Clifford action of `ω` is

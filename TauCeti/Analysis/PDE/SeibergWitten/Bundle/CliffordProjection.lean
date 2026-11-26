@@ -40,7 +40,11 @@ model is self-dual and the positive half-spinors have complex rank two:
 * `P_α ψ = ⟪u₀, ψ⟫ u₀` and `P_β ψ = ψ - ⟪u₀, ψ⟫ u₀`
   (`TauCeti.OrthonormalFrameBundle.cliffordProjection_kahlerForm_apply`,
   `TauCeti.OrthonormalFrameBundle.cliffordProjection_neg_kahlerForm_apply`), so `P_α` and `P_β`
-  are the eigenprojections onto the line `ℂ u₀` and its orthogonal complement, and
+  are the orthogonal projections onto the line `ℂ u₀` and its orthogonal complement
+  (`TauCeti.OrthonormalFrameBundle.cliffordProjection_kahlerForm`,
+  `TauCeti.OrthonormalFrameBundle.cliffordProjection_neg_kahlerForm`,
+  `TauCeti.OrthonormalFrameBundle.isStarProjection_cliffordProjection_kahlerForm`,
+  `TauCeti.OrthonormalFrameBundle.isStarProjection_cliffordProjection_neg_kahlerForm`), and
   `C_x(ω) ψ = 4 ⟪u₀, ψ⟫ u₀ - 2 ψ`
   (`TauCeti.OrthonormalFrameBundle.cliffordRestriction_kahlerForm_apply`);
 * the `2`-eigenspace of `C_x(ω)` is the line `ℂ u₀` and its `-2`-eigenspace is `u₀⊥`
@@ -56,8 +60,9 @@ model is self-dual and the positive half-spinors have complex rank two:
 * **the projected curvature term**: for `Ψ = √r ψ`, the orthogonal projection of
   `q_x(Ψ) - (r / 4) ω` onto `ℝ ω` is `(r / 4) (|α|² - ‖β‖² - 1) ω`
   (`TauCeti.OrthonormalFrameBundle.starProjection_quadraticTwoForm_sqrt_smul_sub_smul`).
-  Under the perturbed curvature equation `F_A⁺ = q(Ψ) + F_{A₀}⁺ - i r ω / 4 + η` this is
-  Taubes's `π_ω (F_A - F_{A₀} - η) = (r / 4) (|α|² - |β|² - 1)`.
+  The left side indexes `F_A⁺ - F_{A₀}⁺ - η` under the perturbed curvature equation
+  `F_A⁺ = q(Ψ) + F_{A₀}⁺ - i r ω / 4 + η`, so this is the pointwise identity behind Taubes's
+  `π_ω (F_A - F_{A₀} - η) = (r / 4) (|α|² - |β|² - 1)` once the curvature equation holds.
 
 These are the bundle-level statements of the pointwise algebra of
 `TauCeti.Analysis.PDE.SeibergWitten.SelfDualSplitting`. The canonical connection `A₀` and the
@@ -183,33 +188,25 @@ theorem cliffordProjection_apply_eq_self_iff (s : SpinCStructure F E 4) {x : X}
     {ω : ⋀[ℝ]^2 (E x)} {ψ : s.halfSpinorBundle o hQ b ρ hρ 1 x} :
     s.cliffordProjection o hQ b ρ hρ x ω ψ = ψ ↔
       s.cliffordRestriction o hQ b ρ hρ x ω ψ = (2 : ℂ) • ψ := by
-  rw [cliffordRestriction_eq_cliffordProjection, sub_apply,
-    smul_apply, smul_apply, one_apply_eq_self]
-  constructor <;> intro h
-  · rw [h]
-    module
-  · linear_combination (norm := module) (4⁻¹ : ℂ) • h
+  rw [cliffordProjection, ← ContinuousLinearMap.smul_def, halfOneAdd_smul_eq_self_iff,
+    ContinuousLinearMap.smul_def, smul_apply, inv_smul_eq_iff₀ two_ne_zero]
 
 /-- The kernel of `P_x(ω)` is the `-2`-eigenspace of `C_x(ω)`. -/
 theorem cliffordProjection_apply_eq_zero_iff (s : SpinCStructure F E 4) {x : X}
     {ω : ⋀[ℝ]^2 (E x)} {ψ : s.halfSpinorBundle o hQ b ρ hρ 1 x} :
     s.cliffordProjection o hQ b ρ hρ x ω ψ = 0 ↔
       s.cliffordRestriction o hQ b ρ hρ x ω ψ = (-2 : ℂ) • ψ := by
-  rw [cliffordRestriction_eq_cliffordProjection, sub_apply,
-    smul_apply, smul_apply, one_apply_eq_self]
-  constructor <;> intro h
-  · rw [h]
-    module
-  · linear_combination (norm := module) (4⁻¹ : ℂ) • h
+  rw [cliffordProjection, ← ContinuousLinearMap.smul_def, halfOneAdd_smul_eq_zero_iff,
+    ContinuousLinearMap.smul_def, smul_apply, inv_smul_eq_iff₀ two_ne_zero, smul_neg, neg_smul]
 
 /-- **`P_x(ω)` is self-adjoint**, for the Hermitian metric of the half-spinor bundle. -/
 theorem isSelfAdjoint_cliffordProjection (s : SpinCStructure F E 4) {x : X}
     (ω : ⋀[ℝ]^2 (E x)) : IsSelfAdjoint (s.cliffordProjection o hQ b ρ hρ x ω) := by
-  rw [cliffordProjection_eq_smul]
-  have hC := isSelfAdjoint_cliffordRestriction (o := o) (hQ := hQ) (b := b) (hρ := hρ) s ω
   have h2 : IsSelfAdjoint (2⁻¹ : ℂ) := by
     rw [isSelfAdjoint_iff, star_inv₀, Complex.star_def, map_ofNat]
-  exact h2.smul ((IsSelfAdjoint.one _).add (h2.smul hC))
+  exact isSelfAdjoint_halfOneAdd ℂ
+    (A := s.halfSpinorBundle o hQ b ρ hρ 1 x →L[ℂ] s.halfSpinorBundle o hQ b ρ hρ 1 x)
+    (h2.smul (isSelfAdjoint_cliffordRestriction (o := o) (hQ := hQ) (b := b) (hρ := hρ) s ω))
 
 /-- **The `ω`-component of `q_x`**: `⟪q_x(ψ), ω⟫ = (‖P_x(ω) ψ‖² - ‖P_x(-ω) ψ‖²) / 2` for every
 two-form `ω` of the fibre. -/
@@ -282,13 +279,6 @@ local notation "𝔰" => canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂
 /-- The canonical spinor at `x`, abbreviated in this file. -/
 local notation "u₀" => canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x
 
-omit [FiniteDimensional ℝ (E x)] in
-include hu₁ in
-/-- The canonical spinor of a unit model spinor is a unit vector: `⟪u₀, u₀⟫ = 1`. -/
-private theorem inner_canonicalSpinor_self : ⟪u₀, u₀⟫_ℂ = 1 := by
-  rw [inner_self_eq_norm_sq_to_K, norm_canonicalSpinor, hu₁]
-  simp
-
 include hJV hu hu₁ hω hrank hJx in
 /-- **`P_α` is the projection onto the line of the canonical spinor**: on the positive
 half-spinors of the canonical `Spinᶜ` structure, `P_α ψ = ⟪u₀, ψ⟫ u₀` for the Kähler two-vector
@@ -313,6 +303,38 @@ theorem cliffordProjection_neg_kahlerForm_apply (ψ : (𝔰).halfSpinorBundle o 
     (𝔰).cliffordProjection o hQ b ρ hρ x (-Jx.kahlerForm) ψ = ψ - ⟪u₀, ψ⟫_ℂ • u₀ := by
   rw [SpinCStructure.cliffordProjection_neg_apply,
     cliffordProjection_kahlerForm_apply hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hu₁ hω hrank hJx]
+
+include hJV hu hu₁ hω hrank hJx in
+/-- **`P_α` is the orthogonal projection onto the line `ℂ u₀`** of the canonical spinor. -/
+theorem cliffordProjection_kahlerForm :
+    (𝔰).cliffordProjection o hQ b ρ hρ x Jx.kahlerForm = (ℂ ∙ u₀).starProjection := by
+  ext ψ
+  rw [cliffordProjection_kahlerForm_apply hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hu₁ hω hrank hJx,
+    Submodule.starProjection_singleton, norm_canonicalSpinor, hu₁]
+  simp
+
+include hJV hu hu₁ hω hrank hJx in
+/-- **`P_β` is the orthogonal projection onto the orthogonal complement `u₀⊥`** of the canonical
+spinor. -/
+theorem cliffordProjection_neg_kahlerForm :
+    (𝔰).cliffordProjection o hQ b ρ hρ x (-Jx.kahlerForm) = (ℂ ∙ u₀)ᗮ.starProjection := by
+  ext ψ
+  rw [Submodule.starProjection_orthogonal_val, SpinCStructure.cliffordProjection_neg_apply,
+    cliffordProjection_kahlerForm hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hu₁ hω hrank hJx]
+
+include hJV hu hu₁ hω hrank hJx in
+/-- `P_α` is a star projection: idempotent and self-adjoint. -/
+theorem isStarProjection_cliffordProjection_kahlerForm :
+    IsStarProjection ((𝔰).cliffordProjection o hQ b ρ hρ x Jx.kahlerForm) := by
+  rw [cliffordProjection_kahlerForm hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hu₁ hω hrank hJx]
+  exact isStarProjection_starProjection
+
+include hJV hu hu₁ hω hrank hJx in
+/-- `P_β` is a star projection: idempotent and self-adjoint. -/
+theorem isStarProjection_cliffordProjection_neg_kahlerForm :
+    IsStarProjection ((𝔰).cliffordProjection o hQ b ρ hρ x (-Jx.kahlerForm)) := by
+  rw [cliffordProjection_neg_kahlerForm hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hu₁ hω hrank hJx]
+  exact isStarProjection_starProjection
 
 include hJV hu hu₁ hω hrank hJx in
 /-- **The Clifford action of the Kähler form on the canonical splitting**:
@@ -349,7 +371,8 @@ theorem cliffordRestriction_kahlerForm_apply_eq_two_smul_iff
     cliffordProjection_kahlerForm_apply hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hu₁ hω hrank hJx]
   refine ⟨fun h ↦ ⟨_, h⟩, ?_⟩
   rintro ⟨c, rfl⟩
-  rw [inner_smul_right, inner_canonicalSpinor_self hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hu₁, mul_one]
+  rw [inner_smul_right, inner_self_eq_one_of_norm_eq_one
+    ((norm_canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ x).trans hu₁), mul_one]
 
 include hJV hu hu₁ hω hrank hJx in
 /-- **The components of the canonical splitting, `α`**: if `ψ = a u₀ + β` with `⟪u₀, β⟫ = 0`, then
@@ -358,8 +381,8 @@ theorem cliffordProjection_kahlerForm_smul_add (a : ℂ)
     {β : (𝔰).halfSpinorBundle o hQ b ρ hρ 1 x} (hβ : ⟪u₀, β⟫_ℂ = 0) :
     (𝔰).cliffordProjection o hQ b ρ hρ x Jx.kahlerForm (a • u₀ + β) = a • u₀ := by
   rw [cliffordProjection_kahlerForm_apply hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hu₁ hω hrank hJx,
-    inner_add_right, inner_smul_right,
-    inner_canonicalSpinor_self hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hu₁, hβ, mul_one]
+    inner_add_right, inner_smul_right, inner_self_eq_one_of_norm_eq_one
+      ((norm_canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ x).trans hu₁), hβ, mul_one]
   exact congrArg (· • _) (add_zero a)
 
 include hJV hu hu₁ hω hrank hJx in
@@ -378,8 +401,8 @@ theorem inner_canonicalSpinor_cliffordProjection_neg_kahlerForm_apply
     (ψ : (𝔰).halfSpinorBundle o hQ b ρ hρ 1 x) :
     ⟪u₀, (𝔰).cliffordProjection o hQ b ρ hρ x (-Jx.kahlerForm) ψ⟫_ℂ = 0 := by
   rw [cliffordProjection_neg_kahlerForm_apply hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hu₁ hω
-    hrank hJx, inner_sub_right, inner_smul_right,
-    inner_canonicalSpinor_self hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hu₁, mul_one, sub_self]
+    hrank hJx, inner_sub_right, inner_smul_right, inner_self_eq_one_of_norm_eq_one
+      ((norm_canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ x).trans hu₁), mul_one, sub_self]
 
 include hJV hu hu₁ hω hrank hJx in
 /-- **Pythagoras for the canonical splitting** `ψ = α u₀ + β`: `‖ψ‖² = |α|² + ‖β‖²` with
@@ -411,9 +434,10 @@ theorem inner_quadraticTwoForm_kahlerForm (ψ : (𝔰).halfSpinorBundle o hQ b �
 include hJV hu hu₁ hω hrank hJx in
 /-- **The projected curvature term of Taubes's equations**: for `Ψ = √r ψ`, the orthogonal
 projection of `q_x(Ψ) - (r / 4) ω` onto the line `ℝ ω` is `(r / 4) (|α|² - ‖β‖² - 1) ω`, with
-`α = ⟪u₀, ψ⟫` and `β = P_β ψ`. Under the perturbed curvature equation
-`F_A⁺ = q(Ψ) + F_{A₀}⁺ - i r ω / 4 + η` the left side is `π_ω (F_A - F_{A₀} - η)`, so this is
-Taubes's `π_ω (F_A - F_{A₀} - η) = (r / 4) (|α|² - |β|² - 1) ω`. -/
+`α = ⟪u₀, ψ⟫` and `β = P_β ψ`. The left side indexes `F_A⁺ - F_{A₀}⁺ - η` under the perturbed
+curvature equation `F_A⁺ = q(Ψ) + F_{A₀}⁺ - i r ω / 4 + η`, so this is the pointwise identity
+behind Taubes's `π_ω (F_A - F_{A₀} - η) = (r / 4) (|α|² - |β|² - 1)` once the curvature equation
+holds; that equation is not treated here. -/
 theorem starProjection_quadraticTwoForm_sqrt_smul_sub_smul {r : ℝ} (hr : 0 ≤ r)
     (ψ : (𝔰).halfSpinorBundle o hQ b ρ hρ 1 x) :
     (ℝ ∙ Jx.kahlerForm).starProjection
