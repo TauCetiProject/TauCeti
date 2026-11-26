@@ -34,7 +34,8 @@ The proof identifies `L(p, r)` with the compactified space of index-two trajecto
 `TauCeti.Geometry.Manifold.Morse.Boundary.Compactification`, which records a trajectory by its
 points on two levels only. A boundary point of `L(p, r)` breaks once, at a critical point `q` with
 `ind p = ind q + 1 = ind r + 2`
-(`IsAdaptedPseudoGradient.IsMorseSmale.exists_of_mem_morseBrokenTrajectoryRecords_of_notMem`).
+(`exists_mem_criticalPoints_of_mem_morseBrokenTrajectoryRecords_of_notMem`, in the namespace
+`IsAdaptedPseudoGradient.IsMorseSmale`).
 Choose levels `c j₁` and `c j₂` of the family separating every critical value strictly between
 `f r` and `f p` from `f r` and `f p`. Then a record is determined by its points on these two
 levels: an unbroken one by its point on one level, and a broken one by its points on its two
@@ -53,8 +54,9 @@ trajectories broken several times; this is not treated here.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 
-* `exists_of_mem_morseBrokenTrajectoryRecords_of_notMem`: in index difference two, a broken
-  trajectory that is not unbroken breaks once, at a critical point of the intermediate index.
+* `exists_mem_criticalPoints_of_mem_morseBrokenTrajectoryRecords_of_notMem`: in index
+  difference two, a broken trajectory that is not unbroken breaks once, at a critical point of
+  the intermediate index.
 * `exists_homeomorph_closure_morseTrajectoryPairs`: in index difference two, reading two separating
   levels is a homeomorphism from the trajectory space onto the compactified space of trajectory
   pairs, carrying the boundary onto the broken pairs.
@@ -96,8 +98,8 @@ is not the record of an unbroken one runs through a single intermediate critical
 `ind p = ind q + 1 = ind r + 2` and `f r < f q < f p`: its points on the levels between `f q` and
 `f p` lie on a trajectory from `p` to `q`, and those on the levels between `f r` and `f q` on a
 trajectory from `q` to `r`. -/
-theorem exists_of_mem_morseBrokenTrajectoryRecords_of_notMem (h : hX.IsMorseSmale)
-    (hf : IsMorse 𝓘(ℝ, E) f) {p r : M} {c : ι → ℝ} {w : ι → M}
+theorem exists_mem_criticalPoints_of_mem_morseBrokenTrajectoryRecords_of_notMem
+    (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p r : M} {c : ι → ℝ} {w : ι → M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2)
     (hw : w ∈ hX.morseBrokenTrajectoryRecords p r c)
     (hw' : w ∉ hX.morseTrajectoryRecords p r c) :
@@ -205,7 +207,7 @@ private theorem injective_readings (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ,
     exact Subtype.ext (funext fun i ↦
       hX.apply_eq_apply_of_apply_eq_of_mem hwL hwL' e₁ hw₁ i.property)
   obtain ⟨q, hq, -, -, hqv, h₁, h₂⟩ :=
-    h.exists_of_mem_morseBrokenTrajectoryRecords_of_notMem hf hind hwL hw
+    h.exists_mem_criticalPoints_of_mem_morseBrokenTrajectoryRecords_of_notMem hf hind hwL hw
   have hq' := hgap q hq hqv
   exact Subtype.ext (hX.eq_of_apply_eq_of_apply_eq (c := (c ⁻¹' Ioo (f r) (f p)).domRestrict c)
     (fun i ↦ hc i ⟨q, hq⟩) hwL hwL' e₁ e₂ (h₁ j₁ ⟨hq'.2, j₁.property.2⟩)
@@ -286,7 +288,8 @@ theorem exists_homeomorph_closure_morseTrajectoryPairs [Countable ι] (h : hX.Is
         (isCompact_range (hπc.comp continuous_subtypeVal)).isClosed
     obtain ⟨w, hw⟩ := hrange hy
     exact ⟨w, Subtype.ext hw⟩
-  refine ⟨hΨ₀.isEmbedding.toHomeomorphOfSurjective hsurj, fun w ↦ rfl, fun w ↦ ?_⟩
+  refine ⟨hΨ₀.isEmbedding.toHomeomorphOfSurjective hsurj,
+    fun w ↦ congrArg Subtype.val (IsEmbedding.toHomeomorphOfSurjective_apply _ _ w), fun w ↦ ?_⟩
   rw [IsEmbedding.toHomeomorphOfSurjective_apply]
   have hiff := readings_mem_morseTrajectoryPairs_iff (j₁ := j₁) (j₂ := j₂) w
   exact ⟨fun hw hP ↦ hiff.1 hP hw, fun hP ↦ not_not.1 fun hw ↦ hP (hiff.2 hw)⟩
@@ -330,7 +333,8 @@ theorem isCollared_morseBrokenTrajectorySpaceBoundary [Countable ι] (h : hX.IsM
   convert (hcol.comp_homeomorph (Ψ.subtype hΨB)).isOpenEmbedding_comp Ψ.symm.isOpenEmbedding
     using 1
   funext w
-  simp
+  simp only [mem_ofPred_eq, comp_apply, Homeomorph.subtype_apply_coe,
+    Homeomorph.symm_apply_apply]
 
 end IsMorseSmale
 

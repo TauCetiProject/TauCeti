@@ -182,6 +182,7 @@ theorem isCollared_closure_diff_morseTrajectoryPairs {p r : M}
         exact ⟨x.property, hx⟩))
     fun x hx ↦ h.exists_nhds_homeomorph_of_mem_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap
       x.property (not_not.1 hx)
+  -- Install the charted structure `C`, so that the boundary `(𝓡∂ 1).boundary` below elaborates.
   let _ := C
   have hcol : IsCollared ((↑) : (𝓡∂ 1).boundary (closure (hX.morseTrajectoryPairs p r c₁ c₂)) →
       closure (hX.morseTrajectoryPairs p r c₁ c₂)) :=

@@ -413,8 +413,7 @@ theorem mem_morseTrajectoryRecords_of_apply_mem {p r : M} {c : ι → ℝ} {w : 
   hX.mem_morseTrajectoryRecords.2 ⟨w i₀, hi₀, fun i ↦
     ⟨hX.value_apply_eq_of_mem_morseBrokenTrajectoryRecords hw i,
       hX.exists_flow_eq_of_apply_mem_unstableSet_inter_stableSet hw hi₀
-        (hX.value_apply_eq_of_mem_morseBrokenTrajectoryRecords hw i ▸
-          hX.value_apply_mem_Ioo_of_mem_morseBrokenTrajectoryRecords hw i)⟩⟩
+        (hX.level_mem_Ioo_of_mem_morseBrokenTrajectoryRecords hw i)⟩⟩
 
 /-- **A once-broken record is determined by its points on two levels.** Let the levels avoid
 `f q`. A record `w` of a broken trajectory from `p` to `r`, whose point on the level `c i₁` lies on
@@ -427,8 +426,7 @@ theorem eq_of_apply_eq_of_apply_eq {p q r p' r' : M} {c : ι → ℝ} (hcq : ∀
     (h₂ : w i₂ = w' i₂) (hw₁ : w i₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
     (hw₂ : w i₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) : w = w' := by
   funext i
-  have hc := hX.value_apply_eq_of_mem_morseBrokenTrajectoryRecords hw i ▸
-    hX.value_apply_mem_Ioo_of_mem_morseBrokenTrajectoryRecords hw i
+  have hc := hX.level_mem_Ioo_of_mem_morseBrokenTrajectoryRecords hw i
   rcases (hcq i).lt_or_gt with hi | hi
   · exact hX.apply_eq_apply_of_apply_eq_of_mem hw hw' h₂ hw₂ ⟨hc.1, hi⟩
   · exact hX.apply_eq_apply_of_apply_eq_of_mem hw hw' h₁ hw₁ ⟨hi, hc.2⟩
