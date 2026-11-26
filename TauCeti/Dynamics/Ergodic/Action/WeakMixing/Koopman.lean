@@ -9,6 +9,7 @@ public import TauCeti.Dynamics.Ergodic.Action.Eigenfunction
 public import TauCeti.Dynamics.Ergodic.Action.WeakMixing.Basic
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
 import TauCeti.Analysis.SpecificLimits.Cesaro.Integral
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Weak mixing in `L²` and eigenfunctions
@@ -260,12 +261,8 @@ theorem IsWeaklyMixing.exists_ae_eq_const_of_eigenfunction (h : IsWeaklyMixing �
     norm_cast
     exact abs_of_nonneg (by positivity)
   have hlim := h.tendsto_average_norm_inner_koopmanGroup F F
-  simp_rw [hcorr, intervalIntegral.integral_const, sub_zero, smul_eq_mul] at hlim
-  have hconst : Tendsto (fun T : ℝ => T⁻¹ * (T * ‖F‖ ^ 2)) atTop (𝓝 (‖F‖ ^ 2)) :=
-    tendsto_const_nhds.congr' (eventually_gt_atTop 0 |>.mono fun T hT => by field_simp)
-  have hF0 : F = 0 := by
-    have := tendsto_nhds_unique hconst hlim
-    simpa using this
+  simp_rw [hcorr] at hlim
+  have hF0 : F = 0 := by simpa using TauCeti.intervalIntegral.eq_zero_of_tendsto_average_const hlim
   filter_upwards [hF.coeFn_toLp, (Lp.ext_iff.1 hF0).trans (Lp.coeFn_zero ℂ 2 μ)] with x h₁ h₂
   rw [← h₁, h₂, Pi.zero_apply, Function.const_apply]
 
