@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.ConcreteCategory.Basic
+public import TauCeti.Geometry.Manifold.Orientation.Cover.Character
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Orientation
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Codisc
 public import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
@@ -61,6 +62,14 @@ isomorphisms of the vector bundle `T*M`:
   `TauCeti.VectorBundleOrientationCover`).
   The twist cannot be dropped in general: for the real projective plane `H₂(ℝP²; o ⊗ ℤ) ≅ ℤ`,
   while `H₂(ℝP²; ℤ) = 0`.
+* with integral coefficients, for a manifold without boundary of positive dimension `n + 1`,
+  `Hₚ₊ₙ₊₁(D*M, S*M; ℤ) ≅ Hₚ(M; o_M)` with coefficients in the orientation local system of `M`
+  itself, the local homology system `x ↦ Hₙ₊₁(M, M ∖ {x}; ℤ)`
+  (`nonempty_singularHomology_codiscPair_iso_twistedHomology_localHomologySystem`, in the
+  namespace `TauCeti.CotangentBundle`).
+  The Riesz isomorphisms identify `o(T*M)` with the orientation local system `o(TM)` of the tangent
+  bundle (`TauCeti.CotangentBundle.signLocalSystemIso`), and `o(TM)` is the local homology system
+  (`TauCeti.Manifold.OrientationCover.signLocalSystemIsoLocalHomologySystem`).
 
 ## Main definitions
 
@@ -79,6 +88,9 @@ isomorphisms of the vector bundle `T*M`:
   `nonempty_singularHomology_codiscPair_iso_twistedHomology`, in `TauCeti.CotangentBundle`: the Thom
   isomorphism of the codisc bundle in characteristic two, for oriented manifolds, and with
   orientation-twisted coefficients over any manifold.
+* `nonempty_singularHomology_codiscPair_iso_twistedHomology_localHomologySystem`, in
+  `TauCeti.CotangentBundle`: the integral Thom isomorphism of the codisc bundle with coefficients in
+  the homological orientation system of `M`.
 
 ## References
 
@@ -281,6 +293,40 @@ theorem nonempty_singularHomology_codiscPair_iso_twistedHomology
   exact ⟨asIso (TopPair.singularHomologyMap (codiscPairMap I M) (ModuleCat.of K K) _) ≪≫ e⟩
 
 end Twisted
+
+/-! ### Coefficients in the homological orientation system -/
+
+section Homological
+
+variable {E M : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace M] [T2Space M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
+  [IsContMDiffRiemannianBundle 𝓘(ℝ, E) 0 E (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
+
+/-- **The Thom isomorphism of the codisc bundle with coefficients in the orientation system of
+`M`.** For a Riemannian manifold `M` without boundary of dimension `n + 1`, compact or not,
+orientable or not, `Hₚ₊ₙ₊₁(D*M, S*M; ℤ) ≅ Hₚ(M; o_M)` in every degree `p`, where `o_M` is the
+orientation local system of `M` built from local homology, `x ↦ Hₙ₊₁(M, M ∖ {x}; ℤ)`
+(`TauCeti.localHomologySystem`). The orientation local system of the cotangent bundle in
+`TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_twistedHomology` is identified
+with that of the tangent bundle by the Riesz isomorphisms
+(`TauCeti.CotangentBundle.signLocalSystemIso`), and that one with `o_M`
+(`TauCeti.Manifold.OrientationCover.signLocalSystemIsoLocalHomologySystem`). -/
+theorem nonempty_singularHomology_codiscPair_iso_twistedHomology_localHomologySystem {n : ℕ}
+    (hE : finrank ℝ E = n + 1) (p : ℕ) :
+    Nonempty ((codiscPair 𝓘(ℝ, E) M).singularHomology (ModuleCat.of ℤ ℤ) (n + 1 + p) ≅
+      LocalCoefficientSystem.twistedHomology (X := TopCat.of M)
+        (localHomologySystem (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) M E (n + 1))
+        p) := by
+  obtain ⟨e⟩ := nonempty_singularHomology_codiscPair_iso_twistedHomology (I := 𝓘(ℝ, E)) (M := M)
+    ((Fintype.card_fin _).trans ContinuousLinearMap.dual_finrank_eq.symm) ℤ p
+  -- The degree `finrank ℝ E + p` of the cotangent statement is `n + 1 + p`.
+  exact ⟨eqToIso (by rw [hE]) ≪≫ e ≪≫ HomologicalComplex.homologyMapIso
+    (LocalCoefficientSystem.twistedChainComplexCoefficientIso
+      ((signLocalSystemIso 𝓘(ℝ, E) ℤ (Fintype.card_fin _)).symm ≪≫
+        Manifold.OrientationCover.signLocalSystemIsoLocalHomologySystem hE)) p⟩
+
+end Homological
 
 end CotangentBundle
 
