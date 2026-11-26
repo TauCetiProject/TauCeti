@@ -52,7 +52,7 @@ Here `B (v₁, v₂) = (diag(1, -1) v₂, 0)` squares to zero, so `exp(ε B)` is
   (`TauCeti.SymplecticForm.TameNotCompatibleExample.invariant_shearComplexStructure_iff`).
 * `TauCeti.SymplecticForm.TameNotCompatibleExample.gradientOperator_ne_shearComplexStructure`: for
   `0 < |ε| < 1` the gradient operator of the tame pair `(ω, J_ε)` is not `J_ε`, so
-  `-J_ε (γ' - X_H)` is not the gradient of the action for the symmetrized metric of `(ω, J_ε)`.
+  `J_ε (γ' - X_H)` is not the gradient of the action for the symmetrized metric of `(ω, J_ε)`.
 
 So this particular path, through an anti-`J₀` direction that is not tangent to the compatible
 structures, is tame exactly on the bounded interval `|ε| < 1`. By contrast, the tangent path of
