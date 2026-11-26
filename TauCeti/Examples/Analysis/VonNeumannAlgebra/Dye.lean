@@ -34,6 +34,14 @@ example {n : Type*} [Fintype n] :
   exact (Matrix.transpose_mul_eq_zero_iff_of_isSelfAdjoint _ _
     p.property.isSelfAdjoint q.property.isSelfAdjoint).symm
 
+-- The same list applies to a semiring square whenever the scalar star projections are zero and one.
+example {R : Type*} [Semiring R] [StarRing R] (x : R × R)
+    (h : ∀ p : R, IsStarProjection p → p = 0 ∨ p = 1) :
+    IsStarProjection x ↔ x = 0 ∨ x = (1, 0) ∨ x = (0, 1) ∨ x = 1 := by
+  apply TauCeti.forall_isStarProjection_prod_iff_eq_zero_or_one.mpr _ x
+  intro p
+  exact ⟨h p, by rintro (rfl | rfl) <;> simp⟩
+
 example (x : ℂ × ℂ) :
     IsStarProjection x ↔ x = 0 ∨ x = (1, 0) ∨ x = (0, 1) ∨ x = 1 :=
   x.isStarProjection_iff_eq_zero_or_one

@@ -13,9 +13,9 @@ import TauCeti.Algebra.Group.Idempotent
 /-!
 # Star projections and equivalences of products
 
-Star projections in a product are characterized coordinatewise. In the square of a semiring
-with cancellation by nonzero left factors, the only star projections are zero, one, and the two
-coordinate projections.
+Star projections in a product are characterized coordinatewise. The square has only zero, one,
+and the two coordinate projections exactly when the scalar star projections are zero and one.
+In particular, this holds in semirings with cancellation by nonzero left factors.
 The coordinate swap is a star algebra equivalence between the two orders of a product,
 lifting `Equiv.prodComm` with only the operations preserved by a star algebra equivalence.
 -/
@@ -30,22 +30,38 @@ theorem Prod.isStarProjection_iff {A B : Type*} [Mul A] [Star A] [Mul B] [Star B
     Prod.ext_iff, Prod.fst_star, Prod.snd_star]
   tauto
 
+/-- The four-pair classification of star projections in a square holds exactly when the scalar
+star projections are zero and one. -/
+theorem TauCeti.forall_isStarProjection_prod_iff_eq_zero_or_one {R : Type*}
+    [MulZeroOneClass R] [Star R] :
+    (∀ x : R × R, IsStarProjection x ↔ x = 0 ∨ x = (1, 0) ∨ x = (0, 1) ∨ x = 1) ↔
+      ∀ p : R, IsStarProjection p ↔ p = 0 ∨ p = 1 := by
+  constructor
+  · intro h p
+    have hzero : IsStarProjection (0 : R) :=
+      ((Prod.isStarProjection_iff 0).mp ((h 0).mpr (Or.inl rfl))).2
+    have hp := h (p, 0)
+    rw [Prod.isStarProjection_iff, and_iff_left hzero] at hp
+    simp only [Prod.ext_iff, Prod.fst_zero, Prod.snd_zero, Prod.fst_one, Prod.snd_one,
+      eq_self, and_true] at hp
+    tauto
+  · intro h x
+    rw [Prod.isStarProjection_iff, h, h]
+    simp only [Prod.ext_iff, Prod.fst_zero, Prod.snd_zero, Prod.fst_one, Prod.snd_one]
+    tauto
+
 /-- The star projections in the square of a semiring with cancellation by nonzero left factors
 are zero, one, and the two coordinate projections. -/
 theorem Prod.isStarProjection_iff_eq_zero_or_one {R : Type*} [NonAssocSemiring R]
     [IsLeftCancelMulZero R] [StarRing R] (x : R × R) :
     IsStarProjection x ↔ x = 0 ∨ x = (1, 0) ∨ x = (0, 1) ∨ x = 1 := by
-  have eq_zero_or_one {p : R} (hp : IsStarProjection p) : p = 0 ∨ p = 1 :=
-    or_iff_not_imp_left.mpr fun h ↦
-      mul_left_cancel₀ h (hp.isIdempotentElem.eq.trans (mul_one p).symm)
-  rw [Prod.isStarProjection_iff]
+  apply TauCeti.forall_isStarProjection_prod_iff_eq_zero_or_one.mpr _ x
+  intro p
   constructor
-  · rintro ⟨h₁, h₂⟩
-    have h₁' := eq_zero_or_one h₁
-    have h₂' := eq_zero_or_one h₂
-    simp only [Prod.ext_iff, Prod.fst_zero, Prod.snd_zero, Prod.fst_one, Prod.snd_one]
-    tauto
-  · rintro (rfl | rfl | rfl | rfl) <;> simp
+  · intro hp
+    exact or_iff_not_imp_left.mpr fun h ↦
+      mul_left_cancel₀ h (hp.isIdempotentElem.eq.trans (mul_one p).symm)
+  · rintro (rfl | rfl) <;> simp
 
 namespace StarAlgEquiv
 
