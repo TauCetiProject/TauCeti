@@ -15,6 +15,7 @@ public import TauCeti.Data.Matrix.Mul
 public import TauCeti.LinearAlgebra.Matrix.Range
 public import TauCeti.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.Algebra.Ring.Pi
 import TauCeti.LinearAlgebra.End.Idempotent
 
 import TauCeti.Data.Matrix.Basic
@@ -55,6 +56,8 @@ modules exactly when the matrices are equivalent.
 * `Matrix.idempotentEquivalent_submatrix`, `Matrix.idempotentEquivalent_conj`,
   `Matrix.IdempotentEquivalent.fromBlocks`, `Matrix.IdempotentEquivalent.map`: invariance under
   relabelling, conjugation, block sums and ring homomorphisms.
+* `Matrix.idempotentEquivalent_prod_iff`, `Matrix.idempotentEquivalent_pi_iff`: over a product
+  of semirings, equivalence of idempotents is checked componentwise.
 * `Matrix.idempotentEquivalent_zero_iff`,
   `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_right`,
   `IsIdempotentElem.idempotentEquivalent_fromBlocks_zero_left`,
@@ -106,6 +109,13 @@ theorem IsIdempotentElem.matrix_prodEquiv_symm {e₁ : Matrix ι ι A} {e₂ : M
     (he₁ : IsIdempotentElem e₁) (he₂ : IsIdempotentElem e₂) :
     IsIdempotentElem ((Matrix.prodEquiv ι ι A B).symm (e₁, e₂)) :=
   IsIdempotentElem.map (e := (e₁, e₂)) (Prod.ext he₁.eq he₂.eq) (Matrix.prodRingEquiv ι A B).symm
+
+/-- An idempotent matrix `e` over a factor `R j` of a product, placed in that factor by
+`Pi.single j` entrywise, is idempotent. -/
+theorem IsIdempotentElem.matrix_map_piSingle {J : Type*} [DecidableEq J] {R : J → Type*}
+    [∀ j, NonUnitalNonAssocSemiring (R j)] (j : J) {e : Matrix ι ι (R j)}
+    (he : IsIdempotentElem e) : IsIdempotentElem (e.map (Pi.single j : R j → ∀ k, R k)) := by
+  simpa using he.matrix_map (NonUnitalRingHom.single R j)
 
 end NonUnitalNonAssocSemiring
 
@@ -287,6 +297,23 @@ theorem idempotentEquivalent_prod_iff {B : Type*} [NonUnitalNonAssocSemiring B]
     ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
   apply Matrix.mul_eq_of_map_fst_of_map_snd <;>
   simp only [Matrix.map_fst_prodEquiv_symm, Matrix.map_snd_prodEquiv_symm, h₁, h₂]
+
+/-- **Products of families of semirings.** Idempotent matrices over `Π j, B j` are equivalent
+exactly when all their components are: the rectangular matrices witnessing the component
+equivalences assemble to a witness over the product. -/
+theorem idempotentEquivalent_pi_iff {J : Type*} {B : J → Type*}
+    [∀ j, NonUnitalNonAssocSemiring (B j)] {e : Matrix ι ι (∀ j, B j)}
+    {f : Matrix κ κ (∀ j, B j)} :
+    IdempotentEquivalent e f ↔ ∀ j, IdempotentEquivalent (e.map (· j)) (f.map (· j)) := by
+  refine ⟨fun h j ↦ h.map (Pi.evalNonUnitalRingHom B j), fun h ↦ ?_⟩
+  choose x y hxy hyx hex hxf hfy hye using h
+  -- The witnesses over the product are assembled from the component witnesses.
+  have hx (j : J) : (Matrix.piEquiv.symm x).map (· j) = x j := by
+    rw [← Matrix.piEquiv_apply, Equiv.apply_symm_apply]
+  have hy (j : J) : (Matrix.piEquiv.symm y).map (· j) = y j := by
+    rw [← Matrix.piEquiv_apply, Equiv.apply_symm_apply]
+  refine ⟨Matrix.piEquiv.symm x, Matrix.piEquiv.symm y, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
+    exact Matrix.mul_eq_of_forall_map_apply fun j ↦ by simp only [*]
 
 /-- Zero matrices of any two finite sizes are equivalent idempotents. -/
 theorem idempotentEquivalent_zero_zero (m n : Type*) [Fintype m] [Fintype n] :
