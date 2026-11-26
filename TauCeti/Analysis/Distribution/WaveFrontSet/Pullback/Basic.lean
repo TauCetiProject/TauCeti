@@ -64,7 +64,7 @@ opposite wave front covectors over a common point is defined (Hörmander I, Theo
   conormal covector of `E × {0}` over `U` lies in the wave front set of `T`.
 * `Distribution.tendsto_pullbackInl`: its values are the limits of `T (ψ ⊗ ρ)` as `ρ` concentrates
   at `0`; `Distribution.exists_seq_tensor_mollifier` supplies such a sequence `ψ ⊗ ρ_n` of test
-  functions.
+  functions, built as `TestFunction.tensorBump`.
 * `Distribution.pullbackInl_ofFun`: for a continuous function satisfying the hypothesis it is the
   restriction to `E × {0}`.
 * `Distribution.isMicrolocallySmoothAt_pullbackInl`, `Distribution.waveFrontSet_pullbackInl_subset`:
@@ -122,6 +122,60 @@ noncomputable section
 
 open Complex Filter Function Metric Set TopologicalSpace TestFunction MeasureTheory WithLp
 open scoped Distributions Topology FourierTransform RealInnerProductSpace ContDiff Real
+
+namespace TestFunction
+
+variable {E D : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup D] [InnerProductSpace ℝ D] [FiniteDimensional ℝ D]
+  {U : Opens E} {W : Opens (WithLp 2 (E × D))}
+
+/-! ### The tensor product of a test function with a normalized bump -/
+
+/-- The product `ψ(x) ρ(y)` of a test function `ψ` with the normalized bump `ρ` of `σ` vanishes off
+`supp ψ × closedBall 0 (rOut σ)`. -/
+theorem mul_normed_eq_zero_of_notMem [MeasurableSpace D] [BorelSpace D] (ψ : 𝓓(U, ℝ))
+    (σ : ContDiffBump (0 : D)) {x : E} {y : D}
+    (h : (x, y) ∉ tsupport ψ ×ˢ closedBall (0 : D) σ.rOut) :
+    ψ x * σ.normed volume y = 0 := by
+  by_cases hx : x ∈ tsupport ψ
+  · rw [notMem_support.1 fun hy ↦ h ⟨hx, ball_subset_closedBall
+      ((σ.support_normed_eq (μ := volume)).subset hy)⟩, mul_zero]
+  · rw [image_eq_zero_of_notMem_tsupport hx, zero_mul]
+
+/-- The product of the support of a test function `ψ` with a closed ball about `0`, as a subset of
+`WithLp 2 (E × D)`, is compact. -/
+theorem isCompact_image_toLp_tsupport_prod_closedBall (ψ : 𝓓(U, ℝ)) (r : ℝ) :
+    IsCompact (toLp 2 '' (tsupport ψ ×ˢ closedBall (0 : D) r)) :=
+  (ψ.hasCompactSupport.isCompact.prod (isCompact_closedBall _ _)).image
+    (prod_continuous_toLp 2 E D)
+
+/-- **The tensor product of a test function with a normalized bump.** The test function
+`(x, y) ↦ ψ(x) ρ(y)` on an open set `W` of `E × D` containing `supp ψ × closedBall 0 (rOut σ)`,
+for the normalized bump `ρ` of `σ`. -/
+def tensorBump [MeasurableSpace D] [BorelSpace D] (ψ : 𝓓(U, ℝ)) (σ : ContDiffBump (0 : D))
+    (hW : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) σ.rOut, toLp 2 (x, y) ∈ W) : 𝓓(W, ℝ) where
+  toFun p := ψ p.fst * σ.normed volume p.snd
+  contDiff' := (ψ.contDiff.comp (fstL 2 ℝ E D).contDiff).mul
+    (σ.contDiff_normed.comp (sndL 2 ℝ E D).contDiff)
+  hasCompactSupport' :=
+    HasCompactSupport.intro (isCompact_image_toLp_tsupport_prod_closedBall ψ σ.rOut)
+    fun _ hp ↦ mul_normed_eq_zero_of_notMem ψ σ (mt (mem_image_of_mem (toLp 2)) hp)
+  tsupport_subset' := (closure_minimal (support_subset_iff'.2 fun _ hp ↦
+    mul_normed_eq_zero_of_notMem ψ σ (mt (mem_image_of_mem (toLp 2)) hp))
+      (isCompact_image_toLp_tsupport_prod_closedBall ψ σ.rOut).isClosed).trans <| by
+    rintro _ ⟨⟨x, y⟩, ⟨hx, hy⟩, rfl⟩
+    exact hW x hx y hy
+
+/-- The values `(ψ ⊗ ρ) (x, y) = ψ x ρ y` of `TestFunction.tensorBump`. -/
+@[simp]
+theorem tensorBump_apply [MeasurableSpace D] [BorelSpace D] (ψ : 𝓓(U, ℝ))
+    (σ : ContDiffBump (0 : D))
+    (hW : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) σ.rOut, toLp 2 (x, y) ∈ W)
+    (p : WithLp 2 (E × D)) :
+    tensorBump ψ σ hW p = ψ p.fst * σ.normed volume p.snd :=
+  (rfl)
+
+end TestFunction
 
 namespace Distribution
 
@@ -517,14 +571,14 @@ theorem exists_seq_tensor_mollifier [MeasurableSpace D] [BorelSpace D]
       ∀ n p, f n p = ψ p.fst * (σ n).normed volume p.snd := by
   set K : Compacts E := ⟨tsupport ψ, ψ.hasCompactSupport⟩
   have hδ := tubeRadius_pos hU K ψ.tsupport_subset
-  refine ⟨fun n ↦ ContDiffBump.shrinking (half_pos hδ) n,
-    fun n ↦ tensorCLM hU K ψ.tsupport_subset n
-      (ContDiffMapSupportedIn.of_support_subset ψ.contDiff (subset_tsupport _)),
-    ContDiffBump.tendsto_rOut_shrinking (half_pos hδ), fun n x hx y hy ↦ ?_, fun n p ↦ ?_⟩
-  · refine toLp_mem_of_lt_tubeRadius hU K ψ.tsupport_subset hx (by simpa using hδ) ?_
-    exact (mem_closedBall_zero_iff.1 hy).trans_lt
-      ((ContDiffBump.rOut_shrinking_le (half_pos hδ) n).trans_lt (half_lt_self hδ))
-  · rw [tensorCLM_apply, ContDiffMapSupportedIn.coe_of_support_subset]
+  have hW (n : ℕ) : ∀ x ∈ tsupport ψ,
+      ∀ y ∈ closedBall (0 : D) (ContDiffBump.shrinking (c := (0 : D)) (half_pos hδ) n).rOut,
+      toLp 2 (x, y) ∈ W := fun x hx y hy ↦
+    toLp_mem_of_lt_tubeRadius hU K ψ.tsupport_subset hx (by simpa using hδ) <|
+      (mem_closedBall_zero_iff.1 hy).trans_lt
+        ((ContDiffBump.rOut_shrinking_le (half_pos hδ) n).trans_lt (half_lt_self hδ))
+  exact ⟨fun n ↦ ContDiffBump.shrinking (half_pos hδ) n, fun n ↦ tensorBump ψ _ (hW n),
+    ContDiffBump.tendsto_rOut_shrinking (half_pos hδ), hW, fun n ↦ tensorBump_apply ψ _ (hW n)⟩
 
 /-- **Additivity of the pullback in the distribution.** -/
 theorem pullbackInl_add (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
