@@ -60,13 +60,9 @@ of this holds on a bounded `Ω`: the constants have zero energy, and `0` is a mi
   `TauCeti.PDE.isLeast_rayleighQuotient_firstMixedEigenvalue`: the Rayleigh principle.
 * `TauCeti.PDE.isLeast_spectrum_mixedOperator_firstMixedEigenvalue`: it is the bottom of the
   spectrum of the mixed realization.
-* `TauCeti.PDE.zero_mem_resolventSet_mixedOperator` and
-  `TauCeti.PDE.resolvent_mixedOperator_zero`: the mixed realization is invertible.
 * `TauCeti.PDE.firstMixedEigenvalue_frontier`: at `Γ = ∂Ω` it is the first Dirichlet eigenvalue.
-* `TauCeti.PDE.isCoercive_mixedForm_laplacian_of_norm_value_le`,
-  `TauCeti.PDE.isCoercive_mixedForm_laplacian_of_isLipschitzDomainWith` and
-  `TauCeti.PDE.isLeast_norm_value_le_mul_norm_gradient_inv_sqrt_firstMixedEigenvalue`: for `-Δ_Γ`,
-  Poincaré–Friedrichs inequalities and the optimal constant.
+* `TauCeti.PDE.isLeast_norm_value_le_mul_norm_gradient_inv_sqrt_firstMixedEigenvalue`: for `-Δ_Γ`,
+  the optimal Poincaré–Friedrichs constant.
 * `TauCeti.PDE.exists_firstMixedEigenvalue_laplacian_of_isLipschitzDomainWith`: the mixed Laplacian
   on a bounded connected Lipschitz domain, for `Γ` of positive surface measure.
 
@@ -125,7 +121,7 @@ private theorem mixedForm_zero_comm
         energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2))
     (u v : W1pVanishingOn mu Omega 2 Γ) :
     mixedForm hcoeff Γ 0 u v = mixedForm hcoeff Γ 0 v u := by
-  simp only [mixedForm_apply, zero_mul, add_zero]
+  rw [mixedForm_zero_apply, mixedForm_zero_apply]
   exact hsymm u v
 
 /-- The first mixed eigenvalue is positive on a nonempty `Ω`, when `Γ` misses `Ω`. -/
@@ -150,7 +146,7 @@ theorem firstMixedEigenvalue_le
     firstMixedEigenvalue hcoeff Γ hB ≤ kappa := by
   rw [firstMixedEigenvalue_def, mixedSolutionOperator_def]
   exact hB.inv_norm_formSolutionOperator_le W1pVanishingOn.valueL hu fun v ↦ by
-    rw [mixedForm_apply, zero_mul, add_zero, heq v, W1pVanishingOn.valueL_apply,
+    rw [mixedForm_zero_apply, heq v, W1pVanishingOn.valueL_apply,
       W1pVanishingOn.valueL_apply]
 
 /-- **The first mixed eigenvalue is a mixed eigenvalue** on a nonempty domain with the Rellich
@@ -174,7 +170,7 @@ theorem exists_ne_zero_forall_energyFormH1_eq_firstMixedEigenvalue_mul
     (W1pVanishingOn.valueL_ne_zero hΓ hOmega)
   refine ⟨u, hu, fun v ↦ ?_⟩
   have hv := heq v
-  rwa [mixedForm_apply, zero_mul, add_zero, W1pVanishingOn.valueL_apply,
+  rwa [mixedForm_zero_apply, W1pVanishingOn.valueL_apply,
     W1pVanishingOn.valueL_apply, ← mixedSolutionOperator_def, ← firstMixedEigenvalue_def] at hv
 
 /-! ### The Rayleigh principle -/
@@ -194,7 +190,7 @@ theorem firstMixedEigenvalue_mul_norm_value_sq_le
   rw [firstMixedEigenvalue_def, mixedSolutionOperator_def]
   have h := hB.inv_norm_formSolutionOperator_mul_norm_apply_sq_le W1pVanishingOn.valueL
     (mixedForm_zero_comm hcoeff hsymm) u
-  rwa [mixedForm_apply, zero_mul, add_zero, W1pVanishingOn.valueL_apply] at h
+  rwa [mixedForm_zero_apply, W1pVanishingOn.valueL_apply] at h
 
 /-- **The first mixed eigenvalue is the optimal Poincaré constant of the energy form**: on a
 nonempty `Ω`, for `Γ` missing `Ω` and a symmetric energy form, `λ₁` is the largest `C` with
@@ -215,7 +211,7 @@ theorem isGreatest_firstMixedEigenvalue
         energyFormH1 a b c (u : W1p mu Omega 2) (u : W1p mu Omega 2)} =
       {C : ℝ | ∀ u : W1pVanishingOn mu Omega 2 Γ,
         C * ‖W1pVanishingOn.valueL u‖ ^ 2 ≤ mixedForm hcoeff Γ 0 u u} := by
-    simp only [W1pVanishingOn.valueL_apply, mixedForm_apply, zero_mul, add_zero]
+    simp only [W1pVanishingOn.valueL_apply, mixedForm_zero_apply]
   rw [hset, firstMixedEigenvalue_def, mixedSolutionOperator_def]
   exact hB.isGreatest_inv_norm_formSolutionOperator (mixedForm_zero_comm hcoeff hsymm)
     (W1pVanishingOn.valueL_ne_zero hΓ hOmega)
@@ -244,7 +240,7 @@ theorem isLeast_rayleighQuotient_firstMixedEigenvalue
         ‖W1p.value (u : W1p mu Omega 2)‖ ^ 2 = r} =
       {r : ℝ | ∃ u : W1pVanishingOn mu Omega 2 Γ, W1pVanishingOn.valueL u ≠ 0 ∧
         mixedForm hcoeff Γ 0 u u / ‖W1pVanishingOn.valueL u‖ ^ 2 = r} := by
-    simp only [W1pVanishingOn.valueL_apply, mixedForm_apply, zero_mul, add_zero]
+    simp only [W1pVanishingOn.valueL_apply, mixedForm_zero_apply]
   rw [hset, firstMixedEigenvalue_def, mixedSolutionOperator_def]
   exact hB.isLeast_rayleighQuotient (W1pVanishingOn.isCompactOperator_valueL hK)
     (mixedForm_zero_comm hcoeff hsymm) (W1pVanishingOn.valueL_ne_zero hΓ hOmega)
@@ -262,26 +258,9 @@ private theorem exists_garding_of_isCoercive_mixedForm_zero
   obtain ⟨C, hC, hle⟩ := hB
   refine ⟨C, hC, fun v ↦ ?_⟩
   have hv := hle v
-  rw [mixedForm_apply, zero_mul, add_zero] at hv
+  rw [mixedForm_zero_apply] at hv
   rw [zero_mul, add_zero, sq, ← mul_assoc]
   exact hv
-
-/-- **`0` is a resolvent point of the mixed realization** when the energy form is coercive on
-`H¹_Γ(Ω)` and `Γ` misses `Ω`. -/
-theorem zero_mem_resolventSet_mixedOperator
-    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (hΓ : Disjoint Γ Omega) (hB : IsCoercive (mixedForm hcoeff Γ 0)) :
-    (0 : ℝ) ∈ (mixedOperator hcoeff Γ).resolventSet := by
-  obtain ⟨theta, htheta, hgarding⟩ := exists_garding_of_isCoercive_mixedForm_zero hcoeff hB
-  simpa only [neg_zero] using neg_mem_resolventSet_mixedOperator hcoeff hΓ htheta hgarding
-
-/-- **`A⁻¹ = S`.** When the energy form is coercive on `H¹_Γ(Ω)` and `Γ` misses `Ω`, the resolvent
-of the mixed realization at `0` is minus the mixed solution operator. -/
-theorem resolvent_mixedOperator_zero
-    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
-    (hΓ : Disjoint Γ Omega) (hB : IsCoercive (mixedForm hcoeff Γ 0)) :
-    (mixedOperator hcoeff Γ).resolvent 0 = -mixedSolutionOperator hcoeff Γ hB := by
-  simpa only [neg_zero] using resolvent_mixedOperator_neg hcoeff hΓ hB
 
 /-- **The first mixed eigenvalue is the bottom of the spectrum.** On a nonempty domain with the
 Rellich property, for `Γ` missing `Ω` and a symmetric energy form coercive on `H¹_Γ(Ω)`, the first
@@ -320,19 +299,6 @@ theorem firstMixedEigenvalue_frontier
 section Laplacian
 
 variable [DecidableEq ι]
-
-/-- **A Poincaré–Friedrichs inequality makes the mixed Laplacian coercive**: if
-`‖u‖_{L²(Ω)} ≤ P ‖∇u‖_{L²(Ω)}` on `H¹_Γ(Ω)`, then `∫_Ω ∇u · ∇v` is coercive on `H¹_Γ(Ω)`, with
-constant `1 / (1 + P²)`. -/
-theorem isCoercive_mixedForm_laplacian_of_norm_value_le {P : ℝ}
-    (hP : ∀ u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ, ‖W1p.value u‖ ≤ P * ‖W1p.gradient u‖) :
-    IsCoercive (mixedForm (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
-      (1 : Matrix ι ι ℝ)) Γ 0) := by
-  have hP2 : (0 : ℝ) < P ^ 2 + 1 := by positivity
-  refine isCoercive_mixedForm _ (inv_pos.mpr hP2) fun v ↦ ?_
-  rw [zero_mul, add_zero, energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
-    inv_mul_le_iff₀ hP2]
-  exact W1p.norm_sq_le_mul_norm_gradient_sq_of_norm_value_le (hP _ v.property)
 
 /-- **The optimal Poincaré–Friedrichs constant is `1 / √λ₁`.** On a nonempty `Ω`, for `Γ` missing
 `Ω`, when `∫_Ω ∇u · ∇v` is coercive on `H¹_Γ(Ω)`, the least `P ≥ 0` with
@@ -373,25 +339,6 @@ theorem isLeast_norm_value_le_mul_norm_gradient_inv_sqrt_firstMixedEigenvalue
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {V : Opens (WithLp 2 (ℝ × E))} {L : ℝ≥0}
-
-/-- **The mixed Laplacian is coercive on a Lipschitz domain** for a boundary part of positive
-measure: let an affine isometry `e` carry the connected open set `Ω ⊆ EuclideanSpace ℝ ι` onto a
-bounded Lipschitz domain `V`, and let `Γ` meet the frontier of `Ω` in a set of positive surface
-measure. Then `∫_Ω ∇u · ∇v` is coercive on `H¹_Γ(Ω)`, by the Poincaré–Friedrichs inequality. -/
-theorem isCoercive_mixedForm_laplacian_of_isLipschitzDomainWith
-    (hV : (V : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hVb : IsBounded (V : Set (WithLp 2 (ℝ × E))))
-    (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
-    (hVΩ : (V : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' Omega)
-    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
-    (hΓ : (μHE[finrank ℝ E] : Measure (EuclideanSpace ℝ ι))
-      (Γ ∩ frontier (Omega : Set (EuclideanSpace ℝ ι))) ≠ 0) :
-    IsCoercive (mixedForm (memLp_energyIntegrand_const_zero_zero (mu := volume) (Omega := Omega)
-      (1 : Matrix ι ι ℝ)) Γ 0) := by
-  obtain ⟨P, -, hP⟩ :=
-    W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv
-      (p := 2) ENNReal.ofNat_ne_top hV hVb e hVΩ hconn hΓ
-  exact isCoercive_mixedForm_laplacian_of_norm_value_le hP
 
 /-- **The first mixed eigenvalue of `-Δ_Γ` for a boundary part of positive measure.** Let an
 affine isometry `e` carry the connected open set `Ω ⊆ EuclideanSpace ℝ ι` onto a bounded Lipschitz
