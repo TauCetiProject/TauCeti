@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Quasilinear.GlobalHolder
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.Global
 import TauCeti.Analysis.Holder.LipschitzDomain
-import TauCeti.Analysis.Holder.Localization
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Quasilinear.Regularity
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
@@ -69,7 +68,8 @@ The global Schauder estimate takes a single Hölder exponent for the coefficient
 derivatives of the boundary graphs. Each pass lowers the exponent of the graphs, after cutting
 them off outside the chart: a graph `γ` with `α`-Hölder derivative agrees near the chart centre
 with a graph whose derivative is `β`-Hölder on the whole space for every `β ≤ min α 1`
-(`ContDiff.exists_eqOn_ball_holderWith_fderiv`).
+(`ContDiff.exists_eqOn_ball_holderWith_fderiv`), so the charts of a `C^{1,α}` boundary are also
+charts of a `C^{1,β}` boundary (`TauCeti.PDE.forall_frontier_chart_of_le`).
 
 ## References
 
@@ -92,39 +92,9 @@ namespace PDE
 
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-! ### Boundary charts -/
-
-variable {Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))} {α : ℝ≥0}
-
-/-- The boundary charts of a set with `C^{1,α}` boundary can be replaced by charts, with the same
-coordinates and cylinders, whose graphs have `β`-Hölder derivatives, for every `β ≤ min α 1`. The
-charts make `E` finite-dimensional, so that the graphs can be cut off outside a ball. -/
-private theorem forall_frontier_chart_of_le {β : ℝ≥0} (hβα : β ≤ α) (hβ1 : β ≤ 1)
-    (hbdry : ∀ x ∈ frontier Ω,
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
-          HolderWith Kγ α (fderiv ℝ γ) ∧
-          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ γ z.snd < z.fst)) :
-    ∀ x ∈ frontier Ω,
-      ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
-        (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
-          HolderWith Kγ β (fderiv ℝ γ) ∧
-          ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ Ω ↔ γ z.snd < z.fst) := by
-  intro x hx
-  obtain ⟨e, γ, h₀, r₀, Kγ, hex, hh₀, hr₀, hγ0, hγ, hγK, hgraph⟩ := hbdry x hx
-  have : FiniteDimensional ℝ (WithLp 2 (ℝ × E)) :=
-    e.linearIsometryEquiv.toLinearEquiv.finiteDimensional
-  have : FiniteDimensional ℝ E := Module.Finite.of_surjective
-    ((LinearMap.snd ℝ ℝ E).comp (WithLp.linearEquiv 2 ℝ (ℝ × E)).toLinearMap)
-    fun y => ⟨WithLp.toLp 2 (0, y), by simp⟩
-  obtain ⟨γ', K, hγ', heq, hK⟩ := hγ.exists_eqOn_ball_holderWith_fderiv hγK hβα hβ1 0 hr₀
-  refine ⟨e, γ', h₀, r₀, K, hex, hh₀, hr₀, by rw [heq (mem_ball_self hr₀), hγ0], hγ', hK,
-    fun z hz => ?_⟩
-  rw [hgraph z hz, heq (mem_ball_zero_iff.2 (mem_normalCylinder.1 hz).2.2)]
-
 /-! ### The bootstrap -/
 
-variable {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
+variable {α : ℝ≥0} {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
   {A : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
   {lam Lam : ℝ} {Kx L KG : ℝ≥0}
   {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}

@@ -212,19 +212,17 @@ theorem _root_.ContDiff.exists_eqOn_ball_holderWith_fderiv [FiniteDimensional �
     · simpa using (hM₁ x (ball_subset_closedBall hx)).trans (le_max_right _ _)
   obtain ⟨D, hD⟩ : ∃ D : ℝ≥0, ∀ x ∈ ball c (3 * r), ∀ y ∈ ball c (3 * r), edist x y ≤ D :=
     ⟨_, fun _ hx _ hy => Metric.edist_le_diam_of_mem isBounded_ball hx hy⟩
-  have hcurry : iteratedFDeriv ℝ 1 f = (continuousMultilinearCurryFin1 ℝ E F).symm ∘ fderiv ℝ f :=
-    funext fun x => by
-      rw [Function.comp_apply, LinearIsometryEquiv.eq_symm_apply,
-        continuousMultilinearCurryFin1_iteratedFDeriv_one]
+  have hcurry :
+      iteratedFDeriv ℝ 1 f = (continuousMultilinearCurryFin1 ℝ E F).symm ∘ fderiv ℝ f := by
+    rw [fderiv_eq_continuousMultilinearCurryFin1_comp (𝕜 := ℝ) f, ← Function.comp_assoc,
+      LinearIsometryEquiv.symm_comp_self, Function.id_comp]
   have hH := holderWith_iteratedFDeriv_cutoff_smul (k := 1) (by simpa using hf.contDiffOn) hχ
     isOpen_ball (convex_ball c _) hχs hβ1 hM hN (hcurry ▸
       (continuousMultilinearCurryFin1 ℝ E F).symm.isometry.comp_holderOnWith
         ((hK.holderOnWith _).of_le hD hβα))
-  have hg : fderiv ℝ (fun x => χ x • f x) =
-      continuousMultilinearCurryFin1 ℝ E F ∘ iteratedFDeriv ℝ 1 (fun x => χ x • f x) :=
-    funext fun x => (continuousMultilinearCurryFin1_iteratedFDeriv_one _ x).symm
   refine ⟨fun x => χ x • f x, _, (hχ.of_le one_le_two).smul hf, fun x hx => ?_,
-    hg ▸ (continuousMultilinearCurryFin1 ℝ E F).isometry.comp_holderWith hH⟩
+    (fderiv_eq_continuousMultilinearCurryFin1_comp (𝕜 := ℝ) (fun x => χ x • f x)) ▸
+      (continuousMultilinearCurryFin1 ℝ E F).isometry.comp_holderWith hH⟩
   simp [χ.one_of_mem_closedBall (ball_subset_closedBall hx)]
 
 namespace CkHolderSpace

@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -87,5 +88,5 @@ theorem HolderOnWith.memLp_top {X E : Type*} [PseudoMetricSpace X] [MeasurableSp
     (hα : 0 < α) (hs : Bornology.IsBounded s) (ht : MeasurableSet t) (hts : t ⊆ s) :
     MemLp f ⊤ (μ.restrict t) := by
   obtain ⟨M, hM⟩ := (hf.isBounded_image hs).exists_norm_le
-  exact memLp_top_of_bound (((hf.continuousOn hα).mono hts).aestronglyMeasurable ht) M
-    (ae_restrict_of_forall_mem ht fun x hx => hM _ (mem_image_of_mem f (hts hx)))
+  exact ((hf.continuousOn hα).mono hts).memLp_top_restrict_of_bound ht M
+    fun x hx => hM _ (mem_image_of_mem f (hts hx))
