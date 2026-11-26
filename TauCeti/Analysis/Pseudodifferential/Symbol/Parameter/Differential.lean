@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.DifferentialSymbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Basic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Parameter.Homogeneous
 
 /-!
 # Differential operators minus a spectral parameter
@@ -26,6 +27,8 @@ give the terms of Seeley's parametrix of `P - z`.
   coefficients is a parameter-dependent symbol of order `m`, independent of `z`. An ordinary
   symbol of order `m` need not be one, since the class asks its frequency derivatives of order
   above `m` to decay in `z` as well; those of a polynomial of degree at most `m` vanish.
+* `TauCeti.ParameterSymbol.isQuasiHomogeneous_ofDifferentialSymbol`: the symbol of summands all of
+  order `d` is quasi-homogeneous of degree `d`.
 * `TauCeti.ParameterSymbol.exists_isElliptic_ofDifferentialSymbol_sub_spectralParameter`:
   **parameter-ellipticity of `P - z`**. If the principal part of `P` has the real scalar symbol
   `q(x, ξ) • id` with `q(x, ξ) ≥ μ ‖ξ‖²`, `μ > 0`, and the coefficients of order at most `1` are
@@ -87,6 +90,16 @@ theorem coefficient_ofDifferentialSymbol (m : ℕ) (s : Finset ι)
     coefficient_ofQuasiHomogeneous _ _ _ x ξ hz]
   rw [Finset.sum_attach s fun i => differentialSymbol {i} v b (x, ξ), differentialSymbol_def]
   exact Finset.sum_congr rfl fun i _ => differentialSymbol_singleton i v b (x, ξ)
+
+/-- The symbol of a differential operator whose summands all have order `d` is quasi-homogeneous
+of degree `d`: it is a homogeneous polynomial of degree `d` in the frequency, independent of the
+spectral parameter. -/
+theorem isQuasiHomogeneous_ofDifferentialSymbol (m : ℕ) (s : Finset ι)
+    (v : ∀ i, Fin (k i) → CoordinateSpace n) (b : ι → CoordinateSpace n → V →L[ℂ] W)
+    (hb : ∀ i ∈ s, ContDiff ℝ ∞ (b i)) (hk : ∀ i ∈ s, k i ≤ m) {d : ℕ} (hd : ∀ i ∈ s, k i = d) :
+    (ofDifferentialSymbol m s v b hb hk : ParameterSymbol n Λ V W m).IsQuasiHomogeneous d :=
+  IsQuasiHomogeneous.sum fun i _ => ((isQuasiHomogeneous_ofQuasiHomogeneous _ _ _).inclusion _
+    ).congr_degree (by rw [hd i i.property])
 
 /-- Splitting the summands of a differential operator by a predicate splits its symbol. -/
 theorem ofDifferentialSymbol_filter_add_ofDifferentialSymbol_filter_not (m : ℕ) (s : Finset ι)
