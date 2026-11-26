@@ -41,9 +41,9 @@ what the slices are.
 tensors `q ⊗ r` of critical points of `f₁` and `f₂` with `ind q + ind r = ind p`, each weighted by
 the number of points of `S p q r` modulo two (`TauCeti.morseDiagonalCoeff`). Dualizing it gives the
 **cup product** of linear forms on the mod-two Morse chains (`TauCeti.morseCupProduct`),
-`a ∪ b = μ ∘ (a ⊗ b) ∘ Δ` for the multiplication `μ` of `ZMod 2`, whose value at `p` is the sum of
-`a q * b r` over the Y-flow lines from `p` to `q` and `r`
-(`TauCeti.morseCupProduct_apply_single`).
+`a ∪ b = μ ∘ (a ⊗ b) ∘ Δ` for the multiplication `μ` of `ZMod 2`, whose value at `p` is the sum,
+over the pairs `(q, r)` with `ind q + ind r = ind p`, of the number of points of `S p q r` modulo
+two times `a q * b r`, an infinite slice counting `0` (`TauCeti.morseCupProduct_apply_single`).
 
 **Broken Y-flow lines.** For `ind p = ind q + ind r + 1` the Y-flow lines form a one-dimensional
 space, whose ends are the Y-flow lines broken along one of the three edges:
@@ -217,9 +217,10 @@ variable (f₀) in
 /-- **The mod-two Morse cup product** of a slice family `S`: the product of a linear form `a` on
 the Morse chains of `f₁` and a linear form `b` on those of `f₂` is the linear form
 `a ∪ b = μ ∘ (a ⊗ b) ∘ Δ` on the Morse chains of `f₀`, for the Morse diagonal `Δ` of `S` and the
-multiplication `μ` of `ZMod 2`. Its value at a critical point `p` is the sum of `a q * b r` over
-the points of the slices `S p q r` (`TauCeti.morseCupProduct_apply_single`). It is bilinear in `a`
-and `b`. -/
+multiplication `μ` of `ZMod 2`. Its value at a critical point `p` is the sum, over the pairs
+`(q, r)` with `ind q + ind r = ind p`, of the number of points of `S p q r` modulo two times
+`a q * b r`, an infinite slice counting `0` (`TauCeti.morseCupProduct_apply_single`). It is
+bilinear in `a` and `b`. -/
 noncomputable def morseCupProduct (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hf₂ : IsMorse 𝓘(ℝ, E) f₂)
     (S : M → M → M → Set α) :
     ((criticalPoints 𝓘(ℝ, E) f₁ →₀ ZMod 2) →ₗ[ZMod 2] ZMod 2) →ₗ[ZMod 2]
@@ -254,7 +255,8 @@ theorem morseCupProduct_apply_single [Fintype (criticalPoints 𝓘(ℝ, E) f₁)
       ∑ x : criticalPoints 𝓘(ℝ, E) f₁ × criticalPoints 𝓘(ℝ, E) f₂,
         morseDiagonalCoeff f₀ f₁ f₂ S p x.1 x.2 *
           (a (Finsupp.single x.1 1) * b (Finsupp.single x.2 1)) := by
-  rw [morseCupProduct_apply, LinearMap.comp_apply, LinearMap.comp_apply, mul'_map_apply_eq_sum]
+  rw [morseCupProduct_apply, LinearMap.comp_apply, LinearMap.comp_apply,
+    LinearMap.mul'_map_apply_eq_sum]
   refine Finset.sum_congr rfl fun x _ ↦ ?_
   rw [finsuppTensorFinsupp'_morseDiagonalMap_single_apply, one_mul]
 
@@ -553,7 +555,7 @@ variable {hX₀ : IsAdaptedPseudoGradient f₀ X₀} {hX₁ : IsAdaptedPseudoGra
 every slice family, `δ(a ∪ b) = δa ∪ b + a ∪ δb` for all linear forms `a` and `b` on the Morse
 chains, where `δa = a ∘ ∂` is the Morse coboundary, exactly when the Morse diagonal satisfies
 `Δ ∘ ∂₀ = (∂₁ ⊗ 1 + 1 ⊗ ∂₂) ∘ Δ`. Over `ZMod 2` there is no Koszul sign. -/
-theorem morseCupProduct_comp_morseBoundary_iff_morseDiagonalMap_comp_morseBoundary_eq :
+theorem morseCupProduct_comp_morseBoundary_eq_iff_morseDiagonalMap_comp_morseBoundary_eq :
     (∀ (a : (criticalPoints 𝓘(ℝ, E) f₁ →₀ ZMod 2) →ₗ[ZMod 2] ZMod 2)
         (b : (criticalPoints 𝓘(ℝ, E) f₂ →₀ ZMod 2) →ₗ[ZMod 2] ZMod 2),
         morseCupProduct f₀ hf₁ hf₂ S a b ∘ₗ h₀.morseBoundary hf₀ =
@@ -562,25 +564,8 @@ theorem morseCupProduct_comp_morseBoundary_iff_morseDiagonalMap_comp_morseBounda
       morseDiagonalMap f₀ hf₁ hf₂ S ∘ₗ h₀.morseBoundary hf₀ =
         ((h₁.morseBoundary hf₁).rTensor _ + (h₂.morseBoundary hf₂).lTensor _) ∘ₗ
           morseDiagonalMap f₀ hf₁ hf₂ S := by
-  -- The right side of the Leibniz rule is `μ ∘ (a ⊗ b) ∘ (∂₁ ⊗ 1 + 1 ⊗ ∂₂) ∘ Δ`.
-  have hR : ∀ a b, morseCupProduct f₀ hf₁ hf₂ S (a ∘ₗ h₁.morseBoundary hf₁) b +
-      morseCupProduct f₀ hf₁ hf₂ S a (b ∘ₗ h₂.morseBoundary hf₂) =
-        LinearMap.mul' (ZMod 2) (ZMod 2) ∘ₗ TensorProduct.map a b ∘ₗ
-          ((h₁.morseBoundary hf₁).rTensor _ + (h₂.morseBoundary hf₂).lTensor _) ∘ₗ
-            morseDiagonalMap f₀ hf₁ hf₂ S := by
-    intro a b
-    refine LinearMap.ext fun c ↦ ?_
-    simp only [morseCupProduct_apply, LinearMap.add_apply, LinearMap.comp_apply, map_add,
-      LinearMap.map_rTensor, LinearMap.map_lTensor]
-  simp_rw [hR, morseCupProduct_apply, LinearMap.comp_assoc]
-  refine ⟨fun h ↦ ?_, fun h a b ↦ by rw [h]⟩
-  -- Test the Leibniz rule against the coordinate forms of pairs of critical points: they read the
-  -- coefficients of the two sides of the chain-map identity.
-  refine Finsupp.lhom_ext' fun p ↦ LinearMap.ext_ring ?_
-  refine (finsuppTensorFinsupp' (ZMod 2) _ _).injective (Finsupp.ext fun x ↦ ?_)
-  have := congr($(h (Finsupp.lapply x.1) (Finsupp.lapply x.2)) (Finsupp.single p 1))
-  simpa only [LinearMap.comp_apply, LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply,
-    mul'_map_lapply_lapply, Prod.mk.eta] using this
+  simpa only [morseCupProduct_apply, LinearMap.comp_assoc] using
+    LinearMap.mul'_comp_map_comp_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp _ _ _ _
 
 include h₀ hf₀ h₁ h₂ in
 /-- **The Leibniz rule of the Morse cup product holds exactly when the broken Y-flow lines come in
@@ -604,8 +589,8 @@ theorem morseCupProduct_comp_morseBoundary_eq_iff
         Even ((morseRootBrokenDiagonalSet f₁ f₂ S hX₀ p q r).ncard +
           (morseFirstLeafBrokenDiagonalSet f₀ f₂ S hX₁ p q r).ncard +
           (morseSecondLeafBrokenDiagonalSet f₀ f₁ S hX₂ p q r).ncard) :=
-  (morseCupProduct_comp_morseBoundary_iff_morseDiagonalMap_comp_morseBoundary_eq h₀ hf₀ h₁ hf₁ h₂
-    hf₂).trans (morseDiagonalMap_comp_morseBoundary_eq_iff h₀ hf₀ h₁ hf₁ h₂ hf₂ hS)
+  (morseCupProduct_comp_morseBoundary_eq_iff_morseDiagonalMap_comp_morseBoundary_eq h₀ hf₀ h₁ hf₁
+    h₂ hf₂).trans (morseDiagonalMap_comp_morseBoundary_eq_iff h₀ hf₀ h₁ hf₁ h₂ hf₂ hS)
 
 end Leibniz
 

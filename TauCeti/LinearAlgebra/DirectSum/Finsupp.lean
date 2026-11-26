@@ -25,8 +25,12 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
   index types.
 * `finsuppTensorFinsupp'_rTensor_apply`, `finsuppTensorFinsupp'_lTensor_apply`: the coefficients
   of `(φ ⊗ 1) t` and `(1 ⊗ ψ) t` are those of `t` multiplied by the matrix of `φ` or `ψ`.
-* `mul'_map_lapply_lapply`, `mul'_map_apply_eq_sum`: the product of two linear forms evaluated on
-  `(α →₀ R) ⊗ (β →₀ R)` reads the coefficients, weighted by the values of the forms on the basis.
+* `LinearMap.mul'_map_lapply_lapply`, `LinearMap.mul'_map_apply_eq_sum`: the product of two linear
+  forms evaluated on `(α →₀ R) ⊗ (β →₀ R)` reads the coefficients, weighted by the values of the
+  forms on the basis.
+* `LinearMap.mul'_comp_map_comp_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp`: the products of
+  linear forms along a map `Δ` into `(α →₀ R) ⊗ (β →₀ R)` satisfy the Leibniz rule for `d₀`, `d₁`
+  and `d₂` exactly when `Δ ∘ d₀ = (d₁ ⊗ 1 + 1 ⊗ d₂) ∘ Δ`.
 * `domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_map` and
   `domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor`: an endomorphism of
   `ι →₀ R`, for `ι ≃ α × β`, whose matrix coefficients split as those of `dA ⊗ 1 + εA ⊗ dB`
@@ -113,6 +117,8 @@ theorem finsuppTensorFinsupp'_lTensor_apply [Fintype β] (ψ : (β →₀ R) →
     ring
   | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
 
+namespace LinearMap
+
 /-- **Coordinates of `(α →₀ R) ⊗ (β →₀ R)`.** Evaluating the coordinate forms at `a` and at `b` on
 the two factors and multiplying reads the coefficient of `(a, b)`. -/
 theorem mul'_map_lapply_lapply (t : (α →₀ R) ⊗[R] (β →₀ R)) (a : α) (b : β) :
@@ -141,6 +147,38 @@ theorem mul'_map_apply_eq_sum [Fintype α] [Fintype β] (f : (α →₀ R) →�
     rw [finsuppTensorFinsupp'_apply_apply, smul_eq_mul, smul_eq_mul]
     ring
   | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
+
+/-- **The Leibniz rule of products of linear forms along `Δ`.** Let
+`Δ : M → (α →₀ R) ⊗ (β →₀ R)` and let `d₀`, `d₁` and `d₂` be endomorphisms of `M`, `α →₀ R` and
+`β →₀ R`. The products `a ∪ b = μ ∘ (a ⊗ b) ∘ Δ` of linear forms satisfy
+`(a ∪ b) ∘ d₀ = (a ∘ d₁) ∪ b + a ∪ (b ∘ d₂)` for all `a` and `b` exactly when
+`Δ ∘ d₀ = (d₁ ⊗ 1 + 1 ⊗ d₂) ∘ Δ`. -/
+theorem mul'_comp_map_comp_comp_eq_iff_comp_eq_rTensor_add_lTensor_comp {M : Type*}
+    [AddCommMonoid M] [Module R M] (Δ : M →ₗ[R] (α →₀ R) ⊗[R] (β →₀ R)) (d₀ : M →ₗ[R] M)
+    (d₁ : (α →₀ R) →ₗ[R] α →₀ R) (d₂ : (β →₀ R) →ₗ[R] β →₀ R) :
+    (∀ (a : (α →₀ R) →ₗ[R] R) (b : (β →₀ R) →ₗ[R] R),
+        mul' R R ∘ₗ TensorProduct.map a b ∘ₗ Δ ∘ₗ d₀ =
+          mul' R R ∘ₗ TensorProduct.map (a ∘ₗ d₁) b ∘ₗ Δ +
+            mul' R R ∘ₗ TensorProduct.map a (b ∘ₗ d₂) ∘ₗ Δ) ↔
+      Δ ∘ₗ d₀ = (d₁.rTensor _ + d₂.lTensor _) ∘ₗ Δ := by
+  -- The right side of the Leibniz rule is `μ ∘ (a ⊗ b) ∘ (d₁ ⊗ 1 + 1 ⊗ d₂) ∘ Δ`.
+  have hR : ∀ (a : (α →₀ R) →ₗ[R] R) (b : (β →₀ R) →ₗ[R] R),
+      mul' R R ∘ₗ TensorProduct.map (a ∘ₗ d₁) b ∘ₗ Δ +
+          mul' R R ∘ₗ TensorProduct.map a (b ∘ₗ d₂) ∘ₗ Δ =
+        mul' R R ∘ₗ TensorProduct.map a b ∘ₗ (d₁.rTensor _ + d₂.lTensor _) ∘ₗ Δ := by
+    intro a b
+    refine LinearMap.ext fun c ↦ ?_
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, _root_.map_add, LinearMap.map_rTensor,
+      LinearMap.map_lTensor]
+  simp_rw [hR]
+  refine ⟨fun h ↦ ?_, fun h a b ↦ by rw [h]⟩
+  -- Test the Leibniz rule against the coordinate forms: they read the coefficients of the two
+  -- sides of the identity.
+  refine LinearMap.ext fun m ↦ (finsuppTensorFinsupp' R α β).injective (Finsupp.ext fun x ↦ ?_)
+  have := congr($(h (Finsupp.lapply x.1) (Finsupp.lapply x.2)) m)
+  simpa only [comp_apply, mul'_map_lapply_lapply, Prod.mk.eta] using this
+
+end LinearMap
 
 /-- **An endomorphism with split coefficients is `dA ⊗ 1 + εA ⊗ dB`.** Let `e : ι ≃ α × β`. If the
 coefficient of `(p', q')` in the image under `d` of the basis vector `(p, q)` is the coefficient of
