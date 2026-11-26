@@ -33,7 +33,7 @@ of the stackification (`TauCeti.Stack.stackificationUniversal`).
 
 ## Main declarations
 
-* `CategoryTheory.Pseudofunctor.StrongTrans.essImage_map`: the essential image of a strong
+* `CategoryTheory.Pseudofunctor.StrongTrans.map_obj_mem_essImage`: the essential image of a strong
   transformation into `Cat` is stable under pullback.
 * `CategoryTheory.Pseudofunctor.StrongTrans.faithful_precomp`,
   `CategoryTheory.Pseudofunctor.StrongTrans.full_precomp`: precomposition with a locally
@@ -73,9 +73,8 @@ private lemma appObj_comp_naturalityObjIso_hom {a b : LocallyDiscrete Cᵒᵖ} (
       (Φ.app b).toFunctor.map (η.naturalityObjIso f M).hom ≫
         (Φ.naturalityObjIso f ((η.app a).toFunctor.obj M)).hom ≫
           (G.map f).toFunctor.map (appObj Γ M) := by
-  have h := congrArg (fun t ↦ t.toNatTrans.app M) (Γ.as.naturality f)
-  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app,
-    comp_naturality_hom_app] at h
+  have h := app_comp_naturalityObjIso_hom Γ f M
+  simp only [naturalityObjIso_hom, comp_naturality_hom_app] at h
   rw [naturalityObjIso_hom, naturalityObjIso_hom, naturalityObjIso_hom]
   -- `h` is the claim, up to unfolding `appObj` and the composites in `Cat`.
   exact h.trans (Category.assoc _ _ _)
@@ -92,19 +91,11 @@ private lemma map_appObj {a b : LocallyDiscrete Cᵒᵖ} (f : a ⟶ b) (M : F.ob
     Functor.map_id, Category.id_comp, Iso.inv_hom_id_assoc]
 
 /-- The essential image of a strong transformation into `Cat` is stable under pullback. -/
-lemma essImage_map {a b : LocallyDiscrete Cᵒᵖ} (f : a ⟶ b) {B : P.obj a}
+lemma map_obj_mem_essImage {a b : LocallyDiscrete Cᵒᵖ} (f : a ⟶ b) {B : P.obj a}
     (hB : (η.app a).toFunctor.essImage B) :
     (η.app b).toFunctor.essImage ((P.map f).toFunctor.obj B) :=
   ⟨(F.map f).toFunctor.obj hB.witness,
     ⟨η.naturalityObjIso f _ ≪≫ (P.map f).toFunctor.mapIso hB.getIso⟩⟩
-
-/-- The naturality isomorphisms of `Φ`, in inverse form. -/
-@[reassoc]
-private lemma map_map_comp_naturalityObjIso_inv {a b : LocallyDiscrete Cᵒᵖ} (f : a ⟶ b)
-    {B B' : P.obj a} (x : B ⟶ B') :
-    (G.map f).toFunctor.map ((Φ.app a).toFunctor.map x) ≫ (Φ.naturalityObjIso f B').inv =
-      (Φ.naturalityObjIso f B).inv ≫ (Φ.app b).toFunctor.map ((P.map f).toFunctor.map x) := by
-  rw [Iso.comp_inv_eq, Category.assoc, naturalityObjIso_hom_naturality, Iso.inv_hom_id_assoc]
 
 /-- The value at an object in the essential image of `η` of the modification `Φ ⟶ Φ'` extending
 `Γ : η ≫ Φ ⟶ η ≫ Φ'`. -/
@@ -150,13 +141,13 @@ private lemma localApp_naturality {a : LocallyDiscrete Cᵒᵖ} {B B' : P.obj a}
 private lemma map_localApp {a b : LocallyDiscrete Cᵒᵖ} (f : a ⟶ b) {B : P.obj a}
     (hB : (η.app a).toFunctor.essImage B) :
     (G.map f).toFunctor.map (localApp Γ hB) =
-      (Φ.naturalityObjIso f B).inv ≫ localApp Γ (essImage_map f hB) ≫
+      (Φ.naturalityObjIso f B).inv ≫ localApp Γ (map_obj_mem_essImage f hB) ≫
         (Φ'.naturalityObjIso f B).hom := by
-  rw [localApp_eq Γ (essImage_map f hB)
+  rw [localApp_eq Γ (map_obj_mem_essImage f hB)
     (η.naturalityObjIso f _ ≪≫ (P.map f).toFunctor.mapIso hB.getIso), localApp]
   simp only [Functor.map_comp, map_appObj, Iso.trans_hom, Iso.trans_inv, Functor.mapIso_hom,
     Functor.mapIso_inv, Category.assoc]
-  rw [map_map_comp_naturalityObjIso_inv_assoc, naturalityObjIso_hom_naturality]
+  rw [naturalityObjIso_inv_naturality_assoc, naturalityObjIso_hom_naturality]
 
 end Full
 
@@ -164,56 +155,14 @@ section Prestack
 
 open LocallyDiscreteOpToCat
 
-variable (P) in
-/-- The comparison isomorphism `(h ≫ g)^* A ≅ h^* (g^* A)` of a pseudofunctor into `Cat`, with its
-source and target written as images of `A`. -/
-private def compObjIso {U T T' : C} (g : T ⟶ U) (h : T' ⟶ T) (A : P.obj (.mk (op U))) :
-    (P.map (h ≫ g).op.toLoc).toFunctor.obj A ≅
-      (P.map h.op.toLoc).toFunctor.obj ((P.map g.op.toLoc).toFunctor.obj A) :=
-  (Cat.Hom.toNatIso (P.mapComp' g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc rfl)).app A
-
-/-- The pullback `pullHom` along `h` of a morphism over `g`, through `compObjIso`. -/
-private lemma pullHom_eq_compObjIso {U U' T T' : C} {M₁ : G.obj (.mk (op U))}
-    {M₂ : G.obj (.mk (op U'))} {g₁ : T ⟶ U} {g₂ : T ⟶ U'}
-    (φ : (G.map g₁.op.toLoc).toFunctor.obj M₁ ⟶ (G.map g₂.op.toLoc).toFunctor.obj M₂)
-    (h : T' ⟶ T) :
-    pullHom φ h (h ≫ g₁) (h ≫ g₂) = (compObjIso G g₁ h M₁).hom ≫
-      (G.map h.op.toLoc).toFunctor.map φ ≫ (compObjIso G g₂ h M₂).inv :=
-  (rfl)
-
-variable (Φ) in
-/-- The naturality isomorphism of `Φ` along a composite, through `compObjIso`. -/
-private lemma naturalityObjIso_comp_hom {U T T' : C} (g : T ⟶ U) (h : T' ⟶ T)
-    (A : P.obj (.mk (op U))) :
-    (Φ.naturalityObjIso (h ≫ g).op.toLoc A).hom =
-      (Φ.app _).toFunctor.map (compObjIso P g h A).hom ≫
-        (Φ.naturalityObjIso h.op.toLoc _).hom ≫
-          (G.map h.op.toLoc).toFunctor.map (Φ.naturalityObjIso g.op.toLoc A).hom ≫
-            (compObjIso G g h _).inv :=
-  -- This is `naturalityObjIso_hom_comp'` up to unfolding `compObjIso`.
-  Φ.naturalityObjIso_hom_comp' g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc rfl A
-
-variable (Φ) in
-/-- The inverse naturality isomorphism of `Φ` along a composite, through `compObjIso`. -/
-private lemma naturalityObjIso_comp_inv {U T T' : C} (g : T ⟶ U) (h : T' ⟶ T)
-    (A : P.obj (.mk (op U))) :
-    (Φ.naturalityObjIso (h ≫ g).op.toLoc A).inv =
-      (compObjIso G g h _).hom ≫
-        (G.map h.op.toLoc).toFunctor.map (Φ.naturalityObjIso g.op.toLoc A).inv ≫
-          (Φ.naturalityObjIso h.op.toLoc _).inv ≫
-            (Φ.app _).toFunctor.map (compObjIso P g h A).inv := by
-  refine Iso.inv_ext ?_
-  rw [naturalityObjIso_comp_hom]
-  simp only [Category.assoc, Iso.inv_hom_id_assoc, ← Functor.map_comp_assoc, Iso.hom_inv_id,
-    Functor.map_id, Category.id_comp, Iso.hom_inv_id_assoc, ← Functor.map_comp]
-
 variable (η) in
 /-- The sieve of the arrows `g : T ⟶ U` along which the pullback of `A` is in the essential
 image of `η`. -/
 private abbrev essImageSieve {U : C} (A : P.obj (.mk (op U))) : Sieve U where
   arrows _ g := (η.app _).toFunctor.essImage ((P.map g.op.toLoc).toFunctor.obj A)
   downward_closed {_ _} g hg h :=
-    Functor.essImage.ofIso (compObjIso P g h A).symm (essImage_map h.op.toLoc hg)
+    Functor.essImage.ofIso (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).symm
+      (map_obj_mem_essImage h.op.toLoc hg)
 
 variable (η) in
 /-- For a locally essentially surjective `η`, the sieve `essImageSieve η A` is covering. -/
@@ -232,12 +181,17 @@ private lemma pullHom_naturalityObjIso {U T T' : C} (g : T ⟶ U) (h : T' ⟶ T)
     pullHom ((Φ.naturalityObjIso g.op.toLoc A).inv ≫ z ≫ (Φ'.naturalityObjIso g.op.toLoc A).hom)
         h (h ≫ g) (h ≫ g) =
       (Φ.naturalityObjIso (h ≫ g).op.toLoc A).inv ≫
-        (Φ.app _).toFunctor.map (compObjIso P g h A).hom ≫
+        (Φ.app _).toFunctor.map (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).hom ≫
           (Φ.naturalityObjIso h.op.toLoc _).hom ≫ (G.map h.op.toLoc).toFunctor.map z ≫
             (Φ'.naturalityObjIso h.op.toLoc _).inv ≫
-              (Φ'.app _).toFunctor.map (compObjIso P g h A).inv ≫
+              (Φ'.app _).toFunctor.map (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).inv ≫
                 (Φ'.naturalityObjIso (h ≫ g).op.toLoc A).hom := by
-  rw [pullHom_eq_compObjIso, naturalityObjIso_comp_inv, naturalityObjIso_comp_hom]
+  rw [pullHom_eq_compIso, Φ.naturalityObjIso_inv_comp' g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc rfl,
+    Φ'.naturalityObjIso_hom_comp' g.op.toLoc h.op.toLoc (h ≫ g).op.toLoc rfl,
+    ← compIso_hom P g.op h.op (h ≫ g).op op_comp.symm A,
+    ← compIso_inv P g.op h.op (h ≫ g).op op_comp.symm A,
+    ← compIso_hom G g.op h.op (h ≫ g).op op_comp.symm ((Φ.app _).toFunctor.obj A),
+    ← compIso_inv G g.op h.op (h ≫ g).op op_comp.symm ((Φ'.app _).toFunctor.obj A)]
   simp only [Functor.map_comp, Category.assoc, ← Functor.map_comp_assoc (Φ.app _).toFunctor,
     ← Functor.map_comp_assoc (Φ'.app _).toFunctor, Iso.inv_hom_id, Functor.map_id,
     Category.id_comp, Iso.inv_hom_id_assoc]
@@ -257,8 +211,8 @@ private lemma pullHom_localApp {U T T' : C} (A : P.obj (.mk (op U))) (g : T ⟶ 
   rw [pullHom_naturalityObjIso, map_localApp]
   simp only [Category.assoc, Iso.hom_inv_id_assoc]
   rw [reassoc_of% (localApp_naturality Γ ((essImageSieve η A).downward_closed hg h)
-    (essImage_map h.op.toLoc hg) (compObjIso P g h A).hom), ← Functor.map_comp_assoc,
-    Iso.hom_inv_id, Functor.map_id, Category.id_comp]
+    (map_obj_mem_essImage h.op.toLoc hg) (P.compIso g.op h.op (h ≫ g).op op_comp.symm A).hom),
+    ← Functor.map_comp_assoc, Iso.hom_inv_id, Functor.map_id, Category.id_comp]
 
 variable (η) in
 /-- The component at `A` of the modification `Φ ⟶ Φ'` extending `Γ : η ≫ Φ ⟶ η ≫ Φ'`, glued from
@@ -302,7 +256,7 @@ private lemma glueApp_naturality {U : C} {A A' : P.obj (.mk (op U))} (x : A ⟶ 
   IsPrestack.hom_ext (J.intersection_covering (essImageSieve_mem η J A) (essImageSieve_mem η J A'))
     fun _ g ⟨hg, hg'⟩ ↦ by
       rw [Functor.map_comp, Functor.map_comp, map_glueApp Γ J A g hg, map_glueApp Γ J A' g hg',
-        map_map_comp_naturalityObjIso_inv_assoc, reassoc_of% (localApp_naturality Γ hg hg'),
+        naturalityObjIso_inv_naturality_assoc, reassoc_of% (localApp_naturality Γ hg hg'),
         Category.assoc, Category.assoc, naturalityObjIso_hom_naturality]
 
 /-- The glued components are compatible with the naturality isomorphisms of `Φ` and `Φ'`. -/
@@ -313,18 +267,20 @@ private lemma glueApp_comp_naturalityObjIso_hom {U V : C} (q : V ⟶ U) (A : P.o
   rw [← Iso.eq_comp_inv]
   refine IsPrestack.hom_ext (essImageSieve_mem η J ((P.map q.op.toLoc).toFunctor.obj A))
     fun W r hr ↦ ?_
-  have hrq : essImageSieve η A (r ≫ q) := Functor.essImage.ofIso (compObjIso P q r A).symm hr
+  have hrq : essImageSieve η A (r ≫ q) :=
+    Functor.essImage.ofIso (P.compIso q.op r.op (r ≫ q).op op_comp.symm A).symm hr
   have h₁ := pullHom_naturalityObjIso Φ Φ' q r A ((Φ.naturalityObjIso q.op.toLoc A).hom ≫
     (G.map q.op.toLoc).toFunctor.map (glueApp Γ J A) ≫ (Φ'.naturalityObjIso q.op.toLoc A).inv)
   simp only [Category.assoc, Iso.inv_hom_id_assoc, Iso.inv_hom_id, Category.comp_id] at h₁
   rw [pullHom_map, map_glueApp Γ J A _ hrq] at h₁
   -- Cancel the naturality isomorphisms along `r ≫ q`.
-  have h₂ : localApp Γ hrq = (Φ.app _).toFunctor.map (compObjIso P q r A).hom ≫
+  have h₂ : localApp Γ hrq =
+      (Φ.app _).toFunctor.map (P.compIso q.op r.op (r ≫ q).op op_comp.symm A).hom ≫
       (Φ.naturalityObjIso r.op.toLoc _).hom ≫ (G.map r.op.toLoc).toFunctor.map
         ((Φ.naturalityObjIso q.op.toLoc A).hom ≫ (G.map q.op.toLoc).toFunctor.map (glueApp Γ J A) ≫
           (Φ'.naturalityObjIso q.op.toLoc A).inv) ≫
         (Φ'.naturalityObjIso r.op.toLoc _).inv ≫
-          (Φ'.app _).toFunctor.map (compObjIso P q r A).inv := by
+          (Φ'.app _).toFunctor.map (P.compIso q.op r.op (r ≫ q).op op_comp.symm A).inv := by
     rw [← cancel_epi (Φ.naturalityObjIso (r ≫ q).op.toLoc A).inv,
       ← cancel_mono (Φ'.naturalityObjIso (r ≫ q).op.toLoc A).hom]
     simpa only [Category.assoc] using h₁
@@ -334,9 +290,10 @@ private lemma glueApp_comp_naturalityObjIso_hom {U V : C} (q : V ⟶ U) (A : P.o
         (G.map q.op.toLoc).toFunctor.map (glueApp Γ J A) ≫
           (Φ'.naturalityObjIso q.op.toLoc A).inv) ≫
         (Φ'.naturalityObjIso r.op.toLoc _).inv := by
-    have h := localApp_naturality Γ hrq hr (compObjIso P q r A).hom
+    have h := localApp_naturality Γ hrq hr (P.compIso q.op r.op (r ≫ q).op op_comp.symm A).hom
     rw [h₂] at h
-    rw [← cancel_epi ((Φ.app _).toFunctor.map (compObjIso P q r A).hom), h]
+    rw [← cancel_epi ((Φ.app _).toFunctor.map
+      (P.compIso q.op r.op (r ≫ q).op op_comp.symm A).hom), h]
     simp only [Category.assoc, ← Functor.map_comp, Iso.inv_hom_id, Functor.map_id,
       Category.comp_id]
   rw [map_glueApp Γ J _ r hr, h₃]
@@ -367,16 +324,6 @@ private lemma whiskerLeft_glue : η ◁ glue Γ J = Γ := by
   rfl
 
 end Glue
-
-/-- The naturality square of a modification `Δ : Φ ⟶ Φ'` along `f`, on an object. -/
-private lemma app_comp_naturalityObjIso_hom (Δ : Φ ⟶ Φ') {a b : LocallyDiscrete Cᵒᵖ} (f : a ⟶ b)
-    (A : P.obj a) :
-    (Δ.as.app b).toNatTrans.app ((P.map f).toFunctor.obj A) ≫ (Φ'.naturalityObjIso f A).hom =
-      (Φ.naturalityObjIso f A).hom ≫ (G.map f).toFunctor.map ((Δ.as.app a).toNatTrans.app A) := by
-  have h := congrArg (fun t ↦ t.toNatTrans.app A) (Δ.as.naturality f)
-  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h
-  rw [naturalityObjIso_hom, naturalityObjIso_hom]
-  exact h
 
 /-- The pullback of a component of a modification `Δ : Φ ⟶ Φ'` to an object in the essential
 image of `η` is determined by the whiskered modification `η ◁ Δ`. -/
