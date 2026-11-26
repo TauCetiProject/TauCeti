@@ -124,24 +124,11 @@ theorem lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation
     mem_lieAnnihilator]
   simp only [mem_stabilizer_continuousAdjointRepresentation_iff]
   refine ⟨fun h ↦ ?_, fun h t ↦ Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero h t⟩
-  -- Read at the identity, the curve `t ↦ Ad_(exp (t X)) Y` is constant, and its derivative at `0`
-  -- is `⁅X, Y⁆`.
-  let e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-  have hconst : (fun t : ℝ ↦ show E from
-      tangentAd (I := I) (mulInvariantExp (I := I) (G := G) (t • e X)) (e Y)) =
-        fun _ ↦ show E from e Y := by
-    funext t
-    have ht := congrArg e (h t)
-    rwa [leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, lieExp_eq_mulInvariantExp, map_smul,
-      ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply] at ht
-  have hderiv := hasDerivAt_tangentAd_mulInvariantExp_smul_apply_zero (I := I) (G := G) (e X) (e Y)
-  dsimp only at hderiv
-  rw [hconst] at hderiv
-  have hzero : e ⁅X, Y⁆ = 0 := by
-    rw [LieEquiv.map_lie, ← LieAlgebra.ad_apply ℝ]
-    exact hderiv.unique (hasDerivAt_const 0 _)
-  exact e.injective (hzero.trans (map_zero e).symm)
+  -- The curve `t ↦ Ad_(exp (t X)) Y` is constant, and its derivative at `0` is `⁅X, Y⁆`.
+  have hderiv := hasDerivAt_Ad_lieExp_smul_apply_zero (I := I) X Y
+  rw [show (fun s : ℝ ↦ Ad (I := I) (lieExp (I := I) (s • X)) Y) = fun _ ↦ Y from funext h]
+    at hderiv
+  exact hderiv.unique (hasDerivAt_const 0 Y)
 
 /-! ### The adjoint stabilizer on the tangent Lie algebra -/
 

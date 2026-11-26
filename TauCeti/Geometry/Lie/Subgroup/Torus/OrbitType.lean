@@ -30,24 +30,27 @@ stabilizer `Z_G(X) = {g | Ad_g X = X}` of `X ∈ t` from the roots that vanish a
   `Lie Z_G(X) = t ⊕ ⨁ {E_i | α_i(X) = 0}`
 
   (`toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation`). A nonzero
-  vector of `E_i` lies in it exactly when `α_i(X) = 0`
-  (`mem_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff`), and the adjoint
-  orbit through `X` has the dimension `dim (𝔤 ⧸ Lie Z_G(X)) = ∑ {dim E_i | α_i(X) ≠ 0}` of the
-  remaining planes
+  vector of a root plane lies in it exactly when its root vanishes at `X`
+  (`IsRootPlane.mem_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff`), and
+  the adjoint orbit through `X` has the dimension `dim (𝔤 ⧸ Lie Z_G(X)) = ∑ {dim E_i | α_i(X) ≠ 0}`
+  of the remaining planes
   (`finrank_quotient_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation`).
-* **Stabilizer types.** When every plane is nonzero, `Lie Z_G(X) ≤ Lie Z_G(Y)` exactly when every
-  root vanishing at `X` vanishes at `Y`
+* **Comparing stabilizers.** When every plane is nonzero, `Lie Z_G(X) ≤ Lie Z_G(Y)` exactly when
+  every root vanishing at `X` vanishes at `Y`
   (`lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_le_iff`). For a compact
   connected group the stabilizers are connected and closed, so they are determined by their Lie
   algebras, and the same holds for the stabilizers themselves:
 
   `Z_G(X) ≤ Z_G(Y) ↔ ∀ i, α_i(X) = 0 → α_i(Y) = 0`
 
-  (`stabilizer_continuousAdjointRepresentation_le_iff`). Thus the stabilizer type of `X ∈ t` is the
-  set of roots vanishing at `X`, the pattern of root hyperplanes through `X`
-  (`stabilizer_continuousAdjointRepresentation_eq_stabilizer_iff`). On a closed Weyl chamber these
-  patterns are its faces; that comparison needs the Weyl group action on the roots and is not made
-  here.
+  (`stabilizer_continuousAdjointRepresentation_le_iff`). Thus the stabilizer `Z_G(X)` itself, not
+  just its conjugacy class, is determined by the set of roots vanishing at `X`, the pattern of root
+  hyperplanes through `X` (`stabilizer_continuousAdjointRepresentation_eq_stabilizer_iff`).
+  Conjugate stabilizers can have different patterns: in `SU(3)`, an element where only `α₁`
+  vanishes and one where only `α₂` vanishes have conjugate stabilizers. So stabilizer types, the
+  conjugacy classes of stabilizers, correspond to vanishing patterns only up to the Weyl group. On
+  a closed Weyl chamber these patterns are its faces; that comparison needs the Weyl group action
+  on the roots and is not made here.
 * **Regular elements.** If the roots are nonzero, `Lie Z_G(X) = t` exactly when no root vanishes
   at `X` (`toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_eq_iff`),
   and for a torus `T`, such as a maximal torus, of a compact connected group with `t = Lie(T)`,
@@ -56,7 +59,8 @@ stabilizer `Z_G(X) = {g | Ad_g X = X}` of `X ∈ t` from the roots that vanish a
 Connectedness of `G` is needed for the group statements: in `O(2)`, with `T = SO(2)` and no roots,
 the stabilizer of `0` is all of `O(2)`, not `T`.
 
-Unqualified names above and below are in the namespace `TauCeti.IsRootPlaneDecomposition`.
+Unqualified names above and below are in the namespace `TauCeti.IsRootPlaneDecomposition`; names
+starting with `IsRootPlane.` are in the namespace `TauCeti`.
 
 ## Main results
 
@@ -66,8 +70,8 @@ Unqualified names above and below are in the namespace `TauCeti.IsRootPlaneDecom
   dimension of the adjoint orbit through `X`.
 * `lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_le_iff`,
   `stabilizer_continuousAdjointRepresentation_le_iff`,
-  `stabilizer_continuousAdjointRepresentation_eq_stabilizer_iff`: stabilizer types are root
-  vanishing patterns.
+  `stabilizer_continuousAdjointRepresentation_eq_stabilizer_iff`: the stabilizers of `X, Y ∈ t`
+  are compared by the roots vanishing at `X` and `Y`.
 * `stabilizer_continuousAdjointRepresentation_eq_iff`: the stabilizer of `X` is the torus exactly
   when `X` is regular.
 
@@ -86,7 +90,7 @@ noncomputable section
 open Module (Dual finrank)
 open scoped ContDiff Manifold
 
-namespace TauCeti.IsRootPlaneDecomposition
+namespace TauCeti
 
 open Lie
 
@@ -95,11 +99,49 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
   {B : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)}
-  {t : Submodule ℝ (LeftInvariantDerivation I G)} {ι : Type*} [Finite ι] {α : ι → Dual ℝ t}
-  {V : ι → Submodule ℝ (LeftInvariantDerivation I G)} {J : (i : ι) → Module.End ℝ (V i)}
+  {t : Submodule ℝ (LeftInvariantDerivation I G)}
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
+
+/-! ### A single root plane -/
+
+namespace IsRootPlane
+
+variable {α : Dual ℝ t} {V : Submodule ℝ (LeftInvariantDerivation I G)} {J : Module.End ℝ V}
+
+/-- **Root planes in the Lie algebra of the stabilizer.** A vector `v` of a root plane `E` with
+root `α` lies in the Lie algebra of the adjoint stabilizer of `X ∈ t` exactly when `α(X) = 0` or
+`v = 0`. -/
+theorem mem_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff
+    (h : IsRootPlane B t α V J) (X : t) (v : V) :
+    (v : LeftInvariantDerivation I G) ∈ lieSubalgebraOfSubgroup (I := I)
+        ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
+          (X : LeftInvariantDerivation I G)) ↔ α X = 0 ∨ v = 0 := by
+  rw [lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation, mem_lieAnnihilator,
+    ← lie_skew, neg_eq_zero, h.lie_eq_zero_iff]
+
+/-- A nonzero root plane `E` with root `α` lies in the Lie algebra of the adjoint stabilizer of
+`X ∈ t` exactly when `α(X) = 0`. -/
+theorem le_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff
+    (h : IsRootPlane B t α V J) (X : t) (hV : V ≠ ⊥) :
+    V ≤ (lieSubalgebraOfSubgroup (I := I)
+        ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
+          (X : LeftInvariantDerivation I G))).toSubmodule ↔ α X = 0 := by
+  refine ⟨fun hle ↦ ?_, fun hα v hv ↦ ?_⟩
+  · obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hV
+    have hmem := h.mem_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff X
+      ⟨v, hv⟩
+    exact (hmem.1 (hle hv)).resolve_right (by simpa using hv0)
+  · exact (h.mem_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff X
+      ⟨v, hv⟩).2 (Or.inl hα)
+
+end IsRootPlane
+
+namespace IsRootPlaneDecomposition
+
+variable {ι : Type*} [Finite ι] {α : ι → Dual ℝ t}
+  {V : ι → Submodule ℝ (LeftInvariantDerivation I G)} {J : (i : ι) → Module.End ℝ (V i)}
 
 /-! ### The Lie algebra of the stabilizer -/
 
@@ -118,33 +160,6 @@ theorem toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresen
     ← lieAnnihilator_bilinForm_apply_eq_of_lieInvariant hB hsep, hD.lieAnnihilator_eq hB hsep X]
 
 omit [Finite ι] in
-/-- **Root planes in the Lie algebra of the stabilizer.** A vector `v` of the root plane `E_i` lies
-in the Lie algebra of the adjoint stabilizer of `X ∈ t` exactly when `α_i(X) = 0` or `v = 0`. -/
-theorem mem_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff
-    (hD : IsRootPlaneDecomposition B t α V J) (X : t) {i : ι} (v : V i) :
-    (v : LeftInvariantDerivation I G) ∈ lieSubalgebraOfSubgroup (I := I)
-        ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
-          (X : LeftInvariantDerivation I G)) ↔ α i X = 0 ∨ v = 0 := by
-  rw [lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation, mem_lieAnnihilator,
-    ← lie_skew, neg_eq_zero, (hD.isRootPlane i).lie_eq_zero_iff]
-
-omit [Finite ι] in
-/-- A nonzero root plane `E_i` lies in the Lie algebra of the adjoint stabilizer of `X ∈ t`
-exactly when `α_i(X) = 0`. -/
-theorem le_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff
-    (hD : IsRootPlaneDecomposition B t α V J) (X : t) {i : ι} (hV : V i ≠ ⊥) :
-    V i ≤ (lieSubalgebraOfSubgroup (I := I)
-        ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
-          (X : LeftInvariantDerivation I G))).toSubmodule ↔ α i X = 0 := by
-  refine ⟨fun h ↦ ?_, fun h v hv ↦ ?_⟩
-  · obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hV
-    have hmem := hD.mem_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff X
-      ⟨v, hv⟩
-    exact (hmem.1 (h hv)).resolve_right (by simpa using hv0)
-  · exact (hD.mem_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff X
-      ⟨v, hv⟩).2 (Or.inl h)
-
-omit [Finite ι] in
 /-- **The dimension of an adjoint orbit through a torus element.** For a separating invariant form
 and `X ∈ t`, the quotient of `𝔤` by the Lie algebra of `Z_G(X)`, the tangent space of the adjoint
 orbit through `X`, has dimension `∑ {dim E_i | α_i(X) ≠ 0}`. -/
@@ -161,11 +176,11 @@ theorem finrank_quotient_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRep
     ← lieAnnihilator_bilinForm_apply_eq_of_lieInvariant hB hsep,
     hD.finrank_quotient_lieAnnihilator hB hsep X]
 
-/-! ### Stabilizer types -/
+/-! ### Comparing stabilizers -/
 
-/-- **Stabilizer types in the Lie algebra.** For a separating invariant form whose root planes are
-nonzero and `X, Y ∈ t`, the Lie algebra of `Z_G(X)` lies in that of `Z_G(Y)` exactly when every
-root vanishing at `X` vanishes at `Y`. -/
+/-- **Comparing stabilizers in the Lie algebra.** For a separating invariant form whose root planes
+are nonzero and `X, Y ∈ t`, the Lie algebra of `Z_G(X)` lies in that of `Z_G(Y)` exactly when
+every root vanishing at `X` vanishes at `Y`. -/
 theorem lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_le_iff
     (hD : IsRootPlaneDecomposition B t α V J)
     (hB : B.lieInvariant (LeftInvariantDerivation I G)) (hsep : B.SeparatingLeft)
@@ -182,8 +197,8 @@ theorem lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_le_if
   rw [← LieSubalgebra.toSubmodule_le_toSubmodule,
     hD.toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation hB hsep X]
   refine ⟨fun h i hi ↦ ?_, fun h ↦ ?_⟩
-  · refine (hD.le_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff Y
-      (hV i)).1 (le_trans ?_ h)
+  · refine (IsRootPlane.le_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff
+      (hD.isRootPlane i) Y (hV i)).1 (le_trans ?_ h)
     exact le_sup_of_le_right (le_iSup₂_of_le i (Finset.mem_filter.2 ⟨Finset.mem_univ i, hi⟩)
       le_rfl)
   · rw [hD.toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation hB hsep Y]
@@ -195,10 +210,10 @@ section Compact
 
 variable [CompactSpace G] [ConnectedSpace G]
 
-/-- **Stabilizer types of a compact connected group.** For a separating invariant form whose root
-planes are nonzero and `X, Y ∈ t`, the adjoint stabilizer `Z_G(X)` lies in `Z_G(Y)` exactly when
-every root vanishing at `X` vanishes at `Y`. The stabilizers are closed and connected, so each is
-determined by its Lie algebra. -/
+/-- **Comparing the stabilizers of a compact connected group.** For a separating invariant form
+whose root planes are nonzero and `X, Y ∈ t`, the adjoint stabilizer `Z_G(X)` lies in `Z_G(Y)`
+exactly when every root vanishing at `X` vanishes at `Y`. The stabilizers are closed and connected,
+so each is determined by its Lie algebra. -/
 theorem stabilizer_continuousAdjointRepresentation_le_iff
     (hD : IsRootPlaneDecomposition B t α V J)
     (hB : B.lieInvariant (LeftInvariantDerivation I G)) (hsep : B.SeparatingLeft)
@@ -214,9 +229,11 @@ theorem stabilizer_continuousAdjointRepresentation_le_iff
     (isConnected_stabilizer_continuousAdjointRepresentation _).isPreconnected
     (isClosed_stabilizer_continuousAdjointRepresentation _)⟩
 
-/-- **The stabilizer type of a torus element is its root vanishing pattern.** For a compact
-connected group, a separating invariant form whose root planes are nonzero and `X, Y ∈ t`, the
-adjoint stabilizers of `X` and `Y` agree exactly when the same roots vanish at `X` and at `Y`. -/
+/-- **Equal adjoint stabilizers have equal root vanishing patterns.** For a compact connected
+group, a separating invariant form whose root planes are nonzero and `X, Y ∈ t`, the adjoint
+stabilizers of `X` and `Y` agree exactly when the same roots vanish at `X` and at `Y`. This is
+equality of the stabilizers, not of their conjugacy classes: stabilizer types correspond to
+vanishing patterns only up to the Weyl group. -/
 theorem stabilizer_continuousAdjointRepresentation_eq_stabilizer_iff
     (hD : IsRootPlaneDecomposition B t α V J)
     (hB : B.lieInvariant (LeftInvariantDerivation I G)) (hsep : B.SeparatingLeft)
@@ -248,8 +265,9 @@ theorem toSubmodule_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresen
   refine ⟨fun h i hi ↦ hα i ?_, fun h ↦ ?_⟩
   · -- A nonzero vector of `E_i` would lie in the abelian subspace `t`, so `α_i` would vanish.
     obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hV i)
-    have hle := (hD.le_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff X
-      (hV i)).2 hi
+    have hle :=
+      (IsRootPlane.le_lieSubalgebraOfSubgroup_stabilizer_continuousAdjointRepresentation_iff
+        (hD.isRootPlane i) X (hV i)).2 hi
     have hvt : v ∈ t := h ▸ hle hv
     ext H
     refine (((hD.isRootPlane i).lie_eq_zero_iff H ⟨v, hv⟩).1
@@ -278,4 +296,6 @@ theorem stabilizer_continuousAdjointRepresentation_eq_iff [CompactSpace G] [Conn
   exact le_of_lieSubalgebraOfSubgroup_le (isClosed_stabilizer_continuousAdjointRepresentation _)
     (isConnected_stabilizer_continuousAdjointRepresentation _).isPreconnected hTc h.le
 
-end TauCeti.IsRootPlaneDecomposition
+end IsRootPlaneDecomposition
+
+end TauCeti
