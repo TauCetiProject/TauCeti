@@ -44,6 +44,7 @@ most `π(x) + (log x / log 2 − 1) √x ≤ 6 x / log x` for `x ≥ 2`.
   `θ` or `ψ` on `y > 0` extends to `y = 0` and has a nonnegative constant.
 * `Chebyshev.psi_sub_theta_le_of_forall_theta_le`, `Chebyshev.psi_sub_theta_le_log_four_mul`:
   the upper bound from a linear bound for `θ`, and its unconditional case.
+* `Chebyshev.psi_le_three_mul_self`: Chebyshev's bound `ψ(x) ≤ 3 x` for `x ≥ 0`.
 * `Chebyshev.psi_sub_theta_le_one_add_mul_sqrt_add`,
   `Chebyshev.one_sub_mul_sqrt_add_theta_rpow_le_psi_sub_theta`: the transfer of a relative bound
   for `θ` to `ψ − θ`.
@@ -178,6 +179,33 @@ theorem psi_sub_theta_le_of_forall_theta_le {c x : ℝ} (hc : ∀ y, 0 < y → �
 theorem psi_sub_theta_le_log_four_mul {x : ℝ} (hx : 0 ≤ x) :
     ψ x - θ x ≤ log 4 * (√x + max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)) :=
   psi_sub_theta_le_of_forall_theta_le (fun _ hy ↦ theta_le_log4_mul_x hy.le) hx
+
+/-- Chebyshev's bound `ψ x ≤ 3 x` for `x ≥ 0`. It follows from `Chebyshev.psi_le` and
+`log x ≤ (2 / e) √x`, as `log 4 + 4 / e < 3`; compare `Chebyshev.psi_le_const_mul_self`, whose
+constant is `log 4 + 4`. -/
+theorem psi_le_three_mul_self {x : ℝ} (hx : 0 ≤ x) : ψ x ≤ 3 * x := by
+  rcases lt_or_ge x 1 with hx1 | hx1
+  · rw [psi_eq_zero_of_lt_two (by linarith)]
+    positivity
+  have hs : 0 < √x := Real.sqrt_pos.2 (by linarith)
+  have hlog : Real.log x ≤ 2 * √x / Real.exp 1 := by
+    have h := Real.log_le_sub_one_of_pos (div_pos hs (Real.exp_pos 1))
+    rw [Real.log_div hs.ne' (Real.exp_pos 1).ne', Real.log_exp, Real.log_sqrt hx] at h
+    have h' : 2 * √x / Real.exp 1 = 2 * (√x / Real.exp 1) := by ring
+    linarith
+  have h4 : Real.log 4 < 1.39 := by
+    rw [show (4 : ℝ) = 2 * 2 by norm_num, Real.log_mul two_ne_zero two_ne_zero]
+    linarith [Real.log_two_lt_d9]
+  have he : 4 / Real.exp 1 < 1.5 := by
+    rw [div_lt_iff₀ (Real.exp_pos 1)]
+    linarith [Real.exp_one_gt_d9]
+  calc ψ x ≤ Real.log 4 * x + 2 * √x * Real.log x := psi_le hx1
+    _ ≤ Real.log 4 * x + 2 * √x * (2 * √x / Real.exp 1) := by gcongr
+    _ = (Real.log 4 + 4 / Real.exp 1) * x := by
+      rw [show 2 * √x * (2 * √x / Real.exp 1) = 4 / Real.exp 1 * (√x * √x) by ring,
+        Real.mul_self_sqrt hx]
+      ring
+    _ ≤ 3 * x := by gcongr; linarith
 
 /-! ### Transfer of a bound for `θ` to `ψ − θ` -/
 
