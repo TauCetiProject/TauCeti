@@ -11,12 +11,19 @@ import TauCeti.LinearAlgebra.Matrix.Block
 /-!
 # Leading-minor weight vectors on rectangular matrices
 
-A partition supported on the first `min m n` coordinates gives a product of leading minors
-of the generic `m × n` matrix. It is a nonzero homogeneous polynomial over a nontrivial
-coefficient ring. Under the substitution `X ↦ gᵀ * X * h` with upper triangular `g` and `h`,
-it transforms by the two diagonal characters of the partition, padded by zeros in the
-larger factor. In particular both upper unitriangular groups fix it. These are the explicit
-joint highest weight vectors in the Cauchy decomposition of rectangular matrix forms.
+An exponent vector `e : Fin (min m n) → ℕ` gives the product
+`TauCeti.rectangularLeadingMinorProd R e` of the leading minors of the generic `m × n` matrix,
+the minor on the first `a + 1` rows and columns appearing with exponent `e a`. Its associated
+partition is `TauCeti.leadingMinorWeight e`, with `j`-th part `∑_{a ≥ j} e a`; conversely
+`TauCeti.leadingMinorExponent` recovers the exponents from an antitone partition. The product is
+a nonzero polynomial over a nontrivial coefficient ring, homogeneous of degree the sum of the
+parts of `leadingMinorWeight e`. Under the substitution `X ↦ gᵀ * X * h` with upper triangular
+`g` and `h`, it is multiplied by the diagonal characters of `g` and `h` with exponents
+`leadingMinorWeight e`, the characters ignoring the diagonal entries beyond `min m n`. So it is a
+joint Borel weight vector, fixed by both upper unitriangular groups.
+
+Over a field of characteristic zero these products span the highest weight lines of the Cauchy
+decomposition of the polynomial functions on `m × n` matrices; this file does not prove that.
 
 The weight calculation is the leading-minor construction of R. Howe, *Perspectives on
 invariant theory*, Israel Math. Conf. Proc. 8 (1995), §2.1. We use the square weight calculation
@@ -31,6 +38,12 @@ namespace TauCeti
 
 variable {m n : ℕ} {R S : Type*} [CommRing R]
 
+/-- The image of `Fin.castLE` is an initial segment. -/
+private theorem isLowerSet_range_castLE {k l : ℕ} (h : k ≤ l) :
+    IsLowerSet (Set.range (Fin.castLE h)) := by
+  rw [Fin.range_castLE]
+  exact fun _ _ hab hb ↦ lt_of_le_of_lt (Fin.le_iff_val_le_val.mp hab) hb
+
 /-- The product of leading minors of a generic `m × n` matrix. For `a : Fin (min m n)`,
 `e a` is the exponent of the minor on the first `a + 1` rows and columns. -/
 noncomputable def rectangularLeadingMinorProd (R : Type*) [CommRing R]
@@ -38,18 +51,20 @@ noncomputable def rectangularLeadingMinorProd (R : Type*) [CommRing R]
   rename (Prod.map (Fin.castLE (min_le_left m n)) (Fin.castLE (min_le_right m n)))
     (leadingMinorProd R e)
 
-/-- The largest square leading block supplies all the factors of the rectangular product. -/
-theorem rectangularLeadingMinorProd_eq_rename (e : Fin (min m n) → ℕ) :
+/-- The rectangular product is the square product on the largest common leading block, renamed
+into the variables of the `m × n` matrix. -/
+theorem rectangularLeadingMinorProd_def (e : Fin (min m n) → ℕ) :
     rectangularLeadingMinorProd R e =
       rename (Prod.map (Fin.castLE (min_le_left m n)) (Fin.castLE (min_le_right m n)))
         (leadingMinorProd R e) := (rfl)
 
-/-- The defining product of generic minors on the common initial segments. -/
-theorem rectangularLeadingMinorProd_def (e : Fin (min m n) → ℕ) :
+/-- The rectangular product as a product of powers of the generic minors on the common initial
+segments of the rows and columns. -/
+theorem rectangularLeadingMinorProd_eq_prod (e : Fin (min m n) → ℕ) :
     rectangularLeadingMinorProd R e = ∏ a, (mvPolynomialMinor R
       (fun j : {j : Fin (min m n) // j ≤ a} ↦ Fin.castLE (min_le_left m n) j.val)
       (fun j : {j : Fin (min m n) // j ≤ a} ↦ Fin.castLE (min_le_right m n) j.val)) ^ e a := by
-  rw [rectangularLeadingMinorProd_eq_rename, leadingMinorProd_def, map_prod]
+  rw [rectangularLeadingMinorProd_def, leadingMinorProd_def, map_prod]
   refine prod_congr rfl fun a _ ↦ ?_
   rw [map_pow]
   congr 1
@@ -62,24 +77,25 @@ theorem rectangularLeadingMinorProd_def (e : Fin (min m n) → ℕ) :
 @[simp]
 theorem rectangularLeadingMinorProd_zero :
     rectangularLeadingMinorProd R (0 : Fin (min m n) → ℕ) = 1 := by
-  simp [rectangularLeadingMinorProd_eq_rename]
+  simp [rectangularLeadingMinorProd_def]
 
 /-- Adding the exponent vectors multiplies the rectangular products. -/
 theorem rectangularLeadingMinorProd_add (e f : Fin (min m n) → ℕ) :
     rectangularLeadingMinorProd R (e + f) =
       rectangularLeadingMinorProd R e * rectangularLeadingMinorProd R f := by
-  simp [rectangularLeadingMinorProd_eq_rename, leadingMinorProd_add]
+  simp [rectangularLeadingMinorProd_def, leadingMinorProd_add]
 
-/-- The rectangular product is homogeneous of degree the sum of the partition coordinates. -/
+/-- The rectangular product is homogeneous of degree the sum of the parts of the associated
+partition `leadingMinorWeight e`. -/
 theorem isHomogeneous_rectangularLeadingMinorProd (e : Fin (min m n) → ℕ) :
     (rectangularLeadingMinorProd R e).IsHomogeneous (∑ j, leadingMinorWeight e j) := by
-  rw [rectangularLeadingMinorProd_eq_rename]
+  rw [rectangularLeadingMinorProd_def]
   exact (isHomogeneous_leadingMinorProd e).rename_isHomogeneous
 
 /-- Products of rectangular leading minors are nonzero over a nontrivial ring. -/
 theorem rectangularLeadingMinorProd_ne_zero [Nontrivial R] (e : Fin (min m n) → ℕ) :
     rectangularLeadingMinorProd R e ≠ 0 := by
-  rw [rectangularLeadingMinorProd_eq_rename]
+  rw [rectangularLeadingMinorProd_def]
   exact (rename_injective _ ((Fin.castLE_injective _).prodMap (Fin.castLE_injective _))).ne
     (leadingMinorProd_ne_zero e)
 
@@ -99,25 +115,25 @@ theorem aeval_rectangularLeadingMinorProd_mul_mul [CommRing S] [Algebra R S]
       aeval (fun ij : Fin m × Fin n ↦ X ij.1 ij.2) (rectangularLeadingMinorProd R e) := by
   let r := Fin.castLEEmb (min_le_left m n)
   let c := Fin.castLEEmb (min_le_right m n)
-  have hr : IsLowerSet (Set.range r) := by
-    rw [Fin.coe_castLEEmb, Fin.range_castLE]
-    exact fun _ _ h hi ↦ lt_of_le_of_lt (Fin.le_iff_val_le_val.mp h) hi
-  have hc : IsLowerSet (Set.range c) := by
-    rw [Fin.coe_castLEEmb, Fin.range_castLE]
-    exact fun _ _ h hi ↦ lt_of_le_of_lt (Fin.le_iff_val_le_val.mp h) hi
   have hblock := submatrix_mul_mul_of_isLowerTriangular_of_isUpperTriangular X
-    (hL.map (algebraMap R S)) (hU.map (algebraMap R S)) r c hr hc
-  rw [rectangularLeadingMinorProd_eq_rename, aeval_rename, aeval_rename]
-  -- The composed evaluation is indexed by the entries of the common leading block.
-  change aeval (fun ij : Fin (min m n) × Fin (min m n) ↦
-    ((L.map (algebraMap R S) * X * U.map (algebraMap R S)).submatrix r c) ij.1 ij.2) _ = _
+    (hL.map (algebraMap R S)) (hU.map (algebraMap R S)) r c
+    (by simpa [r] using isLowerSet_range_castLE (min_le_left m n))
+    (by simpa [c] using isLowerSet_range_castLE (min_le_right m n))
+  -- Renaming the variables along the leading block evaluates on the submatrix of that block.
+  have hsub (M : Matrix (Fin m) (Fin n) S) :
+      (fun ij : Fin m × Fin n ↦ M ij.1 ij.2) ∘
+          Prod.map (Fin.castLE (min_le_left m n)) (Fin.castLE (min_le_right m n)) =
+        fun ij ↦ M.submatrix r c ij.1 ij.2 := by
+    ext ij
+    simp [r, c]
+  rw [rectangularLeadingMinorProd_def, aeval_rename, aeval_rename, hsub, hsub]
   have hL' : (L.submatrix r r).IsLowerTriangular :=
     fun _ _ hij ↦ hL (Fin.strictMono_castLE (min_le_left m n) hij)
   have hU' : (U.submatrix c c).IsUpperTriangular :=
     fun _ _ hij ↦ hU (Fin.strictMono_castLE (min_le_right m n) hij)
   rw [hblock, submatrix_map, submatrix_map, ← aeval_mvPolynomialSubst,
     mvPolynomialSubst_leadingMinorProd hL' hU', map_smul]
-  rfl
+  simp [r, c]
 
 /-- Under substitution of `gᵀ * X * h` for the generic rectangular matrix `X`, upper
 triangular `g` and `h` act on the leading-minor product through its two diagonal weights. -/

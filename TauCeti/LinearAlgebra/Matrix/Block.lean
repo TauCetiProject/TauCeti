@@ -215,13 +215,8 @@ public theorem submatrix_mul_mul_of_isLowerTriangular_of_isUpperTriangular
     (L * X * U).submatrix r c = L.submatrix r r * X.submatrix r c * U.submatrix c c := by
   have hleft := submatrix_mul_of_injective L X r r c r.injective fun i j hj ↦
     hr (le_of_not_gt fun h ↦ hj (hL h)) ⟨i, rfl⟩
-  have hright : (L * X * U).submatrix r c = (L * X).submatrix r c * U.submatrix c c := by
-    ext i j
-    simp only [submatrix_apply, Matrix.mul_apply (M := (L * X)), Matrix.mul_apply
-      (M := (L * X).submatrix r c)]
-    exact (Fintype.sum_of_injective c c.injective _ _ (fun k hk ↦ by
-      have h : c j < k := lt_of_not_ge fun h ↦ hk (hc h ⟨j, rfl⟩)
-      simp [hU h]) fun _ ↦ rfl).symm
+  have hright := submatrix_mul_of_injective_right (L * X) U r c c c.injective fun j k hj ↦
+    hc (le_of_not_gt fun h ↦ hj (hU h)) ⟨k, rfl⟩
   rw [hright, hleft]
 
 /-- If every leading block of `M` has a unit determinant, so does every leading block on a strict
