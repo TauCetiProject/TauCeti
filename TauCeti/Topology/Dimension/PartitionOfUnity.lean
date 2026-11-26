@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.PartitionOfUnity
 public import TauCeti.Topology.Dimension.Covering
-import Mathlib.Analysis.Convex.Combination
+import Mathlib.Analysis.Convex.PartitionOfUnity
 import Mathlib.Analysis.Normed.Module.Convex
 import TauCeti.Analysis.Normed.Module.GeneralPosition
 
@@ -92,10 +92,10 @@ theorem HasCoveringDimensionLE.dense_setOf_forall_ne_zero [CompactSpace X] [Norm
     rw [mem_ball, ContinuousMap.dist_lt_iff hε]
     intro x
     have hgx : g x ∈ closedBall (f x) (2 * (ε / 3)) := hg x ▸
-      (convex_closedBall _ _).finsum_mem (fun i ↦ ρ.nonneg i x) (ρ.sum_eq_one (mem_univ x))
-        fun i hi ↦ by
-          rw [mem_closedBall, two_mul]
-          exact (dist_triangle_right _ _ _).trans (add_lt_add (hyf i) (hρf hi)).le
+      ρ.finsum_smul_mem_convex (g := fun i _ ↦ y i) (mem_univ x) (fun i hi ↦ by
+        rw [mem_closedBall, two_mul]
+        exact (dist_triangle_right _ _ _).trans (add_lt_add (hyf i) (hρf hi)).le)
+        (convex_closedBall _ _)
     exact (mem_closedBall.1 hgx).trans_lt (by linarith)
   · -- At most `d + 1` points `y i` enter `g x`, and they are linearly independent.
     have hs : {i | ρ i x ≠ 0}.Finite := toFinite _
@@ -103,10 +103,7 @@ theorem HasCoveringDimensionLE.dense_setOf_forall_ne_zero [CompactSpace X] [Norm
       (finsum_eq_sum_of_support_subset _ fun i hi ↦ by
         simpa using left_ne_zero_of_smul hi).symm.trans ((hg x).symm.trans hx)
     have h0 := linearIndepOn_iff'.1 (hy _ (hρm x)) hs.toFinset (fun i ↦ ρ i x) (by simp) hsum
-    have h1 := ρ.sum_eq_one (mem_univ x)
-    obtain ⟨i, hi⟩ : ∃ i, ρ i x ≠ 0 := by
-      by_contra! h
-      simp [h] at h1
-    exact hi (h0 i (by simpa using hi))
+    obtain ⟨i, hi⟩ := ρ.exists_pos (mem_univ x)
+    exact hi.ne' (h0 i (by simpa using hi.ne'))
 
 end TauCeti
