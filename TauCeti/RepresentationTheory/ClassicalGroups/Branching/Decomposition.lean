@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.Branching.Rational
 public import TauCeti.RepresentationTheory.ClassicalGroups.Branching.Rationality
-public import TauCeti.RepresentationTheory.ClassicalGroups.UnitaryTrick
+public import TauCeti.RepresentationTheory.ClassicalGroups.Unitary.Trick
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 public import TauCeti.RepresentationTheory.Rep.DirectSum.Character
 
