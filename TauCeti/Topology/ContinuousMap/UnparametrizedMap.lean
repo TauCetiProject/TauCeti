@@ -33,12 +33,7 @@ For a target `Y × M`, the **horizontal leaves** `[y ↦ (y, t), w]`
 `Y × {t}`. A class `[u, z]` is a horizontal leaf exactly when `u` is a reparametrized slice
 `y ↦ (g • y, t)` (`TauCeti.MarkedUnparametrizedMap.mk_mem_range_horizontalLeaf_iff`), and the
 evaluation map is a homeomorphism from the horizontal leaves onto `Y × M`, inverse to
-`horizontalLeaf` (`TauCeti.MarkedUnparametrizedMap.rangeHorizontalLeafHomeomorph`). For the
-Riemann sphere times a torus `T`, with a product structure `i × K` where `K` is an `ω_T`-tame
-almost complex structure on `T`, the one-marked pseudoholomorphic spheres of the class
-`[S² × pt]` are exactly these leaves
-(`TauCeti.degreeOneMarkedSphereModuli_prod_eq_range_horizontalLeaf` in
-`TauCeti.Geometry.Symplectic.Nonsqueezing.MarkedModuli`).
+`horizontalLeaf` (`TauCeti.MarkedUnparametrizedMap.rangeHorizontalLeafHomeomorph`).
 
 The main example is the group `PSL(2, 𝕜)` of Möbius transformations acting on the projective line
 `OnePoint 𝕜`; for `𝕜 = ℂ` the two orbit spaces are the spaces of unparametrized and one-marked
