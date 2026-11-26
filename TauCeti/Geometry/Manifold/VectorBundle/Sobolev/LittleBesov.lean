@@ -135,6 +135,13 @@ theorem IsLocallyMemLittleBesovAt.isLocallyMemBesovAt (h : IsLocallyMemLittleBes
     IsLocallyMemBesovAt φ s p ∞ T x :=
   isLocallyMemBesovAt_def.2 <| IsLocallyAt.mono h fun _ _ _ h ↦ h.isLocallyMemBesovAt
 
+/-- For `p < ∞`, a functional `B^s_{p,q}` near `x` with `q < ∞` is `b^s_{p,∞}` near `x`. -/
+theorem IsLocallyMemBesovAt.isLocallyMemLittleBesovAt_of_ne_top {q : ℝ≥0∞}
+    (h : IsLocallyMemBesovAt φ s p q T x) (hp : p ≠ (∞ : ℝ≥0∞)) (hq : q ≠ (∞ : ℝ≥0∞)) :
+    IsLocallyMemLittleBesovAt φ s p T x :=
+  IsLocallyAt.mono (isLocallyMemBesovAt_def.1 h) fun _ _ _ h ↦
+    h.isLocallyMemLittleBesovAt_of_ne_top hp hq
+
 variable (φ s p T) in
 /-- The points near which `T` is `b^s_{p,∞}` form an open set. -/
 theorem isOpen_setOf_isLocallyMemLittleBesovAt :
@@ -146,10 +153,31 @@ theorem IsLocallyMemLittleBesovAt.smul (h : IsLocallyMemLittleBesovAt φ s p T x
     IsLocallyMemLittleBesovAt φ s p (a • T) x :=
   IsLocallyAt.smul (Distribution.isLocalRegularity_isLocallyMemLittleBesovAt φ p s) h a
 
+/-- The negative of a functional `b^s_{p,∞}` near `x` is `b^s_{p,∞}` near `x`. -/
+theorem IsLocallyMemLittleBesovAt.neg (h : IsLocallyMemLittleBesovAt φ s p T x) :
+    IsLocallyMemLittleBesovAt φ s p (-T) x :=
+  IsLocallyAt.neg (Distribution.isLocalRegularity_isLocallyMemLittleBesovAt φ p s) h
+
+/-- A nonzero real multiple of `T` is `b^s_{p,∞}` near `x` exactly when `T` is. -/
+theorem isLocallyMemLittleBesovAt_smul_iff {a : ℝ} (ha : a ≠ 0) :
+    IsLocallyMemLittleBesovAt φ s p (a • T) x ↔ IsLocallyMemLittleBesovAt φ s p T x :=
+  isLocallyAt_smul_iff (Distribution.isLocalRegularity_isLocallyMemLittleBesovAt φ p s) ha
+
+/-- The negative of `T` is `b^s_{p,∞}` near `x` exactly when `T` is. -/
+@[simp]
+theorem isLocallyMemLittleBesovAt_neg_iff :
+    IsLocallyMemLittleBesovAt φ s p (-T) x ↔ IsLocallyMemLittleBesovAt φ s p T x :=
+  isLocallyAt_neg_iff (Distribution.isLocalRegularity_isLocallyMemLittleBesovAt φ p s)
+
 /-- A sum of functionals `b^s_{p,∞}` near `x` is `b^s_{p,∞}` near `x`. -/
 theorem IsLocallyMemLittleBesovAt.add (h : IsLocallyMemLittleBesovAt φ s p T x)
     (h' : IsLocallyMemLittleBesovAt φ s p T' x) : IsLocallyMemLittleBesovAt φ s p (T + T') x :=
   IsLocallyAt.add (Distribution.isInvariantLocalRegularity_isLocallyMemLittleBesovAt φ p s) h h'
+
+/-- A difference of functionals `b^s_{p,∞}` near `x` is `b^s_{p,∞}` near `x`. -/
+theorem IsLocallyMemLittleBesovAt.sub (h : IsLocallyMemLittleBesovAt φ s p T x)
+    (h' : IsLocallyMemLittleBesovAt φ s p T' x) : IsLocallyMemLittleBesovAt φ s p (T - T') x :=
+  IsLocallyAt.sub (Distribution.isInvariantLocalRegularity_isLocallyMemLittleBesovAt φ p s) h h'
 
 variable (φ s p) in
 /-- On a manifold without boundary, the zero functional is `b^s_{p,∞}` near every point. -/
@@ -327,6 +355,12 @@ theorem besovToDistribution_ofMemLittleBesov {T : BundleTest I F V →L_c[ℝ] �
     A.besovToDistribution φ s p ∞ (A.ofMemLittleBesov φ hT) = T :=
   A.besovToDistribution_ofMemBesov φ hT.memBesov
 
+/-- The element of the little Besov space representing the functional of `u` is `u`. -/
+@[simp]
+theorem ofMemLittleBesov_besovToDistribution (u : A.littleBesovSpace φ s p) :
+    A.ofMemLittleBesov φ ((A.mem_littleBesovSpace_iff_memLittleBesov φ).1 u.property) = u :=
+  Subtype.ext (A.ofMemBesov_besovToDistribution φ _)
+
 variable (s p) in
 /-- The functionals represented by the little Besov space are exactly those which are
 `b^s_{p,∞}` with respect to `A`. -/
@@ -402,6 +436,17 @@ theorem coe_littleBesovBumpEquiv_apply (φ' : ContDiffBump (0 : E)) (u : A.littl
     (A.littleBesovBumpEquiv φ s p φ' u : A.besovSpace φ' s p ∞) = A.besovBumpEquiv φ s p ∞ φ' u :=
   ContinuousLinearEquiv.ofSubmodules_apply _ _ u
 
+/-- The change of bump function sends the element representing `T` for `φ` to the one
+representing `T` for `φ'`. -/
+@[simp]
+theorem littleBesovBumpEquiv_ofMemLittleBesov (φ' : ContDiffBump (0 : E))
+    {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemLittleBesov φ s p T) :
+    A.littleBesovBumpEquiv φ s p φ' (A.ofMemLittleBesov φ hT) =
+      A.ofMemLittleBesov φ' (hT.of_bump φ') :=
+  Subtype.ext <| by
+    rw [coe_littleBesovBumpEquiv_apply, coe_ofMemLittleBesov, coe_ofMemLittleBesov,
+      besovBumpEquiv_ofMemBesov]
+
 @[simp]
 theorem littleBesovBumpEquiv_symm (φ' : ContDiffBump (0 : E)) :
     (A.littleBesovBumpEquiv φ s p φ').symm = A.littleBesovBumpEquiv φ' s p φ :=
@@ -474,6 +519,17 @@ theorem coe_littleBesovSpaceCongr_apply (B : SquareChartPartition κ I F V)
     (u : A.littleBesovSpace φ s p) :
     (A.littleBesovSpaceCongr φ s p B u : B.besovSpace φ s p ∞) = A.besovSpaceCongr φ s p ∞ B u :=
   ContinuousLinearEquiv.ofSubmodules_apply _ _ u
+
+/-- The identification sends the element representing `T` with respect to `A` to the one
+representing `T` with respect to `B`. -/
+@[simp]
+theorem littleBesovSpaceCongr_ofMemLittleBesov (B : SquareChartPartition κ I F V)
+    {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemLittleBesov φ s p T) :
+    A.littleBesovSpaceCongr φ s p B (A.ofMemLittleBesov φ hT) =
+      B.ofMemLittleBesov φ ((A.memLittleBesov_iff_memLittleBesov φ B).1 hT) :=
+  Subtype.ext <| by
+    rw [coe_littleBesovSpaceCongr_apply, coe_ofMemLittleBesov, coe_ofMemLittleBesov,
+      besovSpaceCongr_ofMemBesov]
 
 variable (s p) in
 /-- The identification of the little Besov spaces of a partition with itself is the identity. -/

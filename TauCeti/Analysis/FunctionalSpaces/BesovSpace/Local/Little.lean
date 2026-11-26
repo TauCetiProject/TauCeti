@@ -136,125 +136,104 @@ theorem IsLocallyMemLittleBesovAt.mem (h : T.IsLocallyMemLittleBesovAt φ s p x)
 `s' ≤ s`. -/
 theorem IsLocallyMemLittleBesovAt.mono (h : T.IsLocallyMemLittleBesovAt φ s p x) {s' : ℝ}
     (hs : s' ≤ s) : T.IsLocallyMemLittleBesovAt φ s' p x :=
-  let ⟨U, hU, hUΩ, hT⟩ := h
-  ⟨U, hU, hUΩ, fun ψ hψ ↦ (hT ψ hψ).mono hs⟩
+  exists_mem_nhds_forall_cutoffTempered_mono h fun _ hu ↦ hu.mono hs
 
 /-- **Independence of the bump function.** A distribution `b^s_{p,∞}` near `x` for the
 Littlewood–Paley partition of `φ` is `b^s_{p,∞}` near `x` for that of any other bump function. -/
 theorem IsLocallyMemLittleBesovAt.of_bump (h : T.IsLocallyMemLittleBesovAt φ s p x)
     (φ' : ContDiffBump (0 : E)) : T.IsLocallyMemLittleBesovAt φ' s p x :=
-  let ⟨U, hU, hUΩ, hT⟩ := h
-  ⟨U, hU, hUΩ, fun ψ hψ ↦ (hT ψ hψ).of_bump φ'⟩
+  exists_mem_nhds_forall_cutoffTempered_mono h fun _ hu ↦ hu.of_bump φ'
 
 /-- A distribution `b^s_{p,∞}` near `x` is `B^s_{p,∞}` near `x`. -/
 theorem IsLocallyMemLittleBesovAt.isLocallyMemBesovAt (h : T.IsLocallyMemLittleBesovAt φ s p x) :
     T.IsLocallyMemBesovAt φ s p ∞ x :=
-  let ⟨U, hU, hUΩ, hT⟩ := h
-  isLocallyMemBesovAt_iff.2 ⟨U, hU, hUΩ, fun ψ hψ ↦ (hT ψ hψ).memBesov⟩
+  isLocallyMemBesovAt_iff.2 <| exists_mem_nhds_forall_cutoffTempered_mono h fun _ hu ↦ hu.memBesov
 
 /-- For `p < ∞`, a distribution `B^s_{p,q}` near `x` with `q < ∞` is `b^s_{p,∞}` near `x`. -/
 theorem IsLocallyMemBesovAt.isLocallyMemLittleBesovAt_of_ne_top {q : ℝ≥0∞}
     (h : T.IsLocallyMemBesovAt φ s p q x) (hp : p ≠ (∞ : ℝ≥0∞)) (hq : q ≠ (∞ : ℝ≥0∞)) :
     T.IsLocallyMemLittleBesovAt φ s p x :=
-  let ⟨U, hU, hUΩ, hT⟩ := isLocallyMemBesovAt_iff.1 h
-  ⟨U, hU, hUΩ, fun ψ hψ ↦ (hT ψ hψ).memLittleBesov_of_ne_top hp hq⟩
+  exists_mem_nhds_forall_cutoffTempered_mono (isLocallyMemBesovAt_iff.1 h) fun _ hu ↦
+    hu.memLittleBesov_of_ne_top hp hq
 
 variable (φ) in
 /-- The set of points near which a distribution is `b^s_{p,∞}` is open. -/
 theorem isOpen_setOf_isLocallyMemLittleBesovAt (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)]
-    (T : 𝓓'(Ω, ℂ)) : IsOpen {x : E | T.IsLocallyMemLittleBesovAt φ s p x} := by
-  refine isOpen_iff_mem_nhds.2 fun x ⟨U, hU, hUΩ, hT⟩ ↦ ?_
-  filter_upwards [eventually_mem_nhds_iff.2 hU] with y hy using ⟨U, hy, hUΩ, hT⟩
+    (T : 𝓓'(Ω, ℂ)) : IsOpen {x : E | T.IsLocallyMemLittleBesovAt φ s p x} :=
+  isOpen_setOf_exists_mem_nhds_forall_cutoffTempered _ T
 
 /-- The zero distribution is `b^s_{p,∞}` near every point of its domain. -/
 @[simp]
 theorem isLocallyMemLittleBesovAt_zero_iff :
-    (0 : 𝓓'(Ω, ℂ)).IsLocallyMemLittleBesovAt φ s p x ↔ x ∈ Ω := by
-  refine ⟨IsLocallyMemLittleBesovAt.mem, fun hx ↦
-    ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun ψ _ ↦ ?_⟩⟩
-  rw [cutoffTempered_zero]
-  exact MemLittleBesov.zero
+    (0 : 𝓓'(Ω, ℂ)).IsLocallyMemLittleBesovAt φ s p x ↔ x ∈ Ω :=
+  ⟨IsLocallyMemLittleBesovAt.mem, exists_mem_nhds_forall_cutoffTempered_zero
+    (P := (·.MemLittleBesov φ s p)) MemLittleBesov.zero⟩
 
 /-- A scalar multiple of a distribution `b^s_{p,∞}` near `x` is `b^s_{p,∞}` near `x`. -/
 theorem IsLocallyMemLittleBesovAt.smul (h : T.IsLocallyMemLittleBesovAt φ s p x) (c : ℂ) :
     (c • T).IsLocallyMemLittleBesovAt φ s p x :=
-  let ⟨U, hU, hUΩ, hT⟩ := h
-  ⟨U, hU, hUΩ, fun ψ hψ ↦ by simpa using (hT ψ hψ).smul c⟩
+  exists_mem_nhds_forall_cutoffTempered_smul (P := (·.MemLittleBesov φ s p))
+    (fun c _ hu ↦ hu.smul c) h c
+
+/-- A nonzero scalar multiple of `T` is `b^s_{p,∞}` near `x` exactly when `T` is. -/
+theorem isLocallyMemLittleBesovAt_smul_iff {c : ℂ} (hc : c ≠ 0) :
+    (c • T).IsLocallyMemLittleBesovAt φ s p x ↔ T.IsLocallyMemLittleBesovAt φ s p x :=
+  ⟨fun h ↦ by simpa [smul_smul, inv_mul_cancel₀ hc] using h.smul c⁻¹, fun h ↦ h.smul c⟩
+
+/-- The negative of `T` is `b^s_{p,∞}` near `x` exactly when `T` is. -/
+@[simp]
+theorem isLocallyMemLittleBesovAt_neg_iff :
+    (-T).IsLocallyMemLittleBesovAt φ s p x ↔ T.IsLocallyMemLittleBesovAt φ s p x := by
+  rw [← neg_one_smul ℂ T, isLocallyMemLittleBesovAt_smul_iff (neg_ne_zero.2 one_ne_zero)]
 
 /-- The sum of two distributions `b^s_{p,∞}` near `x` is `b^s_{p,∞}` near `x`. -/
 theorem IsLocallyMemLittleBesovAt.add {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyMemLittleBesovAt φ s p x)
     (hT : T.IsLocallyMemLittleBesovAt φ s p x) : (S + T).IsLocallyMemLittleBesovAt φ s p x :=
-  let ⟨U, hU, hUΩ, hSU⟩ := hS
-  let ⟨V, hV, _, hTV⟩ := hT
-  ⟨U ∩ V, inter_mem hU hV, inter_subset_left.trans hUΩ, fun ψ hψ ↦ by
-    simpa using (hSU ψ (hψ.trans inter_subset_left)).add (hTV ψ (hψ.trans inter_subset_right))⟩
+  exists_mem_nhds_forall_cutoffTempered_add (P := (·.MemLittleBesov φ s p))
+    (fun _ _ ↦ MemLittleBesov.add) hS hT
+
+/-- The difference of two distributions `b^s_{p,∞}` near `x` is `b^s_{p,∞}` near `x`. -/
+theorem IsLocallyMemLittleBesovAt.sub {S : 𝓓'(Ω, ℂ)} (hS : S.IsLocallyMemLittleBesovAt φ s p x)
+    (hT : T.IsLocallyMemLittleBesovAt φ s p x) : (S - T).IsLocallyMemLittleBesovAt φ s p x := by
+  rw [sub_eq_add_neg]
+  exact hS.add (isLocallyMemLittleBesovAt_neg_iff.2 hT)
 
 /-- At a point of an open subset `Ω' ≤ Ω`, the restriction `T|_{Ω'}` is `b^s_{p,∞}` near `x`
 exactly when `T` is. -/
 theorem isLocallyMemLittleBesovAt_restrictCLM_iff {Ω' : Opens E} (h : Ω' ≤ Ω) (hx : x ∈ Ω') :
     (restrictCLM T : 𝓓'(Ω', ℂ)).IsLocallyMemLittleBesovAt φ s p x ↔
-      T.IsLocallyMemLittleBesovAt φ s p x := by
-  constructor
-  · rintro ⟨U, hU, hUΩ', hT⟩
-    refine ⟨U, hU, hUΩ'.trans h, fun ψ hψ ↦ ?_⟩
-    obtain ⟨ψ', rfl⟩ := TestFunction.exists_monoCLM_eq_of_tsupport_subset h (hψ.trans hUΩ')
-    rw [← cutoffTempered_restrictCLM]
-    exact hT ψ' (by rwa [TestFunction.coe_monoCLM_of_le le_rfl h] at hψ)
-  · rintro ⟨U, hU, -, hT⟩
-    refine ⟨U ∩ Ω', inter_mem hU (Ω'.isOpen.mem_nhds hx), inter_subset_right, fun ψ hψ ↦ ?_⟩
-    rw [cutoffTempered_restrictCLM]
-    exact hT _ (by rw [TestFunction.coe_monoCLM_of_le le_rfl h]; exact hψ.trans inter_subset_left)
+      T.IsLocallyMemLittleBesovAt φ s p x :=
+  exists_mem_nhds_forall_cutoffTempered_restrictCLM_iff (P := (·.MemLittleBesov φ s p)) h hx
 
 /-- A smooth multiple `g T` of a distribution `b^s_{p,∞}` near `x` is `b^s_{p,∞}` near `x`. -/
 theorem IsLocallyMemLittleBesovAt.smulLeftCLM (h : T.IsLocallyMemLittleBesovAt φ s p x)
     {g : E → ℝ} (hg : ContDiff ℝ ∞ g) :
     (Distribution.smulLeftCLM hg T).IsLocallyMemLittleBesovAt φ s p x :=
-  let ⟨U, hU, hUΩ, hT⟩ := h
-  ⟨U, hU, hUΩ, fun ψ hψ ↦ by
-    rw [cutoffTempered_smulLeftCLM]
-    exact hT _ ((TestFunction.tsupport_smulLeftCLM_subset hg ψ).trans
-      (inter_subset_right.trans hψ))⟩
+  exists_mem_nhds_forall_cutoffTempered_smulLeftCLM (P := (·.MemLittleBesov φ s p)) h hg
 
 /-- **Testing with one cutoff.** A distribution is `b^s_{p,∞}` near `x` exactly when `χ T` lies in
 `b^s_{p,∞}` for some test function `χ` equal to one near `x`. -/
 theorem isLocallyMemLittleBesovAt_iff_exists_memLittleBesov_cutoffTempered :
     T.IsLocallyMemLittleBesovAt φ s p x ↔
-      ∃ χ : 𝓓(Ω, ℂ), (∀ᶠ y in 𝓝 x, χ y = 1) ∧ (T.cutoffTempered χ).MemLittleBesov φ s p := by
-  refine ⟨fun ⟨U, hU, hUΩ, hT⟩ ↦ ?_, fun ⟨χ, hχ, hT⟩ ↦ ?_⟩
-  · obtain ⟨χ, hχ1, hχU⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
-      isCompact_singleton isOpen_interior
-      (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 hU)) (interior_subset.trans hUΩ)
-    exact ⟨χ, by rwa [nhdsSet_singleton] at hχ1, hT χ (hχU.trans interior_subset)⟩
-  · -- On the set where `χ = 1`, every cut-off distribution `ψ T` is the smooth multiple `ψ (χ T)`.
-    have hxΩ : x ∈ Ω := χ.tsupport_subset (subset_tsupport _ (by simp [hχ.self_of_nhds]))
-    refine ⟨{y | χ y = 1} ∩ Ω, inter_mem hχ (Ω.isOpen.mem_nhds hxΩ), inter_subset_right,
-      fun ψ hψ ↦ ?_⟩
-    rw [← smulLeftCLM_cutoffTempered T fun y hy ↦ (hψ hy).1]
-    exact hT.smulLeftCLM_testFunction ψ
+      ∃ χ : 𝓓(Ω, ℂ), (∀ᶠ y in 𝓝 x, χ y = 1) ∧ (T.cutoffTempered χ).MemLittleBesov φ s p :=
+  exists_mem_nhds_forall_cutoffTempered_iff_exists_eventually_eq_one (P := (·.MemLittleBesov φ s p))
+    fun _ ψ hu ↦ hu.smulLeftCLM_testFunction ψ
 
 /-- **Testing with one nonvanishing cutoff.** A distribution is `b^s_{p,∞}` near `x` exactly when
 `χ T` lies in `b^s_{p,∞}` for some test function `χ` with `χ x ≠ 0`. -/
 theorem isLocallyMemLittleBesovAt_iff_exists_ne_zero_memLittleBesov_cutoffTempered :
     T.IsLocallyMemLittleBesovAt φ s p x ↔
-      ∃ χ : 𝓓(Ω, ℂ), χ x ≠ 0 ∧ (T.cutoffTempered χ).MemLittleBesov φ s p := by
-  refine ⟨fun h ↦ ?_, fun ⟨χ, hχx, hT⟩ ↦ ?_⟩
-  · obtain ⟨χ, hχ, hT⟩ := isLocallyMemLittleBesovAt_iff_exists_memLittleBesov_cutoffTempered.1 h
-    exact ⟨χ, by simp [hχ.self_of_nhds], hT⟩
-  -- A cutoff `ρ` equal to one near `x` is a test-function multiple `h χ`, so `ρ T = h (χ T)`.
-  obtain ⟨ρ, h, hρ1, hhχ⟩ := TestFunction.exists_eventually_eq_one_and_mul_eq hχx
-  refine isLocallyMemLittleBesovAt_iff_exists_memLittleBesov_cutoffTempered.2 ⟨ρ, hρ1, ?_⟩
-  rw [← smulLeftCLM_cutoffTempered_of_mul_eq T
-    (h.hasCompactSupport.hasTemperateGrowth h.contDiff) hhχ]
-  exact hT.smulLeftCLM_testFunction h
+      ∃ χ : 𝓓(Ω, ℂ), χ x ≠ 0 ∧ (T.cutoffTempered χ).MemLittleBesov φ s p :=
+  exists_mem_nhds_forall_cutoffTempered_iff_exists_ne_zero (P := (·.MemLittleBesov φ s p))
+    fun _ ψ hu ↦ hu.smulLeftCLM_testFunction ψ
 
 /-- A tempered distribution in `b^s_{p,∞}` is `b^s_{p,∞}` near every point, as a distribution on
 `Ω`. -/
 theorem _root_.TemperedDistribution.MemLittleBesov.isLocallyMemLittleBesovAt_toDistribution
     {u : 𝓢'(E, ℂ)} (hu : u.MemLittleBesov φ s p) (hx : x ∈ Ω) :
-    (toDistribution Ω u).IsLocallyMemLittleBesovAt φ s p x := by
-  refine ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun ψ _ ↦ ?_⟩
-  rw [cutoffTempered_toDistribution]
-  exact hu.smulLeftCLM_testFunction ψ
+    (toDistribution Ω u).IsLocallyMemLittleBesovAt φ s p x :=
+  exists_mem_nhds_forall_cutoffTempered_toDistribution (P := (·.MemLittleBesov φ s p))
+    (fun _ ψ hu ↦ hu.smulLeftCLM_testFunction ψ) hu hx
 
 /-- **From local to global regularity.** If `T` is `b^s_{p,∞}` near every point of the support of
 a test function `χ`, then `χ T ∈ b^s_{p,∞}`. -/
