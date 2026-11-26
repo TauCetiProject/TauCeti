@@ -149,6 +149,14 @@ theorem sum_units_mul_primorialBernoulli {M : ℕ} [NeZero M] {k : ℕ} (hk : 2 
 noncomputable def bernoulliGroupEntry (M k : ℕ) (u : (ZMod M)ˣ) : ℤ :=
   2 * primorialBernoulli M k u + (if u = 1 then -(-1) ^ k else 0) + if u = -1 then 1 else 0
 
+/-- The value of a Bernoulli group entry: `2 Pₖ₊₁ Mᵏ Bₖ(⟨u⟩ / M)`, minus `(-1)ᵏ` at `u = 1` and
+plus `1` at `u = -1`. -/
+theorem bernoulliGroupEntry_def (M k : ℕ) (u : (ZMod M)ˣ) :
+    bernoulliGroupEntry M k u =
+      2 * primorialBernoulli M k u + (if u = 1 then -(-1) ^ k else 0) +
+        if u = -1 then 1 else 0 :=
+  (rfl)
+
 /-- **The Bernoulli group determinant** of `(ZMod M)ˣ`: the determinant of the group matrix
 `(e(t / s))_{s,t}` of the corrected Bernoulli entries `e = TauCeti.bernoulliGroupEntry M k`. For
 `k ≥ 2` it is nonzero (`TauCeti.bernoulliGroupDet_ne_zero`) and divisible by `Pₖ₊₁ M Bₖ,ψ` for
@@ -162,7 +170,7 @@ theorem sum_mul_bernoulliGroupEntry {M : ℕ} [NeZero M] {R : Type*} [CommRing R
     (χ : (ZMod M)ˣ →* R) (k : ℕ) :
     ∑ u, χ u * (bernoulliGroupEntry M k u : R) =
       2 * ∑ u, χ u * (primorialBernoulli M k u : R) - (-1) ^ k + χ (-1) := by
-  simp [bernoulliGroupEntry, mul_add, sum_add_distrib, mul_sum, mul_left_comm, sub_eq_add_neg]
+  simp [bernoulliGroupEntry_def, mul_add, sum_add_distrib, mul_sum, mul_left_comm, sub_eq_add_neg]
 
 /-- The Bernoulli group determinant, cast to a ring `S`, is the determinant of the cast entries. -/
 theorem intCast_bernoulliGroupDet (M : ℕ) [NeZero M] (k : ℕ) (S : Type*) [CommRing S] :

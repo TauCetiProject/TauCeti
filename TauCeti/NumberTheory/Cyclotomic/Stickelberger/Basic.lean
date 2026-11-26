@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.MonoidAlgebra.Augmentation
 public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
+import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
 # The rational Stickelberger element
@@ -134,13 +135,8 @@ theorem lift_stickelberger_eq_generalizedBernoulli {R : Type*} [CommRing R] [Alg
     lift ℚ R (ZMod m)ˣ ((χ : ZMod m →* R).comp (Units.coeHom (ZMod m))) (stickelberger m) =
       χ⁻¹.generalizedBernoulli 1 := by
   rw [DirichletCharacter.generalizedBernoulli_one_of_ne_one (inv_ne_one.2 hχ), lift_stickelberger]
-  symm
-  -- The character `χ⁻¹` vanishes off the units, so its sum over `ZMod m` is a sum over the units.
-  rw [← Finset.sum_subset (Finset.subset_univ (Finset.univ.map ⟨Units.val, Units.val_injective⟩))
-    fun a _ ha ↦ ?_, Finset.sum_map]
-  · refine Finset.sum_congr rfl fun a _ ↦ ?_
-    simp [MulChar.inv_apply, mul_comm]
-  · have ha' : ¬ IsUnit a := fun ⟨u, hu⟩ ↦ ha (by simp [← hu])
-    simp [MulChar.map_nonunit _ ha']
+  rw [χ⁻¹.sum_mul_eq_sum_units]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  simp [MulChar.inv_apply, mul_comm]
 
 end TauCeti
