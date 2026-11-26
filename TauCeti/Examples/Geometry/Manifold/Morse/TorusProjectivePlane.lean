@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Algebra.Field.ZMod
-import TauCeti.Geometry.Manifold.Morse.Perfect
+public import Mathlib.Algebra.Field.ZMod
+public import TauCeti.Geometry.Manifold.Morse.Perfect
 
 /-!
 # Examples: the Morse polynomials of the two-torus and of the real projective plane
@@ -34,6 +34,8 @@ This file computes both sides on two surfaces.
   Section 5.
 -/
 
+public section
+
 open Polynomial
 open scoped Manifold LinearAlgebra.Projectivization
 
@@ -45,6 +47,11 @@ open TauCeti
 
 section Torus
 
+/-- The coefficients of `1 + 2t + t² = (1 + t)²` are the binomial coefficients `(2 choose j)`. -/
+theorem coeff_one_add_two_mul_X_add_X_sq (j : ℕ) :
+    (1 + 2 * X + X ^ 2 : ℕ[X]).coeff j = (2 : ℕ).choose j := by
+  rw [show (1 + 2 * X + X ^ 2 : ℕ[X]) = (X + 1) ^ 2 by ring, coeff_X_add_one_pow, Nat.cast_id]
+
 variable (p : Fin 2 → ℝ) [∀ i, Fact (0 < p i)]
 
 -- The cosine function on `T²` has one critical point of index `0`, two of index `1` and one of
@@ -52,16 +59,15 @@ variable (p : Fin 2 → ℝ) [∀ i, Fact (0 < p i)]
 example (j : ℕ) :
     criticalCount (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (torusCos p) j =
       ((1 + 2 * X + X ^ 2 : ℕ[X]).coeff j : ℕ∞) := by
-  rw [criticalCount_torusCos, show (1 + 2 * X + X ^ 2 : ℕ[X]) = (X + 1) ^ 2 by ring,
-    coeff_X_add_one_pow, Fintype.card_fin, Nat.cast_id]
+  rw [criticalCount_torusCos, coeff_one_add_two_mul_X_add_X_sq, Fintype.card_fin]
 
--- Over every field the Betti polynomial of `T²` is `1 + 2t + t²` too.
+-- Over every field the Betti polynomial of `T²` is `1 + 2t + t²` too: it agrees with the critical
+-- counts of the cosine function, which is perfect.
 example (k : Type) [Field k] (j : ℕ) :
     bettiNumber k (∀ i, AddCircle (p i)) j = (1 + 2 * X + X ^ 2 : ℕ[X]).coeff j := by
-  have (i : Fin 2) : NeZero (p i) := ⟨(Fact.out : 0 < p i).ne'⟩
-  rw [bettiNumber_def, ModuleCat.finrank_singularHomology_pi_addCircle, ModuleCat.finrank_of_self,
-    mul_one, Nat.card_eq_fintype_card, Fintype.card_fin,
-    show (1 + 2 * X + X ^ 2 : ℕ[X]) = (X + 1) ^ 2 by ring, coeff_X_add_one_pow, Nat.cast_id]
+  have h := (isPerfectMorse_torusCos p k).criticalCount_eq j
+  rw [criticalCount_torusCos, Fintype.card_fin, ← bettiNumber_def, Nat.cast_inj] at h
+  rw [← h, coeff_one_add_two_mul_X_add_X_sq]
 
 -- So the cosine function on `T²` is perfect over every field: its polynomial `Q` is `0`.
 example (k : Type) [Field k] {Q : ℕ[X]} :
