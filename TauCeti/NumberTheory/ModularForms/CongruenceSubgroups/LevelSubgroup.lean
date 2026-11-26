@@ -32,7 +32,7 @@ following subgroups, whose preimages in `SL(2, ℤ)` are the congruence subgroup
 * `TauCeti.GL2Gamma1 (ZMod N) = {a = 1, c = 0}`, the stabiliser of `P`, for `Γ₁(N)`;
 * `TauCeti.GL2Borel (ZMod N) = {c = 0}`, the stabiliser of the line through `P`, for `Γ₀(N)`;
 * `TauCeti.GL2Mirabolic (ZMod N) = {c = 0, d = 1}`, the level `Γ₁^μ(N)`, whose structures are the
-  embeddings `μ_N → E[N]`.
+  embeddings `μ_N → E[N]`; this convention follows Calegari and Geraghty.
 
 This file checks these against Mathlib's congruence subgroups: the preimage of each under the
 reduction `SL(2, ℤ) → GL₂(ℤ / N)` is `Γ(N)`, `Γ₁(N)`, `Γ₀(N)` and `Γ₁(N)` respectively. The
@@ -82,6 +82,8 @@ projective index (`Subgroup.projectiveIndex_pointwise_smul`) and the same determ
 * D. Zywina, *On the possible images of the mod `ℓ` representations associated to elliptic curves
   over `ℚ`*, arXiv:1508.07660, §3.2.
 * F. Diamond and J. Shurman, *A First Course in Modular Forms*, GTM 228, §1.2 and §3.1.
+* F. Calegari and D. Geraghty, *Modularity lifting beyond the Taylor–Wiles method*, Invent. Math.
+  211 (2018), for the level `Γ₁^μ(N)`.
 -/
 
 public section
