@@ -110,8 +110,8 @@ theorem bch_eq_lift {c : ℕ} (hc : lowerCentralSeries ℚ L L c = ⊥) {r : �
 theorem map_bch {c : ℕ} (f : L →ₗ⁅ℚ⁆ L') (hc : lowerCentralSeries ℚ L L c = ⊥)
     (hc' : lowerCentralSeries ℚ L' L' c = ⊥) (x y : L) :
     f (bch c hc x y) = bch c hc' (f x) (f y) := by
-  obtain ⟨r, hr⟩ := LieIdeal.surjective_mkQ _ (FreeLieAlgebra.bchElement c)
-  rw [LieIdeal.mkQ_apply] at hr
+  obtain ⟨r, hr⟩ : ∃ r : 𝔣, LieSubmodule.Quotient.mk r = FreeLieAlgebra.bchElement c := by
+    simpa only [LieIdeal.mkQ_apply] using LieIdeal.surjective_mkQ _ (FreeLieAlgebra.bchElement c)
   rw [bch_eq_lift hc hr, bch_eq_lift hc' hr, map_lift_pair]
 
 /-- The Baker–Campbell–Hausdorff product does not change when the class bound is raised. -/
@@ -188,8 +188,8 @@ theorem exp_lowerCentralQuotientι_bch (u v : F ⧸ lowerCentralSeries ℚ F F c
         IsNilpotent.exp (lowerCentralQuotientι ℚ F c v) := by
   obtain ⟨x, rfl⟩ := LieIdeal.surjective_mkQ _ u
   obtain ⟨y, rfl⟩ := LieIdeal.surjective_mkQ _ v
-  obtain ⟨r, hr⟩ := LieIdeal.surjective_mkQ _ (FreeLieAlgebra.bchElement c)
-  rw [LieIdeal.mkQ_apply] at hr
+  obtain ⟨r, hr⟩ : ∃ r : 𝔣, LieSubmodule.Quotient.mk r = FreeLieAlgebra.bchElement c := by
+    simpa only [LieIdeal.mkQ_apply] using LieIdeal.surjective_mkQ _ (FreeLieAlgebra.bchElement c)
   -- The product is the class of `φ r` for `φ = lift ![x, y]`, and `x = φ X`, `y = φ Y`.
   have hφ : bch c (lowerCentralSeries_quotient_lowerCentralSeries_eq_bot ℚ F c)
       (LieSubmodule.Quotient.mk x) (LieSubmodule.Quotient.mk y) =
@@ -209,10 +209,15 @@ theorem exp_lowerCentralQuotientι_bch (u v : F ⧸ lowerCentralSeries ℚ F F c
   have hy := hq (_root_.FreeLieAlgebra.of ℚ 1)
   rw [_root_.FreeLieAlgebra.lift_of_apply, Matrix.cons_val_zero] at hx
   rw [_root_.FreeLieAlgebra.lift_of_apply, Matrix.cons_val_one, Matrix.cons_val_zero] at hy
-  simp only [LieIdeal.mkQ_apply]
-  rw [hφ, lowerCentralQuotientι_mk, lowerCentralQuotientι_mk, lowerCentralQuotientι_mk, hq, hx, hy,
-    ← map_mul, ← FreeLieAlgebra.exp_lowerCentralQuotientι_bchElement, ← hr,
-    lowerCentralQuotientι_mk]
+  -- The defining identity of `bchElement c`, read off on its representative `r`.
+  have hr' : IsNilpotent.exp (Ideal.Quotient.mk
+      (HopfIdeal.toIdeal (HopfIdeal.augmentation ℚ (_root_.UniversalEnvelopingAlgebra ℚ 𝔣)) ^
+        (c + 1)) (ι r)) =
+      IsNilpotent.exp (Ideal.Quotient.mk _ (ι (_root_.FreeLieAlgebra.of ℚ (0 : Fin 2)))) *
+        IsNilpotent.exp (Ideal.Quotient.mk _ (ι (_root_.FreeLieAlgebra.of ℚ (1 : Fin 2)))) := by
+    rw [← lowerCentralQuotientι_mk, hr, FreeLieAlgebra.exp_lowerCentralQuotientι_bchElement]
+  simp only [LieIdeal.mkQ_apply, hφ, lowerCentralQuotientι_mk]
+  rw [hq, hr', map_mul, ← hx, ← hy]
 
 /-- The Baker–Campbell–Hausdorff product is associative in every free nilpotent Lie algebra. -/
 private theorem bch_assoc_free (u v w : F ⧸ lowerCentralSeries ℚ F F c) :
@@ -407,8 +412,8 @@ theorem ker_map_mkQ (I : LieIdeal ℚ L) :
     (map I.mkQ).ker = (I : LieSubalgebra ℚ L).bchSubgroup := by
   ext g
   rw [MonoidHom.mem_ker, LieSubalgebra.mem_bchSubgroup, ← exp_log g, map_exp, ← exp_zero,
-    exp.injEq, LieIdeal.mkQ_apply, log_exp]
-  exact Submodule.Quotient.mk_eq_zero _
+    exp.injEq, LieIdeal.mkQ_apply, log_exp, LieSubmodule.Quotient.mk_eq_zero',
+    LieIdeal.mem_toLieSubalgebra]
 
 /-- The exponentials of a Lie ideal form a normal subgroup. -/
 instance _root_.LieIdeal.bchSubgroup_normal (I : LieIdeal ℚ L) :
@@ -420,14 +425,14 @@ Baker–Campbell–Hausdorff group of the quotient Lie algebra. -/
 noncomputable def _root_.LieIdeal.bchQuotientEquiv (I : LieIdeal ℚ L) :
     BCHGroup L ⧸ (I : LieSubalgebra ℚ L).bchSubgroup ≃* BCHGroup (L ⧸ I) :=
   (QuotientGroup.quotientMulEquivOfEq (ker_map_mkQ I).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective _ (map_surjective (LieIdeal.surjective_mkQ I)))
+    (QuotientGroup.quotientKerEquivOfRightInverse _ _
+      (Function.rightInverse_surjInv (map_surjective (LieIdeal.surjective_mkQ I))))
 
 @[simp]
 theorem _root_.LieIdeal.bchQuotientEquiv_mk (I : LieIdeal ℚ L) (x : L) :
     I.bchQuotientEquiv (exp x : BCHGroup L) = exp (LieSubmodule.Quotient.mk x) := by
   -- The first isomorphism theorem sends the class of `g` to the image of `g`.
   rw [LieIdeal.bchQuotientEquiv, MulEquiv.trans_apply, QuotientGroup.quotientMulEquivOfEq_mk,
-    QuotientGroup.quotientKerEquivOfSurjective,
     QuotientGroup.quotientKerEquivOfRightInverse_apply, QuotientGroup.kerLift_mk, map_exp,
     LieIdeal.mkQ_apply]
 
