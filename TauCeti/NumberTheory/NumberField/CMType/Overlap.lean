@@ -49,6 +49,9 @@ such a quotient in the definition.
   action on the embeddings factors.
 * `TauCeti.CMType.averageOverlap_conj`: `a⁰_Φ` is a class function, and
   `TauCeti.CMType.averageOverlap_smul`: it depends only on the orbit of `Φ`.
+* `TauCeti.CMType.overlap_mul_of_forall_comp_eq`,
+  `TauCeti.CMType.averageOverlap_mul_of_forall_comp_eq`: `a_Φ(στ) = a_Φ(σ)` and
+  `a⁰_Φ(στ) = a⁰_Φ(σ)` when `τ` fixes every embedding of `E`.
 * `TauCeti.CMType.finsum_averageOverlap`: **the average CM character.** If `E` has `2d`
   complex embeddings and a CM type, then
   `∑_Φ a⁰_Φ(σ) = 2^(d-2) (2d + fix(σ) - swap(σ))`, the sum running over all `2^d` CM types,
@@ -151,6 +154,12 @@ theorem overlap_mul_starRingAut (Φ : CMType E) (σ : RingAut ℂ) :
   rw [overlap_def, overlap_def, mul_smul, mul_smul, starRingAut_smul, starRingAut_smul,
     star_smul]
 
+/-- An automorphism of `ℂ` fixing every complex embedding of `E` does not change the overlaps:
+`a_Φ(στ) = a_Φ(σ)`. -/
+theorem overlap_mul_of_forall_comp_eq (Φ : CMType E) (σ : RingAut ℂ) {τ : RingAut ℂ}
+    (hτ : ∀ φ : E →+* ℂ, (τ : ℂ →+* ℂ).comp φ = φ) : overlap Φ (σ * τ) = overlap Φ σ := by
+  rw [overlap_def, mul_smul, smul_eq_self_of_forall_comp_eq hτ, overlap_def]
+
 /-! ### The conjugacy average -/
 
 /-- The **conjugacy-averaged overlap** `a⁰_Φ(σ)`: the mean of `a_Ψ(σ)` over the CM types `Ψ` in
@@ -185,6 +194,13 @@ theorem averageOverlap_conj (τ σ : RingAut ℂ) (Φ : CMType E) :
   -- `a_Ψ(τστ⁻¹) = a_{τ⁻¹Ψ}(σ)`, and translation by `τ⁻¹` permutes the orbit.
   simp_rw [overlap_conj]
   exact MulAction.finsum_mem_orbit_smul τ⁻¹ Φ fun Ψ ↦ (overlap Ψ σ : ℚ)
+
+/-- An automorphism of `ℂ` fixing every complex embedding of `E` does not change the averaged
+overlaps: `a⁰_Φ(στ) = a⁰_Φ(σ)`. -/
+theorem averageOverlap_mul_of_forall_comp_eq (Φ : CMType E) (σ : RingAut ℂ) {τ : RingAut ℂ}
+    (hτ : ∀ φ : E →+* ℂ, (τ : ℂ →+* ℂ).comp φ = φ) :
+    averageOverlap Φ (σ * τ) = averageOverlap Φ σ := by
+  simp only [averageOverlap_def, overlap_mul_of_forall_comp_eq _ _ hτ]
 
 /-- **The conjugacy average over a finite Galois quotient.** Let `π` map `Aut(ℂ)` to a finite
 group `G` such that every automorphism in the kernel of `π` fixes each embedding of `E`, and let

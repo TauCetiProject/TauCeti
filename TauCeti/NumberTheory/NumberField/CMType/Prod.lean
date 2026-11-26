@@ -127,6 +127,26 @@ theorem prodEquiv_symm_apply (Φ : CMType E₁ × CMType E₂) :
     (prodEquiv (E₁ := E₁) (E₂ := E₂)).symm Φ = prod Φ.1 Φ.2 :=
   (rfl)
 
+/-! ### The action of `Aut(ℂ)` -/
+
+/-- If every ring endomorphism of `ℂ` commutes with complex conjugation on the embeddings of `E₁`
+and of `E₂`, it does so on the embeddings of `E₁ × E₂`, since each of these factors through a
+projection. In particular this holds for a product of two CM fields. -/
+instance instStarCompCommuteProd [StarCompCommute E₁] [StarCompCommute E₂] :
+    StarCompCommute (E₁ × E₂) where
+  star_comp σ φ := by
+    rcases φ.exists_eq_comp_fst_or_snd with ⟨ψ, rfl⟩ | ⟨ψ, rfl⟩ <;>
+      rw [← RingHom.comp_assoc, RingHom.star_comp_right (σ.comp ψ), StarCompCommute.star_comp,
+        RingHom.star_comp_right, RingHom.comp_assoc]
+
+/-- Translating a product type translates both factors: `σ(Φ₁ × Φ₂) = σΦ₁ × σΦ₂`. -/
+@[simp]
+theorem smul_prod [StarCompCommute E₁] [StarCompCommute E₂] (σ : RingAut ℂ) (Φ₁ : CMType E₁)
+    (Φ₂ : CMType E₂) : σ • prod Φ₁ Φ₂ = prod (σ • Φ₁) (σ • Φ₂) := by
+  ext φ
+  rcases φ.exists_eq_comp_fst_or_snd with ⟨ψ, rfl⟩ | ⟨ψ, rfl⟩ <;>
+    simp only [mem_smul, ← RingHom.comp_assoc, comp_fst_mem_prod, comp_snd_mem_prod]
+
 /-- **The product type has `|Φ₁| + |Φ₂|` elements.** -/
 theorem natCard_prod [Finite (E₁ →+* ℂ)] [Finite (E₂ →+* ℂ)] (Φ₁ : CMType E₁)
     (Φ₂ : CMType E₂) : Nat.card (prod Φ₁ Φ₂) = Nat.card Φ₁ + Nat.card Φ₂ := by
