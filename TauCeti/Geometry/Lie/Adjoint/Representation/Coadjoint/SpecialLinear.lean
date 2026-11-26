@@ -201,7 +201,8 @@ theorem disjoint_range_orbitMap_coadjointRepresentation_tracePairing_single :
       (Set.range (Representation.orbitMap Ad* (-tracePairing (Fin 2) (single 0 1 1)))) := by
   rw [range_orbitMap_coadjointRepresentation_tracePairing_single,
     range_orbitMap_coadjointRepresentation_neg_tracePairing_single]
-  exact disjoint_setOf_nilpotent_halves.image injOn_tracePairing (fun Y hY ↦ hY.1) fun Y hY ↦ hY.1
+  exact disjoint_setOf_trace_eq_zero_det_eq_zero_ne_zero.image injOn_tracePairing (fun Y hY ↦ hY.1)
+    fun Y hY ↦ hY.1
 
 /-- The zero covector does not lie on the coadjoint orbit of `ν_E` in `SL(2, ℝ)`. -/
 theorem zero_notMem_range_orbitMap_coadjointRepresentation_tracePairing_single :

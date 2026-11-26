@@ -66,6 +66,10 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.det_one_sub_eq_two_sub_trace_of_det_eq_one`,
   `Matrix.det_one_add_eq_two_add_trace_of_det_eq_one`: `det (1 ∓ A) = 2 ∓ trace A` for a
   determinant-one matrix `A`.
+* `Matrix.mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two`: `Y₀₁ Y₁₀ = -Y₀₀²` for a `2 × 2`
+  matrix of trace zero and determinant zero.
+* `Matrix.eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two`: such a matrix with vanishing
+  off-diagonal entries is zero.
 * `Matrix.trace_ne_zero_or_sub_ne_zero_of_det_eq_one_fin_two`: a determinant-one matrix is not
   both traceless and symmetric.
 * `Matrix.abs_trace_pow_le_two`: the powers of a determinant-one matrix of trace at most `2` in
@@ -206,6 +210,29 @@ theorem det_one_add_eq_two_add_trace_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R
     (hdet : A.det = 1) : (1 + A).det = 2 + A.trace := by
   rw [det_one_add_fin_two, hdet]
   ring
+
+/-- The off-diagonal entries of a `2 × 2` matrix of trace zero and determinant zero satisfy
+`Y₀₁ Y₁₀ = -Y₀₀²`. -/
+theorem mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two {Y : Matrix (Fin 2) (Fin 2) R}
+    (htr : Y.trace = 0) (hdet : Y.det = 0) : Y 0 1 * Y 1 0 = -Y 0 0 ^ 2 := by
+  rw [trace_fin_two] at htr
+  rw [det_fin_two] at hdet
+  linear_combination Y 0 0 * htr - hdet
+
+/-- A `2 × 2` matrix of trace zero and determinant zero whose off-diagonal entries vanish is
+zero. -/
+theorem eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two [NoZeroDivisors R]
+    {Y : Matrix (Fin 2) (Fin 2) R} (htr : Y.trace = 0) (hdet : Y.det = 0)
+    (h01 : Y 0 1 = 0) (h10 : Y 1 0 = 0) : Y = 0 := by
+  have h00 : Y 0 0 = 0 := by
+    have h := mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet
+    rw [h01, zero_mul, eq_comm, neg_eq_zero] at h
+    exact pow_eq_zero_iff two_ne_zero |>.mp h
+  have h11 : Y 1 1 = 0 := by
+    rw [trace_fin_two] at htr
+    linear_combination htr - h00
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [h00, h01, h10, h11]
 
 end CommRing
 

@@ -11,14 +11,16 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
+import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
 # The nilpotent conjugation orbits of `SL(2, ℝ)`
 
 A `2 × 2` matrix `Y` has trace zero and determinant zero exactly when it is nilpotent, and then its
 off-diagonal entries satisfy `Y₀₁ Y₁₀ = -Y₀₀²`, so they have opposite signs. Hence the punctured
-nilpotent cone `{Y | tr Y = 0, det Y = 0, Y ≠ 0}` of real `2 × 2` matrices is the disjoint union of
-the half with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half with `Y₀₁ ≤ 0 ≤ Y₁₀`.
+nilpotent cone `{Y | tr Y = 0, det Y = 0, Y ≠ 0}` of `2 × 2` matrices over a linearly ordered
+commutative ring such as `ℝ` is the disjoint union of the half with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half
+with `Y₀₁ ≤ 0 ≤ Y₁₀`.
 
 Conjugating `E = [[0, 1], [0, 0]]` (`Matrix.single 0 1 1`) by `g = [[a, b], [c, d]]` in
 `SL(2, R)`, over any commutative ring `R`, gives `g E g⁻¹ = [[-a c, a²], [-c², a c]]`. So over `ℝ`
@@ -32,13 +34,9 @@ the conjugation orbit of `E` is the first half and the orbit of `-E` is the seco
   `SL(2, ℝ)` is the half of the punctured nilpotent cone with `Y₀₁ ≥ 0 ≥ Y₁₀`.
 * `Matrix.SpecialLinearGroup.range_coe_mul_neg_single_mul_coe_inv`: the conjugation orbit of `-E`
   is the half with `Y₀₁ ≤ 0 ≤ Y₁₀`.
-* `Matrix.mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two`: `Y₀₁ Y₁₀ = -Y₀₀²` for a `2 × 2`
-  matrix of trace zero and determinant zero.
-* `Matrix.eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two`: such a matrix with vanishing
-  off-diagonal entries is zero.
-* `Matrix.setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union`: the punctured nilpotent cone is the
-  union of its two halves.
-* `Matrix.disjoint_setOf_nilpotent_halves`: the two halves are disjoint.
+* `Matrix.setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union`: over a linearly ordered commutative
+  ring, the punctured nilpotent cone is the union of its two halves.
+* `Matrix.disjoint_setOf_trace_eq_zero_det_eq_zero_ne_zero`: the two halves are disjoint.
 
 ## References
 
@@ -52,33 +50,14 @@ open scoped MatrixGroups
 
 namespace Matrix
 
-/-- The off-diagonal entries of a `2 × 2` matrix of trace zero and determinant zero satisfy
-`Y₀₁ Y₁₀ = -Y₀₀²`. -/
-theorem mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two {R : Type*} [CommRing R]
-    {Y : Matrix (Fin 2) (Fin 2) R} (htr : Y.trace = 0) (hdet : Y.det = 0) :
-    Y 0 1 * Y 1 0 = -Y 0 0 ^ 2 := by
-  rw [trace_fin_two] at htr
-  rw [det_fin_two] at hdet
-  linear_combination Y 0 0 * htr - hdet
+section Ordered
 
-/-- A `2 × 2` matrix of trace zero and determinant zero whose off-diagonal entries vanish is
-zero. -/
-theorem eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two {R : Type*} [CommRing R]
-    [NoZeroDivisors R] {Y : Matrix (Fin 2) (Fin 2) R} (htr : Y.trace = 0) (hdet : Y.det = 0)
-    (h01 : Y 0 1 = 0) (h10 : Y 1 0 = 0) : Y = 0 := by
-  have h00 : Y 0 0 = 0 := by
-    have h := mul_eq_neg_sq_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet
-    rw [h01, zero_mul, eq_comm, neg_eq_zero] at h
-    exact pow_eq_zero_iff two_ne_zero |>.mp h
-  have h11 : Y 1 1 = 0 := by
-    rw [trace_fin_two] at htr
-    linear_combination htr - h00
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [h00, h01, h10, h11]
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
-/-- The punctured nilpotent cone of `𝔰𝔩(2, ℝ)` is the union of its two halves. -/
+/-- Over a linearly ordered commutative ring, the punctured nilpotent cone of `2 × 2` matrices is
+the union of the half with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half with `Y₀₁ ≤ 0 ≤ Y₁₀`. -/
 theorem setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union :
-    {Y : Matrix (Fin 2) (Fin 2) ℝ | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0} =
+    {Y : Matrix (Fin 2) (Fin 2) R | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0} =
       {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ 0 ≤ Y 0 1 ∧ Y 1 0 ≤ 0} ∪
         {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ Y 0 1 ≤ 0 ∧ 0 ≤ Y 1 0} := by
   ext Y
@@ -94,15 +73,18 @@ theorem setOf_trace_eq_zero_det_eq_zero_ne_zero_eq_union :
     · exact .inr ⟨htr, hdet, hne, h, h'⟩
   · rintro (⟨htr, hdet, hne, -⟩ | ⟨htr, hdet, hne, -⟩) <;> exact ⟨htr, hdet, hne⟩
 
-/-- The two halves of the punctured nilpotent cone of `𝔰𝔩(2, ℝ)` are disjoint. -/
-theorem disjoint_setOf_nilpotent_halves :
+/-- Over a linearly ordered commutative ring, the half of the punctured nilpotent cone of `2 × 2`
+matrices with `Y₀₁ ≥ 0 ≥ Y₁₀` and the half with `Y₀₁ ≤ 0 ≤ Y₁₀` are disjoint. -/
+theorem disjoint_setOf_trace_eq_zero_det_eq_zero_ne_zero :
     Disjoint
-      {Y : Matrix (Fin 2) (Fin 2) ℝ | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ 0 ≤ Y 0 1 ∧ Y 1 0 ≤ 0}
+      {Y : Matrix (Fin 2) (Fin 2) R | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ 0 ≤ Y 0 1 ∧ Y 1 0 ≤ 0}
       {Y | Y.trace = 0 ∧ Y.det = 0 ∧ Y ≠ 0 ∧ Y 0 1 ≤ 0 ∧ 0 ≤ Y 1 0} := by
   rw [Set.disjoint_left]
   rintro Y ⟨htr, hdet, hne, hy, hz⟩ ⟨-, -, -, hy', hz'⟩
   exact hne (eq_zero_of_trace_eq_zero_of_det_eq_zero_fin_two htr hdet (le_antisymm hy' hy)
     (le_antisymm hz hz'))
+
+end Ordered
 
 namespace SpecialLinearGroup
 
