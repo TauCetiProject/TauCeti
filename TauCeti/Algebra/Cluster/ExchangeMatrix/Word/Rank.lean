@@ -33,7 +33,7 @@ variable {I K : Type*} [DecidableEq I] [DecidableEq K] [Finite I]
 
 /-- A finite mutation word preserves column rank after scalar change to any commutative ring. -/
 @[simp]
-theorem rank_mutationWord {R : Type*} [CommRing R] (w : List K) :
+theorem rank_matrixMutationWord {R : Type*} [CommRing R] (w : List K) :
     ((matrixMutationWord row B.matrix w).map ((↑) : ℤ → R)).rank =
       (B.matrix.map ((↑) : ℤ → R)).rank := by
   induction w generalizing B with
@@ -45,7 +45,7 @@ theorem rank_mutationWord {R : Type*} [CommRing R] (w : List K) :
 /-- Mutation words preserve column independence. No full-rank assumption is imposed on the
 principal block, and the scalar ring is allowed to be trivial. -/
 @[simp]
-theorem linearIndependent_col_mutationWord_iff {R : Type*} [CommRing R] (w : List K) :
+theorem linearIndependent_col_matrixMutationWord_iff {R : Type*} [CommRing R] (w : List K) :
     LinearIndependent R ((matrixMutationWord row B.matrix w).map ((↑) : ℤ → R)).col ↔
       LinearIndependent R (B.matrix.map ((↑) : ℤ → R)).col := by
   induction w generalizing B with
@@ -58,7 +58,7 @@ theorem linearIndependent_col_mutationWord_iff {R : Type*} [CommRing R] (w : Lis
 word, provided each degree remains nonzero in the scalar field. Each degree `r j` is assumed
 to divide every entry of column `j` of the initial matrix. Negative degrees and positive
 characteristic are allowed. -/
-theorem linearIndependent_col_ediv_mutationWord_iff {F : Type*} [Field F]
+theorem linearIndependent_col_ediv_matrixMutationWord_iff {F : Type*} [Field F]
     (r : K → ℤ) (hr : ∀ j, (r j : F) ≠ 0) (hdiv : ∀ i j, r j ∣ B.matrix i j) (w : List K) :
     LinearIndependent F
         ((Matrix.of fun i j ↦ matrixMutationWord row B.matrix w i j / r j).map
@@ -77,6 +77,6 @@ theorem linearIndependent_col_ediv_mutationWord_iff {F : Type*} [Field F]
       Units.smul_def, smul_eq_mul]
     rw [Int.cast_div (hd i j) (hr j)]
     simp [u, div_eq_mul_inv, mul_comm]
-  rw [hc, LinearIndependent.units_smul_iff, linearIndependent_col_mutationWord_iff]
+  rw [hc, LinearIndependent.units_smul_iff, linearIndependent_col_matrixMutationWord_iff]
 
 end TauCeti.ExchangeMatrix
