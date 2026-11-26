@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.FieldTheory.Galois.Basic
 public import TauCeti.NumberTheory.NumberField.CMType.Primitive.Basic
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
-import TauCeti.NumberTheory.Multiquadratic.Prime.Radicands
+import Mathlib.Tactic.NormNum.IsSquare
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Quadratic
 
 /-!
 # A non-Galois quartic CM type and its reflex
@@ -29,8 +31,8 @@ cannot be identified with the original field by comparing degrees.
   (`a_mul_neg_b`), so these identities alone do not select `b`.
 * **The field `E`.** `[E : ℚ] = 4` (`finrank_E`), `a` has minimal polynomial `X⁴ + 6 X² + 7`
   (`minpoly_a`), and the real elements of `E` are those of `ℚ(√2)` (`mem_E_and_im_eq_zero_iff`).
-  Since `√7` is real and not in `ℚ(√2)` (`sqrt_seven_not_mem_adjoin_sqrt_two`), `b = -√7 / a`
-  is not in `E` (`b_not_mem_E`), so `E / ℚ` is not normal (`not_normal_E`, `not_isGalois_E`).
+  Since `√7` is real and not in `ℚ(√2)` (`sqrt_seven_notMem_adjoin_sqrt_two`), `b = -√7 / a`
+  is not in `E` (`b_notMem_E`), so `E / ℚ` is not normal (`not_normal_E`, `not_isGalois_E`).
 * **The embeddings.** Every embedding `E → ℂ` sends the generator to one of `±a`, `±b`
   (`apply_gen_mem`) and is determined by that value (`ringHom_ext`); the inclusion `E.val` and
   `ιb` are the `ℚ`-algebra embeddings with values `a` and `b`. The embeddings with value `a` or
@@ -41,7 +43,8 @@ cannot be identified with the original field by comparing degrees.
   (`minpoly_a_add_b`) and real elements those of `ℚ(√7)` (`mem_Estar_and_im_eq_zero_iff`).
   Hence `E* ≠ E` (`Estar_ne_E`).
 * **Primitivity.** `Φ` is induced from no proper subfield of `E` (`isPrimitive_Φ`): the reflex
-  field of a CM type on a quadratic field has degree two.
+  field of a CM type on a quadratic field has degree two
+  (`TauCeti.CMType.finrank_reflexField_of_finrank_eq_two`).
 
 ## References
 
@@ -76,6 +79,10 @@ private theorem sqrt_three_add_mul_sqrt_three_sub : √(3 + √2) * √(3 - √2
   rw [← Real.sqrt_mul (by positivity)]
   congr 1
   nlinarith [Real.sq_sqrt (show (0 : ℝ) ≤ 2 by norm_num)]
+
+private theorem ofReal_sqrt_two_sq : ((√2 : ℝ) : ℂ) ^ 2 = 2 := by
+  rw [← ofReal_pow, Real.sq_sqrt (by norm_num)]
+  norm_num
 
 private theorem ofReal_sqrt_seven_sq : ((√7 : ℝ) : ℂ) ^ 2 = 7 := by
   rw [← ofReal_pow, Real.sq_sqrt (by norm_num)]
@@ -183,48 +190,29 @@ private theorem mem_realField_iff {x : ℂ} : x ∈ realField ↔ x.im = 0 := by
 private theorem ofReal_mem_realField (r : ℝ) : (r : ℂ) ∈ realField :=
   mem_realField_iff.2 (ofReal_im r)
 
-/-- Adjoining a set of real numbers inside `ℝ` or inside `ℂ` gives the same degree. -/
-private theorem finrank_adjoin_ofReal_image (S : Set ℝ) :
-    finrank ℚ (adjoin ℚ (((↑) : ℝ → ℂ) '' S)) = finrank ℚ (adjoin ℚ S) := by
-  let ρ : ℝ →ₐ[ℚ] ℂ := ofRealAm.restrictScalars ℚ
-  rw [show ((↑) : ℝ → ℂ) '' S = ρ '' S from rfl, ← adjoin_map]
-  exact (equivMap _ ρ).toLinearEquiv.finrank_eq.symm
+private theorem finrank_adjoin_sqrt_two : finrank ℚ ℚ⟮((√2 : ℝ) : ℂ)⟯ = 2 :=
+  TauCeti.IntermediateField.finrank_adjoin_simple_eq_two_of_not_isSquare
+    (ofReal_sqrt_two_sq.trans (map_ofNat _ 2).symm) (by norm_num)
 
-/-- For a prime `p`, `ℚ(√p) ⊆ ℂ` is quadratic. -/
-private theorem finrank_adjoin_sqrt_prime {p : ℕ} (hp : p.Prime) :
-    finrank ℚ ℚ⟮((√p : ℝ) : ℂ)⟯ = 2 := by
-  have h := Multiquadratic.finrank_adjoin_sqrt_primes (fun _ : Unit ↦ p) (fun _ ↦ hp)
-    (fun _ _ _ ↦ rfl)
-  rw [Set.range_const, Nat.card_unique, pow_one] at h
-  rw [← h, ← finrank_adjoin_ofReal_image, Set.image_singleton]
+private theorem finrank_adjoin_sqrt_seven : finrank ℚ ℚ⟮((√7 : ℝ) : ℂ)⟯ = 2 :=
+  TauCeti.IntermediateField.finrank_adjoin_simple_eq_two_of_not_isSquare
+    (ofReal_sqrt_seven_sq.trans (map_ofNat _ 7).symm) (by norm_num)
 
-private theorem finrank_adjoin_sqrt_two : finrank ℚ ℚ⟮((√2 : ℝ) : ℂ)⟯ = 2 := by
-  simpa using finrank_adjoin_sqrt_prime Nat.prime_two
+/-- **The real quadratic fields `ℚ(√2)` and `ℚ(√7)` are distinct**, since `2 · 7` is not a
+square. -/
+theorem adjoin_sqrt_two_ne_adjoin_sqrt_seven :
+    ℚ⟮((√2 : ℝ) : ℂ)⟯ ≠ ℚ⟮((√7 : ℝ) : ℂ)⟯ := fun h ↦ by
+  have h14 := TauCeti.IntermediateField.isSquare_mul_of_adjoin_simple_eq
+    (ofReal_sqrt_two_sq.trans (map_ofNat _ 2).symm)
+    (ofReal_sqrt_seven_sq.trans (map_ofNat _ 7).symm) h
+  norm_num at h14
 
-private theorem finrank_adjoin_sqrt_seven : finrank ℚ ℚ⟮((√7 : ℝ) : ℂ)⟯ = 2 := by
-  simpa using finrank_adjoin_sqrt_prime (by decide : Nat.Prime 7)
-
-/-- **`√7 ∉ ℚ(√2)`**, since `ℚ(√2, √7)` has degree four. -/
-theorem sqrt_seven_not_mem_adjoin_sqrt_two : ((√7 : ℝ) : ℂ) ∉ ℚ⟮((√2 : ℝ) : ℂ)⟯ := by
-  intro h
-  have h4 := Multiquadratic.finrank_adjoin_sqrt_primes ![2, 7] (by decide) (by decide)
-  rw [← finrank_adjoin_ofReal_image] at h4
+/-- **`√7 ∉ ℚ(√2)`**, since `ℚ(√2)` and `ℚ(√7)` are distinct quadratic fields. -/
+theorem sqrt_seven_notMem_adjoin_sqrt_two : ((√7 : ℝ) : ℂ) ∉ ℚ⟮((√2 : ℝ) : ℂ)⟯ := fun h ↦ by
   have : FiniteDimensional ℚ ℚ⟮((√2 : ℝ) : ℂ)⟯ :=
     .of_finrank_pos (finrank_adjoin_sqrt_two.symm ▸ two_pos)
-  have hsub : ((↑) : ℝ → ℂ) '' Set.range (fun i ↦ √((![2, 7] i : ℕ) : ℝ)) ⊆
-      ℚ⟮((√2 : ℝ) : ℂ)⟯ := by
-    rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
-    fin_cases i
-    · simpa using mem_adjoin_simple_self ℚ ((√2 : ℝ) : ℂ)
-    · simpa using h
-  have hle := finrank_le_of_le_right (adjoin_le_iff.2 hsub)
-  rw [h4, finrank_adjoin_sqrt_two] at hle
-  norm_num at hle
-
-/-- The real quadratic fields `ℚ(√2)` and `ℚ(√7)` are distinct. -/
-theorem adjoin_sqrt_two_ne_adjoin_sqrt_seven :
-    ℚ⟮((√2 : ℝ) : ℂ)⟯ ≠ ℚ⟮((√7 : ℝ) : ℂ)⟯ := fun h ↦
-  sqrt_seven_not_mem_adjoin_sqrt_two (h ▸ mem_adjoin_simple_self ℚ _)
+  exact adjoin_sqrt_two_ne_adjoin_sqrt_seven (eq_of_le_of_finrank_eq (adjoin_simple_le_iff.2 h)
+    (finrank_adjoin_sqrt_seven.trans finrank_adjoin_sqrt_two.symm)).symm
 
 /-- Let `K ⊆ L ⊆ ℂ` with `K` real quadratic and `L` nonreal of degree at most four. Then `L` is
 quartic and its real elements are those of `K`. -/
@@ -245,13 +233,6 @@ private theorem finrank_eq_four_and_inf_realField_eq {K L : IntermediateField �
   have hle := Nat.le_of_dvd (by norm_num) hM
   have hpos : 0 < finrank ℚ ↥(L ⊓ realField) := Nat.pos_of_dvd_of_pos hM (by norm_num)
   omega
-
-/-- An element of `ℂ` killed by a nonzero rational polynomial of degree at most four has degree at
-most four over `ℚ`. -/
-private theorem finrank_adjoin_le_four {z : ℂ} {p : ℚ[X]} (hp : p ≠ 0) (hdeg : p.natDegree ≤ 4)
-    (hz : aeval z p = 0) : finrank ℚ ℚ⟮z⟯ ≤ 4 := by
-  rw [adjoin.finrank (IsAlgebraic.isIntegral ⟨p, hp, hz⟩)]
-  exact (natDegree_le_natDegree (minpoly.degree_le_of_ne_zero ℚ z hp hz)).trans hdeg
 
 /-! ### The field `E = ℚ(a)` -/
 
@@ -277,7 +258,8 @@ private theorem finrank_E_and_inf_realField :
   finrank_eq_four_and_inf_realField_eq (adjoin_simple_le_iff.2 sqrt_two_mem_E)
     finrank_adjoin_sqrt_two (adjoin_simple_le_iff.2 (ofReal_mem_realField _))
     (fun h ↦ a_im_pos.ne' (mem_realField_iff.1 (h (mem_adjoin_simple_self ℚ a))))
-    (finrank_adjoin_le_four monic_quartic_a.ne_zero natDegree_quartic_a.le aeval_a)
+    ((finrank_adjoin_simple_le_natDegree monic_quartic_a.ne_zero aeval_a).trans
+      natDegree_quartic_a.le)
 
 /-- **`[E : ℚ] = 4`.** -/
 theorem finrank_E : finrank ℚ E = 4 :=
@@ -296,11 +278,11 @@ theorem mem_E_and_im_eq_zero_iff {x : ℂ} : x ∈ E ∧ x.im = 0 ↔ x ∈ ℚ�
 
 /-- **`b ∉ E`**: otherwise the real number `√7 = -a b` would lie in the real subfield `ℚ(√2)`
 of `E`. -/
-theorem b_not_mem_E : b ∉ E := fun hb ↦ by
+theorem b_notMem_E : b ∉ E := fun hb ↦ by
   have h7 : ((√7 : ℝ) : ℂ) ∈ E := by
     rw [show ((√7 : ℝ) : ℂ) = -(a * b) by rw [a_mul_b, neg_neg]]
     exact neg_mem (mul_mem (mem_adjoin_simple_self ℚ a) hb)
-  exact sqrt_seven_not_mem_adjoin_sqrt_two (mem_E_and_im_eq_zero_iff.1 ⟨h7, ofReal_im _⟩)
+  exact sqrt_seven_notMem_adjoin_sqrt_two (mem_E_and_im_eq_zero_iff.1 ⟨h7, ofReal_im _⟩)
 
 /-! ### The field `E* = ℚ(a + b)` -/
 
@@ -329,8 +311,8 @@ private theorem finrank_Estar_and_inf_realField :
     finrank_adjoin_sqrt_seven (adjoin_simple_le_iff.2 (ofReal_mem_realField _))
     (fun h ↦ (add_pos a_im_pos b_im_pos).ne'
       (by simpa using mem_realField_iff.1 (h (mem_adjoin_simple_self ℚ (a + b)))))
-    (finrank_adjoin_le_four monic_quartic_a_add_b.ne_zero natDegree_quartic_a_add_b.le
-      aeval_a_add_b)
+    ((finrank_adjoin_simple_le_natDegree monic_quartic_a_add_b.ne_zero aeval_a_add_b).trans
+      natDegree_quartic_a_add_b.le)
 
 /-- **`[E* : ℚ] = 4`.** -/
 theorem finrank_Estar : finrank ℚ Estar = 4 :=
@@ -350,7 +332,7 @@ theorem mem_Estar_and_im_eq_zero_iff {x : ℂ} :
 
 /-- **`E* ≠ E`**: the real number `√7` lies in `E*` but not in `E`. -/
 theorem Estar_ne_E : Estar ≠ E := fun h ↦
-  sqrt_seven_not_mem_adjoin_sqrt_two
+  sqrt_seven_notMem_adjoin_sqrt_two
     (mem_E_and_im_eq_zero_iff.1 ⟨h ▸ sqrt_seven_mem_Estar, ofReal_im _⟩)
 
 /-! ### The complex embeddings of `E` -/
@@ -397,7 +379,7 @@ theorem apply_gen_mem (ψ : E →+* ℂ) : ψ gen ∈ ({a, -a, b, -b} : Set ℂ)
 
 /-- **`E / ℚ` is not normal**: the embedding `ιb` moves `E` off itself, since `b ∉ E`. -/
 theorem not_normal_E : ¬Normal ℚ E := fun _ ↦
-  b_not_mem_E (AlgHom.fieldRange_of_normal ιb ▸ ⟨gen, ιb_gen⟩)
+  b_notMem_E (AlgHom.fieldRange_of_normal ιb ▸ ⟨gen, ιb_gen⟩)
 
 /-- **`E / ℚ` is not Galois.** -/
 theorem not_isGalois_E : ¬IsGalois ℚ E := fun h ↦ not_normal_E h.to_normal
@@ -410,11 +392,6 @@ private theorem a_ne_b : a ≠ b := fun h ↦ by
   have h2 : ((√2 : ℝ) : ℂ) = 0 := by linear_combination h' / 2
   exact (Real.sqrt_pos.2 (by norm_num : (0 : ℝ) < 2)).ne' (ofReal_eq_zero.1 h2)
 
-private theorem ne_neg_of_im_pos {z w : ℂ} (hz : 0 < z.im) (hw : 0 < w.im) : z ≠ -w := fun h ↦ by
-  have := congrArg im h
-  rw [neg_im] at this
-  linarith
-
 private theorem conj_a : (starRingEnd ℂ) a = -a := by simp [a]
 
 private theorem conj_b : (starRingEnd ℂ) b = -b := by simp [b]
@@ -426,14 +403,19 @@ noncomputable def Φ : CMType E where
   star_mem_iff' ψ := by
     simp only [Set.mem_ofPred_eq, RingHom.star_apply]
     have hab := a_ne_b
-    have h₁ := ne_neg_of_im_pos a_im_pos a_im_pos
-    have h₂ := ne_neg_of_im_pos a_im_pos b_im_pos
-    have h₃ := ne_neg_of_im_pos b_im_pos a_im_pos
-    have h₄ := ne_neg_of_im_pos b_im_pos b_im_pos
+    -- Negation swaps the half planes, so `-a` and `-b` differ from `a` and `b`.
+    have him {z w : ℂ} (hz : 0 < z.im) (hw : 0 < w.im) : -w ≠ z := fun h ↦ by
+      have := congrArg im h
+      rw [neg_im] at this
+      linarith
+    have h₁ := him a_im_pos a_im_pos
+    have h₂ := him a_im_pos b_im_pos
+    have h₃ := him b_im_pos a_im_pos
+    have h₄ := him b_im_pos b_im_pos
     have h := apply_gen_mem ψ
     simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at h
     rcases h with h | h | h | h <;>
-      simp [h, conj_a, conj_b, hab, hab.symm, h₁.symm, h₂.symm, h₃.symm, h₄.symm]
+      simp [h, conj_a, conj_b, hab, hab.symm, h₁, h₂, h₃, h₄]
 
 @[simp]
 theorem mem_Φ_iff {ψ : E →+* ℂ} : ψ ∈ Φ ↔ ψ gen = a ∨ ψ gen = b :=
@@ -452,8 +434,8 @@ private theorem val_ne_ιb : (E.val : E →+* ℂ) ≠ ιb := fun h ↦
 /-- The type trace of `Φ` at `x ∈ E` is `x + ιb x`. -/
 @[simp]
 theorem typeTrace_Φ (x : E) : Φ.typeTrace x = x + ιb x := by
-  rw [CMType.typeTrace_apply, coe_Φ, finsum_mem_pair val_ne_ιb]
-  rfl
+  rw [CMType.typeTrace_apply, coe_Φ, finsum_mem_pair val_ne_ιb, AlgHom.coe_toRingHom,
+    AlgHom.coe_toRingHom, coe_val]
 
 /-- The type trace of the `n`th power of the generator is `aⁿ + bⁿ`. -/
 theorem typeTrace_Φ_gen_pow (n : ℕ) : Φ.typeTrace (gen ^ n) = a ^ n + b ^ n := by
@@ -506,37 +488,24 @@ theorem finrank_reflexField_Φ : finrank ℚ Φ.reflexField = 4 := by
 /-- `E` is a number field. -/
 instance : NumberField E where
 
-/-- **`Φ` is primitive.** A proper subfield `F` of `E` from which `Φ` is induced would carry a CM
-type, so it would be quadratic and its CM types would consist of a single embedding `φ₀`. The
-reflex field of `Φ` equals that of the type on `F`, so it would lie in the quadratic field
-`φ₀(F)`, whereas it has degree four. -/
+/-- **`Φ` is primitive**: it is not induced from any proper subfield of `E`. -/
 theorem isPrimitive_Φ : Φ.IsPrimitive := by
   rw [CMType.isPrimitive_iff]
   rintro F ⟨Φ₀, hΦ₀⟩
-  have hdvd : finrank ℚ F ∣ 4 := finrank_E ▸ finrank_top' (F := ℚ) (E := E) ▸
-    finrank_dvd_of_le_right (le_top : F ≤ ⊤)
+  have hdvd : finrank ℚ F ∣ 4 := by
+    have := finrank_dvd_of_le_right (le_top : F ≤ ⊤)
+    rwa [finrank_top', finrank_E] at this
   by_cases h4 : finrank ℚ F = 4
   · exact eq_of_le_of_finrank_eq le_top (by rw [finrank_top', finrank_E, h4])
   exfalso
-  -- `F` carries the CM type `Φ₀`, so it is quadratic and `Φ₀` is a single embedding `φ₀`.
+  -- `F` carries the CM type `Φ₀`, so it is quadratic, and then so is the reflex field of `Φ₀`,
+  -- which is that of `Φ`.
   have hcard := Φ₀.two_mul_card_eq_finrank
   have hF : finrank ℚ F = 2 := by
     have := Nat.le_of_dvd (by norm_num) hdvd
     interval_cases finrank ℚ F <;> omega
-  obtain ⟨φ₀, hφ₀⟩ : ∃ φ₀ : F →+* ℂ, (Φ₀ : Set (F →+* ℂ)) = {φ₀} := by
-    obtain ⟨⟨φ₀, hmem⟩, huniq⟩ := Nat.card_eq_one_iff_exists.1 (by omega : Nat.card Φ₀ = 1)
-    exact ⟨φ₀, Set.eq_singleton_iff_unique_mem.2
-      ⟨hmem, fun ψ hψ ↦ congrArg Subtype.val (huniq ⟨ψ, hψ⟩)⟩⟩
-  -- The reflex field of `Φ₀`, which is that of `Φ`, lies in the quadratic field `φ₀(F)`.
-  have hle : Φ₀.reflexField ≤ φ₀.toRatAlgHom.fieldRange :=
-    CMType.reflexField_le_iff.2 fun x ↦ by
-      rw [CMType.typeTrace_apply, hφ₀, finsum_mem_singleton]
-      exact ⟨x, rfl⟩
-  have hrange : finrank ℚ φ₀.toRatAlgHom.fieldRange = 2 :=
-    hF ▸ (AlgEquiv.ofInjectiveField φ₀.toRatAlgHom).toLinearEquiv.finrank_eq.symm
-  have : FiniteDimensional ℚ φ₀.toRatAlgHom.fieldRange := .of_finrank_pos (by omega)
-  have h := finrank_le_of_le_right hle
-  rw [← CMType.reflexField_induced (L := E), hΦ₀, finrank_reflexField_Φ, hrange] at h
+  have h := Φ₀.finrank_reflexField_of_finrank_eq_two hF
+  rw [← CMType.reflexField_induced (L := E), hΦ₀, finrank_reflexField_Φ] at h
   omega
 
 end TauCeti.NonGaloisQuarticCMType
