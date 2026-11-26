@@ -57,14 +57,9 @@ private theorem IsSmoothTriangulation.finrank_lt_card_of_maximal
   obtain ⟨x, hx⟩ := exists_support_eq hτ.prop
   have hxO : x ∈ O := K.mem_biInter_openStarRealization_iff.2 hx.ge
   -- By maximality, every such point lies in the closed simplex `τ`.
-  have hsub : O ⊆ range (faceInclusion K ⟨τ, hτ.prop⟩) := by
-    intro y hy
-    have hτy : τ ⊆ (carrier K y).val := by
-      rw [carrier_val]
-      exact K.mem_biInter_openStarRealization_iff.1 hy
-    have hc : (carrier K y).val = τ := (hτ.2 (carrier K y).prop hτy).antisymm hτy
-    have hcy : carrier K y = ⟨τ, hτ.prop⟩ := Subtype.ext hc
-    exact hcy ▸ mem_range_faceInclusion_carrier K y
+  have hsub : O ⊆ range (faceInclusion K ⟨τ, hτ.prop⟩) := fun y hy ↦
+    (K.mem_range_faceInclusion_iff _ y).2
+      (hτ.2 (support_mem K y) (K.mem_biInter_openStarRealization_iff.1 hy))
   have hint : κ '' O ⊆ interior (κ '' range (faceInclusion K ⟨τ, hτ.prop⟩)) :=
     interior_maximal (image_mono hsub) (κ.isOpenMap O (K.isOpen_biInter_openStarRealization τ))
   rw [(h.isNullSet_image_range_faceInclusion ⟨τ, hτ.prop⟩ hle).interior_eq_empty] at hint
@@ -91,10 +86,8 @@ theorem IsSmoothTriangulation.dimension_eq [Nonempty M] (h : IsSmoothTriangulati
     K.dimension = (finrank ℝ E : WithBot ℕ∞) := by
   obtain ⟨x⟩ := (inferInstance : Nonempty M)
   rw [← dimension_toPreAbstractSimplicialComplex]
-  refine h.isPure.dimension_eq fun hK ↦ ?_
-  have hmem : (carrier K (κ.symm x)).val ∈ K.toPreAbstractSimplicialComplex :=
-    (carrier K (κ.symm x)).prop
-  rw [hK] at hmem
-  exact hmem
+  exact h.isPure.dimension_eq fun hK ↦
+    PreAbstractSimplicialComplex.notMem_bot (hK ▸ support_mem K (κ.symm x) :
+      (κ.symm x).val.support ∈ (⊥ : PreAbstractSimplicialComplex ι))
 
 end TauCeti
