@@ -77,8 +77,10 @@ unweighted spaces, and turns `D_u` into `D_u - c(s)`
 `TauCeti.SymplecticForm.floerWeightedSobolevOperator`, which acts pointwise by the coefficient
 field of `D_u - c(s)` (`TauCeti.SymplecticForm.coeFn_floerWeightedSobolevOperator`); these
 coefficients are bounded whenever those of `D_u` are and the slope is bounded
-(`TauCeti.SymplecticForm.memLp_floerJetCoeff_sub_smul_fst`). The weights need not be small: for
-data cylindrical near the ends, with `c` constant beyond `±R`, if the fields
+(`TauCeti.SymplecticForm.memLp_floerJetCoeff_sub_smul_fst`), and the operator depends
+Lipschitz-continuously on the slope in operator norm
+(`TauCeti.SymplecticForm.norm_floerWeightedSobolevOperator_sub_le`). The weights need not be
+small: for data cylindrical near the ends, with `c` constant beyond `±R`, if the fields
 `dX_{H±_t}(x±(t)) - δ± J±_t(x±(t))` have nondegenerate return maps (for one-periodic `H±`, `J±`
 and `x±`, if `δ±` are not eigenvalues of the asymptotic operators at `x±`), the weighted operator
 has finite-dimensional kernel
@@ -551,6 +553,42 @@ theorem memLp_floerJetCoeff_sub_smul_fst_of_cylindrical (ω : SymplecticForm V)
   exact ω.memLp_floerJetCoeff_sub_smul_fst
     (ω.memLp_floerJetCoeff_of_cylindrical hcyl hu hHm hJm huxm hδm hHp hJp huxp hδp)
     hc.measurable hB
+
+/-- **The weighted operator depends Lipschitz-continuously on the slope.** For measurable slopes
+`c` and `c'` with `|c s - c' s| ≤ B` for every `s`, the operators `D_u - c(s)` and `D_u - c'(s)`
+on `W^{1,2}(ℝ × S¹, V)` differ by at most `B` in operator norm. -/
+theorem norm_floerWeightedSobolevOperator_sub_le (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) {c c' : ℝ → ℝ}
+    (hc : Measurable c) (hc' : Measurable c') {B : ℝ} (hB : ∀ s, |c s - c' s| ≤ B) :
+    ‖ω.floerWeightedSobolevOperator J Ks Kt u c -
+        ω.floerWeightedSobolevOperator J Ks Kt u c'‖ ≤ B := by
+  have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0)
+  -- The two coefficient fields differ by the bounded field `(c' - c)(s) • fst`.
+  set M := ω.floerJetCoeff J Ks Kt u
+  set D : ℝ × ℝ → V × V × V →L[ℝ] V := fun z ↦ (c' z.1 - c z.1) • fst ℝ V (V × V)
+  have hD : ∀ᵐ z ∂stripMeasure, ‖D z‖ ≤ B := Eventually.of_forall fun z ↦ by
+    rw [norm_smul, Real.norm_eq_abs, abs_sub_comm]
+    exact (mul_le_of_le_one_right (abs_nonneg _) (norm_fst_le ℝ V (V × V))).trans (hB z.1)
+  have hDm : MemLp D ∞ stripMeasure := memLp_top_of_bound
+    (((hc'.comp measurable_fst).sub (hc.comp measurable_fst)).aestronglyMeasurable.smul
+      aestronglyMeasurable_const) B hD
+  have hMD : (fun z ↦ M z - c z.1 • fst ℝ V (V × V)) =
+      (fun z ↦ M z - c' z.1 • fst ℝ V (V × V)) + D := by
+    ext1 z
+    simp only [Pi.add_apply, D]
+    module
+  simp only [floerWeightedSobolevOperator_def, ← sub_comp]
+  by_cases hM' : MemLp (fun z ↦ M z - c' z.1 • fst ℝ V (V × V)) ∞ stripMeasure
+  · rw [hMD, jetOperator_add hM' hDm, add_sub_cancel_left]
+    refine (opNorm_comp_le _ _).trans ((mul_le_of_le_one_right (norm_nonneg _)
+      (Submodule.norm_subtypeL_le _)).trans (opNorm_le_bound _ hB₀ fun x ↦ ?_))
+    exact norm_jetOperator_apply_le hDm hD x
+  · -- Otherwise neither coefficient field is essentially bounded, and both operators vanish.
+    have hM : ¬ MemLp (fun z ↦ M z - c z.1 • fst ℝ V (V × V)) ∞ stripMeasure := fun h ↦
+      hM' (by simpa only [hMD, add_sub_cancel_right] using h.sub hDm)
+    rw [jetOperator_of_not_memLp hM, jetOperator_of_not_memLp hM', sub_zero, zero_comp,
+      opNorm_zero]
+    exact hB₀
 
 /-- **The weighted semi-Fredholm estimate for Floer data cylindrical near the ends**, in the form
 `TauCeti.CylinderSobolev.HasSemiFredholmEstimate` consumed by Peetre's argument on the cylinder:
