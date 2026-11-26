@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Cylinder.Fredholm
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
@@ -199,8 +200,8 @@ private theorem endData_of_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → 
       ContDiff ℝ 2 (uncurry He) ∧ ∀ t y, ω.Compatible (Je t y) := by
   obtain rfl : Je = fun t ↦ J (a, t) := funext fun t ↦ (hJe t).symm
   obtain rfl : He = fun t ↦ Kt (a, t) := funext fun t ↦ (hHe t).symm
-  exact ⟨hJ.comp ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd),
-    hKt.comp ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd), fun t ↦ hJc (a, t)⟩
+  exact ⟨contDiff_comp_prodMap_prodMk_right hJ a, contDiff_comp_prodMap_prodMk_right hKt a,
+    fun t ↦ hJc (a, t)⟩
 
 /-- **Uniform closeness of the coefficient fields along a segment of maps.** For data cylindrical
 near the ends and `C¹` on the whole cylinder (with `C²` Hamiltonians), and differentiable maps
@@ -382,9 +383,9 @@ private theorem tendsto_eLpNorm_floerJetCoeff_family (ω : SymplecticForm V)
   have hM (μ : ℝ) := ω.continuous_floerJetCoeff
     (J := fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap) (Ks := fun w ↦ Ks (μ, w))
     (Kt := fun w ↦ Kt (μ, w)) (u := u)
-    (fun _ ↦ (hJ.comp ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)).contDiffAt)
-    (fun _ ↦ (hKs.comp ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)).contDiffAt)
-    (fun _ ↦ (hKt.comp ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)).contDiffAt) hu
+    (fun _ ↦ (contDiff_comp_prodMap_prodMk_right hJ μ).contDiffAt)
+    (fun _ ↦ (contDiff_comp_prodMap_prodMk_right hKs μ).contDiffAt)
+    (fun _ ↦ (contDiff_comp_prodMap_prodMk_right hKt μ).contDiffAt) hu
   tendsto_eLpNorm_sub_of_forall_dist_lt
     (.of_forall fun μ ↦ ((hM μ).sub (hM lam)).aestronglyMeasurable) fun _ hr ↦ by
       obtain ⟨η, hη, h⟩ :=
@@ -514,14 +515,12 @@ private theorem isCylindricalNearEnds_path {ω : SymplecticForm V}
       hamiltonianT_eq_of_le := fun z hz ↦ hKeq _ (h₁.hamiltonianT_eq_of_le z hz)
         (h₂.hamiltonianT_eq_of_le z hz)
       contDiffAt_almostComplex := fun z ↦
-        ((contDiff_pathAlmostComplex h₀ hJt hJ't hJ hJ').comp
-          ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)).contDiffAt
+        (contDiff_comp_prodMap_prodMk_right (contDiff_pathAlmostComplex h₀ hJt hJ't hJ hJ')
+          μ).contDiffAt
       contDiffAt_hamiltonianS := fun z ↦
-        ((contDiff_pathHamiltonian hKs hKs').comp
-          ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)).contDiffAt
+        (contDiff_comp_prodMap_prodMk_right (contDiff_pathHamiltonian hKs hKs') μ).contDiffAt
       contDiffAt_hamiltonianT := fun z ↦
-        ((contDiff_pathHamiltonian hKt hKt').comp
-          ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)).contDiffAt }
+        (contDiff_comp_prodMap_prodMk_right (contDiff_pathHamiltonian hKt hKt') μ).contDiffAt }
 
 end Coefficient
 
@@ -761,13 +760,13 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
     (endData_of_eq ω (J := fun w ↦ J (μ, w)) (Kt := fun w ↦ Kt (μ, w)) (-|R|)
       (fun t ↦ (hcyl μ hμ).almostComplex_eq_of_le_neg (_, t) hR')
       (fun t ↦ (hcyl μ hμ).hamiltonianT_eq_of_le_neg (_, t) hR')
-      (hJ.comp ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd))
-      (hKt.comp ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)) fun z ↦ hJc (μ, z))
+      (contDiff_comp_prodMap_prodMk_right hJ μ) (contDiff_comp_prodMap_prodMk_right hKt μ)
+      fun z ↦ hJc (μ, z))
     (endData_of_eq ω (J := fun w ↦ J (μ, w)) (Kt := fun w ↦ Kt (μ, w)) |R|
       (fun t ↦ (hcyl μ hμ).almostComplex_eq_of_le (_, t) hR)
       (fun t ↦ (hcyl μ hμ).hamiltonianT_eq_of_le (_, t) hR)
-      (hJ.comp ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd))
-      (hKt.comp ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd)) fun z ↦ hJc (μ, z))
+      (contDiff_comp_prodMap_prodMk_right hJ μ) (contDiff_comp_prodMap_prodMk_right hKt μ)
+      fun z ↦ hJc (μ, z))
   set M : ℝ → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ ↦ ω.floerJetCoeff
     (fun w y ↦ (J (μ, w) y).toLinearMap.toContinuousLinearMap) (fun w ↦ Ks (μ, w))
     (fun w ↦ Kt (μ, w)) u

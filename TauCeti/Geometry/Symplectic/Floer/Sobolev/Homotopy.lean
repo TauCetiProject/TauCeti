@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
 import TauCeti.Geometry.Symplectic.Floer.Continuation
+import TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm
 
 /-!
 # Homotopy invariance of the index of the linearized Floer operator
@@ -32,8 +33,10 @@ identified with a difference of Conley–Zehnder indices, which satisfy the same
 (`TauCeti.GLSymplectic.conleyZehnderIndex_eq_of_homotopy_of_not_hasEigenvalue_one`).
 
 The orbits are fixed along the homotopy. This is the case of the model operators
-`∂s + J₀ ∂t + S(s, t)` at the constant orbit `0` of Hamiltonians quadratic in the point, whose
-asymptotic loops of symmetric matrices `S±` may then be deformed among nondegenerate ones.
+`∂s + J₀ ∂t + S(s, t)` at the constant orbit `0` of Hamiltonians quadratic in the point whose
+asymptotic symmetric matrices `S±` do not depend on `t` (the suspended vector fields are required
+to be globally Lipschitz, which excludes `t`-dependent ones): these `S±` may then be deformed among
+nondegenerate constant symmetric matrices.
 
 The proof joins the two operators through model data: a constant compatible almost complex
 structure `J₀`, `K_s = 0` and the continuation homotopy `K_t = H_{μ,(s, t)}` from `H₋_μ` to `H₊_μ`
@@ -67,53 +70,24 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
-omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The continuation homotopy from `H₋_μ` to `H₊_μ`, as a function of the parameter `μ`, the
-point of the cylinder and the point of `V`, is `C²` when the homotopies `H±` are. -/
-private theorem contDiff_continuationHomotopy_family [NormedSpace ℝ V] {Hm Hp : ℝ → ℝ → V → ℝ}
+/-- The model data `(J₀, 0, H_{μ,(s, t)})`, with a constant compatible almost complex structure
+and the continuation homotopy from `H₋_μ` to `H₊_μ`, are cylindrical near the ends with radius `1`
+and end Hamiltonians `H±_μ`, along every map: this is
+`TauCeti.Floer.isCylindricalNearEnds_continuationHomotopy` for the constant families `J± = J₀`. -/
+private theorem isCylindricalNearEnds_continuationHomotopy_const {ω : SymplecticForm V}
+    {J₀ : AlmostComplexStructure V} (hJ₀ : ω.Compatible J₀) {Hm Hp : ℝ → ℝ → V → ℝ}
     (hHm : ContDiff ℝ 2 fun p : ℝ × ℝ × V ↦ Hm p.1 p.2.1 p.2.2)
-    (hHp : ContDiff ℝ 2 fun p : ℝ × ℝ × V ↦ Hp p.1 p.2.1 p.2.2) :
-    ContDiff ℝ 2
-      (uncurry fun p : ℝ × (ℝ × ℝ) ↦ Floer.continuationHomotopy (Hm p.1) (Hp p.1) p.2) := by
-  -- It is the continuation homotopy of `H±` viewed as Hamiltonians on `ℝ × V`, read at `(μ, y)`.
-  have heq : (uncurry fun p : ℝ × (ℝ × ℝ) ↦ Floer.continuationHomotopy (Hm p.1) (Hp p.1) p.2) =
-      uncurry (Floer.continuationHomotopy (fun t (q : ℝ × V) ↦ Hm q.1 t q.2)
-        (fun t (q : ℝ × V) ↦ Hp q.1 t q.2)) ∘ fun q ↦ (q.1.2, (q.1.1, q.2)) := by
-    funext q
-    simp only [comp_apply, uncurry_def, Floer.continuationHomotopy_def]
-  have hswap : ContDiff ℝ 2 fun p : ℝ × ℝ × V ↦ (p.2.1, p.1, p.2.2) :=
-    contDiff_snd.fst.prodMk (contDiff_fst.prodMk contDiff_snd.snd)
-  rw [heq]
-  exact (Floer.contDiff_uncurry_continuationHomotopy (V := ℝ × V) (hHm.comp hswap)
-    (hHp.comp hswap)).comp (contDiff_fst.snd.prodMk (contDiff_fst.fst.prodMk contDiff_snd))
-
-omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The slice at `μ` of a jointly `C²` homotopy of time-dependent Hamiltonians is `C²`. -/
-private theorem contDiff_uncurry_apply [NormedSpace ℝ V] {H : ℝ → ℝ → V → ℝ}
-    (hH : ContDiff ℝ 2 fun p : ℝ × ℝ × V ↦ H p.1 p.2.1 p.2.2) (μ : ℝ) :
-    ContDiff ℝ 2 (uncurry (H μ)) :=
-  hH.comp (contDiff_const.prodMk (contDiff_fst.prodMk contDiff_snd))
-
-/-- The model data `(J₀, 0, H_{μ,(s, t)})`, with a constant almost complex structure and the
-continuation homotopy from `H₋_μ` to `H₊_μ`, are cylindrical near the ends with radius `1` and end
-Hamiltonians `H±_μ`, along every map. -/
-private theorem isCylindricalNearEnds_continuationHomotopy (J₀ : AlmostComplexStructure V)
-    {Hm Hp : ℝ → ℝ → V → ℝ} (hHm : ContDiff ℝ 2 fun p : ℝ × ℝ × V ↦ Hm p.1 p.2.1 p.2.2)
     (hHp : ContDiff ℝ 2 fun p : ℝ × ℝ × V ↦ Hp p.1 p.2.1 p.2.2) (μ : ℝ) (u : ℝ × ℝ → V) :
     Floer.IsCylindricalNearEnds (fun _ _ ↦ J₀) (fun _ _ ↦ 0)
       (Floer.continuationHomotopy (Hm μ) (Hp μ)) (fun _ _ ↦ J₀) (fun _ _ ↦ J₀) (Hm μ) (Hp μ) 1
-      u where
-  almostComplex_eq_of_le_neg _ _ := rfl
-  almostComplex_eq_of_le _ _ := rfl
-  hamiltonianS_eq_zero _ _ := rfl
-  hamiltonianT_eq_of_le_neg z hz :=
-    funext (Floer.continuationHomotopy_of_nonpos (hz.trans (by norm_num)))
-  hamiltonianT_eq_of_le z hz := funext (Floer.continuationHomotopy_of_one_le hz)
-  contDiffAt_almostComplex _ := contDiffAt_const
-  contDiffAt_hamiltonianS _ := contDiffAt_const
-  contDiffAt_hamiltonianT _ :=
-    (Floer.contDiff_uncurry_continuationHomotopy (contDiff_uncurry_apply hHm μ)
-      (contDiff_uncurry_apply hHp μ)).contDiffAt
+      u := by
+  have h := Floer.isCylindricalNearEnds_continuationHomotopy hJ₀ (Jm := fun _ _ ↦ J₀)
+    (Jp := fun _ _ ↦ J₀) (hJmt := fun _ _ ↦ hJ₀.tames) (hJpt := fun _ _ ↦ hJ₀.tames)
+    (Hm := Hm μ) (Hp := Hp μ) contDiff_const contDiff_const (hHm.comp (contDiff_prodMk_right μ))
+    (hHp.comp (contDiff_prodMk_right μ)) u
+  rwa [show Floer.continuationAlmostComplex hJ₀ (fun _ _ ↦ J₀) (fun _ _ ↦ J₀)
+      (fun _ _ ↦ hJ₀.tames) (fun _ _ ↦ hJ₀.tames) = fun _ _ ↦ J₀ from
+    funext₂ fun z x ↦ Floer.continuationAlmostComplex_self hJ₀ z x] at h
 
 /-- Along a homotopy of time-dependent Hamiltonians `H_μ` of which `x` is an orbit for every
 `μ ∈ [0, 1]`, the slice defects of `u` for every `H_μ` tend to zero at an end along which `u`
@@ -131,7 +105,8 @@ private theorem tendstoUniformlyOn_sliceDefect_homotopy (ω : SymplecticForm V)
         (Icc 0 1) := by
   have h₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨le_rfl, zero_le_one⟩
   have hXc (ν : ℝ) : Continuous (uncurry fun t ↦ ω.hamiltonianVectorField (H ν t)) :=
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (contDiff_uncurry_apply hH ν)).continuous
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) (K := H ν)
+      (hH.comp (contDiff_prodMk_right ν))).continuous
   exact tendstoUniformlyOn_sliceDefect_of_apply_eq (hXc 0) (hXc μ)
     (continuous_iff_continuousAt.2 fun t ↦ (hx 0 h₀ t).continuousAt)
     (fun t ↦ (hx μ hμ t).unique (hx 0 h₀ t)) hux hδ
@@ -177,8 +152,9 @@ private theorem isFredholm_and_index_eq_of_homotopy_model (ω : SymplecticForm V
     (J := fun _ _ ↦ J₀) (Ks := fun _ _ ↦ 0)
     (Kt := fun p ↦ Floer.continuationHomotopy (Hm p.1) (Hp p.1) p.2)
     (Jm := fun _ _ _ ↦ J₀) (Jp := fun _ _ _ ↦ J₀) isPreconnected_Icc
-    (fun μ _ ↦ isCylindricalNearEnds_continuationHomotopy J₀ hHm hHp μ u) contDiff_const
-    contDiff_const (contDiff_continuationHomotopy_family hHm hHp) (fun _ _ ↦ hJ₀) hu hXm hxm hndm
+    (fun μ _ ↦ isCylindricalNearEnds_continuationHomotopy_const hJ₀ hHm hHp μ u) contDiff_const
+    contDiff_const (Floer.contDiff_uncurry_continuationHomotopy_family hHm hHp) (fun _ _ ↦ hJ₀) hu
+    hXm hxm hndm
     huxm (fun _ hμ ↦ tendstoUniformlyOn_sliceDefect_homotopy ω hHm hxm huxm hδm hμ) hXp hxp hndp
     huxp (fun _ hμ ↦ tendstoUniformlyOn_sliceDefect_homotopy ω hHp hxp huxp hδp hμ) hμ₀ hμ₁ h
 
@@ -241,10 +217,11 @@ private theorem isFredholm_iff_and_index_eq_of_homotopy (ω : SymplecticForm V)
   have h₁ : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := ⟨zero_le_one, le_rfl⟩
   -- The model data `(J₀, 0, H_{μ,(s, t)})` at the parameter `μ`, along `v`.
   set J₀ := J 0 0
-  have hcylD (μ : ℝ) (v : ℝ × ℝ → V) := isCylindricalNearEnds_continuationHomotopy J₀ hHm hHp μ v
+  have hcylD (μ : ℝ) (v : ℝ × ℝ → V) :=
+    isCylindricalNearEnds_continuationHomotopy_const (hJc 0 0) hHm hHp μ v
   have hKtD (μ : ℝ) : ContDiff ℝ 2 (uncurry (Floer.continuationHomotopy (Hm μ) (Hp μ))) :=
-    Floer.contDiff_uncurry_continuationHomotopy (contDiff_uncurry_apply hHm μ)
-      (contDiff_uncurry_apply hHp μ)
+    Floer.contDiff_uncurry_continuationHomotopy (hHm.comp (contDiff_prodMk_right μ))
+      (hHp.comp (contDiff_prodMk_right μ))
   have hJ₀ : ContDiff ℝ 1 fun _ : (ℝ × ℝ) × V ↦ J₀.toLinearMap.toContinuousLinearMap :=
     contDiff_const
   have hKsD : ContDiff ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) := contDiff_const
