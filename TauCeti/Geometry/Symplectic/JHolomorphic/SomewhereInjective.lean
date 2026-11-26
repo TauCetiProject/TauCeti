@@ -44,7 +44,8 @@ is immersed.
   at points `ζ z ≠ ζ₀` accumulating at `ζ₀`, so the branch of `u` at `ζ₀` factors through the one
   at `z₀` (`TauCeti.germFactorsThrough_of_frequently_mem_image`, McDuff–Salamon, Lemma 2.4.3),
   relating the distinct points `ζ₀` and `z₀`.
-* **The equivalence.** An injective point `x` lies off `B` and is related only to itself, so its
+* **The equivalence.** An injective point `x` lies off `B`
+  (`TauCeti.IsInjectivePoint.notMem_criticalValuePreimage`) and is related only to itself, so its
   class has one element and `d = 1`; conversely, if `d = 1` then the noncritical points, which
   exist, are limits of injective points. Hence `u` is somewhere injective exactly when no two
   distinct points of `S` are related
@@ -134,6 +135,16 @@ private theorem exists_apply_ne_of_forall_germFactorsThrough_imp_eq [Nontrivial 
   exact hab (hd b a (germFactorsThrough_iff.2 ⟨fun _ ↦ a, rfl,
     .of_forall fun _ ↦ mdifferentiableAt_const, .of_forall fun y ↦ h y a⟩))
 
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- An injective point `x` of a map `u : S → N` from a Riemann surface lies outside the preimage
+`B = u⁻¹(u(Crit u))` of its critical values: `x` is the only point of its fibre, and `u` is
+immersed at `x`. -/
+theorem IsInjectivePoint.notMem_criticalValuePreimage {x : S}
+    (hx : IsInjectivePoint 𝓘(ℝ, ℂ) I u x) : x ∉ criticalValuePreimage I u := fun hB ↦ by
+  obtain ⟨y, hy0, hyx⟩ := mem_criticalValuePreimage.1 hB
+  have h0 : mfderiv 𝓘(ℝ, ℂ) I u x = 0 := hx.eq_of_apply_eq hyx ▸ hy0
+  exact one_ne_zero (α := ℂ) (hx.injective_mfderiv (by rw [h0]; rfl))
+
 /-- On a closed curve whose coincident-branch classes off `B = u⁻¹(u(Crit u))` all have one
 element, the branch of `u` at a point factors holomorphically through the branch of `u` at no
 other point. -/
@@ -147,12 +158,10 @@ private theorem eq_of_germFactorsThrough_of_forall_ncard_eq_one [CompactSpace S]
     (fun y hy ζ' hζ' ↦ ?_) hzζ
   · rw [compl_eq_univ_sdiff]
     exact dense_univ.sdiff_finite (finite_criticalValuePreimage hu hJu hne)
-  · -- The class of `y` is a singleton containing `y`.
+  · -- The class of `y` is a singleton containing `y`, so it is `{y}`.
     obtain ⟨a, ha⟩ := ncard_eq_one.1 (h1 y hy)
-    have hy' : y ∈ {ζ | GermFactorsThrough u y u ζ} := .refl u y
-    have hζ'' : ζ' ∈ {ζ | GermFactorsThrough u y u ζ} := hζ'
-    rw [ha, mem_singleton_iff] at hy' hζ''
-    exact hζ''.trans hy'.symm
+    have hya : y = a := mem_singleton_iff.1 (ha ▸ GermFactorsThrough.refl u y)
+    exact setOf_germFactorsThrough_eq_singleton_iff.1 (hya ▸ ha) ζ' hζ'
 
 /-- **On a closed curve of branch degree one, the points near an immersed point are injective.**
 Let `u : S → N` be a `C²` pseudoholomorphic map from a compact Riemann surface into a Hausdorff
@@ -258,15 +267,10 @@ theorem IsSomewhereInjective.eq_of_germFactorsThrough [CompactSpace S] [Connecte
   obtain ⟨w, hw⟩ := (eventually_mem_nhdsWithin (a := x) (s := {x}ᶜ)).exists
   have hne : ∃ x₁ x₂, u x₁ ≠ u x₂ := ⟨w, x, hx.apply_ne hw⟩
   -- The class of the injective point `x` is `{x}`, so all classes off `B` have one point.
-  have hxB : x ∉ criticalValuePreimage I u := fun hB ↦ by
-    obtain ⟨y, hy0, hyx⟩ := mem_criticalValuePreimage.1 hB
-    exact (hJu.isPseudoholomorphicAt x).injective_mfderiv_iff_ne_zero.1 hx.injective_mfderiv
-      (hx.eq_of_apply_eq hyx ▸ hy0)
   have hx1 : {ζ | GermFactorsThrough u x u ζ} = {x} :=
-    Subset.antisymm (fun ζ hζ ↦ hx.eq_of_apply_eq (GermFactorsThrough.apply_eq hζ).symm)
-      (singleton_subset_iff.2 (.refl u x))
+    setOf_germFactorsThrough_eq_singleton_iff.2 fun _ hζ ↦ hx.eq_of_apply_eq hζ.apply_eq.symm
   obtain ⟨d, -, hd⟩ := exists_pos_forall_ncard_setOf_germFactorsThrough_eq hu hJu hne
-  have hd1 : d = 1 := by rw [← hd x hxB, hx1, ncard_singleton]
+  have hd1 : d = 1 := by rw [← hd x hx.notMem_criticalValuePreimage, hx1, ncard_singleton]
   exact eq_of_germFactorsThrough_of_forall_ncard_eq_one (hu.of_le one_le_two) hJu hne
     (fun y hy ↦ (hd y hy).trans hd1) hzζ
 
@@ -293,9 +297,7 @@ theorem isSomewhereInjective_iff_forall_ncard_setOf_germFactorsThrough_eq_one [C
       ∀ z ∉ criticalValuePreimage I u, {ζ | GermFactorsThrough u z u ζ}.ncard = 1 := by
   rw [isSomewhereInjective_iff_forall_germFactorsThrough_imp_eq hu hJu]
   refine ⟨fun h z _ ↦ ?_, fun h z ζ hzζ ↦ ?_⟩
-  · rw [← ncard_singleton z]
-    exact congrArg ncard (Subset.antisymm (fun ζ hζ ↦ h z ζ hζ)
-      (singleton_subset_iff.2 (.refl u z)))
+  · rw [setOf_germFactorsThrough_eq_singleton_iff.2 (h z), ncard_singleton]
   · exact eq_of_germFactorsThrough_of_forall_ncard_eq_one (hu.of_le one_le_two) hJu hne h hzζ
 
 /-- **A closed curve of branch degree one has countably many noninjective points.** Let

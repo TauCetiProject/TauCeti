@@ -79,6 +79,12 @@ theorem GermFactorsThrough.apply_eq (h : GermFactorsThrough u₁ b u₀ a) : u�
 theorem GermFactorsThrough.refl (u : X → N) (a : X) : GermFactorsThrough u a u a :=
   ⟨id, rfl, .of_forall fun _ ↦ mdifferentiableAt_id, .rfl⟩
 
+/-- The set `{x | GermFactorsThrough u a u x}` is `{a}` exactly when the germ of `u` at `a` factors
+holomorphically through the germ of `u` at no point other than `a`. -/
+theorem setOf_germFactorsThrough_eq_singleton_iff {u : X → N} {a : X} :
+    {x | GermFactorsThrough u a u x} = {a} ↔ ∀ x, GermFactorsThrough u a u x → x = a :=
+  eq_singleton_iff_unique_mem.trans (and_iff_right (.refl u a))
+
 /-- Holomorphic factorizations of germs compose. -/
 theorem GermFactorsThrough.trans (h₂₁ : GermFactorsThrough u₂ c u₁ b)
     (h₁₀ : GermFactorsThrough u₁ b u₀ a) : GermFactorsThrough u₂ c u₀ a := by
