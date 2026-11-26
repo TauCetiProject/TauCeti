@@ -236,15 +236,19 @@ private theorem detForm_smul (g : Subgroup.centralizer {J₀})
     simp [Matrix.mul_apply, Matrix.mulVec, dotProduct, mul_comm]
   rw [hrows, Matrix.det_mul, Matrix.det_transpose, mul_comm]
 
-private theorem detForm_ne_zero : detForm hJ₀ e h₀ h₂ ≠ 0 := by
-  intro h
-  have h1 := toComplex_detForm hJ₀ e h₀ h₂ fun i ↦ UnitaryModel.coords.symm (Pi.single i 1)
-  have h2 : (Matrix.of fun i : Fin 2 ↦ UnitaryModel.coords
+/-- The complex determinant of the standard basis of the model `ℂ²` is `1`. -/
+private theorem toComplex_detForm_std :
+    SpinCStructure.LiftDeterminantModel.toComplex (detForm hJ₀ e h₀ h₂ fun i ↦
+      (UnitaryModel.coords.symm (Pi.single i 1) : unitaryFrameModel hJ₀ e h₀ h₂)) = 1 := by
+  rw [toComplex_detForm]
+  have h1 : (Matrix.of fun i : Fin 2 ↦ UnitaryModel.coords
       (UnitaryModel.coords.symm (Pi.single i 1) : unitaryFrameModel hJ₀ e h₀ h₂)) = 1 := by
     ext i j
     simp [Matrix.one_apply, Pi.single_apply, eq_comm]
-  rw [h, h2, Matrix.det_one] at h1
-  exact zero_ne_one ((map_zero SpinCStructure.LiftDeterminantModel.toComplex).symm.trans h1)
+  rw [h1, Matrix.det_one]
+
+private theorem detForm_ne_zero : detForm hJ₀ e h₀ h₂ ≠ 0 := fun h ↦ by
+  simpa [h] using toComplex_detForm_std hJ₀ e h₀ h₂
 
 /-- **The determinant line of the canonical `Spinᶜ` structure is the anticanonical line**, at a
 fibre: the determinant line `L` of the canonical `Spinᶜ` structure of `J` is identified with the top
@@ -280,6 +284,7 @@ private theorem canonicalDeterminantLineEquivDetBundle_apply (x : X)
 `p` of the standard basis of `ℂ²`
 (`TauCeti.OrthonormalFrameBundle.fiberEquiv_unitaryFrameModelEquiv`), a complex basis of the fibre
 of `(E, J)`. -/
+@[simp]
 theorem canonicalDeterminantLineEquivDetBundle_mk_inl {x : X}
     (p : (unitaryFrameLift hJ hJ₂ hJ₀ Fact.out).P x) (w : SpinCStructure.DeterminantModel 4) :
     canonicalDeterminantLineEquivDetBundle hJ hJ₂ hJ₀ e h₀ h₂ x
@@ -291,17 +296,11 @@ theorem canonicalDeterminantLineEquivDetBundle_mk_inl {x : X}
   set std : Fin 2 → unitaryFrameModel hJ₀ e h₀ h₂ := fun i ↦
     UnitaryModel.coords.symm (Pi.single i 1)
   -- The class `w` of the determinant model is `w` times the determinant of the standard basis.
-  have hstd : SpinCStructure.LiftDeterminantModel.toComplex (detForm hJ₀ e h₀ h₂ std) = 1 := by
-    rw [toComplex_detForm]
-    have h1 : (Matrix.of fun i : Fin 2 ↦ UnitaryModel.coords (std i)) = 1 := by
-      ext i j
-      simp [std, Matrix.one_apply, Pi.single_apply, eq_comm]
-    rw [h1, Matrix.det_one]
   have hw : SpinCStructure.LiftDeterminantModel.ofDeterminantModel _ w =
       SpinCStructure.DeterminantModel.toComplex w • detForm hJ₀ e h₀ h₂ std := by
     apply SpinCStructure.LiftDeterminantModel.toComplex.injective
     rw [SpinCStructure.LiftDeterminantModel.toComplex_ofDeterminantModel,
-      LinearIsometryEquiv.map_smul, hstd, smul_eq_mul, mul_one]
+      LinearIsometryEquiv.map_smul, toComplex_detForm_std, smul_eq_mul, mul_one]
   rw [canonicalDeterminantLineEquivDetBundle_apply, canonicalDeterminantLineEquiv_mk_inl, hw,
     AssociatedBundle.mk_smul_scalar, LinearEquiv.map_smul, ContinuousLinearEquiv.map_smul,
     AssociatedBundle.detEquiv_symm_mk _ _ (detForm_smul hJ₀ e h₀ h₂)]
@@ -312,6 +311,20 @@ theorem canonicalDeterminantLineEquivDetBundle_mk_inl {x : X}
     ((LinearEquiv.exteriorPower_apply_ιMulti _ _ _).trans ?_)
   simp only [Function.comp_def, ContinuousLinearEquiv.coe_toLinearEquiv, unitaryAssociatedEquiv_mk,
     std]
+
+/-- The inverse identification of the anticanonical line with the determinant line sends
+`w (p e₀ ∧ p e₂)` to `[[p, 1], w]`. -/
+@[simp]
+theorem canonicalDeterminantLineEquivDetBundle_symm_smul_ιMulti {x : X}
+    (p : (unitaryFrameLift hJ hJ₂ hJ₀ Fact.out).P x) (w : SpinCStructure.DeterminantModel 4) :
+    (canonicalDeterminantLineEquivDetBundle hJ hJ₂ hJ₀ e h₀ h₂ x).symm
+        (SpinCStructure.DeterminantModel.toComplex w •
+          exteriorPower.ιMulti ℂ (finrank ℂ (unitaryFrameModel hJ₀ e h₀ h₂)) fun i ↦
+            unitaryFrameModelEquiv hJ hJ₂ hJ₀ e h₀ h₂ p
+              (UnitaryModel.coords.symm (Pi.single (Fin.cast (UnitaryModel.finrank_eq _) i) 1))) =
+      AssociatedBundle.mk _ (canonicalSpinCStructureInl hJ hJ₂ hJ₀ Fact.out e h₀ h₂ p) w :=
+  (ContinuousLinearEquiv.symm_apply_eq _).2
+    (canonicalDeterminantLineEquivDetBundle_mk_inl hJ hJ₂ hJ₀ e h₀ h₂ p w).symm
 
 /-- **The identification of the determinant line with the anticanonical line is continuous** on
 total spaces. -/

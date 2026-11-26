@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 public import TauCeti.Topology.VectorBundle.Associated.Basic
+public import TauCeti.Topology.VectorBundle.Associated.Unitary
 public import TauCeti.Topology.VectorBundle.Complex.Structure
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.ComplexStructure
 public import TauCeti.Topology.VectorBundle.Orientation.Complex.FirstChernClass
-import Mathlib.Topology.Instances.Matrix
 
 /-!
 # The complex vector bundle associated to the unitary frames
@@ -36,12 +36,11 @@ a quotient of `P × ℂ²` (`TauCeti.AssociatedBundle.isOpenQuotientMap_totalSpa
 two bundles have the same first Chern class
 (`TauCeti.OrthonormalFrameBundle.firstChernClass_associatedBundle_unitaryFrameModel`).
 
-The model `ℂⁿ` with a group acting through unitary matrices is
-`TauCeti.UnitaryModel ρ`, for a continuous homomorphism `ρ : G →ₜ* U(n)`.
+The model `ℂ²`, on which `U(2)` acts by its unitary matrices, is `TauCeti.UnitaryModel ρ` for
+`ρ = OrthonormalBasis.centralizerToUnitaryGroupContinuousMonoidHom`.
 
 ## Main definitions
 
-* `TauCeti.UnitaryModel ρ`: the space `ℂⁿ` on which `G` acts by the unitary matrices `ρ g`.
 * `TauCeti.OrthonormalFrameBundle.unitaryComplexStructure`: `J` as a continuous complex structure
   on `E`.
 * `TauCeti.OrthonormalFrameBundle.unitaryFrameModelEquiv`: the complex linear isomorphism
@@ -70,76 +69,8 @@ public section
 noncomputable section
 
 open Bundle Module MulOpposite
-open scoped Matrix
 
 namespace TauCeti
-
-/-! ### The model `ℂⁿ` of a unitary representation -/
-
-section UnitaryModel
-
-variable {G : Type*} [Group G] [TopologicalSpace G] {n : ℕ}
-
-/-- The space `ℂⁿ` of complex coordinates, on which a topological group `G` acts through a
-continuous homomorphism `ρ : G →ₜ* U(n)` into the unitary matrices, `g • z = ρ g *ᵥ z`
-(`TauCeti.UnitaryModel.coords_smul`). It is the model fibre of the complex vector bundles
-associated to principal `G`-bundles by `ρ`. -/
-@[expose] def UnitaryModel (_ρ : G →ₜ* Matrix.unitaryGroup (Fin n) ℂ) : Type := Fin n → ℂ
-
-namespace UnitaryModel
-
-variable (ρ : G →ₜ* Matrix.unitaryGroup (Fin n) ℂ)
-
-instance instNormedAddCommGroup : NormedAddCommGroup (UnitaryModel ρ) :=
-  inferInstanceAs (NormedAddCommGroup (Fin n → ℂ))
-
-instance instNormedSpace : NormedSpace ℂ (UnitaryModel ρ) :=
-  inferInstanceAs (NormedSpace ℂ (Fin n → ℂ))
-
-instance instFiniteDimensional : FiniteDimensional ℂ (UnitaryModel ρ) :=
-  inferInstanceAs (FiniteDimensional ℂ (Fin n → ℂ))
-
-/-- `G` acts on the model by the unitary matrices `ρ g`. -/
-instance instDistribMulAction : DistribMulAction G (UnitaryModel ρ) where
-  smul g z := (ρ g : Matrix (Fin n) (Fin n) ℂ) *ᵥ (show Fin n → ℂ from z)
-  one_smul z := by
-    change (ρ 1 : Matrix (Fin n) (Fin n) ℂ) *ᵥ (show Fin n → ℂ from z) = z
-    rw [map_one, Matrix.UnitaryGroup.one_val, Matrix.one_mulVec]
-  mul_smul g h z := by
-    change (ρ (g * h) : Matrix (Fin n) (Fin n) ℂ) *ᵥ (show Fin n → ℂ from z) =
-      (ρ g : Matrix (Fin n) (Fin n) ℂ) *ᵥ ((ρ h : Matrix (Fin n) (Fin n) ℂ) *ᵥ
-        (show Fin n → ℂ from z))
-    rw [map_mul, Matrix.UnitaryGroup.mul_val, Matrix.mulVec_mulVec]
-  smul_zero g := Matrix.mulVec_zero _
-  smul_add g z w := Matrix.mulVec_add _ (show Fin n → ℂ from z) (show Fin n → ℂ from w)
-
-variable {ρ} in
-/-- The model as `ℂⁿ`. -/
-def coords : UnitaryModel ρ ≃L[ℂ] (Fin n → ℂ) :=
-  ContinuousLinearEquiv.refl ℂ (Fin n → ℂ)
-
-/-- `g` acts on the coordinates by the unitary matrix `ρ g`. -/
-@[simp]
-theorem coords_smul (g : G) (z : UnitaryModel ρ) :
-    coords (g • z) = (ρ g : Matrix (Fin n) (Fin n) ℂ) *ᵥ coords z :=
-  (rfl)
-
-instance instSMulCommClass : SMulCommClass G ℂ (UnitaryModel ρ) where
-  smul_comm g c z := coords.injective <| by
-    rw [coords_smul, map_smul, map_smul, coords_smul, Matrix.mulVec_smul]
-
-instance instContinuousSMul : ContinuousSMul G (UnitaryModel ρ) where
-  continuous_smul :=
-    (((continuous_subtypeVal.comp ρ.continuous).comp continuous_fst).matrix_mulVec
-      continuous_snd).congr fun _ ↦ (rfl)
-
-/-- The model has complex dimension `n`. -/
-theorem finrank_eq : finrank ℂ (UnitaryModel ρ) = n :=
-  coords.toLinearEquiv.finrank_eq.trans (finrank_fin_fun ℂ)
-
-end UnitaryModel
-
-end UnitaryModel
 
 /-- A real vector space of dimension four has twice the complex dimension of the model `ℂ²`, the
 dimension condition under which a continuous complex structure on a real bundle with that model
@@ -221,6 +152,11 @@ private theorem fiberEquiv_unitaryFrameModelEquivReal {x : X}
       p.val.frame ((e.complexCoords 2).symm (UnitaryModel.coords z)) := by
   simp only [unitaryFrameModelEquivReal, ContinuousLinearEquiv.trans_apply,
     ContinuousLinearEquiv.apply_symm_apply]
+  -- The remaining composite `coords.restrictScalars ℝ ≫ (e.complexCoords 2).symm` applied to `z`
+  -- is `(e.complexCoords 2).symm (coords z)` by definition of `ContinuousLinearEquiv.trans`,
+  -- `ContinuousLinearEquiv.restrictScalars` and `LinearEquiv.toContinuousLinearEquiv`. It is only
+  -- well typed up to unfolding the type synonym `UnitaryModel`, so the coercion lemmas of these
+  -- wrappers do not rewrite it.
   rfl
 
 private theorem unitaryFrameModelEquivReal_I_smul {x : X}
@@ -298,6 +234,16 @@ theorem unitaryAssociatedEquiv_mk {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ 
   rw [unitaryAssociatedEquiv, ContinuousLinearEquiv.trans_apply,
     AssociatedBundle.mkContinuousLinearEquiv_symm_apply_mk, ← unitaryFrameModelEquiv_smul,
     PrincipalBundle.smul_division]
+
+/-- The inverse identification of `(E, J)` with the associated bundle sends `p (z₀ e₀ + z₁ e₂)` to
+`[p, z]`. -/
+@[simp]
+theorem unitaryAssociatedEquiv_symm_unitaryFrameModelEquiv {x : X}
+    (p : (unitaryFrameLift hJ hJ₂ hJ₀ Fact.out).P x) (z : unitaryFrameModel hJ₀ e h₀ h₂) :
+    (unitaryAssociatedEquiv hJ hJ₂ hJ₀ e h₀ h₂ x).symm
+        (unitaryFrameModelEquiv hJ hJ₂ hJ₀ e h₀ h₂ p z) =
+      AssociatedBundle.mk _ p z :=
+  (ContinuousLinearEquiv.symm_apply_eq _).2 (unitaryAssociatedEquiv_mk hJ hJ₂ hJ₀ e h₀ h₂ p z).symm
 
 /-- **The identification of the associated bundle with `(E, J)` is continuous** on total spaces.
 -/
