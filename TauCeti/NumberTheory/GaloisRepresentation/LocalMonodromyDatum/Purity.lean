@@ -116,22 +116,9 @@ theorem IsMonodromyOperator.unique (h : D.IsMonodromyOperator ρ N)
   -- `a N = log ρ(σ) = a N'`.
   obtain ⟨U, hU, hρ⟩ := h.exists_isOpen_log
   obtain ⟨U', hU', hρ'⟩ := h'.exists_isOpen_log
-  obtain ⟨σ, hσ, hσt⟩ := D.exists_tame_ne_one_of_isOpen (U ⊓ U') (hU.inter hU')
-  have ha : algebraMap ℚ_[ℓ] E (D.tame σ).toAdd ≠ 0 :=
-    (map_ne_zero _).2 fun h0 ↦ hσt (Multiplicative.toAdd.injective h0)
+  obtain ⟨σ, hσ, ha⟩ := D.exists_algebraMap_tame_ne_zero_of_isOpen (E := E) (U ⊓ U')
+    (hU.inter hU')
   exact smul_right_injective _ ha ((hρ σ hσ.1).symm.trans (hρ' σ hσ.2))
-
-/-- The integer `q` of a local monodromy datum is nonzero in every field over `ℚ_ℓ`. -/
-private theorem natCast_q_ne_zero : (D.q : E) ≠ 0 := by
-  rw [← map_natCast (algebraMap ℚ_[ℓ] E)]
-  exact (map_ne_zero _).2 D.q_ne_zero
-
-/-- Conjugation by `Φ` is a continuous endomorphism of inertia. -/
-private theorem continuous_conjNormal (Φ : H) :
-    Continuous fun σ : D.inertia ↦ MulAut.conjNormal Φ σ :=
-  continuous_induced_rng.2 <| by
-    simp only [Function.comp_def, MulAut.conjNormal_apply]
-    fun_prop
 
 /-- **Frobenius twists the monodromy operator by `q⁻¹`**: `ρ(Φ) N ρ(Φ)⁻¹ = q⁻¹ N` for every
 Frobenius element `Φ`. -/
@@ -140,26 +127,27 @@ theorem IsMonodromyOperator.conj_frobenius (h : D.IsMonodromyOperator ρ N) {Φ 
   -- Take `σ` with `t(σ) ≠ 0` in `U` and with `Φ σ Φ⁻¹ ∈ U`. Then `log ρ(Φ σ Φ⁻¹)` is both
   -- `ρ(Φ) (t(σ) N) ρ(Φ)⁻¹` and `t(Φ σ Φ⁻¹) N = q⁻¹ t(σ) N`.
   obtain ⟨U, hU, hρ⟩ := h.exists_isOpen_log
-  obtain ⟨σ, hσ, hσt⟩ := D.exists_tame_ne_one_of_isOpen
+  obtain ⟨σ, hσ, ha⟩ := D.exists_algebraMap_tame_ne_zero_of_isOpen (E := E)
     (U ⊓ U.comap (MulAut.conjNormal Φ : MulAut D.inertia).toMonoidHom)
-    (hU.inter (hU.preimage (continuous_conjNormal (D := D) Φ)))
-  have ha : algebraMap ℚ_[ℓ] E (D.tame σ).toAdd ≠ 0 :=
-    (map_ne_zero _).2 fun h0 ↦ hσt (Multiplicative.toAdd.injective h0)
-  have hlog := hρ _ hσ.2
+    (hU.inter (hU.preimage (D.continuous_conjNormal Φ)))
   -- The left side: `ρ(Φ σ Φ⁻¹)` is the conjugate of `ρ(σ)` by the unit `ρ(Φ)`.
-  rw [MulEquiv.coe_toMonoidHom, MulAut.conjNormal_apply, map_mul, map_mul,
-    ← MonoidHom.coe_toHomUnits ρ Φ, ← MonoidHom.coe_toHomUnits ρ Φ⁻¹, map_inv, Units.log_conj,
-    hρ σ hσ.1] at hlog
+  have hconj : IsNilpotent.log (ρ (MulAut.conjNormal Φ σ)) =
+      algebraMap ℚ_[ℓ] E (D.tame σ).toAdd • (ρ Φ * N * ρ Φ⁻¹) := by
+    simpa [hρ σ hσ.1, ← map_inv] using Units.log_conj (ρ.toHomUnits Φ) (ρ σ)
   -- The right side: the twist `t(Φ σ Φ⁻¹) = q⁻¹ t(σ)`.
-  rw [D.tame_conj Φ (mem_frobenius.1 hΦ) σ, map_mul, map_inv₀, map_natCast, mul_smul] at hlog
-  rw [mul_smul_comm, smul_mul_assoc, smul_comm] at hlog
-  exact smul_right_injective _ ha hlog
+  have htwist : IsNilpotent.log (ρ (MulAut.conjNormal Φ σ)) =
+      algebraMap ℚ_[ℓ] E (D.tame σ).toAdd • ((D.q : E)⁻¹ • N) := by
+    refine (hρ _ hσ.2).trans ?_
+    simp only [MulEquiv.coe_toMonoidHom, D.tame_conj Φ (mem_frobenius.1 hΦ) σ, map_mul, map_inv₀,
+      map_natCast]
+    module
+  exact smul_right_injective _ ha (hconj.symm.trans htwist)
 
 /-- The commutation relation `N ρ(Φ) = q ρ(Φ) N` of the monodromy operator with a Frobenius
 element `Φ`. -/
 theorem IsMonodromyOperator.mul_frobenius (h : D.IsMonodromyOperator ρ N) {Φ : H}
     (hΦ : Φ ∈ D.frobenius) : N * ρ Φ = (D.q : E) • (ρ Φ * N) := by
-  have hq := natCast_q_ne_zero (D := D) (E := E)
+  have hq : (D.q : E) ≠ 0 := D.natCast_q_ne_zero
   have h' := congrArg (· * ρ Φ) (h.conj_frobenius hΦ)
   simp only [mul_assoc, ← map_mul, inv_mul_cancel, map_one, mul_one, smul_mul_assoc] at h'
   rw [h', smul_smul, mul_inv_cancel₀ hq, one_smul]
@@ -168,12 +156,13 @@ theorem IsMonodromyOperator.mul_frobenius (h : D.IsMonodromyOperator ρ N) {Φ :
 theorem IsMonodromyOperator.monodromyFiltration_le_comap (h : D.IsMonodromyOperator ρ N)
     {Φ : H} (hΦ : Φ ∈ D.frobenius) (a : ℤ) :
     N.monodromyFiltration a ≤ (N.monodromyFiltration a).comap (ρ Φ) := by
-  have hq := inv_ne_zero (natCast_q_ne_zero (D := D) (E := E))
+  have hq : (D.q : E)⁻¹ ≠ 0 := inv_ne_zero D.natCast_q_ne_zero
   let e := LinearMap.GeneralLinearGroup.toLinearEquiv (ρ.toHomUnits Φ)
   have he : e.conj N = (D.q : E)⁻¹ • N := by
     rw [← h.conj_frobenius hΦ]
     ext x
-    simp [e, LinearEquiv.conj_apply, LinearMap.GeneralLinearGroup.toLinearEquiv, ← map_inv]
+    simp [e, LinearEquiv.conj_apply_apply, ← LinearEquiv.coe_inv,
+      ← LinearMap.GeneralLinearGroup.toLinearEquiv_inv, ← map_inv]
   rw [← Submodule.map_le_iff_le_comap]
   exact (N.map_monodromyFiltration_of_conj_eq_smul e hq he a).le
 
@@ -215,6 +204,13 @@ def IsWeightMonodromyPure [CharZero E] [FiniteDimensional E V] (w : ℤ) : Prop 
     ∀ Φ ∈ D.frobenius, IsGradedPure (D.q : ℝ) w N.monodromyFiltration (ρ Φ)
 
 variable {D ρ} [CharZero E] [FiniteDimensional E V] {w : ℤ}
+
+/-- Unfolding weight–monodromy purity: `ρ` has a monodromy operator `N` such that every Frobenius
+element is pure of weight `w + j` on the `j`-th graded piece of the monodromy filtration of `N`. -/
+theorem isWeightMonodromyPure_iff :
+    D.IsWeightMonodromyPure ρ w ↔ ∃ N : End E V, D.IsMonodromyOperator ρ N ∧
+      ∀ Φ ∈ D.frobenius, IsGradedPure (D.q : ℝ) w N.monodromyFiltration (ρ Φ) :=
+  Iff.rfl
 
 /-- Purity may be tested on any monodromy operator. -/
 theorem isWeightMonodromyPure_iff_of_isMonodromyOperator (hN : D.IsMonodromyOperator ρ N) :
