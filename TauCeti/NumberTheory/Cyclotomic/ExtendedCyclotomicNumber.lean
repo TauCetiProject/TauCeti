@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.NumberTheory.Cyclotomic.CompatibleTower
 
 import Mathlib.RingTheory.Norm.Transitivity
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Eval
 import TauCeti.NumberTheory.Cyclotomic.DistributionRelation
+import TauCeti.NumberTheory.Cyclotomic.NormRelation
 import TauCeti.RingTheory.Norm.Basic
 
 /-!
@@ -58,6 +60,9 @@ family `c` is not torsion.
   `N_{K(ζ_m)/K}(c_m) = Φ_{mp}(1)`.
 * `TauCeti.CompatibleCyclotomicTower.not_isOfFinOrder_extendedCyclotomicNumber_pow`: `c_{p^k}`
   is not a root of unity.
+* `TauCeti.CompatibleCyclotomicTower.norm_extendedCyclotomicNumber_mul_of_dvd` and
+  `TauCeti.CompatibleCyclotomicTower.norm_extendedCyclotomicNumber_mul_eq_div`: the norm from level
+  `mℓ` to `m` over `ℚ`, with the inverse arithmetic Frobenius factor when `ℓ ∤ mp`.
 
 ## References
 
@@ -175,6 +180,82 @@ theorem not_isOfFinOrder_extendedCyclotomicNumber_pow [CharZero K] [Fact p.Prime
     Nat.cast_eq_one, Nat.pow_eq_one] at this
   have := (Fact.out : p.Prime).one_lt
   omega
+
+section Rat
+
+variable [CharZero Ω] {m} {ℓ : ℕ} [NeZero ℓ]
+
+open IsCyclotomicExtension.Rat
+
+/-- Compatibility of the roots across the top of the norm square, in the conductor order
+used by `extendedCyclotomicNumber`. -/
+private theorem algebraMap_zeta_extended_mul :
+    letI := T.fieldAlgebra ℚ (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
+    algebraMap (T.field ℚ (m * p)) (T.field ℚ (m * ℓ * p)) (T.zeta ℚ (m * p)) =
+      T.zeta ℚ (m * ℓ * p) ^ ℓ := by
+  have h : m * ℓ * p / (m * p) = ℓ := by
+    rw [mul_right_comm m ℓ p, Nat.mul_div_cancel_left _ (NeZero.pos _)]
+  rw [T.algebraMap_zeta ℚ, h]
+
+/-- If `ℓ ∣ mp`, the norm of the extended cyclotomic number from level `mℓ` to level `m`
+is the extended cyclotomic number at level `m`. This includes the step `ℓ = p`. -/
+theorem norm_extendedCyclotomicNumber_mul_of_dvd (h : ℓ ∣ m * p) :
+    letI := T.fieldAlgebra ℚ (dvd_mul_right m ℓ)
+    Algebra.norm (T.field ℚ m) (T.extendedCyclotomicNumber ℚ p (m * ℓ)) =
+      T.extendedCyclotomicNumber ℚ p m := by
+  let := T.fieldAlgebra ℚ (dvd_mul_right m ℓ)
+  let := T.fieldAlgebra ℚ (dvd_mul_right m p)
+  let := T.fieldAlgebra ℚ (dvd_mul_right (m * ℓ) p)
+  let := T.fieldAlgebra ℚ (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
+  let := T.fieldAlgebra ℚ (dvd_mul_of_dvd_left (dvd_mul_right m ℓ) p)
+  have : IsScalarTower (T.field ℚ m) (T.field ℚ (m * ℓ)) (T.field ℚ (m * ℓ * p)) :=
+    IsScalarTower.of_algebraMap_eq' rfl
+  have : IsScalarTower (T.field ℚ m) (T.field ℚ (m * p)) (T.field ℚ (m * ℓ * p)) :=
+    IsScalarTower.of_algebraMap_eq' rfl
+  have := T.isScalarTower_fieldAlgebra ℚ
+    (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
+  have : IsCyclotomicExtension {m * p * ℓ} ℚ (T.field ℚ (m * ℓ * p)) := by
+    simpa only [mul_right_comm m ℓ p] using
+      (inferInstance : IsCyclotomicExtension {m * ℓ * p} ℚ (T.field ℚ (m * ℓ * p)))
+  have hζ : IsPrimitiveRoot (T.zeta ℚ (m * ℓ * p)) (m * p * ℓ) :=
+    (mul_right_comm m ℓ p) ▸ T.isPrimitiveRoot_zeta ℚ (m * ℓ * p)
+  rw [T.extendedCyclotomicNumber_def, T.extendedCyclotomicNumber_def]
+  exact IsPrimitiveRoot.norm_norm_one_sub_of_dvd (F := ℚ)
+    (cyclotomic.irreducible_rat (NeZero.pos _)) hζ (T.algebraMap_zeta_extended_mul) h
+
+/-- At a prime `ℓ` coprime to `mp`, the norm of the extended cyclotomic number from level
+`mℓ` to `m` is the quotient by its inverse arithmetic Frobenius conjugate. -/
+theorem norm_extendedCyclotomicNumber_mul_eq_div [Fact ℓ.Prime]
+    (hcop : ℓ.Coprime (m * p)) (hmp : 1 < m * p) :
+    letI := T.fieldAlgebra ℚ (dvd_mul_right m ℓ)
+    Algebra.norm (T.field ℚ m) (T.extendedCyclotomicNumber ℚ p (m * ℓ)) =
+      T.extendedCyclotomicNumber ℚ p m /
+        (galEquivZMod m (T.field ℚ m)).symm
+          (ZMod.unitOfCoprime ℓ (hcop.coprime_dvd_right (dvd_mul_right m p)))⁻¹
+          (T.extendedCyclotomicNumber ℚ p m) := by
+  let := T.fieldAlgebra ℚ (dvd_mul_right m ℓ)
+  let := T.fieldAlgebra ℚ (dvd_mul_right m p)
+  let := T.fieldAlgebra ℚ (dvd_mul_right (m * ℓ) p)
+  let := T.fieldAlgebra ℚ (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
+  let := T.fieldAlgebra ℚ (dvd_mul_of_dvd_left (dvd_mul_right m ℓ) p)
+  have : IsScalarTower (T.field ℚ m) (T.field ℚ (m * ℓ)) (T.field ℚ (m * ℓ * p)) :=
+    IsScalarTower.of_algebraMap_eq' rfl
+  have : IsScalarTower (T.field ℚ m) (T.field ℚ (m * p)) (T.field ℚ (m * ℓ * p)) :=
+    IsScalarTower.of_algebraMap_eq' rfl
+  have := T.isScalarTower_fieldAlgebra ℚ
+    (Nat.mul_dvd_mul_right (dvd_mul_right m ℓ) p)
+  have := T.isScalarTower_fieldAlgebra ℚ (dvd_mul_right m p)
+  have : IsCyclotomicExtension {m * p * ℓ} ℚ (T.field ℚ (m * ℓ * p)) := by
+    simpa only [mul_right_comm m ℓ p] using
+      (inferInstance : IsCyclotomicExtension {m * ℓ * p} ℚ (T.field ℚ (m * ℓ * p)))
+  have hζ : IsPrimitiveRoot (T.zeta ℚ (m * ℓ * p)) (m * p * ℓ) :=
+    (mul_right_comm m ℓ p) ▸ T.isPrimitiveRoot_zeta ℚ (m * ℓ * p)
+  rw [T.extendedCyclotomicNumber_def, T.extendedCyclotomicNumber_def]
+  exact hζ.norm_norm_one_sub_eq_div_autEquivPow_symm_inv_apply
+    (cyclotomic.irreducible_rat (NeZero.pos _)) (T.algebraMap_zeta_extended_mul)
+    (cyclotomic.irreducible_rat (NeZero.pos m)) (dvd_mul_right m p) hcop hmp
+
+end Rat
 
 end TauCeti.CompatibleCyclotomicTower
 

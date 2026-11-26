@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.NumberTheory.Cyclotomic.Adjoin
 public import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
@@ -230,6 +231,11 @@ instance (m : ℕ) [NeZero m] : FiniteDimensional K (T.field K m) :=
 
 instance (m : ℕ) [NeZero m] : IsGalois K (T.field K m) :=
   IsCyclotomicExtension.isGalois {m} K _
+
+/-- The fields of a cyclotomic tower over a number field are number fields. -/
+instance numberField_field [NumberField K] (m : ℕ) [NeZero m] :
+    NumberField (T.field K m) :=
+  NumberField.of_module_finite K _
 
 /-- The fields of a tower increase along divisibility: `K(ζ_m) ≤ K(ζ_n)` when `m ∣ n`. -/
 theorem field_le {m n : ℕ} [NeZero m] [NeZero n] (h : m ∣ n) : T.field K m ≤ T.field K n :=
