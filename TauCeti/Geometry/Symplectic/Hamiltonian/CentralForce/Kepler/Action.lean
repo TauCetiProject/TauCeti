@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Torus
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Kepler.Frequency
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.Geometry.Euclidean.Circle
 import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Rotation
 
@@ -38,12 +39,17 @@ variables in the sense that their Hamiltonian flows, for the standard symplectic
   `2π`-periodic (`TauCeti.periodic_of_forall_hasDerivAt_angularMomentum`). These facts hold for
   every central force and are proved in
   `TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Rotation`.
-* **The radial action.** On the bound phase space the Hamiltonian vector field of `I_r` is
+* **The radial action.** Off the collision set, where `H ≠ 0` and `L ≠ 0`, the differential of
+  `I_r` is `dI_r = Ω_r⁻¹ dH - sign(L) dL` (`TauCeti.hasFDerivAt_keplerRadialAction`), so its
+  Hamiltonian vector field is
 
   `X_{I_r} = Ω_r⁻¹ X_H - sign(L) X_L`, with `Ω_r⁻¹ = κ √(m / (-2H)) / (-2H)`
 
   (`TauCeti.stdSymplecticForm_hamiltonianVectorField_keplerRadialAction`). Since `H` and `L`
-  Poisson-commute, both are constant along its solutions. If `γ` solves Hamilton's equations for
+  Poisson-commute, `I_r` Poisson-commutes with both
+  (`TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_keplerRadialAction`,
+  `TauCeti.stdSymplecticForm_poissonBracket_angularMomentum_keplerRadialAction`), and both are
+  constant along its solutions. If `γ` solves Hamilton's equations for
   `I_r` in the bound phase space, then rotating `γ(Ω_r τ)` back by the angle
   `sign(L) Ω_r τ` gives a solution of Hamilton's equations for `H`, a bound Kepler motion of the
   same energy `E`. By Kepler's third law (`TauCeti.periodic_of_forall_hasDerivAt_kepler`) it is
@@ -108,48 +114,55 @@ theorem keplerRadialAction_eq_radialAction (hm : 0 < m) {x : V × V}
   rw [kepler_radialAction_turningRadii hm (pos_of_mem_keplerBoundPhaseSpace b hm hx) hℓ
     (centralForceHamiltonian_kepler_min_le b hm hq hℓ) hE, keplerRadialAction_apply]
 
-/-- On the bound phase space, the energy is `-m κ² / (2 (I_r + |I_θ|)²)` in the radial action
-`I_r` and the signed angular action `I_θ = L`. -/
+/-- At a state of negative energy, for `m > 0`, the energy is `-m κ² / (2 (I_r + |I_θ|)²)` in the
+radial action `I_r` and the signed angular action `I_θ = L`. -/
 theorem keplerActionHamiltonian_keplerRadialAction (hm : 0 < m) {x : V × V}
-    (hx : x ∈ keplerBoundPhaseSpace b m κ) :
+    (hE : centralForceHamiltonian m (fun r ↦ -κ / r) x < 0) :
     keplerActionHamiltonian m κ (keplerRadialAction b m κ x, angularMomentum (b 0) (b 1) x) =
       centralForceHamiltonian m (fun r ↦ -κ / r) x := by
-  have hu : 0 < -2 * centralForceHamiltonian m (fun r ↦ -κ / r) x := by
-    linarith [((mem_keplerBoundPhaseSpace b).1 hx).2.1]
+  have hu : 0 < -2 * centralForceHamiltonian m (fun r ↦ -κ / r) x := by linarith
   have hs := sq_sqrt (div_pos hm hu).le
-  have hκ := pos_of_mem_keplerBoundPhaseSpace b hm hx
+  -- A state of negative energy forces an attractive potential, `κ ≠ 0`.
+  have hκ : κ ≠ 0 := by
+    rintro rfl
+    rw [← Prod.mk.eta (p := x), centralForceHamiltonian_apply] at hE
+    have hp : 0 ≤ ‖x.2‖ ^ 2 / (2 * m) := by positivity
+    simp only [neg_zero, zero_div, add_zero] at hE
+    linarith
   rw [keplerActionHamiltonian_def, keplerRadialAction_apply, sub_add_cancel, mul_pow, hs]
+  field_simp
+
+/-- **The differential of the radial action.** Off the collision set, at a state of nonzero
+energy `E` and nonzero angular momentum `ℓ`, the differential of the radial action is
+`dI_r = Ω_r⁻¹ dH - sign(ℓ) dL`, with `Ω_r⁻¹ = κ √(m / (-2E)) / (-2E)`. -/
+theorem hasFDerivAt_keplerRadialAction {x : V × V} (hq : x.1 ≠ 0)
+    (hE : centralForceHamiltonian m (fun r ↦ -κ / r) x ≠ 0)
+    (hℓ : angularMomentum (b 0) (b 1) x ≠ 0) :
+    HasFDerivAt (keplerRadialAction b m κ)
+      ((κ * √(m / (-2 * centralForceHamiltonian m (fun r ↦ -κ / r) x)) /
+          (-2 * centralForceHamiltonian m (fun r ↦ -κ / r) x)) •
+          fderiv ℝ (centralForceHamiltonian m (fun r ↦ -κ / r)) x -
+        (SignType.sign (angularMomentum (b 0) (b 1) x) : ℝ) •
+          fderiv ℝ (angularMomentum (b 0) (b 1)) x) x := by
+  have hH := (hasFDerivAt_centralForceHamiltonian (m := m)
+    (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 hq)) hq).differentiableAt.hasFDerivAt
+  have hL := (hasFDerivAt_angularMomentum (b 0) (b 1) x).differentiableAt.hasFDerivAt
+  have h := (((hasDerivAt_sqrt_div m (mul_ne_zero (by norm_num) hE)).comp_hasFDerivAt x
+    (hH.const_mul (-2))).const_mul κ).sub ((hasDerivAt_abs hℓ).comp_hasFDerivAt x hL)
+  refine h.congr_fderiv ?_
+  rw [smul_smul, smul_smul]
+  congr 2
   field_simp
 
 variable [FiniteDimensional ℝ V]
 
-/-- The action `I_r + |I_θ| = κ √(m / (-2E))`, as a function of the energy `E < 0`, has derivative
-`κ √(m / (-2E)) / (-2E)`, the inverse of the radial frequency. -/
-private theorem hasDerivAt_mul_sqrt_div_neg_two_mul (hm : 0 < m) {E : ℝ} (hE : E < 0) :
-    HasDerivAt (fun E ↦ κ * √(m / (-2 * E))) (κ * √(m / (-2 * E)) / (-2 * E)) E := by
-  have hu : 0 < -2 * E := by linarith
-  have hd : HasDerivAt (fun E ↦ m / (-2 * E)) (2 * m / (-2 * E) ^ 2) E := by
-    convert ((hasDerivAt_id E).const_mul (-2)).inv hu.ne' |>.const_mul m using 1
-    · ext E
-      simp [div_eq_mul_inv]
-    · simp only [id_eq, mul_one, neg_neg]
-      ring
-  convert (hd.sqrt (div_pos hm hu).ne').const_mul κ using 1
-  set y := m / (-2 * E) with hy
-  have hy0 : 0 < y := div_pos hm hu
-  have hmy : m = √y ^ 2 * (-2 * E) := by
-    rw [sq_sqrt hy0.le, hy]
-    field_simp [hE.ne]
-  have hs0 : √y ≠ 0 := (sqrt_pos.2 hy0).ne'
-  rw [hmy]
-  field_simp
-
-/-- **Hamilton's equations for the radial action.** On the bound phase space, the Hamiltonian
-vector field of the radial action is `Ω_r⁻¹ X_H - sign(L) X_L`, where `X_H` and `X_L` are those of
-the energy and the angular momentum and `Ω_r⁻¹ = κ √(m / (-2H)) / (-2H)` is the inverse of the
-radial frequency. -/
-theorem stdSymplecticForm_hamiltonianVectorField_keplerRadialAction (hm : 0 < m) {x : V × V}
-    (hx : x ∈ keplerBoundPhaseSpace b m κ) :
+/-- **Hamilton's equations for the radial action.** Off the collision set, at a state of nonzero
+energy and nonzero angular momentum, the Hamiltonian vector field of the radial action is
+`Ω_r⁻¹ X_H - sign(L) X_L`, where `X_H` and `X_L` are those of the energy and the angular momentum
+and `Ω_r⁻¹ = κ √(m / (-2H)) / (-2H)` is the inverse of the radial frequency. -/
+theorem stdSymplecticForm_hamiltonianVectorField_keplerRadialAction {x : V × V} (hq : x.1 ≠ 0)
+    (hE : centralForceHamiltonian m (fun r ↦ -κ / r) x ≠ 0)
+    (hℓ : angularMomentum (b 0) (b 1) x ≠ 0) :
     (stdSymplecticForm (V := V)).hamiltonianVectorField (keplerRadialAction b m κ) x =
       (κ * √(m / (-2 * centralForceHamiltonian m (fun r ↦ -κ / r) x)) /
           (-2 * centralForceHamiltonian m (fun r ↦ -κ / r) x)) •
@@ -157,17 +170,37 @@ theorem stdSymplecticForm_hamiltonianVectorField_keplerRadialAction (hm : 0 < m)
           (centralForceHamiltonian m (fun r ↦ -κ / r)) x -
       (SignType.sign (angularMomentum (b 0) (b 1) x) : ℝ) •
         (stdSymplecticForm (V := V)).hamiltonianVectorField (angularMomentum (b 0) (b 1)) x := by
-  obtain ⟨hq, hE, hℓ⟩ := (mem_keplerBoundPhaseSpace b).1 hx
-  have hH := (hasFDerivAt_centralForceHamiltonian (m := m)
-    (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 hq)) hq).differentiableAt.hasFDerivAt
-  have hL := (hasFDerivAt_angularMomentum (b 0) (b 1) x).differentiableAt.hasFDerivAt
-  have hI := ((hasDerivAt_mul_sqrt_div_neg_two_mul (κ := κ) hm hE).comp_hasFDerivAt x hH).sub
-    (hL.abs hℓ)
-  -- `hI` differentiates the right-hand side of `keplerRadialAction_apply`.
   rw [eq_comm, SymplecticForm.eq_hamiltonianVectorField_iff,
-    (hI.congr_of_eventuallyEq (.of_forall (keplerRadialAction_apply b m κ))).fderiv]
+    (hasFDerivAt_keplerRadialAction b hq hE hℓ).fderiv]
   intro v
   simp [map_sub, map_smul]
+
+/-- **The radial action is a first integral of the energy.** Off the collision set, at a state of
+nonzero energy and nonzero angular momentum, the energy Poisson-commutes with the radial action. -/
+theorem stdSymplecticForm_poissonBracket_centralForceHamiltonian_keplerRadialAction {x : V × V}
+    (hq : x.1 ≠ 0) (hE : centralForceHamiltonian m (fun r ↦ -κ / r) x ≠ 0)
+    (hℓ : angularMomentum (b 0) (b 1) x ≠ 0) :
+    (stdSymplecticForm (V := V)).poissonBracket (centralForceHamiltonian m (fun r ↦ -κ / r))
+      (keplerRadialAction b m κ) x = 0 := by
+  rw [SymplecticForm.poissonBracket_eq_fderiv,
+    stdSymplecticForm_hamiltonianVectorField_keplerRadialAction b hq hE hℓ]
+  simp [SymplecticForm.fderiv_apply_hamiltonianVectorField,
+    ← SymplecticForm.poissonBracket_eq_fderiv,
+    stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum]
+
+/-- **The radial and angular actions Poisson-commute.** Off the collision set, at a state of
+nonzero energy and nonzero angular momentum, the angular momentum Poisson-commutes with the radial
+action. -/
+theorem stdSymplecticForm_poissonBracket_angularMomentum_keplerRadialAction {x : V × V}
+    (hq : x.1 ≠ 0) (hE : centralForceHamiltonian m (fun r ↦ -κ / r) x ≠ 0)
+    (hℓ : angularMomentum (b 0) (b 1) x ≠ 0) :
+    (stdSymplecticForm (V := V)).poissonBracket (angularMomentum (b 0) (b 1))
+      (keplerRadialAction b m κ) x = 0 := by
+  rw [SymplecticForm.poissonBracket_eq_fderiv,
+    stdSymplecticForm_hamiltonianVectorField_keplerRadialAction b hq hE hℓ]
+  simp [SymplecticForm.fderiv_apply_hamiltonianVectorField,
+    ← SymplecticForm.poissonBracket_eq_fderiv,
+    stdSymplecticForm_poissonBracket_angularMomentum_centralForceHamiltonian]
 
 /-! ### The flow of the radial action -/
 
@@ -277,7 +310,8 @@ theorem periodic_of_forall_hasDerivAt_keplerRadialAction (hm : 0 < m) {γ : ℝ 
   have hc : 0 < c := div_pos (mul_pos hκ (sqrt_pos.2 (div_pos hm (by linarith))))
     (by linarith)
   -- The energy and the angular momentum are conserved, so `γ` moves along `c X_H - σ X_L`.
-  have hγ' (t : ℝ) := stdSymplecticForm_hamiltonianVectorField_keplerRadialAction b hm (hB t) ▸
+  have hγ' (t : ℝ) := stdSymplecticForm_hamiltonianVectorField_keplerRadialAction b (hq t)
+    ((mem_keplerBoundPhaseSpace b).1 (hB t)).2.1.ne ((mem_keplerBoundPhaseSpace b).1 (hB t)).2.2 ▸
     hγ t
   have hcons := energy_angularMomentum_eq_of_hasDerivAt b (fun t ↦ by
     simpa only [sub_eq_add_neg, ← neg_smul] using hγ' t) hq
@@ -350,9 +384,11 @@ theorem exists_forall_hasDerivAt_keplerRadialAction (hm : 0 < m) {x : V × V}
     rw [centralForceHamiltonian_linearIsometryEquiv, (hcons (c * t)).1, hη0]
   have hLt := (angularMomentum_rotation b rfl (-σ * t : ℝ) (η (c * t))).trans
     ((hcons _).2.trans (congrArg _ hη0))
-  have hmem := (mem_keplerBoundPhaseSpace b).2 ⟨by simpa using hηq (c * t), hHt ▸ hE, hLt ▸ hℓ⟩
-  refine ⟨hmem, ?_⟩
-  rw [stdSymplecticForm_hamiltonianVectorField_keplerRadialAction b hm hmem, hHt, hLt,
+  have hqt : (o.rotation (-σ * t : ℝ) (η (c * t)).1, o.rotation (-σ * t : ℝ) (η (c * t)).2).1 ≠
+      0 := by simpa using hηq (c * t)
+  refine ⟨(mem_keplerBoundPhaseSpace b).2 ⟨hqt, hHt ▸ hE, hLt ▸ hℓ⟩, ?_⟩
+  rw [stdSymplecticForm_hamiltonianVectorField_keplerRadialAction b hqt (hHt ▸ hE.ne) (hLt ▸ hℓ),
+    hHt, hLt,
     stdSymplecticForm_hamiltonianVectorField_angularMomentum_eq_rightAngleRotation b rfl, ← hc,
     ← hσ, ← ho, sub_eq_add_neg, ← neg_smul]
   have h := hasDerivAt_rotation_comp_kepler o (a := 1) (s := 0) (k := c) (θ' := -σ)
