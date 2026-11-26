@@ -234,6 +234,27 @@ private theorem isCompactOperator_commL [CompleteSpace D] (hι : IsCompactOperat
 
 /-! ### One piece of the parametrix -/
 
+/-- **The commutator of the trajectory operator with a cutoff.** Multiplying by a smooth cutoff `β`
+before applying `D_A` is multiplying by `β` afterwards, up to the term `β' (ι ∘ u)`:
+`D_A (β u) = β D_A u + β' (ι ∘ u)`. -/
+private theorem familyDomainTrajectoryOperator_comp_mulGraph_eq_add
+    (AL : Lp (D →L[ℝ] H) ∞ μ₀) {β : ℝ → ℝ} (hβ : ContDiff ℝ ∞ β) (hβ₀ : ∀ s, |β s| ≤ 1) {L : ℝ}
+    (hβ₁ : ∀ s, |deriv β s| ≤ L) :
+    (familyDomainTrajectoryOperator ι AL).comp (mulGraph ι β hβ hβ₀ hβ₁) =
+      (mulLp β hβ.continuous hβ₀).comp (familyDomainTrajectoryOperator ι AL) +
+        commL ι (deriv β) (hβ.continuous_deriv (by simp)) hβ₁ := by
+  ext u : 1
+  refine Lp.ext ?_
+  filter_upwards [familyDomainTrajectoryOperator_smulLeftCLM_ae ι AL hβ.contDiffOn
+      ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hβ₀ s)⟩
+      (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hβ₁ s) u,
+    Lp.coeFn_add (mulLp β hβ.continuous hβ₀ (familyDomainTrajectoryOperator ι AL u))
+      (commL ι (deriv β) (hβ.continuous_deriv (by simp)) hβ₁ u),
+    mulLp_ae hβ.continuous hβ₀ (familyDomainTrajectoryOperator ι AL u),
+    commL_ae (hβ.continuous_deriv (by simp)) hβ₁ u] with s h₁ h₂ h₃ h₄
+  rw [ContinuousLinearMap.comp_apply, mulGraph, h₁, add_apply,
+    ContinuousLinearMap.comp_apply, h₂, Pi.add_apply, h₃, h₄]
+
 /-- **The commutator identity of a piece.** Let `R` be a right inverse of `D_B`, and let the cutoff
 `β` be one on the support of `γ`. For `v = R (γ f)`,
 `D_A (β v) = γ f + β (A - B) v + β' (ι ∘ v)`. -/
@@ -249,26 +270,16 @@ private theorem familyDomainTrajectoryOperator_comp_mulGraph (AL : Lp (D →L[�
   ext f : 1
   set v := R (mulLp γ hγ hγ₀ f)
   have hv : domainTrajectoryOperator ι B v = mulLp γ hγ hγ₀ f := hR _
-  refine Lp.ext ?_
-  simp only [ContinuousLinearMap.comp_apply, add_apply]
-  filter_upwards [familyDomainTrajectoryOperator_smulLeftCLM_ae ι AL hβ.contDiffOn
-      ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hβ₀ s)⟩
-      (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hβ₁ s) v,
-    familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_ae ι AL B v,
-    Lp.coeFn_sub (familyDomainTrajectoryOperator ι AL v) (domainTrajectoryOperator ι B v),
-    mulLp_ae hγ hγ₀ f, coeffL_ae AL B hβ.continuous hβ₀ v,
-    commL_ae (hβ.continuous_deriv (by simp)) hβ₁ v,
-    Lp.coeFn_add (mulLp γ hγ hγ₀ f) (coeffL ι AL B β hβ.continuous hβ₀ v +
-      commL ι (deriv β) (hβ.continuous_deriv (by simp)) hβ₁ v),
-    Lp.coeFn_add (coeffL ι AL B β hβ.continuous hβ₀ v)
-      (commL ι (deriv β) (hβ.continuous_deriv (by simp)) hβ₁ v)]
-    with s h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈
-  -- `D_A v = D_B v + (A - B) v` and `D_B v = γ f`.
-  have hDA : familyDomainTrajectoryOperator ι AL v s =
-      γ s • f s + (AL s - B) (prev _ v s) := by
-    rw [← h₂, h₃, Pi.sub_apply, hv, h₄, add_sub_cancel]
-  rw [mulGraph, h₁, hDA, h₇, Pi.add_apply, h₄, h₈, Pi.add_apply, h₅, h₆, smul_add, smul_smul,
-    hβγ, add_assoc]
+  -- `β γ f = γ f`, since `β γ = γ`.
+  have hβγf : mulLp β hβ.continuous hβ₀ (mulLp γ hγ hγ₀ f) = mulLp γ hγ hγ₀ f := by
+    refine Lp.ext ?_
+    filter_upwards [mulLp_ae hβ.continuous hβ₀ (mulLp γ hγ hγ₀ f), mulLp_ae hγ hγ₀ f] with s h₁ h₂
+    rw [h₁, h₂, smul_smul, hβγ]
+  -- `D_A (β v) = β D_A v + β' (ι ∘ v)`, `D_A v = D_B v + (A - B) v` and `D_B v = γ f`.
+  have h := congrArg (· v) (familyDomainTrajectoryOperator_comp_mulGraph_eq_add AL hβ hβ₀ hβ₁)
+  simp only [ContinuousLinearMap.comp_apply, add_apply] at h ⊢
+  rw [h, coeffL, ContinuousLinearMap.comp_apply, sub_apply, map_sub, hv, hβγf]
+  abel
 
 /-- **One piece of the parametrix.** Let `R` be a right inverse of `D_B`, let the cutoff `β` be
 one on the support of `γ`, and split `β = ρ β + (1 - ρ) β` with `0 ≤ ρ ≤ 1`. If `A(s)` is within
@@ -579,28 +590,6 @@ theorem index_familyDomainTrajectoryOperator_eq_zero (hι : IsCompactOperator ι
 /-! ### Catenation of the index -/
 
 omit [CompleteSpace D] in
-/-- **The commutator of the trajectory operator with a cutoff.** Multiplying by a smooth cutoff `β`
-before applying `D_A` is multiplying by `β` afterwards, up to the term `β' (ι ∘ u)`:
-`D_A (β u) = β D_A u + β' (ι ∘ u)`. -/
-private theorem familyDomainTrajectoryOperator_comp_mulGraph_eq_add
-    (AL : Lp (D →L[ℝ] H) ∞ μ₀) {β : ℝ → ℝ} (hβ : ContDiff ℝ ∞ β) (hβ₀ : ∀ s, |β s| ≤ 1) {L : ℝ}
-    (hβ₁ : ∀ s, |deriv β s| ≤ L) :
-    (familyDomainTrajectoryOperator ι AL).comp (mulGraph ι β hβ hβ₀ hβ₁) =
-      (mulLp β hβ.continuous hβ₀).comp (familyDomainTrajectoryOperator ι AL) +
-        commL ι (deriv β) (hβ.continuous_deriv (by simp)) hβ₁ := by
-  ext u : 1
-  refine Lp.ext ?_
-  filter_upwards [familyDomainTrajectoryOperator_smulLeftCLM_ae ι AL hβ.contDiffOn
-      ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hβ₀ s)⟩
-      (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hβ₁ s) u,
-    Lp.coeFn_add (mulLp β hβ.continuous hβ₀ (familyDomainTrajectoryOperator ι AL u))
-      (commL ι (deriv β) (hβ.continuous_deriv (by simp)) hβ₁ u),
-    mulLp_ae hβ.continuous hβ₀ (familyDomainTrajectoryOperator ι AL u),
-    commL_ae (hβ.continuous_deriv (by simp)) hβ₁ u] with s h₁ h₂ h₃ h₄
-  rw [ContinuousLinearMap.comp_apply, mulGraph, h₁, add_apply,
-    ContinuousLinearMap.comp_apply, h₂, Pi.add_apply, h₃, h₄]
-
-omit [CompleteSpace D] in
 /-- Where `χ` vanishes on `(-∞, a]` and `A = B` almost everywhere on `[a, ∞)`, the coefficient
 error `A - B` annihilates `χ u`. -/
 private theorem familyDomainTrajectoryOperator_sub_mulGraph_eq_zero {AL : Lp (D →L[ℝ] H) ∞ μ₀}
@@ -776,31 +765,6 @@ theorem index_familyDomainTrajectoryOperator_add_sub (hι : IsCompactOperator ι
   simp only [G, ContinuousLinearMap.index_comp_equiv]
 
 omit [CompleteSpace H] [CompleteSpace D] in
-/-- An `L∞` class of the interpolation `s ↦ (1 - φ s) • A s + φ s • A' s` of two coefficients by a
-continuous function `φ` with `|φ| ≤ 1`. -/
-private theorem exists_ae_eq_one_sub_smul_add_smul {A A' : ℝ → D →L[ℝ] H}
-    {AL AL' : Lp (D →L[ℝ] H) ∞ μ₀} (hAL : AL =ᵐ[μ₀] A) (hAL' : AL' =ᵐ[μ₀] A') {φ : ℝ → ℝ}
-    (hφ : Continuous φ) (hφ₀ : ∀ s, |φ s| ≤ 1) :
-    ∃ AL₁ : Lp (D →L[ℝ] H) ∞ μ₀, AL₁ =ᵐ[μ₀] fun s ↦ (1 - φ s) • A s + φ s • A' s := by
-  have h₂ : ∃ C, ∀ s ∈ ((⊤ : Opens ℝ) : Set ℝ), ‖1 - φ s‖ ≤ C := ⟨2, fun s _ ↦ by
-    rw [Real.norm_eq_abs]
-    linarith [abs_sub (1 : ℝ) (φ s), abs_one (α := ℝ), hφ₀ s]⟩
-  have h₁ : ∃ C, ∀ s ∈ ((⊤ : Opens ℝ) : Set ℝ), ‖φ s‖ ≤ C :=
-    ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hφ₀ s)⟩
-  refine ⟨Lp.multiplicationOperator (linftyOfContinuousOn volume
-      (continuous_const.sub hφ).continuousOn (⊤ : Opens ℝ).isOpen.measurableSet h₂) AL +
-    Lp.multiplicationOperator (linftyOfContinuousOn volume hφ.continuousOn
-      (⊤ : Opens ℝ).isOpen.measurableSet h₁) AL', ?_⟩
-  filter_upwards [Lp.coeFn_add (Lp.multiplicationOperator (linftyOfContinuousOn volume
-      (continuous_const.sub hφ).continuousOn (⊤ : Opens ℝ).isOpen.measurableSet h₂) AL)
-      (Lp.multiplicationOperator (linftyOfContinuousOn volume hφ.continuousOn
-        (⊤ : Opens ℝ).isOpen.measurableSet h₁) AL'),
-    Lp.multiplicationOperator_linftyOfContinuousOn_ae _ _ _ AL,
-    Lp.multiplicationOperator_linftyOfContinuousOn_ae _ _ _ AL', hAL, hAL'] with s h h₃ h₄ h₅ h₆
-  rw [h, Pi.add_apply, h₃, h₄, h₅, h₆]
-  rfl
-
-omit [CompleteSpace H] [CompleteSpace D] in
 /-- **Cutting a family off to its limit at `+∞`.** A family `A` with limit `B₁` at `+∞`, differing
 from `B₁` on bounded windows by operators bounded through `ι`, agrees with a family `A₁` on
 `(-∞, 0]` such that `A₁ = B₁` on `[1, ∞)` and `A₁ - B₁` is still bounded through `ι` on bounded
@@ -811,9 +775,10 @@ private theorem exists_eq_of_le_zero_and_eq_of_one_le {B₁ : D →L[ℝ] H} {A 
     ∃ (A₁ : ℝ → D →L[ℝ] H) (AL₁ : Lp (D →L[ℝ] H) ∞ μ₀), AL₁ =ᵐ[μ₀] A₁ ∧
       (∀ s, s ≤ 0 → A₁ s = A s) ∧ (∀ s, 1 ≤ s → A₁ s = B₁) ∧
       ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A₁ s - B₁) x‖ ≤ c * ‖ι x‖ := by
-  obtain ⟨AL₁, hAL₁⟩ := exists_ae_eq_one_sub_smul_add_smul hAL
-    (memLp_top_const (μ := μ₀) B₁).coeFn_toLp Real.smoothTransition.continuous
-    Real.smoothTransition.abs_le_one
+  obtain ⟨AL₁, hAL₁⟩ := Lp.exists_ae_eq_one_sub_smul_add_smul hAL
+    (memLp_top_const (μ := μ₀) B₁).coeFn_toLp Real.smoothTransition.continuous.continuousOn
+    (⊤ : Opens ℝ).isOpen.measurableSet
+    ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (Real.smoothTransition.abs_le_one s)⟩
   refine ⟨_, AL₁, hAL₁, fun s hs ↦ by simp [Real.smoothTransition.zero_of_nonpos hs],
     fun s hs ↦ by simp [Real.smoothTransition.one_of_one_le hs], fun T ↦ ?_⟩
   obtain ⟨c, hc⟩ := hc T
@@ -839,9 +804,10 @@ private theorem exists_eq_of_le_two_and_eq_of_three_le {B₁ B₂ : D →L[ℝ] 
     ∃ (A₂ : ℝ → D →L[ℝ] H) (AL₂ : Lp (D →L[ℝ] H) ∞ μ₀), AL₂ =ᵐ[μ₀] A₂ ∧
       (∀ s, s ≤ 2 → A₂ s = B₁) ∧ (∀ s, 3 ≤ s → A₂ s = A' s) ∧
       ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A₂ s - B₂) x‖ ≤ c * ‖ι x‖ := by
-  obtain ⟨AL₂, hAL₂⟩ := exists_ae_eq_one_sub_smul_add_smul
-    (memLp_top_const (μ := μ₀) B₁).coeFn_toLp hAL' (φ := fun s ↦ Real.smoothTransition (s - 2))
-    (by fun_prop) fun s ↦ Real.smoothTransition.abs_le_one _
+  obtain ⟨AL₂, hAL₂⟩ := Lp.exists_ae_eq_one_sub_smul_add_smul
+    (memLp_top_const (μ := μ₀) B₁).coeFn_toLp hAL' (f := fun s ↦ Real.smoothTransition (s - 2))
+    (by fun_prop) (⊤ : Opens ℝ).isOpen.measurableSet
+    ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (Real.smoothTransition.abs_le_one _)⟩
   refine ⟨_, AL₂, hAL₂,
     fun s hs ↦ by simp [Real.smoothTransition.zero_of_nonpos (by linarith : s - 2 ≤ 0)],
     fun s hs ↦ by simp [Real.smoothTransition.one_of_one_le (by linarith : 1 ≤ s - 2)],
