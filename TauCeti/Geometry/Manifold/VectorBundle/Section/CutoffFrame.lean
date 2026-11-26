@@ -32,7 +32,9 @@ For a basis `(bᵢ)` of the model fibre and `ψ = 1` on the support of `ρ`, the
 `K` finitely many trivializations and a partition of unity then write every section as a finite
 sum of cut-off frame sections with cut-off frame coefficients
 (`IsCompact.exists_sum_sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply`). This is how an
-operator out of the sections of a bundle is split into its matrix entries near `K`.
+operator out of the sections of a bundle is split into its matrix entries near `K`. On functions
+supported in `K`, a section may also be replaced by one with compact support
+(`IsCompact.exists_isCompact_tsupport_forall_smul_eq`).
 
 These read operators between sections of bundles as matrices of operators on functions, without
 restricting to the base set of a trivialization: the entries of an operator `P` are the operators
@@ -275,6 +277,28 @@ theorem _root_.IsCompact.exists_sum_sum_cutoffFrameCoeff_smul_cutoffFrameSection
   rw [ContMDiffSection.coe_sum, Finset.sum_apply, Finset.sum_congr rfl fun i _ ↦ hsum i,
     ← Finset.sum_smul, ← Complex.ofReal_sum, ← finsum_eq_sum_of_fintype, ρ.sum_eq_one hx,
     Complex.ofReal_one, one_smul]
+
+omit [FiniteDimensional ℂ W] [ContMDiffVectorBundle ∞ W F I] in
+/-- **Cutting off a section near a compact set.** For a compact set `K` and a smooth section `h`
+of `F` there is a smooth section `h'` with compact support, namely `θ h` for a cutoff `θ` equal to
+`1` near `K`, such that `f • h = f • h'` for every complex-valued smooth function `f` supported in
+`K`. -/
+theorem _root_.IsCompact.exists_isCompact_tsupport_forall_smul_eq {K : Set M} (hK : IsCompact K)
+    (h : Cₛ^∞⟮I; W, F⟯) :
+    ∃ h' : Cₛ^∞⟮I; W, F⟯, IsCompact h'.tsupport ∧
+      ∀ f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯, tsupport f ⊆ K → f • h = f • h' := by
+  obtain ⟨θ, hθ, hθ1, hθc, -, -⟩ := hK.exists_contMDiff_one_nhds_tsupport_subset I isOpen_univ
+    (subset_univ K)
+  set θ' : C^∞⟮I, M; ℝ⟯ := ⟨θ, hθ⟩
+  refine ⟨θ' • h, hθc.isCompact.of_isClosed_subset (ContMDiffSection.isClosed_tsupport _)
+    ((ContMDiffSection.tsupport_smul_function_subset θ' h).trans inter_subset_left),
+    fun f hf ↦ ?_⟩
+  ext x
+  by_cases hx : x ∈ tsupport f
+  · have hθx : θ' x = 1 := hθ1.self_of_nhdsSet x (hf hx)
+    simp only [ContMDiffSection.smul_apply_of_normedAlgebra, ContMDiffSection.smul_apply, hθx,
+      one_smul]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
 
 end Compact
 
