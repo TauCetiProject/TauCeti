@@ -16,6 +16,7 @@ import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Summable
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Summable
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Transformation
 
@@ -139,15 +140,6 @@ def epsteinZeta (τ : ℍ) (s : ℝ) : ℝ :=
 theorem epsteinZeta_def (τ : ℍ) (s : ℝ) :
     epsteinZeta τ s = ∑' p : ℤ × ℤ, (τ.im / ‖(p.1 : ℂ) * τ + p.2‖ ^ 2) ^ s :=
   (rfl)
-
-/-- The series `∑ m^(-s)` over the positive integers, for real `s > 1`, through the entire
-function `riemannZeta₀`, which is `ζ(s) - 1 / (s - 1)` for `s ≠ 1`. -/
-private theorem hasSum_pnat_rpow_neg {s : ℝ} (hs : 1 < s) :
-    HasSum (fun m : ℕ+ ↦ (m : ℝ) ^ (-s)) ((s - 1)⁻¹ + (riemannZeta₀ s).re) := by
-  have h_pnat : HasSum (fun m : ℕ+ ↦ LSeries.term 1 s m) (riemannZeta s) :=
-    hasSum_pnat_iff.mpr (by simpa [LSeriesHasSum] using LSeriesHasSum_one (s := s) (by simpa))
-  simpa [riemannZeta_eq_inv_sub_add, hs.ne', ← rpow_neg, ← ofReal_natCast, comp_def,
-    ← ofReal_cpow, normSq] using hasSum_re h_pnat
 
 /-- For `a > 2`, `|a - b| ≤ 1` and `1 ≤ s ≤ 2`, the values of `t ↦ t^(-2s)` at `a` and `b` differ
 by at most `4 (a / 2)^(-3)`, by the mean value theorem. -/
@@ -430,14 +422,15 @@ private theorem sub_one_mul_tsum_norm_rpow (τ : ℍ) {s : ℝ} (hs : s ∈ Ioo 
   have hf : Summable f := summable_norm_mul_add_rpow τ (by linarith)
   have h_row_zero : ∑' n : ℤ, f (0, n) = 2 * ((2 * s - 1)⁻¹ + (riemannZeta₀ (2 * s)).re) := by
     rw [tsum_int_eq_zero_add_two_mul_tsum_pnat (fun n ↦ by simp [f]) (hf.prod_factor 0)]
-    simp [f, (hasSum_pnat_rpow_neg (s := 2 * s) (by linarith)).tsum_eq,
-      (one_pos.trans hs_one).ne', mul_add]
+    simp [f, (TauCeti.hasSum_pnat_rpow_neg_inv_sub_one_add_riemannZeta₀_re (s := 2 * s)
+      (by linarith)).tsum_eq, (one_pos.trans hs_one).ne', mul_add]
   have h_rows_pos : HasSum (fun m : ℕ+ ↦ ∑' n : ℤ, f (m, n))
       (∑' p : ℕ+ × ℤ, meanError τ p s +
         betaFactor τ.im s * ((2 * s - 1 - 1)⁻¹ + (riemannZeta₀ (2 * s - 1)).re)) := by
     have h_zeta : HasSum (fun m : ℕ+ ↦ (m : ℝ) ^ (-(2 * s - 1)))
         ((2 * s - 1 - 1)⁻¹ + (riemannZeta₀ (2 * s - 1)).re) := by
-      exact_mod_cast hasSum_pnat_rpow_neg (s := 2 * s - 1) (by linarith)
+      exact_mod_cast TauCeti.hasSum_pnat_rpow_neg_inv_sub_one_add_riemannZeta₀_re
+        (s := 2 * s - 1) (by linarith)
     rw [(summable_meanError τ hs_mem).tsum_prod]
     refine ((summable_meanError τ hs_mem).prod.hasSum.add
       (h_zeta.mul_left (betaFactor τ.im s))).congr_fun fun m ↦ ?_

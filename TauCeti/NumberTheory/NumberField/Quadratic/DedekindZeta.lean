@@ -482,11 +482,7 @@ theorem two_mul_log_goldenRatio_div_sqrt_le_LFunction_one_re :
       ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK)).ringHomComp
         (Int.castRingHom ℂ)) 1).re := by
   rcases lt_trichotomy (discr K) 0 with hd | hd | hd
-  · have hc : nrComplexPlaces K = 1 := nrComplexPlaces_eq_one_of_discr_lt_zero hd (by omega)
-    have hr : nrRealPlaces K = 0 := by
-      have := card_add_two_mul_card_eq_rank K
-      omega
-    have : IsTotallyComplex K := nrRealPlaces_eq_zero_iff.mp hr
+  · have : IsTotallyComplex K := IsTotallyComplex.of_discr_lt_zero hd hK
     have hD : 0 ≤ √|(discr K : ℝ)| := Real.sqrt_nonneg _
     have hφπ : 2 * Real.log Real.goldenRatio ≤ π / 3 := by
       linarith [TauCeti.log_goldenRatio_lt_one_half, Real.pi_gt_three]

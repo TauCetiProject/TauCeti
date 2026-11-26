@@ -9,13 +9,17 @@ public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.LimitFormula
-import Mathlib.NumberTheory.LSeries.Injectivity
 import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.LFunctions.DedekindZeta.UnitQuotient
+import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
-import TauCeti.NumberTheory.NumberField.InfinitePlace.Trace
+import TauCeti.NumberTheory.NumberField.Discriminant.Basic
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.DedekindZeta
+import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
+import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 import TauCeti.RingTheory.FractionalIdeal.Norm
 
 /-!
@@ -41,16 +45,14 @@ number `w` cancels, so no assumption `D > 4` is needed.
 The identity of Dirichlet series uses, for each class, Tau Ceti's description of the partial zeta
 function of an ideal class as a sum over the points of an ideal lattice in the fundamental cone
 (`TauCeti.LFunctions.hasSum_norm_cpow_idealLattice_fundamentalCone`); in an imaginary quadratic
-field the cone is the set of points of nonzero norm. The normalisation `2 / √D` is the covolume
-identity `N(𝔞) √D = 2 |c|² Im τ` for `σ(𝔞) = c (ℤ + ℤ τ)`
+field the unit rank is `0` and the cone is the set of points of nonzero norm. The normalisation
+`2 / √D` is the covolume identity `N(𝔞) √D = 2 |c|² Im τ` for `σ(𝔞) = c (ℤ + ℤ τ)`
 (`TauCeti.NumberField.absNorm_mul_sqrt_abs_discr_of_image_eq`), proved by computing the
-discriminant of a `ℤ`-basis of `𝔞` through the trace form.
+discriminant of a `ℤ`-basis of `𝔞` through the trace form, which is `Tr x = 2 Re (σ x)`
+(`TauCeti.NumberField.trace_eq_two_mul_re_of_finrank_eq_two`).
 
 ## Main results
 
-* `TauCeti.NumberField.abs_norm_eq_norm_sq_of_finrank_eq_two`,
-  `TauCeti.NumberField.trace_eq_two_mul_re_of_finrank_eq_two`: the norm and the trace of an
-  imaginary quadratic field through a complex embedding.
 * `TauCeti.NumberField.absNorm_mul_sqrt_abs_discr_of_image_eq`: the covolume of an ideal lattice.
 * `TauCeti.NumberField.chowlaSelberg_classMean`: the Chowla–Selberg formula in class-mean form.
 
@@ -77,55 +79,10 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-! ### An imaginary quadratic field and one of its complex embeddings -/
-
-section ImaginaryQuadratic
-
-variable [IsTotallyComplex K]
-
-private theorem card_infinitePlace_eq_one (hK : finrank ℚ K = 2) :
-    Fintype.card (InfinitePlace K) = 1 := by
-  have h := card_add_two_mul_card_eq_rank K
-  rw [IsTotallyComplex.nrRealPlaces_eq_zero, hK] at h
-  rw [card_eq_nrRealPlaces_add_nrComplexPlaces, IsTotallyComplex.nrRealPlaces_eq_zero]
-  omega
-
-private theorem eq_mk_of_finrank_eq_two (hK : finrank ℚ K = 2) (σ : K →+* ℂ)
-    (w : InfinitePlace K) : w = mk σ :=
-  Fintype.card_le_one_iff.mp (card_infinitePlace_eq_one hK).le _ _
-
-/-- The unit rank of an imaginary quadratic field is `0`, so Mathlib's fundamental cone is the set
-of points of nonzero norm. -/
-private theorem mem_fundamentalCone_iff_of_finrank_eq_two (hK : finrank ℚ K = 2)
-    (x : mixedEmbedding.mixedSpace K) :
-    x ∈ mixedEmbedding.fundamentalCone K ↔ mixedEmbedding.norm x ≠ 0 := by
-  have hr : NumberField.Units.rank K = 0 := by
-    rw [NumberField.Units.rank, card_infinitePlace_eq_one hK]
-  simp only [mixedEmbedding.fundamentalCone, Set.mem_sdiff, Set.mem_preimage,
-    ZSpan.mem_fundamentalDomain, Set.mem_ofPred_eq]
-  exact ⟨fun h ↦ h.2, fun h ↦ ⟨fun i ↦ absurd i.isLt (by omega), h⟩⟩
-
-omit [NumberField K] in
-private theorem mult_eq_two (w : InfinitePlace K) : mult w = 2 := by
-  simp [mult]
-
-/-- In an imaginary quadratic field the absolute value of the norm of `x` is `|σ x|²`, for either
-complex embedding `σ`. -/
-theorem abs_norm_eq_norm_sq_of_finrank_eq_two (hK : finrank ℚ K = 2) (σ : K →+* ℂ) (x : K) :
-    |(Algebra.norm ℚ x : ℝ)| = ‖σ x‖ ^ 2 := by
-  rw [← Rat.cast_abs, ← prod_eq_abs_norm, Fintype.prod_eq_single (mk σ)
-    fun w hw ↦ (hw (eq_mk_of_finrank_eq_two hK σ w)).elim, apply, mult_eq_two]
-
-/-- In an imaginary quadratic field the trace of `x` is `2 Re (σ x)`, for either complex
-embedding `σ`. -/
-theorem trace_eq_two_mul_re_of_finrank_eq_two (hK : finrank ℚ K = 2) (σ : K →+* ℂ) (x : K) :
-    (Algebra.trace ℚ K x : ℝ) = 2 * (σ x).re := by
-  classical
-  rw [← InfinitePlace.sum_mult_mul_re_embedding_eq_trace, Fintype.sum_eq_single (mk σ)
-    fun w hw ↦ (hw (eq_mk_of_finrank_eq_two hK σ w)).elim, mult_eq_two]
-  rcases embedding_mk_eq σ with h | h <;> simp [h, ComplexEmbedding.conjugate_coe_eq]
-
-end ImaginaryQuadratic
+variable (K) in
+/-- The square root of the absolute discriminant is positive. -/
+private theorem sqrt_abs_discr_pos : 0 < √|(discr K : ℝ)| :=
+  Real.sqrt_pos.mpr (abs_cast_discr_pos K)
 
 /-! ### A fractional ideal whose image is homothetic to `ℤ τ + ℤ` -/
 
@@ -142,6 +99,10 @@ private def divEmbedding (I : FractionalIdeal (𝓞 K)⁰ K) (c : ℂ) :
 omit [NumberField K] in
 private theorem divEmbedding_apply (y : (I : Submodule (𝓞 K) K)) :
     divEmbedding σ I c y = c⁻¹ * σ y := (rfl)
+
+omit [NumberField K] in
+private theorem divEmbedding_injective (hc : c ≠ 0) : Function.Injective (divEmbedding σ I c) :=
+  fun _ _ h ↦ Subtype.ext <| σ.injective <| mul_left_cancel₀ (inv_ne_zero hc) h
 
 omit [NumberField K] in
 private theorem range_divEmbedding (hc : c ≠ 0)
@@ -162,8 +123,8 @@ private theorem range_divEmbedding (hc : c ≠ 0)
 private def idealEquivLattice (hc : c ≠ 0)
     (hI : σ '' (I : Set K) = (c * ·) '' (Submodule.span ℤ {(1 : ℂ), (τ : ℂ)} : Set ℂ)) :
     (I : Submodule (𝓞 K) K) ≃ₗ[ℤ] τ.periodPair.lattice :=
-  (LinearEquiv.ofInjective (divEmbedding σ I c) fun _ _ h ↦ Subtype.ext <| σ.injective <|
-    mul_left_cancel₀ (inv_ne_zero hc) h).trans (LinearEquiv.ofEq _ _ (range_divEmbedding σ hc hI))
+  (LinearEquiv.ofInjective (divEmbedding σ I c) (divEmbedding_injective σ hc)).trans
+    (LinearEquiv.ofEq _ _ (range_divEmbedding σ hc hI))
 
 omit [NumberField K] in
 private theorem apply_idealEquivLattice_symm (hc : c ≠ 0)
@@ -172,8 +133,8 @@ private theorem apply_idealEquivLattice_symm (hc : c ≠ 0)
     σ ((idealEquivLattice σ hc hI).symm l) = c * l := by
   set y := (idealEquivLattice σ hc hI).symm l
   have h : (idealEquivLattice σ hc hI y : ℂ) = c⁻¹ * σ y := by
-    simp only [idealEquivLattice, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
-    rfl
+    simp only [idealEquivLattice, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
+      LinearEquiv.ofInjective_apply, divEmbedding_apply]
   rw [LinearEquiv.apply_symm_apply] at h
   rw [h, mul_inv_cancel_left₀ hc]
 
@@ -224,8 +185,7 @@ theorem absNorm_mul_sqrt_abs_discr_of_image_eq (hK : finrank ℚ K = 2) (hc : c 
       ← Algebra.smul_def, B.sum_repr]
   have hdisc : Algebra.discr ℚ v = B.det v ^ 2 * discr K := by
     rw [hvB, Algebra.discr_of_matrix_vecMul, ← Basis.det_apply, ← hvB,
-      Algebra.discr_localizationLocalization, ← NumberField.discr_eq_discr K b]
-    rfl
+      Algebra.discr_localizationLocalization, ← NumberField.discr_eq_discr K b, eq_intCast]
   -- `disc(v) = det (Tr(vᵢ vⱼ)) = -4 |c|⁴ (Im τ)²`, from `Tr x = 2 Re (σ x)`.
   have htr (i j : Fin 2) : (Algebra.trace ℚ K (v i * v j) : ℝ) =
       2 * (c ^ 2 * τ.periodPair.latticeBasis i * τ.periodPair.latticeBasis j).re := by
@@ -293,8 +253,7 @@ private theorem hasSum_mul_im_div_norm_sq_rpow [IsTotallyComplex K] (hK : finran
   set N : ℝ := (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℝ)
   have hN : 0 < N := Rat.cast_pos.mpr (FractionalIdeal.absNorm_pos I.ne_zero)
   have hcov := absNorm_mul_sqrt_abs_discr_of_image_eq σ hK hc hI
-  have hd : 0 < √|(discr K : ℝ)| :=
-    Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K)))
+  have hd := sqrt_abs_discr_pos K
   -- Transport Tau Ceti's sum over the points of the lattice of `I` in the fundamental cone to
   -- `ℤ² ∖ {0}`.
   let Φ := intPairEquivIdealLattice σ hc hI
@@ -302,7 +261,8 @@ private theorem hasSum_mul_im_div_norm_sq_rpow [IsTotallyComplex K] (hK : finran
   have hcone (p : ℤ × ℤ) :
       p ∈ ({0}ᶜ : Set (ℤ × ℤ)) ↔ (Φ p : mixedEmbedding.mixedSpace K) ∈
         mixedEmbedding.fundamentalCone K := by
-    rw [mem_fundamentalCone_iff_of_finrank_eq_two hK, Ne,
+    rw [mixedEmbedding.fundamentalCone.mem_iff_norm_ne_zero_of_rank_eq_zero
+      (Units.rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two K hK), Ne,
       mixedEmbedding.norm_coe_idealLattice_eq_zero_iff, Set.mem_compl_singleton_iff]
     rw [← intPairEquivIdealLattice_zero σ hc hI, Φ.injective.eq_iff]
   have h0 := (Equiv.subtypeEquiv Φ hcone).hasSum_iff.mpr
@@ -406,39 +366,6 @@ private theorem value_and_deriv_eq_of_tendsto {ι : Type*} [Fintype ι] {k : ℝ
 
 /-! ### The class mean -/
 
-/-- The partial zeta functions of the ideal classes sum to the Dedekind zeta function. -/
-private theorem sum_tsum_mk0_eq_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
-    ∑ C : ClassGroup (𝓞 K), ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ // ClassGroup.mk0 𝔟 = C},
-      (Ideal.absNorm (𝔟 : Ideal (𝓞 K)) : ℂ) ^ (-s) = dedekindZeta K s := by
-  have := Fintype.ofFinite (GlobalNumberFields.RayClassGroup (GlobalNumberFields.Modulus.one K))
-  rw [← LFunctions.sum_LSeries_rayClassCoeff_one hs]
-  exact (Fintype.sum_equiv GlobalNumberFields.oneEquivClassGroup.toEquiv _ _
-    fun c ↦ LFunctions.LSeries_rayClassCoeff_one_eq_tsum_oneEquivClassGroup c hs).symm
-
-/-- Two Dirichlet characters with the same `L`-function on `Re s > 1` are equal. -/
-private theorem eq_of_LFunction_eq {N : ℕ} [NeZero N] {χ ψ : DirichletCharacter ℂ N}
-    (h : ∀ s : ℂ, 1 < s.re → χ.LFunction s = ψ.LFunction s) : χ = ψ := by
-  have hcoef (n : ℕ) (hn : n ≠ 0) : χ n = ψ n := by
-    refine LSeries.eq_of_LSeries_eventually_eq (f := fun n ↦ χ n) (g := fun n ↦ ψ n) ?_ ?_ ?_ hn
-    · rw [DirichletCharacter.abscissaOfAbsConv_eq_one (NeZero.ne N)]
-      exact EReal.coe_lt_top 1
-    · rw [DirichletCharacter.abscissaOfAbsConv_eq_one (NeZero.ne N)]
-      exact EReal.coe_lt_top 1
-    · filter_upwards [eventually_gt_atTop 1] with x hx
-      rw [← DirichletCharacter.LFunction_eq_LSeries _ (by simpa using hx),
-        ← DirichletCharacter.LFunction_eq_LSeries _ (by simpa using hx), h _ (by simpa using hx)]
-  refine MulChar.ext' fun a ↦ ?_
-  have ha : ((a.val + N : ℕ) : ZMod N) = a := by simp
-  rw [← ha]
-  exact hcoef _ (by have := NeZero.pos N; omega)
-
-/-- A quadratic field of negative discriminant is totally complex. -/
-private theorem isTotallyComplex_of_discr_neg (hK : finrank ℚ K = 2) (hd : discr K < 0) :
-    IsTotallyComplex K := by
-  have h1 := nrComplexPlaces_eq_one_of_discr_lt_zero hd (by omega)
-  have h2 := card_add_two_mul_card_eq_rank K
-  exact nrRealPlaces_eq_zero_iff.mp (by omega)
-
 /-- A Dirichlet character `χ` modulo `D` with `ζ_K = ζ · L(·, χ)` on `Re s > 1`, for `K` quadratic
 of discriminant `-D`, is the character of `K`, so it is not trivial. -/
 private theorem ne_one_of_dedekindZeta_eq (hK : finrank ℚ K = 2) {D : ℕ} [NeZero D]
@@ -448,7 +375,8 @@ private theorem ne_one_of_dedekindZeta_eq (hK : finrank ℚ K = 2) {D : ℕ} [Ne
   subst hDK
   have hχK : χ = (Multiquadratic.fundamentalDiscriminantChar (discr K)
       (Multiquadratic.isFundamentalDiscr_discr hK)).ringHomComp (Int.castRingHom ℂ) := by
-    refine eq_of_LFunction_eq fun s hs ↦ mul_left_cancel₀ (riemannZeta_ne_zero_of_one_lt_re hs) ?_
+    refine DirichletCharacter.eq_of_LFunction_eq _ fun s hs ↦
+      mul_left_cancel₀ (riemannZeta_ne_zero_of_one_lt_re hs) ?_
     rw [← hχ s hs, dedekindZeta_eq_riemannZeta_mul_LFunction hK hs]
   exact hχK ▸ Multiquadratic.ringHomComp_fundamentalDiscriminantChar_discr_ne_one hK
 
@@ -461,8 +389,7 @@ private theorem sum_rpow_mul_epsteinZeta_eq [IsTotallyComplex K] (hK : finrank �
       (c C * ·) '' (Submodule.span ℤ {(1 : ℂ), (τ C : ℂ)} : Set ℂ)) {s : ℝ} (hs : 1 < s) :
     ((∑ C, (2 / √|(discr K : ℝ)|) ^ s * (τ C).epsteinZeta s : ℝ) : ℂ) =
       Units.torsionOrder K * dedekindZeta K s := by
-  have hk : 0 < 2 / √|(discr K : ℝ)| :=
-    div_pos two_pos (Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K))))
+  have hk : 0 < 2 / √|(discr K : ℝ)| := div_pos two_pos (sqrt_abs_discr_pos K)
   have hclass (C : ClassGroup (𝓞 K)) :
       (((2 / √|(discr K : ℝ)|) ^ s * (τ C).epsteinZeta s : ℝ) : ℂ) =
         Units.torsionOrder K * ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ //
@@ -471,7 +398,7 @@ private theorem sum_rpow_mul_epsteinZeta_eq [IsTotallyComplex K] (hK : finrank �
     refine HasSum.unique ?_ (hasSum_mul_im_div_norm_sq_rpow σ hK (hc C) (hI C) hs)
     refine (hasSum_ofReal.mpr ((hasSum_epsteinZeta (τ C) hs).mul_left _)).congr_fun fun p ↦ ?_
     rw [Real.mul_rpow hk.le (by positivity)]
-  rw [← sum_tsum_mk0_eq_dedekindZeta (by simpa using hs), Finset.mul_sum, ofReal_sum]
+  rw [← LFunctions.sum_tsum_mk0_eq_dedekindZeta (by simpa using hs), Finset.mul_sum, ofReal_sum]
   simp only [hclass]
   exact Fintype.sum_equiv (Equiv.inv _) _ _ fun C ↦ by rw [hIC C]; rfl
 
@@ -528,11 +455,11 @@ theorem chowlaSelberg_classMean (hK : finrank ℚ K = 2) (σ : K →+* ℂ) (D :
     (((∑ C, (τ C).logPeriod) / classNumber K : ℝ) : ℂ) =
       ((Real.eulerMascheroniConstant + Real.log (2 * π / √D) : ℝ) : ℂ) -
         deriv χ.LFunction 1 / χ.LFunction 1 := by
-  have : IsTotallyComplex K := isTotallyComplex_of_discr_neg hK (by have := NeZero.ne D; omega)
+  have : IsTotallyComplex K :=
+    IsTotallyComplex.of_discr_lt_zero (by have := NeZero.ne D; omega) hK
   choose I hIC c hc hI using hτ
   set k : ℝ := 2 / √|(discr K : ℝ)| with hk_def
-  have hk : 0 < k :=
-    div_pos two_pos (Real.sqrt_pos.mpr (abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K))))
+  have hk : 0 < k := div_pos two_pos (sqrt_abs_discr_pos K)
   set w : ℂ := (Units.torsionOrder K : ℂ)
   have hw : w ≠ 0 := Nat.cast_ne_zero.mpr (Units.torsionOrder_ne_zero K)
   -- Both `W(s) = w (s - 1) ζ(s) L(s, χ)` and `∑_C kˢ (s - 1) E(τ_C, s)` are `w (s - 1) ζ_K(s)`.
