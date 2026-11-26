@@ -216,28 +216,19 @@ section ChangeOfBasis
 variable (D : ModuleDeformation ρbar A) {b b' : Module.Basis n A.obj.left D}
   (hb : ∀ i, D.reduction (b i) = Pi.single i 1) (hb' : ∀ i, D.reduction (b' i) = Pi.single i 1)
 
-/-- The change-of-basis matrix between two bases lifting the standard basis of `kⁿ`, as an
-invertible matrix. -/
-private noncomputable def basisChange (b b' : Module.Basis n A.obj.left D) : GL n A.obj.left :=
-  ⟨b'.toMatrix b, b.toMatrix b', b'.toMatrix_mul_toMatrix_flip b,
-    b.toMatrix_mul_toMatrix_flip b'⟩
-
-include hb hb' in
-/-- The change-of-basis matrix between two bases lifting the standard basis of `kⁿ` reduces to the
-identity. -/
-private theorem basisChange_mem_strictKernel : D.basisChange b b' ∈ A.strictKernel n := by
-  refine mem_strictKernel_iff.mpr (GeneralLinearGroup.ext fun i j ↦ ?_)
-  rw [GeneralLinearGroup.map_apply]
-  -- By definition, the entries of `D.basisChange b b'` are those of `b'.toMatrix b`.
-  change A.augmentation (b'.repr (b j) i) = (1 : Matrix n n k) i j
-  rw [D.augmentation_repr b' hb', hb, Pi.single_apply, Matrix.one_apply]
-
 /-- Changing the basis conjugates the lift of a module deformation by the change-of-basis matrix,
 an element of the strict kernel. -/
 theorem exists_smul_toLift_eq :
     ∃ a : A.strictKernel n, ((a : GL n A.obj.left) : Matrix n n A.obj.left) = b'.toMatrix b ∧
       a • D.toLift b hb = D.toLift b' hb' := by
-  refine ⟨⟨D.basisChange b b', D.basisChange_mem_strictKernel hb hb'⟩, rfl, ?_⟩
+  let := b'.invertibleToMatrix b
+  -- The change-of-basis matrix reduces to the identity.
+  have hmem : unitOfInvertible (b'.toMatrix b) ∈ A.strictKernel n :=
+    mem_strictKernel_iff.mpr (GeneralLinearGroup.ext fun i j ↦ by
+      rw [GeneralLinearGroup.map_apply, val_unitOfInvertible, Units.val_one, RingHom.coe_coe,
+        Module.Basis.toMatrix_apply, D.augmentation_repr b' hb', hb, Pi.single_apply,
+        Matrix.one_apply])
+  refine ⟨⟨_, hmem⟩, val_unitOfInvertible _, ?_⟩
   ext g : 1
   refine Units.ext ?_
   rw [Lift.smul_apply, Units.val_mul, Units.val_mul, coe_toLift_apply, coe_toLift_apply]
@@ -302,17 +293,18 @@ theorem toLift_eq_of_equiv {D D' : FramedModuleDeformation ρbar A} (e : D.Equiv
 the other. -/
 noncomputable def equivOfToLiftEq {D D' : FramedModuleDeformation ρbar A}
     (h : D.toLift = D'.toLift) : D.Equiv D' where
-  toRepresentationEquiv := .mk (D.basis.equiv D'.basis (_root_.Equiv.refl n)) fun g ↦
+  toRepresentationEquiv := .mk (basisEquiv D D') fun g ↦
     (LinearMap.toMatrix D.basis D'.basis).injective <| by
       have hg := congrArg (fun ρ : Lift ρbar A ↦ (ρ g : Matrix n n A.obj.left)) h
       simp only [ModuleDeformation.coe_toLift_apply] at hg
+      have he : LinearMap.toMatrix D.basis D'.basis (basisEquiv D D').toLinearMap = 1 :=
+        Matrix.ext fun i j ↦ by
+          simp [LinearMap.toMatrix_apply, Matrix.one_apply, Finsupp.single_apply, eq_comm]
       rw [LinearMap.toMatrix_comp D.basis D.basis D'.basis,
-        LinearMap.toMatrix_comp D.basis D'.basis D'.basis, LinearMap.toMatrix_basis_equiv, hg,
+        LinearMap.toMatrix_comp D.basis D'.basis D'.basis, he, hg,
         Matrix.one_mul, Matrix.mul_one]
-  reduction_apply' := LinearMap.congr_fun (D.basis.ext
-    (f₁ := D'.reduction ∘ₛₗ (D.basis.equiv D'.basis (_root_.Equiv.refl n)).toLinearMap)
-    (f₂ := D.reduction) fun i ↦ by simp)
-  map_basis' i := by simp
+  reduction_apply' := reduction_basisEquiv D D'
+  map_basis' := basisEquiv_basis D D'
 
 /-- Two framed module deformations are isomorphic exactly when they have the same lift. -/
 theorem nonempty_equiv_iff {D D' : FramedModuleDeformation ρbar A} :
@@ -367,10 +359,10 @@ noncomputable def ofLift (ρ : Lift ρbar A) : FramedModuleDeformation ρbar A w
     -- matrix `ρ g` reduces to `ρbar g`.
     have hρ : (ρ g : Matrix n n A.obj.left).map A.augmentation = ρbar g :=
       congrArg Units.val (ρ.map_augmentation_apply g)
+    have hv : stdReduction n A v = A.augmentation ∘ (stdBasis n A).repr v :=
+      funext (stdReduction_apply n A v)
     rw [stdReduction_apply, MonoidHom.coe_mk, OneHom.coe_mk, Matrix.repr_toLin, ← RingHom.coe_coe,
-      RingHom.map_mulVec, RingHom.coe_coe, hρ]
-    -- By definition, `stdReduction n A v` is the family of augmentations of the coordinates of `v`.
-    rfl
+      RingHom.map_mulVec, RingHom.coe_coe, hρ, hv]
   basis := stdBasis n A
   reduction_basis i := funext fun j ↦ by
     simp [stdReduction_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
@@ -439,11 +431,13 @@ noncomputable def liftEquivFramedModuleDeformationClass :
 
 variable {ρbar A}
 
+/-- The bijection sends a lift to the class of its framed module deformation. -/
 @[simp]
 theorem liftEquivFramedModuleDeformationClass_apply (ρ : Lift ρbar A) :
     liftEquivFramedModuleDeformationClass ρbar A ρ = .mk (.ofLift ρ) :=
   (rfl)
 
+/-- The inverse bijection sends the class of a framed module deformation to its lift. -/
 @[simp]
 theorem liftEquivFramedModuleDeformationClass_symm_mk (D : FramedModuleDeformation ρbar A) :
     (liftEquivFramedModuleDeformationClass ρbar A).symm (.mk D) = D.toLift :=
@@ -500,6 +494,8 @@ noncomputable def strictClassEquivModuleDeformationClass :
       (D := .ofLift D'.toLift) (D' := D') (FramedModuleDeformation.toLift_ofLift _)),
       FramedModuleDeformationClass.forget_mk]
 
+/-- The strict class of a lift corresponds to the class of the module deformation obtained by
+forgetting the framing of its framed module deformation. -/
 @[simp]
 theorem strictClassEquivModuleDeformationClass_mk (ρ : Lift ρbar A) :
     strictClassEquivModuleDeformationClass ρbar A (StrictClass.mk ρ) =
