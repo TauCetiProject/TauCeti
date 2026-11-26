@@ -140,6 +140,18 @@ theorem transvection_zero_last_mem_center (h0 : (0 : Fin (n + 1)) < Fin.last n) 
     transvection h0 t ∈ Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R) :=
   center_eq_superdiagonalSubgroup (R := R) ▸ transvection_mem_superdiagonalSubgroup h0 (by simp) t
 
+/-- The value of `u (M - 1) v` at a central element `M = 1 + t E₀ₙ` of `Uₙ₊₁(R)`, `n ≥ 1`, is
+`u 0 * t * v n`. -/
+theorem dotProduct_sub_one_mulVec_of_mem_center (hn : 0 < n)
+    {M : upperUnitriangularGroup (Fin (n + 1)) R}
+    (hM : M ∈ Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R)) (u v : Fin (n + 1) → R) :
+    u ⬝ᵥ ((((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ v) =
+      u 0 * ((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0 (Fin.last n) *
+        v (Fin.last n) := by
+  conv_lhs => rw [(isUpperUnitriangular M).eq_one_add_single_zero_last hn (mem_center_iff.1 hM)]
+  rw [add_sub_cancel_left, single_mulVec]
+  simp [dotProduct, Function.update_apply, mul_assoc]
+
 /-- Two elements of `Uₙ₊₁(R)` are congruent modulo the centre exactly when their entries strictly
 above the diagonal agree away from the corner `(0, n)`. Thus these entries are well-defined
 functions on `Uₙ₊₁(R) / Z`. -/

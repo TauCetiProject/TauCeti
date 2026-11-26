@@ -83,26 +83,6 @@ variable [Ring R]
 
 /-! ### Values of `u (Q - 1) v` -/
 
-/-- The value of `u (Q - 1) v` at a transvection `Q = e_ij(t)`. -/
-private theorem dotProduct_transvection_sub_one_mulVec {i j : Fin (n + 1)} (hij : i < j) (t : R)
-    (u v : Fin (n + 1) → R) :
-    u ⬝ᵥ (((((transvection hij t : upperUnitriangularGroup (Fin (n + 1)) R) :
-      GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ v) = u i * t * v j := by
-  rw [coe_transvection, coe_transvectionUnit_eq_one_add_single, add_sub_cancel_left,
-    single_mulVec]
-  simp [dotProduct, Function.update_apply, mul_assoc]
-
-/-- The value of `u (M - 1) v` at a central element `M = 1 + t E₀ₙ` of `Uₙ₊₁(R)`, `n ≥ 1`. -/
-private theorem dotProduct_sub_one_mulVec_of_mem_center (hn : 0 < n)
-    {M : upperUnitriangularGroup (Fin (n + 1)) R}
-    (hM : M ∈ Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R)) (u v : Fin (n + 1) → R) :
-    u ⬝ᵥ ((((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ v) =
-      u 0 * ((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) 0 (Fin.last n) *
-        v (Fin.last n) := by
-  conv_lhs => rw [(isUpperUnitriangular M).eq_one_add_single_zero_last hn (mem_center_iff.1 hM)]
-  rw [add_sub_cancel_left, single_mulVec]
-  simp [dotProduct, Function.update_apply, mul_assoc]
-
 /-- For `s < n`, a column `j ≥ n - s` comes after the column `0`. -/
 private theorem zero_lt_of_le_add (hs : s < n) {j : Fin (n + 1)} (hj : n ≤ (j : ℕ) + s) :
     (0 : Fin (n + 1)) < j :=
@@ -345,7 +325,8 @@ variable [Ring R] (u v : Fin (n + 1) → R)
 /-- **The stabilizer of a boundary retraction**: the elements `M ∈ Uₙ₊₁(R)` such that
 `u (M Q M⁻¹ - 1) v = u (Q - 1) v` for every `Q` in the two-boundary subgroup `P_(r,s)`, that is,
 conjugation by `M` preserves `ρ_(u,v)`. -/
-def twoBoundaryStabilizer : Subgroup (upperUnitriangularGroup (Fin (n + 1)) R) where
+def twoBoundaryStabilizer (n r s : ℕ) (u v : Fin (n + 1) → R) :
+    Subgroup (upperUnitriangularGroup (Fin (n + 1)) R) where
   carrier := {M | ∀ Q ∈ twoBoundarySubgroup (R := R) n r s,
     u ⬝ᵥ (((((M * Q * M⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
       Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ v) =
@@ -360,7 +341,7 @@ def twoBoundaryStabilizer : Subgroup (upperUnitriangularGroup (Fin (n + 1)) R) w
 
 /-- Membership in the stabilizer of `ρ_(u,v)`. -/
 theorem mem_twoBoundaryStabilizer_iff {M : upperUnitriangularGroup (Fin (n + 1)) R} :
-    M ∈ twoBoundaryStabilizer (r := r) (s := s) u v ↔ ∀ Q ∈ twoBoundarySubgroup (R := R) n r s,
+    M ∈ twoBoundaryStabilizer n r s u v ↔ ∀ Q ∈ twoBoundarySubgroup (R := R) n r s,
       u ⬝ᵥ (((((M * Q * M⁻¹ : upperUnitriangularGroup (Fin (n + 1)) R) : GL (Fin (n + 1)) R) :
         Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ v) =
         u ⬝ᵥ ((((Q : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ v) :=
@@ -369,12 +350,12 @@ theorem mem_twoBoundaryStabilizer_iff {M : upperUnitriangularGroup (Fin (n + 1))
 /-- The centre of `Uₙ₊₁(R)` stabilizes every `ρ_(u,v)`. -/
 theorem center_le_twoBoundaryStabilizer :
     Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R) ≤
-      twoBoundaryStabilizer (r := r) (s := s) u v := fun M hM Q _ ↦ by
+      twoBoundaryStabilizer n r s u v := fun M hM Q _ ↦ by
   rw [(Subgroup.mem_center_iff.1 hM Q).symm, mul_inv_cancel_right]
 
 /-- For `r + s < n` the two-boundary subgroup `P_(r,s)`, being abelian, stabilizes `ρ_(u,v)`. -/
 theorem twoBoundarySubgroup_le_twoBoundaryStabilizer (h : r + s < n) :
-    twoBoundarySubgroup (R := R) n r s ≤ twoBoundaryStabilizer (r := r) (s := s) u v :=
+    twoBoundarySubgroup (R := R) n r s ≤ twoBoundaryStabilizer n r s u v :=
     fun M hM Q hQ ↦ by
   have hc := congrArg Subtype.val ((isMulCommutative_twoBoundarySubgroup (R := R) h).is_comm.comm
     (⟨M, hM⟩ : twoBoundarySubgroup (R := R) n r s) ⟨Q, hQ⟩)
@@ -406,7 +387,7 @@ indices `≤ r` and the column `(M - 1) v` vanishes at the indices `≥ n - s`. 
 theorem mem_twoBoundaryStabilizer_iff_vecMul_sub_one_and_sub_one_mulVec (hr : r < n) (hs : s < n)
     (hu : u 0 = 1)
     (hv : v (Fin.last n) = 1) {M : upperUnitriangularGroup (Fin (n + 1)) R} :
-    M ∈ twoBoundaryStabilizer (r := r) (s := s) u v ↔
+    M ∈ twoBoundaryStabilizer n r s u v ↔
       (∀ i : Fin (n + 1), (i : ℕ) ≤ r →
         (u ᵥ* (((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1)) i = 0) ∧
       ∀ j : Fin (n + 1), n ≤ (j : ℕ) + s →
@@ -453,7 +434,7 @@ indices `≥ n - s`, which together are all indices, so `u (M - 1) (N - 1) v = 0
 `ρ_(u,v)` (`twoBoundaryStabilizerRetraction_apply_of_mem`) and is the corner coordinate on the
 centre (`toAdd_twoBoundaryStabilizerRetraction_of_mem_center`). -/
 def twoBoundaryStabilizerRetraction :
-    twoBoundaryStabilizer (r := r) (s := s) u v →* Multiplicative R where
+    twoBoundaryStabilizer n r s u v →* Multiplicative R where
   toFun M := Multiplicative.ofAdd
     (u ⬝ᵥ ((((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ v))
   map_one' := by simp
@@ -477,7 +458,7 @@ def twoBoundaryStabilizerRetraction :
 /-- The value of `ρ'` at `M` is `u (M - 1) v`. -/
 @[simp]
 theorem toAdd_twoBoundaryStabilizerRetraction_apply
-    (M : twoBoundaryStabilizer (r := r) (s := s) u v) :
+    (M : twoBoundaryStabilizer n r s u v) :
     (twoBoundaryStabilizerRetraction hr hs hrs hu hv M).toAdd =
       u ⬝ᵥ ((((M : GL (Fin (n + 1)) R) : Matrix (Fin (n + 1)) (Fin (n + 1)) R) - 1) *ᵥ v) :=
   (rfl)
@@ -493,7 +474,7 @@ theorem twoBoundaryStabilizerRetraction_apply_of_mem (h : r + s < n)
 
 /-- `ρ'` is the corner coordinate on the centre: it retracts the stabilizer onto the centre. -/
 theorem toAdd_twoBoundaryStabilizerRetraction_of_mem_center
-    {M : twoBoundaryStabilizer (r := r) (s := s) u v}
+    {M : twoBoundaryStabilizer n r s u v}
     (hM : (M : upperUnitriangularGroup (Fin (n + 1)) R) ∈
       Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R)) :
     (twoBoundaryStabilizerRetraction hr hs hrs hu hv M).toAdd =
@@ -503,7 +484,7 @@ theorem toAdd_twoBoundaryStabilizerRetraction_of_mem_center
 
 /-- The kernel of `ρ'` meets the centre trivially: a central element is determined by its corner
 entry, which `ρ'` reads off. -/
-private theorem coe_eq_one_of_mem_center {M : twoBoundaryStabilizer (r := r) (s := s) u v}
+private theorem coe_eq_one_of_mem_center {M : twoBoundaryStabilizer n r s u v}
     (hMZ : (M : upperUnitriangularGroup (Fin (n + 1)) R) ∈
       Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R))
     (hM : twoBoundaryStabilizerRetraction hr hs hrs hu hv M = 1) :
@@ -526,7 +507,7 @@ lift takes values in the kernel of `ρ'`, which maps isomorphically onto the ima
 theorem exists_lift_of_range_le_map_twoBoundaryStabilizer {G : Type*} [Group G]
     (φ : G →* upperUnitriangularGroup (Fin (n + 1)) R ⧸
       Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R))
-    (hφ : φ.range ≤ (twoBoundaryStabilizer (r := r) (s := s) u v).map (QuotientGroup.mk' _)) :
+    (hφ : φ.range ≤ (twoBoundaryStabilizer n r s u v).map (QuotientGroup.mk' _)) :
     ∃ ψ : G →* upperUnitriangularGroup (Fin (n + 1)) R,
       (QuotientGroup.mk' _).comp ψ = φ ∧ ψ.ker = φ.ker := by
   have h0 : (0 : Fin (n + 1)) < Fin.last n :=
@@ -534,7 +515,7 @@ theorem exists_lift_of_range_le_map_twoBoundaryStabilizer {G : Type*} [Group G]
   -- The kernel `K` of `ρ'`, viewed in `Uₙ₊₁(R)`, maps injectively to `Uₙ₊₁(R)/Z`.
   let K : Subgroup (upperUnitriangularGroup (Fin (n + 1)) R) :=
     (twoBoundaryStabilizerRetraction hr hs hrs hu hv).ker.map
-      (twoBoundaryStabilizer (r := r) (s := s) u v).subtype
+      (twoBoundaryStabilizer n r s u v).subtype
   let ι : K →* upperUnitriangularGroup (Fin (n + 1)) R ⧸
       Subgroup.center (upperUnitriangularGroup (Fin (n + 1)) R) :=
     (QuotientGroup.mk' _).comp K.subtype

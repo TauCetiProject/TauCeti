@@ -71,6 +71,14 @@ theorem coe_transvection_apply_of_ne (hij : i < j) (c : R) {a b : m} (h : ¬(i =
   rw [coe_transvection, coe_transvectionUnit_eq_one_add_single, Matrix.add_apply,
     single_apply_of_ne _ _ _ _ _ h, add_zero]
 
+/-- The value of `u (e_ij(c) - 1) v` is `u i * c * v j`. -/
+theorem dotProduct_transvection_sub_one_mulVec (hij : i < j) (c : R) (u v : m → R) :
+    u ⬝ᵥ (((((transvection hij c : upperUnitriangularGroup m R) : GL m R) : Matrix m m R) - 1) *ᵥ
+      v) = u i * c * v j := by
+  rw [coe_transvection, coe_transvectionUnit_eq_one_add_single, add_sub_cancel_left,
+    single_mulVec]
+  simp [dotProduct, Function.update_apply, mul_assoc]
+
 /-- Distinct parameters give distinct transvections. -/
 theorem transvection_injective (hij : i < j) :
     Function.Injective (transvection (R := R) hij) := fun _ _ h ↦
