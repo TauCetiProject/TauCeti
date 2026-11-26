@@ -50,9 +50,9 @@ to a Floer cylinder.
 **Proof.** In the positive end chart `φ'_q(s, t) = φ_q(±s, ±t)` the end is a finite-energy Floer
 half-cylinder for the end Hamiltonian `H'_q(t, x) = ±H_q(±t, x)`
 (`TauCeti.Floer.positiveEndHamiltonian`) with the cylindrical structure `J_q(±t)`
-(`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_of_cylindrical`),
-read in the chart by `J'_q(±t)` and the end Hamiltonian of `F_q`. A `1`-periodic orbit `x` of
-the latter gives the orbit `t ↦ x(±t)` of `F_q`, so it is isolated
+(`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart`), read in the chart
+by `J'_q(±t)` and the end Hamiltonian of `F_q`. A `1`-periodic orbit `x` of the latter gives the
+orbit `t ↦ x(±t)` of `F_q`, so it is isolated
 (`SymplecticForm.exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian`) and its
 return map fixes no nonzero vector
 (`SymplecticForm.eq_zero_of_dysonSeriesLeft_positiveEndHamiltonian_apply_eq_self`). The `C¹`
@@ -187,10 +187,10 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_cy
       (hu.comp (contDiff_positiveEndChart q 3).contMDiff.contMDiffOn fun z hz ↦ haU z hz.1)
       (fun s _ t ↦ by simp only [comp_apply, positiveEndChart_add_one])
       (fun s hs t ↦ huB (s, t) hs)
-      (fun z hz ↦ isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_of_cylindrical hKH hH
+      (fun z hz ↦ hJz z hz.1 ▸ isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart hKH hH
         hHd (haT.trans hz.1.le)
         ((hu.contMDiffAt (hU.mem_nhds (haU _ hz.1))).mdifferentiableAt (by norm_num))
-        (hfloer _ (haU _ hz.1)) (hJz z hz.1))
+        (hfloer _ (haU _ hz.1)))
       (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_isOpen
         q hKH hH hHd hU (hu.mdifferentiableOn (by norm_num)) haT haU))
       -- The orbits of the end Hamiltonian of the positive end chart are isolated and nondegenerate.
