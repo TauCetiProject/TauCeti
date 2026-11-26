@@ -11,8 +11,8 @@ public import TauCeti.Analysis.PDE.Vortex.FramedGauge.SmoothDivisor
 # The field projection onto the moduli space of framed plane vortices
 
 For an integer `k ≥ 2`, the Sobolev framed gauge group `G_(k+2)` acts on the continuous fields of
-`A_m^(k+1) = x_m + H^(k+1)(ℂ; iT*ℂ ⊕ ℂ)` (`TauCeti.Vortex.SobolevFieldSpace`), and the vortex
-orbits form a smooth manifold of dimension `2m`
+`A_m^(k+1) = x_m + H^(k+1)(ℂ; iT*ℂ ⊕ ℂ)` (`TauCeti.Vortex.SobolevFieldSpace`). For `k ≥ 3` the
+vortex orbits form a smooth manifold of dimension `2m`
 (`TauCeti.Vortex.SobolevFieldSpace.isManifold_vortexModuli`). Gluing plane vortices into
 approximate solutions reads a field that is only close to a vortex through a nearby vortex orbit:
 the *field projection*. This file constructs it near every smooth vortex `x₀`, as a smooth,
