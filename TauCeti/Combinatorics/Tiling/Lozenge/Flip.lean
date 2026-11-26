@@ -36,7 +36,7 @@ type.
   edges at `v` named in the definition.
 * `TauCeti.IsFlipAt.isTiling`, `TauCeti.IsFlip.isTiling`: a flip of a tiling of a region is a
   tiling of the region.
-* `TauCeti.IsTiling.diff_union`: replacing a tiling of a subregion by another tiling of it.
+* `TauCeti.IsTiling.sdiff_union`: replacing a tiling of a subregion by another tiling of it.
 
 ## References
 
@@ -89,7 +89,7 @@ theorem isFlip_def : IsFlip M M' ↔ ∃ v, IsFlipAt v M M' := Iff.rfl
 
 /-! ### The two tilings of a hexagon -/
 
-/-- Each of the two triples has exactly one edge of each direction. -/
+/-- `highFlipEdges v` has exactly one edge of each direction. -/
 theorem existsUnique_mem_highFlipEdges_k (v : ℤ × ℤ) (k : Fin 3) :
     ∃! e, e ∈ highFlipEdges v ∧ e.k = k := by
   fin_cases k
@@ -100,6 +100,7 @@ theorem existsUnique_mem_highFlipEdges_k (v : ℤ × ℤ) (k : Fin 3) :
   · exact ⟨⟨v, 2⟩, by simp, fun e ⟨he, hk⟩ => by
       rcases mem_highFlipEdges.1 he with rfl | rfl | rfl <;> simp_all⟩
 
+/-- `lowFlipEdges v` has exactly one edge of each direction. -/
 theorem existsUnique_mem_lowFlipEdges_k (v : ℤ × ℤ) (k : Fin 3) :
     ∃! e, e ∈ lowFlipEdges v ∧ e.k = k := by
   fin_cases k
@@ -116,8 +117,7 @@ theorem disjoint_highFlipEdges_lowFlipEdges (v : ℤ × ℤ) :
   intro e he he'
   rcases mem_highFlipEdges.1 he with rfl | rfl | rfl <;>
     rcases mem_lowFlipEdges.1 he' with h | h | h <;>
-    simp [TriEdge.ext_iff, Prod.ext_iff] at h
-  omega
+    simp [TriEdge.ext_iff, Prod.ext_iff, eq_sub_iff_add_eq] at h
 
 /-- Every face containing an edge of `highFlipEdges v` has `v` as a vertex. -/
 theorem mem_vertexFaces_of_mem_highFlipEdges (he : e ∈ highFlipEdges v) (hf : e ∈ f.edges) :
@@ -187,7 +187,7 @@ theorem disjoint_of_isTiling_of_subset {S : Set TriFace} (hA : IsTiling S A) (hB
 
 /-- Replacing a tiling `A` of a subregion `S` by another tiling `B` of `S`, inside a tiling `M` of
 `R` containing `A`, gives a tiling of `R`. -/
-theorem IsTiling.diff_union {S : Set TriFace} (hM : IsTiling R M) (hA : IsTiling S A)
+theorem IsTiling.sdiff_union {S : Set TriFace} (hM : IsTiling R M) (hA : IsTiling S A)
     (hB : IsTiling S B) (hAM : A ⊆ M) : IsTiling R (M \ A ∪ B) := by
   have hSR : S ⊆ R := fun f hf => by
     obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hf
@@ -259,22 +259,18 @@ theorem symmDiff_eq (h : IsFlipAt v M M')
   obtain ⟨A, B, hp, hAM, rfl⟩ := isFlipAt_iff_exists.1 h
   obtain ⟨hA, hB, hAB, hAB'⟩ := isTiling_and_isTiling_of_flipPair hp
   have hMB := disjoint_of_isTiling_of_subset hA hB hAB hM hAM
-  rw [← hAB']
-  ext e
-  simp only [Set.mem_symmDiff, Set.mem_union, Set.mem_sdiff]
-  by_cases heA : e ∈ A
-  · have heB : e ∉ B := fun heB => Set.disjoint_left.1 hAB heA heB
-    simp [heA, heB, hAM heA]
-  · by_cases heB : e ∈ B
-    · have heM : e ∉ M := fun heM => Set.disjoint_left.1 hMB heM heB
-      simp [heA, heB, heM]
-    · simp [heA, heB]
+  rw [← hAB', ← (hMB.mono_left Set.sdiff_subset).symmDiff_eq_sup, ← symmDiff_of_le hAM,
+    symmDiff_comm A M, symmDiff_assoc, symmDiff_symmDiff_cancel_left, hAB.symmDiff_eq_sup]
 
 /-- **Flips preserve tilings**: a flip of a tiling of a region is a tiling of the region. -/
 theorem isTiling (h : IsFlipAt v M M') (hM : IsTiling R M) : IsTiling R M' := by
   obtain ⟨A, B, hp, hAM, rfl⟩ := isFlipAt_iff_exists.1 h
   obtain ⟨hA, hB, -, -⟩ := isTiling_and_isTiling_of_flipPair hp
-  exact hM.diff_union hA hB hAM
+  exact hM.sdiff_union hA hB hAM
+
+/-- A flip at `v` is a flip. -/
+theorem isFlip (h : IsFlipAt v M M') : IsFlip M M' :=
+  ⟨v, h⟩
 
 end IsFlipAt
 

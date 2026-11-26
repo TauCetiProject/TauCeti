@@ -41,7 +41,7 @@ theorem isFlipAt_highFlipEdges_lowFlipEdges :
 
 /-- The flip from `T_a` to `T_b` can be undone. -/
 example : IsFlip (lowFlipEdges (0, 0)) (highFlipEdges (0, 0)) :=
-  (isFlip_def.2 ⟨(0, 0), isFlipAt_highFlipEdges_lowFlipEdges⟩).symm (isTiling_highFlipEdges (0, 0))
+  isFlipAt_highFlipEdges_lowFlipEdges.isFlip.symm (isTiling_highFlipEdges (0, 0))
 
 /-- The pairs of faces matched by `T_a`: `W(0)–B(0)`, `W(−e₁)–B(−e₃)`, `W(−e₃)–B(−e₂)`. -/
 example : (fun e : TriEdge => (e.whiteFace, e.blackFace)) '' highFlipEdges (0, 0) =
