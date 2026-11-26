@@ -6,10 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatDescent
+public import Mathlib.AlgebraicGeometry.Sites.Etale
+public import Mathlib.AlgebraicGeometry.Sites.Fpqc
+import Mathlib.CategoryTheory.Sites.JointlySurjective
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
+import TauCeti.AlgebraicGeometry.Sites.Descent
 
 /-!
-# Flat morphisms satisfy flat descent
+# Descent and locality of flat morphisms
 
 A morphism whose base change along a surjective flat morphism is flat is itself flat
 (`AlgebraicGeometry.Flat.descendsAlong_surjective_inf_flat`). No quasi-compactness or finite
@@ -28,11 +32,16 @@ Mathlib also passes from fpqc to fppf descent for properties local on the target
 instance which instance search does not apply to concrete properties such as `@Flat`.
 `MorphismProperty.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation` names it,
 so that it can be invoked for a given property.
+
+Using stalkwise flat descent (`AlgebraicGeometry.Scheme.Hom.flat_stalkMap_of_comp`) and
+`AlgebraicGeometry.Flat.descendsAlong_surjective_inf_flat`, flatness is also local at the source
+and at the target for `Scheme.precoverage @Flat` (without any quasi-compactness or
+finite-presentation assumption on the cover), and hence for the fpqc, fppf, and étale precoverages.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory Limits
 
 namespace AlgebraicGeometry
 
@@ -72,6 +81,68 @@ locally of finite presentation. -/
 instance Flat.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation :
     MorphismProperty.DescendsAlong @Flat.{u} (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) :=
   .of_le inf_le_left
+
+namespace Flat
+
+/-- Flatness of scheme morphisms is local at the source for the flat precoverage. -/
+instance isLocalAtSource_precoverage :
+    MorphismProperty.IsLocalAtSource @Flat.{u} (Scheme.precoverage @Flat) :=
+  have : MorphismProperty.RespectsIso @Flat.{u} :=
+    MorphismProperty.IsStableUnderBaseChange.respectsIso
+  { comp hR _ g hg hf :=
+      have : Flat g := hR.2 hg
+      have : Flat _ := hf
+      inferInstance
+    of_forall_comp {_ _ f _} hR h := Flat.of_stalkMap f fun x ↦ by
+      obtain ⟨_, g, hg, u, rfl⟩ :=
+        (Presieve.mem_comap_jointlySurjectivePrecoverage_iff Scheme.forget).mp hR.1 x
+      have : Flat g := hR.2 hg
+      have : Flat (g ≫ f) := h hg
+      exact g.flat_stalkMap_of_comp f u (Flat.stalkMap g u) (Flat.stalkMap (g ≫ f) u) }
+
+/-- Flatness of scheme morphisms is local at the target for the flat precoverage. -/
+instance isLocalAtTarget_precoverage :
+    MorphismProperty.IsLocalAtTarget @Flat.{u} (Scheme.precoverage @Flat) :=
+  let F : MorphismProperty Scheme.{u} := @Flat
+  have : HasRingHomProperty F RingHom.Flat := inferInstanceAs (HasRingHomProperty @Flat _)
+  have : F.IsStableUnderBaseChange :=
+    inferInstanceAs (MorphismProperty.IsStableUnderBaseChange @Flat)
+  have : F.DescendsAlong (@Surjective ⊓ F) := Flat.descendsAlong_surjective_inf_flat
+  MorphismProperty.isLocalAtTarget_precoverage_of_descendsAlong F F
+
+/-- Flatness of scheme morphisms is local at the source for the fpqc precoverage. -/
+instance isLocalAtSource_fpqcPrecoverage :
+    MorphismProperty.IsLocalAtSource @Flat.{u} Scheme.fpqcPrecoverage :=
+  MorphismProperty.IsLocalAtSource.of_le (Scheme.propQCPrecoverage_le_precoverage (P := @Flat))
+
+/-- Flatness of scheme morphisms is local at the target for the fpqc precoverage. -/
+instance isLocalAtTarget_fpqcPrecoverage :
+    MorphismProperty.IsLocalAtTarget @Flat.{u} Scheme.fpqcPrecoverage :=
+  MorphismProperty.IsLocalAtTarget.of_le (Scheme.propQCPrecoverage_le_precoverage (P := @Flat))
+
+/-- Flatness of scheme morphisms is local at the source for the fppf precoverage. -/
+instance isLocalAtSource_fppfPrecoverage :
+    MorphismProperty.IsLocalAtSource @Flat.{u} Scheme.fppfPrecoverage :=
+  MorphismProperty.IsLocalAtSource.of_le Scheme.fppfPrecoverage_le_fpqcPrecoverage
+
+/-- Flatness of scheme morphisms is local at the target for the fppf precoverage. -/
+instance isLocalAtTarget_fppfPrecoverage :
+    MorphismProperty.IsLocalAtTarget @Flat.{u} Scheme.fppfPrecoverage :=
+  MorphismProperty.IsLocalAtTarget.of_le Scheme.fppfPrecoverage_le_fpqcPrecoverage
+
+/-- Flatness of scheme morphisms is local at the source for the étale precoverage. -/
+instance isLocalAtSource_etalePrecoverage :
+    MorphismProperty.IsLocalAtSource @Flat.{u} Scheme.etalePrecoverage :=
+  MorphismProperty.IsLocalAtSource.of_le
+    (Scheme.precoverage_mono (P := @Etale) (Q := @Flat) fun _ _ _ _ ↦ inferInstance)
+
+/-- Flatness of scheme morphisms is local at the target for the étale precoverage. -/
+instance isLocalAtTarget_etalePrecoverage :
+    MorphismProperty.IsLocalAtTarget @Flat.{u} Scheme.etalePrecoverage :=
+  MorphismProperty.IsLocalAtTarget.of_le
+    (Scheme.precoverage_mono (P := @Etale) (Q := @Flat) fun _ _ _ _ ↦ inferInstance)
+
+end Flat
 
 end AlgebraicGeometry
 
