@@ -53,6 +53,10 @@ so it is a proper Zariski-closed subset of the real matrices.
 
 * H. Weyl, *The Classical Groups*, Princeton University Press (1939), Chapter VIII, §11.
 * R. Goodman and N. R. Wallach, *Symmetry, Representations, and Invariants* (2009), Section 2.4.
+* The product Zariski-density and determinant-character results are adapted from
+  `src/Lib/GLn/SchurModule/Polarisation.lean` in `grh-lean`
+  (<https://github.com/lsernau/grh-lean>, Apache 2.0, Copyright 2026 Anthropic, PBC).
+  In particular, `TauCeti.eq_smul_det_pow_of_unitary` follows `New.eq_smul_det_pow_of_unitary`.
 -/
 
 public section
@@ -161,7 +165,8 @@ theorem eq_smul_det_pow_of_unitary {Φ n : Type*} [Fintype n] [DecidableEq n] [F
       ext i j
       simp
     rw [hmat, det_transpose]
-  have hswap (x : Φ × n × n) : swap x = (x.1, x.2.2, x.2.1) := rfl
+  have hswap (x : Φ × n × n) : swap x = (x.1, x.2.2, x.2.1) := by
+    simp [swap, Prod.map_apply', Prod.swap]
   simp only [renameEquiv_apply, smul_eq_C_mul, map_mul, eval_C, map_prod, map_pow, eval_rename,
     Function.comp_def, hswap]
   rw [hf u]

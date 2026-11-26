@@ -24,7 +24,7 @@ matrices.
 
 ## Main results
 
-* `MeasureTheory.Measure.exists_forall_map_eq_integral_translate`: averaging the unitary
+* `MeasureTheory.Measure.exists_forall_map_eq_integral_unitary_translate`: averaging the unitary
   translates `q (uᵀ Z)` against any `μ`-integrable weight `w` on `Φ → unitaryGroup n ℂ` produces a
   polynomial `mean` such that `M mean = ∫ u, w u * M (q (uᵀ Z)) ∂μ` for every `ℂ`-linear functional
   `M`.
@@ -55,7 +55,7 @@ variable {Φ n : Type*} [Fintype n] [DecidableEq n]
 integrable weight `w` with respect to a measure `μ` on `Φ → unitaryGroup n ℂ` produces a
 polynomial `mean` such that `M mean = ∫ u, w u * M (q (uᵀ Z)) ∂μ` for every `ℂ`-linear functional
 `M`. -/
-theorem exists_forall_map_eq_integral_translate
+theorem exists_forall_map_eq_integral_unitary_translate
     [MeasurableSpace (Φ → Matrix.unitaryGroup n ℂ)]
     [OpensMeasurableSpace (Φ → Matrix.unitaryGroup n ℂ)]
     (μ : Measure (Φ → Matrix.unitaryGroup n ℂ))
@@ -79,7 +79,7 @@ theorem exists_forall_map_eq_integral_translate
         conv_lhs => rw [Q.as_sum, _root_.map_sum]
         refine Finset.sum_congr rfl fun d _ ↦ ?_
         have hmap : mapAlgHom (φ u) (monomial d (Q.coeff d)) =
-            monomial d (φ u (Q.coeff d)) := map_monomial (φ u).toRingHom d (Q.coeff d)
+            monomial d (φ u (Q.coeff d)) := by simp
         rw [hmap, smul_monomial, smul_eq_mul, mul_one]
   have hφ_cont (p : MvPolynomial (Φ × n × n) ℂ) : Continuous fun u ↦ φ u p := by
     have hval : Continuous fun U : Matrix.unitaryGroup n ℂ ↦ (U : Matrix n n ℂ) :=
@@ -129,7 +129,7 @@ theorem exists_forall_eq_mul_map_det_pow [Fintype Φ] (c : Φ → ℕ)
       unfold χ
       fun_prop
     exact hχ.comp continuous_inv
-  obtain ⟨mean, h_mean⟩ := μ.exists_forall_map_eq_integral_translate q
+  obtain ⟨mean, h_mean⟩ := μ.exists_forall_map_eq_integral_unitary_translate q
     (hχ_cont.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _))
   let value (x : Φ → Matrix.unitaryGroup n ℂ) : MvPolynomial (Φ × n × n) ℂ →ₐ[ℂ] ℂ :=
     aeval fun y : Φ × n × n ↦ (x y.1 : Matrix n n ℂ) y.2.2 y.2.1
