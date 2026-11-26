@@ -10,9 +10,6 @@ public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Geometry.Symplectic.Floer.RemovableSingularity.Smooth
 import TauCeti.LinearAlgebra.Complex.LinearPart
-import TauCeti.Analysis.Calculus.FDeriv.Inv
-import TauCeti.Analysis.Complex.Conformal.Area
-import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Removal of singularities for finite-energy pseudoholomorphic curves
@@ -136,17 +133,14 @@ theorem exists_contDiffOn_update_comp_inv_of_finite_energy (hℓ : 2 ≤ ℓ)
       (fun z hz ↦ htame z (hS hz)) (henergy.mono_set hS) one_pos
     have hB : ball (0 : ℂ) R⁻¹ = ∅ := ball_eq_empty.2 (inv_nonpos.2 (not_lt.1 hR))
     exact ⟨q, hq, hlim, hB ▸ mapsTo_empty _ _, hB ▸ contDiffOn_empty, by simp [hB]⟩
-  have hJ2 : ContDiffOn ℝ 2 J W := hJ.of_le (WithTop.coe_le_coe.2 hℓ)
-  have hDE := mapsTo_inv_ball_diff_singleton_compl_closedBall (𝕜 := ℂ) R
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hJ2.continuousOn.mono hKW)
   -- The inverted map is a finite-energy solution on the punctured disc of radius `R⁻¹`.
-  obtain ⟨q, hq, hlim, hmaps, hv, hCRv⟩ :=
+  obtain ⟨hv, hCRv, hvK, hvtame, hvenergy⟩ :=
+    contDiffOn_comp_inv_and_integrableOn_of_finite_energy (hJ.continuousOn.mono hKW) hK hJsq hu
+      hCR huK htame henergy
+  obtain ⟨q, hq, hlim, hmaps, hf, hCRf⟩ :=
     ω.exists_contDiffOn_update_of_finite_energy hℓ hg hc (inv_pos.2 hR) hW hJ hK hKW
-      hJsq (hu.comp ((contDiffOn_inv ℝ).mono fun w hw ↦ hw.2) hDE)
-      (fun w hw ↦ fderiv_comp_inv_apply_I_eq hw.2 (hCR _ (hDE hw)) (hJsq _ (huK (hDE hw))))
-      (huK.comp hDE) (fun w hw ↦ htame _ (hDE hw))
-      (integrableOn_norm_fderiv_comp_inv_apply_one_sq hCR (fun z hz ↦ hM _ (huK hz)) henergy)
-  refine ⟨q, hq, ?_, hmaps, hv, hCRv⟩
+      hJsq hv hCRv hvK hvtame hvenergy
+  refine ⟨q, hq, ?_, hmaps, hf, hCRf⟩
   rw [← Metric.cobounded_eq_cocompact]
   simpa [Function.comp_def] using hlim.comp tendsto_inv₀_cobounded'
 

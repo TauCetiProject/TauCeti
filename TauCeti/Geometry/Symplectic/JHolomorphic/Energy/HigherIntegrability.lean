@@ -25,7 +25,8 @@ the puncture changes its classical differential only at that point. This is an i
 statement about the classical differential off the puncture. That this differential is also the
 weak differential of the extension, which therefore solves the Cauchy--Riemann equation weakly
 across the puncture, is proved in `TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative`.
-Elliptic bootstrapping remains a separate step towards smooth removal of singularities.
+Elliptic bootstrapping, the remaining step of smooth removal of singularities, is carried out in
+`TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`.
 
 The proof combines `SymplecticForm.exists_pos_norm_fderiv_le_rpow` with integrability of
 norm powers in real dimension two. No regularity at the missing point is assumed.
