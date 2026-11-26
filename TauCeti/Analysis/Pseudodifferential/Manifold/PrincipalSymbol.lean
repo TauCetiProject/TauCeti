@@ -41,6 +41,8 @@ depends on the cutoffs only through their values at the point.
 
 * `TauCeti.classicalPrincipalSymbol m P x ξ`: the principal symbol of order `m` of `P` at a
   covector `ξ ∈ T*ₓM`, a complex number.
+* `TauCeti.hasCompactSpatialSupport_of_eq_complexChartCompression`: the symbol of a chart
+  compression by `φ` and `ψ` has compact spatial support, as its outputs vanish off `tsupport φ`.
 * `TauCeti.coefficient_principal_eq_classicalPrincipalSymbol`: the principal symbol of the symbol
   of every chart compression of `P` is read from `σ_m(P)`, at the covector `⟪η, ·⟫ ∘ de_x`.
 * `TauCeti.coefficient_principal_apply_eq_classicalPrincipalSymbol`: the same statement read at a
@@ -127,6 +129,23 @@ private theorem IsChartSymbol.eq {e : OpenPartialHomeomorph M (CoordinateSpace n
     (ha : IsChartSymbol P he φ ψ a) (hb : IsChartSymbol P he φ ψ b) : a = b :=
   ClassicalSymbol.ext <| Symbol.ext <| Symbol.coefficient_eq_of_forall_quantizeSchwartzValue_eq
     fun u _ ↦ funext fun x ↦ (ha u x).trans (hb u x).symm
+
+/-- The symbol of a chart compression by `φ` and `ψ` vanishes at positions outside the support of
+`φ`, since every output of the compression does. -/
+theorem hasCompactSpatialSupport_of_eq_complexChartCompression
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {b : ClassicalSymbol n ℂ ℂ m}
+    (hb : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue b.toSymbol.coefficient u y =
+        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y) :
+    b.toSymbol.HasCompactSpatialSupport := by
+  refine Symbol.hasCompactSpatialSupport_iff_exists_tsupport_quantizeSchwartzValue_subset.2
+    ⟨tsupport φ, φ.hasCompactSupport.isCompact, fun u _ ↦ ?_⟩
+  rw [show quantizeSchwartzValue b.toSymbol.coefficient u = fun y ↦ φ y •
+      P (e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))) (e.symm y) from
+    funext fun y ↦ by rw [hb, OpenPartialHomeomorph.complexChartCompression_apply]]
+  exact tsupport_smul_subset_left _ _
 
 /-! ### Changes of chart -/
 
