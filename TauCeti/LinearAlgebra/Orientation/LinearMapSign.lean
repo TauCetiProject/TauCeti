@@ -25,6 +25,7 @@ carrying `o` to `o'`, `-1` when it is an isomorphism not carrying `o` to `o'` (t
   orientation reverses the sign.
 * `Orientation.linearMapSign_map_map`: the sign is unchanged when the map is conjugated by linear
   equivalences of the source and the target and the orientations are transported along them.
+* `Orientation.linearMapSign_smul_of_pos`: a positive multiple of a map has the same sign.
 -/
 
 public section
@@ -143,6 +144,15 @@ theorem linearMapSign_neg_right (hι : Fintype.card ι = finrank R W) :
   · rw [linearMapSign_of_bijective h, linearMapSign_of_bijective h]
     exact ite_eq_neg_eq_neg_ite hι
   · rw [linearMapSign_of_not_bijective h, linearMapSign_of_not_bijective h, neg_zero]
+
+omit [Fintype ι] in
+/-- **A positive multiple has the same sign**: a positive homothety of the target preserves every
+orientation. -/
+theorem linearMapSign_smul_of_pos [Finite ι] {c : R} (hc : 0 < c) :
+    linearMapSign o o' (c • L) = linearMapSign o o' L := by
+  have h := linearMapSign_map_map (o := o) (o' := o') (L := L) (L' := c • L)
+    (LinearEquiv.refl R V) (LinearEquiv.smulOfNeZero R W c hc.ne') fun _ ↦ by simp
+  rwa [Orientation.map_refl, Orientation.map_smulOfNeZero_of_pos o' hc] at h
 
 end Field
 
