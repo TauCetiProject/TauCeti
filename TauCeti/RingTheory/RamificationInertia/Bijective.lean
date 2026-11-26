@@ -25,6 +25,8 @@ whose ramification index it divides.
 
 * `Ideal.inertiaDeg_eq_of_bijective`: `r.inertiaDeg S = r.inertiaDeg R`.
 * `Ideal.ramificationIdx_eq_of_surjective`: `r.ramificationIdx S = r.ramificationIdx R`.
+* `Ideal.inertiaDeg_eq_one_of_surjective`: a maximal ideal of `T` has residue degree `1` over `S`
+  when `algebraMap S T` is surjective.
 * `Ideal.ramificationIdx_map_algEquiv`: `(P.map e).ramificationIdx R = P.ramificationIdx R` for
   an `R`-algebra isomorphism `e`.
 * `Ideal.exists_isMaximal_liesOver_ramificationIdx_dvd`: a maximal ideal `Q` of `S` lies under a
@@ -63,6 +65,21 @@ theorem ramificationIdx_eq_of_surjective
   · rw [ramificationIdx_of_not_isPrime r S hr, ramificationIdx_of_not_isPrime r R hr]
 
 end ChangeOfBase
+
+/-- If the algebra map `S → T` is surjective, a maximal ideal of `T` has inertia degree `1` over
+`S`. -/
+theorem inertiaDeg_eq_one_of_surjective {S T : Type*} [CommRing S] [CommRing T]
+    [Algebra S T] (h : Function.Surjective (algebraMap S T)) (q : Ideal T) [q.IsMaximal] :
+    q.inertiaDeg S = 1 := by
+  have : (q.under S).IsMaximal := comap_isMaximal_of_surjective _ h
+  rw [inertiaDeg_eq_of_isMaximal (q.under S) q]
+  let : Field (S ⧸ q.under S) := Quotient.field _
+  let : Field (T ⧸ q) := Quotient.field _
+  refine Algebra.finrank_eq_one_iff_bijective_algebraMap.mpr
+    ⟨(algebraMap (S ⧸ q.under S) (T ⧸ q)).injective, fun y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := Quotient.mk_surjective y
+  obtain ⟨s, rfl⟩ := h x
+  exact ⟨Quotient.mk _ s, rfl⟩
 
 /-- The ramification index over `R` is invariant under `R`-algebra isomorphisms: the image of an
 ideal `P` under `e : S ≃ₐ[R] T` has the same ramification index over `R` as `P`. -/

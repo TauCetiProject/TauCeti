@@ -42,9 +42,9 @@ friendly. -/
 theorem ramificationIdx_eq_two_and_not_isFriendly_of_liesOver_two (v : HeightOneSpectrum (𝓞 K))
     [v.asIdeal.LiesOver (Ideal.span {(2 : ℤ)})] :
     v.asIdeal.ramificationIdx ℤ = 2 ∧ ¬IsFriendly v := by
-  have : IsCyclotomicExtension {2 ^ (1 + 1)} ℚ K := by norm_num; infer_instance
   refine ⟨?_, fun h ↦ absurd ((isFriendly_iff_mod_four_eq_three v 2).mp h) (by decide)⟩
-  simpa using IsCyclotomicExtension.Rat.ramificationIdx_eq_of_prime_pow 2 1 K v.asIdeal
+  exact IsCyclotomicExtension.Rat.ramificationIdx_eq 4 K v.asIdeal (p := 2) (k := 1) (m := 1)
+    rfl (by decide)
 
 end GaussianRationals
 

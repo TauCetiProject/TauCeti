@@ -11,7 +11,9 @@ public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealOrCMSubfield
 public import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+public import TauCeti.NumberTheory.NumberField.RingOfIntegers.Basic
 public import TauCeti.NumberTheory.RamificationInertia.Tower
+public import TauCeti.RingTheory.RamificationInertia.Bijective
 
 /-!
 # Friendly places
@@ -58,28 +60,6 @@ Unramified over `ℚ` means ramification index `1` over `ℤ`.
 public section
 
 open NumberField TauCeti.NumberField
-
-/-- If the algebra map `S → T` is surjective, a maximal ideal of `T` has inertia degree `1` over
-`S`. -/
-theorem Ideal.inertiaDeg_eq_one_of_surjective {S T : Type*} [CommRing S] [CommRing T]
-    [Algebra S T] (h : Function.Surjective (algebraMap S T)) (q : Ideal T) [q.IsMaximal] :
-    q.inertiaDeg S = 1 := by
-  have : (q.under S).IsMaximal := Ideal.comap_isMaximal_of_surjective _ h
-  rw [Ideal.inertiaDeg_eq_of_isMaximal (q.under S) q]
-  let : Field (S ⧸ q.under S) := Ideal.Quotient.field _
-  let : Field (T ⧸ q) := Ideal.Quotient.field _
-  refine Algebra.finrank_eq_one_iff_bijective_algebraMap.mpr
-    ⟨(algebraMap (S ⧸ q.under S) (T ⧸ q)).injective, fun y ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-  obtain ⟨s, rfl⟩ := h x
-  exact ⟨Ideal.Quotient.mk _ s, rfl⟩
-
-/-- If a subfield `F` of `K` is all of `K`, the map `𝓞 F → 𝓞 K` is surjective. -/
-theorem NumberField.RingOfIntegers.algebraMap_surjective_of_eq_top {K : Type*} [Field K]
-    {F : Subfield K} (hF : F = ⊤) : Function.Surjective (algebraMap (𝓞 F) (𝓞 K)) := by
-  intro x
-  have hx : (x : K) ∈ F := hF ▸ Subfield.mem_top _
-  exact ⟨⟨⟨x, hx⟩, (isIntegral_algebraMap_iff (A := F) (B := K)).mp x.isIntegral_coe⟩, rfl⟩
 
 namespace IsDedekindDomain.HeightOneSpectrum
 
@@ -156,38 +136,29 @@ theorem isFriendly_rat (v : HeightOneSpectrum (𝓞 ℚ)) : IsFriendly v := by
 when it is inert over `ℚ` (inertia degree `2` forces ramification index `1`). -/
 theorem isFriendly_iff_inertiaDeg_eq_two [IsCMField K] (hK : Module.finrank ℚ K = 2)
     (v : HeightOneSpectrum (𝓞 K)) : IsFriendly v ↔ v.asIdeal.inertiaDeg ℤ = 2 := by
-  have hE : maximalRealOrCMSubfield K = ⊤ := maximalRealOrCMSubfield_eq_top_of_isCMField
-  have hCM : IsCMField (maximalRealOrCMSubfield K) := by
-    refine isCMField_maximalRealOrCMSubfield_iff_ne_maximalRealSubfield.mpr fun h ↦ ?_
-    have : IsTotallyReal (⊤ : Subfield K) :=
-      isTotallyReal_iff_le_maximalRealSubfield.mpr (hE ▸ h ▸ le_rfl)
-    exact IsTotallyComplex.not_isTotallyReal (K := K) (isTotallyReal_top_iff.mp this)
   have hKp : Module.finrank ℚ (maximalRealSubfield K) = 1 := by
     have h := Module.finrank_mul_finrank ℚ (maximalRealSubfield K) K
     rw [Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield K) K, hK] at h
     omega
-  -- `e f ≤ [F : ℚ]` for the places below and at `v`.
-  have hw : (v.asIdeal.under (𝓞 (maximalRealSubfield K))).ramificationIdx ℤ *
-      (v.asIdeal.under (𝓞 (maximalRealSubfield K))).inertiaDeg ℤ ≤ 1 :=
-    hKp ▸ RingOfIntegers.rank (maximalRealSubfield K) ▸
-      TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_le_finrank ℤ _
-  have hw₀ := (v.asIdeal.under (𝓞 (maximalRealSubfield K))).ramificationIdx_pos ℤ
-  have hw₀' := (v.asIdeal.under (𝓞 (maximalRealSubfield K))).inertiaDeg_pos ℤ
-  have hv : v.asIdeal.ramificationIdx ℤ * v.asIdeal.inertiaDeg ℤ ≤ 2 :=
-    hK ▸ RingOfIntegers.rank K ▸
-      TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_le_finrank ℤ v.asIdeal
+  -- The place of `K⁺ = ℚ` below `v` has inertia degree `1`.
+  have hw : (v.asIdeal.under (𝓞 (maximalRealSubfield K))).inertiaDeg ℤ = 1 := by
+    have h := TauCeti.RamificationInertia.inertiaDeg_le_finrank ℤ
+      (v.asIdeal.under (𝓞 (maximalRealSubfield K)))
+    rw [RingOfIntegers.rank, hKp] at h
+    exact le_antisymm h (Ideal.inertiaDeg_pos _ ℤ)
+  -- `e f ≤ [K : ℚ] = 2` at `v`.
+  have hv : v.asIdeal.ramificationIdx ℤ * v.asIdeal.inertiaDeg ℤ ≤ 2 := by
+    have h := TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_le_finrank ℤ v.asIdeal
+    rwa [RingOfIntegers.rank, hK] at h
   have hv₀ := v.asIdeal.ramificationIdx_pos ℤ
   -- `E_K = K`, so the place of `E_K` below `v` has the inertia degree of `v`.
   have huv : v.asIdeal.inertiaDeg ℤ =
       (v.asIdeal.under (𝓞 (maximalRealOrCMSubfield K))).inertiaDeg ℤ := by
     rw [Ideal.inertiaDeg_tower (v.asIdeal.under (𝓞 (maximalRealOrCMSubfield K))) v.asIdeal,
-      Ideal.inertiaDeg_eq_one_of_surjective
-        (NumberField.RingOfIntegers.algebraMap_surjective_of_eq_top hE) v.asIdeal, mul_one]
-  have hw₁ : (v.asIdeal.under (𝓞 (maximalRealSubfield K))).inertiaDeg ℤ = 1 :=
-    le_antisymm (le_trans (Nat.le_mul_of_pos_left _ hw₀) hw) hw₀'
-  have hv₁ : v.asIdeal.inertiaDeg ℤ ≤ 2 := le_trans (Nat.le_mul_of_pos_left _ hv₀) hv
+      Ideal.inertiaDeg_eq_one_of_surjective (RingOfIntegers.algebraMap_surjective_of_eq_top
+        maximalRealOrCMSubfield_eq_top_of_isCMField) v.asIdeal, mul_one]
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, fun _ ↦ ?_⟩⟩
-  · have := h.inertiaDeg_eq hCM
+  · have := h.inertiaDeg_eq isCMField_maximalRealOrCMSubfield_of_isCMField
     omega
   · rw [h] at hv
     omega
@@ -206,8 +177,9 @@ theorem isFriendly_iff_mod_four_eq_three [IsCyclotomicExtension {4} ℚ K]
     decide
   rw [isFriendly_iff_inertiaDeg_eq_two hK]
   rcases hp.out.eq_two_or_odd' with rfl | hodd
-  · have : IsCyclotomicExtension {2 ^ (1 + 1)} ℚ K := by norm_num; infer_instance
-    simp [IsCyclotomicExtension.Rat.inertiaDeg_eq_of_prime_pow 2 1 K v.asIdeal]
+  · rw [IsCyclotomicExtension.Rat.inertiaDeg_eq 4 K v.asIdeal (p := 2) (k := 1) (m := 1)
+      rfl (by decide), orderOf_eq_one_iff.mpr (Subsingleton.elim _ _)]
+    decide
   · have h4 : ¬p ∣ 4 := fun h ↦ by
       have := (Nat.prime_dvd_prime_iff_eq hp.out Nat.prime_two).mp
         (hp.out.dvd_of_dvd_pow (show p ∣ 2 ^ 2 from h))
