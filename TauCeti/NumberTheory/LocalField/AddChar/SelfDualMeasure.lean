@@ -161,12 +161,13 @@ theorem addHaar_eq_selfDualMeasure_iff (μ : Measure K) [μ.IsAddHaarMeasure] (m
   -- Both measures are multiples of the Haar measure giving `O` mass one, so it suffices to
   -- compare their masses of `O`; the hypothesis says `q ^ ν * μ(O) ^ 2 = 1`.
   have hν : (Nat.card 𝓀[K] : ℝ≥0∞) ^ (ψ.conductorExponent : ℝ) * μ 𝒪[K] ^ 2 = 1 := by
-    rw [← h, addHaar_setOf_valuation_le_uniformizer_zpow,
-      addHaar_setOf_valuation_le_uniformizer_zpow, mul_mul_mul_comm, ← ENNReal.zpow_add hq0 hqt,
-      ← ENNReal.rpow_intCast, sq]
-    congr 2
+    rw [addHaar_setOf_valuation_le_uniformizer_zpow,
+      addHaar_setOf_valuation_le_uniformizer_zpow] at h
+    convert h using 1
+    rw [← ENNReal.rpow_intCast, ← ENNReal.rpow_intCast, mul_mul_mul_comm,
+      ← ENNReal.rpow_add _ _ hq0 hqt]
     push_cast
-    ring
+    ring_nf
   have hc2 : μ 𝒪[K] ^ (2 : ℝ) =
       (Nat.card 𝓀[K] : ℝ≥0∞) ^ (-(ψ.conductorExponent : ℝ)) := by
     rw [ENNReal.rpow_two, ENNReal.rpow_neg]
@@ -226,10 +227,7 @@ theorem fourierIntegral_fourierIntegral_selfDualMeasure (hψ : Continuous ψ) (h
   have h := VectorFourier.fourierIntegral_fourierIntegral_of_periodic ψ ψ.selfDualMeasure
     (LinearMap.mul K K) ψ.selfDualMeasure hψ (by simpa using continuous_mul) (hmeas m)
     (by rw [hdual]; exact hmeas _) (by rw [LinearMap.flip_mul, hdual, hdual, sub_sub_cancel])
-    (by
-      rw [hdual, measureReal_def, measureReal_def, ← ENNReal.toReal_mul,
-        Valuation.coe_leAddSubgroup, Valuation.coe_leAddSubgroup,
-        selfDualMeasure_mul_selfDualMeasure, ENNReal.toReal_one])
+    (by simp [hdual, measureReal_def, ← ENNReal.toReal_mul, selfDualMeasure_mul_selfDualMeasure])
     (hf.continuous.integrable_of_hasCompactSupport hfc) hm x
   -- `Fourier.fourierIntegral` is by definition the transform for the multiplication pairing.
   rwa [LinearMap.flip_mul] at h
