@@ -55,7 +55,7 @@ theorem norm_toEuclideanCLM_diracFundamentalMatrix_le (hq : IntegrableOn q (Icc 
     intervalIntegral.integral_nonneg ht fun _ _ ↦ norm_nonneg _
   rw [intervalIntegral.integral_add intervalIntegrable_const hqi]
   simp only [intervalIntegral.integral_const, sub_zero, smul_eq_mul]
-  rw [abs_of_nonneg (by positivity)]
+  rw [abs_of_nonneg (add_nonneg (by positivity) hint)]
 
 /-- The Dirac coefficient of a constant potential `c` at `z = 0`:
 `Ω Q_c = [[Re c, -Im c], [-Im c, -Re c]]`. -/

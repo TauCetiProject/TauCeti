@@ -97,23 +97,20 @@ theorem exp_sqrt_two_lt_linfty_opNorm_diracFundamentalMatrix_one_add_I :
   set s : ℝ := Real.sinh √2 / √2
   have hs : 0 < s := div_pos (Real.sinh_pos_iff.2 (by positivity)) (by positivity)
   have hrow : Real.cosh √2 + 2 * s ≤ ‖diracFundamentalMatrix (fun _ ↦ 1 + I) 1 0‖ := by
-    have h := Finset.le_sup (f := fun i : Fin 2 ↦ ∑ j : Fin 2,
-      ‖diracFundamentalMatrix (fun _ ↦ 1 + I) 1 0 i j‖₊) (Finset.mem_univ 0)
-    have h' : ((∑ j : Fin 2, ‖diracFundamentalMatrix (fun _ ↦ 1 + I) 1 0 0 j‖₊ : NNReal) : ℝ) ≤
-        ‖diracFundamentalMatrix (fun _ ↦ 1 + I) 1 0‖ := by
-      rw [linfty_opNorm_def]
-      exact NNReal.coe_le_coe.2 h
-    have e00 : diracFundamentalMatrix (fun _ ↦ 1 + I) 1 0 0 0 = ((Real.cosh √2 + s : ℝ) : ℂ) := by
-      rw [diracFundamentalMatrix_one_add_I]
-      simp [s]
-    have e01 : diracFundamentalMatrix (fun _ ↦ 1 + I) 1 0 0 1 = -((s : ℝ) : ℂ) := by
-      rw [diracFundamentalMatrix_one_add_I]
-      simp [s]
-    refine le_of_eq_of_le ?_ h'
-    have hpos : 0 < Real.cosh √2 + s := by positivity
-    simp only [Fin.sum_univ_two, NNReal.coe_add, coe_nnNorm, e00, e01, norm_neg, norm_real,
-      Real.norm_of_nonneg hpos.le, Real.norm_of_nonneg hs.le]
-    ring
+    -- Test the operator norm on `v = (1, -1)`, whose sup norm is `1`; the first entry of `M v`
+    -- is the first row sum `cosh √2 + 2s`.
+    set M := diracFundamentalMatrix (fun _ ↦ 1 + I) 1 0 with hM
+    have hv : ‖(![1, -1] : Fin 2 → ℂ)‖ ≤ 1 :=
+      (pi_norm_le_iff_of_nonneg zero_le_one).2 fun i ↦ by fin_cases i <;> simp
+    have h0 : (M *ᵥ ![1, -1]) 0 = ((Real.cosh √2 + 2 * s : ℝ) : ℂ) := by
+      rw [hM, diracFundamentalMatrix_one_add_I]
+      simp [mulVec, dotProduct, Fin.sum_univ_two, s, two_mul, add_assoc]
+    calc Real.cosh √2 + 2 * s = ‖(M *ᵥ ![1, -1]) 0‖ := by
+          rw [h0, norm_real,
+            Real.norm_of_nonneg (add_pos (Real.cosh_pos _) (mul_pos two_pos hs)).le]
+      _ ≤ ‖M *ᵥ ![1, -1]‖ := norm_le_pi_norm _ 0
+      _ ≤ ‖M‖ * ‖(![1, -1] : Fin 2 → ℂ)‖ := linfty_opNorm_mulVec _ _
+      _ ≤ ‖M‖ := mul_le_of_le_one_right (norm_nonneg _) hv
   have h2 : s * 2 = √2 * Real.sinh √2 := by
     simp only [s]
     field_simp
