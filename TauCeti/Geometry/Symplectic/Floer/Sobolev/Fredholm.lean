@@ -7,11 +7,11 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder.Fredholm
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
+public import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Add
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
-import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Parametrix
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.UnitaryFrame
@@ -473,32 +473,41 @@ theorem continuousOn_floerSobolevOperator_family {E : Type*} [NormedAddCommGroup
   simp only [floerSobolevOperator_def]
   exact (hcont.clm_comp continuousOn_const) lam hlam
 
-/-- Two sets of Floer data cylindrical near the ends with the same end Hamiltonians, with radii
-`R` and `R'`, are joined by a path of data all cylindrical near the ends with the radius
-`max R R'` and the same end Hamiltonians. At the parameter `μ` the almost complex structures of
-the ends are those of the path at `s = ∓ max R R'`. -/
-private theorem isCylindricalNearEnds_path {ω : SymplecticForm V}
-    {J₀ : AlmostComplexStructure V} (h₀ : ω.Compatible J₀)
-    {J J' : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ}
+/-- Let `(J, K_s, K_t)` and `(J', K'_s, K'_t)` be two sets of Floer data on a domain `Z` whose
+pullbacks along a `C²` map `f` from the cylinder to `Z` are cylindrical near the ends with the same
+end Hamiltonians, with radii `R` and `R'`. Then the pullbacks along `f` of the path of data between
+them are all cylindrical near the ends with the radius `max R R'` and the same end Hamiltonians. At
+the parameter `μ` the almost complex structures of the ends are those of the path at
+`f (∓ max R R', t)`. With `f` the identity this joins two sets of data on the cylinder; with
+`f = (ν, ·)` it joins the data at the parameter `ν` of two families of data. -/
+theorem _root_.TauCeti.Floer.isCylindricalNearEnds_path {Z : Type*} [NormedAddCommGroup Z]
+    [NormedSpace ℝ Z] {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
+    (h₀ : ω.Compatible J₀) {J J' : Z → V → AlmostComplexStructure V} {Ks Kt Ks' Kt' : Z → V → ℝ}
     {Hm Hp : ℝ → V → ℝ} {Jm Jp Jm' Jp' : ℝ → V → AlmostComplexStructure V} {R R' : ℝ}
-    {u : ℝ × ℝ → V}
-    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
-    (hcyl' : Floer.IsCylindricalNearEnds J' Ks' Kt' Jm' Jp' Hm Hp R' u)
+    {u : ℝ × ℝ → V} {f : ℝ × ℝ → Z} (hf : ContDiff ℝ 2 f)
+    (hcyl : Floer.IsCylindricalNearEnds (fun w ↦ J (f w)) (fun w ↦ Ks (f w)) (fun w ↦ Kt (f w))
+      Jm Jp Hm Hp R u)
+    (hcyl' : Floer.IsCylindricalNearEnds (fun w ↦ J' (f w)) (fun w ↦ Ks' (f w))
+      (fun w ↦ Kt' (f w)) Jm' Jp' Hm Hp R' u)
     (hJt : ∀ z y, ω.Tames (J z y)) (hJ't : ∀ z y, ω.Tames (J' z y))
-    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
-    (hJ' : ContDiff ℝ 1 fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJ : ContDiff ℝ 1 fun p : Z × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJ' : ContDiff ℝ 1 fun p : Z × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKs' : ContDiff ℝ 2 (uncurry Ks'))
     (hKt : ContDiff ℝ 2 (uncurry Kt)) (hKt' : ContDiff ℝ 2 (uncurry Kt')) (μ : ℝ) :
-    Floer.IsCylindricalNearEnds (fun w ↦ Floer.pathAlmostComplex h₀ hJt hJ't (μ, w))
-      (fun w ↦ Floer.pathHamiltonian Ks Ks' (μ, w)) (fun w ↦ Floer.pathHamiltonian Kt Kt' (μ, w))
-      (fun t ↦ Floer.pathAlmostComplex h₀ hJt hJ't (μ, (-max R R', t)))
-      (fun t ↦ Floer.pathAlmostComplex h₀ hJt hJ't (μ, (max R R', t))) Hm Hp (max R R') u := by
+    Floer.IsCylindricalNearEnds (fun w ↦ Floer.pathAlmostComplex h₀ hJt hJ't (μ, f w))
+      (fun w ↦ Floer.pathHamiltonian Ks Ks' (μ, f w))
+      (fun w ↦ Floer.pathHamiltonian Kt Kt' (μ, f w))
+      (fun t ↦ Floer.pathAlmostComplex h₀ hJt hJ't (μ, f (-max R R', t)))
+      (fun t ↦ Floer.pathAlmostComplex h₀ hJt hJ't (μ, f (max R R', t))) Hm Hp (max R R') u := by
   have h₁ := hcyl.mono (le_max_left R R')
   have h₂ := hcyl'.mono (le_max_right R R')
   -- Where both Hamiltonians equal the same end Hamiltonian, so does every point of the path.
-  have hKeq {K K' : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ} (e : V → ℝ) (he : K z = e) (he' : K' z = e) :
+  have hKeq {K K' : Z → V → ℝ} {z : Z} (e : V → ℝ) (he : K z = e) (he' : K' z = e) :
       Floer.pathHamiltonian K K' (μ, z) = e :=
     (Floer.pathHamiltonian_of_eq μ (he.trans he'.symm)).trans he
+  -- The pullback along `f` at the parameter `μ` is a `C²` map into the domain of the path.
+  have hg : ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦ ((μ, f p.1), p.2) :=
+    (contDiff_const.prodMk (hf.comp contDiff_fst)).prodMk contDiff_snd
   exact
     { almostComplex_eq_of_le_neg := fun z hz ↦ Floer.pathAlmostComplex_congr h₀ μ
         ((h₁.almostComplex_eq_of_le_neg z hz).trans
@@ -514,15 +523,13 @@ private theorem isCylindricalNearEnds_path {ω : SymplecticForm V}
         (h₂.hamiltonianT_eq_of_le_neg z hz)
       hamiltonianT_eq_of_le := fun z hz ↦ hKeq _ (h₁.hamiltonianT_eq_of_le z hz)
         (h₂.hamiltonianT_eq_of_le z hz)
-      contDiffAt_almostComplex := fun z ↦
-        (contDiff_comp_prodMap_prodMk_right (Floer.contDiff_pathAlmostComplex h₀ hJt hJ't hJ hJ')
-          μ).contDiffAt
-      contDiffAt_hamiltonianS := fun z ↦
-        (contDiff_comp_prodMap_prodMk_right (Floer.contDiff_pathHamiltonian hKs hKs')
-          μ).contDiffAt
-      contDiffAt_hamiltonianT := fun z ↦
-        (contDiff_comp_prodMap_prodMk_right (Floer.contDiff_pathHamiltonian hKt hKt')
-          μ).contDiffAt }
+      contDiffAt_almostComplex := fun _ ↦
+        ((Floer.contDiff_pathAlmostComplex h₀ hJt hJ't hJ hJ').comp
+          (hg.of_le one_le_two)).contDiffAt
+      contDiffAt_hamiltonianS := fun _ ↦
+        ((Floer.contDiff_pathHamiltonian hKs hKs').comp hg).contDiffAt
+      contDiffAt_hamiltonianT := fun _ ↦
+        ((Floer.contDiff_pathHamiltonian hKt hKt').comp hg).contDiffAt }
 
 end Coefficient
 
@@ -851,7 +858,8 @@ private theorem isFredholm_and_index_eq_of_cylindrical_data (ω : SymplecticForm
     (Jm := fun μ t ↦ Floer.pathAlmostComplex h₀ hJt hJ't (μ, (-max R R', t)))
     (Jp := fun μ t ↦ Floer.pathAlmostComplex h₀ hJt hJ't (μ, (max R R', t))) isPreconnected_univ
     (mem_univ 0) (mem_univ 1)
-    (fun μ _ ↦ isCylindricalNearEnds_path h₀ hcyl hcyl' hJt hJ't hJ hJ' hKs hKs' hKt hKt' μ)
+    (fun μ _ ↦ Floer.isCylindricalNearEnds_path h₀ (f := fun w ↦ w) contDiff_id hcyl hcyl' hJt
+      hJ't hJ hJ' hKs hKs' hKt hKt' μ)
     (Floer.contDiff_pathAlmostComplex h₀ hJt hJ't hJ hJ') (Floer.contDiff_pathHamiltonian hKs hKs')
     (Floer.contDiff_pathHamiltonian hKt hKt')
     (fun _ _ _ _ ↦ Floer.compatible_pathAlmostComplex h₀ (hJc _ _) (hJ'c _ _)) hu

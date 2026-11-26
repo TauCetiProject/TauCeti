@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Fredholm.DeterminantLine.Homotopy
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
-import TauCeti.Geometry.Symplectic.Floer.Continuation
-import TauCeti.Geometry.Symplectic.Floer.Continuation.AlmostComplex
 
 /-!
 # Orientation transport for the linearized Floer operator along paths of Floer data
@@ -35,19 +33,22 @@ file proves that the transport depends only on the endpoints of the path
 data with the same end Hamiltonians, defined on `[[a, b]]` and agreeing at `a` and at `b`, the
 transports from `a` to `b` along the two paths agree, once the determinant lines of the equal
 operators at `a` and at `b` are identified. The almost complex structures of the ends may move
-along the paths. So an orientation of the determinant line of `D_u` for one choice of data
-determines one for every other choice with the same end Hamiltonians, independently of the path
-of data used to compare them. In particular, transport around a loop of data is trivial
+along the paths. So for two choices of data joined by a path of such data (compatible,
+cylindrical near the ends with the same end Hamiltonians, along the same map `u`), the induced
+identification of orientations of the determinant lines of `D_u` does not depend on the path. In
+particular, transport around a loop of data is trivial
 (`TauCeti.SymplecticForm.detLineOrientationTransport_floerSobolevOperator_eq_map`), so the
 determinant lines are orientable over every loop of Floer data with fixed end Hamiltonians.
 
-The proof joins the two paths by a homotopy of data relative to the endpoints. Its Hamiltonians
-run along the segment between those of the two paths, and its almost complex structures along the
-continuation homotopy `TauCeti.Floer.continuationAlmostComplex`, whose Cayley coordinates
-relative to the complex structure of `F` run along the segment between those of the two paths, so
-that they stay compatible. The homotopy of data is cylindrical near the ends with the same end
-Hamiltonians and is `C¹` in both parameters, so its operators are Fredholm and continuous on the
-parameter rectangle, and orientation transport is invariant under it
+The proof joins the two paths by a homotopy of data relative to the endpoints: the path of data
+`TauCeti.Floer.pathAlmostComplex`, `TauCeti.Floer.pathHamiltonian` between them, on the domain
+`ℝ × (ℝ × ℝ)` of the parameter `μ` and the point of the cylinder. Its Hamiltonians run along the
+segment between those of the two paths, and its almost complex structures along the continuation
+homotopy `TauCeti.Floer.continuationAlmostComplex`, whose Cayley coordinates relative to the
+complex structure of `F` run along the segment between those of the two paths, so that they stay
+compatible. The homotopy of data is cylindrical near the ends with the same end Hamiltonians
+(`TauCeti.Floer.isCylindricalNearEnds_path`) and is `C¹` in both parameters, so its operators are
+Fredholm and continuous on the parameter rectangle, and orientation transport is invariant under it
 (`TauCeti.detLineOrientationTransport_eq_of_homotopy_of_eq`).
 
 ## Main results
@@ -77,156 +78,6 @@ open scoped NNReal Manifold
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
-
-section HamiltonianHomotopy
-
-variable {V : Type*}
-
-/-- The homotopy between two paths `K₁` and `K₂` of Hamiltonians on the cylinder: at
-`((σ, μ), z)` it is the linear homotopy `K₁ (μ, z) + σ (K₂ (μ, z) - K₁ (μ, z))`. -/
-private def homotopyHamiltonian (K₁ K₂ : ℝ × (ℝ × ℝ) → V → ℝ) (p : (ℝ × ℝ) × (ℝ × ℝ)) (y : V) :
-    ℝ :=
-  Floer.linearHomotopy id (fun _ q ↦ K₁ q.1 q.2) (fun _ q ↦ K₂ q.1 q.2) (p.1.1, 0)
-    ((p.1.2, p.2), y)
-
-/-- Where the two paths of Hamiltonians take a common value, so does the homotopy. -/
-private theorem homotopyHamiltonian_of_eq {K₁ K₂ : ℝ × (ℝ × ℝ) → V → ℝ} (σ : ℝ) {μ : ℝ}
-    {z : ℝ × ℝ} {e : V → ℝ} (h₁ : K₁ (μ, z) = e) (h₂ : K₂ (μ, z) = e) :
-    homotopyHamiltonian K₁ K₂ ((σ, μ), z) = e :=
-  funext fun y ↦ by simp [homotopyHamiltonian, Floer.linearHomotopy_def, h₁, h₂]
-
-/-- The homotopy of Hamiltonians is `K₁` at `σ = 0`. -/
-private theorem homotopyHamiltonian_zero (K₁ K₂ : ℝ × (ℝ × ℝ) → V → ℝ) (μ : ℝ) (z : ℝ × ℝ) :
-    homotopyHamiltonian K₁ K₂ ((0, μ), z) = K₁ (μ, z) :=
-  funext fun _ ↦ Floer.linearHomotopy_of_eq_zero (z := (0, 0)) rfl _
-
-/-- The homotopy of Hamiltonians is `K₂` at `σ = 1`. -/
-private theorem homotopyHamiltonian_one (K₁ K₂ : ℝ × (ℝ × ℝ) → V → ℝ) (μ : ℝ) (z : ℝ × ℝ) :
-    homotopyHamiltonian K₁ K₂ ((1, μ), z) = K₂ (μ, z) :=
-  funext fun _ ↦ Floer.linearHomotopy_of_eq_one (z := (1, 0)) rfl _
-
-/-- The homotopy of Hamiltonians is `C²` when the two paths are. -/
-private theorem contDiff_homotopyHamiltonian [NormedAddCommGroup V] [NormedSpace ℝ V]
-    {K₁ K₂ : ℝ × (ℝ × ℝ) → V → ℝ}
-    (hK₁ : ContDiff ℝ 2 (uncurry K₁)) (hK₂ : ContDiff ℝ 2 (uncurry K₂)) :
-    ContDiff ℝ 2 (uncurry (homotopyHamiltonian K₁ K₂)) := by
-  have h := Floer.contDiff_uncurry_linearHomotopy (n := 2) (β := id)
-    (H₀ := fun (_ : ℝ) (q : (ℝ × (ℝ × ℝ)) × V) ↦ K₁ q.1 q.2)
-    (H₁ := fun (_ : ℝ) (q : (ℝ × (ℝ × ℝ)) × V) ↦ K₂ q.1 q.2) contDiff_id
-    (hK₁.comp contDiff_snd) (hK₂.comp contDiff_snd)
-  exact h.comp ((contDiff_fst.fst.fst.prodMk contDiff_const).prodMk
-    ((contDiff_fst.fst.snd.prodMk contDiff_fst.snd).prodMk contDiff_snd))
-
-end HamiltonianHomotopy
-
-section Homotopy
-
-/-! ### A homotopy between two paths of Floer data -/
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
-  {J₁ J₂ : ℝ × (ℝ × ℝ) → V → AlmostComplexStructure V} {hJ₁ : ∀ p y, ω.Tames (J₁ p y)}
-  {hJ₂ : ∀ p y, ω.Tames (J₂ p y)}
-
-/-- The homotopy between two paths `J₁` and `J₂` of almost complex structures on the cylinder: at
-`((σ, μ), z)` and `y` it is the continuation homotopy, relative to `J₀`, from `J₁ (μ, z) y` to
-`J₂ (μ, z) y` at the homotopy coordinate `s = σ`. -/
-private noncomputable def homotopyAlmostComplex (h₀ : ω.Compatible J₀)
-    (hJ₁ : ∀ p y, ω.Tames (J₁ p y)) (hJ₂ : ∀ p y, ω.Tames (J₂ p y)) (p : (ℝ × ℝ) × (ℝ × ℝ))
-    (y : V) : AlmostComplexStructure V :=
-  Floer.continuationAlmostComplex h₀ (fun _ q ↦ J₁ q.1 q.2) (fun _ q ↦ J₂ q.1 q.2)
-    (fun _ q ↦ hJ₁ q.1 q.2) (fun _ q ↦ hJ₂ q.1 q.2) (p.1.1, 0) ((p.1.2, p.2), y)
-
-/-- The homotopy of almost complex structures is `J₁` at `σ = 0`. -/
-private theorem homotopyAlmostComplex_zero (h₀ : ω.Compatible J₀) (μ : ℝ) (z : ℝ × ℝ) :
-    homotopyAlmostComplex h₀ hJ₁ hJ₂ ((0, μ), z) = J₁ (μ, z) :=
-  funext fun _ ↦ Floer.continuationAlmostComplex_of_nonpos h₀ (z := (0, 0)) le_rfl _
-
-/-- The homotopy of almost complex structures is `J₂` at `σ = 1`. -/
-private theorem homotopyAlmostComplex_one (h₀ : ω.Compatible J₀) (μ : ℝ) (z : ℝ × ℝ) :
-    homotopyAlmostComplex h₀ hJ₁ hJ₂ ((1, μ), z) = J₂ (μ, z) :=
-  funext fun _ ↦ Floer.continuationAlmostComplex_of_one_le h₀ (z := (1, 0)) le_rfl _
-
-/-- Where the two paths of almost complex structures agree, the homotopy is their common value. -/
-private theorem homotopyAlmostComplex_of_eq (h₀ : ω.Compatible J₀) (σ : ℝ) {μ : ℝ} {z : ℝ × ℝ}
-    (h : J₁ (μ, z) = J₂ (μ, z)) : homotopyAlmostComplex h₀ hJ₁ hJ₂ ((σ, μ), z) = J₁ (μ, z) :=
-  funext fun y ↦ Floer.continuationAlmostComplex_of_eq h₀ (congrFun h y)
-
-/-- At each point of the parameter square, the homotopy at `z` depends only on `J₁ (μ, z)` and
-`J₂ (μ, z)`. -/
-private theorem homotopyAlmostComplex_congr (h₀ : ω.Compatible J₀) (σ μ : ℝ) {z z' : ℝ × ℝ}
-    (h₁ : J₁ (μ, z) = J₁ (μ, z')) (h₂ : J₂ (μ, z) = J₂ (μ, z')) :
-    homotopyAlmostComplex h₀ hJ₁ hJ₂ ((σ, μ), z) = homotopyAlmostComplex h₀ hJ₁ hJ₂ ((σ, μ), z') :=
-  funext fun y ↦ h₀.eq_of_cayley_eq (Floer.tames_continuationAlmostComplex h₀ _ _)
-    (Floer.tames_continuationAlmostComplex h₀ _ _) (by
-      simp only [homotopyAlmostComplex, Floer.cayley_continuationAlmostComplex, h₁, h₂])
-
-/-- The homotopy of almost complex structures is `ω`-compatible where both paths are. -/
-private theorem compatible_homotopyAlmostComplex (h₀ : ω.Compatible J₀)
-    {p : (ℝ × ℝ) × (ℝ × ℝ)} {y : V} (h₁ : ω.Compatible (J₁ (p.1.2, p.2) y))
-    (h₂ : ω.Compatible (J₂ (p.1.2, p.2) y)) :
-    ω.Compatible (homotopyAlmostComplex h₀ hJ₁ hJ₂ p y) :=
-  Floer.compatible_continuationAlmostComplex h₀ h₁ h₂
-
-/-- The homotopy of almost complex structures is `C¹` jointly in the two parameters, the point
-of the cylinder and the target point, when the two paths are. -/
-private theorem contDiff_homotopyAlmostComplex (h₀ : ω.Compatible J₀)
-    (hJ₁s : ContDiff ℝ 1 fun q : (ℝ × (ℝ × ℝ)) × V ↦
-      (J₁ q.1 q.2).toLinearMap.toContinuousLinearMap)
-    (hJ₂s : ContDiff ℝ 1 fun q : (ℝ × (ℝ × ℝ)) × V ↦
-      (J₂ q.1 q.2).toLinearMap.toContinuousLinearMap) :
-    ContDiff ℝ 1 fun q : ((ℝ × ℝ) × (ℝ × ℝ)) × V ↦
-      (homotopyAlmostComplex h₀ hJ₁ hJ₂ q.1 q.2).toLinearMap.toContinuousLinearMap := by
-  have h := Floer.contDiff_continuationAlmostComplex (F := (ℝ × (ℝ × ℝ)) × V) (n := 1) h₀
-    (J₁ := fun _ q ↦ J₁ q.1 q.2) (J₂ := fun _ q ↦ J₂ q.1 q.2) (hJ₁ := fun _ q ↦ hJ₁ q.1 q.2)
-    (hJ₂ := fun _ q ↦ hJ₂ q.1 q.2) (hJ₁s.comp contDiff_snd) (hJ₂s.comp contDiff_snd)
-  exact h.comp ((contDiff_fst.fst.fst.prodMk contDiff_const).prodMk
-    ((contDiff_fst.fst.snd.prodMk contDiff_fst.snd).prodMk contDiff_snd))
-
-/-- The homotopy between two paths of data cylindrical near the ends with the same end
-Hamiltonians, with radii `R₁` and `R₂`, is cylindrical near the ends with the radius
-`max R₁ R₂` and the same end Hamiltonians. -/
-private theorem isCylindricalNearEnds_homotopy (h₀ : ω.Compatible J₀)
-    {Ks₁ Kt₁ Ks₂ Kt₂ : ℝ × (ℝ × ℝ) → V → ℝ} {Jm₁ Jp₁ Jm₂ Jp₂ : ℝ → V → AlmostComplexStructure V}
-    {Hm Hp : ℝ → V → ℝ} {R₁ R₂ σ μ : ℝ} {u : ℝ × ℝ → V}
-    (hcyl₁ : Floer.IsCylindricalNearEnds (fun w ↦ J₁ (μ, w)) (fun w ↦ Ks₁ (μ, w))
-      (fun w ↦ Kt₁ (μ, w)) Jm₁ Jp₁ Hm Hp R₁ u)
-    (hcyl₂ : Floer.IsCylindricalNearEnds (fun w ↦ J₂ (μ, w)) (fun w ↦ Ks₂ (μ, w))
-      (fun w ↦ Kt₂ (μ, w)) Jm₂ Jp₂ Hm Hp R₂ u)
-    (hJ : ContDiff ℝ 1 fun q : ((ℝ × ℝ) × (ℝ × ℝ)) × V ↦
-      (homotopyAlmostComplex h₀ hJ₁ hJ₂ q.1 q.2).toLinearMap.toContinuousLinearMap)
-    (hKs : ContDiff ℝ 2 (uncurry (homotopyHamiltonian Ks₁ Ks₂)))
-    (hKt : ContDiff ℝ 2 (uncurry (homotopyHamiltonian Kt₁ Kt₂))) :
-    Floer.IsCylindricalNearEnds (fun w ↦ homotopyAlmostComplex h₀ hJ₁ hJ₂ ((σ, μ), w))
-      (fun w ↦ homotopyHamiltonian Ks₁ Ks₂ ((σ, μ), w))
-      (fun w ↦ homotopyHamiltonian Kt₁ Kt₂ ((σ, μ), w))
-      (fun t ↦ homotopyAlmostComplex h₀ hJ₁ hJ₂ ((σ, μ), (-max R₁ R₂, t)))
-      (fun t ↦ homotopyAlmostComplex h₀ hJ₁ hJ₂ ((σ, μ), (max R₁ R₂, t))) Hm Hp (max R₁ R₂) u := by
-  have h₁ := hcyl₁.mono (le_max_left R₁ R₂)
-  have h₂ := hcyl₂.mono (le_max_right R₁ R₂)
-  exact
-    { almostComplex_eq_of_le_neg := fun z hz ↦ homotopyAlmostComplex_congr h₀ σ μ
-        ((h₁.almostComplex_eq_of_le_neg z hz).trans
-          (h₁.almostComplex_eq_of_le_neg (_, z.2) le_rfl).symm)
-        ((h₂.almostComplex_eq_of_le_neg z hz).trans
-          (h₂.almostComplex_eq_of_le_neg (_, z.2) le_rfl).symm)
-      almostComplex_eq_of_le := fun z hz ↦ homotopyAlmostComplex_congr h₀ σ μ
-        ((h₁.almostComplex_eq_of_le z hz).trans (h₁.almostComplex_eq_of_le (_, z.2) le_rfl).symm)
-        ((h₂.almostComplex_eq_of_le z hz).trans (h₂.almostComplex_eq_of_le (_, z.2) le_rfl).symm)
-      hamiltonianS_eq_zero := fun z hz ↦ homotopyHamiltonian_of_eq σ
-        (h₁.hamiltonianS_eq_zero z hz) (h₂.hamiltonianS_eq_zero z hz)
-      hamiltonianT_eq_of_le_neg := fun z hz ↦ homotopyHamiltonian_of_eq σ
-        (h₁.hamiltonianT_eq_of_le_neg z hz) (h₂.hamiltonianT_eq_of_le_neg z hz)
-      hamiltonianT_eq_of_le := fun z hz ↦ homotopyHamiltonian_of_eq σ
-        (h₁.hamiltonianT_eq_of_le z hz) (h₂.hamiltonianT_eq_of_le z hz)
-      contDiffAt_almostComplex := fun _ ↦
-        (contDiff_comp_prodMap_prodMk_right hJ (σ, μ)).contDiffAt
-      contDiffAt_hamiltonianS := fun _ ↦
-        (contDiff_comp_prodMap_prodMk_right hKs (σ, μ)).contDiffAt
-      contDiffAt_hamiltonianT := fun _ ↦
-        (contDiff_comp_prodMap_prodMk_right hKt (σ, μ)).contDiffAt }
-
-end Homotopy
 
 section Transport
 
@@ -309,37 +160,50 @@ theorem detLineOrientationTransport_floerSobolevOperator_congr (ω : SymplecticF
   have h₀ := ω.compatible_ofComplexModule_of_forall_eq_im_inner hω
   have hJt₁ (p : ℝ × (ℝ × ℝ)) (y : F) : ω.Tames (J₁ p y) := (hJc₁ p y).tames
   have hJt₂ (p : ℝ × (ℝ × ℝ)) (y : F) : ω.Tames (J₂ p y) := (hJc₂ p y).tames
-  -- The homotopy of data from the first path (`σ = 0`) to the second (`σ = 1`) is `C¹` (with
-  -- `C²` Hamiltonians), and cylindrical near the ends with the end Hamiltonians `H±` over the
-  -- parameter rectangle.
-  have hJH := contDiff_homotopyAlmostComplex (hJ₁ := hJt₁) (hJ₂ := hJt₂) h₀ hJ₁ hJ₂
-  have hKsH := contDiff_homotopyHamiltonian hKs₁ hKs₂
-  have hKtH := contDiff_homotopyHamiltonian hKt₁ hKt₂
+  -- The homotopy from the first path (`σ = 0`) to the second (`σ = 1`) is the path of data between
+  -- them at `(σ, (μ, z))`. It is `C¹` (with `C²` Hamiltonians), and cylindrical near the ends with
+  -- the end Hamiltonians `H±` over the parameter rectangle.
+  have hg : ContDiff ℝ ⊤ fun q : ((ℝ × ℝ) × (ℝ × ℝ)) × F ↦ ((q.1.1.1, (q.1.1.2, q.1.2)), q.2) :=
+    (contDiff_fst.fst.fst.prodMk (contDiff_fst.fst.snd.prodMk contDiff_fst.snd)).prodMk
+      contDiff_snd
+  have hJH : ContDiff ℝ 1 fun q : ((ℝ × ℝ) × (ℝ × ℝ)) × F ↦ (Floer.pathAlmostComplex h₀ hJt₁ hJt₂
+      (q.1.1.1, (q.1.1.2, q.1.2)) q.2).toLinearMap.toContinuousLinearMap :=
+    (Floer.contDiff_pathAlmostComplex h₀ hJt₁ hJt₂ hJ₁ hJ₂).comp (hg.of_le le_top)
+  have hKsH : ContDiff ℝ 2 (uncurry fun q : (ℝ × ℝ) × (ℝ × ℝ) ↦
+      Floer.pathHamiltonian Ks₁ Ks₂ (q.1.1, (q.1.2, q.2))) :=
+    (Floer.contDiff_pathHamiltonian hKs₁ hKs₂).comp (hg.of_le le_top)
+  have hKtH : ContDiff ℝ 2 (uncurry fun q : (ℝ × ℝ) × (ℝ × ℝ) ↦
+      Floer.pathHamiltonian Kt₁ Kt₂ (q.1.1, (q.1.2, q.2))) :=
+    (Floer.contDiff_pathHamiltonian hKt₁ hKt₂).comp (hg.of_le le_top)
   have hcyl (p : ℝ × ℝ) (hp : p ∈ uIcc 0 1 ×ˢ uIcc a b) :=
-    isCylindricalNearEnds_homotopy (σ := p.1) h₀ (hcyl₁ p.2 hp.2) (hcyl₂ p.2 hp.2) hJH hKsH hKtH
+    Floer.isCylindricalNearEnds_path h₀ (f := fun w ↦ (p.2, w)) (contDiff_const.prodMk contDiff_id)
+      (hcyl₁ p.2 hp.2) (hcyl₂ p.2 hp.2) hJt₁ hJt₂ hJ₁ hJ₂ hKs₁ hKs₂ hKt₁ hKt₂ p.1
   refine detLineOrientationTransport_eq_of_homotopy_of_eq (s₀ := 0) (s₁ := 1)
-    (H := fun p ↦ ω.floerSobolevOperator
-      (fun w y ↦ (homotopyAlmostComplex h₀ hJt₁ hJt₂ (p, w) y).toLinearMap.toContinuousLinearMap)
-      (fun w ↦ homotopyHamiltonian Ks₁ Ks₂ (p, w)) (fun w ↦ homotopyHamiltonian Kt₁ Kt₂ (p, w)) u)
+    (H := fun p ↦ ω.floerSobolevOperator (fun w y ↦
+        (Floer.pathAlmostComplex h₀ hJt₁ hJt₂ (p.1, (p.2, w)) y).toLinearMap.toContinuousLinearMap)
+      (fun w ↦ Floer.pathHamiltonian Ks₁ Ks₂ (p.1, (p.2, w)))
+      (fun w ↦ Floer.pathHamiltonian Kt₁ Kt₂ (p.1, (p.2, w))) u)
     ?_ ?_ ?_ ?_ ?_ ?_ hT₁ hF₁ hT₂ hF₂ _ _ o
-  · exact ω.continuousOn_floerSobolevOperator_family hcyl hJH hKsH hKtH hu
+  · exact ω.continuousOn_floerSobolevOperator_family
+      (J := fun q : (ℝ × ℝ) × (ℝ × ℝ) ↦
+        Floer.pathAlmostComplex h₀ hJt₁ hJt₂ (q.1.1, (q.1.2, q.2)))
+      (Ks := fun q ↦ Floer.pathHamiltonian Ks₁ Ks₂ (q.1.1, (q.1.2, q.2)))
+      (Kt := fun q ↦ Floer.pathHamiltonian Kt₁ Kt₂ (q.1.1, (q.1.2, q.2))) hcyl hJH hKsH hKtH hu
       (continuous_iff_continuousAt.2 fun t ↦ (hxm t).continuousAt)
       (continuous_iff_continuousAt.2 fun t ↦ (hxp t).continuousAt) huxm hδm huxp hδp
   · exact fun p hp ↦ ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω (hcyl p hp)
       (contDiff_comp_prodMap_prodMk_right hJH p) (contDiff_comp_prodMap_prodMk_right hKsH p)
       (contDiff_comp_prodMap_prodMk_right hKtH p)
-      (fun _ y ↦ compatible_homotopyAlmostComplex h₀ (hJc₁ _ y) (hJc₂ _ y)) hu hXm hHm hHmper hxm
+      (fun _ y ↦ Floer.compatible_pathAlmostComplex h₀ (hJc₁ _ y) (hJc₂ _ y)) hu hXm hHm hHmper hxm
       hxmper hndm huxm hδm hXp hHp hHpper hxp hxpper hndp huxp hδp
-  · exact fun μ ↦ by simp only [homotopyAlmostComplex_zero, homotopyHamiltonian_zero]
-  · exact fun μ ↦ by simp only [homotopyAlmostComplex_one, homotopyHamiltonian_one]
+  · exact fun μ ↦ by simp only [Floer.pathAlmostComplex_zero, Floer.pathHamiltonian_zero]
+  · exact fun μ ↦ by simp only [Floer.pathAlmostComplex_one, Floer.pathHamiltonian_one]
   · exact fun σ _ ↦ by
-      simp only [homotopyAlmostComplex_of_eq h₀ _ (hJa _),
-        homotopyHamiltonian_of_eq _ rfl (hKsa _).symm,
-        homotopyHamiltonian_of_eq _ rfl (hKta _).symm]
+      simp only [Floer.pathAlmostComplex_of_eq h₀ _ (congrFun (hJa _) _),
+        Floer.pathHamiltonian_of_eq _ (hKsa _), Floer.pathHamiltonian_of_eq _ (hKta _)]
   · exact fun σ _ ↦ by
-      simp only [homotopyAlmostComplex_of_eq h₀ _ (hJb _),
-        homotopyHamiltonian_of_eq _ rfl (hKsb _).symm,
-        homotopyHamiltonian_of_eq _ rfl (hKtb _).symm]
+      simp only [Floer.pathAlmostComplex_of_eq h₀ _ (congrFun (hJb _) _),
+        Floer.pathHamiltonian_of_eq _ (hKsb _), Floer.pathHamiltonian_of_eq _ (hKtb _)]
 
 /-- **Orientation transport around a loop of Floer data is trivial.** Under the hypotheses of
 `TauCeti.SymplecticForm.detLineOrientationTransport_floerSobolevOperator_congr` on a single path
@@ -387,7 +251,13 @@ theorem detLineOrientationTransport_floerSobolevOperator_eq_map (ω : Symplectic
   intro o
   have hT₀ := hF a left_mem_uIcc
   -- Compare the path with the constant path at the data at `a`, along which transport is the
-  -- identity.
+  -- identity: its operator at `μ` is that at `a`.
+  have hconst (μ : ℝ) :
+      ω.floerSobolevOperator (fun w y ↦ (J (a, (μ, w).2) y).toLinearMap.toContinuousLinearMap)
+          (fun w ↦ Ks (a, (μ, w).2)) (fun w ↦ Kt (a, (μ, w).2)) u =
+        ω.floerSobolevOperator (fun w y ↦ (J (a, w) y).toLinearMap.toContinuousLinearMap)
+          (fun w ↦ Ks (a, w)) (fun w ↦ Kt (a, w)) u := by
+    simp only
   have hg : ContDiff ℝ ⊤ fun p : (ℝ × (ℝ × ℝ)) × F ↦ ((a, p.1.2), p.2) :=
     (contDiff_const.prodMk contDiff_fst.snd).prodMk contDiff_snd
   have key := detLineOrientationTransport_floerSobolevOperator_congr ω hω
@@ -397,18 +267,16 @@ theorem detLineOrientationTransport_floerSobolevOperator_eq_map (ω : Symplectic
     hJc (fun p ↦ hJc (a, p.2)) hu hXm hHm hHmper hxm hxmper hndm huxm hδm hXp hHp hHpper hxp
     hxpper hndp huxp hδp (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) (fun w ↦ (hJab w).symm)
     (fun w ↦ (hKsab w).symm) (fun w ↦ (hKtab w).symm) hT hF
-    -- The operator of the constant path at `μ` is that at `a` once `(μ, w).2` reduces to `w`.
-    (by dsimp only; exact continuousOn_const) (fun _ _ ↦ by dsimp only; exact hT₀)
+    (continuousOn_const.congr fun μ _ ↦ hconst μ) (fun μ _ ↦ by rw [hconst μ]; exact hT₀)
   have := congrFun key o
-  rw [Function.comp_apply, Function.comp_apply] at this
-  -- Transport along the constant path is the identity; `erw` matches its operators, which are
-  -- those at `a` only up to the reduction of `(μ, w).2` to `w`.
-  erw [detLineOrientationTransport_const hT₀ a b, id] at this
+  rw [Function.comp_apply, Function.comp_apply, detLineOrientationTransport_eq_map_of_forall_eq _ _
+    fun μ _ ↦ (hconst μ).trans (hconst a).symm] at this
   rw [← (Equiv.symm_apply_eq _).2 this, Module.Ray.map_symm, LinearMap.detLineCongrOfEq_symm]
   induction o using Module.Ray.ind with | h v hv => ?_
   simp only [Module.Ray.map_apply]
   congr 1
-  rw [← LinearEquiv.trans_apply, LinearMap.detLineCongrOfEq_trans]
+  rw [← LinearEquiv.trans_apply, ← LinearEquiv.trans_apply, LinearMap.detLineCongrOfEq_trans,
+    LinearMap.detLineCongrOfEq_trans]
 
 end Transport
 
