@@ -407,9 +407,9 @@ theorem W1p.setIntegral_inner_gradient_compAffineIsometryEquivL (e : F ≃ₗᵢ
     (hUV : (U : Set F) = e ⁻¹' V) (u : W1p volume V p) (φ : 𝓓(U, ℝ)) :
     ∫ y in U, ⟪W1p.gradient (W1p.compAffineIsometryEquivL e.toAffineIsometryEquiv hUV u) y,
       ∇ (φ : F → ℝ) y⟫_ℝ =
-      ∫ x in V, ⟪W1p.gradient u x, ∇ (e.toContinuousLinearEquiv.transportTestFunction
+      ∫ x in V, ⟪W1p.gradient u x, ∇ (e.toContinuousLinearEquiv.transportTestFunction ℝ
         (mapsTo_iff_subset_preimage.2 hUV.subset) φ : F' → ℝ) x⟫_ℝ := by
-  set ψ := e.toContinuousLinearEquiv.transportTestFunction
+  set ψ := e.toContinuousLinearEquiv.transportTestFunction ℝ
     (mapsTo_iff_subset_preimage.2 hUV.subset) φ with hψ
   -- Pointwise, both integrands are `Dφ(y) (e⁻¹ ∇u(e y))`.
   have hpt : ∀ y, ⟪e.symm (W1p.gradient u (e y)), ∇ (φ : F → ℝ) y⟫_ℝ =

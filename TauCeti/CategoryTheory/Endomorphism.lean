@@ -16,6 +16,9 @@ object `X` by an isomorphism: its component `z.val.asHom.app X` has inverse
 `z⁻¹.val.asHom.app X`. For `F = 𝟭 C` these are the units of the centre `CatCenter C`.
 Evaluation at `X` is a group homomorphism `(End F)ˣ →* Aut (F.obj X)`
 (`CategoryTheory.NatTrans.unitsEndEval`).
+
+The action `Functor.mapAut` of a composite functor on automorphisms is the composite of the
+actions (`CategoryTheory.Functor.comp_mapAut`).
 -/
 
 public section
@@ -66,3 +69,14 @@ lemma unitsEndEval_asIso_inv (X : C) (z : (End F)ˣ) :
   (rfl)
 
 end CategoryTheory.NatTrans
+
+namespace CategoryTheory.Functor
+
+variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D] {E : Type*} [Category* E]
+
+/-- The action of a composite functor on automorphisms is the composite of the actions. -/
+theorem comp_mapAut (G : C ⥤ D) (H : D ⥤ E) (y : C) (b : Aut y) :
+    (G ⋙ H).mapAut y b = H.mapAut (G.obj y) (G.mapAut y b) :=
+  Aut.ext (Iso.ext (by simp))
+
+end CategoryTheory.Functor
