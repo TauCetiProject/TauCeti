@@ -31,12 +31,6 @@ vertical segment of length `n₂`, and `H_M(v + (n₁, 0)) − H_M(v) = h₁`,
 
 ## Main statements
 
-* `TauCeti.IsTiling.tilingHeight_add_sub_of_vadd_eq`: if a plane tiling is invariant under the
-  translation by `w`, then `H_M(v + w) − H_M(v) = H_M(w)` for every `v`.
-* `TauCeti.IsTiling.card_filter_range_eq_tilingHeight_sub`,
-  `TauCeti.IsTiling.card_filter_range_eq_tilingHeight_sub'`: the number of edges of direction
-  `e₁` (resp. `e₂`) of a plane tiling on a horizontal (resp. vertical) segment is the increase of
-  its height function along the segment.
 * `TauCeti.IsTorusTiling.card_filter_range_eq_heightChange_fst`,
   `TauCeti.IsTorusTiling.card_filter_range_eq_heightChange_snd`: `h₁` is the number of type-1
   lozenges on any horizontal segment of length `n₁`, and `h₂` the number of type-2 lozenges on
@@ -82,71 +76,6 @@ theorem heightChange_def (n₁ n₂ : ℕ) (M : Set TriEdge) : heightChange n₁
       ((Finset.range n₂).filter fun y : ℕ => (⟨(0, (y : ℤ)), 1⟩ : TriEdge) ∈ M).card) :=
   (rfl)
 
-namespace IsTiling
-
-variable (h : IsTiling Set.univ M)
-include h
-
-/-- **Heights of invariant tilings**: if a plane tiling is invariant under the translation by
-`w`, its height function increases by `H_M(w)` between `v` and `v + w`. -/
-theorem tilingHeight_add_sub_of_vadd_eq {w : ℤ × ℤ} (hw : w +ᵥ M = M) (v : ℤ × ℤ) :
-    tilingHeight M (v + w) - tilingHeight M v = tilingHeight M w := by
-  have hv := h.tilingHeight_vadd w (v + w)
-  have h0 := h.tilingHeight_vadd w w
-  rw [hw, add_sub_cancel_right] at hv
-  rw [hw, sub_self, tilingHeight_zero] at h0
-  omega
-
-open Classical in
-/-- **Lozenges of type 1 on a horizontal segment**: the number of edges `((a + i, b), 1)` of a
-plane tiling with `i < n` is `H_M(a + n, b) − H_M(a, b)`. -/
-theorem card_filter_range_eq_tilingHeight_sub (a b : ℤ) (n : ℕ) :
-    (((Finset.range n).filter fun i : ℕ => (⟨(a + i, b), 0⟩ : TriEdge) ∈ M).card : ℤ) =
-      tilingHeight M (a + n, b) - tilingHeight M (a, b) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Finset.range_add_one, Finset.filter_insert]
-    have hinc := h.tilingHeight_target_sub_v ⟨(a + n, b), 0⟩
-    simp only [TriEdge.target_mk, latticeDir_zero, Prod.mk_add_mk, add_zero] at hinc
-    by_cases hM : (⟨(a + n, b), 0⟩ : TriEdge) ∈ M
-    · rw [heightCochain_of_mem hM, neutralIncrement_mk_zero] at hinc
-      rw [ite_eq_left_of_eq_true _ _ (eq_true hM), Finset.card_insert_of_notMem (by simp)]
-      push_cast
-      rw [ih, add_assoc] at *
-      omega
-    · rw [heightCochain_of_notMem hM, neutralIncrement_mk_zero] at hinc
-      rw [ite_eq_right_of_eq_false _ _ (eq_false hM), ih]
-      push_cast
-      rw [← add_assoc]
-      omega
-
-open Classical in
-/-- **Lozenges of type 2 on a vertical segment**: the number of edges `((a, b + j), 2)` of a plane
-tiling with `j < n` is `H_M(a, b + n) − H_M(a, b)`. -/
-theorem card_filter_range_eq_tilingHeight_sub' (a b : ℤ) (n : ℕ) :
-    (((Finset.range n).filter fun j : ℕ => (⟨(a, b + j), 1⟩ : TriEdge) ∈ M).card : ℤ) =
-      tilingHeight M (a, b + n) - tilingHeight M (a, b) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Finset.range_add_one, Finset.filter_insert]
-    have hinc := h.tilingHeight_target_sub_v ⟨(a, b + n), 1⟩
-    simp only [TriEdge.target_mk, latticeDir_one, Prod.mk_add_mk, add_zero] at hinc
-    by_cases hM : (⟨(a, b + n), 1⟩ : TriEdge) ∈ M
-    · rw [heightCochain_of_mem hM, neutralIncrement_mk_one] at hinc
-      rw [ite_eq_left_of_eq_true _ _ (eq_true hM), Finset.card_insert_of_notMem (by simp)]
-      push_cast
-      rw [ih, add_assoc] at *
-      omega
-    · rw [heightCochain_of_notMem hM, neutralIncrement_mk_one] at hinc
-      rw [ite_eq_right_of_eq_false _ _ (eq_false hM), ih]
-      push_cast
-      rw [← add_assoc]
-      omega
-
-end IsTiling
-
 namespace IsTorusTiling
 
 variable (h : IsTorusTiling n₁ n₂ M)
@@ -161,15 +90,17 @@ theorem vadd_snd : ((0 : ℤ), (n₂ : ℤ)) +ᵥ M = M := h.2.2
 /-- The first component of the height change is `H_M(n₁, 0)`. -/
 theorem heightChange_fst_eq : ((heightChange n₁ n₂ M).1 : ℤ) = tilingHeight M (n₁, 0) := by
   classical
-  have := h.isTiling.card_filter_range_eq_tilingHeight_sub 0 0 n₁
-  simp only [zero_add, Prod.mk_zero_zero, tilingHeight_zero, sub_zero] at this
+  have := h.isTiling.card_filter_range_eq_tilingHeight_add_nsmul_sub 0 (k := 0) (by decide) n₁
+  simp only [zero_add, latticeDir_zero, Prod.smul_mk, nsmul_eq_mul, mul_one, smul_zero,
+    tilingHeight_zero, sub_zero] at this
   rw [heightChange_def, ← this]
 
 /-- The second component of the height change is `H_M(0, n₂)`. -/
 theorem heightChange_snd_eq : ((heightChange n₁ n₂ M).2 : ℤ) = tilingHeight M (0, n₂) := by
   classical
-  have := h.isTiling.card_filter_range_eq_tilingHeight_sub' 0 0 n₂
-  simp only [zero_add, Prod.mk_zero_zero, tilingHeight_zero, sub_zero] at this
+  have := h.isTiling.card_filter_range_eq_tilingHeight_add_nsmul_sub 0 (k := 1) (by decide) n₂
+  simp only [zero_add, latticeDir_one, Prod.smul_mk, nsmul_eq_mul, mul_one, smul_zero,
+    tilingHeight_zero, sub_zero] at this
   rw [heightChange_def, ← this]
 
 /-- **The height change by heights**: `H_M(v + (n₁, 0)) − H_M(v) = h₁`. -/
@@ -187,7 +118,10 @@ open Classical in
 theorem card_filter_range_eq_heightChange_fst (a b : ℤ) :
     ((Finset.range n₁).filter fun i : ℕ => (⟨(a + i, b), 0⟩ : TriEdge) ∈ M).card =
       (heightChange n₁ n₂ M).1 := by
-  have := h.isTiling.card_filter_range_eq_tilingHeight_sub a b n₁
+  have := h.isTiling.card_filter_range_eq_tilingHeight_add_nsmul_sub (a, b) (k := 0) (by decide)
+    n₁
+  simp only [latticeDir_zero, Prod.smul_mk, nsmul_eq_mul, mul_one, smul_zero, Prod.mk_add_mk,
+    add_zero] at this
   rw [← Nat.cast_inj (R := ℤ), this, ← h.tilingHeight_add_sub_eq_heightChange_fst (a, b),
     Prod.mk_add_mk, add_zero]
 
@@ -196,7 +130,10 @@ open Classical in
 theorem card_filter_range_eq_heightChange_snd (a b : ℤ) :
     ((Finset.range n₂).filter fun j : ℕ => (⟨(a, b + j), 1⟩ : TriEdge) ∈ M).card =
       (heightChange n₁ n₂ M).2 := by
-  have := h.isTiling.card_filter_range_eq_tilingHeight_sub' a b n₂
+  have := h.isTiling.card_filter_range_eq_tilingHeight_add_nsmul_sub (a, b) (k := 1) (by decide)
+    n₂
+  simp only [latticeDir_one, Prod.smul_mk, nsmul_eq_mul, mul_one, smul_zero, Prod.mk_add_mk,
+    add_zero] at this
   rw [← Nat.cast_inj (R := ℤ), this, ← h.tilingHeight_add_sub_eq_heightChange_snd (a, b),
     Prod.mk_add_mk, add_zero]
 

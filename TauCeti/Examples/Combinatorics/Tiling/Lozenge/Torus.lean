@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Torus
+public import TauCeti.Examples.Combinatorics.Tiling.Lozenge.Height
 import Mathlib.Tactic.FinCases
 
 /-!
 # Checks: torus tilings and height changes
 
-* `n₁ = n₂ = 1`: the torus tilings are exactly the three tilings `{e | e.k = j}` by lozenges of a
-  single type, with height changes `(1, 0)`, `(0, 1)`, `(0, 0)`.
+* `n₁ = n₂ = 1`: the torus tilings are exactly the three tilings `typeTiling j = {e | e.k = j}` by
+  lozenges of a single type, with height changes `(1, 0)`, `(0, 1)`, `(0, 0)`.
 * `n₁ = n₂ = 2`, `(a, b) = (1, 1)`: the floor tiling of `H(x, y) = ⌊(x + y)/2⌋` is a torus tiling
-  with height change `(1, 1)`, and it has no type-3 lozenge, since `H` increases by `1` along every
-  `e₃`, matching `4 − 2 − 2 = 0`.
+  with height change `(1, 1)`. It has no type-3 lozenge (shown in the `Height` Checks), matching
+  `4 − 2 − 2 = 0`.
 -/
 
 public section
@@ -24,7 +25,7 @@ open Pointwise
 
 namespace TauCeti.Examples.LozengeTorusChecks
 
-open TauCeti
+open TauCeti TauCeti.Examples.LozengeHeightChecks
 
 /-! ### The `1 × 1` torus -/
 
@@ -46,21 +47,17 @@ theorem mem_iff_of_vadd_eq {M : Set TriEdge} (h₁ : ((1 : ℤ), (0 : ℤ)) +ᵥ
   rw [key (fun x => (⟨(x, y), k⟩ : TriEdge) ∈ M) (fun x => by
       simpa [add_comm] using step _ h₁ ⟨(x, y), k⟩) x,
     key (fun y => (⟨(0, y), k⟩ : TriEdge) ∈ M) (fun y => by
-      simpa [add_comm] using step _ h₂ ⟨(0, y), k⟩) y]
-  rfl
+      simpa [add_comm] using step _ h₂ ⟨(0, y), k⟩) y, Prod.mk_zero_zero]
 
 /-- The tilings by lozenges of a single type are `1 × 1` torus tilings. -/
-theorem isTorusTiling_setOf_k_eq (j : Fin 3) : IsTorusTiling 1 1 {e : TriEdge | e.k = j} := by
-  refine isTorusTiling_def.2 ⟨isTiling_univ_iff.2 fun f => ?_, ?_, ?_⟩
-  · rw [TriFace.existsUnique_mem_edges_iff]
-    exact ⟨j, TriFace.edge_k f j, fun k hk => by simpa using hk⟩
-  all_goals
-    ext e
+theorem isTorusTiling_typeTiling (j : Fin 3) : IsTorusTiling 1 1 (typeTiling j) := by
+  refine isTorusTiling_def.2 ⟨isTiling_typeTiling j, ?_, ?_⟩ <;>
+  · ext e
     simp [Set.mem_vadd_set_iff_neg_vadd_mem]
 
 /-- **The `1 × 1` torus has exactly three tilings**, one of each type. -/
-example (M : Set TriEdge) : IsTorusTiling 1 1 M ↔ ∃ j : Fin 3, M = {e | e.k = j} := by
-  refine ⟨fun h => ?_, fun ⟨j, hj⟩ => hj ▸ isTorusTiling_setOf_k_eq j⟩
+example (M : Set TriEdge) : IsTorusTiling 1 1 M ↔ ∃ j : Fin 3, M = typeTiling j := by
+  refine ⟨fun h => ?_, fun ⟨j, hj⟩ => hj ▸ isTorusTiling_typeTiling j⟩
   have hM := isTorusTiling_def.1 h
   have hmem := mem_iff_of_vadd_eq (by exact_mod_cast hM.2.1) (by exact_mod_cast hM.2.2)
   obtain ⟨j, hj, hu⟩ := (TriFace.existsUnique_mem_edges_iff ⟨0, true⟩ M).1
@@ -69,26 +66,16 @@ example (M : Set TriEdge) : IsTorusTiling 1 1 M ↔ ∃ j : Fin 3, M = {e | e.k 
     rw [TriFace.edge_mk_true]
     exact (hmem _ k).symm
   refine ⟨j, Set.ext fun ⟨v, k⟩ => ?_⟩
-  change _ ↔ k = j
+  simp only [mem_typeTiling]
   rw [hmem, hk]
   exact ⟨fun hk' => hu k hk', fun hkj => hkj ▸ hj⟩
 
 /-- The height changes of the three `1 × 1` torus tilings are `(1, 0)`, `(0, 1)`, `(0, 0)`. -/
-example : heightChange 1 1 {e : TriEdge | e.k = 0} = (1, 0) ∧
-    heightChange 1 1 {e : TriEdge | e.k = 1} = (0, 1) ∧
-    heightChange 1 1 {e : TriEdge | e.k = 2} = (0, 0) := by
+example : heightChange 1 1 (typeTiling 0) = (1, 0) ∧ heightChange 1 1 (typeTiling 1) = (0, 1) ∧
+    heightChange 1 1 (typeTiling 2) = (0, 0) := by
   simp [heightChange_def, Finset.filter_singleton]
 
 /-! ### The floor tiling of `⌊(x + y)/2⌋` on the `2 × 2` torus -/
-
-/-- `⌊(x + y)/2⌋`. -/
-def halfSumHeight (v : ℤ × ℤ) : ℤ :=
-  (v.1 + v.2) / 2
-
-theorem isHeightFunction_halfSumHeight : IsHeightFunction halfSumHeight := by
-  rw [isHeightFunction_def]
-  rintro ⟨⟨x, y⟩, k⟩
-  fin_cases k <;> simp [halfSumHeight] <;> omega
 
 /-- The floor tiling of `⌊(x + y)/2⌋` is a `2 × 2` torus tiling. -/
 theorem isTorusTiling_tilingOfHeight_halfSumHeight :
@@ -96,23 +83,16 @@ theorem isTorusTiling_tilingOfHeight_halfSumHeight :
   refine isTorusTiling_def.2 ⟨isHeightFunction_halfSumHeight.isTiling_tilingOfHeight, ?_, ?_⟩ <;>
   · ext ⟨⟨x, y⟩, k⟩
     rw [Set.mem_vadd_set_iff_neg_vadd_mem, mem_tilingOfHeight, mem_tilingOfHeight]
-    fin_cases k <;> simp [halfSumHeight] <;> omega
+    fin_cases k <;> simp [halfSumHeight_apply] <;> omega
 
 /-- Its height change is `(1, 1)`. -/
 example : heightChange 2 2 (tilingOfHeight halfSumHeight) = (1, 1) := by
-  have hT := isHeightFunction_halfSumHeight.tilingHeight_tilingOfHeight (by simp [halfSumHeight])
+  have hT :=
+    isHeightFunction_halfSumHeight.tilingHeight_tilingOfHeight (by simp [halfSumHeight_apply])
   have h₁ := isTorusTiling_tilingOfHeight_halfSumHeight.heightChange_fst_eq
   have h₂ := isTorusTiling_tilingOfHeight_halfSumHeight.heightChange_snd_eq
   rw [hT] at h₁ h₂
-  norm_num [halfSumHeight] at h₁ h₂
+  norm_num [halfSumHeight_apply] at h₁ h₂
   exact Prod.ext (by exact_mod_cast h₁) (by exact_mod_cast h₂)
-
-/-- It has no type-3 lozenge: `H` increases by `1` along every `e₃`. -/
-example (e : TriEdge) (he : e ∈ tilingOfHeight halfSumHeight) : e.k ≠ 2 := by
-  obtain ⟨⟨x, y⟩, k⟩ := e
-  rw [mem_tilingOfHeight] at he
-  rintro rfl
-  simp [halfSumHeight] at he
-  omega
 
 end TauCeti.Examples.LozengeTorusChecks
