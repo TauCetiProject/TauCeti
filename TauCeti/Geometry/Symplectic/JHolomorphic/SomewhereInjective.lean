@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.BranchDegree
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Immersion.Family
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
+import TauCeti.Topology.Perfect
 import TauCeti.Topology.Separation.Hausdorff
 
 /-!
@@ -26,13 +27,14 @@ the branch of `u` at `z` factors holomorphically through the branch of `u` at `�
 through which `u` factors over its simple curve (McDuff–Salamon, Proposition 2.5.1). This file
 shows that `d = 1` exactly when `u` has an injective point, a point `z` with `du(z)` injective and
 `u⁻¹(u z) = {z}` (`TauCeti.IsInjectivePoint`), and that the injective points of such a curve are
-all but countably many points, accumulating at no point where `u` is immersed.
+all points except a countable set of noninjective points, which accumulates at no point where `u`
+is immersed.
 
-* **Branch degree one everywhere.** If no point off `B` is related to another point, then no point
-  of `S` at all is related to another point
-  (`TauCeti.RiemannSurface.GermFactorsThrough.eq_of_dense_compl_criticalValuePreimage`). A
-  factorization `u = u ∘ φ` near `z` with `φ z = ζ ≠ z` relates every point `w` near `z` to
-  `φ w ≠ w`, and some of these `w` lie off `B`.
+* **Branch degree one everywhere.** If no point of a dense set, such as the complement of `B`, is
+  related to another point, then no point of `S` at all is related to another point
+  (`TauCeti.RiemannSurface.GermFactorsThrough.eq_of_dense`). A factorization `u = u ∘ φ` near `z`
+  with `φ z = ζ ≠ z` relates every point `w` near `z` to `φ w ≠ w`, and some of these `w` lie in
+  the dense set.
 * **Injective points accumulate.** If no two distinct points are related, the points near an
   immersed point `z₀` other than `z₀` are injective points
   (`TauCeti.eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq`). Otherwise there are
@@ -60,9 +62,8 @@ all but countably many points, accumulating at no point where `u` is immersed.
 
 ## Main results
 
-* `TauCeti.RiemannSurface.GermFactorsThrough.eq_of_dense_compl_criticalValuePreimage`: if no point
-  off `u⁻¹(u(Crit u))` has a coincident branch at another point, and these points are dense, then
-  no point does.
+* `TauCeti.RiemannSurface.GermFactorsThrough.eq_of_dense`: if no point of a dense set, such as the
+  complement of `u⁻¹(u(Crit u))`, has a coincident branch at another point, then no point does.
 * `TauCeti.IsSomewhereInjective.eq_of_germFactorsThrough`: on a somewhere injective closed curve,
   coincident branches occur only at the same point.
 * `TauCeti.eventually_isInjectivePoint_of_forall_germFactorsThrough_imp_eq`,
@@ -99,15 +100,15 @@ variable {S : Type*} [TopologicalSpace S] [ChartedSpace ℂ S] [IsManifold 𝓘(
   [TopologicalSpace N] [ChartedSpace H N] [IsManifold I ∞ N]
   {J : SmoothAlmostComplexStructure I N} {u : S → N}
 
-omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
-/-- **Branch degree one off `B` gives branch degree one everywhere.** Let `u : S → N` be a map
-from a Hausdorff Riemann surface, and suppose that the points outside the preimage
-`B = u⁻¹(u(Crit u))` of its critical values are dense, and that the branch of `u` at a point off
-`B` factors holomorphically through the branch of `u` at no other point. Then the branch of `u` at
-any point `z` factors holomorphically through the branch of `u` at no other point. -/
-theorem RiemannSurface.GermFactorsThrough.eq_of_dense_compl_criticalValuePreimage [T2Space S]
-    (hB : Dense (criticalValuePreimage I u)ᶜ)
-    (hd : ∀ z ∉ criticalValuePreimage I u, ∀ ζ, GermFactorsThrough u z u ζ → ζ = z)
+omit [IsManifold 𝓘(ℂ) ∞ S] [TopologicalSpace N] in
+/-- **Branch degree one on a dense set gives branch degree one everywhere.** Let `u : S → N` be a
+map from a Hausdorff Riemann surface, and let `s` be a dense set of points of `S`, such as the
+complement of the preimage `B = u⁻¹(u(Crit u))` of the critical values of `u`, at each of which
+the branch of `u` factors holomorphically through the branch of `u` at no other point. Then the
+branch of `u` at any point `z` factors holomorphically through the branch of `u` at no other
+point. -/
+theorem RiemannSurface.GermFactorsThrough.eq_of_dense [T2Space S] {s : Set S} (hs : Dense s)
+    (hd : ∀ z ∈ s, ∀ ζ, GermFactorsThrough u z u ζ → ζ = z)
     {z ζ : S} (h : GermFactorsThrough u z u ζ) : ζ = z := by
   by_contra hne
   -- A factorization `u = u ∘ φ` near `z` with `φ z = ζ` relates each `w` near `z` to `φ w`.
@@ -115,10 +116,10 @@ theorem RiemannSurface.GermFactorsThrough.eq_of_dense_compl_criticalValuePreimag
   -- Since `φ z = ζ ≠ z`, also `φ w ≠ w` for `w` near `z`.
   obtain ⟨U, V, hU, hV, hζU, hzV, hUV⟩ := t2_separation hne
   have hφU : ∀ᶠ w in 𝓝 z, φ w ∈ U := hφc.preimage_mem_nhds (hφz ▸ hU.mem_nhds hζU)
-  -- Some such `w` lies off `B`, where it can only be related to itself.
-  obtain ⟨w, hwB, hwr, hwU, hwV⟩ := (mem_closure_iff_frequently.1 (hB.closure_eq ▸ mem_univ z)
+  -- Some such `w` lies in `s`, where it can only be related to itself.
+  obtain ⟨w, hws, hwr, hwU, hwV⟩ := (mem_closure_iff_frequently.1 (hs.closure_eq ▸ mem_univ z)
     |>.and_eventually (hφr.and (hφU.and (hV.mem_nhds hzV)))).exists
-  rw [hd w hwB (φ w) hwr] at hwU
+  rw [hd w hws (φ w) hwr] at hwU
   exact disjoint_left.1 hUV hwU hwV
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [TopologicalSpace N]
@@ -142,7 +143,7 @@ private theorem eq_of_germFactorsThrough_of_forall_ncard_eq_one [CompactSpace S]
     (h1 : ∀ z ∉ criticalValuePreimage I u, {ζ | GermFactorsThrough u z u ζ}.ncard = 1)
     {z ζ : S} (hzζ : GermFactorsThrough u z u ζ) : ζ = z := by
   have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
-  refine GermFactorsThrough.eq_of_dense_compl_criticalValuePreimage (I := I) ?_
+  refine GermFactorsThrough.eq_of_dense (s := (criticalValuePreimage I u)ᶜ) ?_
     (fun y hy ζ' hζ' ↦ ?_) hzζ
   · rw [compl_eq_univ_sdiff]
     exact dense_univ.sdiff_finite (finite_criticalValuePreimage hu hJu hne)
@@ -233,9 +234,8 @@ theorem isSomewhereInjective_of_forall_germFactorsThrough_imp_eq [CompactSpace S
     (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
     (hd : ∀ z ζ, GermFactorsThrough u z u ζ → ζ = z) : IsSomewhereInjective 𝓘(ℝ, ℂ) I u := by
   have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
+  have : Nontrivial S := PerfectSpace.nontrivial S
   obtain ⟨x₁⟩ := (ConnectedSpace.toNonempty : Nonempty S)
-  obtain ⟨w, hw⟩ := (eventually_mem_nhdsWithin (a := x₁) (s := {x₁}ᶜ)).exists
-  have : Nontrivial S := ⟨⟨w, x₁, hw⟩⟩
   -- The critical points of the nonconstant map `u` are isolated, so `u` is immersed somewhere.
   obtain ⟨z₀, hz₀⟩ := Filter.nonempty_of_mem (mem_codiscrete_iff_forall_mem_nhdsNE.1
     (setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic (hu.of_le one_le_two) hJu
@@ -308,9 +308,7 @@ theorem countable_setOf_not_isInjectivePoint [CompactSpace S] [ConnectedSpace S]
     (hd : ∀ z ζ, GermFactorsThrough u z u ζ → ζ = z) :
     {z | ¬IsInjectivePoint 𝓘(ℝ, ℂ) I u z}.Countable := by
   have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
-  obtain ⟨x₁⟩ := (ConnectedSpace.toNonempty : Nonempty S)
-  obtain ⟨w, hw⟩ := (eventually_mem_nhdsWithin (a := x₁) (s := {x₁}ᶜ)).exists
-  have : Nontrivial S := ⟨⟨w, x₁, hw⟩⟩
+  have : Nontrivial S := PerfectSpace.nontrivial S
   have : SecondCountableTopology S := ChartedSpace.secondCountable_of_sigmaCompact ℂ S
   -- Off the finitely many critical points, the noninjective points form a discrete set.
   have hdisc : IsDiscrete ({z | ¬IsInjectivePoint 𝓘(ℝ, ℂ) I u z} ∩
