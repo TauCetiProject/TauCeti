@@ -109,7 +109,7 @@ private theorem tendsto_newtonianKernel_convolution_growth (hn : n = 1 ∨ 3 ≤
   have hRs : Function.support φ ⊆ closedBall 0 R :=
     (subset_tsupport φ).trans (hR₀.trans (closedBall_subset_closedBall (le_max_left _ _)))
   have hV := volume_real_unitBall_pos n
-  set I := ∫ y, ‖φ y‖
+  set I := ∫ y, ‖φ y‖ with hI
   -- Beyond `2R`, `‖x‖ - R` is comparable to `‖x‖`.
   have hsub : ∀ {b : ℝ} {x : EuclideanSpace ℝ (Fin n)}, 2 * R ≤ ‖x‖ →
       (‖x‖ - R) ^ b ≤ 2 ^ |b| * ‖x‖ ^ b := fun hx =>
@@ -136,8 +136,8 @@ private theorem tendsto_newtonianKernel_convolution_growth (hn : n = 1 ∨ 3 ≤
         inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith)) hV.le)
       refine (norm_newtonianKernel_convolution_le hn hRs (by linarith)).trans ?_
       have h := hsub (b := 2 - n) hx
-      calc _ = _ * (‖x‖ - R) ^ (2 - (n : ℝ)) * I := rfl
-        _ ≤ ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+      rw [← hI]
+      calc _ ≤ ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
             (2 ^ |2 - (n : ℝ)| * ‖x‖ ^ (2 - (n : ℝ))) * I := by gcongr
         _ = _ := by ring
   · -- In every dimension, `‖Du x‖ ≤ Cₙ' (‖x‖ - R) ^ (1 - n) ∫ ‖φ‖`.

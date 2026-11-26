@@ -199,11 +199,13 @@ private theorem truncation_bound_mul_measureReal_closedBall_rpow {R δ C : ℝ} 
   set d : ℝ := (finrank ℝ E : ℝ)
   have h₁ : R ^ (1 - d / 2) = R ^ (-(d / 2)) * R := by
     rw [← Real.rpow_add_one hR.ne']
-    ring_nf
+    congr 1
+    ring
   have h₂ : R ^ (2 - d / 2) = R ^ (-(d / 2)) * R ^ 2 := by
     rw [← Real.rpow_natCast, ← Real.rpow_add hR]
     push_cast
-    ring_nf
+    congr 1
+    ring
   have hc : 2 * (δ * 2 ^ |1 - d / 2| * R ^ (1 - d / 2) * (C / R)) +
       C / R ^ 2 * (δ * 2 ^ |2 - d / 2| * R ^ (2 - d / 2)) =
         δ * C * (2 * 2 ^ |1 - d / 2| + 2 ^ |2 - d / 2|) * R ^ (-(d / 2)) := by
