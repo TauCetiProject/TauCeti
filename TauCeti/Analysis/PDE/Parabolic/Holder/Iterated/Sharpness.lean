@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Holder.AbsRpow
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.HeatEquation
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.Solvability
-import TauCeti.Analysis.Holder.Examples
 
 /-!
 # The initial datum `|x|^{3+β}`: the data space of the Cauchy problem is sharp
@@ -25,8 +24,8 @@ Let `0 < β < α` and let `χ` be a `C⁴` cutoff with compact support. The datu
 `u₀(x) = χ(x) |x|^{3+β}` has third derivative `(3 + β)(2 + β)(1 + β) sign(x) |x|^β` near the
 origin wherever `χ = 1` there, which is `β`-Hölder but not `α`-Hölder at `0`. So
 
-* `u₀ ∈ C_b^{3,β}` for `β ≤ 1` (`TauCeti.exists_ckHolderSpace_coe_eq_mul_abs_rpow`, in
-  `Holder/Examples.lean`);
+* `u₀ ∈ C_b^{3,β}` for `β ≤ 1` (`TauCeti.exists_ckHolderSpace_coe_eq_mul_abs_rpow` at `k = 3`, in
+  `Holder/AbsRpow.lean`);
 * no element of `C_b^{3,α}` agrees with `|x|^{3+β}` near `0`
   (`TauCeti.not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow`, ibid.);
 * hence no map in `C_{par,b}^{3+α}` has such a time slice
@@ -92,7 +91,8 @@ theorem not_exists_parabolicCkHolderSpace_slabMk_eq_of_eventuallyEq_abs_rpow {β
     (hg : g =ᶠ[𝓝 0] fun x ↦ |x| ^ (3 + (β : ℝ))) (t : Icc a b) :
     ¬ ∃ v : ParabolicCkHolderSpace 3 α ℝ ℝ hab, ∀ x, v (slabMk x t) = g x := by
   rintro ⟨v, hv⟩
-  exact not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow hβ hβα hg
+  exact not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow 3 hβ hβα
+    (by simpa only [Nat.cast_ofNat] using hg)
     ⟨v.spatialTrace t, funext fun x ↦ by rw [ParabolicCkHolderSpace.spatialTrace_apply, hv]⟩
 
 /-- **The data space of the order-one Cauchy problem is sharp.** Let `0 < β < 1`, `β < α`,
@@ -107,7 +107,7 @@ theorem exists_heatInitialDataL_fst_eq_zero_and_not_exists_parabolicCkHolderSpac
       (ParabolicCkHolderSpace.heatInitialDataL 1 hβ₁.le hT u).1 = 0 ∧
       (∀ x, u (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩) = χ x * |x| ^ (3 + (β : ℝ))) ∧
       ¬ ∃ v : ParabolicCkHolderSpace 3 α ℝ ℝ hT, ⇑v = ⇑u := by
-  obtain ⟨g, hg⟩ := exists_ckHolderSpace_coe_eq_mul_abs_rpow hβ₀ hβ₁.le hχ hχc
+  obtain ⟨g, hg⟩ := exists_ckHolderSpace_coe_eq_mul_abs_rpow 3 hβ₀ hβ₁.le hχ hχc
   have hu := ParabolicCkHolderSpace.heatInitialDataL_heatSolutionL (k := 1) (hT := hT) hβ₀ hβ₁
     (0, g)
   set u := ParabolicCkHolderSpace.heatSolutionL 1 hβ₀ hβ₁ hT (0, g)
@@ -115,7 +115,7 @@ theorem exists_heatInitialDataL_fst_eq_zero_and_not_exists_parabolicCkHolderSpac
     have h := congrArg (fun d ↦ d.2 x) hu
     simp only [ParabolicCkHolderSpace.heatInitialDataL_snd,
       ParabolicCkHolderSpace.spatialTrace_apply] at h
-    rw [h, hg]
+    rw [h, hg, Nat.cast_ofNat]
   refine ⟨u, by rw [hu], htrace, fun ⟨v, hv⟩ ↦ ?_⟩
   refine not_exists_parabolicCkHolderSpace_slabMk_eq_of_eventuallyEq_abs_rpow hβ₀ hβα hT
     (g := fun x ↦ χ x * |x| ^ (3 + (β : ℝ))) ?_ ⟨0, left_mem_Icc.2 hT.le⟩

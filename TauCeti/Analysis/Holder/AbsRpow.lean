@@ -6,19 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.CompLinear
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
-public import Mathlib.Basic.Real.Sign
-public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.InnerProductSpace.NormPow
-import TauCeti.Basic.Real.Sign
-import TauCeti.Analysis.Holder.Examples
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.Localization
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularity
-import TauCeti.Analysis.SpecialFunctions.Pow.Holder
-import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The power `|x|^(k + β)` in the bounded Hölder spaces
@@ -27,12 +20,14 @@ For `k : ℕ` and `0 < β ≤ 1`, the function `|x|^(k + β)` on `ℝ` is `C^k`,
 is `c · sgn(x)^k |x|^β` with `c = (k + β)(k + β - 1) ⋯ (β + 1)`. This file shows that it sits
 exactly in the bounded Hölder space `C_b^{k,β}` near the origin and in no smaller one:
 
-* **Membership** (`TauCeti.exists_ckHolderSpace_eqOn_abs_rpow`). Cut off away from the origin,
-  `|x|^(k + β)` is an element of `C_b^{k,β}(ℝ)` with compact support, equal to `|x|^(k + β)` on
-  `(-1, 1)`.
-* **Sharpness** (`TauCeti.not_exists_ckHolderSpace_eqOn_abs_rpow`). For `α > β` no element of
-  `C_b^{k,α}(ℝ)` agrees with `|x|^(k + β)` on `(-1, 1)`: the `k`-th derivative would be
-  `α`-Hölder near `0`, while `|x|^β` is not.
+* **Membership** (`TauCeti.exists_ckHolderSpace_coe_eq_mul_abs_rpow`). For a compactly supported
+  `C^{k+1}` cutoff `χ`, the function `χ(x) |x|^(k + β)` lies in `C_b^{k,β}(ℝ)`. Taking for `χ` a
+  bump equal to one on `[-1, 1]` gives a compactly supported element of `C_b^{k,β}(ℝ)` equal to
+  `|x|^(k + β)` on `(-1, 1)` (`TauCeti.exists_ckHolderSpace_eqOn_abs_rpow`).
+* **Sharpness** (`TauCeti.not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow`). For `α > β`
+  no element of `C_b^{k,α}(ℝ)` agrees with `|x|^(k + β)` near the origin: its `k`-th derivative
+  would be `α`-Hölder near `0`, while that of `|x|^(k + β)` is not
+  (`TauCeti.not_holderOnWith_iteratedFDeriv_abs_rpow`).
 
 Both transfer along a nonzero continuous linear functional `ℓ` on a normed space `E`, by
 precomposition (`TauCeti.CkHolderSpace.compLinearL`): `|ℓ x|^(k + β)` agrees near the hyperplane
@@ -40,13 +35,8 @@ precomposition (`TauCeti.CkHolderSpace.compLinearL`): `|ℓ x|^(k + β)` agrees 
 with no element of `C_b^{k,α}(E)` for `α > β` (`TauCeti.not_exists_ckHolderSpace_eq_abs_rpow_comp`).
 These are the data that show the data spaces of the parabolic Cauchy problem to be sharp.
 
-The `k`-th derivative is computed by `TauCeti.iteratedDeriv_abs_rpow`, through the signed powers
-`|x|^r sgn(x)^j` of `TauCeti.Analysis.SpecialFunctions.Pow.Regularity`. For `β ≤ 1` the signed
-power `|x|^β sgn(x)^j` is `β`-Hölder with constant `2`
-(`TauCeti.holderWith_abs_rpow_mul_sign_pow`, in `TauCeti.Analysis.SpecialFunctions.Pow.Holder`),
-and for `α > β` it is not `α`-Hölder on `(-1, 1)`
-(`TauCeti.not_holderOnWith_abs_rpow_mul_sign_pow_Ioo`), since its absolute value is the cusp
-`|x|^β` of `TauCeti.not_holderOnWith_abs_rpow_Ioo`.
+The `k`-th derivative and its Hölder bound are `TauCeti.iteratedDeriv_abs_rpow` and
+`TauCeti.holderWith_iteratedFDeriv_abs_rpow`, in `TauCeti.Analysis.SpecialFunctions.Pow.Regularity`.
 -/
 
 public section
@@ -56,100 +46,59 @@ open scoped NNReal Topology
 
 namespace TauCeti
 
-/-! ### Signed powers -/
-
-/-- The absolute value of the signed power `|x|^r sgn(x)^j` is `|x|^r`, for `r > 0`. -/
-private theorem abs_abs_rpow_mul_sign_pow {r : ℝ} (hr : 0 < r) (j : ℕ) (x : ℝ) :
-    |(|x| ^ r * Real.sign x ^ j)| = |x| ^ r := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp [Real.zero_rpow hr.ne']
-  · rw [abs_mul, abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) r), abs_pow,
-      Real.abs_sign_of_ne_zero hx, one_pow, mul_one]
-
-/-- For `0 < β < α`, the signed power `|x|^β sgn(x)^j` is not `α`-Hölder on `(-1, 1)`: its
-absolute value is the cusp `|x|^β`. -/
-theorem not_holderOnWith_abs_rpow_mul_sign_pow_Ioo {α β C : ℝ≥0} (hβ0 : 0 < β) (hβα : β < α)
-    (j : ℕ) :
-    ¬ HolderOnWith C α (fun x : ℝ ↦ |x| ^ (β : ℝ) * Real.sign x ^ j) (Ioo (-1) 1) := by
-  intro h
-  refine not_holderOnWith_abs_rpow_Ioo (C := C) hβ0 hβα (HolderOnWith.of_dist_le fun x hx y hy ↦ ?_)
-  have hβ0' : (0 : ℝ) < β := hβ0
-  have hd := h.dist_le hx hy
-  rw [Real.dist_eq] at hd ⊢
-  rw [← abs_abs_rpow_mul_sign_pow hβ0' j x, ← abs_abs_rpow_mul_sign_pow hβ0' j y]
-  exact (abs_abs_sub_abs_le_abs_sub _ _).trans hd
-
-/-- For `0 < β ≤ 1`, the `k`-th derivative of `|x|^(k + β)` is `β`-Hölder on `ℝ`. -/
-private theorem holderWith_iteratedFDeriv_abs_rpow (k : ℕ) {β : ℝ≥0} (hβ0 : 0 < β)
-    (hβ1 : β ≤ 1) :
-    HolderWith (2 * ‖(descPochhammer ℝ k).eval ((k : ℝ) + β)‖₊) β
-      (iteratedFDeriv ℝ k fun x : ℝ ↦ |x| ^ ((k : ℝ) + β)) := by
-  have hkp : (k : ℝ) < k + β := lt_add_of_pos_right _ hβ0
-  rw [iteratedFDeriv_eq_equiv_comp, iteratedDeriv_abs_rpow hkp, add_sub_cancel_left]
-  exact (LinearIsometryEquiv.isometry _).comp_holderWith
-    ((holderWith_abs_rpow_mul_sign_pow hβ1 k).smul ((descPochhammer ℝ k).eval ((k : ℝ) + β)))
-
 /-! ### `|x|^(k + β)` in `C_b^{k,β}` and not in `C_b^{k,α}` -/
+
+/-- **`χ |x|^(k + β)` lies in `C_b^{k,β}`.** For `0 < β ≤ 1` and a compactly supported `C^{k+1}`
+function `χ` on the line, the map `x ↦ χ(x) |x|^(k + β)` lies in `C_b^{k,β}(ℝ)`. -/
+theorem exists_ckHolderSpace_coe_eq_mul_abs_rpow (k : ℕ) {β : ℝ≥0} (hβ₀ : 0 < β) (hβ₁ : β ≤ 1)
+    {χ : ℝ → ℝ} (hχ : ContDiff ℝ (k + 1) χ) (hχc : HasCompactSupport χ) :
+    ∃ g : CkHolderSpace k β ℝ ℝ, ⇑g = fun x ↦ χ x * |x| ^ ((k : ℝ) + β) := by
+  obtain ⟨R, hR⟩ := hχc.isCompact.isBounded.subset_ball (0 : ℝ)
+  have hkp : (k : ℝ) < k + β := lt_add_of_pos_right _ hβ₀
+  have hf : ContDiff ℝ k fun x : ℝ ↦ |x| ^ ((k : ℝ) + β) := by
+    simpa only [Real.norm_eq_abs] using contDiff_norm_rpow_of_lt (E := ℝ) hkp
+  obtain ⟨M, -, hM⟩ := hf.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen
+    isOpen_univ (isCompact_closedBall (0 : ℝ) R) (subset_univ _)
+  obtain ⟨N, -, hN⟩ := hχc.exists_bound_iteratedFDeriv_of_contDiff (n := k + 1)
+    (by exact_mod_cast hχ)
+  refine ⟨CkHolderSpace.cutoff (M := M.toNNReal) (N := N.toNNReal) hf.contDiffOn
+    hχ isOpen_ball (convex_ball 0 R) hR hβ₁
+    (fun i hi x hx ↦ (hM i hi x (ball_subset_closedBall hx)).trans (Real.le_coe_toNNReal M))
+    (fun i hi x ↦ (hN i hi x).trans (Real.le_coe_toNNReal N))
+    ((holderWith_iteratedFDeriv_abs_rpow k hβ₀ hβ₁).holderOnWith _), ?_⟩
+  rw [CkHolderSpace.coe_cutoff]
+  simp only [smul_eq_mul]
 
 /-- **`|x|^(k + β)` is `C^{k,β}` near the origin.** For `0 < β ≤ 1`, some compactly supported
 element of `C_b^{k,β}(ℝ)` equals `|x|^(k + β)` on `(-1, 1)`: the power multiplied by a smooth
-cutoff. -/
+bump equal to one there. -/
 theorem exists_ckHolderSpace_eqOn_abs_rpow (k : ℕ) {β : ℝ≥0} (hβ0 : 0 < β) (hβ1 : β ≤ 1) :
     ∃ f : CkHolderSpace k β ℝ ℝ, HasCompactSupport f ∧
       ∀ x ∈ Ioo (-1 : ℝ) 1, f x = |x| ^ ((k : ℝ) + β) := by
-  have hkp : (k : ℝ) < k + β := lt_add_of_pos_right _ hβ0
-  have hpow : ContDiff ℝ k fun x : ℝ ↦ |x| ^ ((k : ℝ) + β) := by
-    simpa only [Real.norm_eq_abs] using contDiff_norm_rpow_of_lt (E := ℝ) hkp
   let χ : ContDiffBump (0 : ℝ) := ⟨1, 3 / 2, one_pos, by norm_num⟩
-  have hχs : tsupport χ ⊆ ball (0 : ℝ) 2 := by
-    rw [χ.tsupport_eq]
-    exact closedBall_subset_ball (by norm_num [χ])
-  obtain ⟨N, -, hN⟩ := χ.hasCompactSupport.exists_bound_iteratedFDeriv χ.contDiff (k + 1)
-  obtain ⟨M, -, hM⟩ :=
-    hpow.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ
-      (isCompact_closedBall (0 : ℝ) 2) (subset_univ _)
-  have hfH := (holderWith_iteratedFDeriv_abs_rpow k hβ0 hβ1).holderOnWith (ball (0 : ℝ) 2)
-  let f := CkHolderSpace.cutoff (M := M.toNNReal) (N := N.toNNReal)
-    hpow.contDiffOn ((χ.contDiff (n := ⊤)).of_le (mod_cast le_top)) isOpen_ball
-    (convex_ball 0 2) hχs hβ1
-    (fun i hi x hx ↦ (hM i hi x (ball_subset_closedBall hx)).trans (Real.le_coe_toNNReal M))
-    (fun i hi x ↦ (hN i hi x).trans (Real.le_coe_toNNReal N)) hfH
-  refine ⟨f, χ.hasCompactSupport.of_isClosed_subset (isClosed_tsupport _)
-    (CkHolderSpace.tsupport_cutoff_subset ..), fun x hx ↦ ?_⟩
+  obtain ⟨f, hf⟩ := exists_ckHolderSpace_coe_eq_mul_abs_rpow k hβ0 hβ1 χ.contDiff
+    χ.hasCompactSupport
+  refine ⟨f, hf ▸ χ.hasCompactSupport.mul_right, fun x hx ↦ ?_⟩
   have hx1 : x ∈ closedBall (0 : ℝ) χ.rIn := by
     rw [mem_closedBall, Real.dist_0_eq_abs]
     exact (abs_lt.2 hx).le
-  dsimp only [f]
-  rw [CkHolderSpace.cutoff_apply, χ.one_of_mem_closedBall hx1, one_smul]
+  rw [congrFun hf x, χ.one_of_mem_closedBall hx1, one_mul]
 
-/-- **`|x|^(k + β)` is not `C^{k,α}` near the origin for `α > β`.** No element of `C_b^{k,α}(ℝ)`
-equals `|x|^(k + β)` on `(-1, 1)`: its `k`-th derivative would be `α`-Hölder there, while the
-`k`-th derivative of `|x|^(k + β)` is a nonzero multiple of `sgn(x)^k |x|^β`. -/
-theorem not_exists_ckHolderSpace_eqOn_abs_rpow (k : ℕ) {α β : ℝ≥0} (hβ0 : 0 < β)
-    (hβα : β < α) :
-    ¬ ∃ f : CkHolderSpace k α ℝ ℝ, ∀ x ∈ Ioo (-1 : ℝ) 1, f x = |x| ^ ((k : ℝ) + β) := by
-  rintro ⟨f, hf⟩
-  obtain ⟨C, hC⟩ := f.memHolder_iteratedFDeriv
-  have hkp : (k : ℝ) < k + β := lt_add_of_pos_right _ hβ0
-  set c := (descPochhammer ℝ k).eval ((k : ℝ) + β)
-  have hc : 0 < c := descPochhammer_pos (by linarith)
-  -- On `(-1, 1)` the `k`-th derivative of `f` is that of `|x|^(k + β)`.
-  have heq : ∀ x ∈ Ioo (-1 : ℝ) 1, iteratedFDeriv ℝ k f x =
-      iteratedFDeriv ℝ k (fun x : ℝ ↦ |x| ^ ((k : ℝ) + β)) x := fun x hx ↦
-    (Filter.EventuallyEq.iteratedFDeriv ℝ
-      (eventually_of_mem (isOpen_Ioo.mem_nhds hx) hf) k).self_of_nhds
-  refine not_holderOnWith_abs_rpow_mul_sign_pow_Ioo (C := C * ‖c⁻¹‖₊) hβ0 hβα k
-    (HolderOnWith.of_dist_le fun x hx y hy ↦ ?_)
-  have h := hC.dist_le x y
-  rw [heq x hx, heq y hy, iteratedFDeriv_eq_equiv_comp, Function.comp_apply, Function.comp_apply,
-    LinearIsometryEquiv.dist_map, iteratedDeriv_abs_rpow hkp, add_sub_cancel_left,
-    Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos hc] at h
-  rw [Real.dist_eq, NNReal.coe_mul, coe_nnNorm, Real.norm_eq_abs, abs_inv, abs_of_pos hc]
-  calc |(|x| ^ (β : ℝ) * Real.sign x ^ k - |y| ^ (β : ℝ) * Real.sign y ^ k)|
-      = c⁻¹ * (c * |(|x| ^ (β : ℝ) * Real.sign x ^ k - |y| ^ (β : ℝ) * Real.sign y ^ k)|) := by
-        field_simp
-    _ ≤ c⁻¹ * (C * dist x y ^ (α : ℝ)) := by gcongr
-    _ = C * c⁻¹ * dist x y ^ (α : ℝ) := by ring
+/-- **`|x|^(k + β)` is not `C^{k,α}` at `0` for `α > β`.** For `0 < β < α`, no element of
+`C_b^{k,α}(ℝ)` agrees with `|x|^(k + β)` near `0`: its `k`-th derivative would be `α`-Hölder near
+the origin, while the `k`-th derivative of `|x|^(k + β)` is a nonzero multiple of
+`sgn(x)^k |x|^β`. -/
+theorem not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow (k : ℕ) {β α : ℝ≥0}
+    (hβ : 0 < β) (hβα : β < α) {g : ℝ → ℝ} (hg : g =ᶠ[𝓝 0] fun x ↦ |x| ^ ((k : ℝ) + β)) :
+    ¬ ∃ G : CkHolderSpace k α ℝ ℝ, ⇑G = g := by
+  rintro ⟨G, rfl⟩
+  obtain ⟨C, hC⟩ := G.memHolder_iteratedFDeriv
+  have hkp : (k : ℝ) < k + β := lt_add_of_pos_right _ hβ
+  refine not_holderOnWith_iteratedFDeriv_abs_rpow hkp (C := C)
+    (γ := α) (by rw [add_sub_cancel_left]; exact_mod_cast hβα) (hg.iteratedFDeriv ℝ k)
+    fun x hx y hy ↦ ?_
+  rw [← (hx : _ = _), ← (hy : _ = _)]
+  exact hC x y
 
 /-! ### Along a linear functional -/
 
@@ -194,8 +143,9 @@ theorem not_exists_ckHolderSpace_eq_abs_rpow_comp (k : ℕ) {α β : ℝ≥0} (h
   let e : ℝ →L[ℝ] E := (ContinuousLinearMap.id ℝ ℝ).smulRight ((ℓ v)⁻¹ • v)
   have he : ∀ t, ℓ (e t) = t := fun t ↦ by
     simp [e, map_smul, inv_mul_cancel₀ hv]
-  refine not_exists_ckHolderSpace_eqOn_abs_rpow k hβ0 hβα
-    ⟨CkHolderSpace.compLinearL e f, fun t ht ↦ ?_⟩
+  refine not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow k hβ0 hβα
+    (g := CkHolderSpace.compLinearL e f) ?_ ⟨_, rfl⟩
+  filter_upwards [Ioo_mem_nhds (neg_lt_zero.2 one_pos) one_pos] with t ht
   rw [CkHolderSpace.compLinearL_apply, hf _ (by rw [he]; exact abs_lt.2 ht), he]
 
 end TauCeti

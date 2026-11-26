@@ -42,6 +42,7 @@ theorem abs_sign_of_ne_zero {r : ℝ} (hr : r ≠ 0) : |sign r| = 1 := by
   rcases sign_apply_eq_of_ne_zero r hr with h | h <;> simp [h]
 
 /-- A real number is its absolute value times its sign. -/
+@[simp]
 theorem abs_mul_sign (r : ℝ) : |r| * sign r = r := by
   rcases lt_trichotomy r 0 with h | rfl | h
   · rw [abs_of_neg h, sign_of_neg h]
