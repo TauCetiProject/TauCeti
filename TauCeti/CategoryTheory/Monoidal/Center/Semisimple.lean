@@ -99,11 +99,14 @@ theorem simpleMultiplicities_inductionCenterObj_apply [IsFiniteSemisimpleCategor
     simpleMultiplicities (inductionCenterObj k X) M =
       simpleMultiplicities M.repr.1 (SimpleClasses.classOf X) := by
   have : ∀ Z W : Center C, FiniteDimensional k (Z ⟶ W) := inferInstance
-  have hfin := ((forgetInductionAdjunction k C).homLinearEquiv k M.repr X).finrank_eq.symm
-  rw [induction_obj] at hfin
-  rw [finrank_hom_simple_eq_simpleMultiplicities k, SimpleClasses.classOf_repr,
-    forget_obj, finrank_homTo_simple_eq_simpleMultiplicities k] at hfin
-  exact hfin
+  calc simpleMultiplicities (inductionCenterObj k X) M
+      = Module.finrank k (M.repr ⟶ (induction k C).obj X) := by
+        rw [← induction_obj, finrank_hom_simple_eq_simpleMultiplicities k,
+          SimpleClasses.classOf_repr]
+    _ = Module.finrank k (M.repr.1 ⟶ X) :=
+        ((forgetInductionAdjunction k C).homLinearEquiv k M.repr X).finrank_eq.symm
+    _ = simpleMultiplicities M.repr.1 (SimpleClasses.classOf X) :=
+        finrank_homTo_simple_eq_simpleMultiplicities k _ _
 
 /-- **Frobenius reciprocity for centre induction**: when `Center C` is finite semisimple, the
 multiplicity of a simple isomorphism class `M` of `Center C` in `(induction k C).obj X` (for a
@@ -131,9 +134,8 @@ theorem forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit
   have hg : normGlobalDim C a = d • 𝟙 (𝟙_ C) :=
     (endAlgEquivOfSimple_smul_id (k := k) (End.of (normGlobalDim C a))).symm
   rw [smul_f, id_f,
-    forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f k Z a, hg,
-    MonoidalLinear.smul_whiskerRight, id_whiskerRight, Linear.smul_comp, Linear.comp_smul,
-    Category.id_comp, Iso.inv_hom_id]
+    forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f k Z a, hg]
+  simp [MonoidalLinear.smul_whiskerRight]
 
 private theorem inv_endAlgEquivOfSimple_normGlobalDim_smul_unit_comp_counit
     {a : ∀ S : SimpleClasses C, S.repr ≅ ((S.repr)ᘁ : C)ᘁ}
@@ -294,6 +296,13 @@ theorem rightDim_induction_obj_f (X : C) :
     dim_induction_obj_f k X rightDim rightDim_biproduct
       (rightDim_tensor_eq_comp_of_simple k) fun T ↦ by rw [rightDim_rightDual, scalar_comm]
 
+omit [IsFiniteSemisimpleCategory C] [Fintype (SimpleClasses C)] in
+private theorem leftDimChar_center_of
+    [EssentiallySmall.{max u v} (Center C)] (Z : Center C) :
+    SplitK0.leftDimChar k (Center C) (SplitK0.of Z) =
+      endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim Z).f) := by
+  rw [SplitK0.leftDimChar_of, endAlgEquivOfSimple_unit_apply]
+
 private theorem sum_simpleMultiplicities_mul_leftDimChar_eq
     [IsFiniteSemisimpleCategory (Center C)] [Fintype (SimpleClasses (Center C))]
     [EssentiallySmall.{max u v} C] [EssentiallySmall.{max u v} (Center C)]
@@ -307,9 +316,8 @@ private theorem sum_simpleMultiplicities_mul_leftDimChar_eq
           rw [SplitK0.ringHom_apply_of]
           simp_rw [simpleMultiplicities_induction_obj_apply k, SimpleClasses.classOf_repr]
     _ = _ := by
-          rw [SplitK0.leftDimChar_of, endAlgEquivOfSimple_unit_apply,
-            leftDim_induction_obj_f k S.repr, End.of_comp, map_mul, SplitK0.leftDimChar_of]
-          ring
+          rw [leftDimChar_center_of, leftDim_induction_obj_f]
+          simp [mul_comm]
 
 variable (C)
 
@@ -334,8 +342,12 @@ theorem endAlgEquivOfSimple_globalDim [IsFiniteSemisimpleCategory (Center C)]
   have hM (M : SimpleClasses (Center C)) :
       ∑ S : SimpleClasses C, (simpleMultiplicities M.repr.1 S : k) * ψC (SplitK0.of S.repr) =
         χZ (SplitK0.of (M.repr)ᘁ) := by
-    rw [← SplitK0.ringHom_apply_of ψC M.repr.1, ← SplitK0.dual_of, SplitK0.leftDimChar_dual,
-      SplitK0.rightDimChar_of, SplitK0.rightDimChar_of, endAlgEquivOfSimple_unit_apply, rightDim_f]
+    calc ∑ S : SimpleClasses C, (simpleMultiplicities M.repr.1 S : k) * ψC (SplitK0.of S.repr)
+        = ψC (SplitK0.of M.repr.1) := (SplitK0.ringHom_apply_of ψC M.repr.1).symm
+      _ = χZ (SplitK0.of (M.repr)ᘁ) := by
+          -- Normal form: scalar of `rightDim M.repr.1` in `k`
+          simp only [ψC, χZ, leftDimChar_center_of, leftDim_rightDual, rightDim_f,
+            SplitK0.rightDimChar_of]
   calc endAlgEquivOfSimple k (𝟙_ (Center C)) (End.of (globalDim (Center C)))
       = ∑ M : SimpleClasses (Center C), χZ (SplitK0.of M.repr) *
           (∑ S : SimpleClasses C, (simpleMultiplicities M.repr.1 S : k) * ψC (SplitK0.of S.repr)) :=
@@ -358,14 +370,16 @@ is finite semisimple with finitely many simple classes, on underlying endomorphi
 theorem globalDim_f [IsFiniteSemisimpleCategory (Center C)]
     [Fintype (SimpleClasses (Center C))] :
     (globalDim (Center C)).f = globalDim C ≫ globalDim C := by
-  have hZ : (globalDim (Center C)).f =
-      endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)) ^ 2 • 𝟙 (𝟙_ C) := by
+  set d := endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C))
+  have hd : globalDim C = d • 𝟙 (𝟙_ C) :=
+    (endAlgEquivOfSimple_smul_id (k := k) (End.of (globalDim C))).symm
+  have hZ : (globalDim (Center C)).f = d ^ 2 • 𝟙 (𝟙_ C) := by
     have h1 := congrArg Hom.f
       (endAlgEquivOfSimple_smul_id (k := k) (End.of (globalDim (Center C)))).symm
     rwa [endAlgEquivOfSimple_globalDim k C, smul_f, id_f] at h1
-  exact hZ.trans <| by
-    rw [sq, ← smul_smul, ← Category.id_comp (𝟙 (𝟙_ C)), ← Linear.smul_comp, ← Linear.comp_smul,
-      endAlgEquivOfSimple_smul_id]
+  rw [hZ, hd]
+  simp [sq, smul_smul]
+  rfl
 
 end Pivotal
 
