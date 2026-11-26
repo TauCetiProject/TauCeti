@@ -53,8 +53,9 @@ type it is empty.
 * `TauCeti.isClassicalEllipticAt_iff_forall_notMem_classicalCharacteristicSet`,
   `TauCeti.isClassicalElliptic_iff_classicalCharacteristicSet_eq_empty`: ellipticity is the
   absence of characteristic covectors.
-* `TauCeti.classicalCharacteristicSet_add`, `TauCeti.classicalCharacteristicSet_smul`: adding an
-  operator of order `m - 1` or multiplying by a nonzero constant does not change it, and
+* `TauCeti.classicalCharacteristicSet_add_of_mem_sub_one`,
+  `TauCeti.classicalCharacteristicSet_smul`: adding an operator of order `m - 1` or multiplying by
+  a nonzero constant does not change it, and
   `TauCeti.classicalCharacteristicSet_of_mem_sub_one`: an operator of order `m - 1` is
   characteristic in order `m` at every nonzero covector.
 * `TauCeti.mk_mem_classicalCharacteristicSet_iff_mem_characteristicSet`,
@@ -128,7 +129,8 @@ theorem isClassicalElliptic_iff_classicalCharacteristicSet_eq_empty :
 
 /-- **The characteristic set ignores lower order terms.** Adding an operator of order `m - 1` does
 not change the characteristic set in order `m`. -/
-theorem classicalCharacteristicSet_add (hQ : Q ∈ classicalPseudodifferentialOperators (m - 1)) :
+theorem classicalCharacteristicSet_add_of_mem_sub_one
+    (hQ : Q ∈ classicalPseudodifferentialOperators (m - 1)) :
     classicalCharacteristicSet m (P + Q) = classicalCharacteristicSet m P := by
   ext p
   simp [classicalPrincipalSymbol_add_of_mem_sub_one hQ]
