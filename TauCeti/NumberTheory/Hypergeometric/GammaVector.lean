@@ -40,8 +40,8 @@ entry and sum `0`; the latter is the comparison of degrees in the defining ident
   uniqueness in characteristic zero.
 * `TauCeti.Hypergeometric.CyclotomicData.sum_mul_gamma_eq_zero`: `∑_n n γ(n) = 0`.
 * `TauCeti.Hypergeometric.CyclotomicData.gammaMultiset`: the gamma multiset, with
-  `count_natCast_gammaMultiset`, `count_neg_natCast_gammaMultiset`, `zero_notMem_gammaMultiset`
-  and `sum_gammaMultiset_eq_zero`.
+  `count_gammaMultiset`, `mem_gammaMultiset`, `zero_notMem_gammaMultiset` and
+  `sum_gammaMultiset_eq_zero`.
 
 ## References
 
@@ -88,8 +88,8 @@ theorem gammaSupport_default : (default : CyclotomicData).gammaSupport = ∅ := 
   simp [gammaSupport]
 
 /-- The gamma vector `γ(n) = ∑_{a ∈ A, n ∣ a} μ(a / n) - ∑_{b ∈ B, n ∣ b} μ(b / n)` of a
-cyclotomic datum: the exponents with `Φ_A / Φ_B = ∏_n (X ^ n - 1) ^ γ(n)`. Positive values come
-from `A`. -/
+cyclotomic datum: the exponents with `Φ_A / Φ_B = ∏_n (X ^ n - 1) ^ γ(n)`. The sum over `A`
+enters with a plus sign and the sum over `B` with a minus sign, so the swap negates `γ`. -/
 def gamma (n : ℕ) : ℤ :=
   ((D.A.filter (n ∣ ·)).map fun a ↦ μ (a / n)).sum -
     ((D.B.filter (n ∣ ·)).map fun b ↦ μ (b / n)).sum
@@ -127,43 +127,6 @@ section RatFunc
 
 variable {K : Type*} [Field K]
 
-/-- The image of `X ^ n - 1` in `RatFunc K` is nonzero for `n ≠ 0`. -/
-private lemma algebraMap_X_pow_sub_one_ne_zero {n : ℕ} (hn : n ≠ 0) :
-    algebraMap K[X] (RatFunc K) (X ^ n - 1) ≠ 0 :=
-  (map_ne_zero_iff _ (IsFractionRing.injective K[X] (RatFunc K))).2
-    (X_pow_sub_C_ne_zero (Nat.pos_of_ne_zero hn) 1)
-
-/-- Möbius inversion for one cyclotomic polynomial, with the product spread over a finite set of
-indices containing the divisors of `a`. -/
-private lemma algebraMap_cyclotomic_eq_prod {a : ℕ} (ha : a ≠ 0) {S : Finset ℕ}
-    (hS : a.divisors ⊆ S) :
-    algebraMap K[X] (RatFunc K) (cyclotomic a K) =
-      ∏ n ∈ S, algebraMap K[X] (RatFunc K) (X ^ n - 1) ^ (if n ∣ a then μ (a / n) else 0) := by
-  rw [cyclotomic_eq_prod_X_pow_sub_one_pow_moebius,
-    Nat.prod_divisorsAntidiagonal' fun i j ↦ algebraMap K[X] (RatFunc K) (X ^ j - 1) ^ μ i,
-    ← Finset.prod_subset hS fun n _ hn ↦ by
-      rw [ite_eq_right fun h ↦ hn (Nat.mem_divisors.2 ⟨h, ha⟩), zpow_zero]]
-  exact Finset.prod_congr rfl fun n hn ↦ by rw [ite_eq_left (Nat.dvd_of_mem_divisors hn)]
-
-/-- Möbius inversion for a product of cyclotomic polynomials. -/
-private lemma algebraMap_prod_cyclotomic_eq_prod (A : Multiset ℕ) (hA : ∀ a ∈ A, a ≠ 0)
-    {S : Finset ℕ} (hS : ∀ a ∈ A, a.divisors ⊆ S) (hS₀ : 0 ∉ S) :
-    algebraMap K[X] (RatFunc K) (A.map fun a ↦ cyclotomic a K).prod =
-      ∏ n ∈ S, algebraMap K[X] (RatFunc K) (X ^ n - 1) ^
-        ((A.filter (n ∣ ·)).map fun a ↦ μ (a / n)).sum := by
-  induction A using Multiset.induction_on with
-  | empty => simp
-  | cons a A ih =>
-    rw [Multiset.map_cons, Multiset.prod_cons, map_mul,
-      algebraMap_cyclotomic_eq_prod (hA a (Multiset.mem_cons_self a A))
-        (hS a (Multiset.mem_cons_self a A)),
-      ih (fun b hb ↦ hA b (Multiset.mem_cons_of_mem hb)) fun b hb ↦
-        hS b (Multiset.mem_cons_of_mem hb),
-      ← Finset.prod_mul_distrib]
-    refine Finset.prod_congr rfl fun n hn ↦ ?_
-    rw [← zpow_add₀ (algebraMap_X_pow_sub_one_ne_zero fun h ↦ hS₀ (h ▸ hn)), Multiset.filter_cons]
-    split_ifs <;> simp
-
 /-- The defining rational function of a cyclotomic datum is `∏_n (X ^ n - 1) ^ γ(n)`. -/
 theorem ratFunc_eq_prod_zpow :
     D.ratFunc K = ∏ n ∈ D.gammaSupport, algebraMap K[X] (RatFunc K) (X ^ n - 1) ^ D.gamma n := by
@@ -172,13 +135,14 @@ theorem ratFunc_eq_prod_zpow :
   have hA : ∀ a ∈ D.A, a ≠ 0 := fun a ha ↦ (D.pos_of_mem_A ha).ne'
   have hB : ∀ b ∈ D.B, b ≠ 0 := fun b hb ↦ (D.pos_of_mem_B hb).ne'
   rw [ratFunc_def, phiA_def, phiB_def,
-    algebraMap_prod_cyclotomic_eq_prod _ hA (hS (Multiset.le_add_right _ _))
+    algebraMap_prod_cyclotomic_eq_prod_zpow _ hA (hS (Multiset.le_add_right _ _))
       D.zero_notMem_gammaSupport,
-    algebraMap_prod_cyclotomic_eq_prod _ hB (hS (Multiset.le_add_left _ _))
+    algebraMap_prod_cyclotomic_eq_prod_zpow _ hB (hS (Multiset.le_add_left _ _))
       D.zero_notMem_gammaSupport,
     ← Finset.prod_div_distrib]
   refine Finset.prod_congr rfl fun n hn ↦ ?_
-  rw [gamma_def, zpow_sub₀ (algebraMap_X_pow_sub_one_ne_zero (D.pos_of_mem_gammaSupport hn).ne')]
+  rw [gamma_def,
+    zpow_sub₀ (RatFunc.algebraMap_ne_zero (X_pow_sub_C_ne_zero (D.pos_of_mem_gammaSupport hn) 1))]
 
 end RatFunc
 
@@ -190,8 +154,9 @@ private lemma phiA_mul_prod_eq_of_ringHom {R S : Type*} [CommRing R] [CommRing S
       D.phiB R * ∏ n ∈ I, (X ^ n - 1 : R[X]) ^ e' n) :
     D.phiA S * ∏ n ∈ I, (X ^ n - 1 : S[X]) ^ e n =
       D.phiB S * ∏ n ∈ I, (X ^ n - 1 : S[X]) ^ e' n := by
-  simpa [Polynomial.map_mul, Polynomial.map_prod, map_phiA, map_phiB] using
-    congr_arg (Polynomial.map f) h
+  have h' := congr_arg (Polynomial.map f) h
+  rwa [Polynomial.map_mul, Polynomial.map_mul, map_phiA, map_phiB, map_prod_X_pow_sub_one_pow,
+    map_prod_X_pow_sub_one_pow] at h'
 
 /-- An identity of the shape of the defining identity holds over `ℤ` as soon as it holds over
 some ring of characteristic zero. -/
@@ -202,7 +167,8 @@ private lemma phiA_mul_prod_eq_int {R : Type*} [CommRing R] [CharZero R] {I : Fi
     D.phiA ℤ * ∏ n ∈ I, (X ^ n - 1 : ℤ[X]) ^ e n =
       D.phiB ℤ * ∏ n ∈ I, (X ^ n - 1 : ℤ[X]) ^ e' n := by
   refine Polynomial.map_injective (Int.castRingHom R) Int.cast_injective ?_
-  simpa [Polynomial.map_mul, Polynomial.map_prod, map_phiA, map_phiB] using h
+  rwa [Polynomial.map_mul, Polynomial.map_mul, map_phiA, map_phiB, map_prod_X_pow_sub_one_pow,
+    map_prod_X_pow_sub_one_pow]
 
 /-- The defining identity of the gamma vector, cleared of denominators:
 `Φ_A · ∏_{γ(n) < 0} (X ^ n - 1) ^ (-γ(n)) = Φ_B · ∏_{γ(n) > 0} (X ^ n - 1) ^ γ(n)`, over every
@@ -211,25 +177,21 @@ theorem phiA_mul_prod_eq_phiB_mul_prod (R : Type*) [CommRing R] :
     D.phiA R * ∏ n ∈ D.gammaSupport, (X ^ n - 1 : R[X]) ^ (-D.gamma n).toNat =
       D.phiB R * ∏ n ∈ D.gammaSupport, (X ^ n - 1 : R[X]) ^ (D.gamma n).toNat := by
   refine D.phiA_mul_prod_eq_of_ringHom (Int.castRingHom R) (D.phiA_mul_prod_eq_int (R := ℚ) ?_)
-  have hne {n : ℕ} (hn : n ≠ 0) (k : ℕ) :
-      algebraMap ℚ[X] (RatFunc ℚ) ((X ^ n - 1) ^ k) ≠ 0 := by
-    rw [map_pow]
-    exact pow_ne_zero _ (algebraMap_X_pow_sub_one_ne_zero hn)
-  have hprod (e : ℕ → ℕ) :
-      algebraMap ℚ[X] (RatFunc ℚ) (∏ n ∈ D.gammaSupport, (X ^ n - 1) ^ e n) ≠ 0 := by
-    rw [map_prod]
-    exact Finset.prod_ne_zero_iff.2 fun n hn ↦ hne (D.pos_of_mem_gammaSupport hn).ne' _
-  have key := D.ratFunc_eq_prod_zpow (K := ℚ)
-  have hzpow : ∀ n ∈ D.gammaSupport, algebraMap ℚ[X] (RatFunc ℚ) (X ^ n - 1) ^ D.gamma n =
-      algebraMap ℚ[X] (RatFunc ℚ) ((X ^ n - 1) ^ (D.gamma n).toNat) /
-        algebraMap ℚ[X] (RatFunc ℚ) ((X ^ n - 1) ^ (-D.gamma n).toNat) := fun n hn ↦ by
-    rw [map_pow, map_pow, ← zpow_natCast, ← zpow_natCast,
-      ← zpow_sub₀ (algebraMap_X_pow_sub_one_ne_zero (D.pos_of_mem_gammaSupport hn).ne'),
-      Int.toNat_sub_toNat_neg]
-  rw [Finset.prod_congr rfl hzpow, Finset.prod_div_distrib, ← map_prod, ← map_prod, ratFunc_def,
-    div_eq_div_iff (D.phiB_ne_zero ℚ |> (map_ne_zero_iff _
-      (IsFractionRing.injective ℚ[X] (RatFunc ℚ))).2) (hprod _), ← map_mul, ← map_mul] at key
-  exact (IsFractionRing.injective ℚ[X] (RatFunc ℚ) key).trans (mul_comm _ _)
+  -- In `RatFunc ℚ`, `(X ^ n - 1) ^ max(γ(n), 0)` is
+  -- `(X ^ n - 1) ^ γ(n) · (X ^ n - 1) ^ max(-γ(n), 0)`, and the product of the factors
+  -- `(X ^ n - 1) ^ γ(n)` is `Φ_A / Φ_B`.
+  have hsplit : ∀ n ∈ D.gammaSupport,
+      algebraMap ℚ[X] (RatFunc ℚ) (X ^ n - 1) ^ (D.gamma n).toNat =
+        algebraMap ℚ[X] (RatFunc ℚ) (X ^ n - 1) ^ D.gamma n *
+          algebraMap ℚ[X] (RatFunc ℚ) (X ^ n - 1) ^ (-D.gamma n).toNat := fun n hn ↦ by
+    rw [← zpow_natCast, ← zpow_natCast, ← zpow_add₀ <|
+      RatFunc.algebraMap_ne_zero (X_pow_sub_C_ne_zero (D.pos_of_mem_gammaSupport hn) 1)]
+    congr 1
+    omega
+  refine IsFractionRing.injective ℚ[X] (RatFunc ℚ) ?_
+  simp_rw [map_mul, map_prod, map_pow]
+  rw [Finset.prod_congr rfl hsplit, Finset.prod_mul_distrib, ← ratFunc_eq_prod_zpow, ratFunc_def,
+    ← mul_assoc, mul_div_cancel₀ _ (RatFunc.algebraMap_ne_zero (D.phiB_ne_zero ℚ))]
 
 /-! ### Uniqueness -/
 
@@ -310,38 +272,51 @@ theorem gammaMultiset_def : D.gammaMultiset = ∑ n ∈ D.gammaSupport,
       Multiset.replicate (-D.gamma n).toNat (-n : ℤ)) :=
   (rfl)
 
-/-- A positive integer `n` occurs in the gamma multiset with multiplicity `max(γ(n), 0)`. -/
+/-- An integer `z` occurs in the gamma multiset with multiplicity `max(sign(z) γ(|z|), 0)`: a
+positive `n` occurs `max(γ(n), 0)` times, a negative `-n` occurs `max(-γ(n), 0)` times, and `0`
+does not occur. -/
 @[simp]
+theorem count_gammaMultiset (z : ℤ) :
+    D.gammaMultiset.count z = (z.sign * D.gamma z.natAbs).toNat := by
+  rw [gammaMultiset_def, Multiset.count_sum',
+    Finset.sum_congr rfl fun k hk ↦
+      show _ = if k = z.natAbs then (z.sign * D.gamma k).toNat else 0 by
+        have := D.pos_of_mem_gammaSupport hk
+        rw [Multiset.count_add, Multiset.count_replicate, Multiset.count_replicate]
+        rcases lt_trichotomy z 0 with h | rfl | h
+        · rw [Int.sign_eq_neg_one_of_neg h]
+          split_ifs <;> omega
+        · rw [Int.sign_zero]
+          split_ifs <;> omega
+        · rw [Int.sign_eq_one_of_pos h]
+          split_ifs <;> omega,
+    Finset.sum_ite_eq']
+  split_ifs with hz
+  · rfl
+  · rw [D.gamma_eq_zero_of_notMem hz, mul_zero, Int.toNat_zero]
+
+/-- A positive integer `n` occurs in the gamma multiset with multiplicity `max(γ(n), 0)`. -/
 theorem count_natCast_gammaMultiset (n : ℕ) :
     D.gammaMultiset.count (n : ℤ) = (D.gamma n).toNat := by
-  rw [gammaMultiset_def, Multiset.count_sum',
-    Finset.sum_congr rfl fun k hk ↦ show _ = if k = n then (D.gamma k).toNat else 0 by
-      have := D.pos_of_mem_gammaSupport hk
-      rw [Multiset.count_add, Multiset.count_replicate, Multiset.count_replicate]
-      split_ifs <;> omega,
-    Finset.sum_ite_eq']
-  split_ifs with hn
-  · rfl
-  · rw [D.gamma_eq_zero_of_notMem hn, Int.toNat_zero]
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [Nat.cast_zero, count_gammaMultiset, Int.sign_zero, zero_mul, gamma_zero]
+  · rw [count_gammaMultiset, Int.sign_natCast_of_ne_zero hn, Int.natAbs_natCast, one_mul]
 
 /-- A negative integer `-n` occurs in the gamma multiset with multiplicity `max(-γ(n), 0)`. -/
-@[simp]
 theorem count_neg_natCast_gammaMultiset (n : ℕ) :
     D.gammaMultiset.count (-n : ℤ) = (-D.gamma n).toNat := by
-  rw [gammaMultiset_def, Multiset.count_sum',
-    Finset.sum_congr rfl fun k hk ↦ show _ = if k = n then (-D.gamma k).toNat else 0 by
-      have := D.pos_of_mem_gammaSupport hk
-      rw [Multiset.count_add, Multiset.count_replicate, Multiset.count_replicate]
-      split_ifs <;> omega,
-    Finset.sum_ite_eq']
-  split_ifs with hn
-  · rfl
-  · rw [D.gamma_eq_zero_of_notMem hn, neg_zero, Int.toNat_zero]
+  rcases eq_or_ne n 0 with rfl | hn
+  · rw [Nat.cast_zero, neg_zero, count_gammaMultiset, Int.sign_zero, zero_mul, gamma_zero, neg_zero]
+  · rw [count_gammaMultiset, Int.sign_neg, Int.sign_natCast_of_ne_zero hn, Int.natAbs_neg,
+      Int.natAbs_natCast, neg_one_mul]
+
+/-- An integer `z` lies in the gamma multiset exactly when `sign(z) γ(|z|) > 0`. -/
+theorem mem_gammaMultiset {z : ℤ} : z ∈ D.gammaMultiset ↔ 0 < z.sign * D.gamma z.natAbs := by
+  rw [← Multiset.count_pos, count_gammaMultiset, Int.lt_toNat, Nat.cast_zero]
 
 /-- The gamma multiset has no zero entry. -/
 theorem zero_notMem_gammaMultiset : (0 : ℤ) ∉ D.gammaMultiset := by
-  rw [← Multiset.count_eq_zero, ← Nat.cast_zero, count_natCast_gammaMultiset, gamma_zero,
-    Int.toNat_zero]
+  simp [mem_gammaMultiset]
 
 /-- The entries of the gamma multiset sum to `0`. -/
 theorem sum_gammaMultiset_eq_zero : D.gammaMultiset.sum = 0 := by

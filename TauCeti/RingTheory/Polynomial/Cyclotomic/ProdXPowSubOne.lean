@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Monic
-public import Mathlib.Algebra.CharZero.Defs
-import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.FieldTheory.RatFunc.Basic
+public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
+import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.RootsOfUnity.Complex
 
 /-!
@@ -15,22 +15,27 @@ import Mathlib.RingTheory.RootsOfUnity.Complex
 
 A product `∏_{n ∈ I} (X ^ n - 1) ^ e(n)` with `e(0) = 0` (the factor `X ^ 0 - 1` is `0`) is
 monic of degree `∑ n e(n)`. In characteristic zero the polynomials `X ^ n - 1`, `n ≥ 1`, are
-multiplicatively independent: such a product determines its exponents. Over `ℂ` a primitive
-`N`-th root of unity is a simple root of `X ^ n - 1` exactly when `N ∣ n`, so its multiplicity
-in the product is `∑_{N ∣ n} e(n)`; comparing these multiplicities for the largest `N` at which
-two exponent functions differ separates them. In characteristic `p` independence fails, since
-`X ^ p - 1 = (X - 1) ^ p`.
+multiplicatively independent: such a product determines its exponents. In characteristic zero a
+primitive `N`-th root of unity is a simple root of `X ^ n - 1` exactly when `N ∣ n`, so its
+multiplicity in the product is `∑_{N ∣ n} e(n)`; comparing these multiplicities over `ℂ` for the
+largest `N` at which two exponent functions differ separates them. In characteristic `p`
+independence fails, since `X ^ p - 1 = (X - 1) ^ p`.
 
 Products of this shape are the integral form of a rational function `∏_n (X ^ n - 1) ^ γ(n)`
 with integer exponents, the form in which Beukers, Cohen and Mellit parametrize hypergeometric
-data by their gamma vector.
+data by their gamma vector. Every product of cyclotomic polynomials has this form in
+`RatFunc K`, by Möbius inversion of `X ^ n - 1 = ∏_{d ∣ n} Φ_d`.
 
 ## Main results
 
 * `Polynomial.monic_prod_X_pow_sub_one_pow`, `Polynomial.natDegree_prod_X_pow_sub_one_pow`: the
   product is monic of degree `∑ n e(n)`.
+* `Polynomial.count_roots_prod_X_pow_sub_one_pow`: in characteristic zero, the multiplicity of a
+  primitive `N`-th root of unity in the product is `∑_{N ∣ n} e(n)`.
 * `Polynomial.eq_of_prod_X_pow_sub_one_pow_eq`: in characteristic zero, equal products have equal
   exponents.
+* `Polynomial.algebraMap_prod_cyclotomic_eq_prod_zpow`: a product of cyclotomic polynomials is
+  `∏_n (X ^ n - 1) ^ (∑_{a, n ∣ a} μ(a / n))` in `RatFunc K`.
 
 ## References
 
@@ -66,19 +71,20 @@ theorem natDegree_prod_X_pow_sub_one_pow [Nontrivial R] (he : e 0 = 0) :
   · rw [he, pow_zero, natDegree_one, zero_mul]
   · rw [← C_1, (monic_X_pow_sub_C (1 : R) hn).natDegree_pow, natDegree_X_pow_sub_C, mul_comm]
 
-/-- The multiplicity of a primitive `N`-th root of unity `ζ` as a root of
-`∏_{n ∈ I} (X ^ n - 1) ^ e(n)` is the sum of the exponents `e(n)` over the multiples `n` of `N`. -/
-private lemma count_roots_prod_X_pow_sub_one_pow {ζ : ℂ} {N : ℕ} (hζ : IsPrimitiveRoot ζ N)
-    (I : Finset ℕ) {e : ℕ → ℕ} (he : e 0 = 0) :
-    (∏ n ∈ I, (X ^ n - 1 : ℂ[X]) ^ e n).roots.count ζ = ∑ n ∈ I, if N ∣ n then e n else 0 := by
-  classical
+/-- In characteristic zero, the multiplicity of a primitive `N`-th root of unity `ζ` as a root
+of `∏_{n ∈ I} (X ^ n - 1) ^ e(n)` is the sum of the exponents `e(n)` over the multiples `n` of
+`N`. -/
+theorem count_roots_prod_X_pow_sub_one_pow {K : Type*} [Field K] [CharZero K] [DecidableEq K]
+    {ζ : K} {N : ℕ} (hζ : IsPrimitiveRoot ζ N) (I : Finset ℕ) {e : ℕ → ℕ} (he : e 0 = 0) :
+    (∏ n ∈ I, (X ^ n - 1 : K[X]) ^ e n).roots.count ζ = ∑ n ∈ I, if N ∣ n then e n else 0 := by
   rw [roots_prod _ _ (monic_prod_X_pow_sub_one_pow he).ne_zero, Multiset.count_bind,
     Finset.sum_eq_multiset_sum]
   refine congr_arg Multiset.sum (Multiset.map_congr rfl fun n _ ↦ ?_)
   rcases eq_or_ne n 0 with rfl | hn
   · simp [he]
   rw [roots_pow, Multiset.count_nsmul, ← C_1, ← nthRoots]
-  have hnodup := (Complex.isPrimitiveRoot_exp n hn).nthRoots_one_nodup
+  have hnodup : (nthRoots n (1 : K)).Nodup :=
+    nodup_roots (C_1 (R := K) ▸ X_pow_sub_one_separable_iff.2 (Nat.cast_ne_zero.2 hn))
   by_cases hNn : N ∣ n
   · rw [ite_eq_left hNn, Multiset.count_eq_one_of_mem hnodup
       ((mem_nthRoots (Nat.pos_of_ne_zero hn)).2 (hζ.pow_eq_one_iff_dvd n |>.2 hNn)), mul_one]
@@ -126,7 +132,8 @@ private lemma eq_of_prod_X_pow_sub_one_pow_eq_complex (he : e 0 = 0) (he' : e' 0
 
 /-- Products of powers of the polynomials `X ^ n - 1` commute with every change of
 coefficients. -/
-private lemma map_prod_X_pow_sub_one_pow {S : Type*} [CommRing S] (f : R →+* S) (I : Finset ℕ)
+@[simp]
+theorem map_prod_X_pow_sub_one_pow {S : Type*} [CommRing S] (f : R →+* S) (I : Finset ℕ)
     (e : ℕ → ℕ) :
     (∏ n ∈ I, (X ^ n - 1 : R[X]) ^ e n).map f = ∏ n ∈ I, (X ^ n - 1 : S[X]) ^ e n := by
   simp [Polynomial.map_prod]
@@ -142,5 +149,49 @@ theorem eq_of_prod_X_pow_sub_one_pow_eq [CharZero R] (he : e 0 = 0) (he' : e' 0 
     ← map_prod_X_pow_sub_one_pow (R := ℤ) (Int.castRingHom ℂ)]
   refine congr_arg _ (Polynomial.map_injective (Int.castRingHom R) Int.cast_injective ?_)
   rwa [map_prod_X_pow_sub_one_pow, map_prod_X_pow_sub_one_pow]
+
+section RatFunc
+
+open scoped ArithmeticFunction.Moebius
+
+variable {K : Type*} [Field K]
+
+/-- Möbius inversion for one cyclotomic polynomial in `RatFunc K`,
+`Φ_a = ∏_{n ∣ a} (X ^ n - 1) ^ μ(a / n)`, with the product spread over a finite set `S` of indices
+containing the divisors of `a`. -/
+theorem algebraMap_cyclotomic_eq_prod_zpow {a : ℕ} (ha : a ≠ 0) {S : Finset ℕ}
+    (hS : a.divisors ⊆ S) :
+    algebraMap K[X] (RatFunc K) (cyclotomic a K) =
+      ∏ n ∈ S, algebraMap K[X] (RatFunc K) (X ^ n - 1) ^ (if n ∣ a then μ (a / n) else 0) := by
+  rw [cyclotomic_eq_prod_X_pow_sub_one_pow_moebius,
+    Nat.prod_divisorsAntidiagonal' fun i j ↦ algebraMap K[X] (RatFunc K) (X ^ j - 1) ^ μ i,
+    ← Finset.prod_subset hS fun n _ hn ↦ by
+      rw [ite_eq_right fun h ↦ hn (Nat.mem_divisors.2 ⟨h, ha⟩), zpow_zero]]
+  exact Finset.prod_congr rfl fun n hn ↦ by rw [ite_eq_left (Nat.dvd_of_mem_divisors hn)]
+
+/-- Möbius inversion for a product of cyclotomic polynomials in `RatFunc K`:
+`∏_{a ∈ A} Φ_a = ∏_{n ∈ S} (X ^ n - 1) ^ (∑_{a ∈ A, n ∣ a} μ(a / n))` for a finite set `S ∌ 0` of
+indices containing the divisors of the elements of `A`. -/
+theorem algebraMap_prod_cyclotomic_eq_prod_zpow (A : Multiset ℕ) (hA : ∀ a ∈ A, a ≠ 0)
+    {S : Finset ℕ} (hS : ∀ a ∈ A, a.divisors ⊆ S) (hS₀ : 0 ∉ S) :
+    algebraMap K[X] (RatFunc K) (A.map fun a ↦ cyclotomic a K).prod =
+      ∏ n ∈ S, algebraMap K[X] (RatFunc K) (X ^ n - 1) ^
+        ((A.filter (n ∣ ·)).map fun a ↦ μ (a / n)).sum := by
+  induction A using Multiset.induction_on with
+  | empty => simp
+  | cons a A ih =>
+    rw [Multiset.map_cons, Multiset.prod_cons, map_mul,
+      algebraMap_cyclotomic_eq_prod_zpow (hA a (Multiset.mem_cons_self a A))
+        (hS a (Multiset.mem_cons_self a A)),
+      ih (fun b hb ↦ hA b (Multiset.mem_cons_of_mem hb)) fun b hb ↦
+        hS b (Multiset.mem_cons_of_mem hb),
+      ← Finset.prod_mul_distrib]
+    refine Finset.prod_congr rfl fun n hn ↦ ?_
+    have hn₀ : 0 < n := Nat.pos_of_ne_zero fun h ↦ hS₀ (h ▸ hn)
+    rw [← zpow_add₀ (RatFunc.algebraMap_ne_zero (X_pow_sub_C_ne_zero hn₀ 1)),
+      Multiset.filter_cons]
+    split_ifs <;> simp
+
+end RatFunc
 
 end Polynomial

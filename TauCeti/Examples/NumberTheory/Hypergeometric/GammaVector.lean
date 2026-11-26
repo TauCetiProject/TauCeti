@@ -40,11 +40,7 @@ theorem gamma_one_quartic : quartic.gamma 1 = -8 := by
 
 -- The gamma multiset of `A2.2.2.2_B1.1.1.1` contains `2` four times and `-1` eight times.
 example : quartic.gammaMultiset.count 2 = 4 ∧ quartic.gammaMultiset.count (-1) = 8 := by
-  have h₂ := quartic.count_natCast_gammaMultiset 2
-  have h₁ := quartic.count_neg_natCast_gammaMultiset 1
-  rw [gamma_two_quartic] at h₂
-  rw [gamma_one_quartic] at h₁
-  exact ⟨h₂, h₁⟩
+  simp [gamma_two_quartic, gamma_one_quartic, Int.sign_eq_one_of_pos]
 
 /-- The datum `A = {1}`, `B = {2}`. -/
 def oneTwo : CyclotomicData where
