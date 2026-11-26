@@ -8,14 +8,12 @@ module
 public import TauCeti.Algebra.Polynomial.Bivariate
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
 public import TauCeti.NumberTheory.ModularForms.LevelOne.CyclicIsogenyPolynomial
-public import TauCeti.RingTheory.HahnSeries.Twist
 import Mathlib.NumberTheory.Cyclotomic.Basic
 import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.RingTheory.RootsOfUnity.Complex
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
-import TauCeti.FieldTheory.Galois.FixedField
+import TauCeti.NumberTheory.ModularForms.LevelOne.IsogenyQExpansion
 import TauCeti.NumberTheory.ModularForms.LevelOne.WeaklyHolomorphic
-import TauCeti.NumberTheory.ModularForms.QExpansion.Affine
 import TauCeti.RingTheory.HahnSeries.Map
 
 /-!
@@ -35,15 +33,16 @@ polynomial** `Φ_n(X, Y) : ℤ[X][Y]` (`TauCeti.ModularForm.modularPolynomial`).
 The integrality of the coefficients of `Φ_n` is proved from the `q`-expansions of the factors at
 width `n`. Writing `q_n = e^{2π i τ / n}` and `ζ_n = e^{2π i / n}`, the local parameter at
 `(a τ + b) / d` (with `a d = n`) is `ζ_n^{a b} q_n^{a²}`, so the width-`n` Laurent `q`-expansion
-of `j((a τ + b) / d)` is obtained from the integral Laurent `q`-expansion of `j` by twisting by
-`ζ_n^{a b}` and substituting `X ↦ X^{a²}` (`laurentQExpansion_j_toGLReal_smul`). Its coefficients
-lie in the ring of integers of the cyclotomic field `ℚ(ζ_n)`. Every automorphism
-`σ ∈ Gal(ℚ(ζ_n) / ℚ)` sends `ζ_n ↦ ζ_n^k` for a unit `k` modulo `n`, and
-`FixedDetMatrices.scaleRep k` (`(a, b, d) ↦ (a, k b mod d, d)`) permutes
-`FixedDetMatrices.primitiveReps n`, so `σ` fixes all Laurent `q`-coefficients of the symmetric
-functions of the `j((a τ + b) / d)`. Being both rational and integral over `ℤ`, those coefficients
-are integers, and `TauCeti.ModularForm.exists_aeval_j_eq` expresses each coefficient as a unique
-polynomial in `j` over `ℤ`.
+of `j((a τ + b) / d)` (`TauCeti.ModularForm.laurentQExpansion_j_toGLReal_smul`) is obtained from
+the integral Laurent `q`-expansion of `j` (`TauCeti.ModularForm.laurentQExpansion_j_mem_map_rangeS`)
+by rescaling by `ζ_n^{a b}` and substituting `X ↦ X^{a²}`. Its coefficients lie in the ring of
+integers of the cyclotomic field `ℚ(ζ_n)`. Every automorphism `σ ∈ Gal(ℚ(ζ_n) / ℚ)` sends
+`ζ_n ↦ ζ_n^k` for a unit `k` modulo `n`, and `FixedDetMatrices.scaleRep k`
+(`(a, b, d) ↦ (a, k b mod d, d)`) permutes `FixedDetMatrices.primitiveReps n`, so `σ` fixes all
+Laurent `q`-coefficients of the symmetric functions of the `j((a τ + b) / d)`. Being both rational
+and integral over `ℤ`, those coefficients are integers, and
+`TauCeti.ModularForm.exists_aeval_j_eq` expresses each coefficient as a unique polynomial in `j`
+over `ℤ`.
 
 ## Main definitions
 
@@ -52,8 +51,6 @@ polynomial in `j` over `ℤ`.
 
 ## Main results
 
-* `TauCeti.ModularForm.laurentQExpansion_j_toGLReal_smul`: the width-`n` Laurent `q`-expansion of
-  `j(A • τ)` for `A ∈ reps n`.
 * `TauCeti.ModularForm.modularPolynomial_one`: `Φ_1(X, Y) = Y - X`.
 * `TauCeti.ModularForm.aevalAeval_j_modularPolynomial`: evaluating `Φ_n(X, Y)` at `(j(τ), w)` gives
   `(cyclicIsogenyPolynomial n j τ).eval w`.
@@ -79,70 +76,6 @@ local notation "𝕢" => Function.Periodic.qParam
 namespace TauCeti.ModularForm
 
 open FixedDetMatrices
-
-/-! ### Action and width-`n` `q`-expansion of upper-triangular representatives -/
-
-section RepsExpansion
-
-variable {n : ℕ} [NeZero n]
-
-/-- For `A ∈ reps n`, `τ ↦ j (A • τ)` has a meromorphic width-`n` cusp function at `0`. -/
-theorem meromorphicAt_cuspFunction_j_toGLReal_smul {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) :
-    MeromorphicAt (cuspFunction n fun τ : ℍ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) 0 :=
-  TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_comp_toGLReal_smul
-    (Int.natCast_pos.2 (NeZero.pos n)) hA periodic_j_comp_ofComplex meromorphicAt_cuspFunction_j
-
-/-- **Width-`n` Laurent `q`-expansion of `j(A • τ)`.** For `A = !![a, b; 0, d] ∈ reps n`, the
-width-`n` Laurent `q`-expansion of `j(A • τ)` is the width-one expansion of `j` twisted by
-`ζ_n^{a b}` and expanded by `X ↦ X^{a²}`. -/
-theorem laurentQExpansion_j_toGLReal_smul {A : FixedDetMatrix (Fin 2) ℤ n}
-    (hA : A ∈ reps (n : ℤ)) :
-    UpperHalfPlane.laurentQExpansion n (fun τ : ℍ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) =
-      LaurentSeries.expand ℂ
-        (⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩ : ℕ+)
-        (HahnSeries.twistEquiv
-          (zpowersHom ℂˣ (Units.mk0
-            (cexp (2 * π * I / n) ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs))
-            (pow_ne_zero _ (Complex.exp_ne_zero _))))
-          (UpperHalfPlane.laurentQExpansion 1 j)) := by
-  have hd : 0 < (A.val 1 1).natAbs := Int.natAbs_pos.2 (apply_one_one_ne_zero_of_mem_reps hA)
-  have had : (A.val 0 0).natAbs * (A.val 1 1).natAbs = n :=
-    (natAbs_apply_zero_zero_mul_natAbs_apply_one_one hA.1).trans (Int.natAbs_natCast n)
-  have hexp := TauCeti.UpperHalfPlane.laurentQExpansion_comp_toGLReal_smul
-    (Int.natCast_pos.2 (NeZero.pos n)) hA periodic_j_comp_ofComplex meromorphicAt_cuspFunction_j
-  rw [Int.cast_natCast] at hexp
-  rw [hexp]
-  have hd_eq : ((A.val 0 0).natAbs ^ 2).toPNat' =
-      ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩ :=
-    Subtype.ext (PNat.toPNat'_coe (pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2))
-  have hq : 𝕢 1 ((A.val 0 1 / A.val 1 1 : ℝ) : ℂ) =
-      cexp (2 * π * I / n) ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs) := by
-    have hbZ : A.val 0 1 = ((A.val 0 1).natAbs : ℤ) := (Int.natAbs_of_nonneg hA.2.2.1).symm
-    have hdZ : A.val 1 1 = ((A.val 1 1).natAbs : ℤ) :=
-      (Int.natAbs_of_nonneg
-        (pos_val_one_one_of_mem_reps (Int.natCast_pos.2 (NeZero.pos n)) hA).le).symm
-    have hd0 : ((A.val 1 1).natAbs : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hd.ne'
-    have hn0 : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne n)
-    have hadC : ((A.val 0 0).natAbs : ℂ) * (A.val 1 1).natAbs = n := by exact_mod_cast had
-    rw [hbZ, hdZ]
-    simp only [Function.Periodic.qParam, Int.cast_natCast, Complex.ofReal_one, Complex.ofReal_div,
-      Complex.ofReal_natCast, div_one, ← Complex.exp_natCast_mul]
-    congr 1
-    push_cast
-    field_simp
-    rw [← hadC, Int.natAbs_abs]
-    ring
-  have hu : Units.mk0 (𝕢 1 ((A.val 0 1 / A.val 1 1 : ℝ) : ℂ)) (Periodic.qParam_ne_zero _) =
-      Units.mk0 (cexp (2 * π * I / n) ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs))
-        (pow_ne_zero _ (Complex.exp_ne_zero _)) :=
-    Units.ext hq
-  rw [hd_eq, hu]
-  congr 1
-  ext m
-  simp [TauCeti.LaurentSeries.coeff_rescale, zpowersHom_apply, Units.val_zpow_eq_zpow_val]
-
-end RepsExpansion
 
 /-! ### Meromorphy at `i∞` and width-`n` expansion of `cyclicIsogenyPolynomial n j` -/
 
@@ -226,19 +159,6 @@ section GaloisDescent
 
 variable {n : ℕ} [NeZero n]
 
-/-- The integral Laurent series lifting the width-one Laurent `q`-expansion of `j`. -/
-private def intLaurentJ : LaurentSeries ℤ :=
-  ((HahnSeries.mem_map_rangeS (f := Int.castRingHom ℂ)).2 fun g ↦ by
-    obtain ⟨m, hm⟩ := exists_laurentQExpansion_j_coeff_eq_intCast g
-    exact ⟨m, hm.symm⟩).choose
-
-private theorem map_intLaurentJ :
-    HahnSeries.mapRingHom (Int.castRingHom ℂ) intLaurentJ =
-      UpperHalfPlane.laurentQExpansion 1 j :=
-  ((HahnSeries.mem_map_rangeS (f := Int.castRingHom ℂ)).2 fun g ↦ by
-    obtain ⟨m, hm⟩ := exists_laurentQExpansion_j_coeff_eq_intCast g
-    exact ⟨m, hm.symm⟩).choose_spec
-
 /-- The cyclotomic subfield `ℚ(e^{2π i / n}) ⊆ ℂ`. -/
 private abbrev cyclotomicSubfield (n : ℕ) : IntermediateField ℚ ℂ :=
   IntermediateField.adjoin ℚ ({cexp (2 * π * I / n)} : Set ℂ)
@@ -256,14 +176,13 @@ open scoped Classical in
 `q`-expansion of `j (A • τ)`. -/
 private def repLaurentSeries (A : FixedDetMatrix (Fin 2) ℤ n) :
     LaurentSeries (cyclotomicSubfield n) :=
-  if hA : A ∈ reps (n : ℤ) then
-    LaurentSeries.expand (cyclotomicSubfield n)
-      (⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩ : ℕ+)
-      (HahnSeries.twistEquiv
-        (zpowersHom (cyclotomicSubfield n)ˣ
-          (Units.mk0 (zetaCyclotomic n ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs))
-            (pow_ne_zero _ (isPrimitiveRoot_zetaCyclotomic.ne_zero (NeZero.ne n)))))
-        (HahnSeries.mapRingHom (Int.castRingHom (cyclotomicSubfield n)) intLaurentJ))
+  if A ∈ reps (n : ℤ) then
+    LaurentSeries.expand (cyclotomicSubfield n) ((A.val 0 0).natAbs ^ 2).toPNat'
+      (TauCeti.LaurentSeries.rescale
+        (Units.mk0 (zetaCyclotomic n ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs))
+          (pow_ne_zero _ (isPrimitiveRoot_zetaCyclotomic.ne_zero (NeZero.ne n))))
+        (HahnSeries.mapRingHom (Int.castRingHom (cyclotomicSubfield n))
+          (laurentQExpansion_j_mem_map_rangeS (Int.castRingHom ℂ)).choose))
   else 0
 
 /-- Under `cyclotomicSubfield n → ℂ`, `repLaurentSeries A` maps to the width-`n` Laurent
@@ -271,17 +190,37 @@ private def repLaurentSeries (A : FixedDetMatrix (Fin 2) ℤ n) :
 private theorem map_val_repLaurentSeries {A : FixedDetMatrix (Fin 2) ℤ n} (hA : A ∈ reps (n : ℤ)) :
     HahnSeries.mapRingHom (cyclotomicSubfield n).val.toRingHom (repLaurentSeries A) =
       UpperHalfPlane.laurentQExpansion n (fun τ : ℍ ↦ j (toGLReal (NeZero.ne (n : ℤ)) A • τ)) := by
-  rw [repLaurentSeries, dite_eq_left_of_eq_true (eq_true hA), laurentQExpansion_j_toGLReal_smul hA,
-    ← map_intLaurentJ]
-  set d : ℕ+ := ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
+  have hd : 0 < (A.val 1 1).natAbs := Int.natAbs_pos.2 (apply_one_one_ne_zero_of_mem_reps hA)
+  have had : (A.val 0 0).natAbs * (A.val 1 1).natAbs = n :=
+    (natAbs_apply_zero_zero_mul_natAbs_apply_one_one hA.1).trans (Int.natAbs_natCast n)
+  have hq : 𝕢 1 ((A.val 0 1 / A.val 1 1 : ℝ) : ℂ) =
+      cexp (2 * π * I / n) ^ ((A.val 0 0).natAbs * (A.val 0 1).natAbs) := by
+    have hbZ : A.val 0 1 = ((A.val 0 1).natAbs : ℤ) := (Int.natAbs_of_nonneg hA.2.2.1).symm
+    have hdZ : A.val 1 1 = ((A.val 1 1).natAbs : ℤ) :=
+      (Int.natAbs_of_nonneg
+        (pos_val_one_one_of_mem_reps (Int.natCast_pos.2 (NeZero.pos n)) hA).le).symm
+    have hd0 : ((A.val 1 1).natAbs : ℂ) ≠ 0 := Nat.cast_ne_zero.2 hd.ne'
+    have hn0 : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.2 (NeZero.ne n)
+    have hadC : ((A.val 0 0).natAbs : ℂ) * (A.val 1 1).natAbs = n := by exact_mod_cast had
+    rw [hbZ, hdZ]
+    simp only [Function.Periodic.qParam, Int.cast_natCast, Complex.ofReal_one, Complex.ofReal_div,
+      Complex.ofReal_natCast, div_one, ← Complex.exp_natCast_mul]
+    congr 1
+    push_cast
+    field_simp
+    rw [← hadC, Int.natAbs_abs]
+    ring
+  simp only [repLaurentSeries, hA, ↓reduceIte]
+  rw [laurentQExpansion_j_toGLReal_smul hA]
+  conv_rhs => rw [← (laurentQExpansion_j_mem_map_rangeS (Int.castRingHom ℂ)).choose_spec]
+  set d : ℕ+ := ((A.val 0 0).natAbs ^ 2).toPNat'
   ext g
   by_cases hdvd : (d : ℤ) ∣ g
   · obtain ⟨r, rfl⟩ := hdvd
     rw [HahnSeries.coeff_mapRingHom, LaurentSeries.coeff_expand_mul, LaurentSeries.coeff_expand_mul,
-      HahnSeries.coeff_twistEquiv, HahnSeries.coeff_twistEquiv,
+      TauCeti.LaurentSeries.coeff_rescale, TauCeti.LaurentSeries.coeff_rescale,
       HahnSeries.coeff_mapRingHom, HahnSeries.coeff_mapRingHom]
-    simp only [smul_eq_mul, zpowersHom_apply, Units.val_zpow_eq_zpow_val, Units.val_mk0, map_mul,
-      map_zpow₀]
+    simp only [Units.val_zpow_eq_zpow_val, Units.val_mk0, map_mul, map_zpow₀, hq]
     simp [zetaCyclotomic]
   · simp [LaurentSeries.coeff_expand_of_not_dvd d _ hdvd]
 
@@ -289,11 +228,12 @@ private theorem map_val_repLaurentSeries {A : FixedDetMatrix (Fin 2) ℤ n} (hA 
 private theorem repLaurentSeries_coeff_isIntegral {A : FixedDetMatrix (Fin 2) ℤ n}
     (hA : A ∈ reps (n : ℤ)) (g : ℤ) :
     IsIntegral ℤ ((repLaurentSeries A).coeff g) := by
-  rw [repLaurentSeries, dite_eq_left_of_eq_true (eq_true hA)]
-  set d : ℕ+ := ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
+  simp only [repLaurentSeries, hA, ↓reduceIte]
+  set d : ℕ+ := ((A.val 0 0).natAbs ^ 2).toPNat'
   by_cases hdvd : (d : ℤ) ∣ g
   · obtain ⟨r, rfl⟩ := hdvd
-    rw [LaurentSeries.coeff_expand_mul, HahnSeries.coeff_twistEquiv, HahnSeries.coeff_mapRingHom]
+    rw [LaurentSeries.coeff_expand_mul, TauCeti.LaurentSeries.coeff_rescale,
+      HahnSeries.coeff_mapRingHom]
     have hζ : IsPrimitiveRoot (zetaCyclotomic n) n := isPrimitiveRoot_zetaCyclotomic
     have hζ_int : IsIntegral ℤ (zetaCyclotomic n) := hζ.isIntegral (NeZero.pos n)
     have hζ_inv : IsIntegral ℤ (zetaCyclotomic n)⁻¹ := by
@@ -311,9 +251,11 @@ private theorem repLaurentSeries_coeff_isIntegral {A : FixedDetMatrix (Fin 2) �
       | negSucc l =>
         rw [zpow_negSucc, ← inv_pow, ← inv_pow]
         exact (hζ_inv.pow _).pow (l + 1)
-    have hint : IsIntegral ℤ ((intLaurentJ.coeff r : ℤ) : cyclotomicSubfield n) :=
+    have hint : IsIntegral ℤ
+        ((((laurentQExpansion_j_mem_map_rangeS (Int.castRingHom ℂ)).choose.coeff r : ℤ) :
+          cyclotomicSubfield n)) :=
       intCast_mem (integralClosure ℤ (cyclotomicSubfield n)) _
-    simpa [zpowersHom_apply] using hzpow.mul hint
+    exact hzpow.mul hint
   · rw [LaurentSeries.coeff_expand_of_not_dvd d _ hdvd]
     exact isIntegral_zero
 
@@ -349,16 +291,14 @@ private theorem map_gal_repLaurentSeries (σ : cyclotomicSubfield n ≃ₐ[ℚ] 
     have hnq : zetaCyclotomic n ^ (n * q) = 1 := by rw [pow_mul, hζ.pow_eq_one, one_pow]
     rw [hexp, pow_add, hnq, mul_one]
   ext g
-  rw [repLaurentSeries, dite_eq_left_of_eq_true (eq_true hA),
-    repLaurentSeries, dite_eq_left_of_eq_true (eq_true hBr), HahnSeries.coeff_mapRingHom]
-  set dA : ℕ+ := ⟨(A.val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hA.2.1.ne') 2⟩
-  set dB : ℕ+ :=
-    ⟨((scaleRep u A).val 0 0).natAbs ^ 2, pow_pos (Int.natAbs_pos.2 hBr.2.1.ne') 2⟩
-  have hdAB : dA = dB := Subtype.ext (by simp [dA, dB])
+  simp only [repLaurentSeries, hA, hBr, ↓reduceIte, HahnSeries.coeff_mapRingHom]
+  set dA : ℕ+ := ((A.val 0 0).natAbs ^ 2).toPNat'
+  set dB : ℕ+ := (((scaleRep u A).val 0 0).natAbs ^ 2).toPNat'
+  have hdAB : dA = dB := by simp [dA, dB]
   by_cases hdvd : (dA : ℤ) ∣ g
   · obtain ⟨r, rfl⟩ := hdvd
     rw [LaurentSeries.coeff_expand_mul, hdAB, LaurentSeries.coeff_expand_mul]
-    simp [zpowersHom_apply, Units.val_zpow_eq_zpow_val, hpow]
+    simp [TauCeti.LaurentSeries.coeff_rescale, Units.val_zpow_eq_zpow_val, hpow]
   · rw [LaurentSeries.coeff_expand_of_not_dvd dA _ hdvd,
       LaurentSeries.coeff_expand_of_not_dvd dB _ (hdAB ▸ hdvd), map_zero]
 
@@ -424,7 +364,7 @@ private theorem laurentQExpansion_coeff_cyclicIsogenyPolynomial_j_mem_int (k : �
     simpa [x, coeff_map] using
       congrArg (fun p : (LaurentSeries K)[X] ↦ (p.coeff k).coeff ((d : ℤ) * m))
         (map_gal_prod_repLaurentSeries (n := n) σ)
-  obtain ⟨q, hq⟩ := (InfiniteGalois.mem_range_algebraMap_iff_fixed (k := ℚ) x).2 hx_fixed
+  obtain ⟨q, hq⟩ := (IsGalois.mem_range_algebraMap_iff_fixed (F := ℚ) x).2 hx_fixed
   have hx_int : IsIntegral ℤ x := coeff_prod_repLaurentSeries_isIntegral _
     (fun _ hA ↦ (mem_primitiveReps.1 hA).1) k ((d : ℤ) * m)
   obtain ⟨z, hz⟩ := IsIntegrallyClosed.isIntegral_iff.1 (isIntegral_algebraMap_iff.1 (hq ▸ hx_int))
