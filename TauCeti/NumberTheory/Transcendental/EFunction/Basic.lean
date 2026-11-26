@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.PowerSeries.DFinite.Borel
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 import TauCeti.Algebra.Order.GroupWithZero.Pow
 import TauCeti.FieldTheory.Normal.Closure
+import TauCeti.FieldTheory.Normal.Embeddings
 
 /-!
 # Siegel's E-functions
@@ -53,13 +54,14 @@ When an E-function `a` vanishes at `1` (`eFun a 1 = 0`), the general quotient se
 analytic quotient identity `(1 - z) * eFun (divOneSubSeq a) z = eFun a z`
 (`TauCeti.IsEFunction.one_sub_mul_eFun_divOneSubSeq`). When `a` also has rational coefficients,
 `divOneSubSeq a` is itself an E-function (`TauCeti.IsEFunction.divOneSubSeq`). For an arbitrary
-nonzero E-function, forming the Hurwitz product of all Galois conjugates over a finite Galois
+nonzero E-function `a`, forming the Hurwitz product of all Galois conjugates over a finite Galois
 coefficient field produces a nonzero rational-coefficient E-function multiple
 (`TauCeti.IsEFunction.fold_hurwitzMul_gal`, `TauCeti.exists_rat_fold_hurwitzMul_gal`,
-`TauCeti.IsEFunction.exists_rat_isEFunction_hurwitzMul`) whose `(1 - z)`-quotient at `1` is again
-an E-function (`TauCeti.IsEFunction.divOneSubSeq_fold_hurwitzMul_gal`), reducing vanishing at
-arbitrary algebraic zeros to the rational-coefficient base case in Beukers's proof of the refined
-Siegel–Shidlovskii theorem.
+`TauCeti.IsEFunction.exists_rat_isEFunction_hurwitzMul`). When `eFun a 1 = 0`, the
+`(1 - z)`-quotient of this Galois-conjugate product is again an E-function
+(`TauCeti.IsEFunction.divOneSubSeq_fold_hurwitzMul_gal`); combined with algebraic rescaling
+(`TauCeti.IsEFunction.rescale`), this reduces vanishing at nonzero algebraic zeros to the
+rational-coefficient base case at `1` in Beukers's proof of the refined Siegel–Shidlovskii theorem.
 
 ## Main definitions
 
@@ -630,26 +632,16 @@ protected theorem comp_algHom {K : Type*} [Field K] [Algebra ℚ K] [Algebra.IsA
     (IsScalarTower.toAlgHom ℚ K ℂ).codRestrict (algebraicClosure ℚ ℂ).toSubalgebra hι
   let φ₀ : K →ₐ[ℚ] algebraicClosure ℚ ℂ :=
     φ.codRestrict (algebraicClosure ℚ ℂ).toSubalgebra hφ
-  let _ : Algebra K (algebraicClosure ℚ ℂ) := ι₀.toRingHom.toAlgebra
-  have : IsScalarTower ℚ K (algebraicClosure ℚ ℂ) :=
-    IsScalarTower.of_algebraMap_eq' ι₀.comp_algebraMap.symm
-  let τ : Gal(algebraicClosure ℚ ℂ/ℚ) :=
-    AlgEquiv.ofBijective (φ₀.liftNormal (algebraicClosure ℚ ℂ))
-      (AlgHom.normal_bijective ℚ (algebraicClosure ℚ ℂ) (algebraicClosure ℚ ℂ) _)
+  obtain ⟨τ, hτ₀⟩ := MulAction.exists_smul_eq Gal(algebraicClosure ℚ ℂ/ℚ) ι₀ φ₀
   have hτ : (fun n ↦ (τ ⟨(algebraMap K ℂ ∘ a) n,
         mem_algebraicClosure_iff.mpr (ha.isAlgebraic n)⟩ : ℂ)) = φ ∘ a := by
     ext n
-    have hcomm := φ₀.liftNormal_commutes (algebraicClosure ℚ ℂ) (a n)
     have hsub : (⟨(algebraMap K ℂ ∘ a) n, mem_algebraicClosure_iff.mpr (ha.isAlgebraic n)⟩ :
-        algebraicClosure ℚ ℂ) = algebraMap K (algebraicClosure ℚ ℂ) (a n) := by
-      ext
-      simpa [ι₀, RingHom.algebraMap_toAlgebra] using
-        (AlgHom.coe_codRestrict (IsScalarTower.toAlgHom ℚ K ℂ)
-          (algebraicClosure ℚ ℂ).toSubalgebra hι (a n)).symm
-    rw [hsub]
-    have hval := congrArg Subtype.val hcomm
-    simpa [τ, φ₀] using hval.trans
-      (AlgHom.coe_codRestrict φ (algebraicClosure ℚ ℂ).toSubalgebra hφ (a n))
+        algebraicClosure ℚ ℂ) = ι₀ (a n) :=
+      Subtype.ext (AlgHom.coe_codRestrict (IsScalarTower.toAlgHom ℚ K ℂ)
+        (algebraicClosure ℚ ℂ).toSubalgebra hι (a n)).symm
+    rw [hsub, ← AlgEquiv.smul_algHom_apply, hτ₀]
+    exact AlgHom.coe_codRestrict φ (algebraicClosure ℚ ℂ).toSubalgebra hφ (a n)
   exact hτ ▸ ha.galoisConj τ
 
 end IsEFunction
