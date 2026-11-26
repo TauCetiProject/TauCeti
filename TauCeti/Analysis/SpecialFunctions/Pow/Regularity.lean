@@ -129,7 +129,6 @@ theorem not_holderOnWith_iteratedFDeriv_three_abs_rpow {p : ℝ} (hp : 3 < p) {�
     (hγ : p - 3 < γ) {s : Set ℝ} (hs : s ∈ 𝓝 0) :
     ¬ HolderOnWith C γ (iteratedFDeriv ℝ 3 fun x : ℝ ↦ |x| ^ p) s := by
   intro hH
-  have hγp : (0 : ℝ) < γ - (p - 3) := sub_pos.2 hγ
   set c : ℝ := p * (p - 1) * (p - 2)
   have hc0 : 0 < c := by
     have : 0 < p - 2 := by linarith
@@ -151,15 +150,13 @@ theorem not_holderOnWith_iteratedFDeriv_three_abs_rpow {p : ℝ} (hp : 3 < p) {�
       hD t ht, hD0, dist_zero_right, Real.norm_eq_abs]
     exact abs_of_pos (by positivity)
   -- So the Hölder bound against the origin reads `c t ^ (p - 3) ≤ C t ^ γ`, false for small `t`.
-  obtain ⟨t, hCt, ht⟩ := ((eventually_mul_rpow_lt_nhdsGT_zero hγp C hc0).and
-    (Ioo_mem_nhdsGT hε)).exists
+  refine (not_le.2 hγ) (le_of_forall_mem_Ioc_rpow_le_mul_rpow (C := C / c) (half_pos hε)
+    fun t ht ↦ ?_)
   have hts : t ∈ s := hball (by
-    rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_pos ht.1]; exact ht.2)
+    rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_pos ht.1]; linarith [ht.2])
   have hd := hH.dist_le hts (mem_of_mem_nhds hs)
   rw [hdist t ht.1, Real.dist_eq, sub_zero, abs_of_pos ht.1] at hd
-  have hsplit : t ^ (γ : ℝ) = t ^ ((γ : ℝ) - (p - 3)) * t ^ (p - 3) := by
-    rw [← Real.rpow_add ht.1, sub_add_cancel]
-  rw [hsplit, ← mul_assoc] at hd
-  linarith [mul_lt_mul_of_pos_right hCt (Real.rpow_pos_of_pos ht.1 (p - 3))]
+  rw [div_mul_eq_mul_div, le_div_iff₀ hc0]
+  linarith
 
 end TauCeti
