@@ -102,7 +102,10 @@ theorem coefficientCenter_app (U : C) (a : Multiplicative (A.obj.obj (op U)))
 theorem unitsEndEval_coefficientCenter (U : C) (a : Multiplicative (A.obj.obj (op U)))
     (x : F.obj (.mk (op U))) :
     NatTrans.unitsEndEval (𝟭 _) x (b.coefficientCenter hF U a) = b.mulEquiv U x a :=
-  Aut.ext (Iso.ext (NatTrans.unitsEndEval_asIso_hom x _))
+  Aut.ext (Iso.ext (by
+    rw [NatTrans.unitsEndEval_asIso_hom]
+    -- `CatCenter.app` is Mathlib's abbreviation for `asHom.app`
+    exact b.coefficientCenter_app hF U a x))
 
 /-- **Restriction of central units.** Pulling the central unit of `a` back along `f : V ⟶ U` at
 `x` gives the central unit of the restriction `a|_V` at `F(f) x`. -/
@@ -120,9 +123,7 @@ noncomputable def centerFromBanding (U : C) :
     Multiplicative (A.obj.obj (op U)) →* IntrinsicBandSections F U where
   toFun a := IntrinsicBandSections.ofCompatible
     (fun V f ↦ b.coefficientCenter hF V (.ofAdd (A.obj.map f.op a.toAdd)))
-    ((F.isPullbackCompatible_iff _).mpr fun V W f g x ↦ by
-      rw [map_coefficientCenter_app, toAdd_ofAdd, op_comp, Functor.map_comp,
-        AddCommGrpCat.comp_apply])
+    ((F.isPullbackCompatible_iff _).mpr fun V W f g x ↦ by simp)
   map_one' := IntrinsicBandSections.ext fun V f x ↦ by
     simp only [IntrinsicBandSections.val_ofCompatible, toAdd_one, map_zero, ofAdd_zero, map_one,
       IntrinsicBandSections.val_one]
@@ -154,9 +155,7 @@ theorem evaluation_centerFromBanding {U V : C} (f : V ⟶ U) (x : F.obj (.mk (op
 theorem restrict_centerFromBanding {U V : C} (f : V ⟶ U) (a : Multiplicative (A.obj.obj (op U))) :
     IntrinsicBandSections.restrict f (b.centerFromBanding hF U a) =
       b.centerFromBanding hF V (.ofAdd (A.obj.map f.op a.toAdd)) :=
-  IntrinsicBandSections.ext fun W g x ↦ by
-    rw [IntrinsicBandSections.val_restrict, val_centerFromBanding, val_centerFromBanding,
-      toAdd_ofAdd, op_comp, Functor.map_comp, AddCommGrpCat.comp_apply]
+  IntrinsicBandSections.ext fun W g x ↦ by simp
 
 /-- **Characterization by evaluations.** A central section over `U` whose evaluation at every
 `f : V ⟶ U` and every `x` over `V` is `b(V, x)(a|_V)` is `c_b(U)(a)`. -/
