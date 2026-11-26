@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Giada Franz, The Tau Ceti contributors
 -/
 module
 
@@ -92,7 +92,7 @@ theorem ae_restrict_of_subset_iUnion_isOpen [TopologicalSpace X] [SecondCountabl
 /-- **Continuous local representatives glue.** Let `μ` charge every nonempty open set, and let
 every point `x` of a Lindelöf set `s` have an open neighbourhood `U x` on which `f` agrees
 `μ`-almost everywhere with a function `g x` continuous on `U x`. Then a single function agrees
-with every `g x` on `U x ∩ s`, and with `f` almost everywhere; it differs from `f` only in `s`. -/
+with every `g x` on `U x ∩ s`, and with `f` almost everywhere. -/
 theorem _root_.IsLindelof.exists_ae_eq_and_eqOn_of_forall_ae_eq_continuousOn
     [TopologicalSpace X] [μ.IsOpenPosMeasure] {Y : Type*} [TopologicalSpace Y] [T2Space Y]
     {s : Set X} (hs : IsLindelof s) {f : X → Y} {U : X → Set X} {g : X → X → Y}
