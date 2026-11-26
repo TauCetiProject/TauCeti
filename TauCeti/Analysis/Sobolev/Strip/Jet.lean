@@ -384,6 +384,12 @@ theorem cutoffCoeff_apply (β : ℝ → ℝ) (z : ℝ × ℝ) (v : V × V × V) 
   obtain ⟨a, b, c⟩ := v
   simp [cutoffCoeff]
 
+/-- Where `β` is locally constant, equal to `b`, multiplication by `β(s)` is multiplication by `b`:
+the derivative term vanishes. -/
+theorem cutoffCoeff_of_eventuallyEq {β : ℝ → ℝ} {b : ℝ} {z : ℝ × ℝ}
+    (h : β =ᶠ[𝓝 z.1] fun _ ↦ b) : cutoffCoeff V β z = b • ContinuousLinearMap.id ℝ (V × V × V) := by
+  rw [cutoffCoeff_def, h.eq_of_nhds, h.deriv_eq, deriv_const, zero_smul, add_zero]
+
 /-- Multiplication by `β(s)` followed by multiplication by `γ(s)` is multiplication by
 `β(s) γ(s)`. -/
 theorem cutoffCoeff_comp_cutoffCoeff {β γ : ℝ → ℝ} {z : ℝ × ℝ} (hβ : DifferentiableAt ℝ β z.1)
