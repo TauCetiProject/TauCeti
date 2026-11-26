@@ -55,7 +55,7 @@ open scoped ENNReal
 
 namespace TauCeti
 
-variable {X ι : Type*} {mX : MeasurableSpace X} {μ : Measure X}
+variable {X ι ι' : Type*} {mX : MeasurableSpace X} {μ : Measure X}
 
 /-- The length-`n` itinerary of the label `a` under `T`: `x ↦ (a x, a (T x), …, a (T^[n-1] x))`.
 It labels the join of the partitions given by `a ∘ T^[k]` for `k < n`. -/
@@ -82,6 +82,11 @@ theorem iteratedPartitionLabel_one (T : X → X) (a : X → ι) :
 theorem iteratedPartitionLabel_id (a : X → ι) (n : ℕ) :
     iteratedPartitionLabel id a n = Function.const (Fin n) ∘ a :=
   funext fun x ↦ funext fun k ↦ by simp
+
+/-- The itinerary of a relabeled label is the relabeled itinerary. -/
+theorem iteratedPartitionLabel_comp (T : X → X) (a : X → ι) (e : ι → ι') (n : ℕ) :
+    iteratedPartitionLabel T (e ∘ a) n = (e ∘ ·) ∘ iteratedPartitionLabel T a n :=
+  funext fun _ ↦ funext fun _ ↦ by simp
 
 /-- Itineraries of a measurable label under a measurable map are measurable. -/
 theorem measurable_iteratedPartitionLabel [MeasurableSpace ι] {T : X → X} (hT : Measurable T)
