@@ -359,12 +359,8 @@ variable (R : Type (u + 1)) [Ring R]
 /-- The free solid module `R[S]^solid` on a profinite set `S` is solid: it is a product of copies
 of the discrete module `R`, which is solid. -/
 instance isSolid_profiniteSolid (S : Profinite.{u}) : ((profiniteSolid R).obj S).IsSolid := by
-  have := LocallyConstant.freeOfProfinite S
-  let b := Module.Free.chooseBasis ℤ (LocallyConstant S ℤ)
-  have : (TauCeti.locallyConstantIntDualFan (R := R) b).pt.IsSolid :=
-    ObjectProperty.prop_of_isLimit _ (TauCeti.isLimitLocallyConstantIntDualFan b) fun _ ↦
-      ModuleCat.isSolid_locallyConstant _
-  rw [TauCeti.locallyConstantIntDualFan_pt] at this
-  exact ObjectProperty.prop_of_iso _ (TauCeti.profiniteSolidIsoLocallyConstantIntDual R S).symm this
+  have : HasLimitsOfSize.{u, u} (CondensedMod.{u} R) := hasLimitsOfSizeShrink.{u, u, u, u + 1} _
+  obtain ⟨I, ⟨e⟩⟩ := TauCeti.exists_profiniteSolid_iso_pi R S
+  exact ObjectProperty.prop_of_iso _ e.symm (CondensedMod.isSolid_pi _)
 
 end Condensed

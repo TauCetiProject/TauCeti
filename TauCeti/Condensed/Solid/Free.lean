@@ -552,11 +552,6 @@ noncomputable def locallyConstantIntDualFan {I : Type u}
     Fan fun _ : I ↦ (CondensedMod.LocallyConstant.functor R).obj (ModuleCat.of R R) :=
   Fan.mk (locallyConstantIntDual R S) fun i ↦ locallyConstantIntDualEval (b i)
 
-@[simp]
-theorem locallyConstantIntDualFan_pt {I : Type u} (b : Module.Basis I ℤ (LocallyConstant S ℤ)) :
-    (locallyConstantIntDualFan (R := R) b).pt = locallyConstantIntDual R S :=
-  (rfl)
-
 /-- A `ℤ`-basis of `C(S, ℤ)` indexed by `I` exhibits `locallyConstantIntDual R S` as the product of
 `I` copies of the discrete condensed module `R`. -/
 noncomputable def isLimitLocallyConstantIntDualFan {I : Type u}
