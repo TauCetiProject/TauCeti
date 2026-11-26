@@ -8,8 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity
 public import TauCeti.Geometry.Symplectic.Floer.Rescaling.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
+public import TauCeti.Geometry.Symplectic.Floer.Compactness.Quantization
 import TauCeti.Geometry.Manifold.ExtChartAt.ClosedBall
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Regularity
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -61,11 +63,17 @@ area density of `v` with the limit of the energy densities of the rescaled maps
 this statement is
 `TauCeti.SymplecticForm.exists_tendstoLocallyUniformly_rescale_of_tendsto_norm_fderiv`.
 
-The bubble is a plane. That it extends to a sphere needs removal of the singularity at infinity,
-which is not treated here. Energy quantization
+**The smooth bubble and its quantum of area** (in the namespace `TauCeti.SmoothTwoForm`,
+`IsNondegenerate.exists_pos_forall_exists_rescale_ofReal_le_lintegral_eval₂`). When the frozen
+structure `J(z₀, ·)` is a smooth almost complex structure `J₀` tamed by `ω`, the `C¹` bubble is
+smooth, since `C¹` pseudoholomorphic planes are
+(`TauCeti.contMDiff_of_mfderiv_stdComplexLineImag_eq`), and energy quantization
 (`TauCeti.SmoothTwoForm.Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`) bounds its area
-below only once `v` is `C³` and the frozen structure `J(z₀, ·)` is a smooth almost complex
-structure tamed by `ω`; this file gives only `C¹` regularity of `v` and of `J(z₀, ·)` in charts.
+below by an energy `κ > 0` depending only on `ω`, `J₀` and `K`. So every bubbling point absorbs at
+least `κ`.
+
+The bubble is a plane. That it extends to a sphere needs removal of the singularity at infinity,
+which is not treated here.
 
 ## References
 
@@ -634,6 +642,80 @@ theorem IsNondegenerate.exists_rescale_tendstoLocallyUniformly_fderiv_extChartAt
       (fun w ↦ hXc hXs w) (fun w ↦ hXc hXt w)).trans ?_
     exact liminf_le_liminf (Eventually.of_forall fun n ↦
       MeasureTheory.lintegral_mono_set (ball_subset_ball (min_le_left δ r)))
+
+/-- **The bubble is smooth and carries a quantum of area.** In the setting of
+`IsNondegenerate.exists_rescale_tendstoLocallyUniformly_fderiv_extChartAt_comp`, let `M` be
+Hausdorff and let the structure `J(z₀, ·)` frozen at the bubbling point be a smooth almost complex
+structure `J₀` tamed by `ω`. There is an energy `κ > 0`, depending only on `ω`, `J₀` and `K`, with
+the following property. If the energy densities of smooth solutions `uₙ` of the Floer equation on
+`U`, with values in `K`, tend to `∞` at points `zₙ → z₀`, then there are a subsequence `φ`, centres
+`cₙ → z₀`, scales `εₙ > 0` with `εₙ → 0`, and a smooth `J₀`-holomorphic plane `v : ℝ × ℝ → K`
+such that
+
+* the rescaled maps `w ↦ u_{φ n}(cₙ + εₙ w)` converge to `v` locally uniformly through `e`;
+* the symplectic area `∫ ω(∂ₛv, ∂ₜv)` of `v` is at least `κ` and, for every `δ > 0`, at most the
+  lower limit of the Floer energies of the `u_{φ n}` over the disc of radius `δ` about `z₀`.
+
+So a bubbling point of a sequence of Floer solutions absorbs at least the energy `κ`, carried by a
+smooth plane. -/
+theorem IsNondegenerate.exists_pos_forall_exists_rescale_ofReal_le_lintegral_eval₂ [T2Space M]
+    (hω : ω.IsNondegenerate) {K : Set M} (hK : IsCompact K)
+    (he : ∀ x ∈ K, MDifferentiableAt I 𝓘(ℝ, F) e x) (he_inj : InjOn e K)
+    {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)} {U : Set (ℝ × ℝ)}
+    (hU : IsOpen U) {z₀ : ℝ × ℝ} (hz₀ : z₀ ∈ U)
+    (hJ : ∀ x ∈ K,
+      ContDiffOn ℝ 1 (Floer.almostComplexInChartAt I x J) (U ×ˢ (extChartAt I x).target))
+    (hXs : ∀ x ∈ K,
+      ContDiffOn ℝ 1 (ω.hamiltonianVectorFieldInChartAt x Ks) (U ×ˢ (extChartAt I x).target))
+    (hXt : ∀ x ∈ K,
+      ContDiffOn ℝ 1 (ω.hamiltonianVectorFieldInChartAt x Kt) (U ×ˢ (extChartAt I x).target))
+    (hJt : ∀ z ∈ U, ∀ x, (hω.symplecticFormAt x).Tames (J z x)) {c B : ℝ} (hc : 0 < c)
+    (hJc : ∀ y ∈ U, ∀ x ∈ K, ∀ v,
+      c * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v (J y x v))
+    (hBs : ∀ y ∈ U, ∀ x ∈ K, ‖mvfderiv I e x (ω.hamiltonianVectorField (Ks y) x)‖ ≤ B)
+    (hBt : ∀ y ∈ U, ∀ x ∈ K, ‖mvfderiv I e x (ω.hamiltonianVectorField (Kt y) x)‖ ≤ B)
+    {J₀ : SmoothAlmostComplexStructure I M} (hJ₀ : ∀ x v, J z₀ x v = J₀ x v)
+    (hJ₀t : ω.Tames J₀) :
+    ∃ κ > 0, ∀ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃z : ℕ → ℝ × ℝ⦄,
+      (∀ n, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (u n) U) → (∀ n, MapsTo (u n) U K) →
+      (∀ n, ContinuousOn (ω.floerEnergyDensity Ks Kt (u n)) U) →
+      (∀ n, ∀ y ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J y (u n y))
+        (ω.perturbedMFDeriv Ks Kt (u n) y).toLinearMap) →
+      Tendsto z atTop (𝓝 z₀) →
+      Tendsto (fun n ↦ ω.floerEnergyDensity Ks Kt (u n) (z n)) atTop atTop →
+      ∃ (φ : ℕ → ℕ) (c' : ℕ → ℝ × ℝ) (ε : ℕ → ℝ) (v : ℝ × ℝ → M), StrictMono φ ∧
+        (∀ n, 0 < ε n) ∧ Tendsto c' atTop (𝓝 z₀) ∧ Tendsto ε atTop (𝓝 0) ∧
+        TendstoLocallyUniformly (fun n w ↦ e (u (φ n) (c' n + ε n • w))) (e ∘ v) atTop ∧
+        ContMDiff 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) v ∧ (∀ w, v w ∈ K) ∧
+        (∀ w, mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineImag =
+          J₀ (v w) (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineReal)) ∧
+        ENNReal.ofReal κ ≤ ∫⁻ w, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (v w)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineImag)) ∧
+        ∀ δ > 0, ∫⁻ w, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (v w)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineImag)) ≤
+          liminf (fun n ↦ ∫⁻ y in ball z₀ δ,
+            ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u (φ n)) y)) atTop := by
+  obtain ⟨κ, hκ, hquant⟩ := hJ₀t.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne hK
+  refine ⟨κ, hκ, fun u z hu huK hρ hsol hz hblow ↦ ?_⟩
+  obtain ⟨φ, c', ε, v, hφ, hε, hc', hε0, hv1, hvK, hconv, -, hhol, hv0, -, harea⟩ :=
+    hω.exists_rescale_tendstoLocallyUniformly_fderiv_extChartAt_comp hK he he_inj hU hz₀ hJ hXs
+      hXt hJt hc hJc hBs hBt hu huK hρ hsol hz hblow
+  have hhol₀ (w : ℝ × ℝ) : mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineImag =
+      J₀ (v w) (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineReal) :=
+    (hhol w).trans (hJ₀ _ _)
+  -- The area density of `v` is `1` at the origin, so `v` is not constant.
+  have hne : ∃ w w', v w ≠ v w' := by
+    by_contra! hconst
+    have hd : mfderiv 𝓘(ℝ, ℝ × ℝ) I v 0 stdComplexLineReal = 0 := by
+      rw [show v = fun _ ↦ v 0 from funext fun w ↦ hconst w 0, mfderiv_const]
+      rfl
+    rw [hd, SmoothBundleForm.eval₂_zero_left] at hv0
+    exact zero_ne_one hv0
+  exact ⟨φ, c', ε, v, hφ, hε, hc', hε0, hconv,
+    contMDiff_of_mfderiv_stdComplexLineImag_eq hv1 hhol₀, hvK, hhol₀,
+    hquant hv1 hvK hhol₀ hne, harea⟩
 
 end Bubble
 
