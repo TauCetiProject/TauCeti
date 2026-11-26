@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
 public import Mathlib.Data.Int.Order.Units
 public import TauCeti.CategoryTheory.Dagger.Monoidal
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Functor
 public import TauCeti.CategoryTheory.Preadditive.Schur
 import TauCeti.CategoryTheory.Monoidal.Rigid.Simple
 
@@ -21,9 +21,9 @@ and contracting the first two factors against its adjoint acts as `s` on `X`. Ta
 gives the other zigzag. Thus `R` and `s • dagger R` are the coevaluation and evaluation of
 a native `ExactPairing X X`. Its closed loop is the signed multiple of `R ≫ dagger R`.
 
-The sign is preserved by unitary changes of object and by additive dagger tensor
-functors, including Hilbert space fiber functors. These transport laws use
-`exactPairingCongr` and `Functor.mapExactPairing` on the associated pairing.
+The sign is preserved by unitary changes of object and by additive dagger functors
+with unitary monoidal constraints. The functor transport applies the unit and tensor
+comparisons to the signed zigzag, as in `Functor.mapExactPairing` for an exact pairing.
 
 Given one signed cup on a nonzero object with scalar endomorphisms, every other
 signed cup has its sign and differs from it by a norm-one scalar. In particular,
@@ -51,19 +51,26 @@ associator and unitors inserted. The two signs are the units of the integers. -/
 def IsSignedCup {X : C} (s : ℤˣ) (R : 𝟙_ C ⟶ X ⊗ X) : Prop :=
   X ◁ R ≫ (α_ X X X).inv ≫ dagger R ▷ X = (s : ℤ) • ((ρ_ X).hom ≫ (λ_ X).inv)
 
-namespace IsSignedCup
-
 variable {X Y : C} {s : ℤˣ} {R : 𝟙_ C ⟶ X ⊗ X}
+
+/-- A cup has sign `s` exactly when its contraction on the right is the signed unitor composite. -/
+theorem isSignedCup_iff :
+    IsSignedCup s R ↔
+      X ◁ R ≫ (α_ X X X).inv ≫ dagger R ▷ X = (s : ℤ) • ((ρ_ X).hom ≫ (λ_ X).inv) :=
+  Iff.rfl
+
+namespace IsSignedCup
 
 /-- The signed contraction with the cup on the right. -/
 @[reassoc] theorem whiskerLeft_comp (h : IsSignedCup s R) :
-    X ◁ R ≫ (α_ X X X).inv ≫ dagger R ▷ X = (s : ℤ) • ((ρ_ X).hom ≫ (λ_ X).inv) := h
+    X ◁ R ≫ (α_ X X X).inv ≫ dagger R ▷ X = (s : ℤ) • ((ρ_ X).hom ≫ (λ_ X).inv) :=
+  isSignedCup_iff.mp h
 
 variable [DaggerMonoidalCategory C]
 
 /-- The canonical self-duality of the tensor unit has positive sign. -/
 @[simp] theorem rightUnitor_inv_tensorUnit : IsSignedCup (1 : ℤˣ) (ρ_ (𝟙_ C)).inv := by
-  simpa [IsSignedCup] using ExactPairing.coevaluation_evaluation (𝟙_ C) (𝟙_ C)
+  simpa [isSignedCup_iff] using ExactPairing.coevaluation_evaluation (𝟙_ C) (𝟙_ C)
 
 variable [DaggerPreadditive C]
 
@@ -105,29 +112,42 @@ theorem iff_evaluation_eq [P : ExactPairing X X] (hη : η_ X X = R) :
   · intro hε
     have h := ExactPairing.coevaluation_evaluation X X
     rw [hε, zsmul_whiskerRight, Preadditive.comp_zsmul, Preadditive.comp_zsmul] at h
-    simpa only [IsSignedCup, smul_smul, Int.units_coe_mul_self, one_smul] using
+    simpa only [isSignedCup_iff, smul_smul, Int.units_coe_mul_self, one_smul] using
       congrArg ((s : ℤ) • ·) h
 
+omit [DaggerPreadditive C] [MonoidalPreadditive C] in
 /-- Transporting both legs along a unitary isomorphism preserves the signed cup equation. -/
 theorem unitary_congr (h : IsSignedCup s R) (e : X ≅ Y) (he : IsUnitary e.hom) :
     IsSignedCup s (R ≫ (e.hom ⊗ₘ e.hom)) := by
-  let := h.exactPairing
-  rw [iff_evaluation_eq (P := exactPairingCongr e.symm e.symm) (by
-    simp [exactPairingCongr_coevaluation, tensorHom_def'])]
-  rw [dagger_comp, dagger_tensorHom, e.dagger_hom_eq_inv_of_isUnitary he]
-  simp [exactPairingCongr_evaluation, tensorHom_def']
+  have cup : e.hom ▷ (𝟙_ C) ≫ Y ◁ (R ≫ (e.hom ⊗ₘ e.hom)) =
+      X ◁ R ≫ (e.hom ⊗ₘ (e.hom ⊗ₘ e.hom)) := by
+    rw [← tensorHom_def, whiskerLeft_comp_tensorHom]
+  have cap : ((e.hom ⊗ₘ e.hom) ⊗ₘ e.hom) ≫ dagger (R ≫ (e.hom ⊗ₘ e.hom)) ▷ Y =
+      dagger R ▷ X ≫ (𝟙_ C) ◁ e.hom := by
+    rw [tensorHom_comp_whiskerRight, ← tensorHom_def, dagger_comp, dagger_tensorHom,
+      e.dagger_hom_eq_inv_of_isUnitary he]
+    simp
+  rw [isSignedCup_iff, ← cancel_epi (e.hom ▷ (𝟙_ C)), reassoc_of% cup,
+    associator_inv_naturality_assoc, cap, h.whiskerLeft_comp_assoc]
+  simp
 
-variable {D : Type u'} [Category.{w} D] [MonoidalCategory D] [Preadditive D]
-  [DaggerCategory D] [MonoidalPreadditive D]
+variable {D : Type u'} [Category.{w} D] [MonoidalCategory D] [Preadditive D] [DaggerCategory D]
 
+open Functor.Monoidal in
+omit [DaggerMonoidalCategory C] [DaggerPreadditive C] [MonoidalPreadditive C] in
 /-- An additive dagger functor with unitary monoidal constraints preserves the sign of a
 self-dual cup. The unit and tensor comparisons identify its source and target. -/
 theorem map (h : IsSignedCup s R) (F : C ⥤ D) [F.Monoidal] [F.Additive]
     [F.PreservesDagger] [F.IsUnitaryMonoidal] :
     IsSignedCup s (ε F ≫ F.map R ≫ δ F X X) := by
-  let := h.exactPairing
-  rw [iff_evaluation_eq (P := F.mapExactPairing X X) (by simp)]
-  simp [Category.assoc]
+  apply isSignedCup_iff.mpr
+  let transport (f : X ⊗ 𝟙_ C ⟶ (𝟙_ C) ⊗ X) :=
+    F.obj X ◁ ε F ≫ μ F X (𝟙_ C) ≫ F.map f ≫ δ F (𝟙_ C) X ≫ η F ▷ F.obj X
+  have hm := congrArg transport h.whiskerLeft_comp
+  simp only [transport, Functor.map_zsmul, Functor.map_comp, map_whiskerLeft, map_associator_inv,
+    map_whiskerRight, map_rightUnitor, map_leftUnitor_inv, Preadditive.zsmul_comp,
+    Preadditive.comp_zsmul, Category.assoc, μ_δ_assoc] at hm
+  simpa [Category.assoc] using hm
 
 section Scalar
 
@@ -146,7 +166,7 @@ theorem smul_iff (h : IsSignedCup s R) (hX : ¬ Limits.IsZero X) (c : 𝕜) :
       (by simpa [u] using (ρ_ X).inv ≫= hz =≫ (λ_ X).hom))
   have hst : IsSignedCup t (c • R) ↔
       star c * c * ((s : ℤ) : 𝕜) = ((t : ℤ) : 𝕜) := by
-    rw [IsSignedCup, dagger_smul]
+    rw [isSignedCup_iff, dagger_smul]
     simp only [MonoidalLinear.whiskerLeft_smul, MonoidalLinear.smul_whiskerRight,
       Linear.comp_smul, Linear.smul_comp, h.whiskerLeft_comp, ← Int.cast_smul_eq_zsmul 𝕜,
       smul_smul, ← mul_assoc]
