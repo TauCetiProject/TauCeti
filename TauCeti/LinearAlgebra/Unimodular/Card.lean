@@ -23,6 +23,7 @@ count is the local-ring count `TauCeti.IsLocalRing.card_isUnimodular`.
 
 * `TauCeti.Module.card_isUnimodular_congr`: ring isomorphisms preserve the count.
 * `TauCeti.Module.card_isUnimodular_prod`: the count over `R × S` is the product of the counts.
+* `TauCeti.Module.card_isUnimodular_pi`: the analogous product for a finite family of semirings.
 * `TauCeti.Module.card_isUnimodular_zmod_mul`: for coprime `Q₁` and `Q₂`, the count modulo
   `Q₁ Q₂` is the product of the counts modulo `Q₁` and modulo `Q₂`.
 -/
@@ -51,6 +52,16 @@ theorem card_isUnimodular_prod :
   rw [← Nat.card_prod]
   exact Nat.card_congr (((Equiv.arrowProdEquivProdArrow ι (fun _ ↦ R) (fun _ ↦ S)).subtypeEquiv
     fun _ ↦ isUnimodular_pi_prod_iff).trans (Equiv.subtypeProdEquivProd))
+
+variable (ι) in
+/-- The number of unimodular rows over a finite product of semirings is the product of
+the numbers of unimodular rows over its factors. -/
+theorem card_isUnimodular_pi {κ : Type*} [Fintype κ] (B : κ → Type*) [∀ k, Semiring (B k)] :
+    Nat.card {v : ι → ∀ k, B k // Module.IsUnimodular (∀ k, B k) v} =
+      ∏ k, Nat.card {v : ι → B k // Module.IsUnimodular (B k) v} := by
+  rw [← Nat.card_pi]
+  exact Nat.card_congr (((Equiv.piComm fun (_ : ι) k ↦ B k).subtypeEquiv
+    fun _ ↦ isUnimodular_pi_pi_iff).trans Equiv.subtypePiEquivPi)
 
 variable (ι) in
 /-- **Chinese remainder theorem for unimodular vectors.** For coprime moduli, the number of

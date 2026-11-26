@@ -35,6 +35,14 @@ public section
 
 namespace Ideal
 
+/-- A quotient of a semilocal ring is semilocal. -/
+instance finite_maximalSpectrum_quotient {R : Type*} [CommRing R] [Finite (MaximalSpectrum R)]
+    (I : Ideal R) : Finite (MaximalSpectrum (R ⧸ I)) :=
+  Finite.of_injective (fun P ↦ (⟨P.asIdeal.comap (Quotient.mk I),
+    comap_isMaximal_of_surjective _ Quotient.mk_surjective⟩ : MaximalSpectrum R))
+    fun _ _ h ↦ MaximalSpectrum.ext <|
+      comap_injective_of_surjective _ Quotient.mk_surjective (congrArg MaximalSpectrum.asIdeal h)
+
 /-- An ideal with semilocal quotient ring, for instance with Artinian or finite quotient ring, lies
 in only finitely many maximal ideals. -/
 theorem finite_setOfPred_isMaximal_and_le {R : Type*} [CommRing R] (𝔞 : Ideal R)

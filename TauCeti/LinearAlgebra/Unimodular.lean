@@ -271,6 +271,17 @@ theorem TauCeti.Module.isUnimodular_pi_prod_iff {R S ι : Type*} [Semiring R] [S
   exact isUnimodular_pi_iff.mpr ⟨fun i ↦ (b₁ i, b₂ i), Prod.ext (by simpa [Prod.fst_sum] using hb₁)
     (by simpa [Prod.snd_sum] using hb₂)⟩
 
+/-- A row over a family of semirings is unimodular exactly when its projection to every
+factor is unimodular. -/
+theorem TauCeti.Module.isUnimodular_pi_pi_iff {ι κ : Type*} [Finite ι] {B : κ → Type*}
+    [∀ k, Semiring (B k)]
+    {v : ι → ∀ k, B k} :
+    Module.IsUnimodular (∀ k, B k) v ↔ ∀ k, Module.IsUnimodular (B k) (fun i ↦ v i k) := by
+  refine ⟨fun h k ↦ h.ringHom_comp (Pi.evalRingHom B k), fun h ↦ ?_⟩
+  have := Fintype.ofFinite ι
+  choose b hb using fun k ↦ isUnimodular_pi_iff.mp (h k)
+  exact isUnimodular_pi_iff.mpr ⟨fun i k ↦ b k i, funext fun k ↦ by simpa using hb k⟩
+
 namespace TauCeti
 
 variable {R ι : Type*} [CommSemiring R]
