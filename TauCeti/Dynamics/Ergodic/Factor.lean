@@ -32,6 +32,8 @@ measure-preserving map `π : X → Y` intertwining the two systems almost everyw
   probability systems are factor maps.
 * `TauCeti.IsFactorMap.measurePreserving_target` — if `T` preserves `μ` and `S` is measurable,
   then `S` preserves `ν`.
+* `TauCeti.IsFactorMap.comp_iterate_ae_eq` — a factor map intertwines all iterates almost
+  everywhere when `T` is quasi-measure-preserving.
 * `TauCeti.IsFactorMap.preErgodic`, `TauCeti.IsFactorMap.ergodic` — pre-ergodicity passes to
   factors, and ergodicity passes to factors whose target map is measurable.
 
@@ -107,6 +109,18 @@ theorem measurePreserving_target (h : IsFactorMap π T S μ ν) (hT : MeasurePre
     _ = μ.map (S ∘ π) := Measure.map_map hS hπ.measurable
     _ = μ.map (π ∘ T) := (Measure.map_congr h.comp_ae_eq).symm
     _ = ν := (hπ.comp hT).map_eq
+
+/-- A factor map intertwines all iterates almost everywhere, when `T` is quasi-measure-preserving:
+`π ∘ T^[k] =ᵐ[μ] S^[k] ∘ π`. -/
+theorem comp_iterate_ae_eq (h : IsFactorMap π T S μ ν) (hT : QuasiMeasurePreserving T μ μ)
+    (k : ℕ) : π ∘ T^[k] =ᵐ[μ] S^[k] ∘ π := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    have h₁ : π ∘ T^[k] ∘ T =ᵐ[μ] (S^[k] ∘ π) ∘ T := hT.ae_eq_comp ih
+    have h₂ : S^[k] ∘ (π ∘ T) =ᵐ[μ] S^[k] ∘ (S ∘ π) := h.comp_ae_eq.fun_comp _
+    rw [iterate_succ, iterate_succ]
+    exact h₁.trans h₂
 
 /-- A factor of a pre-ergodic system is pre-ergodic. -/
 theorem preErgodic (h : IsFactorMap π T S μ ν) (hT : PreErgodic T μ) : PreErgodic S ν where
