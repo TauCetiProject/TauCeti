@@ -80,8 +80,8 @@ is defined in `TauCeti/RingTheory/MvPolynomial/Symmetric/Homogeneous.lean`.
   in at least `n` letters and smaller in fewer.
 * `TauCeti.linearIndependent_diagramSchurPoly`: in `N` variables, the Schur polynomials of all the
   Young diagrams with at most `N` rows, of every degree, are linearly independent.
-* `TauCeti.span_diagramSchurPoly_eq_top`: the Schur polynomials span the symmetric polynomials
-  over a commutative ring, since they span each homogeneous degree.
+* `TauCeti.span_symmetricDiagramSchurPoly_eq_top`: the Schur polynomials span the symmetric
+  polynomials over a commutative ring, since they span each homogeneous degree.
 * `TauCeti.map_mem_of_forall_symmetricDiagramSchurPoly`: a linear map out of the symmetric
   polynomials lands in a submodule once every Schur polynomial does.
 
@@ -431,7 +431,7 @@ theorem linearIndependent_diagramSchurPoly {N : ℕ} :
 variables is an `R`-linear combination of Schur polynomials. Each homogeneous component of a
 symmetric polynomial is symmetric, so it is a combination of Schur polynomials of its degree by the
 Schur basis `TauCeti.schurPolyBasis`. -/
-theorem span_diagramSchurPoly_eq_top {N : ℕ} :
+theorem span_symmetricDiagramSchurPoly_eq_top {N : ℕ} :
     Submodule.span R (Set.range (symmetricDiagramSchurPoly N R)) = ⊤ := by
   classical
   refine eq_top_iff.mpr fun x _ => ?_
@@ -464,13 +464,13 @@ theorem span_diagramSchurPoly_eq_top {N : ℕ} :
 
 /-- A linear map out of the symmetric polynomials in `N` variables takes values in a submodule `T`
 once it sends every Schur polynomial into `T`, since the Schur polynomials span
-(`TauCeti.span_diagramSchurPoly_eq_top`). -/
+(`TauCeti.span_symmetricDiagramSchurPoly_eq_top`). -/
 theorem map_mem_of_forall_symmetricDiagramSchurPoly {N : ℕ} {M : Type*} [AddCommMonoid M]
     [Module R M] (f : symmetricSubalgebra (Fin N) R →ₗ[R] M) {T : Submodule R M}
     (h : ∀ μ, f (symmetricDiagramSchurPoly N R μ) ∈ T) (y : symmetricSubalgebra (Fin N) R) :
     f y ∈ T :=
   (Submodule.map_span_le f (Set.range (symmetricDiagramSchurPoly N R)) T).mpr
-    (by rintro _ ⟨μ, rfl⟩; exact h μ) ⟨y, by simp [span_diagramSchurPoly_eq_top], rfl⟩
+    (by rintro _ ⟨μ, rfl⟩; exact h μ) ⟨y, by simp [span_symmetricDiagramSchurPoly_eq_top], rfl⟩
 
 end CommRing
 
