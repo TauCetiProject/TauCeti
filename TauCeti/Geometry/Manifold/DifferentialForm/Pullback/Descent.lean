@@ -106,6 +106,17 @@ theorem isBasic_mpullback (ω : RoughForm I' M' V k) : IsBasic I' f (mpullback I
   simp only [mpullback_apply, hvw]
   exact apply_tangentSpaceCast hxy.symm _
 
+/-- Every form is basic for an injective map whose derivatives are all injective, such as an
+open embedding that is a local diffeomorphism: two points of a fibre coincide, and tangent vectors
+with the same images under the derivative coincide. -/
+theorem isBasic_of_injective (hf : Function.Injective f)
+    (hdf : ∀ x, Function.Injective (mfderiv I I' f x)) (α : RoughForm I M V k) :
+    IsBasic I' f α := by
+  refine isBasic_iff.mpr fun x y hxy v w hvw ↦ ?_
+  obtain rfl := hf hxy
+  -- `tangentSpaceCast` from a tangent space to itself is the identity on vectors.
+  exact congrArg (α x) (funext fun i ↦ hdf x (hvw i))
+
 /-- **Invariant forms killing vertical vectors are basic.** Let `f` be differentiable and let `σ`
 be a family of differentiable self-maps of `M` over `f` (`f ∘ σ i = f`) that is transitive on the
 fibres of `f`. A form `α` that vanishes as soon as one of its arguments is vertical, that is, lies
