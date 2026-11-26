@@ -76,8 +76,9 @@ concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
 
 In particular, if `π_n(F, e)` is trivial, then `p` induces a surjection
 `π_{n+1}(E, e) → π_{n+1}(B, b)` (`TauCeti.TopCat.surjective_homotopyGroupMap_of_subsingleton`),
-and for `n ≥ 1` an injection `π_n(E, e) → π_n(B, b)`
-(`TauCeti.TopCat.injective_homotopyGroupMap_of_subsingleton`).
+so `π_{n+1}(E, e)` is nontrivial whenever `π_{n+1}(B, b)` is
+(`TauCeti.TopCat.nontrivial_homotopyGroup_of_mem_serreFibrations`), and for `n ≥ 1` an injection
+`π_n(E, e) → π_n(B, b)` (`TauCeti.TopCat.injective_homotopyGroupMap_of_subsingleton`).
 
 When the total space has trivial homotopy groups, as for a path fibration, exactness makes the
 boundary map surjective with trivial kernel
@@ -633,6 +634,20 @@ theorem surjective_homotopyGroupMap_of_subsingleton (hp : serreFibrations p) [Fi
     Function.Surjective
       (HomotopyGroup.map (N := Option N) p.hom (Set.mem_singleton_iff.1 e.property)) := fun _ ↦
   (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).2 (Subsingleton.elim _ _)
+
+/-- **A fibre with trivial `π_{n+1}` keeps `π_{n+2}` of the base.** If `π_{n+1}(F, e)` is trivial
+and `π_{n+2}(B, b)` is nontrivial, then so is `π_{n+2}(E, e)`: by exactness of
+`π_{n+2}(E) → π_{n+2}(B) → π_{n+1}(F)`, the projection maps `π_{n+2}(E, e)` onto
+`π_{n+2}(B, b)`. -/
+theorem nontrivial_homotopyGroup_of_mem_serreFibrations {n : ℕ} (hp : serreFibrations p)
+    [Subsingleton (π_ (n + 1) (p.fiber b) e)] [Nontrivial (π_ (n + 2) B b)] :
+    Nontrivial (π_ (n + 2) E e.val) := by
+  -- Read `π_{n+2}` on the cube `I^(Option (Fin (n + 1)))` of the exact sequence.
+  let c : Fin (n + 2) ≃ Option (Fin (n + 1)) := finSuccEquiv (n + 1)
+  have : Nontrivial (HomotopyGroup (Option (Fin (n + 1))) B b) :=
+    (HomotopyGroup.congrEquiv c).symm.nontrivial
+  have := (surjective_homotopyGroupMap_of_subsingleton (N := Fin (n + 1)) hp (e := e)).nontrivial
+  exact (HomotopyGroup.congrEquiv c).nontrivial
 
 /-- For `n ≥ 1`, if `π_n(F, e)` is trivial, then `p` induces an injection
 `π_n(E, e) → π_n(B, b)`. -/

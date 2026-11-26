@@ -28,12 +28,22 @@ disjoint union. In particular, when `X` is a discrete `Small.{v}` space, the pro
 restrictions along the fibre inclusions `TopCat.prodFiberInclusion X Y x`
 (`TopCat.singularCohomology_prod_ext_of_discreteTopology`).
 
+The same holds for a union of pairwise disjoint open subsets `s i` of a space, whose singular
+chains are the coproduct of those of the `s i` (`TauCeti.isColimitCofanSingularChainComplexOpens`):
+its singular cochains and cohomology are the products of those of the `s i`, with the restrictions
+as projections, and a class on the union is determined by its restrictions to the `s i`
+(`TauCeti.singularCohomology_iSup_ext`).
+
 ## Main results
 
 * `TauCeti.isLimitFanSingularCochainComplex`: singular cochains take a disjoint union to a
   product of cochain complexes.
 * `TauCeti.isLimitFanSingularCohomology`: singular cohomology takes a disjoint union to a product
   in every degree.
+* `TauCeti.isLimitFanSingularCochainComplexOpens`, `TauCeti.isLimitFanSingularCohomologyOpens`:
+  the same for a union of pairwise disjoint open sets.
+* `TauCeti.singularCohomology_iSup_ext`: a class on such a union is determined by its
+  restrictions to the members.
 * `TauCeti.singularCohomology_prod_ext_of_discreteTopology`: for a discrete space `X`, a class on
   `X × Y` is determined by its restrictions to the slices `{x} × Y`, since `X × Y` is the disjoint
   union of these slices.
@@ -95,6 +105,53 @@ def isLimitFanSingularCohomology [Small.{v} ι] (n : ℕ) :
   isLimitFanMkObjOfIsLimit (HomologicalComplex.homologyFunctor
     (ModuleCat.{v} k) (ComplexShape.up ℕ) n) _ _
       (isLimitFanSingularCochainComplex X C R k M)
+
+section Opens
+
+open Function TopologicalSpace
+
+variable {Y : Type w} [TopologicalSpace Y] (s : ι → Opens Y)
+
+/-- **Additivity of singular cochains over disjoint open sets.** The singular cochain complex of a
+union of pairwise disjoint open sets `s i` is the product of the singular cochain complexes of the
+`s i`. The projections are the cochain maps induced by the inclusions. -/
+def isLimitFanSingularCochainComplexOpens (hs : Pairwise (Disjoint on s)) :
+    IsLimit (Fan.mk ((TopCat.of ↥(⨆ i, s i)).singularCochainComplex R k M)
+      (fun i ↦ TopCat.singularCochainComplexMap
+        (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩)) :
+      Fan fun i ↦ (TopCat.of (s i)).singularCochainComplex R k M) :=
+  isLimitFanMkObjOfIsLimit (ChainComplex.linearYonedaFunctor (α := ℕ) k M) _ _
+    (Cofan.IsColimit.op (isColimitCofanSingularChainComplexOpens s C R hs))
+
+/-- **Additivity of singular cohomology over disjoint open sets.** In every degree, the singular
+cohomology of a union of pairwise disjoint open sets `s i` is the product of the singular
+cohomologies of the `s i`. The projections are the restrictions to the `s i`. -/
+def isLimitFanSingularCohomologyOpens [Small.{v} ι] (hs : Pairwise (Disjoint on s)) (n : ℕ) :
+    IsLimit (Fan.mk ((TopCat.of ↥(⨆ i, s i)).singularCohomology R k M n)
+      (fun i ↦ TopCat.singularCohomologyMap
+        (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩) n) :
+      Fan fun i ↦ (TopCat.of (s i)).singularCohomology R k M n) :=
+  have : HasLimitsOfShape (Discrete ι) (ModuleCat.{v} k) := ModuleCat.hasLimitsOfShape
+  isLimitFanMkObjOfIsLimit (HomologicalComplex.homologyFunctor
+    (ModuleCat.{v} k) (ComplexShape.up ℕ) n) _ _
+      (isLimitFanSingularCochainComplexOpens C R k M s hs)
+
+variable {s C R k M} in
+/-- **Classes on a disjoint union of open sets are determined by their restrictions.** Two classes
+of `Hⁿ(⋃ i, s i; R, M)`, for pairwise disjoint open sets `s i`, are equal when their restrictions
+to every `s i` are. -/
+theorem singularCohomology_iSup_ext [Small.{v} ι] (hs : Pairwise (Disjoint on s)) {n : ℕ}
+    {z z' : (TopCat.of ↥(⨆ i, s i)).singularCohomology R k M n}
+    (h : ∀ i, TopCat.singularCohomologyMap
+      (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩) n z =
+        TopCat.singularCohomologyMap
+          (ofHom ⟨Opens.inclusion (le_iSup s i), continuous_inclusion _⟩) n z') :
+    z = z' :=
+  have : PreservesLimitsOfShape (Discrete ι) (forget (ModuleCat.{v} k)) :=
+    preservesLimitsOfShape_of_equiv (Discrete.equivalence (equivShrink.{v} ι)).symm _
+  Concrete.isLimit_ext _ (isLimitFanSingularCohomologyOpens C R k M s hs n) _ _ fun ⟨i⟩ ↦ h i
+
+end Opens
 
 section Discrete
 
