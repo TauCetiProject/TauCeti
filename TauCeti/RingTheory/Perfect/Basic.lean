@@ -19,6 +19,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 
 ## Main results
 
+* `MulEquiv.perfectRing`: a multiplicative equivalence preserves bijectivity of the
+  `p`-th power map.
 * `TauCeti.iterateFrobeniusEquiv_symm_add_pow`: the `p ^ n`-th power of the `p ^ (m + n)`-th root
   of `x` is its `p ^ m`-th root.
 * `TauCeti.iterateFrobeniusEquiv_symm_succ_pow`: the `p`-th power of the `p ^ (n + 1)`-th root
@@ -44,6 +46,15 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 -/
 
 public section
+
+/-- A multiplicative equivalence transports bijectivity of the `p`-th power map. -/
+theorem MulEquiv.perfectRing {M N : Type*} [Monoid M] [Monoid N] (e : M ≃* N)
+    (p : ℕ) [PerfectRing M p] : PerfectRing N p := by
+  refine ⟨(Function.Bijective.of_comp_iff (fun x : N ↦ x ^ p) e.bijective).mp ?_⟩
+  have hcomm : (fun x : N ↦ x ^ p) ∘ e = e ∘ (fun x : M ↦ x ^ p) :=
+    funext fun x ↦ (map_pow e x p).symm
+  rw [hcomm]
+  exact e.bijective.comp PerfectRing.bijective_frobenius
 
 namespace TauCeti
 
