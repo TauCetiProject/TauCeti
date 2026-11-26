@@ -49,8 +49,9 @@ the starting point of Bernstein's inequalities.
 * `TemperedDistribution.isVanishingOn_fourier_fourierMultiplierCLM`: the Fourier transform of a
   multiplier vanishes wherever its symbol does.
 * `TemperedDistribution.isVanishingOn_fourier_lineDerivOp`,
-  `TemperedDistribution.isVanishingOn_fourier_iteratedLineDerivOp`: derivatives preserve the
-  vanishing of the Fourier transform.
+  `TemperedDistribution.isVanishingOn_fourier_iteratedLineDerivOp`,
+  `TemperedDistribution.isVanishingOn_fourier_laplacian`: derivatives and the Laplacian preserve
+  the vanishing of the Fourier transform.
 -/
 
 public section
@@ -58,7 +59,7 @@ public section
 namespace TemperedDistribution
 
 open Distribution
-open scoped SchwartzMap FourierTransform LineDeriv
+open scoped SchwartzMap FourierTransform LineDeriv Laplacian
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -147,6 +148,17 @@ theorem isVanishingOn_fourier_iteratedLineDerivOp {u : 𝓢'(E, F)} {s : Set E}
   | succ k ih =>
     rw [LineDeriv.iteratedLineDerivOp_succ_left]
     exact isVanishingOn_fourier_lineDerivOp (ih _) _
+
+/-- **The Laplacian does not enlarge the spectrum.** If the Fourier transform of `u` vanishes on
+`s`, so does that of `Δ u`. -/
+theorem isVanishingOn_fourier_laplacian {u : 𝓢'(E, F)} {s : Set E}
+    (hu : IsVanishingOn (𝓕 u : 𝓢'(E, F)) s) :
+    IsVanishingOn (𝓕 (Δ u : 𝓢'(E, F)) : 𝓢'(E, F)) s := by
+  intro ψ hψ
+  rw [laplacian_eq_sum (stdOrthonormalBasis ℝ E), fourier_apply, sum_apply]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  rw [← fourier_apply]
+  exact isVanishingOn_fourier_lineDerivOp (isVanishingOn_fourier_lineDerivOp hu _) _ ψ hψ
 
 /-- **A multiplier localizes the spectrum to the support of its symbol.** If the symbol `g`
 vanishes on `s`, then the Fourier transform of `fourierMultiplierCLM F g u` vanishes on `s`, for
