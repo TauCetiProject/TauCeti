@@ -142,7 +142,7 @@ variable {C : Type u} [Category.{v} C] {Y : C ⥤ Type w} {A : C} (e : Y.Corepre
 
 /-- **Yoneda lemma** for a functor `Y : C ⥤ Type w` corepresented by `A`: natural transformations
 from `Y` to a functor `G` are the elements of `G(A)`, by evaluation at the universal element. -/
-@[expose] def natTransEquiv (G : C ⥤ Type w) : (Y ⟶ G) ≃ G.obj A where
+def natTransEquiv (G : C ⥤ Type w) : (Y ⟶ G) ≃ G.obj A where
   toFun φ := φ.app A (e.homEquiv (𝟙 A))
   invFun g :=
     { app _ := ↾fun y ↦ G.map (e.homEquiv.symm y) g

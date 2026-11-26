@@ -5,27 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Flat.Basic
-public import TauCeti.Algebra.Category.Grp.TensorProduct
+public import TauCeti.Algebra.Category.Grp.FunctorTensor
 public import TauCeti.Algebra.Homology.Ext.Basic
 public import TauCeti.Algebra.Homology.Ext.Map.NatTrans
-public import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
 public import TauCeti.CategoryTheory.Abelian.FunctorCohomology.Comparison
 
 /-!
 # External products of Ext groups of functors
 
-For functors `M, N : C ⥤ AddCommGrpCat`, `CategoryTheory.objectwiseTensor` gives their objectwise
-tensor product `M ⊗ N : c ↦ M(c) ⊗[ℤ] N(c)`, as a bifunctor. A functor *has flat values*
-(`CategoryTheory.Functor.HasFlatValues`) if all its values are flat `ℤ`-modules, that is,
-torsion-free abelian groups; tensoring with such a functor, on either side, is exact.
+For functors `M, N : C ⥤ AddCommGrpCat`, write `M ⊗ N` for their objectwise tensor product
+`CategoryTheory.objectwiseTensor`, and recall that tensoring with a functor of flat values
+(`CategoryTheory.Functor.HasFlatValues`) is exact (both are in
+`TauCeti.Algebra.Category.Grp.FunctorTensor`).
 
 For `x ∈ Extᵃ(M, F)` and `y ∈ Extᵇ(N, G)`, with `M` and `G` of flat values, and a pairing
 `μ : F ⊗ G ⟶ K`, the *external product*
 `CategoryTheory.Abelian.Ext.externalProduct μ x y : Extᵃ⁺ᵇ(M ⊗ N, K)` is the push-forward by `μ`
 of the Yoneda product of `M ⊗ y ∈ Extᵇ(M ⊗ N, M ⊗ G)` and `x ⊗ G ∈ Extᵃ(M ⊗ G, F ⊗ G)`. It is
-natural in both arguments (`CategoryTheory.Abelian.Ext.mk₀_comp_externalProduct`) and in the
-coefficients (`CategoryTheory.Abelian.Ext.externalProduct_comp_mk₀_comp_mk₀`), commutes with
+biadditive (`CategoryTheory.Abelian.Ext.add_externalProduct`,
+`CategoryTheory.Abelian.Ext.externalProduct_add` and the `zero`, `neg` and `sub` variants; bundled
+as `CategoryTheory.Abelian.Ext.externalProductAddHom`), natural
+in both arguments (`CategoryTheory.Abelian.Ext.mk₀_comp_externalProduct`) and in the coefficients
+(`CategoryTheory.Abelian.Ext.externalProduct_comp_mk₀_left_right`), commutes with
 restriction along a functor, and comparison maps (`CategoryTheory.Functor.extComparison`) carry
 external products to external products when they carry the pairing to the pairing
 (`CategoryTheory.Functor.extComparison_externalProduct`).
@@ -33,141 +34,22 @@ external products to external products when they carry the pairing to the pairin
 ## References
 
 * [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
-  `src/Lib/Cohomology/Hodge/CupProduct.lean` (declarations `New.Variety.abTensor`,
-  `New.Variety.HasFlatValues`, `New.Variety.cup`, `New.Variety.cup_map`,
-  `New.Variety.Comparison.pull_cup`); Apache 2.0, Copyright 2026 Anthropic, PBC. The
-  definitions and results are adapted from these declarations.
+  `src/Lib/Cohomology/Hodge/CupProduct.lean` (declarations `New.Variety.cup`,
+  `New.Variety.cup_map`, `New.Variety.Comparison.pull_cup`); Apache 2.0, Copyright 2026
+  Anthropic, PBC. The definitions and results are adapted from these declarations.
+* C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
+  Mathematics 38, Cambridge University Press, 1994, Section 3.4 (Yoneda Ext and its products).
 -/
 
 public section
 
-open CategoryTheory Limits Abelian TensorProduct
+open CategoryTheory Limits Abelian
 
 universe t t' w v u v' u' v'' u''
 
 namespace CategoryTheory
 
 variable {C : Type u} [Category.{v} C]
-
-variable (C) in
-/-- The objectwise tensor product over `ℤ` of functors to abelian groups, as a bifunctor:
-`(M ⊗ N)(c) = M(c) ⊗[ℤ] N(c)`. -/
-@[expose] noncomputable def objectwiseTensor :
-    (C ⥤ AddCommGrpCat.{w}) ⥤ (C ⥤ AddCommGrpCat.{w}) ⥤ C ⥤ AddCommGrpCat.{w} :=
-  Functor.curryObj
-    { obj p :=
-        { obj c := AddCommGrpCat.of (p.1.obj c ⊗[ℤ] p.2.obj c)
-          map f := AddCommGrpCat.ofHom
-            (TensorProduct.map (p.1.map f).hom.toIntLinearMap (p.2.map f).hom.toIntLinearMap)
-          map_id _ := AddCommGrpCat.tensor_hom_ext fun _ _ ↦ by simp
-          map_comp _ _ := AddCommGrpCat.tensor_hom_ext fun _ _ ↦ by simp }
-      map f :=
-        { app c := AddCommGrpCat.ofHom
-            (TensorProduct.map (f.1.app c).hom.toIntLinearMap (f.2.app c).hom.toIntLinearMap)
-          naturality _ _ _ := AddCommGrpCat.tensor_hom_ext fun _ _ ↦ by simp }
-      map_id _ := NatTrans.ext <| funext fun _ ↦ AddCommGrpCat.tensor_hom_ext fun _ _ ↦ by simp
-      map_comp _ _ :=
-        NatTrans.ext <| funext fun _ ↦ AddCommGrpCat.tensor_hom_ext fun _ _ ↦ by simp }
-
-namespace objectwiseTensor
-
-variable {M M' N N' K : C ⥤ AddCommGrpCat.{w}}
-
-@[simp]
-lemma obj_obj_obj (M N : C ⥤ AddCommGrpCat.{w}) (c : C) :
-    (((objectwiseTensor C).obj M).obj N).obj c = AddCommGrpCat.of (M.obj c ⊗[ℤ] N.obj c) :=
-  (rfl)
-
-/-- Tensoring with a map on the right acts on pure tensors. -/
-@[simp]
-lemma obj_map_app_tmul (M : C ⥤ AddCommGrpCat.{w}) (β : N ⟶ N') (c : C) (m : M.obj c)
-    (n : N.obj c) :
-    ((((objectwiseTensor C).obj M).map β).app c)
-      (show (((objectwiseTensor C).obj M).obj N).obj c from m ⊗ₜ n) = m ⊗ₜ β.app c n :=
-  (rfl)
-
-/-- Tensoring with a map on the left acts on pure tensors. -/
-@[simp]
-lemma map_app_app_tmul (α : M ⟶ M') (N : C ⥤ AddCommGrpCat.{w}) (c : C) (m : M.obj c)
-    (n : N.obj c) :
-    ((((objectwiseTensor C).map α).app N).app c)
-      (show (((objectwiseTensor C).obj M).obj N).obj c from m ⊗ₜ n) = α.app c m ⊗ₜ n :=
-  (rfl)
-
-/-- Two maps out of an objectwise tensor product agree if they agree on pure tensors. -/
-lemma hom_ext {f g : ((objectwiseTensor C).obj M).obj N ⟶ K}
-    (h : ∀ (c : C) (m : M.obj c) (n : N.obj c),
-      f.app c (show (((objectwiseTensor C).obj M).obj N).obj c from m ⊗ₜ n) =
-        g.app c (m ⊗ₜ n)) :
-    f = g :=
-  NatTrans.ext (funext fun c ↦ AddCommGrpCat.tensor_hom_ext (h c))
-
-/-- The two ways of tensoring a pair of maps agree. -/
-lemma map_app_comp_map (α : M ⟶ M') (β : N ⟶ N') :
-    ((objectwiseTensor C).map α).app N ≫ ((objectwiseTensor C).obj M').map β =
-      ((objectwiseTensor C).obj M).map β ≫ ((objectwiseTensor C).map α).app N' :=
-  (((objectwiseTensor C).map α).naturality β).symm
-
--- In both instances `change` unfolds `objectwiseTensor` on a pure tensor to `TensorProduct.map`,
--- that is, to the form of `obj_map_app_tmul` and `map_app_app_tmul`; `simp` does not rewrite with
--- these lemmas here because the sum of maps is applied before the tensor is evaluated.
-instance (M : C ⥤ AddCommGrpCat.{w}) : ((objectwiseTensor C).obj M).Additive :=
-  ⟨fun {_ _ f g} ↦ hom_ext fun c m n ↦ by
-    change m ⊗ₜ[ℤ] (f + g).app c n = m ⊗ₜ[ℤ] f.app c n + m ⊗ₜ[ℤ] g.app c n
-    simp [tmul_add]⟩
-
-instance (N : C ⥤ AddCommGrpCat.{w}) : ((objectwiseTensor C).flip.obj N).Additive :=
-  ⟨fun {_ _ f g} ↦ hom_ext fun c m n ↦ by
-    change (f + g).app c m ⊗ₜ[ℤ] n = f.app c m ⊗ₜ[ℤ] n + g.app c m ⊗ₜ[ℤ] n
-    simp [add_tmul]⟩
-
-end objectwiseTensor
-
-/-- A functor to abelian groups *has flat values* if each of its values is a flat `ℤ`-module. -/
-class Functor.HasFlatValues (F : C ⥤ AddCommGrpCat.{w}) : Prop where
-  /-- Each value of `F` is a flat `ℤ`-module. -/
-  flat (c : C) : Module.Flat ℤ (F.obj c)
-
-instance {C' : Type u'} [Category.{v'} C'] (φ : C' ⥤ C) (F : C ⥤ AddCommGrpCat.{w})
-    [F.HasFlatValues] : (φ ⋙ F).HasFlatValues :=
-  ⟨fun c ↦ Functor.HasFlatValues.flat (F := F) (φ.obj c)⟩
-
-instance {C' : Type u'} [Category.{v'} C'] (φ : C' ⥤ C) (F : C ⥤ AddCommGrpCat.{w})
-    [F.HasFlatValues] :
-    (((Functor.whiskeringLeft C' C AddCommGrpCat.{w}).obj φ).obj F).HasFlatValues :=
-  inferInstanceAs (φ ⋙ F).HasFlatValues
-
-/-- Tensoring on the left with a functor of flat values is exact. -/
-private lemma exact_tensorLeft (M : C ⥤ AddCommGrpCat.{w}) [M.HasFlatValues] :
-    PreservesFiniteLimits ((objectwiseTensor C).obj M) ∧
-      PreservesFiniteColimits ((objectwiseTensor C).obj M) := by
-  refine Functor.preservesFiniteLimits_and_preservesFiniteColimits_of_function_exact _
-    fun S hS c ↦ ?_
-  have := Functor.HasFlatValues.flat (F := M) c
-  exact Module.Flat.lTensor_exact (M.obj c)
-    ((ShortComplex.exact_iff_forall_function_exact S).1 hS c)
-
-/-- Tensoring on the right with a functor of flat values is exact. -/
-private lemma exact_tensorRight (N : C ⥤ AddCommGrpCat.{w}) [N.HasFlatValues] :
-    PreservesFiniteLimits ((objectwiseTensor C).flip.obj N) ∧
-      PreservesFiniteColimits ((objectwiseTensor C).flip.obj N) := by
-  refine Functor.preservesFiniteLimits_and_preservesFiniteColimits_of_function_exact _
-    fun S hS c ↦ ?_
-  have := Functor.HasFlatValues.flat (F := N) c
-  exact Module.Flat.rTensor_exact (N.obj c)
-    ((ShortComplex.exact_iff_forall_function_exact S).1 hS c)
-
-instance (M : C ⥤ AddCommGrpCat.{w}) [M.HasFlatValues] :
-    PreservesFiniteLimits ((objectwiseTensor C).obj M) := (exact_tensorLeft M).1
-
-instance (M : C ⥤ AddCommGrpCat.{w}) [M.HasFlatValues] :
-    PreservesFiniteColimits ((objectwiseTensor C).obj M) := (exact_tensorLeft M).2
-
-instance (N : C ⥤ AddCommGrpCat.{w}) [N.HasFlatValues] :
-    PreservesFiniteLimits ((objectwiseTensor C).flip.obj N) := (exact_tensorRight N).1
-
-instance (N : C ⥤ AddCommGrpCat.{w}) [N.HasFlatValues] :
-    PreservesFiniteColimits ((objectwiseTensor C).flip.obj N) := (exact_tensorRight N).2
 
 /-! ### The external product -/
 
@@ -187,6 +69,71 @@ noncomputable def externalProduct [M.HasFlatValues] [G.HasFlatValues]
   ((y.mapExactFunctor ((T).obj M)).comp (x.mapExactFunctor ((T).flip.obj G))
     (by lia)).comp (mk₀ μ) (add_zero n)
 
+/-- The external product is additive in the first argument. -/
+lemma add_externalProduct [M.HasFlatValues] [G.HasFlatValues] (μ : ((T).obj F).obj G ⟶ K)
+    (x x' : Ext.{t} M F a) (y : Ext.{t} N G b) (h : a + b = n) :
+    externalProduct μ (x + x') y h = externalProduct μ x y h + externalProduct μ x' y h := by
+  simp only [externalProduct, mapExactFunctor_add, comp_add, add_comp]
+
+/-- The external product is additive in the second argument. -/
+lemma externalProduct_add [M.HasFlatValues] [G.HasFlatValues] (μ : ((T).obj F).obj G ⟶ K)
+    (x : Ext.{t} M F a) (y y' : Ext.{t} N G b) (h : a + b = n) :
+    externalProduct μ x (y + y') h = externalProduct μ x y h + externalProduct μ x y' h := by
+  simp only [externalProduct, mapExactFunctor_add, add_comp]
+
+@[simp]
+lemma zero_externalProduct [M.HasFlatValues] [G.HasFlatValues] (μ : ((T).obj F).obj G ⟶ K)
+    (y : Ext.{t} N G b) (h : a + b = n) :
+    externalProduct μ (0 : Ext.{t} M F a) y h = 0 := by
+  simp only [externalProduct, mapExactFunctor_zero, comp_zero, zero_comp]
+
+@[simp]
+lemma externalProduct_zero [M.HasFlatValues] [G.HasFlatValues] (μ : ((T).obj F).obj G ⟶ K)
+    (x : Ext.{t} M F a) (h : a + b = n) :
+    externalProduct μ x (0 : Ext.{t} N G b) h = 0 := by
+  simp only [externalProduct, mapExactFunctor_zero, zero_comp]
+
+/-- The external product, as a biadditive map. -/
+noncomputable def externalProductAddHom [M.HasFlatValues] [G.HasFlatValues]
+    (μ : ((T).obj F).obj G ⟶ K)
+    (h : a + b = n) : Ext.{t} M F a →+ Ext.{t} N G b →+ Ext.{t} (((T).obj M).obj N) K n :=
+  AddMonoidHom.mk' (fun x ↦ AddMonoidHom.mk' (fun y ↦ externalProduct μ x y h)
+    fun y y' ↦ externalProduct_add μ x y y' h)
+    fun x x' ↦ AddMonoidHom.ext fun y ↦ add_externalProduct μ x x' y h
+
+@[simp]
+lemma externalProductAddHom_apply_apply [M.HasFlatValues] [G.HasFlatValues]
+    (μ : ((T).obj F).obj G ⟶ K)
+    (h : a + b = n) (x : Ext.{t} M F a) (y : Ext.{t} N G b) :
+    externalProductAddHom μ h x y = externalProduct μ x y h :=
+  (rfl)
+
+@[simp]
+lemma neg_externalProduct [M.HasFlatValues] [G.HasFlatValues] (μ : ((T).obj F).obj G ⟶ K)
+    (x : Ext.{t} M F a) (y : Ext.{t} N G b) (h : a + b = n) :
+    externalProduct μ (-x) y h = -externalProduct μ x y h := by
+  have := DFunLike.congr_fun ((externalProductAddHom μ h).map_neg x) y
+  rwa [AddMonoidHom.neg_apply, externalProductAddHom_apply_apply,
+    externalProductAddHom_apply_apply] at this
+
+@[simp]
+lemma externalProduct_neg [M.HasFlatValues] [G.HasFlatValues] (μ : ((T).obj F).obj G ⟶ K)
+    (x : Ext.{t} M F a) (y : Ext.{t} N G b) (h : a + b = n) :
+    externalProduct μ x (-y) h = -externalProduct μ x y h :=
+  (externalProductAddHom μ h x).map_neg y
+
+lemma sub_externalProduct [M.HasFlatValues] [G.HasFlatValues] (μ : ((T).obj F).obj G ⟶ K)
+    (x x' : Ext.{t} M F a) (y : Ext.{t} N G b) (h : a + b = n) :
+    externalProduct μ (x - x') y h = externalProduct μ x y h - externalProduct μ x' y h := by
+  have := DFunLike.congr_fun ((externalProductAddHom μ h).map_sub x x') y
+  rwa [AddMonoidHom.sub_apply, externalProductAddHom_apply_apply,
+    externalProductAddHom_apply_apply, externalProductAddHom_apply_apply] at this
+
+lemma externalProduct_sub [M.HasFlatValues] [G.HasFlatValues] (μ : ((T).obj F).obj G ⟶ K)
+    (x : Ext.{t} M F a) (y y' : Ext.{t} N G b) (h : a + b = n) :
+    externalProduct μ x (y - y') h = externalProduct μ x y h - externalProduct μ x y' h :=
+  (externalProductAddHom μ h x).map_sub y y'
+
 /-- Pushing an external product forward along `κ : K ⟶ K'` changes the pairing to `μ ≫ κ`. -/
 lemma externalProduct_comp_mk₀ [M.HasFlatValues] [G.HasFlatValues] {K' : C ⥤ AddCommGrpCat.{w}}
     (μ : ((T).obj F).obj G ⟶ K) (κ : K ⟶ K') (x : Ext.{t} M F a) (y : Ext.{t} N G b)
@@ -197,7 +144,7 @@ lemma externalProduct_comp_mk₀ [M.HasFlatValues] [G.HasFlatValues] {K' : C ⥤
 
 /-- The external product is natural in the coefficients: pushing `x` forward along `β₁ : F ⟶ F'`
 and `y` along `β₂ : G ⟶ G'` and pairing by `μ'` is pairing `x` and `y` by `(β₁ ⊗ β₂) ≫ μ'`. -/
-lemma externalProduct_comp_mk₀_comp_mk₀ [M.HasFlatValues] [G.HasFlatValues]
+lemma externalProduct_comp_mk₀_left_right [M.HasFlatValues] [G.HasFlatValues]
     {F' G' : C ⥤ AddCommGrpCat.{w}} [G'.HasFlatValues] (β₁ : F ⟶ F') (β₂ : G ⟶ G')
     (μ' : ((T).obj F').obj G' ⟶ K) (x : Ext.{t} M F a) (y : Ext.{t} N G b) (h : a + b = n) :
     externalProduct μ' (x.comp (mk₀ β₁) (add_zero a)) (y.comp (mk₀ β₂) (add_zero b)) h =
@@ -246,9 +193,12 @@ lemma mapExactFunctor_whiskeringLeft_externalProduct {C' : Type u'} [Category.{v
   unfold externalProduct
   rw [mapExactFunctor_comp, mapExactFunctor_comp, mapExactFunctor_mk₀, ← comp_mapExactFunctor,
     ← comp_mapExactFunctor, ← comp_mapExactFunctor, ← comp_mapExactFunctor]
-  -- Restriction along `φ` commutes with the objectwise tensor product by definition: the composite
-  -- functors on both sides, and `whiskeringLeft` applied to `μ` and `φ.whiskerLeft μ`, agree
-  -- definitionally.
+  -- The two sides differ only in the exact functors `(T).obj M ⋙ restrict` against
+  -- `restrict ⋙ (T').obj (φ ⋙ M)`, and `(T).flip.obj G ⋙ restrict` against
+  -- `restrict ⋙ (T').flip.obj (φ ⋙ G)`, which are equal by
+  -- `objectwiseTensor.obj_comp_whiskeringLeft` and `objectwiseTensor.flip_obj_comp_whiskeringLeft`.
+  -- The type of `Ext.mapExactFunctor` depends on the functor, so these equalities cannot be
+  -- rewritten under it; both hold by `rfl`, and so does the goal.
   rfl
 
 end Abelian.Ext
@@ -287,7 +237,7 @@ theorem Functor.extComparison_externalProduct {C' : Type u'} [Category.{v'} C']
   have h₁ := mapExactFunctor_whiskeringLeft_externalProduct φ μ x y h
   have h₂ := externalProduct_comp_mk₀ (φ.whiskerLeft μ) βK x' y' h
   have h₄ := (congrArg (fun m ↦ externalProduct m x' y' h) hμ.symm).trans
-    (externalProduct_comp_mk₀_comp_mk₀ βF βG μ' x' y' h).symm
+    (externalProduct_comp_mk₀_left_right βF βG μ' x' y' h).symm
   have h₃ := mk₀_comp_externalProduct μ' (x'.comp (mk₀ βF) (add_zero a))
     (y'.comp (mk₀ βG) (add_zero b)) h α₁ α₂ (γ' := 𝟙 _) (Category.id_comp _)
   rw [mk₀_id_comp] at h₃

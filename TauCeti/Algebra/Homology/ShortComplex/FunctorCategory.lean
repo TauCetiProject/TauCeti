@@ -28,6 +28,16 @@ such a functor category is exact once it sends exact sequences to objectwise exa
 
 Additive functors are stable under extensions: when the source category has binary biproducts,
 the middle term of an exact sequence `F' ⟶ F ⟶ F''` with `F'` and `F''` additive is additive.
+
+## References
+
+* [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
+  `src/Lib/Cohomology/Etale/Basic.lean` (declarations `New.Variety.exact_of_app` and
+  `New.Variety.shortExact_of_app`); Apache 2.0, Copyright 2026 Anthropic, PBC.
+  `CategoryTheory.ShortComplex.exact_iff_forall_function_exact`,
+  `CategoryTheory.ShortComplex.shortExact_of_forall_function_exact` and
+  `CategoryTheory.Functor.preservesFiniteLimits_and_preservesFiniteColimits_of_function_exact` are
+  adapted from these declarations.
 -/
 
 public section

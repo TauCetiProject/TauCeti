@@ -84,7 +84,12 @@ def Functor.CorepresentableBy.freeHomAddEquiv {Y : C ⥤ Type w} {A : C}
     (Y ⋙ AddCommGrpCat.free ⟶ F) ≃+ F.obj A where
   toEquiv := ((Adjunction.whiskerRight C AddCommGrpCat.adj).homEquiv Y F).trans
     (e.natTransEquiv (F ⋙ forget AddCommGrpCat))
-  map_add' _ _ := rfl
+  map_add' f g := by
+    simp only [Equiv.toFun_as_coe, Equiv.trans_apply]
+    rw [natTransEquiv_apply, natTransEquiv_apply, natTransEquiv_apply]
+    -- The adjunction transposes `f + g` componentwise, and addition of morphisms in
+    -- `AddCommGrpCat` is pointwise.
+    rfl
 
 /-- The additive Yoneda bijection sends a morphism to its value at the generator given by the
 universal element. -/
@@ -92,7 +97,7 @@ universal element. -/
 lemma Functor.CorepresentableBy.freeHomAddEquiv_apply {Y : C ⥤ Type w} {A : C}
     (e : Y.CorepresentableBy A) (F : C ⥤ AddCommGrpCat.{w}) (f : Y ⋙ AddCommGrpCat.free ⟶ F) :
     e.freeHomAddEquiv F f = f.app A (FreeAddCommGroup.of (e.homEquiv (𝟙 A))) :=
-  (rfl)
+  e.natTransEquiv_apply _ _
 
 /-- The morphism `ℤ[Y] ⟶ F` corresponding to `g ∈ F(A)` sends the generator of `y ∈ Y(c)`, the
 image of a morphism `A ⟶ c`, to the image of `g` under that morphism. Not a `simp` lemma: its
@@ -115,8 +120,12 @@ lemma Functor.CorepresentableBy.freeHomAddEquiv_symm_apply_app_of {Y : C ⥤ Typ
 /-- The additive Yoneda bijection is natural in the coefficients. -/
 lemma Functor.CorepresentableBy.freeHomAddEquiv_comp {Y : C ⥤ Type w} {A : C}
     (e : Y.CorepresentableBy A) {F G : C ⥤ AddCommGrpCat.{w}} (f : Y ⋙ AddCommGrpCat.free ⟶ F)
-    (g : F ⟶ G) : e.freeHomAddEquiv G (f ≫ g) = g.app A (e.freeHomAddEquiv F f) :=
-  (rfl)
+    (g : F ⟶ G) : e.freeHomAddEquiv G (f ≫ g) = g.app A (e.freeHomAddEquiv F f) := by
+  rw [freeHomAddEquiv_apply, freeHomAddEquiv_apply, NatTrans.comp_app]
+  -- Applying `f.app A ≫ g.app A` is applying `f.app A` and then `g.app A`.
+  -- `ConcreteCategory.comp_apply` does not match here, because the generator has type
+  -- `(Y ⋙ free).obj A` only up to unfolding.
+  rfl
 
 /-- The free abelian functor on a corepresentable functor is projective. -/
 instance projective_free {Y : C ⥤ Type w} [Y.IsCorepresentable] :

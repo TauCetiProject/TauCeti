@@ -89,6 +89,10 @@ along `α`. -/
 lemma extComparison_id_apply (β : F ⟶ G) (α : M ⟶ N) (x : Ext.{t} N F n) :
     extComparison (𝟭 C) β α n x =
       (Ext.mk₀ α).comp (x.comp (Ext.mk₀ β) (add_zero n)) (zero_add n) := by
+  -- `Ext.id_mapExactFunctor` is stated for `𝟭 (C ⥤ AddCommGrpCat)`, which is
+  -- `(whiskeringLeft C C _).obj (𝟭 C)` by `rfl` (Mathlib's `Functor.whiskeringLeft_obj_id`).
+  -- The type of `Ext.mapExactFunctor` depends on the functor, so that equality is used
+  -- definitionally here.
   have hid : x.mapExactFunctor ((whiskeringLeft C C AddCommGrpCat.{w}).obj (𝟭 C)) = x :=
     Ext.id_mapExactFunctor x
   rw [extComparison_apply, hid]
@@ -124,7 +128,7 @@ lemma extComparison_comp_mk₀ (φ : C' ⥤ C) {β : φ ⋙ F ⟶ F'} {β' : φ 
       (extComparison φ β α n x).comp (Ext.mk₀ γ') (add_zero n) := by
   simp only [extComparison_apply, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
     Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀]
-  congr 3
+  rw [whiskeringLeft_obj_map, h]
 
 /-- Comparison maps compose: the comparison map of `(ψ, β')` along `α'` after that of `(φ, β)`
 along `α` is the comparison map of the composite `(ψ ⋙ φ, ψ.whiskerLeft β ≫ β')` along
@@ -133,6 +137,11 @@ lemma extComparison_extComparison (φ : C' ⥤ C) (ψ : C'' ⥤ C') (β : φ ⋙
     (β' : ψ ⋙ F' ⟶ F'') (α : N' ⟶ φ ⋙ N) (α' : N'' ⟶ ψ ⋙ N') (x : Ext.{t} N F n) :
     extComparison ψ β' α' n (extComparison φ β α n x) =
       extComparison (ψ ⋙ φ) (ψ.whiskerLeft β ≫ β') (α' ≫ ψ.whiskerLeft α) n x := by
+  -- `Ext.comp_mapExactFunctor` is stated for the composite of the two restriction functors,
+  -- which is `(whiskeringLeft C'' C _).obj (ψ ⋙ φ)` by `rfl` (Mathlib's
+  -- `Functor.whiskeringLeft_obj_comp`).
+  -- The type of `Ext.mapExactFunctor` depends on the functor, so that equality is used
+  -- definitionally here.
   have h : x.mapExactFunctor ((whiskeringLeft C'' C AddCommGrpCat.{w}).obj (ψ ⋙ φ)) =
       (x.mapExactFunctor ((whiskeringLeft C' C AddCommGrpCat.{w}).obj φ)).mapExactFunctor
         ((whiskeringLeft C'' C' AddCommGrpCat.{w}).obj ψ) :=

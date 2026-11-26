@@ -38,6 +38,8 @@ product with the extension class (`CategoryTheory.Abelian.TotalExt.exact_triangl
   `New.Variety.TotalH.exact_precomp`, `New.Variety.TotalH.exact_triangle`); Apache 2.0,
   Copyright 2026 Anthropic, PBC. The definitions and results are adapted from these declarations,
   stated here for an arbitrary abelian category.
+* C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
+  Mathematics 38, Cambridge University Press, 1994, Section 3.4 (Yoneda Ext and its products).
 -/
 
 public section
@@ -154,7 +156,10 @@ lemma map_comp (x : TotalExt X Y) (y : TotalExt Y Z) :
     | add y y' hy hy' => simp_all
     | of b y => simp [Ext.mapExactFunctor_comp]
 
-/-- The identity functor acts trivially on total Ext groups. -/
+/-- The identity functor acts trivially on total Ext groups. Not a `simp` lemma, unlike
+Mathlib's `Ext.id_mapExactFunctor`: `TotalExt.map` is a bundled additive map, so `simp` first
+rewrites the type of the coercion through `Functor.id_obj`, and the simpNF linter rejects the
+left-hand side. -/
 lemma map_id (x : TotalExt X Y) : map (𝟭 C) x = x := by
   induction x using DirectSum.induction_on with
   | zero => simp

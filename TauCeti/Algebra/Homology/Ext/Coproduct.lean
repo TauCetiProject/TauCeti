@@ -16,8 +16,9 @@ In an abelian category with enough injectives, `Extⁿ` from a coproduct is the 
 no finiteness of the index set or exactness of coproducts is required, because the argument
 shifts dimension in the second variable. In degree zero this is the universal property of the
 coproduct. In degree one every class is the image of a morphism to the cokernel `Q` of an
-injective hull `Y ⟶ I`, and two such morphisms give the same class exactly when they differ by a
-morphism factoring through `I`; both conditions are checked on the summands. In degree `n + 2`
+embedding `Y ⟶ I` into an injective object, and two such morphisms give the same class exactly
+when they differ by a morphism factoring through `I`; both conditions are checked on the summands.
+In degree `n + 2`
 the connecting map `Extⁿ⁺¹(-, Q) ⟶ Extⁿ⁺²(-, Y)` is bijective, naturally in the first variable.
 
 This permits extension descent to be checked on summands of a presenting coproduct, for
@@ -79,8 +80,8 @@ private lemma bijective_restrict_zero (hc : IsColimit c) (Y : C) :
 
 variable [EnoughInjectives C]
 
-/-- In degree one, a class is a morphism to the cokernel of an injective hull, up to the
-morphisms which factor through the injective hull; both conditions are checked on summands. -/
+/-- In degree one, a class is a morphism to the cokernel of an embedding `Y ⟶ I` into an injective
+object, up to the morphisms which factor through `I`; both conditions are checked on summands. -/
 private lemma bijective_restrict_one (hc : IsColimit c) (Y : C) :
     Function.Bijective (restrict c Y 1) := by
   -- A single injective copresentation computes every component and the coproduct at once.
@@ -112,8 +113,8 @@ private lemma bijective_restrict_one (hc : IsColimit c) (Y : C) :
     ext i
     simpa [restrict_apply] using ha i
 
-/-- In degree `n + 2`, the connecting map of an injective hull `Y ⟶ I ⟶ Q` identifies
-`Extⁿ⁺¹(-, Q)` with `Extⁿ⁺²(-, Y)`, compatibly with restriction. -/
+/-- In degree `n + 2`, the connecting map of an embedding `Y ⟶ I` into an injective object, with
+cokernel `I ⟶ Q`, identifies `Extⁿ⁺¹(-, Q)` with `Extⁿ⁺²(-, Y)`, compatibly with restriction. -/
 private lemma bijective_restrict_succ_succ (Y : C) (n : ℕ)
     (h : Function.Bijective (restrict c (TauCeti.injectiveCokernelSequence Y).X₃ (n + 1))) :
     Function.Bijective (restrict c Y (n + 2)) := by
