@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Height
+public import TauCeti.Combinatorics.Tiling.Lozenge.RowTiling
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -17,6 +18,9 @@ import Mathlib.Tactic.FinCases
 * `H(x, y) = ⌊(x + y)/2⌋` is a height function, and its tiling has no lozenge of type 3, since
   `H(v + e₃) − H(v) = 1` everywhere.
 * `H(x, y) = x + y` is not a height function: its increment along `e₃` is `2`.
+* The row tiling `M_ε` has height `H_{M_ε}(x, y) = Σ_{0 ≤ i < x} ε_i` for `x ≥ 0` and
+  `−Σ_{x ≤ i < 0} ε_i` for `x < 0`, independent of `y`; for the alternating `ε_x = [x odd]` this
+  is `⌊x/2⌋`.
 -/
 
 public section
@@ -95,5 +99,35 @@ example (e : TriEdge) (he : e ∈ tilingOfHeight halfSumHeight) : e.k ≠ 2 := b
 /-- `x + y` is not a height function: its increment along `e₃` is `2`. -/
 example : ¬ IsHeightFunction fun v => v.1 + v.2 := fun h => by
   rcases isHeightFunction_def.1 h ⟨0, 2⟩ with h | h <;> simp at h
+
+/-! ### Row tilings -/
+
+/-- For `x ≥ 0`, `H_{M_ε}(x, y) = Σ_{0 ≤ i < x} ε_i`. -/
+example (ε : ℤ → Bool) {x : ℤ} (hx : 0 ≤ x) (y : ℤ) :
+    tilingHeight {e | rowTiling ε e = true} (x, y) =
+      ∑ i ∈ Finset.Ico 0 x, if ε i then 1 else 0 := by
+  simp [rowHeight_of_nonneg ε hx]
+
+/-- For `x < 0`, `H_{M_ε}(x, y) = −Σ_{x ≤ i < 0} ε_i`. -/
+example (ε : ℤ → Bool) {x : ℤ} (hx : x < 0) (y : ℤ) :
+    tilingHeight {e | rowTiling ε e = true} (x, y) =
+      -∑ i ∈ Finset.Ico x 0, if ε i then 1 else 0 := by
+  simp [rowHeight_of_neg ε hx]
+
+/-- For the alternating `ε_x = [x odd]`, `H_{M_ε}(x, y) = ⌊x/2⌋`. -/
+example : tilingHeight {e | rowTiling (fun x => decide (Odd x)) e = true} = fun v => v.1 / 2 := by
+  funext v
+  rw [tilingHeight_rowTiling]
+  induction v.1 using Int.induction_on with
+  | zero => simp
+  | succ n ih =>
+    rw [rowHeight_add_one, ih]
+    simp only [Int.odd_iff]
+    split_ifs <;> simp_all <;> omega
+  | pred n ih =>
+    have := rowHeight_add_one (fun x => decide (Odd x)) (-(n : ℤ) - 1)
+    rw [sub_add_cancel, ih] at this
+    simp only [Int.odd_iff, decide_eq_true_eq] at this ⊢
+    split_ifs at this <;> omega
 
 end TauCeti.Examples.LozengeHeightChecks
