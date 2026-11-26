@@ -127,6 +127,7 @@ theorem surjective_flat_strongDualCotangentTwoForm_iff :
 
 /-- **The constant canonical two-form on `V × V*` is nondegenerate**, for every normed space `V`,
 by Hahn–Banach. -/
+@[simp]
 theorem isNondegenerate_strongDualCotangentTwoForm :
     (strongDualCotangentTwoForm V).IsNondegenerate :=
   (SmoothTwoForm.isNondegenerate_const_iff (strongDualCotangentFlat V)
@@ -190,12 +191,9 @@ theorem not_isInvertible_flat_strongDualCotangentTwoForm
 `(ω♭)⁻¹ df` of every function on `V × V*` is `0`, since no flat map is invertible. -/
 theorem hamiltonianVectorField_strongDualCotangentTwoForm_eq_zero
     (hV : ¬ Function.Surjective (inclusionInDoubleDual ℝ V)) (f : V × StrongDual ℝ V → ℝ) :
-    (strongDualCotangentTwoForm V).hamiltonianVectorField f = 0 := by
-  funext x
-  rw [SmoothTwoForm.hamiltonianVectorField_def,
-    ContinuousLinearMap.inverse_of_not_isInvertible
-      (not_isInvertible_flat_strongDualCotangentTwoForm hV x)]
-  simp
+    (strongDualCotangentTwoForm V).hamiltonianVectorField f = 0 :=
+  funext fun x ↦ SmoothTwoForm.hamiltonianVectorField_eq_zero_of_not_isInvertible_flat
+    (not_isInvertible_flat_strongDualCotangentTwoForm hV x) f
 
 /-- **On a non-reflexive `V` the pinned Poisson bracket vanishes**, although the Hamiltonian
 vector fields of position and momentum functions pair to `a(b)`
@@ -203,10 +201,9 @@ vector fields of position and momentum functions pair to `a(b)`
 theorem poissonBracket_strongDualCotangentTwoForm_eq_zero
     (hV : ¬ Function.Surjective (inclusionInDoubleDual ℝ V)) (f g : V × StrongDual ℝ V → ℝ)
     (x : V × StrongDual ℝ V) :
-    (strongDualCotangentTwoForm V).poissonBracket f g x = 0 := by
-  rw [SmoothTwoForm.poissonBracket_def,
-    hamiltonianVectorField_strongDualCotangentTwoForm_eq_zero hV, Pi.zero_apply,
-    SmoothBundleForm.eval₂_zero_left]
+    (strongDualCotangentTwoForm V).poissonBracket f g x = 0 :=
+  SmoothTwoForm.poissonBracket_eq_zero_of_not_isInvertible_flat
+    (not_isInvertible_flat_strongDualCotangentTwoForm hV x) f g
 
 /-- **On a non-reflexive `V` the pinned Hamiltonian vector field is not a Hamiltonian vector
 field**: for a nonzero covector `a`, the pinned field of `(q, α) ↦ a(q)` is `0`, while its
