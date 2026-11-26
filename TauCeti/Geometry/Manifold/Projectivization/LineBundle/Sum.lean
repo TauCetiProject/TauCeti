@@ -27,7 +27,7 @@ projection and the coordinate inclusion.
 Split bundles of this form are the normal forms of holomorphic bundles on the projective line, and
 the restriction of the tangent bundle of `ℙⁿ` to the coordinate line is `𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`
 (`Projectivization.coordLineTangentDiffeomorph`, in
-`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent`).
+`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent.Basic`).
 
 ## Main declarations
 

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Twist
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Cech
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Projectivization
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle
-public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent
+public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 import TauCeti.Topology.Separation.Hausdorff
 import TauCeti.Topology.Sheaves.Cech.Functoriality
@@ -50,11 +50,10 @@ Riemann sphere, whose first cohomology vanishes in degree at least `-1`.
 summands `𝒪(k l)` (`Projectivization.twistSumSectionBiconeIsBilimit`), with the projections onto
 and the inclusions of the summands. Čech cohomology is an additive functor of the sheaf, so
 `Hⁱ(ℂℙⁿ, ⨁ₗ 𝒪(k l))` vanishes when every `Hⁱ(ℂℙⁿ, 𝒪(k l))` does. On `ℂℙ¹` this gives
-`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`. The pullback `ℓ* TℂPᵐ⁺¹` of the tangent bundle of
-`ℂPᵐ⁺¹` along the coordinate line `ℓ` is `𝒪(2) ⊕ 𝒪(1)ᵐ`
-(`Projectivization.coordLineTangentDiffeomorph`), so `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`. This is the
-vanishing of `H¹(C, u* TℂPⁿ)` on the line component of a genus-zero stable map in the class of a
-line, on which the regularity of such maps rests (Fulton–Pandharipande, Lemma 10).
+`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`. Applied to the splitting
+`ℓ* TℂPᵐ⁺¹ ≅ 𝒪(2) ⊕ 𝒪(1)ᵐ` along the coordinate line `ℓ`, this gives `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`
+(`Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`, in
+`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent.Cohomology`).
 
 ## Main declarations
 
@@ -77,8 +76,6 @@ line, on which the regularity of such maps rests (Fulton–Pandharipande, Lemma 
   vanishes when every `Hⁱ(ℂℙⁿ, 𝒪(k l))` does.
 * `Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`:
   `H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.
-* `Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`:
-  `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0` for the coordinate line `ℓ`.
 
 ## References
 
@@ -885,27 +882,5 @@ theorem isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le
       (twistSumCore (𝕜 := ℂ) (n := 1) k).Fiber 1) :=
   isZero_holomorphicSectionCechCohomology_twistSumCore k fun l ↦
     isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le (k l) (hk l)
-
-/-! ### The tangent bundle along the coordinate line -/
-
-/-- **`H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`.** The first Čech cohomology of the sheaf of holomorphic sections
-of the pullback `ℓ* TℂPᵐ⁺¹` of the tangent bundle of `ℂPᵐ⁺¹` along the coordinate line
-`ℓ : ℂℙ¹ → ℂPᵐ⁺¹` vanishes: `ℓ* TℂPᵐ⁺¹ ≅ 𝒪(2) ⊕ 𝒪(1)ᵐ`
-(`Projectivization.coordLineTangentDiffeomorph`), and `H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`. -/
-theorem isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace (m : ℕ) :
-    IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
-      (CoordLineTangentSpace ℂ m) 1) := by
-  refine (isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le
-    (k := lineTwist m) fun l ↦ ?_).of_iso
-    ((Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) 1).mapIso
-      ((sheafToPresheaf _ _).mapIso (holomorphicSectionSheaf.isoOfLinearEquiv
-        (fun x ↦ (coordLineTangentEquiv x).toLinearEquiv) contMDiff_coordLineTangentEquiv
-        ((coordLineTangentDiffeomorph ω).symm.contMDiff.congr fun q ↦
-          (coordLineTangentDiffeomorph_symm_apply ω q).symm))))
-  refine Fin.cases ?_ (fun l ↦ ?_) l
-  · rw [lineTwist_zero]
-    norm_num
-  · rw [lineTwist_succ]
-    norm_num
 
 end Projectivization
