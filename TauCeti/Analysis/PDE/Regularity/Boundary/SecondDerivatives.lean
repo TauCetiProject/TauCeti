@@ -8,10 +8,14 @@ module
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.FlatBoundary
 public import TauCeti.Analysis.PDE.Regularity.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
+import TauCeti.Analysis.InnerProductSpace.OrthogonalSpanSingleton
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
 import TauCeti.Analysis.PDE.Regularity.Hessian.DivergenceForm
 import TauCeti.Analysis.Sobolev.W1p.Extension
-import TauCeti.MeasureTheory.Function.PreciseRepresentative
+import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
+import TauCeti.Analysis.Sobolev.W1p.Symmetry
+import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
+import TauCeti.MeasureTheory.Function.PreciseRepresentative.HalfSpace
 
 /-!
 # Hölder continuity of the second derivatives up to the boundary of a half-space
@@ -24,15 +28,20 @@ Let `H = {x | c₀ < ⟪x, ν⟫}` be an open half-space of `ℝ^{n+1}`, `ν ≠
 that is `∫_H ⟨a ∇u, ∇v⟩ = ∫_H f v` for every `v ∈ H¹₀(H)`, where `a` is uniformly elliptic and
 Lipschitz, as a bilinear form, on all of `H`, `a` is uniformly elliptic on a ball `B(y₀, r)` about
 a point `y₀` of the boundary hyperplane and its entries are `C¹` with first derivatives `α`-Hölder
-there, and `f ∈ L²(H)` is `α`-Hölder up to the boundary there. This file proves that the second
-derivatives of `u` with a tangential direction are `α`-Hölder up to the boundary near `y₀`: for
-every `e` with `⟪e, ν⟫ = 0`, the weak derivative `∂ₑu` lies in `H¹₀(H)`, and the precise
-representative of its gradient for the Lebesgue measure on `H` is `α`-Hölder on the closed
-half-ball `closedBall y₀ (r / 4) ∩ {c₀ ≤ ⟪y, ν⟫}`
-(`exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient`; this and
-the other declarations named below are in the `TauCeti.PDE` namespace). Since `∇(∂ₑu)` holds the
-derivatives `∂_w ∂ₑu` in every direction `w`, this covers every second derivative `∂_w ∂_z u` with
-`z` or `w` tangential, that is all of them but `∂_ν ∂_ν u`.
+there, and `f ∈ L²(H)` is `α`-Hölder up to the boundary there. This file proves that the weak second
+derivatives of `u` have `α`-Hölder precise representatives up to the boundary near `y₀`.
+
+* **Tangential directions.** For every `e` with `⟪e, ν⟫ = 0`, the weak derivative `∂ₑu` lies in
+  `H¹₀(H)`, and the precise representative of its gradient for the Lebesgue measure on `H` is
+  `α`-Hölder on the closed half-ball `closedBall y₀ (r / 4) ∩ {c₀ ≤ ⟪y, ν⟫}`
+  (`exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient`; this and
+  the other declarations named below are in the `TauCeti.PDE` namespace). Since `∇(∂ₑu)` holds
+  the derivatives `∂_w ∂ₑu` in every direction `w`, this covers every second derivative with a
+  tangential direction, that is all of them but `∂_ν ∂_ν u`.
+* **Every direction.** For every `w`, normal ones included, the weak derivative `∂_w u` lies in
+  `H¹(H)` and the precise representative of its gradient is `α`-Hölder on the closed half-ball
+  `closedBall y₀ (r / 8) ∩ {c₀ ≤ ⟪y, ν⟫}`
+  (`exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_restrict_gradient`).
 
 This is the boundary counterpart of interior `C^{2,α}` regularity for divergence-form equations
 with `C^{1,α}` coefficients
@@ -67,11 +76,25 @@ coefficients on a half-space.
   Schauder estimate up to a flat boundary for a divergence datum,
   `exists_holderOnWith_preciseRepresentative_restrict_gradient_of_holderOnWith_matrixBilinearForm`,
   applies to it.
+* **The normal direction.** Let `e = ν / ‖ν‖`. Since `u ∈ H²(H)`, the weak derivatives of `u`
+  lie in `H¹(H)`, and the equation holds almost everywhere on `B(y₀, r / 4) ∩ H`, where the
+  coefficients are `C¹` (`TauCeti.PDE.ae_sum_sum_eq_neg_of_hasWeakLineDerivOn`):
+  `∑ᵢⱼ (∂ᵢaⁱʲ ∂ⱼu + aⁱʲ ∂ᵢ∂ⱼu) = -f`. In it every second derivative but `∂ₑ∂ₑu` has a tangential
+  direction, by the symmetry of second derivatives
+  (`TauCeti.W1p.inner_gradient_ae_eq_of_hasWeakLineDerivOn`), and the coefficient of `∂ₑ∂ₑu` is
+  `⟪e, a e⟫ ≥ λ`. Solving for it expresses `∇(∂ₑu)` almost everywhere through `f`, `a`, `∂a`, `∇u`
+  and the tangential second derivatives, a field that is `α`-Hölder on the closed half-ball.
+* **The precise representative.** A function equal almost everywhere on `B(y₀, ρ) ∩ H` to a field
+  continuous on the closed half-ball has that field as its precise representative there
+  (`TauCeti.MeasureTheory.preciseRepresentative_restrict_setOf_lt_inner_eq_of_continuousOn`).
+  A general direction `w` is `⟪e, w⟫ e` plus a tangential direction.
 
 ## Main declarations
 
 * `exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient`: the
   tangential second derivatives of the solution are `α`-Hölder up to the flat boundary.
+* `exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_restrict_gradient`: all
+  second derivatives of the solution are `α`-Hölder up to the flat boundary.
 
 ## References
 
@@ -80,6 +103,8 @@ coefficients on a half-space.
   at the boundary).
 * M. Giaquinta, L. Martinazzi, *An Introduction to the Regularity Theory for Elliptic Systems,
   Harmonic Maps and Minimal Graphs*, 2nd ed., Section 5.4.
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.3.2, proof of Theorem 4 (the normal
+  second derivative recovered from the equation).
 -/
 
 public section
@@ -199,6 +224,43 @@ private theorem holderOnWith_comp_fold_ball {α : ℝ≥0} {ν : E} {c₀ : ℝ}
   simpa only [NNReal.one_rpow, mul_one] using hL.comp hF.lipschitzOnWith.holderOnWith fun y hy =>
     ⟨(hF.dist_le_mul y x).trans_lt (by rwa [NNReal.coe_one, one_mul]),
       le_inner_ite_hyperplaneReflection hν c₀ y⟩
+
+/-- **Step 1, assembled: `∇u` has a Hölder representative up to the boundary.** Under the
+hypotheses of the main theorem on `a` and `f` near `y₀`, the gradient of the solution `u` agrees
+almost everywhere on `B(y₀, 3r / 4) ∩ H` with a function that is `α`-Hölder on the closed half-ball
+`closedBall y₀ (r / 2) ∩ {c₀ ≤ ⟪y, ν⟫}`, the precise representative of the gradient of the zero
+extension of `u` to `B(y₀, 3r / 4)`. -/
+private theorem exists_holderOnWith_and_ae_eq_gradient {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+    {H : Opens E} {ν : E} {c₀ : ℝ} (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ} {y₀ : E}
+    (hy₀ : ⟪y₀, ν⟫_ℝ = c₀) {r : ℝ} (hr : 0 < r)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (ball y₀ r))
+    (hellB : UniformlyEllipticOn (ball y₀ r) a lam Lam)
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict H))
+    (hfH : ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α f (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
+    {u : W1p0 volume H 2}
+    (hu : ∀ v : W1p0 volume H 2, energyFormH1 a 0 0 (u : W1p volume H 2) (v : W1p volume H 2) =
+      ∫ x in H, f x * W1p.value (v : W1p volume H 2) x) :
+    ∃ P : E → E, (∃ C : ℝ≥0, HolderOnWith C α P (closedBall y₀ (r / 2) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ})) ∧
+      P =ᵐ[volume.restrict (ball y₀ (3 * r / 4) ∩ H)] W1p.gradient (u : W1p volume H 2) := by
+  set B : Opens E := ⟨ball y₀ (3 * r / 4), isOpen_ball⟩
+  have hBr : closedBall y₀ (3 * r / 4) ⊆ ball y₀ r := closedBall_subset_ball (by linarith)
+  obtain ⟨Ka, hKa⟩ := exists_holderOnWith_matrixBilinearForm_of_contDiffOn isOpen_ball ha
+    (isCompact_closedBall y₀ (3 * r / 4)) hBr hα1.le
+  -- `f` composed with the fold is Hölder near `closedBall y₀ (3r / 4)`, so `f` is bounded on `H`
+  -- there.
+  obtain ⟨δf, hδf, -, Mf, -, hMf⟩ :=
+    (isCompact_closedBall y₀ (3 * r / 4)).exists_holderOnWith_thickening_and_norm_le
+      fun x hx => holderOnWith_comp_fold_ball hν hy₀ hfH x (hBr hx)
+  obtain ⟨CP, hP⟩ := exists_holderOnWith_preciseRepresentative_gradient_extendRestrict hα hα1 hν hH
+    hr (B := B) rfl hellB hKa hf (fun x hx hxH => by
+      simpa only [Function.comp_apply, ((hH x).1 hxH).le, ↓reduceIte] using
+        hMf x (self_subset_thickening hδf _ hx)) hu
+  -- The precise representative agrees with `∇u` almost everywhere on `B ∩ H`.
+  exact ⟨_, ⟨CP, hP⟩, (W1p.gradient_ae_eq_preciseRepresentative_restrict (extendRestrict u B)
+    B.isOpen inter_subset_left).symm.trans
+    (gradient_extendRestrict_ae_eq u)⟩
 
 /-- **Step 2: the folded datum is Hölder.** If the derivatives of the entries of `a` are
 `α`-Hölder near each point of `B(y₀, r)`, `f` is `α`-Hölder up to the boundary near each point of
@@ -324,31 +386,17 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restric
     ((isWeakSolutionDirichlet_iff (hf.toLp f) u).2 fun v => (hu v).trans
       (integral_congr_ae (hf.coeFn_toLp.mono fun x hx => by simp only [hx]))) he
   refine ⟨d, hd, ?_⟩
-  -- The ball `B = B(y₀, 3r / 4)`, the coefficients on it and the bound on `f`.
+  -- The ball `B = B(y₀, 3r / 4)` and the coefficients on it.
   set B : Opens E := ⟨ball y₀ (3 * r / 4), isOpen_ball⟩
   have hBr : closedBall y₀ (3 * r / 4) ⊆ ball y₀ r := closedBall_subset_ball (by linarith)
   have hcl : closure (((B ⊓ H : Opens E)) : Set E) ⊆ closedBall y₀ (3 * r / 4) :=
     (closure_mono inter_subset_left).trans closure_ball_subset_closedBall
   obtain ⟨Ka, hKa⟩ := exists_holderOnWith_matrixBilinearForm_of_contDiffOn isOpen_ball ha
     (isCompact_closedBall y₀ (3 * r / 4)) hBr hα1.le
-  -- `f` composed with the fold is Hölder near `closedBall y₀ (3r / 4)`, so `f` is bounded on `H`
-  -- there.
-  obtain ⟨δf, hδf, -, Mf, -, hMf⟩ :=
-    (isCompact_closedBall y₀ (3 * r / 4)).exists_holderOnWith_thickening_and_norm_le
-      fun x hx => holderOnWith_comp_fold_ball hν hy₀ hfH x (hBr hx)
-  -- Step 1: the precise representative `P` of `∇u` is Hölder up to the boundary, and `P = ∇u`
-  -- almost everywhere on `B ∩ H`.
-  obtain ⟨CP, hP⟩ := exists_holderOnWith_preciseRepresentative_gradient_extendRestrict hα hα1 hν hH
-    hr (B := B) rfl hellB hKa hf (fun x hx hxH => by
-      simpa only [Function.comp_apply, ((hH x).1 hxH).le, ↓reduceIte] using
-        hMf x (self_subset_thickening hδf _ hx)) hu
-  have hPV : preciseRepresentative (volume.restrict (H : Set E))
-      (W1p.gradient (extendRestrict u B) : E → E)
-        =ᵐ[volume.restrict (((B ⊓ H : Opens E)) : Set E)] W1p.gradient (u : W1p volume H 2) :=
-    (ae_eq_restrict_inter_preciseRepresentative_restrict B.isOpen
-      (((Lp.memLp (W1p.gradient (extendRestrict u B))).mono_measure
-        (Measure.restrict_mono inter_subset_left le_rfl)).locallyIntegrable one_le_two)).symm.trans
-      (gradient_extendRestrict_ae_eq u)
+  -- Step 1: `∇u` agrees almost everywhere on `B ∩ H` with a function `P` that is Hölder up to the
+  -- boundary.
+  obtain ⟨P, ⟨CP, hP⟩, hPV⟩ :=
+    exists_holderOnWith_and_ae_eq_gradient hα hα1 hν hH hy₀ hr ha hellB hf hfH hu
   -- Step 2: the folded datum of the equation for `∂ₑu` is Hölder on `B(y₀, r / 2)`.
   obtain ⟨KG, hG⟩ := exists_holderOnWith_datum_comp_fold hα hν hy₀ hr hda hfH hP e
   -- Step 3: the Schauder estimate up to the flat boundary for the zero extension of `∂ₑu`.
@@ -374,6 +422,347 @@ theorem exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restric
   -- `show` makes explicit.
   exact ⟨_, hPB.congr fun x hx => preciseRepresentative_gradient_extendRestrict d
     (show x ∈ ball y₀ (3 * r / 4) from closedBall_subset_ball (by linarith) hx.1)⟩
+
+/-! ### Every second derivative -/
+
+/-- **Solving the equation for the normal second derivative, pointwise.** Let `e` be a unit vector,
+`P` the orthogonal projection onto `(ℝ ∙ e)ᗮ` and `(bᵢ)` the standard basis. Suppose that the
+vector `v`, the gradient of `∂ₑu`, and the vectors `t i`, the gradients of `∂_{P bᵢ} u`, satisfy the
+symmetry `⟪v, P bᵢ⟫ = ⟪t i, e⟫` of second derivatives, and that the equation
+`∑ᵢⱼ (Xᵢⱼ + Aᵢⱼ ∂ᵢ∂ⱼu) = -s` holds with `∂ᵢ∂ⱼu = ⟪⟪e, bⱼ⟫ v + t j, bᵢ⟫`. If `⟪e, A e⟫ ≠ 0`, then
+`v` is determined by `s`, `X`, `A` and the `t i`: its component along `e` is
+`⟪e, A e⟫⁻¹ (-s - ∑ᵢⱼ (Xᵢⱼ + Aᵢⱼ (⟪e, bⱼ⟫ ⟪t i, e⟫ + ⟪t j, bᵢ⟫)))`, and its components along `bₖ`
+orthogonal to `e` are `⟪t k, e⟫`. -/
+private theorem eq_smul_add_sum_of_sum_sum_eq_neg {e : E} (he : ‖e‖ = 1)
+    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} (hA : matrixBilinearForm A e e ≠ 0)
+    {X : Fin (n + 1) → Fin (n + 1) → ℝ} {s : ℝ} {v : E} {t : Fin (n + 1) → E}
+    (hvt : ∀ i, ⟪v, (ℝ ∙ e)ᗮ.starProjection (EuclideanSpace.basisFun (Fin (n + 1)) ℝ i)⟫_ℝ =
+      ⟪t i, e⟫_ℝ)
+    (h : ∑ i, ∑ j, (X i j + A i j * ⟪⟪e, EuclideanSpace.basisFun (Fin (n + 1)) ℝ j⟫_ℝ • v + t j,
+      EuclideanSpace.basisFun (Fin (n + 1)) ℝ i⟫_ℝ) = -s) :
+    v = ((matrixBilinearForm A e e)⁻¹ * (-s - ∑ i, ∑ j,
+        (X i j + A i j * (⟪e, EuclideanSpace.basisFun (Fin (n + 1)) ℝ j⟫_ℝ * ⟪t i, e⟫_ℝ +
+          ⟪t j, EuclideanSpace.basisFun (Fin (n + 1)) ℝ i⟫_ℝ)))) • e +
+      ∑ k, ⟪t k, e⟫_ℝ • EuclideanSpace.basisFun (Fin (n + 1)) ℝ k := by
+  set b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
+  set P := (ℝ ∙ e)ᗮ.starProjection
+  have hdec := inner_smul_add_starProjection_eq ℝ he
+  -- `⟪v, bᵢ⟫ = ⟪e, bᵢ⟫ ⟪v, e⟫ + ⟪t i, e⟫`.
+  have hvb (i : Fin (n + 1)) : ⟪v, b i⟫_ℝ = ⟪e, b i⟫_ℝ * ⟪v, e⟫_ℝ + ⟪t i, e⟫_ℝ := by
+    conv_lhs => rw [← hdec (b i)]
+    rw [inner_add_right, real_inner_smul_right, hvt, mul_comm]
+  -- The coefficient of `⟪v, e⟫` is `⟪e, A e⟫ = ∑ᵢⱼ ⟪e, bᵢ⟫ Aᵢⱼ ⟪e, bⱼ⟫`.
+  have hAe : matrixBilinearForm A e e = ∑ i, ∑ j, A i j * (⟪e, b j⟫_ℝ * ⟪e, b i⟫_ℝ) := by
+    simp only [matrixBilinearForm_apply, dotProduct, Matrix.mulVec, b,
+      EuclideanSpace.inner_basisFun_real, Finset.mul_sum]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  have key : matrixBilinearForm A e e * ⟪v, e⟫_ℝ = -s - ∑ i, ∑ j,
+      (X i j + A i j * (⟪e, b j⟫_ℝ * ⟪t i, e⟫_ℝ + ⟪t j, b i⟫_ℝ)) := by
+    rw [← h, hAe, Finset.sum_mul, ← Finset.sum_sub_distrib]
+    simp only [Finset.sum_mul, ← Finset.sum_sub_distrib, inner_add_left, real_inner_smul_left, hvb]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  -- The components of `P v` are `⟪P v, bₖ⟫ = ⟪v, P bₖ⟫ = ⟪t k, e⟫`.
+  have hPv : P v = ∑ k, ⟪t k, e⟫_ℝ • b k := by
+    conv_lhs => rw [← b.sum_repr' (P v)]
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [real_inner_comm, Submodule.inner_starProjection_left_eq_right, hvt]
+  calc v = ⟪e, v⟫_ℝ • e + P v := (hdec v).symm
+    _ = _ := by rw [hPv, real_inner_comm, (eq_inv_mul_iff_mul_eq₀ hA).2 key]
+
+/-- The candidate for the gradient of the normal derivative `∂ₑu`, for a unit normal `e`: its
+component along `e` is `∂ₑ∂ₑu` solved for from the equation
+`∑ᵢⱼ (∂ᵢaⁱʲ ∂ⱼu + aⁱʲ ∂ᵢ∂ⱼu) = -f`, with `P` in place of `∇u` and `g i` in place of the gradient of
+the tangential derivative `∂_{P bᵢ}u`, and its components along the `bₖ` orthogonal to `e` are the
+tangential derivatives `⟪g k, e⟫` of `∂ₑu`. -/
+private noncomputable def normalField (a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (f : E → ℝ)
+    (P : E → E) (g : Fin (n + 1) → E → E) (e x : E) : E :=
+  ((matrixBilinearForm (a x) e e)⁻¹ * (-f x - ∑ i, ∑ j,
+    (fderiv ℝ (fun y => a y i j) x (EuclideanSpace.basisFun (Fin (n + 1)) ℝ i) *
+        ⟪P x, EuclideanSpace.basisFun (Fin (n + 1)) ℝ j⟫_ℝ +
+      a x i j * (⟪e, EuclideanSpace.basisFun (Fin (n + 1)) ℝ j⟫_ℝ * ⟪g i x, e⟫_ℝ +
+        ⟪g j x, EuclideanSpace.basisFun (Fin (n + 1)) ℝ i⟫_ℝ)))) • e +
+    ∑ k, ⟪g k x, e⟫_ℝ • EuclideanSpace.basisFun (Fin (n + 1)) ℝ k
+
+/-- **The candidate field is Hölder** on a compact set `S` on which `f`, the entries of `a` and
+their derivatives, `⟪e, a e⟫⁻¹`, `P` and the `g k` are `α`-Hölder: it is built from them by sums and
+products. -/
+private theorem exists_holderOnWith_normalField {α : ℝ≥0} (hα : 0 < α) {S : Set E}
+    (hSc : IsCompact S) {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {f : E → ℝ} {P : E → E}
+    {g : Fin (n + 1) → E → E} {e : E} (hf : ∃ C, HolderOnWith C α (fun x => -f x) S)
+    (ha : ∀ i j, ∃ C, HolderOnWith C α (fun x => a x i j) S)
+    (hda : ∀ i j, ∃ C, HolderOnWith C α
+      (fun x => fderiv ℝ (fun y => a y i j) x (EuclideanSpace.basisFun (Fin (n + 1)) ℝ i)) S)
+    (hinv : ∃ C, HolderOnWith C α (fun x => (matrixBilinearForm (a x) e e)⁻¹) S)
+    (hP : ∃ C, HolderOnWith C α P S) (hg : ∀ k, ∃ C, HolderOnWith C α (g k) S) :
+    ∃ C, HolderOnWith C α (normalField a f P g e) S := by
+  set b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
+  have hadd : ∀ {φ ψ : E → ℝ}, (∃ C, HolderOnWith C α φ S) → (∃ C, HolderOnWith C α ψ S) →
+      ∃ C, HolderOnWith C α (fun x => φ x + ψ x) S := fun ⟨_, hφ⟩ ⟨_, hψ⟩ => ⟨_, hφ.add hψ⟩
+  have hmul : ∀ {φ ψ : E → ℝ}, (∃ C, HolderOnWith C α φ S) → (∃ C, HolderOnWith C α ψ S) →
+      ∃ C, HolderOnWith C α (fun x => φ x * ψ x) S := fun ⟨_, hφ⟩ ⟨_, hψ⟩ =>
+    ContinuousLinearMap.exists_holderOnWith_comp₂_of_isCompact (ContinuousLinearMap.mul ℝ ℝ)
+      hSc hα hφ hψ
+  have hsum : ∀ {φ : Fin (n + 1) → E → ℝ}, (∀ i, ∃ C, HolderOnWith C α (φ i) S) →
+      ∃ C, HolderOnWith C α (fun x => ∑ i, φ i x) S := fun h => by
+    choose C hC using h
+    exact ⟨_, HolderOnWith.sum (s := Finset.univ) fun i _ => hC i⟩
+  have hinner : ∀ {F : E → E}, (∃ C, HolderOnWith C α F S) → ∀ w : E,
+      ∃ C, HolderOnWith C α (fun x => ⟪F x, w⟫_ℝ) S := fun ⟨_, hF⟩ w =>
+    ⟨_, ((innerSL ℝ w).lipschitzWith.comp_holderOnWith hF).congr fun x _ => by
+      simp [real_inner_comm]⟩
+  have hsmul : ∀ {φ : E → ℝ}, (∃ C, HolderOnWith C α φ S) → ∀ w : E,
+      ∃ C, HolderOnWith C α (fun x => φ x • w) S := fun ⟨_, hφ⟩ w =>
+    ⟨_, ((ContinuousLinearMap.toSpanSingleton ℝ w).lipschitzWith.comp_holderOnWith hφ).congr
+      fun x _ => by simp⟩
+  have hconst (c : ℝ) : ∃ C, HolderOnWith C α (fun _ : E => c) S := ⟨0, fun x _ y _ => by simp⟩
+  -- The component along `e`, then the tangential components.
+  obtain ⟨CN, hN⟩ := hmul hinv (hadd hf (by
+    obtain ⟨C, h⟩ := hsum fun i => hsum fun j => hadd (hmul (hda i j) (hinner hP (b j)))
+      (hmul (ha i j) (hadd (hmul (hconst ⟪e, b j⟫_ℝ) (hinner (hg i) e)) (hinner (hg j) (b i))))
+    exact ⟨C, h.neg⟩))
+  obtain ⟨C₁, h₁⟩ := hsmul ⟨CN, hN⟩ e
+  choose C₂ h₂ using fun k => hsmul (hinner (hg k) e) (b k)
+  exact ⟨_, (h₁.add (HolderOnWith.sum (s := Finset.univ) fun k _ => h₂ k)).congr fun x _ => by
+    simp only [normalField, Pi.add_apply, Pi.neg_apply, sub_eq_add_neg, b]⟩
+
+/-- **The ingredients of the candidate field are Hölder.** Under the hypotheses of the main
+theorem on `a` and `f` near `y₀`, on the compact closed half-ball
+`S = closedBall y₀ (r / 4) ∩ {c₀ ≤ ⟪y, ν⟫}` the functions `-f`, the entries of `a` and their
+derivatives and `⟪e, a e⟫⁻¹`, for a unit vector `e`, are `α`-Hölder; so, if `P` and the `g k` are
+`α`-Hölder on `S`, then so is the candidate field `normalField a f P g e`. -/
+private theorem exists_holderOnWith_normalField_closedBall {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+    {ν : E} {c₀ : ℝ} (hν : ν ≠ 0) {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    {y₀ : E} (hy₀ : ⟪y₀, ν⟫_ℝ = c₀) {r : ℝ} (hr : 0 < r)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (ball y₀ r))
+    (hellB : UniformlyEllipticOn (ball y₀ r) a lam Lam)
+    (hda : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, ∀ i j,
+      HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x ρ))
+    {f : E → ℝ} (hfH : ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α f (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
+    {e : E} (he : ‖e‖ = 1) {P : E → E} {g : Fin (n + 1) → E → E}
+    (hP : ∃ C, HolderOnWith C α P (closedBall y₀ (r / 4) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
+    (hg : ∀ k, ∃ C, HolderOnWith C α (g k) (closedBall y₀ (r / 4) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ})) :
+    ∃ C, HolderOnWith C α (normalField a f P g e)
+      (closedBall y₀ (r / 4) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) := by
+  set S : Set E := closedBall y₀ (r / 4) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}
+  have hSc : IsCompact S := (isCompact_closedBall _ _).inter_right
+    (isClosed_le continuous_const (continuous_id.inner continuous_const))
+  have hSr : S ⊆ ball y₀ r := inter_subset_left.trans (closedBall_subset_ball (by linarith))
+  refine exists_holderOnWith_normalField hα hSc ?_ (fun i j =>
+    ((ha i j).locallyLipschitzOn (convex_ball y₀ r)).exists_holderOnWith_of_isCompact hα1.le hSc
+      hSr) (fun i j => ?_) ?_ hP hg
+  · -- `f` composed with the fold is Hölder near `S`, and the fold fixes `S`.
+    obtain ⟨δ, hδ, L, -, hL, -⟩ := hSc.exists_holderOnWith_thickening_and_norm_le
+      fun x hx => holderOnWith_comp_fold_ball hν hy₀ hfH x (hSr hx)
+    exact ⟨L, ((hL.mono (self_subset_thickening hδ S)).neg).congr fun x hx => by
+      simp only [Pi.neg_apply, Function.comp_apply, hx.2.out, ↓reduceIte]⟩
+  · obtain ⟨δ, hδ, L, -, hL, -⟩ := hSc.exists_holderOnWith_thickening_and_norm_le
+      (f := fderiv ℝ fun y => a y i j) fun x hx => by
+        obtain ⟨ρ, hρ, L, hL⟩ := hda x (hSr hx)
+        exact ⟨ρ, hρ, L, hL i j⟩
+    exact ⟨_, (ContinuousLinearMap.apply ℝ ℝ _).lipschitzWith.comp_holderOnWith
+      (hL.mono (self_subset_thickening hδ S))⟩
+  · -- `⟪e, a e⟫ ≥ λ`, so its reciprocal is Lipschitz and bounded on `S`.
+    obtain ⟨K', hK'⟩ := ((locallyLipschitzOn_matrixBilinearForm_of_contDiffOn isOpen_ball
+      ha).mono hSr).exists_lipschitzOnWith_of_compact hSc
+    have he0 : e ≠ 0 := fun h => by simp [h] at he
+    exact ⟨_, (lipschitzOnWith_inv_matrixBilinearForm_self (hellB.mono_set hSr) hK'
+      he0).holderOnWith_of_norm_le (M := (lam * ‖e‖ ^ 2)⁻¹.toNNReal) (fun x hx =>
+        (norm_inv_matrixBilinearForm_self_le (hellB.mono_set hSr) hx e).trans
+          (Real.le_coe_toNNReal _)) hα1.le⟩
+
+/-- **The gradient of the normal derivative agrees with the candidate field.** Let `e` be a unit
+normal of `H`, let `u` solve the equation on `H` with `a` `C¹` and elliptic on `B(y₀, r)`, let `d`
+be the weak derivative of `u` along `e` and `dt k ∈ H¹₀(H)` that along the tangential direction
+`P bₖ`, with `P` the orthogonal projection onto `(ℝ ∙ e)ᗮ`. If `∇u = P'` and `∇(dt k) = g k`
+almost everywhere on `B(y₀, r / 4) ∩ H`, then `∇d = normalField a f P' g e` there: the equation
+holds almost everywhere on `B(y₀, r / 4) ∩ H`, and is solved for `∂ₑ∂ₑu` by
+`eq_smul_add_sum_of_sum_sum_eq_neg`. -/
+private theorem gradient_ae_eq_normalField {H : Opens E} {e : E} (he : ‖e‖ = 1)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ} {y₀ : E} {r : ℝ} (hr : 0 < r)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (ball y₀ r))
+    (hellB : UniformlyEllipticOn (ball y₀ r) a lam Lam)
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict H)) {u : W1p0 volume H 2}
+    (hu : ∀ v : W1p0 volume H 2, energyFormH1 a 0 0 (u : W1p volume H 2) (v : W1p volume H 2) =
+      ∫ x in H, f x * W1p.value (v : W1p volume H 2) x)
+    {d : W1p volume H 2} (hd : HasWeakLineDerivOn volume H (W1p.value (u : W1p volume H 2))
+      (W1p.value d) e)
+    {dt : Fin (n + 1) → W1p0 volume H 2}
+    (hdt : ∀ k, HasWeakLineDerivOn volume H (W1p.value (u : W1p volume H 2))
+      (W1p.value (dt k : W1p volume H 2))
+        ((ℝ ∙ e)ᗮ.starProjection (EuclideanSpace.basisFun (Fin (n + 1)) ℝ k)))
+    {P' : E → E} (hP' : P' =ᵐ[volume.restrict (ball y₀ (r / 4) ∩ H)]
+      W1p.gradient (u : W1p volume H 2))
+    {g : Fin (n + 1) → E → E} (hg : ∀ k, (W1p.gradient (dt k : W1p volume H 2) : E → E)
+      =ᵐ[volume.restrict (ball y₀ (r / 4) ∩ H)] g k) :
+    W1p.gradient d =ᵐ[volume.restrict (ball y₀ (r / 4) ∩ H)] normalField a f P' g e := by
+  set b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
+  set V : Opens E := ⟨ball y₀ (r / 4), isOpen_ball⟩ ⊓ H
+  have hVH : V ≤ H := inf_le_right
+  have hVr : (V : Set E) ⊆ ball y₀ r := inter_subset_left.trans (ball_subset_ball (by linarith))
+  have hVsub : (V : Set E) ⊆ H := inter_subset_right
+  -- The coordinate derivatives `∂ⱼu = ⟪e, bⱼ⟫ ∂ₑu + ∂_{P bⱼ}u`.
+  have hDf (j : Fin (n + 1)) : HasWeakLineDerivOn volume H (W1p.value (u : W1p volume H 2))
+      (W1p.value (⟪e, b j⟫_ℝ • d + (dt j : W1p volume H 2))) (b j) :=
+    by rw [W1p.value_add, W1p.value_smul]; exact hd.smul_add_of_normal_tangential he (hdt j)
+  -- The equation holds almost everywhere on `V`, where the coefficients are `C¹`.
+  have hstrong := ae_sum_sum_eq_neg_of_hasWeakLineDerivOn (fun i j => (ha i j).mono hVr)
+    (locallyIntegrableOn_of_locallyIntegrable_restrict ((hf.mono_measure
+      (Measure.restrict_mono hVsub le_rfl)).locallyIntegrable one_le_two))
+    (u := W1p.restrictL hVH (u : W1p volume H 2))
+    (fun φ => (energyFormH1_restrictL_eq_setIntegral hVH hu
+      ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans (integral_congr_ae (by
+        filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) φ] with x hx
+        rw [hx])))
+    (D := fun j => W1p.restrictL hVH (⟪e, b j⟫_ℝ • d + (dt j : W1p volume H 2)))
+    (fun j => (((hDf j).mono hVH).congr_ae (W1p.value_restrictL_ae hVH _).symm).congr_ae_deriv
+      (W1p.value_restrictL_ae hVH _).symm)
+  -- At almost every point of `V`, solve the equation for `∂ₑ∂ₑu`.
+  filter_upwards [hstrong, W1p.gradient_restrictL_ae hVH (u : W1p volume H 2),
+    ae_all_iff.2 fun j => W1p.gradient_restrictL_ae hVH (⟪e, b j⟫_ℝ • d + (dt j : W1p volume H 2)),
+    ae_restrict_of_ae_restrict_of_subset hVsub (ae_all_iff.2 fun j =>
+      W1p.gradient_add_ae (⟪e, b j⟫_ℝ • d) (dt j : W1p volume H 2)),
+    ae_restrict_of_ae_restrict_of_subset hVsub (ae_all_iff.2 fun j =>
+      W1p.gradient_smul_ae ⟪e, b j⟫_ℝ d),
+    ae_restrict_of_ae_restrict_of_subset hVsub (ae_all_iff.2 fun i =>
+      W1p.inner_gradient_ae_eq_of_hasWeakLineDerivOn hd (hdt i)),
+    ae_all_iff.2 hg, hP', ae_restrict_mem V.isOpen.measurableSet]
+    with x hS hU hD hadd hsmul hsym hgx hPx hxV
+  have hA : matrixBilinearForm (a x) e e ≠ 0 := by
+    have h := hellB.lower_bound (hVr hxV) e
+    rw [← matrixBilinearForm_self, he, one_pow, mul_one] at h
+    exact (hellB.pos.trans_le h).ne'
+  simp only [hU, hD, hadd, hsmul, Pi.add_apply, Pi.smul_apply, hgx, ← hPx] at hS
+  simp only [hgx] at hsym
+  exact eq_smul_add_sum_of_sum_sum_eq_neg he hA hsym hS
+
+/-- **The normal derivative and a Hölder field its gradient agrees with.** Under the hypotheses of
+`exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient`, the weak
+derivative `d` of `u` along the unit normal `e = ν / ‖ν‖` exists in `H¹(H)`, and its gradient
+agrees almost everywhere on `B(y₀, r / 4) ∩ H` with a field `G` that is `α`-Hölder on the closed
+half-ball `closedBall y₀ (r / 4) ∩ {c₀ ≤ ⟪y, ν⟫}`. The tangential components of `∇d` are tangential
+derivatives of `∂ₑu`, Hölder by the tangential theorem, and the normal component `∂ₑ∂ₑu` is solved
+for from the equation `∑ᵢⱼ (∂ᵢaⁱʲ ∂ⱼu + aⁱʲ ∂ᵢ∂ⱼu) = -f`, in which its coefficient `⟪e, a e⟫` is at
+least `λ`. -/
+private theorem exists_hasWeakLineDerivOn_normal_and_ae_eq_holderOnWith {α : ℝ≥0} (hα : 0 < α)
+    (hα1 : α < 1) {H : Opens E} {ν : E} {c₀ : ℝ} (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {lam Lam : ℝ} {K : ℝ≥0} (hell : UniformlyEllipticOn (H : Set E) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) H) {y₀ : E}
+    (hy₀ : ⟪y₀, ν⟫_ℝ = c₀) {r : ℝ} (hr : 0 < r)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (ball y₀ r))
+    (hellB : UniformlyEllipticOn (ball y₀ r) a lam Lam)
+    (hda : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, ∀ i j,
+      HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x ρ))
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict H))
+    (hfH : ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α f (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
+    {u : W1p0 volume H 2}
+    (hu : ∀ v : W1p0 volume H 2, energyFormH1 a 0 0 (u : W1p volume H 2) (v : W1p volume H 2) =
+      ∫ x in H, f x * W1p.value (v : W1p volume H 2) x) :
+    ∃ d : W1p volume H 2, HasWeakLineDerivOn volume H (W1p.value (u : W1p volume H 2))
+        (W1p.value d) (‖ν‖⁻¹ • ν) ∧
+      ∃ G : E → E, (∃ C : ℝ≥0, HolderOnWith C α G
+          (closedBall y₀ (r / 4) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ})) ∧
+        W1p.gradient d =ᵐ[volume.restrict (ball y₀ (r / 4) ∩ H)] G := by
+  set b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
+  set e : E := ‖ν‖⁻¹ • ν
+  have he : ‖e‖ = 1 := norm_smul_inv_norm hν
+  -- The normal derivative `d = ∂ₑu ∈ H¹(H)`, from `H²` regularity.
+  obtain ⟨d, hd⟩ := hell.exists_hasWeakLineDerivOn_w1p_of_halfSpace hν hH hK
+    ((isWeakSolutionDirichlet_iff (hf.toLp f) u).2 fun v => (hu v).trans
+      (integral_congr_ae (hf.coeFn_toLp.mono fun x hx => by simp only [hx]))) e
+  -- The tangential derivatives `dₖ = ∂_{P bₖ} u ∈ H¹₀(H)`, whose gradients have the Hölder
+  -- representatives `gₖ` on the closed half-ball, and the Hölder representative `Pu` of `∇u`.
+  choose dt hdt Ct hCt using fun k =>
+    exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient hα hα1 hν hH
+      hell hK hy₀ hr ha hellB hda hf hfH hu
+        (inner_starProjection_orthogonal_singleton_smul_eq_zero ℝ
+          (inv_ne_zero (norm_ne_zero_iff.2 hν)) ν (b k))
+  obtain ⟨Pu, ⟨CPu, hPu⟩, hPuae⟩ :=
+    exists_holderOnWith_and_ae_eq_gradient hα hα1 hν hH hy₀ hr ha hellB hf hfH hu
+  refine ⟨d, hd, _, exists_holderOnWith_normalField_closedBall hα hα1 hν hy₀ hr ha hellB hda hfH
+    he ⟨CPu, hPu.mono (inter_subset_inter_left _ (closedBall_subset_closedBall (by linarith)))⟩
+    fun k => ⟨Ct k, hCt k⟩, gradient_ae_eq_normalField he hr ha hellB hf hu hd hdt
+    (ae_restrict_of_ae_restrict_of_subset
+      (inter_subset_inter_left _ (ball_subset_ball (by linarith))) hPuae)
+    fun k => W1p.gradient_ae_eq_preciseRepresentative_restrict (dt k : W1p volume H 2)
+      isOpen_ball inter_subset_right⟩
+
+/-- **Every second derivative is Hölder up to a flat boundary.** Let `0 < α < 1`, let
+`H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, and let `u ∈ H¹₀(H)` be a weak solution of the Dirichlet
+problem `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `H`, that is `∫_H ⟨a ∇u, ∇v⟩ = ∫_H f v` for every `v ∈ H¹₀(H)`.
+Suppose that `a` is uniformly elliptic with constants `λ, Λ` on `H` and Lipschitz there, and that
+`f ∈ L²(H)`. Let `y₀` lie on the boundary hyperplane and `r > 0`, and suppose that the entries of
+`a` are `C¹` on `B(y₀, r)`, that `a` is uniformly elliptic on `B(y₀, r)`, that the derivatives
+of its entries are `α`-Hölder near each point of `B(y₀, r)`, and that `f` is `α`-Hölder up to the
+boundary near each point of `B(y₀, r) ∩ {c₀ ≤ ⟪y, ν⟫}`.
+
+Then for every direction `w`, normal ones included, the weak derivative `∂_w u` exists in `H¹(H)`,
+and the precise representative of its gradient for the Lebesgue measure on `H` is `α`-Hölder on
+the closed half-ball `closedBall y₀ (r / 8) ∩ {c₀ ≤ ⟪y, ν⟫}`. So the weak second derivatives of `u`
+have `α`-Hölder representatives up to the flat boundary near `y₀`. For a
+tangential `w` the derivative `∂_w u` even lies in `H¹₀(H)`, with the Hölder bound on the larger
+half-ball `closedBall y₀ (r / 4) ∩ {c₀ ≤ ⟪y, ν⟫}`
+(`exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient`). -/
+theorem exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_restrict_gradient
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {H : Opens E} {ν : E} {c₀ : ℝ} (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {lam Lam : ℝ} {K : ℝ≥0} (hell : UniformlyEllipticOn (H : Set E) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) H) {y₀ : E}
+    (hy₀ : ⟪y₀, ν⟫_ℝ = c₀) {r : ℝ} (hr : 0 < r)
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (ball y₀ r))
+    (hellB : UniformlyEllipticOn (ball y₀ r) a lam Lam)
+    (hda : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, ∀ i j,
+      HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x ρ))
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict H))
+    (hfH : ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α f (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
+    {u : W1p0 volume H 2}
+    (hu : ∀ v : W1p0 volume H 2, energyFormH1 a 0 0 (u : W1p volume H 2) (v : W1p volume H 2) =
+      ∫ x in H, f x * W1p.value (v : W1p volume H 2) x)
+    (w : E) :
+    ∃ d : W1p volume H 2, HasWeakLineDerivOn volume H (W1p.value (u : W1p volume H 2))
+        (W1p.value d) w ∧
+      ∃ C : ℝ≥0, HolderOnWith C α (preciseRepresentative (volume.restrict (H : Set E))
+        (W1p.gradient d : E → E)) (closedBall y₀ (r / 8) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) := by
+  set e : E := ‖ν‖⁻¹ • ν
+  have he : ‖e‖ = 1 := norm_smul_inv_norm hν
+  obtain ⟨d, hd, G, ⟨C, hG⟩, hdG⟩ := exists_hasWeakLineDerivOn_normal_and_ae_eq_holderOnWith hα
+    hα1 hν hH hell hK hy₀ hr ha hellB hda hf hfH hu
+  obtain ⟨dτ, hdτ, Cτ, hτ⟩ :=
+    exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient hα hα1 hν hH
+      hell hK hy₀ hr ha hellB hda hf hfH hu
+        (inner_starProjection_orthogonal_singleton_smul_eq_zero ℝ
+          (inv_ne_zero (norm_ne_zero_iff.2 hν)) ν w)
+  -- Split `w` into its normal part `⟪e, w⟫ e` and its tangential part.
+  refine ⟨⟪e, w⟫_ℝ • d + (dτ : W1p volume H 2),
+    by rw [W1p.value_add, W1p.value_smul]; exact hd.smul_add_of_normal_tangential he hdτ, ?_⟩
+  · -- The gradient agrees on `B(y₀, r / 4) ∩ H` with `⟪e, w⟫ G + ∇(∂_{P w} u)`, whose precise
+    -- representative is Hölder on the closed half-ball of radius `r / 4`.
+    set gτ := preciseRepresentative (volume.restrict (H : Set E))
+      (W1p.gradient (dτ : W1p volume H 2) : E → E)
+    have hGw := (hG.smul ⟪e, w⟫_ℝ).add hτ
+    have hae : (W1p.gradient (⟪e, w⟫_ℝ • d + (dτ : W1p volume H 2)) : E → E)
+        =ᵐ[volume.restrict (ball y₀ (r / 4) ∩ H)] ⟪e, w⟫_ℝ • G + gτ := by
+      filter_upwards [ae_restrict_of_ae_restrict_of_subset inter_subset_right
+          (W1p.gradient_add_ae (⟪e, w⟫_ℝ • d) (dτ : W1p volume H 2)),
+        ae_restrict_of_ae_restrict_of_subset inter_subset_right
+          (W1p.gradient_smul_ae ⟪e, w⟫_ℝ d), hdG,
+        W1p.gradient_ae_eq_preciseRepresentative_restrict (dτ : W1p volume H 2) isOpen_ball
+          inter_subset_right]
+        with x h1 h2 h3 h4
+      simp only [h1, h2, h3, h4, Pi.add_apply, Pi.smul_apply, gτ]
+    have hHs : (H : Set E) = {y | c₀ < ⟪y, ν⟫_ℝ} := Set.ext hH
+    refine ⟨_, (hGw.mono (inter_subset_inter_left _
+      (closedBall_subset_closedBall (by linarith)))).congr fun x hx => ?_⟩
+    have h := preciseRepresentative_restrict_setOf_lt_inner_eq_of_continuousOn volume hν hy₀
+      (f := (W1p.gradient (⟪e, w⟫_ℝ • d + (dτ : W1p volume H 2)) : E → E))
+      (by rw [← hHs]; exact (Lp.memLp _).locallyIntegrable one_le_two) (by rwa [← hHs])
+      ((hGw.continuousOn hα).mono (inter_subset_inter_left _ ball_subset_closedBall))
+      ⟨closedBall_subset_ball (by linarith) hx.1, hx.2⟩
+    rw [← hHs] at h
+    exact h.symm
 
 end PDE
 
