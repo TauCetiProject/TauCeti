@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.ZeroAtInftyRepresentative

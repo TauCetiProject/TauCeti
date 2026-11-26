@@ -13,7 +13,7 @@ import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Fourier.L2Multiplier
-import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
@@ -73,7 +73,7 @@ extra factor `⟨ξ⟩` is the gained derivative. With Peetre's inequality for `
 (`SchwartzMap.eLpNorm_rpow_smul_fourier_le_of_eq_integral`) bounds its `L²` norm
 (`SchwartzMap.eLpNorm_rpow_smul_fourier_smulLeftCLM_fourierMultiplierCLM_sub_le`). The estimate
 passes from Schwartz functions to `H^s` by density, as for multiplication by `φ` in
-`TauCeti.Analysis.Sobolev.BesselPotential.Multiplication`
+`TauCeti.Analysis.Sobolev.BesselPotential.Multiplication.Basic`
 (`TemperedDistribution.exists_besselPotential_apply_eq_and_norm_le_of_norm_toLp_le`).
 
 ## Main declarations

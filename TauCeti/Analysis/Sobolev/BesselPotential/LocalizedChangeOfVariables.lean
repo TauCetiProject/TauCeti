@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables
-public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication.Basic
 import TauCeti.Analysis.Distribution.ChangeOfVariables.Localized
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 

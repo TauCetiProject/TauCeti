@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.ChangeOfVariables
 import TauCeti.Analysis.Normed.Operator.Compact.Basic

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
-import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
+import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
