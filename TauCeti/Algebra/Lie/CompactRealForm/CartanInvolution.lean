@@ -81,10 +81,16 @@ theorem coe_restrictRealForm_apply_eq_apply_apply (x : hσ.realForm) :
     (hσ.restrictRealForm hτ hcomm x : L) = σ (τ x) := by
   rw [coe_restrictRealForm_apply, hcomm, apply_coe_realForm]
 
+/-- Applying the restriction of `τ` to `Fix σ` twice gives the identity. -/
+@[simp]
+theorem restrictRealForm_restrictRealForm (x : hσ.realForm) :
+    hσ.restrictRealForm hτ hcomm (hσ.restrictRealForm hτ hcomm x) = x :=
+  Subtype.ext (hτ.apply_apply (x : L))
+
 /-- The restriction of `τ` to `Fix σ` is an involution. -/
 theorem restrictRealForm_involutive :
     Function.Involutive (hσ.restrictRealForm hτ hcomm) :=
-  fun x => Subtype.ext (hτ.apply_apply (x : L))
+  hσ.restrictRealForm_restrictRealForm hτ hcomm
 
 /-- The restriction of `τ` to `Fix σ` is its own inverse. -/
 @[simp]
