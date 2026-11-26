@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
 # Locality of the local Sobolev classes
@@ -37,12 +38,13 @@ derivative to supply the completeness that the weak-derivative predicate demands
 ## Implementation notes
 
 Local `Lᵖ` membership on a compact set is assembled from finitely many compact pieces by
-`IsCompact.induction_on`. At positive order the local weak derivatives are glued by
-`TauCeti.exists_hasWeakFDerivOn_iSup` on the interior of `U`, which is covered by the
-interiors of the sets `U ∩ O i`. The glued field is only determined almost everywhere on that
-interior, and the class on `U` also bounds it on the part of `U` outside its interior, which
-may have positive measure. The glued field is therefore set to zero off the interior of `U`;
-each local field may be replaced in the same way without leaving its class.
+`IsCompact.memLp_restrict_of_forall_nhdsWithin`. At positive order the local weak
+derivatives are glued by `TauCeti.exists_hasWeakFDerivOn_iSup` on the interior of `U`, which
+is covered by the interiors of the sets `U ∩ O i`. The glued field is only determined almost
+everywhere on that interior, and the class on `U` also bounds it on the part of `U` outside
+its interior, which may have positive measure. The glued field is therefore set to zero off
+the interior of `U`; each local field may be replaced in the same way without leaving its
+class.
 
 ## References
 
@@ -65,10 +67,7 @@ theorem memLpLoc_iff_locally :
     MemLpLoc p U f ↔ ∀ x ∈ U, ∃ V ∈ 𝓝[U] x, MemLpLoc p V f := by
   refine ⟨fun hf _ _ => ⟨U, self_mem_nhdsWithin, hf⟩,
     fun h => memLpLoc_iff.2 fun K hKU hK => ?_⟩
-  refine hK.induction_on (p := fun s => MemLp f p (volume.restrict s)) (by simp)
-    (fun s t hst ht => ht.mono_measure (Measure.restrict_mono hst le_rfl))
-    (fun s t hs ht => (hs.add_measure ht).mono_measure (Measure.restrict_union_le s t))
-    fun x hx => ?_
+  refine hK.memLp_restrict_of_forall_nhdsWithin fun x hx => ?_
   obtain ⟨V, hV, hfV⟩ := h x (hKU hx)
   obtain ⟨O, hO, hOV⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hV
   obtain ⟨r, hr, hrO⟩ := nhds_basis_closedBall.mem_iff.1 hO
