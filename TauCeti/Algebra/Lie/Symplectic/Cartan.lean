@@ -53,16 +53,13 @@ theorem coe_cartanInvolution (X : sp l R) :
 /-- Applying the symplectic Lie involution twice gives the original vector. -/
 @[simp]
 theorem cartanInvolution_cartanInvolution (X : sp l R) :
-    cartanInvolution l R (cartanInvolution l R X) = X := by
-  apply Subtype.ext
-  simp
+    cartanInvolution l R (cartanInvolution l R X) = X :=
+  LieSubalgebra.restrictNegTranspose_restrictNegTranspose _ _ X
 
 /-- The symplectic Lie involution is its own inverse. -/
 @[simp]
-theorem cartanInvolution_symm : (cartanInvolution l R).symm = cartanInvolution l R := by
-  apply LieEquiv.ext
-  intro X
-  rw [LieEquiv.symm_apply_eq, cartanInvolution_cartanInvolution]
+theorem cartanInvolution_symm : (cartanInvolution l R).symm = cartanInvolution l R :=
+  LieSubalgebra.restrictNegTranspose_symm _ _
 
 /-- Fixed vectors of the Lie involution are the skew-symmetric symplectic Lie matrices. -/
 @[simp]

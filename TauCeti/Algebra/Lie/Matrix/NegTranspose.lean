@@ -75,4 +75,22 @@ theorem coe_restrictNegTranspose_apply (X : L) :
     (L.restrictNegTranspose hL X : Matrix n n R) = -(X : Matrix n n R)ᵀ := by
   simp [restrictNegTranspose]
 
+/-- `X ↦ -Xᵀ` is an involution. -/
+theorem restrictNegTranspose_involutive :
+    Function.Involutive (L.restrictNegTranspose hL) :=
+  fun X ↦ Subtype.ext (by simp)
+
+/-- Applying `X ↦ -Xᵀ` twice gives back `X`. -/
+@[simp]
+theorem restrictNegTranspose_restrictNegTranspose (X : L) :
+    L.restrictNegTranspose hL (L.restrictNegTranspose hL X) = X :=
+  L.restrictNegTranspose_involutive hL X
+
+/-- The inverse of `X ↦ -Xᵀ` is itself. -/
+@[simp]
+theorem restrictNegTranspose_symm :
+    (L.restrictNegTranspose hL).symm = L.restrictNegTranspose hL :=
+  LieEquiv.ext fun X ↦ (L.restrictNegTranspose hL).symm_apply_eq.mpr
+    (L.restrictNegTranspose_involutive hL X).symm
+
 end LieSubalgebra

@@ -92,7 +92,8 @@ theorem killingHermitianForm_slFinTwoCompactConj_apply_self (X : sl (Fin 2) ℂ)
     slFinTwoCompactConj.killingHermitianForm X X =
       4 * ((X : Matrix (Fin 2) (Fin 2) ℂ) * (X : Matrix (Fin 2) (Fin 2) ℂ)ᴴ).trace := by
   rw [LinearMap.killingHermitianForm_def, killingForm_slFinTwo_apply,
-    coe_slFinTwoCompactConj_apply, mul_neg, trace_neg, mul_neg, neg_neg]
+    coe_slFinTwoCompactConj_apply]
+  simp
 
 /-- **`X ↦ -X*` is a compact conjugation of `𝔰𝔩₂(ℂ)`**:
 `H_τ(X, X) = -B(X, -X*) = 4 tr(X X*) > 0` for `X ≠ 0`. -/
@@ -210,16 +211,15 @@ theorem twistedKillingForm_restrictRealForm_slFinTwo_apply_self
       4 * (((X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) *
         ((X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ)ᵀ).trace := by
   rw [LieEquiv.twistedKillingForm_apply, ofReal_neg, IsLieConjugation.killingForm_realForm,
-    killingForm_slFinTwo_apply, coe_restrictRealForm_slFinTwo_apply, mul_neg, trace_neg, mul_neg,
-    neg_neg]
+    killingForm_slFinTwo_apply, coe_restrictRealForm_slFinTwo_apply]
+  simp
 
 /-- **`Fix σ` is `𝔰𝔩₂(ℝ)`**: the real form of the entrywise conjugation of `𝔰𝔩₂(ℂ)` is isomorphic to
 `𝔰𝔩₂(ℝ)`, by viewing real matrices as complex, with inverse taking real parts of entries. -/
 noncomputable def slFinTwoRealFormEquiv :
     sl (Fin 2) ℝ ≃ₗ⁅ℝ⁆ isLieConjugation_slFinTwoEntrywiseConj.realForm where
   toFun Y := ⟨⟨Complex.ofRealHom.mapMatrix (Y : Matrix (Fin 2) (Fin 2) ℝ), by
-    rw [mem_sl_iff, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, mem_sl_iff.mp Y.property,
-      map_zero]⟩,
+    simp [mem_sl_iff, ← AddMonoidHom.map_trace, mem_sl_iff.mp Y.property]⟩,
     by
       rw [IsLieConjugation.mem_realForm, ← Subtype.coe_inj]
       ext i j
@@ -317,10 +317,11 @@ example :
   have h8 : killingForm ℂ (sl (Fin 2) ℂ) (slFinTwoBasis ℂ 2) (slFinTwoBasis ℂ 2) = 8 := by
     rw [killingForm_slFinTwoBasis]
     simp
-  simp only [map_smul, slFinTwoChevalleyInvolution_slFinTwoBasis_two, map_neg, LinearMap.smul_apply,
-    smul_neg, neg_neg, h8, smul_eq_mul]
-  refine ⟨trivial, ?_⟩
-  rw [← mul_assoc, I_mul_I]
-  ring
+  constructor
+  · rw [slFinTwoChevalleyInvolution_slFinTwoBasis_two, map_neg, neg_neg, h8]
+  · simp only [map_smul, slFinTwoChevalleyInvolution_slFinTwoBasis_two, map_neg,
+      LinearMap.smul_apply, smul_neg, neg_neg, h8, smul_eq_mul]
+    rw [← mul_assoc, I_mul_I]
+    ring
 
 end TauCeti
