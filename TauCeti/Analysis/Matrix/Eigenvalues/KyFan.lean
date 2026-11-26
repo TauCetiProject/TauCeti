@@ -6,11 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Add
+public import Mathlib.Analysis.Convex.Function
+public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Spectral.KyFanGap
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Algebra.Order.Group.Finite
+import TauCeti.Analysis.Calculus.FDeriv.Matrix
+import TauCeti.Analysis.Convex.ContinuousFDeriv
+import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 import TauCeti.Analysis.Matrix.Eigenvalues.Smooth
 import TauCeti.Analysis.Matrix.EntrywiseOpNorm
 
@@ -39,15 +44,30 @@ The proof applies the quadratic expansion of Ky Fan sums at a spectral gap
 values of its entries (`Matrix.norm_toEuclideanLin_le_of_entry_le_square`), which is
 `O(‖x - x₀‖)`, so the remainder is `O(‖x - x₀‖²)`.
 
+On the real vector space `selfAdjoint.submodule ℝ (Matrix n n 𝕜)` of Hermitian matrices, normed by
+the Frobenius norm, Ky Fan sums are convex (`Matrix.convexOn_prefixSum_eigenvalues₀`), by the
+operator form `LinearMap.IsSymmetric.prefixSum_eigenvalues_smul_add_smul_le`. A spectral gap
+persists nearby (`Matrix.eventually_eigenvalues₀_lt`), so a Ky Fan sum is differentiable near a
+spectral gap, and its derivative, being that of a convex function, is continuous there
+(`Matrix.continuousAt_fderiv_prefixSum_eigenvalues₀`, from `ConvexOn.continuousAt_fderiv`).
+
 ## Main results
 
 * `Matrix.hasFDerivAt_prefixSum_eigenvalues₀`: the derivative of a Ky Fan sum at a spectral gap.
 * `Matrix.fderiv_prefixSum_eigenvalues₀_apply`: its value in a direction `v`.
+* `Matrix.convexOn_prefixSum_eigenvalues₀`: Ky Fan sums are convex on Hermitian matrices.
+* `Matrix.differentiableAt_prefixSum_eigenvalues₀`,
+  `Matrix.fderiv_prefixSum_eigenvalues₀_selfAdjoint_apply`: differentiability and derivative of a
+  Ky Fan sum at a spectral gap, on Hermitian matrices.
+* `Matrix.continuousAt_fderiv_prefixSum_eigenvalues₀`: the derivative of a Ky Fan sum is
+  continuous at a spectral gap.
 
 ## References
 
 * A. S. Lewis, *Derivatives of spectral functions*, Math. Oper. Res. **21** (1996), 576–588,
   Theorem 2.1.
+* K. Fan, *On a theorem of Weyl concerning eigenvalues of linear transformations I*, Proc. Natl.
+  Acad. Sci. USA **35** (1949), 652–655, for the convexity of Ky Fan sums.
 -/
 
 public section
@@ -178,5 +198,79 @@ theorem fderiv_prefixSum_eigenvalues₀_apply (hM : ∀ x, (M x).IsHermitian)
   rw [(hasFDerivAt_prefixSum_eigenvalues₀ hM hMd hkn hgap u hu).fderiv,
     ContinuousLinearMap.comp_apply, RCLike.reCLM_apply, _root_.sum_apply, map_sum]
   exact sum_congr rfl fun j _ ↦ congrArg RCLike.re (sum_sum_smul_apply _ _ v)
+
+section SelfAdjoint
+
+open scoped Matrix.Norms.Frobenius
+
+/-- **Ky Fan sums are convex** on the real vector space of Hermitian matrices: the sum of the `k`
+largest eigenvalues is a convex function of the matrix. -/
+theorem convexOn_prefixSum_eigenvalues₀ (k : ℕ) :
+    ConvexOn ℝ Set.univ (fun A : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
+      prefixSum k A.property.isHermitian.eigenvalues₀) := by
+  refine ⟨convex_univ, fun A _ B _ a b ha hb _ ↦ ?_⟩
+  simp only [smul_eq_mul, eigenvalues₀_smul_add_smul]
+  exact LinearMap.IsSymmetric.prefixSum_eigenvalues_smul_add_smul_le _ _ _ ha hb k
+
+/-- A Ky Fan sum is differentiable at a Hermitian matrix with a spectral gap after its `k` largest
+eigenvalues, on the real vector space of Hermitian matrices. -/
+theorem differentiableAt_prefixSum_eigenvalues₀ {A : selfAdjoint.submodule ℝ (Matrix n n 𝕜)}
+    {k : ℕ} (hkn : k ≤ Fintype.card n)
+    (hgap : ∀ i j : Fin (Fintype.card n), i.val < k → k ≤ j.val →
+      A.property.isHermitian.eigenvalues₀ j < A.property.isHermitian.eigenvalues₀ i) :
+    DifferentiableAt ℝ (fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
+      prefixSum k B.property.isHermitian.eigenvalues₀) A := by
+  obtain ⟨u, hu⟩ := A.property.isHermitian.exists_orthonormalBasis_mulVec_eq_eigenvalues₀_smul
+  exact (hasFDerivAt_prefixSum_eigenvalues₀
+    (M := fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦ (B : Matrix n n 𝕜))
+    (fun B ↦ B.property.isHermitian)
+    (fun a b ↦ (hasFDerivAt_selfAdjoint_apply a b A).differentiableAt) hkn hgap u
+    hu).differentiableAt
+
+/-- The derivative of a Ky Fan sum at a Hermitian matrix `A` with a spectral gap after its `k`
+largest eigenvalues, in the direction `H`, is `∑_{j < k} Re ⟪uⱼ, H uⱼ⟫` for any orthonormal
+eigenbasis `(uⱼ)` of `A` ordered as its eigenvalues. -/
+theorem fderiv_prefixSum_eigenvalues₀_selfAdjoint_apply
+    {A : selfAdjoint.submodule ℝ (Matrix n n 𝕜)} {k : ℕ} (hkn : k ≤ Fintype.card n)
+    (hgap : ∀ i j : Fin (Fintype.card n), i.val < k → k ≤ j.val →
+      A.property.isHermitian.eigenvalues₀ j < A.property.isHermitian.eigenvalues₀ i)
+    (u : OrthonormalBasis (Fin (Fintype.card n)) 𝕜 (EuclideanSpace 𝕜 n))
+    (hu : ∀ j, (A : Matrix n n 𝕜) *ᵥ u j = (A.property.isHermitian.eigenvalues₀ j : 𝕜) • ⇑(u j))
+    (H : selfAdjoint.submodule ℝ (Matrix n n 𝕜)) :
+    fderiv ℝ (fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
+      prefixSum k B.property.isHermitian.eigenvalues₀) A H =
+      ∑ j : Fin (Fintype.card n) with j.val < k,
+        RCLike.re (star ⇑(u j) ⬝ᵥ ((H : Matrix n n 𝕜) *ᵥ ⇑(u j))) :=
+  -- The goal carries the Frobenius-norm topology, which agrees with the entrywise topology of
+  -- `Matrix.of_fderiv_selfAdjoint_apply_eq` only after unfolding instances; cast with `▸`.
+  of_fderiv_selfAdjoint_apply_eq A H ▸ fderiv_prefixSum_eigenvalues₀_apply
+    (M := fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦ (B : Matrix n n 𝕜))
+    (fun B ↦ B.property.isHermitian)
+    (fun a b ↦ (hasFDerivAt_selfAdjoint_apply a b A).differentiableAt) hkn hgap u hu H
+
+/-- **The derivative of a Ky Fan sum is continuous at a spectral gap.** At a Hermitian matrix with
+a spectral gap after its `k` largest eigenvalues, the derivative of the Ky Fan sum is continuous:
+the gap persists nearby, where the convex Ky Fan sum is differentiable, so
+`ConvexOn.continuousAt_fderiv` applies. -/
+theorem continuousAt_fderiv_prefixSum_eigenvalues₀
+    {A : selfAdjoint.submodule ℝ (Matrix n n 𝕜)} {k : ℕ} (hkn : k ≤ Fintype.card n)
+    (hgap : ∀ i j : Fin (Fintype.card n), i.val < k → k ≤ j.val →
+      A.property.isHermitian.eigenvalues₀ j < A.property.isHermitian.eigenvalues₀ i) :
+    ContinuousAt (fderiv ℝ (fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
+      prefixSum k B.property.isHermitian.eigenvalues₀)) A := by
+  have hd : ∀ᶠ B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) in 𝓝 A,
+      DifferentiableAt ℝ (fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
+        prefixSum k B.property.isHermitian.eigenvalues₀) B := by
+    filter_upwards [eventually_eigenvalues₀_lt
+      (M := fun B : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦ (B : Matrix n n 𝕜))
+      (fun B ↦ B.property.isHermitian)
+      (fun a b ↦ (hasFDerivAt_selfAdjoint_apply a b A).continuousAt) hgap] with B hB
+    exact differentiableAt_prefixSum_eigenvalues₀ hkn hB
+  -- The implicit arguments are given explicitly: inferring them by unifying with the goal, whose
+  -- instances agree only after unfolding, exhausts the heartbeat budget.
+  exact (convexOn_prefixSum_eigenvalues₀ (𝕜 := 𝕜) (n := n) k).continuousAt_fderiv (x := A)
+    univ_mem hd
+
+end SelfAdjoint
 
 end Matrix

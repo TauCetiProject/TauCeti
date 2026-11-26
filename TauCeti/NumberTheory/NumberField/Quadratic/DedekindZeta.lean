@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import Mathlib.NumberTheory.Real.GoldenRatio
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Character
 public import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import Mathlib.Analysis.Real.Pi.Bounds
@@ -69,6 +70,10 @@ ratio bound holds uniformly for every quadratic field `K`.
   the Dirichlet convolution `ζ * χ_D` (Mathlib's `DirichletCharacter.zetaMul`).
 * `TauCeti.NumberField.dedekindZetaCoeff_eq_sum_divisors`: the number of ideals of norm `n ≠ 0`
   is `∑_{d ∣ n} χ_D(d)`.
+* `TauCeti.NumberField.dedekindZetaCoeff_le_card_divisors`: there are at most as many ideals of
+  norm `n ≠ 0` as `n` has divisors.
+* `TauCeti.NumberField.two_mul_card_idealsLE_le`: there are at most `B (B + 1) / 2` nonzero
+  ideals of norm at most `x`, where `B = ⌊x⌋₊`.
 * `TauCeti.NumberField.dedekindZeta_eq_riemannZeta_mul_LFunction`: `ζ_K(s) = ζ(s) L(s, χ_D)`
   on `Re s > 1`.
 * `TauCeti.NumberField.dedekindZeta_residue_eq_LFunction_one`: the residue of `ζ_K` at `1` is
@@ -236,6 +241,36 @@ theorem dedekindZetaCoeff_eq_sum_divisors {n : ℕ} (hn : n ≠ 0) :
   simp only [DirichletCharacter.zetaMul, ArithmeticFunction.coe_zeta_mul_apply, Int.cast_sum]
   refine Finset.sum_congr rfl fun d hd ↦ ?_
   simp [toArithmeticFunction, Nat.ne_of_gt (Nat.pos_of_mem_divisors hd)]
+
+/-- **A quadratic field has at most as many integral ideals of norm `n` as `n` has divisors**, for
+`n ≠ 0`. -/
+theorem dedekindZetaCoeff_le_card_divisors {n : ℕ} (hn : n ≠ 0) :
+    dedekindZetaCoeff K n ≤ n.divisors.card := by
+  have h : (dedekindZetaCoeff K n : ℤ) ≤ n.divisors.card := by
+    rw [dedekindZetaCoeff_eq_sum_divisors hK hn]
+    calc _ ≤ ∑ _ ∈ n.divisors, (1 : ℤ) :=
+          Finset.sum_le_sum fun d _ ↦ fundamentalDiscriminantChar_le_one _ _
+      _ = n.divisors.card := by simp
+  exact_mod_cast h
+
+/-- **Counting ideals of bounded norm in a quadratic field.** A quadratic field `K` has at most
+`B (B + 1) / 2` nonzero integral ideals of norm at most `x`, where `B = ⌊x⌋₊`. -/
+theorem two_mul_card_idealsLE_le (x : ℝ) : 2 * (idealsLE K x).card ≤ ⌊x⌋₊ * (⌊x⌋₊ + 1) := by
+  classical
+  have hsum : (idealsLE K x).card = ∑ n ∈ Finset.range (⌊x⌋₊ + 1), (normFiber K n).card := by
+    have h := idealSummatory_eq_sum_range_normFiber K (fun _ ↦ 1) x
+    rw [idealSummatory_apply] at h
+    simpa only [Finset.card_eq_sum_ones] using h
+  -- There are at most `n` ideals of norm `n`, so at most `∑_{n ≤ ⌊x⌋} n` in all.
+  have hfib (n : ℕ) : (normFiber K n).card ≤ n := by
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp [normFiber_zero]
+    · rw [card_normFiber_eq_dedekindZetaCoeff K hn]
+      exact (dedekindZetaCoeff_le_card_divisors hK hn).trans (Nat.card_divisors_le_self n)
+  have hle := Finset.sum_le_sum fun n (_ : n ∈ Finset.range (⌊x⌋₊ + 1)) ↦ hfib n
+  have hgauss := Finset.sum_range_id_mul_two (⌊x⌋₊ + 1)
+  simp only [Nat.add_sub_cancel] at hgauss
+  nlinarith
 
 /-- **The Dedekind zeta function of a quadratic field factors as `ζ(s) L(s, χ_D)`** on the
 half-plane `Re s > 1`, where `χ_D` is the complex quadratic character of the discriminant `D`

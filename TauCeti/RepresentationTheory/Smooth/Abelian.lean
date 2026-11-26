@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.Subcategory
+public import TauCeti.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.RepresentationTheory.Smooth.Category
 
 /-!
@@ -31,7 +32,10 @@ intersection of the stabilizers of its two components (`Representation.instIsSmo
 * `TauCeti.SmoothRep.isClosedUnderSubobjects`, `TauCeti.SmoothRep.isClosedUnderQuotients`,
   `TauCeti.SmoothRep.containsZero`, `TauCeti.SmoothRep.isClosedUnderFiniteProducts`: the closure
   properties of smoothness on `Rep A G`.
-* `TauCeti.SmoothRep.abelian`: `SmoothRep A G` is an abelian category.
+* `TauCeti.SmoothRep.abelian`: `SmoothRep A G` is an abelian category. Its inclusion into
+  `Rep A G` preserves finite limits and colimits, by the general instances
+  `CategoryTheory.ObjectProperty.preservesFiniteLimits_ι` and
+  `CategoryTheory.ObjectProperty.preservesFiniteColimits_ι`, so it is exact.
 * `TauCeti.SmoothRep.mono_iff_injective`, `TauCeti.SmoothRep.epi_iff_surjective`.
 
 ## References

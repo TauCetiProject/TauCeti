@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.VonNeumannAlgebra.Conj
+public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
 public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
 public import TauCeti.MeasureTheory.Measure.Atom
 import TauCeti.MeasureTheory.Function.Lp.Multiplication.Commutant
@@ -35,7 +35,7 @@ to an isometric star algebra isomorphism
 
 An almost-everywhere inverse pair of measure-preserving maps induces a unitary equivalence of `L²`
 spaces that conjugates the two multiplication algebras
-(`VonNeumannAlgebra.conj_multiplicationAlgebra_compMeasurePreservingₗᵢEquiv`).
+(`VonNeumannAlgebra.mapLinearIsometryEquiv_compMeasurePreservingₗᵢEquiv_multiplicationAlgebra`).
 
 Finally, we record the canonical models and checks:
 * `μ = 0`: `multiplicationAlgebra 0` is a subsingleton (`0`-dimensional).
@@ -310,12 +310,14 @@ variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {μ : Measure
 maps conjugates `multiplicationAlgebra ν` onto `multiplicationAlgebra μ` (with no `SigmaFinite` or
 `IsProbabilityMeasure` assumption). -/
 @[simp]
-theorem conj_multiplicationAlgebra_compMeasurePreservingₗᵢEquiv
+theorem mapLinearIsometryEquiv_compMeasurePreservingₗᵢEquiv_multiplicationAlgebra
     (hf : MeasurePreserving f μ ν) (hg : MeasurePreserving g ν μ) (hfg : f ∘ g =ᵐ[ν] id) :
-    (multiplicationAlgebra ν).conj
-        (Lp.compMeasurePreservingₗᵢEquiv ℂ (E := ℂ) (p := 2) hf hg hfg) =
+    mapLinearIsometryEquiv
+        (Lp.compMeasurePreservingₗᵢEquiv ℂ (E := ℂ) (p := 2) hf hg hfg)
+        (multiplicationAlgebra ν) =
       multiplicationAlgebra μ := by
-  rw [multiplicationAlgebra_eq_adjoin, multiplicationAlgebra_eq_adjoin, conj_adjoin]
+  rw [multiplicationAlgebra_eq_adjoin, multiplicationAlgebra_eq_adjoin,
+    mapLinearIsometryEquiv_adjoin]
   congr 1
   ext T
   simp only [Set.mem_image, Set.mem_range, exists_exists_eq_and,
@@ -332,9 +334,11 @@ almost-everywhere inverse pair of measure-preserving maps. -/
 noncomputable def multiplicationAlgebraCompMeasurePreservingStarAlgEquiv
     (hf : MeasurePreserving f μ ν) (hg : MeasurePreserving g ν μ) (hfg : f ∘ g =ᵐ[ν] id) :
     multiplicationAlgebra ν ≃⋆ₐ[ℂ] multiplicationAlgebra μ :=
-  ((multiplicationAlgebra ν).conjStarAlgEquiv
-    (Lp.compMeasurePreservingₗᵢEquiv ℂ (E := ℂ) (p := 2) hf hg hfg)).trans <|
-      equivOfEq (conj_multiplicationAlgebra_compMeasurePreservingₗᵢEquiv hf hg hfg)
+  (equivMapLinearIsometryEquiv
+    (Lp.compMeasurePreservingₗᵢEquiv ℂ (E := ℂ) (p := 2) hf hg hfg)
+    (multiplicationAlgebra ν)).trans <|
+      equivOfEq
+        (mapLinearIsometryEquiv_compMeasurePreservingₗᵢEquiv_multiplicationAlgebra hf hg hfg)
 
 @[simp]
 theorem coe_multiplicationAlgebraCompMeasurePreservingStarAlgEquiv_apply

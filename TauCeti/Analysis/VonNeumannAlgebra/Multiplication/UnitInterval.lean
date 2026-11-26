@@ -13,7 +13,7 @@ public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel
 
 Every atomless standard Borel probability space `(Ω, μ)` has multiplication von Neumann algebra
 unitarily conjugate to `VonNeumannAlgebra.multiplicationAlgebra (volume : Measure unitInterval)`
-(`VonNeumannAlgebra.exists_linearIsometryEquiv_conj_multiplicationAlgebra_unitInterval`).
+(`exists_linearIsometryEquiv_mapLinearIsometryEquiv_multiplicationAlgebra_unitInterval`).
 
 ## References
 
@@ -32,13 +32,14 @@ namespace VonNeumannAlgebra
 /-- For any atomless standard Borel probability space `(Ω, μ)`, there exists a unitary equivalence
 `U : Lp ℂ 2 μ ≃ₗᵢ[ℂ] Lp ℂ 2 (volume : Measure unitInterval)` conjugating `multiplicationAlgebra μ`
 onto `multiplicationAlgebra (volume : Measure unitInterval)`. -/
-theorem exists_linearIsometryEquiv_conj_multiplicationAlgebra_unitInterval
+theorem exists_linearIsometryEquiv_mapLinearIsometryEquiv_multiplicationAlgebra_unitInterval
     {Ω : Type*} [MeasurableSpace Ω] [StandardBorelSpace Ω] (μ : Measure Ω)
     [IsProbabilityMeasure μ] [NullSingletonClass μ] :
     ∃ U : Lp ℂ 2 μ ≃ₗᵢ[ℂ] Lp ℂ 2 (volume : Measure I),
-      (multiplicationAlgebra μ).conj U = multiplicationAlgebra (volume : Measure I) := by
+      mapLinearIsometryEquiv U (multiplicationAlgebra μ) =
+        multiplicationAlgebra (volume : Measure I) := by
   obtain ⟨f, g, hf, hg, hgf, _⟩ := Measure.exists_mpModNull_equiv_unitInterval μ
   exact ⟨Lp.compMeasurePreservingₗᵢEquiv ℂ (E := ℂ) (p := 2) hg hf hgf,
-    conj_multiplicationAlgebra_compMeasurePreservingₗᵢEquiv hg hf hgf⟩
+    mapLinearIsometryEquiv_compMeasurePreservingₗᵢEquiv_multiplicationAlgebra hg hf hgf⟩
 
 end VonNeumannAlgebra
