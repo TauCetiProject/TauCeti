@@ -20,7 +20,8 @@ spaces. These give the subsequence and separation arguments used in Riesz theory
 perturbations of the identity. It also shows that the compact operators form a two-sided ideal of
 the algebra of bounded operators, that a compact operator descends to a compact operator on the
 quotient by a submodule of its kernel, and characterizes compact operators into complete spaces by
-total boundedness of the image of a closed ball.
+total boundedness of the image of a closed ball; in particular the range of a compact operator is
+separable.
 
 The ideal property also controls perturbations that are compact only relative to an operator `T`:
 if `K T` is compact, then replacing `F` by `F + K` keeps `(F² - 1) T` compact, provided `[F, T]`
@@ -43,6 +44,7 @@ the compact perturbations of Fredholm modules.
   submodule of its kernel is compact.
 * `IsCompactOperator.totallyBounded_image_closedBall`: a compact operator maps closed balls to
   totally bounded sets.
+* `IsCompactOperator.isSeparable_range`: the range of a compact operator is separable.
 * `ContinuousLinearMap.norm_mkQL_span_comp_le_of_isCover`: quotienting the target by the span of
   the centres of an `ε`-cover of the image of the unit ball leaves an operator of norm at most
   `‖c‖ ε`, for any scalar `c` with `1 < ‖c‖`.
@@ -188,6 +190,18 @@ theorem isCompactOperator_iff_totallyBounded_image_closedBall [CompleteSpace M�
   ⟨fun hf ↦ hf.totallyBounded_image_closedBall r, fun hf ↦
     (isCompactOperator_iff_image_closedBall_subset_compact f hr).mpr
       ⟨_, hf.closure.isCompact_of_isClosed isClosed_closure, subset_closure⟩⟩
+
+/-- The range of a compact operator into a space with countably generated uniformity is separable:
+it is the union of the images of the closed balls of integer radii, which are totally bounded. -/
+theorem IsCompactOperator.isSeparable_range [(uniformity M₂).IsCountablyGenerated]
+    (hf : IsCompactOperator f) : TopologicalSpace.IsSeparable (Set.range f) := by
+  have hrange : Set.range f = ⋃ n : ℕ, f '' Metric.closedBall 0 n := by
+    refine (Set.iUnion_subset fun _ ↦ Set.image_subset_range _ _).antisymm' ?_
+    rintro _ ⟨x, rfl⟩
+    obtain ⟨n, hn⟩ := exists_nat_ge ‖x‖
+    exact Set.mem_iUnion.2 ⟨n, x, mem_closedBall_zero_iff.2 hn, rfl⟩
+  rw [hrange]
+  exact .iUnion fun n ↦ (hf.totallyBounded_image_closedBall n).isSeparable
 
 end TotallyBounded
 
