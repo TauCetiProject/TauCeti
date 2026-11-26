@@ -668,15 +668,17 @@ private theorem hasRegularSpectrum_of_apply_eq_smul_add_smul (hirr : IsIrreducib
   rw [map_neg, hKA, hv, map_add, map_smul, map_smul, hKK]
   module
 
-/-- **The irreducible case with a complex structure.** If a self-adjoint `J` with `J² = -1`
-commutes with an irreducible nondegenerate family with an injective element `A`, then every
-self-adjoint endomorphism commuting with the family lies in `ℝ + ℝ J`, some `A₀ ∈ {A, A + A J}`
-squares to `x₀ + y₀ J` with `y₀ ≠ 0`, and the span contains a regular focus-focus element. -/
-private theorem exists_hasRegularSpectrum_of_mul_self_eq_neg_one
+/-- If a self-adjoint `J` with `J² = -1` commutes with an irreducible nondegenerate family with an
+injective element `A`, then there is a self-adjoint `K` with `K² = -1` commuting with the family
+such that every self-adjoint endomorphism commuting with the family lies in `ℝ + ℝ K`, and some
+`A₀ ∈ {A, A + A J}` squares to `x₀ + y₁ K` with `y₁ > 0`. -/
+private theorem exists_apply_apply_eq_smul_add_smul_of_mul_self_eq_neg_one
     (h : ω.IsNondegenerateQuadraticFamily Q) (hirr : IsIrreducible ω Q) [Nontrivial V]
     {A : Module.End ℝ V} (hA : IsSkewCentral ω Q A) (hAi : Function.Injective A)
     {J : Module.End ℝ V} (hJ : IsSymmCentral ω Q J) (hJJ : J * J = -1) :
-    ∃ P₀ ∈ Submodule.span ℝ (Set.range Q), HasRegularSpectrum (ω.hamiltonianEnd P₀) := by
+    ∃ A₀ K : Module.End ℝ V, IsSkewCentral ω Q A₀ ∧ IsSymmCentral ω Q K ∧
+      (∀ v, K (K v) = -v) ∧ (∀ E, IsSymmCentral ω Q E → ∃ a b : ℝ, E = algebraMap ℝ _ a + b • K) ∧
+      ∃ x₀ y₁ : ℝ, 0 < y₁ ∧ ∀ v, A₀ (A₀ v) = x₀ • v + y₁ • K v := by
   have hspanJ (E : Module.End ℝ V) (hE : IsSymmCentral ω Q E) :
       ∃ a b : ℝ, E = algebraMap ℝ _ a + b • J := by
     rcases hE.eq_algebraMap_or_exists h hirr hA hAi with ⟨c, rfl⟩ | ⟨J', hJ', hJJ', a, b, rfl⟩
@@ -705,15 +707,24 @@ private theorem exists_hasRegularSpectrum_of_mul_self_eq_neg_one
       module
     · exact ⟨A, hA, x, y, hy, hAA⟩
   -- Normalize the sign of `y₀` by replacing `J` with `-J`.
-  obtain ⟨K, hK, hKK, hspanK, y₁, hy₁, hAAK⟩ : ∃ K, IsSymmCentral ω Q K ∧
-      (∀ v, K (K v) = -v) ∧ (∀ E, IsSymmCentral ω Q E → ∃ a b : ℝ, E = algebraMap ℝ _ a + b • K) ∧
-      ∃ y₁ : ℝ, 0 < y₁ ∧ ∀ v, A₀ (A₀ v) = x₀ • v + y₁ • K v := by
-    rcases hy₀.lt_or_gt with hneg | hpos
-    · refine ⟨-J, by simpa using hJ.smul (-1), by simpa using hJpt, fun E hE ↦ ?_, -y₀,
-        by linarith, fun v ↦ by simp [hAA]⟩
-      obtain ⟨a, b, rfl⟩ := hspanJ E hE
-      exact ⟨a, -b, by simp⟩
-    · exact ⟨J, hJ, hJpt, hspanJ, y₀, hpos, hAA⟩
+  rcases hy₀.lt_or_gt with hneg | hpos
+  · refine ⟨A₀, -J, hA₀, by simpa using hJ.smul (-1), by simpa using hJpt, fun E hE ↦ ?_, x₀, -y₀,
+      by linarith, fun v ↦ by simp [hAA]⟩
+    obtain ⟨a, b, rfl⟩ := hspanJ E hE
+    exact ⟨a, -b, by simp⟩
+  · exact ⟨A₀, J, hA₀, hJ, hJpt, hspanJ, x₀, y₀, hpos, hAA⟩
+
+/-- **The irreducible case with a complex structure.** If a self-adjoint `J` with `J² = -1`
+commutes with an irreducible nondegenerate family with an injective element `A`, then every
+self-adjoint endomorphism commuting with the family lies in `ℝ + ℝ J`, some `A₀ ∈ {A, A + A J}`
+squares to `x₀ + y₀ J` with `y₀ ≠ 0`, and the span contains a regular focus-focus element. -/
+private theorem exists_hasRegularSpectrum_of_mul_self_eq_neg_one
+    (h : ω.IsNondegenerateQuadraticFamily Q) (hirr : IsIrreducible ω Q) [Nontrivial V]
+    {A : Module.End ℝ V} (hA : IsSkewCentral ω Q A) (hAi : Function.Injective A)
+    {J : Module.End ℝ V} (hJ : IsSymmCentral ω Q J) (hJJ : J * J = -1) :
+    ∃ P₀ ∈ Submodule.span ℝ (Set.range Q), HasRegularSpectrum (ω.hamiltonianEnd P₀) := by
+  obtain ⟨A₀, K, hA₀, hK, hKK, hspanK, x₀, y₁, hy₁, hAAK⟩ :=
+    exists_apply_apply_eq_smul_add_smul_of_mul_self_eq_neg_one h hirr hA hAi hJ hJJ
   -- `a + b i` is the principal square root of `x₀ + y₁ i`, which lies in the open first quadrant.
   obtain ⟨a, b, ha, hb, hab, hab'⟩ :
       ∃ a b : ℝ, 0 < a ∧ 0 < b ∧ a ^ 2 - b ^ 2 = x₀ ∧ 2 * a * b = y₁ := by
