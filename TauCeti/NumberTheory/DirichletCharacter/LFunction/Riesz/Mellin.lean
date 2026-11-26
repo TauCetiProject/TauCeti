@@ -40,6 +40,17 @@ theorem rieszRemainderMellin_LFunction_of_ne_one (hχ : χ ≠ 1) {s : ℂ} (hs 
     (χ.LFunction_ne_zero_of_one_le_re (.inr hs₁) hs.le)).1
   simpa [hpart, hord] using h
 
+/-- The Riesz remainder Mellin expression is analytic on `Re s ≥ 1`, including at `1`
+where normalization removes the singularity of the defining quotient. -/
+theorem analyticAt_rieszRemainderMellin_LFunction_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
+    AnalyticAt ℂ (TauCeti.rieszRemainderMellin χ.LFunction) s := by
+  by_cases h₁ : s = 1
+  · subst s
+    exact χ.meromorphic_LFunction.analyticAt_rieszRemainderMellin_one
+  · have h₀ : s ≠ 0 := by rintro rfl; norm_num at hs
+    exact (χ.meromorphic_LFunction.rieszRemainderMellin_eq_and_analyticAt h₀ h₁
+      (χ.analyticAt_LFunction (.inl h₁)) (χ.LFunction_ne_zero_of_one_le_re (.inr h₁) hs)).2
+
 /-- A nonzero zero of the L-function gives a simple pole of the Riesz remainder Mellin expression,
 with residue given by the multiplicity and the Riesz kernel. -/
 theorem rieszRemainderMellin_LFunction_simplePole {ρ : ℂ} (h₀ : ρ ≠ 0)
@@ -74,6 +85,18 @@ principal-character pole at `1` is removed. -/
   · intro h
     rw [(χ.rieszRemainderMellin_LFunction_simplePole h₀ h).1]
     exact WithTop.coe_lt_coe.mpr (neg_one_lt_zero : (-1 : ℤ) < 0)
+
+/-- Away from `0`, the residue of the Riesz remainder Mellin expression is the zero
+multiplicity divided by `ρ * (1 - ρ)`, and is zero at points that are not zeros of `L`.
+The natural analytic order at the principal character's pole is zero. -/
+theorem residue_rieszRemainderMellin_LFunction {ρ : ℂ} (h₀ : ρ ≠ 0) :
+    TauCeti.Contour.residue (TauCeti.rieszRemainderMellin χ.LFunction) ρ =
+      (analyticOrderNatAt χ.LFunction ρ : ℂ) / (ρ * (1 - ρ)) := by
+  rw [χ.meromorphic_LFunction.residue_rieszRemainderMellin h₀]
+  by_cases h₁ : ρ = 1
+  · simp [h₁]
+  · rw [χ.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt (.inl h₁), WithTop.untop₀_coe,
+      Int.cast_natCast]
 
 /-- Every real pole of the Mellin expression in the open right half-plane has a positive real
 leading Laurent coefficient, which is its residue since the pole is simple. -/

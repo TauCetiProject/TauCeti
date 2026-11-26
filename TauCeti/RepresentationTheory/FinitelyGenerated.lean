@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.LinearAlgebra.DirectSum.Finite
 public import Mathlib.RepresentationTheory.Intertwining
 public import Mathlib.RepresentationTheory.Stabilizer
+public import TauCeti.RepresentationTheory.Intertwining.DirectSum
 import TauCeti.RepresentationTheory.OfMulAction.Coset.Lift
 import TauCeti.RepresentationTheory.Rep.DirectSum.AsModule
 
@@ -31,6 +32,8 @@ fixing `v_i`.
   representations is finitely generated.
 * `Representation.finite_asModule_ofMulAction`: a permutation representation `A[X]` with finitely
   many `G`-orbits on `X` is finitely generated; in particular so is `A[G ⧸ U]`.
+* `Representation.IntertwiningMap.directSumToModule_surjective_of_span_eq_top`: intertwining
+  maps whose ranges contain a generating family of `V` give a surjection from their direct sum.
 * `Representation.exists_surjective_of_finite_asModule`: a finitely generated representation
   whose vectors are fixed by subgroups satisfying `P` is a quotient of `⊕_{i < n} A[G ⧸ U_i]`
   with each `U_i` satisfying `P`.
@@ -92,6 +95,24 @@ instance finite_asModule_ofMulAction_quotient {G : Type*} [Group G] (U : Subgrou
   have := (MulAction.pretransitive_iff_subsingleton_quotient G (G ⧸ U)).1 inferInstance
   inferInstance
 
+/-- **Maps hitting generators give a surjection from a direct sum.** If the vectors `s i` generate
+`V` over `A[G]` and each `s i` lies in the range of an intertwining map `f i : V_i → V`, then the
+sum map `⊕_i V_i → V` is surjective. -/
+theorem IntertwiningMap.directSumToModule_surjective_of_span_eq_top {ι : Type*} [DecidableEq ι]
+    {V' : ι → Type*} [∀ i, AddCommMonoid (V' i)] [∀ i, Module A (V' i)]
+    {ρ' : ∀ i, Representation A G (V' i)} (f : ∀ i, IntertwiningMap (ρ' i) ρ)
+    {s : ι → ρ.asModule} (hs : Submodule.span A[G] (Set.range s) = ⊤)
+    (hf : ∀ i, ρ.asModuleEquiv (s i) ∈ Set.range (f i)) :
+    Function.Surjective (directSumToModule f) := by
+  refine (equivLinearMapAsModule_surjective_iff _).1 ?_
+  rw [← LinearMap.range_eq_top, eq_top_iff, ← hs, Submodule.span_le]
+  rintro _ ⟨i, rfl⟩
+  obtain ⟨v, hv⟩ := hf i
+  refine ⟨(directSum ρ').asModuleEquiv.symm (DirectSum.lof A ι V' i v), ?_⟩
+  apply ρ.asModuleEquiv.injective
+  rw [asModuleEquiv_apply, equivLinearMapAsModule_apply, asModuleEquiv_symm_apply,
+    directSumToModule_lof, hv]
+
 /-- **Generators give a surjection from permutation representations.** If `V` is finitely
 generated and every vector is fixed by a subgroup satisfying `P`, then `V` is a quotient of
 `⊕_{i < n} A[G ⧸ U_i]` for subgroups `U_i` satisfying `P`. -/
@@ -103,17 +124,8 @@ theorem exists_surjective_of_finite_asModule {G : Type*} [Group G] {ρ : Represe
         Function.Surjective f := by
   obtain ⟨n, s, hs⟩ := Module.Finite.exists_fin (R := A[G]) (M := ρ.asModule)
   choose U hPU hU using fun i : Fin n ↦ hP (ρ.asModuleEquiv (s i))
-  let f := IntertwiningMap.directSumToModule fun i ↦ ρ.cosetLift _ _ (hU i)
-  refine ⟨n, U, hPU, f, (IntertwiningMap.equivLinearMapAsModule_surjective_iff f).1 ?_⟩
-  rw [← LinearMap.range_eq_top, eq_top_iff, ← hs, Submodule.span_le]
-  rintro _ ⟨i, rfl⟩
-  refine ⟨(directSum _).asModuleEquiv.symm
-    (DirectSum.lof A _ _ i (MonoidAlgebra.single ((1 : G) : G ⧸ U i) 1)), ?_⟩
-  apply ρ.asModuleEquiv.injective
-  rw [asModuleEquiv_apply, asModuleEquiv_apply, IntertwiningMap.equivLinearMapAsModule_apply,
-    asModuleEquiv_symm_apply]
-  simp only [f, IntertwiningMap.directSumToModule_lof, cosetLift_single, map_one, one_smul,
-    one_apply_eq_self]
-  exact asModuleEquiv_apply (s i)
+  refine ⟨n, U, hPU, _, IntertwiningMap.directSumToModule_surjective_of_span_eq_top
+    (fun i ↦ ρ.cosetLift _ _ (hU i)) hs fun i ↦ ⟨MonoidAlgebra.single ((1 : G) : G ⧸ U i) 1, ?_⟩⟩
+  rw [cosetLift_single, map_one, one_smul, one_apply_eq_self]
 
 end Representation

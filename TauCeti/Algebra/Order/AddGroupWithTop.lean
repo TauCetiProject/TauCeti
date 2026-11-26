@@ -18,6 +18,7 @@ directly since `WithTop G` is not a group.
 ## Main results
 
 * `WithTop.coe_le_add_coe_iff`: `k ≤ x + c ↔ k - c ≤ x`.
+* `WithTop.coe_lt_add_coe_iff`: `k < x + c ↔ k - c < x`.
 * `WithTop.coe_sub_le_sub_coe_iff`: `k - c ≤ x - c ↔ k ≤ x`.
 -/
 
@@ -31,6 +32,12 @@ variable {G : Type*} [AddCommGroup G] [LinearOrder G] [IsOrderedAddMonoid G] {x 
 /-- A finite lower bound `k` of `x + c` is a lower bound `k - c` of `x`. -/
 theorem coe_le_add_coe_iff : (k : WithTop G) ≤ x + c ↔ ((k - c : G) : WithTop G) ≤ x := by
   rw [← add_le_add_iff_left_of_ne_top (a := (c : WithTop G)) coe_ne_top
+    (b := ((k - c : G) : WithTop G)), ← coe_add, sub_add_cancel]
+
+/-- A finite strict lower bound `k` of `x + c` translates to the strict lower bound `k - c`
+of `x`. -/
+theorem coe_lt_add_coe_iff : (k : WithTop G) < x + c ↔ ((k - c : G) : WithTop G) < x := by
+  rw [← add_lt_add_iff_left_of_ne_top (a := (c : WithTop G)) coe_ne_top
     (b := ((k - c : G) : WithTop G)), ← coe_add, sub_add_cancel]
 
 /-- Subtracting a finite `c` from both sides of a finite lower bound preserves it. -/
