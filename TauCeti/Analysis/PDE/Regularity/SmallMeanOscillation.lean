@@ -14,6 +14,7 @@ import TauCeti.MeasureTheory.Function.SmallMeanOscillation
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.PDE.DirichletProblem.HomogeneousSobolev
 import TauCeti.Analysis.PDE.EnergyForm.Measurability
 import TauCeti.Analysis.PDE.FundamentalSolution.Divergence
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
@@ -336,42 +337,9 @@ theorem exists_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_setAverage
   obtain ⟨A, hA, hδA⟩ := hosc c (κ * ρ) (mul_pos (zero_lt_one.trans_le hκ) hρ)
   obtain ⟨v, hv⟩ := D1p0.exists_w1p_gradient_ae_eq (le_top : B ≤ ⊤) (convex_ball c (κ * ρ))
     isBounded_ball u
-  -- The potential `v` solves the equation on `B`: a test function on `B` is one on the whole
-  -- space, and its gradient vanishes off `B`.
-  have hvB : ∀ φ : 𝓓(B, ℝ), energyFormH1 a 0 0 v (W1p.ofTestFunctionₗ volume B 2 φ) =
-      ∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
-    intro φ
-    set ψ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ) := TestFunction.monoCLM ℝ φ
-    have hψ : (ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) = φ :=
-      TestFunction.coe_monoCLM_of_le le_rfl le_top φ
-    have hsupp : ∀ x ∉ (B : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-        ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x = 0 := fun x hx =>
-      Function.notMem_support.1 fun h => hx (support_gradient_testFunction_subset φ h)
-    have hφB : ∀ᵐ x ∂volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1)))),
-        W1p.gradient (W1p.ofTestFunctionₗ volume B 2 φ) x =
-          ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x := by
-      rw [W1p.gradient_ofTestFunctionₗ]
-      exact gradientTestFunctionLp_apply_ae 2 φ
-    calc energyFormH1 a 0 0 v (W1p.ofTestFunctionₗ volume B 2 φ)
-        = ∫ x in B, matrixBilinearForm (a x) (∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)
-            ((u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
-                (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
-                  Set (EuclideanSpace ℝ (Fin (n + 1)))))) x) := by
-          rw [energyFormH1_zero_zero_eq_setIntegral]
-          refine integral_congr_ae ?_
-          filter_upwards [hv, hφB] with x hvx hφx
-          rw [hvx, hφx]
-      _ = ∫ x, matrixBilinearForm (a x) (∇ (ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)
-            ((u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
-                (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
-                  Set (EuclideanSpace ℝ (Fin (n + 1)))))) x) := by
-          rw [hψ]
-          exact setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by simp [hsupp x hx]
-      _ = ∫ x, ⟪G x, ∇ (ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := hu ψ
-      _ = ∫ x in B, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
-          rw [hψ]
-          exact (setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
-            simp [hsupp x hx]).symm
+  -- The potential `v` solves the equation on `B`.
+  have hvB := energyFormH1_ofTestFunctionₗ_eq_integral_inner_of_gradient_ae_eq (le_top : B ≤ ⊤)
+    (fun ψ => by simpa only [Opens.coe_top, Measure.restrict_univ] using hu ψ) hv
   exact (setAverage_norm_sub_sq_le ha hbd hvB hp.le hgp hGp hq hqp hρ hκ subset_rfl hv hA
     hδA).trans_eq (by ring)
 
@@ -422,15 +390,9 @@ theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le {p
   rw [← hw] at hgp ⊢
   refine h ha hbd hosc w G (fun φ => ?_) hgp hGp
   rw [← hu φ, energyFormH1_zero_zero_eq_setIntegral, hw]
-  have hφ : ∀ᵐ x ∂(volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))),
-      W1p.gradient (W1p.ofTestFunctionₗ volume ⊤ 2 φ) x =
-        ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x := by
-    rw [W1p.gradient_ofTestFunctionₗ]
-    simpa using gradientTestFunctionLp_apply_ae (mu := volume)
-      (Omega := (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1))))) 2 φ
   simp only [Opens.coe_top, Measure.restrict_univ]
   refine integral_congr_ae ?_
-  filter_upwards [hφ] with x hx
+  filter_upwards [W1p.gradient_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ] with x hx
   rw [hx]
 
 /-! ### Localization to small balls -/

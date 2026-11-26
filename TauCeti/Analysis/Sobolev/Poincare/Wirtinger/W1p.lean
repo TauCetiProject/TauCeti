@@ -410,8 +410,7 @@ theorem W1p.setAverage_norm_sub_setAverage_le_of_convex
 
 /-- **The gradients of `W^{1,p}(Ω)` form a closed set.**  On a bounded convex open set `Ω`, a limit
 in `Lᵖ(Ω)` of weak gradients of elements of `W^{1,p}(Ω)` is again the weak gradient of an element of
-`W^{1,p}(Ω)`, for `1 ≤ p ≤ ∞`.  Along a convergent sequence of gradients, the potentials of mean
-zero over `Ω` form a Cauchy sequence, by `TauCeti.W1p.eLpNorm_value_sub_setAverage_le_of_convex`. -/
+`W^{1,p}(Ω)`, for `1 ≤ p ≤ ∞`. -/
 theorem W1p.isClosed_range_gradientL_of_convex (hconv : Convex ℝ (Omega : Set E))
     (hb : Bornology.IsBounded (Omega : Set E)) :
     IsClosed (range (W1p.gradientL : W1p mu Omega p →L[ℝ] Lp E p (mu.restrict Omega))) := by
@@ -444,7 +443,8 @@ theorem W1p.isClosed_range_gradientL_of_convex (hconv : Convex ℝ (Omega : Set 
       exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top eNorm_ne_top) hP
     rw [W1p.gradientL_apply]
     linarith [W1p.norm_le_norm_value_add_norm_gradient v]
-  -- Along a convergent sequence of gradients, the potentials of mean zero form a Cauchy sequence.
+  -- Along a convergent sequence of gradients, the potentials of mean zero form a Cauchy sequence,
+  -- by the Poincaré–Wirtinger inequality `hbound`.
   refine IsSeqClosed.isClosed fun {g g₀} hg hlim => ?_
   choose v hv using hg
   set w : ℕ → W1p mu Omega p := fun k => v k - W1p.const (⨍ x in Omega, W1p.value (v k) x ∂mu)

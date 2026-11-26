@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
+public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.D1p0.Basic
 import TauCeti.Analysis.InnerProductSpace.LaxMilgram
 import TauCeti.Analysis.PDE.EnergyForm.Measurability
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.BilinearMap
 
 /-!
@@ -31,15 +33,18 @@ No boundedness of `Ω` is assumed, and no Poincaré inequality is needed, becaus
 `D^{1,2}_0(Ω)` is the `L²` norm of the gradient alone and ellipticity makes the energy form
 coercive for it. On the whole space this is the solution concept of the problem: for
 `Ω = ℝⁿ` the solution need not be square integrable, so it does not lie in `H¹(ℝⁿ)` in general,
-while its gradient does lie in `L²`. The `W^{1,p}` estimate for coefficients of
-small mean oscillation holds for these solutions
-(`TauCeti.PDE.exists_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_setAverage_le`), and
-they are the solutions of the adjoint problem that a duality argument pairs with.
+while its gradient does lie in `L²`. For `Ω = ℝⁿ`, the a priori `W^{1,p}` estimate for
+coefficients of small mean oscillation holds for those solutions whose gradient lies in `Lᵖ`
+(`TauCeti.PDE.exists_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_setAverage_le`).
 
 The weak equation, stated against test functions, extends by density to every element of
 `D^{1,2}_0(Ω)` in the place of `∇φ`
 (`TauCeti.PDE.integral_matrixBilinearForm_eq_integral_inner_of_forall`): both sides are continuous
 in the test field, the left one because the coefficients are essentially bounded.
+
+On an open set `U ⊆ Ω`, a function in `H¹(U)` whose gradient agrees there with a solution
+`u ∈ D^{1,2}_0(Ω)` solves the same equation weakly on `U`
+(`TauCeti.PDE.energyFormH1_ofTestFunctionₗ_eq_integral_inner_of_gradient_ae_eq`).
 
 ## The argument
 
@@ -71,19 +76,6 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] {Omega : Opens (EuclideanSpace ℝ ι)}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {Lam : ℝ}
 
-/-- An a.e. strongly measurable coefficient matrix bounded by `Λ` on `Ω` gives an essentially
-bounded field of bilinear forms on `Ω`. -/
-private theorem memLp_top_matrixBilinearForm
-    (ha : AEStronglyMeasurable a (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))))
-    (hbd : ∀ x ∈ Omega, ‖matrixBilinearForm (a x)‖ ≤ Lam) :
-    MemLp (fun x => matrixBilinearForm (a x)) ⊤
-      (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))) := by
-  refine memLp_top_of_bound (f := fun x => matrixBilinearForm (a x)) ?_ Lam ?_
-  · simpa only [matrixBilinearFormLinear_apply] using
-      (matrixBilinearFormLinear (n := ι)).continuous.comp_aestronglyMeasurable ha
-  · filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
-    exact hbd x hx
-
 /-- The energy form `(u, w) ↦ ∫_Ω ⟨a u, w⟩` on `D^{1,2}_0(Ω)`, for an essentially bounded field of
 bilinear forms. -/
 private def energyFormD1p0
@@ -93,7 +85,8 @@ private def energyFormD1p0
   ContinuousLinearMap.bilinearComp
     (lpBilinearMap (𝕜 := ℝ) (E := EuclideanSpace ℝ ι) (F := EuclideanSpace ℝ ι) (G := ℝ)
       (p := 2) (q := 2) (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))
-      ((memLp_top_matrixBilinearForm ha hbd).toLp fun x => matrixBilinearForm (a x))).flip
+      ((memLp_top_matrixBilinearForm ha (ae_restrict_of_forall_mem Omega.isOpen.measurableSet
+        hbd)).toLp fun x => matrixBilinearForm (a x))).flip
     (D1p0 volume Omega 2).subtypeL (D1p0 volume Omega 2).subtypeL
 
 private theorem energyFormD1p0_apply
@@ -104,25 +97,39 @@ private theorem energyFormD1p0_apply
       ((u : Lp (EuclideanSpace ℝ ι) 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x) := by
   rw [energyFormD1p0, ContinuousLinearMap.bilinearComp_apply, ContinuousLinearMap.flip_apply,
     lpBilinearMap_apply]
-  have hcoe : ((memLp_top_matrixBilinearForm ha hbd).toLp (fun x => matrixBilinearForm (a x)) :
+  have hcoe : ((memLp_top_matrixBilinearForm ha (ae_restrict_of_forall_mem
+      Omega.isOpen.measurableSet hbd)).toLp (fun x => matrixBilinearForm (a x)) :
       EuclideanSpace ℝ ι → EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) =ᵐ[volume.restrict
         (Omega : Set (EuclideanSpace ℝ ι))] fun x => matrixBilinearForm (a x) :=
-    (memLp_top_matrixBilinearForm ha hbd).coeFn_toLp
+    MemLp.coeFn_toLp _
   refine integral_congr_ae ?_
   filter_upwards [hcoe] with x hx
   simp only [Submodule.subtypeL_apply, hx]
 
-/-- The pairing `w ↦ ∫_Ω ⟨G, w⟩` of `D^{1,2}_0(Ω)` with a datum `G ∈ L²(Ω; ℝⁿ)` is continuous. -/
-private theorem continuous_integral_inner {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+/-- The pairing `w ↦ ∫_Ω ⟨G, w⟩` of `D^{1,2}_0(Ω)` with a datum `G ∈ L²(Ω; ℝⁿ)`, as a continuous
+linear functional. -/
+private def datumD1p0 {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
     (hG : MemLp G 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) :
-    Continuous fun w : D1p0 volume Omega 2 => ∫ x in Omega, ⟪G x,
-      (w : Lp (EuclideanSpace ℝ ι) 2
-          (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x⟫_ℝ := by
-  refine ((innerSL ℝ (hG.toLp G)).comp (D1p0 volume Omega 2).subtypeL).continuous.congr fun w => ?_
-  rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, Submodule.subtypeL_apply,
-    L2.inner_def]
+    StrongDual ℝ (D1p0 volume Omega 2) :=
+  (innerSL ℝ (hG.toLp G)).comp (D1p0 volume Omega 2).subtypeL
+
+private theorem datumD1p0_apply {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (hG : MemLp G 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))))
+    (w : D1p0 volume Omega 2) :
+    datumD1p0 hG w = ∫ x in Omega, ⟪G x,
+      (w : Lp (EuclideanSpace ℝ ι) 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x⟫_ℝ :=
+  L2.toLp_inner_of_ae_eq hG Filter.EventuallyEq.rfl
+
+/-- An integral over `Ω` against the test field of `φ` in `D^{1,2}_0(Ω)` is the integral against
+the gradient of `φ`. -/
+private theorem integral_coe_ofTestFunctionₗ
+    (F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι → ℝ) (φ : 𝓓(Omega, ℝ)) :
+    ∫ x in Omega, F x ((D1p0.ofTestFunctionₗ volume Omega 2 φ : Lp (EuclideanSpace ℝ ι) 2
+        (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x) =
+      ∫ x in Omega, F x (∇ (φ : EuclideanSpace ℝ ι → ℝ) x) := by
+  rw [D1p0.coe_ofTestFunctionₗ]
   refine integral_congr_ae ?_
-  filter_upwards [hG.coeFn_toLp] with x hx
+  filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) 2 φ] with x hx
   rw [hx]
 
 /-- **The weak equation against every finite-energy test field.** Let `a` be a.e. strongly
@@ -147,15 +154,54 @@ theorem integral_matrixBilinearForm_eq_integral_inner_of_forall
         (w : Lp (EuclideanSpace ℝ ι) 2
             (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x⟫_ℝ := by
   refine (D1p0.denseRange_ofTestFunctionₗ (mu := volume) (Omega := Omega) (p := 2)).induction_on w
-    (isClosed_eq ?_ (continuous_integral_inner hG)) fun φ => ?_
+    (isClosed_eq ?_ ((datumD1p0 hG).continuous.congr (datumD1p0_apply hG))) fun φ => ?_
   · exact (energyFormD1p0 ha hbd u).continuous.congr fun w => energyFormD1p0_apply ha hbd u w
-  · have hφ := gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Omega) 2 φ
-    rw [D1p0.coe_ofTestFunctionₗ]
-    refine (integral_congr_ae ?_).trans ((hu φ).trans (integral_congr_ae ?_))
-    · filter_upwards [hφ] with x hx
-      rw [hx]
-    · filter_upwards [hφ] with x hx
-      rw [hx]
+  · exact (integral_coe_ofTestFunctionₗ (fun x v => matrixBilinearForm (a x) v
+        ((u : Lp (EuclideanSpace ℝ ι) 2
+          (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x)) φ).trans
+      ((hu φ).trans (integral_coe_ofTestFunctionₗ (fun x v => ⟪G x, v⟫_ℝ) φ).symm)
+
+/-- **A local potential of a finite-energy solution solves the equation.** Let
+`u ∈ D^{1,2}_0(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly on `Ω`, that is
+`∫_Ω ⟨a ∇u, ∇φ⟩ = ∫_Ω ⟨G, ∇φ⟩` for every test function `φ` on `Ω`, and let `v ∈ H¹(U)` on an open
+set `U ⊆ Ω` have gradient `u` almost everywhere on `U`. Then `v` solves the same equation weakly
+on `U`. -/
+theorem energyFormH1_ofTestFunctionₗ_eq_integral_inner_of_gradient_ae_eq
+    {U : Opens (EuclideanSpace ℝ ι)} (hU : U ≤ Omega) {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {u : D1p0 volume Omega 2}
+    (hu : ∀ φ : 𝓓(Omega, ℝ), ∫ x in Omega, matrixBilinearForm (a x)
+        (∇ (φ : EuclideanSpace ℝ ι → ℝ) x)
+        ((u : Lp (EuclideanSpace ℝ ι) 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x) =
+      ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ)
+    {v : W1p volume U 2}
+    (hv : W1p.gradient v =ᵐ[volume.restrict (U : Set (EuclideanSpace ℝ ι))]
+      (u : Lp (EuclideanSpace ℝ ι) 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))))
+    (φ : 𝓓(U, ℝ)) :
+    energyFormH1 a 0 0 v (W1p.ofTestFunctionₗ volume U 2 φ) =
+      ∫ x in U, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ := by
+  -- A test function on `U` is one on `Ω`, and its gradient vanishes off `U`.
+  set ψ : 𝓓(Omega, ℝ) := TestFunction.monoCLM ℝ φ
+  have hψ : (ψ : EuclideanSpace ℝ ι → ℝ) = φ := TestFunction.coe_monoCLM_of_le le_rfl hU φ
+  have hsupp : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)) \ U,
+      ∇ (φ : EuclideanSpace ℝ ι → ℝ) x = 0 := fun x hx =>
+    Function.notMem_support.1 fun h => hx.2 (support_gradient_testFunction_subset φ h)
+  have hφU : ∀ᵐ x ∂volume.restrict (U : Set (EuclideanSpace ℝ ι)),
+      W1p.gradient (W1p.ofTestFunctionₗ volume U 2 φ) x = ∇ (φ : EuclideanSpace ℝ ι → ℝ) x := by
+    rw [W1p.gradient_ofTestFunctionₗ]
+    exact gradientTestFunctionLp_apply_ae 2 φ
+  rw [energyFormH1_zero_zero_eq_setIntegral]
+  calc _ = ∫ x in U, matrixBilinearForm (a x) (∇ (φ : EuclideanSpace ℝ ι → ℝ) x)
+            ((u : Lp (EuclideanSpace ℝ ι) 2
+              (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x) := by
+        refine integral_congr_ae ?_
+        filter_upwards [hv, hφU] with x hvx hφx
+        rw [hvx, hφx]
+    _ = ∫ x in U, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ := by
+        rw [← setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Omega.isOpen.measurableSet
+            (SetLike.coe_subset_coe.mpr hU) fun x hx => by simp [hsupp x hx],
+          ← setIntegral_eq_of_subset_of_forall_sdiff_eq_zero Omega.isOpen.measurableSet
+            (SetLike.coe_subset_coe.mpr hU) fun x hx => by simp [hsupp x hx], ← hψ]
+        exact hu ψ
 
 variable [DecidableEq ι] {lam : ℝ}
 
@@ -176,8 +222,7 @@ private theorem mul_norm_mul_norm_le_energyFormD1p0 (hell : UniformlyEllipticOn 
     simp only [real_inner_self_eq_norm_sq, U]
   have hmeas : AEStronglyMeasurable (fun x => matrixBilinearForm (a x))
       (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
-    (memLp_top_matrixBilinearForm ha fun _ hx =>
-      hell.opNorm_matrixBilinearForm_le hx).aestronglyMeasurable
+    continuous_matrixBilinearForm.comp_aestronglyMeasurable ha
   have hint : Integrable (fun x => matrixBilinearForm (a x) (U x) (U x))
       (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))) := by
     refine (hsq.const_mul Lam).mono'
@@ -218,39 +263,26 @@ theorem existsUnique_forall_integral_matrixBilinearForm_eq_integral_inner
       ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ := by
   have hbd : ∀ x ∈ Omega, ‖matrixBilinearForm (a x)‖ ≤ Lam :=
     fun _ hx => hell.opNorm_matrixBilinearForm_le hx
-  -- The datum as a continuous linear functional on `D^{1,2}_0(Ω)`.
-  set ℓ : StrongDual ℝ (D1p0 volume Omega 2) :=
-    (innerSL ℝ (hG.toLp G)).comp (D1p0 volume Omega 2).subtypeL
-  have hℓ : ∀ w : D1p0 volume Omega 2, ℓ w = ∫ x in Omega, ⟪G x,
-      (w : Lp (EuclideanSpace ℝ ι) 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x⟫_ℝ :=
-    fun w => by
-      rw [ContinuousLinearMap.comp_apply, innerSL_apply_apply, Submodule.subtypeL_apply,
-        L2.inner_def]
-      refine integral_congr_ae ?_
-      filter_upwards [hG.coeFn_toLp] with x hx
-      rw [hx]
   -- On test fields the weak equation is the Lax–Milgram equation, which extends by density.
   have hiff : ∀ u : D1p0 volume Omega 2,
-      (∀ w, energyFormD1p0 ha hbd u w = ℓ w) ↔ ∀ φ : 𝓓(Omega, ℝ), ∫ x in Omega,
+      (∀ w, energyFormD1p0 ha hbd u w = datumD1p0 hG w) ↔ ∀ φ : 𝓓(Omega, ℝ), ∫ x in Omega,
         matrixBilinearForm (a x) (∇ (φ : EuclideanSpace ℝ ι → ℝ) x)
           ((u : Lp (EuclideanSpace ℝ ι) 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x) =
         ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ := by
     intro u
-    have hφ := fun φ : 𝓓(Omega, ℝ) =>
-      gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Omega) 2 φ
     constructor
     · intro h φ
       have h' := h (D1p0.ofTestFunctionₗ volume Omega 2 φ)
-      rw [energyFormD1p0_apply, hℓ, D1p0.coe_ofTestFunctionₗ] at h'
-      refine (integral_congr_ae ?_).trans (h'.trans (integral_congr_ae ?_))
-      · filter_upwards [hφ φ] with x hx
-        rw [hx]
-      · filter_upwards [hφ φ] with x hx
-        rw [hx]
+      rw [energyFormD1p0_apply, datumD1p0_apply] at h'
+      exact (integral_coe_ofTestFunctionₗ (fun x v => matrixBilinearForm (a x) v
+          ((u : Lp (EuclideanSpace ℝ ι) 2
+            (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x)) φ).symm.trans
+        (h'.trans (integral_coe_ofTestFunctionₗ (fun x v => ⟪G x, v⟫_ℝ) φ))
     · intro h w
-      rw [energyFormD1p0_apply, hℓ]
+      rw [energyFormD1p0_apply, datumD1p0_apply]
       exact integral_matrixBilinearForm_eq_integral_inner_of_forall ha hbd hG h w
-  obtain ⟨u, hu, huniq⟩ := (isCoercive_energyFormD1p0 hell ha).existsUnique_forall_eq ℓ
+  obtain ⟨u, hu, huniq⟩ :=
+    (isCoercive_energyFormD1p0 hell ha).existsUnique_forall_eq (datumD1p0 hG)
   exact ⟨u, (hiff u).1 hu, fun v hv => huniq v ((hiff v).2 hv)⟩
 
 /-- **The energy estimate for finite-energy weak solutions.** Let `a` be uniformly elliptic on `Ω`
@@ -271,17 +303,8 @@ theorem mul_norm_le_of_forall_integral_matrixBilinearForm_eq_integral_inner
     fun _ hx => hell.opNorm_matrixBilinearForm_le hx
   -- Testing the equation with `u` itself: `λ ‖u‖² ≤ B(u, u) = ⟪G, u⟫ ≤ ‖G‖ ‖u‖`.
   have hB := mul_norm_mul_norm_le_energyFormD1p0 hell ha u
-  have hpair : ∫ x in Omega, ⟪G x,
-      (u : Lp (EuclideanSpace ℝ ι) 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι)))) x⟫_ℝ =
-      ⟪hG.toLp G,
-        (u : Lp (EuclideanSpace ℝ ι) 2
-            (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))))⟫_ℝ := by
-    rw [L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hG.coeFn_toLp] with x hx
-    rw [hx]
   rw [energyFormD1p0_apply, integral_matrixBilinearForm_eq_integral_inner_of_forall ha hbd hG hu u,
-    hpair] at hB
+    ← L2.toLp_inner_of_ae_eq hG Filter.EventuallyEq.rfl] at hB
   have hCS := (real_inner_le_norm (hG.toLp G)
     (u : Lp (EuclideanSpace ℝ ι) 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ ι))))).trans_eq
     (by rw [Lp.norm_toLp, Submodule.norm_coe])
