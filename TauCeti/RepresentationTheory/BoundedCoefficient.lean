@@ -23,7 +23,7 @@ and the orbit of `x` is bounded, for instance when `ρ` acts by isometries.
 
 For a compact open subgroup `K` of a locally profinite group `G` and a function `h` on `G/K` with
 finite support, the action `Σ_{c ∈ G/K} h(c) ρ(c) x` of `h` on a `K`-fixed vector `x` is the action
-of the element `Σ_c h(c) c̃` of the monoid algebra, for any choice of representatives `c̃` of the
+of the element `Σ_c h(c) c` of the monoid algebra, for any choice of representatives `c` of the
 cosets, and its `ℓ¹` norm is `Σ_c |h(c)|`. The results below therefore give the bound
 `|θ(h)| ≤ Σ_{c ∈ G/K} |h(c)|` for the eigenvalues `θ(h)` of the spherical Hecke algebra
 `ℋ(G, K)` on a `K`-fixed vector with a bounded coefficient, or of a unitarisable representation.
