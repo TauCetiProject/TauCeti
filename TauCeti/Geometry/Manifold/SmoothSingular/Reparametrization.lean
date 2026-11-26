@@ -17,7 +17,8 @@ import TauCeti.LinearAlgebra.Determinant.Basic
 # Reparametrization and barycentric subdivision invariance of smooth singular integration
 
 Defines smooth, affine, and vertex-permutation reparametrizations of smooth singular simplices
-(`compContDiffOn`, `compAffineMapMk`, `compPerm`) and proves change-of-variables and barycentric
+(`compContDiffOn`, `compAffineMapMk`, `compPerm`), their identity, composition, comparison, and
+injectivity laws (`compAffineMapMk_vertex_injective`), and change-of-variables and barycentric
 subdivision invariance (`integral_compContDiffOn_of_det_nonneg`,
 `integral_compContDiffOn_of_det_nonpos`, `integral_compPerm`,
 `sum_sign_integral_compAffineMapMk_vertex`,
@@ -67,16 +68,44 @@ theorem toContinuousMap_compContDiffOn_apply {q : ℕ} (σ : SmoothSimplex I M p
     (hmaps : MapsTo Ψ (fullSimplex q) (fullSimplex p)) (x : fullSimplex q) :
     (σ.compContDiffOn hΨ hU hmaps).toContinuousMap x =
       σ.toContinuousMap ⟨Ψ x, hmaps x.property⟩ := by
-  rw [compContDiffOn, toContinuousMap_mk]; rfl
+  simp [compContDiffOn, MapsTo.restrict, Subtype.map]
+
+/-- Reparametrizing a smooth simplex by `id` leaves it unchanged. -/
+@[simp]
+theorem compContDiffOn_id (σ : SmoothSimplex I M p)
+    {U : Set (EuclideanSpace ℝ (Fin p))} (hid : ContDiffOn ℝ ∞ id U)
+    (hU : U ∈ 𝓝ˢ (fullSimplex p)) (hmaps : MapsTo id (fullSimplex p) (fullSimplex p)) :
+    σ.compContDiffOn hid hU hmaps = σ := by
+  ext x; simp
+
+/-- Iterated smooth reparametrization of a smooth simplex agrees with reparametrization by the
+composite map. -/
+theorem compContDiffOn_compContDiffOn {q r : ℕ} (σ : SmoothSimplex I M p)
+    {Ψ : EuclideanSpace ℝ (Fin q) → EuclideanSpace ℝ (Fin p)}
+    {U : Set (EuclideanSpace ℝ (Fin q))} (hΨ : ContDiffOn ℝ ∞ Ψ U)
+    (hU : U ∈ 𝓝ˢ (fullSimplex q)) (hmapsΨ : MapsTo Ψ (fullSimplex q) (fullSimplex p))
+    {Φ : EuclideanSpace ℝ (Fin r) → EuclideanSpace ℝ (Fin q)}
+    {V : Set (EuclideanSpace ℝ (Fin r))} (hΦ : ContDiffOn ℝ ∞ Φ V)
+    (hV : V ∈ 𝓝ˢ (fullSimplex r)) (hmapsΦ : MapsTo Φ (fullSimplex r) (fullSimplex q))
+    {W : Set (EuclideanSpace ℝ (Fin r))} (hΨΦ : ContDiffOn ℝ ∞ (Ψ ∘ Φ) W)
+    (hW : W ∈ 𝓝ˢ (fullSimplex r)) :
+    (σ.compContDiffOn hΨ hU hmapsΨ).compContDiffOn hΦ hV hmapsΦ =
+      σ.compContDiffOn hΨΦ hW (hmapsΨ.comp hmapsΦ) := by
+  ext x; simp
 
 /-- Precompose a smooth `p`-simplex with the affine map `Δ^q → Δ^p` determined by a tuple of
-barycentric vertices `v`. This is definitionally the simplex pushed forward by
-`AffineChain.subcomplexChain`. -/
+barycentric vertices `v`, specializing `SSet.Subcomplex.compAffineMapMk` to
+`smoothSingularSubcomplex I M`. -/
 def compAffineMapMk {q : ℕ} (σ : SmoothSimplex I M p)
     (v : Fin (q + 1) → StdSimplex ℝ (Fin (p + 1))) : SmoothSimplex I M q :=
-  ⟨((TopCat.of M).toSSetObjEquiv _).symm
-      (((TopCat.of M).toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)),
-    SSet.Subcomplex.IsAffineStable.comp_affineMapMk_mem σ.property v⟩
+  (smoothSingularSubcomplex I M).compAffineMapMk σ v
+
+/-- `SmoothSimplex.compAffineMapMk` is `SSet.Subcomplex.compAffineMapMk` on
+`smoothSingularSubcomplex I M`. -/
+theorem compAffineMapMk_def {q : ℕ} (σ : SmoothSimplex I M p)
+    (v : Fin (q + 1) → StdSimplex ℝ (Fin (p + 1))) :
+    σ.compAffineMapMk v = (smoothSingularSubcomplex I M).compAffineMapMk σ v :=
+  (rfl)
 
 /-- Read on `Δ^q`, `compAffineMapMk σ v` precomposes `σ` with `affineMapAmbient v`. -/
 @[simp]
@@ -88,8 +117,57 @@ theorem toContinuousMap_compAffineMapMk_apply {q : ℕ} (σ : SmoothSimplex I M 
       (fullSimplexEquivStdSimplex p).symm
         (StdSimplex.affineMapMk v (fullSimplexEquivStdSimplex q x)) :=
     Subtype.ext (affineMapAmbient_coe v x)
-  rw [toContinuousMap_apply, compAffineMapMk, Equiv.apply_symm_apply, ContinuousMap.comp_apply,
-    hx, toContinuousMap_apply, Homeomorph.apply_symm_apply, StdSimplex.continuousAffineMapMk_apply]
+  rw [toContinuousMap_apply, compAffineMapMk_def, SSet.Subcomplex.coe_compAffineMapMk,
+    Equiv.apply_symm_apply, ContinuousMap.comp_apply, hx, toContinuousMap_apply,
+    Homeomorph.apply_symm_apply, StdSimplex.continuousAffineMapMk_apply]
+
+/-- Precomposing a smooth simplex with the standard vertex tuple `StdSimplex.single` leaves it
+unchanged. -/
+@[simp]
+theorem compAffineMapMk_single (σ : SmoothSimplex I M p) :
+    σ.compAffineMapMk StdSimplex.single = σ :=
+  (smoothSingularSubcomplex I M).compAffineMapMk_single σ
+
+/-- Iterated affine reparametrization of a smooth simplex composes the affine maps of standard
+simplices. -/
+theorem compAffineMapMk_compAffineMapMk {q r : ℕ} (σ : SmoothSimplex I M p)
+    (v : Fin (q + 1) → StdSimplex ℝ (Fin (p + 1)))
+    (w : Fin (r + 1) → StdSimplex ℝ (Fin (q + 1))) :
+    (σ.compAffineMapMk v).compAffineMapMk w =
+      σ.compAffineMapMk (StdSimplex.affineMapMk v ∘ w) :=
+  (smoothSingularSubcomplex I M).compAffineMapMk_compAffineMapMk σ v w
+
+/-- Affine reparametrization of a smooth simplex agrees with smooth reparametrization along the
+ambient affine extension `affineMapAmbient v`. -/
+theorem compAffineMapMk_eq_compContDiffOn {q : ℕ} (σ : SmoothSimplex I M p)
+    (v : Fin (q + 1) → StdSimplex ℝ (Fin (p + 1))) :
+    σ.compAffineMapMk v =
+      σ.compContDiffOn (affineMapAmbient v).contDiff.contDiffOn Filter.univ_mem
+        (mapsTo_affineMapAmbient v) := by
+  ext x; simp
+
+/-- For a smooth simplex whose underlying map on `Δ^p` is injective, distinct vertex tuples yield
+distinct affine reparametrizations. -/
+theorem compAffineMapMk_injective {q : ℕ} {σ : SmoothSimplex I M p}
+    (hσ : Function.Injective σ.toContinuousMap) :
+    Function.Injective (σ.compAffineMapMk (q := q)) := fun v₁ v₂ h ↦
+  funext fun k ↦ by
+    let x : fullSimplex q := (fullSimplexEquivStdSimplex q).symm (StdSimplex.single k)
+    have hx := congrArg (fun τ : SmoothSimplex I M q ↦ τ.toContinuousMap x) h
+    simp only [toContinuousMap_compAffineMapMk_apply] at hx
+    have hval := congrArg Subtype.val (hσ hx)
+    dsimp only at hval
+    rw [affineMapAmbient_coe, affineMapAmbient_coe] at hval
+    simpa only [x, Homeomorph.apply_symm_apply, StdSimplex.affineMapMk_single] using
+      (fullSimplexEquivStdSimplex p).symm.injective (Subtype.ext hval)
+
+/-- For a smooth simplex whose underlying map on `Δ^p` is injective, its `(p + 1)!` barycentric
+subdivision simplices are pairwise distinct. -/
+theorem compAffineMapMk_vertex_injective {σ : SmoothSimplex I M p}
+    (hσ : Function.Injective σ.toContinuousMap) :
+    Function.Injective fun π : Equiv.Perm (Fin (p + 1)) ↦
+      σ.compAffineMapMk (BarycentricSubdivision.vertex π) :=
+  (σ.compAffineMapMk_injective hσ).comp BarycentricSubdivision.vertex_injective
 
 /-- Reorder the vertices of a smooth `p`-simplex by a permutation `π` of `Fin (p + 1)`. -/
 def compPerm (σ : SmoothSimplex I M p) (π : Equiv.Perm (Fin (p + 1))) : SmoothSimplex I M p :=
@@ -103,7 +181,29 @@ theorem toContinuousMap_compPerm_apply (σ : SmoothSimplex I M p) (π : Equiv.Pe
       σ.toContinuousMap ⟨simplexMapAmbient π x, mapsTo_simplexMapAmbient π x.property⟩ := by
   rw [compPerm, toContinuousMap_compAffineMapMk_apply]
   exact congrArg σ.toContinuousMap
-    (Subtype.ext (congrFun (congrArg DFunLike.coe (affineMapAmbient_single π)) x.val))
+    (Subtype.ext (DFunLike.congr_fun (affineMapAmbient_single π) x.val))
+
+/-- Permuting the vertices of a smooth simplex by `1` leaves it unchanged. -/
+@[simp]
+theorem compPerm_one (σ : SmoothSimplex I M p) :
+    σ.compPerm 1 = σ := by
+  rw [compPerm, Equiv.Perm.coe_one, Function.comp_id, compAffineMapMk_single]
+
+/-- Iterated vertex permutation of a smooth simplex multiplies the permutations. -/
+theorem compPerm_compPerm (σ : SmoothSimplex I M p) (π₁ π₂ : Equiv.Perm (Fin (p + 1))) :
+    (σ.compPerm π₁).compPerm π₂ = σ.compPerm (π₁ * π₂) := by
+  ext x
+  simp only [toContinuousMap_compPerm_apply, Equiv.Perm.coe_mul]
+  exact congrArg σ.toContinuousMap
+    (Subtype.ext (DFunLike.congr_fun (simplexMapAmbient_comp π₁ π₂).symm x.val))
+
+/-- Vertex permutation of a smooth simplex agrees with smooth reparametrization along
+`simplexMapAmbient π`. -/
+theorem compPerm_eq_compContDiffOn (σ : SmoothSimplex I M p) (π : Equiv.Perm (Fin (p + 1))) :
+    σ.compPerm π =
+      σ.compContDiffOn (simplexMapAmbient π).contDiff.contDiffOn Filter.univ_mem
+        (mapsTo_simplexMapAmbient π) := by
+  ext x; simp
 
 private theorem mpullbackWithin_comp_eval_basis (σ : SmoothSimplex I M p)
     {Ψ : EuclideanSpace ℝ (Fin p) → EuclideanSpace ℝ (Fin p)}
@@ -180,12 +280,11 @@ end Reparam
 
 /-- Permuting the vertices of a smooth simplex scales the integral of any `p`-form by the sign of
 the permutation. -/
+@[simp]
 theorem integral_compPerm (σ : SmoothSimplex I M p) (π : Equiv.Perm (Fin (p + 1)))
     (φ : RoughForm I M F p) :
     (σ.compPerm π).integral φ = (π.sign : ℝ) • σ.integral φ := by
-  have heq : σ.compPerm π = σ.compContDiffOn (simplexMapAmbient π).contDiff.contDiffOn
-      Filter.univ_mem (mapsTo_simplexMapAmbient π) := by ext x; simp
-  rw [heq]
+  rw [σ.compPerm_eq_compContDiffOn π]
   exact σ.integral_compContDiffOn_of_det_eq _ Filter.univ_mem (mapsTo_simplexMapAmbient π)
     (simplexMapAmbient_perm_injective π).injOn (image_simplexMapAmbient_perm π)
     (fun x _ ↦ by
@@ -246,10 +345,10 @@ theorem chainsLinearEquivFinsupp_subcomplexSubdivisionX_ιChainComplex {R : Type
   have hvertex : ⇑(StdSimplex.affineMapMk (R := ℝ) (StdSimplex.single : Fin (p + 1) → _)) ∘
       BarycentricSubdivision.vertex π = BarycentricSubdivision.vertex π :=
     funext fun k ↦ by simp [StdSimplex.affineMapMk_apply]
-  rw [hvertex, one_mul, AffineChain.subcomplexChain_single, ModuleCat.hom_smul,
-    LinearMap.smul_apply, map_zsmul,
+  rw [hvertex, one_mul, AffineChain.subcomplexChain_single, ← SmoothSimplex.compAffineMapMk_def,
+    ModuleCat.hom_smul, LinearMap.smul_apply, map_zsmul,
     _root_.SSet.chainsLinearEquivFinsupp_ιChainComplex (smoothSingularSubcomplex I M : SSet),
-    Finsupp.smul_single, Units.smul_def]; rfl
+    Finsupp.smul_single, ← Units.smul_def]
 
 /-- **Barycentric subdivision preserves integration of continuous forms on smooth chains** with
 coefficients in any ring `R` acting on `F` (including both `ℝ` and `ℤ`). -/

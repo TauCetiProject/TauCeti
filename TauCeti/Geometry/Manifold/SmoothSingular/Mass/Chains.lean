@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Int
 public import TauCeti.Geometry.Manifold.SmoothSingular.Mass.Basic
-import TauCeti.AlgebraicTopology.Singular.Subdivision.FullSimplex
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 
 /-!
@@ -178,7 +177,7 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [IsManifold I 1 
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 /-- **Comass bound for smooth chains:** `‖φ‖ ≤ C` gives `‖chainIntegral c φ‖ ≤ C * chainMass c`
-for any bounded scalar action of `R` on `F`. -/
+for any bounded scalar action of `S` on `F`. -/
 theorem norm_chainIntegral_le_mul_chainMass {S : Type*} [SeminormedRing S] [Module S F]
     [IsBoundedSMul S F] (c : SmoothSimplex I M p →₀ S) (φ : RoughForm I M F p) {C : ℝ}
     (hφ : ∀ x : M, ‖φ x‖ ≤ C) : ‖chainIntegral c φ‖ ≤ C * chainMass c := by
@@ -244,9 +243,8 @@ theorem chainMass_subcomplexSubdivisionX_le
   refine Finset.sum_le_sum fun σ _ ↦ ?_
   rw [chainsLinearEquivFinsupp_subcomplexSubdivisionX_ιChainComplex]
   refine (chainMass_sum_le _ _).trans ?_
-  have hnorm (μ : Equiv.Perm (Fin (p + 1))) : ‖μ.sign • f σ‖ = ‖f σ‖ := by
-    rcases Int.units_eq_one_or μ.sign with h | h <;> simp [h]
-  simp_rw [chainMass_single, hnorm, ← Finset.mul_sum, SmoothSimplex.sum_mass_compAffineMapMk_vertex]
+  simp_rw [chainMass_single, norm_units_zsmul, ← Finset.mul_sum,
+    SmoothSimplex.sum_mass_compAffineMapMk_vertex]
   exact le_rfl
 
 /-- Barycentric subdivision preserves chain mass with exact equality on an injective simplex. -/
@@ -259,31 +257,18 @@ theorem chainMass_subcomplexSubdivisionX_ιChainComplex_of_injective {σ : Smoot
   classical
   rw [chainsLinearEquivFinsupp_subcomplexSubdivisionX_ιChainComplex]
   let g (μ : Equiv.Perm (Fin (p + 1))) := σ.compAffineMapMk (BarycentricSubdivision.vertex μ)
-  have hinj : Function.Injective g := fun μ₁ μ₂ h ↦
-    BarycentricSubdivision.vertex_injective <| funext fun k ↦ by
-      let x : fullSimplex p := (fullSimplexEquivStdSimplex p).symm (StdSimplex.single k)
-      have hx := congrArg (fun τ : SmoothSimplex I M p ↦ τ.toContinuousMap x) h
-      simp only [g, SmoothSimplex.toContinuousMap_compAffineMapMk_apply] at hx
-      have hval := congrArg Subtype.val (hσ hx); dsimp only at hval
-      rw [affineMapAmbient_coe, affineMapAmbient_coe] at hval
-      simpa only [x, Homeomorph.apply_symm_apply, StdSimplex.affineMapMk_single] using
-        (fullSimplexEquivStdSimplex p).symm.injective (Subtype.ext hval)
-  let c : SmoothSimplex I M p →₀ R :=
-    ∑ μ : Equiv.Perm (Fin (p + 1)), Finsupp.single (g μ) (μ.sign • a)
-  -- Express the subdivision sum via `c` so the support and pointwise rewrites share one term.
-  change chainMass c = _
+  have hinj : Function.Injective g := σ.compAffineMapMk_vertex_injective hσ
+  set c : SmoothSimplex I M p →₀ R :=
+    ∑ μ : Equiv.Perm (Fin (p + 1)), Finsupp.single (g μ) (μ.sign • a) with hc_def
   have hsupp : c.support ⊆ Finset.univ.image g := fun τ hτ ↦ by
     obtain ⟨μ, _, hμ⟩ := Finsupp.mem_support_finsetSum τ hτ
     rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hμ)]
     exact Finset.mem_image_of_mem g (Finset.mem_univ μ)
   rw [chainMass_eq_sum_of_support_subset c hsupp, Finset.sum_image (fun _ _ _ _ h ↦ hinj h)]
   have hval (μ : Equiv.Perm (Fin (p + 1))) : c (g μ) = μ.sign • a := by
-    rw [show c = ∑ τ : Equiv.Perm (Fin (p + 1)), Finsupp.single (g τ) (τ.sign • a) from rfl,
-      Finsupp.finsetSum_apply]
+    rw [hc_def, Finsupp.finsetSum_apply]
     simp_rw [Finsupp.single_apply, hinj.eq_iff]; simp
-  have hnorm (μ : Equiv.Perm (Fin (p + 1))) : ‖μ.sign • a‖ = ‖a‖ := by
-    rcases Int.units_eq_one_or μ.sign with h | h <;> simp [h]
-  rw [Finset.sum_congr rfl fun μ _ ↦ by rw [hval μ, hnorm μ], ← Finset.mul_sum]
+  rw [Finset.sum_congr rfl fun μ _ ↦ by rw [hval μ, norm_units_zsmul], ← Finset.mul_sum]
   exact congrArg (‖a‖ * ·) σ.sum_mass_compAffineMapMk_vertex
 
 end SubdivisionMass

@@ -147,40 +147,31 @@ theorem affineMapAmbient_vertex_injective (π : Perm (Fin (p + 1))) :
     rw [det_contLinear_affineMapAmbient_vertex]
     exact div_ne_zero (by rcases Int.units_eq_one_or π.sign with h | h <;> simp [h])
       (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))
-  obtain ⟨g, hg⟩ := ((LinearMap.isUnit_iff_isUnit_det _).mpr hdet.isUnit).exists_left_inv
-  have hlin : Function.Injective (affineMapAmbient (vertex π)).contLinear :=
-    Function.LeftInverse.injective (g := g) fun x ↦ by simpa using LinearMap.congr_fun hg x
-  intro x y hxy
-  have hv := (affineMapAmbient (vertex π)).contLinear_apply_vsub x y
-  rw [vsub_eq_sub, vsub_eq_sub, hxy, sub_self] at hv
-  exact sub_eq_zero.mp (hlin (hv.trans (map_zero _).symm))
+  exact (AffineMap.linear_injective_iff (affineMapAmbient (vertex π)).toAffineMap).mp
+    (LinearMap.equivOfDetNeZero _ hdet).injective
 
-/-- The inverse barycentric coordinates on the `π`-th order chamber of `Δᵖ`: for a weight vector
-`wy` whose entries are nondecreasing along `π`, `chamberInvWeights π wy` reconstructs `wy` as a
-convex combination of the subdivision vertices `vertex π k`. -/
-def chamberInvWeights (π : Perm (Fin (p + 1))) (wy : StdSimplex ℝ (Fin (p + 1))) :
+private def chamberInvWeights (π : Perm (Fin (p + 1))) (wy : StdSimplex ℝ (Fin (p + 1))) :
     Fin (p + 1) → ℝ :=
   Fin.cases ((p + 1 : ℝ) * wy.weights (π 0)) fun k ↦
     (p + 1 - (k.succ : ℕ) : ℝ) * (wy.weights (π k.succ) - wy.weights (π k.castSucc))
 
-/-- The inverse chamber coordinates are nonnegative whenever `wy.weights ∘ π` is monotone. -/
-theorem chamberInvWeights_nonneg {π : Perm (Fin (p + 1))} {wy : StdSimplex ℝ (Fin (p + 1))}
-    (hmono : Monotone fun i ↦ wy.weights (π i)) (k : Fin (p + 1)) :
+private theorem chamberInvWeights_nonneg {π : Perm (Fin (p + 1))}
+    {wy : StdSimplex ℝ (Fin (p + 1))} (hmono : Monotone fun i ↦ wy.weights (π i))
+    (k : Fin (p + 1)) :
     0 ≤ chamberInvWeights π wy k := by
   cases k using Fin.cases with
   | zero => exact mul_nonneg (by positivity) (StdSimplex.weights_nonneg _)
   | succ k =>
     exact mul_nonneg (sub_cast_pos k.succ).le (sub_nonneg.mpr (hmono k.castSucc_le_succ))
 
-/-- Partial sums of `chamberInvWeights π wy` weighted by `(p + 1 - k)⁻¹` telescope to `wy` along
-`π`. -/
-theorem sum_Iic_chamberInvWeights_mul_inv (π : Perm (Fin (p + 1)))
+private theorem sum_Iic_chamberInvWeights_mul_inv (π : Perm (Fin (p + 1)))
     (wy : StdSimplex ℝ (Fin (p + 1))) (j : Fin (p + 1)) :
     ∑ k ∈ Finset.Iic j, chamberInvWeights π wy k * (p + 1 - (k : ℕ) : ℝ)⁻¹ =
       wy.weights (π j) := by
   induction j using Fin.induction with
   | zero =>
-    rw [show Finset.Iic (0 : Fin (p + 1)) = {0} by ext; simp, Finset.sum_singleton]
+    have hIic : Finset.Iic (0 : Fin (p + 1)) = {0} := by ext; simp
+    rw [hIic, Finset.sum_singleton]
     simp only [chamberInvWeights, Fin.cases_zero, Fin.val_zero, Nat.cast_zero, sub_zero]
     field_simp
   | succ k ih =>
@@ -190,20 +181,20 @@ theorem sum_Iic_chamberInvWeights_mul_inv (π : Perm (Fin (p + 1)))
     simp only [chamberInvWeights, Fin.cases_succ]
     rw [mul_right_comm, mul_inv_cancel₀ (sub_cast_pos k.succ).ne', one_mul, sub_add_cancel]
 
-/-- The inverse chamber coordinates of any point of `StdSimplex ℝ (Fin (p + 1))` sum to `1`. -/
-theorem sum_chamberInvWeights_eq_one (π : Perm (Fin (p + 1))) (wy : StdSimplex ℝ (Fin (p + 1))) :
+private theorem sum_chamberInvWeights_eq_one (π : Perm (Fin (p + 1)))
+    (wy : StdSimplex ℝ (Fin (p + 1))) :
     ∑ k : Fin (p + 1), chamberInvWeights π wy k = 1 := by
-  rw [← show ∑ j : Fin (p + 1), wy.weights (π j) = 1 from by
-    rw [Equiv.sum_comp π (fun i ↦ wy.weights i), StdSimplex.total_of_fintype]]
+  have hsum : ∑ j : Fin (p + 1), wy.weights (π j) = 1 := by
+    rw [Equiv.sum_comp π (fun i ↦ wy.weights i), StdSimplex.total_of_fintype]
+  rw [← hsum]
   simp_rw [← sum_Iic_chamberInvWeights_mul_inv π wy]
   have hswap : (∑ j : Fin (p + 1),
         ∑ k ∈ Finset.Iic j, chamberInvWeights π wy k * (p + 1 - (k : ℕ) : ℝ)⁻¹) =
       ∑ k : Fin (p + 1),
         ∑ _ ∈ Finset.Ici k, chamberInvWeights π wy k * (p + 1 - (k : ℕ) : ℝ)⁻¹ := by
-    simp_rw [show ∀ j : Fin (p + 1), Finset.Iic j = Finset.univ.filter (· ≤ j) from
-        fun _ ↦ by ext; simp,
-      show ∀ k : Fin (p + 1), Finset.Ici k = Finset.univ.filter (k ≤ ·) from
-        fun _ ↦ by ext; simp, Finset.sum_filter]
+    have hIic (j : Fin (p + 1)) : Finset.Iic j = Finset.univ.filter (· ≤ j) := by ext; simp
+    have hIci (k : Fin (p + 1)) : Finset.Ici k = Finset.univ.filter (k ≤ ·) := by ext; simp
+    simp_rw [hIic, hIci, Finset.sum_filter]
     exact Finset.sum_comm
   rw [hswap]; symm; refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [Finset.sum_const, nsmul_eq_mul, Fin.card_Ici, Nat.cast_sub k.isLt.le, Nat.cast_add,
@@ -229,11 +220,11 @@ theorem mem_image_affineMapAmbient_vertex_iff (π : Perm (Fin (p + 1)))
     let w : StdSimplex ℝ (Fin (p + 1)) :=
       ⟨Finsupp.equivFunOnFinite.symm (chamberInvWeights π wy), chamberInvWeights_nonneg hmono,
         by rw [Finsupp.sum_fintype _ _ (by simp)]; exact sum_chamberInvWeights_eq_one π wy⟩
+    have hw : StdSimplex.affineMapMk (vertex π) w = wy := by
+      ext m; obtain ⟨j, rfl⟩ := π.surjective m
+      rw [weights_affineMapMk_vertex]; exact sum_Iic_chamberInvWeights_mul_inv π wy j
     refine ⟨((fullSimplexEquivStdSimplex p).symm w).val, Subtype.prop _, ?_⟩
-    rw [affineMapAmbient_coe, Homeomorph.apply_symm_apply,
-      show StdSimplex.affineMapMk (vertex π) w = wy by
-        ext m; obtain ⟨j, rfl⟩ := π.surjective m
-        rw [weights_affineMapMk_vertex]; exact sum_Iic_chamberInvWeights_mul_inv π wy j]
+    rw [affineMapAmbient_coe, Homeomorph.apply_symm_apply, hw]
     exact congrArg Subtype.val ((fullSimplexEquivStdSimplex p).symm_apply_apply ⟨y, hy⟩)
 
 /-- The images of `Δᵖ` under the `(p + 1)!` barycentric subdivision maps cover `Δᵖ`. -/
@@ -244,20 +235,17 @@ theorem iUnion_image_affineMapAmbient_vertex (p : ℕ) :
   rw [mem_image_affineMapAmbient_vertex_iff _ hy]
   exact Tuple.monotone_sort _
 
+private theorem perm_eq_one_of_monotone {α : Type*} [LinearOrder α] [Finite α] {τ : Perm α}
+    (h : Monotone τ) : τ = 1 :=
+  Equiv.ext fun _ ↦ (h.strictMono_of_injective τ.injective).apply_eq
+
 /-- Distinct barycentric subdivision chambers of `Δᵖ` overlap in a set of Lebesgue measure zero. -/
 theorem volume_image_affineMapAmbient_vertex_inter_eq_zero {π₁ π₂ : Perm (Fin (p + 1))}
     (hne : π₁ ≠ π₂) :
     volume ((affineMapAmbient (vertex π₁) '' fullSimplex p) ∩
       (affineMapAmbient (vertex π₂) '' fullSimplex p)) = 0 := by
-  have hnotmono : ¬ Monotone (π₁.symm * π₂) := fun hmono ↦ by
-    set τ : Perm (Fin (p + 1)) := π₁.symm * π₂
-    have hstrict := hmono.strictMono_of_injective τ.injective
-    have hstrict_symm : StrictMono τ.symm := fun a b hab ↦ by
-      by_contra hle; have h := hmono (not_lt.mp hle)
-      rw [τ.apply_symm_apply, τ.apply_symm_apply] at h; exact hab.not_ge h
-    have heq : τ = 1 := Equiv.ext fun i ↦ le_antisymm
-      (by simpa [τ.apply_symm_apply] using hmono (hstrict_symm.id_le i)) (hstrict.id_le i)
-    exact hne (inv_mul_eq_one.mp heq)
+  have hnotmono : ¬ Monotone (π₁.symm * π₂) := fun hmono ↦
+    hne (inv_mul_eq_one.mp (perm_eq_one_of_monotone hmono))
   simp only [Monotone, not_forall, not_le] at hnotmono
   obtain ⟨j₁, j₂, hj, hlt⟩ := hnotmono
   let a := π₂ j₁; let b := π₂ j₂

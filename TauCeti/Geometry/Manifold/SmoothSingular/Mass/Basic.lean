@@ -173,7 +173,8 @@ theorem mass_eq_zero_of_const (hp : 0 < p) (σ : SmoothSimplex I M p) {y₀ : M}
     (fun x ↦ (hσ x).symm) (fun _ _ ↦ mdifferentiableAt_const)]
   refine setIntegral_eq_zero_of_forall_eq_zero fun x _ ↦ ?_
   rw [mfderiv_const]
-  -- The zero continuous linear map has zero underlying linear map, whose `normDet` is `0^p = 0`.
+  -- `TangentSpace (𝓡 p) x` is `EuclideanSpace ℝ (Fin p)` only definitionally, blocking `rw` from
+  -- matching `ContinuousLinearMap.coe_zero` on the domain of `.toLinearMap`.
   change LinearMap.normDet (U := EuclideanSpace ℝ (Fin p)) (0 : EuclideanSpace ℝ (Fin p) →ₗ[ℝ] _) =
     0
   rw [LinearMap.normDet_zero, finrank_euclideanSpace_fin, zero_pow hp.ne']
@@ -225,9 +226,11 @@ theorem mass_ofCurve {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) 
     refine (sq_eq_sq₀ (LinearMap.normDet_nonneg (U := EuclideanSpace ℝ (Fin 1)) _)
       (norm_nonneg _)).mp ?_
     rw [hsq, hcomp]
-    -- Evaluate `(mfderiv γ (P x)).comp P` on the standard basis vector `e₀` (`P e₀ = 1`).
+    -- `TangentSpace (𝓡 1) x` and `TangentSpace 𝓘(ℝ, ℝ) (P x)` are `EuclideanSpace ℝ (Fin 1)` and
+    -- `ℝ` only definitionally, blocking `ContinuousLinearMap.comp_apply` from matching via `rw`.
     change ‖mfderiv 𝓘(ℝ, ℝ) I γ (P x) (P (EuclideanSpace.basisFun (Fin 1) ℝ default))‖ ^ 2 = _
-    rw [show P (EuclideanSpace.basisFun (Fin 1) ℝ default) = (1 : ℝ) by simp [P]]
+    have hP : P (EuclideanSpace.basisFun (Fin 1) ℝ default) = 1 := by simp [P]
+    rw [hP]
   simp_rw [hjac]; dsimp only [P]
   rw [fullSimplex_one_eq_preimage_proj_zero_Icc,
     (volume_preserving_euclideanSpace_proj (ι := Fin 1) 0).setIntegral_preimage_emb
@@ -241,7 +244,8 @@ theorem mass_ofCurve_real {γ : ℝ → ℝ} (hγ : ContMDiff 𝓘(ℝ, ℝ) �
   rw [mass_ofCurve hγ]
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   rw [norm_tangentSpace_vectorSpace, mfderiv_eq_fderiv]
-  -- On `ℝ`, `NormedSpace.fromTangentSpace` is the identity and `fderiv ℝ γ t 1 = deriv γ t`.
+  -- `TangentSpace 𝓘(ℝ, ℝ) t` is `ℝ` only definitionally, so `NormedSpace.fromTangentSpace`
+  -- reduces to the identity by `change` rather than a rewrite lemma.
   change ‖fderiv ℝ γ t 1‖ = |deriv γ t|
   rw [fderiv_apply_one_eq_deriv, Real.norm_eq_abs]
 
@@ -269,8 +273,7 @@ theorem range_toContinuousMap_ofCurve_folded
       rw [fullSimplex_one_eq_preimage_proj_zero_Icc]
       simpa using ⟨by linarith, by linarith [Real.sqrt_nonneg (1 - y)]⟩
     refine ⟨⟨EuclideanSpace.single (0 : Fin 1) t, hxmem⟩, ?_⟩
-    rw [toContinuousMap_ofCurve_apply,
-      show (EuclideanSpace.single (0 : Fin 1) t : EuclideanSpace ℝ (Fin 1)) 0 = t by simp]
+    rw [toContinuousMap_ofCurve_apply, PiLp.single_eq_same]
     have hsq : Real.sqrt (1 - y) ^ 2 = 1 - y := Real.sq_sqrt (by linarith); nlinarith
 
 /-- The folded `1`-simplex `t ↦ 4 * t * (1 - t)` has mass `2` (though its image has length `1`). -/
@@ -322,7 +325,10 @@ private theorem mfderivWithin_comp_extension {f : M → N} (hf : ContMDiff I J �
         (mfderivWithin (𝓡 p) I σ.extension (fullSimplex p) x).toLinearMap := by
   rw [mfderiv_comp_mfderivWithin x ((hf.mdifferentiable (by simp)) (σ.extension x))
     ((σ.contMDiffOn_extension x hx).mdifferentiableWithinAt (by simp))
-    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.mpr (uniqueDiffOn_fullSimplex p x hx))]; rfl
+    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.mpr (uniqueDiffOn_fullSimplex p x hx))]
+  -- `ContinuousLinearMap.toLinearMap` turns `∘SL` into `∘ₗ`, with `TangentSpace (𝓡 p) x` read
+  -- definitionally as `EuclideanSpace ℝ (Fin p)`.
+  rfl
 
 /-- A smooth map with differential operator norm `≤ C` multiplies `p`-simplex mass by `≤ C ^ p`. -/
 theorem mass_smoothSingularSubcomplexMap_app_le [IsManifold I 1 M]
@@ -386,7 +392,8 @@ private theorem normDet_mfderivWithin_comp_of_hasFDerivWithinAt (σ : SmoothSimp
   let L₁ : EuclideanSpace ℝ (Fin p) →ₗ[ℝ] EuclideanSpace ℝ (Fin p) := L.toLinearMap
   let L₂ : EuclideanSpace ℝ (Fin p) →ₗ[ℝ] TangentSpace I (σ.extension (Ψ x)) :=
     (mfderivWithin (𝓡 p) I σ.extension (fullSimplex p) (Ψ x)).toLinearMap
-  -- Identify `TangentSpace (𝓡 p)` with `ℝᵖ` to apply `normDet_comp_of_finrank_eq`.
+  -- `TangentSpace (𝓡 p)` is `EuclideanSpace ℝ (Fin p)` only definitionally, blocking
+  -- `ContinuousLinearMap.coe_comp` from matching via `rw`.
   change LinearMap.normDet (U := EuclideanSpace ℝ (Fin p)) (L₂ ∘ₗ L₁) =
     |LinearMap.det L₁| • LinearMap.normDet (U := EuclideanSpace ℝ (Fin p)) L₂
   rw [LinearMap.normDet_comp_of_finrank_eq (U := EuclideanSpace ℝ (Fin p))
@@ -417,10 +424,10 @@ theorem mass_compContDiffOn (σ : SmoothSimplex I M p)
   rw [himage] at hcov; exact hcov.symm
 
 /-- Permuting the vertices of a smooth simplex leaves its mass unchanged. -/
+@[simp]
 theorem mass_compPerm (σ : SmoothSimplex I M p) (e : Equiv.Perm (Fin (p + 1))) :
     (σ.compPerm e).mass = σ.mass := by
-  rw [show σ.compPerm e = σ.compContDiffOn (simplexMapAmbient e).contDiff.contDiffOn
-    Filter.univ_mem (mapsTo_simplexMapAmbient e) by ext x; simp]
+  rw [σ.compPerm_eq_compContDiffOn e]
   exact σ.mass_compContDiffOn _ Filter.univ_mem (mapsTo_simplexMapAmbient e)
     (simplexMapAmbient_perm_injective e).injOn (image_simplexMapAmbient_perm e)
 
@@ -442,7 +449,15 @@ theorem abs_mpullbackWithin_riemannianVolumeForm (o : Manifold.Orientation I M (
     (mfderivWithin (𝓡 p) I σ.extension (fullSimplex p) x).toLinearMap
     (EuclideanSpace.basisFun (Fin p) ℝ)
   simp only [RCLike.ofReal_real_eq_id, id_eq, EuclideanSpace.basisFun_apply] at hsq
-  exact Eq.trans (by rw [hsq]; rfl)
+  have hgram : (Matrix.gram ℝ fun i ↦
+        mfderivWithin (𝓡 p) I σ.extension (fullSimplex p) x (EuclideanSpace.single i 1)).det =
+      LinearMap.normDet (U := EuclideanSpace ℝ (Fin p))
+        (mfderivWithin (𝓡 p) I σ.extension (fullSimplex p) x).toLinearMap ^ 2 := by
+    rw [hsq]
+    -- `.toLinearMap` is read on `EuclideanSpace ℝ (Fin p)`, which is `TangentSpace (𝓡 p) x`
+    -- only definitionally, so `ContinuousLinearMap.coe_coe` cannot rewrite across the two domains.
+    rfl
+  exact (congrArg Real.sqrt hgram).trans
     (Real.sqrt_sq (LinearMap.normDet_nonneg (U := EuclideanSpace ℝ (Fin p)) _))
 
 /-- Integrating `riemannianVolumeForm` over a positively oriented smooth simplex yields `σ.mass`. -/
@@ -523,7 +538,11 @@ theorem norm_mpullbackWithin_le_opNorm_mul_normDet (σ : SmoothSimplex I M p)
     (fullSimplex p) φ x (fun i ↦ EuclideanSpace.single i (1 : ℝ))).trans ?_))
   simp only [ω', ContinuousAlternatingMap.compContinuousLinearMap_apply]
   congr 1; funext i
-  simp only [Function.comp_apply, Submodule.subtypeL_apply, EuclideanSpace.basisFun_apply]; rfl
+  simp only [Function.comp_apply, Submodule.subtypeL_apply, LinearMap.codRestrict_apply,
+    EuclideanSpace.basisFun_apply]
+  -- `L` is `(mfderivWithin ...).toLinearMap` with `TangentSpace (𝓡 p) x` read definitionally as
+  -- `EuclideanSpace ℝ (Fin p)`.
+  rfl
 
 section ComassIntegrated
 variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]

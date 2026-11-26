@@ -541,12 +541,9 @@ theorem normDet_comp_le_pow_finrank_mul {G : Type*} [NormedAddCommGroup G] [Inne
 theorem normDet_comp_of_inner_eq {G : Type*} [NormedAddCommGroup G] [InnerProductSpace 𝕜 G]
     (f : E →ₗ[𝕜] F) (g : F →ₗ[𝕜] G) (hg : ∀ v w, inner 𝕜 (g v) (g w) = inner 𝕜 v w) :
     (g ∘ₗ f).normDet = f.normDet := by
-  let b := stdOrthonormalBasis 𝕜 E
-  have hsq : (g ∘ₗ f).normDet ^ 2 = f.normDet ^ 2 := by
-    apply RCLike.ofReal_injective (K := 𝕜)
-    rw [(g ∘ₗ f).normDet_sq_eq_det_gram b, f.normDet_sq_eq_det_gram b]
-    congr 1; ext i j; simp [Matrix.gram_apply, hg]
-  exact (sq_eq_sq₀ (g ∘ₗ f).normDet_nonneg f.normDet_nonneg).mp hsq
+  have hiso : (g.domRestrict f.range).normDet = 1 :=
+    ((g.domRestrict f.range).isometryOfInner fun _ _ ↦ hg _ _).normDet_eq_one
+  rw [f.normDet_comp g, hiso, one_mul]
 
 end Bounds
 

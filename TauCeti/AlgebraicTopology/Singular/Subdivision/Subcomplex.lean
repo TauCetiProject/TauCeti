@@ -30,8 +30,9 @@ same operators on smooth chains.
 
 ## Main definitions and results
 
-* `SSet.Subcomplex.IsAffineStable`: the subcomplex is closed under precomposition with affine
-  maps of standard simplices. Intersections of affinely stable subcomplexes are affinely stable.
+* `SSet.Subcomplex.IsAffineStable`, `SSet.Subcomplex.compAffineMapMk`: the subcomplex is closed
+  under precomposition with affine maps of standard simplices, giving a precomposed simplex in `S`.
+  Intersections of affinely stable subcomplexes are affinely stable.
 * `TauCeti.AffineChain.subcomplexChain`: push affine chains of `Δᵐ` forward along a simplex of an
   affinely stable subcomplex, with values in the chains of the subcomplex.
 * `TauCeti.subcomplexSubdivisionChainMap`: barycentric subdivision as a chain endomorphism of the
@@ -79,6 +80,52 @@ instance (S T : (TopCat.toSSet.obj X).Subcomplex) [S.IsAffineStable] [T.IsAffine
   comp_affineMapMk_mem hσ v :=
     ⟨IsAffineStable.comp_affineMapMk_mem hσ.1 v, IsAffineStable.comp_affineMapMk_mem hσ.2 v⟩
 
+/-- Precompose a `m`-simplex of an affinely stable subcomplex `S` with the affine map `Δᵏ → Δᵐ`
+determined by a tuple of barycentric vertices `v`. -/
+@[expose]
+def compAffineMapMk (S : (TopCat.toSSet.obj X).Subcomplex) [S.IsAffineStable] {m k : ℕ}
+    (σ : (S : SSet) _⦋m⦌) (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) : (S : SSet) _⦋k⦌ :=
+  ⟨(X.toSSetObjEquiv _).symm ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)),
+    IsAffineStable.comp_affineMapMk_mem σ.property v⟩
+
+/-- The underlying singular simplex of `S.compAffineMapMk σ v` precomposes `σ` with
+`StdSimplex.continuousAffineMapMk v`. -/
+@[simp]
+lemma coe_compAffineMapMk (S : (TopCat.toSSet.obj X).Subcomplex) [S.IsAffineStable] {m k : ℕ}
+    (σ : (S : SSet) _⦋m⦌) (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) :
+    (S.compAffineMapMk σ v).val = (X.toSSetObjEquiv _).symm
+      ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)) :=
+  (rfl)
+
+/-- Precomposing with the standard vertex tuple `StdSimplex.single` is the identity on `(S : SSet)`.
+-/
+@[simp]
+lemma compAffineMapMk_single (S : (TopCat.toSSet.obj X).Subcomplex) [S.IsAffineStable] {m : ℕ}
+    (σ : (S : SSet) _⦋m⦌) :
+    S.compAffineMapMk σ StdSimplex.single = σ := by
+  apply Subtype.ext
+  rw [coe_compAffineMapMk]
+  have hid : StdSimplex.continuousAffineMapMk (R := ℝ) (StdSimplex.single : Fin (m + 1) → _) =
+      ContinuousMap.id _ := by
+    ext w i
+    simp [StdSimplex.continuousAffineMapMk_apply, Finsupp.single_apply]
+  rw [hid, ContinuousMap.comp_id, Equiv.symm_apply_apply]
+
+/-- Iterated affine precomposition on an affinely stable subcomplex composes the affine maps of
+standard simplices. -/
+lemma compAffineMapMk_compAffineMapMk (S : (TopCat.toSSet.obj X).Subcomplex) [S.IsAffineStable]
+    {m k l : ℕ} (σ : (S : SSet) _⦋m⦌) (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1)))
+    (w : Fin (l + 1) → StdSimplex ℝ (Fin (k + 1))) :
+    S.compAffineMapMk (S.compAffineMapMk σ v) w =
+      S.compAffineMapMk σ (StdSimplex.affineMapMk v ∘ w) := by
+  apply Subtype.ext
+  rw [coe_compAffineMapMk, coe_compAffineMapMk, Equiv.apply_symm_apply, ContinuousMap.comp_assoc,
+    coe_compAffineMapMk]
+  congr 2
+  refine ContinuousMap.ext fun x ↦ ?_
+  simp only [ContinuousMap.comp_apply, StdSimplex.continuousAffineMapMk_apply]
+  exact DFunLike.congr_fun (StdSimplex.comp_affineMapMk (StdSimplex.affineMapMk v) w) x
+
 end SSet.Subcomplex
 
 namespace TauCeti
@@ -92,22 +139,17 @@ namespace AffineChain
 
 /-- Push an affine chain of `Δᵐ` forward along a simplex `σ` of an affinely stable subcomplex `S`,
 with values in the chains of `S`: a vertex tuple `v` is sent to the summand of the simplex
-`σ ∘ StdSimplex.continuousAffineMapMk v` of `S`. -/
+`S.compAffineMapMk σ v`. -/
 def subcomplexChain {m : ℕ} (σ : (S : SSet) _⦋m⦌) (k : ℕ) :
     ((Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) →₀ ℤ) →ₗ[ℤ]
       (R ⟶ ((S : SSet).chainComplex R).X k) :=
-  Finsupp.linearCombination ℤ fun v ↦ (S : SSet).ιChainComplex
-    ⟨(X.toSSetObjEquiv _).symm
-      ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)),
-      IsAffineStable.comp_affineMapMk_mem σ.property v⟩
+  Finsupp.linearCombination ℤ fun v ↦ (S : SSet).ιChainComplex (S.compAffineMapMk σ v)
 
 @[simp]
 lemma subcomplexChain_single {m k : ℕ} (σ : (S : SSet) _⦋m⦌)
     (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) (a : ℤ) :
-    subcomplexChain R S σ k (Finsupp.single v a) = a • (S : SSet).ιChainComplex
-      ⟨(X.toSSetObjEquiv _).symm
-        ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)),
-        IsAffineStable.comp_affineMapMk_mem σ.property v⟩ := by
+    subcomplexChain R S σ k (Finsupp.single v a) =
+      a • (S : SSet).ιChainComplex (S.compAffineMapMk σ v) := by
   simp [subcomplexChain]
 
 /-- Pushing forward inside an affinely stable subcomplex agrees with the ordinary push-forward
