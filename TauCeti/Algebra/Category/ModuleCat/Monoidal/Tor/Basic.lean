@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.RingHom.Flat
-public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Colimits
 public import TauCeti.Algebra.Category.ModuleCat.Projective.QuotientResolution
 
 import Mathlib.Algebra.Category.ModuleCat.Descent
