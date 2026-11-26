@@ -50,7 +50,8 @@ namespace TauCeti.OqSL2
 
 variable (q : ℂ) [Fact (q ≠ 0)]
 
-private theorem q_ne_zero : q ≠ 0 := Fact.out
+/-- The parameter `q` is nonzero, from the instance `Fact (q ≠ 0)`. -/
+theorem q_ne_zero : q ≠ 0 := Fact.out
 
 /- Each relation check below expands products of generators, brings every product of two
 generators into the order `b a`, `c a`, `d b`, `d c`, `c b` with the defining relations (removing
@@ -130,15 +131,37 @@ omit [Fact (q ≠ 0)] in
 /-- The bialgebra structure of `O_q(SL₂)`, with the matrix coproduct and counit. -/
 noncomputable instance instBialgebra : Bialgebra ℂ (OqSL2 q) :=
   Bialgebra.ofAlgHom (comul q) (counit q)
-    (by
-      apply hom_ext <;>
-        simp only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom, Function.comp_apply, comul_aAux,
-          comul_bAux, comul_cAux, comul_dAux, map_add, Algebra.TensorProduct.map_tmul,
-          AlgHom.coe_id, id_eq, Algebra.TensorProduct.assoc_tmul, TensorProduct.add_tmul,
-          TensorProduct.tmul_add] <;>
-        abel)
+    (by apply hom_ext <;> simp [TensorProduct.add_tmul, TensorProduct.tmul_add] <;> abel)
     (by apply hom_ext <;> simp)
     (by apply hom_ext <;> simp)
+
+/-- The coproduct of `a`. -/
+@[simp] theorem comul_a : Coalgebra.comul (R := ℂ) (a q) = a q ⊗ₜ[ℂ] a q + b q ⊗ₜ[ℂ] c q :=
+  comul_aAux q
+
+/-- The coproduct of `b`. -/
+@[simp] theorem comul_b : Coalgebra.comul (R := ℂ) (b q) = a q ⊗ₜ[ℂ] b q + b q ⊗ₜ[ℂ] d q :=
+  comul_bAux q
+
+/-- The coproduct of `c`. -/
+@[simp] theorem comul_c : Coalgebra.comul (R := ℂ) (c q) = c q ⊗ₜ[ℂ] a q + d q ⊗ₜ[ℂ] c q :=
+  comul_cAux q
+
+/-- The coproduct of `d`. -/
+@[simp] theorem comul_d : Coalgebra.comul (R := ℂ) (d q) = c q ⊗ₜ[ℂ] b q + d q ⊗ₜ[ℂ] d q :=
+  comul_dAux q
+
+/-- The counit of `a` is one. -/
+@[simp] theorem counit_a : Coalgebra.counit (R := ℂ) (a q) = 1 := counit_aAux q
+
+/-- The counit of `b` is zero. -/
+@[simp] theorem counit_b : Coalgebra.counit (R := ℂ) (b q) = 0 := counit_bAux q
+
+/-- The counit of `c` is zero. -/
+@[simp] theorem counit_c : Coalgebra.counit (R := ℂ) (c q) = 0 := counit_cAux q
+
+/-- The counit of `d` is one. -/
+@[simp] theorem counit_d : Coalgebra.counit (R := ℂ) (d q) = 1 := counit_dAux q
 
 private noncomputable def antipodeTuple : GeneratorTuple q (OqSL2 q)ᵐᵒᵖ where
   a := MulOpposite.op (d q)
@@ -180,53 +203,21 @@ noncomputable instance instHopfAlgebra : HopfAlgebra ℂ (OqSL2 q) :=
     (by
       rintro _ ⟨g, rfl⟩
       cases g <;>
-        simp only [LinearMap.rTensor_tmul, CoalgebraStruct.comul, LinearMap.coe_ofClass, comul_aAux,
-          comul_bAux, comul_cAux, comul_dAux, map_add, LinearMap.coe_comp, LinearEquiv.coe_coe,
-          MulOpposite.coe_opLinearEquiv_symm, AlgHom.coe_toLinearMap, Function.comp_apply,
-          antipodeOp_aAux, antipodeOp_bAux, antipodeOp_cAux, antipodeOp_dAux, MulOpposite.unop_op,
-          neg_smul, MulOpposite.op_neg, MulOpposite.op_smul, MulOpposite.unop_neg,
-          MulOpposite.unop_smul, LinearMap.mul'_apply, CoalgebraStruct.counit, counit_aAux,
-          counit_bAux, counit_cAux, counit_dAux, Algebra.linearMap_apply, map_one, map_zero] <;>
+        simp only [comul_a, comul_b, comul_c, comul_d, counit_a, counit_b, counit_c, counit_d,
+          map_add, LinearMap.rTensor_tmul, LinearMap.comp_apply, LinearEquiv.coe_coe,
+          MulOpposite.coe_opLinearEquiv_symm, AlgHom.toLinearMap_apply,
+          antipodeOp_aAux, antipodeOp_bAux, antipodeOp_cAux, antipodeOp_dAux,
+          LinearMap.mul'_apply, Algebra.linearMap_apply, map_one, map_zero] <;>
         normalize_oqSL2)
     (by
       rintro _ ⟨g, rfl⟩
       cases g <;>
-        simp only [LinearMap.lTensor_tmul, CoalgebraStruct.comul, LinearMap.coe_ofClass, comul_aAux,
-          comul_bAux, comul_cAux, comul_dAux, map_add, LinearMap.coe_comp, LinearEquiv.coe_coe,
-          MulOpposite.coe_opLinearEquiv_symm, AlgHom.coe_toLinearMap, Function.comp_apply,
-          antipodeOp_aAux, antipodeOp_bAux, antipodeOp_cAux, antipodeOp_dAux, MulOpposite.unop_op,
-          neg_smul, MulOpposite.op_neg, MulOpposite.op_smul, MulOpposite.unop_neg,
-          MulOpposite.unop_smul, LinearMap.mul'_apply, CoalgebraStruct.counit, counit_aAux,
-          counit_bAux, counit_cAux, counit_dAux, Algebra.linearMap_apply, map_one, map_zero] <;>
+        simp only [comul_a, comul_b, comul_c, comul_d, counit_a, counit_b, counit_c, counit_d,
+          map_add, LinearMap.lTensor_tmul, LinearMap.comp_apply, LinearEquiv.coe_coe,
+          MulOpposite.coe_opLinearEquiv_symm, AlgHom.toLinearMap_apply,
+          antipodeOp_aAux, antipodeOp_bAux, antipodeOp_cAux, antipodeOp_dAux,
+          LinearMap.mul'_apply, Algebra.linearMap_apply, map_one, map_zero] <;>
         normalize_oqSL2)
-
-/-- The coproduct of `a`. -/
-@[simp] theorem comul_a : Coalgebra.comul (R := ℂ) (a q) = a q ⊗ₜ[ℂ] a q + b q ⊗ₜ[ℂ] c q :=
-  comul_aAux q
-
-/-- The coproduct of `b`. -/
-@[simp] theorem comul_b : Coalgebra.comul (R := ℂ) (b q) = a q ⊗ₜ[ℂ] b q + b q ⊗ₜ[ℂ] d q :=
-  comul_bAux q
-
-/-- The coproduct of `c`. -/
-@[simp] theorem comul_c : Coalgebra.comul (R := ℂ) (c q) = c q ⊗ₜ[ℂ] a q + d q ⊗ₜ[ℂ] c q :=
-  comul_cAux q
-
-/-- The coproduct of `d`. -/
-@[simp] theorem comul_d : Coalgebra.comul (R := ℂ) (d q) = c q ⊗ₜ[ℂ] b q + d q ⊗ₜ[ℂ] d q :=
-  comul_dAux q
-
-/-- The counit of `a` is one. -/
-@[simp] theorem counit_a : Coalgebra.counit (R := ℂ) (a q) = 1 := counit_aAux q
-
-/-- The counit of `b` is zero. -/
-@[simp] theorem counit_b : Coalgebra.counit (R := ℂ) (b q) = 0 := counit_bAux q
-
-/-- The counit of `c` is zero. -/
-@[simp] theorem counit_c : Coalgebra.counit (R := ℂ) (c q) = 0 := counit_cAux q
-
-/-- The counit of `d` is one. -/
-@[simp] theorem counit_d : Coalgebra.counit (R := ℂ) (d q) = 1 := counit_dAux q
 
 /-- The antipode of `a` is `d`. -/
 @[simp] theorem antipode_a : HopfAlgebra.antipode ℂ (a q) = d q := by

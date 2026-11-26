@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.HopfAlgebra.Star
+public import TauCeti.Algebra.Star.ConjOpposite
 public import TauCeti.QuantumGroups.OqSL2.Hopf
 public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.Algebra.Star.Unitary
@@ -34,9 +35,11 @@ unitary-matrix presentation and the generator-relation presentation of `SU_q(2)`
 
 The coproduct is a star homomorphism, so `OqSL2 q` is a Hopf star algebra
 (`TauCeti.OqSL2.instStarCoalgebra`). Its antipode is the matrix adjoint of the fundamental
-matrix, `S(u_ij) = u_ji*` (`TauCeti.OqSL2.antipode_fundamentalMatrix`); with the values of the
-antipode on the generators (`TauCeti.OqSL2.antipode_a` and its companions) this gives
-`S(a) = a*`, `S(c) = -q c` and `S(c*) = -q⁻¹ c*`.
+matrix, `S(u_ij) = u_ji*` (`TauCeti.OqSL2.antipode_fundamentalMatrix`). In terms of `a` and `c`
+the structure maps are `S(a) = a*`, `S(c*) = -q⁻¹ c*` (`TauCeti.OqSL2.antipode_a_eq_star`,
+`TauCeti.OqSL2.antipode_star_c`), `S(c) = -q c` (`TauCeti.OqSL2.antipode_c`), and
+`Δ(a) = a ⊗ a - q c* ⊗ c`, `Δ(c) = c ⊗ a + a* ⊗ c` (`TauCeti.OqSL2.comul_a_eq_star`,
+`TauCeti.OqSL2.comul_c_eq_star`).
 
 ## Main definitions
 
@@ -53,13 +56,14 @@ antipode on the generators (`TauCeti.OqSL2.antipode_a` and its companions) this 
 * `TauCeti.OqSL2.fundamentalMatrix_mem_unitary`: the fundamental matrix is unitary.
 * `TauCeti.OqSL2.instStarCoalgebra`: the coproduct is a star homomorphism.
 * `TauCeti.OqSL2.antipode_fundamentalMatrix`: `S(u_ij) = u_ji*`.
+* `TauCeti.OqSL2.comul_a_eq_star`, `TauCeti.OqSL2.comul_c_eq_star`: the coproduct of `a` and `c`
+  in terms of `a`, `c` and their adjoints.
 
 ## Implementation notes
 
 A conjugate-linear antimultiplicative map out of `OqSL2 q` is obtained from the universal property
-of the presentation as a complex algebra map into a private copy of the opposite algebra on which
-complex scalars act through complex conjugation, built with `Algebra.compHom`, as for
-`TauCeti.UqSl2.instStarRing`.
+of the presentation as a complex algebra map into the opposite algebra on which complex scalars
+act through complex conjugation, `TauCeti.ConjOpposite`, as for `TauCeti.UqSl2.instStarRing`.
 
 ## References
 
@@ -99,6 +103,17 @@ structure IsSUq2Pair (q : ℂ) (α γ : B) : Prop where
   /-- `α γ* = q γ* α`. -/
   mul_star_eq_smul_star_mul : α * star γ = q • (star γ * α)
 
+/-- For real `q`, the star of the relation `α γ = q γ α` is `γ* α* = q α* γ*`. -/
+theorem IsSUq2Pair.star_mul_star_eq_smul_star_mul_star [StarModule ℂ B] {q : ℂ} {α γ : B}
+    (h : IsSUq2Pair q α γ) (hq : IsSelfAdjoint q) :
+    star γ * star α = q • (star α * star γ) := by
+  simpa [star_mul, hq.star_eq] using congrArg star h.mul_eq_smul_mul
+
+/-- For real `q`, the star of the relation `α γ* = q γ* α` is `γ α* = q α* γ`. -/
+theorem IsSUq2Pair.mul_star_eq_smul_star_mul' [StarModule ℂ B] {q : ℂ} {α γ : B}
+    (h : IsSUq2Pair q α γ) (hq : IsSelfAdjoint q) : γ * star α = q • (star α * γ) := by
+  simpa [star_mul, hq.star_eq] using congrArg star h.mul_star_eq_smul_star_mul
+
 /-- The matrix `[[α, -q γ*], [γ, α*]]` is unitary exactly when `α` and `γ` satisfy the five
 relations of `SU_q(2)`, for every real `q`. -/
 theorem isSUq2Pair_iff_mem_unitary [StarModule ℂ B] {q : ℂ} (hq : IsSelfAdjoint q) (α γ : B) :
@@ -111,11 +126,10 @@ theorem isSUq2Pair_iff_mem_unitary [StarModule ℂ B] {q : ℂ} (hq : IsSelfAdjo
     Matrix.empty_val', Matrix.cons_val_fin_one, star_star, star_smul, star_neg, hq', neg_smul,
     smul_neg, mul_neg, neg_mul, smul_mul_assoc, mul_smul_comm, neg_neg, smul_smul]
   constructor
-  · rintro ⟨h₁, h₂, h₃, h₄, h₅⟩
-    have h₄' : star γ * star α = q • (star α * star γ) := by
-      simpa [star_mul, hq'] using congrArg star h₄
-    have h₅' : γ * star α = q • (star α * γ) := by
-      simpa [star_mul, hq'] using congrArg star h₅
+  · intro h
+    have h₄' := h.star_mul_star_eq_smul_star_mul_star hq
+    have h₅' := h.mul_star_eq_smul_star_mul' hq
+    obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := h
     refine ⟨⟨⟨h₁, ?_⟩, ?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_⟩
     · rw [h₄', neg_add_cancel]
     · rw [h₄, neg_add_cancel]
@@ -148,49 +162,7 @@ end Pair
 
 variable (q : ℂ)
 
-/-! ### The conjugate opposite algebra -/
-
-/-- The opposite algebra of `OqSL2 q`, on which complex scalars act through complex conjugation.
-A complex algebra map into it is a conjugate-linear antimultiplicative map into `OqSL2 q`. -/
-private def ConjOpposite : Type := (OqSL2 q)ᵐᵒᵖ
-
-private instance : Ring (ConjOpposite q) := inferInstanceAs (Ring (OqSL2 q)ᵐᵒᵖ)
-
-private instance : Algebra ℂ (ConjOpposite q) :=
-  Algebra.compHom (OqSL2 q)ᵐᵒᵖ (starRingEnd ℂ)
-
-/-- An element of `OqSL2 q`, viewed in the conjugate opposite algebra. -/
-private def toConj (x : OqSL2 q) : ConjOpposite q := MulOpposite.op x
-
-/-- The underlying element of `OqSL2 q`. -/
-private def ofConj (x : ConjOpposite q) : OqSL2 q := MulOpposite.unop x
-
-/- The following identities unfold the operations of `ConjOpposite q`, which are those of the
-opposite algebra except for the conjugated scalar action; they hold by definition. -/
-
-private theorem ofConj_toConj (x : OqSL2 q) : ofConj q (toConj q x) = x := rfl
-
-private theorem ofConj_injective : Function.Injective (ofConj q) :=
-  MulOpposite.unop_injective
-
-private theorem ofConj_one : ofConj q 1 = 1 := rfl
-
-private theorem ofConj_add (x y : ConjOpposite q) :
-    ofConj q (x + y) = ofConj q x + ofConj q y := rfl
-
-private theorem ofConj_sub (x y : ConjOpposite q) :
-    ofConj q (x - y) = ofConj q x - ofConj q y := rfl
-
-private theorem ofConj_neg (x : ConjOpposite q) : ofConj q (-x) = -ofConj q x := rfl
-
-private theorem ofConj_mul (x y : ConjOpposite q) :
-    ofConj q (x * y) = ofConj q y * ofConj q x := rfl
-
-private theorem ofConj_smul (r : ℂ) (x : ConjOpposite q) :
-    ofConj q (r • x) = star r • ofConj q x := rfl
-
-private theorem ofConj_algebraMap (r : ℂ) :
-    ofConj q (algebraMap ℂ (ConjOpposite q) r) = algebraMap ℂ (OqSL2 q) (star r) := rfl
+open ConjOpposite
 
 /-! ### The star structure -/
 
@@ -198,9 +170,6 @@ variable [Fact (IsSelfAdjoint q)] [Fact (q ≠ 0)]
 
 omit [Fact (q ≠ 0)] in
 private theorem star_q : star q = q := (Fact.out : IsSelfAdjoint q).star_eq
-
-omit [Fact (IsSelfAdjoint q)] in
-private theorem q_ne_zero : q ≠ 0 := Fact.out
 
 /- Each relation check below brings every product of two generators into the order `b a`, `c a`,
 `d b`, `d c`, `c b` with the defining relations (removing `a d` and `d a` through the quantum
@@ -213,30 +182,30 @@ local macro "normalize_oqSL2" : tactic => `(tactic| (
 
 /-- The images of the generators under the star structure, as a generator tuple in the conjugate
 opposite algebra. -/
-private noncomputable def starTuple : GeneratorTuple q (ConjOpposite q) where
-  a := toConj q (d q)
-  b := toConj q (-q • c q)
-  c := toConj q (-q⁻¹ • b q)
-  d := toConj q (a q)
-  a_mul_b := ofConj_injective q (by
+private noncomputable def starTuple : GeneratorTuple q (ConjOpposite (OqSL2 q)) where
+  a := toConj (d q)
+  b := toConj (-q • c q)
+  c := toConj (-q⁻¹ • b q)
+  d := toConj (a q)
+  a_mul_b := ofConj_injective (by
     simp only [ofConj_mul, ofConj_smul, ofConj_toConj, star_q]; normalize_oqSL2)
-  a_mul_c := ofConj_injective q (by
+  a_mul_c := ofConj_injective (by
     simp only [ofConj_mul, ofConj_smul, ofConj_toConj, star_q]; normalize_oqSL2)
-  b_mul_d := ofConj_injective q (by
+  b_mul_d := ofConj_injective (by
     simp only [ofConj_mul, ofConj_smul, ofConj_toConj, star_q]; normalize_oqSL2)
-  c_mul_d := ofConj_injective q (by
+  c_mul_d := ofConj_injective (by
     simp only [ofConj_mul, ofConj_smul, ofConj_toConj, star_q]; normalize_oqSL2)
-  b_mul_c := ofConj_injective q (by
+  b_mul_c := ofConj_injective (by
     simp only [ofConj_mul, ofConj_toConj]; normalize_oqSL2)
-  a_mul_d_sub_d_mul_a := ofConj_injective q (by
+  a_mul_d_sub_d_mul_a := ofConj_injective (by
     simp only [ofConj_mul, ofConj_sub, ofConj_smul, ofConj_toConj, star_sub, star_inv₀, star_q]
     normalize_oqSL2)
-  a_mul_d_sub_b_mul_c := ofConj_injective q (by
+  a_mul_d_sub_b_mul_c := ofConj_injective (by
     simp only [ofConj_mul, ofConj_sub, ofConj_smul, ofConj_toConj, ofConj_one, star_q]
     normalize_oqSL2)
 
 /-- The conjugate-linear antimultiplicative map underlying the star structure. -/
-private noncomputable def starFun (x : OqSL2 q) : OqSL2 q := ofConj q (lift (starTuple q) x)
+private noncomputable def starFun (x : OqSL2 q) : OqSL2 q := ofConj (lift (starTuple q) x)
 
 private theorem starFun_mul (x y : OqSL2 q) : starFun q (x * y) = starFun q y * starFun q x := by
   simp only [starFun, map_mul, ofConj_mul]
@@ -342,10 +311,8 @@ private def pairTuple {α γ : B} (h : IsSUq2Pair q α γ) : GeneratorTuple q B 
     rw [mul_smul_comm, h.mul_star_eq_smul_star_mul, smul_mul_assoc]; module
   a_mul_c := h.mul_eq_smul_mul
   b_mul_d := by
-    have h' : star γ * star α = q • (star α * star γ) := by
-      simpa [star_mul, star_q] using congrArg star h.mul_eq_smul_mul
-    rw [smul_mul_assoc, h', mul_smul_comm]; module
-  c_mul_d := by simpa [star_mul, star_q] using congrArg star h.mul_star_eq_smul_star_mul
+    rw [smul_mul_assoc, h.star_mul_star_eq_smul_star_mul_star Fact.out, mul_smul_comm]; module
+  c_mul_d := h.mul_star_eq_smul_star_mul' Fact.out
   b_mul_c := by rw [smul_mul_assoc, mul_smul_comm, h.star_mul_self_eq_mul_star]
   a_mul_d_sub_d_mul_a := by
     have hq : (q - q⁻¹) * -q = 1 - q ^ 2 := by
@@ -376,8 +343,17 @@ noncomputable def starLift {α γ : B} (h : IsSUq2Pair q α γ) : OqSL2 q →⋆
 @[simp] theorem starLift_a {α γ : B} (h : IsSUq2Pair q α γ) : starLift h (a q) = α := by
   simp [starLift, pairTuple]
 
+/-- `starLift h` sends `b` to `-q γ*`. -/
+@[simp] theorem starLift_b {α γ : B} (h : IsSUq2Pair q α γ) :
+    starLift h (b q) = -q • star γ := by
+  simp [starLift, pairTuple]
+
 /-- `starLift h` sends `c` to `γ`. -/
 @[simp] theorem starLift_c {α γ : B} (h : IsSUq2Pair q α γ) : starLift h (c q) = γ := by
+  simp [starLift, pairTuple]
+
+/-- `starLift h` sends `d` to `α*`. -/
+@[simp] theorem starLift_d {α γ : B} (h : IsSUq2Pair q α γ) : starLift h (d q) = star α := by
   simp [starLift, pairTuple]
 
 omit [StarModule ℂ B] in
@@ -401,6 +377,16 @@ noncomputable def starLiftEquiv :
   left_inv p := by ext <;> simp
   right_inv f := by ext <;> simp
 
+/-- The star algebra map attached to a pair is `starLift`. -/
+@[simp]
+theorem starLiftEquiv_apply (p : {p : B × B // IsSUq2Pair q p.1 p.2}) :
+    starLiftEquiv p = starLift p.property := (rfl)
+
+/-- The pair attached to a star algebra map records its values on `a` and `c`. -/
+@[simp]
+theorem starLiftEquiv_symm_apply (f : OqSL2 q →⋆ₐ[ℂ] B) :
+    starLiftEquiv.symm f = ⟨(f (a q), f (c q)), (isSUq2Pair_a_c q).map f⟩ := (rfl)
+
 end StarLift
 
 /-! ### Compatibility with the Hopf structure -/
@@ -413,10 +399,9 @@ instance instStarCoalgebra : StarCoalgebra ℂ (OqSL2 q) where
     | generator g =>
       cases g <;>
         simp only [star_a, star_b, star_c, star_d, comul_a, comul_b, comul_c, comul_d, star_add,
-          TensorProduct.star_tmul, neg_smul, map_neg, map_smul, smul_add, neg_add_rev,
-          TensorProduct.tmul_neg, TensorProduct.tmul_smul, TensorProduct.neg_tmul,
-          ← TensorProduct.smul_tmul', smul_neg, smul_smul, ne_eq, q_ne_zero, not_false_eq_true,
-          inv_mul_cancel₀, mul_inv_cancel₀, one_smul, neg_neg, add_comm]
+          TensorProduct.star_tmul, map_smul, TensorProduct.tmul_smul,
+          ← TensorProduct.smul_tmul'] <;>
+        match_scalars <;> field_simp [q_ne_zero]
     | algebraMap r => simp [← algebraMap_star_comm]
     | add x y hx hy => simp only [star_add, map_add, hx, hy]
     | mul x y hx hy => simp only [star_mul, Bialgebra.comul_mul, hx, hy]
@@ -426,5 +411,23 @@ instance instStarCoalgebra : StarCoalgebra ℂ (OqSL2 q) where
 theorem antipode_fundamentalMatrix (i j : Fin 2) :
     antipode ℂ (fundamentalMatrix q i j) = star (fundamentalMatrix q j i) := by
   fin_cases i <;> fin_cases j <;> simp
+
+/-- The antipode of `a` is `a*`. -/
+theorem antipode_a_eq_star : antipode ℂ (a q) = star (a q) := by
+  rw [antipode_a, star_a]
+
+/-- The antipode of `c*` is `-q⁻¹ c*`. -/
+theorem antipode_star_c : antipode ℂ (star (c q)) = -q⁻¹ • star (c q) := by
+  rw [star_c, map_smul, antipode_b]
+
+/-- In terms of `a` and `c`, the coproduct of `a` is `Δ(a) = a ⊗ a - q c* ⊗ c`. -/
+theorem comul_a_eq_star :
+    Coalgebra.comul (R := ℂ) (a q) = a q ⊗ₜ[ℂ] a q - (q • star (c q)) ⊗ₜ[ℂ] c q := by
+  rw [comul_a, b_eq_neg_smul_star_c, neg_smul, TensorProduct.neg_tmul, sub_eq_add_neg]
+
+/-- In terms of `a` and `c`, the coproduct of `c` is `Δ(c) = c ⊗ a + a* ⊗ c`. -/
+theorem comul_c_eq_star :
+    Coalgebra.comul (R := ℂ) (c q) = c q ⊗ₜ[ℂ] a q + star (a q) ⊗ₜ[ℂ] c q := by
+  rw [comul_c, star_a]
 
 end TauCeti.OqSL2

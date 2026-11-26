@@ -9,7 +9,6 @@ public import Mathlib.Algebra.FreeAlgebra
 public import Mathlib.Algebra.RingQuot
 public import Mathlib.Basic.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.Notation
-import TauCeti.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
 # The quantum coordinate algebra `O_q(SL₂)`
@@ -40,6 +39,7 @@ of two generators into the order `b a`, `c a`, `d b`, `d c`, `c b`: in particula
 * `TauCeti.OqSL2`: the quotient algebra.
 * `TauCeti.OqSL2.GeneratorTuple`: a tuple in a complex algebra satisfying the defining relations.
 * `TauCeti.OqSL2.lift`: the algebra map induced by such a tuple.
+* `TauCeti.OqSL2.liftEquiv`: algebra maps out of `OqSL2 q` are equivalent to generator tuples.
 * `TauCeti.OqSL2.fundamentalMatrix`: the matrix `u = [[a, b], [c, d]]` of generators.
 
 ## References
@@ -202,6 +202,7 @@ theorem fundamentalMatrix_def : fundamentalMatrix q = !![a q, b q; c q, d q] := 
 @[simp] theorem fundamentalMatrix_one_one : fundamentalMatrix q 1 1 = d q := (rfl)
 
 /-- A tuple in a complex algebra satisfying the defining relations of `OqSL2 q`. -/
+@[ext]
 structure GeneratorTuple (q : ℂ) (A : Type*) [Ring A] [Algebra ℂ A] where
   /-- The proposed image of `a`. -/
   a : A
@@ -283,6 +284,47 @@ theorem hom_ext {A : Type*} [Semiring A] [Algebra ℂ A] {F G : OqSL2 q →ₐ[�
   apply FreeAlgebra.hom_ext
   funext g
   cases g <;> assumption
+
+/-- Algebra maps from `OqSL2 q` are equivalent to tuples satisfying its defining relations. -/
+def liftEquiv : (OqSL2 q →ₐ[ℂ] A) ≃ GeneratorTuple q A where
+  toFun F :=
+    { a := F (a q)
+      b := F (b q)
+      c := F (c q)
+      d := F (d q)
+      a_mul_b := by simpa only [map_mul, map_smul] using congrArg F (a_mul_b (q := q))
+      a_mul_c := by simpa only [map_mul, map_smul] using congrArg F (a_mul_c (q := q))
+      b_mul_d := by simpa only [map_mul, map_smul] using congrArg F (b_mul_d (q := q))
+      c_mul_d := by simpa only [map_mul, map_smul] using congrArg F (c_mul_d (q := q))
+      b_mul_c := by simpa only [map_mul] using congrArg F (b_mul_c (q := q))
+      a_mul_d_sub_d_mul_a := by
+        simpa only [map_sub, map_mul, map_smul] using congrArg F (a_mul_d_sub_d_mul_a (q := q))
+      a_mul_d_sub_b_mul_c := by
+        simpa only [map_sub, map_mul, map_smul, map_one] using
+          congrArg F (a_mul_d_sub_b_mul_c (q := q)) }
+  invFun := lift
+  left_inv F := hom_ext (by simp) (by simp) (by simp) (by simp)
+  right_inv x := by ext <;> simp
+
+/-- The tuple associated to an algebra map records its value on `a`. -/
+@[simp]
+theorem liftEquiv_apply_a (F : OqSL2 q →ₐ[ℂ] A) : (liftEquiv F).a = F (a q) := (rfl)
+
+/-- The tuple associated to an algebra map records its value on `b`. -/
+@[simp]
+theorem liftEquiv_apply_b (F : OqSL2 q →ₐ[ℂ] A) : (liftEquiv F).b = F (b q) := (rfl)
+
+/-- The tuple associated to an algebra map records its value on `c`. -/
+@[simp]
+theorem liftEquiv_apply_c (F : OqSL2 q →ₐ[ℂ] A) : (liftEquiv F).c = F (c q) := (rfl)
+
+/-- The tuple associated to an algebra map records its value on `d`. -/
+@[simp]
+theorem liftEquiv_apply_d (F : OqSL2 q →ₐ[ℂ] A) : (liftEquiv F).d = F (d q) := (rfl)
+
+/-- The inverse universal-property equivalence is the map induced by the tuple. -/
+@[simp]
+theorem liftEquiv_symm_apply (x : GeneratorTuple q A) : liftEquiv.symm x = lift x := (rfl)
 
 /-- The four entries of the fundamental matrix generate `OqSL2 q`. -/
 theorem adjoin_range_generator (q : ℂ) :
