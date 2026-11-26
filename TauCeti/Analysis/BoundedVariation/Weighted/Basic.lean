@@ -449,7 +449,8 @@ zero, for every weight. -/
 @[simp]
 theorem weightedVariation_of_subsingleton [Subsingleton E] : weightedVariation W Ω u = 0 :=
   nonpos_iff_eq_zero.1 <| weightedVariation_le_iff.2 fun X _ => by
-    simp [show X = 0 from TestFunction.ext fun _ => Subsingleton.elim _ _]
+    have hX : X = 0 := TestFunction.ext fun _ => Subsingleton.elim _ _
+    simp [hX]
 
 /-- In dimension zero every set has weighted perimeter zero, for every weight. -/
 @[simp]

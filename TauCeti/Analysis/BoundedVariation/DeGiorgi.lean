@@ -116,38 +116,37 @@ private theorem perimeter_Ioo_preimage_eq_zero_of_isolated (hdim : finrank ℝ E
   intro y hy hyB
   exact (hUsub hy).2 (mem_singleton_iff.1 (hiso.subset ⟨hyB, (hUsub hy).1⟩))
 
-/-- Pulling back a set of positive restricted measure on `ball x r₀` along a measure-preserving
-affine isometric equivalence `f : ℝ ≃ᵃⁱ[ℝ] E` with `f.symm x = 0` gives a set of nonzero measure on
-`(-r₀, r₀)`. -/
-private theorem measure_preimage_inter_Ioo_ne_zero (f : ℝ ≃ᵃⁱ[ℝ] E)
-    (hfmp : MeasurePreserving f volume volume) (hf0 : f.symm x = 0) {r₀ : ℝ} {t : Set E}
-    (ht : 0 < volume (t ∩ ball x r₀)) :
-    volume (f ⁻¹' t ∩ Ioo (-r₀) r₀) ≠ 0 := by
-  have hball : f ⁻¹' ball x r₀ = Ioo (-r₀) r₀ := by
-    simpa [hf0, Real.ball_zero_eq_Ioo] using f.toIsometryEquiv.preimage_ball x r₀
-  have heq : f ⁻¹' t ∩ Ioo (-r₀) r₀ = f ⁻¹' (t ∩ ball x r₀) := by rw [← hball, preimage_inter]
-  rw [heq, hfmp.measure_preimage_emb f.toHomeomorph.toMeasurableEquiv.measurableEmbedding]
-  exact ht.ne'
+/-- `coordEquivOfFinrankEqOne` preserves the Lebesgue measure of sets intersected with `ball x r₀`,
+identifying `f ⁻¹' ball x r₀` with `(-r₀, r₀)`. -/
+private theorem measure_preimage_coordEquivOfFinrankEqOne_inter_Ioo (hdim : finrank ℝ E = 1)
+    {ν : E} (hν : ‖ν‖ = 1) (x : E) (r₀ : ℝ) (t : Set E) :
+    volume (coordEquivOfFinrankEqOne hdim hν x ⁻¹' t ∩ Ioo (-r₀) r₀) =
+      volume (t ∩ ball x r₀) := by
+  let f := coordEquivOfFinrankEqOne hdim hν x
+  rw [← Real.ball_zero_eq_Ioo, ← preimage_coordEquivOfFinrankEqOne_ball hdim hν x r₀,
+    ← preimage_inter,
+    f.measurePreserving.measure_preimage_emb f.toHomeomorph.toMeasurableEquiv.measurableEmbedding]
 
-/-- If `f ⁻¹' s` agrees up to a Lebesgue-null set on `(-r₀, r₀)` with `J ⊆ ℝ`, and `f.symm ⁻¹' J`
-is `u`, then `s =ᵐ[volume.restrict (ball x r₀)] u` along a measure-preserving `f : ℝ ≃ᵃⁱ[ℝ] E`
-with `f.symm x = 0`. -/
-private theorem ae_eq_ball_of_measure_symmDiff_preimage_inter_Ioo_eq_zero (f : ℝ ≃ᵃⁱ[ℝ] E)
-    (hfmp : MeasurePreserving f volume volume) (hf0 : f.symm x = 0) {r₀ : ℝ} {J : Set ℝ}
-    {u : Set E} (hJ : ∀ y : E, f.symm y ∈ J ↔ y ∈ u)
-    (h0 : volume (((f ⁻¹' s) ∆ J) ∩ Ioo (-r₀) r₀) = 0) :
+/-- If `coordEquivOfFinrankEqOne hdim hν x ⁻¹' s` agrees up to a Lebesgue-null set on `(-r₀, r₀)`
+with `J ⊆ ℝ`, and `(coordEquivOfFinrankEqOne hdim hν x).symm ⁻¹' J` is `u`, then
+`s =ᵐ[volume.restrict (ball x r₀)] u`. -/
+private theorem ae_eq_ball_of_measure_symmDiff_preimage_inter_Ioo_eq_zero (hdim : finrank ℝ E = 1)
+    {ν : E} (hν : ‖ν‖ = 1) {r₀ : ℝ} {J : Set ℝ} {u : Set E}
+    (hJ : ∀ y : E, (coordEquivOfFinrankEqOne hdim hν x).symm y ∈ J ↔ y ∈ u)
+    (h0 : volume (((coordEquivOfFinrankEqOne hdim hν x ⁻¹' s) ∆ J) ∩ Ioo (-r₀) r₀) = 0) :
     s =ᵐ[volume.restrict (ball x r₀)] u := by
-  have hball : f ⁻¹' ball x r₀ = Ioo (-r₀) r₀ := by
-    simpa [hf0, Real.ball_zero_eq_Ioo] using f.toIsometryEquiv.preimage_ball x r₀
-  have hemb := f.toHomeomorph.toMeasurableEquiv.measurableEmbedding
+  set f := coordEquivOfFinrankEqOne hdim hν x
   rw [ae_eq_set, Measure.restrict_apply' measurableSet_ball,
-    Measure.restrict_apply' measurableSet_ball, ← hfmp.measure_preimage_emb hemb,
-    ← hfmp.measure_preimage_emb hemb]
+    Measure.restrict_apply' measurableSet_ball,
+    ← measure_preimage_coordEquivOfFinrankEqOne_inter_Ioo hdim hν x r₀,
+    ← measure_preimage_coordEquivOfFinrankEqOne_inter_Ioo hdim hν x r₀]
   refine ⟨measure_mono_null ?_ h0, measure_mono_null ?_ h0⟩
   · intro t ⟨⟨hts, htu⟩, htb⟩
-    exact ⟨.inl ⟨hts, fun htJ => htu ((hJ (f t)).1 (by simpa using htJ))⟩, hball ▸ htb⟩
+    exact ⟨.inl ⟨hts, fun htJ => htu ((hJ (f t)).1 (by rwa [f.symm_apply_apply]))⟩, htb⟩
   · intro t ⟨⟨htu, hts⟩, htb⟩
-    exact ⟨.inr ⟨f.symm_apply_apply t ▸ (hJ (f t)).2 htu, hts⟩, hball ▸ htb⟩
+    have htJ := (hJ (f t)).2 htu
+    rw [f.symm_apply_apply] at htJ
+    exact ⟨.inr ⟨htJ, hts⟩, htb⟩
 
 /-- In dimension `1`, near every point `x ∈ reducedBoundary volume Ω s`, `s` agrees a.e. on a ball
 around `x` with a half-line `{y | ⟪y, w⟫ < ⟪x, w⟫}` for some unit vector `w`. -/
@@ -161,19 +160,18 @@ private theorem exists_ae_eq_setOf_inner_lt_ball_of_finrank_eq_one (hdim : finra
   set ν := outerNormal volume Ω s x
   have hν : ‖ν‖ = 1 := norm_outerNormal hx
   let f := coordEquivOfFinrankEqOne hdim hν x
-  have hfmp := f.measurePreserving
-  have hf0 : f.symm x = 0 := by simp [f]
+  have hpre : f ⁻¹' ball x r₀ = Ioo (-r₀) r₀ := by
+    rw [preimage_coordEquivOfFinrankEqOne_ball, Real.ball_zero_eq_Ioo]
   have hTm {a b : ℝ} (hsub : Ioo a b ⊆ Ioo (-r₀) r₀) :
       NullMeasurableSet (f ⁻¹' s ∩ Ioo a b) volume := by
-    have hΩsub : Ioo a b ⊆ f ⁻¹' Ω := hsub.trans <|
-      (Real.ball_zero_eq_Ioo r₀ ▸ (preimage_coordEquivOfFinrankEqOne_ball hdim hν x r₀).symm) ▸
-        preimage_mono (ball_subset_closedBall.trans hr₀Ω)
+    have hΩsub : Ioo a b ⊆ f ⁻¹' Ω := by
+      rw [← hpre] at hsub
+      exact hsub.trans (preimage_mono (ball_subset_closedBall.trans hr₀Ω))
     have heq : f ⁻¹' s ∩ Ioo a b = f ⁻¹' (s ∩ Ω) ∩ Ioo a b :=
       Set.ext fun t => ⟨fun ⟨hs, ht⟩ => ⟨⟨hs, hΩsub ht⟩, ht⟩, fun ⟨⟨hs, _⟩, ht⟩ => ⟨hs, ht⟩⟩
     rw [heq]
     exact ((nullMeasurableSet_inter_of_mem_reducedBoundary hx).preimage
-      hfmp.quasiMeasurePreserving).inter measurableSet_Ioo.nullMeasurableSet
-  have hsdiff : Ioo (-r₀) r₀ \ f ⁻¹' s = f ⁻¹' sᶜ ∩ Ioo (-r₀) r₀ := by ext; simp [and_comm]
+      f.measurePreserving.quasiMeasurePreserving).inter measurableSet_Ioo.nullMeasurableSet
   -- Zero perimeter on `(-r₀, 0)` and `(0, r₀)` forces `f ⁻¹' s` to match `Iio 0` or `Ioi 0` a.e.
   have hleft := (Real.perimeter_Ioo_eq_zero_iff (hTm (Ioo_subset_Ioo_right hr₀.le))).1
     (perimeter_Ioo_preimage_eq_zero_of_isolated hdim hx hr₀Ω hiso fun t ht => by
@@ -182,17 +180,21 @@ private theorem exists_ae_eq_setOf_inner_lt_ball_of_finrank_eq_one (hdim : finra
     (Real.perimeter_Ioo_eq_zero_iff (hTm (Ioo_subset_Ioo_left (neg_nonpos.2 hr₀.le)))).1
       (perimeter_Ioo_preimage_eq_zero_of_isolated hdim hx hr₀Ω hiso fun t ht => by
         rw [abs_of_pos ht.1]; exact ht)
+  have hs_ne : volume (f ⁻¹' s ∩ Ioo (-r₀) r₀) ≠ 0 := by
+    rw [measure_preimage_coordEquivOfFinrankEqOne_inter_Ioo]
+    exact (measure_inter_ball_pos hx hr₀).ne'
+  have hsdiff_ne : volume (Ioo (-r₀) r₀ \ f ⁻¹' s) ≠ 0 := by
+    have hsdiff : Ioo (-r₀) r₀ \ f ⁻¹' s = f ⁻¹' sᶜ ∩ Ioo (-r₀) r₀ := by ext; simp [and_comm]
+    rw [hsdiff, measure_preimage_coordEquivOfFinrankEqOne_inter_Ioo]
+    exact (measure_inter_ball_pos (by rwa [reducedBoundary_compl]) hr₀).ne'
   -- Pick the corresponding half-line `{y | ⟪y, ±ν⟫ < ⟪x, ±ν⟫}` in `E`.
   refine ⟨r₀, hr₀, hr₀Ω, hiso, ?_⟩
-  rcases measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero
-    (measure_preimage_inter_Ioo_ne_zero f hfmp hf0 (measure_inter_ball_pos hx hr₀))
-    (hsdiff ▸ measure_preimage_inter_Ioo_ne_zero f hfmp hf0
-      (measure_inter_ball_pos (by rwa [reducedBoundary_compl]) hr₀))
-    hleft hright Real.volume_singleton with h0 | h0
-  · exact ⟨ν, hν, ae_eq_ball_of_measure_symmDiff_preimage_inter_Ioo_eq_zero f hfmp hf0
-      (fun y => by simp [f, real_inner_comm ν, inner_sub_right]) h0⟩
-  · exact ⟨-ν, by simpa using hν, ae_eq_ball_of_measure_symmDiff_preimage_inter_Ioo_eq_zero f hfmp
-      hf0 (fun y => by simp [f, real_inner_comm ν, inner_sub_right, inner_neg_right]) h0⟩
+  rcases measure_symmDiff_Iio_or_Ioi_inter_Ioo_eq_zero hs_ne hsdiff_ne hleft hright
+    Real.volume_singleton with h0 | h0
+  · exact ⟨ν, hν, ae_eq_ball_of_measure_symmDiff_preimage_inter_Ioo_eq_zero hdim hν
+      (fun y => by simp [real_inner_comm ν, inner_sub_right]) h0⟩
+  · exact ⟨-ν, by simpa using hν, ae_eq_ball_of_measure_symmDiff_preimage_inter_Ioo_eq_zero hdim hν
+      (fun y => by simp [real_inner_comm ν, inner_sub_right, inner_neg_right]) h0⟩
 
 /-- Around an isolated point `y` of `∂*s`, on any smaller radius `0 < r < r₀` the sphere misses
 `∂*s`, so `|Dχ_s|(closedBall y r) = P(s; ball y r)`. -/

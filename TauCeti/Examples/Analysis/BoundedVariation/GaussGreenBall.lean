@@ -64,7 +64,7 @@ theorem trace_fderiv_mul_indicator_ball {R : ℝ} {φ : E → E} (hid : EqOn φ 
 field `φ` equal to `x` on the closed ball `closedBall 0 R`, the left side is
 `∫_s div φ = n |ball 0 R|`, the right side is `∫_{∂*s} ⟪φ, ν_s⟫ dHⁿ⁻¹ = R Hⁿ⁻¹(sphere 0 R)`, and
 the two agree; with `|ball 0 R| = Rⁿ ω_n` this is `n ω_n Rⁿ = R · n ω_n Rⁿ⁻¹`. -/
-theorem ball_check (hn : 2 ≤ finrank ℝ E) {R : ℝ} (hR : 0 < R) {φ : E → E}
+theorem ball_check {R : ℝ} (hR : 0 < R) {φ : E → E}
     (hφ : ContDiff ℝ 1 φ) (hc : HasCompactSupport φ) (hid : EqOn φ id (closedBall 0 R)) :
     ∫ x, LinearMap.trace ℝ E (fderiv ℝ φ x : E →ₗ[ℝ] E) * (ball (0 : E) R).indicator 1 x =
         finrank ℝ E * volume.real (ball (0 : E) R) ∧
@@ -89,7 +89,7 @@ theorem ball_check (hn : 2 ≤ finrank ℝ E) {R : ℝ} (hR : 0 < R) {φ : E →
     field_simp
   refine ⟨hL, hR', ?_, Measure.addHaar_real_ball_of_pos _ _ hR⟩
   rw [← hL, ← hR']
-  exact integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal hn
+  exact integral_trace_fderiv_mul_indicator_eq_setIntegral_inner_outerNormal
     (locallyIntegrableOn_indicator_const measurableSet_ball.nullMeasurableSet 1)
     (fun _ hK _ => (convex_ball 0 R).exists_opens_totalVariationOn_indicator_ne_top hK.isBounded)
     hφ hc
@@ -103,7 +103,7 @@ theorem setIntegral_inner_neg_normal_ball (hn : 2 ≤ finrank ℝ E) {R : ℝ} (
     ∫ x in sphere (0 : E) R, ⟪φ x, -(R⁻¹ • x)⟫ ∂μHE[finrank ℝ E - 1] =
         -(finrank ℝ E * volume.real (ball (0 : E) R)) ∧
       -(finrank ℝ E * volume.real (ball (0 : E) R)) < 0 := by
-  obtain ⟨-, hR', hGG, -⟩ := ball_check hn hR hφ hc hid
+  obtain ⟨-, hR', hGG, -⟩ := ball_check hR hφ hc hid
   have hn0 : (0 : ℝ) < finrank ℝ E := by exact_mod_cast (by omega : 0 < finrank ℝ E)
   refine ⟨?_, neg_neg_of_pos (mul_pos hn0 ?_)⟩
   · simp_rw [inner_neg_right, integral_neg]

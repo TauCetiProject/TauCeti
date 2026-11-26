@@ -436,8 +436,8 @@ theorem preimage_coordEquivOfFinrankEqOne_ball (hdim : Module.finrank 𝕜 F = 1
 theorem inner_left_inj_of_finrank_eq_one (hdim : Module.finrank 𝕜 F = 1) {ν : F} (hν : ν ≠ 0)
     {x y : F} : ⟪x, ν⟫_𝕜 = ⟪y, ν⟫_𝕜 ↔ x = y := by
   have horth : (𝕜 ∙ ν)ᗮ = ⊥ := by simp [(finrank_eq_one_iff_of_ne_zero ν hν).mp hdim]
-  simpa [sub_eq_zero, inner_sub_left, Submodule.mem_orthogonal_singleton_iff_inner_left] using
-    (show x - y ∈ (𝕜 ∙ ν)ᗮ ↔ x - y ∈ (⊥ : Submodule 𝕜 F) by rw [horth])
+  have hmem : x - y ∈ (𝕜 ∙ ν)ᗮ ↔ x - y ∈ (⊥ : Submodule 𝕜 F) := by rw [horth]
+  simpa [sub_eq_zero, inner_sub_left, Submodule.mem_orthogonal_singleton_iff_inner_left] using hmem
 
 /-- In a `1`-dimensional inner product space, the level set `{z | ⟪z, ν⟫_𝕜 = ⟪y, ν⟫_𝕜}` of pairing
 against a nonzero vector `ν` is `{y}`. -/

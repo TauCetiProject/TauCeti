@@ -26,10 +26,11 @@ regularity assumption on the set:
   `Hⁿ⁻¹(∂s ∩ K) < ∞` for every compact `K ⊆ Ω`, then every compact subset of `Ω` has an open
   neighborhood in which `s` has finite perimeter, and so does the interior of `s`
   (`TauCeti.exists_perimeter_interior_ne_top_of_euclideanHausdorffMeasure_frontier_inter_ne_top`);
-* `TauCeti.perimeter_le_euclideanHausdorffMeasure_frontier_inter`: the sharp bound
-  `P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)` for every set `s` in every ambient dimension, combining the criterion
-  with De Giorgi's representation `P(s; Ω) = Hⁿ⁻¹(∂*s)` of the perimeter of a set of locally
-  finite perimeter.
+* `TauCeti.perimeter_le_euclideanHausdorffMeasure_frontier_inter` and
+  `TauCeti.perimeter_le_euclideanHausdorffMeasure_frontier`: the sharp bounds
+  `P(s; Ω) ≤ Hⁿ⁻¹(∂s ∩ Ω)` and `P(s) ≤ Hⁿ⁻¹(∂s)` for every set `s` in every ambient dimension,
+  combining the criterion with De Giorgi's representation `P(s; Ω) = Hⁿ⁻¹(∂*s)` of the perimeter of
+  a set of locally finite perimeter.
 
 The proof uses three further results, in more basic modules.
 `TauCeti.perimeter_diff_le_of_frontier_inter_subset`: if an open set `G` contains `∂s ∩ V`, then
@@ -252,9 +253,9 @@ theorem perimeter_le_euclideanHausdorffMeasure_frontier_inter
     reducedBoundary_subset)
 
 /-- **The perimeter is at most the Hausdorff measure of the frontier, in the whole space.** In
-dimension `n ≥ 2`, every set `s`, measurable or not, has `P(s) ≤ Hⁿ⁻¹(∂s)`. -/
-theorem perimeter_le_euclideanHausdorffMeasure_frontier (hn : 2 ≤ finrank ℝ E) (s : Set E) :
+every ambient dimension, every set `s`, measurable or not, has `P(s) ≤ Hⁿ⁻¹(∂s)`. -/
+theorem perimeter_le_euclideanHausdorffMeasure_frontier (s : Set E) :
     perimeter volume ⊤ s ≤ μHE[finrank ℝ E - 1] (frontier s) := by
-  simpa using perimeter_le_euclideanHausdorffMeasure_frontier_inter hn ⊤ s
+  simpa using perimeter_le_euclideanHausdorffMeasure_frontier_inter ⊤ s
 
 end TauCeti
