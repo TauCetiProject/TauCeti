@@ -1,0 +1,224 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Diagonal
+import TauCeti.Analysis.InnerProductSpace.Variational.Spectrum
+
+/-!
+# The energy space in an eigenbasis
+
+Let `B` be a bounded, coercive, symmetric bilinear form on a real Hilbert space `V` and
+`J : V →L[ℝ] H` a continuous linear map into a real Hilbert space `H`. Suppose `H` has a Hilbert
+basis `b` of images `b i = J (u i)` of variational eigenvectors,
+
+`B (u i) v = κ i ⟪J (u i), J v⟫` for every `v : V`,
+
+as produced by `IsCoercive.exists_hilbertBasis_forall_apply_eq_smul_inner` when `J` is compact
+with dense range. The model is `V = H¹(M)` with its inner product, `H = L²(M)` and `J` the
+inclusion, for a closed Riemannian manifold `M`: then `u i` are eigenfunctions of the Laplacian
+`Δ⁺` and `κ i = μ i + 1`, with `μ i` the eigenvalues of `Δ⁺`.
+
+This file describes `V` and `B` in the coordinates `⟪b i, h⟫` of `H`. The vectors of `J V` are
+exactly those whose coordinates satisfy `∑ κ i ⟪b i, h⟫² < ∞`
+(`IsCoercive.mem_range_iff_summable_mul_inner_sq`). For injective `J`, every `w : V` is the sum
+of its eigenfunction expansion `w = ∑ ⟪b i, J w⟫ u i`, which converges in `V`
+(`IsCoercive.hasSum_inner_smul`), and the form is diagonal:
+
+`B w v = ∑ κ i ⟪b i, J w⟫ ⟪b i, J v⟫` (`IsCoercive.hasSum_mul_inner_mul_inner`).
+
+Equivalently, `J V` is the domain of the diagonal operator `√κ` in the basis `b`, which is the
+square root `A^{1/2}` of the operator `A` with eigenvalues `κ i`, and `‖A^{1/2} J w‖² = B w w`
+(`IsCoercive.range_eq_diagonalPMap_sqrt_domain`, `IsCoercive.norm_diagonalPMap_sqrt_sq`). So the
+energy space `V` is the form domain of `A`, the first space of the spectral Sobolev scale of `A`.
+For a closed manifold, `A = Δ⁺ + 1` and this identifies `H¹(M)` with the domain of
+`(Δ⁺ + 1)^{1/2}`, with equal norms.
+
+The proofs only use Bessel's inequality in the energy `B`: the eigenvectors `u i` are orthogonal
+for `B`, with `B (u i) (u i) = κ i`, so the partial sums of the expansion of `w` have energy
+`∑ κ i ⟪b i, J w⟫²`, at most `B w w`, and by coercivity they form a Cauchy family in `V`.
+
+## Main results
+
+* `IsCoercive.summable_mul_inner_sq`: Bessel's inequality, `∑ κ i ⟪b i, J w⟫² < ∞`.
+* `IsCoercive.hasSum_inner_smul_of_summable`: if `∑ κ i ⟪b i, h⟫² < ∞`, the expansion
+  `∑ ⟪b i, h⟫ u i` converges in `V` to a preimage of `h`.
+* `IsCoercive.mem_range_iff_summable_mul_inner_sq`: the range of `J` in coordinates.
+* `IsCoercive.hasSum_inner_smul`, `IsCoercive.hasSum_mul_inner_mul_inner`,
+  `IsCoercive.hasSum_mul_inner_sq`: for injective `J`, the expansion of `w` converges to `w` and
+  the form and the energy are diagonal.
+* `IsCoercive.range_eq_diagonalPMap_sqrt_domain`, `IsCoercive.norm_diagonalPMap_sqrt_sq`: the
+  range of `J` is the domain of the diagonal operator `√κ`, which measures the energy.
+
+## References
+
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.5.1, Theorem 1 and its proof (the
+  eigenfunctions of a symmetric elliptic operator, rescaled by `κ^{-1/2}`, form an orthonormal
+  basis of the energy space for the form `B`).
+-/
+
+public section
+
+open scoped InnerProductSpace
+
+namespace IsCoercive
+
+variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+  [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+  {B : V →L[ℝ] V →L[ℝ] ℝ} {J : V →L[ℝ] H} {ι : Type*} {b : HilbertBasis ι ℝ H} {κ : ι → ℝ}
+  {u : ι → V}
+
+/-- A finite combination of eigenvectors pairs with every `v` through the eigenvalues. -/
+private theorem apply_sum_smul (hJu : ∀ i, J (u i) = b i)
+    (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (c : ι → ℝ) (t : Finset ι) (v : V) :
+    B (∑ i ∈ t, c i • u i) v = ∑ i ∈ t, κ i * c i * ⟪b i, J v⟫_ℝ := by
+  simp only [map_sum, map_smul, sum_apply, smul_apply,
+    heq, hJu, smul_eq_mul]
+  exact Finset.sum_congr rfl fun i _ ↦ by ring
+
+/-- The coordinates of the image of a finite combination of eigenvectors. -/
+private theorem inner_apply_sum_smul (hJu : ∀ i, J (u i) = b i) (c : ι → ℝ) {t : Finset ι}
+    {i : ι} (hi : i ∈ t) : ⟪b i, J (∑ j ∈ t, c j • u j)⟫_ℝ = c i := by
+  simp only [map_sum, map_smul, hJu]
+  exact b.orthonormal.inner_right_sum c hi
+
+/-- The energy of a finite combination of eigenvectors: the eigenvectors are orthogonal for `B`,
+with `B (u i) (u i) = κ i`. -/
+private theorem apply_sum_smul_sum_smul (hJu : ∀ i, J (u i) = b i)
+    (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (c : ι → ℝ) (t : Finset ι) :
+    B (∑ i ∈ t, c i • u i) (∑ i ∈ t, c i • u i) = ∑ i ∈ t, κ i * c i ^ 2 := by
+  rw [apply_sum_smul hJu heq]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [inner_apply_sum_smul hJu c hi]
+  ring
+
+/-- The variational eigenvalues are positive. -/
+private theorem pos_of_hilbertBasis (hB : IsCoercive B) (hJu : ∀ i, J (u i) = b i)
+    (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (i : ι) : 0 < κ i := by
+  refine hB.pos_of_forall_apply_eq_smul_inner J (fun hu ↦ ?_) (heq i)
+  have h := hJu i
+  rw [hu, map_zero] at h
+  exact b.orthonormal.ne_zero i h.symm
+
+/-- Bessel's inequality for the partial sums: the energy `B w w` bounds every finite sum of
+`κ i ⟪b i, J w⟫²`, since the energy of `w` minus its partial expansion is nonnegative. -/
+private theorem sum_mul_inner_sq_le (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
+    (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (w : V)
+    (t : Finset ι) : ∑ i ∈ t, κ i * ⟪b i, J w⟫_ℝ ^ 2 ≤ B w w := by
+  set c : ι → ℝ := fun i ↦ ⟪b i, J w⟫_ℝ
+  have hnn : 0 ≤ B (w - ∑ i ∈ t, c i • u i) (w - ∑ i ∈ t, c i • u i) := by
+    obtain ⟨C, hC, hle⟩ := hB
+    exact (mul_nonneg (mul_nonneg hC.le (norm_nonneg _)) (norm_nonneg _)).trans (hle _)
+  have hcross : B (∑ i ∈ t, c i • u i) w = ∑ i ∈ t, κ i * c i ^ 2 := by
+    rw [apply_sum_smul hJu heq]
+    exact Finset.sum_congr rfl fun i _ ↦ by ring
+  simp only [map_sub, sub_apply] at hnn
+  rw [hsymm w (∑ i ∈ t, c i • u i), hcross, apply_sum_smul_sum_smul hJu heq] at hnn
+  linarith
+
+/-- **Bessel's inequality in the energy.** For `w : V`, the coordinates of `J w` satisfy
+`∑ κ i ⟪b i, J w⟫² < ∞`, with sum at most `B w w`. -/
+theorem summable_mul_inner_sq (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
+    (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (w : V) :
+    Summable fun i ↦ κ i * ⟪b i, J w⟫_ℝ ^ 2 :=
+  summable_of_sum_le (fun i ↦ mul_nonneg (pos_of_hilbertBasis hB hJu heq i).le (sq_nonneg _))
+    (sum_mul_inner_sq_le hB hsymm hJu heq w)
+
+variable [CompleteSpace V]
+
+/-- **Convergence of the eigenfunction expansion.** If the coordinates of `h : H` satisfy
+`∑ κ i ⟪b i, h⟫² < ∞`, then the expansion `∑ ⟪b i, h⟫ u i` converges in `V`, to a vector whose
+image under `J` is `h`. -/
+theorem hasSum_inner_smul_of_summable (hB : IsCoercive B) (hJu : ∀ i, J (u i) = b i)
+    (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) {h : H}
+    (hsum : Summable fun i ↦ κ i * ⟪b i, h⟫_ℝ ^ 2) :
+    ∃ w : V, J w = h ∧ HasSum (fun i ↦ ⟪b i, h⟫_ℝ • u i) w := by
+  obtain ⟨C, hC, hle⟩ := id hB
+  -- The partial sums are Cauchy: coercivity bounds them by the tails of `∑ κ i ⟪b i, h⟫²`.
+  have hs : Summable fun i ↦ ⟪b i, h⟫_ℝ • u i := by
+    refine summable_iff_vanishing_norm.2 fun ε hε ↦ ?_
+    obtain ⟨s, hs⟩ := summable_iff_vanishing_norm.1 hsum (C * ε ^ 2) (by positivity)
+    refine ⟨s, fun t ht ↦ ?_⟩
+    have h1 := hle (∑ i ∈ t, ⟪b i, h⟫_ℝ • u i)
+    rw [apply_sum_smul_sum_smul hJu heq] at h1
+    have h2 : ∑ i ∈ t, κ i * ⟪b i, h⟫_ℝ ^ 2 < C * ε ^ 2 := (le_abs_self _).trans_lt (hs t ht)
+    have h4 : ‖∑ i ∈ t, ⟪b i, h⟫_ℝ • u i‖ ^ 2 < ε ^ 2 := by
+      nlinarith
+    exact lt_of_pow_lt_pow_left₀ 2 hε.le h4
+  refine ⟨∑' i, ⟪b i, h⟫_ℝ • u i, ?_, hs.hasSum⟩
+  rw [J.map_tsum hs]
+  simp only [map_smul, hJu, ← b.repr_apply_apply]
+  exact (b.hasSum_repr h).tsum_eq
+
+/-- **The range of `J` in coordinates.** A vector `h : H` is the image of some `w : V` if and
+only if its coordinates satisfy `∑ κ i ⟪b i, h⟫² < ∞`. -/
+theorem mem_range_iff_summable_mul_inner_sq (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
+    (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) {h : H} :
+    h ∈ Set.range J ↔ Summable fun i ↦ κ i * ⟪b i, h⟫_ℝ ^ 2 := by
+  refine ⟨?_, fun hsum ↦ ?_⟩
+  · rintro ⟨w, rfl⟩
+    exact summable_mul_inner_sq hB hsymm hJu heq w
+  · obtain ⟨w, hw, -⟩ := hasSum_inner_smul_of_summable hB hJu heq hsum
+    exact ⟨w, hw⟩
+
+section Injective
+
+variable (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v) (hJ : Function.Injective J)
+  (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ)
+include hB hsymm hJ hJu heq
+
+/-- **The eigenfunction expansion converges in the energy space.** For injective `J`, every
+`w : V` is the sum `∑ ⟪b i, J w⟫ u i` of its eigenfunction expansion, converging in `V`. -/
+theorem hasSum_inner_smul (w : V) : HasSum (fun i ↦ ⟪b i, J w⟫_ℝ • u i) w := by
+  obtain ⟨w', hw', hsum⟩ :=
+    hasSum_inner_smul_of_summable hB hJu heq (summable_mul_inner_sq hB hsymm hJu heq w)
+  rwa [hJ hw'] at hsum
+
+/-- **The form is diagonal in the eigenbasis.** For injective `J`,
+`B w v = ∑ κ i ⟪b i, J w⟫ ⟪b i, J v⟫`. -/
+theorem hasSum_mul_inner_mul_inner (w v : V) :
+    HasSum (fun i ↦ κ i * ⟪b i, J w⟫_ℝ * ⟪b i, J v⟫_ℝ) (B w v) := by
+  have h := ((hasSum_inner_smul hB hsymm hJ hJu heq w).mapL B).mapL
+    (ContinuousLinearMap.apply ℝ ℝ v)
+  simp only [ContinuousLinearMap.apply_apply, map_smul, heq, hJu,
+    smul_eq_mul] at h
+  convert h using 2 with i
+  ring
+
+/-- **The energy is diagonal in the eigenbasis.** For injective `J`,
+`B w w = ∑ κ i ⟪b i, J w⟫²`. -/
+theorem hasSum_mul_inner_sq (w : V) : HasSum (fun i ↦ κ i * ⟪b i, J w⟫_ℝ ^ 2) (B w w) := by
+  simpa only [mul_assoc, sq] using hasSum_mul_inner_mul_inner hB hsymm hJ hJu heq w w
+
+end Injective
+
+/-! ### The square root of the diagonal operator -/
+
+/-- **The range of `J` is the domain of `A^{1/2}`.** The image of `J` is the domain of the
+diagonal operator with entries `√κ i` in the basis `b`, the square root of the operator with
+eigenvalues `κ i`. -/
+theorem range_eq_diagonalPMap_sqrt_domain (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
+    (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) :
+    Set.range J = (b.diagonalPMap fun i ↦ √(κ i)).domain := by
+  ext h
+  rw [SetLike.mem_coe, mem_range_iff_summable_mul_inner_sq hB hsymm hJu heq,
+    HilbertBasis.mem_diagonalPMap_domain_iff]
+  refine summable_congr fun i ↦ ?_
+  rw [Real.norm_eq_abs, sq_abs, mul_pow, Real.sq_sqrt (pos_of_hilbertBasis hB hJu heq i).le]
+
+/-- **`A^{1/2}` measures the energy.** For injective `J`, the diagonal operator `√κ` in the
+basis `b` sends `J w` to a vector of squared norm `B w w`. -/
+theorem norm_diagonalPMap_sqrt_sq (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
+    (hJ : Function.Injective J) (hJu : ∀ i, J (u i) = b i)
+    (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (w : V)
+    (hw : J w ∈ (b.diagonalPMap fun i ↦ √(κ i)).domain) :
+    ‖b.diagonalPMap (fun i ↦ √(κ i)) ⟨J w, hw⟩‖ ^ 2 = B w w := by
+  refine (b.hasSum_norm_inner_sq _).unique ?_
+  convert hasSum_mul_inner_sq hB hsymm hJ hJu heq w using 2 with i
+  rw [b.inner_diagonalPMap_apply, Real.norm_eq_abs, sq_abs, mul_pow,
+    Real.sq_sqrt (pos_of_hilbertBasis hB hJu heq i).le]
+
+end IsCoercive
