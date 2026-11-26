@@ -83,6 +83,8 @@ structure HMM (S Y : Type*) [MeasurableSpace Y] where
 
 namespace HMM
 
+attribute [fun_prop] measurable_dens
+
 variable {S Y : Type*} [MeasurableSpace Y]
 
 /-! ### Discrete observations -/
@@ -237,6 +239,7 @@ theorem jointDensity_congr {x x' : ℕ → S} {y y' : ℕ → Y} {n : ℕ} (hx :
       hx n (by omega), hx (n + 1) le_rfl, hy (n + 1) le_rfl]
 
 /-- The joint density is finite. -/
+@[simp, aesop (rule_sets := [finiteness]) safe apply]
 theorem jointDensity_ne_top (x : ℕ → S) (y : ℕ → Y) (n : ℕ) : M.jointDensity x y n ≠ ∞ := by
   induction n with
   | zero => simp [ENNReal.mul_eq_top, PMF.apply_ne_top]
@@ -251,13 +254,8 @@ observation sequence. -/
 @[fun_prop]
 theorem measurable_jointDensity (x : ℕ → S) (n : ℕ) :
     Measurable fun y : ℕ → Y ↦ M.jointDensity x y n := by
-  have hd : ∀ s t, Measurable fun y : ℕ → Y ↦ (M.dens s (y t) : ℝ≥0∞) := fun s t ↦
-    (M.measurable_dens s).coe_nnreal_ennreal.comp (measurable_pi_apply t)
-  induction n with
-  | zero => simpa using (hd (x 0) 0).const_mul _
-  | succ n ih =>
-    simp_rw [jointDensity_succ]
-    exact (ih.mul_const _).mul (hd _ _)
+  simp only [jointDensity_def]
+  fun_prop
 
 /-- For a fixed state path and horizon `n`, the joint density is a measurable function of the
 observation record `w : Fin (n + 1) → Y`, read as the sequence `fun i ↦ w (Fin.clamp i n)`. -/
