@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
+public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.RingHom.Flat
@@ -467,8 +468,6 @@ theorem isZero_Tor_restrictScalars_of_projective (P : ModuleCat.{u} B) [Projecti
     simp [π]
   let r : Retract P (∐ fun _ : P ↦ of B B) :=
     ⟨Projective.factorThru (𝟙 P) π, π, Projective.factorThru_comp (𝟙 P) π⟩
-  have (Z : ModuleCat.{u} A) : PreservesColimitsOfShape (Discrete P) (tensorRight Z) :=
-    ⟨inferInstance⟩
   have hcoprod : IsZero (((Tor (ModuleCat.{u} A) n).obj
       ((restrictScalars.{u} f).obj (∐ fun _ : P ↦ of B B))).obj N) :=
     isZero_Tor_of_isColimit
