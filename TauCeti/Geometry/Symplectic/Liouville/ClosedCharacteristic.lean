@@ -93,30 +93,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [ChartedSpace H M] [IsManifold I (⊤ : ℕ∞) M] [T2Space M]
   {σ : SmoothTwoForm I M} {Z : (x : M) → TangentSpace I x} {W : Set M} {F : M → ℝ} {c : ℝ}
 
-/-- Flowing a loop that is contractible in `W` along the maximal flow of a `C¹` field `Z`, for a
-time `t` such that the flow is defined and stays in `W` at the times `u t`, `u ∈ [0, 1]`, gives a
-loop contractible in `W`: the times `u t` move one loop to the other. -/
-private theorem exists_nullhomotopic_flowOf_comp {X : Type*} [TopologicalSpace X]
-    (hZ : ContMDiff I I.tangent 1 (T% Z)) {g : C(X, W)} (hg : g.Nullhomotopic) {t : ℝ}
-    (hdom : ∀ x, ∀ u ∈ Icc (0 : ℝ) 1, (u * t, (g x : M)) ∈ flowDomain Z)
-    (hmem : ∀ x, ∀ u ∈ Icc (0 : ℝ) 1, flowOf Z (u * t) (g x) ∈ W) :
-    ∃ g' : C(X, W), g'.Nullhomotopic ∧ ∀ x, (g' x : M) = flowOf Z t (g x) := by
-  have hcont : ContinuousOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (flowDomain Z) :=
-    (contMDiffOn_flowOf le_rfl hZ).continuousOn
-  let H : C(unitInterval × X, W) :=
-    { toFun := fun p : unitInterval × X ↦
-        ⟨flowOf Z ((p.1 : ℝ) * t) (g p.2), hmem p.2 p.1 p.1.property⟩
-      continuous_toFun := (hcont.comp_continuous
-        (f := fun p : unitInterval × X ↦ ((p.1 : ℝ) * t, (g p.2 : M))) (by fun_prop)
-        fun p ↦ hdom p.2 p.1 p.1.property).subtype_mk _ }
-  let g' : C(X, W) := ⟨fun x ↦ H (1, x), by fun_prop⟩
-  let hH : ContinuousMap.Homotopy g g' :=
-    { toContinuousMap := H
-      map_zero_left := fun x ↦ Subtype.ext <| by simp [H]
-      map_one_left := fun _ ↦ rfl }
-  obtain ⟨y, hy⟩ := hg
-  exact ⟨g', ⟨y, (ContinuousMap.Homotopic.symm ⟨hH⟩).trans hy⟩, fun x ↦ by simp [g', H]⟩
-
 namespace IsLiouvilleVectorField
 
 /-! ### The local Liouville flow -/
@@ -316,20 +292,20 @@ theorem exists_hasContractibleClosedCharacteristic_image_flowOf {ε : ℝ} (hε 
       SmoothTwoForm.hamiltonianVectorField_comp (by fun_prop) hG]
     simp
 
+omit hZ in
 /-- **Almost existence gives existence along a Liouville flow**, for contractibility in the whole
 manifold. Under the hypotheses of
-`TauCeti.IsLiouvilleVectorField.exists_hasContractibleClosedCharacteristic_image_flowOf`, if the
-level `F⁻¹(c)` has the contractible almost existence property in `M`, then it carries a closed
-characteristic contractible in `M`. -/
-theorem hasContractibleClosedCharacteristic_univ {ε : ℝ}
+`TauCeti.IsLiouvilleVectorField.exists_hasContractibleClosedCharacteristic_image_flowOf`, with `Z`
+only `C¹`, if the level `F⁻¹(c)` has the contractible almost existence property in `M`, then it
+carries a closed characteristic contractible in `M`. -/
+theorem hasContractibleClosedCharacteristic_univ (hZ : ContMDiff I I.tangent 1 (T% Z)) {ε : ℝ}
     (hε : 0 < ε) (hF : ∀ x, F x ∈ Ioo (c - ε) (c + ε) → MDifferentiableAt I 𝓘(ℝ) F x)
     (hFZ : ∀ x t, F x ∈ Ioo (c - ε) (c + ε) → F x + t ∈ Ioo (c - ε) (c + ε) →
       F (flowOf Z t x) = F x + t)
     (h : σ.HasContractibleAlmostExistence univ F c) :
     σ.HasContractibleClosedCharacteristic univ F c :=
-  hZσ.hasContractibleClosedCharacteristic hσ
-    (hZ.of_le (by simp)) hε hF (fun x t hx hxt ↦ ⟨hc.mem_flowDomain t x, hFZ x t hx hxt⟩)
-    (fun _ _ _ _ _ ↦ mem_univ _) h
+  hZσ.hasContractibleClosedCharacteristic hσ hZ hε hF
+    (fun x t hx hxt ↦ ⟨hc.mem_flowDomain t x, hFZ x t hx hxt⟩) (fun _ _ _ _ _ ↦ mem_univ _) h
 
 end Complete
 

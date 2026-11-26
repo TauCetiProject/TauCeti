@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Geometry.Manifold.IntegralCurve.Flow
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Dynamics.Flow.PeriodBound
@@ -43,6 +44,8 @@ compact set.
   points at which the flow is defined form an open set, and
   `TauCeti.isOpen_setOf_mem_flowDomain_and_flowOf_mem` the times and points whose trajectory is
   defined and in a given open set.
+* `TauCeti.exists_nullhomotopic_flowOf_comp`: flowing a nullhomotopic map, for times at which the
+  flow stays in a set `W`, gives a map nullhomotopic in `W`.
 * `TauCeti.mfderiv_flowOf_comp_apply`: the differential of `(t, s) ↦ φₜ(f s)`.
 * `TauCeti.mfderiv_flowOf_comp_prodMk_apply`: the differential of `y ↦ φ_{τ y}(f y)`.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
@@ -324,6 +327,32 @@ theorem isOpen_setOf_mem_flowDomain_and_flowOf_mem [IsManifold I 1 M]
     {U : Set M} (hU : IsOpen U) :
     IsOpen {q : ℝ × M | q ∈ flowDomain v ∧ flowOf v q.1 q.2 ∈ U} :=
   (contMDiffOn_flowOf le_rfl hv).continuousOn.isOpen_inter_preimage (isOpen_flowDomain hv) hU
+
+/-- **Flowing a nullhomotopic map.** On a complete normed model space, let `g : X → W` be
+nullhomotopic in `W`, and let the maximal flow of a `C¹` field `v` be defined and stay in `W` at
+the times `u t`, `u ∈ [0, 1]`, from every point of `g`. Then `x ↦ φₜ(g x)` is nullhomotopic in
+`W`: the times `u t` move `g` to it inside `W`. -/
+theorem exists_nullhomotopic_flowOf_comp [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {X : Type*} [TopologicalSpace X]
+    {W : Set M} {g : C(X, W)} (hg : g.Nullhomotopic) {t : ℝ}
+    (hdom : ∀ x, ∀ u ∈ Icc (0 : ℝ) 1, (u * t, (g x : M)) ∈ flowDomain v)
+    (hmem : ∀ x, ∀ u ∈ Icc (0 : ℝ) 1, flowOf v (u * t) (g x) ∈ W) :
+    ∃ g' : C(X, W), g'.Nullhomotopic ∧ ∀ x, (g' x : M) = flowOf v t (g x) := by
+  have hcont : ContinuousOn (fun p : ℝ × M ↦ flowOf v p.1 p.2) (flowDomain v) :=
+    (contMDiffOn_flowOf le_rfl hv).continuousOn
+  let H : C(unitInterval × X, W) :=
+    { toFun := fun p : unitInterval × X ↦
+        ⟨flowOf v ((p.1 : ℝ) * t) (g p.2), hmem p.2 p.1 p.1.property⟩
+      continuous_toFun := (hcont.comp_continuous
+        (f := fun p : unitInterval × X ↦ ((p.1 : ℝ) * t, (g p.2 : M))) (by fun_prop)
+        fun p ↦ hdom p.2 p.1 p.1.property).subtype_mk _ }
+  let g' : C(X, W) := ⟨fun x ↦ H (1, x), by fun_prop⟩
+  let hH : ContinuousMap.Homotopy g g' :=
+    { toContinuousMap := H
+      map_zero_left := fun x ↦ Subtype.ext <| by simp [H]
+      map_one_left := fun _ ↦ rfl }
+  obtain ⟨y, hy⟩ := hg
+  exact ⟨g', ⟨y, (ContinuousMap.Homotopic.symm ⟨hH⟩).trans hy⟩, fun x ↦ by simp [g', H]⟩
 
 /-- **The differential of flowing a family of points for a family of times.** On a complete normed
 model space, at a point `z` where `φ_{τ z}(f z)` is defined, the differential of
