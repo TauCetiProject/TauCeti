@@ -25,8 +25,8 @@ the summand `l` are analytic maps between the total spaces of `⨁ₗ 𝒪(k l)`
 projection and the coordinate inclusion.
 
 Split bundles of this form are the normal forms of holomorphic bundles on the projective line, and
-the restriction of the tangent bundle of `ℙⁿ` to a line is `𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`
-(`Projectivization.lineTangentDiffeomorph`, in
+the restriction of the tangent bundle of `ℙⁿ` to the coordinate line is `𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`
+(`Projectivization.coordLineTangentDiffeomorph`, in
 `TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent`).
 
 ## Main declarations
@@ -98,20 +98,11 @@ theorem mem_affineOpen_twistSumCore_indexAt (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)
   exact (twistSumCore k).mem_baseSet_at x
 
 /-- `⨁ₗ 𝒪(k l)` and each `𝒪(k')` have the same preferred charts, those of the manifold structure
-of projective space. -/
+of projective space: both cores choose the affine open `(exists_mem_affineOpen x).choose` at `x`
+(`Projectivization.twistCore_indexAt`), so this holds by definition. -/
 theorem twistSumCore_indexAt (k' : ℤ) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
-    (twistSumCore k).indexAt x = (twistCore k').indexAt x := by
-  -- Both preferred charts are the chart of `x`, and distinct affine opens have distinct centres.
-  have h : affineOpenPartialHomeomorph (K := 𝕜) ((twistSumCore k).indexAt x) =
-      affineOpenPartialHomeomorph ((twistCore k').indexAt x) :=
-    (chartAt_eq_affineOpenPartialHomeomorph_twistCore_indexAt k' x :)
-  have hs : affineOpen (K := 𝕜) ((twistSumCore k).indexAt x) =
-      affineOpen ((twistCore k').indexAt x) := by
-    simpa using congrArg (fun e ↦ e.source) h
-  have hmem := (mk_single_mem_affineOpen_iff (K := 𝕜) ((twistCore k').indexAt x)
-    ((twistCore k').indexAt x)).2 rfl
-  rw [← hs, mk_single_mem_affineOpen_iff] at hmem
-  exact hmem
+    (twistSumCore k).indexAt x = (twistCore k').indexAt x :=
+  (twistCore_indexAt k' x).symm
 
 /-- The coordinate change of `⨁ₗ 𝒪(k l)` from the chart `i` to the chart `j` multiplies the
 coordinate `l` by the transition of `𝒪(k l)`. -/
@@ -119,6 +110,13 @@ coordinate `l` by the transition of `𝒪(k l)`. -/
 theorem twistSumCore_coordChange_apply (i j : Fin (n + 1)) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜))
     (v : κ → 𝕜) (l : κ) :
     (twistSumCore k).coordChange i j x v l = twistTransition (k l) i j x * v l :=
+  (rfl)
+
+/-- In the trivialization of `⨁ₗ 𝒪(k l)` at `x₀`, a vector at `x` is read by the coordinate change
+from the preferred chart at `x` to the preferred chart at `x₀`. -/
+theorem twistSumCore_trivializationAt_snd (x₀ x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) (v : κ → 𝕜) :
+    (trivializationAt (κ → 𝕜) (twistSumCore k).Fiber x₀ ⟨x, v⟩).2 =
+      (twistSumCore k).coordChange ((twistSumCore k).indexAt x) ((twistSumCore k).indexAt x₀) x v :=
   (rfl)
 
 /-- In the trivialization of `⨁ₗ 𝒪(k l)` at `x₀`, the coordinate `l` of a vector at `x` is its
