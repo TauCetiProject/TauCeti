@@ -8,9 +8,10 @@ module
 public import Mathlib.Algebra.Group.Conj
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import TauCeti.LinearAlgebra.End.Invariant
 import Mathlib.Algebra.Module.PID
 import Mathlib.Algebra.Polynomial.Module.FiniteDimensional
-import Mathlib.LinearAlgebra.Matrix.BilinearForm
 
 /-!
 # Similarity classes of square matrices of all sizes
@@ -29,16 +30,17 @@ These classes index the class functions on all square matrices of the Hall algeb
 * `TauCeti.SimilarityClass.ofEnd g`: the class of an endomorphism `g`.
 * `TauCeti.SimilarityClass.rep c`: a chosen endomorphism of `Fin c.dim → k` in the class `c`.
 * `TauCeti.SimilarityClass.charpoly c`: the characteristic polynomial of a class.
-* `Module.End.invtRestrict g hW`, `Module.End.invtQuot g hW`: the endomorphisms that `g` induces on
-  a `g`-invariant subspace `W` and on `V ⧸ W`.
 
 ## Main results
 
 * `TauCeti.SimilarityClass.ofEnd_eq_iff`: two endomorphisms have the same class if and only if a
   linear isomorphism intertwines them.
 * `TauCeti.SimilarityClass.ofEnd_invtRestrict_eq_of_injective`,
-  `TauCeti.SimilarityClass.ofEnd_invtQuot_eq_of_surjective`: classes on invariant subspaces and
-  quotients, computed through an injective or surjective intertwining map.
+  `TauCeti.SimilarityClass.ofEnd_invtQuot_eq_of_surjective`: classes of the endomorphisms induced
+  on invariant subspaces and quotients (`Module.End.invtRestrict`, `Module.End.invtQuot`), computed
+  through an injective or surjective intertwining map.
+* `TauCeti.exists_nondegenerate_mul_form`: a finite-dimensional quotient of `k[X]` carries a
+  linear form `L` for which `(x, y) ↦ L (x * y)` is nondegenerate.
 * `TauCeti.SimilarityClass.ofEnd_dualMap`: every endomorphism of a finite-dimensional vector
   space is similar to its transpose. The proof identifies `V` with a product of cyclic
   `k[X]`-modules `k[X] ⧸ (p)` and each of these with its dual through a nondegenerate form
@@ -99,9 +101,8 @@ theorem ofEnd_eq_mk_toMatrix {n : ℕ} (b : Basis (Fin n) k V) (g : Module.End k
   refine ⟨⟨b.toMatrix (finBasis k V), (finBasis k V).toMatrix b, ?_, ?_⟩, ?_⟩
   · exact Basis.toMatrix_mul_toMatrix_flip _ _
   · exact Basis.toMatrix_mul_toMatrix_flip _ _
-  · change _ * _ = _ * _
-    rw [← basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix b (finBasis k V) b
-      (finBasis k V)]
+  · rw [SemiconjBy, Units.val_mk,
+      ← basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix b (finBasis k V) b (finBasis k V)]
     simp
 
 /-- The class of the endomorphism `toLin' M` of `Fin n → k` is the conjugacy class of `M`. -/
@@ -198,28 +199,6 @@ section Invariant
 variable {V V' : Type*} [AddCommGroup V] [Module k V] [AddCommGroup V'] [Module k V']
   {g : Module.End k V} {g' : Module.End k V'}
 
-/-- The restriction of `g` to a `g`-invariant subspace `W`. -/
-def _root_.Module.End.invtRestrict (g : Module.End k V) {W : Submodule k V}
-    (hW : W ∈ g.invtSubmodule) : Module.End k W :=
-  g.restrict ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem g).1 hW)
-
-/-- The endomorphism of `V ⧸ W` induced by `g`, for a `g`-invariant subspace `W`. -/
-def _root_.Module.End.invtQuot (g : Module.End k V) {W : Submodule k V}
-    (hW : W ∈ g.invtSubmodule) : Module.End k (V ⧸ W) :=
-  W.mapQ W g ((Module.End.mem_invtSubmodule g).1 hW)
-
-/-- The restriction of `g` to `W` acts as `g`. -/
-@[simp]
-theorem _root_.Module.End.coe_invtRestrict_apply {W : Submodule k V} (hW : W ∈ g.invtSubmodule)
-    (x : W) : (g.invtRestrict hW x : V) = g x :=
-  (rfl)
-
-/-- The map induced on `V ⧸ W` sends the class of `x` to the class of `g x`. -/
-@[simp]
-theorem _root_.Module.End.invtQuot_mk {W : Submodule k V} (hW : W ∈ g.invtSubmodule) (x : V) :
-    g.invtQuot hW (Submodule.Quotient.mk x) = Submodule.Quotient.mk (g x) :=
-  (rfl)
-
 variable [Module.Finite k V] [Module.Finite k V']
 
 /-- If `p` is surjective with kernel `W` and intertwines `g` with `g'`, then `g` induces on `V ⧸ W`
@@ -241,14 +220,6 @@ theorem ofEnd_invtRestrict_eq_of_injective (p : V →ₗ[k] V') (hp : ∀ x, p (
   refine (ofEnd_eq_of_apply_eq (g' := g'.invtRestrict hU)
     (LinearEquiv.ofInjective p h_inj ≪≫ₗ LinearEquiv.ofEq _ _ h_range) fun x ↦ ?_).symm
   exact Subtype.ext (by simpa using hp x)
-
-omit [Module.Finite k V] [Module.Finite k V'] in
-/-- The preimage of a `g'`-invariant subspace under a map intertwining `g` with `g'` is
-`g`-invariant. -/
-theorem _root_.Submodule.comap_mem_invtSubmodule (p : V →ₗ[k] V') (hp : ∀ x, p (g x) = g' (p x))
-    {U : Submodule k V'} (hU : U ∈ g'.invtSubmodule) : U.comap p ∈ g.invtSubmodule :=
-  (Module.End.mem_invtSubmodule _).2 fun x hx ↦ by
-    simpa [hp] using (Module.End.mem_invtSubmodule _).1 hU hx
 
 /-- For an injective map `p` intertwining `g` with `g'`, and a `g'`-invariant subspace `U` in the
 image of `p`, the restrictions of `g` to `p⁻¹(U)` and of `g'` to `U` have the same class. -/
@@ -281,7 +252,7 @@ variable {k : Type*} [Field k]
 
 /-- A finite-dimensional quotient `A` of `k[X]` carries a linear form `L` for which the pairing
 `(x, y) ↦ L (x * y)` is nondegenerate. -/
-private theorem exists_nondegenerate_mul_form (I : Ideal k[X]) [Module.Finite k (k[X] ⧸ I)] :
+theorem exists_nondegenerate_mul_form (I : Ideal k[X]) [Module.Finite k (k[X] ⧸ I)] :
     ∃ L : Dual k (k[X] ⧸ I),
       LinearMap.BilinForm.Nondegenerate ((LinearMap.mul k (k[X] ⧸ I)).compr₂ L) := by
   -- Let `k[X]` act on the dual by `(q • φ) x = φ (q • x)`. Over a principal ideal domain some `L`

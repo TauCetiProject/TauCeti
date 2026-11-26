@@ -11,6 +11,7 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.GroupTheory.GroupAction.Quotient
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.LinearAlgebra.Projection
+import TauCeti.LinearAlgebra.GeneralLinearGroup.SubmoduleOrbit
 
 /-!
 # The adjoint of the induction product, and cuspidal elements
@@ -130,13 +131,6 @@ attribute [local instance low] Fintype.ofFinite
 variable {V : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
 
 omit [Fintype k] [DecidableEq k] in
-/-- An automorphism mapping `U` into `U` maps `U` onto `U`. -/
-private theorem smul_eq_of_forall_mem (g : (Module.End k V)ˣ) {U Y : Submodule k V}
-    (h : ∀ x ∈ U, (g : Module.End k V) x ∈ Y) (hd : finrank k Y = finrank k U) : g • U = Y :=
-  Submodule.eq_of_le_of_finrank_eq (Submodule.map_le_iff_le_comap.2 h)
-    (((LinearMap.GeneralLinearGroup.generalLinearEquiv k V) g).finrank_map_eq U |>.trans hd.symm)
-
-omit [Fintype k] [DecidableEq k] in
 private theorem units_inv_apply_apply {M : Type*} [AddCommGroup M] [Module k M]
     (a : (Module.End k M)ˣ) (m : M) : (↑a⁻¹ : Module.End k M) ((a : Module.End k M) m) = m := by
   rw [← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
@@ -168,20 +162,13 @@ private theorem blockUnit_apply (a : (Module.End k U)ˣ) (b : (Module.End k Z)ˣ
         ((U.prodEquivOfIsCompl Z hUZ).symm v)) :=
   rfl
 
-omit [Fintype k] [DecidableEq k] [Module.Finite k V] in
-/-- An automorphism stabilising `U` leaves `U` invariant. -/
-private theorem mem_invtSubmodule_of_mem_stabilizer {g : (Module.End k V)ˣ} {U : Submodule k V}
-    (hg : g ∈ stabilizer (Module.End k V)ˣ U) : U ∈ (g : Module.End k V).invtSubmodule :=
-  (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun v hv ↦ by
-    rw [← mem_stabilizer_iff.1 hg]
-    exact Submodule.mem_map_of_mem hv
-
 omit [Fintype k] [DecidableEq k] in
 private theorem blockUnit_mem_stabilizer (a : (Module.End k U)ˣ) (b : (Module.End k Z)ˣ)
     (x : Z →ₗ[k] U) : blockUnit hUZ a b x ∈ stabilizer (Module.End k V)ˣ U := by
-  refine mem_stabilizer_iff.2 (smul_eq_of_forall_mem _ (fun v hv ↦ ?_) rfl)
-  rw [blockUnit_apply, show v = ((⟨v, hv⟩ : U) : V) from rfl,
-    Submodule.prodEquivOfIsCompl_symm_apply_left]
+  refine mem_stabilizer_iff.2 (Submodule.units_smul_eq_of_forall_mem _ ?_ rfl)
+  intro v hv
+  obtain ⟨u, rfl⟩ : ∃ u : U, (u : V) = v := ⟨⟨v, hv⟩, rfl⟩
+  rw [blockUnit_apply, Submodule.prodEquivOfIsCompl_symm_apply_left]
   simp
 
 /-- The block parametrisation of the stabiliser of `U` in `GL(V)`. -/
@@ -212,7 +199,7 @@ private theorem blockParam_surjective : Function.Surjective (blockParam hUZ) := 
   rintro ⟨g, hg⟩
   let e := U.prodEquivOfIsCompl Z hUZ
   have hU := (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1
-    (mem_invtSubmodule_of_mem_stabilizer hg)
+    (Submodule.mem_invtSubmodule_of_mem_stabilizer hg)
   have hg_inj : Function.Injective (g : Module.End k V) :=
     ((LinearMap.GeneralLinearGroup.generalLinearEquiv k V) g).injective
   -- The three blocks of `g`: `g` on `U`, and the two components of `g` on `Z`.
@@ -255,11 +242,11 @@ map on `V ⧸ U` the class of `b`, and the whole map the class of the block map 
 private theorem pairTerm_blockUnit (A B X : HallAlgebra k) (a : (Module.End k U)ˣ)
     (b : (Module.End k Z)ˣ) (x : Z →ₗ[k] U) :
     pairTerm A B X (blockUnit hUZ a b x)
-        (mem_invtSubmodule_of_mem_stabilizer (blockUnit_mem_stabilizer hUZ a b x)) =
+        (Submodule.mem_invtSubmodule_of_mem_stabilizer (blockUnit_mem_stabilizer hUZ a b x)) =
       conj (A (ofEnd (a : Module.End k U))) * conj (B (ofEnd (b : Module.End k Z))) *
         X (ofEnd (blockTriangularEnd (a : Module.End k U) (b : Module.End k Z) x)) := by
   let e := U.prodEquivOfIsCompl Z hUZ
-  have h_mem := mem_invtSubmodule_of_mem_stabilizer (blockUnit_mem_stabilizer hUZ a b x)
+  have h_mem := Submodule.mem_invtSubmodule_of_mem_stabilizer (blockUnit_mem_stabilizer hUZ a b x)
   rw [pairTerm, ofEnd_invtRestrict_eq_of_injective (g := (a : Module.End k U)) U.subtype
       (fun u ↦ by simp [blockUnit_apply]) h_mem U.injective_subtype U.range_subtype,
     ofEnd_invtQuot_eq_of_surjective (g' := (b : Module.End k Z))
@@ -275,7 +262,7 @@ include hUZ in
 `p = dim U` and `q = dim Z`. -/
 private theorem expect_stabilizer (A B X : HallAlgebra k) :
     𝔼 g : stabilizer (Module.End k V)ˣ U,
-        pairTerm A B X g (mem_invtSubmodule_of_mem_stabilizer (V := V) (U := U) g.prop) =
+        pairTerm A B X g (Submodule.mem_invtSubmodule_of_mem_stabilizer (V := V) (U := U) g.prop) =
       rankInner (finrank k U) A (mulAdjoint (finrank k Z) B X) := by
   have : Finite (Z →ₗ[k] U) := Module.finite_of_finite k
   rw [← Fintype.expect_bijective (blockParam hUZ)
@@ -300,52 +287,31 @@ attribute [local instance low] Fintype.ofFinite
 variable {V : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
 
 omit [Fintype k] [DecidableEq k] in
-/-- The subspaces in the orbit of `U` under `GL(V)` are those of the dimension of `U`. -/
-private theorem mem_orbit_iff {U Y : Submodule k V} :
-    Y ∈ orbit (Module.End k V)ˣ U ↔ finrank k Y = finrank k U := by
-  refine ⟨?_, fun hY ↦ ?_⟩
-  · rintro ⟨g, rfl⟩
-    exact ((LinearMap.GeneralLinearGroup.generalLinearEquiv k V) g).finrank_map_eq U
-  · obtain ⟨g, hg⟩ :=
-      Submodule.exists_linearEquiv_restrict_eq (LinearEquiv.ofFinrankEq U Y hY.symm)
-    refine ⟨LinearMap.GeneralLinearGroup.ofLinearEquiv g,
-      smul_eq_of_forall_mem _ (fun x hx ↦ ?_) hY⟩
-    simp [← hg ⟨x, hx⟩]
-
-omit [Fintype k] [DecidableEq k] in
 open scoped Classical in
 /-- Orbit-stabiliser: `|Stab(U)| / |GL(V)|` is one over the number of subspaces of the dimension
 of `U`. -/
 private theorem card_stabilizer_div_card [Finite k] (U : Submodule k V) :
     (Fintype.card (stabilizer (Module.End k V)ˣ U) : ℂ) / Fintype.card (Module.End k V)ˣ =
       1 / (Finset.univ.filter fun Y : Submodule k V ↦ finrank k Y = finrank k U).card := by
-  have h_orbit : Fintype.card (orbit (Module.End k V)ˣ U) =
-      (Finset.univ.filter fun Y : Submodule k V ↦ finrank k Y = finrank k U).card :=
-    Fintype.card_of_subtype _ fun Y ↦ by simp [mem_orbit_iff]
+  have h := U.card_stabilizer_mul_card_finrank_eq
+  rw [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card, Nat.card_eq_fintype_card,
+    Fintype.card_subtype (p := fun Y : Submodule k V ↦ finrank k Y = finrank k U)] at h
   have h_pos : 0 < Fintype.card (stabilizer (Module.End k V)ˣ U) := Fintype.card_pos
-  rw [← card_orbit_mul_card_stabilizer_eq_card_group (Module.End k V)ˣ U, h_orbit]
-  push_cast
-  field_simp
-  exact div_self (Nat.cast_ne_zero.2 h_pos.ne')
+  rw [← h, Nat.cast_mul, div_mul_cancel_left₀ (Nat.cast_ne_zero.2 h_pos.ne'), one_div]
 
 omit [Fintype k] [DecidableEq k] in
 open scoped Classical in
 /-- Every dimension up to `dim V` is the dimension of a subspace. -/
 private theorem image_finrank_eq_range [Finite k] :
     Finset.univ.image (fun U : Submodule k V ↦ finrank k U) = Finset.range (finrank k V + 1) := by
-  refine Finset.Subset.antisymm (fun p hp ↦ ?_) fun p hp ↦ ?_
-  · obtain ⟨U, -, rfl⟩ := Finset.mem_image.1 hp
-    exact Finset.mem_range.2 (Nat.lt_succ_of_le (Submodule.finrank_le U))
-  · obtain ⟨f, hf⟩ : ∃ f : (Fin p → k) →ₗ[k] V, Function.Injective f :=
-      finrank_le_iff_exists_linearMap.1 (by simpa [Nat.lt_succ_iff] using hp)
-    exact Finset.mem_image.2 ⟨_, Finset.mem_univ _,
-      (LinearMap.finrank_range_of_inj hf).trans (finrank_fin_fun k)⟩
+  ext p
+  simpa [Nat.lt_succ_iff] using Set.ext_iff.1 (Submodule.range_finrank (K := k) (V := V)) p
 
 /-- The sum over the stabiliser of `U` of the term of `(g, U)` is `|Stab(U)|` times
 `⟨A, ∂_{q,B} X⟩_p`, with `p = dim U` and `q = dim V - p`. -/
 private theorem sum_stabilizer_pairTerm (A B X : HallAlgebra k) (U : Submodule k V) :
     ∑ g : stabilizer (Module.End k V)ˣ U,
-        pairTerm A B X g (mem_invtSubmodule_of_mem_stabilizer (V := V) (U := U) g.prop) =
+        pairTerm A B X g (Submodule.mem_invtSubmodule_of_mem_stabilizer (V := V) (U := U) g.prop) =
       Fintype.card (stabilizer (Module.End k V)ˣ U) *
         rankInner (finrank k U) A (mulAdjoint (finrank k V - finrank k U) B X) := by
   obtain ⟨Z, hZ⟩ := U.exists_isCompl
@@ -365,8 +331,8 @@ private theorem rankInner_mul_finrank (A B X : HallAlgebra k) :
   -- The pairs `(g, U)` with `U` invariant under `g`, listed by `U` first.
   let pairs : (Σ U : Submodule k V, stabilizer (Module.End k V)ˣ U) ≃
       Σ g : (Module.End k V)ˣ, (g : Module.End k V).invtSubmodule :=
-    { toFun x := ⟨x.2, x.1, mem_invtSubmodule_of_mem_stabilizer x.2.prop⟩
-      invFun y := ⟨y.2.val, y.1, mem_stabilizer_iff.2 (smul_eq_of_forall_mem _
+    { toFun x := ⟨x.2, x.1, Submodule.mem_invtSubmodule_of_mem_stabilizer x.2.prop⟩
+      invFun y := ⟨y.2.val, y.1, mem_stabilizer_iff.2 (Submodule.units_smul_eq_of_forall_mem _
         ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1 y.2.prop) rfl)⟩
       left_inv _ := rfl
       right_inv _ := rfl }
@@ -472,12 +438,11 @@ theorem mulAdjoint_of_isCuspidal (hc : c.IsCuspidal) {d : ℕ} (hd : d ≠ 0) (f
   ext o
   by_cases ho : o.dim = 0
   · -- At a class of size `0` the block average of `c` is `c`.
-    have h_avg : blockAverage c o = c := ext fun a ↦ blockAverage_of_dim_eq_zero_left c ho a
-    simp [mulAdjoint_apply, h_avg, one_apply, ho]
+    simp [mulAdjoint_apply, blockAverage_eq_self_of_dim_eq_zero c ho, ho]
   · -- At any other class it vanishes on blocks of size `d ≠ 0`.
     rw [mulAdjoint_apply, rankInner_eq_zero_of_right _ fun b hb ↦
       hc.blockAverage_eq_zero ho (hb ▸ hd)]
-    simp [one_apply, ho]
+    simp [ho]
 
 /-- For cuspidal `c` and `d ≠ 0`, the pairing with `c` in rank `d` satisfies the Leibniz rule, the
 other factor being evaluated at the class `o` of size `0`. -/
@@ -502,11 +467,9 @@ private theorem rankInner_mul_of_isCuspidal (hc : c.IsCuspidal) {d : ℕ} (hd : 
       rw [mulAdjoint_apply, rankInner_zero _ _ ho, blockAverage_of_dim_eq_zero_right c ho,
         smul_apply]
   have h_d : mulAdjoint d H c o = rankInner d H c := by
-    rw [mulAdjoint_apply, show blockAverage c o = c from
-      ext fun a ↦ blockAverage_of_dim_eq_zero_left c ho a]
-  rw [← conj_rankInner, h_sum, h_zero_dim, rankInner_smul_right, rankInner_zero _ _ ho, h_d,
-    map_add, map_mul, map_mul, conj_rankInner, conj_rankInner, Complex.conj_conj,
-    Complex.conj_conj]
+    rw [mulAdjoint_apply, blockAverage_eq_self_of_dim_eq_zero c ho]
+  rw [← conj_rankInner, h_sum, h_zero_dim, rankInner_zero _ _ ho, h_d]
+  simp [rankInner_smul_right, conj_rankInner]
   ring
 
 /-- **Leibniz rule.** For cuspidal `c` and `d ≠ 0`, `∂_{d,c}` is a derivation of the Hall

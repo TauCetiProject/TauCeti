@@ -58,10 +58,10 @@ subgroups is not proved here.
   (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC):
   `New.Hall`, `New.Hall.constOne`, `New.Hall.rankPart`, `New.Hall.evalGL`, `New.Hall.moebius`,
   `New.Hall.mulMoebius`, `New.Hall.brauerLift`, `New.Hall.greenCuspidal`, `New.Hall.mul_apply`,
-  `New.Hall.mul_simClassOf`, `New.Hall.mul_apply_eq_zero_of_dim_lt`,
-  `New.StableSubspace.sum_comap`, the `CommRing` and `Algebra ℂ` instances,
-  `New.Hall.one_sub_constOne_pow_apply_eq_zero` and `New.Hall.isUnit_constOne`. The inverse
-  of `𝟙` is built here from truncated geometric series rather than from a topology.
+  `New.Hall.mul_simClassOf`, `New.Hall.mul_apply_eq_zero_of_dim_lt`, the `CommRing` and
+  `Algebra ℂ` instances, `New.Hall.one_sub_constOne_pow_apply_eq_zero` and
+  `New.Hall.isUnit_constOne`. The inverse of `𝟙` is built here from truncated geometric series
+  rather than from a topology.
 -/
 
 public section
@@ -162,6 +162,7 @@ instance : One (HallAlgebra k) :=
   ⟨rankPart 0 constOne⟩
 
 /-- The unit `1` is the indicator of the classes of size `0`. -/
+@[simp]
 theorem one_apply (c : SimilarityClass k) : (1 : HallAlgebra k) c = if c.dim = 0 then 1 else 0 :=
   (rfl)
 
@@ -185,18 +186,12 @@ theorem toClassFunction_apply (F : HallAlgebra k) {n : Type*} [Fintype n] [Decid
 
 section Mul
 
-/-- Over a finite field an endomorphism has finitely many invariant subspaces. -/
-instance [Finite k] {V : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
-    (g : Module.End k V) :
-    Finite g.invtSubmodule :=
-  have := Module.finite_of_finite k (M := V)
-  inferInstance
-
 /-- The *induction product*: `(A ∗ A′)(c)` is the sum, over the subspaces `W` invariant under the
 chosen representative `g` of `c`, of `A` at the class of `g` on `W` times `A′` at the class of
 `g` on the quotient by `W`. By `mul_ofEnd` any representative gives the same sum. The sum is a
-`finsum`; it is meant for finite `k`, where there are finitely many invariant subspaces, and all
-results about it assume `Finite k`. -/
+`finsum`; it is meant for finite `k`, where there are finitely many invariant subspaces. For
+infinite `k` the `finsum` may be a junk `0`. The lemmas of this section hold for any field, while
+the ring laws (`instCommRing`, `instAlgebra`) and `isUnit_constOne` assume `Finite k`. -/
 noncomputable instance : Mul (HallAlgebra k) where
   mul F H c := ∑ᶠ W : c.rep.invtSubmodule,
     F (ofEnd (c.rep.invtRestrict W.prop)) * H (ofEnd (c.rep.invtQuot W.prop))
@@ -204,29 +199,6 @@ noncomputable instance : Mul (HallAlgebra k) where
 variable {V V' : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
   [AddCommGroup V'] [Module k V'] [Module.Finite k V'] {g : Module.End k V}
   {g' : Module.End k V'}
-
-omit [Module.Finite k V] [Module.Finite k V'] in
-open scoped Classical in
-/-- For a map `p` intertwining `g` with `g'`, preimage under `p` is a bijection from the
-`g'`-invariant subspaces in the image of `p` to the `g`-invariant subspaces containing the kernel
-of `p`. -/
-theorem sum_invtSubmodule_comap [Fintype g.invtSubmodule] [Fintype g'.invtSubmodule]
-    (p : V →ₗ[k] V') (hp : ∀ x, p (g x) = g' (p x)) (f : g.invtSubmodule → ℂ) :
-    ∑ W ∈ Finset.univ.filter (fun W : g.invtSubmodule ↦ LinearMap.ker p ≤ W.val), f W =
-      ∑ U ∈ Finset.univ.filter (fun U : g'.invtSubmodule ↦ U.val ≤ LinearMap.range p),
-        f ⟨_, Submodule.comap_mem_invtSubmodule p hp U.prop⟩ := by
-  -- Image and preimage under `p` are inverse bijections between the two index sets.
-  have h_map (W : g.invtSubmodule) : (W : Submodule k V).map p ∈ g'.invtSubmodule := by
-    refine (Module.End.mem_invtSubmodule _).2 ?_
-    rintro _ ⟨x, hx, rfl⟩
-    exact ⟨g x, (Module.End.mem_invtSubmodule _).1 W.prop hx, hp x⟩
-  refine Finset.sum_nbij' (fun W ↦ ⟨_, h_map W⟩)
-    (fun U ↦ ⟨_, Submodule.comap_mem_invtSubmodule p hp U.prop⟩) ?_ ?_ ?_ ?_ ?_
-  · simp [LinearMap.map_le_range]
-  · simp [LinearMap.ker_le_comap]
-  · simp +contextual [Submodule.comap_map_eq]
-  · simp +contextual [Submodule.map_comap_eq]
-  · simp +contextual [Submodule.comap_map_eq]
 
 /-- The sum defining the product is the same for endomorphisms intertwined by a linear
 isomorphism. -/
@@ -401,7 +373,7 @@ private theorem mul_mul_ofEnd_term (F G H : HallAlgebra k) (g : Module.End k V)
   rw [mul_ofEnd_eq_sum, Finset.sum_mul,
     ← Finset.filter_true_of_mem (s := Finset.univ)
       (p := fun U' ↦ LinearMap.ker W.val.subtype ≤ U'.val)
-      (by simp), sum_invtSubmodule_comap W.val.subtype (subtype_invtRestrict W.prop)]
+      (by simp), LinearMap.sum_invtSubmodule_comap W.val.subtype (subtype_invtRestrict W.prop)]
   simp only [Submodule.range_subtype]
   refine Finset.sum_congr rfl fun U hU ↦ ?_
   rw [chainTerm, ofEnd_invtRestrict_comap _ (subtype_invtRestrict W.prop) W.val.injective_subtype
@@ -416,7 +388,8 @@ private theorem mul_ofEnd_mul_term (F G H : HallAlgebra k) (g : Module.End k V)
         chainTerm F G H g U W := by
   have := Fintype.ofFinite (g.invtQuot U.prop).invtSubmodule
   -- The invariant subspaces of `g` on `V ⧸ U` are the images of those containing `U`.
-  have key := sum_invtSubmodule_comap U.val.mkQ (mkQ_invtQuot U.prop) (chainTerm F G H g U)
+  have key :=
+    LinearMap.sum_invtSubmodule_comap U.val.mkQ (mkQ_invtQuot U.prop) (chainTerm F G H g U)
   rw [U.val.ker_mkQ, Finset.filter_true_of_mem (s := Finset.univ)
     (p := fun W' : (g.invtQuot U.prop).invtSubmodule ↦ W'.val ≤ LinearMap.range U.val.mkQ)
     (by simp)] at key
@@ -436,35 +409,15 @@ protected theorem mul_assoc (F G H : HallAlgebra k) : F * G * H = F * (G * H) :=
   simp only [mul_mul_ofEnd_term, mul_ofEnd_mul_term]
   exact Finset.sum_comm' (by simp)
 
-omit [Finite k] [Module.Finite k V] in
-/-- The annihilator of a `g`-invariant subspace is invariant under the transpose of `g`. -/
-private theorem dualAnnihilator_mem_invtSubmodule {g : Module.End k V} {W : Submodule k V}
-    (hW : W ∈ g.invtSubmodule) : W.dualAnnihilator ∈ Module.End.invtSubmodule g.dualMap := by
-  refine (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun φ hφ ↦
-    (Submodule.mem_dualAnnihilator _).2 fun w hw ↦ ?_
-  simpa using (Submodule.mem_dualAnnihilator _).1 hφ _
-    ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1 hW w hw)
-
-omit [Finite k] [Module.Finite k V] in
-/-- The common zeros of a subspace invariant under the transpose of `g` form a `g`-invariant
-subspace. -/
-private theorem dualCoannihilator_mem_invtSubmodule {g : Module.End k V}
-    {W : Submodule k (Dual k V)} (hW : W ∈ Module.End.invtSubmodule g.dualMap) :
-    W.dualCoannihilator ∈ g.invtSubmodule := by
-  refine (Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun v hv ↦
-    (Submodule.mem_dualCoannihilator _).2 fun φ hφ ↦ ?_
-  simpa using (Submodule.mem_dualCoannihilator _).1 hv _
-    ((Module.End.mem_invtSubmodule_iff_forall_mem_of_mem _).1 hW φ hφ)
-
 omit [Finite k] in
 /-- The transpose of `g` on the annihilator of `W` has the class of `g` on `V ⧸ W`, and on the
 quotient by the annihilator the class of `g` on `W`. -/
 private theorem ofEnd_dualMap_dualAnnihilator {g : Module.End k V} {W : Submodule k V}
     (hW : W ∈ g.invtSubmodule) :
     ofEnd (V := W.dualAnnihilator)
-        (Module.End.invtRestrict g.dualMap (dualAnnihilator_mem_invtSubmodule hW)) =
+        (Module.End.invtRestrict g.dualMap (W.dualAnnihilator_mem_invtSubmodule hW)) =
         ofEnd (g.invtQuot hW) ∧
-      ofEnd (Module.End.invtQuot g.dualMap (dualAnnihilator_mem_invtSubmodule hW)) =
+      ofEnd (Module.End.invtQuot g.dualMap (W.dualAnnihilator_mem_invtSubmodule hW)) =
         ofEnd (g.invtRestrict hW) := by
   constructor
   · rw [ofEnd_invtRestrict_eq_of_injective (g := (g.invtQuot hW).dualMap) W.mkQ.dualMap
@@ -487,8 +440,8 @@ protected theorem mul_comm (F H : HallAlgebra k) : F * H = H * F := by
   conv_lhs => rw [← ofEnd_dualMap g]
   rw [mul_ofEnd_eq_sum, mul_ofEnd_eq_sum]
   let E : g.invtSubmodule ≃ Module.End.invtSubmodule g.dualMap :=
-    { toFun W := ⟨_, dualAnnihilator_mem_invtSubmodule W.prop⟩
-      invFun W := ⟨_, dualCoannihilator_mem_invtSubmodule W.prop⟩
+    { toFun W := ⟨_, Submodule.dualAnnihilator_mem_invtSubmodule W.prop⟩
+      invFun W := ⟨_, Submodule.dualCoannihilator_mem_invtSubmodule W.prop⟩
       left_inv W := Subtype.ext Subspace.dualAnnihilator_dualCoannihilator_eq
       right_inv W := Subtype.ext Subspace.dualCoannihilator_dualAnnihilator_eq }
   refine (Fintype.sum_equiv E _ _ fun W ↦ ?_).symm

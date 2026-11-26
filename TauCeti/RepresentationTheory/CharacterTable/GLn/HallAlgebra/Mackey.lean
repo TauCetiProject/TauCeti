@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Expect
+public import TauCeti.LinearAlgebra.End.Invariant
 public import TauCeti.RepresentationTheory.CharacterTable.GLn.HallAlgebra.Basic
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Quotient.Card
+import TauCeti.Algebra.BigOperators.Expect
 
 /-!
 # Block averages in the Hall algebra and Mackey's formula
@@ -25,7 +27,6 @@ subspaces `W` of `V_a`.
 
 ## Main definitions
 
-* `TauCeti.blockTriangularEnd a b x`: the endomorphism `(v, w) ↦ (a v + x w, b w)` of `V × W`.
 * `TauCeti.HallAlgebra.blockAverage A a`: the function `δA(a, ·)`.
 * `TauCeti.HallAlgebra.IsCuspidal A`: `δA(a, b) = 0` whenever `a` and `b` both have positive size.
 
@@ -41,7 +42,8 @@ subspaces `W` of `V_a`.
   `V_b ⧸ B → V_a ⧸ A` that `y` induces.
 * `TauCeti.HallAlgebra.blockAverage_of_dim_eq_zero_left`,
   `TauCeti.HallAlgebra.blockAverage_of_dim_eq_zero_right`: with a block of size `0` the block
-  average is the value at the other block.
+  average is the value at the other block; `TauCeti.HallAlgebra.blockAverage_eq_self_of_dim_eq_zero`
+  is the first as an equation of functions.
 
 ## References
 
@@ -51,10 +53,11 @@ subspaces `W` of `V_a`.
   Lecture Notes in Math. 869 (1981).
 * Adapted from `src/Lib/LocalGL/Green/HallAlgebra.lean` in grh-lean
   (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC):
-  `New.blockTriangularEnd`, `New.Hall.blockAverage`, `New.Hall.IsCuspidal`,
-  `New.Hall.blockAverage_simClassOf`, `New.Hall.exists_restrict_eq_and_mapQ_eq`,
+  `New.Hall.blockAverage`, `New.Hall.IsCuspidal`, `New.Hall.blockAverage_simClassOf`,
   `New.Hall.blockAverage_mul` and `New.Hall.blockAverage_of_dim_eq_zero`, here with the
-  invariant block first.
+  invariant block first. The block maps `TauCeti.blockTriangularEnd` (`New.blockTriangularEnd`)
+  and the lifting lemma `Submodule.exists_restrict_eq_and_mapQ_eq`
+  (`New.Hall.exists_restrict_eq_and_mapQ_eq`) are in `TauCeti.LinearAlgebra.End.Invariant`.
 -/
 
 public section
@@ -63,24 +66,6 @@ open Module TauCeti.SimilarityClass
 open scoped BigOperators
 
 namespace TauCeti
-
-section BlockEnd
-
-variable {k V W : Type*} [Field k] [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W]
-
-/-- The block upper triangular endomorphism `(v, w) ↦ (a v + x w, b w)` of `V × W`, with diagonal
-blocks `a` and `b` and upper right block `x`. -/
-def blockTriangularEnd (a : Module.End k V) (b : Module.End k W) (x : W →ₗ[k] V) :
-    Module.End k (V × W) :=
-  (a.coprod x).prod (b ∘ₗ LinearMap.snd k V W)
-
-/-- The block map sends `(v, w)` to `(a v + x w, b w)`. -/
-@[simp]
-theorem blockTriangularEnd_apply (a : Module.End k V) (b : Module.End k W) (x : W →ₗ[k] V)
-    (p : V × W) : blockTriangularEnd a b x p = (a p.1 + x p.2, b p.2) := by
-  simp [blockTriangularEnd]
-
-end BlockEnd
 
 namespace HallAlgebra
 
@@ -141,6 +126,11 @@ theorem blockAverage_of_dim_eq_zero_left (F : HallAlgebra k) {o : SimilarityClas
       simp [Subsingleton.elim (o.rep p.1 + _) 0]
   simp [blockAverage, h_class]
 
+/-- With a first block of size `0`, the block average is the function itself. -/
+theorem blockAverage_eq_self_of_dim_eq_zero (F : HallAlgebra k) {o : SimilarityClass k}
+    (h : o.dim = 0) : blockAverage F o = F :=
+  ext fun a ↦ blockAverage_of_dim_eq_zero_left F h a
+
 /-- With a second block of size `0`, the block average is the value at the first block. -/
 theorem blockAverage_of_dim_eq_zero_right (F : HallAlgebra k) {o : SimilarityClass k}
     (h : o.dim = 0) (a : SimilarityClass k) : blockAverage F a o = F a := by
@@ -157,30 +147,6 @@ theorem blockAverage_of_dim_eq_zero_right (F : HallAlgebra k) {o : SimilarityCla
 section Mackey
 
 variable (a : Module.End k V) (b : Module.End k W)
-
-/-- The mean of a function of a surjective additive map is the mean over its target. -/
-private theorem expect_comp_surjective {G H : Type*} [AddCommGroup G] [AddCommGroup H]
-    [Fintype G] [Fintype H] (f : G →+ H) (hf : Function.Surjective f) (φ : H → ℂ) :
-    𝔼 g, φ (f g) = 𝔼 h, φ h := by
-  classical
-  -- Every fibre of `f` has the size of its kernel.
-  have h_fib (h : H) : (Finset.univ.filter fun g ↦ f g = h).card =
-      (Finset.univ.filter fun g ↦ f g = 0).card :=
-    AddMonoidHom.card_fiber_eq_of_mem_range f (hf h) (hf 0)
-  have hK : (Finset.univ.filter fun g ↦ f g = 0).card ≠ 0 :=
-    Finset.card_ne_zero.2 ⟨0, by simp⟩
-  have h_sum (ψ : H → ℂ) :
-      ∑ g, ψ (f g) = (Finset.univ.filter fun g ↦ f g = 0).card * ∑ h, ψ h := by
-    rw [← Finset.sum_fiberwise_of_maps_to (g := f) (t := Finset.univ)
-      (fun _ _ ↦ Finset.mem_univ _), Finset.mul_sum]
-    refine Finset.sum_congr rfl fun h _ ↦ ?_
-    rw [Finset.sum_congr rfl fun g hg ↦ by rw [(Finset.mem_filter.1 hg).2], Finset.sum_const,
-      h_fib, nsmul_eq_mul]
-  have h_card : (Fintype.card G : ℂ) =
-      (Finset.univ.filter fun g ↦ f g = 0).card * Fintype.card H := by
-    simpa using h_sum fun _ ↦ 1
-  rw [Fintype.expect_eq_sum_div_card, Fintype.expect_eq_sum_div_card, h_sum, h_card,
-    mul_div_mul_left _ _ (by exact_mod_cast hK)]
 
 omit [Fintype k] in
 /-- Linear maps between finite-dimensional spaces over a finite field form a finite set. -/
@@ -320,22 +286,6 @@ private theorem mackeyParam_surjective : Function.Surjective (mackeyParam a b) :
   refine ⟨⟨(A, B), ⟨_, hy⟩, s⟩, Sigma.subtype_ext (add_sub_cancel _ _) ?_⟩
   exact SetLike.ext fun ⟨v, w⟩ ↦ (mem_mackeyParam a b (A, B) _ s v w).trans (mem_U v w)
 
-omit [Fintype k] [Module.Finite k V] [Module.Finite k W] in
-/-- Any maps `B → A` and `W ⧸ B → V ⧸ A` are induced by one map `W → V` that takes `B` into
-`A`. -/
-private theorem exists_restrict_eq_and_mapQ_eq {A : Submodule k V} {B : Submodule k W}
-    (α : B →ₗ[k] A) (β : W ⧸ B →ₗ[k] V ⧸ A) :
-    ∃ (y : W →ₗ[k] V) (hy : B ≤ A.comap y), y.restrict hy = α ∧ B.mapQ A y hy = β := by
-  -- Extend `α` to `c : W → A`, lift `β` to `r : W ⧸ B → V`, and add.
-  obtain ⟨c, rfl⟩ : ∃ c : W →ₗ[k] A, c ∘ₗ B.subtype = α := α.exists_extend
-  obtain ⟨r, rfl⟩ := Module.projective_lifting_property _ β A.mkQ_surjective
-  refine ⟨A.subtype ∘ₗ c + r ∘ₗ B.mkQ, fun w hw ↦ ?_, ?_, ?_⟩
-  · simp [(Submodule.Quotient.mk_eq_zero B).2 hw]
-  · ext w
-    simp [(Submodule.Quotient.mk_eq_zero B).2 w.prop]
-  · ext w
-    simp [(Submodule.Quotient.mk_eq_zero A).2 (c w).prop]
-
 /-- The maps `B → A` and `W ⧸ B → V ⧸ A` induced by a map `y` taking `B` into `A`. -/
 private def induced (P : a.invtSubmodule × b.invtSubmodule) :
     compat a b P × ((W →ₗ[k] V) ⧸ compat a b P) →+
@@ -348,7 +298,7 @@ private def induced (P : a.invtSubmodule × b.invtSubmodule) :
 omit [Fintype k] [Module.Finite k V] [Module.Finite k W] in
 private theorem induced_surjective (P : a.invtSubmodule × b.invtSubmodule) :
     Function.Surjective (induced a b P) := fun ⟨α, β⟩ ↦ by
-  obtain ⟨y, hy, hα, hβ⟩ := exists_restrict_eq_and_mapQ_eq α β
+  obtain ⟨y, hy, hα, hβ⟩ := Submodule.exists_restrict_eq_and_mapQ_eq α β
   exact ⟨(⟨y, hy⟩, 0), Prod.ext hα hβ⟩
 
 /-- The term of the pair `(x, U)` in the expansion of the left side of Mackey's formula. -/
@@ -447,7 +397,7 @@ theorem blockAverage_mul (F H : HallAlgebra k) :
   rw [finsum_eq_sum_of_fintype, sum_blockAverage_mul_blockAverage_eq, blockAverage_mul_eq_sum]
   refine Finset.sum_congr rfl fun P _ ↦ ?_
   simp_rw [mackeyTerm_mackeyParam]
-  exact expect_comp_surjective (induced a b P) (induced_surjective a b P)
+  exact (induced a b P).expect_comp_of_surjective (induced_surjective a b P)
     (fun z ↦ F (ofEnd (blockTriangularEnd (a.invtRestrict P.1.prop) (b.invtRestrict P.2.prop)
       z.1)) * H (ofEnd (blockTriangularEnd (a.invtQuot P.1.prop) (b.invtQuot P.2.prop) z.2)))
 
