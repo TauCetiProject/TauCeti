@@ -8,8 +8,7 @@ module
 public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
 import TauCeti.Analysis.Calculus.ContDiff.Prod
-import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.DifferentialInequality
-import TauCeti.Topology.Codiscrete
+import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.StdComplexLine
 
 /-!
 # Unique continuation for the coordinate Floer equation
@@ -33,11 +32,11 @@ constant symplectic form, so the vector-space theorems for `TauCeti.SymplecticFo
   `‖∂ₛw + J(z, u z) ∂ₜw‖ ≤ M ‖w‖` near every coincidence point
   (`TauCeti.Floer.exists_eventually_norm_le_of_fderiv_stdComplexLineImag_sub`), by the local
   Lipschitz bounds of `J` and `X`;
-* so, by `TauCeti.eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le`, two solutions on a connected
-  open set which agree on a nonempty open subset agree everywhere
+* so, by `TauCeti.eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_fderiv_le`, two solutions on a
+  connected open set which agree on a nonempty open subset agree everywhere
   (`TauCeti.Floer.eqOn_of_fderiv_stdComplexLineImag_sub_of_eqOn`), and by
-  `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_norm_le` two solutions which differ
-  somewhere agree only on a discrete set
+  `TauCeti.setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_norm_fderiv_le` two solutions
+  which differ somewhere agree only on a discrete set
   (`TauCeti.Floer.setOf_ne_mem_codiscreteWithin_of_fderiv_stdComplexLineImag_sub`).
 
 Only the structure `J(z, u z)` along the first solution has to square to `-1`, and the regularity
@@ -60,7 +59,7 @@ of the data is only used along the graph of the first solution. The manifold ver
 
 public section
 
-open Complex Filter Function Set Topology
+open Filter Set Topology
 
 namespace TauCeti.Floer
 
@@ -139,32 +138,6 @@ theorem exists_eventually_norm_le_of_fderiv_stdComplexLineImag_sub (hΩ : IsOpen
         gcongr
     _ = _ := by ring
 
-/-- In the complex coordinate `e = Complex.equivRealProdCLM`, the difference of two solutions of the
-coordinate Floer equation on `Ω` obeys the Cauchy–Riemann inequality for the structure
-`J(e w, u (e w))` near its zeros in `e ⁻¹' Ω`, with the regularity the unique continuation
-theorems for differential inequalities ask for. -/
-private theorem complexCoordinate (hΩ : IsOpen Ω) (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 J (z, u z))
-    (hJJ : ∀ z ∈ Ω, J (z, u z) ∘L J (z, u z) = -ContinuousLinearMap.id ℝ F)
-    (hX : ∀ z ∈ Ω, ContDiffAt ℝ 1 X (z, u z)) (hu : ContDiffOn ℝ 1 u Ω)
-    (hv : ContDiffOn ℝ 1 v Ω)
-    (hFu : ∀ z ∈ Ω, fderiv ℝ u z stdComplexLineImag - X (z, u z) stdComplexLineImag =
-      J (z, u z) (fderiv ℝ u z stdComplexLineReal - X (z, u z) stdComplexLineReal))
-    (hFv : ∀ z ∈ Ω, fderiv ℝ v z stdComplexLineImag - X (z, v z) stdComplexLineImag =
-      J (z, v z) (fderiv ℝ v z stdComplexLineReal - X (z, v z) stdComplexLineReal)) :
-    let e := Complex.equivRealProdCLM
-    ContDiffOn ℝ 1 (fun w ↦ J (e w, u (e w))) (e ⁻¹' Ω) ∧
-      ContDiffOn ℝ 1 ((u - v) ∘ e) (e ⁻¹' Ω) ∧
-      ∀ w ∈ e ⁻¹' Ω, ((u - v) ∘ e) w = 0 → ∃ M, ∀ᶠ w' in 𝓝 w, ‖fderiv ℝ ((u - v) ∘ e) w' 1 +
-        J (e w', u (e w')) (fderiv ℝ ((u - v) ∘ e) w' I)‖ ≤ M * ‖((u - v) ∘ e) w'‖ := by
-  intro e
-  refine ⟨(contDiffOn_comp_graph (J := fun z x ↦ J (z, x)) hJ hu).comp_continuousLinearMap
-      (e : ℂ →L[ℝ] ℝ × ℝ), (hu.sub hv).comp_continuousLinearMap (e : ℂ →L[ℝ] ℝ × ℝ),
-    fun w hw h ↦ ?_⟩
-  obtain ⟨M, hM⟩ := exists_eventually_norm_le_of_fderiv_stdComplexLineImag_sub hΩ hw
-    (hJ _ hw) (hX _ hw) hJJ hu hv hFu hFv (sub_eq_zero.1 h)
-  refine ⟨M, (e.continuous.tendsto w).eventually hM |>.mono fun w' hw' ↦ ?_⟩
-  rwa [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I, comp_apply]
-
 variable [FiniteDimensional ℝ F]
 
 /-- **Unique continuation for the coordinate Floer equation.** Let `J` and `X` be `C¹` near the
@@ -182,14 +155,12 @@ theorem eqOn_of_fderiv_stdComplexLineImag_sub_of_eqOn (hΩ : IsOpen Ω) (hΩc : 
       J (z, v z) (fderiv ℝ v z stdComplexLineReal - X (z, v z) stdComplexLineReal))
     {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn u v U) :
     EqOn u v Ω := by
-  obtain ⟨hJ', hξ', hb⟩ := complexCoordinate hΩ hJ hJJ hX hu hv hFu hFv
-  set e := Complex.equivRealProdCLM
-  obtain ⟨z₁, hz₁⟩ := hUne
   have h : EqOn (u - v) 0 Ω :=
-    (eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le (hΩ.preimage e.continuous)
-      ((e.toHomeomorph.isPreconnected_preimage).2 hΩc) hJ' (fun w hw ↦ hJJ (e w) hw) hξ' hb
-      (hU.preimage e.continuous) ⟨e.symm z₁, by simpa using hz₁⟩ (preimage_mono hUΩ)
-      fun w hw ↦ sub_eq_zero.2 (h₀ hw)).cancel_right e.surjective.surjOn_preimage
+    eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_fderiv_le hΩ hΩc
+      (contDiffOn_comp_graph (J := fun z x ↦ J (z, x)) hJ hu) hJJ (hu.sub hv)
+      (fun z hz h ↦ exists_eventually_norm_le_of_fderiv_stdComplexLineImag_sub hΩ hz (hJ z hz)
+        (hX z hz) hJJ hu hv hFu hFv (sub_eq_zero.1 h)) hU hUne hUΩ
+      fun z hz ↦ sub_eq_zero.2 (h₀ hz)
   exact fun z hz ↦ sub_eq_zero.1 (h hz)
 
 /-- **Isolated coincidences for the coordinate Floer equation.** Let `J` and `X` be `C¹` near the
@@ -206,14 +177,11 @@ theorem setOf_ne_mem_codiscreteWithin_of_fderiv_stdComplexLineImag_sub (hΩ : Is
     (hFv : ∀ z ∈ Ω, fderiv ℝ v z stdComplexLineImag - X (z, v z) stdComplexLineImag =
       J (z, v z) (fderiv ℝ v z stdComplexLineReal - X (z, v z) stdComplexLineReal))
     (hne : ∃ z ∈ Ω, u z ≠ v z) : {z | u z ≠ v z} ∈ codiscreteWithin Ω := by
-  obtain ⟨hJ', hξ', hb⟩ := complexCoordinate hΩ hJ hJJ hX hu hv hFu hFv
-  set e := Complex.equivRealProdCLM
-  obtain ⟨z₁, hz₁, hne₁⟩ := hne
-  have h := setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_norm_le
-    (hΩ.preimage e.continuous) ((e.toHomeomorph.isPreconnected_preimage).2 hΩc) hJ'
-    (fun w hw ↦ hJJ (e w) hw) hξ' hb
-    ⟨e.symm z₁, by simpa using hz₁, by simpa [sub_eq_zero] using hne₁⟩
   simpa only [Pi.sub_apply, ne_eq, sub_eq_zero] using
-    (e.toHomeomorph.preimage_mem_codiscreteWithin (s := {z | (u - v) z ≠ 0})).1 h
+    setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_norm_fderiv_le hΩ hΩc
+      (contDiffOn_comp_graph (J := fun z x ↦ J (z, x)) hJ hu) hJJ (hu.sub hv)
+      (fun z hz h ↦ exists_eventually_norm_le_of_fderiv_stdComplexLineImag_sub hΩ hz (hJ z hz)
+        (hX z hz) hJJ hu hv hFu hFv (sub_eq_zero.1 h))
+      (by simpa only [Pi.sub_apply, ne_eq, sub_eq_zero] using hne)
 
 end TauCeti.Floer
