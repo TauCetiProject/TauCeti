@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.LinearAlgebra.Matrix.Block
-public import TauCeti.RingTheory.AffineGrassmannian.LatticeFiltration
+public import TauCeti.RingTheory.AffineGrassmannian.Lattice.Filtration
 import Mathlib.RingTheory.Jacobson.Ideal
 import TauCeti.Algebra.Algebra.IsUnit
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Inverse
@@ -32,10 +32,11 @@ unit in `K`, these are the matrices `A` with `μ(ξ)⁻¹ A μ(ξ)` integral, eq
 At `ξ = 0` the divisibility says that the entries with `k j < k i` vanish, i.e. that the matrix
 is block triangular for `k` (`Matrix.BlockTriangular`); in `GLₙ` this is the parabolic `P⁻_μ`
 of the nonpositive weights of `μ`. Reducing modulo `ξ` maps the stabilizer into `P⁻_μ(B ⧸ ξ)`,
-and onto it when `ξ` lies in the Jacobson radical. More generally, on the congruence subgroup of
-level `m`, whose elements are `1 + ξ ^ m X`, the stabilizer is cut out by
-`ξ ^ (k i - k j - m) ∣ X i j`; so its image in the graded piece `X mod ξ` consists of the
-matrices supported on the weights `k i - k j ≤ m` of `μ`.
+and onto it when `ξ` lies in the Jacobson radical. More generally, for `ξ` regular, on the
+congruence subgroup of level `m`, whose elements are `1 + ξ ^ m X`, the stabilizer is cut out by
+`ξ ^ (k i - k j - m) ∣ X i j`; so, when moreover `ξ` lies in the Jacobson radical and `m ≥ 1`,
+its image in the graded piece `X mod ξ` consists of the matrices supported on the weights
+`k i - k j ≤ m` of `μ`.
 
 ## Main definitions
 
@@ -57,9 +58,9 @@ matrices supported on the weights `k i - k j ≤ m` of `μ`.
   `ξ` maps the stabilizer onto the block-triangular subgroup of `GLₙ(B ⧸ ξ)`.
 * `TauCeti.pow_smul_mem_diagonalLatticeSubalgebra_iff`: for `ξ` regular,
   `ξ ^ m X` lies in the subalgebra iff `ξ ^ (k i - k j - m) ∣ X i j` for all `i, j`.
-* `TauCeti.exists_mem_diagonalLatticeStabilizer_eq_one_add_pow_smul_iff`: the reductions modulo
-  `ξ` of the `X` with `1 + ξ ^ m X` in the stabilizer are the matrices vanishing at the weights
-  `k i - k j > m`.
+* `TauCeti.exists_mem_diagonalLatticeStabilizer_eq_one_add_pow_smul_iff`: for `ξ` regular and in
+  the Jacobson radical and `m ≥ 1`, the reductions modulo `ξ` of the `X` with `1 + ξ ^ m X` in the
+  stabilizer are the matrices vanishing at the weights `k i - k j > m`.
 
 ## References
 
@@ -161,8 +162,8 @@ becomes a unit in `K`, this is the stabilizer of `μ(ξ) Bⁿ` in `GLₙ(B)`
 def diagonalLatticeStabilizer (k : n → ℤ) (ξ : B) : Subgroup (GL n B) :=
   (diagonalLatticeSubalgebra k ξ).toSubmonoid.units
 
-/-- An element of `GL n B` lies in the stabilizer as soon as its matrix lies in the subalgebra:
-the inverse matrix then does too. -/
+/-- An element of `GL n B` lies in `diagonalLatticeStabilizer k ξ` iff its matrix lies in
+`diagonalLatticeSubalgebra k ξ`. -/
 @[simp]
 theorem mem_diagonalLatticeStabilizer {k : n → ℤ} {ξ : B} {g : GL n B} :
     g ∈ diagonalLatticeStabilizer k ξ ↔ (g : Matrix n n B) ∈ diagonalLatticeSubalgebra k ξ := by
