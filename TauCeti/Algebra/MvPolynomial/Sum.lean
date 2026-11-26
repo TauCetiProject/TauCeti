@@ -32,6 +32,22 @@ theorem eval₂_sumAlgEquiv (f : R →+* S) (x : σ → S) (y : τ → S)
   | add p q hp hq => simp [hp, hq]
   | mul_X p i hp => cases i <;> simp [hp]
 
+/-- Evaluating a polynomial after substituting an algebra map into its coefficient variables
+agrees with evaluating all variables at once. -/
+theorem aevalTower_map_sumAlgEquiv {A : Type*} [CommSemiring A] [Algebra R A] [Algebra R S]
+    (p : MvPolynomial (σ ⊕ τ) R) (q : MvPolynomial τ R →ₐ[R] A)
+    (y : A →ₐ[R] S) (x : σ → S) :
+    aevalTower y x (map q (sumAlgEquiv R σ τ p)) =
+      aeval (Sum.elim x (fun i ↦ y (q (X i)))) p := by
+  have h : (y : A →+* S).comp (q : MvPolynomial τ R →+* A) =
+      eval₂Hom (algebraMap R S) (fun i ↦ y (q (X i))) :=
+    congrArg AlgHom.toRingHom (aeval_unique (y.comp q))
+  calc
+    _ = eval₂ (y : A →+* S) x (map q (sumAlgEquiv R σ τ p)) := (rfl)
+    _ = eval₂ (eval₂Hom (algebraMap R S) (fun i ↦ y (q (X i)))) x
+        (sumAlgEquiv R σ τ p) := by rw [eval₂_map, h]
+    _ = _ := eval₂_sumAlgEquiv _ _ _ _
+
 /-- Separating two families of variables commutes with mapping the coefficients: the
 coefficient map acts on the polynomial coefficients in the second family. -/
 theorem sumAlgEquiv_map (f : R →+* S) (p : MvPolynomial (σ ⊕ τ) R) :
