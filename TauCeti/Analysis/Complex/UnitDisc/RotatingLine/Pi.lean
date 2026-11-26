@@ -66,14 +66,14 @@ whose continuous extension to the closed disc takes its boundary values in `e^{i
 `u w = w ^ k • star (u w)` for `w` on the unit circle: the elements each of whose coordinates lies
 in `TauCeti.rotatingLineSubspace k α`. -/
 def rotatingLinePiSubspace : Submodule ℝ (CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)) :=
-  ⨅ i : ι, (rotatingLineSubspace k α).comap (compLeftL 1 α (unitBallOpens ℂ)
-    ((ContinuousLinearMap.proj (R := ℂ) i : (ι → ℂ) →L[ℂ] ℂ).restrictScalars ℝ)).toLinearMap
+  ⨅ i : ι, (rotatingLineSubspace k α).comap
+    (compLeftL 1 α (unitBallOpens ℂ) (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i)).toLinearMap
 
 /-- An element of `C^{1,α}(D, ι → ℂ)` lies in `rotatingLinePiSubspace k α ι` exactly when each of
 its coordinates lies in `rotatingLineSubspace k α`. -/
 theorem mem_rotatingLinePiSubspace_iff_forall {u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)} :
-    u ∈ rotatingLinePiSubspace k α ι ↔ ∀ i, compLeftL 1 α (unitBallOpens ℂ)
-      ((ContinuousLinearMap.proj (R := ℂ) i : (ι → ℂ) →L[ℂ] ℂ).restrictScalars ℝ) u ∈
+    u ∈ rotatingLinePiSubspace k α ι ↔ ∀ i,
+      compLeftL 1 α (unitBallOpens ℂ) (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) u ∈
         rotatingLineSubspace k α := by
   simp [rotatingLinePiSubspace, Submodule.mem_iInf]
 
@@ -106,33 +106,37 @@ instance : CompleteSpace (rotatingLinePiSubspace k α ι) :=
 
 /-! ### Reduction to coordinates -/
 
-/-- The `i`-th coordinate projection of `ι → ℂ`, as a real-linear map. -/
-private abbrev projL (i : ι) : (ι → ℂ) →L[ℝ] ℂ :=
-  (ContinuousLinearMap.proj (R := ℂ) i : (ι → ℂ) →L[ℂ] ℂ).restrictScalars ℝ
-
 /-- The `i`-th coordinate projection on the target of the augmented operator. -/
 private abbrev projAugL (i : ι) :
     HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℂ) × (ι → ℂ) →L[ℝ]
       HolderSpace α (unitBallOpens ℂ) ℂ × ℂ × ℂ :=
-  (HolderSpace.compLeftL (projL i)).prodMap ((projL i).prodMap (projL i))
+  (HolderSpace.compLeftL (.proj i)).prodMap
+    ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i).prodMap (.proj i))
 
 /-- A point of the target of the augmented operator is determined by its coordinates. -/
 private theorem eq_of_forall_projAugL_eq
     {y y' : HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℂ) × (ι → ℂ)}
     (h : ∀ i, projAugL i y = projAugL i y') : y = y' := by
   simp only [ContinuousLinearMap.coe_prodMap', Prod.ext_iff] at h
-  refine Prod.ext (HolderSpace.ext fun x ↦ funext fun i ↦ ?_)
-    (Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_))
-  · simpa using congrArg (· x) (h i).1
-  · simpa using (h i).2.1
-  · simpa using (h i).2.2
+  exact Prod.ext (HolderSpace.ext_compLeftL_proj fun i ↦ (h i).1)
+    (Prod.ext (funext fun i ↦ (h i).2.1) (funext fun i ↦ (h i).2.2))
+
+omit [Fintype ι] in
+/-- The complex coordinate projection of `ι → ℂ`, viewed as a real-linear map, is the real
+coordinate projection. -/
+private theorem restrictScalars_proj (i : ι) :
+    (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ =
+      .proj (R := ℝ) i :=
+  ContinuousLinearMap.ext fun _ ↦ rfl
 
 /-- The augmented operator of a coordinate is the coordinate of the augmented operator. -/
-private theorem augmentedConjWirtingerDerivL_compLeftL_projL (i : ι)
+private theorem augmentedConjWirtingerDerivL_compLeftL_proj (i : ι)
     (u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ)) :
-    augmentedConjWirtingerDerivL α ℂ (compLeftL 1 α (unitBallOpens ℂ) (projL i) u) =
-      projAugL i (augmentedConjWirtingerDerivL α (ι → ℂ) u) :=
-  augmentedConjWirtingerDerivL_compLeftL _ u
+    augmentedConjWirtingerDerivL α ℂ
+        (compLeftL 1 α (unitBallOpens ℂ) (.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) u) =
+      projAugL i (augmentedConjWirtingerDerivL α (ι → ℂ) u) := by
+  simpa only [restrictScalars_proj] using
+    augmentedConjWirtingerDerivL_compLeftL (ContinuousLinearMap.proj (R := ℂ) i) u
 
 /-! ### Surjectivity and injectivity -/
 
@@ -150,11 +154,10 @@ theorem exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq (hk : 
     exists_mem_rotatingLineSubspace_augmentedConjWirtingerDerivL_eq hk hα0 hα1 (projAugL i y)
   -- Put the scalar solutions in their coordinates.
   set u := ∑ i, compLeftL 1 α (unitBallOpens ℂ) (.single ℝ (fun _ ↦ ℂ) i) (U i)
-  have hu (i : ι) : compLeftL 1 α (unitBallOpens ℂ) (projL i) u = U i :=
-    compLeftL_proj_sum_compLeftL_single U i
+  have hu (i : ι) := compLeftL_proj_sum_compLeftL_single U i
   refine ⟨u, mem_rotatingLinePiSubspace_iff_forall.2 fun i ↦ hu i ▸ hU i,
     eq_of_forall_projAugL_eq fun i ↦ ?_⟩
-  rw [← augmentedConjWirtingerDerivL_compLeftL_projL, hu, hUy]
+  rw [← augmentedConjWirtingerDerivL_compLeftL_proj, hu, hUy]
 
 /-- **Uniqueness for Maslov index three in `ℂⁿ`.** On the elements of `C^{1,α}(D, ι → ℂ)` with
 boundary values in `e^{3iθ/2} ℝ^ι`, the augmented operator `u ↦ (∂u/∂(conj z), u 0, ∂ₛu(0))` is
@@ -162,11 +165,9 @@ injective. -/
 theorem injOn_augmentedConjWirtingerDerivL_pi :
     InjOn (augmentedConjWirtingerDerivL α (ι → ℂ)) (rotatingLinePiSubspace 3 α ι) := by
   intro u hu v hv huv
-  refine ext_compLeftL_proj fun i ↦ ?_
-  change compLeftL 1 α _ (projL i) u = compLeftL 1 α _ (projL i) v
-  refine injOn_augmentedConjWirtingerDerivL
+  refine ext_compLeftL_proj fun i ↦ injOn_augmentedConjWirtingerDerivL
     (mem_rotatingLinePiSubspace_iff_forall.1 hu i) (mem_rotatingLinePiSubspace_iff_forall.1 hv i) ?_
-  rw [augmentedConjWirtingerDerivL_compLeftL_projL, augmentedConjWirtingerDerivL_compLeftL_projL,
+  rw [augmentedConjWirtingerDerivL_compLeftL_proj, augmentedConjWirtingerDerivL_compLeftL_proj,
     huv]
 
 /-! ### The Banach isomorphism -/
