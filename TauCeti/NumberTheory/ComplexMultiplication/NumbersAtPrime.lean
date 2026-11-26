@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.LegendreSymbol.Basic
+public import TauCeti.NumberTheory.NumberField.Quadratic.EmbeddingBound
 public import TauCeti.NumberTheory.Padics.Basic
 public import TauCeti.NumberTheory.QuadraticOrder.ComplexEmbedding
 import Mathlib.Analysis.SpecificLimits.Basic
@@ -28,10 +29,12 @@ its formal group, are studied at `p` through the following numbers.
   normalised by `v(p) = 1`.
 * `primeNorm d p = q_p`: `p²` if `(p / d) = -1` and `p` otherwise; for `d ≡ 3 (mod 4)` and a prime
   `p`, the norm of a prime of `K` above `p`.
-* `rhoPrime d p = ρ_p = v(π_p) / (q_p - 1)`, the valuation of the scale that turns the formal
-  parameter of the curve into a Lubin–Tate parameter for `π_p`.
-* `gammaPrime d p = γ_p = 1 / (p - 1) - ρ_p`, the rate per derivative at which the Taylor
-  coefficients of theta functions are divisible at `p`.
+* `rhoPrime d p = ρ_p = v(π_p) / (q_p - 1)`, the valuation of the scale `ϖ` in the Lubin–Tate
+  parameter `T(ϖz)/ϖ` for `π_p`, where `T` is the part of the formal parameter of the curve in
+  degrees `1 mod (q_p - 1)`.
+* `gammaPrime d p = γ_p = 1 / (p - 1) - ρ_p`, the leading per-derivative term in the valuation
+  estimates at `p` for the factorial-weighted Taylor coefficients of theta functions, subject to
+  the deductions made there.
 * `partnerExponents d p = I_p°`: all `e ≥ 0` if `p = d`, the odd `e ≥ 0` if `(p / d) = -1`, and no
   `e` otherwise; `positivePartnerExponents d p = I_p` is its subset of positive exponents.
 
@@ -72,8 +75,9 @@ namespace TauCeti.ComplexMultiplication
 
 variable (d p : ℕ)
 
-/-- `π_p`: the square root `√-d = i √d` of `-d` if `p = d`, and `p` otherwise. -/
-noncomputable def piPrime : ℂ := if p = d then I * (√(d : ℝ) : ℂ) else p
+/-- `π_p`: the square root `√-d = √d · i` of `-d`, `QuadraticAlgebra.sqrtRadicand (-d)`, if
+`p = d`, and `p` otherwise. -/
+noncomputable def piPrime : ℂ := if p = d then QuadraticAlgebra.sqrtRadicand (-(d : ℚ)) else p
 
 /-- `v(π_p)`: `1 / 2` if `p = d` and `1` otherwise, the valuation of `π_p` at `p` normalised by
 `v(p) = 1` (`norm_map_piPrime`). -/
@@ -83,7 +87,16 @@ section Basic
 
 variable {d p}
 
-theorem piPrime_self : piPrime d d = I * (√(d : ℝ) : ℂ) := by
+theorem piPrime_def :
+    piPrime d p = if p = d then QuadraticAlgebra.sqrtRadicand (-(d : ℚ)) else (p : ℂ) := by
+  rw [piPrime]
+
+theorem piPrimeValuation_def : piPrimeValuation d p = if p = d then 1 / 2 else 1 := by
+  rw [piPrimeValuation]
+
+/-- In the ramified case `π_d = √-d`; `QuadraticAlgebra.sqrtRadicand_of_nonpos` gives the explicit
+formula `√d · i`. -/
+theorem piPrime_self : piPrime d d = QuadraticAlgebra.sqrtRadicand (-(d : ℚ)) := by
   simp [piPrime]
 
 theorem piPrime_of_ne (h : p ≠ d) : piPrime d p = p := by
@@ -105,16 +118,16 @@ theorem piPrimeValuation_le_one : piPrimeValuation d p ≤ 1 := by
 
 /-- The square of `√-d` is `-d`. -/
 @[simp] theorem piPrime_self_sq : piPrime d d ^ 2 = -d := by
-  rw [piPrime_self, mul_pow, I_sq, ← ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg d)]
+  rw [piPrime_self, sq, QuadraticAlgebra.sqrtRadicand_mul_self]
   push_cast
-  ring
+  rfl
 
 /-- `π_p ≠ 0` for `p ≠ 0`. -/
 theorem piPrime_ne_zero (hp : p ≠ 0) : piPrime d p ≠ 0 := by
   by_cases h : p = d
   · subst h
-    rw [piPrime_self]
-    exact mul_ne_zero I_ne_zero (ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr (by positivity)))
+    rw [piPrime_self, ne_eq, QuadraticAlgebra.sqrtRadicand_eq_zero_iff, neg_eq_zero]
+    exact_mod_cast hp
   · rw [piPrime_of_ne h]
     exact_mod_cast hp
 
@@ -126,7 +139,8 @@ theorem piPrime_mem_complexOrder (h0 : -(d : ℤ) ≤ 0) (hD : -(d : ℤ) % 4 = 
   by_cases h : p = d
   · subst h
     refine ⟨p, 2, ?_⟩
-    rw [piPrime_self, QuadraticOrder.complexGenerator_def]
+    rw [piPrime_self, QuadraticAlgebra.sqrtRadicand_of_nonpos (by simp),
+      QuadraticOrder.complexGenerator_def]
     push_cast
     rw [neg_neg]
     ring
@@ -176,6 +190,9 @@ def positivePartnerExponents : Set ℕ := {e | e ∈ partnerExponents d p ∧ 0 
 
 variable {d p}
 
+theorem primeNorm_def : primeNorm d p = if legendreSym d p = -1 then p ^ 2 else p := by
+  rw [primeNorm]
+
 theorem rhoPrime_def : rhoPrime d p = piPrimeValuation d p / ((primeNorm d p : ℝ) - 1) := by
   rw [rhoPrime]
 
@@ -212,7 +229,8 @@ theorem rhoPrime_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) :
   rw [rhoPrime, piPrimeValuation_of_ne (ne_of_legendreSym_eq_neg_one h),
     primeNorm_of_legendreSym_eq_neg_one h, Nat.cast_pow]
 
-theorem rhoPrime_self : rhoPrime d d = 1 / (2 * (d : ℝ) - 2) := by
+/-- `ρ_d = 1 / (2d - 2)` in the ramified case `p = d`. -/
+@[simp] theorem rhoPrime_self : rhoPrime d d = 1 / (2 * (d : ℝ) - 2) := by
   rw [rhoPrime, piPrimeValuation_self, primeNorm_self, div_div, mul_sub, mul_one]
 
 /-- `γ_p = 0` when `p ≠ d` and `(p / d) ≠ -1`; for `d ≡ 3 (mod 4)` and a prime `p`, this is the
@@ -232,22 +250,27 @@ theorem gammaPrime_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) :
   field_simp
   ring
 
-theorem gammaPrime_self : gammaPrime d d = 1 / (2 * (d : ℝ) - 2) := by
+/-- `γ_d = 1 / (2d - 2)` in the ramified case `p = d`. -/
+@[simp] theorem gammaPrime_self : gammaPrime d d = 1 / (2 * (d : ℝ) - 2) := by
   have hd : (2 : ℝ) ≤ d := by exact_mod_cast (Fact.out : d.Prime).two_le
   have h1 : (d : ℝ) - 1 ≠ 0 := by linarith
   rw [gammaPrime, rhoPrime_self]
   field_simp
   ring
 
+/-- `q_p` is a positive power of `p`. -/
+theorem exists_primeNorm_eq_pow : ∃ k, 0 < k ∧ primeNorm d p = p ^ k := by
+  by_cases h : legendreSym d p = -1
+  · exact ⟨2, two_pos, primeNorm_of_legendreSym_eq_neg_one h⟩
+  · exact ⟨1, one_pos, by rw [primeNorm_of_legendreSym_ne_neg_one h, pow_one]⟩
+
 /-- `0 ≤ ρ_p` for `p ≠ 0`. -/
 theorem rhoPrime_nonneg (hp : p ≠ 0) : 0 ≤ rhoPrime d p := by
-  have : 1 ≤ primeNorm d p := by
-    unfold primeNorm
-    split_ifs
-    · exact Nat.one_le_pow _ _ (Nat.pos_of_ne_zero hp)
-    · exact Nat.one_le_iff_ne_zero.mpr hp
+  obtain ⟨k, -, hq⟩ := exists_primeNorm_eq_pow (d := d) (p := p)
+  have : 1 ≤ primeNorm d p := hq ▸ Nat.one_le_pow _ _ (Nat.pos_of_ne_zero hp)
   exact div_nonneg piPrimeValuation_pos.le (by rw [sub_nonneg]; exact_mod_cast this)
 
+/-- `ρ_p ≤ 1 / (p - 1)`, with equality when `p ≠ d` and `(p / d) ≠ -1`. -/
 theorem rhoPrime_le_one_div : rhoPrime d p ≤ 1 / ((p : ℝ) - 1) := by
   by_cases h₁ : p = d
   · subst h₁
@@ -260,6 +283,7 @@ theorem rhoPrime_le_one_div : rhoPrime d p ≤ 1 / ((p : ℝ) - 1) := by
     exact one_div_le_one_div_of_le (by linarith) (by nlinarith)
   · rw [rhoPrime_of_ne_of_legendreSym_ne_neg_one h₁ h₂]
 
+/-- `0 ≤ γ_p`. -/
 theorem gammaPrime_nonneg : 0 ≤ gammaPrime d p :=
   sub_nonneg.mpr rhoPrime_le_one_div
 
@@ -267,14 +291,13 @@ theorem gammaPrime_nonneg : 0 ≤ gammaPrime d p :=
 theorem gammaPrime_le_one_div (hp : p ≠ 0) : gammaPrime d p ≤ 1 / ((p : ℝ) - 1) :=
   sub_le_self _ (rhoPrime_nonneg hp)
 
+/-- `γ_p ≤ 1`. -/
 theorem gammaPrime_le_one : gammaPrime d p ≤ 1 := by
   rcases Nat.lt_or_ge p 2 with hp | hp
-  · -- `p = 0` or `p = 1`: then `p ≠ d` and `(p / d) = p`, so `γ_p = 0`
+  · -- `p = 0` or `p = 1`: then `p ≠ d` and `(p / d) ≠ -1`, so `γ_p = 0`
     have h₁ : p ≠ d := by have := (Fact.out : d.Prime).two_le; omega
-    have h₂ : legendreSym d p ≠ -1 := by
-      interval_cases p
-      · rw [Nat.cast_zero, legendreSym.at_zero]; decide
-      · rw [Nat.cast_one, legendreSym.at_one]; decide
+    have h₂ : legendreSym d p ≠ -1 := fun h ↦
+      (Nat.not_le_of_gt hp) (two_le_of_legendreSym_eq_neg_one h)
     rw [gammaPrime_of_ne_of_legendreSym_ne_neg_one h₁ h₂]
     exact zero_le_one
   · have hp' : (2 : ℝ) ≤ p := by exact_mod_cast hp
@@ -282,12 +305,7 @@ theorem gammaPrime_le_one : gammaPrime d p ≤ 1 := by
     rw [div_le_one (by linarith)]
     linarith
 
-/-- `q_p` is a positive power of `p`. -/
-theorem exists_primeNorm_eq_pow : ∃ k, 0 < k ∧ primeNorm d p = p ^ k := by
-  by_cases h : legendreSym d p = -1
-  · exact ⟨2, two_pos, primeNorm_of_legendreSym_eq_neg_one h⟩
-  · exact ⟨1, one_pos, by rw [primeNorm_of_legendreSym_ne_neg_one h, pow_one]⟩
-
+/-- `1 < q_p` for `1 < p`. -/
 theorem one_lt_primeNorm (hp : 1 < p) : 1 < primeNorm d p := by
   obtain ⟨k, hk, hq⟩ := exists_primeNorm_eq_pow (d := d) (p := p)
   rw [hq]
@@ -310,10 +328,10 @@ theorem piPrime_mul_conj (hp : p.Prime) (h : legendreSym d p ≠ 1) :
     piPrime d p * (starRingEnd ℂ) (piPrime d p) = primeNorm d p := by
   by_cases h₁ : p = d
   · subst h₁
-    rw [primeNorm_self, piPrime_self, map_mul, conj_I, conj_ofReal]
-    have h2 : (√(p : ℝ) : ℂ) ^ 2 = p := by
-      rw [← ofReal_pow, Real.sq_sqrt (Nat.cast_nonneg p), ofReal_natCast]
-    linear_combination h2 - (√(p : ℝ) : ℂ) ^ 2 * I_sq
+    rw [primeNorm_self, piPrime_self, QuadraticAlgebra.conj_sqrtRadicand (by simp), mul_neg,
+      QuadraticAlgebra.sqrtRadicand_mul_self]
+    push_cast
+    exact neg_neg _
   · -- `p ≠ d` is prime, so `(p / d) = ±1`, and it is not `1`
     have h₂ : legendreSym d p = -1 := by
       refine (legendreSym.eq_one_or_neg_one d ?_).resolve_left h
@@ -324,16 +342,19 @@ theorem piPrime_mul_conj (hp : p.Prime) (h : legendreSym d p ≠ 1) :
     push_cast
     ring
 
+/-- `I_p° = ∅` when `p ≠ d` and `(p / d) ≠ -1`. -/
 theorem partnerExponents_of_ne_of_legendreSym_ne_neg_one (h₁ : p ≠ d)
     (h₂ : legendreSym d p ≠ -1) : partnerExponents d p = ∅ := by
   ext e
   simp [mem_partnerExponents_iff, h₁, h₂]
 
+/-- `I_p = ∅` when `p ≠ d` and `(p / d) ≠ -1`. -/
 theorem positivePartnerExponents_of_ne_of_legendreSym_ne_neg_one (h₁ : p ≠ d)
     (h₂ : legendreSym d p ≠ -1) : positivePartnerExponents d p = ∅ := by
   ext e
   simp [mem_positivePartnerExponents_iff, partnerExponents_of_ne_of_legendreSym_ne_neg_one h₁ h₂]
 
+/-- `I_p°` is the set of odd exponents when `(p / d) = -1`. -/
 theorem partnerExponents_of_legendreSym_eq_neg_one (h : legendreSym d p = -1) :
     partnerExponents d p = {e | Odd e} := by
   ext e
@@ -345,9 +366,10 @@ theorem positivePartnerExponents_of_legendreSym_eq_neg_one (h : legendreSym d p 
     positivePartnerExponents d p = Set.range (fun k : ℕ ↦ 2 * k + 1) := by
   ext e
   rw [mem_positivePartnerExponents_iff, partnerExponents_of_legendreSym_eq_neg_one h,
-    Set.mem_ofPred_eq, Set.mem_range]
-  exact ⟨fun ⟨⟨k, hk⟩, _⟩ ↦ ⟨k, hk.symm⟩, by rintro ⟨k, rfl⟩; exact ⟨⟨k, rfl⟩, Nat.succ_pos _⟩⟩
+    Set.mem_ofPred_eq, and_iff_left_of_imp Odd.pos, odd_iff_exists_bit1, Set.mem_range]
+  exact exists_congr fun _ ↦ eq_comm
 
+/-- `I_d°` is the set of all exponents in the ramified case `p = d`. -/
 @[simp] theorem partnerExponents_self : partnerExponents d d = Set.univ := by
   ext e
   simp [mem_partnerExponents_iff]
@@ -356,9 +378,8 @@ theorem positivePartnerExponents_of_legendreSym_eq_neg_one (h : legendreSym d p 
 theorem positivePartnerExponents_self :
     positivePartnerExponents d d = Set.range (fun k : ℕ ↦ k + 1) := by
   ext e
-  rw [mem_positivePartnerExponents_iff, partnerExponents_self, Set.mem_range]
-  exact ⟨fun ⟨_, he⟩ ↦ ⟨e - 1, Nat.sub_add_cancel he⟩,
-    by rintro ⟨k, rfl⟩; exact ⟨trivial, Nat.succ_pos _⟩⟩
+  rw [Nat.range_succ, mem_positivePartnerExponents_iff, partnerExponents_self]
+  simp
 
 /-- `∑_{e ∈ I_p} c · p ^ (-e) = c · γ_p / v(π_p)` for every real `c`. -/
 theorem hasSum_div_pow_positivePartnerExponents (c : ℝ) :
@@ -382,8 +403,8 @@ theorem hasSum_div_pow_positivePartnerExponents (c : ℝ) :
   by_cases h₂ : legendreSym d p = -1
   · -- `p` inert: `∑_{e odd} c p⁻ᵉ = c p / (p² - 1)`
     have hp : (2 : ℝ) ≤ p := by exact_mod_cast two_le_of_legendreSym_eq_neg_one h₂
-    have hinj : Function.Injective (fun k : ℕ ↦ 2 * k + 1) := fun a b hab ↦ by
-      simp only at hab; omega
+    have hinj : Function.Injective (fun k : ℕ ↦ 2 * k + 1) :=
+      (add_left_injective 1).comp (mul_right_injective₀ two_ne_zero)
     rw [positivePartnerExponents_of_legendreSym_eq_neg_one h₂,
       hinj.hasSum_range_iff (f := fun e ↦ c / (p : ℝ) ^ e)]
     have hg := (hasSum_geometric_of_lt_one (r := ((p : ℝ) ^ 2)⁻¹) (by positivity)
