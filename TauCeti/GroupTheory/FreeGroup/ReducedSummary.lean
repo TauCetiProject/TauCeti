@@ -37,8 +37,9 @@ inequations themselves.
   elements include the summaries of signed words over `α`.
 * `TauCeti.ReducedSummary.ofGenerator`: the summary of the positive one-letter word `[(a, true)]`
   on a generator `a`; the negative one-letter word has its `star` as summary.
-* `TauCeti.ReducedSummary.SupportedIn`: the elements that are values of reduced words whose
-  generators lie in a given set.
+* `TauCeti.ReducedSummary.SupportedIn`: the identity and the elements `word f l S` with `S`
+  contained in a given set `A`; on values of words it holds exactly for the reduced words whose
+  generators lie in `A`.
 
 ## Main results
 
@@ -136,8 +137,9 @@ def ofGenerator (a : α) : ReducedSummary α :=
 
 @[simp] theorem ofGenerator_def (a : α) : ofGenerator a = word (a, true) (a, true) {a} := (rfl)
 
-/-- The elements that are values of reduced words all of whose generators lie in `A`: the
-identity, and the elements `word f l S` with `S ⊆ A`. -/
+/-- The identity and the elements `word f l S` with `S ⊆ A`. This includes elements that are not
+values of words, such as `word f l ∅`; on values of words it holds exactly for the reduced words
+all of whose generators lie in `A` (`supportedIn_starVal_ofGenerator_iff`). -/
 def SupportedIn (A : Set α) : ReducedSummary α → Prop
   | zero => False
   | one => True
@@ -149,6 +151,10 @@ def SupportedIn (A : Set α) : ReducedSummary α → Prop
 
 @[simp] theorem supportedIn_word (A : Set α) (f l : α × Bool) (S : Finset α) :
     SupportedIn A (word f l S) ↔ ↑S ⊆ A := .rfl
+
+@[simp] theorem supportedIn_star (A : Set α) (x : ReducedSummary α) :
+    SupportedIn A (star x) ↔ SupportedIn A x := by
+  cases x <;> exact .rfl
 
 section Monoid
 
@@ -188,6 +194,15 @@ instance : StarMul (ReducedSummary α) where
       simp only [zero_eq_zero, one_eq_one, zero_mul, mul_zero, one_mul, mul_one,
         ReducedSummary.star_zero, star_one_eq, star_word, word_mul_word]
     split_ifs <;> simp_all [Finset.union_comm, eq_comm]
+
+/-- A product satisfies `SupportedIn A` exactly when it is not `0` and both factors satisfy
+`SupportedIn A`. -/
+theorem supportedIn_mul (A : Set α) (x y : ReducedSummary α) :
+    SupportedIn A (x * y) ↔ x * y ≠ 0 ∧ SupportedIn A x ∧ SupportedIn A y := by
+  cases x <;> cases y <;> simp only [zero_eq_zero, one_eq_one, zero_mul, mul_zero, one_mul,
+    mul_one, word_mul_word]
+  all_goals try split_ifs
+  all_goals simp_all [Set.union_subset_iff]
 
 /-- A one-letter word has as summary the letter as first and last letter and its generator as
 the set of generators. -/
