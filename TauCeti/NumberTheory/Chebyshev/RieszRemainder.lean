@@ -16,7 +16,8 @@ import TauCeti.NumberTheory.Chebyshev.WeightMethod
 /-!
 # Lipschitz and size bounds for the Riesz remainder
 
-For coefficients `c : ℕ → ℂ` with `‖c(n)‖ ≤ Λ(n)` and a constant `D ∈ ℂ` put
+For coefficients `c : ℕ → ℂ` with `‖c(n)‖ ≤ Λ(n)` (needed only up to the cutoff of each
+bound) and a constant `D ∈ ℂ` put
 `G(y) = ∑_{1 ≤ n ≤ y} c(n) (y / n - 1) + y D = TauCeti.rieszSum c y + y D`. For a nonprincipal
 Dirichlet character `χ`, `c(n) = χ(n) Λ(n)` and `D = (L′/L)(1, χ)` this is the *Riesz remainder*
 `G_χ` (see `TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Remainder`). For the trivial
@@ -39,17 +40,20 @@ terms `log (max y z)`, `log y` and `‖D‖` stay as they are.
 
 ## Main results
 
+* `Chebyshev.sum_Icc_norm_le_psi`: `∑_{1 ≤ n ≤ y} ‖c(n)‖ ≤ ψ(y)` when `‖c(n)‖ ≤ Λ(n)`.
 * `Chebyshev.norm_mul_rieszSum_div_add_mul_sub_le`, `Chebyshev.norm_rieszSum_add_mul_sub_le`,
   `Chebyshev.norm_rieszSum_add_mul_le`: the three bounds for `G` with `‖c(n)‖ ≤ Λ(n)`.
-* `Chebyshev.abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le`,
+* `Chebyshev.abs_mul_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le`,
   `Chebyshev.abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le`,
   `Chebyshev.abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_le`: the three bounds for `G_1`.
 
 ## References
 
-* The Riesz remainder and these bounds, in the form with an absolute constant, are those of the
-  formal proof of the Riemann hypothesis for Dirichlet `L`-functions,
-  https://github.com/leanprover-community/riemann-hypothesis.
+* The Riesz remainders `G_χ` and `G_1`, and the existence of one absolute constant in the
+  Lipschitz and size bounds, are those of the formal proof of the Riemann hypothesis for
+  Dirichlet `L`-functions, https://github.com/leanprover-community/riemann-hypothesis. The
+  explicit constants and the bound in the weight are proved here from Chebyshev's and Mertens'
+  bounds.
 -/
 
 public section
@@ -65,14 +69,16 @@ open TauCeti
 /-! ### The Riesz remainder of coefficients bounded by `Λ` -/
 
 /-- `ψ` bounds the partial sums of coefficients dominated by `Λ`, over the index set
-`Icc 1 ⌊y⌋₊` of `TauCeti.rieszSum`: `∑_{1 ≤ n ≤ y} ‖c(n)‖ ≤ ψ(y)`. -/
-theorem sum_Icc_norm_le_psi {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) (y : ℝ) :
+`Icc 1 ⌊y⌋₊` of `TauCeti.rieszSum`: if `‖c(n)‖ ≤ Λ(n)` for `1 ≤ n ≤ y`, then
+`∑_{1 ≤ n ≤ y} ‖c(n)‖ ≤ ψ(y)`. -/
+theorem sum_Icc_norm_le_psi {c : ℕ → ℂ} {y : ℝ} (hc : ∀ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ ≤ Λ n) :
     ∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ ≤ ψ y :=
-  (sum_le_sum fun n _ ↦ hc n).trans (le_of_eq (by simp [psi, ← Icc_add_one_left_eq_Ioc]))
+  (sum_le_sum hc).trans (le_of_eq (by simp [psi, ← Icc_add_one_left_eq_Ioc]))
 
 /-- Ordered case of `Chebyshev.norm_mul_rieszSum_div_add_mul_sub_le`. -/
-private theorem norm_mul_rieszSum_div_add_mul_sub_le_of_le {c : ℕ → ℂ}
-    (hc : ∀ n, ‖c n‖ ≤ Λ n) (D : ℂ) {a w w' : ℝ} (ha : 0 ≤ a) (hw : 0 < w) (hww' : w ≤ w') :
+private theorem norm_mul_rieszSum_div_add_mul_sub_le_of_le {c : ℕ → ℂ} {a w w' : ℝ}
+    (hc : ∀ n ∈ Icc 1 ⌊a / w⌋₊, ‖c n‖ ≤ Λ n) (D : ℂ) (ha : 0 ≤ a) (hw : 0 < w)
+    (hww' : w ≤ w') :
     ‖(w : ℂ) * (rieszSum c (a / w) + ((a / w : ℝ) : ℂ) * D) -
         (w' : ℂ) * (rieszSum c (a / w') + ((a / w' : ℝ) : ℂ) * D)‖ ≤
       3 * (a / w) * (w' - w) := by
@@ -80,38 +86,41 @@ private theorem norm_mul_rieszSum_div_add_mul_sub_le_of_le {c : ℕ → ℂ}
     rw [← mul_assoc, ← Complex.ofReal_mul, mul_div_cancel₀ _ hv.ne']
   rw [mul_add, mul_add, hD w hw, hD w' (hw.trans_le hww'), add_sub_add_right_eq_sub]
   exact (norm_mul_rieszSum_div_sub_mul_rieszSum_div_le c hw hww').trans
-    (mul_le_mul_of_nonneg_right ((sum_Icc_norm_le_psi hc _).trans
+    (mul_le_mul_of_nonneg_right ((sum_Icc_norm_le_psi hc).trans
       (psi_le_three_mul_self (by positivity))) (sub_nonneg.2 hww'))
 
-/-- **Lipschitz bound in the weight for the Riesz remainder.** Let
-`‖c(n)‖ ≤ Λ(n)` for all `n`, let `D ∈ ℂ` and `G(y) = TauCeti.rieszSum c y + y D`. For
-`a ≥ 0` and `w, w' > 0`, `‖w G(a / w) - w' G(a / w')‖ ≤ 3 (a / min w w') |w - w'|`. -/
-theorem norm_mul_rieszSum_div_add_mul_sub_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) (D : ℂ)
-    {a w w' : ℝ} (ha : 0 ≤ a) (hw : 0 < w) (hw' : 0 < w') :
+/-- **Lipschitz bound in the weight for the Riesz remainder.** Let `D ∈ ℂ`,
+`G(y) = TauCeti.rieszSum c y + y D`, `a ≥ 0` and `w, w' > 0`, and let `‖c(n)‖ ≤ Λ(n)` for
+`1 ≤ n ≤ a / min w w'`. Then `‖w G(a / w) - w' G(a / w')‖ ≤ 3 (a / min w w') |w - w'|`. -/
+theorem norm_mul_rieszSum_div_add_mul_sub_le {c : ℕ → ℂ} {a w w' : ℝ}
+    (hc : ∀ n ∈ Icc 1 ⌊a / min w w'⌋₊, ‖c n‖ ≤ Λ n) (D : ℂ) (ha : 0 ≤ a) (hw : 0 < w)
+    (hw' : 0 < w') :
     ‖(w : ℂ) * (rieszSum c (a / w) + ((a / w : ℝ) : ℂ) * D) -
         (w' : ℂ) * (rieszSum c (a / w') + ((a / w' : ℝ) : ℂ) * D)‖ ≤
       3 * (a / min w w') * |w - w'| := by
   rcases le_total w w' with h | h
-  · rw [min_eq_left h, abs_sub_comm, abs_of_nonneg (sub_nonneg.2 h)]
+  · rw [min_eq_left h] at hc ⊢
+    rw [abs_sub_comm, abs_of_nonneg (sub_nonneg.2 h)]
     exact norm_mul_rieszSum_div_add_mul_sub_le_of_le hc D ha hw h
-  · rw [min_eq_right h, abs_of_nonneg (sub_nonneg.2 h), norm_sub_rev]
+  · rw [min_eq_right h] at hc ⊢
+    rw [abs_of_nonneg (sub_nonneg.2 h), norm_sub_rev]
     exact norm_mul_rieszSum_div_add_mul_sub_le_of_le hc D ha hw' h
 
-/-- **Lipschitz bound for the Riesz remainder.** Let `‖c(n)‖ ≤ Λ(n)` for all
-`n`, let `D ∈ ℂ` and `G(y) = TauCeti.rieszSum c y + y D`. If `max y z ≥ 1`, then
-`‖G(y) - G(z)‖ ≤ |y - z| (log (max y z) + log 4 + 4 + ‖D‖)`. -/
-theorem norm_rieszSum_add_mul_sub_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) (D : ℂ) {y z : ℝ}
-    (h : 1 ≤ max y z) :
+/-- **Lipschitz bound for the Riesz remainder.** Let `D ∈ ℂ`,
+`G(y) = TauCeti.rieszSum c y + y D`, `max y z ≥ 1`, and let `‖c(n)‖ ≤ Λ(n)` for
+`1 ≤ n ≤ max y z`. Then `‖G(y) - G(z)‖ ≤ |y - z| (log (max y z) + log 4 + 4 + ‖D‖)`. -/
+theorem norm_rieszSum_add_mul_sub_le {c : ℕ → ℂ} {y z : ℝ}
+    (hc : ∀ n ∈ Icc 1 ⌊max y z⌋₊, ‖c n‖ ≤ Λ n) (D : ℂ) (h : 1 ≤ max y z) :
     ‖(rieszSum c y + y * D) - (rieszSum c z + z * D)‖ ≤
       |y - z| * (Real.log (max y z) + (Real.log 4 + 4) + ‖D‖) := by
   wlog hzy : z ≤ y generalizing y z
   · rw [norm_sub_rev, abs_sub_comm, max_comm]
-    exact this (by rwa [max_comm]) (not_le.1 hzy).le
-  rw [max_eq_left hzy] at h ⊢
+    exact this (by rwa [max_comm]) (by rwa [max_comm]) (not_le.1 hzy).le
+  rw [max_eq_left hzy] at h hc ⊢
   have hsum : ∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ / n ≤ Real.log y + (Real.log 4 + 4) := by
     have hΛ := sum_vonMangoldt_div_le h
     rw [← Icc_add_one_left_eq_Ioc, zero_add] at hΛ
-    exact (sum_le_sum fun n _ ↦ div_le_div_of_nonneg_right (hc n) n.cast_nonneg).trans hΛ
+    exact (sum_le_sum fun n hn ↦ div_le_div_of_nonneg_right (hc n hn) n.cast_nonneg).trans hΛ
   rw [abs_of_nonneg (sub_nonneg.2 hzy), add_sub_add_comm, ← sub_mul, mul_add]
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
   · refine (norm_rieszSum_sub_rieszSum_le c hzy).trans ?_
@@ -120,30 +129,31 @@ theorem norm_rieszSum_add_mul_sub_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ �
   · simp only [← Complex.ofReal_sub, norm_mul, Complex.norm_real,
       Real.norm_of_nonneg (sub_nonneg.2 hzy), le_refl]
 
-/-- **Size bound for the Riesz remainder.** Let `‖c(n)‖ ≤ Λ(n)` for all `n` and
-`D ∈ ℂ`. For `y ≥ 1`, `‖TauCeti.rieszSum c y + y D‖ ≤ y (log y + log 4 + 4 + ‖D‖)`. -/
-theorem norm_rieszSum_add_mul_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) (D : ℂ) {y : ℝ}
-    (hy : 1 ≤ y) :
+/-- **Size bound for the Riesz remainder.** Let `D ∈ ℂ`, `y ≥ 1` and `‖c(n)‖ ≤ Λ(n)` for
+`1 ≤ n ≤ y`. Then `‖TauCeti.rieszSum c y + y D‖ ≤ y (log y + log 4 + 4 + ‖D‖)`. -/
+theorem norm_rieszSum_add_mul_le {c : ℕ → ℂ} {y : ℝ} (hc : ∀ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ ≤ Λ n)
+    (D : ℂ) (hy : 1 ≤ y) :
     ‖rieszSum c y + y * D‖ ≤ y * (Real.log y + (Real.log 4 + 4) + ‖D‖) := by
   have hy0 : 0 ≤ y := zero_le_one.trans hy
+  have hc' : ∀ n ∈ Icc 1 ⌊max y 0⌋₊, ‖c n‖ ≤ Λ n := by rwa [max_eq_left hy0]
   simpa [abs_of_nonneg hy0, max_eq_left hy0] using
-    norm_rieszSum_add_mul_sub_le hc D (z := 0) (le_max_of_le_left hy)
+    norm_rieszSum_add_mul_sub_le hc' D (le_max_of_le_left hy)
 
 /-! ### The Riesz remainder of the trivial character -/
 
-/-- Ordered case of `Chebyshev.abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le`. -/
-private theorem abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le_of_le {a w w' : ℝ} (ha : 0 ≤ a)
-    (hw : 0 < w) (hww' : w ≤ w') :
+/-- Ordered case of `Chebyshev.abs_mul_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le`. -/
+private theorem abs_mul_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le_of_le {a w w' : ℝ}
+    (ha : 0 ≤ a) (hw : 0 < w) (hww' : w ≤ w') :
     |w * (∑ n ∈ Ioc 0 ⌊a / w⌋₊, Λ n * (a / w / n - 1) - a / w * Real.log (a / w) +
           (1 + eulerMascheroniConstant) * (a / w)) -
         w' * (∑ n ∈ Ioc 0 ⌊a / w'⌋₊, Λ n * (a / w' / n - 1) - a / w' * Real.log (a / w') +
           (1 + eulerMascheroniConstant) * (a / w'))| ≤ 3 * (a / w) * (w' - w) := by
   have hw' := hw.trans_le hww'
-  have hX := mul_sum_Ioc_floor_mul_div_sub_one_le (c := ⇑Λ) (fun n ↦ vonMangoldt_nonneg)
-    (a := a) hw hww'
+  have hX := mul_sum_Ioc_floor_mul_div_sub_one_le (c := ⇑Λ) (a := a)
+    (fun n _ ↦ vonMangoldt_nonneg) hw hww'
   have hY := norm_mul_rieszSum_div_add_mul_sub_le_of_le (c := fun n ↦ (Λ n : ℂ))
-    (fun n ↦ (Complex.norm_real _).trans_le (Real.norm_of_nonneg vonMangoldt_nonneg).le) 0 ha hw
-    hww'
+    (fun n _ ↦ (Complex.norm_real _).trans_le (Real.norm_of_nonneg vonMangoldt_nonneg).le) 0 ha
+    hw hww'
   simp only [mul_zero, add_zero] at hY
   rw [← ofReal_sum_Ioc_floor_mul_div_sub_one, ← ofReal_sum_Ioc_floor_mul_div_sub_one] at hY
   norm_cast at hY
@@ -172,17 +182,17 @@ private theorem abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le_of_le {a w w' :
 /-- **Lipschitz bound in the weight for the trivial Riesz remainder.** Let
 `G₁(y) = ∑_{1 ≤ n ≤ y} Λ(n) (y / n - 1) - y log y + (1 + γ) y`. For `a ≥ 0` and `w, w' > 0`,
 `|w G₁(a / w) - w' G₁(a / w')| ≤ 3 (a / min w w') |w - w'|`. -/
-theorem abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le {a w w' : ℝ} (ha : 0 ≤ a) (hw : 0 < w)
-    (hw' : 0 < w') :
+theorem abs_mul_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le {a w w' : ℝ} (ha : 0 ≤ a)
+    (hw : 0 < w) (hw' : 0 < w') :
     |w * (∑ n ∈ Ioc 0 ⌊a / w⌋₊, Λ n * (a / w / n - 1) - a / w * Real.log (a / w) +
           (1 + eulerMascheroniConstant) * (a / w)) -
         w' * (∑ n ∈ Ioc 0 ⌊a / w'⌋₊, Λ n * (a / w' / n - 1) - a / w' * Real.log (a / w') +
           (1 + eulerMascheroniConstant) * (a / w'))| ≤ 3 * (a / min w w') * |w - w'| := by
   rcases le_total w w' with h | h
   · rw [min_eq_left h, abs_sub_comm w, abs_of_nonneg (sub_nonneg.2 h)]
-    exact abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le_of_le ha hw h
+    exact abs_mul_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le_of_le ha hw h
   · rw [min_eq_right h, abs_of_nonneg (sub_nonneg.2 h), abs_sub_comm]
-    exact abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le_of_le ha hw' h
+    exact abs_mul_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le_of_le ha hw' h
 
 /-- Ordered case of `Chebyshev.abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le`. -/
 private theorem abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le_of_le {y z : ℝ}
@@ -239,11 +249,14 @@ theorem abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_le {y : ℝ} (hy : 1 �
   rw [h1, abs_of_nonneg (sub_nonneg.2 hy)] at h
   have h2 := abs_sub_abs_le_abs_sub (∑ n ∈ Ioc 0 ⌊y⌋₊, Λ n * (y / n - 1) - y * Real.log y +
     (1 + eulerMascheroniConstant) * y) (1 + eulerMascheroniConstant)
-  have hγ := Real.one_half_lt_eulerMascheroniConstant
-  rw [abs_of_pos (show (0 : ℝ) < 1 + eulerMascheroniConstant by linarith)] at h2
+  -- `1 + γ > 0` and `log 4 > 0`.
+  have hγ : 0 < 1 + eulerMascheroniConstant := by
+    linarith [Real.one_half_lt_eulerMascheroniConstant]
+  have hl : 0 < Real.log 4 := Real.log_pos (by norm_num)
+  rw [abs_of_pos hγ] at h2
   have h3 : (Real.log 4 + 4 + eulerMascheroniConstant) * (y - 1) + (1 + eulerMascheroniConstant) ≤
       (Real.log 4 + 4 + eulerMascheroniConstant) * y := by
-    linarith [Real.log_pos (show (1 : ℝ) < 4 by norm_num)]
-  linarith
+    linarith
+  linarith [h, h2, h3]
 
 end Chebyshev

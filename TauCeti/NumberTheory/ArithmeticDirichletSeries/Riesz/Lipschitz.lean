@@ -39,9 +39,9 @@ the weight and the right derivative.
 
 ## References
 
-* These bounds feed the Riesz-remainder bounds of `TauCeti.NumberTheory.Chebyshev.RieszRemainder`,
-  whose Riesz remainder and absolute-constant form are those of the formal proof of the Riemann
-  hypothesis for Dirichlet `L`-functions, https://github.com/leanprover-community/riemann-hypothesis.
+* These bounds feed the Riesz-remainder bounds of `TauCeti.NumberTheory.Chebyshev.RieszRemainder`;
+  the Riesz remainder itself is that of the formal proof of the Riemann hypothesis for Dirichlet
+  `L`-functions, https://github.com/leanprover-community/riemann-hypothesis.
 -/
 
 public section
@@ -119,10 +119,11 @@ theorem hasDerivWithinAt_rieszSum (c : ℕ → ℂ) (x : ℝ) :
 
 /-! ### Real coefficients -/
 
-/-- **The weighted real Riesz sum is antitone in the weight** for nonnegative coefficients: for
-`0 < w ≤ w'`, `w' S(a / w') ≤ w S(a / w)`, where `S(y) = ∑_{1 ≤ n ≤ y} c(n) (y / n - 1)`. -/
-theorem mul_sum_Ioc_floor_mul_div_sub_one_le {c : ℕ → ℝ} (hc : ∀ n, 0 ≤ c n) {a w w' : ℝ}
-    (hw : 0 < w) (hww' : w ≤ w') :
+/-- **The weighted real Riesz sum is antitone in the weight** for coefficients nonnegative up to
+the cutoff: if `0 < w ≤ w'` and `c(n) ≥ 0` for `1 ≤ n ≤ a / w`, then
+`w' S(a / w') ≤ w S(a / w)`, where `S(y) = ∑_{1 ≤ n ≤ y} c(n) (y / n - 1)`. -/
+theorem mul_sum_Ioc_floor_mul_div_sub_one_le {c : ℕ → ℝ} {a w w' : ℝ}
+    (hc : ∀ n ∈ Icc 1 ⌊a / w⌋₊, 0 ≤ c n) (hw : 0 < w) (hww' : w ≤ w') :
     w' * ∑ n ∈ Ioc 0 ⌊a / w'⌋₊, c n * (a / w' / n - 1) ≤
       w * ∑ n ∈ Ioc 0 ⌊a / w⌋₊, c n * (a / w / n - 1) := by
   have key {v : ℝ} (hv : w ≤ v) : v * ∑ n ∈ Ioc 0 ⌊a / v⌋₊, c n * (a / v / n - 1) =
@@ -131,7 +132,7 @@ theorem mul_sum_Ioc_floor_mul_div_sub_one_le {c : ℕ → ℝ} (hc : ∀ n, 0 �
     rw [← ofReal_sum_Ioc_floor_mul_div_sub_one] at h
     exact_mod_cast h
   rw [key hww', key le_rfl]
-  exact sum_le_sum fun n _ ↦ mul_le_mul_of_nonneg_left (by gcongr) (hc n)
+  exact sum_le_sum fun n hn ↦ mul_le_mul_of_nonneg_left (by gcongr) (hc n hn)
 
 /-- **Right derivative of the real Riesz sum.** `y ↦ ∑_{1 ≤ n ≤ y} c(n) (y / n - 1)` has right
 derivative `∑_{1 ≤ n ≤ x} c(n) / n` at every `x`; it is the real part of
