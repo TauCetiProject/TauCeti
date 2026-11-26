@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GraphOfGroups.OneEdge
+public import Mathlib.GroupTheory.HNNExtension
+public import TauCeti.Algebra.Group.Subgroup.Ker
 public import TauCeti.GroupTheory.SurfaceGroup.Boundary
 import Mathlib.Algebra.Group.Subgroup.ZPowers.Lemmas
 import Mathlib.Tactic.Group
@@ -27,8 +28,8 @@ the stable letter `t` satisfies `t x t⁻¹ = y⁻¹`: the two sides of the curv
 orientations. Both maps are injective because a surface with at least two boundary components is
 not a disc (`TauCeti.SurfaceGroup.Orientable.zpowersHom_peripheral_injective`), so these are the
 monomorphic edge maps of a loop of groups, and the HNN extension is taken along their
-identification `TauCeti.GraphOfGroups.loopEquiv`, as for the fundamental group of a loop of
-groups.
+identification `MonoidHom.rangeEquivRange` of their ranges, as for the fundamental group of a
+loop of groups.
 
 On presentations this is a Tietze transformation. Write `a₁, b₁` for the first handle of
 `S⁺(g + 1, m)`, `W = [a₂, b₂] ⋯ [a_{g+1}, b_{g+1}]` and `P = p₁ ⋯ p_m`. The defining relation
@@ -77,6 +78,7 @@ namespace SurfaceGroup
 namespace Orientable
 
 open HNNExtension (t)
+open MonoidHom (ker_eq_ker_of_injective)
 
 variable (g m : ℕ)
 
@@ -130,21 +132,21 @@ and `curveSnd`, the stable letter conjugates the penultimate peripheral element 
 inverse of the last one, `p_{m+2}⁻¹`. -/
 theorem t_mul_of_peripheral_mul_inv_t :
     (t : HNNExtension (Orientable g (m + 2)) (curveFst g m).range (curveSnd g m).range
-        (GraphOfGroups.loopEquiv _ _ (curveFst_injective g m) (curveSnd_injective g m))) *
+        (MonoidHom.rangeEquivRange _ _
+          (ker_eq_ker_of_injective (curveFst_injective g m) (curveSnd_injective g m)))) *
       HNNExtension.of (peripheral g (m + 2) (Fin.last m).castSucc) * t⁻¹ =
       (HNNExtension.of (peripheral g (m + 2) (Fin.last (m + 1))))⁻¹ := by
-  have h := HNNExtension.equiv_eq_conj
-    (φ := GraphOfGroups.loopEquiv _ _ (curveFst_injective g m) (curveSnd_injective g m))
-    (MonoidHom.ofInjective (curveFst_injective g m) (.ofAdd 1))
-  rw [GraphOfGroups.loopEquiv_ofInjective] at h
-  simpa [MonoidHom.ofInjective_apply] using h.symm
+  simpa using (HNNExtension.equiv_eq_conj (φ := MonoidHom.rangeEquivRange _ _
+    (ker_eq_ker_of_injective (curveFst_injective g m) (curveSnd_injective g m)))
+    ((curveFst g m).rangeRestrict (.ofAdd 1))).symm
 
 /-! ### The two homomorphisms -/
 
 /-- The HNN extension of `S⁺(g, m + 2)` along `curveFst` and `curveSnd`. -/
 private abbrev HNN (g m : ℕ) : Type :=
   HNNExtension (Orientable g (m + 2)) (curveFst g m).range (curveSnd g m).range
-    (GraphOfGroups.loopEquiv _ _ (curveFst_injective g m) (curveSnd_injective g m))
+    (MonoidHom.rangeEquivRange _ _
+      (ker_eq_ker_of_injective (curveFst_injective g m) (curveSnd_injective g m)))
 
 /-- The cyclic permutation `x y W P = 1` of the relation `W P x y = 1` of `S⁺(g, m + 2)`, where
 `x = p_{m+1}`, `y = p_{m+2}`, `W` is the product of the commutators and `P = p₁ ⋯ p_m`. -/
@@ -200,13 +202,13 @@ private def ofBase : Orientable g (m + 2) →* Orientable (g + 1) m :=
 /-- The map `S⁺(g, m + 2) ∗_ℤ → S⁺(g + 1, m)`, sending the stable letter to `a₁`. -/
 private noncomputable def ofHNN : HNN g m →* Orientable (g + 1) m :=
   HNNExtension.lift ofBase (a (g + 1) m 0) fun c ↦ by
-    obtain ⟨n, rfl⟩ := (MonoidHom.ofInjective (curveFst_injective g m)).surjective c
-    rw [GraphOfGroups.loopEquiv_ofInjective]
+    obtain ⟨n, rfl⟩ := (curveFst g m).rangeRestrict_surjective c
     have h : SemiconjBy (a (g + 1) m 0) ((a (g + 1) m 0)⁻¹ * (b (g + 1) m 0)⁻¹ * a (g + 1) m 0)
         (b (g + 1) m 0)⁻¹ := by
       simp [SemiconjBy, mul_assoc]
-    simp only [MonoidHom.ofInjective_apply, curveFst_apply, curveSnd_apply, ← inv_zpow', map_zpow,
-      map_inv, ofBase, lift_peripheral, Fin.snoc_castSucc, Fin.snoc_last]
+    simp only [MonoidHom.rangeEquivRange_rangeRestrict, MonoidHom.coe_rangeRestrict, curveFst_apply,
+      curveSnd_apply, ← inv_zpow', map_zpow, map_inv, ofBase, lift_peripheral, Fin.snoc_castSucc,
+      Fin.snoc_last]
     exact h.zpow_right _
 
 private theorem ofHNN_comp_toHNN : ofHNN.comp toHNN = MonoidHom.id (Orientable (g + 1) m) := by
@@ -234,7 +236,8 @@ element `p'_{m+1}` corresponds to `a₁⁻¹ b₁⁻¹ a₁`. -/
 noncomputable def equivHNNExtension :
     Orientable (g + 1) m ≃* HNNExtension (Orientable g (m + 2)) (curveFst g m).range
       (curveSnd g m).range
-      (GraphOfGroups.loopEquiv _ _ (curveFst_injective g m) (curveSnd_injective g m)) :=
+      (MonoidHom.rangeEquivRange _ _
+        (ker_eq_ker_of_injective (curveFst_injective g m) (curveSnd_injective g m))) :=
   MonoidHom.toMulEquiv toHNN ofHNN ofHNN_comp_toHNN toHNN_comp_ofHNN
 
 variable {g m}
@@ -317,7 +320,8 @@ where `a = a₁` and `b = b₁` are the handle generators of `S⁺(1, 2)`. Since
 three, along the non-separating curve `b₁` of `S⁺(2, 0)`. -/
 theorem t_mul_of_peripheral_mul_inv_t_genusTwo :
     (t : HNNExtension (Orientable 1 2) (curveFst 1 0).range (curveSnd 1 0).range
-        (GraphOfGroups.loopEquiv _ _ (curveFst_injective 1 0) (curveSnd_injective 1 0))) *
+        (MonoidHom.rangeEquivRange _ _
+          (ker_eq_ker_of_injective (curveFst_injective 1 0) (curveSnd_injective 1 0)))) *
       HNNExtension.of (peripheral 1 2 0) * t⁻¹ =
       HNNExtension.of ((a 1 2 0)⁻¹ * (b 1 2 0)⁻¹ * a 1 2 0 * b 1 2 0 * peripheral 1 2 0) := by
   have h := t_mul_of_peripheral_mul_inv_t (g := 1) (m := 0)
