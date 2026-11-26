@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Sites.GlobalSections
+
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
-public import Mathlib.CategoryTheory.Sites.GlobalSections
 public import Mathlib.CategoryTheory.Sites.Whiskering
 
 /-!
@@ -65,5 +66,16 @@ noncomputable def ΓCompIsoSheafComposeCompΓ : Γ J A ⋙ F ≅ sheafCompose J 
     -- the sections over `T` of the sectionwise composite with `F` are `F` of the sections
     NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun _ ↦ by simp) ≪≫
     Functor.isoWhiskerLeft (sheafCompose J F) (ΓNatIsoSheafSections J B hT).symm
+
+/-- The global-sections composition comparison acts via the terminal-section isomorphisms. -/
+@[reassoc, simp]
+lemma ΓCompIsoSheafComposeCompΓ_hom_app (G : Sheaf J A) :
+    (ΓCompIsoSheafComposeCompΓ J F hT).hom.app G =
+      F.map (G.ΓRes (Opposite.op T)) ≫
+        (ΓNatIsoSheafSections J B hT).inv.app ((sheafCompose J F).obj G) := by
+  simp only [ΓCompIsoSheafComposeCompΓ, Iso.trans_hom, NatTrans.comp_app,
+    Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Functor.isoWhiskerLeft_hom,
+    Functor.whiskerLeft_app, NatIso.ofComponents, Iso.refl_hom, Iso.symm_hom, Category.id_comp,
+    ΓNatIsoSheafSections_hom_app_eq_ΓRes]
 
 end CategoryTheory.Sheaf

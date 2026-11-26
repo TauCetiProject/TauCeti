@@ -178,9 +178,11 @@ lemma higherDirectImagePresheafToPresheafIso_hom_app_homologyπ (M : X.Modules) 
       CategoryTheory.Sheaf.H'.resolutionClass
         (K := ((toSheaf X).mapHomologicalComplex _).obj (injectiveResolution M).cocomplex)
         ((toSheaf X).map ((injectiveResolution M).ι.f 0))
-        ((injectiveResolution M).map_ι_f_zero_comp_d (toSheaf X))
-        ((injectiveResolution M).exact₀_map (toSheaf X))
-        ((injectiveResolution M).exactAt_succ_map (toSheaf X)) (f ⁻¹ᵁ V)
+        (CochainComplex.map_augmentation_comp_d (toSheaf X)
+          (injectiveResolution M).ι_f_zero_comp_complex_d)
+        (CochainComplex.map_augmentation_exact (toSheaf X) (injectiveResolution M).exact₀)
+        (CochainComplex.map_exactAt_succ (toSheaf X) (injectiveResolution M).cocomplex_exactAt_succ)
+        (f ⁻¹ᵁ V)
         (((((Modules.pushforward f ⋙ Modules.toPresheafOfModules Y).mapHomologicalComplex
           _).obj (injectiveResolution M).cocomplex).iCycles n).app (.op V) z) (by
           have h := ConcreteCategory.congr_hom

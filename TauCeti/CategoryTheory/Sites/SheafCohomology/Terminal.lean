@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Sites.ConstantSheaf
+
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 
 /-!
@@ -30,6 +32,8 @@ terminal-object comparison compatible with inverse image on sheaf cohomology.
   isomorphism in the coefficient sheaf;
 * `CategoryTheory.Sheaf.cohomologyPresheafObjIsoH`: its specialization
   `Hⁿ(T, F) ≅ Hⁿ(F)` at a terminal object `T`, as an isomorphism of abelian groups.
+
+Terminal-object comparisons identify the native section restriction and cohomology maps.
 -/
 
 public section
@@ -136,4 +140,55 @@ lemma cohomologyPresheafObjIsoH_hom_apply (F : Sheaf J AddCommGrpCat.{v}) (n : �
       (Abelian.Ext.mk₀ hT.freeYonedaSheafIsoConstant.inv).comp x (zero_add n) :=
   (rfl)
 
+end CategoryTheory.Sheaf
+
+/-! ### Terminal comparison and its actual global-sections component -/
+
+universe u' v'
+open TauCeti.CategoryTheory CategoryTheory.Abelian
+
+namespace CategoryTheory.Limits.IsTerminal
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  [HasSheafify J AddCommGrpCat.{v}]
+variable {J} in
+/-- The free-Yoneda identifications at terminal objects commute with their unique maps. -/
+lemma freeYonedaSheafIsoConstant_naturality {S T : C} (hS : IsTerminal S)
+    (hT : IsTerminal T) (i : S ⟶ T) :
+    (freeYonedaSheafFunctor J).map i ≫ hT.freeYonedaSheafIsoConstant.hom =
+      hS.freeYonedaSheafIsoConstant.hom := by
+  let Z := (constantSheaf J AddCommGrpCat.{v}).obj (AddCommGrpCat.of (ULift ℤ))
+  have hTn := hT.freeYonedaSheafSectionsEquiv_inv_comp (J := J) Z
+    (hT.freeYonedaSheafIsoConstant.hom)
+  have hSn := hS.freeYonedaSheafSectionsEquiv_inv_comp (J := J) Z
+    (hS.freeYonedaSheafIsoConstant.hom)
+  rw [Iso.inv_hom_id] at hTn hSn
+  apply (freeYonedaSheafSectionsEquiv J S Z).injective
+  rw [freeYonedaSheafSectionsEquiv_naturality_left, ← hTn, ← hSn]
+  exact ConcreteCategory.congr_hom
+    (constantSheafAdj_homEquiv_comp_map J hS hT i
+      (AddCommGrpCat.of (ULift ℤ)) Z (𝟙 Z)) (ULift.up (1 : ℤ))
+
+end CategoryTheory.Limits.IsTerminal
+
+namespace CategoryTheory.Sheaf
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  [HasSheafify J AddCommGrpCat.{v}]
+variable [HasExt.{w} (Sheaf J AddCommGrpCat.{v})]
+variable {J} in
+/-- Changing the terminal object transports cohomology by the actual restriction map. -/
+lemma cohomologyPresheafObjIsoH_terminal_change (F : Sheaf J AddCommGrpCat.{v})
+    {S T : C} (hS : IsTerminal S) (hT : IsTerminal T) (i : S ⟶ T)
+    (n : ℕ) (x : F.H' n T) :
+    (F.cohomologyPresheafObjIsoH n hS).inv ((F.cohomologyPresheafObjIsoH n hT).hom x) =
+      (F.cohomologyPresheaf n).map i.op x := by
+  let xE : Ext.{w} ((freeYonedaSheafFunctor J).obj T) F n := x
+  -- The terminal comparison composes with the constant/free-Yoneda isomorphism in Ext;
+  -- the cohomology presheaf map precomposes with the free-Yoneda map of `i`.
+  change (Ext.mk₀ hS.freeYonedaSheafIsoConstant.hom).comp
+      ((Ext.mk₀ hT.freeYonedaSheafIsoConstant.inv).comp xE (zero_add n)) (zero_add n) =
+    (Ext.mk₀ ((freeYonedaSheafFunctor J).map i)).comp xE (zero_add n)
+  rw [← Ext.comp_assoc_of_second_deg_zero, Ext.mk₀_comp_mk₀]
+  congr 1
+  rw [← hS.freeYonedaSheafIsoConstant_naturality (J := J) hT i, Category.assoc,
+    Iso.hom_inv_id, Category.comp_id]
 end CategoryTheory.Sheaf

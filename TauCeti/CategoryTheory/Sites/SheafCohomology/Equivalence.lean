@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
-public import Mathlib.CategoryTheory.Sites.Equivalence
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
+public import TauCeti.Algebra.Homology.Ext.Map.AcyclicResolution
+public import TauCeti.CategoryTheory.Sites.Equivalence
 
 /-!
 # Sheaf cohomology along an equivalence of sites
@@ -30,6 +30,8 @@ over `e.inverse.obj V`.
   the coefficient sheaf.
 * `TauCeti.CategoryTheory.cohomologyPresheafObjIsoSheafCongr`: the comparison
   `Hⁿ(V, e_* F) ≅ Hⁿ(e.inverse V, F)` for a single sheaf `F`.
+
+Both directions of the site-equivalence comparison preserve resolution cocycle classes.
 -/
 
 public section
@@ -71,12 +73,6 @@ def sheafCongrInverseFreeYonedaIso (V : D) :
 
 variable [HasExt.{v} (Sheaf J AddCommGrpCat.{v})] [HasExt.{v} (Sheaf K AddCommGrpCat.{v})]
 
-local instance : (e.sheafCongr J K AddCommGrpCat.{v}).symm.functor.Additive :=
-  Functor.additive_of_preserves_binary_products _
-
-local instance : (e.sheafCongr J K AddCommGrpCat.{v}).symm.inverse.Additive :=
-  Functor.additive_of_preserves_binary_products _
-
 /-- Sheaf cohomology is invariant under an equivalence of sites: the cohomology at `V : D` of the
 sheaf transported along `e.sheafCongr J K` is the cohomology of the original sheaf at
 `e.inverse.obj V`, naturally in the coefficient sheaf. -/
@@ -102,6 +98,100 @@ def cohomologyPresheafObjIsoSheafCongr (F : Sheaf J AddCommGrpCat.{v}) (n : ℕ)
     _root_.CategoryTheory.Sheaf.H'.{v} ((e.sheafCongr J K AddCommGrpCat.{v}).functor.obj F) n V ≅
       _root_.CategoryTheory.Sheaf.H'.{v} F n (e.inverse.obj V) :=
   (cohomologyPresheafEvaluationIsoSheafCongr J K e n V).app F
+
+/-! ### Resolution-class normalization under the native equivalence -/
+
+open CochainComplex CategoryTheory.Abelian
+
+omit [HasExt (Sheaf J AddCommGrpCat.{v})] [HasExt (Sheaf K AddCommGrpCat.{v})] in
+/-- The inverse free-Yoneda comparison preserves the represented section. -/
+lemma sheafCongrInverseFreeYonedaIso_evaluation (V : D)
+    (F : Sheaf J AddCommGrpCat.{v})
+    (f : (freeYonedaSheafFunctor J).obj (e.inverse.obj V) ⟶ F) :
+    freeYonedaSheafSectionsEquiv K V
+      ((e.sheafCongr J K AddCommGrpCat.{v}).functor.obj F)
+      (((e.sheafCongr J K AddCommGrpCat.{v}).symm.toAdjunction).homEquiv _ _
+        ((sheafCongrInverseFreeYonedaIso J K
+          e V).hom ≫ f)) =
+      freeYonedaSheafSectionsEquiv J (e.inverse.obj V) F f := by
+  let c := sheafCongrInverseFreeYonedaCorepresentation J K e V
+  let c' := freeYonedaSheafCorepresentableBy J (e.inverse.obj V)
+  -- The inverse free-Yoneda map represents the identity section in the two corepresentations.
+  change c.homEquiv (c.homEquiv.symm (c'.homEquiv (𝟙 _)) ≫ f) = _
+  rw [c.homEquiv_comp, Equiv.apply_symm_apply]
+  exact (c'.homEquiv_eq f).symm.trans
+    (freeYonedaSheafCorepresentableBy_homEquiv J _ f)
+
+variable {F : Sheaf J AddCommGrpCat.{v}}
+  (L : CochainComplex (Sheaf J AddCommGrpCat.{v}) ℕ)
+  (ι : F ⟶ L.X 0) [Mono ι] (hι : ι ≫ L.d 0 1 = 0)
+  (hι' : (ShortComplex.mk ι (L.d 0 1) hι).Exact) (hL : ∀ j, L.ExactAt (j + 1))
+/-- Site equivalence preserves the cohomology class of a resolution cocycle. -/
+lemma cohomologyPresheafEvaluationIsoSheafCongr_resolutionClass (V : D) {n : ℕ}
+    (s : (L.X n).obj.obj (op (e.inverse.obj V)))
+    (hs : (L.d n (n + 1)).hom.app (op (e.inverse.obj V)) s = 0) :
+    (cohomologyPresheafEvaluationIsoSheafCongr J K
+      e n V).hom.app F
+      (Sheaf.H'.resolutionClass ((e.sheafCongr J K AddCommGrpCat.{v}).functor.map ι)
+        (map_augmentation_comp_d (e.sheafCongr J K AddCommGrpCat.{v}).functor hι)
+        (map_augmentation_exact (e.sheafCongr J K AddCommGrpCat.{v}).functor hι')
+        (map_exactAt_succ (e.sheafCongr J K AddCommGrpCat.{v}).functor hL) V s hs) =
+      Sheaf.H'.resolutionClass ι hι hι' hL (e.inverse.obj V) s hs := by
+  let E := (e.sheafCongr J K AddCommGrpCat.{v}).functor
+  let adj := (e.sheafCongr J K AddCommGrpCat.{v}).symm.toAdjunction
+  let ξ := sheafCongrInverseFreeYonedaIso J K e V
+  let c := (freeYonedaSheafSectionsEquiv J (e.inverse.obj V) (L.X n)).symm s
+  let KE : CochainComplex _ ℕ := (E.mapHomologicalComplex (.up ℕ)).obj L
+  let cE := (freeYonedaSheafSectionsEquiv K V (KE.X n)).symm s
+  have hc : c ≫ L.d n (n + 1) = 0 := by
+    simp only [c, freeYonedaSheafSectionsEquiv_symm_naturality_right, hs, map_zero]
+  have hcE : cE ≫ KE.d n (n + 1) = 0 := by
+    dsimp only [cE]
+    -- `s` is a section of `L.X n` at `e.inverse.obj V`, used here as a section of
+    -- `KE.X n = E.obj (L.X n)` at `V`; the carriers agree only after unfolding `sheafCongr`, so
+    -- `rw` cannot match the free-Yoneda naturality lemma.
+    erw [freeYonedaSheafSectionsEquiv_symm_naturality_right, hs, map_zero]
+  have hforward : adj.extEquiv ((Ext.mk₀ ξ.hom).comp
+        (L.extMk ι hι hι' hL c hc) (zero_add n)) =
+      KE.extMk (E.map ι) (map_augmentation_comp_d E hι)
+        (map_augmentation_exact E hι') (map_exactAt_succ E hL) cE hcE := by
+    rw [CochainComplex.mk₀_comp_extMk, extEquiv_extMk]
+    congr 1
+    apply (freeYonedaSheafSectionsEquiv K V (KE.X n)).injective
+    have hv := sheafCongrInverseFreeYonedaIso_evaluation J K e V (L.X n) c
+    dsimp only [c, cE, KE, E, adj, ξ, Functor.mapHomologicalComplex_obj_X] at hv ⊢
+    -- The same carrier identification: the section equivalence for `E.obj (L.X n)` at `V` is
+    -- applied to `s`, typed at `L.X n` and `e.inverse.obj V`, so only `erw` can cancel it.
+    erw [AddEquiv.apply_symm_apply] at hv ⊢
+    exact hv
+  have hm := Sheaf.H'.resolutionClass_def (K := KE) (E.map ι)
+    (map_augmentation_comp_d E hι) (map_augmentation_exact E hι')
+    (map_exactAt_succ E hL) V s hs
+  rw [Sheaf.H'.resolutionClass_def]
+  rw [hm]
+  -- The evaluated comparison is inverse adjunction on Ext followed by the free-Yoneda iso.
+  dsimp only [cohomologyPresheafEvaluationIsoSheafCongr]
+  change (Ext.mk₀ ξ.inv).comp
+    (adj.extEquiv.symm (KE.extMk (E.map ι) (map_augmentation_comp_d E hι)
+      (map_augmentation_exact E hι') (map_exactAt_succ E hL) cE hcE))
+    (zero_add n) = L.extMk ι hι hι' hL c hc
+  rw [← hforward, AddEquiv.symm_apply_apply, ← Ext.comp_assoc_of_second_deg_zero,
+    Ext.mk₀_comp_mk₀, ξ.inv_hom_id, Ext.mk₀_id_comp]
+
+/-- The inverse comparison sends an actual resolution class to its transported class. -/
+lemma cohomologyPresheafEvaluationIsoSheafCongr_inv_resolutionClass
+    (V : D) {n : ℕ} (s : (L.X n).obj.obj (op (e.inverse.obj V)))
+    (hs : (L.d n (n + 1)).hom.app (op (e.inverse.obj V)) s = 0) :
+    let E := (e.sheafCongr J K AddCommGrpCat.{v}).functor
+    (cohomologyPresheafEvaluationIsoSheafCongr J K e n V).inv.app F
+      (Sheaf.H'.resolutionClass ι hι hι' hL (e.inverse.obj V) s hs) =
+    Sheaf.H'.resolutionClass (E.map ι) (map_augmentation_comp_d E hι)
+      (map_augmentation_exact E hι') (map_exactAt_succ E hL) V s hs := by
+  let q := (cohomologyPresheafEvaluationIsoSheafCongr J K e n V).app F
+  have h := congrArg (fun x ↦ q.inv x)
+    (cohomologyPresheafEvaluationIsoSheafCongr_resolutionClass J K e L ι hι hι' hL V s hs)
+  exact h.symm.trans (Iso.hom_inv_id_apply q _)
+
 
 end
 
