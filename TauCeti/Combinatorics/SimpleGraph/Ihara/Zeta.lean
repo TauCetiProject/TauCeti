@@ -29,8 +29,10 @@ It follows from the trace formula `tr Bᵐ = N_m` for `m ≥ 1`
 `exp (∑ₘ tr (Bᵐ) uᵐ / m) det (1 - u B) = 1` (`Matrix.subst_exp_mul_charpolyRev`). In particular
 the coefficients of `ζ` are integers, those of the inverse of `det (1 - u B)` over `ℤ`.
 
-The definition needs no finiteness, connectivity or degree hypothesis on the graph, and the
-determinant formula holds for every finite simple graph.
+The definition typechecks for every simple graph, but it is the Ihara zeta function only when
+every `N_m` is finite, for example for a finite graph: `N_m` is a `Nat.card`, which is `0` for an
+infinite set of walks. The determinant formula holds for every finite simple graph, with no
+connectivity or degree hypothesis.
 
 ## Main definitions
 
