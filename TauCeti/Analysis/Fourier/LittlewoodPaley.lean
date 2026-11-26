@@ -88,7 +88,7 @@ in the single Hilbert space `ℓ²(F)` of all indices rather than in a space dep
 ## The argument for `‖f‖_p ≤ C ‖S f‖_p`
 
 The reverse inequality follows from the first one at the conjugate exponent `q` by duality
-(`MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`). The pieces
+(`MeasureTheory.Lp.exists_eLpNorm_le_one_and_lt_re_inner`). The pieces
 `ψⱼ` and `ψₖ` have disjoint supports once `|j - k| ≥ L`
 (`ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`,
 `ContDiffBump.exists_littlewoodPaley_mul_eq_zero`), so `∑_{|k - j| < L} ψₖ ψⱼ = ψⱼ`
@@ -98,9 +98,10 @@ Hence, for `f, g ∈ L²(V, F)` and a finite set `t` of indices,
 
 `⟪∑_{j ∈ t} Δⱼ f, g⟫ = ∑_{j ∈ t} ∑_{|k - j| < L} ⟪Δⱼ f, Δₖ g⟫`,
 
-which Cauchy–Schwarz for the banded double sum (`ENNReal.tsum_sum_mul_le_of_card_le`) bounds by
-`2 L ∫ S f · S g`. The partial sums `∑_{j ∈ t} Δⱼ f` converge to `f` in `L²` along suitable
-finite sets `t` (`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`,
+which Cauchy–Schwarz for the banded double sum (`ENNReal.tsum_sum_mul_le_of_card_le`) bounds
+by `2 L ∫ S f · S g` (`TauCeti.enorm_inner_sum_le_mul_lintegral_tsum_enorm_sq_rpow`). The partial
+sums `∑_{j ∈ t} Δⱼ f` converge to `f` in `L²` along suitable finite sets `t`
+(`MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_inhomogeneousLittlewoodPaley`,
 `ContDiffBump.tendsto_sum_fourierMultiplierCLM_littlewoodPaley`, both instances of
 `MeasureTheory.Lp.tendsto_sum_fourierMultiplierCLM_of_tendsto`), and Hölder's inequality and
 the first inequality at the exponent `q` give `|⟪f, g⟫| ≤ 2 L C_q ‖S f‖_p ‖g‖_q`. This duality
