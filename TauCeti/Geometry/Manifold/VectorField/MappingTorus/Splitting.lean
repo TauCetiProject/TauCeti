@@ -34,8 +34,8 @@ bundle.
   of the mapping torus is the Whitney sum of the line bundle spanned by `T` and the vertical
   tangent bundle. This is the splitting of a vector bundle by two complementary smooth subbundles
   (`TauCeti.HasLocalContMDiffSubbundleFrames.exists_bundleDiffeomorph_prod_of_isCompl`).
-* The projection of `T Y_φ` onto `V` along `T` sends `w` to `w - dt(w) T`
-  (`TauCeti.SmoothMappingTorus.projection_ker_mfderiv_proj`), and it is a smooth map of
+* The projection of `T Y_φ` onto `V` along `T`, which sends `w` to `w - dt(w) T`
+  (`TauCeti.SmoothMappingTorus.projection_ker_mfderiv_proj_apply`), is a smooth map of
   total spaces from the tangent bundle to the vertical tangent bundle
   (`TauCeti.SmoothMappingTorus.contMDiff_totalSpace_projectionOnto_ker_mfderiv_proj`).
 
@@ -45,9 +45,8 @@ No compactness of `M` is needed.
 
 * `TauCeti.SmoothMappingTorus.exists_bundleDiffeomorph_prod_tangentBundle`: the splitting
   `T Y_φ = ℝ T ⊕ V` as a diffeomorphism of total spaces.
-* `TauCeti.SmoothMappingTorus.projection_ker_mfderiv_proj`,
-  `TauCeti.SmoothMappingTorus.contMDiff_totalSpace_projectionOnto_ker_mfderiv_proj`: the vertical
-  projection `w ↦ w - dt(w) T` and its smoothness.
+* `TauCeti.SmoothMappingTorus.contMDiff_totalSpace_projectionOnto_ker_mfderiv_proj`: the
+  vertical projection `w ↦ w - dt(w) T` is smooth.
 
 ## References
 
@@ -68,34 +67,7 @@ namespace SmoothMappingTorus
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M]
-  (φ : M ≃ₘ⟮I, I⟯ M)
-
-/-- The projection of a tangent vector `w` of the mapping torus onto the vertical space `V = ker dp`
-along the suspension vector field `T` is `w - dt(w) T`. -/
-@[simp]
-theorem projection_ker_mfderiv_proj (y : SmoothMappingTorus φ)
-    (w : TangentSpace (𝓘(ℝ).prod I) y) :
-    (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker.projection (ℝ ∙ timeVectorField φ y)
-        (isCompl_span_timeVectorField_ker_mfderiv_proj φ y).symm w =
-      w - (timeForm φ).val y ![w] • timeVectorField φ y := by
-  set c : ℝ := (timeForm φ).val y ![w]
-  have hc : mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y w = c := (timeForm_apply φ y ![w]).symm
-  -- `w - dt(w) T` is vertical, since `dp(T) = 1`, and `dt(w) T` lies on the line of `T`.
-  have hv : w - c • timeVectorField φ y ∈ (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker := by
-    rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub, map_smul,
-      mfderiv_proj_timeVectorField, hc]
-    exact sub_eq_zero.2 (mul_one c).symm
-  have hu : c • timeVectorField φ y ∈ ℝ ∙ timeVectorField φ y :=
-    Submodule.smul_mem _ c (Submodule.mem_span_singleton_self _)
-  set P := (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker.projectionOnto (ℝ ∙ timeVectorField φ y)
-    (isCompl_span_timeVectorField_ker_mfderiv_proj φ y).symm
-  have hP₁ : P (w - c • timeVectorField φ y) = ⟨_, hv⟩ :=
-    Submodule.projectionOnto_apply_left _ ⟨_, hv⟩
-  have hP₂ : P (c • timeVectorField φ y) = 0 := Submodule.projectionOnto_apply_right _ ⟨_, hu⟩
-  rw [← Submodule.coe_projectionOnto_apply, ← sub_add_cancel w (c • timeVectorField φ y), map_add,
-    hP₁, hP₂, add_zero, sub_add_cancel]
-
-variable [FiniteDimensional ℝ E]
+  (φ : M ≃ₘ⟮I, I⟯ M) [FiniteDimensional ℝ E]
 
 /-- **The splitting `T Y_φ = ℝ T ⊕ V` of the tangent bundle of a mapping torus.** Adding a
 multiple of the suspension vector field `T` to a vertical vector, `(y, a, v) ↦ (y, a + v)`, is a
@@ -129,8 +101,8 @@ theorem exists_bundleDiffeomorph_prod_tangentBundle :
 
 /-- **The vertical projection of a mapping torus is smooth.** The projection of the tangent bundle
 onto the vertical tangent bundle `V = ker dp` along the suspension vector field `T`, which sends `w`
-to `w - dt(w) T` (`TauCeti.SmoothMappingTorus.projection_ker_mfderiv_proj`), is a smooth
-map of total spaces. -/
+to `w - dt(w) T` (`TauCeti.SmoothMappingTorus.projection_ker_mfderiv_proj_apply`), is a
+smooth map of total spaces. -/
 theorem contMDiff_totalSpace_projectionOnto_ker_mfderiv_proj :
     letI := subbundleTopology (ℝ × E) (F' := Fin (finrank ℝ E) → ℝ)
       fun y : SmoothMappingTorus φ ↦ (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker
