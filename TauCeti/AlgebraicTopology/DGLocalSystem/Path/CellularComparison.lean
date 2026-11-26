@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.Cokernel
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BaseChain
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Relative.Cube.Pair
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # The cellular comparison of Brown's twisting cocycle
@@ -52,8 +53,6 @@ cellular chain complex of `X` in positive degrees.
   cube, which `TauCeti.isCubicalRepresentative_ofCube_skeletonCellCube` represents.
 * `TauCeti.homologyMap_cubicalHomologyδ_eq_of_isCubicalRepresentative`: the cubical cellular
   boundary computed on representatives in `X`.
-* `TopPair.mem_range_map_ofInclusion_iff`, `TopPair.IsCubicalRepresentative.of_sub_mem_range`:
-  chains of a subspace and representatives modulo them, for the pairs `(T, A)` of nested subsets.
 * `TauCeti.cellCubeBasis_repr_homologyMap_cubicalHomologyδ`: the cellular boundary of Brown's model
   has the augmented entries `ε(m_{x,y})` of Brown's twisting cocycle as its matrix in the bases of
   characteristic cubes.
@@ -186,6 +185,14 @@ def skeletonCellCubeCycle (j : cell C (m + 1)) :
   TopPair.cubicalCycleOfCube k (skeletonCellCube C (m + 1) j)
     (mapsTo_skeletonCellCube_boundary C (m + 1) j)
 
+/-- The relative cycle of the characteristic cube of `j` is the relative chain of that cube. -/
+@[simp]
+theorem iCycles_skeletonCellCubeCycle (j : cell C (m + 1)) :
+    ((skeletonPair C (m + 1)).cubicalChainComplex k).iCycles (m + 1)
+        (skeletonCellCubeCycle C k m j) =
+      TopPair.cubicalChainOfCube k (skeletonCellCube C (m + 1) j) :=
+  TopPair.iCycles_cubicalCycleOfCube ..
+
 /-- The map `k → Hₘ₊₁(Xᵐ⁺¹, Xᵐ; k)`, `a ↦ a • [χⱼ]`, of the `(m + 1)`-cell `j`. -/
 private def cellCubeHomologyLeg (j : cell C (m + 1)) :
     ModuleCat.of k k ⟶ ((skeletonPair C (m + 1)).cubicalChainComplex k).homology (m + 1) :=
@@ -270,91 +277,15 @@ theorem cellCubeBasis_apply (j : cell C (m + 1)) :
       DirectSum.lof k _ (fun _ ↦ k) j 1 from finsuppLEquivDirectSum_single ..]
   rw [cellCubeHomologyEquiv_lof, cellCubeHomologyLeg_apply, one_smul]
 
-/-- The coordinate of the `(m + 1)`-cell `i` in a combination `∑ j ∈ S, f j • [χⱼ]` of the basis
-vectors of the cells of `S` is `f i`, when `f` vanishes at `i` outside `S`. -/
-theorem cellCubeBasis_repr_sum_smul_apply (S : Finset (cell C (m + 1))) (f : cell C (m + 1) → k)
-    {i : cell C (m + 1)} (hf : i ∉ S → f i = 0) :
-    (cellCubeBasis C k m).repr (∑ j ∈ S, f j • cellCubeBasis C k m j) i = f i := by
-  classical
-  simp only [map_sum, map_smul, Module.Basis.repr_self, Finsupp.finsetSum_apply,
-    Finsupp.smul_apply, Finsupp.single_apply, smul_eq_mul, mul_ite, mul_one, mul_zero,
-    Finset.sum_ite_eq']
-  split_ifs with hi
-  · rfl
-  · exact (hf hi).symm
-
 /-- The characteristic cube of the `(m + 1)`-cell `j` represents the basis vector of `j`. -/
 theorem isCubicalRepresentative_ofCube_skeletonCellCube (j : cell C (m + 1)) :
     (skeletonPair C (m + 1)).IsCubicalRepresentative k
       (NormalizedCubicalChain.ofCube _ k (skeletonCellCube C (m + 1) j)) (cellCubeBasis C k m j) :=
   (TopPair.isCubicalRepresentative_iff _ _).2 ⟨skeletonCellCubeCycle C k m j, by
-    rw [skeletonCellCubeCycle, TopPair.iCycles_cubicalCycleOfCube, TopPair.cubicalChainOfCube_def,
+    rw [iCycles_skeletonCellCubeCycle, TopPair.cubicalChainOfCube_def,
       normalizedCubicalChainComplexXEquiv_symm_apply], (cellCubeBasis_apply C k m j).symm⟩
 
 end Basis
-
-end TauCeti
-
-namespace TopPair
-
-open TauCeti
-
-section Support
-
-universe u
-
-variable {X : Type u} [TopologicalSpace X] {k : Type u} [Ring k]
-
-/-- For nested subsets `A ⊆ T`, a chain of `T` is a chain of `A`, a chain of the subspace of the
-pair `(T, A)`, exactly when its push-forward to `X` is supported in `A`. -/
-theorem mem_range_map_ofInclusion_iff {A T : Set X} (h : A ⊆ T) {n : ℕ}
-    (c : NormalizedCubicalChain (TopPair.ofInclusion (X := TopCat.of X) h).fst k n) :
-    c ∈ LinearMap.range (NormalizedCubicalChain.map k
-        (TopPair.ofInclusion (X := TopCat.of X) h).map.hom n) ↔
-      NormalizedCubicalChain.map k (ContinuousMap.subtypeVal T) n c ∈
-        NormalizedCubicalChain.supportedIn k A n := by
-  rw [NormalizedCubicalChain.range_map_eq_supportedIn_range (R := k)
-      (TopPair.ofInclusion (X := TopCat.of X) h).isEmbedding_map.isInducing n,
-    TopPair.range_ofInclusion_map]
-  refine (NormalizedCubicalChain.map_mem_supportedIn_image_iff k (ι := ContinuousMap.subtypeVal T)
-    IsEmbedding.subtypeVal (Subtype.val ⁻¹' A) c).symm.trans ?_
-  have himage : ⇑(ContinuousMap.subtypeVal T) '' (Subtype.val ⁻¹' A) = A :=
-    (Subtype.image_preimage_coe T A).trans (inter_eq_right.2 h)
-  rw [himage]
-
-/-- For nested subsets `A ⊆ T`, the difference of two chains of `T` is a chain of `A` when the
-difference of their push-forwards to `X` is supported in `A`. -/
-theorem sub_mem_range_map_ofInclusion {A T : Set X} (h : A ⊆ T) {n : ℕ}
-    (c c' : NormalizedCubicalChain T k n)
-    (hc : NormalizedCubicalChain.map k (ContinuousMap.subtypeVal T) n c -
-        NormalizedCubicalChain.map k (ContinuousMap.subtypeVal T) n c' ∈
-      NormalizedCubicalChain.supportedIn k A n) :
-    c - c' ∈ LinearMap.range (NormalizedCubicalChain.map k
-      (TopPair.ofInclusion (X := TopCat.of X) h).map.hom n) :=
-  (mem_range_map_ofInclusion_iff h (c - c')).2 (by rwa [map_sub])
-
-/-- A chain differing from a representative of a relative class by a chain of the subspace
-represents the same class. -/
-theorem IsCubicalRepresentative.of_sub_mem_range {P : TopPair.{u}} {n : ℕ}
-    {c c' : NormalizedCubicalChain P.fst k n}
-    {μ : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c' μ)
-    (hc : c - c' ∈ LinearMap.range (NormalizedCubicalChain.map k P.map.hom n)) :
-    P.IsCubicalRepresentative k c μ := by
-  -- The chain map of the inclusion of the subspace is `NormalizedCubicalChain.map` in each degree
-  -- (`normalizedCubicalChainComplex_map_f_apply`).
-  have hc' : c - c' ∈ LinearMap.range (((normalizedCubicalChainComplex k).map P.map).f n).hom :=
-    hc
-  obtain ⟨r, hr, rfl⟩ := (TopPair.isCubicalRepresentative_iff _ _).1 h
-  refine (TopPair.isCubicalRepresentative_iff _ _).2 ⟨r, ?_, rfl⟩
-  rw [← hr]
-  exact sub_eq_zero.1 ((LinearMap.map_sub _ c c').symm.trans
-    ((HomologicalComplex.cokernel_π_f_apply_eq_zero_iff _ _ _).2 hc'))
-
-end Support
-
-end TopPair
-
-namespace TauCeti
 
 section CellularBoundary
 
@@ -471,11 +402,6 @@ variable {B : Type} [TopologicalSpace B] [T2Space B] {b : B} {C : Set B} [CWComp
   (τ : ∀ (n : ℕ) (j : cell C n), MoorePathBetween B b (map n j 0)) (hC : pathComponent b ⊆ C)
   (m : ℕ)
 
-/-- The `q`-skeleton, read through the identity of `B`. -/
-private theorem preimageSkeleton_id_eq {q : ℤ} {n : ℕ} (h : q + 1 = n) :
-    preimageSkeleton C id q = (skeletonLT C (n : ℕ∞) : Set B) := by
-  rw [preimageSkeleton_def, preimage_id, h, Int.toNat_natCast]
-
 /-- The `(m + 1)`-cells in the row of an `(m + 2)`-cell `x` of Brown's cocycle. -/
 private def brownRowCells (x : cell C (m + 1 + 1)) : Finset (cell C (m + 1)) :=
   ((brownModel H R τ hC).cocycle.m ⟨m + 1 + 1, x⟩).support.preimage (Sigma.mk (m + 1))
@@ -504,8 +430,8 @@ private theorem boundary_sub_sum_mem_supportedIn {x : cell C (m + 1 + 1)}
   have h :=
     brownModel_cubicalChainModuleDifferential_baseChain_sub_mem_cubicalChainModuleSupportedIn
       (H := H) (R := R) τ hC ⟨m + 1 + 1, x⟩
-  rw [preimageSkeleton_id_eq (n := m + 1) (by push_cast; ring), ← hce,
-    cubicalChainModuleDifferential_lof_succ] at h
+  rw [preimageSkeleton_eq_preimage_skeletonLT id (m + 1) _ (by push_cast; ring), preimage_id,
+    ← hce, cubicalChainModuleDifferential_lof_succ] at h
   -- Split the row into its `(m + 1)`-cells and the cells of lower dimension, whose
   -- characteristic cubes lie in the `m`-skeleton.
   set row := (brownModel H R τ hC).cocycle.m ⟨m + 1 + 1, x⟩
@@ -566,13 +492,15 @@ theorem cellCubeBasis_repr_homologyMap_cubicalHomologyδ (x : cell C (m + 1 + 1)
     (by simp)
   have hc₁ := brownModel_baseChain_mem_cubicalChainModuleSupportedIn (H := H) (R := R) τ hC
     ⟨m + 1 + 1, x⟩
-  rw [preimageSkeleton_id_eq (n := m + 1 + 1 + 1) (by push_cast; ring), ← hce,
+  rw [preimageSkeleton_eq_preimage_skeletonLT id (m + 1 + 1 + 1) _ (by push_cast; ring),
+    preimage_id, ← hce,
     cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff,
     NormalizedCubicalChain.supportedIn_def] at hc₁
   obtain ⟨c', rfl⟩ := hc₁
   have hc₂ := brownModel_baseChain_sub_cellCube_mem_cubicalChainModuleSupportedIn (H := H)
     (R := R) τ hC ⟨m + 1 + 1, x⟩
-  rw [preimageSkeleton_id_eq (n := m + 1 + 1) (by push_cast; ring), ← hce, ← map_sub,
+  rw [preimageSkeleton_eq_preimage_skeletonLT id (m + 1 + 1) _ (by push_cast; ring), preimage_id,
+    ← hce, ← map_sub,
     cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff] at hc₂
   have hrep : (skeletonPair C (m + 1 + 1)).IsCubicalRepresentative R c'
       (cellCubeBasis C R (m + 1) x) :=
@@ -601,7 +529,7 @@ theorem cellCubeBasis_repr_homologyMap_cubicalHomologyδ (x : cell C (m + 1 + 1)
   have hcs := boundary_sub_sum_mem_supportedIn τ hC m hce
   rw [← hs] at hcs
   rw [homologyMap_cubicalHomologyδ_eq_of_isCubicalRepresentative C hrep hrep₁ hcs,
-    cellCubeBasis_repr_sum_smul_apply C R m _ _
+    Module.Basis.repr_finsetSum_smul_self_apply _ _ _
       (loopChainAugmentation_brownModel_cocycle_m_eq_zero τ hC m)]
 
 end Brown
