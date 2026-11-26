@@ -185,6 +185,9 @@ def d0 : M →+ (G → M) where
 action, `TauCeti.ContCohomology.B1_le_C1` shows that these cochains are continuous. -/
 def B1 : AddSubgroup (G → M) := (d0 G M).range
 
+/-- The image of `d⁰` is `B¹`. -/
+theorem range_d0 : (d0 G M).range = B1 G M := (rfl)
+
 variable {G M}
 
 /-- The defining formula for `d⁰`. -/
@@ -344,6 +347,12 @@ maps and the `(0, q)` and `(q, 0)` cup shapes all need a degree-`0` carrier to b
 against. Membership is exposed by Mathlib's `FixedPoints.mem_addSubgroup`, which applies directly
 to this abbreviation. -/
 abbrev H0 : AddSubgroup M := FixedPoints.addSubgroup G M
+
+/-- The kernel of `d⁰` is the group of invariants `H⁰(G, M)`. -/
+theorem ker_d0 : (d0 G M).ker = H0 G M := by
+  ext m
+  simp only [AddMonoidHom.mem_ker, FixedPoints.mem_addSubgroup, funext_iff, d0_apply,
+    Pi.zero_apply, sub_eq_zero]
 
 variable {G M}
 

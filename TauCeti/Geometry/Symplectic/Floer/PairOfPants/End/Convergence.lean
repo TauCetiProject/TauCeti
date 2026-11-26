@@ -83,7 +83,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 starts at a nondegenerate fixed point of the time-one map of `H_q`, is isolated among the
 `1`-periodic orbits of `H'_q`: `H'_q` is `H_q` on the input ends and the reversed Hamiltonian
 `-H_q(-t)` on the output end. -/
-private theorem exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian
+theorem exists_pos_forall_eq_of_isNondegenerateFixedPt_positiveEndHamiltonian
     {q : Puncture} {L : ℝ≥0} (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension (H q)))
     {x : ℝ → V}
     (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
