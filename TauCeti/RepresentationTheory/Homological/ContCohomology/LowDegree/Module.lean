@@ -75,23 +75,21 @@ variable {R : Type w} {G : Type u} [Monoid G] {M : Type v} [AddCommGroup M] [Dis
 
 /-- Pulling a `1`-cochain back along the identity of `G` and the coefficient map `r • ·` is
 multiplication by `r`. -/
-theorem cochainsMap1_smul [TopologicalSpace G] (r : R) (f : G → M) :
-    cochainsMap1 (ContinuousMonoidHom.id G : G →* G) (DistribSMul.toAddMonoidHom M r) f = r • f :=
+theorem cochainsMap1_smul (r : R) (f : G → M) :
+    cochainsMap1 (MonoidHom.id G) (DistribSMul.toAddMonoidHom M r) f = r • f :=
   funext fun g ↦ cochainsMap1_apply _ _ f g
 
 /-- Pulling a `2`-cochain back along the identity of `G` and the coefficient map `r • ·` is
 multiplication by `r`. -/
-theorem cochainsMap2_smul [TopologicalSpace G] (r : R) (f : G × G → M) :
-    cochainsMap2 (ContinuousMonoidHom.id G : G →* G) (DistribSMul.toAddMonoidHom M r) f = r • f :=
+theorem cochainsMap2_smul (r : R) (f : G × G → M) :
+    cochainsMap2 (MonoidHom.id G) (DistribSMul.toAddMonoidHom M r) f = r • f :=
   funext fun ⟨g, h⟩ ↦ cochainsMap2_apply _ _ f g h
 
 variable [DistribSMul G M] [SMulCommClass G R M]
 
 /-- The `1`-coboundaries are stable under the scalars. -/
-theorem smul_mem_B1 (r : R) {f : G → M} (hf : f ∈ B1 G M) : r • f ∈ B1 G M := by
-  have h : cochainsMap1 (MonoidHom.id G) (DistribSMul.toAddMonoidHom M r) f = r • f :=
-    funext fun g ↦ cochainsMap1_apply _ _ f g
-  exact h ▸ cochainsMap1_mem_B1 (MonoidHom.id G) (DistribSMul.toAddMonoidHom M r)
+theorem smul_mem_B1 (r : R) {f : G → M} (hf : f ∈ B1 G M) : r • f ∈ B1 G M :=
+  cochainsMap1_smul r f ▸ cochainsMap1_mem_B1 (MonoidHom.id G) (DistribSMul.toAddMonoidHom M r)
     (fun g m ↦ (smul_comm g r m).symm) hf
 
 variable [TopologicalSpace G] [TopologicalSpace M] [IsTopologicalAddGroup M]
