@@ -43,6 +43,14 @@ The relative clutching number has the laws of a relative first Chern number:
   (`TauCeti.relativeClutchingNumber_eq_add`). This is the excision law: relative first Chern
   numbers of pieces glued along a common boundary arc with a common frame add up.
 
+A bundle map carries boundary frames to boundary frames. If `Φ x : E x ≃ E' (f x)` is a family of
+complex-linear isomorphisms covering `f : X → Y`, continuous on total spaces, then `E'` along
+`f ∘ u` relative to the transported frame `Φ ∘ τ` has the same relative clutching number
+(`TauCeti.relativeClutchingNumber_map_of_continuousLinearEquiv`); if the `Φ x` are conjugate
+linear, the relative clutching number changes sign
+(`TauCeti.relativeClutchingNumber_map_of_conjugateLinear`), because conjugating an automorphism by
+a conjugate-linear isomorphism conjugates its determinant.
+
 Finally, it is the clutching number `TauCeti.clutchingNumber` of a sphere relative to a boundary
 frame. In a trivialization `e` of `E` defined over the image of the boundary, the relative clutching
 number is the difference of the degrees of the clutching functions of `φ` and `τ` read in `e`
@@ -69,6 +77,9 @@ point. When `τ` is the frame of the trivialization itself, the two numbers agre
 * `TauCeti.relativeClutchingNumber_trans`: change of boundary frame.
 * `TauCeti.relativeClutchingNumber_eq_of_homotopy`: homotopy invariance.
 * `TauCeti.relativeClutchingNumber_eq_add`: subdivision.
+* `TauCeti.relativeClutchingNumber_map_of_continuousLinearEquiv`,
+  `TauCeti.relativeClutchingNumber_map_of_conjugateLinear`: complex-linear bundle maps preserve
+  relative clutching numbers, and conjugate-linear ones reverse them.
 * `TauCeti.relativeClutchingNumber_eq_sub`: the relative clutching number in a trivialization.
 * `TauCeti.clutchingNumber_eq_relativeClutchingNumber_add` and
   `TauCeti.clutchingNumber_eq_relativeClutchingNumber`: comparison with the clutching number of a
@@ -287,5 +298,73 @@ theorem clutchingNumber_eq_relativeClutchingNumber {x : X} (p : Ω^ (Fin 2) X x)
     rw [clutchingFunction_of_mem hy', hid, ContinuousLinearEquiv.normalizedDet_refl, inv_one]
   rw [clutchingNumber_eq_relativeClutchingNumber_add p hτ e hx, squareBoundaryDegree_congr h1,
     squareBoundaryDegree_const, add_zero]
+
+section Map
+
+variable {Y : Type*} [TopologicalSpace Y]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] [FiniteDimensional ℂ F']
+  {E' : Y → Type*} [∀ y, AddCommGroup (E' y)] [∀ y, Module ℂ (E' y)]
+  [∀ y, TopologicalSpace (E' y)] [TopologicalSpace (TotalSpace F' E')] [FiberBundle F' E']
+  [VectorBundle ℂ F' E'] [∀ y, IsTopologicalAddGroup (E' y)] [∀ y, ContinuousSMul ℂ (E' y)]
+
+/-- **Complex-linear bundle maps preserve relative clutching numbers.** Let `Φ x : E x ≃ E' (f x)`
+be complex-linear isomorphisms covering a continuous map `f : X → Y`, continuous as a map of total
+spaces, and let `L : F ≃ F'` identify the model fibres. The relative clutching number of `E'` along
+`f ∘ u`, relative to the boundary frame `Φ ∘ τ ∘ L⁻¹`, is that of `E` along `u` relative to `τ`. -/
+theorem relativeClutchingNumber_map_of_continuousLinearEquiv (f : C(X, Y))
+    (Φ : ∀ x, E x ≃L[ℂ] E' (f x))
+    (hΦ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' (f v.proj) (Φ v.proj v.snd))
+    (L : F ≃L[ℂ] F') (u : C(Fin 2 → I, X)) (τ : ∀ y, F ≃L[ℂ] E (u y)) :
+    relativeClutchingNumber (f.comp u) (fun y ↦ (L.symm.trans (τ y)).trans (Φ (u y))) =
+      relativeClutchingNumber u τ := by
+  obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous u)
+  -- The frame `Φ ∘ φ ∘ L⁻¹` of `E'` along `f ∘ u`.
+  have hψ : Continuous fun q : (Fin 2 → I) × F' ↦
+      TotalSpace.mk' F' (f (u q.1)) ((L.symm.trans (φ q.1)).trans (Φ (u q.1)) q.2) :=
+    hΦ.comp (hφ.comp (continuous_fst.prodMk (L.symm.continuous.comp continuous_snd)))
+  rw [relativeClutchingNumber_eq_squareBoundaryDegree (f.comp u) _
+      (φ := fun y ↦ (L.symm.trans (φ y)).trans (Φ (u y))) hψ,
+    relativeClutchingNumber_eq_squareBoundaryDegree u τ hφ]
+  -- The transition of the transported frames is that of `τ` and `φ`, conjugated by `L`.
+  refine squareBoundaryDegree_congr fun y _ ↦ ?_
+  have h : ((L.symm.trans (τ y)).trans (Φ (u y))).trans
+      ((L.symm.trans (φ y)).trans (Φ (u y))).symm =
+        L.symm.trans (((τ y).trans (φ y).symm).trans L) := by
+    ext v
+    simp
+  have hL := ContinuousLinearEquiv.normalizedDet_trans_trans_symm L.symm ((τ y).trans (φ y).symm)
+  rwa [ContinuousLinearEquiv.symm_symm, ← h] at hL
+
+/-- **Conjugate-linear bundle maps reverse relative clutching numbers.** Let
+`Φ x : E x ≃ E' (f x)` be conjugate-linear isomorphisms covering a continuous map `f : X → Y`,
+continuous as a map of total spaces, and let `K : F ≃ F'` be a conjugate-linear isomorphism of the
+model fibres. The relative clutching number of `E'` along `f ∘ u`, relative to the boundary frame
+`Φ ∘ τ ∘ K⁻¹`, is the negative of that of `E` along `u` relative to `τ`. -/
+theorem relativeClutchingNumber_map_of_conjugateLinear (f : C(X, Y))
+    (Φ : ∀ x, E x ≃L⋆[ℂ] E' (f x))
+    (hΦ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' (f v.proj) (Φ v.proj v.snd))
+    (K : F ≃L⋆[ℂ] F') (u : C(Fin 2 → I, X)) (τ : ∀ y, F ≃L[ℂ] E (u y)) :
+    relativeClutchingNumber (f.comp u) (fun y ↦ (K.symm.trans (τ y)).trans (Φ (u y))) =
+      -relativeClutchingNumber u τ := by
+  obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous u)
+  -- The frame `Φ ∘ φ ∘ K⁻¹` of `E'` along `f ∘ u`, complex linear as a composite of two
+  -- conjugate-linear maps and a complex-linear one.
+  have hψ : Continuous fun q : (Fin 2 → I) × F' ↦
+      TotalSpace.mk' F' (f (u q.1)) ((K.symm.trans (φ q.1)).trans (Φ (u q.1)) q.2) :=
+    hΦ.comp (hφ.comp (continuous_fst.prodMk (K.symm.continuous.comp continuous_snd)))
+  rw [relativeClutchingNumber_eq_squareBoundaryDegree (f.comp u) _
+      (φ := fun y ↦ (K.symm.trans (φ y)).trans (Φ (u y))) hψ,
+    relativeClutchingNumber_eq_squareBoundaryDegree u τ hφ, ← squareBoundaryDegree_inv]
+  -- The transition of the transported frames is that of `τ` and `φ`, conjugated by `K`, whose
+  -- normalized determinant is the inverse one.
+  refine squareBoundaryDegree_congr fun y _ ↦ ?_
+  have h : ((K.symm.trans (τ y)).trans (Φ (u y))).trans
+      ((K.symm.trans (φ y)).trans (Φ (u y))).symm =
+        (K.symm.trans ((τ y).trans (φ y).symm)).trans K := by
+    ext v
+    simp
+  rw [h, ContinuousLinearEquiv.normalizedDet_conjₛₗ, Pi.inv_apply]
+
+end Map
 
 end TauCeti

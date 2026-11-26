@@ -692,11 +692,8 @@ private theorem setIntegral_matrixBilinearForm_smul_add_eq (hΩH : Omega ≤ H)
       ae_restrict_of_ae_restrict_of_subset hΩ (testFunctionLp_apply_ae (mu := mu) 2 φ)]
       with x h1 h2
     rw [h1, W1p.value_ofTestFunctionₗ, h2]
-  have hφg : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient φΩ x = ∇ φ x := by
-    filter_upwards [W1p.gradient_restrictL_ae hΩH (W1p.ofTestFunctionₗ mu H 2 φ),
-      ae_restrict_of_ae_restrict_of_subset hΩ (gradientTestFunctionLp_apply_ae (mu := mu) 2 φ)]
-      with x h1 h2
-    rw [h1, W1p.gradient_ofTestFunctionₗ, h2]
+  have hφg : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient φΩ x = ∇ φ x :=
+    W1p.gradient_restrictL_ofTestFunctionₗ_ae hΩH φ
   set v := W1p.contDiffSMul ψ hψ hN hψN' hgradN' φΩ
   -- `ψ φ` vanishes off the compact set `tsupport φ ∩ tsupport ψ ⊆ Ω`.
   have hv : v ∈ w1p0Submodule mu Omega 2 := by

@@ -14,6 +14,8 @@ public import Mathlib.RingTheory.LocalRing.Pullback
 public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.RingTheory.Artinian.RestrictScalars
 
+import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Basic
+
 /-!
 # The Artinian coefficient category
 
@@ -60,6 +62,18 @@ hypothesis is needed for the definitions and results here.
   `f : A' ⟶ A` and a surjective `g : A'' ⟶ A`, with projections
   `TauCeti.Deformation.ArtinLocalAlg.pullbackFst` and
   `TauCeti.Deformation.ArtinLocalAlg.pullbackSnd`.
+* `TauCeti.Deformation.ArtinLocalAlg.quotient A I hI`: the quotient `A ⧸ I` by a proper ideal,
+  with the quotient morphism `TauCeti.Deformation.ArtinLocalAlg.toQuotient` and the factorisation
+  `TauCeti.Deformation.ArtinLocalAlg.quotientLift` of a morphism whose kernel contains `I`.
+* `TauCeti.Deformation.ArtinLocalAlg.liftResidue φ ψ`: the morphism `B ⟶ A' ×_k A''` with
+  components `φ` and `ψ`; the fibre product over `k` is a product in `C_Λ`.
+* `TauCeti.Deformation.ArtinLocalAlg.dualNumbersAdd`: the addition map
+  `k[ε] ×_k k[ε] → k[ε]`, `(a + bε, a + b'ε) ↦ a + (b + b')ε`, together with the scalings
+  `TauCeti.Deformation.ArtinLocalAlg.dualNumbersSMul c` (`ε ↦ cε`) and the inclusion
+  `TauCeti.Deformation.ArtinLocalAlg.residueToDualNumbers` of `k`. These maps make the tangent
+  space of a deformation functor a `k`-vector space.
+* `TauCeti.Deformation.ArtinLocalAlg.epsCoeff`: the `ε`-coefficient on the carrier of `k[ε]`;
+  morphisms into `k[ε]` are determined by it (`dualNumbers_hom_ext`).
 
 ## Main results
 
@@ -77,6 +91,10 @@ hypothesis is needed for the definitions and results here.
 * `TauCeti.Deformation.ArtinLocalAlg.isArtinianRing_pullback`: the fibre product of
   Artinian local rings along a surjection, over a common residue field, is Artinian.
 * `TauCeti.Deformation.ArtinLocalAlg.isPullback`: `A' ×_A A''` is a pullback in `C_Λ`.
+* `TauCeti.Deformation.ArtinLocalAlg.ker_quotientLift`: the kernel of the factorisation
+  `A ⧸ I ⟶ B` of `f` is the image of the kernel of `f`.
+* `TauCeti.Deformation.ArtinLocalAlg.isPullback_hom`: `A' ×_A A''` is moreover a pullback in
+  `Over (CommAlgCat.of Λ k)`.
 
 ## References
 
@@ -122,7 +140,7 @@ instance (A : ArtinLocalAlg Λ k) : IsLocalRing A.obj.left := A.property.isLocal
 def augmentation (A : ArtinLocalAlg Λ k) : A.obj.left →ₐ[Λ] k :=
   A.obj.hom.hom
 
-/-- The augmentation of an object of `C_Λ` is the structure map of its underlying object of
+/-- The augmentation of an object `A` of `C_Λ` is the structure map `A → k` of `A` as an object of
 `Over (CommAlgCat.of Λ k)`. -/
 theorem augmentation_def (A : ArtinLocalAlg Λ k) : A.augmentation = A.obj.hom.hom :=
   (rfl)
@@ -318,6 +336,12 @@ section Pullback
 
 variable {A' A'' A : ArtinLocalAlg Λ k} (f : A' ⟶ A) (g : A'' ⟶ A)
 
+/-- The underlying algebra map of an identity in `C_Λ`. -/
+@[simp]
+theorem id_hom_left_hom_apply {B : ArtinLocalAlg Λ k} (b : B.obj.left) :
+    (𝟙 B : B ⟶ B).hom.left.hom b = b :=
+  (rfl)
+
 /-- The underlying algebra map of a composite in `C_Λ`. -/
 @[simp]
 theorem comp_hom_left_hom_apply {B : ArtinLocalAlg Λ k} (φ : A' ⟶ A) (ψ : A ⟶ B)
@@ -431,31 +455,266 @@ theorem pullback_condition : pullbackFst f g hg ≫ f = pullbackSnd f g hg ≫ g
     pullbackSnd_hom_left_hom_apply]
   exact AlgHom.congr_fun (AlgHom.pullback_comm_sq _ _) x
 
-/-- The fibre product of `f` and `g` along the two projections is a pullback square in `C_Λ`.
-Stacks, Lemma 90.3.8 (06GH). -/
-theorem isPullback : IsPullback (pullbackFst f g hg) (pullbackSnd f g hg) f g := by
-  refine .of_isLimit (PullbackCone.IsLimit.mk (pullback_condition f g hg) (fun s ↦ homMk'
-    ((s.fst.hom.left.hom.prod s.snd.hom.left.hom).codRestrict _ fun t ↦ ?_) ?_) (fun s ↦ ?_)
+/-- The fibre product square of `f` and `g` is a pullback square in `Over (CommAlgCat.of Λ k)`,
+not only in its full subcategory `C_Λ`: a pair of maps from any `Λ`-algebra over `k` to `A'` and
+`A''` agreeing in `A` factors through `A' ×_A A''`. Stacks, Lemma 90.3.8 (06GH). -/
+theorem isPullback_hom :
+    IsPullback (pullbackFst f g hg).hom (pullbackSnd f g hg).hom f.hom g.hom := by
+  refine .of_isLimit (PullbackCone.IsLimit.mk (congrArg (·.hom) (pullback_condition f g hg))
+    (fun s ↦ Over.homMk (CommAlgCat.ofHom
+      ((s.fst.left.hom.prod s.snd.left.hom).codRestrict _ fun t ↦ ?_)) ?_) (fun s ↦ ?_)
     (fun s ↦ ?_) fun s m hfst hsnd ↦ ?_)
-  · simpa using congrArg (fun φ ↦ φ.hom.left.hom t) s.condition
+  · simpa using congrArg (fun φ ↦ φ.left.hom t) s.condition
   · ext t
-    exact augmentation_hom_apply s.fst t
+    exact congrArg (fun φ ↦ φ.hom t) (Over.w s.fst)
   -- The lift lands in the carrier of `AlgHom.pullback`, whose instances agree with those of
-  -- `(pullback f g hg).obj.left` only after unfolding `pullback` and `mk'`, so neither
-  -- `homMk'_hom_left_hom` nor `CommAlgCat.hom_ofHom` rewrites here. Both factorisations hold by
-  -- unfolding `homMk'`, `AlgHom.codRestrict` and `AlgHom.prod`.
+  -- `(pullback f g hg).obj.left` only after unfolding `pullback` and `mk'`, so
+  -- `CommAlgCat.hom_ofHom` does not rewrite here. Both factorisations hold by unfolding
+  -- `Over.homMk`, `AlgHom.codRestrict` and `AlgHom.prod`.
   · ext t
     rfl
   · ext t
     rfl
   · ext t
-    have h₁ := congrArg (fun φ ↦ φ.hom.left.hom t) hfst
-    have h₂ := congrArg (fun φ ↦ φ.hom.left.hom t) hsnd
-    simp only [comp_hom_left_hom_apply, pullbackFst_hom_left_hom_apply,
-      pullbackSnd_hom_left_hom_apply] at h₁ h₂
+    have h₁ := congrArg (fun φ ↦ φ.left.hom t) hfst
+    have h₂ := congrArg (fun φ ↦ φ.left.hom t) hsnd
     exact Subtype.ext (Prod.ext h₁ h₂)
 
+/-- The fibre product of `f` and `g` along the two projections is a pullback square in `C_Λ`.
+Stacks, Lemma 90.3.8 (06GH). -/
+theorem isPullback : IsPullback (pullbackFst f g hg) (pullbackSnd f g hg) f g :=
+  (isPullback_hom f g hg).of_map (ObjectProperty.ι _) (pullback_condition f g hg)
+
 end Pullback
+
+section Quotient
+
+variable (A : ArtinLocalAlg Λ k) (I : Ideal A.obj.left)
+
+/-- The augmentation of an object of `C_Λ` vanishes on every proper ideal. -/
+theorem augmentation_eq_zero_of_mem (hI : I ≠ ⊤) {a : A.obj.left} (ha : a ∈ I) :
+    A.augmentation a = 0 :=
+  augmentation_eq_zero_iff.mpr (le_maximalIdeal hI ha)
+
+/-- The quotient `A ⧸ I` of an object `A` of `C_Λ` by a proper ideal `I`, augmented by the map
+induced by the augmentation of `A`. -/
+-- Exposed because the carrier of `quotient A I hI` is `A ⧸ I` by definitional unfolding.
+@[expose] def quotient (hI : I ≠ ⊤) : ArtinLocalAlg Λ k :=
+  have : Nontrivial (A.obj.left ⧸ I) := Ideal.Quotient.nontrivial_iff.mpr hI
+  have : IsLocalRing (A.obj.left ⧸ I) := .of_surjective' _ Ideal.Quotient.mk_surjective
+  mk' (A.obj.left ⧸ I)
+    (Ideal.Quotient.liftₐ I A.augmentation fun _ ↦ augmentation_eq_zero_of_mem A I hI)
+    (Function.Surjective.of_comp (g := Ideal.Quotient.mkₐ Λ I) <| by
+      rw [← AlgHom.coe_comp, Ideal.Quotient.liftₐ_comp]
+      exact A.augmentation_surjective)
+
+/-- The augmentation of `A ⧸ I` is the map induced by the augmentation of `A`. -/
+@[simp]
+theorem augmentation_quotient (hI : I ≠ ⊤) :
+    (A.quotient I hI).augmentation =
+      Ideal.Quotient.liftₐ I A.augmentation fun _ ↦ augmentation_eq_zero_of_mem A I hI :=
+  (rfl)
+
+/-- The quotient morphism `A ⟶ A ⧸ I` of `C_Λ`. -/
+def toQuotient (hI : I ≠ ⊤) : A ⟶ A.quotient I hI :=
+  homMk' (Ideal.Quotient.mkₐ Λ I) (Ideal.Quotient.liftₐ_comp _ _ _)
+
+/-- The underlying algebra map of `toQuotient A I hI` is the quotient map. -/
+@[simp]
+theorem toQuotient_hom_left_hom (hI : I ≠ ⊤) :
+    (A.toQuotient I hI).hom.left.hom = Ideal.Quotient.mkₐ Λ I :=
+  (rfl)
+
+/-- The quotient morphism `A ⟶ A ⧸ I` is surjective. -/
+theorem toQuotient_surjective (hI : I ≠ ⊤) : Function.Surjective (A.toQuotient I hI).hom.left.hom :=
+  Ideal.Quotient.mkₐ_surjective Λ I
+
+/-- The kernel of the quotient morphism `A ⟶ A ⧸ I` is `I`. -/
+theorem ker_toQuotient (hI : I ≠ ⊤) : RingHom.ker (A.toQuotient I hI).hom.left.hom = I :=
+  Ideal.Quotient.mkₐ_ker Λ I
+
+variable {A I} {hI : I ≠ ⊤}
+
+/-- Two morphisms out of `A ⧸ I` agree if they agree after composing with the quotient
+morphism. -/
+theorem quotient_hom_ext {B : ArtinLocalAlg Λ k} {g g' : A.quotient I hI ⟶ B}
+    (h : A.toQuotient I hI ≫ g = A.toQuotient I hI ≫ g') : g = g' := by
+  ext x
+  obtain ⟨a, rfl⟩ := A.toQuotient_surjective I hI x
+  simpa only [comp_hom_left_hom_apply] using congrArg (fun φ ↦ φ.hom.left.hom a) h
+
+variable (hI)
+
+/-- A morphism `f : A ⟶ B` of `C_Λ` whose kernel contains `I` factors through `A ⧸ I`. -/
+def quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B) (hf : I ≤ RingHom.ker f.hom.left.hom) :
+    A.quotient I hI ⟶ B :=
+  homMk' (Ideal.Quotient.liftₐ I f.hom.left.hom fun _ ha ↦ hf ha) <| by
+    ext x
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+    exact augmentation_hom_apply f a
+
+/-- The factorisation `quotientLift hI f hf` sends the class of `a` to `f a`. -/
+@[simp]
+theorem quotientLift_hom_left_hom_apply {B : ArtinLocalAlg Λ k} (f : A ⟶ B)
+    (hf : I ≤ RingHom.ker f.hom.left.hom) (a : A.obj.left) :
+    (quotientLift hI f hf).hom.left.hom (Ideal.Quotient.mk I a) = f.hom.left.hom a :=
+  (rfl)
+
+/-- The factorisation `quotientLift hI f hf` composed with the quotient morphism is `f`. -/
+@[reassoc (attr := simp)]
+theorem toQuotient_comp_quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B)
+    (hf : I ≤ RingHom.ker f.hom.left.hom) : A.toQuotient I hI ≫ quotientLift hI f hf = f :=
+  (rfl)
+
+/-- The factorisation of a surjective morphism through `A ⧸ I` is surjective. -/
+theorem quotientLift_surjective {B : ArtinLocalAlg Λ k} {f : A ⟶ B}
+    (hf : I ≤ RingHom.ker f.hom.left.hom) (hsurj : Function.Surjective f.hom.left.hom) :
+    Function.Surjective (quotientLift hI f hf).hom.left.hom :=
+  fun b ↦ let ⟨a, ha⟩ := hsurj b
+    ⟨(A.toQuotient I hI).hom.left.hom a, by rwa [← comp_hom_left_hom_apply,
+      toQuotient_comp_quotientLift]⟩
+
+/-- The kernel of the factorisation of `f` through `A ⧸ I` is the image of the kernel of `f`. -/
+theorem ker_quotientLift {B : ArtinLocalAlg Λ k} (f : A ⟶ B)
+    (hf : I ≤ RingHom.ker f.hom.left.hom) :
+    RingHom.ker (quotientLift hI f hf).hom.left.hom =
+      (RingHom.ker f.hom.left.hom).map (A.toQuotient I hI).hom.left.hom :=
+  Ideal.ker_quotient_lift _ hf
+
+end Quotient
+
+section LiftResidue
+
+variable {B A' A'' : ArtinLocalAlg Λ k} (φ : B ⟶ A') (ψ : B ⟶ A'')
+
+/-- The morphism `B ⟶ A' ×_k A''` with components `φ` and `ψ`. As `k` is terminal, any two
+morphisms out of `B` agree over `k`, so `A' ×_k A''` is a product of `A'` and `A''` in `C_Λ`. -/
+noncomputable def liftResidue :
+    B ⟶ pullback (toResidue A') (toResidue A'') (toResidue_surjective A'') :=
+  (isPullback _ _ _).lift φ ψ ((isTerminalResidue Λ k).hom_ext _ _)
+
+/-- The first projection recovers the first component of `liftResidue φ ψ`. -/
+@[reassoc (attr := simp)]
+theorem liftResidue_pullbackFst : liftResidue φ ψ ≫ pullbackFst _ _ _ = φ :=
+  IsPullback.lift_fst _ _ _ _
+
+/-- The second projection recovers the second component of `liftResidue φ ψ`. -/
+@[reassoc (attr := simp)]
+theorem liftResidue_pullbackSnd : liftResidue φ ψ ≫ pullbackSnd _ _ _ = ψ :=
+  IsPullback.lift_snd _ _ _ _
+
+/-- The first component of `liftResidue φ ψ b` is `φ b`. -/
+@[simp]
+theorem liftResidue_hom_left_hom_apply_fst (b : B.obj.left) :
+    ((liftResidue φ ψ).hom.left.hom b).val.1 = φ.hom.left.hom b := by
+  rw [← pullbackFst_hom_left_hom_apply, ← comp_hom_left_hom_apply, liftResidue_pullbackFst]
+
+/-- The second component of `liftResidue φ ψ b` is `ψ b`. -/
+@[simp]
+theorem liftResidue_hom_left_hom_apply_snd (b : B.obj.left) :
+    ((liftResidue φ ψ).hom.left.hom b).val.2 = ψ.hom.left.hom b := by
+  rw [← pullbackSnd_hom_left_hom_apply, ← comp_hom_left_hom_apply, liftResidue_pullbackSnd]
+
+end LiftResidue
+
+section DualNumbersPullback
+
+open DualNumber TrivSqZeroExt
+
+/-- A morphism `B ⟶ k[ε]` of `C_Λ` takes `b` to a dual number with first component the
+augmentation of `b`. -/
+@[simp]
+theorem fst_dualNumbers_hom_apply {B : ArtinLocalAlg Λ k} (ψ : B ⟶ dualNumbers Λ k)
+    (b : B.obj.left) : fst (ψ.hom.left.hom b : k[ε]) = B.augmentation b :=
+  augmentation_hom_apply ψ b
+
+/-- The `ε`-coefficient `a + bε ↦ b` on the carrier of `dualNumbers Λ k`. That carrier is `k[ε]`
+only after unfolding `dualNumbers`, so this names the coefficient on it directly, which lets
+`simp` compute the `ε`-coefficients of values of morphisms into `k[ε]`. -/
+def epsCoeff (x : (dualNumbers Λ k).obj.left) : k :=
+  snd (x : k[ε])
+
+/-- The `ε`-coefficient of a dual number is its second component. -/
+theorem epsCoeff_def (x : (dualNumbers Λ k).obj.left) : epsCoeff x = snd (x : k[ε]) :=
+  (rfl)
+
+/-- Morphisms `B ⟶ k[ε]` of `C_Λ` are determined by the `ε`-coefficients of their values. -/
+theorem dualNumbers_hom_ext {B : ArtinLocalAlg Λ k} {ψ₁ ψ₂ : B ⟶ dualNumbers Λ k}
+    (h : ∀ b, epsCoeff (ψ₁.hom.left.hom b) = epsCoeff (ψ₂.hom.left.hom b)) : ψ₁ = ψ₂ := by
+  ext b
+  exact TrivSqZeroExt.ext (by rw [fst_dualNumbers_hom_apply, fst_dualNumbers_hom_apply]) (h b)
+
+variable (Λ k)
+
+/-- The inclusion `k → k[ε]` of the constants, as a morphism of `C_Λ`. -/
+def residueToDualNumbers : residue Λ k ⟶ dualNumbers Λ k :=
+  homMk' (inlAlgHom Λ k k) (AlgHom.ext fun a ↦ fst_inl k a)
+
+/-- The inclusion `k → k[ε]` takes `a` to the constant `a`. -/
+theorem residueToDualNumbers_hom_left_hom_apply (a : k) :
+    (residueToDualNumbers Λ k).hom.left.hom a = (inl a : k[ε]) :=
+  (rfl)
+
+/-- The inclusion `k → k[ε]` takes values with `ε`-coefficient zero. -/
+@[simp]
+theorem epsCoeff_residueToDualNumbers_hom_left_hom_apply (a : (residue Λ k).obj.left) :
+    epsCoeff ((residueToDualNumbers Λ k).hom.left.hom a) = 0 :=
+  snd_inl k a
+
+/-- A morphism `B ⟶ k[ε]` factoring through `k` takes values with `ε`-coefficient zero. Not a
+`simp` lemma: `simp` first splits the composite with `ObjectProperty.FullSubcategory.comp_hom`. -/
+theorem epsCoeff_comp_residueToDualNumbers_hom_left_hom_apply {B : ArtinLocalAlg Λ k}
+    (ψ : B ⟶ residue Λ k) (b : B.obj.left) :
+    epsCoeff ((ψ ≫ residueToDualNumbers Λ k).hom.left.hom b) = 0 :=
+  epsCoeff_residueToDualNumbers_hom_left_hom_apply Λ k _
+
+/-- The scaling `a + bε ↦ a + cbε` of the dual numbers by `c ∈ k`, as a morphism of `C_Λ`. -/
+def dualNumbersSMul (c : k) : dualNumbers Λ k ⟶ dualNumbers Λ k :=
+  homMk' ((TrivSqZeroExt.map (c • LinearMap.id : k →ₗ[k] k)).restrictScalars Λ)
+    (AlgHom.ext fun x ↦ fst_map _ x)
+
+/-- The scaling by `c` multiplies the `ε`-coefficient by `c`. -/
+@[simp]
+theorem epsCoeff_dualNumbersSMul_hom_left_hom_apply (c : k) (x : (dualNumbers Λ k).obj.left) :
+    epsCoeff ((dualNumbersSMul Λ k c).hom.left.hom x) = c * epsCoeff x :=
+  snd_map _ x
+
+/-- The fibre product `k[ε] ×_k k[ε]`. -/
+abbrev dualNumbersPullback : ArtinLocalAlg Λ k :=
+  pullback (toResidue (dualNumbers Λ k)) (toResidue (dualNumbers Λ k)) (toResidue_surjective _)
+
+/-- The addition map `k[ε] ×_k k[ε] → k[ε]` on the underlying algebras. -/
+private def dualNumbersAddAlgHom :
+    AlgHom.pullback (fstHom Λ k k) (fstHom Λ k k) →ₐ[Λ] k[ε] where
+  toFun p := inl (fst p.val.1) + inr (snd p.val.1 + snd p.val.2)
+  map_one' := TrivSqZeroExt.ext (by simp) (by simp)
+  map_mul' p q := by
+    have hp : fst p.val.1 = fst p.val.2 := AlgHom.congr_fun (AlgHom.pullback_comm_sq _ _) p
+    have hq : fst q.val.1 = fst q.val.2 := AlgHom.congr_fun (AlgHom.pullback_comm_sq _ _) q
+    refine TrivSqZeroExt.ext (by simp) ?_
+    simp only [Subalgebra.coe_mul, Prod.fst_mul, Prod.snd_mul, DualNumber.snd_mul, fst_add,
+      fst_inl, fst_inr, snd_add, snd_inl, snd_inr, add_zero, zero_add, ← hp, ← hq]
+    ring
+  map_zero' := TrivSqZeroExt.ext (by simp) (by simp)
+  map_add' p q := TrivSqZeroExt.ext (by simp) (by simp [add_add_add_comm])
+  commutes' r := TrivSqZeroExt.ext (by simp [algebraMap_eq_inl']) (by simp [algebraMap_eq_inl'])
+
+/-- The addition map `k[ε] ×_k k[ε] → k[ε]`, `(a + bε, a + b'ε) ↦ a + (b + b')ε`. It induces the
+addition on the tangent space of a deformation functor. -/
+def dualNumbersAdd : dualNumbersPullback Λ k ⟶ dualNumbers Λ k :=
+  -- Both sides reduce to the first component of the first factor, `fst p.1 + 0` and `fst p.1`.
+  homMk' (dualNumbersAddAlgHom Λ k) (AlgHom.ext fun p ↦ add_zero (fst p.val.1))
+
+variable {Λ k}
+
+/-- The addition map adds the `ε`-coefficients. -/
+@[simp]
+theorem epsCoeff_dualNumbersAdd_hom_left_hom_apply (p : (dualNumbersPullback Λ k).obj.left) :
+    epsCoeff ((dualNumbersAdd Λ k).hom.left.hom p) = epsCoeff p.val.1 + epsCoeff p.val.2 :=
+  -- The left side unfolds to `0 + (snd p.1 + snd p.2)`.
+  zero_add _
+
+end DualNumbersPullback
 
 end ArtinLocalAlg
 

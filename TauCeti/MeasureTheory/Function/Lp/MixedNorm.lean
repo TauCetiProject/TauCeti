@@ -30,10 +30,14 @@ function `G` with `‖f b‖ ^ q ≤ re ⟪Φ b, G b⟫` and `‖G b‖_{r'} ≤
 `|∫ ⟪Φ b, G b⟫ dρ| ≤ M ‖G‖_{L^{q'} L^{r'}}` into `‖f‖_q ≤ M`. The converse bound itself, at all
 exponents, is proved in `TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded`.
 
-The file also records two elementary properties of mixed norms of families of `Lᵖ` functions:
+The file also records four elementary properties of mixed norms of families of `Lᵖ` functions:
 Minkowski's inequality `‖Φ + Ψ‖_{L^q L^r} ≤ ‖Φ‖_{L^q L^r} + ‖Ψ‖_{L^q L^r}` for `1 ≤ q, r`
-(`MeasureTheory.eLpNorm_eLpNorm_add_le`), and invariance under the reflection `b ↦ -b` of the
-parameter when `ρ` is invariant under negation (`ρ.IsNegInvariant`), as Lebesgue measure on the
+(`MeasureTheory.eLpNorm_eLpNorm_add_le`), the bound `‖T ∘ Φ‖_{L^q L^s} ≤ K ‖Φ‖_{L^q L^r}` for a
+continuous map `T` of `Lᵖ` spaces with `‖T f‖_s ≤ K ‖f‖_r`
+(`MeasureTheory.eLpNorm_eLpNorm_apply_le`), the identity
+`‖T ∘ (1_s Φ)‖_{L^q(ρ) L^r} = ‖T ∘ Φ‖_{L^q(ρ|_s) L^r}` for a map `T` with `T 0 = 0`
+(`MeasureTheory.eLpNorm_eLpNorm_apply_indicator`), and invariance under the reflection `b ↦ -b` of
+the parameter when `ρ` is invariant under negation (`ρ.IsNegInvariant`), as Lebesgue measure on the
 time line is (`MeasureTheory.AEStronglyMeasurable.eLpNorm_eLpNorm_comp_neg`); the latter reverses
 time in such estimates.
 
@@ -111,6 +115,43 @@ theorem eLpNorm_eLpNorm_add_le {u v : β → Lp F p μ} (hu : AEStronglyMeasurab
             rw [eLpNorm_congr_ae (Lp.coeFn_add _ _)]
             exact eLpNorm_add_le hr
     _ ≤ _ := eLpNorm_add_le hq
+
+/-! ### Bounded operators -/
+
+/-- **Bounded operators in mixed norms.** A continuous map `T` from `Lᵖ(μ)` to `Lᵖ'(ν)` with
+`‖T f‖_{L^s(ν)} ≤ K ‖f‖_{L^r(μ)}` costs at most the factor `K` in every mixed norm: for an almost
+everywhere strongly measurable `u : β → Lᵖ(μ)`, `‖T ∘ u‖_{L^q_b L^s_y} ≤ K ‖u‖_{L^q_b L^r_x}`. -/
+theorem eLpNorm_eLpNorm_apply_le {Y G : Type*} {mY : MeasurableSpace Y} {ν : Measure Y}
+    [NormedAddCommGroup G] {p' : ℝ≥0∞} [Fact (1 ≤ p')] {T : Lp F p μ → Lp G p' ν}
+    (hTc : Continuous T) {K s : ℝ≥0∞} (hT : ∀ f, eLpNorm (T f) s ν ≤ K * eLpNorm f r μ)
+    {u : β → Lp F p μ} (hu : AEStronglyMeasurable u ρ) :
+    eLpNorm (fun b ↦ eLpNorm (T (u b)) s ν) q ρ ≤
+      K * eLpNorm (fun b ↦ eLpNorm (u b) r μ) q ρ := by
+  have hTu := ((hTc.comp_aestronglyMeasurable hu).aemeasurable_eLpNorm_Lp .rfl
+    s).aestronglyMeasurable
+  rcases eq_or_ne q 0 with rfl | hq
+  · simp [eLpNorm_exponent_zero hTu]
+  calc _ ≤ eLpNorm (fun b ↦ K * eLpNorm (u b) r μ) q ρ :=
+        eLpNorm_mono_eNorm hTu fun b ↦ by simpa only [eNorm_eq_self] using hT (u b)
+    _ = _ := eLpNorm_const_mul_ennreal_of_pos (pos_iff_ne_zero.2 hq)
+
+omit [Fact (1 ≤ p)] in
+/-- **Cut-off families in mixed norms.** For a map `T` from `Lᵖ(μ)` to `Lᵖ'(ν)` with `T 0 = 0`,
+such as a linear map, and a null measurable set `s`, the mixed norm `L^q_b L^r_y` of `T` applied
+to `u : β → Lᵖ(μ)` cut off to `s` and extended by zero is the mixed norm of `T ∘ u` over `s`. -/
+theorem eLpNorm_eLpNorm_apply_indicator {Y G : Type*} {mY : MeasurableSpace Y} {ν : Measure Y}
+    [NormedAddCommGroup G] {p' : ℝ≥0∞} {T : Lp F p μ → Lp G p' ν} (hT : T 0 = 0) {s : Set β}
+    (hs : NullMeasurableSet s ρ) (u : β → Lp F p μ) :
+    eLpNorm (fun b ↦ eLpNorm (T (s.indicator u b)) r ν) q ρ =
+      eLpNorm (fun b ↦ eLpNorm (T (u b)) r ν) q (ρ.restrict s) := by
+  have hind : (fun b ↦ eLpNorm (T (s.indicator u b)) r ν) =
+      s.indicator fun b ↦ eLpNorm (T (u b)) r ν := by
+    funext b
+    by_cases hb : b ∈ s
+    · simp [hb]
+    · rw [Set.indicator_of_notMem hb, Set.indicator_of_notMem hb, hT,
+        eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
+  rw [hind, eLpNorm_indicator_eq_eLpNorm_restrict hs]
 
 end Elementary
 

@@ -22,10 +22,10 @@ import Mathlib.Tactic.Positivity
 For a graph `G` on a finite linear order `V`, the cochain `Cochain.ofLt (complete V) f` with
 `f u v = swap 0 1` on the edges of `G` and `1` elsewhere has defect `2 * #G.oddTriangleFinset`
 (`SimpleGraph.defect_ofLt_ite_adj`). When `G` is cut-minimal every gauge costs at least
-`2 * #G.edgeFinset`: the parity retraction onto `{1, swap 0 1}`
-(`Equiv.Perm.parityRetract`, which fixes the cochain and does not increase the moved-point norm,
-`Cochain.cost_map_le`) turns any gauge into a cut `S`, whose cost is twice the size of the
-symmetric difference of the edges of `G` with the cut edges of `S`. Hence:
+`2 * #G.edgeFinset` (`SimpleGraph.two_mul_card_edgeFinset_le_cost`): the parity retraction onto
+`{1, swap 0 1}` (`Equiv.Perm.parityRetract`, which fixes the cochain and does not increase the
+moved-point norm, `Cochain.cost_map_le`) turns any gauge into a cut `S`, whose cost is twice the
+size of the symmetric difference of the edges of `G` with the cut edges of `S`. Hence:
 
 * `SimpleGraph.h1_complete_movedNorm_fin_three_le_of_isCutMinimal`: for a cut-minimal `G` with an
   edge,
@@ -86,7 +86,7 @@ variable {V : Type*} [Fintype V] [LinearOrder V]
 
 /-- **Parity retraction against a cut-minimal graph.** Every gauge costs at least
 `2 * #G.edgeFinset` against the cochain equal to `swap 0 1` on the edges of a cut-minimal `G`. -/
-private theorem two_mul_card_edgeFinset_le_cost (G : SimpleGraph V) [DecidableRel G.Adj]
+theorem two_mul_card_edgeFinset_le_cost (G : SimpleGraph V) [DecidableRel G.Adj]
     (hG : G.IsCutMinimal) (β : V → Perm (Fin 3)) :
     (2 * #G.edgeFinset : ℝ) ≤
       (Cochain.ofLt (complete V) fun u v => if G.Adj u v then swap 0 1 else 1).cost
@@ -172,18 +172,14 @@ theorem h1_complete_movedNorm_fin_three_le_of_card_eq_mul {q t : ℕ} (hq : 0 < 
     ring
   rw [h1_complete_eq_of_card_eq Perm.isConjInvariant_movedNorm (hV.trans hW.symm)]
   have hE2 := SimpleGraph.two_mul_card_edgeFinset_staircase q t
-  have hO := SimpleGraph.three_mul_card_oddTriangleFinset_staircase q t
   have hE : 0 < #(SimpleGraph.staircase q t).edgeFinset := by
     have : 0 < q ^ 2 * t * (t + 1) := by positivity
     omega
   refine (SimpleGraph.h1_complete_movedNorm_fin_three_le_of_isCutMinimal _
     (SimpleGraph.isCutMinimal_staircase q t) hE).trans_eq ?_
-  have hE' : (0 : ℝ) < #(SimpleGraph.staircase q t).edgeFinset := by exact_mod_cast hE
-  rw [hV, div_eq_div_iff hE'.ne' (by norm_num)]
-  have h := congrArg (Nat.cast (R := ℝ)) hO
-  push_cast at h ⊢
-  -- the two odd-triangle counts differ only in their `DecidableEq W` instances
-  refine (mul_comm _ _).trans ?_
-  convert h
+  have hE' : (#(SimpleGraph.staircase q t).edgeFinset : ℝ) ≠ 0 := by positivity
+  rw [SimpleGraph.card_oddTriangleFinset_staircase, mul_div_cancel_right₀ _ hE', hV]
+  push_cast
+  ring
 
 end TauCeti

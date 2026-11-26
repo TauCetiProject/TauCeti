@@ -40,12 +40,21 @@ its coefficients.
 * `Complex.norm_Gamma_le_Gamma_re`: `‖Γ(s)‖ ≤ Γ(Re s)` for `Re s > 0`.
 * `Complex.norm_Gamma_mul_prod_norm_le`: `‖Γ(s)‖ ∏_{k < n} ‖s + k‖ ≤ Γ(Re s + n)` whenever
   `Re s + n > 0`.
+* `Complex.norm_Gamma_mul_pow_mul_factorial_le`: `‖Γ(s)‖ (1 - a)^N N! ≤ Γ(a)` on the line
+  `Re s = a - N` with `0 < a < 1`, so `Γ` decays factorially to the left; and
+  `Complex.norm_Gamma_mul_pow_mul_factorial_mul_le`:
+  `‖Γ(s)‖ (1 - a)^N N! a (1 + (Im s)²) ≤ Γ(a + 2)` on the same line.
 * `Complex.exists_norm_Gamma_le_mul_inv_one_add_sq_pow`: `‖Γ(σ + i t)‖ ≤ C (1 + t²)⁻ᵐ` for every
   `m` on every vertical line `Re s = σ` with `σ` not a nonpositive integer.
 * `Complex.norm_Gamma_le_of_re_mem_Ioo`: explicit bound
   `‖Γ(s)‖ ≤ (2 m + 1)! / (-Re s (Re s + 1) (1 + (Im s)²)^{m + 1})` for `-1 < Re s < 0`.
 * `Complex.exists_norm_Gamma_le_div_pow_of_re_mem_Icc`: uniform polynomial decay
   `‖Γ(s)‖ ≤ C / |Im s|ᵐ` across any closed strip `σ₀ ≤ Re s ≤ σ₁` for `|Im s| ≥ 1`.
+* `Complex.exists_norm_Gamma_mul_Gamma_add_le_div_pow_of_re_mem_Icc`: the same decay for
+  `Γ(s) Γ(s + p)` with real `p`.
+* `Complex.norm_Gamma_mul_Gamma_add_le_of_re_eq_sub_natCast`: factorial decay of
+  `Γ(s) Γ(s + p)` to the left, times `(1 + (Im s)²)⁻¹`, on the line `Re s = δ - N` with
+  `0 < δ`, `0 < p` and `δ + p < 1`.
 * `Complex.continuousAt_Gamma_of_re_ne_neg_nat`, `Complex.continuous_Gamma_add_mul_I`,
   `Complex.continuous_Gamma_sub_mul_I`: continuity of `Γ` away from `-ℕ` and along pole-free
   vertical lines `y ↦ w ± i y`.
@@ -74,6 +83,7 @@ its coefficients.
 public section
 
 open Real Set MeasureTheory Filter
+open scoped Nat
 open Complex hiding exp continuous_exp
 
 namespace Complex
@@ -107,6 +117,71 @@ theorem norm_Gamma_mul_prod_norm_le {s : ℂ} {n : ℕ} (hs : 0 < s.re + n) :
       show s.re + ((n + 1 : ℕ) : ℝ) = (s + 1).re + n by simp; ring]
     calc _ = ‖Gamma (s + 1)‖ * ∏ k ∈ Finset.range n, ‖s + 1 + k‖ := by rw [hΓ]; simp; ring
       _ ≤ _ := h
+
+/-- On the line `Re w = a - N` with `0 ≤ a < 1`, `(1 - a)^N N! ≤ ∏_{k < N} ‖w + k‖`. -/
+private lemma pow_mul_factorial_le_prod_norm_add {a : ℝ} (ha0 : 0 ≤ a) (ha1 : a < 1) (N : ℕ)
+    {w : ℂ} (hw : w.re = a - N) :
+    (1 - a) ^ N * (N ! : ℝ) ≤ ∏ k ∈ Finset.range N, ‖w + k‖ := by
+  induction N generalizing w with
+  | zero => simp
+  | succ N ih =>
+    have h1 := ih (w := w + 1) (by rw [add_re, hw, one_re]; push_cast; ring)
+    have h0 : (1 - a) * (N + 1) ≤ ‖w‖ := by
+      have : (1 - a) * (N + 1) ≤ -w.re := by
+        rw [hw]; push_cast; nlinarith [(Nat.cast_nonneg N : (0 : ℝ) ≤ N)]
+      exact this.trans ((neg_le_abs _).trans (abs_re_le_norm w))
+    calc (1 - a) ^ (N + 1) * ((N + 1) ! : ℝ) = ((1 - a) ^ N * N !) * ((1 - a) * (N + 1)) := by
+          rw [pow_succ, Nat.factorial_succ]; push_cast; ring
+      _ ≤ (∏ k ∈ Finset.range N, ‖w + 1 + k‖) * ‖w‖ :=
+          mul_le_mul h1 h0 (mul_nonneg (by linarith) (by positivity))
+            (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _)
+      _ = ∏ k ∈ Finset.range (N + 1), ‖w + k‖ := by
+          rw [Finset.prod_range_succ']
+          congr 1
+          · exact Finset.prod_congr rfl fun k _ ↦ by push_cast; ring_nf
+          · simp
+
+/-- Factorial decay of `Γ` to the left: on the vertical line `Re s = a - N` with `0 < a < 1`,
+`‖Γ(s)‖ (1 - a)^N N! ≤ Γ(a)`. -/
+theorem norm_Gamma_mul_pow_mul_factorial_le {a : ℝ} (ha0 : 0 < a) (ha1 : a < 1) (N : ℕ)
+    {s : ℂ} (hs : s.re = a - N) :
+    ‖Gamma s‖ * ((1 - a) ^ N * (N ! : ℝ)) ≤ Real.Gamma a := by
+  have h := norm_Gamma_mul_prod_norm_le (s := s) (n := N) (by rw [hs]; linarith)
+  rw [hs, sub_add_cancel] at h
+  exact (mul_le_mul_of_nonneg_left (pow_mul_factorial_le_prod_norm_add ha0.le ha1 N hs)
+    (norm_nonneg _)).trans h
+
+/-- Factorial decay of `Γ` to the left, together with decay along the line: on the vertical line
+`Re s = a - N` with `0 < a < 1`, `‖Γ(s)‖ (1 - a)^N N! a (1 + (Im s)²) ≤ Γ(a + 2)`. -/
+theorem norm_Gamma_mul_pow_mul_factorial_mul_le {a : ℝ} (ha0 : 0 < a) (ha1 : a < 1)
+    (N : ℕ) {s : ℂ} (hs : s.re = a - N) :
+    ‖Gamma s‖ * ((1 - a) ^ N * (N ! : ℝ) * (a * (1 + s.im ^ 2))) ≤ Real.Gamma (a + 2) := by
+  have h := norm_Gamma_mul_prod_norm_le (s := s) (n := N + 2) (by rw [hs]; push_cast; linarith)
+  rw [hs, show a - N + ((N + 2 : ℕ) : ℝ) = a + 2 by push_cast; ring, Finset.prod_range_succ,
+    Finset.prod_range_succ] at h
+  have hsq (k : ℕ) : ‖s + k‖ ^ 2 = (a - N + k) ^ 2 + s.im ^ 2 := by
+    rw [← normSq_eq_norm_sq, normSq_apply, ← hs]
+    simp only [add_re, add_im, natCast_re, natCast_im, add_zero]
+    ring
+  -- the last two factors give the decay `a (1 + (Im s)²)`
+  have hlast : a * (1 + s.im ^ 2) ≤ ‖s + N‖ * ‖s + ((N + 1 : ℕ) : ℂ)‖ := by
+    refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
+    have e1 : ‖s + N‖ ^ 2 = a ^ 2 + s.im ^ 2 := by rw [hsq]; ring
+    have e2 : ‖s + ((N + 1 : ℕ) : ℂ)‖ ^ 2 = (a + 1) ^ 2 + s.im ^ 2 := by
+      rw [hsq]; push_cast; ring
+    have hm := sq_nonneg s.im
+    have i1 : a ^ 2 * (1 + s.im ^ 2) ≤ a ^ 2 + s.im ^ 2 := by
+      nlinarith [mul_nonneg hm (by nlinarith : (0 : ℝ) ≤ 1 - a ^ 2)]
+    have i2 : 1 + s.im ^ 2 ≤ (a + 1) ^ 2 + s.im ^ 2 := by nlinarith
+    calc (a * (1 + s.im ^ 2)) ^ 2 = a ^ 2 * (1 + s.im ^ 2) * (1 + s.im ^ 2) := by ring
+      _ ≤ (a ^ 2 + s.im ^ 2) * ((a + 1) ^ 2 + s.im ^ 2) :=
+          mul_le_mul i1 i2 (by positivity) (by positivity)
+      _ = (‖s + N‖ * ‖s + ((N + 1 : ℕ) : ℂ)‖) ^ 2 := by rw [mul_pow, e1, e2]
+  calc ‖Gamma s‖ * ((1 - a) ^ N * (N ! : ℝ) * (a * (1 + s.im ^ 2)))
+      ≤ ‖Gamma s‖ * ((∏ k ∈ Finset.range N, ‖s + k‖) * (‖s + N‖ * ‖s + ((N + 1 : ℕ) : ℂ)‖)) := by
+        gcongr
+        exact pow_mul_factorial_le_prod_norm_add ha0.le ha1 N hs
+    _ ≤ Real.Gamma (a + 2) := (le_of_eq (by ring)).trans h
 
 /-- On a vertical line `Re s = σ` avoiding the poles of the Gamma function, `Γ(σ + i t)` decays
 faster than every power of `|t|`: for every `m`, `‖Γ(σ + i t)‖` is bounded by a constant multiple
@@ -225,6 +300,52 @@ theorem exists_norm_Gamma_le_div_pow_of_re_mem_Icc (σ₀ σ₁ : ℝ) (m : ℕ)
           Finset.prod_le_prod₀ (fun _ _ ↦ abs_nonneg _) fun k _ ↦ by
             simpa using abs_im_le_norm (s + k)
   exact (mul_le_mul_of_nonneg_left him_pow (norm_nonneg _)).trans (hbound.trans hΓ_le)
+
+/-- Uniform polynomial decay of `Γ(s) Γ(s + p)` on horizontal segments across a closed vertical
+strip, for real `p`: for every `σ₀, σ₁ : ℝ` and `m : ℕ`, there is `C ≥ 0` such that
+`‖Γ(s) Γ(s + p)‖ ≤ C / |Im s|ᵐ` whenever `Re s ∈ [σ₀, σ₁]` and `1 ≤ |Im s|`. -/
+theorem exists_norm_Gamma_mul_Gamma_add_le_div_pow_of_re_mem_Icc (p σ₀ σ₁ : ℝ) (m : ℕ) :
+    ∃ C ≥ 0, ∀ s : ℂ, s.re ∈ Icc σ₀ σ₁ → 1 ≤ |s.im| →
+      ‖Gamma s * Gamma (s + p)‖ ≤ C / |s.im| ^ m := by
+  obtain ⟨C₁, hC₁0, hC₁⟩ := exists_norm_Gamma_le_div_pow_of_re_mem_Icc σ₀ σ₁ m
+  obtain ⟨C₂, hC₂0, hC₂⟩ := exists_norm_Gamma_le_div_pow_of_re_mem_Icc (σ₀ + p) (σ₁ + p) 0
+  refine ⟨C₁ * C₂, mul_nonneg hC₁0 hC₂0, fun s hs him ↦ ?_⟩
+  have h2 := hC₂ (s + p) (by simp only [add_re, ofReal_re]; exact ⟨by linarith [hs.1],
+    by linarith [hs.2]⟩) (by simpa using him)
+  rw [pow_zero, div_one] at h2
+  calc ‖Gamma s * Gamma (s + p)‖ = ‖Gamma s‖ * ‖Gamma (s + p)‖ := norm_mul _ _
+    _ ≤ C₁ / |s.im| ^ m * C₂ := mul_le_mul (hC₁ s hs him) h2 (norm_nonneg _)
+        (div_nonneg hC₁0 (by positivity))
+    _ = C₁ * C₂ / |s.im| ^ m := by ring
+
+/-- On the line `Re s = δ - N`, with `0 < δ`, `0 < p` and `δ + p < 1`, the product
+`Γ(s) Γ(s + p)` is bounded by `(1 + (Im s)²)⁻¹` times a constant multiple of `1 / (κ^N N!²)`,
+where `κ = (1 - δ)(1 - δ - p)`. -/
+theorem norm_Gamma_mul_Gamma_add_le_of_re_eq_sub_natCast {p δ : ℝ} (hδ : 0 < δ) (hp : 0 < p)
+    (hδp : δ + p < 1) (N : ℕ) {s : ℂ} (hs : s.re = δ - N) :
+    ‖Gamma s * Gamma (s + p)‖ ≤
+      Real.Gamma (δ + 2) * Real.Gamma (δ + p) /
+        (δ * ((1 - δ) * (1 - (δ + p))) ^ N * (N ! : ℝ) ^ 2) * (1 + s.im ^ 2)⁻¹ := by
+  have h1 := norm_Gamma_mul_pow_mul_factorial_mul_le hδ (by linarith) N hs
+  have h2 := norm_Gamma_mul_pow_mul_factorial_le (a := δ + p) (by linarith) hδp N
+    (s := s + p) (by rw [add_re, ofReal_re, hs]; ring)
+  have hD1 : 0 < (1 - δ) ^ N * (N ! : ℝ) * (δ * (1 + s.im ^ 2)) := by
+    have : 0 < 1 - δ := by linarith
+    positivity
+  have hD2 : 0 < (1 - (δ + p)) ^ N * (N ! : ℝ) := by
+    have : 0 < 1 - (δ + p) := by linarith
+    positivity
+  rw [norm_mul]
+  calc ‖Gamma s‖ * ‖Gamma (s + p)‖
+      ≤ Real.Gamma (δ + 2) / ((1 - δ) ^ N * (N ! : ℝ) * (δ * (1 + s.im ^ 2))) *
+          (Real.Gamma (δ + p) / ((1 - (δ + p)) ^ N * (N ! : ℝ))) :=
+        mul_le_mul ((le_div_iff₀ hD1).mpr h1) ((le_div_iff₀ hD2).mpr h2) (norm_nonneg _)
+          (div_nonneg (Real.Gamma_pos_of_pos (by linarith)).le hD1.le)
+    _ = _ := by
+        have : 0 < 1 - δ := by linarith
+        have : 0 < 1 - (δ + p) := by linarith
+        rw [mul_pow]
+        field_simp
 
 /-- `Complex.Gamma` is continuous at every `s` whose real part is not a nonpositive integer. -/
 theorem continuousAt_Gamma_of_re_ne_neg_nat {s : ℂ} (hs : ∀ n : ℕ, s.re ≠ -n) :

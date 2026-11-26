@@ -13,6 +13,7 @@ import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Weighted bounds and integrability of Schwartz functions
@@ -28,6 +29,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 
 * `SchwartzMap.one_add_norm_smul_sq_rpow_mul_norm_le`: `⟨c x⟩ ^ m ‖f x‖` is bounded by a finite
   supremum of Schwartz seminorms of `f` times `(1 + ‖x‖) ^ (-k)`.
+* `SchwartzMap.norm_le_add_seminorm_mul_inv_one_add_norm_pow`: `‖f x‖` is bounded by the sum of its
+  `(0, 0)` and `(k, 0)` seminorms times `(1 + ‖x‖ ^ k)⁻¹`.
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 * `SchwartzMap.integrable_mul`: `f x * g x` is integrable for Schwartz functions with values in a
@@ -49,6 +52,7 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_iteratedFDeriv_comp_left`,
   `SchwartzMap.integral_norm_iteratedFDeriv_comp_left_le`: for a continuous linear map `L`, the
   derivatives of `L ∘ f` are integrable, with `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`.
+* `SchwartzMap.norm_toLp_sq`: the squared `L²` norm of `f` is `∫ ‖f x‖²`.
 * `SchwartzMap.conjnegCLM`: the continuous conjugate-linear reversed-conjugation involution,
   with exact reflected-support, compact-support and near-origin cutoff laws.
 * `SchwartzMap.bilinLeftCLM_apply_eq_sum`: the pointwise product of Schwartz functions with
@@ -84,6 +88,13 @@ section Weight
 
 variable {𝕜 E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F] [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
+
+/-- Pointwise decay of a Schwartz function against `1 + ‖x‖ ^ k`, bounded by the sum of its
+`(0, 0)` and `(k, 0)` seminorms. -/
+theorem norm_le_add_seminorm_mul_inv_one_add_norm_pow (k : ℕ) (f : 𝓢(E, F)) (x : E) :
+    ‖f x‖ ≤ (SchwartzMap.seminorm 𝕜 0 0 f + SchwartzMap.seminorm 𝕜 k 0 f) * (1 + ‖x‖ ^ k)⁻¹ := by
+  rw [le_mul_inv_iff₀ (by positivity), mul_add, mul_one, mul_comm ‖f x‖]
+  exact add_le_add (f.norm_le_seminorm 𝕜 x) (f.norm_pow_mul_le_seminorm 𝕜 k x)
 
 /-- A Schwartz function absorbs the polynomial weight `⟨c x⟩ ^ m = (1 + ‖c x‖²) ^ (m / 2)` and
 still decays like `(1 + ‖x‖) ^ (-k)`, with a constant given by a finite supremum of Schwartz
@@ -159,6 +170,12 @@ theorem integrable_norm_pow_mul_norm_sq (f : 𝓢(E, F)) (k : ℕ) :
     norm_iteratedFDeriv_zero]
   gcongr
   exact f.norm_le_seminorm ℝ x
+
+omit [BorelSpace E] [SecondCountableTopology E] in
+/-- The squared `L²` norm of a Schwartz function is the integral of its squared pointwise norm. -/
+theorem norm_toLp_sq [OpensMeasurableSpace E] [SecondCountableTopologyEither E F] (f : 𝓢(E, F)) :
+    ‖f.toLp 2 μ‖ ^ 2 = ∫ x, ‖f x‖ ^ 2 ∂μ :=
+  (f.memLp 2 μ).norm_toLp_sq
 
 omit [SecondCountableTopology E] in
 /-- A Schwartz function vanishes if and only if the integral of its squared norm does, against a

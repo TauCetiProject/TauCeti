@@ -69,9 +69,7 @@ theorem eq_callValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     (hC : ContinuousOn (Function.uncurry C) (Ioi 0 ×ˢ Icc 0 T))
     (hcd : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo 0 T → ContDiffAt ℝ 2 (fun x ↦ C x t) s)
     (hdiff : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo 0 T → DifferentiableAt ℝ (fun u ↦ C s u) t)
-    (hpde : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo 0 T →
-      deriv (fun u ↦ C s u) t + σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C x t) s +
-        r * (s * deriv (fun x ↦ C x t) s - C s t) = 0)
+    (hpde : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo 0 T → residual r σ C s t = 0)
     (hgrowth : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc 0 T → |C s t| ≤ A * (1 + s))
     (hterminal : ∀ ⦃s⦄, 0 < s → C s T = (s - K)⁺) :
     ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc 0 T → C s t = callValue s r σ K (T - t) :=
@@ -91,7 +89,8 @@ theorem eq_callValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     (fun s hs t ht ↦ (contDiffAt_const.callValue (contDiffAt_const.sub contDiffAt_id) hs
       (sub_pos.2 ht.2) (n := 1) (r := r) (σ := σ) (K := K)).differentiableAt one_ne_zero)
     (fun s hs t ht ↦ by
-      simpa only [div_mul_eq_mul_div] using (hpde hs ht).trans (callValue_pde hs hK ht.2).symm)
+      simpa only [residual_def, div_mul_eq_mul_div] using
+        (hpde hs ht).trans (callValue_pde hK ht.2).symm)
     (fun s hs ↦ by rw [hterminal hs, sub_self, callValue_maturity_zero])
 
 /-- **Uniqueness of the Black–Scholes put price.** Let `σ > 0` and `K > 0`. Let `C(s, t)` be
@@ -104,9 +103,7 @@ theorem eq_putValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     (hC : ContinuousOn (Function.uncurry C) (Ioi 0 ×ˢ Icc 0 T))
     (hcd : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo 0 T → ContDiffAt ℝ 2 (fun x ↦ C x t) s)
     (hdiff : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo 0 T → DifferentiableAt ℝ (fun u ↦ C s u) t)
-    (hpde : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo 0 T →
-      deriv (fun u ↦ C s u) t + σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ C x t) s +
-        r * (s * deriv (fun x ↦ C x t) s - C s t) = 0)
+    (hpde : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Ioo 0 T → residual r σ C s t = 0)
     (hgrowth : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc 0 T → |C s t| ≤ A * (1 + s))
     (hterminal : ∀ ⦃s⦄, 0 < s → C s T = (K - s)⁺) :
     ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc 0 T → C s t = putValue s r σ K (T - t) :=
@@ -130,7 +127,8 @@ theorem eq_putValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     (fun s hs t ht ↦ (contDiffAt_const.putValue (contDiffAt_const.sub contDiffAt_id) hs
       (sub_pos.2 ht.2) (n := 1) (r := r) (σ := σ) (K := K)).differentiableAt one_ne_zero)
     (fun s hs t ht ↦ by
-      simpa only [div_mul_eq_mul_div] using (hpde hs ht).trans (putValue_pde hs hK ht.2).symm)
+      simpa only [residual_def, div_mul_eq_mul_div] using
+        (hpde hs ht).trans (putValue_pde hK ht.2).symm)
     (fun s hs ↦ by rw [hterminal hs, sub_self, putValue_maturity_zero])
 
 end TauCeti.BlackScholes

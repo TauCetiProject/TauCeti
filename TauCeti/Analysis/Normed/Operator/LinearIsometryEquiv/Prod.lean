@@ -6,18 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+public import Mathlib.LinearAlgebra.Prod
 
 /-!
-# Componentwise products of linear isometric equivalences
+# Linear isometric equivalences on product spaces
 
-Componentwise products of linear isometric equivalences on product spaces are again linear
-isometric equivalences (`LinearIsometryEquiv.prodCongr`), with pointwise evaluation and inverse
-given by `LinearIsometryEquiv.prodCongr_apply` and `LinearIsometryEquiv.prodCongr_symm`.
+This file provides linear isometric equivalences on product spaces `E × F`:
+
+* `LinearIsometryEquiv.prodCongr`: componentwise products of linear isometric equivalences, with
+  pointwise evaluation (`LinearIsometryEquiv.prodCongr_apply`) and inverse
+  (`LinearIsometryEquiv.prodCongr_symm`).
+* `LinearIsometryEquiv.negFst`: the reflection `(x, y) ↦ (-x, y)` negating the first coordinate,
+  which on `ℝ × ℝ` exchanges the two ends of a strip or cylinder. Precomposition with it
+  preserves operator norms by Mathlib's `ContinuousLinearMap.opNorm_comp_linearIsometryEquiv`.
 -/
 
 public section
 
 namespace LinearIsometryEquiv
+
+section ProdCongr
 
 variable {𝕜 E F E' F' : Type*} [Semiring 𝕜]
   [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
@@ -41,5 +49,30 @@ theorem prodCongr_apply (e₁ : E ≃ₗᵢ[𝕜] E') (e₂ : F ≃ₗᵢ[𝕜] 
 theorem prodCongr_symm (e₁ : E ≃ₗᵢ[𝕜] E') (e₂ : F ≃ₗᵢ[𝕜] F') :
     (prodCongr e₁ e₂).symm = prodCongr e₁.symm e₂.symm :=
   LinearIsometryEquiv.ext fun x ↦ (prodCongr e₁ e₂).injective (by simp)
+
+end ProdCongr
+
+section NegFst
+
+variable (R E F : Type*) [Semiring R] [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
+  [Module R E] [Module R F]
+
+/-- The reflection `(x, y) ↦ (-x, y)` of `E × F`, negating the first coordinate, as a linear
+isometry equivalence. -/
+def negFst : E × F ≃ₗᵢ[R] E × F where
+  toLinearEquiv := (LinearEquiv.neg R).prodCongr (LinearEquiv.refl R F)
+  norm_map' z := by simp [Prod.norm_def]
+
+@[simp]
+theorem negFst_apply (z : E × F) : negFst R E F z = (-z.1, z.2) := (rfl)
+
+theorem coe_negFst : ⇑(negFst R E F) = Prod.map Neg.neg id := (rfl)
+
+/-- The reflection `negFst` is an involution. -/
+@[simp]
+theorem symm_negFst : (negFst R E F).symm = negFst R E F := by
+  ext z <;> rfl
+
+end NegFst
 
 end LinearIsometryEquiv
