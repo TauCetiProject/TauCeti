@@ -134,8 +134,7 @@ lemma scalarPointHom_surjective {α : ℂ} (hα : α ≠ 0) (h : ∀ z ∈ L.lat
   obtain ⟨w, rfl⟩ := L'.weierstrassPoint_surjective P
   exact ⟨L.weierstrassPoint (α⁻¹ * w), by simp [mul_inv_cancel_left₀ hα]⟩
 
-/-- A scalar map vanishes only for the scalar `0`: the map of `α ≠ 0` is surjective, and the
-curve of `Λ'` has the nonzero point `P(ω₁' / 2)`. -/
+/-- A scalar map vanishes exactly when the scalar is `0`. -/
 @[simp]
 lemma scalarPointHom_eq_zero_iff {α : ℂ} (h : ∀ z ∈ L.lattice, α * z ∈ L'.lattice) :
     scalarPointHom α h = 0 ↔ α = 0 := by

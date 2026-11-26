@@ -134,8 +134,9 @@ so it is finite.
   `UpperHalfPlane.leftOrder_lattice_periodPair_smul`,
   `UpperHalfPlane.mem_leftOrder_lattice_periodPair_iff`: rescaling, homothety, and `SL(2, ℤ)`
   invariance and generator characterization of the complex scalar multiplier order `leftOrder`.
-* `PeriodPair.intCast_mul_sub_mul_eq_normSq`, `PeriodPair.sq_sub_trace_mul_add_norm_eq_zero`: the
-  integer matrix of a multiplier `α` has determinant `|α|²`, and `α² - (2 Re α) α + |α|² = 0` with
+* `PeriodPair.intCast_mul_sub_mul_eq_normSq`,
+  `PeriodPair.exists_sq_sub_trace_mul_add_norm_eq_zero`: the integer matrix of a multiplier `α`
+  has determinant `|α|²`, and `α² - (2 Re α) α + |α|² = 0` with
   integer trace and norm.
 * `PeriodPair.isIntegral_of_mem_leftOrder_lattice`: every multiplier is an algebraic integer.
 * `PeriodPair.exists_intCast_eq_of_im_eq_zero`, `PeriodPair.leftOrder_lattice_eq_bot_iff`: the
@@ -1212,7 +1213,7 @@ theorem Homothetic.leftOrder_lattice_eq {L L' : PeriodPair} (h : L.Homothetic L'
 
 section Multipliers
 
-/-! ### Multipliers are imaginary quadratic integers -/
+/-! ### Multipliers are algebraic integers of degree at most two -/
 
 open ComplexConjugate
 
@@ -1271,7 +1272,7 @@ private lemma eq_intCast_of_im_eq_zero {α : ℂ} (him : α.im = 0) {a b e f : �
 
 /-- **The characteristic equation of a multiplier.** A multiplier `α` satisfies
 `α² - t α + n = 0` with integers `t = 2 Re α` and `n = |α|²`. -/
-theorem sq_sub_trace_mul_add_norm_eq_zero {α : ℂ} (hα : α ∈ L.lattice.leftOrder) :
+theorem exists_sq_sub_trace_mul_add_norm_eq_zero {α : ℂ} (hα : α ∈ L.lattice.leftOrder) :
     ∃ t n : ℤ, α ^ 2 - t * α + n = 0 ∧ (t : ℝ) = 2 * α.re ∧ (n : ℝ) = Complex.normSq α := by
   obtain ⟨a, b, hab⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₁_mem_lattice)
   obtain ⟨e, f, hef⟩ := mem_lattice.mp (Submodule.mem_leftOrder_iff.mp hα _ L.ω₂_mem_lattice)
