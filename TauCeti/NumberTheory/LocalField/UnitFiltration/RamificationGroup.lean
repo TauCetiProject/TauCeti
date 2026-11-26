@@ -391,10 +391,9 @@ variable (G L) in
 /-- The order of the tame quotient `G_0 / G_1` divides `q - 1`, for `q` the cardinality of the
 residue field. -/
 theorem card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one :
-    Nat.card (RamificationGroupGraded G 𝒪[L] (0 : ℤ)) ∣ Nat.card 𝓀[L] - 1 := by
-  rw [← Nat.card_units]
-  exact Subgroup.card_dvd_of_injective _
-    (IsLocalRing.tameCharacterGraded_injective (G := G) (FixedPoints.subalgebra ℤ 𝒪[L] G))
+    Nat.card (RamificationGroupGraded G 𝒪[L] (0 : ℤ)) ∣ Nat.card 𝓀[L] - 1 :=
+  IsLocalRing.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one G 𝒪[L]
+    (FixedPoints.subalgebra ℤ 𝒪[L] G)
 
 /-! ### Wild inertia is a `p`-group -/
 
@@ -436,12 +435,8 @@ theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
     [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
     Nat.card (ramificationGroup G 𝒪[L] 1) =
       p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p := by
-  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  rw [← Sylow.card_eq_multiplicity
-    (IsLocalRing.ramificationGroupOneSylow G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) p),
-    IsLocalRing.ramificationGroupOneSylow_coe]
-  exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
-    (ramificationGroup_antitone G 𝒪[L] (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
+  have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
+  exact IsLocalRing.natCard_ramificationGroup_one G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) p
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the
@@ -452,19 +447,9 @@ is, if and only if the inertia group `G_0` is finite of order prime to `p`: when
 theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p : ℕ)
     [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] :
     ramificationGroup G 𝒪[L] 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G 𝒪[L] 0) := by
-  have hp : p.Prime := CharP.char_is_prime 𝓀[L] p
-  by_cases hfin : Finite (ramificationGroup G 𝒪[L] 0)
-  · rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one G p, pow_eq_one_iff_right hp.ne_one,
-      Nat.factorization_eq_zero_iff]
-    simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
-  · -- if `G_0` is infinite, `G_1 ≠ ⊥`, since `G_0 / G_1` embeds in the finite group `𝓀[L]ˣ`
-    have hinf := not_finite_iff_infinite.mp hfin
-    rw [Nat.card_eq_zero_of_infinite]
-    simp only [dvd_zero, not_true_eq_false, iff_false]
-    intro h
-    have hker :=
-      IsLocalRing.ker_tameCharacter (G := G) (S := 𝒪[L]) (FixedPoints.subalgebra ℤ 𝒪[L] G)
-    rw [h, Subgroup.bot_subgroupOf, MonoidHom.ker_eq_bot_iff] at hker
-    exact hfin (Finite.of_injective _ hker)
+  have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
+  exact
+    ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero_of_finite_residueField
+      G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) p
 
 end TauCeti

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PGroup
+public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
-public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
+import Mathlib.RingTheory.Filtration
 
 /-!
 # The unit filtration of a local ring
@@ -27,11 +29,6 @@ graded piece `𝔪 ^ (n + 1) / 𝔪 ^ (n + 2)` (written `𝔪 ^ (n + 1) ⧸ (�
 assumption, this additive identification determines the torsion of each positive graded piece: when
 `k` has characteristic `p`, every element satisfies `x ^ p = 1` and `U_{n+1} / U_{n+2}` is a
 `p`-group; when `k` has characteristic zero, `U_{n+1} / U_{n+2}` is torsion-free.
-
-When a group `G` acts on `S` by ring automorphisms, an element `σ` in the `i`-th ramification
-group moves every unit `u : Sˣ` by a factor `(σ • u) / u` lying in `U_{i+1}`. Over a discrete
-valuation ring, this is what makes the uniformizer ratio `σ ϖ / ϖ` independent of the choice of
-uniformizer `ϖ` and multiplicative modulo `U_{i+1}`.
 
 ## Main definitions
 
@@ -53,8 +50,6 @@ uniformizer `ϖ` and multiplicative modulo `U_{i+1}`.
   `TauCeti.IsLocalRing.isPGroup_unitFiltrationGraded_succ`, and
   `TauCeti.IsLocalRing.eq_one_of_pow_eq_one_unitFiltrationGraded_succ_of_charZero`: torsion of the
   positive graded pieces determined by the residue characteristic.
-* `TauCeti.IsLocalRing.unitsMap_div_mem_unitFiltration_succ`: an element of the `i`-th ramification
-  group moves every unit of `S` by a factor in `U_{i+1}`.
 
 ## References
 
@@ -230,26 +225,5 @@ theorem eq_one_of_pow_eq_one_unitFiltrationGraded_succ_of_charZero [CharZero (Re
     (by rw [hu.smul_eq_zero.mp hkm, map_one, toAdd_one]))
 
 end Graded
-
-section Action
-
-variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsLocalRing S] [MulSemiringAction G S]
-
-/-- For an element `σ` in the `i`-th ramification group of a local ring `S` and any unit `u : Sˣ`,
-the ratio `(σ • u) / u` lies one step deeper in the unit filtration, in `unitFiltration S (i + 1)`.
--/
-theorem unitsMap_div_mem_unitFiltration_succ {i : ℕ} {σ : G}
-    (hσ : σ ∈ ramificationGroup G S (i : ℤ)) (u : Sˣ) :
-    Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u / u ∈
-      unitFiltration S (i + 1) := by
-  rw [mem_unitFiltration_iff, div_eq_mul_inv]
-  have hsub :
-      ((Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u * u⁻¹ : Sˣ) : S) - 1 =
-        (σ • (u : S) - (u : S)) * (u⁻¹ : Sˣ) := by
-    simp [sub_mul]
-  rw [hsub]
-  exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : S))
-
-end Action
 
 end TauCeti.IsLocalRing
