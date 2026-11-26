@@ -132,7 +132,7 @@ endpoints, and other strings to zero. -/
 theorem isPathCompatible_m (n : ℕ) : IsPathCompatible id (𝒞.m n) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · rw [𝒞.m_zero]
-    exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
+    exact .zero
   · exact 𝒞.isPathCompatible_m_of_pos n hn
 
 /-- The operation `mₙ` sends inputs of degrees `dᵢ` to an element of degree `∑ dᵢ + 2 - n`. -/

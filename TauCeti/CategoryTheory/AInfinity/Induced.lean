@@ -138,23 +138,25 @@ private theorem inducedOperation_succ_of_not_isChainFin {n : ℕ}
   rw [MultilinearMap.fromDirectSumEquiv_lof (p := fun i ↦ (s i, t i))]
   simp [h]
 
-variable {𝒞 F}
-
-/-- On morphisms `aᵢ ⟶ bᵢ`, an operation of the induced category takes values in the morphisms
-from the source of the last input to the target of the first. -/
-private theorem evalNat_inducedOperation_mem {k : ℕ} (hk : 0 < k)
-    {z : ℕ → TotalHom R (InducedQuiver C F)} {a b : ℕ → InducedQuiver C F}
-    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) :
-    evalNat (𝒞.inducedOperation F k) z ∈
-      LinearMap.range (homInclusion (R := R) (a (k - 1)) (b 0)) := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
-  obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
-  rw [evalNat_def, funext hg]
-  by_cases h : IsChainFin F fun i : Fin (n + 1) ↦ (a i, b i)
-  · rw [𝒞.inducedOperation_succ_of_isChainFin F (fun i ↦ a i) (fun i ↦ b i) g h]
+/-- The operations of the induced category are path-compatible. -/
+private theorem isPathCompatible_inducedOperation (n : ℕ) (hn : 0 < n) :
+    IsPathCompatible id (𝒞.inducedOperation F n) := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
+  refine ⟨fun X x ↦ ?_, fun s t x i j hij hne ↦ ?_⟩
+  · have h : IsChainFin F fun i : Fin (n + 1) ↦ (X i.rev.castSucc, X i.rev.succ) := fun i hi ↦
+      congrArg X <| Fin.ext <| by
+        simp only [Fin.val_succ, Fin.val_castSucc, Fin.val_rev]
+        omega
+    rw [𝒞.inducedOperation_succ_of_isChainFin F _ _ x h,
+      show X (Fin.last n).rev.castSucc = X 0 by simp,
+      show X (Fin.rev 0).succ = X (Fin.last (n + 1)) by simp]
     exact LinearMap.mem_range_self _ _
-  · rw [𝒞.inducedOperation_succ_of_not_isChainFin F (fun i ↦ a i) (fun i ↦ b i) g h]
-    exact zero_mem _
+  · refine 𝒞.inducedOperation_succ_of_not_isChainFin F s t x fun h ↦ hne ?_
+    have hj : j = ⟨i + 1, by omega⟩ := Fin.ext hij
+    rw [hj]
+    exact h i (by omega)
+
+variable {𝒞 F}
 
 /-- On a composable string of morphisms `aᵢ ⟶ bᵢ`, the map of total modules intertwines an
 operation of the induced category with the operation of `𝒞`. -/
@@ -177,20 +179,6 @@ private theorem totalHomMap_evalNat_inducedOperation {k : ℕ} (hk : 0 < k)
     (fun i ↦ F (a i).obj) (fun i ↦ F (b i).obj) g
     (fun j ↦ congrArg (fun Y ↦ F Y.obj) (hab.eq j (by simp))) rfl (by simp)
 
-/-- On a string of morphisms `aᵢ ⟶ bᵢ` which is not composable, an operation of the induced
-category vanishes. -/
-private theorem evalNat_inducedOperation_eq_zero {k : ℕ}
-    {z : ℕ → TotalHom R (InducedQuiver C F)} {a b : ℕ → InducedQuiver C F}
-    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
-    (hab : ¬ IsComposableString a b k) :
-    evalNat (𝒞.inducedOperation F k) z = 0 := by
-  rcases Nat.eq_zero_or_pos k with rfl | hk
-  · exact absurd ⟨fun i hi ↦ absurd hi (by omega)⟩ hab
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
-  obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
-  rw [evalNat_def, funext hg,
-    𝒞.inducedOperation_succ_of_not_isChainFin F (fun i ↦ a i) (fun i ↦ b i) g fun h ↦ hab ⟨h⟩]
-
 /-! ### The Stasheff identities -/
 
 section Stasheff
@@ -204,8 +192,9 @@ private theorem inner_mem (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion
     (hs : 1 ≤ s) (hps : p + s ≤ n) :
     evalNat (𝒞.inducedOperation F s) (fun j ↦ x (p + j)) ∈
       LinearMap.range (homInclusion (R := R) (a (p + s - 1)) (b p)) := by
-  have h := evalNat_inducedOperation_mem (𝒞 := 𝒞) hs (z := fun j ↦ x (p + j))
-    (a := fun j ↦ a (p + j)) (b := fun j ↦ b (p + j)) fun i hi ↦ hx (p + i) (by omega)
+  have h := (𝒞.isPathCompatible_inducedOperation F s hs).evalNat_mem_range_homInclusion_of_pos
+    (z := fun j ↦ x (p + j)) (a := fun j ↦ a (p + j)) (b := fun j ↦ b (p + j)) hs
+    fun i hi ↦ hx (p + i) (by omega)
   rwa [show p + (s - 1) = p + s - 1 by omega, add_zero] at h
 
 /-- A Stasheff term of the induced category on a string of morphisms `aᵢ ⟶ bᵢ` is a morphism from
@@ -217,7 +206,8 @@ private theorem stasheffTerm_mem
       LinearMap.range (homInclusion (R := R) (a (n - 1)) (b 0)) := by
   rw [stasheffTerm_def]
   refine Submodule.smul_mem _ _ ?_
-  have h := evalNat_inducedOperation_mem (𝒞 := 𝒞) (by omega)
+  have h := IsPathCompatible.evalNat_mem_range_homInclusion_of_pos
+    (𝒞.isPathCompatible_inducedOperation F _ (by omega)) (by omega)
     (replaceBlock_mem_range_homInclusion hx (inner_mem (𝒞 := 𝒞) hx hs hps) hps)
   have ha : replaceBlock a p s (a (p + s - 1)) (p + 1 + (n - p - s) - 1) = a (n - 1) := by
     rcases Nat.eq_or_lt_of_le (show p ≤ p + 1 + (n - p - s) - 1 by omega) with he | hlt
@@ -244,26 +234,12 @@ private theorem totalHomMap_stasheffTerm
   congr 2
   exact funext fun i ↦ apply_replaceBlock _ _ _ _ _ _
 
-/-- On a string which is not composable, every Stasheff term of the induced category vanishes. -/
-private theorem stasheffTerm_eq_zero
-    (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
-    (hab : ¬ IsComposableString a b n) (hs : 1 ≤ s) (hps : p + s ≤ n) :
-    stasheffTerm (𝒞.inducedOperation F) d x p s (n - p - s) = 0 := by
-  rcases not_isComposableString_block_or_replaceBlock hab with h | h
-  · rw [stasheffTerm_def,
-      evalNat_inducedOperation_eq_zero (fun i hi ↦ hx (p + i) (by omega)) h, evalNat_def,
-      (MultilinearMap.map_coord_zero _ (⟨p, by omega⟩ : Fin (p + 1 + (n - p - s))) (by simp)),
-      smul_zero]
-  · rw [stasheffTerm_def,
-      evalNat_inducedOperation_eq_zero
-        (replaceBlock_mem_range_homInclusion hx (inner_mem (𝒞 := 𝒞) hx hs hps) hps) h,
-      smul_zero]
-
-/-- The Stasheff identities of the induced category on homogeneous morphisms `aᵢ ⟶ bᵢ`.  On a
-composable string, the Stasheff sum is a morphism `a (n - 1) ⟶ b 0`, which the map of total
-modules sends to the Stasheff sum of `𝒞`; on any other string every term vanishes. -/
+/-- The Stasheff identities of the induced category on a homogeneous composable string of
+morphisms `aᵢ ⟶ bᵢ`: the Stasheff sum is a morphism `a (n - 1) ⟶ b 0`, which the map of total
+modules sends to the Stasheff sum of `𝒞`. -/
 private theorem stasheffSum_inducedOperation_of_mem
     (hx : ∀ i < n, x i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
+    (hab : IsComposableString a b n)
     (hd : ∀ i < n, x i ∈ (totalGrading R (InducedQuiver C F)).piece (d i)) :
     stasheffSum (𝒞.inducedOperation F) d x n = 0 := by
   have hterm (p : ℕ) (hp : p ∈ Finset.range (n + 1)) (s : ℕ) (hs : s ∈ Finset.Icc 1 (n - p)) :
@@ -271,26 +247,22 @@ private theorem stasheffSum_inducedOperation_of_mem
     rw [Finset.mem_range] at hp
     rw [Finset.mem_Icc] at hs
     omega
-  by_cases hab : IsComposableString a b n
-  · have hmem : stasheffSum (𝒞.inducedOperation F) d x n ∈
-        LinearMap.range (homInclusion (R := R) (a (n - 1)) (b 0)) := by
-      rw [stasheffSum_def]
-      exact Submodule.sum_mem _ fun p hp ↦ Submodule.sum_mem _ fun s hs ↦
-        stasheffTerm_mem (𝒞 := 𝒞) (d := d) hx (hterm p hp s hs).1 (hterm p hp s hs).2
-    have hmap : totalHomMap R F (stasheffSum (𝒞.inducedOperation F) d x n) = 0 := by
-      rw [stasheffSum_def, map_sum]
-      simp_rw [map_sum]
-      rw [← 𝒞.stasheff n d (fun i ↦ totalHomMap R F (x i)) fun i hi ↦ by
-        rw [𝒞.grading_eq]
-        exact totalHomMap_mem_totalGrading_piece (hd i hi), stasheffSum_def]
-      exact Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun s hs ↦
-        totalHomMap_stasheffTerm hx hab (hterm p hp s hs).1 (hterm p hp s hs).2
-    obtain ⟨g, hg⟩ := hmem
-    rw [← hg, totalHomMap_homInclusion] at hmap
-    rw [← hg, (homInclusion_injective _ _).eq_iff.1 (hmap.trans (map_zero _).symm), map_zero]
-  · rw [stasheffSum_def]
-    exact Finset.sum_eq_zero fun p hp ↦ Finset.sum_eq_zero fun s hs ↦
-      stasheffTerm_eq_zero (𝒞 := 𝒞) (d := d) hx hab (hterm p hp s hs).1 (hterm p hp s hs).2
+  have hmem : stasheffSum (𝒞.inducedOperation F) d x n ∈
+      LinearMap.range (homInclusion (R := R) (a (n - 1)) (b 0)) := by
+    rw [stasheffSum_def]
+    exact Submodule.sum_mem _ fun p hp ↦ Submodule.sum_mem _ fun s hs ↦
+      stasheffTerm_mem (𝒞 := 𝒞) (d := d) hx (hterm p hp s hs).1 (hterm p hp s hs).2
+  have hmap : totalHomMap R F (stasheffSum (𝒞.inducedOperation F) d x n) = 0 := by
+    rw [stasheffSum_def, map_sum]
+    simp_rw [map_sum]
+    rw [← 𝒞.stasheff n d (fun i ↦ totalHomMap R F (x i)) fun i hi ↦ by
+      rw [𝒞.grading_eq]
+      exact totalHomMap_mem_totalGrading_piece (hd i hi), stasheffSum_def]
+    exact Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun s hs ↦
+      totalHomMap_stasheffTerm hx hab (hterm p hp s hs).1 (hterm p hp s hs).2
+  obtain ⟨g, hg⟩ := hmem
+  rw [← hg, totalHomMap_homInclusion] at hmap
+  rw [← hg, (homInclusion_injective _ _).eq_iff.1 (hmap.trans (map_zero _).symm), map_zero]
 
 end Stasheff
 
@@ -311,32 +283,15 @@ private theorem isHomogeneous_inducedOperation (n : ℕ) (hn : 0 < n) :
   · rw [𝒞.inducedOperation_succ_of_not_isChainFin F s t x h]
     exact zero_mem _
 
-/-- The Stasheff identities of the induced category.  It suffices to check them on homogeneous
-morphisms, each in a single hom module. -/
+/-- The Stasheff identities of the induced category.  Its operations are path-compatible, so it
+suffices to check them on homogeneous composable strings. -/
 private theorem stasheffSum_inducedOperation (n : ℕ) (hn : 0 < n) (d : ℕ → ℤ)
     (x : ℕ → TotalHom R (InducedQuiver C F))
     (hx : ∀ i < n, x i ∈ (totalGrading R (InducedQuiver C F)).piece (d i)) :
     stasheffSum (𝒞.inducedOperation F) d x n = 0 :=
-  stasheffSum_eq_zero_of_mem_range_homInclusion (𝒞.isHomogeneous_inducedOperation F) hn
-    (fun _ _ _ _ hy hyd ↦ stasheffSum_inducedOperation_of_mem hy hyd) d x hx
-
-/-- The operations of the induced category are path-compatible. -/
-private theorem isPathCompatible_inducedOperation (n : ℕ) (hn : 0 < n) :
-    IsPathCompatible id (𝒞.inducedOperation F n) := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
-  refine ⟨fun X x ↦ ?_, fun s t x i j hij hne ↦ ?_⟩
-  · have h : IsChainFin F fun i : Fin (n + 1) ↦ (X i.rev.castSucc, X i.rev.succ) := fun i hi ↦
-      congrArg X <| Fin.ext <| by
-        simp only [Fin.val_succ, Fin.val_castSucc, Fin.val_rev]
-        omega
-    rw [𝒞.inducedOperation_succ_of_isChainFin F _ _ x h,
-      show X (Fin.last n).rev.castSucc = X 0 by simp,
-      show X (Fin.rev 0).succ = X (Fin.last (n + 1)) by simp]
-    exact LinearMap.mem_range_self _ _
-  · refine 𝒞.inducedOperation_succ_of_not_isChainFin F s t x fun h ↦ hne ?_
-    have hj : j = ⟨i + 1, by omega⟩ := Fin.ext hij
-    rw [hj]
-    exact h i (by omega)
+  stasheffSum_eq_zero_of_isPathCompatible (𝒞.isHomogeneous_inducedOperation F)
+    (𝒞.isPathCompatible_inducedOperation F) hn
+    (fun _ _ _ hy hyd ↦ stasheffSum_inducedOperation_of_mem hy ⟨fun _ _ ↦ rfl⟩ hyd) d x hx
 
 /-- The total algebra of morphisms of the induced category. -/
 private noncomputable def inducedAlgebra : AInfinityAlgebra R (TotalHom R (InducedQuiver C F)) :=

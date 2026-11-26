@@ -61,6 +61,10 @@ applying the map.
   maps on composable words extend to their coalgebra morphisms and graded Taylor expansions.
 * `TauCeti.GradedLinearQuiver.IsWordPathCompatible.eq_of_totalHomMap_eq`: path-compatible maps
   into a quiver induced along a map of objects are determined by their images on composable words.
+* `TauCeti.GradedLinearQuiver.IsPathCompatible.evalNat_mem_range_homInclusion_of_isComposableString`
+  and `TauCeti.GradedLinearQuiver.IsPathCompatible.evalNat_eq_zero_of_not_isComposableString`: a
+  path-compatible operation sends a natural-indexed composable string to a morphism between its
+  endpoints, and any other string of morphisms to zero.
 
 ## References
 
@@ -285,6 +289,76 @@ theorem replaceBlock_mem_range_homInclusion {n p d : ℕ} {a b : ℕ → C} {y :
   · rwa [replaceBlock_self, replaceBlock_self, replaceBlock_self]
   · rw [replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h, replaceBlock_of_gt _ _ _ _ h]
     exact hy (i + d - 1) (by omega)
+
+/-- A nonempty string of elements `xᵢ` of single hom modules `sᵢ ⟶ tᵢ`, indexed by `Fin n`, extends
+to a string of elements of single hom modules indexed by the naturals. -/
+theorem exists_natString {n : ℕ} (hn : 0 < n) (s t : Fin n → C) {x : Fin n → TotalHom R C}
+    (hx : ∀ i, x i ∈ LinearMap.range (homInclusion (R := R) (s i) (t i))) :
+    ∃ (a b : ℕ → C) (z : ℕ → TotalHom R C),
+      (∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) ∧
+        (∀ i : Fin n, a i = s i) ∧ (∀ i : Fin n, b i = t i) ∧ ∀ i : Fin n, z i = x i := by
+  -- Clamp the indices to `Fin n`, so that the objects are those of the string itself.
+  let j : ℕ → Fin n := fun i ↦ ⟨min i (n - 1), by omega⟩
+  have hj (i : Fin n) : j i = i := Fin.ext (min_eq_left (by have := i.isLt; omega))
+  refine ⟨fun i ↦ s (j i), fun i ↦ t (j i), fun i ↦ if i < n then x (j i) else 0,
+    fun i hi ↦ ?_, fun i ↦ congrArg s (hj i), fun i ↦ congrArg t (hj i), fun i ↦ by simp [hj]⟩
+  simpa only [hi, ↓reduceIte] using hx (j i)
+
+/-- Elements of single hom modules, indexed by the naturals, are the inclusions of a family of
+morphisms. -/
+theorem exists_eq_homInclusion {k : ℕ} {z : ℕ → TotalHom R C} {a b : ℕ → C}
+    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) :
+    ∃ g : ∀ i : Fin k, homModule (R := R) (a i) (b i),
+      ∀ i : Fin k, z i = homInclusion (a i) (b i) (g i) := by
+  choose g hg using fun i : Fin k ↦ hz i i.isLt
+  exact ⟨g, fun i ↦ (hg i).symm⟩
+
+section PathCompatible
+
+open _root_.MultilinearMap (evalNat evalNat_def)
+
+variable {D : Type u'} [GradedLinearQuiver.{u', v', w} R D] {φ : C → D} {k : ℕ}
+  {f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ TotalHom R C) (TotalHom R D)}
+  {z : ℕ → TotalHom R C} {a b : ℕ → C}
+
+/-- A path-compatible operation of positive arity sends a composable string of morphisms
+`aᵢ ⟶ bᵢ` to a morphism from the image of the source `a (k - 1)` of its last morphism to the image
+of the target `b 0` of its first. -/
+theorem IsPathCompatible.evalNat_mem_range_homInclusion_of_isComposableString
+    (hf : IsPathCompatible φ f) (hk : 0 < k)
+    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
+    (hab : IsComposableString a b k) :
+    evalNat f z ∈ LinearMap.range (homInclusion (R := R) (φ (a (k - 1))) (φ (b 0))) := by
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
+  obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
+  rw [evalNat_def, funext hg]
+  exact hf.mem_range_homInclusion_of_chain (fun i ↦ a i) (fun i ↦ b i) g
+    (fun j ↦ by simpa using hab.eq j (by omega)) (by simp) (by simp)
+
+/-- A path-compatible operation sends a string of morphisms `aᵢ ⟶ bᵢ` which is not composable to
+zero. -/
+theorem IsPathCompatible.evalNat_eq_zero_of_not_isComposableString (hf : IsPathCompatible φ f)
+    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
+    (hab : ¬ IsComposableString a b k) : evalNat f z = 0 := by
+  obtain ⟨i, hi, hne⟩ : ∃ i, ∃ (_ : i + 1 < k), b (i + 1) ≠ a i := by
+    by_contra! hc
+    exact hab ⟨hc⟩
+  obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
+  rw [evalNat_def, funext hg]
+  exact hf.eq_zero_of_ne (fun i ↦ a i) (fun i ↦ b i) g ⟨i, by omega⟩ ⟨i + 1, hi⟩ rfl hne
+
+/-- A path-compatible operation of positive arity sends any string of morphisms `aᵢ ⟶ bᵢ` to a
+morphism from the image of `a (k - 1)` to the image of `b 0`: the image of a composable string is
+such a morphism, and any other string is sent to zero. -/
+theorem IsPathCompatible.evalNat_mem_range_homInclusion_of_pos (hf : IsPathCompatible φ f)
+    (hk : 0 < k) (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) :
+    evalNat f z ∈ LinearMap.range (homInclusion (R := R) (φ (a (k - 1))) (φ (b 0))) := by
+  by_cases hab : IsComposableString a b k
+  · exact hf.evalNat_mem_range_homInclusion_of_isComposableString hk hz hab
+  · rw [hf.evalNat_eq_zero_of_not_isComposableString hz hab]
+    exact zero_mem _
+
+end PathCompatible
 
 /-- The morphisms of a string with a morphism prepended lie in the expected hom modules. -/
 private theorem cons_mem {n : ℕ} {a b : ℕ → C} {z : ℕ → TotalHom R C}

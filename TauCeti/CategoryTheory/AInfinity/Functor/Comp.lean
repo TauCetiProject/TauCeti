@@ -327,7 +327,7 @@ theorem isPathCompatible_component_inducedHom (n : ℕ) :
       ((𝒢.inducedHom F).component n) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · rw [AInfinityHom.component_zero]
-    exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
+    exact .zero
   · refine (𝒢.inducedHom F).isWordPathCompatible_taylor_iff.1 ?_ n hn
     rw [taylor_inducedHom]
     exact 𝒢.isWordPathCompatible_inducedTaylor F

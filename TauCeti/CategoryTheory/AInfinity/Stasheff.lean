@@ -28,10 +28,6 @@ operations of an `A∞` category are constructed from data on composable strings
 
 ## Main results
 
-* `TauCeti.GradedLinearQuiver.IsPathCompatible.evalNat_mem_range_homInclusion` and
-  `TauCeti.GradedLinearQuiver.IsPathCompatible.evalNat_eq_zero`: a path-compatible operation sends
-  a natural-indexed composable string to a morphism between its endpoints, and any other string of
-  morphisms to zero.
 * `TauCeti.GradedLinearQuiver.stasheffSum_eq_zero_of_mem_range_homInclusion`: the Stasheff
   identities hold as soon as they hold on morphisms in single hom modules.
 * `TauCeti.GradedLinearQuiver.stasheffSum_eq_zero_of_not_isComposableString`: the Stasheff sum
@@ -48,70 +44,12 @@ public section
 
 namespace TauCeti.GradedLinearQuiver
 
-universe u u' v w
+universe u v w
 
 open AInfinity
 open _root_.MultilinearMap (evalNat evalNat_def)
 
 variable {R : Type w} [CommRing R] {C : Type u} [GradedLinearQuiver.{u, v, w} R C]
-
-/-- A nonempty string of elements `xᵢ` of single hom modules `sᵢ ⟶ tᵢ`, indexed by `Fin n`, extends
-to a string of elements of single hom modules indexed by the naturals. -/
-theorem exists_natString {n : ℕ} (hn : 0 < n) (s t : Fin n → C) {x : Fin n → TotalHom R C}
-    (hx : ∀ i, x i ∈ LinearMap.range (homInclusion (R := R) (s i) (t i))) :
-    ∃ (a b : ℕ → C) (z : ℕ → TotalHom R C),
-      (∀ i < n, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) ∧
-        (∀ i : Fin n, a i = s i) ∧ (∀ i : Fin n, b i = t i) ∧ ∀ i : Fin n, z i = x i := by
-  -- Clamp the indices to `Fin n`, so that the objects are those of the string itself.
-  let j : ℕ → Fin n := fun i ↦ ⟨min i (n - 1), by omega⟩
-  have hj (i : Fin n) : j i = i := Fin.ext (min_eq_left (by have := i.isLt; omega))
-  refine ⟨fun i ↦ s (j i), fun i ↦ t (j i), fun i ↦ if i < n then x (j i) else 0,
-    fun i hi ↦ ?_, fun i ↦ congrArg s (hj i), fun i ↦ congrArg t (hj i), fun i ↦ by simp [hj]⟩
-  simpa only [hi, ↓reduceIte] using hx (j i)
-
-/-! ### Path-compatible operations on natural-indexed strings -/
-
-section PathCompatible
-
-variable {C' : Type u'} [GradedLinearQuiver.{u', v, w} R C'] {φ : C → C'} {k : ℕ}
-  {f : MultilinearMap (RingHom.id R) (fun _ : Fin k ↦ TotalHom R C) (TotalHom R C')}
-  {z : ℕ → TotalHom R C} {a b : ℕ → C}
-
-/-- Elements of single hom modules, indexed by the naturals, are the inclusions of a family of
-morphisms. -/
-theorem exists_eq_homInclusion
-    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i))) :
-    ∃ g : ∀ i : Fin k, homModule (R := R) (a i) (b i),
-      ∀ i : Fin k, z i = homInclusion (a i) (b i) (g i) := by
-  choose g hg using fun i : Fin k ↦ hz i i.isLt
-  exact ⟨g, fun i ↦ (hg i).symm⟩
-
-/-- A path-compatible operation of positive arity sends a composable string of morphisms
-`aᵢ ⟶ bᵢ` to a morphism from the image of the source `a (k - 1)` of its last morphism to the image
-of the target `b 0` of its first. -/
-theorem IsPathCompatible.evalNat_mem_range_homInclusion (hf : IsPathCompatible φ f) (hk : 0 < k)
-    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
-    (hab : IsComposableString a b k) :
-    evalNat f z ∈ LinearMap.range (homInclusion (R := R) (φ (a (k - 1))) (φ (b 0))) := by
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
-  obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
-  rw [evalNat_def, funext hg]
-  exact hf.mem_range_homInclusion_of_chain (fun i ↦ a i) (fun i ↦ b i) g
-    (fun j ↦ by simpa using hab.eq j (by omega)) (by simp) (by simp)
-
-/-- A path-compatible operation sends a string of morphisms `aᵢ ⟶ bᵢ` which is not composable to
-zero. -/
-theorem IsPathCompatible.evalNat_eq_zero (hf : IsPathCompatible φ f)
-    (hz : ∀ i < k, z i ∈ LinearMap.range (homInclusion (R := R) (a i) (b i)))
-    (hab : ¬ IsComposableString a b k) : evalNat f z = 0 := by
-  obtain ⟨i, hi, hne⟩ : ∃ i, ∃ (_ : i + 1 < k), b (i + 1) ≠ a i := by
-    by_contra! hc
-    exact hab ⟨hc⟩
-  obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
-  rw [evalNat_def, funext hg]
-  exact hf.eq_zero_of_ne (fun i ↦ a i) (fun i ↦ b i) g ⟨i, by omega⟩ ⟨i + 1, hi⟩ rfl hne
-
-end PathCompatible
 
 /-! ### Stasheff identities -/
 
@@ -170,17 +108,14 @@ theorem stasheffSum_eq_zero_of_not_isComposableString
       LinearMap.range (homInclusion (R := R) (a (p + i)) (b (p + i))) := hx _ (by omega)
   rw [stasheffTerm_def]
   rcases not_isComposableString_block_or_replaceBlock (p := p) (s := s) hab with h | h
-  · rw [(hm s (by omega)).evalNat_eq_zero hblock h, evalNat_def,
+  · rw [(hm s (by omega)).evalNat_eq_zero_of_not_isComposableString hblock h, evalNat_def,
       (m _).map_coord_zero (⟨p, by omega⟩ : Fin (p + 1 + (n - p - s))) (by simp), smul_zero]
-  · -- The inner operation lands in a single hom module, zero if its block is not composable.
+  · -- The inner operation lands in a single hom module.
     have hinner : evalNat (m s) (fun j ↦ x (p + j)) ∈
         LinearMap.range (homInclusion (R := R) (a (p + s - 1)) (b p)) := by
-      by_cases hc : IsComposableString (fun j ↦ a (p + j)) (fun j ↦ b (p + j)) s
-      · rw [show p + s - 1 = p + (s - 1) by omega]
-        exact (hm s (by omega)).evalNat_mem_range_homInclusion (by omega) hblock hc
-      · rw [(hm s (by omega)).evalNat_eq_zero hblock hc]
-        exact zero_mem _
-    rw [(hm _ (by omega)).evalNat_eq_zero
+      rw [show p + s - 1 = p + (s - 1) by omega]
+      exact (hm s (by omega)).evalNat_mem_range_homInclusion_of_pos (by omega) hblock
+    rw [(hm _ (by omega)).evalNat_eq_zero_of_not_isComposableString
       (replaceBlock_mem_range_homInclusion hx hinner (by omega)) h, smul_zero]
 
 /-- **The Stasheff identities of path-compatible operations can be checked on composable
