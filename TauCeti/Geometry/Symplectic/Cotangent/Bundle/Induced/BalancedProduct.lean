@@ -129,14 +129,14 @@ theorem isBasic_mpullback_inducedForm :
     RoughForm.IsBasic (V := ℝ) 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EN))
       (Quotient.mk (MulAction.orbitRel K (K.RightTranslation × N)))
       (SmoothForm.mpullback (Prod.map K.toRightTranslation.symm (id : N → N))
-        ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞).prodMap contMDiff_id)
+        (Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm ∞)
         (inducedForm I G σ hf)).val := by
   let _ := rightTranslationChartedSpace K N I IN F
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   have := ContMDiffSMul.continuousSMul (I := 𝓘(ℝ, F)) (I' := IN) (G := K) (M := N) ∞
   have hq := isSubmersion_quotientMk_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN) (F := F)
-  have he : ContMDiff (I.prod IN) (I.prod IN) ∞ (Prod.map K.toRightTranslation.symm (id : N → N)) :=
-    (Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞).prodMap contMDiff_id
+  have he := Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm (K := K) (I := I)
+    (IZ := IN) (Z := N) ∞
   refine SmoothTwoForm.isBasic_of_mpullback_eq_of_ker_mfderiv_le
     (τ := fun (k : K) (x : K.RightTranslation × N) ↦ k • x) (hq.contMDiff.mdifferentiable (by simp))
     (fun k ↦ ?_) (fun k ↦ funext fun x ↦ Quotient.sound (MulAction.mem_orbit x k))
@@ -170,7 +170,8 @@ theorem isBasic_mpullback_inducedForm :
       rw [InfinitesimalAction.fundamental_apply] at h
       rw [prodVectorField_snd, h]
       refine (mvfderiv_clm_apply_const ((hf x.2).mdifferentiableAt (by simp)) _ u).trans ?_
-      exact (neg_neg _).symm.trans (congrArg Neg.neg ((mvfderiv IN f x.2 u).map_neg _).symm)
+      -- `dfₙ u (-ι ζ) = -dfₙ u (ι ζ)` by linearity.
+      exact neg_eq_iff_eq_neg.1 ((mvfderiv IN f x.2 u).map_neg _).symm
   · -- On `G × N`, the action of `k` is `(g, n) ↦ (g k⁻¹, k • n)`, which preserves the induced form.
     have hφ := ContMDiffSMul.contMDiff_const_smul (I := 𝓘(ℝ, F)) (I' := IN) (n := ∞) (M := N) k
     have hτ : ContMDiff (I.prod IN) (I.prod IN) ∞ (fun x : K.RightTranslation × N ↦ k • x) :=
@@ -207,7 +208,7 @@ theorem mpullback_quotientMk_balancedProductInducedForm :
           (F := F)).contMDiff
         (balancedProductInducedForm hf hfK hσK hμ) =
       SmoothForm.mpullback (Prod.map K.toRightTranslation.symm (id : N → N))
-        ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞).prodMap contMDiff_id)
+        (Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm ∞)
         (inducedForm I G σ hf) := by
   let _ := rightTranslationChartedSpace K N I IN F
   have := isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN) (F := F)
@@ -225,7 +226,7 @@ theorem eq_balancedProductInducedForm_iff :
             (isSubmersion_quotientMk_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
               (F := F)).contMDiff β =
           SmoothForm.mpullback (Prod.map K.toRightTranslation.symm (id : N → N))
-            ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞).prodMap contMDiff_id)
+            (Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm ∞)
             (inducedForm I G σ hf) := by
   let _ := rightTranslationChartedSpace K N I IN F
   have := isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN) (F := F)
@@ -278,8 +279,8 @@ theorem mpullback_smul_balancedProductInducedForm (k : G) :
   have := isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN) (F := F)
   have := contMDiffSMul_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN) (F := F)
   have hq := isSubmersion_quotientMk_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN) (F := F)
-  have he : ContMDiff (I.prod IN) (I.prod IN) ∞ (Prod.map K.toRightTranslation.symm (id : N → N)) :=
-    (Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞).prodMap contMDiff_id
+  have he := Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm (K := K) (I := I)
+    (IZ := IN) (Z := N) ∞
   -- On representatives, `k` acts by `(g, n) ↦ (k g, n)`, which preserves the induced form.
   have hL : ContMDiff (I.prod IN) (I.prod IN) ∞
       (Prod.map (K.toRightTranslation ∘ (k * ·) ∘ K.toRightTranslation.symm) (id : N → N)) :=
@@ -339,40 +340,23 @@ theorem isEquivariantMomentMap_balancedProductMomentMap :
   have := contMDiffSMul_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN) (F := F)
   have : T2Space G := I.t2Space_of_lieGroup ∞
   have hq := isSubmersion_quotientMk_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN) (F := F)
-  have he : ContMDiff (I.prod IN) (I.prod IN) ∞ (Prod.map K.toRightTranslation.symm (id : N → N)) :=
-    (Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞).prodMap contMDiff_id
-  -- The generator `(ξ_G(g), 0)` of left multiplication on `G × N` is sent to the generator of the
-  -- action of `G` on `G ×_K N`, as the projection intertwines the two actions.
-  have hlift (ξ : GroupLieAlgebra I G) (x : K.RightTranslation × N) :
-      ∃ Y : TangentSpace (I.prod IN) x,
-        mfderiv (I.prod IN) (I.prod IN) (Prod.map K.toRightTranslation.symm (id : N → N)) x Y =
-            ((InfinitesimalAction.fundamental I G I G).prod
-              (0 : InfinitesimalAction (GroupLieAlgebra I G) IN N)) ξ
-              (Prod.map K.toRightTranslation.symm id x) ∧
-          mfderiv (I.prod IN) 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EN))
-              (Quotient.mk (MulAction.orbitRel K (K.RightTranslation × N))) x Y =
-            InfinitesimalAction.fundamental I G 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EN))
-              (BalancedProduct K K.RightTranslation N) ξ
-              (Quotient.mk (MulAction.orbitRel K (K.RightTranslation × N)) x) := by
-    have hφ : MDifferentiableAt I (I.prod IN)
-        (fun g : G ↦ (K.toRightTranslation (g * K.toRightTranslation.symm x.1), x.2)) 1 :=
-      (((Subgroup.RightTranslation.contMDiff_toRightTranslation ∞).comp
-        (contMDiff_mul_right (I := I))).mdifferentiableAt (by simp)).prodMk mdifferentiableAt_const
-    refine ⟨mfderiv I (I.prod IN)
-      (fun g : G ↦ (K.toRightTranslation (g * K.toRightTranslation.symm x.1), x.2)) 1 ξ,
-      ?_, ?_⟩
-    · refine (Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply x _).trans ?_
-      rw [InfinitesimalAction.fundamental_prod_zero_apply]
-      -- `K.RightTranslation` is `G`, and the curve `g ↦ (g x.1, x.2)` of
-      -- `K.RightTranslation × N` is the curve `g ↦ (g • (e x).1, (e x).2)` of `G × N`.
-      rfl
-    · rw [InfinitesimalAction.fundamental_apply, fundamentalVectorField_apply,
-        ← mfderiv_comp_apply_of_eq 1 (hq.contMDiff.mdifferentiableAt (by simp)) hφ (by simp)]
-      -- The projection of the curve `g ↦ (g x.1, x.2)` is the orbit `g ↦ g • [x]`.
-      rfl
+  have he := Subgroup.RightTranslation.contMDiff_prodMap_toRightTranslation_symm (K := K) (I := I)
+    (IZ := IN) (Z := N) ∞
   refine ⟨(isMomentMap_inducedForm (σ := σ) hf).of_comp_eq he hq
-    (mpullback_quotientMk_balancedProductInducedForm hf hfK hσK hμ) Quotient.mk_surjective hlift
+    (mpullback_quotientMk_balancedProductInducedForm hf hfK hσK hμ) Quotient.mk_surjective
+    (fun ξ x ↦ ⟨(fundamentalVectorField I ξ (K.toRightTranslation.symm x.1), 0), ?_,
+      (mfderiv_quotientMk_fundamentalVectorField_rightTranslation ξ x).trans
+        (congrFun (InfinitesimalAction.fundamental_apply ξ) _).symm⟩)
     (funext fun _ ↦ rfl), fun k y ↦ ?_⟩
+  · -- The lift `(ξ_G(g), 0)` is the generator of left multiplication on the first factor.
+    refine (Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply x _).trans ?_
+    simp only [InfinitesimalAction.prod_apply, InfinitesimalAction.zero_apply,
+      InfinitesimalAction.fundamental_apply]
+    exact Prod.ext
+      (prodVectorField_fst (fundamentalVectorField I ξ) (0 : ∀ n : N, TangentSpace IN n)
+        (Prod.map K.toRightTranslation.symm id x)).symm
+      (prodVectorField_snd (fundamentalVectorField I ξ) (0 : ∀ n : N, TangentSpace IN n)
+        (Prod.map K.toRightTranslation.symm id x)).symm
   induction y using induction_on_toRightTranslation with
   | h g n =>
     rw [smul_mk_toRightTranslation, balancedProductMomentMap_mk, balancedProductMomentMap_mk,
