@@ -153,9 +153,8 @@ theorem augmentation_loopChainToGroupAlgebra_barraudCorneaCocycle_m (h : hX.IsMo
   -- Every trajectory has the nonzero coefficient `1`, so the support of `a` is everything.
   have hsupp : (a.support : Set (hX.morseBrokenTrajectorySpace c x y)) = univ :=
     eq_univ_of_forall fun w ↦ by simp [hS w]
-  rw [Finsupp.sum, Finset.sum_congr rfl fun w _ ↦ hS w, Finset.sum_const, nsmul_one,
-    ← Set.ncard_coe_finset, hsupp, ncard_univ,
-    natCard_morseBrokenTrajectorySpace_of_eq_add_one hf hdense h hind]
+  rw [← natCard_morseBrokenTrajectorySpace_of_eq_add_one hf hdense h hind, ← ncard_univ, ← hsupp]
+  simp [Finsupp.sum, hS]
 
 /-- **Modulo two the truncated Barraud–Cornea cocycle is the Morse differential.** Under the
 Morse–Smale condition, let `ind x = ind y + 1`, and let the chain of `S`, with coefficients in

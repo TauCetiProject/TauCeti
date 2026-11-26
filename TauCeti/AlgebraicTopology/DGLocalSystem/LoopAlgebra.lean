@@ -403,18 +403,11 @@ theorem loopChainToGroupAlgebra_cubicalChainSumMap {Z : Type*} [TopologicalSpace
   rw [loopChainToGroupAlgebra_apply, cubicalChainSumMap_apply]
   induction a 0 using NormalizedCubicalChain.induction_on with
   | zero => simp
-  | add a₁ a₂ h₁ h₂ =>
-    rw [map_add, map_add, map_add, h₁, h₂,
-      Finsupp.sum_add_index' (fun _ ↦ MonoidAlgebra.single_zero _)
-        fun _ _ _ ↦ MonoidAlgebra.single_add _ _ _]
-  | smul r a h =>
-    rw [map_smul, map_smul, map_smul, h,
-      Finsupp.sum_smul_index' fun _ ↦ MonoidAlgebra.single_zero _, Finsupp.smul_sum]
-    simp
+  | add a₁ a₂ h₁ h₂ => simp [h₁, h₂, Finsupp.sum_add_index']
+  | smul r a h => simp [h, Finsupp.sum_smul_index', Finsupp.smul_sum]
   | ofCube σ =>
-    rw [NormalizedCubicalChain.map_ofCube, loopZeroChainToGroupAlgebra_ofCube,
-      SingularCube.eq_point σ, NormalizedCubicalChain.zeroEquiv_ofCube_point,
-      Finsupp.sum_single_index (by simp), ContinuousMap.comp_apply, SingularCube.point_apply]
+    rw [SingularCube.eq_point σ]
+    simp
 
 variable (B b R) in
 /-- **The degree-zero truncation as a morphism of DG algebras**: `loopChainToGroupAlgebra` from
