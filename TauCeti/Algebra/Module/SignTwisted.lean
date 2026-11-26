@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.Module.Pi
 public import TauCeti.Data.ZMod.IntUnitsPower
+import TauCeti.Algebra.CharP.Invertible
+import TauCeti.Data.ZMod.Two
 import TauCeti.GroupTheory.Index.DomRestrict
 
 /-!
@@ -42,12 +44,12 @@ has none twisted by `χ` and none twisted by `χ + ι`
 (`TauCeti.signTwisted_domRestrict_ker_inf_eq_bot_iff`). Applying this twice, for a second sign
 character `κ` not vanishing on `ker ι`, the equation has no nonzero periodic solution on the
 four-fold cover `ker κ|ker ι` exactly when it has no nonzero solution twisted by any of `0`, `ι`,
-`κ` and `κ + ι` (`TauCeti.signTwisted_zero_domRestrict_ker_inf_eq_bot_iff`). For a lattice of
-rank two these are the four sign characters, and the four-fold cover is `ℂ / 2Λ`.
+`κ` and `κ + ι` (`TauCeti.signTwisted_zero_domRestrict_ker_domRestrict_ker_inf_eq_bot_iff`).
+For a lattice of rank two these are the four sign characters, and the four-fold cover is `ℂ / 2Λ`.
 
-This is the comparison behind Taubes's labels of square-zero tori: the normal operator of the
-double cover of a torus defined by `ι`, twisted by the restriction of `χ`, splits as the operators
-of the torus twisted by `χ` and by `χ + ι`.
+This is the kernel-level comparison behind Taubes's labels of square-zero tori: for any
+translation-invariant subspace, such as the kernel of the normal operator, the maps twisted along
+`ker ι` by the restriction of `χ` split into those twisted by `χ` and by `χ + ι`.
 
 ## References
 
@@ -111,19 +113,6 @@ theorem translate_mem_signTwisted (hv : v ∈ signTwisted R j χ) {a : A}
   simp only [add_assoc, ha g]
   rw [← add_assoc, hv g]
 
-/-- A sign of `ℤˣ` acting twice is the identity. -/
-private theorem units_smul_units_smul (s : ℤˣ) (x : E) : s • s • x = x := by
-  rw [smul_smul, Int.units_mul_self, one_smul]
-
-/-- The nonzero element of `ZMod 2` is `1`. -/
-private theorem eq_one_of_ne_zero {x : ZMod 2} (hx : x ≠ 0) : x = 1 := by
-  revert x; decide
-
-/-- A nonzero sign character takes the value `1` somewhere. -/
-private theorem exists_eq_one {ι : G →+ ZMod 2} (hι : ι ≠ 0) : ∃ g, ι g = 1 := by
-  obtain ⟨g, hg⟩ := DFunLike.ne_iff.mp hι
-  exact ⟨g, eq_one_of_ne_zero hg⟩
-
 /-- **Extension of twisted maps from a double cover.** If `v` is twisted along `ker ι` by the
 restriction of `χ`, and the twisting law holds at one `g₀` with `ι g₀ = 1`, then `v` is twisted by
 `χ` along all of `G`. -/
@@ -134,7 +123,7 @@ theorem mem_signTwisted_of_mem_signTwisted_domRestrict_ker {ι : G →+ ZMod 2} 
   by_cases hg : ι g = 0
   · exact hv ⟨g, hg⟩ z
   · -- Otherwise `g - g₀` lies in `ker ι`, and the law at `g` is the law at `g₀` and at `g - g₀`.
-    have hk : ι (g - g₀) = 0 := by rw [map_sub, hg₀, eq_one_of_ne_zero hg, sub_self]
+    have hk : ι (g - g₀) = 0 := by rw [map_sub, hg₀, ZMod.ne_zero_iff_eq_one.mp hg, sub_self]
     have hj : j g = j g₀ + j (g - g₀) := by rw [← map_add, add_sub_cancel]
     have := hv ⟨g - g₀, hk⟩ (z + j g₀)
     simp only [AddMonoidHom.domRestrict_apply] at this
@@ -152,24 +141,17 @@ private theorem apply_add_add_eq_of_mem_signTwisted_domRestrict_ker {ι : G →+
 
 variable [Invertible (2 : R)]
 
-/-- An element equal to its negative vanishes when `2` is invertible in the scalars. -/
-private theorem eq_zero_of_eq_neg (K : Type*) [Ring K] [Module K E] [Invertible (2 : K)] {x : E}
-    (hx : x = -x) : x = 0 := by
-  have h2 : (2 : K) • x = 0 := by rw [two_smul]; nth_rw 2 [hx]; exact add_neg_cancel x
-  rw [← one_smul K x, ← invOf_mul_self (2 : K), mul_smul, h2, smul_zero]
-
 /-- **Twists differing by a nonzero sign character are independent.** No nonzero map is twisted
 both by `χ` and by `χ + ι` when `ι ≠ 0` and `2` is invertible. -/
 theorem disjoint_signTwisted_add {ι : G →+ ZMod 2} (hι : ι ≠ 0) :
     Disjoint (signTwisted R j χ) (signTwisted R j (χ + ι) : Submodule R (A → E)) := by
   rw [Submodule.disjoint_def]
   intro v h₁ h₂
-  obtain ⟨g₀, hg₀⟩ := exists_eq_one hι
+  obtain ⟨g₀, hg₀⟩ := ι.exists_eq_one_of_ne_zero hι
   funext z
   have h := (h₁ g₀ z).symm.trans (h₂ g₀ z)
-  rw [AddMonoidHom.add_apply, hg₀, hilbertSign_add, hilbertSign_one, mul_neg_one,
-    Units.neg_smul] at h
-  have := eq_zero_of_eq_neg R h
+  rw [AddMonoidHom.add_apply, hg₀, hilbertSign_add_one, Units.neg_smul] at h
+  have := eq_zero_of_eq_neg_of_invertible_two (R := R) h
   rwa [smul_eq_zero_iff_eq] at this
 
 /-- **Splitting of twisted maps on a double cover.** Let `S` be a submodule of `A → E` invariant
@@ -185,7 +167,7 @@ theorem signTwisted_domRestrict_ker_inf_eq_sup {ι : G →+ ZMod 2} {S : Submodu
     rcases eq_or_ne ι 0 with rfl | hι
     · -- For `ι = 0` the cover is trivial: `ker ι` is all of `G`.
       exact Submodule.mem_sup_left ⟨fun g z ↦ hv ⟨g, by simp⟩ z, hvS⟩
-    obtain ⟨g₀, hg₀⟩ := exists_eq_one hι
+    obtain ⟨g₀, hg₀⟩ := ι.exists_eq_one_of_ne_zero hι
     -- With `s` the sign of `χ g₀` and `w = v (· + j g₀)`, the summands are `(v ± s w) / 2`.
     set s := hilbertSign (χ g₀)
     set w : A → E := fun z ↦ v (z + j g₀)
@@ -200,14 +182,14 @@ theorem signTwisted_domRestrict_ker_inf_eq_sup {ι : G →+ ZMod 2} {S : Submodu
       rw [Units.smul_def]; exact Submodule.smul_of_tower_mem _ _ (hS g₀ v hvS)
     have h₁ : v + s • w ∈ signTwisted R j χ :=
       mem_signTwisted_of_mem_signTwisted_domRestrict_ker hg₀ (add_mem hv hsw) fun z ↦ by
-        rw [Pi.add_apply, Pi.smul_apply, hww, Pi.add_apply, Pi.smul_apply, smul_add,
-          units_smul_units_smul, add_comm]
+        change w z + s • w (z + j g₀) = s • (v z + s • w z)
+        simp only [hww, smul_add, smul_smul, Int.units_mul_self, one_smul, add_comm]
     have h₂ : v - s • w ∈ signTwisted R j (χ + ι) :=
       mem_signTwisted_of_mem_signTwisted_domRestrict_ker (χ := χ + ι) hg₀
         (by rw [AddMonoidHom.domRestrict_ker_add_self]; exact sub_mem hv hsw) fun z ↦ by
-        rw [Pi.sub_apply, Pi.smul_apply, hww, Pi.sub_apply, Pi.smul_apply, AddMonoidHom.add_apply,
-          hg₀, hilbertSign_add, hilbertSign_one, mul_neg_one, Units.neg_smul, smul_sub,
-          units_smul_units_smul, neg_sub]
+        rw [AddMonoidHom.add_apply, hg₀, hilbertSign_add_one]
+        change w z - s • w (z + j g₀) = (-s) • (v z - s • w z)
+        rw [hww, Units.neg_smul, smul_sub, smul_smul, Int.units_mul_self, one_smul, neg_sub]
     have hv₂ : v = ⅟(2 : R) • (v + s • w) + ⅟(2 : R) • (v - s • w) := by
       rw [← smul_add, add_add_sub_cancel, ← two_smul R v, smul_smul, invOf_mul_self, one_smul]
     rw [hv₂]
@@ -219,7 +201,7 @@ theorem signTwisted_domRestrict_ker_inf_eq_sup {ι : G →+ ZMod 2} {S : Submodu
 
 /-- Without a constraint, the maps twisted along `ker ι` by the restriction of `χ` are the sums of
 maps twisted by `χ` and by `χ + ι`. -/
-theorem signTwisted_domRestrict_ker (ι : G →+ ZMod 2) :
+theorem signTwisted_domRestrict_ker_eq_sup (ι : G →+ ZMod 2) :
     signTwisted R (j.domRestrict ι.ker) (χ.domRestrict ι.ker) =
       (signTwisted R j χ ⊔ signTwisted R j (χ + ι) : Submodule R (A → E)) := by
   simpa using signTwisted_domRestrict_ker_inf_eq_sup (R := R) (j := j) (χ := χ) (ι := ι)
@@ -239,7 +221,7 @@ kernel of the restriction of `κ` to `ker ι`. A translation-invariant submodule
 periodic map along `K` exactly when it has no nonzero map twisted by any of `0`, `ι`, `κ` and
 `κ + ι`. When `ι ≠ 0` and `κ` does not vanish on `ker ι`, `K` has index four; for a lattice of rank
 two these are then its four sign characters and `K = 2G`. -/
-theorem signTwisted_zero_domRestrict_ker_inf_eq_bot_iff {ι κ : G →+ ZMod 2}
+theorem signTwisted_zero_domRestrict_ker_domRestrict_ker_inf_eq_bot_iff {ι κ : G →+ ZMod 2}
     {S : Submodule R (A → E)} (hS : ∀ g, ∀ v ∈ S, (fun z ↦ v (z + j g)) ∈ S) :
     signTwisted R ((j.domRestrict ι.ker).domRestrict (κ.domRestrict ι.ker).ker) 0 ⊓ S = ⊥ ↔
       signTwisted R j 0 ⊓ S = ⊥ ∧ signTwisted R j ι ⊓ S = ⊥ ∧

@@ -35,7 +35,7 @@ the double cover `ℂ ⧸ ker ι` of `C`, and every sign character `χ`:
 * the untwisted operator on the four-fold cover cut out by `ι` and a second sign character `κ` not
   vanishing on `ker ι`, which is `ℂ ⧸ 2Λ` for a lattice, has no kernel exactly when none of the four
   twisted operators of `C` has
-  (`TauCeti.signTwisted_zero_domRestrict_ker_inf_cauchyRiemannKernel_eq_bot_iff`).
+  (`TauCeti.signTwisted_zero_domRestrict_ker_domRestrict_ker_inf_cauchyRiemannKernel_eq_bot_iff`).
 
 So whether the twisted operators of a double cover of `C` have kernels is decided by the twisted
 operators of `C`. The kernels here are those of `D` on real-differentiable maps of the plane; the
@@ -54,9 +54,11 @@ open ComplexConjugate
 
 namespace TauCeti
 
-/-- The **kernel of the normal Cauchy–Riemann operator** `D v = ∂bar v + ν v + μ conj v` of a torus,
-in a unitary frame of its normal line: the real-differentiable maps `v : ℂ → ℂ` with
-`∂bar v + ν v + μ conj v = 0`. It is a real subspace, since `D` is real linear. -/
+/-- The **solutions of the normal Cauchy–Riemann equation** `D v = ∂bar v + ν v + μ conj v = 0`:
+the real-differentiable maps `v : ℂ → ℂ` on the plane with `∂bar v + ν v + μ conj v = 0`, for
+arbitrary coefficients `ν` and `μ`. It is a real subspace, since `D` is real linear. For
+`Λ`-periodic `ν` and `μ`, its intersection with `TauCeti.signTwisted ℝ Λ.subtype χ` is the kernel
+of the normal operator of the torus `ℂ ⧸ Λ` twisted by `χ`. -/
 def cauchyRiemannKernel (ν μ : ℂ → ℂ) : Submodule ℝ (ℂ → ℂ) where
   carrier := {v | Differentiable ℝ v ∧
     ∀ z, conjWirtingerDeriv v z 1 + ν z * v z + μ z * conj (v z) = 0}
@@ -67,8 +69,7 @@ def cauchyRiemannKernel (ν μ : ℂ → ℂ) : Submodule ℝ (ℂ → ℂ) wher
   zero_mem' := ⟨differentiable_const 0, fun z ↦ by
     simp [Pi.zero_def]⟩
   smul_mem' c v hv := ⟨hv.1.const_smul c, fun z ↦ by
-    have hcv : c • v = (c : ℂ) • v := funext fun z ↦ by rw [Pi.smul_apply, Pi.smul_apply,
-      Complex.coe_smul]
+    have hcv : c • v = (c : ℂ) • v := funext fun _ ↦ (Complex.coe_smul _ _).symm
     rw [hcv, conjWirtingerDeriv_const_smul, smul_apply, Pi.smul_apply]
     simp only [smul_eq_mul, map_mul, Complex.conj_ofReal]
     linear_combination (c : ℂ) * hv.2 z⟩
@@ -120,7 +121,7 @@ theorem signTwisted_domRestrict_ker_inf_cauchyRiemannKernel_eq_bot_iff
 twisted by `0`, `ι`, `κ` and `κ + ι` has a nonzero solution. When `ι ≠ 0` and `κ` does not vanish
 on `ker ι`, for a lattice `Λ` of rank two, these are its four sign characters and the cover is
 `ℂ ⧸ 2Λ`. -/
-theorem signTwisted_zero_domRestrict_ker_inf_cauchyRiemannKernel_eq_bot_iff
+theorem signTwisted_zero_domRestrict_ker_domRestrict_ker_inf_cauchyRiemannKernel_eq_bot_iff
     (hν : ∀ ω ∈ Λ, ∀ z, ν (z + ω) = ν z) (hμ : ∀ ω ∈ Λ, ∀ z, μ (z + ω) = μ z) :
     signTwisted ℝ ((Λ.subtype.domRestrict ι.ker).domRestrict (κ.domRestrict ι.ker).ker) 0 ⊓
         cauchyRiemannKernel ν μ = ⊥ ↔
@@ -128,7 +129,7 @@ theorem signTwisted_zero_domRestrict_ker_inf_cauchyRiemannKernel_eq_bot_iff
         signTwisted ℝ Λ.subtype ι ⊓ cauchyRiemannKernel ν μ = ⊥ ∧
           signTwisted ℝ Λ.subtype κ ⊓ cauchyRiemannKernel ν μ = ⊥ ∧
             signTwisted ℝ Λ.subtype (κ + ι) ⊓ cauchyRiemannKernel ν μ = ⊥ :=
-  signTwisted_zero_domRestrict_ker_inf_eq_bot_iff fun ω _ ↦
+  signTwisted_zero_domRestrict_ker_domRestrict_ker_inf_eq_bot_iff fun ω _ ↦
     translate_mem_cauchyRiemannKernel (hν ω ω.property) (hμ ω ω.property)
 
 end TauCeti
