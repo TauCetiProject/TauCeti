@@ -431,22 +431,11 @@ private theorem extend_mem_deformationSpace {I I' J J' B B' : Finset A} (hII' : 
   have hpos : positiveIndices (Finset.extendByZero₂ (π := fun _ ↦ ℝ) B' p.val.2.1) =
       positiveIndices p.val.2.1 := by
     ext α
-    simp only [mem_positiveIndices]
-    refine ⟨fun ⟨hαB', hα⟩ ↦ ?_, fun ⟨hαB, hα⟩ ↦ ⟨hBB' hαB, by simpa [hαB] using hα⟩⟩
-    by_cases hαB : α ∈ B
-    · exact ⟨hαB, by simpa [hαB] using hα⟩
-    · simp [hαB] at hα
-  refine ⟨fun α ↦ ?_, fun α hα ↦ ?_, fun α ↦ ?_, ?_⟩
-  · dsimp only
-    by_cases hαB : α.val ∈ B
-    · rw [Finset.extendByZero₂_of_mem _ _ hαB]
-      exact ht _
-    · rw [Finset.extendByZero₂_of_notMem _ _ hαB]
-  · dsimp only
-    by_cases hαB : α.val ∈ B
-    · rw [Finset.extendByZero₂_of_mem _ _ hαB]
-      exact htI _ fun hαI ↦ hα (hII' hαI)
-    · rw [Finset.extendByZero₂_of_notMem _ _ hαB]
+    simp only [mem_positiveIndices, Finset.extendByZero₂_pos_iff (π := fun _ ↦ ℝ)]
+    exact ⟨fun ⟨_, hαB, hα⟩ ↦ ⟨hαB, hα⟩, fun ⟨hαB, hα⟩ ↦ ⟨hBB' hαB, hαB, hα⟩⟩
+  refine ⟨Finset.extendByZero₂_nonneg (π := fun _ ↦ ℝ) ht,
+    fun α hα ↦ Finset.extendByZero₂_eq_zero_of_forall (π := fun _ ↦ ℝ) htI
+      fun hαI ↦ hα (hII' hαI), fun α ↦ ?_, ?_⟩
   · simp only [𝒜.kuranishi_footprintMap, hJB (hJ'J α.property), ↓reduceDIte,
       Finset.extendByZero₂_of_mem]
     exact hs ⟨α, hJ'J α.property⟩

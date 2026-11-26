@@ -338,13 +338,8 @@ theorem exists_isOpen_forall_footprintMap_mem_regLocus {S J : Finset A} (hSJ : S
     obtain ⟨W, hW, hWeq⟩ := isOpen_induced_iff.1
       ((𝒜.isOpen_regLocus S').preimage (𝒜.continuous_footprintMap hS'J))
     refine ⟨W, hW, ?_, fun _ y hy ↦ ?_⟩
-    · have hmem : (⟨x, hx'⟩ : kuranishiZeroSet 𝒜.kuranishi S' J) ∈ Subtype.val ⁻¹' W := by
-        rw [hWeq]
-        exact hreg
-      exact hmem
-    · have hmem : y ∈ Subtype.val ⁻¹' W := hy
-      rw [hWeq] at hmem
-      exact hmem
+    · exact Set.mem_preimage.1 ((Set.ext_iff.1 hWeq _).2 (Set.mem_preimage.2 hreg))
+    · exact Set.mem_preimage.1 ((Set.ext_iff.1 hWeq y).1 (Set.mem_preimage.2 hy))
   choose! W hW hxW hWreg using key
   refine ⟨⋂ S' ∈ J.powerset.filter (S ⊆ ·), W S', isOpen_biInter_finset hW,
     mem_iInter₂.2 hxW, fun S' hSS' hS'J y hy ↦ ?_⟩

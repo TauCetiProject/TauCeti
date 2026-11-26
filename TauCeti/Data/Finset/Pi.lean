@@ -26,7 +26,9 @@ function once `s ∪ (t ∪ u)` is identified with `(s ∪ t) ∪ u`
 In the other direction, `Finset.extendByZero₂ t f` extends a function `f` on `s` by zero to a
 function on `t`. For `s ⊆ t` it is a right inverse of `Finset.restrict₂`
 (`Finset.restrict₂_extendByZero₂`), and a left inverse on the functions vanishing off `s`
-(`Finset.extendByZero₂_restrict₂`).
+(`Finset.extendByZero₂_restrict₂`). It preserves nonnegativity (`Finset.extendByZero₂_nonneg`),
+positivity (`Finset.extendByZero₂_pos_iff`) and vanishing off a finite set
+(`Finset.extendByZero₂_eq_zero_of_forall`).
 
 ## Main results
 
@@ -99,7 +101,34 @@ theorem extendByZero₂_restrict₂ (h : s ⊆ t) {f : ∀ i : t, π i}
     · rw [extendByZero₂_of_mem _ _ hi, restrict₂]
     · rw [extendByZero₂_of_notMem _ _ hi, hf i hi]
 
+/-- The extension by zero of a function vanishing off `u` vanishes off `u`. -/
+theorem extendByZero₂_eq_zero_of_forall {u : Finset ι} {f : ∀ i : s, π i}
+    (hf : ∀ i : s, i.val ∉ u → f i = 0) {i : t} (hi : i.val ∉ u) : extendByZero₂ t f i = 0 := by
+  by_cases h : i.val ∈ s
+  · rw [extendByZero₂_of_mem _ _ h, hf _ hi]
+  · rw [extendByZero₂_of_notMem _ _ h]
+
 end ExtendByZero
+
+section ExtendByZeroPreorder
+
+variable [DecidableEq ι] [∀ i, Zero (π i)] [∀ i, Preorder (π i)] {f : ∀ i : s, π i}
+
+/-- The extension by zero of a nonnegative function is nonnegative. -/
+theorem extendByZero₂_nonneg (hf : ∀ i, 0 ≤ f i) (i : t) : 0 ≤ extendByZero₂ t f i := by
+  by_cases h : i.val ∈ s
+  · rw [extendByZero₂_of_mem _ _ h]
+    exact hf ⟨i, h⟩
+  · rw [extendByZero₂_of_notMem _ _ h]
+
+/-- The extension by zero of `f` is positive exactly at the indices of `s` where `f` is. -/
+theorem extendByZero₂_pos_iff {i : t} :
+    0 < extendByZero₂ t f i ↔ ∃ h : i.val ∈ s, 0 < f ⟨i, h⟩ := by
+  by_cases h : i.val ∈ s
+  · simp only [extendByZero₂_of_mem _ _ h, h, exists_true_left]
+  · simp only [extendByZero₂_of_notMem _ _ h, lt_irrefl, h, IsEmpty.exists_iff]
+
+end ExtendByZeroPreorder
 
 end Finset
 

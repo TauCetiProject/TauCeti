@@ -173,6 +173,7 @@ end TauCeti
 
 /-- Extension by zero of dependent functions on a finite set `s` to a finite set `t` is continuous
 for the product topologies. -/
+@[continuity, fun_prop]
 theorem Finset.continuous_extendByZero₂ {ι : Type*} [DecidableEq ι] {π : ι → Type*}
     [∀ i, Zero (π i)] [∀ i, TopologicalSpace (π i)] {s : Finset ι} (t : Finset ι) :
     Continuous (Finset.extendByZero₂ (π := π) (s := s) t) :=

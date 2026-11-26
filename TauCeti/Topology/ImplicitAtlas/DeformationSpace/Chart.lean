@@ -156,11 +156,8 @@ private theorem chartInv_mem_deformationSpace
     (hm : chartArg hJB m ∈ c.target ∩ c.symm ⁻¹' W) (hpos : ∀ α : I, α.val ∈ S → 0 < m.2.2 α)
     (hnn : ∀ α, 0 ≤ m.2.2 α) :
     chartInv 𝒜 (hSI.trans hIJ) hJB c m ∈ 𝒜.deformationSpace I hJB := by
-  have ht : ∀ α, 0 ≤ Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2 α := fun α ↦ by
-    by_cases h : α.val ∈ I
-    · rw [Finset.extendByZero₂_of_mem _ _ h]
-      exact hnn _
-    · rw [Finset.extendByZero₂_of_notMem _ _ h]
+  have ht : ∀ α, 0 ≤ Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2 α :=
+    Finset.extendByZero₂_nonneg (π := fun _ ↦ ℝ) hnn
   have htI : ∀ α : B, α.val ∉ I → Finset.extendByZero₂ (π := fun _ ↦ ℝ) B m.2.2 α = 0 :=
     fun α h ↦ Finset.extendByZero₂_of_notMem _ α h
   have hsrc : c.symm (chartArg hJB m) ∈ c.source := c.map_target hm.1
