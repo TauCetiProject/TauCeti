@@ -36,8 +36,12 @@ This is the action of the isomorphism classes of complex line bundles on the equ
 of `Spinᶜ` structures. Twisting preserves the orientation induced by `s`; on the classes of
 `Spinᶜ` structures inducing a fixed orientation the action is free and transitive. The
 isomorphism classes of complex line bundles are identified with Čech `H²(X; ℤ)` for paracompact
-Hausdorff bases, and with singular `H²(X; ℤ)` for CW complexes. The determinant line of
-`s.twist L` is that of `s` tensored with `L ⊗ L`. None of these statements is proved here.
+Hausdorff bases, and with singular `H²(X; ℤ)` for CW complexes. None of these statements is
+proved here. Writing `E` for the Hermitian line associated to `L`, the determinant line of
+`s.twist L` is that of `s` tensored with `E ⊗ E`, and each half-spinor bundle is that of `s`
+tensored with `E` (`TauCeti.SpinCStructure.determinantLineTwistEquiv`,
+`TauCeti.SpinCStructure.halfSpinorBundleTwistEquiv`, in
+`TauCeti.Topology.VectorBundle.SpinStructure.Twist.Spinor`).
 
 ## Main definitions
 
@@ -100,8 +104,7 @@ fibre `(s.twist L).P x` unfolds to the fibre of the extension downstream. -/
 noncomputable def twist (s : SpinCStructure F V n) : SpinCStructure F V n :=
   (s.fiberProd Circle L).extend (spinCGroup.mulCircle _ hQ)
     (spinCGroup.continuous_mulCircle _ _)
-    (by rw [MonoidHom.comp_assoc, spinCGroup.toSpecialOrthogonal_comp_mulCircle,
-      MonoidHom.comp_assoc])
+    (spinCGroup.subtype_comp_toSpecialOrthogonal_comp_mulCircle _ hQ)
     spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
 
 variable {L} (s : SpinCStructure F V n)

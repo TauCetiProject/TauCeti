@@ -19,8 +19,8 @@ edge sits in a type (I) simplex.
 ## Main results
 
 * `SSet.prodStdSimplex.pairingCore.Type₁.map_edge_of_index_eq_zero`: for the pairing of
-  `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n])`, a type (I) simplex whose type (II) face is its first
-  face starts with a vertical edge `(0, t) ⟶ (1, t)`.
+  `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n])`, a type (I) simplex whose type (II) face is its first
+  face starts with the vertical edge `(0, 0) ⟶ (1, 0)`.
 
 ## References
 
@@ -36,23 +36,27 @@ open CategoryTheory Simplicial
 
 namespace SSet.prodStdSimplex.pairingCore.Type₁
 
-/-- A type (I) simplex of Moss's pairing for `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n])` whose
-type (II) face is its first face starts with a vertical edge `(0, t) ⟶ (1, t)`. -/
-lemma map_edge_of_index_eq_zero {m n : ℕ} (s : Type₁.{u} (0 : Fin (m + 2)) n)
+/-- A type (I) simplex of Moss's pairing for `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n])` whose
+type (II) face is its first face starts with the vertical edge `(0, 0) ⟶ (1, 0)`: its first two
+vertices are `(0, t)` and `(1, t)`, and `t = 0` because the simplex, which does not lie in
+`Δ[m + 1] ⊗ ∂Δ[n]`, lies over every vertex of `Δ[n]`. -/
+lemma map_edge_of_index_eq_zero {m n : ℕ} (s : Type₁.{u} (0 : Fin (m + 1)) n)
     (hs : s.index = 0) :
     (yonedaEquiv.symm (s.x.cast s.hd).simplex).app _
         (stdSimplex.edge (s.d + 1) 0 1 (Fin.zero_le _)) =
-      (stdSimplex.edge (m + 2) 0 1 (Fin.zero_le _),
-        stdSimplex.const n ((s.x.cast s.hd).simplex.2 0) _) := by
+      (stdSimplex.edge (m + 1) 0 1 (Fin.zero_le _), stdSimplex.const n 0 _) := by
   have h := s.isIndex
   rw [hs, pairingCore.isIndex_succ] at h
   obtain ⟨h₀, h₁, h₂⟩ := h
+  have h0 : (s.x.cast s.hd).simplex.2 0 = 0 := by
+    obtain ⟨i, hi⟩ := pairingCore.mem_range_right s.x s.hd 0
+    exact le_antisymm ((stdSimplex.monotone_apply _ (Fin.zero_le i)).trans_eq hi) (Fin.zero_le _)
   -- Both sides are compared on their vertex functions: the vertex `i` of the left-hand side is
   -- by definition the vertex `i` of the simplex, and `Fin.castSucc 0`, `Fin.succ 0` are `0`, `1`.
   refine Prod.ext ?_ ?_ <;> ext i <;> fin_cases i
   · exact congrArg Fin.val h₀
   · exact congrArg Fin.val h₁
-  · rfl
-  · exact congrArg Fin.val h₂
+  · exact congrArg Fin.val h0
+  · exact congrArg Fin.val (h₂.trans h0)
 
 end SSet.prodStdSimplex.pairingCore.Type₁

@@ -132,10 +132,11 @@ formulation transfers (`TauCeti.PDE.energyFormH1_compL_eq_setIntegral`).
 * `TauCeti.PDE.eLpNorm_pullbackDensity_le`: for such changes of variables with Jacobian
   determinants of absolute value one, the transformed density has at most the `Lᵖ` norm of the
   original one.
-* `TauCeti.PDE.energyFormH1_pullbackPrincipal_smul_add_const`: under a homothety `z ↦ ε z + c`
-  the transformed principal coefficient is a positive multiple of `a (ε z + c)`, and
+* `TauCeti.PDE.energyFormH1_pullbackPrincipal_pullbackDensity_smul_add_const`: under a homothety
+  `z ↦ ε z + p` the transformed energy form is a positive multiple of the energy form with the
+  coefficients `a (ε z + p)` and `ε² c (ε z + p)`, and
   `TauCeti.PDE.exists_supersolution_comp_smul_add_const`: a rescaled weak supersolution of
-  `-div (a ∇u) ≥ 0` is a weak supersolution for the rescaled coefficients.
+  `-div (a ∇u) + c u ≥ 0` is a weak supersolution for the rescaled coefficients.
 
 ## References
 
@@ -1046,50 +1047,54 @@ theorem matrixBilinearForm_pullbackPrincipal_smul_add_const {ε : ℝ} (hε : 0 
   ext η ξ
   simp [ContinuousLinearMap.adjoint_id, mul_assoc]
 
-/-- Under the homothety `z ↦ ε z + c`, `ε > 0`, the energy form of the transformed principal
-coefficient is `ε ^ card ι ε⁻²` times the energy form of the composed coefficient `a ∘ T`. -/
-theorem energyFormH1_pullbackPrincipal_smul_add_const {ε : ℝ} (hε : 0 < ε)
-    (c : EuclideanSpace ℝ ι) (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
-    {U : Opens (EuclideanSpace ℝ ι)} (u v : W1p mu U 2) :
-    energyFormH1 (pullbackPrincipal (fun z => ε • z + c) a) 0 0 u v =
-      (ε ^ Fintype.card ι * (ε⁻¹ * ε⁻¹)) * energyFormH1 (fun z => a (ε • z + c)) 0 0 u v := by
-  rw [energyFormH1_zero_zero_eq_setIntegral, energyFormH1_zero_zero_eq_setIntegral,
-    ← integral_const_mul]
+/-- Under the homothety `z ↦ ε z + p`, `ε > 0`, the energy form of the transformed principal
+coefficient and the transformed density of a mass coefficient `c` is `ε ^ card ι ε⁻²` times the
+energy form of the composed coefficients `a ∘ T` and `ε² (c ∘ T)`. -/
+theorem energyFormH1_pullbackPrincipal_pullbackDensity_smul_add_const {ε : ℝ} (hε : 0 < ε)
+    (p : EuclideanSpace ℝ ι) (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
+    (c : EuclideanSpace ℝ ι → ℝ) {U : Opens (EuclideanSpace ℝ ι)} (u v : W1p mu U 2) :
+    energyFormH1 (pullbackPrincipal (fun z => ε • z + p) a) 0
+        (pullbackDensity (fun z => ε • z + p) c) u v =
+      (ε ^ Fintype.card ι * (ε⁻¹ * ε⁻¹)) *
+        energyFormH1 (fun z => a (ε • z + p)) 0 (fun z => ε ^ 2 * c (ε • z + p)) u v := by
+  rw [energyFormH1_def, energyFormH1_def, ← integral_const_mul]
   refine integral_congr_ae (ae_of_all _ fun z => ?_)
-  dsimp only
-  rw [matrixBilinearForm_pullbackPrincipal_smul_add_const hε c a z, smul_apply, smul_apply,
-    smul_eq_mul]
+  simp only [pullbackDensity_apply, abs_det_fderiv_smul_add_const hε]
+  simp [matrixBilinearForm_pullbackPrincipal_smul_add_const hε p a z]
+  field_simp
 
 omit [DecidableEq ι] in
 /-- **Rescaling a supersolution.** Let `u ∈ H¹(Ω)` be a weak supersolution of
-`-div (a ∇u) ≥ 0` in `Ω`, and let the homothety `T z = ε z + c`, `ε > 0`, map an open set `U` into
-`Ω`. Then `u ∘ T ∈ H¹(U)` is a weak supersolution of `-div ((a ∘ T) ∇v) ≥ 0` in `U`. -/
+`-div (a ∇u) + c u ≥ 0` in `Ω`, and let the homothety `T z = ε z + p`, `ε > 0`, map an open set
+`U` into `Ω`. Then `u ∘ T ∈ H¹(U)` is a weak supersolution of
+`-div ((a ∘ T) ∇v) + ε² (c ∘ T) v ≥ 0` in `U`. -/
 theorem exists_supersolution_comp_smul_add_const {Ω : Opens (EuclideanSpace ℝ ι)}
-    {u : W1p mu Ω 2} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {u : W1p mu Ω 2} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ}
     (hu : ∀ v : W1p0 mu Ω 2, (∀ᵐ x ∂mu.restrict (Ω : Set (EuclideanSpace ℝ ι)),
-      0 ≤ W1p.value (v : W1p mu Ω 2) x) → 0 ≤ energyFormH1 a 0 0 u (v : W1p mu Ω 2))
-    {ε : ℝ} (hε : 0 < ε) (c : EuclideanSpace ℝ ι) (U : Opens (EuclideanSpace ℝ ι))
-    (hUΩ : MapsTo (fun z => ε • z + c) U Ω) :
+      0 ≤ W1p.value (v : W1p mu Ω 2) x) → 0 ≤ energyFormH1 a 0 c u (v : W1p mu Ω 2))
+    {ε : ℝ} (hε : 0 < ε) (p : EuclideanSpace ℝ ι) (U : Opens (EuclideanSpace ℝ ι))
+    (hUΩ : MapsTo (fun z => ε • z + p) U Ω) :
     ∃ uε : W1p mu U 2, W1p.value uε =ᵐ[mu.restrict (U : Set (EuclideanSpace ℝ ι))]
-        (fun z => W1p.value u (ε • z + c)) ∧
+        (fun z => W1p.value u (ε • z + p)) ∧
       ∀ v : W1p0 mu U 2, (∀ᵐ z ∂mu.restrict (U : Set (EuclideanSpace ℝ ι)),
         0 ≤ W1p.value (v : W1p mu U 2) z) →
-        0 ≤ energyFormH1 (fun z => a (ε • z + c)) 0 0 uε (v : W1p mu U 2) := by
+        0 ≤ energyFormH1 (fun z => a (ε • z + p)) 0 (fun z => ε ^ 2 * c (ε • z + p)) uε
+          (v : W1p mu U 2) := by
   classical
-  set V : Opens (EuclideanSpace ℝ ι) := ⟨(fun y => ε⁻¹ • y + -(ε⁻¹ • c)) ⁻¹' U,
+  set V : Opens (EuclideanSpace ℝ ι) := ⟨(fun y => ε⁻¹ • y + -(ε⁻¹ • p)) ⁻¹' U,
       U.isOpen.preimage (by fun_prop)⟩
-  have hST : ∀ z : EuclideanSpace ℝ ι, ε⁻¹ • (ε • z + c) + -(ε⁻¹ • c) = z := fun z => by
+  have hST : ∀ z : EuclideanSpace ℝ ι, ε⁻¹ • (ε • z + p) + -(ε⁻¹ • p) = z := fun z => by
     rw [smul_add, smul_smul, inv_mul_cancel₀ hε.ne', one_smul, add_neg_cancel_right]
-  have hTS : ∀ y : EuclideanSpace ℝ ι, ε • (ε⁻¹ • y + -(ε⁻¹ • c)) + c = y := fun y => by
+  have hTS : ∀ y : EuclideanSpace ℝ ι, ε • (ε⁻¹ • y + -(ε⁻¹ • p)) + p = y := fun y => by
     rw [smul_add, smul_smul, mul_inv_cancel₀ hε.ne', one_smul, smul_neg, smul_smul,
       mul_inv_cancel₀ hε.ne', one_smul, neg_add_cancel_right]
   -- Membership in the preimage `V` is membership of the image under the inverse homothety.
-  have hT := Wkp.IsChangeOfVariables.smul_add_const (k := 1) hε c (U := U) (V := V)
-    (fun z hz => show ε⁻¹ • (ε • z + c) + -(ε⁻¹ • c) ∈ (U : Set (EuclideanSpace ℝ ι)) by
+  have hT := Wkp.IsChangeOfVariables.smul_add_const (k := 1) hε p (U := U) (V := V)
+    (fun z hz => show ε⁻¹ • (ε • z + p) + -(ε⁻¹ • p) ∈ (U : Set (EuclideanSpace ℝ ι)) by
       rwa [hST z])
-  have hS := Wkp.IsChangeOfVariables.smul_add_const (k := 1) (inv_pos.2 hε) (-(ε⁻¹ • c))
+  have hS := Wkp.IsChangeOfVariables.smul_add_const (k := 1) (inv_pos.2 hε) (-(ε⁻¹ • p))
     (U := V) (V := U) (fun y hy => hy)
-  have himage : (fun z => ε • z + c) '' U = V :=
+  have himage : (fun z => ε • z + p) '' U = V :=
     Subset.antisymm hT.mapsTo.image_subset fun y hy => ⟨_, hy, hTS y⟩
   have hVΩ : V ≤ Ω := fun y hy => hTS y ▸ hUΩ hy
   have hp : (2 : ENNReal) ≠ ⊤ := ENNReal.ofNat_ne_top
@@ -1112,9 +1117,9 @@ theorem exists_supersolution_comp_smul_add_const {Ω : Opens (EuclideanSpace ℝ
         hT.pos hT.le_abs_det hS.differentiableOn hS.injOn hS.mapsTo hS.norm_fderiv_le hS.pos
         hS.le_abs_det (fun z _ => hST z) _
     have h := energyFormH1_compL hT.differentiableOn hT.injOn hT.mapsTo hT.norm_fderiv_le hT.pos
-      hT.le_abs_det himage a 0 0 (W1p.restrictL hVΩ u) w
-    rw [pullbackDrift_zero, pullbackDensity_zero, hvw,
-      energyFormH1_pullbackPrincipal_smul_add_const hε c a] at h
+      hT.le_abs_det himage a 0 c (W1p.restrictL hVΩ u) w
+    rw [pullbackDrift_zero, hvw,
+      energyFormH1_pullbackPrincipal_pullbackDensity_smul_add_const hε p a c] at h
     have hnn := energyFormH1_restrictL_nonneg hVΩ hu ⟨w, hw0⟩ hwpos
     rw [← h] at hnn
     exact (mul_nonneg_iff_of_pos_left (by positivity)).1 hnn

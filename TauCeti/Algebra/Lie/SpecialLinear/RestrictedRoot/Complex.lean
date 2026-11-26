@@ -32,6 +32,7 @@ and `𝔪 = i𝔞`.
 ## Main definitions
 
 * `TauCeti.slComplexRealDiagonal`: the real trace-zero diagonal matrices in `𝔰𝔩_n(ℂ)`.
+* `TauCeti.slComplexRealDiagonalSubalgebra`: the same, as a Lie subalgebra.
 * `TauCeti.slComplexRestrictedRoot`: the functional `e_i - e_j` on them.
 
 ## Main results
@@ -204,6 +205,31 @@ theorem isMaximalAbelianInP_slComplexRealDiagonal :
   refine ⟨hdiag, fun k ↦ ?_⟩
   simpa [Complex.conj_eq_iff_im] using congrFun (congrFun
     ((LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff _ _).mp (h𝔟.1 hY)) k) k
+
+variable (n) in
+/-- The real trace-zero diagonal matrices in `𝔰𝔩_n(ℂ)` viewed as real, as a Lie subalgebra (it
+is abelian). Its underlying subspace is `TauCeti.slComplexRealDiagonal`
+(`TauCeti.slComplexRealDiagonalSubalgebra_toSubmodule`). -/
+def slComplexRealDiagonalSubalgebra : LieSubalgebra ℝ (slComplexReal n) :=
+  { slComplexRealDiagonal n with
+    lie_mem' := fun hX hY ↦ by
+      rw [isMaximalAbelianInP_slComplexRealDiagonal.lie_eq_zero hX hY]
+      exact (slComplexRealDiagonal n).zero_mem }
+
+variable (n) in
+/-- The Lie subalgebra `TauCeti.slComplexRealDiagonalSubalgebra` has underlying subspace
+`TauCeti.slComplexRealDiagonal`. -/
+@[simp]
+theorem slComplexRealDiagonalSubalgebra_toSubmodule :
+    (slComplexRealDiagonalSubalgebra n).toSubmodule = slComplexRealDiagonal n :=
+  (rfl)
+
+/-- Membership in `TauCeti.slComplexRealDiagonalSubalgebra` is membership in its underlying
+subspace `TauCeti.slComplexRealDiagonal`. -/
+@[simp]
+theorem mem_slComplexRealDiagonalSubalgebra {X : slComplexReal n} :
+    X ∈ slComplexRealDiagonalSubalgebra n ↔ X ∈ slComplexRealDiagonal n :=
+  Iff.rfl
 
 /-- **`𝔪 = i𝔞`**: an element of the fixed subalgebra `𝔨` (the skew-Hermitian matrices) centralizes
 `𝔞` exactly when it is `i` times an element of `𝔞`. -/
