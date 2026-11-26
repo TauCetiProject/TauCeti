@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Algebra.Lie.Semisimple.Defs
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
+public import Mathlib.LinearAlgebra.Transvection.Basic
 
 import Mathlib.Algebra.Lie.Semisimple.Basic
 import Mathlib.Order.Minimal
@@ -21,9 +22,10 @@ Let `B` be an alternating bilinear form on a module `V`. For `δ : V`, the endom
 `N(δ) = (B.flip δ).smulRight δ : x ↦ B x δ • δ`
 
 is skew-adjoint for `B` and squares to zero, so `1 + c • N(δ)` is the symplectic transvection
-`LinearMap.transvection (c • B.flip δ) δ`, with logarithm `c • N(δ)`. These are the elements of
-the symplectic Lie algebra `skewAdjointLieSubalgebra B` that the local monodromy of a family
-acquiring an ordinary double point contributes, by the Picard–Lefschetz formula.
+`LinearMap.transvection (c • B.flip δ) δ`
+(`LinearMap.BilinForm.transvection_smul_flip_eq_one_add`), with logarithm `c • N(δ)`. These are
+the elements of the symplectic Lie algebra `skewAdjointLieSubalgebra B` that the local monodromy
+of a family acquiring an ordinary double point contributes, by the Picard–Lefschetz formula.
 
 The main theorem, `LinearMap.BilinForm.lieSpan_smulRight_flip_eq_skewAdjointLieSubalgebra`, is a
 lemma of Deligne: if `B` is nondegenerate on a finite-dimensional vector space `V` and `V` is an
@@ -43,6 +45,8 @@ for `v ∈ V` span the skew-adjoint endomorphisms
 
 ## Main results
 
+* `LinearMap.BilinForm.transvection_smul_flip_eq_one_add`: the transvection
+  `LinearMap.transvection (c • B.flip δ) δ` is `1 + c • N(δ)`.
 * `LinearMap.BilinForm.smulRight_flip_mem_skewAdjointSubmodule`: `N(δ)` is skew-adjoint.
 * `LinearMap.BilinForm.smulRight_flip_mul_self`: `N(δ) * N(δ) = 0`.
 * `LinearMap.BilinForm.smulRight_flip_smul`: `N(t • δ) = (t * t) • N(δ)`.
@@ -68,6 +72,19 @@ open LinearMap (BilinForm)
 open Submodule
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+
+section CommSemiring
+
+variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] {B : BilinForm R M}
+
+/-- The transvection `x ↦ x + c * B x δ • δ` is `1 + c • N(δ)`, where `N(δ)` is the endomorphism
+`x ↦ B x δ • δ`. -/
+theorem transvection_smul_flip_eq_one_add (c : R) (δ : M) :
+    LinearMap.transvection (c • B.flip δ) δ = 1 + c • (B.flip δ).smulRight δ := by
+  ext x
+  simp [LinearMap.transvection.apply, smul_smul]
+
+end CommSemiring
 
 section CommRing
 
