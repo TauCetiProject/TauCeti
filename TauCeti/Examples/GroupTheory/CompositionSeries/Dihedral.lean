@@ -39,8 +39,7 @@ example : ∃ s : GroupCompositionSeries (DihedralGroup 4), ∃ i, ¬ (s i).Norm
   let H := Subgroup.zpowers (sr (0 : ZMod 4))
   have hHK : H ≤ K := by
     apply Subgroup.zpowers_le.mpr
-    change parity (sr 0) = 1
-    decide +kernel
+    exact MonoidHom.mem_ker.mpr (by decide +kernel)
   have hcomm : ∀ x y : DihedralGroup 4,
       parity x = 1 → parity y = 1 → x * y = y * x := by decide +kernel
   have hH : (H.subgroupOf K).Normal := by
@@ -57,13 +56,12 @@ example : ∃ s : GroupCompositionSeries (DihedralGroup 4), ∃ i, ¬ (s i).Norm
   let c : RelSeries {p : Subgroup (DihedralGroup 4) × Subgroup (DihedralGroup 4) |
       p.1 ≤ p.2 ∧ (p.1.subgroupOf p.2).Normal} :=
     (((RelSeries.singleton _ ⊥).snoc H (by
-      simpa only [Set.mem_ofPred_eq, RelSeries.last_singleton] using
-        (show (⊥ : Subgroup (DihedralGroup 4)) ≤ H ∧ ((⊥ : Subgroup _).subgroupOf H).Normal
-          from ⟨bot_le, inferInstance⟩))).snoc K (by
+      simp only [Set.mem_ofPred_eq, RelSeries.last_singleton]
+      exact ⟨bot_le, inferInstance⟩)).snoc K (by
       simpa only [Set.mem_ofPred_eq, RelSeries.last_snoc] using ⟨hHK, hH⟩)) |>.snoc ⊤ (by
         simp only [Set.mem_ofPred_eq, RelSeries.last_snoc]
         exact ⟨le_top, inferInstance⟩)
-  obtain ⟨s, hs0, hs1, hsMem⟩ := exists_relSeries_isCompositionStep_refinement c
+  obtain ⟨s, hs0, hs1, hsMem⟩ := c.exists_relSeries_isCompositionStep_refinement
   have hHmem : H ∈ c := by
     apply RelSeries.mem_snoc.mpr ∘ Or.inl
     apply RelSeries.mem_snoc.mpr ∘ Or.inl

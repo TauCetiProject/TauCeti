@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.NormalSubgroup.ChiefSeries
 public import TauCeti.GroupTheory.CompositionSeries.Basic
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # Refining normal-inclusion chains to group composition series
@@ -20,7 +21,7 @@ order covers with composition steps in the relevant subgroup intervals.
 
 ## Main results
 
-* `TauCeti.exists_relSeries_isCompositionStep_refinement`: refinement of a normal-inclusion chain.
+* `RelSeries.exists_relSeries_isCompositionStep_refinement`: refinement of a normal-inclusion chain.
 * `TauCeti.ChiefSeries.exists_relSeries_isCompositionStep_refinement`: refinement of a chief series.
 * `TauCeti.ChiefSeries.exists_groupCompositionSeries_refinement`: refinement from `⊥` to `⊤` when
   the ambient group's subgroup lattice has no infinite ascending or descending chain.
@@ -28,14 +29,12 @@ order covers with composition steps in the relevant subgroup intervals.
 
 public section
 
-namespace TauCeti
-
 variable {G : Type*} [Group G]
 
 /-- A chain of normal inclusions refines to composition steps, preserving its endpoints and all
 its terms, if the subgroup lattice of its last term has no infinite ascending or descending
 chain. -/
-theorem exists_relSeries_isCompositionStep_refinement
+theorem RelSeries.exists_relSeries_isCompositionStep_refinement
     (s : RelSeries {p : Subgroup G × Subgroup G | p.1 ≤ p.2 ∧ (p.1.subgroupOf p.2).Normal})
     [WellFoundedLT (Subgroup s.last)] [WellFoundedGT (Subgroup s.last)] :
     ∃ t : RelSeries {p : Subgroup G × Subgroup G | p.1.IsCompositionStep p.2},
@@ -45,24 +44,15 @@ theorem exists_relSeries_isCompositionStep_refinement
   | singleton A =>
     intro _ _
     refine ⟨RelSeries.singleton _ A, by simp only [RelSeries.head_singleton],
-      by simp only [RelSeries.last_singleton], ?_⟩
-    rintro H ⟨i, rfl⟩
-    have hi : i = 0 := by
-      apply Fin.ext
-      exact Nat.eq_zero_of_le_zero (Nat.le_of_lt_succ
-        (by simpa only [RelSeries.singleton_length] using i.isLt))
-    subst i
-    refine ⟨0, ?_⟩
-    simp only [RelSeries.apply_zero, RelSeries.head_singleton]
+      by simp only [RelSeries.last_singleton], fun _ h ↦ h⟩
   | snoc s B hstep ih =>
     intro hlt hgt
     have : WellFoundedLT (Subgroup B) := (RelSeries.last_snoc s B hstep) ▸ hlt
     have : WellFoundedGT (Subgroup B) := (RelSeries.last_snoc s B hstep) ▸ hgt
-    let e : Subgroup s.last ↪o Subgroup B := OrderEmbedding.ofMapLEIff
-      (Subgroup.map (Subgroup.inclusion hstep.1))
-      (fun _ _ ↦ Subgroup.map_le_map_iff_of_injective (Subgroup.inclusion_injective _))
+    let e := (Subgroup.inclusion hstep.1).subgroupOrderEmbedding
+      (Subgroup.inclusion_injective _)
     obtain ⟨t, htHead, htLast, htMem⟩ := @ih e.wellFoundedLT e.wellFoundedGT
-    obtain ⟨u, huHead, huLast⟩ := exists_relSeries_isCompositionStep_between
+    obtain ⟨u, huHead, huLast⟩ := TauCeti.exists_relSeries_isCompositionStep_between
       (A := s.last) (B := B) hstep.1 hstep.2
     have hconnect : t.last = u.head := htLast.trans huHead.symm
     have hleft : ∀ H ∈ t, H ∈ t.smash u hconnect := by
@@ -74,6 +64,8 @@ theorem exists_relSeries_isCompositionStep_refinement
     · exact hleft H (htMem H hH)
     · rw [← huLast, ← RelSeries.last_smash hconnect]
       exact RelSeries.last_mem _
+
+namespace TauCeti
 
 /-- A chief series refines to composition steps with the same endpoints and every original term
 if the subgroup lattice of its last term has no infinite ascending or descending chain. -/
@@ -89,7 +81,7 @@ theorem ChiefSeries.exists_relSeries_isCompositionStep_refinement (s : ChiefSeri
   have hlast : c.last = (s.last : Subgroup G) := RelSeries.last_map ..
   have : WellFoundedLT (Subgroup c.last) := by rw [hlast]; infer_instance
   have : WellFoundedGT (Subgroup c.last) := by rw [hlast]; infer_instance
-  obtain ⟨t, htHead, htLast, htMem⟩ := TauCeti.exists_relSeries_isCompositionStep_refinement c
+  obtain ⟨t, htHead, htLast, htMem⟩ := c.exists_relSeries_isCompositionStep_refinement
   refine ⟨t, ?_, htLast.trans hlast, fun i ↦ htMem _ ⟨i, ?_⟩⟩
   · simpa only [c, RelSeries.head_map, RelHom.coeFn_mk] using htHead
   · exact RelSeries.map_apply ..
@@ -101,9 +93,7 @@ theorem ChiefSeries.exists_groupCompositionSeries_refinement
     [WellFoundedLT (Subgroup G)] [WellFoundedGT (Subgroup G)]
     (s : ChiefSeries G) (hhead : s.head = ⊥) (hlast : s.last = ⊤) :
     ∃ t : GroupCompositionSeries G, ∀ i, ∃ j, t j = (s i : Subgroup G) := by
-  let e : Subgroup (s.last : Subgroup G) ↪o Subgroup G := OrderEmbedding.ofMapLEIff
-    (Subgroup.map (s.last : Subgroup G).subtype)
-    (fun _ _ ↦ Subgroup.map_le_map_iff_of_injective (s.last : Subgroup G).subtype_injective)
+  let e := (s.last : Subgroup G).subtype.subgroupOrderEmbedding (Subgroup.subtype_injective _)
   have := e.wellFoundedLT
   have := e.wellFoundedGT
   obtain ⟨t, htHead, htLast, htMem⟩ := s.exists_relSeries_isCompositionStep_refinement

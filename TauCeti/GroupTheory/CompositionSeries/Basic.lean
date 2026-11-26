@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.NormalSubgroup.Lattice
 public import Mathlib.Data.SetLike.Fintype
 public import Mathlib.GroupTheory.IsSubnormal
 public import Mathlib.Order.RelSeries
+import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
 # Composition series of groups
@@ -110,9 +111,8 @@ theorem exists_relSeries_isCompositionStep_between {A B : Subgroup G}
     by_cases h : A = C.val
     · subst A
       exact ⟨.singleton _ C.val, RelSeries.head_singleton _, RelSeries.last_singleton _⟩
-    let e : Subgroup C.val ↪o Subgroup B := OrderEmbedding.ofMapLEIff
-      (fun D ↦ D.map (Subgroup.inclusion C.property))
-      (fun _ _ ↦ Subgroup.map_le_map_iff_of_injective (Subgroup.inclusion_injective _))
+    let e := (Subgroup.inclusion C.property).subgroupOrderEmbedding
+      (Subgroup.inclusion_injective _)
     have : WellFoundedGT (Subgroup C.val) := e.wellFoundedGT
     obtain ⟨D, hAD, hND, hstep⟩ := exists_terminal_isCompositionStep (lt_of_le_of_ne hAC h) hN
     obtain ⟨s, hsA, hsD⟩ := ih ⟨D, hstep.lt.le.trans C.property⟩ hstep.lt A hAD hND
@@ -122,9 +122,7 @@ theorem exists_relSeries_isCompositionStep_between {A B : Subgroup G}
 In particular, this applies to every finite group. -/
 theorem nonempty_groupCompositionSeries [WellFoundedLT (Subgroup G)]
     [WellFoundedGT (Subgroup G)] : Nonempty (GroupCompositionSeries G) := by
-  let e : Subgroup (⊤ : Subgroup G) ↪o Subgroup G :=
-    (Subgroup.MapSubtype.orderIso (⊤ : Subgroup G)).toOrderEmbedding.trans
-    (OrderEmbedding.subtype _)
+  let e := (⊤ : Subgroup G).subtype.subgroupOrderEmbedding (Subgroup.subtype_injective _)
   have : WellFoundedLT (Subgroup (⊤ : Subgroup G)) := e.wellFoundedLT
   have : WellFoundedGT (Subgroup (⊤ : Subgroup G)) := e.wellFoundedGT
   obtain ⟨s, h0, h1⟩ := exists_relSeries_isCompositionStep_between (G := G) bot_le
