@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Airy.Basic
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.SpecialFunctions.Airy.Equation
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.Exp.PowerDecay
 
 /-!
@@ -133,9 +134,14 @@ private theorem pow_mul_cexp_neg_cube_div_three_add_mul_eq (n : ℕ) (z : ℂ) (
 `t ↦ tⁿ exp(−t³/3 + z t)` is Bochner integrable on `(0, ∞)`. -/
 theorem _root_.Nat.integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul (n : ℕ) (z : ℂ) :
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) (Ioi 0) := by
-  simpa only [pow_mul_cexp_neg_cube_div_three_add_mul_eq] using
-    integrableOn_cpow_mul_cexp_mul_sub_mul_rpow (p := 3) (q := n) (b := 1 / 3) (by norm_num)
-      (by linarith [n.cast_nonneg (α := ℝ)]) (by norm_num) z
+  refine (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 3) (s := n)
+    (by norm_num) (by norm_num) (by simp; linarith [n.cast_nonneg (α := ℝ)]) z).congr_fun
+    (fun t _ => ?_) measurableSet_Ioi
+  have hexp : z * t - (1 / 3 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ) = -(t : ℂ) ^ 3 / 3 + z * t := by
+    rw [show ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) by norm_num, cpow_natCast]
+    ring
+  dsimp only
+  rw [cpow_natCast, hexp]
 
 /-- The integrand `t ↦ exp(−t³/3 + z t)` of `Hi` is Bochner integrable on `(0, ∞)`. -/
 theorem _root_.Complex.integrableOn_cexp_neg_cube_div_three_add_mul (z : ℂ) :
@@ -250,16 +256,24 @@ theorem scorerHi_rotation_ode {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
 `Hi⁽ⁿ⁾(0) = 3^{(n − 2)/3} Γ((n + 1)/3) / π`. -/
 theorem _root_.Nat.iterate_deriv_scorerHi_zero (n : ℕ) :
     deriv^[n] scorerHi 0 = (3 : ℂ) ^ (((n : ℂ) - 2) / 3) * Gamma (((n : ℂ) + 1) / 3) / π := by
-  -- `(1/3)^(-(n + 1)/3) * (1/3) = 3^((n - 2)/3)`, as real numbers.
-  have h3 : (1 / 3 : ℝ) ^ (-((n : ℝ) + 1) / 3) * (1 / 3) = (3 : ℝ) ^ (((n : ℝ) - 2) / 3) := by
-    rw [one_div, Real.inv_rpow (by norm_num), ← Real.rpow_neg (by norm_num),
-      ← Real.rpow_neg_one 3, ← Real.rpow_add (by norm_num)]
-    ring_nf
-  simp_rw [Nat.iterate_deriv_scorerHi, pow_mul_cexp_neg_cube_div_three_add_mul_eq, zero_mul,
-    zero_sub]
-  rw [integral_cpow_mul_cexp_neg_mul_rpow (by norm_num) (by linarith [n.cast_nonneg (α := ℝ)])
-    (by norm_num), h3, ofReal_mul, ofReal_cpow (by norm_num), ← Gamma_ofReal]
-  push_cast
+  have hint :
+      ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + 0 * t) =
+        ∫ t in Ioi (0 : ℝ),
+          (t : ℂ) ^ (n : ℂ) * cexp (-(1 / 3 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ)) := by
+    refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+    have hexp : -(t : ℂ) ^ 3 / 3 + 0 * t = -(1 / 3 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ) := by
+      rw [show ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) by norm_num, cpow_natCast]
+      ring
+    rw [cpow_natCast, hexp]
+  have hpow : (1 / 3 : ℂ) ^ (-((n : ℂ) + 1) / 3) * (1 / (3 : ℂ)) =
+      (3 : ℂ) ^ (((n : ℂ) - 2) / 3) := by
+    have hexp : ((n : ℂ) + 1) / 3 + (-1) = ((n : ℂ) - 2) / 3 := by ring
+    rw [neg_div, one_div, ← ofReal_ofNat 3, inv_cpow_ofReal_nonneg (by norm_num : (0 : ℝ) ≤ 3),
+      cpow_neg, inv_inv, ← cpow_neg_one, ← cpow_add _ _ (by norm_num), ofReal_ofNat, hexp]
+  rw [Nat.iterate_deriv_scorerHi, hint,
+    integral_cpow_mul_cexp_neg_mul_cpow_Ioi (p := 3) (b := 1 / 3) (s := n)
+      (by norm_num) (by norm_num) (by simp; linarith [n.cast_nonneg (α := ℝ)]),
+    ofReal_ofNat, hpow]
   ring
 
 /-- The value `Hi(0) = 3^{−2/3} Γ(1/3) / π`. -/
