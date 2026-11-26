@@ -1,0 +1,195 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Normed.Algebra.Convolution
+public import TauCeti.Analysis.Normed.Algebra.DividedPower
+public import TauCeti.Analysis.Normed.Algebra.Integral
+public import TauCeti.Analysis.Normed.Field.Basic
+public import TauCeti.Analysis.Normed.Field.Characteristic
+public import TauCeti.Algebra.Coalgebra.Convolution.FiniteCoefficients
+public import TauCeti.RingTheory.IntegralClosure.AlgHom
+public import Mathlib.RingTheory.Valuation.LocalSubring
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
+
+/-!
+# Integral nearly primitive functionals
+
+A functional on a finite free bialgebra over the integers of an algebraically closed
+ultrametric field is integral after scaling by the factorial radius, provided its values
+at group-like elements and its deviation from the Leibniz rule are integral.
+The proof combines character descent, bounded powers of integral elements, and the
+ultrametric divided-power estimate. No completeness assumption is needed.
+
+## References
+
+The argument is due to L. Alpöge, from his formal Lean proof of the Riemann hypothesis
+for Dirichlet L-functions (2026), https://github.com/leanprover-community/riemann-hypothesis;
+the formalization here is independent of that source.
+-/
+
+public noncomputable section
+
+open TensorProduct WithConv
+
+namespace WithConv
+
+section Seminorm
+
+variable {R C M : Type*} [CommRing R] [NormedField C] [Algebra R C]
+  [AddCommGroup M] [Module R M] [Coalgebra R M] [Module.Finite R M]
+
+/-- The sup norm on the finite convolution algebra, bundled as a ring seminorm. -/
+def supNormRingSeminorm (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
+    RingSeminorm (WithConv (M →ₗ[R] C)) where
+  toFun f := f.ofConv.supNorm
+  map_zero' := LinearMap.supNorm_zero
+  add_le' _ _ := (LinearMap.supNorm_add_le_max _ _ hR).trans
+    (max_le_add_of_nonneg (LinearMap.supNorm_nonneg _) (LinearMap.supNorm_nonneg _))
+  neg' f := LinearMap.supNorm_neg f.ofConv
+  mul_le' f g := supNorm_convMul_le f g hR
+
+/-- The bundled convolution seminorm is the sup norm of the underlying functional. -/
+@[simp]
+theorem supNormRingSeminorm_apply (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1)
+    (f : WithConv (M →ₗ[R] C)) : supNormRingSeminorm (M := M) hR f = f.ofConv.supNorm := (rfl)
+
+/-- The convolution sup seminorm is ultrametric. -/
+theorem isNonarchimedean_supNormRingSeminorm (hR : ∀ r : R, ‖algebraMap R C r‖ ≤ 1) :
+    IsNonarchimedean (supNormRingSeminorm (M := M) hR) :=
+  fun f g ↦ LinearMap.supNorm_add_le_max f.ofConv g.ofConv hR
+
+end Seminorm
+
+section Valuation
+
+variable {C : Type*} [NormedField C] [IsUltrametricDist C]
+
+local notation "O(" C ")" => Valuation.valuationSubring (NormedField.valuation (K := C))
+
+private theorem norm_coe_le_one (r : O(C)) : ‖algebraMap O(C) C r‖ ≤ 1 := by
+  exact_mod_cast r.property
+
+section Coalgebra
+
+variable {A : Type*} [AddCommGroup A] [Module O(C) A] [Coalgebra O(C) A]
+  [Coalgebra.IsCocomm O(C) A] [Module.Finite O(C) A] [Module.Free O(C) A]
+
+/-- A functional integral at all group-like elements has bounded convolution powers. -/
+theorem exists_bound_pow_of_groupLike [IsAlgClosed C] (y : WithConv (A →ₗ[O(C)] C))
+    (hy : ∀ u : GroupLike O(C) A, y.ofConv u.val ∈ O(C)) :
+    ∃ K : ℝ, ∀ n : ℕ, (y ^ n).ofConv.supNorm ≤ K := by
+  have : Module.Finite C (WithConv (A →ₗ[O(C)] C)) :=
+    Module.Finite.equiv (WithConv.linearEquiv C _).symm
+  have hyint : IsIntegral O(C) y :=
+    (TauCeti.isIntegral_iff_forall_algHom_mem_range (R := O(C)) (K := C)).mpr fun χ ↦ by
+      obtain ⟨u, hu⟩ := TauCeti.ConvolutionDual.exists_groupLike_algHom_coefficients χ
+      rw [hu]
+      exact ⟨⟨y.ofConv u.val, hy u⟩, rfl⟩
+  apply (supNormRingSeminorm (M := A) norm_coe_le_one).exists_bound_pow_of_isIntegral _ hyint
+  intro r f
+  have heq : (r • f : WithConv (A →ₗ[O(C)] C)) = (r : C) • f := by
+    ext a
+    rfl
+  rw [heq, supNormRingSeminorm_apply, ofConv_smul, LinearMap.supNorm_smul]
+  exact (mul_le_mul_of_nonneg_right (norm_coe_le_one r) f.ofConv.supNorm_nonneg).trans_eq
+    (one_mul _)
+
+end Coalgebra
+
+variable {A : Type*} [Ring A] [Bialgebra O(C) A] [Coalgebra.IsCocomm O(C) A]
+  [Module.Finite O(C) A] [Module.Free O(C) A]
+
+/-- A nearly primitive functional integral at group-like elements becomes integral after
+scaling by any scalar in the closed factorial radius, at every prime including `2`. -/
+theorem smul_apply_mem_valuationSubring_of_groupLike [IsAlgClosed C]
+    (p : ℕ) (hp : p.Prime) (hpC : ‖(p : C)‖ < 1) (y : WithConv (A →ₗ[O(C)] C))
+    (hy : ∀ u : GroupLike O(C) A, y.ofConv u.val ∈ O(C))
+    (he : ∀ a b : A, y.ofConv (a * b) -
+      algebraMap O(C) C (Coalgebra.counit b) * y.ofConv a -
+      algebraMap O(C) C (Coalgebra.counit a) * y.ofConv b ∈ O(C))
+    (κ : C) (hκ : ‖κ‖ ^ (p - 1) ≤ ‖(p : C)‖) (a : A) :
+    κ * y.ofConv a ∈ O(C) := by
+  by_cases hp0 : (p : C) = 0
+  · have hpow : ‖κ‖ ^ (p - 1) = 0 :=
+      le_antisymm (by simpa only [hp0, norm_zero] using hκ) (by positivity)
+    have hκ0 : κ = 0 := norm_eq_zero.mp (eq_zero_of_pow_eq_zero hpow)
+    simp [hκ0]
+  have : CharZero C := NormedField.charZero_of_prime_norm_lt_one hp hpC hp0
+  let : NontriviallyNormedField C := NontriviallyNormedField.ofNormNeOne
+    ⟨(p : C), Nat.cast_ne_zero.mpr hp.ne_zero, hpC.ne⟩
+  let : DenselyNormedField C :=
+    { ‹NontriviallyNormedField C› with
+      lt_norm_lt := fun _ _ h₀ hlt ↦
+        NormedField.exists_lt_norm_lt_of_isAlgClosed C h₀ hlt }
+  let N := supNormRingSeminorm (M := A) (norm_coe_le_one (C := C))
+  let M := supNormRingSeminorm (M := A ⊗[O(C)] A) (norm_coe_le_one (C := C))
+  have herr : M (TauCeti.Bialgebra.convolutionDelta O(C) C A y -
+      tensorCounitRight O(C) C A A y - tensorCounitLeft O(C) C A A y) ≤ 1 := by
+    apply (LinearMap.supNorm_le_iff _ norm_coe_le_one).mpr
+    apply LinearMap.norm_apply_le_of_tmul
+    intro a b
+    have h := he a b
+    have hn : ‖y.ofConv (a * b) -
+        algebraMap O(C) C (Coalgebra.counit b) * y.ofConv a -
+        algebraMap O(C) C (Coalgebra.counit a) * y.ofConv b‖ ≤ 1 := by
+      exact_mod_cast h
+    simpa [mul_comm] using hn
+  have hcross (f g : WithConv (A →ₗ[O(C)] C)) :
+      M (tensorCounitRight O(C) C A A f * tensorCounitLeft O(C) C A A g) = N f * N g := by
+    have h : tensorCounitRight O(C) C A A f * tensorCounitLeft O(C) C A A g = mulTensor f g := by
+      simp
+    rw [h]
+    exact supNorm_mulTensor f g norm_coe_le_one
+  have hbound := N.smul_le_one_of_bounded_powers M
+    (isNonarchimedean_supNormRingSeminorm _) (fun c f ↦ LinearMap.supNorm_smul c f.ofConv)
+    (TauCeti.Bialgebra.convolutionDelta O(C) C A) (tensorCounitRight O(C) C A A)
+    (tensorCounitLeft O(C) C A A) (fun f ↦ supNorm_convolutionDelta_le f norm_coe_le_one)
+    hcross p hp hpC y (exists_bound_pow_of_groupLike y hy) herr κ hκ
+  exact (LinearMap.supNorm_le_one_iff _).mp hbound a
+
+/-- A linear functional which is divisible by `q` on group-like elements and satisfies the
+Leibniz rule modulo `q` is divisible by `q` everywhere after scaling in the factorial radius. -/
+theorem dvd_mul_apply_of_groupLike [IsAlgClosed C]
+    (p : ℕ) (hp : p.Prime) (hpC : ‖(p : C)‖ < 1)
+    (D : A →ₗ[O(C)] O(C)) {q : O(C)} (hq : q ≠ 0)
+    (hgroup : ∀ u : GroupLike O(C) A, q ∣ D u.val)
+    (hrel : ∀ a b : A, q ∣ D (a * b) - Coalgebra.counit b * D a - Coalgebra.counit a * D b)
+    (κ : O(C)) (hκ : ‖(κ : C)‖ ^ (p - 1) ≤ ‖(p : C)‖) (a : A) :
+    q ∣ κ * D a := by
+  have hqC : algebraMap O(C) C q ≠ 0 :=
+    fun h ↦ hq ((IsFractionRing.injective O(C) C) (h.trans (map_zero _).symm))
+  let y := toConv ((algebraMap O(C) C q)⁻¹ • ((Algebra.linearMap O(C) C).comp D))
+  have hy_apply (b : A) : y.ofConv b = (algebraMap O(C) C q)⁻¹ * (algebraMap O(C) C (D b)) := rfl
+  have hy (u : GroupLike O(C) A) : y.ofConv u.val ∈ O(C) := by
+    obtain ⟨c, hc⟩ := hgroup u
+    rw [hy_apply, hc, map_mul, inv_mul_cancel_left₀ hqC]
+    simpa only [ValuationSubring.algebraMap_apply] using c.property
+  have he (b c : A) : y.ofConv (b * c) -
+      algebraMap O(C) C (Coalgebra.counit c) * y.ofConv b -
+      algebraMap O(C) C (Coalgebra.counit b) * y.ofConv c ∈ O(C) := by
+    obtain ⟨d, hd⟩ := hrel b c
+    have heq : y.ofConv (b * c) -
+        algebraMap O(C) C (Coalgebra.counit c) * y.ofConv b -
+        algebraMap O(C) C (Coalgebra.counit b) * y.ofConv c = algebraMap O(C) C d := by
+      calc
+        _ = (algebraMap O(C) C q)⁻¹ * algebraMap O(C) C
+            (D (b * c) - Coalgebra.counit c * D b - Coalgebra.counit b * D c) := by
+          simp only [hy_apply, map_sub, map_mul]
+          ring
+        _ = _ := by rw [hd, map_mul, inv_mul_cancel_left₀ hqC]
+    rw [heq]
+    simpa only [ValuationSubring.algebraMap_apply] using d.property
+  have h := smul_apply_mem_valuationSubring_of_groupLike p hp hpC y hy he (κ : C) hκ a
+  refine ⟨⟨(κ : C) * y.ofConv a, h⟩, ?_⟩
+  apply IsFractionRing.injective O(C) C
+  simp only [map_mul, ValuationSubring.algebraMap_apply, hy_apply]
+  simp only [ValuationSubring.algebraMap_apply] at hqC
+  field_simp
+
+end Valuation
+
+end WithConv

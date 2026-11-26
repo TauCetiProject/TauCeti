@@ -1,0 +1,46 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
+
+/-!
+# Linear relations for the cotangent displacement
+
+The Leibniz relations of a bialgebra are the image of a linear map from its tensor square.
+They vanish under the cotangent displacement. For a finite coordinate algebra their span
+is therefore finitely generated, even over a nonnoetherian base ring.
+-/
+
+public noncomputable section
+
+open Coalgebra TensorProduct
+
+namespace TauCeti.Bialgebra
+
+variable (R A : Type*) [CommRing R] [CommRing A] [Bialgebra R A]
+
+/-- The linear map generating the Leibniz relations for displacement at the counit. -/
+def cotangentRelation : A ⊗[R] A →ₗ[R] A :=
+  LinearMap.mul' R A -
+    (TensorProduct.rid R A).toLinearMap.comp ((counit (R := R)).lTensor A) -
+    (TensorProduct.lid R A).toLinearMap.comp ((counit (R := R)).rTensor A)
+
+/-- A pure tensor gives the Leibniz relation at the counit. -/
+@[simp]
+theorem cotangentRelation_tmul (a b : A) :
+    cotangentRelation R A (a ⊗ₜ[R] b) =
+      a * b - counit (R := R) b • a - counit (R := R) a • b := by
+  simp [cotangentRelation]
+
+/-- The cotangent displacement annihilates the Leibniz relations. -/
+@[simp]
+theorem cotangentMap_comp_cotangentRelation :
+    (cotangentMap R A).comp (cotangentRelation R A) = 0 := by
+  ext a b
+  simp [cotangentMap_mul]
+
+end TauCeti.Bialgebra
