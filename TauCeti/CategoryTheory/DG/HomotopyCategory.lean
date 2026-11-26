@@ -6,33 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Linear.Basic
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.LinearAlgebra.Quotient.Bilinear
-public import TauCeti.CategoryTheory.DG.Basic
+public import TauCeti.CategoryTheory.DG.GradedHomology
 
 /-!
 # The homotopy category of a differential graded category
 
-For a differential graded category C, the morphisms in its homotopy category are the
-degree-zero cocycles in each Hom complex, modulo the degree-zero coboundaries. Composition is
-induced by differential graded composition. The Leibniz rule shows that composing a boundary
-with a cycle on either side is again a boundary, so composition descends to cohomology classes.
-
-This file uses Mathlib's canonical homology object for that quotient. It records the concrete
-criterion that two closed degree-zero morphisms determine the same morphism precisely when their
-difference is the differential of a degree-minus-one morphism, and that a chain map between Hom
-complexes acts on homotopy classes through representatives. The resulting category is naturally
-preadditive and linear over the ground ring.
+For a differential graded category `C`, the morphisms in its homotopy category are the
+degree-zero cocycles in each Hom complex, modulo the degree-zero coboundaries. Specializing the
+graded cohomology calculus of `TauCeti.CategoryTheory.DG.GradedHomology` to degree zero defines
+`TauCeti.dgHomotopyClass` and `TauCeti.dgHomotopyComp` on Mathlib's canonical degree-zero homology
+object `TauCeti.DGHomotopyClass`, assembling into the `R`-linear category
+`TauCeti.DGHomotopyCategory`.
 
 ## Main definitions
 
-* TauCeti.dgCycles: the degree-zero cocycles in a DG Hom complex.
-* TauCeti.dgBoundaries: the degree-zero coboundaries in a DG Hom complex.
-* TauCeti.DGHomotopyClass: the canonical degree-zero homology of a DG Hom complex.
-* TauCeti.dgHomotopyComp: composition of homotopy classes.
-* TauCeti.DGHomotopyCategory: the category with the objects of a DG category and morphisms
-  given by DGHomotopyClass.
+* `TauCeti.dgCycles`: the degree-zero cocycles in a DG Hom complex.
+* `TauCeti.dgBoundaries`: the degree-zero coboundaries in a DG Hom complex.
+* `TauCeti.DGHomotopyClass`: the canonical degree-zero homology of a DG Hom complex.
+* `TauCeti.dgHomotopyComp`: composition of homotopy classes.
+* `TauCeti.DGHomotopyCategory`: the category with the objects of a DG category and morphisms
+  given by `DGHomotopyClass`.
 
 ## Main results
 
@@ -51,8 +44,6 @@ preadditive and linear over the ground ring.
 
 * B. Keller, *Deriving DG categories*, Section 1.
 * V. Drinfeld, *DG quotients of DG categories*, Section 2.
-* `TauCeti.Algebra.Homology.AInfinity.Algebra.Cohomology`, the formal template for the quotient
-  construction and descended bilinear operation.
 -/
 
 public section
@@ -107,86 +98,37 @@ theorem exactAt_iff_forall_exists_dgDifferential_eq {X Y : C} {p : ℤ} :
   -- The maps of the short complex `sc'` are the differentials, by definition.
   rfl
 
-private noncomputable def dgCyclesConcreteEquiv (X Y : C) :
-    dgCycles R X Y ≃ₗ[R]
-      ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.K :=
-  { toFun := fun f ↦ by
-      -- `moduleCatLeftHomologyData.K` unfolds to the kernel of the middle differential,
-      -- which is `dgCycles` after unfolding `dgHomComplex` in degree zero.
-      change LinearMap.ker (dgDifferential R 0)
-      exact f
-    invFun := fun f ↦ by
-      exact f
-    left_inv := fun _ ↦ rfl
-    right_inv := fun _ ↦ rfl
-    map_add' := fun _ _ ↦ rfl
-    map_smul' := fun _ _ ↦ rfl }
-
 /-- A morphism in H⁰(C), using the canonical Mathlib homology object of the DG Hom complex. -/
 noncomputable abbrev DGHomotopyClass (X Y : C) :=
   (dgHomComplex R X Y).homology 0
 
-private noncomputable def dgHomologyIso (X Y : C) :
-    DGHomotopyClass R X Y ≅
-      ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.H :=
-  (dgHomComplex R X Y).homologyIsoSc' (-1) 0 1 (by simp) (by simp) ≪≫
-    ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatHomologyIso
-
 /-- The linear quotient map from degree-zero cocycles to homotopy classes. -/
 noncomputable def dgHomotopyClassLinearMap (X Y : C) :
     dgCycles R X Y →ₗ[R] DGHomotopyClass R X Y :=
-  let S := (dgHomComplex R X Y).sc' (-1) 0 1
-  (dgHomologyIso R X Y).inv.hom.comp
-    (S.moduleCatLeftHomologyData.π.hom.comp (dgCyclesConcreteEquiv R X Y).toLinearMap)
+  dgHomologyClassLinearMap R 0 X Y
 
 /-- The homotopy class represented by a closed degree-zero morphism. -/
 def dgHomotopyClass {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
     DGHomotopyClass R X Y :=
-  dgHomotopyClassLinearMap R X Y ⟨f, hf⟩
+  dgHomologyClass R f ((mem_dgCycles R).mp hf)
 
-/-- Under Mathlib's concrete homology isomorphism, a homotopy class is the quotient class of its
-cocycle representative. -/
-private theorem dgHomotopyClass_moduleCatHomologyIso_hom {X Y : C}
-    (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
-    let S := (dgHomComplex R X Y).sc' (-1) 0 1
-    (dgHomologyIso R X Y).hom (dgHomotopyClass R f hf) =
-      S.moduleCatLeftHomologyData.π (dgCyclesConcreteEquiv R X Y ⟨f, hf⟩) := by
-  let e := dgHomologyIso R X Y
-  -- Unfolding `dgHomotopyClassLinearMap` exposes transport by `e.inv`; applying `e.hom`
-  -- then reduces the claim to the inverse-hom identity.
-  change e.hom (e.inv _) = _
-  exact e.inv_hom_id_apply _
+/-- `TauCeti.dgHomotopyClass` is the degree-zero specialization of `TauCeti.dgHomologyClass`. -/
+theorem dgHomotopyClass_eq_dgHomologyClass {X Y : C} (f : DGHom R 0 X Y)
+    (hf : f ∈ dgCycles R X Y) :
+    dgHomotopyClass R f hf = dgHomologyClass R f ((mem_dgCycles R).mp hf) :=
+  (rfl)
 
-private theorem mem_moduleCatToCycles_range {X Y : C} (f : dgCycles R X Y) :
-    dgCyclesConcreteEquiv R X Y f ∈
-        LinearMap.range
-          ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatToCycles ↔
-      (f : DGHom R 0 X Y) ∈ dgBoundaries R X Y := by
-  constructor
-  · rintro ⟨h, hh⟩
-    refine ⟨h, ?_⟩
-    exact congrArg Subtype.val hh
-  · rintro ⟨h, hh⟩
-    refine ⟨h, ?_⟩
-    apply Subtype.ext
-    exact hh
-
-private theorem moduleCatπ_eq_zero_iff {X Y : C}
-    (f : ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.K) :
-    ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.π f = 0 ↔
-      f ∈ LinearMap.range
-        ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatToCycles := by
-  -- For `ModuleCat`, the concrete homology projection is definitionally the quotient map
-  -- by the range of the map into cycles.
-  change Submodule.Quotient.mk f = 0 ↔ _
-  exact Submodule.Quotient.mk_eq_zero
-    (LinearMap.range ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatToCycles)
+/-- `TauCeti.dgHomotopyClassLinearMap` evaluates a cocycle subtype to `TauCeti.dgHomotopyClass`. -/
+@[simp]
+theorem dgHomotopyClassLinearMap_apply (X Y : C) (f : dgCycles R X Y) :
+    dgHomotopyClassLinearMap R X Y f = dgHomotopyClass R f.1 f.2 :=
+  dgHomologyClassLinearMap_apply R 0 X Y f
 
 /-- Zero represents zero as a homotopy class. -/
 @[simp]
 theorem dgHomotopyClass_zero (X Y : C) :
     dgHomotopyClass R (0 : DGHom R 0 X Y) (dgCycles R X Y).zero_mem = 0 :=
-  (dgHomotopyClassLinearMap R X Y).map_zero
+  dgHomologyClass_zero R 0 X Y
 
 /-- The class of a sum of cocycles is the sum of their classes. -/
 @[simp]
@@ -194,7 +136,7 @@ theorem dgHomotopyClass_add {X Y : C} (f g : DGHom R 0 X Y)
     (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R X Y) :
     dgHomotopyClass R (f + g) ((dgCycles R X Y).add_mem hf hg) =
       dgHomotopyClass R f hf + dgHomotopyClass R g hg :=
-  (dgHomotopyClassLinearMap R X Y).map_add ⟨f, hf⟩ ⟨g, hg⟩
+  dgHomologyClass_add R f g ((mem_dgCycles R).mp hf) ((mem_dgCycles R).mp hg)
 
 /-- The class of a scalar multiple of a cocycle is the scalar multiple of its class. -/
 @[simp]
@@ -202,27 +144,13 @@ theorem dgHomotopyClass_smul {X Y : C} (r : R) (f : DGHom R 0 X Y)
     (hf : f ∈ dgCycles R X Y) :
     dgHomotopyClass R (r • f) ((dgCycles R X Y).smul_mem r hf) =
       r • dgHomotopyClass R f hf :=
-  (dgHomotopyClassLinearMap R X Y).map_smul r ⟨f, hf⟩
+  dgHomologyClass_smul R r f ((mem_dgCycles R).mp hf)
 
 /-- Every homotopy class has a closed degree-zero representative. -/
 theorem exists_dgHomotopyClass_eq {X Y : C} (c : DGHomotopyClass R X Y) :
-    ∃ (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y), dgHomotopyClass R f hf = c := by
-  let e := dgHomologyIso R X Y
-  let S := (dgHomComplex R X Y).sc' (-1) 0 1
-  obtain ⟨f, hf⟩ : ∃ f, S.moduleCatLeftHomologyData.π f = e.hom c := by
-    induction e.hom c using Submodule.Quotient.induction_on with
-    | H f => exact ⟨f, rfl⟩
-  let g := (dgCyclesConcreteEquiv R X Y).symm f
-  refine ⟨g, g.2, ?_⟩
-  apply e.toLinearEquiv.injective
-  have hclass := dgHomotopyClass_moduleCatHomologyIso_hom R (g : DGHom R 0 X Y) g.2
-  -- The function underlying `e.toLinearEquiv` is `e.hom`; spelling that out lets the
-  -- representative compatibility lemma rewrite the transported class.
-  change e.hom (dgHomotopyClass R g g.2) = e.hom c
-  rw [show e.hom (dgHomotopyClass R g g.2) =
-    S.moduleCatLeftHomologyData.π (dgCyclesConcreteEquiv R X Y g) by
-      simpa only [e, S] using hclass]
-  simpa only [g, LinearEquiv.apply_symm_apply] using hf
+    ∃ (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y), dgHomotopyClass R f hf = c :=
+  let ⟨f, hf, h⟩ := exists_dgHomologyClass_eq R c
+  ⟨f, (mem_dgCycles R).mpr hf, h⟩
 
 /-- Two closed degree-zero morphisms represent the same homotopy class exactly when their
 difference is a coboundary. -/
@@ -231,53 +159,10 @@ theorem dgHomotopyClass_eq_iff {X Y : C} {f g : DGHom R 0 X Y}
     (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R X Y) :
     dgHomotopyClass R f hf = dgHomotopyClass R g hg ↔
       f - g ∈ dgBoundaries R X Y := by
-  let e := dgHomologyIso R X Y
-  constructor
-  · intro h
-    have h' := congrArg e.hom h
-    have hf' := dgHomotopyClass_moduleCatHomologyIso_hom R f hf
-    have hg' := dgHomotopyClass_moduleCatHomologyIso_hom R g hg
-    -- Applying the bundled isomorphism is definitionally application of its forward map.
-    -- The following rewrites then use the explicit representative compatibility lemma.
-    change e.hom (dgHomotopyClass R f hf) = e.hom (dgHomotopyClass R g hg) at h'
-    rw [show e.hom (dgHomotopyClass R f hf) =
-        ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.π
-          (dgCyclesConcreteEquiv R X Y ⟨f, hf⟩) by
-          simpa only [e] using hf',
-      show e.hom (dgHomotopyClass R g hg) =
-        ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.π
-          (dgCyclesConcreteEquiv R X Y ⟨g, hg⟩) by
-          simpa only [e] using hg'] at h'
-    let fg : dgCycles R X Y := ⟨f, hf⟩ - ⟨g, hg⟩
-    have hzero : ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.π
-        (dgCyclesConcreteEquiv R X Y fg) = 0 := by
-      rw [show dgCyclesConcreteEquiv R X Y fg =
-        dgCyclesConcreteEquiv R X Y ⟨f, hf⟩ -
-          dgCyclesConcreteEquiv R X Y ⟨g, hg⟩ by simp only [fg, map_sub],
-        map_sub, h', sub_self]
-    have hrange := (moduleCatπ_eq_zero_iff R _).1 hzero
-    simpa only [fg, Submodule.coe_sub] using
-      (mem_moduleCatToCycles_range R fg).1 hrange
-  · intro h
-    apply e.toLinearEquiv.injective
-    have hf' := dgHomotopyClass_moduleCatHomologyIso_hom R f hf
-    have hg' := dgHomotopyClass_moduleCatHomologyIso_hom R g hg
-    -- As above, expose the forward map of the concrete homology isomorphism before using
-    -- `dgHomotopyClass_moduleCatHomologyIso_hom`.
-    change e.hom (dgHomotopyClass R f hf) = e.hom (dgHomotopyClass R g hg)
-    rw [show e.hom (dgHomotopyClass R f hf) =
-        ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.π
-          (dgCyclesConcreteEquiv R X Y ⟨f, hf⟩) by
-          simpa only [e] using hf',
-      show e.hom (dgHomotopyClass R g hg) =
-        ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.π
-          (dgCyclesConcreteEquiv R X Y ⟨g, hg⟩) by
-          simpa only [e] using hg']
-    rw [← sub_eq_zero, ← map_sub]
-    let fg : dgCycles R X Y := ⟨f, hf⟩ - ⟨g, hg⟩
-    apply (moduleCatπ_eq_zero_iff R _).2
-    apply (mem_moduleCatToCycles_range R fg).2
-    simpa only [fg, Submodule.coe_sub] using h
+  rw [dgHomotopyClass_eq_dgHomologyClass, dgHomotopyClass_eq_dgHomologyClass,
+    dgHomologyClass_eq_iff, mem_dgBoundaries]
+  -- Closed integer arithmetic reduces `0 - 1` to `-1` and `-1 + 1` to `0` in `dgDifferential`.
+  rfl
 
 /-- A closed degree-zero morphism represents zero exactly when it is a coboundary. -/
 @[simp]
@@ -289,49 +174,18 @@ theorem dgHomotopyClass_eq_zero_iff {X Y : C} {f : DGHom R 0 X Y}
 
 /-! ### Comparison with Mathlib's homology projection -/
 
-/- The homotopy class of a closed degree-zero morphism is the image under Mathlib's homology
-projection of an explicit cycle lifting it. -/
-private theorem exists_iCycles_eq_and_dgHomotopyClass_eq {X Y : C} (f : DGHom R 0 X Y)
-    (hf : f ∈ dgCycles R X Y) :
-    ∃ x : (dgHomComplex R X Y).cycles 0, ((dgHomComplex R X Y).iCycles 0).hom x = f ∧
-      dgHomotopyClass R f hf = ((dgHomComplex R X Y).homologyπ 0).hom x := by
-  let K := dgHomComplex R X Y
-  let S := K.sc' (-1) 0 1
-  let e := K.cyclesIsoSc' (-1) 0 1 (by simp) (by simp)
-  let c : S.moduleCatLeftHomologyData.K := ⟨f, hf⟩
-  refine ⟨(S.moduleCatCyclesIso.inv ≫ e.inv).hom c, ?_, ?_⟩
-  · have h : (S.moduleCatCyclesIso.inv ≫ e.inv) ≫ K.iCycles 0 =
-        S.moduleCatLeftHomologyData.i := by
-      rw [Category.assoc, HomologicalComplex.cyclesIsoSc'_inv_iCycles]
-      exact S.moduleCatCyclesIso_inv_iCycles
-    exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) c
-  · have h : S.moduleCatLeftHomologyData.π ≫
-        (S.moduleCatHomologyIso.inv ≫ (K.homologyIsoSc' (-1) 0 1 (by simp) (by simp)).inv) =
-        (S.moduleCatCyclesIso.inv ≫ e.inv) ≫ K.homologyπ 0 := by
-      rw [← Category.assoc, ← S.moduleCatCyclesIso_inv_π, Category.assoc, Category.assoc,
-        HomologicalComplex.π_homologyIsoSc'_inv]
-    -- `dgHomotopyClass R f hf` is by definition the left-hand side of `h` applied to `c`.
-    exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) c
-
 /-- The homotopy class of a closed degree-zero morphism `f` is the image, under Mathlib's
 projection `HomologicalComplex.homologyπ` from cycles to homology, of any cycle lifting `f`. -/
 theorem dgHomotopyClass_eq_homologyπ {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R X Y)
     (x : (dgHomComplex R X Y).cycles 0) (hx : ((dgHomComplex R X Y).iCycles 0).hom x = f) :
-    dgHomotopyClass R f hf = ((dgHomComplex R X Y).homologyπ 0).hom x := by
-  obtain ⟨y, hy, hclass⟩ := exists_iCycles_eq_and_dgHomotopyClass_eq R f hf
-  rw [hclass, (ModuleCat.mono_iff_injective ((dgHomComplex R X Y).iCycles 0)).1 inferInstance
-    (hy.trans hx.symm)]
+    dgHomotopyClass R f hf = ((dgHomComplex R X Y).homologyπ 0).hom x :=
+  dgHomologyClass_eq_homologyπ R ((mem_dgCycles R).mp hf) x hx
 
 /-- A closed degree-zero morphism stays closed under a chain map of Hom complexes. -/
 theorem map_mem_dgCycles {C' : Type*} [DGCategory R C'] {X Y : C} {X' Y' : C'}
     (φ : dgHomComplex R X Y ⟶ dgHomComplex R X' Y') {f : DGHom R 0 X Y}
-    (hf : f ∈ dgCycles R X Y) : (φ.f 0).hom f ∈ dgCycles R X' Y' := by
-  obtain ⟨x, hx, _⟩ := exists_iCycles_eq_and_dgHomotopyClass_eq R f hf
-  rw [← hx, ← ModuleCat.comp_apply, ← HomologicalComplex.cyclesMap_i,
-    ModuleCat.comp_apply, mem_dgCycles]
-  unfold dgDifferential
-  rw [← ModuleCat.comp_apply, zero_add, (dgHomComplex R X' Y').iCycles_d 0 1]
-  rfl
+    (hf : f ∈ dgCycles R X Y) : (φ.f 0).hom f ∈ dgCycles R X' Y' :=
+  (mem_dgCycles R).mpr (map_dgDifferential_eq_zero R φ ((mem_dgCycles R).mp hf))
 
 /-- The map induced on homotopy classes by a chain map of Hom complexes sends the class of a
 closed degree-zero morphism to the class of its image. -/
@@ -340,11 +194,8 @@ theorem homologyMap_dgHomotopyClass {C' : Type*} [DGCategory R C'] {X Y : C} {X'
     (φ : dgHomComplex R X Y ⟶ dgHomComplex R X' Y') {f : DGHom R 0 X Y}
     (hf : f ∈ dgCycles R X Y) :
     (HomologicalComplex.homologyMap φ 0).hom (dgHomotopyClass R f hf) =
-      dgHomotopyClass R ((φ.f 0).hom f) (map_mem_dgCycles R φ hf) := by
-  obtain ⟨x, hx, hclass⟩ := exists_iCycles_eq_and_dgHomotopyClass_eq R f hf
-  rw [hclass, dgHomotopyClass_eq_homologyπ R _ ((HomologicalComplex.cyclesMap φ 0).hom x),
-    ← ModuleCat.comp_apply, HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
-  rw [← hx, ← ModuleCat.comp_apply, HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply]
+      dgHomotopyClass R ((φ.f 0).hom f) (map_mem_dgCycles R φ hf) :=
+  homologyMap_dgHomologyClass R φ ((mem_dgCycles R).mp hf)
 
 /-! ### Composition on homotopy classes -/
 
@@ -387,10 +238,9 @@ theorem dgCompZero_smul {X Y Z : C} (r : R) (f : DGHom R 0 X Y) (g : DGHom R 0 Y
 /-- The composite of two degree-zero cocycles is a degree-zero cocycle. -/
 theorem dgCompZero_mem_dgCycles {X Y Z : C} {f : DGHom R 0 X Y} {g : DGHom R 0 Y Z}
     (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y Z) :
-    dgCompZero R f g ∈ dgCycles R X Z := by
-  rw [dgCompZero_def, mem_dgCycles, dgDifferential_dgComp,
-    (mem_dgCycles R).mp hf, (mem_dgCycles R).mp hg]
-  simp
+    dgCompZero R f g ∈ dgCycles R X Z :=
+  (mem_dgCycles R).mpr
+    (dgDifferential_dgComp_eq_zero R ((mem_dgCycles R).mp hf) ((mem_dgCycles R).mp hg) (zero_add 0))
 
 /-- Composing a degree-zero boundary on the left with a degree-zero cocycle gives a boundary. -/
 theorem dgCompZero_mem_dgBoundaries_of_left {X Y Z : C}
@@ -439,65 +289,16 @@ theorem coe_dgCyclesComp {X Y Z : C} (f : dgCycles R X Y) (g : dgCycles R Y Z) :
       dgCompZero R (X := X) (Y := Y) (Z := Z) f g :=
   (rfl)
 
-/-- Composition of homotopy classes, obtained by descending DG composition through the
-coboundary quotients. -/
-private def dgConcreteCyclesComp (X Y Z : C) :
-    ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.K →ₗ[R]
-      ((dgHomComplex R Y Z).sc' (-1) 0 1).moduleCatLeftHomologyData.K →ₗ[R]
-        ((dgHomComplex R X Z).sc' (-1) 0 1).moduleCatLeftHomologyData.K :=
-  LinearMap.mk₂ R
-    (fun f g ↦ dgCyclesConcreteEquiv R X Z
-      (dgCyclesComp R X Y Z ((dgCyclesConcreteEquiv R X Y).symm f)
-        ((dgCyclesConcreteEquiv R Y Z).symm g)))
-    (fun _ _ _ ↦ by simp)
-    (fun _ _ _ ↦ by simp)
-    (fun _ _ _ ↦ by simp)
-    (fun _ _ _ ↦ by simp)
-
-private def dgConcreteHomotopyComp (X Y Z : C) :
-    ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.H →ₗ[R]
-      ((dgHomComplex R Y Z).sc' (-1) 0 1).moduleCatLeftHomologyData.H →ₗ[R]
-        ((dgHomComplex R X Z).sc' (-1) 0 1).moduleCatLeftHomologyData.H :=
-  let SXY := (dgHomComplex R X Y).sc' (-1) 0 1
-  let SYZ := (dgHomComplex R Y Z).sc' (-1) 0 1
-  let SXZ := (dgHomComplex R X Z).sc' (-1) 0 1
-  ((dgConcreteCyclesComp R X Y Z).compr₂ SXZ.moduleCatLeftHomologyData.π.hom).liftQ₂
-    (LinearMap.range SXY.moduleCatToCycles) (LinearMap.range SYZ.moduleCatToCycles)
-    (fun f hf ↦ LinearMap.ext fun g ↦ (moduleCatπ_eq_zero_iff R _).2 <| by
-      apply (mem_moduleCatToCycles_range R
-        ((dgCyclesConcreteEquiv R X Z).symm
-          (dgConcreteCyclesComp R X Y Z f g))).2
-      simp only [dgConcreteCyclesComp]
-      exact dgCompZero_mem_dgBoundaries_of_left R
-        (by
-          obtain ⟨h, hh⟩ := hf
-          refine ⟨h, ?_⟩
-          exact congrArg Subtype.val hh)
-        ((dgCyclesConcreteEquiv R Y Z).symm g).2)
-    (fun g hg ↦ LinearMap.ext fun f ↦ (moduleCatπ_eq_zero_iff R _).2 <| by
-      apply (mem_moduleCatToCycles_range R
-        ((dgCyclesConcreteEquiv R X Z).symm
-          (dgConcreteCyclesComp R X Y Z f g))).2
-      simp only [dgConcreteCyclesComp]
-      exact dgCompZero_mem_dgBoundaries_of_right R
-        ((dgCyclesConcreteEquiv R X Y).symm f).2
-        (by
-          obtain ⟨h, hh⟩ := hg
-          refine ⟨h, ?_⟩
-          exact congrArg Subtype.val hh))
-
 /-- The bilinear composition of homotopy classes induced by DG composition. -/
 noncomputable def dgHomotopyComp (X Y Z : C) :
     DGHomotopyClass R X Y →ₗ[R] DGHomotopyClass R Y Z →ₗ[R]
       DGHomotopyClass R X Z :=
-  LinearMap.mk₂ R
-    (fun f g ↦ (dgHomologyIso R X Z).inv
-      (dgConcreteHomotopyComp R X Y Z ((dgHomologyIso R X Y).hom f)
-        ((dgHomologyIso R Y Z).hom g)))
-    (fun _ _ _ ↦ by simp)
-    (fun _ _ _ ↦ by simp)
-    (fun _ _ _ ↦ by simp)
-    (fun _ _ _ ↦ by simp)
+  dgHomologyComp R X Y Z (zero_add 0)
+
+/-- `TauCeti.dgHomotopyComp` is the degree-zero specialization of `TauCeti.dgHomologyComp`. -/
+theorem dgHomotopyComp_eq_dgHomologyComp (X Y Z : C) :
+    dgHomotopyComp R X Y Z = dgHomologyComp R X Y Z (zero_add 0) :=
+  (rfl)
 
 /-- The composite of classes is represented by the DG composite of their representatives. -/
 @[simp]
@@ -505,49 +306,17 @@ theorem dgHomotopyComp_dgHomotopyClass {X Y Z : C}
     (f : DGHom R 0 X Y) (g : DGHom R 0 Y Z)
     (hf : f ∈ dgCycles R X Y) (hg : g ∈ dgCycles R Y Z) :
     dgHomotopyComp R X Y Z (dgHomotopyClass R f hf) (dgHomotopyClass R g hg) =
-      dgHomotopyClass R (dgCompZero R f g) (dgCompZero_mem_dgCycles R hf hg) := by
-  let eXY := dgHomologyIso R X Y
-  let eYZ := dgHomologyIso R Y Z
-  let eXZ := dgHomologyIso R X Z
-  have hf' := dgHomotopyClass_moduleCatHomologyIso_hom R f hf
-  have hg' := dgHomotopyClass_moduleCatHomologyIso_hom R g hg
-  have hfg' := dgHomotopyClass_moduleCatHomologyIso_hom R (dgCompZero R f g)
-    (dgCompZero_mem_dgCycles R hf hg)
-  apply eXZ.toLinearEquiv.injective
-  -- Unfolding `dgHomotopyComp` exposes its construction by transporting the concrete
-  -- quotient composition along `eXY`, `eYZ`, and `eXZ`.
-  change eXZ.hom (eXZ.inv
-      (dgConcreteHomotopyComp R X Y Z
-        (eXY.hom (dgHomotopyClass R f hf))
-        (eYZ.hom (dgHomotopyClass R g hg)))) =
-    eXZ.hom (dgHomotopyClass R (dgCompZero R f g) _)
-  rw [eXZ.inv_hom_id_apply]
-  rw [show eXY.hom (dgHomotopyClass R f hf) =
-      ((dgHomComplex R X Y).sc' (-1) 0 1).moduleCatLeftHomologyData.π
-        (dgCyclesConcreteEquiv R X Y ⟨f, hf⟩) by simpa only [eXY] using hf',
-    show eYZ.hom (dgHomotopyClass R g hg) =
-      ((dgHomComplex R Y Z).sc' (-1) 0 1).moduleCatLeftHomologyData.π
-        (dgCyclesConcreteEquiv R Y Z ⟨g, hg⟩) by simpa only [eYZ] using hg',
-    show eXZ.hom (dgHomotopyClass R (dgCompZero R f g) _) =
-      ((dgHomComplex R X Z).sc' (-1) 0 1).moduleCatLeftHomologyData.π
-        (dgCyclesConcreteEquiv R X Z
-          ⟨dgCompZero R f g, dgCompZero_mem_dgCycles R hf hg⟩) by
-            simpa only [eXZ] using hfg']
-  rfl
+      dgHomotopyClass R (dgCompZero R f g) (dgCompZero_mem_dgCycles R hf hg) :=
+  dgHomologyComp_dgHomologyClass R (zero_add 0) f g ((mem_dgCycles R).mp hf)
+    ((mem_dgCycles R).mp hg)
 
 /-- Composition of homotopy classes is associative. -/
 theorem dgHomotopyComp_assoc {W X Y Z : C}
     (f : DGHomotopyClass R W X) (g : DGHomotopyClass R X Y)
     (h : DGHomotopyClass R Y Z) :
     dgHomotopyComp R W Y Z (dgHomotopyComp R W X Y f g) h =
-      dgHomotopyComp R W X Z f (dgHomotopyComp R X Y Z g h) := by
-  obtain ⟨f, hf, rfl⟩ := exists_dgHomotopyClass_eq R f
-  obtain ⟨g, hg, rfl⟩ := exists_dgHomotopyClass_eq R g
-  obtain ⟨h, hh, rfl⟩ := exists_dgHomotopyClass_eq R h
-  simp only [dgHomotopyComp_dgHomotopyClass]
-  apply congrArg (dgHomotopyClassLinearMap R W Z)
-  apply Subtype.ext
-  exact dgComp_assoc R f g h rfl rfl rfl
+      dgHomotopyComp R W X Z f (dgHomotopyComp R X Y Z g h) :=
+  dgHomologyComp_assoc R (zero_add 0) (zero_add 0) (zero_add 0) (zero_add 0) f g h
 
 /-! ### The category H⁰(C) -/
 
@@ -594,19 +363,13 @@ noncomputable instance : Category (DGHomotopyCategory R C) where
     ((mem_dgCycles R).mpr (dgDifferential_dgId R (underlying R X)))
   comp {X Y Z} f g :=
     dgHomotopyComp R (underlying R X) (underlying R Y) (underlying R Z) f g
-  id_comp {X Y} f := by
-    obtain ⟨f, hf, rfl⟩ := exists_dgHomotopyClass_eq R f
-    simp only [dgHomotopyComp_dgHomotopyClass]
-    apply congrArg (dgHomotopyClassLinearMap R (underlying R X) (underlying R Y))
-    apply Subtype.ext
-    exact dgId_dgComp R f
-  comp_id {X Y} f := by
-    obtain ⟨f, hf, rfl⟩ := exists_dgHomotopyClass_eq R f
-    simp only [dgHomotopyComp_dgHomotopyClass]
-    apply congrArg (dgHomotopyClassLinearMap R (underlying R X) (underlying R Y))
-    apply Subtype.ext
-    exact dgComp_dgId R f
-  assoc {W X Y Z} f g h := dgHomotopyComp_assoc R f g h
+  id_comp {_ _} f := by
+    rw [dgHomotopyComp_eq_dgHomologyComp, dgHomotopyClass_eq_dgHomologyClass, ← dgHomologyId_def,
+      dgHomologyId_dgHomologyComp]
+  comp_id {_ _} f := by
+    rw [dgHomotopyComp_eq_dgHomologyComp, dgHomotopyClass_eq_dgHomologyClass, ← dgHomologyId_def,
+      dgHomologyComp_dgHomologyId]
+  assoc {_ _ _ _} f g h := dgHomotopyComp_assoc R f g h
 
 noncomputable instance : Preadditive (DGHomotopyCategory R C) where
   homGroup X Y := inferInstanceAs
@@ -635,6 +398,22 @@ theorem id_def (X : DGHomotopyCategory R C) :
     𝟙 X = dgHomotopyClass R (dgId R (underlying R X))
       ((mem_dgCycles R).mpr (dgDifferential_dgId R (underlying R X))) :=
   (rfl)
+
+/-- The forward and inverse morphisms of an isomorphism in `DGHomotopyCategory R C` compose under
+`TauCeti.dgHomologyComp` to `TauCeti.dgHomologyId`. -/
+@[simp]
+theorem dgHomologyComp_hom_inv {X Y : C} (e : of R X ≅ of R Y) :
+    dgHomologyComp R X Y X (zero_add 0) e.hom e.inv = dgHomologyId R X := by
+  rw [dgHomologyId_def, ← dgHomotopyClass_eq_dgHomologyClass, ← dgHomotopyComp_eq_dgHomologyComp]
+  exact e.hom_inv_id
+
+/-- The inverse and forward morphisms of an isomorphism in `DGHomotopyCategory R C` compose under
+`TauCeti.dgHomologyComp` to `TauCeti.dgHomologyId`. -/
+@[simp]
+theorem dgHomologyComp_inv_hom {X Y : C} (e : of R X ≅ of R Y) :
+    dgHomologyComp R Y X Y (zero_add 0) e.inv e.hom = dgHomologyId R Y := by
+  rw [dgHomologyId_def, ← dgHomotopyClass_eq_dgHomologyClass, ← dgHomotopyComp_eq_dgHomologyComp]
+  exact e.inv_hom_id
 
 /-- A closed degree-zero DG morphism, regarded as a morphism in the homotopy category. -/
 def homOf {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :

@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.CategoryTheory.DG.QuasiEquivalence
 public import TauCeti.CategoryTheory.DG.Twisted.Shift
-public import TauCeti.LinearAlgebra.PerfectPairing.Pi
+public import TauCeti.LinearAlgebra.PerfectPairing.Basic
 
 /-!
 # Spherical objects and `A_m`-configurations in differential graded categories
@@ -39,72 +39,6 @@ universe v u u'
 section CommRing
 
 variable (R : Type v) [CommRing R] {C : Type u} [DGCategory R C]
-
-private theorem dgHomologyClass_congr {n : ℤ} {X Y : C} {f g : DGHom R n X Y}
-    (hf : dgDifferential R n f = 0) (hg : dgDifferential R n g = 0) (h : f = g) :
-    dgHomologyClass R f hf = dgHomologyClass R g hg := by cases h; rfl
-
-private def homologyCastEquiv (X Y : C) {a b : ℤ} (hab : a = b) :
-    (dgHomComplex R X Y).homology a ≃ₗ[R] (dgHomComplex R X Y).homology b :=
-  (eqToIso (congrArg (fun d ↦ (dgHomComplex R X Y).homology d) hab)).toLinearEquiv
-
-private theorem homologyCastEquiv_symm (X Y : C) {a b : ℤ} (hab : a = b) :
-    (homologyCastEquiv R X Y hab).symm = homologyCastEquiv R X Y hab.symm := by subst hab; ext; rfl
-
-private theorem homologyCastEquiv_dgHomologyComp {X Y Z : C} {p₁ p₂ q₁ q₂ n₁ n₂ : ℤ}
-    (hp : p₁ = p₂) (hq : q₁ = q₂) (hn : n₁ = n₂) (h₁ : p₁ + q₁ = n₁) (h₂ : p₂ + q₂ = n₂)
-    (a : (dgHomComplex R X Y).homology p₁) (b : (dgHomComplex R Y Z).homology q₁) :
-    homologyCastEquiv R X Z hn (dgHomologyComp R X Y Z h₁ a b) =
-      dgHomologyComp R X Y Z h₂ (homologyCastEquiv R X Y hp a) (homologyCastEquiv R Y Z hq b) := by
-  subst hp hq hn; rfl
-
-private theorem homotopyIso_exists_classes {X Y : C}
-    (e : DGHomotopyCategory.of R X ≅ DGHomotopyCategory.of R Y) :
-    ∃ (u : (dgHomComplex R X Y).homology 0) (v : (dgHomComplex R Y X).homology 0),
-      dgHomologyComp R X Y X (zero_add 0) u v = dgHomologyId R X ∧
-      dgHomologyComp R Y X Y (zero_add 0) v u = dgHomologyId R Y := by
-  obtain ⟨f, hf, hfe⟩ := DGHomotopyCategory.exists_homOf_eq R e.hom
-  obtain ⟨g, hg, hge⟩ := DGHomotopyCategory.exists_homOf_eq R e.inv
-  have hrel {A B : C} {x : DGHom R 0 A B} {y : DGHom R 0 B A} (hx : x ∈ dgCycles R A B)
-      (hy : y ∈ dgCycles R B A) (h : DGHomotopyCategory.homOf R x hx ≫
-        DGHomotopyCategory.homOf R y hy = 𝟙 (DGHomotopyCategory.of R A)) :
-      dgHomologyComp R A B A (zero_add 0) (dgHomologyClass R x ((mem_dgCycles R).mp hx))
-        (dgHomologyClass R y ((mem_dgCycles R).mp hy)) = dgHomologyId R A := by
-    rw [DGHomotopyCategory.homOf_comp, ← DGHomotopyCategory.homOf_dgId,
-      DGHomotopyCategory.homOf_eq_iff] at h
-    simpa only [dgHomologyComp_zero_eq_dgHomotopyComp, dgHomologyId_def,
-      dgHomologyClass_zero_eq_dgHomotopyClass, dgHomotopyComp_dgHomotopyClass,
-      dgHomotopyClass_eq_iff] using h
-  exact ⟨dgHomologyClass R f ((mem_dgCycles R).mp hf), dgHomologyClass R g ((mem_dgCycles R).mp hg),
-    hrel hf hg (by rw [hfe, hge, e.hom_inv_id]), hrel hg hf (by rw [hfe, hge, e.inv_hom_id])⟩
-
-private def gradedPrecompEquiv (Z : C) {X Y : C} {p q d₁ d₂ : ℤ}
-    (hpq : p + q = 0) (hqp : q + p = 0) (hd₁ : q + d₁ = d₂) (hd₂ : p + d₂ = d₁)
-    (u : (dgHomComplex R X Y).homology p) (v : (dgHomComplex R Y X).homology q)
-    (huv : dgHomologyComp R X Y X hpq u v = dgHomologyId R X)
-    (hvu : dgHomologyComp R Y X Y hqp v u = dgHomologyId R Y) :
-    (dgHomComplex R X Z).homology d₁ ≃ₗ[R] (dgHomComplex R Y Z).homology d₂ :=
-  { toFun := dgHomologyComp R Y X Z hd₁ v, invFun := dgHomologyComp R X Y Z hd₂ u
-    left_inv _ := by
-      rw [← dgHomologyComp_assoc R hpq hd₁ (zero_add d₁) hd₂, huv, dgHomologyId_dgHomologyComp]
-    right_inv _ := by
-      rw [← dgHomologyComp_assoc R hqp hd₂ (zero_add d₂) hd₁, hvu, dgHomologyId_dgHomologyComp]
-    map_add' := map_add _, map_smul' := map_smul _ }
-
-private def gradedPostcompEquiv (Z : C) {X Y : C} {p q d₁ d₂ : ℤ}
-    (hpq : p + q = 0) (hqp : q + p = 0) (hd₁ : d₁ + p = d₂) (hd₂ : d₂ + q = d₁)
-    (u : (dgHomComplex R X Y).homology p) (v : (dgHomComplex R Y X).homology q)
-    (huv : dgHomologyComp R X Y X hpq u v = dgHomologyId R X)
-    (hvu : dgHomologyComp R Y X Y hqp v u = dgHomologyId R Y) :
-    (dgHomComplex R Z X).homology d₁ ≃ₗ[R] (dgHomComplex R Z Y).homology d₂ :=
-  { toFun := (dgHomologyComp R Z X Y hd₁).flip u, invFun := (dgHomologyComp R Z Y X hd₂).flip v
-    left_inv x := by
-      rw [LinearMap.flip_apply, LinearMap.flip_apply,
-        dgHomologyComp_assoc R hd₁ hpq hd₂ (add_zero d₁), huv, dgHomologyComp_dgHomologyId]
-    right_inv x := by
-      rw [LinearMap.flip_apply, LinearMap.flip_apply,
-        dgHomologyComp_assoc R hd₂ hqp hd₁ (add_zero d₂), hvu, dgHomologyComp_dgHomologyId]
-    map_add' := map_add _, map_smul' := map_smul _ }
 
 /-- Two objects `X` and `Y` of an `R`-linear DG category have **finite total graded `Hom`**
 (Seidel–Thomas (K2)) when each `(dgHomComplex R X Y).homology d` is finitely generated and only
@@ -235,7 +169,7 @@ theorem hasFiniteTotalGradedHom_to (hE : IsSphericalObject k n E) (F : C) :
   have := (hE.hasFiniteTotalGradedHom_from F).finite (n - d); have := htr F (n - d)
   exact ((LinearEquiv.ofFinrankEq _ _ Subspace.dual_finrank_eq.symm).trans
     (((dgHomologyComp k E F E (add_sub_cancel (n - d) n)).compr₂ tr).flip).toPerfPair.symm).trans
-    (homologyCastEquiv k F E (sub_sub_self n d))
+    (dgHomologyCastEquiv k F E (sub_sub_self n d))
 
 /-- Complementary cohomology groups `Hom^d(E, F)` and `Hom^{n - d}(F, E)` have equal `finrank`. -/
 theorem finrank_homology_symm (hE : IsSphericalObject k n E) (F : C) (d : ℤ) :
@@ -295,6 +229,41 @@ theorem dgEulerPairing_self_of_even (hE : IsSphericalObject k n E) (hn : Even n)
     dgEulerPairing k E E = 2 := by
   rw [hE.dgEulerPairing_self, Int.negOnePow_even _ hn, Units.val_one]; norm_num
 
+/-- Transport `n`-sphericality from `E : C` to `E' : C'` along endomorphism cohomology equivalences
+`eEnd` and objectwise left/right cohomology equivalences `eLeft`, `eRight` indexed by `φ : C' → C`
+and an injective degree map `σ : ℤ → ℤ` that intertwine `TauCeti.dgHomologyComp`. -/
+theorem of_homologyEquiv {C' : Type u'} [DGCategory k C'] {E' : C'}
+    (hE : IsSphericalObject k n E) (φ : C' → C) (σ : ℤ → ℤ) (hσ : Function.Injective σ)
+    (eEnd : ∀ d : ℤ,
+      (dgHomComplex k E' E').homology d ≃ₗ[k] (dgHomComplex k E E).homology d)
+    (eLeft : ∀ (Y : C') (d : ℤ),
+      (dgHomComplex k E' Y).homology d ≃ₗ[k] (dgHomComplex k E (φ Y)).homology (σ d))
+    (eRight : ∀ (Y : C') (d : ℤ),
+      (dgHomComplex k Y E').homology (n - d) ≃ₗ[k]
+        (dgHomComplex k (φ Y) E).homology (n - σ d))
+    (hcomp : ∀ (Y : C') (d : ℤ) (a : (dgHomComplex k E' Y).homology d)
+      (b : (dgHomComplex k Y E').homology (n - d)),
+      eEnd n (dgHomologyComp k E' Y E' (add_sub_cancel d n) a b) =
+        dgHomologyComp k E (φ Y) E (add_sub_cancel (σ d) n)
+          (eLeft Y d a) (eRight Y d b)) :
+    IsSphericalObject k n E' := by
+  obtain ⟨tr, htr⟩ := hE.exists_trace_isPerfPair
+  refine ⟨hE.pos, fun Y ↦ ⟨fun d ↦ by
+      have := (hE.hasFiniteTotalGradedHom_from (φ Y)).finite (σ d)
+      exact Module.Finite.equiv (eLeft Y d).symm,
+    ((hE.hasFiniteTotalGradedHom_from (φ Y)).bdd_support.preimage hσ.injOn).subset fun d hd ↦
+      @Equiv.nontrivial _ _ (eLeft Y d).symm.toEquiv hd⟩,
+    (eEnd 0).finrank_eq.trans hE.finrank_homology_zero,
+    (eEnd n).finrank_eq.trans hE.finrank_homology_top, fun hd0 hdn ↦ by
+      have := hE.subsingleton_homology_of_ne hd0 hdn
+      exact (eEnd _).toEquiv.subsingleton_congr.mpr inferInstance,
+    ⟨tr.comp (eEnd n).toLinearMap, fun Y d ↦ ?_⟩⟩
+  have := htr (φ Y) (σ d)
+  convert (inferInstance :
+    (((dgHomologyComp k E (φ Y) E (add_sub_cancel (σ d) n)).compr₂ tr).compl₁₂
+      (eLeft Y d).toLinearMap (eRight Y d).toLinearMap).IsPerfPair)
+  ext a b; exact congrArg tr (hcomp Y d a b)
+
 private theorem of_gradedPair {E' : C} (hE : IsSphericalObject k n E) {p q : ℤ}
     (hpq : p + q = 0) (hqp : q + p = 0)
     (u : (dgHomComplex k E E').homology p) (v : (dgHomComplex k E' E).homology q)
@@ -302,32 +271,24 @@ private theorem of_gradedPair {E' : C} (hE : IsSphericalObject k n E) {p q : ℤ
     (hvu : dgHomologyComp k E' E E' hqp v u = dgHomologyId k E') :
     IsSphericalObject k n E' := by
   let eLeft (F : C) (d : ℤ) :=
-    gradedPrecompEquiv k F hpq hqp (by omega : q + (p + d) = d) rfl u v huv hvu
+    dgHomologyCompLeftEquiv k F hpq hqp rfl (by omega : q + (p + d) = d) u v huv hvu
   let eRight (F : C) (d : ℤ) :=
-    gradedPostcompEquiv k F hpq hqp (by omega : (d + q) + p = d) rfl u v huv hvu
-  let eEnd (d : ℤ) := (homologyCastEquiv k E E (by omega : d = (p + d) + q)).trans
-    ((eRight E (p + d)).trans (eLeft E' d))
-  obtain ⟨tr, htr⟩ := hE.exists_trace_isPerfPair
-  refine ⟨hE.pos, fun F ↦ (hE.hasFiniteTotalGradedHom_from F).of_equiv (Equiv.addLeft p) (eLeft F),
-    (eEnd 0).symm.finrank_eq.trans hE.finrank_homology_zero,
-    (eEnd n).symm.finrank_eq.trans hE.finrank_homology_top, fun hd0 hdn ↦ by
-      have := hE.subsingleton_homology_of_ne hd0 hdn
-      exact (eEnd _).toEquiv.subsingleton_congr.mp inferInstance,
-    ⟨tr.comp (eEnd n).symm.toLinearMap, fun F d ↦ ?_⟩⟩
-  have := htr F (p + d); convert (inferInstance :
-    (((dgHomologyComp k E F E (add_sub_cancel (p + d) n)).compr₂ tr).compl₁₂
-      (eLeft F d).symm.toLinearMap ((eRight F (n - d)).symm.trans
-        (homologyCastEquiv k F E (by omega : n - d + q = n - (p + d)))).toLinearMap).IsPerfPair)
-  ext a b; simp only [LinearMap.compr₂_apply, LinearMap.comp_apply, LinearMap.compl₁₂_apply,
-    LinearEquiv.coe_coe, eEnd, eLeft, eRight, gradedPrecompEquiv, gradedPostcompEquiv,
-    LinearEquiv.symm_trans_apply, LinearEquiv.trans_apply, LinearEquiv.coe_symm_mk,
-    LinearMap.flip_apply]
-  apply congrArg tr
+    (dgHomologyCompRightEquiv k F hqp hpq rfl (by omega : (n - d + q) + p = n - d) v u hvu
+      huv).trans (dgHomologyCastEquiv k F E (by omega : n - d + q = n - (p + d)))
+  let eEnd (d : ℤ) :=
+    ((eLeft E' d).trans (dgHomologyCompRightEquiv k E hqp hpq rfl
+      (by omega : (p + d + q) + p = p + d) v u hvu huv)).trans
+      (dgHomologyCastEquiv k E E (by omega : p + d + q = d))
+  refine hE.of_homologyEquiv (fun F ↦ F) (fun d ↦ p + d) (add_right_injective p)
+    eEnd eLeft eRight fun F d a b ↦ ?_
+  simp only [eEnd, eLeft, eRight, LinearEquiv.trans_apply, dgHomologyCompLeftEquiv_apply,
+    dgHomologyCompRightEquiv_apply]
   rw [← dgHomologyComp_assoc k (pq := p + d) rfl (add_sub_cancel d n) (by omega) rfl u a b,
-    dgHomologyComp_assoc k (qr := n - d + q) (by omega) rfl rfl (by omega) _ b v,
-    homologyCastEquiv_symm]
-  exact homologyCastEquiv_dgHomologyComp k rfl (by omega : n - d + q = n - (p + d))
-    (by omega : (p + n) + q = n) (by omega) (add_sub_cancel (p + d) n) _ _
+    dgHomologyComp_assoc k (qr := n - d + q) (by omega) rfl rfl (by omega) _ b v]
+  simpa only [dgHomologyCastEquiv_rfl, LinearEquiv.refl_apply] using
+    dgHomologyCastEquiv_dgHomologyComp k rfl (by omega : n - d + q = n - (p + d))
+      (by omega : p + n + q = n) (by omega) (add_sub_cancel (p + d) n)
+      (dgHomologyComp k E E' F rfl u a) (dgHomologyComp k F E' E rfl b v)
 
 /-- A mutually inverse pair of cohomology classes `u ∈ Hom^{-m}(E, E')` and `v ∈ Hom^m(E', E)`
 transports `n`-sphericality from `E` to `E'`. -/
@@ -340,8 +301,9 @@ theorem of_gradedEquiv {E' : C} (hE : IsSphericalObject k n E) {m : ℤ}
 /-- Isomorphic objects in `DGHomotopyCategory k C` have equivalent `n`-sphericality. -/
 theorem of_homotopyIso {E' : C} (hE : IsSphericalObject k n E)
     (e : DGHomotopyCategory.of k E ≅ DGHomotopyCategory.of k E') : IsSphericalObject k n E' :=
-  let ⟨u, v, huv, hvu⟩ := homotopyIso_exists_classes k e
-  hE.of_gradedPair (zero_add 0) (zero_add 0) u v huv hvu
+  hE.of_gradedPair (zero_add 0) (zero_add 0) e.hom e.inv
+    (DGHomotopyCategory.dgHomologyComp_hom_inv k e)
+    (DGHomotopyCategory.dgHomologyComp_inv_hom k e)
 
 end IsSphericalObject
 
@@ -399,57 +361,38 @@ variable {k : Type v} [Field k] {C : Type u₁} {D : Type u₂} [DGCategory k C]
   {F : EnrichedFunctor (CochainComplex (ModuleCat.{v} k) ℤ) C D}
 
 private theorem isSphericalObject_of_map (hff : F.IsQuasiFullyFaithful) {n : ℤ} {E : C}
-    (hFE : IsSphericalObject k n (F.obj E)) : IsSphericalObject k n E := by
-  obtain ⟨tr, htr⟩ := hFE.exists_trace_isPerfPair
-  refine ⟨hFE.pos, fun X ↦ (hFE.hasFiniteTotalGradedHom_from (F.obj X)).of_linearEquiv
-      fun d ↦ (hff.homologyLinearEquiv E X d).symm,
-    (hff.homologyLinearEquiv E E 0).finrank_eq.trans hFE.finrank_homology_zero,
-    (hff.homologyLinearEquiv E E n).finrank_eq.trans hFE.finrank_homology_top, fun hd0 hdn ↦ by
-      have := hFE.subsingleton_homology_of_ne hd0 hdn
-      exact (hff.homologyLinearEquiv E E _).toEquiv.subsingleton_congr.mpr inferInstance,
-    ⟨tr.comp (hff.homologyLinearEquiv E E n).toLinearMap, fun X d ↦ ?_⟩⟩
-  have := htr (F.obj X) d; convert (inferInstance :
-    (((dgHomologyComp k (F.obj E) (F.obj X) (F.obj E) (add_sub_cancel d n)).compr₂ tr).compl₁₂
-      (hff.homologyLinearEquiv E X d).toLinearMap
-      (hff.homologyLinearEquiv X E (n - d)).toLinearMap).IsPerfPair)
-  ext a b; simp [hff.homologyLinearEquiv_dgHomologyComp]
+    (hFE : IsSphericalObject k n (F.obj E)) : IsSphericalObject k n E :=
+  hFE.of_homologyEquiv F.obj (fun d ↦ d) Function.injective_id (hff.homologyLinearEquiv E E)
+    (fun X ↦ hff.homologyLinearEquiv E X) (fun X d ↦ hff.homologyLinearEquiv X E (n - d))
+    fun _ d ↦ hff.homologyLinearEquiv_dgHomologyComp (add_sub_cancel d n)
 
 /-- A DG quasi-equivalence preserves and reflects `n`-spherical objects. -/
 theorem IsQuasiEquivalence.isSphericalObject_iff (hF : F.IsQuasiEquivalence) (n : ℤ) (E : C) :
     IsSphericalObject k n (F.obj E) ↔ IsSphericalObject k n E := by
-  have hff := hF.isQuasiFullyFaithful; refine ⟨isSphericalObject_of_map hff, fun hE ↦ ?_⟩
-  obtain ⟨tr, htr⟩ := hE.exists_trace_isPerfPair
-  refine ⟨hE.pos, fun Y ↦ ?_,
-    (hff.homologyLinearEquiv E E 0).symm.finrank_eq.trans hE.finrank_homology_zero,
-    (hff.homologyLinearEquiv E E n).symm.finrank_eq.trans hE.finrank_homology_top, fun hd0 hdn ↦ by
-      have := hE.subsingleton_homology_of_ne hd0 hdn
-      exact (hff.homologyLinearEquiv E E _).toEquiv.subsingleton_congr.mp inferInstance,
-    ⟨tr.comp (hff.homologyLinearEquiv E E n).symm.toLinearMap, fun Y d ↦ ?_⟩⟩
-  · obtain ⟨X, ⟨eY⟩⟩ := hF.essentiallySurjective Y
-    obtain ⟨u, v, huv, hvu⟩ := TauCeti.homotopyIso_exists_classes k eY
-    exact ((hE.hasFiniteTotalGradedHom_from X).of_linearEquiv
-      (hff.homologyLinearEquiv E X)).of_linearEquiv fun d ↦ TauCeti.gradedPostcompEquiv k
-      (F.obj E) (zero_add 0) (zero_add 0) (add_zero d) (add_zero d) u v huv hvu
-  · obtain ⟨X, ⟨eY⟩⟩ := hF.essentiallySurjective Y
-    obtain ⟨u, v, huv, hvu⟩ := TauCeti.homotopyIso_exists_classes k eY
-    let eL := (TauCeti.gradedPostcompEquiv k (F.obj E) (zero_add 0) (zero_add 0)
-      (add_zero d) (add_zero d) u v huv hvu).symm.trans (hff.homologyLinearEquiv E X d).symm
-    let eR := (TauCeti.gradedPrecompEquiv k (F.obj E) (zero_add 0) (zero_add 0)
-      (zero_add (n - d)) (zero_add (n - d)) u v huv hvu).symm.trans
-      (hff.homologyLinearEquiv X E (n - d)).symm
-    have := htr X d; convert (inferInstance :
-      (((dgHomologyComp k E X E (add_sub_cancel d n)).compr₂ tr).compl₁₂
-        eL.toLinearMap eR.toLinearMap).IsPerfPair)
-    ext a b; simp only [LinearMap.compr₂_apply, LinearMap.comp_apply, LinearMap.compl₁₂_apply,
-      LinearEquiv.coe_coe]
-    apply congrArg tr; apply (hff.homologyLinearEquiv E E n).injective
-    rw [LinearEquiv.apply_symm_apply, hff.homologyLinearEquiv_dgHomologyComp]
-    simp only [eL, eR, TauCeti.gradedPostcompEquiv, TauCeti.gradedPrecompEquiv,
-      LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, LinearEquiv.coe_symm_mk,
-      LinearMap.flip_apply]
-    rw [dgHomologyComp_assoc k (add_zero d) (zero_add (n - d)) (add_sub_cancel d n)
-      (add_sub_cancel d n), ← dgHomologyComp_assoc k (zero_add 0) (zero_add (n - d))
-      (zero_add (n - d)) (zero_add (n - d)), hvu, dgHomologyId_dgHomologyComp]
+  have hff := hF.isQuasiFullyFaithful
+  refine ⟨isSphericalObject_of_map hff, fun hE ↦ ?_⟩
+  choose X hX using hF.essentiallySurjective
+  let eY (Y : D) := (hX Y).some
+  let u (Y : D) : (dgHomComplex k (F.obj (X Y)) Y).homology 0 := (eY Y).hom
+  let v (Y : D) : (dgHomComplex k Y (F.obj (X Y))).homology 0 := (eY Y).inv
+  have huv (Y : D) : dgHomologyComp k (F.obj (X Y)) Y (F.obj (X Y)) (zero_add 0) (u Y) (v Y) =
+      dgHomologyId k (F.obj (X Y)) := DGHomotopyCategory.dgHomologyComp_hom_inv k (eY Y)
+  have hvu (Y : D) : dgHomologyComp k Y (F.obj (X Y)) Y (zero_add 0) (v Y) (u Y) =
+      dgHomologyId k Y := DGHomotopyCategory.dgHomologyComp_inv_hom k (eY Y)
+  refine hE.of_homologyEquiv X (fun d ↦ d) Function.injective_id
+    (fun d ↦ (hff.homologyLinearEquiv E E d).symm)
+    (fun Y d ↦ (dgHomologyCompRightEquiv k (F.obj E) (zero_add 0) (zero_add 0)
+      (add_zero d) (add_zero d) (v Y) (u Y) (hvu Y) (huv Y)).trans
+      (hff.homologyLinearEquiv E (X Y) d).symm)
+    (fun Y d ↦ (dgHomologyCompLeftEquiv k (F.obj E) (zero_add 0) (zero_add 0)
+      (zero_add (n - d)) (zero_add (n - d)) (u Y) (v Y) (huv Y) (hvu Y)).trans
+      (hff.homologyLinearEquiv (X Y) E (n - d)).symm)
+    fun Y d a b ↦ (hff.homologyLinearEquiv E E n).injective ?_
+  simp only [LinearEquiv.apply_symm_apply, hff.homologyLinearEquiv_dgHomologyComp,
+    LinearEquiv.trans_apply, dgHomologyCompRightEquiv_apply, dgHomologyCompLeftEquiv_apply]
+  rw [dgHomologyComp_assoc k (add_zero d) (zero_add (n - d)) (add_sub_cancel d n)
+    (add_sub_cancel d n), ← dgHomologyComp_assoc k (zero_add 0) (zero_add (n - d))
+    (zero_add (n - d)) (zero_add (n - d)), hvu Y, dgHomologyId_dgHomologyComp]
 
 end Field
 

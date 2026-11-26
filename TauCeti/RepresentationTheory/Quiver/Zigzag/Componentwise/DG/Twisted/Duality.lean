@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Algebra.Homology.ShortComplex.PerfectPairing
-public import TauCeti.CategoryTheory.DG.GradedHomology
+public import TauCeti.LinearAlgebra.PerfectPairing.Pi
 public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.TracePairing
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Twisted.Trace
@@ -125,14 +125,11 @@ private theorem diagTerm_dgComp (c : V → kˣ) {X Y : ZigzagProjectiveTwistedCl
     congr 1
     simp only [g', rightEntryEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, ← castDeg_def]
     rw [dgComp_castDeg k (by omega) (by omega : 2 + ((X.obj.X i).shift - (X.obj.X i).shift) = 2)]
-  dsimp only [diagTerm, LinearMap.smul_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    Submodule.coe_subtype, smul_eq_mul]
-  conv_lhs =>
-    rw [hentry, map_zsmul_unit, Submodule.coe_smul_of_tower, map_zsmul_unit, mul_smul_comm,
-      smul_smul, coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_apply, castDeg_self]
-  exact (congrArg (((X.obj.X i).shift.negOnePow *
-      (((X.obj.X i).shift - (Y.obj.X j).shift) * dij).negOnePow) • ·)
-    (zigzagAlgebraProjectiveDGHomWeightedTracePairing_apply k G c (v i) (w j) dij f' g')).symm
+  simp only [diagTerm, LinearMap.smul_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    Submodule.coe_subtype, hentry, map_zsmul_unit,
+    coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_apply, castDeg_self,
+    zigzagAlgebraProjectiveDGHomWeightedTracePairing_apply, smul_eq_mul, mul_smul_comm, smul_smul,
+    dij, f', g']
 
 /-- Unit vertex weights make `dgHomPairing` a perfect pairing over any commutative ring `k`. -/
 instance dgHomPairing_isPerfPair (c : V → kˣ) (X Y : ZigzagProjectiveTwistedClosure k G)

@@ -10,13 +10,11 @@ public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.Pi
 
 /-!
-# Finite-product and unit-scaled perfect pairings
+# Finite-product perfect pairings
 
 Given a finite family of bilinear pairings `p i : M i →ₗ[R] N i →ₗ[R] R` over a commutative
 semiring `R`, summing coordinate evaluations defines `LinearMap.piPairing p`, which is perfect
-whenever every `p i` is perfect (`LinearMap.piPairing_isPerfPair`). Scaling a perfect pairing by a
-unit (`IsPerfPair.smul_of_isUnit`, `IsPerfPair.units_smul`), negation (`IsPerfPair.neg`), or a sign
-`ℤˣ` (`IsPerfPair.intUnits_smul`) also preserves `LinearMap.IsPerfPair`.
+whenever every `p i` is perfect (`LinearMap.piPairing_isPerfPair`).
 -/
 
 public section
@@ -25,25 +23,7 @@ open Function
 
 namespace LinearMap
 
-section CommSemiring
-
-variable {R : Type*} [CommSemiring R]
-
-/-- Scaling a perfect pairing by a unit of the base commutative semiring preserves perfectness. -/
-theorem IsPerfPair.smul_of_isUnit {M N : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N]
-    [Module R N] {c : R} (hc : IsUnit c) (p : M →ₗ[R] N →ₗ[R] R) [p.IsPerfPair] :
-    (c • p).IsPerfPair := by
-  obtain ⟨u, rfl⟩ := hc
-  convert (inferInstance : (p.compl₁₂ (LinearEquiv.smulOfUnit u).toLinearMap
-    (LinearEquiv.refl R N).toLinearMap).IsPerfPair)
-  ext x y; simp [LinearEquiv.smulOfUnit, Units.smul_def]
-
-/-- Scaling a perfect pairing by `u : Rˣ` preserves perfectness. -/
-instance IsPerfPair.units_smul {M N : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N]
-    [Module R N] (u : Rˣ) (p : M →ₗ[R] N →ₗ[R] R) [p.IsPerfPair] : (u • p).IsPerfPair :=
-  Units.smul_def u p ▸ IsPerfPair.smul_of_isUnit u.isUnit p
-
-variable {ι : Type*} [Fintype ι] {M N : ι → Type*}
+variable {R : Type*} [CommSemiring R] {ι : Type*} [Fintype ι] {M N : ι → Type*}
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)]
 
 /-- The bilinear pairing on finite dependent products obtained by summing coordinate pairings. -/
@@ -81,24 +61,5 @@ private theorem piPairing_bijective_left (p : ∀ i, M i →ₗ[R] N i →ₗ[R]
 instance piPairing_isPerfPair (p : ∀ i, M i →ₗ[R] N i →ₗ[R] R) [∀ i, (p i).IsPerfPair] :
     (piPairing p).IsPerfPair :=
   ⟨piPairing_bijective_left p, flip_piPairing p ▸ piPairing_bijective_left fun i ↦ (p i).flip⟩
-
-end CommSemiring
-
-section CommRing
-
-variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-
-/-- Negating a perfect pairing preserves perfectness. -/
-instance IsPerfPair.neg (p : M →ₗ[R] N →ₗ[R] R) [p.IsPerfPair] : (-p).IsPerfPair :=
-  neg_one_smul R p ▸ IsPerfPair.smul_of_isUnit isUnit_one.neg p
-
-/-- Scaling a perfect pairing by a sign unit `u : ℤˣ` preserves perfectness. -/
-instance IsPerfPair.intUnits_smul (u : ℤˣ) (p : M →ₗ[R] N →ₗ[R] R) [p.IsPerfPair] :
-    (u • p).IsPerfPair := by
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · simpa only [one_smul] using ‹p.IsPerfPair›
-  · simpa only [Units.neg_smul, one_smul] using inferInstanceAs (-p).IsPerfPair
-
-end CommRing
 
 end LinearMap

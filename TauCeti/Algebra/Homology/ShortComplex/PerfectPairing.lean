@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
+public import Mathlib.Algebra.Ring.NegOnePow
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
-public import TauCeti.Algebra.Ring.NegOnePow
-public import TauCeti.LinearAlgebra.PerfectPairing.Pi
+public import TauCeti.LinearAlgebra.PerfectPairing.Basic
+public import TauCeti.RingTheory.SimpleModule.InjectiveProjective
 
 /-!
 # Descent of bilinear and perfect pairings to homology
@@ -39,26 +39,6 @@ namespace CategoryTheory.ShortComplex
 section CommRing
 
 variable {R : Type u} [CommRing R]
-
-private theorem moduleCatHomologyIso_π.{u'} (U : ShortComplex (ModuleCat.{u'} R)) (x : U.cycles) :
-    U.moduleCatHomologyIso.hom.hom (U.homologyπ.hom x) =
-      (LinearMap.range U.moduleCatToCycles).mkQ (U.moduleCatCyclesIso.hom.hom x) ∧
-    (LinearMap.ker U.g.hom).subtype (U.moduleCatCyclesIso.hom.hom x) = U.iCycles.hom x :=
-  ⟨by simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, moduleCatLeftHomologyData_π_hom] using
-      LinearMap.congr_fun (congrArg ModuleCat.Hom.hom U.π_moduleCatCyclesIso_hom) x,
-   by simpa only [ModuleCat.hom_comp, LinearMap.comp_apply, moduleCatLeftHomologyData_i_hom] using
-      LinearMap.congr_fun (congrArg ModuleCat.Hom.hom U.moduleCatCyclesIso_hom_i) x⟩
-
-private theorem homologyMap_π.{u'} {U V : ShortComplex (ModuleCat.{u'} R)} (η : U ⟶ V)
-    (z : U.cycles) :
-    (ShortComplex.homologyMap η).hom (U.homologyπ.hom z) =
-      V.homologyπ.hom ((ShortComplex.cyclesMap η).hom z) ∧
-    V.iCycles.hom ((ShortComplex.cyclesMap η).hom z) = η.τ₂.hom (U.iCycles.hom z) :=
-  ⟨by simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using
-      LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (ShortComplex.homologyπ_naturality η)) z,
-   by simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using
-      LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (ShortComplex.cyclesMap_i η)) z⟩
-
 variable (S : ShortComplex (ModuleCat.{v} R)) (T : ShortComplex (ModuleCat.{w} R))
 
 private def concreteHomologyPairing (p₂ : S.X₂ →ₗ[R] T.X₂ →ₗ[R] R)
@@ -87,11 +67,8 @@ def homologyPairing (p₂ : S.X₂ →ₗ[R] T.X₂ →ₗ[R] R)
     (x : S.cycles) (y : T.cycles) :
     S.homologyPairing T p₂ hf hg (S.homologyπ.hom x) (T.homologyπ.hom y) =
       p₂ (S.iCycles.hom x) (T.iCycles.hom y) := by
-  rw [homologyPairing, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-    Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply, (moduleCatHomologyIso_π S x).1,
-    (moduleCatHomologyIso_π T y).1, concreteHomologyPairing, Submodule.mkQ_apply,
-    Submodule.mkQ_apply, LinearMap.liftQ₂_mk, LinearMap.compl₁₂_apply,
-    (moduleCatHomologyIso_π S x).2, (moduleCatHomologyIso_π T y).2]
+  rw [← S.moduleCatCyclesIso_hom_i, ← T.moduleCatCyclesIso_hom_i]
+  simp [homologyPairing, concreteHomologyPairing, ModuleCat.Hom.hom]
 
 /-- Flipping `ShortComplex.homologyPairing` exchanges the two short complexes and flips `p₂`. -/
 @[simp] theorem flip_homologyPairing (p₂ : S.X₂ →ₗ[R] T.X₂ →ₗ[R] R)
@@ -125,8 +102,12 @@ theorem homologyPairing_homologyMap {S' : ShortComplex (ModuleCat.{v} R)}
   have hT : Surjective T'.homologyπ.hom :=
     (ModuleCat.epi_iff_surjective T'.homologyπ).1 inferInstance
   obtain ⟨x, rfl⟩ := hS a; obtain ⟨y, rfl⟩ := hT b
-  rw [(homologyMap_π φ x).1, (homologyMap_π ψ y).1, homologyPairing_homologyπ,
-    homologyPairing_homologyπ, (homologyMap_π φ x).2, (homologyMap_π ψ y).2, hφψ]
+  rw [← ModuleCat.comp_apply, ShortComplex.homologyπ_naturality, ModuleCat.comp_apply,
+    ← ModuleCat.comp_apply T'.homologyπ, ShortComplex.homologyπ_naturality, ModuleCat.comp_apply,
+    homologyPairing_homologyπ, homologyPairing_homologyπ,
+    ← ModuleCat.comp_apply, ShortComplex.cyclesMap_i, ModuleCat.comp_apply,
+    ← ModuleCat.comp_apply (ShortComplex.cyclesMap ψ), ShortComplex.cyclesMap_i,
+    ModuleCat.comp_apply, hφψ]
 
 private theorem concreteHomologyPairing_bijective_left (hR : Module.Baer R R)
     (p₁ : S.X₁ →ₗ[R] T.X₃ →ₗ[R] R) (p₂ : S.X₂ →ₗ[R] T.X₂ →ₗ[R] R)
@@ -214,8 +195,7 @@ theorem isPerfPair_homologyPairing {k : Type u} [Field k]
     (hg : ∀ (x : S.X₂) (y : T.X₁), S.g.hom x = 0 → p₂ x (T.f.hom y) = 0 :=
       fun x y hx ↦ by rw [h₃, hx, map_zero, LinearMap.zero_apply]) :
     (S.homologyPairing T p₂ hf hg).IsPerfPair :=
-  isPerfPair_homologyPairing_of_baer S T
-    (Module.Baer.of_injective (Module.injective_of_isSemisimpleRing k k)) p₁ p₂ p₃ h₁ h₃ hf hg
+  isPerfPair_homologyPairing_of_baer S T (Module.Baer.of_isSemisimpleRing k k) p₁ p₂ p₃ h₁ h₃ hf hg
 
 end CategoryTheory.ShortComplex
 
@@ -226,18 +206,31 @@ open CategoryTheory
 section CommRing
 
 variable {R : Type u} [CommRing R]
-
-private theorem sc'_π.{u'} (K : CochainComplex (ModuleCat.{u'} R) ℤ) (i j k : ℤ)
-    (hij : (ComplexShape.up ℤ).prev j = i) (hjk : (ComplexShape.up ℤ).next j = k) (z : K.cycles j) :
-    (K.homologyIsoSc' i j k hij hjk).toLinearEquiv ((K.homologyπ j).hom z) =
-      (K.sc' i j k).homologyπ.hom ((K.cyclesIsoSc' i j k hij hjk).hom.hom z) ∧
-    (K.sc' i j k).iCycles.hom ((K.cyclesIsoSc' i j k hij hjk).hom.hom z) = (K.iCycles j).hom z :=
-  ⟨by simpa only [Iso.toLinearEquiv_apply, ModuleCat.hom_comp, LinearMap.comp_apply] using
-      LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (K.π_homologyIsoSc'_hom i j k hij hjk)) z,
-   by simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using
-      LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (K.cyclesIsoSc'_hom_iCycles i j k hij hjk)) z⟩
-
 variable (C : CochainComplex (ModuleCat.{v} R) ℤ) (D : CochainComplex (ModuleCat.{w} R) ℤ) (n : ℤ)
+
+private theorem sc'_pairing_left (p : ∀ d : ℤ, C.X d →ₗ[R] D.X (n - d) →ₗ[R] R)
+    (hp : ∀ {a a' : ℤ}, a + 1 = a' → ∀ (x : C.X a) (y : D.X (n - a')),
+      p a' ((C.d a a').hom x) y + a.negOnePow • p a x ((D.d (n - a') (n - a)).hom y) = 0)
+    (d : ℤ) (x : (C.sc' (d - 1) d (d + 1)).X₁)
+    (y : (D.sc' (n - (d + 1)) (n - d) (n - (d - 1))).X₂) :
+    p d ((C.sc' (d - 1) d (d + 1)).f.hom x) y =
+      ((-(d - 1).negOnePow) • p (d - 1)) x
+        ((D.sc' (n - (d + 1)) (n - d) (n - (d - 1))).g.hom y) := by
+  simpa only [HomologicalComplex.shortComplexFunctor'_obj_f,
+    HomologicalComplex.shortComplexFunctor'_obj_g, Units.neg_smul, LinearMap.neg_apply,
+    LinearMap.smul_apply] using eq_neg_of_add_eq_zero_left (hp (by omega : (d - 1) + 1 = d) x y)
+
+private theorem sc'_pairing_right (p : ∀ d : ℤ, C.X d →ₗ[R] D.X (n - d) →ₗ[R] R)
+    (hp : ∀ {a a' : ℤ}, a + 1 = a' → ∀ (x : C.X a) (y : D.X (n - a')),
+      p a' ((C.d a a').hom x) y + a.negOnePow • p a x ((D.d (n - a') (n - a)).hom y) = 0)
+    (d : ℤ) (x : (C.sc' (d - 1) d (d + 1)).X₂)
+    (y : (D.sc' (n - (d + 1)) (n - d) (n - (d - 1))).X₁) :
+    p d x ((D.sc' (n - (d + 1)) (n - d) (n - (d - 1))).f.hom y) =
+      ((-d.negOnePow) • p (d + 1)) ((C.sc' (d - 1) d (d + 1)).g.hom x) y := by
+  simpa only [HomologicalComplex.shortComplexFunctor'_obj_f,
+    HomologicalComplex.shortComplexFunctor'_obj_g, smul_smul, Int.units_mul_self, one_smul,
+    smul_neg, Units.neg_smul, LinearMap.neg_apply, LinearMap.smul_apply] using
+    congrArg (d.negOnePow • ·) (eq_neg_of_add_eq_zero_right (hp (rfl : d + 1 = d + 1) x y))
 
 /-- Descend a graded Leibniz-compatible family of cochain pairings in complementary degrees `d` and
 `n - d` to canonical cohomology. -/
@@ -246,16 +239,9 @@ def homologyPairing (p : ∀ d : ℤ, C.X d →ₗ[R] D.X (n - d) →ₗ[R] R)
       p a' ((C.d a a').hom x) y + a.negOnePow • p a x ((D.d (n - a') (n - a)).hom y) = 0)
     (d : ℤ) : C.homology d →ₗ[R] D.homology (n - d) →ₗ[R] R :=
   ((C.sc' (d - 1) d (d + 1)).homologyPairing (D.sc' (n - (d + 1)) (n - d) (n - (d - 1))) (p d)
-    (fun x y hy ↦ by
-      simp only [HomologicalComplex.shortComplexFunctor'_obj_f,
-        HomologicalComplex.shortComplexFunctor'_obj_g] at hy ⊢
-      simpa only [hy, map_zero, smul_zero, add_zero] using hp (by omega : (d - 1) + 1 = d) x y)
+    (fun x y hy ↦ by rw [sc'_pairing_left C D n p hp d x y, hy, map_zero])
     (fun x y hx ↦ by
-      simp only [HomologicalComplex.shortComplexFunctor'_obj_f,
-        HomologicalComplex.shortComplexFunctor'_obj_g] at hx ⊢
-      have h := hp (rfl : d + 1 = d + 1) x y; rw [hx, map_zero, LinearMap.zero_apply, zero_add] at h
-      simpa only [smul_smul, Int.units_mul_self, one_smul, smul_zero] using
-        congrArg (d.negOnePow • ·) h)).compl₁₂
+      rw [sc'_pairing_right C D n p hp d x y, hx, map_zero, LinearMap.zero_apply])).compl₁₂
     (C.homologyIsoSc' (d - 1) d (d + 1) (by simp) (by simp)).toLinearEquiv.toLinearMap
     (D.homologyIsoSc' (n - (d + 1)) (n - d) (n - (d - 1)) (by simp; omega)
       (by simp; omega)).toLinearEquiv.toLinearMap
@@ -267,10 +253,12 @@ def homologyPairing (p : ∀ d : ℤ, C.X d →ₗ[R] D.X (n - d) →ₗ[R] R)
     (d : ℤ) (x : C.cycles d) (y : D.cycles (n - d)) :
     C.homologyPairing D n p hp d ((C.homologyπ d).hom x) ((D.homologyπ (n - d)).hom y) =
       p d ((C.iCycles d).hom x) ((D.iCycles (n - d)).hom y) := by
-  have hC := sc'_π C (d - 1) d (d + 1) (by simp) (by simp) x
-  have hD := sc'_π D (n - (d + 1)) (n - d) (n - (d - 1)) (by simp; omega) (by simp; omega) y
-  rw [homologyPairing, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-    hC.1, hD.1, ShortComplex.homologyPairing_homologyπ, hC.2, hD.2]
+  simp only [homologyPairing, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, Iso.toLinearEquiv_apply]
+  rw [← ModuleCat.comp_apply, HomologicalComplex.π_homologyIsoSc'_hom, ModuleCat.comp_apply,
+    ← ModuleCat.comp_apply (D.homologyπ _), HomologicalComplex.π_homologyIsoSc'_hom,
+    ModuleCat.comp_apply, ShortComplex.homologyPairing_homologyπ,
+    ← ModuleCat.comp_apply, HomologicalComplex.cyclesIsoSc'_hom_iCycles,
+    ← ModuleCat.comp_apply, HomologicalComplex.cyclesIsoSc'_hom_iCycles]
 
 /-- Over a self-injective commutative ring (`Module.Baer R R`), a degreewise perfect cochain
 pairing satisfying the graded Leibniz rule descends to a perfect pairing on cohomology. -/
@@ -279,24 +267,11 @@ theorem isPerfPair_homologyPairing_of_baer (hR : Module.Baer R R)
     (hp : ∀ {a a' : ℤ}, a + 1 = a' → ∀ (x : C.X a) (y : D.X (n - a')),
       p a' ((C.d a a').hom x) y + a.negOnePow • p a x ((D.d (n - a') (n - a)).hom y) = 0)
     (d : ℤ) : (C.homologyPairing D n p hp d).IsPerfPair := by
-  let S := C.sc' (d - 1) d (d + 1); let T := D.sc' (n - (d + 1)) (n - d) (n - (d - 1))
-  let p₁ : S.X₁ →ₗ[R] T.X₃ →ₗ[R] R := (-(d - 1).negOnePow) • p (d - 1)
-  let p₃ : S.X₃ →ₗ[R] T.X₁ →ₗ[R] R := (-d.negOnePow) • p (d + 1)
-  have _ : p₁.IsPerfPair := inferInstanceAs ((-((d - 1).negOnePow)) • p (d - 1)).IsPerfPair
-  have _ : p₃.IsPerfPair := inferInstanceAs ((-d.negOnePow) • p (d + 1)).IsPerfPair
-  rw [homologyPairing]
-  have _ := ShortComplex.isPerfPair_homologyPairing_of_baer S T hR p₁ (p d) p₃
-    (fun x y ↦ by
-      simpa only [S, T, p₁, HomologicalComplex.shortComplexFunctor'_obj_f,
-        HomologicalComplex.shortComplexFunctor'_obj_g, Units.neg_smul, LinearMap.neg_apply,
-        LinearMap.smul_apply] using
-        eq_neg_of_add_eq_zero_left (hp (by omega : (d - 1) + 1 = d) x y))
-    (fun x y ↦ by
-      simpa only [S, T, p₃, HomologicalComplex.shortComplexFunctor'_obj_f,
-        HomologicalComplex.shortComplexFunctor'_obj_g, smul_smul, Int.units_mul_self, one_smul,
-        smul_neg, Units.neg_smul, LinearMap.neg_apply, LinearMap.smul_apply] using
-        congrArg (d.negOnePow • ·) (eq_neg_of_add_eq_zero_right (hp (rfl : d + 1 = d + 1) x y)))
-  infer_instance
+  have _ := ShortComplex.isPerfPair_homologyPairing_of_baer
+    (C.sc' (d - 1) d (d + 1)) (D.sc' (n - (d + 1)) (n - d) (n - (d - 1))) hR
+    ((-(d - 1).negOnePow) • p (d - 1)) (p d) ((-d.negOnePow) • p (d + 1))
+    (sc'_pairing_left C D n p hp d) (sc'_pairing_right C D n p hp d)
+  rw [homologyPairing]; infer_instance
 
 end CommRing
 
@@ -308,7 +283,6 @@ theorem isPerfPair_homologyPairing {k : Type u} [Field k]
     (hp : ∀ {a a' : ℤ}, a + 1 = a' → ∀ (x : C.X a) (y : D.X (n - a')),
       p a' ((C.d a a').hom x) y + a.negOnePow • p a x ((D.d (n - a') (n - a)).hom y) = 0)
     (d : ℤ) : (C.homologyPairing D n p hp d).IsPerfPair :=
-  isPerfPair_homologyPairing_of_baer C D n
-    (Module.Baer.of_injective (Module.injective_of_isSemisimpleRing k k)) p hp d
+  isPerfPair_homologyPairing_of_baer C D n (Module.Baer.of_isSemisimpleRing k k) p hp d
 
 end CochainComplex
