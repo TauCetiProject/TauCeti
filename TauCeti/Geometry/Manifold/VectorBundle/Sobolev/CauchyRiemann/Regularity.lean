@@ -62,6 +62,8 @@ planar theory.
   kernel of `D`.
 * `TauCeti.IsRealCauchyRiemannOperator.ofContMDiffSection_mem_ker_sobolevL_iff`: the Sobolev
   section of a `C¹` section `s` is in the kernel exactly when `D s = 0`.
+* `TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEquivComap`: the kernel, for `p > 1`, is
+  linearly equivalent to the space of `C¹` sections whose Sobolev sections lie in it.
 * `TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEquiv`,
   `TauCeti.IsRealCauchyRiemannOperator.finrank_ker_sobolevL_eq`: the kernels at two
   exponents `p, p' > 1` are linearly equivalent, so they have the same dimension.
@@ -234,8 +236,9 @@ private theorem map_comap_ker_sobolevL (hp : 1 < p) :
   exact ⟨_, hw, rfl⟩
 
 /-- The kernel of the realization of `D` at exponent `p`, as the space of `C¹` sections whose
-Sobolev sections lie in it. -/
-private def kerSobolevLEquivComap (hp : 1 < p) :
+Sobolev sections lie in it: every kernel element is the Sobolev section of exactly one such
+section. -/
+def kerSobolevLEquivComap (hp : 1 < p) :
     ((hD.sobolevL A hDs volume p).ker).comap
         (SobolevSection.ofContMDiffSection A volume p 1) ≃ₗ[ℝ]
       (hD.sobolevL A hDs volume p).ker :=
@@ -244,7 +247,7 @@ private def kerSobolevLEquivComap (hp : 1 < p) :
 
 /-- `kerSobolevLEquivComap` sends a `C¹` section to its Sobolev section. -/
 @[simp]
-private theorem coe_kerSobolevLEquivComap_apply (hp : 1 < p)
+theorem coe_kerSobolevLEquivComap_apply (hp : 1 < p)
     (t : (hD.sobolevL A hDs volume p).ker.comap (SobolevSection.ofContMDiffSection A volume p 1)) :
     (kerSobolevLEquivComap A hD hDs hp t : SobolevSection A volume p 1) =
       SobolevSection.ofContMDiffSection A volume p 1 t := by
