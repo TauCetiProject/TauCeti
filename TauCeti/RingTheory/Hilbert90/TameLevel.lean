@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Artinian.Ring
 import Mathlib.Algebra.Algebra.Subalgebra.Basic
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.GroupTheory.Index
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Spectrum.Prime.Topology
@@ -47,6 +48,8 @@ both `GL n R` and `Rˣ`:
   Mem. AMS 52 (1965).
 * P. Scholze, *The Langlands–Kottwitz approach for some simple Shimura varieties*, Invent. Math.
   192 (2013), Lemma 2.2.
+* Adapted from the formalization by L. Alpöge and L. Sernau in
+  `Lib/GaloisRep/Hilbert90/TameActions.lean` (`New.IsTameAtLevel`).
 -/
 
 public section
@@ -157,7 +160,12 @@ theorem IsTameAtLevel.of_sq_eq_one_of_isUnit_sub {σ : R →+* R} {m x : R}
     have h_mem : x - σ x ∈ P := sub_mem_comm_iff.mp (by simpa using h_triv x)
     exact P.mem_of_dvd hx.dvd h_mem
 
-private lemma map_prod_range_eq_self_of_periodic {M : Type*} [CommMonoid M] {p : ℕ}
+/-- If a monoid endomorphism `τ` shifts a periodic sequence `a` by `a (i + 1) = τ (a i)` with
+`a p = a 0`, then `τ` fixes the product `∏ i ∈ range p, a i`. -/
+@[to_additive
+  /-- If an additive monoid endomorphism `τ` shifts a periodic sequence `a` by
+  `a (i + 1) = τ (a i)` with `a p = a 0`, then `τ` fixes the sum `∑ i ∈ range p, a i`. -/]
+theorem map_prod_range_eq_self_of_periodic {M : Type*} [CommMonoid M] {p : ℕ}
     (τ : M →* M) (a : ℕ → M) (h_period : a p = a 0) (h_succ : ∀ i : ℕ, a (i + 1) = τ (a i)) :
     τ (∏ i ∈ range p, a i) = ∏ i ∈ range p, a i := by
   cases p with
@@ -168,18 +176,6 @@ private lemma map_prod_range_eq_self_of_periodic {M : Type*} [CommMonoid M] {p :
         simp only [map_prod, h_succ]
       _ = (∏ i ∈ range p, a (i + 1)) * a (p + 1) := prod_range_succ _ p
       _ = ∏ i ∈ range (p + 1), a i := by rw [h_period, prod_range_succ']
-
-private lemma map_sum_range_eq_self_of_periodic {M : Type*} [AddCommMonoid M] {p : ℕ}
-    (τ : M →+ M) (a : ℕ → M) (h_period : a p = a 0) (h_succ : ∀ i : ℕ, a (i + 1) = τ (a i)) :
-    τ (∑ i ∈ range p, a i) = ∑ i ∈ range p, a i := by
-  cases p with
-  | zero => simp
-  | succ p =>
-    calc
-      τ (∑ i ∈ range (p + 1), a i) = ∑ i ∈ range (p + 1), a (i + 1) := by
-        simp only [map_sum, h_succ]
-      _ = (∑ i ∈ range p, a (i + 1)) + a (p + 1) := sum_range_succ _ p
-      _ = ∑ i ∈ range (p + 1), a i := by rw [h_period, sum_range_succ']
 
 private lemma isFixedPt_prod_range_pow_apply {σ : R →+* R} {p : ℕ} (hσ : σ ^ p = 1) (x : R) :
     IsFixedPt σ (∏ i ∈ range p, (σ ^ i) x) :=
@@ -313,16 +309,6 @@ private lemma exists_fixed_eq_one_add_smul {n : Type*} [Fintype n] [DecidableEq 
       rw [eq_add_of_sub_eq' he]
       simp [add_smul, mul_smul, add_assoc]
 
-private lemma dvd_one_sub_det_one_add_smul {n : Type*} [Fintype n] [DecidableEq n]
-    (m : R) (W : Matrix n n R) : m ∣ 1 - (1 + m • W).det := by
-  rw [← Ideal.Quotient.eq_zero_iff_dvd, map_sub, map_one, RingHom.map_det]
-  have hmap : (1 + m • W).map (Ideal.Quotient.mk (span {m})) = 1 := by
-    ext i j
-    have hm0 : Ideal.Quotient.mk (span {m}) m = 0 :=
-      Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton m))
-    simp [Matrix.one_apply, hm0]
-  rw [RingHom.mapMatrix_apply, hmap, det_one, sub_self]
-
 /-- **Hilbert's Theorem 90 for `GL n` at congruence level `m` over an Artinian ring.** If `R` is
 Artinian, `σ` is tame at level `m` with exponent `p`, and `c : GL n R` satisfies `c = 1 + m • Y`
 and `twistedNorm (GeneralLinearGroup.map σ) p c = 1`, then `c * k.map σ = k` for some `k : GL n R`
@@ -357,7 +343,10 @@ theorem IsTameAtLevel.hilbert90_gl {n : Type*} [Fintype n] [DecidableEq n]
       rw [RingHom.map_det, RingHom.mapMatrix_apply]
     have h_unit : IsUnit (twistedNorm (GeneralLinearGroup.map σ) i c).val.det := by simp
     rwa [h_det, M.unit_mul_mem_iff_mem h_unit] at hgM
-  have hm_dvd : m ∣ 1 - g.det := hW ▸ dvd_one_sub_det_one_add_smul m W
+  have hm_dvd : m ∣ 1 - g.det := by
+    rw [hW, Matrix.det_one_add_smul]
+    exact ⟨-(W.trace + Polynomial.eval m (1 + Polynomial.X • W.map Polynomial.C).det.divX.divX * m),
+      by ring⟩
   obtain ⟨N, hN_fixed, ⟨z, hz⟩, hN_one, hN_mem⟩ := exists_fixed_separating h_tame hm_dvd h_conj
   have hmM : m ∉ M := fun hm_mem ↦ by
     have hN_mem_M : N ∈ M := by simpa [hz] using M.mul_mem_right z hm_mem
