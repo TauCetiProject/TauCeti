@@ -58,11 +58,11 @@ theorem verticalIntegrable_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_cpow 
     {σ x : ℝ} (hσ : σ < 0) (hσa : -σ < a.re) (hσb : -σ < b.re) (hx : 0 < x) :
     VerticalIntegrable
       (fun t ↦ Gamma (a + t) * Gamma (b + t) * Gamma (-t) * (Gamma (c + t))⁻¹ * (x : ℂ) ^ t) σ := by
-  have hz : -(-(x : ℂ)) ∈ slitPlane := by simpa using ofReal_mem_slitPlane.mpr hx
+  have hz : -(-(x : ℂ)) ∈ slitPlane := by rw [neg_neg]; exact ofReal_mem_slitPlane.mpr hx
   have ha : ∀ n : ℕ, a.re + σ ≠ -n := fun n _ ↦ by linarith [n.cast_nonneg' (α := ℝ)]
   have hb : ∀ n : ℕ, b.re + σ ≠ -n := fun n _ ↦ by linarith [n.cast_nonneg' (α := ℝ)]
   have hσ' : ∀ n : ℕ, σ ≠ n := fun n _ ↦ by linarith [n.cast_nonneg' (α := ℝ)]
-  simpa [VerticalIntegrable] using
+  simpa only [VerticalIntegrable, neg_neg] using
     integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow c hz ha hb hσ'
 
 /-- **The Mellin–Barnes integral** (DLMF 15.6.6) for Euler's integral at a negative argument. For
@@ -74,7 +74,8 @@ theorem eulerIntegral_neg_eq_mellinBarnes {a b c : ℂ} {σ x : ℝ} (hσ : σ <
     eulerIntegral a b c (-x) = (2 * π * Gamma a * Gamma b)⁻¹ *
       ∫ y : ℝ, Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) *
         Gamma (-(σ + y * I)) * (Gamma (c + (σ + y * I)))⁻¹ * (x : ℂ) ^ (σ + y * I) := by
-  have hz : -(-(x : ℂ)) ∈ slitPlane := by simpa using ofReal_mem_slitPlane.mpr hx
-  simpa using eulerIntegral_eq_mellinBarnes a hbc hz hσ (neg_lt.mp hσa) (neg_lt.mp hσb)
+  have hz : -(-(x : ℂ)) ∈ slitPlane := by rw [neg_neg]; exact ofReal_mem_slitPlane.mpr hx
+  simpa only [neg_neg] using
+    eulerIntegral_eq_mellinBarnes a hbc hz hσ (neg_lt.mp hσa) (neg_lt.mp hσb)
 
 end Complex
