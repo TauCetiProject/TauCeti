@@ -65,6 +65,8 @@ applies to the quotients appearing here without any further appeal to defeq.
   length.
 * `TauCeti.isFiniteLength_of_tower`: finite length over `R` gives finite length over any `A`
   acting compatibly.
+* `TauCeti.length_add_length_eq_length_add_length_of_exact`: in a four-term exact sequence the
+  terms in odd and in even positions have the same total length.
 * `TauCeti.surjective_of_injective_of_length_eq` and
   `TauCeti.injective_of_surjective_of_length_eq`: an injective map between modules of the same
   finite length is surjective, and a surjective one is injective.
@@ -211,6 +213,22 @@ theorem isFiniteLength_of_tower (R : Type*) [Ring R] [SMul R A] [Module R M]
   obtain ⟨_, _⟩ := isFiniteLength_iff_isNoetherian_isArtinian.mp h
   exact isFiniteLength_iff_isNoetherian_isArtinian.mpr
     ⟨isNoetherian_of_tower R inferInstance, isArtinian_of_tower R inferInstance⟩
+
+/-- **Four-term additivity.** In an exact sequence `0 → N₁ → N₂ → N₃ → N₄ → 0` the terms in odd
+and in even positions have the same total length. -/
+theorem length_add_length_eq_length_add_length_of_exact {N₁ N₂ N₃ N₄ : Type*}
+    [AddCommGroup N₁] [Module A N₁] [AddCommGroup N₂] [Module A N₂]
+    [AddCommGroup N₃] [Module A N₃] [AddCommGroup N₄] [Module A N₄]
+    {f₁ : N₁ →ₗ[A] N₂} {f₂ : N₂ →ₗ[A] N₃} {f₃ : N₃ →ₗ[A] N₄} (hf₁ : Function.Injective f₁)
+    (h₁₂ : Function.Exact f₁ f₂) (h₂₃ : Function.Exact f₂ f₃) (hf₃ : Function.Surjective f₃) :
+    Module.length A N₁ + Module.length A N₃ = Module.length A N₂ + Module.length A N₄ := by
+  -- Split the sequence at the image of `f₂`.
+  have h₂ := Module.length_eq_add_of_exact f₁ f₂.rangeRestrict hf₁ f₂.surjective_rangeRestrict
+    fun y ↦ by rw [← h₁₂ y, ← Subtype.coe_inj]; simp
+  have h₃ := Module.length_eq_add_of_exact (LinearMap.range f₂).subtype f₃
+    (Submodule.subtype_injective _) hf₃ fun y ↦ by
+      rw [h₂₃ y]; simp
+  rw [h₂, h₃, ← add_assoc, add_comm (Module.length A N₁)]
 
 /-- An injective linear map between modules of the same finite length is surjective: its
 cokernel has length zero. -/
