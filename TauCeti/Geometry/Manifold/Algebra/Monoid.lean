@@ -29,8 +29,8 @@ are smooth monoid morphisms into the product. Two smooth monoid morphisms with c
 multiply to a smooth monoid morphism out of the product, `ContMDiffMonoidMorphism.noncommCoprod`,
 which restricts to them along the inclusions.
 
-A pointwise product of `C^n` maps, in the order of a list, is `C^n` (`contMDiff_list_prod`, with
-additive form `contMDiff_list_sum`), in a monoid that need not be commutative.
+A pointwise product of `C^n` maps, in the order of a list, is `C^n` (`TauCeti.contMDiff_list_prod`,
+with additive form `TauCeti.contMDiff_list_sum`), in a monoid that need not be commutative.
 -/
 
 public section
@@ -284,8 +284,6 @@ theorem contMDiff_of_contMDiffAt_mulHom (f : F) {a : G}
   funext y
   simp [Function.comp_def, smul_eq_mul, ← map_mul, mul_assoc]
 
-end TauCeti
-
 section ListProd
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
@@ -311,3 +309,5 @@ theorem contMDiff_list_prod {ι : Type*} {f : ι → M → G} (l : List ι)
     exact (h a List.mem_cons_self).mul (ih fun i hi ↦ h i (List.mem_cons_of_mem a hi))
 
 end ListProd
+
+end TauCeti
