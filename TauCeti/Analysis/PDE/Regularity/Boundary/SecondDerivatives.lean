@@ -9,14 +9,12 @@ public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.FlatBoundar
 public import TauCeti.Analysis.PDE.Regularity.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 import TauCeti.Analysis.InnerProductSpace.OrthogonalSpanSingleton
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.PDE.Ellipticity.Extension
 import TauCeti.Analysis.PDE.EnergyForm.Restriction
+import TauCeti.Analysis.PDE.Regularity.FlatBoundary
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
-import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.PDE.Regularity.Hessian.DivergenceForm
 import TauCeti.Analysis.Sobolev.W1p.Extension
-import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
@@ -49,9 +47,9 @@ derivatives of `u` have `α`-Hölder precise representatives up to the boundary 
   (`exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_restrict_gradient`).
 * **Near a flat portion of the boundary.** The same holds locally for an open set `Ω` with
   `Ω ∩ B(y₀, r) = H ∩ B(y₀, r)` and a weak solution `u ∈ H¹(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω` that
-  vanishes on `∂Ω ∩ B(y₀, r)`, with hypotheses on `a` and `f` only on `B(y₀, r)`: every `∂_w u`
-  lies in `H¹(Ω ∩ B(y₀, r / 16))`, with gradient equal almost everywhere there to a field that is
-  `α`-Hölder on `closedBall y₀ (r / 16) ∩ {c₀ ≤ ⟪y, ν⟫}`
+  vanishes on `∂Ω ∩ B(y₀, r)`, with regularity and ellipticity hypotheses on `a` and `f` only on
+  `B(y₀, r)` and `f ∈ L²(Ω)`: every `∂_w u` lies in `H¹(Ω ∩ B(y₀, r / 16))`, with gradient equal
+  almost everywhere there to a field that is `α`-Hölder on `closedBall y₀ (r / 16) ∩ {c₀ ≤ ⟪y, ν⟫}`
   (`exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq`).
 
 This is the boundary counterpart of interior `C^{2,α}` regularity for divergence-form equations
@@ -102,10 +100,10 @@ coefficients on a half-space.
 * **Localization.** Near `closedBall y₀ (3r/4)` the field `a` agrees with a Lipschitz field `a'`
   uniformly elliptic on the whole space (`UniformlyEllipticOn.exists_lipschitzWith_eqOn`). For a
   cutoff `ψ` equal to one near `closedBall y₀ (r / 2)`, the product `ψ u`, extended by zero, lies
-  in `H¹₀(H)` and solves `-∂ᵢ(a'ⁱʲ ∂ⱼw) = g` in `H`
-  (`exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem`), where `g = f` on
-  `B(y₀, r / 2) ∩ H` since `∇ψ` vanishes there. The half-space theorem applies to it on
-  `B(y₀, r / 2)`, and `ψ u = u` there.
+  in `H¹₀(H)` and solves `-∂ᵢ(a'ⁱʲ ∂ⱼw) = g` in `H`, where `g = f` and `ψ u = u` on
+  `B(y₀, r / 2) ∩ H` since `ψ = 1` near there
+  (`exists_isWeakSolutionDirichlet_ae_eq_on_of_inter_eq`). The half-space theorem applies to it on
+  `B(y₀, r / 2)`.
 
 ## Main declarations
 
@@ -787,85 +785,6 @@ theorem exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_res
 
 /-! ### Near a flat portion of the boundary -/
 
-/-- Where the cutoff `ψ` is identically one near `x`, the forcing `localizedForcing a ψ f u` of the
-equation of the cutoff `ψ u` is `f` itself at `x`: its other terms carry `∇ψ` or `div(a ∇ψ)`,
-which vanish near `x`. -/
-private theorem localizedForcing_eq_of_eventuallyEq_one {Ω : Opens E}
-    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {ψ : E → ℝ} {x : E}
-    (hψ : ψ =ᶠ[𝓝 x] fun _ => (1 : ℝ)) (f : Lp ℝ 2 (volume.restrict Ω)) (u : W1p volume Ω 2) :
-    localizedForcing a ψ f u x = f x := by
-  have hgrad : ∀ᶠ y in 𝓝 x, ∇ ψ y = 0 := hψ.eventually_nhds.mono
-    fun y (hy : ψ =ᶠ[𝓝 y] fun _ => (1 : ℝ)) => hy.gradient_eq.trans (gradient_fun_const y 1)
-  have hdiv : divMatrixGradient a ψ x = 0 := by
-    rw [divMatrixGradient_def]
-    refine Finset.sum_eq_zero fun i _ => ?_
-    rw [Filter.EventuallyEq.lineDeriv_eq (f := fun _ => (0 : ℝ))
-      (hgrad.mono fun y hy => by simp only [hy, map_zero])]
-    simp [lineDeriv]
-  rw [localizedForcing_def, hψ.eq_of_nhds, hgrad.self_of_nhds, hdiv]
-  simp
-
-/-- **The cutoff of a solution near a flat portion of the boundary.** Let `U ⊆ B(y₀, r)` be open
-with `closedBall y₀ (r / 2) ⊆ U`, and let `Ω` and `H` agree inside `U`. Let `a'` be Lipschitz and
-uniformly elliptic on the whole space, equal to `a` on `U`, and let `u ∈ H¹(Ω)` solve
-`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω` with `f ∈ L²(Ω)` and vanish on `∂Ω ∩ B(y₀, r)`. Then there are
-`w ∈ H¹₀(H)` and `g ∈ L²(H)` with `-∂ᵢ(a'ⁱʲ ∂ⱼw) = g` weakly in `H`, `g = f` almost everywhere on
-`B(y₀, r / 2) ∩ H` and `w = u` almost everywhere on `Ω ∩ B(y₀, r / 2)`: `w` is `ψ u` extended by
-zero, for a cutoff `ψ` supported in `U` and equal to one near `closedBall y₀ (r / 2)`. -/
-private theorem exists_isWeakSolutionDirichlet_cutoff {H Ω U : Opens E} {y₀ : E} {r : ℝ}
-    (hΩH : Ω ⊓ U ≤ H) (hHΩ : (H : Set E) ∩ U ⊆ Ω) (hUr : (U : Set E) ⊆ ball y₀ r)
-    (hhalf : closedBall y₀ (r / 2) ⊆ U) {a a' : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {lam Lam : ℝ} {K : ℝ≥0} (hell' : UniformlyEllipticOn univ a' lam Lam)
-    (hK' : LipschitzWith K (fun x => matrixBilinearForm (a' x))) (haa' : EqOn a' a U)
-    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict Ω)) {u : W1p volume Ω 2}
-    (hu : ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 0 u (v : W1p volume Ω 2) =
-      ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x)
-    (hu0 : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ ball y₀ r →
-      ∃ v : W1p0 volume Ω 2,
-        W1p.value (v : W1p volume Ω 2) =ᵐ[volume.restrict Ω] fun x => ψ x * W1p.value u x) :
-    ∃ w : W1p0 volume H 2, ∃ g : Lp ℝ 2 (volume.restrict H), IsWeakSolutionDirichlet a' 0 0 g w ∧
-      (∀ᵐ x ∂volume.restrict H, x ∈ ball y₀ (r / 2) → g x = f x) ∧
-      W1p.value (w : W1p volume H 2) =ᵐ[volume.restrict ((Ω : Set E) ∩ ball y₀ (r / 2))]
-        W1p.value u := by
-  set Ω₁ : Opens E := Ω ⊓ U
-  have hfΩ₁ : MemLp f 2 (volume.restrict Ω₁) :=
-    hf.mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr inf_le_left) le_rfl)
-  set u₁ := W1p.restrictL (inf_le_left : Ω₁ ≤ Ω) u
-  -- On `Ω ∩ U` the restriction of `u` solves the equation with `a'`.
-  have hu₁ : ∀ v : W1p0 volume Ω₁ 2, energyFormH1 a' 0 0 u₁ (v : W1p volume Ω₁ 2) =
-      ∫ x in Ω₁, hfΩ₁.toLp f x * W1p.value (v : W1p volume Ω₁ 2) x := fun v => by
-    rw [energyFormH1_restrictL_eq_setIntegral_of_eqOn inf_le_left (fun x hx => haa' hx.2) hu v]
-    exact integral_congr_ae (hfΩ₁.coeFn_toLp.mono fun x hx => by simp only [hx])
-  -- A cutoff `ψ` equal to one near `closedBall y₀ (r / 2)` and supported in `U`; `ψ u ∈ H¹₀`.
-  obtain ⟨ψ, N, hψ, -, hψ1, hψc, hψs, hN, hψN, hgradN⟩ :=
-    (isCompact_closedBall y₀ (r / 2)).exists_contDiff_cutoff_with_bounds U.isOpen hhalf
-  have hψx : ∀ x ∈ ball y₀ (r / 2), ψ =ᶠ[𝓝 x] fun _ => (1 : ℝ) := fun x hx =>
-    mem_interior_iff_mem_nhds.1 (hψ1 (ball_subset_closedBall hx))
-  obtain ⟨v, hv⟩ := W1p.exists_w1p0_value_ae_eq_mul_restrictL (U := ⟨ball y₀ r, isOpen_ball⟩)
-    hUr hu0 hψ hψc hψs
-  have hψu : W1p.contDiffSMul ψ hψ hN (fun x _ => hψN x) (fun x _ => hgradN x) u₁ =
-      (v : W1p volume Ω₁ 2) := by
-    refine W1p.ext_value (Lp.ext ?_)
-    filter_upwards [W1p.value_contDiffSMul_ae hψ hN (fun x _ => hψN x) (fun x _ => hgradN x) u₁,
-      hv] with x h1 h2
-    rw [h1, h2, smul_eq_mul]
-  -- Extended by zero, `ψ u` solves an equation on `H` whose forcing is `f` where `ψ = 1`.
-  obtain ⟨w, g, hw, hg, hwv, -⟩ := exists_isWeakSolutionDirichlet_extendByZeroL_contDiffSMul_of_mem
-    (fun x => hell'.opNorm_matrixBilinearForm_le (mem_univ x)) hK' hΩH hu₁ hψ hψc
-    (fun x hx => ⟨hHΩ ⟨hx.2, hψs hx.1⟩, hψs hx.1⟩) hN _ _ (hψu ▸ v.property)
-  have hsub : (Ω : Set E) ∩ ball y₀ (r / 2) ⊆ Ω₁ := fun x hx =>
-    ⟨hx.1, hhalf (ball_subset_closedBall hx.2)⟩
-  refine ⟨w, g, hw, ?_, ?_⟩
-  · filter_upwards [hg, ae_restrict_of_ae (ae_imp_of_ae_restrict hfΩ₁.coeFn_toLp),
-      ae_restrict_mem H.isOpen.measurableSet] with x hgx hfx hxH hx
-    have hxΩ₁ : x ∈ (Ω₁ : Set E) := hsub ⟨hHΩ ⟨hxH, hhalf (ball_subset_closedBall hx)⟩, hx⟩
-    rw [hgx, indicator_of_mem hxΩ₁, localizedForcing_eq_of_eventuallyEq_one (hψx x hx),
-      hfx hxΩ₁]
-  · filter_upwards [ae_restrict_of_ae_restrict_of_subset (fun x hx => hΩH (hsub hx)) hwv,
-      ae_restrict_of_ae_restrict_of_subset hsub (W1p.value_restrictL_ae inf_le_left u),
-      ae_restrict_mem (Ω.isOpen.inter isOpen_ball).measurableSet] with x h1 h2 hx
-    rw [h1, indicator_of_mem (hsub hx), (hψx x hx.2).eq_of_nhds, one_mul, h2]
-
 /-- **Localizing a solution near a flat portion of the boundary.** Let `Ω` and `H` be open with
 `Ω ∩ B(y₀, r) = H ∩ B(y₀, r)`, let `a` be uniformly elliptic with `C¹` entries on `B(y₀, r)`, and
 let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω` with `f ∈ L²(Ω)` and vanish on `∂Ω ∩ B(y₀, r)`.
@@ -900,26 +819,43 @@ private theorem exists_localized_problem {H Ω : Opens E} {y₀ : E} {r : ℝ} (
       (isCompact_closedBall y₀ (3 * r / 4)) (closedBall_subset_ball (by linarith))
   have hUr : (U : Set E) ⊆ ball y₀ r := hUB
   have hhalf : closedBall y₀ (r / 2) ⊆ U := (closedBall_subset_closedBall (by linarith)).trans hSU
-  -- Inside `U`, the open sets `Ω` and `H` agree.
-  have hΩH : Ω ⊓ U ≤ H := fun x hx => by
-    have hx' : x ∈ (Ω : Set E) ∩ ball y₀ r := ⟨hx.1, hUr hx.2⟩
-    rw [hΩ] at hx'
-    exact hx'.1
-  have hHΩ : (H : Set E) ∩ U ⊆ Ω := fun x hx => by
-    have hx' : x ∈ (H : Set E) ∩ ball y₀ r := ⟨hx.1, hUr hx.2⟩
-    rw [← hΩ] at hx'
-    exact hx'.1
-  obtain ⟨w, g, hw, hg, hwu⟩ :=
-    exists_isWeakSolutionDirichlet_cutoff hΩH hHΩ hUr hhalf hell' hK' haa' hf hu hu0
+  -- On `Ω ∩ U` the restriction of `u` solves the equation with `a'`.
+  have hfU : MemLp f 2 (volume.restrict (Ω ⊓ U : Opens E)) :=
+    hf.mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr inf_le_left) le_rfl)
+  have hu₁ : ∀ v : W1p0 volume (Ω ⊓ U) 2,
+      energyFormH1 a' 0 0 (W1p.restrictL inf_le_left u) (v : W1p volume (Ω ⊓ U) 2) =
+        ∫ x in Ω ⊓ U, hfU.toLp f x * W1p.value (v : W1p volume (Ω ⊓ U) 2) x := fun v => by
+    rw [energyFormH1_restrictL_eq_setIntegral_of_eqOn inf_le_left (fun x hx => haa' hx.2) hu v]
+    exact integral_congr_ae (hfU.coeFn_toLp.mono fun x hx => by simp only [hx])
+  -- Near `closedBall y₀ (r / 2)`, `u` agrees with a solution on `H` with forcing `f`.
+  obtain ⟨w, g, hw, hwu, -, hgf⟩ := exists_isWeakSolutionDirichlet_ae_eq_on_of_inter_eq
+    (U := ⟨ball y₀ r, isOpen_ball⟩) (fun x => hell'.opNorm_matrixBilinearForm_le (mem_univ x))
+    hK' hΩ hUr (isCompact_closedBall y₀ (r / 2)) hhalf hu₁ hu0
+  -- Inside `B(y₀, r)` the open sets `Ω` and `H` agree.
+  have hHΩ : (H : Set E) ∩ ball y₀ r ⊆ Ω := fun x hx => by
+    rw [← hΩ] at hx
+    exact hx.1
+  have hΩH : (Ω : Set E) ∩ ball y₀ r ⊆ H := fun x hx => by
+    rw [hΩ] at hx
+    exact hx.1
   -- The forcing `g` is `f` on `B(y₀, r / 2)` almost everywhere; take `f` there exactly.
   have hg₀ : (ball y₀ (r / 2)).piecewise f g =ᵐ[volume.restrict H] g := by
-    filter_upwards [hg] with x hx
-    by_cases hxB : x ∈ ball y₀ (r / 2)
-    · rw [piecewise_eq_of_mem _ _ _ hxB, hx hxB]
-    · rw [piecewise_eq_of_notMem _ _ _ hxB]
+    filter_upwards [hgf, ae_restrict_of_ae (ae_imp_of_ae_restrict hfU.coeFn_toLp),
+      ae_restrict_mem H.isOpen.measurableSet] with x hgx hfx hxH
+    by_cases hx : x ∈ ball y₀ (r / 2)
+    · have hxU := hhalf (ball_subset_closedBall hx)
+      rw [piecewise_eq_of_mem _ _ _ hx, hgx (ball_subset_closedBall hx),
+        hfx ⟨hHΩ ⟨hxH, hUr hxU⟩, hxU⟩]
+    · rw [piecewise_eq_of_notMem _ _ _ hx]
+  have hwu' : W1p.value (w : W1p volume H 2) =ᵐ[volume.restrict ((Ω : Set E) ∩ ball y₀ (r / 2))]
+      W1p.value u := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset
+        (fun x hx => hΩH ⟨hx.1, hUr (hhalf (ball_subset_closedBall hx.2))⟩) hwu,
+      ae_restrict_mem (Ω.isOpen.inter isOpen_ball).measurableSet] with x h hx
+    exact h (ball_subset_closedBall hx.2)
   refine ⟨a', K, hell', hK', fun x hx => haa' (hhalf (ball_subset_closedBall hx)),
     (ball y₀ (r / 2)).piecewise f g, (Lp.memLp g).ae_eq hg₀.symm,
-    fun x hx => piecewise_eq_of_mem _ _ _ hx, w, fun v' => ?_, hwu⟩
+    fun x hx => piecewise_eq_of_mem _ _ _ hx, w, fun v' => ?_, hwu'⟩
   rw [(isWeakSolutionDirichlet_iff g w).1 hw v']
   exact integral_congr_ae (hg₀.mono fun x hx => by simp only [hx])
 
