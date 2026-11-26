@@ -41,7 +41,7 @@ pair `v, t` in `TauCeti.LinearAlgebra.BilinearForm.HyperbolicPair` and
 `TauCeti.Geometry.Symplectic.Manifold.Suspension.Chamber`, such as
 `LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span` and
 `LinearMap.BilinForm.sigPos_toQuadraticMap_baseChange_eq_one_of_isOfFinAddOrder_span`, applied to
-`H = H²(X; ℤ)` with its `ℤ`-module structure `AddCommGroup.toIntModule`.
+`H = H²(X; ℤ)` with its cohomology `ℤ`-module structure.
 
 The proof combines three computations. The cohomology of a product with a circle splits as
 `H²((ℝ / pℤ) × Y; ℤ) ≅ H²(Y; ℤ) × H¹(Y; ℤ)` by slant products
@@ -71,8 +71,10 @@ Against the homology cross product `[ℝ / pℤ] × y` of the circuit class with
 a class `y` with `⟨v ⌣ [dt], y⟩ = ⟨v, i_*[F]⟩ = 1`, one whose image under the Wang connecting
 morphism is `±[F]`
 (`TauCeti.MappingTorus.exists_singularCupPairing_baseClass_eq_evalFundamentalClass`), so `v, t`
-is a hyperbolic pair of the cup pairing against `[ℝ / pℤ] × y`. That `y` is the fundamental class
-of the three-manifold `Y_φ` is not proved here.
+is a hyperbolic pair of the cup pairing against `[ℝ / pℤ] × y`. For the fundamental class
+`y = [Y_φ]` of the three-manifold `Y_φ`, that `⟨v ⌣ a, [Y_φ]⟩ = 1` for a suitable generator `a`,
+which makes `v, t` a hyperbolic pair of the intersection form, follows from Poincaré duality on
+`Y_φ` (`TauCeti.MappingTorus.exists_forall_eq_zsmul_and_singularCupPairing_eq_one`).
 
 **The first cohomology.** For a path-connected `Y`, the same slant decomposition in degree one,
 `H¹((ℝ / pℤ) × Y; ℤ) ≃ H¹(Y; ℤ) × H⁰(Y; ℤ)`, together with `H⁰(Y; ℤ) ≅ ℤ`

@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
 
+import TauCeti.CategoryTheory.Linear.Int
+
 /-!
 # Evaluating cohomology classes on fundamental classes
 
@@ -52,6 +54,10 @@ coefficients (`TopCat.singularKroneckerEquiv`), and `Hₙ(N; ℤ)` is freely gen
   same pairing.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_neg`: reversing the orientation negates the
   pairing.
+* `evalFundamentalClass_singularCohomologyChainCoefficientMap_eq_singularKronecker`, in the
+  namespace `TauCeti.HomologicalOrientation`: for an integral class with chain coefficients `ℤ`
+  rather than `ULift ℤ`, the pairing is the Kronecker pairing with `f_*[N]` read with chain
+  coefficients `ℤ`.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_id_singularCohomologyMap_eq_degree_smul`:
   for a map `f : N → P` of compact oriented `n`-manifolds with `P` preconnected,
   `⟨f^* c, [N]⟩ = deg f • ⟨c, [P]⟩`, and more generally
@@ -205,6 +211,38 @@ theorem evalFundamentalClass_id_bijective [ConnectedSpace N] [CategoryTheory.Inj
   rw [h]
   exact (LinearEquiv.bijective _).comp ((LinearEquiv.bijective _).comp
     (ModuleCat.hom_bijective.comp ((TopCat.of N).singularKroneckerEquiv ℤ n).bijective))
+
+section UnitCoefficients
+
+open MonoidalCategory
+
+/- Cohomology with chain coefficients the unit object `ℤ` of `ModuleCat ℤ`, as in the cup pairing
+`TopCat.singularCupPairing`, is taken with the `ℤ`-linear structure `ModuleCat.instLinear` of a
+category of modules; instance search would otherwise find the structure
+`Linear.preadditiveIntLinear` of a preadditive category, which `evalFundamentalClass` carries. -/
+attribute [local instance 1100] ModuleCat.instLinear
+
+/-- **Evaluation on `f_*[N]` with chain coefficients `ℤ`**: for an integral class `c ∈ Hⁿ(X; ℤ)`
+with chain coefficients `ℤ`, evaluating its image under the coefficient isomorphism
+`TauCeti.uliftIntIso` on `f_*[N]` is the Kronecker pairing of `c` with `f_*[N]` read with chain
+coefficients `ℤ`. The two sides use the `ℤ`-linear structures of a preadditive category and of a
+category of modules, which agree (`TopCat.singularKronecker_eqToHom`). -/
+theorem evalFundamentalClass_singularCohomologyChainCoefficientMap_eq_singularKronecker
+    (f : C(N, X))
+    (c : (TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (ModuleCat.of ℤ ℤ) n) :
+    o.evalFundamentalClass hn (ModuleCat.of ℤ ℤ) f
+        ((TopCat.of X).singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) uliftIntIso.hom n
+          c) =
+      ((TopCat.of X).singularKronecker ℤ n c).hom
+        ((((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map uliftIntIso.hom).app
+          (TopCat.of X)).hom (o.mapFundamentalClass hn f)) := by
+  have h := TopCat.singularKronecker_eqToHom (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ ℤ)
+    ModuleCat.instLinear Linear.preadditiveIntLinear (Subsingleton.elim _ _) (TopCat.of X) n
+    ((TopCat.of X).singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) uliftIntIso.hom n c)
+  rw [TopCat.singularKronecker_singularCohomologyChainCoefficientMap] at h
+  exact ConcreteCategory.congr_hom h (o.mapFundamentalClass hn f)
+
+end UnitCoefficients
 
 section Degree
 
