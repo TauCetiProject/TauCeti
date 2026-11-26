@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Analytic.OfScalars
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Convex
-import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Algebra.BigOperators.Ring.Finset
@@ -935,65 +934,29 @@ example {z : ℂ} (hz : z ∈ slitPlane) :
 
 /-! ### The Wronskian -/
 
-/-- The exponent `Φ(ζ) = ∑_{s ≥ 1} fₛ ζˢ / s` of Abel's formula is the sum of a power series with
-the radius of convergence of `∑ fₛ ζˢ`; at a point `ζ ≠ 0` where `∑ fₛ ζˢ = F`, its derivative
-is `(F - f₀) / ζ`. -/
-private theorem hasFPowerSeriesOnBall_abelExponent {fs : ℕ → ℂ} {R : ℝ≥0∞} (hR : 0 < R)
-    (hfR : R ≤ (ofScalars ℂ fs).radius) :
-    HasFPowerSeriesOnBall (fun y ↦ ∑' s : ℕ, fs (s + 1) / (s + 1) * y ^ (s + 1))
-      (ofScalars ℂ fun s ↦ fs s / s) 0 R ∧
-    ∀ {ζ F : ℂ}, ζ ≠ 0 → ‖ζ‖ₑ < R → HasSum (fun s ↦ fs s * ζ ^ s) F →
-      HasDerivAt (fun y ↦ ∑' s : ℕ, fs (s + 1) / (s + 1) * y ^ (s + 1)) ((F - fs 0) / ζ) ζ := by
-  -- name the coefficients `eₛ = fₛ / s` (so `e₀ = 0`) by an equation, to rewrite with it
-  obtain ⟨e, he⟩ : ∃ e : ℕ → ℂ, e = fun s ↦ fs s / s := ⟨_, rfl⟩
-  rw [← he]
-  -- the `(s + 1)`-indexed series is the series of `e`, whose term of index `0` vanishes
-  have hΦ : (fun y ↦ ∑' s : ℕ, fs (s + 1) / (s + 1) * y ^ (s + 1)) =
-      fun y ↦ ∑' s, e s * y ^ s := by
-    funext y
-    by_cases hy : Summable fun s : ℕ ↦ e (s + 1) * y ^ (s + 1)
-    · rw [tsum_eq_zero_add' (f := fun s ↦ e s * y ^ s) hy, he]
-      simp only [Nat.cast_zero, div_zero, zero_mul, zero_add, Nat.cast_add, Nat.cast_one]
-    · rw [tsum_eq_zero_of_not_summable, tsum_eq_zero_of_not_summable]
-      · exact fun h ↦ hy ((summable_nat_add_iff 1).2 h)
-      · simpa only [he, Nat.cast_add, Nat.cast_one] using hy
-  have hrad : R ≤ (ofScalars ℂ e).radius := by
-    refine le_radius_ofScalars_of_summable e fun y _ hy ↦ ?_
-    refine .of_norm_bounded (summable_norm_mul_pow_of_lt_radius fs (hy.trans_le hfR))
-      fun n ↦ ?_
-    rcases n.eq_zero_or_pos with rfl | hn
-    · simp [he]
-    rw [he, div_mul_eq_mul_div, norm_div]
-    refine div_le_self (norm_nonneg _) ?_
-    simpa using (Nat.one_le_cast (α := ℝ)).2 hn
-  have hS := hasFPowerSeriesOnBall_tsum_mul_pow e hR hrad
-  rw [← hΦ] at hS
-  refine ⟨hS, fun {ζ F} hζ0 hζ hF ↦ ?_⟩
-  -- the Euler operator `ζ Φ'` has the coefficients `n eₙ = fₙ` for `n ≥ 1`
-  have h1 := hS.hasSum_mul_deriv_ofScalars hζ
-  have h2 : HasSum (fun n : ℕ ↦ (n : ℂ) * e n * ζ ^ n) (F - fs 0) := by
-    convert hF.sub (hasSum_ite_eq 0 (fs 0)) using 1
-    ext n
-    rcases eq_or_ne n 0 with rfl | hn
-    · simp [he]
-    · have : (n : ℂ) ≠ 0 := by exact_mod_cast hn
-      simp only [he, hn, ↓reduceIte, sub_zero]
-      field_simp
-  have hd := (hS.differentiableOn.differentiableAt
-    (Metric.isOpen_eball.mem_nhds (mem_eball_zero_iff.mpr hζ))).hasDerivAt
-  convert hd using 1
-  rw [h2.unique h1]
-  field_simp
+/-- The slit punctured disc `{z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}` is open. -/
+private theorem isOpen_slitDisc (z₀ : ℂ) (r : ℝ) :
+    IsOpen {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} :=
+  (isOpen_slitPlane.preimage (continuous_sub_right z₀)).inter
+    (isOpen_lt (continuous_norm.comp (continuous_sub_right z₀)) continuous_const)
+
+/-- The points `z₀ + t` with `0 < t < r` lie in the slit punctured disc. -/
+private theorem add_ofReal_mem_slitDisc {z₀ : ℂ} {t r : ℝ} (ht : 0 < t) (htr : t < r) :
+    z₀ + t ∈ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} := by
+  refine ⟨by simpa using ofReal_mem_slitPlane.2 ht, ?_⟩
+  rwa [add_sub_cancel_left, norm_real, Real.norm_of_nonneg ht.le]
 
 /-- The Wronskian of `ζ^{α₁} S` and `ζ^{α₂} T + c ζ^{α₁} S log ζ` at a point `y` of the slit disc of
-convergence of `S` and `T`. -/
-private theorem wronskian_cpow_mul_log_eq {α₁ α₂ c y : ℂ} {S T : ℂ → ℂ}
+convergence of `S` and `T` is `y^{α₁ + α₂ - 1} H(y)`, with `H` holomorphic on that disc, provided
+that `c = 0` or `α₁ = α₂ + N`. -/
+private theorem wronskian_cpow_mul_log_eq {α₁ α₂ c y : ℂ} {N : ℕ} {S T : ℂ → ℂ}
     {p q : FormalMultilinearSeries ℂ ℂ ℂ} {R : ℝ≥0∞} (hS : HasFPowerSeriesOnBall S p 0 R)
-    (hT : HasFPowerSeriesOnBall T q 0 R) (hy : y ∈ slitPlane) (hyR : ‖y‖ₑ < R) :
+    (hT : HasFPowerSeriesOnBall T q 0 R) (hc : c = 0 ∨ α₁ = α₂ + N) (hy : y ∈ slitPlane)
+    (hyR : ‖y‖ₑ < R) :
     y ^ α₁ * S y * deriv (fun y ↦ y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)) y -
         deriv (fun y ↦ y ^ α₁ * S y) y * (y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)) =
-      y ^ (α₁ + α₂ - 1) * ((α₂ - α₁) * S y * T y + y * (S y * deriv T y - deriv S y * T y)) +
-        c * y ^ (α₁ - 1) * y ^ (α₁ - 1) * y * S y ^ 2 := by
+      y ^ (α₁ + α₂ - 1) * ((α₂ - α₁) * S y * T y + y * (S y * deriv T y - deriv S y * T y) +
+        c * y ^ N * S y ^ 2) := by
   have hy0 : y ≠ 0 := slitPlane_ne_zero hy
   have h1 := hasDerivAt_cpow_mul (ρ := α₁) hS hy hyR
   have h2 := (hasDerivAt_cpow_mul (ρ := α₂) hT hy hyR).fun_add
@@ -1007,9 +970,15 @@ private theorem wronskian_cpow_mul_log_eq {α₁ α₂ c y : ℂ} {S T : ℂ →
   have e₁₂ : y ^ (α₁ + α₂ - 1) = y ^ (α₁ - 1) * y ^ (α₂ - 1) * y := by
     rw [show α₁ + α₂ - 1 = α₁ - 1 + (α₂ - 1) + 1 by ring, cpow_add _ _ hy0, cpow_add _ _ hy0,
       cpow_one]
+  -- in the term of `c`, `y ^ (α₁ - 1) = y ^ (α₂ - 1) * y ^ N`
+  have eN : c * y ^ (α₁ - 1) = c * (y ^ (α₂ - 1) * y ^ N) := by
+    rcases hc with rfl | rfl
+    · simp only [zero_mul]
+    · rw [show α₂ + N - 1 = α₂ - 1 + N by ring, cpow_add _ _ hy0, cpow_natCast]
   rw [e₁, e₂, e₁₂]
   -- the terms with `log y` cancel, and `y * y⁻¹ = 1` in the term of `c`
-  linear_combination c * y ^ (α₁ - 1) * y ^ (α₁ - 1) * y * S y ^ 2 * mul_inv_cancel₀ hy0
+  linear_combination c * y ^ (α₁ - 1) * y ^ (α₁ - 1) * y * S y ^ 2 * mul_inv_cancel₀ hy0 +
+    y ^ (α₁ - 1) * y * S y ^ 2 * eN
 
 /-- **Abel's identity with its integrating factor.** In the setting of
 `TauCeti.exists_wronskian_eq_of_regularSingular`, the product of the Wronskian `W = w₁ w₂' - w₁' w₂`
@@ -1025,24 +994,21 @@ private theorem hasDerivAt_abelExponent_mul_wronskian {z₀ x : ℂ} {r : ℝ} {
       deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z = 0)
     (he₂ : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
       deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z = 0)
-    (hx : x - z₀ ∈ slitPlane) (hxr : ‖x - z₀‖ < r) :
+    (hx : x ∈ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}) :
     HasDerivAt (fun z ↦ (z - z₀) ^ fs 0 *
       cexp (∑' s : ℕ, fs (s + 1) / (s + 1) * (z - z₀) ^ (s + 1)) *
       (w₁ z * deriv w₂ z - deriv w₁ z * w₂ z)) 0 x := by
-  have hDo : IsOpen {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} :=
-    (isOpen_slitPlane.preimage (continuous_sub_right z₀)).inter
-      (isOpen_lt (continuous_norm.comp (continuous_sub_right z₀)) continuous_const)
-  have hr : 0 < r := (norm_nonneg _).trans_lt hxr
+  have hDo := isOpen_slitDisc z₀ r
   have hfr := le_radius_ofScalars_of_summable_sub fs fun z h0 hz ↦ (hf z h0 hz).summable
-  obtain ⟨-, hΦ⟩ := hasFPowerSeriesOnBall_abelExponent (ENNReal.ofReal_pos.2 hr) hfr
-  have hU := hDo.mem_nhds (show x ∈ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r} from ⟨hx, hxr⟩)
+  have hU := hDo.mem_nhds hx
+  obtain ⟨hx, hxr⟩ := hx
   have hx0 : x - z₀ ≠ 0 := slitPlane_ne_zero hx
   have h1 := (hd₁.differentiableAt hU).hasDerivAt
   have h2 := (hd₂.differentiableAt hU).hasDerivAt
   have h1' := ((hd₁.deriv hDo).differentiableAt hU).hasDerivAt
   have h2' := ((hd₂.deriv hDo).differentiableAt hU).hasDerivAt
   have hp := ((hasDerivAt_id' x).sub_const z₀).cpow_const (c := fs 0) hx
-  have hE := ((hΦ hx0 (eNorm_lt_ofReal_iff.2 hxr)
+  have hE := ((hasDerivAt_tsum_div_mul_pow_succ hx0 ((eNorm_lt_ofReal_iff.2 hxr).trans_le hfr)
     (hf x (norm_pos_iff.2 hx0) hxr)).comp_sub_const x z₀).cexp
   convert (hp.fun_mul hE).fun_mul ((h1.fun_mul h2').fun_sub (h1'.fun_mul h2)) using 1
   have ep : (x - z₀) ^ (fs 0 - 1) = (x - z₀) ^ fs 0 * (x - z₀)⁻¹ := by
@@ -1077,8 +1043,7 @@ theorem exists_wronskian_eq_of_regularSingular {z₀ : ℂ} {r : ℝ} {f g w₁ 
   set D := {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r}
   rcases le_or_gt r 0 with hr | hr
   · exact ⟨0, fun z _ hz ↦ absurd ((norm_nonneg _).trans_lt hz) hr.not_gt⟩
-  have hDo : IsOpen D := (isOpen_slitPlane.preimage (continuous_sub_right z₀)).inter
-    (isOpen_lt (continuous_norm.comp (continuous_sub_right z₀)) continuous_const)
+  have hz₁ : z₀ + ((r / 2 : ℝ) : ℂ) ∈ D := add_ofReal_mem_slitDisc (by positivity) (by linarith)
   -- `D` is star-shaped about `z₀ + r / 2`, hence preconnected
   have hDc : IsPreconnected D := by
     have hc : StarConvex ℝ ((r / 2 : ℝ) : ℂ) (slitPlane ∩ Metric.ball 0 r) :=
@@ -1087,34 +1052,26 @@ theorem exists_wronskian_eq_of_regularSingular {z₀ : ℂ} {r : ℝ} {f g w₁ 
     have hD : D = (fun x ↦ x + -z₀) ⁻¹' (slitPlane ∩ Metric.ball 0 r) := by
       ext z
       simp [D, sub_eq_add_neg, dist_eq_norm]
-    have hz : z₀ + ((r / 2 : ℝ) : ℂ) ∈ D := by
-      refine ⟨by simpa using ofReal_mem_slitPlane.2 (by positivity : (0 : ℝ) < r / 2), ?_⟩
-      rw [add_sub_cancel_left, norm_real, Real.norm_of_nonneg (by positivity)]
-      linarith
-    rw [hD] at hz ⊢
+    rw [hD] at hz₁ ⊢
     have hc' : StarConvex ℝ (z₀ + ((r / 2 : ℝ) : ℂ) + -z₀) (slitPlane ∩ Metric.ball 0 r) := by
       convert hc using 1
       ring
-    exact (hc'.preimage_add_left.isPathConnected hz).isConnected.isPreconnected
+    exact (hc'.preimage_add_left.isPathConnected hz₁).isConnected.isPreconnected
   -- `K = (z - z₀)^{f₀} exp(Φ(z - z₀)) W` has derivative zero on `D`, by Abel's identity
   set K : ℂ → ℂ := fun z ↦ (z - z₀) ^ fs 0 *
     cexp (∑' s : ℕ, fs (s + 1) / (s + 1) * (z - z₀) ^ (s + 1)) *
     (w₁ z * deriv w₂ z - deriv w₁ z * w₂ z)
   have hK (x : ℂ) (hx : x ∈ D) : HasDerivAt K 0 x :=
-    hasDerivAt_abelExponent_mul_wronskian hf hd₁ hd₂ he₁ he₂ hx.1 hx.2
+    hasDerivAt_abelExponent_mul_wronskian hf hd₁ hd₂ he₁ he₂ hx
   refine ⟨K (z₀ + ((r / 2 : ℝ) : ℂ)), fun z hz hzr ↦ ?_⟩
-  have hconst := hDo.is_const_of_deriv_eq_zero hDc
+  rw [← (isOpen_slitDisc z₀ r).is_const_of_deriv_eq_zero hDc
     (fun x hx ↦ (hK x hx).differentiableAt.differentiableWithinAt) (fun x hx ↦ (hK x hx).deriv)
-    (show z ∈ D from ⟨hz, hzr⟩) (show z₀ + ((r / 2 : ℝ) : ℂ) ∈ D from ?_)
-  · rw [← hconst]
-    simp only [K]
-    have hz0 : z - z₀ ≠ 0 := slitPlane_ne_zero hz
-    have hp0 : (z - z₀) ^ fs 0 ≠ 0 := cpow_ne_zero_iff.2 (Or.inl hz0)
-    rw [cpow_neg, Complex.exp_neg]
-    field_simp
-  · refine ⟨by simpa using ofReal_mem_slitPlane.2 (by positivity : (0 : ℝ) < r / 2), ?_⟩
-    rw [add_sub_cancel_left, norm_real, Real.norm_of_nonneg (by positivity)]
-    linarith
+    ⟨hz, hzr⟩ hz₁]
+  simp only [K]
+  have hz0 : z - z₀ ≠ 0 := slitPlane_ne_zero hz
+  have hp0 : (z - z₀) ^ fs 0 ≠ 0 := cpow_ne_zero_iff.2 (Or.inl hz0)
+  rw [cpow_neg, Complex.exp_neg]
+  field_simp
 
 /-- Abel's formula with its constant identified: if the Wronskian of two solutions is
 `(z - z₀)^{-f₀} H(z - z₀)` on the slit punctured disc, with `H` continuous at `0`, then the constant
@@ -1136,8 +1093,8 @@ private theorem wronskian_eq_of_regularSingular_of_continuousAt {z₀ : ℂ} {r 
       H 0 * (z - z₀) ^ (-fs 0) * cexp (-∑' s : ℕ, fs (s + 1) / (s + 1) * (z - z₀) ^ (s + 1)) := by
   have hr : 0 < r := (norm_nonneg _).trans_lt hzr
   obtain ⟨C, hC⟩ := exists_wronskian_eq_of_regularSingular hf hd₁ hd₂ he₁ he₂
-  have hfr := le_radius_ofScalars_of_summable_sub fs fun z h0 hz ↦ (hf z h0 hz).summable
-  obtain ⟨hΦ, -⟩ := hasFPowerSeriesOnBall_abelExponent (ENNReal.ofReal_pos.2 hr) hfr
+  have hΦ := hasFPowerSeriesOnBall_tsum_div_mul_pow_succ fs (ENNReal.ofReal_pos.2 hr)
+    (le_radius_ofScalars_of_summable_sub fs fun z h0 hz ↦ (hf z h0 hz).summable)
   -- along `z = z₀ + t`, `t → 0+`, the constant `C` is `H(t) exp(Φ(t)) → H(0)`
   have hlim : Tendsto (fun t : ℝ ↦ H t * cexp (∑' s : ℕ, fs (s + 1) / (s + 1) * (t : ℂ) ^ (s + 1)))
       (𝓝[>] 0) (𝓝 (H 0)) := by
@@ -1147,10 +1104,7 @@ private theorem wronskian_eq_of_regularSingular_of_continuousAt {z₀ : ℂ} {r 
   have heq : ∀ᶠ t : ℝ in 𝓝[>] 0,
       C = H t * cexp (∑' s : ℕ, fs (s + 1) / (s + 1) * (t : ℂ) ^ (s + 1)) := by
     filter_upwards [Ioo_mem_nhdsGT hr] with t ht
-    have ht' : (z₀ + t) - z₀ ∈ slitPlane := by simpa using ofReal_mem_slitPlane.2 ht.1
-    have htr : ‖(z₀ + t) - z₀‖ < r := by
-      rw [add_sub_cancel_left, norm_real, Real.norm_of_nonneg ht.1.le]
-      exact ht.2
+    obtain ⟨ht', htr⟩ := add_ofReal_mem_slitDisc (z₀ := z₀) ht.1 ht.2
     have h := (hW _ ht' htr).symm.trans (hC _ ht' htr)
     rw [add_sub_cancel_left] at h
     have hp0 : (t : ℂ) ^ (-fs 0) ≠ 0 :=
@@ -1162,6 +1116,62 @@ private theorem wronskian_eq_of_regularSingular_of_continuousAt {z₀ : ℂ} {r 
     linear_combination -h
   obtain rfl := tendsto_nhds_unique (tendsto_const_nhds.congr' heq) hlim
   exact hC z hz hzr
+
+/-- The Wronskian of `w₁(z) = (z - z₀)^{α₁} ∑ aₛ (z - z₀)ˢ` and
+`w₂(z) = (z - z₀)^{α₂} ∑ bₛ (z - z₀)ˢ + c w₁(z) log (z - z₀)`, two solutions whose series converge
+on the disc, where `-f₀ = α₁ + α₂ - 1` and `c = 0` or `α₁ = α₂ + N`: on the slit punctured disc,
+`w₁ w₂' - w₁' w₂ = ((α₂ - α₁) a₀ b₀ + c 0ᴺ a₀²) (z - z₀)^{-f₀} exp(-∑_{s ≥ 1} fₛ (z - z₀)ˢ / s)`.
+-/
+private theorem wronskian_eq_of_regularSingular_of_tsum {z₀ α₁ α₂ c : ℂ} {N : ℕ} {r : ℝ}
+    {f g w₁ w₂ : ℂ → ℂ} {fs a b : ℕ → ℂ}
+    (hf : ∀ z, 0 < ‖z - z₀‖ → ‖z - z₀‖ < r →
+      HasSum (fun s ↦ fs s * (z - z₀) ^ s) ((z - z₀) * f z))
+    (hd₁ : DifferentiableOn ℂ w₁ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r})
+    (hd₂ : DifferentiableOn ℂ w₂ {z | z - z₀ ∈ slitPlane ∧ ‖z - z₀‖ < r})
+    (he₁ : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
+      deriv (deriv w₁) z + f z * deriv w₁ z + g z * w₁ z = 0)
+    (he₂ : ∀ z, z - z₀ ∈ slitPlane → ‖z - z₀‖ < r →
+      deriv (deriv w₂) z + f z * deriv w₂ z + g z * w₂ z = 0)
+    (hf₀ : -fs 0 = α₁ + α₂ - 1) (hc : c = 0 ∨ α₁ = α₂ + N)
+    (hsa : ∀ z, ‖z - z₀‖ < r → Summable fun s ↦ a s * (z - z₀) ^ s)
+    (hsb : ∀ z, ‖z - z₀‖ < r → Summable fun s ↦ b s * (z - z₀) ^ s)
+    (hw₁ : w₁ = fun z ↦ (z - z₀) ^ α₁ * ∑' s, a s * (z - z₀) ^ s)
+    (hw₂ : w₂ = fun z ↦ (z - z₀) ^ α₂ * (∑' s, b s * (z - z₀) ^ s) +
+      c * ((z - z₀) ^ α₁ * (∑' s, a s * (z - z₀) ^ s) * log (z - z₀)))
+    {z : ℂ} (hz : z - z₀ ∈ slitPlane) (hzr : ‖z - z₀‖ < r) :
+    w₁ z * deriv w₂ z - deriv w₁ z * w₂ z = ((α₂ - α₁) * a 0 * b 0 + c * 0 ^ N * a 0 ^ 2) *
+      (z - z₀) ^ (-fs 0) * cexp (-∑' s : ℕ, fs (s + 1) / (s + 1) * (z - z₀) ^ (s + 1)) := by
+  have hr : 0 < r := (norm_nonneg _).trans_lt hzr
+  -- the two series as functions on the disc of radius `r` about the origin
+  set S : ℂ → ℂ := fun y ↦ ∑' s, a s * y ^ s
+  set T : ℂ → ℂ := fun y ↦ ∑' s, b s * y ^ s
+  have hS := hasFPowerSeriesOnBall_tsum_mul_pow a (ENNReal.ofReal_pos.2 hr)
+    (le_radius_ofScalars_of_summable_sub a fun z _ hz ↦ hsa z hz)
+  have hT := hasFPowerSeriesOnBall_tsum_mul_pow b (ENNReal.ofReal_pos.2 hr)
+    (le_radius_ofScalars_of_summable_sub b fun z _ hz ↦ hsb z hz)
+  have hcS := hS.analyticAt.continuousAt
+  have hcT := hT.analyticAt.continuousAt
+  have hcS' := hS.analyticAt.deriv.continuousAt
+  have hcT' := hT.analyticAt.deriv.continuousAt
+  -- the Wronskian is `(z - z₀)^{-f₀} H(z - z₀)` with `H` continuous at `0`
+  have hH : ContinuousAt (fun y ↦ (α₂ - α₁) * S y * T y +
+      y * (S y * deriv T y - deriv S y * T y) + c * y ^ N * S y ^ 2) 0 := by
+    fun_prop
+  refine (wronskian_eq_of_regularSingular_of_continuousAt hf hd₁ hd₂ he₁ he₂ hH
+    (fun x hx hxr ↦ ?_) hz hzr).trans ?_
+  · have hd₁ : deriv w₁ x = deriv (fun y ↦ y ^ α₁ * S y) (x - z₀) := by
+      rw [hw₁]
+      exact deriv_comp_sub_const (fun y ↦ y ^ α₁ * S y) z₀ x
+    have hd₂ : deriv w₂ x =
+        deriv (fun y ↦ y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)) (x - z₀) := by
+      rw [hw₂]
+      exact deriv_comp_sub_const (fun y ↦ y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)) z₀ x
+    rw [hd₁, hd₂, hw₁, hw₂]
+    dsimp only
+    rw [wronskian_cpow_mul_log_eq hS hT hc hx (eNorm_lt_ofReal_iff.2 hxr), hf₀]
+  · have hS0 : S 0 = a 0 := by simpa using (hS.coeff_zero ![]).symm
+    have hT0 : T 0 = b 0 := by simpa using (hT.coeff_zero ![]).symm
+    simp only [hS0, hT0, zero_mul, add_zero]
 
 /-- **The Wronskian of the logarithmic solution** (DLMF 2.7.6). In the setting of
 `TauCeti.regularSingular_log_solution`, let `α₁` and `α₂ = α₁ - N` be the two roots of the
@@ -1197,48 +1207,9 @@ theorem regularSingular_log_wronskian {z₀ α₁ α₂ c : ℂ} {N : ℕ} {r : 
   have hf₀ : -fs 0 = α₁ + α₂ - 1 := by linear_combination hQ 0 - hQ 1
   obtain ⟨hsa, hd₁, he₁⟩ := regularSingular_solution hf hg hα₁ ha hw₁
   obtain ⟨hsb, hd₂, he₂⟩ := regularSingular_log_solution hf hg hα₁ hN ha hb hb' hw₂
-  have hr : 0 < r := (norm_nonneg _).trans_lt hzr
-  -- the two series as functions on the disc of radius `r` about the origin
-  set S : ℂ → ℂ := fun y ↦ ∑' s, a s * y ^ s
-  set T : ℂ → ℂ := fun y ↦ ∑' s, b s * y ^ s
-  have hS := hasFPowerSeriesOnBall_tsum_mul_pow a (ENNReal.ofReal_pos.2 hr)
-    (le_radius_ofScalars_of_summable_sub a fun z _ hz ↦ hsa z hz)
-  have hT := hasFPowerSeriesOnBall_tsum_mul_pow b (ENNReal.ofReal_pos.2 hr)
-    (le_radius_ofScalars_of_summable_sub b fun z _ hz ↦ hsb z hz)
-  have hcS := hS.analyticAt.continuousAt
-  have hcT := hT.analyticAt.continuousAt
-  have hcS' := hS.analyticAt.deriv.continuousAt
-  have hcT' := hT.analyticAt.deriv.continuousAt
-  -- the Wronskian is `(z - z₀)^{-f₀} H(z - z₀)` with `H` continuous at `0`
-  have hH : ContinuousAt (fun y ↦ (α₂ - α₁) * S y * T y +
-      y * (S y * deriv T y - deriv S y * T y) + c * y ^ N * S y ^ 2) 0 := by
-    fun_prop
-  refine (wronskian_eq_of_regularSingular_of_continuousAt hf hd₁ hd₂ he₁ he₂ hH
-    (fun x hx hxr ↦ ?_) hz hzr).trans ?_
-  · have hd₁ : deriv w₁ x = deriv (fun y ↦ y ^ α₁ * S y) (x - z₀) := by
-      rw [hw₁]
-      exact deriv_comp_sub_const (fun y ↦ y ^ α₁ * S y) z₀ x
-    have hd₂ : deriv w₂ x =
-        deriv (fun y ↦ y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)) (x - z₀) := by
-      rw [hw₂]
-      exact deriv_comp_sub_const (fun y ↦ y ^ α₂ * T y + c * (y ^ α₁ * S y * log y)) z₀ x
-    rw [hd₁, hd₂, hw₁, hw₂]
-    dsimp only
-    rw [wronskian_cpow_mul_log_eq hS hT hx (eNorm_lt_ofReal_iff.2 hxr), hf₀]
-    have hx0 : x - z₀ ≠ 0 := slitPlane_ne_zero hx
-    have e₁ : (x - z₀) ^ (α₁ - 1) = (x - z₀) ^ (α₂ - 1) * (x - z₀) ^ N := by
-      rw [hN, show α₂ + N - 1 = α₂ - 1 + N by ring, cpow_add _ _ hx0, cpow_natCast]
-    have e₁₂ : (x - z₀) ^ (α₁ + α₂ - 1) =
-        (x - z₀) ^ (α₁ - 1) * (x - z₀) ^ (α₂ - 1) * (x - z₀) := by
-      rw [show α₁ + α₂ - 1 = α₁ - 1 + (α₂ - 1) + 1 by ring, cpow_add _ _ hx0, cpow_add _ _ hx0,
-        cpow_one]
-    rw [e₁₂]
-    nth_rewrite 2 [e₁]
-    ring
-  · have hS0 : S 0 = a 0 := by simpa using (hS.coeff_zero ![]).symm
-    have hT0 : T 0 = b 0 := by simpa using (hT.coeff_zero ![]).symm
-    simp only [hS0, hT0, zero_mul, add_zero, hN]
-    ring
+  rw [wronskian_eq_of_regularSingular_of_tsum hf hd₁ hd₂ he₁ he₂ hf₀ (.inr hN) hsa hsb hw₁ hw₂
+    hz hzr, hN]
+  ring
 
 /-- **The Wronskian of the logarithmic solution vanishes nowhere.** In the setting of
 `TauCeti.regularSingular_log_wronskian`, if `a₀ ≠ 0`, and `c ≠ 0` when `N = 0` and `b₀ ≠ 0` when
@@ -1297,39 +1268,10 @@ theorem regularSingular_wronskian {z₀ α₁ α₂ : ℂ} {r : ℝ} {f g w₁ w
   have hf₀ : -fs 0 = α₁ + α₂ - 1 := by linear_combination hQ 0 - hQ 1
   obtain ⟨hsa, hd₁, he₁⟩ := regularSingular_solution hf hg (by rw [hQ, sub_self, zero_mul]) ha hw₁
   obtain ⟨hsb, hd₂, he₂⟩ := regularSingular_solution hf hg (by rw [hQ, sub_self, mul_zero]) hb hw₂
-  have hr : 0 < r := (norm_nonneg _).trans_lt hzr
-  set S : ℂ → ℂ := fun y ↦ ∑' s, a s * y ^ s
-  set T : ℂ → ℂ := fun y ↦ ∑' s, b s * y ^ s
-  have hS := hasFPowerSeriesOnBall_tsum_mul_pow a (ENNReal.ofReal_pos.2 hr)
-    (le_radius_ofScalars_of_summable_sub a fun z _ hz ↦ hsa z hz)
-  have hT := hasFPowerSeriesOnBall_tsum_mul_pow b (ENNReal.ofReal_pos.2 hr)
-    (le_radius_ofScalars_of_summable_sub b fun z _ hz ↦ hsb z hz)
-  have hcS := hS.analyticAt.continuousAt
-  have hcT := hT.analyticAt.continuousAt
-  have hcS' := hS.analyticAt.deriv.continuousAt
-  have hcT' := hT.analyticAt.deriv.continuousAt
-  -- the Wronskian is `(z - z₀)^{-f₀} H(z - z₀)` with `H` continuous at `0`
-  have hH : ContinuousAt (fun y ↦ (α₂ - α₁) * S y * T y +
-      y * (S y * deriv T y - deriv S y * T y)) 0 := by
-    fun_prop
-  refine (wronskian_eq_of_regularSingular_of_continuousAt hf hd₁ hd₂ he₁ he₂ hH
-    (fun x hx hxr ↦ ?_) hz hzr).trans ?_
-  · have hd₁ : deriv w₁ x = deriv (fun y ↦ y ^ α₁ * S y) (x - z₀) := by
-      rw [hw₁]
-      exact deriv_comp_sub_const (fun y ↦ y ^ α₁ * S y) z₀ x
-    have hd₂ : deriv w₂ x = deriv (fun y ↦ y ^ α₂ * T y) (x - z₀) := by
-      rw [hw₂]
-      exact deriv_comp_sub_const (fun y ↦ y ^ α₂ * T y) z₀ x
-    -- the case `c = 0` of the Wronskian of the logarithmic solution
-    have h := wronskian_cpow_mul_log_eq (α₁ := α₁) (α₂ := α₂) (c := 0) hS hT hx
-      (eNorm_lt_ofReal_iff.2 hxr)
-    simp only [zero_mul, add_zero] at h
-    rw [hd₁, hd₂, hw₁, hw₂]
-    dsimp only
-    rw [h, hf₀]
-  · have hS0 : S 0 = a 0 := by simpa using (hS.coeff_zero ![]).symm
-    have hT0 : T 0 = b 0 := by simpa using (hT.coeff_zero ![]).symm
-    simp only [hS0, hT0, zero_mul, add_zero]
+  -- the case `c = 0` of the logarithmic solution
+  rw [wronskian_eq_of_regularSingular_of_tsum (c := 0) (N := 0) hf hd₁ hd₂ he₁ he₂ hf₀
+    (.inl rfl) hsa hsb hw₁ (by simpa using hw₂) hz hzr]
+  ring
 
 /-- **The Wronskian of two Frobenius solutions vanishes nowhere.** In the setting of
 `TauCeti.regularSingular_wronskian`, if the roots `α₁ ≠ α₂` are distinct and `a₀ ≠ 0 ≠ b₀`, the
