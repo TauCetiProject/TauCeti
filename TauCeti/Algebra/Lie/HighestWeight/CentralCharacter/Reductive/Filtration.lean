@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Reductive
+public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.Reductive.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Functoriality
 public import TauCeti.LinearAlgebra.TensorProduct.Filtration.Basic
 
@@ -24,7 +24,7 @@ into PBW degree `n` of `U(L)` (`TauCeti.reductiveHarishChandraIso_symm_mem_pbwFi
 On a pure tensor `a ⊗ p`, the inverse is the product of the image of `a ∈ Sym(z(L)) = U(z(L))`
 and of the central element of `U([L, L])` with Harish-Chandra image `p`
 (`TauCeti.reductiveHarishChandraIso_symm_tmul`); the first has PBW degree the degree of `a`
-(`TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_mem_wordFiltration_iff`), the
+(`TauCeti.UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_mem_pbwFiltration_iff`), the
 second the degree of `p` (`TauCeti.harishChandraIso_symm_mem_pbwFiltration`), the inclusions of
 `z(L)` and `[L, L]` preserve PBW degrees, and PBW degrees add under multiplication.
 
@@ -59,12 +59,17 @@ local notation "SZ" => _root_.SymmetricAlgebra K (center K L)
 local notation "FZ" => wordFiltration (_root_.SymmetricAlgebra.ι K (center K L))
 
 omit [CharZero K] [IsAlgClosed K] [FiniteDimensional K L] [HasCentralRadical K L] in
-/-- The image in `U(L)` of an element of `Sym(z(L))` of degree at most `i` has PBW degree at most
-`i`. -/
-private theorem map_symmetricAlgebraEquiv_mem_pbwFiltration {i : ℕ} {a : SZ} (ha : a ∈ FZ i) :
-    map K (center K L).incl (symmetricAlgebraEquiv K (center K L) a) ∈ pbwFiltration K L i := by
-  refine map_mem_pbwFiltration K _ ?_
-  rwa [← symmetricAlgebraEquiv_symm_mem_wordFiltration_iff, AlgEquiv.symm_apply_apply]
+/-- The product of the image in `U(L)` of an element of `Sym(z(L))` of degree at most `i` and of
+the image of an element of `U([L, L])` of PBW degree at most `j` has PBW degree at most `n` when
+`i + j ≤ n`. Both inverse Harish-Chandra isomorphisms take this form on pure tensors. -/
+private theorem map_mul_map_mem_pbwFiltration {i j n : ℕ} (hij : i + j ≤ n) {a : SZ}
+    (ha : a ∈ FZ i) {c : U (derivedSeries K L 1)}
+    (hc : c ∈ pbwFiltration K (derivedSeries K L 1) j) :
+    map K (center K L).incl (symmetricAlgebraEquiv K (center K L) a) *
+        map K (derivedSeries K L 1).incl c ∈ pbwFiltration K L n :=
+  pbwFiltration_mono K L hij (mul_mem_pbwFiltration K L
+    (map_mem_pbwFiltration K _ ((symmetricAlgebraEquiv_mem_pbwFiltration_iff K _).mpr ha))
+    (map_mem_pbwFiltration K _ hc))
 
 /-- **The inverse Harish-Chandra isomorphism of a reductive Lie algebra preserves degrees**: an
 element of `Sym(z(L)) ⊗ S(H)^{W·}` of total degree at most `n` is sent to a central element of PBW
@@ -77,13 +82,12 @@ theorem reductiveHarishChandraIso_symm_mem_pbwFiltration {n : ℕ}
   let e : SZ ⊗[K] dotInvariants b →ₗ[K] U L :=
     (Subalgebra.center K (U L)).val.toLinearMap ∘ₗ
       (reductiveHarishChandraIso b).symm.toAlgHom.toLinearMap
-  suffices h : tensorFiltration FZ _ n ≤ (pbwFiltration K L n).comap e from h ht
-  refine tensorFiltration_le_iff.mpr fun i j hij a ha p hp ↦ ?_
-  change ((reductiveHarishChandraIso b).symm (a ⊗ₜ[K] p) : U L) ∈ pbwFiltration K L n
+  refine (Submodule.mem_comap (f := e) (x := t)).mp (tensorFiltration_le_iff.mpr ?_ ht)
+  intro i j hij a ha p hp
+  simp only [Submodule.mem_comap, e, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    AlgEquiv.coe_toAlgHom, Subalgebra.coe_val]
   rw [reductiveHarishChandraIso_symm_tmul]
-  refine pbwFiltration_mono K L hij (mul_mem_pbwFiltration K L
-    (map_symmetricAlgebraEquiv_mem_pbwFiltration ha) (map_mem_pbwFiltration K _ ?_))
-  exact (harishChandraIso_symm_mem_pbwFiltration b p).mpr hp
+  exact map_mul_map_mem_pbwFiltration hij ha ((harishChandraIso_symm_mem_pbwFiltration b p).mpr hp)
 
 /-- **The inverse linear Harish-Chandra isomorphism of a reductive Lie algebra preserves
 degrees**: an element of `Sym(z(L)) ⊗ S(H)^W` of total degree at most `n` is sent to a central
@@ -96,12 +100,12 @@ theorem reductiveHarishChandraLinearIso_symm_mem_pbwFiltration {n : ℕ}
   let e : SZ ⊗[K] linearInvariants H →ₗ[K] U L :=
     (Subalgebra.center K (U L)).val.toLinearMap ∘ₗ
       (reductiveHarishChandraLinearIso b).symm.toAlgHom.toLinearMap
-  suffices h : tensorFiltration FZ _ n ≤ (pbwFiltration K L n).comap e from h ht
-  refine tensorFiltration_le_iff.mpr fun i j hij a ha q hq ↦ ?_
-  change ((reductiveHarishChandraLinearIso b).symm (a ⊗ₜ[K] q) : U L) ∈ pbwFiltration K L n
+  refine (Submodule.mem_comap (f := e) (x := t)).mp (tensorFiltration_le_iff.mpr ?_ ht)
+  intro i j hij a ha q hq
+  simp only [Submodule.mem_comap, e, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    AlgEquiv.coe_toAlgHom, Subalgebra.coe_val]
   rw [reductiveHarishChandraLinearIso_symm_tmul]
-  refine pbwFiltration_mono K L hij (mul_mem_pbwFiltration K L
-    (map_symmetricAlgebraEquiv_mem_pbwFiltration ha) (map_mem_pbwFiltration K _ ?_))
-  exact (harishChandraLinearIso_symm_mem_pbwFiltration b q).mpr hq
+  exact map_mul_map_mem_pbwFiltration hij ha
+    ((harishChandraLinearIso_symm_mem_pbwFiltration b q).mpr hq)
 
 end TauCeti
