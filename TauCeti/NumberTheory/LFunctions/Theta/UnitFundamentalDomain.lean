@@ -162,6 +162,11 @@ theorem archNorm_smul (c : ℝ) (y : realSpace K) :
     archNorm (c • y) = c ^ Module.finrank ℚ K * archNorm y := by
   simp [archNorm_apply, mul_pow, prod_mul_distrib, prod_pow_eq_pow_sum, sum_mult_eq]
 
+/-- The constant parameter `c` has norm `c ^ [K : ℚ]`. -/
+@[simp]
+theorem archNorm_const (c : ℝ) : archNorm (fun _ ↦ c : realSpace K) = c ^ Module.finrank ℚ K := by
+  simp [archNorm_apply, prod_pow_eq_pow_sum, sum_mult_eq]
+
 variable (K) in
 /-- The norm of `(mult w ^ 2)_w` is `16 ^ r₂`: a complex place contributes `(2 ^ 2) ^ 2`. -/
 theorem archNorm_mult_sq :
