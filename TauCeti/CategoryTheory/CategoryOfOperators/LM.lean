@@ -194,13 +194,6 @@ lemma toAssoc_obj (X : LM.{u}) : toAssoc.obj X = X.toAssocObj := (rfl)
 @[simp]
 lemma toAssoc_map (f : X ⟶ Y) : toAssoc.map f = f.toAssoc := (rfl)
 
-/-- An identification of objects of `LM^⊗` forgets to that of the underlying objects. -/
-@[simp]
-lemma eqToHom_toAssoc (h : X = Y) :
-    (eqToHom h).toAssoc = eqToHom (congrArg toAssocObj h) := by
-  subst h
-  rfl
-
 instance : toAssoc.{u}.Faithful where
   map_injective h := hom_ext h
 
@@ -389,45 +382,6 @@ lemma pushforwardColor_eq_of_isInert (X : LM.{u}) {k : ℕ}
   X.pushforwardColor_eq_of_unique f hi fun _ hi' ↦ Fin.succ_injective _
     (((FinPointed.Hom.isInert_iff f).1 hf j.succ (Fin.succ_ne_zero j)).unique hi' hi)
 
-/-- The lift of an inert map `f : ⟨n⟩ ⟶ ⟨k⟩` of `Fin_*` with source `X`: its target is `⟨k⟩`
-colored along `f`, and its words are the one-letter fibres of `f`. -/
-def Hom.ofInert (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
-    (hf : f.IsInert) : X ⟶ ⟨k, X.pushforwardColor f⟩ where
-  toAssoc := Assoc.Hom.ofBase f
-  isProfile j := by
-    obtain ⟨i, hi⟩ := Assoc.Hom.exists_word_eq_singleton_of_isInert
-      (f := (Assoc.Hom.ofBase f : Assoc.mk X.len ⟶ Assoc.mk k)) (by rwa [Assoc.Hom.ofBase_base]) j
-    have hmem : f.toFun i.succ = j.succ := by
-      simpa using ((Assoc.Hom.ofBase f : Assoc.mk X.len ⟶ Assoc.mk k).mem_word_iff i j).1
-        (by simp [hi])
-    rw [hi, List.map_singleton, isProfile_singleton_iff]
-    exact (X.pushforwardColor_eq_of_isInert f hf hmem).symm
-
-@[simp]
-lemma Hom.ofInert_toAssoc (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
-    (hf : f.IsInert) : (Hom.ofInert X f hf).toAssoc = Assoc.Hom.ofBase f :=
-  (rfl)
-
-/-- The target of every morphism is its source colored along its underlying map. -/
-lemma Hom.mk_pushforwardColor_eq (φ : X ⟶ Y) :
-    (⟨Y.len, X.pushforwardColor φ.toAssoc.base⟩ : LM.{u}) = Y :=
-  congrArg (LM.mk Y.len) (funext fun j ↦ (φ.color_eq_pushforwardColor j).symm)
-
-/-- Every morphism over an inert map is the lift `Hom.ofInert` of that map, followed by the
-identification `Hom.mk_pushforwardColor_eq` of its target with the source colored along that
-map. -/
-lemma Hom.ofInert_comp_eqToHom (φ : X ⟶ Y) (hφ : φ.toAssoc.base.IsInert) :
-    Hom.ofInert X φ.toAssoc.base hφ ≫ eqToHom φ.mk_pushforwardColor_eq = φ := by
-  refine hom_ext ?_
-  simp only [comp_toAssoc, eqToHom_toAssoc, eqToHom_refl, Category.comp_id]
-  exact Assoc.Hom.ext_of_isInert (by simp) (by simpa using hφ)
-
-/-- The lift of an inert map with a given source is strongly coCartesian. -/
-lemma isStronglyCocartesian_ofInert (X : LM.{u}) {k : ℕ}
-    (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k) (hf : f.IsInert) :
-    toFinPointed.IsStronglyCocartesian f (Hom.ofInert X f hf) := by
-  simpa using isStronglyCocartesian_of_isInert (Hom.ofInert X f hf) (by simpa using hf)
-
 /-- The lift of a map `f : ⟨n⟩ ⟶ ⟨k⟩` of `Fin_*` with source `X` each of whose fibres over the
 elements other than the basepoint contains at most one input colored `m`. Its target is `⟨k⟩`
 colored along `f`, and its word over each output lists the inputs colored `a` increasingly,
@@ -473,6 +427,45 @@ lemma Hom.ofBase_toAssoc_base (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.le
       X.color i = .m → X.color i' = .m → i = i') :
     (Hom.ofBase X f hf).toAssoc.base = f :=
   (rfl)
+
+/-- The lift of an inert map `f : ⟨n⟩ ⟶ ⟨k⟩` of `Fin_*` with source `X`: its target is `⟨k⟩`
+colored along `f`, and its words are the one-letter fibres of `f`. It is `Hom.ofBase`, whose
+fibre condition holds since the fibres of `f` over the elements other than the basepoint are
+singletons. -/
+def Hom.ofInert (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
+    (hf : f.IsInert) : X ⟶ ⟨k, X.pushforwardColor f⟩ :=
+  Hom.ofBase X f fun j _ _ hi hi' _ _ ↦ Fin.succ_injective _
+    (((FinPointed.Hom.isInert_iff f).1 hf j.succ (Fin.succ_ne_zero j)).unique hi hi')
+
+@[simp]
+lemma Hom.ofInert_toAssoc (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
+    (hf : f.IsInert) : (Hom.ofInert X f hf).toAssoc = Assoc.Hom.ofBase f :=
+  Assoc.Hom.ext_of_isInert (by rw [Hom.ofInert, Hom.ofBase_toAssoc_base, Assoc.Hom.ofBase_base])
+    (by rwa [Hom.ofInert, Hom.ofBase_toAssoc_base])
+
+/-- The target of every morphism is its source colored along its underlying map. -/
+lemma Hom.mk_pushforwardColor_eq (φ : X ⟶ Y) :
+    (⟨Y.len, X.pushforwardColor φ.toAssoc.base⟩ : LM.{u}) = Y :=
+  congrArg (LM.mk Y.len) (funext fun j ↦ (φ.color_eq_pushforwardColor j).symm)
+
+/-- Every morphism over an inert map is the lift `Hom.ofInert` of that map, followed by the
+identification `Hom.mk_pushforwardColor_eq` of its target with the source colored along that
+map. -/
+lemma Hom.ofInert_comp_eqToHom (φ : X ⟶ Y) (hφ : φ.toAssoc.base.IsInert) :
+    Hom.ofInert X φ.toAssoc.base hφ ≫ eqToHom φ.mk_pushforwardColor_eq = φ := by
+  refine hom_ext ?_
+  -- Forgetting the colors sends the identification of targets to an identity.
+  have h : (eqToHom φ.mk_pushforwardColor_eq).toAssoc =
+      eqToHom (congrArg toAssocObj φ.mk_pushforwardColor_eq) :=
+    eqToHom_map LM.toAssoc φ.mk_pushforwardColor_eq
+  rw [comp_toAssoc, h, eqToHom_refl, Category.comp_id]
+  exact Assoc.Hom.ext_of_isInert (by simp) (by simpa using hφ)
+
+/-- The lift of an inert map with a given source is strongly coCartesian. -/
+lemma isStronglyCocartesian_ofInert (X : LM.{u}) {k : ℕ}
+    (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k) (hf : f.IsInert) :
+    toFinPointed.IsStronglyCocartesian f (Hom.ofInert X f hf) := by
+  simpa using isStronglyCocartesian_of_isInert (Hom.ofInert X f hf) (by simpa using hf)
 
 /-- A map `f : ⟨n⟩ ⟶ ⟨k⟩` of `Fin_*` lifts to `LM^⊗` with source `X`, necessarily with target
 `⟨k⟩` colored along `f` (`Hom.mk_pushforwardColor_eq`), exactly when each of its fibres over the
