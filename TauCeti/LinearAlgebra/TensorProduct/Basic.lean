@@ -28,6 +28,8 @@ with a multiset sum in one factor.
 
 * `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
 * `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
+* `LinearMap.lTensor_involutive`: tensoring an involution on the left with a module gives an
+  involution.
 * `LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self`: the twisted co-Leibniz operator
   `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` composed with itself, for an involution `τ`
   anticommuting with `b`.
@@ -138,6 +140,12 @@ theorem rTensor_add_lTensor_comp_rTensor_comp_self (b τ : N →ₗ[R] N) (d : P
     hcross, add_zero]
 
 end Naturality
+
+variable (M) in
+/-- Tensoring an involutive linear map on the left with a module gives an involution. -/
+theorem lTensor_involutive {f : N →ₗ[R] N} (hf : Function.Involutive f) :
+    Function.Involutive (f.lTensor M) := fun x ↦ by
+  rw [← lTensor_comp_apply, show f ∘ₗ f = id from ext hf, lTensor_id_apply]
 
 /-- Apply a linear functional to the right factor of a tensor, linearly in the functional. -/
 noncomputable def tensorComponent : (N →ₗ[R] R) →ₗ[R] M ⊗[R] N →ₗ[R] M :=

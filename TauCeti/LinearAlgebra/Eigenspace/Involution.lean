@@ -30,6 +30,8 @@ identity.
 * `Module.End.eigenProjOfInvolutive_apply_of_mem_neg`: it kills the `ν`-eigenspace for `μ ν = -1`.
 * `Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg`: the projections for `μ` and
   `-μ` add up to the identity.
+* `Module.End.disjoint_eigenspace_neg`: the `μ`- and `-μ`-eigenspaces of an endomorphism are
+  disjoint when `2 * μ` acts injectively on the module.
 * `Module.End.inf_eigenspace_sup_inf_eigenspace_neg`: an invariant submodule of an involution
   splits as the supremum of its intersections with the `μ`- and `-μ`-eigenspaces (`μ * μ = 1`).
 -/
@@ -86,6 +88,16 @@ theorem eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg (hg : Function.Invol
   have h := halfOneAdd_add_halfOneAdd_neg k (μ • g)
   rw [← neg_smul] at h
   exact LinearMap.congr_fun h y
+
+variable (g) in
+omit [Invertible (2 : k)] in
+/-- The `μ`- and `-μ`-eigenspaces of an endomorphism are disjoint whenever `2 * μ` acts injectively
+on `Y` (for instance when `2` and `μ` are units, as for `IsUnit (2 : k)` and `μ * μ = 1`). -/
+theorem disjoint_eigenspace_neg {μ : k} (h : IsSMulRegular Y (2 * μ)) :
+    Disjoint (g.eigenspace μ) (g.eigenspace (-μ)) :=
+  Submodule.disjoint_def.mpr fun y hy₁ hy₂ ↦ h <| show (2 * μ) • y = (2 * μ) • 0 by
+    rw [smul_zero, two_mul, add_smul]; nth_rw 1 [← mem_eigenspace_iff.mp hy₁]
+    rw [mem_eigenspace_iff.mp hy₂, neg_smul, neg_add_cancel]
 
 omit [Invertible (2 : k)] in
 /-- An invariant submodule of an involution over a commutative ring in which `2` is a unit is the
