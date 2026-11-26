@@ -57,6 +57,39 @@ theorem IsDFinite.exists_minimal_equation {f : K⟦X⟧} (hf : IsDFinite k f) :
   rw [dfiniteOrder, dite_eq_left hf]
   exact Nat.find_spec (isDFinite_def.mp hf)
 
+/-- Dividing a differential equation `p` of `f` by a generator `g` of the ideal of `k[X]` spanned
+by its coefficients gives an equation `q` of the same order, with `pᵢ = g qᵢ`, whose coefficients
+generate the unit ideal: `∑ i, cᵢ qᵢ = 1`. -/
+theorem exists_eq_mul_of_sum_smul_iterate_derivative_eq_zero {f : K⟦X⟧} {n : ℕ}
+    {p : Fin (n + 1) → k[X]} (hlast : p (Fin.last n) ≠ 0) (hp : ∑ i, p i • (d⁄dX)^[i] f = 0) :
+    ∃ (g : k[X]) (q c : Fin (n + 1) → k[X]), (∀ i, p i = g * q i) ∧ q (Fin.last n) ≠ 0 ∧
+      ∑ i, q i • (d⁄dX)^[i] f = 0 ∧ ∑ i, c i * q i = 1 := by
+  choose q hq using fun i ↦ (Submodule.IsPrincipal.mem_iff_generator_dvd _).mp
+    (Ideal.subset_span ⟨i, rfl⟩ : p i ∈ Ideal.span (Set.range p))
+  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun _).mp
+    (Submodule.IsPrincipal.generator_mem (Ideal.span (Set.range p)))
+  generalize Submodule.IsPrincipal.generator (Ideal.span (Set.range p)) = g at hq hc
+  have hg : g ≠ 0 := fun hg ↦ hlast (by rw [hq, hg, zero_mul])
+  refine ⟨g, q, c, hq, fun h0 ↦ hlast (by rw [hq, h0, mul_zero]), ?_, ?_⟩
+  · refine (smul_eq_zero_iff_right hg).mp ?_
+    rw [Finset.smul_sum, ← hp]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [smul_smul, ← hq]
+  · refine mul_left_cancel₀ hg ?_
+    rw [mul_one, Finset.mul_sum]
+    conv_rhs => rw [← hc]
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [smul_eq_mul, hq]; ring
+
+/-- Every D-finite series has a minimal equation whose coefficients generate the unit ideal of
+`k[X]`, obtained by dividing the coefficients of any minimal equation by their greatest common
+divisor. By `PowerSeries.isMinimalSingularPoint_iff_of_sum_mul_eq_one`, the singular points of
+the minimal equation are the roots of its leading coefficient. -/
+theorem IsDFinite.exists_minimal_equation_sum_mul_eq_one {f : K⟦X⟧} (hf : IsDFinite k f) :
+    ∃ p c : Fin (dfiniteOrder k f + 1) → k[X], p (Fin.last _) ≠ 0 ∧
+      ∑ i, p i • (d⁄dX)^[i] f = 0 ∧ ∑ i, c i * p i = 1 := by
+  obtain ⟨p, hp, h⟩ := hf.exists_minimal_equation
+  obtain ⟨-, q, c, -, hq⟩ := exists_eq_mul_of_sum_smul_iterate_derivative_eq_zero hp h
+  exact ⟨q, c, hq⟩
+
 /-- The minimal order is at most the order of every differential equation with nonzero
 leading coefficient. -/
 theorem dfiniteOrder_le {f : K⟦X⟧} {n : ℕ} {p : Fin (n + 1) → k[X]}
@@ -172,11 +205,31 @@ theorem dfiniteOrder_C {a : K} (ha : a ≠ 0) : dfiniteOrder k (C a) = 1 := by
 theorem dfiniteOrder_one [Nontrivial K] : dfiniteOrder k (1 : K⟦X⟧) = 1 := by
   simpa only [map_one] using dfiniteOrder_C (k := k) (K := K) one_ne_zero
 
+/-- For `q ∈ k[X]`, the series `q exp` satisfies the first-order equation
+`q f' - (q' + q) f = 0`. -/
+theorem sum_smul_iterate_derivative_polynomial_smul_exp [Algebra ℚ K] (q : k[X]) :
+    ∑ i, ![-(Polynomial.derivative q + q), q] i • (d⁄dX)^[i] (q • exp K) = 0 := by
+  rw [Fin.sum_univ_two]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Fin.val_zero, Fin.val_one,
+    Function.iterate_zero, id_eq, Function.iterate_one, derivative_polynomial_smul,
+    derivative_exp, ← add_smul, smul_smul]
+  convert zero_smul k[X] (exp K) using 2
+  ring
+
+/-- In characteristic zero, the product of a nonzero polynomial `q ∈ k[X]` and the formal
+exponential has differential order one. -/
+@[simp]
+theorem dfiniteOrder_polynomial_smul_exp [Nontrivial K] [Algebra ℚ K] {q : k[X]} (hq : q ≠ 0) :
+    dfiniteOrder k (q • exp K) = 1 := by
+  have hf : IsDFinite k (q • exp K) := (isDFinite_polynomial_smul_iff hq).mpr isDFinite_exp
+  refine Nat.le_antisymm ?_ (hf.dfiniteOrder_pos ?_)
+  · exact dfiniteOrder_le (by simpa using hq) (sum_smul_iterate_derivative_polynomial_smul_exp q)
+  · rw [Ne, smul_eq_zero_iff_right hq]
+    exact (isUnit_exp K).ne_zero
+
 /-- In characteristic zero the formal exponential has differential order one. -/
 @[simp]
 theorem dfiniteOrder_exp [Nontrivial K] [Algebra ℚ K] : dfiniteOrder k (exp K) = 1 := by
-  apply Nat.le_antisymm _
-    ((isDFinite_exp (k := k) (K := K)).dfiniteOrder_pos (isUnit_exp K).ne_zero)
-  exact dfiniteOrder_le (p := ![-1, 1]) (by simp) sum_smul_iterate_derivative_exp
+  simpa using dfiniteOrder_polynomial_smul_exp (k := k) (K := K) one_ne_zero
 
 end PowerSeries

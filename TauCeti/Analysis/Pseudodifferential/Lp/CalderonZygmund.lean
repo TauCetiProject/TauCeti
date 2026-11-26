@@ -92,6 +92,7 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V
 
 /-! ### Bounds for the kernel away from the diagonal -/
 
+omit [CompleteSpace V] [CompleteSpace W] in
 /-- The size estimate `‖K(x, y)‖ ≤ C ‖x - y‖⁻ⁿ` of the kernel of a uniform symbol of order `0`, in
 every dimension: in dimension `0` there are no pairs of distinct points. -/
 private theorem IsUniform.exists_norm_offDiagonalKernel_le_rpow (ha : a.IsUniform) :

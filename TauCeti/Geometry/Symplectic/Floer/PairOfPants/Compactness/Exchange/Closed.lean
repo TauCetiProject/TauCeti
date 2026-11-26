@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Exchange
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Compactness of the input-exchange family in a closed manifold
@@ -173,17 +174,13 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   -- Each component `(c, z) ↦ K_c(z)(w)` of the perturbations is `C³` jointly in the parameter,
   -- the domain point of `S` and the target point, so its Hamiltonian vector field is `C²` in
   -- every chart.
-  have hg : ContMDiff (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 3
-      (fun p : (ℝ × (ℝ × ℝ)) × M ↦ (p.1.1, (equivRealProdCLM.symm p.1.2, p.2))) :=
-    (contDiff_fst.contMDiff.comp contMDiff_fst).prodMk
-      (((equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd)
   have hK (w : ℂ) (p : ℝ × (ℝ × ℝ)) (hp : p ∈ univ ×ˢ S) (x : M) :
       ContMDiffAt (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
         (uncurry fun (p : ℝ × (ℝ × ℝ)) x ↦
           exchangePerturbation H p.1 (equivRealProdCLM.symm p.2) x w) (p, x) :=
     (((contMDiffAt_exchangePerturbation hH hHs p.1 ⟨equivRealProdCLM.symm p.2, hp.2⟩ x).comp
-      (p, x) hg.contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
+      (p, x) contMDiff_prodMk_equivRealProdCLM_symm.contMDiffAt).clm_apply contMDiffAt_const).of_le
+        (by norm_num)
   have hWS : IsOpen (W ∩ univ ×ˢ S) := hW.inter (isOpen_univ.prod isOpen_thricePuncturedSphereReal)
   have hCDWS : C ×ˢ D ⊆ W ∩ univ ×ˢ S :=
     subset_inter hCDW (prod_mono (subset_univ _) hDS)
@@ -202,19 +199,12 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   have hΩS : Ω ⊆ S := hΩD.trans hDS
   -- The Floer energy over `Ω` is at most the energy over `S`, which exceeds the topological energy
   -- by at most `B₀ + B₁ + B_∞`.
-  have hE (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
-      (fun z x ↦ exchangePerturbation H (c k) (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ exchangePerturbation H (c k) (equivRealProdCLM.symm z) x Complex.I) (u k) z ≤
-        A + ∑ q, B q := by
-    have habs := hω.abs_integral_floerEnergyDensity_exchangePerturbation_sub_le hH
-      (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀₁ (hcC k)).1 (hC₀₁ (hcC k)).2
-      ((hu k).of_le (by norm_num)) (hx k) (hxinf k) (hint k) (harea k)
-    refine (hω.setIntegral_floerEnergyDensity_mono_set hΩS
-      isOpen_thricePuncturedSphereReal.measurableSet (hint k) (fun z hz ↦ hJt _ (hcC k) z hz _)
-      (hfl k)).trans ?_
-    linarith [(abs_sub_le_iff.1 habs).1, htop k]
   exact hconv hΩ hΩD hcC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz))
-    (fun k ↦ (hint k).mono_set hΩS) hE
+    (fun k ↦ (hint k).mono_set hΩS) fun k ↦
+      hω.setIntegral_floerEnergyDensity_exchangePerturbation_le hH
+        (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀₁ (hcC k)).1 (hC₀₁ (hcC k)).2
+        ((hu k).of_le (by norm_num)) (hx k) (hxinf k) (hint k) (harea k)
+        (fun z hz ↦ hJt _ (hcC k) z hz _) (hfl k) (htop k) hΩS
 
 end IsNondegenerate
 

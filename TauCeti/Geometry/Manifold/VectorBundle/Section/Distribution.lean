@@ -64,6 +64,7 @@ charts whose source does not contain `x`
 * `TauCeti.BundleTest.ext_chartDistributionCLM`: functionals on bundle tests are determined by
   their local representatives.
 * `TauCeti.BundleTest.delta`: the point mass at a point with a covector on the fibre.
+* `TauCeti.DualDensityTest I M F V`: the bundle tests with values in `V →L[ℝ] |Λ|`.
 * `TauCeti.BundleDistribution I M F V`: the distributional sections of `V`, the continuous linear
   functionals on the tests with values in `V →L[ℝ] |Λ|`.
 
@@ -499,12 +500,18 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
 
+/-- The bundle tests with values in the **`V`-dual densities**, the bundle of continuous linear
+maps from `V` to the density line `TauCeti.DensityBundle I M`. These are the tests on which the
+distributional sections of `V` act. -/
+abbrev DualDensityTest :=
+  BundleTest I (F →L[ℝ] ℝ) (fun x ↦ V x →L[ℝ] DensityBundle I M x)
+
 /-- The **distributional sections** of a smooth vector bundle `V`: the continuous linear
 functionals on the bundle tests with values in the `V`-dual densities, the bundle of continuous
 linear maps from `V` to the density line `TauCeti.DensityBundle I M`. The density factor is what
 lets a section `u` of `V` act on such a test `s` without a choice of measure on `M`, through the
 integral of the density `x ↦ s x (u x)`. -/
 abbrev BundleDistribution :=
-  BundleTest I (F →L[ℝ] ℝ) (fun x ↦ V x →L[ℝ] DensityBundle I M x) →L_c[ℝ] ℝ
+  DualDensityTest I M F V →L_c[ℝ] ℝ
 
 end TauCeti

@@ -9,11 +9,16 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.Analysis.SpecialFunctions.Integrability.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.MeasureTheory.Function.Floor
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
-# Negative powers in `Lᵖ` near the origin and shifted interval powers
+# Integrability of real powers: `Lᵖ` near the origin, shifted powers, `|x| ^ p` and `|sin x| ^ p`
 
 On an interval `(0, c)`, the power `t ↦ t ^ (-a)` is in `Lᵖ` for every finite exponent `p` with
 `a p < 1` (`TauCeti.memLp_rpow_neg_restrict_Ioo`). This is the `Lᵖ` form of Mathlib's
@@ -27,11 +32,20 @@ gives the shifted integrability criterion `TauCeti.integrableOn_Ioo_sub_rpow_iff
 At infinity, the inverse natural power `t ↦ t⁻¹ ^ k` is integrable on `(c, ∞)` for `0 < c` and
 `2 ≤ k` (`TauCeti.integrableOn_Ioi_inv_pow`), the natural-power form of Mathlib's
 `integrableOn_Ioi_rpow_of_lt`.
+
+On bounded intervals, the even power `x ↦ |x| ^ p` is interval integrable for every `p > -1`
+(`TauCeti.intervalIntegrable_abs_rpow`), the two-sided form of Mathlib's
+`intervalIntegral.intervalIntegrable_rpow'`. So is `x ↦ |sin x| ^ p`
+(`TauCeti.intervalIntegrable_abs_sin_rpow`), whose singularities at the zeros `kπ` of the sine
+are of this type by Jordan's inequality. For `p ≤ 0`, the latter dominates, up to a constant
+factor, the powers `|z - w| ^ p` of the distance from a point `z` running along a circle about `c`
+to a fixed point `w` (`TauCeti.norm_circleMap_sub_rpow_le`).
 -/
 
 public section
 
 open MeasureTheory Set
+open scoped Real
 
 namespace TauCeti
 
@@ -76,5 +90,42 @@ theorem integrableOn_rpow_mul_fract {p a : ℝ} (hp : p < -1) (ha : 0 < a) :
     (ae_of_all _ fun t ↦ by
       rw [Real.norm_of_nonneg (Int.fract_nonneg t)]
       exact (Int.fract_lt_one t).le)
+
+/-- For `p > -1`, the power `x ↦ |x| ^ p` is interval integrable on every bounded interval. -/
+theorem intervalIntegrable_abs_rpow {p : ℝ} (hp : -1 < p) (a b : ℝ) :
+    IntervalIntegrable (fun x : ℝ ↦ |x| ^ p) volume a b := by
+  -- On `[0, c]` the function is `x ↦ x ^ p` away from `0`; it is even, so `[c, 0]` follows.
+  have hpos (c : ℝ) (hc : 0 ≤ c) : IntervalIntegrable (fun x : ℝ ↦ |x| ^ p) volume 0 c :=
+    (intervalIntegral.intervalIntegrable_rpow' hp).congr fun x hx ↦ by
+      rw [uIoc_of_le hc] at hx
+      simp only [abs_of_pos hx.1]
+  have h (c : ℝ) : IntervalIntegrable (fun x : ℝ ↦ |x| ^ p) volume 0 c := by
+    rcases le_total 0 c with hc | hc
+    · exact hpos c hc
+    · rw [IntervalIntegrable.iff_comp_neg]
+      simpa only [abs_neg, neg_zero] using hpos (-c) (neg_nonneg.2 hc)
+  exact (h a).symm.trans (h b)
+
+/-- For `p > -1`, the power `x ↦ |sin x| ^ p` is interval integrable on every bounded interval,
+although it is unbounded near the zeros of the sine when `p < 0`. -/
+theorem intervalIntegrable_abs_sin_rpow {p : ℝ} (hp : -1 < p) (a b : ℝ) :
+    IntervalIntegrable (fun x : ℝ ↦ |Real.sin x| ^ p) volume a b := by
+  rcases le_or_gt 0 p with hp0 | hp0
+  · exact (Real.continuous_sin.abs.rpow_const fun _ ↦ Or.inr hp0).intervalIntegrable a b
+  -- The function has period `π`; on `[-π/2, π/2]` Jordan's inequality `|sin x| ≥ 2|x|/π`
+  -- dominates it by a multiple of `|x| ^ p`.
+  have hper : Function.Periodic (fun x : ℝ ↦ |Real.sin x| ^ p) π := fun x ↦ by
+    simp only [Real.sin_add_pi, abs_neg]
+  refine hper.intervalIntegrable Real.pi_ne_zero (t := -(π / 2)) ?_ a b
+  have hle : -(π / 2) ≤ -(π / 2) + π := by linarith [Real.pi_pos]
+  refine (((intervalIntegrable_abs_rpow hp _ _).const_mul ((2 / π) ^ p))).mono_fun'
+    ((by fun_prop : Measurable fun x : ℝ ↦ |Real.sin x| ^ p).aestronglyMeasurable) ?_
+  rw [uIoc_of_le hle]
+  filter_upwards [ae_restrict_mem measurableSet_Ioc,
+    ae_restrict_of_ae (Measure.ae_ne volume 0)] with x hx hx0
+  have hxπ : |x| ≤ π / 2 := abs_le.2 ⟨hx.1.le, by linarith [hx.2]⟩
+  have hpos : 0 < 2 / π * |x| := by positivity
+  rw [Real.norm_of_nonneg (by positivity), ← Real.mul_rpow (by positivity) (abs_nonneg x)]
+  exact Real.rpow_le_rpow_of_nonpos hpos (Real.mul_abs_le_abs_sin hxπ) hp0.le
 
 end TauCeti
