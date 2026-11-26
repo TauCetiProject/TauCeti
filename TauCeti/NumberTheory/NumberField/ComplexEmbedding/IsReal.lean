@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
+import TauCeti.LinearAlgebra.Complex.Determinant
 
 /-!
 # Values of nonreal complex embeddings
@@ -63,16 +64,11 @@ theorem linearIndependent_real_of_span_rat_eq_top [CharZero K] {σ : K →+* ℂ
     obtain ⟨p, q, h⟩ := Submodule.mem_span_pair.mp (hv ▸ Submodule.mem_top : x ∈ _)
     refine ⟨p, q, ?_⟩
     rw [← h, Rat.smul_def, Rat.smul_def, map_add, map_mul, map_mul, map_ratCast, map_ratCast]
-  refine LinearIndependent.pair_iff.mpr fun s t hst ↦ by_contra fun hne ↦ hσ ?_
-  have hre : s * (σ v₀).re + t * (σ v₁).re = 0 := by simpa using congrArg Complex.re hst
-  have him : s * (σ v₀).im + t * (σ v₁).im = 0 := by simpa using congrArg Complex.im hst
+  refine linearIndependent_pair_iff_im_conj_mul_ne_zero.mpr fun hD ↦ hσ ?_
   -- The real determinant of `σ v₀, σ v₁` vanishes.
-  have hD : (σ v₀).re * (σ v₁).im - (σ v₁).re * (σ v₀).im = 0 := by
-    rcases not_and_or.mp hne with hs | ht
-    · refine (mul_eq_zero.mp ?_).resolve_left hs
-      linear_combination (σ v₁).im * hre - (σ v₁).re * him
-    · refine (mul_eq_zero.mp ?_).resolve_left ht
-      linear_combination -(σ v₀).im * hre + (σ v₀).re * him
+  replace hD : (σ v₀).re * (σ v₁).im - (σ v₁).re * (σ v₀).im = 0 := by
+    simp only [Complex.mul_im, Complex.conj_re, Complex.conj_im] at hD
+    linear_combination hD
   -- Hence every `σ x` lies on the real line through `σ 1 = 1`.
   obtain ⟨p₁, q₁, h₁⟩ := hcoord 1
   rw [map_one] at h₁

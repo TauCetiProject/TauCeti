@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Elliptic.Endomorphism
-public import TauCeti.Analysis.SpecialFunctions.Elliptic.Uniformization
 public import TauCeti.NumberTheory.NumberField.Global.Orders.IdealClassMonoid
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Lattice
 public import TauCeti.NumberTheory.NumberField.ComplexEmbedding.IsReal
@@ -31,8 +30,10 @@ This file proves the endomorphism-order comparison for these lattices:
 * the multiplier ring `{α ∈ ℂ | α σ(I) ⊆ σ(I)}` of the lattice, its left order
   `L.lattice.leftOrder`, is the image under `σ` of the multiplier ring `{x ∈ K | x I ⊆ I}` of the
   ideal (`toSubring_leftOrder_lattice_eq_map`);
-* for a proper ideal, it is the image of `O`, so `O` is the ring of analytic endomorphisms of
-  `E_I(ℂ)`, acting faithfully (`leftOrderEquiv`, `orderEndRingHom_injective`).
+* `O` lies in the multiplier ring of every fractional ideal, so it acts faithfully on `E_I(ℂ)` by
+  the scalar maps (`orderEndRingHom_injective`);
+* for a proper ideal the multiplier ring of the lattice is the image of `O` (`leftOrderEquiv`), so
+  `O` gives exactly the scalar endomorphisms of `E_I(ℂ)` in the image of `PeriodPair.endRingHom`.
 
 Homothetic ideals give homothetic lattices, hence isomorphic curves. So the `j`-invariant of
 `E_I` depends only on the ideal class of `I` in the ideal class monoid of `O`
@@ -43,8 +44,8 @@ Homothetic ideals give homothetic lattices, hence isomorphic curves. So the `j`-
 
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.leftOrderEquiv`: for a proper ideal `I`, the
   order is isomorphic to the multiplier ring of the lattice `σ(I)`, by `σ`.
-* `TauCeti.GlobalNumberFields.NumberFieldOrder.orderEndRingHom`: the resulting action of `O` on
-  the points `E_I(ℂ)`.
+* `TauCeti.GlobalNumberFields.NumberFieldOrder.orderEndRingHom`: the action of `O` on the points
+  `E_I(ℂ)` by the scalar maps.
 * `TauCeti.GlobalNumberFields.NumberFieldOrder.jInvariant`: the `j`-invariant of the curve of a
   nonzero fractional ideal.
 * `TauCeti.GlobalNumberFields.IdealClassMonoid.jInvariant`: its descent to ideal classes.
@@ -149,26 +150,31 @@ lemma coe_leftOrderEquiv {σ : K →+* ℂ} (hI : O.IsProperFractionalIdeal I) {
     (leftOrderEquiv hI hL x : ℂ) = σ x :=
   (rfl)
 
-/-- The action of the order on the points `E_I(ℂ)` of the curve of a proper ideal `I`: `x ∈ O`
-acts by the scalar map of `σ x`. -/
-def orderEndRingHom {σ : K →+* ℂ} (hI : O.IsProperFractionalIdeal I) {L : PeriodPair}
-    (hL : (L.lattice : Set ℂ) = σ '' I) :
+/-- The action of the order on the points `E_I(ℂ)` of the curve of a fractional ideal `I`: `x ∈ O`
+acts by the scalar map of `σ x`, which lies in the multiplier ring of `σ(I)` because `x I ⊆ I`. -/
+def orderEndRingHom {σ : K →+* ℂ} {L : PeriodPair} (hL : (L.lattice : Set ℂ) = σ '' I) :
     O.toSubalgebra →+* AddMonoid.End L.weierstrassCurve.toAffine.Point :=
-  L.endRingHom.comp (leftOrderEquiv hI hL : O.toSubalgebra →+* L.lattice.leftOrder)
+  L.endRingHom.comp ((σ.toIntAlgHom.comp O.toSubalgebra.val).codRestrict L.lattice.leftOrder
+    fun x ↦ by
+      have h : σ x ∈ L.lattice.leftOrder.toSubring := by
+        rw [toSubring_leftOrder_lattice_eq_map hL]
+        exact Subring.mem_map.mpr ⟨x, O.order_le_multiplierRing I x.property, rfl⟩
+      exact h : O.toSubalgebra →+* L.lattice.leftOrder)
 
 /-- An element `x` of the order acts on the curve of `I` by `P(z) ↦ P(σ(x) z)`. -/
 @[simp]
-lemma orderEndRingHom_weierstrassPoint {σ : K →+* ℂ} (hI : O.IsProperFractionalIdeal I)
-    {L : PeriodPair} (hL : (L.lattice : Set ℂ) = σ '' I) (x : O.toSubalgebra) (z : ℂ) :
-    orderEndRingHom hI hL x (L.weierstrassPoint z) = L.weierstrassPoint (σ x * z) := by
-  simp [orderEndRingHom]
+lemma orderEndRingHom_weierstrassPoint {σ : K →+* ℂ} {L : PeriodPair}
+    (hL : (L.lattice : Set ℂ) = σ '' I) (x : O.toSubalgebra) (z : ℂ) :
+    orderEndRingHom hL x (L.weierstrassPoint z) = L.weierstrassPoint (σ x * z) :=
+  L.endRingHom_weierstrassPoint _ z
 
-/-- **The order acts faithfully** on the points of the curve of a proper ideal, and by
-`leftOrderEquiv` every analytic endomorphism `PeriodPair.endRingHom` comes from it. -/
-theorem orderEndRingHom_injective {σ : K →+* ℂ} (hI : O.IsProperFractionalIdeal I)
-    {L : PeriodPair} (hL : (L.lattice : Set ℂ) = σ '' I) :
-    Function.Injective (orderEndRingHom hI hL) :=
-  L.endRingHom_injective.comp (leftOrderEquiv hI hL).injective
+/-- **The order acts faithfully** on the points of the curve of a fractional ideal. For a proper
+ideal, `leftOrderEquiv` shows that every scalar endomorphism in the image of
+`PeriodPair.endRingHom` comes from it. -/
+theorem orderEndRingHom_injective {σ : K →+* ℂ} {L : PeriodPair}
+    (hL : (L.lattice : Set ℂ) = σ '' I) :
+    Function.Injective (orderEndRingHom hL) := fun _ _ h ↦
+  Subtype.val_injective (σ.injective (congrArg Subtype.val (L.endRingHom_injective h)))
 
 /-! ### The `j`-invariant of an ideal class -/
 
