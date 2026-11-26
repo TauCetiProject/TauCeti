@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-public import Mathlib.RingTheory.Etale.Field
+public import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.QcEtale
+public import TauCeti.RingTheory.Etale.Field
 
 /-!
 # Checks for the quasi-compact small Nisnevich site
@@ -45,6 +46,8 @@ example : (⊥ : Sieve (emptyObj X)) ∈ X.qcNisnevichTopology (emptyObj X) := b
   refine GrothendieckTopology.superset_covering _ ?_
     ((Scheme.ofArrows_mem_qcNisnevichTopology_iff (U := emptyObj X)
       (V := fun i : PEmpty.{1} ↦ i.elim) (fun i ↦ i.elim)).2
+      -- The underlying scheme of `emptyObj X` is `∅` by definition of `emptyObj`, `QcEtale.mk` and
+      -- `Over.mk`, so a point of it is a point of `∅`.
       ⟨fun i ↦ i.elim, fun s ↦ (IsEmpty.false (α := (∅ : Scheme.{u})) s).elim⟩)
   rw [Sieve.ofArrows, Sieve.generate_le_iff, Presieve.ofArrows_le_iff]
   exact fun i ↦ i.elim
@@ -53,8 +56,6 @@ variable (k K : Type u) [Field k] [Field K] [Algebra k K] [Algebra.Etale k K]
 
 /-- `Spec K ⟶ Spec k` for an étale field extension, as an object of `(Spec k).QcEtale`. -/
 noncomputable def specObj : (Spec (.of k)).QcEtale :=
-  have : Etale (Spec.map (CommRingCat.ofHom (algebraMap k K))) :=
-    (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
   have := quasiCompact_of_compactSpace (Spec.map (CommRingCat.ofHom (algebraMap k K)))
   Scheme.QcEtale.mk (Spec.map (CommRingCat.ofHom (algebraMap k K)))
 
@@ -75,14 +76,7 @@ example (h : finrank k K ≠ 1) :
   -- too, so this step is definitional rather than a rewrite.
   exact not_isNisnevichCovering_specMap_algebraMap_of_finrank_ne_one k K h
 
-/-- `ℝ → ℂ` is étale, being a finite separable field extension. -/
-theorem algebraEtale_real_complex : Algebra.Etale ℝ ℂ :=
-  have : Algebra.FormallyEtale ℝ ℂ := Algebra.FormallyEtale.of_isSeparable ℝ ℂ
-  have : Algebra.FinitePresentation ℝ ℂ :=
-    Algebra.FinitePresentation.of_finiteType.mp inferInstance
-  ⟨inferInstance, inferInstance⟩
-
-attribute [local instance] algebraEtale_real_complex
+attribute [local instance] Algebra.Etale.of_isSeparable
 
 -- `Spec ℂ ⟶ Spec ℝ` is the structure morphism of the object `specObj ℝ ℂ` of `(Spec ℝ).QcEtale`.
 example : ((Scheme.QcEtale.ι _).obj (specObj ℝ ℂ)).hom =

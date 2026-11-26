@@ -127,6 +127,8 @@ theorem exists_mem_smallNisnevichTopology [QuasiSeparatedSpace X] (V : X.Etale) 
   -- The source of `(AffineEtale.Spec X).obj (U i)` is `Spec` of a ring, hence compact.
   have (i : ι') : QuasiCompact ((AffineEtale.Spec X).obj (U i)).hom :=
     quasiCompact_of_compactSpace (X := Spec (U i).left.unop) (Y := X) _
+  -- `(ι X).obj (mk A.hom)` is `Over.mk ⊤ A.hom _`, which is `A` by structure eta, so `f` and `hf`
+  -- apply unchanged.
   exact ⟨ι', fun i ↦ mk ((AffineEtale.Spec X).obj (U i)).hom, f, hf⟩
 
 instance isCoverDense_smallNisnevichTopology [QuasiSeparatedSpace X] :
