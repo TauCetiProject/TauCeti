@@ -41,6 +41,9 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
   with `R` (`puncturedSphereTruncation_mono`), exhausts the sphere minus its punctures
   (`iUnion_puncturedSphereTruncation`), and specializes to the truncation of the thrice-punctured
   sphere (`puncturedSphereTruncation_eq_truncation`).
+* `isCompact_preimage_puncturedSphereTruncation` and `preimage_puncturedSphereTruncation_subset`:
+  in real coordinates, `Σ_R` is compact and, for nonzero scales, lies in the plane minus the
+  centers.
 * `hasDerivAt_add_mul_cylindricalEndLift`: the complex derivative of the end lift of an input end.
 * `injOn_add_mul_cylindricalEndLift` and `injOn_realChart_add_mul_cylindricalEndLift`: the end
   lift of an input end is injective on every horizontal strip of height one.
@@ -123,6 +126,19 @@ theorem ne_of_mem_puncturedSphereTruncation {i : ι} (ha : a i ≠ 0) {w : ℂ}
     positivity
   rw [sub_self, norm_zero] at h
   linarith
+
+/-- The truncation `Σ_R` of a sphere with moving input ends, in real coordinates, is compact. -/
+theorem isCompact_preimage_puncturedSphereTruncation (c a : ι → ℂ) (R : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_puncturedSphereTruncation c a R)
+
+/-- For nonzero scales, the truncation `Σ_R` of a sphere with moving input ends, in real
+coordinates, lies in the plane minus the centers. -/
+theorem preimage_puncturedSphereTruncation_subset (ha : ∀ i, a i ≠ 0) (R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a R ⊆
+      {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
+  fun _ hz i ↦ ne_of_mem_puncturedSphereTruncation (ha i) hz
 
 /-- For finitely many input ends with nonzero scales, the truncations exhaust the sphere minus
 its punctures: the plane minus the centers of the input ends. -/

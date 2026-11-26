@@ -61,9 +61,6 @@ disc `‖w‖ ≤ 2 exp (2π)`, as along the associativity path (`TauCeti.Floer.
   . The end estimates come from
   `exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_movingEnds` and
   `exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_movingEnds`
-* `TauCeti.Floer.isCompact_preimage_puncturedSphereTruncation`,
-  `TauCeti.Floer.preimage_puncturedSphereTruncation_subset`: the truncation `Σ_T`, in real
-  coordinates, is compact and lies in the plane minus the centers.
 * `TauCeti.Floer.subset_preimage_puncturedSphereTruncation_union`: the plane minus the centers is
   covered by `Σ_T` and the images of the bands `(T, ∞) × [0, 1)` under the end charts.
 * `TauCeti.Floer.integrableOn_sobolevDensity_comp_realChart_of_movingEnds`,
@@ -130,12 +127,6 @@ private theorem isOpen_movingEndsDomain [Finite ι] (c : ι → ℂ) :
 /-- The truncation `Σ_T` of a sphere with moving input ends, in real coordinates. -/
 private noncomputable def movingEndsTruncation (c a : ι → ℂ) (T : ℝ) : Set (ℝ × ℝ) :=
   Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a T
-
-/-- The truncation `Σ_T` of a sphere with moving input ends, in real coordinates, is compact. -/
-theorem _root_.TauCeti.Floer.isCompact_preimage_puncturedSphereTruncation (c a : ι → ℂ) (T : ℝ) :
-    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a T) :=
-  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-    (isCompact_puncturedSphereTruncation c a T)
 
 private theorem movingEndsTruncation_mono (c a : ι → ℂ) {T T' : ℝ} (h : T ≤ T') :
     movingEndsTruncation c a T ⊆ movingEndsTruncation c a T' :=
@@ -273,13 +264,6 @@ private theorem mem_movingEndsTruncation_iff (ha : ∀ i, a i ≠ 0) {T : ℝ} (
     · rw [show Complex.equivRealProdCLM.symm z = 0 from h0, norm_zero]
       positivity
     · exact not_lt.1 fun h ↦ (he none).not_gt ((lt_fst_positiveEndCoord_inf_iff h0).2 h)
-
-/-- The truncation `Σ_T` of a sphere with moving input ends, in real coordinates, lies in the
-plane minus the centers. -/
-theorem _root_.TauCeti.Floer.preimage_puncturedSphereTruncation_subset (ha : ∀ i, a i ≠ 0)
-    (T : ℝ) : Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a T ⊆
-      {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} :=
-  fun _ hz i ↦ ne_of_mem_puncturedSphereTruncation (ha i) hz
 
 /-- The longitudinal coordinate of every end is bounded above on a compact subset of the sphere. -/
 private theorem exists_forall_movingEndCoord_le (ha : ∀ i, a i ≠ 0) {K : Set (ℝ × ℝ)}
