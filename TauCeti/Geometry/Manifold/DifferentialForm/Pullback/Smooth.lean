@@ -325,6 +325,13 @@ theorem mpullback_apply (f : M → M') (hf : ContMDiff I I' ∞ f)
     (mpullback f hf φ).val x v = φ.val (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
   rw [coe_mpullback, TauCeti.mpullback_apply]
 
+/-- Smooth forms which agree at every point of the image of a smooth map `f` have equal pullbacks
+along `f`. -/
+theorem mpullback_eq_of_forall_apply_eq (hf : ContMDiff I I' ∞ f) {φ ψ : SmoothForm I' M' F k}
+    (h : ∀ x, φ.val (f x) = ψ.val (f x)) : mpullback f hf φ = mpullback f hf ψ :=
+  Subtype.ext (funext fun x ↦ ContinuousAlternatingMap.ext fun v ↦ by
+    rw [mpullback_apply, mpullback_apply, h x])
+
 /-- Evaluation of the smooth pullback of a one-form on a tangent vector `v`: it is the form
 evaluated on the image of `v` under the differential. -/
 theorem mpullback_apply_one (f : M → M') (hf : ContMDiff I I' ∞ f)

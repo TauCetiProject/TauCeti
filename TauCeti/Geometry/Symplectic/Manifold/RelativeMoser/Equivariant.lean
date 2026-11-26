@@ -261,16 +261,10 @@ theorem exists_equivariant_diffeomorph_fix_embedding_eventually_mpullback_eq_of_
         mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q))) ∧
       ∀ (a : G) (x : M), Φ (a • x) = a • Φ x := by
   have := ContMDiffSMul.continuousSMul (I := IG) (I' := I) (G := G) (M := M) ∞
-  have hpull : mpullback J I f (σ₁ - σ₀).val = 0 := by
-    have h := congrArg Subtype.val hf
-    rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback] at h
-    rw [AddSubgroupClass.coe_sub, mpullback_sub, h, sub_self]
-  -- The relative Poincaré lemma gives a primitive of `σ₁ - σ₀` on a tubular neighbourhood `W` of
-  -- `f(Q)`, vanishing along `f(Q)`, with zero first jet wherever `σ₁ - σ₀` vanishes.
-  obtain ⟨W, -, hfW, hprim⟩ := f.exists_isSmoothForm_relative_primitive (F := ℝ) isOpen_univ
-    (subset_univ _)
-  obtain ⟨βW, hβW, hdβW, hβW0, hβW1⟩ := hprim (k := 1) (r := ⊤) le_top (σ₁ - σ₀).isSmoothForm
-    ((SmoothForm.isClosed_def _).1 (h₁.sub h₀)) hpull
+  -- A primitive of `σ₁ - σ₀` on a neighbourhood `W` of `f(Q)`, vanishing along `f(Q)`, with zero
+  -- first jet wherever `σ₁ - σ₀` vanishes.
+  obtain ⟨W, hfW, βW, hβW, hdβW, hβW0, hβW1⟩ :=
+    exists_relative_primitive_sub_of_mpullback_eq f h₀ h₁ hf
   -- Moser's argument runs on the largest invariant open subset `W'` of `W`, which still contains
   -- the invariant set `f(Q)`, with the restricted action and primitive.
   let W' := W.invariantCore G
@@ -328,15 +322,11 @@ theorem exists_equivariant_diffeomorph_fix_embedding_eventually_mpullback_eq
       (∀ᶠ x in 𝓝ˢ (range f), (SmoothForm.mpullback Φ Φ.contMDiff σ₁).val x = σ₀.val x) ∧
       (∀ q, mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q))) ∧
       ∀ (a : G) (x : M), Φ (a • x) = a • Φ x := by
-  have hη (q : Q) : (σ₁ - σ₀).val (f q) = 0 := by
-    rw [AddSubgroupClass.coe_sub, Pi.sub_apply, heq q, sub_self]
   -- The forms agree along `f(Q)`, so do their pullbacks, and the path is constantly `σ₀` there.
   obtain ⟨Φ, hΦf, hΦC, hΦ, hΦ1, hΦG⟩ :=
     exists_equivariant_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq G IG f hfG
-      h₀ h₁ hG₀ hG₁
-      (Subtype.ext (funext fun q ↦ ContinuousAlternatingMap.ext fun v ↦ by
-        rw [SmoothForm.mpullback_apply, SmoothForm.mpullback_apply, heq q]))
-      fun q s _ ↦ bilinFormAt_add_smul_sub_of_eq (hη q) s ▸ hnd q
+      h₀ h₁ hG₀ hG₁ (SmoothForm.mpullback_eq_of_forall_apply_eq f.contMDiff heq)
+      fun q s _ ↦ bilinFormAt_add_smul_sub_of_eq (heq q) s ▸ hnd q
   exact ⟨Φ, hΦf, hΦC, hΦ, fun q ↦ hΦ1 q (heq q), hΦG⟩
 
 end TauCeti.SmoothTwoForm
