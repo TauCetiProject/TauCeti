@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.BoundaryValue
+public import TauCeti.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 import Mathlib.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.Normed.Operator.Banach
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.ODE.Regularity
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The Sobolev realization of a linear boundary value problem on `[0, 1]`
 
-Let `X` be a finite-dimensional real normed space, `F₀` and `F₁` two subspaces of `X`, and
+Let `X` be a real Banach space, `F₀` and `F₁` two finite-dimensional subspaces of `X`, and
 `S : ℝ → (X →L[ℝ] X)` a continuous path of operators. This file realizes the boundary value
 problem
 
@@ -24,7 +25,7 @@ problem
 as a bounded operator from a Sobolev space of paths to `L²(0, 1)`, and proves that this operator
 is an isomorphism exactly when the homogeneous problem has only the zero solution, that is, when
 `Ψ(1) F₀ ∩ F₁ = 0` for the propagator `Ψ = TauCeti.dysonSeriesLeft S` of `w' = S w`, provided the
-dimensions of `F₀` and `F₁` add up to that of `X`.
+dimensions of `F₀` and `F₁` add up to that of a finite-dimensional `X`.
 
 For a Hamiltonian chord from a Lagrangian `L₀` to a Lagrangian `L₁`, with `S_t` the linearized
 Hamiltonian vector field along the chord and `F₀`, `F₁` the tangent spaces of the Lagrangians at
@@ -34,8 +35,8 @@ Floer strip over the chord. The linearized Floer operator on a strip between two
 `∂ₛ + A(s)` for a path of such operators acting on paths in `t ∈ [0, 1]`, and its Fredholm theory
 over a common domain (`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`) asks for
 invertible limits `A(±∞)` on that domain. This file constructs the domain of paths with boundary
-values in `F₀` and `F₁`, and shows that at a nondegenerate chord the operator `w' - S w`, hence
-also its composite with the pointwise invertible `J`, is invertible on it. The compactness of the
+values in `F₀` and `F₁`, and shows that at a nondegenerate chord the operator `w' - S w` is
+invertible on it. The realization of `J` as a bounded operator on `L²`, the compactness of the
 embedding of this domain into `L²`, and the symmetry of `J (w' - S w)` for Lagrangian `F₀` and
 `F₁`, which that Fredholm theory also asks for, are not treated here.
 
@@ -43,7 +44,9 @@ embedding of this domain into `L²`, and the symmetry of `J (w' - S w)` for Lagr
   jets `t ↦ (w t, w' t)` of the `C¹` paths `w` with `w 0 ∈ F₀` and `w 1 ∈ F₁`
   (`TauCeti.PathSobolev.boundaryPath`). It is the completion of these paths in a norm equivalent to
   the `W^{1,2}` norm, and its elements are `L²` pairs `(w, w')`, with projections
-  `TauCeti.PathSobolev.valueL` and `TauCeti.PathSobolev.derivL`.
+  `TauCeti.PathSobolev.valueL` and `TauCeti.PathSobolev.derivL`. The construction follows that of
+  `TauCeti.StripSobolev.H1` (`TauCeti.Analysis.Sobolev.Strip.Basic`), here for paths on `[0, 1]`
+  instead of functions on the strip.
 * **The operator.** For an essentially bounded coefficient `A`, given as a class in
   `L^∞((0, 1], X →L[ℝ] X)`, `TauCeti.PathSobolev.boundaryValueOperator A` sends `(w, w')` to
   `w' - A w`.
@@ -115,6 +118,7 @@ def boundaryPath (F₀ F₁ : Submodule ℝ X) : Submodule ℝ (ℝ → X) where
 variable {F₀ F₁ : Submodule ℝ X} {w : ℝ → X}
 
 /-- Membership in the paths with boundary values in `F₀` and `F₁`. -/
+@[simp]
 theorem mem_boundaryPath_iff : w ∈ boundaryPath F₀ F₁ ↔ ContDiff ℝ 1 w ∧ w 0 ∈ F₀ ∧ w 1 ∈ F₁ :=
   Iff.rfl
 
@@ -138,16 +142,10 @@ def pathJet (w : ℝ → X) (t : ℝ) : X × X :=
 theorem pathJet_apply (w : ℝ → X) (t : ℝ) : pathJet w t = (w t, deriv w t) :=
   (rfl)
 
-/-- A continuous function lies in every `Lᵖ` space on `(0, 1]`. -/
-theorem memLp_of_continuous {E : Type*} [NormedAddCommGroup E] {f : ℝ → E} (hf : Continuous f)
-    (p : ℝ≥0∞) : MemLp f p μ₁ :=
-  hf.continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc
-    Ioc_subset_Icc_self p
-
 /-- The jet of a path with boundary values in `F₀` and `F₁` is square integrable on `(0, 1]`. -/
 theorem memLp_pathJet (w : boundaryPath F₀ F₁) : MemLp (pathJet (w : ℝ → X)) 2 μ₁ :=
-  memLp_of_continuous
-    ((contDiff_coe w).continuous.prodMk ((contDiff_coe w).continuous_deriv le_rfl)) 2
+  ((contDiff_coe w).continuous.prodMk
+    ((contDiff_coe w).continuous_deriv le_rfl)).memLp_restrict_Ioc 2
 
 variable (F₀ F₁) in
 /-- The `L²` jets `(w, w')` of the paths with boundary values in `F₀` and `F₁`. -/
@@ -230,21 +228,23 @@ theorem coeFn_derivL (x : H1 F₀ F₁) :
   ContinuousLinearMap.coeFn_compLpL _ _
 
 /-- The value of the jet of a classical path is the path. -/
+@[simp]
 theorem valueL_jetH1 (w : boundaryPath F₀ F₁) :
-    valueL F₀ F₁ (jetH1 F₀ F₁ w) = (memLp_of_continuous (contDiff_coe w).continuous 2).toLp w := by
+    valueL F₀ F₁ (jetH1 F₀ F₁ w) = ((contDiff_coe w).continuous.memLp_restrict_Ioc 2).toLp w := by
   refine Lp.ext ((coeFn_valueL _).trans ?_)
   filter_upwards [MemLp.coeFn_toLp (memLp_pathJet w),
-    MemLp.coeFn_toLp (memLp_of_continuous (contDiff_coe w).continuous 2)] with t h₁ h₂
+    MemLp.coeFn_toLp ((contDiff_coe w).continuous.memLp_restrict_Ioc 2)] with t h₁ h₂
   rw [coe_jetH1, jetLp_apply, h₁, h₂, pathJet_apply]
 
 /-- The derivative of the jet of a classical path is the derivative of the path. -/
+@[simp]
 theorem derivL_jetH1 (w : boundaryPath F₀ F₁) :
     derivL F₀ F₁ (jetH1 F₀ F₁ w) =
-      (memLp_of_continuous ((contDiff_coe w).continuous_deriv le_rfl) 2).toLp
+      (((contDiff_coe w).continuous_deriv le_rfl).memLp_restrict_Ioc 2).toLp
         (deriv (w : ℝ → X)) := by
   refine Lp.ext ((coeFn_derivL _).trans ?_)
   filter_upwards [MemLp.coeFn_toLp (memLp_pathJet w),
-    MemLp.coeFn_toLp (memLp_of_continuous ((contDiff_coe w).continuous_deriv le_rfl) 2)]
+    MemLp.coeFn_toLp (((contDiff_coe w).continuous_deriv le_rfl).memLp_restrict_Ioc 2)]
     with t h₁ h₂
   rw [coe_jetH1, jetLp_apply, h₁, h₂, pathJet_apply]
 
@@ -292,24 +292,71 @@ theorem boundaryValueOperator_apply (A : Lp (X →L[ℝ] X) ∞ μ₁) (x : H1 F
 theorem boundaryValueOperator_jetH1 {A : Lp (X →L[ℝ] X) ∞ μ₁} {S : ℝ → X →L[ℝ] X}
     (hA : A =ᵐ[μ₁] S) (hS : Continuous S) (w : boundaryPath F₀ F₁) :
     boundaryValueOperator F₀ F₁ A (jetH1 F₀ F₁ w) =
-      (memLp_of_continuous (((contDiff_coe w).continuous_deriv le_rfl).sub
-        (hS.clm_apply (contDiff_coe w).continuous)) 2).toLp
+      ((((contDiff_coe w).continuous_deriv le_rfl).sub
+        (hS.clm_apply (contDiff_coe w).continuous)).memLp_restrict_Ioc 2).toLp
         fun t ↦ deriv (w : ℝ → X) t - S t ((w : ℝ → X) t) := by
   rw [boundaryValueOperator_apply, valueL_jetH1, derivL_jetH1]
   refine Lp.ext ?_
   filter_upwards [Lp.coeFn_sub
-      ((memLp_of_continuous ((contDiff_coe w).continuous_deriv le_rfl) 2).toLp
+      ((((contDiff_coe w).continuous_deriv le_rfl).memLp_restrict_Ioc 2).toLp
         (deriv (w : ℝ → X)))
-      (Lp.operatorMultiplication 2 A ((memLp_of_continuous (contDiff_coe w).continuous 2).toLp w)),
-    Lp.operatorMultiplication_ae A ((memLp_of_continuous (contDiff_coe w).continuous 2).toLp w),
-    MemLp.coeFn_toLp (memLp_of_continuous ((contDiff_coe w).continuous_deriv le_rfl) 2),
-    MemLp.coeFn_toLp (memLp_of_continuous (contDiff_coe w).continuous 2),
+      (Lp.operatorMultiplication 2 A (((contDiff_coe w).continuous.memLp_restrict_Ioc 2).toLp w)),
+    Lp.operatorMultiplication_ae A (((contDiff_coe w).continuous.memLp_restrict_Ioc 2).toLp w),
+    MemLp.coeFn_toLp (((contDiff_coe w).continuous_deriv le_rfl).memLp_restrict_Ioc 2),
+    MemLp.coeFn_toLp ((contDiff_coe w).continuous.memLp_restrict_Ioc 2),
     MemLp.coeFn_toLp (f := fun t ↦ deriv (w : ℝ → X) t - S t ((w : ℝ → X) t))
-      (memLp_of_continuous (((contDiff_coe w).continuous_deriv le_rfl).sub
-        (hS.clm_apply (contDiff_coe w).continuous)) 2), hA] with t h h₁ h₂ h₃ h₄ h₅
+      ((((contDiff_coe w).continuous_deriv le_rfl).sub
+        (hS.clm_apply (contDiff_coe w).continuous)).memLp_restrict_Ioc 2), hA]
+    with t h h₁ h₂ h₃ h₄ h₅
   rw [h, Pi.sub_apply, h₁, h₂, h₃, h₄, h₅]
 
-variable [FiniteDimensional ℝ X]
+/-- A classical solution of `w' = S w + f` with `w 0 ∈ F₀` and `w 1 ∈ F₁`, for continuous `S`
+and `f`, is a path with boundary values in `F₀` and `F₁`. -/
+theorem mem_boundaryPath_of_hasDerivAt {S : ℝ → X →L[ℝ] X} {f : ℝ → X} (hS : Continuous S)
+    (hf : Continuous f) (hw : ∀ t, HasDerivAt w (S t (w t) + f t) t) (hw₀ : w 0 ∈ F₀)
+    (hw₁ : w 1 ∈ F₁) : w ∈ boundaryPath F₀ F₁ :=
+  ⟨contDiff_one_of_hasDerivAt (X := fun t v ↦ S t v + f t)
+    (((hS.comp continuous_fst).clm_apply continuous_snd).add (hf.comp continuous_fst)) hw, hw₀, hw₁⟩
+
+/-- On the jet of a classical solution `w` of `w' = S w + f`, the boundary value operator of a
+coefficient represented by `S` is the class of `f`. -/
+theorem boundaryValueOperator_jetH1_of_hasDerivAt {A : Lp (X →L[ℝ] X) ∞ μ₁} {S : ℝ → X →L[ℝ] X}
+    (hA : A =ᵐ[μ₁] S) (hS : Continuous S) {f : ℝ → X} (hf : Continuous f)
+    {w : boundaryPath F₀ F₁} (hw : ∀ t, HasDerivAt (w : ℝ → X) (S t ((w : ℝ → X) t) + f t) t) :
+    boundaryValueOperator F₀ F₁ A (jetH1 F₀ F₁ w) = (hf.memLp_restrict_Ioc 2).toLp f := by
+  rw [boundaryValueOperator_jetH1 hA hS]
+  exact MemLp.toLp_congr _ _ (Eventually.of_forall fun t ↦ by simp [(hw t).deriv])
+
+section CompleteSpace
+
+variable [CompleteSpace X]
+
+/-- **Injectivity forces nondegenerate boundary conditions.** If the boundary value operator of a
+coefficient represented by a continuous path `S` is injective, then `Ψ(1) F₀ ∩ F₁ = 0` for the
+propagator `Ψ = dysonSeriesLeft S`: a nonzero classical solution of `w' = S w`, `w 0 ∈ F₀`,
+`w 1 ∈ F₁` would give a nonzero element of the kernel. -/
+theorem disjoint_map_dysonSeriesLeft_of_injective {A : Lp (X →L[ℝ] X) ∞ μ₁}
+    {S : ℝ → X →L[ℝ] X} (hA : A =ᵐ[μ₁] S) (hS : Continuous S)
+    (hinj : Injective (boundaryValueOperator F₀ F₁ A)) :
+    Disjoint (F₀.map (↑(dysonSeriesLeft S 1) : X →ₗ[ℝ] X)) F₁ := by
+  refine (disjoint_map_dysonSeriesLeft_iff hS).2 fun w hw hw₀ hw₁ ↦ ?_
+  -- The jet of a classical solution of the homogeneous problem lies in the kernel.
+  have hw' (t : ℝ) : HasDerivAt w (S t (w t) + (0 : ℝ → X) t) t := by simpa using hw t
+  have hmem := mem_boundaryPath_of_hasDerivAt hS continuous_zero hw' hw₀ hw₁
+  have hx0 : jetH1 F₀ F₁ ⟨w, hmem⟩ = 0 := hinj <| by
+    rw [boundaryValueOperator_jetH1_of_hasDerivAt (w := ⟨w, hmem⟩) hA hS continuous_zero hw',
+      map_zero, MemLp.toLp_zero]
+  -- Its value vanishes in `L²`, so `w` vanishes almost everywhere on `(0, 1]`, hence at a point.
+  have hv := valueL_jetH1 (F₀ := F₀) (F₁ := F₁) ⟨w, hmem⟩
+  rw [hx0, map_zero] at hv
+  have hae : w =ᵐ[μ₁] 0 :=
+    (MemLp.coeFn_toLp _).symm.trans (by rw [← hv]; exact Lp.coeFn_zero ..)
+  have := ae_neBot.2 (by simp [Measure.restrict_eq_zero] : (μ₁ : Measure ℝ) ≠ 0)
+  obtain ⟨t, ht⟩ := hae.exists
+  -- A solution of `w' = S w` vanishing at one point vanishes everywhere.
+  exact hS.eq_of_hasDerivAt_clm_apply hw (fun s ↦ by simp) ht
+
+variable [FiniteDimensional ℝ F₀] [FiniteDimensional ℝ F₁]
 
 /-- **The `L²` estimate on `H1`.** Let `S` be a continuous path representing `A`, with propagator
 `Ψ = dysonSeriesLeft S`. If `Ψ(1) F₀ ∩ F₁ = 0`, the value of every element of `H1` is bounded in
@@ -362,6 +409,10 @@ theorem exists_forall_norm_le_mul_norm_boundaryValueOperator
       exact hdx.trans (by gcongr)
     _ = (1 + (‖A‖ + 1) * C) * ‖boundaryValueOperator F₀ F₁ A x‖ := by ring
 
+end CompleteSpace
+
+variable [FiniteDimensional ℝ X]
+
 /-- The image of the boundary value operator contains the class of every continuous function when
 `Ψ(1) F₀ ∩ F₁ = 0` and `dim F₀ + dim F₁ = dim X`: it is the image of the jet of the classical
 solution. -/
@@ -370,57 +421,10 @@ theorem toLp_mem_range_boundaryValueOperator {A : Lp (X →L[ℝ] X) ∞ μ₁} 
     (hP : Disjoint (F₀.map (↑(dysonSeriesLeft S 1) : X →ₗ[ℝ] X)) F₁)
     (hdim : Module.finrank ℝ F₀ + Module.finrank ℝ F₁ = Module.finrank ℝ X) {f : ℝ → X}
     (hf : Continuous f) :
-    (memLp_of_continuous hf 2).toLp f ∈ Set.range (boundaryValueOperator F₀ F₁ A) := by
+    (hf.memLp_restrict_Ioc 2).toLp f ∈ Set.range (boundaryValueOperator F₀ F₁ A) := by
   obtain ⟨w, hw, hw₀, hw₁⟩ := exists_hasDerivAt_and_mem_of_disjoint hS hP hdim hf
-  have hderiv : deriv w = fun t ↦ S t (w t) + f t := funext fun t ↦ (hw t).deriv
-  have hwc : Continuous w := continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt
-  have hC1 : ContDiff ℝ 1 w := by
-    refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hw t).differentiableAt, ?_⟩
-    rw [hderiv]
-    exact (hS.clm_apply hwc).add hf
-  refine ⟨jetH1 F₀ F₁ ⟨w, hC1, hw₀, hw₁⟩, ?_⟩
-  rw [boundaryValueOperator_jetH1 hA hS]
-  exact MemLp.toLp_congr _ _ (Eventually.of_forall fun t ↦ by
-    simp [hderiv])
-
-/-- **Injectivity forces nondegenerate boundary conditions.** If the boundary value operator of a
-coefficient represented by a continuous path `S` is injective, then `Ψ(1) F₀ ∩ F₁ = 0` for the
-propagator `Ψ = dysonSeriesLeft S`: a nonzero classical solution of `w' = S w`, `w 0 ∈ F₀`,
-`w 1 ∈ F₁` would give a nonzero element of the kernel. -/
-theorem disjoint_map_dysonSeriesLeft_of_injective {A : Lp (X →L[ℝ] X) ∞ μ₁}
-    {S : ℝ → X →L[ℝ] X} (hA : A =ᵐ[μ₁] S) (hS : Continuous S)
-    (hinj : Injective (boundaryValueOperator F₀ F₁ A)) :
-    Disjoint (F₀.map (↑(dysonSeriesLeft S 1) : X →ₗ[ℝ] X)) F₁ := by
-  refine (disjoint_map_dysonSeriesLeft_iff hS).2 fun w hw hw₀ hw₁ ↦ ?_
-  -- The jet of a classical solution of the homogeneous problem lies in the kernel.
-  have hwc : Continuous w := continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt
-  have hderiv : deriv w = fun t ↦ S t (w t) := funext fun t ↦ (hw t).deriv
-  have hC1 : ContDiff ℝ 1 w := by
-    refine contDiff_one_iff_deriv.2 ⟨fun t ↦ (hw t).differentiableAt, ?_⟩
-    rw [hderiv]
-    exact hS.clm_apply hwc
-  have hx : boundaryValueOperator F₀ F₁ A (jetH1 F₀ F₁ ⟨w, hC1, hw₀, hw₁⟩) = 0 := by
-    rw [boundaryValueOperator_jetH1 hA hS, ← (memLp_of_continuous continuous_const 2).toLp_zero]
-    exact MemLp.toLp_congr _ _ (Eventually.of_forall fun t ↦ by simp [hderiv])
-  have hx0 : jetH1 F₀ F₁ ⟨w, hC1, hw₀, hw₁⟩ = 0 := hinj (by rw [hx, map_zero])
-  -- Its value vanishes in `L²`, so `w` vanishes almost everywhere on `(0, 1]`, hence at a point.
-  have hv : (memLp_of_continuous hwc 2).toLp w = 0 := by
-    have h := valueL_jetH1 (F₀ := F₀) (F₁ := F₁) ⟨w, hC1, hw₀, hw₁⟩
-    rw [hx0, map_zero] at h
-    exact h.symm
-  have hae : w =ᵐ[μ₁] 0 :=
-    (MemLp.coeFn_toLp _).symm.trans (by rw [hv]; exact Lp.coeFn_zero ..)
-  have hne : (μ₁ : Measure ℝ) ≠ 0 := by simp [Measure.restrict_eq_zero]
-  have := ae_neBot.2 hne
-  obtain ⟨t, ht⟩ := hae.exists
-  -- A solution of `w' = S w` vanishing at one point vanishes everywhere.
-  have h0 : w 0 = 0 := by
-    have h1 : dysonSeries (-S) t (dysonSeriesLeft S t (w 0)) = 0 := by
-      rw [← eq_dysonSeriesLeft_apply hS hw t, ht, Pi.zero_apply, map_zero]
-    rwa [← mul_apply_eq_comp, dysonSeries_neg_mul_dysonSeriesLeft hS t,
-      one_apply_eq_self] at h1
-  funext s
-  rw [eq_dysonSeriesLeft_apply hS hw s, h0, map_zero, Pi.zero_apply]
+  exact ⟨jetH1 F₀ F₁ ⟨w, mem_boundaryPath_of_hasDerivAt hS hf hw hw₀ hw₁⟩,
+    boundaryValueOperator_jetH1_of_hasDerivAt (w := ⟨w, _⟩) hA hS hf hw⟩
 
 /-- **Invertibility at nondegenerate boundary conditions.** Let `S` be a continuous path
 representing the coefficient `A`, with propagator `Ψ = dysonSeriesLeft S`. If `Ψ(1) F₀ ∩ F₁ = 0`
