@@ -45,7 +45,8 @@ point under an injective semilinear map is the image of its line. A semilinear e
 a bijection of projective spaces (`LinearEquiv.mapProjectivization`), and a vector lies on the line
 of a point exactly when it is zero or spans that point (`Projectivization.mem_submodule_iff`).
 Over a field, `Projectivization.mk_eq_mk_iff_forall_mul_eq` characterizes equality of projective
-points by vanishing of all their `2 × 2` homogeneous minors.
+points by vanishing of all their `2 × 2` homogeneous minors; on the projective line this is the
+vanishing of a single determinant (`Projectivization.mk_eq_mk_iff_det_eq_zero`).
 
 The normalization lemmas are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
@@ -188,6 +189,16 @@ theorem mk_eq_mk_iff_forall_mul_eq {x y : ι → K} (hx : x ≠ 0) (hy : y ≠ 0
     refine ⟨x j₀ / y j₀, funext fun i ↦ ?_⟩
     simp only [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, div_eq_iff hj₀]
     exact (h i j₀).symm
+
+/-- Two nonzero vectors of `K²` span the same line if and only if the `2 × 2` matrix with rows
+these vectors has determinant zero. -/
+theorem mk_eq_mk_iff_det_eq_zero {x y : Fin 2 → K} (hx : x ≠ 0) (hy : y ≠ 0) :
+    mk K x hx = mk K y hy ↔ (Matrix.of ![x, y]).det = 0 := by
+  rw [mk_eq_mk_iff_forall_mul_eq, Matrix.det_fin_two]
+  simp only [Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one, sub_eq_zero]
+  refine ⟨fun h ↦ h 0 1, fun h i j ↦ ?_⟩
+  fin_cases i <;> fin_cases j
+  exacts [rfl, h, h.symm, rfl]
 
 /-- At any nonzero coordinate of a projective point, there is a representative normalized
 to `1` whose coordinates are the ratios of the chosen representative's coordinates. -/
