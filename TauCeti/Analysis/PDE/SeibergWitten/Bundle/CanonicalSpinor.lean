@@ -409,8 +409,8 @@ theorem smul_canonicalSpinor_add_canonicalHalfSpinorEquivProd_symm_zero {x : X}
     ContinuousLinearEquiv.map_add, ContinuousLinearEquiv.apply_symm_apply,
     ContinuousLinearEquiv.apply_symm_apply, Prod.mk_add_mk, add_zero, zero_add]
 
-/-- **The inverse of the fibrewise splitting, trivial component**: `W⁺_x ≃ ℂ × K⁻¹_x` sends a
-vector with inner product `z.1` with `u₀(x)` to `z`; in particular the complementary summand
+/-- **The inverse of the fibrewise splitting, trivial component**: the preimage of `z` under
+`W⁺_x ≃ ℂ × K⁻¹_x` has inner product `z.1` with `u₀(x)`; in particular the complementary summand
 `symm (0, l)` is orthogonal to `u₀(x)`. -/
 @[simp]
 theorem inner_canonicalSpinor_canonicalHalfSpinorEquivProd_symm (x : X)

@@ -486,6 +486,11 @@ theorem finrank_determinantLine (s : SpinCStructure F E n) (x : X) :
     finrank ℂ (s.determinantLine x) = 1 := by
   rw [AssociatedBundle.finrank_eq ℂ SpinCn, DeterminantModel.finrank_eq_one]
 
+/-- Each fibre of the determinant line is finite-dimensional. -/
+instance finiteDimensional_determinantLine (s : SpinCStructure F E n) (x : X) :
+    FiniteDimensional ℂ (s.determinantLine x) :=
+  AssociatedBundle.finiteDimensional ℂ SpinCn (Classical.choice (s.nonempty_P x))
+
 /-- **The central circle acts with weight two on the determinant line**: `[p • [1, z], w]` is
 `[p, z² w]`. -/
 theorem mk_ofCircle_smul_determinantLine (s : SpinCStructure F E n) {x : X} (p : s.P x)
@@ -528,6 +533,11 @@ theorem finrank_halfSpinorBundle (s : SpinCStructure F E 4) (x : X) :
     finrank ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) =
       finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
   rw [AssociatedBundle.finrank_eq ℂ SpinC, Orientation.HalfSpinModel.toEigenspace.finrank_eq]
+
+/-- Each fibre of the half-spinor bundle is finite-dimensional. -/
+instance finiteDimensional_halfSpinorBundle (s : SpinCStructure F E 4) (x : X) :
+    FiniteDimensional ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) :=
+  AssociatedBundle.finiteDimensional ℂ SpinC (Classical.choice (s.nonempty_P x))
 
 /-- **The central circle acts with weight one on the half-spinors**: `[p • [1, z], ψ]` is
 `[p, z ψ]`. -/
@@ -766,9 +776,6 @@ theorem bijective_alternatingMapLinearEquiv_halfSpinorDetAlternatingMap
     Function.Bijective
       (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap h₂ ω x)) := by
   obtain ⟨p⟩ := s.nonempty_P x
-  have : FiniteDimensional ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) :=
-    AssociatedBundle.finiteDimensional ℂ SpinC p
-  have : FiniteDimensional ℂ (s.determinantLine x) := AssociatedBundle.finiteDimensional ℂ SpinC p
   -- Every `[p, w]` is a multiple of the image of `[p, ψ₁] ∧ [p, ψ₂]`, for `ω(ψ₁, ψ₂) ≠ 0`.
   have hsurj : Function.Surjective
       (exteriorPower.alternatingMapLinearEquiv (s.halfSpinorDetAlternatingMap h₂ ω x)) := by

@@ -148,10 +148,6 @@ private theorem bijective_halfSpinorProdMap (hω : ω ≠ 0) {x : X}
     {v : s.halfSpinorBundle o hQ b ρ hρ ε x} (hv : v ≠ 0) :
     Function.Bijective (halfSpinorProdMap h₂ s ω v :
       s.halfSpinorBundle o hQ b ρ hρ ε x →ₗ[ℂ] ℂ × s.determinantLine x) := by
-  have : FiniteDimensional ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) :=
-    AssociatedBundle.finiteDimensional ℂ SpinC (Classical.choice (s.nonempty_P x))
-  have : FiniteDimensional ℂ (s.determinantLine x) :=
-    AssociatedBundle.finiteDimensional ℂ SpinC (Classical.choice (s.nonempty_P x))
   refine ⟨injective_halfSpinorProdMap hω hv,
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1
       (injective_halfSpinorProdMap hω hv)⟩
@@ -168,8 +164,6 @@ its components are continuous on total spaces
 `TauCeti.SpinCStructure.continuous_snd_halfSpinorEquivProd`). -/
 def halfSpinorEquivProd (hω : ω ≠ 0) {x : X} {v : s.halfSpinorBundle o hQ b ρ hρ ε x}
     (hv : v ≠ 0) : s.halfSpinorBundle o hQ b ρ hρ ε x ≃L[ℂ] ℂ × s.determinantLine x :=
-  haveI : FiniteDimensional ℂ (s.halfSpinorBundle o hQ b ρ hρ ε x) :=
-    AssociatedBundle.finiteDimensional ℂ SpinC (Classical.choice (s.nonempty_P x))
   (LinearEquiv.ofBijective (halfSpinorProdMap h₂ s ω v : _ →ₗ[ℂ] _)
     (bijective_halfSpinorProdMap hω hv)).toContinuousLinearEquiv
 
@@ -196,9 +190,8 @@ theorem halfSpinorEquivProd_self (hω : ω ≠ 0) {x : X} {v : s.halfSpinorBundl
 theorem halfSpinorEquivProd_symm_mk_zero (hω : ω ≠ 0) {x : X}
     {v : s.halfSpinorBundle o hQ b ρ hρ ε x} (hv : v ≠ 0) (a : ℂ) :
     (s.halfSpinorEquivProd h₂ hω hv).symm (a, 0) = (a / (‖v‖ : ℂ) ^ 2) • v := by
-  rw [ContinuousLinearEquiv.symm_apply_eq, map_smul, halfSpinorEquivProd_self, Prod.smul_mk,
-    smul_zero, smul_eq_mul,
-    div_mul_cancel₀ _ (pow_ne_zero 2 (Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hv)))]
+  rw [ContinuousLinearEquiv.symm_apply_eq, map_smul, halfSpinorEquivProd_self]
+  simp [hv]
 
 /-- **The inverse of the splitting, trivial component**: `(s.halfSpinorEquivProd h₂ hω hv).symm z`
 has inner product `z.1` with `v`; in particular the complementary summand `symm (0, l)` is
