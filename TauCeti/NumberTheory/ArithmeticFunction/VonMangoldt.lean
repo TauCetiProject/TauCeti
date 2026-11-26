@@ -46,6 +46,8 @@ prime divisors of any level is bounded by the endpoint prime series, uniformly i
 * `ArithmeticFunction.vonMangoldt.sum_Icc_nonprime_div_le_two_mul_log_four` and
   `ArithmeticFunction.vonMangoldt.tsum_nonprime_div_le`: the finite and infinite sums are at most
   `2 log 4`.
+* `ArithmeticFunction.vonMangoldt.div_mul_log_prime_pow`: at any prime power `p ^ k`,
+  `Λ(p ^ k) / (p ^ k * log (p ^ k)) = (p⁻¹) ^ k / k`.
 -/
 
 public section
@@ -267,5 +269,18 @@ theorem tsum_nonprime_div_le :
       (sum_Icc_nonprime_div_le_two_mul_log_four (s.sup id))
   exact mem_Icc.mpr ⟨Nat.one_le_iff_ne_zero.mpr (ne_of_mem_erase hn),
     le_sup (f := id) (mem_of_mem_erase hn)⟩
+
+/-- At any prime power `p ^ k` (including `k = 0`, where both sides vanish by division by zero),
+`Λ(p ^ k) / (p ^ k * log (p ^ k)) = (p⁻¹) ^ k / k`. -/
+theorem div_mul_log_prime_pow {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    vonMangoldt (p ^ k) / (((p ^ k : ℕ) : ℝ) * Real.log ((p ^ k : ℕ) : ℝ)) =
+      ((p : ℝ)⁻¹) ^ k / (k : ℝ) := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  have hp0 : (p : ℝ) ≠ 0 := mod_cast hp.ne_zero
+  have hk0 : (k : ℝ) ≠ 0 := mod_cast hk
+  have hlog : Real.log (p : ℝ) ≠ 0 := (Real.log_pos (mod_cast hp.one_lt)).ne'
+  rw [vonMangoldt_apply_pow hk, vonMangoldt_apply_prime hp, Nat.cast_pow, Real.log_pow, inv_pow]
+  field_simp
 
 end ArithmeticFunction.vonMangoldt
