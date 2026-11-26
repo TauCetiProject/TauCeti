@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.RieszMellin
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.PoleRemoved
 
 /-!
 # The compensated mean in a signed Dirichlet Riesz transform
@@ -29,24 +28,6 @@ public section
 open Complex TauCeti
 
 namespace DirichletCharacter
-
-/-- On `Re s > 1`, the principal character's Riesz expression is the compensated difference
-quotient of the negative logarithmic derivative of the pole-cleared function minus `1`. -/
-theorem rieszRemainderMellin_LFunctionTrivChar (q : ℕ) [NeZero q] {s : ℂ} (hs : 1 < s.re) :
-    rieszRemainderMellin (LFunctionTrivChar q) s =
-      ((-logDeriv (LFunctionTrivChar₁ q) s - 1) / s -
-        (-logDeriv (LFunctionTrivChar₁ q) 1 - 1)) / (s - 1) := by
-  have h₀ : s ≠ 0 := by rintro rfl; norm_num at hs
-  have h₁ : s ≠ 1 := by rintro rfl; simp at hs
-  have hL := (1 : DirichletCharacter ℂ q).LFunction_ne_zero_of_one_le_re (.inr h₁) hs.le
-  have hmer := (1 : DirichletCharacter ℂ q).meromorphic_LFunction
-  have ha := (1 : DirichletCharacter ℂ q).analyticAt_LFunction (.inl h₁)
-  have h := (hmer.rieszRemainderMellin_eq_and_analyticAt h₀ h₁ ha hL).1
-  rw [h, logDerivFinitePart_LFunctionTrivChar_one, meromorphicOrderAt_LFunctionTrivChar_one,
-    logDeriv_LFunctionTrivChar₁_apply_of_ne_one h₁ hL]
-  simp only [WithTop.untop₀_neg, WithTop.untop₀_one, Int.cast_neg, Int.cast_one]
-  field_simp [h₀, sub_ne_zero.mpr h₁]
-  ring
 
 /-- A finite sum of nonprincipal Riesz expressions, with the common Riesz denominator factored
 out. The family may have repeated characters. -/

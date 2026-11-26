@@ -34,7 +34,7 @@ theorem logDeriv_LFunctionTrivChar₁_apply_of_ne_one {q : ℕ} [NeZero q] {s : 
 
 /-- The finite part of the principal logarithmic derivative is the logarithmic derivative
 of its pole-cleared L-function at `1`. -/
-theorem logDerivFinitePart_LFunctionTrivChar_one (q : ℕ) [NeZero q] :
+@[simp] theorem logDerivFinitePart_LFunctionTrivChar_one (q : ℕ) [NeZero q] :
     logDerivFinitePart (LFunctionTrivChar q) 1 = logDeriv (LFunctionTrivChar₁ q) 1 := by
   have hE := (differentiable_LFunctionTrivChar₁ q).analyticAt (1 : ℂ)
   have hne := LFunctionTrivChar₁_apply_one_ne_zero q
