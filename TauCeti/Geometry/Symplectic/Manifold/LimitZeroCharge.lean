@@ -516,10 +516,7 @@ theorem IsSectionZeroChargeLimit.isZeroChargeLimit (h : IsSectionZeroChargeLimit
     (hc₀ : ∀ k b, c k b = 0 → (s k (G b)).snd = 0) :
     IsZeroChargeLimit l c (G ⁻¹' Z) where
   eventually_ne_zero K hK hKZ := by
-    have hGK : Disjoint (G '' K) Z := by
-      rw [Set.disjoint_left]
-      rintro _ ⟨b, hb, rfl⟩ hbZ
-      exact Set.disjoint_left.1 hKZ hb hbZ
+    have hGK : Disjoint (G '' K) Z := Set.disjoint_image_left.2 hKZ
     filter_upwards [h.eventually_ne_zero (hK.image G.continuous) hGK] with k hk b hb hcb
     exact hk _ ⟨b, hb, rfl⟩ (hc₀ k b hcb)
   exists_eventually_zeroCharge_eq τ _ _ hρ hρ₁ hρ₀ hτ := by
