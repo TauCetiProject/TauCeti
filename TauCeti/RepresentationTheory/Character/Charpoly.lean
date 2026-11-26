@@ -16,8 +16,9 @@ import TauCeti.LinearAlgebra.Charpoly.FinrankTwo
 For a finite-dimensional representation `ρ` of a monoid and an element `g`, the traces of the
 powers of `ρ g` are character values: `tr (ρ g ^ j) = χ_ρ (g ^ j)`. Newton's identities for the
 traces of the powers of an endomorphism therefore express the coefficients of `det (1 - X ρ g)`
-through the character values `χ_ρ (g), χ_ρ (g ^ 2), …`. In characteristic zero the recurrence can
-be solved, so the dimension of `ρ` together with the values `χ_ρ (g ^ j)` for `0 < j ≤ dim ρ`
+through the character values `χ_ρ (g), χ_ρ (g ^ 2), …`. When `d!` is nonzero in `k`, for `d` the
+dimension of `ρ` (in characteristic zero, or in characteristic `p > d`), the recurrence can be
+solved, so the dimension of `ρ` together with the values `χ_ρ (g ^ j)` for `0 < j ≤ dim ρ`
 determines the characteristic polynomial of `ρ g`. In dimension two it is enough that `2 ≠ 0`:
 `det (ρ g) = (χ_ρ (g) ^ 2 - χ_ρ (g ^ 2)) / 2`.
 

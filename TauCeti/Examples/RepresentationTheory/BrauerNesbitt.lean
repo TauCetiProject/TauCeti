@@ -168,9 +168,6 @@ example : ((sign (ZMod 3) 3).IsSemisimpleRepresentation ∧
     character_sign_eq_trivial (ZMod.natCast_self 3),
     isEmpty_equiv_sign_trivial (by decide) (by decide)⟩
 
-/-- `3` is prime. -/
-local instance fact_prime_three : Fact (Nat.Prime 3) := ⟨by decide⟩
-
 /-- **Below the bound, traces suffice.** Over `𝔽₃`, semisimple representations of a monoid of
 dimension `2 < 3` with equal characters are equivalent; `sgn^{⊕3}` and `1^{⊕3}` above satisfy
 every hypothesis except `d < p`. -/

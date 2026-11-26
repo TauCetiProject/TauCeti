@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.LinearAlgebra.Matrix.MvPolynomial
+import TauCeti.Algebra.Regular.NatCast
 import TauCeti.LinearAlgebra.Charpoly.Nilpotent
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
@@ -29,10 +30,11 @@ Newton's identity for that multiset (`Multiset.mul_esymm_eq_sum`). The general c
 universal matrix `Matrix.mvPolynomialX` over `ℤ`, whose coefficient ring embeds into an
 algebraically closed field.
 
-When the integers `1, …, r` are non-zero-divisors, equivalently when `r!` is one, the recurrence
-determines `c_r` from the traces `p_1, …, p_r`. So over a ring without additive torsion, such as a
-field of characteristic zero, or over a field of characteristic `p > d`, the traces of the first
-`d` powers of a `d × d` matrix determine its characteristic polynomial.
+When the integers `1, …, r` are non-zero-divisors, equivalently when `r!` is a non-zero-divisor
+(`IsRegular`), the recurrence determines `c_r` from the traces `p_1, …, p_r`. So over a ring
+without additive torsion, such as a field of characteristic zero, or over a field of
+characteristic `p > d`, the traces of the first `d` powers of a `d × d` matrix determine its
+characteristic polynomial.
 
 ## Main results
 
@@ -163,13 +165,6 @@ theorem trace_pow_eq_of_charpoly_eq {A : Matrix n n R} {B : Matrix m m R}
     simp [hnm]
   exact trace_pow_eq_of_charpolyRev_eq (by rw [← reverse_charpoly, ← reverse_charpoly, h]) hj
 
-/-- If `r!` is a non-zero-divisor, so is `i!` for every `i ≤ r`. -/
-private theorem isRegular_natCast_factorial_of_le {i r : ℕ} (hir : i ≤ r)
-    (hr : IsRegular (r.factorial : R)) : IsRegular (i.factorial : R) := by
-  obtain ⟨c, hc⟩ := Nat.factorial_dvd_factorial hir
-  rw [hc, Nat.cast_mul] at hr
-  exact (isRegular_mul_iff.1 hr).1
-
 /-- When `r!` is a non-zero-divisor of the scalars, the traces of `A ^ j` for `0 < j ≤ r`
 determine the `r`-th coefficient of `det (1 - X A)`. Over a field of characteristic `p` this asks
 for `r < p`. -/
@@ -187,28 +182,19 @@ theorem coeff_charpolyRev_eq_of_trace_pow_eq_of_isRegular {A : Matrix n n R} {B 
       ∑ j ∈ range r, B.charpolyRev.coeff (r - (j + 1)) * (B ^ (j + 1)).trace :=
     sum_congr rfl fun j hj ↦ by
       rw [mem_range] at hj
-      rw [ih _ (by omega) (isRegular_natCast_factorial_of_le (by omega) hr)
-        fun i hi hir ↦ h i hi (by omega), h _ (by omega) (by omega)]
+      rw [ih _ (by omega) (TauCeti.isRegular_natCast_of_dvd (Nat.factorial_dvd_factorial
+        (by omega)) hr) fun i hi hir ↦ h i hi (by omega), h _ (by omega) (by omega)]
   rw [hsum, ← hB] at hA
   -- `r` divides `r!`, so it is a non-zero-divisor as well
-  have hreg : IsRegular (r : R) := by
-    rw [← Nat.mul_factorial_pred hr0.ne', Nat.cast_mul] at hr
-    exact (isRegular_mul_iff.1 hr).1
-  exact hreg.left hA
-
-/-- Without additive torsion in the scalars, every `r!` is a non-zero-divisor. -/
-private theorem isRegular_natCast_factorial [IsAddTorsionFree R] (r : ℕ) :
-    IsRegular (r.factorial : R) :=
-  isLeftRegular_iff_isRegular.1 fun x y hxy ↦
-    eq_of_nsmul_eq_nsmul_of_addCommute (Nat.factorial_ne_zero r) (AddCommute.all x y) <| by
-      simpa only [nsmul_eq_mul] using hxy
+  exact (TauCeti.isRegular_natCast_of_dvd (Nat.dvd_factorial hr0 le_rfl) hr).left hA
 
 /-- Without additive torsion in the scalars, the traces of `A ^ j` for `0 < j ≤ r` determine the
 `r`-th coefficient of `det (1 - X A)`. -/
 theorem coeff_charpolyRev_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R}
     {B : Matrix m m R} {r : ℕ} (h : ∀ j, 0 < j → j ≤ r → (A ^ j).trace = (B ^ j).trace) :
     A.charpolyRev.coeff r = B.charpolyRev.coeff r :=
-  coeff_charpolyRev_eq_of_trace_pow_eq_of_isRegular (isRegular_natCast_factorial r) h
+  coeff_charpolyRev_eq_of_trace_pow_eq_of_isRegular
+    (TauCeti.isRegular_natCast_of_ne_zero (Nat.factorial_ne_zero r)) h
 
 /-- Without additive torsion in the scalars, `det (1 - X A)` and `det (1 - X B)` agree if and only
 if `A` and `B` have the same traces of all positive powers. The matrices may have different
@@ -236,7 +222,8 @@ theorem charpoly_eq_of_trace_pow_eq_of_isRegular {A : Matrix n n R} {B : Matrix 
   have hrev : A.charpolyRev = B.charpolyRev := AddMonoidAlgebra.ext <| Finsupp.ext fun r ↦ by
     rcases le_or_gt r (Fintype.card n) with hr | hr
     · exact coeff_charpolyRev_eq_of_trace_pow_eq_of_isRegular
-        (isRegular_natCast_factorial_of_le hr hd) fun j hj hjr ↦ h j hj (hjr.trans hr)
+        (TauCeti.isRegular_natCast_of_dvd (Nat.factorial_dvd_factorial hr) hd)
+        fun j hj hjr ↦ h j hj (hjr.trans hr)
     · rw [coeff_charpolyRev_eq_zero A hr, coeff_charpolyRev_eq_zero B (hnm ▸ hr)]
   exact (charpolyRev_eq_charpolyRev_iff hnm).1 hrev
 
@@ -246,7 +233,8 @@ theorem charpoly_eq_of_trace_pow_eq [IsAddTorsionFree R] {A : Matrix n n R} {B :
     (hnm : Fintype.card n = Fintype.card m)
     (h : ∀ j, 0 < j → j ≤ Fintype.card n → (A ^ j).trace = (B ^ j).trace) :
     A.charpoly = B.charpoly :=
-  charpoly_eq_of_trace_pow_eq_of_isRegular hnm (isRegular_natCast_factorial _) h
+  charpoly_eq_of_trace_pow_eq_of_isRegular hnm
+    (TauCeti.isRegular_natCast_of_ne_zero (Nat.factorial_ne_zero _)) h
 
 /-- Without additive torsion in the scalars, a `d × d` matrix `A` whose powers `A ^ j` for
 `0 < j ≤ d` all have trace zero satisfies `A ^ d = 0`. Its characteristic polynomial is then
@@ -326,7 +314,8 @@ theorem charpoly_eq_of_trace_pow_eq {N : Type*} [AddCommGroup N] [Module R N] [M
     (hMN : Module.finrank R M = Module.finrank R N)
     (h : ∀ j, 0 < j → j ≤ Module.finrank R M → trace R M (f ^ j) = trace R N (g ^ j)) :
     f.charpoly = g.charpoly :=
-  charpoly_eq_of_trace_pow_eq_of_isRegular hMN (Matrix.isRegular_natCast_factorial _) h
+  charpoly_eq_of_trace_pow_eq_of_isRegular hMN
+    (TauCeti.isRegular_natCast_of_ne_zero (Nat.factorial_ne_zero _)) h
 
 /-- Without additive torsion in the scalars, an endomorphism `f` of a free module of rank `d`
 whose powers `f ^ j` for `0 < j ≤ d` all have trace zero satisfies `f ^ d = 0`. -/

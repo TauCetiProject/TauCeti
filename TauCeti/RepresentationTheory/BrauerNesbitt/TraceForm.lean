@@ -58,11 +58,12 @@ theorem nonempty_equiv_of_character_eq_of_factorial_ne_zero (ρ : Representation
 /-- **Brauer–Nesbitt in characteristic `p > d`, trace form**: over a perfect field of
 characteristic `p`, two semisimple representations of a monoid of the same dimension `d < p` with
 the same character are equivalent. -/
-theorem nonempty_equiv_of_character_eq_of_finrank_lt (p : ℕ) [Fact p.Prime] [CharP k p]
+theorem nonempty_equiv_of_character_eq_of_finrank_lt (p : ℕ) [CharP k p]
     (ρ : Representation k G V) (σ : Representation k G W) [ρ.IsSemisimpleRepresentation]
     [σ.IsSemisimpleRepresentation] (hVW : finrank k V = finrank k W) (hd : finrank k V < p)
     (h : ∀ g, ρ.character g = σ.character g) : Nonempty (ρ.Equiv σ) :=
+  have hp : p.Prime := (CharP.char_is_prime_or_zero k p).resolve_right (by omega)
   nonempty_equiv_of_character_eq_of_factorial_ne_zero ρ σ hVW
-    (by rw [Ne, CharP.cast_eq_zero_iff k p, (Fact.out : p.Prime).dvd_factorial]; omega) h
+    (by rw [Ne, CharP.cast_eq_zero_iff k p, hp.dvd_factorial]; omega) h
 
 end Representation
