@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.GL2Coefficient
-public import TauCeti.RepresentationTheory.ClassicalGroups.UnitaryTrick
+public import TauCeti.RepresentationTheory.ClassicalGroups.Unitary.Trick
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Character
 
 /-!
