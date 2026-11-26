@@ -33,8 +33,8 @@ projection, and the projection formula moves it to `F`.
 
 **The base class.** Together with the evaluation of the base class `[dt] ∈ H¹(T_φ; ℤ)`
 (`TauCeti.MappingTorus.baseClass`) through the Wang class
-(`TauCeti.MappingTorus.exists_singularKronecker_baseClass_apply`), this computes cup products with
-`[dt]`: there is a sign `s = ±1`, the same for every mapping torus, with
+(`TauCeti.MappingTorus.singularKronecker_baseClass_apply_eq_neg`), this computes cup products with
+`[dt]`: there is a sign `s = ±1` (in fact `s = -1`), the same for every mapping torus, with
 
 `⟨v ⌣ [dt], y⟩ = s (-1)ᵖ ⟨i^* v, δ y⟩`
 
@@ -277,8 +277,8 @@ attribute [local instance 1100] ModuleCat.instLinear
 /-- **Cup products with the base class through the Wang sequence**: there is a sign `s = ±1`, the
 same for every mapping torus, with `⟨v ⌣ [dt], y⟩ = s (-1)ᵖ ⟨i^* v, δ y⟩` for all
 `v ∈ Hᵖ(T_φ; ℤ)` and `y ∈ Hₚ₊₁(T_φ; ℤ)`, where `[dt]` is the base class, `δ` the Wang connecting
-morphism and `i` the fibre inclusion. The sign `s` is that of
-`TauCeti.MappingTorus.exists_singularKronecker_baseClass_apply`. -/
+morphism and `i` the fibre inclusion. The sign is `s = -1`, that of
+`TauCeti.MappingTorus.singularKronecker_baseClass_apply_eq_neg`. -/
 theorem exists_singularCupPairing_baseClass_apply :
     ∃ s : ℤ, (s = 1 ∨ s = -1) ∧ ∀ {F : Type} [TopologicalSpace F] (φ : F ≃ₜ F) (p : ℕ)
       (y : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (p + 1)).obj
@@ -289,12 +289,11 @@ theorem exists_singularCupPairing_baseClass_apply :
         s * (-1) ^ p * ((TopCat.of F).singularKronecker ℤ p
           (TopCat.singularCohomologyMap (TopCat.ofHom (incl φ)) p v)).hom
             ((wangδ φ (𝟙_ (ModuleCat.{0} ℤ)) p).hom y) := by
-  obtain ⟨s, hs, h⟩ := exists_singularKronecker_baseClass_apply
-  refine ⟨s, hs, fun {F} _ φ p y v ↦ ?_⟩
+  refine ⟨-1, Or.inr rfl, fun {F} _ φ p y v ↦ ?_⟩
   -- `⟨v ⌣ [dt], y⟩ = ⟨[dt], y ⌢ v⟩ = s ε(δ (y ⌢ v))`, and `δ (y ⌢ v) = (-1)ᵖ δ y ⌢ i^* v`
   rw [TopCat.singularCupPairing_eq_singularKronecker_singularCapLinearMap,
     TopCat.singularCapLinearMap_apply]
-  refine (h φ _).trans ?_
+  refine (singularKronecker_baseClass_apply_eq_neg φ _).trans ?_
   have hcap := singularCap_comp_wangδ φ ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv
     (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom p 0 p rfl v
   have hε := (TopCat.of F).singularCap_comp_singularHomology₀ε ℤ (R := 𝟙_ (ModuleCat.{0} ℤ))
@@ -304,8 +303,8 @@ theorem exists_singularCupPairing_baseClass_apply :
     ((Preadditive.zsmul_comp _ _ _).trans (congrArg _ ((Category.assoc _ _ _).trans
       (congrArg (_ ≫ ·) hε)))))
   have hy := congrArg (fun f ↦ f.hom y) key
-  rw [mul_assoc]
-  exact congrArg (s * ·) hy
+  rw [mul_assoc, neg_one_mul]
+  exact congrArg Neg.neg hy
 
 end BaseClass
 

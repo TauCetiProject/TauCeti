@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Prod
+public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -26,21 +28,27 @@ defaulting to `volume`, as for `MeasureTheory.MemLp`. Strong measurability is pa
 since `MeasureTheory.MemLp` includes it, so for a Banach-valued `f` the class is the Bochner one.
 
 This file supplies the basic API for every source with a measure: restriction to smaller sets,
-almost-everywhere changes, linearity, continuous-linear composition, multiplication by continuous
+a.e. strong measurability on locally closed sets, almost-everywhere and setwise
+congruence, linearity, finite-basis coordinate testing (`Module.Basis.memLpLoc_iff`),
+continuous-linear composition, multiplication by continuous
 factors (with extension by zero for factors supported in `U`, and global `Lᵖ` membership for
 compactly supported ones), composition of local `Lᵖ` operator families with continuous ones,
 Hölder's inequality on compact sets (`TauCeti.MemLpLoc.clm_apply`), decreasing the integrability
 exponent, and comparison with local integrability. A locally `Lᵖ` function vanishing off a compact
-subset of `U` is globally `Lᵖ`. Continuous functions, and more generally a.e.-strongly measurable
-functions bounded near every point of `U`, are locally `Lᵖ` for every exponent, as is the extension
-by zero of a function bounded near every point of `U` on a measurable subset
-(`TauCeti.memLpLoc_indicator_of_forall_eventually_norm_le`). On an open set,
+subset of `U` is globally `Lᵖ`. Continuous functions, open half-space indicators
+(`StrongDual.memLpLoc_indicator_pos`), and more generally a.e.-strongly measurable functions
+bounded near every point of `U`, are locally `Lᵖ` for every exponent, as is the extension by zero
+of a function bounded near every point of `U` on a measurable subset
+(`TauCeti.memLpLoc_indicator_of_forall_eventually_norm_le`). On a regular space
+the class is local and satisfies the sheaf condition on open covers (`TauCeti.memLpLoc_iff_locally`,
+`TauCeti.memLpLoc_iff_forall_inter`, `TauCeti.memLpLoc_iSup_iff`). On an open set,
 membership is detected on the open subsets with compact closure inside it, and on a ball of a proper
 metric space on the smaller concentric balls (`TauCeti.memLpLoc_ball_iff`); with `1 ≤ p` a locally
 `Lᵖ` function agrees almost everywhere with its precise representative.
 
 Membership for `μ` passes to every measure bounded by a finite multiple of `μ`
-(`TauCeti.MemLpLoc.of_measure_le_smul`). Two additive Haar measures on a locally compact group
+(`TauCeti.MemLpLoc.of_measure_le_smul`, `TauCeti.memLpLoc_smul_measure_iff`). Two additive Haar
+measures on a locally compact group
 are proportional on every compact set, so the class does not depend on the choice of Haar
 measure (`TauCeti.memLpLoc_iff_of_isAddHaarMeasure`). Compact sets correspond under a
 homeomorphism, which carries the class for `μ` to the class for the image measure
@@ -76,6 +84,31 @@ theorem memLpLoc_iff : MemLpLoc p U f μ ↔
 /-- Local `Lᵖ` membership restricts to any smaller set. -/
 theorem MemLpLoc.mono_set (hf : MemLpLoc p U f μ) (hVU : V ⊆ U) : MemLpLoc p V f μ :=
   fun K hK hc => hf K (hK.trans hVU) hc
+
+/-- On a locally closed subset of a locally compact second-countable space (in particular on every
+open or closed subset), local `Lᵖ` membership implies almost-everywhere strong measurability on the
+subset, for every exponent `p : ℝ≥0∞`. -/
+theorem MemLpLoc.aestronglyMeasurable_restrict [LocallyCompactSpace X] [SecondCountableTopology X]
+    (hf : MemLpLoc p U f μ) (hU : IsLocallyClosed U) :
+    AEStronglyMeasurable f (μ.restrict U) := by
+  rcases hU with ⟨O, Z, hO, hZ, rfl⟩
+  have hK : ∀ x : ↥(O ∩ Z), ∃ K : Set X, IsCompact K ∧ x.val ∈ interior K ∧ K ⊆ O :=
+    fun x => exists_compact_subset hO x.property.1
+  choose K hKc hxK hKO using hK
+  obtain ⟨T, hTc, hT⟩ := isOpen_iUnion_countable (fun x => interior (K x)) fun _ => isOpen_interior
+  have hcov : O ∩ Z = ⋃ x : T, interior (K x.val) ∩ (O ∩ Z) := by
+    refine Set.Subset.antisymm (fun y hy => ?_) (Set.iUnion_subset fun _ => Set.inter_subset_right)
+    have hyU : y ∈ ⋃ x, interior (K x) := Set.mem_iUnion.2 ⟨⟨y, hy⟩, hxK ⟨y, hy⟩⟩
+    obtain ⟨x, hxT, hyx⟩ := Set.mem_iUnion₂.1 (hT ▸ hyU)
+    exact Set.mem_iUnion.2 ⟨⟨x, hxT⟩, hyx, hy⟩
+  have : Countable T := hTc
+  rw [hcov]
+  refine AEStronglyMeasurable.iUnion fun x => ?_
+  have hsub : interior (K x.val) ∩ (O ∩ Z) ⊆ K x.val ∩ Z :=
+    fun _ hy => ⟨interior_subset hy.1, hy.2.2⟩
+  exact (hf (K x.val ∩ Z) (Set.inter_subset_inter_left Z (hKO x.val))
+    ((hKc x.val).inter_right hZ)).aestronglyMeasurable.mono_measure
+    (Measure.restrict_mono hsub le_rfl)
 
 /-- Local `Lᵖ` membership on `U` gives `Lᵖ` membership on every set whose closure is compact and
 contained in `U`. -/
@@ -118,6 +151,13 @@ theorem MemLpLoc.of_measure_le_smul {c : ℝ≥0∞} (hc : c ≠ ∞) (hνμ : �
 /-- Local `Lᵖ` membership passes to a smaller measure. -/
 theorem MemLpLoc.mono_measure (hνμ : ν ≤ μ) (hf : MemLpLoc p U f μ) : MemLpLoc p U f ν :=
   hf.of_measure_le_smul ENNReal.one_ne_top (by rwa [one_smul])
+
+/-- Multiplying the measure by a finite nonzero constant preserves and reflects `MemLpLoc`. -/
+theorem memLpLoc_smul_measure_iff {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ ∞) :
+    MemLpLoc p U f (c • μ) ↔ MemLpLoc p U f μ :=
+  ⟨MemLpLoc.of_measure_le_smul (ENNReal.inv_ne_top.2 hc₀) <| by
+      rw [smul_smul, ENNReal.inv_mul_cancel hc₀ hc, one_smul],
+    MemLpLoc.of_measure_le_smul hc le_rfl⟩
 
 /-- The zero function belongs to every local `Lᵖ` class. -/
 @[simp]
@@ -175,6 +215,11 @@ theorem MemLpLoc.congr_mono (hf : MemLpLoc p U f μ) (hgf : Set.EqOn g f V) (hVU
     MemLpLoc p V g μ := fun K hK hc => (hf K (hK.trans hVU) hc).ae_eq <| by
   filter_upwards [ae_restrict_mem hc.measurableSet] with z hz using (hgf (hK hz)).symm
 
+/-- Local `Lᵖ` membership on `U` depends only on the values of the function on `U`. -/
+theorem MemLpLoc.congr (hf : MemLpLoc p U f μ) (hgf : Set.EqOn g f U) :
+    MemLpLoc p U g μ :=
+  hf.congr_mono hgf subset_rfl
+
 /-- A locally `Lᵖ` function on `U` that vanishes off a compact set `T ⊆ U` is `Lᵖ` on the whole
 space. -/
 theorem MemLpLoc.memLp_of_forall_notMem_eq_zero (hf : MemLpLoc p U f μ) {T : Set X}
@@ -189,6 +234,11 @@ theorem _root_.ContinuousOn.memLpLoc [IsFiniteMeasureOnCompacts μ] (hf : Contin
     MemLpLoc p U f μ :=
   fun _K hK hc => (hf.mono hK).memLp_restrict_of_subset_isCompact
     hc hc.measurableSet subset_rfl p
+
+/-- A continuous function is locally `Lᵖ` on every subset, with no global bound required. -/
+theorem _root_.Continuous.memLpLoc [IsFiniteMeasureOnCompacts μ] (hf : Continuous f) :
+    MemLpLoc p U f μ :=
+  hf.continuousOn.memLpLoc
 
 /-- Every constant function is locally `Lᵖ` for all exponents, including infinity. -/
 @[simp]
@@ -449,6 +499,46 @@ theorem memLpLoc_iff_of_isAddHaarMeasure (μ ν : Measure G) [μ.IsAddHaarMeasur
 
 end Haar
 
+section Locality
+
+open scoped Topology
+
+variable {X F : Type*} [TopologicalSpace X] [RegularSpace X] [MeasurableSpace X]
+  [NormedAddCommGroup F] {μ : Measure X} {p : ℝ≥0∞} {U : Set X} {f : X → F}
+
+/-- Local `Lᵖ` membership is a local property: it holds on `U` exactly when every point of `U`
+has a neighbourhood within `U` on which it holds. -/
+theorem memLpLoc_iff_locally :
+    MemLpLoc p U f μ ↔ ∀ x ∈ U, ∃ V ∈ 𝓝[U] x, MemLpLoc p V f μ := by
+  refine ⟨fun hf _ _ => ⟨U, self_mem_nhdsWithin, hf⟩,
+    fun h => memLpLoc_iff.2 fun K hKU hK => ?_⟩
+  refine hK.induction_on (p := fun s => MemLp f p (μ.restrict s)) (by simp)
+    (fun s t hst ht => ht.mono_measure (Measure.restrict_mono hst le_rfl))
+    (fun s t hs ht => (hs.add_measure ht).mono_measure (Measure.restrict_union_le s t))
+    fun x hx => ?_
+  obtain ⟨V, hV, hfV⟩ := h x (hKU hx)
+  obtain ⟨O, hO, hOV⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.1 hV
+  obtain ⟨C, hC, hCc, hCO⟩ := exists_mem_nhds_isClosed_subset hO
+  exact ⟨K ∩ C, inter_mem_nhdsWithin K hC,
+    memLpLoc_iff.1 hfV _ (fun z hz => hOV ⟨hCO hz.2, hKU hz.1⟩)
+      (hK.inter_right hCc)⟩
+
+/-- Local `Lᵖ` membership on `U` can be checked on the traces `U ∩ O i` of an open cover. -/
+theorem memLpLoc_iff_forall_inter {ι : Type*} (O : ι → Opens X) (hU : U ⊆ ⋃ i, (O i : Set X)) :
+    MemLpLoc p U f μ ↔ ∀ i, MemLpLoc p (U ∩ O i) f μ := by
+  refine ⟨fun hf i => hf.mono_set Set.inter_subset_left, fun h => memLpLoc_iff_locally.2 ?_⟩
+  intro x hx
+  obtain ⟨i, hi⟩ := Set.mem_iUnion.1 (hU hx)
+  exact ⟨U ∩ O i, inter_mem_nhdsWithin U ((O i).isOpen.mem_nhds hi), h i⟩
+
+/-- Local `Lᵖ` membership on the union of open sets is membership on each of them. -/
+theorem memLpLoc_iSup_iff {ι : Type*} (V : ι → Opens X) :
+    MemLpLoc p (⨆ i, V i : Opens X) f μ ↔ ∀ i, MemLpLoc p (V i) f μ := by
+  rw [memLpLoc_iff_forall_inter V (by simp)]
+  simp only [Opens.coe_iSup, Set.inter_eq_right.2 (Set.subset_iUnion (fun i => (V i : Set X)) _)]
+
+end Locality
+
 end TauCeti
 
 section Transport
@@ -491,3 +581,47 @@ theorem ContinuousLinearEquiv.memLpLoc_comp_right_iff (e : E ≃L[ℝ] E₁) (μ
   exact e.toHomeomorph.memLpLoc_comp_iff
 
 end Transport
+
+section Coordinates
+
+open TauCeti
+
+/-- Local `Lᵖ` membership on any measured topological space can be tested in any finite basis of
+the codomain. No completeness of the codomain is needed. -/
+theorem Module.Basis.memLpLoc_iff {X F ι : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [Finite ι] {μ : Measure X} {p : ℝ≥0∞} {U : Set X}
+    {f : X → F} (b : Module.Basis ι ℝ F) :
+    MemLpLoc p U f μ ↔ ∀ i, MemLpLoc p U (fun x => b.repr (f x) i) μ := by
+  classical
+  let : Fintype ι := Fintype.ofFinite ι
+  let : FiniteDimensional ℝ F := b.finiteDimensional_of_finite
+  constructor
+  · intro h i
+    exact h.clm_comp ((ContinuousLinearMap.proj i).comp b.equivFunL.toContinuousLinearMap)
+  · intro h
+    have hs : MemLpLoc p U (fun x => ∑ i, b.repr (f x) i • b i) μ := by
+      apply MemLpLoc.sum
+      intro i _
+      exact (h i).clm_comp ((ContinuousLinearMap.id ℝ ℝ).smulRight (b i))
+    simpa only [b.sum_repr] using hs
+
+end Coordinates
+
+section HalfSpace
+
+open TauCeti
+
+/-- The indicator of an open half-space `{x : E | 0 < ℓ x}` belongs to `MemLpLoc p U` on every
+subset `U` and for every exponent `p : ℝ≥0∞`. -/
+theorem StrongDual.memLpLoc_indicator_pos {E : Type*} [TopologicalSpace E] [AddCommMonoid E]
+    [Module ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+    (ℓ : StrongDual ℝ E) (p : ℝ≥0∞) (U : Set E) :
+    MemLpLoc p U ({x : E | 0 < ℓ x}.indicator fun _ => (1 : ℝ)) μ := by
+  refine memLpLoc_iff.2 fun K _ hK => ?_
+  have : IsFiniteMeasure (μ.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
+  exact memLp_indicator_const p
+    (isOpen_lt continuous_const ℓ.continuous).measurableSet.nullMeasurableSet 1
+    (Or.inr (measure_ne_top _ _))
+
+end HalfSpace

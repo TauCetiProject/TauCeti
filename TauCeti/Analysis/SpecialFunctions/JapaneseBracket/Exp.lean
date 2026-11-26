@@ -27,7 +27,9 @@ The weights `exp(c √(b + ‖z‖²))` and `exp(-c √(b + ‖z‖²))` are rec
 across the `L²` pairing: `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`
 (`abs_inner_le_of_memLp_exp_mul_smul`). So if `‖u‖₂² ≤ |⟪e, A⟫|`, where the weight `exp(-c ρ)`
 costs at most `q ‖u‖₂` on `e` and the weight `exp(c ρ)` at most `a` on `u`, then
-`‖exp(c ρ) u‖₂ ≤ a q ‖exp(c ρ) A‖₂` (`eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner`). By the
+`‖exp(c ρ) u‖₂ ≤ a q ‖exp(c ρ) A‖₂` (`eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner`). More generally,
+if `‖u‖₂² ≤ ∑ᵢ |⟪eᵢ, Aᵢ⟫|` with `‖exp(-c ρ) eᵢ‖₂ ≤ qᵢ ‖u‖₂`, then
+`‖exp(c ρ) u‖₂ ≤ a ∑ᵢ qᵢ ‖exp(c ρ) Aᵢ‖₂` (`eLpNorm_exp_mul_smul_le_of_sq_le_sum_abs_inner`). By the
 same duality, an operator on `L²` that preserves decay at the rate `-c` has an adjoint that
 preserves decay at the rate `c`, with the same constant
 (`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`).
@@ -183,7 +185,7 @@ theorem sq_exp_mul_sqrt_add_norm_sq_le (c s t : ℝ) (z : E) :
 section L2
 
 open MeasureTheory
-open scoped RealInnerProductSpace NNReal
+open scoped RealInnerProductSpace NNReal ENNReal
 
 variable {X F : Type*} [Norm X] [MeasurableSpace X] {μ : Measure X}
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -206,6 +208,75 @@ theorem abs_inner_le_of_memLp_exp_mul_smul {c : ℝ} {e f : Lp F 2 μ}
   rw [hinner, ← Lp.norm_toLp _ he, ← Lp.norm_toLp _ hf]
   exact abs_real_inner_le_norm _ _
 
+/-- **Moving an exponential weight across the `L²` pairing, in `ℝ≥0∞`.** Let `ρ(z) = √(b + ‖z‖²)`.
+For `L²` functions `e` and `f`, `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`, where the right side may
+be infinite. -/
+theorem ofReal_abs_inner_le_eLpNorm_exp_mul_smul_mul (c : ℝ) (e f : Lp F 2 μ) :
+    ENNReal.ofReal |⟪e, f⟫| ≤ eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ *
+      eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • f z) 2 μ := by
+  set Ne := eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ
+  set Nf := eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • f z) 2 μ
+  -- A weighted norm vanishes only for the zero function, since the weight is positive.
+  have hzero : ∀ (c' : ℝ) (g : Lp F 2 μ),
+      eLpNorm (fun z ↦ Real.exp (c' * √(b + ‖z‖ ^ 2)) • g z) 2 μ = 0 → g = 0 := fun c' g hg ↦
+    Lp.eq_zero_iff_ae_eq_zero.2 (((eLpNorm_eq_zero_iff two_ne_zero).1 hg).mono
+      fun z hz ↦ (smul_eq_zero.1 hz).resolve_left (Real.exp_pos _).ne')
+  rcases eq_or_ne Ne 0 with he | he
+  · rw [hzero _ e he, inner_zero_left, abs_zero, ENNReal.ofReal_zero]
+    exact zero_le
+  rcases eq_or_ne Nf 0 with hf | hf
+  · rw [hzero _ f hf, inner_zero_right, abs_zero, ENNReal.ofReal_zero]
+    exact zero_le
+  rcases eq_or_ne Ne ⊤ with he' | he'
+  · rw [he', ENNReal.top_mul hf]
+    exact le_top
+  rcases eq_or_ne Nf ⊤ with hf' | hf'
+  · rw [hf', ENNReal.mul_top he]
+    exact le_top
+  calc ENNReal.ofReal |⟪e, f⟫| ≤ ENNReal.ofReal (Ne.toReal * Nf.toReal) :=
+        ENNReal.ofReal_le_ofReal (abs_inner_le_of_memLp_exp_mul_smul
+          (memLp_iff.2 he'.lt_top) (memLp_iff.2 hf'.lt_top))
+    _ = Ne * Nf := by
+      rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal he',
+        ENNReal.ofReal_toReal hf']
+
+/-- **A weighted bound from several pairing inequalities.** Let `ρ(z) = √(b + ‖z‖²)` and let `u`,
+`e i`, `A i` be `L²` functions with `‖u‖₂² ≤ ∑ i ∈ s, |⟪e i, A i⟫|`. Suppose that the weight
+`exp(c ρ)` costs at most `a` on `u` and that `‖exp(-c ρ) e i‖₂ ≤ q i ‖u‖₂` for every `i ∈ s`. Then
+`‖exp(c ρ) u‖₂ ≤ a ∑ i ∈ s, q i ‖exp(c ρ) A i‖₂`, where either side may be infinite. -/
+theorem eLpNorm_exp_mul_smul_le_of_sq_le_sum_abs_inner {ι : Type*} {s : Finset ι} {c : ℝ}
+    {u : Lp F 2 μ} {e A : ι → Lp F 2 μ} {a : ℝ≥0} {q : ι → ℝ≥0}
+    (hu : eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • u z) 2 μ ≤ a * eLpNorm u 2 μ)
+    (hqe : ∀ i ∈ s, eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e i z) 2 μ ≤
+      q i * eLpNorm u 2 μ)
+    (hinner : ‖u‖ ^ 2 ≤ ∑ i ∈ s, |⟪e i, A i⟫|) :
+    eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • u z) 2 μ ≤
+      a * ∑ i ∈ s, q i * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A i z) 2 μ := by
+  set S := ∑ i ∈ s, (q i : ℝ≥0∞) * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A i z) 2 μ
+  set U := eLpNorm u 2 μ
+  have hU : U = ENNReal.ofReal ‖u‖ := by
+    rw [Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top u)]
+  -- From `‖u‖₂² ≤ ∑ ‖exp(-c ρ) e i‖₂ ‖exp(c ρ) A i‖₂ ≤ ‖u‖₂ S`, `‖u‖₂ ≤ S`.
+  have h₁ : U * U ≤ U * S := by
+    calc U * U = ENNReal.ofReal (‖u‖ ^ 2) := by
+          rw [hU, sq, ENNReal.ofReal_mul (norm_nonneg u)]
+      _ ≤ ENNReal.ofReal (∑ i ∈ s, |⟪e i, A i⟫|) := ENNReal.ofReal_le_ofReal hinner
+      _ = ∑ i ∈ s, ENNReal.ofReal |⟪e i, A i⟫| :=
+          ENNReal.ofReal_sum_of_nonneg (f := fun i ↦ |⟪e i, A i⟫|) fun i _ ↦ abs_nonneg _
+      _ ≤ ∑ i ∈ s, q i * U * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A i z) 2 μ :=
+          Finset.sum_le_sum fun i hi ↦
+            (ofReal_abs_inner_le_eLpNorm_exp_mul_smul_mul (b := b) c (e i) (A i)).trans
+              (by gcongr; exact hqe i hi)
+      _ = U * S := by
+          rw [Finset.mul_sum]
+          exact Finset.sum_congr rfl fun i _ ↦ by ring
+  have h₂ : U ≤ S := by
+    rcases eq_or_ne U 0 with h | h
+    · rw [h]
+      exact zero_le
+    · exact (ENNReal.mul_le_mul_iff_right h (Lp.eLpNorm_ne_top u)).1 h₁
+  exact hu.trans (by gcongr)
+
 /-- **A weighted bound from a pairing inequality.** Let `ρ(z) = √(b + ‖z‖²)` and let `u`, `e`, `A`
 be `L²` functions with `‖u‖₂² ≤ |⟪e, A⟫|`. Suppose that the weight `exp(c ρ)` costs at most `a` on
 `u` and that `‖exp(-c ρ) e‖₂ ≤ q ‖u‖₂`. Then `‖exp(c ρ) u‖₂ ≤ a q ‖exp(c ρ) A‖₂`, where either
@@ -219,46 +290,9 @@ theorem eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner {c : ℝ} {u e A : Lp F 2 μ}
     (hinner : ‖u‖ ^ 2 ≤ |⟪e, A⟫|) :
     eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • u z) 2 μ ≤
       (a * q : ℝ≥0) * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A z) 2 μ := by
-  set N := eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A z) 2 μ
-  have he : MemLp (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ :=
-    memLp_iff.2 (hqe.trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top (Lp.eLpNorm_lt_top u)))
-  -- If `N = ∞` the bound is trivial unless `a = 0`, when `hu` gives it, or `q = 0`, when `e = 0`
-  -- and hence `u = 0`.
-  rcases eq_or_ne N ⊤ with hN | hN
-  · rcases eq_or_ne (a * q) 0 with h0 | h0
-    · refine hu.trans (le_of_eq_of_le ?_ zero_le)
-      obtain ha | hq := mul_eq_zero.1 h0
-      · rw [ha, ENNReal.coe_zero, zero_mul]
-      have he0 : e = 0 := by
-        refine Lp.eq_zero_iff_ae_eq_zero.2 (((eLpNorm_eq_zero_iff two_ne_zero).1
-          (nonpos_iff_eq_zero.1 (hqe.trans_eq (by rw [hq, ENNReal.coe_zero, zero_mul])))).mono
-            fun z hz ↦ ?_)
-        exact (smul_eq_zero.1 hz).resolve_left (Real.exp_pos _).ne'
-      rw [he0, inner_zero_left, abs_zero] at hinner
-      have hu0 : u = 0 :=
-        norm_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 (le_antisymm hinner (by positivity)))
-      rw [(eLpNorm_eq_zero_iff two_ne_zero).2 (Lp.eq_zero_iff_ae_eq_zero.1 hu0), mul_zero]
-    · rw [hN, ENNReal.mul_top (ENNReal.coe_ne_zero.2 h0)]
-      exact le_top
-  have hA : MemLp (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • A z) 2 μ := memLp_iff.2 hN.lt_top
-  have hq : (eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • e z) 2 μ).toReal ≤ q * ‖u‖ := by
-    simpa [Lp.norm_def, ENNReal.toReal_mul] using ENNReal.toReal_mono
-      (ENNReal.mul_ne_top ENNReal.coe_ne_top (Lp.eLpNorm_ne_top u)) hqe
-  -- From `‖u‖₂² ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) A‖₂ ≤ q ‖u‖₂ N`, `‖u‖₂ ≤ q N`.
-  have hP : ‖u‖ ≤ q * N.toReal := by
-    have h₁ : ‖u‖ ^ 2 ≤ q * ‖u‖ * N.toReal := hinner.trans
-      ((abs_inner_le_of_memLp_exp_mul_smul he hA).trans
-        (mul_le_mul_of_nonneg_right hq ENNReal.toReal_nonneg))
-    rcases (norm_nonneg u).eq_or_lt with h | h
-    · rw [← h]
-      positivity
-    · nlinarith
-  calc _ ≤ a * eLpNorm u 2 μ := hu
-    _ = a * ENNReal.ofReal ‖u‖ := by rw [Lp.norm_def, ENNReal.ofReal_toReal (Lp.eLpNorm_ne_top u)]
-    _ ≤ a * ENNReal.ofReal (q * N.toReal) := by gcongr
-    _ = (a * q : ℝ≥0) * N := by
-      rw [ENNReal.ofReal_mul q.coe_nonneg, ENNReal.ofReal_coe_nnreal,
-        ENNReal.ofReal_toReal hN, ENNReal.coe_mul, mul_assoc]
+  simpa [mul_assoc] using eLpNorm_exp_mul_smul_le_of_sq_le_sum_abs_inner (s := Finset.univ)
+    (e := fun _ : Unit ↦ e) (A := fun _ ↦ A) (q := fun _ ↦ q) hu (fun _ _ ↦ hqe)
+    (by simpa using hinner)
 
 end L2
 
