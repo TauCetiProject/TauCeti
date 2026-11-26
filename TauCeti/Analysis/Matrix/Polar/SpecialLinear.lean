@@ -49,6 +49,8 @@ For `n = 2` and `𝕜 = ℂ` this deforms the Möbius group of the Riemann spher
 * `Matrix.SpecialLinearGroup.polarRetraction_toSL_mul`,
   `Matrix.SpecialLinearGroup.polarHomotopy_toSL_mul`: the retraction and the deformation of
   `SL(n, 𝕜)` commute with left multiplication by `SU(n)`.
+* `Matrix.SpecialLinearGroup.coe_polarRetraction_neg`: the retraction is odd when `n` has even
+  cardinality.
 * `Matrix.ProjectiveSpecialLinearGroup.polarHomotopy_mk`: the deformation of `PSL(n, 𝕜)` is induced
   by that of `SL(n, 𝕜)`.
 
@@ -108,6 +110,17 @@ theorem polarRetraction_toSL_mul (k : specialUnitaryGroup n 𝕜) (g : SpecialLi
   rw [map_one, mul_one, mul_one, ← toGL_toSL, ← map_mul] at h
   rw [coe_polarRetraction_apply, h, Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_inclusion,
     coe_polarRetraction_apply]
+
+/-- The polar retraction is odd: when `n` has even cardinality, so that `-g ∈ SL(n, 𝕜)`, the
+unitary factor of `-g = √(g gᴴ) (-U)` is minus the unitary factor `U` of `g`. -/
+theorem coe_polarRetraction_neg [Fact (Even (Fintype.card n))] (g : SpecialLinearGroup n 𝕜) :
+    (polarRetraction n 𝕜 (-g) : Matrix n n 𝕜) = -(polarRetraction n 𝕜 g : Matrix n n 𝕜) := by
+  have h : (toGL (-g)).polarUnitary = -(toGL g).polarUnitary := by
+    refine Units.polarUnitary_eq_of_mul_eq _
+      (CFC.sqrt_nonneg ((toGL g : Matrix n n 𝕜) * star (toGL g : Matrix n n 𝕜))) ?_
+    rw [Unitary.coe_neg, mul_neg, Units.sqrt_mul_star_mul_polarUnitary]
+    simp only [coe_GL_coe_matrix, coe_neg]
+  rw [coe_polarRetraction_apply, coe_polarRetraction_apply, h, Unitary.coe_neg]
 
 variable (n 𝕜) in
 /-- **`SL(n, 𝕜)` deformation retracts onto `SU(n)`**, for `𝕜 = ℝ` or `ℂ`. The polar deformation
