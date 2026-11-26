@@ -13,8 +13,9 @@ import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Parameters
 # Tricomi's bracket
 
 Tricomi's confluent hypergeometric function `U(a, b, z)` is the solution of Kummer's equation
-`z w'' + (b - z) w' - a w = 0` that is recessive as `z → +∞`. In terms of the two solutions
-`𝐌(a, b, z)` and `z^{1 - b} 𝐌(a - b + 1, 2 - b, z)` regular at the origin, where
+`z w'' + (b - z) w' - a w = 0` that is recessive as `z → +∞`. In terms of the two Frobenius
+solutions `𝐌(a, b, z)` and `z^{1 - b} 𝐌(a - b + 1, 2 - b, z)` at the regular singular point
+`z = 0`, with exponents `0` and `1 - b`, where
 `𝐌(a, b, z) = Complex.regularizedHGFun {a} {b} z` is Olver's regularized Kummer function, it is
 `U(a, b, z) = (π / sin πb) F(a, b, log z)` for `b ∉ ℤ` (DLMF 13.2.42), with the bracket
 
@@ -97,7 +98,9 @@ theorem kummerUBracket_sub_add_one_two_sub (a b w : ℂ) :
   have h₂ : (2 : ℂ) - (2 - b) = b := by ring
   have h₃ : (1 : ℂ) - (2 - b) = b - 1 := by ring
   have he : exp ((b - 1) * w) * exp ((1 - b) * w) = 1 := by
-    rw [← exp_add, ← add_mul, sub_add_sub_cancel', sub_self, zero_mul, exp_zero]
+    rw [← exp_add, ← exp_zero]
+    congr 1
+    ring
   rw [kummerUBracket_def, kummerUBracket_def, h₁, h₂, h₃]
   linear_combination -(regularizedHGFun {a - b + 1} {2 - b} (exp w) / Gamma a) * he
 
@@ -137,9 +140,31 @@ theorem kummerUBracket_ofNat (a w : ℂ) (n : ℕ) [n.AtLeastTwo] :
     kummerUBracket a ofNat(n) w = 0 :=
   kummerUBracket_natCast a w n
 
+/-- Tricomi's bracket vanishes at `b = 0`. -/
+@[simp]
+theorem kummerUBracket_zero_middle (a w : ℂ) : kummerUBracket a 0 w = 0 := by
+  simpa using kummerUBracket_natCast a w 0
+
+/-- Tricomi's bracket vanishes at `b = 1`. -/
+@[simp]
+theorem kummerUBracket_one_middle (a w : ℂ) : kummerUBracket a 1 w = 0 := by
+  simpa using kummerUBracket_natCast a w 1
+
+/-- Tricomi's bracket vanishes at `b = -1`. -/
+@[simp]
+theorem kummerUBracket_neg_one (a w : ℂ) : kummerUBracket a (-1) w = 0 := by
+  simpa using kummerUBracket_neg_natCast a w 1
+
+/-- Tricomi's bracket vanishes at every negative numeral `b ≤ -2`. -/
+@[simp]
+theorem kummerUBracket_neg_ofNat (a w : ℂ) (n : ℕ) [n.AtLeastTwo] :
+    kummerUBracket a (-ofNat(n)) w = 0 :=
+  kummerUBracket_neg_natCast a w n
+
 /-- **Tricomi's bracket vanishes at the integers**: `F(a, n, w) = 0` for every integer `n` and all
 complex `a` and `w`. This is the removable singularity of `U(a, b, z) = (π / sin πb) F(a, b, log z)`
 at integer `b`. -/
+@[simp]
 theorem kummerUBracket_intCast (a w : ℂ) (n : ℤ) : kummerUBracket a n w = 0 := by
   obtain ⟨n, rfl | rfl⟩ := n.eq_nat_or_neg <;> simp
 
@@ -149,7 +174,7 @@ that `(π / sin πb) F(0, b, w) = 1` for `b ∉ ℤ`; this is `U(0, b, z) = 1` (
 theorem kummerUBracket_zero_left (b w : ℂ) : kummerUBracket 0 b w = sin (π * b) / π := by
   have hM : regularizedHGFun {0} {b} (exp w) = (Gamma b)⁻¹ := by
     simp [regularizedHGFun_of_zero_mem]
-  rw [kummerUBracket_def, hM, Gamma_zero, div_zero, sub_zero, zero_sub, neg_add_eq_sub,
-    div_eq_mul_inv, ← mul_inv, Gamma_mul_Gamma_one_sub, inv_div]
+  simp [kummerUBracket_def, hM, neg_add_eq_sub, div_eq_mul_inv, ← mul_inv,
+    Gamma_mul_Gamma_one_sub]
 
 end Complex

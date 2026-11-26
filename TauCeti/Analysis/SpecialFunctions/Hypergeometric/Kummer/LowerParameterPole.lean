@@ -57,8 +57,8 @@ private theorem regularizedHGFunCoeff_singleton_neg_natCast_add (a : ℂ) (n m :
       (ascPochhammer ℂ (n + 1)).eval a * regularizedHGFunCoeff {a + n + 1} {(n : ℂ) + 2} m := by
   have hpoch : (ascPochhammer ℂ (m + (n + 1))).eval a =
       (ascPochhammer ℂ (n + 1)).eval a * (ascPochhammer ℂ m).eval (a + n + 1) := by
-    rw [add_comm m, ← ascPochhammer_mul, eval_mul, eval_comp, eval_add, eval_X, eval_natCast,
-      Nat.cast_succ, add_assoc]
+    rw [add_comm m, ← ascPochhammer_mul]
+    simp [add_assoc]
   have hl : -(n : ℂ) + ((m + (n + 1) : ℕ) : ℂ) = (m : ℂ) + 1 := by push_cast; ring
   have hr : (n : ℂ) + 2 + (m : ℂ) = ((m + (n + 1) : ℕ) : ℂ) + 1 := by push_cast; ring
   rw [regularizedHGFunCoeff_singleton, regularizedHGFunCoeff_singleton, hl, hr, hpoch,
@@ -92,8 +92,8 @@ theorem regularizedHGFun_singleton_neg_natCast_right (a z : ℂ) (n : ℕ) :
 `𝐌(1, 0, z) = ∑_{k ≥ 1} zᵏ / (k - 1)!`, whose `k = 0` term vanishes. -/
 theorem regularizedHGFun_one_singleton_zero (z : ℂ) :
     regularizedHGFun {1} {0} z = z * exp z := by
-  have h := regularizedHGFun_singleton_neg_natCast_right 1 z 0
-  norm_num at h
+  have h : regularizedHGFun {1} {0} z = z * regularizedHGFun {2} {2} z := by
+    simpa [one_add_one_eq_two] using regularizedHGFun_singleton_neg_natCast_right 1 z 0
   rw [h, regularizedHGFun_singleton_self]
   simp
 

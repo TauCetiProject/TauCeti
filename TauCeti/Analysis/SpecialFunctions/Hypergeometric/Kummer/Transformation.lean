@@ -101,6 +101,7 @@ theorem regularizedHGFun_singleton_eq_exp_mul (a b z : ℂ) :
 
 /-- **DLMF 13.6.1** in regularized form: `𝐌(a, a, z) = e^z / Γ(a)` for all complex `a` and `z`,
 including the poles of `Γ`, where both sides vanish. -/
+@[simp, grind =]
 theorem regularizedHGFun_singleton_self (a z : ℂ) :
     regularizedHGFun {a} {a} z = exp z / Gamma a := by
   rw [regularizedHGFun_singleton_eq_exp_mul, sub_self,
