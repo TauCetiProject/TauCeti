@@ -7,6 +7,10 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Approximation
 public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
+public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Completion.Basic
+public import TauCeti.Topology.Algebra.Module.DenseBaseChange
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # Strong approximation for an algebraic function field
@@ -27,6 +31,14 @@ This is Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., Theorem 1.6
 approximation it is a consequence of Riemann's theorem, and it is the form of approximation that
 consumers working inside a holomorphy ring `𝒪_S` want.
 
+The same holds in the completions, and there it is a density statement: for disjoint sets `S`
+and `T` of places which together miss a place of `F / k`, the holomorphy ring `𝒪_S` is dense in
+the product of the completions `F̂_P` over `P ∈ T`. It then passes to every finite
+`𝒪_S`-module `M`, which is dense in the product of its scalar extensions `F̂_P ⊗ M`
+(`DenseRange.pi_one_tmul`). This is the form in which approximation enters the construction of
+integral points on curves: global sections of a vector bundle on an affine curve are approximated
+at finitely many places outside it.
+
 ## Main results
 
 * `TauCeti.Place.exists_forall_mem_valuation_sub_le_and_forall_mem_integers`: strong
@@ -34,6 +46,10 @@ consumers working inside a holomorphy ring `𝒪_S` want.
   rest of `S`.
 * `TauCeti.Place.exists_forall_mem_ord_sub_eq_and_forall_mem_integers`: **strong approximation**
   (Stichtenoth, Theorem 1.6.5), with the orders on `s` prescribed exactly.
+* `TauCeti.Place.denseRange_completionEmbedding_holomorphyRing_pi`: strong approximation in the
+  completions, the density of `𝒪_S` in `∏_{P ∈ T} F̂_P`.
+* `TauCeti.Place.denseRange_one_tmul_holomorphyRing_pi`: the density of a finite `𝒪_S`-module in
+  the product of its scalar extensions to the completions at `T`.
 
 ## Implementation notes
 
@@ -57,6 +73,8 @@ an exact hit whenever `r P > 0`.  No such guard is needed in the equality form, 
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
   Section I.6 (Theorem 1.6.5).
+* L. Moret-Bailly, *Groupes de Picard et problèmes de Skolem II*, Ann. Sci. ÉNS 22 (1989),
+  proof of Lemme 3.8, for approximation in finite projective modules over `𝒪_S`.
 -/
 
 public section
@@ -150,6 +168,73 @@ theorem exists_forall_mem_ord_sub_eq_and_forall_mem_integers :
       rw [ht P hP]
       omega
     rw [hsum, P.ord_add_eq_min_of_ord_ne ht0 h0 hlt.ne, min_eq_left hlt.le, ht P hP]
+
+end Place
+
+/-! ### Strong approximation in the completions -/
+
+namespace Place
+
+open scoped PlaceCompletionExtension TensorProduct
+
+variable (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
+
+include hF hex in
+/-- **Strong approximation in the completions.** Let `S` and `T` be disjoint sets of places of
+`F / k` which together miss at least one place. Then the holomorphy ring `𝒪_S` is dense in the
+product of the completions `F̂_P` over `P ∈ T`.
+
+Some place must be missed: for the rational function field and `T` a single place `P`, the ring
+of functions regular away from `P` is a polynomial ring, which is discrete in `F̂_P`. -/
+theorem denseRange_completionEmbedding_holomorphyRing_pi {S T : Set (Place k F)}
+    (hST : Disjoint S T) (hSTu : S ∪ T ≠ Set.univ) :
+    DenseRange fun x : holomorphyRing S ↦ fun P : T ↦ P.val.completionEmbedding x := by
+  classical
+  refine denseRange_pi_subtype_of_forall_finset fun J hJT u hu ↦ ?_
+  -- Each `u P` with `P ∈ J` contains a filtration coset of some order `b P` around some point
+  -- `g P`; choose `z P ∈ F` within that order of `g P`.
+  have hb (P : T) : ∃ (g : P.val.Completion) (b : ℤ), P.val ∈ J →
+      ∀ y, y - g ∈ P.val.completionPlace.filtration b → y ∈ u P := by
+    by_cases hP : P.val ∈ J
+    · obtain ⟨g, hg⟩ := (hu P hP).2
+      obtain ⟨b, hb⟩ := P.val.exists_forall_sub_mem_completionPlace_filtration_mem
+        ((hu P hP).1.mem_nhds hg)
+      exact ⟨g, b, fun _ ↦ hb⟩
+    · exact ⟨0, 0, fun h ↦ (hP h).elim⟩
+  choose g b hb using hb
+  choose z hz using fun P : T ↦ P.val.exists_sub_completionEmbedding_mem_filtration (g P) (b P)
+  -- Strong approximation of the `z P` to order `b P` on `J`, regular on `S`.
+  have hSJ : S ∪ J ≠ Set.univ := fun h ↦
+    hSTu (Set.eq_univ_of_univ_subset (h ▸ Set.union_subset_union_right S hJT))
+  obtain ⟨x, hxJ, hxS⟩ := exists_forall_mem_valuation_sub_le_and_forall_mem_integers hF hex hSJ
+    Set.subset_union_right (fun Q ↦ if h : Q ∈ T then z ⟨Q, h⟩ else 0)
+    (fun Q ↦ if h : Q ∈ T then b ⟨Q, h⟩ else 0)
+  have hxO : x ∈ holomorphyRing S := mem_holomorphyRing_iff.2 fun Q hQ ↦
+    hxS Q (Or.inl hQ) fun h ↦ hST.notMem_of_mem_left hQ (hJT h)
+  refine ⟨⟨x, hxO⟩, fun P hP ↦ hb P hP _ ?_⟩
+  -- `x - z P` and `z P - g P` both have order at least `b P` at `P`.
+  have hxz := hxJ P.val hP
+  simp only [P.property, ↓reduceDIte] at hxz
+  have hxz' : P.val.completionEmbedding (x - z P) ∈ P.val.completionPlace.filtration (b P) :=
+    P.val.completionEmbedding_mem_filtration_iff.2 (P.val.mem_filtration_iff.2 hxz)
+  have h := add_mem hxz' (neg_mem (hz P))
+  rwa [map_sub, neg_sub, sub_add_sub_cancel] at h
+
+include hF hex in
+/-- **Strong approximation for finite modules over a holomorphy ring.** Let `S` and `T` be
+disjoint sets of places of `F / k` which together miss at least one place. Then a finite module
+`M` over the holomorphy ring `𝒪_S` is dense in the product of its scalar extensions `F̂_P ⊗ M`
+over `P ∈ T`, each with its module topology. -/
+theorem denseRange_one_tmul_holomorphyRing_pi {S T : Set (Place k F)}
+    (hST : Disjoint S T) (hSTu : S ∪ T ≠ Set.univ) (M : Type*) [AddCommMonoid M]
+    [Module (holomorphyRing S) M] [Module.Finite (holomorphyRing S) M]
+    [∀ P : T, TopologicalSpace (P.val.Completion ⊗[holomorphyRing S] M)]
+    [∀ P : T, IsModuleTopology P.val.Completion (P.val.Completion ⊗[holomorphyRing S] M)] :
+    DenseRange fun m : M ↦ fun P : T ↦ (1 : P.val.Completion) ⊗ₜ[holomorphyRing S] m :=
+  DenseRange.pi_one_tmul (A := fun P : T ↦ P.val.Completion)
+    (by simpa only [Subalgebra.algebraMap_eq, RingHom.comp_apply, AlgHom.coe_toRingHom,
+        Subalgebra.coe_val, algebraMap_completion] using
+      denseRange_completionEmbedding_holomorphyRing_pi hF hex hST hSTu) M
 
 end Place
 
