@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.RootPairing
 public import TauCeti.Algebra.Lie.SpecialLinear.Diagonal
-public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Complex
+public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Complex.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import TauCeti.LinearAlgebra.RootSystem.TypeAPairing
