@@ -102,6 +102,7 @@ theorem exists_forall_mem_and_linearIndepOn {ι : Type*} [Finite ι] {k : ℕ}
       · simpa using hzO
       · simpa [hi] using hyO i
     rw [Finset.coe_insert] at hs
-    exact linearIndepOn_update hy (fun u hut huk ↦ hzS ⟨u, hut, huk⟩) hs hsk
+    exact linearIndepOn_update hy
+      (fun u hut huk ↦ Submodule.mem_toAffineSubspace.not.1 (hzS ⟨u, hut, huk⟩)) hs hsk
 
 end TauCeti

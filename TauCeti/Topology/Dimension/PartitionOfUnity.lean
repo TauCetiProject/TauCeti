@@ -86,11 +86,12 @@ theorem HasCoveringDimensionLE.dense_setOf_forall_ne_zero [CompactSpace X] [Norm
     hρU i (subset_tsupport _ hi)
   let g : C(X, E) := ⟨fun x ↦ ∑ᶠ i, ρ i x • y i,
     ρ.continuous_finsum_smul fun _ _ _ ↦ continuousAt_const⟩
+  have hg (x : X) : g x = ∑ᶠ i, ρ i x • y i := congrFun (ContinuousMap.coe_mk _ _) x
   refine ⟨g, ?_, fun x hx ↦ ?_⟩
   · -- `g x` is a convex combination of points within `2ε / 3` of `f x`.
     rw [mem_ball, ContinuousMap.dist_lt_iff hε]
     intro x
-    have hgx : g x ∈ closedBall (f x) (2 * (ε / 3)) :=
+    have hgx : g x ∈ closedBall (f x) (2 * (ε / 3)) := hg x ▸
       (convex_closedBall _ _).finsum_mem (fun i ↦ ρ.nonneg i x) (ρ.sum_eq_one (mem_univ x))
         fun i hi ↦ by
           rw [mem_closedBall, two_mul]
@@ -100,7 +101,7 @@ theorem HasCoveringDimensionLE.dense_setOf_forall_ne_zero [CompactSpace X] [Norm
     have hs : {i | ρ i x ≠ 0}.Finite := toFinite _
     have hsum : ∑ i ∈ hs.toFinset, ρ i x • y i = 0 :=
       (finsum_eq_sum_of_support_subset _ fun i hi ↦ by
-        simpa using left_ne_zero_of_smul hi).symm.trans hx
+        simpa using left_ne_zero_of_smul hi).symm.trans ((hg x).symm.trans hx)
     have h0 := linearIndepOn_iff'.1 (hy _ (hρm x)) hs.toFinset (fun i ↦ ρ i x) (by simp) hsum
     have h1 := ρ.sum_eq_one (mem_univ x)
     obtain ⟨i, hi⟩ : ∃ i, ρ i x ≠ 0 := by

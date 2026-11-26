@@ -238,9 +238,10 @@ theorem HasCoveringDimensionLE.dense_isUnimodular_continuousMap [CompactSpace X]
   rw [dist_comm] at hGa
   refine ⟨fun i ↦ ⟨fun x ↦ G x i, by fun_prop⟩, ?_, ?_⟩
   · rw [Metric.mem_ball, dist_pi_lt_iff hε]
-    exact fun i ↦ (ContinuousMap.dist_lt_iff hε).2 fun x ↦
-      (dist_le_pi_dist (G x) (ContinuousMap.pi a x) i).trans_lt
-        ((ContinuousMap.dist_apply_le_dist x).trans_lt hGa)
+    refine fun i ↦ (ContinuousMap.dist_lt_iff hε).2 fun x ↦ ?_
+    have hx := (ContinuousMap.dist_apply_le_dist x).trans_lt hGa
+    simp only [ContinuousMap.coe_mk, ContinuousMap.pi_eval] at hx ⊢
+    exact (dist_le_pi_dist (G x) (fun i ↦ a i x) i).trans_lt hx
   · rw [Set.mem_ofPred_eq, isUnimodular_continuousMap_iff_forall_exists_ne_zero]
     exact fun x ↦ Function.ne_iff.1 (hG x)
 
