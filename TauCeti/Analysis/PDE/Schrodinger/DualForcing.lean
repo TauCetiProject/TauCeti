@@ -8,13 +8,12 @@ module
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import TauCeti.Analysis.PDE.Schrodinger.MixedNorm
-import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.PDE.Schrodinger.EnergyPair
 import TauCeti.Analysis.PDE.Schrodinger.Endpoint
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.MeasureTheory.Function.Lp.Duality
-import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
+import TauCeti.MeasureTheory.Function.Lp.LpValuedRepresentative
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded
 
@@ -36,7 +35,8 @@ The forcing space is the Bochner space `L^{p₁}(I; L^{r₁'}(E))` on a measurab
 `Lp (Lp ℂ r₁' volume) p₁ (volume.restrict I)`. Its elements need not take values in `L²`. Those
 that have an `L²`-valued representative integrable on `I` are dense, since `r₁'` and `p₁` are
 finite: the indicators `1_A c` of sets of finite measure span a dense subspace, and every
-`c ∈ L^{r₁'}` is a limit of Schwartz functions. On them the retarded integral
+`c ∈ L^{r₁'}` is a limit of Schwartz functions (`MeasureTheory.Lp.dense_integrableRepSubmodule`).
+On them the retarded integral
 `t ↦ ∫_{s < t} S(t - s) (1_I F)(s) ds` is a bounded continuous function of time with values in
 `L²`, and its supremum is at most `C ‖F‖_{L^{p₁}(I; L^{r₁'})}`
 (`TauCeti.exists_enorm_setIntegral_schrodingerPropagator_sub_le`). So it extends uniquely to a
@@ -98,13 +98,6 @@ section Integrable
 
 variable {μ : Measure ℝ} {H : ℝ → Lp ℂ 2 (volume : Measure E)}
 
-/-- The retarded integral of an integrable forcing is bounded by its `L¹_t L²_x` norm. -/
-private theorem norm_setIntegral_Iio_schrodingerPropagator_sub_le (hH : Integrable H μ)
-    (t : ℝ) : ‖∫ s in Iio t, schrodingerPropagator ℂ (t - s) (H s) ∂μ‖ ≤ ∫ s, ‖H s‖ ∂μ := by
-  refine (norm_integral_le_integral_norm _).trans ?_
-  simp_rw [norm_phasePropagator_apply]
-  exact setIntegral_le_integral hH.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
-
 open scoped Classical in
 variable (μ) in
 /-- The retarded integral `t ↦ ∫_{s < t} S(t - s) H(s) dμ(s)` of an integrable forcing `H`, as a
@@ -114,7 +107,7 @@ private def retardedBCF [NullSingletonClass μ] (H : ℝ → Lp ℂ 2 (volume : 
   if hH : Integrable H μ then
     .ofNormedAddCommGroup (fun t ↦ ∫ s in Iio t, schrodingerPropagator ℂ (t - s) (H s) ∂μ)
       (continuous_setIntegral_Iio_phasePropagator_sub _ hH) _
-      (norm_setIntegral_Iio_schrodingerPropagator_sub_le hH)
+      (norm_setIntegral_Iio_phasePropagator_sub_le _ hH)
   else 0
 
 private theorem retardedBCF_apply [NullSingletonClass μ] (hH : Integrable H μ) (t : ℝ) :
@@ -167,50 +160,16 @@ variable (p r' : ℝ≥0∞) [Fact (1 ≤ r')] (I : Set ℝ)
 variable (E) in
 /-- The forcings `Φ ∈ L^p(I; L^{r'})` with an integrable `L²`-valued representative: some
 `F : ℝ → L²`, integrable on `I`, with `Φ(s) = F(s)` almost everywhere for almost every `s ∈ I`. -/
-private def liftSubmodule :
-    Submodule ℂ (Lp (Lp ℂ r' (volume : Measure E)) p (volume.restrict I)) where
-  carrier := {Φ | ∃ F : ℝ → Lp ℂ 2 (volume : Measure E), IntegrableOn F I ∧
-    ∀ᵐ s ∂volume.restrict I, (Φ s : E → ℂ) =ᵐ[volume] F s}
-  add_mem' := by
-    rintro Φ Ψ ⟨F, hF, hΦ⟩ ⟨G, hG, hΨ⟩
-    refine ⟨F + G, hF.add hG, ?_⟩
-    filter_upwards [Lp.coeFn_add Φ Ψ, hΦ, hΨ] with s hs h₁ h₂
-    rw [hs]
-    filter_upwards [Lp.coeFn_add (Φ s) (Ψ s), Lp.coeFn_add (F s) (G s), h₁, h₂] with x hx₁ hx₂
-      hx₃ hx₄
-    simp only [Pi.add_apply] at hx₁ hx₂ ⊢
-    rw [hx₁, hx₂, hx₃, hx₄]
-  zero_mem' := ⟨0, integrableOn_zero, by
-    filter_upwards [Lp.coeFn_zero (Lp ℂ r' (volume : Measure E)) p (volume.restrict I)] with s hs
-    rw [hs]
-    filter_upwards [Lp.coeFn_zero ℂ r' (volume : Measure E),
-      Lp.coeFn_zero ℂ 2 (volume : Measure E)] with x h₁ h₂
-    simp only [Pi.zero_apply] at h₁ h₂ ⊢
-    rw [h₁, h₂]⟩
-  smul_mem' := by
-    rintro c Φ ⟨F, hF, hΦ⟩
-    refine ⟨c • F, hF.smul c, ?_⟩
-    filter_upwards [Lp.coeFn_smul c Φ, hΦ] with s hs h
-    rw [hs]
-    filter_upwards [Lp.coeFn_smul c (Φ s), Lp.coeFn_smul c (F s), h] with x h₁ h₂ h₃
-    simp only [Pi.smul_apply] at h₁ h₂ ⊢
-    rw [h₁, h₂, h₃]
+private abbrev liftSubmodule :
+    Submodule ℂ (Lp (Lp ℂ r' (volume : Measure E)) p (volume.restrict I)) :=
+  Lp.integrableRepSubmodule ℂ ℂ r' volume p (volume.restrict I) 2
 
 variable {p r' I}
 
 private theorem mem_liftSubmodule {Φ : Lp (Lp ℂ r' (volume : Measure E)) p (volume.restrict I)} :
     Φ ∈ liftSubmodule E p r' I ↔ ∃ F : ℝ → Lp ℂ 2 (volume : Measure E), IntegrableOn F I ∧
       ∀ᵐ s ∂volume.restrict I, (Φ s : E → ℂ) =ᵐ[volume] F s :=
-  Iff.rfl
-
-/-- Two `L²`-valued representatives of the same forcing agree almost everywhere on `I`. -/
-private theorem ae_eq_of_lift {Φ : Lp (Lp ℂ r' (volume : Measure E)) p (volume.restrict I)}
-    {F G : ℝ → Lp ℂ 2 (volume : Measure E)}
-    (hF : ∀ᵐ s ∂volume.restrict I, (Φ s : E → ℂ) =ᵐ[volume] F s)
-    (hG : ∀ᵐ s ∂volume.restrict I, (Φ s : E → ℂ) =ᵐ[volume] G s) :
-    F =ᵐ[volume.restrict I] G := by
-  filter_upwards [hF, hG] with s h₁ h₂
-  exact Lp.ext (h₁.symm.trans h₂)
+  Lp.mem_integrableRepSubmodule_iff
 
 /-- A chosen integrable `L²`-valued representative of a forcing in `liftSubmodule`. -/
 private def lift (Φ : liftSubmodule E p r' I) : ℝ → Lp ℂ 2 (volume : Measure E) :=
@@ -232,25 +191,16 @@ private def retardedOnLift :
   toFun Φ := retardedBCF (volume.restrict I) (lift Φ)
   map_add' Φ Ψ := by
     rw [← retardedBCF_add (integrableOn_lift Φ) (integrableOn_lift Ψ)]
-    refine retardedBCF_congr (integrableOn_lift _) (ae_eq_of_lift (ae_eq_lift (Φ + Ψ)) ?_)
-    filter_upwards [Lp.coeFn_add (Φ : Lp (Lp ℂ r' (volume : Measure E)) p (volume.restrict I)) Ψ,
-      ae_eq_lift Φ, ae_eq_lift Ψ] with s hs h₁ h₂
-    rw [Submodule.coe_add, hs]
-    filter_upwards [Lp.coeFn_add ((Φ : Lp (Lp ℂ r' (volume : Measure E)) p
-      (volume.restrict I)) s) ((Ψ : Lp (Lp ℂ r' (volume : Measure E)) p (volume.restrict I)) s),
-      Lp.coeFn_add (lift Φ s) (lift Ψ s), h₁, h₂] with x hx₁ hx₂ hx₃ hx₄
-    simp only [Pi.add_apply] at hx₁ hx₂ ⊢
-    rw [hx₁, hx₂, hx₃, hx₄]
+    exact retardedBCF_congr (integrableOn_lift _) (Lp.ae_eq_of_ae_ae_eq (ae_eq_lift (Φ + Ψ))
+      (Lp.ae_ae_eq_add (ae_eq_lift Φ) (ae_eq_lift Ψ)))
   map_smul' c Φ := by
     rw [RingHom.id_apply, ← retardedBCF_smul (integrableOn_lift Φ)]
-    refine retardedBCF_congr (integrableOn_lift _) (ae_eq_of_lift (ae_eq_lift (c • Φ)) ?_)
-    filter_upwards [Lp.coeFn_smul c (Φ : Lp (Lp ℂ r' (volume : Measure E)) p (volume.restrict I)),
-      ae_eq_lift Φ] with s hs h
-    rw [Submodule.coe_smul, hs]
-    filter_upwards [Lp.coeFn_smul c ((Φ : Lp (Lp ℂ r' (volume : Measure E)) p
-      (volume.restrict I)) s), Lp.coeFn_smul c (lift Φ s), h] with x h₁ h₂ h₃
-    simp only [Pi.smul_apply] at h₁ h₂ ⊢
-    rw [h₁, h₂, h₃]
+    exact retardedBCF_congr (integrableOn_lift _) (Lp.ae_eq_of_ae_ae_eq (ae_eq_lift (c • Φ))
+      (Lp.ae_ae_eq_smul (ae_eq_lift Φ) c))
+
+private theorem retardedOnLift_apply (Φ : liftSubmodule E p r' I) :
+    retardedOnLift p r' I Φ = retardedBCF (volume.restrict I) (lift Φ) :=
+  rfl
 
 private theorem retardedOnLift_apply_of_ae_eq
     {Φ : liftSubmodule E p r' I} {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : IntegrableOn F I)
@@ -258,44 +208,16 @@ private theorem retardedOnLift_apply_of_ae_eq
       (volume.restrict I)) s : E → ℂ) =ᵐ[volume] F s) (t : ℝ) :
     retardedOnLift p r' I Φ t =
       ∫ s in Iio t, schrodingerPropagator ℂ (t - s) (F s) ∂volume.restrict I := by
-  rw [retardedOnLift, LinearMap.coe_mk, AddHom.coe_mk,
-    retardedBCF_congr (integrableOn_lift Φ) (ae_eq_of_lift (ae_eq_lift Φ) hΦF),
+  rw [retardedOnLift_apply,
+    retardedBCF_congr (integrableOn_lift Φ) (Lp.ae_eq_of_ae_ae_eq (ae_eq_lift Φ) hΦF),
     retardedBCF_apply hF]
 
 /-! ### Density -/
 
-/-- For finite `p` and `r'`, the forcings with an integrable `L²`-valued representative are dense
-in `L^p(I; L^{r'})`: the indicators `1_A c` of sets of finite measure span a dense subspace, and
-`c ∈ L^{r'}` is a limit of Schwartz functions, which lie in `L²`. -/
-private theorem dense_liftSubmodule [Fact (1 ≤ p)] (hp : p ≠ ∞) (hr' : r' ≠ ∞) :
-    Dense (liftSubmodule E p r' I :
-      Set (Lp (Lp ℂ r' (volume : Measure E)) p (volume.restrict I))) := by
-  intro Φ
-  induction Φ using Lp.induction hp with
-  | @indicatorConst c s hs hμs =>
-    rw [Lp.simpleFunc.coe_indicatorConst, ← indicatorConstLpL_apply (𝕜 := ℂ)]
-    refine map_mem_closure (indicatorConstLpL ℂ p hs hμs.ne).continuous
-      (SchwartzMap.denseRange_toLpCLM (F := ℂ) (μ := volume) hr' c) ?_
-    rintro _ ⟨φ, rfl⟩
-    rw [indicatorConstLpL_apply]
-    refine ⟨s.indicator fun _ ↦ φ.toLp 2 volume,
-      (integrable_indicator_iff hs).2 (integrableOn_const hμs.ne eNorm_ne_top), ?_⟩
-    filter_upwards [indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμs.ne)
-      (c := SchwartzMap.toLpCLM ℝ ℂ r' volume φ)] with t ht
-    rw [ht]
-    by_cases hts : t ∈ s
-    · simp only [indicator_of_mem hts, SchwartzMap.toLpCLM_apply]
-      exact (φ.coeFn_toLp r' volume).trans (φ.coeFn_toLp 2 volume).symm
-    · simp only [indicator_of_notMem hts]
-      exact (Lp.coeFn_zero ℂ r' volume).trans (Lp.coeFn_zero ℂ 2 volume).symm
-  | add _ _ _ hf hg =>
-    rw [← Submodule.topologicalClosure_coe] at hf hg ⊢
-    exact Submodule.add_mem _ hf hg
-  | isClosed => exact isClosed_closure
-
 private theorem denseRange_subtype_liftSubmodule [Fact (1 ≤ p)] (hp : p ≠ ∞) (hr' : r' ≠ ∞) :
-    DenseRange (liftSubmodule E p r' I).subtype := by
-  simpa [DenseRange] using dense_liftSubmodule (E := E) (I := I) hp hr'
+    DenseRange (liftSubmodule E p r' I).subtype :=
+  (Lp.dense_integrableRepSubmodule (𝕜 := ℂ) (μ := (volume : Measure E)) (ρ := volume.restrict I)
+    (s := 2) hp hr').denseRange_subtypeVal
 
 /-! ### The retarded integral on the dual Strichartz space -/
 
@@ -319,18 +241,6 @@ section Estimates
 
 variable {p₁ q₁ : ℝ≥0} {r₁ r₁' : ℝ≥0∞} [Fact (1 ≤ (p₁ : ℝ≥0∞))] [Fact (1 ≤ r₁')]
   [r₁'.HolderConjugate r₁]
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Fact (1 ≤ (p₁ : ℝ≥0∞))]
-  [Fact (1 ≤ r₁')] in
-/-- The Hölder conjugate of the space exponent of an admissible pair is finite. -/
-private theorem ne_top_of_admissible (hq₁ : 2 ≤ q₁)
-    (hqr₁ : 2 / (q₁ : ℝ) + Module.finrank ℝ E * (r₁⁻¹).toReal = Module.finrank ℝ E / 2) :
-    r₁' ≠ ∞ :=
-  (ENNReal.HolderConjugate.ne_top_iff_ne_one r₁' r₁).2 fun h ↦ by
-    have := two_le_of_admissible (E := E) (zero_lt_two.trans_le hq₁)
-      (ENNReal.HolderConjugate.ne_zero r₁ r₁') hqr₁
-    rw [h] at this
-    norm_num at this
 
 /-- The energy bound `sup_t ‖∫_{s < t} S(t - s) (1_I F)(s) ds‖₂ ≤ C ‖F‖_{L^{p₁}(I; L^{r₁'})}` on
 the forcings with an integrable `L²`-valued representative. -/
@@ -375,7 +285,7 @@ theorem schrodingerRetardedL_apply_of_ae_eq (hq₁ : 2 ≤ q₁)
     (hΦF : ∀ᵐ s ∂volume.restrict I, (Φ s : E → ℂ) =ᵐ[volume] F s) (t : ℝ) :
     schrodingerRetardedL (p₁ : ℝ≥0∞) r₁' I Φ t =
       ∫ s in Iio t, schrodingerPropagator ℂ (t - s) (I.indicator F s) := by
-  have hmem : Φ ∈ liftSubmodule E p₁ r₁' I := ⟨F, hF, hΦF⟩
+  have hmem : Φ ∈ liftSubmodule E p₁ r₁' I := mem_liftSubmodule.2 ⟨F, hF, hΦF⟩
   obtain ⟨C, hC⟩ := exists_norm_retardedOnLift_le (r₁' := r₁') hq₁ hn₁ hpq₁ hqr₁
   have h := LinearMap.extendOfNorm_eq (f := retardedOnLift (p₁ : ℝ≥0∞) r₁' I)
     (e := (liftSubmodule E p₁ r₁' I).subtype)
@@ -493,7 +403,8 @@ theorem exists_eLpNorm_eLpNorm_schrodingerRetardedL_le {p q : ℝ≥0} {r : ℝ�
     fun_prop
   -- The bound holds on the dense subspace of forcings with an `L²`-valued representative, and
   -- both sides are continuous in the forcing.
-  refine (dense_liftSubmodule ENNReal.coe_ne_top (ne_top_of_admissible hq₁ hqr₁)).induction
+  refine (Lp.dense_integrableRepSubmodule (𝕜 := ℂ) (μ := (volume : Measure E))
+    (ρ := volume.restrict I) (s := 2) ENNReal.coe_ne_top (ne_top_of_admissible hq₁ hqr₁)).induction
     (P := fun Φ ↦ ‖∫ t, ⟪W Φ t, G t⟫_ℂ‖ₑ ≤ (C + 1) * ‖Φ‖ₑ * M) (fun Φ hΦ ↦ ?_)
     (isClosed_le (hcont.congr fun Φ ↦ by
         rw [MemLp.innerLpCLM_apply, enorm_integral_inner_comm]
