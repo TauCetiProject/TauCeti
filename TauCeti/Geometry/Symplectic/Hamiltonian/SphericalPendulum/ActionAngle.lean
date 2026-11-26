@@ -264,6 +264,6 @@ theorem not_exists_actionAngle_sphericalPendulumEnergyMomentumVec
   -- Global action–angle coordinates frame the period lattices by the exact forms `p • daⱼ`.
   exact not_forall_periodLattice_eq_closure_sphericalPendulum hU hγU p
     ((h.contMDiff_of_actionAngle p hΦ hΦa).of_le (by simp))
-    (h.periodLattice_eq_closure_of_actionAngle p _ hΦ hΦσ hΦa hΦi)
+    (h.periodLattice_eq_closure_of_actionAngle p _ hΦ hΦσ hΦa fun _ ↦ hΦi.injOn)
 
 end TauCeti

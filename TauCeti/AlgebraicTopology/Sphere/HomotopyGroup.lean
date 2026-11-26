@@ -77,6 +77,7 @@ basis, so its sign depends on the orientation of that basis.
   `k < 4m - 1`, for the unit sphere of `ℍᵐ`.
 * `TauCeti.subsingleton_homotopyGroup_sphere_quaternion`: `πₖ(S³, x)` is trivial for `k < 3`.
 * `TauCeti.homotopyGroupSphereAddEquiv`: `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2`, given an orthonormal basis.
+* `TauCeti.homotopyGroupSphereQuaternionMulEquiv`: `π₃(S³, x) ≅ ℤ` for the unit quaternions.
 * `TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`: `H₁(ΩᴹΩᴹS³; ℤ) ≅ ℤ`.
 * `TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`: `Hₘ₋₂(ΩᴹΩᴹSᵐ; ℤ) ≅ ℤ` for `m ≥ 4`.
 * `TauCeti.MooreLoopSpace.doubleReducedHomology₀SphereIso`: `H~₀(ΩᴹΩᴹS²; R) ≅ ∐_{k ≠ 0} R`,
@@ -350,6 +351,23 @@ theorem subsingleton_homotopyGroup_sphere_piLp_quaternion {p : ℝ≥0∞} [Fact
 theorem subsingleton_homotopyGroup_sphere_quaternion {N : Type*} (hN : Nat.card N < 3)
     (x : sphere (0 : ℍ) 1) : Subsingleton (HomotopyGroup N (sphere (0 : ℍ) 1) x) :=
   subsingleton_homotopyGroup_sphere_of_lt Quaternion.finrank_eq_four hN x
+
+/-- **`π₃(S³) ≅ ℤ` for the unit quaternions**, at every base point: the isomorphism
+`TauCeti.homotopyGroupSphereAddEquiv` for the standard orthonormal basis of `ℍ`, written
+multiplicatively. -/
+def homotopyGroupSphereQuaternionMulEquiv (x : sphere (0 : ℍ) 1) :
+    π_ 3 (sphere (0 : ℍ) 1) x ≃* Multiplicative ℤ :=
+  AddEquiv.toMultiplicativeRight (homotopyGroupSphereAddEquiv (n := 1)
+    ((stdOrthonormalBasis ℝ ℍ).reindex (finCongr Quaternion.finrank_eq_four)) x)
+
+/-- The isomorphism `π₃(S³) ≅ ℤ` for the unit quaternions is
+`TauCeti.homotopyGroupSphereAddEquiv` for the standard orthonormal basis of `ℍ`. -/
+theorem homotopyGroupSphereQuaternionMulEquiv_apply (x : sphere (0 : ℍ) 1)
+    (a : π_ 3 (sphere (0 : ℍ) 1) x) :
+    homotopyGroupSphereQuaternionMulEquiv x a =
+      Multiplicative.ofAdd (homotopyGroupSphereAddEquiv (n := 1)
+        ((stdOrthonormalBasis ℝ ℍ).reindex (finCongr Quaternion.finrank_eq_four)) x a) :=
+  (rfl)
 
 end Quaternion
 

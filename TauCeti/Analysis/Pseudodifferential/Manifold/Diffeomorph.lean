@@ -46,7 +46,8 @@ symbol is then compared through the chain rule `d(e ∘ Φ)_x = de_{Φ x} ∘ d�
   `TauCeti.pushforwardOperator_mem_classicalPseudodifferentialOperators_iff`: `Φ_* P` is a
   classical pseudodifferential operator of order `m` exactly when `P` is.
 * `TauCeti.classicalPrincipalSymbol_pushforwardOperator`: the principal symbol of `Φ_* P` at
-  `(Φ x, ξ)` is that of `P` at `(x, ξ ∘ dΦ_x)`.
+  `(Φ x, ξ)` is that of `P` at `(x, ξ ∘ dΦ_x)`, and
+  `TauCeti.classicalPrincipalSymbol_pushforwardOperator_apply` reads it at any point `y` of `N`.
 * `TauCeti.classicalPrincipalSymbol_apply_eq_of_pushforwardOperator_eq`: an operator invariant
   under a diffeomorphism of `M` has a principal symbol invariant under its cotangent map.
 
@@ -211,6 +212,21 @@ theorem classicalPrincipalSymbol_pushforwardOperator [IsManifold 𝓘(ℝ, Coord
   -- Both sides carry the factor `χ(e (Φ x))² = 1`, once with `χ` read as a cutoff in the target
   -- of `e` and once in the equal target of `Φ ≫ e`.
   exact mul_left_cancel₀ (a := ((χ (e (Φ x)) * χ (e (Φ x)) : ℝ) : ℂ)) (by simp [hχ]) h1
+
+/-- The principal symbol of order `m` of the pushforward `u ↦ P (u ∘ Φ) ∘ Φ⁻¹` at a covector
+`ξ ∈ T*_y N` is the principal symbol of `P` at the preimage `Φ⁻¹ y` and the pulled-back covector
+`ξ ∘ dΦ_{Φ⁻¹ y}`: `classicalPrincipalSymbol_pushforwardOperator` read at an arbitrary point of
+`N`. -/
+@[simp]
+theorem classicalPrincipalSymbol_pushforwardOperator_apply
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ N] {m : ℝ}
+    (y : N) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) y →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (Φ.pushforwardOperator P) y ξ =
+      classicalPrincipalSymbol m P (Φ.symm y)
+        (ξ.comp (mfderiv 𝓘(ℝ, CoordinateSpace n) 𝓘(ℝ, CoordinateSpace n) Φ (Φ.symm y))) := by
+  have h := classicalPrincipalSymbol_pushforwardOperator (P := P) (m := m) Φ (Φ.symm y) ξ
+  rwa [Φ.apply_symm_apply] at h
+
 /-- **Invariant operators have invariant principal symbols.** If an operator `P` on `M` is invariant
 under a diffeomorphism `Ψ` of `M`, in the sense that `P (u ∘ Ψ) ∘ Ψ⁻¹ = P u` for every `u`, then
 its principal symbol is invariant under the cotangent map of `Ψ`:

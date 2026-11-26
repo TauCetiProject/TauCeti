@@ -35,6 +35,8 @@ Schauder estimate to the supremum of the function.
 
 * `TauCeti.exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded`: the interpolation
   inequalities on the closure of a bounded domain with Lipschitz graph boundary.
+* `TauCeti.exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_mul_add_of_isBounded`: the same at
+  a fixed scale, `‖Du‖, ‖D²u‖ ≤ C (M + H)`.
 
 ## References
 
@@ -122,5 +124,53 @@ theorem exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded
   · have hCA : A ≤ (1 + 4 * k) * A := le_mul_of_one_le_left (by linarith) (by linarith)
     nlinarith [mul_nonneg (by linarith : (0 : ℝ) ≤ (1 + 4 * k) * A - 2)
       (by positivity : (0 : ℝ) ≤ M / ε ^ 2), mul_nonneg (by positivity : (0 : ℝ) ≤ 4 * k * A) hH0]
+
+/-- **Interpolation inequalities up to the boundary at a fixed scale.** For `Ω` as in
+`TauCeti.exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded`, there is a constant
+`C` such that every `u` which is `C²` on an open set `U ⊇ closure Ω` with `‖u‖ ≤ M` on
+`closure Ω` and `D²u` `α`-Hölder with constant `H` on `closure Ω` satisfies, at every point of
+`closure Ω`,
+
+`‖Du‖ ≤ C (M + H)` and `‖D²u‖ ≤ C (M + H)`.
+
+So `sup |u| + [D²u]_α` controls the sup norms of `Du` and `D²u` on `closure Ω`. -/
+theorem exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_mul_add_of_isBounded
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] [ProperSpace E] {Ω : Set E}
+    (hbdry : ∀ x ∈ frontier Ω, ∃ (ν : E) (γ : E → ℝ) (G : ℝ≥0) (r : ℝ), ‖ν‖ = 1 ∧
+      LipschitzWith G γ ∧ (∀ z (t : ℝ), γ (z + t • ν) = γ z) ∧ 0 < r ∧
+      Metric.ball x r ∩ Ω = Metric.ball x r ∩ {z | γ z < ⟪z, ν⟫_ℝ})
+    (hΩ : Bornology.IsBounded Ω) (α : ℝ≥0) :
+    ∃ C : ℝ≥0, ∀ {U : Set E} {u : E → F} {M : ℝ} {H : ℝ≥0}, IsOpen U → closure Ω ⊆ U →
+      ContDiffOn ℝ 2 u U → (∀ z ∈ closure Ω, ‖u z‖ ≤ M) →
+      HolderOnWith H α (iteratedFDeriv ℝ 2 u) (closure Ω) → ∀ z ∈ closure Ω,
+        ‖fderiv ℝ u z‖ ≤ C * (M + H) ∧ ‖iteratedFDeriv ℝ 2 u z‖ ≤ C * (M + H) := by
+  obtain ⟨C₂, ε₀, hε₀, hint⟩ := exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_of_isBounded
+    (F := F) hbdry hΩ α
+  -- The scale `ε = min ε₀ 1`, at which `1 / ε ≤ 1 / ε²` and `ε ^ α, ε ^ (1 + α) ≤ 1`.
+  set ε : ℝ := min ε₀ 1
+  have hε : 0 < ε := lt_min hε₀ one_pos
+  have hε1 : ε ≤ 1 := min_le_right _ _
+  have hinv : ε⁻¹ ≤ (ε ^ 2)⁻¹ := inv_anti₀ (by positivity) (by nlinarith)
+  have hr1 : ε ^ (1 + (α : ℝ)) ≤ 1 := Real.rpow_le_one hε.le hε1 (by positivity)
+  have hr2 : ε ^ (α : ℝ) ≤ 1 := Real.rpow_le_one hε.le hε1 α.coe_nonneg
+  set A : ℝ≥0 := ⟨C₂ * ((ε ^ 2)⁻¹ + 1), by positivity⟩
+  have hA : (A : ℝ) = C₂ * ((ε ^ 2)⁻¹ + 1) := rfl
+  refine ⟨A, fun {U u M H} hU hΩU hu hM hH z hz => ?_⟩
+  obtain ⟨h1, h2⟩ := hint ε hε (min_le_left _ _) hU hΩU hu hM hH z hz
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM z hz)
+  have hH0 : (0 : ℝ) ≤ H := H.coe_nonneg
+  have hC₂ : (0 : ℝ) ≤ C₂ := C₂.coe_nonneg
+  have hε2 : 0 ≤ (ε ^ 2)⁻¹ := by positivity
+  rw [hA]
+  rw [div_eq_mul_inv] at h1 h2
+  constructor
+  · refine h1.trans ?_
+    have : M * ε⁻¹ + H * ε ^ (1 + (α : ℝ)) ≤ ((ε ^ 2)⁻¹ + 1) * (M + H) := by
+      nlinarith [mul_le_mul_of_nonneg_left hinv hM0, mul_le_mul_of_nonneg_left hr1 hH0]
+    nlinarith [mul_le_mul_of_nonneg_left this hC₂]
+  · refine h2.trans ?_
+    have : M * (ε ^ 2)⁻¹ + H * ε ^ (α : ℝ) ≤ ((ε ^ 2)⁻¹ + 1) * (M + H) := by
+      nlinarith [mul_le_mul_of_nonneg_left hr2 hH0]
+    nlinarith [mul_le_mul_of_nonneg_left this hC₂]
 
 end TauCeti
