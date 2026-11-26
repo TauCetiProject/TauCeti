@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.Int.Cast.Basic
 
@@ -37,6 +38,7 @@ coordinate `i` to another coordinate.
 * `Pi.induction_on_single_of_sum_eq`: induction over the exponent vectors of degree `d`, starting
   from `Pi.single i d` and moving one unit at a time from the coordinate `i` to another coordinate.
 * `TauCeti.multiIndex_induction_add_single`: induction on exponent vectors by adding unit vectors.
+* `TauCeti.sum_abs_eq_one_iff`: an integer vector of `ℓ¹` norm `1` is `± Pi.single i 1`.
 -/
 
 public section
@@ -147,5 +149,24 @@ theorem multiIndex_induction_add_single [Finite ι] [DecidableEq ι] {P : (ι �
     obtain ⟨β, rfl⟩ := Pi.exists_eq_add_single_one hi
     refine add_single β i (ih β ?_)
     simpa [sum_add_distrib] using h
+
+/-- An integer vector has `ℓ¹` norm `1` exactly when it is a unit vector or the negative of one. -/
+theorem sum_abs_eq_one_iff [Fintype ι] [DecidableEq ι] {z : ι → ℤ} :
+    ∑ i, |z i| = 1 ↔ ∃ i, z = Pi.single i 1 ∨ z = -Pi.single i 1 := by
+  constructor
+  · intro h
+    obtain ⟨i, -, hi⟩ := exists_ne_zero_of_sum_ne_zero (h.trans_ne one_ne_zero)
+    have hsplit := add_sum_erase univ (fun j => |z j|) (mem_univ i)
+    have hrest : 0 ≤ ∑ j ∈ univ.erase i, |z j| := sum_nonneg fun j _ => abs_nonneg _
+    have hzi : |z i| = 1 := by
+      have := abs_pos.2 (abs_ne_zero.1 hi)
+      omega
+    have hzero : ∀ j ≠ i, z j = 0 := fun j hj => abs_eq_zero.1 <|
+      (sum_eq_zero_iff_of_nonneg fun j _ => abs_nonneg (z j)).1 (by omega) j
+        (mem_erase.2 ⟨hj, mem_univ j⟩)
+    refine ⟨i, eq_or_eq_neg_of_abs_eq hzi |>.imp (fun h => ?_) fun h => ?_⟩ <;>
+      ext j <;> obtain rfl | hj := eq_or_ne j i <;> simp [*]
+  · rintro ⟨i, rfl | rfl⟩ <;>
+      simp [Pi.single_apply, apply_ite, abs_one]
 
 end TauCeti
