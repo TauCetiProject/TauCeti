@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Defs
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
-import TauCeti.MeasureTheory.Measure.CompleteLattice
 import Mathlib.MeasureTheory.VectorMeasure.Variation.Basic
 import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 
@@ -42,10 +41,7 @@ probability measures is at most two, not one.
 * `MeasureTheory.etvDist_eq_two_mul_tsum_singleton`,
   `MeasureTheory.etvDist_eq_two_mul_sum_singleton`: for a finite measure and a measure of the same
   total mass, extended total variation distance is twice the sum of the truncated singleton
-  differences;
-* `MeasureTheory.etvDist_eq_two_mul_measure_univ_sub_inf`: for a finite measure and a measure of
-  the same total mass, extended total variation distance is twice the mass of `μ` not shared with
-  `ν`, the shared part being the infimum `μ ⊓ ν`.
+  differences.
 
 ## References
 
@@ -165,22 +161,6 @@ sum of the truncated singleton differences `μ {x} - ν {x}`. -/
 theorem etvDist_eq_two_mul_tsum_singleton [IsFiniteMeasure μ] (h : μ Set.univ = ν Set.univ) :
     etvDist μ ν = 2 * ∑' x, (μ {x} - ν {x}) := by
   rw [etvDist_eq_two_mul_iSup_sub h, iSup_measure_sub_eq_tsum_singleton]
-
-/-- **Total variation and overlap.** On a countable space with measurable singletons, for a finite
-measure `μ` and a measure `ν` of the same total mass, the total variation distance is twice the mass
-of `μ` that is not shared with `ν`, the shared part being the infimum `μ ⊓ ν`. -/
-theorem etvDist_eq_two_mul_measure_univ_sub_inf [IsFiniteMeasure μ]
-    (h : μ Set.univ = ν Set.univ) :
-    etvDist μ ν = 2 * (μ Set.univ - (μ ⊓ ν) Set.univ) := by
-  have hfin : (μ ⊓ ν) Set.univ ≠ ∞ :=
-    ne_top_of_le_ne_top (measure_ne_top μ Set.univ) (Measure.le_iff'.1 inf_le_left Set.univ)
-  -- Pointwise, `μ {x}` splits as `min (μ {x}) (ν {x}) + (μ {x} - ν {x})`.
-  have hsplit : μ Set.univ = (μ ⊓ ν) Set.univ + ∑' x, (μ {x} - ν {x}) := by
-    rw [← μ.tsum_indicator_apply_singleton Set.univ .univ,
-      ← (μ ⊓ ν).tsum_indicator_apply_singleton Set.univ .univ, ← tsum_add]
-    simp only [Set.indicator_univ, Measure.inf_apply_singleton]
-    exact tsum_congr fun x => by rw [add_comm, tsub_add_min]
-  rw [etvDist_eq_two_mul_tsum_singleton h, ENNReal.sub_eq_of_eq_add_rev hfin hsplit]
 
 end Countable
 
