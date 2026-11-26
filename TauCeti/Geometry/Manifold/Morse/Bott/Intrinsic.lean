@@ -168,13 +168,11 @@ theorem SmoothEmbedding.IsNondegenerateCriticalSubmanifold.exists_sliceChart
   have hqs (z : E) (hz : z ∈ q.target) : ContMDiffAt 𝓘(ℝ, E) I ∞ q.symm z :=
     ((hΦs.contMDiffAt (Φ.open_target.mem_nhds hz.1)).of_le hn).comp z
       L.symm.contDiff.contMDiff.contMDiffAt
-  have hflat (z : M) (hz : z ∈ q.source) : z ∈ criticalPoints I f ↔ q z ∈ V := by
-    rw [hcrit z hz |>.trans (isSliceChart_iff.1 hslice z hz.1)]
-    simp only [V, q, Ψ, J.range_eq_univ, mem_prod, mem_univ, mem_singleton_iff, true_and,
-      OpenPartialHomeomorph.transHomeomorph_apply, ContinuousLinearEquiv.coe_toHomeomorph,
-      OpenPartialHomeomorph.coe_restrOpen, comp_apply, LinearMap.mem_ker, LinearMap.coe_comp,
-      LinearMap.coe_snd, LinearEquiv.coe_coe, ContinuousLinearEquiv.toLinearEquiv_symm,
-      ContinuousLinearEquiv.coe_symm_toLinearEquiv, ContinuousLinearEquiv.symm_apply_apply]
+  -- `L` carries the slice of `Φ` onto `V`, and `q` is `L ∘ Φ` on its source.
+  have hslice_V (w : E' × _) : L w ∈ V ↔ w ∈ range J ×ˢ ({0} : Set _) := by
+    simp [V, J.range_eq_univ]
+  have hflat (z : M) (hz : z ∈ q.source) : z ∈ criticalPoints I f ↔ q z ∈ V :=
+    (hcrit z hz).trans <| (isSliceChart_iff.1 hslice z hz.1).trans (hslice_V (Φ z)).symm
   refine ⟨q, V, ⟨hsΦ, (hU.ge (mem_range_self s)).2⟩, hq, hqs, hflat, fun z hz hzc ↦ ?_⟩
   -- Every critical point of the chart lies on the submanifold, whose tangent space is the kernel
   -- of the critical Hessian. The chart carries it into `V`, and both have dimension `dim E'`.
@@ -363,13 +361,16 @@ theorem IsMorse.isMorseBott [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifo
   obtain ⟨i, -, h⟩ := hf.exists_isMorseBottFamily (n := ∞) (by simp) (Fin 0 → ℝ)
   exact h.isMorseBott le_rfl
 
-/-- **A constant function is Morse–Bott**, with the connected components of the manifold as its
-critical submanifolds. -/
-theorem isMorseBott_const [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I ∞ M] (c : ℝ) :
-    IsMorseBott I (fun _ : M ↦ c) :=
-  -- A manifold is locally connected, as its model is.
-  have : LocallyConnectedSpace H := I.toHomeomorph.locallyConnectedSpace
-  have : LocallyConnectedSpace M := ChartedSpace.locallyConnectedSpace H M
-  (isMorseBottFamily_ofOpens_const (I := I) (n := ∞) (by simp) c).isMorseBott le_rfl
+/-- **A constant function is Morse–Bott**: every point is critical, the critical Hessian vanishes,
+and the preferred extended chart at a point flattens the critical set onto the whole model space. -/
+theorem isMorseBott_const [I.Boundaryless] [IsManifold I ∞ M] (c : ℝ) :
+    IsMorseBott I (fun _ : M ↦ c) := by
+  refine ⟨contMDiff_const, fun x _ ↦ ⟨(chartAt H x).transHomeomorph I.toHomeomorph, ⊤,
+    by simp, fun z hz ↦ ?_, fun z hz ↦ ?_, by simp [criticalPoints_const], fun z _ _ ↦ ?_⟩⟩
+  · exact contMDiffAt_extChartAt' (by simpa using hz)
+  · refine (contMDiffOn_extChartAt_symm x).contMDiffAt ((isOpen_extChartAt_target x).mem_nhds ?_)
+    simpa [extChartAt_target, I.range_eq_univ] using hz
+  · rw [criticalHessian_const, ContinuousLinearMap.toLinearMap_zero, LinearMap.ker_zero]
+    exact (Submodule.comap_top _).symm
 
 end TauCeti
