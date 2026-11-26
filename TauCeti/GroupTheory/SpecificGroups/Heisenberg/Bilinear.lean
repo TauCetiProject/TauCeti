@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
+public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import Mathlib.Algebra.Group.Equiv.TypeTags
 import TauCeti.Algebra.Group.TypeTags.Hom
 import TauCeti.LinearAlgebra.BilinearForm.Polarization
@@ -35,22 +36,38 @@ identity is `(0, 0)`, and its multiplication is
 `(t, w) * (s, v) = (t + s + B w v, w + v)`.
 
 Because the action of the space on the coefficients is trivial, the copy of the coefficient group
-supplied by `TauCeti.FactorSet.inl` is central (`TauCeti.FactorSet.inl_range_le_center`), and the
-commutator of two elements measures the failure of `B` to be symmetric
+supplied by `TauCeti.FactorSet.inl` is central (`TauCeti.FactorSet.range_inl_le_center_iff`), and
+the commutator of two elements measures the failure of `B` to be symmetric
 (`TauCeti.HeisenbergGroup.Bilinear.bilinearExtension_commutatorElement_eq_inl`). Halving an
 alternating form is what makes the commutator recover the form itself
 (`LinearMap.IsAlt.halfForm_commutatorElement_eq_inl`), and the centre of the extension of `ω / 2`
 is the copy of the coefficient group exactly when `ω` is left-separating
 (`LinearMap.IsAlt.halfForm_center_eq_range_iff`), in particular when `ω` is nondegenerate.
 
+Choosing instead a non-alternating `B` with `B - Bᵀ = ω` (for instance `B(x + y, x' + y') =
+ω(x, y')` on a polarization `W = X ⊕ Y`) gives an isomorphic group in different coordinates, the
+isomorphism correcting the coefficient by the quadratic form `½B(w, w)`
+(`LinearMap.BilinMap.polarizationEquiv`). An isometry of scalar bilinear forms induces an
+isomorphism of their extensions, so the isometry group of `B` acts faithfully on the extension of
+`B` (`LinearMap.BilinForm.isometryGroupToMulAut`). Homomorphisms out of the extension that read off
+the coefficient, such as the central characters `(t, w) ↦ ψ(t)` of a character `ψ` killing every
+value of `B`, are `TauCeti.FactorSet.extendHom`.
+
 ## Main definitions
 
 * `LinearMap.BilinMap.bilinearFactorSet`: the factor set `(w, v) ↦ B w v` of a bilinear map, for
   the trivial action, written multiplicatively on the space and on the coefficients.
+* `LinearMap.BilinMap.polarizationEquiv`: the equivalence of extensions
+  `E_{½(B - Bᵀ)} ≃ E_B`, `(t, w) ↦ (t + ½B(w, w), w)`.
+* `LinearMap.BilinForm.IsometryEquiv.extensionCongr`: the isomorphism `E_B ≃* E_D`,
+  `(t, w) ↦ (t, e w)`, induced by an isometry `e : B ≃ D` of scalar bilinear forms.
+* `LinearMap.BilinForm.isometryGroupToMulAut`: the action of the isometry group of `B` on `E_B`.
 
 ## Main results
 
 * `LinearMap.BilinMap.bilinearFactorSet_apply`: the value of the factor set is `B`.
+* `TauCeti.HeisenbergGroup.Bilinear.bilinearExtension_toAdd_mul_left`: the coefficient coordinate
+  of `(t, w) * (s, v)` is `t + s + B w v`.
 * `TauCeti.HeisenbergGroup.Bilinear.bilinearExtension_inv`: the inverse of `(t, w)` is
   `(B w w - t, -w)`.
 * `TauCeti.HeisenbergGroup.Bilinear.bilinearExtension_commutatorElement_eq_inl`: the commutator of
@@ -64,11 +81,14 @@ is the copy of the coefficient group exactly when `ω` is left-separating
   half-alternating convention.
 * `LinearMap.BilinMap.polarization_cocycle` (in
   `TauCeti.LinearAlgebra.BilinearForm.Polarization`): the quadratic correction `q x = B x x / 2`
-  converts the cocycle of `B` into the cocycle of `ω / 2` for `ω = B - Bᵀ`.
+  converts the cocycle of `B` into the cocycle of `ω / 2` for `ω = B - Bᵀ`; its factor-set form
+  is `LinearMap.BilinMap.bilinearFactorSet_invOf_two_smul_sub_flip_mul`.
+* `LinearMap.BilinForm.isometryGroupToMulAut_injective`: the isometry action is faithful.
 
 ## References
 
-* S. Kudla, *Notes on the local theta correspondence* (1996), I.1.
+* S. Kudla, *Notes on the local theta correspondence* (1996), I.1, and I.2 for the polarized
+  coordinates and central characters.
 * A. Weil, *Sur certains groupes d'opérateurs unitaires*, Acta Math. 111 (1964), I.§3.
 -/
 
@@ -125,6 +145,12 @@ variable {R : Type*} [CommSemiring R] {W C : Type*} [AddCommGroup W] [Module R W
 section
 
 variable {B : LinearMap.BilinMap R W C} {p q : (bilinearFactorSet B).Extension}
+
+/-- **The group law in the Heisenberg group of `B`**: the coefficient coordinate of
+`(t, w) * (s, v)` is `t + s + B w v`; the space coordinate is `w + v`. -/
+theorem bilinearExtension_toAdd_mul_left :
+    (p * q).left.toAdd = p.left.toAdd + q.left.toAdd + B p.right.toAdd q.right.toAdd := by
+  simp
 
 /-- **The inverse in the Heisenberg group of `B`** is `(t, w)⁻¹ = (B w w - t, -w)`. In particular,
 the inverse of `(0, w)` is `(0, -w)` exactly when `B w w = 0`; this holds for every `w` when `B` is
@@ -195,7 +221,8 @@ theorem bilinearExtension_center_eq_range_iff {B : LinearMap.BilinMap R W C} :
       exact hcentral
     simpa only [toAdd_ofAdd] using (hmem_range ⟨1, ofAdd w⟩).mp hin_range
   · intro h_sep
-    refine le_antisymm ?_ (FactorSet.inl_range_le_center _ TauCeti.trivialMulDistribMulAction_smul)
+    refine le_antisymm ?_
+      ((FactorSet.range_inl_le_center_iff _).2 TauCeti.trivialMulDistribMulAction_smul)
     intro p hp
     exact (hmem_range p).mpr (h_sep p.right.toAdd ((hmem_center p).mp hp))
 
@@ -234,3 +261,125 @@ theorem halfForm_center_eq_range_iff (hω : ω.IsAlt) :
   rw [HeisenbergGroup.Bilinear.bilinearExtension_center_eq_range_iff, hω.invOf_two_smul_sub_flip]
 
 end LinearMap.IsAlt
+
+/-! ### Polarized coordinates -/
+
+namespace LinearMap.BilinMap
+
+variable {R : Type*} [CommSemiring R] {W C : Type*} [AddCommGroup W] [Module R W]
+  [AddCommGroup C] [Module R C] [Invertible (2 : R)] (B : LinearMap.BilinMap R W C)
+
+/-- **The quadratic correction between Heisenberg cocycles**: the factor sets of `½(B - Bᵀ)` and of
+`B` differ by the coboundary of `q(w) = ½B(w, w)`. This is the factor-set form of
+`LinearMap.BilinMap.polarization_cocycle`. -/
+theorem bilinearFactorSet_invOf_two_smul_sub_flip_mul (w v : Multiplicative W) :
+    (⅟(2 : R) • (B - B.flip)).bilinearFactorSet (w, v) *
+        ofAdd (⅟(2 : R) • B (w * v).toAdd (w * v).toAdd) =
+      B.bilinearFactorSet (w, v) *
+        (ofAdd (⅟(2 : R) • B v.toAdd v.toAdd) * ofAdd (⅟(2 : R) • B w.toAdd w.toAdd)) := by
+  apply toAdd.injective
+  simp only [bilinearFactorSet_apply, toAdd_mul, toAdd_ofAdd, polarization_cocycle]
+  abel
+
+/-- **Polarized Heisenberg coordinates**: the equivalence of extensions `E_{½(B - Bᵀ)} ≃ E_B`,
+`(t, w) ↦ (t + ½B(w, w), w)`, rescaling the canonical section by the quadratic form `½B(w, w)`. It
+fixes the coefficient group and the projection to `W` by construction. -/
+def polarizationEquiv :
+    (⅟(2 : R) • (B - B.flip)).bilinearFactorSet.groupExtension.Equiv
+      B.bilinearFactorSet.groupExtension :=
+  FactorSet.rescaleEquiv _ _ (fun w => ofAdd (⅟(2 : R) • B w.toAdd w.toAdd))
+    (bilinearFactorSet_invOf_two_smul_sub_flip_mul B)
+
+@[simp]
+theorem polarizationEquiv_apply (p : (⅟(2 : R) • (B - B.flip)).bilinearFactorSet.Extension) :
+    polarizationEquiv B p =
+      ⟨p.left * ofAdd (⅟(2 : R) • B p.right.toAdd p.right.toAdd), p.right⟩ :=
+  FactorSet.rescaleEquiv_apply _ _ _ _ p
+
+@[simp]
+theorem polarizationEquiv_symm_apply (p : B.bilinearFactorSet.Extension) :
+    (polarizationEquiv B).symm p =
+      ⟨p.left * (ofAdd (⅟(2 : R) • B p.right.toAdd p.right.toAdd))⁻¹, p.right⟩ :=
+  FactorSet.rescaleEquiv_symm_apply _ _ _ _ p
+
+end LinearMap.BilinMap
+
+/-! ### Isometries -/
+
+namespace LinearMap.BilinForm
+
+open LinearMap (BilinForm)
+
+variable {R W W' W'' : Type*} [CommRing R] [AddCommGroup W] [Module R W] [AddCommGroup W']
+  [Module R W'] [AddCommGroup W''] [Module R W'']
+  {B : BilinForm R W} {D : BilinForm R W'} {D' : BilinForm R W''}
+
+namespace IsometryEquiv
+
+/-- **The isomorphism of extensions induced by an isometry**: an isometry `e : B ≃ D` of scalar
+bilinear forms gives `E_B ≃* E_D`, `(t, w) ↦ (t, e w)`, fixing the coefficient group
+(`LinearMap.BilinForm.IsometryEquiv.extensionCongr_inl`). -/
+def extensionCongr (e : B.IsometryEquiv D) :
+    B.bilinearFactorSet.Extension ≃* D.bilinearFactorSet.Extension where
+  toFun p := ⟨p.left, ofAdd (e p.right.toAdd)⟩
+  invFun p := ⟨p.left, ofAdd (e.symm p.right.toAdd)⟩
+  left_inv p := by ext <;> simp
+  right_inv p := by ext <;> simp
+  map_mul' p q := by ext <;> simp [e.map_app]
+
+@[simp]
+theorem extensionCongr_apply (e : B.IsometryEquiv D) (p : B.bilinearFactorSet.Extension) :
+    e.extensionCongr p = ⟨p.left, ofAdd (e p.right.toAdd)⟩ :=
+  (rfl)
+
+@[simp]
+theorem extensionCongr_symm (e : B.IsometryEquiv D) :
+    e.extensionCongr.symm = e.symm.extensionCongr :=
+  (rfl)
+
+@[simp]
+theorem extensionCongr_refl : (IsometryEquiv.refl B).extensionCongr = MulEquiv.refl _ := by
+  ext p <;> simp
+
+/-- The isomorphism induced by a composite isometry `e.trans f`, which applies `e` first, is the
+composite of the induced isomorphisms in the same order. -/
+@[simp]
+theorem extensionCongr_trans (e : B.IsometryEquiv D) (f : D.IsometryEquiv D') :
+    (e.trans f).extensionCongr = e.extensionCongr.trans f.extensionCongr := by
+  ext p <;> simp
+
+/-- The isomorphism induced by an isometry fixes the coefficient group. -/
+theorem extensionCongr_inl (e : B.IsometryEquiv D) (t : Multiplicative R) :
+    e.extensionCongr (FactorSet.inl _ t) = FactorSet.inl _ t := by
+  ext <;> simp
+
+end IsometryEquiv
+
+variable (B)
+
+/-- **The isometry action on the Heisenberg extension**: the isometry group of a scalar bilinear
+form `B` acts on `E_B` by `(t, w) ↦ (t, g w)`. -/
+def isometryGroupToMulAut : isometryGroup B →* MulAut B.bilinearFactorSet.Extension where
+  toFun g := (isometryGroupEquivIsometryEquiv B g).extensionCongr
+  map_one' := by ext p <;> simp
+  map_mul' g h := by ext p <;> simp
+
+@[simp]
+theorem isometryGroupToMulAut_apply (g : isometryGroup B) (p : B.bilinearFactorSet.Extension) :
+    isometryGroupToMulAut B g p = ⟨p.left, ofAdd ((g : W ≃ₗ[R] W) p.right.toAdd)⟩ := by
+  simp [isometryGroupToMulAut]
+
+/-- Every isometry fixes the coefficient group of `E_B`. -/
+theorem isometryGroupToMulAut_inl (g : isometryGroup B) (t : Multiplicative R) :
+    isometryGroupToMulAut B g (FactorSet.inl _ t) = FactorSet.inl _ t := by
+  ext <;> simp
+
+/-- **The isometry action on `E_B` is faithful**: an isometry is determined by its action on the
+elements `(0, w)`. -/
+theorem isometryGroupToMulAut_injective : Function.Injective (isometryGroupToMulAut B) := by
+  intro g h hgh
+  ext w
+  have := congrArg FactorSet.Extension.right (DFunLike.congr_fun hgh ⟨1, ofAdd w⟩)
+  simpa using this
+
+end LinearMap.BilinForm

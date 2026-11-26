@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Sobolev.Local.Basic
 public import TauCeti.Analysis.Sobolev.Local.Norm
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
-import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
+import TauCeti.Analysis.Sobolev.WeakDeriv.AddHaar
 import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 
 /-!

@@ -13,7 +13,7 @@ import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.Analysis.Sobolev.WeakDeriv.Haar
+import TauCeti.Analysis.Sobolev.WeakDeriv.AddHaar
 
 /-!
 # The weak chain rule for measure-preserving Lipschitz changes of variables

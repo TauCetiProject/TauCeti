@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 import Mathlib.Analysis.Normed.Operator.NNNorm
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
+import TauCeti.Analysis.Complex.OperatorNorm
 
 /-!
 # The `W^{k,p}` size of a function
@@ -22,7 +24,8 @@ Its derivatives are taken on the interior and its norms on `U` itself, matching
 almost everywhere, so the minimum is attained by every weak derivative.
 
 This is the quantity in which interior estimates of elliptic equations are stated. The file
-supplies its unfolding, its value through a given weak derivative on an open set, the `Lᵖ` and
+supplies its unfolding, its value through a given weak derivative on an open set or on a set
+that agrees almost everywhere with its interior, such as a half-disc, the `Lᵖ` and
 `W^{k,p}_loc` membership of a function of finite norm and, conversely, the finiteness of the
 norm of a `W^{k,p}_loc` function on relatively compact subsets, the extraction of a weak
 derivative from a finite successor-order norm, the almost-everywhere vanishing of a function of
@@ -30,7 +33,11 @@ zero norm, monotonicity in the set and in the derivative order, invariance under
 almost-everywhere change, the triangle inequality (also over finite sums) and the operator-norm
 bound under a continuous linear map of the codomain. An upper bound of the form
 `a + c ‖f‖_{W^{k+1,p}(U)}` (for finite `c`, with `‖f‖_{W^{k+1,p}(U)}` finite when `c = 0`) may be
-checked through each weak derivative of `f` separately.
+checked through each weak derivative of `f` separately. A chain bound
+`TauCeti.WeakDerivChainLe p S T C m f g` between the iterated weak derivatives of `f` and `g`,
+with a finite nonzero constant `C`, gives the norm bound `‖f‖_{W^{m,p}(S)} ≤ C ‖g‖_{W^{m,p}(T)}`
+when `f` has the iterated weak derivatives, for instance when `MemWkpLoc q S m f`
+(`TauCeti.WeakDerivChainLe.eLpNormWkp_le`).
 
 ## References
 
@@ -67,6 +74,8 @@ private theorem eLpNormWkpAux_univ {E : Type u} [NormedAddCommGroup E] [NormedSp
     simp only [eLpNormWkpAux]
     congr 1
     exact iInf_congr fun D => iInf_congr fun _ => ih (F := E →L[ℝ] F) (f := D)
+
+section General
 
 variable {E : Type u} {F : Type v} {G : Type w}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
@@ -188,15 +197,36 @@ theorem eLpNormWkp_congr_ae (hfg : f =ᵐ[μ.restrict U] g) :
     · exact hD.congr_ae (Filter.EventuallyEq.symm hint)
     · exact hD.congr_ae hint
 
+/-- On a set that agrees almost everywhere with its interior, every weak derivative on the
+interior realizes the successor-order norm. This applies to open sets and, for example, to
+half-discs `Ω ∩ {0 ≤ im}` (`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`). -/
+theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn_interior [FiniteDimensional ℝ E] [BorelSpace E]
+    (hU : U =ᵐ[μ] (Opens.interior U : Set E)) {D : E → E →L[ℝ] F}
+    (hD : HasWeakFDerivOn μ (Opens.interior U) f D) :
+    eLpNormWkp p U (k + 1) f μ = eLpNorm f p (μ.restrict U) + eLpNormWkp p U k D μ := by
+  refine le_antisymm (eLpNormWkp_succ_le hD) ?_
+  rw [eLpNormWkp_succ]
+  gcongr
+  refine le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae ?_).le
+  rw [Measure.restrict_congr_set hU]
+  exact hD.ae_eq hD'
+
 /-- On an open set of a finite-dimensional space, every weak derivative realizes the
 successor-order norm. -/
 theorem eLpNormWkp_succ_eq_of_hasWeakFDerivOn [FiniteDimensional ℝ E] [BorelSpace E]
     {Ω : Opens E} {D : E → E →L[ℝ] F} (hD : HasWeakFDerivOn μ Ω f D) :
-    eLpNormWkp p Ω (k + 1) f μ = eLpNorm f p (μ.restrict Ω) + eLpNormWkp p Ω k D μ := by
-  refine le_antisymm (eLpNormWkp_succ_le (by rwa [Opens.interior_coe])) ?_
-  rw [eLpNormWkp_succ, Opens.interior_coe]
-  gcongr
-  exact le_iInf₂ fun D' hD' => (eLpNormWkp_congr_ae (hD.ae_eq hD')).le
+    eLpNormWkp p Ω (k + 1) f μ = eLpNorm f p (μ.restrict Ω) + eLpNormWkp p Ω k D μ :=
+  eLpNormWkp_succ_eq_of_hasWeakFDerivOn_interior (by rw [Opens.interior_coe])
+    (by rwa [Opens.interior_coe])
+
+/-- On an open set of a finite-dimensional space, the order-`k` norm of a weak derivative is at
+most the order-`k + 1` norm of the function. At `k = 0` this bounds `‖D‖_{Lᵖ(Ω)}` by
+`‖f‖_{W^{1,p}(Ω)}`. -/
+theorem eLpNormWkp_le_eLpNormWkp_succ_of_hasWeakFDerivOn [FiniteDimensional ℝ E] [BorelSpace E]
+    {Ω : Opens E} {D : E → E →L[ℝ] F} (hD : HasWeakFDerivOn μ Ω f D) :
+    eLpNormWkp p Ω k D μ ≤ eLpNormWkp p Ω (k + 1) f μ := by
+  rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD]
+  exact le_add_self
 
 /-- A finite successor-order norm provides a weak derivative on the interior of finite norm of
 the previous order. -/
@@ -260,6 +290,18 @@ theorem exists_hasWeakFDerivOn_eLpNormWkp_succ_eq_of_ne_top [FiniteDimensional �
   rw [Opens.interior_coe] at hD
   exact ⟨D, hD, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn hD⟩
 
+/-- On a set that agrees almost everywhere with its interior, for instance a half-disc
+`Ω ∩ {0 ≤ im}`, a finite successor-order norm is realized by a weak derivative on the interior of
+finite norm of the previous order. -/
+theorem exists_hasWeakFDerivOn_interior_eLpNormWkp_succ_eq_of_ne_top
+    [FiniteDimensional ℝ E] [BorelSpace E]
+    (hU : U =ᵐ[μ] (Opens.interior U : Set E)) (hf : eLpNormWkp p U (k + 1) f μ ≠ ∞) :
+    ∃ D : E → E →L[ℝ] F, HasWeakFDerivOn μ (Opens.interior U) f D ∧
+      eLpNormWkp p U k D μ ≠ ∞ ∧
+      eLpNormWkp p U (k + 1) f μ = eLpNorm f p (μ.restrict U) + eLpNormWkp p U k D μ := by
+  obtain ⟨D, hD, hDk⟩ := exists_hasWeakFDerivOn_of_eLpNormWkp_succ_ne_top hf
+  exact ⟨D, hD, hDk, eLpNormWkp_succ_eq_of_hasWeakFDerivOn_interior hU hD⟩
+
 private theorem eLpNormWkp_ne_top_of_isCompact_max {F : Type max u v} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {f : E → F} (hf : MemWkpLoc p U k f μ) {K : Set E}
     (hKU : K ⊆ U) (hK : IsCompact K) : eLpNormWkp p K k f μ ≠ ∞ := by
@@ -287,6 +329,20 @@ theorem MemWkpLoc.eLpNormWkp_ne_top_of_closure_subset (hf : MemWkpLoc p U k f μ
     (hV : IsCompact (closure V)) (hVU : closure V ⊆ U) : eLpNormWkp p V k f μ ≠ ∞ :=
   ne_top_of_le_ne_top (hf.eLpNormWkp_ne_top_of_isCompact hVU hV)
     (eLpNormWkp_mono_set subset_closure)
+
+/-- A local estimate `‖v‖_{Lᵗ(V)} ≤ C ‖v‖_{W^{k,r}(W)}` on every `V` with compact closure in an
+open `W` makes every `u ∈ W^{k,r}_loc(Ω, F)` locally `Lᵗ`. -/
+theorem MemWkpLoc.memLpLoc_of_forall_exists_eLpNorm_le [LocallyCompactSpace E]
+    {Ω : Opens E} {r t : ℝ≥0∞} (hf : MemWkpLoc r Ω k f μ)
+    (hest : ∀ {V : Set E} {W : Opens E}, IsCompact (closure V) → closure V ⊆ W →
+      ∃ C : ℝ≥0, ∀ v : E → F, eLpNorm v t (μ.restrict V) ≤ C * eLpNormWkp r W k v μ) :
+    MemLpLoc t Ω f μ := by
+  refine memLpLoc_iff.2 fun K hKΩ hK => ?_
+  obtain ⟨W, hKW, hWΩ, hWc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
+  have hKc : closure K = K := hK.isClosed.closure_eq
+  obtain ⟨C, hC⟩ := hest (W := W) (by rwa [hKc]) (by rwa [hKc])
+  exact memLp_iff.2 ((hC f).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
+    (lt_top_iff_ne_top.2 (hf.eLpNormWkp_ne_top_of_closure_subset hWc hWΩ))))
 
 private theorem eLpNormWkp_zero_fun_max {F : Type max u v} [NormedAddCommGroup F]
     [NormedSpace ℝ F] [CompleteSpace F] : eLpNormWkp p U k (0 : E → F) μ = 0 := by
@@ -392,5 +448,143 @@ theorem eLpNormWkp_clm_comp_le [OpensMeasurableSpace E] [CompleteSpace G] (A : F
       have hle : ‖ContinuousLinearMap.compL ℝ E F G A‖ ≤ ‖A‖ :=
         ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun B => A.opNorm_comp_le B
       exact eNorm_le_iff_norm_le.2 hle
+
+/-- A linear isometric equivalence does not increase the `W^{k,p}` size. -/
+private theorem eLpNormWkp_linearIsometryEquiv_comp_le [OpensMeasurableSpace E]
+    [CompleteSpace G] (e : F ≃ₗᵢ[ℝ] G) (f : E → F) :
+    eLpNormWkp p U k (fun z => e (f z)) μ ≤ eLpNormWkp p U k f μ := by
+  have hn : ‖(e.toContinuousLinearEquiv : F →L[ℝ] G)‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x => by simp
+  have he : ‖(e.toContinuousLinearEquiv : F →L[ℝ] G)‖ₑ ≤ 1 :=
+    (ofReal_norm _).symm.trans_le (ENNReal.ofReal_le_one.2 hn)
+  calc
+    _ ≤ ‖(e.toContinuousLinearEquiv : F →L[ℝ] G)‖ₑ * eLpNormWkp p U k f μ :=
+      eLpNormWkp_clm_comp_le (e.toContinuousLinearEquiv : F →L[ℝ] G)
+    _ ≤ 1 * eLpNormWkp p U k f μ := by gcongr
+    _ = _ := one_mul _
+
+/-- **Linear isometric equivalences preserve the `W^{k,p}` size.** For a linear isometric
+equivalence `e : F ≃ₗᵢ[ℝ] G` between complete spaces, `‖e ∘ f‖_{W^{k,p}(U)} = ‖f‖_{W^{k,p}(U)}`. -/
+@[simp]
+theorem eLpNormWkp_linearIsometryEquiv_comp [OpensMeasurableSpace E] [CompleteSpace F]
+    [CompleteSpace G] (e : F ≃ₗᵢ[ℝ] G) (f : E → F) :
+    eLpNormWkp p U k (fun z => e (f z)) μ = eLpNormWkp p U k f μ := by
+  refine le_antisymm (eLpNormWkp_linearIsometryEquiv_comp_le e f) ?_
+  calc
+    _ = eLpNormWkp p U k (fun z => e.symm (e (f z))) μ := by simp
+    _ ≤ _ := eLpNormWkp_linearIsometryEquiv_comp_le e.symm _
+
+/-- A continuous linear map of norm at most one does not increase the `W^{k,p}` norm. -/
+theorem eLpNormWkp_clm_comp_le_of_norm_le_one [OpensMeasurableSpace E] [CompleteSpace G]
+    (A : F →L[ℝ] G) (hA : ‖A‖ ≤ 1) :
+    eLpNormWkp p U k (fun z => A (f z)) μ ≤ eLpNormWkp p U k f μ :=
+  (eLpNormWkp_clm_comp_le A).trans (mul_le_of_le_one_left zero_le (by
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_one.2 hA))
+
+/-- Evaluating a field of linear maps at a vector `v` with `‖v‖ ≤ 1` does not increase the
+`W^{k,p}` norm. -/
+theorem eLpNormWkp_apply_le_of_norm_le_one [OpensMeasurableSpace E] {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace F] (f : E → E' →L[ℝ] F) {v : E'}
+    (hv : ‖v‖ ≤ 1) :
+    eLpNormWkp p U k (fun z => f z v) μ ≤ eLpNormWkp p U k f μ :=
+  eLpNormWkp_clm_comp_le_of_norm_le_one (ContinuousLinearMap.apply ℝ F v)
+    (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun A => by
+      simpa using (A.le_opNorm v).trans (mul_le_of_le_one_right (norm_nonneg A) hv))
+
+/-- On an open set of a finite-dimensional space, a partial derivative `z ↦ D z v`, `‖v‖ ≤ 1`, of
+a weak derivative `D` of `f` has `W^{k,p}` norm at most the `W^{k+1,p}` norm of `f`. -/
+theorem eLpNormWkp_apply_le_eLpNormWkp_succ_of_hasWeakFDerivOn [FiniteDimensional ℝ E]
+    [BorelSpace E] [CompleteSpace F] {Ω : Opens E} {D : E → E →L[ℝ] F}
+    (hD : HasWeakFDerivOn μ Ω f D) {v : E} (hv : ‖v‖ ≤ 1) :
+    eLpNormWkp p Ω k (fun z => D z v) μ ≤ eLpNormWkp p Ω (k + 1) f μ :=
+  (eLpNormWkp_apply_le_of_norm_le_one D hv).trans
+    (eLpNormWkp_le_eLpNormWkp_succ_of_hasWeakFDerivOn hD)
+
+private theorem eLpNormWkp_neg_max {F : Type max u v} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : E → F} : eLpNormWkp p U k (-f) μ = eLpNormWkp p U k f μ := by
+  induction k generalizing F with
+  | zero => exact eLpNorm_neg f p _
+  | succ k ih =>
+    rw [eLpNormWkp_succ, eLpNormWkp_succ, eLpNorm_neg]
+    congr 1
+    refine le_antisymm (le_iInf₂ fun D hD => iInf₂_le_of_le (-D) hD.neg ?_)
+      (le_iInf₂ fun D hD => iInf₂_le_of_le (-D) (by simpa using hD.neg) ?_)
+    all_goals exact (ih (f := D)).le
+
+/-- Negation preserves the `W^{k,p}` norm. -/
+@[simp]
+theorem eLpNormWkp_neg : eLpNormWkp p U k (-f) μ = eLpNormWkp p U k f μ := by
+  cases k with
+  | zero => exact eLpNorm_neg f p _
+  | succ k =>
+    rw [eLpNormWkp_succ, eLpNormWkp_succ, eLpNorm_neg]
+    congr 1
+    refine le_antisymm (le_iInf₂ fun D hD => iInf₂_le_of_le (-D) hD.neg ?_)
+      (le_iInf₂ fun D hD => iInf₂_le_of_le (-D) (by simpa using hD.neg) ?_)
+    all_goals exact (eLpNormWkp_neg_max (f := D)).le
+
+/-- The triangle inequality for the `W^{k,p}` norm of a difference. -/
+theorem eLpNormWkp_sub_le [OpensMeasurableSpace E] (hp : 1 ≤ p) :
+    eLpNormWkp p U k (f - g) μ ≤ eLpNormWkp p U k f μ + eLpNormWkp p U k g μ := by
+  rw [sub_eq_add_neg]
+  exact (eLpNormWkp_add_le hp).trans_eq (by rw [eLpNormWkp_neg])
+
+private theorem weakDerivChainLe_eLpNormWkp_le_max {F : Type max u v} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {S T : Set E} {C : ℝ≥0∞} (hC : C ≠ ∞) (hC0 : C ≠ 0) {m : ℕ}
+    {f g : E → F} (h : WeakDerivChainLe p S T C m f g μ) {q : ℝ≥0∞} (hf : MemWkpLoc q S m f μ) :
+    eLpNormWkp p S m f μ ≤ C * eLpNormWkp p T m g μ := by
+  induction m generalizing F with
+  | zero => simpa using h.eLpNorm_le
+  | succ m ih =>
+    obtain ⟨-, Df, hDf, hDfm⟩ := memWkpLoc_succ_iff.1 hf
+    simpa using le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn (a := 0) hC
+      (fun h0 => absurd h0 hC0) fun Dg hDg _ => by
+        rw [zero_add, mul_add]
+        exact (eLpNormWkp_succ_le hDf).trans
+          (add_le_add h.eLpNorm_le (ih (h.weakFDeriv hDf hDg) hDfm))
+
+/-- **A chain bound bounds the `W^{m,p}` norm.** Let `C` be finite and nonzero. If the iterated
+weak derivatives of `f` on the interior of `S` are bounded in `Lᵖ(S)` by `C` times those of `g` on
+the interior of `T` in `Lᵖ(T)`, in the sense of `TauCeti.WeakDerivChainLe`, then
+`‖f‖_{W^{m,p}(S)} ≤ C ‖g‖_{W^{m,p}(T)}`. The
+derivatives of `f` must exist, which `MemWkpLoc q S m f` provides for any exponent `q`; those of
+`g` need not, the right side being `∞` otherwise. -/
+theorem WeakDerivChainLe.eLpNormWkp_le {S T : Set E} {C : ℝ≥0∞} (hC : C ≠ ∞) (hC0 : C ≠ 0)
+    {m : ℕ} (h : WeakDerivChainLe p S T C m f g μ) {q : ℝ≥0∞} (hf : MemWkpLoc q S m f μ) :
+    eLpNormWkp p S m f μ ≤ C * eLpNormWkp p T m g μ := by
+  cases m with
+  | zero => simpa using h.eLpNorm_le
+  | succ m =>
+    obtain ⟨-, Df, hDf, hDfm⟩ := memWkpLoc_succ_iff.1 hf
+    simpa using le_add_mul_eLpNormWkp_succ_of_forall_hasWeakFDerivOn (a := 0) hC
+      (fun h0 => absurd h0 hC0) fun Dg hDg _ => by
+        rw [zero_add, mul_add]
+        exact (eLpNormWkp_succ_le hDf).trans
+          (add_le_add h.eLpNorm_le
+            (weakDerivChainLe_eLpNormWkp_le_max hC hC0 (h.weakFDeriv hDf hDg) hDfm))
+
+end General
+
+/-- **The `W^{k+1,p}` norm through partial derivatives.** If `D` is a weak derivative of `f` on the
+interior of `U`, the `W^{k+1,p}(U)` norm of `f` is at most its `Lᵖ(U)` norm plus the
+`W^{k,p}(U)` norms of the partial derivatives `z ↦ D z 1` and `z ↦ D z I`, weighted by the norms
+of the maps `L₁`, `L₂` that reassemble `D` from them
+(`ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM`). This is the norm form of
+`TauCeti.memWkpLoc_succ_iff_apply_one_apply_I`. -/
+theorem eLpNormWkp_succ_le_eLpNorm_add_apply_one_add_apply_I {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [CompleteSpace F] {p : ℝ≥0∞} {U : Set ℂ} {k : ℕ} {f : ℂ → F}
+    {μ : Measure ℂ} (hp : 1 ≤ p) {D : ℂ → ℂ →L[ℝ] F}
+    (hD : HasWeakFDerivOn μ (Opens.interior U) f D) :
+    eLpNormWkp p U (k + 1) f μ ≤ eLpNorm f p (μ.restrict U) +
+      (‖ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F Complex.reCLM‖ₑ *
+          eLpNormWkp p U k (fun z => D z 1) μ +
+        ‖ContinuousLinearMap.smulRightL ℝ ℝ ℝ ℂ F Complex.imCLM‖ₑ *
+          eLpNormWkp p U k (fun z => D z Complex.I) μ) := by
+  refine (eLpNormWkp_succ_le hD).trans ?_
+  gcongr
+  conv_lhs => rw [ContinuousLinearMap.fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D]
+  exact (eLpNormWkp_add_le hp).trans (add_le_add (eLpNormWkp_clm_comp_le _)
+    (eLpNormWkp_clm_comp_le _))
 
 end TauCeti

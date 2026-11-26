@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Module.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Operator.Basic
 import TauCeti.Algebra.Order.Ring.Abs
+import TauCeti.Analysis.Normed.Order.OrderUnit
 
 /-!
 # Positive linear functionals dominated by a unit
@@ -32,10 +33,16 @@ instead, so that it also covers monotone functionals on a preordered space. No c
 assumed. Compare `PositiveLinearMap.exists_norm_apply_le`, the corresponding
 automatic continuity for positive maps between C⋆-algebras.
 
+These are the real-valued cases, with target `ℝ` and order unit `1`, of the bounds
+`TauCeti.IsOrderUnitNorm.norm_map_le` and `TauCeti.IsOrderUnitNorm.opNorm_eq_norm_apply` for
+positive maps into an order-unit space, and are derived from them.
+
 ## Main results
 
 * `PositiveLinearMap.abs_apply_le_mul_norm`: the bound `|φ f| ≤ φ u * ‖f‖` for an
   order-preserving linear functional `φ`.
+* `PositiveLinearMap.apply_eq_zero_of_apply_eq_zero`: an order-preserving linear functional
+  vanishing at `u` vanishes identically.
 * `PositiveLinearMap.lipschitzWith_of_forall_le_norm_smul`: `φ` is `φ u`-Lipschitz.
 * `ContinuousLinearMap.opNorm_eq_apply_of_monotone`: a monotone continuous linear functional has
   operator norm `ψ u` when `‖u‖ ≤ 1`.
@@ -53,20 +60,31 @@ namespace PositiveLinearMap
 variable {F E : Type*} [SeminormedAddCommGroup E] [Module ℝ E] [LE E]
   [FunLike F E ℝ] [LinearMapClass F ℝ E ℝ] {u : E}
 
+/-- An order-preserving linear functional is nonnegative at a dominating element `u`, since
+`-φ u ≤ ‖u‖ * φ u`. Order preservation is an explicit hypothesis, as in `abs_apply_le_mul_norm`;
+for a positive linear map `φ`, pass `fun _ _ => map_rel φ`. -/
+theorem apply_nonneg_of_forall_le_norm_smul (φ : F) (hφ : ∀ ⦃f g : E⦄, f ≤ g → φ f ≤ φ g)
+    (hu : ∀ f : E, f ≤ ‖f‖ • u) : 0 ≤ φ u := by
+  have := hφ (hu (-u))
+  rw [map_neg, norm_neg, map_smul, smul_eq_mul] at this
+  nlinarith [norm_nonneg u]
+
 /-- An order-preserving linear functional is controlled in absolute value by its value at a
 dominating element `u`, scaled by the norm. Order preservation is an explicit hypothesis, so this
 also applies to monotone functionals on a preordered space, which do not bundle into
 `E →ₚ[ℝ] ℝ`; for a positive linear map `φ`, pass `fun _ _ => map_rel φ`. -/
 theorem abs_apply_le_mul_norm (φ : F) (hφ : ∀ ⦃f g : E⦄, f ≤ g → φ f ≤ φ g)
     (hu : ∀ f : E, f ≤ ‖f‖ • u) (f : E) : |φ f| ≤ φ u * ‖f‖ := by
-  have h (f : E) : φ f ≤ φ u * ‖f‖ := by simpa [mul_comm] using hφ (hu f)
-  exact abs_le'.2 ⟨h f, by simpa using h (-f)⟩
+  simpa [abs_of_nonneg (apply_nonneg_of_forall_le_norm_smul φ hφ hu)] using
+    TauCeti.isOrderUnitNorm_real_one.norm_map_le hu φ hφ f
+
+/-- An order-preserving linear functional vanishing at a dominating element `u` vanishes
+identically. -/
+theorem apply_eq_zero_of_apply_eq_zero (φ : F) (hφ : ∀ ⦃f g : E⦄, f ≤ g → φ f ≤ φ g)
+    (hu : ∀ f : E, f ≤ ‖f‖ • u) (hφu : φ u = 0) (f : E) : φ f = 0 :=
+  abs_nonpos_iff.1 (by simpa [hφu] using abs_apply_le_mul_norm φ hφ hu f)
 
 variable [OrderHomClass F E ℝ] (φ : F)
-
-/-- A positive linear functional is nonnegative at a dominating element `u`. -/
-theorem apply_nonneg_of_forall_le_norm_smul (hu : ∀ f : E, f ≤ ‖f‖ • u) : 0 ≤ φ u :=
-  nonneg_of_abs_le_mul (abs_apply_le_mul_norm φ (fun _ _ => map_rel φ) hu u) (norm_nonneg u)
 
 /-- A positive linear functional is controlled by its value at a dominating element `u`, scaled by
 the norm of the difference of the arguments. -/
@@ -95,10 +113,8 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [Preorder E]
 `u` of norm at most one dominating every `f` in the sense `f ≤ ‖f‖ • u`. -/
 theorem opNorm_eq_apply_of_monotone (ψ : E →L[ℝ] ℝ) (hψ : Monotone ψ)
     (hu : ∀ f : E, f ≤ ‖f‖ • u) (hu₁ : ‖u‖ ≤ 1) : ‖ψ‖ = ψ u := by
-  have h := PositiveLinearMap.abs_apply_le_mul_norm ψ hψ hu
-  refine le_antisymm (ψ.opNorm_le_bound (nonneg_of_abs_le_mul (h u) (norm_nonneg u)) ?_) ?_
-  · simpa only [Real.norm_eq_abs] using h
-  · exact (Real.le_norm_self _).trans (ψ.unit_le_opNorm u hu₁)
+  rw [TauCeti.isOrderUnitNorm_real_one.opNorm_eq_norm_apply hu hu₁ ψ hψ, Real.norm_of_nonneg]
+  exact PositiveLinearMap.apply_nonneg_of_forall_le_norm_smul ψ hψ hu
 
 end ContinuousLinearMap
 

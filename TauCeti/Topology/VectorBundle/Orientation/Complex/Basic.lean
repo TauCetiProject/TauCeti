@@ -47,6 +47,9 @@ one multiplies them by `(-1) ^ n`, `n` the complex rank
 * `TauCeti.VectorBundleOrientation.mapOrientation_complex` and
   `TauCeti.VectorBundleOrientation.mapOrientation_reindex_complex`: a trivialization of the atlas
   reads the canonical orientation, possibly reindexed, as that of the model fibre.
+* `TauCeti.VectorBundleOrientation.mapOrientation_reindex_complex_eq_orientation`: for a complex
+  line bundle with fibre `ℂ`, a trivialization of the atlas reads the canonical orientation,
+  indexed by `Fin 2`, as `Complex.orientation`.
 * `TauCeti.VectorBundleOrientation.pullback_complex`: the canonical orientation of a pullback
   bundle is the pullback of the canonical orientation.
 * `TauCeti.VectorBundleOrientation.complex_trivial`: the canonical orientation of the trivial
@@ -288,5 +291,24 @@ theorem prod_complex (b : B) :
   exact congrArg (Orientation.reindex ℝ _ · _) (Equiv.ext fun _ ↦ by simp)
 
 end Prod
+
+section Line
+
+variable {B : Type*} [TopologicalSpace B] {L : B → Type*} [TopologicalSpace (TotalSpace ℂ L)]
+  [∀ b, AddCommGroup (L b)] [∀ b, Module ℝ (L b)] [∀ b, Module ℂ (L b)]
+  [∀ b, IsScalarTower ℝ ℂ (L b)] [∀ b, TopologicalSpace (L b)] [FiberBundle ℂ L]
+  [VectorBundle ℂ ℂ L]
+
+local instance : VectorBundle ℝ ℂ L := VectorBundle.restrictScalars ℝ ℂ ℂ L
+
+/-- **A trivialization reads the orientation of a complex line bundle as that of `ℂ`.** For a
+complex line bundle with model fibre `ℂ`, a complex-linear trivialization of the atlas reads the
+canonical orientation, indexed by `Fin 2`, as the standard orientation `Complex.orientation`. -/
+theorem mapOrientation_reindex_complex_eq_orientation (h : 2 * finrank ℂ ℂ = 2)
+    (e : Trivialization ℂ (π ℂ L)) [MemTrivializationAtlas e] {b : B} (hb : b ∈ e.baseSet) :
+    e.mapOrientation (Fin 2) hb (reindex (finCongr h) (complex ℂ L) b) = Complex.orientation :=
+  (mapOrientation_reindex_complex ℂ L _ e hb).trans reindex_complexOrientation_complex
+
+end Line
 
 end TauCeti.VectorBundleOrientation

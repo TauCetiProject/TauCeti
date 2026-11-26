@@ -330,10 +330,12 @@ private theorem injOn_heightMomentum {h j z₀ : ℝ} (hj : j ≠ 0) (hz₀ : z�
         ((sphericalPendulumFlowAction (Pi.single 0 w)).toMul x :
           EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)).2 2) : False := by
     rcases le_or_gt w t₂ with hw₂ | hw₂
-    · exact (strictMonoOn_fst_apply_two_of_isMIntegralCurve_sphericalPendulum hγ hpos
+    · exact (strictMonoOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
+      (hγ.isMIntegralCurveOn _) hpos
         ⟨hv.1, (hvw.trans_le hw₂).le⟩ ⟨hv.1.trans hvw.le, hw₂⟩ hvw).ne hz
     rcases le_or_gt t₂ v with hv₂ | hv₂
-    · exact (strictAntiOn_fst_apply_two_of_isMIntegralCurve_sphericalPendulum hγ hneg
+    · exact (strictAntiOn_fst_apply_two_of_isMIntegralCurveOn_sphericalPendulum
+      (hγ.isMIntegralCurveOn _) hneg
         ⟨hv₂, hvw.le.trans hw.2.le⟩ ⟨hv₂.trans hvw.le, hw.2.le⟩ hvw).ne' hz
     have hpw := hneg w ⟨hw₂, hw.2⟩
     rcases hv.1.eq_or_lt with rfl | hv₁

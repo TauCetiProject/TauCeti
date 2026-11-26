@@ -6,10 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero
 import Mathlib.Algebra.Module.Submodule.Equiv
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Transport of supported smooth bundle sections
+
+A smooth family of fibre maps over the identity acts on smooth sections pointwise
+(`ContMDiffSection.map`); the fibre maps need not be linear.
 
 A smooth fibrewise linear map over the identity induces a linear map on native
 `ContMDiffSection`s. It cannot enlarge closed support and therefore acts on fixed-support
@@ -21,7 +26,12 @@ These are algebraic equivalences on the existing section carriers, not assertion
 section-space topology. In particular, they provide support-preserving transport of tests
 when a bundle is replaced by a smoothly isomorphic bundle. Smoothness is stated on total
 spaces; no norms on individual fibres, finite-rank assumption, compactness of the base,
-or choice of frames is needed. Transport commutes with smooth scalar localization.
+or choice of frames is needed. Transport commutes with smooth scalar localization and with
+extension by zero from an open subset (`ContMDiffSection.extendByZero_mapCompactlySupported`).
+
+On a real `C^n` vector bundle, `n ≤ ∞`, over a finite-dimensional Hausdorff `C^n` manifold, every
+fibre vector is the value of a global `C^n` section, so a bundle map is determined by its action on
+sections (`ContMDiffSection.mapLinearMap_inj`).
 -/
 
 public section
@@ -37,10 +47,57 @@ variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
   {F G : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G] {n : ℕ∞ω}
   {V W : M → Type*}
-  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
-  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
-  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)] [FiberBundle F V]
+  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)] [FiberBundle G W]
+
+section Map
+
+variable (ϕ : ∀ x, V x → W x)
+  (hϕ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
+    (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace G W)))
+
+/-- Postcomposition of sections with a smooth family of fibre maps over the identity. The fibre
+maps need not be linear. -/
+protected def map (s : Cₛ^n⟮I; F, V⟯) : Cₛ^n⟮I; G, W⟯ :=
+  ⟨fun x ↦ ϕ x (s x), hϕ.comp s.contMDiff⟩
+
+/-- A fibrewise map evaluates by the given fibre map, without a change of base point. -/
+@[simp]
+theorem map_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
+    ContMDiffSection.map ϕ hϕ s x = ϕ x (s x) := (rfl)
+
+/-- The identity family of fibre maps acts identically on sections. -/
+@[simp]
+theorem map_id :
+    ContMDiffSection.map (fun _ ↦ id : ∀ x, V x → V x) contMDiff_id =
+      (id : Cₛ^n⟮I; F, V⟯ → Cₛ^n⟮I; F, V⟯) := by
+  funext s
+  ext x
+  rfl
+
+/-- Pointwise injective fibre maps act injectively on sections. -/
+theorem map_injective (h : ∀ x, Function.Injective (ϕ x)) :
+    Function.Injective (ContMDiffSection.map ϕ hϕ) := by
+  intro s t hst
+  ext x
+  exact h x (DFunLike.congr_fun hst x)
+
+/-- Composition of families of fibre maps induces composition of their actions on sections. -/
+theorem map_comp {J : Type*} [NormedAddCommGroup J] [NormedSpace 𝕜 J] {Z : M → Type*}
+    [∀ x, TopologicalSpace (Z x)] [TopologicalSpace (TotalSpace J Z)] [FiberBundle J Z]
+    (ψ : ∀ x, W x → Z x)
+    (hψ : ContMDiff (I.prod 𝓘(𝕜, G)) (I.prod 𝓘(𝕜, J)) n
+      (fun p : TotalSpace G W ↦ (⟨p.proj, ψ p.proj p.snd⟩ : TotalSpace J Z))) :
+    ContMDiffSection.map (fun x ↦ ψ x ∘ ϕ x) (hψ.comp hϕ) =
+      ContMDiffSection.map ψ hψ ∘ ContMDiffSection.map ϕ hϕ := by
+  funext s
+  ext x
+  rfl
+
+end Map
+
+variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [VectorBundle 𝕜 G W]
 
 variable (ϕ : ∀ x, V x →ₗ[𝕜] W x)
   (hϕ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
@@ -48,7 +105,7 @@ variable (ϕ : ∀ x, V x →ₗ[𝕜] W x)
 
 /-- Postcomposition of sections with a smooth fibrewise linear map over the identity. -/
 def mapLinearMap : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^n⟮I; G, W⟯ where
-  toFun s := ⟨fun x ↦ ϕ x (s x), hϕ.comp s.contMDiff⟩
+  toFun := ContMDiffSection.map (fun x ↦ ϕ x) hϕ
   map_add' s t := by ext x; exact (ϕ x).map_add _ _
   map_smul' c s := by ext x; exact (ϕ x).map_smul c _
 
@@ -56,6 +113,11 @@ def mapLinearMap : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^n⟮I; G, W⟯ where
 @[simp]
 theorem mapLinearMap_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
     mapLinearMap ϕ hϕ s x = ϕ x (s x) := (rfl)
+
+/-- As a function, fibrewise linear transport is the action of the underlying fibre maps. -/
+theorem coe_mapLinearMap :
+    (mapLinearMap ϕ hϕ : Cₛ^n⟮I; F, V⟯ → Cₛ^n⟮I; G, W⟯) =
+      ContMDiffSection.map (fun x ↦ ϕ x) hϕ := (rfl)
 
 /-- A fibrewise linear map cannot enlarge the closed support of a section. -/
 theorem tsupport_mapLinearMap_subset (s : Cₛ^n⟮I; F, V⟯) :
@@ -115,12 +177,35 @@ theorem mapLinearMap_smul_function (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F,
   ext x
   simp
 
+/-- Postcomposition of sections with a smooth fibrewise linear map over the identity, as a map
+linear over the smooth scalar functions. -/
+def mapFunctionLinearMap : Cₛ^n⟮I; F, V⟯ →ₗ[C^n⟮I, M; 𝕜⟯] Cₛ^n⟮I; G, W⟯ where
+  toAddHom := (mapLinearMap ϕ hϕ).toAddHom
+  map_smul' := mapLinearMap_smul_function ϕ hϕ
+
+/-- Function-linear transport evaluates by the given fibre map. -/
+@[simp]
+theorem mapFunctionLinearMap_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
+    mapFunctionLinearMap ϕ hϕ s x = ϕ x (s x) := (rfl)
+
+/-- Forgetting linearity over the smooth functions recovers ground-field linear transport. -/
+@[simp]
+theorem restrictScalars_mapFunctionLinearMap :
+    (mapFunctionLinearMap ϕ hϕ).restrictScalars 𝕜 = mapLinearMap ϕ hϕ := (rfl)
+
+/-- As a function, function-linear transport is ground-field linear transport. -/
+theorem coe_mapFunctionLinearMap :
+    (mapFunctionLinearMap ϕ hϕ : Cₛ^n⟮I; F, V⟯ → Cₛ^n⟮I; G, W⟯) = mapLinearMap ϕ hϕ := (rfl)
+
 /-- Pointwise injectivity of a bundle map implies injectivity on smooth sections. -/
 theorem mapLinearMap_injective (h : ∀ x, Function.Injective (ϕ x)) :
-    Function.Injective (mapLinearMap ϕ hϕ) := by
-  intro s t hst
-  ext x
-  exact h x (DFunLike.congr_fun hst x)
+    Function.Injective (mapLinearMap ϕ hϕ) :=
+  ContMDiffSection.map_injective (fun x ↦ ϕ x) hϕ h
+
+/-- Pointwise injectivity of a bundle map implies injectivity of function-linear transport. -/
+theorem mapFunctionLinearMap_injective (h : ∀ x, Function.Injective (ϕ x)) :
+    Function.Injective (mapFunctionLinearMap ϕ hϕ) :=
+  coe_mapFunctionLinearMap ϕ hϕ ▸ mapLinearMap_injective ϕ hϕ h
 
 /-- The identity bundle map acts identically on sections. -/
 @[simp]
@@ -284,6 +369,101 @@ theorem coe_mapCompactlySupportedEquiv_symm (s : compactlySupported I G n W) :
     ((mapCompactlySupportedEquiv e he he').symm s : Cₛ^n⟮I; F, V⟯) =
       (mapEquiv e he he').symm s.val := (rfl)
 
+/-- Fibre transport commutes with the inclusion of a fixed-compact support stage. -/
+@[simp]
+theorem mapCompactlySupportedEquiv_ofSupportedIn (K : TopologicalSpace.Compacts M)
+    (s : supportedIn I F n V K) :
+    mapCompactlySupportedEquiv e he he' (ofSupportedIn K s) =
+      ofSupportedIn K (mapSupportedInEquiv e he he' K s) := by
+  apply Subtype.ext
+  rw [coe_mapCompactlySupportedEquiv, ofSupportedIn_apply, ofSupportedIn_apply,
+    coe_mapSupportedInEquiv]
+
+/-- Inverse transport also commutes with the inclusion of a fixed-compact support stage. -/
+@[simp]
+theorem mapCompactlySupportedEquiv_symm_ofSupportedIn (K : TopologicalSpace.Compacts M)
+    (s : supportedIn I G n W K) :
+    (mapCompactlySupportedEquiv e he he').symm (ofSupportedIn K s) =
+      ofSupportedIn K ((mapSupportedInEquiv e he he' K).symm s) := by
+  apply (mapCompactlySupportedEquiv e he he').injective
+  rw [LinearEquiv.apply_symm_apply, mapCompactlySupportedEquiv_ofSupportedIn,
+    LinearEquiv.apply_symm_apply]
+
+/-- Inverting the fibre equivalences inverts transport of compactly supported sections. -/
+theorem mapCompactlySupportedEquiv_symm :
+    (mapCompactlySupportedEquiv e he he').symm =
+      mapCompactlySupportedEquiv (fun x ↦ (e x).symm) he'
+        (by simpa only [LinearEquiv.symm_symm] using he) := by
+  apply LinearEquiv.ext
+  intro s
+  apply Subtype.ext
+  rw [coe_mapCompactlySupportedEquiv_symm, coe_mapCompactlySupportedEquiv]
+  exact congrArg (fun l ↦ l s.val) (mapEquiv_symm e he he')
+
 end Equivalence
+
+end ContMDiffSection
+
+namespace ContMDiffSection
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [T2Space M]
+  {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {n : ℕ∞ω} {V W : M → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle ℝ F V]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle ℝ G W]
+
+/-- On a real `C^n` vector bundle, `n ≤ ∞`, over a finite-dimensional Hausdorff `C^n` manifold, a
+bundle map is determined by its action on `C^n` sections, since every fibre vector is the value of
+a global `C^n` section. -/
+@[simp]
+theorem mapLinearMap_inj [ENat.LEInfty n] [IsManifold I n M] [ContMDiffVectorBundle n F V I]
+    {ϕ ψ : ∀ x, V x →ₗ[ℝ] W x}
+    {hϕ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace F V ↦ (⟨p.proj, ϕ p.proj p.snd⟩ : TotalSpace G W))}
+    {hψ : ContMDiff (I.prod 𝓘(ℝ, F)) (I.prod 𝓘(ℝ, G)) n
+      (fun p : TotalSpace F V ↦ (⟨p.proj, ψ p.proj p.snd⟩ : TotalSpace G W))} :
+    mapLinearMap ϕ hϕ = mapLinearMap ψ hψ ↔ ϕ = ψ := by
+  refine ⟨fun h ↦ funext fun x ↦ LinearMap.ext fun v ↦ ?_, fun h ↦ by subst h; rfl⟩
+  obtain ⟨s, rfl⟩ := evalLinearMap_surjective (I := I) (F := F) (V := V) n x v
+  simpa using DFunLike.congr_fun (LinearMap.congr_fun h s) x
+
+end ContMDiffSection
+
+namespace ContMDiffSection
+
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+  {F G : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : ℕ∞ω} {V W : M → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, TopologicalSpace (W x)]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+  {U : TopologicalSpace.Opens M}
+
+/-- Extension by zero commutes with a smooth fibrewise linear coefficient map. -/
+theorem extendByZero_mapCompactlySupported (φ : ∀ x, V x →ₗ[𝕜] W x)
+    (hφ : ContMDiff (I.prod 𝓘(𝕜, F)) (I.prod 𝓘(𝕜, G)) n
+      (fun p : TotalSpace F V ↦ (⟨p.proj, φ p.proj p.snd⟩ : TotalSpace G W))) :
+    let c : C^n⟮I, U; I, M⟯ := ⟨Subtype.val, contMDiff_subtypeVal⟩
+    let hφU := Pullback.contMDiff_fiberwise (fun x v ↦ φ x v) hφ c c.contMDiff
+    ∀ s : compactlySupported I F n (c *ᵖ V),
+      extendByZero (mapCompactlySupported (I := I) (F := F) (G := G)
+        (V := c *ᵖ V) (W := c *ᵖ W) (fun x ↦ φ x.val) hφU s) =
+      mapLinearMap φ hφ (extendByZero s) := by
+  intro c hφU s
+  ext x
+  rw [mapLinearMap_apply]
+  -- The law matches this goal only after unfolding the pullback along the bundled
+  -- inclusion (`ContinuousMap.coe_mk`), which `rw` does not do.
+  by_cases hx : x ∈ U
+  · erw [extendByZero_apply_of_mem _ (⟨x, hx⟩ : U), extendByZero_apply_of_mem s (⟨x, hx⟩ : U)]
+    erw [coe_mapCompactlySupported, mapLinearMap_apply]
+  · erw [extendByZero_apply_of_notMem _ hx, extendByZero_apply_of_notMem s hx, map_zero]
 
 end ContMDiffSection

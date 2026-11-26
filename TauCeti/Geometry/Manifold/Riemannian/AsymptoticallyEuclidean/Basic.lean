@@ -49,12 +49,27 @@ inside the ball carry no data. The size of the derivatives is measured by the op
 
 ## Main results
 
+* `TauCeti.norm_mfderiv_sq_eq_sum_pullbackMetricCoeff`: the squared length `‖dφ_x v‖²` is the
+  quadratic form `Σᵢⱼ g_ij(x) vᵢ vⱼ` of the pulled-back metric coefficients.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image_of_subset`: an end maps open subsets of the
+  exterior of its ball to open subsets of `M`.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.toPartialDiffeomorph_symm_apply_apply`: the inverse of an
+  end, as a partial diffeomorphism, undoes the end on the exterior of its ball.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.eventually_notMem_image_compl_closedBall`: every point of
+  `M` lies outside the image of the exterior of all large balls.
 * `TauCeti.IsAsymptoticallyEuclideanEnd.isOpen_image` and
   `TauCeti.IsAsymptoticallyEuclideanEnd.isPathConnected_image`: in dimension at least two, the
   image of an end is open and path-connected.
 * `TauCeti.isAsymptoticallyEuclideanEnd_comp_iff` and
   `TauCeti.isFiniteEndedAsymptoticallyEuclidean_comp_iff`: both notions are invariant under
   Riemannian isometries.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.congr`: an end only depends on its parametrization on the
+  exterior of its ball, and `TauCeti.pullbackMetricCoeff_congr_of_eventuallyEq`: the coefficients
+  at a point only depend on the parametrization near that point.
+* `TauCeti.IsAsymptoticallyEuclideanEnd.of_comp`: a map smooth on the exterior of the ball whose
+  composite with a local Riemannian isometry is an end is itself an end; this is how ends lift to
+  Riemannian coverings. Its lift has the coefficients of the end below
+  (`TauCeti.pullbackMetricCoeff_eqOn_of_eqOn_comp`).
 * `TauCeti.isAsymptoticallyEuclideanEnd_id` and
   `TauCeti.isFiniteEndedAsymptoticallyEuclidean_id`: the identity parametrization of flat
   Euclidean space of positive dimension is an end of every order, and a finite-ended structure
@@ -117,6 +132,21 @@ theorem pullbackMetricCoeff_apply (φ : EuclideanSpace ℝ (Fin n) → M)
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x (EuclideanSpace.basisFun (Fin n) ℝ j)) :=
   (rfl)
 
+/-- The squared length of the image of a vector `v` under the differential of `φ` is the quadratic
+form of the pulled-back metric coefficients: `‖dφ_x v‖² = Σᵢⱼ g_ij(x) vᵢ vⱼ`. -/
+theorem norm_mfderiv_sq_eq_sum_pullbackMetricCoeff (φ : EuclideanSpace ℝ (Fin n) → M)
+    (x v : EuclideanSpace ℝ (Fin n)) :
+    ‖mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x v‖ ^ 2 =
+      ∑ i, ∑ j, pullbackMetricCoeff I φ x i j * v i * v j := by
+  set L := mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x
+  have hv : L v = ∑ i, v i • L (EuclideanSpace.basisFun (Fin n) ℝ i) := by
+    conv_lhs => rw [← (EuclideanSpace.basisFun (Fin n) ℝ).sum_repr v]
+    exact (map_sum L _ _).trans (Finset.sum_congr rfl fun i _ ↦ map_smul _ _ _)
+  rw [← real_inner_self_eq_norm_sq, hv, pullbackMetricCoeff_def,
+    ← Matrix.star_dotProduct_gram_mulVec, star_trivial]
+  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
+
 /-- Composing with a local Riemannian isometry does not change the pulled-back metric
 coefficients at a point where the parametrization is differentiable. -/
 theorem pullbackMetricCoeff_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
@@ -126,6 +156,30 @@ theorem pullbackMetricCoeff_comp {f : M → N} (hf : IsLocalRiemannianIsometry I
   ext i j
   rw [pullbackMetricCoeff_apply, mfderiv_comp x (hf.mdifferentiableAt (φ x)) hφ]
   exact hf.inner_mfderiv _ _ _
+
+/-- The pulled-back metric coefficients at `x` only depend on the parametrization near `x`. -/
+theorem pullbackMetricCoeff_congr_of_eventuallyEq {φ ψ : EuclideanSpace ℝ (Fin n) → M}
+    {x : EuclideanSpace ℝ (Fin n)} (h : φ =ᶠ[𝓝 x] ψ) :
+    pullbackMetricCoeff I φ x = pullbackMetricCoeff I ψ x := by
+  ext i j
+  simp only [pullbackMetricCoeff_apply]
+  -- The derivative of `φ` at `x` is that of `ψ`, read through the identification
+  -- `tangentSpaceCast` of the tangent spaces at the equal points `ψ x` and `φ x`, which is the
+  -- identity map by definition.
+  congr 1
+  · rw [h.eq_of_nhds]
+  all_goals rw [h.mfderiv_eq]; rfl
+
+/-- If a map `ψ`, differentiable on an open set `s`, lifts `φ` through a local Riemannian isometry
+`f` on `s`, that is `f ∘ ψ = φ` on `s`, then `ψ` and `φ` have the same pulled-back metric
+coefficients on `s`. -/
+theorem pullbackMetricCoeff_eqOn_of_eqOn_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
+    {ψ : EuclideanSpace ℝ (Fin n) → M} {φ : EuclideanSpace ℝ (Fin n) → N}
+    {s : Set (EuclideanSpace ℝ (Fin n))} (hs : IsOpen s)
+    (hψ : MDifferentiableOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ψ s) (h : EqOn (f ∘ ψ) φ s) :
+    EqOn (pullbackMetricCoeff I ψ) (pullbackMetricCoeff J φ) s := fun _ hx ↦
+  (pullbackMetricCoeff_comp hf (hψ.mdifferentiableAt (hs.mem_nhds hx))).symm.trans
+    (pullbackMetricCoeff_congr_of_eventuallyEq (eventuallyEq_of_mem (hs.mem_nhds hx) h))
 
 /-- For a map into a real inner product space with its flat metric, the pulled-back metric
 coefficients are the Gram matrix of the partial derivatives `∂ᵢφ = Dφ(x) eᵢ`. -/
@@ -224,12 +278,37 @@ theorem mono_order (h : IsAsymptoticallyEuclideanEnd I t R φ) {t' : ℝ} (ht : 
       exact Real.rpow_le_rpow_of_nonpos h.radius_pos hxR.le (sub_nonpos.2 ht)
     _ = |C| * R ^ (t' - t) * ‖x‖ ^ (-t' - k) := (mul_assoc _ _ _).symm
 
+/-- The metric coefficients of an end are differentiable at infinity. -/
+theorem eventually_differentiableAt_pullbackMetricCoeff (h : IsAsymptoticallyEuclideanEnd I t R φ) :
+    ∀ᶠ x in Bornology.cobounded _, ∀ i j,
+      DifferentiableAt ℝ (fun y ↦ pullbackMetricCoeff I φ y i j) x := by
+  filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop R)] with x hx i j
+  exact ((h.contDiffOn_pullbackMetricCoeff i j).contDiffAt
+    (isClosed_closedBall.isOpen_compl.mem_nhds (by simpa using hx))).differentiableAt
+      (by norm_num)
+
 /-- The image of an end is nonempty, since the exterior of a ball in positive dimension is. -/
 theorem nonempty_image (h : IsAsymptoticallyEuclideanEnd I t R φ) :
     (φ '' (closedBall 0 R)ᶜ).Nonempty := by
   have : Nonempty (Fin n) := ⟨⟨0, h.dim_pos⟩⟩
   obtain ⟨x, hx⟩ := NormedSpace.exists_lt_norm ℝ (EuclideanSpace ℝ (Fin n)) R
   exact ⟨φ x, x, by simpa using hx, rfl⟩
+
+/-- Every point of `M` lies outside the image of the exterior of all large balls: by injectivity
+of the end, a point `φ z` of its image is not the image of a point outside the ball of radius
+`‖z‖`. -/
+theorem eventually_notMem_image_compl_closedBall (h : IsAsymptoticallyEuclideanEnd I t R φ)
+    (p : M) : ∀ᶠ a in atTop, p ∉ φ '' (closedBall 0 a)ᶜ := by
+  by_cases hp : p ∈ φ '' (closedBall 0 R)ᶜ
+  · obtain ⟨z, hz, rfl⟩ := hp
+    filter_upwards [eventually_ge_atTop ‖z‖] with a ha ⟨y, hy, hyz⟩
+    simp only [mem_compl_iff, mem_closedBall_zero_iff, not_le] at hy hz
+    have hyR : y ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := by
+      simpa using hz.trans (ha.trans_lt hy)
+    rw [h.injOn hyR (by simpa using hz) hyz] at hy
+    linarith
+  · filter_upwards [eventually_ge_atTop R] with a ha
+    exact fun hpa ↦ hp (image_mono (compl_subset_compl.2 (closedBall_subset_closedBall ha)) hpa)
 
 /-- An end is a local diffeomorphism on the exterior of its ball, by the inverse function
 theorem. -/
@@ -240,10 +319,16 @@ theorem isLocalDiffeomorphOn [IsManifold I ∞ M] (h : IsAsymptoticallyEuclidean
   exact isLocalDiffeomorphAt_of_mfderiv_eq h.contMDiffOn isClosed_closedBall.isOpen_compl hx
     BoundarylessManifold.isInteriorPoint (by simp) he
 
+/-- The image of an open subset of the exterior of the ball of an end is open. -/
+theorem isOpen_image_of_subset [IsManifold I ∞ M] (h : IsAsymptoticallyEuclideanEnd I t R φ)
+    {U : Set (EuclideanSpace ℝ (Fin n))} (hU : IsOpen U) (hUR : U ⊆ (closedBall 0 R)ᶜ) :
+    IsOpen (φ '' U) :=
+  (h.isLocalDiffeomorphOn.isLocalHomeomorphOn.mono hUR).isOpen_image hU
+
 /-- The image of an end is open. -/
 theorem isOpen_image [IsManifold I ∞ M] (h : IsAsymptoticallyEuclideanEnd I t R φ) :
     IsOpen (φ '' (closedBall 0 R)ᶜ) :=
-  h.isLocalDiffeomorphOn.isLocalHomeomorphOn.isOpen_image isClosed_closedBall.isOpen_compl
+  h.isOpen_image_of_subset isClosed_closedBall.isOpen_compl subset_rfl
 
 /-- An end as a diffeomorphism from the exterior of its ball onto its open image. -/
 def toPartialDiffeomorph [IsManifold I ∞ M] (h : IsAsymptoticallyEuclideanEnd I t R φ) :
@@ -270,6 +355,13 @@ theorem coe_toPartialDiffeomorph [IsManifold I ∞ M]
     (h : IsAsymptoticallyEuclideanEnd I t R φ) : ⇑h.toPartialDiffeomorph = φ :=
   h.isLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn _ _
 
+/-- The inverse of an end, as a partial diffeomorphism, undoes the end on the exterior of its
+ball. -/
+theorem toPartialDiffeomorph_symm_apply_apply [IsManifold I ∞ M]
+    (h : IsAsymptoticallyEuclideanEnd I t R φ) {y : EuclideanSpace ℝ (Fin n)}
+    (hy : y ∈ (closedBall 0 R)ᶜ) : h.toPartialDiffeomorph.symm (φ y) = y := by
+  simpa using h.toPartialDiffeomorph.left_inv (x := y) (by simpa using hy)
+
 /-- In dimension at least two the image of an end is path-connected, as the image of the
 path-connected exterior of a ball. -/
 theorem isPathConnected_image (h : IsAsymptoticallyEuclideanEnd I t R φ) (hn : 1 < n) :
@@ -279,39 +371,81 @@ theorem isPathConnected_image (h : IsAsymptoticallyEuclideanEnd I t R φ) (hn : 
     exact_mod_cast hn
   exact (isPathConnected_compl_closedBall hrank 0 R).image' h.contMDiffOn.continuousOn
 
+/-- An end transfers to any map that is smooth and injective with invertible differential on the
+exterior of the same ball, and whose pulled-back metric coefficients there are those of the end. -/
+theorem of_eqOn_pullbackMetricCoeff (h : IsAsymptoticallyEuclideanEnd I t R φ)
+    {ψ : EuclideanSpace ℝ (Fin n) → N}
+    (hψ : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) J ∞ ψ (closedBall 0 R)ᶜ)
+    (hinj : InjOn ψ (closedBall 0 R)ᶜ)
+    (hinv : ∀ x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ,
+      (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) J ψ x).IsInvertible)
+    (hcoeff : EqOn (pullbackMetricCoeff J ψ) (pullbackMetricCoeff I φ) (closedBall 0 R)ᶜ) :
+    IsAsymptoticallyEuclideanEnd J t R ψ := by
+  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
+  refine
+    { radius_pos := h.radius_pos
+      dim_pos := h.dim_pos
+      contMDiffOn := hψ
+      injOn := hinj
+      isInvertible_mfderiv := hinv
+      contDiffOn_pullbackMetricCoeff := fun i j ↦
+        (h.contDiffOn_pullbackMetricCoeff i j).congr fun _ hy ↦
+          congrArg (fun A : Matrix (Fin n) (Fin n) ℝ ↦ A i j) (hcoeff hy)
+      exists_norm_iteratedFDeriv_le := ⟨C, fun k hk i j x hx ↦ ?_⟩ }
+  -- The coefficients of `ψ` and of `φ` agree on the open exterior, hence near each of its points.
+  have hev : (fun y ↦ (pullbackMetricCoeff J ψ y - 1) i j) =ᶠ[𝓝 x]
+      fun y ↦ (pullbackMetricCoeff I φ y - 1) i j := by
+    filter_upwards [isClosed_closedBall.isOpen_compl.mem_nhds hx] with y hy
+    exact congrArg (fun A : Matrix (Fin n) (Fin n) ℝ ↦ (A - 1) i j) (hcoeff hy)
+  rw [(hev.iteratedFDeriv ℝ k).eq_of_nhds]
+  exact hC k hk i j x hx
+
+/-- An end is differentiable at each point of the exterior of its ball. -/
+theorem mdifferentiableAt (h : IsAsymptoticallyEuclideanEnd I t R φ)
+    {x : EuclideanSpace ℝ (Fin n)} (hx : x ∈ (closedBall 0 R)ᶜ) :
+    MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x :=
+  (h.contMDiffOn.contMDiffAt (isClosed_closedBall.isOpen_compl.mem_nhds hx)).mdifferentiableAt
+    (by simp)
+
+/-- An end only depends on its parametrization on the exterior of its ball: a map agreeing with
+an end there is an end of the same order. -/
+theorem congr (h : IsAsymptoticallyEuclideanEnd I t R φ) {ψ : EuclideanSpace ℝ (Fin n) → M}
+    (hψ : EqOn φ ψ (closedBall 0 R)ᶜ) : IsAsymptoticallyEuclideanEnd I t R ψ := by
+  have hev (x) (hx : x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ) : φ =ᶠ[𝓝 x] ψ :=
+    eventuallyEq_of_mem (isClosed_closedBall.isOpen_compl.mem_nhds hx) hψ
+  refine h.of_eqOn_pullbackMetricCoeff (h.contMDiffOn.congr fun x hx ↦ (hψ hx).symm)
+    (h.injOn.congr hψ) (fun x hx ↦ ?_)
+    fun x hx ↦ (pullbackMetricCoeff_congr_of_eventuallyEq (hev x hx)).symm
+  rw [(hev x hx).symm.mfderiv_eq]
+  exact ContinuousLinearMap.isInvertible_equiv_comp.2 (h.isInvertible_mfderiv x hx)
+
 /-- Composing an end with a local Riemannian isometry that is injective on its image gives an end
 of the same order. -/
 theorem comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
     (hinj : InjOn f (φ '' (closedBall 0 R)ᶜ)) (h : IsAsymptoticallyEuclideanEnd I t R φ) :
     IsAsymptoticallyEuclideanEnd J t R (f ∘ φ) := by
-  have hopen : IsOpen (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ :=
-    isClosed_closedBall.isOpen_compl
+  refine h.of_eqOn_pullbackMetricCoeff (hf.contMDiff.comp_contMDiffOn h.contMDiffOn)
+    (hinj.comp h.injOn (mapsTo_image _ _)) (fun x hx ↦ ?_)
+    fun x hx ↦ pullbackMetricCoeff_comp hf (h.mdifferentiableAt hx)
+  rw [mfderiv_comp x (hf.mdifferentiableAt (φ x)) (h.mdifferentiableAt hx)]
+  exact (hf.isInvertible_mfderiv (φ x)).comp (h.isInvertible_mfderiv x hx)
+
+/-- Conversely, a map smooth on the exterior of the ball whose composite with a local Riemannian
+isometry is an end is itself an end of the same order. -/
+theorem of_comp {f : M → N} (hf : IsLocalRiemannianIsometry I J f)
+    {ψ : EuclideanSpace ℝ (Fin n) → M}
+    (hψ : ContMDiffOn 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ∞ ψ (closedBall 0 R)ᶜ)
+    (h : IsAsymptoticallyEuclideanEnd J t R (f ∘ ψ)) : IsAsymptoticallyEuclideanEnd I t R ψ := by
   have hdiff (x) (hx : x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ) :
-      MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ x :=
-    (h.contMDiffOn.contMDiffAt (hopen.mem_nhds hx)).mdifferentiableAt (by simp)
-  -- The coefficients of `f ∘ φ` and of `φ` agree on the open exterior, hence near each of its
-  -- points.
-  have hcoeff : EqOn (pullbackMetricCoeff J (f ∘ φ)) (pullbackMetricCoeff I φ) (closedBall 0 R)ᶜ :=
-    fun x hx ↦ pullbackMetricCoeff_comp hf (hdiff x hx)
-  obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
-  refine
-    { radius_pos := h.radius_pos
-      dim_pos := h.dim_pos
-      contMDiffOn := hf.contMDiff.comp_contMDiffOn h.contMDiffOn
-      injOn := hinj.comp h.injOn (mapsTo_image _ _)
-      isInvertible_mfderiv := fun x hx ↦ ?_
-      contDiffOn_pullbackMetricCoeff := fun i j ↦
-        (h.contDiffOn_pullbackMetricCoeff i j).congr fun _ hy ↦
-          congrArg (fun A : Matrix (Fin n) (Fin n) ℝ ↦ A i j) (hcoeff hy)
-      exists_norm_iteratedFDeriv_le := ⟨C, fun k hk i j x hx ↦ ?_⟩ }
-  · rw [mfderiv_comp x (hf.mdifferentiableAt (φ x)) (hdiff x hx)]
-    exact (hf.isInvertible_mfderiv (φ x)).comp (h.isInvertible_mfderiv x hx)
-  · have hev : (fun y ↦ (pullbackMetricCoeff J (f ∘ φ) y - 1) i j) =ᶠ[𝓝 x]
-        fun y ↦ (pullbackMetricCoeff I φ y - 1) i j := by
-      filter_upwards [hopen.mem_nhds hx] with y hy
-      exact congrArg (fun A : Matrix (Fin n) (Fin n) ℝ ↦ (A - 1) i j) (hcoeff hy)
-    rw [(hev.iteratedFDeriv ℝ k).eq_of_nhds]
-    exact hC k hk i j x hx
+      MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I ψ x :=
+    (hψ.contMDiffAt (isClosed_closedBall.isOpen_compl.mem_nhds hx)).mdifferentiableAt (by simp)
+  refine h.of_eqOn_pullbackMetricCoeff hψ h.injOn.of_comp (fun x hx ↦ ?_)
+    fun x hx ↦ (pullbackMetricCoeff_comp hf (hdiff x hx)).symm
+  have hcomp := h.isInvertible_mfderiv x hx
+  rw [mfderiv_comp x (hf.mdifferentiableAt (ψ x)) (hdiff x hx)] at hcomp
+  obtain ⟨A, hA⟩ := hf.isInvertible_mfderiv (ψ x)
+  rw [← hA] at hcomp
+  exact ContinuousLinearMap.isInvertible_equiv_comp.1 hcomp
 
 end IsAsymptoticallyEuclideanEnd
 
