@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.RingTheory.KrullDimension.Equidimensional
 public import TauCeti.Topology.KrullDimension.ClosedCover
+import Mathlib.RingTheory.KrullDimension.Polynomial
 
 /-!
 # Krull dimension of schemes and extension of the base field
@@ -63,8 +64,12 @@ an irreducibility assumption on the group.
   dimension of an open subscheme is the supremum of the dimensions of its local rings.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_ne_top_of_locallyOfFiniteType`: a quasi-compact
   scheme locally of finite type over a field has finite Krull dimension.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec_mvPolynomial`: affine space in finitely
+  many variables `σ` over a Noetherian ring `R` has dimension `dim R + |σ|`.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_pullback_Spec_map_of_field`: the Krull dimension
   of a scheme locally of finite type over a field is invariant under extension of the base field.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_isPullback_Spec_map_of_field`: the same
+  invariance for a base change given by a cartesian square.
 * `TauCeti.AlgebraicGeometry.topologicalKrullDim_inter_eq_of_locallyOfFiniteType`: on a scheme
   locally of finite type over a field, a nonempty open part of an irreducible closed subset has
   the dimension of that subset.
@@ -171,6 +176,15 @@ theorem topologicalKrullDim_pullback_Spec_algebraMap (K L A : Type u) [Field K] 
     (ringKrullDim_eq_of_ringEquiv (Algebra.TensorProduct.comm K A L).toRingEquiv).trans
       (ringKrullDim_tensorProduct_field_of_finiteType L A)
 
+/-- **The dimension of affine space.** Over a Noetherian ring `R`, the affine space
+`Spec R[x_i]` in finitely many variables `σ` has dimension `dim R + |σ|`. -/
+theorem topologicalKrullDim_Spec_mvPolynomial (σ R : Type*) [Finite σ] [CommRing R]
+    [IsNoetherianRing R] :
+    topologicalKrullDim (Spec (.of (MvPolynomial σ R))) = ringKrullDim R + Nat.card σ :=
+  -- The underlying space of `Spec R` is `PrimeSpectrum R` by definition.
+  (PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim _).trans
+    MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite
+
 /-- The Krull dimension of an affine scheme locally of finite type over a field `K` is invariant
 under extension of the base field. -/
 private theorem topologicalKrullDim_pullback_Spec_of_field {K L : Type u} [Field K] [Field L]
@@ -196,6 +210,17 @@ theorem topologicalKrullDim_pullback_Spec_map_of_field {K L : Type u} [Field K] 
   refine iSup_congr fun (i : X.affineOpenCover.openCover.I₀) ↦ ?_
   have : LocallyOfFiniteType (X.affineOpenCover.openCover.f i ≫ f) := inferInstance
   exact topologicalKrullDim_pullback_Spec_of_field (A := X.affineOpenCover.X i) (hg := this) _
+
+/-- **Dimension under extension of the base field, for a cartesian square.** If `X'` is the base
+change of a scheme `X` locally of finite type over a field `K` along `Spec K' ⟶ Spec K`, then
+`X'` has the Krull dimension of `X`. -/
+theorem topologicalKrullDim_eq_of_isPullback_Spec_map_of_field {K K' : Type u} [Field K]
+    [Field K'] [Algebra K K'] {X X' : Scheme.{u}} {πX : X' ⟶ X} {sX' : X' ⟶ Spec (.of K')}
+    {sX : X ⟶ Spec (.of K)} [LocallyOfFiniteType sX]
+    (h : IsPullback πX sX' sX (Spec.map (CommRingCat.ofHom (algebraMap K K')))) :
+    topologicalKrullDim X' = topologicalKrullDim X := by
+  rw [h.isoPullback.hom.homeomorph.isHomeomorph.topologicalKrullDim_eq,
+    topologicalKrullDim_pullback_Spec_map_of_field]
 
 /-- On a scheme locally of finite type over a field, a nonempty open part `Z ∩ U` of an
 irreducible closed subset `Z` has the Krull dimension of `Z`. -/

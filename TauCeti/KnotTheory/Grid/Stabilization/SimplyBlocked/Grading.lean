@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Grading.SimplyBlocked
+public import TauCeti.KnotTheory.Grid.Stabilization.Map.Grading
 public import TauCeti.KnotTheory.Grid.Stabilization.SimplyBlocked.Basic
 
 /-!

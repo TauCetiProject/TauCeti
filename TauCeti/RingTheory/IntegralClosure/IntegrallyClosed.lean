@@ -33,6 +33,10 @@ If a subring `S` of `B` is integrally closed in `B`, then its preimage under a r
 homomorphism carries an integrally closed subring containing its kernel to an integrally closed
 subring: lift a monic integral equation, whose evaluation then lies in the kernel.
 
+In an integrally closed domain, if `b ^ e = u ϖ ^ e` with `ϖ ≠ 0` and `e ≠ 0`, then `ϖ` divides
+`b` (Mathlib's `IsIntegrallyClosed.pow_dvd_pow_iff`) and the quotient `b / ϖ` is an `e`-th root
+of `u`.
+
 ## Main results
 
 * `TauCeti.isIntegrallyClosedIn_iff_forall_isAlgebraic`: the elementwise criterion for a field
@@ -43,6 +47,8 @@ subring: lift a monic integral equation, whose evaluation then lies in the kerne
   closed in every domain algebra.
 * `IsIntegrallyClosedIn.pow_dvd_pow_iff`: for `a ∈ R` invertible in `A` and `n ≠ 0`,
   `a ^ n ∣ b ^ n ↔ a ∣ b` in `R`.
+* `IsIntegrallyClosedIn.exists_algebraMap_eq_of_pow_eq_algebraMap`: an element of `A` some nonzero
+  power of which is the image of a unit of `R` is itself the image of a unit of `R`.
 * `IsIntegrallyClosedIn.of_ringEquiv`: transport along a semilinear ring isomorphism.
 * `IsIntegrallyClosedIn.of_isLocalization_of_le_powers`: `R` is integrally closed in its
   localization at any submonoid of the powers of a nonzerodivisor `x` with `R ⧸ (x)` reduced.
@@ -55,6 +61,8 @@ subring: lift a monic integral equation, whose evaluation then lies in the kerne
   integrally closed subring containing its kernel to an integrally closed subring.
 * `Subring.mem_of_pow_mem_of_isIntegrallyClosedIn`: a subring integrally closed in `A` contains
   every element some positive power of which it contains.
+* `TauCeti.exists_eq_mul_of_pow_eq_mul_pow`: in an integrally closed domain, an `e`-th root `b`
+  of `u ϖ ^ e` gives an `e`-th root `b / ϖ` of `u`.
 * `Subring.perfectRing_of_isIntegrallyClosedIn`: a subring integrally closed in a perfect ring is
   perfect.
 * `Function.LeftInverse.isIntegrallyClosed_of_nonZeroDivisors_le` and
@@ -107,6 +115,15 @@ theorem pow_dvd_pow_iff {n : ℕ} (hn : n ≠ 0) {a b : R} (ha : IsUnit (algebra
     (hpow ▸ isIntegral_algebraMap)
   refine ⟨d, IsIntegralClosure.algebraMap_injective R R A ?_⟩
   simp [hd, ← hu, mul_left_comm (u : A)]
+
+/-- If `R` is integrally closed in `A`, an element of `A` some nonzero power of which is the image
+of a unit of `R` is itself the image of a unit of `R`. -/
+theorem exists_algebraMap_eq_of_pow_eq_algebraMap {n : ℕ} (hn : n ≠ 0) {x : A} {w : Rˣ}
+    (h : x ^ n = algebraMap R A w) : ∃ v : Rˣ, algebraMap R A v = x := by
+  obtain ⟨a, rfl⟩ := exists_algebraMap_eq_of_isIntegral_pow (Nat.pos_of_ne_zero hn)
+    (h ▸ isIntegral_algebraMap)
+  have ha : a ^ n = w := IsIntegralClosure.algebraMap_injective R R A (by rw [map_pow, h])
+  exact ⟨((isUnit_pow_iff hn).mp (ha ▸ w.isUnit)).unit, rfl⟩
 
 /-- If `k` is integrally closed in `A`, an element of `A` outside the line `k ∙ 1` is
 transcendental over `k`. -/
@@ -284,3 +301,19 @@ theorem Function.LeftInverse.isIntegrallyClosed {R A : Type*} [CommRing R] [Comm
     (h : Function.LeftInverse π i) : IsIntegrallyClosed R :=
   h.isIntegrallyClosed_of_nonZeroDivisors_le
     (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective i h.injective)
+
+namespace TauCeti
+
+variable {R : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+
+/-- In an integrally closed domain, an `e`-th root `b` of `u ϖ ^ e` with `ϖ ≠ 0` and `e ≠ 0`
+gives an `e`-th root `b / ϖ` of `u`: the element `b` is divisible by `ϖ`, since `ϖ ^ e` divides
+`b ^ e`. -/
+theorem exists_eq_mul_of_pow_eq_mul_pow {ϖ u b : R} (hϖ : ϖ ≠ 0) {e : ℕ} (he : e ≠ 0)
+    (hb : b ^ e = u * ϖ ^ e) : ∃ s : R, b = ϖ * s ∧ s ^ e = u := by
+  obtain ⟨s, hs⟩ := (IsIntegrallyClosed.pow_dvd_pow_iff he (a := ϖ) (b := b)).mp
+    ⟨u, by rw [hb, mul_comm]⟩
+  refine ⟨s, hs, mul_left_cancel₀ (pow_ne_zero e hϖ) ?_⟩
+  rw [← mul_pow, ← hs, hb, mul_comm]
+
+end TauCeti

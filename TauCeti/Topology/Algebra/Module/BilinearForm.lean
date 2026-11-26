@@ -78,6 +78,10 @@ use.
   nonzero diagonal vectors already implies the bounded-unit-set condition.
 * `TauCeti.isOpen_setOf_forall_bilinear_apply_self_pos`: strict diagonal positivity is open
   among all continuous bilinear forms in finite dimensions, without imposing symmetry.
+* `TauCeti.isOpen_setOf_forall_bilinear_apply_endomorphism_pos`: the pairs `(B, A)` of a
+  continuous bilinear form and an endomorphism with `B(u, A u) > 0` for `u ≠ 0` form an open set;
+  `TauCeti.isOpen_setOf_forall_endomorphism_pos` is its case of a fixed form, the openness of
+  taming in the endomorphism.
 * `IsCompact.exists_forall_le_mul_norm_sq`: a family of continuous bilinear forms continuous on a
   compact set is bounded by a uniform multiple of `‖v‖²`.
 * `ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul`: the diagonal of a
@@ -103,6 +107,8 @@ use.
 * `ContinuousLinearEquiv.mem_setOfPred_symm_pos_isVonNBounded_of_inner`: a form reading as an inner
   product through a continuous linear equivalence satisfies these conditions; this supplies the
   local metrics that are glued.
+* `LinearMap.continuous_apply_self`: the diagonal `v ↦ B v v` of a bilinear map on a
+  finite-dimensional Hausdorff topological vector space over a complete field is continuous.
 -/
 
 public section
@@ -377,6 +383,25 @@ theorem isOpen_setOf_forall_bilinear_apply_self_pos
   simpa only [star_trivial, RCLike.re_to_real] using
     (isOpen_setOfPred_re_dotProduct_pos (𝕜 := ℝ)).preimage hA
 
+/-- The pairs `(B, A)` of a continuous bilinear form and a continuous linear endomorphism of a
+finite-dimensional space with `B(u, A u) > 0` for every `u ≠ 0` form an open set. -/
+theorem isOpen_setOf_forall_bilinear_apply_endomorphism_pos
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] :
+    IsOpen {p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E) | ∀ u, u ≠ 0 → 0 < p.1 u (p.2 u)} := by
+  -- `(B, A) ↦ B(·, A ·)` is continuous, and positive definite forms form an open set.
+  have hc : Continuous fun p : (E →L[ℝ] E →L[ℝ] ℝ) × (E →L[ℝ] E) ↦
+      ((ContinuousLinearMap.compL ℝ E E ℝ).flip p.2).comp p.1 := by fun_prop
+  exact isOpen_setOf_forall_bilinear_apply_self_pos.preimage hc
+
+/-- The continuous linear endomorphisms `A` of a finite-dimensional space tamed by a fixed
+continuous bilinear form `B`, that is with `B(u, A u) > 0` for every `u ≠ 0`, form an open set. -/
+theorem isOpen_setOf_forall_endomorphism_pos
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    (B : E →L[ℝ] E →L[ℝ] ℝ) :
+    IsOpen {A : E →L[ℝ] E | ∀ u, u ≠ 0 → 0 < B u (A u)} :=
+  isOpen_setOf_forall_bilinear_apply_endomorphism_pos.preimage
+    (continuous_const.prodMk continuous_id)
+
 /-- The diagonal of a continuous bilinear form at `v` is `‖v‖²` times its value at the unit
 vector `‖v‖⁻¹ • v` (both sides vanish at `v = 0`). -/
 theorem _root_.ContinuousLinearMap.apply_self_eq_norm_sq_mul_apply_inv_norm_smul {E : Type*}
@@ -531,6 +556,24 @@ theorem _root_.ContinuousLinearMap.isVonNBounded_setOf_lt_one_of_pos
   refine ⟨Real.sqrt c⁻¹, fun v hv ↦ Real.le_sqrt_of_sq_le ?_⟩
   rw [inv_eq_one_div, le_div_iff₀ hc]
   linarith [hbound () rfl v, show b v v < 1 from hv]
+
+/-- On a finite-dimensional Hausdorff topological vector space over a complete nontrivially normed
+field `𝕜`, the diagonal `v ↦ B v v` of a bilinear map `B : E →ₗ[𝕜] E →ₗ[𝕜] F` is continuous. -/
+theorem _root_.LinearMap.continuous_apply_self {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] {E : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+    [IsTopologicalAddGroup E] [ContinuousSMul 𝕜 E] [FiniteDimensional 𝕜 E] [T2Space E]
+    {F : Type*} [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    [ContinuousSMul 𝕜 F] (B : E →ₗ[𝕜] E →ₗ[𝕜] F) :
+    Continuous fun v : E ↦ B v v := by
+  -- Expand the first argument in a basis: `B v v = ∑ i, b.equivFun v i • B (b i) v`.
+  let b := Module.finBasis 𝕜 E
+  have hB (v : E) : B v v = ∑ i, b.equivFun v i • B (b i) v := by
+    calc B v v = B (∑ i, b.equivFun v i • b i) v := by rw [b.sum_equivFun]
+      _ = ∑ i, b.equivFun v i • B (b i) v := by
+        simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply]
+  simp only [hB]
+  exact continuous_finsetSum _ fun i _ ↦ ((continuous_apply i).comp
+    (continuous_equivFun_basis b)).smul (B (b i)).continuous_of_finiteDimensional
 
 end TauCeti
 
