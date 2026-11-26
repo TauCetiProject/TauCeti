@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Interval.Representative
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.LinearAlgebra.Dimension.Prod
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.OuterMeasure.AE
 
 /-!
 # The trace of a Lipschitz domain on an interval is the endpoint map
@@ -136,10 +137,8 @@ theorem W1p.frontierTrace_apply_eq_intervalTraceL (hp : p ≠ (∞ : ℝ≥0∞)
           (WithLp.linearEquiv 2 ℝ (ℝ × E))).finrank_eq_zero_of_self_prod,
         Measure.euclideanHausdorffMeasure_zero, Measure.hausdorffMeasure_zero_singleton]
       exact one_ne_zero
-    by_contra hne
-    refine hpos (measure_mono_null (singleton_subset_iff.2 ?_)
-      (ae_iff.1 (W1p.frontierTrace_ae_eq_intervalRepresentativeL hp hΩ hb hab g hg u)))
-    simpa only [mem_ofPred_eq, g.symm_apply_apply] using hne
+    simpa only [g.symm_apply_apply] using (W1p.frontierTrace_ae_eq_intervalRepresentativeL hp hΩ
+      hb hab g hg u).self_of_ae_of_measure_singleton_ne_zero hpos
   rw [hatom a (.inl rfl), hatom b (.inr rfl), W1p.intervalTraceL_apply,
     projIcc_left, projIcc_right]
 
