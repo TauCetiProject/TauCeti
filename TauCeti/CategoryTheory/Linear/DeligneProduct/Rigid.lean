@@ -157,8 +157,10 @@ variable [RightRigidCategory C] [RightRigidCategory D]
 /-- The chosen right dual of a pure object is the pure object of the right duals. -/
 @[simp↓]
 theorem rightDual_bifunctor_obj_obj (X : C) (Y : D) :
-    (((bifunctor k C D).obj X).obj Y)ᘁ = ((bifunctor k C D).obj Xᘁ).obj Yᘁ :=
-  (rfl)
+    (((bifunctor k C D).obj X).obj Y)ᘁ = ((bifunctor k C D).obj Xᘁ).obj Yᘁ := by
+  have h := Mat_.rightDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
+  rw [LinearTensor.rightDual_def] at h
+  exact h
 
 /-- The evaluation of a pure object against its right dual is the one-entry matrix whose entry
 is the pure tensor of the evaluations in the factors. -/
@@ -166,9 +168,9 @@ is the pure tensor of the evaluations in the factors. -/
 theorem evaluation_rightDual_bifunctor_obj_obj (X : C) (Y : D) :
     ε_ (((bifunctor k C D).obj X).obj Y) ((((bifunctor k C D).obj X).obj Y)ᘁ) =
       fun _ _ ↦ LinearTensor.tmul (ε_ X Xᘁ) (ε_ Y Yᘁ) := by
-  ext ⟨⟨⟩, ⟨⟩⟩ u
-  rw [Mat_.evaluation_rightDual_apply, Mat_.id_apply_self, id_whiskerRight, Category.id_comp]
-  exact LinearTensor.rightDual_evaluation ⟨X, Y⟩
+  have h := Mat_.evaluation_rightDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
+  simp only [LinearTensor.rightDual_evaluation] at h
+  exact h
 
 /-- The coevaluation of a pure object with its right dual is the one-entry matrix whose entry
 is the pure tensor of the coevaluations in the factors. -/
@@ -176,13 +178,9 @@ is the pure tensor of the coevaluations in the factors. -/
 theorem coevaluation_rightDual_bifunctor_obj_obj (X : C) (Y : D) :
     η_ (((bifunctor k C D).obj X).obj Y) ((((bifunctor k C D).obj X).obj Y)ᘁ) =
       fun _ _ ↦ LinearTensor.tmul (η_ X Xᘁ) (η_ Y Yᘁ) := by
-  ext u ⟨⟨⟩, ⟨⟩⟩
-  rw [Mat_.coevaluation_rightDual_apply, Mat_.id_apply_self]
-  let P : LinearTensor k C D := ⟨X, Y⟩
-  -- Identify the singleton summands before rewriting the whiskered identity.
-  change η_ P Pᘁ ≫ P ◁ 𝟙 (Pᘁ) = _
-  rw [whiskerLeft_id, Category.comp_id]
-  exact LinearTensor.rightDual_coevaluation P
+  have h := Mat_.coevaluation_rightDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
+  simp only [LinearTensor.rightDual_coevaluation] at h
+  exact h
 
 end RightDual
 
@@ -194,8 +192,10 @@ variable [LeftRigidCategory C] [LeftRigidCategory D]
 @[simp↓]
 theorem leftDual_bifunctor_obj_obj (X : C) (Y : D) :
     (ᘁ(((bifunctor k C D).obj X).obj Y) : DeligneProduct k C D) =
-      ((bifunctor k C D).obj (ᘁX)).obj (ᘁY) :=
-  (rfl)
+      ((bifunctor k C D).obj (ᘁX)).obj (ᘁY) := by
+  have h := Mat_.leftDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
+  rw [LinearTensor.leftDual_def] at h
+  exact h
 
 /-- The evaluation of a pure object against its left dual is the one-entry matrix whose entry
 is the pure tensor of the evaluations in the factors. -/
@@ -203,9 +203,9 @@ is the pure tensor of the evaluations in the factors. -/
 theorem evaluation_leftDual_bifunctor_obj_obj (X : C) (Y : D) :
     ε_ (ᘁ(((bifunctor k C D).obj X).obj Y)) (((bifunctor k C D).obj X).obj Y) =
       fun _ _ ↦ LinearTensor.tmul (ε_ (ᘁX) X) (ε_ (ᘁY) Y) := by
-  ext ⟨⟨⟩, ⟨⟩⟩ u
-  rw [Mat_.evaluation_leftDual_apply, Mat_.id_apply_self, id_whiskerRight, Category.id_comp]
-  exact LinearTensor.leftDual_evaluation ⟨X, Y⟩
+  have h := Mat_.evaluation_leftDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
+  simp only [LinearTensor.leftDual_evaluation] at h
+  exact h
 
 /-- The coevaluation of a pure object with its left dual is the one-entry matrix whose entry
 is the pure tensor of the coevaluations in the factors. -/
@@ -213,9 +213,9 @@ is the pure tensor of the coevaluations in the factors. -/
 theorem coevaluation_leftDual_bifunctor_obj_obj (X : C) (Y : D) :
     η_ (ᘁ(((bifunctor k C D).obj X).obj Y)) (((bifunctor k C D).obj X).obj Y) =
       fun _ _ ↦ LinearTensor.tmul (η_ (ᘁX) X) (η_ (ᘁY) Y) := by
-  ext u ⟨⟨⟩, ⟨⟩⟩
-  rw [Mat_.coevaluation_leftDual_apply, Mat_.id_apply_self, whiskerLeft_id, Category.comp_id]
-  exact LinearTensor.leftDual_coevaluation ⟨X, Y⟩
+  have h := Mat_.coevaluation_leftDual_embedding_obj (⟨X, Y⟩ : LinearTensor k C D)
+  simp only [LinearTensor.leftDual_coevaluation] at h
+  exact h
 
 end LeftDual
 

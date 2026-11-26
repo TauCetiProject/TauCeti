@@ -183,7 +183,7 @@ instance instMonoidalCategory : MonoidalCategory (LinearTensor k C D) :=
   .ofTensorHom
     (id_tensorHom_id := fun P Q ↦ by
       rw [← tmul_id_id P.fst P.snd, ← tmul_id_id Q.fst Q.snd, tmul_tensorHom_tmul]
-      simp only [id_tensorHom_id, tmul_id_id]; rfl)
+      simp only [id_tensorHom_id, tmul_id_id, tensorObj_def])
     (id_tensorHom := fun _ {_ _} _ ↦ rfl)
     (tensorHom_id := fun {_ _} _ _ ↦ rfl)
     (tensorHom_comp_tensorHom := by exact tensorHom_comp)
