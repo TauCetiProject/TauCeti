@@ -40,7 +40,9 @@ intersection of either of these groups with the realified `GL(n, ℂ)`.
 * `Matrix.GeneralLinearGroup.isClosedEmbedding_realify_comp_toUnits`: realification of unitary
   matrices is a closed embedding into `GL (n ⊕ n) ℝ`.
 * `Matrix.unitaryGroupEquivSymplecticInfOrthogonal`: the realification isomorphism of topological
-  groups from `U(n)` onto the orthogonal symplectic matrices.
+  groups from `U(n)` onto the orthogonal symplectic matrices, and
+  `Matrix.unitarySubgroupEquivSymplecticInfOrthogonal`: the same isomorphism read on the unitary
+  subgroup of `GL(n, ℂ)`.
 * `Matrix.GeneralLinearGroup.realifyUnitaryHomeomorph`: realification is a homeomorphism from
   `U(n)` onto the orthogonal matrices of any subgroup of `GL (n ⊕ n) ℝ` whose orthogonal elements
   are the realified unitary matrices, such as the symplectic group and the realified `GL(n, ℂ)`.
@@ -141,6 +143,36 @@ theorem realify_toUnits_unitaryGroupEquivSymplecticInfOrthogonal_symm_apply
     GeneralLinearGroup.realify n ℂ
       (Unitary.toUnits (unitaryGroupEquivSymplecticInfOrthogonal.symm M)) = M := by
   rw [← unitaryGroupEquivSymplecticInfOrthogonal_apply, ContinuousMulEquiv.apply_symm_apply]
+
+/-- **`U(n) ≃ₜ* Sp(2n, ℝ) ∩ O(2n)`**, read on the unitary subgroup of `GL(n, ℂ)`: realification is
+an isomorphism of topological groups from the unitary invertible complex matrices onto the
+orthogonal elements of the real symplectic group. -/
+noncomputable def unitarySubgroupEquivSymplecticInfOrthogonal :
+    unitarySubgroup (GL n ℂ) ≃ₜ* ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)) :=
+  (unitarySubgroupUnitsContinuousMulEquiv (Matrix n n ℂ)).trans
+    unitaryGroupEquivSymplecticInfOrthogonal
+
+/-- The isomorphism `U(n) ≃ₜ* Sp(2n, ℝ) ∩ O(2n)` on the unitary subgroup of `GL(n, ℂ)` is
+realification. -/
+@[simp]
+theorem unitarySubgroupEquivSymplecticInfOrthogonal_apply (U : unitarySubgroup (GL n ℂ)) :
+    (unitarySubgroupEquivSymplecticInfOrthogonal U : GL (n ⊕ n) ℝ) =
+      GeneralLinearGroup.realify n ℂ U := by
+  -- The unitary element underlying `U` is sent back to `U` by the canonical unitary inclusion.
+  have hU : Unitary.toUnits (unitarySubgroupUnitsEquiv U) = (U : GL n ℂ) := by
+    rw [← coe_unitarySubgroupUnitsEquiv_symm_apply, MulEquiv.symm_apply_apply]
+  rw [unitarySubgroupEquivSymplecticInfOrthogonal, ContinuousMulEquiv.trans_apply,
+    unitaryGroupEquivSymplecticInfOrthogonal_apply, unitarySubgroupUnitsContinuousMulEquiv_apply,
+    hU]
+
+/-- The inverse of the isomorphism `U(n) ≃ₜ* Sp(2n, ℝ) ∩ O(2n)` on the unitary subgroup of
+`GL(n, ℂ)` is inverse to realification. -/
+@[simp]
+theorem realify_unitarySubgroupEquivSymplecticInfOrthogonal_symm_apply
+    (M : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ))) :
+    GeneralLinearGroup.realify n ℂ (unitarySubgroupEquivSymplecticInfOrthogonal.symm M : GL n ℂ) =
+      M := by
+  rw [← unitarySubgroupEquivSymplecticInfOrthogonal_apply, ContinuousMulEquiv.apply_symm_apply]
 
 namespace GeneralLinearGroup
 

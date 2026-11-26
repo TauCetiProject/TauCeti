@@ -28,7 +28,7 @@ its generator `A` does (`TauCeti.forall_commute_exp_smul_iff`).
 
 Realification is an isomorphism of topological groups from `GL(n, ℂ)` onto `C_ℝ`
 (`Matrix.GeneralLinearGroup.realifyEquivRange`) and from `U(n)` onto `Sp(2n, ℝ) ∩ O(2n)`
-(`Matrix.unitaryGroupEquivSymplecticInfOrthogonal`). A continuous homomorphism of
+(`Matrix.unitarySubgroupEquivSymplecticInfOrthogonal`). A continuous homomorphism of
 finite-dimensional real Lie groups is smooth (`TauCeti.Lie.contMDiff_of_continuous_monoidHom`), so
 for every Lie group structure on the target, such as the one given by the closed-subgroup theorem,
 both isomorphisms are diffeomorphisms. Here `GL(n, ℂ)` carries its structure as the group of units
@@ -146,26 +146,6 @@ theorem coe_realifyDiffeomorphRange_symm :
 
 end GeneralLinearGroup
 
-/-- Realification, as an isomorphism of topological groups from the unitary subgroup of `GL(n, ℂ)`
-onto the orthogonal symplectic matrices. -/
-private def unitarySubgroupEquivSymplecticInfOrthogonal :
-    unitarySubgroup (GL n ℂ) ≃ₜ* ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)) :=
-  (ContinuousMulEquiv.mk' (unitarySubgroupUnitsHomeomorph (Matrix n n ℂ)) fun U V ↦ by
-    simp only [unitarySubgroupUnitsHomeomorph_apply, map_mul]).trans
-    unitaryGroupEquivSymplecticInfOrthogonal
-
-private theorem coe_unitarySubgroupEquivSymplecticInfOrthogonal_apply
-    (U : unitarySubgroup (GL n ℂ)) :
-    (unitarySubgroupEquivSymplecticInfOrthogonal U : GL (n ⊕ n) ℝ) =
-      GeneralLinearGroup.realify n ℂ U := by
-  -- The unitary element underlying `U` is sent back to `U` by the canonical unitary inclusion.
-  have hU : Unitary.toUnits (unitarySubgroupUnitsEquiv U) = (U : GL n ℂ) := by
-    rw [← coe_unitarySubgroupUnitsEquiv_symm_apply, MulEquiv.symm_apply_apply]
-  have h : unitarySubgroupEquivSymplecticInfOrthogonal U =
-      unitaryGroupEquivSymplecticInfOrthogonal (unitarySubgroupUnitsHomeomorph (Matrix n n ℂ) U) :=
-    ContinuousMulEquiv.trans_apply _ _ U
-  rw [h, unitaryGroupEquivSymplecticInfOrthogonal_apply, unitarySubgroupUnitsHomeomorph_apply, hU]
-
 variable [ChartedSpace H ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ))]
   [LieGroup I ∞ ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ))]
 
@@ -173,12 +153,14 @@ variable (n I) in
 /-- **Realification is a diffeomorphism from `U(n)` onto `Sp(2n, ℝ) ∩ O(2n)`**, for the
 structure of `U(n)` as an embedded Lie subgroup of `GL(n, ℂ)` and every Lie group structure on the
 orthogonal symplectic matrices. It is the topological group isomorphism
-`Matrix.unitaryGroupEquivSymplecticInfOrthogonal`, read on the unitary subgroup of `GL(n, ℂ)`. -/
+`Matrix.unitarySubgroupEquivSymplecticInfOrthogonal`, which is smooth in both directions. -/
 def unitarySubgroupDiffeomorphSymplecticInfOrthogonal :
     unitarySubgroup (GL n ℂ) ≃ₘ⟮𝓘(ℝ, (lieSubalgebraOfSubgroup
       (I := 𝓘(ℝ, Matrix n n ℂ)) (unitarySubgroup (GL n ℂ))).toSubmodule), I⟯
       ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)) :=
-  unitarySubgroupEquivSymplecticInfOrthogonal.toDiffeomorph _ _
+  -- The ascription reads the topology of `GL n ℂ` as the one of the operator norm.
+  ContinuousMulEquiv.toDiffeomorph _ _ (unitarySubgroupEquivSymplecticInfOrthogonal :
+    unitarySubgroup (GL n ℂ) ≃ₜ* ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)))
 
 /-- The diffeomorphism `U(n) ≃ Sp(2n, ℝ) ∩ O(2n)` is realification. -/
 @[simp]
@@ -189,7 +171,7 @@ theorem coe_unitarySubgroupDiffeomorphSymplecticInfOrthogonal_apply
   have h : ⇑(unitarySubgroupDiffeomorphSymplecticInfOrthogonal n I) =
       unitarySubgroupEquivSymplecticInfOrthogonal :=
     ContinuousMulEquiv.coe_toDiffeomorph _
-  rw [h, coe_unitarySubgroupEquivSymplecticInfOrthogonal_apply]
+  rw [h, unitarySubgroupEquivSymplecticInfOrthogonal_apply]
 
 /-- The inverse of the diffeomorphism `U(n) ≃ Sp(2n, ℝ) ∩ O(2n)` is inverse to realification. -/
 @[simp]
