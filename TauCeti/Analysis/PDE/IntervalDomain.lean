@@ -30,14 +30,17 @@ endpoint values.
 * `TauCeti.PDE.coe_intervalDomain_eq_ball`: the interval domain is a ball of the line.
 * `TauCeti.PDE.setIntegral_intervalDomain`: integrals over the interval domain are integrals over
   the real interval.
+* `TauCeti.PDE.measurePreserving_lineEquiv_restrict`: `TauCeti.PDE.lineEquiv` carries Lebesgue
+  measure on `(a, b)` to Lebesgue measure on the interval domain.
 * `TauCeti.PDE.intervalDomainEquivL`: `W^{1,p}` of the interval domain is `W^{1,p}` of the real
   interval, with the value, derivative, integral, boundary part and Dirichlet form transferred by
   `TauCeti.PDE.value_intervalDomainEquivL_ae`, `TauCeti.PDE.gradient_intervalDomainEquivL_ae`,
   their inverse forms `TauCeti.PDE.value_intervalDomainEquivL_symm_ae` and
   `TauCeti.PDE.gradient_intervalDomainEquivL_symm_ae`,
   `TauCeti.PDE.setIntegral_value_intervalDomainEquivL`,
-  `TauCeti.PDE.intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff` and
-  `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL`.
+  `TauCeti.PDE.intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff`,
+  `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL` and
+  `TauCeti.PDE.inner_value_eq_setIntegral_intervalDomainEquivL`.
 * `TauCeti.PDE.norm_value_le_mul_norm_gradient_intervalDomain`: the Poincaré–Friedrichs inequality
   `‖u‖ ≤ (b - a) ‖u'‖` on `W^{1,p}_{{a}}(a, b)`.
 -/
@@ -119,6 +122,22 @@ theorem coe_intervalDomain_eq_preimage :
   rw [coe_intervalDomain_eq_preimage, ← preimage_comp]
   simp
 
+/-- `TauCeti.PDE.lineEquiv` carries Lebesgue measure on the real interval `(a, b)` to Lebesgue
+measure on the interval domain. -/
+theorem measurePreserving_lineEquiv_restrict :
+    MeasurePreserving lineEquiv (volume.restrict (Ioo a b))
+      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))) := by
+  have := measurePreserving_lineEquiv.restrict_preimage (intervalDomain a b).isOpen.measurableSet
+  rwa [preimage_lineEquiv_intervalDomain] at this
+
+/-- The inverse of `TauCeti.PDE.lineEquiv` carries Lebesgue measure on the interval domain to
+Lebesgue measure on the real interval `(a, b)`. -/
+theorem measurePreserving_lineEquiv_symm_restrict :
+    MeasurePreserving lineEquiv.symm
+      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))
+      (volume.restrict (Ioo a b)) := by
+  have := measurePreserving_lineEquiv_symm.restrict_preimage (measurableSet_Ioo (a := a) (b := b))
+  rwa [← coe_intervalDomain_eq_preimage] at this
 
 /-- The interval domain `(a, b)` is bounded. -/
 theorem isBounded_intervalDomain :
@@ -158,7 +177,7 @@ theorem setIntegral_intervalDomain {E : Type*} [NormedAddCommGroup E] [NormedSpa
 
 section Sobolev
 
-open scoped ENNReal
+open scoped ENNReal InnerProductSpace
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -319,6 +338,17 @@ theorem energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL
   filter_upwards [gradient_intervalDomainEquivL_ae u, gradient_intervalDomainEquivL_ae v]
     with t hu hv
   simp [hu, hv, dotProduct]
+
+/-- The `L²` pairing on the interval domain is `∫_a^b u v`, computed on the real interval. -/
+theorem inner_value_eq_setIntegral_intervalDomainEquivL
+    (u v : W1p volume (intervalDomain a b) 2) :
+    ⟪W1p.value u, W1p.value v⟫_ℝ =
+      ∫ t in Ioo a b, W1p.value (intervalDomainEquivL a b 2 u) t *
+        W1p.value (intervalDomainEquivL a b 2 v) t := by
+  rw [W1p.inner_value_eq_setIntegral, setIntegral_intervalDomain_eq_setIntegral_Ioo]
+  refine integral_congr_ae ?_
+  filter_upwards [value_intervalDomainEquivL_ae u, value_intervalDomainEquivL_ae v] with t hu hv
+  rw [hu, hv]
 
 end Sobolev
 
