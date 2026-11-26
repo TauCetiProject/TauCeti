@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
-public import TauCeti.Algebra.Lie.Sl2.Embedding
+public import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # Zero-inclusive `sl₂` triples
@@ -52,9 +52,9 @@ gives the zero homomorphism, along which every representation restricts to a tri
   injective ones, and inner automorphisms.
 * `TauCeti.IsSl2TripleOrZero.symm`: `(-h, f, e)` is a zero-inclusive triple when `(h, e, f)` is.
 * `TauCeti.IsSl2TripleOrZero.toLieHom_eq_zero_iff`: the homomorphism of a triple vanishes exactly
-  for the zero triple; `TauCeti.IsSl2TripleOrZero.toLieHom_map` is its naturality, and
-  `IsSl2Triple.toLieHom_isSl2TripleOrZero` identifies it with `IsSl2Triple.toLieHom` on
-  `sl₂` triples.
+  for the zero triple; `TauCeti.IsSl2TripleOrZero.toLieHom_map` is its naturality.
+* `LieHom.eq_toLieHom_map`: every homomorphism `φ` out of `sl (Fin 2) K` is the homomorphism of the
+  image of the standard triple.
 
 ## References
 
@@ -234,15 +234,15 @@ theorem IsSl2TripleOrZero.smul_of_mem_intLieAlgebra {K L : Type*} [CommRing K] [
   simpa using (intLieAlgebraLieEquiv ⟨g, hg⟩).isSl2TripleOrZero_apply_iff.mpr t
 
 /-- For `i ≠ j`, the matrix units `Eᵢᵢ - Eⱼⱼ`, `Eᵢⱼ`, `Eⱼᵢ` form a zero-inclusive `sl₂` triple in
-`sl n R`, over every commutative ring. Over a nontrivial ring this is
-`(TauCeti.isSl2Triple_single hij).isSl2TripleOrZero`. -/
+`sl n R`, over every commutative ring: over a nontrivial ring this is
+`(TauCeti.isSl2Triple_single hij).isSl2TripleOrZero`, and over the zero ring `sl n R` is trivial. -/
 theorem isSl2TripleOrZero_single {R : Type*} [CommRing R] {n : Type*} [DecidableEq n] [Fintype n]
     {i j : n} (hij : i ≠ j) :
     IsSl2TripleOrZero (SpecialLinear.singleSubSingle i j (1 : R))
-      (SpecialLinear.single i j hij 1) (SpecialLinear.single j i hij.symm 1) where
-  lie_e_f := lie_single_single_eq_singleSubSingle hij 1
-  lie_h_e_nsmul := by rw [lie_singleSubSingle_single hij, ofNat_smul_eq_nsmul]
-  lie_h_f_nsmul := by rw [lie_singleSubSingle_single_swap hij, ofNat_smul_eq_nsmul]
+      (SpecialLinear.single i j hij 1) (SpecialLinear.single j i hij.symm 1) := by
+  cases subsingleton_or_nontrivial R
+  · exact ⟨Subsingleton.elim .., Subsingleton.elim .., Subsingleton.elim ..⟩
+  · exact (isSl2Triple_single hij).isSl2TripleOrZero
 
 /-! ### The homomorphism of a zero-inclusive triple -/
 
@@ -254,8 +254,9 @@ variable (K : Type*) {L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] {h e 
 /-- **The Lie algebra homomorphism of a zero-inclusive triple.** The homomorphism
 `sl (Fin 2) K →ₗ⁅K⁆ L` sending the standard triple `E = E₀₁`, `F = E₁₀`, `H = E₀₀ - E₁₁` to
 `e`, `f`, `h`. It is zero exactly for the zero triple
-(`TauCeti.IsSl2TripleOrZero.toLieHom_eq_zero_iff`) and agrees with `IsSl2Triple.toLieHom` on
-`sl₂` triples (`IsSl2Triple.toLieHom_isSl2TripleOrZero`). -/
+(`TauCeti.IsSl2TripleOrZero.toLieHom_eq_zero_iff`); for an `sl₂` triple `t` it is
+`t.isSl2TripleOrZero.toLieHom K`. Its values are computed by
+`TauCeti.IsSl2TripleOrZero.toLieHom_apply`. -/
 noncomputable def toLieHom : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L :=
   lieHomOfSl2Basis (slFinTwoBasis K) (lie_slFinTwoBasis_zero_one K) (lie_slFinTwoBasis_two_zero K)
     (lie_slFinTwoBasis_two_one K) e f h t.lie_e_f (t.lie_h_e_smul K) (t.lie_lie_smul_f K)
@@ -352,9 +353,9 @@ end Correspondence
 
 end TauCeti
 
-/-- On an `sl₂` triple, the homomorphism of the underlying zero-inclusive triple is the
-homomorphism `IsSl2Triple.toLieHom` of the triple. -/
-theorem IsSl2Triple.toLieHom_isSl2TripleOrZero (K : Type*) {L : Type*} [CommRing K] [LieRing L]
-    [LieAlgebra K L] {h e f : L} (t : IsSl2Triple h e f) :
-    t.isSl2TripleOrZero.toLieHom K = t.toLieHom K := by
+/-- **Every homomorphism out of `sl₂` comes from a triple.** A Lie algebra homomorphism `φ` out of
+`sl (Fin 2) K` is the homomorphism of the zero-inclusive triple `(φ H, φ E, φ F)`. -/
+theorem LieHom.eq_toLieHom_map {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
+    (φ : SpecialLinear.sl (Fin 2) K →ₗ⁅K⁆ L) :
+    φ = ((TauCeti.isSl2TripleOrZero_single (R := K) zero_ne_one).map φ).toLieHom K := by
   ext <;> simp

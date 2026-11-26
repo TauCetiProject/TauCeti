@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Sl2.EigenspaceMap
 public import TauCeti.Algebra.Lie.Sl2.TripleOrZero.Basic
+public import TauCeti.LinearAlgebra.Eigenspace.ZeroEndomorphism
 
 /-!
 # The raising and lowering operators of a zero-inclusive triple between eigenspaces
@@ -60,14 +61,6 @@ namespace TauCeti
 
 namespace IsSl2TripleOrZero
 
-/-- The eigenspaces of the action of `0` at nonzero eigenvalues vanish. -/
-private theorem eigenspace_toEnd_zero_eq_bot {K L M : Type*} [CommRing K] [IsDomain K] [LieRing L]
-    [LieAlgebra K L] [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
-    [IsTorsionFree K M] {μ : K} (hμ : μ ≠ 0) : (toEnd K L M 0).eigenspace μ = ⊥ := by
-  refine (Submodule.eq_bot_iff _).2 fun m hm ↦ ?_
-  rw [Module.End.mem_eigenspace_iff, map_zero, LinearMap.zero_apply, eq_comm, smul_eq_zero] at hm
-  exact hm.resolve_left hμ
-
 /-! ### Injectivity -/
 
 section Domain
@@ -81,7 +74,7 @@ triple these eigenspaces vanish. -/
 theorem disjoint_ker_toEnd_e_eigenspace (t : IsSl2TripleOrZero h e f) (hμ : ∀ n : ℕ, μ ≠ n) :
     Disjoint (LinearMap.ker (toEnd K L M e)) ((toEnd K L M h).eigenspace μ) := by
   rcases eq_or_ne h 0 with rfl | hh
-  · rw [eigenspace_toEnd_zero_eq_bot (by simpa using hμ 0)]
+  · rw [map_zero, End.eigenspace_zero_of_ne_zero (by simpa using hμ 0)]
     exact disjoint_bot_right
   · exact (t.isSl2Triple hh).disjoint_ker_toEnd_e_eigenspace hμ
 
@@ -90,7 +83,7 @@ zero triple these eigenspaces vanish. -/
 theorem disjoint_ker_toEnd_f_eigenspace (t : IsSl2TripleOrZero h e f) (hμ : ∀ n : ℕ, μ ≠ -n) :
     Disjoint (LinearMap.ker (toEnd K L M f)) ((toEnd K L M h).eigenspace μ) := by
   rcases eq_or_ne h 0 with rfl | hh
-  · rw [eigenspace_toEnd_zero_eq_bot (by simpa using hμ 0)]
+  · rw [map_zero, End.eigenspace_zero_of_ne_zero (by simpa using hμ 0)]
     exact disjoint_bot_right
   · exact (t.isSl2Triple hh).disjoint_ker_toEnd_f_eigenspace hμ
 
@@ -144,8 +137,8 @@ theorem map_toEnd_e_eigenspace (t : IsSl2TripleOrZero h e f) (hμ : ∀ n : ℕ,
     ((toEnd K L M h).eigenspace μ).map (toEnd K L M e) = (toEnd K L M h).eigenspace (μ + 2) := by
   have := HasUniqueDiv.of_isTorsionFree K L
   rcases eq_or_ne h 0 with rfl | hh
-  · rw [eigenspace_toEnd_zero_eq_bot (μ := μ + 2) (by simpa using hμ 0), t.e_eq_zero_iff.mpr rfl,
-      map_zero, Submodule.map_zero]
+  · rw [map_zero, End.eigenspace_zero_of_ne_zero (μ := μ + 2) (by simpa using hμ 0),
+      t.e_eq_zero_iff.mpr rfl, map_zero, Submodule.map_zero]
   · exact (t.isSl2Triple hh).map_toEnd_e_eigenspace hμ
 
 /-- **The lowering operator maps `M_μ` onto `M_(μ - 2)`** unless `μ - 2` is a natural number. For
@@ -154,8 +147,8 @@ theorem map_toEnd_f_eigenspace (t : IsSl2TripleOrZero h e f) (hμ : ∀ n : ℕ,
     ((toEnd K L M h).eigenspace μ).map (toEnd K L M f) = (toEnd K L M h).eigenspace (μ - 2) := by
   have := HasUniqueDiv.of_isTorsionFree K L
   rcases eq_or_ne h 0 with rfl | hh
-  · rw [eigenspace_toEnd_zero_eq_bot (μ := μ - 2) (by simpa using hμ 0), t.f_eq_zero_iff.mpr rfl,
-      map_zero, Submodule.map_zero]
+  · rw [map_zero, End.eigenspace_zero_of_ne_zero (μ := μ - 2) (by simpa using hμ 0),
+      t.f_eq_zero_iff.mpr rfl, map_zero, Submodule.map_zero]
   · exact (t.isSl2Triple hh).map_toEnd_f_eigenspace hμ
 
 /-- **Surjectivity of the raising operator at integer weights `j ≥ -1`.** For `j ≥ -1`, `e` maps
@@ -175,10 +168,8 @@ algebra over a field of characteristic zero, `ad e` maps the `0`-eigenspace of `
 `2`-eigenspace. For the zero triple both sides vanish. -/
 theorem map_ad_e_eigenspace_zero (t : IsSl2TripleOrZero h e f) :
     ((ad K L h).eigenspace 0).map (ad K L e) = (ad K L h).eigenspace 2 := by
-  have := t.map_toEnd_e_eigenspace_intCast (K := K) (M := L) (j := 0) (by norm_num)
-  rw [Int.cast_zero, zero_add, Int.cast_ofNat] at this
-  -- `ad K L` is by definition the action `toEnd K L L` of `L` on itself.
-  exact this
+  rw [ad_eq_toEnd]
+  simpa using t.map_toEnd_e_eigenspace_intCast (K := K) (M := L) (j := 0) (by norm_num)
 
 end Field
 
