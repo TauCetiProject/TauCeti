@@ -279,6 +279,20 @@ private def descendedRoughForm (Φ : C ⥤ D) [Φ.EssSurj]
     (arrowLocalLift Φ ht' hΦ (Φ.objPreimage y)
       ⟨Φ.obj (Φ.objPreimage y), y, (Φ.objObjPreimageIso y).hom⟩) α y
 
+include hs' in
+omit [IsGroupoid D] [TopologicalSpace (Quiver.Total C)] [TauCeti.IsTopologicalGroupoid D]
+  [IsManifold I ∞ C] in
+private theorem isLocalLiftAt_canonical (Φ : C ⥤ D) [Φ.EssSurj]
+    (ht' : IsLocalDiffeomorph J' I' ∞ (Quiver.Total.right : Quiver.Total D → D))
+    (hΦ : IsLocalDiffeomorph I I' ∞ Φ.obj) (y : D) :
+    IsLocalLiftAt (I := I) (I' := I') Φ y
+      (arrowLocalLift Φ ht' hΦ (Φ.objPreimage y)
+        ⟨Φ.obj (Φ.objPreimage y), y, (Φ.objObjPreimageIso y).hom⟩)
+      (ht' ⟨Φ.obj (Φ.objPreimage y), y, (Φ.objObjPreimageIso y).hom⟩).localInverse :=
+  isLocalLiftAt_arrowLocalLift Φ ht' hΦ (Φ.objPreimage y)
+    ⟨Φ.obj (Φ.objPreimage y), y, (Φ.objObjPreimageIso y).hom⟩ hs'
+    (mem_arrowLocalLiftOpen Φ ht' hΦ (Φ.objPreimage y) _ rfl)
+
 include hs' hΦ₁
 
 private theorem eventually_descendedRoughForm_eq [Φ.Full] [Φ.EssSurj]
@@ -289,9 +303,7 @@ private theorem eventually_descendedRoughForm_eq [Φ.Full] [Φ.EssSurj]
   eventually_of_mem ((isOpen_arrowLocalLiftOpen Φ ht' hΦ x a hs').mem_nhds
     (mem_arrowLocalLiftOpen Φ ht' hΦ x a ha)) fun y hy ↦
     mpullback_apply_eq_of_isLocalLiftAt (hs' := hs') (hΦ := hΦ) (hΦ₁ := hΦ₁) hs hα
-      (isLocalLiftAt_arrowLocalLift Φ ht' hΦ (Φ.objPreimage y)
-        ⟨Φ.obj (Φ.objPreimage y), y, (Φ.objObjPreimageIso y).hom⟩ hs'
-        (mem_arrowLocalLiftOpen Φ ht' hΦ (Φ.objPreimage y) _ rfl))
+      (isLocalLiftAt_canonical (hs' := hs') Φ ht' hΦ y)
       (isLocalLiftAt_arrowLocalLift Φ ht' hΦ x a hs' hy)
 
 private theorem isSmoothForm_descendedRoughForm [IsManifold I' ∞ D] [Φ.Full] [Φ.EssSurj]
@@ -300,8 +312,7 @@ private theorem isSmoothForm_descendedRoughForm [IsManifold I' ∞ D] [Φ.Full] 
   rw [isSmoothForm_def]; intro y
   let x := Φ.objPreimage y
   let a : Quiver.Total D := ⟨Φ.obj x, y, (Φ.objObjPreimageIso y).hom⟩
-  have hℓ := (isLocalLiftAt_arrowLocalLift (I := I) (I' := I') Φ ht' hΦ x a hs'
-    (mem_arrowLocalLiftOpen Φ ht' hΦ x a rfl)).contMDiffAt
+  have hℓ := (isLocalLiftAt_canonical (hs' := hs') Φ ht' hΦ y).contMDiffAt
   exact ((α.contMDiff (arrowLocalLift Φ ht' hΦ x a y)).mpullback_form hℓ
     (by simp)).congr_of_eventuallyEq
     ((eventually_descendedRoughForm_eq (hs' := hs') (ht' := ht') (hΦ := hΦ) (hΦ₁ := hΦ₁)
@@ -314,9 +325,7 @@ private theorem mpullback_descendedRoughForm [Φ.Full] [Φ.EssSurj]
   have hpt : descendedRoughForm Φ ht' hΦ α.val (Φ.obj x) =
       mpullback (F := V) (k := k) I' I (hΦ x).localInverse α.val (Φ.obj x) :=
     mpullback_apply_eq_of_isLocalLiftAt (hs' := hs') (hΦ := hΦ) (hΦ₁ := hΦ₁) hs hα
-      (isLocalLiftAt_arrowLocalLift Φ ht' hΦ (Φ.objPreimage (Φ.obj x))
-        ⟨Φ.obj (Φ.objPreimage (Φ.obj x)), Φ.obj x, (Φ.objObjPreimageIso (Φ.obj x)).hom⟩ hs'
-        (mem_arrowLocalLiftOpen Φ ht' hΦ (Φ.objPreimage (Φ.obj x)) _ rfl))
+      (isLocalLiftAt_canonical (hs' := hs') Φ ht' hΦ (Φ.obj x))
       ⟨(hΦ x).contMDiffAt_localInverse, IsTopologicalGroupoid.continuous_unit.continuousAt,
         (hΦ x).localInverse_eventuallyEq_right.symm, Eventually.of_forall fun _ ↦ rfl⟩
   have heq : mpullback (F := V) (k := k) I I' Φ.obj (descendedRoughForm Φ ht' hΦ α.val) x =
@@ -344,17 +353,15 @@ private theorem mpullback_left_eq_right_descendedRoughForm [Φ.Full] [Φ.EssSurj
           (mpullback (F := V) (k := k) I' I (arrowLocalLift Φ ht' hΦ x₁ a₁) α.val) a :=
       mpullback_apply_congr rfl
     rw [hpt_l, ← mpullback_comp_at (hs'.mdifferentiable (by simp) a)
-      ((isLocalLiftAt_arrowLocalLift Φ ht' hΦ x₁ a₁ hs'
-        (mem_arrowLocalLiftOpen Φ ht' hΦ x₁ a₁ rfl)).contMDiffAt.mdifferentiableAt (by simp))]
+      ((isLocalLiftAt_canonical (hs' := hs') Φ ht' hΦ a.left).contMDiffAt.mdifferentiableAt
+        (by simp))]
   obtain ⟨τ₂, hlift₂⟩ := isLocalLiftAt_comp_target_localInverse (I := I) (I' := I')
     Φ hs' ht' hΦ x₁ a₁ a rfl rfl
   have hcomp_eq : descendedRoughForm Φ ht' hΦ α.val a.right =
       mpullback (F := V) (k := k) I' I
         (arrowLocalLift Φ ht' hΦ x₁ a₁ ∘ Quiver.Total.left ∘ (ht' a).localInverse) α.val a.right :=
     mpullback_apply_eq_of_isLocalLiftAt (hs' := hs') (hΦ := hΦ) (hΦ₁ := hΦ₁) hs hα
-      (isLocalLiftAt_arrowLocalLift Φ ht' hΦ (Φ.objPreimage a.right)
-        ⟨Φ.obj (Φ.objPreimage a.right), a.right, (Φ.objObjPreimageIso a.right).hom⟩ hs'
-        (mem_arrowLocalLiftOpen Φ ht' hΦ (Φ.objPreimage a.right) _ rfl)) hlift₂
+      (isLocalLiftAt_canonical (hs' := hs') Φ ht' hΦ a.right) hlift₂
   have hr : mpullback (F := V) (k := k) J' I' Quiver.Total.right
         (descendedRoughForm Φ ht' hΦ α.val) a =
       mpullback (F := V) (k := k) J' I' Quiver.Total.right
