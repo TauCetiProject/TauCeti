@@ -42,9 +42,14 @@ intersection of the two regions. Overlapping regions alone prove nothing: `[1, 2
 * `TauCeti.RootIsolation σ z`: a nonzero squarefree rational polynomial vanishing at `z`, with a
   rational region containing `σ z` and no other complex root of the polynomial.
 * `TauCeti.RootIsolation.ofRat`: the isolation of a rational number `q` by `X - q` and `[q, q]`.
+* `TauCeti.RootIsolation.ofSubset`: the isolation given by a squarefree annihilator and a region
+  containing `σ z` and no other root; `TauCeti.RootIsolation.restrict` shrinks the region of an
+  isolation.
 
 ## Main results
 
+* `TauCeti.RationalRegion.isCompact_toSet`: every rational region is compact, hence bounded and
+  closed.
 * `TauCeti.RootIsolation.eq_of_aeval_eq_zero`: an element of `K` that is a root of the polynomial
   and is sent by `σ` into the region equals `z`.
 * `TauCeti.RootIsolation.exists_disc`, `TauCeti.RootIsolation.exists_box`,
@@ -130,6 +135,20 @@ theorem mem_toSet_box {R J : NonemptyInterval ℚ} {w : ℂ} :
 theorem diam_toSet_interval (J : NonemptyInterval ℚ) : diam (interval J).toSet = J.length := by
   rw [toSet_interval, isometry_ofReal.diam_image,
     Real.diam_Icc (by exact_mod_cast J.fst_le_snd), NonemptyInterval.length, Rat.cast_sub]
+
+/-- The subset of `ℂ` described by a rational region is compact. -/
+theorem isCompact_toSet : ∀ R : RationalRegion, IsCompact R.toSet
+  | interval _ => isCompact_Icc.image continuous_ofReal
+  | disc _ _ _ => isCompact_closedBall _ _
+  | box _ _ => isCompact_Icc.reProdIm isCompact_Icc
+
+/-- The subset of `ℂ` described by a rational region is bounded. -/
+theorem isBounded_toSet (R : RationalRegion) : Bornology.IsBounded R.toSet :=
+  R.isCompact_toSet.isBounded
+
+/-- The subset of `ℂ` described by a rational region is closed. -/
+theorem isClosed_toSet (R : RationalRegion) : IsClosed R.toSet :=
+  R.isCompact_toSet.isClosed
 
 /-- Rational approximations of the real and imaginary parts of `x` to within `s`, with
 `4 s < ε`. -/
@@ -274,6 +293,41 @@ theorem ofRat_region (q : ℚ) :
     (ofRat (σ := σ) q).region = .interval (NonemptyInterval.pure q) :=
   (rfl)
 
+/-- The isolation of `z` by a squarefree annihilator `f` and a rational region containing `σ z`
+in which `σ z` is the only complex root of `f`. -/
+def ofSubset {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0) (R : RationalRegion)
+    (hmem : σ z ∈ R.toSet) (hR : R.toSet ⊆ {w | aeval w f = 0 → w = σ z}) :
+    RootIsolation σ z :=
+  ⟨f, hf, hz, R, hmem, hR⟩
+
+@[simp]
+theorem ofSubset_poly {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0) (R : RationalRegion)
+    (hmem : σ z ∈ R.toSet) (hR : R.toSet ⊆ {w | aeval w f = 0 → w = σ z}) :
+    (ofSubset hf hz R hmem hR).poly = f :=
+  (rfl)
+
+@[simp]
+theorem ofSubset_region {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0) (R : RationalRegion)
+    (hmem : σ z ∈ R.toSet) (hR : R.toSet ⊆ {w | aeval w f = 0 → w = σ z}) :
+    (ofSubset hf hz R hmem hR).region = R :=
+  (rfl)
+
+/-- Shrinking the region of an isolation to a rational region that still contains `σ z` gives an
+isolation by the same polynomial. -/
+def restrict (D : RootIsolation σ z) (R : RationalRegion) (hmem : σ z ∈ R.toSet)
+    (hR : R.toSet ⊆ D.region.toSet) : RootIsolation σ z :=
+  ofSubset D.squarefree_poly D.aeval_poly R hmem fun w hw => D.eq_of_mem_region w (hR hw)
+
+@[simp]
+theorem restrict_poly (D : RootIsolation σ z) (R : RationalRegion) (hmem : σ z ∈ R.toSet)
+    (hR : R.toSet ⊆ D.region.toSet) : (D.restrict R hmem hR).poly = D.poly :=
+  (rfl)
+
+@[simp]
+theorem restrict_region (D : RootIsolation σ z) (R : RationalRegion) (hmem : σ z ∈ R.toSet)
+    (hR : R.toSet ⊆ D.region.toSet) : (D.restrict R hmem hR).region = R :=
+  (rfl)
+
 /-- For every squarefree annihilator `f` of `z` and every neighbourhood `V` of `σ z`, there is an
 isolation of `z` by `f` whose region is a closed disc `|w - (a + b i)| ≤ r` contained in `V`, with
 `σ z` in its interior. -/
@@ -283,8 +337,9 @@ theorem exists_disc {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0) {V : S
       dist (σ z) (a + b * I) < r ∧ D.region.toSet ⊆ V := by
   obtain ⟨a, b, r, hr, hsub⟩ := RationalRegion.exists_disc_subset
     (inter_mem hV (eventually_aeval_eq_zero_imp_eq hf.ne_zero (σ z)))
-  exact ⟨a, b, r, ⟨f, hf, hz, .disc a b r, RationalRegion.mem_toSet_disc.mpr hr.le,
-    fun w hw => (hsub hw).2⟩, rfl, rfl, hr, fun w hw => (hsub hw).1⟩
+  rw [Set.subset_inter_iff] at hsub
+  exact ⟨a, b, r, ofSubset hf hz _ (RationalRegion.mem_toSet_disc.mpr hr.le) hsub.2, rfl, rfl,
+    hr, hsub.1⟩
 
 /-- For every squarefree annihilator `f` of `z` and every neighbourhood `V` of `σ z`, there is an
 isolation of `z` by `f` whose region is a rectangle `R × J` with rational sides contained in `V`,
@@ -296,9 +351,9 @@ theorem exists_box {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0) {V : Se
       D.region.toSet ⊆ V := by
   obtain ⟨R, J, hR, hJ, hsub⟩ := RationalRegion.exists_box_subset
     (inter_mem hV (eventually_aeval_eq_zero_imp_eq hf.ne_zero (σ z)))
-  exact ⟨R, J, ⟨f, hf, hz, .box R J, RationalRegion.mem_toSet_box.mpr
-    ⟨Set.Ioo_subset_Icc_self hR, Set.Ioo_subset_Icc_self hJ⟩, fun w hw => (hsub hw).2⟩,
-    rfl, rfl, hR, hJ, fun w hw => (hsub hw).1⟩
+  rw [Set.subset_inter_iff] at hsub
+  exact ⟨R, J, ofSubset hf hz _ (RationalRegion.mem_toSet_box.mpr
+    ⟨Set.Ioo_subset_Icc_self hR, Set.Ioo_subset_Icc_self hJ⟩) hsub.2, rfl, rfl, hR, hJ, hsub.1⟩
 
 /-- For every squarefree annihilator `f` of `z` such that `σ z` is real, and every neighbourhood
 `V` of `σ z`, there is an isolation of `z` by `f` whose region is a real interval with rational
@@ -309,9 +364,9 @@ theorem exists_interval {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0)
       (σ z).re ∈ Set.Ioo (J.fst : ℝ) J.snd ∧ D.region.toSet ⊆ V := by
   obtain ⟨J, hJ, hsub⟩ := RationalRegion.exists_interval_subset hreal
     (inter_mem hV (eventually_aeval_eq_zero_imp_eq hf.ne_zero (σ z)))
-  exact ⟨J, ⟨f, hf, hz, .interval J, RationalRegion.mem_toSet_interval.mpr
-    ⟨hreal, Set.Ioo_subset_Icc_self hJ⟩, fun w hw => (hsub hw).2⟩, rfl, rfl, hJ,
-    fun w hw => (hsub hw).1⟩
+  rw [Set.subset_inter_iff] at hsub
+  exact ⟨J, ofSubset hf hz _ (RationalRegion.mem_toSet_interval.mpr
+    ⟨hreal, Set.Ioo_subset_Icc_self hJ⟩) hsub.2, rfl, rfl, hJ, hsub.1⟩
 
 variable (σ) in
 /-- Every algebraic value has an isolation whose region lies in a prescribed neighbourhood of
