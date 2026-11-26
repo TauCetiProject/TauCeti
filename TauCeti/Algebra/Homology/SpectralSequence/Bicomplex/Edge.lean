@@ -140,7 +140,9 @@ theorem rowFiltrationSpectralSequenceFirstPageXIso_inv_rowFiltrationEdge (p : �
       (((0 : ℕ) : ℤ) : EInt)) := by
     rw [CochainComplex.filtrationFunctor_obj_coe, K.rowFiltration_eq_bot _ (by simp)]
     exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
-  have := cokernel.π_of_zero (hz.eq_of_src
+  -- the projection onto the cokernel of the zero map is an isomorphism, hence an epimorphism;
+  -- this supplies the instance used by `cancel_epi` below
+  have hπ := cokernel.π_of_zero (hz.eq_of_src
     ((CochainComplex.filtrationFunctor K.rowFiltration K.monotone_rowFiltration).map
       (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : (((0 : ℕ) : ℤ)) = _) rfl))) 0)
   -- on the homology of the row `0`, placed in the degrees of the total complex, the edge map is
@@ -158,10 +160,12 @@ theorem rowFiltrationSpectralSequenceFirstPageXIso_inv_rowFiltrationEdge (p : �
     rw [← cancel_epi (HomologicalComplex.homologyMap (eqToHom
       (CochainComplex.filtrationFunctor_obj_coe K.rowFiltration K.monotone_rowFiltration
         (((0 : ℕ) : ℤ) + 1)).symm ≫ cokernel.π _ ≫ (K.rowFiltrationGradedIso 0).hom)
-        (p + (0 : ℕ))),
-      ← HomologicalComplex.homologyMap_comp_assoc, Category.assoc, Category.assoc,
-      Iso.hom_inv_id, Category.comp_id, hF, ← HomologicalComplex.homologyMap_comp,
-      Category.assoc, Category.assoc, hG]
+        (p + (0 : ℕ)))]
+    -- merge the maps on the left and cancel the graded-piece identification with its inverse
+    simp only [← HomologicalComplex.homologyMap_comp_assoc, Category.assoc, Iso.hom_inv_id,
+      Category.comp_id]
+    rw [hF]
+    simp only [← HomologicalComplex.homologyMap_comp, Category.assoc, hG]
     -- `filtrationFunctorArrow` is by definition the identification of the object of the
     -- functor of the filtration with the subcomplex, followed by its inclusion
     exact congrArg (HomologicalComplex.homologyMap · (p + (0 : ℕ)))
@@ -196,7 +200,7 @@ lemma homologyπ_iso_hom_rowFiltrationEdge (r r' : ℤ) (hrr' : r + 1 = r') (hr 
 
 /-- An object of the page `r ≥ 2` of the spectral sequence of the row filtration which vanishes
 has vanishing limit object: the limit object is a subquotient of it. -/
-lemma isZero_rowFiltrationSpectralObject_EInfty (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+lemma isZero_rowFiltrationSpectralObject_EInfty_of_isZero (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
     (h : IsZero ((K.rowFiltrationSpectralSequence.page r).X pq)) :
     IsZero (K.rowFiltrationSpectralObject.EInfty pq.2 (pq.1 + pq.2)) :=
   (K.rowFiltrationSpectralSequence.isZero_page_X_of_le hr h
@@ -233,7 +237,8 @@ lemma isIso_rowFiltration_abutmentFiltrationι_of_isZero (r : ℤ) (hr : 2 ≤ r
     (K.isIso_rowFiltration_abutmentFiltrationι _ _ (by omega))
     (fun s' h₁ _ ↦ by
       simpa using
-        K.isZero_rowFiltrationSpectralObject_EInfty r hr (n - s', s') (h _ (by simpa using h₁)))
+        K.isZero_rowFiltrationSpectralObject_EInfty_of_isZero r hr (n - s', s')
+          (h _ (by simpa using h₁)))
 
 /-- **Collapse onto the row `0`.** If the page `r ≥ 2` of the spectral sequence of the row
 filtration vanishes in the rows `≥ 1`, the edge map from the page `r` is an isomorphism: the
