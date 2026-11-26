@@ -478,15 +478,38 @@ noncomputable def indTopEquiv (ρ : Representation k G V) :
 
 /-- `Representation.indTopEquiv` sends the generator `⟦1 ⊗ₜ v⟧` to `v`. This is
 `Adjunction.unit_leftAdjointUniq_hom_app` read on `v`: the unit of the induction--restriction
-adjunction is the generator map `v ↦ ⟦1 ⊗ₜ v⟧`, and the unit of the restriction equivalence
-`MulEquiv.resFunctorEquiv` is the identity on vectors by definition. -/
+adjunction is the generator map `v ↦ ⟦1 ⊗ₜ v⟧`, and the unit of the adjunction coming from the
+restriction equivalence is the identity (`MulEquiv.resFunctorEquiv_counitIso`). -/
 private lemma indTopEquiv_apply_mk_one (ρ : Representation k G V) (v : V) :
     indTopEquiv ρ (IndV.mk (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype) 1 v) =
-      v :=
-  congrArg (fun f => f.hom v) (Adjunction.unit_leftAdjointUniq_hom_app
-    (Rep.indResAdjunction.{max u v} k (Subgroup.topEquiv (G := G)).toMonoidHom)
-    ((MulEquiv.resFunctorEquiv (Subgroup.topEquiv (G := G))).symm.toAdjunction.ofNatIsoRight
-      (eqToIso (MulEquiv.resFunctorEquiv_functor _))) (Rep.of (ρ.comp (⊤ : Subgroup G).subtype)))
+      v := by
+  -- The unit of induction followed by `indFunctorMulEquivIso` is the identity. The two ends are
+  -- equal by definition: restricting along `Subgroup.topEquiv.symm` and then `Subgroup.topEquiv`
+  -- composes `ρ.comp (⊤ : Subgroup G).subtype` with `g ↦ ⟨g, _⟩` on `⊤`, which is subtype eta.
+  have key : (Rep.indResAdjunction.{max u v} k (Subgroup.topEquiv (G := G)).toMonoidHom).unit.app
+        (Rep.of (ρ.comp (⊤ : Subgroup G).subtype)) ≫
+      (Rep.resFunctor (Subgroup.topEquiv (G := G)).toMonoidHom).map
+        ((TauCeti.Rep.indFunctorMulEquivIso (k := k) (Subgroup.topEquiv (G := G))).hom.app
+          (Rep.of (ρ.comp (⊤ : Subgroup G).subtype))) = eqToHom rfl := by
+    -- Split off the trailing `eqToIso` and evaluate the uniqueness isomorphism of left adjoints
+    -- against the units with `Adjunction.unit_leftAdjointUniq_hom_app`.
+    rw [TauCeti.Rep.indFunctorMulEquivIso, Iso.trans_hom, NatTrans.comp_app, eqToIso.hom,
+      eqToHom_app, Functor.map_comp, eqToHom_map, ← Category.assoc,
+      Adjunction.unit_leftAdjointUniq_hom_app]
+    -- The remaining unit is the counit of `MulEquiv.resFunctorEquiv`, transported along
+    -- `MulEquiv.resFunctorEquiv_functor`. Both are `eqToHom`s, which compose to an `eqToHom`
+    -- between definitionally equal objects, closed by `rfl`.
+    simp only [Adjunction.ofNatIsoRight, Equivalence.toAdjunction_unit, Equivalence.symm_unit,
+      Equivalence.counitInv, MulEquiv.resFunctorEquiv_counitIso, NatTrans.comp_app,
+      Functor.whiskerLeft_app, eqToIso.hom, eqToIso.inv, eqToHom_app, eqToHom_trans]
+    rfl
+  -- Read the identity of morphisms on `v`; the unit of induction is the generator map.
+  have key := congrArg (fun f => f.hom v) key
+  simp only [Rep.hom_comp, IntertwiningMap.comp_apply] at key
+  rw [Rep.resMap_hom_apply, TauCeti.Rep.indResAdjunction_unit_app_hom_apply] at key
+  -- `indTopEquiv ρ` applies the component of `indFunctorMulEquivIso` (`equivOfIso_toFun`), and
+  -- `eqToHom rfl` is the identity on `v`.
+  exact key
 
 -- Pre-order simplification evaluates the map before `simp` unfolds `Representation.IndV.mk`.
 /-- **`Representation.indTopEquiv` on generators**: it sends `⟦g ⊗ₜ v⟧` to `ρ g⁻¹ v`. -/

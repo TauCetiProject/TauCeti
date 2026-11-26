@@ -33,10 +33,10 @@ Two instances are the ones the induction theorems are stated with: `TauCeti.indC
 classes induced from cyclic subgroups, and `TauCeti.indCyclicCoprimeK0 ℓ`, the classes induced
 from cyclic subgroups of order prime to `ℓ`. Both are everything when `G` is itself cyclic (of
 order prime to `ℓ` in the second case), since the whole group is then a member of the family and
-induction from `⊤` is surjective (`TauCeti.indClassesK0_eq_top`). Induction from `⊤` is in fact
-inverse to restriction to `⊤` (`Representation.indTopEquiv`), so the computations at `⊤` are over
-a commutative ring, like the definitions; only the ideal property needs the ring structure of
-`G₀(k[G])` and hence a field.
+induction from `⊤` is surjective (`TauCeti.indClassesK0_eq_top`). Inducing the restriction to `⊤`
+back from `⊤` returns the representation (`Representation.indTopEquiv`), so the computations at
+`⊤` are over a commutative ring, like the definitions; only the ideal property needs the ring
+structure of `G₀(k[G])` and hence a field.
 
 ## Main definitions
 
