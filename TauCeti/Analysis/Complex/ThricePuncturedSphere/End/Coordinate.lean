@@ -206,6 +206,18 @@ theorem one_sub_norm_sub_endCenter_le {q r : Puncture} (hq : q ≠ inf) (hr : r 
 theorem endSign_eq_one {q : Puncture} (hq : q ≠ inf) : q.endSign = 1 := by
   cases q <;> simp_all
 
+/-- Two distinct inputs `q` and `r` of a pair of pants are `0` and `1`, in some order. -/
+theorem eq_zero_and_eq_one_or_eq_one_and_eq_zero {q r : Puncture} (hq : q ≠ inf)
+    (hrq : r ≠ q) (hr : r ≠ inf) : q = zero ∧ r = one ∨ q = one ∧ r = zero := by
+  revert q r
+  decide
+
+/-- An end `p ≠ q` of a pair of pants with distinct inputs `q` and `r` is `r` or the output. -/
+theorem eq_or_eq_inf_of_ne {p q r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q)
+    (hr : r ≠ inf) (hp : p ≠ q) : p = r ∨ p = inf := by
+  revert p q r
+  decide
+
 /-- The end centers are the two finite punctures, so they lie outside the punctured sphere. -/
 theorem endCenter_eq_zero_or_eq_one (q : Puncture) : q.endCenter = 0 ∨ q.endCenter = 1 := by
   cases q <;> simp

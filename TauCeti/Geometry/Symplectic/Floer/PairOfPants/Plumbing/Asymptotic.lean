@@ -232,18 +232,6 @@ theorem IsNondegenerate.integral_floerEnergyDensity_plumbedPerturbation
       (hω.integral_floerEnergyDensity_plumbedTruncation hq hHa hHb hHas hHbs hab hL hR hu).symm))
   rwa [hTP] at h
 
-/-- Two distinct inputs `q` and `r` of a pair of pants are `0` and `1`, in some order. -/
-private theorem eq_zero_and_eq_one_or_eq_one_and_eq_zero {q r : Puncture} (hq : q ≠ inf)
-    (hrq : r ≠ q) (hr : r ≠ inf) : q = zero ∧ r = one ∨ q = one ∧ r = zero := by
-  revert q r
-  decide
-
-/-- An end `p ≠ q` of a pair of pants with distinct inputs `q` and `r` is `r` or the output. -/
-private theorem eq_or_eq_inf_of_ne {p q r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q)
-    (hr : r ≠ inf) (hp : p ≠ q) : p = r ∨ p = inf := by
-  revert p q r
-  decide
-
 /-- The plane minus the three input punctures `c_q`, `ψ(1)` and `c_r` of a plumbed sphere, listed
 as the centers of its input ends, is the plumbed four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`. -/
 private theorem setOf_forall_ne_plumbedCenters {r : Puncture} (hq : q ≠ inf) (hrq : r ≠ q)
