@@ -413,7 +413,13 @@ end Complex
 
 end ProdMap
 
-/-! ### The periodic orbit-torus operator -/
+/-! ### The periodic orbit-torus operator
+
+The periodic orbit-torus operator is `(J₀ L_S) ⊕ B` for the invertible operator `B` on the modes of
+nonzero frequency (`TauCeti.periodicTorusOperator_eq_prodMap`), so the results below are those of
+the previous section. Their proofs rely on the exposed definitions of
+`TauCeti.periodicTorusOperator` and `TauCeti.detLinePeriodicTorusOperatorEquiv` unfolding
+definitionally to `(J₀ L_S) ⊕ B` and to `TauCeti.detLineProdMapLoopOperatorEquiv`. -/
 
 /-- **The determinant lines of a family of periodic orbit-torus operators and of its return maps are
 coherently identified.** Let `M` be a family of continuous loops, continuous on a parameter set
@@ -543,7 +549,8 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_eq_sign_det (hℓ : �
         (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F))) :=
   sign_detLineEquivOfBijective_prodMap_loopOperator_eq_sign_det T
     (D := fun τ ↦ periodicTorusOperator T ℓ (M τ))
-    (B := fun τ ↦ torusModeOperator T (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) (M τ)) (fun _ ↦ rfl) hM
+    (B := fun τ ↦ torusModeOperator T (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) (M τ))
+    (fun τ ↦ periodicTorusOperator_eq_prodMap T ℓ (M τ)) hM
     ((continuous_torusModeOperator T _).comp_continuousOn hM)
     (fun τ hτ ↦ isInvertible_torusModeOperator_periodic T hℓ (M τ) (hMs τ hτ)) hMa hf hz hb hx hxz
 
