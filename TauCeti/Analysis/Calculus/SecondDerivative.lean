@@ -818,7 +818,8 @@ theorem fderiv_fderiv_mul_comp_apply {φ : F → 𝕜} {η : 𝕜 → 𝕜} (P :
     fderiv_comp y (hφ.differentiableAt two_ne_zero) P.differentiableAt,
     fderiv_comp y (hη.differentiableAt two_ne_zero) ℓ.differentiableAt,
     fderiv_fderiv_apply_eq_smul_iteratedDeriv]
-  simp [ContinuousLinearMap.fderiv]
+  simp only [ContinuousLinearMap.fderiv, ContinuousLinearMap.fderiv_fderiv, Pi.zero_apply,
+    zero_apply, map_zero, ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, smul_eq_mul]
   ring
 
 /-- The second derivative of a scalar function of one variable, a map from `𝕜` to the linear forms

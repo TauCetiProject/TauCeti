@@ -138,7 +138,7 @@ private theorem lipschitzWith_consOneCLM :
   rw [sub_apply, consOneCLM_consEquivL, consOneCLM_consEquivL, ← dist_eq_norm]
   have h1 := dist_consEquivL_sq (t, M x) (t, N x)
   have h2 := norm_consEquivL_sq (t, x)
-  simp only [dist_self, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_add] at h1
+  rw [dist_self, zero_pow two_ne_zero, zero_add] at h1
   have h3 : ‖M x - N x‖ ≤ ‖M - N‖ * ‖x‖ := by
     rw [← sub_apply]; exact ContinuousLinearMap.le_opNorm _ _
   have h4 : ‖x‖ ≤ ‖consEquivL ℝ m (t, x)‖ :=
@@ -310,29 +310,15 @@ private theorem memLp_iteratedDeriv_two {η : ℝ → ℝ} (hη : ContDiff ℝ 2
   hη.memLp_iteratedFDeriv_apply_of_hasCompactSupport le_rfl hηc fun _ => 1
 
 omit [Fact (1 ≤ p)] in
-/-- Multiplying by a measurable function bounded by `1` keeps a function in `Lᵖ` and does not
-increase its `Lᵖ` norm. -/
-private theorem memLp_mul_and_lpNorm_mul_le {f ψ : ℝ → ℝ} (hf : MemLp f p volume)
-    (hψ : AEStronglyMeasurable ψ volume) (hψ1 : ∀ t, |ψ t| ≤ 1) :
-    MemLp (fun t => f t * ψ t) p volume ∧
-      lpNorm (fun t => f t * ψ t) p volume ≤ lpNorm f p volume := by
-  refine ⟨hf.of_le_mul (c := 1) (hf.aestronglyMeasurable.mul hψ) (.of_forall fun t => ?_), ?_⟩
-  · rw [norm_mul, one_mul]
-    exact mul_le_of_le_one_right (norm_nonneg _) (by simpa using hψ1 t)
-  · have h := lpNorm_smul_le_mul_lpNorm_of_ae_le (c := 1) hf (.of_forall fun t => by
-      simpa using hψ1 t) (ψ := ψ)
-    simp only [smul_eq_mul, one_mul] at h
-    simpa only [mul_comm] using h
-
-omit [Fact (1 ≤ p)] in
 /-- Multiplying by `cos (k t + θ)` keeps a function in `Lᵖ` and does not increase its `Lᵖ`
 norm. -/
 private theorem memLp_mul_cos_and_lpNorm_le {f : ℝ → ℝ} (hf : MemLp f p volume) (k θ : ℝ) :
     MemLp (fun t => f t * Real.cos (k * t + θ)) p volume ∧
-      lpNorm (fun t => f t * Real.cos (k * t + θ)) p volume ≤ lpNorm f p volume :=
-  memLp_mul_and_lpNorm_mul_le hf
-    ((by fun_prop : Continuous fun t => Real.cos (k * t + θ)).aestronglyMeasurable)
-    fun t => Real.abs_cos_le_one _
+      lpNorm (fun t => f t * Real.cos (k * t + θ)) p volume ≤ lpNorm f p volume := by
+  simpa only [smul_eq_mul, mul_comm (Real.cos _), one_mul] using
+    memLp_smul_and_lpNorm_smul_le_of_ae_le (c := 1) hf
+      ((by fun_prop : Continuous fun t => Real.cos (k * t + θ)).aestronglyMeasurable)
+      (.of_forall fun t => (Real.norm_eq_abs _).trans_le (Real.abs_cos_le_one _))
 
 /-- **Agmon's inequality for a tensor product.** Suppose the Calderón–Zygmund estimate
 `‖D²V‖ ≤ C (‖∑ᵢⱼ ãᵢⱼ ∂ᵢ∂ⱼV‖ + r₀⁻² ‖V‖)` holds on `W^{2,p}(ℝ^{m+1})` for the coefficient
@@ -418,9 +404,12 @@ private theorem lpNorm_iteratedDeriv_two_mul_cos_add_le {ζ : ℝ → ℝ} (hζ 
   have h1 : MemLp (deriv ζ) p volume :=
     (hζ.continuous_deriv one_le_two).memLp_of_hasCompactSupport hζc.deriv
   obtain ⟨hc, hcn⟩ := memLp_mul_cos_and_lpNorm_le (memLp_iteratedDeriv_two (p := p) hζ hζc) k θ
-  have hsin := (memLp_mul_and_lpNorm_mul_le h1
-    ((by fun_prop : Continuous fun t => Real.sin (k * t + θ)).aestronglyMeasurable)
-    fun t => Real.abs_sin_le_one _).2
+  have hsin : lpNorm (fun t => deriv ζ t * Real.sin (k * t + θ)) p volume ≤
+      lpNorm (deriv ζ) p volume := by
+    simpa only [smul_eq_mul, mul_comm (Real.sin _), one_mul] using
+      (memLp_smul_and_lpNorm_smul_le_of_ae_le (c := 1) h1
+        ((by fun_prop : Continuous fun t => Real.sin (k * t + θ)).aestronglyMeasurable)
+        (.of_forall fun t => (Real.norm_eq_abs _).trans_le (Real.abs_sin_le_one _))).2
   simp_rw [iteratedDeriv_two_mul_cos hζ, sub_add_cancel]
   calc _ ≤ lpNorm (fun t => iteratedDeriv 2 ζ t * Real.cos (k * t + θ)) p volume +
         lpNorm (fun t => 2 * k * (deriv ζ t * Real.sin (k * t + θ))) p volume :=
