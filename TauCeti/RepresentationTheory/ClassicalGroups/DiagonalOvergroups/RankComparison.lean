@@ -19,15 +19,16 @@ import TauCeti.Topology.Algebra.Group.Goursat
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Diagonal
 
 /-!
-# Rank phenomena and real counterexample for diagonal overgroups of `GL ι ℂ`
+# Rank phenomena and real counterexample for diagonal overgroups of `GL`
 
 Complements `TauCeti.RepresentationTheory.ClassicalGroups.DiagonalOvergroups.Classification` with:
 * rank `0` (`[IsEmpty ι]`): all four subgroups equal `⊤`;
 * rank `1` (`[Unique ι]`): `determinantEqual ι R = diagonal ι R` and `scalarDiagonal ι R = ⊤`;
 * rank `≥ 2`: strict inclusions (`diagonal_lt_scalarDiagonal`, `determinantEqual_lt_top` over any
   `CommRing R` with `[Nontrivial Rˣ]`; `diagonal_lt_determinantEqual`, `scalarDiagonal_lt_top` over
-  any `[Nontrivial R]`), and over `ℂ` incomparability of `scalarDiagonal ι ℂ` and
-  `determinantEqual ι ℂ` with join `⊤` and disconnected intersection;
+  any `[Nontrivial R]`), non-containment `not_scalarDiagonal_le_determinantEqual` over any
+  characteristic-zero field, join `scalarDiagonal_sup_determinantEqual = ⊤` over any algebraically
+  closed field, and disconnected intersection over `ℂ`;
 * `determinantModulusOne ι` (`{(g, h) | ‖(determinantRatio ι ℂ (g, h) : ℂ)‖ = 1}`): for
   `[Nonempty ι]`, a closed, path-connected subgroup containing `diagonal ι ℂ` that strictly contains
   `determinantEqual ι ℂ` and is not one of the four models in
@@ -50,21 +51,26 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
 
+/-- In rank `0` (`[IsEmpty ι]`), `diagonal ι R` equals `⊤`. -/
 @[simp] theorem diagonal_eq_top_of_isEmpty [IsEmpty ι] : diagonal ι R = ⊤ :=
   eq_top_iff.mpr fun p _ => mem_diagonal_iff.mpr (Subsingleton.elim p.1 p.2)
 
+/-- In rank `0` (`[IsEmpty ι]`), `scalarDiagonal ι R` equals `⊤`. -/
 @[simp] theorem scalarDiagonal_eq_top_of_isEmpty [IsEmpty ι] : scalarDiagonal ι R = ⊤ :=
   top_unique (diagonal_eq_top_of_isEmpty (ι := ι) (R := R) ▸ diagonal_le_scalarDiagonal)
 
+/-- In rank `0` (`[IsEmpty ι]`), `determinantEqual ι R` equals `⊤`. -/
 @[simp] theorem determinantEqual_eq_top_of_isEmpty [IsEmpty ι] : determinantEqual ι R = ⊤ :=
   top_unique (diagonal_eq_top_of_isEmpty (ι := ι) (R := R) ▸ diagonal_le_determinantEqual)
 
+/-- In rank `1` (`[Unique ι]`), `determinantEqual ι R` collapses to `diagonal ι R`. -/
 @[simp] theorem determinantEqual_eq_diagonal_of_unique [Unique ι] :
     determinantEqual ι R = diagonal ι R := by
   refine le_antisymm (fun p hp => mem_diagonal_iff.mpr ?_) diagonal_le_determinantEqual
   rw [GeneralLinearGroup.eq_scalar_det p.1, GeneralLinearGroup.eq_scalar_det p.2,
     mem_determinantEqual_iff.mp hp]
 
+/-- In rank `1` (`[Unique ι]`), `scalarDiagonal ι R` equals `⊤`. -/
 @[simp] theorem scalarDiagonal_eq_top_of_unique [Unique ι] : scalarDiagonal ι R = ⊤ :=
   eq_top_iff.mpr fun p _ => mem_scalarDiagonal_iff.mpr
     ⟨(p.1 / p.2).det, by rw [← GeneralLinearGroup.eq_scalar_det (p.1 / p.2), div_mul_cancel]⟩
@@ -80,16 +86,21 @@ theorem mem_scalarDiagonal_inf_determinantEqual_iff {p : GL ι R × GL ι R} :
   rw [hu, map_mul, GeneralLinearGroup.det_scalar] at hdet
   exact mul_right_cancel (hdet.trans (one_mul p.2.det).symm)
 
-theorem not_scalarDiagonal_le_determinantEqual [Nonempty ι] :
-    ¬ (scalarDiagonal ι ℂ ≤ determinantEqual ι ℂ) := fun hle => by
-  let u : ℂˣ := Units.mk0 2 two_ne_zero
-  have hdet := congrArg (fun x : ℂˣ => ‖(x : ℂ)‖) (mem_determinantEqual_iff.mp
+/-- Over a characteristic-zero field `K` with nonempty `ι`, `scalarDiagonal ι K` is not contained in
+`determinantEqual ι K`. -/
+theorem not_scalarDiagonal_le_determinantEqual {K : Type*} [Field K] [CharZero K] [Nonempty ι] :
+    ¬ (scalarDiagonal ι K ≤ determinantEqual ι K) := fun hle => by
+  let u : Kˣ := Units.mk0 2 two_ne_zero
+  have hdet := congrArg Units.val (mem_determinantEqual_iff.mp
     (hle ((mem_scalarDiagonal_iff (p := (GeneralLinearGroup.scalar ι u, 1))).mpr
       ⟨u, (mul_one _).symm⟩)))
   simp only [u, map_one, GeneralLinearGroup.det_scalar, Units.val_pow_eq_pow_val, Units.val_one,
-    Units.val_mk0, norm_pow, Complex.norm_ofNat, norm_one] at hdet
-  exact (one_lt_pow₀ (by norm_num : (1 : ℝ) < 2) Fintype.card_pos.ne').ne' hdet
+    Units.val_mk0] at hdet
+  exact (Nat.one_lt_two_pow Fintype.card_ne_zero).ne'
+    (Nat.cast_injective (R := K) (by simpa [Nat.cast_pow] using hdet))
 
+/-- For nonempty `ι` and nontrivial `Rˣ`, `diagonal ι R` is strictly contained in
+`scalarDiagonal ι R`. -/
 theorem diagonal_lt_scalarDiagonal [Nonempty ι] [Nontrivial Rˣ] :
     diagonal ι R < scalarDiagonal ι R := by
   refine lt_of_le_of_ne diagonal_le_scalarDiagonal fun h => ?_
@@ -99,11 +110,14 @@ theorem diagonal_lt_scalarDiagonal [Nonempty ι] [Nontrivial Rˣ] :
       ⟨u, (mul_one _).symm⟩
   exact hu (GeneralLinearGroup.scalar_injective ((mem_diagonal_iff.mp hmem).trans (map_one _).symm))
 
+/-- For `|ι| ≥ 2` and nontrivial `R`, `diagonal ι R` is strictly contained in
+`determinantEqual ι R`. -/
 theorem diagonal_lt_determinantEqual [Nontrivial ι] [Nontrivial R] :
     diagonal ι R < determinantEqual ι R :=
   lt_of_le_of_ne diagonal_le_determinantEqual fun h =>
     not_determinantEqual_le_scalarDiagonal (h ▸ diagonal_le_scalarDiagonal)
 
+/-- For nonempty `ι` and nontrivial `Rˣ`, `determinantEqual ι R` is strictly contained in `⊤`. -/
 theorem determinantEqual_lt_top [Nonempty ι] [Nontrivial Rˣ] : determinantEqual ι R < ⊤ := by
   refine lt_top_iff_ne_top.mpr fun htop => ?_
   obtain ⟨u, hu⟩ := exists_ne (1 : Rˣ)
@@ -111,6 +125,7 @@ theorem determinantEqual_lt_top [Nonempty ι] [Nontrivial Rˣ] : determinantEqua
   have hdet := mem_determinantEqual_iff.mp (htop ▸ Subgroup.mem_top (g, 1))
   exact hu (by simpa [hg] using hdet)
 
+/-- For `|ι| ≥ 2` and nontrivial `R`, `scalarDiagonal ι R` is strictly contained in `⊤`. -/
 theorem scalarDiagonal_lt_top [Nontrivial ι] [Nontrivial R] : scalarDiagonal ι R < ⊤ :=
   lt_top_iff_ne_top.mpr scalarDiagonal_ne_top
 
@@ -146,25 +161,28 @@ theorem not_isPreconnected_scalarDiagonal_inf_determinantEqual [Nontrivial ι] :
   · exact not_determinantEqual_le_scalarDiagonal (heq ▸ inf_le_left)
   · exact not_determinantEqual_le_scalarDiagonal (top_unique (heq ▸ inf_le_left) ▸ le_top)
 
-/-- **Every pair in `GL ι ℂ × GL ι ℂ` factors as `scalarDiagonal` times `determinantEqual`.** -/
-theorem exists_mem_scalarDiagonal_mul_mem_determinantEqual (p : GL ι ℂ × GL ι ℂ) :
-    ∃ q ∈ scalarDiagonal ι ℂ, ∃ r ∈ determinantEqual ι ℂ, p = q * r := by
+/-- **Over an algebraically closed field `K`, every pair in `GL ι K × GL ι K` factors as
+`scalarDiagonal` times `determinantEqual`.** -/
+theorem exists_mem_scalarDiagonal_mul_mem_determinantEqual {K : Type*} [Field K] [IsAlgClosed K]
+    (p : GL ι K × GL ι K) :
+    ∃ q ∈ scalarDiagonal ι K, ∃ r ∈ determinantEqual ι K, p = q * r := by
   rcases isEmpty_or_nonempty ι with _ | _
   · exact ⟨1, one_mem _, 1, one_mem _, Subsingleton.elim _ _⟩
-  let d : ℂˣ := p.1.det / p.2.det
-  let u : ℂˣ := Units.mk0 (Complex.exp (Complex.log (d : ℂ) / Fintype.card ι))
-    (Complex.exp_ne_zero _)
-  have hu : u ^ Fintype.card ι = d := Units.ext <| by
-    simp only [u, Units.val_pow_eq_pow_val, Units.val_mk0, ← Complex.exp_natCast_mul]
-    rw [mul_div_cancel₀ _ (Nat.cast_ne_zero.mpr Fintype.card_ne_zero), Complex.exp_log d.ne_zero]
+  let d : Kˣ := p.1.det / p.2.det
+  obtain ⟨c, hc⟩ := IsAlgClosed.exists_pow_nat_eq (d : K) (Fintype.card_pos (α := ι))
+  have hc0 : c ≠ 0 := fun h0 => d.ne_zero (by rw [← hc, h0, zero_pow (Fintype.card_ne_zero)])
+  let u : Kˣ := Units.mk0 c hc0
+  have hu : u ^ Fintype.card ι = d := Units.ext (by simpa [u] using hc)
   refine ⟨(GeneralLinearGroup.scalar ι u, 1), mem_scalarDiagonal_iff.mpr ⟨u, by simp⟩,
     ((GeneralLinearGroup.scalar ι u)⁻¹ * p.1, p.2), ?_,
     Prod.ext (mul_inv_cancel_left _ p.1).symm (one_mul p.2).symm⟩
   rw [mem_determinantEqual_iff, map_mul, map_inv, GeneralLinearGroup.det_scalar, hu]
   simp only [d, inv_div, div_mul_cancel]
 
-@[simp] theorem scalarDiagonal_sup_determinantEqual :
-    scalarDiagonal ι ℂ ⊔ determinantEqual ι ℂ = ⊤ :=
+/-- Over an algebraically closed field `K`, `scalarDiagonal ι K` and `determinantEqual ι K`
+generate `⊤`. -/
+@[simp] theorem scalarDiagonal_sup_determinantEqual {K : Type*} [Field K] [IsAlgClosed K] :
+    scalarDiagonal ι K ⊔ determinantEqual ι K = ⊤ :=
   eq_top_iff.mpr fun p _ =>
     let ⟨_, hq, _, hr, hp⟩ := exists_mem_scalarDiagonal_mul_mem_determinantEqual p
     hp ▸ Subgroup.mul_mem_sup hq hr
@@ -189,6 +207,7 @@ def determinantModulusOne (ι : Type*) [Fintype ι] [DecidableEq ι] :
 @[simp] theorem mem_determinantModulusOne_iff {p : GL ι ℂ × GL ι ℂ} :
     p ∈ determinantModulusOne ι ↔ ‖(determinantRatio ι ℂ p : ℂ)‖ = 1 := by rfl
 
+/-- `determinantEqual ι ℂ` is contained in `determinantModulusOne ι`. -/
 theorem determinantEqual_le_determinantModulusOne :
     determinantEqual ι ℂ ≤ determinantModulusOne ι := fun _ hp => by
   rw [mem_determinantModulusOne_iff, determinantRatio_apply, mem_determinantEqual_iff.mp hp,
@@ -198,6 +217,7 @@ theorem graph_id_le_determinantModulusOne :
     (MonoidHom.id (GL ι ℂ)).graph ≤ determinantModulusOne ι :=
   graph_id_le_determinantEqual.trans determinantEqual_le_determinantModulusOne
 
+/-- `determinantModulusOne ι` is closed in `GL ι ℂ × GL ι ℂ`. -/
 theorem isClosed_determinantModulusOne :
     IsClosed (determinantModulusOne ι : Set (GL ι ℂ × GL ι ℂ)) := by
   rw [Subgroup.isClosed_iff_isClosed_goursatFst graph_id_le_determinantModulusOne,
@@ -206,6 +226,7 @@ theorem isClosed_determinantModulusOne :
       Set.ext fun g => by simp [Subgroup.mem_goursatFst, GeneralLinearGroup.val_det_apply]]
   exact isClosed_eq (continuous_norm.comp Units.continuous_val.matrix_det) continuous_const
 
+/-- `determinantModulusOne ι` is path connected. -/
 instance instPathConnectedSpaceDeterminantModulusOne :
     PathConnectedSpace (determinantModulusOne ι) := by
   rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst
@@ -241,6 +262,7 @@ instance instPathConnectedSpaceDeterminantModulusOne :
     rw [Units.val_mul, SpecialLinearGroup.coe_GL_coe_matrix]
     simp only [s, ← Units.val_mul, mul_inv_cancel_left])
 
+/-- For nonempty `ι`, `determinantEqual ι ℂ` is strictly contained in `determinantModulusOne ι`. -/
 theorem determinantEqual_lt_determinantModulusOne [Nonempty ι] :
     determinantEqual ι ℂ < determinantModulusOne ι := by
   obtain ⟨i₀⟩ := ‹Nonempty ι›

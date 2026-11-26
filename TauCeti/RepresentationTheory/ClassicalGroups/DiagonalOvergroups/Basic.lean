@@ -68,6 +68,7 @@ variable {ι R}
 
 @[simp] theorem diagonalMap_apply (g : GL ι R) : diagonalMap ι R g = (g, g) := by rfl
 
+/-- `diagonal ι R` coincides with the graph `(MonoidHom.id (GL ι R)).graph` of the identity. -/
 theorem diagonal_eq_graph_id : diagonal ι R = (MonoidHom.id (GL ι R)).graph :=
   (MonoidHom.graph_eq_range_prod (MonoidHom.id (GL ι R))).symm
 
@@ -101,6 +102,8 @@ theorem mem_scalarDiagonal_iff_mk_eq {p : GL ι R × GL ι R} :
     fun ⟨u, hu⟩ => ⟨u⁻¹, by rw [← hu, GeneralLinearGroup.scalar_commute u⁻¹ _, mul_assoc,
       ← map_mul, mul_inv_cancel, map_one, mul_one]⟩⟩
 
+/-- `scalarDiagonal ι R` is the Goursat extension `Subgroup.diagonalExt` of
+`Subgroup.center (GL ι R)`. -/
 theorem scalarDiagonal_eq_diagonalExt_center :
     scalarDiagonal ι R = Subgroup.diagonalExt (Subgroup.center (GL ι R)) := by
   ext ⟨g, h⟩
@@ -108,6 +111,8 @@ theorem scalarDiagonal_eq_diagonalExt_center :
   exact ⟨fun ⟨u, hu⟩ => ⟨u, by rw [hu, mul_div_cancel_right]⟩,
     fun ⟨u, hu⟩ => ⟨u, by rw [hu, div_mul_cancel]⟩⟩
 
+/-- `determinantEqual ι R` is the Goursat extension `Subgroup.diagonalExt` of
+`(GeneralLinearGroup.det).ker`. -/
 theorem determinantEqual_eq_diagonalExt_ker_det :
     determinantEqual ι R =
       Subgroup.diagonalExt (GeneralLinearGroup.det (n := ι) (R := R)).ker := by
@@ -125,13 +130,16 @@ theorem diagonal_le_determinantEqual : diagonal ι R ≤ determinantEqual ι R :
 theorem graph_id_le_determinantEqual : (MonoidHom.id (GL ι R)).graph ≤ determinantEqual ι R :=
   diagonal_eq_graph_id (ι := ι) (R := R) ▸ diagonal_le_determinantEqual
 
+/-- The Goursat normal kernel of `diagonal ι R` is `⊥`. -/
 @[simp] theorem goursatFst_diagonal : (diagonal ι R).goursatFst = ⊥ := by
   rw [diagonal_eq_graph_id, Subgroup.goursatFst_graph_id]
 
+/-- The Goursat normal kernel of `scalarDiagonal ι R` is `Subgroup.center (GL ι R)`. -/
 @[simp] theorem goursatFst_scalarDiagonal :
     (scalarDiagonal ι R).goursatFst = Subgroup.center (GL ι R) := by
   rw [scalarDiagonal_eq_diagonalExt_center, Subgroup.goursatFst_diagonalExt]
 
+/-- The Goursat normal kernel of `determinantEqual ι R` is `SpecialLinearGroup.toGL.range`. -/
 @[simp] theorem goursatFst_determinantEqual :
     (determinantEqual ι R).goursatFst = (SpecialLinearGroup.toGL (n := ι) (R := R)).range := by
   rw [determinantEqual_eq_diagonalExt_ker_det, Subgroup.goursatFst_diagonalExt,
@@ -146,6 +154,8 @@ instance instNormalDiagonalSubgroupOfScalarDiagonal :
     ((diagonal ι R).subgroupOf (scalarDiagonal ι R)).Normal := by
   rw [Subgroup.normal_subgroupOf_iff_le_normalizer diagonal_le_scalarDiagonal, normalizer_diagonal]
 
+/-- For `|ι| ≥ 2` and nontrivial `R`, `determinantEqual ι R` is not contained in
+`scalarDiagonal ι R`. -/
 theorem not_determinantEqual_le_scalarDiagonal [Nontrivial ι] [Nontrivial R] :
     ¬ (determinantEqual ι R ≤ scalarDiagonal ι R) := by
   obtain ⟨i, j, hij⟩ := exists_pair_ne ι
@@ -157,6 +167,7 @@ theorem not_determinantEqual_le_scalarDiagonal [Nontrivial ι] [Nontrivial R] :
     GeneralLinearGroup.coe_scalar, hij] using
     congrArg (fun M : Matrix ι ι R => M i j) (congrArg Units.val hu)
 
+/-- For `|ι| ≥ 2` and nontrivial `R`, `scalarDiagonal ι R` is strictly smaller than `⊤`. -/
 theorem scalarDiagonal_ne_top [Nontrivial ι] [Nontrivial R] : scalarDiagonal ι R ≠ ⊤ :=
   fun htop => not_determinantEqual_le_scalarDiagonal (htop ▸ le_top)
 

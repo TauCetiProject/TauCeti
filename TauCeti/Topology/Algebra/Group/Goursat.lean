@@ -16,8 +16,9 @@ import Mathlib.Tactic.Group
 For a topological group `G` and a subgroup `H ≤ G × G` containing `(MonoidHom.id G).graph`, the map
 `(g, h) ↦ (g / h, h)` defines a homeomorphism
 `Subgroup.goursatCoordHomeomorph : H ≃ₜ H.goursatFst × G` with semidirect multiplication
-`(a, h) * (b, k) = (a * (h * b * h⁻¹), h * k)`. Closedness, preconnectedness, and path
-connectedness of `H` reduce to those of `H.goursatFst`.
+`(a, h) * (b, k) = (a * (h * b * h⁻¹), h * k)`. Closedness of `H` reduces to that of
+`H.goursatFst`, and preconnectedness (resp. path connectedness) of `H` reduces to that of
+`H.goursatFst` when `G` is preconnected (resp. path connected).
 
 ## References
 

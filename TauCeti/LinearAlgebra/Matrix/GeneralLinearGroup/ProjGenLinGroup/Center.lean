@@ -77,20 +77,11 @@ theorem GeneralLinearGroup.mem_center_of_forall_commutator_mem_center {g : GL n 
     rw [scalar_eq_one_of_mul_transvection_mul_scalar_eq hij hu, map_one, mul_one] at hu
     simpa [t, Units.val_mul, SpecialLinearGroup.coe_GL_coe_matrix,
       SpecialLinearGroup.transvection_coe, add_mul, mul_add] using congrArg Units.val hu
-  have hmat_center : (g : Matrix n n R) ∈ Set.center (Matrix n n R) := by
-    rw [Matrix.center_eq_range]
-    rcases isEmpty_or_nonempty n with _ | ⟨⟨i₀⟩⟩
-    · exact ⟨0, Subsingleton.elim _ _⟩
-    · refine ⟨(g : Matrix n n R) i₀ i₀, Matrix.ext fun i j => ?_⟩
-      by_cases hij : i = j
-      · subst hij; simp only [scalar_apply, diagonal_apply_eq]
-        exact if h : i = i₀ then h ▸ rfl else by
-          simpa [Matrix.mul_apply, single_apply] using
-            (congrArg (fun M : Matrix n n R => M i i₀) (hcomm_single h)).symm
-      · simpa [scalar_apply, diagonal_apply_ne _ hij, Matrix.mul_apply, single_apply, hij] using
-          congrArg (fun M : Matrix n n R => M j j) (hcomm_single (Ne.symm hij))
-  exact Subgroup.mem_center_iff.mpr fun x =>
-    Units.ext (Semigroup.mem_center_iff.mp hmat_center (x : Matrix n n R))
+  obtain ⟨r, hr⟩ := Matrix.mem_range_scalar_of_commute_single fun i j hij =>
+    (hcomm_single hij).symm
+  exact Subgroup.mem_center_iff.mpr fun x => Units.ext <| by
+    rw [Units.val_mul, Units.val_mul, ← hr]
+    exact (Matrix.scalar_commute r (Commute.all r) (x : Matrix n n R)).symm
 
 end Commutator
 

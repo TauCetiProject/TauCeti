@@ -141,17 +141,22 @@ variable {ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
   [TopologicalSpace R] [IsTopologicalRing R]
 
 omit [IsTopologicalRing R] in
+/-- For a `T₂` space `R`, `diagonal ι R` is closed in `GL ι R × GL ι R`. -/
 theorem isClosed_diagonal [T2Space R] : IsClosed (diagonal ι R : Set (GL ι R × GL ι R)) := by
   rw [show (diagonal ι R : Set (GL ι R × GL ι R)) = {p | p.1 = p.2} from
     Set.ext fun _ => mem_diagonal_iff]
   exact isClosed_eq continuous_fst continuous_snd
 
+/-- Over a `T₂` topological commutative ring `R`, `scalarDiagonal ι R` is closed in
+`GL ι R × GL ι R`. -/
 theorem isClosed_scalarDiagonal [T2Space R] :
     IsClosed (scalarDiagonal ι R : Set (GL ι R × GL ι R)) := by
   rw [Subgroup.isClosed_iff_isClosed_goursatFst graph_id_le_scalarDiagonal,
     goursatFst_scalarDiagonal]
   exact Subgroup.isClosed_center
 
+/-- Over a `T₂` topological commutative ring `R`, `determinantEqual ι R` is closed in
+`GL ι R × GL ι R`. -/
 theorem isClosed_determinantEqual [T2Space R] :
     IsClosed (determinantEqual ι R : Set (GL ι R × GL ι R)) := by
   rw [Subgroup.isClosed_iff_isClosed_goursatFst graph_id_le_determinantEqual,
@@ -159,17 +164,20 @@ theorem isClosed_determinantEqual [T2Space R] :
   exact MonoidHom.coe_range (SpecialLinearGroup.toGL (n := ι) (R := R)) ▸
     SpecialLinearGroup.isClosedEmbedding_toGL.isClosed_range
 
+/-- `diagonal ι ℂ` is path connected. -/
 instance instPathConnectedSpaceDiagonal : PathConnectedSpace (diagonal ι ℂ) := by
   rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst
     (diagonal_eq_graph_id (ι := ι) (R := ℂ)).ge, goursatFst_diagonal]
   exact ⟨⟨1⟩, fun x y => Subsingleton.elim x y ▸ Joined.refl x⟩
 
+/-- `scalarDiagonal ι ℂ` is path connected. -/
 instance instPathConnectedSpaceScalarDiagonal : PathConnectedSpace (scalarDiagonal ι ℂ) := by
   rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst graph_id_le_scalarDiagonal,
     goursatFst_scalarDiagonal, GeneralLinearGroup.center_eq_range_scalar]
   exact (GeneralLinearGroup.scalar ι).rangeRestrict_surjective.pathConnectedSpace
     (GeneralLinearGroup.continuous_scalar.subtype_mk _)
 
+/-- `determinantEqual ι ℂ` is path connected. -/
 instance instPathConnectedSpaceDeterminantEqual : PathConnectedSpace (determinantEqual ι ℂ) := by
   rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst graph_id_le_determinantEqual,
     goursatFst_determinantEqual]
@@ -265,14 +273,12 @@ attribute [local instance] Matrix.linftyOpTopologicalSpace
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 private theorem prodUnits_expUnit_eq_pairExp (X : Matrix ι ι ℂ × Matrix ι ι ℂ) :
-    (ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ)).toMonoidHom (TauCeti.expUnit X) =
+    ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ) (TauCeti.expUnit X) =
       pairExp X := by
+  rw [ContinuousMulEquiv.prodUnits_apply]
+  -- Entrywise and `L∞` operator-norm topologies on `Matrix ι ι ℂ` are definitionally equal.
   refine Prod.ext (Units.ext ?_) (Units.ext ?_) <;>
-    simp only [MulEquiv.coe_toMonoidHom, ContinuousMulEquiv.toMulEquiv_eq_coe,
-      ContinuousMulEquiv.toMulEquiv_prodUnits, MulEquiv.prodUnits, MulEquiv.coe_mk,
-      Equiv.coe_fn_mk, MonoidHom.prod_apply, Units.coe_map, MonoidHom.coe_fst, MonoidHom.coe_snd,
-      TauCeti.expUnit_coe, Prod.fst_exp, Prod.snd_exp, coe_fst_pairExp, coe_snd_pairExp,
-      Matrix.linftyOpTopologicalSpace_eq]
+    simp [TauCeti.expUnit_coe, Prod.fst_exp, Prod.snd_exp] <;> rfl
 
 private theorem mem_realDirections_iff_mem_lieSubalgebraOfSubgroup
     {H : Subgroup (GL ι ℂ × GL ι ℂ)} (hc : IsClosed (H : Set (GL ι ℂ × GL ι ℂ)))
@@ -280,12 +286,13 @@ private theorem mem_realDirections_iff_mem_lieSubalgebraOfSubgroup
     X ∈ realDirections H ↔
       (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := Matrix ι ι ℂ × Matrix ι ι ℂ)).symm X ∈
         TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix ι ι ℂ × Matrix ι ι ℂ))
-          (H.comap (ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ)).toMonoidHom) := by
+          (H.comap (MonoidHom.ofClass
+            (ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ)))) := by
   rw [TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff
     (hc.preimage (map_continuous (ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ)))),
     mem_realDirections_iff]
   exact forall_congr' fun t => by
-    rw [Subgroup.mem_comap, prodUnits_expUnit_eq_pairExp]
+    rw [Subgroup.mem_comap, MonoidHom.coe_ofClass, prodUnits_expUnit_eq_pairExp]
 
 /-- **Real tangent Lie subalgebra** of a closed subgroup `H ≤ GL ι ℂ × GL ι ℂ`. -/
 noncomputable def realTangentLieSubalgebra (H : Subgroup (GL ι ℂ × GL ι ℂ))
@@ -338,8 +345,8 @@ theorem le_of_realDirections_le {H₁ H₂ : Subgroup (GL ι ℂ × GL ι ℂ)}
     (hle : realDirections H₁ ≤ realDirections H₂) :
     H₁ ≤ H₂ := by
   let e := ContinuousMulEquiv.prodUnits (Matrix ι ι ℂ) (Matrix ι ι ℂ)
-  have hconnK₁ : IsPreconnected (SetLike.coe (H₁.comap e.toMonoidHom)) := by
-    have himg : e.symm '' (H₁ : Set _) = SetLike.coe (H₁.comap e.toMonoidHom) :=
+  have hconnK₁ : IsPreconnected (SetLike.coe (H₁.comap (MonoidHom.ofClass e))) := by
+    have himg : e.symm '' (H₁ : Set _) = SetLike.coe (H₁.comap (MonoidHom.ofClass e)) :=
       Set.ext fun u => ⟨by rintro ⟨_, hp, rfl⟩; simpa using hp, fun hu => ⟨e u, hu, by simp⟩⟩
     exact himg ▸ hconn₁.image _ e.symm.continuous.continuousOn
   have hKle := TauCeti.Lie.le_of_lieSubalgebraOfSubgroup_le
@@ -353,6 +360,7 @@ theorem le_of_realDirections_le {H₁ H₂ : Subgroup (GL ι ℂ × GL ι ℂ)}
   have hp'' : e (e.symm p) ∈ H₂ := hKle (show e (e.symm p) ∈ H₁ by rwa [e.apply_symm_apply])
   rwa [e.apply_symm_apply] at hp''
 
+/-- Closed, preconnected subgroups of `GL ι ℂ × GL ι ℂ` with the same `realDirections` are equal. -/
 theorem eq_of_realDirections_eq {H₁ H₂ : Subgroup (GL ι ℂ × GL ι ℂ)}
     (hc₁ : IsClosed (H₁ : Set (GL ι ℂ × GL ι ℂ)))
     (hconn₁ : IsPreconnected (H₁ : Set (GL ι ℂ × GL ι ℂ)))
@@ -363,6 +371,7 @@ theorem eq_of_realDirections_eq {H₁ H₂ : Subgroup (GL ι ℂ × GL ι ℂ)}
   le_antisymm (le_of_realDirections_le hc₁ hconn₁ hc₂ heq.le)
     (le_of_realDirections_le hc₂ hconn₂ hc₁ heq.ge)
 
+/-- The real exponential directions of `diagonal ι ℂ` form `diagonalLie ℂ ι`. -/
 @[simp] theorem realDirections_diagonal :
     realDirections (diagonal ι ℂ) = (diagonalLie ℂ ι : Set (Matrix ι ι ℂ × Matrix ι ι ℂ)) := by
   ext X
@@ -397,6 +406,7 @@ private theorem mem_center_of_pairExp_sub_mem_scalarDiagonal {Z : Matrix ι ι �
   have h1 := congrArg e ((LieModule.mem_maxTrivSubmodule ℝ _ _ _).mp hzc (e.symm B))
   rwa [e.map_lie, e.apply_symm_apply, e.apply_symm_apply, map_zero] at h1
 
+/-- The real exponential directions of `scalarDiagonal ι ℂ` form `scalarDiagonalLie ℂ ι`. -/
 @[simp] theorem realDirections_scalarDiagonal :
     realDirections (scalarDiagonal ι ℂ) =
       (scalarDiagonalLie ℂ ι : Set (Matrix ι ι ℂ × Matrix ι ι ℂ)) := by
@@ -417,6 +427,7 @@ private theorem mem_center_of_pairExp_sub_mem_scalarDiagonal {Z : Matrix ι ι �
     exact congrArg (· * _)
       (congrArg Matrix.diagonal (funext fun _ => (NormedSpace.isUnit_exp (t • c)).unit_spec.symm))
 
+/-- The real exponential directions of `determinantEqual ι ℂ` form `traceEqualLie ℂ ι`. -/
 @[simp] theorem realDirections_determinantEqual :
     realDirections (determinantEqual ι ℂ) =
       (traceEqualLie ℂ ι : Set (Matrix ι ι ℂ × Matrix ι ι ℂ)) := by
@@ -435,7 +446,10 @@ private theorem mem_center_of_pairExp_sub_mem_scalarDiagonal {Z : Matrix ι ι �
   · simp [mem_determinantEqual_iff, Units.ext_iff, GeneralLinearGroup.val_det_apply,
       Matrix.det_exp, htr]
 
-/-- **Classification of closed connected complex diagonal overgroups of `GL ι ℂ`.** -/
+/-- **Classification of closed connected diagonal overgroups of `GL ι ℂ` whose real exponential
+directions are closed under complex scalar multiplication:** every closed, preconnected subgroup
+`H ≤ GL ι ℂ × GL ι ℂ` containing `diagonal ι ℂ` with `realDirections H` closed under complex
+scaling equals `diagonal ι ℂ`, `scalarDiagonal ι ℂ`, `determinantEqual ι ℂ`, or `⊤`. -/
 theorem eq_diagonal_or_eq_scalarDiagonal_or_eq_determinantEqual_or_eq_top
     (H : Subgroup (GL ι ℂ × GL ι ℂ))
     (hd : diagonal ι ℂ ≤ H) (hc : IsClosed (H : Set (GL ι ℂ × GL ι ℂ)))

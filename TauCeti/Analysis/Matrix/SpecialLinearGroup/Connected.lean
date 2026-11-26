@@ -87,9 +87,7 @@ instance instPathConnectedSpace : PathConnectedSpace (SpecialLinearGroup n ℂ) 
       diagonal_transvection_induction' (Joined 1) M
         (fun _ _ hij _ hc => joined_one_diag2n hij hc)
         (fun _ _ hij a => joined_one_transvection hij a)
-        fun _ _ ⟨p⟩ ⟨q⟩ =>
-          ⟨{ toFun := fun t => p t * q t, continuous_toFun := p.continuous.mul q.continuous,
-             source' := by simp, target' := by simp }⟩
+        fun _ _ ha hb => one_mul (1 : SpecialLinearGroup n ℂ) ▸ ha.mul hb
     exact PathConnectedSpace.mk ⟨1⟩ fun x y => (h1 x).symm.trans (h1 y)
 
 end Matrix.SpecialLinearGroup
