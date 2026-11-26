@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
+public import TauCeti.Data.Set.Image
+import TauCeti.Topology.Homeomorph.IsEmbedding
 
 /-!
 # The shriek map of a codimension-zero subdomain
@@ -107,13 +109,6 @@ private lemma symm_mem_collarPart (hg : IsClosedEmbedding g) {x : W}
   rwa [hg.isEmbedding.toHomeomorph_symm_apply]
 
 omit [TopologicalSpace N] in
-/-- `g` undoes its inverse on its range. -/
-private lemma apply_toHomeomorph_symm (hg : IsClosedEmbedding g) {x : W} (hx : x ∈ range g) :
-    g (hg.isEmbedding.toHomeomorph.symm ⟨x, hx⟩) = x := by
-  obtain ⟨z, rfl⟩ := hx
-  rw [hg.isEmbedding.toHomeomorph_symm_apply]
-
-omit [TopologicalSpace N] in
 /-- Inside `W ∖ g(Kₜ)`, the points of `g(Y)` are the points of `g(Cₜ)`. -/
 private lemma mem_image_collarPart_iff {x : W} (hx : x ∉ g '' (collarPart c t)ᶜ) :
     x ∈ g '' collarPart c t ↔ x ∈ range g := by
@@ -140,7 +135,7 @@ private lemma symm_mem_range_of_notMem (hg : IsClosedEmbedding g) (hκf : range 
   rw [← compl_compl (range f), ← hκf]
   rintro ⟨v, hv⟩
   refine hxκ ⟨v, ?_⟩
-  rw [Function.comp_apply, hv, apply_toHomeomorph_symm hg]
+  rw [Function.comp_apply, hv, hg.isEmbedding.apply_toHomeomorph_symm]
 
 open scoped Classical in
 /-- The deformation of `W ∖ g(Kₜ)`: on `g(Cₜ)` the deformation of the collar onto the boundary,
@@ -168,7 +163,7 @@ private lemma complDeformation_of_notMem (hg : IsClosedEmbedding g) (hc : IsColl
   by_cases h : (q.2 : W) ∈ g '' collarPart c t
   · rw [complDeformation_of_mem hg hc ht q h,
       (hc.collarDeformation ht).eq_snd q.1 (symm_mem_range_of_notMem hg hκf h hq),
-      ContinuousMap.id_apply, apply_toHomeomorph_symm hg]
+      ContinuousMap.id_apply, hg.isEmbedding.apply_toHomeomorph_symm]
   · exact dite_eq_right h
 
 private lemma continuous_complDeformation (hg : IsClosedEmbedding g) (hc : IsCollar f c)
@@ -197,11 +192,7 @@ private lemma continuous_complDeformation (hg : IsClosedEmbedding g) (hc : IsCol
           symm_mem_collarPart hg q.property⟩)) :=
       funext fun q ↦ complDeformation_of_mem hg hc ht q q.property
     rw [this]
-    refine g.continuous.comp (continuous_subtypeVal.comp
-      ((hc.collarDeformation ht).continuous.comp
-      ((continuous_fst.comp continuous_subtypeVal).prodMk (Continuous.subtype_mk
-        (hg.isEmbedding.toHomeomorph.symm.continuous.comp (Continuous.subtype_mk
-          (continuous_subtypeVal.comp (continuous_snd.comp continuous_subtypeVal)) _)) _))))
+    fun_prop
   · refine (continuous_subtypeVal.comp continuous_snd).continuousOn.congr fun q hq ↦ ?_
     exact complDeformation_of_notMem hg hc hκf ht q hq
 
@@ -234,7 +225,7 @@ private lemma complDeformation_one (hg : IsClosedEmbedding g) (hc : IsCollar f c
     (x : ((g '' (collarPart c t)ᶜ)ᶜ : Set W)) : complDeformation hg hc ht (1, x) = x := by
   by_cases h : (x : W) ∈ g '' collarPart c t
   · rw [complDeformation_of_mem hg hc ht _ h, ContinuousMap.HomotopyWith.apply_one,
-      ContinuousMap.id_apply, apply_toHomeomorph_symm hg]
+      ContinuousMap.id_apply, hg.isEmbedding.apply_toHomeomorph_symm]
   · exact dite_eq_right h
 
 /-- The shrunk interior `g(Kₜ)` lies in the interior `g(κ(V))`. -/
@@ -333,7 +324,7 @@ an open embedding `κ : V → Y` with collared complement `∂Y` and open image 
 def subdomainLocalHomologyIso (hg : IsClosedEmbedding g) (hκ : IsOpenEmbedding κ)
     (hf : IsCollared f) (hκf : range κ = (range f)ᶜ) (hgκ : IsOpenEmbedding (g ∘ κ)) (k : ℕ) :
     localHomology R (range κ) k ≅ localHomology R (range (g ∘ κ)) k :=
-  have h : g ⁻¹' range (g ∘ κ) ⊆ range κ := by rw [range_comp, hg.injective.preimage_image]
+  have h := (hg.injective.preimage_range_comp κ).subset
   have := isIso_localHomologyMap_of_isCollared R hg hκ hf hκf hgκ h k
   asIso (localHomologyMap R g h k)
 
@@ -341,7 +332,7 @@ def subdomainLocalHomologyIso (hg : IsClosedEmbedding g) (hκ : IsOpenEmbedding 
 lemma subdomainLocalHomologyIso_hom (hg : IsClosedEmbedding g) (hκ : IsOpenEmbedding κ)
     (hf : IsCollared f) (hκf : range κ = (range f)ᶜ) (hgκ : IsOpenEmbedding (g ∘ κ)) (k : ℕ) :
     (subdomainLocalHomologyIso R hg hκ hf hκf hgκ k).hom =
-      localHomologyMap R g (by rw [range_comp, hg.injective.preimage_image]) k :=
+      localHomologyMap R g (hg.injective.preimage_range_comp κ).subset k :=
   (rfl)
 
 variable (hg : IsClosedEmbedding g) (hκ : IsOpenEmbedding κ) (hf : IsCollared f)
@@ -403,7 +394,7 @@ theorem subdomainShriek_comp_localHomologyRestriction_comp_localHomologyMap (x :
           localHomologyMap R g h k =
       localHomologyRestriction R (singleton_subset_iff.2 (hS ⟨x, hp⟩)) k := by
   have hpκ : ({p} : Set W) ⊆ range (g ∘ κ) := singleton_subset_iff.2 ⟨x, hp⟩
-  have h' : g ⁻¹' range (g ∘ κ) ⊆ range κ := by rw [range_comp, hg.injective.preimage_image]
+  have h' := (hg.injective.preimage_range_comp κ).subset
   rw [localHomologyRestriction_comp_localHomologyMap,
     ← localHomologyMap_comp_localHomologyRestriction R g hpκ h',
     subdomainShriek_comp_localHomologyMap_assoc, localHomologyRestriction_comp]
@@ -444,8 +435,7 @@ theorem span_localHomologyRestriction_subdomainShriek_eq_top (K : Type w) [Ring 
       {localHomologyRestriction (ModuleCat.of K K) (singleton_subset_iff.2 (mem_range_self x)) k
         (subdomainShriek (ModuleCat.of K K) hg hκ hf hκf hgκ hS k α)} = ⊤ := by
   have : T1Space Y := hg.isEmbedding.t1Space
-  have h : g ⁻¹' {(g ∘ κ) x} ⊆ {κ x} := by
-    rw [Function.comp_apply, ← image_singleton, hg.injective.preimage_image]
+  have h : g ⁻¹' {(g ∘ κ) x} ⊆ {κ x} := (hg.injective.preimage_singleton (κ x)).subset
   have := isIso_localHomologyMap_singleton (ModuleCat.of K K) hκ hgκ x rfl h k
   rw [← ModuleCat.span_singleton_apply_eq_top_iff (localHomologyMap (ModuleCat.of K K) g h k),
     subdomainShriek_comp_localHomologyRestriction_comp_localHomologyMap_apply (hp := rfl)]
@@ -480,7 +470,7 @@ theorem subdomainShriek_fundamentalClassRel :
   set R := ModuleCat.of ℤ (ULift.{0} ℤ)
   refine (o.comap hj).eq_fundamentalClassRel hn hκ hκf hf' fun x ↦ ?_
   have hp : g (κ x) = ι (j x) := (congrFun hjκ x).symm
-  have h : g ⁻¹' {ι (j x)} ⊆ {κ x} := by rw [← hp, ← image_singleton, hg.preimage_image]
+  have h : g ⁻¹' {ι (j x)} ⊆ {κ x} := hp ▸ (hg.preimage_singleton (κ x)).subset
   have := isIso_localHomologyMap_singleton R hκ (hjκ ▸ hι.comp hj) x hp h n
   -- Compare the local images in `W`, where `g` is injective on local homology at `ι (j x)`.
   apply ConcreteCategory.injective_of_mono_of_preservesPullback (localHomologyMap R g h n)
@@ -502,23 +492,7 @@ theorem subdomainShriek_fundamentalClassRel_ne_zero [Nonempty V] :
         (hjκ ▸ hι.comp hj) (hjκ ▸ range_comp_subset_range j ι) n
         (o.fundamentalClassRel hn hι hιf hf) ≠ 0 := by
   rw [o.subdomainShriek_fundamentalClassRel hn hι hιf hf hg hκ hκf hf' hj hjκ]
-  intro h₀
-  obtain ⟨x⟩ := ‹Nonempty V›
-  -- The local orientation of `o.comap hj` at `x` would vanish.
-  have h := (o.comap hj).localHomologyRestriction_fundamentalClassRel hn hκ hκf hf' x
-  rw [h₀, map_zero] at h
-  have hz : ((o.comap hj) x).val = 0 :=
-    ConcreteCategory.injective_of_mono_of_preservesPullback
-      (localHomologyIsoOfIsOpenEmbedding (ModuleCat.of ℤ (ULift.{0} ℤ)) hκ x n).hom
-      (h.symm.trans (map_zero _).symm)
-  -- But the local homology at `x` is `ℤ`, and every class is a multiple of a local orientation.
-  let e := localHomologySingletonLinearEquiv (ModuleCat.of ℤ (ULift.{0} ℤ)) hn
-    ULift.moduleEquiv x
-  obtain ⟨c, hc⟩ := (isLocalOrientation_iff _ _ _).1 ((o.comap hj) x).property (e.symm 1)
-  have h₁ : e.symm (1 : ℤ) = 0 := by
-    rw [← hc, hz]
-    exact zsmul_zero c
-  exact one_ne_zero (e.symm.map_eq_zero_iff.1 h₁)
+  exact (o.comap hj).fundamentalClassRel_ne_zero hn hκ hκf hf'
 
 end HomologicalOrientation
 
