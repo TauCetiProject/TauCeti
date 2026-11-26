@@ -110,6 +110,13 @@ theorem equivCoprodFreeGroup_symm_inl (g : G) :
     (equivCoprodFreeGroup hι).symm (inl g) = of (inl g) := by
   simp [equivCoprodFreeGroup, ofCoprod]
 
+/-- On the factor `G`, the inverse of `equivCoprodFreeGroup` is the inclusion of `G` into the base
+group `G ∗ Q`. -/
+@[simp]
+theorem equivCoprodFreeGroup_symm_comp_inl :
+    (MonoidHom.ofClass (equivCoprodFreeGroup hι).symm).comp inl = of.comp inl := by
+  ext; simp
+
 /-- On the infinite cyclic factor, the inverse of `equivCoprodFreeGroup` sends `z` to `t⁻¹`. -/
 @[simp]
 theorem equivCoprodFreeGroup_symm_comp_inr :

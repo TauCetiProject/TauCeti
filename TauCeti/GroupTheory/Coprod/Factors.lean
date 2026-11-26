@@ -24,7 +24,8 @@ product `Monoid.PushoutI` of two monoids.
 * `Monoid.Coprod.Factors M N`: the family indexed by `Bool` with `ULift M` at `false` and
   `ULift N` at `true`, with its monoid structure, and its group structure when `M` and `N` are
   groups.
-* `Monoid.Coprod.equivCoprodI`: the isomorphism `M ∗ N ≃* CoprodI (Factors M N)`.
+* `Monoid.Coprod.equivCoprodI`: the isomorphism `M ∗ N ≃* CoprodI (Factors M N)`, with simp
+  lemmas for it and its inverse on generators and on the factor inclusions.
 -/
 
 public section
@@ -97,5 +98,37 @@ theorem equivCoprodI_symm_of_false (x : ULift.{v} M) :
 theorem equivCoprodI_symm_of_true (x : ULift.{u} N) :
     equivCoprodI.symm (no_index (CoprodI.of (M := Factors M N) (i := true) x)) = inr x.down := by
   simp [equivCoprodI]
+
+/-- On the factor `M`, `equivCoprodI` is the inclusion of `ULift M` at `false`. -/
+@[simp]
+theorem equivCoprodI_comp_inl :
+    (MonoidHom.ofClass (equivCoprodI : M ∗ N ≃* _)).comp inl =
+      (CoprodI.of (M := Factors M N) (i := false)).comp MulEquiv.ulift.symm.toMonoidHom := by
+  ext; simp
+
+/-- On the factor `N`, `equivCoprodI` is the inclusion of `ULift N` at `true`. -/
+@[simp]
+theorem equivCoprodI_comp_inr :
+    (MonoidHom.ofClass (equivCoprodI : M ∗ N ≃* _)).comp inr =
+      (CoprodI.of (M := Factors M N) (i := true)).comp MulEquiv.ulift.symm.toMonoidHom := by
+  ext; simp
+
+-- The domain `Factors M N b` of the composite is `no_index`: the discrimination tree would store
+-- it unreduced, and the lemma would never fire.
+/-- On the factor at `false`, the inverse of `equivCoprodI` is the inclusion of `M`. -/
+@[simp]
+theorem equivCoprodI_symm_comp_of_false :
+    (MonoidHom.ofClass (equivCoprodI : M ∗ N ≃* _).symm).comp (M := no_index (Factors M N false))
+        (CoprodI.of (M := Factors M N) (i := false)) =
+      (inl : M →* M ∗ N).comp MulEquiv.ulift.toMonoidHom := by
+  ext; simp
+
+/-- On the factor at `true`, the inverse of `equivCoprodI` is the inclusion of `N`. -/
+@[simp]
+theorem equivCoprodI_symm_comp_of_true :
+    (MonoidHom.ofClass (equivCoprodI : M ∗ N ≃* _).symm).comp (M := no_index (Factors M N true))
+        (CoprodI.of (M := Factors M N) (i := true)) =
+      (inr : N →* M ∗ N).comp MulEquiv.ulift.toMonoidHom := by
+  ext; simp
 
 end Monoid.Coprod

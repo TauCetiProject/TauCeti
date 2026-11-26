@@ -136,6 +136,39 @@ theorem freeFactorEquiv_symm_inr (q : Q) :
     (freeFactorEquiv φ).symm (inr q) = of (φ := freeFactorMap φ) true (ULift.up (inr q)) := by
   simp [freeFactorEquiv]
 
+-- The domain `Factors G (H ∗ Q) b` of the composite is `no_index`, for the reason given at
+-- `freeFactorEquiv_of_false`.
+/-- On the factor `G`, `freeFactorEquiv φ` is the inclusion of `G`. -/
+@[simp]
+theorem freeFactorEquiv_comp_of_false :
+    (MonoidHom.ofClass (freeFactorEquiv (Q := Q) φ)).comp (M := no_index (Factors G (H ∗ Q) false))
+        (of false) =
+      inl.comp MulEquiv.ulift.toMonoidHom := by
+  ext; simp
+
+/-- On the factor `H ∗ Q`, `freeFactorEquiv φ` is `φ` on `H` and the inclusion on `Q`. -/
+@[simp]
+theorem freeFactorEquiv_comp_of_true :
+    (MonoidHom.ofClass (freeFactorEquiv φ)).comp (M := no_index (Factors G (H ∗ Q) true))
+        (of (φ := freeFactorMap (Q := Q) φ) true) =
+      (Coprod.map φ (.id Q)).comp MulEquiv.ulift.toMonoidHom := by
+  ext; simp
+
+/-- On `G`, the inverse of `freeFactorEquiv φ` is the inclusion of the factor `G`. -/
+@[simp]
+theorem freeFactorEquiv_symm_comp_inl :
+    (MonoidHom.ofClass (freeFactorEquiv (Q := Q) φ).symm).comp inl =
+      (of false).comp MulEquiv.ulift.symm.toMonoidHom := by
+  ext; simp
+
+/-- On `Q`, the inverse of `freeFactorEquiv φ` is the inclusion of `Q` into the factor `H ∗ Q`. -/
+@[simp]
+theorem freeFactorEquiv_symm_comp_inr :
+    (MonoidHom.ofClass (freeFactorEquiv φ).symm).comp inr =
+      (of (φ := freeFactorMap (Q := Q) φ) true).comp
+        (MulEquiv.ulift.symm.toMonoidHom.comp inr) := by
+  ext; simp
+
 /-- The homomorphisms from the factors `G` and `H ∗ Q` of `G ∗_H (H ∗ Q)` to `G`: the identity, and
 `φ` together with `ψ`. -/
 private def toDoubleFactor (ψ : Q →* G) : ∀ b, Factors G (H ∗ Q) b →* G
@@ -176,6 +209,23 @@ theorem freeFactorToDouble_of_true (x : ULift (H ∗ Q)) :
 theorem freeFactorToDouble_base (h : H) :
     freeFactorToDouble φ ψ (base (freeFactorMap φ) h) = base _ h := by
   rw [freeFactorToDouble, map_base, MonoidHom.id_apply]
+
+-- The domain of the composite is `no_index`, as in `freeFactorEquiv_comp_of_false`.
+/-- On the factor `G`, `freeFactorToDouble φ ψ` is the inclusion of the first copy of `G`. -/
+@[simp]
+theorem freeFactorToDouble_comp_of_false :
+    (freeFactorToDouble φ ψ).comp (M := no_index (Factors G (H ∗ Q) false)) (of false) =
+      (of false).comp MulEquiv.ulift.toMonoidHom := by
+  ext; simp
+
+/-- On the factor `H ∗ Q`, `freeFactorToDouble φ ψ` is `φ` together with `ψ`, followed by the
+inclusion of the second copy of `G`. -/
+@[simp]
+theorem freeFactorToDouble_comp_of_true :
+    (freeFactorToDouble φ ψ).comp (M := no_index (Factors G (H ∗ Q) true))
+        (of (φ := freeFactorMap φ) true) =
+      (of true).comp ((Coprod.lift φ ψ).comp MulEquiv.ulift.toMonoidHom) := by
+  ext; simp
 
 end Monoid
 
