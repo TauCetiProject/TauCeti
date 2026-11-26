@@ -26,7 +26,9 @@ order. Precomposition with a smooth map is a complex algebra homomorphism
 (`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
 For a diffeomorphism it is a complex algebra isomorphism (`Diffeomorph.compRightComplexAlgEquiv`),
 and conjugating by it carries the complex-linear operators on the functions on one manifold to
-those on the other (`Diffeomorph.pushforwardOperator`), functorially in the diffeomorphism.
+those on the other (`Diffeomorph.pushforwardOperator`), functorially in the diffeomorphism. An
+operator is invariant under the pushforward along a self-diffeomorphism exactly when it commutes
+with precomposition by it (`Diffeomorph.pushforwardOperator_eq_self_iff`).
 
 The constructions use Mathlib's pointwise smooth-function ring, `compLeftRingHom`, and
 its continuous real-linear maps `Complex.reCLM`, `Complex.imCLM`, `Complex.ofRealCLM`
@@ -562,5 +564,17 @@ theorem pushforwardOperator_trans {E'' H'' P : Type*} [NormedAddCommGroup E''] [
     pushforwardOperator (Φ.trans Ψ) = (pushforwardOperator Φ).trans (pushforwardOperator Ψ) := by
   ext P u x
   simp [compRightComplexAlgEquiv_trans]
+
+/-- An operator is invariant under the pushforward along `Φ` exactly when it commutes with
+precomposition by `Φ`: `P (u ∘ Φ) = (P u) ∘ Φ` for every `u`. -/
+theorem pushforwardOperator_eq_self_iff (Φ : M ≃ₘ^n⟮I, I⟯ M)
+    {P : Module.End ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯} :
+    pushforwardOperator Φ P = P ↔
+      ∀ u, P (compRightComplexAlgEquiv Φ u) = compRightComplexAlgEquiv Φ (P u) := by
+  refine ⟨fun h u ↦ ContMDiffMap.ext fun x ↦ ?_, fun h ↦ LinearMap.ext fun u ↦
+    ContMDiffMap.ext fun y ↦ ?_⟩
+  · conv_rhs => rw [compRightComplexAlgEquiv_apply, ← h, pushforwardOperator_apply_apply,
+      Φ.symm_apply_apply]
+  · rw [pushforwardOperator_apply_apply, h, compRightComplexAlgEquiv_apply, Φ.apply_symm_apply]
 
 end Diffeomorph
