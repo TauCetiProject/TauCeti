@@ -45,6 +45,8 @@ a tree, regular of degree `q + 1` when the residue field has `q` elements (*Tree
 * `TauCeti.fullLattices O K V`: the full `O`-lattices in `V`, a `Kˣ`-stable set of submodules.
 * `TauCeti.LatticeClass O K V`: the homothety classes of full lattices.
 * `TauCeti.LatticeClass.mk`: the class of a full lattice.
+* `TauCeti.LatticeClass.lift`: a function on full lattices invariant under homotheties, as a
+  function on lattice classes.
 * `TauCeti.LatticeClass.graph O K V`: the adjacency graph of lattice classes over a discrete
   valuation ring.
 * `TauCeti.LatticeClass.toGraphIso`: the action of `V ≃ₗ[K] V` by graph automorphisms.
@@ -144,6 +146,19 @@ theorem mk_eq_mk_iff {L M : fullLattices O K V} : mk L = mk M ↔ ∃ a : Kˣ, a
 @[simp]
 theorem mk_smul (a : Kˣ) (L : fullLattices O K V) : mk (a • L) = mk L :=
   mk_eq_mk_iff.2 ⟨a, rfl⟩
+
+/-- A function on full lattices that is invariant under homotheties, as a function on lattice
+classes. -/
+def lift {β : Sort*} (f : fullLattices O K V → β) (hf : ∀ (a : Kˣ) L, f (a • L) = f L) :
+    LatticeClass O K V → β :=
+  Quotient.lift f fun _ M h => by
+    obtain ⟨a, rfl⟩ := MulAction.mem_orbit_iff.1 h
+    exact hf a M
+
+@[simp]
+theorem lift_mk {β : Sort*} (f : fullLattices O K V → β) (hf : ∀ (a : Kˣ) L, f (a • L) = f L)
+    (L : fullLattices O K V) : lift f hf (mk L) = f L :=
+  (rfl)
 
 /-- Linear automorphisms of `V` act on lattice classes through representatives. -/
 instance : SMul (V ≃ₗ[K] V) (LatticeClass O K V) where
@@ -280,6 +295,14 @@ theorem coe_neighborEquiv_symm_apply (L : fullLattices O K V)
       mk ⟨M, mem_fullLattices.2
         (Submodule.IsFullLattice.of_maximalIdeal_smul_le K M.property.1.le M.property.2.le)⟩ :=
   (rfl)
+
+/-- The submodule `neighborEquiv L y` is a representative of the neighbour `y`. -/
+@[simp]
+theorem mk_neighborEquiv_apply (L : fullLattices O K V) (y : (graph O K V).neighborSet (mk L)) :
+    mk ⟨(neighborEquiv L y : Submodule O V), mem_fullLattices.2
+      (Submodule.IsFullLattice.of_maximalIdeal_smul_le K (neighborEquiv L y).property.1.le
+        (neighborEquiv L y).property.2.le)⟩ = (y : LatticeClass O K V) :=
+  congrArg Subtype.val ((neighborEquiv L).symm_apply_apply y)
 
 /-- Linear automorphisms of `V` preserve adjacency of lattice classes. -/
 @[simp]
