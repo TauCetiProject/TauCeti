@@ -45,8 +45,8 @@ strict. Strictness itself is proved, for vector spaces, with a Jordan-chain basi
   `Module.End.isStrict_pow_monodromyFiltration`: strictness of the powers of `N` for the
   kernel-image filtration.
 * `Module.End.IsMonodromyFiltration.isStrict_pow` and
-  `Module.End.IsMonodromyFiltration.isStrict`: strictness for a monodromy filtration of a
-  nilpotent endomorphism of a finite-dimensional vector space, centred anywhere.
+  `Module.End.IsMonodromyFiltration.isStrict`: strictness for a monodromy filtration, centred
+  anywhere, of an endomorphism of a finite-dimensional vector space, which is then nilpotent.
 * `Module.End.IsMonodromyFiltration.inf_comap_pow_of_le` and
   `Module.End.IsMonodromyFiltration.inf_comap_of_lt`: `N ^ k` is injective on `gr_i` for
   `c + k ≤ i`, so the primitive parts vanish above the centre.
@@ -136,8 +136,7 @@ monodromy filtration centred at `c` as soon as `c + k ≤ i`. -/
 theorem inf_comap_pow_of_le (hF : N.IsMonodromyFiltration c F) {k : ℕ} {i : ℤ}
     (h : c + k ≤ i) : F i ⊓ (F (i - 2 * k - 1)).comap (N ^ k) = F (i - 1) := by
   obtain ⟨r, rfl⟩ : ∃ r : ℕ, i = c + r := ⟨(i - c).toNat, by omega⟩
-  refine le_antisymm ?_ (le_inf (hF.monotone (by omega))
-    (map_le_iff_le_comap.1 ((hF.map_pow_le k _).trans (hF.monotone (by omega)))))
+  refine le_antisymm ?_ (le_inf (hF.monotone (by omega)) (hF.le_comap_pow (by omega)))
   -- `N ^ r x = N ^ (r - k) (N ^ k x)` lies in `F (c - r - 1)`, so `x ∈ F (c + r - 1)` by the
   -- injectivity of `N ^ r : gr_{c + r} → gr_{c - r}`.
   rintro x ⟨hx, hNx⟩
@@ -145,7 +144,7 @@ theorem inf_comap_pow_of_le (hF : N.IsMonodromyFiltration c F) {k : ℕ} {i : �
   refine ⟨hx, ?_⟩
   rw [SetLike.mem_coe, mem_comap] at hNx ⊢
   rw [show r = (r - k) + k by omega, pow_add, _root_.mul_apply_eq_comp]
-  exact hF.monotone (by omega) (hF.map_pow_le (r - k) _ (mem_map_of_mem hNx))
+  exact hF.le_comap_pow (k := r - k) (by omega) hNx
 
 /-- Above the centre `c`, the endomorphism `N` induces an injective map `gr_i → gr_{i - 2}`: the
 primitive part `ker (N : gr_i → gr_{i - 2})` vanishes for `i > c`. -/
@@ -165,7 +164,7 @@ theorem map_sup_of_lt (hF : N.IsMonodromyFiltration c F) {i : ℤ} (h : i < c) :
   rw [← hF.map_pow_sup (r + 1)]
   refine sup_le_sup ?_ le_rfl
   rw [pow_succ', Module.End.mul_eq_comp, map_comp]
-  exact map_mono ((hF.map_pow_le r _).trans (hF.monotone (by push_cast; omega)))
+  exact map_mono (map_le_iff_le_comap.2 (hF.le_comap_pow (by push_cast; omega)))
 
 end Semiring
 
@@ -184,15 +183,12 @@ theorem inf_comap_pow_sup_map (hF : N.IsMonodromyFiltration c F) (r : ℕ) :
   -- Write `N ^ (r + 1) x` as `N ^ (r + 2) y` modulo `F (c - r - 3)`, with `y ∈ F (c + r + 2)`;
   -- then `x = (x - N y) + N y`.
   intro x hx
-  have hNx : (N ^ (r + 1)) x ∈ F (c - (r + 2 : ℕ)) := by
-    have := hF.map_pow_le (r + 1) _ (mem_map_of_mem hx)
-    exact hF.monotone (by push_cast; omega) this
+  have hNx : (N ^ (r + 1)) x ∈ F (c - (r + 2 : ℕ)) := hF.le_comap_pow (by push_cast; omega) hx
   rw [← hF.map_pow_sup (r + 2), mem_sup] at hNx
   obtain ⟨_, ⟨y, hy, rfl⟩, z, hz, hyz⟩ := hNx
   have hy' : y ∈ F (c + r + 2) := by simpa [add_assoc] using hy
   refine mem_sup.2 ⟨x - N y, ⟨sub_mem hx ?_, ?_⟩, N y, mem_map_of_mem hy', sub_add_cancel _ _⟩
-  · have := hF.map_le _ (mem_map_of_mem hy')
-    exact hF.monotone (by omega) this
+  · exact hF.monotone (by omega) (hF.map_le _ (mem_map_of_mem hy'))
   · rw [SetLike.mem_coe, mem_comap, map_sub, ← _root_.mul_apply_eq_comp, ← pow_succ, ← hyz,
       add_sub_cancel_left]
     exact hF.monotone (by push_cast; omega) hz
@@ -203,16 +199,13 @@ theorem inf_comap_pow_inf_map_sup (hF : N.IsMonodromyFiltration c F) (r : ℕ) :
     F (c + r) ⊓ (F (c - r - 3)).comap (N ^ (r + 1)) ⊓ ((F (c + r + 2)).map N ⊔ F (c + r - 1)) =
       F (c + r - 1) := by
   refine le_antisymm ?_ (le_inf (le_inf (hF.monotone (by omega))
-    (map_le_iff_le_comap.1 ((hF.map_pow_le _ _).trans (hF.monotone (by push_cast; omega)))))
-    le_sup_right)
+    (hF.le_comap_pow (by push_cast; omega))) le_sup_right)
   -- If `x = N y + z` with `y ∈ F (c + r + 2)` and `z ∈ F (c + r - 1)`, then `N ^ (r + 2) y`
   -- lies in `F (c - r - 3)`, so `y ∈ F (c + r + 1)` by the injectivity of
   -- `N ^ (r + 2) : gr_{c + r + 2} → gr_{c - r - 2}`, and `N y ∈ F (c + r - 1)`.
   rintro x ⟨⟨-, hNx⟩, hx⟩
   obtain ⟨_, ⟨y, hy, rfl⟩, z, hz, rfl⟩ := mem_sup.1 hx
-  have hNz : (N ^ (r + 1)) z ∈ F (c - r - 3) := by
-    have := hF.map_pow_le (r + 1) _ (mem_map_of_mem hz)
-    exact hF.monotone (by push_cast; omega) this
+  have hNz : (N ^ (r + 1)) z ∈ F (c - r - 3) := hF.le_comap_pow (by push_cast; omega) hz
   have hy' : y ∈ F (c + (r + 2 : ℕ) - 1) := by
     rw [← hF.inf_comap_pow (r + 2)]
     refine ⟨by simpa [add_assoc] using hy, ?_⟩
@@ -232,8 +225,7 @@ theorem ker_pow_inf_sup (hF : N.IsMonodromyFiltration c F) {k : ℕ}
     LinearMap.ker (N ^ k) ⊓ F i ⊔ F (i - 1) = F i ⊓ (F (i - 2 * k - 1)).comap (N ^ k) := by
   refine le_antisymm (sup_le (inf_comm (LinearMap.ker (N ^ k)) (F i) ▸ inf_le_inf_left _
     fun x hx => by simp [LinearMap.mem_ker.1 hx])
-    (le_inf (hF.monotone (by omega)) (map_le_iff_le_comap.1
-      ((hF.map_pow_le k _).trans (hF.monotone (by omega)))))) ?_
+    (le_inf (hF.monotone (by omega)) (hF.le_comap_pow (by omega)))) ?_
   -- By strictness, `N ^ k x = N ^ k y` with `y ∈ F (i - 1)`; then `x = (x - y) + y`.
   rintro x ⟨hx, hNx⟩
   have : (N ^ k) x ∈ (F (i - 1)).map (N ^ k) := by
@@ -260,22 +252,23 @@ section FiniteDimensional
 variable [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V] {N : Module.End K V}
   {c : ℤ} {F : ℤ → Submodule K V}
 
-/-- A monodromy filtration of a nilpotent endomorphism of a finite-dimensional vector space is
-strict for the powers of `N`: `N ^ k` maps the step `a + 2 k` onto the vectors of the step `a` in
-its range. -/
-theorem isStrict_pow (hN : IsNilpotent N) (hF : N.IsMonodromyFiltration c F) (k : ℕ) :
+/-- A monodromy filtration of an endomorphism of a finite-dimensional vector space, which is
+nilpotent by `isNilpotent`, is strict for the powers of `N`: `N ^ k` maps the step `a + 2 k` onto
+the vectors of the step `a` in its range. -/
+theorem isStrict_pow (hF : N.IsMonodromyFiltration c F) (k : ℕ) :
     LinearMap.IsStrict (N ^ k) (fun a => F (a + 2 * k)) F := by
+  have hN := hF.isNilpotent
   obtain rfl := (isMonodromyFiltration_iff hN).1 hF
   refine LinearMap.isStrict_iff.2 fun a => ?_
   dsimp only
   rw [show a + 2 * k - c = a - c + 2 * k by ring]
   exact LinearMap.isStrict_iff.1 (isStrict_pow_monodromyFiltration hN k) (a - c)
 
-/-- A monodromy filtration of a nilpotent endomorphism of a finite-dimensional vector space is
-strict for `N`: `N (F (a + 2)) = range N ⊓ F a`. -/
-theorem isStrict (hN : IsNilpotent N) (hF : N.IsMonodromyFiltration c F) :
+/-- A monodromy filtration of an endomorphism of a finite-dimensional vector space is strict for
+`N`: `N (F (a + 2)) = range N ⊓ F a`. -/
+theorem isStrict (hF : N.IsMonodromyFiltration c F) :
     LinearMap.IsStrict N (fun a => F (a + 2)) F := by
-  simpa using hF.isStrict_pow hN 1
+  simpa using hF.isStrict_pow 1
 
 end FiniteDimensional
 
