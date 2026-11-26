@@ -65,8 +65,9 @@ variable [FiniteDimensional 𝕜 F]
 
 /-- **The Hilbert–Schmidt inner product as a trace.** In an orthonormal basis `(bᵢ)` of the
 source, `tr (A† B) = ∑ᵢ ⟪A bᵢ, B bᵢ⟫`. -/
-theorem trace_adjoint_comp_eq_sum_inner {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι 𝕜 E)
-    (A B : E →ₗ[𝕜] F) : trace 𝕜 E (A.adjoint ∘ₗ B) = ∑ i, ⟪A (b i), B (b i)⟫_𝕜 := by
+theorem _root_.LinearMap.trace_adjoint_comp_eq_sum_inner {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι 𝕜 E) (A B : E →ₗ[𝕜] F) :
+    trace 𝕜 E (A.adjoint ∘ₗ B) = ∑ i, ⟪A (b i), B (b i)⟫_𝕜 := by
   rw [trace_eq_sum_inner _ b]
   exact Finset.sum_congr rfl fun i _ ↦ adjoint_inner_right A _ _
 
@@ -85,7 +86,7 @@ theorem sq_frobenius_eq_re_trace (A : E →ₗ[𝕜] F) :
 theorem norm_trace_adjoint_comp_le (A B : E →ₗ[𝕜] F) :
     ‖trace 𝕜 E (A.adjoint ∘ₗ B)‖ ≤ frobenius 𝕜 E F A * frobenius 𝕜 E F B := by
   set b := stdOrthonormalBasis 𝕜 E
-  rw [trace_adjoint_comp_eq_sum_inner b, frobenius_apply b, frobenius_apply b]
+  rw [A.trace_adjoint_comp_eq_sum_inner b, frobenius_apply b, frobenius_apply b]
   calc ‖∑ i, ⟪A (b i), B (b i)⟫_𝕜‖ ≤ ∑ i, ‖A (b i)‖ * ‖B (b i)‖ :=
         (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ norm_inner_le_norm _ _)
     _ ≤ _ := Real.sum_mul_le_sqrt_mul_sqrt _ _ _

@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Basic
 public import TauCeti.Analysis.InnerProductSpace.NearIsometry.Basic
 public import TauCeti.Algebra.Module.LinearMap.BigOperators
 public import TauCeti.LinearAlgebra.Spreading
+public import TauCeti.RepresentationTheory.Unitary
 
 /-!
 # One translate from a second moment
@@ -61,15 +61,6 @@ variable {𝕜 S T Γ : Type*} [RCLike 𝕜]
   [NormedAddCommGroup T] [InnerProductSpace 𝕜 T] [FiniteDimensional 𝕜 T]
   [Group Γ] {ρ : Representation 𝕜 Γ T}
 
-omit [FiniteDimensional 𝕜 S] in
-/-- The adjoint of a norm-preserving representation operator `ρ s` is `ρ s⁻¹`. -/
-theorem adjoint_representation_eq_inv (hρ : ∀ s x, ‖ρ s x‖ = ‖x‖) (s : Γ) :
-    (ρ s).adjoint = ρ s⁻¹ := by
-  refine ((eq_adjoint_iff _ _).2 fun x y ↦ ?_).symm
-  let U : T →ₗᵢ[𝕜] T := ⟨ρ s, hρ s⟩
-  rw [← U.inner_map_map]
-  simp [U, ← mul_apply_eq_comp, ← map_mul]
-
 /-- **Gram entries of the translates.** For a norm-preserving representation `ρ`, the
 Hilbert–Schmidt inner product of `ρ(s) B B† ρ(s)⁻¹` and `ρ(t) B B† ρ(t)⁻¹` is the squared
 Frobenius seminorm of `B† ρ(s⁻¹ t) B`. -/
@@ -81,7 +72,7 @@ theorem trace_adjoint_comp_eq_sq_frobenius_adjoint_comp_comp (hρ : ∀ s x, ‖
   set X : S →ₗ[𝕜] T := ρ s ∘ₗ B
   set Y : S →ₗ[𝕜] T := ρ t ∘ₗ B
   have h_factor : B.adjoint ∘ₗ ρ (s⁻¹ * t) ∘ₗ B = X.adjoint ∘ₗ Y := by
-    simp [X, Y, adjoint_comp, adjoint_representation_eq_inv hρ, Module.End.mul_eq_comp, comp_assoc]
+    simp [X, Y, adjoint_comp, ρ.adjoint_eq_inv hρ, Module.End.mul_eq_comp, comp_assoc]
   rw [h_factor, sq_frobenius_eq_trace]
   calc trace 𝕜 T ((X ∘ₗ X.adjoint).adjoint ∘ₗ Y ∘ₗ Y.adjoint)
       = trace 𝕜 T (((X ∘ₗ X.adjoint) ∘ₗ Y) ∘ₗ Y.adjoint) := by

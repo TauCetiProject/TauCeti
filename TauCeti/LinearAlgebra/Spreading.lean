@@ -18,11 +18,15 @@ images keep adding new directions: a greedy choice of logarithmically many of th
 all of `W`. This is the linear algebra behind the "few translates" step of second-moment
 arguments, where the family consists of the translates of one map by a finite group.
 
+Throughout, `dim` is `Module.finrank`, which is `0` on an infinite-dimensional space; the notions
+and bounds are meant for finite-dimensional `V` and `W`.
+
 ## Main definitions and results
 
 * `TauCeti.IsSpread B η`: the family `B` spreads with error `η`.
-* `TauCeti.IsSpread.exists_card_mul_finrank_le_and_le_finrank_biSup_range`: if `B` spreads with
-  error `3ε/2`, where `0 < ε < 1/16`, then the images of a set `t` of maps with
+* `TauCeti.IsSpread.exists_card_mul_finrank_le_and_le_finrank_biSup_range`: if `V` is
+  finite-dimensional and nonzero (`0 < dim V`) and `B` spreads with error `3ε/2`, where
+  `0 < ε < 1/16`, then the images of a set `t` of maps with
   `#t dim V ≤ (5/2) (1 + log (1 / (16 ε))) dim W` together span at least `(1 - 16 ε) dim W`
   dimensions.
 * `TauCeti.finrank_biSup_range_le`: restricting finitely many maps to a subspace `U` loses at
@@ -53,7 +57,9 @@ variable {K V W Θ : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
 /-- A family `(B s)_{s ∈ Θ}` of linear maps *spreads with error `η`* if for every subspace `F` of
 the target, of share `α = dim F / dim W` (with `α = 0` when `dim W = 0`), the preimage of `F`
-under some `B s` has dimension at most `((1 + α) / 2 + η) dim V`. -/
+under some `B s` has dimension at most `((1 + α) / 2 + η) dim V`. Here `dim` is
+`Module.finrank`, which is `0` on an infinite-dimensional space, so the notion is meant for
+finite-dimensional `V` and `W`. -/
 def IsSpread (B : Θ → V →ₗ[K] W) (η : ℝ) : Prop :=
   ∀ F : Submodule K W, ∃ s : Θ,
     (finrank K (F.comap (B s)) : ℝ) ≤ ((1 + finrank K F / finrank K W) / 2 + η) * finrank K V
@@ -188,10 +194,12 @@ private theorem IsSpread.exists_card_mul_finrank_le_and_le_finrank_biSup_range_o
     _ = 5 / 2 * (l * rate) * finrank K W := by rw [h_rate]; field_simp
     _ ≤ 5 / 2 * (1 + Real.log (16 * ε)⁻¹) * finrank K W := by gcongr
 
-/-- **Few maps of a spreading family span almost everything.** Let `V ≠ 0`, let `0 < ε < 1/16`,
-and let the maps `B s : V → W` spread with error `3ε/2`. Then there is a finite set `t` of
-indices with `#t dim V ≤ (5/2) (1 + log (1 / (16 ε))) dim W` whose images together span at least
-`(1 - 16 ε) dim W` dimensions. -/
+/-- **Few maps of a spreading family span almost everything.** Let `V` be finite-dimensional and
+nonzero (`0 < finrank K V`), let `0 < ε < 1/16`, and let the maps `B s : V → W` spread with error
+`3ε/2`. Then there is a finite set `t` of indices with
+`#t dim V ≤ (5/2) (1 + log (1 / (16 ε))) dim W` whose images together span at least
+`(1 - 16 ε) dim W` dimensions. Here `dim W` is `finrank K W`, which is `0` for an
+infinite-dimensional `W`, so the bound says something only for finite-dimensional `W`. -/
 theorem IsSpread.exists_card_mul_finrank_le_and_le_finrank_biSup_range
     (h_spread : IsSpread B (3 / 2 * ε)) (hV : 0 < finrank K V) (hε : 0 < ε)
     (hε_lt : ε < 1 / 16) :
