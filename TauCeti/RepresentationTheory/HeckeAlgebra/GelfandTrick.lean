@@ -281,36 +281,111 @@ theorem Subgroup.heckeConv_def (K : Subgroup G) (f' f : G → A) (x : G) :
     K.heckeConv f' f x = ∑ᶠ q : G ⧸ K, f' q.out * f (q.out⁻¹ * x) :=
   (rfl)
 
+private theorem finite_support_mul {K : Subgroup G} {f : G → A}
+    (hf : {q : G ⧸ K | f q.out ≠ 0}.Finite) (g : G ⧸ K → A) :
+    (Function.support fun q : G ⧸ K ↦ f q.out * g q).Finite :=
+  hf.subset fun _ hq h0 ↦ hq (by simp [h0])
+
+@[simp] theorem Subgroup.heckeConv_zero_left (K : Subgroup G) (f : G → A) :
+    K.heckeConv 0 f = 0 := by
+  funext x
+  simp [heckeConv_def]
+
+@[simp] theorem Subgroup.heckeConv_zero_right (K : Subgroup G) (f' : G → A) :
+    K.heckeConv f' 0 = 0 := by
+  funext x
+  simp [heckeConv_def]
+
+theorem Subgroup.heckeConv_add_left (K : Subgroup G) {f₁ f₂ : G → A}
+    (hf₁ : {q : G ⧸ K | f₁ q.out ≠ 0}.Finite) (hf₂ : {q : G ⧸ K | f₂ q.out ≠ 0}.Finite)
+    (f : G → A) :
+    K.heckeConv (f₁ + f₂) f = K.heckeConv f₁ f + K.heckeConv f₂ f := by
+  funext x
+  simp only [heckeConv_def, Pi.add_apply, add_mul]
+  exact finsum_add_distrib (finite_support_mul hf₁ _) (finite_support_mul hf₂ _)
+
+theorem Subgroup.heckeConv_add_right (K : Subgroup G) {f' : G → A}
+    (hf' : {q : G ⧸ K | f' q.out ≠ 0}.Finite) (f₁ f₂ : G → A) :
+    K.heckeConv f' (f₁ + f₂) = K.heckeConv f' f₁ + K.heckeConv f' f₂ := by
+  funext x
+  simp only [heckeConv_def, Pi.add_apply, mul_add]
+  exact finsum_add_distrib (finite_support_mul hf' _) (finite_support_mul hf' _)
+
+theorem Subgroup.heckeConv_smul_left (K : Subgroup G) {f' : G → A}
+    (hf' : {q : G ⧸ K | f' q.out ≠ 0}.Finite) (c : A) (f : G → A) :
+    K.heckeConv (c • f') f = c • K.heckeConv f' f := by
+  funext x
+  simp only [heckeConv_def, Pi.smul_apply, smul_eq_mul, mul_assoc]
+  exact (map_finsum (LinearMap.lsmul A A c) (finite_support_mul hf' _)).symm
+
+theorem Subgroup.heckeConv_smul_right (K : Subgroup G) {f' : G → A}
+    (hf' : {q : G ⧸ K | f' q.out ≠ 0}.Finite) (c : A) (f : G → A) :
+    K.heckeConv f' (c • f) = c • K.heckeConv f' f := by
+  funext x
+  simp only [heckeConv_def, Pi.smul_apply, smul_eq_mul, mul_left_comm _ c]
+  exact (map_finsum (LinearMap.lsmul A A c) (finite_support_mul hf' _)).symm
+
+/-- The indicator function of `K` is a left unit for Hecke convolution on left `K`-invariant
+functions. -/
+@[simp] theorem Subgroup.heckeConv_indicator_one_left {K : Subgroup G} {f : G → A}
+    (hf : ∀ g : G, ∀ k ∈ K, f (k * g) = f g) :
+    K.heckeConv (Set.indicator (K : Set G) 1) f = f := by
+  funext x
+  rw [heckeConv_def, finsum_eq_single _ (QuotientGroup.mk (1 : G))]
+  · have hout : ((QuotientGroup.mk (1 : G) : G ⧸ K).out : G) ∈ K :=
+      QuotientGroup.out_mem_iff_eq_mk_one.2 rfl
+    simp [hf x _ (K.inv_mem hout)]
+  · intro q hq
+    have hout : q.out ∉ (K : Set G) := fun hmem ↦
+      hq (QuotientGroup.out_mem_iff_eq_mk_one.1 hmem)
+    simp [Set.indicator_of_notMem hout]
+
+/-- The indicator function of `K` is a right unit for Hecke convolution on right `K`-invariant
+functions. -/
+@[simp] theorem Subgroup.heckeConv_indicator_one_right {K : Subgroup G} {f' : G → A}
+    (hf' : ∀ g : G, ∀ k ∈ K, f' (g * k) = f' g) :
+    K.heckeConv f' (Set.indicator (K : Set G) 1) = f' := by
+  funext x
+  rw [heckeConv_def, finsum_eq_single _ (QuotientGroup.mk x)]
+  · obtain ⟨⟨k, hk⟩, hkx⟩ := QuotientGroup.mk_out_eq_mul K x
+    simp [hkx, hf' x _ hk, K.inv_mem hk]
+  · intro q hq
+    have hnot : q.out⁻¹ * x ∉ (K : Set G) := fun hmem ↦ by
+      apply hq
+      rw [← Quotient.out_eq q]
+      exact QuotientGroup.eq.2 hmem
+    simp [Set.indicator_of_notMem hnot]
+
 private theorem mem_conv_prod_image {K : Subgroup G} {f f' : G → A}
-    (hf : K.IsHeckeFunction f) {q s : G ⧸ K} (hq' : f' q.out ≠ 0)
+    (hf_right : ∀ g : G, ∀ k ∈ K, f (g * k) = f g) {q s : G ⧸ K} (hq' : f' q.out ≠ 0)
     (hs' : f (q.out⁻¹ * s.out) ≠ 0) :
     s ∈ (fun p : (G ⧸ K) × (G ⧸ K) ↦ (↑(p.1.out * p.2.out) : G ⧸ K)) ''
       ({q | f' q.out ≠ 0} ×ˢ {r | f r.out ≠ 0}) := by
   let r₀ : G ⧸ K := QuotientGroup.mk (q.out⁻¹ * s.out)
   obtain ⟨⟨k, hk⟩, hr₀⟩ := QuotientGroup.mk_out_eq_mul K (q.out⁻¹ * s.out)
   refine ⟨(q, r₀), ⟨hq', ?_⟩, ?_⟩
-  · simpa only [Set.mem_ofPred_eq, r₀, hr₀, hf.mul_right _ hk] using hs'
+  · simpa only [Set.mem_ofPred_eq, r₀, hr₀, hf_right _ _ hk] using hs'
   · simp only [r₀]
     rw [hr₀, ← mul_assoc, ← mul_assoc, mul_inv_cancel, one_mul]
     exact (QuotientGroup.eq.2 (by simpa [leftRel_apply] using K.inv_mem hk)).symm.trans
       (Quotient.out_eq s)
 
 private theorem mem_conv_prod_image_of_heckeConv_ne_zero {K : Subgroup G} {f f' : G → A}
-    (hf : K.IsHeckeFunction f) {s : G ⧸ K} (hs : K.heckeConv f' f s.out ≠ 0) :
+    (hf_right : ∀ g : G, ∀ k ∈ K, f (g * k) = f g) {s : G ⧸ K} (hs : K.heckeConv f' f s.out ≠ 0) :
     s ∈ (fun p : (G ⧸ K) × (G ⧸ K) ↦ (↑(p.1.out * p.2.out) : G ⧸ K)) ''
       ({q | f' q.out ≠ 0} ×ˢ {r | f r.out ≠ 0}) := by
   have hex : ∃ q : G ⧸ K, f' q.out * f (q.out⁻¹ * s.out) ≠ 0 := by
     by_contra h; push Not at h
     exact hs (by simp [Subgroup.heckeConv_def, finsum_eq_zero_of_forall_eq_zero h])
   obtain ⟨q, hq⟩ := hex
-  exact mem_conv_prod_image hf (left_ne_zero_of_mul hq) (right_ne_zero_of_mul hq)
+  exact mem_conv_prod_image hf_right (left_ne_zero_of_mul hq) (right_ne_zero_of_mul hq)
 
 /-- The Hecke convolution of two Hecke functions is a Hecke function. -/
 theorem Subgroup.IsHeckeFunction.heckeConv {K : Subgroup G} {f' f : G → A}
     (hf' : K.IsHeckeFunction f') (hf : K.IsHeckeFunction f) :
     K.IsHeckeFunction (K.heckeConv f' f) := by
   refine ⟨((hf'.finite_support.prod hf.finite_support).image _).subset fun _ hs ↦
-      mem_conv_prod_image_of_heckeConv_ne_zero hf hs,
+      mem_conv_prod_image_of_heckeConv_ne_zero (fun g _ hk ↦ hf.mul_right g hk) hs,
     fun x k hk ↦ ⟨?_, ?_⟩⟩
   · simp only [Subgroup.heckeConv_def]
     have h1 : (∑ᶠ q : G ⧸ K, f' (k * q.out) * f ((k * q.out)⁻¹ * (k * x))) =
@@ -325,24 +400,27 @@ theorem Subgroup.IsHeckeFunction.heckeConv {K : Subgroup G} {f' f : G → A}
     exact finsum_congr fun q ↦ by rw [← mul_assoc, hf.mul_right _ hk]
 
 /-- Composition of two Hecke operators on a `K`-fixed vector is the Hecke operator of their
-convolution. -/
-theorem Subgroup.IsHeckeFunction.heckeOp_comp {K : Subgroup G} {π : Representation A G W}
-    {f f' : G → A} {v : W} (hf : K.IsHeckeFunction f) (hf' : K.IsHeckeFunction f')
+convolution, assuming finite coset support and right `K`-invariance of `f`. -/
+theorem Representation.heckeOp_comp {K : Subgroup G} (π : Representation A G W)
+    {f f' : G → A} {v : W}
+    (hf_supp : {q : G ⧸ K | f q.out ≠ 0}.Finite)
+    (hf_right : ∀ g : G, ∀ k ∈ K, f (g * k) = f g)
+    (hf'_supp : {q : G ⧸ K | f' q.out ≠ 0}.Finite)
     (hv : ∀ k ∈ K, π k v = v) :
     π.heckeOp K f' (π.heckeOp K f v) = π.heckeOp K (K.heckeConv f' f) v := by
-  have hfin_f := finite_support_smul hf.finite_support (fun q : G ⧸ K ↦ π q.out v)
+  have hfin_f := finite_support_smul hf_supp (fun q : G ⧸ K ↦ π q.out v)
   have hS : ((fun p : (G ⧸ K) × (G ⧸ K) ↦ (↑(p.1.out * p.2.out) : G ⧸ K)) ''
       ({q | f' q.out ≠ 0} ×ˢ {r | f r.out ≠ 0})).Finite :=
-    (hf'.finite_support.prod hf.finite_support).image _
+    (hf'_supp.prod hf_supp).image _
   have hinner (q : G ⧸ K) :
       π q.out (π.heckeOp K f v) = ∑ r ∈ hfin_f.toFinset, f r.out • π (q.out * r.out) v := by
     rw [Representation.heckeOp_def, finsum_eq_sum _ hfin_f, map_sum]
     exact Finset.sum_congr rfl fun r _ ↦ by rw [map_smul, map_mul, mul_apply_eq_comp]
   rw [Representation.heckeOp_def,
-    finsum_eq_sum_of_support_subset _ (s := hf'.finite_support.toFinset)
-      (fun q hq ↦ hf'.finite_support.mem_toFinset.2 (support_smul_subset _ hq))]
+    finsum_eq_sum_of_support_subset _ (s := hf'_supp.toFinset)
+      (fun q hq ↦ hf'_supp.mem_toFinset.2 (support_smul_subset _ hq))]
   simp_rw [hinner, Finset.smul_sum, smul_smul]
-  have hstep : ∀ q ∈ hf'.finite_support.toFinset,
+  have hstep : ∀ q ∈ hf'_supp.toFinset,
       ∑ r ∈ hfin_f.toFinset, (f' q.out * f r.out) • π (q.out * r.out) v =
         ∑ s ∈ hS.toFinset, (f' q.out * f (q.out⁻¹ * s.out)) • π s.out v := fun q hq ↦ by
     have h1 := (finsum_eq_sum_of_support_subset (f := fun r : G ⧸ K ↦
@@ -357,17 +435,26 @@ theorem Subgroup.IsHeckeFunction.heckeOp_comp {K : Subgroup G} {π : Representat
         finsum_congr fun r ↦ by rw [inv_mul_cancel_left]
       rw [h3]
       exact QuotientGroup.finsum_mulLeft_eq q.out (fun g ↦ (f' q.out * f (q.out⁻¹ * g)) • π g v)
-        fun g k hk ↦ by rw [← mul_assoc, hf.mul_right _ hk, map_mul, mul_apply_eq_comp, hv k hk]
+        fun g k hk ↦ by rw [← mul_assoc, hf_right _ _ hk, map_mul, mul_apply_eq_comp, hv k hk]
     exact h1.trans <| h2.trans <| finsum_eq_sum_of_support_subset _ fun s hs ↦
-      hS.mem_toFinset.2 (mem_conv_prod_image hf (hf'.finite_support.mem_toFinset.1 hq)
+      hS.mem_toFinset.2 (mem_conv_prod_image hf_right (hf'_supp.mem_toFinset.1 hq)
         fun h0 ↦ hs (by simp [h0]))
   rw [Finset.sum_congr rfl hstep, Finset.sum_comm, Representation.heckeOp_def,
     finsum_eq_sum_of_support_subset _ (s := hS.toFinset) fun _ hr ↦
-      hS.mem_toFinset.2 (mem_conv_prod_image_of_heckeConv_ne_zero hf (support_smul_subset _ hr))]
+      hS.mem_toFinset.2 (mem_conv_prod_image_of_heckeConv_ne_zero hf_right
+        (support_smul_subset _ hr))]
   refine Finset.sum_congr rfl fun s _ ↦ ?_
   rw [← Finset.sum_smul, Subgroup.heckeConv_def,
-    finsum_eq_sum_of_support_subset _ (s := hf'.finite_support.toFinset)
-      (fun q hq ↦ hf'.finite_support.mem_toFinset.2 (left_ne_zero_of_mul hq))]
+    finsum_eq_sum_of_support_subset _ (s := hf'_supp.toFinset)
+      (fun q hq ↦ hf'_supp.mem_toFinset.2 (left_ne_zero_of_mul hq))]
+
+/-- Composition of two Hecke operators on a `K`-fixed vector is the Hecke operator of their
+convolution. -/
+theorem Subgroup.IsHeckeFunction.heckeOp_comp {K : Subgroup G} {π : Representation A G W}
+    {f f' : G → A} {v : W} (hf : K.IsHeckeFunction f) (hf' : K.IsHeckeFunction f')
+    (hv : ∀ k ∈ K, π k v = v) :
+    π.heckeOp K f' (π.heckeOp K f v) = π.heckeOp K (K.heckeConv f' f) v :=
+  π.heckeOp_comp hf.finite_support (fun g _ hk ↦ hf.mul_right g hk) hf'.finite_support hv
 
 /-- **Gelfand's trick (commutativity of convolution).** If `τ : G ≃* G` sends every `g⁻¹` into
 `K * g * K`, then Hecke convolution is commutative on Hecke functions. -/
