@@ -81,10 +81,6 @@ the projective line. -/
 private def coord (j : Fin 2) (s : ℙ ℂ (Fin 2 → ℂ) → ℂ) (x : ℙ ℂ (Fin 2 → ℂ)) : ℂ :=
   twistTransition k ((twistCore (𝕜 := ℂ) (n := 1) k).indexAt x) j x * s x
 
-private theorem extend_apply_of_mem {X : Type*} [TopologicalSpace X] {U : Opens X} (f : U → ℂ)
-    {y : X} (hy : y ∈ U) : Subtype.val.extend f 0 y = f ⟨y, hy⟩ :=
-  Subtype.val_injective.extend_apply f 0 ⟨y, hy⟩
-
 private theorem contMDiff_mk_iff {W : Opens (ℙ ℂ (Fin 2 → ℂ))}
     (s : (x : W) → (twistCore (𝕜 := ℂ) (n := 1) k).Fiber x) :
     ContMDiff 𝓘(ℂ, Fin 1 → ℂ) (𝓘(ℂ, Fin 1 → ℂ).prod 𝓘(ℂ)) ω
@@ -95,7 +91,7 @@ private theorem contMDiff_mk_iff {W : Opens (ℙ ℂ (Fin 2 → ℂ))}
   have hst : (fun x : W ↦ TotalSpace.mk' ℂ (E := (twistCore (𝕜 := ℂ) (n := 1) k).Fiber)
       (x : ℙ ℂ (Fin 2 → ℂ)) (s x)) = fun x : W ↦ TotalSpace.mk' ℂ (x : ℙ ℂ (Fin 2 → ℂ)) (t x) := by
     funext x
-    have he : t x = s x := extend_apply_of_mem (fun x : W ↦ (s x : ℂ)) x.property
+    have he : t x = s x := Function.extend_val_apply x.property
     exact congrArg (TotalSpace.mk' ℂ (E := (twistCore (𝕜 := ℂ) (n := 1) k).Fiber) _) he.symm
   rw [hst]
   refine Iff.trans ?_ (contMDiffOn_section_twistCore_iff k t W.isOpen)
@@ -105,6 +101,13 @@ private theorem contMDiff_mk_iff {W : Opens (ℙ ℂ (Fin 2 → ℂ))}
     fun h x ↦ (contMDiffAt_subtype_iff
       (f := fun x ↦ TotalSpace.mk' ℂ (E := (twistCore (𝕜 := ℂ) (n := 1) k).Fiber) x (t x))).2
         ((h x x.property).contMDiffAt (W.isOpen.mem_nhds x.property))⟩
+
+/-- Two functions continuous at a non-isolated point `x` that agree on a punctured neighbourhood of
+`x` agree at `x`. -/
+private theorem eq_of_continuousAt_of_eventuallyEq_nhdsNE {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [T2Space Y] {f g : X → Y} {x : X} [(𝓝[≠] x).NeBot]
+    (hf : ContinuousAt f x) (hg : ContinuousAt g x) (h : f =ᶠ[𝓝[≠] x] g) : f x = g x :=
+  ((hf.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hg).1 h).self_of_nhds
 
 /-! ### The projective line and the Riemann sphere -/
 
@@ -187,9 +190,8 @@ private theorem lowerCoord_apply {g : OnePoint ℂ → ℂ} {y : OnePoint ℂ}
     (hg : IsDivisorSectionAt (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) g y)
     (hy : y ≠ ((0 : ℂ) : OnePoint ℂ)) (hy' : y ≠ (∞ : OnePoint ℂ)) (hc : ContinuousAt g y) :
     lowerCoord k g y = invChart y ^ k * g y := by
-  refine ((ContinuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
-    (contMDiffAt_lowerCoord k hg hy).continuousAt
-    (ContinuousAt.mul ?_ hc)).1 (lowerCoord_eventuallyEq k hg hy)).self_of_nhds
+  refine eq_of_continuousAt_of_eventuallyEq_nhdsNE (contMDiffAt_lowerCoord k hg hy).continuousAt
+    (ContinuousAt.mul ?_ hc) (lowerCoord_eventuallyEq k hg hy)
   have hs : y ∈ (invChart : OpenPartialHomeomorph (OnePoint ℂ) ℂ).source := by
     simpa [invChart_source] using hy
   exact (invChart.continuousAt hs).zpow₀ k (Or.inl (invChart_ne_zero hy' hy))
@@ -199,10 +201,10 @@ private theorem lowerCoord_add {g₁ g₂ : OnePoint ℂ → ℂ} {y : OnePoint 
     (h₂ : IsDivisorSectionAt (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) g₂ y)
     (hy : y ≠ ((0 : ℂ) : OnePoint ℂ)) :
     lowerCoord k (g₁ + g₂) y = lowerCoord k g₁ y + lowerCoord k g₂ y := by
-  refine ((ContinuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
+  refine eq_of_continuousAt_of_eventuallyEq_nhdsNE
     (contMDiffAt_lowerCoord k (h₁.add h₂) hy).continuousAt
     ((contMDiffAt_lowerCoord k h₁ hy).continuousAt.add
-      (contMDiffAt_lowerCoord k h₂ hy).continuousAt)).1 ?_).self_of_nhds
+      (contMDiffAt_lowerCoord k h₂ hy).continuousAt) ?_
   filter_upwards [lowerCoord_eventuallyEq k (h₁.add h₂) hy, lowerCoord_eventuallyEq k h₁ hy,
     lowerCoord_eventuallyEq k h₂ hy] with z hz hz₁ hz₂
   simp only [Pi.add_apply, hz, hz₁, hz₂, mul_add]
@@ -211,9 +213,9 @@ private theorem lowerCoord_smul {g : OnePoint ℂ → ℂ} {y : OnePoint ℂ}
     (hg : IsDivisorSectionAt (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) g y)
     (hy : y ≠ ((0 : ℂ) : OnePoint ℂ)) (c : ℂ) :
     lowerCoord k (c • g) y = c * lowerCoord k g y := by
-  refine ((ContinuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
+  refine eq_of_continuousAt_of_eventuallyEq_nhdsNE
     (contMDiffAt_lowerCoord k (hg.const_smul c) hy).continuousAt
-    (continuousAt_const.mul (contMDiffAt_lowerCoord k hg hy).continuousAt)).1 ?_).self_of_nhds
+    (continuousAt_const.mul (contMDiffAt_lowerCoord k hg hy).continuousAt) ?_
   filter_upwards [lowerCoord_eventuallyEq k (hg.const_smul c) hy,
     lowerCoord_eventuallyEq k hg hy] with z hz hz'
   simp only [Pi.smul_apply, smul_eq_mul, Pi.mul_apply, hz, hz']
@@ -304,7 +306,7 @@ private theorem sectionFun_contMDiff {U : Opens (OnePoint ℂ)}
   rw [contMDiff_mk_iff k (fun x : (Opens.map projectiveLineToSphere).obj U ↦ sectionFun k g x)]
   have hext : ∀ x ∈ (Opens.map projectiveLineToSphere).obj U,
       Subtype.val.extend (fun x : (Opens.map projectiveLineToSphere).obj U ↦ sectionFun k g x) 0 x
-        = sectionFun k g x := fun _ hx ↦ extend_apply_of_mem _ hx
+        = sectionFun k g x := fun _ hx ↦ Function.extend_val_apply hx
   have hsymm : ContMDiff 𝓘(ℂ, Fin 1 → ℂ) 𝓘(ℂ) ω (equivProjectivization ℂ).symm :=
     contMDiff_equivProjectivization_symm
   refine Fin.forall_fin_two.2 ⟨?_, ?_⟩
@@ -397,7 +399,8 @@ private theorem sectionFun_restrict {U V : Opens (OnePoint ℂ)} (h : V ≤ U)
   have heq : Subtype.val.extend g'.val 0 =ᶠ[𝓝 ((equivProjectivization ℂ).symm x)]
       Subtype.val.extend g.val 0 := by
     filter_upwards [V.isOpen.mem_nhds hxV] with z hz
-    rw [extend_apply_of_mem _ hz, extend_apply_of_mem _ (h hz), hg]
+    rw [Function.extend_val_apply (g := g'.val) hz, Function.extend_val_apply (g := g.val) (h hz),
+      hg]
     rfl
   rw [sectionFun, sectionFun]
   split_ifs
@@ -426,6 +429,12 @@ def twistCoreDivisorHom : (divisorSheaf (k • WeilDivisor.ofPoint (∞ : OnePoi
       compLinearMap_apply]
     exact sectionFun_restrict i.unop.le _ _ (divisorSheafSectionsEquiv_map _ i.unop g) x x.property
 
+/-- The component of `Projectivization.twistCoreDivisorHom` at `U` is `compLinearMap k U`. -/
+private theorem twistCoreDivisorHom_app_apply {U : Opens (OnePoint ℂ)}
+    (g : (divisorSheaf (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ))).obj.obj (op U)) :
+    (twistCoreDivisorHom k).app (op U) g = compLinearMap k U g :=
+  rfl
+
 /-- On `U₁`, the section of `𝒪(k)` attached by `Projectivization.twistCoreDivisorHom` to a section
 `g` of `𝒪(k [∞])` is `g` read in the frame of the chart `1`: its value is `g` at the corresponding
 point of the Riemann sphere, multiplied by the transition from the chart `1` to the preferred
@@ -439,8 +448,8 @@ theorem twistCoreDivisorHom_app_apply_of_mem_affineOpen_one {U : Opens (OnePoint
       twistTransition k 1 ((twistCore (𝕜 := ℂ) (n := 1) k).indexAt x) x *
         (divisorSheafSectionsEquiv _ U g).val
           ⟨(equivProjectivization ℂ).symm x, mem_map_projectiveLineToSphere.1 hxU⟩ := by
-  refine (compLinearMap_apply g ⟨x, hxU⟩).trans ?_
-  rw [sectionFun, ite_eq_left hx, extend_apply_of_mem]
+  rw [twistCoreDivisorHom_app_apply, compLinearMap_apply, sectionFun, ite_eq_left hx,
+    Function.extend_val_apply (mem_map_projectiveLineToSphere.1 hxU)]
 
 private theorem compLinearMap_injective (U : Opens (OnePoint ℂ)) :
     Function.Injective (compLinearMap k U) := by
@@ -468,17 +477,16 @@ private theorem compLinearMap_injective (U : Opens (OnePoint ℂ)) :
   apply Subtype.ext
   funext ⟨y, hy⟩
   simp only [ZeroMemClass.coe_zero, Pi.zero_apply]
-  rw [← hg', ← extend_apply_of_mem g'.val hy]
+  rw [← hg', ← Function.extend_val_apply (g := g'.val) (j := 0) hy]
   by_cases hyi : y = (∞ : OnePoint ℂ)
   · subst hyi
     by_cases hk : 0 < k
-    · rw [extend_apply_of_mem g'.val hy]
+    · rw [Function.extend_val_apply (g := g'.val) hy]
       exact apply_eq_zero_of_mem_divisorSections g'.property
         (by rw [zsmul_ofPoint_apply_infty]; exact hk)
     · have hc := ((isDivisorSectionAt_extend g'.property ⟨_, hy⟩).contMDiffAt
         (by rw [zsmul_ofPoint_apply_infty]; omega)).continuousAt
-      refine ((ContinuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hc
-        (continuousAt_const (y := (0 : ℂ)))).1 ?_).self_of_nhds
+      refine eq_of_continuousAt_of_eventuallyEq_nhdsNE hc (continuousAt_const (y := (0 : ℂ))) ?_
       filter_upwards [eventually_ne_infty_and_ne_zero,
         nhdsWithin_le_nhds (U.isOpen.mem_nhds hy)] with z hz hzU
       exact hfin z hzU hz.1
@@ -573,10 +581,10 @@ private theorem lowerCoord_coord_one_infty
     lowerCoord k (Subtype.val.extend g.val 0) (∞ : OnePoint ℂ) =
       coord k 0 t (equivProjectivization ℂ (∞ : OnePoint ℂ)) := by
   have hdiv := isDivisorSectionAt_extend g.property ⟨_, hUi⟩
-  refine ((ContinuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE
+  refine eq_of_continuousAt_of_eventuallyEq_nhdsNE
     (contMDiffAt_lowerCoord k hdiv (infty_ne_coe 0)).continuousAt
     (contMDiffAt_coord_comp hs 0 hUi ((equivProjectivization_mem_affineOpen_zero_iff _).2
-      (infty_ne_coe 0))).continuousAt).1 ?_).self_of_nhds
+      (infty_ne_coe 0))).continuousAt ?_
   filter_upwards [lowerCoord_eventuallyEq k hdiv (infty_ne_coe 0),
     eventually_ne_infty_and_ne_zero, nhdsWithin_le_nhds (U.isOpen.mem_nhds hUi)]
     with z hz hz' hzU
@@ -605,8 +613,21 @@ private def divisorSectionOf
     (s : (holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) ℂ (twistCore (𝕜 := ℂ) (n := 1) k).Fiber).obj.obj
       (op ((Opens.map projectiveLineToSphere).obj U))) :
     divisorSections (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) U :=
-  ⟨_, comp_val_mem_divisorSections fun _ hy ↦
-    isDivisorSectionAt_coord_one (contMDiffOn_coord_extend s) hy⟩
+  ⟨toDivisorSection (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ))
+      (coord k 1 (Subtype.val.extend
+        (fun x : (Opens.map projectiveLineToSphere).obj U ↦ (s x : ℂ)) 0) ∘
+          equivProjectivization ℂ) ∘ Subtype.val,
+    comp_val_mem_divisorSections fun _ hy ↦
+      isDivisorSectionAt_coord_one (contMDiffOn_coord_extend s) hy⟩
+
+private theorem divisorSectionOf_val_apply
+    (s : (holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) ℂ (twistCore (𝕜 := ℂ) (n := 1) k).Fiber).obj.obj
+      (op ((Opens.map projectiveLineToSphere).obj U))) (y : U) :
+    (divisorSectionOf k s).val y = toDivisorSection (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ))
+      (coord k 1 (Subtype.val.extend
+        (fun x : (Opens.map projectiveLineToSphere).obj U ↦ (s x : ℂ)) 0) ∘
+          equivProjectivization ℂ) y :=
+  rfl
 
 /-- The section of `𝒪(k [∞])` attached to `s` is sent back to `s`. -/
 private theorem compLinearMap_symm_divisorSectionOf
@@ -617,11 +638,11 @@ private theorem compLinearMap_symm_divisorSectionOf
     (fun x : (Opens.map projectiveLineToSphere).obj U ↦ (s x : ℂ)) 0
   have hs := contMDiffOn_coord_extend s
   have htx : ∀ x : (Opens.map projectiveLineToSphere).obj U, t x = s x := fun x ↦
-    extend_apply_of_mem (fun x : (Opens.map projectiveLineToSphere).obj U ↦ (s x : ℂ)) x.property
+    Function.extend_val_apply x.property
   set g := divisorSectionOf k s
   have hext : ∀ y ∈ U, Subtype.val.extend g.val 0 y = toDivisorSection
       (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) (coord k 1 t ∘ equivProjectivization ℂ) y :=
-    fun y hy ↦ extend_apply_of_mem _ hy
+    fun y hy ↦ Function.extend_val_apply hy
   refine holomorphicSectionSheaf.ext fun x ↦ ?_
   rw [compLinearMap_apply, LinearEquiv.apply_symm_apply, sectionFun]
   have hyU : (equivProjectivization ℂ).symm x ∈ U := x.property
@@ -677,7 +698,9 @@ theorem twistTransition_smul_twistCoreDivisorHom_app_apply_of_mem_affineOpen_zer
         (fun y ↦ invChart y ^ k * Subtype.val.extend (divisorSheafSectionsEquiv _ U g).val 0 y)
         ((equivProjectivization ℂ).symm x) := by
   have h := coord_zero_sectionFun (divisorSheafSectionsEquiv _ U g) hx hxU
-  rw [coord, ← compLinearMap_apply g ⟨x, hxU⟩] at h
+  rw [coord] at h
+  rw [twistCoreDivisorHom_app_apply, compLinearMap_apply]
+  -- the fiber `(twistCore k).Fiber x` is `ℂ`, on which the scalar action of `ℂ` is multiplication
   exact h
 
 /-- The inverse of `Projectivization.twistCoreDivisorHom` reads a holomorphic section `s` of `𝒪(k)`
@@ -697,12 +720,11 @@ theorem inv_twistCoreDivisorHom_app_apply {U : Opens (OnePoint ℂ)}
               (twistCore (𝕜 := ℂ) (n := 1) k).Fiber s x : ℂ)) 0 (equivProjectivization ℂ z)) y := by
   have h : (inv (twistCoreDivisorHom k)).app (op U) s =
       (divisorSheafSectionsEquiv _ U).symm (divisorSectionOf k s) := by
-    conv_lhs => rw [← compLinearMap_symm_divisorSectionOf s]
-    -- `compLinearMap k U` is the component of `twistCoreDivisorHom k` at `U`
-    change ((twistCoreDivisorHom k).app (op U) ≫ (inv (twistCoreDivisorHom k)).app (op U)) _ = _
-    rw [← NatTrans.comp_app, IsIso.hom_inv_id, NatTrans.id_app, ConcreteCategory.id_apply]
-  rw [h, LinearEquiv.apply_symm_apply]
-  rfl
+    conv_lhs => rw [← compLinearMap_symm_divisorSectionOf s, ← twistCoreDivisorHom_app_apply]
+    rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app, IsIso.hom_inv_id, NatTrans.id_app,
+      ConcreteCategory.id_apply]
+  rw [h, LinearEquiv.apply_symm_apply, divisorSectionOf_val_apply]
+  simp only [coord, Function.comp_def]
 
 variable (k) in
 /-- **`H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`.** The first Čech cohomology of the sheaf of holomorphic

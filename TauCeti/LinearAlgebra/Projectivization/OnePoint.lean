@@ -55,6 +55,7 @@ theorem equivProjectivization_mem_affineOpen_zero_iff (x : OnePoint K) :
 
 /-- The only point of `ℙ K (Fin 2 → K)` outside the standard affine open of the coordinate `1`
 corresponds to `∞`. -/
+@[simp]
 theorem equivProjectivization_symm_eq_infty_iff (x : ℙ K (Fin 2 → K)) :
     (equivProjectivization K).symm x = (∞ : OnePoint K) ↔ x ∉ Projectivization.affineOpen 1 := by
   rw [← (equivProjectivization K).apply_symm_apply x, equivProjectivization_mem_affineOpen_one_iff,
