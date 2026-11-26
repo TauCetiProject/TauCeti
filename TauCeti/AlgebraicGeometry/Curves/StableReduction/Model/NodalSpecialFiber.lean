@@ -26,8 +26,6 @@ node.
 
 ## Main results
 
-* `TauCeti.Model.prestableFamily_toBase_iff_atWorstNodal`: a proper model of a prestable curve is
-  prestable exactly when its special fibre is geometrically connected and at worst nodal.
 * `TauCeti.Model.prestableFamily_toBase_of_specialFiber`: a proper model of a prestable curve
   whose special fibre is geometrically connected with only ordinary nodes after some field
   extension is a prestable model.
@@ -52,34 +50,11 @@ namespace TauCeti
 
 universe u
 
-/-- The special fibre of a morphism locally of finite presentation is locally of finite
-presentation over the residue field. -/
-instance locallyOfFinitePresentation_specialFiber_hom {R : Type u} [CommRing R] [IsLocalRing R]
-    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [LocallyOfFinitePresentation toBase] :
-    LocallyOfFinitePresentation (specialFiber R toBase).hom := by
-  rw [specialFiber_hom]
-  infer_instance
-
 namespace Model
 
 variable {R K : Type u} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
 variable [Field K] [Algebra R K] [IsFractionRing R K]
 variable {C : Scheme.{u}} {toK : C ⟶ Spec (.of K)}
-
-/-- A proper model of a prestable curve over a discrete valuation ring is a prestable model
-exactly when its special fibre is geometrically connected and at worst nodal of relative
-dimension one. -/
-theorem prestableFamily_toBase_iff_atWorstNodal (M : Model R K C toK) [M.IsProper]
-    [PrestableFamily toK] :
-    PrestableFamily M.toBase ↔ GeometricallyConnected (specialFiber R M.toBase).hom ∧
-      AtWorstNodalOfRelativeDimensionOne (specialFiber R M.toBase).hom := by
-  rw [M.prestableFamily_toBase_iff]
-  refine ⟨fun ⟨_, _, h⟩ ↦ ⟨inferInstance, h.atWorstNodalOfRelativeDimensionOne⟩,
-    fun ⟨_, h⟩ ↦ ⟨‹_›, ‹_›, ?_⟩⟩
-  have : AlgebraicGeometry.IsProper (specialFiber R M.toBase).hom :=
-    MorphismProperty.of_isPullback (P := @AlgebraicGeometry.IsProper)
-      (isPullback_specialFiber R M.toBase) inferInstance
-  exact { atWorstNodalOfRelativeDimensionOne := h }
 
 /-- **The prestable criterion.** A proper model of a prestable curve over a discrete valuation
 ring is a prestable model when its special fibre is geometrically connected and, after a field
