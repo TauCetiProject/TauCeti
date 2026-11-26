@@ -64,6 +64,12 @@ lean-iwasawa (`acmepjz/lean-iwasawa` at `7fffeb8c80fbe13f989f318c23cbb0dcf223009
 `Iwasawalib/NumberTheory/AbsoluteValue/InertiaSubgroup.lean`, Apache 2.0), which is stated there
 for the group `K ≃ₐ[F] K`; here it is stated for any group acting by ring automorphisms.
 
+The statements and proofs of `AbsoluteValue.inertia_smul`, `AbsoluteValue.inertia_le_stabilizer`,
+`AbsoluteValue.subgroupOf_inertia` and `AbsoluteValue.instNormalInertiaStabilizer` follow Mathlib's
+`Ideal.inertia_smul`, `Ideal.inertia_le_stabilizer`, `AddSubgroup.subgroupOf_inertia` and the
+normality instance for `Ideal.inertia` in `Mathlib/RingTheory/Ideal/Pointwise.lean`; the
+normality proof is Mathlib's.
+
 ## References
 
 * J. Neukirch, *Algebraic Number Theory*, Springer, 1999, Ch. I, §9 and Ch. II, §9.
@@ -73,10 +79,14 @@ public section
 
 namespace AbsoluteValue
 
-variable {G L S : Type*} [Group G] [Ring L] [MulSemiringAction G L] [CommRing S] [LinearOrder S]
-  {w : AbsoluteValue L S}
+variable {G L S : Type*} [Group G]
 
 /-! ### The decomposition group -/
+
+section Stabilizer
+
+variable [Semiring L] [MulSemiringAction G L] [Semiring S] [PartialOrder S]
+  {w : AbsoluteValue L S}
 
 /-- An element of the decomposition group of `w` preserves the values of `w`. -/
 theorem apply_smul_of_mem_stabilizer {σ : G} (hσ : σ ∈ MulAction.stabilizer G w) (x : L) :
@@ -90,11 +100,10 @@ theorem mem_stabilizer_iff_forall_apply_smul_eq {σ : G} :
   refine ⟨apply_smul_of_mem_stabilizer, fun h ↦ ext fun x ↦ ?_⟩
   rw [smul_apply, ← h, smul_inv_smul]
 
-omit [CommRing S] [LinearOrder S] in
 /-- Every element of `G` fixes the trivial absolute value. -/
 @[simp]
-theorem stabilizer_trivial {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
-    [Nontrivial S] [DecidablePred fun x : L ↦ x = 0] [NoZeroDivisors L] :
+theorem stabilizer_trivial [IsOrderedRing S] [Nontrivial S] [DecidablePred fun x : L ↦ x = 0]
+    [NoZeroDivisors L] :
     MulAction.stabilizer G (AbsoluteValue.trivial : AbsoluteValue L S) = ⊤ := by
   refine eq_top_iff.mpr fun σ _ ↦ ?_
   refine MulAction.mem_stabilizer_iff.mpr (ext fun x ↦ ?_)
@@ -102,16 +111,14 @@ theorem stabilizer_trivial {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedR
   · simp
   · rw [smul_apply, trivial_apply hx, trivial_apply ((smul_ne_zero_iff_ne σ⁻¹).mpr hx)]
 
-/-- A ring automorphism preserves the nonarchimedean absolute values. -/
-@[simp]
-theorem isNonarchimedean_smul_iff {g : G} :
-    IsNonarchimedean (g • w) ↔ IsNonarchimedean w := by
-  refine ⟨fun h x y ↦ ?_, fun h x y ↦ by simpa [smul_add] using h (g⁻¹ • x) (g⁻¹ • y)⟩
-  simpa [smul_add] using h (g • x) (g • y)
+end Stabilizer
 
 /-! ### The inertia group -/
 
-variable [IsStrictOrderedRing S]
+section Inertia
+
+variable [Ring L] [MulSemiringAction G L] [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+  {w : AbsoluteValue L S}
 
 variable (G) in
 /-- The *inertia group* of an absolute value `w` on `L`: the elements `σ` of the decomposition
@@ -181,9 +188,14 @@ instance instNormalInertiaStabilizer : (w.inertia (MulAction.stabilizer G w)).No
   simp_rw [Subgroup.normal_iff_map_conj_eq, ← inertia_smul]
   exact fun g ↦ congrArg (inertia _) g.property
 
+end Inertia
+
 /-! ### Elements inducing a power map on the residue ring -/
 
-omit [IsStrictOrderedRing S] in
+section Conj
+
+variable [Ring L] [MulSemiringAction G L] [Semiring S] [PartialOrder S] {w : AbsoluteValue L S}
+
 /-- If `σ` satisfies `w (σ • x - x ^ q) < 1` whenever `w x ≤ 1`, then its conjugate `g σ g⁻¹`
 satisfies the same congruences for `g • w`. -/
 theorem forall_apply_smul_sub_pow_lt_one_conj {σ : G} {q : ℕ}
@@ -192,6 +204,13 @@ theorem forall_apply_smul_sub_pow_lt_one_conj {σ : G} {q : ℕ}
   intro x hx
   rw [smul_apply] at hx ⊢
   simpa [mul_smul, smul_sub, smul_pow'] using h (g⁻¹ • x) hx
+
+end Conj
+
+section Inertia
+
+variable [Ring L] [MulSemiringAction G L] [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+  {w : AbsoluteValue L S}
 
 /-- If `σ` in the decomposition group of a nonarchimedean `w` induces `x ↦ x ^ q` on the residue
 ring and `τ` induces `x ↦ x ^ q'`, then `σ * τ` induces `x ↦ x ^ (q * q')`. -/
@@ -247,46 +266,37 @@ theorem forall_apply_smul_sub_pow_lt_one_mul_of_mem_inertia_left (hw : IsNonarch
   simpa only [one_mul] using forall_apply_smul_sub_pow_lt_one_mul hw (inertia_le_stabilizer hτ)
     (forall_apply_smul_sub_pow_one_lt_one_of_mem_inertia hw hτ) hσq
 
+end Inertia
+
 /-! ### Restriction to a stable subring -/
 
 section under
 
-variable {M : Type*} [CommRing M] [Algebra M L] [FaithfulSMul M L] [MulSemiringAction G M]
-  [SMulDistribClass G M L]
+variable {M : Type*}
 
-omit [CommRing S] [LinearOrder S] [IsStrictOrderedRing S] [FaithfulSMul M L] in
-private theorem algebraMap_smul (g : G) (m : M) :
-    algebraMap M L (g • m) = g • algebraMap M L m := by
-  rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, smul_distrib_smul,
-    smul_one]
-
-omit [IsStrictOrderedRing S] in
-/-- Restricting `w` to a subring `M` that `G` maps to itself commutes with the action of `G`. -/
-theorem under_smul_eq_smul_under (g : G) (w : AbsoluteValue L S) :
-    (g • w).under M = g • w.under M :=
-  ext fun m ↦ by rw [under_apply, smul_apply, smul_apply, under_apply, algebraMap_smul]
-
-omit [IsStrictOrderedRing S] in
 /-- The decomposition group of `w` lies in the decomposition group of its restriction to a
 `G`-stable subring. -/
-theorem stabilizer_le_stabilizer_under :
+theorem stabilizer_le_stabilizer_under [CommSemiring M] [MulSemiringAction G M] [Semiring L]
+    [MulSemiringAction G L] [Algebra M L] [FaithfulSMul M L] [SMulDistribClass G M L] [Semiring S]
+    [PartialOrder S] {w : AbsoluteValue L S} :
     MulAction.stabilizer G w ≤ MulAction.stabilizer G (w.under M) := fun σ hσ ↦ by
-  rw [MulAction.mem_stabilizer_iff, ← under_smul_eq_smul_under, MulAction.mem_stabilizer_iff.mp hσ]
+  rw [MulAction.mem_stabilizer_iff, smul_under, MulAction.mem_stabilizer_iff.mp hσ]
 
-omit [IsStrictOrderedRing S] in
 /-- If `σ` satisfies `w (σ • x - x ^ q) < 1` whenever `w x ≤ 1`, then it satisfies the same
 congruences for the restriction of `w` to a `G`-stable subring. -/
-theorem forall_apply_smul_sub_pow_lt_one_under {σ : G} {q : ℕ}
+theorem forall_apply_smul_sub_pow_lt_one_under [CommRing M] [MulSemiringAction G M] [Ring L]
+    [MulSemiringAction G L] [Algebra M L] [FaithfulSMul M L] [SMulDistribClass G M L] [Semiring S]
+    [PartialOrder S] {w : AbsoluteValue L S} {σ : G} {q : ℕ}
     (h : ∀ x, w x ≤ 1 → w (σ • x - x ^ q) < 1) :
     ∀ m : M, w.under M m ≤ 1 → w.under M (σ • m - m ^ q) < 1 := fun m hm ↦ by
-  rw [under_apply, map_sub, map_pow, algebraMap_smul] at *
+  rw [under_apply, map_sub, map_pow, algebraMap.smul'] at *
   exact h _ hm
 
-omit [CommRing S] [LinearOrder S] [IsStrictOrderedRing S] in
 /-- The inertia group of a real absolute value `w` on a field lies in the inertia group of its
 restriction to a `G`-stable subring. -/
-theorem inertia_le_inertia_under {K : Type*} [Field K] [MulSemiringAction G K] [Algebra M K]
-    [FaithfulSMul M K] [SMulDistribClass G M K] {w : AbsoluteValue K ℝ} :
+theorem inertia_le_inertia_under [CommRing M] [MulSemiringAction G M] {K : Type*} [Field K]
+    [MulSemiringAction G K] [Algebra M K] [FaithfulSMul M K] [SMulDistribClass G M K]
+    {w : AbsoluteValue K ℝ} :
     w.inertia G ≤ (w.under M).inertia G := fun σ hσ ↦ by
   refine ⟨MulAction.mem_stabilizer_iff.mp (stabilizer_le_stabilizer_under hσ.1), fun hw ↦ ?_⟩
   have hw' : IsNonarchimedean w := (isNonarchimedean_iff_of_liesOver w (w.under M)).mpr hw
