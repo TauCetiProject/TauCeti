@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Action
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
+public import Mathlib.Topology.Homotopy.Path
 import Mathlib.Topology.Algebra.InfiniteSum.Order
 
 /-!
@@ -21,9 +22,11 @@ with the weak simplicial topology and left group action on `universalGSpace G`.
 ## Main definitions and results
 
 * `TauCeti.MilnorTotalSpace`, `weight`, `coordSet`, `label`, `ofFinsetCoord`, `map`,
-  `continuous_iff`, `instPathConnectedSpaceMilnorTotalSpace`, `instT2Space`: strong-topology join,
+  `continuous_iff`, `coneAtFreshIndexHomotopy`, `weight_coneAtFreshIndexHomotopy`,
+  `label_coneAtFreshIndexHomotopy_self`, `label_coneAtFreshIndexHomotopy_of_ne`,
+  `instPathConnectedSpaceMilnorTotalSpace`, `instT2Space`: strong-topology join,
   coordinates `(t_i, g_i)`, finite-support coordinate constructor, universal continuity criterion,
-  path-connectedness, and Hausdorffness.
+  fresh-index cone homotopy, path-connectedness, and Hausdorffness.
 * `TauCeti.MilnorTotalSpace.instContinuousSMul`, `instIsCancelSMulOp`, `invEquiv`,
   `TauCeti.weakToMilnorTotalSpace`, `MilnorTotalSpace.map_basepoint`,
   `MilnorTotalSpace.map_op_smul`, `ContinuousMonoidHom.map_comp_weakToMilnorTotalSpace`: joint
@@ -419,90 +422,124 @@ theorem continuous_vertex (i : ℕ) : Continuous (vertex i : G → MilnorTotalSp
   · simp only [weight_vertex, hij, ↓reduceIte, lt_self_iff_false, Set.ofPred_false]
     exact continuousOn_empty _
 
-private def lineToVertexWeight (N : ℕ) (p : MilnorTotalSpace G) (t : unitInterval) (i : ℕ) : ℝ :=
-  if i = N then (t : ℝ) else (1 - (t : ℝ)) * weight i p
+section Cone
 
-private def lineToVertexPt (N : ℕ) (a : G) (p : MilnorTotalSpace G)
-    (hp : weight N p = 0) (t : unitInterval) : MilnorTotalSpace G :=
-  let S := (finite_support_weight p).toFinset
-  have hN : N ∉ S := fun hm ↦ (finite_support_weight p).mem_toFinset.mp hm hp
-  ofFinsetCoord (insert N S) (lineToVertexWeight N p t) (fun i ↦ if i = N then a else label i p)
+open unitInterval
+
+variable {X : Type v} [TopologicalSpace X]
+
+private def coneWeight (N : ℕ) (g : C(X, MilnorTotalSpace G)) (z : I × X) (i : ℕ) : ℝ :=
+  if i = N then (z.1 : ℝ) else (1 - (z.1 : ℝ)) * weight i (g z.2)
+
+private theorem weight_pos_of_coneWeight_pos {N : ℕ} {g : C(X, MilnorTotalSpace G)}
+    {z : I × X} {i : ℕ} (hiN : i ≠ N) (hz : 0 < coneWeight N g z i) : 0 < weight i (g z.2) := by
+  by_contra hle; simp [coneWeight, hiN, le_antisymm (not_lt.mp hle) (weight_nonneg i (g z.2))] at hz
+
+private def conePt (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
+    (hg : ∀ x, weight N (g x) = 0) (z : I × X) : MilnorTotalSpace G :=
+  let S := (finite_support_weight (g z.2)).toFinset
+  have hN : N ∉ S := fun hm ↦ (finite_support_weight (g z.2)).mem_toFinset.mp hm (hg z.2)
+  ofFinsetCoord (insert N S) (coneWeight N g z) (fun i ↦ if i = N then a else label i (g z.2))
     (fun i _ ↦ by
-      unfold lineToVertexWeight; split_ifs
-      exacts [t.property.1, mul_nonneg (sub_nonneg.mpr t.property.2) (weight_nonneg i p)])
+      unfold coneWeight; split_ifs
+      exacts [z.1.property.1, mul_nonneg (sub_nonneg.mpr z.1.property.2) (weight_nonneg i (g z.2))])
     (by
-      unfold lineToVertexWeight
+      unfold coneWeight
       rw [Finset.sum_insert hN, ite_eq_left rfl,
         Finset.sum_congr rfl fun _ hi ↦ ite_eq_right (ne_of_mem_of_not_mem hi hN),
         ← Finset.mul_sum, sum_weight_of_support_subset fun _ ↦ weight_eq_zero_of_notMem,
         mul_one, add_sub_cancel])
 
-omit [TopologicalSpace G] in
-private theorem weight_lineToVertexPt (N : ℕ) (a : G) (p : MilnorTotalSpace G)
-    (hp : weight N p = 0) (t : unitInterval) (i : ℕ) :
-    weight i (lineToVertexPt N a p hp t) = lineToVertexWeight N p t i := by
-  unfold lineToVertexPt; rw [weight_ofFinsetCoord]
+private theorem weight_conePt (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
+    (hg : ∀ x, weight N (g x) = 0) (z : I × X) (i : ℕ) :
+    weight i (conePt N a g hg z) = coneWeight N g z i := by
+  unfold conePt; rw [weight_ofFinsetCoord]
   by_cases hiN : i = N
   · simp [hiN]
   · simp only [Finset.mem_insert, hiN, false_or]
     split_ifs with hi
     · rfl
-    · simp [lineToVertexWeight, hiN, weight_eq_zero_of_notMem hi]
+    · simp [coneWeight, hiN, weight_eq_zero_of_notMem hi]
 
-omit [TopologicalSpace G] in
-private theorem label_lineToVertexPt_self (N : ℕ) (a : G) (p : MilnorTotalSpace G)
-    (hp : weight N p = 0) {t : unitInterval} (ht : 0 < (t : ℝ)) :
-    label N (lineToVertexPt N a p hp t) = a := by
-  unfold lineToVertexPt
-  rw [label_ofFinsetCoord _ _ _ _ _ (Finset.mem_insert_self N _) (by simp [lineToVertexWeight, ht])]
+private theorem label_conePt_self (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
+    (hg : ∀ x, weight N (g x) = 0) {z : I × X} (hs : 0 < (z.1 : ℝ)) :
+    label N (conePt N a g hg z) = a := by
+  unfold conePt
+  rw [label_ofFinsetCoord _ _ _ _ _ (Finset.mem_insert_self N _) (by simp [coneWeight, hs])]
   exact ite_eq_left rfl
 
-omit [TopologicalSpace G] in
-private theorem label_lineToVertexPt_of_ne (N : ℕ) (a : G) (p : MilnorTotalSpace G)
-    (hp : weight N p = 0) {t : unitInterval} {i : ℕ} (hiN : i ≠ N)
-    (ht : 0 < lineToVertexWeight N p t i) :
-    label i (lineToVertexPt N a p hp t) = label i p := by
-  have hpi : 0 < weight i p := by
-    by_contra hle
-    simp [lineToVertexWeight, hiN, le_antisymm (not_lt.mp hle) (weight_nonneg i p)] at ht
-  unfold lineToVertexPt
-  rw [label_ofFinsetCoord _ _ _ _ _
-    (Finset.mem_insert_of_mem ((finite_support_weight p).mem_toFinset.mpr hpi.ne')) ht]
+private theorem label_conePt_of_ne (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
+    (hg : ∀ x, weight N (g x) = 0) {z : I × X} {i : ℕ} (hiN : i ≠ N)
+    (hz : 0 < coneWeight N g z i) : label i (conePt N a g hg z) = label i (g z.2) := by
+  unfold conePt
+  rw [label_ofFinsetCoord _ _ _ _ _ (Finset.mem_insert_of_mem
+    ((finite_support_weight (g z.2)).mem_toFinset.mpr
+      (weight_pos_of_coneWeight_pos hiN hz).ne')) hz]
   exact ite_eq_right hiN
 
-private def lineToVertexPath (N : ℕ) (a : G) (p : MilnorTotalSpace G)
-    (hp : weight N p = 0) : Path p (vertex N a) where
-  toFun := lineToVertexPt N a p hp
+/-- **Cone homotopy at an unused index** to the constant map at `vertex N a`. -/
+def coneAtFreshIndexHomotopy (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
+    (hg : ∀ x, weight N (g x) = 0) : g.Homotopy (ContinuousMap.const X (vertex N a)) where
+  toFun := conePt N a g hg
   continuous_toFun := continuous_iff.mpr ⟨fun i ↦ by
-      simp_rw [weight_lineToVertexPt]; unfold lineToVertexWeight
+      simp_rw [weight_conePt]; unfold coneWeight
       by_cases hiN : i = N <;> simp only [hiN, ↓reduceIte]
-      exacts [continuous_subtypeVal, by fun_prop], fun i ↦ by
-      simp_rw [weight_lineToVertexPt]
+      exacts [continuous_subtypeVal.comp continuous_fst, by fun_prop], fun i ↦ by
+      simp_rw [weight_conePt]
       by_cases hiN : i = N
-      · subst hiN; exact (continuousOn_const (c := a)).congr fun _ ht ↦
-          label_lineToVertexPt_self i a p hp (by simpa [lineToVertexWeight] using ht)
-      · exact (continuousOn_const (c := label i p)).congr fun _ ht ↦
-          label_lineToVertexPt_of_ne N a p hp hiN ht⟩
-  source' := (ext_coord
-    (fun i ↦ by
-      rw [weight_lineToVertexPt]; by_cases hiN : i = N
-      · subst hiN; simp [lineToVertexWeight, hp]
-      · simp [lineToVertexWeight, hiN])
-    (fun i hi ↦ by
-      have hiN : i ≠ N := fun h ↦ (mem_coordSet_iff.mp hi).ne' (h ▸ hp)
-      exact (label_lineToVertexPt_of_ne N a p hp hiN (t := 0)
-        (by simpa [lineToVertexWeight, hiN] using mem_coordSet_iff.mp hi)).symm)).symm
-  target' := ext_coord
-    (fun i ↦ by
-      rw [weight_lineToVertexPt, weight_vertex]
-      by_cases hiN : i = N <;> simp [lineToVertexWeight, hiN])
-    (fun i hi ↦ by
-      have hi' : 0 < lineToVertexWeight N p 1 i :=
-        weight_lineToVertexPt N a p hp 1 i ▸ mem_coordSet_iff.mp hi
-      by_cases hiN : i = N
-      · subst hiN
-        exact (label_lineToVertexPt_self i a p hp zero_lt_one).trans (label_vertex i a).symm
-      · simp [lineToVertexWeight, hiN] at hi')
+      · subst hiN; exact (continuousOn_const (c := a)).congr fun _ hz ↦
+          label_conePt_self i a g hg (by simpa [coneWeight] using hz)
+      · exact ((continuousOn_label i).comp (g.continuous.comp continuous_snd).continuousOn
+          fun _ hz ↦ mem_coordSet_iff.mpr (weight_pos_of_coneWeight_pos hiN hz)).congr fun _ hz ↦
+          label_conePt_of_ne N a g hg hiN hz⟩
+  map_zero_left x := by
+    rw [ContinuousMap.coe_mk]
+    refine (ext_coord
+      (fun i ↦ by
+        rw [weight_conePt]; by_cases hiN : i = N
+        · subst hiN; simp [coneWeight, hg x]
+        · simp [coneWeight, hiN])
+      (fun i hi ↦ by
+        have hiN : i ≠ N := fun h ↦ (mem_coordSet_iff.mp hi).ne' (h ▸ hg x)
+        exact (label_conePt_of_ne N a g hg hiN (z := (0, x))
+          (by simpa [coneWeight, hiN] using mem_coordSet_iff.mp hi)).symm)).symm
+  map_one_left x := by
+    rw [ContinuousMap.coe_mk, ContinuousMap.toFun_eq_coe, ContinuousMap.const_apply]
+    refine ext_coord
+      (fun i ↦ by
+        rw [weight_conePt, weight_vertex]; by_cases hiN : i = N <;> simp [coneWeight, hiN])
+      (fun i hi ↦ by
+        have hi' : 0 < coneWeight N g (1, x) i :=
+          weight_conePt N a g hg (1, x) i ▸ mem_coordSet_iff.mp hi
+        by_cases hiN : i = N
+        · subst hiN; exact (label_conePt_self i a g hg zero_lt_one).trans (label_vertex i a).symm
+        · simp [coneWeight, hiN] at hi')
+
+/-- The `i`-th barycentric weight along `coneAtFreshIndexHomotopy N a g hg` at `(s, x)`. -/
+@[simp] theorem weight_coneAtFreshIndexHomotopy (N : ℕ) (a : G)
+    (g : C(X, MilnorTotalSpace G)) (hg : ∀ x, weight N (g x) = 0) (s : I) (x : X) (i : ℕ) :
+    weight i (coneAtFreshIndexHomotopy N a g hg (s, x)) =
+      if i = N then (s : ℝ) else (1 - (s : ℝ)) * weight i (g x) :=
+  weight_conePt N a g hg (s, x) i
+
+/-- When `0 < (s : ℝ)`, the label at the fresh index `N` along `coneAtFreshIndexHomotopy` is
+`a`. -/
+@[simp] theorem label_coneAtFreshIndexHomotopy_self (N : ℕ) (a : G)
+    (g : C(X, MilnorTotalSpace G)) (hg : ∀ x, weight N (g x) = 0) {s : I} (hs : 0 < (s : ℝ))
+    (x : X) :
+    label N (coneAtFreshIndexHomotopy N a g hg (s, x)) = a :=
+  label_conePt_self N a g hg (z := (s, x)) hs
+
+/-- For `i ≠ N`, every positive-weight coordinate along `coneAtFreshIndexHomotopy N a g hg`
+retains the original vertex label `label i (g x)`. -/
+@[simp] theorem label_coneAtFreshIndexHomotopy_of_ne (N : ℕ) (a : G)
+    (g : C(X, MilnorTotalSpace G)) (hg : ∀ x, weight N (g x) = 0) {s : I} {x : X} {i : ℕ}
+    (hiN : i ≠ N) (h : coneAtFreshIndexHomotopy N a g hg (s, x) ∈ coordSet G i) :
+    label i (coneAtFreshIndexHomotopy N a g hg (s, x)) = label i (g x) :=
+  label_conePt_of_ne N a g hg hiN
+    (weight_conePt N a g hg (s, x) i ▸ mem_coordSet_iff.mp h)
+
+end Cone
 
 /-- `MilnorTotalSpace G` is path-connected whenever `G` is nonempty: any two points join to a
 vertex at an index beyond both of their finite supports. -/
@@ -520,7 +557,8 @@ instance instPathConnectedSpaceMilnorTotalSpace [Nonempty G] :
       fun hm ↦ Nat.not_succ_le_self (S.sup _root_.id) (S.le_sup (f := _root_.id) (hr hm))
     have hp : weight N p = 0 := weight_eq_zero_of_notMem (hN_not_mem p Finset.subset_union_left)
     have hq : weight N q = 0 := weight_eq_zero_of_notMem (hN_not_mem q Finset.subset_union_right)
-    exact ⟨(lineToVertexPath N a p hp).trans (lineToVertexPath N a q hq).symm⟩
+    exact ⟨((coneAtFreshIndexHomotopy N a (ContinuousMap.const Unit p) fun _ ↦ hp).evalAt ()).trans
+      ((coneAtFreshIndexHomotopy N a (ContinuousMap.const Unit q) fun _ ↦ hq).evalAt ()).symm⟩
 
 
 instance instT2Space [T2Space G] : T2Space (MilnorTotalSpace G) :=
@@ -771,7 +809,7 @@ theorem weakToMilnorTotalSpace_apply (G : Type u) [Group G] [TopologicalSpace G]
   exact (MilnorTotalSpace.ofRealization_invRealizationHomeomorph x).trans
     (MilnorTotalSpace.invEquiv_apply x).symm
 
-@[simp] theorem coe_weakToMilnorTotalSpace (G : Type u) [Group G] [TopologicalSpace G] :
+theorem coe_weakToMilnorTotalSpace (G : Type u) [Group G] [TopologicalSpace G] :
     (weakToMilnorTotalSpace G : universalGSpace G → MilnorTotalSpace G) =
       MilnorTotalSpace.invEquiv G :=
   funext (weakToMilnorTotalSpace_apply G)

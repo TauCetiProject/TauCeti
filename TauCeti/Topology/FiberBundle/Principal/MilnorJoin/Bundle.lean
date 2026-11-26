@@ -17,20 +17,21 @@ import TauCeti.Topology.Algebra.GroupAction.Quotient
 For a topological group `G`, this file defines the base space `TauCeti.MilnorClassifyingSpace G`
 as the orbit quotient of `TauCeti.MilnorTotalSpace G` by the free right `G`-action
 (`MulAction Gᵐᵒᵖ`), and constructs the numerable principal `G`-bundle `TauCeti.MilnorBundleFiber G`
-that serves as the universal model for bundle classification.
+over a partition-of-unity-subordinate coordinate cover (whose total space is weakly contractible).
 
 Specifically, this module constructs Milnor's numerable partition of unity
 `TauCeti.milnorPartitionOfUnity` subordinate to the coordinate cover
 `MilnorClassifyingSpace.baseCoordSet G`, equips the projection with normalized local sections
 and principal `G`-bundle charts `TauCeti.milnorTrivialization G i` forming the bundle atlas,
 computes the transition cocycle and division element, and establishes path-connectedness and
-Hausdorffness (when `T2Space G`) of the base space.
+Hausdorffness (for a Hausdorff topological group `G`, i.e. `[IsTopologicalGroup G] [T2Space G]`)
+of the base space.
 
 ## Main definitions and results
 
-* `TauCeti.MilnorClassifyingSpace`, `milnorClassifyingSpaceBasepoint`,
-  `instPathConnectedSpaceMilnorClassifyingSpace`, `isOpenQuotientMap_milnorClassifyingSpaceProj`:
-  orbit quotient of `MilnorTotalSpace G`.
+* `TauCeti.MilnorClassifyingSpace`, `TauCeti.milnorClassifyingSpaceProj`,
+  `milnorClassifyingSpaceBasepoint`, `instPathConnectedSpaceMilnorClassifyingSpace`,
+  `isOpenQuotientMap_milnorClassifyingSpaceProj`: orbit quotient of `MilnorTotalSpace G`.
 * `TauCeti.MilnorClassifyingSpace.baseWeight`, `baseCoordSet`, `maxBaseWeight`,
   `TauCeti.milnorPartitionOfUnity`, `milnorPartitionOfUnity_apply`,
   `milnorPartitionOfUnity_pos_iff`, `isSubordinate_milnorPartitionOfUnity`: descended weights `t_i`,
@@ -67,6 +68,10 @@ variable (G : Type u) [Group G]
 abbrev MilnorClassifyingSpace : Type u :=
   MulAction.orbitRel.Quotient Gᵐᵒᵖ (MilnorTotalSpace G)
 
+/-- The orbit projection from `MilnorTotalSpace G` to `MilnorClassifyingSpace G`. -/
+def milnorClassifyingSpaceProj : MilnorTotalSpace G → MilnorClassifyingSpace G :=
+  Quotient.mk''
+
 /-- The distinguished base point of `MilnorClassifyingSpace G`. -/
 def milnorClassifyingSpaceBasepoint : MilnorClassifyingSpace G :=
   Quotient.mk'' (MilnorTotalSpace.basepoint G)
@@ -78,10 +83,9 @@ theorem milnorClassifyingSpaceBasepoint_eq :
 instance instInhabitedMilnorClassifyingSpace : Inhabited (MilnorClassifyingSpace G) :=
   ⟨milnorClassifyingSpaceBasepoint G⟩
 
-/-- The orbit projection `MilnorTotalSpace G → MilnorClassifyingSpace G` is an open quotient
-map. -/
+/-- The orbit projection `milnorClassifyingSpaceProj G` is an open quotient map. -/
 theorem isOpenQuotientMap_milnorClassifyingSpaceProj [TopologicalSpace G] [ContinuousMul G] :
-    IsOpenQuotientMap (Quotient.mk'' : MilnorTotalSpace G → MilnorClassifyingSpace G) :=
+    IsOpenQuotientMap (milnorClassifyingSpaceProj G) :=
   MulAction.isOpenQuotientMap_quotientMk
 
 /-- `MilnorClassifyingSpace G` is path-connected as the quotient of the path-connected space
@@ -159,7 +163,7 @@ theorem exists_mem_baseCoordSet (b : MilnorClassifyingSpace G) : ∃ i, b ∈ ba
 /-- Pointwise maximum weight `m(b) = ⨆ i, baseWeight G i b` as a continuous function. -/
 def maxBaseWeight (G : Type u) [Group G] [TopologicalSpace G] : C(MilnorClassifyingSpace G, ℝ) :=
   ⟨fun b ↦ ⨆ i : ℕ, baseWeight G i b,
-    PartitionOfUnity.continuous_ciSup_of_hasSum_one (baseWeight G)
+    continuous_ciSup_of_hasSum_one (baseWeight G)
       (fun i b ↦ baseWeight_nonneg i b) hasSum_baseWeight⟩
 
 @[simp] theorem maxBaseWeight_apply (b : MilnorClassifyingSpace G) :
@@ -180,7 +184,7 @@ def milnorPartitionOfUnity (G : Type u) [Group G] [TopologicalSpace G] :
     PartitionOfUnity ℕ (MilnorClassifyingSpace G) :=
   PartitionOfUnity.shrinkOfThreshold (MilnorClassifyingSpace.baseWeight G)
     (MilnorClassifyingSpace.maxBaseWeight G)
-    (PartitionOfUnity.locallyFinite_support_halfThresholdTrunc_of_hasSum_one
+    (locallyFinite_support_halfThresholdTrunc_of_hasSum_one
       (MilnorClassifyingSpace.baseWeight G)
       (fun i b ↦ MilnorClassifyingSpace.baseWeight_nonneg i b)
       MilnorClassifyingSpace.hasSum_baseWeight
@@ -327,6 +331,8 @@ end LocalSections
 
 end MilnorClassifyingSpace
 
+/-- `MilnorClassifyingSpace G` is Hausdorff whenever `G` is a Hausdorff topological group
+(`[IsTopologicalGroup G] [T2Space G]`). -/
 instance instT2SpaceMilnorClassifyingSpace (G : Type u) [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] [T2Space G] : T2Space (MilnorClassifyingSpace G) :=
   t2Space_iff_disjoint_nhds.mpr fun b₁ b₂ hb ↦ by
@@ -355,8 +361,8 @@ instance instT2SpaceMilnorClassifyingSpace (G : Type u) [Group G] [TopologicalSp
 section PrincipalBundle
 
 /-- The fibre over `b : MilnorClassifyingSpace G` of Milnor's numerable principal `G`-bundle
-model used for bundle classification, realized as the orbit `b.orbit` under the free right action
-of `G`. -/
+(over a partition-of-unity-subordinate cover, with weakly contractible total space), realized as
+the orbit `b.orbit` under the free right action of `G`. -/
 abbrev MilnorBundleFiber (G : Type u) [Group G] (b : MilnorClassifyingSpace G) : Type u :=
   MulAction.orbitRel.Quotient.orbit (G := Gᵐᵒᵖ) (α := MilnorTotalSpace G) b
 
@@ -372,11 +378,13 @@ instance instNonempty (b : MilnorClassifyingSpace G) : Nonempty (MilnorBundleFib
 /-- Canonical equivalence identifying `TotalSpace G (MilnorBundleFiber G)` with
 `MilnorTotalSpace G`. -/
 def totalSpaceEquiv (G : Type u) [Group G] :
-    TotalSpace G (MilnorBundleFiber G) ≃ MilnorTotalSpace G :=
-  (⟨fun x ↦ ⟨x.proj, x.snd⟩, fun x ↦ ⟨x.1, x.2⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩ :
-      TotalSpace G (MilnorBundleFiber G) ≃
-        Σ ω : MulAction.orbitRel.Quotient Gᵐᵒᵖ (MilnorTotalSpace G), ω.orbit).trans
-    (MulAction.selfEquivSigmaOrbits' Gᵐᵒᵖ (MilnorTotalSpace G)).symm
+    TotalSpace G (MilnorBundleFiber G) ≃ MilnorTotalSpace G where
+  toFun x := x.snd.val
+  invFun p := ⟨Quotient.mk'' p, ⟨p, MulAction.orbitRel.Quotient.mem_orbit.mpr rfl⟩⟩
+  left_inv := fun ⟨b, ⟨p, hp⟩⟩ ↦ by
+    obtain rfl : Quotient.mk'' p = b := MulAction.orbitRel.Quotient.mem_orbit.mp hp
+    rfl
+  right_inv _ := rfl
 
 @[simp] theorem totalSpaceEquiv_apply (x : TotalSpace G (MilnorBundleFiber G)) :
     totalSpaceEquiv G x = x.snd.val := (rfl)

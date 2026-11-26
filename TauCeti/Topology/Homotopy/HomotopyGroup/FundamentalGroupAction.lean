@@ -406,15 +406,12 @@ theorem subsingleton_homotopyGroup_of_compact_nullhomotopic.{u} {X : Type u} [To
     Subsingleton (HomotopyGroup N X x) := by
   classical
   let _ : Fintype N := Fintype.ofFinite N
-  have h_one : ∀ a : HomotopyGroup N X x, a = 1 := fun a ↦ by
-    induction a using Quotient.inductionOn with | h p =>
+  have h_one : ∀ a : HomotopyGroup N X x, a = 1 := Quotient.ind fun p ↦ by
     have : CompactSpace (Set.range p) :=
       isCompact_iff_compactSpace.mp (isCompact_range p.val.continuous)
-    obtain ⟨g, hg⟩ := one_mem_orbit_of_forall_mem_of_nullhomotopic
+    obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.mp <| one_mem_orbit_of_forall_mem_of_nullhomotopic
       (hnull (ContinuousMap.subtypeVal (Set.range p))) p Set.mem_range_self
-    let b : HomotopyGroup N X x := ⟦p⟧
-    change g • b = 1 at hg
-    exact (inv_smul_smul g b).symm.trans (by rw [hg, smul_one])
+    exact (inv_smul_smul (α := HomotopyGroup N X x) g ⟦p⟧).symm.trans (by rw [hg, smul_one])
   exact ⟨fun a b ↦ (h_one a).trans (h_one b).symm⟩
 
 end TauCeti

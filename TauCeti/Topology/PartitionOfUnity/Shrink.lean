@@ -26,13 +26,13 @@ of `X`, nor openness of the sets `U i`, is used.
 
 * `PartitionOfUnity.ofExistsPos`: normalize a locally finite nonnegative family positive at every
   point into a partition of unity.
-* `PartitionOfUnity.halfThresholdTrunc` and `PartitionOfUnity.shrinkOfThreshold`: truncate a
-  family of continuous weights below half of a continuous positive function `m` (such as their
-  pointwise maximum) and normalize when the truncated supports are locally finite.
-* `PartitionOfUnity.continuous_ciSup_of_hasSum_one` and
-  `PartitionOfUnity.locallyFinite_support_halfThresholdTrunc_of_hasSum_one`: continuity of the
-  pointwise supremum and local finiteness after truncation for any family of continuous
-  nonnegative weights summing pointwise to `1`.
+* `TauCeti.halfThresholdTrunc` and `PartitionOfUnity.shrinkOfThreshold`: truncate a family of
+  continuous weights below half of a continuous positive function `m` (such as their pointwise
+  maximum) and normalize when the truncated supports are locally finite.
+* `TauCeti.continuous_ciSup_of_hasSum_one` and
+  `TauCeti.locallyFinite_support_halfThresholdTrunc_of_hasSum_one`: continuity of the pointwise
+  supremum and local finiteness after truncation for any family of continuous nonnegative weights
+  summing pointwise to `1`.
 * `PartitionOfUnity.shrink`: shrink the closed supports of a partition of unity on `X` inside its
   open supports, with weights given by `PartitionOfUnity.shrink_apply`.
 * `PartitionOfUnity.shrink_pos_iff` and `PartitionOfUnity.support_shrink`: `ρ.shrink i` is positive
@@ -51,9 +51,9 @@ public section
 
 open Function Set Filter Topology
 
-namespace PartitionOfUnity
-
 variable {ι X : Type*} [TopologicalSpace X]
+
+namespace PartitionOfUnity
 
 section OfExistsPos
 
@@ -107,26 +107,29 @@ theorem tsupport_ofExistsPos (f : ι → C(X, ℝ)) (hlf : LocallyFinite fun i �
 
 end OfExistsPos
 
-section ShrinkOfThreshold
+end PartitionOfUnity
+
+namespace TauCeti
+
+section HalfThresholdTrunc
 
 /-- Truncate a continuous weight `f i` below half of `m`: `x ↦ max 0 (f i x - m x / 2)`. -/
 noncomputable def halfThresholdTrunc (f : ι → C(X, ℝ)) (m : C(X, ℝ)) (i : ι) : C(X, ℝ) :=
   ⟨fun x ↦ max 0 (f i x - m x / 2),
     continuous_const.max ((f i).continuous.sub (m.continuous.div_const 2))⟩
 
-/-- Pointwise formula for `PartitionOfUnity.halfThresholdTrunc`. -/
+/-- Pointwise formula for `TauCeti.halfThresholdTrunc`. -/
 @[simp]
 theorem halfThresholdTrunc_apply (f : ι → C(X, ℝ)) (m : C(X, ℝ)) (i : ι) (x : X) :
     halfThresholdTrunc f m i x = max 0 (f i x - m x / 2) :=
   (rfl)
 
-/-- Each truncated weight `PartitionOfUnity.halfThresholdTrunc` is nonnegative. -/
+/-- Each truncated weight `TauCeti.halfThresholdTrunc` is nonnegative. -/
 theorem halfThresholdTrunc_nonneg (f : ι → C(X, ℝ)) (m : C(X, ℝ)) (i : ι) (x : X) :
     0 ≤ halfThresholdTrunc f m i x :=
   le_max_left _ _
 
-/-- A truncated weight `PartitionOfUnity.halfThresholdTrunc f m i x` is positive iff
-`m x / 2 < f i x`. -/
+/-- A truncated weight `TauCeti.halfThresholdTrunc f m i x` is positive iff `m x / 2 < f i x`. -/
 theorem halfThresholdTrunc_pos_iff {f : ι → C(X, ℝ)} {m : C(X, ℝ)} {i : ι} {x : X} :
     0 < halfThresholdTrunc f m i x ↔ m x / 2 < f i x := by
   rw [halfThresholdTrunc_apply, lt_max_iff, or_iff_right (lt_irrefl 0), sub_pos]
@@ -155,66 +158,7 @@ theorem tsupport_halfThresholdTrunc_subset {f : ι → C(X, ℝ)} {m : C(X, ℝ)
       (lt_of_le_of_ne (halfThresholdTrunc_nonneg f m i y) (Ne.symm hy))).le
   exact ((half_pos (hm x)).trans_le hle).ne'
 
-/-- Shrink a family of continuous weights `f` using a continuous function `m` (such as their
-pointwise maximum) such that at every point some `f i x` exceeds `m x / 2` and the truncated
-supports `support (halfThresholdTrunc f m i)` are locally finite. -/
-noncomputable def shrinkOfThreshold (f : ι → C(X, ℝ)) (m : C(X, ℝ))
-    (hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i))
-    (hm_att : ∀ x, ∃ i, m x / 2 < f i x) : PartitionOfUnity ι X :=
-  ofExistsPos (halfThresholdTrunc f m) hlf (halfThresholdTrunc_nonneg f m)
-    fun x ↦ let ⟨i, hi⟩ := hm_att x; ⟨i, halfThresholdTrunc_pos_iff.mpr hi⟩
-
-/-- Each weight of `PartitionOfUnity.shrinkOfThreshold` is the truncated excess
-`max 0 (f i x - m x / 2)` divided by the finite sum of those truncated excesses. -/
-theorem shrinkOfThreshold_apply (f : ι → C(X, ℝ)) (m : C(X, ℝ))
-    (hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i))
-    (hm_att : ∀ x, ∃ i, m x / 2 < f i x) (i : ι) (x : X) :
-    shrinkOfThreshold f m hlf hm_att i x =
-      max 0 (f i x - m x / 2) / ∑ᶠ k, max 0 (f k x - m x / 2) :=
-  (rfl)
-
-/-- A weight of `PartitionOfUnity.shrinkOfThreshold` is positive iff `m x / 2 < f i x`. -/
-theorem shrinkOfThreshold_pos_iff {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
-    {hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i)}
-    {hm_att : ∀ x, ∃ i, m x / 2 < f i x} {i : ι} {x : X} :
-    0 < shrinkOfThreshold f m hlf hm_att i x ↔ m x / 2 < f i x := by
-  rw [shrinkOfThreshold, ofExistsPos_pos_iff, halfThresholdTrunc_pos_iff]
-
-/-- The open support of `shrinkOfThreshold f m hlf hm_att i` is `{x | m x / 2 < f i x}`. -/
-theorem support_shrinkOfThreshold (f : ι → C(X, ℝ)) (m : C(X, ℝ))
-    (hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i))
-    (hm_att : ∀ x, ∃ i, m x / 2 < f i x) (i : ι) :
-    support (shrinkOfThreshold f m hlf hm_att i) = {x | m x / 2 < f i x} := by
-  ext x
-  exact ((shrinkOfThreshold f m hlf hm_att).nonneg i x).lt_iff_ne'.symm.trans
-    shrinkOfThreshold_pos_iff
-
-/-- Every open support of `PartitionOfUnity.shrinkOfThreshold` lies in `support (f i)` when `m` is
-positive everywhere. -/
-theorem support_shrinkOfThreshold_subset {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
-    {hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i)}
-    (hm_pos : ∀ x, 0 < m x) {hm_att : ∀ x, ∃ i, m x / 2 < f i x} (i : ι) :
-    support (shrinkOfThreshold f m hlf hm_att i) ⊆ support (f i) :=
-  (support_ofExistsPos _ _ _ _ i).subset.trans (support_halfThresholdTrunc_subset hm_pos i)
-
-/-- Every closed support of `PartitionOfUnity.shrinkOfThreshold` lies in `support (f i)` when `m` is
-continuous and positive everywhere. -/
-theorem tsupport_shrinkOfThreshold_subset_support {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
-    {hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i)}
-    (hm_pos : ∀ x, 0 < m x) {hm_att : ∀ x, ∃ i, m x / 2 < f i x} (i : ι) :
-    tsupport (shrinkOfThreshold f m hlf hm_att i) ⊆ support (f i) :=
-  (tsupport_ofExistsPos _ _ _ _ i).subset.trans (tsupport_halfThresholdTrunc_subset hm_pos i)
-
-/-- If every open support `support (f i)` lies in `U i` and `m` is continuous and positive
-everywhere, then `PartitionOfUnity.shrinkOfThreshold` is subordinate to `U`. -/
-theorem isSubordinate_shrinkOfThreshold {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
-    {hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i)}
-    (hm_pos : ∀ x, 0 < m x) {hm_att : ∀ x, ∃ i, m x / 2 < f i x}
-    {U : ι → Set X} (hU : ∀ i, support (f i) ⊆ U i) :
-    (shrinkOfThreshold f m hlf hm_att).IsSubordinate U :=
-  fun i ↦ (tsupport_shrinkOfThreshold_subset_support hm_pos i).trans (hU i)
-
-end ShrinkOfThreshold
+end HalfThresholdTrunc
 
 section HasSumOne
 
@@ -286,6 +230,75 @@ theorem locallyFinite_support_halfThresholdTrunc_of_hasSum_one (f : ι → C(X, 
   linarith [(h x hxW).1 j hj, (h x hxW).2]
 
 end HasSumOne
+
+end TauCeti
+
+namespace PartitionOfUnity
+
+open TauCeti
+
+section ShrinkOfThreshold
+
+/-- Shrink a family of continuous weights `f` using a continuous function `m` (such as their
+pointwise maximum) such that at every point some `f i x` exceeds `m x / 2` and the truncated
+supports `support (TauCeti.halfThresholdTrunc f m i)` are locally finite. -/
+noncomputable def shrinkOfThreshold (f : ι → C(X, ℝ)) (m : C(X, ℝ))
+    (hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i))
+    (hm_att : ∀ x, ∃ i, m x / 2 < f i x) : PartitionOfUnity ι X :=
+  ofExistsPos (halfThresholdTrunc f m) hlf (halfThresholdTrunc_nonneg f m)
+    fun x ↦ let ⟨i, hi⟩ := hm_att x; ⟨i, halfThresholdTrunc_pos_iff.mpr hi⟩
+
+/-- Each weight of `PartitionOfUnity.shrinkOfThreshold` is the truncated excess
+`max 0 (f i x - m x / 2)` divided by the finite sum of those truncated excesses. -/
+theorem shrinkOfThreshold_apply (f : ι → C(X, ℝ)) (m : C(X, ℝ))
+    (hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i))
+    (hm_att : ∀ x, ∃ i, m x / 2 < f i x) (i : ι) (x : X) :
+    shrinkOfThreshold f m hlf hm_att i x =
+      max 0 (f i x - m x / 2) / ∑ᶠ k, max 0 (f k x - m x / 2) :=
+  (rfl)
+
+/-- A weight of `PartitionOfUnity.shrinkOfThreshold` is positive iff `m x / 2 < f i x`. -/
+theorem shrinkOfThreshold_pos_iff {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
+    {hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i)}
+    {hm_att : ∀ x, ∃ i, m x / 2 < f i x} {i : ι} {x : X} :
+    0 < shrinkOfThreshold f m hlf hm_att i x ↔ m x / 2 < f i x := by
+  rw [shrinkOfThreshold, ofExistsPos_pos_iff, halfThresholdTrunc_pos_iff]
+
+/-- The open support of `shrinkOfThreshold f m hlf hm_att i` is `{x | m x / 2 < f i x}`. -/
+theorem support_shrinkOfThreshold (f : ι → C(X, ℝ)) (m : C(X, ℝ))
+    (hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i))
+    (hm_att : ∀ x, ∃ i, m x / 2 < f i x) (i : ι) :
+    support (shrinkOfThreshold f m hlf hm_att i) = {x | m x / 2 < f i x} := by
+  ext x
+  exact ((shrinkOfThreshold f m hlf hm_att).nonneg i x).lt_iff_ne'.symm.trans
+    shrinkOfThreshold_pos_iff
+
+/-- Every open support of `PartitionOfUnity.shrinkOfThreshold` lies in `support (f i)` when `m` is
+positive everywhere. -/
+theorem support_shrinkOfThreshold_subset {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
+    {hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i)}
+    (hm_pos : ∀ x, 0 < m x) {hm_att : ∀ x, ∃ i, m x / 2 < f i x} (i : ι) :
+    support (shrinkOfThreshold f m hlf hm_att i) ⊆ support (f i) :=
+  (support_ofExistsPos _ _ _ _ i).subset.trans (support_halfThresholdTrunc_subset hm_pos i)
+
+/-- Every closed support of `PartitionOfUnity.shrinkOfThreshold` lies in `support (f i)` when `m` is
+continuous and positive everywhere. -/
+theorem tsupport_shrinkOfThreshold_subset_support {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
+    {hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i)}
+    (hm_pos : ∀ x, 0 < m x) {hm_att : ∀ x, ∃ i, m x / 2 < f i x} (i : ι) :
+    tsupport (shrinkOfThreshold f m hlf hm_att i) ⊆ support (f i) :=
+  (tsupport_ofExistsPos _ _ _ _ i).subset.trans (tsupport_halfThresholdTrunc_subset hm_pos i)
+
+/-- If every open support `support (f i)` lies in `U i` and `m` is continuous and positive
+everywhere, then `PartitionOfUnity.shrinkOfThreshold` is subordinate to `U`. -/
+theorem isSubordinate_shrinkOfThreshold {f : ι → C(X, ℝ)} {m : C(X, ℝ)}
+    {hlf : LocallyFinite fun i ↦ support (halfThresholdTrunc f m i)}
+    (hm_pos : ∀ x, 0 < m x) {hm_att : ∀ x, ∃ i, m x / 2 < f i x}
+    {U : ι → Set X} (hU : ∀ i, support (f i) ⊆ U i) :
+    (shrinkOfThreshold f m hlf hm_att).IsSubordinate U :=
+  fun i ↦ (tsupport_shrinkOfThreshold_subset_support hm_pos i).trans (hU i)
+
+end ShrinkOfThreshold
 
 section Shrink
 

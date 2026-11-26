@@ -25,9 +25,7 @@ interpolation cones it to `vertex N a` at the fresh index.
 ## Main definitions and results
 
 * `TauCeti.MilnorTotalSpace.partialWeightSum`, `tailTruncationMap`, `tailTruncationHomotopy`,
-  `weight_tailTruncationHomotopy`, `label_tailTruncationHomotopy`, `coneAtFreshIndexHomotopy`,
-  `weight_coneAtFreshIndexHomotopy`, `label_coneAtFreshIndexHomotopy_self`,
-  `label_coneAtFreshIndexHomotopy_of_ne`,
+  `weight_tailTruncationHomotopy`, `label_tailTruncationHomotopy`,
   `exists_one_half_lt_partialWeightSum_of_isCompact_range`.
 * `ContinuousMap.nullhomotopic_to_milnorTotalSpace_of_isCompact_range`,
   `ContinuousMap.nullhomotopic_to_milnorTotalSpace`, `HomotopyGroup.subsingleton_milnorTotalSpace`,
@@ -156,9 +154,15 @@ private theorem sum_tailWeight {N : ℕ} {f : C(X, MilnorTotalSpace G)}
     exact fun hi ↦ Finset.mem_union_right _ (Finset.mem_range.mpr hi)
   have hsplit := Finset.sum_filter_add_sum_filter_not S (· < N) (fun i ↦ weight i (f z.2))
   rw [hfilter, ← partialWeightSum_apply, hsum_one] at hsplit
-  unfold tailWeight
-  rw [← Finset.sum_div, Finset.sum_ite, hfilter, ← partialWeightSum_apply, ← Finset.mul_sum,
-    eq_sub_of_add_eq' hsplit, ← tailDenom, div_self (tailDenom_pos hf z).ne']
+  have hnum :
+      ∑ i ∈ S, (if i < N then weight i (f z.2) else (1 - (z.1 : ℝ)) * weight i (f z.2)) =
+        tailDenom N f z := by
+    rw [Finset.sum_ite, hfilter, ← partialWeightSum_apply, ← Finset.mul_sum]
+    have htail : ∑ i ∈ S.filter (fun j ↦ ¬ j < N), weight i (f z.2) =
+        1 - partialWeightSum G N (f z.2) := by linarith
+    rw [htail, tailDenom]
+  simp_rw [tailWeight, ← Finset.sum_div]
+  rw [hnum, div_self (tailDenom_pos hf z).ne']
 
 private def tailTruncationPt (N : ℕ) (f : C(X, MilnorTotalSpace G))
     (hf : ∀ x, 0 < partialWeightSum G N (f x)) (z : I × X) : MilnorTotalSpace G :=
@@ -258,117 +262,6 @@ vertex label `label i (f x)`. -/
     label i (tailTruncationHomotopy N f hf (s, x)) = label i (f x) :=
   label_tailTruncationPt N f hf
     (weight_tailTruncationPt N f hf (s, x) i ▸ mem_coordSet_iff.mp h)
-
-private def coneWeight (N : ℕ) (g : C(X, MilnorTotalSpace G)) (z : I × X) (i : ℕ) : ℝ :=
-  if i = N then (z.1 : ℝ) else (1 - (z.1 : ℝ)) * weight i (g z.2)
-
-private theorem weight_pos_of_coneWeight_pos {N : ℕ} {g : C(X, MilnorTotalSpace G)}
-    {z : I × X} {i : ℕ} (hiN : i ≠ N) (hz : 0 < coneWeight N g z i) : 0 < weight i (g z.2) := by
-  by_contra hle; simp [coneWeight, hiN, le_antisymm (not_lt.mp hle) (weight_nonneg i (g z.2))] at hz
-
-private def conePt (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
-    (hg : ∀ x, weight N (g x) = 0) (z : I × X) : MilnorTotalSpace G :=
-  let S := (finite_support_weight (g z.2)).toFinset
-  have hN : N ∉ S := fun hm ↦ (finite_support_weight (g z.2)).mem_toFinset.mp hm (hg z.2)
-  ofFinsetCoord (insert N S) (coneWeight N g z) (fun i ↦ if i = N then a else label i (g z.2))
-    (fun i _ ↦ by
-      unfold coneWeight; split_ifs
-      exacts [z.1.property.1, mul_nonneg (sub_nonneg.mpr z.1.property.2) (weight_nonneg i (g z.2))])
-    (by
-      unfold coneWeight
-      rw [Finset.sum_insert hN, ite_eq_left rfl,
-        Finset.sum_congr rfl fun _ hi ↦ ite_eq_right (ne_of_mem_of_not_mem hi hN),
-        ← Finset.mul_sum, sum_weight_of_support_subset fun _ ↦ weight_eq_zero_of_notMem,
-        mul_one, add_sub_cancel])
-
-private theorem weight_conePt (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
-    (hg : ∀ x, weight N (g x) = 0) (z : I × X) (i : ℕ) :
-    weight i (conePt N a g hg z) = coneWeight N g z i := by
-  unfold conePt; rw [weight_ofFinsetCoord]
-  by_cases hiN : i = N
-  · simp [hiN]
-  · simp only [Finset.mem_insert, hiN, false_or]
-    split_ifs with hi
-    · rfl
-    · simp [coneWeight, hiN, weight_eq_zero_of_notMem hi]
-
-private theorem label_conePt_self (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
-    (hg : ∀ x, weight N (g x) = 0) {z : I × X} (hs : 0 < (z.1 : ℝ)) :
-    label N (conePt N a g hg z) = a := by
-  unfold conePt
-  rw [label_ofFinsetCoord _ _ _ _ _ (Finset.mem_insert_self N _) (by simp [coneWeight, hs])]
-  exact ite_eq_left rfl
-
-private theorem label_conePt_of_ne (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
-    (hg : ∀ x, weight N (g x) = 0) {z : I × X} {i : ℕ} (hiN : i ≠ N)
-    (hz : 0 < coneWeight N g z i) : label i (conePt N a g hg z) = label i (g z.2) := by
-  unfold conePt
-  rw [label_ofFinsetCoord _ _ _ _ _ (Finset.mem_insert_of_mem
-    ((finite_support_weight (g z.2)).mem_toFinset.mpr
-      (weight_pos_of_coneWeight_pos hiN hz).ne')) hz]
-  exact ite_eq_right hiN
-
-/-- **Cone homotopy at an unused index** to the constant map at `vertex N a`. -/
-def coneAtFreshIndexHomotopy (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
-    (hg : ∀ x, weight N (g x) = 0) : g.Homotopy (ContinuousMap.const X (vertex N a)) where
-  toFun := conePt N a g hg
-  continuous_toFun := continuous_iff.mpr ⟨fun i ↦ by
-      simp_rw [weight_conePt]; unfold coneWeight
-      by_cases hiN : i = N <;> simp only [hiN, ↓reduceIte]
-      exacts [continuous_subtypeVal.comp continuous_fst, by fun_prop], fun i ↦ by
-      simp_rw [weight_conePt]
-      by_cases hiN : i = N
-      · subst hiN; exact (continuousOn_const (c := a)).congr fun _ hz ↦
-          label_conePt_self i a g hg (by simpa [coneWeight] using hz)
-      · exact ((continuousOn_label i).comp (g.continuous.comp continuous_snd).continuousOn
-          fun _ hz ↦ mem_coordSet_iff.mpr (weight_pos_of_coneWeight_pos hiN hz)).congr fun _ hz ↦
-          label_conePt_of_ne N a g hg hiN hz⟩
-  map_zero_left x := by
-    rw [ContinuousMap.coe_mk]
-    refine (ext_coord
-      (fun i ↦ by
-        rw [weight_conePt]; by_cases hiN : i = N
-        · subst hiN; simp [coneWeight, hg x]
-        · simp [coneWeight, hiN])
-      (fun i hi ↦ by
-        have hiN : i ≠ N := fun h ↦ (mem_coordSet_iff.mp hi).ne' (h ▸ hg x)
-        exact (label_conePt_of_ne N a g hg hiN (z := (0, x))
-          (by simpa [coneWeight, hiN] using mem_coordSet_iff.mp hi)).symm)).symm
-  map_one_left x := by
-    rw [ContinuousMap.coe_mk, ContinuousMap.toFun_eq_coe, ContinuousMap.const_apply]
-    refine ext_coord
-      (fun i ↦ by
-        rw [weight_conePt, weight_vertex]; by_cases hiN : i = N <;> simp [coneWeight, hiN])
-      (fun i hi ↦ by
-        have hi' : 0 < coneWeight N g (1, x) i :=
-          weight_conePt N a g hg (1, x) i ▸ mem_coordSet_iff.mp hi
-        by_cases hiN : i = N
-        · subst hiN; exact (label_conePt_self i a g hg zero_lt_one).trans (label_vertex i a).symm
-        · simp [coneWeight, hiN] at hi')
-
-/-- The `i`-th barycentric weight along `coneAtFreshIndexHomotopy N a g hg` at `(s, x)`. -/
-@[simp] theorem weight_coneAtFreshIndexHomotopy (N : ℕ) (a : G)
-    (g : C(X, MilnorTotalSpace G)) (hg : ∀ x, weight N (g x) = 0) (s : I) (x : X) (i : ℕ) :
-    weight i (coneAtFreshIndexHomotopy N a g hg (s, x)) =
-      if i = N then (s : ℝ) else (1 - (s : ℝ)) * weight i (g x) :=
-  weight_conePt N a g hg (s, x) i
-
-/-- When `0 < (s : ℝ)`, the label at the fresh index `N` along `coneAtFreshIndexHomotopy` is
-`a`. -/
-@[simp] theorem label_coneAtFreshIndexHomotopy_self (N : ℕ) (a : G)
-    (g : C(X, MilnorTotalSpace G)) (hg : ∀ x, weight N (g x) = 0) {s : I} (hs : 0 < (s : ℝ))
-    (x : X) :
-    label N (coneAtFreshIndexHomotopy N a g hg (s, x)) = a :=
-  label_conePt_self N a g hg (z := (s, x)) hs
-
-/-- For `i ≠ N`, every positive-weight coordinate along `coneAtFreshIndexHomotopy N a g hg`
-retains the original vertex label `label i (g x)`. -/
-@[simp] theorem label_coneAtFreshIndexHomotopy_of_ne (N : ℕ) (a : G)
-    (g : C(X, MilnorTotalSpace G)) (hg : ∀ x, weight N (g x) = 0) {s : I} {x : X} {i : ℕ}
-    (hiN : i ≠ N) (h : coneAtFreshIndexHomotopy N a g hg (s, x) ∈ coordSet G i) :
-    label i (coneAtFreshIndexHomotopy N a g hg (s, x)) = label i (g x) :=
-  label_conePt_of_ne N a g hg hiN
-    (weight_conePt N a g hg (s, x) i ▸ mem_coordSet_iff.mp h)
 
 end Homotopies
 
