@@ -13,15 +13,21 @@ public import Mathlib.GroupTheory.OrderOfElement
 If two powers of a finite-order element are signed powers of `x` times a common base point,
 eliminating the signs and `x` gives a congruence among the three exponents. This applies even
 when some of the points coincide.
+
+The exponent congruence argument is adapted from the odd-prime case of
+`New.Parameters.exists_large_isSparse` in
+[`grh/src/New/Reduction/Data/Existence.lean`](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh/src/New/Reduction/Data/Existence.lean)
+of grh-lean (Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
 public section
 
 /-- Two signed-power relations with a common base point give a modular weighted mean among the
 exponents. The signs can be any elements with square one. -/
-theorem IsOfFinOrder.add_mul_modEq_of_eq_mul_pow_mul {G : Type*} [CommMonoid G] {g x ε ε' : G}
-    (hg : IsOfFinOrder g) {a b c i j : ℕ} (hij : i ≤ j) (hε : ε ^ 2 = 1) (hε' : ε' ^ 2 = 1)
-    (hb : g ^ b = ε * x ^ i * g ^ a) (hc : g ^ c = ε' * x ^ j * g ^ a) :
+theorem IsOfFinOrder.mul_modEq_mul_add_mul_of_eq_mul_pow_mul {G : Type*} [CommMonoid G]
+    {g x ε ε' : G} (hg : IsOfFinOrder g) {a b c i j : ℕ} (hij : i ≤ j)
+    (hε : ε ^ 2 = 1) (hε' : ε' ^ 2 = 1) (hb : g ^ b = ε * x ^ i * g ^ a)
+    (hc : g ^ c = ε' * x ^ j * g ^ a) :
     2 * j * b ≡ 2 * (j - i) * a + 2 * i * c [MOD orderOf g] := by
   have hb' : g ^ (2 * j * b) = x ^ (i * 2 * j) * g ^ (2 * j * a) := by
     have he := congrArg (fun y => (y ^ 2) ^ j) hb

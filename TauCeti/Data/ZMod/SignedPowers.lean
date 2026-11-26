@@ -16,9 +16,9 @@ from one point cannot be two distinct short signed powers of the same small prim
 prime, reduction modulo a power of two and squaring eliminate the signs. For the prime two,
 reduction modulo a power of three suffices, since the generator reduces to one there.
 
-The application to sparse sets is from `New.Parameters.exists_large_isSparse` in
-`grh/src/New/Reduction/Data/Existence.lean` of
-[grh-lean](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207).
+Both modular reduction arguments are adapted from `New.Parameters.exists_large_isSparse` in
+[`grh/src/New/Reduction/Data/Existence.lean`](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh/src/New/Reduction/Data/Existence.lean)
+of grh-lean (Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
 public section
@@ -70,7 +70,7 @@ theorem not_exists_signed_pow_relations {m s v u p i j a b c : ℕ}
   have hε₂ : (f ε) ^ 2 = 1 := by simpa using congrArg f hε
   have hε₂' : (f ε') ^ 2 = 1 := by simpa using congrArg f hε'
   have hfin : IsOfFinOrder (f g) := orderOf_pos_iff.mp (hord ▸ pow_pos two_pos s)
-  have he := hfin.add_mul_modEq_of_eq_mul_pow_mul hij hε₂ hε₂' hb' hc'
+  have he := hfin.mul_modEq_mul_add_mul_of_eq_mul_pow_mul hij hε₂ hε₂' hb' hc'
   rw [hord] at he
   rw [← hmean he] at hb'
   have hb'' : 1 = f ε * (p : ZMod (2 ^ (s + (v + 2)))) ^ i :=
@@ -80,6 +80,6 @@ theorem not_exists_signed_pow_relations {m s v u p i j a b c : ℕ}
     simp only [mul_pow, hε₂, one_mul, one_pow, ← pow_mul'] at hpow'
     let f₂ := castHom (pow_dvd_pow 2 (by omega : s + 1 ≤ s + (v + 2))) (ZMod (2 ^ (s + 1)))
     simpa using congrArg f₂ hpow'
-  exact (not_le_of_gt hsize) (two_pow_le_mul_succ_of_pow_eq_one hp (by omega) hpow)
+  exact (not_le_of_gt hsize) (two_pow_le_mul_add_one_of_pow_eq_one hp (by omega) hpow)
 
 end ZMod

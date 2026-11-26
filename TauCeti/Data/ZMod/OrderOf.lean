@@ -54,7 +54,7 @@ decides which `q ^ k + 1` are divisible by `p`.
   `q` modulo `n` divides `k`.
 * `ZMod.eventually_pow_dvd_orderOf_natCast`: for `a ≠ 1` and every `j`, `ℓ ^ j` divides the
   order of `a` modulo `ℓ ^ r` for all large `r`.
-* `ZMod.two_pow_le_mul_succ_of_pow_eq_one`: if `a > 1` and `a ^ n ≡ 1` modulo `2 ^ (s + 1)`
+* `ZMod.two_pow_le_mul_add_one_of_pow_eq_one`: if `a > 1` and `a ^ n ≡ 1` modulo `2 ^ (s + 1)`
   for `n > 0`, then `2 ^ s ≤ n * (a + 1)`.
 * `ZMod.two_dvd_exponent_units`: for `n ≠ 1, 2`, `2` divides the exponent of `(ℤ/n)ˣ`.
 * `ZMod.isUnit_of_orderOf_eq_totient`, `ZMod.zpowers_eq_top_of_orderOf_eq_totient`: a residue of
@@ -77,6 +77,9 @@ decides which `q ^ k + 1` are divisible by `p`.
 
 * K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 4, §1,
   Theorem 2.
+* For the dyadic exponent bound, see `New.two_pow_le_of_pow_eq_one` in
+  [`grh/src/Lib/General/NumberTheory/ImaginaryQuadraticField.lean`](https://github.com/lsernau/grh-lean/blob/72fead102f663d5c7a407964a13dc0cf9d977207/grh/src/Lib/General/NumberTheory/ImaginaryQuadraticField.lean)
+  of grh-lean (Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
 public section
@@ -114,7 +117,7 @@ theorem dvd_pow_sub_one_iff_orderOf_natCast_dvd {n q : ℕ} (hq : 0 < q) (k : �
 
 /-- If a positive power of an integer `a > 1` is one modulo `2^(s+1)`, then the exponent
 times `a + 1` is at least `2^s`. -/
-theorem two_pow_le_mul_succ_of_pow_eq_one {a n s : ℕ} (ha : 1 < a) (hn : 0 < n)
+theorem two_pow_le_mul_add_one_of_pow_eq_one {a n s : ℕ} (ha : 1 < a) (hn : 0 < n)
     (h : (a : ZMod (2 ^ (s + 1))) ^ n = 1) : 2 ^ s ≤ n * (a + 1) := by
   have hd : 2 ^ (s + 1) ∣ a ^ n - 1 :=
     (dvd_pow_sub_one_iff_orderOf_natCast_dvd (by omega) n).2 (orderOf_dvd_of_pow_eq_one h)
