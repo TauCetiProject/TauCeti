@@ -354,6 +354,20 @@ private theorem hasDerivAt_edge {t : ℝ} (ht : HasDerivAt γ (fun i ↦
   exact (hasDerivAt_pi.1 ht k).prodMk h2
 
 omit [NeZero N] in
+/-- The second derivative `d²S_k(edge velocity, w)` splits along the two components
+`y_k - Y_(k-1)` and `y_(k+1) - Y_k` of the edge velocity. -/
+private theorem fderiv_fderiv_edgeVelocity_apply (t : ℝ) (k : ZMod N) (w : ℝ × ℝ) :
+    fderiv ℝ (fderiv ℝ (S k)) (γ t k, γ t (k + 1)) (edgeVelocity S γ t k) w =
+      ((stripGeneratingSource (S k) (γ t k, γ t (k + 1))).2 -
+          (stripGeneratingTarget (S (k - 1)) (γ t (k - 1), γ t k)).2) *
+        fderiv ℝ (fderiv ℝ (S k)) (γ t k, γ t (k + 1)) (1, 0) w +
+      ((stripGeneratingSource (S (k + 1)) (γ t (k + 1), γ t (k + 1 + 1))).2 -
+          (stripGeneratingTarget (S k) (γ t k, γ t (k + 1))).2) *
+        fderiv ℝ (fderiv ℝ (S k)) (γ t k, γ t (k + 1)) (0, 1) w := by
+  rw [edgeVelocity, (fderiv ℝ (fderiv ℝ (S k)) _).apply_mk_eq_smul_add_smul]
+  simp only [add_apply, smul_apply, smul_eq_mul]
+
+omit [NeZero N] in
 /-- Along a trajectory, the second partial derivative `∂_w S_k` at the edge `(γ_k, γ_(k+1))`
 moves with velocity `d²S_k(edge velocity, w)`. -/
 private theorem hasDerivAt_fderiv_apply {t : ℝ} {k : ZMod N} (ht : HasDerivAt γ (fun i ↦
@@ -380,10 +394,8 @@ private theorem hasDerivAt_stripGeneratingSource_snd {t : ℝ} {k : ZMod N}
         (fun k t ↦ -fderiv ℝ (fderiv ℝ (S k)) (γ t k, γ t (k + 1)) (0, 1) (1, 0)) k t) t := by
   simp only [stripGeneratingSource_snd]
   refine (hasDerivAt_fderiv_apply ht hd (1, 0)).neg.congr_deriv ?_
-  simp only [momentumVelocity, edgeVelocity, stripGeneratingSource_snd,
-    stripGeneratingTarget_snd]
-  rw [(fderiv ℝ (fderiv ℝ (S k)) _).apply_mk_eq_smul_add_smul]
-  simp only [add_apply, smul_apply, smul_eq_mul, sub_add_cancel]
+  rw [fderiv_fderiv_edgeVelocity_apply]
+  simp only [momentumVelocity, stripGeneratingSource_snd, stripGeneratingTarget_snd, sub_add_cancel]
   ring
 
 /-- The momenta along a trajectory of the negative gradient flow of the cyclic action satisfy the
@@ -442,10 +454,9 @@ private theorem exists_faceData
     rw [← (hS k).isSymmSndFDerivAt (by simp) (1, 0) (0, 1)]
     linarith
   · intro k hk
-    simp only [momentumVelocity, edgeVelocity, stripGeneratingSource_snd,
-      stripGeneratingTarget_snd]
-    rw [hBface k (hk ▸ hc), (fderiv ℝ (fderiv ℝ (S k)) _).apply_mk_eq_smul_add_smul]
-    simp only [add_apply, smul_apply, smul_eq_mul, sub_add_cancel]
+    rw [hBface k (hk ▸ hc), fderiv_fderiv_edgeVelocity_apply]
+    simp only [momentumVelocity, stripGeneratingSource_snd, stripGeneratingTarget_snd,
+      sub_add_cancel]
     ring
 
 /-- In the setting of `TauCeti.eventually_nhdsGT_forall_stripGeneratingSource_snd_mem_Ioo`, a
