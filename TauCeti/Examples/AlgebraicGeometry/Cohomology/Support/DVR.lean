@@ -47,10 +47,11 @@ abbrev uniformizer : Γ(Spec (.of R), ⊤) := (Scheme.ΓSpecIso (.of R)).inv ϖ
 /-- The complement `V(ϖ)` of the basic open `D(ϖ)` of `Spec R` is the closed point `V(𝔪)`. -/
 theorem mem_compl_basicOpen_uniformizer_iff (hϖ : Irreducible ϖ) (x : PrimeSpectrum R) :
     x ∈ ((Spec (.of R)).basicOpen (uniformizer ϖ)).compl ↔ x = closedPoint R := by
+  -- Mathlib has no membership lemma for `Opens.compl`: `U.compl` is the closed set `⟨Uᶜ, _⟩`, so
+  -- membership in it is `x ∉ U` by definition.
   change x ∉ (Spec (.of R)).basicOpen (uniformizer ϖ) ↔ _
   rw [basicOpen_eq_of_affine]
-  -- Membership in `PrimeSpectrum.basicOpen ϖ` is `ϖ ∉ x.asIdeal` by definition.
-  change ¬ϖ ∉ x.asIdeal ↔ _
+  refine (PrimeSpectrum.mem_basicOpen ϖ x).not.trans ?_
   rw [not_not, PrimeSpectrum.ext_iff, closedPoint, ← Ideal.span_singleton_le_iff_mem,
     ← (IsDiscreteValuationRing.irreducible_iff_uniformizer ϖ).1 hϖ]
   exact ⟨fun h ↦ ((maximalIdeal.isMaximal R).eq_of_le x.isPrime.ne_top h).symm,
@@ -70,63 +71,17 @@ theorem subsingleton_cohomologyWithSupport_zero (hϖ : Irreducible ϖ) :
   rw [← this] at h𝔪
   exact hϖ.ne_zero (Ideal.mem_bot.1 h𝔪)
 
-variable (K : Type u) [Field K] [Algebra R K] [IsFractionRing R K]
-
-/-- The ring isomorphism `Γ(Spec R, 𝒪) ≅ R` sends the localization at the uniformizer to the
-fraction field `K`. -/
-def localizationRingEquiv (hϖ : Irreducible ϖ) : Localization.Away (uniformizer ϖ) ≃+* K :=
-  have : IsLocalization.Away ϖ K := hϖ.isLocalizationAway_fractionRing
-  IsLocalization.ringEquivOfRingEquiv _ _
-    (Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv
-    (show (Submonoid.powers (uniformizer ϖ)).map _ = Submonoid.powers ϖ by
-      rw [Submonoid.map_powers]
-      exact congrArg Submonoid.powers ((Scheme.ΓSpecIso (.of R)).inv_hom_id_apply ϖ))
-
-/-- `localizationRingEquiv` is compatible with the identification `Γ(Spec R, 𝒪) ≅ R`. -/
-lemma localizationRingEquiv_algebraMap (hϖ : Irreducible ϖ) (a : Γ(Spec (.of R), ⊤)) :
-    localizationRingEquiv K hϖ (algebraMap _ _ a) =
-      algebraMap R K ((Scheme.ΓSpecIso (.of R)).hom a) :=
-  have : IsLocalization.Away ϖ K := hϖ.isLocalizationAway_fractionRing
-  by unfold localizationRingEquiv; exact IsLocalization.ringEquivOfRingEquiv_eq _ a
-
-/-- `localizationRingEquiv` carries the image of `Γ(Spec R, 𝒪)` onto the image of `R`. -/
-lemma map_range_algebraMap (hϖ : Irreducible ϖ) :
-    (LinearMap.range (Algebra.linearMap Γ(Spec (.of R), ⊤)
-        (Localization.Away (uniformizer ϖ)))).toAddSubgroup.map
-        (localizationRingEquiv K hϖ).toAddEquiv.toAddMonoidHom =
-      (algebraMap R K).toAddMonoidHom.range := by
-  ext y
-  simp only [AddSubgroup.mem_map, Submodule.mem_toAddSubgroup, LinearMap.mem_range,
-    Algebra.linearMap_apply, AddMonoidHom.mem_range]
-  constructor
-  · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
-    exact ⟨(Scheme.ΓSpecIso (.of R)).hom a, (localizationRingEquiv_algebraMap K hϖ a).symm⟩
-  · rintro ⟨r, rfl⟩
-    refine ⟨_, ⟨(Scheme.ΓSpecIso (.of R)).inv r, rfl⟩, ?_⟩
-    refine (localizationRingEquiv_algebraMap K hϖ _).trans ?_
-    exact congrArg _ ((Scheme.ΓSpecIso (.of R)).inv_hom_id_apply r)
+variable (K : Type*) [CommRing K] [Algebra R K] [IsFractionRing R K]
 
 /-- **`H¹_𝔪(Spec R, 𝒪) ≅ K / R`** for a discrete valuation ring `R` with fraction field `K`: the
 first cohomology of the structure sheaf with supports in the closed point `V(ϖ)` is the quotient of
-`K` by the image of `R`. -/
-def cohomologyWithSupportOneAddEquiv (hϖ : Irreducible ϖ) :
+`K` by the image of `R`, since `K` is the localization of `R` away from `ϖ`. -/
+abbrev cohomologyWithSupportOneAddEquiv (hϖ : Irreducible ϖ) :
     (Scheme.Modules.unit (Spec (.of R))).cohomologyWithSupport
         ((Spec (.of R)).basicOpen (uniformizer ϖ)).compl ⊤ 1 ≃+
       K ⧸ (algebraMap R K).toAddMonoidHom.range :=
-  (Scheme.Modules.cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv _
-    (uniformizer ϖ)).toAddEquiv.trans
-    (QuotientAddGroup.congr _ _ (localizationRingEquiv K hϖ).toAddEquiv
-      (map_range_algebraMap K hϖ))
-
-/-- The identification of `H¹_𝔪(Spec R, 𝒪)` with `K / R` sends the class of an element of `K`
-back through `localizationRingEquiv` to `H¹_{V(f)}(X, 𝒪) ≅ Γ(X, 𝒪)_f / Γ(X, 𝒪)` for `f = ϖ`. -/
-lemma cohomologyWithSupportOneAddEquiv_symm_mk (hϖ : Irreducible ϖ) (y : K) :
-    (cohomologyWithSupportOneAddEquiv K hϖ).symm (QuotientAddGroup.mk y) =
-      (Scheme.Modules.cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv _
-        (uniformizer ϖ)).symm (Submodule.Quotient.mk ((localizationRingEquiv K hϖ).symm y)) :=
-  -- As in `SupportDegreeOneExample.cohomologyWithSupportOneAddEquiv_symm_mk`: the `Submodule`
-  -- and `AddSubgroup` quotients agree only definitionally, so this is `rfl` rather than `rw`.
-  (rfl)
+  have : IsLocalization.Away ϖ K := hϖ.isLocalizationAway_fractionRing
+  Scheme.Modules.cohomologyWithSupportOneComplBasicOpenSpecUnitAddEquiv ϖ K
 
 end TauCeti.AlgebraicGeometry.SupportDVRExample
 
