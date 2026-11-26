@@ -28,10 +28,9 @@ inclusion of a finite subgroup, the sum `∑ h ∈ H, χ(g f(h)) χ'((g f(h))⁻
 `σ g ∘ S`, where `σ` is the conjugation action on `W →ₗ[k] V` and `S` the sum of `σ ∘ f` over `H`
 (`Representation.sum_character_mul_mul_character_mul_inv_eq_trace`); no finiteness of `V` or `W`
 is needed, as the character of `linHom ρ' ρ` is `g ↦ χ'(g⁻¹) χ(g)` in any dimension
-(`Representation.character_linHom`). For a representation of a finite group, the group sum
-`S = Representation.norm ρ` satisfies `S * S = |G| • S` (`Representation.norm_mul_norm`). Hence,
-if `G` is finite and its order is zero in `k`, `∑ g, χ(g) χ'(g⁻¹) = 0`, as the sum of `σ` over `G`
-is then nilpotent (`Representation.sum_character_mul_character_inv_eq_zero_of_natCard_eq_zero`).
+(`Representation.character_linHom`). Hence, if `G` is finite and its order is zero in `k`,
+`∑ g, χ(g) χ'(g⁻¹) = 0`, as the sum of `σ` over `G` is then nilpotent
+(`Representation.sum_character_mul_character_inv_eq_zero_of_natCard_eq_zero`).
 
 The trace of the action is a class function for a representation over a commutative semiring on
 any additive commutative monoid (`Representation.trace_conj`). `Representation.character` and
@@ -84,18 +83,6 @@ theorem character_comp {k G H V : Type*} [Field k] [Monoid G] [Monoid H] [AddCom
     [Module k V] (ρ : Representation k G V) (f : H →* G) :
     character (ρ.comp f) = ρ.character ∘ f :=
   rfl
-
-/-- **The square of the group sum**: for a representation of a finite group,
-`norm ρ * norm ρ = |G| • norm ρ`, since `norm ρ * ρ g = norm ρ` for every `g`
-(`Representation.norm_comp_self`). -/
-theorem norm_mul_norm {k G V : Type*} [Semiring k] [Group G] [Fintype G] [AddCommMonoid V]
-    [Module k V] (ρ : Representation k G V) : ρ.norm * ρ.norm = Nat.card G • ρ.norm :=
-  calc ρ.norm * ρ.norm = ρ.norm * ∑ g : G, ρ g := by rw [norm]
-    _ = ∑ g : G, ρ.norm * ρ g := Finset.mul_sum _ _ _
-    _ = ∑ _g : G, ρ.norm := Finset.sum_congr rfl fun g _ => by
-        rw [Module.End.mul_eq_comp, norm_comp_self]
-    _ = Nat.card G • ρ.norm := by
-        rw [Finset.sum_const, Finset.card_univ, Fintype.card_eq_nat_card]
 
 /-- **The character of `Hom(V, W)`, in any dimension**: the character of the conjugation action
 `Representation.linHom ρ σ` on `V →ₗ[k] W` is `g ↦ χ_ρ(g⁻¹) χ_σ(g)`. This is Mathlib's
