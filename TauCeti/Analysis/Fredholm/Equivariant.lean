@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 import TauCeti.Topology.Algebra.Module.InvariantComplement
 
 /-!
@@ -57,8 +56,11 @@ theorem IsFredholm.exists_fredholmPackage_forall_mapsTo {G : Type*} [Group G] [F
       MapsTo (ρ g) pkg.decDom.X₀ pkg.decDom.X₀ ∧ MapsTo (ρ g) pkg.decDom.X₁ pkg.decDom.X₁ ∧
         MapsTo (ρ' g) pkg.decCodom.X₀ pkg.decCodom.X₀ ∧
           MapsTo (ρ' g) pkg.decCodom.X₁ pkg.decCodom.X₁ := by
-  have hker (g : G) := mapsTo_ker_of_comp_eq_comp (ext (hρ g))
-  have hrange (g : G) := mapsTo_range_of_comp_eq_comp (ext (hρ g))
+  have hker (g : G) : MapsTo (ρ g) u.ker u.ker :=
+    Function.Semiconj.mapsTo_preimage (s := {0}) (t := {0}) (hρ g) (by simp)
+  have hrange (g : G) : MapsTo (ρ' g) u.range u.range := by
+    rw [LinearMap.coe_range, coe_coe]
+    exact Function.Semiconj.mapsTo_range (hρ g)
   obtain ⟨dom₁, h_dom, h_dom₁⟩ :=
     hu.closedComplemented_ker.exists_isTopCompl_forall_mapsTo hG ρ hker
   obtain ⟨codom₀, h_codom, h_codom₀⟩ :=

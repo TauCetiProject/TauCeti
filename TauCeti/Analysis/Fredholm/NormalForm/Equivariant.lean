@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Fredholm.NormalForm.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Topology.Algebra.Module.Complement
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # The equivariant Lyapunov–Schmidt reduction
@@ -124,16 +123,18 @@ of the derivative `T` of `f` at `a`, which is the finite-dimensional domain summ
 theorem mapsTo_decDom_X₀ (hf : HasFDerivAt f T a) (ha : σ a = a)
     (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) : MapsTo σ pkg.decDom.X₀ pkg.decDom.X₀ := by
   rw [← pkg.ker_eq]
-  exact mapsTo_ker_of_comp_eq_comp
-    (hf.comp_eq_comp_of_eventuallyEq σ.hasFDerivAt τ.hasFDerivAt ha hfσ)
+  have h := hf.comp_eq_comp_of_eventuallyEq σ.hasFDerivAt τ.hasFDerivAt ha hfσ
+  exact Function.Semiconj.mapsTo_preimage (s := {0}) (t := {0})
+    (fun x ↦ congr($h x) : Function.Semiconj T σ τ) (by simp)
 
 /-- If `f` intertwines `σ` with `τ` near a point `a` fixed by `σ`, then `τ` preserves the range of
 the derivative `T` of `f` at `a`, which is the essential codomain summand. -/
 theorem mapsTo_decCodom_X₁ (hf : HasFDerivAt f T a) (ha : σ a = a)
     (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) : MapsTo τ pkg.decCodom.X₁ pkg.decCodom.X₁ := by
   rw [← pkg.range_eq]
-  exact mapsTo_range_of_comp_eq_comp
-    (hf.comp_eq_comp_of_eventuallyEq σ.hasFDerivAt τ.hasFDerivAt ha hfσ)
+  have h := hf.comp_eq_comp_of_eventuallyEq σ.hasFDerivAt τ.hasFDerivAt ha hfσ
+  rw [LinearMap.coe_range, coe_coe]
+  exact Function.Semiconj.mapsTo_range fun x ↦ congr($h x)
 
 section Chart
 
