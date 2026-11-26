@@ -8,7 +8,6 @@ module
 public import Mathlib.Topology.DiscreteSubset
 public import TauCeti.Geometry.Symplectic.Floer.Chart
 import TauCeti.Geometry.Manifold.ExtChartAt.MapsTo
-import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 import TauCeti.Geometry.Symplectic.Floer.Rotation
 import TauCeti.Geometry.Symplectic.Floer.UniqueContinuation.Coordinate
 
