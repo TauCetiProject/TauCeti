@@ -28,7 +28,7 @@ type a nonzero multiple of `ω ^ (γ + 1)`, by the induction hypothesis.
 
 ## Main results
 
-* `TauCeti.bfEquiv_of_typeLT_eq_omega0_opow_mul`: well-orders of types `ω ^ γ * δ` and
+* `TauCeti.bfEquiv_of_type_lt_eq_omega0_opow_mul`: well-orders of types `ω ^ γ * δ` and
   `ω ^ γ * ε`, with `δ` and `ε` nonzero, are back-and-forth equivalent at level `γ`.
 * `TauCeti.bfEquiv_omega0_opow_mul`: the same for the canonical well-orders
   `(ω ^ γ * δ).ToType` and `(ω ^ γ * ε).ToType`.
@@ -60,7 +60,7 @@ variable {M N : Type u} [LinearOrder M] [LinearOrder N] [WellFoundedLT M] [WellF
 
 /-- In a well-order of type `ω ^ (γ + 1) * δ`, the final segment above a point has type a nonzero
 multiple of `ω ^ γ`. -/
-private theorem exists_typeLT_Ioi_eq {γ δ : Ordinal.{u}} (hM : typeLT M = ω ^ (γ + 1) * δ)
+private theorem exists_type_lt_Ioi_eq {γ δ : Ordinal.{u}} (hM : typeLT M = ω ^ (γ + 1) * δ)
     (m : M) : ∃ θ ≠ 0, typeLT (Set.Ioi m) = ω ^ γ * θ := by
   -- The final segment is nonempty, as `ω ^ (γ + 1) * δ` is a limit ordinal.
   have hlim : IsSuccLimit (typeLT M) := by
@@ -113,16 +113,16 @@ private theorem OmegaPowMul.forth {γ : Ordinal.{u}} (ih : OmegaPowMul γ) {δ �
         if μ = 0 then ρ else ω ^ γ + ρ := by
       rw [type_Iio_lt, typein_enum]
     split_ifs at hn with hμ
-    · exact bfEquiv_of_typeLT_eq (by rw [hm, hn, hμ, mul_zero, zero_add]) γ
+    · exact bfEquiv_of_type_lt_eq (by rw [hm, hn, hμ, mul_zero, zero_add]) γ
     · -- Both initial segments are ordered sums of a nonzero multiple of `ω ^ γ` and `ρ`.
-      refine (bfEquiv_of_typeLT_eq (B := (ω ^ γ * μ).ToType ⊕ₗ ρ.ToType)
+      refine (bfEquiv_of_type_lt_eq (B := (ω ^ γ * μ).ToType ⊕ₗ ρ.ToType)
         (by rw [hm, type_lt_sum_lex, type_toType, type_toType]) γ).trans <|
-        (BFEquiv.trans ?_ (bfEquiv_of_typeLT_eq (A := (ω ^ γ * 1).ToType ⊕ₗ ρ.ToType)
+        (BFEquiv.trans ?_ (bfEquiv_of_type_lt_eq (A := (ω ^ γ * 1).ToType ⊕ₗ ρ.ToType)
           (by rw [hn, type_lt_sum_lex, type_toType, type_toType, mul_one]) γ))
       exact BFEquiv.sumLex (ih _ _ μ 1 hμ one_ne_zero (type_toType _) (type_toType _))
         (BFEquiv.refl γ _)
-  · obtain ⟨θ, hθ, hθm⟩ := exists_typeLT_Ioi_eq hM m
-    obtain ⟨θ', hθ', hθn⟩ := exists_typeLT_Ioi_eq hN (Ordinal.enum (· < ·) ⟨_, hν⟩)
+  · obtain ⟨θ, hθ, hθm⟩ := exists_type_lt_Ioi_eq hM m
+    obtain ⟨θ', hθ', hθn⟩ := exists_type_lt_Ioi_eq hN (Ordinal.enum (· < ·) ⟨_, hν⟩)
     exact ih _ _ θ θ' hθ hθ' hθm hθn
 
 /-- The statement for all levels, by induction on the level. -/
@@ -152,7 +152,7 @@ private theorem omegaPowMul (γ : Ordinal.{u}) : OmegaPowMul γ := by
 /-- **Ordinal multiples at level `γ`.** Well-orders of types `ω ^ γ * δ` and `ω ^ γ * ε`, with `δ`
 and `ε` nonzero, are back-and-forth equivalent at level `γ` as structures in the language of
 orders. -/
-theorem bfEquiv_of_typeLT_eq_omega0_opow_mul {γ δ ε : Ordinal.{u}} (hδ : δ ≠ 0) (hε : ε ≠ 0)
+theorem bfEquiv_of_type_lt_eq_omega0_opow_mul {γ δ ε : Ordinal.{u}} (hδ : δ ≠ 0) (hε : ε ≠ 0)
     (hM : typeLT M = ω ^ γ * δ) (hN : typeLT N = ω ^ γ * ε) :
     BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → M) (Fin.elim0 : Fin 0 → N) :=
   omegaPowMul γ M N δ ε hδ hε hM hN
@@ -164,6 +164,6 @@ theorem bfEquiv_omega0_opow_mul (γ : Ordinal.{u}) {δ ε : Ordinal.{u}} (hδ : 
     (hε : ε ≠ 0) :
     BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → (ω ^ γ * δ).ToType)
       (Fin.elim0 : Fin 0 → (ω ^ γ * ε).ToType) :=
-  bfEquiv_of_typeLT_eq_omega0_opow_mul hδ hε (type_toType _) (type_toType _)
+  bfEquiv_of_type_lt_eq_omega0_opow_mul hδ hε (type_toType _) (type_toType _)
 
 end TauCeti

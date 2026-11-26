@@ -29,7 +29,7 @@ of orders is carried along order isomorphisms.
   order isomorphisms.
 * `TauCeti.BFEquiv.orderIso_congr`: the same for orders as structures, that is, for the empty
   tuple.
-* `TauCeti.bfEquiv_of_typeLT_eq`: well-orders of the same order type are back-and-forth
+* `TauCeti.bfEquiv_of_type_lt_eq`: well-orders of the same order type are back-and-forth
   equivalent at every level.
 -/
 
@@ -122,7 +122,7 @@ section WellOrder
 open Ordinal
 
 /-- Well-orders of the same order type are back-and-forth equivalent at every level. -/
-theorem bfEquiv_of_typeLT_eq {A B : Type u₁} [LinearOrder A] [LinearOrder B]
+theorem bfEquiv_of_type_lt_eq {A B : Type u₁} [LinearOrder A] [LinearOrder B]
     [WellFoundedLT A] [WellFoundedLT B] (h : typeLT A = typeLT B) (γ : Ordinal.{o}) :
     BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → A) (Fin.elim0 : Fin 0 → B) :=
   (BFEquiv.refl γ _).orderIso_congr (OrderIso.refl A) (OrderIso.ofRelIsoLT (type_eq.1 h).some)
