@@ -54,9 +54,7 @@ Littlewood–Paley partition of a bump function `φ`, in the same way as the Sob
 The Euclidean comparisons pass to these spaces componentwise, as continuous linear maps which do
 not change the represented functional: the inclusions `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' ≤ s`,
 `q ≤ q'` and for `s' < s` (`TauCeti.SquareChartPartition.besovInclusion`,
-`TauCeti.SquareChartPartition.besovInclusionOfLT`), the Bernstein embedding
-`B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}` for `p ≤ r`
-(`TauCeti.SquareChartPartition.besovInclusionOfExponentLE`), the change of bump function
+`TauCeti.SquareChartPartition.besovInclusionOfLT`), the change of bump function
 (`TauCeti.SquareChartPartition.besovBumpEquiv`), the inclusions `H^{s,p} ⊆ B^s_{p,∞}` and
 `B^s_{p,1} ⊆ H^{s,p}` with the Bessel-potential spaces of the same partition
 (`TauCeti.SquareChartPartition.besselPotentialSpaceToBesovSpace`,
@@ -96,7 +94,6 @@ This comparison gives no explicit equivalence constants.
   `TauCeti.SquareChartPartition.besovSpaceEquiv`: the Besov space represents exactly the
   functionals that are `B^s_{p,q}` with respect to the partition.
 * `TauCeti.SquareChartPartition.besovInclusion`, `TauCeti.SquareChartPartition.besovInclusionOfLT`,
-  `TauCeti.SquareChartPartition.besovInclusionOfExponentLE`,
   `TauCeti.SquareChartPartition.besovBumpEquiv`,
   `TauCeti.SquareChartPartition.besselPotentialSpaceToBesovSpace`,
   `TauCeti.SquareChartPartition.besovSpaceToBesselPotentialSpace` and
@@ -585,48 +582,6 @@ theorem norm_besovInclusionOfLT_le (hs : s' < s) :
       (sub_nonpos.2 hs.le)))
   exact ContinuousLinearMap.opNorm_le_bound _ hC <|
     A.norm_mapOfToDistrEq_apply_le φ _ _ hC fun u ↦ BesovSpace.norm_inclusionOfLT_le hs u
-
-/-! ### The Bernstein embedding -/
-
-variable {r : ℝ≥0∞} [Fact (1 ≤ r)]
-
-variable (q) in
-/-- **The Bernstein embedding** `B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}` of the Besov spaces of
-`A`, for `p ≤ r`, where `n` is the dimension of the model space `E` and `1/∞ = 0`: the Euclidean
-embedding `TauCeti.BesovSpace.inclusionOfExponentLE` in every component. It represents the same
-functional on bundle tests
-(`TauCeti.SquareChartPartition.besovToDistribution_besovInclusionOfExponentLE`); at the level of
-the predicate it is `TauCeti.SquareChartPartition.MemBesov.mono_exponent`. -/
-def besovInclusionOfExponentLE (hpr : p ≤ r) :
-    A.besovSpace φ s p q →L[ℝ]
-      A.besovSpace φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q :=
-  A.mapOfToDistrEq φ (BesovSpace.inclusionOfExponentLE ℂ φ q hpr)
-    (BesovSpace.toDistr_inclusionOfExponentLE hpr)
-
-@[simp]
-theorem besovInclusionOfExponentLE_apply (hpr : p ≤ r) (u : A.besovSpace φ s p q)
-    (k : ι × Fin (Module.finrank ℝ F)) :
-    (A.besovInclusionOfExponentLE φ q hpr u).val k =
-      BesovSpace.inclusionOfExponentLE ℂ φ q hpr (u.val k) :=
-  (rfl)
-
-/-- The Bernstein embedding does not change the represented functional. -/
-@[simp]
-theorem besovToDistribution_besovInclusionOfExponentLE (hpr : p ≤ r) (u : A.besovSpace φ s p q) :
-    A.besovToDistribution φ _ r q (A.besovInclusionOfExponentLE φ q hpr u) =
-      A.besovToDistribution φ s p q u :=
-  A.besovToDistribution_mapOfToDistrEq φ _ _ u
-
-@[simp]
-theorem besovInclusionOfExponentLE_ofMemBesov (hpr : p ≤ r) {T : BundleTest I F V →L_c[ℝ] ℝ}
-    (hT : A.MemBesov φ s p q T) :
-    A.besovInclusionOfExponentLE φ q hpr (A.ofMemBesov φ hT) =
-      A.ofMemBesov φ (hT.mono_exponent hpr) :=
-  A.besovToDistribution_injective φ (by simp)
-
-theorem besovInclusionOfExponentLE_injective (hpr : p ≤ r) :
-    Function.Injective (A.besovInclusionOfExponentLE φ (s := s) q hpr) :=
-  A.mapOfToDistrEq_injective φ _ _
 
 /-! ### Change of bump function -/
 
