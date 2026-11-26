@@ -51,17 +51,36 @@ section Angle
 
 variable {ι : Type*} [Fintype ι]
 
-/-- In the preferred chart at `x`, a function of the `i`-th angle of the torus `(ℝ / 2πℤ)^ι` given
-by `g ∘ toCircle` is read as `y ↦ g (exp (i yᵢ))`. -/
-private theorem comp_extChartAt_symm_eventuallyEq (g : Circle → ℝ) (i : ι)
+/-- On the circle `ℝ / 2πℤ`, the real part of the class of `s` on the unit circle is `cos s`. -/
+private theorem re_toCircle_coe_two_pi (s : ℝ) :
+    (toCircle (s : AddCircle (2 * π)) : ℂ).re = Real.cos s := by
+  rw [re_toCircle_coe, div_self Real.two_pi_pos.ne', one_mul]
+
+/-- On the circle `ℝ / 2πℤ`, the imaginary part of the class of `s` on the unit circle is
+`sin s`. -/
+private theorem im_toCircle_coe_two_pi (s : ℝ) :
+    (toCircle (s : AddCircle (2 * π)) : ℂ).im = Real.sin s := by
+  rw [im_toCircle_coe, div_self Real.two_pi_pos.ne', one_mul]
+
+/-- In the preferred chart at `x`, a function `f` of the torus `(ℝ / 2πℤ)^ι` whose value at the
+class of every real vector `t` is `h tᵢ` is read as `y ↦ h yᵢ`. -/
+private theorem comp_extChartAt_symm_eventuallyEq {f : (∀ _ : ι, AddCircle (2 * π)) → ℝ}
+    {h : ℝ → ℝ} {i : ι} (hf : ∀ t : ι → ℝ, f (fun j ↦ (t j : AddCircle (2 * π))) = h (t i))
     (x : ∀ _ : ι, AddCircle (2 * π)) :
-    (fun z : ∀ _ : ι, AddCircle (2 * π) ↦ g (toCircle (z i))) ∘
-        (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).symm
-      =ᶠ[𝓝 (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x)]
-      fun y ↦ g (toCircle (y i : AddCircle (2 * π))) := by
+    f ∘ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).symm
+      =ᶠ[𝓝 (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x)] fun y ↦ h (y i) := by
   filter_upwards [extChartAt_target_mem_nhds (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x]
     with y hy
-  rw [Function.comp_apply, extChartAt_pi_symm_apply x hy]
+  rw [Function.comp_apply, extChartAt_pi_symm_apply x hy, hf]
+
+/-- A function `f` of the torus `(ℝ / 2πℤ)^ι` whose value at the class of every real vector `t` is
+`h tᵢ` takes the value `h` at the `i`-th coordinate of the chart point of `x`. -/
+private theorem apply_eq_extChartAt {f : (∀ _ : ι, AddCircle (2 * π)) → ℝ} {h : ℝ → ℝ} {i : ι}
+    (hf : ∀ t : ι → ℝ, f (fun j ↦ (t j : AddCircle (2 * π))) = h (t i))
+    (x : ∀ _ : ι, AddCircle (2 * π)) :
+    f x = h (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x i) := by
+  have := (comp_extChartAt_symm_eventuallyEq hf x).self_of_nhds
+  rwa [Function.comp_apply, extChartAt_to_inv] at this
 
 variable (ι) in
 /-- The cosine `x ↦ cos xᵢ` of the `i`-th angle of the torus `(ℝ / 2πℤ)^ι`, as a smooth
@@ -70,9 +89,9 @@ noncomputable def torusAngleCos (i : ι) :
     C^∞⟮ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ), ∀ _ : ι, AddCircle (2 * π); ℝ⟯ :=
   ⟨fun x ↦ (toCircle (x i) : ℂ).re, fun x ↦
     contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.2 <|
-      ContDiffAt.congr_of_eventuallyEq
-        (by simp only [re_toCircle_coe]; fun_prop)
-        (comp_extChartAt_symm_eventuallyEq (fun z ↦ (z : ℂ).re) i x)⟩
+      ContDiffAt.congr_of_eventuallyEq (by fun_prop)
+        (comp_extChartAt_symm_eventuallyEq (h := Real.cos)
+          (fun t ↦ re_toCircle_coe_two_pi (t i)) x)⟩
 
 variable (ι) in
 /-- The sine `x ↦ sin xᵢ` of the `i`-th angle of the torus `(ℝ / 2πℤ)^ι`, as a smooth function. -/
@@ -80,9 +99,9 @@ noncomputable def torusAngleSin (i : ι) :
     C^∞⟮ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ), ∀ _ : ι, AddCircle (2 * π); ℝ⟯ :=
   ⟨fun x ↦ (toCircle (x i) : ℂ).im, fun x ↦
     contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.2 <|
-      ContDiffAt.congr_of_eventuallyEq
-        (by simp only [im_toCircle_coe]; fun_prop)
-        (comp_extChartAt_symm_eventuallyEq (fun z ↦ (z : ℂ).im) i x)⟩
+      ContDiffAt.congr_of_eventuallyEq (by fun_prop)
+        (comp_extChartAt_symm_eventuallyEq (h := Real.sin)
+          (fun t ↦ im_toCircle_coe_two_pi (t i)) x)⟩
 
 /-- The cosine of the `i`-th angle is the real part of the `i`-th coordinate on the unit circle. -/
 theorem torusAngleCos_apply (i : ι) (x : ∀ _ : ι, AddCircle (2 * π)) :
@@ -99,30 +118,13 @@ theorem torusAngleSin_apply (i : ι) (x : ∀ _ : ι, AddCircle (2 * π)) :
 @[simp]
 theorem torusAngleCos_coe (i : ι) (t : ι → ℝ) :
     torusAngleCos ι i (fun j ↦ (t j : AddCircle (2 * π))) = Real.cos (t i) := by
-  rw [torusAngleCos_apply, re_toCircle_coe, div_self Real.two_pi_pos.ne', one_mul]
+  rw [torusAngleCos_apply, re_toCircle_coe_two_pi]
 
 /-- The sine of the `i`-th angle at the class of a real vector `t` is `sin tᵢ`. -/
 @[simp]
 theorem torusAngleSin_coe (i : ι) (t : ι → ℝ) :
     torusAngleSin ι i (fun j ↦ (t j : AddCircle (2 * π))) = Real.sin (t i) := by
-  rw [torusAngleSin_apply, im_toCircle_coe, div_self Real.two_pi_pos.ne', one_mul]
-
-/-- Read in the preferred chart at `x`, the `i`-th angle of `x` is the `i`-th coordinate of its
-chart point, so its cosine and sine are those of that coordinate. -/
-private theorem torusAngleCos_torusAngleSin_eq_extChartAt (i : ι)
-    (x : ∀ _ : ι, AddCircle (2 * π)) :
-    torusAngleCos ι i x = Real.cos (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x i) ∧
-      torusAngleSin ι i x =
-        Real.sin (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x i) := by
-  have hx : x = fun j ↦ ((extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x j : ℝ) :
-      AddCircle (2 * π)) := by
-    rw [← extChartAt_pi_symm_apply x (mem_extChartAt_target x),
-      (extChartAt _ x).left_inv (mem_extChartAt_source x)]
-  constructor
-  · conv_lhs => rw [hx]
-    exact torusAngleCos_coe i _
-  · conv_lhs => rw [hx]
-    exact torusAngleSin_coe i _
+  rw [torusAngleSin_apply, im_toCircle_coe_two_pi]
 
 omit [Fintype ι] in
 /-- The covector `c • proj i` of `ι → ℝ` sends `w` to `c * wᵢ`. -/
@@ -130,35 +132,39 @@ private theorem smul_proj_apply (c : ℝ) (i : ι) (w : ι → ℝ) :
     (c • ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i) w = c * w i := by
   rw [smul_apply, ContinuousLinearMap.proj_apply, smul_eq_mul]
 
+/-- A function `f` of the torus `(ℝ / 2πℤ)^ι` whose value at the class of every real vector `t` is
+`h tᵢ`, for `h` with derivative `h'`, has differential `g x dxᵢ`, where `g` is the function whose
+value at the class of `t` is `h' tᵢ`. -/
+private theorem mvfderiv_apply_of_coe {f g : (∀ _ : ι, AddCircle (2 * π)) → ℝ} {h h' : ℝ → ℝ}
+    {i : ι} (hf : ∀ t : ι → ℝ, f (fun j ↦ (t j : AddCircle (2 * π))) = h (t i))
+    (hg : ∀ t : ι → ℝ, g (fun j ↦ (t j : AddCircle (2 * π))) = h' (t i))
+    (hh : ∀ s, HasDerivAt h (h' s) s) (x : ∀ _ : ι, AddCircle (2 * π))
+    (v : TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x) :
+    mvfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) f x v = g x * v i := by
+  have hd : HasFDerivAt (fun y : ι → ℝ ↦ h (y i))
+      (h' (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x i) •
+        ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i)
+      (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x) :=
+    (hh _).comp_hasFDerivAt _ (hasFDerivAt_apply i _)
+  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, (comp_extChartAt_symm_eventuallyEq hf x).fderiv_eq,
+    hd.fderiv, ← apply_eq_extChartAt hg x]
+  -- The tangent vector `v` is a vector of `ι → ℝ`.
+  exact smul_proj_apply _ i v
+
 /-- The cosine of the `i`-th angle has differential `-sin xᵢ dxᵢ`. -/
 theorem mvfderiv_torusAngleCos (i : ι) (x : ∀ _ : ι, AddCircle (2 * π))
     (v : TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x) :
     mvfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusAngleCos ι i) x v =
-      -torusAngleSin ι i x * v i := by
-  have heq : torusAngleCos ι i ∘ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).symm
-      =ᶠ[𝓝 (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x)] fun y ↦ Real.cos (y i) := by
-    filter_upwards [extChartAt_target_mem_nhds (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x]
-      with y hy
-    rw [Function.comp_apply, extChartAt_pi_symm_apply x hy, torusAngleCos_coe]
-  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, heq.fderiv_eq,
-    (hasFDerivAt_apply i _).cos.fderiv, (torusAngleCos_torusAngleSin_eq_extChartAt i x).2]
-  -- The tangent vector `v` is a vector of `ι → ℝ`.
-  exact smul_proj_apply _ i v
+      -torusAngleSin ι i x * v i :=
+  mvfderiv_apply_of_coe (torusAngleCos_coe i) (g := fun x ↦ -torusAngleSin ι i x)
+    (fun t ↦ by rw [torusAngleSin_coe]) Real.hasDerivAt_cos x v
 
 /-- The sine of the `i`-th angle has differential `cos xᵢ dxᵢ`. -/
 theorem mvfderiv_torusAngleSin (i : ι) (x : ∀ _ : ι, AddCircle (2 * π))
     (v : TangentSpace (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x) :
     mvfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusAngleSin ι i) x v =
-      torusAngleCos ι i x * v i := by
-  have heq : torusAngleSin ι i ∘ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).symm
-      =ᶠ[𝓝 (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x x)] fun y ↦ Real.sin (y i) := by
-    filter_upwards [extChartAt_target_mem_nhds (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x]
-      with y hy
-    rw [Function.comp_apply, extChartAt_pi_symm_apply x hy, torusAngleSin_coe]
-  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, heq.fderiv_eq,
-    (hasFDerivAt_apply i _).sin.fderiv, (torusAngleCos_torusAngleSin_eq_extChartAt i x).1]
-  -- The tangent vector `v` is a vector of `ι → ℝ`.
-  exact smul_proj_apply _ i v
+      torusAngleCos ι i x * v i :=
+  mvfderiv_apply_of_coe (torusAngleSin_coe i) (torusAngleCos_coe i) Real.hasDerivAt_sin x v
 
 /-- The cosine of an angle of the torus lies in `[-1, 1]`. -/
 theorem abs_torusAngleCos_le_one (i : ι) (x : ∀ _ : ι, AddCircle (2 * π)) :
