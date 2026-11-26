@@ -416,6 +416,13 @@ theorem hamiltonianVectorField_eq_zero_of_not_mdifferentiableAt {x : M}
     (h : ¬MDifferentiableAt I 𝓘(ℝ) f x) : σ.hamiltonianVectorField f x = 0 := by
   simp [hamiltonianVectorField_def, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt h]
 
+/-- The Hamiltonian vector field vanishes at every point where the flat map of `σ` is not
+invertible, by the convention that `ContinuousLinearMap.inverse` is `0` there. -/
+theorem hamiltonianVectorField_eq_zero_of_not_isInvertible_flat {x : M}
+    (hx : ¬(σ.flat x).IsInvertible) (f : M → ℝ) : σ.hamiltonianVectorField f x = 0 := by
+  rw [hamiltonianVectorField_def, ContinuousLinearMap.inverse_of_not_isInvertible hx,
+    zero_apply]
+
 /-- The Hamiltonian vector field is additive on differentiable functions. -/
 theorem hamiltonianVectorField_add {x : M} (hf : MDifferentiableAt I 𝓘(ℝ) f x)
     (hg : MDifferentiableAt I 𝓘(ℝ) g x) :
@@ -972,6 +979,13 @@ theorem poissonBracket_const_right (σ : SmoothTwoForm I M) (f : M → ℝ) (c :
   rw [poissonBracket_def, hamiltonianVectorField_const, ← SmoothForm.bilinFormAt_apply,
     Pi.zero_apply, map_zero]
 
+/-- The Poisson bracket vanishes at every point where the flat map of `σ` is not invertible, since
+both Hamiltonian vector fields vanish there. -/
+theorem poissonBracket_eq_zero_of_not_isInvertible_flat {x : M} (hx : ¬(σ.flat x).IsInvertible)
+    (f g : M → ℝ) : σ.poissonBracket f g x = 0 := by
+  rw [poissonBracket_def, hamiltonianVectorField_eq_zero_of_not_isInvertible_flat hx,
+    SmoothBundleForm.eval₂_zero_left]
+
 /-- Adding a constant to the first Hamiltonian does not change the Poisson bracket. -/
 @[simp]
 theorem poissonBracket_add_const_left (σ : SmoothTwoForm I M) (f : M → ℝ) (c : ℝ) (g : M → ℝ)
@@ -1080,9 +1094,8 @@ theorem poissonBracket_eq_neg_mvfderiv (σ : SmoothTwoForm I M) (f g : M → ℝ
   by_cases hx : (σ.flat x).IsInvertible
   · rw [← neg_poissonBracket, poissonBracket_def, ← flat_apply]
     simp [hamiltonianVectorField_def, hx.self_apply_inverse]
-  · simp only [poissonBracket_def, hamiltonianVectorField_def,
-      ContinuousLinearMap.inverse_of_not_isInvertible hx, zero_apply, map_zero, neg_zero]
-    rw [← flat_apply, map_zero]
+  · rw [poissonBracket_eq_zero_of_not_isInvertible_flat hx,
+      hamiltonianVectorField_eq_zero_of_not_isInvertible_flat hx, map_zero, neg_zero]
 
 /-- The Poisson bracket `{f, g}` is the derivative of `f` along the Hamiltonian vector field of
 `g`. -/
