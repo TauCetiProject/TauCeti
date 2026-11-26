@@ -307,13 +307,11 @@ with neck length `T`: both are the pair-of-pants structure there. -/
 theorem cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation {T : ℝ}
     (hR : 2 ≤ R) (hRT : T ≤ R + 1) {w : ℂ} (hw : w ∈ truncation T) :
     h₀.cappedComparisonAlmostComplex J hJ R w = h₀.cappedAlmostComplex J hJ 1 T w := by
-  have hσ {L : ℝ} (hL : T ≤ L + 2) (q : Puncture) : q.endSign * (q.endCoord w).re ≤ L + 2 :=
-    ((mem_truncation.1 hw).2.2 q).trans hL
   rw [h₀.cappedComparisonAlmostComplex_of_two_le J hJ hR]
   refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x ↦ ?_
   rw [almostComplexStructureAt_cappedAlmostComplex, almostComplexStructureAt_cappedAlmostComplex,
-    Floer.cappedAlmostComplex_eq_pairOfPantsAlmostComplex _ le_rfl (hσ (by linarith)),
-    Floer.cappedAlmostComplex_eq_pairOfPantsAlmostComplex _ le_rfl (hσ (by linarith))]
+    ← Floer.cappedComparisonAlmostComplex_of_two_le _ hR,
+    Floer.cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation _ hR hRT hw]
 
 /-- **The comparison family is smooth** along every `C^n` family of family parameters `R`, points
 `f` of `ℂ` and points `b` of `M`. -/
