@@ -67,6 +67,12 @@ connection and the cutoffs, which enter the section on a four-manifold, are not 
   for the Dirac remainder `i c(h b) ζ`.
 * `TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le`: the quadratic
   estimate for the curvature remainder `q(ζ) / 2`.
+* `TauCeti.SeibergWitten.`
+  `exists_sqrt_rescaledTargetNormSq_smul_flatDirac_sub_flatDeformationDirac_sub_le`,
+  `TauCeti.SeibergWitten.`
+  `exists_sqrt_rescaledTargetNormSq_flatCurvature_sub_flatDeformationCurvature_sub_le`: the same
+  estimates for the nonlinear parts written through the flat Dirac and curvature operators and
+  their linearizations, in which the base-point values cancel.
 
 ## References
 
@@ -108,6 +114,19 @@ private theorem rpow_finrank_eq (h : ℝ) : h ^ (finrank ℝ V : ℝ) = h ^ 4 :=
   norm_num
 
 variable [MeasurableSpace V] [BorelSpace V]
+
+/-- The bilinear algebra estimate of the semiclassical norms on the four-space
+(`TauCeti.exists_semiclassicalSobolevNorm_bilinear_le`) for one fixed continuous bilinear map `L`,
+with its operator norm absorbed into the constant. -/
+private theorem exists_semiclassicalSobolevNorm_apply_apply_le [FiniteDimensional ℝ B]
+    [FiniteDimensional ℝ S] {k : ℕ} (hk : finrank ℝ V < 2 * k) (L : B →L[ℝ] S →L[ℝ] T) :
+    ∃ C, 0 ≤ C ∧ ∀ h : ℝ, 0 < h → ∀ (f : V → B) (g : V → S), ContDiff ℝ k f → ContDiff ℝ k g →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun x ↦ L (f x) (g x)) 2) ∧
+        semiclassicalSobolevNorm k h (fun x ↦ L (f x) (g x)) ≤
+          C * semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
+  obtain ⟨C, hC, hB⟩ := exists_semiclassicalSobolevNorm_bilinear_le (F := B) hk S T
+  exact ⟨C * ‖L‖, by positivity, fun h hh f g hf hg hfm hgm ↦ hB h hh L f g hf hg hfm hgm⟩
 
 /-- The target norm through order `k` is at most `h²` times the semiclassical norm of order `k`:
 `‖y‖_(F_(r,k)) ≤ h² ‖y‖_{k,h}`. -/
@@ -239,7 +258,7 @@ theorem exists_sqrt_rescaledTargetNormSq_flatDirac_const_sub_flatDirac_const_le 
         C / h ^ 2 * (√(rescaledFieldNormSq k h b₁ ζ₁) + √(rescaledFieldNormSq k h b₂ ζ₂)) *
           √(rescaledFieldNormSq k h (b₁ - b₂) (ζ₁ - ζ₂)) := by
   have hk' : finrank ℝ V < 2 * k := by rw [Fact.out (p := finrank ℝ V = 4)]; omega
-  obtain ⟨C₀, hC₀, hB⟩ := exists_semiclassicalSobolevNorm_bilinear_le hk' (cliffordMulL o ρ)
+  obtain ⟨C₀, hC₀, hB⟩ := exists_semiclassicalSobolevNorm_apply_apply_le hk' (cliffordMulL o ρ)
   refine ⟨6 * (k + 1) * C₀, by positivity, fun h hh b₁ b₂ ζ₁ ζ₂ hb₁ hb₂ hζ₁ hζ₂ hb₁m hb₂m hζ₁m
     hζ₂m ↦ sqrt_rescaledTargetNormSq_le_of_le hC₀ hh ?_⟩
   -- The difference of the remainders splits as `i c(h (b₁ - b₂)) ζ₁ + i c(h b₂) (ζ₁ - ζ₂)`.
@@ -271,6 +290,62 @@ theorem exists_sqrt_rescaledTargetNormSq_flatDirac_const_sub_flatDirac_const_le 
   refine (semiclassicalSobolevNorm_add_le hc₁ hc₂ h₁m hh.le).trans ?_
   nlinarith [mul_nonneg hC₀ (mul_nonneg ‹0 ≤ semiclassicalSobolevNorm k h (ζ₁ - ζ₂)›
     (add_nonneg ‹0 ≤ semiclassicalSobolevNorm k h ζ₁› ‹0 ≤ semiclassicalSobolevNorm k h ζ₂›))]
+
+variable (e : OrthonormalBasis (Fin 4) ℝ V)
+
+/-- **The quadratic estimate for the nonlinear part of the flat Dirac operator.** Let `k ≥ 3`.
+There is a constant `C ≥ 0` such that for every scale `h > 0`, every pair `(b, ψ)` with `ψ`
+differentiable, and all increments `(b₁, ζ₁)` and `(b₂, ζ₂)` of class `Cᵏ` with square-integrable
+derivatives through order `k`, the expressions
+`M(bᵢ, ζᵢ) = D_{b + bᵢ} (ψ + ζᵢ) - D'_{(b, ψ)}(bᵢ, ζᵢ)`, weighted by `h`, satisfy
+
+`‖h (M(b₁, ζ₁) - M(b₂, ζ₂))‖_(F_(r,k)) ≤
+  (C / h²) (‖(b₁, ζ₁)‖_(E_(r,k)) + ‖(b₂, ζ₂)‖_(E_(r,k))) ‖(b₁ - b₂, ζ₁ - ζ₂)‖_(E_(r,k))`.
+
+Each `M(bᵢ, ζᵢ)` is the nonlinear part `i c(bᵢ) ζᵢ` of the flat Dirac operator plus the base-point
+value `D_b ψ` (`TauCeti.SeibergWitten.flatDirac_add_eq_add_flatDeformationDirac_add`); that common
+term cancels, and `h i c(bᵢ) ζᵢ = i c(h bᵢ) ζᵢ` is the Dirac remainder read at scale `h`
+(`TauCeti.SeibergWitten.`
+`exists_sqrt_rescaledTargetNormSq_flatDirac_const_sub_flatDirac_const_le`). The constant does not
+depend on `h` or on `(b, ψ)`. -/
+theorem exists_sqrt_rescaledTargetNormSq_smul_flatDirac_sub_flatDeformationDirac_sub_le {k : ℕ}
+    (hk : 2 < k) :
+    ∃ C, 0 ≤ C ∧ ∀ h : ℝ, 0 < h → ∀ (b b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ)
+      (ψ ζ₁ ζ₂ : V → positiveHalfSpinors o ρ), Differentiable ℝ (fun y ↦ (ψ y : W)) →
+      ContDiff ℝ k b₁ → ContDiff ℝ k b₂ → ContDiff ℝ k ζ₁ → ContDiff ℝ k ζ₂ →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i b₁) 2) → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i b₂) 2) →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i ζ₁) 2) → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i ζ₂) 2) →
+      √(rescaledTargetNormSq (k + 1) h fun y ↦
+          h • ((flatDirac ρ (b + b₁) (fun z ↦ ((ψ + ζ₁) z : W)) y -
+              flatDeformationDirac e b b₁ ψ ζ₁ y) -
+            (flatDirac ρ (b + b₂) (fun z ↦ ((ψ + ζ₂) z : W)) y -
+              flatDeformationDirac e b b₂ ψ ζ₂ y))) ≤
+        C / h ^ 2 * (√(rescaledFieldNormSq k h b₁ ζ₁) + √(rescaledFieldNormSq k h b₂ ζ₂)) *
+          √(rescaledFieldNormSq k h (b₁ - b₂) (ζ₁ - ζ₂)) := by
+  obtain ⟨C, hC, hDirac⟩ :=
+    exists_sqrt_rescaledTargetNormSq_flatDirac_const_sub_flatDirac_const_le (V := V) (o := o)
+      (ρ := ρ) hk
+  refine ⟨C, hC, fun h hh b b₁ b₂ ψ ζ₁ ζ₂ hψ hb₁ hb₂ hζ₁ hζ₂ hb₁m hb₂m hζ₁m hζ₂m ↦ ?_⟩
+  -- The underlying spinor fields in `W` are differentiable.
+  have hcoe {ζ : V → positiveHalfSpinors o ρ} (hζ : ContDiff ℝ k ζ) :
+      Differentiable ℝ (fun y ↦ (ζ y : W)) :=
+    (((positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ).contDiff.comp hζ).differentiable
+      (by norm_cast; omega)
+  -- The weighted nonlinear parts differ by the difference of the Dirac remainders.
+  have hN : (fun y ↦ h • ((flatDirac ρ (b + b₁) (fun z ↦ ((ψ + ζ₁) z : W)) y -
+        flatDeformationDirac e b b₁ ψ ζ₁ y) -
+      (flatDirac ρ (b + b₂) (fun z ↦ ((ψ + ζ₂) z : W)) y -
+        flatDeformationDirac e b b₂ ψ ζ₂ y))) =
+      fun y ↦ flatDirac ρ (h • b₁) (fun _ ↦ (ζ₁ y : W)) y -
+        flatDirac ρ (h • b₂) (fun _ ↦ (ζ₂ y : W)) y := by
+    funext y
+    rw [flatDirac_add_eq_add_flatDeformationDirac_add e (hψ y) (hcoe hζ₁ y),
+      flatDirac_add_eq_add_flatDeformationDirac_add e (hψ y) (hcoe hζ₂ y),
+      flatDirac_smul_connection_const, flatDirac_smul_connection_const, ← smul_sub]
+    congr 1
+    abel
+  rw [hN]
+  exact hDirac h hh b₁ b₂ ζ₁ ζ₂ hb₁ hb₂ hζ₁ hζ₂ hb₁m hb₂m hζ₁m hζ₂m
 
 end Dirac
 
@@ -309,7 +384,7 @@ theorem exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le {k : ℕ} (hk :
           √(rescaledFieldNormSq k h (b₁ - b₂) (ζ₁ - ζ₂)) := by
   have hk' : finrank ℝ V < 2 * k := by rw [Fact.out (p := finrank ℝ V = 4)]; omega
   obtain ⟨C₀, hC₀, hB⟩ :=
-    exists_semiclassicalSobolevNorm_bilinear_le hk' (quadraticTwoFormPolarL o ρ hkl)
+    exists_semiclassicalSobolevNorm_apply_apply_le hk' (quadraticTwoFormPolarL o ρ hkl)
   refine ⟨6 * (k + 1) * C₀, by positivity, fun h hh b₁ b₂ ζ₁ ζ₂ hζ₁ hζ₂ hζ₁m hζ₂m ↦
     sqrt_rescaledTargetNormSq_le_of_le hC₀ hh ?_⟩
   -- `q(ζ₁) / 2 - q(ζ₂) / 2 = q'(ζ₁ - ζ₂, ζ₁ + ζ₂) / 4`.
@@ -340,6 +415,48 @@ theorem exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le {k : ℕ} (hk :
       ‹0 ≤ semiclassicalSobolevNorm k h ζ₁›),
     mul_nonneg hC₀ (mul_nonneg (mul_nonneg hh.le ‹0 ≤ semiclassicalSobolevNorm k h b₂›)
       ‹0 ≤ semiclassicalSobolevNorm k h (ζ₁ - ζ₂)›)]
+
+/-- **The quadratic estimate for the nonlinear part of the flat curvature equation.** Let
+`k ≥ 3`. There is a constant `C ≥ 0` such that for every scale `h > 0`, every pair `(b, ψ)` with
+`b` differentiable, and all increments `(b₁, ζ₁)` and `(b₂, ζ₂)` with `b₁`, `b₂` differentiable
+and `ζ₁`, `ζ₂` of class `Cᵏ` with square-integrable derivatives through order `k`, the expressions
+`M(bᵢ, ζᵢ) = flatCurvature (b + bᵢ) (ψ + ζᵢ) - F'_ψ(bᵢ, ζᵢ)` satisfy
+
+`‖M(b₁, ζ₁) - M(b₂, ζ₂)‖_(F_(r,k)) ≤
+  (C / h²) (‖(b₁, ζ₁)‖_(E_(r,k)) + ‖(b₂, ζ₂)‖_(E_(r,k))) ‖(b₁ - b₂, ζ₁ - ζ₂)‖_(E_(r,k))`.
+
+Each `M(bᵢ, ζᵢ)` is the nonlinear part `q(ζᵢ) / 2` of the flat curvature equation plus the
+base-point value `flatCurvature b ψ` (`TauCeti.SeibergWitten.flatCurvature_add`); that common term
+cancels, so `M(b₁, ζ₁) - M(b₂, ζ₂)` is the difference of the curvature remainders
+(`TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le`). The constant
+does not depend on `h` or on `(b, ψ)`. -/
+theorem exists_sqrt_rescaledTargetNormSq_flatCurvature_sub_flatDeformationCurvature_sub_le
+    {k : ℕ} (hk : 2 < k) :
+    ∃ C, 0 ≤ C ∧ ∀ h : ℝ, 0 < h → ∀ (b b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ)
+      (ψ ζ₁ ζ₂ : V → positiveHalfSpinors o ρ), Differentiable ℝ b → Differentiable ℝ b₁ →
+      Differentiable ℝ b₂ → ContDiff ℝ k ζ₁ → ContDiff ℝ k ζ₂ →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i ζ₁) 2) → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i ζ₂) 2) →
+      √(rescaledTargetNormSq (k + 1) h fun y ↦
+          (flatCurvature o ρ hkl (b + b₁) (ψ + ζ₁) y -
+              flatDeformationCurvature o ρ hkl b₁ ψ ζ₁ y) -
+            (flatCurvature o ρ hkl (b + b₂) (ψ + ζ₂) y -
+              flatDeformationCurvature o ρ hkl b₂ ψ ζ₂ y)) ≤
+        C / h ^ 2 * (√(rescaledFieldNormSq k h b₁ ζ₁) + √(rescaledFieldNormSq k h b₂ ζ₂)) *
+          √(rescaledFieldNormSq k h (b₁ - b₂) (ζ₁ - ζ₂)) := by
+  obtain ⟨C, hC, hq⟩ :=
+    exists_sqrt_rescaledTargetNormSq_quadraticTwoForm_sub_le (o := o) (ρ := ρ) hkl hk
+  refine ⟨C, hC, fun h hh b b₁ b₂ ψ ζ₁ ζ₂ hb hb₁ hb₂ hζ₁ hζ₂ hζ₁m hζ₂m ↦ ?_⟩
+  -- The nonlinear parts differ by `q(ζ₁) / 2 - q(ζ₂) / 2`.
+  have hN : (fun y ↦ (flatCurvature o ρ hkl (b + b₁) (ψ + ζ₁) y -
+        flatDeformationCurvature o ρ hkl b₁ ψ ζ₁ y) -
+      (flatCurvature o ρ hkl (b + b₂) (ψ + ζ₂) y - flatDeformationCurvature o ρ hkl b₂ ψ ζ₂ y)) =
+      fun y ↦ (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (ζ₁ y) : ⋀[ℝ]^2 V) -
+        (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (ζ₂ y) : ⋀[ℝ]^2 V) := by
+    funext y
+    rw [flatCurvature_add hkl (hb y) (hb₁ y), flatCurvature_add hkl (hb y) (hb₂ y)]
+    abel
+  rw [hN]
+  exact hq h hh b₁ b₂ ζ₁ ζ₂ hζ₁ hζ₂ hζ₁m hζ₂m
 
 end Curvature
 

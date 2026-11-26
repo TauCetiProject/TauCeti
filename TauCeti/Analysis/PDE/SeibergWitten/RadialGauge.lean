@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Topology.ContinuousMap.Ascoli
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
@@ -214,9 +215,6 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_radialGauge [FiniteDimension
     exact add_le_add (hC n y hy) (mul_le_mul (hM n y hy) (hA n y hy) (norm_nonneg _)
       ((norm_nonneg _).trans (hM n y hy)))
   -- Arzelà–Ascoli, first for the connections and then for the sections.
-  have : FiniteDimensional ℝ (E [⋀^Fin 1]→L[ℝ] ℝ) := LinearEquiv.finiteDimensional
-    (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ)
-      (0 : Fin 1)).toLinearEquiv
   have hcequi : EquicontinuousOn c s := equicontinuousOn_of_forall_isCompact_norm_fderiv_le hso hc
     fun K hK hKs ↦ isLocallyBoundedOn_def.1 hDc K hKs hK
   have hβequi : EquicontinuousOn β s := equicontinuousOn_of_forall_isCompact_norm_fderiv_le hso hβ

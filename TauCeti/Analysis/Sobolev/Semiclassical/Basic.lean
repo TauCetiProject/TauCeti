@@ -45,11 +45,13 @@ constants independent of `h`**:
 * `|f(x)| ≤ C ‖f‖_{k,h}` (`TauCeti.exists_norm_le_mul_semiclassicalSobolevNorm`);
 * `‖f g‖_{k,h} ≤ C ‖f‖_{k,h} ‖g‖_{k,h}` (`TauCeti.exists_semiclassicalSobolevNorm_mul_le`).
 
-The algebra estimate extends to a continuous bilinear map `B` with finite-dimensional source
-spaces, `‖B (f, g)‖_{k,h} ≤ C ‖f‖_{k,h} ‖g‖_{k,h}`
-(`TauCeti.exists_semiclassicalSobolevNorm_bilinear_le`), by expanding `B (f, g)` in bases of the
-two sources into finitely many products of scalar coordinates. This covers the nonlinear terms of
-field equations, such as Clifford multiplication of a spinor by a one-form.
+The algebra estimate extends to every continuous bilinear map `L` with finite-dimensional source
+spaces, `‖L (f, g)‖_{k,h} ≤ C ‖L‖ ‖f‖_{k,h} ‖g‖_{k,h}` with `C` independent of `h` and `L`
+(`TauCeti.exists_semiclassicalSobolevNorm_bilinear_le`), by expanding `f` and `g` in bases of the
+two sources into finitely many products of scalar coordinates and composing with fixed linear
+maps, which does not increase the norm by more than their operator norm
+(`TauCeti.semiclassicalSobolevNorm_clm_comp_le`). This covers the nonlinear terms of field
+equations, such as Clifford multiplication of a spinor by a one-form.
 
 These give pointwise control of nonlinear terms at the microscopic scale without any loss in `h`.
 The unscaled norms behave quite differently: on a function concentrated at scale `h`, the sum of
@@ -106,6 +108,7 @@ the semiclassical and unscaled norms satisfy
 * `TauCeti.exists_norm_le_mul_semiclassicalSobolevNorm`: the Sobolev embedding, uniformly in `h`.
 * `TauCeti.exists_semiclassicalSobolevNorm_mul_le`: the algebra estimate, uniformly in `h`.
 * `TauCeti.exists_semiclassicalSobolevNorm_bilinear_le`: the same for bilinear maps.
+* `TauCeti.semiclassicalSobolevNorm_clm_comp_le`: composition with a continuous linear map.
 * `TauCeti.mul_semiclassicalSobolevNorm_fderiv_le`: `h D` is bounded from order `k + 1` to
   order `k`.
 * `TauCeti.semiclassicalSobolevNorm_smul_le_of_le_left`: multipliers with semiclassical `Cᵏ`
@@ -655,107 +658,150 @@ end Multiplier
 
 section Bilinear
 
-variable {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup H]
-  [NormedSpace ℝ H] {k : ℕ} {h : ℝ}
+/-- **Composition with a fixed continuous linear map.** For `f` of class `Cᵏ` with
+square-integrable derivatives through order `k`, a continuous linear map `L` and `h ≥ 0`, the
+derivatives of `L ∘ f` through order `k` are square integrable and
+`‖L ∘ f‖_{k,h} ≤ ‖L‖ ‖f‖_{k,h}`. -/
+theorem semiclassicalSobolevNorm_clm_comp_le {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    (L : F →L[ℝ] G) {k : ℕ} {f : E → F} (hf : ContDiff ℝ k f)
+    (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) {h : ℝ} (hh : 0 ≤ h) :
+    (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (L ∘ f)) 2) ∧
+      semiclassicalSobolevNorm k h (L ∘ f) ≤ ‖L‖ * semiclassicalSobolevNorm k h f := by
+  have hle (i : ℕ) (hi : i ≤ k) (x : E) :
+      ‖iteratedFDeriv ℝ i (L ∘ f) x‖ ≤ ‖L‖ * ‖iteratedFDeriv ℝ i f x‖ :=
+    L.norm_iteratedFDeriv_comp_left hf.contDiffAt (by exact_mod_cast hi)
+  have hbound (i : ℕ) (hi : i ≤ k) : MemLp (fun x ↦ ‖L‖ * ‖iteratedFDeriv ℝ i f x‖) 2 :=
+    (hfm i hi).norm.const_mul ‖L‖
+  have hm (i : ℕ) (hi : i ≤ k) : MemLp (iteratedFDeriv ℝ i (L ∘ f)) 2 :=
+    (hbound i hi).of_le
+      ((L.contDiff.comp hf).continuous_iteratedFDeriv (by exact_mod_cast hi)).aestronglyMeasurable
+      (.of_forall fun x ↦ (hle i hi x).trans (le_abs_self _))
+  refine ⟨hm, ?_⟩
+  rw [semiclassicalSobolevNorm, semiclassicalSobolevNorm, mul_left_comm]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hh _)
+  rw [Finset.mul_sum]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  have hi : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
+  have hL : lpNorm (iteratedFDeriv ℝ i (L ∘ f)) 2 volume ≤
+      ‖L‖ * lpNorm (iteratedFDeriv ℝ i f) 2 volume := by
+    refine (lpNorm_mono_real (hbound i hi) (hle i hi)).trans_eq ?_
+    rw [show (fun x ↦ ‖L‖ * ‖iteratedFDeriv ℝ i f x‖) =
+        ‖L‖ • fun x ↦ ‖iteratedFDeriv ℝ i f x‖ by
+          funext x; rw [Pi.smul_apply, smul_eq_mul],
+      lpNorm_const_smul_of_nonneg (norm_nonneg L), lpNorm_norm (hfm i hi).aestronglyMeasurable]
+  calc h ^ i * lpNorm (iteratedFDeriv ℝ i (L ∘ f)) 2 volume
+      ≤ h ^ i * (‖L‖ * lpNorm (iteratedFDeriv ℝ i f) 2 volume) :=
+        mul_le_mul_of_nonneg_left hL (pow_nonneg hh i)
+    _ = ‖L‖ * (h ^ i * lpNorm (iteratedFDeriv ℝ i f) 2 volume) := by ring
 
-/-- Applying a fixed continuous linear map `L` costs at most the factor `(k + 1) 2ᵏ ‖L‖` in the
-semiclassical norm: the constant case of `semiclassicalSobolevNorm_clm_apply_le_of_le_left`. -/
-private theorem memLp_and_semiclassicalSobolevNorm_comp_le (L : F →L[ℝ] G) {f : E → F}
-    (hf : ContDiff ℝ k f) (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) (hh : 0 < h) :
-    (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun y ↦ L (f y)) 2) ∧
-      semiclassicalSobolevNorm k h (fun y ↦ L (f y)) ≤
-        (k + 1) * 2 ^ k * ‖L‖ * semiclassicalSobolevNorm k h f := by
-  refine semiclassicalSobolevNorm_clm_apply_le_of_le_left (A := fun _ ↦ L) contDiff_const hf hfm
-    hh fun i _ x ↦ ?_
-  rcases eq_or_ne i 0 with rfl | hi
-  · simp
-  · simp [iteratedFDeriv_const_of_ne hi]
-
-/-- The bounds on one term `x ↦ L (a (f x) * b (g x))` of the expansion of a bilinear map in
-coordinates, given the scalar algebra estimate with constant `C₀` at the scale `h`. -/
-private theorem contDiff_memLp_semiclassicalSobolevNorm_term_le {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
-    (hmul : ∀ φ ψ : E → ℝ, ContDiff ℝ k φ → ContDiff ℝ k ψ →
-      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i φ) 2) → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i ψ) 2) →
-      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (φ * ψ)) 2) ∧
-        semiclassicalSobolevNorm k h (φ * ψ) ≤
-          C₀ * semiclassicalSobolevNorm k h φ * semiclassicalSobolevNorm k h ψ)
-    (L : ℝ →L[ℝ] H) (a : F →L[ℝ] ℝ) (b : G →L[ℝ] ℝ) {f : E → F} {g : E → G}
-    (hf : ContDiff ℝ k f) (hg : ContDiff ℝ k g) (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2)
-    (hgm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) (hh : 0 < h) :
-    ContDiff ℝ k (fun x ↦ L (a (f x) * b (g x))) ∧
-      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun x ↦ L (a (f x) * b (g x))) 2) ∧
-        semiclassicalSobolevNorm k h (fun x ↦ L (a (f x) * b (g x))) ≤
-          (k + 1) * 2 ^ k * ‖L‖ * C₀ * ((k + 1) * 2 ^ k * ‖a‖) * ((k + 1) * 2 ^ k * ‖b‖) *
-            semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
-  have hfi := a.contDiff.comp hf
-  have hgj := b.contDiff.comp hg
-  obtain ⟨hfim, hfin⟩ := memLp_and_semiclassicalSobolevNorm_comp_le a hf hfm hh
-  obtain ⟨hgjm, hgjn⟩ := memLp_and_semiclassicalSobolevNorm_comp_le b hg hgm hh
-  obtain ⟨hpm, hpn⟩ := hmul _ _ hfi hgj hfim hgjm
-  obtain ⟨hvm, hvn⟩ := memLp_and_semiclassicalSobolevNorm_comp_le L (hfi.mul hgj) hpm hh
-  refine ⟨L.contDiff.comp (hfi.mul hgj), hvm, hvn.trans ?_⟩
-  have hf0 := semiclassicalSobolevNorm_nonneg k hh.le f
-  have hgj0 := semiclassicalSobolevNorm_nonneg k hh.le fun x ↦ b (g x)
-  calc (k + 1) * 2 ^ k * ‖L‖ *
-        semiclassicalSobolevNorm k h ((fun x ↦ a (f x)) * fun x ↦ b (g x))
-      ≤ (k + 1) * 2 ^ k * ‖L‖ * (C₀ * semiclassicalSobolevNorm k h (fun x ↦ a (f x)) *
-          semiclassicalSobolevNorm k h (fun x ↦ b (g x))) :=
-        mul_le_mul_of_nonneg_left hpn (by positivity)
-    _ ≤ (k + 1) * 2 ^ k * ‖L‖ * (C₀ * ((k + 1) * 2 ^ k * ‖a‖ * semiclassicalSobolevNorm k h f) *
-          ((k + 1) * 2 ^ k * ‖b‖ * semiclassicalSobolevNorm k h g)) :=
-        mul_le_mul_of_nonneg_left (mul_le_mul (mul_le_mul_of_nonneg_left hfin hC₀) hgjn hgj0
-          (mul_nonneg hC₀ (by positivity))) (by positivity)
-    _ = _ := by ring
-
-variable [FiniteDimensional ℝ F] [FiniteDimensional ℝ G]
-
-/-- **The bilinear algebra estimate, uniformly in the scale.** Let `2k > dim E` and let
-`B : F →L[ℝ] G →L[ℝ] H` be a continuous bilinear map with finite-dimensional source spaces. There
-is a constant `C ≥ 0` such that for every `h > 0` and all functions `f : E → F` and `g : E → G` of
-class `Cᵏ` with square-integrable derivatives through order `k`, the derivatives of
-`x ↦ B (f x) (g x)` through order `k` are square integrable and
-`‖B (f, g)‖_{k,h} ≤ C ‖f‖_{k,h} ‖g‖_{k,h}`. -/
-theorem exists_semiclassicalSobolevNorm_bilinear_le (hk : finrank ℝ E < 2 * k)
-    (B : F →L[ℝ] G →L[ℝ] H) :
-    ∃ C, 0 ≤ C ∧ ∀ h : ℝ, 0 < h → ∀ (f : E → F) (g : E → G), ContDiff ℝ k f → ContDiff ℝ k g →
+/-- One term of the expansion of a bilinear product in bases: if the scalar algebra estimate
+holds with the constant `C₀`, then `y ↦ (a (f y) b (g y)) • w` for fixed linear functionals `a`
+and `b` and a fixed vector `w` satisfies
+`‖(a f) (b g) • w‖_{k,h} ≤ ‖w‖ C₀ ‖a‖ ‖f‖_{k,h} ‖b‖ ‖g‖_{k,h}`. -/
+private theorem term_semiclassicalSobolevNorm_le {G H : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [NormedAddCommGroup H] [NormedSpace ℝ H] {k : ℕ} {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
+    (hmul : ∀ h : ℝ, 0 < h → ∀ f g : E → ℝ, ContDiff ℝ k f → ContDiff ℝ k g →
       (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) →
-      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun x ↦ B (f x) (g x)) 2) ∧
-        semiclassicalSobolevNorm k h (fun x ↦ B (f x) (g x)) ≤
-          C * semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
-  -- Expand `B (f x) (g x)` in bases of `F` and `G`: it is the sum over pairs of basis vectors of
-  -- the products of coordinates `fᵢ gⱼ` times the constant vectors `B (eᵢ) (e'ⱼ)`.
-  let bF := Module.finBasis ℝ F
-  let bG := Module.finBasis ℝ G
-  let cF (i : Fin (finrank ℝ F)) : F →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (bF.coord i)
-  let cG (j : Fin (finrank ℝ G)) : G →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (bG.coord j)
-  let v (p : Fin (finrank ℝ F) × Fin (finrank ℝ G)) : ℝ →L[ℝ] H :=
-    ContinuousLinearMap.toSpanSingleton ℝ (B (bF p.1) (bG p.2))
-  have hexp (x : F) (y : G) : B x y = ∑ p, v p (cF p.1 x * cG p.2 y) := by
-    conv_lhs => rw [← bF.sum_repr x, ← bG.sum_repr y]
-    simp only [map_sum, map_smul, FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul,
-      Pi.smul_apply, Fintype.sum_prod_type, v, cF, cG, ContinuousLinearMap.toSpanSingleton_apply,
-      LinearMap.coe_toContinuousLinearMap', Basis.coord_apply, mul_smul, Finset.smul_sum]
-    rw [Finset.sum_comm]
-    simp only [smul_comm (bF.repr x _)]
-  clear_value v cF cG
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (f * g)) 2) ∧
+        semiclassicalSobolevNorm k h (f * g) ≤
+          C₀ * semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g)
+    (h : ℝ) (hh : 0 < h) (a : F →L[ℝ] ℝ) (b : G →L[ℝ] ℝ) (w : H) {f : E → F} {g : E → G}
+    (hf : ContDiff ℝ k f) (hg : ContDiff ℝ k g) (hfm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2)
+    (hgm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) :
+    ContDiff ℝ k (ContinuousLinearMap.toSpanSingleton ℝ w ∘ ((a ∘ f) * (b ∘ g))) ∧
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i
+        (ContinuousLinearMap.toSpanSingleton ℝ w ∘ ((a ∘ f) * (b ∘ g)))) 2) ∧
+      semiclassicalSobolevNorm k h (ContinuousLinearMap.toSpanSingleton ℝ w ∘ ((a ∘ f) * (b ∘ g)))
+        ≤ ‖w‖ * (C₀ * (‖a‖ * semiclassicalSobolevNorm k h f) *
+          (‖b‖ * semiclassicalSobolevNorm k h g)) := by
+  have hf' := semiclassicalSobolevNorm_clm_comp_le a hf hfm hh.le
+  have hg' := semiclassicalSobolevNorm_clm_comp_le b hg hgm hh.le
+  have hfc : ContDiff ℝ k (a ∘ f) := a.contDiff.comp hf
+  have hgc : ContDiff ℝ k (b ∘ g) := b.contDiff.comp hg
+  obtain ⟨hφm, hφ⟩ := hmul h hh _ _ hfc hgc hf'.1 hg'.1
+  obtain ⟨hTm, hTn⟩ := semiclassicalSobolevNorm_clm_comp_le
+    (ContinuousLinearMap.toSpanSingleton ℝ w) (hfc.mul hgc) hφm hh.le
+  refine ⟨(ContinuousLinearMap.contDiff _).comp (hfc.mul hgc), hTm, hTn.trans ?_⟩
+  rw [ContinuousLinearMap.norm_toSpanSingleton]
+  have hf₀ := semiclassicalSobolevNorm_nonneg k hh.le f
+  have hgc₀ := semiclassicalSobolevNorm_nonneg k hh.le (b ∘ g)
+  exact mul_le_mul_of_nonneg_left (hφ.trans (mul_le_mul (mul_le_mul_of_nonneg_left hf'.2 hC₀)
+    hg'.2 hgc₀ (mul_nonneg hC₀ (mul_nonneg (norm_nonneg _) hf₀)))) (norm_nonneg w)
+
+/-- **The algebra estimate for bilinear products, uniformly in the scale.** Let `F` and `G` be
+finite-dimensional. If `2k > dim E`, there is a constant `C ≥ 0` such that for every `h > 0`,
+every continuous bilinear map `L : F →L[ℝ] G →L[ℝ] H` and all functions `f : E → F` and
+`g : E → G` of class `Cᵏ` with square-integrable derivatives through order `k`, the derivatives
+of `x ↦ L (f x) (g x)` through order `k` are square integrable and
+
+`‖L (f, g)‖_{k,h} ≤ C ‖L‖ ‖f‖_{k,h} ‖g‖_{k,h}`.
+
+This is the form in which quadratic nonlinearities, such as Clifford multiplication of a spinor
+by a connection form or the quadratic map of a spinor, are controlled at the microscopic scale.
+The constant depends on `E`, `F`, `G` and `k`, but not on `h`, `L`, `f` or `g`. -/
+theorem exists_semiclassicalSobolevNorm_bilinear_le {k : ℕ} (hk : finrank ℝ E < 2 * k)
+    (G H : Type*) [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup H]
+    [NormedSpace ℝ H] [FiniteDimensional ℝ F] [FiniteDimensional ℝ G] :
+    ∃ C, 0 ≤ C ∧ ∀ h : ℝ, 0 < h → ∀ (L : F →L[ℝ] G →L[ℝ] H) (f : E → F) (g : E → G),
+      ContDiff ℝ k f → ContDiff ℝ k g →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun x ↦ L (f x) (g x)) 2) ∧
+        semiclassicalSobolevNorm k h (fun x ↦ L (f x) (g x)) ≤
+          C * ‖L‖ * semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
   obtain ⟨C₀, hC₀, hmul⟩ := exists_semiclassicalSobolevNorm_mul_le (E := E) hk
-  set K : ℝ := (k + 1) * 2 ^ k
-  refine ⟨∑ p, K * ‖v p‖ * C₀ * (K * ‖cF p.1‖) * (K * ‖cG p.2‖), by positivity,
-    fun h hh f g hf hg hfm hgm ↦ ?_⟩
-  have hterm (p : Fin (finrank ℝ F) × Fin (finrank ℝ G)) :=
-    contDiff_memLp_semiclassicalSobolevNorm_term_le hC₀ (hmul h hh) (v p) (cF p.1) (cG p.2) hf hg
-      hfm hgm hh
-  have hfun : (fun x ↦ B (f x) (g x)) =
-      fun x ↦ ∑ p, v p (cF p.1 (f x) * cG p.2 (g x)) := funext fun x ↦ hexp (f x) (g x)
-  rw [hfun]
+  -- Expand `f` and `g` in bases `(uᵢ)` and `(vⱼ)` with coordinate functionals `cuᵢ` and `cvⱼ`:
+  -- `L (f, g) = ∑ᵢⱼ (cuᵢ f) (cvⱼ g) • L (uᵢ, vⱼ)`, with each coefficient controlled by the scalar
+  -- algebra estimate.
+  obtain ⟨n, ⟨u⟩⟩ : ∃ n : ℕ, Nonempty (Basis (Fin n) ℝ F) := ⟨_, ⟨Module.finBasis ℝ F⟩⟩
+  obtain ⟨m, ⟨v⟩⟩ : ∃ m : ℕ, Nonempty (Basis (Fin m) ℝ G) := ⟨_, ⟨Module.finBasis ℝ G⟩⟩
+  obtain ⟨cu, hcu⟩ : ∃ cu : Fin n → F →L[ℝ] ℝ, ∀ i y, cu i y = u.repr y i :=
+    ⟨fun i ↦ LinearMap.toContinuousLinearMap (u.coord i), fun _ _ ↦ rfl⟩
+  obtain ⟨cv, hcv⟩ : ∃ cv : Fin m → G →L[ℝ] ℝ, ∀ j y, cv j y = v.repr y j :=
+    ⟨fun j ↦ LinearMap.toContinuousLinearMap (v.coord j), fun _ _ ↦ rfl⟩
+  refine ⟨C₀ * ∑ p : Fin n × Fin m, ‖u p.1‖ * ‖v p.2‖ * (‖cu p.1‖ * ‖cv p.2‖), by positivity,
+    fun h hh L f g hf hg hfm hgm ↦ ?_⟩
+  -- The term of index `p = (i, j)`.
+  let T : Fin n × Fin m → E → H := fun p ↦
+    ContinuousLinearMap.toSpanSingleton ℝ (L (u p.1) (v p.2)) ∘ ((cu p.1 ∘ f) * (cv p.2 ∘ g))
+  have hexp : (fun x ↦ L (f x) (g x)) = fun x ↦ ∑ p, T p x := by
+    funext x
+    rw [Fintype.sum_prod_type]
+    conv_lhs => rw [← u.sum_repr (f x), ← v.sum_repr (g x)]
+    simp only [map_sum, map_smul, FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul,
+      Pi.smul_apply, Finset.smul_sum, smul_smul]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    simp only [T, Function.comp_apply, Pi.mul_apply, ContinuousLinearMap.toSpanSingleton_apply,
+      hcu, hcv, mul_comm]
+  -- Each term is controlled by the scalar estimate and composition with linear maps.
+  have hf₀ := semiclassicalSobolevNorm_nonneg k hh.le f
+  have hg₀ := semiclassicalSobolevNorm_nonneg k hh.le g
+  have hT (p : Fin n × Fin m) : ContDiff ℝ k (T p) ∧
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i (T p)) 2) ∧
+        semiclassicalSobolevNorm k h (T p) ≤ ‖L‖ * (‖u p.1‖ * ‖v p.2‖) *
+          (C₀ * (‖cu p.1‖ * semiclassicalSobolevNorm k h f) *
+            (‖cv p.2‖ * semiclassicalSobolevNorm k h g)) := by
+    obtain ⟨h₁, h₂, h₃⟩ := term_semiclassicalSobolevNorm_le hC₀ hmul h hh (cu p.1) (cv p.2)
+      (L (u p.1) (v p.2)) hf hg hfm hgm
+    exact ⟨h₁, h₂, h₃.trans (mul_le_mul_of_nonneg_right
+      ((L.le_opNorm₂ _ _).trans_eq (mul_assoc _ _ _)) (by positivity))⟩
+  clear_value T
+  rw [hexp]
   refine ⟨fun i hi ↦ ?_, ?_⟩
-  · rw [iteratedFDeriv_sum fun p _ ↦ (hterm p).1.of_le (by exact_mod_cast hi)]
-    exact memLp_finsetSum' (f := fun p ↦ iteratedFDeriv ℝ i fun x ↦
-      v p (cF p.1 (f x) * cG p.2 (g x))) _ fun p _ ↦ (hterm p).2.1 i hi
-  · refine (semiclassicalSobolevNorm_sum_le _ (fun p _ ↦ (hterm p).1)
-      (fun p _ ↦ (hterm p).2.1) hh.le).trans ?_
-    rw [Finset.sum_mul, Finset.sum_mul]
-    exact Finset.sum_le_sum fun p _ ↦ (hterm p).2.2
+  · rw [iteratedFDeriv_sum (f := T) (u := Finset.univ) fun p _ ↦
+      (hT p).1.of_le (by exact_mod_cast hi)]
+    exact memLp_finsetSum' (f := fun p ↦ iteratedFDeriv ℝ i (T p)) _ fun p _ ↦ (hT p).2.1 i hi
+  calc semiclassicalSobolevNorm k h (fun x ↦ ∑ p, T p x)
+      ≤ ∑ p, semiclassicalSobolevNorm k h (T p) :=
+        semiclassicalSobolevNorm_sum_le _ (fun p _ ↦ (hT p).1) (fun p _ ↦ (hT p).2.1) hh.le
+    _ ≤ ∑ p, ‖L‖ * (‖u p.1‖ * ‖v p.2‖) *
+          (C₀ * (‖cu p.1‖ * semiclassicalSobolevNorm k h f) *
+            (‖cv p.2‖ * semiclassicalSobolevNorm k h g)) :=
+        Finset.sum_le_sum fun p _ ↦ (hT p).2.2
+    _ = C₀ * (∑ p : Fin n × Fin m, ‖u p.1‖ * ‖v p.2‖ * (‖cu p.1‖ * ‖cv p.2‖)) * ‖L‖ *
+          semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g := by
+        rw [Finset.mul_sum, Finset.sum_mul, Finset.sum_mul, Finset.sum_mul]
+        exact Finset.sum_congr rfl fun p _ ↦ by ring
 
 end Bilinear
 

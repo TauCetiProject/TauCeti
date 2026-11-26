@@ -67,6 +67,16 @@ space `V`, a flat chart, with the derivatives `∇ʲ` read as the iterated deriv
   multiplier and change-of-chart estimates
   (`TauCeti.semiclassicalSobolevNorm_clm_apply_le_of_le_left`,
   `TauCeti.semiclassicalSobolevNorm_comp_le`).
+* **The algebra estimate.** For `n < 2k` and a continuous bilinear map `L` between
+  finite-dimensional spaces,
+  `‖L (f, g)‖_(F_(r,k)) ≤ C ‖L‖ h^(-n/2) ‖f‖_(F_(r,k)) ‖g‖_(F_(r,k))` with `C` independent of `h`
+  (`TauCeti.SeibergWitten.exists_sqrt_rescaledTargetNormSq_bilinear_le`), from the algebra
+  estimate of the semiclassical norms (`TauCeti.exists_semiclassicalSobolevNorm_bilinear_le`).
+  The components of the rescaled norm are bounded by it, `h ‖b‖_(F_(r,s)) ≤ ‖(b, ζ)‖_(E_(r,s))`
+  and `‖ζ‖_(F_(r,s)) ≤ 2 ‖(b, ζ)‖_(E_(r,s))`
+  (`TauCeti.SeibergWitten.mul_sqrt_rescaledTargetNormSq_le_sqrt_rescaledFieldNormSq`,
+  `TauCeti.SeibergWitten.sqrt_rescaledTargetNormSq_le_two_mul_sqrt_rescaledFieldNormSq`), so this
+  controls the quadratic terms of the Seiberg–Witten equations in the rescaled norms.
 * **Seminorm.** The square roots satisfy the triangle inequality on fields with square-integrable
   derivatives (`TauCeti.SeibergWitten.sqrt_rescaledFieldNormSq_add_le`,
   `TauCeti.SeibergWitten.sqrt_rescaledTargetNormSq_add_le`), by Minkowski's inequality.
@@ -205,6 +215,27 @@ theorem rescaledFieldNormSq_nonneg (s : ℕ) (h : ℝ) (b : V → B) (ζ : V →
   have := rescaledTargetNormSq_nonneg (s + 1) h b
   have := rescaledTargetNormSq_nonneg (s + 1) h ζ
   positivity
+
+/-- The connection component is controlled by the rescaled norm with its weight:
+`h ‖b‖_(F_(r,s)) ≤ ‖(b, ζ)‖_(E_(r,s))`. -/
+theorem mul_sqrt_rescaledTargetNormSq_le_sqrt_rescaledFieldNormSq (s : ℕ) (h : ℝ) (b : V → B)
+    (ζ : V → S) :
+    h * √(rescaledTargetNormSq (s + 1) h b) ≤ √(rescaledFieldNormSq s h b ζ) := by
+  refine (le_abs_self _).trans (Real.abs_le_sqrt ?_)
+  rw [mul_pow, Real.sq_sqrt (rescaledTargetNormSq_nonneg _ _ _),
+    rescaledFieldNormSq_eq_rescaledTargetNormSq]
+  exact le_add_of_nonneg_right (div_nonneg (rescaledTargetNormSq_nonneg _ _ _) (by norm_num))
+
+/-- The spinor component is controlled by the rescaled norm:
+`‖ζ‖_(F_(r,s)) ≤ 2 ‖(b, ζ)‖_(E_(r,s))`. -/
+theorem sqrt_rescaledTargetNormSq_le_two_mul_sqrt_rescaledFieldNormSq (s : ℕ) (h : ℝ)
+    (b : V → B) (ζ : V → S) :
+    √(rescaledTargetNormSq (s + 1) h ζ) ≤ 2 * √(rescaledFieldNormSq s h b ζ) := by
+  rw [show (2 : ℝ) = √4 by rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq zero_le_two],
+    ← Real.sqrt_mul zero_le_four, rescaledFieldNormSq_eq_rescaledTargetNormSq]
+  refine Real.sqrt_le_sqrt ?_
+  nlinarith [rescaledTargetNormSq_nonneg (s + 1) h b, sq_nonneg h,
+    mul_nonneg (sq_nonneg h) (rescaledTargetNormSq_nonneg (s + 1) h b)]
 
 /-! ### The scaling check -/
 
@@ -442,6 +473,78 @@ theorem rescaledTargetNormSq_clm_apply_le {k : ℕ} {h M : ℝ} {y : V → T} {T
   rw [rescaledTargetNormSq_eq_sum_sq, rescaledTargetNormSq_eq_sum_sq]
   exact sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le k hh
     (semiclassicalSobolevNorm_clm_apply_le_of_le_left hA hy hym hh hM).2
+
+/-! ### The algebra estimate -/
+
+/-- The square-root form of `rpow_mul_le_mul_rescaledTargetNormSq_succ`:
+`h^(n/2) ‖y‖_{k,h} ≤ √(k + 1) ‖y‖_(F_(r,k))`. -/
+private theorem rpow_mul_semiclassicalSobolevNorm_le_sqrt {T' : Type*} [NormedAddCommGroup T']
+    [NormedSpace ℝ T'] (k : ℕ) {h : ℝ} (hh : 0 < h) (y : V → T') :
+    h ^ ((finrank ℝ V : ℝ) / 2) * semiclassicalSobolevNorm k h y ≤
+      √(k + 1 : ℝ) * √(rescaledTargetNormSq (k + 1) h y) := by
+  rw [← Real.sqrt_mul (by positivity)]
+  refine (le_abs_self _).trans (Real.abs_le_sqrt (le_trans (le_of_eq ?_)
+    (rpow_mul_le_mul_rescaledTargetNormSq_succ k hh y)))
+  rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hh.le]
+  norm_num
+
+/-- **The algebra estimate for the target norm.** Let `B` and `S` be finite-dimensional and
+`n = dim V < 2k`. There is a constant `C ≥ 0` such that for every `h > 0`, every continuous bilinear
+map `L : B →L[ℝ] S →L[ℝ] T` and all `f`, `g` of class `Cᵏ` with square-integrable derivatives
+through order `k`, the derivatives of `L (f, g)` through order `k` are square integrable and
+
+`‖L (f, g)‖_(F_(r,k)) ≤ C ‖L‖ h^(-n/2) ‖f‖_(F_(r,k)) ‖g‖_(F_(r,k))`.
+
+The factor `h^(-n/2)` is the price of the missing volume normalization: the target norm is
+comparable to `h^(n/2)` times the semiclassical norm,
+`‖y‖_(F_(r,k))² ≤ hⁿ ‖y‖_{k,h}² ≤ (k + 1) ‖y‖_(F_(r,k))²`, and the semiclassical norm is an
+algebra norm uniformly in `h` (`TauCeti.exists_semiclassicalSobolevNorm_bilinear_le`). -/
+theorem exists_sqrt_rescaledTargetNormSq_bilinear_le {k : ℕ} (hk : finrank ℝ V < 2 * k)
+    [FiniteDimensional ℝ B] [FiniteDimensional ℝ S] :
+    ∃ C, 0 ≤ C ∧ ∀ h : ℝ, 0 < h → ∀ (L : B →L[ℝ] S →L[ℝ] T) (f : V → B) (g : V → S),
+      ContDiff ℝ k f → ContDiff ℝ k g → (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i f) 2) →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) →
+      (∀ i ≤ k, MemLp (iteratedFDeriv ℝ i fun x ↦ L (f x) (g x)) 2) ∧
+        √(rescaledTargetNormSq (k + 1) h fun x ↦ L (f x) (g x)) ≤
+          C * ‖L‖ * h ^ (-(finrank ℝ V : ℝ) / 2) * √(rescaledTargetNormSq (k + 1) h f) *
+            √(rescaledTargetNormSq (k + 1) h g) := by
+  obtain ⟨C₀, hC₀, hL⟩ := exists_semiclassicalSobolevNorm_bilinear_le (E := V) (F := B) hk S T
+  refine ⟨C₀ * (k + 1), by positivity, fun h hh L f g hf hg hfm hgm ↦ ?_⟩
+  obtain ⟨hm, hle⟩ := hL h hh L f g hf hg hfm hgm
+  refine ⟨hm, ?_⟩
+  -- With `a = h^(n/2)`: `√F(y) ≤ a ‖y‖_{k,h}` and `a ‖y‖_{k,h} ≤ √(k + 1) √F(y)`.
+  set a := h ^ ((finrank ℝ V : ℝ) / 2) with ha
+  have ha₀ : 0 < a := Real.rpow_pos_of_pos hh _
+  have ha2 : h ^ (finrank ℝ V : ℝ) = a ^ 2 := by
+    rw [ha, ← Real.rpow_natCast, ← Real.rpow_mul hh.le]
+    norm_num
+  have hainv : h ^ (-(finrank ℝ V : ℝ) / 2) = a⁻¹ := by
+    rw [ha, ← Real.rpow_neg hh.le, neg_div]
+  have hup : √(rescaledTargetNormSq (k + 1) h fun x ↦ L (f x) (g x)) ≤
+      a * semiclassicalSobolevNorm k h (fun x ↦ L (f x) (g x)) := by
+    rw [← Real.sqrt_sq (mul_nonneg ha₀.le (semiclassicalSobolevNorm_nonneg k hh.le _))]
+    exact Real.sqrt_le_sqrt
+      ((rescaledTargetNormSq_succ_le_rpow_mul k hh _).trans_eq (by rw [ha2]; ring))
+  have hf' := rpow_mul_semiclassicalSobolevNorm_le_sqrt k hh f
+  have hg' := rpow_mul_semiclassicalSobolevNorm_le_sqrt k hh g
+  have hc₀ : 0 ≤ C₀ * ‖L‖ * a⁻¹ := by positivity
+  have hk1 := Real.mul_self_sqrt (show (0 : ℝ) ≤ k + 1 by positivity)
+  rw [hainv]
+  calc √(rescaledTargetNormSq (k + 1) h fun x ↦ L (f x) (g x))
+      ≤ a * (C₀ * ‖L‖ * semiclassicalSobolevNorm k h f * semiclassicalSobolevNorm k h g) :=
+        hup.trans (mul_le_mul_of_nonneg_left hle ha₀.le)
+    _ = C₀ * ‖L‖ * a⁻¹ * (a * semiclassicalSobolevNorm k h f) *
+          (a * semiclassicalSobolevNorm k h g) := by
+        field_simp
+    _ ≤ C₀ * ‖L‖ * a⁻¹ * (√(k + 1 : ℝ) * √(rescaledTargetNormSq (k + 1) h f)) *
+          (√(k + 1 : ℝ) * √(rescaledTargetNormSq (k + 1) h g)) :=
+        mul_le_mul (mul_le_mul_of_nonneg_left hf' hc₀) hg'
+          (mul_nonneg ha₀.le (semiclassicalSobolevNorm_nonneg k hh.le g))
+          (mul_nonneg hc₀ (by positivity))
+    _ = C₀ * (k + 1) * ‖L‖ * a⁻¹ * √(rescaledTargetNormSq (k + 1) h f) *
+          √(rescaledTargetNormSq (k + 1) h g) := by
+        linear_combination (C₀ * ‖L‖ * a⁻¹ * √(rescaledTargetNormSq (k + 1) h f) *
+          √(rescaledTargetNormSq (k + 1) h g)) * hk1
 
 /-! ### The triangle inequality -/
 
