@@ -39,13 +39,13 @@ abelian subspaces of `𝔭` to the statement that every element of `𝔭` is `K_
 * `LieEquiv.IsMaximalAbelianInP.ker_ad_inf_cartanP_eq`: for `𝔞` maximal abelian in `𝔭` and `H`
   regular, `Z_𝔭(H) = 𝔞`; `LieEquiv.IsMaximalAbelianInP.exists_ker_ad_inf_cartanP_eq` gives such an
   `H`.
-* `LieEquiv.isMaximalAbelianInP_of_ker_ad_inf_cartanP_le` and
-  `LieEquiv.IsCartanInvolution.isMaximalAbelianInP_iff_exists_ker_ad_inf_cartanP_eq`: an abelian
+* `LieEquiv.IsCartanInvolution.isMaximalAbelianInP_iff_exists_ker_ad_inf_cartanP_eq`: an abelian
   subspace of `𝔭` is maximal exactly when it is the centralizer in `𝔭` of one of its elements.
-* `LieEquiv.IsMaximalAbelianInP.eq_of_ker_ad_inf_cartanP_le`: a maximal abelian subspace `𝔟` of
-  `𝔭` containing `H` lies in, hence equals, any maximal abelian `𝔞 ⊇ Z_𝔭(H)`.
-* `LieEquiv.IsMaximalAbelianInP.map_eq_of_apply_mem`: an isomorphism carrying `H'` with
-  `Z_𝔭(H') ⊆ 𝔞'` into a maximal abelian subspace `𝔞` carries `𝔞'` onto `𝔞`.
+
+The ring-generic steps, `LieEquiv.isMaximalAbelianInP_of_ker_ad_inf_cartanP_le`,
+`LieEquiv.IsMaximalAbelianInP.eq_of_ker_ad_inf_cartanP_le` and
+`LieEquiv.IsMaximalAbelianInP.map_eq_of_apply_mem`, are in
+`TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Basic`.
 
 ## References
 
@@ -109,63 +109,6 @@ end Submodule
 namespace LieEquiv
 
 open Submodule
-
-section Generic
-
-variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {θ : L ≃ₗ⁅R⁆ L}
-  {𝔞 𝔟 : Submodule R L} {H : L}
-
-/-- An abelian subspace of `𝔭` lies in the centralizer in `𝔭` of each of its elements. -/
-private theorem le_ker_ad_inf_cartanP (h𝔟 : 𝔟 ≤ θ.cartanP) (hab : ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0)
-    (hH : H ∈ 𝔟) : 𝔟 ≤ LinearMap.ker (ad R L H) ⊓ θ.cartanP :=
-  fun _ hx ↦ ⟨LinearMap.mem_ker.mpr (hab H hH _ hx), h𝔟 hx⟩
-
-/-- An abelian subspace `𝔞` of `𝔭` that contains the centralizer `Z_𝔭(H)` of one of its elements
-`H` is maximal abelian in `𝔭`. -/
-theorem isMaximalAbelianInP_of_ker_ad_inf_cartanP_le (h𝔞 : 𝔞 ≤ θ.cartanP)
-    (hab : ∀ x ∈ 𝔞, ∀ y ∈ 𝔞, ⁅x, y⁆ = 0) (hH𝔞 : H ∈ 𝔞)
-    (hH : LinearMap.ker (ad R L H) ⊓ θ.cartanP ≤ 𝔞) : θ.IsMaximalAbelianInP 𝔞 :=
-  isMaximalAbelianInP_iff.mpr ⟨⟨h𝔞, hab⟩, fun _ h𝔟 h𝔞𝔟 ↦
-    (le_ker_ad_inf_cartanP h𝔟.1 h𝔟.2 (h𝔞𝔟 hH𝔞)).trans hH⟩
-
-/-- **Uniqueness of the maximal abelian subspace through `H`.** If a maximal abelian subspace `𝔞`
-of `𝔭` contains the centralizer `Z_𝔭(H)`, then every maximal abelian subspace of `𝔭` containing
-`H` equals `𝔞`. -/
-theorem IsMaximalAbelianInP.eq_of_ker_ad_inf_cartanP_le (h𝔞 : θ.IsMaximalAbelianInP 𝔞)
-    (h𝔟 : θ.IsMaximalAbelianInP 𝔟) (hH𝔟 : H ∈ 𝔟)
-    (hH : LinearMap.ker (ad R L H) ⊓ θ.cartanP ≤ 𝔞) : 𝔟 = 𝔞 := by
-  have h𝔟𝔞 : 𝔟 ≤ 𝔞 :=
-    (le_ker_ad_inf_cartanP h𝔟.le_cartanP (fun _ hx _ hy ↦ h𝔟.lie_eq_zero hx hy) hH𝔟).trans hH
-  exact le_antisymm h𝔟𝔞 ((isMaximalAbelianInP_iff.mp h𝔟).2
-    ⟨h𝔞.le_cartanP, fun _ hx _ hy ↦ h𝔞.lie_eq_zero hx hy⟩ h𝔟𝔞)
-
-variable {L' : Type*} [LieRing L'] [LieAlgebra R L'] in
-/-- **Conjugating maximal abelian subspaces through a regular element.** Let `𝔞` be a maximal
-abelian subspace of `𝔭` and `H` an element whose centralizer `Z_𝔭(H)` lies in `𝔞`. If an
-isomorphism `e` carries `H` into a maximal abelian subspace `𝔟` of the `-1`-eigenspace of
-`e ∘ θ ∘ e⁻¹`, then `e` carries `𝔞` onto `𝔟`. For an automorphism `e` commuting with `θ` this
-says that `e 𝔞 = 𝔟` as soon as `e H ∈ 𝔟`. -/
-theorem IsMaximalAbelianInP.map_eq_of_apply_mem (h𝔞 : θ.IsMaximalAbelianInP 𝔞)
-    (hH : LinearMap.ker (ad R L H) ⊓ θ.cartanP ≤ 𝔞) (e : L ≃ₗ⁅R⁆ L') {𝔟 : Submodule R L'}
-    (h𝔟 : (e.conj θ).IsMaximalAbelianInP 𝔟) (he : e H ∈ 𝔟) :
-    𝔞.map (e.toLinearEquiv : L →ₗ[R] L') = 𝔟 := by
-  set f := e.toLinearEquiv
-  -- The centralizer in `𝔭` of `e H` is the image of that of `H`.
-  have hker :
-      LinearMap.ker (ad R L' (e H)) = (LinearMap.ker (ad R L H)).map (f : L →ₗ[R] L') := by
-    ext y
-    refine ⟨fun hy ↦ ⟨e.symm y, ?_, by simp [f]⟩, ?_⟩
-    · rw [LinearMap.mem_ker, ad_apply] at hy
-      rw [SetLike.mem_coe, LinearMap.mem_ker, ad_apply, ← e.symm_apply_apply H, ← e.symm.map_lie,
-        hy, map_zero]
-    · rintro ⟨x, hx, rfl⟩
-      rw [SetLike.mem_coe, LinearMap.mem_ker, ad_apply] at hx
-      simp [f, ← LieEquiv.map_lie, hx]
-  refine ((h𝔞.map e).eq_of_ker_ad_inf_cartanP_le h𝔟 he ?_).symm
-  rw [hker, cartanP_conj, ← map_inf _ f.injective]
-  exact map_mono hH
-
-end Generic
 
 namespace IsCartanInvolution
 
