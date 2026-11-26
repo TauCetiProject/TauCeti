@@ -48,7 +48,7 @@ read on `M`, is bounded in `H^{s - m}` by the reading `ψ · (g ∘ e'⁻¹)` of
   coordinate balls.
 * In the chart `Eₖ`, the reading of `P (ρₖ Ψ g)` through `φ` is a chart compression of `P`
   applied to the reading `Wₖ` of `ρₖ Ψ g` in `Eₖ`. So it is `Op(aₖ) Wₖ` for a classical symbol
-  `aₖ` of order `m` vanishing at positions outside the support of `φ`, and
+  `aₖ` of order `m` with compact spatial support, and
   `‖Op(aₖ) Wₖ‖_{H^{s - m}} ≤ C ‖Wₖ‖_{H^s}` (`TauCeti.Symbol.quantizeSobolev`).
 * The reading `Wₖ` in `Eₖ` is `θₖ · (w ∘ κₖ)` for the reading `w = ψ · (g ∘ e'⁻¹)` in `e'`, the
   transition map `κₖ = e' ∘ Eₖ⁻¹` and a cutoff `θₖ` with compact support in the source of `κₖ`
@@ -130,7 +130,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
 
 /-- **One chart.** In a chart `E` that agrees with `e` over the support of `φ`, reading `P` from
 `E` through a cutoff `χ` to `e` through `φ` is a chart compression of `P`, hence a quantization
-`Op(a)` with `a` vanishing at positions outside the support of `φ`, bounded `H^s → H^{s - m}`. -/
+`Op(a)` with `a` of compact spatial support, bounded `H^s → H^{s - m}`. -/
 private theorem exists_norm_cutoffPushforwardSchwartz_apply_complexCutoffPullback_le
     (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
     (hP : P ∈ classicalPseudodifferentialOperators m)

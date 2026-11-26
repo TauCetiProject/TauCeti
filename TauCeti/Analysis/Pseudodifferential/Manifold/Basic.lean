@@ -348,8 +348,8 @@ theorem mem_classicalPseudodifferentialOperators_iff {m : ℝ}
               e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x :=
   Iff.rfl
 
-/-- The symbol of a chart compression by `φ` and `ψ` vanishes at positions outside the support of
-`φ`, since every output of the compression does. -/
+/-- The symbol of a chart compression by `φ` and `ψ` has compact spatial support, since every
+output of the compression is supported in the compact support of `φ`. -/
 theorem hasCompactSpatialSupport_of_eq_complexChartCompression {m : ℝ}
     {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
