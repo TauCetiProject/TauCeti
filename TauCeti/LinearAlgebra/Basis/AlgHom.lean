@@ -14,14 +14,15 @@ import Mathlib.LinearAlgebra.BilinearMap
 
 Let `f : k →+* k'` be a ring homomorphism of commutative semirings and `F : A →+* A'` a ring
 homomorphism from a `k`-algebra to a `k'`-algebra that is compatible with `f` on scalars and carries
-a `k`-basis of `A` to a `k'`-basis of `A'`. Every `k`-algebra homomorphism `A → k` then extends to a
-`k'`-algebra homomorphism `A' → k'`: it is the `k'`-linear map with the transported values on the
-basis, and it is multiplicative because the two bilinear maps `(x, y) ↦ ψ (x * y)` and
+a `k`-basis of `A` to a `k'`-basis of `A'`. Every `k`-algebra homomorphism `A → k` then extends
+uniquely to a `k'`-algebra homomorphism `A' → k'`: it is the `k'`-linear map with the transported
+values on the basis, and it is multiplicative because the two bilinear maps `(x, y) ↦ ψ (x * y)` and
 `(x, y) ↦ ψ x * ψ y` agree on pairs of basis vectors.
 
 ## Main results
 
-* `TauCeti.exists_algHom_comp_eq_of_basis`: the extension `φ'` with `φ' (F x) = f (φ x)`.
+* `TauCeti.existsUnique_algHom_comp_eq_of_basis`: the unique extension `φ'` with
+  `φ' (F x) = f (φ x)`.
 -/
 
 public section
@@ -34,12 +35,12 @@ variable {k k' A A' ι : Type*} [CommSemiring k] [CommSemiring k'] [Semiring A] 
 /-- **Extending a character along a basis-preserving map.** Let `f : k →+* k'` be a ring
 homomorphism, `F : A →+* A'` a ring homomorphism with `F(algebraMap r) = algebraMap (f r)`,
 carrying a `k`-basis `v` of `A` to a `k'`-basis `v'` of `A'`. Every `k`-algebra homomorphism
-`φ : A → k` extends to a `k'`-algebra homomorphism `φ' : A' → k'` with `φ'(F x) = f(φ(x))`:
-`φ'` takes the value `f(φ(v i))` at `v' i`. -/
-theorem exists_algHom_comp_eq_of_basis (f : k →+* k') (F : A →+* A')
+`φ : A → k` extends to a unique `k'`-algebra homomorphism `φ' : A' → k'` with
+`φ'(F x) = f(φ(x))`: `φ'` takes the value `f(φ(v i))` at `v' i`. -/
+theorem existsUnique_algHom_comp_eq_of_basis (f : k →+* k') (F : A →+* A')
     (hF : ∀ r, F (algebraMap k A r) = algebraMap k' A' (f r)) (v : Module.Basis ι k A)
     (v' : Module.Basis ι k' A') (hv : ∀ i, F (v i) = v' i) (φ : A →ₐ[k] k) :
-    ∃ φ' : A' →ₐ[k'] k', ∀ x, φ' (F x) = f (φ x) := by
+    ∃! φ' : A' →ₐ[k'] k', ∀ x, φ' (F x) = f (φ x) := by
   classical
   let ψ : A' →ₗ[k'] k' := v'.constr k' fun i => f (φ (v i))
   have hψv (i : ι) : ψ (v' i) = f (φ (v i)) := v'.constr_basis k' _ i
@@ -58,6 +59,8 @@ theorem exists_algHom_comp_eq_of_basis (f : k →+* k') (F : A →+* A')
     exact fun x y => LinearMap.congr_fun₂ h x y
   have hone : ψ 1 = 1 := by
     rw [← map_one F, hψF, map_one, map_one]
-  exact ⟨AlgHom.ofLinearMap ψ hone hmul, hψF⟩
+  -- Any other extension agrees with `ψ` on the basis `v' i = F (v i)`.
+  refine ⟨AlgHom.ofLinearMap ψ hone hmul, hψF, fun φ'' hφ'' => ?_⟩
+  exact AlgHom.toLinearMap_injective (v'.ext fun i => by simp [← hv, hφ'', hψF])
 
 end TauCeti
