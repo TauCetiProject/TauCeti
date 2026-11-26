@@ -30,7 +30,7 @@ integral consequences of the lacunary principle for Morse functions in
 * the integral homology `Hₙ(M; ℤ)` is the free abelian group `ℤ^F` on the set `F` of these fixed
   points (`TauCeti.SmoothTwoForm.IsMomentMap.nonempty_singularHomology_int_linearEquiv_finsupp`),
   so its rank is the number of fixed points of index `n`
-  (`TauCeti.SmoothTwoForm.IsMomentMap.finrank_singularHomology_int`).
+  (`TauCeti.SmoothTwoForm.IsMomentMap.finrank_singularHomology_int_eq_ncard`).
 
 For a torus, that is a compact connected abelian Lie group, such `ξ` exist, and isolated fixed
 points make the homology of `M` that of a space with only even cells:
@@ -131,14 +131,14 @@ theorem nonempty_singularHomology_int_linearEquiv_finsupp
 by symplectomorphisms of a compact manifold, with moment map `μ`, all of whose fixed points are
 isolated, and for `ξ` such that the closure of `{exp (t ξ) | t ∈ ℝ}` is the whole group, the rank
 of `Hₙ(M; ℤ)` is the number of fixed points at which `μ^ξ` has Morse index `n`. -/
-theorem finrank_singularHomology_int (hξ : Lie.closedOneParameterSubgroup ξ = ⊤)
+theorem finrank_singularHomology_int_eq_ncard (hξ : Lie.closedOneParameterSubgroup ξ = ⊤)
     (hiso : ∀ p ∈ MulAction.fixedPoints G M, ∀ᶠ q in 𝓝 p, q ∈ MulAction.fixedPoints G M → q = p)
     (n : ℕ) :
     finrank ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) =
       {p ∈ MulAction.fixedPoints G M | manifoldMorseIndex I' (fun y ↦ μ y ξ) p = n}.ncard := by
   rw [← h.criticalPoints_eq_fixedPoints_of_eq_top hσ hξ]
-  exact (h.isMorse_of_eq_top hσ hξ hiso).finrank_singularHomology_int_of_forall_ne_add_one
+  exact (h.isMorse_of_eq_top hσ hξ hiso).finrank_singularHomology_int_eq_ncard_of_forall_ne_add_one
     (h.forall_manifoldMorseIndex_ne_add_one hσ hσG) n
 
 /-! ### Torus actions -/
@@ -191,7 +191,8 @@ theorem finrank_singularHomology_int_eq_bettiNumber
     finrank ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
         (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) = bettiNumber k M n := by
   obtain ⟨ξ, hξ⟩ := (Lie.dense_setOf_closedOneParameterSubgroup_eq_top I G).nonempty
-  rw [h.finrank_singularHomology_int hσ hσG hξ hiso, h.bettiNumber_eq_ncard hσ hσG k hξ hiso]
+  rw [h.finrank_singularHomology_int_eq_ncard hσ hσG hξ hiso,
+    h.bettiNumber_eq_ncard hσ hσG k hξ hiso]
 
 end Torus
 
