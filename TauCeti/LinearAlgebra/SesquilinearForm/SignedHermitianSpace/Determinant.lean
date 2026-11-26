@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.BilinearMap.GramCongruence
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Hyperbolic
 
 /-!
@@ -13,8 +14,8 @@ public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Hyperb
 For a basis `b` of a signed hermitian space `(V, h)` over a commutative ring with involution `σ`,
 the Gram matrix `G_b = (h (bᵢ) (bⱼ))` is Mathlib's `LinearMap.toMatrix₂ b b h`. A change of basis
 by the matrix `P` turns it into `σ(P)ᵀ G_b P`, so the Gram determinant changes by the norm
-`σ (det P) * det P` of the unit `det P`
-(`TauCeti.SignedHermitianSpace.det_toMatrix₂_basis_change`). The class of `det G_b` modulo norms
+`σ (det P) * det P` of the unit `det P` (`LinearMap.det_toMatrix₂_basis_change`, which holds
+for any form semilinear in its first argument). The class of `det G_b` modulo norms
 of units is therefore attached to the space: it does not depend on the basis, it is an isometry
 invariant (`TauCeti.SignedHermitianSpace.Equivalent.exists_det_eq`), and it is multiplicative
 under orthogonal sums (`TauCeti.SignedHermitianSpace.det_toMatrix₂_prod`). For a hermitian space
@@ -25,10 +26,6 @@ Gram determinant `-ε`.
 
 ## Main statements
 
-* `TauCeti.SignedHermitianSpace.toMatrix₂_basis_change`: `G_c = σ(P)ᵀ G_b P` for `P` the matrix
-  of `c` in `b`.
-* `TauCeti.SignedHermitianSpace.det_toMatrix₂_basis_change`:
-  `det G_c = σ (det P) * det P * det G_b`.
 * `TauCeti.SignedHermitianSpace.Equivalent.exists_det_eq`: Gram determinants of isometric spaces
   differ by the norm of a unit.
 * `TauCeti.SignedHermitianSpace.det_toMatrix₂_prod`: Gram determinants multiply under orthogonal
@@ -48,27 +45,6 @@ namespace SignedHermitianSpace
 variable {K V V₁ V₂ : Type*} [CommRing K] {σ : K →+* K} {ε : ℤˣ} [AddCommGroup V] [Module K V]
   [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂] [Module K V₂]
   {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
-
-/-- **Change of basis for the Gram matrix.** If `P` is the matrix of the basis `c` in the basis
-`b`, then the Gram matrix of `h` in `c` is `σ(P)ᵀ G_b P`. -/
-theorem toMatrix₂_basis_change (H : SignedHermitianSpace K V σ ε) (b c : Basis ι K V) :
-    LinearMap.toMatrix₂ c c H.form =
-      ((b.toMatrix c).map σ)ᵀ * LinearMap.toMatrix₂ b b H.form * b.toMatrix c := by
-  ext i j
-  rw [LinearMap.toMatrix₂_apply, ← b.sum_toMatrix_smul_self c i, ← b.sum_toMatrix_smul_self c j]
-  simp only [Matrix.mul_apply, transpose_apply, map_apply, LinearMap.toMatrix₂_apply, map_sum,
-    map_smulₛₗ, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, RingHom.id_apply,
-    Finset.sum_mul, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-
-/-- **The Gram determinant changes by a norm.** If `P` is the matrix of the basis `c` in the basis
-`b`, then `det G_c = σ (det P) * det P * det G_b`, where `det P` is a unit. -/
-theorem det_toMatrix₂_basis_change (H : SignedHermitianSpace K V σ ε) (b c : Basis ι K V) :
-    (LinearMap.toMatrix₂ c c H.form).det =
-      σ (b.toMatrix c).det * (b.toMatrix c).det * (LinearMap.toMatrix₂ b b H.form).det := by
-  rw [toMatrix₂_basis_change H b, det_mul, det_mul, det_transpose, ← RingHom.mapMatrix_apply,
-    ← RingHom.map_det]
-  ring
 
 /-- The Gram matrix of a transported basis: an isometric equivalence `e` carries the Gram matrix
 of `b` to that of `e ∘ b`. -/
@@ -90,7 +66,7 @@ theorem Equivalent.exists_det_eq {H₁ : SignedHermitianSpace K V₁ σ ε}
   let b := b₁.map e.toLinearEquiv
   let _ := b.invertibleToMatrix b₂
   refine ⟨(isUnit_det_of_invertible (b.toMatrix b₂)).unit, ?_⟩
-  rw [det_toMatrix₂_basis_change H₂ b b₂, e.toMatrix₂_map, IsUnit.unit_spec]
+  rw [LinearMap.det_toMatrix₂_basis_change H₂.form b b₂, e.toMatrix₂_map, IsUnit.unit_spec]
 
 /-- **Gram determinants multiply under orthogonal sums.** -/
 theorem det_toMatrix₂_prod (H₁ : SignedHermitianSpace K V₁ σ ε)
