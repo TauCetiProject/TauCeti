@@ -157,26 +157,17 @@ theorem _root_.TauCeti.TwistingChainSystem.IsRepresenting.morseLevelChangeChainS
         (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k (TopPair.ofSubsetMap
           (TopCat.ofHom
             (hX.morseBrokenTrajectorySpaceLevelHomeomorph hf hdense₁ hdense₂ hc₁ hc₂ x y))
-          fun _ ↦ (hX.morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary_iff hf hdense₁ hdense₂
-            hc₁ hc₂).2)) (ind x - ind y - 1).toNat).hom (μ x y) :=
+          fun _ ↦
+            (hX.morseBrokenTrajectorySpaceLevelHomeomorph_mem_morseBrokenTrajectorySpaceBoundary_iff
+              hf hdense₁ hdense₂ hc₁ hc₂).2)) (ind x - ind y - 1).toNat).hom (μ x y) :=
   hS.map _ fun _ _ _ ↦
-    (hX.morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary_iff hf hdense₁ hdense₂ hc₁ hc₂).2
+    (hX.morseBrokenTrajectorySpaceLevelHomeomorph_mem_morseBrokenTrajectorySpaceBoundary_iff hf
+      hdense₁ hdense₂ hc₁ hc₂).2
 
 /-! ### The Barraud–Cornea cocycle and the DG Morse complex -/
 
 variable {Y : Type*} [TopologicalSpace Y] {θ : C(M, Y)} {y₀ : Y}
   (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀)
-
-/-- The Barraud–Cornea cocycle is the twisting cocycle of the evaluation into Moore loops,
-restricted to the trajectory spaces. -/
-private theorem barraudCorneaCocycle_eq_twistingCocycle
-    (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
-    hX.barraudCorneaCocycle hf hdense hθ hc S =
-      S.twistingCocycle (fun x y ↦ (hX.morseLoopEvaluation hf hdense hθ x y).comp
-          (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)))
-        (hX.morseLoopEvaluation_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hθ hc) :=
-  TwistingCocycle.ext fun x y ↦ by
-    rw [barraudCorneaCocycle_m, TwistingChainSystem.twistingCocycle_m]
 
 /-- **The Barraud–Cornea cocycle does not depend on the levels**: the Barraud–Cornea cocycle of the
 change of levels of a twisting chain system is the Barraud–Cornea cocycle of the system. A broken

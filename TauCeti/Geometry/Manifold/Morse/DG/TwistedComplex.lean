@@ -139,8 +139,7 @@ def barraudCorneaContinuationCocycle (T : S.Homotopy S') :
   { ν := ν.ν
     mem_graded := ν.mem_graded
     continuation := fun x y ↦ by
-      simpa only [barraudCorneaCocycle_m, TwistingChainSystem.twistingCocycle_m] using
-        ν.continuation x y }
+      simpa only [barraudCorneaCocycle_eq_twistingCocycle] using ν.continuation x y }
 
 /-- The entries of the continuation cocycle of a homotopy `T` are `1 + q_* h`: the Kronecker symbol
 plus the push-forward of the chain of `T` along the evaluation into Moore loops. -/

@@ -32,8 +32,9 @@ spaces:
   point (`morseBrokenTrajectorySpaceLevelHomeomorph_morseBrokenTrajectorySpaceComp`, in the
   namespace `TauCeti.IsAdaptedPseudoGradient`);
 * it carries the boundary, the broken trajectories that are not unbroken, onto the boundary
-  (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary_iff`),
-  since the boundary is the union of the images of the composition maps;
+  (`morseBrokenTrajectorySpaceLevelHomeomorph_mem_morseBrokenTrajectorySpaceBoundary_iff`, in the
+  namespace `TauCeti.IsAdaptedPseudoGradient`), since the boundary is the union of the images of
+  the composition maps;
 * it does not change the Moore path of a broken trajectory, parametrized by the values of `f`
   (`TauCeti.IsAdaptedPseudoGradient.morseLevelPath_morseBrokenTrajectorySpaceLevelHomeomorph`).
 
@@ -54,7 +55,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   re-recording have the same point on every level.
 * `morseBrokenTrajectorySpaceLevelHomeomorph_morseBrokenTrajectorySpaceComp`: the change of levels
   commutes with the composition maps.
-* `morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary_iff`: it preserves the boundary.
+* `morseBrokenTrajectorySpaceLevelHomeomorph_mem_morseBrokenTrajectorySpaceBoundary_iff`: it
+  preserves the boundary.
 * `morseLevelPath_morseBrokenTrajectorySpaceLevelHomeomorph`: it preserves the Moore paths of
   broken trajectories.
 
@@ -241,7 +243,7 @@ theorem morseBrokenTrajectorySpaceLevelHomeomorph_morseBrokenTrajectorySpaceComp
 
 /-- The change of levels carries the boundary into the boundary: a boundary point is a
 concatenation at a critical point, and the change of levels commutes with concatenation. -/
-private theorem morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary
+private theorem morseBrokenTrajectorySpaceLevelHomeomorph_mem_morseBrokenTrajectorySpaceBoundary
     {x y : criticalPoints 𝓘(ℝ, E) f} {w : hX.morseBrokenTrajectorySpace c x y}
     (hw : w ∈ hX.morseBrokenTrajectorySpaceBoundary c x y) :
     hX.morseBrokenTrajectorySpaceLevelHomeomorph hf hdense hdense' hc hc' x y w ∈
@@ -253,14 +255,17 @@ private theorem morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary
 
 /-- **The change of levels preserves the boundary**: a broken trajectory is not unbroken exactly
 when its re-recording is not. -/
-theorem morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary_iff
+theorem morseBrokenTrajectorySpaceLevelHomeomorph_mem_morseBrokenTrajectorySpaceBoundary_iff
     {x y : criticalPoints 𝓘(ℝ, E) f} {w : hX.morseBrokenTrajectorySpace c x y} :
     hX.morseBrokenTrajectorySpaceLevelHomeomorph hf hdense hdense' hc hc' x y w ∈
         hX.morseBrokenTrajectorySpaceBoundary c' x y ↔
       w ∈ hX.morseBrokenTrajectorySpaceBoundary c x y := by
-  refine ⟨fun hw ↦ ?_, hX.morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary hf hdense hdense'
-    hc hc'⟩
-  have h := hX.morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary hf hdense' hdense hc' hc hw
+  refine ⟨fun hw ↦ ?_,
+    hX.morseBrokenTrajectorySpaceLevelHomeomorph_mem_morseBrokenTrajectorySpaceBoundary hf
+      hdense hdense' hc hc'⟩
+  have h :=
+    hX.morseBrokenTrajectorySpaceLevelHomeomorph_mem_morseBrokenTrajectorySpaceBoundary hf
+      hdense' hdense hc' hc hw
   rwa [← morseBrokenTrajectorySpaceLevelHomeomorph_symm, Homeomorph.symm_apply_apply] at h
 
 end IsAdaptedPseudoGradient
