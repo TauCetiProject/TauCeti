@@ -18,13 +18,13 @@ import TauCeti.RingTheory.Localization.AsSubring
 /-!
 # Localizations of integral closures of Dedekind domains are valuation rings
 
-The localization of a Dedekind domain at a nonzero prime is a discrete valuation ring, and at the
-zero prime it is the fraction field; in both cases it is a valuation ring
-(`IsDedekindDomain.preValuationRing_atPrime`). This passes to the integral closure `B` of a
-Dedekind domain `R` in a separable algebraic extension `L` of its fraction field `K`, which need
-not be finite and whose integral closure need not be Noetherian, for instance the ring of all
-algebraic integers in an algebraic closure of `ℚ`: every localization of `B` at a prime is a
-valuation ring (`IsIntegralClosure.preValuationRing_atPrime`), that is, `B` is a Prüfer domain.
+The localization of a Dedekind domain at a prime is a local Dedekind domain, hence a principal
+ideal domain and so a valuation ring, as Mathlib's instances record. This passes to the integral
+closure `B` of a Dedekind domain `R` in a separable algebraic extension `L` of its fraction field
+`K`, which need not be finite and whose integral closure need not be Noetherian, for instance the
+ring of all algebraic integers in an algebraic closure of `ℚ`: every localization of `B` at a
+prime is a valuation ring (`IsIntegralClosure.preValuationRing_atPrime`), that is, `B` is a
+Prüfer domain.
 
 The proof is the directed union over finite subextensions. An element `x ∈ L` lies in the finite
 separable extension `F = K(x)`, whose integral closure `C` of `R` is a Dedekind domain mapping to
@@ -37,13 +37,12 @@ decomposition and inertia groups, and Frobenius elements.
 
 ## Main results
 
-* `IsDedekindDomain.preValuationRing_atPrime`: the localizations of a Dedekind domain at its
-  primes are valuation rings.
 * `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_asIdeal`: at a nonzero prime, the
   localization as a valuation subring is Mathlib's
   `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime`.
-* `IsIntegralClosure.preValuationRing_atPrime`: the same for the integral closure of a Dedekind
-  domain in a separable algebraic extension of its fraction field.
+* `IsIntegralClosure.preValuationRing_atPrime`: the localizations at primes of the integral
+  closure of a Dedekind domain in a separable algebraic extension of its fraction field are
+  valuation rings.
 
 ## References
 
@@ -56,22 +55,6 @@ decomposition and inertia groups, and Frobenius elements.
 public section
 
 open scoped nonZeroDivisors
-
-/-- **The localizations of a Dedekind domain at its primes are valuation rings**: discrete
-valuation rings at the nonzero primes, and the fraction field at the zero prime. -/
-instance IsDedekindDomain.preValuationRing_atPrime {C : Type*} [CommRing C] [IsDedekindDomain C]
-    (P : Ideal C) [P.IsPrime] : PreValuationRing (Localization.AtPrime P) := by
-  rw [P.preValuationRing_atPrime_iff (FractionRing C)]
-  intro x
-  simp_rw [Localization.subalgebra.mem_ofField_iff]
-  by_cases hP : P = ⊥
-  · obtain ⟨a, s, hs, rfl⟩ := IsFractionRing.div_surjective C x
-    refine Or.inl ⟨a, s, ?_, div_eq_mul_inv _ _⟩
-    simpa [hP, Ideal.primeCompl] using nonZeroDivisors.ne_zero hs
-  · let w : HeightOneSpectrum C := ⟨P, inferInstance, hP⟩
-    exact ((HeightOneSpectrum.valuationSubringAtPrime (FractionRing C) w).mem_or_inv_mem x).imp
-      HeightOneSpectrum.mem_valuationSubringAtPrime_iff.mp
-      HeightOneSpectrum.mem_valuationSubringAtPrime_iff.mp
 
 /-- At a nonzero prime `v` of a Dedekind domain `C` with fraction field `L`, the localization at
 `v.asIdeal` realized inside `L` is Mathlib's `HeightOneSpectrum.valuationSubringAtPrime`. So the

@@ -115,9 +115,7 @@ theorem algebraMap_mem_valuationSubring (A : ValuationSubring (AlgebraicClosure 
     (b : integralClosure (𝓞 F) (AlgebraicClosure F)) :
     algebraMap (integralClosure (𝓞 F) (AlgebraicClosure F)) (AlgebraicClosure F) b ∈ A := by
   have hb : IsIntegral ℤ (b : AlgebraicClosure F) := isIntegral_trans (R := ℤ) _ b.property
-  obtain ⟨a, ha⟩ := IsIntegrallyClosed.isIntegral_iff.mp (hb.tower_top (A := A))
-  rw [Subalgebra.algebraMap_apply, ← ha]
-  exact a.property
+  exact Subring.isIntegrallyClosed_iff.mp inferInstance (hb.tower_top (A := A))
 
 /-- **Valuation subrings of `F^alg` are primes of `O`**: sending a valuation subring to its centre
 on `O` is a bijection onto the prime spectrum of `O`, with inverse `Q ↦ O_Q`. -/
@@ -183,14 +181,13 @@ theorem inertiaGroup_eq_map_inertiaSubgroup :
 
 /-- **Arithmetic Frobenius elements at a prime and at its valuation subring**: `σ ∈ G_F` is an
 arithmetic Frobenius element at `Q` exactly when it lies in the decomposition subgroup of `O_Q`
-and acts on the residue field of `O_Q` as `x ↦ x ^ q`, where `q = #(𝓞 F ⧸ Q ∩ 𝓞 F)`. -/
+and acts on the residue field of `O_Q` as `y ↦ y ^ q`, where `q = #(𝓞 F ⧸ Q ∩ 𝓞 F)`. -/
 theorem isArithFrobAtIntegralPrime_iff_residue {σ : Field.absoluteGaloisGroup F} :
     IsArithFrobAtIntegralPrime σ Q ↔
       ∃ hσ : σ ∈ (Q.valuationSubringAtPrime (AlgebraicClosure F)).decompositionSubgroup F,
-        ∀ x : Q.valuationSubringAtPrime (AlgebraicClosure F),
-          IsLocalRing.residue _ ((⟨σ, hσ⟩ : (Q.valuationSubringAtPrime
-            (AlgebraicClosure F)).decompositionSubgroup F) • x) =
-            IsLocalRing.residue _ x ^ Nat.card (𝓞 F ⧸ Q.under (𝓞 F)) :=
+        ∀ y : IsLocalRing.ResidueField (Q.valuationSubringAtPrime (AlgebraicClosure F)),
+          (⟨σ, hσ⟩ : (Q.valuationSubringAtPrime (AlgebraicClosure F)).decompositionSubgroup F) •
+            y = y ^ Nat.card (𝓞 F ⧸ Q.under (𝓞 F)) :=
   Ideal.isCenteredAt_valuationSubringAtPrime.isArithFrobAt_iff
 
 variable (F) in
@@ -200,15 +197,9 @@ theorem exists_isCenteredAt_under_eq (p : Ideal (𝓞 F)) [p.IsPrime] :
     ∃ (A : ValuationSubring (AlgebraicClosure F))
       (Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))), Q.IsPrime ∧
         A.IsCenteredAt Q ∧ Q.under (𝓞 F) = p := by
-  have hinj : Function.Injective
-      (algebraMap (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F))) := fun x y hxy ↦
-    FaithfulSMul.algebraMap_injective (𝓞 F) (AlgebraicClosure F) (by
-      rw [IsScalarTower.algebraMap_apply (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F)), hxy,
-        ← IsScalarTower.algebraMap_apply])
-  obtain ⟨Q, -, hQ, hQp⟩ := Ideal.exists_ideal_over_prime_of_isIntegral p
-    (⊥ : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))) (by
-      simp [← RingHom.ker_eq_comap_bot, (RingHom.injective_iff_ker_eq_bot _).mp hinj])
-  exact ⟨Q.valuationSubringAtPrime _, Q, hQ, Ideal.isCenteredAt_valuationSubringAtPrime, hQp⟩
+  obtain ⟨⟨Q, hQ, hQp⟩⟩ := p.nonempty_primesOver (S := integralClosure (𝓞 F) (AlgebraicClosure F))
+  exact ⟨Q.valuationSubringAtPrime _, Q, hQ, Ideal.isCenteredAt_valuationSubringAtPrime,
+    ((Ideal.liesOver_iff _ _).mp hQp).symm⟩
 
 variable {Q} in
 omit [Q.IsPrime] in
