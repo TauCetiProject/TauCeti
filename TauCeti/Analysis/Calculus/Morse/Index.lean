@@ -346,6 +346,12 @@ theorem morseIndex_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
     morseIndex f x = morseIndex g x := by
   rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_congr_of_eventuallyEq hfg]
 
+/-- Adding a constant to a function does not change its Morse index. -/
+@[simp]
+theorem morseIndex_const_add (c : ℝ) (f : E → ℝ) (x : E) :
+    morseIndex (fun y ↦ c + f y) x = morseIndex f x := by
+  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_const_add]
+
 /-- The Morse index is invariant under a `C²` change of coordinates with invertible derivative.
 Criticality is needed because it removes the first-order term from the second-order chain rule. -/
 theorem morseIndex_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
