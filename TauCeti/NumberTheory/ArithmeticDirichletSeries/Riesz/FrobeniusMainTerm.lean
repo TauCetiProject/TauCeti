@@ -27,14 +27,14 @@ open scoped BigOperators ComplexConjugate
 
 namespace MonoidHom
 
-open Classical in
 /-- In the main-term correction for a Frobenius-restricted first Riesz sum, the constants `d χ`
 for nontrivial characters cancel except for `d q`, which enters with a positive sign. The
 principal constant is `b` (arithmetically `1 + γ`). Multiplication by `c` and `τ` matches the
 caps off the kernel with those on the kernel. -/
 theorem expect_filter_apply_ne_one_mul_log_div_sub_sum_conj_mul_eq {G : Type*} [Group G] [Fintype G]
-    (q : G →* ℂˣ) (hq : q * q = 1) {c τ : G} (hc : (q c : ℂ) = -1) (hτ : q τ = 1)
-    (s : Finset (G →* ℂˣ)) (hs : q ∈ s) (d : (G →* ℂˣ) → ℂ) (b : ℂ)
+    (q : G →* ℂˣ) [DecidablePred fun g ↦ q g ≠ 1] [DecidablePred fun h ↦ q h = 1]
+    (hq : q * q = 1) {c τ : G} (hc : (q c : ℂ) = -1) (hτ : q τ = 1)
+    (s : Finset (G →* ℂˣ)) [DecidableEq (G →* ℂˣ)] (hs : q ∈ s) (d : (G →* ℂˣ) → ℂ) (b : ℂ)
     (a : ℝ) (w : G → ℝ) (hw : ∀ h ∈ q.ker, w h ≠ 0) :
     (𝔼 g with q g ≠ 1, (w (c * g * τ) : ℂ) * ((a / w (c * g * τ) : ℝ) : ℂ) *
       ((Real.log (a / w (c * g * τ)) : ℂ) - b -
