@@ -1,0 +1,282 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Fredholm.NormalForm.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Equivariant
+import TauCeti.Topology.Algebra.Module.InvariantComplement
+
+/-!
+# The equivariant Lyapunov–Schmidt reduction
+
+Let `f : E → F` be a map whose derivative `T` at a point `a` is Fredholm, and let
+`ContinuousLinearMap.FredholmPackage.obstructionMap` be its finite-dimensional obstruction in the
+normal-form coordinates of a Fredholm package `pkg` of `T`. This file shows that the reduction
+inherits the symmetries of `f`.
+
+Suppose that continuous linear maps `σ : E → E` and `τ : F → F` intertwine `f` near `a`,
+`f (σ x) = τ (f x)`, that `σ` fixes `a`, and that `σ` preserves the two summands of the domain
+splitting of `pkg` and `τ` the two summands of its codomain splitting. Write `σ₀` and `τ₀`, `τ₁`
+for the restrictions of `σ` and `τ` to the finite-dimensional summands and to the essential
+codomain summand. Then near the coordinate of `a`:
+
+* the normal-form coordinates intertwine `σ` with `τ₁ × σ₀`
+  (`ContinuousLinearMap.FredholmPackage.normalFormMap_map`), and so does the inverse chart
+  (`ContinuousLinearMap.FredholmPackage.eventually_normalFormOpenPartialHomeomorph_symm_prodMap`);
+* the obstruction map intertwines `τ₁ × σ₀` with `τ₀`
+  (`ContinuousLinearMap.FredholmPackage.eventually_obstructionMap_prodMap`), and its slice through
+  the base point intertwines `σ₀` with `τ₀`
+  (`ContinuousLinearMap.FredholmPackage.eventually_obstructionSlice_map`).
+
+Two of these four invariance conditions hold automatically: differentiating `f ∘ σ = τ ∘ f` at `a`
+gives `T ∘ σ = τ ∘ T`, so `σ` preserves the kernel of `T` and `τ` its range
+(`ContinuousLinearMap.FredholmPackage.mapsTo_decDom_X₀`,
+`ContinuousLinearMap.FredholmPackage.mapsTo_decCodom_X₁`). Splittings with all four invariance
+properties exist: if a finite group `G` of invertible order acts on
+`E` and `F` by continuous linear maps and `T` intertwines the two actions, then `T` has a Fredholm
+package whose four summands are `G`-invariant
+(`ContinuousLinearMap.IsFredholm.exists_fredholmPackage_forall_mapsTo`), obtained by averaging
+projections over `G`.
+
+The case of an involution acting by `-1` on the kernel and on the cokernel of `T` is the source of
+odd obstruction maps (`ContinuousLinearMap.FredholmPackage.eventually_obstructionSlice_neg`). In
+Taubes's count of pseudoholomorphic curves this is the expected situation at a period-doubling
+bifurcation of a torus: the deformation problem of its double cover commutes with the deck
+involution, the double cover itself is a fixed solution, and at the bifurcation the kernel of the
+linearization consists of sections that are odd under the involution. The reduced obstruction slice
+is then an odd function, to which the pitchfork model `TauCeti.eventually_pitchfork` of
+`TauCeti.Analysis.Calculus.Bifurcation` applies once the kernel and cokernel are identified with
+the scalars; a pair of opposite nonzero zeros of the slice is one orbit of the involution, which
+would correspond to one embedded torus in twice the class of the original one. This file proves
+only the abstract reduction, not these geometric identifications.
+
+## Main results
+
+* `ContinuousLinearMap.IsFredholm.exists_fredholmPackage_forall_mapsTo`: an equivariant Fredholm
+  operator has a Fredholm package with invariant summands.
+* `ContinuousLinearMap.FredholmPackage.mapsTo_decDom_X₀`,
+  `ContinuousLinearMap.FredholmPackage.mapsTo_decCodom_X₁`: the symmetries of an equivariant map
+  preserve the kernel and the range of its derivative at a fixed point.
+* `ContinuousLinearMap.FredholmPackage.normalFormMap_map`,
+  `ContinuousLinearMap.FredholmPackage.eventually_normalFormOpenPartialHomeomorph_symm_prodMap`:
+  the normal-form chart and its inverse are equivariant.
+* `ContinuousLinearMap.FredholmPackage.eventually_obstructionMap_prodMap`: the obstruction map of
+  an equivariant map is equivariant.
+* `ContinuousLinearMap.FredholmPackage.eventually_obstructionSlice_map`: so is its slice through the
+  base point.
+* `ContinuousLinearMap.FredholmPackage.eventually_obstructionSlice_neg`: for an involution acting by
+  `-1` on the kernel and the cokernel, the slice is odd.
+
+## References
+
+* M. Golubitsky and D. G. Schaeffer, *Singularities and Groups in Bifurcation Theory, Vol. I*,
+  Applied Mathematical Sciences 51, Springer, 1985, Chapter VII, §3 (the equivariant
+  Lyapunov–Schmidt reduction).
+* C. H. Taubes, *Counting pseudo-holomorphic submanifolds in dimension 4*, J. Differential Geom.
+  44 (1996), 818–893.
+-/
+
+public section
+
+open Set Filter Topology
+
+namespace ContinuousLinearMap
+
+section Package
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [AddCommGroup F] [Module 𝕜 E] [Module 𝕜 F]
+  [TopologicalSpace E] [TopologicalSpace F] [IsTopologicalAddGroup E] [IsTopologicalAddGroup F]
+  [ContinuousConstSMul 𝕜 E] [ContinuousSMul 𝕜 F]
+
+/-- **Equivariant Fredholm packages.** Let a finite group `G`, whose order is invertible in `𝕜`,
+act on `E` and on `F` by continuous linear maps, and let `u` be a Fredholm operator intertwining
+the two actions. Then `u` has a Fredholm package whose four summands are invariant under the
+actions. -/
+theorem IsFredholm.exists_fredholmPackage_forall_mapsTo {G : Type*} [Group G] [Finite G]
+    (hG : IsUnit (Nat.card G : 𝕜)) {u : E →L[𝕜] F} (hu : u.IsFredholm)
+    (ρ : G →* E →L[𝕜] E) (ρ' : G →* F →L[𝕜] F) (hρ : ∀ g x, u (ρ g x) = ρ' g (u x)) :
+    ∃ pkg : FredholmPackage u, ∀ g,
+      MapsTo (ρ g) pkg.decDom.X₀ pkg.decDom.X₀ ∧ MapsTo (ρ g) pkg.decDom.X₁ pkg.decDom.X₁ ∧
+        MapsTo (ρ' g) pkg.decCodom.X₀ pkg.decCodom.X₀ ∧
+          MapsTo (ρ' g) pkg.decCodom.X₁ pkg.decCodom.X₁ := by
+  have hker (g : G) : MapsTo (ρ g) u.ker u.ker := fun x hx ↦ by
+    simp only [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx ⊢
+    rw [hρ, hx, map_zero]
+  have hrange (g : G) : MapsTo (ρ' g) u.range u.range := by
+    rintro _ ⟨x, rfl⟩
+    exact ⟨ρ g x, hρ g x⟩
+  obtain ⟨dom₁, h_dom, h_dom₁⟩ :=
+    hu.closedComplemented_ker.exists_isTopCompl_forall_mapsTo hG ρ hker
+  obtain ⟨codom₀, h_codom, h_codom₀⟩ :=
+    hu.closedComplemented_range.exists_isTopCompl_forall_mapsTo hG ρ' hrange
+  exact ⟨hu.fredholmPackage h_dom h_codom, fun g ↦ ⟨hker g, h_dom₁ g, h_codom₀ g, hrange g⟩⟩
+
+end Package
+
+namespace FredholmPackage
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {T : E →L[𝕜] F} (pkg : ContinuousLinearMap.FredholmPackage T)
+  {σ : E →L[𝕜] E} {τ : F →L[𝕜] F}
+  (hσ₀ : MapsTo σ pkg.decDom.X₀ pkg.decDom.X₀) (hσ₁ : MapsTo σ pkg.decDom.X₁ pkg.decDom.X₁)
+  (hτ₀ : MapsTo τ pkg.decCodom.X₀ pkg.decCodom.X₀)
+  (hτ₁ : MapsTo τ pkg.decCodom.X₁ pkg.decCodom.X₁)
+  {f : E → F} {a : E}
+
+include hτ₀ hτ₁ in
+/-- The projection of the codomain onto its essential summand commutes with a map preserving both
+codomain summands. -/
+private theorem proj_map (y : F) :
+    pkg.decCodom.proj (τ y) = τ.restrict (fun _ hx ↦ hτ₁ hx) (pkg.decCodom.proj y) :=
+  Subtype.ext <| Submodule.projectionL_apply_of_mapsTo pkg.decCodom.isTopCompl hτ₁ hτ₀ y
+
+include hσ₀ hσ₁ in
+/-- The projection of the domain onto its finite-dimensional summand commutes with a map preserving
+both domain summands. -/
+private theorem projX₀_map (x : E) :
+    pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm (σ x) =
+      σ.restrict (fun _ hx ↦ hσ₀ hx)
+        (pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm x) :=
+  Subtype.ext <| Submodule.projectionL_apply_of_mapsTo pkg.decDom.isTopCompl.symm hσ₀ hσ₁ x
+
+include hσ₀ hσ₁ hτ₀ hτ₁ in
+/-- **The normal-form coordinates are equivariant.** If `σ` fixes the base point `a`, preserves both
+domain summands, `τ` preserves both codomain summands and `f (σ x) = τ (f x)`, then the normal-form
+coordinates of `σ x` are those of `x` moved by the restrictions of `τ` and `σ`. -/
+theorem normalFormMap_map (ha : σ a = a) {x : E} (hx : f (σ x) = τ (f x)) :
+    pkg.normalFormMap f a (σ x) =
+      Prod.map (τ.restrict fun _ hy ↦ hτ₁ hy) (σ.restrict fun _ hy ↦ hσ₀ hy)
+        (pkg.normalFormMap f a x) := by
+  rw [normalFormMap_apply, normalFormMap_apply, Prod.map_apply, hx, ← pkg.proj_map hτ₀ hτ₁,
+    ← pkg.projX₀_map hσ₀ hσ₁, map_sub σ, ha]
+
+/-- If `f` intertwines `σ` with `τ` near a point `a` fixed by `σ`, then `σ` preserves the kernel
+of the derivative `T` of `f` at `a`, which is the finite-dimensional domain summand. -/
+theorem mapsTo_decDom_X₀ (hf : HasFDerivAt f T a) (ha : σ a = a)
+    (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) : MapsTo σ pkg.decDom.X₀ pkg.decDom.X₀ := by
+  intro x hx
+  rw [SetLike.mem_coe, ← pkg.ker_eq] at hx ⊢
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx ⊢
+  rw [← comp_apply, hf.comp_eq_comp_of_eventuallyEq σ.hasFDerivAt
+    τ.hasFDerivAt ha hfσ, comp_apply, hx, map_zero]
+
+/-- If `f` intertwines `σ` with `τ` near a point `a` fixed by `σ`, then `τ` preserves the range of
+the derivative `T` of `f` at `a`, which is the essential codomain summand. -/
+theorem mapsTo_decCodom_X₁ (hf : HasFDerivAt f T a) (ha : σ a = a)
+    (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) : MapsTo τ pkg.decCodom.X₁ pkg.decCodom.X₁ := by
+  rw [← pkg.range_eq]
+  rintro _ ⟨x, rfl⟩
+  exact ⟨σ x, congr($(hf.comp_eq_comp_of_eventuallyEq σ.hasFDerivAt τ.hasFDerivAt ha hfσ) x)⟩
+
+section Chart
+
+variable [CompleteSpace E]
+
+include hσ₀ hσ₁ hτ₀ hτ₁ in
+/-- **The inverse normal-form chart is equivariant.** Near the coordinate of the base point, the
+inverse normal-form chart intertwines the restrictions of `τ` and `σ` with `σ`. -/
+theorem eventually_normalFormOpenPartialHomeomorph_symm_prodMap (hf : HasStrictFDerivAt f T a)
+    (ha : σ a = a) (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) :
+    ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
+      (pkg.normalFormOpenPartialHomeomorph hf).symm
+          (Prod.map (τ.restrict fun _ hy ↦ hτ₁ hy) (σ.restrict fun _ hy ↦ hσ₀ hy) y) =
+        σ ((pkg.normalFormOpenPartialHomeomorph hf).symm y) := by
+  set Φ := pkg.normalFormOpenPartialHomeomorph hf
+  have hy₀ := pkg.normalFormOpenPartialHomeomorph_self_mem_target hf
+  have hsymm : Φ.symm (pkg.decCodom.proj (f a), 0) = a :=
+    pkg.normalFormOpenPartialHomeomorph_symm_proj_self hf
+  -- Near `a`, `f` is equivariant and `σ` maps into the source of the chart.
+  have hσsrc : ∀ᶠ x in 𝓝 a, σ x ∈ Φ.source :=
+    σ.continuous.continuousAt.preimage_mem_nhds
+      (by rw [ha]; exact Φ.open_source.mem_nhds (pkg.mem_normalFormOpenPartialHomeomorph_source hf))
+  have hnear : ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
+      f (σ (Φ.symm y)) = τ (f (Φ.symm y)) ∧ σ (Φ.symm y) ∈ Φ.source :=
+    (Φ.continuousAt_symm hy₀).eventually
+      (p := fun x ↦ f (σ x) = τ (f x) ∧ σ x ∈ Φ.source) (by rw [hsymm]; exact hfσ.and hσsrc)
+  filter_upwards [Φ.open_target.mem_nhds hy₀, hnear] with y hy ⟨hfy, hsrc⟩
+  have hΦ : Φ (σ (Φ.symm y)) =
+      Prod.map (τ.restrict fun _ hy ↦ hτ₁ hy) (σ.restrict fun _ hy ↦ hσ₀ hy) y := by
+    rw [pkg.normalFormOpenPartialHomeomorph_apply, pkg.normalFormMap_map hσ₀ hσ₁ hτ₀ hτ₁ ha hfy,
+      ← pkg.normalFormOpenPartialHomeomorph_apply hf, Φ.right_inv hy]
+  rw [← hΦ, Φ.left_inv hsrc]
+
+include hσ₀ hσ₁ hτ₀ hτ₁ in
+/-- **The obstruction map is equivariant.** If `σ` fixes the base point `a`, preserves both domain
+summands, `τ` preserves both codomain summands and `f` intertwines `σ` with `τ` near `a`, then near
+the coordinate of `a` the obstruction map intertwines the restrictions of `τ` and `σ` with the
+restriction of `τ` to the finite-dimensional codomain summand. -/
+theorem eventually_obstructionMap_prodMap (hf : HasStrictFDerivAt f T a) (ha : σ a = a)
+    (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) :
+    ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
+      pkg.obstructionMap hf
+          (Prod.map (τ.restrict fun _ hy ↦ hτ₁ hy) (σ.restrict fun _ hy ↦ hσ₀ hy) y) =
+        τ.restrict (fun _ hy ↦ hτ₀ hy) (pkg.obstructionMap hf y) := by
+  set Φ := pkg.normalFormOpenPartialHomeomorph hf
+  have hnear : ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
+      f (σ (Φ.symm y)) = τ (f (Φ.symm y)) := by
+    refine (Φ.continuousAt_symm (pkg.normalFormOpenPartialHomeomorph_self_mem_target hf)).eventually
+      (p := fun x ↦ f (σ x) = τ (f x)) ?_
+    rw [pkg.normalFormOpenPartialHomeomorph_symm_proj_self hf]
+    exact hfσ
+  filter_upwards [pkg.eventually_normalFormOpenPartialHomeomorph_symm_prodMap hσ₀ hσ₁ hτ₀ hτ₁ hf
+    ha hfσ, hnear] with y hy hfy
+  refine Subtype.ext ?_
+  rw [obstructionMap_apply, obstructionMap_apply, hy, hfy, coe_restrict_apply,
+    Submodule.coe_projectionOntoL_apply, Submodule.coe_projectionOntoL_apply]
+  exact Submodule.projectionL_apply_of_mapsTo pkg.decCodom.isTopCompl.symm hτ₀ hτ₁ _
+
+include hσ₀ hσ₁ hτ₀ in
+/-- **The obstruction slice through the base point is equivariant.** Under the hypotheses of
+`eventually_obstructionMap_prodMap`, where `τ` preserves the essential codomain summand by
+`mapsTo_decCodom_X₁`, the essential coordinate `pkg.decCodom.proj (f a)` of the base
+point is fixed by `τ`, and near `0` the slice of the obstruction map through it intertwines the
+restrictions of `σ` and `τ` to the finite-dimensional summands. -/
+theorem eventually_obstructionSlice_map (hf : HasStrictFDerivAt f T a) (ha : σ a = a)
+    (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) :
+    ∀ᶠ z in 𝓝 (0 : pkg.decDom.X₀),
+      pkg.obstructionSlice hf (pkg.decCodom.proj (f a)) (σ.restrict (fun _ hy ↦ hσ₀ hy) z) =
+        τ.restrict (fun _ hy ↦ hτ₀ hy) (pkg.obstructionSlice hf (pkg.decCodom.proj (f a)) z) := by
+  have hτ₁ := pkg.mapsTo_decCodom_X₁ hf.hasFDerivAt ha hfσ
+  have hfa : τ (f a) = f a := by rw [← hfσ.self_of_nhds, ha]
+  have hy₁ :
+      τ.restrict (fun _ hy ↦ hτ₁ hy) (pkg.decCodom.proj (f a)) = pkg.decCodom.proj (f a) := by
+    rw [← pkg.proj_map hτ₀ hτ₁, hfa]
+  have hslice : Tendsto (fun z : pkg.decDom.X₀ ↦ (pkg.decCodom.proj (f a), z)) (𝓝 0)
+      (𝓝 (pkg.decCodom.proj (f a), 0)) :=
+    (continuous_const.prodMk continuous_id).tendsto' _ _ rfl
+  filter_upwards [hslice.eventually (pkg.eventually_obstructionMap_prodMap hσ₀ hσ₁ hτ₀ hτ₁ hf ha
+    hfσ)] with z hz
+  rw [obstructionSlice_apply, obstructionSlice_apply, ← hz, Prod.map_apply, hy₁]
+
+/-- **Odd obstruction slices.** Suppose that `σ` fixes the base point `a`, acts by `-1` on the
+finite-dimensional domain summand (the kernel of `T`) and preserves the essential one, that `τ` acts
+by `-1` on the finite-dimensional codomain summand, and that `f` intertwines `σ` with `τ` near `a`.
+Then near `0` the slice of the obstruction map through the base point is odd. -/
+theorem eventually_obstructionSlice_neg (hf : HasStrictFDerivAt f T a)
+    (hσ₀ : ∀ x ∈ pkg.decDom.X₀, σ x = -x) (hσ₁ : MapsTo σ pkg.decDom.X₁ pkg.decDom.X₁)
+    (hτ₀ : ∀ y ∈ pkg.decCodom.X₀, τ y = -y) (ha : σ a = a) (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) :
+    ∀ᶠ z in 𝓝 (0 : pkg.decDom.X₀),
+      pkg.obstructionSlice hf (pkg.decCodom.proj (f a)) (-z) =
+        -pkg.obstructionSlice hf (pkg.decCodom.proj (f a)) z := by
+  have hσ₀' : MapsTo σ pkg.decDom.X₀ pkg.decDom.X₀ := fun x hx ↦ by
+    rw [SetLike.mem_coe, hσ₀ x hx]
+    exact neg_mem hx
+  have hτ₀' : MapsTo τ pkg.decCodom.X₀ pkg.decCodom.X₀ := fun y hy ↦ by
+    rw [SetLike.mem_coe, hτ₀ y hy]
+    exact neg_mem hy
+  filter_upwards [pkg.eventually_obstructionSlice_map hσ₀' hσ₁ hτ₀' hf ha hfσ] with z hz
+  have hσz : σ.restrict (fun _ hy ↦ hσ₀' hy) z = -z := Subtype.ext (hσ₀ z z.property)
+  rw [← hσz, hz]
+  exact Subtype.ext (hτ₀ _ (Subtype.property _))
+
+end Chart
+
+end FredholmPackage
+
+end ContinuousLinearMap
