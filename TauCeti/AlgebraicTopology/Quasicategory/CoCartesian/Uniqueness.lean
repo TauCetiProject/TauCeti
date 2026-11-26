@@ -274,8 +274,9 @@ private lemma exists_lift_boundary_pre_horn_zero [InnerFibration p] {n : ℕ}
       rw [ihomOver.obj₀Equiv_app_coe] at hv
       have h₁ : (lift (𝟙 _) (const (stdSimplex.obj₀Equiv.symm v))).app _
           (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
-          (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp), stdSimplex.const n v _) :=
-        Prod.ext rfl rfl
+          (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp), stdSimplex.const n v _) := by
+        rw [lift_id_const_app_one, Edge.id_edge, SimplicialObject.σ_def,
+          stdSimplex.obj₀Equiv_symm_apply, stdSimplex.map_const]
       have h₂ := hpush.inr_desc (ihomOver.homEquiv t₀).val (ihomOver.homEquiv b₀).val hw
       exact hv.of_edge_eq ((congrArg ((ihomOver.homEquiv b₀).val.app _) h₁).trans
         (congrArg (fun f : (Λ[m + 2, 0] : SSet.{u}) ⊗ Δ[n] ⟶ X ↦ f.app _
@@ -314,7 +315,7 @@ theorem exists_lift_tensor_horn_zero [InnerFibration p] {Z : SSet.{u}}
       rw [ihomOver.obj₀Equiv_app_coe, Equiv.apply_symm_apply]
       have hz : (lift (𝟙 _) (const z)).app _ (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp)) =
           (horn.edge (m + 2) 0 0 1 (Fin.zero_le _) (by simp), Z.σ 0 z) :=
-        Prod.ext rfl (const_app_one (W := (Λ[m + 2, 0] : SSet)) z _)
+        lift_id_const_app_one z _
       exact (hZ z).of_edge_eq (congrArg (fun q ↦ b.app _ ((β_ (Λ[m + 2, 0] : SSet) Z).hom.app _ q))
         hz.symm)
   refine ⟨(β_ _ _).hom ≫ (ihomOver.homEquiv l).val, ?_, ?_⟩
