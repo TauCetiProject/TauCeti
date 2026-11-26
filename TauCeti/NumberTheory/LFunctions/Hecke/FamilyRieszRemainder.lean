@@ -59,9 +59,7 @@ theorem ofReal_familyRieszRemainder (w : PrimitiveRayClassCharacter K →₀ ℝ
       w.sum fun ψ c ↦ (c : ℂ) * ((ψ.rieszRemainder y + ψ⁻¹.rieszRemainder y) / 2) := by
   simp only [familyRieszRemainder_apply, Finsupp.sum, ofReal_sum, ofReal_mul,
     PrimitiveRayClassCharacter.rieszRemainder_inv]
-  refine Finset.sum_congr rfl fun ψ _ ↦ congrArg ((w ψ : ℂ) * ·) ?_
-  apply (eq_div_iff (by norm_num : (2 : ℂ) ≠ 0)).mpr
-  rw [Complex.add_conj, ofReal_mul, ofReal_ofNat, mul_comm]
+  exact Finset.sum_congr rfl fun ψ _ ↦ congrArg ((w ψ : ℂ) * ·) (re_eq_add_conj _)
 
 /-- For inverse-symmetric weights the weighted sum of the complex remainders is already real. -/
 theorem ofReal_familyRieszRemainder_of_mapDomain_inv_eq (w : PrimitiveRayClassCharacter K →₀ ℝ)
