@@ -279,6 +279,16 @@ def supportedSubmoduleSectionsRestrict {W' W : Opens X} (i : W' ⟶ W) :
   Functor.whiskerLeft (supportedSubmoduleFunctor S)
     ((sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map i.op)
 
+/-- Restriction of supported sections is induced by presheaf evaluation. -/
+lemma supportedSubmoduleSectionsRestrict_eq_whiskerLeft_evaluation {W' W : Opens X}
+    (i : W' ⟶ W) :
+    supportedSubmoduleSectionsRestrict (R := R) S i =
+      Functor.whiskerLeft
+        (supportedSubmoduleFunctor S ⋙
+          sheafToPresheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))
+        ((evaluation (Opens X)ᵒᵖ (ModuleCat.{u} R)).map i.op) :=
+  (rfl)
+
 /-- Restriction of supported sections leaves the usual restriction in the ambient sheaf. -/
 -- Rewrite before evaluation simplifies the bundled section object.
 @[simp↓]

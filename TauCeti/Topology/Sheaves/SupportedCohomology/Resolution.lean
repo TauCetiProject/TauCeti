@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.DerivedCategory.RightDerivedFunctor.Plus
 public import TauCeti.Topology.Sheaves.SupportedCohomology.Sections
 public import TauCeti.CategoryTheory.Abelian.AcyclicResolution
 public import TauCeti.Topology.Sheaves.Flasque.Module
@@ -23,8 +24,9 @@ functor of sections on `W` supported in `S`.
 
 The comparisons are characterized through every augmentation-preserving map to
 an injective resolution. Thus they do not depend on a chosen comparison map.
-These results do not yet identify the derived sheaf functor with the
-sheafification of the supported Ext presheaves.
+For bounded below complexes of flasque sheaves, the units of the bounded below right derived
+functors are also isomorphisms, both for sheaf-valued supported sections and for supported
+sections on an open.
 
 ## References
 
@@ -37,7 +39,7 @@ public section
 
 open CategoryTheory Limits Opposite TopologicalSpace CochainComplex
 
-universe u
+universe u w w'
 
 namespace CategoryTheory.Sheaf
 
@@ -165,5 +167,38 @@ lemma rightDerivedSupportedSubmoduleSectionsObjIsoOfIsFlasque_hom_comp_homologyM
       (I.isoRightDerivedObj (supportedSubmoduleSectionsFunctor S W) n).hom :=
   Functor.rightDerivedObjIsoOfResolution_hom_comp_homologyMap _ _ _ _ _ ι
     (fun n ↦ isFlasque_iff.mpr (hK n)) n I φ hφ
+
+section BoundedBelow
+
+open DerivedCategory
+
+variable [HasDerivedCategory.{w} (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R))]
+
+/-- A bounded below complex of flasque sheaves computes the derived sheaf of supported
+sections by applying supported sections termwise. -/
+theorem isIso_rightDerivedFunctorPlusUnit_app_supportedSubmodule_of_isFlasque
+    (L : CochainComplex.Plus (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)))
+    (hL : ∀ n, TopCat.Presheaf.IsFlasque (L.obj.X n).obj) :
+    IsIso ((supportedSubmoduleFunctor S).rightDerivedFunctorPlusUnit.app L) :=
+  Functor.isIso_rightDerivedFunctorPlusUnit_app _ (isFlasque X _) flasque_cokernel
+    (supported_exact_on_flasque S)
+    (fun _ _ ↦ isFlasque_iff.mpr (isFlasque_of_injective_moduleCat _)) L
+    (fun n ↦ isFlasque_iff.mpr (hL n))
+
+variable [HasDerivedCategory.{w'} (ModuleCat.{u} R)]
+
+/-- A bounded below complex of flasque sheaves computes derived supported sections on an open
+by taking supported sections on that open termwise. -/
+theorem isIso_rightDerivedFunctorPlusUnit_app_supportedSubmoduleSections_of_isFlasque
+    (W : Opens X)
+    (L : CochainComplex.Plus (Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)))
+    (hL : ∀ n, TopCat.Presheaf.IsFlasque (L.obj.X n).obj) :
+    IsIso ((supportedSubmoduleSectionsFunctor S W).rightDerivedFunctorPlusUnit.app L) :=
+  Functor.isIso_rightDerivedFunctorPlusUnit_app _ (isFlasque X _) flasque_cokernel
+    (supported_sections_exact_on_flasque S W)
+    (fun _ _ ↦ isFlasque_iff.mpr (isFlasque_of_injective_moduleCat _)) L
+    (fun n ↦ isFlasque_iff.mpr (hL n))
+
+end BoundedBelow
 
 end CategoryTheory.Sheaf
