@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities
+import TauCeti.Algebra.BigOperators.AlternatingSum
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Metric
 
 /-!
@@ -143,22 +144,6 @@ end Twisted
 
 /-! ### The Euler characteristic of `M` -/
 
-/-- A shifted alternating sum: if `t` vanishes from `N` on and `r + N ≤ n + 1`, then
-`∑_{r ≤ k ≤ n} (-1)ᵏ t (k - r) = (-1)^r ∑ᶠ m, (-1)ᵐ t m`. -/
-private theorem sum_range_ite_neg_one_pow_mul_eq {t : ℕ → ℤ} {r N n : ℕ}
-    (ht : ∀ m, N ≤ m → t m = 0) (hn : r + N ≤ n + 1) :
-    ∑ k ∈ Finset.range (n + 1), (if r ≤ k then (-1 : ℤ) ^ k * t (k - r) else 0) =
-      (-1) ^ r * ∑ᶠ m, (-1 : ℤ) ^ m * t m := by
-  obtain ⟨d, hd⟩ : ∃ d, n + 1 = r + d := ⟨n + 1 - r, by omega⟩
-  rw [hd, Finset.sum_range_add, Finset.sum_eq_zero fun k hk ↦ ite_eq_right (by simp at hk; omega),
-    zero_add, finsum_eq_sum_of_support_subset _ (s := Finset.range d) fun m hm ↦ ?_,
-    Finset.mul_sum]
-  · refine Finset.sum_congr rfl fun m _ ↦ ?_
-    rw [ite_eq_left (Nat.le_add_right r m), Nat.add_sub_cancel_left, pow_add, mul_assoc]
-  · simp only [Function.mem_support, Finset.coe_range, Set.mem_Iio] at hm ⊢
-    by_contra hmd
-    exact hm (by rw [ht m (by omega), mul_zero])
-
 /-- **The Euler characteristic of a manifold from a Morse–Bott function.** Let the family
 `i j : S j → M` exhibit `f` as a Morse–Bott function on a compact boundaryless manifold `M`, the
 piece `S j` having index `λ_j`. Then `χ(M) = ∑ⱼ (-1)^{λ_j} χ(S j)`. No orientation of the negative
@@ -193,7 +178,7 @@ theorem eulerChar_eq_sum_neg_one_pow_index_mul_eulerChar [FiniteCWType M]
       mul_ite, mul_zero]
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [sum_range_ite_neg_one_pow_mul_eq
+    rw [sum_range_ite_neg_one_pow_mul_eq_neg_one_pow_mul_finsum
       (t := fun m ↦ (h.twistedBettiNumber hn hdim g hV ℚ j m : ℤ)) (fun m hm ↦ by simp [hN m hm j])
       (hrN j),
       h.finsum_neg_one_pow_mul_twistedBettiNumber hn hdim g hV ℚ j]
