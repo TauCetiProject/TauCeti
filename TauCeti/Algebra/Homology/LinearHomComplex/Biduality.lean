@@ -65,12 +65,10 @@ theorem linearDualHomologyEquiv_homologyπ (p n : ℤ) (h : p + n = 0)
     linearDualHomologyEquiv K p n h ((linearDual R K).homologyπ n φ) (K.homologyπ p x) =
       linearDualXEquiv K h ((linearDual R K).iCycles n φ) (K.iCycles p x) := by
   obtain rfl : p = -n := by omega
-  -- The equivalence bundles the operation of taking the underlying linear map.
-  have homLinearEquiv_apply (f : K.homology (-n) ⟶ ModuleCat.of R R) :
-      ModuleCat.homLinearEquiv (S := R) f = f.hom := rfl
-  simpa only [linearDualHomologyEquiv, LinearEquiv.trans_apply, LinearEquiv.cast_apply, cast_eq,
-    homLinearEquiv_apply, linearHomComplexSingleKroneckerEquiv_apply, ModuleCat.hom_comp,
-    LinearMap.comp_apply, linearDualXEquiv_apply] using
+  simp only [linearDualHomologyEquiv, LinearEquiv.trans_apply, LinearEquiv.cast_apply, cast_eq]
+  rw [ModuleCat.homLinearEquiv_apply, AddEquiv.toFun_eq_coe, ModuleCat.homAddEquiv_apply]
+  simpa only [linearHomComplexSingleKroneckerEquiv_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
+    linearDualXEquiv_apply] using
     LinearMap.congr_fun (congrArg ModuleCat.Hom.hom
       (homologyπ_linearHomComplexSingleKronecker (k := R) K (ModuleCat.of R R) n φ)) x
 
