@@ -27,8 +27,12 @@ determines the measure outright.
 
 * `MeasureTheory.Measure.measureReal_le_sum_div_of_le` — a bound by a finite sum divided by a
   nonzero constant passes to real-valued measures when each summand is finite;
+* `MeasureTheory.sum_measureReal_preimage_singleton_inter` — the measurable fibres of a map into
+  a finite type split the mass of every set of finite measure;
 * `TauCeti.volume_Ioc_inter_Ioo_of_le_of_le` — the portion of an interval inside a larger open
   interval keeps its full length;
+* `TauCeti.ae_measureReal_preimage_ne_zero` — for a finite measure, almost every point lies in a
+  fibre of positive mass of a countable label;
 * `MeasureTheory.Measure.map_abs_eq_restrict_add_restrict` — decomposition of the image under
   absolute value into the two half-lines;
 * `MeasureTheory.Measure.map_abs_apply_zero` — the image under absolute value preserves the atom
@@ -190,6 +194,28 @@ theorem map_sq_map_sqrt (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
 
 end MeasureTheory.Measure
 
+namespace MeasureTheory
+
+variable {Ω A : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Fintype A]
+
+/-- The measurable fibres of a map `X` into a finite type partition every set additively: for an
+arbitrary set `S` of finite measure, the masses of `X ⁻¹' {a} ∩ S` sum to the mass of `S`. -/
+theorem sum_measureReal_preimage_singleton_inter {X : Ω → A}
+    (hX : ∀ a, MeasurableSet (X ⁻¹' {a})) (S : Set Ω) (hS : μ S ≠ ∞ := by finiteness) :
+    ∑ a, μ.real (X ⁻¹' {a} ∩ S) = μ.real S := by
+  have := isFiniteMeasure_restrict.mpr hS
+  simp only [← measureReal_restrict_apply (hX _)]
+  rw [sum_measureReal_preimage_singleton _ fun a _ ↦ hX a]
+  simp [measureReal_def]
+
+/-- Under a probability measure the measurable fibres of a map into a finite type have total
+mass one. -/
+theorem sum_measureReal_preimage_singleton_eq_one [IsProbabilityMeasure μ] {X : Ω → A}
+    (hX : ∀ a, MeasurableSet (X ⁻¹' {a})) : ∑ a, μ.real (X ⁻¹' {a}) = 1 := by
+  simpa using sum_measureReal_preimage_singleton_inter (μ := μ) hX univ
+
+end MeasureTheory
+
 namespace TauCeti
 
 /-- The pushforward of Lebesgue measure under an invertible affine map.
@@ -209,5 +235,18 @@ theorem volume_Ioc_inter_Ioo_of_le_of_le {a b c d : ℝ} (hca : c ≤ a) (hbd : 
   refine le_antisymm ((measure_mono inter_subset_left).trans_eq Real.volume_Ioc) ?_
   rw [← Real.volume_Ioo]
   exact measure_mono fun t ht ↦ ⟨Ioo_subset_Ioc_self ht, hca.trans_lt ht.1, ht.2.trans_le hbd⟩
+
+/-- Almost every point lies in a fibre `b ⁻¹' {b x}` of positive mass, for a finite measure and
+a label `b` into a countable type. -/
+theorem ae_measureReal_preimage_ne_zero {X κ : Type*} {mX : MeasurableSpace X} {μ : Measure X}
+    [IsFiniteMeasure μ] [Countable κ] {b : X → κ} :
+    ∀ᵐ x ∂μ, μ.real (b ⁻¹' {b x}) ≠ 0 := by
+  have h : ∀ j, ∀ᵐ x ∂μ, b x = j → μ.real (b ⁻¹' {j}) ≠ 0 := fun j ↦ by
+    by_cases hj : μ.real (b ⁻¹' {j}) = 0
+    · filter_upwards [measure_eq_zero_iff_ae_notMem.mp
+        ((measureReal_eq_zero_iff (measure_ne_top μ _)).mp hj)] with x hx hbx
+      exact absurd hbx hx
+    · exact Filter.Eventually.of_forall fun _ _ ↦ hj
+  filter_upwards [ae_all_iff.mpr h] with x hx using hx (b x) rfl
 
 end TauCeti

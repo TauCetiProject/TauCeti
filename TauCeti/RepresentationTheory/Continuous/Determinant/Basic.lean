@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Determinant.Projective.Basic
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.Topology.Algebra.Group.Units
 
 /-!
 # The determinant character of a continuous representation
@@ -116,9 +117,7 @@ theorem continuous_projectiveDet_apply (ρ : ContinuousRep Γ A M) :
 /-- **The determinant character is continuous**, for the module topology on `M` and a group `Γ`
 with continuous inversion. -/
 theorem continuous_det [ContinuousInv Γ] (ρ : ContinuousRep Γ A M) : Continuous ρ.det :=
-  Units.continuous_iff.2 ⟨ρ.continuous_projectiveDet_apply,
-    (ρ.continuous_projectiveDet_apply.comp continuous_inv).congr fun g => by
-      rw [Function.comp_apply, ← coe_det_apply, map_inv]⟩
+  (MonoidHom.continuous_iff_continuous_val ρ.det).2 ρ.continuous_projectiveDet_apply
 
 /-- The determinant character as a continuous homomorphism `Γ →ₜ* Aˣ`. -/
 noncomputable def continuousDet [ContinuousInv Γ] (ρ : ContinuousRep Γ A M) : Γ →ₜ* Aˣ :=
