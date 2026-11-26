@@ -34,9 +34,10 @@ isomorphism `ι : ℂ ≃ PadicAlgCl ℓ`.
 ## References
 
 Adapted from the formal proof of the Riemann hypothesis for Dirichlet L-functions in grh-lean
-(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC), file
-`New/Reduction/Lattices/Colength.lean` (`New.ColengthDvd.of_det_dvd`,
-`New.colengthDvd_inf_comap_span`, `New.colengthDvd_top_smul_top`, `New.colengthDvd_sup_span`).
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC) at commit
+72fead102f663d5c7a407964a13dc0cf9d977207, file `grh/src/New/Reduction/Lattices/Colength.lean`
+(`New.ColengthDvd.of_det_dvd`, `New.colengthDvd_inf_comap_span`, `New.colengthDvd_top_smul_top`,
+`New.colengthDvd_sup_span`).
 -/
 
 public section

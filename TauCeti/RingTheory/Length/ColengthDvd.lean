@@ -32,7 +32,8 @@ length `ord_O (det m)` (`Matrix.length_quotient_range_mulVecLin_eq_ord_det`), wh
 ## References
 
 Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic
-PBC), file `New/Reduction/Lattices/Colength.lean` (`New.ColengthDvd.relLength_le`,
+PBC) at commit 72fead102f663d5c7a407964a13dc0cf9d977207, file
+`grh/src/New/Reduction/Lattices/Colength.lean` (`New.ColengthDvd.relLength_le`,
 `New.IsOntoUpToColength.exists_relLength_le`), stated there over a discrete valuation ring and
 proved through the Smith normal form.
 -/
