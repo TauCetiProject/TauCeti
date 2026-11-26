@@ -10,6 +10,7 @@ public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import TauCeti.Topology.VectorBundle.Coordinates
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Finite bundle atlases of derived bundles
@@ -50,6 +51,8 @@ compact space (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
 * `TauCeti.FiniteBundleAtlas.coord_prod`, `TauCeti.FiniteBundleAtlas.coord_hom`,
   `TauCeti.FiniteBundleAtlas.coord_hom_apply`, `TauCeti.FiniteBundleAtlas.coord_tangentHom`: the
   chart readings of sections of the derived bundles.
+* `TauCeti.FiniteBundleAtlas.coord_tangentHom_prod`: a one-form with values in `V ×ᵇ V'` is read
+  in the charts of `A.prod h` as the `prod` of the readings of its components.
 * `TauCeti.FiniteBundleAtlas.coord_hom_eq_coordChange`,
   `TauCeti.FiniteBundleAtlas.coord_tangentHom_eq_coordChange`: on an overlap, the readings of a
   section of the hom bundle in two charts differ by the coordinate changes of both bundles, which
@@ -331,6 +334,27 @@ theorem coord_tangentHom_eq_coordChange {i i' : Fin A.n}
     (h := A.closure_dom_subset_source)]
   exact A.tangent.coord_hom_eq_coordChange A.closure_dom_subset_baseSet ω
     (A.tangent.mem_overlap.2 (A.mem_overlap.1 hy))
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F'] {V' : M → Type*}
+  [TopologicalSpace (TotalSpace F' V')] [∀ x, AddCommGroup (V' x)] [∀ x, Module ℝ (V' x)]
+  [∀ x, TopologicalSpace (V' x)] [FiberBundle F' V'] [VectorBundle ℝ F' V']
+  [∀ x, IsTopologicalAddGroup (V' x)] [∀ x, ContinuousSMul ℝ (V' x)]
+
+/-- On the image of a chart, a one-form with values in `V ×ᵇ V'` is read in the chart of
+`A.prod h` as the pair of the readings of its two components in the charts of `A` and of
+`A.ofBaseSet h`. -/
+theorem coord_tangentHom_prod
+    (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet) (i : Fin A.n)
+    (ω : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] (V ×ᵇ V') x) {y : E} (hy : y ∈ A.image i) :
+    (A.prod h).tangentHom.coord i ω y =
+      (A.tangentHom.coord i (fun x ↦ (ContinuousLinearMap.fst ℝ (V x) (V' x)).comp (ω x)) y).prod
+        ((A.ofBaseSet h).tangentHom.coord i
+          (fun x ↦ (ContinuousLinearMap.snd ℝ (V x) (V' x)).comp (ω x)) y) := by
+  have hx := A.symm_mem_dom hy
+  refine ((A.prod h).coord_tangentHom i ω y).trans ?_
+  rw [A.coord_tangentHom, ((A.ofBaseSet h).coord_tangentHom i _ y : _)]
+  exact ContinuousLinearMap.inCoordinates_prod_eq (A.dom_subset_baseSet i hx)
+    (h i (subset_closure hx)) _
 
 end TangentHom
 

@@ -10,7 +10,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 
 import TauCeti.Geometry.Manifold.Riemannian.Section
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!

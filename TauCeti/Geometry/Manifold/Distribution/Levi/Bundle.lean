@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Distribution.Levi
 public import TauCeti.Geometry.Manifold.Distribution.Quotient
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!

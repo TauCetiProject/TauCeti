@@ -12,7 +12,7 @@ import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.RankOne
 import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Tangent and normal projections along immersions

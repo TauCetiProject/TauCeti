@@ -10,7 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # The curvature endomorphism on real two-forms

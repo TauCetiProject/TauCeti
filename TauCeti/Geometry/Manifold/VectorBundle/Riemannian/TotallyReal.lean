@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Hermitian
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 public import TauCeti.LinearAlgebra.TotallyReal.CompatibleForm
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Hermitian metrics compatible with a totally real subbundle

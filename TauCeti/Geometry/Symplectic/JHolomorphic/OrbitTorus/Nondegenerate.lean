@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Manifold.TwoForm.Basic
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Trivialization
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Symplectic.Manifold.FixedPoint
 import TauCeti.Geometry.Symplectic.Manifold.Suspension.AlmostComplex
 
