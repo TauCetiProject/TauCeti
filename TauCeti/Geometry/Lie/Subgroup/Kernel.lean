@@ -18,17 +18,20 @@ then its Lie map `df` is injective. For `df X = 0` the one-parameter subgroup `t
 `ker f`, so `X` lies in the Lie algebra of the closed subgroup `ker f`, which is trivial because
 `ker f` is discrete (`TauCeti.Lie.discreteTopology_iff_lieSubalgebraOfSubgroup_eq_bot`).
 
-In particular an injective continuous homomorphism, whose kernel is trivial, has injective
-differential at the identity, where the differential is the Lie map. Since `f (g * k) = f g * f k`,
-left translations carry this to every point, so `f` is an immersion.
+The Lie map is the differential at the identity. A homomorphism carries left-invariant vector
+fields to left-invariant vector fields, so such a homomorphism has injective differential at every
+point and is an immersion. In particular this applies to injective continuous homomorphisms, whose
+kernel is trivial.
 
 ## Main results
 
 * `ContinuousMonoidHom.lieMap_injective_of_discreteTopology_ker`: a continuous homomorphism with
   discrete kernel has injective Lie map.
-* `ContinuousMonoidHom.injective_mfderiv_of_injective`,
-  `ContinuousMonoidHom.isImmersion_of_injective`: an injective continuous homomorphism has
-  injective differential at every point, so it is an immersion.
+* `ContinuousMonoidHom.injective_mfderiv_of_discreteTopology_ker`,
+  `ContinuousMonoidHom.isImmersion_of_discreteTopology_ker`: a continuous homomorphism with discrete
+  kernel has injective differential at every point, so it is an immersion.
+* `ContinuousMonoidHom.isImmersion_of_injective`: in particular an injective continuous
+  homomorphism is an immersion.
 
 ## References
 
@@ -77,16 +80,14 @@ theorem lieMap_injective_of_discreteTopology_ker (f : G →ₜ* G') [DiscreteTop
   rwa [(discreteTopology_iff_lieSubalgebraOfSubgroup_eq_bot (I := I) hclosed).1 inferInstance,
     LieSubalgebra.mem_bot] at hmem
 
-/-- **An injective continuous homomorphism has injective differential** at every point. Its kernel
-is trivial, hence discrete, so its Lie map, which is its differential at the identity, is injective
-(`ContinuousMonoidHom.lieMap_injective_of_discreteTopology_ker`). Left translation by `g` and by
-`f g` carries this to the differential at `g`, since `f (g * k) = f g * f k`. -/
-theorem injective_mfderiv_of_injective (f : G →ₜ* G') (hf : Function.Injective f) (g : G) :
-    Function.Injective (mfderiv I I' f g) := by
-  have : DiscreteTopology f.ker := by
-    rw [(MonoidHom.ker_eq_bot_iff _).2 hf]
-    infer_instance
-  have hd := contMDiff_of_continuous_monoidHom (I := I) (I' := I') f f.continuous
+/-- **A continuous homomorphism with discrete kernel has injective differential** at every point.
+Its Lie map, which is its differential at the identity, is injective
+(`ContinuousMonoidHom.lieMap_injective_of_discreteTopology_ker`). The differential at `g` carries
+the left-invariant vector field of `X` to that of its image
+(`ContMDiffMonoidMorphism.mfderiv_mulInvariantVectorField`), so it is injective too. -/
+theorem injective_mfderiv_of_discreteTopology_ker (f : G →ₜ* G') [DiscreteTopology f.ker]
+    (g : G) : Function.Injective (mfderiv I I' f g) := by
+  let φ := f.toContMDiffMonoidMorphism I I'
   -- At the identity the differential is the Lie map, read through evaluation at the identity.
   have h1 : Function.Injective (mfderiv I I' f 1) := by
     let e := leftInvariantDerivationLieEquivGroupLieAlgebra
@@ -96,41 +97,40 @@ theorem injective_mfderiv_of_injective (f : G →ₜ* G') (hf : Function.Injecti
     intro v w hvw
     obtain ⟨X, rfl⟩ := e.surjective v
     obtain ⟨Y, rfl⟩ := e.surjective w
-    have hX := leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
-      (f.toContMDiffMonoidMorphism I I') X
-    have hY := leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
-      (f.toContMDiffMonoidMorphism I I') Y
+    have hX := leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap φ X
+    have hY := leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap φ Y
     rw [coe_toContMDiffMonoidMorphism, ← lieMap_def] at hX hY
     exact congrArg e (lieMap_injective_of_discreteTopology_ker (I := I) (I' := I') f
       (e'.injective (hX.trans (hvw.trans hY.symm))))
-  -- Left translations carry the identity to `g`, and `f 1 = 1` to `f g`.
-  have hcomp : (fun k ↦ f (g * k)) = (f g * ·) ∘ f := funext fun k ↦ map_mul f g k
-  have hchain (w : TangentSpace I (1 : G)) :
-      mfderiv I I' f g (mfderiv I I (g * ·) 1 w) =
-        mfderiv I' I' (f g * ·) 1 (mfderiv I I' f 1 w) := by
-    rw [← mfderiv_comp_apply_of_eq 1 (hd.mdifferentiableAt (by simp)) mdifferentiableAt_mul_left
-      (mul_one g), ← mfderiv_comp_apply_of_eq 1 mdifferentiableAt_mul_left
-      (hd.mdifferentiableAt (by simp)) (map_one f), Function.comp_def, hcomp]
-  -- The differential of left translation at the identity is injective.
-  have hinj : Function.Injective (mfderiv I' I' (f g * ·) 1) := fun a b hab ↦
-    (TauCeti.mulInvariantVectorFieldEquiv I' (f g)).injective (by
-      rwa [TauCeti.mulInvariantVectorFieldEquiv_apply, TauCeti.mulInvariantVectorFieldEquiv_apply,
-        GroupLieAlgebra.mulInvariantVectorField_apply,
-        GroupLieAlgebra.mulInvariantVectorField_apply])
+  -- Every tangent vector at `g` is the value of a left-invariant vector field, and the
+  -- differential at `g` carries these fields to the fields of their images.
   intro v w hvw
-  obtain ⟨v, rfl⟩ := (TauCeti.mulInvariantVectorFieldEquiv I g).surjective v
-  obtain ⟨w, rfl⟩ := (TauCeti.mulInvariantVectorFieldEquiv I g).surjective w
-  rw [TauCeti.mulInvariantVectorFieldEquiv_apply, TauCeti.mulInvariantVectorFieldEquiv_apply,
-    GroupLieAlgebra.mulInvariantVectorField_apply, GroupLieAlgebra.mulInvariantVectorField_apply,
-    hchain, hchain] at hvw
-  exact congrArg _ (h1 (hinj hvw))
+  obtain ⟨X, rfl⟩ := TauCeti.exists_mulInvariantVectorField_eq (I := I) v
+  obtain ⟨Y, rfl⟩ := TauCeti.exists_mulInvariantVectorField_eq (I := I) w
+  have h := φ.mfderiv_mulInvariantVectorField g X
+  rw [coe_toContMDiffMonoidMorphism, hvw, ← coe_toContMDiffMonoidMorphism (I := I) (I' := I'),
+    φ.mfderiv_mulInvariantVectorField g Y, ← TauCeti.mulInvariantVectorFieldEquiv_apply,
+    ← TauCeti.mulInvariantVectorFieldEquiv_apply] at h
+  have hXY := (TauCeti.mulInvariantVectorFieldEquiv I' (φ g)).injective h
+  rw [MonoidHom.groupLieAlgebraMap_apply, MonoidHom.groupLieAlgebraMap_apply,
+    ContMDiffMonoidMorphism.coe_toMonoidHom, coe_toContMDiffMonoidMorphism] at hXY
+  rw [h1 hXY.symm]
 
-/-- **An injective continuous homomorphism is an immersion.** It is smooth by automatic smoothness
-(`TauCeti.Lie.contMDiff_of_continuous_monoidHom`), and its differential is injective at every point
-(`ContinuousMonoidHom.injective_mfderiv_of_injective`). -/
-theorem isImmersion_of_injective [I.Boundaryless] [I'.Boundaryless] (f : G →ₜ* G')
-    (hf : Function.Injective f) : Manifold.IsImmersion I I' ∞ f :=
+/-- **A continuous homomorphism with discrete kernel is an immersion.** It is smooth by automatic
+smoothness (`TauCeti.Lie.contMDiff_of_continuous_monoidHom`), and its differential is injective at
+every point (`ContinuousMonoidHom.injective_mfderiv_of_discreteTopology_ker`). -/
+theorem isImmersion_of_discreteTopology_ker [I.Boundaryless] [I'.Boundaryless] (f : G →ₜ* G')
+    [DiscreteTopology f.ker] : Manifold.IsImmersion I I' ∞ f :=
   (contMDiff_of_continuous_monoidHom f f.continuous).isImmersion_of_injective_mfderiv (by simp)
-    (injective_mfderiv_of_injective f hf)
+    (injective_mfderiv_of_discreteTopology_ker f)
+
+/-- **An injective continuous homomorphism is an immersion**, since its kernel is trivial, hence
+discrete (`ContinuousMonoidHom.isImmersion_of_discreteTopology_ker`). -/
+theorem isImmersion_of_injective [I.Boundaryless] [I'.Boundaryless] (f : G →ₜ* G')
+    (hf : Function.Injective f) : Manifold.IsImmersion I I' ∞ f := by
+  have : DiscreteTopology f.ker := by
+    rw [(MonoidHom.ker_eq_bot_iff _).2 hf]
+    infer_instance
+  exact isImmersion_of_discreteTopology_ker f
 
 end ContinuousMonoidHom

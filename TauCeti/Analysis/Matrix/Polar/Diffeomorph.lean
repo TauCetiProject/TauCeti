@@ -10,8 +10,7 @@ public import TauCeti.Analysis.Matrix.Polar.Deformation
 public import TauCeti.Geometry.Manifold.Instances.PositiveDefiniteMatrix.DetOne
 public import TauCeti.Geometry.Manifold.Instances.SpecialLinearGroup
 public import TauCeti.Geometry.Manifold.Instances.Unitary.Special
-import TauCeti.Geometry.Lie.Subgroup.Kernel
-import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
+import TauCeti.Geometry.Lie.SpecialLinear.RealEmbedding
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
@@ -55,8 +54,8 @@ of `V A W` are `(V U W, Wᴴ Q W)`
 `Matrix.GeneralLinearGroup.coe_rightPolarDiffeomorph_mul_toUnits_snd`).
 
 They also restrict to determinant one: `det A = 1` exactly when `det P = 1` and `det U = 1`, because
-`det P = ‖det A‖` is positive, and likewise `det √(Aᴴ A) = ‖det A‖`. Hence both polar coordinates
-restrict to global real smooth diffeomorphisms
+`det P = ‖det A‖` is positive, and likewise `det √(Aᴴ A) = ‖det A‖` (`Matrix.det_sqrt_star_mul`).
+Hence both polar coordinates restrict to global real smooth diffeomorphisms
 
 `Matrix.SpecialLinearGroup.polarDiffeomorph n 𝕜 : SL(n, 𝕜) ≃ₘ PosDefDetOne n 𝕜 × SU(n)`,
 `Matrix.SpecialLinearGroup.rightPolarDiffeomorph n 𝕜 : SL(n, 𝕜) ≃ₘ SU(n) × PosDefDetOne n 𝕜`
@@ -65,10 +64,10 @@ onto the products of the positive-definite matrices of determinant one
 (`Matrix.PosDefDetOne n 𝕜`, with its regular-level structure) with the special unitary group
 `SU(n)` (`SO(n)` when `𝕜 = ℝ`, with its native Lie-group structure). The special linear group
 carries the real structure of its native analytic atlas. Its inclusion into `GL(n, 𝕜)` is an
-injective continuous homomorphism of real Lie groups, hence a smooth immersion
-(`ContinuousMonoidHom.isImmersion_of_injective`). So the matrix inclusion of `SL(n, 𝕜)` is a real
-smooth embedding, and the inverse maps `(P, U) ↦ P U` and `(U, Q) ↦ U Q` are smooth because their
-matrix products are.
+injective continuous homomorphism of real Lie groups, hence a smooth immersion, so the matrix
+inclusion of `SL(n, 𝕜)` is a real smooth embedding
+(`Matrix.SpecialLinearGroup.isSmoothEmbedding_subtypeVal_real`), and the inverse maps
+`(P, U) ↦ P U` and `(U, Q) ↦ U Q` are smooth because their matrix products are.
 
 To state or use the smooth structures, `open scoped Matrix.Norms.L2Operator` and enable
 `attribute [local instance] Matrix.l2OpNormedAlgebraReal`.
@@ -327,27 +326,6 @@ variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
 
-/-- The inclusion of `SL(n, 𝕜)` into the general linear group, as a continuous homomorphism. -/
-private def toGLContinuousMonoidHom : SpecialLinearGroup n 𝕜 →ₜ* GL n 𝕜 :=
-  ⟨toGL, continuous_toGL⟩
-
-/-- The inclusion of `SL(n, 𝕜)` into the general linear group is real smooth, by automatic
-smoothness of continuous homomorphisms of real Lie groups. -/
-private theorem contMDiff_toGL_real :
-    ContMDiff 𝓘(ℝ, Model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞
-      (toGL : SpecialLinearGroup n 𝕜 → GL n 𝕜) :=
-  TauCeti.Lie.contMDiff_of_continuous_monoidHom toGLContinuousMonoidHom continuous_toGL
-
-/-- The matrix inclusion of `SL(n, 𝕜)` is a real smooth embedding for the real atlas of
-`SL(n, 𝕜)` and the `ℓ²` operator norm on the matrices. The inclusion into the general linear
-group is an injective continuous homomorphism of real Lie groups, hence an immersion. -/
-private theorem isSmoothEmbedding_subtypeVal_real :
-    Manifold.IsSmoothEmbedding 𝓘(ℝ, Model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞
-      (fun A : SpecialLinearGroup n 𝕜 ↦ (A : Matrix n n 𝕜)) := by
-  have h := Units.isImmersion_val_comp (ContinuousMonoidHom.isImmersion_of_injective
-    (I := 𝓘(ℝ, Model n 𝕜)) (I' := 𝓘(ℝ, Matrix n n 𝕜)) toGLContinuousMonoidHom toGL_injective)
-  exact ⟨h, .subtypeVal⟩
-
 variable (n 𝕜) in
 /-- **Polar coordinates on `SL(n, 𝕜)`** for `𝕜 = ℝ` or `ℂ`: the restriction of the polar
 diffeomorphism `Matrix.GeneralLinearGroup.polarDiffeomorph` is a global real smooth
@@ -433,11 +411,6 @@ theorem polarDiffeomorph_eq_iff (g : SpecialLinearGroup n 𝕜)
 
 /-! ### The right polar coordinates on `SL(n, 𝕜)` -/
 
-/-- The right positive factor `√(Aᴴ A)` of a matrix of determinant one has determinant one. -/
-private theorem det_sqrt_star_mul_eq_one (g : SpecialLinearGroup n 𝕜) :
-    (CFC.sqrt (star (g : Matrix n n 𝕜) * g)).det = 1 := by
-  simpa [star_eq_conjTranspose, det_conjTranspose] using det_sqrt_mul_star (star (g : Matrix n n 𝕜))
-
 variable (n 𝕜) in
 /-- **Right polar coordinates on `SL(n, 𝕜)`** for `𝕜 = ℝ` or `ℂ`: the restriction of the right
 polar diffeomorphism `Matrix.GeneralLinearGroup.rightPolarDiffeomorph` is a global real smooth
@@ -458,7 +431,8 @@ def rightPolarDiffeomorph : SpecialLinearGroup n 𝕜 ≃ₘ^∞⟮𝓘(ℝ, Mod
           exact det_polarUnitary_of_det_eq_one (toGL g) g.property⟩⟩,
       ⟨(GeneralLinearGroup.rightPolarDiffeomorph n 𝕜 (toGL g)).2, by
         rw [GeneralLinearGroup.coe_rightPolarDiffeomorph_apply_snd]
-        exact det_sqrt_star_mul_eq_one g⟩)
+        exact (det_sqrt_star_mul (g : Matrix n n 𝕜)).trans (by
+          rw [g.property, norm_one, RCLike.ofReal_one])⟩)
   invFun p := ⟨(p.1 : Matrix n n 𝕜) * ((p.2 : posDefOpens n 𝕜) : selfAdjoint (Matrix n n 𝕜)), by
     rw [det_mul, p.2.property, (mem_specialUnitaryGroup_iff.1 p.1.property).2, mul_one]⟩
   left_inv g := Subtype.ext ((GeneralLinearGroup.coe_rightPolarDiffeomorph_symm_apply _).symm.trans
