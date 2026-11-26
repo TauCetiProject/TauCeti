@@ -12,6 +12,7 @@ import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 
 /-!
 # Dirichlet series of twisted von Mangoldt weights in a residue class
@@ -44,9 +45,8 @@ theorem LSeriesHasSum_residueClass_mul_char {q d : ℕ} [NeZero q] [NeZero d]
         ψ a⁻¹ * logDeriv (ψ.mul ξ).LFunction s) := by
   have hχ (ψ : DirichletCharacter ℂ q) : LSeriesHasSum (↗(ψ.mul ξ) * ↗vonMangoldt) s
       (-logDeriv (ψ.mul ξ).LFunction s) := by
-    refine LSeriesHasSum_iff.mpr ⟨LSeriesSummable_twist_vonMangoldt _ hs, ?_⟩
-    rw [LSeries_twist_vonMangoldt_eq _ hs, logDeriv_apply,
-      deriv_LFunction_eq_deriv_LSeries _ hs, LFunction_eq_LSeries _ hs, neg_div]
+    simpa only [DirichletCharacter.logDeriv_LFunction_eq_neg_LSeries _ hs, neg_neg] using
+      (LSeriesSummable_twist_vonMangoldt (ψ.mul ξ) hs).LSeriesHasSum
   have hsum := (LSeriesHasSum.sum (S := Finset.univ) fun ψ _ ↦
     (hχ ψ).smul (ψ a⁻¹)).smul (q.totient : ℂ)⁻¹
   rw [neg_mul, ← mul_neg, ← Finset.sum_neg_distrib]
