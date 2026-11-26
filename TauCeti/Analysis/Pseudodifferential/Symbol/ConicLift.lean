@@ -42,8 +42,8 @@ difference are controlled, and none are claimed: the difference is not a symbol 
 These position bounds are what the weighted Fourier–Schur estimate needs, so after localization by
 a compactly supported cutoff `ψ` the two quantizations are `O(ε ^ m)` apart as operators
 `H^s → H^{s - m}`, for every real `s`
-(`TauCeti.Symbol.exists_eLpNorm_smul_fourier_smul_sub_conicLift_le`); for `m = 1` this is the
-bound `C ε` from `H¹` to `L²`.
+(`TauCeti.Symbol.exists_eLpNorm_smul_fourier_smul_quantizeSchwartzValue_sub_conicLift_le`);
+for `m = 1` this is the bound `C ε` from `H¹` to `L²`.
 
 The full symbols of the external product of two elliptic operators on the factors of a product
 have entries of the form `p(P x, P ξ)`, singular along an axis; their lifts are symbols of order
@@ -65,8 +65,9 @@ homogeneous counterpart of the construction, for principal symbols, is
   frequencies (`TauCeti.Symbol.coefficient_conicLift_eventuallyEq_zero`).
 * `TauCeti.Symbol.exists_norm_mixedDeriv_sub_conicLift_le`: the bound `C ε ^ m ⟨ξ⟩ ^ m` on the
   position derivatives of `p(P x, P ξ) - c(ξ) p(P x, P ξ)`, uniform in `ε` and `R ≥ max 1 ε⁻¹`.
-* `TauCeti.Symbol.exists_eLpNorm_smul_fourier_smul_sub_conicLift_le`: the bound
-  `‖ψ (Op(p ∘ P) u - Op(c p) u)‖_{H^{s - m}} ≤ C ε ^ m ‖u‖_{H^s}`, with the same uniformity.
+* `TauCeti.Symbol.exists_eLpNorm_smul_fourier_smul_quantizeSchwartzValue_sub_conicLift_le`:
+  the bound `‖ψ (Op(p ∘ P) u - Op(c p) u)‖_{H^{s - m}} ≤ C ε ^ m ‖u‖_{H^s}`, with the same
+  uniformity.
 
 ## References
 
@@ -536,43 +537,12 @@ private theorem exists_norm_coefficient_comp_prodMap_le (hm : 0 ≤ m) (p : Symb
   obtain ⟨D, hD0, hD⟩ :=
     exists_bound_mixedDeriv_comp_prodMap_of_isCompact P p isCompact_singleton [] []
   refine ⟨D * (1 + ‖P‖ ^ 2) ^ (m / 2), by positivity, fun ξ ↦ ?_⟩
-  have hPξ : 1 + ‖P ξ‖ ^ 2 ≤ (1 + ‖P‖ ^ 2) * (1 + ‖ξ‖ ^ 2) := by
-    have h := P.le_opNorm ξ
-    have h' : ‖P ξ‖ ^ 2 ≤ ‖P‖ ^ 2 * ‖ξ‖ ^ 2 := by
-      rw [← mul_pow]
-      exact pow_le_pow_left₀ (norm_nonneg _) h 2
-    nlinarith [sq_nonneg ‖P‖, sq_nonneg ‖ξ‖]
   calc ‖p.coefficient (P x, P ξ)‖ ≤ D * (1 + ‖P ξ‖ ^ 2) ^ (m / 2) := by
         simpa using hD x rfl ξ
-    _ ≤ D * ((1 + ‖P‖ ^ 2) * (1 + ‖ξ‖ ^ 2)) ^ (m / 2) := by gcongr
-    _ = D * (1 + ‖P‖ ^ 2) ^ (m / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-        rw [Real.mul_rpow (by positivity) (by positivity), mul_assoc]
-
-/-- Localizing the cutoff error by a real function `ψ` of the position localizes the difference
-of the two quantizations: `Op(ψ (p ∘ P - c p)) u = ψ (Op(p ∘ P) u - Op(c p) u)`. -/
-private theorem quantizeSchwartzValue_smul_sub_conicLift (hm : 0 ≤ m) (p : Symbol n V W m)
-    (χ : ConicCutoff) (φ : FrequencyCutoff (CoordinateSpace N)) (hε : ε ≠ 0) (hR : 1 ≤ R)
-    (ψ : CoordinateSpace N → ℝ) (u : 𝓢(CoordinateSpace N, V)) (x : CoordinateSpace N) :
-    quantizeSchwartzValue (fun q ↦ ψ q.1 • (p.coefficient (P q.1, P q.2) -
-        (p.conicLift P χ φ hε hR).coefficient q)) u x =
-      ψ x • (quantizeSchwartzValue (p.coefficient ∘ P.prodMap P) u x -
-        quantizeSchwartzValue (p.conicLift P χ φ hε hR).coefficient u x) := by
-  obtain ⟨C, -, hC⟩ := exists_norm_coefficient_comp_prodMap_le P hm p x
-  obtain ⟨C', -, hC'⟩ := (p.conicLift P χ φ hε hR).exists_bound_coefficient_slice x
-  have ha := integrable_quantizeSchwartzValue_integrand (a := p.coefficient ∘ P.prodMap P)
-    ((p.contDiff_coefficient.continuous.comp
-      ((P.prodMap P).continuous.comp (Continuous.prodMk_right x))).aestronglyMeasurable)
-    hC (𝓕 u)
-  have hb := integrable_quantizeSchwartzValue_integrand
-    ((p.conicLift P χ φ hε hR).continuous_coefficient_slice x).aestronglyMeasurable hC' (𝓕 u)
-  have ha' := ha.smul (ψ x)
-  have hb' := hb.smul (ψ x)
-  simp only [Pi.smul_def] at ha' hb'
-  rw [quantizeSchwartzValue_def, quantizeSchwartzValue_def, quantizeSchwartzValue_def, smul_sub,
-    ← integral_smul, ← integral_smul, ← integral_sub ha' hb']
-  refine integral_congr_ae (ae_of_all _ fun ζ ↦ ?_)
-  simp only [smul_apply, sub_apply, smul_sub, smul_comm _ (ψ x), Function.comp_apply,
-    ContinuousLinearMap.coe_prodMap', Prod.map_apply]
+    _ ≤ D * ((1 + ‖P‖ ^ 2) ^ (m / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+        gcongr
+        exact one_add_norm_sq_rpow_le_mul_of_norm_le_mul hm (P.le_opNorm ξ)
+    _ = D * (1 + ‖P‖ ^ 2) ^ (m / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by rw [mul_assoc]
 
 /-- The position slices of the cutoff error `p(P y, P ξ) - c(ξ) p(P y, P ξ)` are smooth. -/
 private theorem contDiff_coefficient_comp_sub_conicLift (p : Symbol n V W m) (χ : ConicCutoff)
@@ -637,11 +607,12 @@ for every Schwartz function `u`, every conic cutoff `χ`, every frequency cutoff
 `ε > 0` and `R ≥ max 1 ε⁻¹`, where `p ∘ P` is the uncut lift `(x, ξ) ↦ p(P x, P ξ)` and `c p` is
 the lift `TauCeti.Symbol.conicLift` cut off near the axis `P ξ = 0`. The Sobolev norms are the
 weighted `L²` norms of the Fourier transforms. So, after localization in the position, the
-quantization of the cut-off lift converges to that of the uncut lift in the operator norm
-`H^s → H^{s - m}` as `ε → 0`, at the rate `ε ^ m`; for `m = 1` and `s = 1` this is the bound
-`C ε` from `H¹` to `L²`. -/
-theorem exists_eLpNorm_smul_fourier_smul_sub_conicLift_le (hm : 0 ≤ m) (p : Symbol n V W m)
-    {ψ : CoordinateSpace N → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ) (s : ℝ) :
+quantizations of the cut-off and the uncut lift are `O(ε ^ m)` apart in the operator norm
+`H^s → H^{s - m}`. For `m > 0` the first converges to the second as `ε → 0`, at the rate `ε ^ m`;
+for `m = 1` and `s = 1` this is the bound `C ε` from `H¹` to `L²`. -/
+theorem exists_eLpNorm_smul_fourier_smul_quantizeSchwartzValue_sub_conicLift_le (hm : 0 ≤ m)
+    (p : Symbol n V W m) {ψ : CoordinateSpace N → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψc : HasCompactSupport ψ) (s : ℝ) :
     ∃ C, 0 ≤ C ∧ ∀ (χ : ConicCutoff) (φ : FrequencyCutoff (CoordinateSpace N)) {ε R : ℝ}
       (hε : 0 < ε) (hR₁ : 1 ≤ R), ε⁻¹ ≤ R → ∀ u : 𝓢(CoordinateSpace N, V),
         eLpNorm (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ ((s - m) / 2) : ℝ) : ℂ) •
@@ -670,10 +641,21 @@ theorem exists_eLpNorm_smul_fourier_smul_sub_conicLift_le (hm : 0 ≤ m) (p : Sy
   have hdK (x : CoordinateSpace N) (hx : x ∉ tsupport ψ) (ξ : CoordinateSpace N) :
       d (x, ξ) = 0 := by
     simp [d, image_eq_zero_of_notMem_tsupport hx]
+  -- Localizing the cutoff error localizes the difference of the two quantizations.
   have hOp : (fun x ↦ ψ x • (quantizeSchwartzValue (p.coefficient ∘ P.prodMap P) u x -
       quantizeSchwartzValue (p.conicLift P χ φ hε.ne' hR₁).coefficient u x)) =
-        quantizeSchwartzValue d u :=
-    funext fun x ↦ (quantizeSchwartzValue_smul_sub_conicLift P hm p χ φ hε.ne' hR₁ ψ u x).symm
+        quantizeSchwartzValue d u := funext fun x ↦ by
+    obtain ⟨C₁, -, hC₁⟩ := exists_norm_coefficient_comp_prodMap_le P hm p x
+    obtain ⟨C₂, -, hC₂⟩ := (p.conicLift P χ φ hε.ne' hR₁).exists_bound_coefficient_slice x
+    rw [eq_comm, quantizeSchwartzValue_congr_left (a := d) (b := fun q ↦ (ψ q.1 : ℂ) •
+        (p.coefficient ∘ P.prodMap P - (p.conicLift P χ φ hε.ne' hR₁).coefficient) q)
+        (fun ξ ↦ by simp [d, Complex.coe_smul]),
+      quantizeSchwartzValue_comp_fst_smul_left (fun y ↦ (ψ y : ℂ)),
+      quantizeSchwartzValue_sub_left (a := p.coefficient ∘ P.prodMap P)
+        (p.contDiff_coefficient.continuous.comp
+          ((P.prodMap P).continuous.comp (Continuous.prodMk_right x))).aestronglyMeasurable hC₁
+        ((p.conicLift P χ φ hε.ne' hR₁).continuous_coefficient_slice x).aestronglyMeasurable hC₂,
+      Complex.coe_smul]
   rw [hOp]
   refine (hFS d (A * ε ^ m) hd hdsmooth hdK (hA χ φ hε hR₁ hR) u).trans_eq ?_
   rw [mul_assoc]
