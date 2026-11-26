@@ -233,11 +233,8 @@ theorem IsMorse.even_toNat_totalCriticalCount_sphere {f : sphere (0 : E) 1 → �
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
   have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ E = n + 1)
   obtain ⟨v⟩ := NormedSpace.sphere_nonempty_rclike ℝ (E := E) zero_le_one
-  have h₂ : totalCriticalCount (𝓡 n) (sphereHeight v) = 2 := by
-    rw [totalCriticalCount_def, criticalPoints_sphereHeight,
-      encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]
   have h := hf.toNat_totalCriticalCount_modEq (isMorse_sphereHeight v)
-  rw [h₂] at h
+  rw [totalCriticalCount_sphereHeight] at h
   exact Nat.even_iff.2 h
 
 /-- Every Morse function on the sphere `Sⁿ` has signed critical count
