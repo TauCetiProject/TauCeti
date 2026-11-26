@@ -234,8 +234,7 @@ theorem re_meromorphicTrailingCoeffAt_primePsiErrorTransform_neg {β : ℝ} (hβ
   obtain ⟨m, hm⟩ := WithTop.ne_top_iff_exists.mp (meromorphicOrderAt_dedekindZetaC_ne_top K β)
   have hm₀ : 0 < m := by exact_mod_cast (hm ▸ hz)
   rw [(primePsiErrorTransform_simplePole K h₀ hz).2, ← hm, WithTop.untop₀_coe]
-  have hcast : -(m : ℂ) / (β : ℂ) = ((-(m : ℝ) / β : ℝ) : ℂ) := by push_cast; rfl
-  rw [hcast, Complex.ofReal_re]
+  rw [Complex.div_ofReal_re, Complex.neg_re, Complex.intCast_re]
   exact div_neg_of_neg_of_pos (neg_neg_of_pos (Int.cast_pos.mpr hm₀)) hβ
 
 end TauCeti

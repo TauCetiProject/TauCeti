@@ -81,21 +81,6 @@ theorem primeCount_rat_univ (x : ℝ) :
     ← Nat.primesLE_card_eq_primeCounting, ← image_absNorm_primesLE_rat,
     Finset.card_image_of_injective _ Rat.HeightOneSpectrum.absNorm_asIdeal_injective]
 
-open ArithmeticFunction in
-/-- The norm coefficients of the ideal von Mangoldt function over `ℚ` are the classical
-von Mangoldt coefficients. -/
-@[simp] theorem primeVonMangoldtCoeff_rat_univ (n : ℕ) :
-    primeVonMangoldtCoeff ℚ Set.univ n = Λ n := by
-  by_cases hn : IsPrimePow n
-  · obtain ⟨p, k, hp, hk, rfl⟩ := (isPrimePow_nat_iff n).mp hn
-    obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
-    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv
-    rw [← hv, primeVonMangoldtCoeff_rat_natGenerator_pow Set.univ v hk, hv,
-      vonMangoldt_apply_pow hk.ne', vonMangoldt_apply_prime hp]
-    simp
-  · rw [primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow Set.univ hn,
-      vonMangoldt_eq_zero_iff.mpr hn]
-
 /-- The sum of the von Mangoldt weights of all prime ideal powers over `ℚ` is Mathlib's
 Chebyshev function `ψ`. -/
 @[simp] theorem primePsi_rat_univ (x : ℝ) : primePsi ℚ Set.univ x = Chebyshev.psi x := by

@@ -31,6 +31,30 @@ namespace TauCeti
 
 open LFunctions
 
+/-- Substituting `x = exp u` turns an eventual bound `f x ≤ C * x ^ θ` into an almost-everywhere
+bound `f (exp u) ≤ C * exp (θ * u)` on a ray, the form the Laplace-transform results take. -/
+private lemma exists_ae_le_exp_of_eventually_le_rpow {f : ℝ → ℝ} {θ C : ℝ}
+    (h : ∀ᶠ x in atTop, f x ≤ C * x ^ θ) :
+    ∃ u₀, ∀ᵐ u ∂volume.restrict (Ioi u₀), f (Real.exp u) ≤ C * Real.exp (θ * u) := by
+  obtain ⟨u₀, hu₀⟩ := eventually_atTop.mp (Real.tendsto_exp_atTop.eventually h)
+  refine ⟨u₀, ?_⟩
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
+  rw [mul_comm θ u, Real.exp_mul]
+  exact hu₀ u (le_of_lt hu)
+
+/-- The Riemann hypothesis follows from bounds `P C (1 / 2 + ε)`, one for each `ε > 0`, as soon as
+each bound `P C σ` with `σ > 1 / 2` excludes zeros of `ζ_ℚ` to the right of `σ`. -/
+private lemma riemannHypothesis_of_forall_exponent {P : ℝ → ℝ → Prop}
+    (h : ∀ ε > (0 : ℝ), ∃ C : ℝ, P C (1 / 2 + ε))
+    (hP : ∀ σ > (1 / 2 : ℝ), ∀ C, P C σ → ZeroFreeRightOf σ (dedekindZetaC ℚ)) :
+    RiemannHypothesis := by
+  rw [riemannHypothesis_iff_zeroFreeRightOf, ← zeroFreeRightOf_dedekindZetaC_rat_iff,
+    zeroFreeRightOf_iff_forall_gt]
+  intro σ hσ
+  obtain ⟨C, hC⟩ := h (σ - 1 / 2) (sub_pos.mpr hσ)
+  rw [add_sub_cancel] at hC
+  exact hP σ hσ C hC
+
 variable (K : Type*) [Field K] [NumberField K]
 
 /-- An eventual lower bound for `ψ_K(x) - x` by `-C * x ^ θ` excludes zeros of `ζ_K` in
@@ -38,12 +62,8 @@ variable (K : Type*) [Field K] [NumberField K]
 theorem zeroFreeRightOf_dedekindZetaC_of_eventually_neg_rpow_le_primePsi_sub {θ C : ℝ}
     (hθ : 0 ≤ θ) (h : ∀ᶠ x in atTop, -(C * x ^ θ) ≤ primePsi K univ x - x) :
     ZeroFreeRightOf θ (dedekindZetaC K) := by
-  obtain ⟨u₀, hu₀⟩ := eventually_atTop.mp (Real.tendsto_exp_atTop.eventually h)
-  have hg : ∀ᵐ u ∂volume.restrict (Ioi u₀),
-      -(primePsi K univ (Real.exp u) - Real.exp u) ≤ C * Real.exp (θ * u) := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
-    rw [mul_comm θ u, Real.exp_mul]
-    simpa only [neg_neg] using neg_le_neg (hu₀ u (le_of_lt hu))
+  obtain ⟨u₀, hg⟩ := exists_ae_le_exp_of_eventually_le_rpow
+    (f := fun x ↦ -(primePsi K univ x - x)) (h.mono fun _ hx ↦ neg_le.mp hx)
   have hF : MeromorphicOn (fun s ↦ -primePsiErrorTransform K s) {s | θ < s.re} :=
     (meromorphicNFOn_primePsiErrorTransform K).meromorphicOn.neg.mono_set (subset_univ _)
   have hL (s : ℂ) (hs : 1 < s.re) : HasLaplace
@@ -69,12 +89,7 @@ theorem zeroFreeRightOf_or_exists_rightmost_real_zero_of_eventually_primePsi_sub
     ZeroFreeRightOf θ (dedekindZetaC K) ∨
       ∃ β ∈ Ioo θ 1, 0 < meromorphicOrderAt (dedekindZetaC K) (β : ℂ) ∧
         ZeroFreeRightOf β (dedekindZetaC K) := by
-  obtain ⟨u₀, hu₀⟩ := eventually_atTop.mp (Real.tendsto_exp_atTop.eventually h)
-  have hg : ∀ᵐ u ∂volume.restrict (Ioi u₀),
-      primePsi K univ (Real.exp u) - Real.exp u ≤ C * Real.exp (θ * u) := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
-    rw [mul_comm θ u, Real.exp_mul]
-    exact hu₀ u (le_of_lt hu)
+  obtain ⟨u₀, hg⟩ := exists_ae_le_exp_of_eventually_le_rpow (f := fun x ↦ primePsi K univ x - x) h
   rcases hasLaplace_toMeromorphicNFOn_or_exists_rightmost_real_pole_of_ae_le_exp hg
       ((meromorphicNFOn_primePsiErrorTransform K).meromorphicOn.mono_set (subset_univ _))
       (fun _ hs ↦ hasLaplace_primePsi_sub_exp K hs) with ⟨hn, -⟩ | ⟨β, hβ, hβ₁, hp, -, -, hn, -⟩
@@ -104,25 +119,19 @@ theorem zeroFreeRightOf_dedekindZetaC_of_eventually_primePsi_sub_le_rpow {θ C :
 `x ^ (1 / 2 + ε)` for every `ε > 0`. -/
 theorem riemannHypothesis_of_eventually_neg_rpow_le_psi_sub
     (h : ∀ ε > (0 : ℝ), ∃ C : ℝ,
-      ∀ᶠ x in atTop, -(C * x ^ (1 / 2 + ε)) ≤ Chebyshev.psi x - x) : RiemannHypothesis := by
-  rw [riemannHypothesis_iff_zeroFreeRightOf, ← zeroFreeRightOf_dedekindZetaC_rat_iff,
-    zeroFreeRightOf_iff_forall_gt]
-  intro σ hσ
-  obtain ⟨C, hC⟩ := h (σ - 1 / 2) (sub_pos.mpr hσ)
-  rw [add_sub_cancel] at hC
-  exact zeroFreeRightOf_dedekindZetaC_of_eventually_neg_rpow_le_primePsi_sub ℚ (by linarith)
-    (by simpa only [primePsi_rat_univ] using hC)
+      ∀ᶠ x in atTop, -(C * x ^ (1 / 2 + ε)) ≤ Chebyshev.psi x - x) : RiemannHypothesis :=
+  riemannHypothesis_of_forall_exponent
+    (P := fun C θ ↦ ∀ᶠ x in atTop, -(C * x ^ θ) ≤ Chebyshev.psi x - x) h fun σ hσ _ hC ↦
+      zeroFreeRightOf_dedekindZetaC_of_eventually_neg_rpow_le_primePsi_sub ℚ (by linarith)
+        (by simpa only [primePsi_rat_univ] using hC)
 
 /-- The Riemann hypothesis follows from eventual upper bounds for `ψ(x) - x` of order
 `x ^ (1 / 2 + ε)` for every `ε > 0`. -/
 theorem riemannHypothesis_of_eventually_psi_sub_le_rpow
     (h : ∀ ε > (0 : ℝ), ∃ C : ℝ,
       ∀ᶠ x in atTop, Chebyshev.psi x - x ≤ C * x ^ (1 / 2 + ε)) : RiemannHypothesis := by
-  rw [riemannHypothesis_iff_zeroFreeRightOf, ← zeroFreeRightOf_dedekindZetaC_rat_iff,
-    zeroFreeRightOf_iff_forall_gt]
-  intro σ hσ
-  obtain ⟨C, hC⟩ := h (σ - 1 / 2) (sub_pos.mpr hσ)
-  rw [add_sub_cancel] at hC
+  refine riemannHypothesis_of_forall_exponent
+    (P := fun C θ ↦ ∀ᶠ x in atTop, Chebyshev.psi x - x ≤ C * x ^ θ) h fun σ hσ _ hC ↦ ?_
   refine zeroFreeRightOf_dedekindZetaC_of_eventually_primePsi_sub_le_rpow ℚ (by linarith)
     (by simpa only [primePsi_rat_univ] using hC) fun β hβ ↦ ?_
   rw [meromorphicOrderAt_congr (dedekindZetaC_rat_eventuallyEq_riemannZeta β)]
