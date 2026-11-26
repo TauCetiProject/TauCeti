@@ -75,17 +75,6 @@ namespace TauCeti
 variable {A H F : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [NormedAddCommGroup F] [InnerProductSpace ℂ F] [AddCommGroup A] [Module ℂ A]
 
-/-- The right slice of the operator `spatialTensorLinearMap y` at `(g, f)` is the contraction of
-`y` against the vector functional `b ↦ ⟪f, b g⟫` on its second factor. -/
-@[simp]
-theorem sliceRight_spatialTensorLinearMap [CompleteSpace H] (y : (H →L[ℂ] H) ⊗[ℂ] (F →L[ℂ] F))
-    (g f : F) :
-    sliceRight g f (spatialTensorLinearMap ℂ H F H F y) =
-      LinearMap.tensorComponent (vectorFunctional g f : (F →L[ℂ] F) →L[ℂ] ℂ).toLinearMap y := by
-  induction y using TensorProduct.inductionOn with
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul a b => simp
-
 /-- The right slice of `(π ⊗ 1)(y)` at `(g, f)` is `π` applied to the contraction of `y` against
 the vector functional `b ↦ ⟪f, b g⟫` on its second factor. -/
 theorem sliceRight_spatialTensorLinearMap_rTensor [CompleteSpace H] (π : A →ₗ[ℂ] H →L[ℂ] H)

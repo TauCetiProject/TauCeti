@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
 public import TauCeti.Algebra.Star.TensorProductLift
 public import TauCeti.Analysis.InnerProductSpace.Operator.VectorFunctional
 public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.RingTheory.Flat.Basic
 import TauCeti.Topology.Algebra.NonUnitalStarAlgebra
@@ -46,7 +47,8 @@ smallest C*-norm on `A ⊗[𝕜] B`; the subscript `min` is only the conventiona
 ## Main declarations
 
 * `TauCeti.spatialTensorLinearMap`: the linear map `B(E, E') ⊗[𝕜] B(F, F') → B(E ⊗₂ F, E' ⊗₂ F')`,
-  with its matrix coefficients `TauCeti.inner_spatialTensorLinearMap`,
+  with its matrix coefficients `TauCeti.inner_spatialTensorLinearMap`, its right slices
+  `TauCeti.sliceRight_spatialTensorLinearMap`,
   `TauCeti.spatialTensorLinearMap_injective`, and its invariance under the flip
   `E ⊗₂ F ≃ F ⊗₂ E` (`TauCeti.spatialTensorLinearMap_comm_apply`,
   `TauCeti.norm_spatialTensorLinearMap_comm`).
@@ -112,6 +114,17 @@ theorem inner_spatialTensorLinearMap (ξ : E) (ξ' : E') (η : F) (η' : F')
     simp only [map_add, add_apply, inner_add_right, hx, hy]
   | tmul a b =>
     simp [UniformSpace.Completion.inner_coe, inner_smul_right]
+
+/-- The right slice of the operator `spatialTensorLinearMap x` at `(η, η')` is the contraction of
+`x` against the vector functional `b ↦ ⟪η', b η⟫` on its second factor. -/
+@[simp]
+theorem sliceRight_spatialTensorLinearMap [CompleteSpace E'] (x : (E →L[𝕜] E') ⊗[𝕜] (F →L[𝕜] F'))
+    (η : F) (η' : F') :
+    sliceRight η η' (spatialTensorLinearMap 𝕜 E F E' F' x) =
+      LinearMap.tensorComponent (vectorFunctional η η' : (F →L[𝕜] F') →L[𝕜] 𝕜).toLinearMap x := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul a b => simp
 
 /-- **Injectivity of the spatial tensor map** on the full operator spaces. -/
 theorem spatialTensorLinearMap_injective :
