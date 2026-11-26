@@ -29,7 +29,7 @@ the adjoint action of a commutative `K` fixes `Lie(K)` pointwise and `Lie(K)` is
 subalgebra of `𝔤`; in particular the Lie algebra of a commutative Lie group is abelian. This
 applies to the Lie algebra `𝔱` of a torus `T ≤ G`, which is abelian and fixed pointwise by
 `Ad(T)`. A closed connected commutative subgroup is moreover the exponential image of its Lie
-algebra.
+algebra, so its normalizer consists of the elements whose adjoint action preserves its Lie algebra.
 
 Conjugation by `g` carries the one-parameter subgroup of `X ∈ Lie(K)` to the one-parameter
 subgroup of `Ad g X`; when `g` commutes with the former, uniqueness of the generator of a
@@ -59,6 +59,8 @@ subalgebra they generate by `TauCeti.Lie.lieSubalgebraOfSubgroup_induction`.
   commutative subgroup is the exponential image of its Lie algebra.
 * `TauCeti.Lie.mem_centralizer_iff_forall_Ad_apply_eq_self`: an element centralizes a closed
   preconnected subgroup exactly when its adjoint action fixes its Lie algebra pointwise.
+* `TauCeti.Lie.mem_normalizer_iff_forall_Ad_mem`: an element normalizes a closed preconnected
+  commutative subgroup exactly when its adjoint action maps the Lie algebra into itself.
 
 ## References
 
@@ -215,5 +217,41 @@ theorem image_lieExp_lieSubalgebraOfSubgroup_of_isPreconnected {K : Subgroup G}
   rw [hX, EmbeddedLieSubgroupData.subtypeVal_apply,
     ← EmbeddedLieSubgroupData.lieMapSubtypeVal_apply] at hnat
   exact hnat.symm
+
+/-- **The normalizer of a closed preconnected commutative subgroup** `K` consists of the elements
+whose adjoint action maps the Lie algebra `Lie(K)` into itself. -/
+theorem mem_normalizer_iff_forall_Ad_mem {K : Subgroup G} [IsMulCommutative K]
+    (hK : IsClosed (K : Set G)) (hconn : IsPreconnected (K : Set G)) {g : G} :
+    g ∈ Subgroup.normalizer (K : Set G) ↔
+      ∀ X ∈ lieSubalgebraOfSubgroup (I := I) K, Ad (I := I) g X ∈ lieSubalgebraOfSubgroup (I := I) K
+    := by
+  refine ⟨fun hg X hX ↦ Ad_mem_lieSubalgebraOfSubgroup hg hX, fun h ↦ ?_⟩
+  have : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  set 𝔨 := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
+  have hK' : (K : Set G) = lieExp (I := I) '' (𝔨 : Set (LeftInvariantDerivation I G)) :=
+    (image_lieExp_lieSubalgebraOfSubgroup_of_isPreconnected hK hconn).symm
+  -- `Ad g` maps the finite-dimensional space `𝔨` injectively into itself, hence onto itself.
+  have hsurj : Function.Surjective ((Ad (I := I) g).toLinearMap.restrict (p := 𝔨) (q := 𝔨) h) :=
+    LinearMap.surjective_of_injective fun X Y hXY ↦ Subtype.ext <|
+      (Ad (I := I) g).injective (congrArg Subtype.val hXY)
+  rw [Subgroup.mem_normalizer_iff]
+  intro k
+  constructor
+  · intro hk
+    obtain ⟨X, hX, rfl⟩ : k ∈ lieExp (I := I) '' (𝔨 : Set (LeftInvariantDerivation I G)) := by
+      rw [← hK']
+      exact hk
+    rw [conj_lieExp]
+    exact lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK (h X hX)
+  · intro hk
+    obtain ⟨X, hX, hXk⟩ :
+        g * k * g⁻¹ ∈ lieExp (I := I) '' (𝔨 : Set (LeftInvariantDerivation I G)) := by
+      rw [← hK']
+      exact hk
+    obtain ⟨Y, hY⟩ := hsurj ⟨X, hX⟩
+    have hYX : Ad (I := I) g Y = X := congrArg Subtype.val hY
+    rw [← hYX, ← conj_lieExp, mul_left_inj, mul_right_inj] at hXk
+    exact hXk ▸ lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK Y.property
 
 end TauCeti.Lie
