@@ -80,6 +80,10 @@ theorem tilingOfHeightOn_def (R : Set TriFace) (H : ℤ × ℤ → ℤ) :
 @[simp] theorem isHeightFunctionOn_univ : IsHeightFunctionOn Set.univ H ↔ IsHeightFunction H := by
   simp [isHeightFunctionOn_def, isHeightFunction_def, mem_regionEdges_iff]
 
+@[simp] theorem tilingOfHeightOn_univ : tilingOfHeightOn Set.univ H = tilingOfHeight H := by
+  ext e
+  simp [mem_regionEdges_iff]
+
 theorem IsHeightFunction.isHeightFunctionOn (hH : IsHeightFunction H) (R : Set TriFace) :
     IsHeightFunctionOn R H :=
   fun e _ => isHeightFunction_def.1 hH e
@@ -131,8 +135,7 @@ theorem isCochainPrimitiveOn :
   · rw [heightCochain_of_notMem hm]
     rw [mem_tilingOfHeightOn, not_and_or] at hm
     rcases hm with hm | hm
-    · rcases hH e he with h | h <;> rcases neutralIncrement_eq_zero_or_eq_one e with h' | h' <;>
-        omega
+    · exact ((ne_one_sub_neutralIncrement_iff (hH e he)).1 hm).symm
     · exact absurd he hm
 
 /-- Along an edge of `R`, the height cochain of the free tiling of a height function on `R` is
@@ -223,9 +226,8 @@ theorem IsHeightFunctionOn.isTiling_tilingOfHeightOn_iff (hH : IsHeightFunctionO
   rw [hH.isFreeTiling_tilingOfHeightOn.isTiling_iff, Set.disjoint_right]
   refine forall₂_congr fun e he => ?_
   have heR := boundaryEdges_subset_regionEdges he
-  rw [mem_tilingOfHeightOn, not_and_or]
-  rcases hH e heR with h | h <;> rcases neutralIncrement_eq_zero_or_eq_one e with h' | h' <;>
-    simp [heR] <;> omega
+  rw [mem_tilingOfHeightOn, not_and_or, or_iff_left (not_not.2 heR)]
+  exact ne_one_sub_neutralIncrement_iff (hH e heR)
 
 /-- **Restriction commutes with heights**: the height function of a plane tiling `M` is a height
 function on every region `R`, and its free tiling on `R` is the restriction `M ∩ E(R)`. -/

@@ -190,9 +190,7 @@ theorem heightCochain_tilingOfHeight (hH : IsHeightFunction H) (e : TriEdge) :
   by_cases he : e ∈ tilingOfHeight H
   · rw [heightCochain_of_mem he, mem_tilingOfHeight.1 he]
   · rw [heightCochain_of_notMem he]
-    rw [mem_tilingOfHeight] at he
-    rcases hH e with h | h <;> rcases neutralIncrement_eq_zero_or_eq_one e with h' | h' <;>
-      omega
+    exact ((ne_one_sub_neutralIncrement_iff (hH e)).1 he).symm
 
 end IsHeightFunction
 
