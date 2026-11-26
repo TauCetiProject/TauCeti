@@ -102,6 +102,18 @@ variable {E G M V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 
 namespace Floer
 
+/-- Each component `z ↦ K_z(v)` of the pair-of-pants perturbation, read in the plane chart
+`ℝ × ℝ ≅ ℂ`, is `Cⁿ` jointly in the point of `S = ℂ ∖ {0, 1}` and the target point, for `Cⁿ`
+Hamiltonians. -/
+theorem contMDiffAt_pairOfPantsPerturbation_apply_equivRealProdCLM {n : ℕ∞}
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q)))
+    (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n
+      (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x v) (z, x) :=
+  ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
+    ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+      contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const
+
 variable [NormedSpace ℝ V]
 
 /-- **The perturbation read in a chart is smooth.** For period-one Hamiltonians which are `C^n` on
@@ -114,14 +126,12 @@ theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞} {m : WithTop �
     (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V m) (hnm : (n : WithTop ℕ∞) ≤ m) (v : ℂ) :
     ContDiffOn ℝ n (fun p : (ℝ × ℝ) × V ↦
         pairOfPantsPerturbation H (equivRealProdCLM.symm p.1) (φ.symm p.2) v)
-      (thricePuncturedSphereReal ×ˢ φ.target) := by
-  refine (φ.contDiffOn_comp_symm_of_contMDiffOn
-    (K := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x)
-    isOpen_thricePuncturedSphereReal ?_ hnm).clm_apply contDiffOn_const
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  exact ((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
-    ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-      contMDiff_snd).contMDiffAt).contMDiffWithinAt
+      (thricePuncturedSphereReal ×ˢ φ.target) :=
+  φ.contDiffOn_comp_symm_of_contMDiffOn
+    (K := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x v)
+    isOpen_thricePuncturedSphereReal (fun p hp ↦
+      (contMDiffAt_pairOfPantsPerturbation_apply_equivRealProdCLM hH hHs v p.1 hp.1
+        p.2).contMDiffWithinAt) hnm
 
 /-- **The end Hamiltonian read in a chart is smooth.** For a period-one Hamiltonian `H_q` which is
 `C^n` on `ℝ × M` and a `C^n` partial diffeomorphism `φ` from `M` to a normed space `V`, the
