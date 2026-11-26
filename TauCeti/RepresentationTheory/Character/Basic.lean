@@ -50,6 +50,11 @@ The `n`-th power map is a bijection of a group `G` whenever `n` is coprime to `|
 (`Representation.card_inv_mul_sum_char_eq_finrank`). An irreducible representation has a nonzero
 invariant vector only when it is the trivial line, so the average is `1` for the trivial
 character and `0` otherwise (`Representation.card_inv_mul_sum_char_pow_eq_zero_iff_of_coprime`).
+
+For a right action of a group `H`, written as a representation of `Hᵐᵒᵖ`, the dimension of the
+invariants of a subgroup `S` whose order is finite and nonzero in the field is the average
+`|S|⁻¹ ∑_{u ∈ S} tr(u)` of the character over `S`
+(`Representation.natCast_finrank_invariants_comp_op_subtype`).
 -/
 
 public section
@@ -189,5 +194,23 @@ theorem card_inv_mul_sum_char_pow_eq_zero_iff_of_coprime (ρ : Representation k 
       ‹ρ.IsIrreducible›.finrank_eq_one_of_invariants_ne_bot hne, Nat.cast_one]
 
 end Average
+
+open MulOpposite Module in
+/-- **The dimension of the invariants of a finite subgroup is the average of the character.**
+For a right action of a group `H` on `M`, written as a representation of `Hᵐᵒᵖ`, and a subgroup
+`S` of `H` whose order is finite and nonzero in `K`, `dim M^S = |S|⁻¹ ∑_{u ∈ S} tr(u | M)`. -/
+theorem natCast_finrank_invariants_comp_op_subtype {K M : Type*} [Field K] [AddCommGroup M]
+    [Module K M] [FiniteDimensional K M] {H : Type*} [Group H] (ρ : Representation K Hᵐᵒᵖ M)
+    (S : Subgroup H) (hS : (Nat.card S : K) ≠ 0) :
+    (finrank K (invariants (ρ.comp (MonoidHom.op S.subtype))) : K) =
+      (Nat.card S : K)⁻¹ * ∑ᶠ u : S, ρ.character (op (u : H)) := by
+  have := Nat.finite_of_card_ne_zero fun h ↦ hS (by rw [h, Nat.cast_zero])
+  have := Fintype.ofFinite S
+  have : Fintype Sᵐᵒᵖ := Fintype.ofEquiv S MulOpposite.opEquiv
+  have hS' : Nat.card Sᵐᵒᵖ = Nat.card S := Nat.card_congr MulOpposite.opEquiv.symm
+  have : Invertible (Nat.card Sᵐᵒᵖ : K) := invertibleOfNonzero (by rwa [hS'])
+  rw [← card_inv_mul_sum_char_eq_finrank, hS', finsum_eq_sum_of_fintype, character_comp]
+  congr 1
+  exact (Fintype.sum_equiv MulOpposite.opEquiv _ _ fun _ ↦ rfl).symm
 
 end Representation
