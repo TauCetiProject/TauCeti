@@ -58,6 +58,8 @@ live in `Type` here.
 * `TauCeti.ModularSymbol.toH1_eq_zero_iff` and `TauCeti.ModularSymbol.ker_toH1`: exactness at
   `Symb_Γ(V)`, the kernel of `δ` is `Eis_Γ(V)`.
 * `TauCeti.ModularSymbol.toH1_comp_bsymbRes`: `δ ∘ res = 0`.
+* `TauCeti.ModularSymbol.range_bsymbRes_eq_ker_toH1`: exactness of
+  `BSymb_Γ(V) → Symb_Γ(V) → H¹(Γ, V)`, the image of `res` is the kernel of `δ`.
 * `TauCeti.ModularSymbol.resNatTrans_app_toH1_eq_zero`: `δ(φ)` vanishes on every cusp stabiliser.
 * `TauCeti.ModularSymbol.mem_range_toH1_iff`: exactness at `H¹(Γ, V)`, a class is in the image of
   `δ` iff it restricts to zero on every cusp stabiliser.
@@ -181,6 +183,13 @@ theorem toH1_comp_bsymbRes : toH1 ρ ∘ₗ bsymbRes ρ = 0 :=
   LinearMap.ext fun ψ ↦ (toH1_eq_zero_iff _).2 <| by
     rw [coe_bsymbRes]
     exact restrictDivisor_mem_eis ψ.property
+
+variable (ρ) in
+/-- **Exactness of `BSymb_Γ(V) → Symb_Γ(V) → H¹(Γ, V)`**: the image of the restriction map is the
+kernel of `δ`. -/
+theorem range_bsymbRes_eq_ker_toH1 : LinearMap.range (bsymbRes ρ) = LinearMap.ker (toH1 ρ) := by
+  rw [ker_toH1, ← map_subtype_range_bsymbRes,
+    Submodule.comap_map_eq_of_injective (symb ρ).injective_subtype]
 
 end ToH1
 
