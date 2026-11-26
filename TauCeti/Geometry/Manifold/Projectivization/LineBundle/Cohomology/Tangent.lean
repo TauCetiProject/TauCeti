@@ -36,7 +36,7 @@ identification of the cokernel is not made here.
 
 public noncomputable section
 
-open Bundle CategoryTheory CategoryTheory.Limits TauCeti
+open Bundle CategoryTheory CategoryTheory.Limits Opposite TopologicalSpace TauCeti
 open scoped Manifold ContDiff LinearAlgebra.Projectivization
 
 namespace Projectivization
@@ -54,6 +54,26 @@ def coordLineTangentSectionIso :
     contMDiff_coordLineTangentEquiv <|
       (coordLineTangentDiffeomorph (𝕜 := ℂ) (m := m) ω).symm.contMDiff.congr fun q ↦
         (coordLineTangentDiffeomorph_symm_apply (m := m) ω q).symm
+
+variable {m}
+
+@[simp]
+theorem coordLineTangentSectionIso_hom_app_apply
+    {U : (Opens (TopCat.of (ℙ ℂ (Fin 2 → ℂ))))ᵒᵖ}
+    (s : (holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+      (CoordLineTangentSpace ℂ m)).obj.obj U) (x : ↥(unop U)) :
+    (coordLineTangentSectionIso m).hom.hom.app U s x = coordLineTangentEquiv x (s x) :=
+  holomorphicSectionSheaf.isoOfLinearEquiv_hom_app_apply _ _ _ s x
+
+@[simp]
+theorem coordLineTangentSectionIso_inv_app_apply
+    {U : (Opens (TopCat.of (ℙ ℂ (Fin 2 → ℂ))))ᵒᵖ}
+    (s : (holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+      (twistSumCore (𝕜 := ℂ) (n := 1) (lineTwist m)).Fiber).obj.obj U) (x : ↥(unop U)) :
+    (coordLineTangentSectionIso m).inv.hom.app U s x = (coordLineTangentEquiv x).symm (s x) :=
+  holomorphicSectionSheaf.isoOfLinearEquiv_inv_app_apply _ _ _ s x
+
+variable (m)
 
 /-- **`H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`.** The first Čech cohomology of the sheaf of holomorphic sections of
 the pullback of the tangent bundle of `ℂPᵐ⁺¹` along the coordinate line vanishes. -/

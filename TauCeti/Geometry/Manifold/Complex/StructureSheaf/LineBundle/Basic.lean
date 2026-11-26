@@ -409,6 +409,23 @@ theorem comp_hom_app_apply {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace
     (f ≫ g).hom.app U s x = g.hom.app U (f.hom.app U s) x :=
   (rfl)
 
+/-- The zero morphism between sheaves of holomorphic sections sends every section to the zero
+section. -/
+-- Not simp: simp already proves it, through `Limits.zero_app` and `zero_apply`.
+theorem zero_hom_app_apply {U : (Opens (TopCat.of X))ᵒᵖ}
+    (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U) (x : ↥(unop U)) :
+    (0 : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂).hom.app U s x = 0 :=
+  (rfl)
+
+/-- A sum of two morphisms between sheaves of holomorphic sections acts on the values of a
+section as the sum of the values. -/
+-- Not simp: simp already proves it, through `Sheaf.Hom.add_app` and `add_apply`.
+theorem add_hom_app_apply (f g : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂)
+    {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U)
+    (x : ↥(unop U)) :
+    (f + g).hom.app U s x = f.hom.app U s x + g.hom.app U s x :=
+  (rfl)
+
 /-- A finite sum of morphisms between sheaves of holomorphic sections acts on the values of a
 section as the sum of the values. -/
 @[simp]
@@ -418,8 +435,8 @@ theorem sum_hom_app_apply {ι : Type*} (t : Finset ι)
     (x : ↥(unop U)) :
     (∑ i ∈ t, f i).hom.app U s x = ∑ i ∈ t, (f i).hom.app U s x :=
   map_sum ({ toFun := fun g ↦ g.hom.app U s x
-             map_zero' := rfl
-             map_add' := fun _ _ ↦ rfl } :
+             map_zero' := zero_hom_app_apply s x
+             map_add' := fun f g ↦ add_hom_app_apply f g s x } :
     (holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂) →+ V₂ x) f t
 
 /-- A fibrewise linear map `φ : V₁ x → V₂ x` whose total-space map is complex analytic induces a

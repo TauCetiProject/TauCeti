@@ -98,10 +98,8 @@ theorem twistSumSectionSingle_twistSumSectionProj_of_ne {l l' : κ} (h : l ≠ l
     twistSumSectionSingle (n := n) k l ≫ twistSumSectionProj k l' = 0 := by
   refine holomorphicSectionSheaf.hom_ext fun _ s x ↦ ?_
   simp only [holomorphicSectionSheaf.comp_hom_app_apply, twistSumSectionProj_app_apply,
-    twistSumSectionSingle_app_apply]
-  exact (Pi.single_eq_of_ne' (M := fun _ : κ ↦ ℂ) h (s x)).trans
-    (holomorphicSectionSheaf.zero_apply (I := 𝓘(ℂ, Fin n → ℂ))
-      (V := (twistCore (𝕜 := ℂ) (n := n) (k l')).Fiber) x).symm
+    twistSumSectionSingle_app_apply, holomorphicSectionSheaf.zero_hom_app_apply]
+  exact Pi.single_eq_of_ne' (M := fun _ : κ ↦ ℂ) h (s x)
 
 /-- The projections onto the summands followed by the inclusions of the summands add up to the
 identity of the sheaf of holomorphic sections of `⨁ₗ 𝒪(k l)`. -/
@@ -201,6 +199,24 @@ def twistSumCechIso (p : ℕ) :
       ⨁ fun l ↦ holomorphicSectionCechCohomology 𝓘(ℂ, Fin n → ℂ) ℂ
         (twistCore (𝕜 := ℂ) (n := n) (k l)).Fiber p :=
   biproduct.uniqueUpToIso _ (twistSumCechBiconeIsBilimit n k p)
+
+/-- The component `l` of the isomorphism `Projectivization.twistSumCechIso` is the map induced
+on cohomology by the projection onto the summand `𝒪(k l)`. -/
+@[reassoc (attr := simp)]
+theorem twistSumCechIso_hom_π (p : ℕ) (l : κ) :
+    (twistSumCechIso n k p).hom ≫ biproduct.π _ l =
+      (Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) (ModuleCat.{0} ℂ) p).map
+        (twistSumSectionProj k l).hom :=
+  biproduct.lift_π _ l
+
+/-- The inverse of the isomorphism `Projectivization.twistSumCechIso` restricted to the summand
+`l` is the map induced on cohomology by the inclusion of the summand `𝒪(k l)`. -/
+@[reassoc (attr := simp)]
+theorem ι_twistSumCechIso_inv (p : ℕ) (l : κ) :
+    biproduct.ι _ l ≫ (twistSumCechIso n k p).inv =
+      (Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) (ModuleCat.{0} ℂ) p).map
+        (twistSumSectionSingle k l).hom :=
+  biproduct.ι_desc _ l
 
 omit [DecidableEq κ]
 variable {n k}
