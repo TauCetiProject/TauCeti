@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.Augmentation.Basic
+import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
 # Permutation representations in modular characteristic are not semisimple
@@ -51,8 +52,7 @@ theorem not_isSemisimpleRepresentation_ofMulAction {X : Type*} [MulAction G X]
     refine mem_invariantLine_iff.2 ⟨c.coeff x₀, ?_⟩
     ext x
     obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq G x₀ x
-    simpa [coeff_permutationSum, coeff_ofMulAction] using
-      congrArg (fun y : MonoidAlgebra k X ↦ y.coeff (g • x₀)) (hinv g)
+    simpa [coeff_permutationSum] using (coeff_smul_of_forall_ofMulAction_eq hinv g x₀).symm
   -- The augmentation of `∑_x x` is `|X| = 0`, so the invariant line lies in the augmentation.
   have haug : invariantLine k G X ≤ augmentationSubrepresentation k G X := fun v hv ↦ by
     obtain ⟨a, rfl⟩ := mem_invariantLine_iff.1 hv
