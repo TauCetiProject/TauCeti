@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Contour.Cycle.Basic
-public import TauCeti.Analysis.Contour.Curve.Circle.Basic
 public import TauCeti.Analysis.Contour.Winding.Number.Circle.Basic
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Circle
 
 /-!
 # Circles as contour cycles
@@ -22,7 +22,7 @@ such as Banach-algebra resolvents.
 
 ## Main definitions
 
-* `TauCeti.Contour.circleCurve`: the circle as a closed piecewise-`C¹` curve.
+* `TauCeti.Contour.circleCurve`: the circle as a closed absolutely continuous curve.
 * `TauCeti.Contour.circleCycle`: the corresponding one-generator contour cycle.
 
 ## Main results
@@ -43,33 +43,33 @@ open scoped Real
 
 namespace TauCeti.Contour
 
-/-- The counterclockwise circle `circleMap c R` on `[0, 2π]`, bundled as a closed piecewise-`C¹`
-curve. -/
-def circleCurve (c : ℂ) (R : ℝ) : PiecewiseC1ClosedCurve :=
-  PiecewiseC1ClosedCurve.of (circleMap c R)
-    (IsPiecewiseC1On.of_contDiffOn (contDiff_circleMap c R).contDiffOn)
+/-- The counterclockwise circle `circleMap c R` on `[0, 2π]`, bundled as a closed absolutely
+continuous curve. -/
+def circleCurve (c : ℂ) (R : ℝ) : AbsolutelyContinuousClosedCurve :=
+  AbsolutelyContinuousClosedCurve.of (circleMap c R)
+    (absolutelyContinuousOnInterval_circleMap c R 0 (2 * π))
     (by simpa using (periodic_circleMap c R 0).symm)
 
 /-- The bundled circle starts at `0`. -/
 @[simp]
 theorem circleCurve_a (c : ℂ) (R : ℝ) : (circleCurve c R).a = 0 := by
-  rw [circleCurve, PiecewiseC1ClosedCurve.of_a]
+  rw [circleCurve, AbsolutelyContinuousClosedCurve.of_a]
 
 /-- The bundled circle ends at `2π`. -/
 @[simp]
 theorem circleCurve_b (c : ℂ) (R : ℝ) : (circleCurve c R).b = 2 * π := by
-  rw [circleCurve, PiecewiseC1ClosedCurve.of_b]
+  rw [circleCurve, AbsolutelyContinuousClosedCurve.of_b]
 
 /-- On its parameter interval, the bundled circle agrees with `circleMap c R`. -/
 @[simp]
 theorem circleCurve_apply {c : ℂ} {R t : ℝ} (ht : t ∈ uIcc 0 (2 * π)) :
     circleCurve c R t = circleMap c R t := by
   rw [circleCurve]
-  exact PiecewiseC1ClosedCurve.of_apply _ _ _ ht
+  exact AbsolutelyContinuousClosedCurve.of_apply _ _ _ ht
 
 /-- The counterclockwise circle `circleMap c R` on `[0, 2π]` as a one-generator contour cycle. -/
 def circleCycle (c : ℂ) (R : ℝ) : Cycle :=
-  FreeAbelianGroup.of (circleCurve c R)
+  FreeAddCommGroup.of (circleCurve c R)
 
 namespace Cycle
 

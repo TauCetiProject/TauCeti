@@ -8,7 +8,9 @@ module
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.Hausdorff
+import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.Isodiametric
 
 /-!
@@ -23,8 +25,11 @@ either normalization. Since `μHE[finrank ℝ E]` is Lebesgue volume on a finite
 inner product space `E` and Hausdorff measure decreases with the dimension parameter, every
 Lebesgue-null set in `E` is `μH[d]`- and `μHE[d]`-null for `d ≥ finrank ℝ E`
 (`TauCeti.hausdorffMeasure_eq_zero_of_volume_eq_zero`,
-`TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`). In dimension zero, Hausdorff
-measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`). In dimension one the
+`TauCeti.euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero`); conversely, every subset of `E`
+with finite `μHE[d]` measure for `d < finrank ℝ E` has Lebesgue volume zero
+(`TauCeti.volume_eq_zero_of_euclideanHausdorffMeasure_ne_top`). In dimension zero, Hausdorff
+measure is counting measure (`TauCeti.hausdorffMeasure_zero_eq_count`), so `μHE[0]` gives `encard`
+on every set (`TauCeti.euclideanHausdorffMeasure_zero_apply`). In dimension one the
 normalizing constant is `1`, because `μH[1]` already agrees with Lebesgue measure on `ℝ`. Hence
 `μHE[1] = μH[1]` on every extended metric space, so length statements may be proved with either
 normalization.
@@ -50,12 +55,36 @@ transported to `s` by adding a base point, is the Euclidean Hausdorff measure of
 of `s` (`AffineSubspace.volume_preimage_coe_vadd`). These coordinates `v ↦ v +ᵥ q` are Mathlib's
 `IsometryEquiv.vaddConst q` followed by the inclusion of `s`
 (`AffineSubspace.val_comp_vaddConst`), so they form an isometry onto `s`
-(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`). In particular, for a unit
-vector `ν` of a finite-dimensional real inner product space of dimension `n`, the restriction of
-`μHE[n - 1]` to the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue measure of the
-orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`
+(`AffineSubspace.isometry_coe_vadd`, `AffineSubspace.range_coe_vadd`). Balls of the same radius
+in two real inner product spaces of the same dimension, such as a `k`-dimensional one and
+`EuclideanSpace ℝ (Fin k)`, have the same volume (`TauCeti.volume_ball_eq_of_finrank_eq`).
+Hence the isodiametric inequality holds on `s`:
+`μHE[k] (t ∩ s) ≤ (ediam t / 2) ^ k ω_k` for every set `t`, where `k` is the dimension of `s`
+(`AffineSubspace.euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul`). In particular, for a
+unit vector `ν` of a finite-dimensional real inner product space of dimension `n`, the
+restriction of `μHE[n - 1]` to the hyperplane `{x | ⟪x, ν⟫ = c}` is the image of the Lebesgue
+measure of the orthogonal complement `(ℝ ∙ ν)ᗮ` under `y ↦ c • ν + y`
 (`TauCeti.euclideanHausdorffMeasure_restrict_setOf_inner_eq`), so integrals over the hyperplane
-are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`).
+are integrals over `(ℝ ∙ ν)ᗮ` (`TauCeti.setIntegral_setOf_inner_eq`), the disc cut from the
+hyperplane by a ball of radius `r` centred on it has measure `ω_{n-1} r ^ (n - 1)`
+(`TauCeti.euclideanHausdorffMeasure_ball_inter_setOf_inner_eq`), in dimension `n ≥ 2` the
+hyperplane itself has infinite `μHE[n - 1]` measure
+(`TauCeti.euclideanHausdorffMeasure_setOf_inner_eq_eq_top`), and the isodiametric
+inequality holds on the hyperplane (`TauCeti.euclideanHausdorffMeasure_inter_setOf_inner_eq_le`).
+
+Isometries carry restricted Euclidean Hausdorff measure to its restriction on the image
+(`Isometry.map_euclideanHausdorffMeasure_restrict`), and an isometric equivalence carries it
+restricted to the frontier of a preimage to its restriction to the frontier of the set
+(`IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier`).
+
+For a linear subspace `T` of dimension `k` of a finite-dimensional real inner product space,
+`μHE[k]⌞T` is the image of the Lebesgue measure of `T` under the inclusion
+(`Submodule.euclideanHausdorffMeasure_restrict_eq_map`). It is locally finite, gives balls about
+points of `T` the volume of the balls of the same radius in `EuclideanSpace ℝ (Fin k)`
+(`Submodule.euclideanHausdorffMeasure_restrict_apply_ball`,
+`Submodule.euclideanHausdorffMeasure_restrict_apply_closedBall`) and spheres of nonzero radius about
+them measure zero (`Submodule.euclideanHausdorffMeasure_restrict_apply_sphere`), and determines `T`
+(`Submodule.eq_of_euclideanHausdorffMeasure_restrict_eq`).
 
 ## References
 
@@ -111,7 +140,36 @@ theorem euclideanHausdorffMeasure_one {X : Type*} [EMetricSpace X] [MeasurableSp
 
 end MeasureTheory.Measure
 
+/-- An isometry carries Euclidean Hausdorff measure restricted to a set to Euclidean
+Hausdorff measure restricted to its image, in every dimension. -/
+theorem Isometry.map_euclideanHausdorffMeasure_restrict {X Y : Type*} [EMetricSpace X]
+    [MeasurableSpace X] [BorelSpace X] [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y]
+    {f : X → Y} (hf : Isometry f) {d : ℕ} (s : Set X) :
+    ((μHE[d] : Measure X).restrict s).map f = (μHE[d] : Measure Y).restrict (f '' s) := by
+  ext t ht
+  rw [Measure.map_apply hf.continuous.measurable ht,
+    Measure.restrict_apply (hf.continuous.measurable ht), Measure.restrict_apply ht,
+    ← image_preimage_inter, hf.euclideanHausdorffMeasure_image]
+
+/-- An isometric equivalence `e` with `s = e⁻¹ t` carries Euclidean Hausdorff measure restricted
+to `frontier s` to Euclidean Hausdorff measure restricted to `frontier t`, in every dimension. -/
+theorem IsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier
+    {X Y : Type*} [EMetricSpace X] [MeasurableSpace X] [BorelSpace X] [EMetricSpace Y]
+    [MeasurableSpace Y] [BorelSpace Y] (e : X ≃ᵢ Y) {s : Set X} {t : Set Y} (hst : s = e ⁻¹' t)
+    (d : ℕ) :
+    MeasurePreserving e ((μHE[d] : Measure X).restrict (frontier s))
+      ((μHE[d] : Measure Y).restrict (frontier t)) := by
+  rw [hst, ← e.coe_toHomeomorph, ← Homeomorph.preimage_frontier]
+  exact (e.measurePreserving_euclideanHausdorffMeasure d).restrict_preimage
+    isClosed_frontier.measurableSet
+
 namespace TauCeti
+
+/-- The zero-dimensional Euclidean Hausdorff measure `μHE[0]` counts the points of any set,
+measurable or not, on every extended metric space. -/
+theorem euclideanHausdorffMeasure_zero_apply {X : Type*} [EMetricSpace X] [MeasurableSpace X]
+    [BorelSpace X] (s : Set X) : μHE[0] s = s.encard := by
+  rw [Measure.euclideanHausdorffMeasure_zero, hausdorffMeasure_zero_apply]
 
 open Measure in
 /-- Integrating `μHE[k] (g y)` pulls out the finite Euclidean normalization factor
@@ -143,6 +201,15 @@ theorem euclideanHausdorffMeasure_eq_zero_of_volume_eq_zero {E : Type*} [NormedA
     μHE[d] s = 0 :=
   Measure.euclideanHausdorffMeasure_eq_zero_iff.2
     (hausdorffMeasure_eq_zero_of_volume_eq_zero hs (Nat.cast_le.2 hd))
+
+/-- A subset of a finite-dimensional real inner product space `E` with finite `d`-dimensional
+Euclidean Hausdorff measure has Lebesgue volume zero whenever `d < finrank ℝ E`. -/
+theorem volume_eq_zero_of_euclideanHausdorffMeasure_ne_top {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {d : ℕ} (hd : d < finrank ℝ E) {s : Set E} (hs : μHE[d] s ≠ ∞) :
+    volume s = 0 := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume]
+  exact (Measure.euclideanHausdorffMeasure_zero_or_top hd s).resolve_right hs
 
 end TauCeti
 
@@ -197,7 +264,7 @@ theorem volume_eq_smul_hausdorffMeasure (k : ℕ) :
     rw [_root_.smul_apply, smul_eq_mul, ← ENNReal.inv_mul_le_iff hω0 hωtop]
     simpa using hle s
   · rw [_root_.smul_apply, smul_eq_mul]
-    exact mul_hausdorffMeasure_le_measure volume (Nat.cast_nonneg k) fun x _ =>
+    exact mul_hausdorffMeasure_le_measure volume fun x _ =>
       (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) =>
         (volume_closedBall_eq_div_mul x hr.le).ge).frequently
 
@@ -249,7 +316,7 @@ theorem mul_euclideanHausdorffMeasure_le_measure_of_isOpen (μ : Measure X) (k :
     c * μHE[k] A ≤ μ U := by
   rw [TauCeti.euclideanHausdorffMeasure_eq_smul_hausdorffMeasure, smul_apply, smul_eq_mul,
     ← mul_assoc]
-  refine mul_hausdorffMeasure_le_measure_of_isOpen μ (Nat.cast_nonneg k) hU hAU fun x hx =>
+  refine mul_hausdorffMeasure_le_measure_of_isOpen μ hU hAU fun x hx =>
     (h x hx).mp (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) hle => ?_)
   rwa [EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le, ← mul_assoc] at hle
 
@@ -306,7 +373,7 @@ theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div (k : ℕ) {A :
   replace hAfin : μH[k] A ≠ ∞ := fun h => hAfin (by
     rw [_root_.smul_apply, smul_eq_mul, h]; exact ENNReal.mul_top hω0)
   refine ae_smul_measure ?_ _
-  filter_upwards [ae_tendsto_hausdorffMeasure_inter_closedBall_div (Nat.cast_nonneg k)
+  filter_upwards [ae_tendsto_hausdorffMeasure_inter_closedBall_div
     (hA.mono_ac (absolutelyContinuous_smul hω0)) hAfin] with x hx hxA
   refine (hx hxA).congr' (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) => ?_)
   dsimp only
@@ -357,7 +424,7 @@ theorem val_comp_vaddConst (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
 theorem isometry_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
     Isometry fun v : s.direction ↦ ((v +ᵥ q : s) : P) := by
   rw [← s.val_comp_vaddConst q]
-  exact isometry_subtype_coe.comp (IsometryEquiv.vaddConst q).isometry
+  exact isometry_subtypeVal.comp (IsometryEquiv.vaddConst q).isometry
 
 /-- Adding a base point `q` of `s` to the directions of `s` reaches exactly the points of `s`. -/
 theorem range_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s) :
@@ -378,7 +445,105 @@ theorem volume_preimage_coe_vadd (s : AffineSubspace ℝ P) [Nonempty s] (q : s)
     preimage_comp, (IsometryEquiv.vaddConst q).isometry.euclideanHausdorffMeasure_preimage,
     (IsometryEquiv.vaddConst q).range_eq_univ, inter_univ, euclideanHausdorffMeasure_preimage_coe]
 
+/-- **Isodiametric inequality in an affine subspace.** The part of a set `t` lying in an affine
+subspace `s` of dimension `k` has `μHE[k] (t ∩ s) ≤ (ediam t / 2) ^ k ω_k`, where `ω_k` is the
+volume of the unit ball of `EuclideanSpace ℝ (Fin k)`. -/
+theorem euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul (s : AffineSubspace ℝ P)
+    (t : Set P) :
+    μHE[finrank ℝ s.direction] (t ∩ s) ≤ (Metric.ediam t / 2) ^ finrank ℝ s.direction *
+      volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ s.direction))) 1) := by
+  rcases isEmpty_or_nonempty s with hs | hs
+  · have : t ∩ (s : Set P) = ∅ := eq_empty_of_forall_notMem fun x hx => hs.false ⟨x, hx.2⟩
+    simp [this]
+  obtain ⟨q⟩ := id hs
+  rw [← s.volume_preimage_coe_vadd q t]
+  refine (Measure.addHaar_le_ediam_div_two_pow_mul_addHaar_ball volume _).trans ?_
+  gcongr
+  · rw [← (s.isometry_coe_vadd q).ediam_image]
+    exact Metric.ediam_mono (image_preimage_subset _ _)
+  · exact (TauCeti.volume_ball_eq_of_finrank_eq (finrank_euclideanSpace_fin).symm _ _ _).le
+
 end AffineSubspace
+
+namespace Submodule
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+
+/-- The Euclidean Hausdorff measure of the dimension of a subspace `T`, restricted to `T`, is the
+image of the Lebesgue measure of `T` under the inclusion. -/
+theorem euclideanHausdorffMeasure_restrict_eq_map (T : Submodule ℝ E) :
+    μHE[finrank ℝ T].restrict (T : Set E) = (volume : Measure T).map Subtype.val := by
+  rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
+    isometry_subtypeVal.map_euclideanHausdorffMeasure, Subtype.range_coe]
+
+/-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, of a measurable set `s` is
+the volume of the part of `s` in `T`. -/
+theorem euclideanHausdorffMeasure_restrict_apply (T : Submodule ℝ E) {s : Set E}
+    (hs : MeasurableSet s) :
+    μHE[finrank ℝ T].restrict (T : Set E) s = volume (Subtype.val ⁻¹' s : Set T) := by
+  rw [T.euclideanHausdorffMeasure_restrict_eq_map, Measure.map_apply measurable_subtypeVal hs]
+
+/-- The Euclidean Hausdorff measure of the dimension of a subspace, restricted to the subspace, is
+locally finite. -/
+instance isLocallyFiniteMeasure_euclideanHausdorffMeasure_restrict (T : Submodule ℝ E) :
+    IsLocallyFiniteMeasure (μHE[finrank ℝ T].restrict (T : Set E)) := by
+  have := Measure.isFiniteMeasureOnCompacts_map_of_isProperMap (volume : Measure T)
+    T.isClosed_of_finiteDimensional.isClosedEmbedding_subtypeVal.isProperMap
+  rw [T.euclideanHausdorffMeasure_restrict_eq_map]
+  infer_instance
+
+/-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives a sphere of nonzero
+radius about a point of `T` measure zero. -/
+theorem euclideanHausdorffMeasure_restrict_apply_sphere {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
+    {r : ℝ} (hr : r ≠ 0) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.sphere x r) = 0 := by
+  rw [T.euclideanHausdorffMeasure_restrict_apply Metric.isClosed_sphere.measurableSet,
+    ← Subtype.coe_mk x hx, isometry_subtypeVal.preimage_sphere,
+    Measure.addHaar_sphere_of_ne_zero volume _ hr]
+
+/-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives an open ball about a
+point of `T` the volume of the ball of the same radius in `k`-dimensional Euclidean space. -/
+theorem euclideanHausdorffMeasure_restrict_apply_ball {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
+    (r : ℝ) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.ball x r) =
+      volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r) := by
+  rw [T.euclideanHausdorffMeasure_restrict_apply measurableSet_ball,
+    ← Subtype.coe_mk x hx, isometry_subtypeVal.preimage_ball,
+    TauCeti.volume_ball_eq_of_finrank_eq finrank_euclideanSpace_fin.symm _ 0 r]
+
+/-- The measure `μHE[k]⌞T`, with `k` the dimension of the subspace `T`, gives a closed ball about a
+point of `T` the volume of the closed ball of the same radius in `k`-dimensional Euclidean
+space. -/
+theorem euclideanHausdorffMeasure_restrict_apply_closedBall {T : Submodule ℝ E} {x : E} (hx : x ∈ T)
+    (r : ℝ) : μHE[finrank ℝ T].restrict (T : Set E) (Metric.closedBall x r) =
+      volume (Metric.closedBall (0 : EuclideanSpace ℝ (Fin (finrank ℝ T))) r) := by
+  rw [T.euclideanHausdorffMeasure_restrict_apply measurableSet_closedBall,
+    ← Subtype.coe_mk x hx, isometry_subtypeVal.preimage_closedBall,
+    TauCeti.volume_closedBall_eq_of_finrank_eq finrank_euclideanSpace_fin.symm _ 0 r]
+
+/-- If `μHE[k]` restricts to the same measure on a subspace `T₁` of dimension `k` and on a
+subspace `T₂`, then `T₁ ≤ T₂`: every ball about a point of `T₁` has positive mass. -/
+theorem le_of_euclideanHausdorffMeasure_restrict_eq {T₁ T₂ : Submodule ℝ E} {k : ℕ}
+    (h : μHE[k].restrict (T₁ : Set E) = μHE[k].restrict (T₂ : Set E)) (h₁ : finrank ℝ T₁ = k) :
+    T₁ ≤ T₂ := by
+  intro v hv
+  by_contra hv₂
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 T₂.isClosed_of_finiteDimensional.isOpen_compl v hv₂
+  have h0 : μHE[k].restrict (T₂ : Set E) (Metric.ball v ε) = 0 := by
+    rw [Measure.restrict_apply measurableSet_ball, disjoint_iff_inter_eq_empty.1
+      (subset_compl_iff_disjoint_right.1 hball), measure_empty]
+  subst h₁
+  rw [← h, euclideanHausdorffMeasure_restrict_apply_ball hv] at h0
+  exact (Metric.measure_ball_pos volume _ hε).ne' h0
+
+/-- **The restricted Euclidean Hausdorff measure determines the subspace.** Two subspaces of
+dimension `k` on which `μHE[k]` restricts to the same measure are equal. -/
+theorem eq_of_euclideanHausdorffMeasure_restrict_eq {T₁ T₂ : Submodule ℝ E} {k : ℕ}
+    (h : μHE[k].restrict (T₁ : Set E) = μHE[k].restrict (T₂ : Set E)) (h₁ : finrank ℝ T₁ = k)
+    (h₂ : finrank ℝ T₂ = k) : T₁ = T₂ :=
+  (le_of_euclideanHausdorffMeasure_restrict_eq h h₁).antisymm
+    (le_of_euclideanHausdorffMeasure_restrict_eq h.symm h₂)
+
+end Submodule
 
 namespace TauCeti
 
@@ -390,7 +555,7 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {ν : F}
 isometry. When `‖ν‖ = 1`, its range is the hyperplane `{x | ⟪x, ν⟫ = c}`. -/
 theorem isometry_smul_add_coe (c : ℝ) :
     Isometry fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F) :=
-  (isometry_add_left (c • ν)).comp isometry_subtype_coe
+  (isometry_add_left (c • ν)).comp isometry_subtypeVal
 
 variable [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F]
 
@@ -407,7 +572,7 @@ theorem euclideanHausdorffMeasure_restrict_setOf_inner_eq (hν : ‖ν‖ = 1) (
     ext x
     refine ⟨?_, fun hx => ?_⟩
     · rintro ⟨y, rfl⟩
-      have hy : ⟪(y : F), ν⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 y.2
+      have hy : ⟪(y : F), ν⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_left.1 y.property
       simp [inner_add_left, real_inner_smul_left, hν, hy]
     · have hy : x - c • ν ∈ (ℝ ∙ ν)ᗮ := by
         rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,
@@ -418,6 +583,77 @@ theorem euclideanHausdorffMeasure_restrict_setOf_inner_eq (hν : ‖ν‖ = 1) (
     Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0,
     (isometry_smul_add_coe c).map_euclideanHausdorffMeasure]
   exact congrArg _ hrange.symm
+
+/-- **A hyperplane has infinite Hausdorff measure.** For a unit vector `ν` of a space of dimension
+`n ≥ 2`, the hyperplane `{x | ⟪x, ν⟫ = c}` has infinite `μHE[n - 1]` measure. -/
+theorem euclideanHausdorffMeasure_setOf_inner_eq_eq_top (hF : 2 ≤ finrank ℝ F) (hν : ‖ν‖ = 1)
+    (c : ℝ) : μHE[finrank ℝ F - 1] {x | ⟪x, ν⟫ = c} = ∞ := by
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
+  have : Nontrivial (ℝ ∙ ν)ᗮ := by
+    have h := (ℝ ∙ ν).finrank_add_finrank_orthogonal
+    rw [finrank_span_singleton hν0] at h
+    exact (Module.finrank_pos_iff (R := ℝ)).1 (by omega)
+  rw [← Measure.restrict_apply_univ, euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
+    Measure.map_apply (isometry_smul_add_coe c).continuous.measurable MeasurableSet.univ,
+    preimage_univ]
+  exact measure_univ_of_isAddLeftInvariant _
+
+/-- **Isodiametric inequality on a hyperplane.** For a unit vector `ν` of a space of dimension `n`,
+the part of a set `t` on the hyperplane `{x | ⟪x, ν⟫ = c}` has
+`μHE[n - 1] (t ∩ {x | ⟪x, ν⟫ = c}) ≤ (ediam t / 2) ^ (n - 1) ω_{n-1}`, where `ω_{n-1}` is the volume
+of the unit ball of `EuclideanSpace ℝ (Fin (n - 1))`. -/
+theorem euclideanHausdorffMeasure_inter_setOf_inner_eq_le (hν : ‖ν‖ = 1) (c : ℝ) (t : Set F) :
+    μHE[finrank ℝ F - 1] (t ∩ {x | ⟪x, ν⟫ = c}) ≤ (Metric.ediam t / 2) ^ (finrank ℝ F - 1) *
+      volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
+  have : Nontrivial F := ⟨⟨ν, 0, hν0⟩⟩
+  have : Fact (finrank ℝ F = finrank ℝ F - 1 + 1) := ⟨(Nat.sub_add_cancel finrank_pos).symm⟩
+  -- The hyperplane is the affine subspace through `c • ν` with direction `(ℝ ∙ ν)ᗮ`.
+  set S := AffineSubspace.mk' (c • ν) (ℝ ∙ ν)ᗮ
+  have hS : (S : Set F) = {x | ⟪x, ν⟫ = c} := by
+    ext x
+    simp [S, AffineSubspace.mem_mk', Submodule.mem_orthogonal_singleton_iff_inner_left,
+      inner_sub_left, real_inner_smul_left, hν, sub_eq_zero]
+  have hdim : finrank ℝ S.direction = finrank ℝ F - 1 := by
+    rw [AffineSubspace.direction_mk',
+      Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0]
+  have h := S.euclideanHausdorffMeasure_inter_le_ediam_div_two_pow_mul t
+  rwa [hS, hdim] at h
+
+/-- **Hausdorff measure of a disc in a hyperplane.** For a unit vector `ν` of a space of dimension
+`n` and `r > 0`, the part of the hyperplane `{y | ⟪y, ν⟫ = ⟪x, ν⟫}` through `x` lying in the ball
+`B(x, r)` has `μHE[n - 1]` measure `ω_{n-1} r ^ (n - 1)`, where `ω_{n-1}` is the volume of the unit
+ball of `EuclideanSpace ℝ (Fin (n - 1))`. -/
+theorem euclideanHausdorffMeasure_ball_inter_setOf_inner_eq (hν : ‖ν‖ = 1) (x : F) {r : ℝ}
+    (hr : 0 < r) :
+    μHE[finrank ℝ F - 1] (Metric.ball x r ∩ {y | ⟪y, ν⟫ = ⟪x, ν⟫}) =
+      ENNReal.ofReal r ^ (finrank ℝ F - 1) *
+        volume (Metric.ball (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1) := by
+  set c := ⟪x, ν⟫
+  have hν0 : ν ≠ 0 := norm_ne_zero_iff.1 (hν ▸ one_ne_zero)
+  have : Nontrivial F := ⟨⟨ν, 0, hν0⟩⟩
+  have : Fact (finrank ℝ F = finrank ℝ F - 1 + 1) := ⟨(Nat.sub_add_cancel finrank_pos).symm⟩
+  -- The point `x` is `c • ν + x₀` with `x₀ ∈ (ℝ ∙ ν)ᗮ`, so the part of the hyperplane in the
+  -- ball is the image of the ball of radius `r` about `x₀` in `(ℝ ∙ ν)ᗮ`.
+  have hx₀ : x - c • ν ∈ (ℝ ∙ ν)ᗮ := by
+    rw [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_left,
+      real_inner_smul_left, real_inner_self_eq_norm_sq, hν]
+    ring
+  have hι := isometry_smul_add_coe (ν := ν) c
+  have hpre : (fun y : (ℝ ∙ ν)ᗮ => c • ν + (y : F)) ⁻¹' Metric.ball x r =
+      Metric.ball ⟨x - c • ν, hx₀⟩ r := by
+    convert hι.preimage_ball ⟨x - c • ν, hx₀⟩ r
+    simp
+  have hball := volume_ball_eq_of_finrank_eq
+    ((Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0).trans
+      finrank_euclideanSpace_fin.symm) (0 : (ℝ ∙ ν)ᗮ)
+    (0 : EuclideanSpace ℝ (Fin (finrank ℝ F - 1))) 1
+  rw [← Measure.restrict_apply' (measurableSet_eq_fun (by fun_prop) measurable_const),
+    euclideanHausdorffMeasure_restrict_setOf_inner_eq hν,
+    Measure.map_apply hι.continuous.measurable measurableSet_ball, hpre,
+    Measure.addHaar_ball_of_pos _ _ hr,
+    Submodule.finrank_orthogonal_span_singleton (n := finrank ℝ F - 1) hν0,
+    ENNReal.ofReal_pow hr.le, hball]
 
 /-- Integrals over the hyperplane `{x | ⟪x, ν⟫ = c}` against Hausdorff measure are integrals over
 `(ℝ ∙ ν)ᗮ` against Lebesgue measure. -/

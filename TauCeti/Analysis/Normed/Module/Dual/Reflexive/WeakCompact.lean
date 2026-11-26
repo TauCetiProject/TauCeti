@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Module.DoubleDual
 import Mathlib.Analysis.LocallyConvex.WeakSpace
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.DoubleDual
-import TauCeti.Analysis.Normed.Module.WeakSpace.EberleinSmulian
+import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
 
 /-!
 # Reflexivity and weak compactness
@@ -27,6 +27,10 @@ are explicit, using `toWeakSpace` and `NormedSpace.inclusionInDoubleDualWeak`.
 
 The forward direction transports Banach–Alaoglu along the inducing bidual map;
 the reverse direction uses Goldstine's theorem.
+
+With Šmulian's theorem (`TauCeti.tendsto_subseq_toWeakSpace_of_isCompact_closure`), every bounded
+sequence in a reflexive real or complex normed space has a weakly convergent subsequence
+(`TauCeti.tendsto_subseq_toWeakSpace_of_isBounded`).
 
 ## References
 
@@ -95,17 +99,16 @@ theorem surjective_inclusionInDoubleDual_iff_isCompact_toWeakSpace_closedBall :
 
 section Normed
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
-/-- A norm-bounded, sequentially weakly closed subset of a reflexive normed space is weakly
-compact. -/
-theorem isCompact_toWeakSpace_of_isBounded_of_seqClosed
-    (hE : Surjective (inclusionInDoubleDual 𝕜 E)) {s : Set E} (hbound : IsBounded s)
-    (hclosed : ∀ ⦃u : ℕ → E⦄ ⦃x : E⦄, (∀ n, u n ∈ s) →
-      Tendsto (fun n ↦ toWeakSpace 𝕜 E (u n)) atTop (𝓝 (toWeakSpace 𝕜 E x)) → x ∈ s) :
-    IsCompact (toWeakSpace 𝕜 E '' s) :=
-  isCompact_toWeakSpace_of_isCompact_closure_of_seqClosed
-    (isCompact_closure_toWeakSpace_of_isBounded hE hbound) hclosed
+/-- In a reflexive real or complex normed space, every norm-bounded sequence has a weakly
+convergent subsequence. -/
+theorem tendsto_subseq_toWeakSpace_of_isBounded (hF : Surjective (inclusionInDoubleDual 𝕜 F))
+    {u : ℕ → F} (hu : IsBounded (range u)) :
+    ∃ x : F, ∃ φ : ℕ → ℕ, StrictMono φ ∧
+      Tendsto (fun n ↦ toWeakSpace 𝕜 F (u (φ n))) atTop (𝓝 (toWeakSpace 𝕜 F x)) :=
+  tendsto_subseq_toWeakSpace_of_isCompact_closure (isCompact_closure_toWeakSpace_of_isBounded hF hu)
+    mem_range_self
 
 end Normed
 

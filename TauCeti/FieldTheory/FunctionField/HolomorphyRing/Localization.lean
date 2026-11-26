@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.AffineModel.Prime
 public import TauCeti.RingTheory.Localization.AsSubring
+public import TauCeti.RingTheory.Localization.Subalgebra.Membership
 
 /-!
 # The localization of a holomorphy ring away from a function
@@ -70,9 +71,13 @@ theorem coe_ofField_powers_eq_holomorphyRing (hF : IsFunctionField k F)
   have hx0 : (x : F) ≠ 0 := fun h ↦
     nonZeroDivisors.ne_zero (hx (Submonoid.mem_powers x)) (Subtype.ext h)
   ext z
-  rw [SetLike.mem_coe, mem_ofField_powers_iff, Subalgebra.range_algebraMap, SetLike.mem_coe,
+  have hmem : z ∈ ofField F (Submonoid.powers x) hx ↔
+      ∃ n : ℕ, algebraMap A F x ^ n * z ∈ Set.range (algebraMap A F) := by
+    rw [ofField_eq, TauCeti.IsLocalization.mem_subalgebra_iff_exists_pow_mul_mem_range x]
+  rw [SetLike.mem_coe, hmem, ← RingHom.coe_range, Subalgebra.range_algebraMap, SetLike.mem_coe,
     mem_holomorphyRing_iff]
-  simp only [Subalgebra.mem_toSubring, Subalgebra.algebraMap_apply, hA', mem_holomorphyRing_iff,
+  simp only [SetLike.mem_coe, Subalgebra.mem_toSubring, Subalgebra.algebraMap_apply, hA',
+    mem_holomorphyRing_iff,
     Set.mem_inter_iff, Set.mem_ofPred_eq, and_imp]
   constructor
   · rintro ⟨n, hn⟩ P hP hPx
@@ -82,7 +87,7 @@ theorem coe_ofField_powers_eq_holomorphyRing (hF : IsFunctionField k F)
     exact mul_mem (pow_mem hPx n) (hn P hP)
   · intro h
     obtain ⟨n, hn⟩ :=
-      exists_pow_mul_mem_holomorphyRing hF ((hA' x).mp x.2) fun P hP hPx ↦ h P hP hPx
+      exists_pow_mul_mem_holomorphyRing hF ((hA' x).mp x.property) fun P hP hPx ↦ h P hP hPx
     exact ⟨n, mem_holomorphyRing_iff.mp hn⟩
 
 /-- **Membership in `𝒪_S[1/x]`**: a function lies in the localization exactly when it is regular
@@ -105,7 +110,7 @@ theorem forall_algebraMap_mem_integers_ofField_powers_iff (hF : IsFunctionField 
       P ∈ S ∩ {P : Place k F | (x : F)⁻¹ ∈ P.integers} := by
   rw [← coe_holomorphyRing_subset_integers_iff hF,
     ← coe_ofField_powers_eq_holomorphyRing hF hA x hx]
-  exact ⟨fun h a ha ↦ h ⟨a, ha⟩, fun h a ↦ h a.2⟩
+  exact ⟨fun h a ha ↦ h ⟨a, ha⟩, fun h a ↦ h a.property⟩
 
 /-- **`𝒪_S[1/x]` is a holomorphy ring, as a localization**: for a nonzero `x ∈ 𝒪_S`, the
 holomorphy ring of the places of `S` at which `x⁻¹` is regular is the localization of `𝒪_S` away
@@ -128,8 +133,8 @@ theorem isLocalization_away_holomorphyRing_inter (hF : IsFunctionField k F)
     refine IsUnit.of_mul_eq_one
       (⟨(x : F)⁻¹, mem_holomorphyRing_iff.mpr fun P hP ↦ hP.2⟩ ^ n) (Subtype.ext ?_)
     simp [hcoe, mul_inv_cancel₀ (pow_ne_zero n hx)]
-  · obtain ⟨n, hn⟩ := exists_pow_mul_mem_holomorphyRing hF x.2 (z := z)
-      fun P hP hPx ↦ mem_holomorphyRing_iff.mp z.2 P ⟨hP, hPx⟩
+  · obtain ⟨n, hn⟩ := exists_pow_mul_mem_holomorphyRing hF x.property (z := z)
+      fun P hP hPx ↦ mem_holomorphyRing_iff.mp z.property P ⟨hP, hPx⟩
     refine ⟨⟨⟨_, hn⟩, ⟨x ^ n, n, rfl⟩⟩, Subtype.ext ?_⟩
     simp [hcoe, mul_comm]
   · have := congrArg (fun z : holomorphyRing _ ↦ (z : F)) h
@@ -155,7 +160,7 @@ theorem ofFieldPowersHeightOneSpectrumEquiv_apply (hF : IsFunctionField k F)
     (P : ↥(S ∩ {P : Place k F | (x : F)⁻¹ ∈ P.integers})) :
     ofFieldPowersHeightOneSpectrumEquiv hF hA x hx P =
       (P : Place k F).center
-        ((forall_algebraMap_mem_integers_ofField_powers_iff hF hA x hx).mpr P.2) :=
+        ((forall_algebraMap_mem_integers_ofField_powers_iff hF hA x hx).mpr P.property) :=
   Place.heightOneSpectrumEquiv_apply k F _
 
 @[simp]

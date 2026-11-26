@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Elliptic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Hyperbolic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.NondegenerateRankZero
+import TauCeti.Algebra.Order.Ring.Square
 import TauCeti.Algebra.Polynomial.RingDivision
 
 /-!
@@ -38,11 +39,16 @@ with square `μₖ = -cₖ²` for `k ∈ s` and `μₖ = cₖ²` for `k ∉ s`. 
 squarefree polynomial `(∏ₜ (X² - t)) X` over the nonzero values `t` of the `μₖ`
 (`IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_ellipticHyperbolic`). If the `cₖ` are
 nonzero and the squares of the coefficients of blocks of the same type are distinct, then the `μₖ`
-are pairwise distinct, and every quadratic form Poisson-commuting with `P` is a combination of the
-blocks (`IsDarbouxBasis.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero`). Indeed,
-if `R` Poisson-commutes with `P` then `polar R (A_P u) v = -polar R u (A_P v)`. Applied twice this
-shows that the polar form of `R` pairs distinct planes trivially. On an elliptic plane it then is a
-multiple of `xₖ² + yₖ²`, and on a hyperbolic plane a multiple of `xₖ yₖ`.
+are pairwise distinct (`TauCeti.injective_ite_neg_sq`), and every quadratic form
+Poisson-commuting with `P` is a combination of the blocks
+(`IsDarbouxBasis.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero`; for the
+hyperbolic blocks alone, `IsDarbouxBasis.mem_span_hyperbolic_of_quadraticPoissonBracket_eq_zero`).
+Indeed, if `R` Poisson-commutes with `P` then `polar R (A_P u) v = -polar R u (A_P v)`
+(`TauCeti.SymplecticForm.polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero`). Applied
+twice this shows that the polar form of `R` pairs distinct planes trivially. On an elliptic plane it
+then is a multiple of `xₖ² + yₖ²`, and on a hyperbolic plane a multiple of `xₖ yₖ`. Moreover, a
+form whose Hamiltonian endomorphism acts on each plane as that of `cₖ Bₖ` is `P` itself
+(`IsDarbouxBasis.eq_sum_smul_ellipticHyperbolic_of_hamiltonianEnd_apply`).
 
 ## References
 
@@ -148,6 +154,34 @@ theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd
   split_ifs with hj <;>
     simp [map_sum, LinearMap.sum_apply, hb.hamiltonianEnd_ellipticHyperbolic_apply_snd, hj]
 
+/-- A quadratic form whose Hamiltonian endomorphism acts, in a Darboux basis, on each plane
+`span(qₖ, pₖ)` as that of `cₖ Bₖ`, `Bₖ` the `k`-th elliptic–hyperbolic block, is the combination
+`∑ₖ cₖ Bₖ`. -/
+theorem IsDarbouxBasis.eq_sum_smul_ellipticHyperbolic_of_hamiltonianEnd_apply
+    (hb : ω.IsDarbouxBasis b) {R : QuadraticForm ℝ V}
+    (hR : ∀ k, ω.hamiltonianEnd R (b (k, 0)) =
+        (if k ∈ s then -c k • b (k, 1) else c k • b (k, 0)) ∧
+      ω.hamiltonianEnd R (b (k, 1)) = if k ∈ s then c k • b (k, 0) else -c k • b (k, 1)) :
+    R = ∑ k, c k • ellipticHyperbolic b s k := by
+  refine ω.hamiltonianEnd_injective (b.ext fun ⟨k, a⟩ ↦ ?_)
+  obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
+  · rw [(hR k).1, hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_fst]
+  · rw [(hR k).2, hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd]
+
+/-- In a Darboux basis, the Hamiltonian endomorphism of `∑ₖ cₖ Hₖ`, `Hₖ` the hyperbolic blocks,
+sends `qⱼ` to `cⱼ qⱼ`. -/
+theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_hyperbolic_apply_fst (hb : ω.IsDarbouxBasis b)
+    (c : Fin n → ℝ) (j : Fin n) :
+    ω.hamiltonianEnd (∑ k, c k • hyperbolic b k) (b (j, 0)) = c j • b (j, 0) := by
+  simpa using hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_fst ∅ c j
+
+/-- In a Darboux basis, the Hamiltonian endomorphism of `∑ₖ cₖ Hₖ`, `Hₖ` the hyperbolic blocks,
+sends `pⱼ` to `-cⱼ pⱼ`. -/
+theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_hyperbolic_apply_snd (hb : ω.IsDarbouxBasis b)
+    (c : Fin n → ℝ) (j : Fin n) :
+    ω.hamiltonianEnd (∑ k, c k • hyperbolic b k) (b (j, 1)) = -c j • b (j, 1) := by
+  simpa using hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd ∅ c j
+
 /-- The square of the Hamiltonian endomorphism of `∑ₖ cₖ Bₖ` is `-cₖ²` on an elliptic plane
 `span(qₖ, pₖ)` and `cₖ²` on a hyperbolic one. -/
 private theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_apply
@@ -206,23 +240,6 @@ theorem IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_ellipticHyperbolic
         one_apply_eq_self, sub_self]
     rw [hi, map_zero]
 
-/-- The coefficients of `∑ₖ cₖ Bₖ`, `Bₖ` the elliptic–hyperbolic blocks, are **regular** when they
-are nonzero and coefficients of blocks of the same type have distinct squares. Then the squares
-`-cₖ²` and `cₖ²` of the Hamiltonian endomorphism on the elliptic and hyperbolic planes are pairwise
-distinct. -/
-private theorem ellipticHyperbolic_sq_ne
-    (hc : Pairwise fun k l ↦ (k ∈ s ↔ l ∈ s) → c k ^ 2 ≠ c l ^ 2) (hc0 : ∀ k, c k ≠ 0)
-    {k l : Fin n} (hkl : k ≠ l) :
-    (if k ∈ s then -c k ^ 2 else c k ^ 2) ≠ (if l ∈ s then -c l ^ 2 else c l ^ 2) := by
-  have hk := sq_pos_of_ne_zero (hc0 k)
-  have hl := sq_pos_of_ne_zero (hc0 l)
-  have h := hc hkl
-  by_cases hks : k ∈ s <;> by_cases hls : l ∈ s <;> simp only [hks, hls, ↓reduceIte] at h ⊢
-  · exact fun e ↦ h (by simp) (neg_inj.1 e)
-  · linarith
-  · linarith
-  · exact h (by simp)
-
 /-- A quadratic form `R` Poisson-commuting with a regular combination `∑ₖ cₖ Bₖ` of the
 elliptic–hyperbolic blocks pairs distinct planes trivially, and on each plane its polar form is
 that of a multiple of the block. -/
@@ -241,15 +258,8 @@ private theorem IsDarbouxBasis.polar_apply_of_quadraticPoissonBracket_eq_zero
     hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_fst s c j
   have hA₁ (j : Fin n) : A (b (j, 1)) = if j ∈ s then c j • b (j, 0) else -c j • b (j, 1) :=
     hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_snd s c j
-  -- Since `A_R` commutes with `A_P` and `A_P ∈ sp(V, ω)`,
-  -- `polar R (A_P u) v = -polar R u (A_P v)`.
-  have hcomm (u : V) : ω.hamiltonianEnd R (A u) = A (ω.hamiltonianEnd R u) := by
-    simpa only [mul_apply_eq_comp] using
-      LinearMap.congr_fun (ω.quadraticPoissonBracket_eq_zero_iff.1 hR).eq u
-  have hskew (u v : V) :
-      QuadraticMap.polar R (A u) v = -QuadraticMap.polar R u (A v) := by
-    rw [← apply_hamiltonianEnd, ← apply_hamiltonianEnd, hcomm, apply_hamiltonianEnd,
-      apply_hamiltonianEnd_right, neg_neg]
+  have hskew (u v : V) : QuadraticMap.polar R (A u) v = -QuadraticMap.polar R u (A v) :=
+    ω.polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero hR u v
   obtain ⟨l, a'⟩ := i
   rcases eq_or_ne l k with rfl | hlk
   · -- On the `l`-th plane, `polar R` is a multiple of `xₗ² + yₗ²` or of `xₗ yₗ`.
@@ -286,7 +296,7 @@ private theorem IsDarbouxBasis.polar_apply_of_quadraticPoissonBracket_eq_zero
       hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_apply,
       hb.hamiltonianEnd_sum_smul_ellipticHyperbolic_apply_apply, QuadraticMap.polar_smul_left,
       QuadraticMap.polar_smul_right, smul_eq_mul, smul_eq_mul] at e
-    have := ellipticHyperbolic_sq_ne s hc hc0 hlk.symm
+    have := (injective_ite_neg_sq s hc hc0).ne hlk.symm
     have h : ((if k ∈ s then -c k ^ 2 else c k ^ 2) - (if l ∈ s then -c l ^ 2 else c l ^ 2)) *
         QuadraticMap.polar R (b (k, a)) (b (l, a')) = 0 := by
       linear_combination e
@@ -329,6 +339,16 @@ theorem IsDarbouxBasis.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq
   rw [ω.hamiltonianEnd_injective hB]
   exact Submodule.sum_mem _ fun k _ ↦
     Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self k))
+
+/-- **The commutant of a regular hyperbolic element.** If the coefficients `cₖ` are nonzero with
+distinct squares, every quadratic form Poisson-commuting with `∑ₖ cₖ Hₖ`, `Hₖ` the hyperbolic
+blocks, is a linear combination of the `Hₖ`. -/
+theorem IsDarbouxBasis.mem_span_hyperbolic_of_quadraticPoissonBracket_eq_zero
+    (hb : ω.IsDarbouxBasis b) (hc : Pairwise fun k l ↦ c k ^ 2 ≠ c l ^ 2) (hc0 : ∀ k, c k ≠ 0)
+    {R : QuadraticForm ℝ V} (hR : ω.quadraticPoissonBracket R (∑ k, c k • hyperbolic b k) = 0) :
+    R ∈ Submodule.span ℝ (Set.range (hyperbolic b)) := by
+  simpa using hb.mem_span_ellipticHyperbolic_of_quadraticPoissonBracket_eq_zero ∅
+    (fun _ _ hkl _ ↦ hc hkl) hc0 (by simpa using hR)
 
 end Regular
 

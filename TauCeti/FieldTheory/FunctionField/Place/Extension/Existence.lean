@@ -149,7 +149,7 @@ theorem isIntegral_iff_forall_restrict_eq_mem_integers (hF' : IsFunctionField k'
     IsIntegral P.integers x ↔ ∀ P' : Place k' F', P'.restrict k F = P → x ∈ P'.integers := by
   refine ⟨fun hx P' hP' ↦ P'.mem_integers_of_isIntegral (fun a ↦ ?_) hx, fun h ↦ ?_⟩
   · subst hP'
-    exact (mem_integers_restrict_iff k F P' (a : F)).mp a.2
+    exact (mem_integers_restrict_iff k F P' (a : F)).mp a.property
   by_contra hx
   have hxB : x ∉ (integralClosure P.integers F').toSubring := hx
   obtain ⟨V, hBV, hxV⟩ := Subring.exists_le_valuationSubring_of_isIntegrallyClosedIn hxB

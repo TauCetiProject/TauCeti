@@ -40,10 +40,10 @@ variable {K : Type*} [NontriviallyNormedField K] [CompleteSpace K] [Nonarchimede
 at `a`. It does not depend on the auxiliary point `x` of `Spa (K, K°)`. -/
 theorem classicalPoint_val_eq_maximalIdealPoint_val [IsUltrametricDist K]
     (x : spa (powerBoundedSubring K)) (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    (classicalPoint x a ha).1 =
-      (maximalIdealPoint K (RingHom.ker (evalAtHom a ha)) (isClosed_ker_evalAtHom a ha)).1 :=
+    (classicalPoint x a ha).val =
+      (maximalIdealPoint K (RingHom.ker (evalAtHom a ha)) (isClosed_ker_evalAtHom a ha)).val :=
   ext' fun f g ↦ by
-    rw [classicalPoint_vle, vle_iff_norm_le_of_mem_spa x.2,
+    rw [classicalPoint_vle, vle_iff_norm_le_of_mem_spa x.property,
       maximalIdealPoint_vle_iff_of_ker_eq (𝔪 := RingHom.ker (evalAtHom a ha)) _
         (evalAtAlgHom a ha) (by ext f; simp [RingHom.mem_ker]), evalAtAlgHom_apply,
       evalAtAlgHom_apply]

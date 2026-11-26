@@ -5,9 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Analysis.Analytic.ConvergenceRadius
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import Mathlib.MeasureTheory.Measure.OpenPos
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
+import Mathlib.Analysis.Analytic.Uniqueness
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.FieldTheory.Finite.Polynomial
+import TauCeti.Algebra.MvPolynomial.PDeriv
+import TauCeti.Analysis.MvPolynomial.Jacobian
 
 /-!
 # Bounded-degree polynomial functions on Euclidean space
@@ -23,10 +32,34 @@ also when the coordinate type is empty.
 
 Evaluating a real multilinear map on the diagonal gives a polynomial function of degree at most
 the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`); this covers
-the homogeneous terms of a power series.
+finite products of linear inner-product forms (`TauCeti.prod_inner_mem_polynomialsDegLE`), and
+every partial sum of a real formal multilinear series belongs to `polynomialsDegLE ι (N - 1)`
+(`FormalMultilinearSeries.partialSum_mem_polynomialsDegLE`).
 
-The construction uses Mathlib's `MvPolynomial.evalₗ` and `MvPolynomial.funext`, and the formal
-dimension formula `TauCeti.finrank_restrictTotalDegree`.
+The file also develops the foundational calculus of these polynomial functions on
+`EuclideanSpace ℝ ι`:
+
+* Every function in `polynomialsDegLE ι m` is real-analytic on `EuclideanSpace ℝ ι`, hence `C^n`
+  for every `n` (`MvPolynomial.analyticOnNhd_polynomialEvalₗ`,
+  `MvPolynomial.contDiff_polynomialEvalₗ`, `TauCeti.analyticOnNhd_of_mem_polynomialsDegLE`,
+  `TauCeti.contDiff_of_mem_polynomialsDegLE`).
+* Two polynomial functions agreeing on a nonempty open set, or almost everywhere there with respect
+  to an open-positive measure, agree everywhere on `EuclideanSpace ℝ ι`
+  (`TauCeti.polynomialEvalₗ_eq_of_eqOn_isOpen`,
+  `TauCeti.eq_of_mem_polynomialsDegLE_of_eqOn_isOpen`,
+  `TauCeti.eq_of_mem_polynomialsDegLE_of_ae_eq_isOpen`).
+* Coordinate and directional Fréchet derivatives and gradients of `polynomialEvalₗ ι p` agree with
+  the evaluated formal partial derivatives (`MvPolynomial.fderiv_polynomialEvalₗ_single`,
+  `MvPolynomial.fderiv_polynomialEvalₗ_apply`, `MvPolynomial.gradient_polynomialEvalₗ`);
+  directional differentiation lowers the degree bound by at most one
+  (`TauCeti.fderiv_apply_mem_polynomialsDegLE`), and every iterated Fréchet derivative of order
+  strictly exceeding `m` vanishes identically
+  (`TauCeti.iteratedFDeriv_eq_zero_of_mem_polynomialsDegLE`).
+
+The construction uses Mathlib's `MvPolynomial.evalₗ`, `MvPolynomial.funext`, and
+`AnalyticOnNhd.eval_continuousLinearMap`, together with `TauCeti.finrank_restrictTotalDegree`,
+`MvPolynomial.totalDegree_pderiv_le`, and the Euclidean polynomial derivative formulas from
+`TauCeti.Analysis.MvPolynomial.Jacobian`.
 -/
 
 public section
@@ -36,6 +69,9 @@ noncomputable section
 namespace TauCeti
 
 open MvPolynomial
+open scoped InnerProductSpace
+
+section Basic
 
 variable (ι : Type*)
 
@@ -165,6 +201,20 @@ theorem _root_.MultilinearMap.apply_const_mem_polynomialsDegLE [Finite ι] {κ :
     conv_rhs => rw [← b.sum_repr x, m.map_sum]
     simp [m.map_smul_univ, b, mul_comm]
 
+/-- Every partial sum `p.partialSum N` of a real formal multilinear series on Euclidean space is a
+polynomial function of degree at most `N - 1`. -/
+theorem _root_.FormalMultilinearSeries.partialSum_mem_polynomialsDegLE {ι : Type*} [Finite ι]
+    [ContinuousAdd (EuclideanSpace ℝ ι)] [ContinuousConstSMul ℝ (EuclideanSpace ℝ ι)]
+    (p : FormalMultilinearSeries ℝ (EuclideanSpace ℝ ι) ℝ) (N : ℕ) :
+    p.partialSum N ∈ polynomialsDegLE ι (N - 1) := by
+  have hsum : p.partialSum N = ∑ k ∈ Finset.range N, fun y ↦ p k fun _ ↦ y := by
+    ext y
+    simp [FormalMultilinearSeries.partialSum]
+  rw [hsum]
+  refine Submodule.sum_mem _ fun k hk ↦
+    polynomialsDegLE_mono ι (Nat.le_sub_one_of_lt (Finset.mem_range.1 hk)) ?_
+  simpa using (p k).toMultilinearMap.apply_const_mem_polynomialsDegLE
+
 /-- Bounded-degree polynomial functions form a finite-dimensional space. -/
 instance [Finite ι] (m : ℕ) : FiniteDimensional ℝ (polynomialsDegLE ι m) :=
   inferInstanceAs (Module.Finite ℝ ((restrictTotalDegree ι ℝ m).map (polynomialEvalₗ ι)))
@@ -177,5 +227,185 @@ theorem finrank_polynomialsDegLE [Fintype ι] (m : ℕ) :
       (m + Fintype.card ι).choose (Fintype.card ι) := by
   rw [← (restrictTotalDegreeEquivPolynomialsDegLE ι m).finrank_eq,
     finrank_restrictTotalDegree]
+
+end Basic
+
+/-- A finite product of at most `m` linear inner-product forms on `EuclideanSpace ℝ ι` belongs to
+`TauCeti.polynomialsDegLE ι m`. -/
+theorem prod_inner_mem_polynomialsDegLE {ι α : Type*} [Fintype ι] (s : Finset α)
+    (a : α → EuclideanSpace ℝ ι) {m : ℕ} (hm : s.card ≤ m) :
+    (fun x : EuclideanSpace ℝ ι => ∏ l ∈ s, ⟪a l, x⟫_ℝ) ∈ polynomialsDegLE ι m := by
+  let M := (MultilinearMap.mkPiAlgebra ℝ s ℝ).compLinearMap fun l =>
+    (innerSL ℝ (a l.val)).toLinearMap
+  have hfn : (fun x : EuclideanSpace ℝ ι => M fun _ => x) = fun x => ∏ l ∈ s, ⟪a l, x⟫_ℝ := by
+    ext x; simpa [M] using Finset.prod_attach s fun l => ⟪a l, x⟫_ℝ
+  exact hfn ▸ polynomialsDegLE_mono ι (by simpa [Fintype.card_coe] using hm)
+    M.apply_const_mem_polynomialsDegLE
+
+section Calculus
+
+open MeasureTheory
+open scoped ContDiff Gradient InnerProductSpace Topology
+
+private theorem polynomialEvalₗ_eq_fun {ι : Type*} (p : MvPolynomial ι ℝ) :
+    (polynomialEvalₗ ι p : EuclideanSpace ℝ ι → ℝ) = fun x : EuclideanSpace ℝ ι ↦ eval x p :=
+  _root_.funext fun x ↦ polynomialEvalₗ_apply ι p x
+
+/-! ### Analyticity and smoothness -/
+
+section Analytic
+
+variable {ι : Type*} [Fintype ι]
+
+/-- Evaluating a real multivariate polynomial on `EuclideanSpace ℝ ι` is real-analytic on the whole
+space. -/
+theorem _root_.MvPolynomial.analyticOnNhd_polynomialEvalₗ (p : MvPolynomial ι ℝ) :
+    AnalyticOnNhd ℝ (polynomialEvalₗ ι p) Set.univ := by
+  rw [polynomialEvalₗ_eq_fun]
+  exact AnalyticOnNhd.eval_continuousLinearMap
+    (EuclideanSpace.equiv ι ℝ).toContinuousLinearMap p
+
+/-- Evaluating a real multivariate polynomial on `EuclideanSpace ℝ ι` is `C^n` for every `n`. -/
+theorem _root_.MvPolynomial.contDiff_polynomialEvalₗ {n : WithTop ℕ∞} (p : MvPolynomial ι ℝ) :
+    ContDiff ℝ n (polynomialEvalₗ ι p) :=
+  p.analyticOnNhd_polynomialEvalₗ.contDiff.of_le le_top
+
+/-- Every polynomial function in `polynomialsDegLE ι m` is real-analytic on `EuclideanSpace ℝ ι`. -/
+theorem analyticOnNhd_of_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : f ∈ polynomialsDegLE ι m) :
+    AnalyticOnNhd ℝ f Set.univ := by
+  obtain ⟨p, -, rfl⟩ := (mem_polynomialsDegLE_iff ι).mp hf
+  exact p.analyticOnNhd_polynomialEvalₗ
+
+/-- Every polynomial function in `polynomialsDegLE ι m` is `C^n` for every `n`. -/
+theorem contDiff_of_mem_polynomialsDegLE {m : ℕ} {n : WithTop ℕ∞} {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : f ∈ polynomialsDegLE ι m) :
+    ContDiff ℝ n f :=
+  (analyticOnNhd_of_mem_polynomialsDegLE hf).contDiff.of_le le_top
+
+end Analytic
+
+/-! ### Open-set rigidity -/
+
+section Rigidity
+
+variable {ι : Type*} [Finite ι]
+
+/-- Two formal polynomials whose evaluations agree on a nonempty open subset of
+`EuclideanSpace ℝ ι` are equal. -/
+theorem polynomialEvalₗ_eq_of_eqOn_isOpen {p q : MvPolynomial ι ℝ}
+    {s : Set (EuclideanSpace ℝ ι)} (hs : IsOpen s) (hs_ne : s.Nonempty)
+    (heq : Set.EqOn (polynomialEvalₗ ι p) (polynomialEvalₗ ι q) s) :
+    p = q := by
+  let := Fintype.ofFinite ι
+  obtain ⟨z₀, hz₀⟩ := hs_ne
+  apply polynomialEvalₗ_injective ι
+  exact p.analyticOnNhd_polynomialEvalₗ.eq_of_eventuallyEq
+    q.analyticOnNhd_polynomialEvalₗ (heq.eventuallyEq_of_mem (hs.mem_nhds hz₀))
+
+/-- Two polynomial functions agreeing on a nonempty open subset of `EuclideanSpace ℝ ι` are equal
+everywhere. -/
+theorem eq_of_mem_polynomialsDegLE_of_eqOn_isOpen {m₁ m₂ : ℕ} {f g : EuclideanSpace ℝ ι → ℝ}
+    (hf : f ∈ polynomialsDegLE ι m₁) (hg : g ∈ polynomialsDegLE ι m₂)
+    {s : Set (EuclideanSpace ℝ ι)} (hs : IsOpen s) (hs_ne : s.Nonempty) (heq : Set.EqOn f g s) :
+    f = g := by
+  let := Fintype.ofFinite ι
+  obtain ⟨z₀, hz₀⟩ := hs_ne
+  exact (analyticOnNhd_of_mem_polynomialsDegLE hf).eq_of_eventuallyEq
+    (analyticOnNhd_of_mem_polynomialsDegLE hg) (heq.eventuallyEq_of_mem (hs.mem_nhds hz₀))
+
+/-- Two polynomial functions agreeing almost everywhere on a nonempty open subset of
+`EuclideanSpace ℝ ι` with respect to an open-positive measure are equal everywhere. -/
+theorem eq_of_mem_polynomialsDegLE_of_ae_eq_isOpen {m₁ m₂ : ℕ}
+    [MeasurableSpace (EuclideanSpace ℝ ι)] {mu : Measure (EuclideanSpace ℝ ι)}
+    [mu.IsOpenPosMeasure] {f g : EuclideanSpace ℝ ι → ℝ}
+    (hf : f ∈ polynomialsDegLE ι m₁) (hg : g ∈ polynomialsDegLE ι m₂)
+    {s : Set (EuclideanSpace ℝ ι)} (hs : IsOpen s) (hs_ne : s.Nonempty)
+    (hae : f =ᵐ[mu.restrict s] g) :
+    f = g := by
+  let := Fintype.ofFinite ι
+  exact eq_of_mem_polynomialsDegLE_of_eqOn_isOpen hf hg hs hs_ne <|
+    Measure.eqOn_open_of_ae_eq hae hs
+      (contDiff_of_mem_polynomialsDegLE (n := 0) hf).continuous.continuousOn
+      (contDiff_of_mem_polynomialsDegLE (n := 0) hg).continuous.continuousOn
+
+end Rigidity
+
+/-! ### Derivatives and degree lowering -/
+
+section Derivatives
+
+/-- Differentiating `polynomialEvalₗ ι p` in the `i`-th standard coordinate direction evaluates
+`pderiv i p`. -/
+@[simp]
+theorem _root_.MvPolynomial.fderiv_polynomialEvalₗ_single {ι : Type*} [Finite ι] [DecidableEq ι]
+    (p : MvPolynomial ι ℝ) (x : EuclideanSpace ℝ ι) (i : ι) :
+    fderiv ℝ (polynomialEvalₗ ι p) x (EuclideanSpace.single i 1) =
+      polynomialEvalₗ ι (pderiv i p) x := by
+  rw [polynomialEvalₗ_eq_fun, polynomialEvalₗ_apply]
+  exact p.fderiv_eval_euclidean_single x i
+
+/-- The directional Fréchet derivative of `polynomialEvalₗ ι p` at `x` along `v` is the inner
+product of the evaluated formal gradient with `v`. -/
+theorem _root_.MvPolynomial.fderiv_polynomialEvalₗ_apply {ι : Type*} [Fintype ι]
+    (p : MvPolynomial ι ℝ) (x v : EuclideanSpace ℝ ι) :
+    fderiv ℝ (polynomialEvalₗ ι p) x v = ∑ i, polynomialEvalₗ ι (pderiv i p) x * v i := by
+  rw [polynomialEvalₗ_eq_fun]
+  simpa only [polynomialEvalₗ_apply] using p.fderiv_eval_euclidean_apply x v
+
+/-- The Euclidean gradient of `polynomialEvalₗ ι p` at `x` expands in the standard basis with
+coefficients `polynomialEvalₗ ι (pderiv i p) x`. -/
+theorem _root_.MvPolynomial.gradient_polynomialEvalₗ {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (p : MvPolynomial ι ℝ) (x : EuclideanSpace ℝ ι) :
+    ∇ (polynomialEvalₗ ι p) x =
+      ∑ i, polynomialEvalₗ ι (pderiv i p) x • EuclideanSpace.single i 1 := by
+  apply (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ ι)).injective
+  ext v
+  simp [p.fderiv_polynomialEvalₗ_apply, EuclideanSpace.inner_single_left, mul_comm]
+
+/-- Differentiating a polynomial function of degree at most `m` in a fixed direction produces a
+polynomial function of degree at most `m - 1`. -/
+theorem fderiv_apply_mem_polynomialsDegLE {ι : Type*} [Finite ι] {m : ℕ}
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : f ∈ polynomialsDegLE ι m) (v : EuclideanSpace ℝ ι) :
+    (fun x ↦ fderiv ℝ f x v) ∈ polynomialsDegLE ι (m - 1) := by
+  let := Fintype.ofFinite ι
+  obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).mp hf
+  have heq : (fun x ↦ fderiv ℝ (polynomialEvalₗ ι p) x v) =
+      ∑ i, v i • polynomialEvalₗ ι (pderiv i p) := by
+    ext x
+    simp [p.fderiv_polynomialEvalₗ_apply, mul_comm]
+  rw [heq]
+  refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ (v i) ?_
+  rw [polynomialEvalₗ_mem_polynomialsDegLE_iff]
+  exact (p.totalDegree_pderiv_le i).trans (Nat.sub_le_sub_right hp 1)
+
+/-- Every iterated Fréchet derivative of order strictly above `m` vanishes on
+`polynomialsDegLE ι m`. -/
+theorem iteratedFDeriv_eq_zero_of_mem_polynomialsDegLE {ι : Type*} [Fintype ι] {m k : ℕ}
+    (hmk : m < k) {f : EuclideanSpace ℝ ι → ℝ} (hf : f ∈ polynomialsDegLE ι m) :
+    iteratedFDeriv ℝ k f = 0 := by
+  induction m generalizing k f with
+  | zero =>
+      obtain ⟨c, rfl⟩ := (mem_polynomialsDegLE_zero_iff ι).mp hf
+      exact iteratedFDeriv_const_of_ne hmk.ne' c
+  | succ m ih =>
+      obtain _ | k := k
+      · omega
+      ext x v
+      rw [Pi.zero_apply, zero_apply, iteratedFDeriv_succ_apply_right]
+      set g : (EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ :=
+        ContinuousLinearMap.apply ℝ ℝ (v (Fin.last k))
+      have hdf : ContDiff ℝ k (fun y ↦ fderiv ℝ f y) :=
+        (contDiff_of_mem_polynomialsDegLE (n := k + 1) hf).fderiv_right (m := k) le_rfl
+      have hcomp := congrArg (fun M ↦ M (Fin.init v))
+        (g.iteratedFDeriv_comp_left (hdf.contDiffAt (x := x)) (i := k) le_rfl)
+      simpa only [Function.comp_def, g, ContinuousLinearMap.compContinuousMultilinearMap_coe,
+        ContinuousLinearMap.apply_apply, Pi.zero_apply, zero_apply] using
+          hcomp.symm.trans <| congrArg (fun M ↦ M x (Fin.init v)) <|
+            ih (Nat.lt_of_succ_lt_succ hmk) (fderiv_apply_mem_polynomialsDegLE hf (v (Fin.last k)))
+
+end Derivatives
+
+end Calculus
 
 end TauCeti

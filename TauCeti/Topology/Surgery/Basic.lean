@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Basic
-public import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
+public import TauCeti.Topology.ContinuousMap.Glue.ClosedEmbeddings
 
 /-!
 # Surgery on a framed sphere
@@ -153,7 +153,7 @@ theorem apply_sphereBallBoundaryInclusion_mem_sphereExterior (hφ : Function.Inj
     φ (sphereBallBoundaryInclusion q) ∈ sphereExterior φ := by
   rintro ⟨p, hp, hpq⟩
   rw [hφ hpq, mem_ofPred_eq, coe_sphereBallBoundaryInclusion_snd,
-    mem_sphere_zero_iff_norm.mp q.2.2] at hp
+    mem_sphere_zero_iff_norm.mp q.2.property] at hp
   exact lt_irrefl _ hp
 
 /-- The boundary `φ (Sᵏ × ∂D^q)` of the exterior of an injective framed sphere, parametrized by

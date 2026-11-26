@@ -65,7 +65,7 @@ private lemma reverse_gap_le_of_convexSection
   nlinarith only [hs.2, hδε]
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- Two-sided Monge–Ampère bounds and a uniform height of sections compactly contained in the
 open convex domain give a Hölder gradient for a differentiable convex globally Lipschitz

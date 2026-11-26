@@ -130,7 +130,7 @@ theorem map_cartan (h : H) : ω (h : L) = -(h : L) := by
   | mem y hy =>
       obtain ⟨α, rfl⟩ := hy
       rw [rootSystem_coroot_apply]
-      exact hx.map_coroot α.1
+      exact hx.map_coroot α.val
   | zero => simp
   | add y z _ _ hy hz =>
       -- Expose the ambient addition hidden by the subtype coercion in the induction goal.

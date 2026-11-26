@@ -41,12 +41,17 @@ morphism.
 ## Main declarations
 
 * `CategoryTheory.ExactPairing.rightHom_ext`: morphisms into a right dual agree once they agree
-  after evaluation, and `CategoryTheory.ExactPairing.leftHom_ext`: morphisms out of a left member
-  agree once they agree after coevaluation;
+  after evaluation, and `CategoryTheory.ExactPairing.leftHom_ext` and
+  `CategoryTheory.ExactPairing.rightDualHom_ext`: morphisms out of the left or the right member
+  of an exact pairing agree once they agree after coevaluation;
 * `CategoryTheory.leftAdjointMate_rightAdjointMate` and
   `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
   original morphism, so `CategoryTheory.rightAdjointMate_injective`;
-* `CategoryTheory.Iso.rightAdjointMate`: the isomorphism `Yᘁ ≅ Xᘁ` induced by `X ≅ Y`;
+* `CategoryTheory.Iso.rightAdjointMate`: the isomorphism `Yᘁ ≅ Xᘁ` induced by `X ≅ Y`, with
+  `CategoryTheory.Iso.rightAdjointMate_inv_tensorHom_hom_comp_evaluation` and
+  `CategoryTheory.Iso.coevaluation_comp_hom_tensorHom_rightAdjointMate_inv` transporting the
+  evaluation and coevaluation along `X ≅ Y`;
+* `CategoryTheory.Iso.leftAdjointMate`: the isomorphism `ᘁY ≅ ᘁX` induced by `X ≅ Y`;
 * `CategoryTheory.ExactPairing.rightMate`: the right adjoint mate with respect to explicit exact
   pairings, characterized by `CategoryTheory.ExactPairing.rightMate_comp_evaluation` (and its
   whiskered form `CategoryTheory.ExactPairing.whiskerRight_rightMate_evaluation`) and
@@ -117,6 +122,12 @@ after the coevaluation of the pairing. -/
 theorem leftHom_ext {X Y A : C} [ExactPairing X Y] {f g : X ⟶ A}
     (h : η_ X Y ≫ f ▷ Y = η_ X Y ≫ g ▷ Y) : f = g := by
   simpa using congrArg (tensorRightHomEquiv (𝟙_ C) X Y A).symm h
+
+/-- Two morphisms out of the right member `Y` of an exact pairing `(X, Y)` agree as soon as they
+agree after the coevaluation of the pairing. -/
+theorem rightDualHom_ext {X Y A : C} [ExactPairing X Y] {f g : Y ⟶ A}
+    (h : η_ X Y ≫ X ◁ f = η_ X Y ≫ X ◁ g) : f = g := by
+  simpa using congrArg (tensorLeftHomEquiv (𝟙_ C) X Y A).symm h
 
 /-- The right adjoint mate `Y' ⟶ X'` of `f : X ⟶ Y`, with respect to explicitly given exact
 pairings `(X, X')` and `(Y, Y')`: Mathlib's `CategoryTheory.rightAdjointMate` with the given
@@ -540,6 +551,43 @@ theorem Iso.rightAdjointMate_hom {X Y : C} [HasRightDual X] [HasRightDual Y] (e 
 @[simp]
 theorem Iso.rightAdjointMate_inv {X Y : C} [HasRightDual X] [HasRightDual Y] (e : X ≅ Y) :
     e.rightAdjointMate.inv = e.invᘁ :=
+  (rfl)
+
+/-- An isomorphism `a : X ≅ Y`, applied to `X` and through the mate of its inverse to `Xᘁ`, carries
+the evaluation of `(Y, Yᘁ)` back to the evaluation of `(X, Xᘁ)`. -/
+@[reassoc]
+theorem Iso.rightAdjointMate_inv_tensorHom_hom_comp_evaluation {X Y : C} [HasRightDual X]
+    [HasRightDual Y] (a : X ≅ Y) : (a.invᘁ ⊗ₘ a.hom) ≫ ε_ Y Yᘁ = ε_ X Xᘁ := by
+  rw [tensorHom_def'_assoc, rightAdjointMate_comp_evaluation, ← whiskerLeft_comp_assoc,
+    a.hom_inv_id, whiskerLeft_id, Category.id_comp]
+
+/-- An isomorphism `a : X ≅ Y`, applied to `X` and through the mate of its inverse to `Xᘁ`, carries
+the coevaluation of `(X, Xᘁ)` to the coevaluation of `(Y, Yᘁ)`. -/
+@[reassoc]
+theorem Iso.coevaluation_comp_hom_tensorHom_rightAdjointMate_inv {X Y : C} [HasRightDual X]
+    [HasRightDual Y] (a : X ≅ Y) : η_ X Xᘁ ≫ (a.hom ⊗ₘ a.invᘁ) = η_ Y Yᘁ := by
+  rw [tensorHom_def', coevaluation_comp_rightAdjointMate_assoc, ← comp_whiskerRight,
+    a.inv_hom_id, id_whiskerRight, Category.comp_id]
+
+/-- An isomorphism `X ≅ Y` induces an isomorphism `ᘁY ≅ ᘁX` of left duals, whose components are
+the left adjoint mates of those of `X ≅ Y`. -/
+def Iso.leftAdjointMate {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) :
+    (ᘁY : C) ≅ (ᘁX : C) where
+  hom := ᘁe.hom
+  inv := ᘁe.inv
+  hom_inv_id := by rw [← comp_leftAdjointMate, e.inv_hom_id, leftAdjointMate_id]
+  inv_hom_id := by rw [← comp_leftAdjointMate, e.hom_inv_id, leftAdjointMate_id]
+
+/-- The component of `Iso.leftAdjointMate e` is the left adjoint mate of that of `e`. -/
+@[simp]
+theorem Iso.leftAdjointMate_hom {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) :
+    e.leftAdjointMate.hom = ᘁe.hom :=
+  (rfl)
+
+/-- The inverse of `Iso.leftAdjointMate e` is the left adjoint mate of the inverse of `e`. -/
+@[simp]
+theorem Iso.leftAdjointMate_inv {X Y : C} [HasLeftDual X] [HasLeftDual Y] (e : X ≅ Y) :
+    e.leftAdjointMate.inv = ᘁe.inv :=
   (rfl)
 
 end CategoryTheory

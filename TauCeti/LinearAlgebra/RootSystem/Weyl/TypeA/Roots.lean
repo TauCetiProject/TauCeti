@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.Basic
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.TypeA.Presentation
 import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
+import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 
 /-!
@@ -111,7 +112,7 @@ private theorem letterPair_typeAWeylGroupEquiv_of_weylGroupToPerm_eq {u : P.weyl
     letterPair (P.typeAWeylGroupEquiv b e he u) (e i) = letterPair 1 (e j) := by
   refine letterPair_eq_of_swap_eq ?_ ?_
   · rw [← isPos_weylGroupToPerm_iff_typeAWeylGroupEquiv, hu]
-    exact Base.isPos_of_mem_support j.2
+    exact Base.isPos_of_mem_support j.property
   · rw [← P.typeAWeylGroupEquiv_ofIdx b e he, ← P.typeAWeylGroupEquiv_ofIdx b e he, ← map_inv,
       ← map_mul, ← map_mul, ← hu, weylGroup.ofIdx_weylGroupToPerm_eq_conj]
 

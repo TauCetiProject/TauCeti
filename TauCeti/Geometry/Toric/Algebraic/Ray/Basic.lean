@@ -61,7 +61,7 @@ abbrev ToricRay (σ : PointedCone ℝ V) :=
 namespace ToricRay
 
 /-- The pointed cone underlying a ray. -/
-abbrev toPointedCone (ρ : ToricRay σ) : PointedCone ℝ V := ρ.1.toPointedCone
+abbrev toPointedCone (ρ : ToricRay σ) : PointedCone ℝ V := ρ.val.toPointedCone
 
 /-- Rays are viewed as sets of vectors: membership `x ∈ ρ` and the coercion `(ρ : Set V)` both
 refer to the pointed cone `ρ.toPointedCone` underlying the ray, and two rays with the same
@@ -73,7 +73,7 @@ instance : SetLike (ToricRay σ) V where
 /-- The span of the cone underlying a ray has real dimension one. -/
 @[simp]
 theorem finrank_span (ρ : ToricRay σ) :
-    Module.finrank ℝ (Submodule.span ℝ (ρ : Set V)) = 1 := ρ.2
+    Module.finrank ℝ (Submodule.span ℝ (ρ : Set V)) = 1 := ρ.property
 
 /-- A ray is not the zero pointed cone. -/
 theorem toPointedCone_ne_bot (ρ : ToricRay σ) : ρ.toPointedCone ≠ ⊥ := by
@@ -111,18 +111,24 @@ theorem eq_hull_singleton (ρ : ToricRay σ) (hρ : (ρ.toPointedCone : ConvexCo
     exact hρ x hx hx0 hnegx
   · exact Submodule.span_le.2 fun _ hx' ↦ by simpa using hx' ▸ hx
 
+/-- A pointed cone containing a nonzero point of a salient ray contains the whole ray. -/
+theorem toPointedCone_le_of_mem (ρ : ToricRay σ) (hρ : (ρ.toPointedCone : ConvexCone ℝ V).Salient)
+    {x : V} (hx : x ∈ ρ) (hx0 : x ≠ 0) (hτ : x ∈ τ) : ρ.toPointedCone ≤ τ := by
+  rw [ρ.eq_hull_singleton hρ hx hx0]
+  exact Submodule.span_le.2 (Set.singleton_subset_iff.2 hτ)
+
 /-! ### The zero cone -/
 
 /-- The zero cone has no rays: its only face is itself, whose span is zero-dimensional. -/
 instance instIsEmptyBot : IsEmpty (ToricRay (⊥ : PointedCone ℝ V)) where
-  false ρ := ρ.toPointedCone_ne_bot (le_antisymm ρ.1.isFaceOf.le bot_le)
+  false ρ := ρ.toPointedCone_ne_bot (le_antisymm ρ.val.isFaceOf.le bot_le)
 
 /-! ### Rays of a face -/
 
 /-- A ray of a face `τ` of a cone `σ` is a ray of `σ`: a face of a face is a face, and
 one-dimensionality of the span does not mention the ambient cone. -/
 def faceEmbedding (hτ : τ.IsFaceOf σ) : ToricRay τ ↪ ToricRay σ where
-  toFun ρ := ⟨⟨ρ.toPointedCone, ρ.1.isFaceOf.trans hτ⟩, ρ.2⟩
+  toFun ρ := ⟨⟨ρ.toPointedCone, ρ.val.isFaceOf.trans hτ⟩, ρ.property⟩
   inj' ρ ρ' h := by
     have hcone : ρ.toPointedCone = ρ'.toPointedCone :=
       congrArg (fun ν : ToricRay σ ↦ ν.toPointedCone) h
@@ -145,8 +151,9 @@ theorem range_faceEmbedding (hτ : τ.IsFaceOf σ) :
   ext ρ
   refine ⟨?_, fun hρ ↦ ?_⟩
   · rintro ⟨ν, rfl⟩
-    exact ν.1.isFaceOf.le
-  · exact ⟨⟨⟨ρ.toPointedCone, (PointedCone.IsFaceOf.isFaceOf_iff_le ρ.1.isFaceOf hτ).2 hρ⟩, ρ.2⟩,
+    exact ν.val.isFaceOf.le
+  · exact ⟨⟨⟨ρ.toPointedCone, (PointedCone.IsFaceOf.isFaceOf_iff_le ρ.val.isFaceOf hτ).2 hρ⟩,
+      ρ.property⟩,
       rfl⟩
 
 /-! ### The ray spanned by a vector -/
@@ -172,10 +179,10 @@ theorem toPointedCone_eq_of_hull_singleton {x : V}
     (ρ : ToricRay (PointedCone.hull ℝ {x})) : ρ.toPointedCone = PointedCone.hull ℝ {x} := by
   have hx : x ∈ ρ.toPointedCone := by
     by_contra hx
-    have h := ρ.1.isFaceOf.eq_hull_inter_of_eq_hull rfl
+    have h := ρ.val.isFaceOf.eq_hull_inter_of_eq_hull rfl
     rw [Set.singleton_inter_eq_empty.2 (by simpa using hx)] at h
     exact ρ.toPointedCone_ne_bot (by simpa using h)
-  exact le_antisymm ρ.1.isFaceOf.le (Submodule.span_le.2 (Set.singleton_subset_iff.2 hx))
+  exact le_antisymm ρ.val.isFaceOf.le (Submodule.span_le.2 (Set.singleton_subset_iff.2 hx))
 
 /-- The cone spanned by a nonzero vector has exactly one ray. -/
 theorem eq_hullSingleton {x : V} (hx : x ≠ 0) (ρ : ToricRay (PointedCone.hull ℝ {x})) :
@@ -194,8 +201,8 @@ theorem eq_of_toPointedCone_le (hσ : (σ : ConvexCone ℝ V).Salient) {ν ρ : 
     (h : ν.toPointedCone ≤ ρ.toPointedCone) : ν = ρ := by
   obtain ⟨x, hx, hx0⟩ := ν.exists_mem_ne_zero
   apply toPointedCone_injective
-  rw [ν.eq_hull_singleton (hσ.anti ν.1.isFaceOf.le) hx hx0,
-    ρ.eq_hull_singleton (hσ.anti ρ.1.isFaceOf.le) (h hx) hx0]
+  rw [ν.eq_hull_singleton (hσ.anti ν.val.isFaceOf.le) hx hx0,
+    ρ.eq_hull_singleton (hσ.anti ρ.val.isFaceOf.le) (h hx) hx0]
 
 /-- In a salient cone, containment of rays is equality. -/
 theorem toPointedCone_le_toPointedCone_iff (hσ : (σ : ConvexCone ℝ V).Salient)
@@ -237,8 +244,8 @@ theorem map_fst_eq_bot_of_map_snd_ne_bot (G : ToricRay (σ.prod τ))
     rw [hGeq]; exact PointedCone.subset_hull (Set.mem_singleton p)
   have hmem : (p.1, (0 : V')) ∈ PointedCone.hull ℝ {p} := by
     rw [← hGeq]
-    have hp := Submodule.mem_prod.1 (G.1.isFaceOf.le hpG)
-    exact G.1.isFaceOf.mem_of_add_mem_left (x := (p.1, 0)) (y := (0, p.2))
+    have hp := Submodule.mem_prod.1 (G.val.isFaceOf.le hpG)
+    exact G.val.isFaceOf.mem_of_add_mem_left (x := (p.1, 0)) (y := (0, p.2))
       (Submodule.mem_prod.2 ⟨hp.1, Submodule.zero_mem _⟩)
       (Submodule.mem_prod.2 ⟨Submodule.zero_mem _, hp.2⟩) (by simpa using hpG)
   obtain ⟨c, -, hcp⟩ := PointedCone.mem_hull_singleton.1 hmem
@@ -284,7 +291,7 @@ the second factor is the zero cone. -/
 noncomputable def prodRayFst (G : ToricRay (σ.prod τ))
     (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥) : ToricRay σ :=
-  ⟨⟨_, G.1.isFaceOf.fst⟩, finrank_span_map_fst_eq_one G hG h⟩
+  ⟨⟨_, G.val.isFaceOf.fst⟩, finrank_span_map_fst_eq_one G hG h⟩
 
 @[simp]
 theorem toPointedCone_prodRayFst (G : ToricRay (σ.prod τ))
@@ -304,7 +311,7 @@ to the second factor is not the zero cone. -/
 noncomputable def prodRaySnd (G : ToricRay (σ.prod τ))
     (hG : (G.toPointedCone : ConvexCone ℝ (V × V')).Salient)
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) : ToricRay τ :=
-  ⟨⟨_, G.1.isFaceOf.snd⟩, finrank_span_map_snd_eq_one G hG h⟩
+  ⟨⟨_, G.val.isFaceOf.snd⟩, finrank_span_map_snd_eq_one G hG h⟩
 
 @[simp]
 theorem toPointedCone_prodRaySnd (G : ToricRay (σ.prod τ))
@@ -344,24 +351,24 @@ theorem prod_ext {G H : ToricRay (σ.prod τ)}
     have hsum : x + (c.1, a.2) ∈ B.toPointedCone := by
       rw [← hadd, hxa, hcx]
       exact Submodule.add_mem _ ha hc
-    exact B.1.isFaceOf.mem_of_add_mem_left (x := x) (y := (c.1, a.2))
+    exact B.val.isFaceOf.mem_of_add_mem_left (x := x) (y := (c.1, a.2))
       (Submodule.mem_prod.2 ⟨by
-          have h := B.1.isFaceOf.le ha
+          have h := B.val.isFaceOf.le ha
           rw [← hxa] at h
           exact (Submodule.mem_prod.1 h).1,
         by
-          have h := B.1.isFaceOf.le hc
+          have h := B.val.isFaceOf.le hc
           rw [← hcx] at h
           exact (Submodule.mem_prod.1 h).2⟩)
-      (Submodule.mem_prod.2 ⟨(Submodule.mem_prod.1 (B.1.isFaceOf.le hc)).1,
-        (Submodule.mem_prod.1 (B.1.isFaceOf.le ha)).2⟩) hsum
+      (Submodule.mem_prod.2 ⟨(Submodule.mem_prod.1 (B.val.isFaceOf.le hc)).1,
+        (Submodule.mem_prod.1 (B.val.isFaceOf.le ha)).2⟩) hsum
   exact le_antisymm (key h₁.le h₂.le) (key h₁.ge h₂.ge)
 
 /-- A ray of the first factor included as a ray of the product by taking its product with the zero
 cone in the second factor. -/
 def prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) : ToricRay (σ.prod τ) :=
-  ⟨⟨ρ.toPointedCone.prod ⊥, ρ.1.isFaceOf.prod hτ.bot_isFaceOf⟩,
-    (PointedCone.finrank_span_coe_prod_bot ρ.toPointedCone).trans ρ.2⟩
+  ⟨⟨ρ.toPointedCone.prod ⊥, ρ.val.isFaceOf.prod hτ.bot_isFaceOf⟩,
+    (PointedCone.finrank_span_coe_prod_bot ρ.toPointedCone).trans ρ.property⟩
 
 @[simp]
 theorem toPointedCone_prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) :
@@ -375,8 +382,8 @@ theorem mem_prodInl (hτ : (τ : ConvexCone ℝ V').Salient) (ρ : ToricRay σ) 
 /-- A ray of the second factor included as a ray of the product by taking the product of the zero
 cone in the first factor with that ray. -/
 def prodInr (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay τ) : ToricRay (σ.prod τ) :=
-  ⟨⟨(⊥ : PointedCone ℝ V).prod ρ.toPointedCone, hσ.bot_isFaceOf.prod ρ.1.isFaceOf⟩,
-    (PointedCone.finrank_span_coe_bot_prod ρ.toPointedCone).trans ρ.2⟩
+  ⟨⟨(⊥ : PointedCone ℝ V).prod ρ.toPointedCone, hσ.bot_isFaceOf.prod ρ.val.isFaceOf⟩,
+    (PointedCone.finrank_span_coe_bot_prod ρ.toPointedCone).trans ρ.property⟩
 
 @[simp]
 theorem toPointedCone_prodInr (hσ : (σ : ConvexCone ℝ V).Salient) (ρ : ToricRay τ) :
@@ -395,8 +402,8 @@ cone. The two cases of the forward map are computed by
 noncomputable def prodSplit (hσ : (σ : ConvexCone ℝ V).Salient)
     (hτ : (τ : ConvexCone ℝ V').Salient) : ToricRay (σ.prod τ) ≃ ToricRay σ ⊕ ToricRay τ where
   toFun G := if h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥ then
-    Sum.inl (prodRayFst G ((hσ.prod hτ).anti fun _ hx ↦ G.1.isFaceOf.le hx) h)
-    else Sum.inr (prodRaySnd G ((hσ.prod hτ).anti fun _ hx ↦ G.1.isFaceOf.le hx) h)
+    Sum.inl (prodRayFst G ((hσ.prod hτ).anti fun _ hx ↦ G.val.isFaceOf.le hx) h)
+    else Sum.inr (prodRaySnd G ((hσ.prod hτ).anti fun _ hx ↦ G.val.isFaceOf.le hx) h)
   invFun := Sum.elim (prodInl hτ) (prodInr hσ)
   left_inv G := by
     dsimp only
@@ -408,7 +415,7 @@ noncomputable def prodSplit (hσ : (σ : ConvexCone ℝ V).Salient)
       rw [dite_eq_right h, Sum.elim_inr]
       exact prod_ext ((Submodule.prod_map_fst ..).trans
         (map_fst_eq_bot_of_map_snd_ne_bot G
-          ((hσ.prod hτ).anti fun _ hx ↦ G.1.isFaceOf.le hx) h).symm)
+          ((hσ.prod hτ).anti fun _ hx ↦ G.val.isFaceOf.le hx) h).symm)
         (Submodule.prod_map_snd ..)
   right_inv := by
     rintro (ρ | ρ)
@@ -428,7 +435,7 @@ theorem prodSplit_eq_inl (hσ : (σ : ConvexCone ℝ V).Salient)
     (hτ : (τ : ConvexCone ℝ V').Salient) (G : ToricRay (σ.prod τ))
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone = ⊥) :
     prodSplit hσ hτ G =
-      Sum.inl (prodRayFst G ((hσ.prod hτ).anti fun _ hx ↦ G.1.isFaceOf.le hx) h) :=
+      Sum.inl (prodRayFst G ((hσ.prod hτ).anti fun _ hx ↦ G.val.isFaceOf.le hx) h) :=
   dite_eq_left h
 
 @[simp]
@@ -436,7 +443,7 @@ theorem prodSplit_eq_inr (hσ : (σ : ConvexCone ℝ V).Salient)
     (hτ : (τ : ConvexCone ℝ V').Salient) (G : ToricRay (σ.prod τ))
     (h : PointedCone.map (LinearMap.snd ℝ V V') G.toPointedCone ≠ ⊥) :
     prodSplit hσ hτ G =
-      Sum.inr (prodRaySnd G ((hσ.prod hτ).anti fun _ hx ↦ G.1.isFaceOf.le hx) h) :=
+      Sum.inr (prodRaySnd G ((hσ.prod hτ).anti fun _ hx ↦ G.val.isFaceOf.le hx) h) :=
   dite_eq_right h
 
 @[simp]
@@ -473,7 +480,7 @@ theorem mem_faceFinset (hτ : τ.IsFaceOf σ) (hfg : τ.FG) {ρ : ToricRay σ} :
 /-- A ray of a face `τ` of `σ`, viewed as a ray of `σ`, lies in `faceFinset` of `τ`. -/
 theorem faceEmbedding_mem_faceFinset (hτ : τ.IsFaceOf σ) (hfg : τ.FG) (ρ : ToricRay τ) :
     faceEmbedding hτ ρ ∈ faceFinset hτ hfg :=
-  (mem_faceFinset hτ hfg).2 ρ.1.isFaceOf.le
+  (mem_faceFinset hτ hfg).2 ρ.val.isFaceOf.le
 
 /-- For faces `υ ≤ τ ≤ σ`, the rays of `σ` contained in `υ` are the rays of `τ` contained in `υ`,
 viewed as rays of `σ`. -/

@@ -159,7 +159,7 @@ theorem extendToLocalization_lt_of_mem_locIdealImage {v : Valuation A Γ₀} (hs
   | smul r y _ hy =>
     rw [smul_eq_mul, MulMemClass.coe_mul, Valuation.map_mul]
     have hr : v.extendToLocalization (Valuation.powers_le_supp_primeCompl hs) S r ≤ 1 :=
-      extendToLocalization_le_one_of_mem_locSubring S P T s hs hA₀ hT r.2
+      extendToLocalization_le_one_of_mem_locSubring S P T s hs hA₀ hT r.property
     calc _ ≤ 1 * v.extendToLocalization (Valuation.powers_le_supp_primeCompl hs) S y := by gcongr
       _ < γ := by rwa [one_mul]
 
@@ -180,11 +180,11 @@ theorem isContinuous_extendToLocalization [IsTopologicalRing A]
   -- and Wedhorn's quantifier over the whole value group is exactly what reaches it.
   obtain ⟨⟨a, y⟩, rfl⟩ := IsLocalization.mk'_surjective (Submonoid.powers s) b
   have hy : v (y : A) ≠ 0 := fun h ↦
-    Ideal.mem_primeCompl_iff.mp (Valuation.powers_le_supp_primeCompl hs y.2)
+    Ideal.mem_primeCompl_iff.mp (Valuation.powers_le_supp_primeCompl hs y.property)
       ((Valuation.mem_supp_iff _ _).mpr h)
   rw [Valuation.extendToLocalization_mk', ← div_eq_mul_inv] at hb ⊢
   have hnhds : {c : A | v c < v a / v (y : A)} ∈ nhds (0 : A) :=
-    (hv.isOpen_lt_div a hy).mem_nhds (by simpa using zero_lt_iff.mpr hb)
+    (hv.isOpen_lt_div a hy).mem_nhds (by simpa using pos_iff_ne_zero.mpr hb)
   obtain ⟨n, -, hn⟩ := P.hasBasis_nhds_zero.mem_iff.mp hnhds
   -- The sublevel set is an additive subgroup containing an open one, hence open.
   have hopen := AddSubgroup.isOpen_mono (H₁ := locIdealImage P T s S n)
@@ -213,8 +213,8 @@ theorem le_one_of_mem_adjoin_plus (Aplus : Subring A) {u : Valuation S Γ₀}
   -- the subalgebra is generated over `A⁺` by the fractions `t/s`, so the two hypotheses cover
   -- both families of generators and the remaining cases are the valuation axioms
   induction hx using Algebra.adjoin_induction with
-  | mem y hy => obtain ⟨t, rfl⟩ := hy; exact hT t t.2
-  | algebraMap r => rw [IsScalarTower.algebraMap_apply ↥Aplus A S]; exact hplus _ r.2
+  | mem y hy => obtain ⟨t, rfl⟩ := hy; exact hT t t.property
+  | algebraMap r => rw [IsScalarTower.algebraMap_apply ↥Aplus A S]; exact hplus _ r.property
   | add y z _ _ hy hz => exact le_trans (Valuation.map_add _ _ _) (max_le hy hz)
   | mul y z _ _ hy hz => rw [Valuation.map_mul]; exact mul_le_one' hy hz
 
@@ -236,7 +236,7 @@ theorem le_one_of_mem_integralClosure_adjoin_plus (Aplus : Subring A) {u : Valua
   -- valuation ring integrally closed in `Aₛ`, so a bound on the generating subalgebra is
   -- already a bound on its closure
   (Subring.integralClosure_le_iff (T := u.integer)).mpr
-    (fun r ↦ le_one_of_mem_adjoin_plus S T s Aplus hplus hT r.2) hx
+    (fun r ↦ le_one_of_mem_adjoin_plus S T s Aplus hplus hT r.property) hx
 
 omit [TopologicalSpace A] in
 /-- **The extension is `≤ 1` on the plus ring of the localisation** — the integral closure in

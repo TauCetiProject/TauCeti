@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.PlaneSeparation.Isoperimetric
+public import TauCeti.Analysis.Complex.PlaneSeparation.Perimeter
 public import TauCeti.Analysis.SpecialFunctions.CantorFunction
 import TauCeti.Analysis.Contour.Curve.Circle.Basic
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Circle
@@ -20,24 +21,29 @@ with angle `2π φ t` gives a curve `TauCeti.cantorCircle` on `[0, 1]` that is c
 injective on `[0, 1)` and rectifiable, of length `2π`, but not absolutely continuous.
 
 Such a curve lies outside the absolutely continuous form of the planar isoperimetric theorem, while
-the bounded-variation form applies to it: its inside has area `A` and its length `L` satisfies the
-equality `4π A = L²` (`TauCeti.four_pi_mul_volume_real_filledHull_sdiff_cantorCircle`).
+the bounded-variation form applies to it: its inside has area `π`, De Giorgi perimeter `2π`, and
+satisfies `4π A = L²` (`TauCeti.four_pi_mul_volume_real_filledHull_sdiff_cantorCircle`).
 
 ## Main results
 
 * `TauCeti.image_cantorCircle_Icc`: the trace of `cantorCircle` is the unit circle.
 * `TauCeti.injOn_cantorCircle`: `cantorCircle` is injective on `[0, 1)`.
 * `TauCeti.eVariationOn_cantorCircle`: `cantorCircle` has length `2π` on `[0, 1]`.
+* `TauCeti.ae_norm_deriv_cantorCircle`: `cantorCircle` has speed `π` almost everywhere.
 * `TauCeti.not_absolutelyContinuousOnInterval_cantorCircle`: `cantorCircle` is not absolutely
   continuous on `[0, 1]`.
 * `TauCeti.four_pi_mul_volume_real_filledHull_sdiff_cantorCircle`: equality in the isoperimetric
   inequality for `cantorCircle`.
+* `TauCeti.perimeter_filledHull_sdiff_cantorCircle`,
+  `TauCeti.volume_real_filledHull_sdiff_cantorCircle`, and
+  `TauCeti.abs_rectifiableSignedArea_cantorCircle`: De Giorgi perimeter `2π`, enclosed area `π`,
+  and absolute geometric signed area `π` of `cantorCircle`.
 -/
 
 public section
 
 open Complex MeasureTheory Metric Set
-open scoped Real
+open scoped ENNReal Real
 
 namespace TauCeti
 
@@ -48,6 +54,20 @@ noncomputable def cantorCircle : ℝ → ℂ := circleMap 0 1 ∘ fun t ↦ 2 * 
 /-- Evaluation of `cantorCircle`. -/
 theorem cantorCircle_apply (t : ℝ) : cantorCircle t = circleMap 0 1 (2 * π * cantorReparam t) :=
   (rfl)
+
+/-- Off the Cantor set, `cantorCircle` has derivative `π i γ`. -/
+theorem hasDerivAt_cantorCircle_of_notMem {t : ℝ} (ht : t ∉ cantorSet) :
+    HasDerivAt cantorCircle (π * I * cantorCircle t) t := by
+  refine ((hasDerivAt_circleMap 0 1 _).scomp t
+    ((hasDerivAt_cantorReparam_of_notMem ht).const_mul (2 * π))).congr_deriv ?_
+  rw [cantorCircle_apply, real_smul]
+  push_cast
+  ring
+
+/-- `cantorCircle` has speed `π` at almost every point. -/
+theorem ae_norm_deriv_cantorCircle : ∀ᵐ t, ‖deriv cantorCircle t‖ = π :=
+  (measure_eq_zero_iff_ae_notMem.mp volume_cantorSet).mono fun t ht ↦ by
+    simp [(hasDerivAt_cantorCircle_of_notMem ht).deriv, cantorCircle_apply, abs_of_pos Real.pi_pos]
 
 /-- `cantorCircle` is continuous. -/
 theorem continuous_cantorCircle : Continuous cantorCircle :=
@@ -138,5 +158,31 @@ theorem four_pi_mul_volume_real_filledHull_sdiff_cantorCircle :
   (boundedVariationOn_cantorCircle.four_pi_mul_volume_real_filledHull_sdiff_eq_iff zero_lt_one
     continuous_cantorCircle.continuousOn (by simp) injOn_cantorCircle).2
       ⟨0, 1, one_pos, image_cantorCircle_Icc⟩
+
+/-- **Perimeter of the inside of `cantorCircle`.** The bounded inside of `cantorCircle` — a
+continuous simple closed curve of bounded variation that is not absolutely continuous — has
+De Giorgi perimeter `2π`. -/
+theorem perimeter_filledHull_sdiff_cantorCircle :
+    perimeter volume ⊤ (filledHull (cantorCircle '' Icc 0 1) \ cantorCircle '' Icc 0 1) =
+      ENNReal.ofReal (2 * π) := by
+  rw [boundedVariationOn_cantorCircle.perimeter_filledHull_sdiff zero_lt_one
+    continuous_cantorCircle.continuousOn (by simp) injOn_cantorCircle, eVariationOn_cantorCircle]
+
+/-- **Area of the inside of `cantorCircle`.** The bounded inside of `cantorCircle` has Lebesgue area
+`π`. -/
+theorem volume_real_filledHull_sdiff_cantorCircle :
+    volume.real (filledHull (cantorCircle '' Icc 0 1) \ cantorCircle '' Icc 0 1) = π := by
+  have h := four_pi_mul_volume_real_filledHull_sdiff_cantorCircle
+  rw [eVariationOn_cantorCircle, ENNReal.toReal_ofReal Real.two_pi_pos.le] at h
+  have hπ : 0 < 4 * π := by positivity
+  nlinarith
+
+/-- **Geometric signed area of `cantorCircle` up to sign.** The arclength signed area of the
+non-absolutely-continuous simple closed curve `cantorCircle` has absolute value `π`. -/
+theorem abs_rectifiableSignedArea_cantorCircle :
+    |rectifiableSignedArea cantorCircle 0 1| = π := by
+  rw [boundedVariationOn_cantorCircle.abs_rectifiableSignedArea_eq_volume_real zero_lt_one
+    continuous_cantorCircle.continuousOn (by simp) injOn_cantorCircle,
+    volume_real_filledHull_sdiff_cantorCircle]
 
 end TauCeti

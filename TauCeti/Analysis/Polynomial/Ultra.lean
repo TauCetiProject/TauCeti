@@ -7,8 +7,15 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.SmallDegree
+public import Mathlib.Algebra.Polynomial.HasseDeriv
+public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Analysis.Normed.Group.Ultra
+public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
+
+import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
+import Mathlib.Algebra.Polynomial.Taylor
+import TauCeti.Analysis.Normed.Unbundled.RootBound
 
 /-!
 # Polynomial bounds over ultrametric rings
@@ -23,10 +30,28 @@ bounds the coefficients of determinants such as `det (1 - X A)` and of the adjug
 `1 - X A`.
 
 An integral polynomial has norm at most one on the closed unit ball of an ultrametric
-seminormed ring with `‖1‖ = 1` (`Polynomial.norm_aeval_le_one`).
+seminormed ring with `‖1‖ = 1` (`Polynomial.norm_aeval_le_one`). More generally, let `P` be a
+polynomial over a normed field whose coefficients satisfy `‖cₖ‖ Rᵏ ≤ R`, that is, whose Gauss norm
+at radius `R` is at most `R`. If `P` vanishes below degree `m` and at `0`, then in an ultrametric
+normed algebra it takes at `x` with `‖x‖ ≤ R` a value of norm at most `R (‖x‖ / R) ^ m`
+(`Polynomial.norm_aeval_le_mul_div_pow`): every term `cₖ xᵏ` has norm at most `R (‖x‖ / R) ^ k`
+(`TauCeti.norm_smul_pow_le_mul_div_pow`). For a vanishing constant coefficient, the bound
+`‖cₖ‖ Rᵏ ≤ R` is `‖cₖ‖ R ^ (k - 1) ≤ 1` (`TauCeti.norm_mul_pow_le_of_norm_mul_pow_sub_one_le`).
+
+Over an ultrametric seminormed integral domain with `‖1‖ = 1`, let `P` be a split monic
+polynomial of degree `n` all of whose roots lie within `r` of a point `α`. The value at `α` of the
+`d`-th Hasse derivative of `P` is the coefficient of `Y ^ d` in `P(α + Y) = ∏ (Y - (αᵢ - α))`, so
+it has norm at most `r ^ (n - d)` (`Polynomial.Monic.norm_eval_hasseDeriv_le`). If moreover the
+norm is multiplicative, that Hasse derivative splits and its leading coefficient `n.choose d` is
+nonzero, the product of the distances from `α` to its roots shows that one of them, `β`,
+satisfies `‖n.choose d‖ * ‖α - β‖ ^ (n - d) ≤ r ^ (n - d)`
+(`Polynomial.Monic.exists_isRoot_hasseDeriv_norm_sub_le`). These are the estimates in Ax's proof
+of the Ax–Sen lemma.
 
 ## References
 
+* J. Ax, *Zeros of polynomials over local fields — the Galois action*, J. Algebra 15 (1970),
+  417–428.
 * J.-P. Serre, *Endomorphismes complètement continus des espaces de Banach p-adiques*,
   Publ. Math. IHÉS **12** (1962), 69–85, §§4–5.
 -/
@@ -50,6 +75,28 @@ end Polynomial
 
 
 namespace TauCeti
+
+/-- The coefficient bound `‖c‖ R ^ (n - 1) ≤ 1` is the weighted bound `‖c‖ Rⁿ ≤ R` when `c`
+vanishes in degree `n = 0`. -/
+theorem norm_mul_pow_le_of_norm_mul_pow_sub_one_le {E : Type*} [SeminormedAddGroup E] {c : E}
+    {n : ℕ} {R : ℝ} (hR : 0 ≤ R) (hc0 : n = 0 → c = 0) (hc : ‖c‖ * R ^ (n - 1) ≤ 1) :
+    ‖c‖ * R ^ n ≤ R := by
+  rcases n with _ | m
+  · simp [hc0 rfl, hR]
+  rw [Nat.add_sub_cancel] at hc
+  rw [pow_succ, ← mul_assoc]
+  exact mul_le_of_le_one_left hR hc
+
+/-- **A weighted monomial bound.** If `‖c‖ Rᵏ ≤ R` with `R > 0` and `k ≠ 0`, then
+`‖c • xᵏ‖ ≤ R (‖x‖ / R) ^ k` in every normed algebra. -/
+theorem norm_smul_pow_le_mul_div_pow {K A : Type*} [NormedField K] [SeminormedRing A]
+    [NormedAlgebra K A] {c : K} {k : ℕ} {R : ℝ} (hR : 0 < R) (hk : k ≠ 0)
+    (hc : ‖c‖ * R ^ k ≤ R) (x : A) : ‖c • x ^ k‖ ≤ R * (‖x‖ / R) ^ k :=
+  calc ‖c • x ^ k‖ ≤ ‖c‖ * ‖x‖ ^ k :=
+        (norm_smul_le _ _).trans (by gcongr; exact norm_pow_le' x (Nat.pos_of_ne_zero hk))
+    _ = ‖c‖ * R ^ k * (‖x‖ / R) ^ k := by
+        rw [div_pow, mul_assoc, mul_div_cancel₀ _ (pow_pos hR k).ne']
+    _ ≤ R * (‖x‖ / R) ^ k := by gcongr
 
 /-- **Coefficients of a product of linear polynomials.** Over an ultrametric seminormed
 commutative ring with `‖1‖ = 1`, let `p a` be polynomials of degree at most one with
@@ -95,3 +142,97 @@ theorem norm_coeff_prod_le_of_natDegree_le_one {α R : Type*}
     exact hs _ (insert_subset_insert a ht) (by rw [card_insert_of_notMem hat, htk])
 
 end TauCeti
+
+namespace Polynomial
+
+/-- **Evaluating a polynomial with small coefficients.** In an ultrametric normed algebra over
+a normed field, a polynomial with vanishing constant coefficient, vanishing coefficients below
+degree `m` and coefficients bounded by `‖cₖ‖ Rᵏ ≤ R` takes at `x` with `‖x‖ ≤ R` a value of norm
+at most `R (‖x‖ / R) ^ m`. -/
+theorem norm_aeval_le_mul_div_pow {K A : Type*} [NormedField K] [SeminormedRing A]
+    [NormedAlgebra K A] [IsUltrametricDist A] {P : K[X]} {R : ℝ} (hR : 0 < R)
+    (hP0 : P.coeff 0 = 0) {m : ℕ} (hPm : ∀ k < m, P.coeff k = 0)
+    (hP : ∀ k, ‖P.coeff k‖ * R ^ k ≤ R) {x : A} (hx : ‖x‖ ≤ R) :
+    ‖aeval x P‖ ≤ R * (‖x‖ / R) ^ m := by
+  have hS0 : 0 ≤ ‖x‖ / R := by positivity
+  have hS1 : ‖x‖ / R ≤ 1 := (div_le_one hR).mpr hx
+  rw [aeval_eq_sum_range]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun k _ ↦ ?_
+  rcases lt_or_ge k m with hk | hk
+  · simpa [hPm k hk] using by positivity
+  rcases eq_or_ne k 0 with rfl | hk0
+  · simpa [hP0] using by positivity
+  exact (TauCeti.norm_smul_pow_le_mul_div_pow hR hk0 (hP k) x).trans
+    (mul_le_mul_of_nonneg_left (pow_le_pow_of_le_one hS0 hS1 hk) hR.le)
+
+end Polynomial
+
+namespace Polynomial.Monic
+
+variable {E : Type*} [SeminormedCommRing E] [IsDomain E] [NormOneClass E] [IsUltrametricDist E]
+
+/-- **Hasse derivatives near the roots.** If a monic polynomial `P` over an ultrametric seminormed
+integral domain with `‖1‖ = 1` splits, and all its roots lie within `r` of a point `α`, then the
+`d`-th Hasse derivative of `P` at `α` has norm at most `r ^ (natDegree P - d)`. It is the
+coefficient of `Y ^ d` in `P(α + Y) = ∏ (Y - (αᵢ - α))`. -/
+theorem norm_eval_hasseDeriv_le {P : E[X]} (hP : P.Monic) (hsplit : P.Splits) {α : E} {r : ℝ}
+    (hr : ∀ β ∈ P.roots, ‖β - α‖ ≤ r) (d : ℕ) :
+    ‖(hasseDeriv d P).eval α‖ ≤ r ^ (P.natDegree - d) := by
+  have hT : (taylor α P).Monic := by
+    rw [Monic, leadingCoeff_taylor]
+    exact hP
+  -- The roots of `P(α + Y)` are the differences `β - α` for the roots `β` of `P`. The function
+  -- underlying `normRingSeminorm E` is the norm itself.
+  have hroots : ∀ γ ∈ (taylor α P).roots, normRingSeminorm E γ ≤ r := by
+    intro γ hγ
+    have h0 : P.IsRoot (γ + α) := by
+      rw [IsRoot, ← taylor_eval]
+      exact (mem_roots hT.ne_zero).mp hγ
+    have h := hr _ ((mem_roots hP.ne_zero).mpr h0)
+    rwa [add_sub_cancel_right] at h
+  have h := hT.apply_coeff_le_pow_of_card_roots (f := normRingSeminorm E) (norm_one (α := E)).le
+    IsUltrametricDist.isNonarchimedean_norm
+    (splits_iff_card_roots.mp (hsplit.taylor α)) hroots d
+  rwa [taylor_coeff, natDegree_taylor] at h
+
+variable [NormMulClass E]
+
+/-- **A root of a Hasse derivative near a point.** Let `P` be a split monic polynomial over an
+ultrametric seminormed integral domain with a multiplicative norm and `‖1‖ = 1`, all of whose
+roots lie within `r` of a point `α`, and let `d < n = natDegree P`. If the `d`-th Hasse
+derivative of `P` splits and its leading coefficient `n.choose d` is nonzero, then it has a root
+`β` with `‖n.choose d‖ * ‖α - β‖ ^ (n - d) ≤ r ^ (n - d)`. -/
+theorem exists_isRoot_hasseDeriv_norm_sub_le {P : E[X]} (hP : P.Monic) (hsplit : P.Splits)
+    {α : E} {r : ℝ} (hr : ∀ β ∈ P.roots, ‖β - α‖ ≤ r) {d : ℕ} (hd : d < P.natDegree)
+    (hdsplit : (hasseDeriv d P).Splits) (hchoose : (P.natDegree.choose d : E) ≠ 0) :
+    ∃ β, (hasseDeriv d P).IsRoot β ∧
+      ‖(P.natDegree.choose d : E)‖ * ‖α - β‖ ^ (P.natDegree - d) ≤ r ^ (P.natDegree - d) := by
+  classical
+  set Q := hasseDeriv d P
+  set n := P.natDegree
+  have hcoeff : Q.coeff (n - d) = (n.choose d : E) := by
+    rw [hasseDeriv_coeff, Nat.sub_add_cancel hd.le, hP.coeff_natDegree, mul_one]
+  have hdeg : Q.natDegree = n - d :=
+    (natDegree_hasseDeriv_le P d).antisymm (le_natDegree_of_ne_zero (hcoeff ▸ hchoose))
+  have hlead : Q.leadingCoeff = (n.choose d : E) := by rw [Polynomial.leadingCoeff, hdeg, hcoeff]
+  have hne : Q.roots.toFinset.Nonempty := by
+    rw [Multiset.toFinset_nonempty]
+    exact hdsplit.roots_ne_zero (by omega)
+  obtain ⟨β, hβ, hmin⟩ := Q.roots.toFinset.exists_min_image (fun γ ↦ ‖α - γ‖) hne
+  rw [Multiset.mem_toFinset] at hβ
+  refine ⟨β, (mem_roots (ne_zero_of_natDegree_gt (n := 0) (by omega))).mp hβ, ?_⟩
+  have hcard : Multiset.card Q.roots = n - d := by
+    rw [← hdeg, ← splits_iff_card_roots.mp hdsplit]
+  calc ‖(n.choose d : E)‖ * ‖α - β‖ ^ (n - d)
+      = ‖(n.choose d : E)‖ * (Q.roots.map fun _ ↦ ‖α - β‖).prod := by
+        rw [Multiset.map_const', Multiset.prod_replicate, hcard]
+    _ ≤ ‖(n.choose d : E)‖ * (Q.roots.map fun γ ↦ ‖α - γ‖).prod := by
+        gcongr
+        exact Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ ↦ norm_nonneg _)
+          fun γ hγ ↦ hmin γ (Multiset.mem_toFinset.mpr hγ)
+    _ = ‖Q.eval α‖ := by
+        rw [hdsplit.eval_eq_prod_roots, norm_mul, hlead, Multiset.norm_prod, Multiset.map_map,
+          Function.comp_def]
+    _ ≤ r ^ (n - d) := hP.norm_eval_hasseDeriv_le hsplit hr d
+
+end Polynomial.Monic

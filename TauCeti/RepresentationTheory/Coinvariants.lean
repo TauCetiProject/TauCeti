@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Coinvariants
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.RepresentationTheory.OfMulAction
 
 /-!
@@ -70,6 +70,12 @@ element `∑ x ∈ s, single x r` has every orbit sum equal to `r`.
   coinvariant kernel is `range (ρ g - 1)`.
 * `Representation.mem_coinvariantsKer_iff_exists_sum`: for finite `G`, the coinvariant kernel
   is the set of sums `∑ g, (ρ g (y g) - y g)`.
+* `Representation.coinvariantsEquivOfIsTrivial`: the coinvariants of a trivial representation are
+  the representation space.
+* `Representation.coinvariantsKer_eq_span_two_smul_top` and
+  `Representation.coinvariantsEquivQuotientTwo`: if every element acts by `1` or `-1`, and some
+  element acts by `-1`, the coinvariants are `V ⧸ 2V`. This is the zeroth homology of a sign local
+  system, such as the orientation system of a non-orientable bundle.
 * `Representation.mem_range_ofMulAction_sub_id_iff`: an element of `k[X]` lies in the range of
   `ρ g - 1` if and only if its coefficient sums along the orbits of `⟨g⟩` vanish.
 * `MonoidAlgebra.coeff_mapDomainLinearMap_orbitRel_sum_single`: the orbit sums of
@@ -297,6 +303,71 @@ theorem coinvariantsKer_eq_range_of_forall_mem_zpowers (g : G) (hg : ∀ x, x �
     (Subgroup.eq_top_iff' _).2 hg).trans iSup_singleton
 
 end Generators
+
+/-! ### Representations acting by signs -/
+
+section Sign
+
+variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
+  {ρ : Representation k G V}
+
+/-- The coinvariant kernel of a trivial representation is zero. -/
+theorem coinvariantsKer_eq_bot [ρ.IsTrivial] : Coinvariants.ker ρ = ⊥ :=
+  Submodule.span_eq_bot.2 <| by
+    rintro _ ⟨⟨g, v⟩, rfl⟩
+    simp [isTrivial_apply]
+
+/-- If every element of `G` acts by `1` or by `-1`, and some element acts by `-1`, the coinvariant
+kernel is `2 V`: the coinvariants are `V ⧸ 2 V`. -/
+theorem coinvariantsKer_eq_span_two_smul_top (h : ∀ g, ρ g = 1 ∨ ρ g = -1) {g₀ : G}
+    (hg₀ : ρ g₀ = -1) : Coinvariants.ker ρ = Ideal.span {(2 : k)} • ⊤ := by
+  rw [Submodule.ideal_span_singleton_smul]
+  refine le_antisymm (Submodule.span_le.2 ?_) ?_
+  · rintro _ ⟨⟨g, v⟩, rfl⟩
+    refine SetLike.mem_coe.2 ?_
+    rcases h g with hg | hg
+    · simp [hg]
+    · -- Here `ρ g v - v = 2 • (-v)`.
+      exact (Submodule.mem_smul_pointwise_iff_exists _ _ _).2
+        ⟨-v, Submodule.mem_top, by simp [hg, two_smul]; abel⟩
+  · rintro _ ⟨v, -, rfl⟩
+    -- Here `2 • v = ρ g₀ (-v) - (-v)`.
+    exact Coinvariants.mem_ker_of_eq g₀ (-v) _ (by simp [hg₀, two_smul])
+
+variable (ρ) in
+/-- The coinvariants of a trivial representation are the representation space itself. -/
+def coinvariantsEquivOfIsTrivial [ρ.IsTrivial] : ρ.Coinvariants ≃ₗ[k] V :=
+  Submodule.quotEquivOfEqBot _ coinvariantsKer_eq_bot
+
+@[simp]
+theorem coinvariantsEquivOfIsTrivial_mk [ρ.IsTrivial] (v : V) :
+    coinvariantsEquivOfIsTrivial ρ (Coinvariants.mk ρ v) = v :=
+  Submodule.quotEquivOfEqBot_apply_mk _ _ v
+
+@[simp]
+theorem coinvariantsEquivOfIsTrivial_symm_apply [ρ.IsTrivial] (v : V) :
+    (coinvariantsEquivOfIsTrivial ρ).symm v = Coinvariants.mk ρ v :=
+  (LinearEquiv.symm_apply_eq _).2 (coinvariantsEquivOfIsTrivial_mk v).symm
+
+/-- If every element of `G` acts by `1` or by `-1`, and some element acts by `-1`, the coinvariants
+are `V ⧸ 2 V`. -/
+def coinvariantsEquivQuotientTwo (h : ∀ g, ρ g = 1 ∨ ρ g = -1) {g₀ : G} (hg₀ : ρ g₀ = -1) :
+    ρ.Coinvariants ≃ₗ[k] V ⧸ (Ideal.span {(2 : k)} • ⊤ : Submodule k V) :=
+  Submodule.quotEquivOfEq _ _ (coinvariantsKer_eq_span_two_smul_top h hg₀)
+
+@[simp]
+theorem coinvariantsEquivQuotientTwo_mk (h : ∀ g, ρ g = 1 ∨ ρ g = -1) {g₀ : G}
+    (hg₀ : ρ g₀ = -1) (v : V) :
+    coinvariantsEquivQuotientTwo h hg₀ (Coinvariants.mk ρ v) = Submodule.Quotient.mk v :=
+  Submodule.quotEquivOfEq_mk _ _ _ v
+
+@[simp]
+theorem coinvariantsEquivQuotientTwo_symm_mk (h : ∀ g, ρ g = 1 ∨ ρ g = -1) {g₀ : G}
+    (hg₀ : ρ g₀ = -1) (v : V) :
+    (coinvariantsEquivQuotientTwo h hg₀).symm (Submodule.Quotient.mk v) = Coinvariants.mk ρ v :=
+  (LinearEquiv.symm_apply_eq _).2 (coinvariantsEquivQuotientTwo_mk h hg₀ v).symm
+
+end Sign
 
 /-! ### The coinvariant kernel of a representation of a finite monoid -/
 

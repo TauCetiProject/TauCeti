@@ -44,6 +44,8 @@ real interval `[0, 1)` (`TauCeti.SmoothCollar.isCollar`).
 ## Main results
 
 * `TauCeti.SmoothCollar.isOpenEmbedding`: a smooth collar is an open embedding.
+* `TauCeti.SmoothCollar.contMDiff_subtypeVal_boundary`: the boundary inclusion is `C^k`
+  from the given collar, without a global ambient-manifold regularity assumption.
 * `TauCeti.SmoothCollar.boundary_subset_range`: its image contains the boundary.
 * `TauCeti.SmoothCollar.isCollar`: a smooth collar is a topological collar of the boundary
   inclusion.
@@ -70,7 +72,7 @@ namespace TauCeti
 open _root_.TauCeti.EuclideanHalfSpace
 
 variable {n : ℕ} {k : WithTop ℕ∞} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
+  [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
 
 variable (n k M) in
 /-- A `C^k` **smooth collar** of a manifold with boundary `M`, modeled on the Euclidean
@@ -129,6 +131,16 @@ theorem apply_zero (x : ↥((𝓡∂ (n + 1)).boundary M)) : c (x, normalIioOpen
 /-- A smooth collar is `C^k`. -/
 protected theorem contMDiff : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k c :=
   c.isLocalDiffeomorph.contMDiff
+
+/-- A given `C^k` collar makes the boundary inclusion `C^k`, even without assuming that the
+ambient charted space is globally a `C^k` manifold. The canonical boundary immersion theorem
+requires that stronger ambient regularity, so the collar's zero slice is used here. -/
+protected theorem contMDiff_subtypeVal_boundary (c : SmoothCollar n k M) :
+    ContMDiff (𝓡 n) (𝓡∂ (n + 1)) k
+      (Subtype.val : ↥((𝓡∂ (n + 1)).boundary M) → M) := by
+  have h := c.contMDiff.comp (contMDiff_id.prodMk
+    (contMDiff_const (c := normalIioOpensZero one_pos)))
+  exact h.congr fun y ↦ (c.apply_zero y).symm
 
 /-- A smooth collar is continuous. -/
 protected theorem continuous : Continuous c := c.isLocalDiffeomorph.isLocalHomeomorph.continuous
@@ -234,6 +246,15 @@ theorem reparam_apply (p : ↥((𝓡∂ (n + 1)).boundary M) × normalIioOpens 1
 theorem opensRange_reparam_le : (c.reparam ψ hψ hψi hψ0).opensRange ≤ c.opensRange := by
   rintro _ ⟨p, rfl⟩
   exact ⟨(p.1, ψ p.2), rfl⟩
+
+/-- The image of the reparametrized collar is the image under the collar of `∂M × range ψ`. -/
+theorem range_reparam : range (c.reparam ψ hψ hψi hψ0) = c '' (univ ×ˢ range ψ) := by
+  ext y
+  constructor
+  · rintro ⟨p, rfl⟩
+    exact ⟨(p.1, ψ p.2), ⟨mem_univ _, mem_range_self _⟩, rfl⟩
+  · rintro ⟨⟨x, _⟩, ⟨-, s, rfl⟩, rfl⟩
+    exact ⟨(x, s), rfl⟩
 
 /-- Reparametrizing the depth by a surjective `ψ` does not change the image of a collar. -/
 theorem opensRange_reparam (hψs : Surjective ψ) :

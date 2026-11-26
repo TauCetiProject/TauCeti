@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.Polynomial.Eisenstein.LocalRing
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
@@ -30,7 +31,7 @@ The point is that `f ≡ X ^ deg f` modulo the maximal ideal `𝔪` of `A`, so `
 element of `B` is a polynomial in `x` and the constant coefficient `f(0)`, a uniformizer of `A`,
 lies in `x B`. No completeness of `A` and no separability of `f` is needed. Applied to `X ^ n - ϖ`
 for a uniformizer `ϖ`, this describes the integral closure of `A` in the field obtained by
-adjoining an `n`-th root of `ϖ` (`TauCeti.RingTheory.DiscreteValuationRing.Kummer`).
+adjoining an `n`-th root of `ϖ` (`TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic`).
 
 ## Main results
 
@@ -75,7 +76,7 @@ private theorem eq_span_singleton_of_isMaximal_of_monic (hf : f.IsEisensteinAt (
   have hspan := (irreducible_coeff_zero_of_aeval_eq_zero hf hmo hx).maximalIdeal_eq
   -- `P` lies over the maximal ideal of `A`, as `B` is integral over `A`.
   have hunder : P.comap (algebraMap A B) = maximalIdeal A :=
-    eq_maximalIdeal (Ideal.IsMaximal.under A P)
+    Ideal.comap_eq_maximalIdeal_of_isIntegral P
   have hc0 : algebraMap A B (f.coeff 0) ∈ P := by
     rw [← Ideal.mem_comap, hunder, hspan]
     exact Ideal.mem_span_singleton_self _
@@ -139,8 +140,6 @@ private theorem inertiaDeg_eq_one_of_monic (hf : f.IsEisensteinAt (maximalIdeal 
     (Ideal.IsMaximal.ne_top ‹_›) (Subsingleton.elim _ _)
   have : Module.Finite A B :=
     ⟨by simpa [hadj] using (show IsIntegral A x from ⟨f, hmo, hx⟩).fg_adjoin_singleton⟩
-  have : P.LiesOver (maximalIdeal A) :=
-    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩
   let := Ideal.Quotient.field (maximalIdeal A)
   rw [Ideal.inertiaDeg_eq_of_isMaximal (maximalIdeal A) P,
     ← Subalgebra.bot_eq_top_iff_finrank_eq_one, ← Algebra.range_ofId, AlgHom.range_eq_top]

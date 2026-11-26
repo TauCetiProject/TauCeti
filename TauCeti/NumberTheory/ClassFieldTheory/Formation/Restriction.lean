@@ -224,7 +224,7 @@ theorem mk_mem_range_galHom_iff (T : LayerRestriction small big) (u : big.ground
     rw [galHom_mk, QuotientGroup.eq, Subgroup.mem_subgroupOf] at hw
     have hw' : ((w : G)⁻¹ * u) ∈ small.ground :=
       small.top_le_ground (T.same_top ▸ (by simpa using hw))
-    simpa using mul_mem w.2 hw'
+    simpa using mul_mem w.property hw'
   · intro hu
     exact ⟨(⟨u, hu⟩ : small.ground), by rw [galHom_mk]; rfl⟩
 
@@ -455,7 +455,7 @@ theorem exists_refinement (R : LayerRestriction small big) (T : LayerRefinement 
             top_le_ground := T.top_le.trans (R.same_top ▸ small.top_le_ground)
             normal := ⟨fun v hv u ↦ Subgroup.mem_subgroupOf.2 ?_⟩ },
     ⟨rfl, T.top_le.trans R.same_top.ge⟩, ⟨rfl, R.ground_le.trans T.same_ground.le⟩⟩
-  exact big'.conj_mem_top (T.same_ground ▸ R.ground_le u.2) (Subgroup.mem_subgroupOf.1 hv)
+  exact big'.conj_mem_top (T.same_ground ▸ R.ground_le u.property) (Subgroup.mem_subgroupOf.1 hv)
 
 /-- **Restriction commutes with inflation.** For layers `K/F`, `K/E`, `L/F` and `L/E` related by
 the restrictions `R`, `R'` and the refinements `T`, `T'`, inflating from `K/F` to `L/F` and then
@@ -499,7 +499,7 @@ variable (L : NormalLayer G) (H : Subgroup L.Gal)
 /-- The intermediate subgroup `V ≤ W ≤ U` attached to a subgroup `H` of the Galois group `U ⧸ V`:
 the preimage of `H` in `U`, read inside `G`. -/
 def subgroupGround : Subgroup G :=
-  ((QuotientGroup.comapMk'OrderIso L.relativeTop H).1).map L.ground.toSubgroup.subtype
+  ((QuotientGroup.comapMk'OrderIso L.relativeTop H).val).map L.ground.toSubgroup.subtype
 
 /-- Membership in the intermediate subgroup: an element of `U` lies in it exactly when its class
 in the Galois group lies in `H`. -/
@@ -548,7 +548,7 @@ def subgroupLayer : NormalLayer G where
   top := L.top
   top_le_ground := OpenSubgroup.toSubgroup_le.1 (L.top_le_subgroupGround H)
   normal := ⟨fun _v hv w ↦ Subgroup.mem_subgroupOf.2 (L.conj_mem_top
-    (L.subgroupGround_le_ground H w.2) (Subgroup.mem_subgroupOf.1 hv))⟩
+    (L.subgroupGround_le_ground H w.property) (Subgroup.mem_subgroupOf.1 hv))⟩
 
 /-- The ground subgroup of the layer of `H` is the preimage of `H`. -/
 @[simp]
@@ -575,13 +575,13 @@ theorem range_galHom_subgroupRestriction : (L.subgroupRestriction H).galHom.rang
   · rintro ⟨δ, rfl⟩
     induction δ using QuotientGroup.induction_on with
     | H w =>
-      obtain ⟨_, hmem⟩ := (L.mem_subgroupGround H).1 w.2
+      obtain ⟨_, hmem⟩ := (L.mem_subgroupGround H).1 w.property
       rw [LayerRestriction.galHom_mk]
       exact congrArg (fun x : L.ground ↦ (QuotientGroup.mk x : L.Gal)) (Subtype.ext rfl) ▸ hmem
   · intro hγ
     induction γ using QuotientGroup.induction_on with
     | H u =>
-      refine ⟨QuotientGroup.mk ⟨(u : G), (L.mem_subgroupGround H).2 ⟨u.2, hγ⟩⟩, ?_⟩
+      refine ⟨QuotientGroup.mk ⟨(u : G), (L.mem_subgroupGround H).2 ⟨u.property, hγ⟩⟩, ?_⟩
       rw [LayerRestriction.galHom_mk]
       congr 1
 
@@ -689,7 +689,7 @@ theorem subgroupLayer_subgroupLayer (H' : Subgroup (L.subgroupLayer H).Gal) :
       rw [LayerRestriction.galHom_mk, QuotientGroup.eq] at hδg
       have hw : (w : G)⁻¹ * g ∈ L.top := Subgroup.mem_subgroupOf.1 hδg
       have hgmem : g ∈ L.subgroupGround H := by
-        have hmul := mul_mem w.2 (L.top_le_subgroupGround H hw)
+        have hmul := mul_mem w.property (L.top_le_subgroupGround H hw)
         rwa [mul_inv_cancel_left] at hmul
       refine ⟨hgmem, ?_⟩
       have hEq : (QuotientGroup.mk w : (L.subgroupLayer H).Gal) =
@@ -751,7 +751,7 @@ theorem ker_galHom_quotientRefinement : (L.quotientRefinement N).galHom.ker = N 
   | H w =>
     rw [MonoidHom.mem_ker, LayerRefinement.galHom_mk_eq_one_iff, ← OpenSubgroup.mem_toSubgroup,
       top_quotientLayer, mem_subgroupGround]
-    exact ⟨fun ⟨_, hmem⟩ ↦ hmem, fun hmem ↦ ⟨w.2, hmem⟩⟩
+    exact ⟨fun ⟨_, hmem⟩ ↦ hmem, fun hmem ↦ ⟨w.property, hmem⟩⟩
 
 /-- **The degree of the layer of `(U ⧸ V) ⧸ N` is the index of `N`.** -/
 theorem degree_quotientLayer : (L.quotientLayer N).degree = N.index := by

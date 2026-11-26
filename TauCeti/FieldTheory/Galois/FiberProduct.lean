@@ -43,6 +43,8 @@ rather than in either of them, and the restriction maps to it are
   surjective iff the two subextensions meet in `F`.
 * `IntermediateField.mem_range_restrictNormalHomSupProd_iff`: the Galois group of a compositum of
   two finite Galois intermediate fields is the fibre product over their intersection.
+* `IntermediateField.restrictNormalHomSupProd_bijective_of_inf_eq_bot`: when the two fields meet
+  in `F`, it is the full product.
 * `IntermediateField.fixingSubgroup_inf_of_normal_right`: inside any normal extension `E/F`, the
   fixing subgroup of `K ⊓ L` is `K.fixingSubgroup ⊔ L.fixingSubgroup` whenever `L/F` is normal.
 * `IntermediateField.mem_range_restrictNormalHom_prod_restrictNormalHom_iff`: inside any normal
@@ -160,7 +162,7 @@ theorem mem_range_restrictNormalHom_prod_iff_restrictNormalHomOfLE_eq
   constructor
   · intro h
     ext z
-    obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩⟩ := z.2
+    obtain ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩⟩ := z.property
     rw [AlgHom.coe_restrictNormalHomOfLE_apply _ _ _ hx₁,
       AlgHom.coe_restrictNormalHomOfLE_apply _ _ _ hx₂]
     exact h x₁ x₂ (hx₁.trans hx₂.symm)
@@ -215,11 +217,20 @@ theorem mem_range_restrictNormalHomSupProd_iff (σ : Gal(K/F))
   · intro h x₁ x₂ hx
     have hx' : (x₁ : E) = x₂ := congrArg Subtype.val hx
     -- `x₁` and `x₂` are the same element of `K ⊓ L`, seen in `K` and in `L`.
-    let m : ↥(K ⊓ L) := ⟨x₁, x₁.2, hx' ▸ x₂.2⟩
+    let m : ↥(K ⊓ L) := ⟨x₁, x₁.property, hx' ▸ x₂.property⟩
     have hm₂ : inclusion (inf_le_right : K ⊓ L ≤ L) m = x₂ := Subtype.ext hx'
     have hm := key₁ m
     rw [h, key₂, hm₂] at hm
     exact Subtype.ext hm.symm
+
+/-- **Automorphisms of finite Galois fields meeting in `F` extend to the compositum.** If
+`K ⊓ L = ⊥`, the restriction map `Gal(K ⊔ L / F) → Gal(K/F) × Gal(L/F)` is bijective. -/
+theorem restrictNormalHomSupProd_bijective_of_inf_eq_bot (h : K ⊓ L = ⊥) :
+    Function.Bijective (restrictNormalHomSupProd K L) := by
+  refine ⟨restrictNormalHomSupProd_injective K L, fun ⟨σ, τ⟩ ↦ ?_⟩
+  refine (mem_range_restrictNormalHomSupProd_iff K L σ τ).2 (AlgEquiv.ext fun x ↦ ?_)
+  obtain ⟨c, hc⟩ := mem_bot.1 (show (x : E) ∈ (⊥ : IntermediateField F E) from h ▸ x.property)
+  rw [show x = algebraMap F _ c from Subtype.ext hc.symm, AlgEquiv.commutes, AlgEquiv.commutes]
 
 end Compositum
 

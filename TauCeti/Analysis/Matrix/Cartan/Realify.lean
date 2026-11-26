@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Cartan
+public import TauCeti.Analysis.Matrix.Cartan.Basic
 public import TauCeti.Analysis.Matrix.Exponential.Log
 public import TauCeti.Analysis.Matrix.Polar.GLSymplectic
 public import TauCeti.Geometry.Lie.Exponential.Matrix.Symplectic
@@ -54,6 +54,15 @@ The compact factor `{u ∈ O(2n) | u ∈ H}` produced by the generic theorem is 
   comparing its unitary factor with `TauCeti.GLSymplectic.polarUnitary`.
 * `Matrix.GeneralLinearGroup.realifyCartanHomeomorph`: the Cartan decomposition
   `U(n) × {X ∈ Sym | J X = X J} ≃ₜ C_ℝ`.
+* `TauCeti.GLSymplectic.leftCartanHomeomorph`: the Cartan decomposition of `Sp(2n, ℝ)` in the
+  other factor order, `(X, U) ↦ exp X * realify U`, which is the polar decomposition `A = P U` with
+  `P = exp X = √(A Aᵀ)` (`TauCeti.GLSymplectic.exp_leftCartanHomeomorph_symm_apply_fst`) and `U`
+  the orthogonal polar factor
+  (`TauCeti.GLSymplectic.realify_leftCartanHomeomorph_symm_apply_snd`).
+  It is obtained from `TauCeti.GLSymplectic.cartanHomeomorph` by inversion,
+  `(realify U⁻¹ * exp (-X))⁻¹ = exp X * realify U`.
+* `Matrix.GeneralLinearGroup.sqrt_mul_star_eq_exp_and_polarUnitary_eq_realify`: a factorization
+  `A = exp X * realify U` with `X` symmetric and `U` unitary is the polar decomposition of `A`.
 
 ## References
 
@@ -106,10 +115,10 @@ def cartanHomeomorph :
         (X : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈ LieAlgebra.Symplectic.sp n ℝ} ≃ₜ
       {x : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
         ∀ t : ℝ, expUnit (t • (x : Matrix (n ⊕ n) (n ⊕ n) ℝ)) ∈ GLSymplectic n ℝ} :=
-    { toFun X := ⟨X.1, (hline _).2 X.2⟩
-      invFun x := ⟨x.1, (hline _).1 x.2⟩
-      continuous_toFun := continuous_subtype_val.subtype_mk _
-      continuous_invFun := continuous_subtype_val.subtype_mk _ }
+    { toFun X := ⟨X.val, (hline _).2 X.property⟩
+      invFun x := ⟨x.val, (hline _).1 x.property⟩
+      continuous_toFun := continuous_subtypeVal.subtype_mk _
+      continuous_invFun := continuous_subtypeVal.subtype_mk _ }
   exact ((realifyUnitaryHomeomorph inf_unitarySubgroup).prodCongr eP).trans
     ((GLSymplectic n ℝ).cartanHomeomorph (fun _ ↦ star_mem) fun x hx h ↦ (hline x).2
       ((IsHermitian.exp_mem_symplecticGroup_iff hx.isHermitian).1 (by simpa using h)))
@@ -194,10 +203,10 @@ def realifyCartanHomeomorph :
         Commute (J n ℝ) (X : Matrix (n ⊕ n) (n ⊕ n) ℝ)} ≃ₜ
       {x : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
         ∀ t : ℝ, expUnit (t • (x : Matrix (n ⊕ n) (n ⊕ n) ℝ)) ∈ (realify n ℂ).range} :=
-    { toFun X := ⟨X.1, (hline (isHermitian_iff_isSelfAdjoint.2 X.1.2)).2 X.2⟩
-      invFun x := ⟨x.1, (hline (isHermitian_iff_isSelfAdjoint.2 x.1.2)).1 x.2⟩
-      continuous_toFun := continuous_subtype_val.subtype_mk _
-      continuous_invFun := continuous_subtype_val.subtype_mk _ }
+    { toFun X := ⟨X.val, (hline (isHermitian_iff_isSelfAdjoint.2 X.val.property)).2 X.property⟩
+      invFun x := ⟨x.val, (hline (isHermitian_iff_isSelfAdjoint.2 x.val.property)).1 x.property⟩
+      continuous_toFun := continuous_subtypeVal.subtype_mk _
+      continuous_invFun := continuous_subtypeVal.subtype_mk _ }
   exact ((realifyUnitaryHomeomorph (inf_comm (realify n ℂ).range _ ▸
       unitarySubgroup_inf_range_realify)).prodCongr eP).trans
     ((realify n ℂ).range.cartanHomeomorph (fun _ ↦ star_mem_range_realify) fun x hx h ↦
@@ -240,4 +249,124 @@ theorem coe_realifyCartanHomeomorph_symm_apply_snd (A : (realify n ℂ).range) :
   let := Matrix.l2OpNormedAlgebraReal (n := n ⊕ n) (𝕜 := ℝ)
   simp [realifyCartanHomeomorph, CFC.log]
 
+/-- A factorization `A = exp X * realify U` of a real invertible matrix, with `X` symmetric and `U`
+complex unitary, is its polar decomposition `A = P U`: the positive factor `√(A Aᵀ)` is `exp X`
+and the orthogonal factor is `realify U`. -/
+theorem sqrt_mul_star_eq_exp_and_polarUnitary_eq_realify {A : GL (n ⊕ n) ℝ}
+    {X : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hX : X.IsHermitian) (U : unitaryGroup n ℂ)
+    (hA : (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) = NormedSpace.exp X * (U : Matrix n n ℂ).realify) :
+    CFC.sqrt ((A : Matrix (n ⊕ n) (n ⊕ n) ℝ) * star (A : Matrix (n ⊕ n) (n ⊕ n) ℝ)) =
+        NormedSpace.exp X ∧
+      (A.polarUnitary : Matrix (n ⊕ n) (n ⊕ n) ℝ) = (U : Matrix n n ℂ).realify := by
+  open scoped Matrix.Norms.L2Operator in
+  let := Matrix.l2OpNormedAlgebraReal (n := n ⊕ n) (𝕜 := ℝ)
+  have hU : (U : Matrix n n ℂ).realify ∈ unitary (Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
+    realify_mem_orthogonalGroup_iff.2 U.property
+  have h := (Units.mul_eq_iff_sqrt_mul_star_eq_and_polarUnitary_eq A
+    (nonneg_iff_posSemidef.2 hX.posDef_exp.posSemidef) (v := ⟨_, hU⟩)).1 hA.symm
+  exact ⟨h.1, congrArg Subtype.val h.2⟩
+
 end Matrix.GeneralLinearGroup
+
+/-! ### The Cartan decomposition of `Sp(2n, ℝ)` in the order `A = exp X * U` -/
+
+namespace TauCeti.GLSymplectic
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+variable (n) in
+/-- **The Cartan decomposition of the real symplectic group in the polar order `A = P U`**: the
+map `(X, U) ↦ exp X * realify U` is a homeomorphism from the product of the symmetric matrices in
+the symplectic Lie algebra `𝔰𝔭(2n, ℝ)` and the unitary group `U(n)` onto `Sp(2n, ℝ)`.
+
+For `A ∈ Sp(2n, ℝ)`, `exp X` is the positive polar factor `√(A Aᵀ)`
+(`TauCeti.GLSymplectic.exp_leftCartanHomeomorph_symm_apply_fst`) and `realify U` is the
+orthogonal polar factor (`TauCeti.GLSymplectic.realify_leftCartanHomeomorph_symm_apply_snd`).
+Compare `TauCeti.GLSymplectic.cartanHomeomorph`, the other factor order `A = U exp X'`, which has
+the same unitary factor and `exp X' = √(Aᵀ A)`. -/
+def leftCartanHomeomorph :
+    {X : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
+        (X : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈ LieAlgebra.Symplectic.sp n ℝ} × unitaryGroup n ℂ ≃ₜ
+      GLSymplectic n ℝ :=
+  -- `(X, U) ↦ (realify U⁻¹ * exp (-X))⁻¹`
+  ((Homeomorph.prodComm _ _).trans ((Homeomorph.inv _).prodCongr
+    ((Homeomorph.neg _).subtype fun X ↦ by simp [neg_mem_iff]))).trans
+    ((cartanHomeomorph n).trans (Homeomorph.inv _))
+
+/-- The Cartan decomposition map of `Sp(2n, ℝ)` in the polar order sends `(X, U)` to
+`exp X * realify U`. -/
+@[simp]
+theorem val_leftCartanHomeomorph_apply
+    (p : {X : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ) //
+      (X : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∈ LieAlgebra.Symplectic.sp n ℝ} × unitaryGroup n ℂ) :
+    ((leftCartanHomeomorph n p : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+      NormedSpace.exp ((p.1 : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :
+          Matrix (n ⊕ n) (n ⊕ n) ℝ) *
+        (p.2 : Matrix n n ℂ).realify := by
+  simp only [leftCartanHomeomorph, Homeomorph.trans_apply, Homeomorph.coe_prodComm,
+    Homeomorph.coe_prodCongr, Prod.map_fst, Prod.map_snd, Prod.fst_swap, Prod.snd_swap,
+    Homeomorph.coe_inv, Subgroup.coe_inv, Matrix.coe_units_inv, val_cartanHomeomorph_apply,
+    Homeomorph.subtype_apply_coe, Homeomorph.coe_neg, NegMemClass.coe_neg]
+  refine Matrix.inv_eq_right_inv ?_
+  have hU : ((p.2⁻¹ : unitaryGroup n ℂ) : Matrix n n ℂ).realify * (p.2 : Matrix n n ℂ).realify =
+      1 := by
+    rw [← realify_mul, ← Submonoid.coe_mul, inv_mul_cancel, Submonoid.coe_one, realify_one]
+  -- `exp (-X) * exp X = 1`
+  have hX : NormedSpace.exp (-((p.1 : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :
+      Matrix (n ⊕ n) (n ⊕ n) ℝ)) * NormedSpace.exp ((p.1 : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :
+        Matrix (n ⊕ n) (n ⊕ n) ℝ) = 1 := by
+    rw [Matrix.exp_neg]
+    exact Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).1 (Matrix.isUnit_exp _))
+  rw [Matrix.mul_assoc, ← Matrix.mul_assoc (NormedSpace.exp _), hX, Matrix.one_mul, hU]
+
+/-- The two factors of the Cartan decomposition of `A ∈ Sp(2n, ℝ)` in the polar order are its polar
+factors. -/
+private theorem polar_leftCartanHomeomorph_symm_apply (A : GLSymplectic n ℝ) :
+    CFC.sqrt (((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
+        star ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) =
+      NormedSpace.exp ((((leftCartanHomeomorph n).symm A).1 :
+        selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) : Matrix (n ⊕ n) (n ⊕ n) ℝ) ∧
+    ((A : GL (n ⊕ n) ℝ).polarUnitary : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+      ((((leftCartanHomeomorph n).symm A).2 : unitaryGroup n ℂ) : Matrix n n ℂ).realify := by
+  refine sqrt_mul_star_eq_exp_and_polarUnitary_eq_realify
+    (isHermitian_iff_isSelfAdjoint.2 ((leftCartanHomeomorph n).symm A).1.val.property) _ ?_
+  rw [← val_leftCartanHomeomorph_apply, Homeomorph.apply_symm_apply]
+
+/-- The exponential of the symmetric factor of the Cartan decomposition of `A ∈ Sp(2n, ℝ)` in the
+polar order is the positive polar factor `√(A Aᵀ)`. -/
+theorem exp_leftCartanHomeomorph_symm_apply_fst (A : GLSymplectic n ℝ) :
+    NormedSpace.exp ((((leftCartanHomeomorph n).symm A).1 :
+        selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+      CFC.sqrt (((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
+        star ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) :=
+  (polar_leftCartanHomeomorph_symm_apply A).1.symm
+
+/-- The symmetric factor of the Cartan decomposition of `A ∈ Sp(2n, ℝ)` in the polar order is the
+logarithm of the positive polar factor `√(A Aᵀ)`. -/
+@[simp]
+theorem coe_leftCartanHomeomorph_symm_apply_fst (A : GLSymplectic n ℝ) :
+    ((((leftCartanHomeomorph n).symm A).1 : selfAdjoint (Matrix (n ⊕ n) (n ⊕ n) ℝ)) :
+        Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+      cfc Real.log (CFC.sqrt (((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
+        star ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ))) := by
+  rw [← exp_leftCartanHomeomorph_symm_apply_fst,
+    (isHermitian_iff_isSelfAdjoint.2 ((leftCartanHomeomorph n).symm A).1.val.property).cfc_log_exp]
+
+/-- The unitary factor of the Cartan decomposition of `A ∈ Sp(2n, ℝ)` in the polar order
+realifies to the orthogonal polar factor of `A`. -/
+@[simp]
+theorem realify_leftCartanHomeomorph_symm_apply_snd (A : GLSymplectic n ℝ) :
+    ((((leftCartanHomeomorph n).symm A).2 : unitaryGroup n ℂ) : Matrix n n ℂ).realify =
+      ((A : GL (n ⊕ n) ℝ).polarUnitary : Matrix (n ⊕ n) (n ⊕ n) ℝ) :=
+  (polar_leftCartanHomeomorph_symm_apply A).2.symm
+
+/-- The unitary factor of the Cartan decomposition of `A ∈ Sp(2n, ℝ)` in the polar order is the
+orthogonal polar factor `TauCeti.GLSymplectic.polarUnitary A`, under the identification
+`Matrix.unitaryGroupEquivSymplecticInfOrthogonal` of `U(n)` with `Sp(2n, ℝ) ∩ O(2n)`. -/
+theorem unitaryGroupEquivSymplecticInfOrthogonal_leftCartanHomeomorph_symm_apply_snd
+    (A : GLSymplectic n ℝ) :
+    unitaryGroupEquivSymplecticInfOrthogonal ((leftCartanHomeomorph n).symm A).2 =
+      polarUnitary A :=
+  Subtype.ext (Units.ext (by simp))
+
+end TauCeti.GLSymplectic

@@ -119,7 +119,8 @@ variable {P Q : C} {p : preadditiveYoneda.obj P ⟶ F} {q : preadditiveYoneda.ob
 /-- A functor with a projective cover is finitely generated. -/
 theorem isFinitelyGeneratedFunctor (hp : IsRepresentableProjectiveCover p) :
     IsFinitelyGeneratedFunctor F :=
-  isFinitelyGeneratedFunctor_def.2 ⟨P, p, hp.epi⟩
+  have := hp.epi
+  (isFinitelyGeneratedFunctor_preadditiveYoneda_obj P).of_epi p
 
 /-- **Rigidity of projective covers.** A morphism `u : P ⟶ Q` between the sources of two
 projective covers of `F` that commutes with them is an isomorphism. -/
@@ -326,7 +327,7 @@ private theorem exists_isRepresentableProjectiveCover_of_biproduct (n : ℕ) :
     classical
     obtain ⟨j, hj⟩ := exists_epi_of_not_isRepresentableProjectiveCover P hP p hmin
     exact ih _ (hn ▸ Fintype.card_subtype_lt (x := j) (by simp))
-      (Subtype.restrict (· ≠ j) P) rfl (fun k ↦ hP k.1) _ hj
+      (Subtype.restrict (· ≠ j) P) rfl (fun k ↦ hP k.val) _ hj
 
 /-- A quotient of the representable functor `(-, P₁ ⊞ ⋯ ⊞ Pₙ)` of a finite biproduct of objects
 with local endomorphism rings has a projective cover. -/
@@ -341,7 +342,7 @@ finitely generated functor `F : Cᵒᵖ ⥤ AddCommGrpCat` has a projective cove
 theorem IsKrullSchmidt.exists_isRepresentableProjectiveCover [IsKrullSchmidt C]
     (hF : IsFinitelyGeneratedFunctor F) :
     ∃ (P : C) (p : preadditiveYoneda.obj P ⟶ F), IsRepresentableProjectiveCover p := by
-  obtain ⟨Y, p, hp⟩ := isFinitelyGeneratedFunctor_def.1 hF
+  obtain ⟨Y, p, hp⟩ := (isFinitelyGeneratedFunctor_iff_exists_single _).1 hF
   obtain ⟨n, P, hP, ⟨e⟩⟩ := IsKrullSchmidt.exists_iso_biproduct Y
   exact exists_isRepresentableProjectiveCover_of_epi_biproduct P hP
     (preadditiveYoneda.map e.inv ≫ p)

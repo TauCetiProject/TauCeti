@@ -19,7 +19,7 @@ import TauCeti.LinearAlgebra.Isomorphisms
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.Finiteness.Finsupp
 import TauCeti.RingTheory.Localization.Module
-import TauCeti.RingTheory.Support
+import TauCeti.RingTheory.Support.Basic
 
 /-!
 # Pseudo-isomorphisms
@@ -54,6 +54,8 @@ Chapter V, §3, Exercise 1).
   pseudo-isomorphism.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.restrict_torsion`: over a noetherian domain, a
   pseudo-isomorphism restricts to a pseudo-isomorphism between the torsion submodules.
+* `TauCeti.Iwasawa.IsPseudoIsomorphism.isTorsion_iff`: over a domain, the source of a
+  pseudo-isomorphism is torsion iff its target is.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.finite_iff`: over a noetherian ring, the source of a
   pseudo-isomorphism is finitely generated iff its target is.
 * `TauCeti.Iwasawa.isPseudoIsomorphism_lsmul`: multiplication by `a` on a finitely generated
@@ -225,13 +227,30 @@ theorem IsPseudoIsomorphism.restrict_torsion [IsDomain A] [IsNoetherianRing A] {
     rw [Submodule.mkQ_apply, Submodule.mapQ_apply, Submodule.Quotient.mk_eq_zero] at hx
     rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
     obtain ⟨m, hm⟩ := hx
-    obtain ⟨a, ha⟩ := (Submodule.mem_torsion_iff _).mp t.2
+    obtain ⟨a, ha⟩ := (Submodule.mem_torsion_iff _).mp t.property
     obtain ⟨b, hb⟩ := hf.isPseudoNull_ker.isTorsion (x := ⟨a • m, by
       rw [LinearMap.mem_ker, LinearMap.map_smul_of_tower, hm]
       exact congr(($ha : N))⟩)
     refine ⟨⟨m, (Submodule.mem_torsion_iff m).mpr ⟨b * a, ?_⟩⟩, Subtype.ext hm⟩
     rw [mul_smul]
     exact congr(($hb : M))
+
+/-- Over a domain, the source of a pseudo-isomorphism is torsion iff its target is: the kernel
+and the cokernel are pseudo-null, hence torsion. -/
+theorem IsPseudoIsomorphism.isTorsion_iff [IsDomain A] {f : M →ₗ[A] N}
+    (hf : IsPseudoIsomorphism f) : Module.IsTorsion A M ↔ Module.IsTorsion A N := by
+  refine ⟨fun hM n ↦ ?_, fun hN m ↦ ?_⟩
+  · -- Some `a` moves `n` into the range of `f`, and some `b` kills the preimage.
+    obtain ⟨a, ha⟩ := hf.isPseudoNull_coker.isTorsion (x := Submodule.Quotient.mk n)
+    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero] at ha
+    obtain ⟨m, hm⟩ := ha
+    obtain ⟨b, hb⟩ := hM (x := m)
+    exact ⟨b * a, by rw [mul_smul, ← hm, ← LinearMap.map_smul_of_tower, hb, map_zero]⟩
+  · -- Some `a` moves `m` into the kernel of `f`, and some `b` kills it there.
+    obtain ⟨a, ha⟩ := hN (x := f m)
+    obtain ⟨b, hb⟩ := hf.isPseudoNull_ker.isTorsion (x := ⟨a • m, by
+      rw [LinearMap.mem_ker, LinearMap.map_smul_of_tower, ha]⟩)
+    exact ⟨b * a, by rw [mul_smul]; exact congr(($hb : M))⟩
 
 /-- The multiplication criterion: over a noetherian ring, multiplication by `a` on a finitely
 generated module `M` is a pseudo-isomorphism if `a` lies in no prime of height at most one in the
@@ -346,7 +365,8 @@ is a pseudo-isomorphism iff its kernel and cokernel are finite. -/
 theorem isPseudoIsomorphism_iff_finite [IsLocalRing A] [IsNoetherianRing A]
     [Finite (IsLocalRing.ResidueField A)] (hdim : ringKrullDim A = 2) {f : M →ₗ[A] N} :
     IsPseudoIsomorphism f ↔ Finite (LinearMap.ker f) ∧ Finite (N ⧸ LinearMap.range f) :=
-  ⟨fun hf ↦ ⟨(isPseudoNull_iff_finite hdim).mp hf.1, (isPseudoNull_iff_finite hdim).mp hf.2⟩,
+  ⟨fun hf ↦ ⟨(isPseudoNull_iff_finite hdim).mp hf.isPseudoNull_ker,
+      (isPseudoNull_iff_finite hdim).mp hf.isPseudoNull_coker⟩,
     fun ⟨h₁, h₂⟩ ↦ ⟨(isPseudoNull_iff_finite hdim).mpr h₁, (isPseudoNull_iff_finite hdim).mpr h₂⟩⟩
 
 section EulerQuotient
@@ -451,7 +471,7 @@ example (p : ℕ) [Fact p.Prime] :
   · -- Otherwise a height-one prime `𝔭` minimal over `(m)` lies in the support of `coker g`.
     have hmu : Ideal.span {m} ≠ ⊤ := by
       rw [Ne, Ideal.span_singleton_eq_top]
-      exact (mem_maximalIdeal _).mp (g 1).2
+      exact (mem_maximalIdeal _).mp (g 1).property
     obtain ⟨𝔭, h𝔭⟩ := Ideal.nonempty_minimalPrimes hmu
     have := h𝔭.1.1
     have hht := Ideal.height_le_one_of_isPrincipal_of_mem_minimalPrimes _ _ h𝔭

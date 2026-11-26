@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import TauCeti.NumberTheory.HeckeRing.Associativity
+public import TauCeti.NumberTheory.HeckeRing.GLn.FractionRing
 public import TauCeti.NumberTheory.HeckeRing.GLn.TransposeAntiInvolution
 public import TauCeti.NumberTheory.HeckeRing.Map.SubgroupExtension
 public import TauCeti.NumberTheory.HeckeRing.Map.Submonoid
@@ -46,7 +47,8 @@ and packages the central scalar units `T(c, …, c)` that clear denominators acr
 * `HeckeRing.GLn.exists_pos_natDiagGL_mul_mem_intEntries`,
   `HeckeRing.GLn.exists_pos_natDiagGL_mul_mem_posDetInt`: clearing denominators by `diag(c, …, c)`.
 * `HeckeRing.GLn.commensurator_SLnZ_eq_top`, `HeckeRing.GLn.commensurator_GLnZ_eq_top`: both
-  arithmetic subgroups have commensurator `⊤` in `GL_n(ℚ)`.
+  arithmetic subgroups have commensurator `⊤` in `GL_n(ℚ)`; the second is the case `ℤ ⊂ ℚ` of
+  `HeckeRing.GLn.commensurator_integralGL_eq_top`, via `HeckeRing.GLn.GLnZ_eq_integralGL`.
 * `HeckeRing.GLn.isUnit_integralToRational_of_mem_scalarSubmonoid`,
   `HeckeRing.GLn.exists_mul_mem_scalarSubmonoid_eq`: `integralToRational n` sends
   `scalarSubmonoid n` to units and clears denominators across `RationalHeckeRing n`.
@@ -147,9 +149,16 @@ theorem commensurator_SLnZ_eq_top : commensurator (SLnZ n) = ⊤ := by
   simpa only [inv_mul_cancel_left] using
     (commensurator (SLnZ n)).mul_mem ((commensurator (SLnZ n)).inv_mem h1) h2
 
-/-- **The commensurator of `GL_n(ℤ)` in `GL_n(ℚ)` is the whole group.** -/
-theorem commensurator_GLnZ_eq_top : commensurator (GLnZ n) = ⊤ :=
-  (commensurable_GLnZ_SLnZ n).eq.trans (commensurator_SLnZ_eq_top n)
+/-- `GL_n(ℤ)` is the subgroup `integralGL ℤ ℚ (Fin n)` of integral points of `GL_n(ℚ)`. -/
+theorem GLnZ_eq_integralGL : GLnZ n = integralGL ℤ ℚ (Fin n) := by
+  ext g
+  rw [mem_GLnZ_iff, integralGL, MonoidHom.mem_range, algebraMap_int_eq]
+
+/-- **The commensurator of `GL_n(ℤ)` in `GL_n(ℚ)` is the whole group**: the case `ℤ ⊂ ℚ` of
+`commensurator_integralGL_eq_top`. -/
+theorem commensurator_GLnZ_eq_top : commensurator (GLnZ n) = ⊤ := by
+  rw [GLnZ_eq_integralGL]
+  exact commensurator_integralGL_eq_top
 
 /-- The positive-determinant rational Hecke triple `(SL_n(ℤ), GL_n^+(ℚ))`. -/
 instance instIsHeckeTripleGLPosSLnZ :
@@ -277,7 +286,7 @@ noncomputable def rationalToFullRingEquiv (R : Type*) [Semiring R] :
       𝕋 (⊤ : Submonoid (GL (Fin n) ℚ)) (GLnZ n) R :=
   HeckeCosetModule.mapSubgroupRingEquiv R (SLnZ_eq_GLnZ_inf_glpos n) le_top le_rfl
     (fun δ' ↦ exists_mem_GLnZ_mul_mem_glpos n (δ' : GL (Fin n) ℚ))
-    (fun g _ hu ↦ exists_mem_SLnZ_inv_mul_mem_conj_GLnZ n g.2 hu)
+    (fun g _ hu ↦ exists_mem_SLnZ_inv_mul_mem_conj_GLnZ n g.property hu)
 
 /-- The rational-to-full Hecke ring isomorphism over `ℤ`. -/
 noncomputable abbrev rationalToFullEquiv : RationalHeckeRing n ≃+* FullHeckeRing n :=
@@ -340,7 +349,7 @@ theorem transposeRationalAntiInvolution_onHeckeCoset_eq_self
     (transposeRationalAntiInvolution n).onHeckeCoset D = D := by
   induction D using HeckeCoset.induction with | h g =>
   rw [(transposeRationalAntiInvolution n).onHeckeCoset_mk]
-  obtain ⟨c, -, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
+  obtain ⟨c, -, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.property
   have hbar_int := (transposeAntiInvolution n).bar_mem_doubleCoset_self
     (transposeAntiInvolution_onHeckeCoset_eq_self n) ⟨natDiagGL n (fun _ ↦ c) * g, hcg⟩
   rw [transposeAntiInvolution_bar] at hbar_int
@@ -413,7 +422,7 @@ theorem single_mul_natDiagGL_const (g : (Matrix.GLPos (Fin n) ℚ).toSubmonoid) 
         (HeckeCoset.mk (SLnZ n) (SLnZ n)
           ⟨natDiagGL n (fun _ ↦ c), posDetInt_le_glpos n (natDiagGL_mem_posDetInt n _)⟩) 1 =
       HeckeCosetModule.single ℤ (HeckeCoset.mk (SLnZ n) (SLnZ n)
-        ⟨(g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c), (Matrix.GLPos (Fin n) ℚ).mul_mem g.2
+        ⟨(g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c), (Matrix.GLPos (Fin n) ℚ).mul_mem g.property
           (posDetInt_le_glpos n (natDiagGL_mem_posDetInt n _))⟩) 1 :=
   HeckeCosetModule.single_mul_single_of_mem_normalizer_right (x := g)
     (y := ⟨natDiagGL n (fun _ ↦ c), posDetInt_le_glpos n (natDiagGL_mem_posDetInt n _)⟩) ℤ
@@ -513,7 +522,7 @@ theorem exists_mul_mem_scalarSubmonoid_eq (z : RationalHeckeRing n) :
       rw [← HeckeCosetModule.smul_single_one ℤ D m]
       refine sat.zsmul_mem ?_ m
       induction D using HeckeCoset.induction with | h g =>
-      obtain ⟨c, hc, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.2
+      obtain ⟨c, hc, hcg⟩ := exists_pos_natDiagGL_mul_mem_posDetInt n g.property
       have hgc : (g : GL (Fin n) ℚ) * natDiagGL n (fun _ ↦ c) ∈ posDetInt n :=
         natDiagGL_const_comm n c g ▸ hcg
       refine Subalgebra.mem_toSubring.mpr (Subalgebra.mem_saturation_iff.mpr

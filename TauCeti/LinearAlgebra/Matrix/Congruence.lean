@@ -36,6 +36,13 @@ one factor after the other.
   `Matrix.one_add_vecMulVec_single_add_single_mul_mul_transpose_apply` — the determinant and
   entries of congruence under the basis substitution `r ↦ r + a + b`.
 * `Matrix.transpose_map_mul_mul_mul` — `((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`.
+* `Matrix.mul_mul_transpose_apply` — entrywise expansion of `(P * M * Qᵀ) i j` as a double sum.
+* `Matrix.mul_mul_mul_transpose_sub_mul_smul` and
+  `Matrix.mul_mul_transpose_sub_smul_of_mul_eq_one`: the similitude defect
+  `f(X, r) = X D Xᵀ - r D` of a product and of a left inverse, the identities behind closure of
+  similitude groups under multiplication and inversion.
+* `Matrix.transpose_mul_mul_eq_smul_of_mul_mul_transpose_eq_smul`: for a form with `J * J = -1`,
+  a similitude `M J Mᵀ = r J` with unit multiplier satisfies `Mᵀ J M = r J`.
 
 ## References
 
@@ -115,6 +122,66 @@ theorem transpose_map_mul_mul_mul {l m n R : Type*} [Fintype l] [Fintype m] [Com
     ((M * N).map σ)ᵀ * Q * (M * N) = (N.map σ)ᵀ * ((M.map σ)ᵀ * Q * M) * N := by
   rw [Matrix.map_mul, transpose_mul]
   simp only [Matrix.mul_assoc]
+
+/-- Entrywise expansion of a bilinear congruence `(P * M * Qᵀ) i j` as a double sum over the
+inner indices. -/
+theorem mul_mul_transpose_apply {l m n p R : Type*} [Fintype m] [Fintype n]
+    [NonUnitalNonAssocSemiring R] (P : Matrix l m R) (M : Matrix m n R) (Q : Matrix p n R)
+    (i : l) (j : p) :
+    (P * M * Qᵀ) i j = ∑ x : m, ∑ y : n, P i x * M x y * Q j y := by
+  simp only [Matrix.mul_apply, transpose_apply, Finset.sum_mul]
+  exact Finset.sum_comm
+
+/-- Congruence by a left inverse undoes congruence: if `W X = 1`, then `W (X D Xᵀ) Wᵀ = D`. -/
+theorem mul_mul_mul_transpose_mul_transpose_of_mul_eq_one {n R : Type*} [Fintype n]
+    [DecidableEq n] [CommSemiring R] {W X : Matrix n n R} (hW : W * X = 1) (D : Matrix n n R) :
+    W * (X * D * Xᵀ) * Wᵀ = D := by
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hW, Matrix.one_mul, Matrix.mul_assoc,
+    ← Matrix.transpose_mul, hW, Matrix.transpose_one, Matrix.mul_one]
+
+section Similitude
+
+variable {n R : Type*} [Fintype n] [CommRing R]
+
+/-- **The similitude defect of a product**: for `f(X, r) = X D Xᵀ - r D`,
+`f(Y Z, r₁ r₂) = Y f(Z, r₂) Yᵀ + r₂ f(Y, r₁)`. -/
+theorem mul_mul_mul_transpose_sub_mul_smul (Y Z D : Matrix n n R) (r₁ r₂ : R) :
+    Y * Z * D * (Y * Z)ᵀ - (r₁ * r₂) • D =
+      Y * (Z * D * Zᵀ - r₂ • D) * Yᵀ + r₂ • (Y * D * Yᵀ - r₁ • D) := by
+  rw [Matrix.transpose_mul, Matrix.mul_sub, Matrix.sub_mul, smul_sub, Matrix.mul_smul,
+    Matrix.smul_mul, smul_smul, mul_comm r₂ r₁]
+  simp only [Matrix.mul_assoc]
+  abel
+
+/-- **The similitude defect of a left inverse**: for `f(X, r) = X D Xᵀ - r D`, if `W X = 1` and
+`s r = 1`, then `f(W, s) = -(s W f(X, r) Wᵀ)`. -/
+theorem mul_mul_transpose_sub_smul_of_mul_eq_one [DecidableEq n] {W X : Matrix n n R} {r s : R}
+    (hW : W * X = 1) (hs : s * r = 1) (D : Matrix n n R) :
+    W * D * Wᵀ - s • D = -(s • (W * (X * D * Xᵀ - r • D) * Wᵀ)) := by
+  rw [Matrix.mul_sub, Matrix.sub_mul, mul_mul_mul_transpose_mul_transpose_of_mul_eq_one hW,
+    Matrix.mul_smul, Matrix.smul_mul, smul_sub, smul_smul, hs, one_smul, neg_sub]
+
+/-- **Row and column similitudes agree for a form squaring to `-1`**: if `J * J = -1` and
+`M J Mᵀ = r J` with `r` a unit, then `Mᵀ J M = r J`. -/
+theorem transpose_mul_mul_eq_smul_of_mul_mul_transpose_eq_smul [DecidableEq n]
+    {J M : Matrix n n R} (hJ : J * J = -1) (r : Rˣ) (h : M * J * Mᵀ = (r : R) • J) :
+    Mᵀ * J * M = (r : R) • J := by
+  -- `M (J Mᵀ J) = r J J = -r`, so `-r⁻¹ J Mᵀ J` is a right, hence a left, inverse of `M`.
+  have hright : M * (-((r⁻¹ : Rˣ) : R) • (J * Mᵀ * J)) = 1 := by
+    rw [Matrix.mul_smul, ← Matrix.mul_assoc, ← Matrix.mul_assoc, h]
+    simp [hJ, smul_smul]
+  have hleft := mul_eq_one_comm.mp hright
+  rw [Matrix.smul_mul] at hleft
+  -- Cancelling the unit `-r⁻¹`: `J Mᵀ J M = -r`.
+  have hJM : J * Mᵀ * J * M = (-(r : R)) • (1 : Matrix n n R) := by
+    rw [← hleft, smul_smul, neg_mul_neg, Units.mul_inv, one_smul]
+  calc Mᵀ * J * M
+      = -(J * (J * Mᵀ * J * M)) := by
+        simp only [← Matrix.mul_assoc, hJ, Matrix.neg_mul, Matrix.one_mul, neg_neg]
+    _ = (r : R) • J := by
+        rw [hJM, Matrix.mul_smul, Matrix.mul_one, neg_smul, neg_neg]
+
+end Similitude
 
 section BasisSubstitution
 

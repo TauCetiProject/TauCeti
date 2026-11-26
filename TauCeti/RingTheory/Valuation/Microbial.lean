@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.ArchimedeanDensely
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.Algebra.Order.Group.ConvexSubgroup
 public import TauCeti.RingTheory.Valuation.CharacteristicGroup
+import TauCeti.Algebra.Order.Hom.MonoidWithZero
 import TauCeti.RingTheory.Valuation.CofinalIdeal.Basic
 
 /-!
@@ -118,12 +119,8 @@ theorem isMicrobial_of_cofinalValue {v : Valuation R Γ₀} {b : R} (hb0 : v b �
   have huImage : OrderMonoidIso.unitsWithZero u =
       valueGroup.mk (v : R →*₀ Γ₀) 1 b (by simp) hb0 := by
     apply WithZero.coe_injective
-    calc
-      ((OrderMonoidIso.unitsWithZero u : v.valueGroup) :
-          v.ValueGroup₀) = ((u : (v.ValueGroup₀)ˣ) :
-            v.ValueGroup₀) := WithZero.coe_unitsWithZeroEquiv_eq_units_val _
-      _ = v.restrict b := by simp only [u, Units.val_mk0]
-      _ = _ := v.restrict_eq_mk hb0
+    rw [OrderMonoidIso.coe_unitsWithZero_apply]
+    exact v.restrict_eq_mk hb0
   have huCofImage : TauCeti.IsCofinalElement ⊤ (OrderMonoidIso.unitsWithZero u) := by
     rw [huImage]
     exact (cofinalValueFor_iff_isCofinalElement hb0).mp (cofinalValueFor_top_iff.mpr hcof)

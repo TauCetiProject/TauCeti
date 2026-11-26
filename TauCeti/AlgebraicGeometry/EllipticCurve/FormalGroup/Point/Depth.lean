@@ -201,8 +201,8 @@ open scoped Classical in
 theorem eventually_formalPointFiltration_inf_eq_bot
     (H : AddSubgroup (C.baseChange F_u).toAffine.Point) [Finite H] :
     ∀ᶠ k : ℕ in Filter.atTop, C.formalPointFiltration u k ⊓ H = ⊥ := by
-  have h (P : H) : ∀ᶠ k : ℕ in Filter.atTop, P.1 ∈ C.formalPointFiltration u k → P.1 = 0 := by
-    filter_upwards [TauCeti.eventually_lt_exp_pow (Valued.v (Affine.Point.xCoord P.1))
+  have h (P : H) : ∀ᶠ k : ℕ in Filter.atTop, P.val ∈ C.formalPointFiltration u k → P.val = 0 := by
+    filter_upwards [TauCeti.eventually_lt_exp_pow (Valued.v (Affine.Point.xCoord P.val))
       two_ne_zero, Filter.eventually_ne_atTop 0] with k hk hk0 hP
     exact ((C.mem_formalPointFiltration_iff_valuation_xCoord u hk0).mp hP).resolve_right hk.not_ge
   filter_upwards [Filter.eventually_all.mpr h] with k hk

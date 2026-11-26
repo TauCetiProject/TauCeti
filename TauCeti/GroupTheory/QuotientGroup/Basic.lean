@@ -51,6 +51,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   the same elements number `|C_G(g)| * #(H ∩ [g])`.
 * `Subgroup.natCard_fixedBy_mul_natCard`: the fixed-coset identity
   `#(G ⧸ H)^g · |H| = |C_G(g)| · #(H ∩ [g])`.
+* `QuotientGroup.smul_eq_mk_mul`: for `N` normal, `G` acts on `G ⧸ N` by left multiplication
+  through `G → G ⧸ N`.
 * `TauCeti.smul_quotient_eq_self_of_mem`: an element of a normal subgroup fixes every coset.
 * `TauCeti.quotientBot_equivariant`: `QuotientGroup.quotientBot` intertwines left translation on
   `G ⧸ ⊥` with left translation in `G`.
@@ -69,6 +71,7 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   two tail products of a word, modulo a normal subgroup.
 * `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
   lies in the normal subgroup.
+* `QuotientAddGroup.congr_mk`: the additive form of Mathlib's `QuotientGroup.congr_mk`.
 -/
 
 public section
@@ -83,6 +86,12 @@ attribute [simp] Subgroup.quotientEquivOfEq_mk
 namespace TauCeti
 
 variable {G : Type*} [Group G]
+
+/-- For `N` normal, the action of `G` on `G ⧸ N` is left multiplication through `G → G ⧸ N`. -/
+theorem _root_.QuotientGroup.smul_eq_mk_mul {N : Subgroup G} [N.Normal] (g : G) (q : G ⧸ N) :
+    g • q = (g : G ⧸ N) * q := by
+  induction q using QuotientGroup.induction_on
+  rw [MulAction.Quotient.smul_coe, smul_eq_mul, QuotientGroup.mk_mul]
 
 /-- An element of a normal subgroup `N` fixes every coset of `N`. -/
 @[simp]
@@ -307,7 +316,7 @@ representative of a left coset of `H` and an element of `H`. -/
 theorem _root_.Subgroup.sum_eq_sum_leftCosets (f : G → M) :
     ∑ g : G, f g = ∑ q : G ⧸ H, ∑ h : H, f (q.out * h) := by
   have hmk (q : G ⧸ H) (h : H) : ((q.out * h : G) : G ⧸ H) = q := by
-    rw [QuotientGroup.mk_mul_of_mem _ h.2, QuotientGroup.out_eq']
+    rw [QuotientGroup.mk_mul_of_mem _ h.property, QuotientGroup.out_eq']
   have hbij : Function.Bijective fun p : (G ⧸ H) × H => (p.1.out : G) * (p.2 : G) := by
     refine Function.bijective_iff_has_inverse.2 ⟨fun g => ((g : G ⧸ H),
       ⟨(Quotient.out (g : G ⧸ H))⁻¹ * g, QuotientGroup.eq.mp (QuotientGroup.out_eq' _)⟩),
@@ -330,5 +339,16 @@ theorem _root_.Subgroup.sum_eq_sum_rightCosets (f : G → M) :
     (fun h => f ((q.out * (h : G))⁻¹)) fun _ => by simp).symm
 
 end Finite
+
+/-- `QuotientAddGroup.congr` sends the class of an element to the class of its image. This is the
+additive form of `QuotientGroup.congr_mk`, which Mathlib states only for groups. -/
+@[simp]
+theorem _root_.QuotientAddGroup.congr_mk {G H : Type*} [AddGroup G] [AddGroup H]
+    (G' : AddSubgroup G) (H' : AddSubgroup H) [G'.Normal] [H'.Normal] (e : G ≃+ H)
+    (he : G'.map (e : G →+ H) = H') (x : G) :
+    QuotientAddGroup.congr G' H' e he (x : G ⧸ G') = (e x : H ⧸ H') :=
+  rfl
+
+attribute [to_additive existing] QuotientGroup.congr_mk
 
 end TauCeti

@@ -79,14 +79,8 @@ theorem definingHopfIdeal_toIdeal :
 
 /-- The upper-triangular Hopf ideal of `SLₙ` is finitely generated as an ideal. -/
 theorem definingHopfIdeal_toIdeal_fg : (definingHopfIdeal R n).toIdeal.FG := by
-  rw [definingHopfIdeal_toIdeal]
-  refine Submodule.fg_span (Set.Finite.image _ ?_)
-  refine (Set.finite_range fun p : Fin n × Fin n ↦
-    GeneralLinear.coordinateHopfAlgebraAlgEquiv R n
-      (GeneralLinear.coordinateRingMap R n (MvPolynomial.X p))).subset ?_
-  intro x hx
-  obtain ⟨i, j, -, rfl⟩ := (GeneralLinear.UpperTriangular.mem_definingRelationSet_iff R n x).mp hx
-  exact ⟨(i, j), rfl⟩
+  rw [definingHopfIdeal, HopfIdeal.map_toIdeal]
+  exact (GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_fg R _).map _
 
 /-- The coordinate Hopf algebra of the upper-triangular closed subgroup scheme of `SLₙ`. -/
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=
@@ -172,9 +166,9 @@ theorem pointsMulEquiv_coe
     _ = SpecialLinear.pointsMulEquiv (R := R) (A := A) n
           (((CommHopfAlgCat.quotientPointsSubgroupNatIso
             (SpecialLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)).app
-            (CommAlgCat.of R A)).hom f).1 :=
+            (CommAlgCat.of R A)).hom f).val :=
       (congrArg
-        (fun g ↦ SpecialLinear.pointsMulEquiv (R := R) (A := A) n g.1) hcomponent).symm
+        (fun g ↦ SpecialLinear.pointsMulEquiv (R := R) (A := A) n g.val) hcomponent).symm
     _ = _ := (Subgroup.coe_congrOfMapEq_apply _ _ _).symm
 
 /-- The ambient point attached to an upper-triangular determinant-one matrix is the
@@ -185,7 +179,7 @@ theorem quotientPointsHom_pointsMulEquiv_symm
     CommHopfAlgCat.quotientPointsHom
         (SpecialLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n)
         (CommAlgCat.of R A) ((pointsMulEquiv R n (A := A)).symm g) =
-      (SpecialLinear.pointsMulEquiv (R := R) (A := A) n).symm g.1 := by
+      (SpecialLinear.pointsMulEquiv (R := R) (A := A) n).symm g.val := by
   apply (SpecialLinear.pointsMulEquiv (R := R) (A := A) n).injective
   rw [pointsMulEquiv_coe, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply]
 
@@ -232,8 +226,8 @@ private instance instFormallySmoothCoordinateHopfAlgebra :
     ⟨fun _ ↦ (IsNilpotent.isUnit_quotient_mk_iff ⟨2, hI⟩).mp⟩
   obtain ⟨N, hNupper, hN⟩ :=
     Matrix.SpecialLinearGroup.exists_isUpperTriangular_map_eq (Ideal.Quotient.mk I)
-      Ideal.Quotient.mk_surjective g.1
-      (UpperTriangularGroup.mem_comap_toGL_iff.mp g.2)
+      Ideal.Quotient.mk_surjective g.val
+      (UpperTriangularGroup.mem_comap_toGL_iff.mp g.property)
   let lift : WithConv (coordinateHopfAlgebra R n →ₐ[R] B) :=
     (pointsMulEquiv R n (A := B)).symm ⟨N, UpperTriangularGroup.mem_comap_toGL_iff.mpr hNupper⟩
   refine ⟨lift.ofConv, ?_⟩

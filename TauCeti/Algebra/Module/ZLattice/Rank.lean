@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 import Mathlib.LinearAlgebra.FreeModule.PID
+import TauCeti.LinearAlgebra.Complex.Finrank
 
 /-!
 # A rank criterion for discrete integer submodules
@@ -31,6 +32,8 @@ discrete from their rank and real span, without a separate compactness argument.
   statements and their names follow Kevin H. Wilson's successive-minima proposal for Mathlib,
   `Mathlib/Algebra/Module/ZLattice/Basic.lean` at revision `8423d1c` of
   <https://github.com/khwilson/mathlib4>.
+- `TauCeti.ZLattice.finrank_eq_two_mul_finrank_complex`: a full lattice in a finite-dimensional
+  complex space has rank twice the complex dimension.
 
 Apply `(TauCeti.discreteTopology_iff_finrank_eq_finrank_span (L := L)).mpr hr` to obtain
 discreteness from a rank equality `hr`.
@@ -73,7 +76,7 @@ theorem _root_.Submodule.moduleFinite_of_discreteTopology_of_finiteDimensional_s
   let F := Submodule.span ℝ (L : Set E)
   let L' : Submodule ℤ F := ZLattice.comap ℝ L F.subtype
   have : DiscreteTopology L' :=
-    ZLattice.comap_discreteTopology ℝ L continuous_subtype_val Subtype.val_injective
+    ZLattice.comap_discreteTopology ℝ L continuous_subtypeVal Subtype.val_injective
   -- `ZLattice.comap` is the pullback of `L` along the subtype map, viewed `ℤ`-linearly.
   have hL' : L' = L.comap (F.restrictScalars ℤ).subtype := rfl
   have e : L' ≃ₗ[ℤ] L := hL' ▸
@@ -93,9 +96,9 @@ theorem discreteTopology_iff_finrank_eq_finrank_span
   let e := Submodule.comapSubtypeEquivOfLe hLF
   -- After coercing to E, both directions are subtype projections.
   have he : Continuous e := by
-    exact (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+    exact (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
   have he' : Continuous e.symm := by
-    exact (continuous_subtype_val.subtype_mk _).subtype_mk _
+    exact (continuous_subtypeVal.subtype_mk _).subtype_mk _
   have : Module.Finite ℤ L' := Module.Finite.equiv e.symm
   -- L' has carrier Subtype.val ⁻¹' (L : Set E) by definition of comap and restrictScalars.
   have hs : Submodule.span ℝ (L' : Set F) = ⊤ := Submodule.span_span_coe_preimage
@@ -145,3 +148,14 @@ theorem setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology {s : Set E}
 theorem setFinrank_real_eq_finrank_int : Set.finrank ℝ (L : Set E) = Module.finrank ℤ L := by
   rw [setFinrank_real_eq_setFinrank_int_of_subset_discreteTopology L le_rfl, Set.finrank,
     Submodule.span_eq]
+
+namespace TauCeti
+
+/-- A full lattice in a finite-dimensional complex space `E`, such as the period lattice of a
+complex torus `E / L`, has rank `2 * dim_ℂ E`. -/
+theorem ZLattice.finrank_eq_two_mul_finrank_complex {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [FiniteDimensional ℂ E] (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice ℝ L] : Module.finrank ℤ L = 2 * Module.finrank ℂ E := by
+  rw [_root_.ZLattice.rank ℝ L, finrank_real_eq_two_mul_finrank_complex]
+
+end TauCeti

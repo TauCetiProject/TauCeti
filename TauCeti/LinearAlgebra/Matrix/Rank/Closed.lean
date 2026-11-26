@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 public import TauCeti.LinearAlgebra.Matrix.Rank
 public import TauCeti.Topology.Algebra.MvPolynomial.ZeroLocus
 
@@ -60,13 +60,14 @@ section Zariski
 
 variable {k K : Type*} [Field k] [Field K] [Algebra k K]
 
-omit [DecidableEq n] in
+omit [Fintype n] [DecidableEq n] in
 /-- **Rank bounds are Zariski closed.** If `rank Z ≤ r` for every matrix `Z` of a set `S`, then
 `rank Y ≤ r` for every `Y` on which all polynomials vanishing on `S` vanish. -/
-theorem rank_le_of_mem_zeroLocus_vanishingIdeal {m : Type*} [Finite m] {S : Set (Matrix m n K)}
-    {r : ℕ} (hS : ∀ Z ∈ S, Z.rank ≤ r) {Y : Matrix m n K}
+theorem rank_le_of_mem_zeroLocus_vanishingIdeal [Finite n] {m : Type*} [Finite m]
+    {S : Set (Matrix m n K)} {r : ℕ} (hS : ∀ Z ∈ S, Z.rank ≤ r) {Y : Matrix m n K}
     (hY : Function.uncurry Y ∈ zeroLocus K (vanishingIdeal k (Function.uncurry '' S))) :
     Y.rank ≤ r := by
+  have := Fintype.ofFinite n
   rw [rank_le_iff_forall_det_submatrix_eq_zero]
   intro a b
   -- The minor of `Y` at `(a, b)` is the value at `Y` of a polynomial vanishing on `S`.
@@ -99,10 +100,10 @@ section Topological
 
 variable {K : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T1Space K]
 
-omit [DecidableEq n] in
+omit [Fintype n] [DecidableEq n] in
 /-- Over a field with continuous ring operations and closed points, the matrices of rank at most
 `r` form a closed set. -/
-theorem isClosed_setOfPred_rank_le {m : Type*} [Finite m] (r : ℕ) :
+theorem isClosed_setOfPred_rank_le [Finite n] {m : Type*} [Finite m] (r : ℕ) :
     IsClosed {A : Matrix m n K | A.rank ≤ r} := by
   refine isClosed_of_closure_subset fun Y hY ↦ rank_le_of_mem_zeroLocus_vanishingIdeal
     (k := K) (S := {A : Matrix m n K | A.rank ≤ r}) (fun _ hA ↦ hA)
