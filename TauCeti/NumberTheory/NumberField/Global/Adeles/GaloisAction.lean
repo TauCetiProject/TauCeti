@@ -248,8 +248,10 @@ theorem finiteAdeleEquiv_mem_integralAdeles (e : K ≃+* L) {x : FiniteAdeleRing
   exact (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff (R := 𝓞 L) (e r)).2 ⟨⟨e r, hr⟩, rfl⟩
 
 variable {K L} in
-/-- Transport of finite adeles along a field isomorphism preserves integrality. -/
-@[simp]
+/-- Transport of finite adeles along a field isomorphism preserves integrality. It takes priority
+over the place-by-place unfolding `IsDedekindDomain.FiniteAdeleRing.mem_integralAdeles` as a `simp`
+lemma. -/
+@[simp high]
 theorem finiteAdeleEquiv_mem_integralAdeles_iff (e : K ≃+* L) {x : FiniteAdeleRing (𝓞 K) K} :
     finiteAdeleEquiv K L e x ∈ FiniteAdeleRing.integralAdeles (𝓞 L) L ↔
       x ∈ FiniteAdeleRing.integralAdeles (𝓞 K) K := by

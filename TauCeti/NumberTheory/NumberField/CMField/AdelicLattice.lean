@@ -98,8 +98,9 @@ theorem finiteAdeleConj_finiteAdeleConj (a : 𝔸ᶠ[E]) :
   rw [finiteAdeleConj_def, ← RingEquiv.trans_apply, finiteAdeleEquiv_trans, h,
     finiteAdeleEquiv_refl, RingEquiv.refl_apply]
 
-/-- Complex conjugation preserves the integral finite adeles. -/
-@[simp]
+/-- Complex conjugation preserves the integral finite adeles. It takes priority over the
+place-by-place unfolding `IsDedekindDomain.FiniteAdeleRing.mem_integralAdeles` as a `simp` lemma. -/
+@[simp high]
 theorem finiteAdeleConj_mem_integralAdeles_iff {x : 𝔸ᶠ[E]} :
     finiteAdeleConj E x ∈ integralAdeles (𝓞 E) E ↔ x ∈ integralAdeles (𝓞 E) E :=
   finiteAdeleEquiv_mem_integralAdeles_iff _
