@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 public import TauCeti.Analysis.Sobolev.W1p.Interval.Trace
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 
 /-!
 # Interval Sobolev functions vanishing on a set
@@ -38,7 +38,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Metric Set TopologicalSpace
+open MeasureTheory Set TopologicalSpace
 open scoped ENNReal Distributions
 
 namespace TauCeti.W1p
@@ -67,20 +67,15 @@ private theorem exists_mem_w1p0Submodule_intervalRepresentativeL_eq_one {t : ℝ
     (ht : t ∈ Ioo a b) :
     ∃ u ∈ w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ p,
       intervalRepresentativeL (ht.1.trans ht.2) u ⟨t, Ioo_subset_Icc_self ht⟩ = 1 := by
-  set r := min (t - a) (b - t)
-  have hr0 : 0 < r := lt_min (sub_pos.2 ht.1) (sub_pos.2 ht.2)
-  let f : ContDiffBump t := ⟨r / 4, r / 2, by positivity, by linarith⟩
-  have hsub : tsupport f ⊆ Ioo a b := by
-    rw [f.tsupport_eq, Real.closedBall_eq_Icc]
-    refine Icc_subset_Ioo ?_ ?_ <;> simp only [f] <;>
-      linarith [min_le_left (t - a) (b - t), min_le_right (t - a) (b - t)]
-  let φ : 𝓓((⊤ : Opens ℝ), ℝ) := ⟨f, f.contDiff, f.hasCompactSupport, subset_univ _⟩
-  let ψ : 𝓓((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ), ℝ) := ⟨f, f.contDiff, f.hasCompactSupport, hsub⟩
+  obtain ⟨f, hsub, hcs, hf, -, hf1⟩ :=
+    exists_contDiff_tsupport_subset (n := ⊤) (Ioo_mem_nhds ht.1 ht.2)
+  let φ : 𝓓((⊤ : Opens ℝ), ℝ) := ⟨f, hf, hcs, subset_univ _⟩
+  let ψ : 𝓓((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ), ℝ) := ⟨f, hf, hcs, hsub⟩
   refine ⟨restrictL le_top (ofTestFunctionₗ volume ⊤ p φ), ?_, ?_⟩
   · rw [restrictL_ofTestFunctionₗ_eq_of_eqOn le_top (ψ := ψ) fun _ _ ↦ rfl]
     exact ofTestFunctionₗ_mem_w1p0Submodule ψ
   · rw [intervalRepresentativeL_restrictL_ofTestFunctionₗ]
-    exact f.one_of_mem_closedBall (mem_closedBall_self f.rIn_pos.le)
+    exact hf1
 
 /-- **`W^{1,p}_0(a, b) ≤ W^{1,p}_Γ(a, b)` exactly when `Γ` misses `(a, b)`**, for every
 `1 ≤ p ≤ ∞`. One direction holds on every open set
