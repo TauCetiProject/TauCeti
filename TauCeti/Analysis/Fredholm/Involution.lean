@@ -28,9 +28,9 @@ Theorem C.1.10.
 
 ## Main declarations
 
-* `ContinuousLinearMap.isFredholm_iff_isFredholm_restrictEigenspace_and`: an operator commuting
-  with the involutions is Fredholm exactly when its restrictions to the `1`- and `-1`-eigenspaces
-  are.
+* `ContinuousLinearMap.isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one`: an operator
+  commuting with the involutions is Fredholm exactly when its restrictions to the `1`- and
+  `-1`-eigenspaces are.
 * `ContinuousLinearMap.isFredholm_iff_isFredholm_restrictEigenspace`: Fredholmness is detected on
   the `1`-eigenspaces.
 -/
@@ -49,7 +49,7 @@ variable {σX JX : X →L[𝕜] X} {σY JY : Y →L[𝕜] Y}
 /-- An operator commuting with the involutions `σ` is Fredholm if and only if its restrictions to
 the `1`-eigenspaces and to the `-1`-eigenspaces are: splitting by the involutions conjugates it to
 the product of the two restrictions. -/
-theorem isFredholm_iff_isFredholm_restrictEigenspace_and (T : X →L[𝕜] Y)
+theorem isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one (T : X →L[𝕜] Y)
     (hσX : Function.Involutive σX) (hσY : Function.Involutive σY) (hT : T.comp σX = σY.comp T) :
     IsFredholm T ↔
       IsFredholm (T.restrictEigenspace hT 1) ∧ IsFredholm (T.restrictEigenspace hT (-1)) := by
@@ -65,7 +65,7 @@ theorem isFredholm_iff_isFredholm_restrictEigenspace (T : X →L[𝕜] Y)
     (hT : T.comp σX = σY.comp T) (hTJ : T.comp JX = JY.comp T) :
     IsFredholm T ↔ IsFredholm (T.restrictEigenspace hT 1) := by
   have hswap := restrictEigenspace_comp_eigenspaceNegEquiv T hJX hJσX hJY hJσY hT hTJ 1
-  rw [isFredholm_iff_isFredholm_restrictEigenspace_and T hσX hσY hT,
+  rw [isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one T hσX hσY hT,
     ← isFredholm_iff_of_comp_eq _ _ hswap.symm, and_self]
 
 end ContinuousLinearMap

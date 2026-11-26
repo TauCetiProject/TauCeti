@@ -1082,10 +1082,9 @@ theorem detLineEquivOfBijective_detLineProdMapEquiv_symm_tmul (hf : Function.Bij
     rw [← map_smul, smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply]
   have hy : y = detLineEquivOfBijective hg y • (detLineEquivOfBijective hg).symm 1 := by
     rw [← map_smul, smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply]
-  rw [hx, hy, smul_tmul_smul, map_smul, map_smul,
-    ← detLineProdMapEquiv_detLineEquivOfBijective_symm_one f g hf hg, LinearEquiv.symm_apply_apply,
-    LinearEquiv.apply_symm_apply, map_smul, map_smul, LinearEquiv.apply_symm_apply,
-    LinearEquiv.apply_symm_apply, smul_eq_mul, smul_eq_mul, smul_eq_mul, mul_one, mul_one, mul_one]
+  rw [hx, hy, smul_tmul_smul, map_smul,
+    ← detLineProdMapEquiv_detLineEquivOfBijective_symm_one f g hf hg]
+  simp
 
 /-! ### Naturality of the direct sum isomorphism -/
 

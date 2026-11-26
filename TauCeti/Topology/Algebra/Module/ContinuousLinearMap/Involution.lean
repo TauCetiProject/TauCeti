@@ -36,10 +36,11 @@ with the boundary condition.
 
 * `ContinuousLinearMap.restrictEigenspace`: the restriction of an intertwining operator to
   eigenspaces with the same eigenvalue, bijective when the operator is
-  (`ContinuousLinearMap.bijective_restrictEigenspace`).
+  (`ContinuousLinearMap.restrictEigenspace_bijective`).
 * `ContinuousLinearMap.equivEigenspaceProd`: the splitting `X ≃L ker (σ - 1) × ker (σ + 1)` of a
   space by a continuous linear involution, and `ContinuousLinearMap.equivEigenspaceProd_comp`,
-  which conjugates an intertwining operator to the product of its restrictions.
+  which conjugates an intertwining operator to the product of its restrictions, with its
+  linear-map form `ContinuousLinearMap.prodMap_comp_equivEigenspaceProd`.
 * `ContinuousLinearMap.eigenspaceNegEquiv`: a map `J` with `J² = -1` anticommuting with `σ`
   identifies the `μ`- and `-μ`-eigenspaces of `σ`, and
   `ContinuousLinearMap.restrictEigenspace_comp_eigenspaceNegEquiv` intertwines the restrictions.
@@ -77,7 +78,7 @@ lemma coe_restrictEigenspace_apply (T : X →L[𝕜] Y) {σX : X →L[𝕜] X} {
 
 /-- The restriction to `μ`-eigenspaces of a bijective operator intertwining `σX` and `σY` is
 bijective: the preimage `x` of a `μ`-eigenvector `y` satisfies `T (σX x) = σY y = T (μ • x)`. -/
-theorem bijective_restrictEigenspace {T : X →L[𝕜] Y} (hb : Function.Bijective T)
+theorem restrictEigenspace_bijective {T : X →L[𝕜] Y} (hb : Function.Bijective T)
     {σX : X →L[𝕜] X} {σY : Y →L[𝕜] Y} (hT : T.comp σX = σY.comp T) (μ : 𝕜) :
     Function.Bijective (T.restrictEigenspace hT μ) := by
   refine ⟨fun x y h ↦ Subtype.ext (hb.1 (congrArg Subtype.val h)), fun y ↦ ?_⟩
@@ -149,6 +150,18 @@ lemma equivEigenspaceProd_comp (T : X →L[𝕜] Y) {σX : X →L[𝕜] X} {σY 
   ext x
   · simp [hTx]
   · simp [hTx]
+
+/-- `ContinuousLinearMap.equivEigenspaceProd_comp` as a commuting square of linear maps: the form
+along which linear-algebraic constructions such as determinant lines are transported. -/
+theorem prodMap_comp_equivEigenspaceProd (T : X →L[𝕜] Y) {σX : X →L[𝕜] X} {σY : Y →L[𝕜] Y}
+    (hσX : Function.Involutive σX) (hσY : Function.Involutive σY) (hT : T.comp σX = σY.comp T) :
+    (T.restrictEigenspace hT 1 : eigenspace (σX : End 𝕜 X) 1 →ₗ[𝕜]
+          eigenspace (σY : End 𝕜 Y) 1).prodMap
+        (T.restrictEigenspace hT (-1) : eigenspace (σX : End 𝕜 X) (-1) →ₗ[𝕜]
+          eigenspace (σY : End 𝕜 Y) (-1)) ∘ₗ
+        (equivEigenspaceProd σX hσX).toLinearEquiv.toLinearMap =
+      (equivEigenspaceProd σY hσY).toLinearEquiv.toLinearMap ∘ₗ (T : X →ₗ[𝕜] Y) :=
+  congr(toLinearMap $(equivEigenspaceProd_comp T hσX hσY hT)).symm
 
 end Involution
 

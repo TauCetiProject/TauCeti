@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.DeterminantLine.DirectSum
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Naturality
 public import TauCeti.Analysis.Fredholm.Involution
+public import TauCeti.Analysis.Normed.Operator.Eigenspace
 public import TauCeti.LinearAlgebra.Eigenspace.ContinuousLinearMap
 public import TauCeti.LinearAlgebra.TensorProduct.Separation
 
@@ -19,8 +20,8 @@ them, `T ∘ σE = σF ∘ T`. Splitting `E` and `F` into the `±1`-eigenspaces 
 (`ContinuousLinearMap.equivEigenspaceProd`) conjugates `T` to the direct sum `T₊ ⊕ T₋` of its
 restrictions `T₊` and `T₋` to the `1`- and `-1`-eigenspaces
 (`ContinuousLinearMap.equivEigenspaceProd_comp`). So `T` is Fredholm exactly when `T₊` and `T₋`
-are (`ContinuousLinearMap.isFredholm_iff_isFredholm_restrictEigenspace_and`), and its determinant
-line is the tensor product of theirs,
+are (`ContinuousLinearMap.isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one`), and its
+determinant line is the tensor product of theirs,
 
 `det T ≃ det T₊ ⊗ det T₋`  (`ContinuousLinearMap.detLineEigenspaceEquiv`):
 
@@ -43,7 +44,7 @@ orientations of bijective operators.
   and splits the transport along the direct sum
   (`TauCeti.detLineOrientationTransport_prodMap`).
 * **Bijective operators.** If `T` is bijective, so are `T₊` and `T₋`
-  (`ContinuousLinearMap.bijective_restrictEigenspace`), all cokernels vanish, and reading the
+  (`ContinuousLinearMap.restrictEigenspace_bijective`), all cokernels vanish, and reading the
   split element `v ⊗ v'` of `det T` in the trivialization given by bijectivity
   (`LinearMap.detLineEquivOfBijective`) gives the product of the readings of `v` and `v'`
   (`ContinuousLinearMap.detLineEquivOfBijective_detLineEigenspaceEquiv_symm_tmul`).
@@ -66,7 +67,6 @@ starting point of the path split in the same way.
 
 ## Main results
 
-* `ContinuousOn.restrictEigenspace`: restricting to eigenspaces preserves continuity of families.
 * `ContinuousLinearMap.detLineEigenspaceEquiv_symm_tmul`: the inverse isomorphism on pure tensors.
 * `ContinuousLinearMap.detLineCongr_detLineEigenspaceEquiv_symm_tmul`: read along the splitting,
   it is the normalized direct sum in the determinant line of `T₊ ⊕ T₋`.
@@ -93,28 +93,6 @@ noncomputable section
 
 open Module Module.End TensorProduct Set
 
-section Continuity
-
-variable {𝕜 E F X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace X] {σE : E →L[𝕜] E}
-  {σF : F →L[𝕜] F} {T : X → E →L[𝕜] F} {s : Set X}
-
-/-- Restricting a family of operators intertwining `σE` and `σF` to `μ`-eigenspaces preserves
-continuity: restriction does not increase the operator norm of differences. -/
-theorem ContinuousOn.restrictEigenspace (hT : ContinuousOn T s)
-    (hTσ : ∀ x, (T x).comp σE = σF.comp (T x)) (μ : 𝕜) :
-    ContinuousOn (fun x ↦ (T x).restrictEigenspace (hTσ x) μ) s := by
-  have hle (x y : X) : ‖(T x).restrictEigenspace (hTσ x) μ - (T y).restrictEigenspace (hTσ y) μ‖ ≤
-      ‖T x - T y‖ :=
-    ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ by
-      simpa using (T x - T y).le_opNorm v
-  intro x hx
-  have hTx := hT x hx
-  rw [ContinuousWithinAt, tendsto_iff_norm_sub_tendsto_zero] at hTx ⊢
-  exact squeeze_zero (fun _ ↦ norm_nonneg _) (fun y ↦ hle y x) hTx
-
-end Continuity
-
 namespace ContinuousLinearMap
 
 section Splitting
@@ -123,20 +101,6 @@ variable {𝕜 E F : Type*} [Field 𝕜] [NeZero (2 : 𝕜)]
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
   [ContinuousConstSMul 𝕜 E] [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
   [IsTopologicalAddGroup F] [ContinuousConstSMul 𝕜 F] {σE : E →L[𝕜] E} {σF : F →L[𝕜] F}
-
-/-- Splitting by the involutions conjugates an intertwining operator to the product of its
-restrictions, as a commuting square of linear maps: the form of
-`ContinuousLinearMap.equivEigenspaceProd_comp` along which determinant lines are transported
-(`LinearMap.detLineCongr`). -/
-theorem prodMap_comp_equivEigenspaceProd (T : E →L[𝕜] F) (hσE : Function.Involutive σE)
-    (hσF : Function.Involutive σF) (hT : T.comp σE = σF.comp T) :
-    (T.restrictEigenspace hT 1 : eigenspace (σE : End 𝕜 E) 1 →ₗ[𝕜]
-          eigenspace (σF : End 𝕜 F) 1).prodMap
-        (T.restrictEigenspace hT (-1) : eigenspace (σE : End 𝕜 E) (-1) →ₗ[𝕜]
-          eigenspace (σF : End 𝕜 F) (-1)) ∘ₗ
-        (equivEigenspaceProd σE hσE).toLinearEquiv.toLinearMap =
-      (equivEigenspaceProd σF hσF).toLinearEquiv.toLinearMap ∘ₗ (T : E →ₗ[𝕜] F) :=
-  congr(toLinearMap $(equivEigenspaceProd_comp T hσE hσF hT)).symm
 
 variable (T : E →L[𝕜] F) (hσE : Function.Involutive σE) (hσF : Function.Involutive σF)
   (hT : T.comp σE = σF.comp T)
@@ -198,44 +162,34 @@ theorem detLineEigenspaceEquiv_symm_tmul
               eigenspace (σE : End 𝕜 E) (-1) →ₗ[𝕜] eigenspace (σF : End 𝕜 F) (-1))).symm
             (v ⊗ₜ v')) := by
   rw [LinearEquiv.symm_apply_eq, detLineEigenspaceEquiv_def]
-  simp only [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, LinearEquiv.map_smul]
-  rw [LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv_apply, Units.smul_def, smul_smul,
-    Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, ← pow_add, ← two_mul, pow_mul,
-    neg_one_sq, one_pow, one_smul]
+  simp only [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, LinearEquiv.map_smul,
+    LinearEquiv.smulOfUnit, DistribMulAction.toLinearEquiv_apply, Units.smul_def, smul_smul]
+  -- The two signs `(-1) ^ (dim coker T₊ * dim coker T₋)` cancel.
+  simp [← mul_pow]
 
 /-- Read along the splitting by the involutions (`LinearMap.detLineCongr` along
 `ContinuousLinearMap.equivEigenspaceProd`), the element of `det T` corresponding to `v ⊗ v'` is
 the normalized direct sum `(-1) ^ (dim coker T₊ * dim coker T₋) • (v ⊕ v')` in the determinant line
-of the direct sum `T₊ ⊕ T₋` of continuous linear maps. -/
+of the direct sum `T₊ ⊕ T₋`. -/
 theorem detLineCongr_detLineEigenspaceEquiv_symm_tmul
     (v : (T.restrictEigenspace hT 1 : eigenspace (σE : End 𝕜 E) 1 →ₗ[𝕜]
       eigenspace (σF : End 𝕜 F) 1).detLine)
     (v' : (T.restrictEigenspace hT (-1) : eigenspace (σE : End 𝕜 E) (-1) →ₗ[𝕜]
       eigenspace (σF : End 𝕜 F) (-1)).detLine) :
-    (T : E →ₗ[𝕜] F).detLineCongr (g := ((T.restrictEigenspace hT 1).prodMap
-        (T.restrictEigenspace hT (-1)) :
-          eigenspace (σE : End 𝕜 E) 1 × eigenspace (σE : End 𝕜 E) (-1) →ₗ[𝕜]
-            eigenspace (σF : End 𝕜 F) 1 × eigenspace (σF : End 𝕜 F) (-1)))
-        (equivEigenspaceProd σE hσE).toLinearEquiv (equivEigenspaceProd σF hσF).toLinearEquiv
-        (prodMap_comp_equivEigenspaceProd T hσE hσF hT)
+    (T : E →ₗ[𝕜] F).detLineCongr (equivEigenspaceProd σE hσE).toLinearEquiv
+        (equivEigenspaceProd σF hσF).toLinearEquiv (prodMap_comp_equivEigenspaceProd T hσE hσF hT)
         ((detLineEigenspaceEquiv T hσE hσF hT).symm (v ⊗ₜ v')) =
-      ((-1 : 𝕜) ^ (finrank 𝕜 (eigenspace (σF : End 𝕜 F) 1 ⧸ (T.restrictEigenspace hT 1).range) *
+      (-1 : 𝕜) ^ (finrank 𝕜 (eigenspace (σF : End 𝕜 F) 1 ⧸ (T.restrictEigenspace hT 1).range) *
           finrank 𝕜 (eigenspace (σF : End 𝕜 F) (-1) ⧸ (T.restrictEigenspace hT (-1)).range)) •
         (LinearMap.detLineProdMapEquiv (T.restrictEigenspace hT 1 :
           eigenspace (σE : End 𝕜 E) 1 →ₗ[𝕜] eigenspace (σF : End 𝕜 F) 1)
           (T.restrictEigenspace hT (-1) :
             eigenspace (σE : End 𝕜 E) (-1) →ₗ[𝕜] eigenspace (σF : End 𝕜 F) (-1))).symm
-          (v ⊗ₜ v') :
-        ((T.restrictEigenspace hT 1).prodMap (T.restrictEigenspace hT (-1)) :
-          eigenspace (σE : End 𝕜 E) 1 × eigenspace (σE : End 𝕜 E) (-1) →ₗ[𝕜]
-            eigenspace (σF : End 𝕜 F) 1 × eigenspace (σF : End 𝕜 F) (-1)).detLine) := by
-  rw [detLineEigenspaceEquiv_symm_tmul]
-  -- The transport is undone by its inverse, written with the direct sum of the underlying linear
-  -- maps instead of the coercion of `ContinuousLinearMap.prodMap`; the two agree by unfolding.
-  erw [LinearEquiv.apply_symm_apply]
+          (v ⊗ₜ v') := by
+  rw [detLineEigenspaceEquiv_symm_tmul, LinearEquiv.apply_symm_apply]
 
 /-- **Bijective operators.** If `T` is bijective, so are its restrictions `T₊` and `T₋`
-(`ContinuousLinearMap.bijective_restrictEigenspace`), and reading the element of `det T`
+(`ContinuousLinearMap.restrictEigenspace_bijective`), and reading the element of `det T`
 corresponding to `v ⊗ v'` in the trivialization given by bijectivity
 (`LinearMap.detLineEquivOfBijective`) gives the product of the readings of `v` and `v'`. So the
 orientation given by bijectivity splits as the orientations given by bijectivity. -/
@@ -248,18 +202,18 @@ theorem detLineEquivOfBijective_detLineEigenspaceEquiv_symm_tmul (hb : Function.
         (v ⊗ₜ v')) =
       (T.restrictEigenspace hT 1 : eigenspace (σE : End 𝕜 E) 1 →ₗ[𝕜]
           eigenspace (σF : End 𝕜 F) 1).detLineEquivOfBijective
-          (bijective_restrictEigenspace hb hT 1) v *
+          (restrictEigenspace_bijective hb hT 1) v *
         (T.restrictEigenspace hT (-1) : eigenspace (σE : End 𝕜 E) (-1) →ₗ[𝕜]
           eigenspace (σF : End 𝕜 F) (-1)).detLineEquivOfBijective
-          (bijective_restrictEigenspace hb hT (-1)) v' := by
+          (restrictEigenspace_bijective hb hT (-1)) v' := by
   have hc : finrank 𝕜 (eigenspace (σF : End 𝕜 F) 1 ⧸ (T.restrictEigenspace hT 1).range) = 0 :=
-    LinearMap.finrank_quotient_range_eq_zero_of_surjective (bijective_restrictEigenspace hb hT 1).2
+    LinearMap.finrank_quotient_range_eq_zero_of_surjective (restrictEigenspace_bijective hb hT 1).2
   rw [detLineEigenspaceEquiv_symm_tmul, show (-1 : 𝕜) ^ (finrank 𝕜 (eigenspace (σF : End 𝕜 F) 1 ⧸
       (T.restrictEigenspace hT 1).range) * finrank 𝕜 (eigenspace (σF : End 𝕜 F) (-1) ⧸
         (T.restrictEigenspace hT (-1)).range)) = 1 by simp [hc], one_smul,
     LinearMap.detLineCongr_symm, LinearMap.detLineCongr_eq_detLineCongrKerCoker,
     LinearMap.detLineEquivOfBijective_detLineCongrKerCoker
-      ((bijective_restrictEigenspace hb hT 1).prodMap (bijective_restrictEigenspace hb hT (-1))),
+      ((restrictEigenspace_bijective hb hT 1).prodMap (restrictEigenspace_bijective hb hT (-1))),
     LinearMap.detLineEquivOfBijective_detLineProdMapEquiv_symm_tmul]
 
 end Splitting
@@ -275,7 +229,9 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
   {T : ℝ → E →L[ℝ] F} {a b : ℝ}
 
 omit [CompleteSpace E] [CompleteSpace F] in
-/-- The ray form of `ContinuousLinearMap.detLineCongr_detLineEigenspaceEquiv_symm_tmul`. -/
+/-- The ray form of `ContinuousLinearMap.detLineCongr_detLineEigenspaceEquiv_symm_tmul`, with the
+direct sum `T₊ ⊕ T₋` written as a continuous linear map, as orientation transport along the direct
+sum (`TauCeti.detLineOrientationTransport_prodMap`) states it. -/
 private theorem ray_map_detLineCongr_detLineEigenspaceEquiv_symm_tmul (T : E →L[ℝ] F)
     (hσE : Function.Involutive σE) (hσF : Function.Involutive σF) (hT : T.comp σE = σF.comp T)
     [FiniteDimensional ℝ (T.restrictEigenspace hT 1).ker]
@@ -311,7 +267,10 @@ private theorem ray_map_detLineCongr_detLineEigenspaceEquiv_symm_tmul (T : E →
           (T.restrictEigenspace hT (-1) :
             eigenspace (σE : End ℝ E) (-1) →ₗ[ℝ] eigenspace (σF : End ℝ F) (-1)) _ hv hv') := by
   rw [Module.Ray.map_apply]
-  exact (ray_eq_iff _ _).2 (by rw [detLineCongr_detLineEigenspaceEquiv_symm_tmul]; exact .rfl)
+  -- `ContinuousLinearMap.coe_prodMap` holds by `rfl`: the transport along the splitting with target
+  -- the coerced direct sum of continuous linear maps, as in `TauCeti.detLineOrientationTransport`,
+  -- is the one of `ContinuousLinearMap.detLineCongr_detLineEigenspaceEquiv_symm_tmul`.
+  exact (ray_eq_iff _ _).2 (detLineCongr_detLineEigenspaceEquiv_symm_tmul T hσE hσF hT v v' ▸ .rfl)
 
 /-- **Orientation transport commutes with the splitting by involutions.** Let `T` be a path of
 operators intertwining the involutions `σE` and `σF`, continuous and Fredholm between `a` and `b`,
@@ -344,20 +303,22 @@ theorem detLineOrientationTransport_detLineEigenspaceEquiv_symm (hσE : Function
       eigenspace (σF : End ℝ F) (-1)).detLine}
     (hv₀ : v₀ ≠ 0) (hv₀' : v₀' ≠ 0) (hu : u ≠ 0) (hu' : u' ≠ 0)
     (htr : detLineOrientationTransport a b (hT.restrictEigenspace hTσ 1)
-      (fun t ht ↦ ((isFredholm_iff_isFredholm_restrictEigenspace_and (T t) hσE hσF (hTσ t)).1
-        (hF t ht)).1) (rayOfNeZero ℝ v₀ hv₀) = rayOfNeZero ℝ u hu)
+      (fun t ht ↦ ((isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one (T t) hσE hσF
+        (hTσ t)).1 (hF t ht)).1) (rayOfNeZero ℝ v₀ hv₀) = rayOfNeZero ℝ u hu)
     (htr' : detLineOrientationTransport a b (hT.restrictEigenspace hTσ (-1))
-      (fun t ht ↦ ((isFredholm_iff_isFredholm_restrictEigenspace_and (T t) hσE hσF (hTσ t)).1
-        (hF t ht)).2) (rayOfNeZero ℝ v₀' hv₀') = rayOfNeZero ℝ u' hu') :
+      (fun t ht ↦ ((isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one (T t) hσE hσF
+        (hTσ t)).1 (hF t ht)).2) (rayOfNeZero ℝ v₀' hv₀') = rayOfNeZero ℝ u' hu') :
     detLineOrientationTransport a b hT hF
         (rayOfNeZero ℝ ((detLineEigenspaceEquiv (T a) hσE hσF (hTσ a)).symm (v₀ ⊗ₜ v₀'))
           ((LinearEquiv.map_ne_zero_iff _).2 (tmul_ne_zero hv₀ hv₀'))) =
       rayOfNeZero ℝ ((detLineEigenspaceEquiv (T b) hσE hσF (hTσ b)).symm (u ⊗ₜ u'))
         ((LinearEquiv.map_ne_zero_iff _).2 (tmul_ne_zero hu hu')) := by
-  have hFp (t : ℝ) (ht : t ∈ uIcc a b) := ((isFredholm_iff_isFredholm_restrictEigenspace_and
-    (T t) hσE hσF (hTσ t)).1 (hF t ht)).1
-  have hFm (t : ℝ) (ht : t ∈ uIcc a b) := ((isFredholm_iff_isFredholm_restrictEigenspace_and
-    (T t) hσE hσF (hTσ t)).1 (hF t ht)).2
+  have hFp (t : ℝ) (ht : t ∈ uIcc a b) :=
+    ((isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one (T t) hσE hσF
+      (hTσ t)).1 (hF t ht)).1
+  have hFm (t : ℝ) (ht : t ∈ uIcc a b) :=
+    ((isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one (T t) hσE hσF
+      (hTσ t)).1 (hF t ht)).2
   -- Orientation transport along the direct sum of the restrictions splits.
   have hsum := detLineOrientationTransport_prodMap (hT.restrictEigenspace hTσ 1)
     (hT.restrictEigenspace hTσ (-1)) hFp hFm hv₀ hv₀' hu hu' htr htr'
@@ -373,14 +334,8 @@ theorem detLineOrientationTransport_detLineEigenspaceEquiv_symm (hσE : Function
       ((LinearEquiv.map_ne_zero_iff _).2 (tmul_ne_zero hv₀ hv₀')))
   -- Read along the splitting, the orientations at `a` and `b` are normalized direct sums.
   rw [ray_map_detLineCongr_detLineEigenspaceEquiv_symm_tmul (T a) hσE hσF (hTσ a) hv₀ hv₀'] at hnat
-  apply (Module.Ray.map ((T b : E →ₗ[ℝ] F).detLineCongr (g :=
-    (((T b).restrictEigenspace (hTσ b) 1).prodMap ((T b).restrictEigenspace (hTσ b) (-1)) :
-      eigenspace (σE : End ℝ E) 1 × eigenspace (σE : End ℝ E) (-1) →ₗ[ℝ]
-        eigenspace (σF : End ℝ F) 1 × eigenspace (σF : End ℝ F) (-1)))
-    (equivEigenspaceProd σE hσE).toLinearEquiv (equivEigenspaceProd σF hσF).toLinearEquiv
-    (prodMap_comp_equivEigenspaceProd (T b) hσE hσF (hTσ b)))).injective
-  rw [hnat.symm.trans hsum,
-    ray_map_detLineCongr_detLineEigenspaceEquiv_symm_tmul (T b) hσE hσF (hTσ b) hu hu']
+  exact (Module.Ray.map _).injective (hnat.symm.trans (hsum.trans
+    (ray_map_detLineCongr_detLineEigenspaceEquiv_symm_tmul (T b) hσE hσF (hTσ b) hu hu').symm))
 
 /-- **Transported signs multiply.** In the situation of
 `TauCeti.detLineOrientationTransport_detLineEigenspaceEquiv_symm`, let `T b` be bijective. Every
@@ -414,11 +369,11 @@ theorem sign_detLineEquivOfBijective_eq_mul_of_detLineOrientationTransport
       eigenspace (σF : End ℝ F) (-1)).detLine}
     (hv₀ : v₀ ≠ 0) (hv₀' : v₀' ≠ 0) (hu : u ≠ 0) (hu' : u' ≠ 0)
     (htr : detLineOrientationTransport a b (hT.restrictEigenspace hTσ 1)
-      (fun t ht ↦ ((isFredholm_iff_isFredholm_restrictEigenspace_and (T t) hσE hσF (hTσ t)).1
-        (hF t ht)).1) (rayOfNeZero ℝ v₀ hv₀) = rayOfNeZero ℝ u hu)
+      (fun t ht ↦ ((isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one (T t) hσE hσF
+        (hTσ t)).1 (hF t ht)).1) (rayOfNeZero ℝ v₀ hv₀) = rayOfNeZero ℝ u hu)
     (htr' : detLineOrientationTransport a b (hT.restrictEigenspace hTσ (-1))
-      (fun t ht ↦ ((isFredholm_iff_isFredholm_restrictEigenspace_and (T t) hσE hσF (hTσ t)).1
-        (hF t ht)).2) (rayOfNeZero ℝ v₀' hv₀') = rayOfNeZero ℝ u' hu')
+      (fun t ht ↦ ((isFredholm_iff_isFredholm_restrictEigenspace_one_and_neg_one (T t) hσE hσF
+        (hTσ t)).1 (hF t ht)).2) (rayOfNeZero ℝ v₀' hv₀') = rayOfNeZero ℝ u' hu')
     (hb : Function.Bijective (T b)) {x : (T b : E →ₗ[ℝ] F).detLine} (hx : x ≠ 0)
     (hxo : rayOfNeZero ℝ x hx = detLineOrientationTransport a b hT hF
       (rayOfNeZero ℝ ((detLineEigenspaceEquiv (T a) hσE hσF (hTσ a)).symm (v₀ ⊗ₜ v₀'))
@@ -426,11 +381,11 @@ theorem sign_detLineEquivOfBijective_eq_mul_of_detLineOrientationTransport
     SignType.sign ((T b : E →ₗ[ℝ] F).detLineEquivOfBijective hb x) =
       SignType.sign (((T b).restrictEigenspace (hTσ b) 1 : eigenspace (σE : End ℝ E) 1 →ₗ[ℝ]
           eigenspace (σF : End ℝ F) 1).detLineEquivOfBijective
-          (bijective_restrictEigenspace hb (hTσ b) 1) u) *
+          (restrictEigenspace_bijective hb (hTσ b) 1) u) *
         SignType.sign (((T b).restrictEigenspace (hTσ b) (-1) :
           eigenspace (σE : End ℝ E) (-1) →ₗ[ℝ]
             eigenspace (σF : End ℝ F) (-1)).detLineEquivOfBijective
-          (bijective_restrictEigenspace hb (hTσ b) (-1)) u') := by
+          (restrictEigenspace_bijective hb (hTσ b) (-1)) u') := by
   rw [detLineOrientationTransport_detLineEigenspaceEquiv_symm hσE hσF hTσ hT hF hv₀ hv₀' hu hu' htr
     htr', ray_eq_iff] at hxo
   obtain ⟨r, hr, hrx⟩ := SameRay.exists_pos_left (R := ℝ) (M := (T b : E →ₗ[ℝ] F).detLine) hxo hx
