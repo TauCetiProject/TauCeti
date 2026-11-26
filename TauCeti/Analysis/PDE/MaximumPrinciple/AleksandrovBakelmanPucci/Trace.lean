@@ -431,10 +431,15 @@ theorem le_of_traceCLM_comp_iteratedGradient_add_inner_nonneg_le_frontier
     tendsto_setLIntegral_setOf_ne_zero_and_norm_le (Lp.stronglyMeasurable _) hb hR.le
   have hV (k : ℕ) : volume (ball (0 : F) 1) ≤ ENNReal.ofReal ((1 / n) ^ n) * I k := by
     have hr0 : 0 < (ū x - m) / diam (Ω : Set F) / (k + 1) := by positivity
+    set r := (ū x - m) / diam (Ω : Set F) / (k + 1)
     have h := volume_ball_le_ofReal_mul_setLIntegral_of_add_inner_nonneg hΩb hp u hcont hū hdiff
       hA hL hm hx hr0.le (div_le_self hR.le (by linarith [(k.cast_nonneg : (0 : ℝ) ≤ k)]))
-    rw [Measure.addHaar_ball _ _ hr0.le, div_eq_mul_one_div (_ / _ / _) (n : ℝ), mul_pow,
-      ENNReal.ofReal_mul (by positivity), mul_assoc] at h
+    -- Rescale: `(r / n)ⁿ = rⁿ (1 / n)ⁿ` and `|B(0, r)| = rⁿ |B(0, 1)|`, then cancel `rⁿ`.
+    have hpow : ENNReal.ofReal ((r / n) ^ n) =
+        ENNReal.ofReal (r ^ n) * ENNReal.ofReal ((1 / n) ^ n) := by
+      rw [← ENNReal.ofReal_mul (by positivity)]
+      ring_nf
+    rw [Measure.addHaar_ball _ _ hr0.le, hpow, mul_assoc] at h
     exact (ENNReal.mul_le_mul_iff_right (ENNReal.ofReal_pos.2 (by positivity)).ne'
       ENNReal.ofReal_ne_top).1 h
   have h0 : volume (ball (0 : F) 1) ≤ 0 := by
