@@ -44,8 +44,8 @@ The finite sum against a zero-extended vector reduces to the sum over its origin
 Over an index type with at most one element and for `p ≠ 0`, the `Lᵖ` norm is the norm of the
 coordinate.
 Reindexing the coordinates along the identity bijection is the identity.
-Maps into `PiLp p β` converge uniformly exactly when each coordinate does. For `p ≥ 1` and a
-finite index type, `PiLp p E` is complete if and only if every factor `E i` is
+Maps into `PiLp p β` converge uniformly exactly when each coordinate does. A product
+`PiLp p E` of nonempty uniform spaces is complete if and only if every factor `E i` is
 (`PiLp.completeSpace_iff`).
 
 We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (and the
@@ -623,21 +623,24 @@ end LinearIsometryEquiv
 
 namespace PiLp
 
-variable {ι : Type*} {E : ι → Type*} (p : ℝ≥0∞) [Fact (1 ≤ p)] [Finite ι]
-  [∀ i, NormedAddCommGroup (E i)]
+variable {ι : Type*} {E : ι → Type*} (p : ℝ≥0∞) [∀ i, UniformSpace (E i)] [∀ i, Nonempty (E i)]
 
-/-- Each factor of a complete finite `L^p` product is complete. -/
+/-- Each factor of a complete `L^p` product of nonempty uniform spaces is complete. -/
 theorem completeSpace_of_completeSpace [CompleteSpace (PiLp p E)] (i : ι) :
     CompleteSpace (E i) := by
   classical
-  have := Fintype.ofFinite ι
-  have hs : Isometry (single p i : E i → PiLp p E) := .of_dist_eq (dist_single_same p E i)
-  -- The `i`-th coordinate is a continuous left inverse of `single p i`, so its range is closed.
-  exact hs.isUniformInducing.completeSpace
-    (Function.LeftInverse.isClosed_range (f := fun x : PiLp p E ↦ x i)
-      (fun _ ↦ single_eq_same p i _) (PiLp.continuous_apply p E i) hs.continuous).isComplete
+  have := (uniformEquiv p E).completeSpace_iff.1 ‹_›
+  -- `E i` is a retract of the product: insert into a fixed point `c` and read coordinate `i`.
+  let c : ∀ j, E j := fun _ ↦ Classical.arbitrary _
+  refine CompleteSpace.of_comp_eq_id (fun x : ∀ j, E j ↦ x i) (Function.update c i)
+    (funext fun _ ↦ Function.update_self ..) (continuous_apply i) ?_
+  refine uniformContinuous_pi.2 fun j ↦ ?_
+  rcases eq_or_ne j i with rfl | hji
+  · simp only [Function.update_self]; exact uniformContinuous_id
+  · simpa [Function.update_of_ne hji] using uniformContinuous_const
 
-/-- A finite `L^p` product is complete if and only if every factor is complete. -/
+/-- An `L^p` product of nonempty uniform spaces is complete if and only if every factor is
+complete. -/
 theorem completeSpace_iff : CompleteSpace (PiLp p E) ↔ ∀ i, CompleteSpace (E i) :=
   ⟨fun _ ↦ completeSpace_of_completeSpace p, fun _ ↦ inferInstance⟩
 
