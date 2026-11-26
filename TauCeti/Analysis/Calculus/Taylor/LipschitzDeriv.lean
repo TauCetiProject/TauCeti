@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Taylor and quadrature residuals of curves with a Lipschitz derivative
@@ -31,7 +31,7 @@ one-sided at the endpoints.
 * The trapezoidal rule: `‖w (t + h) - w t - (h/2) • (w' t + w' (t + h))‖ ≤ M h³ / 12` for `w''`
   `M`-Lipschitz (`TauCeti.norm_sub_sub_smul_add_le_of_lipschitzOnWith`).
 * The midpoint rule: `‖w (t + h) - w t - h • w' (t + h/2)‖ ≤ M h³ / 24` for `w''` `M`-Lipschitz
-  (`TauCeti.norm_sub_sub_smul_add_half_le_of_lipschitzOnWith`).
+  (`TauCeti.norm_sub_sub_smul_apply_add_half_le_of_lipschitzOnWith`).
 
 The constants are attained by `w r = r²` (first order and midpoint interpolation) and `w r = r³`
 (the second order and the two quadrature rules), and a Lipschitz bound `M` on a derivative holds
@@ -39,9 +39,8 @@ whenever the next derivative has norm at most `M`. For a solution `y` of `y' = f
 `w = y` and `w' r = f r (y r)`, these residuals are the parts of the local errors of the Euler,
 trapezoidal and midpoint one-step methods that do not involve the Lipschitz constant of `f`.
 
-All bounds come from the mean value inequality with a polynomial majorant, recorded as
-`TauCeti.norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_left`,
-`TauCeti.norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_right` and their two-sided form
+All bounds come from the mean value inequality with a polynomial majorant in
+`TauCeti.Analysis.Calculus.MeanValue`, chiefly its two-sided form
 `TauCeti.norm_image_sub_le_of_norm_deriv_le_mul_abs_sub_pow`.
 
 ## References
@@ -59,64 +58,6 @@ open scoped NNReal
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-! ### The mean value inequality with a polynomial majorant -/
-
-/-- The mean value inequality with a derivative bound growing like a power of the distance to the
-left endpoint: if `‖f' r‖ ≤ C (r - t) ^ n` on `[t, u)`, then
-`‖f u - f t‖ ≤ C (u - t) ^ (n + 1) / (n + 1)`. -/
-theorem norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_left {f f' : ℝ → E} {t u C : ℝ} {n : ℕ}
-    (htu : t ≤ u) (hf : ∀ r ∈ Icc t u, HasDerivWithinAt f (f' r) (Icc t u) r)
-    (hbound : ∀ r ∈ Ico t u, ‖f' r‖ ≤ C * (r - t) ^ n) :
-    ‖f u - f t‖ ≤ C * (u - t) ^ (n + 1) / (n + 1) := by
-  refine image_norm_le_of_norm_deriv_right_le_deriv_boundary (f := fun r ↦ f r - f t)
-    (B := fun r ↦ C * (r - t) ^ (n + 1) / (n + 1))
-    (fun r hr ↦ ((hf r hr).sub_const (f t)).continuousWithinAt)
-    (fun r hr ↦ ((hf r (Ico_subset_Icc_self hr)).sub_const (f t)).mono_of_mem_nhdsWithin
-      (Icc_mem_nhdsGE_of_mem hr)) (by simp) (fun r ↦ ?_) hbound (right_mem_Icc.2 htu)
-  convert ((((hasDerivAt_id' r).sub_const t).fun_pow (n + 1)).const_mul C).div_const
-    ((n : ℝ) + 1) using 1
-  push_cast
-  field_simp
-
-/-- The mean value inequality with a derivative bound growing like a power of the distance to the
-right endpoint: if `‖f' r‖ ≤ C (u - r) ^ n` on `[t, u)`, then
-`‖f u - f t‖ ≤ C (u - t) ^ (n + 1) / (n + 1)`. -/
-theorem norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_right {f f' : ℝ → E} {t u C : ℝ} {n : ℕ}
-    (htu : t ≤ u) (hf : ∀ r ∈ Icc t u, HasDerivWithinAt f (f' r) (Icc t u) r)
-    (hbound : ∀ r ∈ Ico t u, ‖f' r‖ ≤ C * (u - r) ^ n) :
-    ‖f u - f t‖ ≤ C * (u - t) ^ (n + 1) / (n + 1) := by
-  have key := image_norm_le_of_norm_deriv_right_le_deriv_boundary (f := fun r ↦ f r - f t)
-    (fun r hr ↦ ((hf r hr).sub_const (f t)).continuousWithinAt)
-    (fun r hr ↦ ((hf r (Ico_subset_Icc_self hr)).sub_const (f t)).mono_of_mem_nhdsWithin
-      (Icc_mem_nhdsGE_of_mem hr))
-    (B := fun r ↦ C * ((u - t) ^ (n + 1) - (u - r) ^ (n + 1)) / (n + 1)) (by simp)
-    (fun r ↦ ?_) hbound (right_mem_Icc.2 htu)
-  · simpa using key
-  · convert (((((hasDerivAt_id' r).const_sub u).fun_pow (n + 1)).const_sub
-      ((u - t) ^ (n + 1))).const_mul C).div_const ((n : ℝ) + 1) using 1
-    push_cast
-    field_simp
-
-/-- The mean value inequality with a derivative bound growing like a power of the distance to a
-base point `s`: if `‖f' r‖ ≤ C |r - s| ^ n` on `[a, b]`, then for `s`, `u` in `[a, b]`, in either
-order, `‖f u - f s‖ ≤ C |u - s| ^ (n + 1) / (n + 1)`. -/
-theorem norm_image_sub_le_of_norm_deriv_le_mul_abs_sub_pow {f f' : ℝ → E} {a b s u C : ℝ}
-    {n : ℕ}
-    (hf : ∀ r ∈ Icc a b, HasDerivWithinAt f (f' r) (Icc a b) r)
-    (hbound : ∀ r ∈ Icc a b, ‖f' r‖ ≤ C * |r - s| ^ n) (hs : s ∈ Icc a b) (hu : u ∈ Icc a b) :
-    ‖f u - f s‖ ≤ C * |u - s| ^ (n + 1) / (n + 1) := by
-  rcases le_total s u with hsu | hus
-  · have hsub : Icc s u ⊆ Icc a b := Icc_subset_Icc hs.1 hu.2
-    rw [abs_of_nonneg (sub_nonneg.2 hsu)]
-    refine norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_left hsu
-      (fun r hr ↦ (hf r (hsub hr)).mono hsub) fun r hr ↦ ?_
-    simpa [abs_of_nonneg (sub_nonneg.2 hr.1)] using hbound r (hsub (Ico_subset_Icc_self hr))
-  · have hsub : Icc u s ⊆ Icc a b := Icc_subset_Icc hu.1 hs.2
-    rw [norm_sub_rev, abs_of_nonpos (sub_nonpos.2 hus), neg_sub]
-    refine norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_right hus
-      (fun r hr ↦ (hf r (hsub hr)).mono hsub) fun r hr ↦ ?_
-    simpa [abs_of_nonpos (sub_nonpos.2 hr.2.le)] using hbound r (hsub (Ico_subset_Icc_self hr))
 
 /-! ### Taylor residuals -/
 
@@ -235,7 +176,7 @@ theorem norm_sub_sub_smul_add_le_of_lipschitzOnWith
 /-- **The midpoint rule residual.** If `w` has derivative `w' r` and `w'` has derivative `w'' r`
 within `[a, b]` at every `r ∈ [a, b]`, and `w''` is `M`-Lipschitz on `[a, b]`, then for `a ≤ t`,
 `0 ≤ h` and `t + h ≤ b`, `‖w (t + h) - w t - h • w' (t + h / 2)‖ ≤ M h ^ 3 / 24`. -/
-theorem norm_sub_sub_smul_add_half_le_of_lipschitzOnWith
+theorem norm_sub_sub_smul_apply_add_half_le_of_lipschitzOnWith
     (hw : ∀ r ∈ Icc a b, HasDerivWithinAt w (w' r) (Icc a b) r)
     (hw' : ∀ r ∈ Icc a b, HasDerivWithinAt w' (w'' r) (Icc a b) r)
     (hM : LipschitzOnWith M w'' (Icc a b)) (ht : a ≤ t) (hh : 0 ≤ h) (hth : t + h ≤ b) :
