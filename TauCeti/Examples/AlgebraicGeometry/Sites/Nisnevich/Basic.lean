@@ -34,22 +34,8 @@ example (X : Scheme.{u}) : IsNisnevichCovering (fun _ : PUnit.{1} ↦ 𝟙 X) :=
 -- A quadratic field extension is not a Nisnevich covering.
 example (k K : Type u) [Field k] [Field K] [Algebra k K] (h : Module.finrank k K = 2) :
     ¬ IsNisnevichCovering
-      (fun _ : PUnit.{u + 1} ↦ Spec.map (CommRingCat.ofHom (algebraMap k K))) := by
-  intro hc
-  obtain ⟨-, x, -, hx⟩ := hc.exists_isIso (IsLocalRing.closedPoint k)
-  have := x.isPrime
-  rw [RingHom.isIso_SpecMap_residueFieldMap_iff _ x _ rfl] at hx
-  -- The residue field of the field `k` at its prime is `k`, so `k → K` is onto.
-  have hb : Function.Bijective (algebraMap k K) := by
-    refine ⟨(algebraMap k K).injective, fun y ↦ ?_⟩
-    obtain ⟨w, hw⟩ := hx.2 (algebraMap K x.asIdeal.ResidueField y)
-    obtain ⟨r, rfl⟩ :=
-      (Ideal.algEquivResidueFieldOfField (x.asIdeal.comap (algebraMap k K))).surjective w
-    refine ⟨r, (algebraMap K x.asIdeal.ResidueField).injective ?_⟩
-    rw [← hw, Ideal.algEquivResidueFieldOfField_apply, Ideal.ResidueField.map_algebraMap]
-  have := (LinearEquiv.ofBijective (Algebra.linearMap k K) hb).finrank_eq
-  rw [Module.finrank_self] at this
-  omega
+      (fun _ : PUnit.{u + 1} ↦ Spec.map (CommRingCat.ofHom (algebraMap k K))) :=
+  not_isNisnevichCovering_specMap_algebraMap_of_finrank_ne_one k K (by omega)
 
 example (X : Scheme.{u}) : HasSheafify X.smallNisnevichTopology (Type u) := inferInstance
 
