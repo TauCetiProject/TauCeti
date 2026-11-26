@@ -14,6 +14,8 @@ public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.LinearAlgebra.End.CharP
 
+import Mathlib.LinearAlgebra.TensorProduct.Pi
+
 /-!
 # Diagonal tensor products of a representation with a module over a group algebra
 
@@ -187,13 +189,10 @@ theorem shortExact_diagonalTensorMap [Module.Flat k N] {W' W'' : Type w} [AddCom
       simp only [diagonalTensorMap_hom_apply, hex.linearMap_comp_eq_zero, LinearMap.rTensor_zero,
         ModuleCat.hom_zero, LinearMap.zero_apply]
       -- The carrier of `diagonalTensor σ'' N` is `W'' ⊗[k] N` by definition.
-      exact LinearMap.zero_apply (M := W ⊗[k] N) (M₂ := W'' ⊗[k] N) x)).ShortExact := by
-  refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
-  · rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
-    exact rTensor_exact N hex hsurj
-  · exact (ModuleCat.mono_iff_injective _).2
-      (Module.Flat.rTensor_preserves_injective_linearMap f hinj)
-  · exact (ModuleCat.epi_iff_surjective _).2 (LinearMap.rTensor_surjective N hsurj)
+      exact LinearMap.zero_apply (M := W ⊗[k] N) (M₂ := W'' ⊗[k] N) x)).ShortExact :=
+  ModuleCat.shortComplex_shortExact _ (rTensor_exact N hex hsurj)
+    (Module.Flat.rTensor_preserves_injective_linearMap f hinj)
+    (LinearMap.rTensor_surjective N hsurj)
 
 /-- The diagonal tensor product with a trivial line is `N` itself, through `c ⊗ n ↦ c • n`. -/
 noncomputable def diagonalTensorTrivialEquiv {τ : Representation k Δ k} (hτ : ∀ g, τ g = 1) :
@@ -225,11 +224,14 @@ theorem diagonalTensorTrivialEquiv_symm_apply {τ : Representation k Δ k} (hτ 
     (n : N) : (diagonalTensorTrivialEquiv N hτ).symm n = (1 : k) ⊗ₜ[k] n :=
   TensorProduct.lid_symm_apply n
 
-/-- A diagonal tensor product of finite modules over a finite ring is finite. -/
-instance [Finite k] [Finite W] [Finite N] : Finite (diagonalTensor σ N) :=
-  have : Module.Finite k W := Module.Finite.of_finite
-  have : Module.Finite k N := Module.Finite.of_finite
-  Module.finite_of_finite k (M := W ⊗[k] N)
+/-- The diagonal tensor product of a finitely generated module with a finite module is finite: it
+is a quotient of `(Fin n → k) ⊗[k] N`, that is of `Fin n → N`. -/
+instance [Module.Finite k W] [Finite N] : Finite (diagonalTensor σ N) := by
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' k W
+  have : Finite ((Fin n → k) ⊗[k] N) :=
+    .of_equiv _ ((TensorProduct.comm k _ _).trans
+      (TensorProduct.piScalarRight k k N (Fin n))).symm.toEquiv
+  exact .of_surjective (f.rTensor N) (LinearMap.rTensor_surjective N hf)
 
 end DiagonalTensorModule
 
@@ -250,11 +252,9 @@ theorem eq_zero_of_smul_eq_self_diagonalTensor {z : Δ}
     rw [injective_iff_map_eq_zero]
     intro n hn
     exact hN n (by simpa [y, sub_eq_zero] using hn)
-  have hpow : ∀ m : ℕ, MonoidAlgebra.of R Δ (z ^ m) • x = x := by
-    intro m
-    induction m with
-    | zero => rw [pow_zero, map_one, one_smul]
-    | succ m ih => rw [pow_succ, map_mul, mul_smul, hx, ih]
+  have hpow (m : ℕ) : MonoidAlgebra.of R Δ (z ^ m) • x = x := by
+    rw [map_pow, ← smul_iterate_apply]
+    exact Function.iterate_fixed hx m
   have hact : diagonalTensorAction σ N (MonoidAlgebra.of R Δ (z ^ ℓ ^ a)) =
       (y ^ ℓ ^ a).lTensor W := by
     rw [diagonalTensorAction_of_eq_lTensor σ N hσ, map_pow, map_pow]

@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Order.Ring.Units
-public import TauCeti.GroupTheory.QuotientGroup.CardInvSmul
 public import TauCeti.RepresentationTheory.Augmentation.Basic
+public import TauCeti.RepresentationTheory.NormSplit.Permutation
 public import TauCeti.RepresentationTheory.Tensor.Diagonal
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Universal
 public import TauCeti.RepresentationTheory.Induction.Artin.Spanning
+
+import TauCeti.GroupTheory.SpecificGroups.Cyclic.CoprimePart
 
 /-!
 # Multiplicative functions of finite modules that are trivial on projective modules
@@ -39,7 +41,8 @@ with values in the torsion-free group of positive rationals. By the modular Arti
 (`TauCeti.exists_linearCombination_indK0_resK0_eq_natCard_nsmul`), `|Δ ⧸ C|` times the class of
 the trivial representation is an integral combination of permutation classes `[ZMod ℓ[(Δ ⧸ C) ⧸ D]]`
 for subgroups `D` of order prime to `ℓ`. The modules `ZMod ℓ[(Δ ⧸ C) ⧸ D] ⊗ M` satisfy Higman's
-criterion, because the stabilizers in `Δ` of the cosets have order `|C| |D|`, prime to `ℓ`; so
+criterion (`TauCeti.exists_sum_smul_inv_smul_eq_diagonalTensor_ofMulAction`), because the
+stabilizers in `Δ` of the cosets have order `|C| |D|`, prime to `ℓ`; so
 `φ (M) ^ |Δ ⧸ C| = 1`, and `φ M = 1`.
 
 ## Main results
@@ -72,71 +75,6 @@ section Core
 
 variable {R : Type u} [Ring R] {Δ : Type} [Group Δ] {ℓ : ℕ} [Fact ℓ.Prime]
 
-section Higman
-
-open Finset
-
-variable (N : ModuleCat.{v} R[Δ]) [Module (ZMod ℓ) N] [SMulCommClass R[Δ] (ZMod ℓ) N]
-  [Fintype Δ] (C : Subgroup Δ) [C.Normal] (D : Subgroup (Δ ⧸ C))
-
-/-- The permutation representation of `Δ` on the cosets of `D` in the quotient `Δ ⧸ C`. -/
-private noncomputable abbrev cosetRep : Representation (ZMod ℓ) Δ (ZMod ℓ)[(Δ ⧸ C) ⧸ D] :=
-  (Representation.ofMulAction (ZMod ℓ) (Δ ⧸ C) ((Δ ⧸ C) ⧸ D)).comp (QuotientGroup.mk' C)
-
-variable {C} in
-/-- **Higman's criterion for permutation modules.** If `C` and `D` have order prime to `ℓ`, the
-diagonal tensor product of `N` with the permutation module of `(Δ ⧸ C) ⧸ D` satisfies Higman's
-criterion: some additive `τ` has `∑ g, g τ g⁻¹ = 1`. -/
-private theorem exists_sum_smul_inv_smul_eq_diagonalTensor_cosetRep (hC : ¬ ℓ ∣ Nat.card C)
-    (hD : ¬ ℓ ∣ Nat.card D) :
-    ∃ τ : (cosetRep (ℓ := ℓ) C D).diagonalTensor N →+ (cosetRep (ℓ := ℓ) C D).diagonalTensor N,
-      ∀ x, ∑ g : Δ, MonoidAlgebra.of R Δ g • τ (MonoidAlgebra.of R Δ g⁻¹ • x) = x := by
-  classical
-  set x₀ : (Δ ⧸ C) ⧸ D := QuotientGroup.mk 1
-  set c : ZMod ℓ := ((Nat.card C * Nat.card D : ℕ) : ZMod ℓ)
-  have hc : c ≠ 0 := by
-    rw [Ne, ZMod.natCast_eq_zero_iff, (Fact.out : ℓ.Prime).dvd_mul]
-    tauto
-  let proj : (ZMod ℓ)[(Δ ⧸ C) ⧸ D] →ₗ[ZMod ℓ] (ZMod ℓ)[(Δ ⧸ C) ⧸ D] :=
-    MonoidAlgebra.lsingle x₀ ∘ₗ Finsupp.lapply x₀ ∘ₗ
-      (MonoidAlgebra.coeffLinearEquiv (ZMod ℓ)).toLinearMap
-  have hproj (y : (Δ ⧸ C) ⧸ D) (r : ZMod ℓ) :
-      proj (MonoidAlgebra.single y r) = if y = x₀ then MonoidAlgebra.single y r else 0 := by
-    split_ifs with h
-    · simp [proj, h]
-    · simp [proj, h]
-  set A := (cosetRep (ℓ := ℓ) C D).diagonalTensorAction (R := R) N
-  have hterm (g : Δ) (y : (Δ ⧸ C) ⧸ D) (r : ZMod ℓ) (n : N) :
-      A (MonoidAlgebra.of R Δ g) ((c⁻¹ • proj.rTensor N)
-        (A (MonoidAlgebra.of R Δ g⁻¹) (MonoidAlgebra.single y r ⊗ₜ n))) =
-        if (QuotientGroup.mk' C g)⁻¹ • y = x₀ then c⁻¹ • (MonoidAlgebra.single y r ⊗ₜ n)
-        else 0 := by
-    simp only [A, MonoidAlgebra.of_apply, Representation.diagonalTensorAction_single_tmul,
-      MonoidHom.comp_apply, Representation.ofMulAction_single, LinearMap.smul_apply,
-      LinearMap.rTensor_tmul, map_inv, hproj]
-    split_ifs with h
-    · simp [MonoidAlgebra.single_mul_single, smul_smul, ← MonoidAlgebra.one_def]
-    · simp
-  have hF : ∑ g : Δ, A (MonoidAlgebra.of R Δ g) * (c⁻¹ • proj.rTensor N) *
-      A (MonoidAlgebra.of R Δ g⁻¹) = 1 := by
-    refine TensorProduct.ext' fun v n ↦ ?_
-    induction v using MonoidAlgebra.induction_linear with
-    | zero => simp
-    | add v v' hv hv' => simp only [TensorProduct.add_tmul, map_add, hv, hv']
-    | single y r =>
-      rw [LinearMap.sum_apply]
-      have hcard : #{g : Δ | (QuotientGroup.mk' C g)⁻¹ • y = x₀} = Nat.card C * Nat.card D := by
-        rw [← QuotientGroup.natCard_inv_smul_eq_mk_one C D y, Nat.card_eq_fintype_card,
-          Fintype.card_subtype]
-      simp only [mul_apply_eq_comp, hterm, Finset.sum_ite, Finset.sum_const_zero, add_zero,
-        Finset.sum_const, hcard, ← Nat.cast_smul_eq_nsmul (ZMod ℓ), smul_smul]
-      rw [mul_inv_cancel₀ hc, one_smul, one_apply_eq_self]
-  refine ⟨AddMonoidHom.mk' (fun x ↦ (c⁻¹ • proj.rTensor N) x) (map_add _), fun x ↦ ?_⟩
-  -- The identity `hF` of endomorphisms of `W ⊗ N`, evaluated at `x`.
-  exact (LinearMap.sum_apply _ _ x).symm.trans (LinearMap.congr_fun hF x)
-
-end Higman
-
 section Main
 
 open Finset
@@ -160,13 +98,9 @@ private theorem phi_eq_of_linearEquiv {X Y : ModuleCat.{v} R[Δ]} (e : X ≃ₗ[
   have h0 : φ (ModuleCat.of R[Δ] PUnit.{v + 1}) = 1 :=
     h_higman _ inferInstance (fun _ ↦ Subsingleton.elim _ _) (fun _ _ ↦ Subsingleton.elim _ _)
       ⟨0, fun _ ↦ Subsingleton.elim _ _⟩
-  have hS : (ShortComplex.mk (ModuleCat.ofHom e.toLinearMap)
-      (0 : Y ⟶ ModuleCat.of R[Δ] PUnit.{v + 1}) (by simp)).ShortExact := by
-    refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
-    · rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
-      exact fun y ↦ ⟨fun _ ↦ ⟨e.symm y, e.apply_symm_apply y⟩, fun _ ↦ Subsingleton.elim _ _⟩
-    · exact (ModuleCat.mono_iff_injective _).2 e.injective
-    · exact (ModuleCat.epi_iff_surjective _).2 fun _ ↦ ⟨0, Subsingleton.elim _ _⟩
+  have hS := (ShortComplex.Splitting.ofIsIsoOfIsZero
+    (S := ShortComplex.mk e.toModuleIso.hom (0 : Y ⟶ ModuleCat.of R[Δ] PUnit.{v + 1}) (by simp))
+    inferInstance (ModuleCat.isZero_of_subsingleton _)).shortExact
   rw [h_mul _ hS ‹_› hY hzY, h0, mul_one]
 
 include h_mul h_higman in
@@ -177,40 +111,29 @@ private theorem phi_ne_zero {C : Subgroup Δ} [C.Normal] (hC : ¬ ℓ ∣ Nat.ca
     [SMulCommClass R[Δ] (ZMod ℓ) N] [Finite N]
     (hzN : ∀ n : N, MonoidAlgebra.of R Δ z • n = n → n = 0) : φ N ≠ 0 := by
   set X := (Δ ⧸ C) ⧸ (⊥ : Subgroup (Δ ⧸ C))
-  -- The augmentation, which is invariant under the permutation action.
-  let aug : (ZMod ℓ)[X] →ₗ[ZMod ℓ] ZMod ℓ := (MonoidAlgebra.basis X (ZMod ℓ)).sumCoords
-  have heq (g : Δ) : aug ∘ₗ cosetRep (ℓ := ℓ) C ⊥ g =
-      Representation.trivial (ZMod ℓ) Δ (ZMod ℓ) g ∘ₗ aug :=
-    LinearMap.ext fun v ↦ by
-      simp only [aug, LinearMap.comp_apply, MonoidHom.comp_apply, Representation.trivial_apply]
-      exact sumCoords_basis_ofMulAction (ZMod ℓ) (Δ ⧸ C) X (QuotientGroup.mk' C g) v
-  let e : (cosetRep (ℓ := ℓ) C ⊥).diagonalTensor N →ₗ[R[Δ]] N :=
+  set ρ : Representation (ZMod ℓ) Δ (ZMod ℓ)[X] :=
+    (Representation.ofMulAction (ZMod ℓ) (Δ ⧸ C) X).comp (QuotientGroup.mk' C)
+  -- The augmentation of the permutation module of `Δ ⧸ C`, inflated to `Δ`.
+  let e : ρ.diagonalTensor N →ₗ[R[Δ]] N :=
     (Representation.diagonalTensorTrivialEquiv N fun _ ↦ rfl).toLinearMap ∘ₗ
-      (Representation.diagonalTensorMap N aug heq).hom
-  have he : Function.Surjective e := fun n ↦ by
-    obtain ⟨x, hx⟩ : ∃ x : (cosetRep (ℓ := ℓ) C ⊥).diagonalTensor N, aug.rTensor N x = _ :=
-      LinearMap.rTensor_surjective N (MonoidAlgebra.basis X (ZMod ℓ)).sumCoords_surjective
-        ((Representation.diagonalTensorTrivialEquiv N
-          (τ := Representation.trivial (ZMod ℓ) Δ (ZMod ℓ)) fun _ ↦ rfl).symm n)
-    have hx' : (Representation.diagonalTensorMap N aug heq).hom x = _ :=
-      (Representation.diagonalTensorMap_hom_apply ..).trans hx
-    exact ⟨x, by rw [LinearMap.comp_apply, hx', LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]⟩
-  have hS : (ShortComplex.mk (ModuleCat.ofHom (LinearMap.ker e).subtype) (ModuleCat.ofHom e)
-      (by ext x; exact x.property)).ShortExact := by
-    refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
-    · rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact]
-      exact LinearMap.exact_subtype_ker_map e
-    · exact (ModuleCat.mono_iff_injective _).2 Subtype.val_injective
-    · exact (ModuleCat.epi_iff_surjective _).2 he
-  have : Finite (ZMod ℓ)[X] := Module.finite_of_finite (ZMod ℓ)
-  have hP : Finite ((cosetRep (ℓ := ℓ) C ⊥).diagonalTensor N) := inferInstance
-  have hσ : cosetRep (ℓ := ℓ) C ⊥ (z ^ ℓ ^ a) = 1 := by
-    simp [cosetRep, (QuotientGroup.eq_one_iff _).2 hw]
-  have h1 := h_higman _ hP (ZModModule.char_nsmul_eq_zero ℓ)
+      (Representation.diagonalTensorMap N (σ := ρ)
+        (σ' := Representation.trivial (ZMod ℓ) Δ (ZMod ℓ))
+        (permutationAugmentation (ZMod ℓ) (Δ ⧸ C) X).hom.toLinearMap
+        fun g ↦ (permutationAugmentation (ZMod ℓ) (Δ ⧸ C) X).hom.isIntertwining'
+          (QuotientGroup.mk' C g)).hom
+  have he : Function.Surjective e := by
+    refine (Representation.diagonalTensorTrivialEquiv N fun _ ↦ rfl).surjective.comp fun y ↦ ?_
+    obtain ⟨x, hx⟩ := LinearMap.rTensor_surjective N
+      ((Rep.epi_iff_surjective (permutationAugmentation (ZMod ℓ) (Δ ⧸ C) X)).1 inferInstance) y
+    exact ⟨x, (Representation.diagonalTensorMap_hom_apply ..).trans hx⟩
+  have hσ : ρ (z ^ ℓ ^ a) = 1 := by
+    simp [ρ, (QuotientGroup.eq_one_iff _).2 hw]
+  have h1 := h_higman _ inferInstance (ZModModule.char_nsmul_eq_zero ℓ)
     (Representation.eq_zero_of_smul_eq_self_diagonalTensor _ N hzN hσ)
-    (exists_sum_smul_inv_smul_eq_diagonalTensor_cosetRep N ⊥ hC
+    (exists_sum_smul_inv_smul_eq_diagonalTensor_ofMulAction N ⊥ hC
       (by simpa using (Fact.out : ℓ.Prime).ne_one))
-  have h2 := h_mul _ hS hP (ZModModule.char_nsmul_eq_zero ℓ)
+  have h2 := h_mul _ (LinearMap.shortExact_shortComplexKer he) inferInstance
+    (ZModModule.char_nsmul_eq_zero ℓ)
     (Representation.eq_zero_of_smul_eq_self_diagonalTensor _ N hzN hσ)
   intro h
   simp only [h, mul_zero] at h2
@@ -224,6 +147,14 @@ private noncomputable abbrev inflTensor (V : FDRep (ZMod ℓ) (Δ ⧸ C)) : Modu
   Representation.diagonalTensor
     (((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).obj V).ρ.comp
       (QuotientGroup.mk' C)) N
+
+omit [Fintype Δ] in
+/-- The inflated tensor product of `FDRep.of ρ` is the diagonal tensor product of `N` with `ρ`
+inflated to `Δ`. -/
+private theorem inflTensor_of {V : Type} [AddCommGroup V] [Module (ZMod ℓ) V]
+    [Module.Finite (ZMod ℓ) V] (ρ : Representation (ZMod ℓ) (Δ ⧸ C) V) :
+    inflTensor C N (FDRep.of ρ) = Representation.diagonalTensor (ρ.comp (QuotientGroup.mk' C)) N :=
+  rfl
 
 omit [Fintype Δ] in
 /-- The inflated tensor product of a finite module with a finite representation is finite. -/
@@ -295,14 +226,18 @@ private theorem phi_eq_one_of_quotient {a : ℕ} (hC : ¬ ℓ ∣ Nat.card C) (h
   let Φ := liftFDRepK0 f hf
   obtain ⟨c, hc⟩ :=
     exists_linearCombination_indK0_resK0_eq_natCard_nsmul (k := ZMod ℓ) (G := Δ ⧸ C) ℓ
+  have hσ {V : Type} [AddCommGroup V] [Module (ZMod ℓ) V]
+      (ρ : Representation (ZMod ℓ) (Δ ⧸ C) V) : ρ.comp (QuotientGroup.mk' C) (z ^ ℓ ^ a) = 1 := by
+    rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply, (QuotientGroup.eq_one_iff _).2 hw, map_one]
   have hperm (D : {D : Subgroup (Δ ⧸ C) // IsCyclic D ∧ ¬ ℓ ∣ Nat.card D}) :
       Φ (indK0 (ZMod ℓ) D.val (resK0 (ZMod ℓ) D.val.subtype 1)) = 0 := by
     rw [resK0_one, indK0_one, permK0_def]
     refine (liftFDRepK0_of f hf (FDRep.of (Representation.ofMulAction (ZMod ℓ) (Δ ⧸ C)
       ((Δ ⧸ C) ⧸ D.val)))).trans (hf0 _ ?_)
-    exact h_higman _ (finite_inflTensor C N _) (ZModModule.char_nsmul_eq_zero ℓ)
-      (eq_zero_of_of_smul_inflTensor_eq C N hw hzM _)
-      (exists_sum_smul_inv_smul_eq_diagonalTensor_cosetRep N D.val hC D.property.2)
+    rw [inflTensor_of]
+    exact h_higman _ inferInstance (ZModModule.char_nsmul_eq_zero ℓ)
+      (Representation.eq_zero_of_smul_eq_self_diagonalTensor _ N hzM (hσ _))
+      (exists_sum_smul_inv_smul_eq_diagonalTensor_ofMulAction N D.val hC D.property.2)
   have h1 : Nat.card (Δ ⧸ C) • Φ 1 = 0 := by
     rw [← map_nsmul, ← hc 1, Finsupp.linearCombination_apply, map_finsuppSum]
     exact Finset.sum_eq_zero fun D _ ↦ by simp only [map_zsmul, hperm, zsmul_zero]
@@ -312,9 +247,11 @@ private theorem phi_eq_one_of_quotient {a : ℕ} (hC : ¬ ℓ ∣ Nat.card C) (h
     ((liftFDRepK0_of f hf (FDRep.of (Representation.trivial (ZMod ℓ) (Δ ⧸ C) (ZMod ℓ)))).symm.trans
       h2)
   simp only [f, toMul_ofMul, Units.val_mk0, toMul_zero, OneMemClass.coe_one, Units.val_one] at h3
+  rw [inflTensor_of] at h3
   exact (phi_eq_of_linearEquiv h_mul h_higman
     (Representation.diagonalTensorTrivialEquiv N (k := ZMod ℓ)
-      (τ := (Representation.trivial (ZMod ℓ) Δ (ZMod ℓ))) fun _ ↦ rfl)
+      (τ := (Representation.trivial (ZMod ℓ) (Δ ⧸ C) (ZMod ℓ)).comp (QuotientGroup.mk' C))
+      fun _ ↦ rfl)
     (ZModModule.char_nsmul_eq_zero ℓ) hzM).trans (by exact_mod_cast h3)
 
 end Main
@@ -348,16 +285,13 @@ theorem eq_one_of_multiplicative_of_eq_one_of_higman {R : Type u} [Ring R] {Δ :
   let : Module (ZMod ℓ) M := AddCommGroup.zmodModule hℓM
   have : SMulCommClass R[Δ] (ZMod ℓ) M :=
     ⟨fun a c m ↦ ZMod.map_smul (DistribSMul.toAddMonoidHom M a) c m⟩
-  -- Pass to the quotient `Δ ⧸ C` by the prime-to-`ℓ` part `C` of the cyclic group of `z`.
-  let C := Subgroup.zpowers (z ^ ℓ ^ (orderOf z).factorization ℓ)
-  have : C.Normal := ⟨fun n hn g ↦ by
-    obtain ⟨k, rfl⟩ := Subgroup.mem_zpowers_iff.1 hn
-    rw [(((Commute.pow_left (hz g) _).zpow_left k).symm).mul_inv_cancel]
-    exact Subgroup.zpow_mem_zpowers _ k⟩
-  have hC : ¬ ℓ ∣ Nat.card C := by
-    rw [Nat.card_zpowers, orderOf_pow_of_dvd (pow_ne_zero _ hℓ.ne_zero) (Nat.ordProj_dvd _ _)]
-    exact Nat.not_dvd_ordCompl hℓ (orderOf_pos z).ne'
-  have hw : z ^ ℓ ^ (orderOf z).factorization ℓ ∈ C := Subgroup.mem_zpowers _
+  -- Pass to the quotient `Δ ⧸ C` by the subgroup `C` generated by the `ℓ`-free part of `z`.
+  let C := Subgroup.zpowers (pFreePart ℓ z)
+  have hzc : z ∈ Subgroup.center Δ := Subgroup.mem_center_iff.2 fun g ↦ (hz g).symm
+  have : C.Normal := Subgroup.normal_of_le_center
+    (Subgroup.zpowers_le.2 (Subgroup.zpowers_le.2 hzc (pFreePart_mem_zpowers ℓ z)))
+  have hC : ¬ ℓ ∣ Nat.card C := not_dvd_natCard_zpowers_pFreePart hℓ (orderOf_pos z).ne'
+  have hw : z ^ ordProj[ℓ] (orderOf z) ∈ C := pow_ordProj_mem_zpowers_pFreePart ℓ z
   exact phi_eq_one_of_quotient h_mul h_higman C M hC hw hzM
 
 end TauCeti
