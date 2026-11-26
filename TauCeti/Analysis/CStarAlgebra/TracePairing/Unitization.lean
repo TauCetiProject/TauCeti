@@ -17,9 +17,10 @@ Let `τ` be a positive tracial functional on a possibly nonunital C⋆-algebra `
 positive nor bounded by `1`. The **trace pairing** `τ_* : K₀(A) →+ ℝ`
 (`TauCeti.PositiveTracialFunctional.unitizationKZeroPairing`) is the real part of the unnormalized
 matrix trace of `τ⁺` on `K₀(A⁺)`, restricted to `K₀(A)`; the value of `τ⁺` on the scalars does
-not matter there (`TauCeti.UnitizationKZero.tracePairing_traceExtension`). On a class `[e] − [p]`,
-where the scalar part of the projection `e` over `A⁺` is the projection `p` over `ℂ`, it is the
-real part of `∑ i, τ ((e i i).snd)`, the trace of the matrix `e − p` over `A`
+not matter there (`TauCeti.UnitizationKZero.tracePairing_traceExtension`). On a class `[e] − [p]`
+of `K₀(A)`, for projections `e` over `A⁺` and `p` over `ℂ`, it is the real part of
+`∑ i, τ ((e i i).snd)`; when `p` is the scalar part of `e`, this is the trace of the matrix
+`e − p` over `A`
 (`TauCeti.PositiveTracialFunctional.unitizationKZeroPairing_of_mk_sub_inl_of_mk`), so neither
 positivity of `τ⁺` nor a bound on `‖τ‖` enters. It is natural for star homomorphisms
 (`TauCeti.PositiveTracialFunctional.unitizationKZeroPairing_comp`).
@@ -57,15 +58,16 @@ theorem unitizationKZeroPairing_apply (x : UnitizationKZero ℂ A) :
       (UnitizationKZero.tracePairing (τ : A →+ ℂ) τ.map_mul_comm x).re :=
   (rfl)
 
-/-- **The pairing on a representative.** For a projection `e` over `A⁺` with scalar part the
-projection `p` over `ℂ`, the class `[e] − [p]` pairs to the real part of `∑ i, τ ((e i i).snd)`,
+/-- **The pairing on a representative.** Let `e` be a projection over `A⁺` and `p` a projection
+over `ℂ`. If `[e] − [p]` lies in `K₀(A)`, it pairs to the real part of `∑ i, τ ((e i i).snd)`.
+When `p` is the scalar part of `e` (`TauCeti.UnitizationKZero.of_mk_sub_inl_of_mk_mem`), this is
 the trace of `e − p`. -/
 theorem unitizationKZeroPairing_of_mk_sub_inl_of_mk {e : Matrix m m (Unitization ℂ A)}
     (he : IsStarProjection e) {p : Matrix m m ℂ} (hp : IsStarProjection p)
-    (hep : e.map (fun x ↦ x.fst) = p) :
-    τ.unitizationKZeroPairing
-        ⟨_, UnitizationKZero.of_mk_sub_inl_of_mk_mem he hp hep⟩ =
-      (∑ i, τ ((e i i).snd)).re := by
+    (hx : GrothendieckAddGroup.of (ProjectionMonoid.mk e he) -
+      UnitizationKZero.inl ℂ A (GrothendieckAddGroup.of (ProjectionMonoid.mk p hp)) ∈
+        UnitizationKZero ℂ A) :
+    τ.unitizationKZeroPairing ⟨_, hx⟩ = (∑ i, τ ((e i i).snd)).re := by
   rw [unitizationKZeroPairing_apply, UnitizationKZero.tracePairing_of_mk_sub_inl_of_mk]
   simp
 

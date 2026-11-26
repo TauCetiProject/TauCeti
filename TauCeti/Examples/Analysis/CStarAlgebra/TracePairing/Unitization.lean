@@ -46,7 +46,7 @@ theorem unitizationKZeroPairing_e :
     idTrace.unitizationKZeroPairing
         ⟨_, UnitizationKZero.of_mk_sub_inl_of_mk_mem isStarProjection_e (.zero _) map_fst_e⟩ =
       1 := by
-  rw [PositiveTracialFunctional.unitizationKZeroPairing_of_mk_sub_inl_of_mk _ _ _ map_fst_e]
+  rw [PositiveTracialFunctional.unitizationKZeroPairing_of_mk_sub_inl_of_mk]
   simp
 
 /-- The class `[1 − inr 1] − [1]` of `K₀(ℂ)` pairs to `−1`. -/
@@ -55,7 +55,7 @@ theorem unitizationKZeroPairing_one_sub_e :
         ⟨_, UnitizationKZero.of_mk_sub_inl_of_mk_mem isStarProjection_e.one_sub (.one _)
           map_fst_one_sub_e⟩ =
       -1 := by
-  rw [PositiveTracialFunctional.unitizationKZeroPairing_of_mk_sub_inl_of_mk _ _ _ map_fst_one_sub_e]
+  rw [PositiveTracialFunctional.unitizationKZeroPairing_of_mk_sub_inl_of_mk]
   simp
 
 end TauCeti.UnitizationTracePairingExample
