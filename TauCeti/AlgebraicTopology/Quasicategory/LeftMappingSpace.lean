@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.Quasicategory.CompStruct
 public import TauCeti.AlgebraicTopology.Quasicategory.MappingSpace
-public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
-public import TauCeti.AlgebraicTopology.SimplicialSet.Horn
 import TauCeti.AlgebraicTopology.SimplicialSet.Vertex
 
 /-!
@@ -132,31 +129,36 @@ def obj₀Equiv : (X.leftMappingSpace x y : SSet.{u}) _⦋0⦌ ≃ Edge x y wher
   right_inv _ := rfl
 
 /-- The edge attached to a vertex of `Hom^L_X(x, y)` is that vertex, as a `1`-simplex of `X`. -/
+@[simp]
 theorem obj₀Equiv_apply_edge (σ : (X.leftMappingSpace x y : SSet.{u}) _⦋0⦌) :
-    (obj₀Equiv σ).edge = σ.val :=
+    dsimp% (obj₀Equiv σ).edge = σ.val :=
   (rfl)
 
 /-- The vertex of `Hom^L_X(x, y)` attached to an edge is that edge, as a `1`-simplex of `X`. -/
+@[simp]
 theorem obj₀Equiv_symm_apply_coe (e : Edge x y) :
-    (obj₀Equiv.symm e).val = e.edge :=
+    dsimp% (obj₀Equiv.symm e).val = e.edge :=
   (rfl)
 
 /-- The `j`-th face of an `(n + 1)`-simplex of `Hom^L_X(x, y)` is the `(j + 1)`-th face of the
 corresponding `(n + 2)`-simplex of `X`. -/
+@[simp]
 theorem coe_δ {n : ℕ} (j : Fin (n + 2)) (s : (X.leftMappingSpace x y : SSet.{u}) _⦋n + 1⦌) :
-    (SimplicialObject.δ (X.leftMappingSpace x y : SSet.{u}) j s).val =
+    dsimp% (SimplicialObject.δ (X.leftMappingSpace x y : SSet.{u}) j s).val =
       X.δ j.succ (s.val : X _⦋n + 2⦌) :=
   (ConcreteCategory.congr_hom (X.vertexJoin_op_comp_δ j) s.val :)
 
 /-- The `j`-th degeneracy of an `n`-simplex of `Hom^L_X(x, y)` is the `(j + 1)`-th degeneracy of
 the corresponding `(n + 1)`-simplex of `X`. -/
+@[simp]
 theorem coe_σ {n : ℕ} (j : Fin (n + 1)) (s : (X.leftMappingSpace x y : SSet.{u}) _⦋n⦌) :
-    (SimplicialObject.σ (X.leftMappingSpace x y : SSet.{u}) j s).val =
+    dsimp% (SimplicialObject.σ (X.leftMappingSpace x y : SSet.{u}) j s).val =
       X.σ j.succ (s.val : X _⦋n + 1⦌) :=
   (ConcreteCategory.congr_hom (X.vertexJoin_op_comp_σ j) s.val :)
 
 /-- The initial vertex of an `n`-simplex of `Hom^L_X(x, y)`, an `(n + 1)`-simplex of `X`, is
 `x`. -/
+@[simp]
 theorem map_const_zero {n : ℕ} (s : (X.leftMappingSpace x y : SSet.{u}) _⦋n⦌) :
     X.map (SimplexCategory.const ⦋0⦌ ⦋n + 1⦌ 0).op (s.val : X _⦋n + 1⦌) = x :=
   ((mem_leftMappingSpace_iff _).1 s.property).1
@@ -461,16 +463,18 @@ noncomputable def cosliceFiberIso :
 
 /-- The simplex of `Hom^L_X(x, y)` attached to a simplex `Δ[0] ⋆ Δ[n] ⟶ X` of the fibre of
 `X_{x/} ⟶ X` is its composite with `Δ[n + 1] ≅ Δ[0] ⋆ Δ[n]`. -/
+@[simp]
 theorem cosliceFiberIso_hom_app_coe {n : ℕ}
     (s : (fiber (coslice.π (yonedaEquiv.symm x)) y : SSet.{u}) _⦋n⦌) :
-    ((cosliceFiberIso x y).hom.app _ s).val =
+    dsimp% ((cosliceFiberIso x y).hom.app _ s).val =
       (yonedaEquiv ((join.coneIso n).inv ≫ (coslice.objEquiv s.val).val) : X _⦋n + 1⦌) :=
   (rfl)
 
 /-- The simplex `Δ[0] ⋆ Δ[n] ⟶ X` of the fibre of `X_{x/} ⟶ X` attached to a simplex of
 `Hom^L_X(x, y)` is its composite with `Δ[0] ⋆ Δ[n] ≅ Δ[n + 1]`. -/
+@[simp]
 theorem cosliceFiberIso_inv_app_coe {n : ℕ} (t : (X.leftMappingSpace x y : SSet.{u}) _⦋n⦌) :
-    (coslice.objEquiv ((cosliceFiberIso x y).inv.app _ t).val).val =
+    dsimp% (coslice.objEquiv ((cosliceFiberIso x y).inv.app _ t).val).val =
       (join.coneIso n).hom ≫ yonedaEquiv.symm (t.val : X _⦋n + 1⦌) :=
   congrArg Subtype.val (coslice.objEquiv.apply_symm_apply _)
 
