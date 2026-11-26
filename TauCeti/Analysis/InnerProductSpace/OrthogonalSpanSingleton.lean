@@ -14,15 +14,12 @@ Let `E` be an inner product space of dimension `n + 1` and `v` a nonzero vector 
 orthogonal hyperplane `(𝕜 ∙ v)ᗮ` has dimension `n`, so every space `W` of dimension `n` maps
 isomorphically onto it. Composing with the inclusion and the orthogonal projection gives a
 continuous linear map `L : W → E` with values orthogonal to `v` and a left inverse `P` of `L`
-that kills `v`. In particular, in dimension at least `2` every nonzero vector has a nonzero
-orthogonal vector.
+that kills `v`.
 
 ## Main results
 
 * `TauCeti.exists_leftInverse_inner_eq_zero_of_finrank_eq`: maps `L : W → E` with values
   orthogonal to `v` and `P : E → W` with `P ∘ L = id` and `P v = 0`.
-* `TauCeti.exists_ne_zero_inner_eq_zero`: a nonzero vector orthogonal to a given nonzero vector,
-  in dimension at least `2`.
 -/
 
 public section
@@ -53,15 +50,5 @@ theorem exists_leftInverse_inner_eq_zero_of_finrank_eq {n : ℕ} [Fact (finrank 
   · simp [K, Submodule.orthogonalProjectionOnto_orthogonalComplement_singleton_eq_zero]
   · exact Submodule.inner_left_of_mem_orthogonal (Submodule.mem_span_singleton_self v)
       (A w).property
-
-/-- In dimension at least `2`, every nonzero vector `v` has a nonzero orthogonal vector. -/
-theorem exists_ne_zero_inner_eq_zero (hE : 2 ≤ finrank 𝕜 E) {v : E} (hv : v ≠ 0) :
-    ∃ w : E, w ≠ 0 ∧ ⟪v, w⟫_𝕜 = 0 := by
-  have : FiniteDimensional 𝕜 E := .of_finrank_pos (by omega)
-  have h := Submodule.finrank_add_finrank_orthogonal (𝕜 ∙ v)
-  rw [finrank_span_singleton hv] at h
-  have : Nontrivial (𝕜 ∙ v)ᗮ := Module.nontrivial_of_finrank_pos (R := 𝕜) (by omega)
-  obtain ⟨w, hw⟩ := exists_ne (0 : (𝕜 ∙ v)ᗮ)
-  exact ⟨w, by simpa using hw, Submodule.mem_orthogonal_singleton_iff_inner_right.mp w.property⟩
 
 end TauCeti

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.SingularValues.Least
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
-import TauCeti.Analysis.InnerProductSpace.OrthogonalSpanSingleton
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.InnerProductSpace.Radial.Rescale
 
 /-!
@@ -147,9 +147,10 @@ theorem abs_mul_norm_rpow_le_norm_fderiv_norm_rpow_smul_self (a : ℝ) {x : E} (
 `‖x‖ ^ (a - 1) ≤ ‖D‖` on the operator norm of the derivative of the radial stretch. -/
 theorem norm_rpow_le_norm_fderiv_norm_rpow_smul_self (hE : 2 ≤ finrank ℝ E) (a : ℝ) {x : E}
     (hx : x ≠ 0) : ‖x‖ ^ (a - 1) ≤ ‖fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x‖ := by
-  obtain ⟨w, hw0, hw⟩ := exists_ne_zero_inner_eq_zero hE hx
+  obtain ⟨w, hw0, hw⟩ :=
+    exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ) {x} (by simp; omega)
   have h := (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x).le_opNorm w
-  rw [norm_fderiv_norm_rpow_smul_self_apply_of_inner_eq_zero a hx hw] at h
+  rw [norm_fderiv_norm_rpow_smul_self_apply_of_inner_eq_zero a hx (hw x (by simp))] at h
   exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hw0)
 
 /-- The radial direction gives the upper bound `ℓ(D) ≤ |a| · ‖x‖ ^ (a - 1)` on the minimal stretch
@@ -170,11 +171,12 @@ theorem minimalStretch_fderiv_norm_rpow_smul_self_le_norm_rpow [FiniteDimensiona
     (hE : 2 ≤ finrank ℝ E) (a : ℝ) {x : E} (hx : x ≠ 0) :
     (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E).minimalStretch ≤ ‖x‖ ^ (a - 1) := by
   have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
-  obtain ⟨w, hw0, hw⟩ := exists_ne_zero_inner_eq_zero hE hx
+  obtain ⟨w, hw0, hw⟩ :=
+    exists_ne_zero_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ) {x} (by simp; omega)
   have h := LinearMap.minimalStretch_mul_norm_le_norm_apply
     (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E) w
   rw [ContinuousLinearMap.coe_coe,
-    norm_fderiv_norm_rpow_smul_self_apply_of_inner_eq_zero a hx hw] at h
+    norm_fderiv_norm_rpow_smul_self_apply_of_inner_eq_zero a hx (hw x (by simp))] at h
   exact le_of_mul_le_mul_right h (norm_pos_iff.mpr hw0)
 
 /-- For `|a| ≥ 1` and `x ≠ 0`, in every dimension, `‖D‖ = |a| · ‖x‖ ^ (a - 1)`: the norm is
