@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.FiniteDimensional.ScalarTower
 public import TauCeti.RingTheory.Semisimple.Multiplicity
 public import TauCeti.RingTheory.SimpleModule.Basic
 
@@ -34,7 +35,9 @@ block of size three), which is why the full composition series is used.
 * `TauCeti.seriesSemisimplification s`: the product of the factors `s i.succ / s i.castSucc` of a
   composition series `s`.
 * `TauCeti.semisimplification R M`: the semisimplification of a module of finite length, the
-  product of the factors of a chosen composition series from `⊥` to `⊤`.
+  product of the factors of a chosen composition series from `⊥` to `⊤`. For a `k`-algebra `R`
+  it is a `k`-vector space (`TauCeti.semisimplification.instModule`), finite-dimensional when `M`
+  is (`TauCeti.semisimplification.instFiniteDimensional`).
 
 ## Main results
 
@@ -113,6 +116,26 @@ instance : IsNoetherian R (semisimplification R M) :=
 /-- The semisimplification is Artinian, as a finite product of simple modules. -/
 instance : IsArtinian R (semisimplification R M) :=
   inferInstanceAs (IsArtinian R (seriesSemisimplification _))
+
+section Algebra
+
+variable {k : Type*} [Field k] [Algebra k R] [Module k M] [IsScalarTower k R M]
+
+/-- The `k`-vector space structure of the semisimplification of an `R`-module, for a
+`k`-algebra `R`. -/
+noncomputable instance semisimplification.instModule : Module k (semisimplification R M) :=
+  inferInstanceAs (Module k (seriesSemisimplification _))
+
+/-- The `k`- and `R`-actions on the semisimplification are compatible. -/
+instance semisimplification.instIsScalarTower : IsScalarTower k R (semisimplification R M) :=
+  inferInstanceAs (IsScalarTower k R (seriesSemisimplification _))
+
+/-- The semisimplification of a finite-dimensional module is finite-dimensional. -/
+instance semisimplification.instFiniteDimensional [FiniteDimensional k M] :
+    FiniteDimensional k (semisimplification R M) :=
+  inferInstanceAs (FiniteDimensional k (seriesSemisimplification _))
+
+end Algebra
 
 /-- The semisimplification has the Jordan-Hölder multiplicities of the module. -/
 @[simp]

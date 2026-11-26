@@ -40,27 +40,6 @@ namespace TauCeti
 
 variable {k A : Type*} [Field k] [Ring A] [Algebra k A]
 
-section Instances
-
-variable {M : Type*} [AddCommGroup M] [Module A M] [Module k M] [IsScalarTower k A M]
-  [IsNoetherian A M] [IsArtinian A M]
-
-/-- The `k`-vector space structure of the semisimplification of an `A`-module, for a
-`k`-algebra `A`. -/
-noncomputable instance semisimplification.instModule : Module k (semisimplification A M) :=
-  inferInstanceAs (Module k (seriesSemisimplification _))
-
-/-- The `k`- and `A`-actions on the semisimplification are compatible. -/
-instance semisimplification.instIsScalarTower : IsScalarTower k A (semisimplification A M) :=
-  inferInstanceAs (IsScalarTower k A (seriesSemisimplification _))
-
-/-- The semisimplification of a finite-dimensional module is finite-dimensional. -/
-instance semisimplification.instFiniteDimensional [FiniteDimensional k M] :
-    FiniteDimensional k (semisimplification A M) :=
-  inferInstanceAs (FiniteDimensional k (seriesSemisimplification _))
-
-end Instances
-
 section Charpoly
 
 variable {M : Type*} [AddCommGroup M] [Module A M] [Module k M] [IsScalarTower k A M]
