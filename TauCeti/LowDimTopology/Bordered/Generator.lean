@@ -169,6 +169,15 @@ theorem generatorChain_apply [DecidableEq Point] (x : H.Generator) (q : Point) :
     ⟨by rintro ⟨j, rfl⟩; simp, fun h => ⟨_, h⟩⟩
   simp only [generatorChain, Set.indicator_apply, this, Pi.one_apply]
 
+/-- Pairing the `0`-chain of a generator with a ring-valued function on intersection points sums
+the function over the points of the generator. -/
+theorem sum_generatorChain_mul [Fintype Point] {R : Type*} [Ring R] (x : H.Generator)
+    (f : Point → R) : ∑ q, (H.generatorChain x q : R) * f q = ∑ j, f (x.point j) := by
+  classical
+  refine (Fintype.sum_of_injective x.point (Function.LeftInverse.injective x.beta_point) _ _
+    (fun q hq => ?_) fun j => by simp).symm
+  simp [show x.point (H.beta q) ≠ q from fun h => hq ⟨_, h⟩]
+
 /-! ### The idempotents of a generator -/
 
 section Idempotents

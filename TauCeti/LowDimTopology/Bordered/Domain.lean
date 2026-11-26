@@ -585,6 +585,31 @@ theorem apply_borderRegion_eq_of_borderClass_eq {D D' : Region → ℤ}
     simp only [borderClass_apply] at hi
     linarith
 
+/-- The multiplicity of a domain at the interval below the boundary point `i` is its basepoint
+multiplicity minus the border class summed over the points below `i`. -/
+theorem apply_borderRegion_castSucc (D : Region → ℤ) (i : Fin n) :
+    D (H.borderRegion i.castSucc) =
+      D (H.borderRegion 0) - ∑ y ∈ ({y | y < i} : Finset (Fin n)), H.borderClass D y := by
+  obtain ⟨k, hk⟩ := i
+  induction k with
+  | zero =>
+    have : ({y | y < (⟨0, hk⟩ : Fin n)} : Finset (Fin n)) = ∅ := by
+      ext y
+      simp [Fin.lt_def]
+    simp [this, Fin.castSucc, Fin.castAdd, Fin.castLE]
+  | succ k ih =>
+    have hset : ({y | y < (⟨k + 1, hk⟩ : Fin n)} : Finset (Fin n)) =
+        insert ⟨k, by omega⟩ ({y | y < (⟨k, by omega⟩ : Fin n)} : Finset (Fin n)) := by
+      ext y
+      simp only [mem_filter, mem_univ, true_and, mem_insert, Fin.lt_def, Fin.ext_iff]
+      omega
+    have hcs : (⟨k + 1, hk⟩ : Fin n).castSucc = (⟨k, by omega⟩ : Fin n).succ := by
+      ext
+      simp
+    have hδ := H.borderClass_apply D ⟨k, by omega⟩
+    rw [hset, sum_insert (by simp), hcs]
+    linarith [ih (by omega)]
+
 /-- A domain is a provincial periodic domain exactly when it has multiplicity zero at every region
 along the boundary and its `α`- and `β`-parts are cycles. -/
 theorem mem_provincialPeriodicDomains_iff_forall_borderRegion {P : Region → ℤ} :
