@@ -51,7 +51,9 @@ Laplacian between the quotients of one manifold by almost-conjugate subgroups.
   with `TauCeti.Manifold.SobolevH1.normalizedPullback_ofSmooth` on smooth functions.
 * `TauCeti.Manifold.SobolevH1.toLp_normalizedPullback`: compatibility with the normalized pullback
   on `L²`.
-* `TauCeti.Manifold.SobolevH1.dirichletForm_normalizedPullback`: the energy-form identity.
+* `TauCeti.Manifold.SobolevH1.dirichletForm_normalizedPullback`,
+  `TauCeti.Manifold.SobolevH1.inner_toLp_normalizedPullback`: the energy-form identity and its
+  `L²` counterpart.
 * `TauCeti.Manifold.SobolevH1.compRiemannianIsometry_normalizedPullback`: the range consists of
   deck-invariant elements.
 * `TauCeti.Manifold.SobolevH1.smul_sum_compRiemannianIsometry_mem_range_normalizedPullback`: the
@@ -209,6 +211,15 @@ theorem dirichletForm_normalizedPullback (hq : IsQuotientCoveringMap q G)
       dirichletForm w v := by
   rw [dirichletForm_apply, dirichletForm_apply, LinearIsometry.inner_map_map,
     toLp_normalizedPullback, toLp_normalizedPullback, LinearIsometry.inner_map_map]
+
+/-- The normalized pullback preserves the `L²` inner product of values of elements of `H¹`:
+`⟪J w, J v⟫_{L²(M)} = ⟪w, v⟫_{L²(N)}`. -/
+@[simp]
+theorem inner_toLp_normalizedPullback (hq : IsQuotientCoveringMap q G)
+    (hf : IsLocalRiemannianIsometry I I' q) (w v : SobolevH1 I' N) :
+    ⟪toLp (normalizedPullback hq hf w), toLp (normalizedPullback hq hf v)⟫_ℝ =
+      ⟪toLp w, toLp v⟫_ℝ := by
+  rw [toLp_normalizedPullback, toLp_normalizedPullback, LinearIsometry.inner_map_map]
 
 /-- **Deck invariance.** The normalized pullback of `w ∈ H¹(N)` is invariant under pullback along
 every Riemannian isometry `Φ` of `M` with `q ∘ Φ = q`, such as a deck transformation of the
