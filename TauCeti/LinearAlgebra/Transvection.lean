@@ -351,12 +351,8 @@ theorem isCompl_fixedSubmodule_eigenspace_det {e : V ≃ₗ[K] V} (he : e ∈ di
   have hv : v ≠ 0 := ne_zero_of_map hfv
   rw [he, LinearMap.transvection.det, LinearMap.transvection.fixedSubmodule_eq_ker hv,
     LinearMap.transvection.eigenspace_one_add_apply (Ne.isUnit hfv)]
-  refine Module.Dual.isCompl_ker_of_disjoint_of_ne_bot ?_ (by simpa using hv)
-  rw [Submodule.disjoint_def]
-  intro x hx hxv
-  obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.mp hxv
-  rw [LinearMap.mem_ker, LinearMap.map_smul, smul_eq_mul, mul_eq_zero] at hx
-  simp [hx.resolve_right hfv]
+  exact Module.Dual.isCompl_ker_of_disjoint_of_ne_bot
+    (Submodule.disjoint_span_singleton_of_notMem (by simpa using hfv)) (by simpa using hv)
 
 /-- The eigenspace of a dilatransvection `e` that is not a transvection for the eigenvalue
 `det e` is a line. -/
