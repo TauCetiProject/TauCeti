@@ -38,7 +38,8 @@ derivatives of polynomial vectors and induction on `N`.
 
 ## Main definitions
 
-* `TauCeti.Fock.moment`, `TauCeti.Fock.HasFiniteMoments`: `M_N` and finiteness of all moments.
+* `TauCeti.Fock.moment`, `TauCeti.Fock.HasFiniteMoments`: `M_N` and finiteness of all moments,
+  characterised by `TauCeti.Fock.hasFiniteMoments_iff`.
 
 ## Main results
 
@@ -92,6 +93,15 @@ def moment (N : ℕ) (v : FockSpace ε) : ℝ≥0∞ := ∫⁻ y, (1 + ‖y‖�
 
 /-- A Fock vector *has finite moments* if `M_N(v) < ∞` for every `N`. -/
 def HasFiniteMoments (v : FockSpace ε) : Prop := ∀ N, moment N v ≠ ⊤
+
+/-- A Fock vector has finite moments exactly when each of its moments is finite. -/
+theorem hasFiniteMoments_iff {v : FockSpace ε} : HasFiniteMoments v ↔ ∀ N, moment N v ≠ ⊤ :=
+  Iff.rfl
+
+/-- Each moment of a Fock vector with finite moments is finite. -/
+theorem HasFiniteMoments.moment_ne_top {v : FockSpace ε} (hv : HasFiniteMoments v) (N : ℕ) :
+    moment N v ≠ ⊤ :=
+  hasFiniteMoments_iff.1 hv N
 
 /-- The moment of order `0` is the norm: `M_0(v) = ‖v‖`. -/
 theorem moment_zero (v : FockSpace ε) : moment 0 v = ‖v‖ₑ := by
