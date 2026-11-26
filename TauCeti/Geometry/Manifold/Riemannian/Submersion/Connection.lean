@@ -170,10 +170,8 @@ theorem koszul_horizontalLift
   rw [TauCeti.Manifold.koszul_apply, TauCeti.Manifold.koszul_apply,
     h.mvfderiv_inner_horizontalLift hY hZ, h.mvfderiv_inner_horizontalLift hZ hX,
     h.mvfderiv_inner_horizontalLift hX hY]
-  have hi (v : TangentSpace I x) (w : TangentSpace J (f x)) :
-      inner ℝ v (h.horizontalLift x w) = inner ℝ (mfderiv I J f x v) w := by
-    rw [h.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_right]
-  rw [hi, hi, hi, h.mfderiv_mlieBracket_horizontalLift hX hY,
+  rw [h.inner_horizontalLift_right, h.inner_horizontalLift_right, h.inner_horizontalLift_right,
+    h.mfderiv_mlieBracket_horizontalLift hX hY,
     h.mfderiv_mlieBracket_horizontalLift hX hZ, h.mfderiv_mlieBracket_horizontalLift hY hZ]
 
 variable {covM : CovariantDerivative I E (TangentSpace I : M → Type _)}
@@ -195,8 +193,7 @@ theorem mfderiv_covariantDerivative_horizontalLift
       (h.mdifferentiableAt_horizontalLift hY) (h.mdifferentiableAt_horizontalLift hZ),
     ← hN.two_inner_eq_koszul (hX.mdifferentiableAt one_ne_zero)
       (hY.mdifferentiableAt one_ne_zero) (hZ.mdifferentiableAt one_ne_zero)] at hk
-  simp only [h.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_right,
-    FiberBundle.extend_apply_self] at hk ⊢
+  simp only [h.inner_horizontalLift_right, FiberBundle.extend_apply_self] at hk ⊢
   linarith
 
 /-- The horizontal component of the total-space covariant derivative of basic horizontal

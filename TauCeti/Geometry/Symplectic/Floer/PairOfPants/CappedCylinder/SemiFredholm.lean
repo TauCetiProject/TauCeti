@@ -33,7 +33,9 @@ integrals over `[a, b] × [0, 1]`
 (`exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_cappedCylinderComponent_add`, in
 the namespace `TauCeti.SymplecticForm`). The estimate holds at every neck length `L > 4`, where the
 capped datum is smooth. It is the estimate for data that are cylindrical on the ends,
-`exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`.
+`exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical`, since the
+capped datum is cylindrical near the ends with radius `max R 3`
+(`TauCeti.Floer.isCylindricalNearEnds_cappedCylinderComponent`).
 
 ## References
 
@@ -49,6 +51,50 @@ public section
 open Filter Set Function
 open scoped NNReal Manifold
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
+
+namespace TauCeti.Floer
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **The datum of the pair of pants capped at `1` is cylindrical near the ends.** Let `Hb r` be
+jointly `C²` Hamiltonians of period one in `t` and let `L > 4`. Let `J(z)` be almost complex
+structures on the cylinder, `C¹` along the graph of a map `u`, equal to `Jp_t` for `s ≥ R` and to
+`Jm_t` for `s ≤ -R`. Then the Floer datum `(J, K_s, K_t)` with the components
+`cappedCylinderComponent Hb L 1` and `cappedCylinderComponent Hb L Complex.I` of the capped
+perturbation is cylindrical near the ends along `u`, with radius `max R 3`, end data `(Jm, Hb ∞)`
+at `-∞` and `(Jp, Hb 0)` at `+∞`. -/
+theorem isCylindricalNearEnds_cappedCylinderComponent {Hb : Puncture → ℝ → V → ℝ}
+    (hHb : ∀ r, Periodic (Hb r) 1) (hHbs : ∀ r, ContDiff ℝ 2 (uncurry (Hb r))) {L : ℝ}
+    (hL : 4 < L) {Jm Jp : ℝ → V → AlmostComplexStructure V}
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z)) {R : ℝ}
+    (hJRp : ∀ s t, R ≤ s → J (s, t) = Jp t) (hJRm : ∀ s t, s ≤ -R → J (s, t) = Jm t) :
+    IsCylindricalNearEnds J (cappedCylinderComponent Hb L 1)
+      (cappedCylinderComponent Hb L Complex.I) Jm Jp (Hb inf) (Hb zero) (max R 3) u := by
+  have hL₂ : 2 ≤ L := by linarith
+  have hK (v : ℂ) : ContDiff ℝ 2 (uncurry (cappedCylinderComponent Hb L v)) :=
+    contDiff_uncurry_cappedCylinderComponent hHb hHbs hL v
+  -- Beyond `max R 3` the datum is `Hb 0 (t) dt` on the input end and `Hb ∞ (t) dt` on the output.
+  have hp (v : ℂ) (s t : ℝ) (hs : max R 3 ≤ s) :
+      cappedCylinderComponent Hb L v (s, t) = fun x ↦ v.im * Hb zero t x :=
+    funext (cappedCylinderComponent_of_two_le (hHb zero) hL₂ (z := (s, t))
+      (by linarith [le_max_right R 3]) v)
+  have hm (v : ℂ) (s t : ℝ) (hs : s ≤ -max R 3) :
+      cappedCylinderComponent Hb L v (s, t) = fun x ↦ v.im * Hb inf t x :=
+    funext (cappedCylinderComponent_of_le_neg_three (hHb inf) hL₂ (z := (s, t))
+      (by linarith [le_max_right R 3]) v)
+  refine ⟨fun ⟨s, t⟩ hs ↦ hJRm s t (hs.trans (neg_le_neg (le_max_left _ _))),
+    fun ⟨s, t⟩ hs ↦ hJRp s t ((le_max_left _ _).trans hs), fun ⟨s, t⟩ hs ↦ ?_,
+    fun ⟨s, t⟩ hs ↦ by simp [hm _ s t hs], fun ⟨s, t⟩ hs ↦ by simp [hp _ s t hs], hJ,
+    fun _ ↦ (hK 1).contDiffAt, fun _ ↦ (hK Complex.I).contDiffAt⟩
+  funext x
+  rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
+  rcases hs with hs | hs
+  · simp [hm 1 s t hs]
+  · simp [hp 1 s t hs]
+
+end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
 
@@ -106,29 +152,9 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_cappedCy
           C * ((∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
             (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
             (cappedCylinderComponent Hb L 1) (cappedCylinderComponent Hb L Complex.I) u ξ z‖ ^ 2) +
-            ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) := by
-  have hL₂ : 2 ≤ L := by linarith
-  have hK (v : ℂ) : ContDiff ℝ 2 (uncurry (cappedCylinderComponent Hb L v)) :=
-    contDiff_uncurry_cappedCylinderComponent hHb hHbs hL v
-  -- Beyond `max R 3` the datum is `Hb 0 (t) dt` on the input end and `Hb ∞ (t) dt` on the output.
-  have hp (v : ℂ) (s t : ℝ) (hs : max R 3 ≤ s) :
-      cappedCylinderComponent Hb L v (s, t) = fun x ↦ v.im * Hb zero t x :=
-    funext (cappedCylinderComponent_of_two_le (hHb zero) hL₂ (z := (s, t))
-      (by linarith [le_max_right R 3]) v)
-  have hm (v : ℂ) (s t : ℝ) (hs : s ≤ -max R 3) :
-      cappedCylinderComponent Hb L v (s, t) = fun x ↦ v.im * Hb inf t x :=
-    funext (cappedCylinderComponent_of_le_neg_three (hHb inf) hL₂ (z := (s, t))
-      (by linarith [le_max_right R 3]) v)
-  refine ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical
-    (R := max R 3) ⟨fun ⟨s, t⟩ hs ↦ hJRm s t (hs.trans (neg_le_neg (le_max_left _ _))),
-      fun ⟨s, t⟩ hs ↦ hJRp s t ((le_max_left _ _).trans hs), fun ⟨s, t⟩ hs ↦ ?_,
-      fun ⟨s, t⟩ hs ↦ by simp [hm _ s t hs], fun ⟨s, t⟩ hs ↦ by simp [hp _ s t hs], hJ,
-      fun _ ↦ (hK 1).contDiffAt, fun _ ↦ (hK Complex.I).contDiffAt⟩
-    hu hJu hXm (hHbs inf) hxm hndm hJm hJxm huxm hδm hXp (hHbs zero) hxp hndp hJp hJxp huxp hδp
-  funext x
-  rw [mem_Ioo, not_and_or, not_lt, not_lt] at hs
-  rcases hs with hs | hs
-  · simp [hm 1 s t hs]
-  · simp [hp 1 s t hs]
+            ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) :=
+  ω.exists_forall_setIntegral_le_mul_setIntegral_floerLinearization_add_of_cylindrical
+    (isCylindricalNearEnds_cappedCylinderComponent hHb hHbs hL hJ hJRp hJRm) hu hJu hXm (hHbs inf)
+    hxm hndm hJm hJxm huxm hδm hXp (hHbs zero) hxp hndp hJp hJxp huxp hδp
 
 end TauCeti.SymplecticForm

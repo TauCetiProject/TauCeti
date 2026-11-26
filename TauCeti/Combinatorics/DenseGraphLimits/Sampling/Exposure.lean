@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Oscillation
 public import TauCeti.Probability.Distributions.Uniform.Basic
-public import TauCeti.Combinatorics.SimpleGraph.Measurable
+public import TauCeti.Combinatorics.SimpleGraph.Measurable.Basic
 
 /-!
 # The padded vertex exposure of a sampled graph

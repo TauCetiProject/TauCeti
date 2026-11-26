@@ -18,10 +18,11 @@ public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Analysis.InnerProductSpace.OrthogonalLast
 public import TauCeti.Geometry.Sphere.LinearIsometry
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.AlgebraicTopology.Singular.BettiNumber
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.Topology.Homotopy.PuncturedStarConvex
 
 /-!
@@ -115,8 +116,9 @@ Coefficients are an object `R` of an abelian category with coproducts.
   it.
 * `TauCeti.reducedSingularHomologyFunctor_map_sphere_neg`: the antipodal map acts on `H_redₙ(S)`
   by `(-1) ^ (n + 1)`.
-* `TauCeti.singularHomologyMap_sphere_neg_apply`: the antipodal map acts on the ordinary homology
-  `Hₙ₊₁(S; k)` of the unit sphere of an `(n + 2)`-dimensional space by `(-1) ^ (n + 2)`.
+* `TauCeti.singularHomologyFunctor_map_sphere_neg` and
+  `TauCeti.singularHomologyMap_sphere_neg_apply`: the antipodal map acts on the ordinary homology
+  `Hₙ₊₁(S)` of the unit sphere of an `(n + 2)`-dimensional space by `(-1) ^ (n + 2)`.
 * `TauCeti.isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne`,
   `TauCeti.reducedSingularHomologyTopCatSphereIso` and
   `TauCeti.reducedSingularHomologyFunctor_map_diskBoundaryNeg`: the same for Mathlib's
@@ -626,12 +628,8 @@ theorem reducedSingularHomologyFunctor_map_reflection_unitSphereMap {n : ℕ}
           (ℝ ∙ v)ᗮ.reflection.toLinearIsometry.continuous_unitSphereMap⟩) = -𝟙 _ := by
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   -- Extend the unit vector `‖v‖⁻¹ • v` to an orthonormal basis `b` with `b 0 = ‖v‖⁻¹ • v`.
-  obtain ⟨b, hb⟩ := Orthonormal.exists_orthonormalBasis_extension_of_card_eq (𝕜 := ℝ)
-    (ι := Fin (n + 1)) (by simpa using hE) (v := fun _ ↦ ‖v‖⁻¹ • v) (s := {0})
-    (orthonormal_iff_ite.2 fun i j ↦ by
-      rw [Subsingleton.elim i j]
-      simp [hv])
-  have hb₀ : b 0 = ‖v‖⁻¹ • v := hb 0 rfl
+  obtain ⟨b, hb₀⟩ := exists_orthonormalBasis_fin_apply_zero_eq hE
+    (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hv)
   rw [← cancel_mono (reducedSingularHomologySphereIso R b).hom, Preadditive.neg_comp,
     Category.id_comp]
   refine reducedSingularHomologySphereIso_hom_neg_zero R b _ ?_ fun i hi ↦ ?_
@@ -770,25 +768,31 @@ theorem reducedSingularHomologyFunctor_map_sphere_neg {n : ℕ} (hE : finrank �
   rw [h, reducedSingularHomologyFunctor_map_unitSphereMap R hE, hdet, LinearMap.det_smul]
   simp [hE, sign_pow]
 
+/-- **The antipodal map acts by `(-1) ^ (n + 2)` on the top homology of a sphere.** For a real
+inner product space `E` of dimension `n + 2`, the antipodal map `x ↦ -x` of the unit sphere `S`
+of `E` induces multiplication by `(-1) ^ (n + 2)` on `Hₙ₊₁(S)`. -/
+theorem singularHomologyFunctor_map_sphere_neg {n : ℕ} (hE : finrank ℝ E = n + 2) :
+    ((AlgebraicTopology.singularHomologyFunctor C (n + 1)).obj R).map
+        (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _) =
+      (-1 : ℤ) ^ (n + 2) • 𝟙 _ := by
+  -- In positive degrees ordinary and reduced homology agree naturally.
+  have h := (reducedSingularHomologySuccIso R n).hom.naturality
+    (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _)
+  rw [reducedSingularHomologyFunctor_map_sphere_neg R hE] at h
+  rw [← cancel_epi ((reducedSingularHomologySuccIso R n).hom.app _), ← h]
+  simp
+
 /-- **The antipodal map acts by `(-1) ^ (n + 2)` on the top ordinary homology of a sphere.**  For a
 real inner product space `E` of dimension `n + 2` and a ring `k`, the antipodal map `x ↦ -x` of the
-unit sphere `S` of `E` acts on `Hₙ₊₁(S; k)` by `(-1) ^ (n + 2)`, as on reduced homology
-(`TauCeti.reducedSingularHomologyFunctor_map_sphere_neg`), which agrees with ordinary homology in
-positive degrees. -/
+unit sphere `S` of `E` acts on `Hₙ₊₁(S; k)` by `(-1) ^ (n + 2)`: the elementwise form of
+`TauCeti.singularHomologyFunctor_map_sphere_neg`. -/
 theorem singularHomologyMap_sphere_neg_apply (k : Type w) [Ring k] {n : ℕ}
     (hE : finrank ℝ E = n + 2)
     (y : ((singularChains k).obj (TopCat.of (sphere (0 : E) 1))).homology (n + 1)) :
     ContinuousMap.singularHomologyMap k (n + 1) ⟨Neg.neg, continuous_neg⟩ y =
       (-1 : ℤ) ^ (n + 2) • y := by
-  let ν : TopCat.of (sphere (0 : E) 1) ⟶ TopCat.of (sphere (0 : E) 1) :=
-    TopCat.ofHom ⟨Neg.neg, continuous_neg⟩
-  have hnat := (reducedSingularHomologySuccIso (ModuleCat.of k k) n).hom.naturality ν
-  rw [reducedSingularHomologyFunctor_map_sphere_neg _ hE] at hnat
-  have hmap : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} k) (n + 1)).obj
-      (ModuleCat.of k k)).map ν = (-1 : ℤ) ^ (n + 2) • 𝟙 _ := by
-    rw [← cancel_epi ((reducedSingularHomologySuccIso (ModuleCat.of k k) n).hom.app _)]
-    simpa using hnat.symm
-  rw [ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map, hmap, ModuleCat.hom_zsmul,
+  rw [ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map,
+    singularHomologyFunctor_map_sphere_neg (ModuleCat.of k k) hE, ModuleCat.hom_zsmul,
     ModuleCat.hom_id]
   -- The homology of `singularChains k`, where `y` lies, is by definition the object of the
   -- singular homology functor (`TauCeti.singularHomologyFunctor_obj_obj`), so `rw` cannot apply

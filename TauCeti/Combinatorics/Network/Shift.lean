@@ -36,6 +36,7 @@ open Finset
 universe u v w
 
 variable {V : Type u} {Q : V → V → Type v} {K : Type w}
+
 variable [Fintype V] [∀ x y, Fintype (Q x y)] [AddCommGroup K]
 
 /-- Arrow assignments between `lo` and `hi` whose excess is the prescribed function `b`.
@@ -51,6 +52,30 @@ abbrev ExcessIntervalFlow [Preorder K] (lo hi : Assignment Q K) (a b : V → K) 
 namespace ExcessFlow
 
 variable [Preorder K] {lo hi : Assignment Q K} {b : V → K}
+
+/-- Reindex a prescribed-excess assignment along equalities of its bounds and excess. -/
+def congr {lo' hi' : Assignment Q K} {b' : V → K} (hlo : lo = lo') (hhi : hi = hi')
+    (hb : b = b') : ExcessFlow lo hi b ≃ ExcessFlow lo' hi' b' :=
+  Equiv.subtypeEquivRight fun _ ↦ by subst lo'; subst hi'; subst b'; rfl
+
+@[simp]
+theorem congr_apply_val {lo' hi' : Assignment Q K} {b' : V → K} (hlo : lo = lo')
+    (hhi : hi = hi') (hb : b = b') (f : ExcessFlow lo hi b) :
+    (congr hlo hhi hb f).val = f.val :=
+  (rfl)
+
+/-- Reversing a prescribed-excess reindexing reverses each equality. -/
+@[simp]
+theorem congr_symm {lo' hi' : Assignment Q K} {b' : V → K} (hlo : lo = lo')
+    (hhi : hi = hi') (hb : b = b') :
+    (congr hlo hhi hb).symm = congr hlo.symm hhi.symm hb.symm :=
+  (rfl)
+
+/-- Reindexing a prescribed-excess problem along reflexive equalities is the identity. -/
+@[simp]
+theorem congr_refl :
+    congr (lo := lo) (hi := hi) (b := b) rfl rfl rfl = Equiv.refl _ :=
+  (rfl)
 
 /-- A realizing assignment respects its arrow bounds. -/
 theorem mem_Icc (f : ExcessFlow lo hi b) : f.val ∈ Set.Icc lo hi := f.property.1
@@ -90,6 +115,31 @@ end ExcessFlow
 namespace ExcessIntervalFlow
 
 variable [Preorder K] {lo hi : Assignment Q K} {a b : V → K}
+
+/-- Reindex an interval-excess assignment along equalities of its arrow and vertex bounds. -/
+def congr {lo' hi' : Assignment Q K} {a' b' : V → K} (hlo : lo = lo') (hhi : hi = hi')
+    (ha : a = a') (hb : b = b') :
+    ExcessIntervalFlow lo hi a b ≃ ExcessIntervalFlow lo' hi' a' b' :=
+  Equiv.subtypeEquivRight fun _ ↦ by subst lo'; subst hi'; subst a'; subst b'; rfl
+
+@[simp]
+theorem congr_apply_val {lo' hi' : Assignment Q K} {a' b' : V → K} (hlo : lo = lo')
+    (hhi : hi = hi') (ha : a = a') (hb : b = b') (f : ExcessIntervalFlow lo hi a b) :
+    (congr hlo hhi ha hb f).val = f.val :=
+  (rfl)
+
+/-- Reversing an interval-excess reindexing reverses each equality. -/
+@[simp]
+theorem congr_symm {lo' hi' : Assignment Q K} {a' b' : V → K} (hlo : lo = lo')
+    (hhi : hi = hi') (ha : a = a') (hb : b = b') :
+    (congr hlo hhi ha hb).symm = congr hlo.symm hhi.symm ha.symm hb.symm :=
+  (rfl)
+
+/-- Reindexing an interval-excess problem along reflexive equalities is the identity. -/
+@[simp]
+theorem congr_refl :
+    congr (lo := lo) (hi := hi) (a := a) (b := b) rfl rfl rfl rfl = Equiv.refl _ :=
+  (rfl)
 
 /-- An interval-excess assignment respects its arrow bounds. -/
 theorem mem_Icc (f : ExcessIntervalFlow lo hi a b) : f.val ∈ Set.Icc lo hi := f.property.1
@@ -140,7 +190,7 @@ def shiftEquiv (lo hi h : Assignment Q K) (a b : V → K) :
     ExcessIntervalFlow lo hi a b ≃
       ExcessIntervalFlow (lo - h) (hi - h) (a - excessAt h) (b - excessAt h) :=
   (Equiv.subRight h).subtypeEquiv fun f ↦ by
-    have hex : excessAt (f - h) = excessAt f - excessAt h := funext (excessAt_sub f h)
+    have hex : excessAt (f - h) = excessAt f - excessAt h := excessAt_sub f h
     simp only [Equiv.subRight_apply, hex, Set.sub_mem_Icc_iff_left, sub_add_cancel]
 
 @[simp]
@@ -153,6 +203,32 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (a b : V → K)
     (f : ExcessIntervalFlow (lo - h) (hi - h) (a - excessAt h) (b - excessAt h)) :
     ((shiftEquiv lo hi h a b).symm f).val = f.val + h :=
   (rfl)
+
+/-- Shifting interval excess by the zero assignment is the identity equivalence. -/
+theorem shiftEquiv_zero (lo hi : Assignment Q K) (a b : V → K) :
+    (shiftEquiv lo hi 0 a b).trans
+        (congr (sub_zero lo) (sub_zero hi)
+          (by simp only [excessAt_zero, sub_zero])
+          (by simp only [excessAt_zero, sub_zero])) =
+      Equiv.refl (ExcessIntervalFlow lo hi a b) := by
+  apply Equiv.ext
+  intro f
+  apply Subtype.ext
+  simp only [Equiv.trans_apply, congr_apply_val, shiftEquiv_apply_val, Equiv.refl_apply,
+    sub_zero]
+
+/-- Successive interval-excess shifts compose by adding their reference assignments. -/
+theorem shiftEquiv_add (lo hi h k : Assignment Q K) (a b : V → K) :
+    ((shiftEquiv lo hi h a b).trans
+        (shiftEquiv (lo - h) (hi - h) k (a - excessAt h) (b - excessAt h))).trans
+      (congr (sub_sub lo h k) (sub_sub hi h k)
+        (by simp only [excessAt_add, sub_sub])
+        (by simp only [excessAt_add, sub_sub])) =
+      shiftEquiv lo hi (h + k) a b := by
+  apply Equiv.ext
+  intro f
+  apply Subtype.ext
+  simp only [Equiv.trans_apply, congr_apply_val, shiftEquiv_apply_val, sub_sub]
 
 /-- Interval-excess shifts also preserve any additive subgroup containing the reference. -/
 theorem shiftEquiv_apply_mem_iff (lo hi h : Assignment Q K) (a b : V → K)
@@ -202,6 +278,30 @@ theorem shiftEquiv_symm_apply_val (lo hi h : Assignment Q K) (b : V → K)
     (f : ExcessFlow (lo - h) (hi - h) (b - excessAt h)) :
     ((shiftEquiv lo hi h b).symm f).val = f.val + h :=
   (rfl)
+
+/-- Shifting prescribed excess by the zero assignment is the identity equivalence. -/
+theorem shiftEquiv_zero (lo hi : Assignment Q K) (b : V → K) :
+    (shiftEquiv lo hi 0 b).trans
+        (congr (sub_zero lo) (sub_zero hi)
+          (by simp only [excessAt_zero, sub_zero])) =
+      Equiv.refl (ExcessFlow lo hi b) := by
+  apply Equiv.ext
+  intro f
+  apply Subtype.ext
+  simp only [Equiv.trans_apply, congr_apply_val, shiftEquiv_apply_val, Equiv.refl_apply,
+    sub_zero]
+
+/-- Successive prescribed-excess shifts compose by adding their reference assignments. -/
+theorem shiftEquiv_add (lo hi h k : Assignment Q K) (b : V → K) :
+    ((shiftEquiv lo hi h b).trans
+        (shiftEquiv (lo - h) (hi - h) k (b - excessAt h))).trans
+      (congr (sub_sub lo h k) (sub_sub hi h k)
+        (by simp only [excessAt_add, sub_sub])) =
+      shiftEquiv lo hi (h + k) b := by
+  apply Equiv.ext
+  intro f
+  apply Subtype.ext
+  simp only [Equiv.trans_apply, congr_apply_val, shiftEquiv_apply_val, sub_sub]
 
 /-- A shift by a subgroup-valued reference preserves subgroup membership arrowwise. -/
 theorem shiftEquiv_apply_mem_iff (lo hi h : Assignment Q K) (b : V → K)

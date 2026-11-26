@@ -31,6 +31,9 @@ and at `c τ` for real `c > 0`, where the branches of `√(c τ)` and `√τ` di
 ## Main results
 
 * `TauCeti.ModularForm.eta_eq_exp_mul_tprod`: `η(τ) = e^{2π i τ / 24} ∏_{n ≥ 1} (1 - qⁿ)`.
+* `TauCeti.ModularForm.norm_eta_q_lt_one`: the factors `qⁿ` of the product have modulus less
+  than one.
+* `TauCeti.ModularForm.tendsto_eta_div_exp`: `η(z) / e^{2π i z / 24} → 1` as `Im z → ∞`.
 * `TauCeti.ModularForm.eta_two_mul`, `TauCeti.ModularForm.eta_div_two`,
   `TauCeti.ModularForm.eta_add_one_div_two`: the three product identities above.
 * `TauCeti.ModularForm.eta_neg_one_div_sq`: `η(-1/τ)² = -i τ η(τ)²` on the upper half-plane.
@@ -44,7 +47,7 @@ and at `c τ` for real `c > 0`, where the branches of `√(c τ)` and `√τ` di
 
 public section
 
-open Complex
+open Complex Filter Topology
 open scoped Real ModularForm
 
 namespace TauCeti.ModularForm
@@ -55,6 +58,25 @@ theorem eta_eq_exp_mul_tprod (τ : ℂ) :
     η τ = cexp (2 * π * I * τ / 24) * ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (n + 1)) := by
   simp only [_root_.ModularForm.eta, _root_.ModularForm.eta_q_eq_pow, Function.Periodic.qParam,
     ofReal_ofNat]
+
+/-- On the upper half-plane, the powers `eta_q n τ = q^(n+1)` of `q = e^{2π i τ}` have modulus
+less than one. -/
+theorem norm_eta_q_lt_one (n : ℕ) {τ : ℂ} (hτ : 0 < τ.im) :
+    ‖_root_.ModularForm.eta_q n τ‖ < 1 := by
+  simpa using pow_lt_one₀ (norm_nonneg _) (Function.Periodic.norm_qParam_lt_one one_pos hτ)
+    n.succ_ne_zero
+
+/-- `η(z) ~ e^{2 π i z / 24}` as `Im z → ∞`: the quotient `η(z) / e^{2 π i z / 24}` is the Euler
+product `∏_{n ≥ 1} (1 - qⁿ)`, which tends to `1` as `q = e^{2 π i z} → 0`. -/
+theorem tendsto_eta_div_exp :
+    Tendsto (fun z : ℂ ↦ η z / cexp (2 * π * I * z / 24)) (comap im atTop) (𝓝 1) := by
+  have hq : Tendsto (fun z : ℂ ↦ cexp (2 * π * I * z)) (comap im atTop) (𝓝 0) :=
+    ((Function.Periodic.qParam_tendsto one_pos).mono_right nhdsWithin_le_nhds).congr
+      fun z ↦ by simp [Function.Periodic.qParam]
+  refine (tendsto_tprod_one_sub_pow_mul (w := fun _ ↦ 1) hq (by simpa using hq)).congr
+    fun z ↦ ?_
+  simp only [mul_one]
+  rw [eta_eq_exp_mul_tprod, mul_div_cancel_left₀ _ (exp_ne_zero _)]
 
 /-- `η(2τ) = e^{π i τ / 12} η(τ) ∏_{n ≥ 1} (1 + qⁿ)` on the upper half-plane, where
 `q = e^{2π i τ}`. -/
