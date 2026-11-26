@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Examples.AlgebraicGeometry.Sites.Nisnevich.DistinguishedSquare.EmptyOpen
 public import TauCeti.FieldTheory.RatFunc.PowerTower
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # Examples: `K(t) → K(u)`, `t ↦ u²`, is not distinguished with empty open part
@@ -38,30 +39,16 @@ variable (K : Type u) [Field K]
 noncomputable abbrev adjoinXSq : IntermediateField K (RatFunc K) :=
   IntermediateField.adjoin K {(RatFunc.X : RatFunc K) ^ 2}
 
-/-- The isomorphism `K(t) ≃ K(u²)` sending `t` to `u²`. -/
-noncomputable def adjoinXSqEquiv : RatFunc K ≃ₐ[K] adjoinXSq K :=
-  RatFunc.algEquivOfTranscendental _ (RatFunc.transcendental_X.pow two_pos)
-
-/-- The ring map `K(t) → K(u)` sending `t` to `u²`. -/
+/-- The ring map `K(t) → K(u)` sending `t` to `u²`: the structure map of the `K(t)`-algebra
+structure on `K(u)` in which `t` acts as `u²` (`TauCeti.ratFuncAlgebraOfTranscendental`). -/
 noncomputable def squareHom : RatFunc K →+* RatFunc K :=
-  (algebraMap (adjoinXSq K) (RatFunc K)).comp (adjoinXSqEquiv K).toRingEquiv.toRingHom
-
-theorem squareHom_apply (f : RatFunc K) : squareHom K f = (adjoinXSqEquiv K f : RatFunc K) :=
-  (rfl)
+  letI := ratFuncAlgebraOfTranscendental (RatFunc.transcendental_X.pow two_pos :
+    Transcendental K (RatFunc.X ^ 2 : RatFunc K))
+  algebraMap (RatFunc K) (RatFunc K)
 
 @[simp]
-theorem squareHom_X : squareHom K RatFunc.X = RatFunc.X ^ 2 := by
-  rw [squareHom_apply, adjoinXSqEquiv, RatFunc.algEquivOfTranscendental_X]
-
-/-- `K(t) → K(u)`, `t ↦ u²`, is not bijective, since its image `K(u²)` has index two in `K(u)`. -/
-theorem not_bijective_squareHom : ¬ Function.Bijective (squareHom K) := by
-  intro h
-  have hval : Function.Bijective (algebraMap (adjoinXSq K) (RatFunc K)) := by
-    refine ⟨Subtype.val_injective, fun y ↦ ?_⟩
-    obtain ⟨x, rfl⟩ := h.2 y
-    exact ⟨adjoinXSqEquiv K x, (squareHom_apply K x).symm⟩
-  have := Module.finrank_of_bijective_algebraMap hval
-  simp at this
+theorem squareHom_X : squareHom K RatFunc.X = RatFunc.X ^ 2 :=
+  algebraMap_ratFuncAlgebraOfTranscendental_X _
 
 /-- **The inclusion `K(u²) → K(u)` is not distinguished with empty `U`.** -/
 theorem isEmpty_iso_SpecMap_adjoinXSq
@@ -74,8 +61,14 @@ square over `Spec K(t)` with empty open part has `p` isomorphic over `Spec K(t)`
 `Spec K(u) ⟶ Spec K(t)` of `squareHom`, although source and target are the same scheme. -/
 theorem isEmpty_iso_SpecMap_squareHom
     (Q : ElementaryDistinguishedSquare (Spec (.of (RatFunc K)))) [IsEmpty Q.U] :
-    IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.map (CommRingCat.ofHom (squareHom K)))) :=
-  Q.isEmpty_iso_of_not_isIso _ fun hi ↦ not_bijective_squareHom K (isIso_SpecMap_iff.1 hi)
+    IsEmpty (Over.mk Q.p ≅ Over.mk (Spec.map (CommRingCat.ofHom (squareHom K)))) := by
+  have hx : Transcendental K (RatFunc.X ^ 2 : RatFunc K) := RatFunc.transcendental_X.pow two_pos
+  let _ := ratFuncAlgebraOfTranscendental hx
+  have := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  refine DistinguishedSquareEmptyOpenExample.isEmpty_iso_SpecMap_of_finrank_ne_one _ _ ?_ Q
+  rw [← finrank_adjoin_algebraMap_X (k := K), algebraMap_ratFuncAlgebraOfTranscendental_X,
+    RatFunc.finrank_adjoin_X_pow]
+  decide
 
 /-- The case `ℚ(t) → ℚ(u)`, `t ↦ u²`. -/
 example (Q : ElementaryDistinguishedSquare (Spec (.of (RatFunc ℚ)))) [IsEmpty Q.U] :
