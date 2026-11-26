@@ -67,7 +67,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- Where the pullback of `(K_s, K_t)` along a chart with nonzero complex-linear derivative is
 `H(t) dt` for a `C²` Hamiltonian `H(t)`, the components of `K` and their Hamiltonian vector fields
 are differentiable in the target point. -/
-private theorem differentiableAt_of_perturbationPullback (ω : SymplecticForm V) {h : V → ℝ}
+theorem differentiableAt_of_perturbationPullback (ω : SymplecticForm V) {h : V → ℝ}
     (hh : ContDiff ℝ 2 h) {ψ : ℝ × ℝ → ℝ × ℝ} {ζ : ℝ × ℝ}
     (hψJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (AlmostComplexStructure.product ℝ) (fderiv ℝ ψ ζ : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))

@@ -111,12 +111,13 @@ private theorem setLIntegral_image_positiveEndChart_le {T : ℝ} (hT : 0 ≤ T) 
       (ae_of_all _ fun ζ ↦ sobolevDensity_nonneg _ ζ)).symm)
   simp_rw [sobolevDensity_apply, stdComplexLineReal_eq, stdComplexLineImag_eq, comp_apply]
 
-/-- On a compact set `K` where the cylindrical weight is at most `B ≥ 0`, the weighted energy of a
-`C¹` section is at most `B + 1` times its `W^{1,2}` energy. -/
-private theorem setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity {K : Set (ℝ × ℝ)}
-    (hK : IsCompact K) {B : ℝ} (hB0 : 0 ≤ B) (hB : ∀ z ∈ K, cylindricalWeight z ≤ B)
+/-- On a compact set `K` where a weight `ρ` is at most `B ≥ 0`, the weighted energy
+`∫_K (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of a `C¹` section is at most `B + 1` times its `W^{1,2}` energy
+`∫_K (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²)`. -/
+theorem setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) {ρ : ℝ × ℝ → ℝ} {B : ℝ} (hB0 : 0 ≤ B) (hB : ∀ z ∈ K, ρ z ≤ B)
     {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
-    ∫⁻ z in K, ENNReal.ofReal (cylindricalWeight z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
+    ∫⁻ z in K, ENNReal.ofReal (ρ z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
         ‖fderiv ℝ ξ z (0, 1)‖ ^ 2) ≤
       ENNReal.ofReal ((B + 1) * ∫ z in K, sobolevDensity ξ z) := by
   rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal
