@@ -238,6 +238,29 @@ private theorem hasDerivAt_coe_maximalIntegralCurve_kepler (x : puncturedPhaseSp
   rw [SymplecticForm.hamiltonianVectorField_constSmooth] at h
   exact h
 
+/-- The maximal integral curve of the Kepler Hamiltonian vector field on the punctured phase space
+avoids the collision set `q = 0`. -/
+private theorem fst_maximalIntegralCurve_kepler_ne_zero (x : puncturedPhaseSpace V) (t : ℝ) :
+    ((maximalIntegralCurve (SmoothTwoForm.hamiltonianVectorField
+      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
+        (stdSymplecticForm (V := V)).constSmooth)
+      (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)) x t :
+        puncturedPhaseSpace V) : V × V).1 ≠ 0 :=
+  mem_puncturedPhaseSpace.1 (maximalIntegralCurve _ x t).property
+
+/-- Along the maximal integral curve of the Kepler Hamiltonian vector field on the punctured phase
+space, the Kepler potential `-κ / r` is differentiable at the distance to the origin. -/
+private theorem differentiableAt_kepler_potential_maximalIntegralCurve (x : puncturedPhaseSpace V)
+    (t : ℝ) :
+    DifferentiableAt ℝ (fun r ↦ -κ / r) ‖((maximalIntegralCurve
+      (SmoothTwoForm.hamiltonianVectorField
+        (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
+          (stdSymplecticForm (V := V)).constSmooth)
+        (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)) x t :
+          puncturedPhaseSpace V) : V × V).1‖ :=
+  (hasDerivAt_kepler_potential κ
+    (norm_ne_zero_iff.2 (fst_maximalIntegralCurve_kepler_ne_zero x t))).differentiableAt
+
 /-- **Nonradial Kepler motions never collide.** For `m, κ > 0`, the maximal integral curve of the
 Kepler Hamiltonian vector field on the punctured phase space through a state with nonzero angular
 momentum, `‖q‖² ‖p‖² - ⟪q, p⟫² ≠ 0`, is defined for all time. This holds at every energy. -/
@@ -549,10 +572,8 @@ private theorem exists_isCompact_forall_maximalIntegralCurve_mem_kepler (hm : 0 
   -- By energy conservation the energy at time `t` is `E`.
   have hH := centralForceHamiltonian_eq_of_hasDerivAt isPreconnected_maximalIntegralCurveInterval
     (fun s hs ↦ hasDerivAt_coe_maximalIntegralCurve_kepler x hs)
-    (fun s _ ↦ mem_puncturedPhaseSpace.1 (maximalIntegralCurve _ x s).property)
-    (fun s _ ↦ (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2
-      (mem_puncturedPhaseSpace.1 (maximalIntegralCurve _ x s).property))).differentiableAt)
-    h0 (hS ht)
+    (fun s _ ↦ fst_maximalIntegralCurve_kepler_ne_zero x s)
+    (fun s _ ↦ differentiableAt_kepler_potential_maximalIntegralCurve x s) h0 (hS ht)
   rw [maximalIntegralCurve_zero] at hH
   refine ⟨⟨mem_closedBall_zero_iff.2 (hband t ht).2, mem_closedBall_zero_iff.2 ?_⟩,
     (hband t ht).1⟩
@@ -589,18 +610,14 @@ private theorem hasDerivAt_radialProjection_maximalIntegralCurve_kepler (hm : 0 
             puncturedPhaseSpace V) : V × V))) t := by
   have h0 := zero_mem_maximalIntegralCurveInterval (x := x)
     (contMDiff_hamiltonianVectorField_kepler (V := V) (m := m) (κ := κ)).contMDiffAt
-  have hq (t : ℝ) := mem_puncturedPhaseSpace.1 (maximalIntegralCurve
-    (SmoothTwoForm.hamiltonianVectorField
-      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
-        (stdSymplecticForm (V := V)).constSmooth)
-      (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)) x t).property
+  have hq := fst_maximalIntegralCurve_kepler_ne_zero (m := m) (κ := κ) x
   have hℓ :
       ‖(x : V × V).1‖ ^ 2 * ‖(x : V × V).2‖ ^ 2 - ⟪(x : V × V).1, (x : V × V).2⟫_ℝ ^ 2 = 0 :=
     by_contra fun hℓ ↦
       hI (maximalIntegralCurveInterval_hamiltonianVectorField_kepler_eq_univ hm hκ x hℓ)
   exact hasDerivAt_radialProjection_comp isPreconnected_maximalIntegralCurveInterval
     (fun t ht ↦ hasDerivAt_coe_maximalIntegralCurve_kepler x ht) (fun t _ ↦ hq t)
-    (fun t _ ↦ (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq t))).differentiableAt) h0
+    (fun t _ ↦ differentiableAt_kepler_potential_maximalIntegralCurve x t) h0
     (ℓ := 0) (by rw [maximalIntegralCurve_zero, hℓ]; ring)
 
 /-- **Kepler motions collide at a finite end of their time interval, forwards in time.** For
@@ -621,11 +638,7 @@ theorem tendsto_fst_maximalIntegralCurve_kepler_nhdsLT (hm : 0 < m) (hκ : 0 < �
       (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)) x t :
         puncturedPhaseSpace V) : V × V).1) (𝓝[<] b) (𝓝 0) := by
   have hv := contMDiff_hamiltonianVectorField_kepler (V := V) (m := m) (κ := κ)
-  have hq (t : ℝ) := mem_puncturedPhaseSpace.1 (maximalIntegralCurve
-    (SmoothTwoForm.hamiltonianVectorField
-      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
-        (stdSymplecticForm (V := V)).constSmooth)
-      (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)) x t).property
+  have hq := fst_maximalIntegralCurve_kepler_ne_zero (m := m) (κ := κ) x
   -- The radial projection `(‖q‖, p_r)` is a radial motion with `ℓ = 0`.
   have hρ := hasDerivAt_radialProjection_maximalIntegralCurve_kepler hm hκ x fun h ↦
     not_bddAbove_univ (h ▸ hb).bddAbove
@@ -666,11 +679,7 @@ theorem tendsto_fst_maximalIntegralCurve_kepler_nhdsGT (hm : 0 < m) (hκ : 0 < �
       (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)) x t :
         puncturedPhaseSpace V) : V × V).1) (𝓝[>] a) (𝓝 0) := by
   have hv := contMDiff_hamiltonianVectorField_kepler (V := V) (m := m) (κ := κ)
-  have hq (t : ℝ) := mem_puncturedPhaseSpace.1 (maximalIntegralCurve
-    (SmoothTwoForm.hamiltonianVectorField
-      (SmoothForm.mpullback (Subtype.val : puncturedPhaseSpace V → V × V) contMDiff_subtypeVal
-        (stdSymplecticForm (V := V)).constSmooth)
-      (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)) x t).property
+  have hq := fst_maximalIntegralCurve_kepler_ne_zero (m := m) (κ := κ) x
   -- The radial projection `(‖q‖, p_r)` is a radial motion with `ℓ = 0`.
   have hρ := hasDerivAt_radialProjection_maximalIntegralCurve_kepler hm hκ x fun h ↦
     not_bddBelow_univ (h ▸ ha).bddBelow
@@ -694,7 +703,7 @@ theorem tendsto_fst_maximalIntegralCurve_kepler_nhdsGT (hm : 0 < m) (hκ : 0 < �
     (fun s hs ↦ hasDerivAt_reverse_hamiltonianVectorField_effectivePotential (hρ (-s) (hS hs))
       (by simpa [radialProjection_fst] using hq (-s))
       (by simpa [radialProjection_fst] using
-        (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq (-s)))).differentiableAt))
+        differentiableAt_kepler_potential_maximalIntegralCurve (m := m) x (-s)))
     (fun s _ ↦ by simpa [radialProjection_fst] using hq (-s)) hε
     (hfreq'.mono fun s hs ↦ by simpa [radialProjection_fst] using hs)
   have ht₀' : a < -t₀ := lt_neg.2 ht₀.2
@@ -773,7 +782,7 @@ theorem bddAbove_and_bddBelow_maximalIntegralCurveInterval_kepler (hm : 0 < m) (
     (centralForceHamiltonian m (fun r ↦ -κ / r) ∘ Subtype.val)
   have h0 := zero_mem_maximalIntegralCurveInterval (x := x)
     (contMDiff_hamiltonianVectorField_kepler (V := V) (m := m) (κ := κ)).contMDiffAt
-  have hq (t : ℝ) := mem_puncturedPhaseSpace.1 (maximalIntegralCurve X x t).property
+  have hq := fst_maximalIntegralCurve_kepler_ne_zero (m := m) (κ := κ) x
   have hx : ((maximalIntegralCurve X x 0 : puncturedPhaseSpace V) : V × V) = x := by
     rw [maximalIntegralCurve_zero]
   refine ⟨by_contra fun hup ↦ ?_, by_contra fun hlow ↦ ?_⟩
@@ -795,7 +804,7 @@ theorem bddAbove_and_bddBelow_maximalIntegralCurveInterval_kepler (hm : 0 < m) (
         -((maximalIntegralCurve X x (-s) : puncturedPhaseSpace V) : V × V).2))
       (fun t ht ↦ hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian
         (hasDerivAt_coe_maximalIntegralCurve_kepler x (hIic (neg_nonpos.2 ht))) (hq (-t))
-        (hasDerivAt_kepler_potential κ (norm_ne_zero_iff.2 (hq (-t)))).differentiableAt)
+        (differentiableAt_kepler_potential_maximalIntegralCurve x (-t)))
       (fun t _ ↦ hq (-t)) (by simpa [hx] using hℓ)
     simp only [neg_zero, hx, centralForceHamiltonian_apply, norm_neg] at h
     rw [← Prod.mk.eta (p := (x : V × V)), centralForceHamiltonian_apply] at hE

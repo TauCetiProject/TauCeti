@@ -230,9 +230,9 @@ theorem sq_sub_inner_sq_eq_zero_iff {x : V × V} (hq : x.1 ≠ 0) :
   have h : ‖x.2 - radialMomentum x • ‖x.1‖⁻¹ • x.1‖ ^ 2 =
       (‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) / ‖x.1‖ ^ 2 := by
     rw [← sub_eq_iff_eq_add'.2 (norm_snd_sq_eq_radialMomentum_sq_add hq), norm_sub_sq_real]
-    simp [norm_smul, real_inner_smul_right, real_inner_comm, radialMomentum]
+    simp only [norm_smul, norm_inv, Real.norm_eq_abs, abs_norm, mul_pow, sq_abs,
+      real_inner_smul_right, real_inner_comm, radialMomentum]
     field_simp
-    rw [sq_abs]
     ring
   have h' : x.2 = radialMomentum x • ‖x.1‖⁻¹ • x.1 ↔
       ‖x.2 - radialMomentum x • ‖x.1‖⁻¹ • x.1‖ ^ 2 = 0 := by
