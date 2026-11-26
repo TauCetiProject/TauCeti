@@ -259,7 +259,9 @@ theorem exists_mul_toPowerSeries_shift {f : ℤ → R} (q : Polynomial R) {d₁ 
     refine ⟨trunc k φ * q + Polynomial.X ^ k * h, ?_⟩
     have hsplit : φ = (trunc k φ).toPowerSeries + X ^ k * (mk fun n : ℕ ↦ f (d₁ + n)) := by
       conv_lhs => rw [eq_X_pow_mul_shift_add_trunc k φ, add_comm, hshift d₀ d₁ hle]
-    conv_lhs => rw [show (mk fun n : ℕ ↦ f (d₀ + n)) = φ from rfl, hsplit, add_mul, mul_assoc, hh]
+    dsimp only [φ] at hsplit
+    conv_lhs => rw [hsplit, add_mul, mul_assoc, hh]
+    dsimp only [φ]
     rw [Polynomial.coe_add, Polynomial.coe_mul, Polynomial.coe_mul, Polynomial.coe_pow,
       Polynomial.coe_X]
   · let k : ℕ := (d₀ - d₁).toNat
