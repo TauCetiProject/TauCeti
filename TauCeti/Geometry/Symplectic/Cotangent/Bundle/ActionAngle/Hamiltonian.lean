@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Topology.Covering.FundamentalGroupCircle
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.FiberBundle.Separation
@@ -204,10 +203,7 @@ theorem eq_of_isMIntegralCurve_hamiltonianVectorField_comp_torusActions {h : (ι
           AddCircle p)).comp g
     have hloop := (gj.nullhomotopic_iff_homotopic_refl (AddCircle.zsmulLoop p (θ j) (m j))
       fun t ↦ ?_).1 (hg.comp_right _)
-    · have hw := AddCircle.windingNumber_zsmulLoop (p := p) (θ j) (m j)
-      rw [Path.Homotopic.Quotient.eq.2 hloop, Path.Homotopic.Quotient.mk_refl,
-        ← FundamentalGroup.one_def] at hw
-      simpa [AddCircle.windingNumber] using hw.symm
+    · exact (AddCircle.zsmulLoop_homotopic_refl_iff (θ j) (m j)).1 hloop
     · simp only [gj, ContinuousMap.comp_apply, ContinuousMap.coe_mk, AddCircle.ofUnitInterval_apply,
         hgγ, hγc, proj_actionAngleCover, AddCircle.zsmulLoop_apply, Pi.add_apply, Pi.smul_apply,
         smul_eq_mul]
