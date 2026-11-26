@@ -205,6 +205,12 @@ noncomputable def weylSimple (i : I) : R.weylGroup hA :=
 theorem coe_weylSimple (i : I) :
     (R.weylSimple hA i : Dual K H ≃ₗ[K] Dual K H) = R.simpleReflection hA i := (rfl)
 
+/-- The difference between the actions of `v` and `v * sᵢ` on a weight `lam` is the translated
+simple root scaled by the value of `lam` on the simple coroot. -/
+theorem smul_sub_mul_weylSimple_smul (v : R.weylGroup hA) (i : I) (lam : Dual K H) :
+    v • lam - (v * R.weylSimple hA i) • lam = lam (R.coroot i) • (v • R.root i) := by
+  simp [mul_smul, Subgroup.smul_def, coe_weylSimple, simpleReflection_apply]
+
 @[simp]
 theorem weylSimple_mul_self (i : I) :
     R.weylSimple hA i * R.weylSimple hA i = 1 :=

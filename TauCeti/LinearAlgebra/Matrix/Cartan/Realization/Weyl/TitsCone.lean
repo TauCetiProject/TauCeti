@@ -43,6 +43,10 @@ variable {B : Matrix I I K} (R : CartanRealization B H)
 /-- The closed dominant chamber consists of the weights nonnegative on all simple coroots. -/
 def dominantChamber [LE K] : Set (Dual K H) := {lam | R.IsDominant lam}
 
+/-- The dominant chamber as a set of dominant weights. -/
+theorem dominantChamber_def [LE K] :
+    R.dominantChamber = {lam | R.IsDominant lam} := (rfl)
+
 /-- Chamber membership is dominance on the simple coroots. -/
 @[simp]
 theorem mem_dominantChamber [LE K] {lam : Dual K H} :
@@ -54,6 +58,10 @@ variable [LE K] (hA : ∀ i, B i i = 2)
 the dominant chamber. -/
 def titsCone : Set (Dual K H) := {lam | ∃ w : R.weylGroup hA, R.IsDominant (w • lam)}
 
+/-- The Tits cone as the set of weights admitting a dominant Weyl translate. -/
+theorem titsCone_def :
+    R.titsCone hA = {lam | ∃ w : R.weylGroup hA, R.IsDominant (w • lam)} := (rfl)
+
 /-- A weight belongs to the Tits cone exactly when its orbit contains a dominant weight. -/
 theorem mem_titsCone_iff {lam : Dual K H} :
     lam ∈ R.titsCone hA ↔ ∃ w : R.weylGroup hA, R.IsDominant (w • lam) := Iff.rfl
@@ -61,13 +69,7 @@ theorem mem_titsCone_iff {lam : Dual K H} :
 /-- The Tits cone is the union of the Weyl translates of the closed dominant chamber. -/
 theorem titsCone_eq_iUnion :
     R.titsCone hA = ⋃ w : R.weylGroup hA, (w • ·) '' R.dominantChamber := by
-  ext lam
-  rw [mem_titsCone_iff, Set.mem_iUnion]
-  constructor
-  · rintro ⟨w, hw⟩
-    exact ⟨w⁻¹, w • lam, hw, inv_smul_smul w lam⟩
-  · rintro ⟨w, μ, hμ, rfl⟩
-    exact ⟨w⁻¹, by simpa using hμ⟩
+  simp only [titsCone_def, Set.image_smul, Set.iUnion_smul_eq_ofPred_exists, mem_dominantChamber]
 
 /-- Every dominant weight belongs to the Tits cone. -/
 theorem dominantChamber_subset_titsCone : R.dominantChamber ⊆ R.titsCone hA :=
@@ -91,11 +93,6 @@ variable {A : Matrix I I ℤ} (R : CartanRealization (A.map (Int.cast : ℤ → 
   (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
 
 local notation "W" => R.weylGroup (diag_map_intCast hdiag)
-
-private theorem smul_sub_mul_weylSimple_smul (v : W) (i : I) (lam : Dual K H) :
-    v • lam - (v * R.weylSimple (diag_map_intCast hdiag) i) • lam =
-      lam (R.coroot i) • (v • R.root i) := by
-  simp [mul_smul, Subgroup.smul_def, coe_weylSimple, simpleReflection_apply]
 
 section RootOrder
 
@@ -125,7 +122,7 @@ private theorem sub_smul_mem_of_step (w : W) (lam : Dual K H) (S : AddSubmonoid 
     obtain ⟨v, i, hv, hvi, hβ⟩ := R.exists_mul_simple_of_ne_one hdiag hoff hzero hw
     have hdiff : v • lam - w • lam = lam (R.coroot i) • (v • R.root i) := by
       simpa only [← R.weylCoxeterSystem_simple hdiag hoff hzero, hvi] using
-        R.smul_sub_mul_weylSimple_smul hdiag v i lam
+        R.smul_sub_mul_weylSimple_smul (diag_map_intCast hdiag) v i lam
     rw [← sub_add_sub_cancel lam (v • lam) (w • lam), hdiff]
     exact add_mem (ih _ (hn ▸ hv) v rfl) (hstep _ hβ i)
 
@@ -142,10 +139,11 @@ theorem rootLE_smul_of_forall_apply_coroot_eq_natCast (w : W) {lam : Dual K H}
 
 end RootOrder
 
-variable [LinearOrder K] [IsStrictOrderedRing K]
+variable [PartialOrder K] [IsOrderedRing K] [CharZero K]
 
 local notation "Δ" => PointedCone.hull K (Set.range R.root)
 
+omit [CharZero K] in
 private theorem posRootCone_le_hull :
     R.posRootCone ≤ (Δ : Submodule (Nonneg K) (Dual K H)).restrictScalars ℕ :=
   R.posRootCone_def ▸ Submodule.span_le.mpr (PointedCone.subset_hull (R := K))
@@ -158,6 +156,7 @@ theorem sub_smul_mem_root_hull (w : W) {lam : Dual K H} (hlam : R.IsDominant lam
   R.sub_smul_mem_of_step hdiag hoff hzero w lam (Δ).toAddSubmonoid
     fun _ hβ i ↦ PointedCone.smul_mem Δ (R.isDominant_iff.mp hlam i) (R.posRootCone_le_hull hβ)
 
+omit [CharZero K] in
 private theorem eq_zero_of_mem_root_hull_of_neg_mem {β : Dual K H}
     (hβ : β ∈ Δ) (hneg : -β ∈ Δ) : β = 0 := by
   by_contra hn
@@ -210,7 +209,7 @@ theorem parabolic_eq_stabilizer {lam : Dual K H} (hlam : R.IsDominant lam) :
     obtain ⟨v, i, hv, hvi, hβ⟩ := R.exists_mul_simple_of_ne_one hdiag hoff hzero hw
     have hdiff : v • lam - lam = lam (R.coroot i) • (v • R.root i) := by
       simpa only [← R.weylCoxeterSystem_simple hdiag hoff hzero, hvi, hwlam] using
-        R.smul_sub_mul_weylSimple_smul hdiag v i lam
+        R.smul_sub_mul_weylSimple_smul (diag_map_intCast hdiag) v i lam
     -- Both differences lie in the salient cone, so this reflection step fixes the weight.
     have hstep : v • lam - lam ∈ Δ :=
       hdiff ▸ PointedCone.smul_mem Δ (R.isDominant_iff.mp hlam i) (R.posRootCone_le_hull hβ)
