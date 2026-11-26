@@ -401,7 +401,7 @@ theorem _root_.IsCompactOperator.withLpProdMap {f : α →L[𝕜] α'} {g : β �
   have hsnd : Filter.Tendsto (WithLp.snd (p := p) (α := α) (β := β)) (nhds 0) (nhds 0) := by
     simpa using (WithLp.continuous_snd p α β).tendsto 0
   filter_upwards [hfst h₁, hsnd h₂] with x hx₁ hx₂
-  exact ⟨(f x.fst, g x.snd), ⟨hx₁, hx₂⟩, rfl⟩
+  exact ⟨(f x.fst, g x.snd), ⟨hx₁, hx₂⟩, (withLpProdMap_apply f g x).symm⟩
 
 end Topological
 
