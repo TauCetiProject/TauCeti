@@ -17,8 +17,9 @@ Heisenberg group.
 
 ## Main results
 
-* `TauCeti.measurePreserving_skew_add_right`: on a product of additive groups with right
-  invariant measures, `(x, y) ↦ (x + a, y + g x)` preserves the product measure for measurable `g`.
+* `TauCeti.measurePreserving_skew_mul_right`: for right invariant s-finite measures,
+  `(x, y) ↦ (x * a, y * g x)` preserves the product measure for measurable `g`; its additive form
+  is `TauCeti.measurePreserving_skew_add_right`.
 * `TauCeti.measurePreserving_shear`: `(y, z) ↦ (y + b, z + c + a y)` preserves Lebesgue measure
   on `ℝ × ℝ`.
 * `TauCeti.measurePreserving_affine`: `(x, y, z) ↦ (x + a, y + b, z + c + d x)` preserves Lebesgue
@@ -33,17 +34,20 @@ open MeasureTheory
 
 namespace TauCeti
 
-/-- On a product of additive groups with right invariant s-finite measures, the skew translation
-`(x, y) ↦ (x + a, y + g x)` preserves the product measure for every measurable `g`: it translates
+/-- On a product of right invariant s-finite measures, the skew translation
+`(x, y) ↦ (x * a, y * g x)` preserves the product measure for every measurable `g`: it translates
 the base and each fibre. -/
-theorem measurePreserving_skew_add_right {G H : Type*} [MeasurableSpace G] [AddGroup G]
-    [MeasurableAdd G] [MeasurableSpace H] [AddGroup H] [MeasurableAdd₂ H] (μ : Measure G)
-    (ν : Measure H) [SFinite μ] [SFinite ν] [μ.IsAddRightInvariant] [ν.IsAddRightInvariant]
+@[to_additive /-- On a product of right invariant s-finite measures, the skew translation
+`(x, y) ↦ (x + a, y + g x)` preserves the product measure for every measurable `g`: it translates
+the base and each fibre. -/]
+theorem measurePreserving_skew_mul_right {G H : Type*} [MeasurableSpace G] [Mul G]
+    [MeasurableMul G] [MeasurableSpace H] [Mul H] [MeasurableMul₂ H] (μ : Measure G)
+    (ν : Measure H) [SFinite μ] [SFinite ν] [μ.IsMulRightInvariant] [ν.IsMulRightInvariant]
     (a : G) {g : G → H} (hg : Measurable g) :
-    MeasurePreserving (fun p : G × H ↦ (p.1 + a, p.2 + g p.1)) (μ.prod ν) (μ.prod ν) :=
-  (measurePreserving_add_right μ a).skew_product (g := fun x y ↦ y + g x)
-    (measurable_snd.add (hg.comp measurable_fst))
-    (Filter.Eventually.of_forall fun x ↦ (measurePreserving_add_right ν (g x)).map_eq)
+    MeasurePreserving (fun p : G × H ↦ (p.1 * a, p.2 * g p.1)) (μ.prod ν) (μ.prod ν) :=
+  (measurePreserving_mul_right μ a).skew_product (g := fun x y ↦ y * g x)
+    (measurable_snd.mul (hg.comp measurable_fst))
+    (Filter.Eventually.of_forall fun x ↦ (measurePreserving_mul_right ν (g x)).map_eq)
 
 /-- On `ℝ × ℝ`, the shear `(y, z) ↦ (y + b, z + c + a y)` preserves Lebesgue measure. -/
 theorem measurePreserving_shear (a b c : ℝ) :
