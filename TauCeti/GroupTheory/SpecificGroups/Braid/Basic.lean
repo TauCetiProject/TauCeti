@@ -7,6 +7,7 @@ module
 
 import Mathlib.Data.Finite.Perm
 import Mathlib.GroupTheory.Perm.Cycle.Type
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.GroupTheory.Coxeter.Artin
 public import TauCeti.GroupTheory.Coxeter.Matrix
 public import TauCeti.GroupTheory.Perm.Basic
@@ -264,6 +265,21 @@ theorem strandSucc_rev (i : Fin (n - 1)) : strandSucc i.rev = (strand i).rev := 
   ext
   simp only [val_strand, val_strandSucc, Fin.val_rev]
   omega
+
+/-- Adding `1` to the lower strand crossed by `sigma i` gives the upper crossed strand. -/
+@[simp]
+theorem strand_add_one [NeZero n] (i : Fin (n - 1)) : strand i + 1 = strandSucc i := by
+  ext
+  have hi := i.isLt
+  simp only [Fin.val_add, val_strand, val_strandSucc, Fin.val_one',
+    Nat.mod_eq_of_lt (show 1 < n by omega), Nat.mod_eq_of_lt (show (i : ℕ) + 1 < n by omega)]
+
+/-- Rotating the strand indices cyclically sends the lower strand crossed by `sigma i` to the upper
+one. Not `@[simp]` because `finRotate_apply` simplifies the left-hand side to `strand i + 1`, which
+`strand_add_one` then simplifies to `strandSucc i`. -/
+theorem finRotate_strand (i : Fin (n - 1)) : finRotate n (strand i) = strandSucc i := by
+  have := (strand i).neZero
+  rw [finRotate_apply, strand_add_one]
 
 /-- The two strands crossed by an elementary braid are distinct. -/
 theorem strand_ne_strandSucc (i : Fin (n - 1)) : strand i ≠ strandSucc i := by

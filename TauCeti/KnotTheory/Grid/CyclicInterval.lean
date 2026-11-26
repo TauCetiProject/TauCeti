@@ -101,6 +101,8 @@ directions before taking products.
   its own cyclic successor.
 * `TauCeti.Grid.self_mem_cIco_finRotate`: a point always lies in a nondegenerate half-open arc
   ending at its own cyclic successor.
+* `TauCeti.Grid.cIco_eq_cIco_iff`: a nonempty half-open cyclic interval uniquely determines its
+  initial and terminal endpoints.
 * `TauCeti.Grid.notMem_cIco_of_mem_cIoo_finRotate`: a point and its cyclic successor both miss
   the half-open arc ending strictly before the successor.
 * `TauCeti.Grid.mem_cIco_finRotate_iff_mem_insert_cIoo`: the half-open arc between cyclic
@@ -959,6 +961,29 @@ theorem ite_mem_cIco_finRotate_sub_ite_mem_cIco (a b s : Fin n) :
     have := b.isLt
     simp only [mem_cIco, ne_eq, Fin.ext_iff, ite_prop_iff_or]
     split_ifs <;> omega
+
+/-- Two half-open cyclic intervals, at least one of which is nonempty, are equal if and only if
+they have the same initial and terminal endpoints. -/
+theorem cIco_eq_cIco_iff {a b c d : Fin n} (hne : a ≠ b ∨ c ≠ d) :
+    cIco a b = cIco c d ↔ a = c ∧ b = d := by
+  refine ⟨fun h => ?_, fun ⟨ha, hb⟩ => ha ▸ hb ▸ rfl⟩
+  have hab : a ≠ b := hne.elim id fun hcd => by
+    rintro rfl
+    have hc := left_mem_cIco hcd
+    rw [← h, cIco_self] at hc
+    exact Finset.notMem_empty c hc
+  have hstep : ∀ x : Fin n,
+      ((if x = a then 1 else 0 : ℤ) - if x = b then 1 else 0) =
+        (if x = c then 1 else 0 : ℤ) - if x = d then 1 else 0 := fun x => by
+    have h₁ := ite_mem_cIco_finRotate_sub_ite_mem_cIco a b ((finRotate n).symm x)
+    have h₂ := ite_mem_cIco_finRotate_sub_ite_mem_cIco c d ((finRotate n).symm x)
+    rw [h, Equiv.apply_symm_apply] at h₁
+    rw [Equiv.apply_symm_apply] at h₂
+    exact h₁.symm.trans h₂
+  have ha := hstep a
+  have hb := hstep b
+  simp only [↓reduceIte, hab, hab.symm] at ha hb
+  constructor <;> split_ifs at ha hb <;> first | assumption | omega
 
 /-- **The two sides of a step across a half-open arc.** For distinct endpoints, a row of squares
 `s` and its cyclic successor both lie on the half-open arc from `a` to `b` when the successor lies

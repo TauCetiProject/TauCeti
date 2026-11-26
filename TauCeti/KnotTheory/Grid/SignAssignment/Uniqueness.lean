@@ -10,6 +10,7 @@ public import TauCeti.KnotTheory.Grid.SignAssignment.Differential
 import TauCeti.GroupTheory.Coxeter.Cocycle
 import TauCeti.GroupTheory.Perm.Coxeter
 import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Geometry
+import TauCeti.KnotTheory.Grid.Rectangle.Annulus.Empty
 import TauCeti.KnotTheory.Grid.Rectangle.Swap
 
 /-!
@@ -97,10 +98,8 @@ private theorem ratio_congr (S T : GridSignAssignment n) {x y x' y' : GridState 
     (hl : r.left = r'.left) (hrr : r.right = r'.right) :
     ratio S T r hr = ratio S T r' hr' := by
   subst hx
-  have hy : y = y' := by rw [r.target_eq_swapColumns, r'.target_eq_swapColumns, hl, hrr]
-  subst hy
-  obtain rfl : r = r' := GridRectangleBetween.ext hl hrr
-  rfl
+  obtain rfl : y = y' := by rw [r.target_eq_swapColumns, r'.target_eq_swapColumns, hl, hrr]
+  obtain rfl : r = r' := GridRectangleBetween.ext hl hrr; rfl
 
 private theorem ratio_mul_ratio (S T : GridSignAssignment n) {x₁ y₁ x₂ y₂ : GridState n}
     (r₁ : GridRectangleBetween x₁ y₁) (r₂ : GridRectangleBetween x₂ y₂)
@@ -133,13 +132,12 @@ private theorem ratio_commute (S T : GridSignAssignment n) {x z : GridState n}
     (by rw [D.commute_first_toGridRectangle h, D.commute_second_toGridRectangle h, add_comm])
 
 private theorem ratio_recut (S T : GridSignAssignment n) {x z : GridState n}
-    (D : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide)
-    (h₁ : D.first.IsEmpty) (h₂ : D.second.IsEmpty) :
-    ratio S T (D.recut hone h₁ h₂).first (D.isRecut_recut hone h₁ h₂).isEmpty_first *
-        ratio S T (D.recut hone h₁ h₂).second (D.isRecut_recut hone h₁ h₂).isEmpty_second =
-      ratio S T D.first h₁ * ratio S T D.second h₂ :=
-  ratio_square S T D (D.recut hone h₁ h₂) h₁ h₂
-    (D.isRecut_recut hone h₁ h₂).isEmpty_first (D.isRecut_recut hone h₁ h₂).isEmpty_second
+    {D E : GridRectangleDecomposition x z} (hone : D.HasOneCommonSide)
+    (h₁ : D.first.IsEmpty) (h₂ : D.second.IsEmpty) (hE : E = D.recut hone h₁ h₂)
+    (hE₁ : E.first.IsEmpty) (hE₂ : E.second.IsEmpty) :
+    ratio S T E.first hE₁ * ratio S T E.second hE₂ =
+      ratio S T D.first h₁ * ratio S T D.second h₂ := by
+  subst hE; exact ratio_square S T D (D.recut hone h₁ h₂) h₁ h₂ hE₁ hE₂
     (D.recut_ne hone h₁ h₂) (D.isRecut_recut hone h₁ h₂).isRepartition.val_add_val_eq
 
 private theorem ratio_vertical_annulus (S T : GridSignAssignment n) {x y : GridState n}
@@ -148,8 +146,7 @@ private theorem ratio_vertical_annulus (S T : GridSignAssignment n) {x y : GridS
     ratio S T s hs = ratio S T r hr :=
   units_eq_of_mul_eq_one <| by
     rw [ratio_mul_ratio, S.sign_mul_sign_eq_neg_one_of_left_eq_left r s hr hs hleft,
-      T.sign_mul_sign_eq_neg_one_of_left_eq_left r s hr hs hleft]
-    simp
+      T.sign_mul_sign_eq_neg_one_of_left_eq_left r s hr hs hleft]; simp
 
 private theorem ratio_horizontal_annulus (S T : GridSignAssignment n) {x y : GridState n}
     (r : GridRectangleBetween x y) (s : GridRectangleBetween y x)
@@ -182,24 +179,11 @@ private theorem widthOneRect_isEmpty (x : GridState n) (a : Fin n) (hn : 1 < n) 
   GridRectangleBetween.isEmpty_of_right_eq_finRotate _
     (by rw [widthOneRect_left, widthOneRect_right])
 
-private theorem finRotate_strand (i : Fin (n - 1)) :
-    finRotate n (BraidGroup.strand i) = BraidGroup.strandSucc i := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by have := i.isLt; omega⟩
-  apply Fin.ext
-  rw [coe_finRotate]
-  have hne : BraidGroup.strand i ≠ Fin.last m := fun h => by
-    have hval := congrArg Fin.val h
-    simp only [BraidGroup.val_strand, Fin.val_last] at hval
-    have := i.isLt; omega
-  simp [hne]
-
 private theorem mk_swapColumns_strand (σ : Equiv.Perm (Fin n)) (i : Fin (n - 1)) :
     (⟨σ⟩ : GridState n).swapColumns (BraidGroup.strand i) (finRotate n (BraidGroup.strand i)) =
       ⟨σ * (permCoxeterSystem n).simple i⟩ := by
-  ext c
-  rw [GridState.swapColumns_apply, finRotate_strand, permCoxeterSystem_simple,
-    BraidGroup.transposition_eq_swap]
-  rfl
+  ext c; rw [GridState.swapColumns_apply, BraidGroup.finRotate_strand, permCoxeterSystem_simple,
+    BraidGroup.transposition_eq_swap]; rfl
 
 /-- The `ℤˣ`-valued 1-cochain on the right Cayley graph of `Equiv.Perm (Fin n)` obtained by
 evaluating the ratio of `S` and `T` on adjacent width-one rectangles. -/
@@ -211,35 +195,27 @@ private theorem adjCocycle_inv (S T : GridSignAssignment n) (hn : 1 < n)
     (σ : Equiv.Perm (Fin n)) (i : Fin (n - 1)) :
     adjCocycle S T hn (σ * (permCoxeterSystem n).simple i) i = (adjCocycle S T hn σ i)⁻¹ := by
   let r := widthOneRect ⟨σ⟩ (BraidGroup.strand i) hn
-  let s : GridRectangleBetween _ ⟨σ⟩ :=
-    { left := r.left, right := r.right, left_ne_right := r.left_ne_right
-      map_left := r.map_right.symm, map_right := r.map_left.symm
-      map_of_ne := fun c hl hr => (r.map_of_ne c hl hr).symm }
-  have hs : s.IsEmpty := GridRectangleBetween.isEmpty_of_right_eq_finRotate s
-    (by simp [s, r, widthOneRect_left, widthOneRect_right])
+  have hs : r.verticalComplement.IsEmpty := (r.isEmpty_and_isEmpty_verticalComplement_iff.mpr
+    (by rw [widthOneRect_left, widthOneRect_right])).2
   rw [adjCocycle, ratio_congr S T _ hs (mk_swapColumns_strand σ i).symm
-      (by simp [s, r, widthOneRect_left]) (by simp [s, r, widthOneRect_right]),
-    ratio_vertical_annulus S T r s (widthOneRect_isEmpty _ _ hn) hs rfl, Int.units_inv_eq_self]
-  rfl
+      (by simp [r, widthOneRect_left]) (by simp [r, widthOneRect_right]),
+    ratio_vertical_annulus S T r r.verticalComplement (widthOneRect_isEmpty _ _ hn) hs
+      r.verticalComplement_left, Int.units_inv_eq_self]; rfl
 
 private theorem adjCocycle_braid_two (S T : GridSignAssignment n) (hn : 1 < n)
     (σ : Equiv.Perm (Fin n)) {i j : Fin (n - 1)}
     (hdist : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i) :
     adjCocycle S T hn σ i * adjCocycle S T hn (σ * (permCoxeterSystem n).simple i) j =
       adjCocycle S T hn σ j * adjCocycle S T hn (σ * (permCoxeterSystem n).simple j) i := by
-  let x : GridState n := ⟨σ⟩
-  let a := BraidGroup.strand i
-  let b := BraidGroup.strand j
+  let x : GridState n := ⟨σ⟩; let a := BraidGroup.strand i; let b := BraidGroup.strand j
   let y := x.swapColumns a (finRotate n a)
   let D : GridRectangleDecomposition x (y.swapColumns b (finRotate n b)) :=
     { middle := y, first := widthOneRect x a hn, second := widthOneRect y b hn }
   have hdisj : D.HasDisjointSides := by
     rw [D.hasDisjointSides_iff]
-    simp only [D, widthOneRect_left, widthOneRect_right, finRotate_strand, a, b, ne_eq,
-      Fin.ext_iff, BraidGroup.val_strand, BraidGroup.val_strandSucc]
-    omega
-  have hD₁ := widthOneRect_isEmpty x a hn
-  have hD₂ := widthOneRect_isEmpty y b hn
+    simp only [D, widthOneRect_left, widthOneRect_right, BraidGroup.finRotate_strand, a, b, ne_eq,
+      Fin.ext_iff, BraidGroup.val_strand, BraidGroup.val_strandSucc]; omega
+  have hD₁ := widthOneRect_isEmpty x a hn; have hD₂ := widthOneRect_isEmpty y b hn
   have hcomm := ratio_commute S T D hdisj hD₁ hD₂
   rw [ratio_congr S T (D.isEmpty_commute_first hdisj hD₁ hD₂) (widthOneRect_isEmpty x b hn) rfl
       (by simp [D, widthOneRect_left, b]) (by simp [D, widthOneRect_right, b]),
@@ -253,34 +229,60 @@ private theorem adjCocycle_braid_two (S T : GridSignAssignment n) (hn : 1 < n)
       (by simp [widthOneRect_left, b]) (by simp [widthOneRect_right, b])] at hcomm
   exact hcomm.symm
 
+/-- Recutting two consecutive width-one rectangles `(a, b)` then `(b, c)` when
+`x b ∈ cIoo (x a) (x c)` yields side columns `(b, c)` followed by `(a, c)`. -/
+private theorem recut_sides_of_consecutive_widthOne {x z : GridState n}
+    (D : GridRectangleDecomposition x z) {a b c : Fin n}
+    (hfl : D.first.left = a) (hfr : D.first.right = b)
+    (hsl : D.second.left = b) (hsr : D.second.right = c)
+    (hac : a ≠ c) (hbc : b ≠ c) (hrow : x b ∈ Grid.cIoo (x a) (x c))
+    (hone : D.HasOneCommonSide) (hD₁ : D.first.IsEmpty) (hD₂ : D.second.IsEmpty) :
+    (D.recut hone hD₁ hD₂).first.left = b ∧ (D.recut hone hD₁ hD₂).first.right = c ∧
+      (D.recut hone hD₁ hD₂).second.left = a ∧ (D.recut hone hD₁ hD₂).second.right = c := by
+  rcases D.recut_geometry_of_right_eq_left (hfr.trans hsl.symm) hone hD₁ hD₂ with
+    ⟨-, hEfl, hEfr, hEsl, hEsr, -⟩ | ⟨hbad, -⟩
+  · exact ⟨hEfl.trans hfr, hEfr.trans hsr, hEsl.trans hfl, hEsr.trans hsr⟩
+  · have hstop : D.second.top = x c := by
+      rw [GridRectangleBetween.top_def, hsr, D.first.map_of_ne c (hfl ▸ hac.symm) (hfr ▸ hbc.symm)]
+    rw [GridRectangleBetween.bottom_def, hfl, GridRectangleBetween.top_def, hfr, hstop] at hbad
+    exact False.elim (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap (x a) (x b)) hbad
+      (Grid.mem_cIoo_cyclic_left hrow))
+
+/-- Recutting an empty rectangle on `(a, c)` followed by an empty rectangle on `(a, b)` with
+`b ∈ cIoo a c` yields side columns `(a, b)` followed by `(b, c)`. -/
+private theorem recut_sides_of_span_then_left {x z : GridState n}
+    (D : GridRectangleDecomposition x z) {a b c : Fin n}
+    (hfl : D.first.left = a) (hfr : D.first.right = c)
+    (hsl : D.second.left = a) (hsr : D.second.right = b) (hbac : b ∈ Grid.cIoo a c)
+    (hone : D.HasOneCommonSide) (hD₁ : D.first.IsEmpty) (hD₂ : D.second.IsEmpty) :
+    (D.recut hone hD₁ hD₂).first.left = a ∧ (D.recut hone hD₁ hD₂).first.right = b ∧
+      (D.recut hone hD₁ hD₂).second.left = b ∧ (D.recut hone hD₁ hD₂).second.right = c := by
+  obtain ⟨hEfl, hEfr, hEsl, hEsr⟩ :=
+    D.recut_sides_of_left_eq_left_of_mem_cIoo (hfl.trans hsl.symm) (by rwa [hfl, hfr, hsr]) hD₁ hD₂
+  exact ⟨hEfl.trans hfl, hEfr.trans hsr, hEsl.trans hsr, hEsr.trans hfr⟩
+
+private noncomputable abbrev braidThreeProd (S T : GridSignAssignment n) (hn : 1 < n)
+    (σ : Equiv.Perm (Fin n)) (i j : Fin (n - 1)) : ℤˣ :=
+  adjCocycle S T hn σ i * adjCocycle S T hn (σ * (permCoxeterSystem n).simple i) j *
+    adjCocycle S T hn (σ * (permCoxeterSystem n).simple i * (permCoxeterSystem n).simple j) i
+
 private theorem adjCocycle_braid_three_of_mem_cIoo (S T : GridSignAssignment n) (hn : 1 < n)
     (σ : Equiv.Perm (Fin n)) {i j : Fin (n - 1)} (hij : (i : ℕ) + 1 = j)
     (hrow : σ (BraidGroup.strandSucc i) ∈
       Grid.cIoo (σ (BraidGroup.strand i)) (σ (BraidGroup.strandSucc j))) :
-    adjCocycle S T hn σ i *
-        adjCocycle S T hn (σ * (permCoxeterSystem n).simple i) j *
-        adjCocycle S T hn
-          (σ * (permCoxeterSystem n).simple i * (permCoxeterSystem n).simple j) i =
-      adjCocycle S T hn σ j *
-        adjCocycle S T hn (σ * (permCoxeterSystem n).simple j) i *
-        adjCocycle S T hn
-          (σ * (permCoxeterSystem n).simple j * (permCoxeterSystem n).simple i) j := by
+    braidThreeProd S T hn σ i j = braidThreeProd S T hn σ j i := by
   let x : GridState n := ⟨σ⟩
-  let a := BraidGroup.strand i
-  let b := BraidGroup.strandSucc i
-  let c := BraidGroup.strandSucc j
-  let si := (permCoxeterSystem n).simple i
-  let sj := (permCoxeterSystem n).simple j
+  let a := BraidGroup.strand i; let b := BraidGroup.strandSucc i; let c := BraidGroup.strandSucc j
+  set si := (permCoxeterSystem n).simple i; set sj := (permCoxeterSystem n).simple j
   have hbj : BraidGroup.strand j = b := BraidGroup.strand_eq_strandSucc_of_succ hij
-  have hab : finRotate n a = b := finRotate_strand i
-  have hbc : finRotate n b = c := hbj ▸ finRotate_strand j
+  have hab : finRotate n a = b := BraidGroup.finRotate_strand i
+  have hbc : finRotate n b = c := hbj ▸ BraidGroup.finRotate_strand j
   have hac : a ≠ c := BraidGroup.strand_ne_strandSucc_of_succ hij
   have hbac : b ∈ Grid.cIoo a c := by
     rw [Grid.mem_cIoo]; refine ⟨hac, ?_⟩
     have := BraidGroup.val_strand i; have := BraidGroup.val_strandSucc i
-    have := BraidGroup.val_strandSucc j
-    rw [ite_eq_left (by omega)]; omega
-  -- First recut: `(a, b)` then `(b, c)`.
+    have := BraidGroup.val_strandSucc j; rw [ite_eq_left (by omega)]; omega
+  -- Step 1: recut `(a, b)` followed by `(b, c)` at `x` into `(b, c)` followed by `(a, c)`.
   let y₁ := x.swapColumns a (finRotate n a)
   let z₁ := y₁.swapColumns (BraidGroup.strand j) (finRotate n (BraidGroup.strand j))
   let D₁ : GridRectangleDecomposition x z₁ :=
@@ -292,103 +294,76 @@ private theorem adjCocycle_braid_three_of_mem_cIoo (S T : GridSignAssignment n) 
     (by simpa only [D₁, widthOneRect_left, widthOneRect_right, hbj, hbc] using hac)
   have hD₁f : D₁.first.IsEmpty := widthOneRect_isEmpty _ _ hn
   have hD₁s : D₁.second.IsEmpty := widthOneRect_isEmpty _ _ hn
-  let E₁ := D₁.recut hone₁ hD₁f hD₁s
-  have hrec₁ := D₁.isRecut_recut hone₁ hD₁f hD₁s
-  have hE₁_sides :
-      E₁.first.left = b ∧ E₁.first.right = c ∧ E₁.second.left = a ∧ E₁.second.right = c := by
-    rcases D₁.recut_geometry_of_right_eq_left hD₁_common hone₁ hD₁f hD₁s with
-      ⟨-, hfl, hfr, hsl, hsr, -⟩ | ⟨hbad, -⟩
-    · exact ⟨by simpa only [E₁, D₁, widthOneRect_right, hab] using hfl,
-        by simpa only [E₁, D₁, widthOneRect_right, hbj, hbc] using hfr,
-        by simpa only [E₁, D₁, widthOneRect_left] using hsl,
-        by simpa only [E₁, D₁, widthOneRect_right, hbj, hbc] using hsr⟩
-    · have hD₁_stop : D₁.second.top = σ c := by
-        rw [show D₁.second.top = y₁ (finRotate n (BraidGroup.strand j)) from
-          widthOneRect_top _ _ hn, hbj, hbc]
-        change x (Equiv.swap a (finRotate n a) c) = σ c
-        rw [hab, Equiv.swap_apply_of_ne_of_ne hac.symm (hbc ▸ Grid.finRotate_ne_self hn b)]
-      rw [widthOneRect_bottom, show D₁.first.top = σ b by rw [widthOneRect_top, hab], hD₁_stop]
-        at hbad
-      exact False.elim (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap (σ a) (σ b)) hbad
-        (Grid.mem_cIoo_cyclic_left hrow))
-  obtain ⟨hE₁fl, hE₁fr, hE₁sl, hE₁sr⟩ := hE₁_sides
+  let E₁ := D₁.recut hone₁ hD₁f hD₁s; have hrec₁ := D₁.isRecut_recut hone₁ hD₁f hD₁s
+  obtain ⟨hE₁fl, hE₁fr, hE₁sl, hE₁sr⟩ := recut_sides_of_consecutive_widthOne D₁
+    (widthOneRect_left x a hn) ((widthOneRect_right x a hn).trans hab)
+    ((widthOneRect_left y₁ (BraidGroup.strand j) hn).trans hbj)
+    (by simp only [D₁, widthOneRect_right, hbj, hbc])
+    hac (hbj ▸ BraidGroup.strand_ne_strandSucc j) hrow hone₁ hD₁f hD₁s
   have hy₁ : y₁ = ⟨σ * si⟩ := mk_swapColumns_strand σ i
   have hz₁ : z₁ = ⟨σ * si * sj⟩ := (by rw [← hy₁] : z₁ = _).trans (mk_swapColumns_strand _ j)
   have hE₁mid : E₁.middle = ⟨σ * sj⟩ := by
-    rw [E₁.first.target_eq_swapColumns, hE₁fl, hE₁fr, ← hbc, ← hbj]
-    exact mk_swapColumns_strand σ j
+    rw [E₁.first.target_eq_swapColumns, hE₁fl, hE₁fr, ← hbc, ← hbj]; exact mk_swapColumns_strand σ j
   have hstep₁ : adjCocycle S T hn σ j * ratio S T E₁.second hrec₁.isEmpty_second =
       adjCocycle S T hn σ i * adjCocycle S T hn (σ * si) j := by
-    have hr₁ := ratio_recut S T D₁ hone₁ hD₁f hD₁s
+    have hr₁ := ratio_recut S T hone₁ hD₁f hD₁s rfl hrec₁.isEmpty_first hrec₁.isEmpty_second
     rw [ratio_congr S T hrec₁.isEmpty_first (widthOneRect_isEmpty x (BraidGroup.strand j) hn) rfl
         (by rw [hE₁fl, widthOneRect_left, hbj]) (by rw [hE₁fr, widthOneRect_right, hbj, hbc]),
       ratio_congr S T hD₁s (widthOneRect_isEmpty ⟨σ * si⟩ (BraidGroup.strand j) hn) hy₁
-        (by simp [D₁, widthOneRect_left]) (by simp [D₁, widthOneRect_right])] at hr₁
-    exact hr₁
-  -- Second recut: `E₁.second` (sides `(a, c)`) followed by `(a, b)` at `z₁`.
+        (by simp [D₁, widthOneRect_left]) (by simp [D₁, widthOneRect_right])] at hr₁; exact hr₁
+  -- Step 2: recut `E₁.second` (on `(a, c)`) followed by `(a, b)` at `z₁` into `(a, b)`
+  -- followed by `(b, c)`.
   let D₂ : GridRectangleDecomposition E₁.middle (z₁.swapColumns a (finRotate n a)) :=
     { middle := z₁, first := E₁.second, second := widthOneRect z₁ a hn }
   have hD₂_common : D₂.first.left = D₂.second.left := hE₁sl.trans (widthOneRect_left z₁ a hn).symm
   have hD₂_col : D₂.second.right ∈ Grid.cIoo D₂.first.left D₂.first.right := by
-    simpa only [D₂, widthOneRect_right, hE₁sl, hE₁sr, hab] using hbac
+    dsimp only [D₂, E₁]; rwa [widthOneRect_right, hE₁sl, hE₁sr, hab]
   have hone₂ := D₂.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hD₂_common hD₂_col
   have hD₂s : D₂.second.IsEmpty := widthOneRect_isEmpty _ _ hn
   let E₂ := D₂.recut hone₂ hrec₁.isEmpty_second hD₂s
   have hrec₂ := D₂.isRecut_recut hone₂ hrec₁.isEmpty_second hD₂s
-  obtain ⟨hE₂fl, hE₂fr, hE₂sl, hE₂sr⟩ :=
-    D₂.recut_sides_of_left_eq_left_of_mem_cIoo hD₂_common hD₂_col hrec₁.isEmpty_second hD₂s
-  have hD₂sr : D₂.second.right = finRotate n a := widthOneRect_right z₁ a hn
+  obtain ⟨hE₂fl, hE₂fr, hE₂sl, hE₂sr⟩ := recut_sides_of_span_then_left D₂
+    hE₁sl hE₁sr (widthOneRect_left z₁ a hn) ((widthOneRect_right z₁ a hn).trans hab) hbac
+    hone₂ hrec₁.isEmpty_second hD₂s
   have hE₂mid : E₂.middle = ⟨σ * sj * si⟩ := by
-    rw [E₂.first.target_eq_swapColumns, hE₂fl, hE₂fr, hE₁sl, hD₂sr, hE₁mid]
+    rw [E₂.first.target_eq_swapColumns, hE₂fl, hE₂fr, ← hab, hE₁mid]
     exact mk_swapColumns_strand _ i
   have hstep₂ : adjCocycle S T hn (σ * sj) i * adjCocycle S T hn (σ * sj * si) j =
       ratio S T E₁.second hrec₁.isEmpty_second * adjCocycle S T hn (σ * si * sj) i := by
-    have hr₂ := ratio_recut S T D₂ hone₂ hrec₁.isEmpty_second hD₂s
+    have hr₂ := ratio_recut S T hone₂ hrec₁.isEmpty_second hD₂s rfl
+      hrec₂.isEmpty_first hrec₂.isEmpty_second
     rw [ratio_congr S T hrec₂.isEmpty_first (widthOneRect_isEmpty ⟨σ * sj⟩ a hn) hE₁mid
-        (by rw [hE₂fl, hE₁sl, widthOneRect_left]) (by rw [hE₂fr, hD₂sr, widthOneRect_right]),
+        (by rw [hE₂fl, widthOneRect_left]) (by rw [hE₂fr, ← hab, widthOneRect_right]),
       ratio_congr S T hrec₂.isEmpty_second
         (widthOneRect_isEmpty ⟨σ * sj * si⟩ (BraidGroup.strand j) hn) hE₂mid
-        (by rw [hE₂sl, hD₂sr, hab, widthOneRect_left, hbj])
-        (by rw [hE₂sr, hE₁sr, widthOneRect_right, hbj, hbc]),
+        (by rw [hE₂sl, widthOneRect_left, hbj]) (by rw [hE₂sr, widthOneRect_right, hbj, hbc]),
       ratio_congr S T hD₂s (widthOneRect_isEmpty ⟨σ * si * sj⟩ a hn) hz₁
         (by simp [D₂, widthOneRect_left, a]) (by simp [D₂, widthOneRect_right, a])] at hr₂
     exact hr₂
-  change adjCocycle S T hn σ i * adjCocycle S T hn (σ * si) j *
-      adjCocycle S T hn (σ * si * sj) i =
-    adjCocycle S T hn σ j * adjCocycle S T hn (σ * sj) i * adjCocycle S T hn (σ * sj * si) j
-  rw [← hstep₁, mul_assoc, ← hstep₂, ← mul_assoc]
+  -- Combine both recut identities across the shared factor `ratio S T E₁.second`.
+  rw [braidThreeProd, braidThreeProd, ← hstep₁, mul_assoc, ← hstep₂, ← mul_assoc]
 
 private theorem adjCocycle_braid_three_of_succ (S T : GridSignAssignment n) (hn : 1 < n)
     (σ : Equiv.Perm (Fin n)) {i j : Fin (n - 1)} (hij : (i : ℕ) + 1 = j) :
-    adjCocycle S T hn σ i *
-        adjCocycle S T hn (σ * (permCoxeterSystem n).simple i) j *
-        adjCocycle S T hn
-          (σ * (permCoxeterSystem n).simple i * (permCoxeterSystem n).simple j) i =
-      adjCocycle S T hn σ j *
-        adjCocycle S T hn (σ * (permCoxeterSystem n).simple j) i *
-        adjCocycle S T hn
-          (σ * (permCoxeterSystem n).simple j * (permCoxeterSystem n).simple i) j := by
-  let a := BraidGroup.strand i
-  let b := BraidGroup.strandSucc i
-  let c := BraidGroup.strandSucc j
+    braidThreeProd S T hn σ i j = braidThreeProd S T hn σ j i := by
+  let a := BraidGroup.strand i; let b := BraidGroup.strandSucc i; let c := BraidGroup.strandSucc j
   by_cases hrow : σ b ∈ Grid.cIoo (σ a) (σ c)
   · exact adjCocycle_braid_three_of_mem_cIoo S T hn σ hij hrow
-  · let si := (permCoxeterSystem n).simple i
-    let sj := (permCoxeterSystem n).simple j
+  · set si := (permCoxeterSystem n).simple i with hsi_def
+    set sj := (permCoxeterSystem n).simple j with hsj_def
     let τ : Equiv.Perm (Fin n) := σ * si * sj * si
     have hτ_eq : τ = σ * sj * si * sj := by
       have hbraid : si * sj * si = sj * si * sj := by
-        simpa only [si, sj, permCoxeterSystem_simple] using
-          BraidGroup.transposition_braid (Or.inl hij)
+        simpa [si, sj, permCoxeterSystem_simple] using BraidGroup.transposition_braid (Or.inl hij)
       simp only [τ, mul_assoc, ← mul_assoc si sj si, hbraid]
     have hbj : BraidGroup.strand j = b := BraidGroup.strand_eq_strandSucc_of_succ hij
     have hab : a ≠ b := BraidGroup.strand_ne_strandSucc i
     have hbc : b ≠ c := hbj ▸ BraidGroup.strand_ne_strandSucc j
     have hac : a ≠ c := BraidGroup.strand_ne_strandSucc_of_succ hij
     have hsi : si = Equiv.swap a b := by
-      simp only [si, permCoxeterSystem_simple, BraidGroup.transposition_eq_swap, a, b]
+      simp [si, permCoxeterSystem_simple, BraidGroup.transposition_eq_swap, a, b]
     have hsj : sj = Equiv.swap b c := by
-      simp only [sj, permCoxeterSystem_simple, BraidGroup.transposition_eq_swap, hbj, c]
+      simp [sj, permCoxeterSystem_simple, BraidGroup.transposition_eq_swap, hbj, c]
     have hrow' : τ b ∈ Grid.cIoo (τ a) (τ c) := by
       rw [show τ a = σ c by
           simp [τ, Equiv.Perm.mul_apply, hsi, hsj, Equiv.swap_apply_of_ne_of_ne hac.symm hbc.symm],
@@ -404,17 +379,20 @@ private theorem adjCocycle_braid_three_of_succ (S T : GridSignAssignment n) (hn 
     have hstep : ∀ w k, adjCocycle S T hn (w * (permCoxeterSystem n).simple k) k =
         adjCocycle S T hn w k := fun w k => by rw [adjCocycle_inv, Int.units_inv_eq_self]
     have hmain := adjCocycle_braid_three_of_mem_cIoo S T hn τ hij hrow'
-    change adjCocycle S T hn τ i * adjCocycle S T hn (τ * si) j *
-        adjCocycle S T hn (τ * si * sj) i =
-      adjCocycle S T hn τ j * adjCocycle S T hn (τ * sj) i *
-        adjCocycle S T hn (τ * sj * si) j at hmain
-    have hL2 : τ * si = σ * si * sj := hsq _ i
-    have hL3 : τ * si * sj = σ * si := by rw [hL2, hsq]
-    have hR2 : τ * sj = σ * sj * si := by rw [hτ_eq, hsq]
-    have hR3 : τ * sj * si = σ * sj := by rw [hR2, hsq]
-    rw [hL3, hL2, hR3, hR2, hstep σ i, hstep (σ * si) j, hstep (σ * sj) i, hstep σ j,
-      show adjCocycle S T hn τ i = adjCocycle S T hn (σ * si * sj) i from hstep _ i,
-      show adjCocycle S T hn τ j = adjCocycle S T hn (σ * sj * si) j by rw [hτ_eq, hstep]] at hmain
+    unfold braidThreeProd at hmain ⊢
+    simp only [← hsi_def, ← hsj_def] at hmain ⊢
+    have hL2 : τ * si = σ * si * sj := hsi_def ▸ hsq _ i
+    have hL3 : τ * si * sj = σ * si := hL2 ▸ hsj_def ▸ hsq _ j
+    have hR2 : τ * sj = σ * sj * si := hτ_eq ▸ hsj_def ▸ hsq _ j
+    have hR3 : τ * sj * si = σ * sj := hR2 ▸ hsi_def ▸ hsq _ i
+    have hstep_i : ∀ w, adjCocycle S T hn (w * si) i = adjCocycle S T hn w i :=
+      fun w => hsi_def ▸ hstep w i
+    have hstep_j : ∀ w, adjCocycle S T hn (w * sj) j = adjCocycle S T hn w j :=
+      fun w => hsj_def ▸ hstep w j
+    rw [hL3, hL2, hR3, hR2, hstep_i σ, hstep_j (σ * si), hstep_i (σ * sj), hstep_j σ,
+      show adjCocycle S T hn τ i = adjCocycle S T hn (σ * si * sj) i from hstep_i _,
+      show adjCocycle S T hn τ j = adjCocycle S T hn (σ * sj * si) j by rw [hτ_eq, hstep_j]]
+        at hmain
     simpa only [mul_comm, mul_left_comm, mul_assoc] using hmain
 
 private theorem adjCocycle_braid (S T : GridSignAssignment n) (hn : 1 < n)
@@ -431,9 +409,8 @@ private theorem adjCocycle_braid (S T : GridSignAssignment n) (hn : 1 < n)
       coxeterMatrixA_eq_three hadj.symm, CoxeterSystem.alternatingWord, List.concat_eq_append,
       List.nil_append, List.cons_append, CoxeterSystem.wordCocycleProd_cons,
       CoxeterSystem.wordCocycleProd_nil, mul_one, ← mul_assoc]
-    rcases hadj with h | h
-    · exact (adjCocycle_braid_three_of_succ S T hn σ h).symm
-    · exact adjCocycle_braid_three_of_succ S T hn σ h
+    exact hadj.elim (fun h => (adjCocycle_braid_three_of_succ S T hn σ h).symm)
+      (adjCocycle_braid_three_of_succ S T hn σ)
   · have hdist : (i : ℕ) + 2 ≤ j ∨ (j : ℕ) + 2 ≤ i := by omega
     simp only [CoxeterSystem.braidWord, coxeterMatrixA_eq_two hdist,
       coxeterMatrixA_eq_two hdist.symm, CoxeterSystem.alternatingWord, List.concat_eq_append,
@@ -448,16 +425,14 @@ private theorem mem_cIoo_and_card_cIco_finRotate {a b : Fin n} (hn : 1 < n) {w :
     finRotate n a ∈ Grid.cIoo a b ∧ (Grid.cIco (finRotate n a) b).card = w - 1 := by
   have hge2 : 2 ≤ w := by have := Grid.card_cIco_of_ne hab; omega
   have hne : finRotate n a ≠ b := fun heq => by
-    rw [Grid.cIco_eq_singleton_iff.mpr ⟨rfl, heq.symm, hab⟩, Finset.card_singleton] at hw
-    omega
+    rw [Grid.cIco_eq_singleton_iff.mpr ⟨rfl, heq.symm, hab⟩, Finset.card_singleton] at hw; omega
   have hmem : finRotate n a ∈ Grid.cIoo a b :=
     Grid.mem_cIoo_cyclic_right (Grid.mem_cIoo_finRotate_left_iff.mpr ⟨hab.symm, hne.symm⟩)
-  refine ⟨hmem, ?_⟩
   have hunion := congrArg Finset.card (Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hmem)
   rw [Finset.card_union_of_disjoint (Grid.disjoint_cIco_cIco_of_mem_cIoo hmem), hw,
     Grid.cIco_eq_singleton_iff.mpr ⟨rfl, rfl, (Grid.finRotate_ne_self hn a).symm⟩,
     Finset.card_singleton] at hunion
-  omega
+  exact ⟨hmem, by omega⟩
 
 /-- Agreement on width-one rectangles at columns satisfying `P` extends by induction on cyclic
 width to every empty rectangle whose covered columns all satisfy `P`. -/
@@ -494,42 +469,88 @@ private theorem ratio_eq_one_of_forall_cIco (S T : GridSignAssignment n) (hn : 1
       have hDs : D.second.IsEmpty := widthOneRect_isEmpty y a hn
       let E := D.recut hone hr hDs
       have hrec := D.isRecut_recut hone hr hDs
-      obtain ⟨hEfl, hEfr, hEsl, hEsr⟩ :=
-        D.recut_sides_of_left_eq_left_of_mem_cIoo hD_common hD_col hr hDs
-      have hDsr : D.second.right = finRotate n a := widthOneRect_right y a hn
+      obtain ⟨hEfl, hEfr, hEsl, hEsr⟩ := recut_sides_of_span_then_left D rfl rfl
+        (widthOneRect_left y a hn) (widthOneRect_right y a hn) hb_mem hone hr hDs
       have hEf : ratio S T E.first hrec.isEmpty_first = 1 := by
         rw [ratio_congr S T hrec.isEmpty_first (widthOneRect_isEmpty x a hn) rfl
           (hEfl.trans (widthOneRect_left x a hn).symm)
-          (by rw [hEfr, hDsr, widthOneRect_right]), h1 x a hPa]
+          (hEfr.trans (widthOneRect_right x a hn).symm), h1 x a hPa]
       have hEs : ratio S T E.second hrec.isEmpty_second = 1 :=
-        ih (w - 1) (by omega) E.second hrec.isEmpty_second
-          (by rwa [hEsl, hEsr, hDsr]) fun c hc => by
-            rw [hEsl, hEsr, hDsr] at hc
-            exact hP c (Grid.cIco_subset_of_mem_cIoo hb_mem hc)
-      have hrecut := ratio_recut S T D hone hr hDs
-      change ratio S T E.first hrec.isEmpty_first * ratio S T E.second hrec.isEmpty_second =
-        ratio S T r hr * ratio S T D.second hDs at hrecut
-      rw [hEf, hEs, h1 y a hPa, mul_one, mul_one] at hrecut
+        ih (w - 1) (by omega) E.second hrec.isEmpty_second (by rwa [hEsl, hEsr]) fun c hc =>
+          hP c (Grid.cIco_subset_of_mem_cIoo hb_mem (by rwa [hEsl, hEsr] at hc))
+      have hrecut := ratio_recut S T hone hr hDs rfl hrec.isEmpty_first hrec.isEmpty_second
+      rw [hEf, hEs, show ratio S T D.second hDs = 1 from h1 y a hPa, mul_one, mul_one] at hrecut
       exact hrecut.symm
 
 /-- A wrapping height-one rectangle pairs via a horizontal annulus with a non-wrapping empty
 rectangle, so agreement on non-wrapping rectangles forces its ratio to be `1`. -/
-private theorem ratio_eq_one_of_cIoo_rows_eq_empty (S T : GridSignAssignment n)
+private theorem ratio_eq_one_of_top_eq_finRotate (S T : GridSignAssignment n)
     (hnonwrap : ∀ {x y : GridState n} (r : GridRectangleBetween x y) (hr : r.IsEmpty),
       r.left.val < r.right.val → ratio S T r hr = 1)
     {x y : GridState n} (r : GridRectangleBetween x y) (hr : r.IsEmpty)
-    (hrev : r.right.val < r.left.val) (hrows : Grid.cIoo r.bottom r.top = ∅) :
+    (hrev : r.right.val < r.left.val) (htop : r.top = finRotate n r.bottom) :
     ratio S T r hr = 1 := by
-  let s : GridRectangleBetween y x :=
-    { left := r.right, right := r.left, left_ne_right := r.left_ne_right.symm
-      map_left := r.map_left.symm, map_right := r.map_right.symm
-      map_of_ne := fun c hl hr => (r.map_of_ne c hr hl).symm }
-  have hs_empty : s.IsEmpty := by
-    rw [s.isEmpty_iff_forall_notMem_cIoo]; intro _ _
-    rw [show s.bottom = r.bottom from r.map_right, show s.top = r.top from r.map_left, hrows]
-    exact Finset.notMem_empty _
-  rw [← ratio_horizontal_annulus S T r s hr hs_empty rfl]
-  exact hnonwrap s hs_empty hrev
+  have hs_empty : r.horizontalComplement.IsEmpty :=
+    (r.isEmpty_and_isEmpty_horizontalComplement_iff.mpr htop).2
+  rw [← ratio_horizontal_annulus S T r r.horizontalComplement hr hs_empty
+    r.horizontalComplement_left]
+  exact hnonwrap r.horizontalComplement hs_empty (by simpa using hrev)
+
+private def lastCol (hn : 1 < n) : Fin n := ⟨n - 1, by omega⟩
+private def zeroCol (hn : 1 < n) : Fin n := ⟨0, by omega⟩
+
+private theorem finRotate_lastCol (hn : 1 < n) : finRotate n (lastCol hn) = zeroCol hn := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  exact Fin.ext (by rw [coe_finRotate]; simp [lastCol, Fin.last, zeroCol])
+
+private theorem lastCol_ne_zeroCol (hn : 1 < n) : lastCol hn ≠ zeroCol hn :=
+  finRotate_lastCol hn ▸ (Grid.finRotate_ne_self hn (lastCol hn)).symm
+
+/-- When the row span from `x (lastCol hn)` to `x (zeroCol hn)` has height `h ≠ 1`, the column `c`
+at row `finRotate n (x (lastCol hn))` satisfies `0 < c < n - 1`, and swapping `lastCol hn` with `c`
+reduces that height to `h - 1`. -/
+private theorem exists_cutCol_of_height_ne_one (hn : 1 < n) (x : GridState n) {h : ℕ}
+    (hh : (Grid.cIco (x (lastCol hn)) (x (zeroCol hn))).card = h) (hh1 : h ≠ 1) :
+    ∃ c : Fin n, x c = finRotate n (x (lastCol hn)) ∧ 0 < c.val ∧ c.val < n - 1 ∧
+      (Grid.cIco ((x.swapColumns (lastCol hn) c) (lastCol hn))
+        ((x.swapColumns (lastCol hn) c) (zeroCol hn))).card = h - 1 := by
+  have hne_rows : x (lastCol hn) ≠ x (zeroCol hn) := x.toPerm.injective.ne (lastCol_ne_zeroCol hn)
+  obtain ⟨hr_mid_mem, hcard_mid⟩ := mem_cIoo_and_card_cIco_finRotate hn hne_rows hh hh1
+  let r_mid : Fin n := finRotate n (x (lastCol hn))
+  let c : Fin n := x.toPerm.symm r_mid
+  have hxc : x c = r_mid := x.toPerm.apply_symm_apply r_mid
+  have hc_ne_last : c ≠ lastCol hn := fun heq =>
+    Grid.finRotate_ne_self hn (x (lastCol hn)) (hxc.symm.trans (congrArg x heq))
+  have hc_ne_zero : c ≠ zeroCol hn := fun heq =>
+    Grid.right_notMem_cIoo (x (lastCol hn)) (x (zeroCol hn))
+      ((hxc.symm.trans (congrArg x heq)) ▸ hr_mid_mem)
+  refine ⟨c, hxc, Nat.pos_of_ne_zero fun heq => hc_ne_zero (Fin.ext heq),
+    lt_of_le_of_ne (by have := c.isLt; omega) (fun heq => hc_ne_last (Fin.ext heq)), ?_⟩
+  simpa only [GridState.swapColumns_apply, Equiv.swap_apply_left, hxc,
+    Equiv.swap_apply_of_ne_of_ne (lastCol_ne_zeroCol hn).symm hc_ne_zero.symm] using hcard_mid
+
+/-- The wrapping height-one strip rectangle from `lastCol hn` to an interior column `c < n - 1`. -/
+private def heightOneStrip (x : GridState n) (hn : 1 < n) {c : Fin n} (hc_lt : c.val < n - 1) :
+    GridRectangleBetween x (x.swapColumns (lastCol hn) c) :=
+  GridRectangleBetween.ofSwapColumns x _ (lastCol hn) c
+    (fun heq => by have := congrArg Fin.val heq; simp [lastCol] at this; omega) rfl
+
+private theorem heightOneStrip_isEmpty (x : GridState n) (hn : 1 < n) {c : Fin n}
+    (hc_lt : c.val < n - 1) (hxc : x c = finRotate n (x (lastCol hn))) :
+    (heightOneStrip x hn hc_lt).IsEmpty :=
+  ((heightOneStrip x hn hc_lt).isEmpty_and_isEmpty_horizontalComplement_iff.mpr (by
+    rw [heightOneStrip, GridRectangleBetween.ofSwapColumns_top,
+      GridRectangleBetween.ofSwapColumns_bottom, hxc])).1
+
+private theorem ratio_heightOneStrip (S T : GridSignAssignment n) (hn : 1 < n)
+    (hnonwrap : ∀ {x y : GridState n} (r : GridRectangleBetween x y) (hr : r.IsEmpty),
+      r.left.val < r.right.val → ratio S T r hr = 1)
+    (x : GridState n) {c : Fin n} (hc_lt : c.val < n - 1)
+    (hxc : x c = finRotate n (x (lastCol hn))) :
+    ratio S T (heightOneStrip x hn hc_lt) (heightOneStrip_isEmpty x hn hc_lt hxc) = 1 :=
+  ratio_eq_one_of_top_eq_finRotate S T hnonwrap _ _ (by simpa [heightOneStrip, lastCol] using hc_lt)
+    (by rw [heightOneStrip, GridRectangleBetween.ofSwapColumns_top,
+          GridRectangleBetween.ofSwapColumns_bottom, hxc])
 
 /-- Agreement on all non-wrapping empty rectangles extends to wrapping width-one rectangles from
 column `n - 1` to column `0`, by induction on vertical height. -/
@@ -537,86 +558,60 @@ private theorem ratio_eq_one_lastCol (S T : GridSignAssignment n) (hn : 1 < n)
     (hnonwrap : ∀ {x y : GridState n} (r : GridRectangleBetween x y) (hr : r.IsEmpty),
       r.left.val < r.right.val → ratio S T r hr = 1) :
     ∀ (h : ℕ) (x : GridState n),
-      (Grid.cIco (x ⟨n - 1, by omega⟩) (x ⟨0, by omega⟩)).card = h →
-      ratio S T (widthOneRect x ⟨n - 1, by omega⟩ hn)
-        (widthOneRect_isEmpty x ⟨n - 1, by omega⟩ hn) = 1 := by
-  let lastCol : Fin n := ⟨n - 1, by omega⟩
-  let zeroCol : Fin n := ⟨0, by omega⟩
-  have hrot_last : finRotate n lastCol = zeroCol := by
-    obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-    exact Fin.ext (by rw [coe_finRotate]; simp [lastCol, Fin.last, zeroCol])
-  have hlast_ne_zero : lastCol ≠ zeroCol :=
-    hrot_last ▸ (Grid.finRotate_ne_self hn lastCol).symm
+      (Grid.cIco (x (lastCol hn)) (x (zeroCol hn))).card = h →
+      ratio S T (widthOneRect x (lastCol hn) hn) (widthOneRect_isEmpty x (lastCol hn) hn) = 1 := by
   intro h
   induction h using Nat.strong_induction_on with
   | ind h ih =>
     intro x hh
-    change (Grid.cIco (x lastCol) (x zeroCol)).card = h at hh
-    have hne_rows : x lastCol ≠ x zeroCol := x.toPerm.injective.ne hlast_ne_zero
+    have hne_rows : x (lastCol hn) ≠ x (zeroCol hn) := x.toPerm.injective.ne (lastCol_ne_zeroCol hn)
     by_cases hh1 : h = 1
-    · exact ratio_eq_one_of_cIoo_rows_eq_empty S T hnonwrap (widthOneRect x lastCol hn)
-        (widthOneRect_isEmpty x lastCol hn)
-        (by rw [widthOneRect_right, widthOneRect_left, hrot_last]; simp only [zeroCol, lastCol]
-            omega)
-        (by rw [widthOneRect_bottom, widthOneRect_top, hrot_last]
-            exact Finset.card_eq_zero.mp (by have := Grid.card_cIco_of_ne hne_rows; omega))
-    · have hge2 : 2 ≤ h := by have := Grid.card_cIco_of_ne hne_rows; omega
-      obtain ⟨hr_mid_mem, hcard_mid⟩ := mem_cIoo_and_card_cIco_finRotate hn hne_rows hh hh1
-      let r_mid : Fin n := finRotate n (x lastCol)
-      let c : Fin n := x.toPerm.symm r_mid
-      have hxc : x c = r_mid := x.toPerm.apply_symm_apply r_mid
-      have hc_ne_last : c ≠ lastCol := fun heq =>
-        Grid.finRotate_ne_self hn (x lastCol) (hxc.symm.trans (congrArg x heq))
-      have hc_ne_zero : c ≠ zeroCol := fun heq =>
-        Grid.right_notMem_cIoo (x lastCol) (x zeroCol) (by
-          rw [show finRotate n (x lastCol) = x zeroCol from hxc.symm.trans (congrArg x heq)]
-            at hr_mid_mem
-          exact hr_mid_mem)
-      have hc_pos : 0 < c.val := Nat.pos_of_ne_zero fun heq => hc_ne_zero (Fin.ext heq)
-      have hc_lt : c.val < n - 1 := by
-        have := c.isLt; exact lt_of_le_of_ne (by omega) fun heq => hc_ne_last (Fin.ext heq)
-      let w := x.swapColumns lastCol c
-      let t : GridRectangleBetween x w :=
-        GridRectangleBetween.ofSwapColumns x w lastCol c hc_ne_last.symm rfl
-      have ht_rows : Grid.cIoo t.bottom t.top = ∅ := by
-        rw [show t.bottom = x lastCol from GridRectangleBetween.ofSwapColumns_bottom ..,
-          (GridRectangleBetween.ofSwapColumns_top ..).trans hxc, Grid.cIoo_finRotate_eq_empty]
-      have ht_empty : t.IsEmpty := by
-        rw [t.isEmpty_iff_forall_notMem_cIoo]; intro _ _; rw [ht_rows]; exact Finset.notMem_empty _
-      have ht_ratio : ratio S T t ht_empty = 1 :=
-        ratio_eq_one_of_cIoo_rows_eq_empty S T hnonwrap t ht_empty
-          (by rw [GridRectangleBetween.ofSwapColumns_left, GridRectangleBetween.ofSwapColumns_right]
-              exact hc_lt) ht_rows
-      let D : GridRectangleDecomposition x (w.swapColumns lastCol (finRotate n lastCol)) :=
-        { middle := w, first := t, second := widthOneRect w lastCol hn }
-      have hDfl : D.first.left = lastCol := GridRectangleBetween.ofSwapColumns_left ..
+    · -- Base case `h = 1`: horizontal annulus pairs `widthOneRect` with a non-wrapping rectangle.
+      have hcard_oo : (Grid.cIoo (x (lastCol hn)) (x (zeroCol hn))).card = 0 := by
+        have := Grid.card_cIco_of_ne hne_rows; omega
+      have htop : x (zeroCol hn) = finRotate n (x (lastCol hn)) :=
+        (Grid.cIco_eq_singleton_iff.mp (show Grid.cIco (x (lastCol hn)) (x (zeroCol hn)) =
+            {x (lastCol hn)} by
+          simp [Grid.cIco_of_ne hne_rows, Finset.card_eq_zero.mp hcard_oo])).2.1
+      exact ratio_eq_one_of_top_eq_finRotate S T hnonwrap (widthOneRect x (lastCol hn) hn)
+        (widthOneRect_isEmpty x (lastCol hn) hn)
+        (by rw [widthOneRect_right, widthOneRect_left, finRotate_lastCol]
+            simp only [zeroCol, lastCol]; omega)
+        (by rw [widthOneRect_bottom, widthOneRect_top, finRotate_lastCol, htop])
+    · -- Inductive step `h ≥ 2`: cut off a height-one strip `t` at column `c` (`0 < c < n - 1`).
+      have hge2 : 2 ≤ h := by have := Grid.card_cIco_of_ne hne_rows; omega
+      obtain ⟨c, hxc, hc_pos, hc_lt, hD2_height⟩ := exists_cutCol_of_height_ne_one hn x hh hh1
+      let w := x.swapColumns (lastCol hn) c
+      let t := heightOneStrip x hn hc_lt
+      have ht_empty : t.IsEmpty := heightOneStrip_isEmpty x hn hc_lt hxc
+      let D : GridRectangleDecomposition x
+          (w.swapColumns (lastCol hn) (finRotate n (lastCol hn))) :=
+        { middle := w, first := t, second := widthOneRect w (lastCol hn) hn }
+      have hDfl : D.first.left = lastCol hn := GridRectangleBetween.ofSwapColumns_left ..
       have hDfr : D.first.right = c := GridRectangleBetween.ofSwapColumns_right ..
-      have hDsr : D.second.right = zeroCol := (widthOneRect_right w lastCol hn).trans hrot_last
+      have hDsr : D.second.right = zeroCol hn :=
+        (widthOneRect_right w (lastCol hn) hn).trans (finRotate_lastCol hn)
       have hD_common : D.first.left = D.second.left :=
-        hDfl.trans (widthOneRect_left w lastCol hn).symm
-      have hD_col : D.second.right ∈ Grid.cIoo D.first.left D.first.right := by
-        rw [hDfl, hDfr, hDsr, Grid.mem_cIoo]
-        refine ⟨hc_ne_last.symm, ?_⟩
+        hDfl.trans (widthOneRect_left w (lastCol hn) hn).symm
+      have hbac : zeroCol hn ∈ Grid.cIoo (lastCol hn) c := by
+        rw [Grid.mem_cIoo]
+        refine ⟨fun heq => by have := congrArg Fin.val heq; simp [lastCol] at this; omega, ?_⟩
         rw [ite_eq_right (by simp [lastCol]; omega)]; exact Or.inr hc_pos
-      have hone := D.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hD_common hD_col
-      have hDs : D.second.IsEmpty := widthOneRect_isEmpty w lastCol hn
+      have hone := D.hasOneCommonSide_of_left_eq_left_of_mem_cIoo hD_common
+        (by rwa [hDfl, hDfr, hDsr])
+      have hDs : D.second.IsEmpty := widthOneRect_isEmpty w (lastCol hn) hn
       let E := D.recut hone ht_empty hDs
       have hrec := D.isRecut_recut hone ht_empty hDs
-      obtain ⟨hEfl, hEfr, hEsl, hEsr⟩ :=
-        D.recut_sides_of_left_eq_left_of_mem_cIoo hD_common hD_col ht_empty hDs
-      have hD2_height : (Grid.cIco (w lastCol) (w zeroCol)).card = h - 1 := by
-        rw [show w lastCol = r_mid by simp [w, hxc],
-          show w zeroCol = x zeroCol by
-            simp [w, Equiv.swap_apply_of_ne_of_ne hlast_ne_zero.symm hc_ne_zero.symm]]
-        exact hcard_mid
-      have hrecut := ratio_recut S T D hone ht_empty hDs
-      change ratio S T E.first hrec.isEmpty_first * ratio S T E.second hrec.isEmpty_second =
-        ratio S T t ht_empty * ratio S T D.second hDs at hrecut
-      rw [ratio_congr S T _ (widthOneRect_isEmpty x lastCol hn) rfl
-            (by rw [hEfl, hDfl, widthOneRect_left])
-            (by rw [hEfr, hDsr, widthOneRect_right, hrot_last]),
-          hnonwrap E.second hrec.isEmpty_second (by rw [hEsl, hEsr, hDsr, hDfr]; exact hc_pos),
-          ht_ratio, ih (h - 1) (by omega) w hD2_height, mul_one, mul_one] at hrecut
+      obtain ⟨hEfl, hEfr, hEsl, hEsr⟩ := recut_sides_of_span_then_left D hDfl hDfr
+        (widthOneRect_left w (lastCol hn) hn) hDsr hbac hone ht_empty hDs
+      have hrecut := ratio_recut S T hone ht_empty hDs rfl hrec.isEmpty_first hrec.isEmpty_second
+      rw [ratio_congr S T _ (widthOneRect_isEmpty x (lastCol hn) hn) rfl
+            (hEfl.trans (widthOneRect_left x (lastCol hn) hn).symm)
+            (by rw [hEfr, widthOneRect_right, finRotate_lastCol]),
+          hnonwrap E.second hrec.isEmpty_second (by rw [hEsl, hEsr]; exact hc_pos),
+          show ratio S T D.first ht_empty = 1 from ratio_heightOneStrip S T hn hnonwrap x hc_lt hxc,
+          show ratio S T D.second hDs = 1 from ih (h - 1) (by omega) w hD2_height,
+          mul_one, mul_one] at hrecut
       exact hrecut
 
 /-! ### Main uniqueness theorems -/
@@ -626,40 +621,35 @@ both endpoint signs. -/
 @[simp]
 theorem gauge_neg (S : GridSignAssignment n) (f : GridState n → ℤˣ) :
     S.gauge (-f) = S.gauge f := by
-  refine GridSignAssignment.ext fun x y r hr => ?_
+  refine GridSignAssignment.ext fun _ _ _ _ => ?_
   simp only [gauge_sign, Pi.neg_apply, neg_mul_neg]
 
 /-- Two gauges produce the same sign assignment if and only if they agree everywhere or are
 opposite everywhere. -/
 theorem gauge_eq_iff (S : GridSignAssignment n) (f g : GridState n → ℤˣ) :
     S.gauge f = S.gauge g ↔ f = g ∨ f = -g := by
-  constructor
-  · intro heq
-    let h : GridState n → ℤˣ := fun x => f x * g x
-    have hconst : ∀ x : GridState n, h x = h ⟨1⟩ := by
-      by_cases hn : 1 < n
-      · intro x
-        have hstep : ∀ (σ : Equiv.Perm (Fin n)) (i : Fin (n - 1)),
-            h ⟨σ * (permCoxeterSystem n).simple i⟩ = h ⟨σ⟩ := fun σ i => by
-          have hsign := congrArg (fun A : GridSignAssignment n =>
-            A.sign (widthOneRect ⟨σ⟩ (BraidGroup.strand i) hn) (widthOneRect_isEmpty _ _ hn)) heq
-          simp only [gauge_sign, mk_swapColumns_strand] at hsign
-          refine units_eq_of_mul_eq_one ?_
-          rw [show h ⟨σ⟩ * h ⟨σ * (permCoxeterSystem n).simple i⟩ =
-              (f ⟨σ⟩ * f ⟨σ * (permCoxeterSystem n).simple i⟩) *
-                (g ⟨σ⟩ * g ⟨σ * (permCoxeterSystem n).simple i⟩) by unfold h; ac_rfl,
-            mul_right_cancel hsign, Int.units_mul_self]
-        exact (permCoxeterSystem n).fun_eq_const_of_mul_simple_eq
-          (f := fun σ => h ⟨σ⟩) hstep x.toPerm
-      · intro x; rw [show x = ⟨1⟩ by ext c; have := c.isLt; omega]
-    rcases Int.units_eq_one_or (h ⟨1⟩) with h1 | h1
-    · exact Or.inl (funext fun x => (units_eq_of_mul_eq_one ((hconst x).trans h1)).symm)
-    · exact Or.inr (funext fun x => by
-        simpa [Pi.neg_apply] using
-          (congrArg Neg.neg (units_eq_neg_of_mul_eq_neg_one ((hconst x).trans h1))).symm)
-  · rintro (rfl | rfl)
-    · rfl
-    · exact S.gauge_neg g
+  refine ⟨fun heq => ?_, fun h => h.elim (fun h => h ▸ rfl) fun h => h ▸ S.gauge_neg g⟩
+  let h : GridState n → ℤˣ := fun x => f x * g x
+  have hconst : ∀ x : GridState n, h x = h ⟨1⟩ := by
+    by_cases hn : 1 < n
+    · intro x
+      have hstep : ∀ (σ : Equiv.Perm (Fin n)) (i : Fin (n - 1)),
+          h ⟨σ * (permCoxeterSystem n).simple i⟩ = h ⟨σ⟩ := fun σ i => by
+        have hsign := congrArg (fun A : GridSignAssignment n =>
+          A.sign (widthOneRect ⟨σ⟩ (BraidGroup.strand i) hn) (widthOneRect_isEmpty _ _ hn)) heq
+        simp only [gauge_sign, mk_swapColumns_strand] at hsign
+        refine units_eq_of_mul_eq_one ?_
+        rw [show h ⟨σ⟩ * h ⟨σ * (permCoxeterSystem n).simple i⟩ =
+            (f ⟨σ⟩ * f ⟨σ * (permCoxeterSystem n).simple i⟩) *
+              (g ⟨σ⟩ * g ⟨σ * (permCoxeterSystem n).simple i⟩) by unfold h; ac_rfl,
+          mul_right_cancel hsign, Int.units_mul_self]
+      exact (permCoxeterSystem n).fun_eq_const_of_mul_simple_eq (f := fun σ => h ⟨σ⟩) hstep x.toPerm
+    · intro x; rw [show x = ⟨1⟩ by ext c; have := c.isLt; omega]
+  rcases Int.units_eq_one_or (h ⟨1⟩) with h1 | h1
+  · exact Or.inl (funext fun x => (units_eq_of_mul_eq_one ((hconst x).trans h1)).symm)
+  · exact Or.inr (funext fun x => by
+      simpa [Pi.neg_apply] using
+        (congrArg Neg.neg (units_eq_neg_of_mul_eq_neg_one ((hconst x).trans h1))).symm)
 
 /-- **Uniqueness of grid sign assignments up to gauge.** Any two sign assignments on size-`n` grid
 states differ by a gauge transformation. -/
@@ -673,13 +663,12 @@ theorem exists_gauge_eq (S T : GridSignAssignment n) :
     have hadj : ∀ (x : GridState n) (i : Fin (n - 1)),
         ratio S T' (widthOneRect x (BraidGroup.strand i) hn) (widthOneRect_isEmpty x _ hn) = 1 :=
       fun x i => by
-        have hbase : ratio S T (widthOneRect x (BraidGroup.strand i) hn)
-              (widthOneRect_isEmpty x _ hn) =
-            (f x.toPerm)⁻¹ * f (x.toPerm * (permCoxeterSystem n).simple i) := (hf x.toPerm i).symm
         rw [show ratio S T' _ _ = (g x * g (x.swapColumns (BraidGroup.strand i)
                 (finRotate n (BraidGroup.strand i)))) * ratio S T _ _ by
               simp only [ratio, T', gauge_sign]; ac_rfl,
-          hbase, mk_swapColumns_strand x.toPerm i]
+          show ratio S T _ _ = (f x.toPerm)⁻¹ * f (x.toPerm * (permCoxeterSystem n).simple i) from
+            (hf x.toPerm i).symm,
+          mk_swapColumns_strand x.toPerm i]
         simp only [g, Int.units_inv_eq_self, Int.units_mul_self]
     have hadj' : ∀ (x : GridState n) (a : Fin n), a.val < n - 1 →
         ratio S T' (widthOneRect x a hn) (widthOneRect_isEmpty x a hn) = 1 := fun x a ha =>
@@ -692,11 +681,10 @@ theorem exists_gauge_eq (S T : GridSignAssignment n) :
           rw [Grid.cIco_eq_Ico_of_lt hlt, Finset.mem_Ico] at hc
           have := r.right.isLt; omega
     have hall1 : ∀ (x : GridState n) (a : Fin n), True →
-        ratio S T' (widthOneRect x a hn) (widthOneRect_isEmpty x a hn) = 1 := fun x a _ => by
-      by_cases ha : a.val < n - 1
-      · exact hadj' x a ha
-      · rw [show a = ⟨n - 1, by omega⟩ from Fin.ext (by have := a.isLt; dsimp; omega)]
-        exact ratio_eq_one_lastCol S T' hn hnonwrap _ x rfl
+        ratio S T' (widthOneRect x a hn) (widthOneRect_isEmpty x a hn) = 1 := fun x a _ =>
+      if ha : a.val < n - 1 then hadj' x a ha
+      else (show a = lastCol hn from Fin.ext (by have := a.isLt; simp [lastCol]; omega)) ▸
+        ratio_eq_one_lastCol S T' hn hnonwrap _ x rfl
     have hST' : S = T' := GridSignAssignment.ext fun _ _ r hr =>
       (ratio_eq_one_iff S T' r hr).mp
         (ratio_eq_one_of_forall_cIco S T' hn (P := fun _ => True) hall1 _ r hr rfl fun _ _ =>
@@ -711,17 +699,13 @@ grid state is specified. -/
 theorem existsUnique_gauge_eq (S T : GridSignAssignment n) (x₀ : GridState n) (s₀ : ℤˣ) :
     ∃! f : GridState n → ℤˣ, f x₀ = s₀ ∧ S.gauge f = T := by
   obtain ⟨f₀, hf₀⟩ := exists_gauge_eq S T
-  let c : ℤˣ := s₀ * f₀ x₀
-  let f : GridState n → ℤˣ := fun x => c * f₀ x
-  have hfx₀ : f x₀ = s₀ := by simp only [f, c, mul_assoc, Int.units_mul_self, mul_one]
-  have hgauge : S.gauge f = T := by
-    rw [← hf₀]
-    exact GridSignAssignment.ext fun x y r hr => by
-      simp only [gauge_sign, f]; rw [mul_mul_mul_comm, Int.units_mul_self, one_mul]
+  let f : GridState n → ℤˣ := fun x => (s₀ * f₀ x₀) * f₀ x
+  have hfx₀ : f x₀ = s₀ := by simp only [f, mul_assoc, Int.units_mul_self, mul_one]
+  have hgauge : S.gauge f = T := hf₀ ▸ GridSignAssignment.ext fun _ _ _ _ => by
+    simp only [gauge_sign, f]; rw [mul_mul_mul_comm, Int.units_mul_self, one_mul]
   refine ⟨f, ⟨hfx₀, hgauge⟩, fun g ⟨hgx₀, hggauge⟩ => ?_⟩
-  rcases (S.gauge_eq_iff g f).mp (hggauge.trans hgauge.symm) with rfl | hneg
-  · rfl
-  · exact False.elim (units_ne_neg_self s₀ (by simpa [hgx₀, hfx₀] using congrFun hneg x₀))
+  exact ((S.gauge_eq_iff g f).mp (hggauge.trans hgauge.symm)).resolve_right fun hneg =>
+    units_ne_neg_self s₀ (by simpa [hgx₀, hfx₀] using congrFun hneg x₀)
 
 end GridSignAssignment
 

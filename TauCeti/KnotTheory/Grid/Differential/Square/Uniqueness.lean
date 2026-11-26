@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Pairing
+import TauCeti.Data.Finset.Basic
 import TauCeti.KnotTheory.Grid.Differential.Square.Recut.Geometry
 import TauCeti.KnotTheory.Grid.Rectangle.Annulus.Basic
 
@@ -30,8 +31,6 @@ This file establishes that uniqueness: whenever two distinct two-step empty deco
 
 ## Main results
 
-* `TauCeti.GridRectangleDecomposition.hasSameSideOverlap_recut_iff`: recutting swaps same-side and
-  mixed-side overlaps.
 * `TauCeti.GridRectangleDecomposition.target_ne_source_of_val_add_val_eq_of_ne`: two distinct
   decompositions covering the same multiset of squares cannot return to the source state.
 * `TauCeti.GridRectangleDecomposition.eq_commute_of_val_add_val_eq_of_ne`: in the disjoint-side
@@ -53,53 +52,7 @@ namespace GridRectangleDecomposition
 
 variable {n : ℕ} {x z : GridState n}
 
-/-! ### Helper lemmas on cyclic intervals, side columns, and multisets of squares -/
-
-/-- A nondegenerate half-open cyclic interval uniquely determines both of its endpoints. -/
-private theorem endpoints_eq_of_cIco_eq {a b c d : Fin n} (hab : a ≠ b) (hcd : c ≠ d)
-    (h : Grid.cIco a b = Grid.cIco c d) : a = c ∧ b = d := by
-  cases n with
-  | zero => exact a.elim0
-  | succ m =>
-    have hstep : ∀ {p : Fin (m + 1)},
-        (finRotate (m + 1) p ∈ Grid.cIco c d ↔ p ∉ Grid.cIco c d) →
-        c = finRotate (m + 1) p ∨ d = finRotate (m + 1) p := by
-      intro p hp
-      by_contra hne
-      push Not at hne
-      have hiff := Grid.mem_cIco_finRotate_iff_of_ne hne.1 hne.2
-      tauto
-    have hac : a = c := by
-      let p := (finRotate (m + 1))⁻¹ a
-      have hp : finRotate (m + 1) p = a := Equiv.apply_symm_apply _ a
-      have hpa : p ∉ Grid.cIco c d := h ▸ by
-        rw [← hp, finRotate_apply]; exact Grid.notMem_cIco_finRotate_left p b
-      have ha : finRotate (m + 1) p ∈ Grid.cIco c d := hp ▸ h ▸ Grid.left_mem_cIco hab
-      rcases hstep ⟨fun _ => hpa, fun _ => ha⟩ with hca | hda
-      · exact (hca.trans hp).symm
-      · exact absurd (hp ▸ ha) (hda.trans hp ▸ Grid.right_notMem_cIco c d)
-    have hbd : b = d := by
-      let q := (finRotate (m + 1))⁻¹ b
-      have hq : finRotate (m + 1) q = b := Equiv.apply_symm_apply _ b
-      have hqb : q ∈ Grid.cIco c d := by
-        rw [← h, ← hq]; exact Grid.self_mem_cIco_finRotate (by rw [hq]; exact hab)
-      have hb : finRotate (m + 1) q ∉ Grid.cIco c d := hq ▸ h ▸ Grid.right_notMem_cIco a b
-      rcases hstep ⟨fun h' => absurd h' hb, fun h' => absurd hqb h'⟩ with hcb | hdb
-      · exact absurd (Grid.left_mem_cIco hcd) (hcb ▸ hb)
-      · exact (hdb.trans hq).symm
-    exact ⟨hac, hbd⟩
-
-/-- If two finite sets are disjoint and another pair has the same multiset sum, then the second
-pair is also disjoint and has the same union. -/
-private theorem disjoint_and_union_eq_of_val_add_val_eq {α : Type*} [DecidableEq α]
-    {A₁ A₂ B₁ B₂ : Finset α} (hA : Disjoint A₁ A₂) (hval : B₁.val + B₂.val = A₁.val + A₂.val) :
-    Disjoint B₁ B₂ ∧ B₁ ∪ B₂ = A₁ ∪ A₂ := by
-  have hAnodup : (A₁.val + A₂.val).Nodup :=
-    Multiset.nodup_add.mpr ⟨A₁.nodup, A₂.nodup, Finset.disjoint_val.mpr hA⟩
-  refine ⟨Finset.disjoint_val.mp (Multiset.nodup_add.mp (hval ▸ hAnodup)).2.2, ?_⟩
-  ext p
-  simpa only [Finset.mem_union, Multiset.mem_add, Finset.mem_val] using
-    show p ∈ B₁.val + B₂.val ↔ p ∈ A₁.val + A₂.val from hval ▸ Iff.rfl
+/-! ### Helper lemmas on side columns and covered squares -/
 
 /-- An empty rectangle does not cover the source state's point outside its side columns. -/
 private theorem notMem_coveredSquares_of_isEmpty_of_notMem_sideColumns
@@ -125,9 +78,7 @@ private theorem coveredSquares_eq {x₁ y₁ x₂ y₂ : GridState n}
     (hx : x₁ = x₂) (hl : r₁.left = r₂.left) (hr : r₁.right = r₂.right) :
     r₁.toGridRectangle.coveredSquares = r₂.toGridRectangle.coveredSquares := by
   subst hx
-  have hy : y₁ = y₂ :=
-    r₁.target_eq_swapColumns.trans (by rw [hl, hr, ← r₂.target_eq_swapColumns])
-  subst hy
+  obtain rfl : y₁ = y₂ := by rw [r₁.target_eq_swapColumns, r₂.target_eq_swapColumns, hl, hr]
   rw [GridRectangleBetween.ext hl hr]
 
 /-- Equal unordered side-column pairs plus membership of `r₁.left` in `cIco r₂.left r₂.right`
@@ -137,50 +88,10 @@ private theorem left_right_eq_of_sideColumns_eq {x₁ y₁ x₂ y₂ : GridState
     (hs : r₂.sideColumns = r₁.sideColumns) (hc : r₁.left ∈ Grid.cIco r₂.left r₂.right) :
     r₂.left = r₁.left ∧ r₂.right = r₁.right := by
   have hmem : ∀ c ∈ r₁.sideColumns, c = r₂.left ∨ c = r₂.right := fun c h => by
-    rw [← hs, GridRectangleBetween.mem_sideColumns] at h
-    exact h
+    rwa [← hs, GridRectangleBetween.mem_sideColumns] at h
   have hl : r₂.left = r₁.left :=
     ((hmem _ (by simp)).resolve_right fun h => Grid.right_notMem_cIco _ _ (h ▸ hc)).symm
-  have hr : r₂.right = r₁.right :=
-    ((hmem _ (by simp)).resolve_left fun h => r₁.left_ne_right (h.trans hl).symm).symm
-  exact ⟨hl, hr⟩
-
-/-! ### Overlap orientation under recutting -/
-
-/-- Recutting exchanges same-side overlaps and mixed-side overlaps. -/
-theorem hasSameSideOverlap_recut_iff (D : GridRectangleDecomposition x z)
-    (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty) :
-    (D.recut hone hfirst hsecond).HasSameSideOverlap ↔ D.HasMixedSideOverlap := by
-  have hone' := D.hasOneCommonSide_recut hone hfirst hsecond
-  constructor
-  · intro hsame'
-    rcases D.hasSameSideOverlap_or_hasMixedSideOverlap hone with hsame | hmixed
-    · exfalso
-      apply (D.recut hone hfirst hsecond).not_hasMixedSideOverlap_of_hasSameSideOverlap hsame'
-      rw [GridRectangleDecomposition.hasMixedSideOverlap_iff]
-      rcases (D.hasSameSideOverlap_iff.mp hsame).2 with hleft | hright
-      · have hdata := D.isRecutOfLeftEqLeft_recut hleft hone hfirst hsecond
-        obtain ⟨hE₁, hE₂⟩ := hdata.recut_sides
-        rcases hdata.recut_branch with ⟨-, -, hEl₁, -⟩ | ⟨-, -, -, hEl₂⟩
-        · exact ⟨hone', Or.inl (hEl₁.trans hE₂.symm)⟩
-        · exact ⟨hone', Or.inr (hE₁.trans hEl₂.symm)⟩
-      · have hdata := D.isRecutOfRightEqRight_recut hright hone hfirst hsecond
-        obtain ⟨hE₁, hE₂⟩ := hdata.recut_sides
-        rcases hdata.recut_branch with ⟨-, -, hEr₁, -⟩ | ⟨-, -, -, hEr₂⟩
-        · exact ⟨hone', Or.inr (hEr₁.trans hE₂.symm)⟩
-        · exact ⟨hone', Or.inl (hE₁.trans hEr₂.symm)⟩
-    · exact hmixed
-  · intro hmixed
-    rw [GridRectangleDecomposition.hasSameSideOverlap_iff]
-    rcases (D.hasMixedSideOverlap_iff.mp hmixed).2 with hlr | hrl
-    · rcases D.recut_geometry_of_left_eq_right hlr hone hfirst hsecond with
-          ⟨-, hEl₁, -, hEl₂, -, -⟩ | ⟨-, -, hEr₁, -, hEr₂, -⟩
-      · exact ⟨hone', Or.inl (hEl₁.trans hEl₂.symm)⟩
-      · exact ⟨hone', Or.inr (hEr₁.trans hEr₂.symm)⟩
-    · rcases D.recut_geometry_of_right_eq_left hrl hone hfirst hsecond with
-          ⟨-, -, hEr₁, -, hEr₂, -⟩ | ⟨-, hEl₁, -, hEl₂, -, -⟩
-      · exact ⟨hone', Or.inr (hEr₁.trans hEr₂.symm)⟩
-      · exact ⟨hone', Or.inl (hEl₁.trans hEl₂.symm)⟩
+  exact ⟨hl, ((hmem _ (by simp)).resolve_left fun h => r₁.left_ne_right (h.trans hl).symm).symm⟩
 
 /-! ### Annular domains -/
 
@@ -196,23 +107,22 @@ theorem target_ne_source_of_val_add_val_eq_of_ne {D E : GridRectangleDecompositi
   have hunion :
       E.first.toGridRectangle.coveredSquares ∪ E.second.toGridRectangle.coveredSquares =
         D.first.toGridRectangle.coveredSquares ∪ D.second.toGridRectangle.coveredSquares :=
-    (disjoint_and_union_eq_of_val_add_val_eq
+    (Finset.disjoint_and_union_eq_of_val_add_val_eq
       (D.first.disjoint_coveredSquares D.second) hdom).2
   have hvh : ∀ {a b c d : Fin n}, c ≠ d →
       Grid.cIco a b ×ˢ (Finset.univ : Finset (Fin n)) ≠
         (Finset.univ : Finset (Fin n)) ×ˢ Grid.cIco c d := fun {a b c d} hcd h => by
     have hmem : (b, c) ∈ Grid.cIco a b ×ˢ (Finset.univ : Finset (Fin n)) :=
-      h ▸ Finset.mem_product.mpr ⟨Finset.mem_univ _, Grid.left_mem_cIco hcd⟩
+      h ▸ Finset.mem_product.mpr ⟨Finset.mem_univ b, Grid.left_mem_cIco hcd⟩
     exact Grid.right_notMem_cIco a b (Finset.mem_product.mp hmem).1
   rcases D.first.left_right_eq_cases D.second with ⟨hDl, _⟩ | ⟨hDl, _⟩ <;>
     rcases E.first.left_right_eq_cases E.second with ⟨hEl, _⟩ | ⟨hEl, _⟩
   · rw [D.first.coveredSquares_union_coveredSquares_of_left_eq_left D.second hDl,
       E.first.coveredSquares_union_coveredSquares_of_left_eq_left E.second hEl] at hunion
     have hcols : Grid.cIco E.first.left E.first.right = Grid.cIco D.first.left D.first.right := by
-      ext c
-      simpa [GridRectangle.mem_coveredColumns] using
+      ext c; simpa [GridRectangle.mem_coveredColumns] using
         eq_iff_iff.mp (congrArg (fun S => (c, D.first.bottom) ∈ S) hunion)
-    obtain ⟨hl, hr⟩ := endpoints_eq_of_cIco_eq E.first.left_ne_right D.first.left_ne_right hcols
+    obtain ⟨hl, hr⟩ := (Grid.cIco_eq_cIco_iff (Or.inl E.first.left_ne_right)).mp hcols
     exact hne (GridRectangleDecomposition.ext hl hr (hEl.trans (hl.trans hDl.symm)))
   · rw [D.first.coveredSquares_union_coveredSquares_of_left_eq_left D.second hDl,
       E.first.coveredSquares_union_coveredSquares_of_left_eq_right E.second hEl] at hunion
@@ -223,14 +133,11 @@ theorem target_ne_source_of_val_add_val_eq_of_ne {D E : GridRectangleDecompositi
   · rw [D.first.coveredSquares_union_coveredSquares_of_left_eq_right D.second hDl,
       E.first.coveredSquares_union_coveredSquares_of_left_eq_right E.second hEl] at hunion
     have hrows : Grid.cIco E.first.bottom E.first.top = Grid.cIco D.first.bottom D.first.top := by
-      ext r
-      simpa [GridRectangle.mem_coveredRows] using
+      ext r; simpa [GridRectangle.mem_coveredRows] using
         eq_iff_iff.mp (congrArg (fun S => (D.first.left, r) ∈ S) hunion)
-    obtain ⟨hb, ht⟩ := endpoints_eq_of_cIco_eq E.first.bottom_ne_top D.first.bottom_ne_top hrows
-    have hl : E.first.left = D.first.left :=
-      z.toPerm.injective (E.first.bottom_def.symm.trans (hb.trans D.first.bottom_def))
-    have hr : E.first.right = D.first.right :=
-      z.toPerm.injective (E.first.top_def.symm.trans (ht.trans D.first.top_def))
+    obtain ⟨hb, ht⟩ := (Grid.cIco_eq_cIco_iff (Or.inl E.first.bottom_ne_top)).mp hrows
+    have hl := z.toPerm.injective (E.first.bottom_def.symm.trans (hb.trans D.first.bottom_def))
+    have hr := z.toPerm.injective (E.first.top_def.symm.trans (ht.trans D.first.top_def))
     exact hne (GridRectangleDecomposition.ext hl hr (hEl.trans (hr.trans hDl.symm)))
 
 /-! ### Disjoint-side decompositions -/
@@ -269,8 +176,7 @@ private theorem eq_of_hasDisjointSides_of_sideColumns_eq {D E : GridRectangleDec
             | simp [h₁, h₂, GridState.swapColumns_comm]
   rw [coveredSquares_eq hmid hl₂ hr₂] at hdom
   have hp₁_in₁ : (D.first.left, D.first.bottom) ∈ E.first.toGridRectangle.coveredSquares := by
-    change (D.first.left, D.first.bottom) ∈ E.first.toGridRectangle.coveredSquares.val
-    rw [add_right_cancel hdom]
+    rw [← Finset.mem_val, add_right_cancel hdom, Finset.mem_val]
     exact D.first.left_bottom_mem_coveredSquares
   obtain ⟨hl₁, hr₁⟩ := left_right_eq_of_sideColumns_eq hs₁
     (E.first.mem_toGridRectangle_coveredSquares.mp hp₁_in₁).1
@@ -287,42 +193,30 @@ private theorem sideColumns_eq_or_swap_of_hasDisjointSides {D E : GridRectangleD
       D.second.right :=
     D.second.target_eq_swapColumns.trans
       (congrArg (·.swapColumns D.second.left D.second.right) D.first.target_eq_swapColumns)
-  have hDdisj := D.hasDisjointSides_iff.mp hD
-  have hE : E.HasDisjointSides := by
-    have key : ∀ {z' : GridState n} (E' : GridRectangleDecomposition x z'),
-        z' = (x.swapColumns D.first.left D.first.right).swapColumns D.second.left
-          D.second.right → E'.HasDisjointSides := by
-      rintro _ E' rfl
-      exact hasDisjointSides_of_disjoint x D.first.left_ne_right D.second.left_ne_right
-        (hasDisjointSides_iff_disjoint_sideColumns.mp hD) E'
-    exact key E hzD
+  have hE : E.HasDisjointSides :=
+    (hzD ▸ hasDisjointSides_of_disjoint x D.first.left_ne_right D.second.left_ne_right
+      (hasDisjointSides_iff_disjoint_sideColumns.mp hD) :
+      ∀ F : GridRectangleDecomposition x z, F.HasDisjointSides) E
   have hperm_of : ∀ F : GridRectangleDecomposition x z, z.toPerm = x.toPerm *
       (Equiv.swap F.first.left F.first.right * Equiv.swap F.second.left F.second.right) := fun F =>
     (congrArg GridState.toPerm F.second.target_eq_swapColumns).trans <| by
       rw [GridState.swapColumns_toPerm, congrArg GridState.toPerm F.first.target_eq_swapColumns,
         GridState.swapColumns_toPerm, mul_assoc]
-  have hperm : Equiv.swap E.first.left E.first.right * Equiv.swap E.second.left E.second.right =
-      Equiv.swap D.first.left D.first.right * Equiv.swap D.second.left D.second.right :=
-    mul_left_cancel ((hperm_of E).symm.trans (hperm_of D))
+  have hperm := mul_left_cancel ((hperm_of E).symm.trans (hperm_of D))
+  have hDdisj := D.hasDisjointSides_iff.mp hD
   have hEdisj := E.hasDisjointSides_iff.mp hE
   have hpair : ∀ {a b : Fin n},
       (Equiv.swap D.first.left D.first.right * Equiv.swap D.second.left D.second.right) a = b →
       a ≠ b → ({a, b} : Finset (Fin n)) = D.first.sideColumns ∨
-        ({a, b} : Finset (Fin n)) = D.second.sideColumns := by
-    intro a b hab hne
+        ({a, b} : Finset (Fin n)) = D.second.sideColumns := fun {a b} hab hne => by
     rcases hDdisj with ⟨hll, hlr, hrl, hrr⟩
     rw [Equiv.Perm.mul_apply, Equiv.swap_apply_def, Equiv.swap_apply_def] at hab
     split_ifs at hab <;> subst_vars <;>
       simp_all [GridRectangleBetween.sideColumns, Finset.pair_comm]
-  have h1 : E.first.sideColumns = D.first.sideColumns ∨
-      E.first.sideColumns = D.second.sideColumns :=
-    hpair (by rw [← hperm, Equiv.Perm.mul_apply,
-      Equiv.swap_apply_of_ne_of_ne hEdisj.1 hEdisj.2.1, Equiv.swap_apply_left])
-      E.first.left_ne_right
-  have h2 : E.second.sideColumns = D.first.sideColumns ∨
-      E.second.sideColumns = D.second.sideColumns :=
-    hpair (by rw [← hperm, Equiv.Perm.mul_apply, Equiv.swap_apply_left,
-      Equiv.swap_apply_of_ne_of_ne hEdisj.2.1.symm hEdisj.2.2.2.symm]) E.second.left_ne_right
+  have h1 := hpair (by rw [← hperm, Equiv.Perm.mul_apply,
+    Equiv.swap_apply_of_ne_of_ne hEdisj.1 hEdisj.2.1, Equiv.swap_apply_left]) E.first.left_ne_right
+  have h2 := hpair (by rw [← hperm, Equiv.Perm.mul_apply, Equiv.swap_apply_left,
+    Equiv.swap_apply_of_ne_of_ne hEdisj.2.1.symm hEdisj.2.2.2.symm]) E.second.left_ne_right
   have hEne : E.first.sideColumns ≠ E.second.sideColumns := fun heq =>
     Finset.disjoint_left.mp (hasDisjointSides_iff_disjoint_sideColumns.mp hE)
       (by simp : E.first.left ∈ E.first.sideColumns) (heq ▸ by simp)
@@ -340,13 +234,13 @@ theorem eq_commute_of_val_add_val_eq_of_ne {D E : GridRectangleDecomposition x z
   rcases sideColumns_eq_or_swap_of_hasDisjointSides hD with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
   · exact absurd (eq_of_hasDisjointSides_of_sideColumns_eq hD hE₁ h₁ h₂ hdom) hne
   · have hE : E.HasDisjointSides := hasDisjointSides_iff_disjoint_sideColumns.mpr
-      (by rw [h₁, h₂]; exact (hasDisjointSides_iff_disjoint_sideColumns.mp hD).symm)
+      (h₁ ▸ h₂ ▸ (hasDisjointSides_iff_disjoint_sideColumns.mp hD).symm)
     have heq : E.commute hE = D := eq_of_hasDisjointSides_of_sideColumns_eq hD
       (E.isEmpty_commute_first hE hE₁ hE₂)
       (by rw [GridRectangleBetween.sideColumns, E.commute_first_left hE, E.commute_first_right hE,
-        ← GridRectangleBetween.sideColumns, h₂])
-      (by rw [GridRectangleBetween.sideColumns, E.commute_second_left hE,
-        E.commute_second_right hE, ← GridRectangleBetween.sideColumns, h₁])
+            ← GridRectangleBetween.sideColumns, h₂])
+      (by rw [GridRectangleBetween.sideColumns, E.commute_second_left hE, E.commute_second_right hE,
+            ← GridRectangleBetween.sideColumns, h₁])
       (by rw [E.commute_first_toGridRectangle hE, E.commute_second_toGridRectangle hE, add_comm,
         hdom])
     exact (E.commute_commute hE).symm.trans (by subst heq; rfl)
@@ -387,27 +281,25 @@ private theorem eq_of_isRepartition_of_middle_eq {D E : GridRectangleDecompositi
         D.first.left_bottom_mem_coveredSquares (coveredSquares_eq hmid hl₂ hr₂ ▸ hmem₂)
   · exfalso
     have hsub₁ : Grid.cIco D.first.left D.first.right ⊆ Grid.cIco D.second.right D.second.left :=
-      fun c hc => by
-        rcases Finset.mem_union.mp (hrep.coveredSquares_union_eq ▸ Finset.mem_union_left _
-          (D.first.mem_toGridRectangle_coveredSquares (p := (c, D.first.bottom)) |>.mpr
-            ⟨hc, Grid.left_mem_cIco D.first.bottom_ne_top⟩)) with hE₁ | hE₂
-        · exact absurd (hl₁ ▸ hr₁ ▸ (E.first.mem_toGridRectangle_coveredSquares.mp hE₁).1)
-            (Finset.disjoint_left.mp (Grid.disjoint_cIco_swap _ _) hc)
-        · exact hl₂ ▸ hr₂ ▸ (E.second.mem_toGridRectangle_coveredSquares.mp hE₂).1
+      fun c hc => (Finset.mem_union.mp (hrep.coveredSquares_union_eq ▸ Finset.mem_union_left _
+        (D.first.mem_toGridRectangle_coveredSquares (p := (c, D.first.bottom)) |>.mpr
+          ⟨hc, Grid.left_mem_cIco D.first.bottom_ne_top⟩))).elim
+        (fun hE₁ => absurd (hl₁ ▸ hr₁ ▸ (E.first.mem_toGridRectangle_coveredSquares.mp hE₁).1)
+          (Finset.disjoint_left.mp (Grid.disjoint_cIco_swap _ _) hc))
+        (fun hE₂ => hl₂ ▸ hr₂ ▸ (E.second.mem_toGridRectangle_coveredSquares.mp hE₂).1)
     have hsub₂ : Grid.cIco D.first.right D.first.left ⊆ Grid.cIco D.second.left D.second.right :=
-      fun c hc => by
-        rcases Finset.mem_union.mp (hrep.coveredSquares_union_eq.symm ▸ Finset.mem_union_left _
-          (E.first.mem_toGridRectangle_coveredSquares (p := (c, E.first.bottom)) |>.mpr
-            ⟨hl₁ ▸ hr₁ ▸ hc, Grid.left_mem_cIco E.first.bottom_ne_top⟩)) with hD₁ | hD₂
-        · exact absurd hc (Finset.disjoint_left.mp (Grid.disjoint_cIco_swap _ _)
-            (D.first.mem_toGridRectangle_coveredSquares.mp hD₁).1)
-        · exact (D.second.mem_toGridRectangle_coveredSquares.mp hD₂).1
+      fun c hc => (Finset.mem_union.mp (hrep.coveredSquares_union_eq.symm ▸ Finset.mem_union_left _
+        (E.first.mem_toGridRectangle_coveredSquares (p := (c, E.first.bottom)) |>.mpr
+          ⟨hl₁ ▸ hr₁ ▸ hc, Grid.left_mem_cIco E.first.bottom_ne_top⟩))).elim
+        (fun hD₁ => absurd hc (Finset.disjoint_left.mp (Grid.disjoint_cIco_swap _ _)
+          (D.first.mem_toGridRectangle_coveredSquares.mp hD₁).1))
+        (fun hD₂ => (D.second.mem_toGridRectangle_coveredSquares.mp hD₂).1)
     have heq : Grid.cIco D.first.left D.first.right = Grid.cIco D.second.right D.second.left :=
       Finset.Subset.antisymm hsub₁ fun c hc =>
         (Finset.mem_union.mp ((Grid.cIco_union_swap D.first.left_ne_right).symm ▸
           Finset.mem_univ c)).resolve_right fun h =>
             Finset.disjoint_right.mp (Grid.disjoint_cIco_swap _ _) hc (hsub₂ h)
-    obtain ⟨hl, hr⟩ := endpoints_eq_of_cIco_eq D.first.left_ne_right D.second.left_ne_right.symm heq
+    obtain ⟨hl, hr⟩ := (Grid.cIco_eq_cIco_iff (Or.inl D.first.left_ne_right)).mp heq
     exact D.sideColumns_ne_of_hasOneCommonSide hone
       (by simp [GridRectangleBetween.sideColumns, hl, hr, Finset.pair_comm])
 
@@ -426,13 +318,66 @@ private theorem middle_cases_of_sideColumns_subset {D E : GridRectangleDecomposi
     first | exact absurd (h₁.trans h₂.symm) E.first.left_ne_right
           | simp [h₁, h₂, GridState.swapColumns_comm]
 
+/-- In a one-common-side hexagon with side-column sets `{a, b}` and `{a, c}`, every side column of
+`E.first` is one of `a`, `b`, or `c`. -/
+private theorem first_sideColumns_three_cases {D : GridRectangleDecomposition x z}
+    (E : GridRectangleDecomposition x z) (hone : D.HasOneCommonSide) {a b c : Fin n}
+    (h₁ : D.first.sideColumns = {a, b}) (h₂ : D.second.sideColumns = {a, c}) :
+    ∀ k ∈ E.first.sideColumns, k = a ∨ k = b ∨ k = c := fun k hk => by
+  have hk' : k ∈ D.first.sideColumns ∪ D.second.sideColumns :=
+    (sideColumns_union_eq_of_hasOneCommonSide D E hone) ▸ Finset.mem_union_left _ hk
+  rw [h₁, h₂] at hk'
+  simp only [Finset.mem_union, Finset.mem_insert, Finset.mem_singleton] at hk'
+  tauto
+
+/-- Every square of `E.first` has its row in the combined row span `cIco u w` when `D`'s two
+rectangles partition `cIco u w` at an interior row `v`. -/
+private theorem mem_cIco_rows_of_isRepartition {D E : GridRectangleDecomposition x z}
+    (hrep : D.IsRepartition E) {u v w : Fin n} (hord : v ∈ Grid.cIoo u w)
+    (hrows : (D.first.bottom = u ∧ D.first.top = v ∧ D.second.bottom = v ∧ D.second.top = w) ∨
+      (D.second.bottom = u ∧ D.second.top = v ∧ D.first.bottom = v ∧ D.first.top = w)) :
+    ∀ {p : Fin n × Fin n}, p ∈ E.first.toGridRectangle.coveredSquares → p.2 ∈ Grid.cIco u w :=
+  fun hp => by
+    rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hord]
+    rcases Finset.mem_union.mp (hrep.coveredSquares_union_eq ▸ Finset.mem_union_left _ hp) with
+      h₁ | h₂
+    · have hr := (D.first.mem_toGridRectangle_coveredSquares.mp h₁).2
+      exact hrows.elim (fun ⟨hb, ht, _, _⟩ => Finset.mem_union_left _ (hb ▸ ht ▸ hr))
+        (fun ⟨_, _, hb, ht⟩ => Finset.mem_union_right _ (hb ▸ ht ▸ hr))
+    · have hr := (D.second.mem_toGridRectangle_coveredSquares.mp h₂).2
+      exact hrows.elim (fun ⟨_, _, hb, ht⟩ => Finset.mem_union_right _ (hb ▸ ht ▸ hr))
+        (fun ⟨hb, ht, _, _⟩ => Finset.mem_union_left _ (hb ▸ ht ▸ hr))
+
+/-- Every square of `E.first` has its column in `cIco l r` whenever both rectangles of `D` have
+their covered columns contained in `cIco l r`. -/
+private theorem mem_cIco_cols_of_isRepartition {D E : GridRectangleDecomposition x z}
+    (hrep : D.IsRepartition E) {l r : Fin n}
+    (h₁ : Grid.cIco D.first.left D.first.right ⊆ Grid.cIco l r)
+    (h₂ : Grid.cIco D.second.left D.second.right ⊆ Grid.cIco l r) :
+    ∀ {p : Fin n × Fin n}, p ∈ E.first.toGridRectangle.coveredSquares → p.1 ∈ Grid.cIco l r :=
+  fun hp => (Finset.mem_union.mp (hrep.coveredSquares_union_eq ▸ Finset.mem_union_left _ hp)).elim
+    (fun h => h₁ (D.first.mem_toGridRectangle_coveredSquares.mp h).1)
+    (fun h => h₂ (D.second.mem_toGridRectangle_coveredSquares.mp h).1)
+
+/-- When every square of `E.first` lies in `cIco l r` and an interior column `m ∈ cIoo l r` has
+`x m ∈ cIoo (x l) (x r)`, `E.first` cannot swap `l` and `r`: orientation `(l, r)` puts `(m, x m)`
+in the interior of `E.first`, while orientation `(r, l)` puts column `r` in `cIco l r`. -/
+private theorem not_middle_eq_swapColumns_of_mem_cIoo {E : GridRectangleDecomposition x z}
+    (hE₁ : E.first.IsEmpty) {l m r : Fin n} (hcol : m ∈ Grid.cIoo l r)
+    (hrow : x m ∈ Grid.cIoo (x l) (x r))
+    (hcols : ∀ {p : Fin n × Fin n}, p ∈ E.first.toGridRectangle.coveredSquares →
+      p.1 ∈ Grid.cIco l r) : E.middle ≠ x.swapColumns l r := fun hmid => by
+  rcases first_sides_eq_of_middle_eq hmid with ⟨hl, hr⟩ | ⟨hl, _⟩
+  · exact E.first.isEmpty_iff_forall_notMem_cIoo.mp hE₁ m (hl ▸ hr ▸ hcol)
+      (by simpa [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hl, hr] using hrow)
+  · exact Grid.right_notMem_cIco l r (hl ▸ hcols E.first.left_bottom_mem_coveredSquares)
+
 /-- Repartitioning is transitive from a decomposition to its canonical recut. -/
 private theorem recut_isRepartition {D E : GridRectangleDecomposition x z}
     (hone : D.HasOneCommonSide) (hD₁ : D.first.IsEmpty) (hD₂ : D.second.IsEmpty)
     (hrep : D.IsRepartition E) : (D.recut hone hD₁ hD₂).IsRepartition E :=
   ⟨(D.isRecut_recut hone hD₁ hD₂).isRepartition.disjoint_coveredSquares_right,
-    hrep.disjoint_coveredSquares_right,
-    hrep.coveredSquares_union_eq.trans
+    hrep.disjoint_coveredSquares_right, hrep.coveredSquares_union_eq.trans
       (D.isRecut_recut hone hD₁ hD₂).isRepartition.coveredSquares_union_eq.symm⟩
 
 private theorem eq_recut_of_middle_eq {D E : GridRectangleDecomposition x z}
@@ -447,64 +392,40 @@ repartitions. -/
 private theorem eq_or_eq_recut_of_left_eq_left {D E : GridRectangleDecomposition x z}
     (hcommon : D.first.left = D.second.left) (hone : D.HasOneCommonSide)
     (hD₁ : D.first.IsEmpty) (hD₂ : D.second.IsEmpty) (hE₁ : E.first.IsEmpty)
-    (hrep : D.IsRepartition E) :
-    E = D ∨ E = D.recut hone hD₁ hD₂ := by
+    (hrep : D.IsRepartition E) : E = D ∨ E = D.recut hone hD₁ hD₂ := by
   have hother : D.first.right ≠ D.second.right := fun hr =>
     D.sideColumns_ne_of_hasOneCommonSide hone
       (by simp [GridRectangleBetween.sideColumns, hcommon, hr])
-  have hca : D.second.right ≠ D.first.left := hcommon ▸ D.second.left_ne_right.symm
   have hD₂top : D.second.top = x D.second.right := by
-    rw [GridRectangleBetween.top_def, D.first.map_of_ne D.second.right hca hother.symm]
-  have hD₂bot : D.second.bottom = D.first.top :=
-    D.second_bottom_eq_first_top_of_left_eq_left hcommon
+    rw [GridRectangleBetween.top_def,
+      D.first.map_of_ne D.second.right (hcommon ▸ D.second.left_ne_right.symm) hother.symm]
   have hord := D.cyclicOrder_of_isEmpty_of_left_eq_left hcommon hother hD₁ hD₂
-  have hrow_mem : ∀ {p : Fin n × Fin n}, p ∈ E.first.toGridRectangle.coveredSquares →
-      p.2 ∈ Grid.cIco D.first.bottom D.second.top := fun hp => by
-    rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hord.2]
-    rcases Finset.mem_union.mp (hrep.coveredSquares_union_eq ▸ Finset.mem_union_left _ hp) with
-      h₁ | h₂
-    · exact Finset.mem_union_left _ (D.first.mem_toGridRectangle_coveredSquares.mp h₁).2
-    · exact Finset.mem_union_right _
-        (hD₂bot ▸ (D.second.mem_toGridRectangle_coveredSquares.mp h₂).2)
-  have hE₁sub : ∀ k ∈ E.first.sideColumns,
-      k = D.first.left ∨ k = D.first.right ∨ k = D.second.right := fun k hk => by
-    have hk' : k ∈ D.first.sideColumns ∪ D.second.sideColumns :=
-      (sideColumns_union_eq_of_hasOneCommonSide D E hone) ▸ Finset.mem_union_left _ hk
-    simp only [Finset.mem_union, GridRectangleBetween.mem_sideColumns, ← hcommon] at hk'; tauto
+  have hrow_mem {p} := mem_cIco_rows_of_isRepartition (p := p) hrep hord.2
+    (Or.inl ⟨rfl, rfl, D.second_bottom_eq_first_top_of_left_eq_left hcommon, rfl⟩)
+  have hE₁sub := first_sideColumns_three_cases E hone rfl
+    (by rw [GridRectangleBetween.sideColumns, ← hcommon])
   have hdata := D.isRecutOfLeftEqLeft_recut hcommon hone hD₁ hD₂
+  -- Split on the three unordered column pairs that `E.first` can swap among `{a, b, c}`:
+  -- `{a, b}` gives `D`, while `{b, c}` and `{a, c}` match `D.recut` in one column order and
+  -- violate the hexagon bounds or emptiness of `E.first` in the opposite column order.
   rcases middle_cases_of_sideColumns_subset hE₁sub (Or.inl ⟨rfl, rfl⟩) with hmid | hmid | hmid
   · exact Or.inl (eq_of_isRepartition_of_middle_eq hone hrep hmid)
   · rcases hdata.recut_branch with ⟨-, hRmid, -⟩ | ⟨hcol, -⟩
     · exact Or.inr (eq_recut_of_middle_eq hone hD₁ hD₂ hrep (hmid.trans hRmid.symm))
     · exfalso
-      have hcol_mem : ∀ {p : Fin n × Fin n}, p ∈ E.first.toGridRectangle.coveredSquares →
-          p.1 ∈ Grid.cIco D.first.left D.first.right := fun hp => by
-        rcases Finset.mem_union.mp (hrep.coveredSquares_union_eq ▸ Finset.mem_union_left _ hp) with
-          h₁ | h₂
-        · exact (D.first.mem_toGridRectangle_coveredSquares.mp h₁).1
-        · exact Grid.mem_cIco_of_mem_cIco_of_mem_cIoo
-            (hcommon ▸ (D.second.mem_toGridRectangle_coveredSquares.mp h₂).1) hcol
+      have hcol_mem {p} := mem_cIco_cols_of_isRepartition (p := p) hrep Finset.Subset.rfl
+        fun _ hc => Grid.mem_cIco_of_mem_cIco_of_mem_cIoo (hcommon ▸ hc) hcol
       rcases first_sides_eq_of_middle_eq hmid with ⟨hl, _⟩ | ⟨hl, _⟩
       · exact Grid.right_notMem_cIco _ _ (hl ▸ hcol_mem E.first.left_bottom_mem_coveredSquares)
       · have hr := hrow_mem E.first.left_bottom_mem_coveredSquares
-        rw [E.first.bottom_def, hl, ← hD₂top] at hr
-        exact Grid.right_notMem_cIco _ _ hr
+        rw [E.first.bottom_def, hl, ← hD₂top] at hr; exact Grid.right_notMem_cIco _ _ hr
   · rcases hdata.recut_branch with ⟨hcol, -⟩ | ⟨-, hRmid, -⟩
-    · exfalso
-      have hcol_mem : ∀ {p : Fin n × Fin n}, p ∈ E.first.toGridRectangle.coveredSquares →
-          p.1 ∈ Grid.cIco D.first.left D.second.right := fun hp => by
-        rcases Finset.mem_union.mp (hrep.coveredSquares_union_eq ▸ Finset.mem_union_left _ hp) with
-          h₁ | h₂
-        · exact Grid.mem_cIco_of_mem_cIco_of_mem_cIoo
-            (D.first.mem_toGridRectangle_coveredSquares.mp h₁).1 hcol
-        · exact hcommon ▸ (D.second.mem_toGridRectangle_coveredSquares.mp h₂).1
-      rcases first_sides_eq_of_middle_eq hmid with ⟨hl, hr⟩ | ⟨hl, _⟩
-      · refine E.first.isEmpty_iff_forall_notMem_cIoo.mp hE₁ D.first.right
-          (by rw [hl, hr]; exact hcol) ?_
-        rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hl, hr,
-          ← D.first.bottom_def, ← hD₂top]
-        exact D.first.top_def ▸ hord.2
-      · exact Grid.right_notMem_cIco _ _ (hl ▸ hcol_mem E.first.left_bottom_mem_coveredSquares)
+    · exact absurd hmid <| not_middle_eq_swapColumns_of_mem_cIoo hE₁ hcol
+        (by simpa [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, ← hD₂top]
+          using hord.2)
+        (fun hp => mem_cIco_cols_of_isRepartition hrep
+          (fun _ hc => Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hc hcol)
+          (hcommon ▸ Finset.Subset.rfl) hp)
     · exact Or.inr (eq_recut_of_middle_eq hone hD₁ hD₂ hrep (hmid.trans hRmid.symm))
 
 /-- A decomposition with `right = right` overlap admits only itself and its canonical recut as
@@ -512,82 +433,58 @@ empty repartitions. -/
 private theorem eq_or_eq_recut_of_right_eq_right {D E : GridRectangleDecomposition x z}
     (hcommon : D.first.right = D.second.right) (hone : D.HasOneCommonSide)
     (hD₁ : D.first.IsEmpty) (hD₂ : D.second.IsEmpty) (hE₁ : E.first.IsEmpty)
-    (hrep : D.IsRepartition E) :
-    E = D ∨ E = D.recut hone hD₁ hD₂ := by
+    (hrep : D.IsRepartition E) : E = D ∨ E = D.recut hone hD₁ hD₂ := by
   have hother : D.first.left ≠ D.second.left := fun hl =>
     D.sideColumns_ne_of_hasOneCommonSide hone
       (by simp [GridRectangleBetween.sideColumns, hcommon, hl])
-  have hca : D.second.left ≠ D.first.right := hcommon ▸ D.second.left_ne_right
   have hD₂bot : D.second.bottom = x D.second.left := by
-    rw [GridRectangleBetween.bottom_def, D.first.map_of_ne D.second.left hother.symm hca]
+    rw [GridRectangleBetween.bottom_def,
+      D.first.map_of_ne D.second.left hother.symm (hcommon ▸ D.second.left_ne_right)]
   have hD₂top : D.second.top = D.first.bottom := by
     rw [GridRectangleBetween.top_def, GridRectangleBetween.bottom_def, ← hcommon, D.first.map_right]
   have hord := D.cyclicOrder_of_isEmpty_of_right_eq_right hcommon hother hD₁ hD₂
-  have hrow_mem : ∀ {p : Fin n × Fin n}, p ∈ E.first.toGridRectangle.coveredSquares →
-      p.2 ∈ Grid.cIco D.second.bottom D.first.top := fun hp => by
-    rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hord.2]
-    rcases Finset.mem_union.mp (hrep.coveredSquares_union_eq ▸ Finset.mem_union_left _ hp) with
-      h₁ | h₂
-    · exact Finset.mem_union_right _ (D.first.mem_toGridRectangle_coveredSquares.mp h₁).2
-    · exact Finset.mem_union_left _
-        (hD₂top ▸ (D.second.mem_toGridRectangle_coveredSquares.mp h₂).2)
-  have hE₁sub : ∀ k ∈ E.first.sideColumns,
-      k = D.first.right ∨ k = D.first.left ∨ k = D.second.left := fun k hk => by
-    have hk' : k ∈ D.first.sideColumns ∪ D.second.sideColumns :=
-      (sideColumns_union_eq_of_hasOneCommonSide D E hone) ▸ Finset.mem_union_left _ hk
-    simp only [Finset.mem_union, GridRectangleBetween.mem_sideColumns, ← hcommon] at hk'; tauto
+  have hrow_mem {p} := mem_cIco_rows_of_isRepartition (p := p) hrep hord.2
+    (Or.inr ⟨rfl, hD₂top, rfl, rfl⟩)
+  have hE₁sub := first_sideColumns_three_cases E hone
+    (Finset.pair_comm D.first.left D.first.right)
+    (by rw [GridRectangleBetween.sideColumns, ← hcommon, Finset.pair_comm])
   have hdata := D.isRecutOfRightEqRight_recut hcommon hone hD₁ hD₂
+  -- Split on the three unordered column pairs that `E.first` can swap among `{r, l₁, l₂}`:
+  -- `{l₁, r}` gives `D`, while `{l₁, l₂}` and `{l₂, r}` match `D.recut` in one column order and
+  -- violate the hexagon bounds or emptiness of `E.first` in the opposite column order.
   rcases middle_cases_of_sideColumns_subset hE₁sub (Or.inr ⟨rfl, rfl⟩) with hmid | hmid | hmid
   · exact Or.inl (eq_of_isRepartition_of_middle_eq hone hrep hmid)
   · rw [GridState.swapColumns_comm] at hmid
     rcases hdata.recut_branch with ⟨-, hRmid, -⟩ | ⟨hcol, -⟩
     · exact Or.inr (eq_recut_of_middle_eq hone hD₁ hD₂ hrep (hmid.trans hRmid.symm))
     · exfalso
-      have hcol_mem : ∀ {p : Fin n × Fin n}, p ∈ E.first.toGridRectangle.coveredSquares →
-          p.1 ∈ Grid.cIco D.first.left D.first.right := fun hp => by
-        rcases Finset.mem_union.mp (hrep.coveredSquares_union_eq ▸ Finset.mem_union_left _ hp) with
-          h₁ | h₂
-        · exact (D.first.mem_toGridRectangle_coveredSquares.mp h₁).1
-        · exact Grid.cIco_subset_of_mem_cIoo hcol
-            (hcommon ▸ (D.second.mem_toGridRectangle_coveredSquares.mp h₂).1)
+      have hcol_mem {p} := mem_cIco_cols_of_isRepartition (p := p) hrep Finset.Subset.rfl
+        (hcommon ▸ Grid.cIco_subset_of_mem_cIoo hcol)
       rcases first_sides_eq_of_middle_eq hmid with ⟨hl, hr⟩ | ⟨hl, hr⟩
-      · exact Grid.right_notMem_cIco _ _
-          (hcol_mem (p := (D.first.right, E.first.bottom))
-            (E.first.mem_toGridRectangle_coveredSquares.mpr
-              ⟨by rw [hl, hr]; exact Grid.cIoo_subset_cIco _ _ (Grid.mem_cIoo_cyclic_left hcol),
-                Grid.left_mem_cIco E.first.bottom_ne_top⟩))
-      · exact Grid.right_notMem_cIco _ _
-          (hrow_mem (p := (E.first.left, D.first.top))
-            (E.first.mem_toGridRectangle_coveredSquares.mpr
-              ⟨Grid.left_mem_cIco E.first.left_ne_right, by
-                dsimp only; rw [hl, hr, ← D.first.bottom_def, ← hD₂bot]
-                exact Grid.cIoo_subset_cIco _ _ (Grid.mem_cIoo_cyclic_left hord.2)⟩))
+      · exact Grid.right_notMem_cIco _ _ (hcol_mem (p := (D.first.right, E.first.bottom))
+          (E.first.mem_toGridRectangle_coveredSquares.mpr
+            ⟨by rw [hl, hr]; exact Grid.cIoo_subset_cIco _ _ (Grid.mem_cIoo_cyclic_left hcol),
+              Grid.left_mem_cIco E.first.bottom_ne_top⟩))
+      · exact Grid.right_notMem_cIco _ _ (hrow_mem (p := (E.first.left, D.first.top))
+          (E.first.mem_toGridRectangle_coveredSquares.mpr ⟨Grid.left_mem_cIco E.first.left_ne_right,
+            by dsimp only; rw [hl, hr, ← D.first.bottom_def, ← hD₂bot]
+               exact Grid.cIoo_subset_cIco _ _ (Grid.mem_cIoo_cyclic_left hord.2)⟩))
   · rw [GridState.swapColumns_comm] at hmid
     rcases hdata.recut_branch with ⟨hcol, -⟩ | ⟨-, hRmid, -⟩
-    · exfalso
-      have hcol_mem : ∀ {p : Fin n × Fin n}, p ∈ E.first.toGridRectangle.coveredSquares →
-          p.1 ∈ Grid.cIco D.second.left D.first.right := fun hp => by
-        rcases Finset.mem_union.mp (hrep.coveredSquares_union_eq ▸ Finset.mem_union_left _ hp) with
-          h₁ | h₂
-        · exact Grid.cIco_subset_of_mem_cIoo hcol
-            (D.first.mem_toGridRectangle_coveredSquares.mp h₁).1
-        · exact hcommon ▸ (D.second.mem_toGridRectangle_coveredSquares.mp h₂).1
-      rcases first_sides_eq_of_middle_eq hmid with ⟨hl, hr⟩ | ⟨hl, _⟩
-      · refine E.first.isEmpty_iff_forall_notMem_cIoo.mp hE₁ D.first.left
-          (by rw [hl, hr]; exact hcol) ?_
-        rw [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, hl, hr,
-          ← hD₂bot, ← D.first.top_def]
-        exact D.first.bottom_def ▸ hord.2
-      · exact Grid.right_notMem_cIco _ _ (hl ▸ hcol_mem E.first.left_bottom_mem_coveredSquares)
+    · exact absurd hmid <| not_middle_eq_swapColumns_of_mem_cIoo hE₁ hcol
+        (by simpa [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def, ← hD₂bot]
+          using hord.2)
+        (fun hp => mem_cIco_cols_of_isRepartition hrep (Grid.cIco_subset_of_mem_cIoo hcol)
+          (hcommon ▸ Finset.Subset.rfl) hp)
     · exact Or.inr (eq_recut_of_middle_eq hone hD₁ hD₂ hrep (hmid.trans hRmid.symm))
 
 private theorem eq_or_eq_recut_of_hasSameSideOverlap {D E : GridRectangleDecomposition x z}
     (hsame : D.HasSameSideOverlap) (hone : D.HasOneCommonSide)
     (hD₁ : D.first.IsEmpty) (hD₂ : D.second.IsEmpty) (hE₁ : E.first.IsEmpty)
-    (hrep : D.IsRepartition E) : E = D ∨ E = D.recut hone hD₁ hD₂ := by
-  rcases (D.hasSameSideOverlap_iff.mp hsame).2 with hleft | hright
-  · exact eq_or_eq_recut_of_left_eq_left hleft hone hD₁ hD₂ hE₁ hrep
-  · exact eq_or_eq_recut_of_right_eq_right hright hone hD₁ hD₂ hE₁ hrep
+    (hrep : D.IsRepartition E) : E = D ∨ E = D.recut hone hD₁ hD₂ :=
+  ((D.hasSameSideOverlap_iff.mp hsame).2).elim
+    (fun h => eq_or_eq_recut_of_left_eq_left h hone hD₁ hD₂ hE₁ hrep)
+    (fun h => eq_or_eq_recut_of_right_eq_right h hone hD₁ hD₂ hE₁ hrep)
 
 /-- When `D` shares exactly one side column, the unique other empty two-step decomposition with
 the same covered-square multiset is `D.recut hone hD₁ hD₂`. -/
@@ -601,7 +498,7 @@ theorem eq_recut_of_val_add_val_eq_of_ne {D E : GridRectangleDecomposition x z}
   have hDdisj : Disjoint D.first.toGridRectangle.coveredSquares
       D.second.toGridRectangle.coveredSquares :=
     (D.isRecut_recut hone hD₁ hD₂).isRepartition.disjoint_coveredSquares_left
-  obtain ⟨hEdisj, hunion⟩ := disjoint_and_union_eq_of_val_add_val_eq hDdisj hdom
+  obtain ⟨hEdisj, hunion⟩ := Finset.disjoint_and_union_eq_of_val_add_val_eq hDdisj hdom
   have hrep : D.IsRepartition E := ⟨hDdisj, hEdisj, hunion⟩
   rcases D.hasSameSideOverlap_or_hasMixedSideOverlap hone with hsame | hmixed
   · exact (eq_or_eq_recut_of_hasSameSideOverlap hsame hone hD₁ hD₂ hE₁ hrep).resolve_left hne

@@ -105,6 +105,8 @@ import TauCeti.Data.Set.PowersetCard
   replacement by a point outside the finset does not change injectivity.
 * `Finset.sdiff_coe_filter_mem_eq`: removing from a set `U` the points of a finset `S` lying in
   `U` is removing all of `S`.
+* `Finset.disjoint_and_union_eq_of_val_add_val_eq`: if two disjoint finsets have the same multiset
+  sum as another pair of finsets, the second pair is also disjoint and has the same union.
 -/
 
 public section
@@ -839,6 +841,18 @@ theorem sdiff_coe_filter_mem_eq {α : Type*} (S : Finset α) (U : Set α) [Decid
   ext z
   simp only [Set.mem_sdiff, coe_filter, Set.mem_ofPred_eq, mem_coe]
   tauto
+
+/-- If two disjoint finite sets have the same multiset sum as another pair of finite sets, then the
+second pair is also disjoint and has the same union. -/
+theorem disjoint_and_union_eq_of_val_add_val_eq {α : Type*} [DecidableEq α]
+    {s₁ s₂ t₁ t₂ : Finset α} (hs : Disjoint s₁ s₂) (hval : t₁.val + t₂.val = s₁.val + s₂.val) :
+    Disjoint t₁ t₂ ∧ t₁ ∪ t₂ = s₁ ∪ s₂ := by
+  have hnodup : (s₁.val + s₂.val).Nodup :=
+    Multiset.nodup_add.mpr ⟨s₁.nodup, s₂.nodup, disjoint_val.mpr hs⟩
+  refine ⟨disjoint_val.mp (Multiset.nodup_add.mp (hval ▸ hnodup)).2.2, ?_⟩
+  ext p
+  simpa only [mem_union, Multiset.mem_add, mem_val] using
+    show p ∈ t₁.val + t₂.val ↔ p ∈ s₁.val + s₂.val from hval ▸ Iff.rfl
 
 end Finset
 

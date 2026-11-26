@@ -65,21 +65,18 @@ def wordCocycleProd (cs : CoxeterSystem M W) (u : W → B → G) : W → List B 
 /-- The path product along the empty word is `1`. -/
 @[simp]
 theorem wordCocycleProd_nil (cs : CoxeterSystem M W) (u : W → B → G) (w : W) :
-    cs.wordCocycleProd u w [] = 1 :=
-  (rfl)
+    cs.wordCocycleProd u w [] = 1 := (rfl)
 
 /-- The path product along a nonempty word multiplies the first edge label by the path product from
 the next vertex. -/
 @[simp]
 theorem wordCocycleProd_cons (cs : CoxeterSystem M W) (u : W → B → G) (w : W) (i : B)
     (ω : List B) :
-    cs.wordCocycleProd u w (i :: ω) = u w i * cs.wordCocycleProd u (w * cs.simple i) ω :=
-  (rfl)
+    cs.wordCocycleProd u w (i :: ω) = u w i * cs.wordCocycleProd u (w * cs.simple i) ω := (rfl)
 
 /-- The path product along a one-letter word is the single edge label. -/
 theorem wordCocycleProd_singleton (cs : CoxeterSystem M W) (u : W → B → G) (w : W) (i : B) :
-    cs.wordCocycleProd u w [i] = u w i :=
-  mul_one (u w i)
+    cs.wordCocycleProd u w [i] = u w i := mul_one (u w i)
 
 /-- Path products multiply under word concatenation, advancing the basepoint by the prefix word. -/
 theorem wordCocycleProd_append (cs : CoxeterSystem M W) (u : W → B → G) (w : W)
@@ -88,8 +85,7 @@ theorem wordCocycleProd_append (cs : CoxeterSystem M W) (u : W → B → G) (w :
       cs.wordCocycleProd u w ω₁ * cs.wordCocycleProd u (w * cs.wordProd ω₁) ω₂ := by
   induction ω₁ generalizing w with
   | nil => simp
-  | cons i ω₁ ih =>
-    simp only [List.cons_append, wordCocycleProd_cons, wordProd_cons, ih, mul_assoc]
+  | cons i ω₁ ih => simp [wordCocycleProd_cons, wordProd_cons, ih, mul_assoc]
 
 /-- A single braid move preserves the path product whenever the 1-cochain satisfies the braid
 relations at every vertex. -/
@@ -99,8 +95,7 @@ theorem IsBraidMove.wordCocycleProd_eq (cs : CoxeterSystem M W) {u : W → B →
     {ω ω' : List B} (h : IsBraidMove M ω ω') (w : W) :
     cs.wordCocycleProd u w ω = cs.wordCocycleProd u w ω' := by
   cases h with
-  | mk pre suf i j =>
-    simp only [wordCocycleProd_append, wordProd_append, hbraid, cs.wordProd_braidWord_eq i j]
+  | mk _ _ i j => simp [wordCocycleProd_append, hbraid, cs.wordProd_braidWord_eq]
 
 /-- Braid-equivalent words have equal path products whenever the 1-cochain satisfies the braid
 relations at every vertex. -/
@@ -131,15 +126,8 @@ variable {B W α : Type*} {M : CoxeterMatrix B} [Group W]
 /-- A function on a Coxeter group that is invariant under right multiplication by every simple
 reflection is constant. -/
 theorem fun_eq_const_of_mul_simple_eq (cs : CoxeterSystem M W) {f : W → α}
-    (hf : ∀ w i, f (w * cs.simple i) = f w) (w : W) : f w = f 1 := by
-  have hword : ∀ (x : W) (ω : List B), f (x * cs.wordProd ω) = f x := by
-    intro x ω
-    induction ω generalizing x with
-    | nil => simp
-    | cons i ω ih =>
-      rw [wordProd_cons, ← mul_assoc, ih, hf]
-  obtain ⟨ω, rfl⟩ := cs.wordProd_surjective w
-  simpa using hword 1 ω
+    (hf : ∀ w i, f (w * cs.simple i) = f w) (w : W) : f w = f 1 :=
+  cs.simple_induction_right (p := fun w => f w = f 1) w rfl fun w i h => (hf w i).trans h
 
 end Connected
 
@@ -155,9 +143,8 @@ theorem apply_mul_wordProd_eq_mul_wordCocycleProd (cs : CoxeterSystem M W) {u : 
   induction ω generalizing w with
   | nil => simp
   | cons i ω ih =>
-    rw [wordProd_cons, ← mul_assoc, ih, wordCocycleProd_cons, ← mul_assoc]
-    have hstep : f (w * cs.simple i) = f w * u w i := eq_mul_of_inv_mul_eq (hf w i)
-    rw [hstep]
+    rw [wordProd_cons, ← mul_assoc, ih, wordCocycleProd_cons, ← mul_assoc,
+      eq_mul_of_inv_mul_eq (hf w i)]
 
 /-- **Simply connectedness of the Coxeter Cayley 2-complex.** Every 1-cocycle `u : W → B → G` on
 the right Cayley graph of a Coxeter system that satisfies the involution relation along edges and
@@ -170,41 +157,29 @@ theorem existsUnique_cocycle_eq_inv_mul (cs : CoxeterSystem M W) {u : W → B �
     ∃! f : W → G, f 1 = 1 ∧ ∀ w i, (f w)⁻¹ * f (w * cs.simple i) = u w i := by
   classical
   let f : W → G := fun w => cs.wordCocycleProd u 1 (cs.exists_isReduced w).choose
-  have hf_eq : ∀ {ω : List B}, cs.IsReduced ω → f (cs.wordProd ω) = cs.wordCocycleProd u 1 ω := by
-    intro ω hω
-    have hspec := (cs.exists_isReduced (cs.wordProd ω)).choose_spec
-    exact cs.wordCocycleProd_eq_of_isReduced hbraid hspec.1 hω hspec.2.symm 1
-  have hf_one : f 1 = 1 := by
-    have hnil : cs.IsReduced ([] : List B) := by
-      simp [IsReduced]
-    simpa [wordProd_nil] using hf_eq hnil
+  have hf_eq : ∀ {ω : List B}, cs.IsReduced ω → f (cs.wordProd ω) = cs.wordCocycleProd u 1 ω :=
+    fun hω =>
+      let hspec := (cs.exists_isReduced _).choose_spec
+      cs.wordCocycleProd_eq_of_isReduced hbraid hspec.1 hω hspec.2.symm 1
+  have hf_one : f 1 = 1 := by simpa [wordProd_nil] using hf_eq (ω := []) (by simp [IsReduced])
   have hf_asc : ∀ w i, cs.length (w * cs.simple i) = cs.length w + 1 →
-      (f w)⁻¹ * f (w * cs.simple i) = u w i := by
-    intro w i hlen
+      (f w)⁻¹ * f (w * cs.simple i) = u w i := fun w i hlen => by
     obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
     have hred : cs.IsReduced (ω ++ [i]) := by
       rw [IsReduced, wordProd_append, wordProd_singleton, hlen, List.length_append,
         List.length_singleton, hω.eq]
-    have hnext : f (cs.wordProd ω * cs.simple i) = f (cs.wordProd ω) * u (cs.wordProd ω) i := by
-      rw [← wordProd_singleton, ← wordProd_append, hf_eq hred, wordCocycleProd_append,
-        one_mul, wordCocycleProd_singleton, hf_eq hω]
-    rw [hnext, inv_mul_cancel_left]
-  have hf_step : ∀ w i, (f w)⁻¹ * f (w * cs.simple i) = u w i := by
-    intro w i
+    rw [← wordProd_singleton, ← wordProd_append, hf_eq hred, wordCocycleProd_append, one_mul,
+      wordCocycleProd_singleton, ← hf_eq hω, inv_mul_cancel_left]
+  have hf_step : ∀ w i, (f w)⁻¹ * f (w * cs.simple i) = u w i := fun w i => by
     rcases cs.length_mul_simple w i with hlen | hlen
     · exact hf_asc w i hlen
     · have hback := hf_asc (w * cs.simple i) i (by rw [cs.simple_mul_simple_cancel_right, hlen])
       rw [cs.simple_mul_simple_cancel_right, hinv w i] at hback
       simpa [mul_inv_rev] using congrArg Inv.inv hback
-  refine ⟨f, ⟨hf_one, hf_step⟩, ?_⟩
-  rintro g ⟨hg_one, hg⟩
-  funext w
+  refine ⟨f, ⟨hf_one, hf_step⟩, fun g ⟨hg_one, hg⟩ => funext fun w => ?_⟩
   obtain ⟨ω, rfl⟩ := cs.wordProd_surjective w
-  have h1 := cs.apply_mul_wordProd_eq_mul_wordCocycleProd hg 1 ω
-  have h2 := cs.apply_mul_wordProd_eq_mul_wordCocycleProd hf_step 1 ω
-  rw [one_mul, hg_one, one_mul] at h1
-  rw [one_mul, hf_one, one_mul] at h2
-  exact h1.trans h2.symm
+  rw [← one_mul (cs.wordProd ω), cs.apply_mul_wordProd_eq_mul_wordCocycleProd hg,
+    cs.apply_mul_wordProd_eq_mul_wordCocycleProd hf_step, hg_one, hf_one]
 
 /-- Every Cayley-graph 1-cocycle on a Coxeter system satisfying the involution and braid relations
 is a coboundary. -/
