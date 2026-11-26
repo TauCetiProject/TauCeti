@@ -46,8 +46,10 @@ smooth when `C` is constant along the fibres of a collar projection near the bou
 * `TauCeti.SchottkyDouble.contMDiff_doubleAlongSwap`: the lifted involution is real `C^n` on the
   total space of the doubled bundle, with no regularity hypothesis on `C`.
 
-Not treated here: that every smooth bundle pair is isomorphic to one constant along a collar
-projection, and independence of that choice up to isomorphism.
+Every smooth bundle pair is isomorphic to one constant along a collar projection
+(`TauCeti.SchottkyDouble.exists_iso_contMDiffOn_coordChange_doubledBundleCore`, in
+`TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.DoubledBundle.CollarForm`). Not treated
+here: independence of that choice up to isomorphism.
 
 ## References
 
