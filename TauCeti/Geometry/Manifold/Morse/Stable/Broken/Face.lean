@@ -160,7 +160,7 @@ theorem exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary
     hX.morseTrajectoryRecords_subset_morseBrokenTrajectoryRecords
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 x.property) (hxc 1) hxz _ ha⟩⟩,
     ⟨_, mem_morseBrokenTrajectorySpace.2 ⟨hzy, hb⟩⟩,
-    mem_morseBrokenTrajectorySpaceBoundary.not.2 (not_not.2 ha),
+    notMem_morseBrokenTrajectorySpaceBoundary.2 ha,
     Subtype.ext (funext fun i ↦ ?_)⟩
   rw [coe_morseBrokenTrajectorySpaceComp_apply]
   by_cases h : f z < c i
@@ -278,10 +278,10 @@ theorem disjoint_range_morseBrokenTrajectorySpaceComp_image
   rw [← he, coe_morseBrokenTrajectorySpaceComp_apply] at hw_i
   have hu₁ : u₁.val ∈
       hX.morseTrajectoryRecords x z ((c ⁻¹' Ioo (f z) (f x)).domRestrict c) :=
-    not_not.1 (mt mem_morseBrokenTrajectorySpaceBoundary.2 hu₁)
+    notMem_morseBrokenTrajectorySpaceBoundary.1 hu₁
   have hu₂ : u₂.val ∈
       hX.morseTrajectoryRecords z y ((c ⁻¹' Ioo (f y) (f z)).domRestrict c) :=
-    not_not.1 (mt mem_morseBrokenTrajectorySpaceBoundary.2 hu₂)
+    notMem_morseBrokenTrajectorySpaceBoundary.1 hu₂
   by_cases hzi : f z < c i
   · rw [concatLevelRecords_of_lt (fun j ↦ hc j z) u₁.val u₂.val
       (i := ⟨i, hyz'.trans hi, hix⟩) hzi] at hw_i
@@ -415,27 +415,20 @@ theorem isOpenEmbedding_morseBrokenTrajectorySpaceComp_compl_prod_compl [Countab
   have := hf.finite_criticalPoints.to_subtype
   refine ⟨((hX.isEmbedding_morseBrokenTrajectorySpaceComp hc x z y).comp
     (IsEmbedding.subtypeVal.prodMap IsEmbedding.subtypeVal)).codRestrict _ _, ?_⟩
-  have hrange : range (fun r : ↥(hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ ×
-        ↥(hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ ↦
-      (⟨hX.morseBrokenTrajectorySpaceComp hc x z y (r.1, r.2),
-        hX.morseBrokenTrajectorySpaceComp_mem_morseBrokenTrajectorySpaceBoundary hc hdense x z y
-          _⟩ : hX.morseBrokenTrajectorySpaceBoundary c x y)) =
-      Subtype.val ⁻¹' (⋃ (z' : criticalPoints 𝓘(ℝ, E) f) (_ : z' ≠ z),
-        range (hX.morseBrokenTrajectorySpaceComp hc x z' y))ᶜ := by
-    ext w
-    have hw := congrArg (w.val ∈ ·)
-      (hX.image_morseBrokenTrajectorySpaceComp_compl_prod_compl hc hdense x z y)
-    simp only [mem_sdiff, w.property, true_and, eq_iff_iff] at hw
-    rw [mem_preimage, mem_compl_iff, ← hw]
-    constructor
-    · rintro ⟨r, rfl⟩
-      exact ⟨(r.1, r.2), ⟨r.1.property, r.2.property⟩, rfl⟩
-    · rintro ⟨p, hp, he⟩
-      exact ⟨(⟨p.1, hp.1⟩, ⟨p.2, hp.2⟩), Subtype.ext he⟩
-  rw [hrange]
-  exact (isClosed_iUnion_of_finite fun z' ↦ isClosed_iUnion_of_finite fun _ ↦
+  -- The range is the part of the boundary outside the closed faces of the other critical points.
+  convert (isClosed_iUnion_of_finite fun z' ↦ isClosed_iUnion_of_finite fun (_ : z' ≠ z) ↦
     h.isClosed_range_morseBrokenTrajectorySpaceComp hc hf x z' y).isOpen_compl.preimage
-      continuous_subtypeVal
+      continuous_subtypeVal using 1
+  ext w
+  have hw := congrArg (w.val ∈ ·)
+    (hX.image_morseBrokenTrajectorySpaceComp_compl_prod_compl hc hdense x z y)
+  simp only [mem_sdiff, w.property, true_and, eq_iff_iff] at hw
+  rw [mem_preimage, mem_compl_iff, ← hw]
+  constructor
+  · rintro ⟨r, rfl⟩
+    exact ⟨(r.1, r.2), ⟨r.1.property, r.2.property⟩, rfl⟩
+  · rintro ⟨p, hp, he⟩
+    exact ⟨(⟨p.1, hp.1⟩, ⟨p.2, hp.2⟩), Subtype.ext he⟩
 
 include h hf hc hdense in
 /-- **The interiors of the faces are dense in the boundary.** A broken trajectory is the
@@ -459,7 +452,7 @@ theorem dense_morseBrokenTrajectorySpaceComp_image (x y : criticalPoints 𝓘(�
       hX.morseTrajectoryRecords_subset_morseBrokenTrajectoryRecords
         (mem_criticalPoints_iff_mfderiv_eq_zero.1 z.property)
         (mem_criticalPoints_iff_mfderiv_eq_zero.1 y.property) hzy _ hv⟩⟩,
-      mem_morseBrokenTrajectorySpaceBoundary.not.2 (not_not.2 hv), rfl⟩
+      notMem_morseBrokenTrajectorySpaceBoundary.2 hv, rfl⟩
   refine map_mem_closure (f := fun b' ↦ hX.morseBrokenTrajectorySpaceComp hc x z y (a, b'))
     ((map_continuous _).comp (Continuous.prodMk_right a)) hbcl fun b' hb' ↦ ?_
   exact ⟨⟨_, hX.morseBrokenTrajectorySpaceComp_mem_morseBrokenTrajectorySpaceBoundary hc hdense
