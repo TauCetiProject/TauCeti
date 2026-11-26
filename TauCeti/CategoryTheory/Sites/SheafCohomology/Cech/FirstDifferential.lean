@@ -34,10 +34,10 @@ of `I`.
   differential of the cohomology presheaf of `I`
   (`TauCeti.CategoryTheory.presheafCechColumnHomologyIso_inv_comp_homologyMap_cechColumnD`); the
   same holds after transport along an isomorphism of `Hᵏ(I)` with a presheaf `P`
-  (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequence_page_two_d_comp_iso`), which
-  for an injective resolution of `F` is the cohomology presheaf of `F`. The first page is then
-  identified with the Čech cochains of `P`
-  (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso`).
+  (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequence_page_two_d_comp_iso`), under
+  the identification of the first page with the Čech cochains of `P`
+  (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso`). For an
+  injective resolution of `F`, `P` is the cohomology presheaf of `F`.
 
 The objects of the second page are identified with the Čech cohomology groups of `U` with
 coefficients in `Hᵏ(F)`, the cohomology of the Čech complexes `Č(U, Hᵏ(F))`, in
@@ -89,29 +89,6 @@ theorem presheafCechDoubleComplexSpectralSequence_page_two_d (I : CochainComplex
   rw [Iso.inv_comp_eq, presheafCechDoubleComplexSpectralSequenceFirstPageXIso_hom,
     presheafCechDoubleComplexSpectralSequenceFirstPageXIso_hom]
   exact ((reassoc_of% h) _).trans ((_ ≫= hds).trans (Category.assoc _ _ _).symm)
-
-/-- The object at `(-k - 2p, p)` on the first page (numbered `2`) of the spectral sequence of the
-Čech double complex is, with exact products of the shape of Čech degree `p`, the opposite of the
-Čech cochains `Čᵖ(U, P)` of a presheaf `P` isomorphic to the cohomology presheaf `Hᵏ(I)`. -/
-def presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ)
-    (p : ℕ) [HasExactLimitsOfShape (Discrete (Fin (p + 1) → ι)) A] (k : ℕ) {P : Cᵒᵖ ⥤ A}
-    (e : I.homology k ≅ P) :
-    ((presheafCechDoubleComplexSpectralSequence U I).page 2).X (-(k : ℤ) - 2 * p, p) ≅
-      op (((cechComplexFunctor U).obj P).X p) :=
-  presheafCechDoubleComplexSpectralSequenceFirstPageXIso U I p k ≪≫
-    (presheafCechColumnHomologyIso U I p k ≪≫
-      (cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p).mapIso e).symm.op
-
-/-- The identification `presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso` is that of
-the first page with the column homology, followed by `presheafCechColumnHomologyIso` and `e`. -/
-lemma presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso_hom
-    (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ) [HasExactLimitsOfShape (Discrete (Fin (p + 1) → ι)) A]
-    (k : ℕ) {P : Cᵒᵖ ⥤ A} (e : I.homology k ≅ P) :
-    (presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso U I p k e).hom =
-      (presheafCechDoubleComplexSpectralSequenceFirstPageXIso U I p k).hom ≫
-        ((cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p).map e.inv ≫
-          (presheafCechColumnHomologyIso U I p k).inv).op :=
-  (rfl)
 
 /-- **The first differential on Čech cochains of a presheaf isomorphic to the cohomology.** With
 exact products, under the identifications

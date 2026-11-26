@@ -34,7 +34,6 @@ lemma op_homologyπ_homologyOpIso_hom :
   have h : S.op.leftHomologyπ ≫ S.leftHomologyOpIso.hom =
       S.cyclesOpIso.hom ≫ S.rightHomologyι.op :=
     S.rightHomologyData.op.leftHomologyπ_comp_leftHomologyIso_hom
-  rw [homologyOpIso, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, Iso.op_hom, Iso.symm_hom,
-    homologyπ, Category.assoc, Iso.hom_inv_id_assoc, reassoc_of% h, homologyι, op_comp]
+  simp [homologyOpIso, homologyπ, homologyι, reassoc_of% h]
 
 end CategoryTheory.ShortComplex
