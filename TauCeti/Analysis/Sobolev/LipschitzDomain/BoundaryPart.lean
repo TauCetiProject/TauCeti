@@ -52,8 +52,8 @@ first, the function equal to `0` on the first ball and `1` on the second is a co
 * `TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`: `W^{1,p}_∅(Ω) = W^{1,p}(Ω)`.
 * `TauCeti.W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`: functions in
   `W^{1,p}_Γ(Ω)` have zero trace on `Γ`.
-* `TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero`: the converse reduced to
-  neighbourhoods of the relative boundary of `Γ`, and
+* `TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero_of_forall_mem_closure_inter`:
+  the converse reduced to neighbourhoods of the relative boundary of `Γ`, and
   `TauCeti.W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_disjoint_closure`: the
   trace characterization when that relative boundary is empty.
 * `TauCeti.W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule`: the
@@ -266,8 +266,8 @@ Lipschitz domain and for `p < ∞`, let `Γ` miss `Ω` and let the trace of `u �
 almost everywhere on `Γ`. Suppose that every point of `closure Γ ∩ closure (frontier Ω \ Γ)` has
 a neighbourhood `U` such that `ψ u ∈ W^{1,p}_Γ(Ω)` for every smooth `ψ` bounded together with its
 gradient on `Ω` and supported in `U`. Then `u ∈ W^{1,p}_Γ(Ω)`. -/
-theorem W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero (hp : p ≠ (∞ : ℝ≥0∞))
-    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+theorem W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero_of_forall_mem_closure_inter
+    (hp : p ≠ (∞ : ℝ≥0∞)) (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E))))
     (hΓΩ : Disjoint Γ (Ω : Set (WithLp 2 (ℝ × E)))) {u : W1p volume Ω p}
     (hu : W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
@@ -308,7 +308,7 @@ theorem W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_disjoint
       W1p.frontierTrace hp hΩ hb u =ᵐ[((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict
         (frontier (Ω : Set (WithLp 2 (ℝ × E))))).restrict Γ] 0 :=
   ⟨W1p.frontierTrace_ae_eq_zero_of_mem_w1pVanishingOnSubmodule hp hΩ hb, fun hu =>
-    W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero hp hΩ hb hΓΩ hu
-      fun x hx => absurd hx (disjoint_iff_inter_eq_empty.1 hΓ ▸ notMem_empty x)⟩
+    W1p.mem_w1pVanishingOnSubmodule_of_frontierTrace_ae_eq_zero_of_forall_mem_closure_inter hp hΩ
+      hb hΓΩ hu fun x hx => absurd hx (disjoint_iff_inter_eq_empty.1 hΓ ▸ notMem_empty x)⟩
 
 end TauCeti
