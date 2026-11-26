@@ -96,15 +96,19 @@ theorem pushout_jointly_surjective (m : (pushout i j : CompHaus.{u})) :
     CompHausLike.ofHom _ ⟨fun y ↦ ⟨pushout.inr i j y, .inr ⟨y, rfl⟩⟩, by fun_prop⟩
   have hab : i ≫ a = j ≫ b := by
     ext s
-    exact congr($(pushout.condition (f := i) (g := j)) s)
+    simp only [a, b, ConcreteCategory.comp_apply, CompHausLike.hom_ofHom, ContinuousMap.coe_mk]
+    rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, pushout.condition]
   let incl : CompHaus.of K ⟶ pushout i j :=
     CompHausLike.ofHom _ ⟨Subtype.val, continuous_subtypeVal⟩
   have hid : pushout.desc a b hab ≫ incl = 𝟙 _ := by
     apply pushout.hom_ext <;> ext <;> simp [a, b, incl]
   -- The pushout factors through the union `K` of the two images, so every point lies in `K`.
-  have hm : incl (pushout.desc a b hab m) = m := congr($hid m)
-  rw [← hm]
-  exact (pushout.desc a b hab m).property
+  have hm : incl (pushout.desc a b hab m) = m := by
+    rw [← ConcreteCategory.comp_apply, hid, ConcreteCategory.id_apply]
+  simp only [incl, CompHausLike.hom_ofHom, ContinuousMap.coe_mk] at hm
+  have hK := (pushout.desc a b hab m).property
+  rw [Set.mem_union, Set.mem_range, Set.mem_range] at hK
+  rwa [← hm]
 
 variable {i j} in
 /-- Two continuous maps on a pushout of compact Hausdorff spaces that agree on both legs are
