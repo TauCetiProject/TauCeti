@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import TauCeti.Analysis.PDE.Vortex.Deformation
@@ -754,6 +755,20 @@ theorem gaugeFixedZerothOrder_eq_toEuclideanLin (w v : EuclideanSpace ℝ (Fin 4
     gaugeFixedZerothOrder w v = (gaugeFixedZerothOrderMatrix w).toEuclideanLin v := by
   ext i
   simp [gaugeFixedZerothOrder_apply, Matrix.toLpLin_apply, Matrix.mulVec, dotProduct]
+
+/-- The adjoint of the zeroth-order part at a value `w` is the transpose of its matrix. -/
+@[simp]
+theorem adjoint_gaugeFixedZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
+    ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w) v =
+      WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * v j := by
+  -- `gaugeFixedZerothOrder w` is the Euclidean map of its matrix, whose adjoint is the transpose.
+  have h : gaugeFixedZerothOrder w =
+      (gaugeFixedZerothOrderMatrix w).toEuclideanLin.toContinuousLinearMap :=
+    ContinuousLinearMap.ext (gaugeFixedZerothOrder_eq_toEuclideanLin w)
+  rw [h, ← LinearMap.adjoint_toContinuousLinearMap,
+    ← Matrix.toEuclideanLin_conjTranspose_eq_adjoint, Matrix.conjTranspose_eq_transpose_of_trivial]
+  ext i
+  simp [Matrix.toLpLin_apply, Matrix.mulVec, dotProduct, Matrix.transpose_apply]
 
 /-- The gauge-fixed operators at two fields `x` and `x'` differ by multiplication by the
 zeroth-order part `gaugeFixedZerothOrder (x z - x' z)`, pointwise and without any regularity of the
