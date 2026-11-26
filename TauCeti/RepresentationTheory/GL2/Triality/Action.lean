@@ -44,6 +44,8 @@ factors permutes the three copies of `GL₂(R)`. This is the action on the sympl
   `m ⊗ v ↦ g₀ m g₂ᵀ ⊗ g₁ v`.
 * `TauCeti.GL2Triality.representation_inr_swap_tmul`: the transposition `(0 2)` acts by
   `m ⊗ v ↦ mᵀ ⊗ v`.
+* `TauCeti.GL2Triality.representation_inr_mul_inl_mul_inr_inv`: conjugation by a permutation
+  permutes the three copies of `GL₂(R)`.
 
 ## References
 
@@ -193,6 +195,17 @@ theorem representation_inr_swap_tmul (m : Matrix (Fin 2) (Fin 2) R) (v : Fin 2 �
     linearMap_ext_vecMulVec_tmul fun a b c ↦ by
       simp [representation_vecMulVec_tmul, transpose_vecMulVec, Equiv.swap_apply_of_ne_of_ne]
   simp [h]
+
+/-- Conjugating the action of a triple of invertible matrices by a permutation `σ` of the tensor
+factors permutes the three copies of `GL₂(R)`: the matrix in position `k` moves to position
+`σ k`. -/
+theorem representation_inr_mul_inl_mul_inr_inv (σ : Equiv.Perm (Fin 3))
+    (g : Fin 3 → GL (Fin 2) R) :
+    representation R (SemidirectProduct.inr σ) * representation R (SemidirectProduct.inl g) *
+        representation R (SemidirectProduct.inr σ⁻¹) =
+      representation R (SemidirectProduct.inl (g ∘ σ.symm)) := by
+  rw [← map_mul, ← map_mul, ← SemidirectProduct.inl_aut]
+  rfl
 
 end Action
 
