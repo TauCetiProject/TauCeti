@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
 public import TauCeti.Analysis.PDE.FundamentalSolution.FourierMultiplier
+import TauCeti.Analysis.Normed.Group.Bounded
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Hessian
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.MeasureTheory.Function.Lp.Integral.BoundedSmul
 
 /-!
@@ -33,16 +35,17 @@ the Calderón–Zygmund theory asks of an `L²`-bounded operator before it bound
 
 For `φ` smooth with compact support, the Newtonian potential `u = Gₙ ⋆ φ` solves `-Δu = φ`, so
 `T_{m_{v,w}} φ` should be `-∂_v ∂_w u`. The identity `∂_v ∂_w = T_{m_{v,w}} ∘ Δ` holds on Schwartz
-functions, and `u` is not one, but it extends to smooth solutions of Poisson's equation that grow
-slowly enough at infinity
+functions, and `u` is not one, but the identity extends to smooth solutions of Poisson's equation
+that grow slowly enough at infinity
 (`TauCeti.coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp_of_laplacian_eq_neg`).
 For `n ≥ 3` the potential decays: `u = O(‖x‖ ^ (2 - n))` and `Du = O(‖x‖ ^ (1 - n))`
 (`TauCeti.norm_newtonianKernel_convolution_le`,
-`TauCeti.norm_fderiv_newtonianKernel_convolution_le`). Hence `T_{m_{v,w}} φ = -∂_v ∂_w u` almost
-everywhere (`TauCeti.coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp`). In dimension one `u` grows
-linearly and `Du` is bounded, which is still slow enough. Since `T_{m_{v,w}} = -R_v R_w` for the
-Riesz transforms, this gives `D²u(v, w) = R_v R_w φ` for `n = 1` and `n ≥ 3`
-(`TauCeti.coeFn_rieszTransform_rieszTransform_toLp`).
+`TauCeti.norm_fderiv_newtonianKernel_convolution_le`). In dimension one `u` grows linearly
+(`TauCeti.norm_newtonianKernel_one_convolution_le`) and `Du` is bounded, which is still slow
+enough. Hence `T_{m_{v,w}} φ = -∂_v ∂_w u` almost everywhere for `n = 1` and `n ≥ 3`
+(`TauCeti.coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp`). Since `T_{m_{v,w}} = -R_v R_w` for
+the Riesz transforms, this gives `D²u(v, w) = R_v R_w φ`
+(`TauCeti.coeFn_rieszTransform_rieszTransform_toLp_newtonianKernel`).
 
 Off the support of `φ`, integrating by parts twice moves the derivatives from `φ` onto the
 kernel: `D²u(x)(v, w) = ∫ D²Gₙ(x - y)(v, w) φ(y) dy`
@@ -59,9 +62,9 @@ converges almost everywhere along a subsequence.
 * `TauCeti.iteratedFDeriv_two_newtonianKernel_convolution_apply_of_notMem_tsupport`: the second
   derivatives of the Newtonian potential off the support of the density.
 * `TauCeti.coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp`: `T_{m_{v,w}} φ = -D²(Gₙ ⋆ φ)(v, w)`
-  for `φ` smooth with compact support.
-* `TauCeti.coeFn_rieszTransform_rieszTransform_toLp`: `D²(Gₙ ⋆ φ)(v, w) = R_v R_w φ` for `n = 1`
-  and `n ≥ 3`.
+  for `φ` smooth with compact support, `n = 1` or `n ≥ 3`.
+* `TauCeti.coeFn_rieszTransform_rieszTransform_toLp_newtonianKernel`:
+  `D²(Gₙ ⋆ φ)(v, w) = R_v R_w φ` for `n = 1` and `n ≥ 3`.
 * `TauCeti.ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral`: the kernel representation of
   `T_{m_{v,w}}` off the support of its argument.
 
@@ -84,54 +87,7 @@ open scoped Convolution ContDiff
 
 variable {n : ℕ}
 
-/-- A bound `g x ≤ K ‖x‖ ^ b` for large `‖x‖` makes `‖x‖ ^ c g x` tend to zero at infinity once
-`c + b < 0`. -/
-private theorem tendsto_rpow_mul_cocompact_of_le {g : EuclideanSpace ℝ (Fin n) → ℝ}
-    {R K b c : ℝ} (hbc : c + b < 0) (hg0 : ∀ x, 0 ≤ g x)
-    (hg : ∀ x, R ≤ ‖x‖ → g x ≤ K * ‖x‖ ^ b) :
-    Tendsto (fun x => ‖x‖ ^ c * g x) (cocompact _) (𝓝 0) := by
-  have hlim : Tendsto (fun x : EuclideanSpace ℝ (Fin n) => K * ‖x‖ ^ (c + b)) (cocompact _)
-      (𝓝 0) := by
-    have h := ((tendsto_rpow_neg_atTop (y := -(c + b)) (by linarith)).comp
-      (tendsto_norm_cocompact_atTop (E := EuclideanSpace ℝ (Fin n)))).const_mul K
-    rw [mul_zero] at h
-    exact h.congr fun x => by simp only [Function.comp_apply, neg_neg]
-  refine squeeze_zero' (Eventually.of_forall fun x => mul_nonneg (by positivity) (hg0 x)) ?_ hlim
-  filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop (max R 1)] with x hx
-  have hx0 : 0 < ‖x‖ := zero_lt_one.trans_le ((le_max_right _ _).trans hx)
-  calc ‖x‖ ^ c * g x ≤ ‖x‖ ^ c * (K * ‖x‖ ^ b) :=
-        mul_le_mul_of_nonneg_left (hg x ((le_max_left _ _).trans hx)) (by positivity)
-    _ = K * ‖x‖ ^ (c + b) := by rw [Real.rpow_add hx0]; ring
-
-/-- Far from the support, `(‖x‖ - R) ^ b ≤ 2 ^ (-b) ‖x‖ ^ b` for a nonpositive exponent `b`. -/
-private theorem sub_rpow_le_two_rpow_neg_mul_rpow {R t b : ℝ} (hR : 0 < R) (ht : 2 * R ≤ t)
-    (hb : b ≤ 0) : (t - R) ^ b ≤ 2 ^ (-b) * t ^ b := by
-  have ht0 : 0 < t := by linarith
-  calc (t - R) ^ b ≤ (t / 2) ^ b :=
-        Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hb
-    _ = 2 ^ (-b) * t ^ b := by
-        rw [Real.div_rpow ht0.le zero_le_two, Real.rpow_neg zero_le_two]
-        ring
-
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {φ : EuclideanSpace ℝ (Fin n) → F}
-
-/-- In dimension one the Newtonian potential grows at most linearly:
-`‖(G₁ ⋆ φ) x‖ ≤ ‖x‖ ∫ ‖φ‖` once `φ` vanishes off `closedBall 0 R` and `R ≤ ‖x‖`, because
-`G₁(z) = -‖z‖ / 2`. -/
-private theorem norm_newtonianKernel_one_convolution_le {φ : EuclideanSpace ℝ (Fin 1) → F}
-    (hφ : Integrable φ) {R : ℝ} (hR : Function.support φ ⊆ closedBall 0 R)
-    {x : EuclideanSpace ℝ (Fin 1)} (hx : R ≤ ‖x‖) :
-    ‖(newtonianKernel 1 ⋆ φ) x‖ ≤ ‖x‖ * ∫ y, ‖φ y‖ := by
-  rw [convolution_lsmul_swap, ← integral_const_mul]
-  refine norm_integral_le_of_norm_le (hφ.norm.const_mul _) (ae_of_all _ fun y => ?_)
-  by_cases hy : φ y = 0
-  · simp [hy]
-  have hyR : ‖y‖ ≤ R := mem_closedBall_zero_iff.1 (hR hy)
-  rw [norm_smul, newtonianKernel_one, Real.norm_eq_abs, abs_div, abs_neg, abs_norm,
-    abs_two]
-  refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
-  rw [div_le_iff₀ two_pos]
-  linarith [norm_sub_le x y]
 
 /-- For `n = 1` and for `n ≥ 3`, the Newtonian potential `u = Gₙ ⋆ φ` of a continuous `φ` with
 compact support satisfies the growth conditions of
@@ -146,7 +102,7 @@ private theorem tendsto_newtonianKernel_convolution_growth (hn : n = 1 ∨ 3 ≤
       Tendsto (fun x => ‖x‖ ^ ((Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) : ℝ) / 2 - 1) *
         ‖fderiv ℝ (newtonianKernel n ⋆ φ) x‖) (cocompact _) (𝓝 0) := by
   have hn1 : (1 : ℝ) ≤ n := by rcases hn with rfl | hn <;> [norm_num; exact_mod_cast (by omega)]
-  rw [finrank_euclideanSpace_fin]
+  rw [finrank_euclideanSpace_fin, ← Metric.cobounded_eq_cocompact]
   obtain ⟨R₀, hR₀⟩ := hc.isCompact.isBounded.subset_closedBall 0
   set R := max R₀ 1
   have hR : 0 < R := zero_lt_one.trans_le (le_max_right _ _)
@@ -154,37 +110,41 @@ private theorem tendsto_newtonianKernel_convolution_growth (hn : n = 1 ∨ 3 ≤
     (subset_tsupport φ).trans (hR₀.trans (closedBall_subset_closedBall (le_max_left _ _)))
   have hV := volume_real_unitBall_pos n
   set I := ∫ y, ‖φ y‖
-  refine ⟨?_, tendsto_rpow_mul_cocompact_of_le (R := 2 * R)
-    (K := 2 ^ (-(1 - (n : ℝ))) *
+  -- Beyond `2R`, `‖x‖ - R` is comparable to `‖x‖`.
+  have hsub : ∀ {b : ℝ} {x : EuclideanSpace ℝ (Fin n)}, 2 * R ≤ ‖x‖ →
+      (‖x‖ - R) ^ b ≤ 2 ^ |b| * ‖x‖ ^ b := fun hx =>
+    rpow_le_two_rpow_abs_mul (by linarith) (by linarith)
+  refine ⟨?_, tendsto_norm_rpow_mul_cobounded_of_le (R := 2 * R)
+    (K := 2 ^ |1 - (n : ℝ)| *
       (((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ * I))
     (b := 1 - n) (by linarith) (fun x => norm_nonneg _) fun x hx => ?_⟩
   · rcases hn with rfl | hn
     · -- In dimension one, `‖u x‖ ≤ ‖x‖ ∫ ‖φ‖`.
-      exact tendsto_rpow_mul_cocompact_of_le (R := R) (K := I) (b := 1) (by norm_num)
+      exact tendsto_norm_rpow_mul_cobounded_of_le (R := R) (K := I) (b := 1) (by norm_num)
         (fun x => norm_nonneg _) fun x hx => by
           rw [Real.rpow_one, mul_comm]
           exact norm_newtonianKernel_one_convolution_le (hφ.integrable_of_hasCompactSupport hc)
             hRs hx
     · -- For `n ≥ 3`, `‖u x‖ ≤ Cₙ (‖x‖ - R) ^ (2 - n) ∫ ‖φ‖`.
       have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
-      refine tendsto_rpow_mul_cocompact_of_le (R := 2 * R)
-        (K := 2 ^ (-(2 - (n : ℝ))) *
+      refine tendsto_norm_rpow_mul_cobounded_of_le (R := 2 * R)
+        (K := 2 ^ |2 - (n : ℝ)| *
           (((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ * I))
         (b := 2 - n) (by linarith) (fun x => norm_nonneg _) fun x hx => ?_
       have hCn : 0 ≤ ((n : ℝ) * ((n : ℝ) - 2) *
           volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
         inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith)) hV.le)
       refine (norm_newtonianKernel_convolution_le hn hRs (by linarith)).trans ?_
-      have h := sub_rpow_le_two_rpow_neg_mul_rpow hR hx (b := 2 - n) (by linarith)
+      have h := hsub (b := 2 - n) hx
       calc _ = _ * (‖x‖ - R) ^ (2 - (n : ℝ)) * I := rfl
         _ ≤ ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-            (2 ^ (-(2 - (n : ℝ))) * ‖x‖ ^ (2 - (n : ℝ))) * I := by gcongr
+            (2 ^ |2 - (n : ℝ)| * ‖x‖ ^ (2 - (n : ℝ))) * I := by gcongr
         _ = _ := by ring
   · -- In every dimension, `‖Du x‖ ≤ Cₙ' (‖x‖ - R) ^ (1 - n) ∫ ‖φ‖`.
     refine (norm_fderiv_newtonianKernel_convolution_le hRs (by linarith)).trans ?_
-    have h := sub_rpow_le_two_rpow_neg_mul_rpow hR hx (b := 1 - n) (by linarith)
+    have h := hsub (b := 1 - n) hx
     calc _ ≤ ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-            (2 ^ (-(1 - (n : ℝ))) * ‖x‖ ^ (1 - (n : ℝ))) * I := by
+            (2 ^ |1 - (n : ℝ)| * ‖x‖ ^ (1 - (n : ℝ))) * I := by
           gcongr
       _ = _ := by ring
 
@@ -231,16 +191,15 @@ variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteS
 
 open scoped Laplacian LineDeriv SchwartzMap
 
-/-- **The Hessian multiplier on smooth functions with compact support.** For `n ≥ 3` and `φ`
-smooth with compact support on `ℝⁿ`, the Fourier multiplier `T_{m_{v,w}}` with symbol
+/-- **The Hessian multiplier on smooth functions with compact support.** For `n = 1` or `n ≥ 3`
+and `φ` smooth with compact support on `ℝⁿ`, the Fourier multiplier `T_{m_{v,w}}` with symbol
 `⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²` sends `φ` to `-D²(Gₙ ⋆ φ)(v, w)`. Since `-Δ (Gₙ ⋆ φ) = φ`, this says that
 `T_{m_{v,w}} = ∂_v ∂_w Δ⁻¹` on such functions, with `Δ⁻¹` given by the Newtonian potential.
 
-The Newtonian potential `u = Gₙ ⋆ φ` is not a Schwartz function, so the identity
-`∂_v ∂_w = T_{m_{v,w}} ∘ Δ` on Schwartz functions does not apply to it directly. It applies to
-truncations `χ_R u`, which agree with `u` on `ball 0 R` and whose Laplacians tend to `-φ` in `L²`
-because `u` decays like `‖x‖ ^ (2 - n)` and `n ≥ 3`. -/
-theorem coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp (hn : 3 ≤ n) (hφ : ContDiff ℝ ∞ φ)
+The Newtonian potential `u = Gₙ ⋆ φ` is not a Schwartz function, but it grows slowly enough for
+`TauCeti.coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp_of_laplacian_eq_neg`. -/
+theorem coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp (hn : n = 1 ∨ 3 ≤ n)
+    (hφ : ContDiff ℝ ∞ φ)
     (hc : HasCompactSupport φ) (v w : EuclideanSpace ℝ (Fin n)) :
     Lp.fourierMultiplierCLM F (hessianSymbolLp v w)
         ((hφ.continuous.memLp_of_hasCompactSupport (μ := volume) (p := 2) hc).toLp φ) =ᵐ[volume]
@@ -248,8 +207,8 @@ theorem coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp (hn : 3 ≤ n) (hφ : Co
   coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp_of_laplacian_eq_neg
     (contDiff_newtonianKernel_convolution hφ hc)
     (laplacian_newtonianKernel_convolution (by omega) (by omega) (hφ.of_le (by simp)) hc) _ hc
-    (tendsto_newtonianKernel_convolution_growth (Or.inr hn) hφ.continuous hc).1
-    (tendsto_newtonianKernel_convolution_growth (Or.inr hn) hφ.continuous hc).2 v w
+    (tendsto_newtonianKernel_convolution_growth hn hφ.continuous hc).1
+    (tendsto_newtonianKernel_convolution_growth hn hφ.continuous hc).2 v w
 
 /-- **Second derivatives of the Newtonian potential are Riesz transforms.** For `n = 1` or
 `n ≥ 3` and `φ` smooth with compact support on `ℝⁿ`, the Newtonian potential `u = Gₙ ⋆ φ`, the
@@ -261,8 +220,8 @@ almost everywhere, where `R_v` is the Riesz transform with symbol `-i ⟪ξ, v�
 Fourier side both sides have symbol `-⟪ξ, v⟫ ⟪ξ, w⟫ / ‖ξ‖²` times that of `φ`. In dimension one
 `R_v R_w = -⟪v, w⟫` and the identity is `u'' = -φ`; in the plane the logarithmic kernel takes the
 place of `Gₙ` (`TauCeti.coeFn_rieszTransform_rieszTransform_toLp_planarNewtonianKernel`). -/
-theorem coeFn_rieszTransform_rieszTransform_toLp (hn : n = 1 ∨ 3 ≤ n) (hφ : ContDiff ℝ ∞ φ)
-    (hc : HasCompactSupport φ) (v w : EuclideanSpace ℝ (Fin n)) :
+theorem coeFn_rieszTransform_rieszTransform_toLp_newtonianKernel (hn : n = 1 ∨ 3 ≤ n)
+    (hφ : ContDiff ℝ ∞ φ) (hc : HasCompactSupport φ) (v w : EuclideanSpace ℝ (Fin n)) :
     rieszTransform F v (rieszTransform F w
         ((hφ.continuous.memLp_of_hasCompactSupport (μ := volume) (p := 2) hc).toLp φ)) =ᵐ[volume]
       fun x => iteratedFDeriv ℝ 2 (newtonianKernel n ⋆ φ) x ![v, w] :=
@@ -315,7 +274,8 @@ theorem ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral (hn : 3 ≤ n)
     (tendstoInMeasure_of_tendsto_Lp ((T.continuous.tendsto f).comp hΦ)).exists_seq_tendsto_ae
   have hsmooth : ∀ᵐ x, ∀ k, T ((hφL k).toLp (φ k)) x =
       -iteratedFDeriv ℝ 2 (newtonianKernel n ⋆ φ k) x ![v, w] :=
-    ae_all_iff.2 fun k => coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp hn (hφ k) (hφc k) v w
+    ae_all_iff.2 fun k =>
+      coeFn_fourierMultiplierCLM_hessianSymbolLp_toLp (Or.inr hn) (hφ k) (hφc k) v w
   filter_upwards [hae, hsmooth] with x hx hxk hxs
   rw [integral_congr_ae (hff'.mono fun y hy => by rw [hy])]
   obtain ⟨η, hη, hxη, B, hB, hkc, hkB⟩ :=

@@ -10,6 +10,8 @@ import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
+import TauCeti.Analysis.Normed.Group.Bounded
+import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 
 /-!
 # Second derivatives of solutions of Poisson's equation as Riesz transforms
@@ -73,31 +75,6 @@ namespace TauCeti
 open ContinuousLinearMap Filter InnerProductSpace MeasureTheory Metric Module Set Topology
 open scoped ContDiff Laplacian Gradient LineDeriv SchwartzMap
 
-/-- On the annulus `R ≤ t ≤ 2R`, the power `t ^ a` is at most `2 ^ |a|` times `R ^ a`. -/
-private theorem rpow_le_two_rpow_abs_mul_rpow {R t a : ℝ} (hR : 0 < R) (hRt : R ≤ t)
-    (ht : t ≤ 2 * R) : t ^ a ≤ 2 ^ |a| * R ^ a := by
-  have h1 : 1 ≤ t / R := (one_le_div hR).2 hRt
-  have h2 : t / R ≤ 2 := (div_le_iff₀ hR).2 (by linarith)
-  have heq : t ^ a = (t / R) ^ a * R ^ a := by
-    rw [← Real.mul_rpow (by positivity) hR.le, div_mul_cancel₀ _ hR.ne']
-  rw [heq]
-  refine mul_le_mul_of_nonneg_right ?_ (by positivity)
-  rcases le_or_gt 0 a with ha | ha
-  · rw [abs_of_nonneg ha]
-    exact Real.rpow_le_rpow (by positivity) h2 ha
-  · exact (Real.rpow_le_one_of_one_le_of_nonpos h1 ha.le).trans
-      (Real.one_le_rpow one_le_two (abs_nonneg a))
-
-/-- A bound `g x ≤ δ` for large `‖x‖` from `g → 0` along `cocompact E`. -/
-private theorem exists_forall_le_of_tendsto_cocompact {E : Type*} [NormedAddCommGroup E]
-    [ProperSpace E] {g : E → ℝ}
-    (hg : Tendsto g (cocompact E) (𝓝 0)) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ R₁, ∀ x : E, R₁ ≤ ‖x‖ → g x ≤ δ := by
-  have h := hg.eventually (ge_mem_nhds hδ)
-  rw [← cobounded_eq_cocompact] at h
-  obtain ⟨R₁, -, hR₁⟩ := Filter.hasBasis_cobounded_norm.eventually_iff.1 h
-  exact ⟨R₁, fun x hx => hR₁ hx⟩
-
 /-- A growth bound `‖x‖ ^ (-a) g x ≤ δ` for `R ≤ ‖x‖` bounds `g` on the annulus
 `R ≤ ‖x‖ ≤ 2R` by `δ 2 ^ |a| R ^ a`. -/
 private theorem le_mul_two_rpow_abs_mul_rpow_of_rpow_neg_mul_le {E : Type*}
@@ -108,7 +85,7 @@ private theorem le_mul_two_rpow_abs_mul_rpow_of_rpow_neg_mul_le {E : Type*}
   calc g x = ‖x‖ ^ a * (‖x‖ ^ (-a) * g x) := by
         rw [← mul_assoc, ← Real.rpow_add hx0, add_neg_cancel, Real.rpow_zero, one_mul]
     _ ≤ (2 ^ |a| * R ^ a) * δ :=
-        mul_le_mul (rpow_le_two_rpow_abs_mul_rpow hR hx hx2) (hg x hx)
+        mul_le_mul (rpow_le_two_rpow_abs_mul (by linarith) hx2) (hg x hx)
           (mul_nonneg (by positivity) (hg0 x)) (by positivity)
     _ = δ * 2 ^ |a| * R ^ a := by ring
 
@@ -126,14 +103,11 @@ private theorem norm_laplacian_smul_add_le (hu : ContDiff ℝ ∞ u) (hΔ : Δ u
     {R₀ R C a b : ℝ} (hf : ∀ y : E, R₀ < ‖y‖ → f y = 0) (hR₀ : R₀ < R) (hR : 0 < R)
     {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχ1 : ∀ x, ‖x‖ < R → χ =ᶠ[𝓝 x] fun _ => 1)
     (hχ0 : ∀ x, 2 * R < ‖x‖ → χ =ᶠ[𝓝 x] fun _ => 0) (hχ' : ∀ x, ‖fderiv ℝ χ x‖ ≤ C / R)
-    (hχ'' : ∀ x, ‖Δ χ x‖ ≤ C / R ^ 2) (ha0 : 0 ≤ a) (hb0 : 0 ≤ b)
+    (hχ'' : ∀ x, ‖Δ χ x‖ ≤ C / R ^ 2) (hC : 0 ≤ C) (ha0 : 0 ≤ a) (hb0 : 0 ≤ b)
     (ha : ∀ x : E, R ≤ ‖x‖ → ‖x‖ ≤ 2 * R → ‖u x‖ ≤ a)
     (hb : ∀ x : E, R ≤ ‖x‖ → ‖x‖ ≤ 2 * R → ‖fderiv ℝ u x‖ ≤ b) (x : E) :
     ‖Δ (fun y => χ y • u y) x + f x‖ ≤
       (closedBall (0 : E) (2 * R)).indicator (fun _ => 2 * (b * (C / R)) + C / R ^ 2 * a) x := by
-  have hC : 0 ≤ C := by
-    have := (norm_nonneg _).trans (hχ' 0)
-    rwa [le_div_iff₀ hR, zero_mul] at this
   have hK : 0 ≤ 2 * (b * (C / R)) + C / R ^ 2 * a := by positivity
   by_cases hxR : ‖x‖ < R
   · -- Inside `ball 0 R` the truncation is `u` itself, and `Δu = -f`.
@@ -174,11 +148,13 @@ variable [MeasurableSpace E] [BorelSpace E]
 private theorem rpow_neg_mul_measureReal_closedBall_rpow {R : ℝ} (hR : 0 < R) :
     R ^ (-((finrank ℝ E : ℝ) / 2)) * volume.real (closedBall (0 : E) (2 * R)) ^ (1 / 2 : ℝ) =
       2 ^ ((finrank ℝ E : ℝ) / 2) * volume.real (ball (0 : E) 1) ^ (1 / 2 : ℝ) := by
+  set d : ℝ := (finrank ℝ E : ℝ)
+  have hRd : R ^ (-(d / 2)) * R ^ (d / 2) = 1 := by
+    rw [← Real.rpow_add hR, neg_add_cancel, Real.rpow_zero]
   rw [Measure.addHaar_real_closedBall _ _ (by positivity),
     Real.mul_rpow (by positivity) measureReal_nonneg, ← Real.rpow_natCast,
-    ← Real.rpow_mul (by positivity), Real.mul_rpow zero_le_two hR.le, ← mul_assoc,
-    ← mul_assoc, mul_comm _ (2 ^ _), mul_assoc (2 ^ _), ← Real.rpow_add hR, mul_one_div,
-    neg_add_cancel, Real.rpow_zero, mul_one]
+    ← Real.rpow_mul (by positivity), Real.mul_rpow zero_le_two hR.le, mul_one_div]
+  linear_combination (2 ^ (d / 2) * volume.real (ball (0 : E) 1) ^ (1 / 2 : ℝ)) * hRd
 
 /-- **The `L²` truncation error.** Under the hypotheses of `norm_laplacian_smul_add_le`, the
 `L²` norm of `Δ(χ u) + f` is at most the pointwise bound `2 b C / R + a C / R²` times the square
@@ -187,15 +163,12 @@ private theorem norm_toLp_laplacian_add_le (hu : ContDiff ℝ ∞ u) (hΔ : Δ u
     (hf : MemLp f 2 volume) {R₀ R C a b : ℝ} (hf0 : ∀ y : E, R₀ < ‖y‖ → f y = 0) (hR₀ : R₀ < R)
     (hR : 0 < R) {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
     (hχ1 : ∀ x, ‖x‖ < R → χ =ᶠ[𝓝 x] fun _ => 1) (hχ0 : ∀ x, 2 * R < ‖x‖ → χ =ᶠ[𝓝 x] fun _ => 0)
-    (hχ' : ∀ x, ‖fderiv ℝ χ x‖ ≤ C / R) (hχ'' : ∀ x, ‖Δ χ x‖ ≤ C / R ^ 2) (ha0 : 0 ≤ a)
-    (hb0 : 0 ≤ b) (ha : ∀ x : E, R ≤ ‖x‖ → ‖x‖ ≤ 2 * R → ‖u x‖ ≤ a)
+    (hχ' : ∀ x, ‖fderiv ℝ χ x‖ ≤ C / R) (hχ'' : ∀ x, ‖Δ χ x‖ ≤ C / R ^ 2) (hC : 0 ≤ C)
+    (ha0 : 0 ≤ a) (hb0 : 0 ≤ b) (ha : ∀ x : E, R ≤ ‖x‖ → ‖x‖ ≤ 2 * R → ‖u x‖ ≤ a)
     (hb : ∀ x : E, R ≤ ‖x‖ → ‖x‖ ≤ 2 * R → ‖fderiv ℝ u x‖ ≤ b) :
     ‖(Δ ((hχc.smul_right (f' := u)).toSchwartzMap (hχ.smul hu))).toLp 2 + hf.toLp f‖ ≤
       (2 * (b * (C / R)) + C / R ^ 2 * a) *
         volume.real (closedBall (0 : E) (2 * R)) ^ (1 / 2 : ℝ) := by
-  have hC : 0 ≤ C := by
-    have := (norm_nonneg _).trans (hχ' 0)
-    rwa [le_div_iff₀ hR, zero_mul] at this
   set c := 2 * (b * (C / R)) + C / R ^ 2 * a
   have hc0 : 0 ≤ c := by positivity
   set S := (hχc.smul_right (f' := u)).toSchwartzMap (hχ.smul hu)
@@ -209,7 +182,7 @@ private theorem norm_toLp_laplacian_add_le (hu : ContDiff ℝ ∞ u) (hΔ : Δ u
         (hμs := (measure_closedBall_lt_top (μ := volume)).ne) (c := c)] with x h₁ h₂ h₃ h₄
     rw [h₁, Pi.add_apply, h₂, h₃, h₄, SchwartzMap.laplacian_apply, norm_indicator_eq_indicator_norm,
       Real.norm_of_nonneg hc0]
-    exact norm_laplacian_smul_add_le hu hΔ hf0 hR₀ hR hχ hχ1 hχ0 hχ' hχ'' ha0 hb0 ha hb x
+    exact norm_laplacian_smul_add_le hu hΔ hf0 hR₀ hR hχ hχ1 hχ0 hχ' hχ'' hC ha0 hb0 ha hb x
   · rw [norm_indicatorConstLp two_ne_zero ENNReal.ofNat_ne_top, Real.norm_of_nonneg hc0,
       ENNReal.toReal_ofNat]
 
@@ -279,13 +252,14 @@ private theorem exists_schwartzMap_eventuallyEq_tendsto_toLp_laplacian_add
     rw [div_mul_eq_mul_div, div_lt_iff₀ (by linarith)]
     nlinarith
   have hδ : 0 < δ := div_pos hε (by linarith)
-  obtain ⟨R₁, hR₁⟩ := exists_forall_le_of_tendsto_cocompact hu₀ hδ
-  obtain ⟨R₂, hR₂⟩ := exists_forall_le_of_tendsto_cocompact hu₁ hδ
+  rw [← Metric.cobounded_eq_cocompact] at hu₀ hu₁
+  obtain ⟨R₁, hR₁⟩ := exists_forall_le_of_tendsto_cobounded hu₀ hδ
+  obtain ⟨R₂, hR₂⟩ := exists_forall_le_of_tendsto_cobounded hu₁ hδ
   obtain ⟨N, hN⟩ := (hR.eventually (eventually_ge_atTop (max R₁ R₂))).exists_forall_of_atTop
   refine ⟨N, fun m hm => ?_⟩
   have hRm0 := hR0 m
   have hbound := norm_toLp_laplacian_add_le hu hΔ hf hf0 (hR₀R m) hRm0 (hχ m) (hχc m) (hχ1 m)
-    (hχ0 m) (hχ' m) (hχ'' m) (by positivity) (by positivity)
+    (hχ0 m) (hχ' m) (hχ'' m) hC0 (by positivity) (by positivity)
     (fun x hx hx2 => le_mul_two_rpow_abs_mul_rpow_of_rpow_neg_mul_le (δ := δ) (a := 2 - d / 2) hRm0
       (fun x => norm_nonneg (u x)) (fun x hx => by
         rw [neg_sub]
