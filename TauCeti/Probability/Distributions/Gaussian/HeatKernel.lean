@@ -30,8 +30,12 @@ so the score of `N(m, v • 1)` is `-(y - m) / v`.
 * `TauCeti.Probability.contDiff_multivariateGaussianPDFReal_smul_one` and
   `TauCeti.Probability.exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le`: the
   density of `N(m, v • 1)` is smooth and all of its derivatives are bounded.
+* `TauCeti.Probability.exists_one_add_norm_pow_mul_multivariateGaussianPDFReal_smul_one_le`: the
+  density of `N(0, v • 1)` absorbs every polynomial weight `(1 + ‖z‖)^k`.
 * `TauCeti.Probability.hasGradientAt_multivariateGaussianPDFReal_smul_one`: the density `φ` of
   `N(m, v • 1)` has gradient `-v⁻¹ φ(y) (y - m)`, so its score is `-(y - m) / v`.
+* `TauCeti.Probability.hasFDerivAt_multivariateGaussianPDFReal_smul_one_smul_self`: for the density
+  `φ` of `N(0, v • 1)`, the derivative of `z ↦ φ(z) z` is `φ(z) (1 - z ⊗ z / v)`.
 -/
 
 public section
@@ -88,6 +92,19 @@ theorem exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le {v : 
   rw [funext (multivariateGaussianPDFReal_smul_one hv m), iteratedFDeriv_comp_sub]
   exact hC _
 
+/-- For `v > 0`, the density of the centred isotropic Gaussian law `N(0, v • 1)` decays fast enough
+to absorb every polynomial weight: `(1 + ‖z‖)^k φ(z)` is bounded. -/
+theorem exists_one_add_norm_pow_mul_multivariateGaussianPDFReal_smul_one_le {v : ℝ} (hv : 0 < v)
+    (k : ℕ) :
+    ∃ C, ∀ z : EuclideanSpace ℝ ι,
+      (1 + ‖z‖) ^ k * multivariateGaussianPDFReal 0 (v • 1) z ≤ C := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_one_add_norm_pow_mul_heatKernel_le (E := EuclideanSpace ℝ ι) (half_pos hv) k
+  refine ⟨C * (4 * π * (2 * (v / 2))) ^
+    (-(Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ) / 2), fun z ↦ ?_⟩
+  rw [multivariateGaussianPDFReal_zero_smul_one hv]
+  exact (hC z).trans (mul_le_mul_of_nonneg_left (heatKernel_le (by positivity) z) hC0.le)
+
 /-- For `v > 0`, the isotropic Gaussian law `N(m, v • 1)` is Lebesgue measure weighted by the
 heat kernel at time `v / 2`, translated to `m`. -/
 theorem multivariateGaussian_smul_one_eq_withDensity_heatKernel {v : ℝ} (hv : 0 < v)
@@ -111,5 +128,22 @@ theorem hasGradientAt_multivariateGaussianPDFReal_smul_one {v : ℝ} (hv : 0 < v
   rw [ContinuousLinearMap.comp_id, show 2 * (v / 2) = v by ring] at h
   rw [funext (multivariateGaussianPDFReal_smul_one hv m), hasGradientAt_iff_hasFDerivAt]
   exact h
+
+/-- For `v > 0` and the density `φ` of the centred isotropic Gaussian law `N(0, v • 1)`, the
+derivative of `z ↦ φ(z) z` at `z` is `φ(z) (1 - z ⊗ z / v)`, where `z ⊗ z = rankOne ℝ z z` is the
+operator `w ↦ ⟪z, w⟫ • z`. -/
+theorem hasFDerivAt_multivariateGaussianPDFReal_smul_one_smul_self {v : ℝ} (hv : 0 < v)
+    (z : EuclideanSpace ℝ ι) :
+    HasFDerivAt (fun z ↦ multivariateGaussianPDFReal 0 (v • 1) z • z)
+      (multivariateGaussianPDFReal 0 (v • 1) z • ContinuousLinearMap.id ℝ _ -
+        (v⁻¹ * multivariateGaussianPDFReal 0 (v • 1) z) • InnerProductSpace.rankOne ℝ z z) z := by
+  have h := (hasGradientAt_multivariateGaussianPDFReal_smul_one hv 0 z).hasFDerivAt
+  refine (h.fun_smul (hasFDerivAt_id z)).congr_fderiv ?_
+  ext1 w
+  simp only [sub_zero, add_apply, smul_apply,
+    ContinuousLinearMap.id_apply, ContinuousLinearMap.smulRight_apply,
+    InnerProductSpace.toDual_apply_apply, sub_apply,
+    InnerProductSpace.rankOne_apply, real_inner_smul_left, mul_smul, id_eq]
+  module
 
 end TauCeti.Probability

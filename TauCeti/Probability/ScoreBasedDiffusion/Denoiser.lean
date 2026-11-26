@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Probability.DenoisingDiffusion.SmoothedDensity
 
 import TauCeti.Analysis.InnerProductSpace.Positive.Integral
-import TauCeti.Analysis.PDE.HeatKernel.Bounds
 
 /-!
 # The denoiser and the pointwise Tweedie formulas
@@ -67,18 +66,22 @@ namespace TauCeti.Probability
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The **denoiser**: the mean `p(y)⁻¹ ∫ φ_{s²}(y - c • x) x dμ₀(x)` of the posterior law of `X`
-given the observation `c • X + s • Z = y`, for `X` with law `μ₀` and an independent standard
-Gaussian vector `Z`. -/
+/-- The **denoiser** `p(y)⁻¹ ∫ φ_{s²}(y - c • x) x dμ₀(x)`. For a finite nonzero `μ₀` and
+`s ≠ 0` it is the mean of the posterior law of `X` given the observation `c • X + s • Z = y`, for
+`X` with law `μ₀` and an independent standard Gaussian vector `Z`, whenever `c ≠ 0` or `μ₀` has a
+first moment. Otherwise (`c = 0` and no first moment) the integral diverges and the denoiser is
+`0`, Bochner's value for a non-integrable integrand. -/
 def denoiser (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ) (y : EuclideanSpace ℝ ι) :
     EuclideanSpace ℝ ι :=
   (smoothedDensity μ₀ c s y)⁻¹ •
     ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • x ∂μ₀
 
-/-- The **posterior covariance**: the covariance operator
-`p(y)⁻¹ ∫ φ_{s²}(y - c • x) (x - m) ⊗ (x - m) dμ₀(x)` of the posterior law of `X` given the
-observation `c • X + s • Z = y`, where `m = denoiser μ₀ c s y` and `u ⊗ u = rankOne ℝ u u` is the
-operator `w ↦ ⟪u, w⟫ • u`. -/
+/-- The **posterior covariance** `p(y)⁻¹ ∫ φ_{s²}(y - c • x) (x - m) ⊗ (x - m) dμ₀(x)`, where
+`m = denoiser μ₀ c s y` and `u ⊗ u = rankOne ℝ u u` is the operator `w ↦ ⟪u, w⟫ • u`. For a finite
+nonzero `μ₀` and `s ≠ 0` it is the covariance operator of the posterior law of `X` given the
+observation `c • X + s • Z = y` whenever `c ≠ 0` or `μ₀` has a second moment. Otherwise (`c = 0`
+and no second moment) the integral diverges and the value is `0`, Bochner's value for a
+non-integrable integrand. -/
 def posteriorCov (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ) (y : EuclideanSpace ℝ ι) :
     EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι :=
   (smoothedDensity μ₀ c s y)⁻¹ •
@@ -100,73 +103,53 @@ theorem posteriorCov_def (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ) (
         rankOne ℝ (x - denoiser μ₀ c s y) (x - denoiser μ₀ c s y) ∂μ₀ :=
   (rfl)
 
-/-! ### Integrability of Gaussian moments -/
+/-! ### Moments of the noise -/
 
-section Integrability
+section Moments
 
-/-- The Gaussian density `φ_{s²}` decays fast enough to absorb a quadratic weight. -/
-private theorem exists_one_add_norm_sq_mul_pdf_le (hs : s ≠ 0) :
-    ∃ C, ∀ z : EuclideanSpace ℝ ι,
-      (1 + ‖z‖) ^ 2 * multivariateGaussianPDFReal 0 (s ^ 2 • 1) z ≤ C := by
-  have hv : 0 < s ^ 2 / 2 := by positivity
-  obtain ⟨C, hC0, hC⟩ :=
-    exists_one_add_norm_pow_mul_heatKernel_le (E := EuclideanSpace ℝ ι) hv 2
-  refine ⟨C * (4 * Real.pi * (2 * (s ^ 2 / 2))) ^
-    (-(Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ) / 2), fun z ↦ ?_⟩
-  rw [multivariateGaussianPDFReal_zero_smul_one (by positivity)]
-  exact (hC z).trans (mul_le_mul_of_nonneg_left (heatKernel_le (by positivity) z) hC0.le)
+/-- The unnormalized first moment `∫ φ_{s²}(y - c • x) (y - c • x) dμ₀(x)` of the noise
+`y - c • x`; it is `-s² ∇p(y)`. -/
+private def noiseFirstMoment (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ)
+    (y : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι :=
+  ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀
 
-/-- Against a finite measure, `x ↦ φ_{s²}(y - c • x) • g(y - c • x)` is integrable for every
-continuous `g` of at most quadratic growth. -/
-private theorem integrable_pdf_sub_smul_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0) {F : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {g : EuclideanSpace ℝ ι → F} (hg : Continuous g)
-    {K : ℝ} (hgK : ∀ z, ‖g z‖ ≤ K * (1 + ‖z‖) ^ 2) (y : EuclideanSpace ℝ ι) :
-    Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
-      g (y - c • x)) μ₀ := by
-  obtain ⟨C, hC⟩ := exists_one_add_norm_sq_mul_pdf_le (ι := ι) hs
-  have hφ : Continuous (multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1)) :=
-    (contDiff_multivariateGaussianPDFReal_smul_one (n := 0) (by positivity) 0).continuous
-  refine Integrable.of_bound (C := K * C)
-    ((hφ.smul hg).comp (by fun_prop : Continuous fun x : EuclideanSpace ℝ ι ↦ y - c • x)
-      |>.aestronglyMeasurable) (.of_forall fun x ↦ ?_)
-  set z := y - c • x
-  have hφz := multivariateGaussianPDFReal_nonneg (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1) z
-  have hK : 0 ≤ K := by simpa using (norm_nonneg _).trans (hgK 0)
-  rw [norm_smul, Real.norm_of_nonneg hφz]
-  calc multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * ‖g z‖
-      ≤ multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * (K * (1 + ‖z‖) ^ 2) :=
-        mul_le_mul_of_nonneg_left (hgK z) hφz
-    _ = K * ((1 + ‖z‖) ^ 2 * multivariateGaussianPDFReal 0 (s ^ 2 • 1) z) := by ring
-    _ ≤ K * C := mul_le_mul_of_nonneg_left (hC z) hK
+/-- The unnormalized second moment `∫ φ_{s²}(y - c • x) (y - c • x) ⊗ (y - c • x) dμ₀(x)` of the
+noise `y - c • x`. -/
+private def noiseSecondMoment (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ)
+    (y : EuclideanSpace ℝ ι) : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι :=
+  ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • rankOne ℝ (y - c • x) (y - c • x) ∂μ₀
+
+private theorem noiseFirstMoment_def (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ)
+    (y : EuclideanSpace ℝ ι) : noiseFirstMoment μ₀ c s y =
+      ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀ :=
+  (rfl)
+
+private theorem noiseSecondMoment_def (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : ℝ)
+    (y : EuclideanSpace ℝ ι) : noiseSecondMoment μ₀ c s y =
+      ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
+        rankOne ℝ (y - c • x) (y - c • x) ∂μ₀ :=
+  (rfl)
 
 /-- Against a finite measure, `x ↦ φ_{s²}(y - c • x) (y - c • x)` is integrable. -/
 private theorem integrable_pdf_sub_smul_sub [IsFiniteMeasure μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
     Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x))
       μ₀ :=
-  integrable_pdf_sub_smul_smul hs continuous_id (K := 1)
+  integrable_multivariateGaussianPDFReal_sub_smul_smul hs continuous_id (K := 1)
     (fun z ↦ by simp only [id]; nlinarith [norm_nonneg z]) y
 
-/-- Against a finite measure, `x ↦ φ_{s²}(y - c • x) (y - c • x - a) ⊗ (y - c • x - a)` is
+/-- Against a finite measure, `x ↦ φ_{s²}(y - c • x) (y - c • x) ⊗ (y - c • x)` is
 integrable. -/
 private theorem integrable_pdf_sub_smul_rankOne [IsFiniteMeasure μ₀] (hs : s ≠ 0)
-    (a y : EuclideanSpace ℝ ι) :
-    Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
-      rankOne ℝ (y - c • x - a) (y - c • x - a)) μ₀ :=
-  integrable_pdf_sub_smul_smul hs (g := fun z ↦ rankOne ℝ (z - a) (z - a))
-    (by simp only [rankOne_def]; fun_prop) (K := (1 + ‖a‖) ^ 2) (fun z ↦ by
-      rw [norm_rankOne, ← sq, ← mul_pow]
-      refine pow_le_pow_left₀ (norm_nonneg _) ((norm_sub_le _ _).trans ?_) 2
-      nlinarith [norm_nonneg z, norm_nonneg a]) y
-
-/-- The case `a = 0` of `integrable_pdf_sub_smul_rankOne`. -/
-private theorem integrable_pdf_sub_smul_rankOne_self [IsFiniteMeasure μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
     Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
-      rankOne ℝ (y - c • x) (y - c • x)) μ₀ := by
-  simpa only [sub_zero] using integrable_pdf_sub_smul_rankOne (μ₀ := μ₀) (c := c) hs 0 y
+      rankOne ℝ (y - c • x) (y - c • x)) μ₀ :=
+  integrable_multivariateGaussianPDFReal_sub_smul_smul hs (g := fun z ↦ rankOne ℝ z z)
+    (by simp only [rankOne_def]; fun_prop) (K := 1) (fun z ↦ by
+      rw [norm_rankOne, one_mul]
+      nlinarith [norm_nonneg z]) y
 
-end Integrability
+end Moments
 
 /-! ### Tweedie's formula -/
 
@@ -176,20 +159,19 @@ converges for every finite `μ₀`, also when the left integral does not. -/
 private theorem smul_integral_pdf_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
     c • ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • x ∂μ₀ =
-      smoothedDensity μ₀ c s y • y -
-        ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀ := by
-  rw [← integral_smul, smoothedDensity_apply, ← integral_smul_const,
-    ← integral_sub ((integrable_pdf_sub_smul hs y).smul_const y) (integrable_pdf_sub_smul_sub hs y)]
+      smoothedDensity μ₀ c s y • y - noiseFirstMoment μ₀ c s y := by
+  rw [← integral_smul, smoothedDensity_apply, ← integral_smul_const, noiseFirstMoment_def,
+    ← integral_sub ((integrable_multivariateGaussianPDFReal_sub_smul hs y).smul_const y)
+      (integrable_pdf_sub_smul_sub hs y)]
   congr 1
   funext x
   rw [← smul_sub, sub_sub_cancel, smul_comm]
 
-/-- The signal level times the denoiser is the observation minus the normalized integral of
-`φ_{s²}(y - c • x) (y - c • x)`. -/
+/-- The signal level times the denoiser is the observation minus the normalized first moment of
+the noise. -/
 private theorem smul_denoiser [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
-    c • denoiser μ₀ c s y = y - (smoothedDensity μ₀ c s y)⁻¹ •
-      ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀ := by
+    c • denoiser μ₀ c s y = y - (smoothedDensity μ₀ c s y)⁻¹ • noiseFirstMoment μ₀ c s y := by
   rw [denoiser_def, smul_comm, smul_integral_pdf_smul hs, smul_sub, smul_smul,
     inv_mul_cancel₀ (smoothedDensity_pos hs y).ne', one_smul]
 
@@ -200,67 +182,53 @@ this reads `∇ log p(y) = -y / s²`. -/
 theorem noisyScore_eq_denoiser [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
     noisyScore μ₀ c s y = (s ^ 2)⁻¹ • (c • denoiser μ₀ c s y - y) := by
-  rw [noisyScore_eq_integral hs, smul_denoiser hs, sub_sub_cancel_left, smul_neg, neg_smul]
+  rw [noisyScore_eq_integral hs, ← noiseFirstMoment_def, smul_denoiser hs, sub_sub_cancel_left,
+    smul_neg, neg_smul]
 
 /-! ### The posterior covariance as a second moment -/
 
 section Covariance
 
-/-- The second moment of `z = y - c • x` about a point `a` under the unnormalized posterior:
-`∫ φ_{s²}(z) (z - a) ⊗ (z - a) = ∫ φ_{s²}(z) z ⊗ z - a ⊗ G - G ⊗ a + p(y) a ⊗ a`, where
-`G = ∫ φ_{s²}(z) z`. -/
+/-- The second moment of the noise `z = y - c • x` about a point `a` under the unnormalized
+posterior: `∫ φ_{s²}(z) (z - a) ⊗ (z - a) = H - a ⊗ G - G ⊗ a + p(y) a ⊗ a`, where `G` and `H` are
+the first and second moments of the noise. -/
 private theorem integral_pdf_smul_rankOne_sub [IsFiniteMeasure μ₀] (hs : s ≠ 0)
     (a y : EuclideanSpace ℝ ι) :
     ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
         rankOne ℝ (y - c • x - a) (y - c • x - a) ∂μ₀ =
-      (∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
-          rankOne ℝ (y - c • x) (y - c • x) ∂μ₀) -
-        rankOne ℝ a (∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀) -
-        rankOne ℝ (∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀) a +
-        smoothedDensity μ₀ c s y • rankOne ℝ a a := by
-  set φ := multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1)
+      noiseSecondMoment μ₀ c s y - rankOne ℝ a (noiseFirstMoment μ₀ c s y) -
+        rankOne ℝ (noiseFirstMoment μ₀ c s y) a + smoothedDensity μ₀ c s y • rankOne ℝ a a := by
   have hz := integrable_pdf_sub_smul_sub (μ₀ := μ₀) (c := c) hs y
-  ext1 w
-  have I0 : Integrable (fun x ↦ φ (y - c • x) • ⟪y - c • x, w⟫ • (y - c • x)) μ₀ := by
-    simpa only [smul_apply, rankOne_apply] using
-      (integrable_pdf_sub_smul_rankOne_self (μ₀ := μ₀) (c := c) hs y).apply_continuousLinearMap w
-  have I1 : Integrable (fun x ↦ ⟪φ (y - c • x) • (y - c • x), w⟫ • a) μ₀ :=
-    (hz.inner_const w).smul_const a
-  have I2 : Integrable (fun x ↦ ⟪a, w⟫ • (φ (y - c • x) • (y - c • x))) μ₀ := hz.smul ⟪a, w⟫
-  have I3 : Integrable (fun x ↦ (⟪a, w⟫ * φ (y - c • x)) • a) μ₀ :=
-    ((integrable_pdf_sub_smul hs y).const_mul ⟪a, w⟫).smul_const a
-  have I01 : Integrable (fun x ↦ φ (y - c • x) • ⟪y - c • x, w⟫ • (y - c • x) -
-      ⟪φ (y - c • x) • (y - c • x), w⟫ • a) μ₀ := I0.sub I1
-  have I012 : Integrable (fun x ↦ φ (y - c • x) • ⟪y - c • x, w⟫ • (y - c • x) -
-      ⟪φ (y - c • x) • (y - c • x), w⟫ • a - ⟪a, w⟫ • (φ (y - c • x) • (y - c • x))) μ₀ :=
-    I01.sub I2
-  have e (x : EuclideanSpace ℝ ι) :
-      φ (y - c • x) • ⟪y - c • x - a, w⟫ • (y - c • x - a) =
-        φ (y - c • x) • ⟪y - c • x, w⟫ • (y - c • x) - ⟪φ (y - c • x) • (y - c • x), w⟫ • a -
-          ⟪a, w⟫ • (φ (y - c • x) • (y - c • x)) + (⟪a, w⟫ * φ (y - c • x)) • a := by
-    simp only [inner_sub_left, real_inner_smul_left]
-    module
-  rw [integral_apply (integrable_pdf_sub_smul_rankOne hs a y) w, add_apply, sub_apply, sub_apply,
-    integral_apply (integrable_pdf_sub_smul_rankOne_self hs y) w]
-  simp only [smul_apply, rankOne_apply]
-  rw [integral_congr_ae (ae_of_all _ e), integral_add I012 I3, integral_sub I01 I2,
-    integral_sub I0 I1, integral_smul_const, integral_smul, integral_smul_const,
-    integral_const_mul, ← smoothedDensity_apply]
-  simp only [real_inner_comm w]
-  rw [integral_inner hz w]
-  module
+  have hH := integrable_pdf_sub_smul_rankOne (μ₀ := μ₀) (c := c) hs y
+  have hp := (integrable_multivariateGaussianPDFReal_sub_smul (μ₀ := μ₀) (c := c) hs y).smul_const
+    (rankOne ℝ a a)
+  -- `R` is the continuous linear map `u ↦ u ⊗ a`; it and `u ↦ a ⊗ u` commute with `∫`.
+  set R := StrongDual.smulRightL ℝ (EuclideanSpace ℝ ι) (EuclideanSpace ℝ ι) (innerSL ℝ a)
+  have hR (u : EuclideanSpace ℝ ι) : R u = rankOne ℝ u a := rfl
+  have hL := (rankOne ℝ a).integrable_comp hz
+  set φ := multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1)
+  -- Expand `(z - a) ⊗ (z - a)` by bilinearity of `rankOne`.
+  have e (x : EuclideanSpace ℝ ι) : φ (y - c • x) • rankOne ℝ (y - c • x - a) (y - c • x - a) =
+      φ (y - c • x) • rankOne ℝ (y - c • x) (y - c • x) -
+        rankOne ℝ a (φ (y - c • x) • (y - c • x)) - R (φ (y - c • x) • (y - c • x)) +
+        φ (y - c • x) • rankOne ℝ a a := by
+    simp only [hR, map_sub, map_smul, sub_apply, smul_apply, smul_sub]
+    abel
+  rw [integral_congr_ae (ae_of_all _ e), integral_add ((hH.sub' hL).sub' (R.integrable_comp hz)) hp,
+    integral_sub (hH.sub' hL) (R.integrable_comp hz), integral_sub hH hL,
+    (rankOne ℝ a).integral_comp_commSL (by simp) hz, R.integral_comp_comm hz, integral_smul_const,
+    ← smoothedDensity_apply, hR, noiseFirstMoment_def, noiseSecondMoment_def]
 
 /-- The signal level squared times the rank-one operator `(x - m) ⊗ (x - m)`, for `m` the
-denoiser at `y`, is `(z - a) ⊗ (z - a)` with `z = y - c • x` and `a = p(y)⁻¹ ∫ φ_{s²}(z) z`. -/
+denoiser at `y`, is `(z - a) ⊗ (z - a)` with `z = y - c • x` and `a = p(y)⁻¹ G` the normalized
+first moment of the noise. -/
 private theorem sq_smul_rankOne_sub_denoiser [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s ≠ 0)
     (x y : EuclideanSpace ℝ ι) :
     c ^ 2 • rankOne ℝ (x - denoiser μ₀ c s y) (x - denoiser μ₀ c s y) =
-      rankOne ℝ (y - c • x - (smoothedDensity μ₀ c s y)⁻¹ •
-          ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀)
-        (y - c • x - (smoothedDensity μ₀ c s y)⁻¹ •
-          ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀) := by
-  have hcx : c • (x - denoiser μ₀ c s y) = -(y - c • x - (smoothedDensity μ₀ c s y)⁻¹ •
-      ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀) := by
+      rankOne ℝ (y - c • x - (smoothedDensity μ₀ c s y)⁻¹ • noiseFirstMoment μ₀ c s y)
+        (y - c • x - (smoothedDensity μ₀ c s y)⁻¹ • noiseFirstMoment μ₀ c s y) := by
+  have hcx : c • (x - denoiser μ₀ c s y) =
+      -(y - c • x - (smoothedDensity μ₀ c s y)⁻¹ • noiseFirstMoment μ₀ c s y) := by
     rw [smul_sub, smul_denoiser hs]
     abel
   rw [← neg_neg (y - c • x - _), ← hcx]
@@ -269,23 +237,19 @@ private theorem sq_smul_rankOne_sub_denoiser [IsFiniteMeasure μ₀] [NeZero μ�
   module
 
 /-- The signal level squared times the posterior covariance is the normalized second moment of
-`y - c • x` minus the square of its normalized first moment. -/
+the noise minus the square of its normalized first moment. -/
 private theorem sq_smul_posteriorCov [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
     c ^ 2 • posteriorCov μ₀ c s y =
-      (smoothedDensity μ₀ c s y)⁻¹ • ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
-        rankOne ℝ (y - c • x) (y - c • x) ∂μ₀ -
-      (smoothedDensity μ₀ c s y)⁻¹ ^ 2 • rankOne ℝ
-        (∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀)
-        (∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀) := by
-  have hp : smoothedDensity μ₀ c s y ≠ 0 := (smoothedDensity_pos hs y).ne'
+      (smoothedDensity μ₀ c s y)⁻¹ • noiseSecondMoment μ₀ c s y -
+        (smoothedDensity μ₀ c s y)⁻¹ ^ 2 •
+          rankOne ℝ (noiseFirstMoment μ₀ c s y) (noiseFirstMoment μ₀ c s y) := by
   rw [posteriorCov_def, smul_comm, ← integral_smul]
   simp_rw [smul_comm (c ^ 2), sq_smul_rankOne_sub_denoiser hs _ y]
   rw [integral_pdf_smul_rankOne_sub hs]
-  generalize (∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
-    rankOne ℝ (y - c • x) (y - c • x) ∂μ₀) = H
-  generalize (∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀) = g
-  generalize smoothedDensity μ₀ c s y = p at hp ⊢
+  have hp : smoothedDensity μ₀ c s y ≠ 0 := (smoothedDensity_pos hs y).ne'
+  set p := smoothedDensity μ₀ c s y
+  set g := noiseFirstMoment μ₀ c s y
   ext1 w
   simp only [smul_apply, add_apply, sub_apply, rankOne_apply, real_inner_smul_left, smul_smul]
   rw [show p * (p⁻¹ * ⟪g, w⟫ * p⁻¹) = p⁻¹ * ⟪g, w⟫ by field_simp]
@@ -296,19 +260,6 @@ end Covariance
 /-! ### The derivative of the score -/
 
 section Derivative
-
-/-- The derivative of `z ↦ φ_{s²}(z) z` is `φ_{s²}(z) (1 - z ⊗ z / s²)`. -/
-private theorem hasFDerivAt_pdf_smul_self (hs : s ≠ 0) (z : EuclideanSpace ℝ ι) :
-    HasFDerivAt (fun z ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) z • z)
-      (multivariateGaussianPDFReal 0 (s ^ 2 • 1) z • ContinuousLinearMap.id ℝ _ -
-        ((s ^ 2)⁻¹ * multivariateGaussianPDFReal 0 (s ^ 2 • 1) z) • rankOne ℝ z z) z := by
-  have h := (hasGradientAt_multivariateGaussianPDFReal_smul_one
-    (by positivity : 0 < s ^ 2) 0 z).hasFDerivAt
-  refine (h.fun_smul (hasFDerivAt_id z)).congr_fderiv ?_
-  ext1 w
-  simp only [sub_zero, add_apply, smul_apply, ContinuousLinearMap.id_apply, smulRight_apply,
-    toDual_apply_apply, sub_apply, rankOne_apply, real_inner_smul_left, mul_smul, id_eq]
-  module
 
 /-- The norm of the derivative of `z ↦ φ_{s²}(z) z` is controlled by a quadratic weight. -/
 private theorem norm_pdf_smul_id_sub_le (z : EuclideanSpace ℝ ι) :
@@ -330,24 +281,23 @@ private theorem norm_pdf_smul_id_sub_le (z : EuclideanSpace ℝ ι) :
         exact hid.trans h1
     _ = _ := by ring
 
-/-- Differentiation under the integral sign of `y ↦ ∫ φ_{s²}(y - c • x) (y - c • x) dμ₀(x)`, the
-integral giving `-s² ∇p(y)`. -/
-private theorem hasFDerivAt_integral_pdf_smul_sub [IsFiniteMeasure μ₀] (hs : s ≠ 0)
+/-- Differentiation under the integral sign of the first moment of the noise, the integral giving
+`-s² ∇p(y)`. -/
+private theorem hasFDerivAt_noiseFirstMoment [IsFiniteMeasure μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
-    HasFDerivAt (fun y ↦ ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
-        (y - c • x) ∂μ₀)
-      (smoothedDensity μ₀ c s y • ContinuousLinearMap.id ℝ _ - (s ^ 2)⁻¹ •
-        ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
-          rankOne ℝ (y - c • x) (y - c • x) ∂μ₀) y := by
-  obtain ⟨C, hC⟩ := exists_one_add_norm_sq_mul_pdf_le (ι := ι) hs
+    HasFDerivAt (noiseFirstMoment μ₀ c s)
+      (smoothedDensity μ₀ c s y • ContinuousLinearMap.id ℝ _ -
+        (s ^ 2)⁻¹ • noiseSecondMoment μ₀ c s y) y := by
+  obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_multivariateGaussianPDFReal_smul_one_le
+    (ι := ι) (by positivity : 0 < s ^ 2) 2
   have hid : Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
       ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)) μ₀ :=
-    (integrable_pdf_sub_smul hs y).smul_const _
+    (integrable_multivariateGaussianPDFReal_sub_smul hs y).smul_const _
   have hrk : Integrable (fun x ↦ ((s ^ 2)⁻¹ *
       multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x)) •
         rankOne ℝ (y - c • x) (y - c • x)) μ₀ := by
     simpa only [Pi.smul_def, mul_smul] using
-      (integrable_pdf_sub_smul_rankOne_self (μ₀ := μ₀) (c := c) hs y).smul (s ^ 2)⁻¹
+      (integrable_pdf_sub_smul_rankOne (μ₀ := μ₀) (c := c) hs y).smul (s ^ 2)⁻¹
   have key := hasFDerivAt_integral_of_dominated_of_fderiv_le (μ := μ₀) (x₀ := y)
     (F := fun y x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x))
     (F' := fun y x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
@@ -361,11 +311,11 @@ private theorem hasFDerivAt_integral_pdf_smul_sub [IsFiniteMeasure μ₀] (hs : 
       (mul_le_mul_of_nonneg_left (hC _) (by positivity)))
     (integrable_const _)
     (.of_forall fun x y' _ ↦ by
-      have h := (hasFDerivAt_pdf_smul_self hs (y' - c • x)).comp y'
-        ((hasFDerivAt_id y').sub_const (c • x))
+      have h := (hasFDerivAt_multivariateGaussianPDFReal_smul_one_smul_self
+        (by positivity : 0 < s ^ 2) (y' - c • x)).comp y' ((hasFDerivAt_id y').sub_const (c • x))
       rwa [comp_id] at h)
-  convert key using 1
-  rw [integral_sub hid hrk, integral_smul_const, ← smoothedDensity_apply]
+  refine key.congr_fderiv ?_
+  rw [integral_sub hid hrk, integral_smul_const, ← smoothedDensity_apply, noiseSecondMoment_def]
   simp only [mul_smul, integral_smul]
 
 /-- **The posterior covariance is a positive operator**, for every data law, every level and
@@ -385,40 +335,31 @@ theorem hasFDerivAt_noisyScore [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s �
     (y : EuclideanSpace ℝ ι) :
     HasFDerivAt (noisyScore μ₀ c s)
       ((s ^ 2)⁻¹ • ((c ^ 2 / s ^ 2) • posteriorCov μ₀ c s y - ContinuousLinearMap.id ℝ _)) y := by
-  set G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun y ↦
-    ∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀
   have hp0 : smoothedDensity μ₀ c s y ≠ 0 := (smoothedDensity_pos hs y).ne'
-  have hp : HasFDerivAt (smoothedDensity μ₀ c s) (toDual ℝ _ (-(s ^ 2)⁻¹ • G y)) y :=
+  have hp : HasFDerivAt (smoothedDensity μ₀ c s)
+      (toDual ℝ _ (-(s ^ 2)⁻¹ • noiseFirstMoment μ₀ c s y)) y :=
     hasGradientAt_iff_hasFDerivAt.1 (hasGradientAt_smoothedDensity (μ₀ := μ₀) (c := c) hs y)
   have h := (((hasDerivAt_inv hp0).comp_hasFDerivAt y hp).smul
-    (hasFDerivAt_integral_pdf_smul_sub (μ₀ := μ₀) (c := c) hs y)).const_smul (-(s ^ 2)⁻¹)
+    (hasFDerivAt_noiseFirstMoment (μ₀ := μ₀) (c := c) hs y)).const_smul (-(s ^ 2)⁻¹)
   rw [funext (noisyScore_eq_integral (μ₀ := μ₀) (c := c) hs)]
   refine h.congr_fderiv ?_
   rw [div_eq_inv_mul, mul_smul, sq_smul_posteriorCov hs]
-  simp only [G, Function.comp_apply]
-  generalize (∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
-    rankOne ℝ (y - c • x) (y - c • x) ∂μ₀) = H
-  generalize (∫ x, multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) • (y - c • x) ∂μ₀) = g
-  generalize smoothedDensity μ₀ c s y = p at hp0 ⊢
   ext1 w
-  simp only [smul_apply, sub_apply, add_apply, smulRight_apply, ContinuousLinearMap.id_apply,
-    rankOne_apply, toDual_apply_apply, real_inner_smul_left]
+  simp only [Function.comp_apply, smul_apply, sub_apply, add_apply, smulRight_apply,
+    ContinuousLinearMap.id_apply, rankOne_apply, toDual_apply_apply, real_inner_smul_left]
   rw [smul_add, smul_sub, inv_smul_smul₀ hp0, ← inv_pow]
   module
 
-/-- **The score is semiconvex.** For a finite data law, the derivative of the score is at least
-`-1 / s²` as a quadratic form: `⟪D(∇ log p)(y) w, w⟫ ≥ -‖w‖² / s²`. This is the second-order
-condition for `y ↦ log p(y) + ‖y‖² / (2 s²)` to be convex. -/
+/-- **The derivative of the score is bounded below.** For a finite data law, the derivative of the
+score is at least `-1 / s²` as a quadratic form: `⟪D(∇ log p)(y) w, w⟫ ≥ -‖w‖² / s²`. This is the
+second-order condition for `y ↦ log p(y) + ‖y‖² / (2 s²)` to be convex, that is, for `log p` to be
+semiconvex. -/
 theorem le_inner_fderiv_noisyScore [IsFiniteMeasure μ₀] (hs : s ≠ 0)
     (y w : EuclideanSpace ℝ ι) :
     -(‖w‖ ^ 2 / s ^ 2) ≤ ⟪fderiv ℝ (noisyScore μ₀ c s) y w, w⟫ := by
   rcases eq_zero_or_neZero μ₀ with rfl | _
-  · -- For the zero measure the density, hence the score, vanishes identically.
-    have h0 : noisyScore (0 : Measure (EuclideanSpace ℝ ι)) c s = 0 := by
-      funext z
-      simp [noisyScore_apply, smoothedDensity_apply]
-    rw [h0]
-    simp only [fderiv_zero, Pi.zero_apply, zero_apply, inner_zero_left]
+  · -- For the zero measure the score vanishes identically.
+    simp only [noisyScore_zero, fderiv_zero, Pi.zero_apply, zero_apply, inner_zero_left]
     exact neg_nonpos.2 (by positivity)
   rw [(hasFDerivAt_noisyScore hs y).fderiv]
   simp only [smul_apply, sub_apply, ContinuousLinearMap.id_apply, real_inner_smul_left,

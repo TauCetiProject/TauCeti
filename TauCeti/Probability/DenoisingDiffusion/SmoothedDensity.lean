@@ -110,7 +110,7 @@ private theorem measurable_pdf_sub_smul (y : EuclideanSpace ℝ ι) :
   (measurable_multivariateGaussianPDFReal _ _).comp (by fun_prop)
 
 /-- Against a finite measure the integrand of the smoothed density is integrable. -/
-theorem integrable_pdf_sub_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
+theorem integrable_multivariateGaussianPDFReal_sub_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) :
     Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x)) μ₀ := by
   obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_multivariateGaussianPDFReal_smul_one_le
@@ -119,9 +119,39 @@ theorem integrable_pdf_sub_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
     (.of_forall fun x ↦ ?_)
   simpa using hC (y - c • x)
 
+/-- Against a finite measure, `x ↦ φ_{s²}(y - c • x) • g(y - c • x)` is integrable for every
+continuous `g` of at most quadratic growth, since `φ_{s²}` absorbs a quadratic weight. -/
+theorem integrable_multivariateGaussianPDFReal_sub_smul_smul [IsFiniteMeasure μ₀] (hs : s ≠ 0)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {g : EuclideanSpace ℝ ι → F}
+    (hg : Continuous g) {K : ℝ} (hgK : ∀ z, ‖g z‖ ≤ K * (1 + ‖z‖) ^ 2) (y : EuclideanSpace ℝ ι) :
+    Integrable (fun x ↦ multivariateGaussianPDFReal 0 (s ^ 2 • 1) (y - c • x) •
+      g (y - c • x)) μ₀ := by
+  obtain ⟨C, hC⟩ := exists_one_add_norm_pow_mul_multivariateGaussianPDFReal_smul_one_le
+    (ι := ι) (by positivity : 0 < s ^ 2) 2
+  have hφ : Continuous (multivariateGaussianPDFReal (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1)) :=
+    (contDiff_multivariateGaussianPDFReal_smul_one (n := 0) (by positivity) 0).continuous
+  refine Integrable.of_bound (C := K * C)
+    ((hφ.smul hg).comp (by fun_prop : Continuous fun x : EuclideanSpace ℝ ι ↦ y - c • x)
+      |>.aestronglyMeasurable) (.of_forall fun x ↦ ?_)
+  set z := y - c • x
+  have hφz := multivariateGaussianPDFReal_nonneg (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1) z
+  have hK : 0 ≤ K := by simpa using (norm_nonneg _).trans (hgK 0)
+  rw [norm_smul, Real.norm_of_nonneg hφz]
+  calc multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * ‖g z‖
+      ≤ multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * (K * (1 + ‖z‖) ^ 2) :=
+        mul_le_mul_of_nonneg_left (hgK z) hφz
+    _ = K * ((1 + ‖z‖) ^ 2 * multivariateGaussianPDFReal 0 (s ^ 2 • 1) z) := by ring
+    _ ≤ K * C := mul_le_mul_of_nonneg_left (hC z) hK
+
 end Kernel
 
 /-! ### The density of the noisy observation -/
+
+/-- The smoothed density of the zero measure vanishes. -/
+@[simp]
+theorem smoothedDensity_zero (c s : ℝ) :
+    smoothedDensity (0 : Measure (EuclideanSpace ℝ ι)) c s = 0 :=
+  funext fun y ↦ by rw [smoothedDensity_apply, integral_zero_measure, Pi.zero_apply]
 
 /-- For `s ≠ 0`, the smoothed density is the integral of the heat kernel at time `s² / 2`. -/
 theorem smoothedDensity_eq_integral_heatKernel (hs : s ≠ 0) (y : EuclideanSpace ℝ ι) :
@@ -137,7 +167,8 @@ theorem smoothedDensity_nonneg (μ₀ : Measure (EuclideanSpace ℝ ι)) (c s : 
 theorem smoothedDensity_pos [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s ≠ 0)
     (y : EuclideanSpace ℝ ι) : 0 < smoothedDensity μ₀ c s y := by
   rw [smoothedDensity_apply, integral_pos_iff_support_of_nonneg
-    (fun _ ↦ multivariateGaussianPDFReal_nonneg _ _ _) (integrable_pdf_sub_smul hs y),
+    (fun _ ↦ multivariateGaussianPDFReal_nonneg _ _ _)
+    (integrable_multivariateGaussianPDFReal_sub_smul hs y),
     Function.support_eq_univ fun _ ↦ (multivariateGaussianPDFReal_pos
       (Matrix.PosDef.one.smul (by positivity : 0 < s ^ 2)).det_pos _ _).ne']
   exact Measure.measure_univ_pos.2 (NeZero.ne μ₀)
@@ -159,8 +190,9 @@ theorem bind_multivariateGaussian_eq_withDensity_smoothedDensity [IsFiniteMeasur
     ((measurable_multivariateGaussianPDFReal _ _).comp (by fun_prop)).ennreal_ofReal.aemeasurable]
   congr 1
   funext y
-  rw [smoothedDensity_apply, ofReal_integral_eq_lintegral_ofReal (integrable_pdf_sub_smul hs y)
-    (.of_forall fun x ↦ multivariateGaussianPDFReal_nonneg _ _ _)]
+  rw [smoothedDensity_apply,
+    ofReal_integral_eq_lintegral_ofReal (integrable_multivariateGaussianPDFReal_sub_smul hs y)
+      (.of_forall fun x ↦ multivariateGaussianPDFReal_nonneg _ _ _)]
 
 /-- **The density of a Gaussian observation.** If `X` has a finite law `μ₀` and `Z` is a standard
 Gaussian vector independent of `X`, then for `s ≠ 0` the observation `c • X + s • Z` has the
@@ -285,6 +317,13 @@ theorem hasGradientAt_log_smoothedDensity [IsFiniteMeasure μ₀] [NeZero μ₀]
     (smoothedDensity_pos hs y).ne')
   rw [hasGradientAt_iff_hasFDerivAt, map_smul, (hasGradientAt_smoothedDensity hs y).gradient]
   exact h
+
+/-- The score of the zero measure vanishes, since its smoothed density does. -/
+@[simp]
+theorem noisyScore_zero (c s : ℝ) :
+    noisyScore (0 : Measure (EuclideanSpace ℝ ι)) c s = 0 := by
+  funext y
+  simp [noisyScore_apply]
 
 /-- **The score is `∇p / p`.** -/
 theorem noisyScore_eq_inv_smul_gradient [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s ≠ 0)
