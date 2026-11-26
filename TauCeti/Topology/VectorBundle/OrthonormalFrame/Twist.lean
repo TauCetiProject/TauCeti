@@ -32,9 +32,6 @@ Twisting is functorial in the lift and in `Q` (`TauCeti.OrthonormalFrameLift.twi
 (`TauCeti.OrthonormalFrameLift.twistTrivialEquiv`), by `[(p, h), a] ↦ p • μ (1, h) a`. Twisting
 commutes with pullback along a continuous map (`TauCeti.OrthonormalFrameLift.twistPullbackEquiv`).
 
-The construction and its API generalize the twist of `Spinᶜ` structures by principal
-`U(1)`-bundles, which this library first formalized for the central circle alone.
-
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameLift.twist`: the twist of a lift by a principal bundle.
