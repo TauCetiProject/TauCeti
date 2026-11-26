@@ -332,8 +332,7 @@ def galEquivAbsoluteGaloisGroup : Gal(Ω/K) ≃ₜ* AbsoluteGaloisGroup K :=
 theorem galEquivAbsoluteGaloisGroup_apply (σ : Gal(Ω/K)) (x : SeparableClosure K) :
     galEquivAbsoluteGaloisGroup K Ω σ x =
       (equiv K (SeparableClosure K) Ω).symm (σ (equiv K (SeparableClosure K) Ω x)) := by
-  rw [galEquivAbsoluteGaloisGroup, AlgEquiv.autCongrContinuousMulEquiv_apply,
-    AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.trans_apply, AlgEquiv.symm_symm]
+  simp [galEquivAbsoluteGaloisGroup]
 
 /-- The inverse of `galEquivAbsoluteGaloisGroup K Ω` acts on `Ω` as `τ` conjugated by the inverse
 of `IsSepClosure.equiv`. -/
@@ -341,8 +340,6 @@ of `IsSepClosure.equiv`. -/
 theorem galEquivAbsoluteGaloisGroup_symm_apply (τ : AbsoluteGaloisGroup K) (x : Ω) :
     (galEquivAbsoluteGaloisGroup K Ω).symm τ x =
       equiv K (SeparableClosure K) Ω (τ ((equiv K (SeparableClosure K) Ω).symm x)) := by
-  rw [galEquivAbsoluteGaloisGroup, AlgEquiv.autCongrContinuousMulEquiv_symm,
-    AlgEquiv.autCongrContinuousMulEquiv_apply, AlgEquiv.autCongr_apply, AlgEquiv.trans_apply,
-    AlgEquiv.trans_apply, AlgEquiv.symm_symm]
+  simp [galEquivAbsoluteGaloisGroup]
 
 end IsSepClosure

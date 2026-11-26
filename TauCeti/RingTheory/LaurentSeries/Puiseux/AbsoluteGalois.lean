@@ -108,8 +108,7 @@ noncomputable def galEquivTateModuleOfAlgEquiv (e : puiseuxField K ≃ₐ[K⸨X�
 theorem galEquivTateModuleOfAlgEquiv_apply (e : puiseuxField K ≃ₐ[K⸨X⸩] L)
     (σ : Gal(L/K⸨X⸩)) :
     galEquivTateModuleOfAlgEquiv e σ = galEquivTateModule K (e.symm.autCongr σ) := by
-  rw [galEquivTateModuleOfAlgEquiv, ContinuousMulEquiv.trans_apply,
-    AlgEquiv.autCongrContinuousMulEquiv_apply]
+  simp [galEquivTateModuleOfAlgEquiv]
 
 /-- The inverse of `galEquivTateModuleOfAlgEquiv e` is the Kummer action conjugated by `e`. -/
 @[simp]
@@ -123,10 +122,9 @@ theorem galEquivTateModuleOfAlgEquiv_symm_apply (e : puiseuxField K ≃ₐ[K⸨X
 @[simp]
 theorem galEquivTateModuleOfAlgEquiv_refl :
     galEquivTateModuleOfAlgEquiv (AlgEquiv.refl : puiseuxField K ≃ₐ[K⸨X⸩] puiseuxField K) =
-      galEquivTateModule K :=
-  DFunLike.ext _ _ fun σ ↦ by
-    rw [galEquivTateModuleOfAlgEquiv_apply, AlgEquiv.refl_symm, AlgEquiv.autCongr_refl,
-      MulEquiv.refl_apply]
+      galEquivTateModule K := by
+  ext σ
+  simp
 
 /-- **Independence of the model.** The identification `Gal(L/K⸨X⸩) ≃ₜ* lim_n μₙ(K)` does not
 depend on the isomorphism `e : puiseuxField K ≃ₐ[K⸨X⸩] L` it is transported along. -/
