@@ -12,6 +12,7 @@ import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Complex.DivisorFactorization
 import TauCeti.Analysis.Complex.InfiniteProd
+import TauCeti.Analysis.Normed.Ring.InfiniteProd.Basic
 import TauCeti.Topology.Algebra.InfiniteSum.Real
 
 /-!
@@ -377,16 +378,7 @@ theorem norm_tprod_weierstrassFactor_div_le_exp {ι : Type*} (p : ℕ) {a : ι �
     rw [tsum_mul_left]
     ring
   rw [← htsum]
-  by_cases hm : Multipliable fun i ↦ weierstrassFactor p (z / a i)
-  · refine le_of_tendsto' (Filter.Tendsto.norm hm.hasProd) fun s ↦ ?_
-    calc
-      _ = ∏ i ∈ s, ‖weierstrassFactor p (z / a i)‖ := norm_prod _ _
-      _ ≤ ∏ i ∈ s, Real.exp (c i) := by gcongr with i; exact hfac i
-      _ = Real.exp (∑ i ∈ s, c i) := (Real.exp_sum _ _).symm
-      _ ≤ Real.exp (∑' i, c i) :=
-        Real.exp_le_exp.mpr (hc.sum_le_tsum s fun _ _ ↦ by positivity)
-  · rw [tprod_eq_one_of_not_multipliable hm, norm_one]
-    exact Real.one_le_exp (tsum_nonneg fun _ ↦ by positivity)
+  exact TauCeti.norm_tprod_le_exp_of_sum_le hfac fun s ↦ hc.sum_le_tsum s fun _ _ ↦ by positivity
 
 end Growth
 

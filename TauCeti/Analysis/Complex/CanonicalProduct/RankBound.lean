@@ -21,8 +21,8 @@ bound, and its rank is the least one.
 
 ## Main results
 
-* `Set.HasRankBound.subset`, `Set.HasRankBound.mono`: rank bounds pass to subsets and to larger
-  exponents.
+* `Set.HasRankBound.subset`, `Set.HasRankBound.mono_exponent`: rank bounds pass to subsets and
+  to larger exponents.
 * `Set.HasRankBound.countable`: a rank-bounded set is countable.
 * `Set.HasRankBound.finite_inter_closedBall`: a rank-bounded set has finitely many points in each
   closed disk about the origin.
@@ -85,12 +85,12 @@ theorem HasRankBound.summable_div_pow (h : Λ.HasRankBound p) (R : ℝ) :
 /-- A rank bound passes to subsets. -/
 theorem HasRankBound.subset (h : Λ.HasRankBound p) (hΛ : Λ' ⊆ Λ) : Λ'.HasRankBound p := by
   rw [hasRankBound_def] at h ⊢
-  have hsub := h.comp_injective (inclusion_injective (sdiff_subset_sdiff_left (t := {0}) hΛ))
-  exact hsub
+  exact (h.comp_injective (inclusion_injective (sdiff_subset_sdiff_left (t := {0}) hΛ))).congr
+    fun _ ↦ rfl
 
 /-- A rank bound passes to every larger exponent: the finitely many points of norm below one do
 not affect summability, and beyond them the summands decrease with the exponent. -/
-theorem HasRankBound.mono (h : Λ.HasRankBound p) (hpq : p ≤ q) : Λ.HasRankBound q := by
+theorem HasRankBound.mono_exponent (h : Λ.HasRankBound p) (hpq : p ≤ q) : Λ.HasRankBound q := by
   rw [hasRankBound_def] at h ⊢
   refine .of_norm_bounded_eventually h ?_
   filter_upwards [h.tendsto_cofinite_zero.eventually (gt_mem_nhds one_pos)] with w hw

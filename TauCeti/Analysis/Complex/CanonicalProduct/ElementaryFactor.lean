@@ -302,7 +302,7 @@ theorem norm_weierstrassFactor_le_exp (p : ℕ) (z : ℂ) :
     rw [weierstrassFactor_eq_mul_exp_sum, norm_mul, norm_exp]
     calc
       _ ≤ Real.exp (‖z‖ ^ (p + 1)) * Real.exp (p * ‖z‖ ^ (p + 1)) := by gcongr
-      _ = _ := by rw [← Real.exp_add]; ring_nf
+      _ = _ := by rw [← Real.exp_add]; congr 1; ring
 
 /-- Away from its zero, a primary factor is the exponential of the remainder of the Taylor
 series of `log (1 - z)` after its first `p` terms. -/
@@ -467,20 +467,5 @@ theorem norm_weierstrassFactor_one_le_exp (z : ℂ) :
     positivity
   · rw [← Real.exp_log h]
     exact Real.exp_le_exp.mpr (log_norm_weierstrassFactor_one_le z)
-
-/-- The genus-one factor has a global quadratic exponential bound. -/
-theorem norm_weierstrassFactor_one_le_exp_sq (z : ℂ) :
-    ‖weierstrassFactor 1 z‖ ≤ Real.exp (3 * ‖z‖ ^ 2) := by
-  by_cases hz : ‖z‖ ≤ 1
-  · calc
-      _ ≤ ‖(1 : ℂ)‖ + ‖weierstrassFactor 1 z - 1‖ := norm_le_norm_add_norm_sub' _ _
-      _ ≤ ‖z‖ ^ 2 + 1 := by
-        have hsharp : ‖weierstrassFactor 1 z - 1‖ ≤ ‖z‖ ^ 2 :=
-          norm_weierstrassFactor_sub_one_le 1 hz
-        simpa only [norm_one, add_comm] using add_le_add_left hsharp 1
-      _ ≤ Real.exp (‖z‖ ^ 2) := Real.add_one_le_exp _
-      _ ≤ Real.exp (3 * ‖z‖ ^ 2) := Real.exp_le_exp.mpr (by nlinarith [sq_nonneg ‖z‖])
-  · exact (norm_weierstrassFactor_one_le_exp z).trans
-      (Real.exp_le_exp.mpr (by nlinarith [norm_nonneg z]))
 
 end Complex
