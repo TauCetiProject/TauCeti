@@ -46,9 +46,10 @@ namespace AddCircle
 
 /-- Mathlib's translation action of `ℝ` on `AddCircle T` adds the image of `t` in the circle. -/
 @[simp]
-theorem vadd_eq_add {T : ℝ} (t : ℝ) (x : AddCircle T) : t +ᵥ x = (t : AddCircle T) + x :=
+protected theorem vadd_eq_add {T : ℝ} (t : ℝ) (x : AddCircle T) :
+    t +ᵥ x = (t : AddCircle T) + x :=
   QuotientAddGroup.induction_on x fun y ↦ by
-    rw [AddAction.Quotient.vadd_coe, _root_.vadd_eq_add, QuotientAddGroup.mk_add]
+    rw [AddAction.Quotient.vadd_coe, vadd_eq_add, QuotientAddGroup.mk_add]
 
 /-- The translation action of `ℝ` on `AddCircle T` is jointly measurable. -/
 instance instMeasurableVAdd₂Real {T : ℝ} : MeasurableVAdd₂ ℝ (AddCircle T) :=
@@ -58,7 +59,8 @@ instance instMeasurableVAdd₂Real {T : ℝ} : MeasurableVAdd₂ ℝ (AddCircle 
 measure. -/
 instance instVAddInvariantMeasureReal {T : ℝ} {μ : Measure (AddCircle T)}
     [μ.IsAddLeftInvariant] : VAddInvariantMeasure ℝ (AddCircle T) μ :=
-  ⟨fun t s _ ↦ by simpa only [vadd_eq_add] using measure_preimage_add μ (t : AddCircle T) s⟩
+  ⟨fun t s _ ↦ by
+    simpa only [AddCircle.vadd_eq_add] using measure_preimage_add μ (t : AddCircle T) s⟩
 
 variable {T : ℝ} [hT : Fact (0 < T)]
 
