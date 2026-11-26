@@ -227,6 +227,22 @@ lemma opNorm_energyIntegrand_le_of_bounds (hLam : 0 ≤ Lam)
   intro U V
   exact norm_energyIntegrand_apply_le_of_bounds hLam ha hb hc U V
 
+/-- Without drift and mass, the jet form only sees the gradient components:
+`⟨A ξ, η⟩` on jets `U = (u, ξ)`, `V = (v, η)`. -/
+lemma energyIntegrand_zero_zero_apply (A : Matrix n n ℝ) (U V : ℝ × EuclideanSpace ℝ n) :
+    energyIntegrand A 0 0 U V = V.2 ⬝ᵥ (A *ᵥ U.2) := by
+  simp [energyIntegrand_apply, matrixBilinearForm_apply]
+
+/-- The operator norm of the jet form bounds the mixed form `η · A ξ` of its principal
+coefficient: on the jets `(0, ξ)` and `(0, η)` the drift and mass terms vanish. -/
+lemma abs_dotProduct_mulVec_le_norm_energyIntegrand (A : Matrix n n ℝ) (b : EuclideanSpace ℝ n)
+    (c : ℝ) (η ξ : EuclideanSpace ℝ n) :
+    |η ⬝ᵥ (A *ᵥ ξ)| ≤ ‖energyIntegrand A b c‖ * ‖η‖ * ‖ξ‖ := by
+  have h := (energyIntegrand A b c).le_opNorm₂ (0, ξ) (0, η)
+  rw [energyIntegrand_apply, Real.norm_eq_abs, Prod.norm_mk, Prod.norm_mk, norm_zero,
+    max_eq_right (norm_nonneg ξ), max_eq_right (norm_nonneg η)] at h
+  simpa [matrixBilinearForm_apply, mul_right_comm] using h
+
 /-- Pointwise boundedness of the shifted Laplacian jet form with constant `1 + ‖c‖`. -/
 lemma norm_energyIntegrand_one_zero_mass_apply_le (c : ℝ) (U V : ℝ × EuclideanSpace ℝ n) :
     ‖energyIntegrand (1 : Matrix n n ℝ) 0 c U V‖ ≤
