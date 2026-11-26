@@ -8,7 +8,7 @@ module
 import TauCeti.ModelTheory.RelationalConfiguration.WellOrder
 import TauCeti.SetTheory.Descriptive.Tree.Descending
 import Mathlib.ModelTheory.Order
-import TauCeti.ModelTheory.Order
+import TauCeti.ModelTheory.RelationalConfiguration.OrderClass
 import Mathlib.Logic.Equiv.Nat
 
 /-!
@@ -59,9 +59,8 @@ example : ¬ IsWellFounded
       (descendingTree (codeRel leSymb (@ofStructure Language.order ℕ (orderStructure ℕ)))) ∧
     @ofStructure Language.order ℕ (orderStructure ℕ) ∉ wellOrderClass leSymb := by
   -- the code interprets the order symbol by `≤`, which relates `0` to itself
-  have h0 : codeRel leSymb (@ofStructure Language.order ℕ (orderStructure ℕ)) 0 0 := by
-    let := orderStructure ℕ
-    exact (codeRel_ofStructure leSymb 0 0).2 ((relMap_leSymb ![0, 0]).2 le_rfl)
+  have h0 : codeRel leSymb (@ofStructure Language.order ℕ (orderStructure ℕ)) 0 0 :=
+    (codeRel_leSymb_ofStructure_orderStructure (V := ℕ)) ▸ le_rfl
   have hbranch := not_isWellFounded_iff.2
     ⟨fun _ => 0, (forall_ofFn_mem_descendingTree_iff _).2 fun _ => h0⟩
   exact ⟨hbranch, fun h => hbranch (isWellFounded_descendingTree_iff.2 (mem_wellOrderClass.1 h).wf)⟩
