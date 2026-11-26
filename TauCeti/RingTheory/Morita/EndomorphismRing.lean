@@ -113,6 +113,33 @@ theorem IsAdditiveGenerator.isMoritaEquivalent_moduleEnd {M M₁ : FGModuleCat.{
 
 end AdditiveClosure
 
+section MoritaInvariance
+
+variable (R : Type*) [CommSemiring R] {A A' : Type u} [Ring A] [Algebra R A] [Ring A']
+  [Algebra R A']
+
+/-- **Morita equivalent rings have Morita equivalent additive-generator endomorphism rings.** If
+`A` and `A'` are Morita equivalent over `R`, and `M`, `M'` are additive generators of `mod A` and
+`mod A'`, then `Module.End A M` and `Module.End A' M'` are Morita equivalent. -/
+theorem IsAdditiveGenerator.isMoritaEquivalent_moduleEnd_of_isMoritaEquivalent
+    {M : FGModuleCat.{u} A} {M' : FGModuleCat.{u} A'} (hM : IsAdditiveGenerator M)
+    (hM' : IsAdditiveGenerator M') (h : IsMoritaEquivalent R A A') :
+    IsMoritaEquivalent R (Module.End A M.obj) (Module.End A' M'.obj) := by
+  obtain ⟨⟨G⟩⟩ := h
+  -- `G` restricts to `mod A ≌ mod A'`, which carries `M` to an additive generator `N = G M`.
+  let N : FGModuleCat.{u} A' :=
+    ⟨G.eqv.functor.obj M.obj, (G.eqv.finite_functor_obj_iff _).2 inferInstance⟩
+  have hN : IsAdditiveGenerator N :=
+    ((G.eqv.finiteModulesEquivalence.functor.isAdditiveGenerator_obj_iff M).2 hM).of_iso
+      ((ModuleCat.isFG A').fullyFaithfulι.preimageIso
+        (eqToIso (G.eqv.finiteModulesEquivalence_functor_obj_obj M)))
+  exact (IsMoritaEquivalent.of_algEquiv R
+    (G.eqv.fullyFaithfulFunctor.moduleEndAlgEquiv R M.obj)).trans R
+      (hN.isMoritaEquivalent_moduleEnd R hM')
+
+
+end MoritaInvariance
+
 section ArtinAlgebra
 
 variable (R : Type*) [CommRing R] [IsArtinianRing R] {A A' : Type u} [Ring A] [Algebra R A]
@@ -165,19 +192,9 @@ two additive generators of the same `mod A`; the direction `→` makes it inject
 theorem isMoritaEquivalent_end_iff (M : FGModuleCat.{u} A) (M' : FGModuleCat.{u} A')
     (hM : IsAdditiveGenerator M) (hM' : IsAdditiveGenerator M') :
     IsMoritaEquivalent R (Module.End A M.obj) (Module.End A' M'.obj) ↔
-      IsMoritaEquivalent R A A' := by
-  refine ⟨isMoritaEquivalent_of_isMoritaEquivalent_end R hM.isGeneratorCogenerator
-    hM'.isGeneratorCogenerator, fun ⟨⟨G⟩⟩ ↦ ?_⟩
-  -- `G` restricts to `mod A ≌ mod A'`, which carries `M` to an additive generator `N = G M`.
-  let N : FGModuleCat.{u} A' :=
-    ⟨G.eqv.functor.obj M.obj, (G.eqv.finite_functor_obj_iff _).2 inferInstance⟩
-  have hN : IsAdditiveGenerator N :=
-    ((G.eqv.finiteModulesEquivalence.functor.isAdditiveGenerator_obj_iff M).2 hM).of_iso
-      ((ModuleCat.isFG A').fullyFaithfulι.preimageIso
-        (eqToIso (G.eqv.finiteModulesEquivalence_functor_obj_obj M)))
-  exact (IsMoritaEquivalent.of_algEquiv R
-    (G.eqv.fullyFaithfulFunctor.moduleEndAlgEquiv R M.obj)).trans R
-      (hN.isMoritaEquivalent_moduleEnd R hM')
+      IsMoritaEquivalent R A A' :=
+  ⟨isMoritaEquivalent_of_isMoritaEquivalent_end R hM.isGeneratorCogenerator
+    hM'.isGeneratorCogenerator, hM.isMoritaEquivalent_moduleEnd_of_isMoritaEquivalent R hM'⟩
 
 end ArtinAlgebra
 
