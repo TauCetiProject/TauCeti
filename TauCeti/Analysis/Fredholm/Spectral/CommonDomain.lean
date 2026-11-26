@@ -151,7 +151,7 @@ omit [NormedAlgebra ℝ (H →L[𝕜] H)]
 /-- Along an interval with an admissible shift `c ≠ 0`, the shifted resolvent transforms at `c`
 of a continuous path of operators symmetric through a compact `ι` form a continuous path of
 self-adjoint Fredholm operators. -/
-private theorem regular_shiftedResolventTransform {s : Set ℝ} {c : ℝ}
+theorem regular_shiftedResolventTransform {s : Set ℝ} {c : ℝ}
     (hι : IsCompactOperator ι) (hA : ContinuousOn A s)
     (hsymm : ∀ t ∈ s, ∀ x y, ⟪A t x, ι y⟫ = ⟪ι x, A t y⟫) (hc : c ≠ 0)
     (hinv : ∀ u ∈ s, ((c : 𝕜) • ι - A u).IsInvertible) :

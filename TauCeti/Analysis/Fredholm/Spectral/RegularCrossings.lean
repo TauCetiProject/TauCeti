@@ -10,6 +10,7 @@ import TauCeti.Analysis.Fredholm.SelfAdjoint
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.IntervalJumps
 
 /-!
 # The regular-crossing formula for the spectral flow
@@ -35,8 +36,9 @@ isolated (`TauCeti.eventually_ker_eq_bot_of_crossingForm_nondegenerate`), and th
 form an open subset of `[a, b]`, because an injective self-adjoint Fredholm operator is invertible
 (`ContinuousLinearMap.IsFredholm.isInvertible_of_injective_of_isSelfAdjoint`) and invertible
 operators form an open set. So the crossings form a closed discrete subset of `[a, b]`, which is
-finite. The sum is assembled by induction on the crossings from the last one. Over an interval
-without crossings the path is invertible and has no spectral flow
+finite. The spectral flow is then the sum of its jumps at the crossings
+(`TauCeti.eq_finsum_of_eventually_eq_of_add`). Over an interval without crossings the path is
+invertible and has no spectral flow
 (`TauCeti.spectralFlow_eq_zero_of_forall_ker_eq_bot`). Across a crossing, the spectral
 flow over a short enough interval is the signature of its crossing form
 (`TauCeti.eventually_spectralFlow_eq_sigPos_sub_sigNeg_crossingForm`), and concatenation
@@ -114,63 +116,6 @@ theorem finite_setOf_ker_ne_bot (hA : ContinuousOn A (Icc a b))
     filter_upwards [eventually_ker_eq_bot_of_crossingForm_nondegenerate hcont hsa' (hF z hz)
       (hderiv z hz' hnz) (hreg z hz' hnz)] with t ht _ using ht
 
-/-- The regular-crossing formula for a finite set `S` of regular crossings in `(a, b)` outside which
-the path is injective, by induction on `S` from its largest element. -/
-private theorem spectralFlow_eq_sum_crossingForm_of_finset (S : Finset ℝ) :
-    ∀ b, a ≤ b → ContinuousOn A (Icc a b) → (∀ t ∈ Icc a b, IsSelfAdjoint (A t)) →
-      (∀ t ∈ Icc a b, (A t).IsFredholm) → (∀ t ∈ Icc a b, t ∉ S → (A t).ker = ⊥) →
-      (∀ t ∈ S, t ∈ Ioo a b ∧ HasDerivAt A (A' t) t ∧
-        (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t))).Nondegenerate) →
-      spectralFlow A a b = ∑ t ∈ S,
-        ((sigPos (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t))) : ℤ) -
-          sigNeg (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t)))) := by
-  classical
-  induction S using Finset.induction_on_max with
-  | empty =>
-    intro b hab hA hsa hF hker _
-    rw [Finset.sum_empty]
-    exact spectralFlow_eq_zero_of_forall_ker_eq_bot hab hA hsa hF fun t ht ↦
-      hker t ht (Finset.notMem_empty t)
-  | insert s S hlt ih =>
-    intro b _ hA hsa hF hker hS
-    obtain ⟨⟨has, hsb⟩, hd, hΓ⟩ := hS s (Finset.mem_insert_self s S)
-    obtain ⟨hcont, hsa'⟩ :=
-      hA.eventually_continuousAt_and_eventually_of_mem_Ioo hsa ⟨has, hsb⟩
-    -- Choose `t₁ < s < t₂`, with `t₁` above every other crossing, such that the spectral flow from
-    -- `t₁` to `t₂` is the signature of the crossing form at `s`.
-    have hleft : ∀ᶠ t in 𝓝[<] s, t ∈ Ioo a s ∧ ∀ x ∈ S, x < t :=
-      (eventually_mem_set.2 (Ioo_mem_nhdsLT has)).and <| (eventually_all_finset S).2 fun x hx ↦
-        (eventually_mem_set.2 (Ioo_mem_nhdsLT (hlt x hx))).mono fun t ht ↦ ht.1
-    obtain ⟨t₁, ⟨⟨hat₁, ht₁s⟩, hSt₁⟩, hjump⟩ := (hleft.and
-      (eventually_spectralFlow_eq_sigPos_sub_sigNeg_crossingForm hcont hsa'
-        (hF s ⟨has.le, hsb.le⟩) hd hΓ)).exists
-    obtain ⟨t₂, ⟨hst₂, ht₂b⟩, hjump⟩ :=
-      ((eventually_mem_set.2 (Ioo_mem_nhdsGT hsb)).and hjump).exists
-    -- On `[t₂, b]` there is no crossing, so there is no spectral flow there.
-    have hright : spectralFlow A t₂ b = 0 := by
-      have hsub : Icc t₂ b ⊆ Icc a b := Icc_subset_Icc (has.trans hst₂).le le_rfl
-      refine spectralFlow_eq_zero_of_forall_ker_eq_bot ht₂b.le (hA.mono hsub)
-        (fun t ht ↦ hsa t (hsub ht)) (fun t ht ↦ hF t (hsub ht)) fun t ht ↦ hker t (hsub ht) ?_
-      rw [Finset.mem_insert, not_or]
-      exact ⟨(hst₂.trans_le ht.1).ne', fun htS ↦ (hlt t htS).not_gt (hst₂.trans_le ht.1)⟩
-    -- On `[a, t₁]` the crossings are those of `S`, and the induction hypothesis applies.
-    have hsub : Icc a t₁ ⊆ Icc a b := Icc_subset_Icc le_rfl (ht₁s.trans hsb).le
-    have hinit := ih t₁ hat₁.le (hA.mono hsub) (fun t ht ↦ hsa t (hsub ht))
-      (fun t ht ↦ hF t (hsub ht))
-      (fun t ht htS ↦ hker t (hsub ht) (by
-        rw [Finset.mem_insert, not_or]
-        exact ⟨(ht.2.trans_lt ht₁s).ne, htS⟩))
-      (fun t htS ↦ ⟨⟨(hS t (Finset.mem_insert_of_mem htS)).1.1, hSt₁ t htS⟩,
-        (hS t (Finset.mem_insert_of_mem htS)).2⟩)
-    -- Concatenate the spectral flows over `[a, t₁]`, `[t₁, t₂]` and `[t₂, b]`.
-    have ht₁t₂ : t₁ ≤ t₂ := (ht₁s.trans hst₂).le
-    have hsub₂ : Icc a t₂ ⊆ Icc a b := Icc_subset_Icc le_rfl ht₂b.le
-    rw [spectralFlow_add_adjacent_intervals (hat₁.le.trans ht₁t₂) ht₂b.le hA hsa hF,
-      spectralFlow_add_adjacent_intervals hat₁.le ht₁t₂ (hA.mono hsub₂)
-        (fun t ht ↦ hsa t (hsub₂ ht)) (fun t ht ↦ hF t (hsub₂ ht)),
-      hinit, hjump, hright, Finset.sum_insert fun h ↦ (hlt s h).false]
-    ring
-
 /-- **The regular-crossing formula for the spectral flow** (Robbin–Salamon). Let `A` be a continuous
 path of self-adjoint Fredholm operators on a real Hilbert space over `[a, b]`, injective (hence
 invertible) at both endpoints. Suppose that every crossing `t ∈ (a, b)`, a time at which `A t` is
@@ -188,22 +133,21 @@ theorem spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm (hab : a ≤ b)
     spectralFlow A a b = ∑ᶠ t ∈ Ioo a b,
       ((sigPos (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t))) : ℤ) -
         sigNeg (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (A' t)))) := by
-  have hfin := finite_setOf_ker_ne_bot hA hsa hF ha hb hderiv hreg
-  have hS : ∀ t, t ∈ hfin.toFinset ↔ t ∈ Icc a b ∧ (A t).ker ≠ ⊥ := by simp
-  rw [spectralFlow_eq_sum_crossingForm_of_finset hfin.toFinset b hab hA hsa hF
-    (fun t ht htS ↦ not_not.1 fun hnt ↦ htS ((hS t).2 ⟨ht, hnt⟩))
-    (fun t htS ↦ by
-      obtain ⟨ht, hnt⟩ := (hS t).1 htS
-      have hIoo := mem_Ioo_of_mem_Icc_of_not (fun t ↦ (A t).ker = ⊥) ha hb ht hnt
-      exact ⟨hIoo, hderiv t hIoo hnt, hreg t hIoo hnt⟩)]
-  refine (finsum_mem_eq_sum_of_inter_support_eq _ ?_).symm
-  ext t
-  simp only [mem_inter_iff, Finset.mem_coe, hS, Function.mem_support]
-  refine and_congr_left fun hft ↦ ?_
-  -- Only crossings contribute: at an injective time the crossing form lives on the zero space.
-  have hnt : (A t).ker ≠ ⊥ := fun hnt ↦ hft <|
-    sigPos_sub_sigNeg_crossingForm_eq_zero_of_ker_eq_bot (by rwa [ker_innerSL_comp]) _
-  exact ⟨fun ht ↦ ⟨Ioo_subset_Icc_self ht, hnt⟩,
-    fun ⟨ht, _⟩ ↦ mem_Ioo_of_mem_Icc_of_not (fun t ↦ (A t).ker = ⊥) ha hb ht hnt⟩
+  refine eq_finsum_of_eventually_eq_of_add (p := fun t ↦ (A t).ker = ⊥) hab
+    (finite_setOf_ker_ne_bot hA hsa hF ha hb hderiv hreg) ha hb
+    (fun s m t has hsm hmt htb ↦ ?_) (fun s t has hst htb hker ↦ ?_) (fun s hs hns ↦ ?_)
+    fun t _ ht ↦ sigPos_sub_sigNeg_crossingForm_eq_zero_of_ker_eq_bot (by rwa [ker_innerSL_comp]) _
+  · -- The spectral flow is additive.
+    have hsub : Icc s t ⊆ Icc a b := Icc_subset_Icc has htb
+    exact spectralFlow_add_adjacent_intervals hsm hmt (hA.mono hsub)
+      (fun u hu ↦ hsa u (hsub hu)) fun u hu ↦ hF u (hsub hu)
+  · -- Over an interval without crossings there is no spectral flow.
+    have hsub : Icc s t ⊆ Icc a b := Icc_subset_Icc has htb
+    exact spectralFlow_eq_zero_of_forall_ker_eq_bot hst (hA.mono hsub)
+      (fun u hu ↦ hsa u (hsub hu)) (fun u hu ↦ hF u (hsub hu)) hker
+  · -- Across a crossing the spectral flow jumps by the signature of its crossing form.
+    obtain ⟨hcont, hsa'⟩ := hA.eventually_continuousAt_and_eventually_of_mem_Ioo hsa hs
+    exact eventually_spectralFlow_eq_sigPos_sub_sigNeg_crossingForm hcont hsa'
+      (hF s (Ioo_subset_Icc_self hs)) (hderiv s hs hns) (hreg s hs hns)
 
 end TauCeti
