@@ -14,13 +14,19 @@ public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
-# Units from automorphisms of the rank-one free module
+# Endomorphisms in `ModuleCat`
 
 An automorphism of a ring as a module over itself sends one to a unit. Consequently,
 the scalar comparing the images of one under two isomorphisms is a unit as well.
 
 A natural number `e` kills a module `M` exactly when the endomorphism `e • 𝟙 M` vanishes
 (`ModuleCat.nsmul_id_eq_zero_iff`).
+
+An `R`-linear, additive, fully faithful functor `F : ModuleCat A ⥤ ModuleCat B`, for instance a
+Morita equivalence, identifies the endomorphism algebras:
+`Module.End A M ≃ₐ[R] Module.End B (F M)`
+(`CategoryTheory.Functor.FullyFaithful.moduleEndAlgEquiv`, with `moduleEndAlgEquiv_apply` and
+`moduleEndAlgEquiv_symm_apply`).
 -/
 
 public noncomputable section
@@ -73,14 +79,16 @@ noncomputable def moduleEndAlgEquiv (M : ModuleCat.{v} A) :
       Functor.FullyFaithful.ringEquivEnd_apply_asHom]
     -- The endomorphism `algebraMap R _ r` of `M` is `r • 𝟙 M`, and `F` is `R`-linear.
     change (F.map (r • 𝟙 M)).hom = _
-    rw [F.map_smul, F.map_id]
-    rfl
+    rw [F.map_smul, F.map_id, ModuleCat.hom_smul, ModuleCat.hom_id,
+      Module.algebraMap_end_eq_smul_id]
 
 @[simp]
 theorem moduleEndAlgEquiv_apply (M : ModuleCat.{v} A) (f : Module.End A M) :
     hF.moduleEndAlgEquiv R M f = (F.map (ModuleCat.ofHom f)).hom := by
-  rw [moduleEndAlgEquiv, AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply, RingEquiv.trans_apply,
+  simp only [moduleEndAlgEquiv, AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply,
     ModuleCat.endRingEquiv_apply, Functor.FullyFaithful.ringEquivEnd_apply_asHom]
+  -- `((ModuleCat.endRingEquiv M).symm f).asHom` is `ModuleCat.ofHom f` by definition of
+  -- `ModuleCat.endRingEquiv`, which has no simp lemma in this form.
   rfl
 
 @[simp]
