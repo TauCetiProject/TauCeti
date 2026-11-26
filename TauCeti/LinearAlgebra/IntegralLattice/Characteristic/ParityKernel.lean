@@ -145,7 +145,7 @@ theorem evenSublattice_dualCarrier_eq_sup_span_half_characteristic (hLu : L.IsUn
       Submodule.add_mem_sup hxL (Submodule.mem_span_singleton_self _)
 
 /-- In a unimodular lattice, `2 • [w / 2] = 0` in `A_(L_even)` iff the rank is even. -/
-theorem two_nsmul_halfCharacteristicClass_eq_zero_iff (hLu : L.IsUnimodular) {w : L}
+theorem two_nsmul_halfCharacteristicClass_eq_zero_iff_even_finrank (hLu : L.IsUnimodular) {w : L}
     (hw : L.IsCharacteristicVector w) :
     2 • L.halfCharacteristicClass hw = 0 ↔ Even (Module.finrank ℤ L) := by
   rw [L.two_nsmul_halfCharacteristicClass_eq_zero_iff_even_integralNorm hw,
@@ -231,7 +231,7 @@ noncomputable def zmodTwoProdAddEquivEvenSublatticeDiscriminantGroup (hLu : L.Is
     ZMod 2 × ZMod 2 ≃+ L.evenSublattice.DiscriminantGroup := by
   have hw2 : (2 : ℤ) • L.halfCharacteristicClass hw = 0 := by
     rw [two_zsmul, ← two_nsmul]
-    exact (L.two_nsmul_halfCharacteristicClass_eq_zero_iff hLu hw).mpr heven
+    exact (L.two_nsmul_halfCharacteristicClass_eq_zero_iff_even_finrank hLu hw).mpr heven
   refine AddEquiv.ofBijective
     ((L.evenSublatticeZModTwoHom _ (L.two_zsmul_latticeVectorClass e)).coprod
       (L.evenSublatticeZModTwoHom _ hw2)) ?_
@@ -556,9 +556,10 @@ theorem carrier_inf_eq_evenSublattice_carrier_of_isNeighbor {M : IntegralLattice
     (AddSubgroup.relIndex_eq_one.mp (by omega)))
 
 /-- **Classification of even Kneser two-neighbors of an odd unimodular lattice.** -/
-theorem eq_halfCharacteristicOverlattice_or_shifted_of_isNeighbor [L.IsNondegenerate]
-    {M : IntegralLattice V} (hLu : L.IsUnimodular) (hM : L.IsNeighbor M 2) (hMe : M.IsEven)
-    {w : L} (hw : L.IsCharacteristicVector w) {e : L} (he : Odd (L.integralNorm e)) :
+theorem eq_halfCharacteristicOverlattice_or_eq_shiftedHalfCharacteristicOverlattice_of_isNeighbor
+    [L.IsNondegenerate] {M : IntegralLattice V} (hLu : L.IsUnimodular) (hM : L.IsNeighbor M 2)
+    (hMe : M.IsEven) {w : L} (hw : L.IsCharacteristicVector w) {e : L}
+    (he : Odd (L.integralNorm e)) :
     ∃ h8 : 8 ∣ L.integralNorm w,
       M = L.halfCharacteristicOverlattice hw h8 ∨
         M = L.shiftedHalfCharacteristicOverlattice hw h8 e := by

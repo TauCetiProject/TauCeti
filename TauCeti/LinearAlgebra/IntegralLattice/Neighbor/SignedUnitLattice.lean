@@ -197,8 +197,8 @@ theorem nonempty_isometry_evenSignedUnitNeighbor_of_isNeighbor_signedUnitLattice
     have hrel := hM.relIndex_inf_left; rw [hcar, AddSubgroup.relIndex_self] at hrel; omega
   obtain ⟨k⟩ : Nonempty (Fin r ⊕ Fin s) := Fintype.card_pos_iff.mp (by simpa using hpos)
   obtain ⟨h8', hEq⟩ :=
-    (signedUnitLattice r s).eq_halfCharacteristicOverlattice_or_shifted_of_isNeighbor
-      (isUnimodular_signedUnitLattice r s) hM hMe
+    eq_halfCharacteristicOverlattice_or_eq_shiftedHalfCharacteristicOverlattice_of_isNeighbor
+      (signedUnitLattice r s) (isUnimodular_signedUnitLattice r s) hM hMe
       (isCharacteristicVector_signedUnitCharacteristicVector r s)
       (odd_integralNorm_signedUnitBasisVector r s k)
   have h8 : 8 ∣ (r : ℤ) - s := by rwa [integralNorm_signedUnitCharacteristicVector] at h8'
