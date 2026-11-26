@@ -32,6 +32,8 @@ probability measures is at most two, not one.
 
 * `MeasureTheory.etvDist_eq_tsum_enorm_singleton`, `MeasureTheory.tvDist_eq_tsum_abs_singleton`:
   extended and real total variation distances as singleton series;
+* `MeasureTheory.tvDist_eq_two_mul_abs_measureReal_true`: on `Bool`, for measures of equal total
+  mass, the distance is twice the difference of the masses at `true`;
 * `MeasureTheory.iSup_measure_sub_eq_tsum_singleton`,
   `MeasureTheory.measure_setOf_lt_sub_eq_tsum_singleton`: event excess on countable spaces and
   its attainment on `{x | ν {x} < μ {x}}`;
@@ -85,6 +87,20 @@ theorem tvDist_eq_tsum_abs_singleton :
   simp
 
 end TotalVariation
+
+/-- On `Bool`, the total variation distance between two finite measures of the same total mass
+(e.g. two probability measures) is twice the absolute difference of their masses at `true`. -/
+theorem tvDist_eq_two_mul_abs_measureReal_true {μ ν : Measure Bool} [IsFiniteMeasure μ]
+    (h : μ Set.univ = ν Set.univ) :
+    tvDist μ ν = 2 * |μ.real {true} - ν.real {true}| := by
+  have : IsFiniteMeasure ν := ⟨h ▸ measure_lt_top μ Set.univ⟩
+  have hμ := sum_measureReal_singleton (μ := μ) Finset.univ
+  have hν := sum_measureReal_singleton (μ := ν) Finset.univ
+  have huniv : μ.real Set.univ = ν.real Set.univ := by simp only [measureReal_def, h]
+  simp only [Finset.coe_univ, Fintype.sum_bool] at hμ hν
+  rw [tvDist_eq_tsum_abs_singleton, tsum_fintype, Fintype.sum_bool,
+    show μ.real {false} - ν.real {false} = -(μ.real {true} - ν.real {true}) by linarith,
+    abs_neg, two_mul]
 
 section Excess
 
