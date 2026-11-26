@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Smooth
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Weingarten.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # Smoothness of the Weingarten map and the mean curvature of the boundary
