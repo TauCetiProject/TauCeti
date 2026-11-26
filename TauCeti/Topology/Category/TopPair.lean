@@ -215,6 +215,14 @@ lemma ofSubsetIso_inv (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') :
     (ofSubsetIso e h).inv =
       ofSubsetMap (TopCat.ofHom e.symm) fun y hy ↦ (h _).2 (by simpa using hy) := (rfl)
 
+-- Not `@[simp]`: `TopPair.ofSubsetIso_hom` simplifies `(ofSubsetIso e h).hom` inside the LHS,
+-- so `simpNF` rejects `@[simp]` on this lemma.
+/-- On the ambient space, `(TopPair.ofSubsetIso e h).hom` acts as `e`. -/
+lemma ofSubsetIso_hom_fst_apply (e : X ≃ₜ Y) (h : ∀ x, x ∈ B ↔ e x ∈ B') (x : X) :
+    Hom.fst (ofSubsetIso e h).hom x = e x := by
+  rw [ofSubsetIso_hom]
+  exact ofSubsetMap_fst_apply _ _ x
+
 /-- A homotopy between maps `X ⟶ Y` which keeps `B` inside `B'` at every time induces a homotopy
 between the induced maps of pairs `(X, B) ⟶ (Y, B')`. -/
 def ofSubsetHomotopy {g₀ g₁ : X ⟶ Y} (F : g₀.hom.Homotopy g₁.hom)

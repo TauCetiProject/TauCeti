@@ -252,8 +252,8 @@ lemma intervalQuotientSphereOneHomeomorph_π (t : I) :
       basedCubeToSphere.{u} 1 (fun _ ↦ t) := by
   have h₁ : TopPair.Hom.fst intervalEndpointPairIsoCubeOne.{u}.hom (ULift.up t) =
       ULift.up fun _ ↦ t := by
-    rw [intervalEndpointPairIsoCubeOne, TopPair.ofSubsetIso_hom]
-    apply TopPair.ofSubsetMap_fst_apply
+    rw [intervalEndpointPairIsoCubeOne]
+    apply TopPair.ofSubsetIso_hom_fst_apply
   exact (congrArg (cubeQuotientSphereHomeomorph.{u} 1)
     ((TopPair.ordinaryPairQuotientCongrHomeomorph_π intervalEndpointPairIsoCubeOne.{u}
       (ULift.up t)).trans (congrArg _ h₁))).trans (cubeQuotientSphereHomeomorph_π 1 _)

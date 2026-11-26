@@ -593,8 +593,8 @@ lemma cubeBoundaryPairProdIso_hom_fst_apply (m n : ℕ)
     (p : ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))) :
     TopPair.Hom.fst (cubeBoundaryPairProdIso.{u} m n).hom p =
       ULift.up (Fin.append p.1.down p.2.down) := by
-  rw [cubeBoundaryPairProdIso, TopPair.ofSubsetIso_hom]
-  apply TopPair.ofSubsetMap_fst_apply
+  rw [cubeBoundaryPairProdIso]
+  apply TopPair.ofSubsetIso_hom_fst_apply
 
 /-- A singular `m`-cube of the ambient space of a pair `P` sending the boundary of the cube into
 the subspace, as a map of pairs `(Iᵐ, ∂Iᵐ) ⟶ P`. -/

@@ -80,24 +80,37 @@ def spherePoleLinearIsometry (n : ℕ) :
     if i = 0 ∧ n ≠ 0 then LinearIsometryEquiv.neg ℝ else LinearIsometryEquiv.refl ℝ ℝ).trans
     (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (finRotate (n + 1)))
 
+-- Not `@[simp]`: the concrete-index `@[simp]` lemmas below simplify `0`, `1`, and `j.succ.succ`,
+-- and marking this general `if`-formula `@[simp]` would put their LHSs out of `simp` normal form.
+/-- Coordinate formula for `TauCeti.spherePoleLinearIsometry`: coordinate `i` is pulled back along
+`finRotate (n + 1)` and negated when `n ≠ 0` and `(finRotate (n + 1)).symm i = 0`. -/
+lemma spherePoleLinearIsometry_apply (n : ℕ) (x : EuclideanSpace ℝ (Fin (n + 1)))
+    (i : Fin (n + 1)) :
+    spherePoleLinearIsometry n x i =
+      (if (finRotate (n + 1)).symm i = 0 ∧ n ≠ 0 then -1 else 1) *
+        x ((finRotate (n + 1)).symm i) := by
+  simp only [spherePoleLinearIsometry, LinearIsometryEquiv.trans_apply,
+    LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft'_apply,
+    LinearIsometryEquiv.piLpCongrRight_apply]
+  split_ifs <;> simp
+
 @[simp]
 lemma spherePoleLinearIsometry_zero :
     spherePoleLinearIsometry 0 = LinearIsometryEquiv.refl ℝ (EuclideanSpace ℝ (Fin 1)) := by
-  ext x i; rw [Fin.eq_zero i]; simp [spherePoleLinearIsometry]
+  ext x i; rw [Fin.eq_zero i]; simp [spherePoleLinearIsometry_apply]
 
 @[simp]
 lemma spherePoleLinearIsometry_apply_zero (n : ℕ) (x : EuclideanSpace ℝ (Fin (n + 1))) :
     spherePoleLinearIsometry n x 0 = x (Fin.last n) := by
-  simp only [spherePoleLinearIsometry, LinearIsometryEquiv.trans_apply,
-    LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft', Equiv.coe_fn_mk]
-  rw [(finRotate (n + 1)).symm_apply_eq.2 finRotate_last.symm]; simp
+  rw [spherePoleLinearIsometry_apply, (finRotate (n + 1)).symm_apply_eq.2 finRotate_last.symm]
+  simp
 
 @[simp]
 lemma spherePoleLinearIsometry_succ_apply_one (m : ℕ) (x : EuclideanSpace ℝ (Fin (m + 2))) :
     spherePoleLinearIsometry (m + 1) x 1 = -x 0 := by
-  simp only [spherePoleLinearIsometry, LinearIsometryEquiv.trans_apply,
-    LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft', Equiv.coe_fn_mk]
-  rw [(finRotate (m + 2)).symm_apply_eq.2 finRotate_apply_zero.symm]; simp
+  rw [spherePoleLinearIsometry_apply,
+    (finRotate (m + 2)).symm_apply_eq.2 finRotate_apply_zero.symm]
+  simp
 
 @[simp]
 lemma spherePoleLinearIsometry_succ_apply_succ_succ (m : ℕ) (x : EuclideanSpace ℝ (Fin (m + 2)))
@@ -105,9 +118,8 @@ lemma spherePoleLinearIsometry_succ_apply_succ_succ (m : ℕ) (x : EuclideanSpac
     spherePoleLinearIsometry (m + 1) x j.succ.succ = x j.succ.castSucc := by
   have hrot : (finRotate (m + 2)).symm j.succ.succ = j.succ.castSucc :=
     (finRotate (m + 2)).symm_apply_eq.2 (finRotate_of_lt (Nat.succ_lt_succ j.isLt)).symm
-  simp only [spherePoleLinearIsometry, LinearIsometryEquiv.trans_apply,
-    LinearIsometryEquiv.piLpCongrLeft_apply, Equiv.piCongrLeft', Equiv.coe_fn_mk]
-  rw [hrot]; simp
+  rw [spherePoleLinearIsometry_apply, hrot]
+  simp
 
 @[simp]
 lemma spherePoleLinearIsometry_single_last (n : ℕ) (r : ℝ) :
@@ -137,25 +149,14 @@ lemma det_spherePoleLinearIsometry (n : ℕ) [NeZero n] :
   let M := Matrix.diagonal fun k : Fin (n + 1) ↦ if k = 0 then (-1 : ℝ) else 1
   have hM : LinearMap.toMatrix b b (spherePoleLinearIsometry n).toLinearMap =
       M.submatrix (finRotate (n + 1)).symm id := by
-    ext i j; rw [Matrix.submatrix_apply, id_eq]
-    rcases eq_or_ne i (finRotate (n + 1) j) with rfl | hi
-    · rw [Equiv.symm_apply_apply]
-      by_cases hj : j = 0 <;> simp [b, M, spherePoleLinearIsometry, hn, hj,
-        LinearMap.toMatrix_apply, EuclideanSpace.basisFun_apply]
-    · have hij : (finRotate (n + 1)).symm i ≠ j := mt (finRotate (n + 1)).symm_apply_eq.mp hi
-      simp only [b, M, Matrix.diagonal_apply_ne _ hij, spherePoleLinearIsometry,
-        LinearMap.toMatrix_apply, OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply,
-        LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-        LinearIsometryEquiv.coe_toLinearEquiv, LinearIsometryEquiv.piLpCongrRight_single,
-        LinearIsometryEquiv.piLpCongrLeft_single, OrthonormalBasis.coe_toBasis_repr_apply,
-        EuclideanSpace.basisFun_repr, PiLp.single_apply, hi, ↓reduceIte]
+    ext i j
+    simp [b, M, LinearMap.toMatrix_apply, EuclideanSpace.basisFun_apply,
+      spherePoleLinearIsometry_apply, hn, Matrix.diagonal_apply]
   have hsign : Equiv.Perm.sign (finRotate (n + 1)).symm = (-1) ^ n := by
     rw [← Equiv.Perm.inv_def, map_inv, Int.units_inv_eq_self, sign_finRotate, Nat.add_sub_cancel]
   rw [← LinearMap.det_toMatrix b, hM, Matrix.det_permute, hsign, Matrix.det_diagonal,
     Fin.prod_univ_succ]
-  simp only [Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, Int.reduceNeg, Int.cast_pow,
-    Int.cast_neg, Int.cast_one, ↓reduceIte, Fin.succ_ne_zero, Finset.prod_const_one, mul_one,
-    pow_succ]
+  simp [pow_succ]
 
 /-- The based cube-to-sphere collapse map `Iⁿ → TopCat.sphere n`, sending `∂Iⁿ` to
 `TauCeti.sphereBasepoint n` (`e₀`) and the centre of the cube to `TauCeti.sphereAntiBasepoint n`
@@ -227,7 +228,17 @@ def sphereCongrHomeomorph {a b : ℕ} (h : a = b) :
 @[simp]
 lemma sphereCongrHomeomorph_rfl (a : ℕ) :
     sphereCongrHomeomorph (rfl : a = a) = Homeomorph.refl (TopCat.sphere.{u} a) := by
-  ext s; refine ULift.ext (Subtype.ext ?_); ext i; rfl
+  -- `TopCat.sphere.{u} a` has carrier `ULift.{u} (sphere 0 1)`; stating the identity on that
+  -- carrier lets `simp` reduce `finCongr rfl` and `piLpCongrLeft` by lemmas.
+  have he :
+      (Homeomorph.ulift.trans <|
+        (((LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
+          (finCongr (congrArg (· + 1) (rfl : a = a)))).toHomeomorph.subtype fun _ ↦ by simp).trans
+          Homeomorph.ulift.symm)) =
+        Homeomorph.refl (ULift.{u} (sphere (0 : EuclideanSpace ℝ (Fin (a + 1))) 1)) := by
+    ext s
+    simp [Homeomorph.ulift, Homeomorph.subtype]
+  exact he
 
 @[simp]
 lemma sphereCongrHomeomorph_sphereBasepoint {a b : ℕ} (h : a = b) :
