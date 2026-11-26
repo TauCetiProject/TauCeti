@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Order.AddGroupWithTop
 public import TauCeti.GroupTheory.BruhatTits.RootDatum
 public import TauCeti.GroupTheory.GroupAction.ConjAct
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.Order.Interval.Finite
 
 /-!
 # Valuations of a root datum
@@ -304,28 +305,15 @@ theorem isDiscrete_iff : φ.IsDiscrete ↔ ∀ (i : ι) (r s : ℝ), (φ.valueSe
 
 variable {φ}
 
-/-- A discrete valuation takes finitely many values in each closed bounded interval. -/
-theorem IsDiscrete.finite_valueSet_inter_Icc (h : φ.IsDiscrete) (i : ι) (r s : ℝ) :
-    (φ.valueSet i ∩ Set.Icc r s).Finite :=
-  h i r s
-
 /-- For a discrete valuation, the filtration `U (a, ·)` is constant on an interval `(r, s]` to
 the right of every `r`. -/
 theorem IsDiscrete.exists_forall_filtration_eq (h : φ.IsDiscrete) (i : ι) (r : ℝ) :
     ∃ s, r < s ∧ ∀ t ∈ Set.Ioc r s, φ.filtration i t = φ.filtration i s := by
-  -- `s` is the least element of the finite set `Γ a ∩ (r, r + 1]` together with `r + 1`.
-  set S := insert (r + 1) (φ.valueSet i ∩ Set.Ioc r (r + 1))
-  have hS : S.Finite :=
-    ((h i r (r + 1)).subset (Set.inter_subset_inter_right _ Set.Ioc_subset_Icc_self)).insert _
-  obtain ⟨s, hs, hmin⟩ := Set.exists_min_image S id hS (Set.insert_nonempty _ _)
-  have hsr : s ≤ r + 1 := hmin _ (Set.mem_insert _ _)
-  have hrs : r < s := by
-    rcases Set.mem_insert_iff.mp hs with rfl | hs
-    · exact lt_add_one r
-    · exact hs.2.1
+  -- `s` is a lower bound of the values of `φ a` above `r`, with `s > r`.
+  obtain ⟨s, hrs, hmin⟩ := exists_lt_forall_le_of_finite_inter_Ioo (lt_add_one r)
+    ((h i r (r + 1)).subset (Set.inter_subset_inter_right _ Set.Ioo_subset_Icc_self))
   refine ⟨s, hrs, fun t ht ↦ (φ.filtration_eq_filtration_iff ht.2).mpr ?_⟩
-  refine Set.disjoint_left.mpr fun q hq hqt ↦ hqt.2.not_ge ?_
-  exact hmin q (Set.mem_insert_of_mem _ ⟨hq, ht.1.trans_le hqt.1, (hqt.2.trans_le hsr).le⟩)
+  exact Set.disjoint_left.mpr fun q hq hqt ↦ hqt.2.not_ge (hmin q hq (ht.1.trans_le hqt.1))
 
 /-- For a discrete valuation, the subgroup `U (a, r+) = ⋃_{t > r} U (a, t)` is itself a
 filtration subgroup `U (a, s)` for some `s > r`. -/
@@ -577,7 +565,7 @@ theorem Equipollent.trans {ψ χ : Valuation D} (h₁ : φ.Equipollent ψ) (h₂
 /-- Discreteness is invariant under equipollence. -/
 theorem Equipollent.isDiscrete_iff {ψ : Valuation D} (h : φ.Equipollent ψ) :
     φ.IsDiscrete ↔ ψ.IsDiscrete := by
-  obtain ⟨v, rfl⟩ := h
+  obtain ⟨v, rfl⟩ := AddAction.mem_orbit_iff.1 (AddAction.orbitRel_apply.1 h)
   simp
 
 variable (D) in

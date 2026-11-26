@@ -13,6 +13,8 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.RankOne
+import TauCeti.Algebra.Order.Floor.Ring
+import TauCeti.Order.Interval.Finite
 
 /-!
 # The valued root datum of `SL₂`
@@ -581,48 +583,25 @@ theorem isDiscrete_sl2_iff :
     (sl2 R ω hω).IsDiscrete ↔ ∃ ε : ℝ, 0 < ε ∧ ∀ x : K, 0 < ω x → (ε : WithTop ℝ) ≤ ω x := by
   rw [isDiscrete_sl2_iff_finite]
   constructor
-  · -- `ε` is the least element of the finite set `ω (Kˣ) ∩ (0, 1]` together with `1`.
+  · -- `ε` is a lower bound of the positive values of `ω`, with `ε > 0`.
     intro h
-    set S := insert 1 ({t : ℝ | ∃ x : K, x ≠ 0 ∧ ω x = t} ∩ Set.Ioc 0 1)
-    have hS : S.Finite :=
-      ((h 0 1).subset (Set.inter_subset_inter_right _ Set.Ioc_subset_Icc_self)).insert _
-    obtain ⟨ε, hε, hmin⟩ := Set.exists_min_image S id hS (Set.insert_nonempty _ _)
-    have hε1 : ε ≤ 1 := hmin 1 (Set.mem_insert _ _)
-    refine ⟨ε, ?_, fun x hx ↦ ?_⟩
-    · rcases Set.mem_insert_iff.mp hε with rfl | hε
-      exacts [one_pos, hε.2.1]
+    obtain ⟨ε, hε, hmin⟩ := exists_lt_forall_le_of_finite_inter_Ioo one_pos
+      ((h 0 1).subset (Set.inter_subset_inter_right _ Set.Ioo_subset_Icc_self))
+    refine ⟨ε, hε, fun x hx ↦ ?_⟩
     rcases eq_or_ne (ω x) ⊤ with h0 | h0
     · simp [h0]
     obtain ⟨t, ht⟩ := WithTop.ne_top_iff_exists.mp h0
     rw [← ht] at hx ⊢
     have hx0 : x ≠ 0 := fun h ↦ by simp [h] at ht
-    rcases le_or_gt t 1 with ht1 | ht1
-    · exact_mod_cast hmin t (Set.mem_insert_of_mem _ ⟨⟨x, hx0, ht.symm⟩, by exact_mod_cast hx, ht1⟩)
-    · exact_mod_cast hε1.trans ht1.le
-  · -- Two values in `[r, s]` with the same `⌊(t - r) / ε⌋` differ by less than `ε`; their
-    -- difference is again a value of `ω`, so they are equal.
-    rintro ⟨ε, hε, hsep⟩ r s
-    have key {a b : ℝ} {x y : K} (hx : ω x = a) (hy : ω y = b) (hab : a < b)
-        (he : ⌊(a - r) / ε⌋ = ⌊(b - r) / ε⌋) : False := by
-      have hyx : ω (y * x⁻¹) = ((b - a : ℝ) : WithTop ℝ) := by
-        rw [AddValuation.map_mul, AddValuation.map_inv, hx, hy,
-          ← WithTop.LinearOrderedAddCommGroup.coe_neg, ← WithTop.coe_add, sub_eq_add_neg]
-      have hle : ε ≤ b - a := by
-        have := hsep (y * x⁻¹) (by rw [hyx]; exact_mod_cast sub_pos.mpr hab)
-        rwa [hyx, WithTop.coe_le_coe] at this
-      have hlt := (abs_sub_lt_iff.mp (Int.abs_sub_lt_one_of_floor_eq_floor he)).2
-      rw [div_sub_div_same, sub_sub_sub_cancel_right, div_lt_one hε] at hlt
-      exact hlt.not_ge hle
-    refine Set.Finite.of_finite_image ((Set.finite_Icc 0 ⌊(s - r) / ε⌋).subset ?_)
-      (f := fun t ↦ ⌊(t - r) / ε⌋) ?_
-    · rintro _ ⟨t, ⟨_, hrt, hts⟩, rfl⟩
-      exact ⟨Int.floor_nonneg.mpr (div_nonneg (sub_nonneg.mpr hrt) hε.le),
-        Int.floor_le_floor (div_le_div_of_nonneg_right (by linarith) hε.le)⟩
-    · rintro a ⟨⟨x, -, hx⟩, -⟩ b ⟨⟨y, -, hy⟩, -⟩ he
-      rcases lt_trichotomy a b with hab | rfl | hab
-      · exact (key hx hy hab he).elim
-      · rfl
-      · exact (key hy hx hab he.symm).elim
+    exact_mod_cast hmin t ⟨x, hx0, ht.symm⟩ (by exact_mod_cast hx)
+  · -- Two values `a < b` of `ω` differ by the value `b - a = ω (y * x⁻¹)`, so by at least `ε`.
+    rintro ⟨ε, hε, hsep⟩
+    refine finite_inter_Icc_of_forall_le_sub hε ?_
+    rintro a ⟨x, -, hx⟩ b ⟨y, -, hy⟩ hab
+    have hyx : ω (y * x⁻¹) = ((b - a : ℝ) : WithTop ℝ) := by
+      simp [hx, hy, sub_eq_add_neg]
+    have hle := hsep (y * x⁻¹) (by rw [hyx]; exact_mod_cast sub_pos.mpr hab)
+    rwa [hyx, WithTop.coe_le_coe] at hle
 
 /-- If `ω` takes only integer values on `Kˣ`, as a normalized discrete valuation does, then the
 standard valuation of `SL₂(K)` is discrete. -/
