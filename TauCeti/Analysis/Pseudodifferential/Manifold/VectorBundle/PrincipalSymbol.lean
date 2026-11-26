@@ -596,7 +596,7 @@ theorem sectionClassicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators {k
     (hf : mvfderiv 𝓘(ℝ, CoordinateSpace n) f x ≠ 0) (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
     sectionClassicalPrincipalSymbol k P x (mvfderiv 𝓘(ℝ, CoordinateSpace n) f x) (s x) =
       (Complex.I ^ k / k.factorial) • (smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) P s x := by
-  set R := (smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) P
+  set R := (smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) P with hRdef
   -- The `k`-fold commutator `R` has order `0`: it is linear over the functions.
   have hR : ∀ (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) σ, R (g • σ) = g • R σ :=
     mem_differentialOperators_zero_iff.1
@@ -625,8 +625,8 @@ theorem sectionClassicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators {k
   rw [← hv, coord_sectionClassicalPrincipalSymbol
       (mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators hP),
     classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators hentry f hf,
-    ← sectionEntry_smulCommutator_pow,
-    sectionEntry_apply, one_smul, hRs, map_smul, map_smul, hρx, one_smul, smul_eq_mul]
+    ← sectionEntry_smulCommutator_pow]
+  simp [sectionEntry_apply, ← hRdef, hRs, hρx]
 
 /-! ### Ellipticity -/
 
