@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Valuation.Discrete.UnitPart
 public import TauCeti.RingTheory.Valuation.UnitGroup
+import TauCeti.Algebra.Ring.Units
 
 /-!
 # The tame symbol of a discrete valuation
@@ -282,46 +283,36 @@ theorem tameSymbol_coe_right_of_ord_eq_one {t : Fˣ} (ht : v.ord (t : F) = 1)
 
 /-- **The tame symbol through unit parts.** Let `t` have order one, and write `f = t ^ a · u` and
 `g = t ^ b · w` with `u = v.unitPart t ht f` and `w = v.unitPart t ht g` units of the valuation
-ring. Then `∂_v{f, g} = (-1) ^ (a b) · res u ^ b · res w ^ (-a)`. As the left-hand side does not
-involve `t`, neither does the right-hand side. -/
+ring. Then `∂_v{f, g} = (-1) ^ (a b) · res u ^ b · res w ^ (-a)`, where the residues
+`res u = v.unitPartResidue t ht f` and `res w = v.unitPartResidue t ht g` are the reduced unit
+parts. As the left-hand side does not involve `t`, neither does the right-hand side. -/
 theorem tameSymbol_eq_unitPart (t : Fˣ) (ht : v.ord (t : F) = 1) (f g : Fˣ) :
     v.tameSymbol f g = (-1) ^ (v.ord (f : F) * v.ord (g : F)) *
-      v.valuationSubring.unitGroupToResidueFieldUnits (v.unitPart t ht f) ^ v.ord (g : F) *
-      v.valuationSubring.unitGroupToResidueFieldUnits (v.unitPart t ht g) ^ (-v.ord (f : F)) := by
+      v.unitPartResidue t ht f ^ v.ord (g : F) * v.unitPartResidue t ht g ^ (-v.ord (f : F)) := by
   rw [v.tameSymbol_eq_of_tameUnit_eq (⟨-1, v.valuationSubring.neg_one_mem_unitGroup⟩ ^
       (v.ord (f : F) * v.ord (g : F)) * v.unitPart t ht f ^ v.ord (g : F) *
       v.unitPart t ht g ^ (-v.ord (f : F))) (v.tameUnit_eq_unitPart t ht f g),
     map_mul, map_mul, map_zpow, map_zpow, map_zpow,
-    ValuationSubring.unitGroupToResidueFieldUnits_neg_one]
+    ValuationSubring.unitGroupToResidueFieldUnits_neg_one, unitPartResidue_apply,
+    unitPartResidue_apply]
 
 /-- The Steinberg relation when the first entry has positive order. -/
 private theorem tameSymbol_of_add_eq_one_of_ord_pos {r s : Fˣ} (h : (r : F) + s = 1)
     (hr : 0 < v.ord (r : F)) : v.tameSymbol r s = 1 := by
-  have hs : (s : F) = 1 + -(r : F) := by rw [← h]; ring
-  have hs0 : v.ord (s : F) = 0 := by
-    rw [hs, v.ord_add_eq_min_of_ord_ne (by simp) (v.ne_zero_iff.2 (neg_ne_zero.2 r.ne_zero))
-      (by rw [ord_one, ord_neg]; omega), ord_one, ord_neg]
-    omega
-  let u : v.valuationSubring.unitGroup := ⟨s, (v.mem_unitGroup_iff_ord_eq_zero s).2 hs0⟩
-  have hu : v.valuationSubring.unitGroupToResidueFieldUnits u = 1 :=
-    v.unitGroupToResidueFieldUnits_eq_one_of_ord_sub_one_pos u (by
-      rw [show ((u : Fˣ) : F) - 1 = -(r : F) by simp [u, hs], ord_neg]
-      exact hr)
-  simpa [hu] using v.tameSymbol_coe_right r u
+  let u : v.valuationSubring.unitGroup :=
+    ⟨s, (v.mem_unitGroup_iff_ord_eq_zero s).2 (v.ord_eq_zero_of_add_eq_one_of_ord_pos h hr)⟩
+  simpa [v.unitGroupToResidueFieldUnits_eq_one_of_add_eq_one (s := u) h hr] using
+    v.tameSymbol_coe_right r u
 
 /-- The Steinberg relation when the first entry has negative order, reduced to positive order
 through `1 - r⁻¹ = -s r⁻¹`. -/
 private theorem tameSymbol_of_add_eq_one_of_ord_neg {r s : Fˣ} (h : (r : F) + s = 1)
     (hr : v.ord (r : F) < 0) : v.tameSymbol r s = 1 := by
-  have h' : ((r⁻¹ : Fˣ) : F) + ((-(s * r⁻¹) : Fˣ) : F) = 1 := by
-    have hr0 := r.ne_zero
-    simp only [Units.val_inv_eq_inv_val, Units.val_neg, Units.val_mul]
-    field_simp
-    linear_combination -h
   have hs : s = -r * -(s * r⁻¹) := by
     rw [neg_mul_neg, mul_left_comm, mul_inv_cancel, mul_one]
   rw [hs, tameSymbol_mul_right, tameSymbol_self_neg, one_mul, ← inv_inv r, tameSymbol_inv_left,
-    inv_inv, tameSymbol_of_add_eq_one_of_ord_pos v h' (by simpa using hr), inv_one]
+    inv_inv, tameSymbol_of_add_eq_one_of_ord_pos v (Units.val_inv_add_val_neg_mul_inv_eq_one h)
+      (by simpa using hr), inv_one]
 
 /-- **The Steinberg relation**: `∂_v{r, s} = 1` whenever `r + s = 1`. -/
 theorem tameSymbol_of_add_eq_one {r s : Fˣ} (h : (r : F) + s = 1) : v.tameSymbol r s = 1 := by

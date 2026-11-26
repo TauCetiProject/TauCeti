@@ -41,8 +41,6 @@ depends on the cutoffs only through their values at the point.
 
 * `TauCeti.classicalPrincipalSymbol m P x ξ`: the principal symbol of order `m` of `P` at a
   covector `ξ ∈ T*ₓM`, a complex number.
-* `TauCeti.hasCompactSpatialSupport_of_eq_complexChartCompression`: the symbol of a chart
-  compression by `φ` and `ψ` has compact spatial support, as its outputs vanish off `tsupport φ`.
 * `TauCeti.coefficient_principal_eq_classicalPrincipalSymbol`: the principal symbol of the symbol
   of every chart compression of `P` is read from `σ_m(P)`, at the covector `⟪η, ·⟫ ∘ de_x`.
 * `TauCeti.coefficient_principal_apply_eq_classicalPrincipalSymbol`: the same statement read at a
@@ -54,6 +52,8 @@ depends on the cutoffs only through their values at the point.
   symbol is linear in the operator.
 * `TauCeti.classicalPrincipalSymbol_neg`, `TauCeti.classicalPrincipalSymbol_sub`: the principal
   symbol commutes with negation and subtraction of operators.
+* `TauCeti.classicalPrincipalSymbol_id`: the principal symbol of order `0` of the identity is `1`
+  at nonzero covectors.
 * `TauCeti.classicalPrincipalSymbol_eq_zero_of_mem_sub_one`: an operator of order `m - 1` has
   principal symbol `0` in order `m`.
 * `TauCeti.classicalPrincipalSymbol_eq_zero_iff`: conversely, the principal symbol of an operator
@@ -136,23 +136,6 @@ private theorem IsChartSymbol.eq {e : OpenPartialHomeomorph M (CoordinateSpace n
     (ha : IsChartSymbol P he φ ψ a) (hb : IsChartSymbol P he φ ψ b) : a = b :=
   ClassicalSymbol.ext <| Symbol.ext <| Symbol.coefficient_eq_of_forall_quantizeSchwartzValue_eq
     fun u _ ↦ funext fun x ↦ (ha u x).trans (hb u x).symm
-
-/-- The symbol of a chart compression by `φ` and `ψ` vanishes at positions outside the support of
-`φ`, since every output of the compression does. -/
-theorem hasCompactSpatialSupport_of_eq_complexChartCompression
-    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {b : ClassicalSymbol n ℂ ℂ m}
-    (hb : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
-      quantizeSchwartzValue b.toSymbol.coefficient u y =
-        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y) :
-    b.toSymbol.HasCompactSpatialSupport := by
-  refine Symbol.hasCompactSpatialSupport_iff_exists_tsupport_quantizeSchwartzValue_subset.2
-    ⟨tsupport φ, φ.hasCompactSupport.isCompact, fun u _ ↦ ?_⟩
-  rw [show quantizeSchwartzValue b.toSymbol.coefficient u = fun y ↦ φ y •
-      P (e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))) (e.symm y) from
-    funext fun y ↦ by rw [hb, OpenPartialHomeomorph.complexChartCompression_apply]]
-  exact tsupport_smul_subset_left _ _
 
 /-! ### Changes of chart -/
 
@@ -547,6 +530,27 @@ theorem classicalPrincipalSymbol_zero (x : M)
     classicalPrincipalSymbol m (0 : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) x ξ = 0 := by
   simpa using classicalPrincipalSymbol_smul (m := m) (zero_mem _) 0 x ξ
+
+/-- **The principal symbol of the identity** is `1` at every nonzero covector. In the preferred
+chart at `x`, the compression of the identity by a cutoff `χ` is multiplication by `χ²`, whose
+principal symbol is `χ²` at nonzero frequencies. -/
+@[simp]
+theorem classicalPrincipalSymbol_id (x : M) {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ}
+    (hξ : ξ ≠ 0) :
+    classicalPrincipalSymbol 0 (LinearMap.id : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) x ξ = 1 := by
+  set e := chartAt (CoordinateSpace n) x
+  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas x
+  have hx : x ∈ e.source := mem_chart_source _ x
+  set χ := (exists_cutoff_chartAt (n := n) x).choose
+  have hχ : χ (e x) = 1 := (exists_cutoff_chartAt (n := n) x).choose_spec.self_of_nhds
+  have h := coefficient_principal_apply_eq_classicalPrincipalSymbol
+    id_mem_classicalPseudodifferentialOperators he χ χ
+    (ClassicalSymbol.quantizeSchwartzValue_ofSpatial_eq_complexChartCompression_id he χ χ) hx ξ
+  rw [ClassicalSymbol.coefficient_principal_ofSpatial _ _ (toDual_symm_comp_inverse_mvfderiv_ne_zero
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx hξ), hχ] at h
+  simpa using h.symm
 
 /-- **Operators of lower order.** A classical pseudodifferential operator of order `m - 1` has
 principal symbol `0` in order `m`: its chart symbols, read in order `m`, have no term of order
