@@ -73,7 +73,7 @@ namespace AbsoluteValue
 
 section Field
 
-variable {K S : Type*} [Field K] [Field S] [LinearOrder S] [IsStrictOrderedRing S]
+variable {K S : Type*} [Field K] [Semifield S] [LinearOrder S] [IsStrictOrderedRing S]
   {w : AbsoluteValue K S}
 
 /-- The valuation subring `{x | w x ≤ 1}` of a nonarchimedean absolute value `w` on a field. -/
@@ -85,7 +85,11 @@ def valuationSubring (hw : IsNonarchimedean w) : ValuationSubring K where
   one_mem' := by simp
   add_mem' {x y} hx hy := (hw x y).trans (max_le hx hy)
   zero_mem' := by simp
-  neg_mem' {x} hx := by simpa only [Set.mem_ofPred_eq, AbsoluteValue.map_neg] using hx
+  neg_mem' {x} hx := by
+    -- `S` need not be a ring, so compare the squares `w (-x) * w (-x) = w x * w x` instead.
+    have h : w (-x) = w x := (mul_self_inj (w.nonneg _) (w.nonneg _)).1 <| by
+      rw [← map_mul, ← map_mul, neg_mul_neg]
+    simpa only [Set.mem_ofPred_eq, h] using hx
   mem_or_inv_mem' x := (le_total (w x) 1).imp id fun h ↦ by
     simpa only [Set.mem_ofPred_eq, map_inv₀] using inv_le_one_of_one_le₀ h
 
@@ -202,7 +206,7 @@ namespace Valuation
 
 /-- The absolute value obtained from a valuation through a strictly monotone realization has the
 same valuation subring as the valuation. -/
-theorem valuationSubring_toAbsoluteValue {K S Γ₀ : Type*} [Field K] [Field S] [LinearOrder S]
+theorem valuationSubring_toAbsoluteValue {K S Γ₀ : Type*} [Field K] [Semifield S] [LinearOrder S]
     [IsStrictOrderedRing S] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation K Γ₀)
     (f : Γ₀ →*₀ S) (hf : StrictMono f) (hf_zero : ∀ a, f a = 0 ↔ a = 0)
     (hv_zero : ∀ x, v x = 0 ↔ x = 0) :
