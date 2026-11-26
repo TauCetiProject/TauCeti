@@ -23,6 +23,9 @@ file compares these data with monoid (group) object structures on `F.obj X`, in 
   `CategoryTheory.Functor.grpObjObjOfMap`). When the axioms already hold on `X` this is Mathlib's
   `CategoryTheory.Functor.monObjObj` (`CategoryTheory.Functor.grpObjObj`), whose construction and
   proofs these follow.
+* For a morphism `f` of monoid objects, `F.map f` is a homomorphism exactly when the equations
+  expressing that `f` is one hold after applying `F`
+  (`CategoryTheory.Functor.isMonHom_map_iff_map_eq`).
 * A monoidal natural transformation `τ : F ⟶ G` is a homomorphism `F.obj X ⟶ G.obj X` between
   monoid objects whose structure morphisms are the images of the same data on `X`
   (`CategoryTheory.NatTrans.isMonHom_app`).
@@ -31,7 +34,8 @@ The first statement lets a faithful functor reflect the axioms
 (`CategoryTheory.Functor.monObjOfFaithful`). Together, the statements move monoid and group
 objects along functors which are not faithful, such as the base change functors from a member of a
 cofiltered system of schemes to its limit: a group law over the limit is spread out to a member by
-lifting its structure morphisms and then the equalities expressing its axioms.
+lifting its structure morphisms and then the equalities expressing its axioms, and a homomorphism
+by spreading out the equalities expressing that it is one.
 -/
 
 public section
@@ -73,6 +77,27 @@ theorem map_mul_assoc (h_mul : F.map mul = δ F X X ≫ μ[F.obj X]) :
   simp [h_mul, ← δ_natural_left_assoc, ← δ_natural_right_assoc]
 
 end OplaxMonoidal
+
+section IsMonHom
+
+open scoped Obj
+
+variable [F.Monoidal] {X Y : C} [MonObj X] [MonObj Y]
+
+/-- For a monoidal functor `F` and a morphism `f` of monoid objects, `F.map f` is a homomorphism
+between the image monoid objects exactly when the two homomorphism equations for `f` hold after
+applying `F`. -/
+theorem isMonHom_map_iff_map_eq (f : X ⟶ Y) :
+    IsMonHom (F.map f) ↔
+      F.map (η[X] ≫ f) = F.map η[Y] ∧ F.map (μ[X] ≫ f) = F.map ((f ⊗ₘ f) ≫ μ[Y]) := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨h_one, h_mul⟩ ↦ ⟨?_, ?_⟩⟩
+  · simpa [← cancel_epi (ε F)] using h.one_hom
+  · simpa [← cancel_epi (LaxMonoidal.μ F X X)] using h.mul_hom
+  · rw [obj.η_def, obj.η_def, Category.assoc, ← F.map_comp, h_one]
+  · rw [obj.μ_def, obj.μ_def, Category.assoc, ← F.map_comp, h_mul, F.map_comp,
+      LaxMonoidal.μ_natural_assoc]
+
+end IsMonHom
 
 variable [F.LaxMonoidal] {X : C} (one : 𝟙_ C ⟶ X) (mul : X ⊗ X ⟶ X)
 

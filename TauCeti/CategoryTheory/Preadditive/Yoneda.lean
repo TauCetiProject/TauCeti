@@ -154,6 +154,17 @@ theorem exists_comp_eq_preadditiveYoneda_obj_of_epi {Y : C} {F G : Cᵒᵖ ⥤ A
   refine ⟨s, preadditiveYoneda_obj_hom_ext ?_⟩
   exact (congrArg (π.app (op Y)) (by simp : F.map (𝟙 Y).op x = x)).trans hx
 
+/-- A morphism from a sum `∐ (-, Y j)` of representable functors to `G` lifts along any
+epimorphism `F ⟶ G` out of an additive functor `F`: lift each summand by
+`exists_comp_eq_preadditiveYoneda_obj_of_epi`. -/
+theorem exists_comp_eq_sigma_preadditiveYoneda_obj_of_epi {J : Type*} {Y : J → C}
+    {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [HasCoproduct fun j ↦ preadditiveYoneda.obj (Y j)]
+    [F.Additive] (π : F ⟶ G) [Epi π] (α : (∐ fun j ↦ preadditiveYoneda.obj (Y j)) ⟶ G) :
+    ∃ s : (∐ fun j ↦ preadditiveYoneda.obj (Y j)) ⟶ F, s ≫ π = α := by
+  choose s hs using fun j ↦ exists_comp_eq_preadditiveYoneda_obj_of_epi π
+    (Sigma.ι (fun j ↦ preadditiveYoneda.obj (Y j)) j ≫ α)
+  exact ⟨Sigma.desc s, Sigma.hom_ext _ _ fun j ↦ by simp [hs]⟩
+
 /-- A morphism from a representable functor `(-, Y)` to `F` lifts along any epimorphism
 `(-, Y') ⟶ F`, and the lift is the image of a morphism `Y ⟶ Y'`. -/
 theorem exists_preadditiveYoneda_map_comp_eq {Y Y' : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
