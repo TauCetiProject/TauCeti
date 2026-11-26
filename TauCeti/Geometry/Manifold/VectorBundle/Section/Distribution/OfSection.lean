@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Density.Integral
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution
 public import TauCeti.Geometry.Manifold.PartitionOfUnity.ChartCutoffs
+public import TauCeti.Geometry.Manifold.VectorBundle.FirstJet.Basic
 
 /-!
 # Distributional sections of locally integrable sections
@@ -23,9 +24,10 @@ analogue of Mathlib's `Distribution.ofFun`, and follows its convention: the func
 `TauCeti.BundleDistribution.ofSection_of_not_locallyIntegrableSection` correspond to
 `Distribution.ofFun_apply` / `Distribution.ofFun_eq_zero`.
 
-A section is **locally integrable** (`TauCeti.LocallyIntegrableSection`) when its readings
-`TauCeti.sectionInChartAt I G u α` in the preferred chart and trivialization at every point `α` are
-locally integrable where they are defined, for the Haar measure of the fixed basis of the model.
+A section is **locally integrable** (`TauCeti.LocallyIntegrableSection`) when its local
+representatives `TauCeti.FirstJetBundle.localRep I G u α` in the preferred chart and trivialization
+at every point `α` are locally integrable where they are defined, for the Haar measure of the fixed
+basis of the model.
 
 The key computation is in a restriction `c` of the preferred chart at `α` and the preferred frame
 of the dual-density bundle (`TauCeti.RoughDensity.inChartAt_pairing`): there the density paired
@@ -45,8 +47,6 @@ the integrals in charts are Mathlib's `TestFunction.integralAgainstBilinCLM`, th
 
 ## Main declarations
 
-* `TauCeti.sectionInChartAt`: the reading of a section in the preferred chart and trivialization,
-  with `TauCeti.sectionInChartAt_def`.
 * `TauCeti.LocallyIntegrableSection`: local integrability of a section, with
   `TauCeti.locallyIntegrableSection_def`, `TauCeti.LocallyIntegrableSection.locallyIntegrableOn`,
   `TauCeti.LocallyIntegrableSection.zero`, `TauCeti.LocallyIntegrableSection.add` and
@@ -126,34 +126,20 @@ section Measure
 variable [MeasurableSpace E] [BorelSpace E]
 
 variable (I G) in
-/-- The reading of a section `u` of `W` in the preferred chart and trivialization at `α`. -/
-def sectionInChartAt (u : (x : M) → W x) (α : M) (y : E) : G :=
-  (trivializationAt G W α ⟨(extChartAt I α).symm y, u ((extChartAt I α).symm y)⟩).2
-
-variable (I G) in
 /-- A section is locally integrable when its readings in the preferred charts and trivializations
 are locally integrable where they are defined: Mathlib's `MeasureTheory.LocallyIntegrableOn`, read
 chart by chart. -/
 def LocallyIntegrableSection (u : (x : M) → W x) : Prop :=
-  ∀ α : M, LocallyIntegrableOn (sectionInChartAt I G u α)
+  ∀ α : M, LocallyIntegrableOn (FirstJetBundle.localRep I G u α)
     ((extChartAt I α).target ∩ (extChartAt I α).symm ⁻¹' (trivializationAt G W α).baseSet)
     (Module.finBasis ℝ E).addHaar
-
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [NormedSpace ℝ G] [∀ x, AddCommGroup (W x)]
-  [∀ x, Module ℝ (W x)] [VectorBundle ℝ G W] [MeasurableSpace E] [BorelSpace E] in
-/-- The reading of `u` at `y` in the preferred chart and trivialization at `α` is the
-trivialization's value at the point of the chart with coordinates `y`. -/
-theorem sectionInChartAt_def (u : (x : M) → W x) (α : M) (y : E) :
-    sectionInChartAt I G u α y =
-      (trivializationAt G W α ⟨(extChartAt I α).symm y, u ((extChartAt I α).symm y)⟩).2 :=
-  (rfl)
 
 omit [IsManifold I ∞ M] [NormedSpace ℝ G] [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
   [VectorBundle ℝ G W] in
 /-- A section is locally integrable exactly when its readings in the preferred charts and
 trivializations are locally integrable where they are defined. -/
 theorem locallyIntegrableSection_def {u : (x : M) → W x} :
-    LocallyIntegrableSection I G u ↔ ∀ α : M, LocallyIntegrableOn (sectionInChartAt I G u α)
+    LocallyIntegrableSection I G u ↔ ∀ α : M, LocallyIntegrableOn (FirstJetBundle.localRep I G u α)
       ((extChartAt I α).target ∩ (extChartAt I α).symm ⁻¹' (trivializationAt G W α).baseSet)
       (Module.finBasis ℝ E).addHaar :=
   Iff.rfl
@@ -164,7 +150,7 @@ omit [IsManifold I ∞ M] [NormedSpace ℝ G] [∀ x, AddCommGroup (W x)] [∀ x
 defined. -/
 theorem LocallyIntegrableSection.locallyIntegrableOn {u : (x : M) → W x}
     (hu : LocallyIntegrableSection I G u) (α : M) :
-    LocallyIntegrableOn (sectionInChartAt I G u α)
+    LocallyIntegrableOn (FirstJetBundle.localRep I G u α)
       ((extChartAt I α).target ∩ (extChartAt I α).symm ⁻¹' (trivializationAt G W α).baseSet)
       (Module.finBasis ℝ E).addHaar :=
   locallyIntegrableSection_def.1 hu α
@@ -185,7 +171,7 @@ theorem LocallyIntegrableSection.add {u v : (x : M) → W x} (hu : LocallyIntegr
     LocallyIntegrableSection I G fun x ↦ u x + v x := locallyIntegrableSection_def.2 fun α ↦
   ((hu.locallyIntegrableOn α).add (hv.locallyIntegrableOn α)).congr
     ((ae_restrict_iff' (measurableSet_inter_preimage_baseSet α)).2 (ae_of_all _ fun y hy ↦ by
-      simp only [Pi.add_apply, sectionInChartAt_def,
+      simp only [Pi.add_apply, FirstJetBundle.localRep_apply,
         Trivialization.apply_eq_prod_continuousLinearEquivAt ℝ _ _ hy.2, map_add]))
 
 omit [IsManifold I ∞ M] in
@@ -194,7 +180,7 @@ theorem LocallyIntegrableSection.smul {u : (x : M) → W x} (hu : LocallyIntegra
     (a : ℝ) : LocallyIntegrableSection I G fun x ↦ a • u x := locallyIntegrableSection_def.2 fun α ↦
   ((hu.locallyIntegrableOn α).smul a).congr
     ((ae_restrict_iff' (measurableSet_inter_preimage_baseSet α)).2 (ae_of_all _ fun y hy ↦ by
-      simp only [Pi.smul_apply, sectionInChartAt_def,
+      simp only [Pi.smul_apply, FirstJetBundle.localRep_apply,
         Trivialization.apply_eq_prod_continuousLinearEquivAt ℝ _ _ hy.2, map_smul]))
 
 omit [IsManifold I ∞ M] in
@@ -202,7 +188,7 @@ omit [IsManifold I ∞ M] in
 theorem LocallyIntegrableSection.zero : LocallyIntegrableSection I G fun x ↦ (0 : W x) :=
   locallyIntegrableSection_def.2 fun α ↦ locallyIntegrableOn_zero.congr
     ((ae_restrict_iff' (measurableSet_inter_preimage_baseSet α)).2 (ae_of_all _ fun y hy ↦ by
-      simp only [sectionInChartAt_def,
+      simp only [FirstJetBundle.localRep_apply,
         Trivialization.apply_eq_prod_continuousLinearEquivAt ℝ _ _ hy.2, map_zero]))
 
 variable [ContMDiffVectorBundle ∞ G W I] [T2Space M]
@@ -258,14 +244,14 @@ private theorem inChartAt_chartTestCLM (ψ : 𝓓(⟨c.target, c.open_target⟩,
     RoughDensity.inChartAt
         (fun x ↦ (𝒯 α
           |>.chartTestCLM c hc hct ψ) x (u x)) (Module.finBasis ℝ E) α y =
-      ψ y (sectionInChartAt I G u α y) := by
+      ψ y (FirstJetBundle.localRep I G u α y) := by
   by_cases hy : y ∈ c.target
   · have hx := c.map_target hy
     have hyt := target_subset c hct hcα hy
     rw [RoughDensity.inChartAt_pairing _ _ _ hyt.1 hyt.2, ← symm_eq_extChartAt_symm c hct hcα hy,
       Bundle.Trivialization.chartTestCLM_apply_of_mem _ _ _ _ _ hx, c.right_inv hy,
       Trivialization.symmL_apply _ (hct hx), Trivialization.apply_mk_symm _ (hct hx),
-      sectionInChartAt_def,
+      FirstJetBundle.localRep_apply,
       symm_eq_extChartAt_symm c hct hcα hy]
   · rw [show ψ y = 0 from ψ.zero_on_compl hy, zero_apply]
     by_cases hyt : y ∈ (extChartAt I α).target
@@ -317,7 +303,8 @@ include hcα in
 /-- The density paired from a section with locally integrable reading and a test extended through a
 restriction of the preferred chart at `α` and the preferred frame is integrable. -/
 private theorem integrableDensity_chartTestCLM
-    (hu : LocallyIntegrableOn (sectionInChartAt I G u α) c.target (Module.finBasis ℝ E).addHaar)
+    (hu : LocallyIntegrableOn (FirstJetBundle.localRep I G u α) c.target
+      (Module.finBasis ℝ E).addHaar)
     (ψ : 𝓓(⟨c.target, c.open_target⟩, G →L[ℝ] ℝ)) :
     IntegrableDensity fun x ↦
       (𝒯 α
@@ -335,13 +322,14 @@ through a restriction of the preferred chart at `α` and the preferred frame is 
 test against the reading of the section, provided that reading is locally integrable on the chart
 target. -/
 theorem integralDensity_chartTestCLM
-    (hu : LocallyIntegrableOn (sectionInChartAt I G u α) c.target (Module.finBasis ℝ E).addHaar)
+    (hu : LocallyIntegrableOn (FirstJetBundle.localRep I G u α) c.target
+      (Module.finBasis ℝ E).addHaar)
     (ψ : 𝓓(⟨c.target, c.open_target⟩, G →L[ℝ] ℝ)) :
     integralDensity (fun x ↦
       (𝒯 α
         |>.chartTestCLM c hc hct ψ) x (u x)) =
       TestFunction.integralAgainstBilinCLM (ContinuousLinearMap.id ℝ (G →L[ℝ] ℝ))
-        (Module.finBasis ℝ E).addHaar (sectionInChartAt I G u α) ψ := by
+        (Module.finBasis ℝ E).addHaar (FirstJetBundle.localRep I G u α) ψ := by
   obtain ⟨-, hs⟩ := tsupport_chartTestCLM_pairing c hc hct ψ (u := u)
   rw [integralDensity_eq_integral_inChartAt (integrableDensity_chartTestCLM c hc hct hcα hu ψ)
       (Module.finBasis ℝ E) α fun x hx ↦ by
@@ -424,7 +412,8 @@ private theorem integrableDensity_and_integralDensity_eq_sum (hu : LocallyIntegr
     IntegrableDensity (fun x ↦ φ x (u x)) ∧
       integralDensity (fun x ↦ φ x (u x)) = ∑ α ∈ A.meeting K hK,
         TestFunction.integralAgainstBilinCLM (ContinuousLinearMap.id ℝ (G →L[ℝ] ℝ))
-          (Module.finBasis ℝ E).addHaar (sectionInChartAt I G u α) (cutoffTestCLM A hA α φ) := by
+          (Module.finBasis ℝ E).addHaar (FirstJetBundle.localRep I G u α)
+          (cutoffTestCLM A hA α φ) := by
   have hd : (fun x ↦ φ x (u x) : RoughDensity I M (Module.finrank ℝ E)) =
       ∑ α ∈ A.meeting K hK, fun x ↦ ((𝒯 α).chartTestCLM (A.chart α) (A.contMDiffOn_chart α)
         (hA α) (cutoffTestCLM A hA α φ)) x (u x) := by
@@ -483,7 +472,7 @@ private theorem continuous_ofSectionₗ (hu : LocallyIntegrableSection I G u) :
   have heq : ⇑(ofSectionₗ hu) ∘ BundleTest.ofCompactlySupported _ _ _ ∘
       ContMDiffSection.ofSupportedIn K = fun σ ↦ ∑ α ∈ A.meeting K K.isCompact,
         TestFunction.integralAgainstBilinCLM (ContinuousLinearMap.id ℝ (G →L[ℝ] ℝ))
-          (Module.finBasis ℝ E).addHaar (sectionInChartAt I G u α) (cutoffTestCLM A hA α
+          (Module.finBasis ℝ E).addHaar (FirstJetBundle.localRep I G u α) (cutoffTestCLM A hA α
             (BundleTest.ofCompactlySupported _ _ _ (ContMDiffSection.ofSupportedIn K σ))) :=
     funext fun σ ↦ (integrableDensity_and_integralDensity_eq_sum hu A hA hAα _ K.isCompact
       (BundleTest.tsupport_ofSupportedIn_subset K σ)).2
@@ -535,7 +524,7 @@ theorem chartDistributionCLM_ofSection_apply_apply (hu : LocallyIntegrableSectio
     (φ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (v : G →L[ℝ] ℝ) :
     (𝒯 α).chartDistributionCLM
         c hc hct (BundleDistribution.ofSection I G u) φ v =
-      ∫ y, φ y * v (sectionInChartAt I G u α y) ∂(Module.finBasis ℝ E).addHaar := by
+      ∫ y, φ y * v (FirstJetBundle.localRep I G u α y) ∂(Module.finBasis ℝ E).addHaar := by
   have hloc := (hu.locallyIntegrableOn α).mono_set (target_subset c hct hcα)
   rw [Bundle.Trivialization.chartDistributionCLM_apply_apply, BundleDistribution.ofSection_apply hu,
     integralDensity_chartTestCLM c hc hct hcα hloc,
