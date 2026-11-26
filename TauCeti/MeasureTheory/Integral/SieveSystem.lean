@@ -239,16 +239,6 @@ variable {τ : Type*} [Fintype τ] {C : τ → Type*} {U : τ → Type*} [∀ v,
   {u : ∀ v, C v → U v} {ι : ∀ v, U v → C v} {J : ∀ v, ℕ → (ℕ → U v) → (ℕ → U v) → ℂ}
   {ψ : ∀ v, C v → ℂ} {En : τ → ℝ} {Λ : ∀ v, ℕ → (ℕ → U v) → ℝ} {β : ∀ v, C v → ℝ}
 
-omit [Fintype τ] [∀ v, TopologicalSpace (U v)] in
-/-- Changing the entry of a head `p : ℕ → ∀ v, U v` at one position changes the component of the
-head at `v` at the same position. -/
-private theorem update_apply_eq (p : ℕ → ∀ v, U v) (i : ℕ) (x : ∀ v, U v) (v : τ) :
-    (fun k ↦ update p i x k v) = update (fun k ↦ p k v) i (x v) := by
-  ext k
-  by_cases hk : k = i
-  · subst hk; simp
-  · simp [hk]
-
 omit [∀ v, MeasureSpace (C v)] [∀ v, SigmaFinite (volume : Measure (C v))]
   [∀ v, TopologicalSpace (U v)] in
 /-- At a common entry of the heads, the integrand of a product of finitely many systems is the
@@ -261,7 +251,10 @@ private theorem pi_integrand_eq (i : ℕ) (p q : ℕ → ∀ v, U v) (ξ : ∀ v
       J v (i + 1) (update (fun k ↦ p k v) i (u v (c v)))
         (update (fun k ↦ q k v) i (u v (c v))) := by
   ext c
-  simp only [update_apply_eq, Pi.mul_apply, prod_mul_distrib]
+  have h (r : ℕ → ∀ v, U v) (v : τ) : (fun k ↦ update r i (fun v ↦ u v (c v)) k v) =
+      update (fun k ↦ r k v) i (u v (c v)) :=
+    comp_update (fun y : ∀ v, U v ↦ y v) r i _
+  simp only [h, Pi.mul_apply, prod_mul_distrib]
 
 /-- Schur's product theorem for finitely many kernels: the entrywise product of finitely many
 positive semidefinite matrices is positive semidefinite. -/
