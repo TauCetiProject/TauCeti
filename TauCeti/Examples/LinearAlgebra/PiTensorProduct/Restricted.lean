@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.PiTensorProduct.Restricted.Rescale
+public import TauCeti.LinearAlgebra.PiTensorProduct.Restricted
 
 /-!
 # Checks for restricted tensor products
