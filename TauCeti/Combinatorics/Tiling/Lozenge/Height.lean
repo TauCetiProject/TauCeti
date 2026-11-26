@@ -91,6 +91,11 @@ variable {e : TriEdge}
 @[simp] theorem heightCochain_of_notMem (he : e ∉ M) : heightCochain M e = neutralIncrement e := by
   simp [heightCochain, he]
 
+/-- The height cochain along an edge of direction `e₁` is the indicator of `M`. -/
+theorem heightCochain_mk_zero (M : Set TriEdge) (v : ℤ × ℤ) :
+    heightCochain M ⟨v, 0⟩ = M.indicator 1 ⟨v, 0⟩ := by
+  by_cases hM : (⟨v, 0⟩ : TriEdge) ∈ M <;> simp [hM]
+
 /-- The height cochain takes the non-neutral value `1 − c₀(e)` exactly on the edges of `M`. -/
 theorem heightCochain_eq_one_sub_neutralIncrement_iff :
     heightCochain M e = 1 - neutralIncrement e ↔ e ∈ M := by
