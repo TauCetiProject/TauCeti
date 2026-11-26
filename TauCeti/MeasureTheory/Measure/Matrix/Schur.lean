@@ -57,21 +57,23 @@ theorem measurePreserving_schurMatrixEquiv :
   have he (A : Matrix (Fin n) (Fin n) ℂ) : e.symm A = schurMatrixEquiv.symm A := (rfl)
   rw [he]
   apply Prod.ext <;> funext ij
-  · simp only [Function.comp_apply, Prod.map_fst, id_eq, schurMatrixEquiv_symm_fst,
+  · simp only [Function.comp_apply, Prod.map_fst, id_eq, Matrix.schurMatrixEquiv_symm_fst,
       MeasurableEquiv.piEquivPiSubtypeProd, MeasurableEquiv.coe_mk,
       Equiv.piEquivPiSubtypeProd, Equiv.coe_fn_mk, MeasurableEquiv.coe_curry_symm,
       Matrix.ofMeasurableEquiv_symm_apply]
     rfl
-  · simp only [Function.comp_apply, Prod.map_snd, schurMatrixEquiv_symm_snd,
+  · simp only [Function.comp_apply, Prod.map_snd, Matrix.schurMatrixEquiv_symm_snd,
       MeasurableEquiv.piCongrLeft, MeasurableEquiv.symm_mk, MeasurableEquiv.coe_mk,
       Equiv.piCongrLeft_symm_apply, MeasurableEquiv.piEquivPiSubtypeProd,
       Equiv.piEquivPiSubtypeProd, Equiv.coe_fn_mk, MeasurableEquiv.coe_curry_symm,
       Matrix.ofMeasurableEquiv_symm_apply]
     rfl
 
+open Matrix.UnitaryGroup
+
 /-- On an injective null-measurable patch, Schur coordinates transform the lower integral
 against matrix-entry Lebesgue measure by the angular Jacobian and the squared Vandermonde. -/
-theorem lintegral_image_schurMatrix (U : Matrix.unitaryGroup (Fin n) ℂ)
+theorem _root_.Matrix.UnitaryGroup.lintegral_image_schurMatrix (U : Matrix.unitaryGroup (Fin n) ℂ)
     {s : Set (SchurCoordinates n)} (hs : NullMeasurableSet s volume)
     (hinj : Set.InjOn (schurCoordinates U) s) (g : Matrix (Fin n) (Fin n) ℂ → ℝ≥0∞) :
     (∫⁻ A in schurMatrix U '' s, g A) =

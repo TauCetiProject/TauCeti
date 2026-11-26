@@ -58,12 +58,12 @@ def schurMatrixEquiv : SchurCoordinates n ≃ₗ[ℂ] Matrix (Fin n) (Fin n) ℂ
       (LinearEquiv.refl ℂ _).prodCongr (LinearEquiv.funCongrLeft ℂ ℂ swap)).symm
 
 /-- The first coordinate reads the upper triangular entries. -/
-@[simp] theorem schurMatrixEquiv_symm_fst (A : Matrix (Fin n) (Fin n) ℂ)
+@[simp] theorem _root_.Matrix.schurMatrixEquiv_symm_fst (A : Matrix (Fin n) (Fin n) ℂ)
     (ij : {ij : Fin n × Fin n // ij.1 ≤ ij.2}) :
     (schurMatrixEquiv.symm A).1 ij = A ij.val.1 ij.val.2 := (rfl)
 
 /-- The second coordinate reads the strict lower entries. -/
-@[simp] theorem schurMatrixEquiv_symm_snd (A : Matrix (Fin n) (Fin n) ℂ)
+@[simp] theorem _root_.Matrix.schurMatrixEquiv_symm_snd (A : Matrix (Fin n) (Fin n) ℂ)
     (ij : FinStrictUpper n) :
     (schurMatrixEquiv.symm A).2 ij = A ij.val.2 ij.val.1 := (rfl)
 
@@ -219,19 +219,23 @@ private def schurFrame (b : FinStrictUpper n → ℂ) : unitaryGroup (Fin n) ℂ
 /-- Conjugate the upper triangular component by the fixed unitary frame followed by the
 transverse exponential of the strict lower angular coordinates, and read the resulting
 matrix entries in Schur coordinates. -/
-def schurCoordinates (U : unitaryGroup (Fin n) ℂ) (x : SchurCoordinates n) : SchurCoordinates n :=
+def _root_.Matrix.UnitaryGroup.schurCoordinates (U : unitaryGroup (Fin n) ℂ)
+    (x : SchurCoordinates n) : SchurCoordinates n :=
   schurMatrixEquiv.symm
     (Unitary.conjStarAlgAut ℂ _ (U * schurFrame x.2) (schurMatrixEquiv (x.1, 0)))
 
+open Matrix.UnitaryGroup
+
 /-- The Schur parametrization assembles the upper triangular input and conjugates it
 by the unitary exponential in the fixed frame. -/
-theorem schurCoordinates_apply (U : unitaryGroup (Fin n) ℂ) (x : SchurCoordinates n) :
+theorem _root_.Matrix.UnitaryGroup.schurCoordinates_apply (U : unitaryGroup (Fin n) ℂ)
+    (x : SchurCoordinates n) :
     schurCoordinates U x = schurMatrixEquiv.symm
       (Unitary.conjStarAlgAut ℂ _ (U * expStrictUpper (fun ij ↦ -star (x.2 ij)))
         (schurMatrixEquiv (x.1, 0))) := (rfl)
 
 /-- Zero angles give the unitary conjugate of the upper triangular input by the fixed frame. -/
-@[simp] theorem schurCoordinates_zero (U : unitaryGroup (Fin n) ℂ)
+@[simp] theorem _root_.Matrix.UnitaryGroup.schurCoordinates_zero (U : unitaryGroup (Fin n) ℂ)
     (a : {ij : Fin n × Fin n // ij.1 ≤ ij.2} → ℂ) :
     schurCoordinates U (a, 0) = schurMatrixEquiv.symm
       (Unitary.conjStarAlgAut ℂ _ U (schurMatrixEquiv (a, 0))) := by
@@ -240,17 +244,20 @@ theorem schurCoordinates_apply (U : unitaryGroup (Fin n) ℂ) (x : SchurCoordina
 
 /-- The complex matrix parametrized by the upper triangular entries and the angles in a
 fixed unitary frame. -/
-def schurMatrix (U : unitaryGroup (Fin n) ℂ) (x : SchurCoordinates n) : Matrix (Fin n) (Fin n) ℂ :=
+def _root_.Matrix.UnitaryGroup.schurMatrix (U : unitaryGroup (Fin n) ℂ)
+    (x : SchurCoordinates n) : Matrix (Fin n) (Fin n) ℂ :=
   schurMatrixEquiv (schurCoordinates U x)
 
 /-- Reading the entries of the parametrized matrix gives the Schur coordinate map. -/
-@[simp] theorem schurMatrixEquiv_symm_schurMatrix (U : unitaryGroup (Fin n) ℂ)
+@[simp] theorem _root_.Matrix.UnitaryGroup.schurMatrixEquiv_symm_schurMatrix
+    (U : unitaryGroup (Fin n) ℂ)
     (x : SchurCoordinates n) : schurMatrixEquiv.symm (schurMatrix U x) = schurCoordinates U x :=
   schurMatrixEquiv.symm_apply_apply _
 
 /-- The matrix parametrization conjugates the triangular input by the fixed frame followed by
 the transverse unitary exponential. -/
-theorem schurMatrix_apply (U : unitaryGroup (Fin n) ℂ) (x : SchurCoordinates n) :
+theorem _root_.Matrix.UnitaryGroup.schurMatrix_apply (U : unitaryGroup (Fin n) ℂ)
+    (x : SchurCoordinates n) :
     schurMatrix U x = Unitary.conjStarAlgAut ℂ _
       (U * expStrictUpper (fun ij ↦ -star (x.2 ij))) (schurMatrixEquiv (x.1, 0)) := by
   rw [schurMatrix, schurCoordinates_apply, LinearEquiv.apply_symm_apply]
@@ -276,7 +283,8 @@ private theorem det_schurConj (U : unitaryGroup (Fin n) ℂ) :
     LinearMap.det_conj, LinearMap.det_restrictScalars_eq_normSq, hdet, Complex.normSq_one]
 
 /-- Schur coordinates depend smoothly on both the triangular entries and the angles. -/
-theorem contDiff_schurCoordinates (U : unitaryGroup (Fin n) ℂ) {k : WithTop ℕ∞} :
+theorem _root_.Matrix.UnitaryGroup.contDiff_schurCoordinates (U : unitaryGroup (Fin n) ℂ)
+    {k : WithTop ℕ∞} :
     ContDiff ℝ k (schurCoordinates U) := by
   have hF : ContDiff ℝ k (fun x : SchurCoordinates n ↦
       (U : Matrix (Fin n) (Fin n) ℂ) * (schurFrame x.2 : Matrix (Fin n) (Fin n) ℂ)) :=
@@ -428,7 +436,8 @@ private theorem hasFDerivAt_schurCoordinates (U : unitaryGroup (Fin n) ℂ)
 
 /-- The real Jacobian of the Schur parametrization is the angular Jacobian times the
 squared Vandermonde of the upper triangular diagonal. -/
-theorem det_fderiv_schurCoordinates (U : unitaryGroup (Fin n) ℂ) (x : SchurCoordinates n) :
+theorem _root_.Matrix.UnitaryGroup.det_fderiv_schurCoordinates (U : unitaryGroup (Fin n) ℂ)
+    (x : SchurCoordinates n) :
     (fderiv ℝ (schurCoordinates U) x).det =
       (spectralAngularFDeriv (fun ij ↦ -star (x.2 ij))).det *
         ∏ ij : FinStrictUpper n, ‖x.1 ⟨(ij.val.1, ij.val.1), le_rfl⟩ -
@@ -447,7 +456,8 @@ theorem det_fderiv_schurCoordinates (U : unitaryGroup (Fin n) ℂ) (x : SchurCoo
   rfl
 
 /-- At zero angle the Jacobian in every fixed unitary frame is the squared Vandermonde. -/
-@[simp] theorem det_fderiv_schurCoordinates_zero (U : unitaryGroup (Fin n) ℂ)
+@[simp] theorem _root_.Matrix.UnitaryGroup.det_fderiv_schurCoordinates_zero
+    (U : unitaryGroup (Fin n) ℂ)
     (a : {ij : Fin n × Fin n // ij.1 ≤ ij.2} → ℂ) :
     (fderiv ℝ (schurCoordinates U) (a, 0)).det =
       ∏ ij : FinStrictUpper n, ‖a ⟨(ij.val.1, ij.val.1), le_rfl⟩ -
@@ -460,7 +470,8 @@ theorem det_fderiv_schurCoordinates (U : unitaryGroup (Fin n) ℂ) (x : SchurCoo
 
 /-- At an upper triangular input with distinct diagonal entries, the Schur parametrization
 restricts to a local chart centered at zero angle. -/
-theorem exists_schurCoordinates_openPartialHomeomorph (U : unitaryGroup (Fin n) ℂ)
+theorem _root_.Matrix.UnitaryGroup.exists_schurCoordinates_openPartialHomeomorph
+    (U : unitaryGroup (Fin n) ℂ)
     (a : {ij : Fin n × Fin n // ij.1 ≤ ij.2} → ℂ)
     (ha : Function.Injective fun i ↦ a ⟨(i, i), le_rfl⟩) :
     ∃ e : OpenPartialHomeomorph (SchurCoordinates n) (SchurCoordinates n),
