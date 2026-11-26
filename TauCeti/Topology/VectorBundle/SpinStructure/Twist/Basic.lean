@@ -92,9 +92,7 @@ noncomputable abbrev twistTrivialEquiv : (s.twist (Bundle.Trivial X Circle)).Equ
     (spinCGroup.continuous_mulCircle _ _)
     (spinCGroup.subtype_comp_toSpecialOrthogonal_comp_mulCircle _ _)
     spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
-    (MonoidHom.ext fun a ↦ by
-      rw [MonoidHom.comp_apply, MonoidHom.inl_apply, spinCGroup.mulCircle_apply, map_one, mul_one,
-        MonoidHom.id_apply])
+    (spinCGroup.mulCircle_comp_inl _ _)
 
 end SpinCStructure
 
