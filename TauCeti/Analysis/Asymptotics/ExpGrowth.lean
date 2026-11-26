@@ -102,8 +102,7 @@ theorem Monotone.expGrowthSup_comp_add {u : ℕ → ℝ≥0∞} (h : Monotone u)
     refine (EReal.tendsto_coe.2 hr).congr' ((eventually_gt_atTop 0).mono fun n hn ↦ ?_)
     have hn' : (n : ℝ) ≠ 0 := by exact_mod_cast hn.ne'
     dsimp only
-    rw [show ((n + k : ℕ) : EReal) = ((n + k : ℝ) : EReal) by push_cast; rfl,
-      show (n : EReal) = ((n : ℝ) : EReal) from rfl, ← EReal.coe_div]
+    rw [← EReal.coe_natCast, ← EReal.coe_natCast, ← EReal.coe_div, Nat.cast_add]
     congr 1
     field_simp
   have := h.expGrowthSup_comp (v := fun n ↦ n + k) hv one_ne_zero (EReal.coe_ne_top 1)
