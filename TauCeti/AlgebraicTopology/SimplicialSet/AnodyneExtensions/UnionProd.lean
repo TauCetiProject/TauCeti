@@ -19,7 +19,7 @@ edge sits in a type (I) simplex.
 ## Main results
 
 * `SSet.prodStdSimplex.pairingCore.Type₁.map_edge_of_index_eq_zero`: for the pairing of
-  `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n])`, a type (I) simplex whose type (II) face is its first
+  `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n])`, a type (I) simplex whose type (II) face is its first
   face starts with a vertical edge `(0, t) ⟶ (1, t)`.
 
 ## References
@@ -36,13 +36,13 @@ open CategoryTheory Simplicial
 
 namespace SSet.prodStdSimplex.pairingCore.Type₁
 
-/-- A type (I) simplex of Moss's pairing for `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n])` whose
+/-- A type (I) simplex of Moss's pairing for `(Λ[m + 1, 0] ⊗ Δ[n]) ∪ (Δ[m + 1] ⊗ ∂Δ[n])` whose
 type (II) face is its first face starts with a vertical edge `(0, t) ⟶ (1, t)`. -/
-lemma map_edge_of_index_eq_zero {m n : ℕ} (s : Type₁.{u} (0 : Fin (m + 2)) n)
+lemma map_edge_of_index_eq_zero {m n : ℕ} (s : Type₁.{u} (0 : Fin (m + 1)) n)
     (hs : s.index = 0) :
     (yonedaEquiv.symm (s.x.cast s.hd).simplex).app _
         (stdSimplex.edge (s.d + 1) 0 1 (Fin.zero_le _)) =
-      (stdSimplex.edge (m + 2) 0 1 (Fin.zero_le _),
+      (stdSimplex.edge (m + 1) 0 1 (Fin.zero_le _),
         stdSimplex.const n ((s.x.cast s.hd).simplex.2 0) _) := by
   have h := s.isIndex
   rw [hs, pairingCore.isIndex_succ] at h

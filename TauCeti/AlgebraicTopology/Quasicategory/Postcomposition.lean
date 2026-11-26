@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Quasicategory.EquivalenceCartesian
 public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
 public import TauCeti.AlgebraicTopology.Quasicategory.Slice
 public import TauCeti.AlgebraicTopology.SimplicialSet.CompStruct
 public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
+public import TauCeti.AlgebraicTopology.SimplicialSet.WeakHomotopyEquivalence.Realization
+public import TauCeti.AlgebraicTopology.SimplicialSet.WeakHomotopyEquivalence.TrivialFibration
 
 /-!
 # Postcomposition on right mapping spaces
@@ -40,6 +43,12 @@ independent of the choice of section up to homotopy
 (`SSet.rightMappingSpace.exists_homotopy_postcomp`). This is the composition of mapping spaces
 of a quasicategory with a fixed morphism.
 
+When `g` is moreover an equivalence, the right leg is a trivial fibration as well
+(`SSet.rightMappingSpace.postcompSpace.rlp_tgt`): restricting cones over `g` to cones over its
+target is one exactly when `g` is an equivalence (`SSet.Edge.isEquivalence_iff_rlp_slice_map`).
+Postcomposition with an equivalence, a section of one trivial fibration followed by another, is
+therefore a weak homotopy equivalence (`SSet.rightMappingSpace.isWeakHomotopyEquivalence_postcomp`).
+
 ## Main definitions
 
 * `SSet.rightMappingSpace.postcompSpace x g`: the simplicial set `Hom^R_X(x, g)` of composites
@@ -63,6 +72,13 @@ of a quasicategory with a fixed morphism.
   of `f` and `g`.
 * `SSet.rightMappingSpace.exists_homotopy_postcomp`: every map obtained from a section of `src` is
   homotopic to `postcomp x g`.
+* `SSet.rightMappingSpace.postcompSpace_eq_preimage`,
+  `SSet.rightMappingSpace.postcompSpace.rlp_tgt`: `Hom^R_X(x, g)` is the preimage of
+  `Hom^R_X(x, z)` under restriction of cones to the target of `g`, and for an equivalence `g`,
+  `tgt` is a trivial fibration.
+* `SSet.rightMappingSpace.isWeakHomotopyEquivalence_postcomp`,
+  `SSet.rightMappingSpace.weakEquivalence_postcomp`: **postcomposition with an equivalence is a
+  weak homotopy equivalence**, and a weak equivalence of the Kan–Quillen model structure.
 
 ## References
 
@@ -73,7 +89,7 @@ of a quasicategory with a fixed morphism.
 
 public section
 
-open CategoryTheory Limits MorphismProperty Opposite Simplicial SimplexCategory
+open CategoryTheory HomotopicalAlgebra Limits MorphismProperty Opposite Simplicial SimplexCategory
 
 universe u
 
@@ -118,6 +134,21 @@ theorem mem_postcompSpace_iff (g : Edge y z) {n : SimplexCategoryᵒᵖ}
     s ∈ (postcompSpace x g).obj n ↔
       (slice.π (yonedaEquiv.symm g.edge)).app n s = X.map (n.unop.const _ 0).op x := by
   rw [postcompSpace_eq_fiber, mem_fiber_iff]
+
+variable (x) in
+/-- `Hom^R_X(x, g)` is the preimage of `Hom^R_X(x, z)`, the fibre over `x` of `X_{/z} ⟶ X`, under
+the restriction of cones `X_{/g} ⟶ X_{/z}` to the target of `g`. -/
+theorem postcompSpace_eq_preimage (g : Edge y z) :
+    postcompSpace x g = (fiber (slice.π (yonedaEquiv.symm z)) x).preimage
+      (slice.map (stdSimplex.δ 0) (𝟙 X) (by simp)) := by
+  rw [postcompSpace_eq_fiber]
+  ext n s
+  -- Restricting a cone over `g` to its target does not change its restriction to `Δ[n]`.
+  have h := ConcreteCategory.congr_hom (NatTrans.congr_app (slice.map_π
+    (q := yonedaEquiv.symm z) (stdSimplex.δ 0) (𝟙 X) (by simp)) n) s
+  simp only [NatTrans.comp_app, ConcreteCategory.comp_apply, NatTrans.id_app,
+    ConcreteCategory.id_apply] at h
+  simp only [Subcomplex.preimage_obj, Set.mem_preimage, mem_fiber_iff, h]
 
 namespace postcompSpace
 
@@ -187,6 +218,33 @@ theorem rlp_src [X.Quasicategory] (g : Edge y z) :
   have := slice.hasLiftingProperty_map_δ_one (yonedaEquiv.symm g.edge)
     (p := yonedaEquiv.symm y) (by simp) i
   exact inferInstanceAs (HasLiftingProperty i (Subcomplex.fromPreimage _ _ ≫ _))
+
+variable (x) in
+/-- For a quasicategory `X` and an equivalence `g : y ⟶ z`, **the restriction
+`Hom^R_X(x, g) ⟶ Hom^R_X(x, z)` to the target of `g` is a trivial fibration**: it has the right
+lifting property with respect to every monomorphism. It is a base change of the restriction of
+cones `X_{/g} ⟶ X_{/z}`, which is a trivial fibration exactly when `g` is an equivalence
+(`SSet.Edge.isEquivalence_iff_rlp_slice_map`). -/
+theorem rlp_tgt [X.Quasicategory] {g : Edge y z} (hg : g.IsEquivalence) :
+    (monomorphisms SSet.{u}).rlp (tgt x g) := by
+  -- `SSet.Edge.isEquivalence_iff_rlp_slice_map` restricts cones to the slice over
+  -- `stdSimplex.δ 0 ≫ yonedaEquiv.symm g.edge`, which is `yonedaEquiv.symm z`.
+  have hm : ∀ {q : Δ[0] ⟶ X} (h : stdSimplex.δ 0 ≫ yonedaEquiv.symm g.edge ≫ 𝟙 X = q),
+      (monomorphisms SSet.{u}).rlp (slice.map (stdSimplex.δ 0) (𝟙 X) h) := by
+    intro q h
+    obtain rfl : stdSimplex.δ 0 ≫ yonedaEquiv.symm g.edge = q := by simpa using h
+    exact (Edge.isEquivalence_iff_rlp_slice_map g).1 hg
+  intro _ _ i hi
+  let m : slice (yonedaEquiv.symm g.edge) ⟶ slice (yonedaEquiv.symm z) :=
+    slice.map (stdSimplex.δ 0) (𝟙 X) (by simp)
+  have : HasLiftingProperty i m := hm _ i hi
+  have e : CategoryTheory.Arrow.mk (tgt x g) ≅ CategoryTheory.Arrow.mk
+      ((fiber (slice.π (yonedaEquiv.symm z)) x).fromPreimage m) :=
+    CategoryTheory.Arrow.isoMk (Subcomplex.eqToIso (postcompSpace_eq_preimage x g))
+      (sliceFiberIso x z).symm (by
+        rw [← cancel_mono (Subcomplex.ι _)]
+        simp [tgt, m])
+  exact (HasLiftingProperty.iff_of_arrow_iso_right i e).2 inferInstance
 
 /-! ### Vertices of `Hom^R_X(x, g)` -/
 
@@ -324,6 +382,31 @@ theorem exists_homotopy_postcomp [X.Quasicategory] (g : Edge y z)
   obtain ⟨H, -⟩ := exists_homotopy_of_rlp_monomorphisms (postcompSpace.rlp_src x g) s
     (section_ (postcompSpace.src x g)) (by rw [hs, IsSplitEpi.id])
   exact ⟨H.postcomp _⟩
+
+/-- For a quasicategory `X`, **postcomposition with an equivalence `g : y ⟶ z` is a weak homotopy
+equivalence** `Hom^R_X(x, y) ⟶ Hom^R_X(x, z)`. -/
+theorem isWeakHomotopyEquivalence_postcomp [X.Quasicategory] {g : Edge y z}
+    (hg : g.IsEquivalence) : IsWeakHomotopyEquivalence (postcomp x g) := by
+  -- By definition, `postcomp x g` is a section of the trivial fibration `src x g` followed by
+  -- `tgt x g`, which is a trivial fibration as well since `g` is an equivalence.
+  have := isSplitEpi_of_rlp_monomorphisms (postcompSpace.rlp_src x g)
+  have := isWeakHomotopyEquivalence_of_rlp_monomorphisms (postcompSpace.rlp_src x g)
+  have := isWeakHomotopyEquivalence_of_rlp_monomorphisms (postcompSpace.rlp_tgt x hg)
+  have : IsWeakHomotopyEquivalence
+      (section_ (postcompSpace.src x g) ≫ postcompSpace.src x g) := by
+    rw [IsSplitEpi.id]
+    infer_instance
+  have := IsWeakHomotopyEquivalence.of_postcomp (section_ (postcompSpace.src x g))
+    (postcompSpace.src x g)
+  exact inferInstanceAs (IsWeakHomotopyEquivalence (section_ _ ≫ postcompSpace.tgt x g))
+
+open modelCategoryQuillen in
+/-- For a quasicategory `X`, postcomposition with an equivalence `g : y ⟶ z` is a weak
+equivalence `Hom^R_X(x, y) ⟶ Hom^R_X(x, z)` of the Kan–Quillen model structure. -/
+theorem weakEquivalence_postcomp [X.Quasicategory] {g : Edge y z} (hg : g.IsEquivalence) :
+    WeakEquivalence (postcomp x g) :=
+  have := isWeakHomotopyEquivalence_postcomp (x := x) hg
+  weakEquivalence_of_isWeakHomotopyEquivalence _
 
 end rightMappingSpace
 

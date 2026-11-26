@@ -26,10 +26,10 @@ equivalence exactly when it induces a bijection on homotopy classes of maps into
 (`SSet.isWeakHomotopyEquivalence_iff_homotopy`).
 
 Weak homotopy equivalences contain the isomorphisms, are stable under composition and satisfy
-two out of three. Every simplicial homotopy equivalence is a weak homotopy equivalence, and between
-Kan complexes the converse holds. A simplicial set `K` is weakly contractible in the sense of
-`SSet.IsWeaklyContractible` exactly when its map to `Δ[0]` is a weak homotopy equivalence, which is
-Kerodon's definition of weak contractibility.
+two out of three and two out of six. Every simplicial homotopy equivalence is a weak homotopy
+equivalence, and between Kan complexes the converse holds. A simplicial set `K` is weakly
+contractible in the sense of `SSet.IsWeaklyContractible` exactly when its map to `Δ[0]` is a weak
+homotopy equivalence, which is Kerodon's definition of weak contractibility.
 
 ## Main declarations
 
@@ -39,7 +39,7 @@ Kerodon's definition of weak contractibility.
   equivalences, and `SSet.isWeakHomotopyEquivalence_iff_exists_homotopy_inverse`: between Kan
   complexes, weak homotopy equivalences are homotopy equivalences.
 * `SSet.IsWeakHomotopyEquivalence.of_precomp`, `SSet.IsWeakHomotopyEquivalence.of_postcomp`:
-  two out of three.
+  two out of three, and `SSet.IsWeakHomotopyEquivalence.of_comp_of_comp`: two out of six.
 * `SSet.isWeaklyContractible_iff_isWeakHomotopyEquivalence`: `K` is weakly contractible exactly
   when `K ⟶ Δ[0]` is a weak homotopy equivalence.
 
@@ -142,6 +142,18 @@ lemma of_postcomp (g : Y ⟶ Z) [IsWeakHomotopyEquivalence g]
   bijective_mapπ₀_pre_app W _ := by
     have h := bijective_mapπ₀_pre_app (f := f ≫ g) W
     rwa [mapπ₀_pre_app_comp, Function.Bijective.of_comp_iff _ (bijective_mapπ₀_pre_app W)] at h
+
+/-- **Two out of six**: if `f ≫ g` and `g ≫ h` are weak homotopy equivalences, then so is `g`.
+On homotopy classes of maps into a Kan complex, the first composite makes precomposition with `g`
+injective and the second makes it surjective. -/
+lemma of_comp_of_comp {W : SSet.{u}} (f : W ⟶ X) (g : X ⟶ Y) (h : Y ⟶ Z)
+    [IsWeakHomotopyEquivalence (f ≫ g)] [IsWeakHomotopyEquivalence (g ≫ h)] :
+    IsWeakHomotopyEquivalence g where
+  bijective_mapπ₀_pre_app V _ := by
+    have h₁ := bijective_mapπ₀_pre_app (f := f ≫ g) V
+    have h₂ := bijective_mapπ₀_pre_app (f := g ≫ h) V
+    rw [mapπ₀_pre_app_comp] at h₁ h₂
+    exact ⟨h₁.injective.of_comp, h₂.surjective.of_comp⟩
 
 /-- A simplicial homotopy equivalence is a weak homotopy equivalence. -/
 lemma of_homotopy {g : Y ⟶ X} (H₁ : Homotopy (f ≫ g) (𝟙 X)) (H₂ : Homotopy (g ≫ f) (𝟙 Y)) :

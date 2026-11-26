@@ -97,6 +97,8 @@ of a product identify the right mapping spaces of `X ⊗ Y` with the products of
 * `SSet.rightMappingSpace.π₀Equiv_mapπ₀_map`: under `π₀Equiv`, the map induced by `f` on
   connected components of right mapping spaces is the action of `mapHomotopyCategory f` on
   morphisms.
+* `SSet.rightMappingSpace.sliceFiberIso_inv_comp_map`: under `sliceFiberIso`, the map induced by
+  `f` on right mapping spaces is the pushforward of cones along `f`.
 
 ## References
 
@@ -800,6 +802,24 @@ theorem sliceFiberIso_inv_app_coe {m : SimplexCategory}
     (slice.objEquiv ((sliceFiberIso x y).inv.app (op m) t).val).val =
       (join.joinVertexIso m).hom ≫ yonedaEquiv.symm t.val :=
   congrArg Subtype.val (slice.objEquiv.apply_symm_apply _)
+
+/-- Under `SSet.rightMappingSpace.sliceFiberIso`, the map `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)`
+induced by `f : X ⟶ Y` is the pushforward of cones `X_{/y} ⟶ Y_{/f y}` along `f`. -/
+theorem sliceFiberIso_inv_comp_map {Y : SSet.{u}} (f : X ⟶ Y) :
+    (sliceFiberIso x y).inv ≫ (fiber (slice.π (yonedaEquiv.symm y)) x).ι ≫
+        slice.map (𝟙 Δ[0]) f (by rw [Category.id_comp, yonedaEquiv_symm_comp]) =
+      map x y f ≫ (sliceFiberIso (f.app _ x) (f.app _ y)).inv ≫
+        (fiber (slice.π (yonedaEquiv.symm (f.app _ y))) (f.app _ x)).ι := by
+  ext m s
+  induction m using Opposite.rec with | op m
+  apply slice.objEquiv.injective
+  apply Subtype.ext
+  change (slice.objEquiv ((slice.map (𝟙 Δ[0]) f
+      (by rw [Category.id_comp, yonedaEquiv_symm_comp])).app _
+        ((sliceFiberIso x y).inv.app _ s).val)).val =
+    (slice.objEquiv ((sliceFiberIso _ _).inv.app _ ((map x y f).app _ s)).val).val
+  rw [slice.objEquiv_map_app_coe, sliceFiberIso_inv_app_coe, sliceFiberIso_inv_app_coe,
+    map_app_coe, join.map_id, Category.id_comp, Category.assoc, yonedaEquiv_symm_comp]
 
 end sliceFiber
 

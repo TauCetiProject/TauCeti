@@ -151,6 +151,16 @@ lemma ihomObj₀Equiv_apply (v : ((ihom X).obj Z) _⦋0⦌) :
     ← Category.id_comp (curry (fst X X ≫ f)), lift_curry_ihom_ev_app, lift_fst_assoc,
     Category.id_comp]
 
+/-- The map corresponding to the vertex of `Fun(X, Z)` given by `φ : 𝟙_ SSet ⟶ Fun(X, Z)` is the
+uncurried form `MonoidalClosed.uncurry' φ` of `φ`. -/
+lemma ihomObj₀Equiv_unitHomEquiv (φ : 𝟙_ SSet ⟶ (ihom X).obj Z) :
+    ihomObj₀Equiv X Z (unitHomEquiv _ φ) = MonoidalClosed.uncurry' φ := by
+  have h : toUnit X ≫ φ = const (unitHomEquiv _ φ) := by
+    rw [← (unitHomEquiv _).symm_apply_apply φ, Equiv.apply_symm_apply]
+    rfl
+  rw [ihomObj₀Equiv_apply, ← h, MonoidalClosed.uncurry', uncurry_eq, ← Category.assoc]
+  congr 1
+
 /-- The map corresponding to the image of a vertex `y` under `b : Y ⟶ Fun(X, Z)` is the
 restriction of the uncurried form of `b` to `X ⊗ {y}`. -/
 lemma ihomObj₀Equiv_app {Y : SSet.{u}} (b : Y ⟶ (ihom X).obj Z) (y : Y _⦋0⦌) :
