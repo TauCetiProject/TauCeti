@@ -52,7 +52,8 @@ to a parametrix of `D_u` spliced from inverses of its end models.
   `TauCeti.SymplecticForm.eventually_forall_norm_floerJetCoeff_sub_stationaryJetCoeff_lt`.
 * **Translation invariance.** Translating `ζ` along the end multiplies both `dφ'_q(ζ)` and `r` by
   the same positive factor (`TauCeti.Floer.fderiv_positiveEndChart_add_fst`,
-  `TauCeti.Floer.positiveEndChartScale_add_fst`), so the rotation depends only on `t`
+  `TauCeti.Floer.positiveEndChartScale_add_fst`), so the unit tangent
+  `TauCeti.Floer.endUnitTangent` of the chart and the rotation depend only on `t`
   (`TauCeti.Floer.endModelRotation_eq_of_snd_eq`), and so does the end model
   (`TauCeti.Floer.endModelCoeff_eq_of_snd_eq`).
 * **Invertibility.** Since `a² + b² = r²` and `J_t² = -1`, the rotation is invertible with inverse
@@ -92,6 +93,51 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-! ### The end model and its rotation -/
 
+/-- The **unit tangent of the end chart** `φ'_q` at `ζ`: the image `(a', b') = r⁻¹ dφ'_q(ζ) (1, 0)`
+of the unit longitudinal vector under the rotation part of the chart, for the conformal scale `r`
+of the chart at `ζ`. It satisfies `a'² + b'² = 1`
+(`TauCeti.Floer.fst_endUnitTangent_sq_add_snd_sq`). -/
+def endUnitTangent (q : Puncture) (ζ : ℝ × ℝ) : ℝ × ℝ :=
+  ((positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ) (1, 0)
+
+theorem endUnitTangent_def (q : Puncture) (ζ : ℝ × ℝ) :
+    endUnitTangent q ζ = ((positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ) (1, 0) :=
+  (rfl)
+
+/-- The unit tangent of the end chart depends only on the angular coordinate. -/
+theorem endUnitTangent_eq_of_snd_eq (q : Puncture) {ζ ζ' : ℝ × ℝ} (h : ζ.2 = ζ'.2) :
+    endUnitTangent q ζ = endUnitTangent q ζ' := by
+  rw [endUnitTangent, endUnitTangent,
+    positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq q h]
+
+/-- The unit tangent of the end chart is continuous. -/
+theorem continuous_endUnitTangent (q : Puncture) : Continuous (endUnitTangent q) := by
+  have hd : Continuous fun ζ ↦ fderiv ℝ (positiveEndChart q) ζ :=
+    (contDiff_positiveEndChart q 1).continuous_fderiv one_ne_zero
+  exact (((continuous_positiveEndChartScale q).inv₀
+    fun ζ ↦ (positiveEndChartScale_pos q ζ).ne').smul hd).clm_apply continuous_const
+
+/-- **The unit tangent of the end chart is a unit vector**: `a'² + b'² = 1`, since
+`a² + b² = r²` for `(a, b) = dφ'_q (1, 0)`. -/
+theorem fst_endUnitTangent_sq_add_snd_sq (q : Puncture) (ζ : ℝ × ℝ) :
+    (endUnitTangent q ζ).1 ^ 2 + (endUnitTangent q ζ).2 ^ 2 = 1 := by
+  have hr : positiveEndChartScale q ζ ≠ 0 := (positiveEndChartScale_pos q ζ).ne'
+  simp only [endUnitTangent, smul_apply, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_pow,
+    ← mul_add, ← sq_positiveEndChartScale_eq_sq_add_sq, inv_pow]
+  exact inv_mul_cancel₀ (pow_ne_zero 2 hr)
+
+/-- The first component of the unit tangent of the end chart is at most one in absolute value. -/
+theorem abs_fst_endUnitTangent_le_one (q : Puncture) (ζ : ℝ × ℝ) :
+    |(endUnitTangent q ζ).1| ≤ 1 :=
+  sq_le_one_iff_abs_le_one _ |>.1 <| by
+    linarith [fst_endUnitTangent_sq_add_snd_sq q ζ, sq_nonneg (endUnitTangent q ζ).2]
+
+/-- The second component of the unit tangent of the end chart is at most one in absolute value. -/
+theorem abs_snd_endUnitTangent_le_one (q : Puncture) (ζ : ℝ × ℝ) :
+    |(endUnitTangent q ζ).2| ≤ 1 :=
+  sq_le_one_iff_abs_le_one _ |>.1 <| by
+    linarith [fst_endUnitTangent_sq_add_snd_sq q ζ, sq_nonneg (endUnitTangent q ζ).1]
+
 /-- The **rotation of the end model** of the end `q` at `ζ = (s, t)`, for a loop `J_t` of almost
 complex structures: `r⁻¹ (a + b J_t)`, where `(a, b) = dφ'_q (1, 0)` is the image of the unit
 longitudinal vector under the positive end chart `φ'_q` and `r` is the conformal scale of the chart
@@ -110,40 +156,30 @@ theorem endModelRotation_def (q : Puncture) (J : ℝ → AlmostComplexStructure 
         (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 • (J ζ.2).toLinearMap.toContinuousLinearMap) :=
   (rfl)
 
+/-- The rotation of the end model is `a' + b' J_t`, where `(a', b')` is the unit tangent
+`r⁻¹ dφ'_q (1, 0)` of the end chart (`TauCeti.Floer.endUnitTangent`). -/
+theorem endModelRotation_eq (q : Puncture) (J : ℝ → AlmostComplexStructure V) (ζ : ℝ × ℝ) :
+    endModelRotation q J ζ = (endUnitTangent q ζ).1 • ContinuousLinearMap.id ℝ V +
+      (endUnitTangent q ζ).2 • (J ζ.2).toLinearMap.toContinuousLinearMap := by
+  simp [endModelRotation_def, endUnitTangent, smul_add, smul_smul]
+
 theorem endModelRotation_apply (q : Puncture) (J : ℝ → AlmostComplexStructure V) (ζ : ℝ × ℝ)
     (v : V) :
-    endModelRotation q J ζ v = (positiveEndChartScale q ζ)⁻¹ •
-      ((fderiv ℝ (positiveEndChart q) ζ (1, 0)).1 • v +
-        (fderiv ℝ (positiveEndChart q) ζ (1, 0)).2 • J ζ.2 v) := by
-  simp [endModelRotation_def]
-
-/-- The rotation of the end model is `a' + b' J_t`, where `(a', b') = r⁻¹ dφ'_q (1, 0)` is the image
-of the unit longitudinal vector under the rotation part of the chart. -/
-theorem endModelRotation_eq (q : Puncture) (J : ℝ → AlmostComplexStructure V) (ζ : ℝ × ℝ) :
-    endModelRotation q J ζ =
-      (((positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ) (1, 0)).1 •
-          ContinuousLinearMap.id ℝ V +
-        (((positiveEndChartScale q ζ)⁻¹ • fderiv ℝ (positiveEndChart q) ζ) (1, 0)).2 •
-          (J ζ.2).toLinearMap.toContinuousLinearMap := by
-  simp [endModelRotation_def, smul_add, smul_smul]
+    endModelRotation q J ζ v = (endUnitTangent q ζ).1 • v + (endUnitTangent q ζ).2 • J ζ.2 v := by
+  simp [endModelRotation_eq]
 
 /-- **The rotation of the end model is translation invariant**: it depends only on the angular
 coordinate, since the rotation part `r⁻¹ dφ'_q` of the chart does. -/
 theorem endModelRotation_eq_of_snd_eq (q : Puncture) (J : ℝ → AlmostComplexStructure V)
     {ζ ζ' : ℝ × ℝ} (h : ζ.2 = ζ'.2) : endModelRotation q J ζ = endModelRotation q J ζ' := by
-  rw [endModelRotation_eq, endModelRotation_eq,
-    positiveEndChartScale_inv_smul_fderiv_positiveEndChart_eq_of_snd_eq q h, h]
+  rw [endModelRotation_eq, endModelRotation_eq, endUnitTangent_eq_of_snd_eq q h, h]
 
 /-- The rotation of the end model is invertible: it is `a' + b' J_t` with `a'² + b'² = 1`, since
 `a² + b² = r²` for `(a, b) = dφ'_q (1, 0)`. -/
 theorem isInvertible_endModelRotation (q : Puncture) (J : ℝ → AlmostComplexStructure V)
     (ζ : ℝ × ℝ) : (endModelRotation q J ζ).IsInvertible := by
-  have hr : positiveEndChartScale q ζ ≠ 0 := (positiveEndChartScale_pos q ζ).ne'
   rw [endModelRotation_eq]
-  refine (J ζ.2).isInvertible_smul_id_add_smul ?_
-  simp only [smul_apply, Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_pow, ← mul_add,
-    ← sq_positiveEndChartScale_eq_sq_add_sq]
-  exact mul_ne_zero (pow_ne_zero 2 (inv_ne_zero hr)) (pow_ne_zero 2 hr)
+  exact (J ζ.2).isInvertible_smul_id_add_smul <| fst_endUnitTangent_sq_add_snd_sq q ζ ▸ one_ne_zero
 
 /-- For a continuous loop `J_t`, the rotation of the end model is continuous. -/
 theorem continuous_endModelRotation (q : Puncture) {J : ℝ → AlmostComplexStructure V}
