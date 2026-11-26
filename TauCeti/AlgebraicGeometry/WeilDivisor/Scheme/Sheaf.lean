@@ -619,27 +619,26 @@ lemma rationalFunctionsMul_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens}
     Scheme.Modules.Hom.app
         (Scheme.rationalFunctionsMul X ((Additive.toMul g : X.functionFieldˣ) : X.functionField))
         U s ∈ sections (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) U := by
-  apply rationalFunctionsMul_mem_sections_of_coeffEq g le_rfl _ hs
-  intro x _
-  rw [WeilDivisor.coeff_sub, WeilDivisor.OrderSystem.coeff_principalDivisor,
+  refine rationalFunctionsMul_mem_sections_of_le_ord (fun y ↦ Or.inr ?_) hs
+  rw [WeilDivisor.coeff_sub, WeilDivisor.coeff_sub, WeilDivisor.OrderSystem.coeff_principalDivisor,
     WeilDivisor.OrderSystem.ofScheme_ord, orderAt_apply]
   omega
 
 /-- Multiplication by `g`, as a morphism `𝒪_X(D) ⟶ 𝒪_X(D - div g)`. -/
 def sheafMul (D : SchemeWeilDivisor X) :
     sheaf D ⟶ sheaf (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) :=
-  SheafOfModules.Submodule.lift _
-    (sheafι D ≫ Scheme.rationalFunctionsMul X
-      ((Additive.toMul g : X.functionFieldˣ) : X.functionField))
-    fun U s ↦ rationalFunctionsMul_mem_sections g
-      ((submodule D).toSubmodule.ι_app_mem U s)
+  sheafHomOfMul ((Additive.toMul g : X.functionFieldˣ) : X.functionField) fun y ↦ Or.inr <| by
+    rw [WeilDivisor.coeff_sub, WeilDivisor.coeff_sub,
+      WeilDivisor.OrderSystem.coeff_principalDivisor, WeilDivisor.OrderSystem.ofScheme_ord,
+      orderAt_apply]
+    omega
 
 @[reassoc (attr := simp)]
 lemma sheafMul_ι (D : SchemeWeilDivisor X) :
     sheafMul g D ≫ sheafι _ =
       sheafι D ≫ Scheme.rationalFunctionsMul X
-        ((Additive.toMul g : X.functionFieldˣ) : X.functionField) :=
-  SheafOfModules.Submodule.lift_ι _ _ _
+        ((Additive.toMul g : X.functionFieldˣ) : X.functionField) := by
+  rw [sheafMul, sheafHomOfMul_ι]
 
 omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
 /-- The divisor bookkeeping behind `SchemeWeilDivisor.sheafMulIso`. -/

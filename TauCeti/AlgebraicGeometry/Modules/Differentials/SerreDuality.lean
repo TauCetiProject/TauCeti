@@ -23,9 +23,10 @@ linear form `tr ∘ H¹(φ)` on `H¹(X, F)`. This is the additive map
 For a line bundle `L` the map is bijective (`InvertibleSheaf.bijective_residueTraceDualityHom`):
 for every linear form `ℓ` on `H¹(X, L)` there is exactly one `φ : L ⟶ Ω_{X/k}` with
 `tr ∘ H¹(φ) = ℓ`. This is Serre duality for line bundles in its normalized form, with the duality
-map named: `InvertibleSheaf.residueTraceDualityEquiv`. Through
-`Hom(L, Ω_{X/k}) = H⁰(X, Ω_{X/k} ⊗ L⁻¹)` it says that the cup product followed by the trace is a
-perfect pairing.
+map named: `InvertibleSheaf.residueTraceDualityEquiv`. Informally, through
+`Hom(L, Ω_{X/k}) = H⁰(X, Ω_{X/k} ⊗ L⁻¹)` this is the classical statement that the cup product
+followed by the trace is a perfect pairing; that identification and the cup-product form are not
+formalised here.
 
 Every line bundle on such a curve is the sheaf `𝒪_X(D)` of a Weil divisor, so it suffices to treat
 `𝒪_X(D)` (`bijective_residueTraceDualityHom_sheaf`). For a separating function `t`, the sheaf
@@ -39,8 +40,8 @@ Weil differentials (`SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero`).
 
 * `residueTraceDualityHom`: the map `φ ↦ tr ∘ H¹(φ)`, with its naturality
   `residueTraceDualityHom_comp`;
-* `bijective_residueTraceDualityHom_of_iso`: it is bijective for every sheaf isomorphic to a
-  divisor sheaf;
+* `bijective_residueTraceDualityHom_sheaf`: it is bijective for every divisor sheaf, and
+  `bijective_residueTraceDualityHom_iff_of_iso` transports bijectivity along isomorphisms;
 * `InvertibleSheaf.bijective_residueTraceDualityHom` and
   `InvertibleSheaf.residueTraceDualityEquiv`: Serre duality for line bundles through the trace.
 
@@ -132,12 +133,12 @@ private lemma residueTraceDualityHom_sheaf_apply {D : SchemeWeilDivisor X}
   congr 1
   -- compare the two classes after the isomorphism `H¹(Ω_{X/k}) ≅ H¹(𝒪_X(K))`
   apply (Scheme.Modules.cohomologyBaseLinearEquivOfIso k e 1).injective
-  rw [Scheme.Modules.cohomologyBaseLinearEquivOfIso_apply,
-    Scheme.Modules.cohomologyBaseLinearEquivOfIso_apply,
-    ← LinearMap.comp_apply (Scheme.Modules.cohomologyMapBaseLinear k X e.hom 1),
-    ← Scheme.Modules.cohomologyMapBaseLinear_comp, hH,
-    Scheme.Modules.coe_cohomologyMapBaseLinear,
-    cohomologyMap_repartitionToRelativeDifferentialsCohomologyOne]
+  simp only [Scheme.Modules.cohomologyMapBaseLinear_comp, LinearMap.comp_apply,
+    Scheme.Modules.coe_cohomologyMapBaseLinear] at hH
+  simp only [Scheme.Modules.cohomologyBaseLinearEquivOfIso_apply,
+    Scheme.Modules.coe_cohomologyMapBaseLinear, hH]
+  exact
+    (cohomologyMap_repartitionToRelativeDifferentialsCohomologyOne ht hF hk hex hdim K hK _).symm
 
 include ht hK in
 /-- Serre duality through the trace for `𝒪_X(D)`, computed with a separating function `t`. -/
@@ -194,26 +195,22 @@ theorem bijective_residueTraceDualityHom_sheaf (D : SchemeWeilDivisor X) :
     (fun y ↦ by simp only [SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
       coeff_weilDifferentialDivisor]) D
 
-/-- **Serre duality through the trace** for every sheaf `F` isomorphic to a divisor sheaf: the map
-`φ ↦ tr ∘ H¹(φ)` from `Hom(F, Ω_{X/k})` to `H¹(X, F)^∨` is bijective. -/
-theorem bijective_residueTraceDualityHom_of_iso {F : X.Modules} {D : SchemeWeilDivisor X}
-    (e : F ≅ SchemeWeilDivisor.sheaf D) :
-    Function.Bijective (residueTraceDualityHom hF hk hex hdim F) := by
+/-- The trace duality map is bijective for `F` exactly when it is bijective for a sheaf `G`
+isomorphic to `F`: along `e : F ≅ G` the two maps differ by the bijections `(e.inv ≫ ·)` and the
+dual of `H¹(e)`. -/
+theorem bijective_residueTraceDualityHom_iff_of_iso {F G : X.Modules} (e : F ≅ G) :
+    Function.Bijective (residueTraceDualityHom hF hk hex hdim F) ↔
+      Function.Bijective (residueTraceDualityHom hF hk hex hdim G) := by
   have h : ⇑(residueTraceDualityHom hF hk hex hdim F) =
       (Scheme.Modules.cohomologyBaseLinearEquivOfIso k e 1).dualMap ∘
-        residueTraceDualityHom hF hk hex hdim (SchemeWeilDivisor.sheaf D) ∘ (e.inv ≫ ·) := by
+        residueTraceDualityHom hF hk hex hdim G ∘ e.homFromEquiv := by
     funext φ
     refine LinearMap.ext fun x ↦ ?_
-    rw [Function.comp_apply, Function.comp_apply, LinearEquiv.dualMap_apply,
-      Scheme.Modules.cohomologyBaseLinearEquivOfIso_apply, residueTraceDualityHom_apply,
-      residueTraceDualityHom_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-      ← LinearMap.comp_apply (Scheme.Modules.cohomologyMapBaseLinear k X (e.inv ≫ φ) 1),
-      ← Scheme.Modules.cohomologyMapBaseLinear_comp, Iso.hom_inv_id_assoc]
-  rw [h]
-  refine (LinearEquiv.dualMap _).bijective.comp
-    ((bijective_residueTraceDualityHom_sheaf hF hk hex hdim D).comp ⟨fun φ ψ hφψ ↦ ?_, fun ψ ↦
-      ⟨e.hom ≫ ψ, Iso.inv_hom_id_assoc e ψ⟩⟩)
-  simpa only [Iso.hom_inv_id_assoc] using congrArg (e.hom ≫ ·) hφψ
+    simp only [Function.comp_apply, LinearEquiv.dualMap_apply, Iso.homFromEquiv_apply,
+      Scheme.Modules.cohomologyBaseLinearEquivOfIso_apply, ← LinearMap.comp_apply,
+      ← residueTraceDualityHom_comp, Iso.hom_inv_id_assoc]
+  rw [h, Function.Bijective.of_comp_iff' (LinearEquiv.dualMap _).bijective,
+    Function.Bijective.of_comp_iff _ e.homFromEquiv.bijective]
 
 /-- **Serre duality for line bundles, through the trace.** For every line bundle `L`, the map
 `φ ↦ tr ∘ H¹(φ)` from `Hom(L, Ω_{X/k})` to `H¹(X, L)^∨` is bijective: every linear form on
@@ -221,7 +218,8 @@ theorem bijective_residueTraceDualityHom_of_iso {F : X.Modules} {D : SchemeWeilD
 theorem InvertibleSheaf.bijective_residueTraceDualityHom (L : InvertibleSheaf X) :
     Function.Bijective (residueTraceDualityHom hF hk hex hdim L.obj) := by
   obtain ⟨D, ⟨e⟩⟩ := SchemeWeilDivisor.exists_nonempty_iso_sheaf hdim L
-  exact bijective_residueTraceDualityHom_of_iso hF hk hex hdim e
+  exact (bijective_residueTraceDualityHom_iff_of_iso hF hk hex hdim e).mpr
+    (bijective_residueTraceDualityHom_sheaf hF hk hex hdim D)
 
 /-- **Serre duality for line bundles, through the trace**, as an additive equivalence
 `Hom(L, Ω_{X/k}) ≃ H¹(X, L)^∨`, `φ ↦ tr ∘ H¹(φ)`. -/
