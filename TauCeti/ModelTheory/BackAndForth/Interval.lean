@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.BackAndForth.DiscreteOrder
-public import Mathlib.Order.Sum.Order
+public import TauCeti.ModelTheory.BackAndForth.LinearOrder
+public import TauCeti.Order.Hom.SumLex
 public import Mathlib.Order.Hom.Set
 
 /-!
@@ -26,7 +26,7 @@ over all patterns is the same as quantifying over the open intervals.
 As a consequence, back-and-forth equivalence at level `γ` is compatible with ordered sums: if
 `A` is equivalent to `A'` and `B` to `B'`, then `A ⊕ₗ B` is equivalent to `A' ⊕ₗ B'`. These are
 the tools for computing back-and-forth levels of well-orders, such as the equivalence of the
-ordinals `ω ^ γ * δ` and `ω ^ γ * ε` at level `γ`.
+ordinals `ω ^ γ * δ` and `ω ^ γ * ε` at level `γ` for nonzero `δ` and `ε`.
 
 ## Main definitions
 
@@ -35,8 +35,6 @@ ordinals `ω ^ γ * δ` and `ω ^ γ * ε` at level `γ`.
 
 ## Main results
 
-* `TauCeti.sameAtomicType_order_iff_cmp`: tuples of linear orders have the same atomic type
-  exactly when their entries compare in the same way.
 * `TauCeti.bfEquiv_iff_forall_cmpCell`: the interval lemma.
 * `TauCeti.BFEquiv.sumLex`: back-and-forth equivalence at level `γ` passes to ordered sums.
 
@@ -59,36 +57,6 @@ attribute [local instance] orderStructure
 section Cell
 
 variable {M : Type w} {N : Type w'} [LinearOrder M] [LinearOrder N] {n : ℕ}
-
-/-- In the language of orders, tuples of two linear orders have the same atomic type exactly when
-their entries compare in the same way. -/
-theorem sameAtomicType_order_iff_cmp (a : Fin n → M) (b : Fin n → N) :
-    SameAtomicType (L := Language.order) a b ↔ ∀ i j, cmp (a i) (a j) = cmp (b i) (b j) := by
-  rw [sameAtomicType_order_iff]
-  refine ⟨fun ⟨he, hle⟩ i j => ?_, fun h =>
-    ⟨fun i j => eq_iff_eq_of_cmp_eq_cmp (h i j), fun i j => le_iff_le_of_cmp_eq_cmp (h i j)⟩⟩
-  rcases lt_trichotomy (a i) (a j) with hij | hij | hij
-  · rw [hij.cmp_eq_lt, eq_comm, cmp_eq_lt_iff, ← not_le, ← hle, not_le]
-    exact hij
-  · rw [hij, cmp_self_eq_eq, eq_comm, cmp_eq_eq_iff, ← he, hij]
-  · rw [hij.cmp_eq_gt, eq_comm, cmp_eq_gt_iff, ← not_le, ← hle, not_le]
-    exact hij
-
-/-- Extending two tuples of the same atomic type by one point each preserves the atomic type
-exactly when the new points compare with the old entries in the same way. -/
-theorem sameAtomicType_snoc_iff_cmp {a : Fin n → M} {b : Fin n → N} {x : M} {y : N} :
-    SameAtomicType (L := Language.order) (snoc a x) (snoc b y) ↔
-      SameAtomicType (L := Language.order) a b ∧ ∀ i, cmp (a i) x = cmp (b i) y := by
-  simp only [sameAtomicType_order_iff_cmp, forall_fin_succ', snoc_castSucc, snoc_last,
-    cmp_self_eq_eq, and_true]
-  exact ⟨fun h => ⟨fun i => (h.1 i).1, fun i => (h.1 i).2⟩,
-    fun h => ⟨fun i => ⟨h.1 i, h.2 i⟩, fun j => cmp_eq_cmp_symm.1 (h.2 j)⟩⟩
-
-/-- Any two points of linear orders have the same atomic type. -/
-theorem sameAtomicType_snoc_elim0 (x : M) (y : N) :
-    SameAtomicType (L := Language.order) (snoc (Fin.elim0 : Fin 0 → M) x)
-      (snoc (Fin.elim0 : Fin 0 → N) y) :=
-  sameAtomicType_snoc_iff_cmp.2 ⟨sameAtomicType_elim0, finZeroElim⟩
 
 /-- The cell of the comparison pattern `σ` for the tuple `a`: the points `z` with
 `cmp (a i) z = σ i` for every `i`. -/
@@ -130,14 +98,13 @@ section Transport
 variable {M : Type w} {N : Type w'} [LinearOrder M] [LinearOrder N]
 variable {M' : Type u₁} {N' : Type u₂} [LinearOrder M'] [LinearOrder N']
 
-/-- Back-and-forth equivalence of linear orders is invariant under order isomorphisms. -/
+/-- `BFEquiv.orderIso_comp` for linear orders as structures, that is, for empty tuples. -/
 private theorem bfEquiv_of_orderIso {γ : Ordinal.{o}} (e : M ≃o M') (f : N ≃o N')
     (h : BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → M) (Fin.elim0 : Fin 0 → N)) :
     BFEquiv (L := Language.order) γ 0 (Fin.elim0 : Fin 0 → M') (Fin.elim0 : Fin 0 → N') := by
-  have he := (StrongHomClass.toEquiv e : M ≃[Language.order] M').bfEquiv γ Fin.elim0
-  have hf := (StrongHomClass.toEquiv f : N ≃[Language.order] N').bfEquiv γ Fin.elim0
-  rw [Subsingleton.elim (_ ∘ Fin.elim0) Fin.elim0] at he hf
-  exact he.symm.trans (h.trans hf)
+  have h' := h.orderIso_comp e f
+  rwa [Subsingleton.elim (_ ∘ Fin.elim0) Fin.elim0, Subsingleton.elim (_ ∘ Fin.elim0) Fin.elim0]
+    at h'
 
 end Transport
 
@@ -294,25 +261,6 @@ section SumLex
 
 variable {A : Type u₁} {B : Type u₃} [LinearOrder A] [LinearOrder B]
 
-/-- A subset of a lexicographic sum is the lexicographic sum of its two parts. -/
-private def subtypeSumLexOrderIso (s : Set (A ⊕ₗ B)) :
-    s ≃o {a | toLex (Sum.inl a) ∈ s} ⊕ₗ {b | toLex (Sum.inr b) ∈ s} where
-  toFun
-    | ⟨.inl a, h⟩ => toLex (.inl ⟨a, h⟩)
-    | ⟨.inr b, h⟩ => toLex (.inr ⟨b, h⟩)
-  invFun z := Sum.elim (fun a => ⟨toLex (.inl a.val), a.property⟩)
-    (fun b => ⟨toLex (.inr b.val), b.property⟩) (ofLex z)
-  left_inv := by rintro ⟨a | b, h⟩ <;> rfl
-  right_inv := by rintro (a | b) <;> rfl
-  map_rel_iff' := by
-    rintro ⟨a | b, h⟩ ⟨a' | b', h'⟩
-    · exact Sum.Lex.inl_le_inl_iff.trans
-        (Sum.Lex.inl_le_inl_iff (β := B) (a := a) (b := a')).symm
-    · exact iff_of_true (Sum.Lex.inl_le_inr _ _) (Sum.Lex.inl_le_inr _ _)
-    · exact iff_of_false Sum.Lex.not_inr_le_inl Sum.Lex.not_inr_le_inl
-    · exact Sum.Lex.inr_le_inr_iff.trans
-        (Sum.Lex.inr_le_inr_iff (α := A) (a := b) (b := b')).symm
-
 /-- The proposition `p`, as a subset of a linear order, is back-and-forth equivalent to the same
 subset of an equivalent order. -/
 private theorem bfEquiv_setOf_const {A' : Type u₂} [LinearOrder A'] {γ : Ordinal.{o}}
@@ -331,22 +279,24 @@ private theorem bfEquiv_setOf_const {A' : Type u₂} [LinearOrder A'] {γ : Ordi
 private def cmpCellInlOrderIso (a : A) (τ : Fin 1 → Ordering) :
     cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inl a))) τ ≃o
       cmpCell (snoc (Fin.elim0 : Fin 0 → A) a) τ ⊕ₗ {_b : B | Ordering.lt = τ (last 0)} :=
-  (subtypeSumLexOrderIso _).trans <| OrderIso.sumLexCongr
-    (Set.orderIsoOfEq _ _ <| Set.ext fun x => by
+  let s := cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inl a))) τ
+  OrderIso.subtypeSumLex.trans <| OrderIso.sumLexCongr
+    (Set.orderIsoOfEq {x | toLex (Sum.inl x) ∈ s} _ <| Set.ext fun x => by
       rw [Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, mem_cmpCell_snoc_elim0,
         ← StrictMono.cmp_map_eq (f := (toLex ∘ Sum.inl : A → A ⊕ₗ B)) Sum.Lex.inl_strictMono a x,
         Function.comp_apply, Function.comp_apply])
-    (Set.orderIsoOfEq _ _ <| Set.ext fun y => by
-      simp only [Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr a y).cmp_eq_lt])
+    (Set.orderIsoOfEq {y | toLex (Sum.inr y) ∈ s} _ <| Set.ext fun y => by
+      simp only [s, Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr a y).cmp_eq_lt])
 
 /-- The cells of a point of the right summand. -/
 private def cmpCellInrOrderIso (b : B) (τ : Fin 1 → Ordering) :
     cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inr b))) τ ≃o
       {_a : A | Ordering.gt = τ (last 0)} ⊕ₗ cmpCell (snoc (Fin.elim0 : Fin 0 → B) b) τ :=
-  (subtypeSumLexOrderIso _).trans <| OrderIso.sumLexCongr
-    (Set.orderIsoOfEq _ _ <| Set.ext fun x => by
-      simp only [Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr x b).cmp_eq_gt])
-    (Set.orderIsoOfEq _ _ <| Set.ext fun y => by
+  let s := cmpCell (snoc (Fin.elim0 : Fin 0 → A ⊕ₗ B) (toLex (Sum.inr b))) τ
+  OrderIso.subtypeSumLex.trans <| OrderIso.sumLexCongr
+    (Set.orderIsoOfEq {x | toLex (Sum.inl x) ∈ s} _ <| Set.ext fun x => by
+      simp only [s, Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, (Sum.Lex.inl_lt_inr x b).cmp_eq_gt])
+    (Set.orderIsoOfEq {y | toLex (Sum.inr y) ∈ s} _ <| Set.ext fun y => by
       rw [Set.mem_ofPred_eq, mem_cmpCell_snoc_elim0, mem_cmpCell_snoc_elim0,
         ← StrictMono.cmp_map_eq (f := (toLex ∘ Sum.inr : B → A ⊕ₗ B)) Sum.Lex.inr_strictMono b y,
         Function.comp_apply, Function.comp_apply])
