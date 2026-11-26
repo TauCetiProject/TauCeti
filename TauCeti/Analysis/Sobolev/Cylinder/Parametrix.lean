@@ -114,16 +114,16 @@ theorem jetOperator_cutoffCoeff_mem_H1 {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 
   refine jetClosure_subset_of_isClosed
     (s := jetOperator stripMeasure (cutoffCoeff V β) ⁻¹'
       (H1 V : Set (Lp (V × V × V) 2 stripMeasure)))
-    ((isClosed_jetClosure _).preimage (jetOperator stripMeasure _).continuous) ?_ hf
+    ((isClosed_jetClosure 2 _).preimage (jetOperator stripMeasure _).continuous) ?_ hf
   rintro _ ⟨ξ, rfl⟩
   have hmem := smul_fst_mem_testSection hβ ξ.property
   have hξd : Differentiable ℝ (ξ : ℝ × ℝ → V) :=
     (mem_testSection_iff.1 ξ.property).1.differentiable (by norm_num)
-  have heq : jetOperator stripMeasure (cutoffCoeff V β) (jetLp (testSection V) ξ) =
-      jetLp (testSection V) ⟨_, hmem⟩ := by
+  have heq : jetOperator stripMeasure (cutoffCoeff V β) (jetLp 2 (testSection V) ξ) =
+      jetLp 2 (testSection V) ⟨_, hmem⟩ := by
     refine Lp.ext ?_
     filter_upwards [jetOperator_jetLp_ae_eq hN ξ,
-      coeFn_jetLp (S := testSection V) ⟨_, hmem⟩] with z h₁ h₂
+      coeFn_jetLp 2 (S := testSection V) ⟨_, hmem⟩] with z h₁ h₂
     rw [h₁, h₂, jet_smul_fst_eq_cutoffCoeff ((hβ.differentiable (by norm_num)) _) (hξd z)]
   simp only [Set.mem_preimage, SetLike.mem_coe, heq]
   exact jetLp_mem_jetClosure _

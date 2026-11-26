@@ -267,6 +267,35 @@ theorem lineMap_one (χ₀ χ₁ : ConicCutoff) : χ₀.lineMap χ₁ 1 = χ₁ 
   ext t
   simp
 
+/-- For smooth maps `σ`, `π` and `d` out of `Q`, and `g` smooth away from the zero frequency, the
+function `q ↦ χ(‖π q‖² / d q) • g (σ q, π q)` is smooth wherever `d q ≠ 0`: where `π q ≠ 0` all
+its factors are smooth, and near a point with `π q = 0` the ratio is below `1 / 4`, so the cutoff
+vanishes. With `d q = ‖π q‖² + ‖π' q‖²` this cuts off a symbol near the axis `π q = 0` of a
+product. -/
+theorem contDiffOn_smul {Q P G V W : Type*} [NormedAddCommGroup Q] [NormedSpace ℝ Q]
+    [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+    [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
+    {σ : Q → P} {π : Q → G} {d : Q → ℝ} (hσ : ContDiff ℝ ∞ σ) (hπ : ContDiff ℝ ∞ π)
+    (hd : ContDiff ℝ ∞ d) {g : P × G → V →L[ℂ] W} (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) :
+    ContDiffOn ℝ ∞ (fun q ↦ χ (‖π q‖ ^ 2 / d q) • g (σ q, π q)) {q | d q ≠ 0} := by
+  intro q hq
+  refine ContDiffAt.contDiffWithinAt ?_
+  have hq : d q ≠ 0 := hq
+  have hnum : ContDiff ℝ ∞ fun q ↦ ‖π q‖ ^ 2 := (contDiff_norm_sq ℝ).comp hπ
+  by_cases hq0 : π q = 0
+  · -- Near `q` the ratio is below `1 / 4`, so the cutoff and the whole function vanish.
+    have hratio : ContinuousAt (fun q ↦ ‖π q‖ ^ 2 / d q) q :=
+      hnum.continuous.continuousAt.div hd.continuous.continuousAt hq
+    have hlt : ∀ᶠ q' in 𝓝 q, ‖π q'‖ ^ 2 / d q' < 1 / 4 :=
+      hratio.eventually (gt_mem_nhds (by simp [hq0]))
+    refine contDiffAt_const (c := (0 : V →L[ℂ] W)).congr_of_eventuallyEq ?_
+    filter_upwards [hlt] with q' hq'
+    rw [χ.apply_eq_zero_of_le_one_div_four hq'.le, zero_smul]
+  · have hgq : ContDiffAt ℝ ∞ g (σ q, π q) :=
+      hg.contDiffAt ((isOpen_compl_singleton.preimage continuous_snd).mem_nhds hq0)
+    exact (χ.contDiff.contDiffAt.comp q (hnum.contDiffAt.div hd.contDiffAt hq)).smul
+      (hgq.comp q (hσ.prodMk hπ).contDiffAt)
+
 end ConicCutoff
 
 /-! ### Cutting off a homogeneous symbol near an axis -/
@@ -278,39 +307,6 @@ variable {X Y E F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAdd
   [InnerProductSpace ℝ F] {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
-/-- For smooth maps `σ`, `π` and `π'` out of `Q`, and `g` smooth away from the zero frequency,
-the function `q ↦ χ(‖π q‖² / (‖π q‖² + ‖π' q‖²)) • g (σ q, π q)` is smooth wherever
-`(π q, π' q) ≠ 0`: where `π q ≠ 0` all its factors are smooth, and near a point with `π q = 0`
-the cutoff vanishes. -/
-private theorem contDiffOn_conicCutoff_smul {Q P G G' : Type*} [NormedAddCommGroup Q]
-    [NormedSpace ℝ Q] [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup G]
-    [InnerProductSpace ℝ G] [NormedAddCommGroup G'] [InnerProductSpace ℝ G'] (χ : ConicCutoff)
-    {σ : Q → P} {π : Q → G} {π' : Q → G'} (hσ : ContDiff ℝ ∞ σ) (hπ : ContDiff ℝ ∞ π)
-    (hπ' : ContDiff ℝ ∞ π') {g : P × G → V →L[ℂ] W} (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) :
-    ContDiffOn ℝ ∞ (fun q ↦ χ (‖π q‖ ^ 2 / (‖π q‖ ^ 2 + ‖π' q‖ ^ 2)) • g (σ q, π q))
-      {q | π q ≠ 0 ∨ π' q ≠ 0} := by
-  intro q hq
-  refine ContDiffAt.contDiffWithinAt ?_
-  have hnum : ContDiff ℝ ∞ fun q ↦ ‖π q‖ ^ 2 := (contDiff_norm_sq ℝ).comp hπ
-  have hden : ContDiff ℝ ∞ fun q ↦ ‖π q‖ ^ 2 + ‖π' q‖ ^ 2 :=
-    hnum.add ((contDiff_norm_sq ℝ).comp hπ')
-  by_cases hq0 : π q = 0
-  · -- Near `q` the ratio is below `1 / 4`, so the cutoff and the whole function vanish.
-    have hq' : π' q ≠ 0 := hq.resolve_left (not_not.2 hq0)
-    have hpos : ‖π q‖ ^ 2 + ‖π' q‖ ^ 2 ≠ 0 := by positivity
-    have hratio : ContinuousAt (fun q ↦ ‖π q‖ ^ 2 / (‖π q‖ ^ 2 + ‖π' q‖ ^ 2)) q :=
-      hnum.continuous.continuousAt.div hden.continuous.continuousAt hpos
-    have hlt : ∀ᶠ q' in 𝓝 q, ‖π q'‖ ^ 2 / (‖π q'‖ ^ 2 + ‖π' q'‖ ^ 2) < 1 / 4 :=
-      hratio.eventually (gt_mem_nhds (by simp [hq0]))
-    refine contDiffAt_const (c := (0 : V →L[ℂ] W)).congr_of_eventuallyEq ?_
-    filter_upwards [hlt] with q' hq'
-    rw [χ.apply_eq_zero_of_le_one_div_four hq'.le, zero_smul]
-  · have hpos : ‖π q‖ ^ 2 + ‖π' q‖ ^ 2 ≠ 0 := by positivity
-    have hgq : ContDiffAt ℝ ∞ g (σ q, π q) :=
-      hg.contDiffAt ((isOpen_compl_singleton.preimage continuous_snd).mem_nhds hq0)
-    exact (χ.contDiff.contDiffAt.comp q (hnum.contDiffAt.div hden.contDiffAt hpos)).smul
-      (hgq.comp q (hσ.prodMk hπ).contDiffAt)
-
 /-- A homogeneous symbol `a` on the first factor, as a homogeneous symbol on the product cut off
 near the axis `ξ = 0`: its coefficient at `((x, y), (ξ, η))` is
 `χ(‖ξ‖² / (‖ξ‖² + ‖η‖²)) • a (x, ξ)`. The cutoff vanishes near every point with `ξ = 0` and
@@ -321,9 +317,10 @@ def conicCutoffFst (χ : ConicCutoff) (a : HomogeneousSymbol X E V W m) :
   coefficient p := χ (‖p.2.1‖ ^ 2 / (‖p.2.1‖ ^ 2 + ‖p.2.2‖ ^ 2)) • a.coefficient (p.1.1, p.2.1)
   zero_covector _ := by simp
   contDiffOn_coefficient :=
-    (contDiffOn_conicCutoff_smul χ contDiff_fst.fst contDiff_snd.fst contDiff_snd.snd
-      a.contDiffOn_coefficient).mono
-      fun p hp ↦ by simpa [Prod.ext_iff, or_iff_not_imp_left] using hp
+    (χ.contDiffOn_smul contDiff_fst.fst contDiff_snd.fst
+      (((contDiff_norm_sq ℝ).comp contDiff_snd.fst).add
+        ((contDiff_norm_sq ℝ).comp contDiff_snd.snd))
+      a.contDiffOn_coefficient).mono fun _ hp ↦ norm_sq_add_norm_sq_ne_zero hp
   homogeneous x ξ t ht := by
     simp only [Prod.smul_fst, Prod.smul_snd, norm_smul_sq_div_add_norm_smul_sq _ _ ht.ne',
       a.homogeneous _ _ t ht]
@@ -355,10 +352,10 @@ def conicCutoffSnd (χ : ConicCutoff) (b : HomogeneousSymbol Y F V W m) :
   coefficient p := χ (‖p.2.2‖ ^ 2 / (‖p.2.1‖ ^ 2 + ‖p.2.2‖ ^ 2)) • b.coefficient (p.1.2, p.2.2)
   zero_covector _ := by simp
   contDiffOn_coefficient :=
-    ((contDiffOn_conicCutoff_smul χ contDiff_fst.snd contDiff_snd.snd contDiff_snd.fst
-      b.contDiffOn_coefficient).mono
-      fun p hp ↦ by simpa [Prod.ext_iff, or_iff_not_imp_right] using hp).congr
-      fun p _ ↦ by simp [add_comm]
+    (χ.contDiffOn_smul contDiff_fst.snd contDiff_snd.snd
+      (((contDiff_norm_sq ℝ).comp contDiff_snd.fst).add
+        ((contDiff_norm_sq ℝ).comp contDiff_snd.snd))
+      b.contDiffOn_coefficient).mono fun _ hp ↦ norm_sq_add_norm_sq_ne_zero hp
   homogeneous x ξ t ht := by
     simp only [Prod.smul_fst, Prod.smul_snd, add_comm (‖t • ξ.1‖ ^ 2), add_comm (‖ξ.1‖ ^ 2),
       norm_smul_sq_div_add_norm_smul_sq _ _ ht.ne', b.homogeneous _ _ t ht]
