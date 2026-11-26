@@ -12,14 +12,17 @@ import Mathlib.LinearAlgebra.TensorProduct.Tower
 import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.Tactic.Module
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+import TauCeti.RingTheory.Polynomial.Truncated.Basic
 
 /-!
 # Amitsur's theorem on characteristic polynomials over the base ring
 
 Let `B` be a commutative ring, `A` a commutative `B`-algebra, `Λ` a `B`-algebra, and
 `ρ : Λ →ₐ[B] Matrix n n A` a `B`-algebra homomorphism into square matrices over `A`. This file
-proves two algebraic criteria for the characteristic polynomials of matrices in the image of `ρ`
-to have all coefficients in the image of `B` in `A`:
+proves Amitsur's criterion for the characteristic polynomials of matrices in the image of `ρ` to
+have all coefficients in the image of `B` in `A`, together with a Cayley–Hamilton consequence
+lifting `det (ρ w) • 1` into `ρ(Λ)`:
 
 * `AlgHom.exists_mul_eq_smul_one_of_charpoly_coeff_mem_range`: if the characteristic polynomial of
   `ρ w` has all coefficients in `(algebraMap B A).range`, then `det (ρ w)` lifts to `F : B` and
@@ -44,18 +47,6 @@ public section
 
 open Polynomial Submodule AdjoinRoot Matrix Algebra
 open scoped TensorProduct
-
-namespace Matrix
-
-/-- Evaluating the reversed characteristic polynomial `M.charpoly.reverse` at `c` in a commutative
-`A`-algebra `C` gives `det (1 - c • M.map (algebraMap A C))`. -/
-theorem aeval_reverse_charpoly {A C n : Type*} [CommRing A] [CommRing C] [Algebra A C]
-    [Fintype n] [DecidableEq n] (M : Matrix n n A) (c : C) :
-    aeval c M.charpoly.reverse = det (1 - c • M.map (algebraMap A C)) := by
-  simp [reverse_charpoly, charpolyRev, AlgHom.map_det, map_sub, Matrix.map_smul',
-    Function.comp_def]
-
-end Matrix
 
 namespace AlgHom
 
@@ -104,21 +95,15 @@ private noncomputable abbrev amitsurLift (ρ : Λ →ₐ[B] Matrix n n A) (e : �
     amitsurSubalg B A e ⊗[B] Λ →ₐ[amitsurSubalg B A e] Matrix n n (AdjoinRoot (X ^ e : A[X])) :=
   ((ofAlgHom B (X ^ e : A[X])).mapMatrix.comp ρ).liftEquiv B (amitsurSubalg B A e) _ _
 
-/-- Equality of two polynomials in `AdjoinRoot (X ^ e : A[X])` is agreement of all coefficients of
-degree strictly below `e`. -/
-private lemma mk_X_pow_eq_iff {e : ℕ} {p q : A[X]} :
-    AdjoinRoot.mk (X ^ e) p = AdjoinRoot.mk (X ^ e) q ↔ ∀ d < e, p.coeff d = q.coeff d := by
-  rw [AdjoinRoot.mk_eq_mk, X_pow_dvd_iff]
-  simp [sub_eq_zero]
-
 /-- On pure tensors `1 ⊗ₜ s`, `det (1 - c • amitsurLift ρ e (1 ⊗ₜ s))` is the reversed
 characteristic polynomial of `ρ s` evaluated at `c`. -/
 private lemma det_one_sub_smul_amitsurLift_tmul (ρ : Λ →ₐ[B] Matrix n n A) (e : ℕ) (s : Λ)
     (c : amitsurSubalg B A e) :
     det (1 - c • amitsurLift ρ e (1 ⊗ₜ s)) =
       aeval (c : AdjoinRoot (X ^ e : A[X])) (ρ s).charpoly.reverse := by
-  simpa [(amitsurSubalg B A e).smul_def] using
-    (aeval_reverse_charpoly (ρ s) (c : AdjoinRoot (X ^ e : A[X]))).symm
+  rw [reverse_charpoly, aeval_def, eval₂_eq_eval_map, ← charpolyRev_map,
+    eval_charpolyRev_eq_det_one_sub_smul]
+  simp [(amitsurSubalg B A e).smul_def, amitsurLift]
 
 /-- Inductive step for Amitsur's theorem: working modulo `X ^ e` over `amitsurSubalg B A e`, adding
 `t ^ j • γ` to `β` preserves membership of `det (1 - t • f β)` in `amitsurSubalg B A e`. -/
@@ -181,7 +166,7 @@ theorem charpoly_coeff_mem_range_of_span (ρ : Λ →ₐ[B] Matrix n n A) {S : S
   have hroot : (amitsurRoot B A e : AdjoinRoot (X ^ e : A[X])) = root (X ^ e : A[X]) := by simp
   rw [aeval_eq_of_algebra, det_one_sub_smul_amitsurLift_tmul, hroot, aeval_eq] at hq
   have hagree : ∀ d < e, (q.map (algebraMap B A)).coeff d = (ρ w).charpoly.reverse.coeff d :=
-    mk_X_pow_eq_iff.1 hq
+    AdjoinRoot.mk_X_pow_eq_mk_iff.1 hq
   refine ⟨q.coeff (e - 1), ?_⟩
   simpa [e, coeff_map, coeff_reverse] using hagree (e - 1) (Nat.lt_succ_self _)
 
