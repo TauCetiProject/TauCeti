@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Coefficients
 public import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Relative
+public import TauCeti.Topology.VectorBundle.MayerVietoris.Twisted
 public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.Topology.FiberBundle.Trivialization
 
@@ -41,6 +43,81 @@ open Bundle CategoryTheory Set
 universe u w w'
 
 namespace TauCeti
+
+section Comparison
+
+variable {B : Type w} {F : Type*} {E : B → Type w}
+  [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
+  {R : Type u} [Ring R] (L : LocalCoefficientSystem.{u, w, max w w'} R (TopCat.of (TotalSpace F E)))
+
+/-- Comparing `TauCeti.thomPairOverTwistedHomologyMap` with
+`TopPair.restrictPreimagePairTwistedChainComplexMap` in homology along the equality of coefficient
+systems. -/
+@[reassoc]
+theorem thomPairOverTwistedHomologyMap_comp_eqToHom {W W' : Set B} (h : W ⊆ W') (n : ℕ) :
+    thomPairOverTwistedHomologyMap L h n ≫
+        (thomPairOver F E W').twistedHomologyCoefficientMap
+          (eqToHom (TopPair.pullback_subtypeVal_eq_pullback_restrictPreimagePairMap
+            (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E) L (π F E) W')) n =
+      (thomPairOver F E W).twistedHomologyCoefficientMap
+          (eqToHom (TopPair.pullback_subtypeVal_eq_pullback_restrictPreimagePairMap
+            (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E) L (π F E) W)) n ≫
+        HomologicalComplex.homologyMap (TopPair.restrictPreimagePairTwistedChainComplexMap
+          (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E) L (π F E) h) n := by
+  rw [thomPairOverTwistedHomologyMap_def]
+  exact TopPair.subsetPairTwistedHomologyMap_comp_eqToHom (X := TopCat.of (TotalSpace F E))
+    (zeroSectionCompl F E) L (π F E) h n
+
+/-- The twisted homology of the Thom pair over `Set.univ`, as a pair of subsets of the total space,
+is isomorphic to the twisted homology of the Thom pair `(E, E₀)`. -/
+def thomPairOverTwistedHomologyUnivIso (n : ℕ) :
+    thomPairOverTwistedHomology L univ n ≅ (thomPair F E).twistedHomology L n :=
+  have := TopCat.isIso_restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
+    (zeroSectionCompl F E) (S := univ) fun _ ↦ trivial
+  have := LocalCoefficientSystem.isIso_relativeTwistedHomologyMap_of_isIso L
+    (TopCat.restrictPreimagePairMap (X := TopCat.of (TotalSpace F E)) (π F E)
+      (zeroSectionCompl F E) univ) n
+  (thomPairOver F E univ).twistedHomologyCoefficientIso
+      (eqToIso (TopPair.pullback_subtypeVal_eq_pullback_restrictPreimagePairMap
+        (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E) L (π F E) univ)) n ≪≫
+    asIso (TopPair.twistedHomologyMap (TopCat.restrictPreimagePairMap
+      (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) univ) L n)
+
+/-- The forward morphism of `TauCeti.thomPairOverTwistedHomologyUnivIso` is the coefficient
+transport followed by the homology map of `TopCat.restrictPreimagePairMap`. -/
+@[simp]
+theorem thomPairOverTwistedHomologyUnivIso_hom (n : ℕ) :
+    (thomPairOverTwistedHomologyUnivIso L n).hom =
+      (thomPairOver F E univ).twistedHomologyCoefficientMap
+          (eqToHom (TopPair.pullback_subtypeVal_eq_pullback_restrictPreimagePairMap
+            (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E) L (π F E) univ)) n ≫
+        TopPair.twistedHomologyMap (TopCat.restrictPreimagePairMap
+          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) univ) L n := by
+  rw [thomPairOverTwistedHomologyUnivIso, Iso.trans_hom, asIso_hom]
+  -- `erw`: `(thomPairOver F E univ).fst` matches `TopCat.of ↥(π F E ⁻¹' univ)` after unfolding.
+  erw [TopPair.twistedHomologyCoefficientIso_hom, eqToIso.hom]
+
+/-- Restriction from `W` to `Set.univ`, followed by `TauCeti.thomPairOverTwistedHomologyUnivIso`,
+is the inclusion of the pair over `W` into `(E, E₀)` up to coefficient transport. -/
+@[reassoc]
+theorem thomPairOverTwistedHomologyMap_subset_univ_comp_thomPairOverTwistedHomologyUnivIso_hom
+    (W : Set B) (n : ℕ) :
+    thomPairOverTwistedHomologyMap L (subset_univ W) n ≫
+        (thomPairOverTwistedHomologyUnivIso L n).hom =
+      (thomPairOver F E W).twistedHomologyCoefficientMap
+          (eqToHom (TopPair.pullback_subtypeVal_eq_pullback_restrictPreimagePairMap
+            (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E) L (π F E) W)) n ≫
+        TopPair.twistedHomologyMap (TopCat.restrictPreimagePairMap
+          (X := TopCat.of (TotalSpace F E)) (π F E) (zeroSectionCompl F E) W) L n := by
+  rw [thomPairOverTwistedHomologyUnivIso_hom, ← Category.assoc,
+    thomPairOverTwistedHomologyMap_comp_eqToHom, Category.assoc]
+  congr 1
+  exact (HomologicalComplex.homologyMap_comp _ _ n).symm.trans
+    (congrArg (HomologicalComplex.homologyMap · n)
+      (TopPair.restrictPreimagePairTwistedChainComplexMap_comp_twistedChainComplexMap
+        (X := TopCat.of (TotalSpace F E)) (zeroSectionCompl F E) L (π F E) (subset_univ W)))
+
+end Comparison
 
 variable {B : Type w} [TopologicalSpace B] {F : Type w} [TopologicalSpace F]
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, Zero (E b)]
