@@ -29,13 +29,17 @@ exponential of the Hamiltonian frozen at the start of the step.
 ## Main declarations
 
 * `TauCeti.hamiltonianPropagator`: the propagator `U` of `i U' = T H U`, `U 0 = 1`.
+* `TauCeti.hamiltonianPropagator_eq_dysonSeriesLeft`: `U` is the left Dyson series of
+  `r ↦ -iT H r`.
 * `TauCeti.hasDerivAt_hamiltonianPropagator`, `TauCeti.eq_hamiltonianPropagator`: `U` solves the
   Schrödinger equation, and it is the only solution with `U 0 = 1`.
 * `TauCeti.hamiltonianPropagator_mem_unitary`: `U s` is unitary for a self-adjoint family.
 * `TauCeti.hamiltonianPropagator_const`: for a constant Hamiltonian `h`, `U s = exp (-iTs h)`.
 * `TauCeti.hamiltonianPropagator_add`, `TauCeti.hamiltonianPropagator_comp_const_add`:
   `U (a + s) = Uₐ s U a` for the propagator `Uₐ` of the translated family `r ↦ H (a + r)`, so
-  that `Uₐ s = U (a + s) U(a)⋆` for a self-adjoint family.
+  that `Uₐ s = U (a + s) U(a)⁻¹`.
+* `TauCeti.hamiltonianPropagator_comp_const_add_eq_mul_star`: `Uₐ s = U (a + s) U(a)⋆` for a
+  self-adjoint family.
 * `TauCeti.norm_hamiltonianPropagator_sub_le`: `‖U₁ s - U₂ s‖ ≤ |T| ∫₀ˢ ‖H₁ - H₂‖` for `s ≥ 0`.
 
 ## References
@@ -61,6 +65,11 @@ solution of `i U' s = T H(s) U(s)` with `U 0 = 1`, defined as the left Dyson ser
 and is its only solution (`eq_hamiltonianPropagator`). -/
 def hamiltonianPropagator (H : ℝ → B) (T s : ℝ) : B :=
   dysonSeriesLeft (fun r => (-(T * I) : ℂ) • H r) s
+
+/-- The Schrödinger propagator is the left Dyson series of `r ↦ -iT H r`. -/
+theorem hamiltonianPropagator_eq_dysonSeriesLeft (H : ℝ → B) (T s : ℝ) :
+    hamiltonianPropagator H T s = dysonSeriesLeft (fun r => (-(T * I) : ℂ) • H r) s :=
+  (rfl)
 
 @[simp]
 theorem hamiltonianPropagator_zero (H : ℝ → B) (T : ℝ) : hamiltonianPropagator H T 0 = 1 :=
@@ -96,8 +105,8 @@ theorem eq_hamiltonianPropagator (hH : Continuous H) {f : ℝ → B} (hf₀ : f 
 @[simp]
 theorem hamiltonianPropagator_const (h : B) (T s : ℝ) :
     hamiltonianPropagator (fun _ => h) T s = NormedSpace.exp ((-(T * s * I) : ℂ) • h) := by
-  rw [hamiltonianPropagator, dysonSeriesLeft_const, ← algebraMap_smul ℂ s, smul_smul,
-    Complex.coe_algebraMap]
+  rw [hamiltonianPropagator_eq_dysonSeriesLeft, dysonSeriesLeft_const, ← algebraMap_smul ℂ s,
+    smul_smul, Complex.coe_algebraMap]
   congr 2
   ring
 
@@ -107,6 +116,14 @@ theorem hamiltonianPropagator_add (hH : Continuous H) (T a s : ℝ) :
     hamiltonianPropagator H T (a + s) =
       hamiltonianPropagator (fun r => H (a + r)) T s * hamiltonianPropagator H T a :=
   dysonSeriesLeft_add (hH.const_smul _) a s
+
+/-- The propagator of the translated family `r ↦ H (a + r)` is `U (a + s) U(a)⁻¹`. -/
+theorem hamiltonianPropagator_comp_const_add (hH : Continuous H) (T a s : ℝ) :
+    hamiltonianPropagator (fun r => H (a + r)) T s =
+      hamiltonianPropagator H T (a + s) * Ring.inverse (hamiltonianPropagator H T a) := by
+  rw [hamiltonianPropagator_add hH,
+    Ring.mul_inverse_cancel_right (hamiltonianPropagator H T a) _
+      (isUnit_dysonSeriesLeft (hH.const_smul _) a)]
 
 section Star
 
@@ -126,8 +143,8 @@ theorem hamiltonianPropagator_mem_unitary (hH : Continuous H) (hsa : ∀ r, IsSe
   dysonSeriesLeft_mem_unitary (hH.const_smul _) (fun r => star_neg_mul_I_smul (hsa r) T) s
 
 /-- For a self-adjoint family, the propagator of the translated family `r ↦ H (a + r)` is
-`U (a + s) U(a)⋆ = U (a + s) U(a)⁻¹`. -/
-theorem hamiltonianPropagator_comp_const_add (hH : Continuous H)
+`U (a + s) U(a)⋆`. -/
+theorem hamiltonianPropagator_comp_const_add_eq_mul_star (hH : Continuous H)
     (hsa : ∀ r, IsSelfAdjoint (H r)) (T a s : ℝ) :
     hamiltonianPropagator (fun r => H (a + r)) T s =
       hamiltonianPropagator H T (a + s) * star (hamiltonianPropagator H T a) := by
@@ -142,7 +159,7 @@ theorem norm_hamiltonianPropagator_sub_le_abs [CStarRing B] (h₁ : Continuous H
     ‖hamiltonianPropagator H₁ T s - hamiltonianPropagator H₂ T s‖ ≤
       |T| * |∫ r in 0..s, ‖H₁ r - H₂ r‖| := by
   have hc : ‖(-(T * I) : ℂ)‖ = |T| := by simp
-  rw [hamiltonianPropagator, hamiltonianPropagator]
+  rw [hamiltonianPropagator_eq_dysonSeriesLeft, hamiltonianPropagator_eq_dysonSeriesLeft]
   refine (norm_dysonSeriesLeft_sub_le (h₁.const_smul _) (h₂.const_smul _)
     (fun r => star_neg_mul_I_smul (hH₁ r) T) (fun r => star_neg_mul_I_smul (hH₂ r) T) s).trans_eq ?_
   simp only [Pi.smul_apply, ← smul_sub, norm_smul, hc, intervalIntegral.integral_const_mul,
