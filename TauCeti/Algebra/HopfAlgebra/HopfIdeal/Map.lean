@@ -43,8 +43,7 @@ of the augmentation ideal under `f`.
   laws.
 * `TauCeti.HopfIdeal.giMapComapOfSurjective`: along a surjective morphism the image and the
   inverse image form a Galois insertion; `TauCeti.HopfIdeal.map_le_iff_le_comapOfSurjective` is
-  the adjunction, and `TauCeti.HopfIdeal.comapOfSurjective_le_comapOfSurjective_iff` and
-  `TauCeti.HopfIdeal.comapOfSurjective_eq_comapOfSurjective_iff` follow from the insertion.
+  the adjunction.
 * `TauCeti.HopfIdeal.relIsoOfSurjective`: the correspondence theorem, an order isomorphism
   between the Hopf ideals of the codomain and the Hopf ideals containing the kernel.
 * `TauCeti.HopfIdeal.map_comapOfSurjective`, `TauCeti.HopfIdeal.comapOfSurjective_map`,
@@ -329,21 +328,6 @@ noncomputable def giMapComapOfSurjective (f : H →ₐc[R] K) (hf : Function.Sur
   GaloisInsertion.monotoneIntro (fun _ _ => comapOfSurjective_mono f hf)
     (fun _ _ => map_mono f) (fun _ => (map_le_iff_le_comapOfSurjective hf).mp le_rfl)
     (fun J => map_comapOfSurjective J f hf)
-
-/-- For a surjective morphism, containment after inverse image is equivalent to containment
-before inverse image. -/
-@[simp]
-theorem comapOfSurjective_le_comapOfSurjective_iff (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) {I J : HopfIdeal R K} :
-    I.comapOfSurjective f hf ≤ J.comapOfSurjective f hf ↔ I ≤ J :=
-  (giMapComapOfSurjective f hf).u_le_u_iff
-
-/-- For a surjective morphism, inverse image of Hopf ideals reflects equality. -/
-@[simp]
-theorem comapOfSurjective_eq_comapOfSurjective_iff (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) {I J : HopfIdeal R K} :
-    I.comapOfSurjective f hf = J.comapOfSurjective f hf ↔ I = J :=
-  (giMapComapOfSurjective f hf).u_injective.eq_iff
 
 /-- Along a surjective morphism, inverse image after image is the join with the kernel. -/
 theorem comapOfSurjective_map (I : HopfIdeal R H) (f : H →ₐc[R] K)
