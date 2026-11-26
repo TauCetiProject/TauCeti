@@ -23,7 +23,7 @@ by Sophie Morel: the forgetful functor to types preserves and reflects the relev
 colimits, and `CategoryTheory.uliftFunctor` on types preserves them.
 -/
 
-@[expose] public section
+public section
 
 universe v u
 
@@ -32,7 +32,7 @@ open CategoryTheory Limits
 namespace CommRingCat
 
 /-- The universe lift functor for commutative rings. -/
-@[pp_with_univ]
+@[expose, pp_with_univ]
 def uliftFunctor : CommRingCat.{u} ⥤ CommRingCat.{max u v} where
   obj R := CommRingCat.of (ULift.{v} R)
   map f := CommRingCat.ofHom f.hom.ulift

@@ -35,8 +35,6 @@ defines the same spaces as using finitely generated ideal sheaves.
 
 ## Main definitions
 
-* `TauCeti.closedAnalyticSubspace.constRingHom J`: the constant functions on the closed analytic
-  subspace cut out by `J`.
 * `TauCeti.closedAnalyticSubspace.toOver J`: the closed analytic subspace cut out by `J`, in
   universe `u`, over `Spec (ULift ℂ)`.
 * `TauCeti.IsComplexAnalyticSpace`: the local-model condition on locally ringed spaces over
@@ -51,6 +49,7 @@ defines the same spaces as using finitely generated ideal sheaves.
   at a point `z` of `V(J)` is `𝒪_{X,z} ⧸ J_z`.
 * `TauCeti.closedAnalyticSubspace.not_isReduced_stalk_toOver_span_sq`: nilpotents survive in the
   local models; the ideal `(f²)` cuts out a nonreduced space wherever the germ of `f` is nonzero.
+* `TauCeti.isComplexAnalyticSpace_iff`: the local-model condition, unfolded.
 * `TauCeti.isComplexAnalyticSpace_toOver`: each local model is a complex analytic space.
 
 ## References
@@ -63,7 +62,7 @@ defines the same spaces as using finitely generated ideal sheaves.
   Wissenschaften 265, Springer, 1984, Chapter 1.
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 universe u
 
@@ -79,23 +78,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {X : Type} [TopologicalSpace X] [ChartedSpace H X]
   (J : Ideal ((holomorphicStructureSheaf I X).presheaf.obj (op ⊤)))
 
-/-- The constant functions on the closed analytic subspace cut out by `J`: a complex number goes
-to the global section whose value at each point is the class of the germ of the constant
-function. -/
-def constRingHom : ℂ →+* (closedAnalyticSubspace J).presheaf.obj (op ⊤) :=
-  (TopCat.Presheaf.quotientIdealSheaf.restrictRingHom _ J (zeroLocus J) ⊤).comp
-    (algebraMap ℂ ((holomorphicStructureSheaf I X).presheaf.obj (op ⊤)))
-
-/-- The constant function `c` is the restriction of the constant holomorphic function `c`. -/
-theorem constRingHom_apply (c : ℂ) :
-    constRingHom J c = TopCat.Presheaf.quotientIdealSheaf.restrictRingHom _ J (zeroLocus J) ⊤
-      (algebraMap ℂ ((holomorphicStructureSheaf I X).presheaf.obj (op ⊤)) c) :=
-  (rfl)
-
 /-- **The local model of complex analytic spaces in universe `u`.** The closed analytic subspace
 cut out by `J`, transported to universe `u` along `ULift`, over `Spec (ULift ℂ)` through its
-constant functions. -/
-def toOver : Over (Spec (CommRingCat.of (ULift.{u} ℂ))).toLocallyRingedSpace :=
+constant functions.
+
+The body is exposed so that the points and sections of the local model are definitionally those of
+the universe lift (`toOver_left`). -/
+@[expose] def toOver : Over (Spec (CommRingCat.of (ULift.{u} ℂ))).toLocallyRingedSpace :=
   Over.mk ((closedAnalyticSubspace J).ulift.{u}.toΓSpec ≫
     Spec.locallyRingedSpaceMap (CommRingCat.ofHom (constRingHom J).ulift ≫
       ((closedAnalyticSubspace J).uliftΓIso.{u}).inv))
@@ -118,8 +107,7 @@ def toOverStalkEquiv (z : zeroLocus J) :
     (toOver.{u} J).left.presheaf.stalk (ULift.up z) ≃+*
       (holomorphicStructureSheaf I X).presheaf.stalk z.val ⧸
         (holomorphicStructureSheaf I X).presheaf.stalkIdeal J z.val :=
-  ((closedAnalyticSubspace J).uliftStalkIso.{u} z).commRingCatIsoToRingEquiv.trans
-    (ULift.ringEquiv.trans (stalkEquiv J z))
+  ((closedAnalyticSubspace J).uliftStalkRingEquiv.{u} z).trans (stalkEquiv J z)
 
 variable {J} in
 /-- The stalk isomorphism of the local model sends the germ of a section at `z` to its class at
@@ -130,10 +118,10 @@ theorem toOverStalkEquiv_germ {z : zeroLocus J} {W : Opens (toOver.{u} J).left.c
     toOverStalkEquiv J z ((toOver.{u} J).left.presheaf.germ W (ULift.up z) hz f) =
       (TopCat.Presheaf.quotientIdealSheaf.sectionsEquiv _ J (zeroLocus J)
         ((closedAnalyticSubspace J).uliftOpensEquiv.{u}.functor.obj W) f.down).val ⟨z, hz⟩ :=
-  -- By definition, `toOverStalkEquiv` applies `stalkEquiv` to `ULift.down` of the lifted stalk
-  -- isomorphism, which sends the germ of `f` to the lift of the germ of `f.down`.
-  (congrArg (fun t ↦ stalkEquiv J z (ULift.down t))
-    ((closedAnalyticSubspace J).germ_uliftStalkIso_hom_apply.{u} W z hz f)).trans
+  -- By definition, `toOverStalkEquiv` applies `stalkEquiv` to the lifted stalk isomorphism,
+  -- which sends the germ of `f` to the germ of `f.down`.
+  (congrArg (stalkEquiv J z)
+    ((closedAnalyticSubspace J).uliftStalkRingEquiv_germ.{u} W z hz f)).trans
       (stalkEquiv_germ hz f.down)
 
 /-- **Nilpotents survive in the local model.** If `f` has a nonzero germ at a point `z` of the
@@ -144,10 +132,7 @@ theorem not_isReduced_stalk_toOver_span_sq
     (hf : (holomorphicStructureSheaf I X).presheaf.germ ⊤ z.val (Opens.mem_top _) f ≠ 0) :
     ¬ IsReduced ((toOver.{u} (Ideal.span {f ^ 2})).left.presheaf.stalk (ULift.up z)) := by
   intro hred
-  have : IsReduced ((closedAnalyticSubspace (Ideal.span {f ^ 2})).uliftPresheaf.{u}.stalk
-    (ULift.up z)) := hred
-  let e := ((closedAnalyticSubspace (Ideal.span {f ^ 2})).uliftStalkIso.{u}
-    z).commRingCatIsoToRingEquiv.trans ULift.ringEquiv
+  let e := (toOverStalkEquiv.{u} (Ideal.span {f ^ 2}) z).trans (stalkEquiv _ z).symm
   exact not_isReduced_stalk_span_sq z hf (isReduced_of_injective e.symm.toRingHom e.symm.injective)
 
 /-- The unit ideal cuts out the empty local model. -/
@@ -168,6 +153,18 @@ def IsComplexAnalyticSpace :
       Nonempty (Over.mk (X.left.ofRestrict W.isOpenEmbedding ≫ X.hom) ≅
         closedAnalyticSubspace.toOver.{u} J)
 
+/-- A locally ringed space over `Spec (ULift ℂ)` satisfies the local-model condition exactly when
+every point has an open neighbourhood isomorphic over `Spec (ULift ℂ)` to a local model cut out by
+a finitely generated ideal. -/
+theorem isComplexAnalyticSpace_iff
+    (X : Over (Spec (CommRingCat.of (ULift.{u} ℂ))).toLocallyRingedSpace) :
+    IsComplexAnalyticSpace X ↔ ∀ x : X.left, ∃ (W : Opens X.left) (_ : x ∈ W) (n : ℕ)
+      (U : Opens (Fin n → ℂ))
+      (J : Ideal ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) U).presheaf.obj (op ⊤))), J.FG ∧
+        Nonempty (Over.mk (X.left.ofRestrict W.isOpenEmbedding ≫ X.hom) ≅
+          closedAnalyticSubspace.toOver.{u} J) :=
+  Iff.rfl
+
 /-- **Complex analytic spaces** in universe `u`: locally ringed spaces over `Spec (ULift ℂ)` which
 are locally isomorphic to the local models `(V(J), (𝒪_U ⧸ J 𝒪_U)|_{V(J)})`, for finitely
 generated ideals `J` of holomorphic functions on open subsets `U` of `ℂⁿ`. Morphisms are morphisms
@@ -180,10 +177,11 @@ finitely generated ideal of holomorphic functions on an open subset of `ℂⁿ`,
 satisfies the local-model condition, with the whole space as the neighbourhood of every point. -/
 theorem isComplexAnalyticSpace_toOver {n : ℕ} {U : Opens (Fin n → ℂ)}
     {J : Ideal ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) U).presheaf.obj (op ⊤))}
-    (hJ : J.FG) : IsComplexAnalyticSpace (closedAnalyticSubspace.toOver.{u} J) := fun _ ↦
+    (hJ : J.FG) : IsComplexAnalyticSpace (closedAnalyticSubspace.toOver.{u} J) :=
   -- The morphism underlying `restrictTopIso` is `ofRestrict`, so it commutes with the structure
   -- morphisms by definition.
-  ⟨⊤, trivial, n, U, J, hJ, ⟨Over.isoMk (LocallyRingedSpace.restrictTopIso _) rfl⟩⟩
+  (isComplexAnalyticSpace_iff _).mpr fun _ ↦
+    ⟨⊤, trivial, n, U, J, hJ, ⟨Over.isoMk (LocallyRingedSpace.restrictTopIso _) rfl⟩⟩
 
 namespace ComplexAnalyticSpace
 

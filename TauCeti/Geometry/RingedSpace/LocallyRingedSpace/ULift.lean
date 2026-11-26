@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.RingedSpace.LocallyRingedSpace
 public import Mathlib.Topology.Category.TopCat.ULift
 public import TauCeti.Algebra.Category.Ring.ULift
+public import TauCeti.Topology.Sheaves.Homeomorph
 import Mathlib.CategoryTheory.Filtered.Final
 
 /-!
@@ -24,7 +25,8 @@ such as spaces of holomorphic functions on open subsets of `ℂⁿ`, to any univ
   of `X`.
 * `AlgebraicGeometry.LocallyRingedSpace.ulift X`: the universe lift of `X`.
 * `AlgebraicGeometry.LocallyRingedSpace.uliftStalkIso X x`: the stalk of `X.ulift` at
-  `ULift.up x` is `ULift` of the stalk of `X` at `x`.
+  `ULift.up x` is `ULift` of the stalk of `X` at `x`; `uliftStalkRingEquiv X x` is the resulting
+  ring isomorphism with the stalk of `X` at `x`.
 * `AlgebraicGeometry.LocallyRingedSpace.uliftΓIso X`: the global sections of `X.ulift` are `ULift`
   of those of `X`.
 
@@ -34,7 +36,7 @@ limits, and along the equivalence of the sites of open sets. The stalks are comp
 the corresponding functor between open neighbourhoods.
 -/
 
-@[expose] public noncomputable section
+public noncomputable section
 
 universe v u
 
@@ -46,6 +48,7 @@ variable (X : LocallyRingedSpace.{u})
 
 /-- The open sets of the universe lift `ULift X` of the underlying space of `X` correspond to
 those of `X`, by taking preimages along `ULift.up`. -/
+@[expose]
 def uliftOpensEquiv : Opens (TopCat.uliftFunctor.{v}.obj X.carrier) ≌ Opens X.carrier :=
   (TopCat.uliftFunctorObjHomeo.{v} X.carrier).symm.opensCongr.equivalence
 
@@ -62,20 +65,18 @@ theorem uliftOpensEquiv_functor_obj_top :
     (uliftOpensEquiv.{v} X).functor.obj ⊤ = ⊤ :=
   (rfl)
 
-/-- The correspondence of open sets sends covers to covers, so it is a continuous functor of
-sites; this transports the sheaf condition from `X` to its universe lift. -/
+/-- The correspondence of open sets is a continuous functor of sites, by
+`Homeomorph.opensCongr_isDenseSubsite`; this transports the sheaf condition from `X` to its
+universe lift. -/
 instance : (uliftOpensEquiv.{v} X).functor.IsContinuous (Opens.grothendieckTopology _)
-    (Opens.grothendieckTopology _) := by
-  apply Functor.isContinuous_of_coverPreserving
-  · exact compatiblePreservingOfDownwardsClosed _ (F := (uliftOpensEquiv.{v} X).functor)
-      fun {_ d} _ ↦ ⟨(uliftOpensEquiv.{v} X).inverse.obj d, (uliftOpensEquiv.{v} X).counitIso.app d⟩
-  · constructor
-    rintro U S hS x hx
-    obtain ⟨V, i, hi, hxV⟩ := hS (ULift.up x) hx
-    exact ⟨_, (uliftOpensEquiv.{v} X).functor.map i, ⟨_, i, 𝟙 _, hi, Subsingleton.elim _ _⟩, hxV⟩
+    (Opens.grothendieckTopology _) :=
+  inferInstanceAs
+    ((TopCat.uliftFunctorObjHomeo.{v} X.carrier).symm.opensCongr.equivalence.functor.IsContinuous
+      (Opens.grothendieckTopology _) (Opens.grothendieckTopology _))
 
 /-- The structure presheaf of the universe lift: its sections over an open set `U` of `ULift X`
 are `ULift` of the sections of `X` over the corresponding open set of `X`. -/
+@[expose]
 def uliftPresheaf :
     (TopCat.uliftFunctor.{v}.obj X.carrier).Presheaf CommRingCat.{max u v} :=
   (uliftOpensEquiv.{v} X).functor.op ⋙ X.presheaf ⋙ CommRingCat.uliftFunctor.{v}
@@ -107,8 +108,9 @@ instance (x : X.carrier) : (uliftOpenNhdsFunctor.{v} X x).op.Final := by
       ⟨(homOfLE ((uliftOpensEquiv.{v} X).counitIso.hom.app U.unop.val).le).op⟩⟩
   · exact ⟨_, 𝟙 _, Subsingleton.elim _ _⟩
 
-/-- The stalk of the universe lift at `ULift.up x` is `ULift` of the stalk of `X` at `x`. -/
-def uliftStalkIso (x : X.carrier) :
+/-- The stalk of the lifted structure presheaf, computed as the image of the stalk of `X` under
+`CommRingCat.uliftFunctor`; `uliftStalkIso` restates it for `X.ulift`. -/
+private def uliftPresheafStalkIso (x : X.carrier) :
     (uliftPresheaf.{v} X).stalk (ULift.up x) ≅
       CommRingCat.uliftFunctor.{v}.obj (X.presheaf.stalk x) :=
   (colimit.isColimit _).coconePointUniqueUpToIso
@@ -119,7 +121,7 @@ def uliftStalkIso (x : X.carrier) :
 /-- **The universe lift of a locally ringed space.** The points of `X.ulift` are `ULift X`, and its
 sections over an open set `U` are `ULift` of the sections of `X` over the corresponding open set
 `(uliftOpensEquiv X).functor.obj U` of `X`. -/
-@[pp_with_univ]
+@[expose, pp_with_univ]
 def ulift : LocallyRingedSpace.{max u v} where
   carrier := TopCat.uliftFunctor.{v}.obj X.carrier
   presheaf := uliftPresheaf.{v} X
@@ -128,15 +130,23 @@ def ulift : LocallyRingedSpace.{max u v} where
     rintro ⟨x⟩
     have : IsLocalRing (CommRingCat.uliftFunctor.{v}.obj (X.presheaf.stalk x)) :=
       ULift.ringEquiv.symm.isLocalRing
-    exact (uliftStalkIso.{v} X x).symm.commRingCatIsoToRingEquiv.isLocalRing
+    exact (uliftPresheafStalkIso.{v} X x).symm.commRingCatIsoToRingEquiv.isLocalRing
 
 /-- The underlying space of the universe lift is `ULift` of the underlying space. -/
+@[simp]
 theorem ulift_carrier : (ulift.{v} X).carrier = TopCat.uliftFunctor.{v}.obj X.carrier :=
   (rfl)
 
 /-- The structure sheaf of the universe lift is `uliftPresheaf`. -/
+@[simp]
 theorem ulift_presheaf : (ulift.{v} X).presheaf = uliftPresheaf.{v} X :=
   (rfl)
+
+/-- The stalk of the universe lift at `ULift.up x` is `ULift` of the stalk of `X` at `x`. -/
+def uliftStalkIso (x : X.carrier) :
+    (ulift.{v} X).presheaf.stalk (ULift.up x) ≅
+      CommRingCat.uliftFunctor.{v}.obj (X.presheaf.stalk x) :=
+  uliftPresheafStalkIso.{v} X x
 
 /-- The stalk isomorphism of the universe lift sends the germ of a section at `ULift.up x` to the
 lift of its germ at `x`. -/
@@ -149,9 +159,35 @@ theorem germ_uliftStalkIso_hom (U : Opens (ulift.{v} X).carrier) (x : X.carrier)
   IsColimit.comp_coconePointUniqueUpToIso_hom _ _
     (op (⟨U, hx⟩ : OpenNhds (TopCat.uliftFunctorObjHomeo.{v} X.carrier x)))
 
+/-- The stalk of the universe lift at `ULift.up x` is isomorphic, as a ring, to the stalk of `X`
+at `x`. -/
+def uliftStalkRingEquiv (x : X.carrier) :
+    (ulift.{v} X).presheaf.stalk (ULift.up x) ≃+* X.presheaf.stalk x :=
+  (uliftStalkIso.{v} X x).commRingCatIsoToRingEquiv.trans ULift.ringEquiv
+
+/-- The stalk ring isomorphism of the universe lift sends the germ of a section at `ULift.up x` to
+the germ at `x` of the corresponding section of `X`. -/
+@[simp]
+theorem uliftStalkRingEquiv_germ (U : Opens (ulift.{v} X).carrier) (x : X.carrier)
+    (hx : ULift.up x ∈ U) (f : (ulift.{v} X).presheaf.obj (op U)) :
+    uliftStalkRingEquiv.{v} X x ((ulift.{v} X).presheaf.germ U (ULift.up x) hx f) =
+      X.presheaf.germ ((uliftOpensEquiv.{v} X).functor.obj U) x hx f.down :=
+  congrArg ULift.down (germ_uliftStalkIso_hom_apply.{v} X U x hx f)
+
 /-- The global sections of the universe lift are `ULift` of the global sections. -/
 def uliftΓIso :
     Γ.obj (op (ulift.{v} X)) ≅ CommRingCat.uliftFunctor.{v}.obj (Γ.obj (op X)) :=
   Iso.refl _
+
+/-- The global sections isomorphism of the universe lift is the identity on underlying values. -/
+theorem uliftΓIso_hom_apply (f : Γ.obj (op (ulift.{v} X))) :
+    (uliftΓIso.{v} X).hom f = ULift.up (ULift.down f : Γ.obj (op X)) :=
+  (rfl)
+
+/-- The inverse global sections isomorphism of the universe lift is the identity on underlying
+values. -/
+theorem uliftΓIso_inv_apply (f : CommRingCat.uliftFunctor.{v}.obj (Γ.obj (op X))) :
+    (uliftΓIso.{v} X).inv f = (ULift.up f.down : (ulift.{v} X).presheaf.obj (op ⊤)) :=
+  (rfl)
 
 end AlgebraicGeometry.LocallyRingedSpace
