@@ -282,7 +282,7 @@ theorem exists_forall_integral_le_mul_integral_floerLinearization_add_of_eq_base
     hJ₀ (|T|, 0) (by simp [Prod.norm_def, le_abs_self]) (u (|T|, 0)) ▸ hc (|T|, 0)
   set R : ℝ := max T 1
   -- A cutoff `ψ`, equal to `1` near the disc `|w| ≤ 2 R` and to `0` near `|w| ≥ 2 R + 1`.
-  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ :=
+  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK, -⟩ :=
     (isCompact_setOf_norm_equivRealProdCLM_symm_le (2 * R)).exists_contDiff_cutoff_sublevel
       Complex.equivRealProdCLM.symm.continuous.norm (lt_add_one (2 * R))
   have hψ2 : ContDiff ℝ 2 fun z ↦ 1 - ψ z := contDiff_const.sub (hψ.of_le (by simp))

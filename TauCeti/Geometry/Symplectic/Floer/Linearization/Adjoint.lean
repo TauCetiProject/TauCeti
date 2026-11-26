@@ -53,8 +53,13 @@ Integrating by parts against this pairing gives the **formal adjoint**
   `‖D^* (f η)‖ ≤ |f| ‖D^* η‖ + ‖df‖ (1 + ‖J‖) ‖η‖`
   (`norm_floerLinearizationAdjoint_fun_smul_le`), and for `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`,
   `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²`
-  (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). In particular the weight `e^{δ s}` shifts
-  the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
+  (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). Integrated against a continuous weight
+  `w ≥ 0`, a cutoff `β` with values in `[0, 1]` costs
+  `∫ w ‖D^* (β η)‖² ≤ 2 ∫ w ‖D^* η‖² + C ∫_K ‖η‖²` over the compact set `K` off which `dβ = 0`
+  (`exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le`), and for a positive weight the
+  unweighted `L²` norm of `D^* η` on a compact set is at most a multiple of the weighted one
+  (`exists_setIntegral_norm_floerLinearizationAdjoint_sq_le_mul_integral`). The weight `e^{δ s}`
+  shifts the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
   `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
   (`TauCeti.SymplecticForm.floerLinearization_exp_smul`), this is the weight dual to `e^{-δ s}`:
   both conjugated operators are `D - δ` and its adjoint `D^* - δ`.
@@ -445,6 +450,91 @@ theorem continuous_floerLinearizationAdjoint_of_tsupport_subset {U : Set (ℝ ×
       Filter.mem_of_superset ((isClosed_tsupport η).isOpen_compl.mem_nhds fun h ↦ hz (hηU h))
         fun w hw ↦ floerLinearizationAdjoint_of_notMem_tsupport hw
     exact continuousAt_const.congr h.symm
+
+/-- A continuous weight times the square norm of the formal adjoint is integrable when the
+adjoint is continuous and the covector field has compact support. This is the adjoint counterpart
+of `integrable_norm_floerLinearization_sq`. -/
+theorem integrable_mul_norm_floerLinearizationAdjoint_sq_of_continuous {w : ℝ × ℝ → ℝ}
+    (hwc : Continuous w) (hD : Continuous (ω.floerLinearizationAdjoint J Ks Kt u η))
+    (hη : HasCompactSupport η) :
+    Integrable fun z ↦ w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 :=
+  (hwc.mul (hD.norm.pow 2)).integrable_of_hasCompactSupport (hη.mono' fun z hz ↦
+    by_contra fun h ↦ hz (by simp [floerLinearizationAdjoint_of_notMem_tsupport h]))
+
+/-- **The weighted cost of a cutoff for the formal adjoint.** Let `β` be a `C¹` function with
+values in `[0, 1]` whose derivative vanishes off a compact set `K`, and let `w ≥ 0` be a continuous
+weight. Then multiplying a `C¹` covector field `η` of compact support by `β` gives a covector field
+whose adjoint has `w`-weighted squared `L²` norm at most twice that of `D^* η` plus a multiple of
+the squared `L²` norm of `η` over `K`:
+`∫ w ‖D^* (β η)‖² ≤ 2 ∫ w ‖D^* η‖² + C ∫_K ‖η‖²`. This is the adjoint counterpart of
+`exists_integral_norm_floerLinearization_smul_sq_le`; the weight is that of the dual of a weighted
+Sobolev space, such as the inverse of the cylindrical weight of a punctured domain. -/
+theorem exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le (ω : SymplecticForm V)
+    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z) (hwc : Continuous w) {β : ℝ × ℝ → ℝ}
+    (hβ : ContDiff ℝ 1 β) (hβ1 : ∀ z, β z ∈ Icc 0 1) {K : Set (ℝ × ℝ)} (hK : IsCompact K)
+    (hβK : ∀ z ∉ K, fderiv ℝ β z = 0) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 1 η → HasCompactSupport η →
+      ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u (fun x ↦ β x • η x) z‖ ^ 2 ≤
+        2 * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2) +
+          C * ∫ z in K, ‖η z‖ ^ 2 := by
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ J z (u z)) fun z _ ↦
+    ((hJ z).continuousAt.comp₂ continuousAt_id hu.continuous.continuousAt).continuousWithinAt
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hβ.continuous_fderiv one_ne_zero).continuousOn
+  obtain ⟨Λ, hΛ⟩ := hK.exists_bound_of_continuousOn hwc.continuousOn
+  refine ⟨2 * (max M 0 * (1 + max B 0)) ^ 2 * max Λ 0, by positivity, fun η hη hηc ↦ ?_⟩
+  -- The weighted square norm of the adjoint of a compactly supported field is integrable.
+  have hint {θ : ℝ × ℝ → V →L[ℝ] ℝ} (hθ : ContDiff ℝ 1 θ) (hθc : HasCompactSupport θ) :
+      Integrable fun z ↦ w z * ‖ω.floerLinearizationAdjoint J Ks Kt u θ z‖ ^ 2 :=
+    integrable_mul_norm_floerLinearizationAdjoint_sq_of_continuous hwc
+      (continuous_floerLinearizationAdjoint hJ hKs hKt hu hθ) hθc
+  -- The operator-generic cost of a cutoff, with `w ≤ Λ` on `K`.
+  refine integral_mul_norm_fun_smul_sq_le (D := ω.floerLinearizationAdjoint J Ks Kt u) (S := univ)
+    (f := β) (b := fun z ↦ ‖J z (u z)‖) (M := max M 0) (B := max B 0) (Λ := max Λ 0) (ξ := η)
+    hw hK (fun z _ h ↦ by_contra fun hz ↦ h (hβK z hz))
+    (fun z hz ↦ (hM z hz).trans (le_max_left _ _))
+    (fun z hz ↦ (hB z hz).trans (le_max_left _ _)) (le_max_right _ _)
+    (fun z hz ↦ (Real.le_norm_self _).trans ((hΛ z hz).trans (le_max_left _ _))) hη.continuous
+    ?_ (fun z hz ↦ absurd (mem_univ z) hz) (hint hη hηc)
+    (hint (hβ.smul hη) (HasCompactSupport.smul_left (f := β) hηc))
+  intro z _ M' B' hM' hB'
+  exact norm_floerLinearizationAdjoint_fun_smul_sq_le (ω := ω) (Ks := Ks) (Kt := Kt)
+    (hβ.differentiable one_ne_zero z) (hη.differentiable one_ne_zero z)
+    (((hJ z).differentiableAt one_ne_zero).comp (f := fun x ↦ (x, u x)) z
+      (differentiableAt_id.prodMk (hu.differentiable one_ne_zero z)))
+    (abs_le.2 ⟨by linarith [(hβ1 z).1], (hβ1 z).2⟩) hM' hB'
+
+/-- **The weight on a compact set.** If the weight `w` is continuous and positive, then on a
+compact set `K` it is bounded below, so the `L²` norm of `D^* η` on `K` is at most a constant times
+the `w`-weighted `L²` norm of `D^* η`, for every `C¹` covector field `η` of compact support. -/
+theorem exists_setIntegral_norm_floerLinearizationAdjoint_sq_le_mul_integral
+    (ω : SymplecticForm V) (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u)
+    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 < w z) (hwc : Continuous w) {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) :
+    ∃ Λ, 0 ≤ Λ ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 1 η → HasCompactSupport η →
+      ∫ z in K, ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 ≤
+        Λ * ∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 := by
+  obtain ⟨Λ, hΛ⟩ := hK.exists_bound_of_continuousOn (hwc.inv₀ fun z ↦ (hw z).ne').continuousOn
+  refine ⟨max Λ 0, le_max_right _ _, fun η hη hηc ↦ ?_⟩
+  have hDc := continuous_floerLinearizationAdjoint (ω := ω) hJ hKs hKt hu hη
+  have hW := integrable_mul_norm_floerLinearizationAdjoint_sq_of_continuous hwc hDc hηc
+  rw [← integral_const_mul]
+  refine (setIntegral_mono_on ((hDc.norm.pow 2).continuousOn.integrableOn_compact hK)
+    (hW.const_mul _).integrableOn hK.measurableSet fun z hz ↦ ?_).trans
+    (setIntegral_le_integral (hW.const_mul _) (ae_of_all _ fun z ↦
+      mul_nonneg (le_max_right _ _) (mul_nonneg (hw z).le (sq_nonneg _))))
+  -- On `K`, `w⁻¹ ≤ Λ`, so `1 ≤ Λ w`.
+  have h : 1 ≤ max Λ 0 * w z := by
+    rw [← inv_mul_cancel₀ (hw z).ne']
+    exact mul_le_mul_of_nonneg_right ((Real.le_norm_self _).trans
+      ((hΛ z hz).trans (le_max_left _ _))) (hw z).le
+  calc _ ≤ max Λ 0 * w z * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 :=
+        le_mul_of_one_le_left (sq_nonneg _) h
+    _ = _ := by ring
 
 /-- Off the common topological support of `η` and `ξ`, the pairings `η(D ξ)`, `(D^* η)(ξ)`,
 `η(ξ)` and `(η ∘ J)(ξ)` all vanish near the point. -/

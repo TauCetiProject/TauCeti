@@ -51,7 +51,9 @@ finite. A compactly supported direction has a compactly supported image
 (`hasCompactSupport_floerLinearization`), whose square norm is then integrable
 (`integrable_norm_floerLinearization_sq`). Multiplying a direction of compact support by a cutoff
 `β` with values in `[0, 1]` bounds `‖D_u (β ξ)‖²` in `L²` by `2 ‖D_u ξ‖²` plus a multiple of `‖ξ‖²`
-over a compact set off which `dβ` vanishes (`exists_integral_norm_floerLinearization_smul_sq_le`).
+over a compact set off which `dβ` vanishes (`exists_integral_norm_floerLinearization_smul_sq_le`);
+this is the operator-generic weighted bound `TauCeti.integral_mul_norm_fun_smul_sq_le`, shared with
+the formal adjoint, for the weight `1`.
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`), and `Cⁿ` where
@@ -93,6 +95,54 @@ theorem norm_smul_add_add_sq_le {E : Type*} [SeminormedAddCommGroup E] [NormedSp
     linarith
   calc _ ≤ (‖a‖ + M * (1 + B) * y) ^ 2 := by gcongr
     _ ≤ _ := by nlinarith [sq_nonneg (‖a‖ - M * (1 + B) * y)]
+
+/-- **The weighted `L²` norm of an operator on a cut-off field.** Let `f` have derivative supported
+in a compact set `K` on `S`, bounded by `M` there, let `b ≤ B` and the weight `w ≥ 0` satisfy
+`w ≤ Λ` on `K`. If an operator `D` vanishes on `f ξ` off `S` and, at each point of `S` where
+`‖df‖ ≤ M'` and `b ≤ B'`, satisfies `‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M' (1 + B'))² ‖ξ‖²`, then
+`∫ w ‖D (f ξ)‖² ≤ 2 ∫ w ‖D ξ‖² + 2 (M (1 + B))² Λ ∫_K ‖ξ‖²`. This is shared by the linearized
+Floer operator `D_u` (with `w = 1`) and by its formal adjoint (with the weight of the dual of a
+weighted Sobolev space). -/
+theorem integral_mul_norm_fun_smul_sq_le {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] {D : (ℝ × ℝ → E) → ℝ × ℝ → F} {S : Set (ℝ × ℝ)}
+    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z) {K : Set (ℝ × ℝ)} (hK : IsCompact K) {f : ℝ × ℝ → ℝ}
+    (hfK : ∀ z ∈ S, fderiv ℝ f z ≠ 0 → z ∈ K) {b : ℝ × ℝ → ℝ}
+    {M B Λ : ℝ} (hM : ∀ z ∈ K, ‖fderiv ℝ f z‖ ≤ M) (hB : ∀ z ∈ K, b z ≤ B) (hΛ₀ : 0 ≤ Λ)
+    (hΛ : ∀ z ∈ K, w z ≤ Λ) {ξ : ℝ × ℝ → E} (hξ : Continuous ξ)
+    (hD : ∀ z ∈ S, ∀ M' B' : ℝ, ‖fderiv ℝ f z‖ ≤ M' → b z ≤ B' →
+      ‖D (fun x ↦ f x • ξ x) z‖ ^ 2 ≤
+        2 * ‖D ξ z‖ ^ 2 + 2 * (M' * (1 + B')) ^ 2 * ‖ξ z‖ ^ 2)
+    (hD₀ : ∀ z ∉ S, D (fun x ↦ f x • ξ x) z = 0)
+    (hξi : MeasureTheory.Integrable fun z ↦ w z * ‖D ξ z‖ ^ 2)
+    (hfξi : MeasureTheory.Integrable fun z ↦ w z * ‖D (fun x ↦ f x • ξ x) z‖ ^ 2) :
+    ∫ z, w z * ‖D (fun x ↦ f x • ξ x) z‖ ^ 2 ≤
+      2 * (∫ z, w z * ‖D ξ z‖ ^ 2) + 2 * (M * (1 + B)) ^ 2 * Λ * ∫ z in K, ‖ξ z‖ ^ 2 := by
+  have hind : MeasureTheory.Integrable (K.indicator fun z ↦ ‖ξ z‖ ^ 2) :=
+    ((hξ.norm.pow 2).continuousOn.integrableOn_compact hK).integrable_indicator hK.measurableSet
+  set c := M * (1 + B)
+  calc _ ≤ ∫ z, (2 * (w z * ‖D ξ z‖ ^ 2) + 2 * c ^ 2 * Λ * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z) := by
+        refine MeasureTheory.integral_mono hfξi ((hξi.const_mul 2).add (hind.const_mul _))
+          fun z ↦ ?_
+        have hind₀ : 0 ≤ K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z :=
+          Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) z
+        by_cases hzS : z ∈ S
+        · by_cases hz : fderiv ℝ f z = 0
+          · have h := hD z hzS 0 (b z) (by simp [hz]) le_rfl
+            simp only [zero_mul, zero_pow two_ne_zero, mul_zero, add_zero] at h
+            nlinarith [mul_nonneg (mul_nonneg (sq_nonneg c) hΛ₀) hind₀,
+              mul_le_mul_of_nonneg_left h (hw z)]
+          · have hzK := hfK z hzS hz
+            have h := hD z hzS M B (hM z hzK) (hB z hzK)
+            rw [Set.indicator_of_mem hzK]
+            nlinarith [mul_le_mul_of_nonneg_left h (hw z), mul_le_mul_of_nonneg_right (hΛ z hzK)
+              (mul_nonneg (sq_nonneg c) (sq_nonneg ‖ξ z‖))]
+        · rw [hD₀ z hzS, norm_zero, zero_pow two_ne_zero, mul_zero]
+          have := hw z
+          positivity
+    _ = _ := by
+        rw [MeasureTheory.integral_add (hξi.const_mul 2) (hind.const_mul _),
+          MeasureTheory.integral_const_mul, MeasureTheory.integral_const_mul,
+          MeasureTheory.integral_indicator hK.measurableSet]
 
 end TauCeti
 
@@ -610,37 +660,23 @@ theorem exists_integral_norm_floerLinearization_smul_sq_le (ω : SymplecticForm 
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (continuous_comp_prodMk_of_continuousAt
     (fun z ↦ (hJ z).continuousAt) hu.continuous).continuousOn
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hβ.continuous_fderiv one_ne_zero).continuousOn
-  set c := max M 0 * (1 + max B 0)
-  refine ⟨2 * c ^ 2, by positivity, fun ξ hξ hξc ↦ ?_⟩
-  have hD := ω.integrable_norm_floerLinearization_sq (μ := MeasureTheory.volume)
-    (ω.continuous_floerLinearization hJ hKs hKt hu hξ) hξc
-  have hind : MeasureTheory.Integrable (K.indicator fun z ↦ ‖ξ z‖ ^ 2) :=
-    (MeasureTheory.integrable_indicator_iff hK.measurableSet).2
-      ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact hK)
-  -- The cutoff error is at most `c ‖ξ‖` on `K`, and vanishes off `K`.
-  have hpt (z : ℝ × ℝ) : ‖ω.floerLinearization J Ks Kt u (fun w ↦ β w • ξ w) z‖ ^ 2 ≤
-      2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 +
-        2 * c ^ 2 * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z := by
-    have hβd := hβ.differentiable one_ne_zero z
-    have hξd := hξ.differentiable one_ne_zero z
-    have hβz : |β z| ≤ 1 := abs_le.2 ⟨by linarith [(hβ1 z).1], (hβ1 z).2⟩
-    by_cases hz : z ∈ K
-    · rw [Set.indicator_of_mem hz]
-      exact ω.norm_floerLinearization_fun_smul_sq_le J Ks Kt u ξ hβd hξd hβz
-        ((hM z hz).trans (le_max_left _ _)) ((hB z hz).trans (le_max_left _ _))
-    · simpa [Set.indicator_of_notMem hz] using
-        ω.norm_floerLinearization_fun_smul_sq_le J Ks Kt u ξ hβd hξd hβz (M := 0)
-          (by simp [hβK z hz]) le_rfl
-  calc _ ≤ ∫ z, (2 * ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 +
-        2 * c ^ 2 * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z) :=
-        MeasureTheory.integral_mono
-          (ω.integrable_norm_floerLinearization_sq
-            (ω.continuous_floerLinearization hJ hKs hKt hu (hβ.smul hξ)) hξc.smul_left)
-          ((hD.const_mul 2).add (hind.const_mul _)) hpt
-    _ = _ := by
-        rw [MeasureTheory.integral_add (hD.const_mul 2) (hind.const_mul _),
-          MeasureTheory.integral_const_mul, MeasureTheory.integral_const_mul,
-          MeasureTheory.integral_indicator hK.measurableSet]
+  refine ⟨2 * (max M 0 * (1 + max B 0)) ^ 2, by positivity, fun ξ hξ hξc ↦ ?_⟩
+  have hint {θ : ℝ × ℝ → V} (hθ : ContDiff ℝ 1 θ) (hθc : HasCompactSupport θ) :
+      MeasureTheory.Integrable fun z ↦ 1 * ‖ω.floerLinearization J Ks Kt u θ z‖ ^ 2 := by
+    simpa only [one_mul] using ω.integrable_norm_floerLinearization_sq
+      (ω.continuous_floerLinearization hJ hKs hKt hu hθ) hθc
+  -- The operator-generic cost of a cutoff, with the weight `1`.
+  simpa only [one_mul, mul_one] using integral_mul_norm_fun_smul_sq_le
+    (D := ω.floerLinearization J Ks Kt u) (S := Set.univ) (w := fun _ ↦ 1) (f := β)
+    (b := fun z ↦ ‖J z (u z)‖) (M := max M 0) (B := max B 0) (Λ := 1) (ξ := ξ)
+    (fun _ ↦ zero_le_one) hK
+    (fun z _ h ↦ by_contra fun hz ↦ h (hβK z hz)) (fun z hz ↦ (hM z hz).trans (le_max_left _ _))
+    (fun z hz ↦ (hB z hz).trans (le_max_left _ _)) zero_le_one (fun _ _ ↦ le_rfl) hξ.continuous
+    (fun z _ _ _ hM' hB' ↦ ω.norm_floerLinearization_fun_smul_sq_le J Ks Kt u ξ
+      (hβ.differentiable one_ne_zero z) (hξ.differentiable one_ne_zero z)
+      (abs_le.2 ⟨by linarith [(hβ1 z).1], (hβ1 z).2⟩) hM' hB')
+    (fun z hz ↦ absurd (Set.mem_univ z) hz) (hint hξ hξc)
+    (hint (hβ.smul hξ) (HasCompactSupport.smul_left (f := β) hξc))
 
 /-- **Measurability of the Floer operator.** Let the coefficients `J` be jointly continuous and the
 Hamiltonians `Ks`, `Kt` jointly `C¹`. Then the Floer operator of an almost everywhere strongly

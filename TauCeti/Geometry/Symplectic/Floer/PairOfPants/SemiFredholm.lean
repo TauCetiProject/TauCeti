@@ -319,52 +319,6 @@ private theorem contDiff_endCutoff_smul (R₀ : ℝ) (q : Puncture) {ξ : ℝ ×
     ContDiff ℝ 2 fun z ↦ endCutoff R₀ q z • ξ z :=
   contDiff_smul_of_tsupport_subset (fun _ hz ↦ contDiffAt_endCutoff R₀ q hz) hξ hξS
 
-omit [FiniteDimensional ℝ V] in
-/-- **The weighted `L²` norm of an operator on a cut-off field.** Let `f` have derivative supported
-in a compact set `K`, bounded by `M` there, let `b ≤ B` and the weight `w ≥ 0` satisfy `w ≤ Λ` on
-`K`. If an operator `D` vanishes on `f ξ` off `S` and, at each point of `S` where `‖df‖ ≤ M'` and
-`b ≤ B'`, satisfies `‖D (f ξ)‖² ≤ 2 ‖D ξ‖² + 2 (M' (1 + B'))² ‖ξ‖²`, then
-`∫ w ‖D (f ξ)‖² ≤ 2 ∫ w ‖D ξ‖² + 2 (M (1 + B))² Λ ∫_K ‖ξ‖²`. This is shared by `D_u` (with
-`w = 1`) and by its formal adjoint (with `w = ρ⁻¹`). -/
-private theorem integral_mul_norm_fun_smul_sq_le {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup F] {D : (ℝ × ℝ → E) → ℝ × ℝ → F}
-    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z) {K : Set (ℝ × ℝ)} (hK : IsCompact K) {f : ℝ × ℝ → ℝ}
-    (hfK : ∀ z ∈ thricePuncturedSphereReal, fderiv ℝ f z ≠ 0 → z ∈ K) {b : ℝ × ℝ → ℝ}
-    {M B Λ : ℝ} (hM : ∀ z ∈ K, ‖fderiv ℝ f z‖ ≤ M) (hB : ∀ z ∈ K, b z ≤ B) (hΛ₀ : 0 ≤ Λ)
-    (hΛ : ∀ z ∈ K, w z ≤ Λ) {ξ : ℝ × ℝ → E} (hξ : Continuous ξ)
-    (hD : ∀ z ∈ thricePuncturedSphereReal, ∀ M' B' : ℝ, ‖fderiv ℝ f z‖ ≤ M' → b z ≤ B' →
-      ‖D (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
-        2 * ‖D ξ z‖ ^ 2 + 2 * (M' * (1 + B')) ^ 2 * ‖ξ z‖ ^ 2)
-    (hD₀ : ∀ z ∉ thricePuncturedSphereReal, D (fun w ↦ f w • ξ w) z = 0)
-    (hξi : Integrable fun z ↦ w z * ‖D ξ z‖ ^ 2)
-    (hfξi : Integrable fun z ↦ w z * ‖D (fun w ↦ f w • ξ w) z‖ ^ 2) :
-    ∫ z, w z * ‖D (fun w ↦ f w • ξ w) z‖ ^ 2 ≤
-      2 * (∫ z, w z * ‖D ξ z‖ ^ 2) + 2 * (M * (1 + B)) ^ 2 * Λ * ∫ z in K, ‖ξ z‖ ^ 2 := by
-  have hind : Integrable (K.indicator fun z ↦ ‖ξ z‖ ^ 2) :=
-    ((hξ.norm.pow 2).continuousOn.integrableOn_compact hK).integrable_indicator hK.measurableSet
-  set c := M * (1 + B)
-  calc _ ≤ ∫ z, (2 * (w z * ‖D ξ z‖ ^ 2) + 2 * c ^ 2 * Λ * K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z) := by
-        refine integral_mono hfξi ((hξi.const_mul 2).add (hind.const_mul _)) fun z ↦ ?_
-        have hind₀ : 0 ≤ K.indicator (fun z ↦ ‖ξ z‖ ^ 2) z :=
-          indicator_nonneg (fun _ _ ↦ sq_nonneg _) z
-        by_cases hzS : z ∈ thricePuncturedSphereReal
-        · by_cases hz : fderiv ℝ f z = 0
-          · have h := hD z hzS 0 (b z) (by simp [hz]) le_rfl
-            simp only [zero_mul, zero_pow two_ne_zero, mul_zero, add_zero] at h
-            nlinarith [mul_nonneg (mul_nonneg (sq_nonneg c) hΛ₀) hind₀,
-              mul_le_mul_of_nonneg_left h (hw z)]
-          · have hzK := hfK z hzS hz
-            have h := hD z hzS M B (hM z hzK) (hB z hzK)
-            rw [indicator_of_mem hzK]
-            nlinarith [mul_le_mul_of_nonneg_left h (hw z), mul_le_mul_of_nonneg_right (hΛ z hzK)
-              (mul_nonneg (sq_nonneg c) (sq_nonneg ‖ξ z‖))]
-        · rw [hD₀ z hzS, norm_zero, zero_pow two_ne_zero, mul_zero]
-          have := hw z
-          positivity
-    _ = _ := by
-        rw [integral_add (hξi.const_mul 2) (hind.const_mul _), integral_const_mul,
-          integral_const_mul, integral_indicator hK.measurableSet]
-
 /-- **The `L²` norm of the operator on a cut-off section.** Let `f` be smooth on `S` with
 `|f| ≤ 1`, with derivative supported in a compact set `K ⊆ S` and bounded by `M` there, and let
 `‖J‖ ≤ B` along `u` on `K`. Then for a `C²` section `ξ` with compact support in `S`,

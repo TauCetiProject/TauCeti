@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.VaryingStructure
 import TauCeti.Geometry.Symplectic.Rescale
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Complex.EquivRealProd
+import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Topology.Constructions.SumProd
 
 /-!
@@ -259,37 +260,6 @@ theorem
         rw [integral_const_mul]
         ring
 
-omit [FiniteDimensional ℝ V] in
-/-- **Comparing with a cut-off section on a disc.** If `β = 1` near every point of the disc
-`‖w‖ ≤ a` and `a ≤ b`, then the `W^{1,2}` energy of `ξ` on that disc is at most the energy of
-`β ξ` on the disc `‖w‖ ≤ b`, split into its derivative and `L²` parts. -/
-private theorem setIntegral_le_of_eventuallyEq_one {ξ : ℝ × ℝ → V} {β : ℝ × ℝ → ℝ} {a b : ℝ}
-    (hab : a ≤ b) (hβ1 : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ a → β =ᶠ[𝓝 z] 1)
-    (hβξ : ContDiff ℝ 1 fun w ↦ β w • ξ w) :
-    ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a},
-        (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 +
-          ‖ξ z‖ ^ 2) ≤
-      (∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b},
-        (‖fderiv ℝ (fun w ↦ β w • ξ w) z stdComplexLineReal‖ ^ 2 +
-          ‖fderiv ℝ (fun w ↦ β w • ξ w) z stdComplexLineImag‖ ^ 2)) +
-        ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ b}, ‖β z • ξ z‖ ^ 2 := by
-  have hK := isCompact_setOf_norm_equivRealProdCLM_symm_le b
-  have hdξ := hβξ.continuous_fderiv one_ne_zero
-  have hF : Continuous fun z ↦ ‖fderiv ℝ (fun w ↦ β w • ξ w) z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ (fun w ↦ β w • ξ w) z stdComplexLineImag‖ ^ 2 := by fun_prop
-  have hG : Continuous fun z ↦ ‖β z • ξ z‖ ^ 2 := hβξ.continuous.norm.pow 2
-  rw [← integral_add (hF.continuousOn.integrableOn_compact hK)
-    (hG.continuousOn.integrableOn_compact hK)]
-  refine le_of_eq_of_le (setIntegral_congr_fun (measurableSet_le
-    Complex.equivRealProdCLM.symm.continuous.norm.measurable measurable_const) fun z hz ↦ ?_)
-    (setIntegral_mono_set ((hF.add hG).continuousOn.integrableOn_compact hK)
-      (ae_of_all _ fun _ ↦ by positivity)
-      (ae_of_all _ fun z (hz : _ ≤ a) ↦ (show _ ≤ b from hz.trans hab)))
-  -- Near the disc `‖w‖ ≤ a` the cut-off section agrees with `ξ`.
-  have hev : (fun w ↦ β w • ξ w) =ᶠ[𝓝 z] ξ := (hβ1 z hz).mono fun z' h ↦ by
-    simp [show β z' = 1 from h]
-  simp only [hev.fderiv_eq, show β z • ξ z = ξ z from hev.eq_of_nhds]
-
 /-- **The estimate of the linearized Floer operator on a disc.** Let `a < b`, let `J(z, u z)` be
 `ω`-compatible for every `z` in the disc `‖w‖ ≤ b`, with `J` `C¹` and `Ks`, `Kt` `C²` at the points
 `(z, u z)`, and `u` `C¹`. Then there is a constant `C ≥ 0` such that every `C²` section `ξ` of
@@ -323,45 +293,42 @@ theorem exists_forall_setIntegral_le_mul_integral_floerLinearization_add_of_lt
       (fun z _ ↦ hu.contDiffAt) hc
   set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
   -- A cutoff `β` equal to `1` near `‖w‖ ≤ a` and vanishing near `‖w‖ ≥ b`.
-  obtain ⟨β, hβ, hβ01, hβ1, hβ0, hβK⟩ :=
+  obtain ⟨β, hβ, hβ01, hβ1, -, hβK, hβb⟩ :=
     (isCompact_setOf_norm_equivRealProdCLM_symm_le a).exists_contDiff_cutoff_sublevel
       Complex.equivRealProdCLM.symm.continuous.norm hab
   obtain ⟨C₁, hC₁, herr⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le (J := J') hJ hKs
     hKt hu (hβ.of_le (by simp)) hβ01 hK fun z hz ↦ hβK z (not_le.1 hz)
   refine ⟨C₀ * (C₁ + 3) + 1, by positivity, fun ξ hξ hξc ↦ ?_⟩
+  simp only [← Floer.sobolevDensity_apply]
   set ξ₀ : ℝ × ℝ → V := fun w ↦ β w • ξ w
   have hξ₀ : ContDiff ℝ 2 ξ₀ := (hβ.of_le (by simp)).smul hξ
-  have hξ₀K : tsupport ξ₀ ⊆ K := fun z hz ↦ by
-    rw [mem_ofPred_eq]
-    exact (not_le.1 fun h ↦ notMem_tsupport_iff_eventuallyEq.2 (hβ0 z h)
-      (tsupport_smul_subset_left _ _ hz)).le
+  have hξ₀K : tsupport ξ₀ ⊆ K :=
+    (tsupport_smul_subset_left _ _).trans fun z hz ↦ (show _ < b from hβb hz).le
+  have hI {g : ℝ × ℝ → ℝ} (hg : Continuous g) : IntegrableOn g K :=
+    hg.continuousOn.integrableOn_compact hK
+  have hG : Continuous fun z ↦ ‖ξ₀ z‖ ^ 2 := hξ₀.continuous.norm.pow 2
   -- The cutoff does not increase the `L²` norm on `K`.
   have hξ₀ξ : ∫ z in K, ‖ξ₀ z‖ ^ 2 ≤ ∫ z in K, ‖ξ z‖ ^ 2 :=
-    setIntegral_mono_on ((hξ₀.continuous.norm.pow 2).continuousOn.integrableOn_compact hK)
-      ((hξ.continuous.norm.pow 2).continuousOn.integrableOn_compact hK) hK.measurableSet
-        fun z _ ↦ by
-          simp only [ξ₀, norm_smul, Real.norm_eq_abs, abs_of_nonneg (hβ01 z).1, mul_pow]
-          exact mul_le_of_le_one_left (by positivity) (pow_le_one₀ (hβ01 z).1 (hβ01 z).2)
+    setIntegral_mono_on (hI hG) (hI (hξ.continuous.norm.pow 2)) hK.measurableSet fun z _ ↦ by
+      simp only [ξ₀, norm_smul, Real.norm_eq_abs, abs_of_nonneg (hβ01 z).1, mul_pow]
+      exact mul_le_of_le_one_left (by positivity) (pow_le_one₀ (hβ01 z).1 (hβ01 z).2)
   -- Combine the disc comparison, the `L²` estimate of `D` on `K` and the cost of the cutoff.
-  have h₁ : ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a},
-        (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 +
-          ‖ξ z‖ ^ 2) ≤
-      (∫ z in K, (‖fderiv ℝ ξ₀ z stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ ξ₀ z stdComplexLineImag‖ ^ 2)) + ∫ z in K, ‖ξ₀ z‖ ^ 2 :=
-    setIntegral_le_of_eventuallyEq_one hab.le hβ1 (hξ₀.of_le one_le_two)
-  have h₂ : ∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2 ≤
-      2 * (∫ z, ‖ω.floerLinearization J' Ks Kt u ξ z‖ ^ 2) + C₁ * ∫ z in K, ‖ξ z‖ ^ 2 :=
-    herr (hξ.of_le one_le_two) hξc
-  have h₃ : ∫ z in K, (‖fderiv ℝ ξ₀ z stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ ξ₀ z stdComplexLineImag‖ ^ 2) ≤
-      C₀ * ((∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2) + ∫ z in K, ‖ξ₀ z‖ ^ 2) := by
+  have h₁ := Floer.setIntegral_sobolevDensity_le_of_eventuallyEq_one hab.le hβ1
+    (hξ₀.of_le one_le_two)
+  have h₂ : ∫ z in K, Floer.sobolevDensity ξ₀ z ≤
+      C₀ * ((∫ z, ‖ω.floerLinearization J' Ks Kt u ξ₀ z‖ ^ 2) + ∫ z in K, ‖ξ₀ z‖ ^ 2) +
+        ∫ z in K, ‖ξ₀ z‖ ^ 2 := by
     have hD := ω.integrable_norm_floerLinearization_sq (μ := volume)
       (ω.continuous_floerLinearization (J := J') hJ hKs hKt hu (hξ₀.of_le one_le_two))
       hξc.smul_left
-    refine (hcore hξ₀ hξ₀K).trans (mul_le_mul_of_nonneg_left ((integral_add hD.integrableOn
-      ((hξ₀.continuous.norm.pow 2).continuousOn.integrableOn_compact hK)).trans_le
-        (add_le_add_left (setIntegral_le_integral hD (ae_of_all _ fun _ ↦ by positivity)) _)) hC₀)
-  nlinarith [mul_le_mul_of_nonneg_left (add_le_add h₂ hξ₀ξ) hC₀,
+    have := hξ₀.continuous_fderiv two_ne_zero
+    simp only [Floer.sobolevDensity_apply]
+    refine (integral_add (hI (by fun_prop)) (hI hG)).trans_le (add_le_add_left ((hcore hξ₀
+      hξ₀K).trans (mul_le_mul_of_nonneg_left ((integral_add hD.integrableOn (hI hG)).trans_le
+        (add_le_add_left (setIntegral_le_integral hD (ae_of_all _ fun _ ↦ by positivity)) _))
+          hC₀)) _)
+  nlinarith [h₁.trans h₂,
+    mul_le_mul_of_nonneg_left (add_le_add (herr (hξ.of_le one_le_two) hξc) hξ₀ξ) hC₀,
     integral_nonneg (μ := volume) fun z ↦ sq_nonneg ‖ω.floerLinearization J' Ks Kt u ξ z‖,
     mul_nonneg hC₀ (by positivity : 0 ≤ (C₁ + 1) *
       (∫ z, ‖ω.floerLinearization J' Ks Kt u ξ z‖ ^ 2) + 2 * ∫ z in K, ‖ξ z‖ ^ 2)]
