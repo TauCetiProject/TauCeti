@@ -81,6 +81,13 @@ theorem norm_det_eq_one {R : Type*} [CommRing R] [Norm R] [NormOneClass R]
     (g : SpecialLinearGroup n R) : ‖(g : Matrix n n R).det‖ = 1 := by
   rw [g.property, norm_one]
 
+/-- The embedding `SL(n, R) → GL(n, R)` commutes with negation, when `n` has even cardinality, so
+that `-g ∈ SL(n, R)`. -/
+@[simp]
+theorem toGL_neg {R : Type*} [CommRing R] [Fact (Even (Fintype.card n))]
+    (g : SpecialLinearGroup n R) : toGL (-g) = -toGL g :=
+  Units.ext <| by simp only [coe_GL_coe_matrix, coe_neg, Units.val_neg]
+
 variable (n 𝕜) in
 /-- **The polar retraction** `SL(n, 𝕜) → SU(n)`, for `𝕜 = ℝ` or `ℂ`: the unitary factor `U` of the
 polar decomposition `g = P * U`, which has determinant one. -/
@@ -120,9 +127,7 @@ theorem polarRetraction_toSL_mul (k : specialUnitaryGroup n 𝕜) (g : SpecialLi
 unitary factor of `-g = √(g gᴴ) (-U)` is minus the unitary factor `U` of `g`. -/
 theorem coe_polarRetraction_neg [Fact (Even (Fintype.card n))] (g : SpecialLinearGroup n 𝕜) :
     (polarRetraction n 𝕜 (-g) : Matrix n n 𝕜) = -(polarRetraction n 𝕜 g : Matrix n n 𝕜) := by
-  have h : toGL (-g) = -toGL g :=
-    Units.ext <| by simp only [coe_GL_coe_matrix, coe_neg, Units.val_neg]
-  rw [coe_polarRetraction_apply, coe_polarRetraction_apply, h, Units.polarUnitary_neg,
+  rw [coe_polarRetraction_apply, coe_polarRetraction_apply, toGL_neg, Units.polarUnitary_neg,
     Unitary.coe_neg]
 
 variable (n 𝕜) in
