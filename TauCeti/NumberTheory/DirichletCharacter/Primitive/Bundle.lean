@@ -158,6 +158,10 @@ theorem character_one : (1 : PrimitiveDirichletCharacter).character = 1 :=
 theorem of_one [NeZero N] : of (1 : DirichletCharacter ℂ N) = 1 :=
   of_eq_iff.2 ⟨one_dvd N, changeLevel_one _⟩
 
+/-- A bundle is trivial exactly when its character is the principal character of its level. -/
+theorem character_eq_one_iff (ψ : PrimitiveDirichletCharacter) : ψ.character = 1 ↔ ψ = 1 :=
+  ⟨fun h ↦ by rw [← of_character ψ, h, of_one], by rintro rfl; rfl⟩
+
 /-- The inverse of a bundle: the inverse character, primitive at the same level. -/
 noncomputable instance : Inv PrimitiveDirichletCharacter :=
   ⟨fun ψ => ⟨ψ.level, ψ.character⁻¹, ψ.isPrimitive.inv⟩⟩

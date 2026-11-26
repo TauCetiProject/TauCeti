@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
+public import TauCeti.Analysis.LaplaceTransform.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.RieszMellin
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
@@ -27,9 +28,10 @@ an absolutely convergent upper Mellin transform on `1 < s.re`. The transform equ
 meromorphic Riesz expression, so estimates for the prime sum can be related to poles of that
 expression.
 
-The normalization and transform identities are those of Levent Alpöge's `Deduction.Gchi`,
-`Deduction.mellin_Gchi_modOne` and `Deduction.mellin_Gchi_of_ne_one` in the formalization of the
-Riemann hypothesis for Dirichlet L-functions.
+The normalization, conjugation and transform identities are those of Levent Alpöge's
+`Deduction.Gchi`, `Deduction.Gchi_conj`, `Deduction.mellin_Gchi_modOne` and
+`Deduction.mellin_Gchi_of_ne_one` in the formalization of the Riemann hypothesis for Dirichlet
+L-functions.
 -/
 
 public section
@@ -88,8 +90,7 @@ theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
   by_cases hχ : χ = 1
   · subst χ
     simp [rieszSum_def]
-  · have hc : χ.character ≠ 1 := fun hc ↦ hχ (by
-      rw [← of_character χ, hc, of_one])
+  · have hc : χ.character ≠ 1 := (character_eq_one_iff χ).not.mpr hχ
     have hi : χ⁻¹ ≠ 1 := fun hi ↦ hχ (by
       simpa only [inv_inv, inv_one] using congrArg Inv.inv hi)
     have hlog : logDeriv (χ.character⁻¹).LFunction 1 =
@@ -102,7 +103,7 @@ theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
 
 /-- On the half-plane of absolute convergence the remainder in logarithmic coordinates has
 one-sided Laplace transform given by the meromorphic Riesz expression. -/
-private theorem hasLaplace_rieszRemainder (χ : PrimitiveDirichletCharacter) {s : ℂ}
+theorem hasLaplace_rieszRemainder (χ : PrimitiveDirichletCharacter) {s : ℂ}
     (hs : 1 < s.re) :
     HasLaplace (χ.rieszRemainder ∘ Real.exp) s (rieszRemainderMellin χ.character.LFunction s) := by
   have h₀ : s ≠ 0 := Complex.ne_zero_of_re_pos (zero_lt_one.trans hs)
@@ -129,13 +130,15 @@ private theorem hasLaplace_rieszRemainder (χ : PrimitiveDirichletCharacter) {s 
     rw [rieszRemainderMellin_riemannZeta hs]
     convert h using 1
     · ext u
-      rw [Function.comp_apply, rieszRemainder, ite_eq_left rfl]
-      simp [Function.comp_apply, Real.log_exp, mul_comm]
+      have h1 (n : ℕ) : (1 : PrimitiveDirichletCharacter).character n = 1 :=
+        DirichletCharacter.modOne_eq_one' (χ := (1 : DirichletCharacter ℂ 1)) n
+      rw [Function.comp_apply, rieszRemainder_one]
+      simp [h1, Real.log_exp, mul_comm, -character_one]
     · simp only [Nat.factorial_zero, Nat.factorial_one, Nat.cast_one, Nat.reduceAdd, pow_one,
         smul_eq_mul, Complex.ofReal_one]
       field_simp
       ring
-  · have hc : χ.character ≠ 1 := fun hc ↦ hχ (by rw [← of_character χ, hc, of_one])
+  · have hc : χ.character ≠ 1 := (character_eq_one_iff χ).not.mpr hχ
     have h := hr.add (hlin (logDeriv χ.character.LFunction 1))
     rw [χ.character.rieszRemainderMellin_LFunction_of_ne_one hc hs]
     convert h using 1
