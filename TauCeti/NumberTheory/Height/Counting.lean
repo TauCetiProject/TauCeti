@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Height.House
 
 import TauCeti.Algebra.Polynomial.Card.RootSetUnion
+import TauCeti.Data.Int.Interval
 
 /-!
 # Counting algebraic numbers of bounded naive height or house
@@ -117,10 +118,8 @@ theorem finite_setOf_isIntegral_natDegree_eq_house_le (k : ℕ) (C : ℝ) :
     fun i ↦ (s i).finite_toSet
   refine ⟨hfin.subset hsub, (Set.ncard_le_ncard hsub hfin).trans <|
     (Polynomial.ncard_biUnion_roots_natDegree_le_coeff_mem_pi_le _ k s).trans_eq ?_⟩
-  have hN : (Finset.Icc (-(N : ℤ)) N).card = 2 * N + 1 := by
-    rw [Int.card_Icc]
-    omega
-  simp only [s, Fin.prod_univ_castSucc, Fin.lastCases_last, Fin.lastCases_castSucc, hN,
+  simp only [s, Fin.prod_univ_castSucc, Fin.lastCases_last, Fin.lastCases_castSucc,
+    Int.card_Icc_neg_natCast_natCast,
     Finset.card_singleton, Finset.prod_const, Finset.card_univ, Fintype.card_fin, one_mul,
     mul_comm]
 
