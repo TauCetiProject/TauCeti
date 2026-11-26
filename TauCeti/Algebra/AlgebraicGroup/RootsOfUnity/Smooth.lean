@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.RootsOfUnity.Scheme
 public import TauCeti.Algebra.MonoidAlgebra.Smooth
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.Smooth
+public import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
 
 /-!
 # Smoothness of roots-of-unity group schemes
@@ -16,7 +17,12 @@ For positive `n`, the coordinate algebra of `μ_n` is the group algebra of the c
 `ℤ/n`. It is smooth over a field exactly when `n` is nonzero in that field. In particular,
 `μ_p` is non-smooth in characteristic `p`, even though its points over an algebraically closed
 field form the trivial group. This example keeps smoothness separate from the finite-type
-affine-group-scheme definition.
+affine-group-scheme definition. Over every commutative ring `O` the coordinate algebra `O[ℤ/n]`
+of `μ_n` (for positive `n`, `O[x]/(x^n - 1)`) is a group algebra, hence free
+and flat. When `O` has an algebra map to a field of
+characteristic `p`, such as `ℤ_p` and its residue field, the coordinate algebra of `μ_p` is
+nevertheless not smooth, since smoothness would pass to the fibre
+(`coordinateRing_not_smooth_of_charP`).
 
 ## References
 
@@ -77,5 +83,18 @@ theorem groupScheme_not_smooth (p : ℕ) [Fact p.Prime] [CharP k p] :
   intro hs
   exact (isUnit_iff_ne_zero.mp ((groupScheme_smooth_iff (k := k) p).mp hs))
     (CharP.cast_eq_zero k p)
+
+/-- **`μ_p` is not smooth over a ring with a fibre of characteristic `p`**: over a commutative
+ring `O` with an algebra map to a field `κ` of characteristic `p`, for example `ℤ_p` and its
+residue field, the coordinate algebra `O[x]/(x^p - 1) = O[ℤ/p]` of `μ_p` is not smooth, since its
+base change `κ[ℤ/p]` is not. It is flat over `O`, being a group algebra. -/
+theorem coordinateRing_not_smooth_of_charP {O : Type u} [CommRing O] (κ : Type u) [Field κ]
+    [Algebra O κ] (p : ℕ) [Fact p.Prime] [CharP κ p] :
+    ¬ Algebra.Smooth O (DiagonalizableGroup.coordinateRing O (characterGroup.{u} p)).obj := by
+  -- The coordinate algebra of `μ_p` is by definition the group algebra of `ℤ/p`.
+  change ¬ Algebra.Smooth O (MonoidAlgebra O (ULift.{u} (Multiplicative (ZMod p))))
+  intro hs
+  exact coordinateRing_not_smooth (k := κ) p <| Algebra.Smooth.of_equiv
+    (MonoidAlgebra.scalarTensorEquiv O κ)
 
 end TauCeti.RootsOfUnityGroup

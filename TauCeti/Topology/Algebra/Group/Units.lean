@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.Group.Units
+public import Mathlib.Topology.MetricSpace.Polish
 
 /-!
 # Separation, neighbourhoods, countability and preconnected sets in a group of units
@@ -20,12 +21,14 @@ file records consequences of that definition.
   neighbourhood of `u` in `Mˣ` exactly when it contains every unit `v` with `v` in a prescribed
   neighbourhood of `u` and `v⁻¹` in a prescribed neighbourhood of `u⁻¹`.
 * In a `T₁` monoid with continuous multiplication, `u ↦ (u, u⁻¹)` is a closed embedding, so the
-  units of a σ-compact monoid are σ-compact.
+  units of a σ-compact monoid are σ-compact and the units of a Polish monoid are Polish.
 * Since `u ↦ (u, u⁻¹)` is an embedding, the units of a second-countable monoid are second
   countable.
 * In a group with zero with continuous inversion away from zero, the coercion `G₀ˣ → G₀` is a
   topological embedding, so a preconnected set of nonzero elements pulls back to a preconnected
   set of units.
+* A homomorphism from a group with continuous inversion into `Mˣ` is continuous exactly when its
+  values in `M` are, since its inverses are its values at inverses.
 
 ## Main results
 
@@ -35,8 +38,10 @@ file records consequences of that definition.
 * `Units.instSigmaCompactSpace`: the units of a σ-compact monoid are σ-compact.
 * `Units.instSecondCountableTopology`: the units of a second-countable monoid are second
   countable.
+* `Units.instPolishSpace`: the units of a Polish monoid with continuous multiplication are Polish.
 * `IsPreconnected.preimage_units_val`: preconnected sets of nonzero elements pull back to
   preconnected sets of units.
+* `MonoidHom.continuous_iff_continuous_val`: continuity of a homomorphism into the units.
 -/
 
 public section
@@ -94,7 +99,27 @@ instance instSecondCountableTopology [SecondCountableTopology M] : SecondCountab
   ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isEmbedding.comp
     isEmbedding_embedProduct |>.secondCountableTopology
 
+/-- **The units of a Polish monoid form a Polish space.** In a Polish monoid with continuous
+multiplication, `u ↦ (u, u⁻¹)` is a closed embedding of `Mˣ` into the Polish space `M × M`. -/
+@[to_additive /-- The additive units of a Polish additive monoid with continuous addition form a
+Polish space. -/]
+instance instPolishSpace [ContinuousMul M] [PolishSpace M] : PolishSpace Mˣ :=
+  ((Homeomorph.refl M).prodCongr MulOpposite.opHomeomorph.symm).isClosedEmbedding.comp
+    isClosedEmbedding_embedProduct |>.polishSpace
+
 end Units
+
+/-- **Continuity into the units of a topological monoid**: a homomorphism from a group with
+continuous inversion into `Mˣ` is continuous for the units topology exactly when its values in `M`
+are continuous, since `ρ(g)⁻¹ = ρ(g⁻¹)`. -/
+@[to_additive /-- **Continuity into the additive units of a topological additive monoid**: a
+homomorphism from an additive group with continuous negation into `AddUnits M` is continuous
+exactly when its values in `M` are continuous, since `-ρ(g) = ρ(-g)`. -/]
+theorem MonoidHom.continuous_iff_continuous_val {G M : Type*} [Group G] [TopologicalSpace G]
+    [ContinuousInv G] [Monoid M] [TopologicalSpace M] (ρ : G →* Mˣ) :
+    Continuous ρ ↔ Continuous fun g => (ρ g : M) := by
+  refine ⟨fun h => Units.continuous_val.comp h, fun h => Units.continuous_iff.2 ⟨h, ?_⟩⟩
+  exact (h.comp continuous_inv).congr fun g => by rw [Function.comp_apply, map_inv]
 
 /-- **Preconnected sets of nonzero elements pull back to preconnected sets of units.**  In a group
 with zero whose inversion is continuous away from zero, the coercion from the units is a

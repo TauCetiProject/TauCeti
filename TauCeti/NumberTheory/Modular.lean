@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -209,10 +210,8 @@ theorem volume_fd : (volume : Measure ℍ) fd = ENNReal.ofReal (Real.pi / 3) := 
     ext z
     simp only [fd, mem_ofPred_eq, TauCeti.UpperHalfPlane.mem_idealRegion_iff, abs_le]
     tauto
-  have harccos : Real.arccos (1 / 2) = Real.pi / 3 := by
-    rw [← Real.cos_pi_div_three, Real.arccos_cos (by positivity) (by linarith [Real.pi_pos])]
   rw [hfd, TauCeti.UpperHalfPlane.volume_idealRegion (by norm_num) (by norm_num) (by norm_num),
-    Real.arccos_neg, harccos]
+    Real.arccos_neg, Real.arccos_one_half]
   congr 1
   ring
 

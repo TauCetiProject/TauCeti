@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+public import TauCeti.LinearAlgebra.Matrix.Charpoly.Zeta
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.Topology.Instances.AddCircle.Torus
 
 /-!
@@ -40,6 +42,20 @@ fixed-point side of the Lefschetz formula for linear automorphisms of a torus: `
 `H_k(Tⁿ; ℚ) = Λᵏ ℚⁿ` by `Λᵏ A`, and `∑ₖ (-1)ᵏ tr Λᵏ A = det (1 - A)` is its Lefschetz number. The
 homological side is not formalized here.
 
+On the two-torus `ι = Fin 2` these signed counts determine the dynamical zeta function
+`ζ = exp (∑ₙ (∑_{φⁿ x = x} sgn det (1 - dφⁿ_x)) tⁿ / n)` of `φ(x) = A • x`. Since
+`det (1 - Aⁿ) = 1 - tr (Aⁿ) + (det A)ⁿ` is the alternating sum of the traces of the actions of `φⁿ`
+on `H₀`, `H₁` and `H₂` of the torus, `ζ` is the homological zeta function
+
+`ζ = det (1 - t A) / ((1 - t) (1 - det A t))`
+
+for every `A ∈ GL(2, ℤ)`, degenerate iterates included: for those, both sides of the `n`-th
+Lefschetz identity vanish (`AddCircle.`
+`subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul_mul`).
+For an area-preserving `A`, `det A = 1`, this is `det (1 - t A) / (1 - t) ^ 2`, whose coefficient of
+`tⁿ` is `n det (1 - A)` for `n ≠ 0`. For the identity of the torus, all of whose points are
+degenerate fixed points, and more generally whenever `det (1 - A) = 0`, the zeta function is `1`.
+
 The iterates of `x ↦ A • x` are `x ↦ Aⁿ • x`, so the map is nondegenerate up to period `N`
 exactly when `det (1 - Aᵏ) ≠ 0` for `0 < k ≤ N`
 (`AddCircle.isNondegenerateUpToPeriod_generalLinearGroup_smul_iff`); the point `0` is fixed by
@@ -67,6 +83,16 @@ every period.
   signed count of the fixed points of the `n`-th iterate is `det (1 - Aⁿ)`.
 * `AddCircle.isNondegenerateUpToPeriod_generalLinearGroup_smul_iff`: nondegeneracy up to period
   `N` exactly when `det (1 - Aᵏ) ≠ 0` for `0 < k ≤ N`.
+* `AddCircle.`
+  `subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul_mul`:
+  the dynamical zeta function of a linear map of the two-torus is
+  `det (1 - t A) / ((1 - t) (1 - det A t))`.
+* `AddCircle.`
+  `subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul`,
+  `AddCircle.`
+  `coeff_subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul`:
+  for `det A = 1` it is `det (1 - t A) / (1 - t) ^ 2`, with coefficients `n det (1 - A)` for
+  `n ≠ 0`.
 
 ## References
 
@@ -211,5 +237,75 @@ theorem isNondegenerateUpToPeriod_generalLinearGroup_smul_iff (A : GL ι ℤ) (N
     refine (isNondegenerateFixedPt_generalLinearGroup_smul_iff p (A ^ k) hx).2 ?_
     rw [Units.val_pow_eq_pow_val]
     exact h k hk hkN
+
+/-! ### The zeta function of a linear map of the two-torus -/
+
+section FinTwo
+
+/-- The signed fixed-point count of the `n`-th iterate of `x ↦ A • x` on the two-torus, as a
+rational number, is `det (1 - Bⁿ)` for the rational matrix `B` of `A`. -/
+private theorem intCast_finsum_sign_det_id_sub_fixedPointDerivative_iterate (A : GL (Fin 2) ℤ)
+    (n : ℕ) :
+    ((∑ᶠ x : {x : Fin 2 → AddCircle p // (fun y ↦ A • y)^[n] x = x},
+        (SignType.sign (LinearMap.det (LinearMap.id - fixedPointDerivative
+          (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (fun y ↦ A • y)^[n] x)) : ℤ) : ℤ) : ℚ) =
+      (1 - ((A : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℚ)) ^ n).det := by
+  rw [finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul,
+    Matrix.intCast_det_one_sub, Matrix.map_pow]
+
+/-- **The dynamical zeta function of a linear map of the two-torus.** Let `A ∈ GL(2, ℤ)` act on
+the torus `Fin 2 → AddCircle p` by `φ(x) = A • x`. Its dynamical zeta function
+`ζ = exp (∑ₙ (∑_{φⁿ x = x} sgn det (1 - dφⁿ_x)) tⁿ / n)`, built from the fixed points of the
+iterates and their Lefschetz signs, is the homological zeta function
+
+`ζ = det (1 - t A) / ((1 - t) (1 - det A t))`,
+
+stated without inverses. The three factors are the actions of `φ` on `H₁`, `H₀` and `H₂` of the
+torus. No hypothesis on `A` is needed: when an iterate is degenerate, `det (1 - Aⁿ) = 0`, every
+fixed point of `φⁿ` has sign `0`, and both sides of the `n`-th Lefschetz identity vanish. -/
+theorem subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul_mul
+    (A : GL (Fin 2) ℤ) :
+    (PowerSeries.exp ℚ).subst (PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ •
+        ((∑ᶠ x : {x : Fin 2 → AddCircle p // (fun y ↦ A • y)^[n] x = x},
+          (SignType.sign (LinearMap.det (LinearMap.id - fixedPointDerivative
+            (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (fun y ↦ A • y)^[n] x)) : ℤ) : ℤ) : ℚ)) *
+        ((1 - PowerSeries.X) *
+          (1 - PowerSeries.C (((A : Matrix (Fin 2) (Fin 2) ℤ).det : ℤ) : ℚ) * PowerSeries.X)) =
+      (((A : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℚ)).charpolyRev : PowerSeries ℚ) := by
+  simp_rw [intCast_finsum_sign_det_id_sub_fixedPointDerivative_iterate]
+  rw [Int.cast_det]
+  exact Matrix.subst_exp_det_one_sub_pow_mul_fin_two _
+
+/-- **The dynamical zeta function of an area-preserving linear map of the two-torus.** For
+`A ∈ SL(2, ℤ)` acting on the torus, the dynamical zeta function is
+`ζ = det (1 - t A) / (1 - t) ^ 2`. -/
+theorem subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul
+    {A : GL (Fin 2) ℤ} (hA : (A : Matrix (Fin 2) (Fin 2) ℤ).det = 1) :
+    (PowerSeries.exp ℚ).subst (PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ •
+        ((∑ᶠ x : {x : Fin 2 → AddCircle p // (fun y ↦ A • y)^[n] x = x},
+          (SignType.sign (LinearMap.det (LinearMap.id - fixedPointDerivative
+            (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (fun y ↦ A • y)^[n] x)) : ℤ) : ℤ) : ℚ)) =
+      (((A : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℚ)).charpolyRev : PowerSeries ℚ) *
+        PowerSeries.mk 1 ^ 2 := by
+  simp_rw [intCast_finsum_sign_det_id_sub_fixedPointDerivative_iterate]
+  exact Matrix.subst_exp_det_one_sub_pow_fin_two_of_det_eq_one
+    ((Int.castRingHom ℚ).det_map_eq_one hA)
+
+/-- **The coefficients of the dynamical zeta function of an area-preserving linear map of the
+two-torus.** For `A ∈ SL(2, ℤ)` acting on the torus and `n ≠ 0`, the coefficient of `tⁿ` in the
+dynamical zeta function is `n det (1 - A)`. In particular, when `det (1 - A) = 0`, as for the
+identity of the torus, whose fixed points are all degenerate, the zeta function is `1`. -/
+theorem coeff_subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul
+    {A : GL (Fin 2) ℤ} (hA : (A : Matrix (Fin 2) (Fin 2) ℤ).det = 1) {n : ℕ} (hn : n ≠ 0) :
+    PowerSeries.coeff n ((PowerSeries.exp ℚ).subst (PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ •
+        ((∑ᶠ x : {x : Fin 2 → AddCircle p // (fun y ↦ A • y)^[n] x = x},
+          (SignType.sign (LinearMap.det (LinearMap.id - fixedPointDerivative
+            (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (fun y ↦ A • y)^[n] x)) : ℤ) : ℤ) : ℚ))) =
+      n * (1 - (A : Matrix (Fin 2) (Fin 2) ℤ)).det := by
+  simp_rw [intCast_finsum_sign_det_id_sub_fixedPointDerivative_iterate]
+  rw [Matrix.coeff_subst_exp_det_one_sub_pow_fin_two_of_det_eq_one
+    ((Int.castRingHom ℚ).det_map_eq_one hA) hn, Matrix.intCast_det_one_sub]
+
+end FinTwo
 
 end AddCircle

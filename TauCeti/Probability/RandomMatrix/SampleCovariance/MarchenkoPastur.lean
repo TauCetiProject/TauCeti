@@ -9,6 +9,7 @@ public import TauCeti.Probability.Distributions.MarchenkoPastur.Stability
 public import TauCeti.Probability.RandomMatrix.QuadraticForm
 public import TauCeti.Probability.RandomMatrix.SampleCovariance.ZeroMass
 import TauCeti.Analysis.Matrix.SampleCovariance.SelfConsistency
+import TauCeti.Analysis.Matrix.SpectralMeasure.Scaling
 import TauCeti.Probability.RandomMatrix.SampleCovariance.Approximation
 import TauCeti.Probability.RandomMatrix.SampleCovariance.ExpectedSpectralMeasure
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -218,6 +219,64 @@ theorem marchenkoPastur_ae {x : ℕ × ℕ → Ω → ℂ} {ν : Measure ℂ}
   exact ((hYlaw m i j).ae_iff (p := fun x ↦ ‖x‖ ≤ B.toNNReal)
     (measurableSet_setOfPred.1 (measurableSet_le measurable_norm measurable_const))).2
     (hB.mono fun _ h ↦ h.trans (Real.le_coe_toNNReal B))
+
+/-- For i.i.d. complex entries with positive finite variance `v` and arbitrary mean, the
+empirical spectral measures of the entrywise centered sample covariances converge weakly
+almost surely to the Marchenko–Pastur law at the limiting positive aspect ratio `y`, scaled
+by `v`. -/
+theorem ae_tendsto_spectralMeasure_centered_sampleCovariance_of_pos_variance
+    {x : ℕ × ℕ → Ω → ℂ} {ν : Measure ℂ}
+    (hx : ∀ ij, HasLaw (x ij) ν P) (hindep : iIndepFun x P) (hy : 0 < y)
+    (hp : Tendsto (fun n ↦ (p n : ℝ) / n) atTop (𝓝 y))
+    (hv : 0 < ∫ z, ‖z - ∫ w, w ∂ν‖ ^ 2 ∂ν) :
+    let b := ∫ z, z ∂ν
+    let v := ∫ z, ‖z - b‖ ^ 2 ∂ν
+    ∀ᵐ ω ∂P, Tendsto (fun n ↦ (sampleCovariance (Matrix.of
+      fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j) ω - b)).spectralMeasure
+        (isHermitian_sampleCovariance _)) atTop
+      (𝓝 ((marchenkoPastur y).toProbabilityMeasure.map (v * ·))) := by
+  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
+  have : IsProbabilityMeasure ν := (hx (0, 0)).isProbabilityMeasure_iff.1 ‹_›
+  let b := ∫ z, z ∂ν
+  let v := ∫ z, ‖z - b‖ ^ 2 ∂ν
+  have hv' : 0 < v := hv
+  let Z (z : ℂ) := (√v)⁻¹ • (z - b)
+  have hZ : Measurable Z := by fun_prop
+  have hmean : ∫ z, z ∂(ν.map Z) = 0 := by
+    have hsq : Integrable (fun z ↦ ‖z - b‖ ^ 2) ν := by
+      by_contra h
+      exact hv'.ne' (integral_undef h)
+    have hLp : MemLp (fun z ↦ z - b) 2 ν :=
+      (memLp_two_iff_integrable_sq_norm
+        (measurable_id.sub measurable_const).aestronglyMeasurable).mpr hsq
+    have hid : Integrable (fun z : ℂ ↦ z) ν := by
+      simpa only [sub_eq_add_neg, integrable_add_const_iff] using hLp.integrable one_le_two
+    rw [integral_map hZ.aemeasurable (by fun_prop)]
+    simp only [Z, integral_smul]
+    rw [integral_sub hid (integrable_const b)]
+    simp [b]
+  have hvar : ∫ z, ‖z‖ ^ 2 ∂(ν.map Z) = 1 := by
+    rw [integral_map hZ.aemeasurable (by fun_prop)]
+    simp only [Z, norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity : 0 ≤ (√v)⁻¹),
+      mul_pow, integral_const_mul, inv_pow, Real.sq_sqrt hv'.le]
+    exact inv_mul_cancel₀ hv'.ne'
+  filter_upwards [marchenkoPastur_ae (fun ij ↦ (hasLaw_map hZ.aemeasurable).fun_comp (hx ij))
+    (hindep.comp (fun _ ↦ Z) (fun _ ↦ hZ)) hmean hvar hy hp]
+    with ω hMP
+  let A (n : ℕ) := Matrix.of fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j) ω - b
+  let B (n : ℕ) := Matrix.of fun (i : Fin (p n)) (j : Fin n) ↦ Z (x (i, j) ω)
+  have hA (n : ℕ) : A n = √v • B n := by
+    ext i j
+    simp only [A, B, Matrix.smul_apply, Matrix.of_apply, Z, smul_smul,
+      mul_inv_cancel₀ (Real.sqrt_pos.2 hv').ne', one_smul]
+  have hmap (n : ℕ) : ((sampleCovariance (B n)).spectralMeasure
+      (isHermitian_sampleCovariance _)).map (v * ·) =
+        (sampleCovariance (A n)).spectralMeasure (isHermitian_sampleCovariance _) := by
+    rw [map_spectralMeasure_mul]
+    apply spectralMeasure_eq_of_charpoly_eq
+    rw [hA n, sampleCovariance_real_smul, Real.sq_sqrt hv'.le]
+  exact ((ProbabilityMeasure.continuous_map (continuous_const.mul continuous_id)).tendsto _
+    |>.comp hMP).congr hmap
 
 section VaryingSpaces
 

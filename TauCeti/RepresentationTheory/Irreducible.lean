@@ -51,6 +51,8 @@ an algebra are those of the whole algebra.
 
 * `Representation.IsIrreducible.nontrivial`: an irreducible representation has a nonzero
   carrier.
+* `Representation.IsIrreducible.of_comp`: a representation whose pullback along a monoid
+  homomorphism is irreducible is irreducible.
 * `Representation.IsIrreducible.finrank_pos`: a finite-dimensional irreducible
   representation has positive dimension.
 * `Representation.IsIrreducible.natCast_finrank_ne_zero`: in characteristic zero that
@@ -115,6 +117,20 @@ theorem IsIrreducible.nontrivial {ρ : Representation k G V}
   have _ : ρ.IsIrreducible := h
   have _ := IsSimpleModule.nontrivial k[G] ρ.asModule
   ρ.asModuleEquiv.symm.toEquiv.nontrivial
+
+/-- A representation whose pullback along a monoid homomorphism `f : H →* G` is irreducible is
+irreducible: every subrepresentation of `ρ` is one of `ρ.comp f`. -/
+theorem IsIrreducible.of_comp {H : Type*} [Monoid H] {ρ : Representation k G V} (f : H →* G)
+    [hρ : Representation.IsIrreducible (ρ.comp f)] : ρ.IsIrreducible := by
+  have := hρ.nontrivial
+  refine ⟨fun S => ?_⟩
+  refine (eq_bot_or_eq_top (S.res f)).imp (fun h => ?_) fun h => ?_
+  · apply Subrepresentation.toSubmodule_injective
+    simpa only [Subrepresentation.toSubmodule_res, Subrepresentation.toSubmodule_bot] using
+      congrArg Subrepresentation.toSubmodule h
+  · apply Subrepresentation.toSubmodule_injective
+    simpa only [Subrepresentation.toSubmodule_res, Subrepresentation.toSubmodule_top] using
+      congrArg Subrepresentation.toSubmodule h
 
 /-- **A finite-dimensional irreducible representation has positive dimension.** This is what makes
 the degree of an irreducible character positive, and, cast into the base field by
