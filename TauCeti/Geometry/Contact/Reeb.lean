@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Contact.StableHamiltonian
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.LinearAlgebra.Projection.SplittingEquiv
+import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 
 /-!
 # The Reeb vector field of a contact form
@@ -46,6 +50,14 @@ Evaluating `α` on it gives `α(R_(f α)) = 1 / f`
 (`TauCeti.SmoothForm.IsContactForm.apply_reebVectorField_of_eq_smul`), which is where the factor
 `f²` in the equation for `Y` comes from. For a constant `c ≠ 0` this gives `R_(c α) = R_α / c`
 (`TauCeti.SmoothForm.IsContactForm.reebVectorField_smul`), and in particular `R_(-α) = -R_α`.
+More generally, for a locally constant `c`, such as a nonzero constant on each connected component
+of `M`, the correction `Y` vanishes and `R_(c α) = R_α / c`
+(`TauCeti.SmoothForm.IsContactForm.reebVectorField_of_eq_smul_of_isLocallyConstant`). Along an
+integral curve `γ` of `R_(c α)` the function `c` is a constant `c₀`, so `t ↦ γ(c₀ t)` is an
+integral curve of `R_α`
+(`TauCeti.SmoothForm.IsContactForm.isMIntegralCurve_comp_mul_of_eq_smul_of_isLocallyConstant`):
+the closed Reeb orbits of `c α` are those of `α`, run at the speed `1 / c₀`, backwards where
+`c₀ < 0`.
 
 The Reeb vector field is the characteristic vector field of the stable Hamiltonian structure
 `(α, dα)` (`TauCeti.SmoothForm.characteristicVectorField_mextDerivₗ`), so its basic equations are
@@ -77,6 +89,10 @@ law is pointwise linear algebra at each point, applying `Module.Dual.reebVector`
 * `TauCeti.SmoothForm.IsContactForm.eq_smul_reebVectorField_sub_reebVectorField_iff`: the
   correction `Z = f R_(f α) - R_α` is the unique such vector.
 * `TauCeti.SmoothForm.IsContactForm.apply_reebVectorField_of_eq_smul`: `α(R_(f α)) = 1 / f`.
+* `TauCeti.SmoothForm.IsContactForm.reebVectorField_of_eq_smul_of_isLocallyConstant`:
+  `R_(c α) = R_α / c` for a locally constant `c`.
+* `TauCeti.SmoothForm.IsContactForm.isMIntegralCurve_comp_mul_of_eq_smul_of_isLocallyConstant`:
+  the Reeb orbits of `c α` are those of `α`, reparametrized.
 
 ## References
 
@@ -376,6 +392,38 @@ omit [FiniteDimensional ℝ E] in
 theorem IsContactForm.reebVectorField_neg (hα : α.IsContactForm) (x : M) :
     (-α).reebVectorField x = -α.reebVectorField x := by
   rw [← neg_one_smul ℝ α, hα.reebVectorField_smul (by norm_num), inv_neg, inv_one, neg_one_smul]
+
+/-- **Rescaling a contact form by a locally constant function.** If `β = c α` for a locally constant
+function `c`, such as a constant on each connected component, then `R_β = R_α / c`: the derivative
+of `c` vanishes, so the correction of the rescaling law
+(`TauCeti.SmoothForm.IsContactForm.reebVectorField_eq_inv_smul_add_iff`) is zero. Where `c x = 0`
+both sides are `0`. -/
+theorem IsContactForm.reebVectorField_of_eq_smul_of_isLocallyConstant (hα : α.IsContactForm)
+    {β : SmoothForm I M ℝ 1} {c : M → ℝ} (hc : IsLocallyConstant c)
+    (hβ : ∀ y, β.val y = c y • α.val y) (x : M) :
+    β.reebVectorField x = (c x)⁻¹ • α.reebVectorField x := by
+  have hd : mvfderiv I c x = 0 := by
+    rw [Filter.EventuallyEq.mvfderiv_eq (hc.eventually_eq x)]
+    exact mvfderiv_eq_zero_iff.mpr (mfderiv_const ..)
+  simpa using (hα.reebVectorField_eq_inv_smul_add_iff (hc.contMDiff x) hβ 0).2
+    ⟨ContinuousAlternatingMap.map_coord_zero _ 0 rfl, fun w _ ↦ by
+      rw [hd, zero_apply, zero_div]
+      exact ContinuousAlternatingMap.map_coord_zero _ 0 rfl⟩
+
+/-- **Reeb orbits of a locally constant rescaling.** Let `β = c α` for a locally constant function
+`c`. Along an integral curve `γ` of `R_β`, `c` takes the constant value `c₀ = c (γ 0)`, and
+`R_β = R_α / c₀` there, so if `c₀ ≠ 0`, then `t ↦ γ (t c₀)` is an integral curve of `R_α`. -/
+theorem IsContactForm.isMIntegralCurve_comp_mul_of_eq_smul_of_isLocallyConstant
+    (hα : α.IsContactForm) {β : SmoothForm I M ℝ 1} {c : M → ℝ} (hc : IsLocallyConstant c)
+    (hβ : ∀ y, β.val y = c y • α.val y) {γ : ℝ → M} (hγ : IsMIntegralCurve γ β.reebVectorField)
+    (hc₀ : c (γ 0) ≠ 0) :
+    IsMIntegralCurve (γ ∘ (· * c (γ 0))) α.reebVectorField := by
+  -- `c` is constant along the connected curve.
+  have hcγ (t : ℝ) : c (γ t) = c (γ 0) :=
+    (hc.comp_continuous hγ.continuous).apply_eq_of_preconnectedSpace t 0
+  refine (isMIntegralCurve_congr_vectorField fun t ↦ ?_).1 (hγ.comp_mul (c (γ 0)))
+  rw [Pi.smul_apply, Function.comp_apply, hα.reebVectorField_of_eq_smul_of_isLocallyConstant hc hβ,
+    hcγ (t * c (γ 0)), smul_inv_smul₀ hc₀]
 
 end SmoothForm
 
