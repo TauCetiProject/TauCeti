@@ -50,6 +50,8 @@ open sets satisfying such a bound on each pair of compact sets is continuous in 
   `max_{j ≤ ℓ} N_j` defines the topology of `𝓓^{ℓ}_{K}(E, F)`.
 * `LinearMap.exists_bound_supportedIn_of_continuous`: a separately continuous bilinear map on two
   such spaces is bounded by `C N_{≤k}(φ) N_{≤k}(ψ)` for some `C` and `k`.
+* `LinearMap.exists_bound_ofSupportedIn_of_continuous`: the same bound on each pair of compact
+  sets for a separately continuous bilinear map on test functions on open sets.
 * `LinearMap.continuous_apply_left_of_bound`: conversely, a bilinear map on test functions on open
   sets with such a bound on each pair of compact sets is continuous in its first variable.
 * `ContDiffMapSupportedIn.supSeminorm_le_of_forall_norm_iteratedFDeriv_le`: a uniform bound `B`
@@ -262,6 +264,24 @@ theorem exists_bound_supportedIn_of_continuous
   · exact Seminorm.le_def.1 (Finset.sup_mono (hle Finset.subset_union_left)) φ
   · exact Seminorm.le_def.1 (Finset.sup_mono (hle Finset.subset_union_right)) ψ
 
+/-- A bilinear map `B` on test functions on open sets `Ω ⊆ E₁` and `O ⊆ E₂`, continuous in each
+variable, satisfies the estimate of the Schwartz kernel theorem: for all compact sets `K₁ ⊆ Ω` and
+`K₂ ⊆ O` some `C` and `k` give `‖B φ ψ‖ ≤ C N_{≤k}(φ) N_{≤k}(ψ)` for `φ` supported in `K₁` and `ψ`
+supported in `K₂`. -/
+theorem exists_bound_ofSupportedIn_of_continuous {Ω : Opens E₁} {O : Opens E₂}
+    (B : 𝓓^{n₁}(Ω, F₁) →ₗ[𝕜] 𝓓^{n₂}(O, F₂) →ₗ[𝕜] G)
+    (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ) (h₂ : ∀ φ, Continuous (B φ))
+    (K₁ : Compacts E₁) (K₂ : Compacts E₂) (hK₁ : (K₁ : Set E₁) ⊆ Ω) (hK₂ : (K₂ : Set E₂) ⊆ O) :
+    ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
+      ‖B (TestFunction.ofSupportedIn hK₁ φ) (TestFunction.ofSupportedIn hK₂ ψ)‖ ≤
+        C * ContDiffMapSupportedIn.supSeminorm 𝕜 E₁ F₁ n₁ K₁ k φ *
+          ContDiffMapSupportedIn.supSeminorm 𝕜 E₂ F₂ n₂ K₂ k ψ :=
+  exists_bound_supportedIn_of_continuous
+    (B.compl₁₂ (TestFunction.ofSupportedInCLM 𝕜 hK₁).toLinearMap
+      (TestFunction.ofSupportedInCLM 𝕜 hK₂).toLinearMap)
+    (fun _ ↦ (h₁ _).comp (TestFunction.continuous_ofSupportedIn hK₁))
+    (fun _ ↦ (h₂ _).comp (TestFunction.continuous_ofSupportedIn hK₂))
+
 end LinearMap
 
 namespace LinearMap
@@ -275,12 +295,10 @@ variable {𝕜 E D F₁ F₂ G : Type*} [RCLike 𝕜]
   [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G]
   {n₁ n₂ : ℕ∞} {Ω : Opens E} {O : Opens D}
 
-/-- Conversely to `LinearMap.exists_bound_supportedIn_of_continuous`, a bilinear map `B` on test
+/-- Conversely to `LinearMap.exists_bound_ofSupportedIn_of_continuous`, a bilinear map `B` on test
 functions on open sets `Ω` and `O` such that for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O` some `C`
 and `k` give `‖B φ ψ‖ ≤ C N_{≤k}(φ) N_{≤k}(ψ)` for `φ` supported in `K₁` and `ψ` supported in
-`K₂` is continuous in its first variable: a test function `ψ` is supported in the compact set
-`tsupport ψ`, so on the tests supported in a compact `K₁` the map `φ ↦ B φ ψ` is bounded by a
-multiple of one seminorm. -/
+`K₂` is continuous in its first variable. -/
 theorem continuous_apply_left_of_bound (B : 𝓓^{n₁}(Ω, F₁) →ₗ[𝕜] 𝓓^{n₂}(O, F₂) →ₗ[𝕜] G)
     (hB : ∀ (K₁ : Compacts E) (K₂ : Compacts D) (hK₁ : (K₁ : Set E) ⊆ Ω)
       (hK₂ : (K₂ : Set D) ⊆ O), ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
@@ -288,6 +306,8 @@ theorem continuous_apply_left_of_bound (B : 𝓓^{n₁}(Ω, F₁) →ₗ[𝕜] �
           C * ContDiffMapSupportedIn.supSeminorm 𝕜 E F₁ n₁ K₁ k φ *
             ContDiffMapSupportedIn.supSeminorm 𝕜 D F₂ n₂ K₂ k ψ)
     (ψ : 𝓓^{n₂}(O, F₂)) : Continuous fun φ ↦ B φ ψ := by
+  -- `ψ` is supported in the compact set `tsupport ψ`, so on the tests supported in a compact `K₁`
+  -- the map `φ ↦ B φ ψ` is bounded by a multiple of one seminorm.
   let K₂ : Compacts D := ⟨tsupport ψ, ψ.hasCompactSupport⟩
   let ψ₀ : 𝓓^{n₂}_{K₂}(D, F₂) := .of_support_subset ψ.contDiff (subset_tsupport _)
   have hψ : ofSupportedIn ψ.tsupport_subset ψ₀ = ψ := TestFunction.ext fun _ ↦ rfl

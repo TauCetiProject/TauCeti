@@ -435,27 +435,7 @@ end Pi
 section FiniteDimensional
 
 variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
-  [NormedSpace ℝ D] {Ω : Opens E} {O : Opens D}
-
-/-- A bilinear map on real or complex test functions which is continuous in each variable
-satisfies the estimate of the Schwartz kernel theorem: for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O`
-some `C` and `k` give `‖B φ ψ‖ ≤ C N_k(φ) N_k(ψ)` for `φ` supported in `K₁` and `ψ` supported in
-`K₂`. This is `LinearMap.exists_bound_supportedIn_of_continuous` for the restriction of `B` to such
-functions. -/
-private theorem exists_bound_ofSupportedIn_of_continuous {𝕜 G : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] (B : 𝓓(Ω, 𝕜) →ₗ[𝕜] 𝓓(O, 𝕜) →ₗ[𝕜] G)
-    (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ)
-    (h₂ : ∀ φ, Continuous (B φ)) (K₁ : Compacts E) (K₂ : Compacts D)
-    (hK₁ : (K₁ : Set E) ⊆ Ω) (hK₂ : (K₂ : Set D) ⊆ O) :
-    ∃ (C : ℝ) (k : ℕ), ∀ φ ψ, ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
-      C * ContDiffMapSupportedIn.supSeminorm 𝕜 _ 𝕜 ⊤ K₁ k φ *
-        ContDiffMapSupportedIn.supSeminorm 𝕜 _ 𝕜 ⊤ K₂ k ψ :=
-  exists_bound_supportedIn_of_continuous
-    (B.compl₁₂ (ofSupportedInCLM 𝕜 hK₁).toLinearMap (ofSupportedInCLM 𝕜 hK₂).toLinearMap)
-    (fun _ ↦ (h₁ _).comp (continuous_ofSupportedIn hK₁))
-    (fun _ ↦ (h₂ _).comp (continuous_ofSupportedIn hK₂))
-
-variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ D]
+  [NormedSpace ℝ D] {Ω : Opens E} {O : Opens D} [FiniteDimensional ℝ E] [FiniteDimensional ℝ D]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
   {B : 𝓓(Ω, ℂ) →ₗ[ℂ] 𝓓(O, ℂ) →ₗ[ℂ] F}
 
