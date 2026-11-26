@@ -63,6 +63,17 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddComm
 
 /-! ### The fibres -/
 
+/-- A set closed under scaling by every `t ∈ [0, 1]` is preconnected: it is empty, or it contains
+the origin and is star-shaped about it. -/
+private theorem isPreconnected_of_forall_smul_mem {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {s : Set E} (hs : ∀ x ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, t • x ∈ s) :
+    IsPreconnected s := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
+  · exact isPreconnected_empty
+  have h0 : (0 : E) ∈ s := by simpa using hs x hx 0 ⟨le_rfl, zero_le_one⟩
+  exact (StarConvex.isPathConnected (starConvex_zero_iff.2 fun y hy t ht₀ ht₁ ↦
+    hs y hy t ⟨ht₀, ht₁⟩) h0).isConnected.isPreconnected
+
 /-- The fibres of `‖b‖² - ‖a‖²` of positive value in the ball `‖a‖² + ‖b‖² < r` are preconnected
 when `W` does not have dimension one. -/
 private theorem isPreconnected_setOf_norm_sq_sub_norm_sq_eq_of_pos (hW : Module.rank ℝ W ≠ 1)
@@ -91,19 +102,10 @@ private theorem isPreconnected_setOf_norm_sq_sub_norm_sq_eq_of_pos (hW : Module.
       · rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hb.ne']
       · rw [hsq, smul_smul, mul_inv_cancel₀ hb.ne', one_smul]
   rw [← himage]
-  have hD : IsPreconnected D := by
-    rcases D.eq_empty_or_nonempty with h | ⟨a, ha⟩
-    · rw [h]
-      exact isPreconnected_empty
-    -- `D` is star-shaped about the origin, which it contains.
-    have h0 : (0 : V) ∈ D := by
-      simp only [D, mem_ofPred_eq, norm_zero] at ha ⊢
-      nlinarith [sq_nonneg ‖a‖]
-    refine (StarConvex.isPathConnected (fun a ha s t hs ht hst ↦ ?_) h0).isConnected.isPreconnected
-    simp only [D, mem_ofPred_eq, smul_zero, zero_add, norm_smul, Real.norm_eq_abs,
-      abs_of_nonneg ht] at ha ⊢
-    have : t ^ 2 ≤ 1 := by nlinarith
-    nlinarith [sq_nonneg ‖a‖, mul_le_mul_of_nonneg_right this (sq_nonneg ‖a‖)]
+  -- `D` is closed under scaling by `t ∈ [0, 1]`.
+  have hD : IsPreconnected D := isPreconnected_of_forall_smul_mem fun a ha t ht ↦ by
+    simp only [D, mem_ofPred_eq, norm_smul, Real.norm_of_nonneg ht.1, mul_pow] at ha ⊢
+    linarith [mul_le_of_le_one_left (sq_nonneg ‖a‖) (pow_le_one₀ (n := 2) ht.1 ht.2)]
   -- The unit sphere of `W` is preconnected, being empty in dimension zero.
   have hS : IsPreconnected (sphere (0 : W) 1) := by
     rcases hW.lt_or_gt with h | h
@@ -130,22 +132,14 @@ theorem isPreconnected_setOf_norm_sq_sub_norm_sq_eq (hV : Module.rank ℝ V ≠ 
     simp only [mem_ofPred_eq, image_swap_eq_preimage_swap, mem_preimage, Prod.fst_swap,
       Prod.snd_swap]
     constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
-  · -- The fibre of `0` is a cone, star-shaped about the origin, which it contains if nonempty.
-    rcases eq_empty_or_nonempty
-        {y : V × W | ‖y.1‖ ^ 2 + ‖y.2‖ ^ 2 < r ∧ ‖y.2‖ ^ 2 - ‖y.1‖ ^ 2 = 0} with h | ⟨y, hy⟩
-    · rw [h]
-      exact isPreconnected_empty
-    have h0 : (0 : V × W) ∈
-        {y : V × W | ‖y.1‖ ^ 2 + ‖y.2‖ ^ 2 < r ∧ ‖y.2‖ ^ 2 - ‖y.1‖ ^ 2 = 0} := by
-      simp only [mem_ofPred_eq, Prod.fst_zero, Prod.snd_zero, norm_zero] at hy ⊢
-      constructor <;> nlinarith [sq_nonneg ‖y.1‖, sq_nonneg ‖y.2‖]
-    refine (StarConvex.isPathConnected (fun y hy s t hs ht hst ↦ ?_) h0).isConnected.isPreconnected
-    simp only [mem_ofPred_eq, smul_zero, zero_add, Prod.smul_fst, Prod.smul_snd, norm_smul,
-      Real.norm_eq_abs, abs_of_nonneg ht, mul_pow] at hy ⊢
-    have : t ^ 2 ≤ 1 := by nlinarith
+  · -- The fibre of `0` is closed under scaling by `t ∈ [0, 1]`.
+    refine isPreconnected_of_forall_smul_mem fun y hy t ht ↦ ?_
+    simp only [mem_ofPred_eq, Prod.smul_fst, Prod.smul_snd, norm_smul, Real.norm_of_nonneg ht.1,
+      mul_pow] at hy ⊢
+    have ht2 : t ^ 2 ≤ 1 := pow_le_one₀ ht.1 ht.2
     constructor
-    · nlinarith [sq_nonneg ‖y.1‖, sq_nonneg ‖y.2‖,
-        mul_le_mul_of_nonneg_right this (add_nonneg (sq_nonneg ‖y.1‖) (sq_nonneg ‖y.2‖))]
+    · linarith [mul_le_of_le_one_left (sq_nonneg ‖y.1‖) ht2,
+        mul_le_of_le_one_left (sq_nonneg ‖y.2‖) ht2]
     · rw [← mul_sub, hy.2, mul_zero]
   · exact isPreconnected_setOf_norm_sq_sub_norm_sq_eq_of_pos hW r hv
 
@@ -261,20 +255,13 @@ theorem isConvexChart_prod_setOf_norm_sq_add_norm_sq_lt {P : Type*} [Topological
       (B ×ˢ {y : V × W | ‖y.1‖ ^ 2 + ‖y.2‖ ^ 2 < r}) := by
   set R := {y : V × W | ‖y.1‖ ^ 2 + ‖y.2‖ ^ 2 < r}
   have hf : Continuous fun z : P × (V × W) ↦ c + (‖z.2.2‖ ^ 2 - ‖z.2.1‖ ^ 2) := by fun_prop
-  -- The ball is star-shaped about the origin, which it contains if nonempty.
-  have hR : IsPreconnected R := by
-    rcases R.eq_empty_or_nonempty with h | ⟨y, hy⟩
-    · rw [h]
-      exact isPreconnected_empty
-    have h0 : (0 : V × W) ∈ R := by
-      simp only [R, mem_ofPred_eq, Prod.fst_zero, Prod.snd_zero, norm_zero] at hy ⊢
-      nlinarith [sq_nonneg ‖y.1‖, sq_nonneg ‖y.2‖]
-    refine (StarConvex.isPathConnected (fun y hy s t hs ht hst ↦ ?_) h0).isConnected.isPreconnected
-    simp only [R, mem_ofPred_eq, smul_zero, zero_add, Prod.smul_fst, Prod.smul_snd, norm_smul,
-      Real.norm_eq_abs, abs_of_nonneg ht, mul_pow] at hy ⊢
-    have : t ^ 2 ≤ 1 := by nlinarith
-    nlinarith [sq_nonneg ‖y.1‖, sq_nonneg ‖y.2‖,
-      mul_le_mul_of_nonneg_right this (add_nonneg (sq_nonneg ‖y.1‖) (sq_nonneg ‖y.2‖))]
+  -- The ball is closed under scaling by `t ∈ [0, 1]`.
+  have hR : IsPreconnected R := isPreconnected_of_forall_smul_mem fun y hy t ht ↦ by
+    simp only [R, mem_ofPred_eq, Prod.smul_fst, Prod.smul_snd, norm_smul, Real.norm_of_nonneg ht.1,
+      mul_pow] at hy ⊢
+    have ht2 : t ^ 2 ≤ 1 := pow_le_one₀ ht.1 ht.2
+    linarith [mul_le_of_le_one_left (sq_nonneg ‖y.1‖) ht2,
+      mul_le_of_le_one_left (sq_nonneg ‖y.2‖) ht2]
   refine ⟨hBo.prod (isOpen_lt (by fun_prop) continuous_const), ?_, fun U _ hUo z hz ↦ ?_,
     fun v ↦ ?_⟩
   · -- The image of the preconnected chart is an interval.

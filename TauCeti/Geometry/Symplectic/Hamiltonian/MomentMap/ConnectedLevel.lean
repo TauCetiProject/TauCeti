@@ -72,8 +72,8 @@ theorem isPreconnected_setOf_apply_eq
     (ξ : GroupLieAlgebra I G) (c : ℝ) :
     IsPreconnected {x | μ x ξ = c} := by
   have hf : ContMDiff 𝓘(ℝ, E') 𝓘(ℝ) ∞ fun y ↦ μ y ξ := h.contMDiff ξ
-  refine isPreconnected_preimage_singleton_of_forall_mem_criticalPoints (hf.of_le (by simp))
-    (fun x hx ↦ ?_) c
+  refine isPreconnected_preimage_singleton_of_forall_mem_criticalPoints_exists_isConvexChart
+    (hf.of_le (by simp)) (fun x hx ↦ ?_) c
   -- A critical point lies on one of the Morse–Bott critical submanifolds `M^{T_ξ}_d`.
   obtain ⟨d, hd⟩ := mem_iUnion.1 (h.criticalPoints_eq_iUnion_fixedPointsOfFinrank hσ ξ ▸ hx)
   -- The fixed tangent subspace at `x`, of dimension `d`, is a subspace of the model `E'`, which is
