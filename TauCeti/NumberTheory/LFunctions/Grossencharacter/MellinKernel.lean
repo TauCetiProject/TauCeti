@@ -417,17 +417,14 @@ theorem hasMellin_heckeMellinKernel_sub (χ : Grossencharacter K 𝔪)
   let f : realSpace K → ℂ := fun y ↦
     (χ.archWeight y : ℂ) * (χ.heckeTheta J y - χ.heckeEpsilon)
   let M := ∫ y in unitCone D, (archNorm y : ℂ) ^ (s / 2) * f y ∂archHaar K
-  have hF := hasMellin_centeredSurfaceAverage χ J hD hs
   have hscale := χ.heckeScale_pos J
-  have hscaled := hF.comp_mul_right (a := (χ.heckeScale J)⁻¹) (inv_pos.mpr hscale)
   have heq (u : ℝ) (hu : u ∈ Ioi 0) : mellinFactor χ J •
-      centeredSurfaceAverage χ D J (u * (χ.heckeScale J)⁻¹) =
+      centeredSurfaceAverage χ D J (u / χ.heckeScale J) =
       χ.heckeMellinKernel D J u - χ.heckeEpsilon * mellinConstant K := by
     rw [heckeMellinKernel_sub_eq_integral χ J hD hu]
-    simp only [centeredSurfaceAverage, div_eq_mul_inv, smul_eq_mul]
-  have hkernel := (hasMellin_congr heq).mp (hasMellin_const_smul hscaled.1 (mellinFactor χ J))
-  rw [hscaled.2, Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg hscale.le, Complex.cpow_neg,
-    inv_inv, smul_eq_mul, smul_eq_mul] at hkernel
+    simp only [centeredSurfaceAverage, smul_eq_mul]
+  have hkernel := (hasMellin_congr heq).mp
+    ((hasMellin_centeredSurfaceAverage χ J hD hs).const_smul_comp_div (mellinFactor χ J) hscale)
   have hpow :
       (↑((χ.heckeScale J) ^ (-q) : ℝ) : ℂ) * (χ.heckeScale J : ℂ) ^ (s / 2 + (q : ℂ)) =
         (χ.heckeScale J : ℂ) ^ (s / 2) := by
@@ -441,7 +438,7 @@ theorem hasMellin_heckeMellinKernel_sub (χ : Grossencharacter K 𝔪)
   refine ⟨hkernel.1, hkernel.2.trans ?_⟩
   calc
     _ = A * (((χ.heckeScale J ^ (-q) : ℝ) : ℂ) *
-        (χ.heckeScale J : ℂ) ^ (s / 2 + (q : ℂ))) * M := by rw [hfactor]; ring
+        (χ.heckeScale J : ℂ) ^ (s / 2 + (q : ℂ))) * M := by rw [smul_eq_mul, hfactor]; ring
     _ = _ := by rw [hpow]
 
 end TauCeti.LFunctions.Grossencharacter
