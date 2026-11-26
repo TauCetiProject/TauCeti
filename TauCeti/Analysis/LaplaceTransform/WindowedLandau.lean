@@ -138,7 +138,8 @@ theorem meromorphicOrderAt_nonneg_of_hasLaplace_window_of_simple_poles
   · have hβθ : θ < (β : ℂ).re := by simpa using hβ
     have hsimpleβ := hsimple β hβθ ((hord hβθ).symm.trans_lt hβN)
     have hnonpos := hz.differentiableOn.residue_re_nonpos_of_window_taylor_bound
-      (sub_pos.mp hdist) (lt_min hdr (hdr.trans_le hr)) ((hord hβθ).trans hsimpleβ).ge
+      (sub_pos.mp hdist) (lt_min hdr (hdr.trans_le hr))
+      (meromorphicAt_of_meromorphicOrderAt_ne_zero hβN.ne) ((hord hβθ).trans hsimpleβ).ge
       (fun η hη ↦ (hupperγ 0 η hη).imp fun _ hC U₀ ↦ (hC U₀).imp fun _ ⟨hU, k, hk, hu⟩ ↦
         ⟨hU, k, hk, (le_add_of_nonneg_left (norm_nonneg _)).trans hu⟩)
     rw [Contour.residue_congr_nhdsNE (hF.toMeromorphicNFOn_eq_self_on_nhdsNE hβθ)] at hnonpos
