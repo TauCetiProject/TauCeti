@@ -33,7 +33,8 @@ treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
 * `TauCeti.SymplecticForm.floerJetCoeff` is the coefficient field of `D_u` on jets:
   `(v, v_s, v_t) ↦ v_s + J(z, u z) v_t + A(z) v`, so that on the jet `(ξ, ∂s ξ, ∂t ξ)` of a section
   it gives `D_u ξ` (`TauCeti.SymplecticForm.floerJetCoeff_jet`). At `z` it depends on the data only
-  through their values at `z` (`TauCeti.SymplecticForm.floerJetCoeff_congr_data`); for a constant
+  through their values at `z` (`TauCeti.SymplecticForm.floerJetCoeff_congr_data`), and it
+  translates with the data (`TauCeti.SymplecticForm.floerJetCoeff_comp_add_right`); for a constant
   complex structure `J₀` it is that of `∂s + J₀ ∂t - dX_{K_s}(u) - J₀ dX_{K_t}(u)`
   (`TauCeti.SymplecticForm.floerJetCoeff_const`); it is
   continuous for data that are `C¹` (with `C²` Hamiltonians `K_s`, `K_t`) along the graph of `u`
@@ -45,7 +46,8 @@ treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
   pointwise by the coefficient field (`TauCeti.SymplecticForm.coeFn_floerSobolevOperator`), and on
   the jet of a test section it is `D_u ξ`
   (`TauCeti.SymplecticForm.floerSobolevOperator_jetLp_ae_eq`), provided its coefficients are
-  essentially bounded on the cylinder.
+  essentially bounded on the cylinder. Conversely, the coefficients of a realization with a right
+  inverse are essentially bounded (`TauCeti.SymplecticForm.memLp_floerJetCoeff_of_comp_eq_id`).
 * For data cylindrical near the ends (`TauCeti.Floer.IsCylindricalNearEnds`), if the loops of `u`
   converge uniformly at both ends and the slice defects `∂t u - X_{H±_t}(u)` of the end data tend
   uniformly to zero at the corresponding end, the coefficients are bounded
@@ -215,6 +217,20 @@ theorem floerSobolevOperator_jetLp_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ
       ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp ξ] with z h₁ h₂
   rw [h₁, h₂, floerJetCoeff_jet]
 
+/-- A Sobolev realization of the linearized Floer operator that has a right inverse has
+essentially bounded coefficients, as soon as `L²(ℝ × S¹, V)` is nontrivial: otherwise the
+realization is `0` by convention. -/
+theorem memLp_floerJetCoeff_of_comp_eq_id (ω : SymplecticForm V)
+    [Nontrivial (Lp V 2 stripMeasure)] {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
+    {u : ℝ × ℝ → V} {Q : Lp V 2 stripMeasure →L[ℝ] H1 V}
+    (hQ : (ω.floerSobolevOperator J Ks Kt u).comp Q = ContinuousLinearMap.id ℝ _) :
+    MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure := by
+  refine memLp_of_jetOperator_ne_zero fun h ↦ ?_
+  rw [floerSobolevOperator_def, h, ContinuousLinearMap.zero_comp,
+    ContinuousLinearMap.zero_comp] at hQ
+  obtain ⟨f, hf⟩ := exists_ne (0 : Lp V 2 stripMeasure)
+  exact hf (by simpa using (DFunLike.congr_fun hQ f).symm)
+
 /-- The coefficient field of the linearized Floer operator at `z` depends on the Floer data only
 through their values at `z`. -/
 theorem floerJetCoeff_congr_data (ω : SymplecticForm V) {J J' : ℝ × ℝ → V → V →L[ℝ] V}
@@ -223,6 +239,16 @@ theorem floerJetCoeff_congr_data (ω : SymplecticForm V) {J J' : ℝ × ℝ → 
     ω.floerJetCoeff J Ks Kt u z = ω.floerJetCoeff J' Ks' Kt' u z :=
   ContinuousLinearMap.ext fun v ↦ by
     simp only [floerJetCoeff_apply, floerLinearizationCoeff_apply, hJ, hKs, hKt]
+
+/-- **The coefficient field of a translate.** The coefficient field on jets of the data
+`w ↦ (J, K_s, K_t, u) (w + v)` at `z` is that of the data `(J, K_s, K_t, u)` at `z + v`. -/
+theorem floerJetCoeff_comp_add_right (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V)
+    (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (v z : ℝ × ℝ) :
+    ω.floerJetCoeff (fun w ↦ J (w + v)) (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v))
+        (fun w ↦ u (w + v)) z =
+      ω.floerJetCoeff J Ks Kt u (z + v) :=
+  ContinuousLinearMap.ext fun x ↦ by
+    simp only [floerJetCoeff_apply, floerLinearizationCoeff_apply, fderiv_comp_add_right]
 
 /-- For a constant complex structure `J₀`, the coefficient field of the linearized Floer operator
 is that of `∂s + J₀ ∂t - dX_{K_s}(u) - J₀ dX_{K_t}(u)`: the term in the derivative of the complex
@@ -309,6 +335,28 @@ theorem exists_forall_norm_floerJetCoeff_le (ω : SymplecticForm V) {H : ℝ →
         ((norm_nonneg (fderiv ℝ (J' (s, t)) (u (s, t)))).trans hdJb))
       (mul_le_mul hJb hdXb (norm_nonneg _) ((norm_nonneg (J' (s, t) (u (s, t)))).trans hJb)))
   exact (norm_firstOrderJetCoeff_le _ _).trans (add_le_add (add_le_add le_rfl hJb) hA_le)
+
+/-- If the loops of a map `v` converge uniformly on `[0, 1]` to a loop continuous on `[0, 1]` and
+its slice defects for a jointly `C²` Hamiltonian `H` tend uniformly to zero, then far out, over
+the band `t ∈ [0, 1]`, the coefficient field on jets of the cylindrical datum `H_t dt` along `v`,
+with a `C¹` family `J_t` of structures, is bounded. -/
+theorem exists_eventually_norm_floerJetCoeff_le (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    (hH : ContDiff ℝ 2 (uncurry H)) {J : ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiff ℝ 1 fun p : ℝ × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {v : ℝ × ℝ → V} {x : ℝ → V} (hx : ContinuousOn x (Icc 0 1))
+    (hvx : TendstoUniformlyOn (fun s t ↦ v (s, t)) x atTop (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) v
+      (s, t)) 0 atTop (Icc 0 1)) :
+    ∃ B, ∀ᶠ s in atTop, ∀ t ∈ Icc (0 : ℝ) 1,
+      ‖ω.floerJetCoeff (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+        (fun w ↦ H w.2) v (s, t)‖ ≤ B := by
+  -- Far out, `v` and its slice defect are bounded over the band, near their limits.
+  obtain ⟨Cu, hCu⟩ := isCompact_Icc.exists_eventually_forall_norm_le_of_tendstoUniformlyOn hx
+    (g := Prod.snd) continuous_snd hvx
+  obtain ⟨Cδ, hCδ⟩ := isCompact_Icc.exists_eventually_forall_norm_le_of_tendstoUniformlyOn
+    continuousOn_const (g := Prod.snd) continuous_snd hδ
+  obtain ⟨B, hB⟩ := ω.exists_forall_norm_floerJetCoeff_le hH hJ v Cu Cδ
+  exact ⟨B, (hCu.and hCδ).mono fun s hs t ht ↦ hB (s, t) ht (hs.1 t ht) (hs.2 t ht)⟩
 
 /-- **The coefficients of the linearized Floer operator are bounded for Floer data cylindrical
 near the ends.** Let the data `(J, K_s, K_t)` be `C¹` (with `C²` Hamiltonians) along the graph of a

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import Mathlib.LinearAlgebra.Eigenspace.Zero
+import Mathlib.FieldTheory.Separable
 
 /-!
 # Diagonalizable endomorphisms are semisimple
@@ -28,6 +29,8 @@ of the `μ`-eigenspace.
 
 * `TauCeti.isSemisimple_of_iSup_eigenspace_eq_top`: an endomorphism of a semisimple module whose
   eigenspaces span the module is semisimple.
+* `TauCeti.isSemisimple_lmul`: multiplication by a fixed vector on `ι → K`, a diagonal operator,
+  is semisimple.
 * `Module.End.IsFinitelySemisimple.rootMultiplicity_charpoly`: for a semisimple endomorphism, the
   multiplicity of a root `μ` of the characteristic polynomial is the dimension of the
   `μ`-eigenspace.
@@ -68,6 +71,22 @@ theorem isSemisimple_of_iSup_eigenspace_eq_top (hf : ⨆ μ : R, f.eigenspace μ
   rw [eq_top_iff, ← e.map_top, ← e.le_symm_apply, ← Subtype.coe_le_coe]
   exact hf.ge.trans <| iSup_le fun μ ↦ Subtype.coe_le_coe.2 <| e.le_symm_apply.2 <|
     le_iSup (fun μ ↦ e ⟨_, hinv μ⟩) μ
+
+open Polynomial in
+/-- Multiplication by a fixed vector `c : ι → K`, the diagonal operator with entries `c i`, is
+semisimple: it is killed by the squarefree polynomial `∏ (X - c i)` over the distinct values. -/
+theorem isSemisimple_lmul {K ι : Type*} [Field K] [Finite ι] (c : ι → K) :
+    (Algebra.lmul K (ι → K) c).IsSemisimple := by
+  classical
+  cases nonempty_fintype ι
+  refine End.isSemisimple_of_squarefree_aeval_eq_zero
+    (p := ∏ x ∈ Finset.univ.image c, (X - C x)) ?_ ?_
+  · exact (separable_prod_X_sub_C_iff' (f := id).mpr fun _ _ _ _ h ↦ h).squarefree
+  · rw [aeval_algHom_apply, map_prod]
+    convert map_zero (Algebra.lmul K (ι → K))
+    funext j
+    rw [Finset.prod_apply, Pi.zero_apply]
+    exact Finset.prod_eq_zero (Finset.mem_image_of_mem c (Finset.mem_univ j)) (by simp)
 
 end TauCeti
 

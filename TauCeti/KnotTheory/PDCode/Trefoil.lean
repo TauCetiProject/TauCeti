@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.Kauffman
+public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Adequate
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -31,12 +32,15 @@ value is `t + t³ - t⁴`.
 
 * `TauCeti.rightHandedTrefoilPDCode_writhe`: the diagram has writhe three.
 * `TauCeti.rightHandedTrefoilPDCode_componentCount`: the diagram is a knot.
+* `TauCeti.rightHandedTrefoilPDCode_isAAdequate`, `TauCeti.rightHandedTrefoilPDCode_isBAdequate`:
+  the diagram is both A-adequate and B-adequate.
 * `TauCeti.normalizedKauffmanBracket_rightHandedTrefoilPDCode`: its normalized bracket is
   `A⁻⁴ + A⁻¹² - A⁻¹⁶`.
 
 ## References
 
-* W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapter 3.
+* W. B. R. Lickorish, *An Introduction to Knot Theory*, Springer GTM 175 (1997), Chapters 3
+  and 5.
 * L. H. Kauffman, *State models and the Jones polynomial*, Topology 26 (1987), 395–407.
 -/
 
@@ -271,7 +275,8 @@ theorem rightHandedTrefoilPDCode_componentCount :
   norm_num [trefoilComponentForest] at hcount ⊢
   omega
 
-private theorem rightHandedTrefoilPDCode_stateLoopCount (b₀ b₁ b₂ : Bool) :
+/-- The number of circles of each of the eight smoothings of the standard trefoil diagram. -/
+theorem rightHandedTrefoilPDCode_stateLoopCount (b₀ b₁ b₂ : Bool) :
     rightHandedTrefoilPDCode.toPDCode.stateLoopCount ![b₀, b₁, b₂] =
       match b₀, b₁, b₂ with
       | false, false, false => 3
@@ -290,6 +295,28 @@ private theorem rightHandedTrefoilPDCode_stateLoopCount (b₀ b₁ b₂ : Bool) 
     rw [trefoilStatePerm_eq_prod_swap] <;>
     norm_num [trefoilStateForest] at hcount ⊢ <;>
     omega
+
+/-- **The standard right-handed trefoil diagram is A-adequate**: its all-A smoothing has two
+circles, and changing any crossing merges them. -/
+theorem rightHandedTrefoilPDCode_isAAdequate :
+    rightHandedTrefoilPDCode.toPDCode.IsAAdequate := by
+  rw [PDCode.isAAdequate_iff]
+  intro c
+  have h (v : Fin 3 → Bool) : v = ![v 0, v 1, v 2] := (FinVec.etaExpand_eq v).symm
+  rw [h (Function.update _ c _), h fun _ ↦ _, rightHandedTrefoilPDCode_stateLoopCount,
+    rightHandedTrefoilPDCode_stateLoopCount]
+  fin_cases c <;> rfl
+
+/-- **The standard right-handed trefoil diagram is B-adequate**: its all-B smoothing has three
+circles, and changing any crossing merges two of them. -/
+theorem rightHandedTrefoilPDCode_isBAdequate :
+    rightHandedTrefoilPDCode.toPDCode.IsBAdequate := by
+  rw [PDCode.isBAdequate_iff]
+  intro c
+  have h (v : Fin 3 → Bool) : v = ![v 0, v 1, v 2] := (FinVec.etaExpand_eq v).symm
+  rw [h (Function.update _ c _), h fun _ ↦ _, rightHandedTrefoilPDCode_stateLoopCount,
+    rightHandedTrefoilPDCode_stateLoopCount]
+  fin_cases c <;> rfl
 
 /-- The Kauffman bracket of the standard right-handed trefoil is
 `-A⁵ - A⁻³ + A⁻⁷`. -/

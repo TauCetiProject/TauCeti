@@ -83,8 +83,8 @@ theorem exists_countable_range_isStoppingTime_between_level_hits
   have hlevel (j : ℕ) : ∀ᵐ ω ∂P, ∀ t : ℝ≥0, σ ω = t → θ j < X t ω := by
     filter_upwards [hc] with ω hω t ht
     have hhit := (hσeq ω hω).symm.trans ht
-    obtain ⟨u, hu, _, huc⟩ := isClosed_Ici.exists_hittingAfter_eq hω
-      (hhit.trans_ne WithTop.coe_ne_top)
+    obtain ⟨u, hu, _, huc⟩ := isClosed_Ici.exists_hittingAfter_eq_of_isRightContinuous
+      hω.isRightContinuous (hhit.trans_ne WithTop.coe_ne_top)
     have hut : u = t := WithTop.coe_injective (hu.symm.trans hhit)
     exact (hθlt j).trans_le (hut ▸ huc)
   have hcFinite : ∀ᵐ ω ∂P.toFinite, Continuous (X · ω) := by
