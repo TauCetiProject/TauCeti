@@ -85,6 +85,8 @@ normality of it is equivalent to freeness of the action of the image.
   inverse map the set into itself.
 * `TauCeti.smul_eq_smul_iff_inv_mul_mem_stabilizer`: two group elements carry `x₀` to the same
   point exactly when they differ on the right by an element of the stabilizer of `x₀`.
+* `MulAction.finite_stabilizer_of_finset_invariant`: any element of a `G`-set whose stabilizer
+  preserves a finite nonempty subset of `G` has finite stabilizer.
 * `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
   translation on its nonempty proper finite subsets.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
@@ -594,6 +596,24 @@ theorem stabilizer_finset_eq_bot_of_prime_card {G : Type*} [Group G] [Fintype G]
 end PrimeCard
 
 end TauCeti
+
+section FinsetStabilizer
+
+open scoped Pointwise
+
+/-- Any element `x` of a `G`-set `X` whose stabilizer preserves a finite nonempty subset `S ⊆ G`
+(for example, the support of a nonzero finitely supported configuration in a Bernoulli shift) has
+finite stabilizer. -/
+theorem MulAction.finite_stabilizer_of_finset_invariant {G X : Type*} [Group G] [DecidableEq G]
+    [MulAction G X] {x : X} {S : Finset G} (hS : S.Nonempty)
+    (hinv : ∀ g : G, g • x = x → g • S = S) :
+    Finite (MulAction.stabilizer G x) := by
+  have hfin : (MulAction.stabilizer G S : Set G).Finite := by
+    rw [← MulAction.stabilizer_coe_finset]
+    exact MulAction.stabilizer_finite (Finset.coe_nonempty.mpr hS) S.finite_toSet
+  exact (hfin.subset (SetLike.coe_subset_coe.mpr hinv)).to_subtype
+
+end FinsetStabilizer
 
 namespace MonoidHom
 

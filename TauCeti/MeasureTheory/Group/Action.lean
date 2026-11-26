@@ -7,10 +7,11 @@ module
 
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
+public import Mathlib.MeasureTheory.Measure.Count
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
-public import Mathlib.Topology.MetricSpace.IsometricSMul
 public import Mathlib.Probability.ConditionalProbability
+public import Mathlib.Topology.MetricSpace.IsometricSMul
 
 /-!
 # Invariant measures of a scalar multiplication
@@ -19,13 +20,16 @@ General facts about `SMulInvariantMeasure`, Mathlib's class of measures invarian
 multiplication, that do not concern ergodicity: the restriction of an invariant measure to a
 measurable set that is invariant up to null sets is again invariant
 (`SMulInvariantMeasure.restrict`), and so is the conditioned measure
-(`SMulInvariantMeasure.cond`); for a measure-preserving action, invariance up to null sets
+(`SMulInvariantMeasure.cond`); counting measure is invariant under any measurable group action
+(`instSMulInvariantMeasureCount`); for a measure-preserving action, invariance up to null sets
 passes to every set almost everywhere equal to an almost invariant one
 (`preimage_smul_ae_eq_self_of_ae_eq`); for a transitive isometric action all balls of one radius
 have the same invariant measure (`measure_ball_eq_measure_ball`), and on a finite measure space with
 measurable singletons every atom has a finite orbit (`finite_orbit_of_measure_singleton_ne_zero`).
-For a countable group, pushing forward a measure without atoms to the orbit space gives a measure
-without atoms (`nullSingletonClass_map_quotientMk`).
+Every scalar multiplication on a discrete measurable space has measurable translations
+(`DiscreteMeasurableSpace.toMeasurableConstSMul`). For a countable group, pushing forward a measure
+without atoms to the orbit space gives a measure without atoms
+(`nullSingletonClass_map_quotientMk`).
 
 For a monoid `G` carrying a right-invariant probability measure `μ`, such as normalized Haar
 measure on a compact group, the law `μ.map (· • x)` of the orbit map at `x` is the same for all
@@ -44,6 +48,24 @@ open Metric Set
 open scoped Pointwise ProbabilityTheory
 
 namespace MeasureTheory
+
+section Discrete
+
+variable {M G X : Type*} [MeasurableSpace X]
+
+/-- Every scalar multiplication on a discrete measurable space has measurable translations. -/
+instance (priority := 100) _root_.DiscreteMeasurableSpace.toMeasurableConstSMul [SMul M X]
+    [DiscreteMeasurableSpace X] : MeasurableConstSMul M X :=
+  ⟨fun _ ↦ .of_discrete⟩
+
+/-- Counting measure is invariant under any group action with measurable translations. -/
+instance instSMulInvariantMeasureCount [Group G] [MulAction G X] [MeasurableConstSMul G X] :
+    SMulInvariantMeasure G X (Measure.count : Measure X) where
+  measure_preimage_smul g s hs := by
+    rw [Measure.count_apply (hs.preimage (measurable_const_smul g)), Measure.count_apply hs,
+      preimage_smul, ← image_smul, (MulAction.injective g⁻¹).encard_image]
+
+end Discrete
 
 section Restrict
 

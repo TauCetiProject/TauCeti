@@ -52,6 +52,9 @@ bounds.
   the same identities for the extended norm and the lower integral of an `Lᵖ` function.
 * `MeasureTheory.Lp.integral_norm_mul_norm_le`: Cauchy–Schwarz, `∫ ‖f‖ ‖g‖ ≤ ‖f‖₂ ‖g‖₂` for
   `L²` functions.
+* `MeasureTheory.Lp.integrable_norm_sq_sub` and
+  `MeasureTheory.Lp.integral_abs_norm_sq_sub_le`: for `f, g ∈ L²`, `‖f‖² - ‖g‖²` is integrable and
+  `∫ |‖f‖² - ‖g‖²| ≤ ‖f - g‖ * (‖f‖ + ‖g‖)`.
 * `MeasureTheory.MemLp.norm_toLp_sq`: the same for the class of a square-integrable function.
 * `MeasureTheory.integral_norm_sq_eq_toReal_eLpNorm_sq`: the integral of the squared pointwise
   norm of any a.e. strongly measurable function is its squared `L²` seminorm, as a real number.
@@ -432,6 +435,40 @@ theorem Lp.integral_norm_mul_norm_le {alpha E F : Type*} [MeasurableSpace alpha]
   simpa only [norm_norm, Real.rpow_two, ← Real.sqrt_eq_rpow, Lp.integral_norm_sq_eq_norm_sq,
     Real.sqrt_sq_eq_abs, abs_norm] using
     integral_mul_norm_le_Lp_mul_Lq Real.HolderConjugate.two_two hf hg
+
+/-- For two `L²` functions, the difference of their squared pointwise norms is integrable. -/
+theorem Lp.integrable_norm_sq_sub {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] (f g : Lp F 2 m) :
+    Integrable (fun x ↦ ‖f x‖ ^ 2 - ‖g x‖ ^ 2) m :=
+  ((Lp.memLp f).integrable_norm_pow two_ne_zero).sub
+    ((Lp.memLp g).integrable_norm_pow two_ne_zero)
+
+/-- **Cauchy–Schwarz bound for `L²` squared-norm variation.** For `f, g ∈ L²`, the `L¹` distance
+between the densities `‖f‖²` and `‖g‖²` is at most `‖f - g‖ * (‖f‖ + ‖g‖)`. -/
+theorem Lp.integral_abs_norm_sq_sub_le {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] (f g : Lp F 2 m) :
+    ∫ x, |‖f x‖ ^ 2 - ‖g x‖ ^ 2| ∂m ≤ ‖f - g‖ * (‖f‖ + ‖g‖) := by
+  let s : Lp ℝ 2 m := Lp.normLp f + Lp.normLp g
+  have hpoint : (fun x ↦ |‖f x‖ ^ 2 - ‖g x‖ ^ 2|) ≤ᵐ[m] fun x ↦ ‖(f - g) x‖ * ‖s x‖ := by
+    filter_upwards [Lp.coeFn_sub f g, Lp.coeFn_add (Lp.normLp f) (Lp.normLp g),
+      Lp.coeFn_normLp f, Lp.coeFn_normLp g] with x hsub hadd hf hg
+    have hnonneg : 0 ≤ ‖f x‖ + ‖g x‖ := by positivity
+    have hsx : ‖s x‖ = ‖f x‖ + ‖g x‖ := by
+      rw [hadd, Pi.add_apply, hf, hg, Real.norm_of_nonneg hnonneg]
+    calc |‖f x‖ ^ 2 - ‖g x‖ ^ 2|
+        = |(‖f x‖ - ‖g x‖) * (‖f x‖ + ‖g x‖)| := by rw [sq_sub_sq, mul_comm]
+      _ = |‖f x‖ - ‖g x‖| * (‖f x‖ + ‖g x‖) := by rw [abs_mul, abs_of_nonneg hnonneg]
+      _ ≤ ‖f x - g x‖ * (‖f x‖ + ‖g x‖) :=
+          mul_le_mul_of_nonneg_right (abs_norm_sub_norm_le (f x) (g x)) hnonneg
+      _ = ‖(f - g) x‖ * ‖s x‖ := by rw [← Pi.sub_apply, ← hsub, hsx]
+  calc ∫ x, |‖f x‖ ^ 2 - ‖g x‖ ^ 2| ∂m
+      ≤ ∫ x, ‖(f - g) x‖ * ‖s x‖ ∂m :=
+        integral_mono_ae (Lp.integrable_norm_sq_sub f g).abs
+          ((Lp.memLp (f - g)).norm.integrable_mul (Lp.memLp s).norm) hpoint
+    _ ≤ ‖f - g‖ * ‖s‖ := Lp.integral_norm_mul_norm_le (f - g) s
+    _ ≤ ‖f - g‖ * (‖f‖ + ‖g‖) := by
+        refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
+        simpa only [s, Lp.norm_normLp] using norm_add_le (Lp.normLp f) (Lp.normLp g)
 
 /-- The `L²` seminorm of a square-integrable function is the square root of the integral of its
 squared pointwise norm. -/
