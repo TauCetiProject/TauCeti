@@ -37,6 +37,9 @@ Two facts about the right-hand side, the **twisting sum** `TauCeti.twistingChain
   `q (ι (u, v)) = q u * q v`, carry it to the twisting product of the push-forwards
   (`TauCeti.cubicalChainSumMap_twistingChainSum`).
 
+Twisting chain systems are carried along maps of the spaces that carry the composition maps to
+composition maps (`TauCeti.TwistingChainSystem.map`), functorially.
+
 Consequently the push-forwards `q_* (s x y)` form a twisting cocycle with values in the
 differential graded algebra `C^□_*(G; R)` (`TauCeti.TwistingChainSystem.twistingCocycle`). When
 the system is a representing chain system, `G` is the Moore loops of a space `B` and `q` evaluates
@@ -49,6 +52,8 @@ with coefficients in a DG local system.
 * `TauCeti.TwistingChainSystem`: chains satisfying the twisting equation.
 * `TauCeti.TwistingChainSystem.twistingCocycle`: the twisting cocycle of push-forwards along
   multiplicative evaluation maps.
+* `TauCeti.TwistingChainSystem.map`: the push-forward of a twisting chain system along maps
+  compatible with the composition maps.
 
 ## Main results
 
@@ -60,6 +65,10 @@ with coefficients in a DG local system.
   only depends on the chains of the pairs `(x, z)` and `(z, y)` for those `z`.
 * `TauCeti.cubicalChainDifferential_twistingChainSum`: the twisting sum is a cycle.
 * `TauCeti.cubicalChainSumMap_twistingChainSum`: push-forward along multiplicative evaluation maps.
+* `TauCeti.cubicalChainSumMap_twistingChainSum_of_comp`: push-forward along maps compatible with
+  the composition maps.
+* `TauCeti.TwistingChainSystem.map_id`, `TauCeti.TwistingChainSystem.map_map`: push-forwards of
+  twisting chain systems are functorial.
 
 ## References
 
@@ -307,5 +316,73 @@ theorem twistingCocycle_m (S : TwistingChainSystem ind ι R)
 end TwistingChainSystem
 
 end Evaluation
+
+/-! ### Push-forward along maps of the spaces -/
+
+section Map
+
+variable {N : P → P → Type*} [∀ x y, TopologicalSpace (N x y)]
+  {κ : ∀ x y z, C(N x y × N y z, N x z)} {φ : ∀ x y, C(M x y, N x y)}
+
+/-- **Push-forward of the twisting sum along maps compatible with the composition maps**: if
+`φ x y (ι x z y (u, v)) = κ x z y (φ x z u, φ z y v)`, the push-forward of the twisting sum for `ι`
+is the twisting sum for `κ` of the push-forwards. -/
+theorem cubicalChainSumMap_twistingChainSum_of_comp {x y : P}
+    (hφ : ∀ z (u : M x z) (v : M z y), φ x y (ι x z y (u, v)) = κ x z y (φ x z u, φ z y v))
+    (s : ∀ x y, normalizedCubicalChainAlgebra (M x y) R) :
+    cubicalChainSumMap R (φ x y) (twistingChainSum ind ι R s x y) =
+      twistingChainSum ind κ R (fun x y ↦ cubicalChainSumMap R (φ x y) (s x y)) x y := by
+  rw [twistingChainSum_def, twistingChainSum_def, map_sum]
+  refine Finset.sum_congr rfl fun z _ ↦ ?_
+  rw [map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing_of_comp (hφ z)]
+
+namespace TwistingChainSystem
+
+variable (φ) in
+/-- **The push-forward of a twisting chain system** along maps `φ x y : M x y → N x y` that carry
+the composition maps `ι` to the composition maps `κ`: its chains are the push-forwards
+`φ_* (s x y)`. Along homeomorphisms of the spaces compatible with their composition maps, such as
+the changes of the levels on which Morse trajectories are recorded, this transports twisting chain
+systems from one family of spaces to the other. -/
+def map (S : TwistingChainSystem ind ι R)
+    (hφ : ∀ x z y (u : M x z) (v : M z y), φ x y (ι x z y (u, v)) = κ x z y (φ x z u, φ z y v)) :
+    TwistingChainSystem ind κ R where
+  chain x y := cubicalChainSumMap R (φ x y) (S.chain x y)
+  mem_graded x y := cubicalChainSumMap_mem _ (S.mem_graded x y)
+  twisting x y := by
+    rw [cubicalChainDifferential_cubicalChainSumMap, S.twisting,
+      cubicalChainSumMap_twistingChainSum_of_comp (hφ x · y)]
+
+variable (hφ : ∀ x z y (u : M x z) (v : M z y), φ x y (ι x z y (u, v)) = κ x z y (φ x z u, φ z y v))
+
+/-- The chains of the push-forward of a twisting chain system are the push-forwards of its
+chains. -/
+@[simp]
+theorem map_chain (S : TwistingChainSystem ind ι R) (x y : P) :
+    (S.map φ hφ).chain x y = cubicalChainSumMap R (φ x y) (S.chain x y) :=
+  (rfl)
+
+/-- The push-forward along the identities is the identity. -/
+@[simp]
+theorem map_id (S : TwistingChainSystem ind ι R) :
+    S.map (fun x y ↦ ContinuousMap.id (M x y)) (fun _ _ _ _ _ ↦ by simp) = S :=
+  ext fun x y ↦ by rw [map_chain, cubicalChainSumMap_id, LinearMap.id_apply]
+
+/-- **Push-forwards compose**: pushing forward along `φ` and then along `ψ` is pushing forward
+along the composites. -/
+@[simp]
+theorem map_map {L : P → P → Type*} [∀ x y, TopologicalSpace (L x y)]
+    {κ' : ∀ x y z, C(L x y × L y z, L x z)} {ψ : ∀ x y, C(N x y, L x y)}
+    (hψ : ∀ x z y (u : N x z) (v : N z y), ψ x y (κ x z y (u, v)) = κ' x z y (ψ x z u, ψ z y v))
+    (S : TwistingChainSystem ind ι R) :
+    (S.map φ hφ).map ψ hψ =
+      S.map (fun x y ↦ (ψ x y).comp (φ x y)) fun x z y u v ↦ by
+        simp only [ContinuousMap.comp_apply, hφ, hψ] :=
+  ext fun x y ↦ by
+    rw [map_chain, map_chain, map_chain, cubicalChainSumMap_comp, LinearMap.comp_apply]
+
+end TwistingChainSystem
+
+end Map
 
 end TauCeti

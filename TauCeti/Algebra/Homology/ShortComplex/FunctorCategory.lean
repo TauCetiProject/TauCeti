@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.EpiMono
+public import Mathlib.Algebra.Homology.ShortComplex.Ab
+public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Abelian.Refinements
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Exact
@@ -17,13 +20,31 @@ A short complex of functors into an abelian category is exact if and only if its
 value at each object is exact. This allows sectionwise exact sequences of
 presheaves to be sheafified using exactness of sheafification.
 
+For functors to abelian groups, objectwise exactness is exactness of sequences of group
+homomorphisms (`CategoryTheory.ShortComplex.exact_iff_forall_function_exact` and
+`CategoryTheory.ShortComplex.shortExact_of_forall_function_exact`), so an additive functor into
+such a functor category is exact once it sends exact sequences to objectwise exact sequences
+(`CategoryTheory.Functor.preservesFiniteLimits_and_preservesFiniteColimits_of_function_exact`).
+
 Additive functors are stable under extensions: when the source category has binary biproducts,
 the middle term of an exact sequence `F' ⟶ F ⟶ F''` with `F'` and `F''` additive is additive.
+
+## References
+
+* [ShortProof]: `grh-lean`, https://github.com/lsernau/grh-lean, file
+  `src/Lib/Cohomology/Etale/Basic.lean` (declarations `New.Variety.exact_of_app` and
+  `New.Variety.shortExact_of_app`); Apache 2.0, Copyright 2026 Anthropic, PBC.
+  `CategoryTheory.ShortComplex.exact_iff_forall_function_exact`,
+  `CategoryTheory.ShortComplex.shortExact_of_forall_function_exact` and
+  `CategoryTheory.Functor.preservesFiniteLimits_and_preservesFiniteColimits_of_function_exact` are
+  adapted from these declarations.
 -/
 
 public section
 
 open CategoryTheory.Limits
+
+universe w
 
 namespace CategoryTheory.ShortComplex
 
@@ -35,6 +56,27 @@ lemma exact_iff_evaluation (S : ShortComplex (J ⥤ C)) :
   have h : JointlyFaithful (fun j ↦ (evaluation J C).obj j) :=
     ⟨fun h ↦ NatTrans.ext (funext h)⟩
   exact h.jointlyReflectsIsomorphisms.exact_iff S
+
+/-- A short complex of functors to abelian groups is exact exactly when it is exact at every
+object, as a sequence of group homomorphisms. -/
+lemma exact_iff_forall_function_exact {C : Type*} [Category* C]
+    (S : ShortComplex (C ⥤ AddCommGrpCat.{w})) :
+    S.Exact ↔ ∀ c : C, Function.Exact (S.f.app c) (S.g.app c) := by
+  rw [exact_iff_evaluation]
+  exact forall_congr' fun c ↦ ab_exact_iff_function_exact (S.map ((evaluation _ _).obj c))
+
+/-- A short complex of functors to abelian groups is short exact if, at every object, its first
+map is injective, its last map is surjective, and it is exact in the middle. -/
+lemma shortExact_of_forall_function_exact {C : Type*} [Category* C]
+    {S : ShortComplex (C ⥤ AddCommGrpCat.{w})}
+    (h₁ : ∀ c : C, Function.Injective (S.f.app c))
+    (h₂ : ∀ c : C, Function.Exact (S.f.app c) (S.g.app c))
+    (h₃ : ∀ c : C, Function.Surjective (S.g.app c)) : S.ShortExact := by
+  have (c : C) : Mono (S.f.app c) := (AddCommGrpCat.mono_iff_injective _).2 (h₁ c)
+  have (c : C) : Epi (S.g.app c) := (AddCommGrpCat.epi_iff_surjective _).2 (h₃ c)
+  have : Mono S.f := NatTrans.mono_of_mono_app _
+  have : Epi S.g := NatTrans.epi_of_epi_app _
+  exact ShortExact.mk' ((exact_iff_forall_function_exact S).2 h₂) inferInstance inferInstance
 
 /-- The middle term of an exact sequence `F' ⟶ F ⟶ F''` of functors into an abelian category is
 additive when `F'` and `F''` are, provided the source category has binary biproducts. -/
@@ -75,3 +117,19 @@ theorem Exact.additive_X₂ [Preadditive J] [HasBinaryBiproducts J] {S : ShortCo
   exact ⟨hmap⟩
 
 end CategoryTheory.ShortComplex
+
+namespace CategoryTheory.Functor
+
+/-- An additive functor `G` from an abelian category to functors to abelian groups preserves
+finite limits and finite colimits if it sends exact sequences to sequences that are exact at every
+object, as sequences of group homomorphisms. -/
+lemma preservesFiniteLimits_and_preservesFiniteColimits_of_function_exact
+    {𝒜 C : Type*} [Category* 𝒜] [Abelian 𝒜] [Category* C] (G : 𝒜 ⥤ C ⥤ AddCommGrpCat.{w})
+    [G.Additive]
+    (h : ∀ S : ShortComplex 𝒜, S.Exact →
+      ∀ c, Function.Exact ((G.map S.f).app c) ((G.map S.g).app c)) :
+    PreservesFiniteLimits G ∧ PreservesFiniteColimits G :=
+  (G.exact_tfae.out 2 4 :).mp fun S hS ↦
+    (ShortComplex.exact_iff_forall_function_exact _).2 (h S hS)
+
+end CategoryTheory.Functor
