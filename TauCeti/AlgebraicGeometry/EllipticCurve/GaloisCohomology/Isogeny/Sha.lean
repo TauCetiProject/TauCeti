@@ -274,6 +274,24 @@ theorem shafarevichTateMapEquivOfDegreeEqOne_symm_apply (f : Hom W₁.toAffine W
     (f.shafarevichTateMapEquivOfDegreeEqOne τ hf).symm c = f.dual.shafarevichTateMap τ c :=
   (rfl)
 
+/-- The underlying additive homomorphism of `shafarevichTateMapEquivOfDegreeEqOne` is
+`shafarevichTateMap`. -/
+@[simp]
+theorem shafarevichTateMapEquivOfDegreeEqOne_toAddMonoidHom
+    (f : Hom W₁.toAffine W₂.toAffine) (hf : f.degree = 1) :
+    (f.shafarevichTateMapEquivOfDegreeEqOne τ hf :
+      W₁.shafarevichTateGroup τ →+ W₂.shafarevichTateGroup τ) = f.shafarevichTateMap τ :=
+  (rfl)
+
+/-- The underlying additive homomorphism of `(shafarevichTateMapEquivOfDegreeEqOne).symm` is
+`f.dual.shafarevichTateMap`. -/
+@[simp]
+theorem shafarevichTateMapEquivOfDegreeEqOne_symm_toAddMonoidHom
+    (f : Hom W₁.toAffine W₂.toAffine) (hf : f.degree = 1) :
+    ((f.shafarevichTateMapEquivOfDegreeEqOne τ hf).symm :
+      W₂.shafarevichTateGroup τ →+ W₁.shafarevichTateGroup τ) = f.dual.shafarevichTateMap τ :=
+  (rfl)
+
 /-- **Degree-one morphisms preserve the order of `Sha(W)`** for any family of local conditions. -/
 theorem card_shafarevichTateGroup_eq_of_degree_eq_one (f : Hom W₁.toAffine W₂.toAffine)
     (hf : f.degree = 1) :
@@ -310,7 +328,8 @@ theorem inclusion_comp_shafarevichTateMap (f : Hom W₁.toAffine W₂.toAffine)
       (f.shafarevichTateMap τ').comp
         (AddSubgroup.inclusion (W₁.shafarevichTateGroup_eq_shafarevichTateGroup τ τ').le) := by
   ext c
-  rfl
+  simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddSubgroup.coe_inclusion,
+    coe_shafarevichTateMap]
 
 /-- Whether `f.shafarevichTateMap τ` is zero does not depend on the choice of embeddings `τ`. -/
 theorem shafarevichTateMap_eq_zero_iff (f : Hom W₁.toAffine W₂.toAffine)
@@ -321,7 +340,8 @@ theorem shafarevichTateMap_eq_zero_iff (f : Hom W₁.toAffine W₂.toAffine)
     AddSubgroup.inclusion_injective _
   have hsurj : Function.Surjective
       (AddSubgroup.inclusion (W₁.shafarevichTateGroup_eq_shafarevichTateGroup τ τ').le) :=
-    (AddEquiv.addSubgroupCongr (W₁.shafarevichTateGroup_eq_shafarevichTateGroup τ τ')).surjective
+    fun c ↦ ⟨⟨c, (W₁.shafarevichTateGroup_eq_shafarevichTateGroup τ τ').ge c.property⟩,
+      Subtype.ext (AddSubgroup.coe_inclusion _ _)⟩
   rw [← AddMonoidHom.cancel_left hinj, AddMonoidHom.comp_zero,
     f.inclusion_comp_shafarevichTateMap τ τ',
     ← AddMonoidHom.zero_comp
@@ -332,8 +352,8 @@ theorem shafarevichTateMap_eq_zero_iff (f : Hom W₁.toAffine W₂.toAffine)
 
 section NumberField
 
-variable {K : Type*} [Field K] [NumberField K] {W₁ W₂ : WeierstrassCurve K}
-  [W₁.IsElliptic] [W₂.IsElliptic]
+variable {K : Type*} [Field K] [NumberField K] {W₁ W₂ W₃ : WeierstrassCurve K}
+  [W₁.IsElliptic] [W₂.IsElliptic] [W₃.IsElliptic]
 
 private abbrev defaultPlaceEmbeddings (K : Type*) [Field K] [NumberField K] :
     ∀ v : GlobalNumberFields.Place K, SeparableClosure K →ₐ[K] SeparableClosure v.Completion :=
@@ -355,6 +375,77 @@ def shaMap (f : Hom W₁.toAffine W₂.toAffine) : W₁.sha →+ W₂.sha :=
 theorem coe_shaMap (f : Hom W₁.toAffine W₂.toAffine) (c : W₁.sha) :
     (f.shaMap c : H1 (AbsoluteGaloisGroup K) W₂.PointCoeff) = f.pointH1Map c := by
   simp [shaMap]
+
+/-- The identity morphism acts identically on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_id : (id W₁.toAffine).shaMap = AddMonoidHom.id _ := by
+  ext c
+  simp
+
+/-- Composition of morphisms induces composition on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_comp (g : Hom W₂.toAffine W₃.toAffine) (f : Hom W₁.toAffine W₂.toAffine) :
+    (g.comp f).shaMap = g.shaMap.comp f.shaMap := by
+  ext c
+  simp
+
+/-- Addition of morphisms adds their induced maps on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_add (f g : Hom W₁.toAffine W₂.toAffine) :
+    (f + g).shaMap = f.shaMap + g.shaMap := by
+  ext c
+  simp
+
+/-- Negating a morphism negates its induced map on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_neg (f : Hom W₁.toAffine W₂.toAffine) :
+    (-f).shaMap = -f.shaMap := by
+  ext c
+  simp
+
+/-- Subtraction of morphisms subtracts their induced maps on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_sub (f g : Hom W₁.toAffine W₂.toAffine) :
+    (f - g).shaMap = f.shaMap - g.shaMap := by
+  ext c
+  simp
+
+/-- The zero morphism induces zero on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_zero : (0 : Hom W₁.toAffine W₂.toAffine).shaMap = 0 := by
+  ext c
+  simp
+
+/-- Multiplication by `n` on the curve induces multiplication by `n` on `Sha(E/K)`. -/
+@[simp]
+theorem shaMap_natCast (n : ℕ) (c : W₁.sha) :
+    (n : Hom W₁.toAffine W₁.toAffine).shaMap c = n • c := by
+  ext
+  simp
+
+/-- Multiplying a morphism by `n` multiplies its induced map on `Sha(E/K)` by `n`. -/
+@[simp]
+theorem shaMap_nsmul (n : ℕ) (f : Hom W₁.toAffine W₂.toAffine) :
+    (n • f).shaMap = n • f.shaMap := by
+  have hf : n • f = (n : Hom W₂.toAffine W₂.toAffine).comp f := by
+    rw [← nsmul_one, one_def, nsmul_comp, id_comp]
+  refine AddMonoidHom.ext fun c ↦ ?_
+  rw [hf, shaMap_comp, AddMonoidHom.comp_apply, shaMap_natCast, AddMonoidHom.nsmul_apply]
+
+/-- **A morphism followed by its dual is multiplication by the degree** on `Sha(E/K)`. -/
+@[simp]
+theorem dual_shaMap_shaMap (f : Hom W₁.toAffine W₂.toAffine) (c : W₁.sha) :
+    f.dual.shaMap (f.shaMap c) = f.degree • c := by
+  rw [← AddMonoidHom.comp_apply, ← shaMap_comp, dual_comp_self, ← one_def, nsmul_one,
+    shaMap_natCast]
+
+/-- **The dual of a morphism followed by the morphism is multiplication by the degree** on
+`Sha(E/K)`. -/
+@[simp]
+theorem shaMap_dual_shaMap (f : Hom W₁.toAffine W₂.toAffine) (c : W₂.sha) :
+    f.shaMap (f.dual.shaMap c) = f.degree • c := by
+  rw [← AddMonoidHom.comp_apply, ← shaMap_comp, comp_dual_self, ← one_def, nsmul_one,
+    shaMap_natCast]
 
 /-- Along any family `τ` of embeddings of separable closures over the places of `K`, `f.shaMap`
 is zero if and only if `f.shafarevichTateMap τ` is zero. -/

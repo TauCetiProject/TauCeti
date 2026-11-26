@@ -37,10 +37,10 @@ If moreover `ψ` and `ψ̂` induce the zero map on Shafarevich–Tate groups, th
 nonzero morphism `f : E₁ → E₂` has a multiple that is an isogeny killing Sha in both directions,
 namely `ψ = #Sha(E₂) • f` (`TauCeti.Isogeny.Hom.exists_isogeny_shafarevichTateMap_eq_zero`); over a
 number field (and in particular over `ℚ`), `TauCeti.Isogeny.Hom.exists_isogeny_shaMap_eq_zero`
-states this in terms of `TauCeti.Isogeny.Hom.shaMap`, which does not depend on `τ`, and
-`TauCeti.Isogeny.bsdQuotient_div_bsdQuotient` and
-`TauCeti.Isogeny.Hom.exists_isogeny_bsdQuotient_div_bsdQuotient` take their vanishing hypotheses on
-`shaMap`.
+states this in terms of `TauCeti.Isogeny.Hom.shaMap`, which does not depend on `τ`. Accordingly,
+`TauCeti.Isogeny.bsdQuotient_div_bsdQuotient` takes its vanishing hypotheses on `shaMap`, while
+`TauCeti.Isogeny.Hom.exists_isogeny_bsdQuotient_div_bsdQuotient` obtains both vanishing conditions
+internally from `exists_isogeny_shaMap_eq_zero`.
 
 Over `ℚ`, for an arbitrary isogeny `φ : E₁ → E₂` with `Sha` finite, combining Cassels' global
 period–Tamagawa–Kummer product formula
@@ -106,6 +106,12 @@ open Hom (ofIsogeny)
 
 section BSDQuotient
 
+private theorem kummerRatio_mul_card_ker_real {A B : WeierstrassCurve ℚ}
+    [A.IsElliptic] [B.IsElliptic] (ψ : Isogeny A.toAffine B.toAffine) :
+    (ψ.kummerRatio : ℝ) * Nat.card (Hom.ofIsogeny ψ).pointMapHom.ker =
+      (Hom.ofIsogeny ψ).pointMapHom.range.index := by
+  exact_mod_cast ψ.kummerRatio_mul_card_ker
+
 variable {E₁ E₂ : WeierstrassCurve ℚ} [E₁.IsElliptic] [E₂.IsElliptic]
 
 /-- **Master algebraic relation for the Birch–Swinnerton-Dyer quotient under an isogeny**:
@@ -122,15 +128,9 @@ theorem bsdQuotient_mul_card_sha_mul_kummerRatioProduct_mul_kummerRatio_dual
   have hreg := Hom.regulator_div_card_torsion_sq_mul_index_dual_div_card_ker_eq
     (f := Hom.ofIsogeny φ) (Hom.ofIsogeny_ne_zero φ)
   rw [Hom.dual_ofIsogeny] at hreg
-  have hk₁ : (φ.kummerRatio : ℝ) * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker =
-      (Hom.ofIsogeny φ).pointMapHom.range.index := by
-    exact_mod_cast φ.kummerRatio_mul_card_ker
-  have hk₂ : (φ.dual.kummerRatio : ℝ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker =
-      (Hom.ofIsogeny φ.dual).pointMapHom.range.index := by
-    exact_mod_cast φ.dual.kummerRatio_mul_card_ker
   have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
   have := (Hom.ofIsogeny φ.dual).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ.dual)
-  rw [← hk₁, ← hk₂,
+  rw [← kummerRatio_mul_card_ker_real φ, ← kummerRatio_mul_card_ker_real φ.dual,
     mul_div_cancel_right₀ (φ.dual.kummerRatio : ℝ) (Nat.cast_ne_zero.2 Nat.card_pos.ne'),
     mul_div_cancel_right₀ (φ.kummerRatio : ℝ) (Nat.cast_ne_zero.2 Nat.card_pos.ne')] at hreg
   rw [E₁.bsdQuotient_def, E₂.bsdQuotient_def]
@@ -182,13 +182,7 @@ theorem bsdQuotient_mul_card_selmerGroup_dual [Finite E₁.sha] [Finite E₂.sha
       (Hom.ofIsogeny φ.dual).pointMapHom.range.index *
         Nat.card (φ.dual.shafarevichTateGroupKer τ) := by
     exact_mod_cast φ.dual.card_selmerGroup τ
-  have hk₁ : (φ.kummerRatio : ℝ) * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker =
-      (Hom.ofIsogeny φ).pointMapHom.range.index := by
-    exact_mod_cast φ.kummerRatio_mul_card_ker
-  have hk₂ : (φ.dual.kummerRatio : ℝ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker =
-      (Hom.ofIsogeny φ.dual).pointMapHom.range.index := by
-    exact_mod_cast φ.dual.kummerRatio_mul_card_ker
-  rw [hsel₁, hsel₂, ← hk₁, ← hk₂]
+  rw [hsel₁, hsel₂, ← kummerRatio_mul_card_ker_real φ, ← kummerRatio_mul_card_ker_real φ.dual]
   rw [hsha₁, hsha₂] at hbase
   linear_combination
     (Nat.card (Hom.ofIsogeny φ).pointMapHom.ker *
