@@ -128,8 +128,7 @@ theorem genIndex_eq_cardQuot {g : integralAdeles (𝓞 K) K} (hg : IsUnit (g : �
     _ = Nat.card (𝓞 K ⧸ N) := by
       rw [FractionalIdeal.coeIdeal_absNorm, Ideal.absNorm_apply, Submodule.cardQuot_apply]
     _ = (Ideal.span {g}).cardQuot := by
-      rw [h_span, Submodule.cardQuot_apply,
-        Nat.card_congr (quotientEquivQuotientCompletedIdeal K hN0).toEquiv]
+      rw [h_span, cardQuot_completedIdeal K hN0, Submodule.cardQuot_apply]
 
 /-- Some positive integer multiple of a finite adele is integral. -/
 theorem exists_natCast_mul_mem_integralAdeles (a : 𝔸ᶠ[K]) :
