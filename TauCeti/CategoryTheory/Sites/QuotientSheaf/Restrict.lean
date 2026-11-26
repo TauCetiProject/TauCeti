@@ -75,14 +75,6 @@ theorem quotientSheaf.isKernelPair_restrictRel [IsEquivalenceRelation t s] :
     J.uliftYoneda.{w}).paste_horiz (by simpa only [Functor.map_comp] using h₁)
   simpa only [restrictRel.fst_def, restrictRel.snd_def, Functor.map_comp] using h₂
 
-/-- The composite `h_{U'} ⟶ h_U ⟶ U/R` is invariant under the restricted relation. -/
-theorem quotientSheaf.restrictRel_condition [IsEquivalenceRelation t s] :
-    J.uliftYoneda.{w}.map (restrictRel.fst g t s) ≫ J.uliftYoneda.{w}.map g ≫
-        quotientSheaf.π J s t =
-      J.uliftYoneda.{w}.map (restrictRel.snd g t s) ≫ J.uliftYoneda.{w}.map g ≫
-        quotientSheaf.π J s t :=
-  (quotientSheaf.isKernelPair_restrictRel s t g).w
-
 variable {g}
 
 /-- **Restriction along a covering** (for schemes and the fppf topology, Stacks, Lemma 39.20.5
@@ -92,7 +84,7 @@ isomorphism, where `R'` is the restriction of the relation along `g`. -/
 theorem quotientSheaf.isIso_desc_restrictRel [IsEquivalenceRelation t s]
     (hg : Sieve.generate (Presieve.singleton g) ∈ J U) :
     IsIso (quotientSheaf.desc (J.uliftYoneda.{w}.map g ≫ quotientSheaf.π J s t)
-      (quotientSheaf.restrictRel_condition s t g)) := by
+      (quotientSheaf.restrictRel_condition J s t g)) := by
   have : Epi (J.uliftYoneda.{w}.map g) := (Sheaf.isLocallySurjective_iff_epi _).1
     (Sheaf.isLocallySurjective_uliftYoneda_map_of_mem hg)
   exact quotientSheaf.isIso_desc_of_isKernelPair _ (quotientSheaf.isKernelPair_restrictRel s t g)
@@ -107,7 +99,7 @@ noncomputable def quotientSheaf.restrictIso [IsEquivalenceRelation t s]
       quotientSheaf.{w} J s t :=
   have := quotientSheaf.isIso_desc_restrictRel.{w} s t hg
   asIso (quotientSheaf.desc (J.uliftYoneda.{w}.map g ≫ quotientSheaf.π J s t)
-    (quotientSheaf.restrictRel_condition s t g))
+    (quotientSheaf.restrictRel_condition J s t g))
 
 /-- The projection onto `U'/R'`, followed by `U'/R' ≅ U/R`, is `h_{U'} ⟶ h_U ⟶ U/R`. -/
 @[reassoc (attr := simp)]
