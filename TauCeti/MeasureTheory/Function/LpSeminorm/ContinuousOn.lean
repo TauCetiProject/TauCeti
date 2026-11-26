@@ -36,13 +36,13 @@ every `Lᵖ`, so for a finite exponent `p ≠ 0` its `Lᵖ` seminorm is the inte
 
 In the other direction, for a measure that charges every nonempty open set
 (`MeasureTheory.Measure.IsOpenPosMeasure`), the `L^∞` seminorm bounds the value of `f` at every
-point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`). In particular, on a nonempty
-open interval `(a, b) ⊆ ℝ`, the real-valued `L^∞` norm of the identity function equals `max |a| |b|`
-(`MeasureTheory.Measure.lpNorm_id_exponent_top_restrict_Ioo`). The same holds for the `L^∞`
-seminorm on a set `s` at a point of the closure of the interior of `s` where `f` is continuous
-within `s`, such as a boundary point of a closed half-disc
-(`ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict_of_mem_closure_interior`); the statement for
-`ContinuousAt` is its case `s = univ`.
+point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`). More generally, for such a
+measure, `‖f x‖ₑ ≤ ‖f‖_{L^∞(μ.restrict s)}` whenever `f` is continuous at `x` within a set `s` and
+`x` lies in the closure of the interior of `s`, for instance at a boundary point of a closed
+half-disc (`ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict_of_mem_closure_interior`); the
+statement for `ContinuousAt` is its case `s = univ`. In particular, on a nonempty open interval
+`(a, b) ⊆ ℝ`, the real-valued `L^∞` norm of the identity function equals `max |a| |b|`
+(`MeasureTheory.Measure.lpNorm_id_exponent_top_restrict_Ioo`).
 -/
 
 public section

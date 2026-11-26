@@ -11,6 +11,7 @@ import TauCeti.Analysis.Calculus.Hadamard.Basic
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Bound.HalfDisc
 import TauCeti.Analysis.Sobolev.Local.Morrey.HalfDisc.Higher
 import TauCeti.Analysis.Sobolev.Local.Multiplication.HalfDisc.Bound.Supercritical
+import TauCeti.Topology.Instances.ENNReal
 import TauCeti.Topology.Sets.Opens
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -127,19 +128,6 @@ theorem exists_eLpNormWkp_comp_sub_le_of_two_lt_mul_halfPlane {p : ℝ≥0} (hp 
       push_cast
       ring
 
-/-- The bound in `TauCeti.MemWkpLoc.tendsto_eLpNormWkp_comp_sub_of_two_lt_mul_inter_setOf_im_nonneg`
-tends to `0`: if `cₙ → 0` and `a` is finite, then `C (1 + (a + (a + cₙ)))^k cₙ → 0`. -/
-private theorem tendsto_mul_one_add_pow_mul {ι : Type*} {l : Filter ι} {c : ι → ℝ≥0∞}
-    (hc : Tendsto c l (𝓝 0)) {a : ℝ≥0∞} (ha : a ≠ ∞) (C : ℝ≥0) (k : ℕ) :
-    Tendsto (fun n => C * (1 + (a + (a + c n))) ^ k * c n) l (𝓝 0) := by
-  have h₁ : Tendsto (fun n => (C : ℝ≥0∞) * (1 + (a + (a + c n))) ^ k) l
-      (𝓝 (C * (1 + (a + (a + 0))) ^ k)) :=
-    ENNReal.Tendsto.const_mul (ENNReal.Tendsto.pow (tendsto_const_nhds.add
-      (tendsto_const_nhds.add (tendsto_const_nhds.add hc)))) (Or.inr ENNReal.coe_ne_top)
-  have hfin : (C : ℝ≥0∞) * (1 + (a + (a + 0))) ^ k ≠ ∞ :=
-    ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.pow_ne_top (by simp [ha]))
-  simpa using ENNReal.Tendsto.mul h₁ (Or.inr ENNReal.zero_ne_top) hc (Or.inr hfin)
-
 /-- **Continuity of composition in `W^{k,p}_loc` up to the real axis for `kp > 2`.** Let `1 < p`
 and `k p > 2`, let `g : F → G` be `C^{k+1}` on an open set `W`, and let
 `u₀ ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) k` be continuous on `Ω ∩ {0 ≤ im}` with
@@ -206,8 +194,11 @@ theorem MemWkpLoc.tendsto_eLpNormWkp_comp_sub_of_two_lt_mul_inter_setOf_im_nonne
     calc eLpNormWkp p P k (u n) ≤ eLpNormWkp p P k (u n - u₀) + eLpNormWkp p P k u₀ := by
           simpa using eLpNormWkp_add_le (U := P) (f := u n - u₀) (g := u₀) hp1
       _ ≤ _ := by rw [add_comm]; gcongr
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
-    (tendsto_mul_one_add_pow_mul (hlim T hTS hT) hu₀V C k) (.of_forall fun _ => zero_le) key
+  have hbd := ENNReal.tendsto_mul_add_pow_mul_of_tendsto_zero (hlim T hTS hT) (C := C)
+    ENNReal.coe_ne_top (b := 1 + (eLpNormWkp p P k u₀ + eLpNormWkp p P k u₀)) (by simp [hu₀V]) k
+  simp only [add_assoc] at hbd
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbd
+    (.of_forall fun _ => zero_le) key
 
 /-- The check at `p = 4/3` and `k = 2`, outside the range `p > 2` of
 `TauCeti.MemWkpLoc.tendsto_eLpNormWkp_succ_comp_sub_inter_setOf_im_nonneg`: squaring is continuous
