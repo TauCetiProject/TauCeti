@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Cell.HandlePushout
-import Mathlib.CategoryTheory.Limits.Constructions.BinaryProducts
-import Mathlib.Topology.Category.TopCat.Limits.Products
+import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.AlgebraicTopology.Disk
 
 /-!
@@ -21,14 +20,19 @@ every case of the theorem is degenerate at once.
 
 On a manifold modelled on a zero-dimensional space every function is a Morse function
 (`TauCeti.isMorse_of_subsingleton`), every point is a critical point of index `0`, each handle
-`𝔻 0 × 𝔻 0` is a point and each attaching region `∂𝔻 0 × 𝔻 0` is empty. So the pushout attaches
-nothing to the lower sublevel: it is the disjoint union of the lower sublevel and one point for each
-critical point on the level. Hence `M_{c+ε} = {f ≤ c + ε}` is homeomorphic to `M_{c-ε}` with the
-points of the level `c` added as isolated points
-(`TauCeti.exists_homeomorph_sublevel_sum_of_subsingleton`). The statement is derived from the
-handle attachment theorem, not built by hand, and tests that its conventions (the empty unit sphere
-`∂𝔻 0`, the one-point disc `𝔻 0`, the coindex `m - λ` in `ℕ`) behave as they should in this edge
-case.
+`𝔻 0 × 𝔻 0` is a point and each attaching region `∂𝔻 0 × 𝔻 0` is empty. Handles of index `0` glue
+nothing and add one disc `𝔻 m` each
+(`TauCeti.IsMorse.exists_homeomorph_sublevel_sum_of_manifoldMorseIndex_eq_zero`), here the point
+`𝔻 0`. Hence `M_{c+ε} = {f ≤ c + ε}` is homeomorphic to `M_{c-ε}` with the points of the level `c`
+added as isolated points (`TauCeti.exists_homeomorph_sublevel_sum_of_subsingleton`). The statement
+is derived from the handle attachment theorem, not built by hand, and tests that its conventions
+(the empty unit sphere `∂𝔻 0`, the one-point disc `𝔻 0`, the coindex `m - λ` in `ℕ`) behave as they
+should in this edge case.
+
+Since every point is critical, a band `f⁻¹[a, b]` without critical points is empty in dimension
+`0`, and the deformation across such a band (`TauCeti.exists_sublevelDeformation`) has nothing to
+move: the two sublevels `{f ≤ a}` and `{f ≤ b}` are the same set, and the inclusion of one into the
+other is a homeomorphism. This is recorded below as an example.
 
 ## References
 
@@ -38,7 +42,7 @@ case.
 
 public section
 
-open Set CategoryTheory Limits Topology Module
+open Set Topology Module
 open scoped ContDiff Manifold
 
 universe u
@@ -65,41 +69,29 @@ theorem exists_homeomorph_sublevel_sum_of_subsingleton (f : M → ℝ) {c δ : �
   have : DiscreteTopology M := ChartedSpace.discreteTopology H M
   have : I.Boundaryless := ⟨eq_univ_of_forall fun x ↦ ⟨I.symm x, Subsingleton.elim _ _⟩⟩
   have : IsManifold I ∞ M := isManifold_of_contDiffOn I ∞ M fun _ _ _ _ ↦ contDiffOn_of_subsingleton
-  obtain ⟨ε, hε, hεδ, α, χ, j, hpush, -⟩ :=
-    (isMorse_of_subsingleton (I := I) (f := f)).exists_isPushout_sublevel_handles hδ hcompact
-  refine ⟨ε, hε, hεδ, ⟨?_⟩⟩
-  -- Every critical point has index `0`, and the dimension is `0`.
-  have hk : ∀ p, manifoldMorseIndex I f p = 0 := fun _ ↦ manifoldMorseIndex_eq_zero_of_subsingleton
-  have hl : ∀ p, finrank ℝ E - manifoldMorseIndex I f p = 0 := fun _ ↦ by
-    simp [finrank_zero_of_subsingleton]
-  have hD₀ : ∀ {k : ℕ}, k = 0 → Unique (TopCat.disk.{u} k) := by rintro _ rfl; infer_instance
-  have hS₀ : ∀ {k : ℕ}, k = 0 → IsEmpty (TopCat.diskBoundary.{u} k) := by
-    rintro _ rfl; infer_instance
-  -- Every attaching region `∂𝔻 0 × 𝔻 0` is empty, so their coproduct is initial.
-  have hinit : IsInitial (∐ fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
-      TopCat.of (TopCat.diskBoundary.{u} (manifoldMorseIndex I f p) ×
-        TopCat.disk.{u} (finrank ℝ E - manifoldMorseIndex I f p))) := by
-    have hX : IsEmpty ((∐ fun p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) ↦
-        TopCat.of (TopCat.diskBoundary.{u} (manifoldMorseIndex I f p) ×
-          TopCat.disk.{u} (finrank ℝ E - manifoldMorseIndex I f p)) : TopCat.{u})) := by
-      refine ⟨fun x ↦ ?_⟩
-      obtain ⟨p, y, -⟩ := (TopCat.sigmaIsoSigma _).hom x
-      exact (hS₀ (hk p)).false y
-    exact TopCat.isInitialPEmpty.ofIso (TopCat.isoOfHomeo Homeomorph.empty)
-  -- So the pushout is the coproduct of the lower sublevel and the handles `𝔻 0 × 𝔻 0`, which are
-  -- points, one for each critical point on the level.
-  have hc := isCoproductOfIsInitialIsPushout _ _ _ _ hinit hpush.isColimit
-  refine (TopCat.homeoOfIso (hc.coconePointUniqueUpToIso
-    (TopCat.binaryCofanIsColimit _ _))).trans (Homeomorph.sumCongr (.refl _) ?_)
-  have : ∀ p : ↥(criticalPoints I f ∩ f ⁻¹' {c}), Unique
-      (TopCat.disk.{u} (manifoldMorseIndex I f p) ×
-        TopCat.disk.{u} (finrank ℝ E - manifoldMorseIndex I f p)) := fun p ↦
-    have := hD₀ (hk p)
-    have := hD₀ (hl p)
-    uniqueOfSubsingleton (default, default)
-  exact (TopCat.homeoOfIso (TopCat.sigmaIsoSigma _)).trans
-    { Equiv.sigmaUnique _ _ with
-      continuous_toFun := continuous_sigma fun _ ↦ continuous_const
-      continuous_invFun := continuous_of_discreteTopology }
+  -- Every critical point has index `0`, so each handle adds a disc `𝔻 m`, here the point `𝔻 0`.
+  obtain ⟨ε, hε, hεδ, ⟨e⟩⟩ :=
+    IsMorse.exists_homeomorph_sublevel_sum_of_manifoldMorseIndex_eq_zero
+      (isMorse_of_subsingleton (I := I) (f := f)) hδ hcompact
+      fun _ _ ↦ manifoldMorseIndex_eq_zero_of_subsingleton
+  have : Unique (TopCat.disk.{u} (finrank ℝ E)) := by
+    rw [finrank_zero_of_subsingleton]; infer_instance
+  exact ⟨ε, hε, hεδ, ⟨e.trans (Homeomorph.sumCongr (.refl _) (Homeomorph.prodUnique _ _))⟩⟩
+
+/-- **A band without critical points in dimension zero.** In dimension `0` every point is critical
+(`TauCeti.criticalPoints_eq_univ_of_subsingleton`), so a band `f⁻¹[a, b]` without critical points
+is empty, the sublevels `{f ≤ a}` and `{f ≤ b}` are equal, and the inclusion of one into the other
+is a homeomorphism. -/
+example (f : M → ℝ) {a b : ℝ} (hab : a ≤ b) (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b = ∅) :
+    f ⁻¹' Icc a b = ∅ ∧ {x | f x ≤ b} = {x | f x ≤ a} ∧
+      IsHomeomorph (sublevelInclusion f a b hab) := by
+  rw [criticalPoints_eq_univ_of_subsingleton, univ_inter] at hcrit
+  have hsub : {x | f x ≤ b} = {x | f x ≤ a} :=
+    Subset.antisymm (fun x hx ↦ not_lt.1 fun hax ↦ hcrit.subset ⟨hax.le, hx⟩)
+      (sublevel_mono f hab)
+  refine ⟨hcrit, hsub, isHomeomorph_iff_isEmbedding_surjective.2 ⟨?_, fun y ↦
+    ⟨⟨y, hsub ▸ y.property⟩, Subtype.ext (coe_sublevelInclusion_apply f hab _)⟩⟩⟩
+  rw [sublevelInclusion_eq_inclusion]
+  exact IsEmbedding.inclusion (sublevel_mono f hab)
 
 end TauCeti
