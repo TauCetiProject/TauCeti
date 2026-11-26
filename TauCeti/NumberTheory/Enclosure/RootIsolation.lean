@@ -14,6 +14,7 @@ import Mathlib.Analysis.Real.Sqrt
 import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.FieldTheory.Separable
 import Mathlib.Topology.Instances.ENNReal.Lemmas
+import TauCeti.NumberTheory.Enclosure.Archimedean
 import TauCeti.Topology.Algebra.Polynomial.Root.Isolated
 
 /-!
@@ -69,6 +70,8 @@ alone prove nothing: `[1, 2]` isolates both `√2` (as a root of `X² - 2`) and 
   and the inverse of isolated values.
 * `TauCeti.RootIsolation.exists_pairwise_disjoint`: finitely many algebraic values have isolations
   with pairwise disjoint regions.
+* `TauCeti.RootIsolation.exists_refine_box`: the rectangle of an isolation can be refined to
+  nested rectangles of `2⁻ⁿ` times its widths, isolating the same value by the same polynomial.
 * `TauCeti.RootIsolation.eq_iff_exists_aeval_gcd_eq_zero`: the exact equality test by the gcd of
   the two polynomials.
 
@@ -330,6 +333,30 @@ theorem restrict_poly (D : RootIsolation σ z) (R : RationalRegion) (hmem : σ z
 theorem restrict_region (D : RootIsolation σ z) (R : RationalRegion) (hmem : σ z ∈ R.toSet)
     (hR : R.toSet ⊆ D.region.toSet) : (D.restrict R hmem hR).region = R :=
   (rfl)
+
+/-- The rectangle of an isolation can be refined arbitrarily: for every `n` there is an isolation
+by the same polynomial whose rectangle lies inside the original one, with both sides of width
+`2⁻ⁿ` times the original widths. -/
+theorem exists_refine_box (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}
+    (h : D.region = .box R J) (n : ℕ) :
+    ∃ (R' J' : NonemptyInterval ℚ) (D' : RootIsolation σ z), D'.poly = D.poly ∧
+      D'.region = .box R' J' ∧ R' ≤ R ∧ J' ≤ J ∧ R'.length = R.length / 2 ^ n ∧
+      J'.length = J.length / 2 ^ n := by
+  have hmem := D.mem_region
+  rw [h, RationalRegion.mem_toSet_box] at hmem
+  -- The rectangle of `D` is the box of a complex enclosure of `σ z`; refine that enclosure.
+  let E : ComplexEnclosure (σ z) := ⟨⟨R, hmem.1.1, hmem.1.2⟩, ⟨J, hmem.2.1, hmem.2.2⟩⟩
+  have hbox (F : ComplexEnclosure (σ z)) :
+      F.box = (RationalRegion.box F.re.interval F.im.interval).toSet := by
+    rw [ComplexEnclosure.box_def, RationalRegion.toSet_box]
+  refine ⟨(E.refine n).re.interval, (E.refine n).im.interval,
+    D.restrict (.box _ _) (hbox _ ▸ (E.refine n).self_mem_box) ?_, rfl, rfl, ?_, ?_, ?_, ?_⟩
+  · rw [← hbox, h, ← hbox E]
+    simpa using E.antitone_box_refine n.zero_le
+  · exact (E.refine_re n).symm ▸ E.re.refine_interval_le n
+  · exact (E.refine_im n).symm ▸ E.im.refine_interval_le n
+  · exact (E.refine_re n).symm ▸ E.re.length_refine n
+  · exact (E.refine_im n).symm ▸ E.im.length_refine n
 
 /-- For every squarefree annihilator `f` of `z` and every neighbourhood `V` of `σ z`, there is an
 isolation of `z` by `f` whose region is a closed disc `|w - (a + b i)| ≤ r` contained in `V`, with
