@@ -16,8 +16,9 @@ A morphism of uncurved nonunital `A∞` algebras `A ⟶ B` is a degree-zero coal
 `b_B ∘ F = F ∘ b_A`.  A coalgebra morphism of reduced tensor coalgebras is determined by its
 suspended Taylor components `Tᶜ(sA) ⟶ sB`, and every family of such components arises from
 exactly one coalgebra morphism
-(`TauCeti.ReducedTensorWords.coalgHomEquivTaylor`).  This coalgebra morphism is therefore the
-stored datum, and the Taylor components are derived from it.
+(`LinearMap.IsConilpotent.coalgHomEquiv` for `Δ = TauCeti.ReducedTensorWords.deconcatenation`).
+This coalgebra morphism is therefore the stored datum, and the Taylor components are derived from
+it.
 
 The bar-differential equation is equivalent to its projection onto single letters, the suspended
 component equation `taylor_B ∘ F = f ∘ b_A` for the Taylor components `f` of `F`

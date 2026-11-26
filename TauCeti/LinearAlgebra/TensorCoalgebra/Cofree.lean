@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.DirectSum.TensorProduct
 public import TauCeti.LinearAlgebra.TensorCoalgebra.CoalgHom
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Conilpotence
 
@@ -28,7 +27,8 @@ Conversely `f` is the composite of `F` with the projection `Tᶜ(N) ⟶ N` onto 
 That `F` is a coalgebra map is generalized coassociativity (`LinearMap.iteratedComul_add_succ`)
 read one bidegree at a time; that a coalgebra map is determined by its projection to letters
 needs neither coassociativity nor conilpotence. For `C = Tᶜ(M)` itself the cofree lift is the
-Taylor expansion `TauCeti.ReducedTensorWords.coalgHom` (`cofreeLift_deconcatenation`).
+Taylor expansion `TauCeti.ReducedTensorWords.coalgHom`
+(`LinearMap.IsConilpotent.cofreeLift_eq_coalgHom`).
 
 Applied to the reduced bar construction `Tᶜ(sA)` of an algebra `A`, this identifies maps of
 coalgebras from a conilpotent coalgebra `C` into the bar construction with linear maps `C ⟶ sA`;
@@ -46,7 +46,8 @@ of the bar–cobar adjunction.
 
 * `LinearMap.IsConilpotent.component_cofreeLift`: the length-`(n + 1)` component of the cofree
   lift is `f^{⊗(n + 1)} ∘ Δ⁽ⁿ⁾`.
-* `LinearMap.IsConilpotent.letter_comp_cofreeLift`: its projection to letters is `f`.
+* `LinearMap.IsConilpotent.letter_cofreeLift`, `LinearMap.IsConilpotent.letter_comp_cofreeLift`:
+  its projection to letters is `f`.
 * `LinearMap.IsConilpotent.deconcatenation_comp_cofreeLift`: for a coassociative coproduct, it is a
   coalgebra map.
 * `LinearMap.IsConilpotent.eq_cofreeLift`: every coalgebra map into `Tᶜ(N)` is the cofree lift of
@@ -144,37 +145,25 @@ theorem component_comp_cofreeLift (n : ℕ) :
       PiTensorProduct.map (fun _ ↦ f) ∘ₗ Δ.iteratedComul n :=
   LinearMap.ext (hΔ.component_cofreeLift f n)
 
+/-- The length-one projection, presented through the index `⟨0 + 1, _⟩` that
+`LinearMap.IsConilpotent.component_cofreeLift` produces for `n = 0`. The two indices agree by
+definition, since the value of `(1 : {n : ℕ // 0 < n})` is `1` by definition (`Positive.val_one`);
+rewriting along `Positive.val_one` itself is not possible, because the index determines the type
+of the projection. -/
+private theorem component_one_eq : component R N 1 = component R N ⟨0 + 1, Nat.succ_pos 0⟩ :=
+  (rfl)
+
 /-- The projection of the cofree lift of `f` onto single letters is `f`. -/
 @[simp]
-theorem letter_comp_cofreeLift : letter R N ∘ₗ hΔ.cofreeLift f = f := by
-  refine LinearMap.ext fun c ↦ ?_
-  -- The length-one component, whose index `⟨0 + 1, _⟩` is definitionally `1`.
-  have h : component R N 1 (hΔ.cofreeLift f c) =
-      PiTensorProduct.map (fun _ ↦ f) (Δ.iteratedComul 0 c) := hΔ.component_cofreeLift f 0 c
-  rw [LinearMap.comp_apply, letter_apply, h, LinearMap.iteratedComul_zero,
+theorem letter_cofreeLift (c : C) : letter R N (hΔ.cofreeLift f c) = f c := by
+  rw [letter_apply, component_one_eq, component_cofreeLift, LinearMap.iteratedComul_zero,
     TensorPower.oneEquiv_map, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
 
-/-- Two linear maps into reduced tensor words agree when all their length components agree. -/
-private theorem linearMap_ext_component {X : Type*} [AddCommMonoid X] [Module R X]
-    {F G : X →ₗ[R] ReducedTensorWords R N}
-    (h : ∀ n : ℕ, component R N ⟨n + 1, n.succ_pos⟩ ∘ₗ F =
-      component R N ⟨n + 1, n.succ_pos⟩ ∘ₗ G) : F = G := by
-  refine LinearMap.ext fun c ↦ DFinsupp.ext fun ⟨k, hk⟩ ↦ ?_
-  obtain ⟨n, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
-  rw [apply_eq_component, apply_eq_component]
-  exact LinearMap.congr_fun (h n) c
-
-/-- An element of `Tᶜ(N) ⊗ Tᶜ(N)` is determined by its bihomogeneous components. -/
-private theorem tensor_ext {z w : ReducedTensorWords R N ⊗[R] ReducedTensorWords R N}
-    (h : ∀ p q : {n : ℕ // 0 < n}, TensorProduct.map (component R N p) (component R N q) z =
-      TensorProduct.map (component R N p) (component R N q) w) : z = w := by
-  have hc (p : {n : ℕ // 0 < n}) : component R N p =
-      DirectSum.component R _ (fun n : {n : ℕ // 0 < n} ↦ TensorPower R n.val N) p :=
-    LinearMap.ext fun x ↦
-      (apply_eq_component R N x p).symm.trans (DirectSum.apply_eq_component R x p)
-  refine TensorProduct.ext_map_component fun p q ↦ ?_
-  rw [← hc, ← hc]
-  exact h p q
+/-- The projection of the cofree lift of `f` onto single letters is `f`, as an equality of linear
+maps. -/
+@[simp]
+theorem letter_comp_cofreeLift : letter R N ∘ₗ hΔ.cofreeLift f = f :=
+  LinearMap.ext (hΔ.letter_cofreeLift f)
 
 /-- **The cofree lift is a coalgebra map** when the coproduct is coassociative:
 `Δ_{Tᶜ(N)} ∘ F = (F ⊗ F) ∘ Δ`. -/
@@ -184,7 +173,7 @@ theorem deconcatenation_comp_cofreeLift
       TensorProduct.map (hΔ.cofreeLift f) (hΔ.cofreeLift f) ∘ₗ Δ := by
   -- Compare the two sides in each bidegree `(i + 1, j + 1)`: cutting the length-`(i + j + 2)`
   -- component is splitting `Δ⁽ⁱ⁺ʲ⁺¹⁾`, which is `(Δ⁽ⁱ⁾ ⊗ Δ⁽ʲ⁾) ∘ Δ` by coassociativity.
-  refine LinearMap.ext fun c ↦ tensor_ext fun ⟨p, hp⟩ ⟨q, hq⟩ ↦ ?_
+  refine LinearMap.ext fun c ↦ tensor_ext_component R N fun ⟨p, hp⟩ ⟨q, hq⟩ ↦ ?_
   obtain ⟨i, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hp.ne'
   obtain ⟨j, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hq.ne'
   -- The component of length `(i + 1) + (j + 1)`, definitionally `(i + 1 + j) + 1`.
@@ -219,13 +208,12 @@ private theorem component_comp_eq_of_deconcatenation_comp {F : C →ₗ[R] Reduc
     exact h1
   | succ n ih =>
     -- Cut the component of length `n + 2` after its first `n + 1` letters.
-    have hcut := map_component_comp_deconcatenation R N ⟨n + 1, n.succ_pos⟩ 1
     have hsplit : component R N ⟨n + 1 + 1, (n + 1).succ_pos⟩ =
         TensorPower.mulEquiv.toLinearMap ∘ₗ
           TensorProduct.map (component R N ⟨n + 1, n.succ_pos⟩) (component R N 1) ∘ₗ
             deconcatenation R N := by
-      rw [hcut, ← LinearMap.comp_assoc, LinearEquiv.comp_symm, LinearMap.id_comp]
-      rfl
+      rw [component_one_eq, map_component_comp_deconcatenation, ← LinearMap.comp_assoc,
+        LinearEquiv.comp_symm, LinearMap.id_comp]
     rw [hsplit, LinearMap.comp_assoc, LinearMap.comp_assoc, hF, ← LinearMap.comp_assoc _ _
       (TensorProduct.map _ _), ← TensorProduct.map_comp, ih, h1, LinearMap.iteratedComul_succ,
       TauCeti.TensorPower.oneEquiv_symm_comp, TensorProduct.map_comp]
@@ -237,7 +225,7 @@ neither coassociativity nor conilpotence beyond the existence of the cofree lift
 theorem eq_cofreeLift {F : C →ₗ[R] ReducedTensorWords R N}
     (hF : deconcatenation R N ∘ₗ F = TensorProduct.map F F ∘ₗ Δ) :
     F = hΔ.cofreeLift (letter R N ∘ₗ F) :=
-  linearMap_ext_component fun n ↦ by
+  linearMap_ext_component R N fun n ↦ by
     rw [component_comp_cofreeLift, component_comp_eq_of_deconcatenation_comp hF]
 
 /-- **The cofree property of the reduced tensor coalgebra.** For a coassociative conilpotent
@@ -271,7 +259,7 @@ gives the cofree lift of `f ∘ g`. -/
 theorem cofreeLift_comp {Δ' : D →ₗ[R] D ⊗[R] D} (hΔ' : Δ'.IsConilpotent) {g : D →ₗ[R] C}
     (hg : Δ ∘ₗ g = TensorProduct.map g g ∘ₗ Δ') :
     hΔ.cofreeLift f ∘ₗ g = hΔ'.cofreeLift (f ∘ₗ g) :=
-  linearMap_ext_component fun n ↦ by
+  linearMap_ext_component R N fun n ↦ by
     rw [← LinearMap.comp_assoc, component_comp_cofreeLift, component_comp_cofreeLift,
       LinearMap.comp_assoc, LinearMap.iteratedComul_comp hg, ← LinearMap.comp_assoc,
       ← PiTensorProduct.map_comp]
@@ -280,7 +268,7 @@ theorem cofreeLift_comp {Δ' : D →ₗ[R] D ⊗[R] D} (hΔ' : Δ'.IsConilpotent
 cofree lift gives the cofree lift of `g ∘ f`. -/
 theorem map_comp_cofreeLift (g : N →ₗ[R] P) :
     ReducedTensorWords.map R g ∘ₗ hΔ.cofreeLift f = hΔ.cofreeLift (g ∘ₗ f) :=
-  linearMap_ext_component fun n ↦ LinearMap.ext fun c ↦ by
+  linearMap_ext_component R P fun n ↦ LinearMap.ext fun c ↦ by
     rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, component_map,
       component_cofreeLift, component_cofreeLift, ← LinearMap.comp_apply (PiTensorProduct.map _),
       ← PiTensorProduct.map_comp]
@@ -288,8 +276,9 @@ theorem map_comp_cofreeLift (g : N →ₗ[R] P) :
 /-- For the reduced tensor coalgebra `Tᶜ(M)` itself, the cofree lift of `f : Tᶜ(M) ⟶ N` is the
 Taylor expansion `TauCeti.ReducedTensorWords.coalgHom`. -/
 theorem cofreeLift_eq_coalgHom {M : Type*} [AddCommMonoid M] [Module R M]
-    (hΔ : (deconcatenation R M).IsConilpotent) (f : ReducedTensorWords R M →ₗ[R] N) :
-    hΔ.cofreeLift f = coalgHom R f := by
-  rw [hΔ.eq_cofreeLift (isCoalgHom_iff.mp (isCoalgHom_coalgHom f)), letter_comp_coalgHom]
+    (f : ReducedTensorWords R M →ₗ[R] N) :
+    (isConilpotent_deconcatenation R M).cofreeLift f = coalgHom R f := by
+  rw [(isConilpotent_deconcatenation R M).eq_cofreeLift (isCoalgHom_iff.mp (isCoalgHom_coalgHom f)),
+    letter_comp_coalgHom]
 
 end LinearMap.IsConilpotent
