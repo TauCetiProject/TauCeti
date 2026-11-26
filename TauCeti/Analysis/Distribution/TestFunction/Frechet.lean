@@ -34,7 +34,7 @@ continuous linear map from test functions to distributions, by pairing; the boun
 continuity hypothesis of the Schwartz kernel theorem for test functions supported in small compact
 sets, `LinearMap.exists_schwartzKernel_supportedIn`. Conversely, a bilinear map on test functions on
 open sets satisfying such a bound on each pair of compact sets is continuous in each variable
-(`LinearMap.continuous_apply_left_of_bound`).
+(`LinearMap.continuous_apply_left_of_bound`, `LinearMap.continuous_apply_right_of_bound`).
 
 ## Main results
 
@@ -52,8 +52,9 @@ open sets satisfying such a bound on each pair of compact sets is continuous in 
   such spaces is bounded by `C N_{≤k}(φ) N_{≤k}(ψ)` for some `C` and `k`.
 * `LinearMap.exists_bound_ofSupportedIn_of_continuous`: the same bound on each pair of compact
   sets for a separately continuous bilinear map on test functions on open sets.
-* `LinearMap.continuous_apply_left_of_bound`: conversely, a bilinear map on test functions on open
-  sets with such a bound on each pair of compact sets is continuous in its first variable.
+* `LinearMap.continuous_apply_left_of_bound`, `LinearMap.continuous_apply_right_of_bound`:
+  conversely, a bilinear map on test functions on open sets with such a bound on each pair of
+  compact sets is continuous in each variable.
 * `ContDiffMapSupportedIn.supSeminorm_le_of_forall_norm_iteratedFDeriv_le`: a uniform bound `B`
   on the derivatives of order at most `r` bounds the seminorm `N_{≤r}` by `B`.
 
@@ -328,5 +329,20 @@ theorem continuous_apply_left_of_bound (B : 𝓓^{n₁}(Ω, F₁) →ₗ[𝕜] �
     ((B.flip ψ).comp (ofSupportedInCLM 𝕜 hK₁).toLinearMap)
     ⟨{k}, (C * ContDiffMapSupportedIn.supSeminorm 𝕜 D F₂ n₂ K₂ k ψ₀).toNNReal, fun φ ↦ by
       simpa [NNReal.smul_def] using h φ⟩
+
+/-- Conversely to `LinearMap.exists_bound_ofSupportedIn_of_continuous`, a bilinear map `B` on test
+functions on open sets `Ω` and `O` such that for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O` some `C`
+and `k` give `‖B φ ψ‖ ≤ C N_{≤k}(φ) N_{≤k}(ψ)` for `φ` supported in `K₁` and `ψ` supported in
+`K₂` is continuous in its second variable. -/
+theorem continuous_apply_right_of_bound (B : 𝓓^{n₁}(Ω, F₁) →ₗ[𝕜] 𝓓^{n₂}(O, F₂) →ₗ[𝕜] G)
+    (hB : ∀ (K₁ : Compacts E) (K₂ : Compacts D) (hK₁ : (K₁ : Set E) ⊆ Ω)
+      (hK₂ : (K₂ : Set D) ⊆ O), ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
+        ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
+          C * ContDiffMapSupportedIn.supSeminorm 𝕜 E F₁ n₁ K₁ k φ *
+            ContDiffMapSupportedIn.supSeminorm 𝕜 D F₂ n₂ K₂ k ψ)
+    (φ : 𝓓^{n₁}(Ω, F₁)) : Continuous (B φ) := by
+  refine continuous_apply_left_of_bound B.flip (fun K₂ K₁ hK₂ hK₁ ↦ ?_) φ
+  obtain ⟨C, k, hC⟩ := hB K₁ K₂ hK₁ hK₂
+  exact ⟨C, k, fun ψ φ ↦ by simpa only [flip_apply, mul_right_comm C] using hC φ ψ⟩
 
 end LinearMap

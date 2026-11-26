@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.Gluing
 import TauCeti.Analysis.Distribution.TestFunction.Complexify
 import TauCeti.Analysis.Distribution.TestFunction.Frechet
 import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
+import TauCeti.Analysis.Distribution.TestFunction.TransportTensor
 import TauCeti.Analysis.Normed.Module.Complexification
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
@@ -40,8 +41,9 @@ restriction to functions supported in `K₁` and `K₂` is a separately continuo
 Fréchet spaces, which has finite order (`LinearMap.exists_bound_supportedIn_of_continuous`,
 through the Banach–Steinhaus theorem). Conversely, the estimate makes `B` continuous in each
 variable, since a test function `ψ` is supported in the compact set `tsupport ψ`
-(`LinearMap.continuous_apply_left_of_bound`). The forms of the theorem for separately continuous
-`B` are `LinearMap.existsUnique_schwartzKernel_testFunction_of_continuous` and
+(`LinearMap.continuous_apply_left_of_bound`, `LinearMap.continuous_apply_right_of_bound`). The
+forms of the theorem for separately continuous `B` are
+`LinearMap.existsUnique_schwartzKernel_testFunction_of_continuous` and
 `LinearMap.existsUnique_schwartzKernel_distribution_of_continuous`.
 
 A real bilinear map `B` on the real test functions `𝓓(Ω, ℝ) × 𝓓(O, ℝ)` with values in a real
@@ -509,14 +511,10 @@ theorem existsUnique_schwartzKernel_testFunction
             ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₂ k ψ)
     {V : Opens (E × D)} (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
     ∃! T : 𝓓(V, ℂ) →L[ℂ] F, ∀ (φ : 𝓓(Ω, ℂ)) (ψ : 𝓓(O, ℂ)),
-      T (φ.tensor ψ hV.symm.subset) = B φ ψ := by
-  -- The estimate makes `B` continuous in each variable; for the second variable apply this to the
-  -- flipped map.
-  refine existsUnique_schwartzKernel_testFunction_of_continuous B
-    (continuous_apply_left_of_bound B hB) (fun φ ↦ ?_) hV
-  refine continuous_apply_left_of_bound B.flip (fun K₂ K₁ hK₂ hK₁ ↦ ?_) φ
-  obtain ⟨C, k, hC⟩ := hB K₁ K₂ hK₁ hK₂
-  exact ⟨C, k, fun ψ φ ↦ by simpa only [flip_apply, mul_right_comm C] using hC φ ψ⟩
+      T (φ.tensor ψ hV.symm.subset) = B φ ψ :=
+  -- The estimate makes `B` continuous in each variable.
+  existsUnique_schwartzKernel_testFunction_of_continuous B
+    (continuous_apply_left_of_bound B hB) (continuous_apply_right_of_bound B hB) hV
 
 /-- **The Schwartz kernel theorem for distributions on open sets.** Let `B` be a complex bilinear
 form on the complex test functions on open sets `Ω ⊆ E` and `O ⊆ D` such that for all

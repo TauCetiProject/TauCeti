@@ -33,7 +33,12 @@ reflections.
   linear equivalence, changing their domain, as a continuous linear map.
 * `ContinuousLinearEquiv.transportTestFunction_apply`: evaluation of a transported test function.
 * `ContinuousLinearEquiv.transportTestFunctionComplex`: the same transport of test functions with
-  values in a complex normed space, as a complex-linear map.
+  values in a complex normed space, as a complex-linear map, which as a function is
+  `transportTestFunction` (`ContinuousLinearEquiv.coe_transportTestFunctionComplex`), with its
+  functoriality and compatibility with postcomposition
+  (`ContinuousLinearEquiv.transportTestFunctionComplex_trans`,
+  `ContinuousLinearEquiv.transportTestFunctionComplex_transportTestFunctionComplex_symm`,
+  `ContinuousLinearEquiv.transportTestFunctionComplex_postcompCLM`).
 * `ContinuousLinearEquiv.transportTestFunction_trans`,
   `ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm`: functoriality.
 * `ContinuousLinearEquiv.transportTestFunction_postcompCLM`: transport commutes with
@@ -168,11 +173,42 @@ def transportTestFunctionComplex (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) :
   map_smul' _ _ := TestFunction.ext fun _ ↦ by simp
   cont := (e.transportTestFunction hVO).continuous
 
-/-- A transported complex test function is evaluated at the inversely transported point. -/
+/-- As a function, the complex-linear transport is the real-linear transport
+`transportTestFunction`. -/
 @[simp]
+theorem coe_transportTestFunctionComplex (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) :
+    ⇑(transportTestFunctionComplex (n := n) (G := G) e hVO) = e.transportTestFunction hVO :=
+  (rfl)
+
+/-- A transported complex test function is evaluated at the inversely transported point. -/
 theorem transportTestFunctionComplex_apply (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω)
     (φ : 𝓓^{n}(V, G)) (y : E') : transportTestFunctionComplex e hVO φ y = φ (e.symm y) :=
   e.transportTestFunction_apply hVO φ y
+
+/-- Transporting complex test functions along a composite of continuous linear equivalences is
+transporting along each in turn. -/
+theorem transportTestFunctionComplex_trans {E'' : Type*} [NormedAddCommGroup E'']
+    [NormedSpace ℝ E''] {W : Opens E''} (e₁ : E ≃L[ℝ] E') (e₂ : E' ≃L[ℝ] E'')
+    (h₁ : MapsTo e₁ V Ω) (h₂ : MapsTo e₂ Ω W) (h : MapsTo (e₁.trans e₂) V W) (φ : 𝓓^{n}(V, G)) :
+    (e₁.trans e₂).transportTestFunctionComplex h φ =
+      e₂.transportTestFunctionComplex h₂ (e₁.transportTestFunctionComplex h₁ φ) :=
+  e₁.transportTestFunction_trans e₂ h₁ h₂ h φ
+
+/-- Transporting complex test functions along `e.symm` and then along `e` gives back the original
+test function. -/
+theorem transportTestFunctionComplex_transportTestFunctionComplex_symm (e : E ≃L[ℝ] E')
+    (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V) (φ : 𝓓^{n}(Ω, G)) :
+    e.transportTestFunctionComplex hVO (e.symm.transportTestFunctionComplex hOV φ) = φ :=
+  e.transportTestFunction_transportTestFunction_symm hVO hOV φ
+
+/-- The complex-linear transport commutes with postcomposition by a complex-linear continuous
+map. -/
+theorem transportTestFunctionComplex_postcompCLM {H : Type*} [NormedAddCommGroup H]
+    [NormedSpace ℂ H] (e : E ≃L[ℝ] E') (hVO : MapsTo e V Ω) (L : G →L[ℂ] H) (φ : 𝓓^{n}(V, G)) :
+    e.transportTestFunctionComplex hVO (postcompCLM L φ) =
+      postcompCLM L (e.transportTestFunctionComplex hVO φ) := by
+  ext y
+  simp
 
 end Complex
 

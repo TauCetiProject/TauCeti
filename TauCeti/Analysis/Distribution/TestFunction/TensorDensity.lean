@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
+import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Fourier.Torus.Decay
@@ -55,9 +55,6 @@ Real-valued test functions are the ones on which Mathlib's distributions `𝓓'(
   distributions on a product.
 * `TestFunction.continuous_prodSMulCLM_apply`: the tensor product `(x, t) ↦ ψ t • φ x` of real
   test functions is continuous in `ψ`.
-* `ContinuousLinearEquiv.transportTestFunctionComplex_prodCongr_tensor`: transport along a product
-  of continuous linear equivalences takes tensor products of complex test functions to tensor
-  products.
 
 ## References
 
@@ -274,22 +271,3 @@ theorem continuous_prodSMulCLM_apply (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) 
   exact (ContinuousLinearMap.continuous _).comp (ContinuousLinearMap.continuous _)
 
 end TestFunction
-
-namespace ContinuousLinearEquiv
-
-variable {E E' D D' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedAddCommGroup D] [NormedSpace ℝ D]
-  [NormedAddCommGroup D'] [NormedSpace ℝ D'] {n : ℕ∞} {V : Opens E} {Ω : Opens E'} {O : Opens D}
-  {O' : Opens D'} {W : Opens (E × D)} {W' : Opens (E' × D')}
-
-/-- Transport along a product `e₁ × e₂` of continuous linear equivalences takes the tensor product
-`φ ⊗ ψ` to the tensor product of the transports of `φ` and `ψ`. -/
-theorem transportTestFunctionComplex_prodCongr_tensor (e₁ : E ≃L[ℝ] E') (e₂ : D ≃L[ℝ] D')
-    (h₁ : MapsTo e₁ V Ω) (h₂ : MapsTo e₂ O O') (h : MapsTo (e₁.prodCongr e₂) W W')
-    (hW : (V : Set E) ×ˢ (O : Set D) ⊆ W) (hW' : (Ω : Set E') ×ˢ (O' : Set D') ⊆ W')
-    (φ : 𝓓^{n}(V, ℂ)) (ψ : 𝓓^{n}(O, ℂ)) :
-    transportTestFunctionComplex (e₁.prodCongr e₂) h (φ.tensor ψ hW) =
-      (transportTestFunctionComplex e₁ h₁ φ).tensor (transportTestFunctionComplex e₂ h₂ ψ) hW' :=
-  TestFunction.ext fun _ ↦ by simp
-
-end ContinuousLinearEquiv
