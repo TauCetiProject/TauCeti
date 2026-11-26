@@ -17,7 +17,8 @@ consists of the vectors on which each element above `H` acts by the character of
 
 If inverse conjugation by an element of `Q` preserves `H` and `χ`, every lift induces the same
 endomorphism of this weight space. A monoid mapping into these elements acts on the weight space
-provided each element of its image lifts through `red`.
+provided each element of its image lifts through `red`. The resulting representation is
+`Representation.weightSpaceLift`.
 
 ## References
 
@@ -92,7 +93,7 @@ private theorem map_chooseLift (s : S) : red (chooseLift red φ hlift s) = φ s 
 
 /-- A monoid homomorphism acts on the pulled-back weight space by lifts through reduction
 when each image element lifts and its inverse conjugation preserves the subgroup and character. -/
-noncomputable def weightSpaceLiftRep :
+noncomputable def weightSpaceLift :
     Representation k S (weightSpace (ρ.comp (H.comap red).subtype)
       (χ.comp (red.subgroupComap H))) where
   toFun s := (ρ (chooseLift red φ hlift s)).restrict fun _ hv ↦
@@ -110,10 +111,10 @@ noncomputable def weightSpaceLiftRep :
     rw [← mul_apply_eq_comp, ← map_mul]
     exact ρ.apply_eq_apply_of_mem_weightSpace_of_map_eq red χ v.property (by simp)
 
-/-- The weight-space action can be evaluated with any lift of the given element. -/
-theorem weightSpaceLiftRep_apply (s : S)
+/-- Evaluate `weightSpaceLift` using any lift of the given element. -/
+theorem weightSpaceLift_apply (s : S)
     (v : weightSpace (ρ.comp (H.comap red).subtype) (χ.comp (red.subgroupComap H))) {g : G}
-    (hg : red g = φ s) : (ρ.weightSpaceLiftRep red χ φ hlift hχ s v : V) = ρ g v :=
+    (hg : red g = φ s) : (ρ.weightSpaceLift red χ φ hlift hχ s v : V) = ρ g v :=
   ρ.apply_eq_apply_of_mem_weightSpace_of_map_eq red χ v.property
     ((map_chooseLift red φ hlift s).trans hg.symm)
 
