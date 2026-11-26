@@ -84,7 +84,7 @@ variable {n : ℕ}
 `η ↦ ⟨a(x) Dg(x), η⟩`, is `α`-Hölder on `s` with constant `K_a M_g + Λ K_g` and bounded by
 `Λ M_g`, when on `s` the coefficient `a` is uniformly elliptic and `α`-Hölder with constant `K_a`
 and `Dg` is `α`-Hölder with constant `K_g` and bounded by `M_g`. -/
-private theorem holderOnWith_and_norm_le_toDual_symm_flip_matrixBilinearForm
+private theorem holderOnWith_and_norm_le_continuousLinearMapOfBilin_flip_matrixBilinearForm
     {s : Set (EuclideanSpace ℝ (Fin (n + 1)))}
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     {Dg : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {lam Lam : ℝ}
@@ -92,14 +92,15 @@ private theorem holderOnWith_and_norm_le_toDual_symm_flip_matrixBilinearForm
     (hKa : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s)
     (hDgK : HolderOnWith Kg α Dg s) (hDgM : ∀ y ∈ s, ‖Dg y‖ ≤ Mg) :
     HolderOnWith (Ka * Mg + Lam.toNNReal * Kg) α
-        (fun x => (toDual ℝ _).symm ((matrixBilinearForm (a x)).flip (Dg x))) s ∧
-      ∀ x ∈ s, ‖(toDual ℝ _).symm ((matrixBilinearForm (a x)).flip (Dg x))‖ ≤
+        (fun x => continuousLinearMapOfBilin (matrixBilinearForm (a x)).flip (Dg x)) s ∧
+      ∀ x ∈ s, ‖continuousLinearMapOfBilin (matrixBilinearForm (a x)).flip (Dg x)‖ ≤
         (Lam.toNNReal * Mg : ℝ≥0) := by
   have hBM : ∀ x ∈ s, ‖matrixBilinearForm (a x)‖ ≤ (Lam.toNNReal : ℝ) := fun x hx =>
     (hell.opNorm_matrixBilinearForm_le hx).trans (Real.le_coe_toNNReal _)
   refine ⟨(toDual ℝ _).symm.isometry.comp_holderOnWith
     (ContinuousLinearMap.holderOnWith_flip_apply hKa hDgK hBM hDgM), fun x hx => ?_⟩
-  rw [LinearIsometryEquiv.norm_map, NNReal.coe_mul]
+  rw [continuousLinearMapOfBilin, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.norm_map, NNReal.coe_mul]
   refine (ContinuousLinearMap.le_opNorm _ _).trans ?_
   rw [ContinuousLinearMap.opNorm_flip]
   exact mul_le_mul (hBM x hx) (hDgM x hx) (norm_nonneg _) (by positivity)
@@ -114,22 +115,22 @@ private theorem energyFormH1_sub_ofTestFunctionₗ_eq {Ω : Opens (EuclideanSpac
     {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {u g : W1p volume Ω 2}
     (hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (volume.restrict Ω))
     (hG : MemLp G 2 (volume.restrict Ω))
-    (hH : MemLp (fun x => (toDual ℝ _).symm ((matrixBilinearForm (a x)).flip (Dg x))) 2
+    (hH : MemLp (fun x => continuousLinearMapOfBilin (matrixBilinearForm (a x)).flip (Dg x)) 2
       (volume.restrict Ω))
     (hDg : ⇑(W1p.gradient g) =ᵐ[volume.restrict Ω] Dg)
     (hu : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
       (∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
         ∫ x in Ω, f x * φ x) (φ : 𝓓(Ω, ℝ)) :
     energyFormH1 a 0 0 (u - g) (W1p.ofTestFunctionₗ volume Ω 2 φ) =
-      (∫ x in Ω, ⟪G x - (toDual ℝ _).symm ((matrixBilinearForm (a x)).flip (Dg x)),
+      (∫ x in Ω, ⟪G x - continuousLinearMapOfBilin (matrixBilinearForm (a x)).flip (Dg x),
         ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) + ∫ x in Ω, f x * φ x := by
   have hg : energyFormH1 a 0 0 g (W1p.ofTestFunctionₗ volume Ω 2 φ) =
-      ∫ x in Ω, ⟪(toDual ℝ _).symm ((matrixBilinearForm (a x)).flip (Dg x)),
+      ∫ x in Ω, ⟪continuousLinearMapOfBilin (matrixBilinearForm (a x)).flip (Dg x),
         ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
     rw [energyFormH1_def]
     refine integral_congr_ae ?_
     filter_upwards [hDg, gradientTestFunctionLp_apply_ae (mu := volume) 2 φ] with x hx hφx
-    simp only [toDual_symm_apply, ContinuousLinearMap.flip_apply]
+    rw [continuousLinearMapOfBilin_apply, ContinuousLinearMap.flip_apply]
     simp [energyIntegrand_apply, hx, hφx]
   simp_rw [inner_sub_left]
   rw [integral_sub (integrable_inner_gradient_testFunction hG φ)
@@ -211,7 +212,7 @@ theorem exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule {E : Type*
     isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
   -- The field `H(x) = a(x) Dg(x)`, through the Riesz representation, is Hölder and bounded.
   obtain ⟨hH, hHM⟩ :=
-    holderOnWith_and_norm_le_toDual_symm_flip_matrixBilinearForm hell hKa hDgK hDgM
+    holderOnWith_and_norm_le_continuousLinearMapOfBilin_flip_matrixBilinearForm hell hKa hDgK hDgM
   -- The data `G`, `H` and the coefficient are integrable on `Ω`.
   obtain ⟨MG, hMG⟩ := (hKG.isBounded_image hΩ.closure).exists_norm_le
   obtain ⟨hcoeff, hG2⟩ := memLp_energyIntegrand_and_memLp_of_holderOnWith (mu := volume) hα
@@ -307,8 +308,8 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWi
   have hellΩ := hell.mono_set (subset_closure (s := (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
   have ha := aestronglyMeasurable_of_holderOnWith_matrixBilinearForm (mu := volume)
     Ω.isOpen.measurableSet subset_closure hα hKa
-  have hG2 := MeasureTheory.memLp_of_holderOnWith (μ := volume) (p := 2) Ω.isOpen.measurableSet
-    subset_closure hΩ.closure hα hG
+  have hG2 : MemLp G 2 (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
+    (hG.memLp_top hα hΩ.closure Ω.isOpen.measurableSet subset_closure).mono_exponent le_top
   have hf2 : MemLp f 2 (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     hf.mono_exponent hq
   -- The right-hand side as a functional on `H¹₀(Ω)`.
@@ -334,15 +335,10 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWi
   -- The weak equation against `H¹₀(Ω)` gives it against the test functions.
   have htest : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
       (∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
-        ∫ x in Ω, f x * φ x := fun φ => by
-    rw [hu' ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩]
-    congr 1
-    · refine integral_congr_ae ?_
-      filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Ω) 2 φ] with x hx
-      rw [← hx, ← W1p.gradient_ofTestFunctionₗ (mu := volume) (Omega := Ω) (p := 2) φ]
-    · refine integral_congr_ae ?_
-      filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := 2) φ] with x hx
-      exact congrArg (f x * ·) hx
+        ∫ x in Ω, f x * φ x := by
+    simpa only [neg_neg] using energyFormH1_ofTestFunctionₗ_eq_of_forall_w1p0 (F := -G)
+      fun v => by rw [hu' v, Pi.neg_def]; simp only [inner_neg_left, integral_neg, sub_neg_eq_add,
+        add_comm]
   refine ⟨u, ⟨⟨hu0, hu'⟩, hreg hell hKa hKaM hG hf hu0 hgD hDg hMg htest⟩, fun u' hu'' => ?_⟩
   exact huniq u' ⟨hu''.1.1, fun v => (hu''.1.2 v).trans (hℓ v).symm⟩
 

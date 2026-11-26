@@ -87,8 +87,9 @@ the sum of these.
 * `TauCeti.PDE.memLp_energyIntegrand_and_memLp_of_holderOnWith`: on an open set of finite
   measure, Hölder elliptic coefficients give an essentially bounded energy integrand and a
   bounded Hölder field is square integrable.
-* `TauCeti.PDE.coefficientField`: the vector field `x ↦ a(x) ξ(x)`, Hölder with constant
-  `K_a ‖p‖` for a constant vector `ξ = p` (`TauCeti.PDE.holderOnWith_coefficientField_const`).
+* `TauCeti.PDE.holderOnWith_continuousLinearMapOfBilin_flip_matrixBilinearForm`: for a constant
+  vector `p`, the field `x ↦ a(x) p`, written as a Riesz representative, is Hölder with constant
+  `K_a ‖p‖`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`: on an
   open set inside a ball `B(x₀, r)`, the replacement frozen at `x₀` exists and its error is
   `O(r^α)` for `α`-Hölder coefficients and field, plus `2 r ‖f‖_{L²(B)}`.
@@ -316,28 +317,15 @@ theorem aestronglyMeasurable_of_holderOnWith_matrixBilinearForm {B S : Set (Eucl
   (continuousOn_of_continuousOn_matrixBilinearForm
     ((haK.continuousOn hα).mono hBS)).aestronglyMeasurable hB
 
-/-- The vector field `x ↦ a(x) ξ(x)`, written through the bilinear forms of `a` and the Riesz
-representation: its inner product with `η` is `ηᵀ a(x) ξ(x)` (`inner_coefficientField`). -/
-def coefficientField (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
-    (ξ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (x : EuclideanSpace ℝ ι) :
-    EuclideanSpace ℝ ι :=
-  (toDual ℝ (EuclideanSpace ℝ ι)).symm ((matrixBilinearForm (a x)).flip (ξ x))
-
-omit [DecidableEq ι] in
-/-- The inner product of `a(x) ξ(x)` with `η` is the bilinear form of `a(x)` at `η` and `ξ(x)`. -/
-@[simp]
-theorem inner_coefficientField (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)
-    (ξ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (x η : EuclideanSpace ℝ ι) :
-    ⟪coefficientField a ξ x, η⟫_ℝ = matrixBilinearForm (a x) η (ξ x) := by
-  rw [coefficientField, toDual_symm_apply, ContinuousLinearMap.flip_apply]
-
 omit [DecidableEq ι] in
 /-- If the bilinear forms of `a` are `α`-Hölder with constant `K_a` on `s`, then for a constant
-vector `p` the field `x ↦ a(x) p` is `α`-Hölder on `s` with constant `K_a ‖p‖`. -/
-theorem holderOnWith_coefficientField_const {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {s : Set (EuclideanSpace ℝ ι)} {α Ka : ℝ≥0}
+vector `p` the field `x ↦ a(x) p`, the Riesz representative of `η ↦ ηᵀ a(x) p`, is `α`-Hölder on
+`s` with constant `K_a ‖p‖`. -/
+theorem holderOnWith_continuousLinearMapOfBilin_flip_matrixBilinearForm
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {s : Set (EuclideanSpace ℝ ι)} {α Ka : ℝ≥0}
     (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s) (p : EuclideanSpace ℝ ι) :
-    HolderOnWith (Ka * ‖p‖₊) α (coefficientField a fun _ => p) s :=
+    HolderOnWith (Ka * ‖p‖₊) α
+      (fun x => continuousLinearMapOfBilin (matrixBilinearForm (a x)).flip p) s :=
   (toDual ℝ (EuclideanSpace ℝ ι)).symm.isometry.comp_holderOnWith (haK.clm_flip.clm_apply_const p)
 
 omit [mu.IsAddHaarMeasure] in
