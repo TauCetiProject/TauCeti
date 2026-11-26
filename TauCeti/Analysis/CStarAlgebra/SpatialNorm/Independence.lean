@@ -87,17 +87,18 @@ theorem norm_spatialTensorLinearMap_rTensor_le (π : A →⋆ₙₐ[ℂ] (H →L
   have := CStarAlgebra.spectralOrderedRing A
   refine opNorm_le_of_forall_norm_ofMatrix_sliceRight_le _ fun n e he ↦ ?_
   let S : CStarMatrix (Fin n) (Fin n) A :=
-    CStarMatrix.ofMatrix fun k l ↦
+    CStarMatrix.ofMatrix <| Matrix.of fun k l ↦
       LinearMap.tensorComponent (vectorFunctional (e l) (e k) : (F →L[ℂ] F) →L[ℂ] ℂ).toLinearMap y
-  simp only [sliceRight_spatialTensorLinearMap_rTensor]
-  calc ‖CStarMatrix.mapₙₐ π S‖ ≤ ‖S‖ := NonUnitalStarAlgHom.norm_apply_le _ _
+  -- The slice matrices of `(π ⊗ 1)(y)` and `(σ ⊗ 1)(y)` are the entrywise images `π(S)`, `σ(S)`.
+  calc _ = ‖CStarMatrix.mapₙₐ π S‖ := by
+        simp [S, CStarMatrix.map, CStarMatrix.ofMatrix_apply]
+    _ ≤ ‖S‖ := NonUnitalStarAlgHom.norm_apply_le _ _
     _ = ‖CStarMatrix.mapₙₐ σ S‖ :=
         (NonUnitalStarAlgHom.norm_map _ (CStarMatrix.map_injective hσ) S).symm
-    _ ≤ _ := by
-        have := norm_ofMatrix_sliceRight_le he
-          (spatialTensorLinearMap ℂ K F K F ((σ : A →ₗ[ℂ] K →L[ℂ] K).rTensor _ y))
-        simp only [sliceRight_spatialTensorLinearMap_rTensor] at this
-        exact this
+    _ = ‖CStarMatrix.ofMatrix fun k l ↦ sliceRight (e l) (e k)
+          (spatialTensorLinearMap ℂ K F K F ((σ : A →ₗ[ℂ] K →L[ℂ] K).rTensor _ y))‖ := by
+        simp [S, CStarMatrix.map, CStarMatrix.ofMatrix_apply]
+    _ ≤ _ := norm_ofMatrix_sliceRight_le he _
 
 /-- **One-sided comparison in the second factor**: for a star homomorphism `π` and an injective
 star homomorphism `σ` of a C*-algebra `B`, `‖(1 ⊗ π)(y)‖ ≤ ‖(1 ⊗ σ)(y)‖` for all
