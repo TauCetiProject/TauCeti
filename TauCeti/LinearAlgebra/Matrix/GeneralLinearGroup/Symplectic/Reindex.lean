@@ -77,8 +77,7 @@ theorem reindex_J_mul_reindex_J : reindex e e (J l R) * reindex e e (J l R) = -1
 omit [Fintype l] [Fintype p] [DecidableEq p] in
 /-- The transported alternating form is antisymmetric. -/
 theorem transpose_reindex_J : (reindex e e (J l R))ᵀ = -reindex e e (J l R) := by
-  rw [transpose_reindex, J_transpose, reindex_apply, reindex_apply, submatrix_neg, Pi.neg_apply,
-    Pi.neg_apply]
+  rw [transpose_reindex, J_transpose, ← coe_reindexLinearEquiv R R, map_neg]
 
 variable {e}
 
@@ -98,10 +97,8 @@ omit [DecidableEq p] in
 theorem transpose_mul_reindex_J_mul_eq_iff {M : Matrix p p R} :
     Mᵀ * reindex e e (J l R) * M = reindex e e (J l R) ↔
       reindex e.symm e.symm M ∈ symplecticGroup l R := by
-  classical
-  obtain ⟨N, rfl⟩ := (reindex e e).surjective M
-  rw [← reindex_symm, Equiv.symm_apply_apply, transpose_reindex, SymplecticGroup.mem_iff',
-    ← coe_reindexAlgEquiv R R e, ← map_mul, ← map_mul, (reindexAlgEquiv R R e).injective.eq_iff]
+  rw [← SymplecticGroup.transpose_mem_iff, transpose_reindex, ← mul_reindex_J_mul_transpose_eq_iff,
+    transpose_transpose]
 
 omit [DecidableEq p] in
 /-- A matrix commutes with the transported alternating form exactly when reindexing it back gives
@@ -142,8 +139,7 @@ theorem mem_map_reindexGL_iff {M : GL p R} :
 theorem mem_map_reindexGL_iff' {M : GL p R} :
     M ∈ (GLSymplectic l R).map (e.reindexGL R) ↔
       (M : Matrix p p R)ᵀ * reindex e e (J l R) * (M : Matrix p p R) = reindex e e (J l R) := by
-  rw [Equiv.mem_map_reindexGL_iff, mem_iff_mem_symplecticGroup, transpose_mul_reindex_J_mul_eq_iff,
-    Equiv.coe_reindexGL, reindex_apply, Equiv.symm_symm]
+  rw [mem_map_reindexGL_iff, mul_reindex_J_mul_transpose_eq_iff, transpose_mul_reindex_J_mul_eq_iff]
 
 /-- **The reindexed symplectic subgroup is closed under transposition.** -/
 theorem star_mem_map_reindexGL [StarRing R] [TrivialStar R] {M : GL p R}

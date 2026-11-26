@@ -107,8 +107,7 @@ operation this is the orthogonal subgroup. -/
 theorem map_reindexGL_unitarySubgroup :
     (unitarySubgroup (GL n R)).map (e.reindexGL R) = unitarySubgroup (GL p R) := by
   ext M
-  rw [mem_map_reindexGL_iff, mem_unitarySubgroup_iff, mem_unitarySubgroup_iff, Unitary.mem_iff,
-    Unitary.mem_iff, star_reindexGL, ← map_mul, ← map_mul, MulEquiv.map_eq_one_iff,
-    MulEquiv.map_eq_one_iff]
+  rw [mem_map_reindexGL_iff]
+  simp [mem_unitarySubgroup_iff, Unitary.mem_iff, ← map_mul]
 
 end Equiv
