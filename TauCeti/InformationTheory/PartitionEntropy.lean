@@ -46,8 +46,6 @@ of two labels `a`, `b` is the pair label `x ↦ (a x, b x)`.
   embedding a countable alphabet into `ℕ`, does not change the entropy.
 * `TauCeti.countablePartitionEntropy_congr_ae`, `TauCeti.conditionalPartitionEntropy_congr_ae`:
   almost-everywhere equal labels have equal entropy and conditional entropy.
-* `TauCeti.countablePartitionEntropy_eq_ofReal_sum`: on a finite alphabet, under a probability
-  (or zero) measure, the entropy is the finite sum `∑ i, negMulLog p_i`.
 
 ## References
 
@@ -201,14 +199,6 @@ theorem countablePartitionEntropy_comp_le [Countable ι] (a : X → ι) (f : ι 
   (countablePartitionEntropy_le_pair a (f ∘ a)).trans_eq <|
     countablePartitionEntropy_comp_of_injective (e := fun i ↦ (i, f i)) a
       fun _ _ h ↦ congrArg Prod.fst h
-
-/-- On a finite alphabet, the entropy of a partition under a probability measure (or the zero
-measure) is the finite sum of `negMulLog` of its atom masses. -/
-theorem countablePartitionEntropy_eq_ofReal_sum [Fintype ι] [IsZeroOrProbabilityMeasure μ]
-    (a : X → ι) :
-    countablePartitionEntropy μ a = ENNReal.ofReal (∑ i, negMulLog (μ.real (a ⁻¹' {i}))) := by
-  rw [countablePartitionEntropy_def, tsum_fintype, ENNReal.ofReal_sum_of_nonneg]
-  exact fun _ _ ↦ negMulLog_nonneg measureReal_nonneg measureReal_le_one
 
 /-- On a finite alphabet the entropy is finite, for any measure. -/
 theorem countablePartitionEntropy_ne_top [Finite ι] (μ : Measure X) (a : X → ι) :
