@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
-public import TauCeti.Geometry.Manifold.Morse.Bott.StableManifold
+public import TauCeti.Geometry.Manifold.Morse.Bott.Chart.StableSubspace
+public import TauCeti.Geometry.Manifold.LinearSlice
 public import TauCeti.LinearAlgebra.ExtendByZero
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -275,7 +276,7 @@ theorem exists_isSliceChart_stableSet_flow (hX : IsAdaptedPseudoGradient f X)
     (isOpen_lt (continuous_norm.comp φ.continuous_coord) continuous_const)
   refine ⟨D, hD, ⟨φ.mem_source, by simpa using hε⟩, inter_subset_left, fun T ↦ ?_⟩
   rw [← hX.isBottAdaptedPseudoGradient_flowDiffeomorph]
-  exact hX.isBottAdaptedPseudoGradient.isSliceChart_flowDiffeomorph_trans_restr φ.toMorseBottChart
+  exact hX.isBottAdaptedPseudoGradient.isSliceChart_flowDiffeomorph_trans_restr
     (fun t y ↦ by rw [hX.isBottAdaptedPseudoGradient_flow, Flow.apply_mem_stableSet_iff]) hD
     (fun y hy ↦ (hloc y hy.1 hy.2).trans φ.mem_stableSubspace.symm) T
 

@@ -8,9 +8,11 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.PseudoGradient
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
 public import TauCeti.Dynamics.Flow.Stable
+public import TauCeti.Geometry.Manifold.LinearSlice
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
 # The flow of a Morse–Bott pseudo-gradient and its local stable sets
@@ -57,6 +59,11 @@ critical point `p` is the centre of the chart.
 * `TauCeti.IsBottAdaptedPseudoGradient.flow`: the flow of an adapted pseudo-gradient on a compact
   manifold, with `TauCeti.IsBottAdaptedPseudoGradient.neg_flow`: the flow of `-X` is the reversed
   flow.
+* `TauCeti.IsBottAdaptedPseudoGradient.isSliceChart_flowDiffeomorph_trans_restr`,
+  `TauCeti.IsBottAdaptedPseudoGradient.exists_isSliceChart_of_flow_mem`: a chart composed with a
+  time-`T` map of the flow is a slice chart for every flow-invariant set it flattens, used for the
+  stable manifolds in `TauCeti.Geometry.Manifold.Morse.Bott.StableManifold` and
+  `TauCeti.Geometry.Manifold.Morse.Stable.Manifold`.
 * `TauCeti.IsBottAdaptedPseudoGradient.flow_toChart_symm_of_forall_mem_uIcc`: in a Morse–Bott
   chart the flow is the linear flow while the linear orbit stays in the chart.
 * `TauCeti.IsBottAdaptedPseudoGradient.tendsto_flow_of_forall_coord_eq_zero`: points of the stable
@@ -151,6 +158,39 @@ theorem flowDiffeomorph_apply (t : ℝ) (y : M) : hX.flowDiffeomorph t y = hX.fl
 theorem flowDiffeomorph_symm_apply (t : ℝ) (y : M) :
     (hX.flowDiffeomorph t).symm y = hX.flow (-t) y := by
   rw [flowDiffeomorph, globalFlowDiffeomorph_symm_apply, hX.flow_apply, globalFlow_apply]
+
+/-- **Slice charts along the flow.** Let `W` be a set invariant under the flow, and `D` an open
+set on which a chart `e` flattens `W` onto a set `L`: a point of `D` lies in `W` exactly when its
+image under `e` lies in `L`. For every time `T`, the chart `e` restricted to `D`, composed with the
+time-`T` map of the flow, flattens `W` onto `L`. -/
+theorem isSliceChart_flowDiffeomorph_trans_restr {e : OpenPartialHomeomorph M E} {L : Set E}
+    {W D : Set M} (hW : ∀ t y, hX.flow t y ∈ W ↔ y ∈ W) (hD : IsOpen D)
+    (hDW : ∀ y ∈ D, y ∈ W ↔ e y ∈ L) (T : ℝ) :
+    IsSliceChart ((hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph
+      (e.restr D)) L W := by
+  refine isSliceChart_iff.2 fun z hz ↦ ?_
+  simp only [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
+    hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply] at hz
+  simp only [Homeomorph.transOpenPartialHomeomorph_apply, OpenPartialHomeomorph.restr_apply,
+    Diffeomorph.coe_toHomeomorph, comp_apply, flowDiffeomorph_apply]
+  rw [← hDW _ hz.2, hW]
+
+/-- **A slice chart at a point whose orbit enters `D`.** If the chart `e` of the maximal atlas,
+restricted to an open subset `D` of its source and composed with the time-`T` map of the flow, is a
+slice chart for `W`, then this chart is a chart of the maximal atlas at every point `y` whose orbit
+is in `D` at time `T`. -/
+theorem exists_isSliceChart_of_flow_mem {e : OpenPartialHomeomorph M E}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) {L : Set E} {W D : Set M} (hD : IsOpen D)
+    (hDs : D ⊆ e.source) {T : ℝ}
+    (hslice : IsSliceChart ((hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph
+      (e.restr D)) L W) {y : M} (hT : hX.flow T y ∈ D) :
+    ∃ q : OpenPartialHomeomorph M E, y ∈ q.source ∧
+      q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧ IsSliceChart q L W := by
+  refine ⟨_, ?_, (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
+    (restr_mem_maximalAtlas _ he hD), hslice⟩
+  rw [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
+    hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply]
+  exact ⟨hDs hT, hT⟩
 
 /-- `f` is antitone along every orbit of the flow. -/
 theorem antitone_flow (y : M) : Antitone fun t ↦ f (hX.flow t y) :=

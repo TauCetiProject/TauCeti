@@ -62,10 +62,6 @@ In the namespace `TauCeti.IsBottAdaptedPseudoGradient`:
 
 * `exists_forall_mem_biUnion_stableSet_iff`: near a point of `S`, `W^s(S)` is the stable slice of
   a Morse–Bott chart.
-* `isSliceChart_flowDiffeomorph_trans_restr`, `exists_isSliceChart_of_flow_mem`: a Morse–Bott chart
-  composed with a time-`T` map of the flow is a slice chart for every flow-invariant set that is
-  the stable slice of the chart, also used for the stable manifolds of Morse functions in
-  `TauCeti.Geometry.Manifold.Morse.Stable.Manifold`.
 * `exists_isSliceChart_biUnion_stableSet`, `exists_isSliceChart_biUnion_unstableSet`: slice charts
   for `W^s(S)` and `W^u(S)`, onto subspaces of dimensions `n - λ` and `n - λ⁻`, where `λ⁻` is the
   Morse index of `-f`.
@@ -170,39 +166,6 @@ private theorem exists_forall_mem_biUnion_stableSet_iff_half (φ : MorseBottChar
     fun z hz ↦ hrT z (hz.trans_le (min_le_right _ _)), fun y hy hyr ↦ hloc y hy ?_⟩
   exact hyr.trans_le (by linarith [min_le_left (2 * ε) r])
 
-/-- **Slice charts along the flow.** Let `W` be a set invariant under the flow, and `D` an open
-set on which `W` is the stable slice of a Morse–Bott chart `φ`: a point of `D` lies in `W` exactly
-when its coordinates of negative weight vanish. For every time `T`, the chart `φ` restricted to `D`,
-composed with the time-`T` map of the flow, flattens `W` onto the stable subspace of `φ`. -/
-theorem isSliceChart_flowDiffeomorph_trans_restr (φ : MorseBottChart E f x) {W D : Set M}
-    (hW : ∀ t y, hX.flow t y ∈ W ↔ y ∈ W) (hD : IsOpen D)
-    (hDW : ∀ y ∈ D, y ∈ W ↔ φ.toChart y ∈ φ.stableSubspace) (T : ℝ) :
-    IsSliceChart ((hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph
-      (φ.toChart.restr D)) (φ.stableSubspace : Set E) W := by
-  refine isSliceChart_iff.2 fun z hz ↦ ?_
-  simp only [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
-    hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply] at hz
-  simp only [Homeomorph.transOpenPartialHomeomorph_apply, OpenPartialHomeomorph.restr_apply,
-    Diffeomorph.coe_toHomeomorph, comp_apply, flowDiffeomorph_apply, SetLike.mem_coe]
-  rw [← hDW _ hz.2, hW]
-
-/-- **A slice chart at a point whose orbit enters `D`.** If the chart `e` of the maximal atlas,
-restricted to an open subset `D` of its source and composed with the time-`T` map of the flow, is a
-slice chart for `W`, then this chart is a chart of the maximal atlas at every point `y` whose orbit
-is in `D` at time `T`. -/
-theorem exists_isSliceChart_of_flow_mem {e : OpenPartialHomeomorph M E}
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) {L : Set E} {W D : Set M} (hD : IsOpen D)
-    (hDs : D ⊆ e.source) {T : ℝ}
-    (hslice : IsSliceChart ((hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph
-      (e.restr D)) L W) {y : M} (hT : hX.flow T y ∈ D) :
-    ∃ q : OpenPartialHomeomorph M E, y ∈ q.source ∧
-      q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧ IsSliceChart q L W := by
-  refine ⟨_, ?_, (hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
-    (restr_mem_maximalAtlas _ he hD), hslice⟩
-  rw [Homeomorph.transOpenPartialHomeomorph_source, OpenPartialHomeomorph.restr_source,
-    hD.interior_eq, mem_preimage, Diffeomorph.coe_toHomeomorph, flowDiffeomorph_apply]
-  exact ⟨hDs hT, hT⟩
-
 /-- A point of the stable set of `p ∈ S` lies in the source of a slice chart for `W^s(S)` built
 from a Morse–Bott chart at `p`, together with the data needed for its endpoint map. -/
 private theorem exists_slice_data (hc : ∀ p ∈ S, f p = c)
@@ -238,7 +201,7 @@ theorem exists_isSliceChart_biUnion_stableSet (hc : ∀ p ∈ S, f p = c)
   obtain ⟨φ, r, T, -, -, hloc, hT⟩ := hX.exists_slice_data hc hSo hp hy
   obtain ⟨q, hyq, hq, hs⟩ := hX.exists_isSliceChart_of_flow_mem φ.mem_maximalAtlas
     (isOpen_halfCube φ r) inter_subset_left
-    (hX.isSliceChart_flowDiffeomorph_trans_restr φ
+    (hX.isSliceChart_flowDiffeomorph_trans_restr (L := φ.stableSubspace)
       (fun t y ↦ by simp only [mem_iUnion₂, Flow.apply_mem_stableSet_iff])
       (isOpen_halfCube φ r) (fun y hy ↦ hloc y hy.1 hy.2) T) hT
   exact ⟨φ.stableSubspace, q, φ.finrank_stableSubspace_add_manifoldMorseIndex, hyq, hq, hs⟩
