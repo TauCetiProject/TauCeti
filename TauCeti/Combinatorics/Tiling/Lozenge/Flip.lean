@@ -14,9 +14,8 @@ import Mathlib.Tactic.FinCases
 The six faces round a vertex `v` form a unit hexagon, which has two tilings: the three edges
 `(v,3)`, `(v−e₁,1)`, `(v−e₂,2)` (`highFlipEdges v`) and the three edges `(v,1)`, `(v,2)`,
 `(v−e₃,3)` (`lowFlipEdges v`). A flip at `v` replaces one of these triples in a set of edges by the
-other; on a tiling, replacing the first by the second lowers the height at `v` by one. Each triple
-has one edge of each direction, so a flip removes one lozenge of each type and adds one of each
-type.
+other. Each triple has one edge of each direction, so a flip removes one lozenge of each type and
+adds one of each type.
 
 ## Main definitions
 
@@ -47,13 +46,11 @@ public section
 
 namespace TauCeti
 
-/-- The tiling `(v,3)`, `(v−e₁,1)`, `(v−e₂,2)` of the hexagon round `v`, the one with the higher
-height at `v`. -/
+/-- The tiling of the hexagon round `v` by the three edges `(v,3)`, `(v−e₁,1)`, `(v−e₂,2)`. -/
 def highFlipEdges (v : ℤ × ℤ) : Set TriEdge :=
   {⟨v, 2⟩, ⟨v - (1, 0), 0⟩, ⟨v - (0, 1), 1⟩}
 
-/-- The tiling `(v,1)`, `(v,2)`, `(v−e₃,3)` of the hexagon round `v`, the one with the lower height
-at `v`. -/
+/-- The tiling of the hexagon round `v` by the three edges `(v,1)`, `(v,2)`, `(v−e₃,3)`. -/
 def lowFlipEdges (v : ℤ × ℤ) : Set TriEdge :=
   {⟨v, 0⟩, ⟨v, 1⟩, ⟨v - (1, 1), 2⟩}
 
