@@ -8,13 +8,13 @@ module
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.Nullstellensatz
-import Mathlib.Algebra.MonoidAlgebra.Support
 import Mathlib.Data.Finset.Finsupp
 import Mathlib.Data.Finsupp.PWO
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.Tactic.Linarith
-import TauCeti.Data.Finsupp.WeightOrder
+import TauCeti.Data.Finsupp.Weight.Order
 import TauCeti.Order.WellQuasiOrder
+import TauCeti.RingTheory.MvPolynomial.Basic
 import TauCeti.RingTheory.MvPolynomial.LocalOrder
 import TauCeti.RingTheory.MvPolynomial.TaylorJet
 
@@ -48,18 +48,6 @@ public section
 open MvPolynomial Finset Finsupp Submodule Ideal
 
 namespace TauCeti
-
-/-- A submodule containing the unit monomials indexed by a polynomial's support contains it. -/
-private lemma mem_submodule_of_support {K ι : Type*} [CommSemiring K]
-    {p : MvPolynomial ι K} {N : Submodule K (MvPolynomial ι K)}
-    (h : ∀ α ∈ p.support, monomial α 1 ∈ N) : p ∈ N := by
-  have hp := AddMonoidAlgebra.mem_span_support_coeff p
-  rw [MvPolynomial.finsupp_support_eq_support p] at hp
-  refine Submodule.span_le.2 ?_ hp
-  rintro _ ⟨α, hα, rfl⟩
-  -- The monoid-algebra basis element is the polynomial monomial with coefficient one.
-  change monomial α 1 ∈ N
-  exact h α hα
 
 variable {K ι S : Type*} [Field K]
 

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.MonomialOrder
 public import Mathlib.Data.Finsupp.Weight
-import TauCeti.Data.Finsupp.Weight
+import TauCeti.Data.Finsupp.Weight.Basic
 import TauCeti.Geometry.Convex.Cone.Alternative
 
 /-!

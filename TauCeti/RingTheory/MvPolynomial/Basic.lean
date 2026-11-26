@@ -28,6 +28,8 @@ coefficients (`MvPolynomial.basisMonomials_repr_apply`).
 
 * `TauCeti.MvPolynomial.finite_map`: `MvPolynomial.map f` is finite when `f` is.
 * `MvPolynomial.basisMonomials_repr_apply`: coordinates in the monomial basis are coefficients.
+* `MvPolynomial.mem_submodule_of_support`: a submodule containing every unit monomial in the
+  support of a polynomial contains the polynomial.
 
 ## Provenance
 
@@ -45,6 +47,18 @@ namespace MvPolynomial
 theorem basisMonomials_repr_apply {σ R : Type*} [CommSemiring R] (p : MvPolynomial σ R)
     (s : σ →₀ ℕ) : (basisMonomials σ R).repr p s = p.coeff s :=
   (rfl)
+
+/-- A submodule containing the unit monomials indexed by a polynomial's support contains it. -/
+theorem mem_submodule_of_support {σ R : Type*} [CommSemiring R]
+    {p : MvPolynomial σ R} {N : Submodule R (MvPolynomial σ R)}
+    (h : ∀ α ∈ p.support, monomial α 1 ∈ N) : p ∈ N := by
+  have hp := AddMonoidAlgebra.mem_span_support_coeff p
+  rw [MvPolynomial.finsupp_support_eq_support p] at hp
+  refine Submodule.span_le.2 ?_ hp
+  rintro _ ⟨α, hα, rfl⟩
+  -- The monoid-algebra basis element is the polynomial monomial with coefficient one.
+  change monomial α 1 ∈ N
+  exact h α hα
 
 end MvPolynomial
 

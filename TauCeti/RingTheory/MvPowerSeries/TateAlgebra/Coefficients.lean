@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Finsupp.Weight
+public import TauCeti.Data.Finsupp.Weight.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Coefficients
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Real

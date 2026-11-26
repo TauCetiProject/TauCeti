@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Finiteness
-import TauCeti.Data.Finsupp.Weight
+import TauCeti.Data.Finsupp.Weight.Basic
 import Mathlib.Algebra.Group.Submonoid.Finsupp
 import Mathlib.Tactic.Positivity
 

@@ -20,7 +20,7 @@ import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.Data.ZMod.Basic
 import TauCeti.Algebra.Polynomial.Expand
 import TauCeti.Algebra.Polynomial.HasseDeriv
-import TauCeti.Data.Finsupp.Weight
+import TauCeti.Data.Finsupp.Weight.Basic
 
 /-!
 # The power substitution `F ↦ F(X, X ^ B)` and jets on the Frobenius graph

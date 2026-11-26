@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
-public import TauCeti.Data.Finsupp.Weight
+public import TauCeti.Data.Finsupp.Weight.Basic
 public import TauCeti.Algebra.Lie.LowerCentralSeries
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 

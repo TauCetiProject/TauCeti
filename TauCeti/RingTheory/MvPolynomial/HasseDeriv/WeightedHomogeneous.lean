@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
-public import TauCeti.Data.Finsupp.Weight
+public import TauCeti.Data.Finsupp.Weight.Basic
 
 /-!
 # Hasse derivatives of weighted homogeneous polynomials

@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.MvPowerSeries.Convolution
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 import Mathlib.Algebra.Order.Antidiag.Tendsto
 import TauCeti.Data.Finsupp.Sum
-import TauCeti.Data.Finsupp.Weight
+import TauCeti.Data.Finsupp.Weight.Basic
 
 /-!
 # Restricted series with coefficients in a normed module

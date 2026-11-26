@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Finsupp.SumProd
 public import TauCeti.Algebra.Homology.SquareZero
-public import TauCeti.Data.Finsupp.Weight
+public import TauCeti.Data.Finsupp.Weight.Basic
 public import TauCeti.RingTheory.MvPolynomial.ConstantCoeffReduction
 
 /-!

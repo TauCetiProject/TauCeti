@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Data.Finsupp.Weight
+public import TauCeti.Data.Finsupp.Weight.Basic
 public import Mathlib.Algebra.Module.Submodule.Bilinear
 public import Mathlib.Algebra.MvPolynomial.Funext
 public import Mathlib.Algebra.Order.Interval.Set.SuccPred

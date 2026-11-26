@@ -10,7 +10,7 @@ public import TauCeti.Algebra.MonoidAlgebra.Grading
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
-import TauCeti.Data.Finsupp.Weight
+import TauCeti.Data.Finsupp.Weight.Basic
 
 /-!
 # Hilbert functions of semigroup algebras and of their binomial presentations

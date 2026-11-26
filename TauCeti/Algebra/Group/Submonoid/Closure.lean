@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import Mathlib.Algebra.Group.Submonoid.Operations
 public import Mathlib.Algebra.Order.Monoid.Defs
 import Mathlib.Algebra.Group.Submonoid.Finsupp
-import TauCeti.Data.Finsupp.Weight
+import TauCeti.Data.Finsupp.Weight.Basic
 
 /-!
 # The additive closure of a family

@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 public import Mathlib.RingTheory.MvPowerSeries.LexOrder
 public import TauCeti.Algebra.MvPolynomial.Equiv
 public import TauCeti.Data.Finsupp.MapDomain
-public import TauCeti.Data.Finsupp.Weight
+public import TauCeti.Data.Finsupp.Weight.Basic
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 import Mathlib.Algebra.MvPolynomial.Polynomial
 
