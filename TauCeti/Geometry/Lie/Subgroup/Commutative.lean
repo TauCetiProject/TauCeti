@@ -60,6 +60,10 @@ subalgebra they generate by `TauCeti.Lie.lieSubalgebraOfSubgroup_induction`.
   commutative subgroup is the exponential image of its Lie algebra.
 * `TauCeti.Lie.mem_centralizer_iff_forall_Ad_apply_eq_self`: an element centralizes a closed
   preconnected subgroup exactly when its adjoint action fixes its Lie algebra pointwise.
+* `TauCeti.Lie.mul_mul_inv_mem_of_forall_Ad_mem`: conjugation by an element whose adjoint
+  action maps the Lie algebra of a closed preconnected subgroup into itself preserves the subgroup.
+* `TauCeti.Lie.Ad_inv_mem_of_forall_Ad_mem`: if `Ad g` maps `Lie(K)` into itself, so does
+  `Ad g⁻¹`.
 * `TauCeti.Lie.mem_normalizer_iff_forall_Ad_mem`: an element normalizes a closed preconnected
   subgroup exactly when its adjoint action maps its Lie algebra into itself.
 
@@ -142,6 +146,44 @@ theorem mem_centralizer_iff_forall_Ad_apply_eq_self {K : Subgroup G}
   have hk' := hle ⟨(⟨k, hk⟩ : K), d.subtypeVal_apply _⟩
   exact Subgroup.mem_centralizer_singleton_iff.mp hk'
 
+/-- **Conjugation by an element whose adjoint action preserves `Lie(K)` preserves `K`**: for a
+closed preconnected subgroup `K`, if `Ad a` maps `Lie(K)` into itself then `a * k * a⁻¹ ∈ K`
+for every `k ∈ K`. -/
+theorem mul_mul_inv_mem_of_forall_Ad_mem {K : Subgroup G}
+    (hK : IsClosed (K : Set G)) (hconn : IsPreconnected (K : Set G)) {a : G}
+    (ha : ∀ X ∈ lieSubalgebraOfSubgroup (I := I) K,
+      Ad (I := I) a X ∈ lieSubalgebraOfSubgroup (I := I) K) {k : G} (hk : k ∈ K) :
+    a * k * a⁻¹ ∈ K := by
+  obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK
+  let _ : ChartedSpace (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞ K := d.lieGroup
+  let _ : PreconnectedSpace K := isPreconnected_iff_preconnectedSpace.mp hconn
+  have hle : MonoidHom.range d.subtypeVal.toMonoidHom ≤ K.comap (MulAut.conj a).toMonoidHom := by
+    refine (d.subtypeVal.range_le_iff_forall_lieExp_mem _).mpr fun X ↦ ?_
+    rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply, conj_lieExp]
+    refine lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK (ha _ ?_)
+    simpa only [d.lieMapSubtypeVal_apply] using
+      d.lieMapSubtypeVal_mem_lieSubalgebraOfSubgroup X
+  exact hle ⟨(⟨k, hk⟩ : K), d.subtypeVal_apply _⟩
+
+/-- If `Ad g` maps `Lie(K)` into itself, then so does `Ad g⁻¹`: `Ad g` restricts to an
+injective, hence surjective, endomorphism of the finite-dimensional space `Lie(K)`. -/
+theorem Ad_inv_mem_of_forall_Ad_mem {K : Subgroup G} {g : G}
+    (h : ∀ X ∈ lieSubalgebraOfSubgroup (I := I) K,
+      Ad (I := I) g X ∈ lieSubalgebraOfSubgroup (I := I) K)
+    {X : LeftInvariantDerivation I G} (hX : X ∈ lieSubalgebraOfSubgroup (I := I) K) :
+    Ad (I := I) g⁻¹ X ∈ lieSubalgebraOfSubgroup (I := I) K := by
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  obtain ⟨Y, hY⟩ := LinearMap.surjective_of_injective (f := (Ad (I := I) g).toLinearMap.restrict
+      (p := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
+      (q := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) h)
+    (fun Y Z hYZ ↦ Subtype.ext <| (Ad (I := I) g).injective (congrArg Subtype.val hYZ)) ⟨X, hX⟩
+  have hYX : Ad (I := I) g Y = X := congrArg Subtype.val hY
+  rw [← hYX, Ad_inv, LieEquiv.symm_apply_apply]
+  exact Y.property
+
 /-- An element normalizes a closed preconnected subgroup `K` exactly when its adjoint action maps
 the subgroup's Lie algebra `Lie(K)` into itself. -/
 theorem mem_normalizer_iff_forall_Ad_mem {K : Subgroup G}
@@ -150,41 +192,10 @@ theorem mem_normalizer_iff_forall_Ad_mem {K : Subgroup G}
       ∀ X ∈ lieSubalgebraOfSubgroup (I := I) K, Ad (I := I) g X ∈ lieSubalgebraOfSubgroup (I := I) K
     := by
   refine ⟨fun hg X hX ↦ Ad_mem_lieSubalgebraOfSubgroup hg hX, fun h ↦ ?_⟩
-  obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hK
-  let _ : ChartedSpace (lieSubalgebraOfSubgroup (I := I) K).toSubmodule K := d.chartedSpace
-  let _ : LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) ∞ K := d.lieGroup
-  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-    finiteDimensional_leftInvariantDerivation
-      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  let _ : PreconnectedSpace K := isPreconnected_iff_preconnectedSpace.mp hconn
-  -- Conjugation by an element whose adjoint action preserves `Lie(K)` maps `K` into itself.
-  have hconj (a : G) (ha : ∀ X ∈ lieSubalgebraOfSubgroup (I := I) K,
-      Ad (I := I) a X ∈ lieSubalgebraOfSubgroup (I := I) K) {k : G} (hk : k ∈ K) :
-      a * k * a⁻¹ ∈ K := by
-    have hle : MonoidHom.range d.subtypeVal.toMonoidHom ≤ K.comap (MulAut.conj a).toMonoidHom := by
-      refine (d.subtypeVal.range_le_iff_forall_lieExp_mem _).mpr fun X ↦ ?_
-      rw [Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply, conj_lieExp]
-      refine lieExp_mem_of_mem_lieSubalgebraOfSubgroup hK (ha _ ?_)
-      simpa only [d.lieMapSubtypeVal_apply] using
-        d.lieMapSubtypeVal_mem_lieSubalgebraOfSubgroup X
-    exact hle ⟨(⟨k, hk⟩ : K), d.subtypeVal_apply _⟩
-  -- `Ad g` maps the finite-dimensional space `Lie(K)` injectively into itself, hence onto itself,
-  -- so `Ad g⁻¹` preserves `Lie(K)` as well.
-  have hsurj : Function.Surjective ((Ad (I := I) g).toLinearMap.restrict
-      (p := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
-      (q := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule) h) :=
-    LinearMap.surjective_of_injective fun X Y hXY ↦ Subtype.ext <|
-      (Ad (I := I) g).injective (congrArg Subtype.val hXY)
-  have hinv (X) (hX : X ∈ lieSubalgebraOfSubgroup (I := I) K) :
-      Ad (I := I) g⁻¹ X ∈ lieSubalgebraOfSubgroup (I := I) K := by
-    obtain ⟨Y, hY⟩ := hsurj ⟨X, hX⟩
-    have hYX : Ad (I := I) g Y = X := congrArg Subtype.val hY
-    rw [← hYX, Ad_inv, LieEquiv.symm_apply_apply]
-    exact Y.property
   rw [Subgroup.mem_normalizer_iff]
-  refine fun k ↦ ⟨hconj g h, fun hk ↦ ?_⟩
-  simpa [mul_assoc] using hconj g⁻¹ hinv hk
+  refine fun k ↦ ⟨mul_mul_inv_mem_of_forall_Ad_mem hK hconn h, fun hk ↦ ?_⟩
+  simpa [mul_assoc] using
+    mul_mul_inv_mem_of_forall_Ad_mem hK hconn (fun _ ↦ Ad_inv_mem_of_forall_Ad_mem h) hk
 
 /-- **The Lie algebra of the centralizer of `K` brackets to zero with `Lie(K)`**: for
 `X ∈ Lie(centralizer K)` and `Y ∈ Lie(K)`, `⁅X, Y⁆ = 0`. -/
