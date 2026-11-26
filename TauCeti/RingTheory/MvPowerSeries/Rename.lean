@@ -20,7 +20,8 @@ coefficient — together with one consequence of those comparisons: that reindex
 series along `unitSumUnitEquivFinTwo` carries an associativity identity with it. The second says
 where a renamed series *vanishes*: at every exponent that is nonzero at a variable outside the
 image of the renaming. The third is about two renamings at once — along embeddings with disjoint
-images, a common value forces both series to be the same constant. Finally, renaming along an
+images, a common value forces both series to be the same constant, and the coefficients of
+their product split along the two images. Finally, renaming along an
 equivalence moves each coefficient to the transported exponent, and so reindexes the weighted
 coefficient norms from which Gauss norms and restrictedness are computed.
 
@@ -63,6 +64,9 @@ reindexing the three-variable ambient ring as well, along
 * `MvPowerSeries.eq_C_of_rename_eq_rename` and
   `MvPowerSeries.right_eq_C_of_rename_eq_rename`: renamings along embeddings with disjoint images
   agree only when both series are the same constant.
+* `MvPowerSeries.coeff_embDomain_add_embDomain_rename_mul_rename`: along embeddings with disjoint
+  images, the coefficient of a product of renamings at an exponent split along the two images is
+  the product of the coefficients.
 
 ## Provenance
 
@@ -161,6 +165,41 @@ theorem right_eq_C_of_rename_eq_rename (hdisj : ∀ i j, e₁ i ≠ e₂ j)
     rw [← constantCoeff_rename (f := e₂) b, ← h, constantCoeff_rename]
   rw [← hconst]
   exact eq_C_of_rename_eq_rename (fun i j ↦ (hdisj j i).symm) h.symm
+
+variable (a b) in
+/-- **The coefficients of a product of renamings along embeddings with disjoint images** are
+products of coefficients: at the exponent `μ` carried to the image of `e₁` plus `ν` carried to the
+image of `e₂`, the coefficient of `rename e₁ a * rename e₂ b` is that of `a` at `μ` times that of
+`b` at `ν`. The only way to split this exponent between the two renamed series, both nonzero, is
+along the two images. -/
+theorem coeff_embDomain_add_embDomain_rename_mul_rename (hdisj : ∀ i j, e₁ i ≠ e₂ j)
+    (μ : σ₁ →₀ ℕ) (ν : σ₂ →₀ ℕ) :
+    coeff (μ.embDomain e₁ + ν.embDomain e₂) (rename e₁ a * rename e₂ b) =
+      coeff μ a * coeff ν b := by
+  classical
+  rw [coeff_mul, Finset.sum_eq_single (μ.embDomain e₁, ν.embDomain e₂)]
+  · rw [coeff_embDomain_rename, coeff_embDomain_rename]
+  · rintro ⟨p, q⟩ hpq hne
+    rw [Finset.mem_antidiagonal] at hpq
+    by_cases hp : p ∈ Set.range (mapDomain e₁)
+    · by_cases hq : q ∈ Set.range (mapDomain e₂)
+      · obtain ⟨s, rfl⟩ := hp
+        obtain ⟨t, rfl⟩ := hq
+        simp only [← embDomain_eq_mapDomain] at hpq hne
+        have h₁ : ∀ (x : σ₂ →₀ ℕ) i, x.embDomain e₂ (e₁ i) = 0 := fun x i ↦
+          embDomain_of_notMem_range _ _ _ fun ⟨j, hj⟩ ↦ hdisj i j hj.symm
+        have h₂ : ∀ (x : σ₁ →₀ ℕ) j, x.embDomain e₁ (e₂ j) = 0 := fun x j ↦
+          embDomain_of_notMem_range _ _ _ fun ⟨i, hi⟩ ↦ hdisj i j hi
+        have hs : s = μ := by
+          ext i
+          simpa [embDomain_apply_self, h₁] using congr($hpq (e₁ i))
+        have ht : t = ν := by
+          ext j
+          simpa [embDomain_apply_self, h₂] using congr($hpq (e₂ j))
+        exact (hne (by rw [hs, ht])).elim
+      · rw [coeff_rename_eq_zero _ _ hq, mul_zero]
+    · rw [coeff_rename_eq_zero _ _ hp, zero_mul]
+  · exact fun h ↦ (h (by simp)).elim
 
 end Disjoint
 

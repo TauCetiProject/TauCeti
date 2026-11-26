@@ -6,10 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
+public import Mathlib.RingTheory.PowerSeries.Derivative
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.NewtonPolynomial
 public import TauCeti.RingTheory.PowerSeries.Expand
 
 import Mathlib.Data.Multiset.Fintype
+import Mathlib.RingTheory.PowerSeries.Inverse
+import Mathlib.RingTheory.PowerSeries.WellKnown
+import TauCeti.Algebra.MvPolynomial.Coeff
+import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
+import TauCeti.RingTheory.PowerSeries.Derivative
 
 /-!
 # The multiplicative sequence of a power series
@@ -54,6 +61,18 @@ for even series, and the explicit polynomials `K₁`, `K₂` and `K₃`.
 * `PowerSeries.expand_mk_aeval_multiplicativeSequence`,
   `PowerSeries.aeval_multiset_esymm_sq_multiplicativeSequence`: for the even series `Q(t²)`,
   `∏_{x ∈ s} Q(x² t²)` is `∑ₖ Kₖ(e₁(s²), …, eₙ(s²)) t²ᵏ`, where `s²` is the multiset of squares.
+* `PowerSeries.map_multiplicativeSequence`: the multiplicative sequence is compatible with change
+  of coefficients.
+* `PowerSeries.multiplicativeSequence_one_add_X`: the multiplicative sequence of `1 + X` is
+  `Kₖ = eₖ`.
+* `PowerSeries.constantCoeff_multiplicativeSequence`: in positive degree `Kₖ` has no constant
+  term.
+* `PowerSeries.natCast_mul_multiplicativeSequence`: the Newton-type recursion
+  `m Kₘ = ∑_{a + b = m} Kₐ g_b s_b` when `Q G = X Q'`, where `s_b` is the Newton polynomial.
+* `TauCeti.coeff_single_newtonMvPolynomial`: the coefficient of `eₖ` in the Newton polynomial
+  `sₖ` is `(-1)ᵏ⁻¹ k`.
+* `PowerSeries.coeff_single_multiplicativeSequence`: for `Q(0) = 1`, the coefficient of `eₖ` in
+  `Kₖ` is `(-1)ᵏ⁻¹` times the coefficient of `tᵏ` in `t Q'(t) / Q(t)`.
 * `PowerSeries.multiplicativeSequence_one_right`, `PowerSeries.multiplicativeSequence_two_right`,
   `PowerSeries.multiplicativeSequence_three_right`: for `Q(0) = 1`, `K₁ = q₁ e₁`,
   `K₂ = q₂ e₁² + (q₁² - 2 q₂) e₂` and
@@ -377,5 +396,177 @@ theorem multiplicativeSequence_three_right (hQ : constantCoeff Q = 1) :
   simp [MvPolynomial.algebraMap_eq, Nat.mod_eq_of_lt (show 2 < n + 3 by omega)]
 
 end LowDegree
+
+section Map
+
+variable {S : Type*} [CommRing S]
+
+/-- **Change of coefficients**: changing the coefficients of the multiplicative sequence of `Q`
+along a ring homomorphism `f` gives the multiplicative sequence of the image of `Q`. -/
+@[simp]
+theorem map_multiplicativeSequence (f : R →+* S) :
+    MvPolynomial.map f (Q.multiplicativeSequence n k) = (Q.map f).multiplicativeSequence n k := by
+  refine eq_multiplicativeSequence_iff.2 ?_
+  have h : (MvPolynomial.aeval fun j : Fin n => MvPolynomial.esymm (Fin n) S (j + 1)).toRingHom.comp
+      (MvPolynomial.map f) =
+      (MvPolynomial.map f).comp
+        (MvPolynomial.aeval fun j : Fin n => MvPolynomial.esymm (Fin n) R (j + 1)).toRingHom := by
+    ext <;> simp [MvPolynomial.map_esymm]
+  have h' := congrArg (fun φ => φ (Q.multiplicativeSequence n k)) h
+  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at h'
+  rw [h', aeval_esymm_multiplicativeSequence, ← coeff_map, map_prod]
+  congr 1
+  refine Finset.prod_congr rfl fun i _ => ?_
+  ext m
+  simp [coeff_rescale, MvPolynomial.algebraMap_eq]
+
+end Map
+
+section Elementary
+
+variable {n}
+
+/-- **The multiplicative sequence of `1 + X`** is the sequence of elementary symmetric
+polynomials: since `∏ᵢ (1 + xᵢ t) = ∑ₖ eₖ tᵏ`, the polynomial `K_{i+1}` is the variable `i`, which
+stands for `e_{i+1}`. -/
+theorem multiplicativeSequence_one_add_X (i : Fin n) :
+    (1 + X : R⟦X⟧).multiplicativeSequence n (i + 1) = MvPolynomial.X i := by
+  refine (eq_multiplicativeSequence_iff.2 ?_).symm
+  have h : ∏ j : Fin n, rescale (MvPolynomial.X j)
+      ((1 + X : R⟦X⟧).map (algebraMap R (MvPolynomial (Fin n) R))) =
+      ∏ j : Fin n, (1 + C (MvPolynomial.X j) * X) :=
+    Finset.prod_congr rfl fun j _ => by simp
+  rw [MvPolynomial.aeval_X, h, ← TauCeti.mk_esymm_eq_prod_one_add_X (σ := Fin n) R, coeff_mk]
+
+end Elementary
+
+section Indecomposable
+
+/-! ### The indecomposable coefficient
+
+For `Q(0) = 1` write `t Q'(t) / Q(t) = ∑ₘ gₘ tᵐ`. Then `t F' = F · ∑ₘ gₘ pₘ tᵐ` for
+`F = ∏ᵢ Q(xᵢ t)`, where `pₘ` is the `m`-th power sum of the roots, so `m Kₘ = ∑ₐ Kₐ g_{m-a} N_{m-a}`
+with `N_b` the Newton polynomial. Taking the coefficient of the monomial `eₖ`, which is a
+derivation at `0` and kills all products of polynomials without constant term, gives
+`k c = gₖ d`, where `c` and `d` are the coefficients of `eₖ` in `Kₖ` and `Nₖ`. Applying this to
+`Q = 1 + X`, whose multiplicative sequence is `Kₖ = eₖ`, gives `d = (-1)ᵏ⁻¹ k`. The factor `k` is
+cancelled for the universal series over `ℤ[q₀, q₁, …]`, and the result is then specialized to
+any commutative ring. -/
+
+variable {Q n} {G : R⟦X⟧}
+
+/-- **Newton-type identity for the multiplicative sequence**: if `Q G = X Q'`, then
+`m Kₘ = ∑_{a + b = m} Kₐ g_b s_b`, where `s_b` is the Newton polynomial. -/
+theorem natCast_mul_multiplicativeSequence (hG : Q * G = X * d⁄dX Q) (m : ℕ) :
+    (m : MvPolynomial (Fin n) R) * Q.multiplicativeSequence n m =
+      ∑ p ∈ antidiagonal m, Q.multiplicativeSequence n p.1 *
+        (MvPolynomial.C (coeff p.2 G) * TauCeti.newtonMvPolynomial R n p.2) := by
+  have hs : (univ.val.map (MvPolynomial.X (R := R) (σ := Fin n))).card = n := by simp
+  refine MvPolynomial.aeval_multiset_esymm_X_injective R (Fintype.card_fin n).ge ?_
+  have h := congrArg (coeff m) (X_mul_derivative_multiset_prod_rescale hG
+    (univ.val.map (MvPolynomial.X (R := R) (σ := Fin n))))
+  rw [coeff_X_mul_derivative, coeff_mul] at h
+  have hK (k : ℕ) := aeval_multiset_esymm_multiplicativeSequence Q n k
+    (univ.val.map (MvPolynomial.X (R := R) (σ := Fin n))) hs
+  have hN (k : ℕ) := Multiset.aeval_esymm_newtonMvPolynomial (R := R) (k := k)
+    (univ.val.map (MvPolynomial.X (R := R) (σ := Fin n))) hs
+  simp only [map_mul, map_natCast, map_sum, MvPolynomial.aeval_C, hK, hN]
+  simpa only [coeff_mk] using h
+
+/-- In positive degree, the multiplicative sequence has no constant term. -/
+theorem constantCoeff_multiplicativeSequence {m : ℕ} (hm : m ≠ 0) :
+    MvPolynomial.constantCoeff (Q.multiplicativeSequence n m) = 0 := by
+  have h := aeval_multiset_esymm_multiplicativeSequence Q n m (Multiset.replicate n (0 : R))
+    (by simp)
+  simp only [Multiset.esymm_replicate_zero, Multiset.map_replicate, Multiset.prod_replicate,
+    rescale_zero_apply, ← map_pow, coeff_C, hm, ite_false] at h
+  simpa [← Pi.zero_def, MvPolynomial.aeval_zero] using h
+
+/-- If `Q(0) = 1` and `Q G = X Q'`, then `k` times the coefficient of `eₖ` in `Kₖ` is `gₖ` times
+the coefficient of `eₖ` in the Newton polynomial `sₖ`. -/
+private theorem natCast_mul_coeff_single_multiplicativeSequence (hQ : constantCoeff Q = 1)
+    (hG : Q * G = X * d⁄dX Q) (i : Fin n) :
+    ((i + 1 : ℕ) : R) * (Q.multiplicativeSequence n (i + 1)).coeff (Finsupp.single i 1) =
+      coeff (i + 1) G * (TauCeti.newtonMvPolynomial R n (i + 1)).coeff (Finsupp.single i 1) := by
+  have hG₀ : coeff 0 G = 0 := by
+    simpa [hQ] using congrArg constantCoeff hG
+  -- Every term `g_b s_b` has zero constant term.
+  have hcc (b : ℕ) : MvPolynomial.constantCoeff
+      (MvPolynomial.C (coeff b G) * TauCeti.newtonMvPolynomial R n b) = 0 := by
+    rcases eq_or_ne b 0 with rfl | hb
+    · simp [hG₀]
+    · simp [TauCeti.constantCoeff_newtonMvPolynomial hb]
+  have h := congrArg (fun p : MvPolynomial (Fin n) R => p.coeff (Finsupp.single i 1))
+    (natCast_mul_multiplicativeSequence hG (i + 1))
+  simp only [MvPolynomial.coeff_single_one_mul, MvPolynomial.coeff_sum, hcc, mul_zero,
+    zero_add] at h
+  rw [Finset.sum_eq_single ((0 : ℕ), (i : ℕ) + 1)] at h
+  · have h0 : (0 : Fin n →₀ ℕ) ≠ Finsupp.single i 1 := (Finsupp.single_ne_zero.2 one_ne_zero).symm
+    simpa [hQ, MvPolynomial.coeff_C_mul, MvPolynomial.coeff_one, h0] using h
+  · rintro ⟨a, b⟩ hab hne
+    have ha : a ≠ 0 := by
+      rintro rfl
+      exact hne (by simpa [eq_comm] using hab)
+    rw [constantCoeff_multiplicativeSequence ha, zero_mul]
+  · simp
+
+/-- The coefficient of `eₖ` in the Newton polynomial `sₖ` is `(-1)ᵏ⁻¹ k`. -/
+theorem _root_.TauCeti.coeff_single_newtonMvPolynomial (i : Fin n) :
+    (TauCeti.newtonMvPolynomial R n (i + 1)).coeff (Finsupp.single i 1) =
+      (-1) ^ (i : ℕ) * ((i + 1 : ℕ) : R) := by
+  -- `t (1 + t)' / (1 + t) = ∑_{m ≥ 1} (-1)ᵐ⁻¹ tᵐ`.
+  have hG : (1 + X : R⟦X⟧) * (X * rescale (-1) (mk 1)) = X * d⁄dX (1 + X : R⟦X⟧) := by
+    have h := congrArg (rescale (-1 : R)) (mk_one_mul_one_sub_eq_one (S := R))
+    simp only [map_mul, map_sub, map_one, rescale_X, map_neg, neg_mul, one_mul, sub_neg_eq_add] at h
+    rw [map_add, derivative_X, derivative_one, zero_add, mul_one]
+    linear_combination X * h
+  have h := natCast_mul_coeff_single_multiplicativeSequence (by simp) hG i
+  rw [multiplicativeSequence_one_add_X] at h
+  simp only [MvPolynomial.coeff_X, ↓reduceIte, mul_one] at h
+  rw [coeff_succ_X_mul, coeff_rescale, coeff_mk, Pi.one_apply, mul_one] at h
+  rw [h, ← mul_assoc, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+
+/-- **The indecomposable coefficient of a multiplicative sequence**: let `Q(0) = 1` and let
+`G = X Q' / Q` be the logarithmic derivative series, characterized by `Q G = X Q'`. Then, for
+`k = i + 1 ≤ n`, the coefficient of the monomial `eₖ` in `Kₖ` is `(-1)ᵏ⁻¹` times the coefficient
+of `Xᵏ` in `G`. Modulo products of lower elementary symmetric polynomials, `Kₖ` is therefore
+`(-1)ᵏ⁻¹ gₖ eₖ`. For an even characteristic series `L(X) = P(X²)`, the theorem is applied to `P`,
+not to `L`: the variable `i` then stands for `eₖ` of the squared roots, which is the Pontryagin
+class `pₖ`, so this computes Hirzebruch's coefficient `sₖ` of `pₖ`. -/
+theorem coeff_single_multiplicativeSequence (hQ : constantCoeff Q = 1) (hG : Q * G = X * d⁄dX Q)
+    (i : Fin n) :
+    (Q.multiplicativeSequence n (i + 1)).coeff (Finsupp.single i 1) =
+      (-1) ^ (i : ℕ) * coeff (i + 1) G := by
+  -- The universal series `1 + ∑ₘ qₘ Xᵐ⁺¹` over `ℤ[q₀, q₁, …]`, where `k` can be cancelled.
+  set Q₀ : (MvPolynomial ℕ ℤ)⟦X⟧ := 1 + X * mk MvPolynomial.X
+  have hQ₀ : constantCoeff Q₀ = 1 := by simp [Q₀]
+  set G₀ := X * d⁄dX Q₀ * invOfUnit Q₀ 1
+  have hG₀ : Q₀ * G₀ = X * d⁄dX Q₀ := by
+    rw [mul_comm, mul_assoc, mul_comm (invOfUnit Q₀ 1), mul_invOfUnit Q₀ 1 (by simp [hQ₀]),
+      mul_one]
+  have h₀ : (Q₀.multiplicativeSequence n (i + 1)).coeff (Finsupp.single i 1) =
+      (-1) ^ (i : ℕ) * coeff (i + 1) G₀ := by
+    have h := natCast_mul_coeff_single_multiplicativeSequence hQ₀ hG₀ i
+    rw [TauCeti.coeff_single_newtonMvPolynomial] at h
+    refine mul_left_cancel₀ (Nat.cast_ne_zero.2 (Nat.succ_ne_zero (i : ℕ))) ?_
+    rw [h]
+    ring
+  -- Specialize the universal series to `Q`.
+  set f : MvPolynomial ℕ ℤ →+* R :=
+    MvPolynomial.eval₂Hom (Int.castRingHom R) fun m => coeff (m + 1) Q
+  have hf : Q₀.map f = Q := by
+    ext m
+    rcases m with _ | m
+    · simp [Q₀, hQ]
+    · simp [Q₀, f, coeff_succ_X_mul]
+  have hGf : G₀.map f = G := by
+    refine (isUnit_iff_constantCoeff.2 (hQ ▸ isUnit_one)).mul_left_cancel ?_
+    rw [hG, ← hf, ← map_mul, hG₀, map_mul, map_X, derivative_map]
+  have h := congrArg f h₀
+  rw [← MvPolynomial.coeff_map, map_multiplicativeSequence, hf, map_mul, map_pow, map_neg,
+    map_one, ← coeff_map, hGf] at h
+  exact h
+
+end Indecomposable
 
 end PowerSeries

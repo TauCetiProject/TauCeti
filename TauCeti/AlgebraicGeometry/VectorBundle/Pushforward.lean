@@ -15,6 +15,7 @@ import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Tilde.Pushforward
+import TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal
 import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Basic
 import TauCeti.AlgebraicGeometry.VectorBundle.OpenCover
 
@@ -244,8 +245,6 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isFinite_and_flat_and_locallyOfFinit
   refine ⟨fun ⟨_, _, _⟩ ↦ ⟨inferInstance, isFiniteLocallyFree_pushforward_unit f⟩,
     fun ⟨_, h⟩ ↦ ?_⟩
   let 𝒰 := Y.affineCover
-  have : IsZariskiLocalAtTarget @IsIntegralHom.{u} :=
-    @HasAffineProperty.instIsZariskiLocalAtTarget _ _ IsIntegralHom.hasAffineProperty
   have : IsZariskiLocalAtTarget @LocallyOfFiniteType.{u} :=
     HasRingHomProperty.instIsZariskiLocalAtTarget _ (Q := @RingHom.FiniteType)
   have : IsZariskiLocalAtTarget @Flat.{u} :=

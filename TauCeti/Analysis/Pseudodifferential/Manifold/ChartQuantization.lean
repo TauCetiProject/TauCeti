@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
+import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -49,6 +50,9 @@ on the overlap and vanishes off it
 
 * `OpenPartialHomeomorph.isProperlySupported_chartQuantization`: a chart quantization is properly
   supported.
+* `OpenPartialHomeomorph.chartQuantization_eq_mulLeft_comp_comp_mulLeft`: localization, the chart
+  quantization of the symbol of a chart compression of `P` by `φ` and `ψ` is `φ P ψ`, with the
+  cutoffs read on `M`.
 * `OpenPartialHomeomorph.exists_complexChartCompression_chartQuantization_eq`: the compression of a
   chart quantization in any chart is the quantization of a classical symbol of the same order, with
   principal symbol transformed by the cotangent map of the transition map.
@@ -157,25 +161,86 @@ theorem tsupport_chartQuantization_subset (φ ψ : 𝓓(⟨e.target, e.open_targ
     tsupport (e.chartQuantization he φ ψ a u) ⊆ e.symm '' tsupport φ :=
   tsupport_complexCutoffPullback_subset he φ _
 
-/-- **Chart quantizations are properly supported.** For every compact set, one may take
-`K' = e⁻¹(supp φ) ∪ e⁻¹(supp ψ)`: the output is always supported in `e⁻¹(supp φ)`, and it vanishes
-when the input vanishes near `e⁻¹(supp ψ)`. -/
-theorem isProperlySupported_chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    (a : ClassicalSymbol n ℂ ℂ m) : IsProperlySupported (e.chartQuantization he φ ψ a) := by
-  refine isProperlySupported_iff.2 fun _ _ ↦ ⟨e.symm '' tsupport φ ∪ e.symm '' tsupport ψ,
-    (e.isCompact_symm_image_tsupport φ).union (e.isCompact_symm_image_tsupport ψ),
-    fun u _ ↦ (tsupport_chartQuantization_subset he φ ψ a u).trans subset_union_left,
-    fun u hu p _ ↦ ?_⟩
-  -- If `u` vanishes near `e⁻¹(supp ψ)`, then `ψ · (u ∘ e⁻¹)` is the zero function.
+/-- The chart quantization only sees its input on the image of the support of `ψ` under the
+inverse of the chart: it vanishes on every input vanishing there. -/
+theorem chartQuantization_eq_zero (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (a : ClassicalSymbol n ℂ ℂ m) {u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hu : ∀ p ∈ e.symm '' tsupport ψ, u p = 0) : e.chartQuantization he φ ψ a u = 0 := by
+  -- Since `u` vanishes on `e⁻¹(supp ψ)`, the function `ψ · (u ∘ e⁻¹)` is zero.
   have hv (y : CoordinateSpace n) : (0 : 𝓢(CoordinateSpace n, ℂ)) y = ψ y • u (e.symm y) := by
     by_cases hy : y ∈ tsupport ψ
-    · rw [(hu.filter_mono (nhdsSet_mono subset_union_right)).self_of_nhdsSet _
-        (mem_image_of_mem _ hy), smul_zero, zero_apply]
+    · rw [hu _ (mem_image_of_mem _ hy), smul_zero, zero_apply]
     · rw [image_eq_zero_of_notMem_tsupport hy, zero_smul, zero_apply]
+  ext p
+  rw [ContMDiffMap.coe_zero, Pi.zero_apply]
   by_cases hp : p ∈ e.source
   · rw [chartQuantization_apply_of_mem he φ ψ a u hv hp, quantizeSchwartzValue_zero_right,
       smul_zero]
   · exact chartQuantization_apply_of_notMem he φ ψ a u hp
+
+/-- **Chart quantizations are properly supported.** For every compact set, one may take
+`K' = e⁻¹(supp φ) ∪ e⁻¹(supp ψ)`: the output is always supported in `e⁻¹(supp φ)`, and it vanishes
+when the input vanishes near `e⁻¹(supp ψ)`. -/
+theorem isProperlySupported_chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (a : ClassicalSymbol n ℂ ℂ m) : IsProperlySupported (e.chartQuantization he φ ψ a) :=
+  isProperlySupported_iff.2 fun _ _ ↦ ⟨e.symm '' tsupport φ ∪ e.symm '' tsupport ψ,
+    (e.isCompact_symm_image_tsupport φ).union (e.isCompact_symm_image_tsupport ψ),
+    fun u _ ↦ (tsupport_chartQuantization_subset he φ ψ a u).trans subset_union_left,
+    fun u hu p _ ↦ by
+      rw [chartQuantization_eq_zero he φ ψ a fun q hq ↦
+        (hu.filter_mono (nhdsSet_mono subset_union_right)).self_of_nhdsSet q hq,
+        ContMDiffMap.coe_zero, Pi.zero_apply]⟩
+
+/-! ### Localization -/
+
+section Localization
+
+variable {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+  C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+
+/-- **Localization.** Let `a` be the symbol of the chart compression of an operator `P` by cutoffs
+`φ` and `ψ` in a chart `e`. For cutoffs `φ₁` and `ψ₁` equal to `1` on the supports of `φ` and
+`ψ`, the chart quantization of `a` localized by `φ₁` and `ψ₁` is `u ↦ φ · P (ψ u)`, where `φ` and
+`ψ` are read on `M` through the chart and extended by `0`. -/
+theorem chartQuantization_eq_mulLeft_comp_comp_mulLeft {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    {a : ClassicalSymbol n ℂ ℂ m}
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u x =
+        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x)
+    {φ₁ ψ₁ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hφ₁ : EqOn φ₁ 1 (tsupport φ))
+    (hψ₁ : EqOn ψ₁ 1 (tsupport ψ)) :
+    e.chartQuantization he φ₁ ψ₁ a =
+      LinearMap.mulLeft ℂ (e.complexCutoffPullback he φ 1) ∘ₗ P ∘ₗ
+        LinearMap.mulLeft ℂ (e.complexCutoffPullback he ψ 1) := by
+  ext u p
+  -- The input `ψ₁ · (u ∘ e⁻¹)` of `Op(a)`, as a Schwartz function.
+  set v := cutoffPushforwardSchwartz he ψ₁ u
+  have hv (y : CoordinateSpace n) : v y = ψ₁ y • u (e.symm y) :=
+    cutoffPushforwardSchwartz_apply he ψ₁ u y
+  -- Read on `M`, the pullback of `v` by `ψ` is `ψ u`, since `ψ₁ = 1` on the support of `ψ`.
+  have hpull : e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff v (v.smooth ⊤)) =
+      e.complexCutoffPullback he ψ 1 * u := by
+    ext q
+    by_cases hq : q ∈ e.source
+    · have h := mul_complexCutoffPullback_apply_of_eq_smul he ψ (g := 1)
+        (hψ₁.mono inter_subset_left) (f := ContMDiffMap.ofContDiff v (v.smooth ⊤))
+        (fun y ↦ by rw [ContMDiffMap.coe_ofContDiff, hv]) hq
+      rw [Pi.one_apply, one_mul, one_mul, e.left_inv hq] at h
+      rw [h, ContMDiffMap.coe_mul, Pi.mul_apply, complexCutoffPullback_apply_of_mem he _ _ hq,
+        ContMDiffMap.coe_one, Pi.one_apply, smul_one_mul]
+    · simp [complexCutoffPullback_apply_of_notMem he _ _ hq]
+  by_cases hp : p ∈ e.source
+  · rw [chartQuantization_apply_of_mem he φ₁ ψ₁ a u hv hp, ha, complexChartCompression_apply,
+      e.left_inv hp, hpull]
+    simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+      complexCutoffPullback_apply_of_mem he _ _ hp, ContMDiffMap.coe_one, Pi.one_apply,
+      smul_one_mul]
+    exact smul_eq_right_of_ne_zero_imp_eq_one fun h ↦
+      hφ₁ (subset_tsupport _ (left_ne_zero_of_smul h))
+  · simp [chartQuantization_apply_of_notMem he _ _ a u hp,
+      complexCutoffPullback_apply_of_notMem he _ _ hp]
+
+end Localization
 
 /-! ### Compressions of a chart quantization -/
 

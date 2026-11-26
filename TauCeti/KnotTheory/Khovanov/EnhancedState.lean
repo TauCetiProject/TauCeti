@@ -136,6 +136,23 @@ theorem labelingQuantumDegree_eq (l : ι → Bool) :
     Finset.cast_card, ← Finset.sum_sub_distrib]
   exact Finset.sum_congr rfl fun i _ ↦ by cases l i <;> simp
 
+/-- The only labelling of lowest quantum degree `-k` labels every circle by `X`. -/
+theorem labelingQuantumDegree_eq_neg_card_iff (l : ι → Bool) :
+    labelingQuantumDegree ι l = -Fintype.card ι ↔ l = fun _ ↦ true := by
+  rw [labelingQuantumDegree_eq, funext_iff]
+  refine ⟨fun h i ↦ ?_, fun h ↦ by simp [h]; ring⟩
+  have hcard : #{i | l i = true} = Fintype.card ι := by omega
+  exact Finset.filter_eq_self.1 (Finset.eq_univ_of_card _ hcard) i (Finset.mem_univ i)
+
+/-- The only labelling of highest quantum degree `k` labels every circle by `1`. -/
+theorem labelingQuantumDegree_eq_card_iff (l : ι → Bool) :
+    labelingQuantumDegree ι l = Fintype.card ι ↔ l = fun _ ↦ false := by
+  rw [labelingQuantumDegree_eq, funext_iff]
+  refine ⟨fun h i ↦ ?_, fun h ↦ by simp [h]⟩
+  have hcard : #{i | l i = true} = 0 := by omega
+  rw [Finset.card_eq_zero, Finset.filter_eq_empty_iff] at hcard
+  simpa using hcard (Finset.mem_univ i)
+
 /-- The quantum degree of a labelling of `k` circles lies between `-k` and `k`. -/
 theorem abs_labelingQuantumDegree_le (l : ι → Bool) :
     |labelingQuantumDegree ι l| ≤ Fintype.card ι := by
