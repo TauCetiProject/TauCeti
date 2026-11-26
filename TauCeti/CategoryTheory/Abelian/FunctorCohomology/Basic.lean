@@ -95,8 +95,9 @@ lemma Functor.CorepresentableBy.freeHomAddEquiv_apply {Y : C ⥤ Type w} {A : C}
   (rfl)
 
 /-- The morphism `ℤ[Y] ⟶ F` corresponding to `g ∈ F(A)` sends the generator of `y ∈ Y(c)`, the
-image of a morphism `A ⟶ c`, to the image of `g` under that morphism. -/
-@[simp]
+image of a morphism `A ⟶ c`, to the image of `g` under that morphism. Not a `simp` lemma: its
+left-hand side is not in simp normal form, since `simp` rewrites the type of `FreeAddCommGroup.of y`
+through `Functor.comp_obj`. -/
 lemma Functor.CorepresentableBy.freeHomAddEquiv_symm_apply_app_of {Y : C ⥤ Type w} {A : C}
     (e : Y.CorepresentableBy A) (F : C ⥤ AddCommGrpCat.{w}) (g : F.obj A) {c : C} (y : Y.obj c) :
     ((e.freeHomAddEquiv F).symm g).app c (FreeAddCommGroup.of y) = F.map (e.homEquiv.symm y) g := by
