@@ -33,8 +33,8 @@ If a subring `S` of `B` is integrally closed in `B`, then its preimage under a r
 homomorphism carries an integrally closed subring containing its kernel to an integrally closed
 subring: lift a monic integral equation, whose evaluation then lies in the kernel.
 
-An irreducible element of an integrally closed domain is not a square in its fraction field: a
-square root there is integral, so it lies in the ring, where `Irreducible.not_isSquare` applies.
+An element of an integrally closed domain is a square in its fraction field exactly when it is a
+square in the ring: a square root in the fraction field is integral, so it lies in the ring.
 
 In an integrally closed domain, if `b ^ e = u ϖ ^ e` with `ϖ ≠ 0` and `e ≠ 0`, then `ϖ` divides
 `b` (Mathlib's `IsIntegrallyClosed.pow_dvd_pow_iff`) and the quotient `b / ϖ` is an `e`-th root
@@ -66,8 +66,8 @@ of `u`.
   every element some positive power of which it contains.
 * `TauCeti.exists_eq_mul_of_pow_eq_mul_pow`: in an integrally closed domain, an `e`-th root `b`
   of `u ϖ ^ e` gives an `e`-th root `b / ϖ` of `u`.
-* `Irreducible.not_isSquare_algebraMap`: an irreducible element of an integrally closed domain
-  is not a square in its fraction field.
+* `IsIntegrallyClosed.isSquare_algebraMap_iff`: an element of an integrally closed domain is a
+  square in its fraction field if and only if it is a square in the ring.
 * `Subring.perfectRing_of_isIntegrallyClosedIn`: a subring integrally closed in a perfect ring is
   perfect.
 * `Function.LeftInverse.isIntegrallyClosed_of_nonZeroDivisors_le` and
@@ -323,13 +323,13 @@ theorem exists_eq_mul_of_pow_eq_mul_pow {ϖ u b : R} (hϖ : ϖ ≠ 0) {e : ℕ} 
 
 end TauCeti
 
-/-- An irreducible element of an integrally closed domain is not a square in its fraction field:
-a square root would be integral, hence a square root in the ring itself. -/
-theorem Irreducible.not_isSquare_algebraMap {R : Type*} [CommRing R] [IsIntegrallyClosed R]
-    (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] {ϖ : R} (hϖ : Irreducible ϖ) :
-    ¬ IsSquare (algebraMap R K ϖ) := by
-  rintro ⟨x, hx⟩
-  obtain ⟨y, rfl⟩ := IsIntegrallyClosed.exists_algebraMap_eq_of_isIntegral_pow (R := R) (x := x)
-    two_pos (by rw [sq, ← hx]; exact isIntegral_algebraMap)
-  rw [← map_mul, (IsFractionRing.injective R K).eq_iff] at hx
-  exact hϖ.not_isSquare ⟨y, hx⟩
+/-- An element of an integrally closed domain is a square in its fraction field if and only if it
+is a square in the ring: a square root in the fraction field is integral, hence lies in the ring. -/
+theorem IsIntegrallyClosed.isSquare_algebraMap_iff {R : Type*} [CommRing R] [IsIntegrallyClosed R]
+    (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] {x : R} :
+    IsSquare (algebraMap R K x) ↔ IsSquare x := by
+  refine ⟨fun ⟨r, hr⟩ ↦ ?_, fun h ↦ h.map (algebraMap R K)⟩
+  obtain ⟨y, rfl⟩ := IsIntegrallyClosed.exists_algebraMap_eq_of_isIntegral_pow (R := R) (x := r)
+    two_pos (by rw [sq, ← hr]; exact isIntegral_algebraMap)
+  rw [← map_mul, (IsFractionRing.injective R K).eq_iff] at hr
+  exact ⟨y, hr⟩

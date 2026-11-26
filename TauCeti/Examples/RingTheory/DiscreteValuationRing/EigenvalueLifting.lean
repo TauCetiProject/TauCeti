@@ -191,7 +191,7 @@ theorem not_exists_companion_baseChange_fractionRing_eq_smul [IsIntegrallyClosed
     ¬ ∃ (c : K) (v : K ⊗[O] (Fin 2 → O)), v ≠ 0 ∧
       (toLin' !![0, ϖ; 1, 0]).baseChange K v = c • v := by
   rintro ⟨c, v, hv0, hv⟩
-  exact hϖ.not_isSquare_algebraMap K
+  exact (IsIntegrallyClosed.isSquare_algebraMap_iff K).not.2 hϖ.not_isSquare
     ⟨c, by rw [← sq_eq_of_companion_baseChange_eq_smul ϖ hv0 hv, sq]⟩
 
 /-- Over an `O`-algebra `A` containing a square root `α` of `ϖ`, the vector `(α, 1)` is an
@@ -229,7 +229,7 @@ theorem not_isSeparable_of_companion_baseChange_eq_smul [IsIntegrallyClosed O]
   rw [hc, adjoin_simple_eq_bot_iff.2 (IntermediateField.algebraMap_mem _ _)] at h
   obtain ⟨y, rfl⟩ := mem_bot.1 (h ▸ mem_adjoin_simple_self K c)
   rw [← map_pow, (algebraMap K L).injective.eq_iff] at hc
-  exact hϖ.not_isSquare_algebraMap K ⟨y, by rw [← hc, sq]⟩
+  exact hϖ.not_isSquare ((IsIntegrallyClosed.isSquare_algebraMap_iff K).1 ⟨y, by rw [← hc, sq]⟩)
 
 /-- For `O = 𝔽₂⟦t⟧` and `ϖ = t`, an eigenvalue `c` of the companion operator `[[0, t], [1, 0]]`
 over a field `L` containing the fraction field `K` generates a nontrivial purely inseparable
@@ -268,7 +268,7 @@ example [IsDomain O] [IsDiscreteValuationRing O] (K : Type*) [Field K] [Algebra 
   refine ⟨L, V, ‹_›, b (), hb2, ?_, by simp [(hb ()).2]⟩
   rintro ⟨y, hy⟩
   rw [← hy, ← map_pow, (algebraMap K L).injective.eq_iff] at hb2
-  exact hϖ.not_isSquare_algebraMap K ⟨y, by rw [← hb2, sq]⟩
+  exact hϖ.not_isSquare ((IsIntegrallyClosed.isSquare_algebraMap_iff K).1 ⟨y, by rw [← hb2, sq]⟩)
 
 end Companion
 
