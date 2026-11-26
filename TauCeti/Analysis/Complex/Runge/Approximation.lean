@@ -383,14 +383,16 @@ theorem IsRungeCompactPair.exists_differentiableOn_iteratedDeriv_eq_and_norm_sub
     P.differentiableOn.add (Qp.differentiableOn.mul hG), fun a ha k hk ↦ ?_, fun z hz ↦ ?_⟩
   · have hat : a ∈ t := hs.mem_toFinset.mpr ha
     have haΩ : a ∈ Ω := hRunge.subset (hsK ha)
-    have hQG_an : AnalyticAt ℂ (fun z ↦ Qp.eval z * G z) a :=
-      (Qp.differentiable.analyticAt a).mul (hG.analyticAt (hRunge.isOpen.mem_nhds haΩ))
+    have hQp_an : AnalyticAt ℂ (fun z ↦ Qp.eval z) a := Qp.differentiable.analyticAt a
+    have hG_an : AnalyticAt ℂ G a := hG.analyticAt (hRunge.isOpen.mem_nhds haΩ)
+    have hQG_an : AnalyticAt ℂ (fun z ↦ Qp.eval z * G z) a := hQp_an.mul hG_an
+    have hQp_eq : (fun z ↦ Qp.eval z) = ∏ x ∈ t, (· - x) ^ m x := by
+      ext z
+      simp [Qp, eval_prod]
     have hQG_ord : (m a : ℕ∞) ≤ analyticOrderAt (fun z ↦ Qp.eval z * G z) a := by
-      refine hQG_an.natCast_le_analyticOrderAt_of_eventually_eq_pow_smul
-        (((∏ x ∈ t.erase a, (X - C x) ^ m x).differentiable.continuous.continuousAt).mul
-          (hG.analyticAt (hRunge.isOpen.mem_nhds haΩ)).continuousAt) (.of_forall fun z ↦ ?_)
-      simp only [Qp, eval_prod, eval_pow, eval_sub, eval_X, eval_C, smul_eq_mul, Pi.mul_apply]
-      rw [← Finset.mul_prod_erase t _ hat, mul_assoc]
+      rw [analyticOrderAt_fun_mul hQp_an hG_an, hQp_eq, analyticOrderAt_prod_sub_pow,
+        ite_eq_left hat]
+      exact le_self_add
     have hQG_zero : iteratedDeriv k (fun z ↦ Qp.eval z * G z) a = 0 :=
       (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hQG_an).mp hQG_ord k hk
     change iteratedDeriv k ((fun z ↦ P.eval z) + fun z ↦ Qp.eval z * G z) a = _
