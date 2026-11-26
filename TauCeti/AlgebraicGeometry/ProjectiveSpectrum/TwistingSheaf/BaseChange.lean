@@ -169,11 +169,9 @@ private theorem theta_tmul (k j : ℕ) (h : (j : ℤ) = (k * d : ℕ) + n) (s : 
   TensorProduct.liftAddHom_tmul ..
 
 /-- Multiplication by `aᴺ`, from `𝒜ⱼ` to `𝒜_J`, `J = N d + j`. -/
-private def mulPow (N j J : ℕ) (hJ : N * d + j = J) : 𝒜 j →ₗ[R] 𝒜 J where
-  toFun x := ⟨a ^ N * x, hJ ▸ SetLike.mul_mem_graded
-    (by simpa [mul_comm] using SetLike.pow_mem_graded N ha) x.property⟩
-  map_add' x x' := Subtype.ext (mul_add _ _ _)
-  map_smul' r x := Subtype.ext (mul_smul_comm r _ (x : A))
+private def mulPow (N j J : ℕ) (hJ : N * d + j = J) : 𝒜 j →ₗ[R] 𝒜 J :=
+  (LinearEquiv.ofEq _ _ (congrArg 𝒜 hJ)).toLinearMap ∘ₗ DirectSum.gMulLHom R (fun i ↦ 𝒜 i)
+    ⟨a ^ N, by simpa [mul_comm] using SetLike.pow_mem_graded N ha⟩
 
 /-- Raising the denominator `aᵏ` to `aᵏ⁺ᴺ` does not change the elements `∑ s ⊗ r / aᵏ`. -/
 private theorem theta_mulPow (k j N J K : ℕ) (h : (j : ℤ) = (k * d : ℕ) + n)
@@ -202,7 +200,9 @@ private theorem coe_liftBaseChange_mulPow (N j J : ℕ) (hJ : N * d + j = J)
   | add t t' ht ht' => simp only [map_add, Submodule.coe_add, ht, ht', mul_add]
   | tmul s x =>
     simp only [LinearMap.baseChange_tmul, LinearMap.liftBaseChange_tmul, Submodule.coe_smul, hφ,
-      mulPow, LinearMap.coe_mk, AddHom.coe_mk, map_mul, map_pow, mul_smul_comm]
+      mul_smul_comm]
+    -- The graded product `gMulLHom` computes the product `aᴺ x` of representatives in `A`.
+    rw [show ((mulPow ha N j J hJ x : 𝒜 J) : A) = a ^ N * x from rfl, map_mul, map_pow]
 
 omit [Algebra Γ(Proj 𝒜, basicOpen 𝒜 a) Γ(Proj ℬ, basicOpen ℬ (f a))] in
 include hφ in
