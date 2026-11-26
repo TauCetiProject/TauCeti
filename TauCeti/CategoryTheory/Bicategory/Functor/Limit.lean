@@ -40,14 +40,17 @@ Mathematically, the products `TauCeti.Stack.pi` and the 2-fiber products
 discrete category and over a cospan; this file does not compare them. The construction uses no
 topology.
 
-The fibers of `limit D` contain, besides the objects of the fibers of the `D i`, families indexed
-by `I` and by its morphisms, and their morphisms are families indexed by `I`. The construction is
-therefore stated for diagrams with values in `Cat.{w, max w u'}` for `I : Type w`, so that
-`limit D` takes values in the same bicategory as the `D i`; this includes the big site of schemes,
-with `I` in the universe of the schemes and values in `Cat.{u, u + 1}`. For the same reason the
-fiber is not taken to be the category of strong transformations from the constant pseudofunctor at
-the point: its morphisms, modifications of `Cat`-valued strong transformations, would lie in the
-universe of the objects of the fibers.
+The fibers of `limit D` contain, besides the objects and morphisms of the fibers of the `D i`,
+families indexed by `I` and by its morphisms, and their morphisms are families indexed by `I`. The
+construction is therefore stated for diagrams with values in `Cat.{max w v', max w v' z}` for
+`I : Type w`, so that `limit D` takes values in the same bicategory as the `D i`. This includes the
+big site of schemes, with `I` in the universe `u` of the schemes and values in `Cat.{u, u + 1}`
+(`limit.{u, u + 1, u}`), as well as finite diagrams with values in `Cat.{u, u + 1}`
+(`limit.{0, u + 1, u}`); the universes have to be given explicitly there, since the elaborator
+does not solve the constraints on `max`. For the same reason the fiber is not taken to be the
+category of strong transformations from the constant pseudofunctor at the point: its morphisms,
+modifications of `Cat`-valued strong transformations, would lie in the universe of the objects of
+the fibers.
 
 ## Main declarations
 
@@ -72,15 +75,18 @@ universe of the objects of the fibers.
 open CategoryTheory Bicategory Opposite
 open scoped Pseudofunctor.StrongTrans
 
-universe w u' v u
+-- The universe of the objects of the fibers is named `z` so that it comes after `v'` and `w` in
+-- the order in which Lean normalizes `max w v' z`: with a name coming before them, unifying
+-- `max w v' ?z` with `max w v' z` gets stuck at every use of `D`.
+universe w z v' v u
 
-@[expose] public section
+public section
 
 namespace TauCeti.Stack
 
 variable {C : Type u} [Category.{v} C] {I : Type w} [SmallCategory I]
   (D : Pseudofunctor (LocallyDiscrete I)
-    (Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{w, max w u'}))
+    (Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w v' z}))
 
 namespace limit
 
@@ -151,7 +157,7 @@ lemma transitionCompIso_naturality {i j k : I} (f : i ⟶ j) (g : j ⟶ k) {T T'
 /-- An object of the fiber over `T` of the pseudo-limit of `D`: a family of objects `obj i` of the
 fibers over `T` of the `D i`, with isomorphisms `iso f : D(f) (obj i) ≅ obj j` for `f : i ⟶ j`,
 compatible with the unit and composition comparisons of `D`. -/
-structure Fiber (T : Cᵒᵖ) : Type (max w u') where
+structure Fiber (T : Cᵒᵖ) : Type (max w v' z) where
   /-- The component in the fiber of `D i` over `T`. -/
   obj (i : I) : (D.obj (.mk i)).obj (.mk T)
   /-- The transition isomorphism along `f : i ⟶ j`. -/
@@ -200,7 +206,6 @@ lemma comp_hom {x y z : Fiber D T} (φ : x ⟶ y) (ψ : y ⟶ z) (i : I) :
 
 /-- An isomorphism in the fiber over `T`, from isomorphisms of the components compatible with the
 transition isomorphisms. -/
-@[simps]
 def isoMk {x y : Fiber D T} (e : ∀ i, x.obj i ≅ y.obj i)
     (comm : ∀ ⦃i j : I⦄ (f : i ⟶ j),
       (transition D f T).map (e i).hom ≫ (y.iso f).hom = (x.iso f).hom ≫ (e j).hom) :
@@ -212,6 +217,22 @@ def isoMk {x y : Fiber D T} (e : ∀ i, x.obj i ≅ y.obj i)
         rw [← cancel_epi ((transition D f T).map (e i).hom), ← Functor.map_comp_assoc,
           Iso.hom_inv_id, Functor.map_id, Category.id_comp, reassoc_of% (comm f),
           Iso.hom_inv_id, Category.comp_id] }
+
+section isoMk
+
+variable {x y : Fiber D T} (e : ∀ i, x.obj i ≅ y.obj i)
+  (comm : ∀ ⦃i j : I⦄ (f : i ⟶ j),
+    (transition D f T).map (e i).hom ≫ (y.iso f).hom = (x.iso f).hom ≫ (e j).hom)
+
+@[simp]
+lemma isoMk_hom_hom (i : I) : (isoMk e comm).hom.hom i = (e i).hom :=
+  (rfl)
+
+@[simp]
+lemma isoMk_inv_hom (i : I) : (isoMk e comm).inv.hom i = (e i).inv :=
+  (rfl)
+
+end isoMk
 
 /-- A morphism of the fiber over `T` whose components are isomorphisms is an isomorphism. -/
 lemma isIso_of_isIso_hom {x y : Fiber D T} (φ : x ⟶ y) [∀ i, IsIso (φ.hom i)] : IsIso φ :=
@@ -229,7 +250,7 @@ are the pullbacks along `a` of the components, and its transition isomorphisms a
 of the transition isomorphisms, conjugated by the naturality isomorphisms of the `D f`. -/
 -- Reducible so that the components and transition isomorphisms of a pullback are seen by `rw`
 -- and `simp` as those of the original object, pulled back.
-@[reducible, simps]
+@[expose, reducible, simps]
 def mapObj {T T' : Cᵒᵖ} (a : T ⟶ T') (x : Fiber D T) : Fiber D T' where
   obj i := ((D.obj (.mk i)).map a.toLoc).toFunctor.obj (x.obj i)
   iso {i j} f := (Cat.Hom.toNatIso ((D.map f.toLoc).naturality a.toLoc)).app (x.obj i) ≪≫
@@ -247,7 +268,7 @@ def mapObj {T T' : Cᵒᵖ} (a : T ⟶ T') (x : Fiber D T) : Fiber D T' where
 variable (D) in
 /-- The pullback along `a : T ⟶ T'` of a morphism of the fiber over `T`, componentwise. -/
 -- Reducible for the same reason as `mapObj`.
-@[reducible]
+@[expose, reducible]
 def mapHom {T T' : Cᵒᵖ} (a : T ⟶ T') {x y : Fiber D T} (φ : x ⟶ y) :
     mapObj D a x ⟶ mapObj D a y where
   hom i := ((D.obj (.mk i)).map a.toLoc).toFunctor.map (φ.hom i)
@@ -260,7 +281,7 @@ def mapHom {T T' : Cᵒᵖ} (a : T ⟶ T') {x y : Fiber D T} (φ : x ⟶ y) :
 variable (D) in
 /-- The pullback functor of the pseudo-limit along `a : T ⟶ T'` in `Cᵒᵖ`. -/
 -- Reducible for the same reason as `mapObj`.
-@[reducible]
+@[expose, reducible]
 def map {T T' : Cᵒᵖ} (a : T ⟶ T') : Fiber D T ⥤ Fiber D T' where
   obj := mapObj D a
   map := mapHom D a
@@ -269,7 +290,6 @@ def map {T T' : Cᵒᵖ} (a : T ⟶ T') : Fiber D T ⥤ Fiber D T' where
 
 variable (D) in
 /-- The unit isomorphism of the pseudo-limit, from the unit comparisons of the `D i`. -/
-@[simps!]
 def mapIdIso (T : Cᵒᵖ) : map D (𝟙 T) ≅ 𝟭 (Fiber D T) :=
   NatIso.ofComponents
     (fun x ↦ Fiber.isoMk
@@ -289,7 +309,6 @@ def mapIdIso (T : Cᵒᵖ) : map D (𝟙 T) ≅ 𝟭 (Fiber D T) :=
 variable (D) in
 /-- The composition isomorphism of the pseudo-limit at a factorization `a ≫ b = ab`, from the
 composition comparisons of the `D i`. -/
-@[simps!]
 def mapCompIso {T T' T'' : Cᵒᵖ} (a : T ⟶ T') (b : T' ⟶ T'') (ab : T ⟶ T'') (h : a ≫ b = ab) :
     map D ab ≅ map D a ⋙ map D b :=
   NatIso.ofComponents
@@ -310,6 +329,34 @@ def mapCompIso {T T' T'' : Cᵒᵖ} (a : T ⟶ T') (b : T' ⟶ T'') (ab : T ⟶ 
       exact ((D.obj (.mk i)).mapComp' a.toLoc b.toLoc ab.toLoc
         (congrArg Quiver.Hom.toLoc h)).hom.toNatTrans.naturality (φ.hom i))
 
+@[simp]
+lemma mapIdIso_hom_app_hom (T : Cᵒᵖ) (x : Fiber D T) (i : I) :
+    ((mapIdIso D T).hom.app x).hom i =
+      ((D.obj (.mk i)).mapId' (𝟙 T).toLoc).hom.toNatTrans.app (x.obj i) :=
+  (rfl)
+
+@[simp]
+lemma mapIdIso_inv_app_hom (T : Cᵒᵖ) (x : Fiber D T) (i : I) :
+    ((mapIdIso D T).inv.app x).hom i =
+      ((D.obj (.mk i)).mapId' (𝟙 T).toLoc).inv.toNatTrans.app (x.obj i) :=
+  (rfl)
+
+@[simp]
+lemma mapCompIso_hom_app_hom {T T' T'' : Cᵒᵖ} (a : T ⟶ T') (b : T' ⟶ T'') (ab : T ⟶ T'')
+    (h : a ≫ b = ab) (x : Fiber D T) (i : I) :
+    ((mapCompIso D a b ab h).hom.app x).hom i =
+      ((D.obj (.mk i)).mapComp' a.toLoc b.toLoc ab.toLoc
+        (congrArg Quiver.Hom.toLoc h)).hom.toNatTrans.app (x.obj i) :=
+  (rfl)
+
+@[simp]
+lemma mapCompIso_inv_app_hom {T T' T'' : Cᵒᵖ} (a : T ⟶ T') (b : T' ⟶ T'') (ab : T ⟶ T'')
+    (h : a ≫ b = ab) (x : Fiber D T) (i : I) :
+    ((mapCompIso D a b ab h).inv.app x).hom i =
+      ((D.obj (.mk i)).mapComp' a.toLoc b.toLoc ab.toLoc
+        (congrArg Quiver.Hom.toLoc h)).inv.toNatTrans.app (x.obj i) :=
+  (rfl)
+
 end limit
 
 open limit in
@@ -317,7 +364,10 @@ open limit in
 pseudofunctors, computed fiberwise: its fiber over `T` is the pseudo-limit of the fibers over `T`
 of the `D i` (`limit.Fiber D T`), and its pullback functors and comparisons are those of the
 `D i`, componentwise. -/
-def limit : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{w, max w u'} :=
+-- Exposed so that the fibers of `limit D` are seen as the categories `Fiber D X.as` in the
+-- statements of the lemmas on their objects and morphisms.
+@[expose]
+def limit : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w v' z} :=
   LocallyDiscrete.mkCatPseudofunctor (obj := fun T ↦ Cat.of (Fiber D T)) (map D)
     (mapIdIso D) (mapCompIso D)
     (fun _ _ _ _ _ _ hfg hgh hfgh hfgh' x ↦ by
@@ -423,13 +473,16 @@ instance instIsGroupoidObj (X : LocallyDiscrete Cᵒᵖ) [∀ i, IsGroupoid ((D.
 
 variable (D) in
 /-- The evaluation functor `Fiber D T ⥤ (D i)(T)` at `i`. -/
-@[simps]
+-- Exposed, as is `π`, so that the components of `π D i` are seen in the statements of its lemmas
+-- as the components of the objects of the pseudo-limit.
+@[expose, simps]
 def Fiber.eval (T : Cᵒᵖ) (i : I) : Fiber D T ⥤ (D.obj (.mk i)).obj (.mk T) where
   obj x := x.obj i
   map φ := φ.hom i
 
 variable (D) in
 /-- The projection `limit D ⟶ D i`, with components the evaluation functors at `i`. -/
+@[expose]
 def π (i : I) : limit D ⟶ D.obj (.mk i) where
   app X := (Fiber.eval D X.as i).toCatHom
   naturality f := Iso.refl _
@@ -496,12 +549,12 @@ def πCompMap {i j : I} (f : i ⟶ j) : π D i ≫ D.map f.toLoc ≅ π D j :=
 @[simp]
 lemma πCompMap_hom_as_app {i j : I} (f : i ⟶ j) (X : LocallyDiscrete Cᵒᵖ) (x : (limit D).obj X) :
     ((πCompMap D f).hom.as.app X).toNatTrans.app x = (Fiber.iso x f).hom :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma πCompMap_inv_as_app {i j : I} (f : i ⟶ j) (X : LocallyDiscrete Cᵒᵖ) (x : (limit D).obj X) :
     ((πCompMap D f).inv.as.app X).toNatTrans.app x = (Fiber.iso x f).inv :=
-  rfl
+  (rfl)
 
 /-- The `2`-cell of the pseudo-limit at an identity is the unit comparison of `D`. -/
 lemma πCompMap_id (i : I) :
@@ -542,7 +595,7 @@ variable (D) in
 /-- A pseudo-cone over the diagram `D` with apex `K`: strong transformations `π i : K ⟶ D i` with
 invertible modifications `iso f : π i ≫ D(f) ≅ π j` for `f : i ⟶ j`, compatible with the unit and
 composition comparisons of `D`. -/
-structure Cone (K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{w, max w u'}) where
+structure Cone (K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w v' z}) where
   /-- The leg at `i`. -/
   π (i : I) : K ⟶ D.obj (.mk i)
   /-- The `2`-cell along `f : i ⟶ j`. -/
@@ -555,7 +608,8 @@ structure Cone (K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{w, max w u'}) w
 variable (D) in
 /-- The pseudo-cone of the pseudo-limit, formed by its projections and the `2`-cells
 `πCompMap D f`. -/
-@[simps]
+-- Exposed so that the `2`-cells of `cone D`, between its legs, are seen as those of `π D`.
+@[expose, simps]
 def cone : Cone D (limit D) where
   π := π D
   iso := πCompMap D
@@ -564,12 +618,14 @@ def cone : Cone D (limit D) where
 
 section lift
 
-variable {K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{w, max w u'}} (c : Cone D K)
+variable {K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w v' z}} (c : Cone D K)
 
 /-- The image under the legs of a pseudo-cone of an object `k` of `K` over `X`: the object of the
 fiber of the pseudo-limit over `X` with components the images of `k` under the legs, and with
 transition isomorphisms the components of the `2`-cells of the cone. -/
-@[simps]
+-- Exposed, as are `liftApp` and `lift`, so that the components of `lift c` are seen in the
+-- statements of its lemmas as the images under the legs of `c`.
+@[expose, simps]
 def liftObj {X : LocallyDiscrete Cᵒᵖ} (k : K.obj X) : Fiber D X.as where
   obj i := ((c.π i).app X).toFunctor.obj k
   iso f :=
@@ -590,7 +646,7 @@ def liftObj {X : LocallyDiscrete Cᵒᵖ} (k : K.obj X) : Fiber D X.as where
     exact h.trans (congrArg (_ ≫ ·) (Category.id_comp _))
 
 /-- The component over `X` of `lift c`. -/
-@[simps]
+@[expose, simps]
 def liftApp (X : LocallyDiscrete Cᵒᵖ) : K.obj X ⥤ Fiber D X.as where
   obj := liftObj c
   map φ :=
@@ -600,7 +656,6 @@ def liftApp (X : LocallyDiscrete Cᵒᵖ) : K.obj X ⥤ Fiber D X.as where
   map_comp _ _ := Fiber.hom_ext fun _ ↦ Functor.map_comp _ _ _
 
 /-- The naturality isomorphism of `lift c` at `g`, with components those of the legs of `c`. -/
-@[simps!]
 def liftNaturality {X Y : LocallyDiscrete Cᵒᵖ} (g : X ⟶ Y) :
     (K.map g).toFunctor ⋙ liftApp c Y ≅ liftApp c X ⋙ map D g.as :=
   NatIso.ofComponents
@@ -611,8 +666,19 @@ def liftNaturality {X Y : LocallyDiscrete Cᵒᵖ} (g : X ⟶ Y) :
         exact (Category.assoc _ _ _).symm.trans h.symm))
     (fun φ ↦ Fiber.hom_ext fun i ↦ ((c.π i).naturality g).hom.toNatTrans.naturality φ)
 
+@[simp]
+lemma liftNaturality_hom_app_hom {X Y : LocallyDiscrete Cᵒᵖ} (g : X ⟶ Y) (k : K.obj X) (i : I) :
+    ((liftNaturality c g).hom.app k).hom i = ((c.π i).naturality g).hom.toNatTrans.app k :=
+  (rfl)
+
+@[simp]
+lemma liftNaturality_inv_app_hom {X Y : LocallyDiscrete Cᵒᵖ} (g : X ⟶ Y) (k : K.obj X) (i : I) :
+    ((liftNaturality c g).inv.app k).hom i = ((c.π i).naturality g).inv.toNatTrans.app k :=
+  (rfl)
+
 /-- The strong transformation `K ⟶ limit D` induced by a pseudo-cone `c` over `D` with apex
 `K`. -/
+@[expose]
 def lift : K ⟶ limit D where
   app X := (liftApp c X).toCatHom
   naturality g := Cat.Hom.isoMk (liftNaturality c g)
@@ -662,7 +728,7 @@ as components. -/
 lemma lift_naturality_hom_app_hom {X Y : LocallyDiscrete Cᵒᵖ} (g : X ⟶ Y) (k : K.obj X) (i : I) :
     Fiber.Hom.hom (((lift c).naturality g).hom.toNatTrans.app k) i =
       ((c.π i).naturality g).hom.toNatTrans.app k :=
-  rfl
+  (rfl)
 
 /-- The naturality isomorphisms of `lift c` have the naturality isomorphisms of the legs of `c`
 as components. -/
@@ -670,7 +736,7 @@ as components. -/
 lemma lift_naturality_inv_app_hom {X Y : LocallyDiscrete Cᵒᵖ} (g : X ⟶ Y) (k : K.obj X) (i : I) :
     Fiber.Hom.hom (((lift c).naturality g).inv.toNatTrans.app k) i =
       ((c.π i).naturality g).inv.toNatTrans.app k :=
-  rfl
+  (rfl)
 
 /-- The `i`-th projection of `lift c` is the leg `c.π i`. -/
 def liftCompπ (i : I) : lift c ≫ π D i ≅ c.π i :=
@@ -688,12 +754,12 @@ def liftCompπ (i : I) : lift c ≫ π D i ≅ c.π i :=
 @[simp]
 lemma liftCompπ_hom_as_app (i : I) (X : LocallyDiscrete Cᵒᵖ) :
     (liftCompπ c i).hom.as.app X = 𝟙 _ :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma liftCompπ_inv_as_app (i : I) (X : LocallyDiscrete Cᵒᵖ) :
     (liftCompπ c i).inv.as.app X = 𝟙 _ :=
-  rfl
+  (rfl)
 
 /-- Under the isomorphisms `liftCompπ`, the `2`-cells of the pseudo-limit whiskered by `lift c`
 are the `2`-cells of the pseudo-cone `c`. -/
@@ -713,7 +779,7 @@ end lift
 
 section homMk
 
-variable {K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{w, max w u'}} {φ ψ : K ⟶ limit D}
+variable {K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{max w v', max w v' z}} {φ ψ : K ⟶ limit D}
 
 /-- The components of a modification `φ ≫ π D i ⟶ ψ ≫ π D i` are natural with respect to the
 naturality isomorphisms of `φ` and `ψ`, on `i`-th components. -/
@@ -777,7 +843,7 @@ variable (m : ∀ i, φ ≫ π D i ⟶ ψ ≫ π D i)
 lemma homMk_as_app_app_hom (X : LocallyDiscrete Cᵒᵖ) (k : K.obj X) (i : I) :
     Fiber.Hom.hom (((homMk m hm).as.app X).toNatTrans.app k) i =
       ((m i).as.app X).toNatTrans.app k :=
-  rfl
+  (rfl)
 
 /-- The `i`-th projection of `homMk m hm` is `m i`. -/
 @[simp]
@@ -811,7 +877,6 @@ lemma whiskerRight_π_comp_whiskerLeft_πCompMap (n : φ ⟶ ψ) {i j : I} (f : 
 
 /-- An isomorphism `φ ≅ ψ` between strong transformations into the pseudo-limit, from a family
 of isomorphisms `e i : φ ≫ π D i ≅ ψ ≫ π D i` compatible with the `2`-cells `πCompMap D f`. -/
-@[simps]
 def isoMk (e : ∀ i, φ ≫ π D i ≅ ψ ≫ π D i)
     (he : ∀ ⦃i j : I⦄ (f : i ⟶ j), (e i).hom ▷ D.map f.toLoc ≫ (α_ _ _ _).hom ≫
       ψ ◁ (πCompMap D f).hom = (α_ _ _ _).hom ≫ φ ◁ (πCompMap D f).hom ≫ (e j).hom) :
@@ -823,6 +888,29 @@ def isoMk (e : ∀ i, φ ≫ π D i ≅ ψ ≫ π D i)
     simp
   hom_inv_id := hom_ext fun i ↦ by simp
   inv_hom_id := hom_ext fun i ↦ by simp
+
+section isoMk
+
+variable (e : ∀ i, φ ≫ π D i ≅ ψ ≫ π D i)
+  (he : ∀ ⦃i j : I⦄ (f : i ⟶ j), (e i).hom ▷ D.map f.toLoc ≫ (α_ _ _ _).hom ≫
+    ψ ◁ (πCompMap D f).hom = (α_ _ _ _).hom ≫ φ ◁ (πCompMap D f).hom ≫ (e j).hom)
+
+lemma isoMk_hom : (isoMk e he).hom = homMk (fun i ↦ (e i).hom) he :=
+  (rfl)
+
+/-- The `i`-th projection of `(isoMk e he).hom` is `(e i).hom`. -/
+@[simp]
+lemma isoMk_hom_whiskerRight_π (i : I) : (isoMk e he).hom ▷ π D i = (e i).hom :=
+  homMk_whiskerRight_π _ he i
+
+/-- The `i`-th projection of `(isoMk e he).inv` is `(e i).inv`. -/
+@[simp]
+lemma isoMk_inv_whiskerRight_π (i : I) : (isoMk e he).inv ▷ π D i = (e i).inv := by
+  ext X k
+  rw [Pseudofunctor.StrongTrans.whiskerRight_as_app]
+  rfl
+
+end isoMk
 
 end homMk
 
