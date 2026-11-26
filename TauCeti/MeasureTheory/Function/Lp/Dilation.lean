@@ -47,7 +47,9 @@ continuous extended norm.
 * `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`,
   `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage`: the same
   identities for the `Lᵖ` seminorms on the preimage of `s` and on `s`.
-* `MeasureTheory.MemLp.comp_continuousLinearEquiv`: so composing with `e` preserves `Lᵖ`.
+* `MeasureTheory.MemLp.comp_continuousLinearEquiv`: so composing with `e` preserves `Lᵖ`, and
+  `MeasureTheory.MemLp.comp_continuousLinearEquiv_restrict_preimage` carries `Lᵖ` on `s` to `Lᵖ`
+  on `e ⁻¹' s`.
 * `MeasureTheory.Lp.compContinuousLinearEquivAddRestrict`,
   `MeasureTheory.Lp.coeFn_compContinuousLinearEquivAddRestrict`: restricted additive Haar `Lᵖ`
   precomposition along an invertible affine map `x ↦ B x + b`.
@@ -127,12 +129,20 @@ theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p 
   simpa using eLpNorm_comp_continuousLinearEquiv_restrict_preimage μ u e p (s := Set.univ)
 
 variable {μ} in
+/-- Precomposition with a linear automorphism `e` maps `Lᵖ` on a set `s` to `Lᵖ` on `e ⁻¹' s`, for
+an additive Haar measure. -/
+theorem _root_.MeasureTheory.MemLp.comp_continuousLinearEquiv_restrict_preimage {p : ℝ≥0∞}
+    {u : E → G} {s : Set E} (hu : MemLp u p (μ.restrict s)) (e : E ≃L[ℝ] E) :
+    MemLp (fun x ↦ u (e x)) p (μ.restrict (e ⁻¹' s)) := by
+  rw [memLp_iff, ← Function.comp_def, eLpNorm_comp_continuousLinearEquiv_restrict_preimage]
+  exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
+    ENNReal.ofReal_ne_top) hu.eLpNorm_lt_top
+
+variable {μ} in
 /-- Precomposition with a linear automorphism preserves `Lᵖ` for an additive Haar measure. -/
 theorem _root_.MeasureTheory.MemLp.comp_continuousLinearEquiv {p : ℝ≥0∞} {u : E → G}
     (hu : MemLp u p μ) (e : E ≃L[ℝ] E) : MemLp (fun x ↦ u (e x)) p μ := by
-  rw [memLp_iff, ← Function.comp_def, eLpNorm_comp_continuousLinearEquiv]
-  exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
-    ENNReal.ofReal_ne_top) hu.eLpNorm_lt_top
+  simpa using (hu.restrict Set.univ).comp_continuousLinearEquiv_restrict_preimage e
 
 variable {μ} {𝕜 F : Type*} [NormedField 𝕜] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] {p : ℝ≥0∞} [Fact (1 ≤ p)] {r s : ℝ}

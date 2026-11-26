@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.Dynamics.Flow.ConnectingOrbit
-public import TauCeti.Geometry.Manifold.Morse.Boundary.BrokenSign
+public import TauCeti.Geometry.Manifold.Morse.Boundary.Broken.Sign
 
 /-!
 # The Morse boundary with coefficients in a local system

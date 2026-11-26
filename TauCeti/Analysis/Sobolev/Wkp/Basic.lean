@@ -246,6 +246,12 @@ theorem firstOrder_succ (k : ℕ) (u : Wkp mu Omega p (k + 2)) :
     firstOrder (k + 1) u = firstOrder k (lowerOrder (k + 1) u) :=
   (rfl)
 
+/-- The first-order part preserves subtraction. Unlike `value_sub` it is not `@[simp]`: the
+simpNF linter finds that its left-hand side does not simplify with it. -/
+theorem firstOrder_sub (k : ℕ) (u v : Wkp mu Omega p (k + 1)) :
+    firstOrder k (u - v) = firstOrder k u - firstOrder k v :=
+  map_sub (firstOrderL k) u v
+
 /-- The continuous projection to the highest weak derivative of a positive-order Sobolev
 function.  For `W^{k+1,p}` its target is `Lᵖ(Ω; IteratedGradient E k)`. -/
 def iteratedGradientL (k : ℕ) : Wkp mu Omega p (k + 1) →L[ℝ]
@@ -261,6 +267,12 @@ def iteratedGradient (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
 theorem iteratedGradientL_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     iteratedGradientL k u = iteratedGradient k u :=
   (rfl)
+
+/-- The highest weak derivative preserves subtraction. Unlike `value_sub` it is not `@[simp]`: the
+simpNF linter finds that its left-hand side does not simplify with it. -/
+theorem iteratedGradient_sub (k : ℕ) (u v : Wkp mu Omega p (k + 1)) :
+    iteratedGradient k (u - v) = iteratedGradient k u - iteratedGradient k v :=
+  map_sub (iteratedGradientL k) u v
 
 /-- The continuous projection of a Sobolev function to its `Lᵖ` value component. -/
 def valueL : (k : ℕ) → Wkp mu Omega p k →L[ℝ] Lp ℝ p (mu.restrict Omega)

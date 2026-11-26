@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.MeasureTheory.Function.Lp.Dilation
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Linear Hessian transfer and gradient components in `W^{2,p}`
@@ -66,14 +67,6 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem abs_det_le (e : E ≃L[ℝ] E) (x : E) :
     |(e : E →L[ℝ] E).det| ≤ |(fderiv ℝ e x).det| := by
   rw [e.fderiv]
-
-/-- Almost-everywhere statements on `W` pull back along a linear automorphism `e` to
-`U = e⁻¹(W)`. -/
-private theorem quasiMeasurePreserving_restrict_of_coe_eq_preimage (e : E ≃L[ℝ] E)
-    (hUW : (U : Set E) = e ⁻¹' W) :
-    QuasiMeasurePreserving e (mu.restrict U) (mu.restrict W) :=
-  (Measure.ContinuousLinearMap.quasiMeasurePreserving mu (e : E →L[ℝ] E)
-    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero).restrict (mapsTo_of_coe_eq_preimage e hUW)
 
 /-- Each component `⟪∇u, c⟫` of the weak gradient of `u ∈ W^{2,p}(W)` is the value of a function
 `d ∈ W^{1,p}(W)` whose weak gradient has the components `⟪D²u f, c⟫`. -/
@@ -142,7 +135,7 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       fun x _ => abs_det_le e x
   have hC' : (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ ≠ ⊤ :=
     ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 habs).ne'
-  have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
+  have hqmp := e.quasiMeasurePreserving_restrict mu (mapsTo_of_coe_eq_preimage e hUW)
   -- `v` solves Poisson's equation with forcing term `f ∘ e`
   set f' := Lp.compOfMapLeSmul ℝ e.continuous.aemeasurable hC' hmap f
   have hf'e := Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) e.continuous.aemeasurable hC' hmap f

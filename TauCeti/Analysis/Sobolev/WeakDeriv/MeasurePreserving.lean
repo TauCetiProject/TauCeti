@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import Mathlib.Dynamics.Ergodic.MeasurePreserving
+import TauCeti.Analysis.Sobolev.WeakDeriv.AddHaar
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.Analysis.Sobolev.Mollification.Interior

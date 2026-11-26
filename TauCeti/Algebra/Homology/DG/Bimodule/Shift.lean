@@ -163,6 +163,12 @@ theorem shiftEquiv_differential (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (n : 
     shiftEquiv M n ((M.shift n).differential x) =
       n.negOnePow • M.differential (shiftEquiv M n x) := shift_differential_apply M n x
 
+/-- A shift by one negates the differential in the original carrier coordinates. -/
+theorem shiftEquiv_one_differential (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB)
+    (x : M.shift 1) :
+    M.shiftEquiv 1 ((M.shift 1).differential x) = -M.differential (M.shiftEquiv 1 x) := by
+  rw [shiftEquiv_differential, Int.negOnePow_one, Units.neg_smul, one_smul]
+
 /-- Reading the shifted left action twists the scalar by its Koszul automorphism. -/
 @[simp]
 theorem shiftEquiv_smul_left (M : DGBimoduleCat.{uR, uA, uB, uM} hA hB) (n : ℤ)

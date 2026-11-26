@@ -301,23 +301,23 @@ theorem rootLatticeIsometryCheckerboard_symm_apply (n : ℕ) (hn : 4 ≤ n)
   let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
   set e := rootLatticeIsometryCheckerboard n hn ht
   have hexp (x : Fin n → ℚ) :
-      e x = ∑ i : Fin n, x i • typeDSimpleRootBasis ℚ n hn i := by
+      e x = ∑ i : Fin n, x i • typeDSimpleRootBasis ℚ n (by omega) i := by
     have hx : x = ∑ i : Fin n, x i • Pi.single i 1 := by
       ext j
       simp [Finset.sum_apply, Pi.single_apply]
     refine (congrArg e hx).trans ((map_sum e (fun i : Fin n ↦ x i • Pi.single i (1 : ℚ))
       Finset.univ).trans ?_)
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hcb : checkerboardSimpleRoot n hn i = typeDSimpleRootBasis ℚ n hn i := by
+    have hcb : checkerboardSimpleRoot n hn i = typeDSimpleRootBasis ℚ n (by omega) i := by
       ext j
       rw [checkerboardSimpleRoot_apply, typeDSimpleRootBasis_apply]
     exact (map_smul e (x i) (Pi.single i (1 : ℚ))).trans
       (congrArg (x i • ·) ((rootLatticeIsometryCheckerboard_single n hn ht i).trans hcb))
-  have hrepr : e ((typeDSimpleRootBasis ℚ n hn).repr y) = y :=
-    (hexp _).trans ((typeDSimpleRootBasis ℚ n hn).sum_repr y)
-  have hsymm : e.symm y = (typeDSimpleRootBasis ℚ n hn).repr y :=
+  have hrepr : e ((typeDSimpleRootBasis ℚ n (by omega)).repr y) = y :=
+    (hexp _).trans ((typeDSimpleRootBasis ℚ n (by omega)).sum_repr y)
+  have hsymm : e.symm y = (typeDSimpleRootBasis ℚ n (by omega)).repr y :=
     (congrArg e.symm hrepr.symm).trans (e.symm_apply_apply _)
-  rw [congrFun hsymm k, typeDSimpleRootBasis_repr_apply ℚ hn y k, invOf_eq_inv]
+  rw [congrFun hsymm k, typeDSimpleRootBasis_repr_apply ℚ (by omega) y k, invOf_eq_inv]
   split_ifs <;> ring
 
 end TauCeti.DynkinType
