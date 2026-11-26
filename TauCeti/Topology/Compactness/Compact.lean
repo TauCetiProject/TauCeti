@@ -16,15 +16,17 @@ import TauCeti.Topology.Separation.InvFunOn
 /-!
 # Compactness utilities
 
-General lemmas about compact and σ-compact subsets of topological spaces, limits along
-ultrafilters of families eventually in a compact set, families whose values tend to the
-cocompact filter, whose images therefore lie in no fixed compact set, and passing from constants
-valid near each point of a compact set to one constant valid on all of it, also for eventual
-bounds along a filter (`IsCompact.exists_eventually_forall_le_of_forall`). Maps converging
-continuously on a compact set eventually map it into any open set containing the image under the
-limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`). The fibres over `w` of a closed set
-`C ⊆ P × X` that near `w₀` all lie in a fixed compact set are eventually contained in every open
-neighbourhood of the fibre over `w₀` (`IsClosed.eventually_preimage_prodMk_subset`).
+General lemmas about compact and σ-compact subsets of topological spaces, compact fibers of
+countable intersections in product spaces (including commuting second-coordinate projection with
+antitone intersections), limits along ultrafilters of families eventually in a compact set,
+families whose values tend to the cocompact filter, whose images therefore lie in no fixed compact
+set, and passing from constants valid near each point of a compact set to one constant valid on all
+of it, also for eventual bounds along a filter (`IsCompact.exists_eventually_forall_le_of_forall`).
+Maps converging continuously on a compact set eventually map it into any open set containing the
+image under the limit (`IsCompact.eventually_forall_mem_of_tendsto_prod_nhds`). The fibres over
+`w` of a closed set `C ⊆ P × X` that near `w₀` all lie in a fixed compact set are eventually
+contained in every open neighbourhood of the fibre over `w₀`
+(`IsClosed.eventually_preimage_prodMk_subset`).
 
 A continuous injection on a compact set `K` with values in a Hausdorff space restricts to a closed
 embedding of `K` (`IsCompact.isClosedEmbedding_domRestrict`). So neighbourhoods of a point of `K`
@@ -400,6 +402,40 @@ theorem isOpen_forall_prodMk_mem (hι : Continuous ι) (hW : IsOpen W) :
         fun _ h y ↦ h _ (Set.mem_range_self y)
 
 end TubeLemma
+
+/-- For a sequence of sets in `X × Ω` whose fibers over `ω` are antitone and compact in a Hausdorff
+space `X`, `ω` belongs to the projection of the intersection if and only if it belongs to the
+projection of every stage. -/
+theorem mem_image_snd_iInter_iff_of_isCompact {X Ω : Type*} [TopologicalSpace X] [T2Space X]
+    {e : ℕ → Set (X × Ω)} {ω : Ω} (hanti : Antitone fun n ↦ {x : X | (x, ω) ∈ e n})
+    (hK : ∀ n, IsCompact {x : X | (x, ω) ∈ e n}) :
+    ω ∈ Prod.snd '' (⋂ n, e n) ↔ ω ∈ ⋂ n, Prod.snd '' e n := by
+  refine ⟨fun h ↦ image_iInter_subset _ _ h, fun hω ↦ ?_⟩
+  let C : ℕ → Set X := fun n ↦ {x | (x, ω) ∈ e n}
+  have hne (n : ℕ) : (C n).Nonempty := by
+    obtain ⟨⟨x, _⟩, hx, rfl⟩ := mem_iInter.mp hω n
+    exact ⟨x, hx⟩
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed C
+    (fun n _ h ↦ hanti (Nat.le_succ n) h) hne (hK 0) fun n ↦ (hK n).isClosed
+  exact ⟨(x, ω), mem_iInter.mpr fun n ↦ mem_iInter.mp hx n, rfl⟩
+
+/-- For an antitone sequence of sets in `X × Ω` whose fibers over `Ω` are compact in a Hausdorff
+space `X`, projection onto `Ω` commutes with the countable intersection. -/
+theorem image_snd_iInter_eq_of_isCompact {X Ω : Type*} [TopologicalSpace X] [T2Space X]
+    {e : ℕ → Set (X × Ω)} (hanti : Antitone e)
+    (hK : ∀ n ω, IsCompact {x : X | (x, ω) ∈ e n}) :
+    Prod.snd '' (⋂ n, e n) = ⋂ n, Prod.snd '' (e n) :=
+  Set.ext fun ω ↦ mem_image_snd_iInter_iff_of_isCompact
+    (fun _ _ h _ hx ↦ hanti h hx) fun n ↦ hK n ω
+
+/-- A countable intersection of sets in `X × Ω` with compact fibers in a Hausdorff space `X` again
+has compact fibers. -/
+theorem isCompact_fiber_iInter {X Ω : Type*} [TopologicalSpace X] [T2Space X]
+    {e : ℕ → Set (X × Ω)} {ω : Ω} (hK : ∀ n, IsCompact {x : X | (x, ω) ∈ e n}) :
+    IsCompact {x : X | (x, ω) ∈ ⋂ n, e n} := by
+  have heq : {x : X | (x, ω) ∈ ⋂ n, e n} = ⋂ n, {x : X | (x, ω) ∈ e n} := by ext; simp
+  rw [heq]
+  exact (hK 0).of_isClosed_subset (isClosed_iInter fun n ↦ (hK n).isClosed) (iInter_subset _ 0)
 
 end TauCeti
 

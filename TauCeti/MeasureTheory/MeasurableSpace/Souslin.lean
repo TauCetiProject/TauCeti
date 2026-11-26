@@ -1,14 +1,22 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Daniel Lyng, The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.ENNReal.Basic
 public import Mathlib.Data.List.OfFn
 public import Mathlib.Data.Nat.Pairing
 public import Mathlib.Data.Set.Lattice.Indexed
 public import Mathlib.MeasureTheory.MeasurableSpace.Defs
+import Mathlib.Data.Fintype.Pi
+import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Order.SupClosed
+import Mathlib.Topology.Compactness.Compact
+import Mathlib.Topology.Constructions
+import Mathlib.Topology.Order.Basic
+import TauCeti.Order.CompleteLattice.Basic
 
 /-!
 # The Souslin operation on families of sets
@@ -26,16 +34,35 @@ The empty prefix is deliberately ignored; its value can be any member of the ori
 If the family is nonempty and complements of its generators are Souslin over it,
 every set in the generated sigma algebra is also Souslin over it.
 
+When `J : Set (ℕ → ℕ) → ℝ≥0∞` is upward continuous along increasing countable unions in Baire
+space, any strict lower bound `r < J univ` persists uniformly across finite-coordinate boxes
+`{β | ∀ k < n, β k ≤ N k}` for suitable coordinate caps `N : ℕ → ℕ`
+(`TauCeti.exists_lt_iInf_setOf_forall_lt_le`). Combining this coordinate-bounding recursion with
+finite-prefix boxes over a binary-lattice paving `E` shows that for any upward-continuous (hence
+monotone) `I : Set α → ℝ≥0∞` and `s ∈ souslinClosure E`, every `r < I s` is witnessed by an
+antitone sequence `e : ℕ → Set α` in `E` with `(⋂ k, e k) ⊆ s` and `r < ⨅ k, I (e k)`
+(`TauCeti.exists_antitone_mem_of_lt_of_mem_souslinClosure`). No topology or measurability
+structure on the carrier is assumed.
+
+## Provenance
+
+The Baire-space coordinate-bounding recursion (`TauCeti.exists_lt_iInf_setOf_forall_lt_le`, shared
+with `TauCeti.MeasureTheory.Constructions.Polish.Capacitability`) adapts the finite-measure
+coordinate-capping step of Daniel Lyng's Apache-2.0 Econlib formalization
+(`Econlib/Math/MeasureTheory/AnalyticNullMeasurable.lean`, commit
+`003655ccf010cdf44c4f67d6675167b54ce0e9df`) to arbitrary upward-continuous `ℝ≥0∞`-valued set
+functions.
+
 ## References
 
 * S. Theodorakopoulos, *New proofs to measurable, predictable and optional section theorems*,
-  arXiv:2310.13086v2, §2.
+  arXiv:2310.13086v2, §2 (Theorem 2.5).
 -/
 
 public section
 
-open Set
-open scoped MeasureTheory
+open Filter Set Topology
+open scoped ENNReal MeasureTheory NNReal
 
 namespace TauCeti
 
@@ -275,5 +302,192 @@ theorem mem_souslinClosure_of_measurableSet_generateFrom {E : Set (Set α)}
       rw [compl_iUnion]
       exact iInter_mem_souslinClosure (fun n ↦ (ih n).2)
   exact h.1
+
+/-! ### Capacity approximation over binary-lattice pavings -/
+
+-- Intersect the values of `f` along all nonempty prefixes of `w : Fin (k + 1) → ℕ`.
+private def prefixInter (f : List ℕ → Set α) : ∀ k : ℕ, (Fin (k + 1) → ℕ) → Set α
+  | 0, w => f (List.ofFn w)
+  | k + 1, w => prefixInter f k (Fin.init w) ∩ f (List.ofFn w)
+
+private lemma prefixInter_mem {E : Set (Set α)} (hinter : ∀ u ∈ E, ∀ v ∈ E, u ∩ v ∈ E)
+    {f : List ℕ → Set α} (hf : ∀ l, f l ∈ E) :
+    ∀ (k : ℕ) (w : Fin (k + 1) → ℕ), prefixInter f k w ∈ E
+  | 0, w => hf (List.ofFn w)
+  | k + 1, w => hinter _ (prefixInter_mem hinter hf k (Fin.init w)) _ (hf (List.ofFn w))
+
+private lemma mem_prefixInter_of_forall {f : List ℕ → Set α} {x : α} {β : ℕ → ℕ}
+    (hβ : ∀ n : ℕ, x ∈ f (List.ofFn fun i : Fin (n + 1) ↦ β i)) :
+    ∀ k : ℕ, x ∈ prefixInter f k (fun i : Fin (k + 1) ↦ β i)
+  | 0 => hβ 0
+  | k + 1 => ⟨mem_prefixInter_of_forall hβ k, hβ (k + 1)⟩
+
+private lemma mem_of_mem_prefixInter {f : List ℕ → Set α} {x : α} :
+    ∀ {k : ℕ} {w : Fin (k + 1) → ℕ}, x ∈ prefixInter f k w → x ∈ f (List.ofFn w)
+  | 0, _, hx => hx
+  | _ + 1, _, hx => hx.2
+
+private def prefixBox (N : ℕ → ℕ) (k : ℕ) : Finset (Fin (k + 1) → ℕ) :=
+  Fintype.piFinset fun i ↦ Finset.Iic (N i)
+
+private lemma prefixBox_nonempty (N : ℕ → ℕ) (k : ℕ) : (prefixBox N k).Nonempty :=
+  ⟨fun _ ↦ 0, Fintype.mem_piFinset.mpr fun _ ↦ Finset.mem_Iic.mpr (Nat.zero_le _)⟩
+
+private def prunedSet (f : List ℕ → Set α) (N : ℕ → ℕ) (k : ℕ) : Set α :=
+  ⋃ w ∈ prefixBox N k, prefixInter f k w
+
+private lemma prunedSet_mem {E : Set (Set α)} (hunion : ∀ u ∈ E, ∀ v ∈ E, u ∪ v ∈ E)
+    (hinter : ∀ u ∈ E, ∀ v ∈ E, u ∩ v ∈ E) {f : List ℕ → Set α} (hf : ∀ l, f l ∈ E)
+    (N : ℕ → ℕ) (k : ℕ) : prunedSet f N k ∈ E := by
+  rw [prunedSet, ← Finset.sup_set_eq_biUnion]
+  exact SupClosed.finsetSup_mem (s := E) hunion (prefixBox_nonempty N k)
+    fun w _ ↦ prefixInter_mem hinter hf k w
+
+private lemma prunedSet_anti (f : List ℕ → Set α) (N : ℕ → ℕ) : Antitone (prunedSet f N) := by
+  refine antitone_nat_of_succ_le fun k x hx ↦ ?_
+  obtain ⟨w, hw, hxw⟩ := mem_iUnion₂.mp hx
+  refine mem_iUnion₂.mpr ⟨Fin.init w, ?_, hxw.1⟩
+  exact Fintype.mem_piFinset.mpr fun i ↦ Fintype.mem_piFinset.mp hw i.castSucc
+
+private lemma iInter_prunedSet_subset (f : List ℕ → Set α) (N : ℕ → ℕ) :
+    (⋂ k, prunedSet f N k) ⊆ souslinOperation f := by
+  intro x hx
+  let K : ℕ → Set (ℕ → ℕ) := fun k ↦
+    {β | ∀ i, β i ≤ N i} ∩ {β | x ∈ prefixInter f k (fun i : Fin (k + 1) ↦ β i)}
+  have hbox : IsCompact {β : ℕ → ℕ | ∀ i, β i ≤ N i} := by
+    have heq : {β : ℕ → ℕ | ∀ i, β i ≤ N i} = univ.pi fun i ↦ Iic (N i) := by
+      ext β; simp [Pi.le_def]
+    exact heq ▸ isCompact_univ_pi fun i ↦ (finite_Iic (N i)).isCompact
+  have hK_closed (k : ℕ) : IsClosed (K k) :=
+    hbox.isClosed.inter <| (isClosed_discrete {w | x ∈ prefixInter f k w}).preimage
+      (continuous_pi fun i : Fin (k + 1) ↦
+        (continuous_apply (i : ℕ) : Continuous fun β : ℕ → ℕ ↦ β i))
+  have hK0_compact : IsCompact (K 0) := hbox.of_isClosed_subset (hK_closed 0) inter_subset_left
+  have hK_ne (k : ℕ) : (K k).Nonempty := by
+    obtain ⟨w, hw, hxw⟩ := mem_iUnion₂.mp (mem_iInter.mp hx k)
+    refine ⟨fun m ↦ if hm : m < k + 1 then w ⟨m, hm⟩ else 0, fun m ↦ ?_, ?_⟩
+    · dsimp only
+      split_ifs with hm
+      · exact Finset.mem_Iic.mp (Fintype.mem_piFinset.mp hw ⟨m, hm⟩)
+      · exact Nat.zero_le _
+    · have heq : (fun i : Fin (k + 1) ↦ if hm : (i : ℕ) < k + 1 then w ⟨i, hm⟩ else 0) = w :=
+        funext fun i ↦ dite_eq_left i.isLt
+      simpa only [mem_ofPred_eq, heq] using hxw
+  obtain ⟨β, hβ⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed K
+    (fun k β hβ ↦ ⟨hβ.1, hβ.2.1⟩) hK_ne hK0_compact hK_closed
+  exact mem_souslinOperation_iff.mpr
+    ⟨β, fun k ↦ mem_of_mem_prefixInter (mem_iInter.mp hβ k).2⟩
+
+-- Choose a bound `M` on coordinate `n` preserving a strict lower bound along upward continuity.
+private lemma exists_coord_bound_of_lt {J : Set (ℕ → ℕ) → ℝ≥0∞}
+    (hJ : ∀ A : ℕ → Set (ℕ → ℕ), Monotone A → J (⋃ m, A m) = ⨆ m, J (A m))
+    {a b : ℝ≥0∞} (hab : a < b) (n : ℕ) (T : Set (ℕ → ℕ)) :
+    ∃ M : ℕ, b ≤ J T → a ≤ J (T ∩ {β | β n ≤ M}) := by
+  by_cases hT : b ≤ J T
+  · have hm : Monotone fun M : ℕ ↦ T ∩ {β | β n ≤ M} := fun _ _ hMM' ↦
+      inter_subset_inter_right _ fun _ hβ ↦ hβ.trans hMM'
+    have hu : (⋃ M : ℕ, T ∩ {β | β n ≤ M}) = T := by
+      ext β
+      simp only [mem_iUnion, mem_inter_iff, mem_ofPred_eq]
+      exact ⟨fun ⟨_, hβ, _⟩ ↦ hβ, fun hβ ↦ ⟨β n, hβ, le_rfl⟩⟩
+    obtain ⟨M, hM⟩ := lt_iSup_iff.mp (by rw [← hJ _ hm, hu]; exact hab.trans_le hT)
+    exact ⟨M, fun _ ↦ hM.le⟩
+  · exact ⟨0, fun h ↦ (hT h).elim⟩
+
+-- Recursively prune branch space coordinate by coordinate using chosen bounds `Mof n (F n)`.
+private def prunedBranches (Mof : ℕ → Set (ℕ → ℕ) → ℕ) : ℕ → Set (ℕ → ℕ)
+  | 0 => univ
+  | n + 1 =>
+    let Fn := prunedBranches Mof n
+    Fn ∩ {β | β n ≤ Mof n Fn}
+
+@[simp]
+private lemma prunedBranches_zero (Mof : ℕ → Set (ℕ → ℕ) → ℕ) :
+    prunedBranches Mof 0 = univ := rfl
+
+@[simp]
+private lemma prunedBranches_succ (Mof : ℕ → Set (ℕ → ℕ) → ℕ) (n : ℕ) :
+    prunedBranches Mof (n + 1) =
+      prunedBranches Mof n ∩ {β | β n ≤ Mof n (prunedBranches Mof n)} := rfl
+
+/-- Given an `ℝ≥0∞`-valued set function `J` on Baire space `ℕ → ℕ` that is upward continuous along
+increasing countable unions, any strict lower bound `r < J univ` persists uniformly across all
+finite-coordinate boxes `{β | ∀ k < n, β k ≤ N k}` for suitable coordinate bounds `N : ℕ → ℕ`. -/
+theorem exists_lt_iInf_setOf_forall_lt_le {J : Set (ℕ → ℕ) → ℝ≥0∞}
+    (hJ : ∀ A : ℕ → Set (ℕ → ℕ), Monotone A → J (⋃ n, A n) = ⨆ n, J (A n))
+    {r : ℝ≥0∞} (hr : r < J univ) :
+    ∃ N : ℕ → ℕ, r < ⨅ n, J {β | ∀ k < n, β k ≤ N k} := by
+  obtain ⟨p, hrp, hp⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hr
+  obtain ⟨q, hpq, hq⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hp
+  let a : ℕ → ℝ≥0 := fun n ↦ p + (q - p) / 2 ^ n
+  have ha_lt (n : ℕ) : ((a (n + 1) : ℝ≥0) : ℝ≥0∞) < (a n : ℝ≥0) := by
+    refine ENNReal.coe_lt_coe.mpr (add_lt_add_right ?_ p)
+    exact div_lt_div_of_pos_left (tsub_pos_of_lt (ENNReal.coe_lt_coe.mp hpq))
+      (pow_pos zero_lt_two n) (pow_lt_pow_right₀ one_lt_two (Nat.lt_succ_self n))
+  choose Mof hMof using fun n T ↦ exists_coord_bound_of_lt hJ (ha_lt n) n T
+  -- Invariant: `prunedBranches Mof n` equals `{β | ∀ k < n, β k ≤ N k}` and maintains `a n ≤ J _`.
+  let N : ℕ → ℕ := fun n ↦ Mof n (prunedBranches Mof n)
+  have hF_eq : ∀ n, prunedBranches Mof n = {β | ∀ k < n, β k ≤ N k} := by
+    intro n
+    induction n with
+    | zero =>
+      rw [prunedBranches_zero]
+      ext β
+      simp
+    | succ n ih =>
+      rw [prunedBranches_succ, show Mof n (prunedBranches Mof n) = N n from rfl, ih]
+      ext β
+      simp only [mem_inter_iff, mem_ofPred_eq, Nat.lt_succ_iff_lt_or_eq]
+      exact ⟨fun ⟨hpre, hn⟩ k hk ↦ hk.elim (hpre k) (· ▸ hn),
+        fun h ↦ ⟨fun k hk ↦ h k (Or.inl hk), h n (Or.inr rfl)⟩⟩
+  have hinv : ∀ n, ((a n : ℝ≥0) : ℝ≥0∞) ≤ J (prunedBranches Mof n) := by
+    intro n
+    induction n with
+    | zero =>
+      rw [prunedBranches_zero]
+      have ha0 : a 0 = q := by simp [a, add_tsub_cancel_of_le (ENNReal.coe_lt_coe.mp hpq).le]
+      simpa only [ha0] using hq.le
+    | succ n ih =>
+      rw [prunedBranches_succ]
+      exact hMof n (prunedBranches Mof n) ih
+  refine ⟨N, hrp.trans_le (le_iInf fun n ↦ ?_)⟩
+  rw [← hF_eq n]
+  exact (ENNReal.coe_le_coe.mpr le_self_add).trans (hinv n)
+
+/-- **Strict capacity approximation of Souslin sets over a paving** (Theodorakopoulos, Theorem 2.5).
+If `E` is closed under binary unions and intersections and `I : Set α → ℝ≥0∞` is upward continuous
+along increasing countable unions (hence monotone), then for every `s ∈ souslinClosure E` and
+`r < I s` there exists an antitone sequence `e : ℕ → Set α` in `E` with `(⋂ k, e k) ⊆ s` and
+`r < ⨅ k, I (e k)`. No topology, measurability, or finiteness assumption on `α` or `I` is needed. -/
+theorem exists_antitone_mem_of_lt_of_mem_souslinClosure {E : Set (Set α)}
+    (hunion : ∀ u ∈ E, ∀ v ∈ E, u ∪ v ∈ E) (hinter : ∀ u ∈ E, ∀ v ∈ E, u ∩ v ∈ E)
+    {I : Set α → ℝ≥0∞}
+    (hiUnion : ∀ A : ℕ → Set α, Monotone A → I (⋃ n, A n) = ⨆ n, I (A n))
+    {s : Set α} (hs : s ∈ souslinClosure E) {r : ℝ≥0∞} (hr : r < I s) :
+    ∃ e : ℕ → Set α, Antitone e ∧ (∀ k, e k ∈ E) ∧ (⋂ k, e k) ⊆ s ∧ r < ⨅ k, I (e k) := by
+  have hmono : Monotone I :=
+    monotone_of_map_iSup_of_monotone (by simpa only [iSup_eq_iUnion] using hiUnion)
+  obtain ⟨f, hf, rfl⟩ := hs
+  let S : Set (ℕ → ℕ) → Set α := fun T ↦
+    ⋃ β ∈ T, ⋂ m : ℕ, f (List.ofFn fun i : Fin (m + 1) ↦ β i)
+  have hJ (U : ℕ → Set (ℕ → ℕ)) (hU : Monotone U) :
+      I (S (⋃ M, U M)) = ⨆ M, I (S (U M)) := by
+    have hSU : S (⋃ M, U M) = ⋃ M, S (U M) := by
+      ext x
+      simp only [S, mem_iUnion, exists_prop]
+      exact ⟨fun ⟨β, ⟨M, hβ⟩, hx⟩ ↦ ⟨M, β, hβ, hx⟩, fun ⟨M, β, hβ, hx⟩ ↦ ⟨β, ⟨M, hβ⟩, hx⟩⟩
+    rw [hSU]
+    exact hiUnion _ fun _ _ h ↦ biUnion_mono (hU h) fun _ _ ↦ Subset.rfl
+  have hS_univ : S univ = souslinOperation f := by simp [S, souslinOperation]
+  rw [← hS_univ] at hr
+  obtain ⟨N, hN⟩ := exists_lt_iInf_setOf_forall_lt_le (J := fun T ↦ I (S T)) hJ hr
+  refine ⟨prunedSet f N, prunedSet_anti f N, prunedSet_mem hunion hinter hf N,
+    iInter_prunedSet_subset f N, hN.trans_le (le_iInf fun k ↦ ?_)⟩
+  refine (iInf_le (fun n ↦ I (S {β | ∀ i < n, β i ≤ N i})) (k + 1)).trans (hmono ?_)
+  rintro x hx
+  obtain ⟨β, hβF, hxβ⟩ := mem_iUnion₂.mp hx
+  exact mem_iUnion₂.mpr ⟨fun i : Fin (k + 1) ↦ β i,
+    Fintype.mem_piFinset.mpr fun i ↦ Finset.mem_Iic.mpr (hβF i i.isLt),
+    mem_prefixInter_of_forall (mem_iInter.mp hxβ) k⟩
 
 end TauCeti

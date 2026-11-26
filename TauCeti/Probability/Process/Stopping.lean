@@ -12,11 +12,12 @@ public import TauCeti.Topology.Order.Cadlag
 # Stopping times and stopped paths
 
 A stopping time remains a stopping time for a larger filtration. This transports stopping
-arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
-the stopping-time property, as does gluing two stopping times along an event measurable in both
-stopping σ-algebras (`MeasureTheory.IsStoppingTime.piecewise`); in particular, restricting a
-stopping time to an event known at that time by setting it to `⊤` outside (`piecewise_top`) yields
-a stopping time.
+arguments and localizing sequences when augmenting a filtration. Finite suprema, forward shifts
+by a constant in canonically ordered time with ordered subtraction, gluing two stopping times
+along an event measurable in both stopping σ-algebras (`MeasureTheory.IsStoppingTime.piecewise`),
+restricting a stopping time to an event known at that time by setting it to `⊤` outside
+(`piecewise_top`), and piecewise combinations `if σ ω ≤ η ω then σ ω else σ ω ⊔ c` preserve the
+stopping-time property.
 
 Stopping preserves path continuity, right continuity at each time, and the càdlàg property globally
 (`IsCadlag.stoppedProcess`), including when the stopping time is infinite. These pathwise facts
@@ -80,6 +81,41 @@ theorem piecewise_top {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
     IsStoppingTime ℱ (s.piecewise τ (fun _ ↦ ⊤)) :=
   hτ.piecewise (isStoppingTime_top ℱ) hs
     (hτ.measurableSpace_mono (isStoppingTime_top ℱ) (fun _ ↦ le_top) s hs)
+
+/-- Shifting a stopping time forward by a constant `c` preserves the stopping-time property in any
+canonically ordered cancellative linear order with ordered subtraction. -/
+theorem add_const_of_orderedSub {ι Ω : Type*} [AddCommMonoid ι] [LinearOrder ι]
+    [CanonicallyOrderedAdd ι] [AddLeftReflectLE ι] [Sub ι] [OrderedSub ι]
+    {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ} {τ : Ω → WithTop ι}
+    (hτ : IsStoppingTime ℱ τ) (c : ι) :
+    IsStoppingTime ℱ (fun ω ↦ τ ω + c) := by
+  intro t
+  by_cases hct : c ≤ t
+  · have heq : {ω | τ ω + c ≤ t} = {ω | τ ω ≤ ((t - c : ι) : WithTop ι)} := by
+      ext ω
+      simp only [Set.mem_ofPred_eq]
+      cases τ ω with
+      | top => simp [WithTop.top_add]
+      | coe u => exact_mod_cast (le_tsub_iff_right hct).symm
+    rw [heq]
+    exact ℱ.mono tsub_le_self _ (hτ.measurableSet_le (t - c))
+  · have hemp : {ω | τ ω + c ≤ t} = ∅ := by
+      ext ω
+      simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false, not_le]
+      exact (WithTop.coe_lt_coe.mpr (lt_of_not_ge hct)).trans_le le_add_self
+    rw [hemp]
+    exact @MeasurableSet.empty _ (ℱ t)
+
+/-- Keeping a stopping time `σ` where `σ ≤ η` and raising it to `σ ⊔ c` otherwise produces a
+stopping time. -/
+theorem ite_le_sup_const {ι Ω : Type*} [LinearOrder ι] [TopologicalSpace ι]
+    [SecondCountableTopology ι] [OrderTopology ι] {mΩ : MeasurableSpace Ω}
+    {ℱ : Filtration ι mΩ} {σ η : Ω → WithTop ι} [DecidablePred fun ω ↦ σ ω ≤ η ω]
+    (hσ : IsStoppingTime ℱ σ) (hη : IsStoppingTime ℱ η) (c : ι) :
+    IsStoppingTime ℱ (fun ω ↦ if σ ω ≤ η ω then σ ω else σ ω ⊔ c) :=
+  have hs := hσ.measurableSet_le_stopping_time hη
+  have hsup := hσ.max (isStoppingTime_const ℱ c)
+  hσ.piecewise hsup hs (hσ.measurableSpace_mono hsup (fun _ ↦ le_max_left _ _) _ hs)
 
 end IsStoppingTime
 

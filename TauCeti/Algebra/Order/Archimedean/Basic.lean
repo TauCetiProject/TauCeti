@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Archimedean.Basic
+import Mathlib.Data.Set.Lattice.Image
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 
 /-!
-# Choosing multiples and step counts in Archimedean ordered structures
+# Choosing multiples, step counts, and natural-number bounds in Archimedean ordered structures
 
 This file chooses a positive number of steps `n` with `L * n⁻¹ < c`, which splits a segment into `n`
 steps of length `n⁻¹` with an error of at most `c`.
@@ -22,8 +23,9 @@ stays below `1`. Moser's iteration uses it to pick the exponents `p₀ χ^k` alo
 Hölder inequality is iterated.
 
 Finally, it chooses a dyadic scale `2ᵏ` comparable to a given length: for `ρ, n > 0` there is
-an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`. Covering arguments with dyadic cubes use it to fit
-a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`.
+an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n` (covering arguments with dyadic cubes use it to fit
+a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`), and exhausts
+Archimedean ordered semirings and arbitrary sets by natural-number upper bounds.
 
 Beyond ordered semifields, in an Archimedean linearly ordered additive group the integer
 multiples `k • ℓ` of a nonzero element `ℓ` are unbounded above, whatever the sign of `ℓ`. For maps
@@ -40,6 +42,10 @@ lines, and that the inverse of a positive twist lift twists negatively.
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
 * `TauCeti.exists_four_mul_two_zpow_mul_le_and_lt`: for `ρ, n > 0` there is `k : ℤ` with
   `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
+* `TauCeti.iUnion_Iic_natCast_eq_univ`: natural-number downward rays `Iic (m : R)` cover any
+  Archimedean ordered semiring.
+* `Set.iUnion_inter_preimage_Iic_natCast`: any set is exhausted by intersecting with the
+  natural-number sublevel sets `g ⁻¹' Iic (m : R)` of a map into an Archimedean ordered semiring.
 * `TauCeti.exists_lt_zsmul`: in an Archimedean linearly ordered additive group, the integer
   multiples of a nonzero element are unbounded above.
 -/
@@ -99,6 +105,12 @@ theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : L} (hρ : 0 < ρ) (hn : 0
 
 end Field
 
+/-- Closed downward rays at natural-number bounds cover any Archimedean ordered semiring. -/
+@[simp]
+theorem iUnion_Iic_natCast_eq_univ {R : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    [Archimedean R] : (⋃ m : ℕ, Set.Iic (m : R)) = Set.univ :=
+  Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr (exists_nat_ge x)
+
 /-- In an Archimedean linearly ordered additive group, some integer multiple of a nonzero element
 `ℓ` exceeds any given `r`, whatever the sign of `ℓ`. -/
 theorem exists_lt_zsmul {M : Type*} [AddCommGroup M] [LinearOrder M] [IsOrderedAddMonoid M]
@@ -110,3 +122,11 @@ theorem exists_lt_zsmul {M : Type*} [AddCommGroup M] [LinearOrder M] [IsOrderedA
     exact ⟨n, by rwa [natCast_zsmul]⟩
 
 end TauCeti
+
+/-- Any set is exhausted by intersecting with the natural-number sublevel sets `g ⁻¹' Iic (m : R)`
+of a map into an Archimedean ordered semiring. -/
+theorem Set.iUnion_inter_preimage_Iic_natCast {α R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] [Archimedean R] (s : Set α) (g : α → R) :
+    (⋃ m : ℕ, s ∩ g ⁻¹' Set.Iic (m : R)) = s := by
+  rw [← Set.inter_iUnion, ← Set.preimage_iUnion, TauCeti.iUnion_Iic_natCast_eq_univ,
+    Set.preimage_univ, Set.inter_univ]

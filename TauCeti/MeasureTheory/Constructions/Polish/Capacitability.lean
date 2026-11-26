@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.MeasureTheory.Measure.NullMeasurable
 
-import Mathlib.Tactic.Positivity
+import TauCeti.MeasureTheory.MeasurableSpace.Souslin
 import TauCeti.Topology.Instances.NatNat
 
 /-!
@@ -51,11 +51,12 @@ every Hausdorff space.
 
 ## Provenance
 
-The coordinate-bounding recursion adapts the finite-measure universal-measurability argument from
-Daniel Lyng's Apache-2.0 Econlib formalization
+The Baire-space coordinate-bounding recursion (`TauCeti.exists_lt_iInf_setOf_forall_lt_le` in
+`TauCeti.MeasureTheory.MeasurableSpace.Souslin`) adapts the finite-measure universal-measurability
+argument from Daniel Lyng's Apache-2.0 Econlib formalization
 (`Econlib/Math/MeasureTheory/AnalyticNullMeasurable.lean`, commit
-`003655ccf010cdf44c4f67d6675167b54ce0e9df`) to arbitrary `ℝ≥0∞`-valued Choquet capacities in
-Hausdorff spaces, using the ultrafilter closure lemma
+`003655ccf010cdf44c4f67d6675167b54ce0e9df`) to arbitrary upward-continuous `ℝ≥0∞`-valued set
+functions; `exists_isCompact_subset_range_lt` combines it with the ultrafilter closure lemma
 `TauCeti.iInter_closure_image_subset_image_Iic` from `TauCeti.Topology.Instances.NatNat`.
 
 ## References
@@ -68,7 +69,7 @@ Hausdorff spaces, using the ultrafilter closure lemma
 public section
 
 open Filter MeasureTheory Set Topology
-open scoped ENNReal NNReal
+open scoped ENNReal
 
 namespace TauCeti
 
@@ -140,57 +141,13 @@ space is witnessed by a compact subset of that image. -/
 theorem IsChoquetCapacity.exists_isCompact_subset_range_lt (hI : IsChoquetCapacity I)
     {f : (ℕ → ℕ) → X} (hf : Continuous f) {r : ℝ≥0∞} (hr : r < I (range f)) :
     ∃ K : Set X, IsCompact K ∧ K ⊆ range f ∧ r < I K := by
-  obtain ⟨p, hrp, hp⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hr
-  obtain ⟨q, hpq, hq⟩ := ENNReal.lt_iff_exists_nnreal_btwn.1 hp
-  set δ : ℝ≥0 := q - p
-  have hδ : 0 < δ := tsub_pos_of_lt (ENNReal.coe_lt_coe.1 hpq)
-  let a : ℕ → ℝ≥0 := fun n ↦ p + δ / 2 ^ n
-  have ha_lt (n : ℕ) : ((a (n + 1) : ℝ≥0) : ℝ≥0∞) < (a n : ℝ≥0) := by
-    refine ENNReal.coe_lt_coe.2 (add_lt_add_right ?_ p)
-    exact div_lt_div_of_pos_left hδ (by positivity)
-      (pow_lt_pow_right₀ one_lt_two (Nat.lt_succ_self n))
-  -- At stage `n`, bound the `n`th coordinate while keeping the capacity above `a (n + 1)`.
-  have hstep (n : ℕ) (T : Set (ℕ → ℕ)) :
-      ∃ M : ℕ, ((a n : ℝ≥0) : ℝ≥0∞) ≤ I (f '' T) →
-        ((a (n + 1) : ℝ≥0) : ℝ≥0∞) ≤ I (f '' (T ∩ {β | β n ≤ M})) := by
-    by_cases hT : ((a n : ℝ≥0) : ℝ≥0∞) ≤ I (f '' T)
-    · have hmono : Monotone fun M : ℕ ↦ f '' (T ∩ {β | β n ≤ M}) := fun M M' hMM' ↦
-        image_mono (inter_subset_inter_right _ fun _ hβ ↦ hβ.trans hMM')
-      have hunion : ⋃ M : ℕ, f '' (T ∩ {β | β n ≤ M}) = f '' T := by
-        rw [← image_iUnion]
-        congr 1
-        ext β
-        simp only [mem_iUnion, mem_inter_iff, mem_ofPred_eq]
-        exact ⟨fun ⟨_, hβ, _⟩ ↦ hβ, fun hβ ↦ ⟨β n, hβ, le_rfl⟩⟩
-      have hsup : ((a (n + 1) : ℝ≥0) : ℝ≥0∞) < ⨆ M, I (f '' (T ∩ {β | β n ≤ M})) := by
-        rw [← hI.iUnion_eq _ hmono, hunion]
-        exact (ha_lt n).trans_le hT
-      obtain ⟨M, hM⟩ := lt_iSup_iff.1 hsup
-      exact ⟨M, fun _ ↦ hM.le⟩
-    · exact ⟨0, fun h ↦ (hT h).elim⟩
-  choose Mof hMof using hstep
-  let F : ℕ → Set (ℕ → ℕ) :=
-    fun n ↦ Nat.rec univ (fun n Fn ↦ Fn ∩ {β | β n ≤ Mof n Fn}) n
-  let N : ℕ → ℕ := fun n ↦ Mof n (F n)
-  have hF_succ (n : ℕ) : F (n + 1) = F n ∩ {β | β n ≤ N n} := rfl
-  have hF_eq : ∀ n, F n = {β | ∀ k < n, β k ≤ N k} := by
-    intro n
-    induction n with
-    | zero => ext β; simp [F]
-    | succ n ih =>
-      rw [hF_succ, ih]
-      ext β
-      simp only [mem_inter_iff, mem_ofPred_eq]
-      exact ⟨fun ⟨hpre, hn⟩ k hk ↦ (Nat.lt_succ_iff_lt_or_eq.mp hk).elim (hpre k) (· ▸ hn),
-        fun h ↦ ⟨fun k hk ↦ h k (hk.trans (Nat.lt_succ_self n)), h n (Nat.lt_succ_self n)⟩⟩
-  have hinv : ∀ n, ((a n : ℝ≥0) : ℝ≥0∞) ≤ I (f '' F n) := by
-    intro n
-    induction n with
-    | zero =>
-      have ha0 : a 0 = q := by
-        simp [a, δ, add_tsub_cancel_of_le (ENNReal.coe_lt_coe.1 hpq).le]
-      simpa [F, ha0] using hq.le
-    | succ n ih => exact hMof n (F n) ih
+  have hJ (U : ℕ → Set (ℕ → ℕ)) (hU : Monotone U) :
+      I (f '' (⋃ M, U M)) = ⨆ M, I (f '' U M) := by
+    rw [image_iUnion]
+    exact hI.iUnion_eq _ fun _ _ h ↦ image_mono (hU h)
+  rw [← image_univ] at hr
+  obtain ⟨N, hN⟩ := exists_lt_iInf_setOf_forall_lt_le (J := fun T ↦ I (f '' T)) hJ hr
+  let F : ℕ → Set (ℕ → ℕ) := fun n ↦ {β | ∀ k < n, β k ≤ N k}
   have hC_compact : IsCompact (Iic N) := by
     have : Iic N = univ.pi fun k ↦ Iic (N k) := by
       ext β; simp [Pi.le_def]
@@ -199,18 +156,13 @@ theorem IsChoquetCapacity.exists_isCompact_subset_range_lt (hI : IsChoquetCapaci
   refine ⟨f '' Iic N, hC_compact.image hf, image_subset_range f _, ?_⟩
   have hD_anti : Antitone fun n ↦ closure (f '' F n) :=
     antitone_nat_of_succ_le fun n ↦
-      closure_mono (image_mono (by rw [hF_succ]; exact inter_subset_left))
-  have hsub : ⋂ n, closure (f '' F n) ⊆ f '' Iic N := by
-    simpa only [← hF_eq] using iInter_closure_image_subset_image_Iic hf N
-  have hp_le : (p : ℝ≥0∞) ≤ I (f '' Iic N) := by
-    calc
-      (p : ℝ≥0∞) ≤ ⨅ n, I (closure (f '' F n)) :=
-        le_iInf fun n ↦ (ENNReal.coe_le_coe.2 le_self_add).trans <|
-          (hinv n).trans (hI.mono subset_closure)
-      _ = I (⋂ n, closure (f '' F n)) :=
-        (hI.iInter_isClosed_eq _ (fun _ ↦ isClosed_closure) hD_anti).symm
-      _ ≤ I (f '' Iic N) := hI.mono hsub
-  exact hrp.trans_le hp_le
+      closure_mono (image_mono fun _ h k hk ↦ h k (Nat.lt_succ_of_lt hk))
+  calc r
+    _ < ⨅ n, I (f '' F n) := hN
+    _ ≤ ⨅ n, I (closure (f '' F n)) := iInf_mono fun n ↦ hI.mono subset_closure
+    _ = I (⋂ n, closure (f '' F n)) :=
+      (hI.iInter_isClosed_eq _ (fun _ ↦ isClosed_closure) hD_anti).symm
+    _ ≤ I (f '' Iic N) := hI.mono (iInter_closure_image_subset_image_Iic hf N)
 
 /-- **Strict inner compact approximation of analytic sets.** In a Hausdorff space, every value
 strictly below the Choquet capacity of an analytic set is exceeded on a compact subset. -/
