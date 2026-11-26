@@ -156,15 +156,8 @@ theorem not_isNisnevichCovering_specMap_algebraMap_of_finrank_ne_one (k K : Type
     ¬ IsNisnevichCovering (fun _ : ι ↦ Spec.map (CommRingCat.ofHom (algebraMap k K))) := by
   intro hc
   obtain ⟨-, x, -, hx⟩ := hc.exists_isIso (IsLocalRing.closedPoint k)
-  have := x.isPrime
-  rw [RingHom.isIso_SpecMap_residueFieldMap_iff _ x _ rfl] at hx
-  -- The residue field of the field `k` at its prime is `k`, so `k → K` is onto.
-  refine h (Module.finrank_of_bijective_algebraMap ⟨(algebraMap k K).injective, fun y ↦ ?_⟩)
-  obtain ⟨w, hw⟩ := hx.2 (algebraMap K x.asIdeal.ResidueField y)
-  obtain ⟨r, rfl⟩ :=
-    (Ideal.algEquivResidueFieldOfField (x.asIdeal.comap (algebraMap k K))).surjective w
-  refine ⟨r, (algebraMap K x.asIdeal.ResidueField).injective ?_⟩
-  rw [← hw, Ideal.algEquivResidueFieldOfField_apply, Ideal.ResidueField.map_algebraMap]
+  rw [RingHom.isIso_SpecMap_residueFieldMap_iff_surjective] at hx
+  exact h (Module.finrank_of_bijective_algebraMap ⟨(algebraMap k K).injective, hx⟩)
 
 /-- The Nisnevich precoverage on the category of schemes: a presieve on `S` is covering if its
 morphisms are étale and every point of `S` has a preimage under one of them with the same
