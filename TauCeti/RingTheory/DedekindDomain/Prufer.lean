@@ -56,7 +56,7 @@ open scoped nonZeroDivisors
 
 /-- **The localizations of a Dedekind domain at its primes are valuation rings**: discrete
 valuation rings at the nonzero primes, and the fraction field at the zero prime. -/
-theorem IsDedekindDomain.preValuationRing_atPrime {C : Type*} [CommRing C] [IsDedekindDomain C]
+instance IsDedekindDomain.preValuationRing_atPrime {C : Type*} [CommRing C] [IsDedekindDomain C]
     (P : Ideal C) [P.IsPrime] : PreValuationRing (Localization.AtPrime P) := by
   rw [P.preValuationRing_atPrime_iff (FractionRing C)]
   intro x
@@ -117,8 +117,7 @@ theorem preValuationRing_atPrime (P : Ideal B) [P.IsPrime] :
       Ideal.mem_primeCompl_iff.mpr (Ideal.mem_comap.not.mp (Ideal.mem_primeCompl_iff.mp hs)), ?_⟩
     rw [hφ, hφ, IntermediateField.coe_mul, IntermediateField.coe_inv, Subalgebra.algebraMap_apply,
       Subalgebra.algebraMap_apply]
-  have := IsDedekindDomain.preValuationRing_atPrime P'
-  exact ((P'.preValuationRing_atPrime_iff F).mp this
+  exact ((P'.preValuationRing_atPrime_iff F).mp inferInstance
     ⟨x, IntermediateField.mem_adjoin_simple_self K x⟩).imp (htrans _) (htrans _)
 
 end IsIntegralClosure
