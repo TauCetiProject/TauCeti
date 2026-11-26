@@ -26,11 +26,11 @@ universe u
 
 open CategoryTheory IntegralModel
 
-/-- **An integral entry does not make an integral point** (*SmoothModel.integral_inverse*): over a
-ring `O` with `O → K` injective, the `K`-point of `GL₁` with matrix `(ϖ)` for a non-unit `ϖ ∈ O`
-(for example a uniformizer of a discrete valuation ring) has an integral entry but is not an
-integral point of `GL_{1,O}`, because its inverse is not integral. -/
-theorem not_mem_integralPoints_generalLinear_one {O K : Type u} [CommRing O] [CommRing K]
+/-- **An integral entry does not make an integral point**: over a ring `O` with `O → K`
+injective, the `K`-point of `GL₁` with matrix `(ϖ)` for a non-unit `ϖ ∈ O` (for example a
+uniformizer of a discrete valuation ring) has an integral entry but is not an integral point of
+`GL_{1,O}`, because its inverse is not integral. -/
+theorem notMem_integralPoints_generalLinear_one {O K : Type u} [CommRing O] [CommRing K]
     [Algebra O K] (hinj : Function.Injective (algebraMap O K)) {ϖ : O} (hϖ : ¬IsUnit ϖ)
     (g : GL (Fin 1) K) (hg : (g : Matrix (Fin 1) (Fin 1) K) = !![algebraMap O K ϖ]) :
     WithConv.toConv ((GeneralLinear.generalLinearToPoint (R := K) 1 g).ofConv.comp
@@ -60,7 +60,7 @@ example (two : GL (Fin 1) ℚ) (htwo : (two : Matrix (Fin 1) (Fin 1) ℚ) = !![2
     WithConv.toConv ((GeneralLinear.generalLinearToPoint (R := ℚ) 1 two).ofConv.comp
       (eqToHom (GeneralLinear.finiteTypeCoordinateHopfAlgebra_obj ℚ 1)).hom.toAlgHom) ∉
       (SmoothModel.generalLinear ℤ ℚ 1).integralPoints :=
-  not_mem_integralPoints_generalLinear_one (ϖ := 2) (RingHom.injective_int (algebraMap ℤ ℚ))
+  notMem_integralPoints_generalLinear_one (ϖ := 2) (RingHom.injective_int (algebraMap ℤ ℚ))
     (by decide) two (by rw [htwo, map_ofNat])
 
 end TauCeti.Examples
