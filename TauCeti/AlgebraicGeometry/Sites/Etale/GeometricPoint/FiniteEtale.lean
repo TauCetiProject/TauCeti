@@ -97,14 +97,7 @@ theorem toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply
           ((Over.homMk φ.hom φ.w : Over.mk s₁.hom ⟶ Over.mk s₂.hom) ≫
             (FiniteEtaleScheme.fiberCompInclIso s₂.hom).hom.app X y)) := by
   rw [FiniteEtaleScheme.toSheafCompSheafFiberIso_inv_app_apply,
-    FiniteEtaleScheme.toSheafCompSheafFiberIso_inv_app_apply]
-  let a : ((finiteEtaleSchemeProperty S).ι ⋙ coyoneda.obj (op (Over.mk s₁.hom))).obj X :=
-    (Over.homMk φ.hom φ.w : Over.mk s₁.hom ⟶ Over.mk s₂.hom) ≫
-      (FiniteEtaleScheme.fiberCompInclIso s₂.hom).hom.app X y
-  have h2 : (FiniteEtaleScheme.fiberCompInclIso s₁.hom).hom.app X
-      ((FiniteEtaleScheme.fiberCompInclIso s₁.hom).inv.app X a) = a :=
-    congrArg (fun g ↦ g a) ((FiniteEtaleScheme.fiberCompInclIso s₁.hom).inv_hom_id_app X)
-  rw [h2]
+    FiniteEtaleScheme.toSheafCompSheafFiberIso_inv_app_apply, Iso.inv_hom_id_app_apply]
   exact congrArg (fun g ↦ g (𝟙 _))
     (toPresheafFiber_toPointFunctor_map_sheafFiber_app (A := Type u) φ
       ((FiniteEtaleScheme.toSheaf S).obj X) ((FiniteEtaleScheme.toEtale S).obj X)
@@ -157,6 +150,7 @@ theorem toSheafOfOverIdStalkEquivFiber_ofOverGaloisStalkAction (R : Type u) [Com
             (toSheafOfOverIdStalkEquivFiber R Ω X z) := by
   let F := (FiniteEtaleScheme.toSheaf (Spec (.of R))).obj X
   let s₀ := of (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))
+  -- Transport `homOfAlgHom _ σ.toAlgHom` across `ofOverIdIso R Ω` to an endomorphism `φ₀` of `s₀`.
   let φ₀ : s₀ ⟶ s₀ := homOfRingHom σ.toAlgHom.toRingHom
     (by rw [AlgHom.toRingHom_eq_coe]; exact Spec.map_algHom_comp_map_algebraMap σ.toAlgHom)
   have hcomm : (ofOverIdIso R Ω).inv ≫ homOfAlgHom (𝟙 (Spec (.of R))) σ.toAlgHom =
@@ -165,6 +159,7 @@ theorem toSheafOfOverIdStalkEquivFiber_ofOverGaloisStalkAction (R : Type u) [Com
     simp only [comp_hom, ofOverIdIso_inv_hom, homOfAlgHom_hom, Category.id_comp, φ₀,
       homOfRingHom_hom]
     exact (Category.comp_id _).symm
+  -- Rewrite the transported Galois action on `z` as `φ₀` acting on the transported germ `z₀`.
   let z₀ := ((toPointFunctor (Spec (.of R))).map (ofOverIdIso R Ω).inv).sheafFiber.app F z
   have hnat : ((toPointFunctor (Spec (.of R))).map (ofOverIdIso R Ω).inv).sheafFiber.app F
         ((ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω σ).asIso.hom.app F z) =
@@ -174,12 +169,11 @@ theorem toSheafOfOverIdStalkEquivFiber_ofOverGaloisStalkAction (R : Type u) [Com
       NatTrans.comp_app] at h
     rw [ofOverGaloisStalkAction_asIso_hom]
     exact congrArg (fun g ↦ g z) h
+  -- Identify `z₀` with `y` via `toSheafCompSheafFiberIso`, then apply `φ₀` on the geometric fibre.
   let y := toSheafOfOverIdStalkEquivFiber R Ω X z
   have hy_inv : (FiniteEtaleScheme.toSheafCompSheafFiberIso s₀.hom).inv.app X y = z₀ := by
-    dsimp only [y]
-    rw [toSheafOfOverIdStalkEquivFiber_apply]
-    exact congrArg (fun g ↦ g z₀)
-      ((FiniteEtaleScheme.toSheafCompSheafFiberIso s₀.hom).hom_inv_id_app X)
+    rw [show y = _ from toSheafOfOverIdStalkEquivFiber_apply R Ω X z]
+    exact Iso.hom_inv_id_app_apply (FiniteEtaleScheme.toSheafCompSheafFiberIso s₀.hom) X z₀
   let a : ((finiteEtaleSchemeProperty (Spec (.of R))).ι ⋙
       coyoneda.obj (op (Over.mk s₀.hom))).obj X :=
     (Over.homMk φ₀.hom φ₀.w : Over.mk s₀.hom ⟶ Over.mk s₀.hom) ≫
@@ -188,19 +182,16 @@ theorem toSheafOfOverIdStalkEquivFiber_ofOverGaloisStalkAction (R : Type u) [Com
         ((ofOverGaloisStalkAction (𝟙 (Spec (.of R))) Ω σ).asIso.hom.app F z) =
       (FiniteEtaleScheme.fiberCompInclIso s₀.hom).inv.app X a := by
     rw [toSheafOfOverIdStalkEquivFiber_apply, hnat, ← hy_inv,
-      toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply φ₀ X y]
-    exact congrArg (fun g ↦ g ((FiniteEtaleScheme.fiberCompInclIso s₀.hom).inv.app X a))
-      ((FiniteEtaleScheme.toSheafCompSheafFiberIso s₀.hom).inv_hom_id_app X)
-  rw [hstep]
-  have ha : (FiniteEtaleScheme.fiberCompInclIso s₀.hom).hom.app X
-      ((FiniteEtaleScheme.fiberCompInclIso s₀.hom).inv.app X a) = a :=
-    congrArg (fun g ↦ g a) ((FiniteEtaleScheme.fiberCompInclIso s₀.hom).inv_hom_id_app X)
-  rw [ha]
+      toPointFunctor_map_sheafFiber_app_toSheafCompSheafFiberIso_inv_app_apply φ₀ X y,
+      Iso.inv_hom_id_app_apply]
+  -- Cancel `fiberCompInclIso` and compare scheme morphisms via `algSpec_map_ofHom_left`.
+  rw [hstep, Iso.inv_hom_id_app_apply]
   refine Over.OverMorphism.ext ?_
   simp only [a, Over.comp_left, Over.homMk_left, φ₀, homOfRingHom_hom]
-  -- `y` is definitionally the stalk fibre transported along `ofOverIdIso`, bridging
-  -- `(algSpec (.of R)).obj (op (CommAlgCat.of (.of R) Ω))` and `Over.mk s₀.hom`.
-  rfl
+  exact (congrArg (· ≫ _)
+    (TauCeti.AlgebraicGeometry.algSpec_map_ofHom_left
+      (R := .of R) (A := CommAlgCat.of R Ω) (B := CommAlgCat.of R Ω) σ.toAlgHom).symm).trans
+    (Over.comp_left _ _ _ _ _).symm
 
 private theorem algHom_eq_comp_of_ofOverGaloisStalkAction {R Ω : Type u} [CommRing R] [Field Ω]
     [IsSepClosed Ω] [Algebra R Ω] {X : FiniteEtaleScheme (Spec (.of R))} {B : CommAlgCat.{u} R}

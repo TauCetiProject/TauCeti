@@ -133,7 +133,7 @@ theorem SpecMap_comp_ofOver_iff [Mono a] (g : Ω₂ →+* Ω₁) :
 
 /-- When `a` is a monomorphism, the ring homomorphism underlying a morphism
 `ofOver a Ω₁ ⟶ ofOver a Ω₂` is `R`-linear. -/
-theorem algebraMap_comp_ringHom [Mono a] (f : ofOver a Ω₁ ⟶ ofOver a Ω₂) :
+theorem Hom.ringHom_comp_algebraMap [Mono a] (f : ofOver a Ω₁ ⟶ ofOver a Ω₂) :
     f.ringHom.comp (algebraMap R Ω₂) = algebraMap R Ω₁ :=
   (SpecMap_comp_ofOver_iff a f.ringHom).mp f.SpecMap_ringHom_comp
 
@@ -218,7 +218,7 @@ noncomputable def autToAlgEquiv [Mono a] (φ : Aut (ofOver a Ω)) : Ω ≃ₐ[R]
     (f := (Scheme.Spec.preimageIso ((forget S).mapIso φ.asIso)).unop.commRingCatIsoToRingEquiv)
     fun r ↦ by
       rw [← RingEquiv.coe_toRingHom, autToRingEquiv_toRingHom]
-      exact DFunLike.congr_fun (algebraMap_comp_ringHom a φ.asIso.hom) r
+      exact DFunLike.congr_fun (φ.asIso.hom.ringHom_comp_algebraMap a) r
 
 /-- The ring homomorphism underlying `autToAlgEquiv a Ω φ` is `φ.asIso.hom.ringHom`. -/
 @[simp]

@@ -227,11 +227,8 @@ the `(Nat.card K) ^ m`-th power. -/
 theorem frobeniusAlgEquivOfFinite_pow_apply (K L : Type*) [Field K] [Finite K] [Field L]
     [Algebra K L] [PerfectField L] (m : ℕ) (x : L) :
     (frobeniusAlgEquivOfFinite K L ^ m) x = x ^ Nat.card K ^ m := by
-  induction m generalizing x with
-  | zero => simp
-  | succ m ih =>
-    rw [pow_succ', AlgEquiv.mul_apply, frobeniusAlgEquivOfFinite_apply, ih, ← pow_mul,
-      pow_succ', mul_comm]
+  rw [AlgEquiv.coe_pow, show ⇑(frobeniusAlgEquivOfFinite K L) = (· ^ Nat.card K) from
+    funext (frobeniusAlgEquivOfFinite_apply K L), pow_iterate]
 
 /-- When `K` carries a `Fintype` instance, `(frobeniusAlgEquivOfFinite K L ^ m).toAlgHom` equals
 `FiniteField.frobeniusAlgHom K L ^ m`. -/
