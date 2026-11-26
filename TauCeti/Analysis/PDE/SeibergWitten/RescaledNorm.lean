@@ -1,0 +1,510 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Sobolev.Semiclassical.ChangeOfVariables
+import Mathlib.Analysis.MeanInequalities
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+
+/-!
+# The rescaled Hilbert norms of Taubes's gluing construction
+
+In Taubes's construction of Seiberg–Witten solutions from pseudoholomorphic curves, the
+equations at parameter `r` are solved near an approximate solution `(a_app, χ_app)` by a
+contraction in Hilbert norms adapted to the length scale `h = λ⁻¹` of the vortices, where
+`λ = √(2 r)`. A connection increment `b` and a normalized spinor increment `ζ` are measured by
+
+`‖(b, ζ)‖_(E_(r,s))² = ∑_{j ≤ s} λ^(-2j) (λ⁻² ‖∇ʲ b‖₂² + ‖∇ʲ ζ‖₂² / 4)`,
+
+and the values `y = (f, τ, ν)` of the gauge-fixed Seiberg–Witten section, in the gauge, curvature
+and negative-spinor target, by
+
+`‖y‖_(F_(r,s-1))² = ∑_{j ≤ s - 1} λ^(-2j) ‖∇ʲ y‖₂²`.
+
+This file defines these two quantities for fields on a finite-dimensional real inner product
+space `V`, a flat chart, with the derivatives `∇ʲ` read as the iterated derivatives
+`iteratedFDeriv ℝ j`, and with `h = λ⁻¹` as the parameter:
+`TauCeti.SeibergWitten.rescaledFieldNormSq s h b ζ` and
+`TauCeti.SeibergWitten.rescaledTargetNormSq s h y`. It proves:
+
+* **The scaling check.** In the rescaled coordinate `w = λ y`, the connection has plane
+  coefficient `b_w(w) = λ⁻¹ b(λ⁻¹ w)` and the spinor is `ζ_w(w) = ζ(λ⁻¹ w)`, and
+  `‖(b, ζ)‖_(E_(r,s))² = λ⁻ⁿ ∑_{j ≤ s} (‖∇ʲ b_w‖₂² + ‖∇ʲ ζ_w‖₂² / 4)` for `n = dim V`
+  (`TauCeti.SeibergWitten.rescaledFieldNormSq_eq_rpow_mul`): the rescaled norm is the unit-scale
+  norm of the rescaled fields, with the coefficient metric `|b|² + |δα|² / 4` of the plane vortex
+  equations and the volume factor `λ⁻ⁿ`. The weight `λ⁻²` on `b` is what makes the connection and
+  the section scale alike. The same holds for the target norm
+  (`TauCeti.SeibergWitten.rescaledTargetNormSq_eq_rpow_mul`).
+* **Equivalence with the fixed-order norms.** For `0 < h ≤ 1`, that is `λ ≥ 1`, the rescaled norm
+  lies between `h^(2s+2)` times and one times the unit-scale norm of the same fields
+  (`TauCeti.SeibergWitten.pow_mul_rescaledFieldNormSq_one_le`,
+  `TauCeti.SeibergWitten.rescaledFieldNormSq_le_one`, and for the target
+  `TauCeti.SeibergWitten.pow_mul_rescaledTargetNormSq_one_le`,
+  `TauCeti.SeibergWitten.rescaledTargetNormSq_le_one`). The constants degenerate as `h → 0`,
+  which is why the estimates of the construction are stated in the rescaled norms.
+* **Comparison with the semiclassical norms.** Up to the factor `hⁿ` and the constant `s + 1`,
+  the rescaled field norm is the square of the semiclassical Sobolev norms
+  `‖f‖_{s,h} = h^(-n/2) ∑_{i ≤ s} hⁱ ‖Dⁱ f‖₂` (`TauCeti.semiclassicalSobolevNorm`):
+  `hⁿ (h² ‖b‖_{s,h}² + ‖ζ‖_{s,h}² / 4)` lies between `‖(b, ζ)‖_(E_(r,s))²` and `s + 1` times it
+  (`TauCeti.SeibergWitten.rescaledFieldNormSq_le_rpow_mul`,
+  `TauCeti.SeibergWitten.rpow_mul_le_mul_rescaledFieldNormSq`). So the Sobolev embedding,
+  algebra, multiplier and change-of-chart estimates of the semiclassical norms, all with
+  constants independent of `h`, hold for the rescaled field norm.
+* **Gauge, bundle and tube charts.** Multiplying the spinor increment by a gauge `g` with
+  semiclassical bounds `hⁱ ‖Dⁱ g‖ ≤ M` for `i ≤ s`, such as a change of unitary gauge varying on the
+  scale `h`, changes the rescaled norm by at most a factor depending only on `s` and `M`
+  (`TauCeti.SeibergWitten.rescaledFieldNormSq_smul_le`). The same holds for changes of frame of
+  the connection and spinor bundles, `(b, ζ) ↦ (A b, A' ζ)` with operator-valued `A` and `A'`
+  obeying such bounds (`TauCeti.SeibergWitten.rescaledFieldNormSq_clm_apply_le`, and
+  `TauCeti.SeibergWitten.rescaledTargetNormSq_clm_apply_le` for the target), and for reading the
+  fields in a chart `Φ` controlled at the scale `h`
+  (`TauCeti.SeibergWitten.rescaledFieldNormSq_comp_le`). These rest on the semiclassical
+  multiplier and change-of-chart estimates
+  (`TauCeti.semiclassicalSobolevNorm_clm_apply_le_of_le_left`,
+  `TauCeti.semiclassicalSobolevNorm_comp_le`).
+* **Seminorm.** The square roots satisfy the triangle inequality on fields with square-integrable
+  derivatives (`TauCeti.SeibergWitten.sqrt_rescaledFieldNormSq_add_le`,
+  `TauCeti.SeibergWitten.sqrt_rescaledTargetNormSq_add_le`), by Minkowski's inequality.
+
+The derivatives are measured in the operator norm of `iteratedFDeriv`, which is equivalent to
+the Hilbert–Schmidt norm of the tensor `∇ʲ` with constants depending only on `j` and `n`; with it
+the quantities above are equivalent to Hilbert norms, but are not themselves defined by an inner
+product. The fields are smooth functions on a flat chart; the completion to the Sobolev spaces of
+sections of the bundles over a four-manifold, with its reference connections, is not treated here.
+
+## Main definitions
+
+* `TauCeti.SeibergWitten.rescaledFieldNormSq s h b ζ`: the square of the norm of
+  `(b, ζ)` in `E_(r,s)`, at the scale `h = (2 r)^(-1/2)`.
+* `TauCeti.SeibergWitten.rescaledTargetNormSq s h y`: the square of the norm of `y` in
+  `F_(r,s-1)`.
+
+## References
+
+* C. H. Taubes, *Gr ⇒ SW: From pseudo-holomorphic curves to Seiberg–Witten solutions*,
+  J. Differential Geom. 51 (1999), 203–334.
+-/
+
+public section
+
+open MeasureTheory Module
+
+namespace TauCeti.SeibergWitten
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V]
+  {B : Type*} [NormedAddCommGroup B] [NormedSpace ℝ B]
+  {S : Type*} [NormedAddCommGroup S] [NormedSpace ℝ S]
+  {T : Type*} [NormedAddCommGroup T] [NormedSpace ℝ T]
+
+/-! ### Definitions -/
+
+/-- The square of the **rescaled Hilbert norm** `E_(r,s)` of a connection increment `b` and a
+normalized spinor increment `ζ`, at the scale `h = λ⁻¹ = (2 r)^(-1/2)`:
+`‖(b, ζ)‖_(E_(r,s))² = ∑_{j ≤ s} h^(2j) (h² ‖Dʲ b‖₂² + ‖Dʲ ζ‖₂² / 4)`. A derivative contributes
+`0` when it is not square integrable (`MeasureTheory.lpNorm_of_not_memLp`). -/
+noncomputable def rescaledFieldNormSq (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) : ℝ :=
+  ∑ j ∈ Finset.range (s + 1), h ^ (2 * j) *
+    (h ^ 2 * lpNorm (iteratedFDeriv ℝ j b) 2 volume ^ 2 +
+      lpNorm (iteratedFDeriv ℝ j ζ) 2 volume ^ 2 / 4)
+
+/-- The square of the **rescaled target norm** `F_(r,s-1)` of a field `y` with values in the
+gauge, curvature and negative-spinor target, at the scale `h = λ⁻¹ = (2 r)^(-1/2)`:
+`‖y‖_(F_(r,s-1))² = ∑_{j < s} h^(2j) ‖Dʲ y‖₂²`, through the derivatives of order `s - 1`. -/
+noncomputable def rescaledTargetNormSq (s : ℕ) (h : ℝ) (y : V → T) : ℝ :=
+  ∑ j ∈ Finset.range s, h ^ (2 * j) * lpNorm (iteratedFDeriv ℝ j y) 2 volume ^ 2
+
+theorem rescaledFieldNormSq_def (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
+    rescaledFieldNormSq s h b ζ = ∑ j ∈ Finset.range (s + 1), h ^ (2 * j) *
+      (h ^ 2 * lpNorm (iteratedFDeriv ℝ j b) 2 volume ^ 2 +
+        lpNorm (iteratedFDeriv ℝ j ζ) 2 volume ^ 2 / 4) :=
+  (rfl)
+
+theorem rescaledTargetNormSq_def (s : ℕ) (h : ℝ) (y : V → T) :
+    rescaledTargetNormSq s h y =
+      ∑ j ∈ Finset.range s, h ^ (2 * j) * lpNorm (iteratedFDeriv ℝ j y) 2 volume ^ 2 :=
+  (rfl)
+
+/-- The rescaled norm as a sum of squares of the scaled `L²` norms of the derivatives:
+`‖(b, ζ)‖_(E_(r,s))² = h² ∑_{j ≤ s} (hʲ ‖Dʲ b‖₂)² + (∑_{j ≤ s} (hʲ ‖Dʲ ζ‖₂)²) / 4`. -/
+theorem rescaledFieldNormSq_eq_sum_sq (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
+    rescaledFieldNormSq s h b ζ =
+      h ^ 2 * ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j b) 2 volume) ^ 2 +
+        (∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j ζ) 2 volume) ^ 2) /
+          4 := by
+  rw [rescaledFieldNormSq, Finset.mul_sum, Finset.sum_div, ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
+
+@[simp]
+theorem rescaledFieldNormSq_zero (s : ℕ) (h : ℝ) :
+    rescaledFieldNormSq s h (0 : V → B) (0 : V → S) = 0 := by
+  simp [rescaledFieldNormSq]
+
+@[simp]
+theorem rescaledTargetNormSq_zero (s : ℕ) (h : ℝ) : rescaledTargetNormSq s h (0 : V → T) = 0 := by
+  simp [rescaledTargetNormSq]
+
+theorem rescaledFieldNormSq_nonneg (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
+    0 ≤ rescaledFieldNormSq s h b ζ := by
+  rw [rescaledFieldNormSq]
+  refine Finset.sum_nonneg fun j _ ↦ ?_
+  rw [pow_mul]
+  positivity
+
+theorem rescaledTargetNormSq_nonneg (s : ℕ) (h : ℝ) (y : V → T) :
+    0 ≤ rescaledTargetNormSq s h y := by
+  rw [rescaledTargetNormSq]
+  refine Finset.sum_nonneg fun j _ ↦ ?_
+  rw [pow_mul]
+  positivity
+
+/-! ### The scaling check -/
+
+/-- The dilation law of a single term: for `ζ` of class `Cʲ` and `h > 0`,
+`h^(2j) ‖Dʲ ζ‖₂² = hⁿ ‖Dʲ (ζ (h • ·))‖₂²`. -/
+private theorem pow_mul_lpNorm_sq_eq {j : ℕ} {ζ : V → S} (hζ : ContDiff ℝ j ζ) {h : ℝ}
+    (hh : 0 < h) :
+    h ^ (2 * j) * lpNorm (iteratedFDeriv ℝ j ζ) 2 volume ^ 2 =
+      h ^ (finrank ℝ V : ℝ) * lpNorm (iteratedFDeriv ℝ j fun w ↦ ζ (h • w)) 2 volume ^ 2 := by
+  rw [Measure.lpNorm_iteratedFDeriv_comp_smul volume hζ hh.ne', abs_of_pos hh, mul_pow,
+    ← mul_assoc, ← Real.rpow_natCast (h ^ _) 2, ← Real.rpow_mul hh.le, ← Real.rpow_add hh,
+    ← Real.rpow_natCast]
+  congr 2
+  simp only [ENNReal.toReal_ofNat]
+  push_cast
+  ring
+
+/-- **The scaling check for the rescaled norm.** In the rescaled coordinate `w = λ y`,
+`λ = h⁻¹`, the connection increment has plane coefficient `b_w(w) = h b(h w)` and the spinor
+increment is `ζ_w(w) = ζ(h w)`, and
+`‖(b, ζ)‖_(E_(r,s))² = hⁿ ∑_{j ≤ s} (‖Dʲ b_w‖₂² + ‖Dʲ ζ_w‖₂² / 4)`, for `b` and `ζ` of class
+`Cˢ` and `n = dim V`: the unit-scale norm of the rescaled fields, in the coefficient metric
+`|b|² + |δα|² / 4`, times the volume factor `hⁿ`. -/
+theorem rescaledFieldNormSq_eq_rpow_mul {s : ℕ} {b : V → B} {ζ : V → S} (hb : ContDiff ℝ s b)
+    (hζ : ContDiff ℝ s ζ) {h : ℝ} (hh : 0 < h) :
+    rescaledFieldNormSq s h b ζ = h ^ (finrank ℝ V : ℝ) *
+      rescaledFieldNormSq s 1 (fun w ↦ h • b (h • w)) (fun w ↦ ζ (h • w)) := by
+  rw [rescaledFieldNormSq, rescaledFieldNormSq, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  have hjs : (j : ℕ∞) ≤ s := by exact_mod_cast Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
+  have hbj : ContDiff ℝ j b := hb.of_le (by exact_mod_cast hjs)
+  have hζj : ContDiff ℝ j ζ := hζ.of_le (by exact_mod_cast hjs)
+  -- The derivatives of `h • b (h • ·)` are `h` times those of `b (h • ·)`.
+  have hD : iteratedFDeriv ℝ j (fun w ↦ h • b (h • w)) =
+      h • iteratedFDeriv ℝ j (fun w ↦ b (h • w)) :=
+    funext fun _ ↦ (ContinuousLinearEquiv.smulLeft (R₁ := ℝ)
+      (Units.mk0 h hh.ne')).iteratedFDeriv_comp_left
+  rw [hD, lpNorm_const_smul, coe_nnNorm, Real.norm_eq_abs, abs_of_pos hh]
+  simp only [one_pow, one_mul]
+  linear_combination h ^ 2 * pow_mul_lpNorm_sq_eq hbj hh + pow_mul_lpNorm_sq_eq hζj hh / 4
+
+/-- **The scaling check for the target norm.** For `y` of class `C^(s-1)` and `h > 0`,
+`‖y‖_(F_(r,s-1))² = hⁿ ∑_{j < s} ‖Dʲ y_w‖₂²` with `y_w(w) = y(h w)`, `n = dim V`. -/
+theorem rescaledTargetNormSq_eq_rpow_mul {s : ℕ} {y : V → T} (hy : ContDiff ℝ (s - 1 : ℕ) y)
+    {h : ℝ} (hh : 0 < h) :
+    rescaledTargetNormSq s h y =
+      h ^ (finrank ℝ V : ℝ) * rescaledTargetNormSq s 1 (fun w ↦ y (h • w)) := by
+  rw [rescaledTargetNormSq, rescaledTargetNormSq, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j hj ↦ ?_
+  have hjs : j ≤ s - 1 := Nat.le_sub_one_of_lt (Finset.mem_range.1 hj)
+  rw [one_pow, one_mul]
+  exact pow_mul_lpNorm_sq_eq (hy.of_le (by exact_mod_cast hjs)) hh
+
+/-! ### Equivalence with the fixed-order norms -/
+
+/-- **The rescaled norm below the unit-scale norm.** For `0 ≤ h ≤ 1`,
+`‖(b, ζ)‖_(E_(r,s))² ≤ ∑_{j ≤ s} (‖Dʲ b‖₂² + ‖Dʲ ζ‖₂² / 4)`. -/
+theorem rescaledFieldNormSq_le_one (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1) (b : V → B)
+    (ζ : V → S) : rescaledFieldNormSq s h b ζ ≤ rescaledFieldNormSq s 1 b ζ := by
+  refine Finset.sum_le_sum fun j _ ↦ ?_
+  rw [one_pow, one_pow, one_mul, one_mul]
+  have h2 : h ^ 2 ≤ 1 := pow_le_one₀ hh hh₁
+  calc h ^ (2 * j) * (h ^ 2 * lpNorm (iteratedFDeriv ℝ j b) 2 volume ^ 2 +
+        lpNorm (iteratedFDeriv ℝ j ζ) 2 volume ^ 2 / 4)
+      ≤ 1 * (1 * lpNorm (iteratedFDeriv ℝ j b) 2 volume ^ 2 +
+        lpNorm (iteratedFDeriv ℝ j ζ) 2 volume ^ 2 / 4) := by
+        gcongr
+        exact pow_le_one₀ hh hh₁
+    _ = _ := by ring
+
+/-- **The unit-scale norm below the rescaled norm.** For `0 ≤ h ≤ 1`, the unit-scale norm loses at
+most `h^(2s+2)`: `h^(2s+2) ∑_{j ≤ s} (‖Dʲ b‖₂² + ‖Dʲ ζ‖₂² / 4) ≤ ‖(b, ζ)‖_(E_(r,s))²`. -/
+theorem pow_mul_rescaledFieldNormSq_one_le (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1)
+    (b : V → B) (ζ : V → S) :
+    h ^ (2 * s + 2) * rescaledFieldNormSq s 1 b ζ ≤ rescaledFieldNormSq s h b ζ := by
+  rw [rescaledFieldNormSq, Finset.mul_sum]
+  refine Finset.sum_le_sum fun j hj ↦ ?_
+  have hjs : j ≤ s := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
+  rw [one_pow, one_pow, one_mul, one_mul]
+  have hb : h ^ (2 * s + 2) ≤ h ^ (2 * j) * h ^ 2 := by
+    rw [← pow_add]
+    exact pow_le_pow_of_le_one hh hh₁ (by omega)
+  have hζ : h ^ (2 * s + 2) ≤ h ^ (2 * j) := pow_le_pow_of_le_one hh hh₁ (by omega)
+  have hX := sq_nonneg (lpNorm (iteratedFDeriv ℝ j b) 2 volume)
+  have hY := sq_nonneg (lpNorm (iteratedFDeriv ℝ j ζ) 2 volume)
+  nlinarith [mul_le_mul_of_nonneg_right hb hX, mul_le_mul_of_nonneg_right hζ hY]
+
+/-- **The target norm below the unit-scale norm.** For `0 ≤ h ≤ 1`,
+`‖y‖_(F_(r,s-1))² ≤ ∑_{j < s} ‖Dʲ y‖₂²`. -/
+theorem rescaledTargetNormSq_le_one (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1) (y : V → T) :
+    rescaledTargetNormSq s h y ≤ rescaledTargetNormSq s 1 y := by
+  refine Finset.sum_le_sum fun j _ ↦ ?_
+  rw [one_pow, one_mul]
+  exact mul_le_of_le_one_left (sq_nonneg _) (pow_le_one₀ hh hh₁)
+
+/-- **The unit-scale target norm below the rescaled one.** For `0 ≤ h ≤ 1`,
+`h^(2s) ∑_{j < s} ‖Dʲ y‖₂² ≤ ‖y‖_(F_(r,s-1))²`. -/
+theorem pow_mul_rescaledTargetNormSq_one_le (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1)
+    (y : V → T) : h ^ (2 * s) * rescaledTargetNormSq s 1 y ≤ rescaledTargetNormSq s h y := by
+  rw [rescaledTargetNormSq, Finset.mul_sum]
+  refine Finset.sum_le_sum fun j hj ↦ ?_
+  rw [one_pow, one_mul]
+  exact mul_le_mul_of_nonneg_right
+    (pow_le_pow_of_le_one hh hh₁ (by have := Finset.mem_range.1 hj; omega)) (sq_nonneg _)
+
+/-! ### Comparison with the semiclassical norms -/
+
+/-- **The rescaled norm below the semiclassical norms.** For `h > 0`,
+`‖(b, ζ)‖_(E_(r,s))² ≤ hⁿ (h² ‖b‖_{s,h}² + ‖ζ‖_{s,h}² / 4)`, where `‖·‖_{s,h}` is the
+semiclassical Sobolev norm `TauCeti.semiclassicalSobolevNorm`. -/
+theorem rescaledFieldNormSq_le_rpow_mul (s : ℕ) {h : ℝ} (hh : 0 < h) (b : V → B) (ζ : V → S) :
+    rescaledFieldNormSq s h b ζ ≤ h ^ (finrank ℝ V : ℝ) *
+      (h ^ 2 * semiclassicalSobolevNorm s h b ^ 2 + semiclassicalSobolevNorm s h ζ ^ 2 / 4) := by
+  rw [rescaledFieldNormSq_eq_sum_sq, mul_add, mul_left_comm, mul_div_assoc']
+  gcongr
+  · exact sum_sq_le_rpow_mul_semiclassicalSobolevNorm_sq s hh b
+  · exact sum_sq_le_rpow_mul_semiclassicalSobolevNorm_sq s hh ζ
+
+/-- **The semiclassical norms below the rescaled norm.** For `h > 0`,
+`hⁿ (h² ‖b‖_{s,h}² + ‖ζ‖_{s,h}² / 4) ≤ (s + 1) ‖(b, ζ)‖_(E_(r,s))²`. -/
+theorem rpow_mul_le_mul_rescaledFieldNormSq (s : ℕ) {h : ℝ} (hh : 0 < h) (b : V → B)
+    (ζ : V → S) :
+    h ^ (finrank ℝ V : ℝ) *
+        (h ^ 2 * semiclassicalSobolevNorm s h b ^ 2 + semiclassicalSobolevNorm s h ζ ^ 2 / 4) ≤
+      (s + 1) * rescaledFieldNormSq s h b ζ := by
+  have hb := rpow_mul_semiclassicalSobolevNorm_sq_le s hh b
+  have hζ := rpow_mul_semiclassicalSobolevNorm_sq_le s hh ζ
+  rw [rescaledFieldNormSq_eq_sum_sq]
+  nlinarith [sq_nonneg h]
+
+/-! ### Gauge, bundle and tube charts -/
+
+/-- A semiclassical bound `‖φ‖_{s,h} ≤ C ‖u‖_{s,h}` bounds the square sum
+`∑_{j ≤ s} (hʲ ‖Dʲ φ‖₂)²` by `(s + 1) C²` times that of `u`. -/
+private theorem sum_sq_le_of_semiclassicalSobolevNorm_le {G G' : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [NormedAddCommGroup G'] [NormedSpace ℝ G'] {s : ℕ} {h C : ℝ} (hh : 0 < h)
+    {φ : V → G'} {u : V → G}
+    (hle : semiclassicalSobolevNorm s h φ ≤ C * semiclassicalSobolevNorm s h u) :
+    ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j φ) 2 volume) ^ 2 ≤
+      (s + 1) * C ^ 2 *
+        ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j u) 2 volume) ^ 2 := by
+  have hsq : semiclassicalSobolevNorm s h φ ^ 2 ≤ C ^ 2 * semiclassicalSobolevNorm s h u ^ 2 := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (semiclassicalSobolevNorm_nonneg s hh.le φ) hle 2
+  have hn : 0 ≤ h ^ (finrank ℝ V : ℝ) := Real.rpow_nonneg hh.le _
+  have hu := rpow_mul_semiclassicalSobolevNorm_sq_le s hh u
+  calc _ ≤ h ^ (finrank ℝ V : ℝ) * semiclassicalSobolevNorm s h φ ^ 2 :=
+        sum_sq_le_rpow_mul_semiclassicalSobolevNorm_sq s hh φ
+    _ ≤ C ^ 2 * (h ^ (finrank ℝ V : ℝ) * semiclassicalSobolevNorm s h u ^ 2) := by
+        nlinarith [mul_le_mul_of_nonneg_left hsq hn]
+    _ ≤ C ^ 2 * ((s + 1) * ∑ j ∈ Finset.range (s + 1),
+          (h ^ j * lpNorm (iteratedFDeriv ℝ j u) 2 volume) ^ 2) :=
+        mul_le_mul_of_nonneg_left hu (sq_nonneg C)
+    _ = _ := by ring
+
+/-- If the square sums of `b'` and `ζ'` are at most `c₁` and `c₂` times those of `b` and `ζ`,
+then `‖(b', ζ')‖_(E_(r,s))² ≤ max c₁ c₂ ‖(b, ζ)‖_(E_(r,s))²`. -/
+private theorem rescaledFieldNormSq_le_max_mul {s : ℕ} {h c₁ c₂ : ℝ} {b : V → B} {ζ : V → S}
+    {B' S' : Type*} [NormedAddCommGroup B'] [NormedSpace ℝ B'] [NormedAddCommGroup S']
+    [NormedSpace ℝ S'] {b' : V → B'} {ζ' : V → S'}
+    (hb : ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j b') 2 volume) ^ 2 ≤
+      c₁ * ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j b) 2 volume) ^ 2)
+    (hζ : ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j ζ') 2 volume) ^ 2 ≤
+      c₂ * ∑ j ∈ Finset.range (s + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j ζ) 2 volume) ^ 2) :
+    rescaledFieldNormSq s h b' ζ' ≤ max c₁ c₂ * rescaledFieldNormSq s h b ζ := by
+  rw [rescaledFieldNormSq_eq_sum_sq, rescaledFieldNormSq_eq_sum_sq]
+  have hb0 : 0 ≤ ∑ j ∈ Finset.range (s + 1),
+      (h ^ j * lpNorm (iteratedFDeriv ℝ j b) 2 volume) ^ 2 :=
+    Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+  have hζ0 : 0 ≤ ∑ j ∈ Finset.range (s + 1),
+      (h ^ j * lpNorm (iteratedFDeriv ℝ j ζ) 2 volume) ^ 2 :=
+    Finset.sum_nonneg fun _ _ ↦ sq_nonneg _
+  nlinarith [mul_le_mul_of_nonneg_right (le_max_left c₁ c₂) (mul_nonneg (sq_nonneg h) hb0),
+    mul_le_mul_of_nonneg_right (le_max_right c₁ c₂) hζ0, mul_le_mul_of_nonneg_left hb (sq_nonneg h)]
+
+section Gauge
+
+variable {𝕜 : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedSpace 𝕜 S] [IsScalarTower ℝ 𝕜 S]
+
+/-- **Multiplication of the spinor increment by a gauge with semiclassical bounds.** Let `ζ` be of
+class `Cˢ` with square-integrable derivatives through order `s`, and let `g : V → 𝕜` be of class
+`Cˢ` with `hⁱ ‖Dⁱ g‖ ≤ M` everywhere for `i ≤ s`, such as a unitary gauge varying on the scale
+`h`. Then `‖(b, g ζ)‖_(E_(r,s))² ≤ max 1 ((s + 1) ((s + 1) 2ˢ M)²) ‖(b, ζ)‖_(E_(r,s))²`, with a
+constant depending only on `s` and `M`, not on `h`. -/
+theorem rescaledFieldNormSq_smul_le {s : ℕ} {h M : ℝ} {g : V → 𝕜} {ζ : V → S}
+    (hg : ContDiff ℝ s g) (hζ : ContDiff ℝ s ζ) (hζm : ∀ i ≤ s, MemLp (iteratedFDeriv ℝ i ζ) 2)
+    (hh : 0 < h) (hM : ∀ i ≤ s, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i g x‖ ≤ M) (b : V → B) :
+    rescaledFieldNormSq s h b (fun y ↦ g y • ζ y) ≤
+      max 1 ((s + 1) * ((s + 1) * 2 ^ s * M) ^ 2) * rescaledFieldNormSq s h b ζ :=
+  rescaledFieldNormSq_le_max_mul (one_mul _).symm.le
+    (sum_sq_le_of_semiclassicalSobolevNorm_le hh
+      (semiclassicalSobolevNorm_smul_le_of_le_left hg hζ hζm hh hM).2)
+
+end Gauge
+
+/-- **Changes of bundle frames.** Let `b` and `ζ` be of class `Cˢ` with square-integrable
+derivatives through order `s`, and let `A : V → B →L[ℝ] B'` and `A' : V → S →L[ℝ] S'` be of class
+`Cˢ` with `hⁱ ‖Dⁱ A‖ ≤ M` and `hⁱ ‖Dⁱ A'‖ ≤ M'` everywhere for `i ≤ s`, such as changes of
+unitary frames of the connection and spinor bundles varying on the scale `h`. Then
+`‖(A b, A' ζ)‖_(E_(r,s))² ≤ max c c' ‖(b, ζ)‖_(E_(r,s))²` with `c = (s + 1) ((s + 1) 2ˢ M)²` and
+`c' = (s + 1) ((s + 1) 2ˢ M')²`, constants depending only on `s`, `M` and `M'`, not on `h`. -/
+theorem rescaledFieldNormSq_clm_apply_le {s : ℕ} {h M M' : ℝ} {b : V → B} {ζ : V → S}
+    {B' S' : Type*} [NormedAddCommGroup B'] [NormedSpace ℝ B'] [NormedAddCommGroup S']
+    [NormedSpace ℝ S'] {A : V → B →L[ℝ] B'} {A' : V → S →L[ℝ] S'} (hA : ContDiff ℝ s A)
+    (hA' : ContDiff ℝ s A') (hb : ContDiff ℝ s b) (hζ : ContDiff ℝ s ζ)
+    (hbm : ∀ i ≤ s, MemLp (iteratedFDeriv ℝ i b) 2) (hζm : ∀ i ≤ s, MemLp (iteratedFDeriv ℝ i ζ) 2)
+    (hh : 0 < h) (hM : ∀ i ≤ s, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i A x‖ ≤ M)
+    (hM' : ∀ i ≤ s, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i A' x‖ ≤ M') :
+    rescaledFieldNormSq s h (fun y ↦ A y (b y)) (fun y ↦ A' y (ζ y)) ≤
+      max ((s + 1) * ((s + 1) * 2 ^ s * M) ^ 2) ((s + 1) * ((s + 1) * 2 ^ s * M') ^ 2) *
+        rescaledFieldNormSq s h b ζ :=
+  rescaledFieldNormSq_le_max_mul
+    (sum_sq_le_of_semiclassicalSobolevNorm_le hh
+      (semiclassicalSobolevNorm_clm_apply_le_of_le_left hA hb hbm hh hM).2)
+    (sum_sq_le_of_semiclassicalSobolevNorm_le hh
+      (semiclassicalSobolevNorm_clm_apply_le_of_le_left hA' hζ hζm hh hM').2)
+
+/-- **Changes of tube charts.** Let `Φ : V → V` be a chart at scale `h`: an injective map of class
+`Cˢ` with `h^(i-1) ‖Dⁱ Φ‖ ≤ L` for `1 ≤ i ≤ s` and `c ≤ |det DΦ|` with `c > 0`, as in
+`TauCeti.semiclassicalSobolevNorm_comp_le`. For `b` and `ζ` of class `Cˢ` with square-integrable
+derivatives through order `s`, the fields read in the chart satisfy
+`‖(b ∘ Φ, ζ ∘ Φ)‖_(E_(r,s))² ≤ (s + 1) K² ‖(b, ζ)‖_(E_(r,s))²` with
+`K = TauCeti.Wkp.compLBound 2 s L c`, a constant depending only on `s`, `L` and `c`, not on `h`.
+The components of a connection form are then transformed by the transpose of `DΦ`, a change of
+frame as in `TauCeti.SeibergWitten.rescaledFieldNormSq_clm_apply_le`. -/
+theorem rescaledFieldNormSq_comp_le {s : ℕ} {h L c : ℝ} {b : V → B} {ζ : V → S} {Φ : V → V}
+    (hb : ContDiff ℝ s b) (hζ : ContDiff ℝ s ζ) (hbm : ∀ i ≤ s, MemLp (iteratedFDeriv ℝ i b) 2)
+    (hζm : ∀ i ≤ s, MemLp (iteratedFDeriv ℝ i ζ) 2) (hΦ : ContDiff ℝ s Φ)
+    (hΦd : Differentiable ℝ Φ) (hinj : Function.Injective Φ) (hh : 0 < h)
+    (hL : ∀ i, 1 ≤ i → i ≤ s → ∀ x, h ^ (i - 1) * ‖iteratedFDeriv ℝ i Φ x‖ ≤ L) (hc : 0 < c)
+    (hdet : ∀ x, c ≤ |(fderiv ℝ Φ x).det|) :
+    rescaledFieldNormSq s h (b ∘ Φ) (ζ ∘ Φ) ≤
+      (s + 1) * Wkp.compLBound 2 s L c ^ 2 * rescaledFieldNormSq s h b ζ := by
+  have := rescaledFieldNormSq_le_max_mul (s := s) (h := h) (b := b) (ζ := ζ) (b' := b ∘ Φ)
+    (ζ' := ζ ∘ Φ) (sum_sq_le_of_semiclassicalSobolevNorm_le hh
+      (semiclassicalSobolevNorm_comp_le hb hbm hΦ hΦd hinj hh hL hc hdet))
+    (sum_sq_le_of_semiclassicalSobolevNorm_le hh
+      (semiclassicalSobolevNorm_comp_le hζ hζm hΦ hΦd hinj hh hL hc hdet))
+  rwa [max_self] at this
+
+/-! ### The target norm against the semiclassical norms -/
+
+/-- The target norm through order `k` is the square sum `∑_{j ≤ k} (hʲ ‖Dʲ y‖₂)²`. -/
+private theorem rescaledTargetNormSq_succ_eq_sum_sq (k : ℕ) (h : ℝ) (y : V → T) :
+    rescaledTargetNormSq (k + 1) h y =
+      ∑ j ∈ Finset.range (k + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j y) 2 volume) ^ 2 :=
+  Finset.sum_congr rfl fun j _ ↦ by ring
+
+/-- **The target norm below the semiclassical norm.** For `h > 0`,
+`‖y‖_(F_(r,k))² ≤ hⁿ ‖y‖_{k,h}²`. -/
+theorem rescaledTargetNormSq_succ_le_rpow_mul (k : ℕ) {h : ℝ} (hh : 0 < h) (y : V → T) :
+    rescaledTargetNormSq (k + 1) h y ≤
+      h ^ (finrank ℝ V : ℝ) * semiclassicalSobolevNorm k h y ^ 2 := by
+  rw [rescaledTargetNormSq_succ_eq_sum_sq]
+  exact sum_sq_le_rpow_mul_semiclassicalSobolevNorm_sq k hh y
+
+/-- **The semiclassical norm below the target norm.** For `h > 0`,
+`hⁿ ‖y‖_{k,h}² ≤ (k + 1) ‖y‖_(F_(r,k))²`. -/
+theorem rpow_mul_le_mul_rescaledTargetNormSq_succ (k : ℕ) {h : ℝ} (hh : 0 < h) (y : V → T) :
+    h ^ (finrank ℝ V : ℝ) * semiclassicalSobolevNorm k h y ^ 2 ≤
+      (k + 1) * rescaledTargetNormSq (k + 1) h y := by
+  rw [rescaledTargetNormSq_succ_eq_sum_sq]
+  exact rpow_mul_semiclassicalSobolevNorm_sq_le k hh y
+
+/-- **Changes of frame of the target bundle.** If `y` is of class `Cᵏ` with square-integrable
+derivatives through order `k`, and `A : V → T →L[ℝ] T'` is of class `Cᵏ` with `hⁱ ‖Dⁱ A‖ ≤ M`
+everywhere for `i ≤ k`, then
+`‖A y‖_(F_(r,k))² ≤ (k + 1) ((k + 1) 2ᵏ M)² ‖y‖_(F_(r,k))²`. -/
+theorem rescaledTargetNormSq_clm_apply_le {k : ℕ} {h M : ℝ} {y : V → T} {T' : Type*}
+    [NormedAddCommGroup T'] [NormedSpace ℝ T'] {A : V → T →L[ℝ] T'} (hA : ContDiff ℝ k A)
+    (hy : ContDiff ℝ k y) (hym : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i y) 2) (hh : 0 < h)
+    (hM : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i A x‖ ≤ M) :
+    rescaledTargetNormSq (k + 1) h (fun x ↦ A x (y x)) ≤
+      (k + 1) * ((k + 1) * 2 ^ k * M) ^ 2 * rescaledTargetNormSq (k + 1) h y := by
+  rw [rescaledTargetNormSq_succ_eq_sum_sq, rescaledTargetNormSq_succ_eq_sum_sq]
+  exact sum_sq_le_of_semiclassicalSobolevNorm_le hh
+    (semiclassicalSobolevNorm_clm_apply_le_of_le_left hA hy hym hh hM).2
+
+/-! ### The triangle inequality -/
+
+/-- **Minkowski's inequality for dominated square sums.** If `0 ≤ z i ≤ x i + y i` on `s`, then
+`√(∑ z²) ≤ √(∑ x²) + √(∑ y²)`. -/
+private theorem sqrt_sum_sq_le {ι : Type*} (s : Finset ι) {x y z : ι → ℝ}
+    (hz : ∀ i ∈ s, 0 ≤ z i)
+    (hzxy : ∀ i ∈ s, z i ≤ x i + y i) :
+    √(∑ i ∈ s, z i ^ 2) ≤ √(∑ i ∈ s, x i ^ 2) + √(∑ i ∈ s, y i ^ 2) := by
+  have hM := Real.Lp_add_le s x y (p := 2) one_le_two
+  simp only [Real.rpow_two, sq_abs, ← Real.sqrt_eq_rpow] at hM
+  refine (Real.sqrt_le_sqrt (Finset.sum_le_sum fun i hi ↦ ?_)).trans hM
+  exact pow_le_pow_left₀ (hz i hi) (hzxy i hi) 2
+
+/-- **The triangle inequality for the target norm.** For `y` and `y'` of class `C^(s-1)` with
+square-integrable derivatives through order `s - 1`, and `h ≥ 0`,
+`‖y + y'‖_(F_(r,s-1)) ≤ ‖y‖_(F_(r,s-1)) + ‖y'‖_(F_(r,s-1))`. -/
+theorem sqrt_rescaledTargetNormSq_add_le {s : ℕ} {y y' : V → T}
+    (hy : ContDiff ℝ (s - 1 : ℕ) y) (hy' : ContDiff ℝ (s - 1 : ℕ) y')
+    (hym : ∀ j < s, MemLp (iteratedFDeriv ℝ j y) 2) {h : ℝ} (hh : 0 ≤ h) :
+    √(rescaledTargetNormSq s h (y + y')) ≤
+      √(rescaledTargetNormSq s h y) + √(rescaledTargetNormSq s h y') := by
+  have key : ∀ f : V → T, rescaledTargetNormSq s h f =
+      ∑ j ∈ Finset.range s, (h ^ j * lpNorm (iteratedFDeriv ℝ j f) 2 volume) ^ 2 := fun f ↦
+    Finset.sum_congr rfl fun j _ ↦ by ring
+  rw [key, key, key]
+  refine sqrt_sum_sq_le _ (fun j _ ↦ mul_nonneg (pow_nonneg hh j) lpNorm_nonneg) fun j hj ↦ ?_
+  have hjs : j < s := Finset.mem_range.1 hj
+  have hjs' : j ≤ s - 1 := Nat.le_sub_one_of_lt hjs
+  rw [iteratedFDeriv_add (hy.of_le (by exact_mod_cast hjs')) (hy'.of_le (by exact_mod_cast hjs')),
+    ← mul_add]
+  exact mul_le_mul_of_nonneg_left (lpNorm_add_le (hym j hjs) one_le_two) (pow_nonneg hh j)
+
+/-- **The triangle inequality for the rescaled norm.** For connection and spinor increments of
+class `Cˢ`, with `b` and `ζ` having square-integrable derivatives through order `s`, and `h ≥ 0`,
+`‖(b + b', ζ + ζ')‖_(E_(r,s)) ≤ ‖(b, ζ)‖_(E_(r,s)) + ‖(b', ζ')‖_(E_(r,s))`. -/
+theorem sqrt_rescaledFieldNormSq_add_le {s : ℕ} {b b' : V → B} {ζ ζ' : V → S}
+    (hb : ContDiff ℝ s b) (hb' : ContDiff ℝ s b') (hζ : ContDiff ℝ s ζ) (hζ' : ContDiff ℝ s ζ')
+    (hbm : ∀ j ≤ s, MemLp (iteratedFDeriv ℝ j b) 2)
+    (hζm : ∀ j ≤ s, MemLp (iteratedFDeriv ℝ j ζ) 2) {h : ℝ} (hh : 0 ≤ h) :
+    √(rescaledFieldNormSq s h (b + b') (ζ + ζ')) ≤
+      √(rescaledFieldNormSq s h b ζ) + √(rescaledFieldNormSq s h b' ζ') := by
+  -- Index the terms of both components by `(j, true)` for `b` and `(j, false)` for `ζ`.
+  let c : (V → B) → (V → S) → ℕ × Bool → ℝ := fun b ζ p ↦
+    if p.2 then h ^ (p.1 + 1) * lpNorm (iteratedFDeriv ℝ p.1 b) 2 volume
+    else h ^ p.1 * lpNorm (iteratedFDeriv ℝ p.1 ζ) 2 volume / 2
+  have key : ∀ b ζ, rescaledFieldNormSq s h b ζ =
+      ∑ p ∈ Finset.range (s + 1) ×ˢ Finset.univ, c b ζ p ^ 2 := fun b ζ ↦ by
+    rw [Finset.sum_product, rescaledFieldNormSq]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    simp only [c, Fintype.sum_bool, ite_true, Bool.false_eq_true, ite_false]
+    ring
+  have hc : ∀ b ζ p, 0 ≤ c b ζ p := fun b ζ p ↦ by
+    simp only [c]
+    split_ifs
+    · exact mul_nonneg (pow_nonneg hh _) lpNorm_nonneg
+    · exact div_nonneg (mul_nonneg (pow_nonneg hh _) lpNorm_nonneg) zero_le_two
+  rw [key, key, key]
+  refine sqrt_sum_sq_le _ (fun p _ ↦ hc _ _ p) fun p hp ↦ ?_
+  have hjs : p.1 ≤ s := Nat.lt_succ_iff.1 (Finset.mem_range.1 (Finset.mem_product.1 hp).1)
+  have hjs' : (p.1 : WithTop ℕ∞) ≤ s := by exact_mod_cast hjs
+  simp only [c]
+  split_ifs
+  · rw [iteratedFDeriv_add (hb.of_le hjs') (hb'.of_le hjs'), ← mul_add]
+    exact mul_le_mul_of_nonneg_left (lpNorm_add_le (hbm p.1 hjs) one_le_two) (pow_nonneg hh _)
+  · rw [iteratedFDeriv_add (hζ.of_le hjs') (hζ'.of_le hjs'), ← add_div, ← mul_add]
+    gcongr
+    exact lpNorm_add_le (hζm p.1 hjs) one_le_two
+
+end TauCeti.SeibergWitten
