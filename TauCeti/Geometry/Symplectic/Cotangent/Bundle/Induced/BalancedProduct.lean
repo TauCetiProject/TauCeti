@@ -9,8 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.BalancedProduct
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Induced
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.MomentMap
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
-import TauCeti.Geometry.Lie.Adjoint.Infinitesimal
-import TauCeti.Geometry.Lie.Adjoint.Smooth
+import TauCeti.Geometry.Lie.FundamentalVectorField.Coadjoint
 import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 
 /-!
@@ -64,8 +63,6 @@ section in that case, is not discussed here.
 
 ## Main results
 
-* `TauCeti.mvfderiv_fundamentalVectorField_apply_of_apply_smul`: the derivative of the
-  equivariance of `f`.
 * `TauCeti.CotangentBundle.isBasic_mpullback_inducedForm`: the induced form is basic for
   `G × N → G ×_K N`.
 * `TauCeti.CotangentBundle.mpullback_quotientMk_balancedProductInducedForm`,
@@ -99,68 +96,6 @@ namespace TauCeti
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-/-! ### The derivative of the equivariance of a map to `𝔤*` -/
-
-section Equivariance
-
-variable {G : Type*} [Group G] {K : Subgroup G}
-  {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace G] [ChartedSpace H G]
-  [LieGroup I ∞ G]
-  {EK HK : Type*} [NormedAddCommGroup EK] [NormedSpace ℝ EK] [TopologicalSpace HK]
-  {IK : ModelWithCorners ℝ EK HK} [ChartedSpace HK K] [ContMDiffSMul IK I ∞ K G]
-  {EN HN : Type*} [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
-  {IN : ModelWithCorners ℝ EN HN} {N : Type*} [TopologicalSpace N] [ChartedSpace HN N]
-  [MulAction K N] [ContMDiffSMul IK IN ∞ K N]
-
-/-- **Infinitesimal equivariance of a map to `𝔤*`.** Let a subgroup `K` of `G` act on `N`, and let
-`f : N → 𝔤*` be equivariant along the orbit of `n`, `f (k • n) = f n ∘ Ad_{k⁻¹}`. Then the
-derivative of `f` along the fundamental vector field of `ζ ∈ Lie(K)` is
-`df_n (ζ_N n) = -f n ∘ ad_(ι ζ)`, where `ι ζ` is the image of `ζ` in the Lie algebra of `G`. -/
-theorem mvfderiv_fundamentalVectorField_apply_of_apply_smul {f : N → E →L[ℝ] ℝ} {n : N}
-    (hf : MDifferentiableAt IN 𝓘(ℝ, E →L[ℝ] ℝ) f n)
-    (hfK : ∀ k : K, f (k • n) = f n ∘L Lie.adjointContinuousLinearMap (I := I) ((k : G)⁻¹))
-    (ζ : GroupLieAlgebra IK K) (η : GroupLieAlgebra I G) :
-    mvfderiv IN f n (fundamentalVectorField IN ζ n) η =
-      -f n (⁅K.subtype.groupLieAlgebraMap IK I ζ, η⁆ : GroupLieAlgebra I G) := by
-  have hι : MDifferentiableAt IK I ((↑) : K → G) 1 :=
-    (K.contMDiff_subtypeVal_of_contMDiffSMul (I' := IK) (n := ∞)).mdifferentiableAt (by simp)
-  have hinv : MDifferentiableAt IK I (fun k : K ↦ (k : G)⁻¹) 1 :=
-    ((contMDiff_inv I ∞).mdifferentiableAt (by simp)).comp _ hι
-  have horbit : MDifferentiableAt IK IN (fun k : K ↦ k • n) 1 :=
-    (ContMDiffSMul.contMDiff_smul_const (I := IK) (I' := IN) (n := ∞) n).mdifferentiableAt
-      (by simp)
-  have hT : MDifferentiableAt I 𝓘(ℝ, E) (fun g : G ↦ show E from Lie.tangentAd (I := I) g η)
-      ((1 : K) : G)⁻¹ :=
-    (Lie.contMDiff_tangentAd_apply_const (I := I) (G := G) (show E from η)).mdifferentiableAt
-      (by simp)
-  -- Differentiate `k ↦ f (k • n) η = f n (Ad_(k⁻¹) η)` at `k = 1` in the direction `ζ`, once
-  -- through the orbit map of `n` and once through the adjoint action.
-  have h₁ : mvfderiv IK (fun k : K ↦ f (k • n) η) 1 ζ =
-      mvfderiv IN f n (fundamentalVectorField IN ζ n) η :=
-    (mvfderiv_comp_apply_of_eq (g := fun m ↦ f m η) 1 (hf.clm_apply mdifferentiableAt_const)
-      horbit (one_smul K n) ζ).trans <| by
-        rw [fundamentalVectorField_apply]
-        exact mvfderiv_clm_apply_const hf η _
-  have hh : mfderiv IK I (fun k : K ↦ (k : G)⁻¹) 1 ζ = -K.subtype.groupLieAlgebraMap IK I ζ := by
-    rw [show (fun k : K ↦ (k : G)⁻¹) = (fun x : G ↦ x⁻¹) ∘ ((↑) : K → G) from rfl,
-      mfderiv_comp_apply_of_eq 1 ((contMDiff_inv I ∞).mdifferentiableAt (by simp)) hι rfl,
-      OneMemClass.coe_one, GroupLieAlgebra.mfderiv_inv_one_apply,
-      MonoidHom.groupLieAlgebraMap_apply, Subgroup.coe_subtype]
-  have h₂ : mvfderiv IK (fun k : K ↦ f (k • n) η) 1 ζ =
-      f n (⁅-K.subtype.groupLieAlgebraMap IK I ζ, η⁆ : GroupLieAlgebra I G) := by
-    have hfun : (fun k : K ↦ f (k • n) η) =
-        f n ∘ (fun g : G ↦ show E from Lie.tangentAd (I := I) g η) ∘ (fun k : K ↦ (k : G)⁻¹) :=
-      funext fun k ↦ by simp only [comp_apply, hfK, Lie.tangentAd_apply]; rfl
-    rw [hfun, (f n).mvfderiv_comp_apply (hT.comp_of_eq 1 hinv rfl) ζ]
-    congr 1
-    rw [mvfderiv_comp_apply_of_eq 1 hT hinv rfl, hh, OneMemClass.coe_one, inv_one]
-    exact Lie.mvfderiv_tangentAd_apply_one (I := I) (G := G) _ η
-  rw [← h₁, h₂, neg_lie]
-  exact (f n).map_neg _
-
-end Equivariance
-
 namespace CotangentBundle
 
 open BalancedProduct
@@ -176,18 +111,6 @@ variable {G : Type*} [Group G] {K : Subgroup G}
   [ChartedSpace F K] [LieGroup 𝓘(ℝ, F) ∞ K] [ContMDiffSMul 𝓘(ℝ, F) I ∞ K G]
   [ContMDiffSMul 𝓘(ℝ, F) IN ∞ K N]
   {σ : SmoothTwoForm IN N} {f : N → E →L[ℝ] ℝ}
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [LieGroup I ∞ G] [IsClosed (K : Set G)]
-  [FiniteDimensional ℝ EN] [IN.Boundaryless] [IsManifold IN ∞ N] [T2Space N] [MulAction K N] in
-/-- The identification `K.RightTranslation × N = G × N` has the identity as differential. -/
-private theorem mfderiv_prodMap_toRightTranslation_symm_apply (x : K.RightTranslation × N)
-    (v : TangentSpace (I.prod IN) x) :
-    mfderiv (I.prod IN) (I.prod IN) (Prod.map K.toRightTranslation.symm (id : N → N)) x v = v := by
-  -- `K.toRightTranslation.symm` is the identity of `G`, and `K.RightTranslation` carries the
-  -- manifold structure of `G`; `change` passes to the identity map, which `rw` cannot do across
-  -- the type synonym.
-  change mfderiv (I.prod IN) (I.prod IN) (id : G × N → G × N) x v = v
-  exact DFunLike.congr_fun (mfderiv_id (I := I.prod IN) (x := show G × N from x)) v
 
 variable (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) ∞ f)
   (hfK : ∀ (k : K) n, f (k • n) = f n ∘L Lie.adjointContinuousLinearMap (I := I) ((k : G)⁻¹))
@@ -231,7 +154,8 @@ theorem isBasic_mpullback_inducedForm :
     rw [InfinitesimalAction.fundamental_apply, fundamentalVectorField_prod]
     refine LinearMap.mem_ker.2 (LinearMap.ext fun w ↦ ?_)
     rw [LinearMap.zero_apply, SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback,
-      mfderiv_prodMap_toRightTranslation_symm_apply, mfderiv_prodMap_toRightTranslation_symm_apply]
+      Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply,
+      Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply]
     refine eval₂_inducedForm_eq_zero hf (ξ := -K.subtype.groupLieAlgebraMap 𝓘(ℝ, F) I ζ) ?_
       (fun η ↦ ?_) (fun u ↦ ?_) w
     · rw [prodVectorField_fst]
@@ -274,6 +198,7 @@ def balancedProductInducedForm :
     Quotient.mk_surjective _ (isBasic_mpullback_inducedForm hf hfK hσK hμ)
 
 /-- The induced form on `G ×_K N` pulls back to the induced form on `G × N`. -/
+@[simp]
 theorem mpullback_quotientMk_balancedProductInducedForm :
     letI := rightTranslationChartedSpace K N I IN F
     haveI := isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN) (F := F)
@@ -324,8 +249,9 @@ theorem eval₂_balancedProductInducedForm_mfderiv_quotientMk (x : K.RightTransl
   have := isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN) (F := F)
   rw [← SmoothForm.eval₂_mpullback _ (isSubmersion_quotientMk_rightTranslation (K := K) (Z := N)
       (I := I) (IZ := IN) (F := F)).contMDiff, mpullback_quotientMk_balancedProductInducedForm,
-    SmoothForm.eval₂_mpullback, mfderiv_prodMap_toRightTranslation_symm_apply,
-    mfderiv_prodMap_toRightTranslation_symm_apply]
+    SmoothForm.eval₂_mpullback,
+    Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply,
+    Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply]
   -- `Prod.map K.toRightTranslation.symm id x` is `(K.toRightTranslation.symm x.1, x.2)`.
   rfl
 
@@ -435,7 +361,7 @@ theorem isEquivariantMomentMap_balancedProductMomentMap :
     refine ⟨mfderiv I (I.prod IN)
       (fun g : G ↦ (K.toRightTranslation (g * K.toRightTranslation.symm x.1), x.2)) 1 ξ,
       ?_, ?_⟩
-    · refine (mfderiv_prodMap_toRightTranslation_symm_apply x _).trans ?_
+    · refine (Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply x _).trans ?_
       rw [InfinitesimalAction.fundamental_prod_zero_apply]
       -- `K.RightTranslation` is `G`, and the curve `g ↦ (g x.1, x.2)` of
       -- `K.RightTranslation × N` is the curve `g ↦ (g • (e x).1, (e x).2)` of `G × N`.
@@ -451,8 +377,7 @@ theorem isEquivariantMomentMap_balancedProductMomentMap :
   | h g n =>
     rw [smul_mk_toRightTranslation, balancedProductMomentMap_mk, balancedProductMomentMap_mk,
       map_mul]
-    -- The product in `Module.End` is composition.
-    rfl
+    exact mul_apply_eq_comp _ _ _
 
 end CotangentBundle
 

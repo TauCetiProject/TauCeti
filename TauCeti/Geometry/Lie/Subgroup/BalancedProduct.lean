@@ -97,6 +97,9 @@ compared with reduction at zero of the shifted moment map on the product with th
   smooth exactly when its composite with `[g, z] ↦ (g • ι z, g K)` is, for a smooth embedding `ι`.
 * `Subgroup.RightTranslation.fundamentalVectorField_toRightTranslation`: the generators of right
   translation by `K` are left-invariant vector fields.
+* `Subgroup.RightTranslation.mfderiv_toRightTranslation_symm_apply`,
+  `Subgroup.RightTranslation.mfderiv_prodMap_toRightTranslation_symm_apply`: the identifications
+  `K.RightTranslation = G` and `K.RightTranslation × Z = G × Z` have the identity as differential.
 * `TauCeti.BalancedProduct.isManifold_orbitRelQuotient_rightTranslation`,
   `TauCeti.BalancedProduct.isSubmersion_quotientMk_orbitRelQuotient_rightTranslation`: the orbit
   space of `G` is a smooth manifold and the orbit projection is a smooth submersion.
@@ -135,6 +138,27 @@ theorem contMDiff_toRightTranslation (n : ℕ∞ω) : ContMDiff I I n K.toRightT
 theorem contMDiff_toRightTranslation_symm (n : ℕ∞ω) :
     ContMDiff I I n K.toRightTranslation.symm :=
   contMDiff_id
+
+/-- The identification `K.RightTranslation = G` has the identity as differential. -/
+@[simp]
+theorem mfderiv_toRightTranslation_symm_apply (x : K.RightTranslation) (v : TangentSpace I x) :
+    mfderiv I I K.toRightTranslation.symm x v = v := by
+  -- `K.toRightTranslation.symm` is the identity of `G`, and `K.RightTranslation` carries the
+  -- manifold structure of `G`; `change` passes to the identity map, which `rw` cannot do across
+  -- the type synonym.
+  change mfderiv I I (id : G → G) x v = v
+  exact DFunLike.congr_fun (mfderiv_id (I := I) (x := show G from x)) v
+
+/-- The identification `K.RightTranslation × Z = G × Z` has the identity as differential. -/
+@[simp]
+theorem mfderiv_prodMap_toRightTranslation_symm_apply {EZ HZ : Type*} [NormedAddCommGroup EZ]
+    [NormedSpace 𝕜 EZ] [TopologicalSpace HZ] {IZ : ModelWithCorners 𝕜 EZ HZ} {Z : Type*}
+    [TopologicalSpace Z] [ChartedSpace HZ Z] (x : K.RightTranslation × Z)
+    (v : TangentSpace (I.prod IZ) x) :
+    mfderiv (I.prod IZ) (I.prod IZ) (Prod.map K.toRightTranslation.symm (id : Z → Z)) x v = v := by
+  -- As for `mfderiv_toRightTranslation_symm_apply`, `change` passes to the identity of `G × Z`.
+  change mfderiv (I.prod IZ) (I.prod IZ) (id : G × Z → G × Z) x v = v
+  exact DFunLike.congr_fun (mfderiv_id (I := I.prod IZ) (x := show G × Z from x)) v
 
 variable {EK HK : Type*} [NormedAddCommGroup EK] [NormedSpace 𝕜 EK] [TopologicalSpace HK]
   {IK : ModelWithCorners 𝕜 EK HK} [ChartedSpace HK K] {n : ℕ∞ω}
