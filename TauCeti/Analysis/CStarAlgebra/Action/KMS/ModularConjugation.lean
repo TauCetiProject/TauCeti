@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.GNS
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS.Basic
-public import TauCeti.Analysis.VonNeumannAlgebra.Adjoin
+public import TauCeti.Analysis.CStarAlgebra.GNS.VonNeumannAlgebra
+public import TauCeti.Analysis.InnerProductSpace.ConjOperator
 import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
 
@@ -17,23 +18,23 @@ import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
 For a β-KMS state `ω` of a point-norm continuous real action `α` on a possibly nonunital
 C⋆-algebra `A`, the formula `J₀ [a] = [α_{iβ/2}(a⋆)]` on classes of entire analytic elements
 extends uniquely to an antiunitary involution `J₀ : H_ω ≃ₗᵢ⋆[ℂ] H_ω`
-(`TauCeti.CStarAction.IsKMSState.modularConjugation`). Conjugating bounded operators by `J₀` gives
-the conjugate-linear isometric involution `TauCeti.CStarAction.IsKMSState.conjModularConjugation`
-(`T ↦ J₀ T J₀`), which satisfies `J₀ M J₀ ⊆ M'` for `M = π_ω(A)''`
-(`conjModularConjugation_mem_centralizer`). In the unital case, `J₀` fixes the cyclic GNS vector
-`Ω = [1]` (`modularConjugation_gnsVector`); the reverse inclusion `J₀ M' J₀ ⊆ M` is proved in
-`TauCeti.Analysis.CStarAlgebra.Action.KMS.TomitaCommutation`.
+(`TauCeti.CStarAction.IsKMSState.modularConjugation`). Conjugating bounded operators by `J₀` via
+`LinearIsometryEquiv.conjOperator` (`T ↦ J₀ T J₀`) satisfies `J₀ M J₀ ⊆ M'` for
+`M = ω.toPositiveLinearMap.gnsVonNeumannAlgebra`
+(`TauCeti.CStarAction.IsKMSState.conjOperator_modularConjugation_mem_commutant`). In the unital
+case, `J₀` fixes the cyclic GNS vector `Ω = [1]`
+(`TauCeti.CStarAction.IsKMSState.modularConjugation_gnsVector`); the reverse inclusion
+`J₀ M' J₀ ⊆ M` is proved in `TauCeti.Analysis.CStarAlgebra.Action.KMS.TomitaCommutation`.
 
 ## Main definitions
 
 * `TauCeti.CStarAction.IsKMSState.modularConjugation`: the antiunitary involution `J₀` on `H_ω`.
-* `TauCeti.CStarAction.IsKMSState.conjModularConjugation`: operator conjugation `T ↦ J₀ T J₀`.
 
 ## Main statements
 
 * `TauCeti.CStarAction.IsKMSState.modularConjugation_apply_toGNS`: `J₀ [a] = [α_{iβ/2}(a⋆)]`.
 * `TauCeti.CStarAction.IsKMSState.inner_modularConjugation`: `⟪J₀ u, J₀ v⟫ = ⟪v, u⟫`.
-* `TauCeti.CStarAction.IsKMSState.conjModularConjugation_mem_centralizer`: `J₀ M J₀ ⊆ M'`.
+* `TauCeti.CStarAction.IsKMSState.conjOperator_modularConjugation_mem_commutant`: `J₀ M J₀ ⊆ M'`.
 
 ## References
 
@@ -159,15 +160,18 @@ theorem IsKMSState.modularConjugation_apply_toGNS (hω : α.IsKMSState β ω) {a
       ω.toPositiveLinearMap.toGNS (α.entireExtension (star a) ((β / 2 : ℝ) * I)) :=
   modularConjugationIsometry_apply_toGNS hω ha
 
-/-- The modular conjugation is its own inverse. -/
-@[simp] theorem IsKMSState.modularConjugation_symm (hω : α.IsKMSState β ω) :
-    hω.modularConjugation.symm = hω.modularConjugation := by ext v; rfl
-
 /-- The modular conjugation is an involution: `J₀ (J₀ v) = v`. -/
 @[simp] theorem IsKMSState.modularConjugation_modularConjugation (hω : α.IsKMSState β ω)
     (v : ω.toPositiveLinearMap.GNS) :
     hω.modularConjugation (hω.modularConjugation v) = v :=
   modularConjugationIsometry_involutive hω v
+
+/-- The modular conjugation is its own inverse. -/
+@[simp] theorem IsKMSState.modularConjugation_symm (hω : α.IsKMSState β ω) :
+    hω.modularConjugation.symm = hω.modularConjugation := by
+  ext v
+  exact hω.modularConjugation.symm_apply_eq.mpr
+    (hω.modularConjugation_modularConjugation v).symm
 
 /-- **Antiunitarity of the modular conjugation:** `⟪J₀ u, J₀ v⟫ = ⟪v, u⟫`. -/
 theorem IsKMSState.inner_modularConjugation (hω : α.IsKMSState β ω)
@@ -226,82 +230,17 @@ theorem IsKMSState.modularConjugation_gnsImplementingGroup (hω : α.IsKMSState 
 
 /-! ### Conjugation of bounded operators by `J₀` -/
 
-/-- Conjugation `T ↦ J₀ T J₀` of a bounded operator on `H_ω` by the modular conjugation
-`J₀`. -/
-def IsKMSState.conjModularConjugation (hω : α.IsKMSState β ω)
-    (T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) :
-    ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS where
-  toFun v := hω.modularConjugation (T (hω.modularConjugation v))
-  map_add' _ _ := by simp
-  map_smul' _ _ := by simp [map_smulₛₗ]
-  cont := by fun_prop
-
-/-- Evaluating `J₀ T J₀` on a vector `v`. -/
-@[simp] theorem IsKMSState.conjModularConjugation_apply (hω : α.IsKMSState β ω)
-    (T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS)
-    (v : ω.toPositiveLinearMap.GNS) :
-    hω.conjModularConjugation T v = hω.modularConjugation (T (hω.modularConjugation v)) := by
-  rw [conjModularConjugation]; rfl
-
-/-- Conjugation by `J₀` is an involution. -/
-@[simp] theorem IsKMSState.conjModularConjugation_conjModularConjugation (hω : α.IsKMSState β ω)
-    (T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) :
-    hω.conjModularConjugation (hω.conjModularConjugation T) = T := by ext v; simp
-
-/-- Conjugation by `J₀` fixes `1`. -/
-@[simp] theorem IsKMSState.conjModularConjugation_one (hω : α.IsKMSState β ω) :
-    hω.conjModularConjugation 1 = 1 := by ext v; simp
-
-/-- Conjugation by `J₀` fixes `0`. -/
-@[simp] theorem IsKMSState.conjModularConjugation_zero (hω : α.IsKMSState β ω) :
-    hω.conjModularConjugation 0 = 0 := by ext v; simp
-
-/-- Conjugation by `J₀` is additive. -/
-@[simp] theorem IsKMSState.conjModularConjugation_add (hω : α.IsKMSState β ω)
-    (S T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) :
-    hω.conjModularConjugation (S + T) =
-      hω.conjModularConjugation S + hω.conjModularConjugation T := by ext v; simp
-
-/-- Conjugation by `J₀` is conjugate-linear. -/
-@[simp] theorem IsKMSState.conjModularConjugation_smul (hω : α.IsKMSState β ω) (c : ℂ)
-    (T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) :
-    hω.conjModularConjugation (c • T) = conj c • hω.conjModularConjugation T := by
-  ext v; simp [map_smulₛₗ]
-
-/-- Conjugation by `J₀` is multiplicative. -/
-@[simp] theorem IsKMSState.conjModularConjugation_mul (hω : α.IsKMSState β ω)
-    (S T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) :
-    hω.conjModularConjugation (S * T) =
-      hω.conjModularConjugation S * hω.conjModularConjugation T := by ext v; simp
-
-/-- Conjugation by `J₀` commutes with the operator adjoint. -/
-@[simp] theorem IsKMSState.conjModularConjugation_star (hω : α.IsKMSState β ω)
-    (T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) :
-    hω.conjModularConjugation (star T) = star (hω.conjModularConjugation T) := by
-  ext v; refine ext_inner_left ℂ fun u => ?_
-  simp only [conjModularConjugation_apply, star_eq_adjoint, adjoint_inner_right]
-  rw [hω.inner_modularConjugation_right, adjoint_inner_left, hω.inner_modularConjugation_left]
-
-/-- Conjugation by `J₀` preserves the operator norm. -/
-@[simp] theorem IsKMSState.norm_conjModularConjugation (hω : α.IsKMSState β ω)
-    (T : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) :
-    ‖hω.conjModularConjugation T‖ = ‖T‖ := by
-  have hle (S : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS) :
-      ‖hω.conjModularConjugation S‖ ≤ ‖S‖ := opNorm_le_bound _ (norm_nonneg S) fun v => by
-    simpa only [conjModularConjugation_apply, hω.modularConjugation.norm_map] using
-      S.le_opNorm (hω.modularConjugation v)
-  exact le_antisymm (hle T) (by simpa using hle (hω.conjModularConjugation T))
-
 /-- On classes of entire analytic elements, `J₀ π_ω(b) J₀` acts by right multiplication by
 `α_{iβ/2}(b⋆)`. -/
-theorem IsKMSState.conjModularConjugation_gnsNonUnitalStarAlgHom_apply_toGNS
+theorem IsKMSState.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_apply_toGNS
     (hω : α.IsKMSState β ω) {a b : A} (ha : α.IsEntireAnalytic a)
     (hb : α.IsEntireAnalytic b) :
-    hω.conjModularConjugation (ω.toPositiveLinearMap.gnsNonUnitalStarAlgHom b)
+    hω.modularConjugation.conjOperator (ω.toPositiveLinearMap.gnsNonUnitalStarAlgHom b)
         (ω.toPositiveLinearMap.toGNS a) =
       ω.toPositiveLinearMap.toGNS (a * α.entireExtension (star b) ((β / 2 : ℝ) * I)) := by
   let f := ω.toPositiveLinearMap
-  rw [conjModularConjugation_apply, hω.modularConjugation_apply_toGNS ha,
+  rw [LinearIsometryEquiv.conjOperator_apply, hω.modularConjugation_symm,
+    hω.modularConjugation_apply_toGNS ha,
     show f.gnsNonUnitalStarAlgHom b (f.toGNS (α.entireExtension (star a) ((β / 2 : ℝ) * I))) =
       f.toGNS (b * α.entireExtension (star a) ((β / 2 : ℝ) * I)) by
       simp [toGNS_apply, gnsNonUnitalStarAlgHom_apply_coe],
@@ -310,31 +249,31 @@ theorem IsKMSState.conjModularConjugation_gnsNonUnitalStarAlgHom_apply_toGNS
     Complex.conj_I, mul_neg, (isEntireAnalytic_entireExtension α a _).entireExtension_mul hb.star,
     entireExtension_entireExtension, neg_add_cancel, ha.entireExtension_apply_zero]
 
-/-- For every `b : A`, the operator `J₀ π_ω(b) J₀` lies in the commutant `π_ω(A)'`. -/
-theorem IsKMSState.conjModularConjugation_gnsNonUnitalStarAlgHom_mem_centralizer
+/-- For every `b : A`, the operator `J₀ π_ω(b) J₀` lies in the commutant `M_ω'`. -/
+theorem IsKMSState.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_mem_commutant
     (hω : α.IsKMSState β ω) (b : A) :
-    hω.conjModularConjugation (ω.toPositiveLinearMap.gnsNonUnitalStarAlgHom b) ∈
-      Set.centralizer (Set.range ω.toPositiveLinearMap.gnsNonUnitalStarAlgHom) := by
+    hω.modularConjugation.conjOperator (ω.toPositiveLinearMap.gnsNonUnitalStarAlgHom b) ∈
+      ω.toPositiveLinearMap.gnsVonNeumannAlgebra.commutant := by
   let f := ω.toPositiveLinearMap; let ρ := f.gnsNonUnitalStarAlgHom
-  have hcont_conj : Continuous fun x : A => hω.conjModularConjugation (ρ x) :=
-    (AddMonoidHomClass.isometry_of_norm
-      ({ toFun := hω.conjModularConjugation
-         map_zero' := hω.conjModularConjugation_zero
-         map_add' := hω.conjModularConjugation_add } : (f.GNS →L[ℂ] f.GNS) →+ _)
-      hω.norm_conjModularConjugation).continuous.comp (map_continuous ρ)
+  have hcont_conj : Continuous fun x : A => hω.modularConjugation.conjOperator (ρ x) :=
+    hω.modularConjugation.conjOperator.continuous.comp (map_continuous ρ)
   have hcomm_entire {b c : A} (hb : α.IsEntireAnalytic b) (hc : α.IsEntireAnalytic c) :
-      ρ c * hω.conjModularConjugation (ρ b) = hω.conjModularConjugation (ρ b) * ρ c := by
+      ρ c * hω.modularConjugation.conjOperator (ρ b) =
+        hω.modularConjugation.conjOperator (ρ b) * ρ c := by
     ext v; refine (denseRange_toGNS_entireAnalytic α f).induction_on v
       (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
     have ha := mem_entireAnalytic.mp a.property
     have hρ (x y : A) : ρ x (f.toGNS y) = f.toGNS (x * y) := by
       simp [ρ, toGNS_apply, gnsNonUnitalStarAlgHom_apply_coe]
     simp only [mul_apply_eq_comp]
-    rw [hρ c (a : A), hω.conjModularConjugation_gnsNonUnitalStarAlgHom_apply_toGNS ha hb,
-      hω.conjModularConjugation_gnsNonUnitalStarAlgHom_apply_toGNS (hc.mul ha) hb, hρ, mul_assoc]
-  rintro _ ⟨c, rfl⟩
+    rw [hρ c (a : A),
+      hω.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_apply_toGNS ha hb,
+      hω.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_apply_toGNS (hc.mul ha) hb,
+      hρ, mul_assoc]
+  refine f.mem_gnsVonNeumannAlgebra_commutant_iff.mpr fun c => ?_
   have hfor_b {b : A} (hb : α.IsEntireAnalytic b) :
-      ρ c * hω.conjModularConjugation (ρ b) = hω.conjModularConjugation (ρ b) * ρ c :=
+      ρ c * hω.modularConjugation.conjOperator (ρ b) =
+        hω.modularConjugation.conjOperator (ρ b) * ρ c :=
     congrFun (Continuous.ext_on α.dense_entireAnalytic
       ((map_continuous ρ).mul continuous_const) (continuous_const.mul (map_continuous ρ))
       fun _ hx => hcomm_entire hb (mem_entireAnalytic.mp hx)) c
@@ -342,21 +281,24 @@ theorem IsKMSState.conjModularConjugation_gnsNonUnitalStarAlgHom_mem_centralizer
     (continuous_const.mul hcont_conj) (hcont_conj.mul continuous_const)
     fun _ hx => hfor_b (mem_entireAnalytic.mp hx)) b
 
-/-- **Tomita commutation (`J₀ M J₀ ⊆ M'`).** Conjugating any operator in the von Neumann
-algebra `π_ω(A)''` by the modular conjugation `J₀` yields an operator in `π_ω(A)'`. -/
-theorem IsKMSState.conjModularConjugation_mem_centralizer (hω : α.IsKMSState β ω)
+/-- **Tomita commutation (`J₀ M J₀ ⊆ M'`).** Conjugating any operator in the GNS von Neumann
+algebra `M_ω = π_ω(A)''` by the modular conjugation `J₀` yields an operator in `M_ω'`. -/
+theorem IsKMSState.conjOperator_modularConjugation_mem_commutant (hω : α.IsKMSState β ω)
     {x : ω.toPositiveLinearMap.GNS →L[ℂ] ω.toPositiveLinearMap.GNS}
-    (hx : x ∈ VonNeumannAlgebra.adjoin
-      (Set.range ω.toPositiveLinearMap.gnsNonUnitalStarAlgHom)) :
-    hω.conjModularConjugation x ∈
-      Set.centralizer (Set.range ω.toPositiveLinearMap.gnsNonUnitalStarAlgHom) := by
-  rw [← SetLike.mem_coe,
-    ← NonUnitalStarAlgHom.coe_range ω.toPositiveLinearMap.gnsNonUnitalStarAlgHom,
-    VonNeumannAlgebra.coe_adjoin_of_star_subset (StarMemClass.star_coe_eq _).subset,
-    NonUnitalStarAlgHom.coe_range] at hx
-  rintro _ ⟨a, rfl⟩
-  simpa using congrArg hω.conjModularConjugation
-    (hx _ (hω.conjModularConjugation_gnsNonUnitalStarAlgHom_mem_centralizer a))
+    (hx : x ∈ ω.toPositiveLinearMap.gnsVonNeumannAlgebra) :
+    hω.modularConjugation.conjOperator x ∈
+      ω.toPositiveLinearMap.gnsVonNeumannAlgebra.commutant := by
+  let f := ω.toPositiveLinearMap
+  refine f.mem_gnsVonNeumannAlgebra_commutant_iff.mpr fun a => ?_
+  have hc := VonNeumannAlgebra.mem_commutant_iff.mp
+    (hω.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_mem_commutant a) x hx
+  have h := congrArg hω.modularConjugation.conjOperator hc
+  have hinvol (T : f.GNS →L[ℂ] f.GNS) :
+      hω.modularConjugation.conjOperator (hω.modularConjugation.conjOperator T) = T := by
+    simpa only [LinearIsometryEquiv.conjOperator_symm, hω.modularConjugation_symm] using
+      hω.modularConjugation.conjOperator.symm_apply_apply T
+  rw [LinearIsometryEquiv.conjOperator_mul, LinearIsometryEquiv.conjOperator_mul, hinvol] at h
+  exact h.symm
 
 end NonUnital
 

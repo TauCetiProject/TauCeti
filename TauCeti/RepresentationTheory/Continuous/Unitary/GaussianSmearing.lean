@@ -83,7 +83,7 @@ theorem gaussianSmear_apply (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g 
     (R : H →L[ℂ] H) (c : ℝ) (z : ℂ) (v : H) :
     hU.gaussianSmear hcont R c z v =
       ∫ t : ℝ, Complex.gaussianKernel c t z • U (.ofAdd t) (R (U (.ofAdd (-t)) v)) := by
-  rw [gaussianSmear]; rfl
+  simp [gaussianSmear, LinearMap.mkContinuous_apply]
 
 /-- Complex-time Gaussian smearing is strongly entire in `z`. -/
 theorem differentiable_gaussianSmear_apply (hU : U.IsUnitary)

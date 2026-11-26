@@ -202,13 +202,6 @@ section Unital
 
 variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
-/-- For a unital C⋆-algebra, the GNS Radon–Nikodym operator lies in the commutant of
-`f.gnsStarAlgHom`. -/
-theorem gnsRadonNikodym_mem_centralizer_gnsStarAlgHom {f g : B →ₚ[ℂ] ℂ} {C : ℝ}
-    (hfg : ∀ a, 0 ≤ a → g a ≤ (C : ℂ) * f a) :
-    f.gnsRadonNikodym g ∈ Set.centralizer (Set.range f.gnsStarAlgHom) :=
-  gnsRadonNikodym_mem_centralizer hfg
-
 /-- For a unital C⋆-algebra, evaluating the vector functional of the GNS Radon–Nikodym operator on
 `a` recovers `g a`. -/
 theorem inner_gnsVector_gnsRadonNikodym {f g : B →ₚ[ℂ] ℂ} {C : ℝ}
@@ -257,13 +250,15 @@ theorem gnsVectorFunctional_one (f : B →ₚ[ℂ] ℂ) (a : B) :
 /-- For an operator `T` in the GNS commutant, the star pairing of `f.gnsVectorFunctional T` is
 the matrix coefficient `⟪[a]_f, T [b]_f⟫`. -/
 theorem gnsVectorFunctional_star_mul (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GNS}
-    (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom)) (a b : B) :
+    (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom)) (a b : B) :
     f.gnsVectorFunctional T (star a * b) = ⟪f.toGNS a, T (f.toGNS b)⟫_ℂ := by
   have hcomm := hT _ ⟨star a, rfl⟩
   calc f.gnsVectorFunctional T (star a * b)
-      = ⟪f.gnsVector, (T * f.gnsStarAlgHom (star a)) (f.gnsStarAlgHom b f.gnsVector)⟫_ℂ := by
+      = ⟪f.gnsVector, (T * f.gnsNonUnitalStarAlgHom (star a))
+          (f.gnsNonUnitalStarAlgHom b f.gnsVector)⟫_ℂ := by
         simp [map_mul, mul_apply_eq_comp]
-    _ = ⟪f.gnsVector, f.gnsStarAlgHom (star a) (T (f.gnsStarAlgHom b f.gnsVector))⟫_ℂ := by
+    _ = ⟪f.gnsVector, f.gnsNonUnitalStarAlgHom (star a)
+          (T (f.gnsNonUnitalStarAlgHom b f.gnsVector))⟫_ℂ := by
         rw [← hcomm, mul_apply_eq_comp]
     _ = ⟪f.toGNS a, T (f.toGNS b)⟫_ℂ := by
         rw [map_star, star_eq_adjoint, adjoint_inner_right]; simp [toGNS_apply]
@@ -271,7 +266,7 @@ theorem gnsVectorFunctional_star_mul (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ
 /-- A positive operator in the GNS commutant defines a nonnegative functional on nonnegative
 elements of `B`. -/
 theorem gnsVectorFunctional_nonneg (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GNS}
-    (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom)) (hTpos : T.IsPositive)
+    (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom)) (hTpos : T.IsPositive)
     {a : B} (ha : 0 ≤ a) : 0 ≤ f.gnsVectorFunctional T a := by
   rw [StarOrderedRing.nonneg_iff] at ha
   refine AddSubmonoid.closure_induction ?_ (by simp)
@@ -282,11 +277,11 @@ theorem gnsVectorFunctional_nonneg (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] 
 /-- If `T` lies in the GNS commutant and `C • 1 - T` is positive, then the vector functional of `T`
 is dominated by `C • f`. -/
 theorem gnsVectorFunctional_le (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GNS}
-    (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom)) {C : ℝ}
+    (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom)) {C : ℝ}
     (hTC : ((C : ℂ) • (1 : f.GNS →L[ℂ] f.GNS) - T).IsPositive) {a : B} (ha : 0 ≤ a) :
     f.gnsVectorFunctional T a ≤ (C : ℂ) * f a := by
   have hmem : (C : ℂ) • (1 : f.GNS →L[ℂ] f.GNS) - T ∈
-      Set.centralizer (Set.range f.gnsStarAlgHom) := fun S hS => by
+      Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom) := fun S hS => by
     rw [mul_sub, sub_mul, mul_smul_comm, smul_mul_assoc, mul_one, one_mul, hT S hS]
   have h := gnsVectorFunctional_nonneg f hmem hTC ha
   simp only [gnsVectorFunctional_sub, gnsVectorFunctional_smul, sub_apply, smul_apply,
@@ -296,7 +291,7 @@ theorem gnsVectorFunctional_le (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GN
 /-- For a self-adjoint operator `T` in the GNS commutant, its vector functional is dominated by
 `‖T‖ • f`. -/
 theorem gnsVectorFunctional_le_opNorm_mul (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GNS}
-    (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom)) (hTsa : IsSelfAdjoint T)
+    (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom)) (hTsa : IsSelfAdjoint T)
     {a : B} (ha : 0 ≤ a) : f.gnsVectorFunctional T a ≤ (‖T‖ : ℂ) * f a := by
   refine gnsVectorFunctional_le f hT ?_ ha
   rw [Complex.coe_smul, ← Algebra.algebraMap_eq_smul_one, ← ContinuousLinearMap.le_def]
@@ -304,15 +299,15 @@ theorem gnsVectorFunctional_le_opNorm_mul (f : B →ₚ[ℂ] ℂ) {T : f.GNS →
 
 /-- An operator in the GNS commutant whose vector functional vanishes kills the cyclic vector. -/
 theorem apply_gnsVector_eq_zero_of_gnsVectorFunctional_eq_zero (f : B →ₚ[ℂ] ℂ)
-    {T : f.GNS →L[ℂ] f.GNS} (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom))
+    {T : f.GNS →L[ℂ] f.GNS} (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom))
     (hvan : f.gnsVectorFunctional T = 0) : T f.gnsVector = 0 := by
   refine ext_inner_left ℂ fun u =>
     f.denseRange_toGNS.induction_on u (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
   calc ⟪f.toGNS a, T f.gnsVector⟫_ℂ
-      = ⟪f.gnsVector, (f.gnsStarAlgHom (star a) * T) f.gnsVector⟫_ℂ := by
+      = ⟪f.gnsVector, (f.gnsNonUnitalStarAlgHom (star a) * T) f.gnsVector⟫_ℂ := by
         rw [mul_apply_eq_comp, map_star, star_eq_adjoint, adjoint_inner_right]; simp [toGNS_apply]
     _ = f.gnsVectorFunctional T (star a) := by
-        rw [hT _ ⟨star a, rfl⟩, mul_apply_eq_comp, ← gnsVectorFunctional_apply]
+        rw [hT _ ⟨star a, rfl⟩, mul_apply_eq_comp]; simp [gnsVectorFunctional_apply]
     _ = ⟪f.toGNS a, 0⟫_ℂ := by simp [hvan]
 
 /-- The vector functional of the GNS Radon–Nikodym operator of `g` recovers `g`. -/
@@ -324,7 +319,7 @@ theorem gnsVectorFunctional_gnsRadonNikodym {f g : B →ₚ[ℂ] ℂ} {C : ℝ}
 /-- The GNS Radon–Nikodym operator of the vector functional of a positive commutant operator `T`
 recovers `T`. -/
 theorem gnsRadonNikodym_gnsVectorFunctional (f : B →ₚ[ℂ] ℂ) {T : f.GNS →L[ℂ] f.GNS}
-    (hT : T ∈ Set.centralizer (Set.range f.gnsStarAlgHom)) (hTpos : T.IsPositive) :
+    (hT : T ∈ Set.centralizer (Set.range f.gnsNonUnitalStarAlgHom)) (hTpos : T.IsPositive) :
     f.gnsRadonNikodym (.mk₀ (f.gnsVectorFunctional T).toLinearMap fun _ =>
         gnsVectorFunctional_nonneg f hT hTpos) = T :=
   (eq_gnsRadonNikodym_of_inner_eq (C := ‖T‖)
