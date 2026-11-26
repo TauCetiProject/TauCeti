@@ -19,7 +19,7 @@ relation whose classes are the finite condensation classes: `IsNear (· ≤ ·) 
 (`TauCeti.isNear_comm`, `TauCeti.IsNear.symm`), reflexive for an antisymmetric relation
 (`TauCeti.isNear_refl`), and transitive for a linear order (`TauCeti.IsNear.trans`), so it is an
 equivalence relation for a linear order (`TauCeti.isNear_equivalence`). A relation isomorphism
-preserves it (`TauCeti.isNear_map`, `TauCeti.setOf_isNear_map`).
+preserves it (`RelIso.isNear_apply_iff`, `RelIso.setOf_isNear_apply`).
 -/
 
 public section
@@ -72,9 +72,17 @@ condensation classes. -/
 theorem isNear_equivalence [LinearOrder α] : Equivalence (IsNear (α := α) (· ≤ ·)) :=
   ⟨isNear_refl _, IsNear.symm, IsNear.trans⟩
 
+end TauCeti
+
+namespace RelIso
+
+open TauCeti
+
+variable {α β : Type*}
+
 /-- A relation isomorphism `r ≃r r'` preserves nearness. -/
 @[simp]
-theorem isNear_map {r : α → α → Prop} {r' : β → β → Prop} (f : r ≃r r') (p q : α) :
+theorem isNear_apply_iff {r : α → α → Prop} {r' : β → β → Prop} (f : r ≃r r') (p q : α) :
     IsNear r' (f p) (f q) ↔ IsNear r p q := by
   have h : {z | r' (f p) z ∧ r' z (f q) ∨ r' (f q) z ∧ r' z (f p)} =
       f '' {z | r p z ∧ r z q ∨ r q z ∧ r z p} := by
@@ -84,10 +92,10 @@ theorem isNear_map {r : α → α → Prop} {r' : β → β → Prop} (f : r ≃
   rw [isNear_iff, isNear_iff, h, finite_image_iff f.injective.injOn]
 
 /-- A relation isomorphism `f : r ≃r r'` carries the points near `p` to the points near `f p`. -/
-theorem setOf_isNear_map {r : α → α → Prop} {r' : β → β → Prop} (f : r ≃r r') (p : α) :
+theorem setOf_isNear_apply {r : α → α → Prop} {r' : β → β → Prop} (f : r ≃r r') (p : α) :
     {q | IsNear r' (f p) q} = f '' {q | IsNear r p q} := by
   ext q
   obtain ⟨w, rfl⟩ := f.surjective q
-  simp only [mem_ofPred_eq, isNear_map f, f.injective.mem_set_image]
+  simp only [mem_ofPred_eq, f.isNear_apply_iff, f.injective.mem_set_image]
 
-end TauCeti
+end RelIso

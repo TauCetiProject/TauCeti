@@ -323,7 +323,7 @@ same size, in order; so it induces an order automorphism `Φ` of `List ℚ` with
 theorem exists_orderIso_of_unravelOrderRel {χ χ' : List ℚ → ℕ}
     (f : unravelOrderRel χ ≃r unravelOrderRel χ') :
     ∃ Φ : List ℚ ≃o List ℚ, ∀ x, χ' (Φ x) = χ x := by
-  have hN := setOf_isNear_map f
+  have hN := f.setOf_isNear_apply
   have hfin (p : List ℚ × ℕ) : (f p).2 < χ' (f p).1 + 2 ↔ p.2 < χ p.1 + 2 := by
     rw [← finite_setOf_isNear_unravelOrderRel_iff, ← finite_setOf_isNear_unravelOrderRel_iff, hN,
       finite_image_iff f.injective.injOn]
@@ -340,12 +340,12 @@ theorem exists_orderIso_of_unravelOrderRel {χ χ' : List ℚ → ℕ}
       f.map_rel_iff.2 (unravelOrderRel_iff.2 (Or.inl hxy))
     refine (fst_le_of_unravelOrderRel hr).lt_of_ne fun he => hxy.ne ?_
     have h := (isNear_unravelOrderRel_iff (h0 x)).2 ⟨he.symm, he ▸ h0 y⟩
-    rw [isNear_map f, isNear_unravelOrderRel_iff (by simp)] at h
+    rw [f.isNear_apply_iff, isNear_unravelOrderRel_iff (by simp)] at h
     exact h.1.symm
   have hsurj : Function.Surjective Φ₀ := fun y => by
     obtain ⟨p, hpy⟩ := f.surjective (y, 0)
     have hp : p.2 < χ p.1 + 2 := (hfin p).1 (by rw [hpy]; simp)
-    have h := (isNear_map f p (p.1, 0)).2 ((isNear_unravelOrderRel_iff hp).2 ⟨rfl, by simp⟩)
+    have h := (f.isNear_apply_iff p (p.1, 0)).2 ((isNear_unravelOrderRel_iff hp).2 ⟨rfl, by simp⟩)
     rw [hpy, isNear_unravelOrderRel_iff (by simp)] at h
     exact ⟨p.1, h.1⟩
   exact ⟨StrictMono.orderIsoOfSurjective Φ₀ hmono hsurj, hχ⟩
