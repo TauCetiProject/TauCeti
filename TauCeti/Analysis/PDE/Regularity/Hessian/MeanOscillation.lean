@@ -602,11 +602,6 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matri
   have key :=
     setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matrixBilinearForm_sub_le
       hA ha haK u hball heq hρ hρr
-  set C₁ := 4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3))
-  set C₂ := 2 * (C₁ + 2) / lam ^ 2
-  set k : ℝ := (n + 1) ^ 2
-  rw [mul_add, ← mul_assoc k (C₁ * _), ← mul_assoc k C₁, ← mul_assoc k C₂,
-    add_comm (∫ x in ball x₀ r, f x ^ 2)] at key
   -- Pass to averages, using `|B_ρ| = (ρ / r)^(n + 1) |B_r|` and Hölder's inequality with
   -- exponents `q'` and `q` for the coefficient term `∫ θ² ‖D²u‖²`.
   have hV : 0 < volume.real (ball x₀ r) :=
@@ -615,8 +610,13 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_sq_le_of_norm_matri
     simp only [Measure.addHaar_real_ball_of_pos _ _ hρ, Measure.addHaar_real_ball_of_pos _ _ hr,
       finrank_euclideanSpace_fin, div_pow]
     field_simp
-  refine (setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq hV (div_pos hρ hr) hVρ
-    (by have := hA.pos; positivity) (by positivity) hq hθm hθ hHq key).trans_eq ?_
+  refine (setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq
+    (C₁ := (n + 1) ^ 2 * (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3))))
+    (C₂ := (n + 1) ^ 2 *
+      (2 * (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2))
+    (M := (n + 1) ^ 2) (G := fun x => f x ^ 2) hV (div_pos hρ hr) hVρ
+    (by have := hA.pos; positivity) (by positivity) hq hθm hθ hHq
+    (key.trans_eq (by ring))).trans_eq ?_
   rw [inv_div]
   ring
 
