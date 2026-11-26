@@ -185,6 +185,14 @@ theorem traceExpectation_mem (a : A) : C.traceExpectation τ a ∈ C := by
   unfold traceExpectation
   split_ifs <;> simp
 
+/-- Outside the finite-dimensional, nondegenerate case the expectation onto `C` is `0`. -/
+theorem traceExpectation_of_not
+    (h : ¬ (FiniteDimensional K C ∧ ∀ x ∈ C, (∀ y ∈ C, τ (x * y) = 0) → x = 0)) :
+    C.traceExpectation τ = 0 := by
+  rw [traceExpectation, dite_eq_right h]
+
+section Nondegenerate
+
 variable [FiniteDimensional K C] (hC : ∀ x ∈ C, (∀ y ∈ C, τ (x * y) = 0) → x = 0)
 include hC
 
@@ -193,8 +201,8 @@ include hC
 theorem traceExpectation_apply (a : A) :
     C.traceExpectation τ a = (τ ∘ₗ C.val.toLinearMap).traceExpectation
       (fun x hx ↦ Subtype.ext <| hC x x.property fun y hy ↦ hx ⟨y, hy⟩) τ C.val a := by
-  rw [traceExpectation, dite_eq_left ⟨inferInstance, hC⟩]
-  rfl
+  rw [traceExpectation, dite_eq_left ⟨inferInstance, hC⟩, LinearMap.comp_apply,
+    AlgHom.toLinearMap_apply, Subalgebra.coe_val]
 
 /-- The defining identity of the expectation onto `C`: pairing against elements of `C` does not
 see the difference between `a` and its expectation. -/
@@ -271,20 +279,27 @@ theorem traceExpectation_comp_traceExpectation_of_le [FiniteDimensional K C]
     C.traceExpectation τ ∘ₗ D.traceExpectation τ = C.traceExpectation τ :=
   LinearMap.ext <| traceExpectation_traceExpectation_of_le hC hD hCD
 
+end Nondegenerate
+
 /-- A trace-preserving algebra isomorphism `e` carries the expectation onto `C` to the
 expectation onto the image of `C`. -/
 theorem traceExpectation_map (e : A ≃ₐ[K] A') {τ' : A' →ₗ[K] K} (he : ∀ a, τ' (e a) = τ a)
     (a : A) :
     (C.map (e : A →ₐ[K] A')).traceExpectation τ' (e a) = e (C.traceExpectation τ a) := by
-  have : FiniteDimensional K (C.map (e : A →ₐ[K] A')) :=
-    (e.subalgebraMap C).toLinearEquiv.finiteDimensional
-  have hC' : ∀ x ∈ C.map (e : A →ₐ[K] A'), (∀ y ∈ C.map (e : A →ₐ[K] A'), τ' (x * y) = 0) →
-      x = 0 := by
-    rintro _ ⟨x, hx, rfl⟩ h
-    rw [hC x hx fun y hy ↦ ?_, map_zero]
-    simpa [← he] using h (e y) ⟨y, hy, rfl⟩
-  refine (traceExpectation_eq_iff hC' ⟨_, traceExpectation_mem a, rfl⟩).mpr ?_
-  rintro _ ⟨y, hy, rfl⟩
-  simp [← map_mul, he, apply_traceExpectation_mul hC a hy]
+  have hfd : FiniteDimensional K (C.map (e : A →ₐ[K] A')) ↔ FiniteDimensional K C :=
+    ⟨fun _ ↦ (e.subalgebraMap C).toLinearEquiv.symm.finiteDimensional,
+      fun _ ↦ (e.subalgebraMap C).toLinearEquiv.finiteDimensional⟩
+  have hnd : (∀ x ∈ C.map (e : A →ₐ[K] A'), (∀ y ∈ C.map (e : A →ₐ[K] A'), τ' (x * y) = 0) →
+      x = 0) ↔ ∀ x ∈ C, (∀ y ∈ C, τ (x * y) = 0) → x = 0 := by
+    simp only [mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂,
+      AlgEquiv.coe_toAlgHom, ← map_mul, he, EmbeddingLike.map_eq_zero_iff]
+  by_cases hC : FiniteDimensional K C ∧ ∀ x ∈ C, (∀ y ∈ C, τ (x * y) = 0) → x = 0
+  · obtain ⟨_, hC⟩ := hC
+    have : FiniteDimensional K (C.map (e : A →ₐ[K] A')) := hfd.mpr inferInstance
+    refine (traceExpectation_eq_iff (hnd.mpr hC) ⟨_, traceExpectation_mem a, rfl⟩).mpr ?_
+    rintro _ ⟨y, hy, rfl⟩
+    simp [← map_mul, he, apply_traceExpectation_mul hC a hy]
+  · rw [traceExpectation_of_not hC, traceExpectation_of_not (by rwa [hfd, hnd]),
+      LinearMap.zero_apply, LinearMap.zero_apply, map_zero]
 
 end Subalgebra

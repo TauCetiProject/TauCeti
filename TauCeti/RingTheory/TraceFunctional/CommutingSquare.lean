@@ -22,11 +22,11 @@ in which `A₀`, `A₁` and `B₀` are finite-dimensional with nondegenerate tra
 `(x, y) ↦ τ (x * y)`. Write `E_C = C.traceExpectation τ` for the `τ`-preserving conditional
 expectation onto such a subalgebra `C`. The square *commutes* when `E_{A₁} ∘ E_{B₀} = E_{A₀}`.
 
-Commuting squares of finite-dimensional algebras are the input of Ocneanu's compactness theorem:
-iterating basic constructions on a commuting square yields a subfactor of the hyperfinite II₁
-factor whose relative commutants are computed by the square. This file proves the standard
-equivalent forms of the commuting condition and their invariance under trace-preserving
-isomorphisms.
+Symmetric commuting squares of finite-dimensional algebras with a Markov trace are the input of
+Ocneanu's compactness theorem, which computes the relative commutants of the resulting hyperfinite
+subfactor from the finite-dimensional tower of basic constructions. This file provides the general
+commuting-square calculus used there: the standard equivalent forms of the commuting condition and
+their invariance under trace-preserving isomorphisms.
 
 Only the algebraic structure is used: no positivity, normalization or Markov condition. For a
 faithful positive trace on a finite-dimensional C⋆-algebra the nondegeneracy hypotheses hold for
@@ -82,6 +82,14 @@ theorem IsCommutingSquare.traceExpectation_traceExpectation (h : IsCommutingSqua
     (a : A) :
     A₁.traceExpectation τ (B₀.traceExpectation τ a) = A₀.traceExpectation τ a :=
   isCommutingSquare_iff.mp h a
+
+/-- A trace-preserving algebra isomorphism carries a square to a commuting square exactly when the
+original square commutes. -/
+theorem isCommutingSquare_map_iff (e : A ≃ₐ[K] A') {τ' : A' →ₗ[K] K} (he : ∀ a, τ' (e a) = τ a) :
+    IsCommutingSquare (A₀.map (e : A →ₐ[K] A')) (A₁.map (e : A →ₐ[K] A'))
+      (B₀.map (e : A →ₐ[K] A')) τ' ↔ IsCommutingSquare A₀ A₁ B₀ τ := by
+  simp only [isCommutingSquare_iff, e.surjective.forall, traceExpectation_map e he,
+    e.injective.eq_iff]
 
 variable [FiniteDimensional K A₀] [FiniteDimensional K A₁] [FiniteDimensional K B₀]
   (h₀ : ∀ x ∈ A₀, (∀ y ∈ A₀, τ (x * y) = 0) → x = 0)
@@ -152,19 +160,5 @@ theorem isCommutingSquare_tfae (hτ : ∀ a b, τ (a * b) = τ (b * a)) (hA : A�
   tfae_have 2 ↔ 3 := isCommutingSquare_iff_forall_mem h₀ h₁ hA
   tfae_have 1 ↔ 4 := isCommutingSquare_iff_commute_and_inf_eq h₀ h₁ hB hτ hA hAB
   tfae_finish
-
-include h₀ h₁ hB in
-/-- A trace-preserving algebra isomorphism carries a square to a commuting square exactly when the
-original square commutes. -/
-theorem isCommutingSquare_map_iff (e : A ≃ₐ[K] A') {τ' : A' →ₗ[K] K} (he : ∀ a, τ' (e a) = τ a) :
-    IsCommutingSquare (A₀.map (e : A →ₐ[K] A')) (A₁.map (e : A →ₐ[K] A'))
-      (B₀.map (e : A →ₐ[K] A')) τ' ↔ IsCommutingSquare A₀ A₁ B₀ τ := by
-  simp only [isCommutingSquare_iff]
-  refine ⟨fun h a ↦ e.injective ?_, fun h a' ↦ ?_⟩
-  · rw [← traceExpectation_map h₁ e he, ← traceExpectation_map hB e he, h,
-      traceExpectation_map h₀ e he]
-  · obtain ⟨a, rfl⟩ := e.surjective a'
-    rw [traceExpectation_map hB e he, traceExpectation_map h₁ e he, h,
-      traceExpectation_map h₀ e he]
 
 end Subalgebra
