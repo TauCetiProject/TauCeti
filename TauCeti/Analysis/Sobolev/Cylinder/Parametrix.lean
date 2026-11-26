@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Fredholm.CompactPerturbation
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
@@ -58,6 +59,12 @@ regularity theory for weak solutions of the adjoint equation.
   both ends is Fredholm on `W^{1,2}`.
 * `TauCeti.CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero`:
   zeroth-order operators with coefficients vanishing at infinity are compact on `W^{1,2}`.
+* `TauCeti.CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero_of_le_or_le`:
+  zeroth-order operators with coefficients supported in a band `T₀ < s < T₁` are compact on
+  `W^{1,2}`.
+* `TauCeti.CylinderSobolev.exists_pos_forall_isInvertible_jetOperator_add_comp_subtypeL`: an
+  invertible first-order operator on the cylinder stays invertible under small perturbations of
+  its coefficient field.
 * `TauCeti.CylinderSobolev.jetOperator_cutoffCoeff_mem_H1`: multiplication by a cutoff in `s`
   preserves `W^{1,2}`.
 
@@ -266,7 +273,56 @@ theorem isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero [FiniteDimen
     exists_isCompactOperator_norm_jetOperator_comp_subtypeL_sub_le hG hval (half_pos hε).le hR
   exact ⟨K, hK, by rw [dist_eq_norm]; linarith⟩
 
+/-- **Zeroth-order operators with coefficients supported in a band are compact on `W^{1,2}`.** If
+the coefficient field `G` acts on values only, `G z (0, a, b) = 0`, and vanishes for `s ≤ T₀` and
+for `s ≥ T₁`, then the operator `ξ ↦ (z ↦ G z (ξ z))`, that is
+`(jetOperator stripMeasure G).comp (H1 V).subtypeL`, is compact from `H1 V` to `L²`. -/
+theorem isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero_of_le_or_le
+    [FiniteDimensional ℝ V] [CompleteSpace W]
+    {G : ℝ × ℝ → V × V × V →L[ℝ] W} (hG : MemLp G ∞ stripMeasure)
+    (hval : ∀ᵐ z ∂stripMeasure, ∀ a b : V, G z (0, a, b) = 0) {T₀ T₁ : ℝ}
+    (hout : ∀ᵐ z ∂stripMeasure, z.1 ≤ T₀ ∨ T₁ ≤ z.1 → G z = 0) :
+    IsCompactOperator ((jetOperator stripMeasure G).comp (H1 V).subtypeL) := by
+  refine isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero hG hval (R := max |T₀| |T₁|) ?_
+  filter_upwards [hout] with z hz hR
+  refine hz ?_
+  rcases lt_abs.1 hR with h | h
+  · exact Or.inr ((le_abs_self T₁).trans ((le_max_right _ _).trans h.le))
+  · exact Or.inl (by linarith [neg_abs_le T₀, le_max_left |T₀| |T₁|])
+
 end Operator
+
+/-! ### Small perturbations of an invertible operator -/
+
+section Perturbation
+
+/-- **Invertibility of a first-order operator on the cylinder is stable under small perturbations
+of its coefficient field.** If the operator of an essentially bounded coefficient field `G₀` is an
+isomorphism from `W^{1,2}` onto `L²`, there is `ε > 0` such that the operator of `G₀ + P` is an
+isomorphism for every essentially bounded `P` with `‖P z‖ ≤ ε` almost everywhere. -/
+theorem exists_pos_forall_isInvertible_jetOperator_add_comp_subtypeL [CompleteSpace V]
+    {G₀ : ℝ × ℝ → V × V × V →L[ℝ] W} (hG₀ : MemLp G₀ ∞ stripMeasure)
+    (hD : ((jetOperator stripMeasure G₀).comp (H1 V).subtypeL).IsInvertible) :
+    ∃ ε > 0, ∀ {P : ℝ × ℝ → V × V × V →L[ℝ] W}, MemLp P ∞ stripMeasure →
+      (∀ᵐ z ∂stripMeasure, ‖P z‖ ≤ ε) →
+      ((jetOperator stripMeasure (G₀ + P)).comp (H1 V).subtypeL).IsInvertible := by
+  set C := ‖((jetOperator stripMeasure G₀).comp (H1 V).subtypeL).inverse‖ with hCdef
+  have hC : 0 ≤ C := by rw [hCdef]; exact ContinuousLinearMap.opNorm_nonneg _
+  refine ⟨1 / (2 * (C + 1)), by positivity, fun {P} hPm hPb ↦ hD.of_mul_norm_sub_lt le_rfl ?_⟩
+  -- The difference with the invertible operator is the operator of `P`, of norm at most `ε`.
+  have hnorm : ‖(jetOperator stripMeasure (G₀ + P)).comp (H1 V).subtypeL -
+      (jetOperator stripMeasure G₀).comp (H1 V).subtypeL‖ ≤ 1 / (2 * (C + 1)) := by
+    rw [jetOperator_add hG₀ hPm, ContinuousLinearMap.add_comp,
+      add_sub_cancel_left ((jetOperator stripMeasure G₀).comp (H1 V).subtypeL)]
+    refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ ?_
+    rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, ← Submodule.norm_coe x]
+    exact norm_jetOperator_apply_le hPm hPb _
+  calc C * ‖(jetOperator stripMeasure (G₀ + P)).comp (H1 V).subtypeL -
+        (jetOperator stripMeasure G₀).comp (H1 V).subtypeL‖
+      ≤ C * (1 / (2 * (C + 1))) := by gcongr
+    _ < 1 := by rw [mul_one_div, div_lt_one (by positivity)]; linarith
+
+end Perturbation
 
 /-! ### The parametrix of an operator with invertible models at the ends -/
 
