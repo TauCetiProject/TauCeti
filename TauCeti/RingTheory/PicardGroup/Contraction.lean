@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.PicardGroup
+import TauCeti.LinearAlgebra.TensorProduct.Cyclic
 
 /-!
 # Cancelling an invertible module against its dual
@@ -165,12 +166,11 @@ theorem dual_apply_smul_eq_self (η : Dual R M) : η x • ξ = η := by
 `x ⊗ n`: `y ⊗ n = x ⊗ ξ y • n`. -/
 theorem exists_eq_tmul_of_apply_eq_one {N : Type*} [AddCommMonoid N] [Module R N]
     (X : M ⊗[R] N) : ∃ n, X = x ⊗ₜ n := by
-  induction X using TensorProduct.inductionOn with
-  | tmul y n => exact ⟨ξ y • n, by rw [← smul_tmul, apply_smul_eq_self hξ y]⟩
-  | add X Y hX hY =>
-    obtain ⟨n, rfl⟩ := hX
-    obtain ⟨n', rfl⟩ := hY
-    exact ⟨n + n', (tmul_add x n n').symm⟩
+  have hs : Submodule.span R {x} = ⊤ := Submodule.eq_top_iff'.2 fun y ↦
+    Submodule.mem_span_singleton.2 ⟨ξ y, apply_smul_eq_self hξ y⟩
+  obtain ⟨n, h⟩ := TensorProduct.exists_eq_tmul_of_span_singleton_eq_top hs
+    (TensorProduct.comm R M N X)
+  exact ⟨n, (TensorProduct.comm R M N).injective (by simpa using h)⟩
 
 /-- In `W ⊗ M^*` for an invertible module `M`, with `ξ x = 1`, every element `X` is the pure
 tensor of its evaluation at `x` with `ξ`. -/
