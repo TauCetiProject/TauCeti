@@ -30,6 +30,8 @@ of `n` with the primes dividing `m` removed; for `n = 0` it is the empty product
 
 * `Nat.mem_primeFactors_oddExpPart`: the prime factors of `oddExpPart m n` are exactly the primes
   `p ∤ m` dividing `n` to an odd power.
+* `Nat.oddExpPart_eq_one_iff`, `Nat.oddExpPart_eq_one_iff_of_isPrimePow`: `oddExpPart m n = 1`
+  exactly when every prime factor of `n` divides `m` or divides `n` to an even power.
 * `Nat.exists_eq_oddExpPart_mul_sq_mul`: `n = oddExpPart m n · t² · A` for some `t` and some `A`
   whose prime factors divide `m`.
 * `Nat.oddExpPart_prime_pow`, `Nat.oddExpPart_mul_of_isPrimePow`: the odd-exponent part of a
@@ -64,6 +66,18 @@ theorem mem_primeFactors_oddExpPart {m n p : ℕ} :
       p ∈ n.primeFactors ∧ ¬ p ∣ m ∧ Odd (n.factorization p) := by
   rw [oddExpPart_def, primeFactors_prod fun q hq =>
     prime_of_mem_primeFactors (Finset.mem_filter.1 hq).1, Finset.mem_filter]
+
+/-- The odd-exponent part of `n` away from `m` is `1` exactly when every prime factor of `n`
+divides `m` or divides `n` to an even power. -/
+theorem oddExpPart_eq_one_iff {m n : ℕ} :
+    oddExpPart m n = 1 ↔ ∀ p ∈ n.primeFactors, p ∣ m ∨ Even (n.factorization p) := by
+  rw [oddExpPart_def, Finset.prod_eq_one_iff_of_one_le fun p hp =>
+    (prime_of_mem_primeFactors (Finset.mem_filter.1 hp).1).one_lt.le]
+  refine forall_congr' fun p => ?_
+  simp only [Finset.mem_filter, and_imp, ← not_odd_iff_even]
+  refine imp_congr_right fun hp => ?_
+  have := (prime_of_mem_primeFactors hp).ne_one
+  tauto
 
 /-- The odd-exponent part of `n` away from an even `m` is odd. -/
 theorem odd_oddExpPart {m : ℕ} (n : ℕ) (h2 : 2 ∣ m) : Odd (oddExpPart m n) := by
@@ -135,6 +149,14 @@ theorem oddExpPart_of_isPrimePow {m n : ℕ} (hn : IsPrimePow n) :
   obtain ⟨p, k, hp, hk, rfl⟩ := hn
   rw [oddExpPart_prime_pow hp.nat_prime, hp.nat_prime.pow_minFac hk.ne',
     hp.nat_prime.factorization_pow, Finsupp.single_eq_same]
+
+/-- The odd-exponent part of a prime power `n` away from `m` is `1` exactly when `n.minFac`
+divides `m` or the exponent of `n.minFac` in `n` is even. -/
+theorem oddExpPart_eq_one_iff_of_isPrimePow {m n : ℕ} (hn : IsPrimePow n) :
+    oddExpPart m n = 1 ↔ n.minFac ∣ m ∨ Even (n.factorization n.minFac) := by
+  rw [oddExpPart_of_isPrimePow hn, ← not_odd_iff_even]
+  have := (minFac_prime hn.ne_one).ne_one
+  split_ifs <;> tauto
 
 /-- A prime power whose odd-exponent part is not `1` has odd-exponent part its prime. -/
 theorem oddExpPart_eq_minFac_of_isPrimePow {m n : ℕ} (hn : IsPrimePow n)
