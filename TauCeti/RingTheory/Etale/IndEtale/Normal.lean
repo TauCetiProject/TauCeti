@@ -81,12 +81,12 @@ private theorem isDomain_and_isIntegrallyClosed_localization :
   have h : ((maximalIdeal A).comap g).under R = (maximalIdeal A).under R := by
     ext r
     simp [Ideal.under]
-  have : IsDomain (Localization.AtPrime (((maximalIdeal A).comap g).under R)) := by
-    convert (inferInstance : IsDomain (Localization.AtPrime ((maximalIdeal A).under R)))
-      using 3
-  have : IsIntegrallyClosed (Localization.AtPrime (((maximalIdeal A).comap g).under R)) := by
-    convert (inferInstance : IsIntegrallyClosed (Localization.AtPrime ((maximalIdeal A).under R)))
-      using 3
+  -- Transport the hypotheses on the localization of `R` along `h`.
+  have transport (P : Ideal R) [P.IsPrime] (hP : P = (maximalIdeal A).under R) :
+      IsDomain (Localization.AtPrime P) ∧ IsIntegrallyClosed (Localization.AtPrime P) := by
+    subst hP
+    exact ⟨inferInstance, inferInstance⟩
+  obtain ⟨_, _⟩ := transport _ h
   exact ⟨Etale.isDomain_localization_atPrime_of_localization_under R _,
     Etale.isIntegrallyClosed_localization_atPrime_of_localization_under R _⟩
 
@@ -104,6 +104,47 @@ private theorem map_dvd_map_of_eval_scaleRoots_eq_zero {q : D[X]} (hq : q.Monic)
     map_dvd (localizationLift g) (IsIntegrallyClosed.dvd_of_eval_scaleRoots_eq_zero (hq.map φ) hL)
 
 end Stage
+
+/-- **Integral dependence descends to an étale stage.** If `a / b` is a root of a monic polynomial
+`p` over `A`, in the denominator-free form `(p.scaleRoots b)(a) = 0`, then so is `u / v` for a monic
+`q` over an étale `R`-algebra `D` with an `R`-algebra map `g : D → A` sending `u` to `a` and `v`
+to `b`. The equation is a polynomial condition on `a`, `b` and the lower coefficients of `p`. -/
+private theorem exists_etale_eval_scaleRoots_eq_zero [IndEtale R A] {p : A[X]} (hp : p.Monic)
+    {a b : A} (hab : (p.scaleRoots b).eval a = 0) :
+    ∃ (D : Type u) (_ : CommRing D) (_ : _root_.Algebra R D) (_ : _root_.Algebra.Etale R D)
+      (g : D →ₐ[R] A) (q : D[X]) (u v : D),
+      q.Monic ∧ g u = a ∧ g v = b ∧ (q.scaleRoots v).eval u = 0 := by
+  -- This is the equation `P = 0` in the lower coefficients of `p` and in `a` and `b`, where `P`
+  -- is built from the generic monic polynomial `Q` of degree `n`.
+  set n := p.natDegree
+  let Q : (MvPolynomial (Fin n ⊕ Fin 2) R)[X] :=
+    X ^ n + ∑ i : Fin n, C (MvPolynomial.X (Sum.inl i)) * X ^ (i : ℕ)
+  have hQ : Q.Monic := monic_X_pow_add (degree_sum_fin_lt _)
+  have hQmap {T : Type u} [CommRing T] (φ : MvPolynomial (Fin n ⊕ Fin 2) R →+* T) :
+      Q.map φ = X ^ n + ∑ i : Fin n, C (φ (MvPolynomial.X (Sum.inl i))) * X ^ (i : ℕ) := by
+    simp [Q, Polynomial.map_sum]
+  let P := (Q.scaleRoots (MvPolynomial.X (Sum.inr 1))).eval (MvPolynomial.X (Sum.inr 0))
+  have hP {T : Type u} [CommRing T] [Nontrivial T] (φ : MvPolynomial (Fin n ⊕ Fin 2) R →+* T) :
+      φ P = ((Q.map φ).scaleRoots (φ (MvPolynomial.X (Sum.inr 1)))).eval
+        (φ (MvPolynomial.X (Sum.inr 0))) :=
+    map_eval_scaleRoots φ (hQ.natDegree_map φ) _ _
+  let x : Fin n ⊕ Fin 2 → A := Sum.elim (fun i ↦ p.coeff i) ![a, b]
+  have hx : MvPolynomial.aeval x P = 0 := by
+    have hpQ : Q.map (MvPolynomial.aeval x).toRingHom = p := by
+      rw [hQmap, hp.as_sum, ← Fin.sum_univ_eq_sum_range (fun i ↦ C (p.coeff i) * X ^ i)]
+      simp [x, n]
+    have h := hP (MvPolynomial.aeval x).toRingHom
+    rw [hpQ] at h
+    simpa [x, hab] using h
+  -- The equation holds at an étale stage `g : D → A`.
+  obtain ⟨D, _, _, _, g, y, hy, hPy⟩ := exists_etale_aeval_eq_zero x P hx
+  have : Nontrivial D := g.toRingHom.domain_nontrivial
+  have hrel := hP (MvPolynomial.aeval y).toRingHom
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.aeval_X] at hrel
+  have hgy (i : Fin n ⊕ Fin 2) : g (y i) = x i := congrFun hy i
+  exact ⟨D, inferInstance, inferInstance, inferInstance, g, Q.map (MvPolynomial.aeval y).toRingHom,
+    y (Sum.inr 0), y (Sum.inr 1), hQ.map _, by simpa [x] using hgy (Sum.inr 0),
+    by simpa [x] using hgy (Sum.inr 1), hrel.symm.trans hPy⟩
 
 variable [IndEtale R A] [IsDomain (Localization.AtPrime ((maximalIdeal A).under R))]
   [IsIntegrallyClosed (Localization.AtPrime ((maximalIdeal A).under R))]
@@ -146,39 +187,12 @@ theorem isIntegrallyClosed_of_isLocalRing : IsIntegrallyClosed A := by
     apply IsFractionRing.injective A (FractionRing A)
     rw [← eval₂_hom, map_zero]
     exact scaleRoots_eval₂_eq_zero_of_eval₂_div_eq_zero (IsFractionRing.injective A _) hpx hb
-  -- This is the equation `P = 0` in the lower coefficients of `p` and in `a` and `b`, where `P`
-  -- is built from the generic monic polynomial `Q` of degree `n`.
-  set n := p.natDegree
-  let Q : (MvPolynomial (Fin n ⊕ Fin 2) R)[X] :=
-    X ^ n + ∑ i : Fin n, C (MvPolynomial.X (Sum.inl i)) * X ^ (i : ℕ)
-  have hQ : Q.Monic := monic_X_pow_add (degree_sum_fin_lt _)
-  have hQmap {T : Type u} [CommRing T] (φ : MvPolynomial (Fin n ⊕ Fin 2) R →+* T) :
-      Q.map φ = X ^ n + ∑ i : Fin n, C (φ (MvPolynomial.X (Sum.inl i))) * X ^ (i : ℕ) := by
-    simp [Q, Polynomial.map_sum]
-  let P := (Q.scaleRoots (MvPolynomial.X (Sum.inr 1))).eval (MvPolynomial.X (Sum.inr 0))
-  have hP {T : Type u} [CommRing T] [Nontrivial T] (φ : MvPolynomial (Fin n ⊕ Fin 2) R →+* T) :
-      φ P = ((Q.map φ).scaleRoots (φ (MvPolynomial.X (Sum.inr 1)))).eval
-        (φ (MvPolynomial.X (Sum.inr 0))) :=
-    map_eval_scaleRoots φ (hQ.natDegree_map φ) _ _
-  let x : Fin n ⊕ Fin 2 → A := Sum.elim (fun i ↦ p.coeff i) ![a, b]
-  have hx : MvPolynomial.aeval x P = 0 := by
-    have hpQ : Q.map (MvPolynomial.aeval x).toRingHom = p := by
-      rw [hQmap, hp.as_sum, ← Fin.sum_univ_eq_sum_range (fun i ↦ C (p.coeff i) * X ^ i)]
-      simp [x, n]
-    have h := hP (MvPolynomial.aeval x).toRingHom
-    rw [hpQ] at h
-    simpa [x, hab] using h
-  -- The equation holds at an étale stage `g : D → A`, where it is resolved.
-  obtain ⟨D, _, _, _, g, y, hy, hPy⟩ := exists_etale_aeval_eq_zero x P hx
-  have : Nontrivial D := g.toRingHom.domain_nontrivial
-  have hrel := hP (MvPolynomial.aeval y).toRingHom
-  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, MvPolynomial.aeval_X] at hrel
-  have hgy (i : Fin n ⊕ Fin 2) : g (y i) = x i := congrFun hy i
-  obtain ⟨c, hc⟩ := map_dvd_map_of_eval_scaleRoots_eq_zero g
-    (hQ.map (MvPolynomial.aeval y).toRingHom) (hrel.symm.trans hPy)
-  have hc' : a = b * c := by simpa [hgy, x] using hc
+  -- The equation already holds at an étale stage `g : D → A`, where it is resolved.
+  obtain ⟨D, _, _, _, g, q, u, v, hq, rfl, rfl, huv⟩ :=
+    exists_etale_eval_scaleRoots_eq_zero (R := R) hp hab
+  obtain ⟨c, hc⟩ := map_dvd_map_of_eval_scaleRoots_eq_zero g hq huv
   refine ⟨c, ?_⟩
-  rw [eq_div_iff (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb), ← map_mul, hc',
+  rw [eq_div_iff (IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb), ← map_mul, hc,
     mul_comm]
 
 end TauCeti.Algebra.IndEtale

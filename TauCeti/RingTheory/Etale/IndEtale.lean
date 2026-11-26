@@ -124,7 +124,8 @@ theorem exists_etale_aeval_eq_zero [IndEtale R S] {ι : Type*} [Finite ι] (x : 
       exact congrArg (MvPolynomial.aeval · P) hy'
   refine ⟨pres.diag.obj l, inferInstance, inferInstance, hD l, (pres.ι.app l).hom,
     (pres.diag.map f).hom ∘ y, ?_, ?_⟩
-  · rw [← hy', ← Function.comp_assoc, ← AlgHom.coe_comp, ← CommAlgCat.hom_comp, pres.w]
+  · ext i
+    simp [← hy']
   · -- The transition maps act on elements through their underlying algebra maps.
     change (pres.diag.map f).hom (MvPolynomial.aeval y P) = (pres.diag.map f').hom 0 at hf
     rwa [map_zero, MvPolynomial.comp_aeval_apply] at hf

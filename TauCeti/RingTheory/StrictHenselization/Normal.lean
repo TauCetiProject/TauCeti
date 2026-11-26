@@ -45,15 +45,19 @@ namespace TauCeti.StrictHenselization
 variable (R Ω : Type u) [CommRing R] [IsDomain R] [IsIntegrallyClosed R] [CommRing Ω]
   [IsLocalRing Ω] [Algebra R Ω]
 
+/-- The localization of `R` at the prime under the maximal ideal of `algebra R Ω` is integrally
+closed, as a localization of the integrally closed domain `R`. -/
+private theorem isIntegrallyClosed_localization_under :
+    IsIntegrallyClosed (Localization.AtPrime ((maximalIdeal (algebra R Ω)).under R)) :=
+  isIntegrallyClosed_of_isLocalization _ _
+    ((maximalIdeal (algebra R Ω)).under R).primeCompl_le_nonZeroDivisors
+
 /-- **The strict henselization of a normal domain is a domain.** For an integrally closed domain
 `R`, the colimit of the étale neighbourhoods of `R` pointed in a local ring `Ω` is a domain; in
 particular so is the strict henselization of a local ring that is an integrally closed domain. -/
 @[stacks 06DI "strict henselization, domain part"]
 instance isDomain_algebra : IsDomain (algebra R Ω) :=
-  -- The localization of `R` at the prime under the maximal ideal is integrally closed.
-  have := isIntegrallyClosed_of_isLocalization
-    (Localization.AtPrime ((maximalIdeal (algebra R Ω)).under R)) _
-    ((maximalIdeal (algebra R Ω)).under R).primeCompl_le_nonZeroDivisors
+  have := isIntegrallyClosed_localization_under R Ω
   Algebra.IndEtale.isDomain_of_isLocalRing R (algebra R Ω)
 
 /-- **The strict henselization of a normal domain is integrally closed.** For an integrally closed
@@ -62,10 +66,7 @@ integrally closed domain; in particular so is the strict henselization of a loca
 integrally closed domain. -/
 @[stacks 06DI "strict henselization"]
 instance isIntegrallyClosed_algebra : IsIntegrallyClosed (algebra R Ω) :=
-  -- The localization of `R` at the prime under the maximal ideal is integrally closed.
-  have := isIntegrallyClosed_of_isLocalization
-    (Localization.AtPrime ((maximalIdeal (algebra R Ω)).under R)) _
-    ((maximalIdeal (algebra R Ω)).under R).primeCompl_le_nonZeroDivisors
+  have := isIntegrallyClosed_localization_under R Ω
   Algebra.IndEtale.isIntegrallyClosed_of_isLocalRing R (algebra R Ω)
 
 -- The colimit of the étale neighbourhoods of `ℤ` pointed in any field, such as an algebraic
