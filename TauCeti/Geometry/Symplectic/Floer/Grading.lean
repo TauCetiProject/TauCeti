@@ -197,9 +197,9 @@ include hμ hδμ in
 /-- The cochain regrading `k = n - μ` is the only affine regrading `k = c + σ μ` of the raw Floer
 grading in which both a supported product kernel of raw degree `-n` has degree zero and a
 supported differential of raw degree `-1` on its output has degree `+1`, provided each has a
-nonzero coefficient. Among the regradings `C^k = CF_(c+k)` and `C^k = CF_(c-k)`, the first has
-a product of degree zero only for `c = n` and then a differential of degree `-1`, and the second
-needs `c = n`. -/
+nonzero coefficient. For `σ = 1`, the regrading `C^k = CF_(k-c)`, the product has degree zero
+only for `c = -n`, that is for `C^k = CF_(n+k)`, whose differential has degree `-1`; for
+`σ = -1`, the regrading `C^k = CF_(c-k)`, it needs `c = n`. -/
 theorem forall_kernelProduct_mem_gradeBy_and_forall_kernelMap_mem_gradeBy_affine_iff
     {p₁ : S₁} {p₂ : S₂} {p₀ : S₀} (hp : κ p₁ p₂ p₀ ≠ 0) {q q₀ : S₀} (hq : δ q q₀ ≠ 0) :
     ((∀ i j (a : NovikovModule R F₁) (b : NovikovModule R F₂),
