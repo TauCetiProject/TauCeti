@@ -328,6 +328,29 @@ def rectangleFacetEquiv : Fin 4 ≃ Option (Fin 1) ⊕ Option (Fin 1) where
   left_inv := by decide
   right_inv := by decide
 
+theorem coe_rectangleFacetEquiv :
+    ⇑rectangleFacetEquiv = ![.inl (some 0), .inr (some 0), .inr none, .inl none] := (rfl)
+
+@[simp] theorem rectangleFacetEquiv_zero : rectangleFacetEquiv 0 = .inl (some 0) := (rfl)
+
+@[simp] theorem rectangleFacetEquiv_one : rectangleFacetEquiv 1 = .inr (some 0) := (rfl)
+
+@[simp] theorem rectangleFacetEquiv_two : rectangleFacetEquiv 2 = .inr none := (rfl)
+
+@[simp] theorem rectangleFacetEquiv_three : rectangleFacetEquiv 3 = .inl none := (rfl)
+
+@[simp] theorem rectangleFacetEquiv_symm_inl_some (i : Fin 1) :
+    rectangleFacetEquiv.symm (.inl (some i)) = 0 := (rfl)
+
+@[simp] theorem rectangleFacetEquiv_symm_inr_some (i : Fin 1) :
+    rectangleFacetEquiv.symm (.inr (some i)) = 1 := (rfl)
+
+@[simp] theorem rectangleFacetEquiv_symm_inr_none : rectangleFacetEquiv.symm (.inr none) = 2 :=
+  (rfl)
+
+@[simp] theorem rectangleFacetEquiv_symm_inl_none : rectangleFacetEquiv.symm (.inl none) = 3 :=
+  (rfl)
+
 /-- The splitting `ℤ² = ℤ × ℤ` of the lattice of the rectangle. -/
 private def rectangleLatticeMap (v : Fin 2 → ℤ) : (Fin 1 → ℤ) × (Fin 1 → ℤ) :=
   (fun _ ↦ v 0, fun _ ↦ v 1)
@@ -360,7 +383,7 @@ private theorem prodNormal_comp_rectangleFacetEquiv :
       fun j ↦ rectangleLatticeMap (hirzebruchNormal 0 j) := by
   funext j
   fin_cases j <;> ext k <;> fin_cases k <;>
-    simp [rectangleFacetEquiv, rectangleLatticeMap, hirzebruchNormal_def]
+    simp [rectangleLatticeMap, hirzebruchNormal_def]
 
 /-- Listed along `rectangleFacetEquiv`, the support constants of the product of two intervals are
 those of the rectangle. -/
@@ -368,7 +391,7 @@ private theorem sumElim_simplexSupport_comp_rectangleFacetEquiv :
     Sum.elim (simplexSupport a) (simplexSupport b) ∘ rectangleFacetEquiv =
       hirzebruchSupport a b := by
   funext j
-  fin_cases j <;> simp [rectangleFacetEquiv, hirzebruchSupport_def]
+  fin_cases j <;> simp [hirzebruchSupport_def]
 
 /-- The levels of the rectangle and of the product of two intervals correspond along
 `rectangleFacetEquiv`. -/
@@ -593,12 +616,12 @@ theorem reducedMomentMap_rectangleDiffeomorph_symm_mk_apply_zero (ha : 0 < a) (h
       a * ‖(w : EuclideanSpace ℂ (Fin 2)) 1‖ ^ 2 := by
   have h := reducedMomentMap_rectangleDiffeomorph_symm_apply ha hb hβ
     (ComplexProjectiveSpace.mk 1 w, ComplexProjectiveSpace.mk 1 w') 0
-  have he : rectangleFacetEquiv 0 = .inl (some 0) := rfl
   have hn : (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 0) = Pi.single 0 1 := by
     ext k
     fin_cases k <;> simp [hirzebruchNormal_def]
-  simp only [he, hn, prodNormal_inl, simplexNormal_some, AddMonoidHom.coe_prodMap, Prod.map_apply,
-    AddMonoidHom.compLeft_single, Int.coe_castAddHom, Int.cast_one, map_zero, Sum.elim_inl,
+  simp only [rectangleFacetEquiv_zero, hn, prodNormal_inl, simplexNormal_some,
+    AddMonoidHom.coe_prodMap, Prod.map_apply, AddMonoidHom.compLeft_single, Int.coe_castAddHom,
+    Int.cast_one, map_zero, Sum.elim_inl,
     simplexSupport_some, hirzebruchSupport_def, Matrix.cons_val_zero, sub_zero] at h
   rw [h, reducedMomentMap_simplexProdDiffeomorph_symm_mk_apply_fst, Fin.succ_zero_eq_one]
 
@@ -616,12 +639,12 @@ theorem reducedMomentMap_rectangleDiffeomorph_symm_mk_apply_one (ha : 0 < a) (hb
       b * ‖(w' : EuclideanSpace ℂ (Fin 2)) 1‖ ^ 2 := by
   have h := reducedMomentMap_rectangleDiffeomorph_symm_apply ha hb hβ
     (ComplexProjectiveSpace.mk 1 w, ComplexProjectiveSpace.mk 1 w') 1
-  have he : rectangleFacetEquiv 1 = .inr (some 0) := rfl
   have hn : (Int.castAddHom ℝ).compLeft (Fin 2) (hirzebruchNormal 0 1) = Pi.single 1 1 := by
     ext k
     fin_cases k <;> simp [hirzebruchNormal_def]
-  simp only [he, hn, prodNormal_inr, simplexNormal_some, AddMonoidHom.coe_prodMap, Prod.map_apply,
-    AddMonoidHom.compLeft_single, Int.coe_castAddHom, Int.cast_one, map_zero, Sum.elim_inr,
+  simp only [rectangleFacetEquiv_one, hn, prodNormal_inr, simplexNormal_some,
+    AddMonoidHom.coe_prodMap, Prod.map_apply, AddMonoidHom.compLeft_single, Int.coe_castAddHom,
+    Int.cast_one, map_zero, Sum.elim_inr,
     simplexSupport_some, hirzebruchSupport_def, Matrix.cons_val_one, Matrix.cons_val_zero,
     sub_zero] at h
   rw [h, reducedMomentMap_simplexProdDiffeomorph_symm_mk_apply_snd, Fin.succ_zero_eq_one]
