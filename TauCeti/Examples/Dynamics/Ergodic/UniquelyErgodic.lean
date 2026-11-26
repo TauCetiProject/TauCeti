@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Ergodic.UniquelyErgodic
+public import TauCeti.Dynamics.Ergodic.InvariantProbabilities.Extreme
 public import Mathlib.Dynamics.Ergodic.AddCircle
 public import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
@@ -14,7 +15,8 @@ public import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 * The doubling map of `UnitAddCircle` preserves both `δ_0` and `volume`, so it is not uniquely
   ergodic, and by `TauCeti.uniquelyErgodic_iff_tendstoUniformly_birkhoffAverage` some continuous
-  function has Birkhoff averages that do not converge uniformly to a constant.
+  function has Birkhoff averages that do not converge uniformly to a constant. Both measures are
+  ergodic, so its invariant probabilities have at least two extreme points.
 * The identity of a one-point space is uniquely ergodic, so its Birkhoff averages converge
   uniformly to the integral against the Dirac mass.
 -/
@@ -22,6 +24,7 @@ public import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 public section
 
 open MeasureTheory Filter TauCeti
+open scoped ENNReal
 
 namespace TauCeti.UniquelyErgodicExamples
 
@@ -54,6 +57,32 @@ example : ∃ f : C(UnitAddCircle, ℝ), ∀ c : ℝ,
   by_contra! h
   exact not_uniquelyErgodic_doubling
     ((uniquelyErgodic_iff_tendstoUniformly_birkhoffAverage continuous_doubling).mpr h)
+
+/-- The Dirac mass at the fixed point `0` is ergodic for the doubling map. -/
+theorem ergodic_doubling_dirac : Ergodic doubling (Measure.dirac 0) where
+  toMeasurePreserving := by
+    refine ⟨continuous_doubling.measurable, ?_⟩
+    rw [Measure.map_dirac' continuous_doubling.measurable]
+    simp [doubling]
+  aeconst_set _ _ _ := by
+    rw [ae_dirac_eq]
+    exact Filter.EventuallyConst.of_tendsto (tendsto_pure_pure _ _)
+
+/-- **Check.** `δ_0` and `volume` are two distinct extreme points of the invariant probabilities of
+the doubling map: both are ergodic. -/
+example : ∃ μ ν : ProbabilityMeasure UnitAddCircle, μ ≠ ν ∧
+    (μ : Measure UnitAddCircle) ∈ Set.extremePoints ℝ≥0∞
+      (((↑) : ProbabilityMeasure UnitAddCircle → Measure UnitAddCircle) ''
+        invariantProbabilities doubling) ∧
+    (ν : Measure UnitAddCircle) ∈ Set.extremePoints ℝ≥0∞
+      (((↑) : ProbabilityMeasure UnitAddCircle → Measure UnitAddCircle) ''
+        invariantProbabilities doubling) := by
+  refine ⟨⟨Measure.dirac 0, inferInstance⟩, ⟨volume, inferInstance⟩, fun h ↦ ?_,
+    ergodic_iff_mem_extremePoints_invariantProbabilities.1 ergodic_doubling_dirac,
+    ergodic_iff_mem_extremePoints_invariantProbabilities.1
+      (AddCircle.ergodic_nsmul (T := 1) one_lt_two)⟩
+  have := congrArg (fun μ : ProbabilityMeasure UnitAddCircle ↦ (μ : Measure UnitAddCircle) {0}) h
+  simp at this
 
 /-- The identity of a one-point space is uniquely ergodic. -/
 theorem uniquelyErgodic_id_unit : UniquelyErgodic (id : Unit → Unit) := by
