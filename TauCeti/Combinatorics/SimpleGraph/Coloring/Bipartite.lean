@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
+public import Mathlib.Combinatorics.SimpleGraph.Matching
 public import TauCeti.Combinatorics.SimpleGraph.Coloring.Edge
 
 import TauCeti.Combinatorics.Graph.Matching.EdgeColoring
+import TauCeti.Combinatorics.Graph.Matching.OfSimpleGraph
 
 /-!
 # Kőnig's edge-colouring theorem and chromatic index of finite bipartite simple graphs
@@ -19,7 +21,8 @@ its maximum degree (`0` on an empty vertex type). Equivalently, its edge set par
 pairwise disjoint matching subgraphs, with empty matchings allowed.
 
 These results are transported from the finite multigraph theorem in
-`TauCeti.Combinatorics.Graph.Matching.EdgeColoring` along `Graph.ofSimpleGraph`.
+`TauCeti.Combinatorics.Graph.Matching.EdgeColoring` and the matching-partition transport in
+`TauCeti.Combinatorics.Graph.Matching.OfSimpleGraph` along `Graph.ofSimpleGraph`.
 
 ## Main results
 
