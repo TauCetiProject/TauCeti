@@ -80,15 +80,9 @@ observable `v ∘ g⁻¹`. -/
 private theorem lpKoopman_obs (g : Equiv.Perm (Fin 3)) (a b c : ℂ) :
     lpKoopman ℂ ℂ p Measure.count measurePreserving_perm_count g (obs p a b c) =
       obs p (![a, b, c] (g⁻¹ • 0)) (![a, b, c] (g⁻¹ • 1)) (![a, b, c] (g⁻¹ • 2)) := by
-  rw [Lp.ext_iff]
-  refine (coeFn_lpKoopman _ _).trans ?_
-  have h₁ := MemLp.coeFn_toLp (MemLp.of_discrete (f := ![a, b, c]) (p := p) (μ := .count))
-  have h₂ := MemLp.coeFn_toLp (MemLp.of_discrete
-    (f := ![![a, b, c] (g⁻¹ • 0), ![a, b, c] (g⁻¹ • 1), ![a, b, c] (g⁻¹ • 2)]) (p := p)
-    (μ := .count))
-  rw [Filter.EventuallyEq, Measure.ae_count_iff] at h₁ h₂ ⊢
+  rw [lpKoopman_apply, Lp.toLp_compMeasurePreserving, MemLp.toLp_eq_toLp_iff,
+    Filter.EventuallyEq, Measure.ae_count_iff]
   intro x
-  rw [h₁, h₂]
   fin_cases x <;> simp
 
 omit [Fact (1 ≤ p)] in
@@ -142,15 +136,11 @@ noncomputable abbrev unitIcc (a : ℝ) : Lp ℂ p (volume : Measure ℝ) :=
 theorem lpKoopman_unitIcc_zero (t : ℝ) :
     lpKoopman ℂ ℂ p volume (measurePreserving_multiplicative_smul volume)
       (Multiplicative.ofAdd t) (unitIcc p 0) = unitIcc p t := by
-  rw [Lp.ext_iff]
-  refine (coeFn_lpKoopman _ _).trans ?_
-  refine ((measurePreserving_multiplicative_smul volume _).quasiMeasurePreserving.ae_eq_comp
-    indicatorConstLp_coeFn).trans (Filter.EventuallyEq.trans ?_ indicatorConstLp_coeFn.symm)
-  refine Filter.Eventually.of_forall fun x ↦ ?_
-  have hmem : (Multiplicative.ofAdd t)⁻¹ • x ∈ Icc (0 : ℝ) (0 + 1) ↔ x ∈ Icc t (t + 1) := by
-    rw [← ofAdd_neg, ofAdd_smul, vadd_eq_add, mem_Icc, mem_Icc]
-    constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
-  simp only [Function.comp_apply, indicator, hmem]
+  rw [lpKoopman_apply, Lp.indicatorConstLp_compMeasurePreserving]
+  congr 1
+  ext x
+  rw [mem_preimage, ← ofAdd_neg, ofAdd_smul, vadd_eq_add, mem_Icc, mem_Icc]
+  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
 
 /-- **Check.** The pullback of `1_[0,1]` by any translation has `Lᵖ` norm `1`, for every
 `1 ≤ p ≤ ∞`, although Lebesgue measure is infinite. -/
