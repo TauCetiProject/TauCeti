@@ -86,6 +86,9 @@ families are treated in `TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Spli
 * `TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_of_isSemisimple`: a Poisson-commuting
   family is nondegenerate if the forms Poisson-commuting with a form `P` with semisimple
   Hamiltonian endomorphism all lie in its span.
+* `TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_of_forall_quadraticPoissonBracket_eq_zero`:
+  a Poisson-commuting family of forms with semisimple Hamiltonian endomorphisms is nondegenerate if
+  every form Poisson-commuting with all of them lies in its span.
 * `TauCeti.SymplecticForm.mem_span_sumElim_prod_of_quadraticPoissonBracket_eq_zero`: the forms on
   a direct sum Poisson-commuting with `P₁ ⊕ P₂` lie in the span of the two families extended by
   zero, when the minimal polynomials of `A_{P₁}` and `A_{P₂}` are coprime.
@@ -413,6 +416,22 @@ end TwoDim
 
 /-! ### Regular semisimple elements -/
 
+/-- **The Engel subalgebra of a semisimple element is its centralizer.** If `P` has semisimple
+Hamiltonian endomorphism `A_P`, every quadratic form `R` with `A_R` in the Engel subalgebra of
+`A_P` in `sp(V, ω)` Poisson-commutes with `P`: `ad A_P` is semisimple on `sp(V, ω)`, so its
+generalized kernel is its kernel. -/
+theorem quadraticPoissonBracket_eq_zero_of_mem_engel {P R : QuadraticForm ℝ V}
+    (hP : (ω.hamiltonianEnd P).IsSemisimple)
+    (hR : ω.hamiltonianEndEquiv R ∈ engel ℝ (ω.hamiltonianEndEquiv P)) :
+    ω.quadraticPoissonBracket R P = 0 := by
+  have hP' : (ω.hamiltonianEndEquiv P : Module.End ℝ V).IsSemisimple := by
+    rwa [coe_hamiltonianEndEquiv_apply]
+  have had := (skewAdjointLieSubalgebra ω.toBilinForm).isSemisimple_ad_of_isSemisimple_ad
+    (x := ω.hamiltonianEndEquiv P) (LieAlgebra.ad_isSemisimple_of_isSemisimple hP')
+  rwa [mem_engel_iff_lie_eq_zero had.isFinitelySemisimple,
+    ← hamiltonianEndEquiv_quadraticPoissonBracket, LinearEquiv.map_eq_zero_iff,
+    ← neg_quadraticPoissonBracket, neg_eq_zero] at hR
+
 /-- **Regular semisimple elements give Cartan subalgebras.** A family of pairwise Poisson-commuting
 quadratic forms is nondegenerate as soon as some quadratic form `P` has semisimple Hamiltonian
 endomorphism and every quadratic form Poisson-commuting with `P` lies in the span of the family.
@@ -423,16 +442,39 @@ theorem isNondegenerateQuadraticFamily_of_isSemisimple {Q : ι → QuadraticForm
     (hPQ : ∀ R, ω.quadraticPoissonBracket R P = 0 → R ∈ Submodule.span ℝ (Set.range Q)) :
     ω.IsNondegenerateQuadraticFamily Q := by
   refine isNondegenerateQuadraticFamily_of_engel_le hQ P fun X hX ↦ ?_
-  -- `ad A_P` is semisimple on `sp(V, ω)`, so the Engel subalgebra of `A_P` is its centralizer.
-  have hP' : (ω.hamiltonianEndEquiv P : Module.End ℝ V).IsSemisimple := by
-    rwa [coe_hamiltonianEndEquiv_apply]
-  have had := (skewAdjointLieSubalgebra ω.toBilinForm).isSemisimple_ad_of_isSemisimple_ad
-    (x := ω.hamiltonianEndEquiv P) (LieAlgebra.ad_isSemisimple_of_isSemisimple hP')
-  rw [mem_engel_iff_lie_eq_zero had.isFinitelySemisimple] at hX
   obtain ⟨R, rfl⟩ := ω.hamiltonianEndEquiv.surjective X
-  rw [← hamiltonianEndEquiv_quadraticPoissonBracket, LinearEquiv.map_eq_zero_iff,
-    ← neg_quadraticPoissonBracket, neg_eq_zero] at hX
-  exact hamiltonianEndEquiv_mem_lieSpan_of_mem_span (hPQ R hX)
+  exact hamiltonianEndEquiv_mem_lieSpan_of_mem_span
+    (hPQ R (quadraticPoissonBracket_eq_zero_of_mem_engel hP hX))
+
+/-- **Toral families spanning their centralizer are nondegenerate.** A family of pairwise
+Poisson-commuting quadratic forms whose Hamiltonian endomorphisms are semisimple is nondegenerate
+as soon as every quadratic form Poisson-commuting with all members of the family lies in its span:
+the abelian subalgebra of `sp(V, ω)` the family generates consists of semisimple elements, so its
+normalizer is its centralizer. The converse is
+`IsNondegenerateQuadraticFamily.mem_span_of_forall_quadraticPoissonBracket_eq_zero` in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral`. -/
+theorem isNondegenerateQuadraticFamily_of_forall_quadraticPoissonBracket_eq_zero
+    {Q : ι → QuadraticForm ℝ V} (hQ : ∀ i j, ω.quadraticPoissonBracket (Q i) (Q j) = 0)
+    (hs : ∀ i, (ω.hamiltonianEnd (Q i)).IsSemisimple)
+    (hR : ∀ R, (∀ i, ω.quadraticPoissonBracket R (Q i) = 0) →
+      R ∈ Submodule.span ℝ (Set.range Q)) :
+    ω.IsNondegenerateQuadraticFamily Q := by
+  -- If `{R, Qᵢ}` lies in the span then `ad(A_{Qᵢ})² A_R = 0`, so `A_R` lies in the Engel
+  -- subalgebra of the semisimple element `A_{Qᵢ}`, which is its centralizer.
+  refine isNondegenerateQuadraticFamily_of_forall_mem_span hQ fun R hRQ ↦ hR R fun i ↦ ?_
+  -- `{Qᵢ, {Qᵢ, R}} = 0`, since `{Qᵢ, R} = -{R, Qᵢ}` lies in the span of the Poisson-commuting
+  -- family.
+  have hQR : ω.quadraticPoissonBracket (Q i) R ∈ Submodule.span ℝ (Set.range Q) := by
+    rw [← neg_quadraticPoissonBracket]
+    exact neg_mem (hRQ i)
+  have h2 : ω.quadraticPoissonBracket (Q i) (ω.quadraticPoissonBracket (Q i) R) = 0 :=
+    ω.quadraticPoissonBracket_eq_zero_of_mem_span hQ (Submodule.subset_span ⟨i, rfl⟩) hQR
+  have hmem : ω.hamiltonianEndEquiv R ∈ engel ℝ (ω.hamiltonianEndEquiv (Q i)) := by
+    refine (mem_engel_iff _ _ _).2 ⟨2, ?_⟩
+    rw [pow_two, mul_apply_eq_comp, LieAlgebra.ad_apply, LieAlgebra.ad_apply,
+      ← hamiltonianEndEquiv_quadraticPoissonBracket, ← hamiltonianEndEquiv_quadraticPoissonBracket,
+      h2, map_zero]
+  exact quadraticPoissonBracket_eq_zero_of_mem_engel (hs i) hmem
 
 /-! ### Direct sums -/
 

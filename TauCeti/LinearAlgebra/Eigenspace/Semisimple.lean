@@ -31,6 +31,8 @@ of the `μ`-eigenspace.
   eigenspaces span the module is semisimple.
 * `TauCeti.isSemisimple_lmul`: multiplication by a fixed vector on `ι → K`, a diagonal operator,
   is semisimple.
+* `TauCeti.isSemisimple_of_pow_three_eq_smul`: an endomorphism with `f³ = c f`, `c ≠ 0`, is
+  semisimple away from characteristic two.
 * `Module.End.IsFinitelySemisimple.rootMultiplicity_charpoly`: for a semisimple endomorphism, the
   multiplicity of a root `μ` of the characteristic polynomial is the dimension of the
   `μ`-eigenspace.
@@ -87,6 +89,21 @@ theorem isSemisimple_lmul {K ι : Type*} [Field K] [Finite ι] (c : ι → K) :
     funext j
     rw [Finset.prod_apply, Pi.zero_apply]
     exact Finset.prod_eq_zero (Finset.mem_image_of_mem c (Finset.mem_univ j)) (by simp)
+
+open Polynomial in
+/-- An endomorphism `f` with `f³ = c f` for a nonzero scalar `c` is semisimple when `2 ≠ 0`: it is
+killed by the squarefree polynomial `X (X² - c)`. Both hypotheses are needed: `f³ = 0` holds for
+nilpotent `f`, and in characteristic two the matrix `[[a, 1], [0, a]]` satisfies `f² = a²` but is
+not semisimple. -/
+theorem isSemisimple_of_pow_three_eq_smul {K M : Type*} [Field K] [NeZero (2 : K)]
+    [AddCommGroup M] [Module K M] {f : End K M} {c : K} (hc : c ≠ 0) (h : f ^ 3 = c • f) :
+    f.IsSemisimple := by
+  refine End.isSemisimple_of_squarefree_aeval_eq_zero (p := X * (X ^ 2 - C c)) ?_ ?_
+  · refine (separable_X.mul (separable_X_pow_sub_C c two_ne_zero hc) ?_).squarefree
+    refine ⟨C c⁻¹ * X, -C c⁻¹, ?_⟩
+    have hc' : C c⁻¹ * C c = (1 : K[X]) := by rw [← C_mul, inv_mul_cancel₀ hc, C_1]
+    linear_combination hc'
+  · simp [mul_sub, ← pow_succ', h, Algebra.algebraMap_eq_smul_one]
 
 end TauCeti
 
