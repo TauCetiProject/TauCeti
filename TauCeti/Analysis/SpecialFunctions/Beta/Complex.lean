@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
@@ -197,17 +197,9 @@ theorem integral_cpow_neg_mul_inv_add (hα₀ : 0 < α) (hα₁ : α < 1) {z : �
   have hG : DifferentiableOn ℂ
       (fun z : ℂ ↦ ((Real.pi / Real.sin (Real.pi * α) : ℝ) : ℂ) * z ^ (-(α : ℂ))) slitPlane :=
     fun w hw ↦ (differentiableAt_id.cpow_const hw).const_mul _ |>.differentiableWithinAt
-  have h1 : (1 : ℂ) ∈ slitPlane := one_mem_slitPlane
-  refine ((differentiableOn_integral_cpow_neg_mul_inv_add hα₀ hα₁).analyticOnNhd
-    isOpen_slitPlane).eqOn_of_preconnected_of_frequently_eq (hG.analyticOnNhd isOpen_slitPlane)
-    (starConvex_one_slitPlane.isPathConnected h1).isConnected.isPreconnected h1 ?_ hz
-  -- the positive reals accumulate at `1`
-  have hT : Tendsto (fun x : ℝ ↦ (x : ℂ)) (𝓝[≠] 1) (𝓝[≠] 1) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      ((continuous_ofReal.tendsto' 1 1 ofReal_one).mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun x hx ↦ by simpa using hx)
-  refine hT.frequently (Eventually.frequently ?_)
-  filter_upwards [nhdsWithin_le_nhds (lt_mem_nhds one_pos)] with x hx using hreal hx
+  exact ((differentiableOn_integral_cpow_neg_mul_inv_add hα₀ hα₁).analyticOnNhd
+    isOpen_slitPlane).eqOn_slitPlane_of_ofReal_pos_eq (hG.analyticOnNhd isOpen_slitPlane)
+    (fun x hx ↦ hreal hx) hz
 
 end Stieltjes
 
