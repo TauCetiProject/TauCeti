@@ -25,6 +25,8 @@ a maximal ideal of `T` whose ramification index it divides.
 
 * `Ideal.inertiaDeg_eq_of_bijective`: `r.inertiaDeg S = r.inertiaDeg R`.
 * `Ideal.ramificationIdx_eq_of_surjective`: `r.ramificationIdx S = r.ramificationIdx R`.
+* `Ideal.inertiaDeg_eq_one_of_surjective`: a prime ideal of `T` has residue degree `1` over `S`
+  when `algebraMap S T` is surjective.
 * `Ideal.ramificationIdx_map_algEquiv`: `(P.map e).ramificationIdx R = P.ramificationIdx R` for
   an `R`-algebra isomorphism `e`.
 * `Ideal.inertiaDeg_map_algEquiv`: `(P.map e).inertiaDeg R = P.inertiaDeg R` for an `R`-algebra
@@ -65,6 +67,17 @@ theorem ramificationIdx_eq_of_surjective
   · rw [ramificationIdx_of_not_isPrime r S hr, ramificationIdx_of_not_isPrime r R hr]
 
 end ChangeOfBase
+
+/-- If the algebra map `S → T` is surjective, a prime ideal of `T` has inertia degree `1` over
+`S`. -/
+theorem inertiaDeg_eq_one_of_surjective {S T : Type*} [CommRing S] [CommRing T]
+    [Algebra S T] (h : Function.Surjective (algebraMap S T)) (q : Ideal T) [q.IsPrime] :
+    q.inertiaDeg S = 1 := by
+  let := Localization.AtPrime.algebraOfLiesOver (q.under S) q
+  rw [inertiaDeg_def, Algebra.finrank_eq_one_iff_bijective_algebraMap]
+  -- The residue-field algebra map induced by `algebraOfLiesOver` is, by definition,
+  -- `ResidueField.map` of `algebraMap S T`.
+  exact (RingHom.surjectiveOnStalks_of_surjective h).residueFieldMap_bijective _ q rfl
 
 /-- The ramification index over `R` is invariant under `R`-algebra isomorphisms: the image of an
 ideal `P` under `e : S ≃ₐ[R] T` has the same ramification index over `R` as `P`. -/
