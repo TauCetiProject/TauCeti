@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
 
 /-!
@@ -21,6 +22,8 @@ terminal affine group scheme over `R`.
 
 ## Main declarations
 
+* `TauCeti.TrivialGroup.finiteTypeCoordinateHopfAlgebra`: the coordinate Hopf algebra `R` of the
+  trivial group, as a finite-type Hopf algebra.
 * `TauCeti.TrivialGroup.pointsMulEquiv`: the convolution group of points is `PUnit`.
 * `TauCeti.TrivialGroup.pointsMulEquiv_mapValue`: the equivalence is natural in the value
   algebra.
@@ -119,6 +122,12 @@ theorem mapValue_pointsMulEquiv_symm_apply (φ : A →ₐ[R] B) (u : PUnit.{1}) 
   rw [pointsMulEquiv_mapValue]
 
 end Naturality
+
+/-- The coordinate Hopf algebra `K` of the trivial affine group over `K`, as a finite-type Hopf
+algebra. -/
+noncomputable abbrev finiteTypeCoordinateHopfAlgebra (K : Type u) [CommRing K] :
+    FiniteTypeCommHopfAlgCat.{u, u} K :=
+  FiniteTypeCommHopfAlgCat.of K K
 
 end TrivialGroup
 

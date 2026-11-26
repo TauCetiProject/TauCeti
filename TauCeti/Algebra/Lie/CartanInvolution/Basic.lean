@@ -40,7 +40,8 @@ derived algebra, the latter semisimple with negative definite Killing form.
   negative definite on `𝔨` and positive definite on `𝔭`.
 * `LieEquiv.IsCartanInvolution.isKilling`, `LieEquiv.IsCartanInvolution.isSemisimple`: a Lie
   algebra with a Cartan involution has nondegenerate Killing form, hence is finite-dimensional
-  (`LieEquiv.IsCartanInvolution.finiteDimensional`) and semisimple.
+  (`LieEquiv.IsCartanInvolution.finiteDimensional`) and semisimple; a nontrivial abelian Lie
+  algebra has none (`LieEquiv.IsCartanInvolution.not_isLieAbelian`).
 * `LieEquiv.IsCartanInvolution.orthogonal_fixedSubalgebra_eq_cartanP`: `𝔭` is the
   Killing-orthogonal complement of `𝔨`.
 * `LieEquiv.IsCartanInvolution.eq_of_fixedSubalgebra_eq`: a Cartan involution is determined by
@@ -177,6 +178,12 @@ theorem isSemisimple (hθ : θ.IsCartanInvolution) : IsSemisimple K L :=
   have := hθ.isKilling
   have := hθ.finiteDimensional
   inferInstance
+
+/-- A nontrivial abelian Lie algebra has no Cartan involution: its Killing form vanishes. -/
+theorem not_isLieAbelian [Nontrivial L] (hθ : θ.IsCartanInvolution) : ¬ IsLieAbelian L :=
+  fun _ ↦
+  have := hθ.isSemisimple
+  not_subsingleton L (LieAlgebra.subsingleton_of_hasTrivialRadical_lie_abelian K L)
 
 /-- The `-1`-eigenspace `𝔭` of a Cartan involution is the Killing-orthogonal complement of its
 fixed subalgebra `𝔨`. -/

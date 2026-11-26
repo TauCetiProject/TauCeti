@@ -72,6 +72,32 @@ theorem IsInvertible.prod_coprod_of_subsingleton {T : E →L[𝕜] F} {D₂ : Λ
 
 end Subsingleton
 
+section Dense
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousSMul 𝕜 F]
+
+/-- **Stabilizers inside a dense subspace.** A Fredholm operator `T` has a finite-dimensional
+stabilizer `S` inside any dense subspace `D` of its target: `S` is a topological complement of the
+range of `T`, so `(x, σ) ↦ T x + σ` is onto, with kernel `ker T × {0}`. -/
+theorem IsFredholm.exists_le_isTopCompl_range_of_dense {T : E →L[𝕜] F} (hT : IsFredholm T)
+    {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
+    ∃ S ≤ D, FiniteDimensional 𝕜 S ∧ IsTopCompl T.range S ∧
+      Surjective (T.coprod S.subtypeL) ∧ (T.coprod S.subtypeL).ker = T.ker.prod ⊥ := by
+  have := hT.finite_coker
+  obtain ⟨S, hSD, hS⟩ := Submodule.exists_le_isTopCompl_of_dense hT.isClosed_range hD
+  refine ⟨S, hSD, (T.range.quotientEquivOfIsCompl S hS.isCompl).finiteDimensional, hS, ?_, ?_⟩
+  · apply LinearMap.range_eq_top.mp
+    rw [range_coprod, Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
+    exact hS.isCompl.sup_eq_top
+  · rw [ker_coprod_of_disjoint_range (by
+      rw [Submodule.toLinearMap_subtypeL, Submodule.range_subtype]; exact hS.isCompl.disjoint),
+      Submodule.toLinearMap_subtypeL, Submodule.ker_subtype]
+
+end Dense
+
 variable {𝕜 E F S : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
@@ -171,14 +197,8 @@ theorem IsFredholm.exists_le_isTopCompl_rightInverse_coprod_of_dense {T : E →L
     (hT : IsFredholm T) {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
     ∃ S : Submodule 𝕜 F, S ≤ D ∧ IsTopCompl S T.range ∧ FiniteDimensional 𝕜 S ∧
       ∃ Q : F →L[𝕜] E × S, (T.coprod S.subtypeL).comp Q = ContinuousLinearMap.id 𝕜 F := by
-  have := hT.finite_coker
-  obtain ⟨S, hSD, hS⟩ := Submodule.exists_le_isTopCompl_of_dense hT.isClosed_range hD
-  have : FiniteDimensional 𝕜 S := (T.range.quotientEquivOfIsCompl S hS.isCompl).finiteDimensional
+  obtain ⟨S, hSD, _, hS, hsurj, -⟩ := hT.exists_le_isTopCompl_range_of_dense hD
   have : IsClosed (S : Set F) := S.isClosed_of_finiteDimensional
-  have hsurj : Surjective (T.coprod S.subtypeL) := by
-    apply LinearMap.range_eq_top.mp
-    rw [range_coprod, Submodule.toLinearMap_subtypeL, Submodule.range_subtype]
-    exact hS.isCompl.sup_eq_top
   obtain ⟨Q, hQ⟩ := ((T.coprod S.subtypeL).exists_rightInverse_iff_closedComplemented_ker
     ((T.coprod S.subtypeL).isQuotientMap hsurj)).2
     (hT.coprod_of_finiteDimensional S.subtypeL).closedComplemented_ker

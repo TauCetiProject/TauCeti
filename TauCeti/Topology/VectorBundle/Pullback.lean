@@ -16,20 +16,22 @@ structures and their scalar towers from `E (f x)`. Mathlib supplies the additive
 structures. The topological group structures let fibrewise linear equivalences between pullbacks,
 such as the pullback `x ↦ e (f x)` of a family of fibrewise linear equivalences `e`, induce maps of
 total spaces with continuous inverses. The normed instances allow the orthonormal frame bundle of a
-pullback to use exactly the original fibre metrics, with no transport or renorming. A pulled-back
+pullback to use exactly the original fibre metrics, with no transport or renorming. The topology of
+the fibre norm is Mathlib's pullback fibre topology itself, not merely equal to it after unfolding,
+so Mathlib's `FiberBundle.pullback` and `VectorBundle.pullback` apply to statements that take the
+fibre topology from the norm, such as those about smooth sections with fibre inner products over an
+open subset. A pulled-back
 linear trivialization also induces the original fibre equivalence at the image point
 (`Bundle.Trivialization.linearEquivAt_pullback`,
 `Bundle.Trivialization.continuousLinearEquivAt_pullback` and
 `Bundle.Trivialization.continuousLinearMapAt_pullback`), and reads coordinates back into the fibre
-as the original one does (`Bundle.Trivialization.symm_pullback`). Hom coordinates between
+as the original one does (`Bundle.Trivialization.symm_pullback`,
+`Bundle.Trivialization.pullback_symmL_apply`). Restricting a chart whose source lies in the base
+set of a trivialization to an open subset gives a chart whose source lies in the base set of the
+trivialization pulled back along the inclusion
+(`Bundle.Trivialization.subtypeRestr_source_subset_pullback_baseSet`). Hom coordinates between
 pullbacks by two different base maps agree with the original source and target coordinates
 (`ContinuousLinearMap.inCoordinates_pullback_of_mem`).
-
-Mathlib's `FiberBundle.pullback` and `VectorBundle.pullback` give the fibres of `f *ᵖ E` the
-pulled-back fibre topology, which agrees with the topology of the fibre norm only after unfolding
-instances. Constructions that read the fibres through their norms, such as orthonormal frames,
-use the restatements `Bundle.Pullback.normedFiberBundle` and `Bundle.Pullback.normedVectorBundle`
-for the norm topologies instead, as local instances.
 -/
 
 public section
@@ -63,10 +65,17 @@ instance instIsScalarTower {R S : Type*} [Semiring R] [Semiring S] [SMul R S]
     [∀ b, IsScalarTower R S (E b)] (x : B') : IsScalarTower R S ((f *ᵖ E) x) :=
   inferInstanceAs (IsScalarTower R S (E (f x)))
 
-/-- A pullback fibre carries the normed additive group structure of the original fibre. -/
+/-- A pullback fibre carries the normed additive group structure of the original fibre. Its
+topology is Mathlib's pullback fibre topology `instTopologicalSpacePullback`, the one in which
+`FiberBundle.pullback` is stated, so that the pullback of a bundle with normed fibres is a fibre
+bundle for the topology of the fibre norms. -/
 instance instNormedAddCommGroup [∀ b, NormedAddCommGroup (E b)] (x : B') :
     NormedAddCommGroup ((f *ᵖ E) x) :=
-  inferInstanceAs (NormedAddCommGroup (E (f x)))
+  letI : NormedAddCommGroup ((f *ᵖ E) x) := inferInstanceAs (NormedAddCommGroup (E (f x)))
+  { this with
+    toMetricSpace := @MetricSpace.replaceTopology _ (instTopologicalSpacePullback E f x)
+      this.toMetricSpace rfl
+    dist_eq := this.dist_eq }
 
 /-- Scalar multiplication on a normed pullback fibre has the original norm bound. -/
 instance instNormedSpace {𝕜 : Type*} [NormedField 𝕜]
@@ -79,30 +88,6 @@ instance instInnerProductSpace {𝕜 : Type*} [RCLike 𝕜]
     [∀ b, NormedAddCommGroup (E b)] [∀ b, InnerProductSpace 𝕜 (E b)] (x : B') :
     InnerProductSpace 𝕜 ((f *ᵖ E) x) :=
   inferInstanceAs (InnerProductSpace 𝕜 (E (f x)))
-
-end Bundle.Pullback
-
-namespace Bundle.Pullback
-
-variable {B B' : Type*} [TopologicalSpace B] [TopologicalSpace B'] (F : Type*)
-  (E : B → Type*) [∀ b, NormedAddCommGroup (E b)] [TopologicalSpace (TotalSpace F E)]
-  {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
-
-/-- The pullback of a fibre bundle `E` with normed fibres along `f`, with the fibres `E (f y)`
-carrying the topology of their norms (Mathlib's `FiberBundle.pullback`, restated for these fibre
-topologies). -/
-noncomputable abbrev normedFiberBundle [TopologicalSpace F] [FiberBundle F E] (f : K) :
-    @FiberBundle B' F _ _ ((f : B' → B) *ᵖ E) _ fun _ ↦ UniformSpace.toTopologicalSpace :=
-  FiberBundle.pullback (F := F) (E := E) f
-
-/-- The pullback of a vector bundle `E` with normed fibres along `f`, with the fibres `E (f y)`
-carrying the topology of their norms (Mathlib's `VectorBundle.pullback`, restated for these fibre
-topologies). -/
-abbrev normedVectorBundle [NormedAddCommGroup F] [FiberBundle F E] (𝕜 : Type*)
-    [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 F]
-    [∀ b, NormedSpace 𝕜 (E b)] [VectorBundle 𝕜 F E] (f : K) :
-    @VectorBundle 𝕜 B' F ((f : B' → B) *ᵖ E) _ _ _ _ _ _ _ _ (normedFiberBundle F E f) :=
-  VectorBundle.pullback 𝕜 (F := F) (E := E) f
 
 end Bundle.Pullback
 
@@ -166,6 +151,19 @@ theorem continuousLinearMapAt_pullback (e : Trivialization F (π F V)) [e.IsLine
     pullback_apply]
   exact ((congrFun (e.continuousLinearMapAt_apply 𝕜 (f x)) v).trans (e.linearMapAt_apply v)).symm
 
+/-- The inverse of a pulled-back continuous linear fibre chart, extended by zero off the base set,
+is the inverse of the original one at the image point. -/
+@[simp]
+theorem pullback_symmL_apply (e : Trivialization F (π F V)) [e.IsLinear 𝕜] (f : K) (x : B')
+    (w : F) : (e.pullback f).symmL 𝕜 x w = e.symmL 𝕜 (f x) w := by
+  by_cases hx : f x ∈ e.baseSet
+  · rw [symmL_apply _ (by rwa [pullback_baseSet]), symmL_apply _ hx]
+    exact symm_pullback e f hx w
+  · rw [symmL_apply_of_notMem _ (by rwa [pullback_baseSet]), symmL_apply_of_notMem _ hx]
+    -- Both sides are zero; the zero of the pullback fibre `(f *ᵖ V) x` is by definition the zero
+    -- of `V (f x)`.
+    rfl
+
 end Bundle.Trivialization
 
 namespace Bundle.Trivialization
@@ -179,6 +177,22 @@ bundle. -/
 instance memTrivializationAtlas_pullback (e : Trivialization F (π F V))
     [MemTrivializationAtlas e] (f : C(B', B)) : MemTrivializationAtlas (e.pullback f) :=
   ⟨e, inferInstance, rfl⟩
+
+end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+/-- If the source of a chart `c` lies in the base set of a frame `t`, the source of its
+restriction `c|_U` lies in the base set of the pullback of `t` along the inclusion `U → M`. -/
+theorem subtypeRestr_source_subset_pullback_baseSet {E M F : Type*} [TopologicalSpace E]
+    [TopologicalSpace M] [TopologicalSpace F]
+    {V : M → Type*} [∀ x, Nonempty (V x)] [TopologicalSpace (TotalSpace F V)]
+    (t : Trivialization F (π F V)) {c : OpenPartialHomeomorph M E} {U : TopologicalSpace.Opens M}
+    (hU : Nonempty U) (hct : c.source ⊆ t.baseSet) :
+    (c.subtypeRestr hU).source ⊆
+      (t.pullback (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M))).baseSet := by
+  rw [OpenPartialHomeomorph.subtypeRestr_source, pullback_baseSet]
+  exact Set.preimage_mono hct
 
 end Bundle.Trivialization
 

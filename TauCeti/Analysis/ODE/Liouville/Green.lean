@@ -182,10 +182,9 @@ private lemma exists_liouvilleGreen_volterra {ξ : ℝ → ℝ} {Φ : ℝ → �
     congr 1 with v
     simp only [smul_eq_mul]
     ring
-  · have h := norm_volterra_solution_le_exp_sub_one (Q := fun _ ↦ 1 / 2) hK hΦc hΦc
-      continuousOn_const zero_le_one (fun _ _ ↦ by norm_num) hKle (fun _ _ ↦ le_rfl) hΦi' hεc
-      hεeq hεO hx
-    rw [integral_const_mul] at h
+  · have h := norm_volterra_solution_le_exp_sub_one (Q := fun _ ↦ 1 / 2) (P₀ := 1) hKle
+      (fun _ _ ↦ le_rfl) hΦi' hεc hεeq hεO hx
+    rw [one_mul, integral_const_mul] at h
     convert h using 3
     ring
 

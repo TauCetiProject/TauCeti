@@ -12,10 +12,12 @@ public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
 Over a seminormed commutative ring `R`, which need not be a field, an `R`-bilinear map `β` with
 `‖β x y‖ ≤ C * ‖x‖ * ‖y‖` is jointly continuous (`LinearMap.continuous₂_of_bound`), and so is a
-scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`). For an
-`R`-algebra `S`, such a bound on the action makes the structure map bounded
+scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`).
+For an `R`-algebra `S`, a bound on the action makes the structure map bounded
 (`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`, and
-`TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul` when `[IsBoundedSMul R S]`).
+`TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul` when `[IsBoundedSMul R S]`), and conversely
+a bound on the structure map makes the action bounded
+(`TauCeti.exists_norm_smul_le_of_norm_algebraMap_le`).
 The evaluation action of bounded operators on a seminormed space is bounded
 (`ContinuousLinearMap.isBoundedSMul_apply`) and hence jointly continuous
 (`IsBoundedSMul.continuousSMul`), as is every submonoid such as the unitary group.
@@ -77,6 +79,15 @@ theorem TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul {S : Type*} [Seminorm
   let ⟨C, hC⟩ := TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := R) (S := S)
     ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩
   ⟨C, hC⟩
+
+/-- If the structure map of an `R`-algebra `S` is bounded, `‖algebraMap R S r‖ ≤ C * ‖r‖`, then
+so is the scalar action: `‖r • s‖ ≤ C * ‖r‖ * ‖s‖`. -/
+theorem TauCeti.exists_norm_smul_le_of_norm_algebraMap_le {S : Type*} [SeminormedRing S]
+    [Algebra R S] (h : ∃ C : ℝ≥0, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖) :
+    ∃ C : ℝ≥0, ∀ (r : R) (s : S), ‖r • s‖ ≤ C * ‖r‖ * ‖s‖ :=
+  h.imp fun C hC r s ↦ by
+    rw [Algebra.smul_def]
+    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hC r) (norm_nonneg s))
 
 /-- A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`,
 tends to `(a, 0)` at `(a, 0)`. -/

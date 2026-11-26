@@ -110,6 +110,68 @@ theorem minimumValue_arrowSum_inf (hcap : 0 ≤ cap) (hAB : Disjoint A B)
   exact minimumValue_eq_of_le_of_min_le hAB (fun S ↦ arrowSum_mono inf_le_left S Sᶜ)
     (fun S ↦ min_arrowSum_le_arrowSum_inf hcap hb₀ S Sᶜ) hS₀ hb
 
+-- Nonnegativity is necessary in the preceding results. On `s = 0`, `a = 1` and `t = 2`,
+-- the nonzero capacities of `s → a`, `a → t` and `s → t` are respectively `2`, `1` and `-1`.
+-- Before capping at `1`, only `{s, a}` is minimum, with value `0`; afterwards `{s}` also has
+-- value `0` and is minimum.
+example :
+    let cap : Assignment (fun _ _ : Fin 3 ↦ Unit) ℤ :=
+      fun x y _ ↦ ![![0, 2, -1], ![0, 0, 1], ![0, 0, 0]] x y
+    ¬IsMinimum (fun S ↦ arrowSum cap S Sᶜ) {0} {2} {0} ∧
+      IsMinimum (fun S ↦ arrowSum cap S Sᶜ) {0} {2} {0, 1} ∧
+      IsMinimum (fun S ↦ arrowSum (cap ⊓ fun _ _ _ ↦ 1) S Sᶜ) {0} {2} {0} ∧
+      IsMinimum (fun S ↦ arrowSum (cap ⊓ fun _ _ _ ↦ 1) S Sᶜ) {0} {2} {0, 1} := by
+  intro cap
+  have admissible_eq (S : Finset (Fin 3)) (hS : IsAdmissible {0} {2} S) :
+      S = {0} ∨ S = {0, 1} := by
+    have h0 : 0 ∈ S := hS.subset (by simp)
+    have h2 : 2 ∉ S := fun h ↦ Finset.disjoint_left.mp hS.disjoint h (by simp)
+    by_cases h1 : 1 ∈ S
+    · right
+      ext v
+      fin_cases v <;> simp_all
+    · left
+      ext v
+      fin_cases v <;> simp_all
+  have admissible_source : IsAdmissible {0} {2} ({0} : Finset (Fin 3)) :=
+    isAdmissible_iff.mpr ⟨by simp, by simp⟩
+  have admissible_both : IsAdmissible {0} {2} ({0, 1} : Finset (Fin 3)) :=
+    isAdmissible_iff.mpr ⟨by simp, by simp⟩
+  have cut_source : arrowSum cap {0} ({0} : Finset (Fin 3))ᶜ = 1 := by
+    rw [show ({0} : Finset (Fin 3))ᶜ = {1, 2} by decide]
+    norm_num [cap, arrowSum_def]
+  have cut_both : arrowSum cap {0, 1} ({0, 1} : Finset (Fin 3))ᶜ = 0 := by
+    rw [show ({0, 1} : Finset (Fin 3))ᶜ = {2} by decide]
+    norm_num [cap, arrowSum_def]
+  have capped_cut_source :
+      arrowSum (cap ⊓ fun _ _ _ ↦ 1) {0} ({0} : Finset (Fin 3))ᶜ = 0 := by
+    rw [show ({0} : Finset (Fin 3))ᶜ = {1, 2} by decide]
+    norm_num [cap, arrowSum_def]
+  have capped_cut_both :
+      arrowSum (cap ⊓ fun _ _ _ ↦ 1) {0, 1} ({0, 1} : Finset (Fin 3))ᶜ = 0 := by
+    rw [show ({0, 1} : Finset (Fin 3))ᶜ = {2} by decide]
+    norm_num [cap, arrowSum_def]
+  constructor
+  · intro h
+    have hle := h.le (S := {0}) (T := {0, 1}) admissible_both
+    rw [cut_source, cut_both] at hle
+    omega
+  constructor
+  · rw [isMinimum_iff]
+    refine ⟨admissible_both, fun S hS ↦ ?_⟩
+    rcases admissible_eq S hS with rfl | rfl
+    · rw [cut_both, cut_source]; omega
+    · exact le_rfl
+  constructor <;> rw [isMinimum_iff]
+  · refine ⟨admissible_source, fun S hS ↦ ?_⟩
+    rcases admissible_eq S hS with rfl | rfl
+    · exact le_rfl
+    · rw [capped_cut_source, capped_cut_both]
+  · refine ⟨admissible_both, fun S hS ↦ ?_⟩
+    rcases admissible_eq S hS with rfl | rfl
+    · rw [capped_cut_both, capped_cut_source]
+    · exact le_rfl
+
 end MinimumCut
 
 /-! ### Flows -/
