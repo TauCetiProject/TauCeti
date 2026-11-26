@@ -275,8 +275,8 @@ private theorem tan_angle_neg_div_two_sq {z : sphere (0 : E) 1} (hz : sphereHeig
         (1 + sphereHeight v z) / (1 - sphereHeight v z) := by
   set u := angle (z : E) (-(v : E))
   have hcos : Real.cos u = -sphereHeight v z := by
-    rw [cos_angle, inner_neg_right, norm_neg, norm_eq_of_mem_sphere, norm_eq_of_mem_sphere,
-      mul_one, div_one, sphereHeight_apply]
+    rw [← inner_eq_cos_angle_of_norm_eq_one (norm_eq_of_mem_sphere z) (by simp),
+      inner_neg_right, sphereHeight_apply]
   have hne : Real.cos u ≠ -1 := by
     rw [hcos, ne_eq, neg_inj]
     exact hz.ne

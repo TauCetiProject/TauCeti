@@ -136,8 +136,9 @@ private theorem ofReal_arccos_mul_sub_arccos_le_riemannianEDist_sphere {c : ℝ}
     x y
   have hx : inner ℝ (x : E) (x : E) = 1 :=
     inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere x)
-  rw [ENNReal.coe_one, one_mul, edist_dist, Real.dist_eq, Function.comp_apply,
-    Function.comp_apply, hx, mul_one, abs_sub_comm] at h
+  simp only [ENNReal.coe_one, one_mul, edist_dist, Real.dist_eq, Function.comp_apply, hx,
+    mul_one] at h
+  rw [abs_sub_comm] at h
   exact (ENNReal.ofReal_le_ofReal (le_abs_self _)).trans h
 
 /-- **The angle is at most the round distance.** For any two points `x, y` of the unit sphere, the
