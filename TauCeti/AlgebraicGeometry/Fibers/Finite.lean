@@ -14,8 +14,8 @@ For a morphism of schemes `f : X ⟶ Y` and a point `y` of `Y`, this file relate
 the fibre morphism `f⁻¹(y) ⟶ Spec κ(y)` to the set-theoretic fibre `f ⁻¹' {y}`. When the fibre
 morphism is finite, the scheme-theoretic fibre is Artinian, the set-theoretic fibre is finite
 and discrete, and a morphism locally of finite type is quasi-finite at each point of that fibre.
-For `f` quasi-compact and locally of finite type, the fibre morphism at `y` is finite exactly when
-the set-theoretic fibre is finite.
+For `f` locally of finite type, the fibre morphism at `y` is finite exactly when the
+set-theoretic fibre is finite.
 
 These are pointwise forms of Mathlib's
 `AlgebraicGeometry.locallyQuasiFinite_iff_isFinite_fiber` and
@@ -33,8 +33,8 @@ such as alterations over the generic points of their target.
 * `AlgebraicGeometry.Scheme.Hom.quasiFiniteAt_of_isFinite_fiberToSpecResidueField`: a morphism
   locally of finite type is quasi-finite at each point of a fibre whose fibre morphism is finite.
 * `AlgebraicGeometry.Scheme.Hom.isFinite_fiberToSpecResidueField_iff_finite_preimage_singleton`:
-  for quasi-compact morphisms locally of finite type, the fibre morphism is finite exactly when
-  the set-theoretic fibre is finite.
+  for morphisms locally of finite type, the fibre morphism is finite exactly when the
+  set-theoretic fibre is finite.
 -/
 
 public section
@@ -77,17 +77,15 @@ theorem quasiFiniteAt_of_isFinite_fiberToSpecResidueField {f : X ⟶ Y} [Locally
   have := f.isArtinianScheme_fiber_of_isFinite_fiberToSpecResidueField (f x)
   exact quasiFiniteAt_iff_isOpen_singleton_asFiber.mpr (isOpen_discrete _)
 
-/-- For a quasi-compact morphism locally of finite type, the fibre morphism
-`f⁻¹(y) ⟶ Spec κ(y)` is finite exactly when the fibre `f ⁻¹' {y}` is a finite set. -/
+/-- For a morphism locally of finite type, the fibre morphism `f⁻¹(y) ⟶ Spec κ(y)` is finite
+exactly when the fibre `f ⁻¹' {y}` is a finite set. -/
 theorem isFinite_fiberToSpecResidueField_iff_finite_preimage_singleton (f : X ⟶ Y)
-    [LocallyOfFiniteType f] [QuasiCompact f] (y : Y) :
+    [LocallyOfFiniteType f] (y : Y) :
     IsFinite (f.fiberToSpecResidueField y) ↔ (f ⁻¹' {y}).Finite := by
   refine ⟨fun _ ↦
     f.finite_preimage_singleton_of_isFinite_fiberToSpecResidueField y, fun h ↦ ?_⟩
   have : Finite (f.fiber y) := have := h.to_subtype; .of_equiv _ (f.fiberHomeo y).symm.toEquiv
   have : LocallyOfFiniteType (f.fiberToSpecResidueField y) :=
-    MorphismProperty.of_isPullback (.of_hasPullback _ _) ‹_›
-  have : QuasiCompact (f.fiberToSpecResidueField y) :=
     MorphismProperty.of_isPullback (.of_hasPullback _ _) ‹_›
   have : LocallyQuasiFinite (f.fiberToSpecResidueField y) :=
     .of_finite_preimage_singleton _ fun _ ↦ Set.toFinite _

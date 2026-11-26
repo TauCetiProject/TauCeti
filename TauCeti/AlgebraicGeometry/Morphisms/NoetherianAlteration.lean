@@ -12,6 +12,7 @@ import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 import TauCeti.AlgebraicGeometry.Fibers.Finite
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
+import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.Topology.Sober
 
 /-!
@@ -48,8 +49,8 @@ comparison with `IsAlteration` requires an irreducible source.
   finiteness over the generic points is finiteness of the fibres over the component-generic
   points.
 * `AlgebraicGeometry.Scheme.Hom.isFiniteOverGenericPoints_iff_forall_finite_preimage_singleton`:
-  for quasi-compact morphisms locally of finite type, it says that the fibres over the
-  component-generic points are finite sets.
+  for morphisms locally of finite type, it says that the fibres over the component-generic
+  points are finite sets.
 * `Scheme.Hom.isFiniteOverGenericPoints_of_isFinite_morphismRestrict`: a morphism finite over an
   open subscheme containing the component-generic points is finite over the generic points.
 * `Scheme.Hom.isFiniteOverGenericPoints_iff_exists_isFinite_morphismRestrict`:
@@ -106,16 +107,16 @@ theorem isFiniteOverGenericPoints_iff_forall_isFinite_fiberToSpecResidueField (f
       exact (IsPullback.of_hasPullback _ _).paste_horiz (IsPullback.of_hasPullback _ _)
     -- `f.fiberToSpecResidueField y` is by definition the second projection of this pullback.
     rw [← h.isoPullback_hom_snd, MorphismProperty.cancel_left_of_respectsIso @IsFinite]
-    rfl
+    simp only [fiberToSpecResidueField, fiber]
   rw [isFiniteOverGenericPoints_iff, IsZariskiLocalAtTarget.iff_of_openCover (P := @IsFinite)
     (sigmaOpenCover fun y : genericPoints Y ↦ Spec (Y.residueField y))]
   exact ⟨fun h y hy ↦ (key ⟨y, hy⟩).mp (h ⟨y, hy⟩),
     fun h ⟨y, hy⟩ ↦ (key ⟨y, hy⟩).mpr (h y hy)⟩
 
-/-- A quasi-compact morphism locally of finite type is finite over the generic points of its
-target exactly when its fibres over the component-generic points are finite sets. -/
+/-- A morphism locally of finite type is finite over the generic points of its target exactly
+when its fibres over the component-generic points are finite sets. -/
 theorem isFiniteOverGenericPoints_iff_forall_finite_preimage_singleton (f : X ⟶ Y)
-    [LocallyOfFiniteType f] [QuasiCompact f] :
+    [LocallyOfFiniteType f] :
     f.IsFiniteOverGenericPoints ↔ ∀ y ∈ genericPoints Y, (f ⁻¹' {y}).Finite := by
   simp only [isFiniteOverGenericPoints_iff_forall_isFinite_fiberToSpecResidueField,
     isFinite_fiberToSpecResidueField_iff_finite_preimage_singleton]
@@ -140,10 +141,10 @@ theorem IsFiniteOverGenericPoints.mem_genericPoints {f : X ⟶ Y}
   exact congrArg Subtype.val
     (((subtype_specializes_iff (p := (· ∈ f ⁻¹' {f x})) ⟨x', hfx'⟩ ⟨x, rfl⟩).mpr hx').eq)
 
-/-- A composite of quasi-compact morphisms locally of finite type that are finite over the
-generic points of their targets is finite over the generic points of its target. -/
+/-- A composite of morphisms locally of finite type that are finite over the generic points of
+their targets is finite over the generic points of its target. -/
 theorem IsFiniteOverGenericPoints.comp {f : X ⟶ Y} {g : Y ⟶ Z} [LocallyOfFiniteType f]
-    [QuasiCompact f] [LocallyOfFiniteType g] [QuasiCompact g]
+    [LocallyOfFiniteType g]
     (hg : g.IsFiniteOverGenericPoints) (hf : f.IsFiniteOverGenericPoints) :
     (f ≫ g).IsFiniteOverGenericPoints := by
   have hg' := g.isFiniteOverGenericPoints_iff_forall_finite_preimage_singleton.mp hg
@@ -174,19 +175,12 @@ theorem isFiniteOverGenericPoints_iff_exists_isFinite_morphismRestrict (f : X �
   refine ⟨fun hf ↦ ?_, fun ⟨U, hU, _⟩ ↦ f.isFiniteOverGenericPoints_of_isFinite_morphismRestrict hU⟩
   rw [isFiniteOverGenericPoints_iff_forall_isFinite_fiberToSpecResidueField] at hf
   -- Spread out at each component-generic point (Stacks 02UP), then glue the opens.
-  choose V hyV _ using fun y : genericPoints Y ↦
+  choose V hyV hV using fun y : genericPoints Y ↦
     have := hf y y.property
     exists_isFinite_morphismRestrict_of_finite_preimage_singleton f y
       (f.finite_preimage_singleton_of_isFinite_fiberToSpecResidueField y)
-  refine ⟨⨆ y, V y, fun y hy ↦ Opens.mem_iSup.mpr ⟨⟨y, hy⟩, hyV _⟩, ?_⟩
-  refine IsZariskiLocalAtTarget.of_forall_exists_morphismRestrict fun x ↦ ?_
-  obtain ⟨y, hy⟩ := Opens.mem_iSup.mp x.property
-  refine ⟨(⨆ y, V y).ι ⁻¹ᵁ V y, hy, ?_⟩
-  rw [MorphismProperty.arrow_mk_iso_iff @IsFinite (morphismRestrictRestrict f _ _),
-    MorphismProperty.arrow_mk_iso_iff @IsFinite (morphismRestrictEq f (V := V y) (by
-      rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι, inf_eq_right]
-      exact le_iSup V y))]
-  infer_instance
+  exact ⟨⨆ y, V y, fun y hy ↦ Opens.mem_iSup.mpr ⟨⟨y, hy⟩, hyV _⟩,
+    IsZariskiLocalAtTarget.restrict_iSup @IsFinite hV⟩
 
 /-- A morphism `f : X ⟶ Y` is a *noetherian alteration* if it is proper, surjective, maximally
 dominating and finite over the generic points of its target, that is, its base change to the
@@ -235,11 +229,8 @@ theorem isNoetherianAlteration_iff_isAlteration [IrreducibleSpace X] (f : X ⟶ 
   · rintro ⟨_, _, hmd, hfin⟩
     obtain ⟨U, hU, _⟩ :=
       (isFiniteOverGenericPoints_iff_exists_isFinite_morphismRestrict f).mp hfin
-    have hX : genericPoint X ∈ genericPoints X := by
-      rw [genericPoints_eq_singleton]
-      exact mem_singleton _
-    exact ⟨inferInstance, inferInstance, U, ⟨_, hU (f.isMaximallyDominating_iff.mp hmd _ hX)⟩,
-      inferInstance⟩
+    exact ⟨inferInstance, inferInstance, U,
+      ⟨_, hU (f.isMaximallyDominating_iff_genericPoint_mem.mp hmd)⟩, inferInstance⟩
   · rintro ⟨_, _, U, hU, _⟩
     have := f.irreducibleSpace_of_isDominant
     refine ⟨inferInstance, inferInstance, isMaximallyDominating_of_isDominant f,
