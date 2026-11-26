@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.Algebra.Polynomial.BigOperators
+import Mathlib.Algebra.Polynomial.Mirror
 import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
@@ -73,6 +74,7 @@ of `p` to the root `a` of `(taylor τ p).reflect d` (`Polynomial.isRoot_reflect_
 
 Over a field, reversal and reflection at a bound on the degree preserve splitting
 (`Polynomial.Splits.reverse`, `Polynomial.Splits.reflect`).
+Reversal also preserves coprimality over a field (`Polynomial.isCoprime_reverse`).
 -/
 
 public section
@@ -255,6 +257,30 @@ theorem aeval_C_mul_reverse [CommSemiring R] {A : Type*} [Semiring A] [Algebra R
 @[simp]
 theorem reverse_one [Semiring R] : (1 : R[X]).reverse = 1 := by
   rw [← C_1, reverse_C, C_1]
+
+/-- Reversal commutes with finite products over a semiring without zero divisors. -/
+theorem reverse_prod {ι : Type*} [CommSemiring R] [NoZeroDivisors R] (s : Finset ι)
+    (p : ι → R[X]) : (∏ i ∈ s, p i).reverse = ∏ i ∈ s, (p i).reverse := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.prod_insert hi, Finset.prod_insert hi, reverse_mul_of_domain, ih]
+
+/-- Reversal preserves coprimality over a field. -/
+theorem isCoprime_reverse {K : Type*} [Field K] {p q : K[X]} (hpq : IsCoprime p q) :
+    IsCoprime p.reverse q.reverse := by
+  refine isCoprime_of_dvd _ _ ?_ ?_
+  · rintro ⟨hp, hq⟩
+    exact (hpq.ne_zero_or_ne_zero.resolve_left fun h ↦ h (reverse_eq_zero.mp hp))
+      (reverse_eq_zero.mp hq)
+  · intro d hd _ hdp hdq
+    have hmirror_dvd {f : K[X]} (h : d ∣ f.reverse) : d.mirror ∣ f := by
+      obtain ⟨a, ha⟩ : d ∣ f.mirror := h.trans (dvd_mul_right _ _)
+      exact ⟨a.mirror, by
+        simpa only [mirror_mirror, mirror_mul_of_domain] using congrArg Polynomial.mirror ha⟩
+    obtain ⟨r, hr, heq⟩ := Polynomial.isUnit_iff.mp
+      (hpq.isUnit_of_dvd' (hmirror_dvd hdp) (hmirror_dvd hdq))
+    exact hd (Polynomial.isUnit_iff.mpr ⟨r, hr, by rw [← mirror_C, heq, mirror_mirror]⟩)
 
 /-- A monic polynomial `p` with `p.reverse = p` has constant coefficient `1`. -/
 theorem Monic.coeff_zero_eq_one_of_reverse_eq [Semiring R] {p : R[X]} (hp : p.Monic)
