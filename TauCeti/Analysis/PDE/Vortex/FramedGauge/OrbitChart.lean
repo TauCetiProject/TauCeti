@@ -56,8 +56,9 @@ orders of the same field space, `↑(k + 1)` for the gauge action and `↑k + 1`
 are identified by `TauCeti.Vortex.SobolevFieldSpace.congrOrder`.
 
 With these charts, invariance of domain makes the zero divisor a homeomorphism from the vortex
-moduli onto `Sym^m ℂ` (`TauCeti.Analysis.PDE.Vortex.FramedGauge.SymmetricPower`). Whether the
-transition maps of the charts are smooth is not treated here.
+moduli onto `Sym^m ℂ` (`TauCeti.Analysis.PDE.Vortex.FramedGauge.SymmetricPower`). Cut down to a
+neighbourhood of the orbit, these charts are smoothly compatible
+(`TauCeti.Analysis.PDE.Vortex.FramedGauge.SmoothChart`).
 
 ## Main results
 
@@ -130,6 +131,29 @@ theorem realSobolevSliceEquation_realSubRef_congrOrder_eq_zero_iff (hk : 2 ≤ k
   simp only [realSobolevSliceEquation_realSubRef_eq_zero_iff, mem_coulombSlice, coe_congrOrder,
     funext_iff, Pi.zero_apply]
 
+/-- The real coordinates, at the order `↑k + 1` of the slice equation, of the fields of
+`A_m^(k+1)`. -/
+noncomputable def sliceCoords (hk : 2 ≤ k) :
+    SobolevFieldSpace f m (k + 1 : ℕ) ≃ₜ
+      (Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :=
+  (congrOrder (s := ((k + 1 : ℕ) : ℝ)) (Nat.cast_succ k)).trans
+    (realSubRefHomeomorph (by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]))
+
+/-- The slice coordinates of `y` are the real coordinates of `y` at the order `↑k + 1`. -/
+@[simp]
+theorem sliceCoords_apply (hk : 2 ≤ k) (y : SobolevFieldSpace f m (k + 1 : ℕ)) :
+    sliceCoords hk y = (congrOrder (Nat.cast_succ k) y).realSubRef _ := by
+  simp [sliceCoords]
+
+/-- The field with slice coordinates `u` is the field with real coordinates `u` at the order
+`↑k + 1`, read at the order `↑(k + 1)`. -/
+@[simp]
+theorem sliceCoords_symm_apply (hk : 2 ≤ k)
+    (u : Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :
+    (sliceCoords (f := f) (m := m) hk).symm u = congrOrder (Nat.cast_succ k).symm
+      (ofRealSubRef (by linarith [(Nat.ofNat_le_cast.2 hk : (2 : ℝ) ≤ k)]) u) := by
+  simp [sliceCoords]
+
 variable [Fact (1 < k + 1)] {hs : 1 < ((k + 1 : ℕ) : ℝ) + 1}
 
 /-- The real coordinates, at the order `↑k + 1`, of the vortices in the Coulomb slice of `x₀` that
@@ -146,15 +170,8 @@ private theorem isOpenEmbedding_realSubRef_congrOrder (hk : 2 ≤ k)
           ⟨mem_coulombSlice.2 p.val.property.2,
             (mk_mem_vortexModuli_iff (by omega)).1 p.property⟩⟩ :
         {u | realSobolevSliceEquation f m hk (congrOrder (Nat.cast_succ k) x₀) u = 0}) := by
-  have hs' : 1 < (k : ℝ) + 1 := by
-    have : (2 : ℝ) ≤ k := by exact_mod_cast hk
-    linarith
-  set φ : SobolevFieldSpace f m (k + 1 : ℕ) ≃ₜ
-      (Fin 4 → realSubmodule ℂ (k.cast_add_one_pos (α := ℝ)).le) :=
-    (congrOrder (Nat.cast_succ k)).trans (realSubRefHomeomorph hs')
-  have hφ (y : SobolevFieldSpace f m (k + 1 : ℕ)) :
-      φ y = (congrOrder (Nat.cast_succ k) y).realSubRef (k.cast_add_one_pos (α := ℝ)).le := by
-    simp [φ]
+  have hφ := sliceCoords_apply (f := f) (m := m) hk
+  set φ := sliceCoords (f := f) (m := m) hk
   refine ⟨IsEmbedding.subtypeVal.of_comp_iff.1 ?_, ?_⟩
   · convert φ.isEmbedding.comp (IsEmbedding.subtypeVal.comp IsEmbedding.subtypeVal) using 1
     exact funext fun p ↦ (hφ _).symm

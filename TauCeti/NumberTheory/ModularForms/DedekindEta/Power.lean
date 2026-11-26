@@ -91,29 +91,15 @@ theorem eta_zpow_two_mul_slash (k : ℤ) (γ : SL(2, ℤ)) :
 
 /-! ### The multiplier on principal congruence subgroups -/
 
-/-- `e(n / 24) ^ r = 1` when `24 ∣ r n`. -/
-private theorem cexp_div_twentyFour_zpow_eq_one {n r : ℤ} (h : 24 ∣ r * n) :
-    cexp (2 * π * I * (n : ℂ) / 24) ^ r = 1 := by
-  obtain ⟨m, hm⟩ := h
-  have hm' : (r : ℂ) * n = 24 * m := by exact_mod_cast hm
-  have hexp : (r : ℂ) * (2 * π * I * n / 24) = m * (2 * π * I) := by
-    linear_combination (2 * π * I / 24) * hm'
-  rw [← exp_intCast_mul, hexp, exp_int_mul_two_pi_mul_I]
-
-/-- An even power of a Kronecker symbol `(a / b)` with `a` and `b` coprime is `1`. -/
-private theorem kroneckerSym_zpow_eq_one {a b r : ℤ} (h : a.gcd b = 1) (hr : Even r) :
-    ((kroneckerSym a b : ℤ) : ℂ) ^ r = 1 := by
-  obtain ⟨m, rfl⟩ := hr
-  rw [← two_mul, zpow_mul, zpow_two, ← sq, ← Int.cast_pow, sq_kroneckerSym_eq_one h, Int.cast_one,
-    one_zpow]
-
 /-- The multiplier statement for even `c`, from the divisibilities of the entries. -/
 private theorem etaMultiplier_zpow_eq_one_of_even_c {N r : ℤ} {γ : SL(2, ℤ)}
     (heven : Even (γ 1 0)) (hr : Even r) (hrN : 24 ∣ r * N) (hb : N ∣ γ 0 1) (hc : N ∣ γ 1 0)
     (hd : N ∣ γ 1 1 - 1) : etaMultiplier γ ^ r = 1 := by
-  rw [etaMultiplier_eq_kroneckerSym_mul_of_even_c γ heven, mul_zpow,
-    kroneckerSym_zpow_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1)) hr, one_mul]
-  refine cexp_div_twentyFour_zpow_eq_one (hrN.trans (mul_dvd_mul_left r ?_))
+  obtain ⟨m, rfl⟩ := hr.two_dvd
+  rw [etaMultiplier_eq_kroneckerSym_mul_of_even_c γ heven, mul_zpow, zpow_mul, zpow_ofNat,
+    sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1)),
+    one_zpow, one_mul, ← e24_def, ← e24_mul, e24_congr (Int.modEq_zero_iff_dvd.2
+      (hrN.trans (mul_dvd_mul_left _ ?_))), e24_zero]
   have : N ∣ (γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * (γ 1 1 * (γ 1 0 ^ 2 - 1)) +
       3 * (γ 1 1 - 1) - 3 * γ 1 1 * γ 1 0 :=
     (((hc.mul_left _).sub (hb.mul_right _)).add (hd.mul_left _)).sub (hc.mul_left _)
@@ -124,10 +110,12 @@ private theorem etaMultiplier_zpow_eq_one_of_even_c {N r : ℤ} {γ : SL(2, ℤ)
 private theorem etaMultiplier_zpow_eq_one_of_c_pos_of_odd_c {N r : ℤ} {γ : SL(2, ℤ)}
     (hpos : 0 < γ 1 0) (hodd : Odd (γ 1 0)) (hr : Even r) (hrN : 24 ∣ r * N) (hb : N ∣ γ 0 1)
     (hc : N ∣ γ 1 0) : etaMultiplier γ ^ r = 1 := by
-  rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c γ hpos hodd, mul_zpow,
-    kroneckerSym_zpow_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1).symm) hr,
-    one_mul]
-  refine cexp_div_twentyFour_zpow_eq_one (hrN.trans (mul_dvd_mul_left r ?_))
+  obtain ⟨m, rfl⟩ := hr.two_dvd
+  rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c γ hpos hodd, mul_zpow, zpow_mul,
+    zpow_ofNat,
+    sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1).symm),
+    one_zpow, one_mul, ← e24_def, ← e24_mul, e24_congr (Int.modEq_zero_iff_dvd.2
+      (hrN.trans (mul_dvd_mul_left _ ?_))), e24_zero]
   have : N ∣ (γ 0 0 + γ 1 1) * γ 1 0 - γ 0 1 * (γ 1 1 * (γ 1 0 ^ 2 - 1)) - 3 * γ 1 0 :=
     ((hc.mul_left _).sub (hb.mul_right _)).sub (hc.mul_left _)
   convert this using 1

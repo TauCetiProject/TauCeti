@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.IsManifold.Prod
+public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedChainComplex
 public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedUniqueExtremum
 public import TauCeti.Geometry.Manifold.Morse.Boundary.UniqueExtremum
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Prod
@@ -61,6 +62,9 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
   `(-v, -w)`), the two trajectories carry opposite signs `+1` and `-1`.
 * `signedTrajectoryCount_sphereHeight_comp_fst_add_comp_snd`: every signed trajectory count
   between consecutive-index critical points on `S¹ × S¹` vanishes.
+* `free_homology_signedMorseComplex_sphereHeight_comp_fst_add_comp_snd` and
+  `finrank_homology_signedMorseComplex_sphereHeight_comp_fst_add_comp_snd`: its integral Morse
+  homology is free of ranks `1`, `2` and `1` in degrees `0`, `1` and `2`.
 
 ## References
 
@@ -248,6 +252,39 @@ theorem signedTrajectoryCount_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorse
   h.signedTrajectoryCount_eq_zero_of_finrank_eq_two (isMorse_sphereHeight_prod v w) (by simp)
     subsingleton_setOf_manifoldMorseIndex_eq_two subsingleton_setOf_manifoldMorseIndex_eq_zero
     hφp hφq op oq hpq
+
+/-- **The integral Morse homology of the torus is free.** For every Morse–Smale pseudo-gradient
+adapted to the sum of two height functions on `S¹ × S¹` and every choice of orientations, the
+integral Morse homology, with coefficients in any ring, is a free module in each degree, since the
+integral Morse boundary vanishes. -/
+theorem free_homology_signedMorseComplex_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
+      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd))
+    (𝔬 : MorseOrientation (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) X)
+    {R : Type*} [Ring R]
+    (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) (n : ℕ) :
+    Module.Free R ((hX.signedMorseComplex 𝔬 hf R hsq).homology n) :=
+  free_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero hsq
+    (h.signedMorseBoundary_sphereHeight_comp_fst_add_comp_snd hf 𝔬 R) n
+
+/-- **The integral Morse homology of the torus.** For every Morse–Smale pseudo-gradient adapted to
+the sum of two height functions on `S¹ × S¹` and every choice of orientations of the unstable
+manifolds, the integral Morse homology, with coefficients in any ring with the strong rank
+condition such as `ℤ`, has rank `1`, `2` and `1` in degrees `0`, `1` and `2`, and vanishes above:
+over `ℤ` it is `ℤ`, `ℤ²`, `ℤ`, the integral homology of the torus. -/
+theorem finrank_homology_signedMorseComplex_sphereHeight_comp_fst_add_comp_snd
+    (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
+      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd))
+    (𝔬 : MorseOrientation (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd) X)
+    {R : Type*} [Ring R] [StrongRankCondition R]
+    (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) (n : ℕ) :
+    finrank R ((hX.signedMorseComplex 𝔬 hf R hsq).homology n) =
+      if n = 1 then 2 else if n ≤ 2 then 1 else 0 := by
+  rw [finrank_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero hsq
+      (h.signedMorseBoundary_sphereHeight_comp_fst_add_comp_snd hf 𝔬 R),
+    modelWithCornersSelf_prod, criticalCount_sphereHeight_comp_fst_add_comp_snd]
+  rcases n with _ | _ | _ | n <;> simp [one_add_one_eq_two]
 
 end IsAdaptedPseudoGradient.IsMorseSmale
 

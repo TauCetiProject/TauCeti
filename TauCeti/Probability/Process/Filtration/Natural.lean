@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Adapted
+public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Probability.Process.Filtration.NullAugmentation
+import TauCeti.Probability.Independence.CondExp
 
 /-!
 # Natural filtrations, deterministic translation and future increments
@@ -16,19 +18,41 @@ Adding a deterministic function to a real-valued process leaves this filtration 
 the original process is recovered by subtracting the same function. No continuity of the
 deterministic function, or probability law of the process, is needed. The past up to a fixed
 date together with the whole future increment process determines every later observation
-(`MeasureTheory.Filtration.natural_le_sup_comap_shift`).
+(`MeasureTheory.Filtration.natural_le_sup_comap_shift`). When that future increment process is
+independent of the raw right-continuous natural past at `s`, conditioning recovers every
+right-continuous past indicator up to a null set
+(`MeasureTheory.Filtration.rightCont_natural_le_nullAugment_of_indep_shift`).
 
 Consequently the usual augmented natural filtrations also agree after deterministic
 translation and an equivalent change of measure. The null sets adjoined here are those of
 the ambient measure, not just those already visible at a given time.
+
+## References
+
+* I. Karatzas and S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
+  Springer, 1991, §2.7.A.
+* P. E. Protter, *Stochastic Integration and Differential Equations*, second edition, Springer,
+  2005, Chapter I, §4, Theorem 31.
 -/
 
 public section
 
 noncomputable section
 
-open TopologicalSpace
+open ProbabilityTheory TopologicalSpace
 open scoped NNReal
+
+namespace TauCeti
+
+/-- Coordinatewise measurability makes the whole future-increment process measurable.
+No probability law or path regularity is required. -/
+theorem measurable_shift_sub {Ω ι E : Type*} [MeasurableSpace Ω] [Add ι]
+    [MeasurableSpace E] [Sub E] [MeasurableSub₂ E] {W : ι → Ω → E}
+    (hmeas : ∀ t, Measurable (W t)) (s : ι) :
+    Measurable (fun ω v => W (s + v) ω - W s ω) :=
+  measurable_pi_iff.2 fun v => (hmeas (s + v)).sub (hmeas s)
+
+end TauCeti
 
 namespace MeasureTheory.Filtration
 
@@ -127,5 +151,40 @@ theorem natural_le_sup_comap_shift (W : ℝ≥0 → Ω → ℝ)
     have h := hinc.add hstart
     simp only [add_tsub_cancel_of_le (le_of_not_ge hus), Pi.add_def, sub_add_cancel] at h
     exact h.comap_le
+
+/-- **Blumenthal inclusion for natural filtrations.** If the future increment process
+`(W (s + v) - W s)_v` is independent of `(Filtration.natural W hW).rightCont s` under a probability
+measure `P`, then every event of `(Filtration.natural W hW).rightCont s` agrees `P`-almost
+everywhere with an event of `Filtration.natural W hW s`. -/
+theorem rightCont_natural_le_nullAugment_of_indep_shift {P : Measure Ω}
+    [IsProbabilityMeasure P] {W : ℝ≥0 → Ω → ℝ} (hW : ∀ t, StronglyMeasurable (W t)) {s : ℝ≥0}
+    (hindep : Indep (MeasurableSpace.comap (fun ω v => W (s + v) ω - W s ω) inferInstance)
+      ((natural W hW).rightCont s) P) :
+    (natural W hW).rightCont s ≤ (natural W hW).nullAugment P s := by
+  classical
+  let ℱ := natural W hW
+  let mFuture := MeasurableSpace.comap (fun ω v => W (s + v) ω - W s ω) inferInstance
+  -- Restore the ambient instance: `mFuture` is also eligible for measurable-space synthesis.
+  let : MeasurableSpace Ω := m
+  have hfuture : mFuture ≤ m :=
+    (TauCeti.measurable_shift_sub (fun t => (hW t).measurable) s).comap_le
+  have hle : ℱ.rightCont s ≤ ℱ s ⊔ mFuture :=
+    (ℱ.rightCont_le_of_lt (lt_add_one s)).trans (natural_le_sup_comap_shift W hW s (s + 1))
+  intro A hA
+  rw [measurableSet_nullAugment_iff]
+  have hAi : Integrable (A.indicator fun _ => (1 : ℝ)) P :=
+    (integrable_const 1).indicator (ℱ.rightCont.le s A hA)
+  have hcond := hindep.symm.condExp_eq_of_le_of_stronglyMeasurable_sup
+    (ℱ.le_rightCont s) (ℱ.rightCont.le s) hfuture
+    ((stronglyMeasurable_const.indicator hA).mono hle) hAi
+  have heq : P[A.indicator (fun _ => (1 : ℝ)) | ℱ s] =ᵐ[P] A.indicator fun _ => (1 : ℝ) :=
+    hcond.symm.trans (Filter.EventuallyEq.of_eq
+      (condExp_of_stronglyMeasurable (ℱ.rightCont.le s)
+        (stronglyMeasurable_const.indicator hA) hAi))
+  refine ⟨{ω | 1 / 2 < P[A.indicator (fun _ => (1 : ℝ)) | ℱ s] ω},
+    measurableSet_lt measurable_const stronglyMeasurable_condExp.measurable, ?_⟩
+  filter_upwards [heq] with ω hω
+  simp only [hω]
+  by_cases hωA : ω ∈ A <;> norm_num [hωA]
 
 end MeasureTheory.Filtration

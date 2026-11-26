@@ -39,6 +39,8 @@ reversed flow.
   coordinates of positive weight.
 * `TauCeti.MorseChart.mfderiv_toChart_apply_of_mem_stableSubspace`: at a point in the stable
   subspace of a chart where `X` is linear, the chart derivative of `X` is `-φ.toChart y`.
+* `TauCeti.MorseChart.exp_neg_smul_coord_symm_linearFlow`: the linear flow, rescaled by `e^{-s}`,
+  is the projection onto the coordinates of negative weight plus `e^{-2s}` times its complement.
 * `TauCeti.IsAdaptedPseudoGradient.exists_isSliceChart_stableSet_flow`: the slice charts of `W^s(x)`
   given by a Morse chart composed with the time-`T` maps of the flow.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableSet_chart`: slice charts for `W^s(x)`.
@@ -216,6 +218,28 @@ theorem linearFlow_coord_negativeExtend (t : ℝ) (c : {i // φ.weight i < 0} �
   · rw [φ.linearFlow_of_weight_eq_neg_one hi]
   · rw [MorseBottChart.linearFlow_apply,
       φ.coord_negativeExtend_of_not_weight_neg c (by rw [hi]; norm_num), mul_zero, mul_zero]
+
+/-- **The rescaled linear flow.** Read in the coordinates of a Morse chart, the linear flow for the
+time `s`, multiplied by `e^{-s}`, keeps the coordinates of negative weight and multiplies those of
+positive weight by `e^{-2s}`: it is the projection `v ↦ φ.negativeExtend (φ.negativeCoord v)`
+plus `e^{-2s}` times the complementary projection. -/
+theorem exp_neg_smul_coord_symm_linearFlow (s : ℝ) (v : E) :
+    Real.exp (-s) • φ.coord.symm (φ.linearFlow s (φ.coord v)) =
+      φ.negativeExtend (φ.negativeCoord v) +
+        Real.exp (-(2 * s)) • (v - φ.negativeExtend (φ.negativeCoord v)) := by
+  refine φ.coord.injective (funext fun i ↦ ?_)
+  simp only [map_smul, map_add, map_sub, LinearEquiv.apply_symm_apply, Pi.smul_apply,
+    Pi.add_apply, Pi.sub_apply, smul_eq_mul]
+  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi
+  · have hneg : φ.weight i < 0 := by rw [hi]; norm_num
+    rw [φ.linearFlow_of_weight_eq_neg_one hi,
+      φ.coord_negativeExtend_of_weight_neg _ ⟨i, hneg⟩, negativeCoord_apply, ← mul_assoc,
+      ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_mul, sub_self, mul_zero, add_zero]
+  · have hpos : ¬φ.weight i < 0 := by rw [hi]; norm_num
+    rw [φ.linearFlow_of_weight_eq_one hi, φ.coord_negativeExtend_of_not_weight_neg _ hpos,
+      ← mul_assoc, ← Real.exp_add, sub_zero, zero_add]
+    congr 2
+    ring
 
 /-- If the coordinates of `a` are those of `b` moved by the linear flow for the time `s`, the
 coordinates of negative weight of `a` are `e^{s}` times those of `b`. -/

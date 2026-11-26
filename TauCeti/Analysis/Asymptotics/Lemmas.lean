@@ -39,7 +39,8 @@ are used, not differentiability or any additive structure.
 
 In a seminormed group the norm is at most one on a neighbourhood of the origin, so there a higher
 power of the norm is dominated by any lower one. This is the comparison that lets a Taylor
-remainder of one order be read as a remainder of a smaller order.
+remainder of one order be read as a remainder of a smaller order. In particular a map within
+`O(‖x‖ ^ k)`, `k ≥ 1`, of the identity is itself `O(‖x‖)` at the origin.
 
 A bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` outside a ball about any centre `c` of a normed division ring
 gives `g = O(x⁻¹ ^ n)` at infinity: the decay rate of an inverse power does not depend on the
@@ -85,6 +86,8 @@ resolvent-type functions, which are `O(1 / y)` there.
   `f(σ) = O((σ - a)⁻¹)` along it.
 * `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`: `‖x‖ ^ m = O(‖x‖ ^ n)` at the origin
   whenever `n ≤ m`.
+* `Asymptotics.isBigO_norm_of_isBigO_sub_norm_pow`: `w x - x = O(‖x‖ ^ k)` at the origin with
+  `k ≥ 1` implies `w x = O(‖x‖)` there.
 * `Asymptotics.isBigO_inv_pow_cobounded_of_norm_le`: a bound `‖g x‖ ≤ A / ‖x - c‖ ^ n` for
   `‖x - c‖ > R` gives `g = O(x⁻¹ ^ n)` at infinity.
 * `Asymptotics.IsBigO.comp_const_mul_rpow`: `F = O(x ^ r)` at infinity implies
@@ -172,6 +175,15 @@ theorem isBigO_norm_pow_norm_pow_nhds_zero_of_le {E : Type*} [SeminormedAddGroup
   filter_upwards [Metric.closedBall_mem_nhds (0 : E) one_pos] with x hx
   simp only [one_mul, norm_pow, Real.norm_of_nonneg (norm_nonneg x)]
   exact pow_le_pow_of_le_one (norm_nonneg x) (by simpa [Metric.mem_closedBall] using hx) h
+
+/-- **A map within `O(‖x‖ ^ k)` of the identity is `O(‖x‖)` at the origin.** If
+`w x - x = O(‖x‖ ^ k)` near `0` for some `k ≥ 1`, then `w x = O(‖x‖)` near `0`. -/
+theorem isBigO_norm_of_isBigO_sub_norm_pow {E : Type*} [SeminormedAddCommGroup E] {w : E → E}
+    {k : ℕ} (hk : 1 ≤ k) (hw : (fun x ↦ w x - x) =O[𝓝 0] fun x ↦ ‖x‖ ^ k) :
+    w =O[𝓝 0] fun x ↦ ‖x‖ := by
+  have hk1 : (fun x : E ↦ ‖x‖ ^ k) =O[𝓝 0] fun x ↦ ‖x‖ := by
+    simpa using isBigO_norm_pow_norm_pow_nhds_zero_of_le (E := E) hk
+  simpa using (hw.trans hk1).add (isBigO_norm_right.2 (isBigO_refl (fun x : E ↦ x) (𝓝 0)))
 
 /-- **An inverse-power bound about any centre is a decay bound at infinity.** If
 `‖g x‖ ≤ A / ‖x - c‖ ^ n` whenever `R < ‖x - c‖`, then `g = O(x⁻¹ ^ n)` along `cobounded 𝕜`. -/
