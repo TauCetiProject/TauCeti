@@ -43,11 +43,6 @@ namespace TauCeti
 private def oddExpPart (m₀ n : ℕ) : ℕ :=
   ∏ p ∈ n.primeFactors with ¬ p ∣ m₀ ∧ Odd (n.factorization p), p
 
-private lemma minFac_prime_pow {p k : ℕ} (hp : p.Prime) (hk : k ≠ 0) : (p ^ k).minFac = p := by
-  have hne1 : p ^ k ≠ 1 := fun h => hp.ne_one ((Nat.pow_eq_one.mp h).resolve_right hk)
-  exact (Nat.prime_dvd_prime_iff_eq (Nat.minFac_prime hne1) hp).mp
-    ((Nat.minFac_prime hne1).dvd_of_dvd_pow (Nat.minFac_dvd (p ^ k)))
-
 private lemma oddExpPart_le {m₀ n : ℕ} (hn : n ≠ 0) : oddExpPart m₀ n ≤ n := by
   obtain ⟨t, A, h, -⟩ := Nat.exists_eq_prod_mul_sq_mul m₀ n
   exact Nat.le_of_dvd (Nat.pos_of_ne_zero hn) ⟨t ^ 2 * A, by rw [← mul_assoc]; exact h⟩
@@ -60,22 +55,9 @@ private lemma odd_oddExpPart {m₀ n : ℕ} (h2 : 2 ∣ m₀) : Odd (oddExpPart 
   · exact (hp.2.1 h2).elim
   · exact hodd
 
-private lemma squarefree_oddExpPart (m₀ n : ℕ) : Squarefree (oddExpPart m₀ n) := by
-  unfold oddExpPart
-  rw [Nat.squarefree_iff_prime_squarefree]
-  intro p hp hdvd
-  have hmem : ∀ q ∈ n.primeFactors.filter (fun q => ¬ q ∣ m₀ ∧ Odd (n.factorization q)),
-      q.Prime := fun q hq => Nat.prime_of_mem_primeFactors (Finset.mem_filter.mp hq).1
-  have hp_mem : p ∈ n.primeFactors.filter (fun q => ¬ q ∣ m₀ ∧ Odd (n.factorization q)) := by
-    obtain ⟨q, hq, hpq⟩ := (hp.prime.dvd_finsetProd_iff _).mp (dvd_of_mul_right_dvd hdvd)
-    rwa [(Nat.prime_dvd_prime_iff_eq hp (hmem q hq)).mp hpq]
-  rw [← Finset.mul_prod_erase _ _ hp_mem] at hdvd
-  have hp_dvd : p ∣ ∏ q ∈ (n.primeFactors.filter _).erase p, q :=
-    (mul_dvd_mul_iff_left hp.ne_zero).mp hdvd
-  obtain ⟨q, hq, hpq⟩ := (hp.prime.dvd_finsetProd_iff _).mp hp_dvd
-  have hne : q ≠ p := (Finset.mem_erase.mp hq).1
-  have hqp := (Nat.prime_dvd_prime_iff_eq hp (hmem q (Finset.mem_erase.mp hq).2)).mp hpq
-  exact hne hqp.symm
+private lemma squarefree_oddExpPart (m₀ n : ℕ) : Squarefree (oddExpPart m₀ n) :=
+  n.squarefree_prod_primeFactors.squarefree_of_dvd
+    (Finset.prod_dvd_prod_of_subset _ _ _ (Finset.filter_subset _ _))
 
 private lemma coprime_oddExpPart (m₀ n : ℕ) : (oddExpPart m₀ n).Coprime m₀ := by
   unfold oddExpPart
@@ -89,7 +71,7 @@ private lemma oddExpPart_primePow {m₀ n : ℕ} (hn : IsPrimePow n) :
   obtain ⟨p, k, hp, hk, rfl⟩ := hn
   have hpf : (p ^ k).primeFactors = {p} := by
     rw [Nat.primeFactors_pow p hk.ne', hp.nat_prime.primeFactors]
-  have hmin : (p ^ k).minFac = p := minFac_prime_pow hp.nat_prime hk.ne'
+  have hmin : (p ^ k).minFac = p := hp.nat_prime.pow_minFac hk.ne'
   unfold oddExpPart
   rw [hpf, hmin, Finset.filter_singleton]
   split_ifs <;> simp
@@ -104,9 +86,9 @@ private lemma oddExpPart_mul_of_primePow_eq {m₀ p k l : ℕ} (hp : p.Prime)
   have hon := oddExpPart_primePow (m₀ := m₀) ⟨p, k, hp.prime, hk, rfl⟩
   have hon' := oddExpPart_primePow (m₀ := m₀) ⟨p, l, hp.prime, hl, rfl⟩
   have hom := oddExpPart_primePow (m₀ := m₀) ⟨p, k + l, hp.prime, hkl, rfl⟩
-  rw [minFac_prime_pow hp hk.ne', hp.factorization_pow, Finsupp.single_eq_same] at hon
-  rw [minFac_prime_pow hp hl.ne', hp.factorization_pow, Finsupp.single_eq_same] at hon'
-  rw [minFac_prime_pow hp hkl.ne', hp.factorization_pow, Finsupp.single_eq_same] at hom
+  rw [hp.pow_minFac hk.ne', hp.factorization_pow, Finsupp.single_eq_same] at hon
+  rw [hp.pow_minFac hl.ne', hp.factorization_pow, Finsupp.single_eq_same] at hon'
+  rw [hp.pow_minFac hkl.ne', hp.factorization_pow, Finsupp.single_eq_same] at hom
   rw [hmul, hom, hon, hon']
   by_cases hdiv : p ∣ m₀
   · simp [hdiv]
@@ -127,8 +109,8 @@ private lemma oddExpPart_mul_of_primePow {m₀ n n' : ℕ} (hn : IsPrimePow n) (
   obtain ⟨q, l, hq, hl, rfl⟩ := hn'
   have hp' := hp.nat_prime
   have hq' := hq.nat_prime
-  have hmin_p : (p ^ k).minFac = p := minFac_prime_pow hp' hk.ne'
-  have hmin_q : (q ^ l).minFac = q := minFac_prime_pow hq' hl.ne'
+  have hmin_p : (p ^ k).minFac = p := hp'.pow_minFac hk.ne'
+  have hmin_q : (q ^ l).minFac = q := hq'.pow_minFac hl.ne'
   by_cases hpq : p = q
   · subst hpq
     rw [hmin_p, hmin_q, ite_eq_left rfl]
