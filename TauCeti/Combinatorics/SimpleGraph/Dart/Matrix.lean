@@ -45,7 +45,8 @@ ingredients of Bass's proof of the three-term determinant formula for the Ihara 
 * `SimpleGraph.dartFstMatrix_mul_dartSymmMatrix`, `SimpleGraph.dartSndMatrix_mul_dartSymmMatrix`:
   `S J = T` and `T J = S`.
 * `SimpleGraph.dartSymmMatrix_mul_self`: `J² = 1`.
-* `SimpleGraph.dartSymmMatrix_mul_transpose_dartSndMatrix`: `J Tᵀ = Sᵀ`.
+* `SimpleGraph.dartSymmMatrix_mul_transpose_dartSndMatrix`,
+  `SimpleGraph.dartSymmMatrix_mul_transpose_dartFstMatrix`: `J Tᵀ = Sᵀ` and `J Sᵀ = Tᵀ`.
 * `SimpleGraph.transpose_dartSndMatrix_mul_dartFstMatrix_apply`: `(Tᵀ S) a b = 1` iff
   `a.snd = b.fst`.
 * `SimpleGraph.dartSymmMatrix_eq_permMatrix`: `J` is the permutation matrix of the reversal.
@@ -197,12 +198,14 @@ theorem dartFstMatrix_mul_transpose_dartFstMatrix :
     exact h rfl
 
 /-- The start matrix times the reversal matrix is the end matrix: `S J = T`. -/
+@[simp]
 theorem dartFstMatrix_mul_dartSymmMatrix :
     G.dartFstMatrix R * G.dartSymmMatrix R = G.dartSndMatrix R := by
   ext v b
   simp [Matrix.mul_apply, Dart.eq_symm_comm]
 
 /-- The end matrix times the reversal matrix is the start matrix: `T J = S`. -/
+@[simp]
 theorem dartSndMatrix_mul_dartSymmMatrix :
     G.dartSndMatrix R * G.dartSymmMatrix R = G.dartFstMatrix R := by
   ext v b
@@ -217,8 +220,18 @@ theorem dartSymmMatrix_mul_self : G.dartSymmMatrix R * G.dartSymmMatrix R = 1 :=
 
 /-- The reversal matrix times the transposed end matrix is the transposed start matrix:
 `J Tᵀ = Sᵀ`. -/
+@[simp]
 theorem dartSymmMatrix_mul_transpose_dartSndMatrix :
     G.dartSymmMatrix R * (G.dartSndMatrix R)ᵀ = (G.dartFstMatrix R)ᵀ := by
+  ext a v
+  rw [Matrix.mul_apply, Fintype.sum_eq_single a.symm fun b hb => by simp [hb]]
+  simp
+
+/-- The reversal matrix times the transposed start matrix is the transposed end matrix:
+`J Sᵀ = Tᵀ`. -/
+@[simp]
+theorem dartSymmMatrix_mul_transpose_dartFstMatrix :
+    G.dartSymmMatrix R * (G.dartFstMatrix R)ᵀ = (G.dartSndMatrix R)ᵀ := by
   ext a v
   rw [Matrix.mul_apply, Fintype.sum_eq_single a.symm fun b hb => by simp [hb]]
   simp
