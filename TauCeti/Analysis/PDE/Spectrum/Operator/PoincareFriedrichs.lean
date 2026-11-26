@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Spectrum.Operator.Mixed
-import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 import TauCeti.Analysis.InnerProductSpace.Variational.Rayleigh
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 
