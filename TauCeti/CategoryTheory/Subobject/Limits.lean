@@ -57,11 +57,24 @@ theorem kernelSubobject_cokernel_π [HasZeroMorphisms C] [IsNormalMonoCategory C
     (kernelSubobject (cokernel.π f)).arrow (kernelSubobject_arrow_comp _)
   exact Subobject.le_mk_of_comm l hl
 
+/-- An image subobject `imageSubobject f` lies below `S` if and only if `f` factors through `S`. -/
+theorem imageSubobject_le_iff_factors {X Y : C} (f : X ⟶ Y) [HasImage f] (S : Subobject Y) :
+    imageSubobject f ≤ S ↔ S.Factors f :=
+  ⟨fun h ↦ Subobject.factors_of_le f h (by simpa using imageSubobject_factors_comp_self f (𝟙 _)),
+   fun h ↦ imageSubobject_le f (S.factorThru f h) (Subobject.factorThru_arrow _ _ _)⟩
+
 end CategoryTheory.Limits
 
 namespace CategoryTheory.Subobject
 
 variable {C : Type u} [Category.{v} C]
+
+/-- If `(Subobject.exists f).obj S ≤ T`, then `S.arrow ≫ f` factors through `T`. -/
+theorem factors_of_exists_le [HasImages C] {X Y : C} {f : X ⟶ Y}
+    {S : Subobject X} {T : Subobject Y} (h : (Subobject.exists f).obj S ≤ T) :
+    T.Factors (S.arrow ≫ f) :=
+  factors_of_le _ h ((Subobject.imageFactorisation f S).F.fac ▸
+    factors_comp_arrow (Subobject.imageFactorisation f S).F.e)
 
 /-- In a normal-mono category with cokernels, the kernel subobject of `A ⟶ ∏ᵢ cokernel (S i).arrow`
 is the greatest lower bound of `S : ι → Subobject A`. -/

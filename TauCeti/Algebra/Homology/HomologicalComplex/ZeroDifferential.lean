@@ -102,6 +102,19 @@ lemma XIsoHomologyOfDEqZero_inv (K : HomologicalComplex C c) (i : ι) [K.HasHomo
       K.iCycles i := by
   simp [XIsoHomologyOfDEqZero]
 
+/-- `K.XIsoHomologyOfDEqZero i h₁ h₂` agrees with `(cyclesIsoX₂ _).symm ≪≫ asIsoHomologyπ _` on
+`K.sc i`. -/
+lemma XIsoHomologyOfDEqZero_eq_shortComplex (K : HomologicalComplex C c) (i : ι)
+    [K.HasHomology i] (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
+    K.XIsoHomologyOfDEqZero i h₁ h₂ =
+      ((K.sc i).cyclesIsoX₂ h₂).symm ≪≫ (K.sc i).asIsoHomologyπ h₁ := by
+  ext
+  have hinj : (K.iCyclesIso i (c.next i) rfl h₂).inv = ((K.sc i).cyclesIsoX₂ h₂).inv := by
+    rw [← cancel_mono (K.sc i).iCycles, ShortComplex.cyclesIsoX₂_inv_hom_id]
+    simpa [HomologicalComplex.iCycles] using K.iCyclesIso_inv_hom_id i (c.next i) rfl h₂
+  rw [XIsoHomologyOfDEqZero_hom, Iso.trans_hom, Iso.symm_hom, ShortComplex.asIsoHomologyπ_hom,
+    hinj, HomologicalComplex.homologyπ]
+
 /-- If the differentials into and out of degree `i` vanish, the homology in degree `i` is the
 term in degree `i`, so it is projective when that term is. -/
 lemma projective_homology_of_d_eq_zero (K : HomologicalComplex C c) (i : ι) [K.HasHomology i]

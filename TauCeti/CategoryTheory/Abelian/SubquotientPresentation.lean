@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Order.Bounds.Basic
 public import TauCeti.CategoryTheory.Abelian.Subobject
+public import TauCeti.CategoryTheory.Subobject.Basic
 public import TauCeti.CategoryTheory.Subobject.Pullback
 import Mathlib.CategoryTheory.Abelian.Refinements
-import TauCeti.CategoryTheory.Subobject.Basic
 import TauCeti.CategoryTheory.Subobject.Image
+import TauCeti.CategoryTheory.Subobject.Limits
 
 /-!
 # Subquotient presentations
@@ -752,21 +753,24 @@ section MapInduced
 variable {A' A'' X' X'' : C} (P : SubquotientPresentation A X)
   (P' : SubquotientPresentation A' X')
 
-private lemma imageSubobject_le_iff_factors {W₁ W₂ : C} (f : W₁ ⟶ W₂) (S : Subobject W₂) :
-    imageSubobject f ≤ S ↔ S.Factors f :=
-  ⟨fun h ↦ factors_of_le f h (by simpa using imageSubobject_factors_comp_self f (𝟙 _)),
-   fun h ↦ imageSubobject_le f (S.factorThru f h) (factorThru_arrow _ _ _)⟩
-
 /-- Lift a morphism `f : A ⟶ A'` to `P.Z ⟶ P'.Z` when `(Subobject.exists f).obj P.Z ≤ P'.Z`. -/
 noncomputable def liftZ (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) :
     (P.Z : C) ⟶ (P'.Z : C) :=
-  P'.Z.factorThru (P.Z.arrow ≫ f)
-    ((imageSubobject_le_iff_factors _ _).mp
-      ((Subobject.exists_eq_imageSubobject f P.Z).symm.trans_le hZ))
+  P'.Z.factorThru (P.Z.arrow ≫ f) (Subobject.factors_of_exists_le hZ)
 
 @[reassoc (attr := simp)]
 lemma liftZ_arrow (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) :
     P.liftZ P' f hZ ≫ P'.Z.arrow = P.Z.arrow ≫ f :=
+  factorThru_arrow _ _ _
+
+/-- Lift a morphism `f : A ⟶ A'` to `P.B ⟶ P'.B` when `(Subobject.exists f).obj P.B ≤ P'.B`. -/
+noncomputable def liftB (f : A ⟶ A') (hB : (Subobject.exists f).obj P.B ≤ P'.B) :
+    (P.B : C) ⟶ (P'.B : C) :=
+  P'.B.factorThru (P.B.arrow ≫ f) (Subobject.factors_of_exists_le hB)
+
+@[reassoc (attr := simp)]
+lemma liftB_arrow (f : A ⟶ A') (hB : (Subobject.exists f).obj P.B ≤ P'.B) :
+    P.liftB P' f hB ≫ P'.B.arrow = P.B.arrow ≫ f :=
   factorThru_arrow _ _ _
 
 /-- The morphism `X ⟶ X'` induced by `f : A ⟶ A'` sending `P.Z` into `P'.Z` and `P.B` into
@@ -774,12 +778,9 @@ lemma liftZ_arrow (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z) :
 noncomputable def mapInduced (f : A ⟶ A') (hZ : (Subobject.exists f).obj P.Z ≤ P'.Z)
     (hB : (Subobject.exists f).obj P.B ≤ P'.B) : X ⟶ X' :=
   P.desc (P.liftZ P' f hZ ≫ P'.π) (by
-    let liftB : (P.B : C) ⟶ (P'.B : C) :=
-      P'.B.factorThru (P.B.arrow ≫ f)
-        ((imageSubobject_le_iff_factors _ _).mp
-          ((Subobject.exists_eq_imageSubobject f P.B).symm.trans_le hB))
-    have hsq : ofLE P.B P.Z P.le ≫ P.liftZ P' f hZ = liftB ≫ ofLE P'.B P'.Z P'.le := by
-      simp [← cancel_mono P'.Z.arrow, liftB]
+    have hsq : ofLE P.B P.Z P.le ≫ P.liftZ P' f hZ =
+        P.liftB P' f hB ≫ ofLE P'.B P'.Z P'.le := by
+      simp [← cancel_mono P'.Z.arrow]
     rw [reassoc_of% hsq, P'.ofLE_π, comp_zero])
 
 @[reassoc (attr := simp)]
@@ -804,10 +805,8 @@ lemma mapInduced_congr {P₁ P₂ : SubquotientPresentation A X}
 
 @[simp]
 lemma mapInduced_id
-    (hZ : (Subobject.exists (𝟙 A)).obj P.Z ≤ P.Z :=
-      by simp [Subobject.exists_iso_map, Subobject.map_id])
-    (hB : (Subobject.exists (𝟙 A)).obj P.B ≤ P.B :=
-      by simp [Subobject.exists_iso_map, Subobject.map_id]) :
+    (hZ : (Subobject.exists (𝟙 A)).obj P.Z ≤ P.Z := (Subobject.exists_id P.Z).le)
+    (hB : (Subobject.exists (𝟙 A)).obj P.B ≤ P.B := (Subobject.exists_id P.B).le) :
     P.mapInduced P (𝟙 A) hZ hB = 𝟙 X := by
   have hlift : P.liftZ P (𝟙 A) hZ = 𝟙 (P.Z : C) := by
     rw [← cancel_mono P.Z.arrow]; simp
@@ -839,20 +838,24 @@ lemma exists_preimage_le_preimage_iff (f : A ⟶ A')
     (S : Subobject X) (S' : Subobject X') :
     (Subobject.exists f).obj (P.preimage S) ≤ P'.preimage S' ↔
       (Subobject.exists (P.mapInduced P' f hZ hB)).obj S ≤ S' := by
-  have hL : (Subobject.exists f).obj (P.preimage S) ≤ P'.preimage S' ↔
-      (P'.preimage S').Factors ((P.preimage S).arrow ≫ f) := by
-    rw [Subobject.exists_eq_imageSubobject, imageSubobject_le_iff_factors]
-  have hR : (Subobject.exists (P.mapInduced P' f hZ hB)).obj S ≤ S' ↔
-      S'.Factors (S.arrow ≫ P.mapInduced P' f hZ hB) := by
-    rw [Subobject.exists_eq_imageSubobject, imageSubobject_le_iff_factors]
   have hLift : (P.preimage S).arrow ≫ f =
       (ofLE (P.preimage S) P.Z (P.preimage_le_Z S) ≫ P.liftZ P' f hZ) ≫ P'.Z.arrow := by
     simp
   have hProj : (ofLE (P.preimage S) P.Z (P.preimage_le_Z S) ≫ P.liftZ P' f hZ) ≫ P'.π =
       P.preimageπ S ≫ S.arrow ≫ P.mapInduced P' f hZ hB := by
     simp
-  rw [hL, hLift, P'.factors_preimage_iff, hProj, hR, ← imageSubobject_le_iff_factors,
-    ← imageSubobject_le_iff_factors, imageSubobject_comp_eq_of_epi]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hfac : S'.Factors (S.arrow ≫ P.mapInduced P' f hZ hB) := by
+      have h1 := Subobject.factors_of_exists_le h
+      rw [hLift, P'.factors_preimage_iff, hProj, Subobject.factors_comp_iff_of_epi] at h1
+      exact h1
+    exact Subobject.exists_le_of_comm _ (S'.factorThru _ hfac) (S'.factorThru_arrow _ _)
+  · have hfac : (P'.preimage S').Factors ((P.preimage S).arrow ≫ f) := by
+      have h1 := Subobject.factors_of_exists_le h
+      rw [hLift, P'.factors_preimage_iff, hProj]
+      exact Subobject.factors_of_factors_right _ h1
+    exact Subobject.exists_le_of_comm f ((P'.preimage S').factorThru _ hfac)
+      ((P'.preimage S').factorThru_arrow _ _)
 
 end MapInduced
 

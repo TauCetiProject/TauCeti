@@ -299,12 +299,26 @@ theorem hasLimitPageAt_of_hasCountableProducts_of_isCoregularAt [HasCountablePro
 
 variable [E.HasInfiniteCyclesAt pq] [E.HasInfiniteBoundariesAt pq]
 
+/-- At a stabilising position `pq` from page `s`, the boundary subobject of `limitPagePresentation`
+agrees with that of `pagePresentation` at page `s`. -/
+theorem limitPagePresentation_B_eq_pagePresentation_of_stabilisesAt {s : ℤ} (hs : r₀ ≤ s)
+    (h : E.StabilisesAt pq s hs) :
+    (E.limitPagePresentation pq).B = (E.pagePresentation pq s hs).B := by
+  rw [limitPagePresentation_B, pagePresentation_B, E.infiniteBoundaries_eq_of_stabilisesAt pq hs h]
+
+/-- At a stabilising position `pq` from page `s`, the cycle subobject of `limitPagePresentation`
+agrees with that of `pagePresentation` at page `s`. -/
+theorem limitPagePresentation_Z_eq_pagePresentation_of_stabilisesAt {s : ℤ} (hs : r₀ ≤ s)
+    (h : E.StabilisesAt pq s hs) :
+    (E.limitPagePresentation pq).Z = (E.pagePresentation pq s hs).Z := by
+  rw [limitPagePresentation_Z, pagePresentation_Z, E.infiniteCycles_eq_of_stabilisesAt pq hs h]
+
 /-- At a stabilising position `pq` from page `s`, the canonical iso `E.limitPage pq ≅ E_s(pq)`. -/
 noncomputable def limitPageIsoPageX (s : ℤ) (hs : r₀ ≤ s) (h : E.StabilisesAt pq s hs) :
     E.limitPage pq ≅ (E.page s hs).X pq :=
   (E.limitPagePresentation pq).isoOfEq (E.pagePresentation pq s hs)
-    (by simpa using E.infiniteBoundaries_eq_of_stabilisesAt pq hs h)
-    (by simpa using E.infiniteCycles_eq_of_stabilisesAt pq hs h)
+    (E.limitPagePresentation_B_eq_pagePresentation_of_stabilisesAt pq hs h)
+    (E.limitPagePresentation_Z_eq_pagePresentation_of_stabilisesAt pq hs h)
 
 /-- Compatibility of `limitPageIsoPageX` with `pageXIsoOfStabilises`. -/
 theorem limitPageIsoPageX_trans_pageXIsoOfStabilises {s r : ℤ} (hs : r₀ ≤ s)
@@ -607,6 +621,26 @@ theorem infiniteBoundaries_eq_preimage_fromPage (s : ℤ) (hs : r₀ ≤ s) [E.H
   exact ((E.pagePresentation pq s hs).isLUB_preimage_iff (Set.range_nonempty _)).mpr
     ((E.fromPage s hs).isLUB_infiniteBoundaries pq)
 
+/-- Under rebasing to page `s ≥ r₀`, the boundary subobject of `limitPagePresentation` agrees
+with that of `(E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq)`. -/
+theorem limitPagePresentation_B_eq_trans_fromPage (s : ℤ) (hs : r₀ ≤ s)
+    [E.HasInfiniteCyclesAt pq] [E.HasInfiniteBoundariesAt pq]
+    [(E.fromPage s hs).HasInfiniteCyclesAt pq] [(E.fromPage s hs).HasInfiniteBoundariesAt pq] :
+    (E.limitPagePresentation pq).B =
+      ((E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq)).B := by
+  rw [limitPagePresentation_B, SubquotientPresentation.trans_B, limitPagePresentation_B,
+    E.infiniteBoundaries_eq_preimage_fromPage pq s hs]
+
+/-- Under rebasing to page `s ≥ r₀`, the cycle subobject of `limitPagePresentation` agrees
+with that of `(E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq)`. -/
+theorem limitPagePresentation_Z_eq_trans_fromPage (s : ℤ) (hs : r₀ ≤ s)
+    [E.HasInfiniteCyclesAt pq] [E.HasInfiniteBoundariesAt pq]
+    [(E.fromPage s hs).HasInfiniteCyclesAt pq] [(E.fromPage s hs).HasInfiniteBoundariesAt pq] :
+    (E.limitPagePresentation pq).Z =
+      ((E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq)).Z := by
+  rw [limitPagePresentation_Z, SubquotientPresentation.trans_Z, limitPagePresentation_Z,
+    E.infiniteCycles_eq_preimage_fromPage pq s hs]
+
 /-- The canonical rebasing isomorphism `E.limitPage pq ≅ (E.fromPage s hs).limitPage pq`. -/
 noncomputable def limitPageIsoFromPage (s : ℤ) (hs : r₀ ≤ s)
     [E.HasInfiniteCyclesAt pq] [E.HasInfiniteBoundariesAt pq]
@@ -614,8 +648,8 @@ noncomputable def limitPageIsoFromPage (s : ℤ) (hs : r₀ ≤ s)
     E.limitPage pq ≅ (E.fromPage s hs).limitPage pq :=
   (E.limitPagePresentation pq).isoOfEq
     ((E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq))
-    (by simpa using E.infiniteBoundaries_eq_preimage_fromPage pq s hs)
-    (by simpa using E.infiniteCycles_eq_preimage_fromPage pq s hs)
+    (E.limitPagePresentation_B_eq_trans_fromPage pq s hs)
+    (E.limitPagePresentation_Z_eq_trans_fromPage pq s hs)
 
 @[simp]
 theorem limitPageIsoFromPage_self [E.HasInfiniteCyclesAt pq] [E.HasInfiniteBoundariesAt pq] :
@@ -655,14 +689,14 @@ theorem Hom.limitPageMap_comp_limitPageIsoFromPage_hom {E E' : SpectralSequence 
   -- Combine page-level and rebased limit-page naturality via `MapsTo.trans`.
   have hmaps := (pagePresentation_mapsTo pq f s hs).trans
     (SubquotientPresentation.mapsTo_mapInduced ((E.fromPage s hs).limitPagePresentation pq)
-      ((E'.fromPage s hs).limitPagePresentation pq) (((f.fromPage s hs).hom s le_rfl).f pq)
-      (by simpa using (f.fromPage s hs).exists_infiniteCycles_le pq)
-      (by simpa using (f.fromPage s hs).exists_infiniteBoundaries_le pq))
-  rw [Hom.limitPageMap, limitPageIsoFromPage, limitPageIsoFromPage,
+      ((E'.fromPage s hs).limitPagePresentation pq) ((f.hom s hs).f pq)
+      (by simpa [Hom.fromPage_hom] using (f.fromPage s hs).exists_infiniteCycles_le pq)
+      (by simpa [Hom.fromPage_hom] using (f.fromPage s hs).exists_infiniteBoundaries_le pq))
+  rw [Hom.limitPageMap, Hom.limitPageMap, limitPageIsoFromPage, limitPageIsoFromPage,
     SubquotientPresentation.mapInduced_comp_isoOfEq_hom
-      (Q := (E.pagePresentation pq s hs).trans ((E.fromPage s hs).limitPagePresentation pq))
-      (hB := by simpa using E.infiniteBoundaries_eq_preimage_fromPage pq s hs)
-      (hZ := by simpa using E.infiniteCycles_eq_preimage_fromPage pq s hs)]
+      (hB := E.limitPagePresentation_B_eq_trans_fromPage pq s hs)
+      (hZ := E.limitPagePresentation_Z_eq_trans_fromPage pq s hs)]
+  simp only [Hom.fromPage_hom]
   exact congrArg (_ ≫ ·) (hmaps.mapInduced_eq _ _)
 
 end Rebasing

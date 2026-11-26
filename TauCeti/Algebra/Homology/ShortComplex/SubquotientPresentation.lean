@@ -117,19 +117,18 @@ lemma homologyPresentation_mapsTo {S' : ShortComplex C} (α : S ⟶ S') :
 /-- A morphism `φ : S ⟶ S'` maps `kernelSubobject S.g` into `kernelSubobject S'.g`. -/
 lemma exists_kernelSubobject_le {C : Type*} [Category* C] [HasZeroMorphisms C] [HasImages C]
     {S S' : ShortComplex C} (φ : S ⟶ S') [HasKernel S.g] [HasKernel S'.g] :
-    (Subobject.exists φ.τ₂).obj (kernelSubobject S.g) ≤ kernelSubobject S'.g := by
-  rw [Subobject.exists_eq_imageSubobject]
-  exact imageSubobject_le _ (kernelSubobjectMap (Arrow.homMk φ.τ₂ φ.τ₃ φ.comm₂₃))
+    (Subobject.exists φ.τ₂).obj (kernelSubobject S.g) ≤ kernelSubobject S'.g :=
+  Subobject.exists_le_of_comm φ.τ₂ (kernelSubobjectMap (Arrow.homMk φ.τ₂ φ.τ₃ φ.comm₂₃))
     (kernelSubobjectMap_arrow _)
 
 /-- A morphism `φ : S ⟶ S'` maps `imageSubobject S.f` into `imageSubobject S'.f`. -/
 lemma exists_imageSubobject_le {C : Type*} [Category* C] [HasZeroMorphisms C] [HasImages C]
     {S S' : ShortComplex C} (φ : S ⟶ S')
     [HasImageMap (Arrow.homMk (f := Arrow.mk S.f) (g := Arrow.mk S'.f) φ.τ₁ φ.τ₂ φ.comm₁₂)] :
-    (Subobject.exists φ.τ₂).obj (imageSubobject S.f) ≤ imageSubobject S'.f := by
-  rw [Subobject.exists_eq_imageSubobject]
-  exact imageSubobject_le _ (imageSubobjectMap (Arrow.homMk (f := Arrow.mk S.f) (g := Arrow.mk S'.f)
-    φ.τ₁ φ.τ₂ φ.comm₁₂)) (imageSubobjectMap_arrow _)
+    (Subobject.exists φ.τ₂).obj (imageSubobject S.f) ≤ imageSubobject S'.f :=
+  Subobject.exists_le_of_comm φ.τ₂
+    (imageSubobjectMap (Arrow.homMk (f := Arrow.mk S.f) (g := Arrow.mk S'.f) φ.τ₁ φ.τ₂ φ.comm₁₂))
+    (imageSubobjectMap_arrow _)
 
 /-- When `S.f = 0` and `S.g = 0`, `S.homologyPresentation` is the identity presentation transported
 along `(S.cyclesIsoX₂ hg).symm ≪≫ S.asIsoHomologyπ hf`. -/

@@ -116,14 +116,14 @@ lemma fromPage_iso (s : ℤ) (hs : r₀ ≤ s) (r r' : ℤ) (pq : κ) (hrr' : r 
     (E.fromPage s hs).iso r r' pq hrr' hr = E.iso r r' pq hrr' (hs.trans hr) := rfl
 
 /-- Restrict a morphism of spectral sequences to start at a later page `s ≥ r₀`. -/
-@[expose] def Hom.fromPage {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ)
+def Hom.fromPage {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ)
     (hs : r₀ ≤ s := by lia) : E.fromPage s hs ⟶ E'.fromPage s hs where
   hom r hr := f.hom r (hs.trans hr)
   comm r r' pq hrr' hr := f.comm r r' pq hrr' (hs.trans hr)
 
 @[simp]
 lemma Hom.fromPage_hom {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (s : ℤ) (hs : r₀ ≤ s)
-    (r : ℤ) (hr : s ≤ r) : (f.fromPage s hs).hom r hr = f.hom r (hs.trans hr) := rfl
+    (r : ℤ) (hr : s ≤ r) : (f.fromPage s hs).hom r hr = f.hom r (hs.trans hr) := (rfl)
 
 /-- Rebasing spectral sequences from page `r₀` to page `s ≥ r₀`, as a functor. -/
 @[expose, simps]
@@ -171,14 +171,14 @@ lemma pagePresentation_add_one (r : ℤ) (hr : r₀ ≤ r) :
 /-- The cycle tower `Z_r(pq)`: the subobject of the object at `pq` on the first page whose
 quotient by the boundary subobject `B_r(pq)` is the object at `pq` on the page `r`. It consists of
 the elements that survive to the page `r`. -/
-@[expose] noncomputable def cyclesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
+noncomputable def cyclesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
     Subobject ((E.page r₀).X pq) :=
   (E.pagePresentation pq r hr).Z
 
 /-- The boundary tower `B_r(pq)`: the subobject of the object at `pq` on the first page that is
 divided out in the object at `pq` on the page `r`. It consists of the elements that are boundaries
 by the page `r`. -/
-@[expose] noncomputable def boundariesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
+noncomputable def boundariesSubobject (r : ℤ) (hr : r₀ ≤ r := by lia) :
     Subobject ((E.page r₀).X pq) :=
   (E.pagePresentation pq r hr).B
 
@@ -362,7 +362,8 @@ lemma Hom.exists_boundariesSubobject_le (f : E ⟶ E') (pq : κ) (r : ℤ) (hr :
 /-- The morphism induced by `(f.hom r₀).f pq` on `pagePresentation` is `(f.hom r).f pq`. -/
 lemma Hom.mapInduced_pagePresentation (f : E ⟶ E') (pq : κ) (r : ℤ) (hr : r₀ ≤ r := by lia) :
     (E.pagePresentation pq r hr).mapInduced (E'.pagePresentation pq r hr) ((f.hom r₀).f pq)
-        (f.exists_cyclesSubobject_le pq r hr) (f.exists_boundariesSubobject_le pq r hr) =
+        (by rw [pagePresentation_Z]; exact f.exists_cyclesSubobject_le pq r hr)
+        (by rw [pagePresentation_B]; exact f.exists_boundariesSubobject_le pq r hr) =
       (f.hom r hr).f pq :=
   (pagePresentation_mapsTo pq f r hr).mapInduced_eq _ _
 
@@ -606,15 +607,11 @@ lemma pagePresentation_eq_mapIso_pageXIsoOfStabilises (s : ℤ) (hs : r₀ ≤ s
   induction r, hsr using Int.leInduction with
   | base => rw [pageXIsoOfStabilises_self, SubquotientPresentation.mapIso_refl]
   | succ t hst ih =>
-    have hiso : (((E.page t (hs.trans hst)).sc pq).cyclesIsoX₂ (h.dFrom_eq_zero hst)).symm ≪≫
-        ((E.page t (hs.trans hst)).sc pq).asIsoHomologyπ (h.dTo_eq_zero hst) =
-        (E.page t (hs.trans hst)).XIsoHomologyOfDEqZero pq
-          (h.dTo_eq_zero hst) (h.dFrom_eq_zero hst) :=
-      Iso.ext (by simp [HomologicalComplex.XIsoHomologyOfDEqZero_hom]; rfl)
     rw [pagePresentation_add_one E pq t (hs.trans hst), ih,
       pageXIsoOfStabilises_add_one E pq s hs h t hst,
       ShortComplex.homologyPresentation_eq_refl_mapIso _ (h.dTo_eq_zero hst) (h.dFrom_eq_zero hst),
-      hiso, SubquotientPresentation.trans_mapIso]
+      ← HomologicalComplex.XIsoHomologyOfDEqZero_eq_shortComplex,
+      SubquotientPresentation.trans_mapIso]
     have htr : ((E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h t hst)).trans
         (SubquotientPresentation.refl (((E.page t (hs.trans hst)).sc pq).X₂)) =
       (E.pagePresentation pq s hs).mapIso (E.pageXIsoOfStabilises pq s hs h t hst) :=
