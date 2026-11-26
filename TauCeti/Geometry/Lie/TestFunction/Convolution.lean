@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Lie.TestFunction.Basic
 public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Geometry.Lie.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral
+import TauCeti.Geometry.Manifold.ContMDiff.ParametricIntegral.Weighted
 import TauCeti.MeasureTheory.Group.Convolution.Norm
 import TauCeti.MeasureTheory.Group.Convolution.Support
 import Mathlib.MeasureTheory.Integral.Prod
@@ -114,7 +114,7 @@ private def convolutionAux (a b : LieTestFunction I G) : LieTestFunction I G :=
   have := topologicalGroup_of_lieGroup I ∞ (G := G)
   { toFun g := ∫ x, a x * b (x⁻¹ * g) ∂μ
     contMDiff' := by
-      simpa using (ContinuousLinearMap.mul ℝ ℂ).contMDiff_integral_inv_mul (ν := μ) a.contMDiff
+      simpa using (ContinuousLinearMap.mul ℝ ℂ).contMDiff_integral_inv_mul (ν := μ) a.continuous
         a.hasCompactSupport a.hasCompactSupport.isCompact.measure_lt_top.ne b.contMDiff
     hasCompactSupport' := hasCompactSupport_integral_of_inv_mul_mem μ a.hasCompactSupport
       b.hasCompactSupport fun _ _ ↦ mem_tsupport_of_mul_ne_zero a b }
