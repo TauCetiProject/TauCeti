@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.TargetCut
 public import TauCeti.LinearAlgebra.AffineSpace.MarkingStabilizer
 public import Mathlib.Geometry.Manifold.ContMDiff.Defs
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
+import TauCeti.Analysis.Calculus.FDeriv.CountableLevels
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Topology.Algebra.Module.FiniteDimension
