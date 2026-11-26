@@ -156,29 +156,23 @@ theorem W1p.posPart_add_mem_w1p0Submodule (hp : p ≠ ∞) (hb : Bornology.IsBou
     (hg : ContinuousOn g (closure (Omega : Set E)))
     (hg0 : ∀ x ∈ frontier (Omega : Set E), g x ≤ 0) (hG : W1p.value G =ᵐ[mu.restrict Omega] g) :
     W1p.posPart hp (ψ + G) ∈ w1p0Submodule mu Omega p := by
-  -- Approximate `ψ` by test functions `φ`: each `(φ + G)⁺` differs from `G⁺` only on the compact
-  -- support of `φ`, and `G⁺` vanishes continuously on the boundary.
+  -- Squeeze: `0 ≤ (ψ + G)⁺ ≤ ψ⁺ + G⁺`, and `G⁺` vanishes continuously on the boundary.
   have hGp : W1p.posPart hp G ∈ w1p0Submodule mu Omega p := by
     refine W1p.mem_w1p0Submodule_of_continuousOn_closure hp hb (g := fun x => max (g x) 0)
       (ContinuousOn.sup hg continuousOn_const) (fun x hx => max_eq_right (hg0 x hx)) ?_
     filter_upwards [Lp.coeFn_posPart (W1p.value G), hG] with x h1 h2
     rw [W1p.value_posPart, h1, h2]
-  obtain ⟨φ, hφ⟩ := mem_w1p0Submodule_iff_exists_seq_tendsto.1 hψ
-  have hlim : Tendsto (fun k => W1p.posPart hp (W1p.ofTestFunctionₗ mu Omega p (φ k) + G)) atTop
-      (𝓝 (W1p.posPart hp (ψ + G))) :=
-    ((W1p.continuous_posPart hp).tendsto _).comp (hφ.add_const G)
-  refine (w1p0Submodule mu Omega p).isClosed.mem_of_tendsto hlim
-    (Eventually.of_forall fun k => ?_)
-  -- Off the support of `φ k`, the positive part of `φ k + G` is that of `G`.
-  have hdiff : W1p.posPart hp (W1p.ofTestFunctionₗ mu Omega p (φ k) + G) - W1p.posPart hp G ∈
-      w1p0Submodule mu Omega p := by
-    refine W1p.mem_w1p0Submodule_of_isCompact hp (φ k).hasCompactSupport (φ k).tsupport_subset ?_
-    filter_upwards [W1p.value_sub_ae (W1p.posPart hp (W1p.ofTestFunctionₗ mu Omega p (φ k) + G))
-        (W1p.posPart hp G), Lp.coeFn_posPart (W1p.value (W1p.ofTestFunctionₗ mu Omega p (φ k) + G)),
-      Lp.coeFn_posPart (W1p.value G), W1p.value_add_ae (W1p.ofTestFunctionₗ mu Omega p (φ k)) G,
-      W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) (φ k)] with x h1 h2 h3 h4 h5 hx
-    rw [h1, Pi.sub_apply, W1p.value_posPart, W1p.value_posPart, h2, h3, h4, Pi.add_apply, h5,
-      image_eq_zero_of_notMem_tsupport hx, zero_add, sub_self]
-  simpa using add_mem hdiff hGp
+  refine W1p.mem_w1p0Submodule_of_nonneg_of_le hp
+    (add_mem (W1p.posPart_mem_w1p0Submodule hp hψ) hGp) ?_ ?_
+  · filter_upwards [Lp.coeFn_posPart (W1p.value (ψ + G))] with x h
+    rw [W1p.value_posPart, h]
+    exact le_max_right _ _
+  · filter_upwards [Lp.coeFn_posPart (W1p.value (ψ + G)), Lp.coeFn_posPart (W1p.value ψ),
+      Lp.coeFn_posPart (W1p.value G), W1p.value_add_ae ψ G,
+      W1p.value_add_ae (W1p.posPart hp ψ) (W1p.posPart hp G)] with x h1 h2 h3 h4 h5
+    rw [W1p.value_posPart, h1, h4, h5, Pi.add_apply, W1p.value_posPart, W1p.value_posPart,
+      Pi.add_apply, h2, h3]
+    exact max_le (add_le_add (le_max_left _ _) (le_max_left _ _))
+      (add_nonneg (le_max_right _ _) (le_max_right _ _))
 
 end TauCeti
