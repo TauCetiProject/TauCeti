@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.RadialTwist
 public import TauCeti.Topology.Circle.Degree
 public import TauCeti.Topology.Homotopy.AddCircle
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # The `π₁`-sensitive capacity of a planar annulus is infinite
@@ -67,39 +68,11 @@ namespace TauCeti
 
 /-! ### Periodic orbits of radial Hamiltonians wind around the centre -/
 
-/-- The degree step: if a closed curve in `ℂ ∖ 0`, whose loop of directions turns uniformly
-through the angle `a` from `θ₀`, is homotopic through closed curves avoiding `0` to a curve of
-constant direction `θ₀`, then `a = 0`. -/
-private theorem eq_zero_of_homotopy_div_norm {θ₀ a : ℝ} (ha : Circle.exp a = 1)
-    (F : C(I × I, ℂ)) (hne : ∀ st, F st ≠ 0)
-    (h₀ : ∀ s : I, (Circle.exp (θ₀ + a * s) : ℂ) = F (0, s) / ‖F (0, s)‖)
-    (h₁ : ∀ s : I, (Circle.exp θ₀ : ℂ) = F (1, s) / ‖F (1, s)‖)
-    (hF : ∀ s, F (s, 0) = F (s, 1)) : a = 0 := by
-  let γ₀ : Path (Circle.exp θ₀) (Circle.exp θ₀) :=
-    { toFun := fun s ↦ Circle.exp (θ₀ + a * s)
-      continuous_toFun := by fun_prop
-      source' := by simp
-      target' := by rw [Set.Icc.coe_one, mul_one, Circle.exp_add, ha, mul_one] }
-  have hdeg : Circle.degree γ₀ = 0 :=
-    (Circle.degree_eq_of_homotopy_div_norm γ₀ (Path.refl (Circle.exp θ₀)) F hne h₀ h₁ hF).trans
-      (Circle.degree_refl _)
-  have hθ := Circle.sub_eq_degree_mul γ₀ (θ := fun s : I ↦ θ₀ + a * s) (by fun_prop) fun _ ↦ rfl
-  rw [hdeg] at hθ
-  simp only [Set.Icc.coe_one, Set.Icc.coe_zero, mul_one, mul_zero, add_zero, Int.cast_zero,
-    zero_mul] at hθ
-  linarith
-
 /-- **Nonconstant periodic orbits of a radial Hamiltonian wind around the centre.** Let `γ` be a
 `T`-periodic solution, `T > 0`, of Hamilton's equations of the radial Hamiltonian
 `-G(‖w - p‖²) / 2` (`TauCeti.radialHamiltonian`) on the complex line, whose vector field is
 globally Lipschitz. If the loop `ℝ / Tℤ → W` that `γ` traces is null-homotopic in a set `W` not
-containing `p`, then `γ` is constant.
-
-Indeed `γ` turns `γ 0` about `p` at the constant angular speed `c = G'(‖γ 0 - p‖²)`
-(`TauCeti.hamiltonianFlow_radialHamiltonian`), so seen from `p` its loop of directions has the
-angle function `arg (γ 0 - p) + c T s` on the unit interval, while a null-homotopy in `W` makes it
-homotopic, through closed curves avoiding `p`, to a constant loop. The degrees agree, so
-`c T = 0`. -/
+containing `p`, then `γ` is constant. -/
 theorem eq_of_periodic_of_nullhomotopic_radialHamiltonian {G : ℝ → ℝ} {p : ℂ} {K : NNReal}
     (hX : LipschitzWith K
       (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p)))
@@ -129,9 +102,6 @@ theorem eq_of_periodic_of_nullhomotopic_radialHamiltonian {G : ℝ → ℝ} {p :
   -- Seen from `p`: the homotopy avoids `0`, and the orbit returns to `γ 0` at time `T`.
   have hne (y : W) : (y : ℂ) - p ≠ 0 := sub_ne_zero.2 fun h ↦ hW (h ▸ y.property)
   have hw : γ 0 - p ≠ 0 := hne (δ 0)
-  have hx : Complex.exp (Complex.arg (γ 0 - p) * Complex.I) = (γ 0 - p) / ‖γ 0 - p‖ := by
-    rw [eq_div_iff (by exact_mod_cast norm_ne_zero_iff.2 hw), mul_comm]
-    exact norm_mul_exp_arg_mul_I _
   have hclose : Circle.exp (c * T) = 1 := by
     have h : Complex.exp (Complex.I * ↑(T * c)) * (γ 0 - p) = 1 * (γ 0 - p) := by
       rw [one_mul, eq_sub_iff_add_eq', ← hrot T, ← zero_add T, hper 0]
@@ -143,19 +113,19 @@ theorem eq_of_periodic_of_nullhomotopic_radialHamiltonian {G : ℝ → ℝ} {p :
   exfalso
   let F : C(I × I, ℂ) := ⟨fun st ↦ (H st : ℂ) - p,
     (continuous_subtypeVal.comp H.continuous).sub continuous_const⟩
-  refine hc (mul_eq_zero.1 (eq_zero_of_homotopy_div_norm (θ₀ := Complex.arg (γ 0 - p)) hclose F
-    (fun st ↦ hne (H st)) (fun s ↦ ?_) (fun s ↦ ?_) (fun s ↦ ?_)) |>.resolve_right hT.ne')
+  refine hc (mul_eq_zero.1 (Circle.eq_zero_of_homotopy_div_norm_exp (θ₀ := arg (γ 0 - p)) hclose
+    F (fun st ↦ hne (H st)) (fun s ↦ ?_) (fun s ↦ ?_) (fun s ↦ ?_)) |>.resolve_right hT.ne')
   · simp only [F, ContinuousMap.coe_mk, H.apply_zero, Path.coe_toContinuousMap,
       Periodic.loop_apply, δ]
-    rw [hrot (0 + s * T), add_sub_cancel_left, norm_mul, norm_exp_I_mul_ofReal, one_mul,
-      mul_div_assoc, ← hx,
-      Circle.coe_exp, ← Complex.exp_add]
+    rw [hrot (0 + s * T)]
+    simp only [add_sub_cancel_left, norm_mul, norm_exp_I_mul_ofReal, one_mul, mul_div_assoc,
+      ← exp_arg_mul_I hw, Circle.coe_exp, ← Complex.exp_add]
     congr 1
     push_cast
     ring
   · simp only [F, ContinuousMap.coe_mk, H.apply_one, Path.coe_toContinuousMap, Path.refl_apply]
     rw [Circle.coe_exp]
-    exact hx
+    exact exp_arg_mul_I hw
   · simp only [F, ContinuousMap.coe_mk, H.source, H.target]
 
 /-! ### Radial bumps and the capacity of the annulus -/
@@ -163,7 +133,7 @@ theorem eq_of_periodic_of_nullhomotopic_radialHamiltonian {G : ℝ → ℝ} {p :
 /-- The point `p + √s` lies at squared distance `s` from `p`. -/
 private theorem norm_add_sqrt_sub_sq (p : ℂ) {s : ℝ} (hs : 0 ≤ s) :
     ‖p + (√s : ℂ) - p‖ ^ 2 = s := by
-  rw [add_sub_cancel_left, Complex.norm_real, Real.norm_eq_abs, sq_abs, Real.sq_sqrt hs]
+  simp [Real.sq_sqrt hs]
 
 variable {a b c : ℝ} (φ : ContDiffBump c)
 
@@ -244,8 +214,7 @@ private theorem iSup_radialHamiltonian_bump (hc : 0 ≤ c) (p : ℂ) {N : ℝ} (
 /-- **A set containing an annulus has infinite `π₁`-sensitive capacity away from its centre.**
 On the complex line with its standard area form, if `U` contains the annulus
 `a < ‖w - p‖² < b`, with `0 < b`, and contractibility is tested in a set `W` not containing `p`,
-then `c°_HZ(U; W) = ∞`: radial bumps of every height are admissible, since none of their
-nonconstant periodic orbits is contractible in `W`. -/
+then `c°_HZ(U; W) = ∞`. -/
 theorem contractibleHZCapacity_eq_top_of_annulus_subset {p : ℂ} (hab : a < b) (hb : 0 < b)
     {W U : Set ℂ} (hW : p ∉ W) (hU : (fun w ↦ ‖w - p‖ ^ 2) ⁻¹' Ioo a b ⊆ U) :
     stdComplexSymplecticForm.constSmooth.contractibleHZCapacity W U = ⊤ := by
