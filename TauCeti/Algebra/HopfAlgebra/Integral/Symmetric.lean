@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Algebra.Frobenius.Symmetric
+public import TauCeti.Algebra.HopfAlgebra.Antipode
 public import TauCeti.Algebra.HopfAlgebra.Integral.Modular
 
 /-!
@@ -27,18 +28,6 @@ public section
 open Coalgebra HopfAlgebra
 
 namespace TauCeti.HopfAlgebra
-
-/-- The square of the antipode is inner if it is conjugation by a unit. -/
-def AntipodeSquareIsInner (k H : Type*) [CommSemiring k] [Semiring H]
-    [HopfAlgebraStruct k H] : Prop :=
-  ∃ u : Hˣ, ∀ x : H, antipode k (antipode k x) = (u : H) * x * ↑u⁻¹
-
-/-- The unit witnessing that the square of the antipode is inner. -/
-theorem antipodeSquareIsInner_iff (k H : Type*) [CommSemiring k] [Semiring H]
-    [HopfAlgebraStruct k H] :
-    AntipodeSquareIsInner k H ↔
-      ∃ u : Hˣ, ∀ x : H, antipode k (antipode k x) = (u : H) * x * ↑u⁻¹ :=
-  Iff.rfl
 
 variable {k H : Type*} [Field k] [Ring H] [HopfAlgebra k H] [FiniteDimensional k H]
 
