@@ -170,12 +170,6 @@ private def planarCoordEquiv {U : Opens ℂ} (z : U) : TangentSpace 𝓘(ℝ, �
   (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, ℂ)) z).trans
     (NormedSpace.fromTangentSpace (z : ℂ))
 
-private theorem planarCoordEquiv_symm_apply {U : Opens ℂ} (z : U) (a : ℂ) :
-    (planarCoordEquiv z).symm a =
-      (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, ℂ)) z).symm
-        ((NormedSpace.fromTangentSpace (z : ℂ)).symm a) :=
-  ContinuousLinearEquiv.symm_trans_apply _ _ a
-
 end Helpers
 
 /-! ### Differential decompositions on an open subset `U ⊆ ℂ` -/
@@ -265,7 +259,7 @@ private theorem planarTwoFormCoeff_eq_apply_symm {U : Opens ℂ} {F : Type*}
     [NormedAddCommGroup F] [NormedSpace ℝ F] (η : RoughForm 𝓘(ℝ, ℂ) U F 2) (z : U) :
     planarTwoFormCoeff η z =
       η z ![(planarCoordEquiv z).symm 1, (planarCoordEquiv z).symm Complex.I] := by
-  simp [planarTwoFormCoeff_apply, planarCoordEquiv_symm_apply]
+  simp [planarTwoFormCoeff_apply, planarCoordEquiv, ContinuousLinearEquiv.symm_trans_apply]
 
 private theorem planarTwoFormCoeff_wedgeWith_ofFunction_mpullback {U : Opens ℂ}
     {F₁ F₂ F₃ : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
@@ -511,14 +505,8 @@ theorem planarTwoFormCoeff_mextDeriv_wedgeWith_complexDz {U : Opens ℂ} {W : Ty
   simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.lsmul_apply,
     SmoothForm.complexDz_apply, Matrix.cons_val_zero, ContinuousLinearEquiv.apply_symm_apply,
     conjWirtingerDeriv_apply, smul_eq_mul, mul_one, smul_add, smul_smul]
-  have hI : (2 * Complex.I) * (2⁻¹ : ℂ) = Complex.I := by
-    calc (2 * Complex.I) * (2⁻¹ : ℂ) = (2 * (2⁻¹ : ℂ)) * Complex.I := by ring
-      _ = Complex.I := by norm_num
-  have hII : (2 * Complex.I) * ((2⁻¹ : ℂ) * Complex.I) = -1 := by
-    calc (2 * Complex.I) * ((2⁻¹ : ℂ) * Complex.I)
-        = (2 * (2⁻¹ : ℂ)) * (Complex.I * Complex.I) := by ring
-      _ = -1 := by norm_num [Complex.I_mul_I]
-  rw [hI, hII]
+  rw [show (2 * Complex.I) * (2⁻¹ : ℂ) = Complex.I by ring_nf,
+    show (2 * Complex.I) * ((2⁻¹ : ℂ) * Complex.I) = -1 by ring_nf; simp [Complex.I_sq]]
   module
 
 /-- For a differentiable function `f : U → W` into a complex normed space `W` with ambient
@@ -540,14 +528,48 @@ theorem planarTwoFormCoeff_mextDeriv_wedgeWith_complexDzBar {U : Opens ℂ} {W :
     SmoothForm.complexDzBar_apply, Matrix.cons_val_zero, ContinuousLinearEquiv.apply_symm_apply,
     conj_I, (starRingEnd ℂ).map_one, wirtingerDeriv_apply, smul_eq_mul, mul_one, smul_sub,
     smul_smul]
-  have hI : (-2 * Complex.I) * (2⁻¹ : ℂ) = -Complex.I := by
-    calc (-2 * Complex.I) * (2⁻¹ : ℂ) = -(2 * (2⁻¹ : ℂ)) * Complex.I := by ring
-      _ = -Complex.I := by norm_num
-  have hII : (-2 * Complex.I) * ((2⁻¹ : ℂ) * Complex.I) = 1 := by
-    calc (-2 * Complex.I) * ((2⁻¹ : ℂ) * Complex.I)
-        = -(2 * (2⁻¹ : ℂ)) * (Complex.I * Complex.I) := by ring
-      _ = 1 := by norm_num [Complex.I_mul_I]
-  rw [hI, hII]
+  rw [show (-2 * Complex.I) * (2⁻¹ : ℂ) = -Complex.I by ring_nf,
+    show (-2 * Complex.I) * ((2⁻¹ : ℂ) * Complex.I) = 1 by ring_nf; simp [Complex.I_sq]]
+
+private theorem differentiableWithinAt_inChartAt_wedgeWith_ofFunction_mpullback {U : Opens ℂ}
+    {F G H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [NormedAddCommGroup H] [NormedSpace ℝ H]
+    (B : F →L[ℝ] G →L[ℝ] H) {f : U → F} {z : U}
+    (hf : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, F) f z) (α : SmoothForm 𝓘(ℝ, ℂ) ℂ G 1) :
+    DifferentiableWithinAt ℝ
+      ((RoughForm.wedgeWith B (RoughForm.ofFunction 𝓘(ℝ, ℂ) f)
+        (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) α.val)).inChartAt z)
+      (range 𝓘(ℝ, ℂ)) (extChartAt 𝓘(ℝ, ℂ) z z) := by
+  rw [← SmoothForm.coe_mpullback (Subtype.val : U → ℂ) contMDiff_subtypeVal α]
+  exact RoughForm.differentiableWithinAt_inChartAt_wedgeWith B
+    (RoughForm.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt _
+      (mdifferentiableAt_ofFunction hf))
+    (RoughForm.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt _
+      ((SmoothForm.mpullback (Subtype.val : U → ℂ) contMDiff_subtypeVal α).mdifferentiableAt z))
+
+private theorem mextDeriv_add_wedgeWith_ofFunction_mpullback {U : Opens ℂ}
+    {F₁ F₂ F₃ F₄ H : Type*} [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+    [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+    [NormedAddCommGroup F₄] [NormedSpace ℝ F₄] [NormedAddCommGroup H] [NormedSpace ℝ H]
+    (B₁ : F₁ →L[ℝ] F₂ →L[ℝ] H) (B₂ : F₃ →L[ℝ] F₄ →L[ℝ] H)
+    {f₁ : U → F₁} {f₂ : U → F₃} {z : U}
+    (hf₁ : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, F₁) f₁ z)
+    (hf₂ : MDifferentiableAt 𝓘(ℝ, ℂ) 𝓘(ℝ, F₃) f₂ z)
+    (α₁ : SmoothForm 𝓘(ℝ, ℂ) ℂ F₂ 1) (α₂ : SmoothForm 𝓘(ℝ, ℂ) ℂ F₄ 1) :
+    mextDeriv
+      (RoughForm.wedgeWith B₁ (RoughForm.ofFunction 𝓘(ℝ, ℂ) f₁)
+          (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) α₁.val) +
+        RoughForm.wedgeWith B₂ (RoughForm.ofFunction 𝓘(ℝ, ℂ) f₂)
+          (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) α₂.val)) z =
+      mextDeriv
+        (RoughForm.wedgeWith B₁ (RoughForm.ofFunction 𝓘(ℝ, ℂ) f₁)
+          (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) α₁.val)) z +
+      mextDeriv
+        (RoughForm.wedgeWith B₂ (RoughForm.ofFunction 𝓘(ℝ, ℂ) f₂)
+          (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ) α₂.val)) z :=
+  mextDeriv_add
+    (differentiableWithinAt_inChartAt_wedgeWith_ofFunction_mpullback B₁ hf₁ α₁)
+    (differentiableWithinAt_inChartAt_wedgeWith_ofFunction_mpullback B₂ hf₂ α₂)
 
 /-- For differentiable functions `a, b : U → F` into a real normed space `F` with ambient
 representatives `a', b' : ℂ → F`, the `dx ∧ dy` coefficient of `d(a dx + b dy)` at `z` is
@@ -568,32 +590,10 @@ theorem planarTwoFormCoeff_mextDeriv_wedgeWith_complexDx_add_complexDy {U : Open
             (mpullback 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : U → ℂ)
               SmoothForm.complexDy.val))) z =
       fderiv ℝ b' z 1 - fderiv ℝ a' z Complex.I := by
-  have hdx := (SmoothForm.mpullback (Subtype.val : U → ℂ) contMDiff_subtypeVal
-    SmoothForm.complexDx).mdifferentiableAt z
-  have hdy := (SmoothForm.mpullback (Subtype.val : U → ℂ) contMDiff_subtypeVal
-    SmoothForm.complexDy).mdifferentiableAt z
-  have ha' := RoughForm.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt
-    (RoughForm.ofFunction 𝓘(ℝ, ℂ) a) (mdifferentiableAt_ofFunction ha)
-  have hb' := RoughForm.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt
-    (RoughForm.ofFunction 𝓘(ℝ, ℂ) b) (mdifferentiableAt_ofFunction hb)
-  rw [← SmoothForm.coe_mpullback (Subtype.val : U → ℂ) contMDiff_subtypeVal SmoothForm.complexDx,
-    ← SmoothForm.coe_mpullback (Subtype.val : U → ℂ) contMDiff_subtypeVal SmoothForm.complexDy]
-  set α₁ := RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℝ).flip
-    (RoughForm.ofFunction 𝓘(ℝ, ℂ) a)
-    (SmoothForm.mpullback (Subtype.val : U → ℂ) contMDiff_subtypeVal SmoothForm.complexDx).val
-  set α₂ := RoughForm.wedgeWith (ContinuousLinearMap.lsmul ℝ ℝ).flip
-    (RoughForm.ofFunction 𝓘(ℝ, ℂ) b)
-    (SmoothForm.mpullback (Subtype.val : U → ℂ) contMDiff_subtypeVal SmoothForm.complexDy).val
-  have hsum : mextDeriv (α₁ + α₂) z = mextDeriv α₁ z + mextDeriv α₂ z :=
-    mextDeriv_add
-      (RoughForm.differentiableWithinAt_inChartAt_wedgeWith _ ha'
-        (RoughForm.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt _ hdx))
-      (RoughForm.differentiableWithinAt_inChartAt_wedgeWith _ hb'
-        (RoughForm.differentiableWithinAt_range_inChartAt_of_mdifferentiableAt _ hdy))
-  rw [planarTwoFormCoeff_apply, hsum, ContinuousAlternatingMap.add_apply,
-    ← planarTwoFormCoeff_apply, ← planarTwoFormCoeff_apply]
-  dsimp only [α₁, α₂]
-  rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
+  rw [planarTwoFormCoeff_apply,
+    mextDeriv_add_wedgeWith_ofFunction_mpullback _ _ ha hb SmoothForm.complexDx
+      SmoothForm.complexDy,
+    ContinuousAlternatingMap.add_apply, ← planarTwoFormCoeff_apply, ← planarTwoFormCoeff_apply,
     planarTwoFormCoeff_mextDeriv_wedgeWith_of_isClosed _ ha_eq ha
       ((SmoothForm.isClosed_def _).2 SmoothForm.mextDeriv_complexDx),
     planarTwoFormCoeff_mextDeriv_wedgeWith_of_isClosed _ hb_eq hb
