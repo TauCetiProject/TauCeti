@@ -46,9 +46,10 @@ inserted, then `|λ'|² - |ρ_{n'}|² = |λ|² - |ρ_n|² - n n' (n' - n) / 4`
 * A. Paul, *First occurrence for the dual pairs `(U(p, q), U(r, s))`*, Canad. J. Math. 51
   (1999), 636--657, Theorem 2.11.
 * The normal ordering argument is adapted from `New.FockDualPair.centredCasimir_oscRows`,
-  `New.FockDualPair.centredCasimir_swap_oscRows_eq_add`, `New.sum_mul_eq_normal_order` and
-  `New.IsMatch.centred_casimirValue_eq` in `src/Lib/DiscreteSeries/Theta/CasimirComparison.lean`
-  of grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
+  `New.FockDualPair.centredCasimir_swap_oscRows_eq_add` and `New.sum_mul_eq_normal_order` in
+  `src/Lib/DiscreteSeries/Theta/CasimirComparison.lean` of grh-lean
+  (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). The
+  parameter identity `TauCeti.sum_sq_sub_eq_of_equiv_sum` is credited in its own file.
 -/
 
 public section
@@ -113,63 +114,6 @@ end NormalOrder
 variable {K : Type*} [Field K] {I I' : Type*} [Fintype I] [DecidableEq I] [Fintype I']
   [DecidableEq I'] {ε : I → Bool} {ε' : I' → Bool}
 
-variable (K ε ε')
-
-/-- The operator `D₄ = ∑ R a c R b c' L b c L a c'` on the Fock module. -/
-private noncomputable def fockQuartic : Module.End K (MvPolynomial (I × I') K) :=
-  ∑ a : I, ∑ b : I, ∑ c : I', ∑ c' : I',
-    oscRaise K (IsEvenPair ε ε') (a, c) * oscRaise K (IsEvenPair ε ε') (b, c') *
-      oscLower K (IsEvenPair ε ε') (b, c) * oscLower K (IsEvenPair ε ε') (a, c')
-
-/-- The operator `D₂ = ∑ R a c L a c` on the Fock module. -/
-private noncomputable def fockQuadratic : Module.End K (MvPolynomial (I × I') K) :=
-  ∑ a : I, ∑ c : I', oscRaise K (IsEvenPair ε ε') (a, c) * oscLower K (IsEvenPair ε ε') (a, c)
-
-variable {K ε ε'}
-
-private theorem lift_fockRowHom_glCasimir_eq [NeZero (2 : K)] :
-    UniversalEnvelopingAlgebra.lift K (fockRowHom K ε ε') (glCasimir K I) =
-      fockQuartic K ε ε' + (card I + card I' : K) • fockQuadratic K ε ε' +
-        (card I * card I' ^ 2 / 4 : K) • 1 := by
-  rw [lift_glCasimir]
-  simp only [fockRowHom_single]
-  rw [sum_mul_eq_normal_order (fun a c ↦ oscRaise K (IsEvenPair ε ε') (a, c))
-    (fun b c ↦ oscLower K (IsEvenPair ε ε') (b, c)) _
-    fun r c c' ↦ by simp [oscLower_mul_oscRaise]]
-  rw [fockQuartic, fockQuadratic, mul_div_cancel₀ _ two_ne_zero]
-  congr 2
-  rw [div_pow]
-  norm_num
-  ring
-
-private theorem lift_fockColHom_glCasimir_eq [NeZero (2 : K)] :
-    UniversalEnvelopingAlgebra.lift K (fockColHom K ε ε') (glCasimir K I') =
-      fockQuartic K ε ε' + (card I + card I' : K) • fockQuadratic K ε ε' +
-        (card I ^ 2 * card I' / 4 : K) • 1 := by
-  rw [lift_glCasimir]
-  simp only [fockColHom_single]
-  rw [sum_mul_eq_normal_order (fun c a ↦ oscRaise K (IsEvenPair ε ε') (a, c))
-    (fun d a ↦ oscLower K (IsEvenPair ε ε') (a, d)) _
-    fun r c c' ↦ by simp [oscLower_mul_oscRaise]]
-  -- The quartic terms agree after reordering the sums and exchanging the commuting `L`s.
-  have h_quartic : ∑ c : I', ∑ d : I', ∑ a : I, ∑ b : I,
-      oscRaise K (IsEvenPair ε ε') (a, c) * oscRaise K (IsEvenPair ε ε') (b, d) *
-        oscLower K (IsEvenPair ε ε') (a, d) * oscLower K (IsEvenPair ε ε') (b, c) =
-      fockQuartic K ε ε' := by
-    have h := sum_comm (s := (univ : Finset (I' × I'))) (t := (univ : Finset (I × I)))
-      (f := fun x y ↦ oscRaise K (IsEvenPair ε ε') (y.1, x.1) *
-        oscRaise K (IsEvenPair ε ε') (y.2, x.2) * oscLower K (IsEvenPair ε ε') (y.1, x.2) *
-          oscLower K (IsEvenPair ε ε') (y.2, x.1))
-    simp only [Fintype.sum_prod_type] at h
-    rw [h, fockQuartic]
-    simp only [mul_assoc, (commute_oscLower (_, _) (_, _)).eq]
-  rw [h_quartic, fockQuadratic, sum_comm (s := univ (α := I')), mul_div_cancel₀ _ two_ne_zero]
-  congr 2
-  · rw [add_comm (card I' : K)]
-  · rw [div_pow]
-    norm_num
-    ring
-
 /-- **The Casimir operator of `gl I` on the Fock module**, in normal order: with `n` rows and `n'`
 columns it is `D₄ + (n + n') D₂ + n n'² / 4`, where `D₄ = ∑ R a c R b c' L b c L a c'` and
 `D₂ = ∑ R a c L a c`. -/
@@ -180,8 +124,52 @@ theorem lift_fockRowHom_glCasimir [NeZero (2 : K)] :
           oscLower K (IsEvenPair ε ε') (b, c) * oscLower K (IsEvenPair ε ε') (a, c')) +
         (card I + card I' : K) • (∑ a : I, ∑ c : I',
           oscRaise K (IsEvenPair ε ε') (a, c) * oscLower K (IsEvenPair ε ε') (a, c)) +
-        (card I * card I' ^ 2 / 4 : K) • 1 :=
-  lift_fockRowHom_glCasimir_eq
+        (card I * card I' ^ 2 / 4 : K) • 1 := by
+  rw [lift_glCasimir]
+  simp only [fockRowHom_single]
+  rw [sum_mul_eq_normal_order (fun a c ↦ oscRaise K (IsEvenPair ε ε') (a, c))
+    (fun b c ↦ oscLower K (IsEvenPair ε ε') (b, c)) _
+    fun r c c' ↦ by simp [oscLower_mul_oscRaise], mul_div_cancel₀ _ two_ne_zero]
+  congr 2
+  rw [div_pow]
+  norm_num
+  ring
+
+/-- The Casimir operator of `gl I'` on the Fock module, in the normal order of
+`TauCeti.lift_fockRowHom_glCasimir`: `D₄ + (n + n') D₂ + n² n' / 4`. -/
+private theorem lift_fockColHom_glCasimir_eq [NeZero (2 : K)] :
+    UniversalEnvelopingAlgebra.lift K (fockColHom K ε ε') (glCasimir K I') =
+      (∑ a : I, ∑ b : I, ∑ c : I', ∑ c' : I',
+        oscRaise K (IsEvenPair ε ε') (a, c) * oscRaise K (IsEvenPair ε ε') (b, c') *
+          oscLower K (IsEvenPair ε ε') (b, c) * oscLower K (IsEvenPair ε ε') (a, c')) +
+        (card I + card I' : K) • (∑ a : I, ∑ c : I',
+          oscRaise K (IsEvenPair ε ε') (a, c) * oscLower K (IsEvenPair ε ε') (a, c)) +
+        (card I ^ 2 * card I' / 4 : K) • 1 := by
+  rw [lift_glCasimir]
+  simp only [fockColHom_single]
+  rw [sum_mul_eq_normal_order (fun c a ↦ oscRaise K (IsEvenPair ε ε') (a, c))
+    (fun d a ↦ oscLower K (IsEvenPair ε ε') (a, d)) _
+    fun r c c' ↦ by simp [oscLower_mul_oscRaise]]
+  -- The quartic terms agree after reordering the sums and exchanging the commuting `L`s.
+  have h_quartic : ∑ c : I', ∑ d : I', ∑ a : I, ∑ b : I,
+      oscRaise K (IsEvenPair ε ε') (a, c) * oscRaise K (IsEvenPair ε ε') (b, d) *
+        oscLower K (IsEvenPair ε ε') (a, d) * oscLower K (IsEvenPair ε ε') (b, c) =
+      ∑ a : I, ∑ b : I, ∑ c : I', ∑ c' : I',
+        oscRaise K (IsEvenPair ε ε') (a, c) * oscRaise K (IsEvenPair ε ε') (b, c') *
+          oscLower K (IsEvenPair ε ε') (b, c) * oscLower K (IsEvenPair ε ε') (a, c') := by
+    have h := sum_comm (s := (univ : Finset (I' × I'))) (t := (univ : Finset (I × I)))
+      (f := fun x y ↦ oscRaise K (IsEvenPair ε ε') (y.1, x.1) *
+        oscRaise K (IsEvenPair ε ε') (y.2, x.2) * oscLower K (IsEvenPair ε ε') (y.1, x.2) *
+          oscLower K (IsEvenPair ε ε') (y.2, x.1))
+    simp only [Fintype.sum_prod_type] at h
+    rw [h]
+    simp only [mul_assoc, (commute_oscLower (_, _) (_, _)).eq]
+  rw [h_quartic, sum_comm (s := univ (α := I')), mul_div_cancel₀ _ two_ne_zero]
+  congr 2
+  · rw [add_comm (card I' : K)]
+  · rw [div_pow]
+    norm_num
+    ring
 
 /-- **The comparison of the Casimir operators on the Fock module.** With `n` rows and `n'`
 columns, the Casimir operator of `gl I'` is that of `gl I` plus the scalar `n n' (n - n') / 4`. -/
@@ -189,7 +177,7 @@ theorem lift_fockColHom_glCasimir [NeZero (2 : K)] :
     UniversalEnvelopingAlgebra.lift K (fockColHom K ε ε') (glCasimir K I') =
       UniversalEnvelopingAlgebra.lift K (fockRowHom K ε ε') (glCasimir K I) +
         (card I * card I' * (card I - card I') / 4 : K) • 1 := by
-  rw [lift_fockColHom_glCasimir_eq, lift_fockRowHom_glCasimir_eq]
+  rw [lift_fockColHom_glCasimir_eq, lift_fockRowHom_glCasimir]
   module
 
 /-- On a nonzero vector of the Fock module on which the Casimir operators of `gl I` and `gl I'`

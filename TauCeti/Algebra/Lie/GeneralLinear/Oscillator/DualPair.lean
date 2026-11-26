@@ -83,9 +83,12 @@ degree from below (`TauCeti.sum_abs_le_of_fockRowHom_single_self`).
 * M. Kashiwara and M. Vergne, *On the Segal–Shale–Weil representations and harmonic
   polynomials*, Invent. Math. 44 (1978), 1--47.
 * The oscillator actions are adapted from `New.FockDualPair.oscRows` and
-  `New.FockDualPair.swap_oscRows_E` in `src/Lib/DiscreteSeries/Theta/FockDualPair.lean` of
-  grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), and
-  the oscillator operators from `New.Fock.raiseOp` and `New.Fock.lowerOp` in
+  `New.FockDualPair.swap_oscRows_E`, the vacuum weights (`TauCeti.fockRowHom_single_self_one`)
+  from `New.FockDualPair.vacuumWeight`, and the degree-lowering operators
+  (`TauCeti.fockRowLower`, `TauCeti.fockColLower`) from `New.FockDualPair.fockLaplacian`, all in
+  `src/Lib/DiscreteSeries/Theta/FockDualPair.lean` of grh-lean
+  (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), and the
+  oscillator operators from `New.Fock.raiseOp` and `New.Fock.lowerOp` in
   `src/Lib/Weil/Fock/Basic.lean`; there the column action is the contragredient of the one here
   and the pair carries a free global sign and free shifts.
 -/
@@ -310,18 +313,10 @@ as `z c a` carries the action of `gl I` on the Fock module of `(ε, ε')` to the
 on the columns of the Fock module of `(ε', ε)`. -/
 theorem rename_swap_fockRowHom (A : Matrix I I K) (P : MvPolynomial (I × I') K) :
     rename Prod.swap (fockRowHom K ε ε' A P) = fockColHom K ε' ε A (rename Prod.swap P) := by
-  induction A using Matrix.induction_on' with
-  | h_zero => simp
-  | h_add A A' hA hA' => simp only [map_add, LinearMap.add_apply, hA, hA']
-  | h_std_basis a b x =>
-    -- Write `E a b x` as `x • E a b 1` (`Matrix.smul_single`) to use the matrix unit formulas.
-    rw [← mul_one x, ← smul_eq_mul, ← smul_single, map_smul, map_smul, LinearMap.smul_apply,
-      LinearMap.smul_apply, map_smul, fockRowHom_single, fockColHom_single]
-    congr 1
-    simp only [LinearMap.add_apply, LinearMap.sum_apply, map_add, map_sum, mul_apply_eq_comp,
-      rename_oscRaise Prod.swap_injective isEvenPair_swap,
-      rename_oscLower Prod.swap_injective isEvenPair_swap, Prod.swap_prod_mk]
-    split_ifs <;> simp
+  -- Apply `TauCeti.rename_swap_fockColHom` to the exchanged pair; renaming twice is the identity.
+  have h := rename_swap_fockColHom (ε := ε') (ε' := ε) A (rename Prod.swap P)
+  rw [rename_rename, Prod.swap_swap_eq, rename_id_apply] at h
+  rw [← h, rename_rename, Prod.swap_swap_eq, rename_id_apply]
 
 /-! ### The compact parts: weights and degrees -/
 
@@ -521,13 +516,10 @@ variable (K ε ε') in
 commuting actions `TauCeti.fockRowHom` and `TauCeti.fockColHom`. -/
 noncomputable def fockHom :
     Matrix I I K × Matrix I' I' K →ₗ⁅K⁆ Module.End K (MvPolynomial (I × I') K) where
-  toFun x := fockRowHom K ε ε' x.1 + fockColHom K ε ε' x.2
-  map_add' x y := by
-    simp only [Prod.fst_add, Prod.snd_add, map_add]
-    abel
-  map_smul' r x := by simp [smul_add]
+  __ := (fockRowHom K ε ε').toLinearMap.coprod (fockColHom K ε ε').toLinearMap
   map_lie' {x y} := by
-    simp only [LieAlgebra.Prod.bracket_apply, LieHom.map_lie, lie_add, add_lie,
+    simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearMap.coprod_apply,
+      LieHom.coe_toLinearMap, LieAlgebra.Prod.bracket_apply, LieHom.map_lie, lie_add, add_lie,
       (commute_iff_lie_eq).1 (commute_fockRowHom_fockColHom _ _),
       (commute_iff_lie_eq).1 (commute_fockRowHom_fockColHom _ _).symm, add_zero, zero_add]
 

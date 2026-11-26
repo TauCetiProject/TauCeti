@@ -68,6 +68,12 @@ for `ρ = ((n - 1) / 2, …, -(n - 1) / 2)`, and `|ρ|² = n (n² - 1) / 12`.
   (2009), Chapter 4.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Springer GTM 9
   (1972), Section 6.
+* A. Paul, *First occurrence for the dual pairs `(U(p, q), U(r, s))`*, Canad. J. Math. 51
+  (1999), 636--657, Theorem 2.11, for the parameter identity `TauCeti.sum_sq_sub_eq_of_equiv_sum`.
+* The parameter identity `TauCeti.sum_sq_sub_eq_of_equiv_sum`, with `TauCeti.sum_rho_sq` and
+  `TauCeti.glCasimir_eigenvalue_eq_sum_sq_sub`, is adapted from
+  `New.IsMatch.centred_casimirValue_eq` in `src/Lib/DiscreteSeries/Theta/CasimirComparison.lean`
+  of grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
 
 -/
 
@@ -436,9 +442,7 @@ theorem sum_sq_sub_eq_of_equiv_sum {I I' : Type*} [Fintype I] [Fintype I'] {t : 
       ∑ a, lam a ^ 2 - Fintype.card I * (Fintype.card I ^ 2 - 1) / 12 -
         Fintype.card I * Fintype.card I' * (Fintype.card I' - Fintype.card I) / 4 := by
   have h_card : (Fintype.card I' : F) = Fintype.card I + t := by
-    rw [← Fintype.card_congr e, Fintype.card_sum, Fintype.card_fin]
-    push_cast
-    rfl
+    rw [← Fintype.card_congr e, Fintype.card_sum, Fintype.card_fin, Nat.cast_add]
   rw [← e.sum_comp, Fintype.sum_sum_type]
   simp only [h_left, h_right, sum_rho_sq, h_card]
   ring

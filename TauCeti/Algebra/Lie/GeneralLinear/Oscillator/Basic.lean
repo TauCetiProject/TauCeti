@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Lie.Matrix.Single
 import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 import Mathlib.Tactic.NoncommRing
 import TauCeti.Algebra.MvPolynomial.PDeriv
+import TauCeti.Algebra.MvPolynomial.PolynomialOperator
 
 /-!
 # The oscillator representation of `gl ι` on polynomials
@@ -113,38 +114,51 @@ theorem oscLower_apply_of_neg {i : ι} (h : ¬p i) (P : MvPolynomial ι K) :
 
 /-! ### The canonical commutation relations -/
 
+variable (K) in
+/-- The operators that make up `R i` and `L i`: multiplication by `X i` and `±∂ / ∂ X i`. -/
+private noncomputable def oscPieces (i : ι) : Set (Module.End K (MvPolynomial ι K)) :=
+  {LinearMap.mulLeft K (X i), (pderiv i).toLinearMap, -(pderiv i).toLinearMap}
+
+private theorem oscRaise_mem_oscPieces (i : ι) : oscRaise K p i ∈ oscPieces K i := by
+  unfold oscRaise oscPieces
+  split_ifs <;> simp
+
+private theorem oscLower_mem_oscPieces (i : ι) : oscLower K p i ∈ oscPieces K i := by
+  unfold oscLower oscPieces
+  split_ifs <;> simp
+
+/-- The pieces of the oscillator operators at two distinct variables commute. -/
+private theorem commute_of_mem_oscPieces {i j : ι} (hij : i ≠ j)
+    {S T : Module.End K (MvPolynomial ι K)} (hS : S ∈ oscPieces K i) (hT : T ∈ oscPieces K j) :
+    Commute S T := by
+  simp only [oscPieces, Set.mem_insert_iff, Set.mem_singleton_iff] at hS hT
+  refine LinearMap.ext fun P ↦ ?_
+  simp only [mul_apply_eq_comp]
+  rcases hS with rfl | rfl | rfl <;> rcases hT with rfl | rfl | rfl <;>
+    simp [mul_left_comm, pderiv_comm i j, pderiv_X_mul_of_ne hij, pderiv_X_mul_of_ne hij.symm]
+
 /-- The operators `R i` and `R j` commute. -/
 theorem commute_oscRaise (i j : ι) : Commute (oscRaise K p i) (oscRaise K p j) := by
-  refine LinearMap.ext fun P ↦ ?_
   rcases eq_or_ne i j with rfl | hij
-  · rfl
-  simp only [mul_apply_eq_comp]
-  by_cases hi : p i <;> by_cases hj : p j <;>
-    simp [hi, hj, mul_left_comm, pderiv_comm i j, pderiv_X_mul_of_ne hij,
-      pderiv_X_mul_of_ne hij.symm]
+  · exact Commute.refl _
+  exact commute_of_mem_oscPieces hij (oscRaise_mem_oscPieces i) (oscRaise_mem_oscPieces j)
 
 /-- The operators `L i` and `L j` commute. -/
 theorem commute_oscLower (i j : ι) : Commute (oscLower K p i) (oscLower K p j) := by
-  refine LinearMap.ext fun P ↦ ?_
   rcases eq_or_ne i j with rfl | hij
-  · rfl
-  simp only [mul_apply_eq_comp]
-  by_cases hi : p i <;> by_cases hj : p j <;>
-    simp [hi, hj, mul_left_comm, pderiv_comm i j, pderiv_X_mul_of_ne hij,
-      pderiv_X_mul_of_ne hij.symm]
+  · exact Commute.refl _
+  exact commute_of_mem_oscPieces hij (oscLower_mem_oscPieces i) (oscLower_mem_oscPieces j)
 
 /-- **The canonical commutation relation** `L i R j = R j L i + δ i j`. For `i = j` this is
 Leibniz's rule `∂ (X P) = X ∂ P + P`, whatever the parity of `i`. -/
 theorem oscLower_mul_oscRaise [DecidableEq ι] (i j : ι) :
     oscLower K p i * oscRaise K p j = oscRaise K p j * oscLower K p i + if i = j then 1 else 0 := by
-  refine LinearMap.ext fun P ↦ ?_
   rcases eq_or_ne i j with rfl | hij
-  · by_cases hi : p i <;>
+  · refine LinearMap.ext fun P ↦ ?_
+    by_cases hi : p i <;>
       simp [hi, Derivation.leibniz, add_comm]
-  simp only [mul_apply_eq_comp, hij, ite_false, add_zero]
-  by_cases hi : p i <;> by_cases hj : p j <;>
-    simp [hi, hj, mul_left_comm, pderiv_comm i j, pderiv_X_mul_of_ne hij,
-      pderiv_X_mul_of_ne hij.symm]
+  simp only [hij, ite_false, add_zero]
+  exact (commute_of_mem_oscPieces hij (oscLower_mem_oscPieces i) (oscRaise_mem_oscPieces j)).eq
 
 /-- The commutator of two products `R i L j` and `R k L m` follows the rule of the matrix units:
 it is `δ j k R i L m - δ i m R k L j`. -/
@@ -235,12 +249,9 @@ theorem oscRaise_mul_oscLower_mem_homogeneousSubmodule {i j : ι} (h : p i ↔ p
     (oscRaise K p i * oscLower K p j) P ∈ homogeneousSubmodule ι K d := by
   rw [mem_homogeneousSubmodule] at hP ⊢
   by_cases hj : p j
-  · rw [mul_apply_eq_comp, oscLower_apply_of_pos hj, oscRaise_apply_of_pos (h.2 hj)]
-    rcases d with _ | d
-    · rw [totalDegree_eq_zero_iff_eq_C.1 (Nat.le_zero.1 hP.totalDegree_le),
-        pderiv_C, mul_zero]
-      exact isHomogeneous_zero _ _ _
-    · simpa [add_comm] using (isHomogeneous_X K i).mul hP.pderiv
+  · rw [mul_apply_eq_comp, oscLower_apply_of_pos hj, oscRaise_apply_of_pos (h.2 hj),
+      ← polynomialOperator_apply]
+    exact hP.polynomialOperator i j
   · rw [mul_apply_eq_comp, oscLower_apply_of_neg hj, oscRaise_apply_of_neg (h.not.2 hj)]
     simpa using ((isHomogeneous_X K j).mul hP).pderiv.neg
 

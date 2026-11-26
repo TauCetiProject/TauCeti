@@ -95,13 +95,9 @@ the matrix units of `gl (ι × κ)` that move a cell from column `d` to column `
 alone. -/
 theorem glOneKronecker_single (c d : κ) :
     glOneKronecker R ι κ (single c d 1) = ∑ a : ι, single (a, c) (a, d) (1 : R) := by
-  rw [glOneKronecker_apply]
-  calc (1 : Matrix ι ι R) ⊗ₖ single c d (1 : R)
-      = (∑ a : ι, single a a (1 : R)) ⊗ₖ single c d (1 : R) := by rw [sum_single_one]
-    _ = ∑ a : ι, single a a (1 : R) ⊗ₖ single c d (1 : R) :=
-        map_sum ((kroneckerBilinear (R := R)).flip (single c d (1 : R))) _ _
-    _ = ∑ a : ι, single (a, c) (a, d) (1 : R) := by
-        simp [single_kronecker_single]
+  rw [glOneKronecker, LieHom.comp_apply, glBlockDiagonal_single, map_sum]
+  simp only [LieEquiv.coe_toLieHom, reindexLieEquiv_apply, reindex_apply, submatrix_single_equiv,
+    Equiv.symm_symm, Equiv.prodComm_apply, Prod.swap_prod_mk]
 
 /-- The images of the block-diagonal map `A ↦ A ⊗ 1` and of `B ↦ 1 ⊗ B` commute. -/
 theorem commute_glBlockDiagonal_glOneKronecker (A : Matrix ι ι R) (B : Matrix κ κ R) :
