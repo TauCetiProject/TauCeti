@@ -165,23 +165,21 @@ theorem spatialTensorLinearMap_comm_apply (x : (E →L[𝕜] E') ⊗[𝕜] (F �
   | tmul a b => simpa using mapLCompletion_commIsometry_completion a b u
   | add x y hx hy => simp only [map_add, add_apply, hx, hy]
 
-/-- The flip does not increase the norm of `spatialTensorLinearMap`. -/
-theorem norm_spatialTensorLinearMap_comm_le (x : (E →L[𝕜] E') ⊗[𝕜] (F →L[𝕜] F')) :
-    ‖spatialTensorLinearMap 𝕜 F E F' E' (TensorProduct.comm 𝕜 _ _ x)‖ ≤
-      ‖spatialTensorLinearMap 𝕜 E F E' F' x‖ := by
-  refine opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
-  obtain ⟨u, rfl⟩ := (commIsometry 𝕜 E F).completion.surjective v
-  rw [spatialTensorLinearMap_comm_apply, LinearIsometryEquiv.norm_map,
-    LinearIsometryEquiv.norm_map]
-  exact le_opNorm _ _
-
 /-- **Flip invariance**: `‖(b ⊗ a)‖ = ‖(a ⊗ b)‖` for the spatial operator of a tensor and of its
 flip. -/
 theorem norm_spatialTensorLinearMap_comm (x : (E →L[𝕜] E') ⊗[𝕜] (F →L[𝕜] F')) :
     ‖spatialTensorLinearMap 𝕜 F E F' E' (TensorProduct.comm 𝕜 _ _ x)‖ =
       ‖spatialTensorLinearMap 𝕜 E F E' F' x‖ := by
-  refine (norm_spatialTensorLinearMap_comm_le x).antisymm ?_
-  simpa using norm_spatialTensorLinearMap_comm_le (TensorProduct.comm 𝕜 _ _ x)
+  -- The flipped operator is the original one conjugated by the flip isometries.
+  have h : spatialTensorLinearMap 𝕜 F E F' E' (TensorProduct.comm 𝕜 _ _ x) =
+      ((commIsometry 𝕜 E' F').completion : Completion (E' ⊗[𝕜] F') →L[𝕜] _) ∘L
+        spatialTensorLinearMap 𝕜 E F E' F' x ∘L
+          ((commIsometry 𝕜 E F).completion.symm : Completion (F ⊗[𝕜] E) →L[𝕜] _) := by
+    ext v
+    obtain ⟨u, rfl⟩ := (commIsometry 𝕜 E F).completion.surjective v
+    rw [spatialTensorLinearMap_comm_apply]
+    simp only [comp_apply, LinearIsometryEquiv.coe_coe'', LinearIsometryEquiv.symm_apply_apply]
+  rw [h, opNorm_linearIsometryEquiv_comp, opNorm_comp_linearIsometryEquiv]
 
 end TauCeti
 

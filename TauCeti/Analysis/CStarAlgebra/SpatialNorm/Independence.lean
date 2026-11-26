@@ -72,15 +72,17 @@ open scoped InnerProductSpace ComplexOrder
 
 namespace TauCeti
 
-variable {A H F : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-  [NormedAddCommGroup F] [InnerProductSpace ℂ F] [AddCommGroup A] [Module ℂ A]
+variable {𝕜 A E E' F F' : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E'] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+  [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F'] [AddCommGroup A] [Module 𝕜 A]
 
 /-- The right slice of `(π ⊗ 1)(y)` at `(g, f)` is `π` applied to the contraction of `y` against
 the vector functional `b ↦ ⟪f, b g⟫` on its second factor. -/
-theorem sliceRight_spatialTensorLinearMap_rTensor [CompleteSpace H] (π : A →ₗ[ℂ] H →L[ℂ] H)
-    (y : A ⊗[ℂ] (F →L[ℂ] F)) (g f : F) :
-    sliceRight g f (spatialTensorLinearMap ℂ H F H F (π.rTensor _ y)) =
-      π (LinearMap.tensorComponent (vectorFunctional g f : (F →L[ℂ] F) →L[ℂ] ℂ).toLinearMap y) := by
+theorem sliceRight_spatialTensorLinearMap_rTensor [CompleteSpace E'] (π : A →ₗ[𝕜] E →L[𝕜] E')
+    (y : A ⊗[𝕜] (F →L[𝕜] F')) (g : F) (f : F') :
+    sliceRight g f (spatialTensorLinearMap 𝕜 E F E' F' (π.rTensor _ y)) =
+      π (LinearMap.tensorComponent
+        (vectorFunctional g f : (F →L[𝕜] F') →L[𝕜] 𝕜).toLinearMap y) := by
   rw [sliceRight_spatialTensorLinearMap, LinearMap.rTensor, LinearMap.tensorComponent_map,
     LinearMap.comp_id]
 
