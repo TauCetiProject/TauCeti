@@ -12,8 +12,8 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Haar
 /-!
 # Checks for the normalized Haar measure on the finite adeles
 
-Checks of AdelicAlgebraicGroups §0.4 for a number field `K`. For *finite-adele-haar*, with `μ_f`
-the additive Haar measure on `𝔸_{K,f}` giving `∏_v 𝒪_v` mass one:
+Checks of the additive Haar measure `μ_f` on the finite adeles `𝔸_{K,f}` of a number field `K`,
+normalized to give `∏_v 𝒪_v` mass one:
 
 * for a nonzero ideal `𝔞` of `𝓞 K`, the closure of `𝔞` in `∏_v 𝒪_v` has measure
   `(Ideal.absNorm 𝔞)⁻¹`;
