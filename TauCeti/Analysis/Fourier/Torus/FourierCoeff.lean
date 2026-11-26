@@ -37,6 +37,8 @@ each Fourier coefficient is a continuous linear functional of norm at most one.
 * `TauCeti.UnitAddTorus.norm_mFourierCoeff_le_norm`: `‖f̂(n)‖ ≤ ‖f‖` in `Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`.
 * `TauCeti.UnitAddTorus.mFourierCoeffCLM`: the `n`-th Fourier coefficient as a continuous linear
   functional on `Lᵖ(𝕋ᵈ)`.
+* `TauCeti.UnitAddTorus.mFourierCoeffContinuousMapCLM`: the `n`-th Fourier coefficient as a
+  continuous linear functional of norm at most one on `C(𝕋ᵈ, ℂ)` with the supremum norm.
 -/
 
 public section
@@ -204,6 +206,29 @@ noncomputable def mFourierCoeffCLM (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : d → 
 theorem mFourierCoeffCLM_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (f : Lp ℂ p (volume : Measure (UnitAddTorus d))) (n : d → ℤ) :
     mFourierCoeffCLM p n f = mFourierCoeff f n := (rfl)
+
+/-- The `n`-th Fourier coefficient of a continuous function on the torus, as a continuous linear
+functional for the supremum norm. -/
+noncomputable def mFourierCoeffContinuousMapCLM (n : d → ℤ) : C(UnitAddTorus d, ℂ) →L[ℂ] ℂ :=
+  (mFourierCoeffCLM ∞ n).comp (ContinuousMap.toLp (E := ℂ) ∞ volume ℂ)
+
+@[simp]
+theorem mFourierCoeffContinuousMapCLM_apply (n : d → ℤ) (f : C(UnitAddTorus d, ℂ)) :
+    mFourierCoeffContinuousMapCLM n f = mFourierCoeff f n := by
+  rw [mFourierCoeffContinuousMapCLM, ContinuousLinearMap.comp_apply, mFourierCoeffCLM_apply,
+    mFourierCoeff_congr_ae (ContinuousMap.coeFn_toLp volume f)]
+
+/-- The Fourier coefficients of a continuous function on the torus are bounded by its supremum
+norm. -/
+theorem norm_mFourierCoeffContinuousMapCLM_le (n : d → ℤ) :
+    ‖mFourierCoeffContinuousMapCLM (d := d) n‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
+    have h : ‖ContinuousMap.toLp (E := ℂ) ∞ volume ℂ f‖ ≤ 1 * ‖f‖ := by
+      refine (ContinuousMap.toLp (E := ℂ) ∞ volume ℂ).le_of_opNorm_le ?_ f
+      refine (ContinuousMap.toLp_norm_le volume).trans_eq ?_
+      rw [ENNReal.toReal_top, inv_zero, Real.rpow_zero]
+    rw [mFourierCoeffContinuousMapCLM, ContinuousLinearMap.comp_apply, mFourierCoeffCLM_apply]
+    exact (norm_mFourierCoeff_le_norm _ n).trans h
 
 end Lp
 
