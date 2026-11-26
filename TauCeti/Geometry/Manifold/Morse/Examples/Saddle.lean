@@ -8,9 +8,11 @@ module
 public import TauCeti.Analysis.Calculus.Morse.NormSq
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.Morse.Prod
 
 /-!
-# The quadratic model of a Morse critical point and the saddle of the plane
+# The quadratic model of a Morse critical point, and the saddle and the bowl of the plane
 
 On a product `E × F` of finite-dimensional real inner product spaces, with its self-model, the
 function `q (u, v) = -‖u‖ ^ 2 + ‖v‖ ^ 2` is the model of a nondegenerate critical point of index
@@ -24,13 +26,28 @@ which has no factor `1/2`. This file reads off its critical data as a function o
   `((u, v), (u', v')) ↦ -2 ⟪u, u'⟫ + 2 ⟪v, v'⟫`
   (`TauCeti.criticalHessian_neg_norm_sq_add_norm_sq_apply`) and its Morse index is `dim E`
   (`TauCeti.manifoldMorseIndex_neg_norm_sq_add_norm_sq`), so its only critical point is counted in
-  index `dim E` (`TauCeti.criticalCount_neg_norm_sq_add_norm_sq`).
+  index `dim E` (`TauCeti.criticalCount_neg_norm_sq_add_norm_sq`). Its negative
+  `(u, v) ↦ ‖u‖ ^ 2 - ‖v‖ ^ 2` has Morse index `dim F`
+  (`TauCeti.manifoldMorseIndex_norm_sq_sub_norm_sq`), so the indices of the model and of its
+  negative add up to `dim E + dim F`.
 * **The saddle of the plane.** For `E = F = ℝ` this is `f (x, y) = -x² + y²` on `ℝ × ℝ`. Its only
   critical point is the origin (`TauCeti.criticalPoints_neg_sq_add_sq`), so it has one critical
   point (`TauCeti.totalCriticalCount_neg_sq_add_sq`), which is nondegenerate
   (`TauCeti.isMorse_neg_sq_add_sq`). In the coordinates of the plane its Hessian is `diag(-2, 2)`,
   the bilinear form `(v, w) ↦ -2 v₁ w₁ + 2 v₂ w₂` (`TauCeti.criticalHessian_neg_sq_add_sq_apply`),
-  and its Morse index is `1` (`TauCeti.manifoldMorseIndex_neg_sq_add_sq`).
+  and its Morse index is `1` (`TauCeti.manifoldMorseIndex_neg_sq_add_sq`). Its negative
+  `x² - y²` has Morse index `1` as well (`TauCeti.manifoldMorseIndex_sq_sub_sq`): the indices of
+  `f` and `-f` are both `1` and add up to the dimension `2`.
+* **The bowl of the plane.** The function `f (x, y) = x² + y²` on `ℝ × ℝ` has the origin as its
+  only critical point (`TauCeti.criticalPoints_sq_add_sq`), which is nondegenerate
+  (`TauCeti.isMorse_sq_add_sq`), a minimum of Morse index `0`
+  (`TauCeti.manifoldMorseIndex_sq_add_sq`). Its negative `-x² - y²` has Morse index `2`
+  (`TauCeti.manifoldMorseIndex_neg_sq_sub_sq`), the dimension of the plane.
+
+At a nondegenerate critical point the Morse indices of a function and of its negative always add up
+to the dimension (`manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank`, in the namespace
+`TauCeti.IsManifoldNondegenerateCriticalPoint`). In the plane the saddle splits the dimension `2`
+as `1 + 1` and the bowl as `0 + 2`.
 
 ## References
 
@@ -102,6 +119,19 @@ theorem criticalCount_neg_norm_sq_add_norm_sq (j : ℕ) :
   · simp [hj]
   · simp [Ne.symm hj]
 
+/-- **The negative `(u, v) ↦ ‖u‖ ^ 2 - ‖v‖ ^ 2` of the model has Morse index `dim F`** at every
+point. -/
+theorem manifoldMorseIndex_norm_sq_sub_norm_sq (p : E × F) :
+    manifoldMorseIndex 𝓘(ℝ, E × F) (fun p : E × F ↦ ‖p.1‖ ^ 2 - ‖p.2‖ ^ 2) p = finrank ℝ F := by
+  obtain ⟨u, v⟩ := p
+  have h : (fun p : E × F ↦ ‖p.1‖ ^ 2 - ‖p.2‖ ^ 2) =
+      (fun u : E ↦ ‖u‖ ^ 2) ∘ Prod.fst + (fun v : F ↦ -‖v‖ ^ 2) ∘ Prod.snd := by
+    ext p
+    simp [sub_eq_add_neg]
+  rw [manifoldMorseIndex_modelSpace, h, morseIndex_comp_fst_add_comp_snd
+    (contDiff_norm_sq ℝ).contDiffAt (contDiff_norm_sq ℝ).neg.contDiffAt, morseIndex_norm_sq,
+    morseIndex_neg_norm_sq, zero_add]
+
 end Model
 
 /-! ### The saddle of the plane -/
@@ -144,6 +174,77 @@ theorem criticalHessian_neg_sq_add_sq_apply (p v w : ℝ × ℝ) :
   rw [neg_sq_add_sq_eq, criticalHessian_neg_norm_sq_add_norm_sq_apply]
   simp [mul_comm]
 
+/-- **The negative `x² - y²` of the saddle of the plane has Morse index `1`**, like the saddle
+itself. -/
+theorem manifoldMorseIndex_sq_sub_sq (p : ℝ × ℝ) :
+    manifoldMorseIndex 𝓘(ℝ, ℝ × ℝ) (fun p : ℝ × ℝ ↦ p.1 ^ 2 - p.2 ^ 2) p = 1 := by
+  have h : (fun p : ℝ × ℝ ↦ p.1 ^ 2 - p.2 ^ 2) = fun p : ℝ × ℝ ↦ ‖p.1‖ ^ 2 - ‖p.2‖ ^ 2 := by
+    ext p
+    simp [Real.norm_eq_abs, sq_abs]
+  rw [h, manifoldMorseIndex_norm_sq_sub_norm_sq, finrank_self]
+
 end Plane
+
+/-! ### The bowl of the plane -/
+
+section Bowl
+
+/-- The bowl `x² + y²` of the plane as the separated sum of two copies of the squared norm of
+`ℝ`. -/
+private theorem sq_add_sq_eq :
+    (fun p : ℝ × ℝ ↦ p.1 ^ 2 + p.2 ^ 2) =
+      (fun x : ℝ ↦ ‖x‖ ^ 2) ∘ Prod.fst + (fun y : ℝ ↦ ‖y‖ ^ 2) ∘ Prod.snd := by
+  ext p
+  simp [Real.norm_eq_abs, sq_abs]
+
+/-- **The origin is the only critical point of the bowl** `x² + y²` of the plane. -/
+@[simp]
+theorem criticalPoints_sq_add_sq :
+    criticalPoints 𝓘(ℝ, ℝ × ℝ) (fun p : ℝ × ℝ ↦ p.1 ^ 2 + p.2 ^ 2) = {0} := by
+  ext ⟨x, y⟩
+  have hd (z : ℝ) : DifferentiableAt ℝ (fun x : ℝ ↦ ‖x‖ ^ 2) z :=
+    (contDiff_norm_sq ℝ).differentiable one_ne_zero z
+  rw [mem_criticalPoints_iff_fderiv_eq_zero, sq_add_sq_eq,
+    fderiv_comp_fst_add_comp_snd_eq_zero_iff (hd x) (hd y), fderiv_norm_sq_eq_zero_iff,
+    fderiv_norm_sq_eq_zero_iff, mem_singleton_iff, Prod.mk_eq_zero]
+
+/-- The bowl `x² + y²` of the plane has exactly one critical point. -/
+@[simp]
+theorem totalCriticalCount_sq_add_sq :
+    totalCriticalCount 𝓘(ℝ, ℝ × ℝ) (fun p : ℝ × ℝ ↦ p.1 ^ 2 + p.2 ^ 2) = 1 := by
+  rw [totalCriticalCount_def, criticalPoints_sq_add_sq, encard_singleton]
+
+/-- The bowl `x² + y²` of the plane is a Morse function. -/
+theorem isMorse_sq_add_sq : IsMorse 𝓘(ℝ, ℝ × ℝ) (fun p : ℝ × ℝ ↦ p.1 ^ 2 + p.2 ^ 2) := by
+  refine isMorse_modelSpace_iff.2 ⟨by fun_prop, hasNondegenerateCriticalPointsOn_iff.2
+    fun p _ hp ↦ ?_⟩
+  have hp0 : p = 0 := by
+    simpa using mem_criticalPoints_iff_fderiv_eq_zero.2 hp
+  rw [hp0, sq_add_sq_eq, ← Prod.mk_zero_zero]
+  exact isNondegenerateCriticalPoint_norm_sq.comp_fst_add_comp_snd
+    isNondegenerateCriticalPoint_norm_sq
+
+/-- **The bowl `x² + y²` of the plane has Morse index `0`** at every point. -/
+theorem manifoldMorseIndex_sq_add_sq (p : ℝ × ℝ) :
+    manifoldMorseIndex 𝓘(ℝ, ℝ × ℝ) (fun p : ℝ × ℝ ↦ p.1 ^ 2 + p.2 ^ 2) p = 0 := by
+  obtain ⟨x, y⟩ := p
+  rw [manifoldMorseIndex_modelSpace, sq_add_sq_eq, morseIndex_comp_fst_add_comp_snd
+    (contDiff_norm_sq ℝ).contDiffAt (contDiff_norm_sq ℝ).contDiffAt, morseIndex_norm_sq,
+    morseIndex_norm_sq]
+
+/-- **The negative `-x² - y²` of the bowl of the plane has Morse index `2`** at every point, the
+dimension of the plane. -/
+theorem manifoldMorseIndex_neg_sq_sub_sq (p : ℝ × ℝ) :
+    manifoldMorseIndex 𝓘(ℝ, ℝ × ℝ) (fun p : ℝ × ℝ ↦ -p.1 ^ 2 - p.2 ^ 2) p = 2 := by
+  obtain ⟨x, y⟩ := p
+  have h : (fun p : ℝ × ℝ ↦ -p.1 ^ 2 - p.2 ^ 2) =
+      (fun x : ℝ ↦ -‖x‖ ^ 2) ∘ Prod.fst + (fun y : ℝ ↦ -‖y‖ ^ 2) ∘ Prod.snd := by
+    ext p
+    simp [Real.norm_eq_abs, sq_abs, sub_eq_add_neg]
+  rw [manifoldMorseIndex_modelSpace, h, morseIndex_comp_fst_add_comp_snd
+    (contDiff_norm_sq ℝ).neg.contDiffAt (contDiff_norm_sq ℝ).neg.contDiffAt, morseIndex_neg_norm_sq,
+    morseIndex_neg_norm_sq, finrank_self]
+
+end Bowl
 
 end TauCeti
