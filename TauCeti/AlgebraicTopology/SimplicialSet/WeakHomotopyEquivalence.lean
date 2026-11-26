@@ -229,7 +229,7 @@ instance {K : SSet.{u}} [IsWeaklyContractible K] (p : K ⟶ Δ[0]) :
 
 /-- Opposite preserves weak contractibility, by testing homotopy classes of maps into Kan
 complexes and reversing their homotopies. -/
-lemma IsWeaklyContractible.op (K : SSet.{u}) [IsWeaklyContractible K] :
+instance IsWeaklyContractible.op (K : SSet.{u}) [IsWeaklyContractible K] :
     IsWeaklyContractible K.op := by
   let p := stdSimplex.isTerminalObj₀.from K.op
   apply (isWeaklyContractible_iff_isWeakHomotopyEquivalence p).2
@@ -260,8 +260,7 @@ lemma IsWeaklyContractible.op (K : SSet.{u}) [IsWeaklyContractible K] :
 /-- A simplicial set is weakly contractible exactly when its opposite is. -/
 theorem isWeaklyContractible_op_iff (K : SSet.{u}) :
     IsWeaklyContractible K.op ↔ IsWeaklyContractible K := by
-  refine ⟨fun _ ↦ ?_, fun _ ↦ IsWeaklyContractible.op K⟩
-  have := IsWeaklyContractible.op K.op
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
   exact IsWeaklyContractible.of_iso (K := K.op.op) (L := K)
     (opFunctorCompOpFunctorIso.app K)
 
