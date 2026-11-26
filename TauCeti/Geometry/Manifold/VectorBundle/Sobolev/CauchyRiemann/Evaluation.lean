@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroCount
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Fredholm
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Regularity
-import TauCeti.Data.Sum.Infinite
+import Mathlib.SetTheory.Cardinal.Embedding
 import TauCeti.Geometry.Manifold.Connected
 import TauCeti.Topology.VectorBundle.FiniteDimensional
 
@@ -267,7 +267,10 @@ theorem kerSobolevLEval_surjective_of_le_index (hp : 1 < p) {ι : Type*} [Finite
   have : Infinite M := infinite_of_nontrivial_model (E := ℂ)
   -- Complete `x` to a family `z` of `d + 1` distinct points.
   set m := (d + 1).toNat - Nat.card ι
-  obtain ⟨y, hz⟩ := hx.exists_sumElim_injective (β := Fin m)
+  obtain ⟨y, hy⟩ := Fin.Embedding.exists_embedding_disjoint_range_of_add_le_ENat_card
+    (s := Set.range x) (n := m) (by simp [ENat.card_eq_top_of_infinite])
+  have hz : Injective (Sum.elim x y) :=
+    hx.sumElim y.injective fun a b h ↦ Set.disjoint_left.1 hy ⟨a, rfl⟩ ⟨b, h.symm⟩
   set z := Sum.elim x y
   have hcardz : Nat.card (ι ⊕ Fin m) = (d + 1).toNat := by
     rw [Nat.card_sum, Nat.card_fin]
