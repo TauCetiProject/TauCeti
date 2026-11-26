@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
 # The positive part and the indecomposables of a `ℤ`-graded algebra
@@ -90,8 +91,6 @@ a canonically ordered monoid such as `ℕ`, and its cotangent space `Ideal.Cotan
 -/
 
 public section
-
-open scoped DirectSum
 
 namespace TauCeti
 
@@ -461,15 +460,44 @@ theorem homogeneousSubmodule_eq_range {p : ℤ} (hp : 0 < p) :
 
 variable [GradedAlgebra 𝒜]
 
+variable (𝒜) in
+private theorem isHomogeneous_positivePart :
+    DirectSum.SetLike.IsHomogeneous (InternalGrading.ofDecomposition 𝒜).piece
+      (positivePart 𝒜) := by
+  intro p a ha
+  simpa using decompose_mem_positivePart ha p
+
+variable (𝒜) in
+private theorem isHomogeneous_positivePart_mul_positivePart :
+    DirectSum.SetLike.IsHomogeneous ((InternalGrading.ofDecomposition 𝒜).submodule (positivePart 𝒜)
+      (isHomogeneous_positivePart 𝒜)).piece
+      ((positivePart 𝒜 * positivePart 𝒜).comap (positivePart 𝒜).subtype) := by
+  intro p a ha
+  rw [Submodule.mem_comap, Submodule.subtype_apply, InternalGrading.coe_decompose_submodule,
+    InternalGrading.coe_decompose_ofDecomposition_piece_apply]
+  exact homogeneousDecomposables_le_positivePart_mul_positivePart p
+    (decompose_mem_homogeneousDecomposables ha p)
+
+variable (𝒜) in
+/-- The grading of `Q(A)` as the quotient of the grading of `A⁺` by its elements of each degree
+by the homogeneous submodule `A⁺ · A⁺`; its pieces are the degree-`p` indecomposables. -/
+private noncomputable def grading : InternalGrading R (Indecomposables 𝒜) ℤ :=
+  ((InternalGrading.ofDecomposition 𝒜).submodule (positivePart 𝒜)
+    (isHomogeneous_positivePart 𝒜)).quotient _ (isHomogeneous_positivePart_mul_positivePart 𝒜)
+
+variable (𝒜) in
+private theorem grading_piece (p : ℤ) : (grading 𝒜).piece p = homogeneousSubmodule 𝒜 p := by
+  rw [grading, InternalGrading.quotient_piece, InternalGrading.submodule_piece,
+    InternalGrading.ofDecomposition_piece]
+  rfl
+
 /-- The indecomposables have no component of degree `p ≤ 0`. -/
 theorem homogeneousSubmodule_eq_bot {p : ℤ} (hp : p ≤ 0) : homogeneousSubmodule 𝒜 p = ⊥ := by
-  refine eq_bot_iff.2 fun x hx => ?_
-  obtain ⟨a, ha, rfl⟩ := mem_homogeneousSubmodule_iff.1 hx
-  have : (a : A) = 0 := by
-    rw [← DirectSum.decompose_of_mem_same 𝒜 ha]
-    exact mem_positivePart_iff.1 a.property p hp
-  rw [Submodule.mem_bot, mk_eq_zero_iff, this]
-  exact zero_mem _
+  rw [← grading_piece]
+  refine InternalGrading.quotient_piece_eq_bot _ _ _ (eq_bot_iff.2 fun a ha => ?_)
+  rw [InternalGrading.mem_submodule_piece, InternalGrading.ofDecomposition_piece] at ha
+  rw [Submodule.mem_bot, ← Submodule.coe_eq_zero, ← DirectSum.decompose_of_mem_same 𝒜 ha]
+  exact mem_positivePart_iff.1 a.property p hp
 
 /-- For `p > 0`, the kernel of the class map `Aᵖ → Q(A)` is the decomposables of degree `p`. -/
 theorem ker_mk_comp_inclusion {p : ℤ} (hp : 0 < p) :
@@ -490,8 +518,10 @@ noncomputable def homogeneousSubmoduleEquiv {p : ℤ} (hp : 0 < p) :
 @[simp]
 theorem homogeneousSubmoduleEquiv_mk {p : ℤ} (hp : 0 < p) (a : 𝒜 p) :
     (homogeneousSubmoduleEquiv hp (Submodule.Quotient.mk a) : Indecomposables 𝒜) =
-      mk 𝒜 ⟨a, mem_positivePart_of_mem hp a.property⟩ :=
-  (rfl)
+      mk 𝒜 ⟨a, mem_positivePart_of_mem hp a.property⟩ := by
+  rw [homogeneousSubmoduleEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    Submodule.quotEquivOfEq_mk, LinearEquiv.coe_ofEq_apply, LinearMap.quotKerEquivRange_apply_mk,
+    LinearMap.comp_apply, Submodule.inclusion_apply]
 
 @[simp]
 theorem homogeneousSubmoduleEquiv_symm_mk {p : ℤ} (hp : 0 < p) (a : 𝒜 p) :
@@ -503,50 +533,8 @@ theorem homogeneousSubmoduleEquiv_symm_mk {p : ℤ} (hp : 0 < p) (a : 𝒜 p) :
 /-- **The grading of the indecomposables**: `Q(A)` is the internal direct sum of its homogeneous
 components `Qᵖ(A)`. -/
 theorem isInternal_homogeneousSubmodule :
-    DirectSum.IsInternal (homogeneousSubmodule 𝒜) := by
-  classical
-  -- The homogeneous projections of `A` preserve `A⁺` and `A⁺ · A⁺`, so descend to `Q(A)`.
-  let π (p : ℤ) : Indecomposables 𝒜 →ₗ[R] Indecomposables 𝒜 :=
-    Submodule.mapQ _ _ ((GradedAlgebra.proj 𝒜 p).restrict fun a ha =>
-      decompose_mem_positivePart ha p) fun a ha =>
-        homogeneousDecomposables_le_positivePart_mul_positivePart p
-          (decompose_mem_homogeneousDecomposables (Submodule.mem_comap.1 ha) p)
-  have hπ (p q : ℤ) (x : homogeneousSubmodule 𝒜 q) :
-      π p x = if p = q then (x : Indecomposables 𝒜) else 0 := by
-    obtain ⟨a, ha, hx⟩ := mem_homogeneousSubmodule_iff.1 x.property
-    rw [← hx]
-    split_ifs with hpq
-    · subst hpq
-      exact congrArg (mk 𝒜) (Subtype.ext (DirectSum.decompose_of_mem_same 𝒜 ha))
-    · refine (congrArg (mk 𝒜) (Subtype.ext ?_)).trans (map_zero _)
-      exact DirectSum.decompose_of_mem_ne 𝒜 ha (Ne.symm hpq)
-  -- These projections recover every coordinate of the direct sum.
-  have hcoord (x : ⨁ p, homogeneousSubmodule 𝒜 p) (p : ℤ) :
-      π p (DirectSum.coeAddMonoidHom (homogeneousSubmodule 𝒜) x) = (x p : Indecomposables 𝒜) := by
-    induction x using DirectSum.induction_on with
-    | zero => simp
-    | of q y =>
-      rw [DirectSum.coeAddMonoidHom_of, hπ]
-      split_ifs with hpq
-      · subst hpq
-        simp
-      · simp [DirectSum.of_eq_of_ne _ _ _ hpq]
-    | add x y hx hy => simp [hx, hy]
-  refine ⟨fun x y hxy => DFinsupp.ext fun p => Subtype.ext ?_, fun x => ?_⟩
-  · rw [← hcoord x p, ← hcoord y p, hxy]
-  -- An element of `A⁺` is the sum of its homogeneous components, each of positive degree.
-  obtain ⟨a, rfl⟩ := mk_surjective x
-  have ha : a = ∑ p ∈ (DirectSum.decompose 𝒜 (a : A)).support,
-      (⟨_, decompose_mem_positivePart a.property p⟩ : positivePart 𝒜) := by
-    ext1
-    rw [Submodule.coe_sum]
-    exact (DirectSum.sum_support_decompose 𝒜 (a : A)).symm
-  have hmem : mk 𝒜 a ∈ ⨆ p, homogeneousSubmodule 𝒜 p := by
-    rw [ha, map_sum]
-    exact sum_mem fun p _ => Submodule.mem_iSup_of_mem p (mk_mem_homogeneousSubmodule
-      (SetLike.coe_mem _))
-  rw [← DirectSum.range_coeLinearMap] at hmem
-  exact LinearMap.mem_range.1 hmem
+    DirectSum.IsInternal (homogeneousSubmodule 𝒜) :=
+  funext (grading_piece 𝒜) ▸ (grading 𝒜).isInternal
 
 end Indecomposables
 
@@ -605,7 +593,8 @@ theorem homogeneousMap_id (p : ℤ) :
     homogeneousMap (GradedAlgHom.id R 𝒜) p = LinearMap.id := by
   ext ⟨x, hx⟩
   obtain ⟨a, ha, rfl⟩ := mem_homogeneousSubmodule_iff.1 hx
-  exact homogeneousMap_mk _ ha
+  rw [homogeneousMap_mk _ ha, LinearMap.id_apply]
+  simp only [GradedAlgHom.id_apply]
 
 /-- The maps induced on the degree-`p` indecomposables are functorial. -/
 theorem homogeneousMap_comp (g : ℬ →ₐᵍ[R] 𝒞) (f : 𝒜 →ₐᵍ[R] ℬ) (p : ℤ) :

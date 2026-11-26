@@ -628,7 +628,7 @@ noncomputable def homogeneousIndecomposablesBasis (hx : IsFreeGradedCommutative 
     (LinearEquiv.ofEq _ _ (hx.homogeneousSubmodule_eq_span hdeg p).symm)
 
 @[simp]
-theorem coe_homogeneousIndecomposablesBasis (hx : IsFreeGradedCommutative 𝒜 x deg)
+theorem homogeneousIndecomposablesBasis_apply (hx : IsFreeGradedCommutative 𝒜 x deg)
     (hdeg : ∀ i, 0 < deg i) (p : ℤ) (i : {i // (deg i : ℤ) = p}) :
     (hx.homogeneousIndecomposablesBasis hdeg p i : Indecomposables 𝒜) =
       Indecomposables.mk 𝒜 ⟨x i, hx.mem_positivePart (hdeg i)⟩ := by
