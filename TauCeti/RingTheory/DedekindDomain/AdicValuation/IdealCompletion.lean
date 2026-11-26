@@ -82,18 +82,14 @@ namespace IsDedekindDomain.HeightOneSpectrum
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] (K : Type*) [Field K] [Algebra R K]
   [IsFractionRing R K] (v : HeightOneSpectrum R)
 
-/-- `under_maximalIdeal_adicCompletionIntegers` in the form taken by `AdicCompletion.mapₐ`. -/
-private theorem asIdeal_le_comap_maximalIdeal :
-    v.asIdeal ≤ (maximalIdeal (v.adicCompletionIntegers K)).comap
-      (Algebra.ofId R (v.adicCompletionIntegers K)) :=
-  (v.under_maximalIdeal_adicCompletionIntegers (K := K)).ge
-
 /-- The `v`-adic completion `lim R ⧸ vⁿ` of a Dedekind domain is the ring of integers `𝒪_v` of
 the completion of its fraction field at `v`. -/
 noncomputable def adicCompletionAsIdealAlgEquivIntegers :
     AdicCompletion v.asIdeal R ≃ₐ[R] v.adicCompletionIntegers K :=
+  -- The `show` keeps the hypothesis in the `comap` form that `evalₐ_mapₐ` rewrites against.
   (AlgEquiv.ofBijective (mapₐ (Algebra.ofId R (v.adicCompletionIntegers K))
-      (v.asIdeal_le_comap_maximalIdeal K))
+      (show v.asIdeal ≤ (maximalIdeal _).comap (Algebra.ofId R _) from
+        (v.under_maximalIdeal_adicCompletionIntegers (K := K)).ge))
     (mapₐ_bijective _ _ fun n ↦ v.quotientMap_maximalIdeal_pow_bijective (K := K) n)).trans
     ((ofAlgEquiv (maximalIdeal (v.adicCompletionIntegers K))).symm.restrictScalars R)
 
@@ -140,12 +136,6 @@ namespace Ideal
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] (K : Type*) [Field K] [Algebra R K]
   [IsFractionRing R K] {I : Ideal R}
 
-/-- Distinct height-one primes are comaximal. -/
-private theorem pairwise_isCoprime_heightOneSpectrum :
-    Pairwise fun v w : {v : HeightOneSpectrum R // I ≤ v.asIdeal} ↦
-      IsCoprime v.val.asIdeal w.val.asIdeal :=
-  fun _ _ hvw ↦ isCoprime_of_isMaximal fun h ↦ hvw (Subtype.ext (HeightOneSpectrum.ext h))
-
 /-- **Decomposition of an ideal-adic completion of a Dedekind domain.** For a nonzero ideal `I`
 of a Dedekind domain `R` with fraction field `K`, the `I`-adic completion `lim R ⧸ Iⁿ` is the
 product of the rings of integers `𝒪_v` of the completions of `K` at the finitely many height-one
@@ -157,9 +147,12 @@ noncomputable def adicCompletionAlgEquivPi (hI : I ≠ ⊥) :
     AdicCompletion I R ≃ₐ[R]
       ∀ v : {v : HeightOneSpectrum R // I ≤ v.asIdeal}, v.val.adicCompletionIntegers K :=
   haveI := finite_heightOneSpectrum_le hI
+  -- The `show` keeps the hypothesis in the `Pairwise` form that `coprimeEquiv_apply` rewrites
+  -- against.
   (equivOfPowLe ⟨1, (pow_one I).le.trans (le_iInf fun v ↦ v.property)⟩
       (exists_iInf_heightOneSpectrum_pow_le hI)).trans <|
-    (coprimeEquiv _ pairwise_isCoprime_heightOneSpectrum).trans <|
+    (coprimeEquiv _ (show Pairwise _ from fun v w h ↦
+        v.val.isCoprime_of_ne w.val (Subtype.coe_injective.ne h))).trans <|
       AlgEquiv.piCongrRight fun v ↦ v.val.adicCompletionAsIdealAlgEquivIntegers K
 
 /-- The coordinate of `adicCompletionAlgEquivPi` at `v ⊇ I` is the canonical map

@@ -39,7 +39,7 @@ large finite set of primes. These constructions use only ideal arithmetic, indep
 A nonzero ideal lies in only finitely many height-one primes (`Ideal.finite_heightOneSpectrum_le`),
 their intersection is its radical (`Ideal.iInf_heightOneSpectrum_eq_radical`, in any commutative
 ring), and a power of that intersection lies in the ideal
-(`Ideal.exists_iInf_heightOneSpectrum_pow_le`).
+(`Ideal.exists_iInf_heightOneSpectrum_pow_le`, in any Noetherian ring).
 `Ideal.span_singleton_sup_eq` computes `(y) + I = Q` for an element `y` of order one at a prime
 `Q ⊇ I` that avoids the other primes containing the nonzero ideal `I`.
 
@@ -459,6 +459,13 @@ theorem iInf_heightOneSpectrum_eq_radical (hI : I ≠ ⊥) :
   refine le_sInf fun P ⟨hIP, hP⟩ ↦ ?_
   exact iInf_le_of_le ⟨⟨P, hP, ne_bot_of_le_ne_bot hI hIP⟩, hIP⟩ le_rfl
 
+/-- A power of the intersection of the height-one primes containing a nonzero ideal `I` of a
+Noetherian ring lies in `I`. -/
+theorem exists_iInf_heightOneSpectrum_pow_le [IsNoetherianRing R] (hI : I ≠ ⊥) :
+    ∃ k : ℕ, (⨅ v : {v : HeightOneSpectrum R // I ≤ v.asIdeal}, v.val.asIdeal) ^ k ≤ I := by
+  rw [iInf_heightOneSpectrum_eq_radical hI]
+  exact exists_radical_pow_le_of_fg _ (IsNoetherian.noetherian _)
+
 variable [IsDedekindDomain R]
 
 /-- Every nonzero ideal is eventually supported: a sufficiently large finite set of height-one
@@ -627,13 +634,6 @@ theorem finite_heightOneSpectrum_le (hI : I ≠ ⊥) :
     Finite {v : HeightOneSpectrum R // I ≤ v.asIdeal} :=
   ((finite_factors hI).subset (t := {v : HeightOneSpectrum R | I ≤ v.asIdeal})
     fun _ hv ↦ dvd_iff_le.mpr hv).to_subtype
-
-/-- A power of the intersection of the height-one primes containing a nonzero ideal `I` of a
-Dedekind domain lies in `I`. -/
-theorem exists_iInf_heightOneSpectrum_pow_le (hI : I ≠ ⊥) :
-    ∃ k : ℕ, (⨅ v : {v : HeightOneSpectrum R // I ≤ v.asIdeal}, v.val.asIdeal) ^ k ≤ I := by
-  rw [iInf_heightOneSpectrum_eq_radical hI]
-  exact exists_radical_pow_le_of_fg _ (IsNoetherian.noetherian _)
 
 end Ideal
 
