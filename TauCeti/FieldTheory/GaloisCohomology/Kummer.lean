@@ -781,9 +781,7 @@ theorem kummerCoeffBaseChangeOfDvd_smul {m : ℕ} (h : m ∣ n) (g : AbsoluteGal
   apply Additive.toMul.injective
   apply Subtype.ext
   apply Units.ext
-  simpa only [Additive.toMul_smul, rootsOfUnity.coe_smul, AlgEquiv.smul_units_def, Units.coe_map,
-    toMul_kummerCoeffBaseChangeOfDvd, toMul_kummerCoeffBaseChange] using
-    congrArg (fun y : KummerCoeff L m ↦ y.toMul.val.val) (kummerCoeffBaseChange_smul m τ g x)
+  simp [absoluteGaloisGroupMap_commutes]
 
 /-- Pullback transports the class of a chosen Kummer cocycle to the class of its
 transported root. This statement does not require the exponent to be invertible. -/

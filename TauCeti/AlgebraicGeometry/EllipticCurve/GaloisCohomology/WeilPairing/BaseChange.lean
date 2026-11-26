@@ -131,30 +131,30 @@ cup product of the restricted kernel classes over that extension. -/
 theorem kerH1WeilPairing_kerRes
     (a : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff)
     (b : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
-    let hnL : IsUnit ((φ.baseChange L).degree : L) := by
-      have hd : (φ.baseChange L).degree = φ.degree := φ.degree_map (algebraMap K L)
-      simpa only [hd, map_natCast] using hn.map (algebraMap K L)
-    (φ.baseChange L).kerH1WeilPairing hnL (φ.kerRes τ a) (φ.dualKerRes τ b) =
+    (φ.baseChange L).kerH1WeilPairing
+        (Eq.subst (motive := fun n : ℕ ↦ IsUnit (n : L)) (b := (φ.baseChange L).degree)
+          (φ.degree_map (algebraMap K L)).symm
+          (map_natCast (algebraMap K L) φ.degree ▸ hn.map (algebraMap K L)))
+        (φ.kerRes τ a) (φ.dualKerRes τ b) =
       explicitMap2 (AbsoluteGaloisGroup K) (KummerCoeff K φ.degree)
         (AbsoluteGaloisGroup L) (KummerCoeff L (φ.baseChange L).degree)
         (absoluteGaloisGroupMap τ)
         (kummerCoeffBaseChangeOfDvd τ (φ.degree_map (algebraMap K L)).symm.dvd)
         continuous_of_discreteTopology (kummerCoeffBaseChangeOfDvd_smul τ _)
         (φ.kerH1WeilPairing hn a b) := by
-  intro hnL
   simp only [kerH1WeilPairing_eq_explicitCup11, kerRes_eq_explicitMap1, dualKerRes_eq_explicitMap1]
   exact (explicitMap2_explicitCup11 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff
     (ofIsogeny φ.dual).KerCoeff (KummerCoeff K φ.degree) (φ.kerCoeffWeilPairing hn)
     continuous_of_discreteTopology (φ.kerCoeffWeilPairing_smul hn) (AbsoluteGaloisGroup L)
     (ofIsogeny (φ.baseChange L)).KerCoeff (ofIsogeny (φ.baseChange L).dual).KerCoeff
-    (KummerCoeff L (φ.baseChange L).degree) ((φ.baseChange L).kerCoeffWeilPairing hnL)
-    continuous_of_discreteTopology ((φ.baseChange L).kerCoeffWeilPairing_smul hnL)
+    (KummerCoeff L (φ.baseChange L).degree) ((φ.baseChange L).kerCoeffWeilPairing _)
+    continuous_of_discreteTopology ((φ.baseChange L).kerCoeffWeilPairing_smul _)
     (absoluteGaloisGroupMap τ) (φ.kerCoeffBaseChange τ) (φ.dualKerCoeffBaseChange τ)
     (kummerCoeffBaseChangeOfDvd τ (φ.degree_map (algebraMap K L)).symm.dvd)
     continuous_of_discreteTopology continuous_of_discreteTopology continuous_of_discreteTopology
     (kerCoeffBaseChange_smul τ φ) (dualKerCoeffBaseChange_smul τ φ)
     (kummerCoeffBaseChangeOfDvd_smul τ _)
-    (φ.kummerCoeffBaseChangeOfDvd_kerCoeffWeilPairing τ hn hnL) a b).symm
+    (φ.kummerCoeffBaseChangeOfDvd_kerCoeffWeilPairing τ hn _) a b).symm
 
 /-- **The Brauer class of the isogeny Weil cup product localizes to the isogeny Weil cup product
 of the base change**: for classes `a ∈ H¹(K, E₁[φ])` and `b ∈ H¹(K, E₂[φ̂])`, the base change to
