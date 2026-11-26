@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 public import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
@@ -47,9 +46,10 @@ gives the zero homomorphism, along which every representation restricts to a tri
   triple or an `sl₂` triple; `TauCeti.IsSl2TripleOrZero.e_eq_zero_iff` and
   `TauCeti.IsSl2TripleOrZero.f_eq_zero_iff` say that each of `e` and `f` vanishes exactly when `h`
   does.
-* `TauCeti.IsSl2TripleOrZero.map`, `TauCeti.isSl2TripleOrZero_map_iff` and
-  `TauCeti.IsSl2TripleOrZero.smul_of_mem_intLieAlgebra`: images under Lie algebra homomorphisms,
-  injective ones, and inner automorphisms.
+* `TauCeti.IsSl2TripleOrZero.map` and `TauCeti.isSl2TripleOrZero_map_iff`: images under Lie
+  algebra homomorphisms and injective ones. The images under inner automorphisms are
+  `TauCeti.IsSl2TripleOrZero.smul_of_mem_intLieAlgebra`, in
+  `TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup`.
 * `TauCeti.IsSl2TripleOrZero.symm`: `(-h, f, e)` is a zero-inclusive triple when `(h, e, f)` is.
 * `TauCeti.IsSl2TripleOrZero.toLieHom_eq_zero_iff`: the homomorphism of a triple vanishes exactly
   for the zero triple; `TauCeti.IsSl2TripleOrZero.toLieHom_map` is its naturality.
@@ -224,15 +224,6 @@ theorem isSl2TripleOrZero_iff {L : Type*} [LieRing L] [HasUniqueDiv L] {h e f : 
     · exact .inr (t.isSl2Triple hh)
   · rintro (⟨rfl, rfl, rfl⟩ | t)
     exacts [isSl2TripleOrZero_zero, t.isSl2TripleOrZero]
-
-/-- An inner automorphism `g ∈ Int(L)` carries a zero-inclusive `sl₂` triple `(h, e, f)` to the
-zero-inclusive `sl₂` triple `(g h, g e, g f)`. -/
-theorem IsSl2TripleOrZero.smul_of_mem_intLieAlgebra {K L : Type*} [CommRing K] [LieRing L]
-    [LieAlgebra K L] [LieAlgebra ℚ L] {g : LinearMap.GeneralLinearGroup K L}
-    (hg : g ∈ intLieAlgebra K L) {h e f : L} (t : IsSl2TripleOrZero h e f) :
-    IsSl2TripleOrZero (g • h) (g • e) (g • f) := by
-  simpa only [LieEquiv.coe_toLieHom, intLieAlgebraLieEquiv_apply] using
-    t.map (intLieAlgebraLieEquiv ⟨g, hg⟩).toLieHom
 
 /-- For `i ≠ j`, the matrix units `Eᵢᵢ - Eⱼⱼ`, `Eᵢⱼ`, `Eⱼᵢ` form a zero-inclusive `sl₂` triple in
 `sl n R`, over every commutative ring: over a nontrivial ring this is

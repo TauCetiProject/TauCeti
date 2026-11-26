@@ -16,7 +16,7 @@ whole module (`Module.End.eigenspace_zero`).
 
 ## Main results
 
-* `Module.End.eigenspace_zero_of_ne_zero`: the `μ`-eigenspace of `0` is trivial for `μ ≠ 0`.
+* `Module.End.zero_eigenspace_eq_bot`: the `μ`-eigenspace of `0` is trivial for `μ ≠ 0`.
 -/
 
 public section
@@ -26,7 +26,7 @@ namespace Module.End
 /-- The zero endomorphism of a torsion-free module over a domain has trivial eigenspace at every
 nonzero scalar. -/
 @[simp]
-theorem eigenspace_zero_of_ne_zero {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M]
+theorem zero_eigenspace_eq_bot {R M : Type*} [CommRing R] [IsDomain R] [AddCommGroup M]
     [Module R M] [IsTorsionFree R M] {μ : R} (hμ : μ ≠ 0) : (0 : End R M).eigenspace μ = ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun m hm ↦ ?_
   rw [mem_eigenspace_iff, LinearMap.zero_apply, eq_comm, smul_eq_zero] at hm

@@ -78,7 +78,7 @@ triple these eigenspaces vanish. -/
 theorem disjoint_ker_toEnd_e_eigenspace (t : IsSl2TripleOrZero h e f) (hμ : ∀ n : ℕ, μ ≠ n) :
     Disjoint (LinearMap.ker (toEnd K L M e)) ((toEnd K L M h).eigenspace μ) := by
   rcases eq_or_ne h 0 with rfl | hh
-  · rw [map_zero, End.eigenspace_zero_of_ne_zero (by simpa using hμ 0)]
+  · rw [map_zero, End.zero_eigenspace_eq_bot (by simpa using hμ 0)]
     exact disjoint_bot_right
   · exact (t.isSl2Triple hh).disjoint_ker_toEnd_e_eigenspace hμ
 
@@ -87,7 +87,7 @@ zero triple these eigenspaces vanish. -/
 theorem disjoint_ker_toEnd_f_eigenspace (t : IsSl2TripleOrZero h e f) (hμ : ∀ n : ℕ, μ ≠ -n) :
     Disjoint (LinearMap.ker (toEnd K L M f)) ((toEnd K L M h).eigenspace μ) := by
   rcases eq_or_ne h 0 with rfl | hh
-  · rw [map_zero, End.eigenspace_zero_of_ne_zero (by simpa using hμ 0)]
+  · rw [map_zero, End.zero_eigenspace_eq_bot (by simpa using hμ 0)]
     exact disjoint_bot_right
   · exact (t.isSl2Triple hh).disjoint_ker_toEnd_f_eigenspace hμ
 
@@ -149,7 +149,7 @@ theorem map_toEnd_e_eigenspace (t : IsSl2TripleOrZero h e f) (hμ : ∀ n : ℕ,
     ((toEnd K L M h).eigenspace μ).map (toEnd K L M e) = (toEnd K L M h).eigenspace (μ + 2) := by
   have := HasUniqueDiv.of_isTorsionFree K L
   rcases eq_or_ne h 0 with rfl | hh
-  · rw [map_zero, End.eigenspace_zero_of_ne_zero (μ := μ + 2) (by simpa using hμ 0),
+  · rw [map_zero, End.zero_eigenspace_eq_bot (μ := μ + 2) (by simpa using hμ 0),
       t.e_eq_zero_iff.mpr rfl, map_zero, Submodule.map_zero]
   · exact (t.isSl2Triple hh).map_toEnd_e_eigenspace hμ
 
@@ -159,7 +159,7 @@ theorem map_toEnd_f_eigenspace (t : IsSl2TripleOrZero h e f) (hμ : ∀ n : ℕ,
     ((toEnd K L M h).eigenspace μ).map (toEnd K L M f) = (toEnd K L M h).eigenspace (μ - 2) := by
   have := HasUniqueDiv.of_isTorsionFree K L
   rcases eq_or_ne h 0 with rfl | hh
-  · rw [map_zero, End.eigenspace_zero_of_ne_zero (μ := μ - 2) (by simpa using hμ 0),
+  · rw [map_zero, End.zero_eigenspace_eq_bot (μ := μ - 2) (by simpa using hμ 0),
       t.f_eq_zero_iff.mpr rfl, map_zero, Submodule.map_zero]
   · exact (t.isSl2Triple hh).map_toEnd_f_eigenspace hμ
 
