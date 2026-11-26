@@ -92,7 +92,7 @@ theorem integral_riemannZetaRieszZeroSide_mul_cpow_eq_add {s : ℂ} (hs : 1 < s.
 entire completion `ξ` of zeta equals `s γ + (s - 1) (1 - log (2π)) - (ζ'/ζ(s) + 1 / (s - 1))`
 minus the gamma combination of `TauCeti.mul_integral_rieszGammaCorrection_eq_logDeriv_Gammaℝ`.
 This is the factorization `ξ(s) = 2π (s - 1) ζ(s) Γℝ(s + 2)` read at `0`, `1` and `s`. -/
-theorem logDeriv_zetaEntireCompletion_rieszCombination {s : ℂ} (hs : 1 < s.re) :
+private theorem logDeriv_zetaEntireCompletion_rieszCombination {s : ℂ} (hs : 1 < s.re) :
     logDeriv zetaEntireCompletion 0 +
         s * (logDeriv zetaEntireCompletion 1 - logDeriv zetaEntireCompletion 0) -
           logDeriv zetaEntireCompletion s =
