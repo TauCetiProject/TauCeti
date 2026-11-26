@@ -38,7 +38,9 @@ with the same kernel are isomorphic over the target (Mathlib's `IsClosedImmersio
 * `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_hom_graphι`: `graphSymmIso` is compatible
   with the closed immersions of the graphs and the exchange of factors.
 * `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_hom_graphFst`,
-  `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_hom_graphSnd`: `graphSymmIso` exchanges the
+  `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_hom_graphSnd`,
+  `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_inv_graphFst`,
+  `AlgebraicGeometry.Scheme.PartialIso.graphSymmIso_inv_graphSnd`: `graphSymmIso` exchanges the
   two projections.
 * `AlgebraicGeometry.Scheme.RationalMap.ker_graphLift_comp_pullbackSymmetry_hom`,
   `AlgebraicGeometry.Scheme.RationalMap.exists_graphIso_of_comp_eq_id`: for mutually inverse
@@ -47,7 +49,7 @@ with the same kernel are isomorphic over the target (Mathlib's `IsClosedImmersio
   partial isomorphism `φ`
   (`AlgebraicGeometry.Scheme.RationalMap.exists_partialIso_toRationalMap_eq`) and `g` is that of
   `φ.symm`
-  (`AlgebraicGeometry.Scheme.RationalMap.eq_symm_toRationalMap_of_comp_eq_id`).
+  (`AlgebraicGeometry.Scheme.PartialIso.eq_symm_toRationalMap_of_comp_eq_id`).
 -/
 
 public section
@@ -93,9 +95,8 @@ kernel of the closed immersion of `Γ_{φ⁻¹}`. -/
 theorem ker_graphι_comp_pullbackSymmetry_hom :
     (RationalMap.graphι φ.toRationalMap ≫ (pullbackSymmetry _ _).hom).ker =
       (RationalMap.graphι φ.symm.toRationalMap).ker := by
-  rw [Hom.ker_comp, RationalMap.graphι, Hom.imageι, IdealSheafData.ker_subschemeι,
-    IdealSheafData.map_ker, ker_graphLift_comp_pullbackSymmetry_hom, RationalMap.graphι, Hom.imageι,
-    IdealSheafData.ker_subschemeι]
+  rw [Hom.ker_comp, RationalMap.ker_graphι, IdealSheafData.map_ker,
+    ker_graphLift_comp_pullbackSymmetry_hom, RationalMap.ker_graphι]
 
 /-- **The graph of the inverse.** The exchange of factors `X × Y ≅ Y × X` induces an isomorphism
 of the graph `Γ_φ` of the rational map of a partial isomorphism `φ` with the graph `Γ_{φ⁻¹}` of
@@ -140,25 +141,27 @@ theorem graphSymmIso_hom_graphSnd :
   rw [RationalMap.graphFst, RationalMap.graphSnd, graphClosureFst_def, graphClosureSnd_def]
   simp
 
+/-- The inverse of `Γ_φ ≅ Γ_{φ⁻¹}` carries the first projection of `Γ_φ` to the second projection
+of `Γ_{φ⁻¹}`. -/
+@[reassoc (attr := simp)]
+theorem graphSymmIso_inv_graphFst :
+    (graphSymmIso φ).inv ≫ RationalMap.graphFst φ.toRationalMap =
+      RationalMap.graphSnd φ.symm.toRationalMap := by
+  rw [Iso.inv_comp_eq, graphSymmIso_hom_graphSnd]
+
+/-- The inverse of `Γ_φ ≅ Γ_{φ⁻¹}` carries the second projection of `Γ_φ` to the first projection
+of `Γ_{φ⁻¹}`. -/
+@[reassoc (attr := simp)]
+theorem graphSymmIso_inv_graphSnd :
+    (graphSymmIso φ).inv ≫ RationalMap.graphSnd φ.toRationalMap =
+      RationalMap.graphFst φ.symm.toRationalMap := by
+  rw [Iso.inv_comp_eq, graphSymmIso_hom_graphFst]
+
 end PartialIso
 
 namespace RationalMap
 
-variable {X Y : Scheme.{u}} [IsIntegral X] [IsIntegral Y]
-
-/-- A left inverse `g` of the rational map of a partial isomorphism `φ` is the rational map of
-`φ.symm`. -/
-theorem eq_symm_toRationalMap_of_comp_eq_id (φ : X.PartialIso Y) (g : Y ⤏ X)
-    (h : φ.toRationalMap.comp g = RationalMap.id X) : g = φ.symm.toRationalMap := by
-  have : φ.symm.toRationalMap.IsDominant :=
-    (PartialMap.isDominant_toRationalMap_iff _).2 inferInstance
-  have : φ.toRationalMap.IsDominant :=
-    (PartialMap.isDominant_toRationalMap_iff _).2 inferInstance
-  calc g = (φ.symm.toRationalMap.comp φ.toRationalMap).comp g := by
-        simp only [φ.toRationalMap_symm_comp, RationalMap.id_comp]
-    _ = φ.symm.toRationalMap := by rw [comp_assoc, h, comp_id]
-
-variable [X.IsSeparated] [Y.IsSeparated]
+variable {X Y : Scheme.{u}} [IsIntegral X] [IsIntegral Y] [X.IsSeparated] [Y.IsSeparated]
 
 /-- **The graph of the inverse of a birational map.** For mutually inverse dominant rational maps
 `f : X ⤏ Y` and `g : Y ⤏ X` of integral separated schemes, the exchange of factors
@@ -168,7 +171,7 @@ theorem ker_graphLift_comp_pullbackSymmetry_hom (f : X ⤏ Y) [f.IsDominant] (g 
     [g.IsDominant] (h : f.comp g = RationalMap.id X) (h' : g.comp f = RationalMap.id Y) :
     (graphLift f ≫ (pullbackSymmetry _ _).hom).ker = (graphLift g).ker := by
   obtain ⟨φ, rfl⟩ := f.exists_partialIso_toRationalMap_eq g h h'
-  obtain rfl := eq_symm_toRationalMap_of_comp_eq_id φ g h
+  obtain rfl := φ.eq_symm_toRationalMap_of_comp_eq_id g h
   exact φ.ker_graphLift_comp_pullbackSymmetry_hom
 
 /-- **The graph of the inverse of a birational map.** For mutually inverse dominant rational maps
@@ -179,7 +182,7 @@ theorem exists_graphIso_of_comp_eq_id (f : X ⤏ Y) [f.IsDominant] (g : Y ⤏ X)
     ∃ e : graph f ≅ graph g, e.hom ≫ graphι g = graphι f ≫ (pullbackSymmetry _ _).hom ∧
       e.hom ≫ graphFst g = graphSnd f ∧ e.hom ≫ graphSnd g = graphFst f := by
   obtain ⟨φ, rfl⟩ := f.exists_partialIso_toRationalMap_eq g h h'
-  obtain rfl := eq_symm_toRationalMap_of_comp_eq_id φ g h
+  obtain rfl := φ.eq_symm_toRationalMap_of_comp_eq_id g h
   exact ⟨φ.graphSymmIso, φ.graphSymmIso_hom_graphι, φ.graphSymmIso_hom_graphFst,
     φ.graphSymmIso_hom_graphSnd⟩
 
