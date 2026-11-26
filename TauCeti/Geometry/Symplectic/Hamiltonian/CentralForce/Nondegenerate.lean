@@ -34,7 +34,9 @@ these coordinates the transversal Hessians are the multiples of
 Hessian of the reduced Hamiltonian `p_r² / (2m) + U_L(r)` of the radial motion. Hence a point of a
 circular orbit is a nondegenerate point of `F` exactly when `r` is a nondegenerate critical point
 of the effective potential, `U_L''(r) ≠ 0`
-(`TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`). For `m > 0` the transversal
+(`TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_polarCanonical_iff`; at a point of
+`V × V` this is `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`, in the module
+`TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.SingularPoint`). For `m > 0` the transversal
 Hessian of the critical function `H - Ω L` on the radial directions is positive definite exactly
 when `U_L''(r) > 0`, that is, at a nondegenerate minimum of the effective potential
 (`posDef_hessianQuadraticForm_comp_centralForceEnergyMomentum_comp_fderiv_polarCanonical_inl_iff`).
@@ -51,13 +53,11 @@ transversal Hessians well defined.
 
 * `TauCeti.comp_fderiv_centralForceEnergyMomentum_eq_zero`: on a circular orbit, the critical
   functional `h - Ω l` kills the image of `dF`.
-* `TauCeti.finrank_range_fderiv_centralForceEnergyMomentum`,
-  `TauCeti.finrank_range_fderiv_centralForceEnergyMomentum_polarCanonical`: `F` has rank one at a
+* `TauCeti.finrank_range_fderiv_centralForceEnergyMomentum_polarCanonical`: `F` has rank one at a
   point of a circular orbit.
 * `TauCeti.hessianQuadraticForm_comp_centralForceEnergyMomentum_apply_fderiv_polarCanonical`: the
   transversal Hessians in the slice coordinates `(δr, δp_r)`.
-* `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`,
-  `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_polarCanonical_iff`: a point of a
+* `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_polarCanonical_iff`: a point of a
   circular orbit is nondegenerate exactly when `U_L''(r) ≠ 0`.
 * `posDef_hessianQuadraticForm_comp_centralForceEnergyMomentum_comp_fderiv_polarCanonical_inl_iff`:
   for `m > 0` the transversal Hessian of `H - Ω L` on the radial directions is positive definite
@@ -410,16 +410,6 @@ private theorem fderiv_centralForceEnergyMomentum_fderiv_polarCanonical_one
       (ContinuousLinearMap.snd ℝ (ℝ × ℝ) (ℝ × ℝ))).hasFDerivAt
   simpa using DFunLike.congr_fun h ((0, 0), (0, 1))
 
-/-- A point `(q, p)` with `q ≠ 0` and `⟪q, p⟫ = 0` has polar coordinates `(‖q‖, 0, θ, L(q, p))`
-for some angle `θ`. -/
-private theorem exists_polarCanonical_eq {x : V × V} (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0) :
-    ∃ θ : ℝ, polarCanonical (b 0) (b 1) ((‖x.1‖, 0), (θ, angularMomentum (b 0) (b 1) x)) = x := by
-  obtain ⟨θ, hθ⟩ : ∃ θ : ℝ, (θ : Real.Angle) = polarAngle (b 0) (b 1) x.1 :=
-    (polarAngle (b 0) (b 1) x.1).induction_on fun θ ↦ ⟨θ, rfl⟩
-  have hx := polarCanonical_polarAngle b x.2 hq hθ
-  rw [radialMomentum_apply, h0, zero_div, Prod.mk.eta] at hx
-  exact ⟨θ, hx⟩
-
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ V]
@@ -545,35 +535,6 @@ theorem isNondegeneratePoint_centralForceEnergyMomentum_polarCanonical_iff (hm :
         hr hc⟩) (by simp),
     SymplecticForm.isNondegenerateQuadraticFamily_const_iff (by simp),
     nondegenerate_hessianQuadraticForm_transversalModel_iff hm hU hr.ne' hc]
-
-/-- **Circular orbits have rank one.** Let `(q, p)` be a point of a circular orbit of a planar
-central force with angular momentum `L`: `q ≠ 0`, `⟪q, p⟫ = 0`, and `‖q‖` is a critical point of
-the effective potential `U_L`, at which the potential is differentiable. Then the derivative of
-the energy–momentum map `(H, L)` has rank one at `(q, p)`. -/
-theorem finrank_range_fderiv_centralForceEnergyMomentum (hm : m ≠ 0) {x : V × V}
-    (hq : x.1 ≠ 0) (hU : DifferentiableAt ℝ U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
-    (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0) :
-    finrank ℝ (fderiv ℝ (centralForceEnergyMomentum b m U) x).range = 1 := by
-  obtain ⟨θ, hx⟩ := exists_polarCanonical_eq b hq h0
-  have h := finrank_range_fderiv_centralForceEnergyMomentum_polarCanonical b (θ := θ) hm hU
-    (norm_pos_iff.2 hq) hc
-  rwa [hx] at h
-
-/-- **Nondegeneracy of circular orbits.** Let `(q, p)` be a point of a circular orbit of a planar
-central force with angular momentum `L`: `q ≠ 0`, `⟪q, p⟫ = 0`, and `‖q‖` is a critical point of
-the effective potential `U_L`, at which the potential is `C²`. Then `(q, p)` is a nondegenerate
-point of the energy–momentum map `(H, L)` exactly when `‖q‖` is a nondegenerate critical point of
-`U_L`, `U_L''(‖q‖) ≠ 0`. The energy–momentum map has rank one there
-(`TauCeti.finrank_range_fderiv_centralForceEnergyMomentum`). -/
-theorem isNondegeneratePoint_centralForceEnergyMomentum_iff (hm : m ≠ 0) {x : V × V}
-    (hq : x.1 ≠ 0) (hU : ContDiffAt ℝ 2 U ‖x.1‖) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
-    (hc : deriv (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ = 0) :
-    (stdSymplecticForm (V := V)).IsNondegeneratePoint (centralForceEnergyMomentum b m U) x ↔
-      iteratedDeriv 2 (effectivePotential m (angularMomentum (b 0) (b 1) x) U) ‖x.1‖ ≠ 0 := by
-  obtain ⟨θ, hx⟩ := exists_polarCanonical_eq b hq h0
-  have h := isNondegeneratePoint_centralForceEnergyMomentum_polarCanonical_iff b (θ := θ) hm hU
-    (norm_pos_iff.2 hq) hc
-  rwa [hx] at h
 
 end FiniteDimensional
 
