@@ -18,20 +18,18 @@ Gårding cone `Γ(σ_k, e)` of the elementary symmetric polynomial `σ_k` in the
 `e = (1, …, 1)` (`TauCeti.gardingCone_esymm_eq_hessianCone`, a restatement of
 `MvPolynomial.gardingCone_esymm`). Through this identification the Hessian cones inherit the
 properties of Gårding cones of symmetric homogeneous polynomials: they are invariant under
-permutations of the coordinates and under positive dilations. They are open, as finite
-intersections of the open sets `{σ_j > 0}`. With `Γ_n ⊆ Γ_k ⊆ Γ_1` this makes
-`Γ_k` an admissible cone for `1 ≤ k ≤ n` (`TauCeti.isAdmissibleCone_hessianCone`). The extreme
-cases are the positive orthant `Γ_n` (`TauCeti.hessianCone_self`) and the half-space `Γ_1`
-(`TauCeti.hessianCone_one`), and the cones are nested, `Γ_k ⊆ Γ_j` for `j ≤ k`
-(`TauCeti.hessianCone_subset_hessianCone`).
+permutations of the coordinates and under positive dilations. Together with openness
+(`TauCeti.isOpen_hessianCone`) and `Γ_n ⊆ Γ_k ⊆ Γ_1` (`TauCeti.sum_pos_of_mem_hessianCone`), both
+from the basic cone API next to the definition, this makes `Γ_k` an admissible cone for
+`1 ≤ k ≤ n` (`TauCeti.isAdmissibleCone_hessianCone`). The largest index `Γ_n` is the positive
+orthant (`TauCeti.hessianCone_self`).
 
 ## Main results
 
 * `TauCeti.gardingCone_esymm_eq_hessianCone`: `Γ(σ_k, e) = Γ_k`.
-* `TauCeti.isOpen_hessianCone`, `TauCeti.comp_perm_mem_hessianCone`,
-  `TauCeti.smul_mem_hessianCone`: `Γ_k` is open, symmetric and a cone.
-* `TauCeti.hessianCone_self`, `TauCeti.hessianCone_one`: `Γ_n` is the positive orthant and `Γ_1`
-  the half-space `σ_1 > 0`.
+* `TauCeti.comp_perm_mem_hessianCone`, `TauCeti.smul_mem_hessianCone`: `Γ_k` is symmetric and a
+  cone.
+* `TauCeti.hessianCone_self`: `Γ_n` is the positive orthant.
 * `TauCeti.isAdmissibleCone_hessianCone`: for `1 ≤ k ≤ n`, `Γ_k` is an admissible cone.
 
 ## References
@@ -57,13 +55,6 @@ theorem gardingCone_esymm_eq_hessianCone (n k : ℕ) :
   exact ⟨fun h j hj ↦ h j (mem_Icc.1 hj).1 (mem_Icc.1 hj).2,
     fun h j hj1 hjk ↦ h j (mem_Icc.2 ⟨hj1, hjk⟩)⟩
 
-/-- The Hessian cone `Γ_k` is open. -/
-theorem isOpen_hessianCone (n k : ℕ) : IsOpen (hessianCone n k) := by
-  have h : hessianCone n k = ⋂ j ∈ Icc 1 k, {μ | 0 < eval μ (esymm (Fin n) ℝ j)} := by
-    ext; simp
-  rw [h]
-  exact isOpen_biInter_finset fun j _ ↦ isOpen_lt continuous_const (MvPolynomial.continuous_eval _)
-
 /-- The Hessian cone `Γ_k` is invariant under permutations of the coordinates. -/
 theorem comp_perm_mem_hessianCone (σ : Equiv.Perm (Fin n)) {μ : Fin n → ℝ}
     (hμ : μ ∈ hessianCone n k) : μ ∘ σ ∈ hessianCone n k := by
@@ -76,26 +67,10 @@ theorem smul_mem_hessianCone {t : ℝ} (ht : 0 < t) {μ : Fin n → ℝ}
   rw [← gardingCone_esymm_eq_hessianCone] at hμ ⊢
   exact smul_mem_gardingCone (MvPolynomial.isHomogeneous_esymm (σ := Fin n) (R := ℝ) k) hμ ht
 
-/-- The Hessian cones are nested: `Γ_k ⊆ Γ_j` for `j ≤ k`. -/
-theorem hessianCone_subset_hessianCone {j : ℕ} (hjk : j ≤ k) :
-    hessianCone n k ⊆ hessianCone n j := fun _ hμ ↦ mem_hessianCone.2 fun i hi ↦
-  mem_hessianCone.1 hμ i (mem_Icc.2 ⟨(mem_Icc.1 hi).1, (mem_Icc.1 hi).2.trans hjk⟩)
-
 /-- `Γ_n` is the positive orthant. -/
 theorem hessianCone_self (n : ℕ) : hessianCone n n = {μ : Fin n → ℝ | ∀ i, 0 < μ i} := by
   rw [← gardingCone_esymm_eq_hessianCone]
   simpa using gardingCone_esymm_card (σ := Fin n)
-
-/-- `Γ_1` is the half-space `σ_1 = λ_1 + ⋯ + λ_n > 0`. -/
-theorem hessianCone_one (n : ℕ) : hessianCone n 1 = {μ : Fin n → ℝ | 0 < ∑ i, μ i} := by
-  ext μ
-  simp [esymm_one]
-
-/-- `Γ_k ⊆ Γ_1` for `k ≥ 1`: every point of `Γ_k` has positive coordinate sum. -/
-theorem sum_pos_of_mem_hessianCone (hk : 1 ≤ k) {μ : Fin n → ℝ} (hμ : μ ∈ hessianCone n k) :
-    0 < ∑ i, μ i := by
-  have := hessianCone_subset_hessianCone hk hμ
-  rwa [hessianCone_one] at this
 
 /-- **The Hessian cone `Γ_k` is an admissible cone** for `1 ≤ k ≤ n`: it is open, symmetric,
 invariant under positive dilations, and `Γ_n ⊆ Γ_k ⊆ Γ_1`. -/
