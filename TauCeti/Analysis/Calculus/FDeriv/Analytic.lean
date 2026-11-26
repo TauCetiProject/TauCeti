@@ -31,10 +31,17 @@ are the diagonal values of the derivative series in the direction `v`, up to the
 so they vanish. This replaces the mean value theorem over nonarchimedean fields such as `ℚ_p`,
 where the ball of convergence is totally disconnected. Characteristic zero is needed: over a field
 of characteristic `p`, the derivative of `z ↦ z ^ p` vanishes identically, but the function is not
-constant. Consequently, if the derivative kills the kernel of a continuous projection `π` on the
-ball of convergence `Metric.eball 0 r`, the function satisfies `g (π z) = g z` whenever
+constant. This is the argument of Schneider, *p-Adic Lie Groups*, Corollary 5.8 (see the
+references below). Consequently, if the derivative kills the kernel of a continuous projection
+`π` on the ball of convergence `Metric.eball 0 r`, the function satisfies `g (π z) = g z` whenever
 `‖π z‖ₑ + ‖z - π z‖ₑ < r` (`HasFPowerSeriesOnBall.apply_proj_eq_of_fderiv_apply_eq_zero`), as for
 `ℝ` and `ℂ` in `TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`.
+
+## References
+
+* P. Schneider, *p-Adic Lie Groups*, Grundlehren der mathematischen Wissenschaften 344, Springer,
+  2011, §5, Corollary 5.8 (an analytic function with vanishing derivative is locally constant in
+  characteristic zero).
 -/
 
 public section
