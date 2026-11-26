@@ -1,0 +1,828 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.PDE.Regularity.Boundary.SecondDerivatives
+public import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
+public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Hessian
+import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Analysis.Normed.Operator.Holder
+import TauCeti.Analysis.Sobolev.W1p.Convex
+import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
+import TauCeti.Analysis.Sobolev.W1p.Symmetry
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
+import TauCeti.Topology.MetricSpace.Holder
+
+/-!
+# Second derivatives up to a curved boundary
+
+Let `0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be open. Near a boundary point `x₀`, suppose that `∂Ω` is
+straightened by a chart: mutually inverse changes of variables `Φ : U' → U` and `Ψ : U → U'` of
+order two, with Jacobian determinant one and `D²Ψ` `α`-Hölder, such that `Φ` maps the part of `U'`
+in an open half-space `H = {c₀ < ⟪y, ν⟫}` onto `Ω ∩ U` and `x₀ = Φ y₀` with `y₀` on the boundary
+hyperplane. This is the situation at a boundary point of a domain with `C^{2,α}` boundary. Let `a`
+be uniformly elliptic near `x₀` with entries of class `C^{1,α}` there, let `f ∈ L²(Ω)` be `α`-Hölder
+up to the boundary near `x₀`, and let `u ∈ H¹(Ω)` be a weak solution of
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`
+
+that vanishes on `∂Ω` near `x₀`. This file proves that `u` is `C^{2,α}` up to the boundary near
+`x₀`: on `Ω ∩ V` for an open neighbourhood `V` of `x₀`, `u` is the first-order part of an element
+of `W^{2,2}(Ω ∩ V)` whose weak Hessian agrees almost everywhere with a field that is `α`-Hölder on
+`closure Ω ∩ V`
+(`exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_isChangeOfVariables`; this and
+the other declarations named below are in the `TauCeti.PDE` namespace). With the interior regularity
+of `exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contDiffOn`, this
+is the local regularity from which the `C^{2,α}` regularity of weak solutions of the Dirichlet
+problem on a domain with `C^{2,α}` boundary is assembled (Gilbarg–Trudinger, Lemma 6.18 and
+Theorem 6.19, here for divergence-form equations).
+
+## The argument
+
+* **Flattening.** The function `v = u ∘ Φ` lies in `H¹` of the flat half-ball `H ∩ B(y₀, r)`,
+  vanishes on its flat boundary, and solves `-∂ᵢ(a'ⁱʲ ∂ⱼv) = f ∘ Φ` weakly there
+  (`energyFormH1_compL_eq_setIntegral`), with the pulled-back coefficient
+  `a' = DΨ(Φ ·) a(Φ ·) DΨ(Φ ·)ᵀ`. It is uniformly elliptic, and its entries are `C¹` with
+  `α`-Hölder derivatives: they are sums of products of the entries of `DΨ(Φ ·)` and `a(Φ ·)`,
+  whose derivatives `D²Ψ(Φ ·) DΦ` and `Da(Φ ·) DΦ` are `α`-Hölder because `D²Ψ` and `Da` are and
+  `Φ` and `DΦ` are Lipschitz on compact convex sets. The datum `f ∘ Φ` is `α`-Hölder up to the
+  flat boundary.
+* **The flat case.** Every second derivative of `v` is `α`-Hölder up to the flat boundary
+  (`exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq`). So
+  `v ∈ W^{2,2}` on a smaller half-ball, its weak Hessian agrees almost everywhere with an
+  `α`-Hölder field, and its weak gradient, whose components then have bounded gradients on the
+  convex half-ball, with a Lipschitz one.
+* **Back to `Ω`.** On `Ω ∩ V` the function `u = v ∘ Ψ` lies in `W^{2,2}`
+  (`TauCeti.Wkp.compL`), and the chain rule for the weak Hessian
+  (`TauCeti.Wkp.inner_iteratedGradient_compL_ae`)
+
+  `⟪D²u h, g⟫ = ⟪D²v(Ψ ·) (DΨ h), DΨ g⟫ + ⟪∇v(Ψ ·), D²Ψ h g⟫`
+
+  expresses its entries through `α`-Hölder functions, since `Ψ` maps `closure Ω` near `x₀` into
+  the closed half-space.
+
+## Main declarations
+
+* `exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_isChangeOfVariables`:
+  `C^{2,α}` regularity of weak solutions up to a straightened boundary portion.
+
+## References
+
+* D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
+  Section 6.2 (flattening the boundary), Lemma 6.18 and Theorem 6.19.
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.3.2 (regularity up to the boundary
+  by flattening).
+-/
+
+public section
+
+noncomputable section
+
+open InnerProductSpace MeasureTheory Metric Set TopologicalSpace
+open scoped ContDiff Distributions Gradient InnerProductSpace NNReal Topology
+
+namespace TauCeti
+
+namespace PDE
+
+variable {n : ℕ}
+
+local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
+
+/-! ### Functions with Hölder derivatives on a compact set -/
+
+section HolderDerivative
+
+variable {F A B G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [NormedAddCommGroup A] [NormedSpace ℝ A] [NormedAddCommGroup B] [NormedSpace ℝ B]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] {α : ℝ≥0}
+
+/-- `f` is differentiable at the points of `s` with a derivative `f'`, and both `f` and `f'` are
+`α`-Hölder on `K`. The pulled-back principal coefficient is assembled from such functions by
+products, sums and linear maps. -/
+private def HasHolderFDerivOn (α : ℝ≥0) (s K : Set E) (f : E → F) : Prop :=
+  ∃ f' : E → E →L[ℝ] F, (∀ y ∈ s, HasFDerivAt f (f' y) y) ∧ (∃ C, HolderOnWith C α f K) ∧
+    ∃ C, HolderOnWith C α f' K
+
+/-- Bilinear products preserve `HasHolderFDerivOn`. -/
+private theorem HasHolderFDerivOn.comp₂ (L : A →L[ℝ] B →L[ℝ] G) (hα : 0 < α) {s K : Set E}
+    (hK : IsCompact K) {f : E → A} {g : E → B} (hf : HasHolderFDerivOn α s K f)
+    (hg : HasHolderFDerivOn α s K g) :
+    HasHolderFDerivOn α s K fun z => L (f z) (g z) := by
+  obtain ⟨f', hf', ⟨Cf, hfC⟩, ⟨Cf', hf'C⟩⟩ := hf
+  obtain ⟨g', hg', ⟨Cg, hgC⟩, ⟨Cg', hg'C⟩⟩ := hg
+  obtain ⟨C₁, h₁⟩ := (L.precompR E).exists_holderOnWith_comp₂_of_isCompact hK hα hfC hg'C
+  obtain ⟨C₂, h₂⟩ := (L.precompL E).exists_holderOnWith_comp₂_of_isCompact hK hα hf'C hgC
+  exact ⟨fun y => L.precompR E (f y) (g' y) + L.precompL E (f' y) (g y),
+    fun y hy => L.hasFDerivAt_of_bilinear (hf' y hy) (hg' y hy),
+    L.exists_holderOnWith_comp₂_of_isCompact hK hα hfC hgC, _, h₁.add h₂⟩
+
+/-- Sums preserve `HasHolderFDerivOn`. -/
+private theorem HasHolderFDerivOn.add {s K : Set E} {f g : E → F}
+    (hf : HasHolderFDerivOn α s K f) (hg : HasHolderFDerivOn α s K g) :
+    HasHolderFDerivOn α s K (f + g) := by
+  obtain ⟨f', hf', ⟨Cf, hfC⟩, ⟨Cf', hf'C⟩⟩ := hf
+  obtain ⟨g', hg', ⟨Cg, hgC⟩, ⟨Cg', hg'C⟩⟩ := hg
+  exact ⟨f' + g', fun y hy => (hf' y hy).add (hg' y hy), ⟨_, hfC.add hgC⟩, ⟨_, hf'C.add hg'C⟩⟩
+
+/-- Finite sums preserve `HasHolderFDerivOn`. -/
+private theorem HasHolderFDerivOn.sum {ι : Type*} (t : Finset ι) {s K : Set E} {f : ι → E → F}
+    (hf : ∀ i ∈ t, HasHolderFDerivOn α s K (f i)) :
+    HasHolderFDerivOn α s K fun z => ∑ i ∈ t, f i z := by
+  classical
+  induction t using Finset.induction_on with
+  | empty =>
+    exact ⟨0, fun y _ => by simpa using hasFDerivAt_const (0 : F) y,
+      ⟨0, fun x _ y _ => by simp⟩, ⟨0, fun x _ y _ => by simp⟩⟩
+  | insert i t hi ih =>
+    simp only [Finset.sum_insert hi]
+    exact (hf i (Finset.mem_insert_self i t)).add
+      (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
+
+/-- A continuous linear map applied after a function preserves `HasHolderFDerivOn`. -/
+private theorem HasHolderFDerivOn.clm_comp (T : F →L[ℝ] G) {s K : Set E} {f : E → F}
+    (hf : HasHolderFDerivOn α s K f) : HasHolderFDerivOn α s K fun z => T (f z) := by
+  obtain ⟨f', hf', ⟨Cf, hfC⟩, ⟨Cf', hf'C⟩⟩ := hf
+  exact ⟨fun y => T.comp (f' y), fun y hy => T.hasFDerivAt.comp y (hf' y hy),
+    ⟨_, T.lipschitzWith.comp_holderOnWith hfC⟩,
+    ⟨_, (ContinuousLinearMap.compL ℝ E F G T).lipschitzWith.comp_holderOnWith hf'C⟩⟩
+
+/-- On a set `s` contained in `K`, the derivative of a function with `HasHolderFDerivOn` is
+`α`-Hölder on `s`. -/
+private theorem HasHolderFDerivOn.exists_holderOnWith_fderiv {s K : Set E} (hsK : s ⊆ K)
+    {f : E → F} (hf : HasHolderFDerivOn α s K f) :
+    ∃ C, HolderOnWith C α (fderiv ℝ f) s := by
+  obtain ⟨f', hf', -, ⟨C, hC⟩⟩ := hf
+  exact ⟨C, (hC.mono hsK).congr fun y hy => (hf' y hy).fderiv.symm⟩
+
+/-- A `C¹` function `g` whose derivative is `α`-Hölder on a set `t`, composed with a map `Φ` that
+is `C¹` with `C¹` derivative on a compact convex set `K` and maps `K` into `t`, has
+`HasHolderFDerivOn` on every open `s ⊆ K`: `D(g ∘ Φ) = Dg(Φ ·) DΦ`. -/
+private theorem hasHolderFDerivOn_comp (hα : 0 < α) (hα1 : α ≤ 1) {s K : Set E} (hs : IsOpen s)
+    (hsK : s ⊆ K) (hK : IsCompact K) (hKc : Convex ℝ K) {Φ : E → E} (hΦ : ContDiffOn ℝ 1 Φ K)
+    (hDΦ : ContDiffOn ℝ 1 (fderiv ℝ Φ) K) {g : E → ℝ} {O t : Set E} (hO : IsOpen O)
+    (hg : ContDiffOn ℝ 1 g O) (hKO : MapsTo Φ K O) (hKt : MapsTo Φ K t) {C : ℝ≥0}
+    (hgH : HolderOnWith C α (fderiv ℝ g) t) : HasHolderFDerivOn α s K fun y => g (Φ y) := by
+  obtain ⟨LΦ, hLΦ⟩ := hΦ.exists_lipschitzOnWith one_ne_zero hKc hK
+  obtain ⟨CΦ, hCΦ⟩ := hDΦ.exists_holderOnWith hKc hK hα1
+  refine ⟨fun y => (fderiv ℝ g (Φ y)).comp (fderiv ℝ Φ y), fun y hy => ?_,
+    (hg.comp hΦ hKO).exists_holderOnWith hKc hK hα1, ?_⟩
+  · have hΦd := (hΦ.differentiableOn one_ne_zero y (hsK hy)).differentiableAt
+      (Filter.mem_of_superset (hs.mem_nhds hy) hsK)
+    have hd := (hg.differentiableOn one_ne_zero (Φ y) (hKO (hsK hy))).differentiableAt
+      (hO.mem_nhds (hKO (hsK hy)))
+    exact hd.hasFDerivAt.comp y hΦd.hasFDerivAt
+  · have h1 := hgH.comp hLΦ.holderOnWith hKt
+    rw [mul_one] at h1
+    exact (ContinuousLinearMap.compL ℝ E E ℝ).exists_holderOnWith_comp₂_of_isCompact hK hα h1 hCΦ
+
+end HolderDerivative
+
+/-! ### The pulled-back principal coefficient has Hölder derivatives -/
+
+section Coefficient
+
+/-- The entries `∑ₖₗ (DΨ(Φ ·) eₖ)ᵢ aₖₗ(Φ ·) (DΨ(Φ ·) eₗ)ⱼ` of the pulled-back principal coefficient
+have `α`-Hölder derivatives near every point `x ∈ U'` with `Φ x ∈ W`, when `D²Ψ` is `α`-Hölder on
+`U` and the entries of `a` are `C¹` on `W` with locally `α`-Hölder derivatives. -/
+private theorem exists_hasHolderFDerivOn_pullbackPrincipal_sum {α : ℝ≥0} (hα : 0 < α)
+    (hα1 : α ≤ 1) {U' U W : Opens E} {Φ Ψ : E → E} {L : ℝ}
+    (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L 1)
+    {KT : ℝ≥0} (hT : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Ψ)) U)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    (ha : ∀ k l, ContDiffOn ℝ 1 (fun y => a y k l) W)
+    (hda : ∀ x ∈ W, ∃ ρ > 0, ∃ C : ℝ≥0, ∀ k l,
+      HolderOnWith C α (fderiv ℝ fun y => a y k l) (ball x ρ))
+    {x : E} (hx : x ∈ U') (hxW : Φ x ∈ W) :
+    ∃ ρ > 0, closedBall x ρ ⊆ U' ∧ ∀ i j, HasHolderFDerivOn α (ball x ρ) (closedBall x ρ)
+      fun y => ∑ k, ∑ l, (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single k 1)).ofLp i * a (Φ y) k l *
+        (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single l 1)).ofLp j := by
+  obtain ⟨ρa, hρa, Ca, hCa⟩ := hda (Φ x) hxW
+  -- A closed ball `K` about `x` in `U'` which `Φ` maps into the ball where `Da` is Hölder.
+  have hO : IsOpen ((U' : Set E) ∩ Φ ⁻¹' (ball (Φ x) ρa ∩ W)) :=
+    hΦ.contDiffOn.continuousOn.isOpen_inter_preimage U'.isOpen (isOpen_ball.inter W.isOpen)
+  have hxO : x ∈ (U' : Set E) ∩ Φ ⁻¹' (ball (Φ x) ρa ∩ W) := ⟨hx, mem_ball_self hρa, hxW⟩
+  obtain ⟨ρ, hρ, hρs⟩ := nhds_basis_closedBall.mem_iff.1 (hO.mem_nhds hxO)
+  have hKU' : closedBall x ρ ⊆ U' := fun y hy => (hρs hy).1
+  have hKU : MapsTo Φ (closedBall x ρ) U := fun y hy => hΦ.mapsTo (hKU' hy)
+  have hΦ2 : ContDiffOn ℝ 2 Φ U' := by exact_mod_cast hΦ.contDiffOn
+  have hΦK : ContDiffOn ℝ 1 Φ (closedBall x ρ) := (hΦ2.mono hKU').of_le one_le_two
+  have hDΦK : ContDiffOn ℝ 1 (fderiv ℝ Φ) (closedBall x ρ) :=
+    (hΦ.contDiffOn_fderiv (k := 1)).mono hKU'
+  -- The entries `a(Φ ·)ₖₗ` and `(DΨ(Φ ·) eₖ)ᵢ` have `α`-Hölder derivatives on the ball.
+  have hA (k l : Fin (n + 1)) : HasHolderFDerivOn α (ball x ρ) (closedBall x ρ)
+      fun y => a (Φ y) k l :=
+    hasHolderFDerivOn_comp hα hα1 isOpen_ball ball_subset_closedBall (isCompact_closedBall x ρ)
+      (convex_closedBall x ρ) hΦK hDΦK W.isOpen (ha k l) (fun y hy => (hρs hy).2.2)
+      (fun y hy => (hρs hy).2.1) (hCa k l)
+  have hDΨ : ContDiffOn ℝ 1 (fderiv ℝ Ψ) U := hΨ.contDiffOn_fderiv (k := 1)
+  have hTe (i k : Fin (n + 1)) : HasHolderFDerivOn α (ball x ρ) (closedBall x ρ)
+      fun y => (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single k 1)).ofLp i := by
+    let ℓ : (E →L[ℝ] E) →L[ℝ] ℝ := (EuclideanSpace.proj i).comp
+      (ContinuousLinearMap.apply ℝ E (EuclideanSpace.single k (1 : ℝ)))
+    have hℓ (z : E) (hz : z ∈ U) : fderiv ℝ (fun w => ℓ (fderiv ℝ Ψ w)) z =
+        ℓ.comp (fderiv ℝ (fderiv ℝ Ψ) z) :=
+      (ℓ.hasFDerivAt.comp z ((hDΨ.differentiableOn one_ne_zero z hz).differentiableAt
+        (U.isOpen.mem_nhds hz)).hasFDerivAt).fderiv
+    refine hasHolderFDerivOn_comp hα hα1 isOpen_ball ball_subset_closedBall
+      (isCompact_closedBall x ρ) (convex_closedBall x ρ) hΦK hDΦK U.isOpen
+      (g := fun w => ℓ (fderiv ℝ Ψ w)) (ℓ.contDiff.comp_contDiffOn hDΨ) hKU hKU
+      (C := ‖ℓ‖₊ * KT) ?_
+    refine HolderOnWith.of_dist_le fun z hz w hw => ?_
+    rw [hℓ z hz, hℓ w hw, dist_eq_norm, ← ContinuousLinearMap.comp_sub, NNReal.coe_mul,
+      coe_nnNorm, mul_assoc]
+    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+      (mul_le_mul_of_nonneg_left (by rw [← dist_eq_norm]; exact hT.dist_le hz hw)
+        (norm_nonneg _))
+  -- The entries of `a'` are sums of products of these.
+  exact ⟨ρ, hρ, hKU', fun i j => HasHolderFDerivOn.sum _ fun k _ => HasHolderFDerivOn.sum _
+    fun l _ => ((hTe i k).comp₂ (ContinuousLinearMap.mul ℝ ℝ) hα (isCompact_closedBall x ρ)
+      (hA k l)).comp₂ (ContinuousLinearMap.mul ℝ ℝ) hα (isCompact_closedBall x ρ) (hTe j l)⟩
+
+/-- **The flattened coefficient is `C^{1,α}`.** Let `Φ` and `Ψ` be mutually inverse changes of
+variables of order two with Jacobian determinant one, with `D²Ψ` `α`-Hölder on `U`. If the entries
+of `a` are `C¹` on an open set `W` with first derivatives locally `α`-Hölder there, then near every
+point `x ∈ U'` with `Φ x ∈ W` the first derivatives of the entries of the pulled-back principal
+coefficient `DΨ(Φ ·) a(Φ ·) DΨ(Φ ·)ᵀ` are `α`-Hölder. -/
+private theorem exists_holderOnWith_fderiv_pullbackPrincipal {α : ℝ≥0} (hα : 0 < α)
+    (hα1 : α ≤ 1) {U' U W : Opens E} {Φ Ψ : E → E} {L : ℝ}
+    (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L 1)
+    (hΨΦ : LeftInvOn Ψ Φ U') (hΦΨ : RightInvOn Ψ Φ U) {KT : ℝ≥0}
+    (hT : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Ψ)) U)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    (ha : ∀ k l, ContDiffOn ℝ 1 (fun y => a y k l) W)
+    (hda : ∀ x ∈ W, ∃ ρ > 0, ∃ C : ℝ≥0, ∀ k l,
+      HolderOnWith C α (fderiv ℝ fun y => a y k l) (ball x ρ))
+    {x : E} (hx : x ∈ U') (hxW : Φ x ∈ W) :
+    ∃ ρ > 0, ∃ C : ℝ≥0, ∀ i j,
+      HolderOnWith C α (fderiv ℝ fun y => pullbackPrincipal Φ a y i j) (ball x ρ) := by
+  obtain ⟨ρ, hρ, hKU', hg⟩ :=
+    exists_hasHolderFDerivOn_pullbackPrincipal_sum hα hα1 hΦ hΨ hT ha hda hx hxW
+  have hent (i j : Fin (n + 1)) : ∃ C : ℝ≥0,
+      HolderOnWith C α (fderiv ℝ fun y => pullbackPrincipal Φ a y i j) (ball x ρ) := by
+    obtain ⟨C, hC⟩ := (hg i j).exists_holderOnWith_fderiv ball_subset_closedBall
+    refine ⟨C, hC.congr fun y hy => ?_⟩
+    -- `a'` is this sum near `y`, since `DΨ(Φ ·)` inverts `DΦ` and `|det DΦ| = 1` on `U'`.
+    refine Filter.EventuallyEq.fderiv_eq (Filter.eventuallyEq_of_mem
+      (U'.isOpen.mem_nhds (hKU' (ball_subset_closedBall hy))) fun z hz => ?_)
+    rw [pullbackPrincipal_apply_apply_of_comp_eq_id a
+      (hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ hz) i j,
+      hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ hz, one_mul]
+  choose C hC using hent
+  refine ⟨ρ, hρ, ∑ i, ∑ j, C i j, fun i j => (hC i j).mono_const ?_⟩
+  exact (Finset.single_le_sum (f := fun j => C i j) (fun _ _ => zero_le)
+    (Finset.mem_univ j)).trans (Finset.single_le_sum (f := fun i => ∑ j, C i j)
+      (fun _ _ => zero_le) (Finset.mem_univ i))
+
+end Coefficient
+
+/-! ### The flat boundary in Sobolev form -/
+
+section Flat
+
+/-- If `v ∈ H¹(Ω)` has, in every direction `w`, a weak derivative `d w ∈ H¹(Ω)`, then `v` is the
+first-order part of an element of `W^{2,2}(Ω)` whose weak Hessian in the direction `w` is the weak
+gradient of `d w`. -/
+private theorem exists_wkp_of_forall_hasWeakLineDerivOn {Ω : Opens E} (v : W1p volume Ω 2)
+    (d : E → W1p volume Ω 2)
+    (hd : ∀ w, HasWeakLineDerivOn volume Ω (W1p.value v) (W1p.value (d w)) w) :
+    ∃ V : Wkp volume Ω 2 2, Wkp.lowerOrder 1 V = v ∧ ∀ w, ∀ᵐ x ∂volume.restrict (Ω : Set E),
+      Wkp.iteratedGradient 1 V x w = W1p.gradient (d w) x := by
+  let b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
+  have hdv (w : E) : (fun x => ⟪W1p.gradient v x, w⟫_ℝ)
+      =ᵐ[volume.restrict (Ω : Set E)] W1p.value (d w) :=
+    (W1p.hasWeakLineDerivOn_inner_gradient v w).ae_eq (hd w)
+  obtain ⟨V, hV⟩ := W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn v b fun i j =>
+    ⟨(innerSL ℝ (b i)).compLp (W1p.gradient (d (b j))),
+      (((W1p.hasWeakLineDerivOn_inner_gradient (d (b j)) (b i)).congr_ae (hdv (b j)).symm)
+        |>.congr_ae_deriv) (by
+          filter_upwards [(innerSL ℝ (b i)).coeFn_compLp (W1p.gradient (d (b j)))] with x hx
+          rw [hx, innerSL_apply_apply, real_inner_comm])⟩
+  -- The weak derivative of `V` in the direction `w` is `d w`.
+  have hlin (w : E) : Wkp.lineDerivL w 1 V = d w := by
+    refine W1p.ext_value (Lp.ext ?_)
+    have h1 := Wkp.hasWeakLineDerivOn_lineDerivL w 1 V
+    rw [← Wkp.value_lowerOrder_one, hV] at h1
+    simpa only [Wkp.value_one] using h1.ae_eq (hd w)
+  refine ⟨V, hV, fun w => ?_⟩
+  filter_upwards [Wkp.iteratedGradient_lineDerivL_ae w 0 V] with x h1
+  rw [← h1, Wkp.iteratedGradient_zero, hlin w]
+
+/-- On a bounded open convex set `Ω`, an element of `H¹(Ω)` whose weak gradient agrees almost
+everywhere with a field that is `α`-Hölder on `closure Ω`, `0 < α ≤ 1`, agrees almost everywhere
+with a function that is `α`-Hölder on `closure Ω`: its gradient is bounded, so it has a Lipschitz
+representative on `Ω`, which extends to the closure. -/
+private theorem exists_holderOnWith_closure_ae_eq_of_gradient {α : ℝ≥0} (hα : 0 < α)
+    (hα1 : α ≤ 1) {Ω : Opens E} (hconv : Convex ℝ (Ω : Set E))
+    (hb : Bornology.IsBounded (Ω : Set E)) (d : W1p volume Ω 2) {G : E → E} {C : ℝ≥0}
+    (hG : HolderOnWith C α G (closure (Ω : Set E)))
+    (hGd : (W1p.gradient d : E → E) =ᵐ[volume.restrict (Ω : Set E)] G) :
+    ∃ g : E → ℝ, (∃ C : ℝ≥0, HolderOnWith C α g (closure (Ω : Set E))) ∧
+      (W1p.value d : E → ℝ) =ᵐ[volume.restrict (Ω : Set E)] g := by
+  have hc := hb.isCompact_closure
+  obtain ⟨M, hM⟩ := hc.exists_bound_of_continuousOn (hG.continuousOn hα)
+  have hbd : ∀ᵐ x ∂volume.restrict (Ω : Set E), ‖W1p.gradient d x‖ ≤ M.toNNReal := by
+    filter_upwards [hGd, ae_restrict_mem Ω.isOpen.measurableSet] with x h1 hx
+    rw [h1]
+    exact (hM x (subset_closure hx)).trans (Real.le_coe_toNNReal M)
+  obtain ⟨g, hgeq, hgH⟩ := (W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le d
+    le_rfl hconv subset_rfl hbd).holderOnWith.exists_eqOn_holderOnWith_closure one_pos
+  obtain ⟨Mg, hMg⟩ := hc.exists_bound_of_continuousOn (hgH.continuousOn one_pos)
+  refine ⟨g, ⟨_, (holderOnWith_one.1 hgH).holderOnWith_of_norm_le (M := Mg.toNNReal)
+    (fun x hx => (hMg x hx).trans (Real.le_coe_toNNReal Mg)) hα1⟩, ?_⟩
+  filter_upwards [W1p.ae_eq_preciseRepresentative d, ae_restrict_mem Ω.isOpen.measurableSet]
+    with x h hx
+  rw [h, hgeq hx]
+
+/-- **`C^{2,α}` up to a flat boundary portion, in Sobolev form.** Under the hypotheses of
+`exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq`, the restriction of `v` to
+the half-ball `Ω' ∩ B(y₀, r / 16)` is the first-order part of an element of `W^{2,2}` there whose
+weak Hessian and weak gradient agree almost everywhere with fields that are `α`-Hölder on the closed
+half-ball `closure (H ∩ B(y₀, r / 16))`. -/
+private theorem exists_wkp_and_holderOnWith_of_inter_ball_eq {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+    {H Ω' : Opens E} {ν : E} {c₀ : ℝ} (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {y₀ : E}
+    (hy₀ : ⟪y₀, ν⟫_ℝ = c₀) {r : ℝ} (hr : 0 < r)
+    (hΩ' : (Ω' : Set E) ∩ ball y₀ r = (H : Set E) ∩ ball y₀ r)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (ball y₀ r))
+    (hell : UniformlyEllipticOn (ball y₀ r) a lam Lam)
+    (hda : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, ∀ i j,
+      HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x ρ))
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict Ω'))
+    (hfH : ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α f (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
+    {v : W1p volume Ω' 2}
+    (hv : ∀ w : W1p0 volume Ω' 2, energyFormH1 a 0 0 v (w : W1p volume Ω' 2) =
+      ∫ x in Ω', f x * W1p.value (w : W1p volume Ω' 2) x)
+    (hv0 : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ ball y₀ r →
+      ∃ w : W1p0 volume Ω' 2,
+        W1p.value (w : W1p volume Ω' 2) =ᵐ[volume.restrict Ω'] fun x => ψ x * W1p.value v x) :
+    ∃ V : Wkp volume (Ω' ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩ : Opens E) 2 2,
+      Wkp.lowerOrder 1 V = W1p.restrictL inf_le_left v ∧
+      ∃ (Gv : E → E →L[ℝ] E) (P : E → E),
+        (∃ C : ℝ≥0, HolderOnWith C α Gv (closure ((H : Set E) ∩ ball y₀ (r / 16)))) ∧
+        (∃ C : ℝ≥0, HolderOnWith C α P (closure ((H : Set E) ∩ ball y₀ (r / 16)))) ∧
+        (Wkp.iteratedGradient 1 V : E → E →L[ℝ] E)
+          =ᵐ[volume.restrict ((Ω' : Set E) ∩ ball y₀ (r / 16))] Gv ∧
+        (W1p.gradient (W1p.restrictL (inf_le_left :
+            (Ω' ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩ : Opens E) ≤ Ω') v) : E → E)
+          =ᵐ[volume.restrict ((Ω' : Set E) ∩ ball y₀ (r / 16))] P := by
+  let Ω'' : Opens E := Ω' ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩
+  have hΩ''H : ((Ω'' : Opens E) : Set E) = (H : Set E) ∩ ball y₀ (r / 16) := by
+    have hball : ball y₀ (r / 16) ⊆ ball y₀ r := ball_subset_ball (by linarith)
+    -- Unfold the coercion of `Ω''` first, so that the rewrites do not reach inside the `Opens`.
+    rw [show ((Ω'' : Opens E) : Set E) = (Ω' : Set E) ∩ ball y₀ (r / 16) from rfl,
+      ← inter_eq_right.2 hball, ← inter_assoc, hΩ', inter_assoc, inter_eq_right.2 hball]
+  set S₀ := closure ((H : Set E) ∩ ball y₀ (r / 16))
+  have hS₀ : S₀ ⊆ closedBall y₀ (r / 16) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ} :=
+    closure_minimal (fun y hy => ⟨ball_subset_closedBall hy.2, ((hH y).1 hy.1).le⟩)
+      (isClosed_closedBall.inter (isClosed_le continuous_const
+        (continuous_id.inner continuous_const)))
+  have hΩ''conv : Convex ℝ ((Ω'' : Opens E) : Set E) := by
+    rw [hΩ''H, show (H : Set E) = {x | c₀ < ⟪x, ν⟫_ℝ} from Set.ext hH]
+    exact (convex_halfSpace_gt (IsLinearMap.mk (fun x y => inner_add_left x y ν)
+      (fun c x => real_inner_smul_left x ν c)) c₀).inter (convex_ball y₀ (r / 16))
+  -- Second derivatives in every direction, from the flat theorem.
+  have hflat := fun w : E => exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq
+    hα hα1 hν hH hy₀ hr hΩ' ha hell hda hf hfH hv hv0 w
+  choose d hd G hG hGd using hflat; choose CG hCG using hG
+  let b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
+  have hvv : W1p.value (W1p.restrictL (inf_le_left : Ω'' ≤ Ω') v)
+      =ᵐ[volume.restrict (Ω'' : Set E)] W1p.value v := W1p.value_restrictL_ae inf_le_left v
+  obtain ⟨V, hV, hhess⟩ := exists_wkp_of_forall_hasWeakLineDerivOn _ d
+    fun w => (hd w).congr_ae hvv.symm
+  -- A Hölder representative of each component of `∇v` up to the flat boundary.
+  have hP (j : Fin (n + 1)) : ∃ g : E → ℝ, (∃ C : ℝ≥0, HolderOnWith C α g S₀) ∧
+      (fun x => ⟪W1p.gradient (W1p.restrictL (inf_le_left : Ω'' ≤ Ω') v) x, b j⟫_ℝ)
+        =ᵐ[volume.restrict (Ω'' : Set E)] g := by
+    obtain ⟨g, hgH, hg⟩ := exists_holderOnWith_closure_ae_eq_of_gradient hα hα1.le hΩ''conv
+      (by rw [hΩ''H]; exact isBounded_ball.subset inter_subset_right) (d (b j))
+      (by rw [hΩ''H]; exact (hCG (b j)).mono hS₀) (hGd (b j))
+    rw [hΩ''H] at hgH
+    exact ⟨g, hgH, (((W1p.hasWeakLineDerivOn_inner_gradient _ (b j)).congr_ae hvv).ae_eq
+      (hd (b j))).trans hg⟩
+  choose g hgH hg using hP; choose Cg hCg using hgH
+  refine ⟨V, hV, fun y => ∑ i, (innerSL ℝ (b i)).smulRight (G (b i) y),
+    fun y => ∑ j, g j y • b j, ⟨_, HolderOnWith.sum fun i _ =>
+      (ContinuousLinearMap.smulRightL ℝ ℝ ℝ E E (innerSL ℝ (b i))).lipschitzWith.comp_holderOnWith
+        ((hCG (b i)).mono hS₀)⟩, ⟨_, HolderOnWith.sum fun j _ =>
+      (ContinuousLinearMap.toSpanSingleton ℝ (b j)).lipschitzWith.comp_holderOnWith (hCg j)⟩,
+    ?_, ?_⟩
+  · filter_upwards [ae_all_iff.2 fun i => (hhess (b i)).and (hGd (b i))] with x hx
+    refine ContinuousLinearMap.ext fun h => ?_
+    conv_lhs => rw [← b.sum_repr' h]
+    simp only [map_sum, map_smul, sum_apply, ContinuousLinearMap.smulRight_apply,
+      innerSL_apply_apply]
+    exact Finset.sum_congr rfl fun i _ => by rw [(hx i).1, (hx i).2]
+  · filter_upwards [ae_all_iff.2 hg] with x hx
+    conv_lhs => rw [← b.sum_repr' (W1p.gradient _ x)]
+    exact Finset.sum_congr rfl fun j _ => by rw [real_inner_comm, hx j]
+
+end Flat
+
+/-! ### Transport to a curved boundary -/
+
+section Curved
+
+/-- **The hypotheses of the flat theorem in a chart.** In the setting of
+`exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_isChangeOfVariables`, on a
+ball `B(y₀, r) ⊆ U'` that `Φ` maps into `W`, the pulled-back coefficient `a'` has `C¹` entries with
+locally `α`-Hölder derivatives and is uniformly elliptic, and `f ∘ Φ` is `α`-Hölder up to the flat
+boundary near each point of the ball in the closed half-space. -/
+private theorem flat_hypotheses_of_isChangeOfVariables
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω W U' U : Opens E} {Φ Ψ : E → E} {L : ℝ}
+    (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L 1)
+    (hΨΦ : ∀ x, Ψ (Φ x) = x) (hΦΨ : ∀ y, Φ (Ψ y) = y) (hΦc : Continuous Φ) {ν : E}
+    (hν : ν ≠ 0) {c₀ : ℝ} (himage : Φ '' ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') = (Ω : Set E) ∩ U)
+    {KT : ℝ≥0} (hT : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Ψ)) U)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) W)
+    (hell : UniformlyEllipticOn W a lam Lam)
+    (hda : ∀ x ∈ W, ∃ ρ > 0, ∃ C : ℝ≥0, ∀ i j,
+      HolderOnWith C α (fderiv ℝ fun y => a y i j) (ball x ρ))
+    {f : E → ℝ} (hfH : ∀ x ∈ (W : Set E) ∩ closure Ω, ∃ ρ > 0, ∃ C : ℝ≥0,
+      HolderOnWith C α f (ball x ρ ∩ closure Ω))
+    {y₀ : E} {r : ℝ} (hr : 0 < r) (hBU' : ball y₀ r ⊆ U') (hBW : MapsTo Φ (ball y₀ r) W) :
+    (∀ i j, ContDiffOn ℝ 1 (fun x => pullbackPrincipal Φ a x i j) (ball y₀ r)) ∧
+      (∃ lam' Lam' : ℝ, UniformlyEllipticOn (ball y₀ r) (pullbackPrincipal Φ a) lam' Lam') ∧
+      (∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ C : ℝ≥0, ∀ i j,
+        HolderOnWith C α (fderiv ℝ fun y => pullbackPrincipal Φ a y i j) (ball x ρ)) ∧
+      ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ C : ℝ≥0,
+        HolderOnWith C α (fun y => f (Φ y)) (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) := by
+  have hΨΦ' : LeftInvOn Ψ Φ U' := fun x _ => hΨΦ x
+  have hΦΨ' : RightInvOn Ψ Φ U := fun y _ => hΦΨ y
+  have hΦ2 : ContDiffOn ℝ 2 Φ U' := by exact_mod_cast hΦ.contDiffOn
+  -- Points of `U'` in the closed half-space are mapped into `closure Ω`.
+  have hΦcl {y : E} (hy : y ∈ U') (hyν : c₀ ≤ ⟪y, ν⟫_ℝ) : Φ y ∈ closure (Ω : Set E) :=
+    map_mem_closure hΦc (mem_closure_setOf_lt_inner_inter hν hyν U'.isOpen hy)
+      (fun z hz => (himage ▸ mem_image_of_mem Φ hz : Φ z ∈ (Ω : Set E) ∩ U).1)
+  refine ⟨fun i j => contDiffOn_pullbackPrincipal_apply (hΦ.mono one_le_two) (hΨ.mono one_le_two)
+      hΨΦ' hΦΨ' hBU' hBW ((hΦ2.mono hBU').of_le one_le_two)
+      (by exact_mod_cast hΨ.contDiffOn) ha i j,
+    exists_uniformlyEllipticOn_pullbackPrincipal (hΦ.mono one_le_two) (hΨ.mono one_le_two) hΨΦ'
+      hΦΨ' hBU' ⟨y₀, mem_ball_self hr⟩ hBW hell,
+    fun x hx => exists_holderOnWith_fderiv_pullbackPrincipal hα hα1.le hΦ hΨ hΨΦ' hΦΨ' hT ha hda
+      (hBU' hx) (hBW hx), ?_⟩
+  -- `f ∘ Φ` is Hölder near each point: `f` is near `Φ x`, and `Φ` is Lipschitz near `x`.
+  rintro x ⟨hxB, hxν⟩
+  obtain ⟨ρf, hρf, Cf, hCf⟩ := hfH (Φ x) ⟨hBW hxB, hΦcl (hBU' hxB) hxν⟩
+  have hxO : x ∈ ball y₀ r ∩ Φ ⁻¹' ball (Φ x) ρf := by
+    refine ⟨hxB, ?_⟩
+    rw [mem_preimage]
+    exact mem_ball_self hρf
+  obtain ⟨ρ, hρ, hρs⟩ := nhds_basis_closedBall.mem_iff.1
+    ((isOpen_ball.inter (isOpen_ball.preimage hΦc)).mem_nhds hxO)
+  obtain ⟨LΦ, hLΦ⟩ := ((hΦ2.mono ((hρs.trans inter_subset_left).trans hBU')).of_le
+    one_le_two).exists_lipschitzOnWith one_ne_zero (convex_closedBall x ρ)
+    (isCompact_closedBall x ρ)
+  have h := hCf.comp (hLΦ.holderOnWith.mono (inter_subset_left.trans ball_subset_closedBall))
+    fun y (hy : y ∈ ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) => ⟨(hρs (ball_subset_closedBall hy.1)).2,
+      hΦcl (hBU' (hρs (ball_subset_closedBall hy.1)).1) hy.2⟩
+  rw [mul_one] at h
+  exact ⟨ρ, hρ, _, h⟩
+
+/-- **The flattened problem.** In the setting of
+`exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_isChangeOfVariables`, on a
+ball `B(y₀, r)` whose closure lies in `U'` and is mapped into `W` by `Φ`, the function `v = u ∘ Φ`
+on `H ∩ B(y₀, r)` lies in `H¹`, vanishes on the flat boundary and solves
+`-∂ᵢ(a'ⁱʲ ∂ⱼv) = f ∘ Φ` weakly, with `f ∘ Φ` square integrable. -/
+private theorem exists_flattened_problem {Ω W U' U : Opens E} {Φ Ψ : E → E} {L : ℝ}
+    (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L 1)
+    (hΨΦ : ∀ x, Ψ (Φ x) = x) (hΦΨ : ∀ y, Φ (Ψ y) = y) (hΦc : Continuous Φ)
+    (hΨc : Continuous Ψ) {ν : E} {c₀ : ℝ} {H : Opens E} (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
+    (himage : Φ '' ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') = (Ω : Set E) ∩ U)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {f : E → ℝ}
+    (hf : MemLp f 2 (volume.restrict Ω)) {u : W1p volume Ω 2}
+    (hu : ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 0 u (v : W1p volume Ω 2) =
+      ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x)
+    (hu0 : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ W →
+      ∃ v : W1p0 volume Ω 2,
+        W1p.value (v : W1p volume Ω 2) =ᵐ[volume.restrict Ω] fun x => ψ x * W1p.value u x)
+    {y₀ : E} {r : ℝ} (hrB : closedBall y₀ r ⊆ (U' : Set E) ∩ Φ ⁻¹' W) :
+    ∃ v : W1p volume (H ⊓ ⟨ball y₀ r, isOpen_ball⟩) 2,
+      (W1p.value v : E → ℝ) =ᵐ[volume.restrict ((H : Set E) ∩ ball y₀ r)]
+        (fun y => W1p.value u (Φ y)) ∧
+      (∀ w : W1p0 volume (H ⊓ ⟨ball y₀ r, isOpen_ball⟩) 2,
+        energyFormH1 (pullbackPrincipal Φ a) 0 0 v
+            (w : W1p volume (H ⊓ ⟨ball y₀ r, isOpen_ball⟩) 2) =
+          ∫ x in (H : Set E) ∩ ball y₀ r,
+            f (Φ x) * W1p.value (w : W1p volume (H ⊓ ⟨ball y₀ r, isOpen_ball⟩) 2) x) ∧
+      (∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ ball y₀ r →
+        ∃ w : W1p0 volume (H ⊓ ⟨ball y₀ r, isOpen_ball⟩) 2,
+          W1p.value (w : W1p volume (H ⊓ ⟨ball y₀ r, isOpen_ball⟩) 2)
+            =ᵐ[volume.restrict ((H : Set E) ∩ ball y₀ r)] fun x => ψ x * W1p.value v x) ∧
+      MemLp (fun y => f (Φ y)) 2 (volume.restrict ((H : Set E) ∩ ball y₀ r)) := by
+  have hBU' : ball y₀ r ⊆ U' := ball_subset_closedBall.trans (hrB.trans inter_subset_left)
+  -- The flat domain `Ω' = H ∩ B(y₀, r)` and the curved one `D = Ω ∩ U ∩ Ψ⁻¹ B(y₀, r)`.
+  let Ω' : Opens E := H ⊓ ⟨ball y₀ r, isOpen_ball⟩
+  let O : Opens E := ⟨U ∩ Ψ ⁻¹' ball y₀ r,
+    hΨc.continuousOn.isOpen_inter_preimage U.isOpen isOpen_ball⟩
+  let D : Opens E := Ω ⊓ O
+  have hΦmaps : MapsTo Φ Ω' D := fun x hx => by
+    have hmem : Φ x ∈ (Ω : Set E) ∩ U :=
+      himage ▸ mem_image_of_mem _ ⟨(hH x).1 hx.1, hBU' hx.2⟩
+    exact ⟨hmem.1, hmem.2, by rw [mem_preimage, hΨΦ]; exact hx.2⟩
+  have hΨmaps : MapsTo Ψ D Ω' := fun y hy => by
+    obtain ⟨x, ⟨hxH, -⟩, rfl⟩ : y ∈ Φ '' ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') := himage ▸ ⟨hy.1, hy.2.1⟩
+    exact ⟨(hH _).2 (by rw [hΨΦ]; exact hxH), hy.2.2⟩
+  have hΦ' : Wkp.IsChangeOfVariables 1 Ω' D Φ L 1 :=
+    (hΦ.mono_set (fun x hx => hBU' hx.2 : Ω' ≤ U') hΦmaps).mono one_le_two
+  have hΨ' : Wkp.IsChangeOfVariables 2 D Ω' Ψ L 1 := hΨ.mono_set (fun y hy => hy.2.1) hΨmaps
+  have hdet (x : E) (hx : x ∈ (Ω' : Set E)) : pullbackDensity Φ f x = f (Φ x) := by
+    rw [pullbackDensity_apply, hΦ'.abs_det_fderiv_eq_one hΨ' (fun x _ => hΨΦ x)
+      (fun y _ => hΦΨ y) hx, one_mul]
+  refine ⟨hΦ'.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL (inf_le_left : D ≤ Ω) u), ?_,
+    fun w => ?_, hΦ'.exists_w1p0_value_ae_eq_mul_value_w1pCompL ENNReal.ofNat_ne_top
+      hΦc.continuousOn hΨc.continuousOn hΨmaps (fun x _ => hΨΦ x)
+      (fun x hx => ⟨hΦ.mapsTo (hBU' hx), by rw [mem_preimage, hΨΦ]; exact hx⟩ :
+        MapsTo Φ ((⟨ball y₀ r, isOpen_ball⟩ : Opens E) : Set E) O)
+      (fun χ hχ hχc hχs => hu0 χ hχ hχc (hχs.trans fun y hy => by
+        have h := (hrB (ball_subset_closedBall hy.2)).2
+        rwa [mem_preimage, hΦΨ] at h)), ?_⟩
+  · filter_upwards [hΦ'.value_w1pCompL_ae ENNReal.ofNat_ne_top
+      (W1p.restrictL (inf_le_left : D ≤ Ω) u),
+      hΦ'.ae_comp (W1p.value_restrictL_ae (inf_le_left : D ≤ Ω) u)] with x h1 h2
+    rw [h1, h2]
+  · -- The transformed equation, with `pullbackDensity Φ f = f ∘ Φ` since `|det DΦ| = 1`.
+    have h := energyFormH1_compL_eq_setIntegral hΦ'.differentiableOn hΦ'.injOn hΦ'.mapsTo
+      hΦ'.norm_fderiv_le hΦ'.pos hΦ'.le_abs_det hΨ'.differentiableOn hΨ'.mapsTo
+      hΨ'.norm_fderiv_le hΨ'.pos hΨ'.le_abs_det (fun x _ => hΨΦ x) (fun y _ => hΦΨ y)
+      (energyFormH1_restrictL_eq_setIntegral (inf_le_left : D ≤ Ω) hu) w
+    rw [pullbackDrift_zero, pullbackDensity_zero] at h
+    exact h.trans (setIntegral_congr_fun Ω'.isOpen.measurableSet fun x hx => by rw [hdet x hx])
+  · exact (memLp_pullbackDensity hΦ'.differentiableOn hΦ'.injOn hΦ'.mapsTo
+      hΦ'.norm_fderiv_le hΦ'.pos hΦ'.le_abs_det (hf.mono_measure
+        (Measure.restrict_mono (fun x hx => hx.1 : (D : Set E) ⊆ Ω) le_rfl))).ae_eq
+      (ae_restrict_of_forall_mem Ω'.isOpen.measurableSet hdet)
+
+/-- **The flattened solution is `C^{2,α}` up to the flat boundary.** Under the hypotheses of
+`exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_isChangeOfVariables`, there is
+`r > 0` such that on the half-ball `H ∩ B(y₀, r / 16)` the function `u ∘ Φ`
+is the value of an element of `W^{2,2}` whose weak Hessian and weak gradient agree almost
+everywhere with fields that are `α`-Hölder on `closure (H ∩ B(y₀, r / 16))`. -/
+private theorem exists_flat_of_isChangeOfVariables
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω W U' U : Opens E} {Φ Ψ : E → E} {L : ℝ}
+    (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L 1)
+    (hΨΦ : ∀ x, Ψ (Φ x) = x) (hΦΨ : ∀ y, Φ (Ψ y) = y) (hΦc : Continuous Φ)
+    (hΨc : Continuous Ψ) {ν : E} (hν : ν ≠ 0) {c₀ : ℝ} {H : Opens E}
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
+    (himage : Φ '' ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') = (Ω : Set E) ∩ U)
+    {KT : ℝ≥0} (hT : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Ψ)) U)
+    {y₀ : E} (hy₀ : y₀ ∈ U') (hy₀ν : ⟪y₀, ν⟫_ℝ = c₀) (hy₀W : Φ y₀ ∈ W)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) W)
+    (hell : UniformlyEllipticOn W a lam Lam)
+    (hda : ∀ x ∈ W, ∃ ρ > 0, ∃ C : ℝ≥0, ∀ i j,
+      HolderOnWith C α (fderiv ℝ fun y => a y i j) (ball x ρ))
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict Ω))
+    (hfH : ∀ x ∈ (W : Set E) ∩ closure Ω, ∃ ρ > 0, ∃ C : ℝ≥0,
+      HolderOnWith C α f (ball x ρ ∩ closure Ω))
+    {u : W1p volume Ω 2}
+    (hu : ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 0 u (v : W1p volume Ω 2) =
+      ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x)
+    (hu0 : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ W →
+      ∃ v : W1p0 volume Ω 2,
+        W1p.value (v : W1p volume Ω 2) =ᵐ[volume.restrict Ω] fun x => ψ x * W1p.value u x) :
+    ∃ r > 0,
+      ∃ V2 : Wkp volume ((H ⊓ ⟨ball y₀ r, isOpen_ball⟩) ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩ :
+        Opens E) 2 2,
+        (Wkp.value 2 V2 : E → ℝ) =ᵐ[volume.restrict ((H : Set E) ∩ ball y₀ r ∩ ball y₀ (r / 16))]
+          (fun y => W1p.value u (Φ y)) ∧
+        ∃ (Gv : E → E →L[ℝ] E) (P : E → E),
+          (∃ C : ℝ≥0, HolderOnWith C α Gv (closure ((H : Set E) ∩ ball y₀ (r / 16)))) ∧
+          (∃ C : ℝ≥0, HolderOnWith C α P (closure ((H : Set E) ∩ ball y₀ (r / 16)))) ∧
+          (Wkp.iteratedGradient 1 V2 : E → E →L[ℝ] E)
+            =ᵐ[volume.restrict ((H : Set E) ∩ ball y₀ r ∩ ball y₀ (r / 16))] Gv ∧
+          (W1p.gradient (Wkp.lowerOrder 1 V2) : E → E)
+            =ᵐ[volume.restrict ((H : Set E) ∩ ball y₀ r ∩ ball y₀ (r / 16))] P := by
+  -- A closed ball about `y₀` in `U'` which `Φ` maps into `W`.
+  obtain ⟨r, hr, hrB⟩ := nhds_basis_closedBall.mem_iff.1
+    ((U'.isOpen.inter (W.isOpen.preimage hΦc)).mem_nhds ⟨hy₀, hy₀W⟩)
+  have hBU' : ball y₀ r ⊆ U' := ball_subset_closedBall.trans (hrB.trans inter_subset_left)
+  obtain ⟨ha', ⟨lam', Lam', hell'⟩, hda', hfH'⟩ := flat_hypotheses_of_isChangeOfVariables hα hα1
+    hΦ hΨ hΨΦ hΦΨ hΦc hν himage hT ha hell hda hfH hr hBU'
+    fun x hx => (hrB (ball_subset_closedBall hx)).2
+  obtain ⟨v, hvu, hv, hv0, hf'⟩ :=
+    exists_flattened_problem hΦ hΨ hΨΦ hΦΨ hΦc hΨc hH himage hf hu hu0 hrB
+  have hΩ' : ((H ⊓ ⟨ball y₀ r, isOpen_ball⟩ : Opens E) : Set E) ∩ ball y₀ r =
+      (H : Set E) ∩ ball y₀ r := by
+    rw [Opens.coe_inf, inter_assoc]
+    exact congrArg _ (inter_self _)
+  -- Regularity near the flat boundary.
+  obtain ⟨V2, hV2, Gv, P, hCG, hCP, hGvae, hPae⟩ :=
+    exists_wkp_and_holderOnWith_of_inter_ball_eq hα hα1 hν hH hy₀ν hr hΩ' ha' hell' hda' hf' hfH'
+      hv hv0
+  refine ⟨r, hr, V2, ?_, Gv, P, hCG, hCP, hGvae, by rwa [hV2]⟩
+  rw [← Wkp.value_lowerOrder_one, hV2]
+  filter_upwards [W1p.value_restrictL_ae (inf_le_left :
+      ((H ⊓ ⟨ball y₀ r, isOpen_ball⟩) ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩ : Opens E) ≤
+        H ⊓ ⟨ball y₀ r, isOpen_ball⟩) v,
+    ae_restrict_of_ae_restrict_of_subset inter_subset_left hvu] with x h1 h2
+  rw [h1, h2]
+
+/-- **The weak Hessian along a change of variables.** Let `Ψ` be a change of variables of order two
+from `Ω₁` into `Ω₂`, and let `V ∈ W^{2,2}(Ω₂)` have weak Hessian and weak gradient equal almost
+everywhere to fields `Gv` and `P` that are `α`-Hölder on a set `S₀`. If `Ψ` maps a compact set `K`
+into `S₀`, is Lipschitz there and has `α`-Hölder first and second derivatives there, then the weak
+Hessian of `V ∘ Ψ` agrees almost everywhere on `Ω₁` with a field that is `α`-Hölder on `K`: by the
+chain rule `⟪D²(V ∘ Ψ) h, g⟫ = ⟪D²V(Ψ ·) (DΨ h), DΨ g⟫ + ⟪∇V(Ψ ·), D²Ψ h g⟫`. -/
+private theorem exists_holderOnWith_iteratedGradient_compL {α : ℝ≥0} (hα : 0 < α)
+    {Ω₁ Ω₂ : Opens E} {Ψ : E → E} {L : ℝ} (hΨ : Wkp.IsChangeOfVariables 2 Ω₁ Ω₂ Ψ L 1)
+    (V : Wkp volume Ω₂ 2 2) {S₀ K : Set E} (hK : IsCompact K) (hΨK : MapsTo Ψ K S₀)
+    {LΨ : ℝ≥0} (hΨL : HolderOnWith LΨ 1 Ψ K)
+    (hDΨ : ∀ e : E, ∃ C : ℝ≥0, HolderOnWith C α (fun x => fderiv ℝ Ψ x e) K)
+    {KT : ℝ≥0} (hD2 : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Ψ)) K)
+    {Gv : E → E →L[ℝ] E} {P : E → E} {CG CP : ℝ≥0} (hGv : HolderOnWith CG α Gv S₀)
+    (hP : HolderOnWith CP α P S₀)
+    (hGvae : (Wkp.iteratedGradient 1 V : E → E →L[ℝ] E) =ᵐ[volume.restrict (Ω₂ : Set E)] Gv)
+    (hPae : (W1p.gradient (Wkp.lowerOrder 1 V) : E → E) =ᵐ[volume.restrict (Ω₂ : Set E)] P) :
+    ∃ G : E → E →L[ℝ] E, (∃ C : ℝ≥0, HolderOnWith C α G K) ∧
+      (Wkp.iteratedGradient 1 (Wkp.compL hΨ V) : E → E →L[ℝ] E)
+        =ᵐ[volume.restrict (Ω₁ : Set E)] G := by
+  let b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
+  let Q : E → E → E → ℝ := fun x h g => ⟪Gv (Ψ x) (fderiv ℝ Ψ x h), fderiv ℝ Ψ x g⟫_ℝ +
+    ⟪P (Ψ x), fderiv ℝ (fderiv ℝ Ψ) x h g⟫_ℝ
+  -- The entries of the chain-rule Hessian in the basis are `α`-Hölder on `K`.
+  have hGvΨ : HolderOnWith (CG * LΨ ^ (α : ℝ)) α (fun x => Gv (Ψ x)) K := by
+    have h := hGv.comp hΨL hΨK
+    rw [mul_one] at h
+    exact h
+  have hPΨ : HolderOnWith (CP * LΨ ^ (α : ℝ)) α (fun x => P (Ψ x)) K := by
+    have h := hP.comp hΨL hΨK
+    rw [mul_one] at h
+    exact h
+  have hQ (k l : Fin (n + 1)) : ∃ C : ℝ≥0, HolderOnWith C α (fun x => Q x (b k) (b l)) K := by
+    obtain ⟨Ck, hCk⟩ := hDΨ (b k)
+    obtain ⟨Cl, hCl⟩ := hDΨ (b l)
+    obtain ⟨C₁, h₁⟩ := (ContinuousLinearMap.id ℝ (E →L[ℝ] E)).exists_holderOnWith_comp₂_of_isCompact
+      hK hα hGvΨ hCk
+    obtain ⟨C₂, h₂⟩ := (innerSL ℝ).exists_holderOnWith_comp₂_of_isCompact hK hα h₁ hCl
+    have hD2kl : HolderOnWith KT α (fun x => fderiv ℝ (fderiv ℝ Ψ) x (b k) (b l)) K := by
+      refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+      rw [dist_eq_norm, show fderiv ℝ (fderiv ℝ Ψ) x (b k) (b l) -
+          fderiv ℝ (fderiv ℝ Ψ) y (b k) (b l) =
+        (fderiv ℝ (fderiv ℝ Ψ) x - fderiv ℝ (fderiv ℝ Ψ) y) (b k) (b l) by simp]
+      calc ‖(fderiv ℝ (fderiv ℝ Ψ) x - fderiv ℝ (fderiv ℝ Ψ) y) (b k) (b l)‖
+          ≤ ‖fderiv ℝ (fderiv ℝ Ψ) x - fderiv ℝ (fderiv ℝ Ψ) y‖ * ‖b k‖ * ‖b l‖ :=
+            ContinuousLinearMap.le_opNorm₂ _ _ _
+        _ = dist (fderiv ℝ (fderiv ℝ Ψ) x) (fderiv ℝ (fderiv ℝ Ψ) y) := by
+            rw [b.orthonormal.1 k, b.orthonormal.1 l, mul_one, mul_one]
+            exact (dist_eq_norm (fderiv ℝ (fderiv ℝ Ψ) x) (fderiv ℝ (fderiv ℝ Ψ) y)).symm
+        _ ≤ KT * dist x y ^ (α : ℝ) := hD2.dist_le hx hy
+    obtain ⟨C₃, h₃⟩ := (innerSL ℝ).exists_holderOnWith_comp₂_of_isCompact hK hα hPΨ hD2kl
+    have h := h₂.add h₃
+    simp only [innerSL_apply_apply, ContinuousLinearMap.id_apply] at h
+    exact ⟨C₂ + C₃, h⟩
+  choose CQ hCQ using hQ
+  refine ⟨fun x => ∑ k, ∑ l, Q x (b k) (b l) • (innerSL ℝ (b k)).smulRight (b l),
+    ⟨_, HolderOnWith.sum fun k _ => HolderOnWith.sum fun l _ =>
+      ((ContinuousLinearMap.toSpanSingleton ℝ
+        ((innerSL ℝ (b k)).smulRight (b l))).lipschitzWith.comp_holderOnWith (hCQ k l))⟩, ?_⟩
+  filter_upwards [Wkp.inner_iteratedGradient_compL_ae hΨ ENNReal.ofNat_ne_top V,
+    hΨ.ae_comp hGvae, hΨ.ae_comp hPae] with x h1 h2 h3
+  refine ContinuousLinearMap.ext fun h => ext_inner_right ℝ fun g => ?_
+  rw [h1 h g, Wkp.iteratedGradient_zero, h2, h3]
+  conv_lhs => rw [← b.sum_repr' h, ← b.sum_repr' g]
+  simp only [Q, map_sum, map_smul, sum_apply, smul_apply,
+    inner_sum, sum_inner, real_inner_smul_left, real_inner_smul_right,
+    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply]
+  simp only [Finset.mul_sum, ← Finset.sum_add_distrib]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by ring
+
+/-- **The Hessian is `α`-Hölder up to the curved boundary.** In the setting of
+`exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_isChangeOfVariables`, if
+`V ∈ W^{2,2}` on the flat half-ball `Ω₂` has weak Hessian and weak gradient equal almost everywhere
+to fields that are `α`-Hölder on `closure (H ∩ B(y₀, r / 16))`, then for `V ∘ Ψ` on `Ω₁` the weak
+Hessian agrees almost everywhere with a field that is `α`-Hölder on
+`closure Ω ∩ U ∩ Ψ⁻¹ B(y₀, r / 32) ∩ B(z, ρ)`, whenever `closedBall z ρ ⊆ U`. -/
+private theorem exists_holderOnWith_iteratedGradient_compL_closure {α : ℝ≥0} (hα : 0 < α)
+    (hα1 : α < 1) {Ω U U' Ω₁ Ω₂ H : Opens E} {Ψ : E → E} {L : ℝ}
+    (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L 1) (hΨ'' : Wkp.IsChangeOfVariables 2 Ω₁ Ω₂ Ψ L 1)
+    (hΨc : Continuous Ψ) {KT : ℝ≥0} (hT : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Ψ)) U)
+    (hΨcl : ∀ x ∈ U, x ∈ closure (Ω : Set E) → Ψ x ∈ closure (H : Set E))
+    {y₀ z : E} {r ρ : ℝ} (hr : 0 < r) (hρU : closedBall z ρ ⊆ U) (V : Wkp volume Ω₂ 2 2)
+    {Gv : E → E →L[ℝ] E} {P : E → E} {CG CP : ℝ≥0}
+    (hCG : HolderOnWith CG α Gv (closure ((H : Set E) ∩ ball y₀ (r / 16))))
+    (hCP : HolderOnWith CP α P (closure ((H : Set E) ∩ ball y₀ (r / 16))))
+    (hGvae : (Wkp.iteratedGradient 1 V : E → E →L[ℝ] E) =ᵐ[volume.restrict (Ω₂ : Set E)] Gv)
+    (hPae : (W1p.gradient (Wkp.lowerOrder 1 V) : E → E) =ᵐ[volume.restrict (Ω₂ : Set E)] P) :
+    ∃ G : E → E →L[ℝ] E, (∃ C : ℝ≥0, HolderOnWith C α G
+        (closure (Ω : Set E) ∩ ((U : Set E) ∩ Ψ ⁻¹' ball y₀ (r / 32) ∩ ball z ρ))) ∧
+      (Wkp.iteratedGradient 1 (Wkp.compL hΨ'' V) : E → E →L[ℝ] E)
+        =ᵐ[volume.restrict (Ω₁ : Set E)] G := by
+  -- A compact set `K` containing `closure Ω ∩ V`, mapped by `Ψ` into the closed half-ball.
+  let K : Set E := closure (Ω : Set E) ∩ closedBall z ρ ∩ Ψ ⁻¹' closedBall y₀ (r / 32)
+  have hKc : IsCompact K := (isCompact_closedBall z ρ).of_isClosed_subset
+    ((isClosed_closure.inter isClosed_closedBall).inter
+      (isClosed_closedBall.preimage hΨc)) fun x hx => hx.1.2
+  have hKU : K ⊆ U := fun x hx => hρU hx.1.2
+  have hSK : closure (Ω : Set E) ∩ ((U : Set E) ∩ Ψ ⁻¹' ball y₀ (r / 32) ∩ ball z ρ) ⊆ K := by
+    rintro x ⟨hxΩ, ⟨-, hxb⟩, hxρ⟩
+    exact ⟨⟨hxΩ, ball_subset_closedBall hxρ⟩,
+      mem_preimage.2 (ball_subset_closedBall (mem_preimage.1 hxb))⟩
+  have hΨK : MapsTo Ψ K (closure ((H : Set E) ∩ ball y₀ (r / 16))) := fun x hx => by
+    have hb : Ψ x ∈ ball y₀ (r / 16) :=
+      closedBall_subset_ball (by linarith) (mem_preimage.1 hx.2)
+    have h := isOpen_ball.inter_closure ⟨hb, hΨcl x (hKU hx) hx.1.1⟩
+    rwa [inter_comm] at h
+  -- `Ψ` is Lipschitz and `DΨ` is `α`-Hölder on the compact convex `closedBall z ρ ⊇ K`.
+  have hΨ2 : ContDiffOn ℝ 2 Ψ U := by exact_mod_cast hΨ.contDiffOn
+  obtain ⟨LΨ, hLΨ⟩ := ((hΨ2.mono hρU).of_le one_le_two).exists_lipschitzOnWith one_ne_zero
+    (convex_closedBall z ρ) (isCompact_closedBall z ρ)
+  have hDΨ (e : E) : ∃ C : ℝ≥0, HolderOnWith C α (fun x => fderiv ℝ Ψ x e) K := by
+    obtain ⟨C, hC⟩ := (((hΨ.contDiffOn_fderiv (k := 1)).clm_apply contDiffOn_const).mono
+      hρU).exists_holderOnWith (convex_closedBall z ρ) (isCompact_closedBall z ρ) hα1.le
+    exact ⟨C, hC.mono fun x (hx : x ∈ K) => hx.1.2⟩
+  obtain ⟨G, ⟨C, hC⟩, hG⟩ := exists_holderOnWith_iteratedGradient_compL hα hΨ'' V hKc hΨK
+    ((hLΨ.mono fun x (hx : x ∈ K) => hx.1.2).holderOnWith) hDΨ (hT.mono hKU) hCG hCP hGvae hPae
+  exact ⟨G, ⟨C, hC.mono hSK⟩, hG⟩
+
+/-- **Second derivatives up to a straightened boundary portion.** Let `Φ` and `Ψ` be mutually
+inverse homeomorphisms which are changes of variables of order two between open sets `U'` and `U`,
+with Jacobian determinant one, such that `Φ` maps the part of `U'` in the half-space
+`H = {c₀ < ⟪x, ν⟫}` onto `Ω ∩ U`, and suppose that `D²Ψ` is `α`-Hölder on `U`, `0 < α < 1`. Let
+`y₀ ∈ U'` lie on the boundary hyperplane, so that `Φ y₀` is a boundary point of `Ω`, and let `W` be
+an open neighbourhood of `Φ y₀`. Suppose that `a` is uniformly elliptic on `W`, that its entries are
+`C¹` there with first derivatives `α`-Hölder near each point of `W`, and that `f ∈ L²(Ω)` is
+`α`-Hölder on `closure Ω` near each point of `W ∩ closure Ω`. Let `u ∈ H¹(Ω)` be a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, that is `∫_Ω ⟨a ∇u, ∇v⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, such that
+`ψ u ∈ H¹₀(Ω)` for every smooth `ψ` compactly supported in `W`: `u` vanishes on `∂Ω ∩ W`.
+
+Then there is an open neighbourhood `V` of `Φ y₀` on which `u` is `W^{2,2}` and its weak Hessian
+agrees almost everywhere on `Ω ∩ V` with a field that is `α`-Hölder on `closure Ω ∩ V`: `u` is
+`C^{2,α}` up to the boundary near `Φ y₀`. -/
+theorem exists_lowerOrder_eq_restrictL_and_holderOnWith_iteratedGradient_of_isChangeOfVariables
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω W U' U : Opens E} {Φ Ψ : E → E} {L : ℝ}
+    (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L 1)
+    (hΨΦ : ∀ x, Ψ (Φ x) = x) (hΦΨ : ∀ y, Φ (Ψ y) = y) (hΦc : Continuous Φ)
+    (hΨc : Continuous Ψ) {ν : E} (hν : ν ≠ 0) {c₀ : ℝ}
+    (himage : Φ '' ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') = (Ω : Set E) ∩ U)
+    {KT : ℝ≥0} (hT : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Ψ)) U)
+    {y₀ : E} (hy₀ : y₀ ∈ U') (hy₀ν : ⟪y₀, ν⟫_ℝ = c₀) (hy₀W : Φ y₀ ∈ W)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) W)
+    (hell : UniformlyEllipticOn W a lam Lam)
+    (hda : ∀ x ∈ W, ∃ ρ > 0, ∃ C : ℝ≥0, ∀ i j,
+      HolderOnWith C α (fderiv ℝ fun y => a y i j) (ball x ρ))
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict Ω))
+    (hfH : ∀ x ∈ (W : Set E) ∩ closure Ω, ∃ ρ > 0, ∃ C : ℝ≥0,
+      HolderOnWith C α f (ball x ρ ∩ closure Ω))
+    {u : W1p volume Ω 2}
+    (hu : ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 0 u (v : W1p volume Ω 2) =
+      ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x)
+    (hu0 : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ W →
+      ∃ v : W1p0 volume Ω 2,
+        W1p.value (v : W1p volume Ω 2) =ᵐ[volume.restrict Ω] fun x => ψ x * W1p.value u x) :
+    ∃ V : Opens E, Φ y₀ ∈ V ∧ ∃ w : Wkp volume (Ω ⊓ V) 2 2,
+      Wkp.lowerOrder 1 w = W1p.restrictL inf_le_left u ∧
+      ∃ G : E → E →L[ℝ] E, (∃ C : ℝ≥0, HolderOnWith C α G (closure (Ω : Set E) ∩ V)) ∧
+        (Wkp.iteratedGradient 1 w : E → E →L[ℝ] E) =ᵐ[volume.restrict ((Ω : Set E) ∩ V)] G := by
+  let H : Opens E := ⟨{x | c₀ < ⟪x, ν⟫_ℝ}, isOpen_lt continuous_const
+    (continuous_id.inner continuous_const)⟩
+  have hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ := fun _ => Iff.rfl
+  obtain ⟨r, hr, V2, hval, Gv, P, ⟨CG, hCG⟩, ⟨CP, hCP⟩, hGvae, hPae⟩ :=
+    exists_flat_of_isChangeOfVariables hα hα1 hΦ hΨ hΨΦ hΦΨ hΦc hΨc hν hH himage hT hy₀ hy₀ν
+      hy₀W ha hell hda hf hfH hu hu0
+  -- `Ψ` maps `closure Ω ∩ U` into the closed half-space.
+  have hΨcl (x : E) (hx : x ∈ U) (hxΩ : x ∈ closure (Ω : Set E)) :
+      Ψ x ∈ closure (H : Set E) := by
+    refine map_mem_closure hΨc (U.isOpen.inter_closure ⟨hx, hxΩ⟩) fun z hz => ?_
+    obtain ⟨y, hy, hyz⟩ : z ∈ Φ '' ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') := himage ▸ ⟨hz.2, hz.1⟩
+    rw [← hyz, hΨΦ]
+    exact hy.1
+  -- `V = U ∩ Ψ⁻¹ B(y₀, r / 32) ∩ B(Φ y₀, ρ)` with `closedBall (Φ y₀) ρ ⊆ U`.
+  have hx₀U : Φ y₀ ∈ U := hΦ.mapsTo hy₀
+  obtain ⟨ρ, hρ, hρU⟩ := nhds_basis_closedBall.mem_iff.1 (U.isOpen.mem_nhds hx₀U)
+  let V : Opens E := ⟨U ∩ Ψ ⁻¹' ball y₀ (r / 32) ∩ ball (Φ y₀) ρ,
+    (hΨc.continuousOn.isOpen_inter_preimage U.isOpen isOpen_ball).inter isOpen_ball⟩
+  have hx₀V : Φ y₀ ∈ V :=
+    ⟨⟨hx₀U, by rw [mem_preimage, hΨΦ]; exact mem_ball_self (by positivity)⟩, mem_ball_self hρ⟩
+  have hΨV : MapsTo Ψ (Ω ⊓ V : Opens E)
+      ((H ⊓ ⟨ball y₀ r, isOpen_ball⟩) ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩ : Opens E) :=
+    fun y hy => by
+      obtain ⟨x, ⟨hxH, -⟩, rfl⟩ : y ∈ Φ '' ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') :=
+        himage ▸ ⟨hy.1, hy.2.1.1⟩
+      have hb := hy.2.1.2
+      rw [mem_preimage] at hb
+      exact ⟨⟨(hH _).2 (by rw [hΨΦ]; exact hxH), ball_subset_ball (by linarith) hb⟩,
+        ball_subset_ball (by linarith) hb⟩
+  have hΨ'' := hΨ.mono_set (fun y hy => hy.2.1.1 : Ω ⊓ V ≤ U) hΨV
+  refine ⟨V, hx₀V, Wkp.compL hΨ'' V2, ?_,
+    exists_holderOnWith_iteratedGradient_compL_closure hα hα1 hΨ hΨ'' hΨc hT hΨcl hr hρU V2 hCG
+      hCP hGvae hPae⟩
+  -- The first-order part of `V2 ∘ Ψ` is `u`.
+  refine W1p.ext_value (Lp.ext ?_)
+  rw [Wkp.value_lowerOrder_one]
+  filter_upwards [Wkp.value_compL_ae hΨ'' V2, hΨ''.ae_comp hval,
+    W1p.value_restrictL_ae (inf_le_left : Ω ⊓ V ≤ Ω) u] with x h1 h2 h3
+  rw [h1, h2, hΦΨ, h3]
+
+end Curved
+
+end PDE
+
+end TauCeti
