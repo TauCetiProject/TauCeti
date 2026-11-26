@@ -61,6 +61,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.mul_cpow_of_arg_add_mem` -- a principal power splits across a product when the
   arguments add in the principal range.
 * `TauCeti.mul_cpow_of_re_pos` -- the right-half-plane specialization.
+* `TauCeti.div_cpow_of_arg_div_add_arg_mem` -- a principal power splits across a quotient
+  `x / y` when the arguments of `x / y` and `y` add in the principal range.
 * `TauCeti.ofReal_pow_cpow` -- a principal power of a natural power of a nonnegative real
   multiplies the exponents.
 * `TauCeti.ofReal_cpow_conj` -- a principal power of a nonnegative real commutes with complex
@@ -182,6 +184,15 @@ theorem mul_cpow_of_arg_add_mem {x y : ℂ}
   · simp [zero_cpow hw]
   rw [cpow_def_of_ne_zero (mul_ne_zero hx hy), cpow_def_of_ne_zero hx,
     cpow_def_of_ne_zero hy, log_mul hx hy h, add_mul, exp_add]
+
+/-- A principal power splits across a quotient `x / y` with `y ≠ 0` when the arguments of `x / y`
+and of `y` add up to a value in the principal range `(-π, π]`. -/
+theorem div_cpow_of_arg_div_add_arg_mem {x y : ℂ} (hy : y ≠ 0)
+    (h : arg (x / y) + arg y ∈ Set.Ioc (-Real.pi) Real.pi) (w : ℂ) :
+    (x / y) ^ w = x ^ w * y ^ (-w) := by
+  have h' := mul_cpow_of_arg_add_mem h w
+  rw [div_mul_cancel₀ x hy] at h'
+  rw [cpow_neg, h', mul_inv_cancel_right₀ (cpow_ne_zero_iff.2 (Or.inl hy))]
 
 /-- A principal power splits across a product of two numbers in the open right half-plane.
 Their arguments add without crossing the branch cut. -/
