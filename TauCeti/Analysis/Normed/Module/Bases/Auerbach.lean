@@ -10,7 +10,9 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Normed.Ring.Lemmas
+import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.Dual.Basis
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
@@ -69,19 +71,18 @@ private lemma exists_evalMatrix_det_ne_zero {K U 𝒜 : Type*} [Field K] [AddCom
   let e : Fin n ≃ s := (Fintype.equivFinOfCardEq hcard).symm
   have hmem : ∀ i : Fin n, (e i : Module.Dual K U) ∈ Set.range ℓ := fun i => hs_sub (e i).property
   choose f hf using hmem
-  refine ⟨f, ?_⟩
-  intro hdet
-  have hdetT : (Matrix.transpose (Matrix.of fun i j => ℓ (f i) (b j))).det = 0 := by
-    rw [Matrix.det_transpose]; exact hdet
-  obtain ⟨g, hg_ne, hg0⟩ := Matrix.exists_mulVec_eq_zero_iff.mpr hdetT
   have hli : LinearIndependent K (fun i : Fin n => ℓ (f i)) := by
     have h1 := hs_li.comp e e.injective
     simpa [Function.comp_def, hf] using h1
-  have hg_zero : ∀ i : Fin n, g i = 0 := by
-    refine (Fintype.linearIndependent_iff.mp hli) g (b.ext fun j => ?_)
-    have hj := congrFun hg0 j
-    simpa [Matrix.mulVec, dotProduct, LinearMap.sum_apply, LinearMap.smul_apply, mul_comm] using hj
-  exact hg_ne (funext hg_zero)
+  -- `ℓ ∘ f` is a basis of the dual, so its matrix in the dual basis of `b`, the transpose of the
+  -- evaluation matrix, has unit determinant.
+  have hunit := b.dualBasis.is_basis_iff_det.mp
+    ⟨hli, hli.span_eq_top_of_card_eq_finrank' (by simp [n, Subspace.dual_finrank_eq])⟩
+  rw [Module.Basis.det_apply,
+    show b.dualBasis.toMatrix (fun i => ℓ (f i)) = (Matrix.of fun i j => ℓ (f i) (b j)).transpose
+      by ext; simp [Module.Basis.toMatrix_apply],
+    Matrix.det_transpose] at hunit
+  exact ⟨f, hunit.ne_zero⟩
 
 private lemma norm_eval_le_one_of_isMaxOn {K U 𝒜 L : Type*} [Field K] [AddCommGroup U] [Module K U]
     [NormedField L] {n : ℕ} (φ : K →+* L) (ℓ : 𝒜 → Module.Dual K U)
@@ -165,11 +166,10 @@ theorem exists_auerbachBasis {K U 𝒜 L : Type*} [Field K] [AddCommGroup U] [Mo
     rw [Fintype.linearIndependent_iff]
     intro c hc i
     simpa [map_sum, map_smul, hdual] using congrArg (ℓ (a i)) hc
-  have hz_span : ⊤ ≤ Submodule.span K (Set.range zvec) := by
-    rw [top_le_iff]
-    exact hz_li.span_eq_top_of_card_eq_finrank (Fintype.card_fin n)
-  let z : Module.Basis (Fin n) K U := Module.Basis.mk hz_li hz_span
-  have hz_apply : ∀ k, z k = zvec k := fun k => Module.Basis.mk_apply hz_li hz_span k
+  let z : Module.Basis (Fin n) K U :=
+    basisOfLinearIndependentOfCardEqFinrank' zvec hz_li (Fintype.card_fin n)
+  have hz_apply : ∀ k, z k = zvec k := fun k => by
+    simp [z, coe_basisOfLinearIndependentOfCardEqFinrank']
   exact ⟨a, z, fun i j => by rw [hz_apply]; exact hdual i j, fun x k =>
     norm_eval_le_one_of_isMaxOn φ ℓ b a (fun f => ha_max (Set.mem_univ f)) ha_det z hz_apply x k⟩
 
