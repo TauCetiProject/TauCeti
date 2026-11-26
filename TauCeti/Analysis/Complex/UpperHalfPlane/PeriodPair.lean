@@ -112,8 +112,9 @@ so it is finite.
   matrix of `c` in the two lattice bases, and is finite.
 * `PeriodPair.relIndex_div_mul_mem_lattice`: with `n = [Λ' : c Λ]`, `(n / c) Λ' ⊆ Λ`.
 * `PeriodPair.G_smul`, `PeriodPair.g₂_smul`, `PeriodPair.g₃_smul`,
-  `PeriodPair.weierstrassP_smul`, `PeriodPair.derivWeierstrassP_smul`: rescaling the lattice by
-  `c` rescales `G n` by `c⁻ⁿ`, `℘` by `c⁻²` and `℘'` by `c⁻³`.
+  `PeriodPair.weierstrassP_smul`, `PeriodPair.derivWeierstrassP_smul`,
+  `PeriodPair.deriv_derivWeierstrassP_smul`: rescaling the lattice by `c` rescales `G n` by `c⁻ⁿ`,
+  `℘` by `c⁻²`, `℘'` by `c⁻³` and `℘''` by `c⁻⁴`.
 * `PeriodPair.weierstrassZeta_smul`, `PeriodPair.quasiPeriod_smul`: rescaling the lattice by `c`
   rescales `ζ` and the quasi-periods by `c⁻¹`.
 * `PeriodPair.G_eq_of_lattice_eq`, `PeriodPair.weierstrassP_eq_of_lattice_eq`,
@@ -952,6 +953,16 @@ lemma derivWeierstrassP_smul (z : ℂ) : ℘'[c • L] (c * z) = ℘'[L] z / (c 
   simp only [LinearEquiv.coe_toEquiv, coe_latticeSMulEquiv, ← mul_sub, mul_pow, div_eq_mul_inv,
     mul_inv]
   ring
+
+/-- `℘''(c z; c Λ) = c⁻⁴ ℘''(z; Λ)`. -/
+@[simp]
+lemma deriv_derivWeierstrassP_smul (z : ℂ) :
+    deriv ℘'[c • L] (c * z) = deriv ℘'[L] z / (c : ℂ) ^ 4 := by
+  have h : ℘'[c • L] = fun w ↦ ℘'[L] ((c : ℂ)⁻¹ * w) / (c : ℂ) ^ 3 := by
+    ext w
+    rw [← derivWeierstrassP_smul, mul_inv_cancel_left₀ c.ne_zero]
+  rw [h, deriv_div_const, deriv_comp_mul_left, smul_eq_mul, inv_mul_cancel_left₀ c.ne_zero]
+  field_simp
 
 /-- `ζ(c z; c Λ) = c⁻¹ ζ(z; Λ)`. -/
 @[simp]
