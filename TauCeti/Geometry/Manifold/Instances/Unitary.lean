@@ -107,13 +107,15 @@ with an immersive inclusion into the group of units. -/
 private theorem exists_nativeStructure :
     ∃ c : ChartedSpace 𝔩 (unitary R), IsLieGroupAtlas c := by
   -- Use Cartan charts on the closed unitary subgroup of the units, then transport them
-  -- through the canonical homeomorphism. The pullback diffeomorphism transfers the smooth
-  -- inclusion and its immersion, while the group isomorphism transfers the Lie-group laws.
+  -- through the canonical isomorphism of topological groups. The pullback diffeomorphism transfers
+  -- the smooth inclusion and its immersion, while the group isomorphism transfers the Lie-group
+  -- laws.
   obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed
     (I := 𝓘(ℝ, R)) (K := 𝕂) (TauCeti.isClosed_unitarySubgroup_units R)
   let _ : ChartedSpace 𝔩 𝕂 := d.chartedSpace
   let _ : LieGroup 𝓘(ℝ, 𝔩) ∞ 𝕂 := d.lieGroup
-  let e := TauCeti.unitarySubgroupUnitsHomeomorph R
+  let f := TauCeti.unitarySubgroupUnitsContinuousMulEquiv R
+  let e := f.toHomeomorph
   let c := e.symm.pullbackChartedSpace (H := 𝔩)
   let _ : ChartedSpace 𝔩 (unitary R) := c
   have hm : IsManifold 𝓘(ℝ, 𝔩) ∞ (unitary R) :=
@@ -122,9 +124,10 @@ private theorem exists_nativeStructure :
   let _ : IsManifold 𝓘(ℝ, 𝔩) ∞ (unitary R) := hm
   have hphi : (fun u : unitary R ↦ (φ u : Rˣ)) = Unitary.toUnits := by
     funext u
-    simp only [φ, Homeomorph.coe_pullbackDiffeomorph, e,
-      TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply,
-      TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply]
+    rw [Homeomorph.coe_pullbackDiffeomorph]
+    -- The pulled-back map is the inverse of the canonical group isomorphism.
+    exact (congrArg Subtype.val (TauCeti.unitarySubgroupUnitsContinuousMulEquiv_symm_apply u)).trans
+      (TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply u)
   have hinc : ContMDiff 𝓘(ℝ, 𝔩) 𝓘(ℝ, R) ∞
       (Unitary.toUnits : unitary R → Rˣ) :=
     (d.contMDiff_subtypeVal.comp φ.contMDiff).congr fun u ↦ (congrFun hphi u).symm
@@ -139,10 +142,7 @@ private theorem exists_nativeStructure :
                contMDiff_toUnits := hinc
                isImmersion_toUnits := hi
                lieGroup := ?_ }⟩
-  let f := ContinuousMulEquiv.mk' e.symm fun x y ↦ by
-    simpa only [e, TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply] using
-      map_mul unitarySubgroupUnitsEquiv.symm x y
-  exact f.lieGroup_pullbackChartedSpace (I := 𝓘(ℝ, 𝔩)) (n := ∞)
+  exact f.symm.lieGroup_pullbackChartedSpace (I := 𝓘(ℝ, 𝔩)) (n := ∞)
 
 /-- The native atlas of the unitary group, induced by its closed embedding into the units. -/
 instance instChartedSpace : ChartedSpace 𝔩 (unitary R) :=

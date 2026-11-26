@@ -12,16 +12,14 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Number
 
 Supplements `TauCeti.LinearAlgebra.RootSystem.Coxeter.Number` with the fundamental invariant
 degrees `TauCeti.DynkinType.degrees` (`dᵢ = mᵢ + 1`) and the remaining exponent/degree identities
-(`sum_exponents`, `sum_degrees`, `coxeterNumber_sub_one_mem_exponents`,
-`two_le_of_mem_degrees`, `le_coxeterNumber_of_mem_degrees`, `two_mem_degrees`,
-`coxeterNumber_mem_degrees`).
+(`sum_exponents`, `sum_degrees`, `two_le_of_mem_degrees`, `le_coxeterNumber_of_mem_degrees`,
+`two_mem_degrees`, `coxeterNumber_mem_degrees`).
 
 ## Main definitions & results
 
 * `TauCeti.DynkinType.degrees`, `degrees_def`, `mem_degrees_iff`, `length_degrees`,
-  `sum_exponents`, `sum_degrees`, `coxeterNumber_sub_one_mem_exponents`,
-  `two_le_of_mem_degrees`, `le_coxeterNumber_of_mem_degrees`, `two_mem_degrees`,
-  `coxeterNumber_mem_degrees`.
+  `sum_exponents`, `sum_degrees`, `two_le_of_mem_degrees`, `le_coxeterNumber_of_mem_degrees`,
+  `two_mem_degrees`, `coxeterNumber_mem_degrees`.
 
 ## References
 
@@ -69,14 +67,6 @@ lemma degrees_def (t : DynkinType) : t.degrees = t.exponents.map (· + 1) := (rf
 types). -/
 @[simp] theorem sum_degrees (t : DynkinType) : t.degrees.sum = t.numRoots / 2 + t.rank := by
   simp [degrees_def, List.sum_map_add]
-
-/-- `h - 1` is always an exponent of a valid Dynkin type. -/
-@[simp high] lemma coxeterNumber_sub_one_mem_exponents {t : DynkinType} (ht : t.Valid) :
-    t.coxeterNumber - 1 ∈ t.exponents := by
-  have h2 := two_le_coxeterNumber ht
-  refine mem_exponents_of_coprime ht (by omega) ?_
-  have hcop : (t.coxeterNumber - 1).Coprime (t.coxeterNumber - 1 + 1) := by simp
-  rwa [Nat.sub_add_cancel (by omega)] at hcop
 
 /-- Every fundamental degree of a valid Dynkin type is at least `2`. -/
 lemma two_le_of_mem_degrees {t : DynkinType} (ht : t.Valid) {d : ℕ} (hd : d ∈ t.degrees) :

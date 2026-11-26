@@ -25,12 +25,17 @@ normed space. Openness of `Ω` is assumed only for the `C¹` result.
 * `TauCeti.formalDeriv u x` is the *formal derivative* of `u : ℝⁿ → F` at `x`: the continuous
   linear map `ℝⁿ → F` sending `eᵢ` to the partial derivative `∂ᵢu(x) = lineDeriv ℝ u x eᵢ`, which
   is `0` where that derivative does not exist (`TauCeti.formalDeriv_apply_single`). It is the
-  Fréchet derivative wherever `u` is differentiable (`TauCeti.formalDeriv_eq_fderiv`).
+  Fréchet derivative wherever `u` is differentiable (`TauCeti.formalDeriv_eq_fderiv`), and at `x`
+  it depends only on the germ of `u` at `x` (`Filter.EventuallyEq.formalDeriv_eq`).
 * `TauCeti.coordinateBox a b` is the closed coordinate box `Π_j [a_j, b_j]`, and
   `TauCeti.lineFunction u x i` is the line function `t ↦ u(x + (t - xᵢ) eᵢ)` of `u` through `x` in
-  the `i`-th direction. For `x` in a box and `t ∈ [aᵢ, bᵢ]`, the point `x + (t - xᵢ) eᵢ` stays in
-  the box (`TauCeti.add_sub_smul_single_mem_coordinateBox`), and the line function depends only
-  on the coordinates of `x` other than the `i`-th (`TauCeti.lineFunction_add_smul_single`).
+  the `i`-th direction. A box has volume `∏ⱼ ENNReal.ofReal (bⱼ - aⱼ)`
+  (`TauCeti.volume_coordinateBox`).
+  For `x` in a box and `t ∈ [aᵢ, bᵢ]`, the point `x + (t - xᵢ) eᵢ` stays in the box
+  (`TauCeti.add_sub_smul_single_mem_coordinateBox`), and the line function depends only on the
+  coordinates of `x` other than the `i`-th (`TauCeti.lineFunction_add_smul_single`). Taking line
+  functions commutes with the pointwise operations and with composition
+  (`TauCeti.lineFunction_add`, `TauCeti.lineFunction_smul`, `TauCeti.lineFunction_comp`, ...).
 * `TauCeti.IsACLOn u Ω`: `u` is continuous on `Ω` and, for every closed coordinate box `Q ⊆ Ω` with
   `aⱼ < bⱼ` for all `j` and every `i`, the line function through `x` is absolutely continuous on
   `[aᵢ, bᵢ]` for almost every `x ∈ Q`.
@@ -91,6 +96,13 @@ theorem formalDeriv_eq_fderiv {u : EuclideanSpace ℝ (Fin n) → F} {x : Euclid
   EuclideanSpace.ext_continuousLinearMap_single fun i ↦ by
     rw [formalDeriv_apply_single, hu.lineDeriv_eq_fderiv]
 
+/-- The formal derivative at `x` depends only on the germ of the map at `x`. -/
+theorem _root_.Filter.EventuallyEq.formalDeriv_eq {u v : EuclideanSpace ℝ (Fin n) → F}
+    {x : EuclideanSpace ℝ (Fin n)} (h : u =ᶠ[𝓝 x] v) : formalDeriv u x = formalDeriv v x := by
+  ext w
+  rw [formalDeriv_apply, formalDeriv_apply]
+  simp_rw [h.lineDeriv_eq]
+
 /-- The norm of the formal derivative is at most the sum of the norms of the partial
 derivatives. -/
 theorem norm_formalDeriv_le (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n)) :
@@ -145,6 +157,13 @@ theorem isClosed_coordinateBox (a b : Fin n → ℝ) : IsClosed (coordinateBox a
 theorem measurableSet_coordinateBox (a b : Fin n → ℝ) : MeasurableSet (coordinateBox a b) :=
   (isClosed_coordinateBox a b).measurableSet
 
+/-- The volume of a closed coordinate box is the product of its side lengths. -/
+theorem volume_coordinateBox (a b : Fin n → ℝ) :
+    volume (coordinateBox a b) = ∏ i, ENNReal.ofReal (b i - a i) := by
+  rw [coordinateBox_eq_preimage_Icc, PiLp.coe_continuousLinearEquiv,
+    (PiLp.volume_preserving_ofLp (Fin n)).measure_preimage measurableSet_Icc.nullMeasurableSet,
+    Real.volume_Icc_pi]
+
 /-- The **line function** of `u` through `x` in the `i`-th coordinate direction,
 `t ↦ u(x + (t - xᵢ) eᵢ)`: its value at `t` is the value of `u` at the point obtained from `x` by
 replacing the `i`-th coordinate with `t`. -/
@@ -163,6 +182,76 @@ omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
 @[simp]
 theorem lineFunction_self (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n))
     (i : Fin n) : lineFunction u x i (x i) = u x := by
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a constant map is constant. -/
+@[simp]
+theorem lineFunction_const (c : F) (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (fun _ ↦ c) x i = fun _ ↦ c := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of the zero map is zero. -/
+@[simp]
+theorem lineFunction_zero [Zero F] (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (0 : EuclideanSpace ℝ (Fin n) → F) x i = 0 := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a sum is the sum of the line functions. -/
+@[simp]
+theorem lineFunction_add [Add F] (u v : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (u + v) x i = lineFunction u x i + lineFunction v x i := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a negative is the negative of the line function. -/
+@[simp]
+theorem lineFunction_neg [Neg F] (u : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (-u) x i = -lineFunction u x i := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a difference is the difference of the line functions. -/
+@[simp]
+theorem lineFunction_sub [Sub F] (u v : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (u - v) x i = lineFunction u x i - lineFunction v x i := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a constant multiple is the constant multiple of the line function. -/
+@[simp]
+theorem lineFunction_const_smul {M : Type*} [SMul M F] (c : M) (u : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (c • u) x i = c • lineFunction u x i := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of a pointwise product `g • u` is the product of the line functions. -/
+@[simp]
+theorem lineFunction_smul {M : Type*} [SMul M F] (g : EuclideanSpace ℝ (Fin n) → M)
+    (u : EuclideanSpace ℝ (Fin n) → F) (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (g • u) x i = lineFunction g x i • lineFunction u x i := by
+  funext
+  simp [lineFunction]
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- The line function of `L ∘ u` is `L` composed with the line function of `u`. -/
+@[simp]
+theorem lineFunction_comp {F' : Type*} (L : F → F') (u : EuclideanSpace ℝ (Fin n) → F)
+    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
+    lineFunction (L ∘ u) x i = L ∘ lineFunction u x i := by
+  funext
   simp [lineFunction]
 
 omit [NormedAddCommGroup F] [NormedSpace ℝ F] in

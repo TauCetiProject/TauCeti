@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Ring
 public import TauCeti.RingTheory.DedekindDomain.LocallyFree.K0
 public import TauCeti.RingTheory.PicardGroup.ClassGroup
 import TauCeti.LinearAlgebra.Dimension.Pi
+import TauCeti.RingTheory.FractionalIdeal.Operations
 
 /-!
 # The ring structure of projective `K₀` of a Dedekind domain
@@ -97,9 +98,8 @@ theorem classOf_mul_classOf {K : Type u} [Field K] [Algebra A K] [IsFractionRing
       SplitK0.of.{u} (of A (J : FractionalIdeal A⁰ K)) =
       SplitK0.of.{u} (of A ((I * J : (FractionalIdeal A⁰ K)ˣ) : FractionalIdeal A⁰ K)) := by
     rw [← splitK0_of_tensorProduct]
-    exact SplitK0.of_congr (ObjectProperty.isoMk _ ((Submodule.tensorEquivMul
-      (FractionalIdeal.unitsMulEquivSubmodule I) (FractionalIdeal.unitsMulEquivSubmodule J)).trans
-      (LinearEquiv.ofEq _ _ (by simp [FractionalIdeal.unitsMulEquivSubmodule]))).toModuleIso)
+    exact SplitK0.of_congr
+      (ObjectProperty.isoMk _ (FractionalIdeal.tensorEquivMul I J).toModuleIso)
   -- `[IJ] - [A] = ([I] - [A]) + ([J] - [A])`.
   have h := classOf_mul I J
   simp only [classOf_def, one_smul, splitK0_of_self] at h ⊢

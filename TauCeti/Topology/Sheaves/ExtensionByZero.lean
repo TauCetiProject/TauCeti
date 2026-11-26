@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Sheaves.Over
-public import TauCeti.CategoryTheory.Sites.ExtensionByZero
+public import TauCeti.CategoryTheory.Sites.ExtensionByZero.Basic
 public import TauCeti.Topology.Sheaves.Skyscraper
 
 /-!

@@ -45,6 +45,8 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `setLIntegral_closedBall_le_morreyNormPow`: the Morrey norm also controls the balls centred
   outside `Ω`, at the cost of a factor `2^λ` for `λ ≥ 0`. So the Morrey norms defined with all
   centres in the ambient space, as in Rosales' paper, and with centres in `Ω` are equivalent.
+* `integrable_of_hasCompactSupport_of_morreyNormPow_ne_top`: a compactly supported function of
+  finite Morrey norm `‖f‖_{L^{1,λ}}` is integrable.
 * `morreyNormPow_mono_set`, `morreyNormPow_smul`, `morreyNormPow_add_rpow_le`: monotonicity in the
   set, homogeneity, and for `p ≥ 1` the triangle inequality for the Morrey norm itself.
 * `morreyNormPow_le_eLpNorm_rpow_mul`: **Hölder's inequality** `L^q ⊆ L^{p, n (1 - p / q)}` for
@@ -167,6 +169,25 @@ theorem setLIntegral_closedBall_le_morreyNormPow [OpensMeasurableSpace X] (hr : 
     linarith
   calc _ ≤ ∫⁻ z in closedBall y (2 * r), ‖f z‖ₑ ^ p ∂μ.restrict Ω := lintegral_mono_set hsub
     _ ≤ _ := setLIntegral_closedBall_le_morreyNormPow_of_mem hyΩ (by positivity)
+
+/-- **Compactly supported Morrey functions are integrable.** An a.e.-strongly measurable,
+compactly supported `f` whose Morrey norm `‖f‖_{L^{1,λ}}` on the whole space is finite is
+integrable: its support lies in a closed ball, whose mass the Morrey norm bounds. -/
+theorem integrable_of_hasCompactSupport_of_morreyNormPow_ne_top (hf : AEStronglyMeasurable f μ)
+    (hfc : HasCompactSupport f) (hM : morreyNormPow μ univ 1 lam f ≠ ∞) : Integrable f μ := by
+  refine ⟨hf, ?_⟩
+  have hsupp : Function.support (fun y => ‖f y‖ₑ) ⊆ tsupport f :=
+    (Function.support_comp_subset eNorm_zero f).trans (subset_tsupport f)
+  rcases (tsupport f).eq_empty_or_nonempty with h0 | ⟨x, -⟩
+  · rw [HasFiniteIntegral, ← setLIntegral_eq_of_support_subset (hsupp.trans h0.subset)]
+    simp
+  obtain ⟨R, hR⟩ := hfc.isCompact.isBounded.subset_closedBall x
+  rw [HasFiniteIntegral, ← setLIntegral_eq_of_support_subset
+    (hsupp.trans (hR.trans (closedBall_subset_closedBall (le_max_left R 1))))]
+  have h1 := setLIntegral_closedBall_le_morreyNormPow_of_mem (μ := μ) (p := 1) (f := f)
+    (lam := lam) (mem_univ x) (r := max R 1) (by positivity)
+  simp only [ENNReal.rpow_one, Measure.restrict_univ] at h1
+  exact h1.trans_lt (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hM.lt_top)
 
 /-- The Morrey norm is monotone in the set: shrinking `Ω` removes centres and mass. -/
 theorem morreyNormPow_mono_set (h : Ω' ⊆ Ω) :

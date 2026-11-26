@@ -49,6 +49,7 @@ permutation matrix.
   `Fin (l + m + n) ≃ Fin (l + (m + n))`.
 * `TauCeti.blockSumGL_map`: block sum commutes with ring homomorphisms applied to entries.
 * `TauCeti.det_blockSumGL`: over a commutative ring, `det (g ⊞ h) = det g * det h`.
+* `TauCeti.coe_blockSumGL_mem_unitary`: the block sum of unitary matrices is unitary.
 * `TauCeti.reindexGL_finAddFlip_blockSumGL`, `TauCeti.permutationGL_mul_blockSumGL_mul_inv`:
   swapping the two blocks of `g ⊞ h` gives `h ⊞ g`, and at a common size this is conjugation by
   the block-swap permutation matrix.
@@ -199,6 +200,14 @@ theorem det_blockSumGL {R : Type*} [CommRing R] (u : GL (Fin m) R × GL (Fin n) 
       GeneralLinearGroup.det u.1 * GeneralLinearGroup.det u.2 := by
   ext
   simp [GeneralLinearGroup.val_det_apply, coe_blockSumGL, det_fromBlocks_zero₂₁]
+
+/-- The block sum of unitary matrices is unitary. -/
+theorem coe_blockSumGL_mem_unitary [StarRing A] {u : GL (Fin m) A × GL (Fin n) A}
+    (hu₁ : (u.1 : Matrix (Fin m) (Fin m) A) ∈ unitary _)
+    (hu₂ : (u.2 : Matrix (Fin n) (Fin n) A) ∈ unitary _) :
+    (blockSumGL A u : Matrix (Fin (m + n)) (Fin (m + n)) A) ∈ unitary _ := by
+  rw [coe_blockSumGL]
+  exact (reindex_fromBlocks_zero_zero_mem_unitary_iff _).2 ⟨hu₁, hu₂⟩
 
 /-- Swapping the two blocks: relabelling the indices of `g ⊞ h` along
 `finAddFlip : Fin (m + n) ≃ Fin (n + m)` gives `h ⊞ g`. -/

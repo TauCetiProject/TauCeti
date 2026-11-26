@@ -532,6 +532,10 @@ theorem W1p.value_apply_ae (u : W1p mu Omega p) :
 theorem W1p.memLp_value (u : W1p mu ⊤ p) : MemLp (W1p.value u : E → ℝ) p mu := by
   simpa using Lp.memLp (W1p.value u)
 
+/-- On the whole space, the value of a `W^{1,1}` function is integrable. -/
+theorem W1p.integrable_value (u : W1p mu ⊤ 1) : Integrable (W1p.value u : E → ℝ) mu :=
+  memLp_one_iff_integrable.1 (W1p.memLp_value u)
+
 /-- The value of a finite sum of Sobolev functions is almost everywhere the sum of their values. -/
 theorem W1p.value_finsetSum_ae {ι : Type*} (s : Finset ι) (u : ι → W1p mu Omega p) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value (∑ j ∈ s, u j) x = ∑ j ∈ s, W1p.value (u j) x := by
@@ -625,6 +629,14 @@ theorem W1p.gradient_apply_ae (u : W1p mu Omega p) :
       W1p.gradient u x = WithLp.snd ((u : Sobolev1JetLp mu Omega p) x) := by
   rw [W1p.gradient_coe]
   exact Sobolev1JetLp.gradient_apply_ae (u : Sobolev1JetLp mu Omega p)
+
+/-- On the whole space, the weak gradient of a Sobolev function is in `Lᵖ(μ)`. -/
+theorem W1p.memLp_gradient (u : W1p mu ⊤ p) : MemLp (W1p.gradient u : E → E) p mu :=
+  Lp.memLp_of_restrict_coe_opens_top (W1p.gradient u)
+
+/-- On the whole space, the weak gradient of a `W^{1,1}` function is integrable. -/
+theorem W1p.integrable_gradient (u : W1p mu ⊤ 1) : Integrable (W1p.gradient u : E → E) mu :=
+  memLp_one_iff_integrable.1 (W1p.memLp_gradient u)
 
 /-- Two Sobolev functions are equal when their value and weak-gradient components are equal. -/
 @[ext]

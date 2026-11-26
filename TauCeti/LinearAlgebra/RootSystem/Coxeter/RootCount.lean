@@ -12,17 +12,16 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Exponents
 
 Supplements `TauCeti.LinearAlgebra.RootSystem.Coxeter.Number` with additional root-count,
 exponent-sum, and fundamental-degree formulas (`|Φ⁺| = ∑ mᵢ`, `∑ dᵢ = |Φ⁺| + r`, `|Φ| = r * h`,
-`h = |Φ| / r`, and `Nonempty (ι ≃ Fin t.numRoots)`) for bases of valid Cartan type and for
-classified finite irreducible reduced crystallographic root systems.
+and `h = |Φ| / r`) for bases of valid Cartan type and for classified finite irreducible reduced
+crystallographic root systems.
 
 ## Main results
 
-* `TauCeti.HasCartanType.nonempty_equiv_fin_numRoots`: equivalence `ι ≃ Fin t.numRoots`.
 * `TauCeti.HasCartanType.ncard_posRoots_eq_sum_exponents`,
   `card_posRootsFinset_eq_sum_exponents`, `sum_degrees_eq_ncard_posRoots_add_card_support`,
   `natCard_eq_card_support_mul_coxeterNumber`, and `coxeterNumber_eq_natCard_div_card_support`.
-* `RootPairing.Base.natCard_eq_numRoots_classifiedDynkinType` and its four siblings for classified
-  finite irreducible root systems.
+* `RootPairing.Base.ncard_posRoots_eq_sum_exponents_classifiedDynkinType` and its three siblings
+  for classified finite irreducible root systems.
 
 ## References
 
@@ -40,23 +39,12 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [Finite ι]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [P.IsCrystallographic] [P.IsReduced]
 
-/-- **A finite reduced crystallographic root pairing carrying a base of valid Cartan type `t` has
-root index type equivalent to `Fin t.numRoots`.** No spanning assumption on the roots is
-required. -/
-theorem HasCartanType.nonempty_equiv_fin_numRoots {b : P.Base} {t : DynkinType}
-    (h : HasCartanType P b t) (ht : t.Valid) :
-    Nonempty (ι ≃ Fin t.numRoots) := by
-  let := Fintype.ofFinite ι
-  exact ⟨Fintype.equivFinOfCardEq (Nat.card_eq_fintype_card.symm.trans (h.natCard_eq_numRoots ht))⟩
-
 /-- **The number of positive roots of a base of valid Cartan type `t` equals the sum of the
 exponents of `t`.** -/
 theorem HasCartanType.ncard_posRoots_eq_sum_exponents {b : P.Base} {t : DynkinType}
     (h : HasCartanType P b t) (ht : t.Valid) :
-    (posRoots P b).ncard = t.exponents.sum := by
-  have h2 := h.two_mul_ncard_posRoots_eq_numRoots ht
-  have hexp := t.two_mul_sum_exponents_eq_numRoots
-  omega
+    (posRoots P b).ncard = t.exponents.sum :=
+  (h.sum_exponents_eq_ncard_posRoots ht).symm
 
 /-- Finset version of `TauCeti.HasCartanType.ncard_posRoots_eq_sum_exponents`. -/
 theorem HasCartanType.card_posRootsFinset_eq_sum_exponents {b : P.Base} {t : DynkinType}
@@ -100,11 +88,6 @@ variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [Finite ι]
   {P : RootPairing ι R M N} [P.IsRootSystem] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
 
 open TauCeti
-
-/-- `Nat.card ι` equals `(classifiedDynkinType b).numRoots`. -/
-theorem natCard_eq_numRoots_classifiedDynkinType (b : P.Base) :
-    Nat.card ι = (classifiedDynkinType b).numRoots :=
-  (hasCartanType_classifiedDynkinType b).natCard_eq_numRoots (valid_classifiedDynkinType b)
 
 /-- The number of positive roots equals the sum of exponents of `classifiedDynkinType b`. -/
 theorem ncard_posRoots_eq_sum_exponents_classifiedDynkinType (b : P.Base) :
