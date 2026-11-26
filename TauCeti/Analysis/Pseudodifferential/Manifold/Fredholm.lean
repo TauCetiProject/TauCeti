@@ -115,12 +115,13 @@ theorem IsClassicalElliptic.isFredholm_chartSobolevExtension [CompactSpace M]
 extension `H^s(M) → H^{s - m}(M)` of an elliptic classical pseudodifferential operator `P` of
 order `m` consists of the smooth functions `u` with `P u = 0`, for every real `s`. -/
 theorem IsClassicalElliptic.ker_chartSobolevExtension [CompactSpace M]
-    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    (hPe : IsClassicalElliptic m P)
     (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
     (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
     (chartSobolevExtension hc ψ hc' φ P s (s - m)).ker =
       (LinearMap.ker P).map (toChartSobolevSpace hc ψ s) := by
   -- A parametrix `Q` of order `-m`, with `R = Q ∘ P - 1` of order `-∞`.
+  have hP := hPe.mem_of_isProperlySupported (isProperlySupported_of_compactSpace P)
   obtain ⟨Q, hQ, -, hQP⟩ := hPe.exists_comp_sub_id_mem_smoothingPseudodifferentialOperators
   have hT := chartSobolevExtension_toChartSobolevSpace_of_mem (hc' := hc') (φ := φ) hP hψ
     (le_refl (s - m))
@@ -151,12 +152,12 @@ theorem IsClassicalElliptic.ker_chartSobolevExtension [CompactSpace M]
 classical pseudodifferential operator `P` of order `m` has the dimension of the space of smooth
 solutions of `P u = 0`, for every real `s`. -/
 theorem IsClassicalElliptic.finrank_ker_chartSobolevExtension [CompactSpace M]
-    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P)
+    (hPe : IsClassicalElliptic m P)
     (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
     (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
     Module.finrank ℂ (chartSobolevExtension hc ψ hc' φ P s (s - m)).ker =
       Module.finrank ℂ (LinearMap.ker P) := by
-  rw [hPe.ker_chartSobolevExtension hP hψ hφ s]
+  rw [hPe.ker_chartSobolevExtension hψ hφ s]
   exact (Submodule.equivMapOfInjective _ (toChartSobolevSpace_injective hc ψ hψ s)
     _).finrank_eq.symm
 
