@@ -398,7 +398,8 @@ def halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) (x : X) :
       (Extend.inl χ₄ hχ₄ (Classical.arbitrary (s.P x))))
 
 /-- Charge conjugation of spinors through the chosen point `p₀` of `s.P x`, stated with the fibre
-`Extend s.P χ hχ` of the charge conjugate. -/
+`Extend s.P χ hχ` that `s.chargeConj.P` unfolds to, so that `rw` can match the point `[p₀, 1]` of
+this fibre. -/
 private theorem halfSpinorBundleChargeConjEquiv_apply (s : SpinCStructure F E 4) {x : X}
     (ψ : s.halfSpinorBundle o hQV b ρ hρ ε x) :
     s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε x ψ =
@@ -424,6 +425,7 @@ theorem halfSpinorBundleChargeConjEquiv_mk (s : SpinCStructure F E 4) {x : X} (p
   obtain ⟨g, hg⟩ : ∃ g, PrincipalBundle.division SpinC₄ p₀ p = g := ⟨_, rfl⟩
   obtain rfl : op g • p₀ = p := hg ▸ PrincipalBundle.smul_division p₀ p
   rw [hg, Orientation.HalfSpinModel.conjEquiv_smul, Extend.inl_smul]
+  -- The goal is stated on `s.chargeConj.P`, which unfolds to `Extend s.P χ₄ hχ₄`.
   exact (AssociatedBundle.mk_smul (P := Extend s.P χ₄ hχ₄) _ _ _).symm
 
 /-- **The inverse of charge conjugation of spinors in a frame**: `[[p, 1], ψ] ↦ [p, j⁻¹ ψ]`. -/
@@ -444,7 +446,7 @@ theorem continuous_halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) :
       TotalSpace.mk' (o.HalfSpinModel hQV b ρ' hρ' ε') v.proj
         (s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε v.proj v.snd) := by
   -- The total space of `W^ε(s)` is a quotient of `P × S^ε`, on which the map is
-  -- `(p, ψ) ↦ [[p, 1], j ψ]`.
+  -- `(p, ψ) ↦ [[p, 1], j ψ]`, stated on `Extend s.P χ₄ hχ₄`, the unfolding of `s.chargeConj.P`.
   refine (AssociatedBundle.isOpenQuotientMap_totalSpaceMk_mk SpinC₄ s.P
     (o.HalfSpinModel hQV b ρ hρ ε)).continuous_comp_iff.1 ?_
   have hc : Continuous fun y : TotalSpace SpinC₄ s.P × o.HalfSpinModel hQV b ρ hρ ε ↦
@@ -470,8 +472,9 @@ theorem cliffordMul_halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) {
         (s.cliffordMul o hQV b ρ hρ hδ x v ψ) := by
   obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
   rw [halfSpinorBundleChargeConjEquiv_mk, cliffordMul_mk, halfSpinorBundleChargeConjEquiv_mk]
-  refine (s.chargeConj.cliffordMul_mk hδ' (Extend.inl χ₄ hχ₄ p) v _).trans ?_
-  rw [vectorFrame_chargeConj_inl, Orientation.HalfSpinModel.cliffordMul_conjEquiv]
+  -- `rw` does not unfold `chargeConj`, so the point `[p, 1]` of `s.chargeConj.P x` is explicit.
+  rw [s.chargeConj.cliffordMul_mk hδ' (Extend.inl χ₄ hχ₄ p), vectorFrame_chargeConj_inl,
+    Orientation.HalfSpinModel.cliffordMul_conjEquiv]
 
 end SpinCStructure
 

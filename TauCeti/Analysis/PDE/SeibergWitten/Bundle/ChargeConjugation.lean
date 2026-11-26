@@ -118,13 +118,13 @@ theorem cliffordRestriction_halfSpinorBundleChargeConjEquiv (s : SpinCStructure 
       -s.halfSpinorBundleChargeConjEquiv o hQ b hρ hρ' j hj (map_one _) x
         (s.cliffordRestriction o hQ b ρ hρ x α ψ) := by
   obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
+  -- `rw` does not unfold `chargeConj`, so the point `[p, 1]` of `s.chargeConj.P x` is explicit.
   rw [halfSpinorBundleChargeConjEquiv_mk, cliffordRestriction_mk,
-    halfSpinorBundleChargeConjEquiv_mk]
-  refine (s.chargeConj.cliffordRestriction_mk (Extend.inl χ hχ p) α _).trans ?_
-  rw [vectorFrame_chargeConj_inl, Orientation.HalfSpinModel.toPositiveHalfSpinors_conjEquiv,
+    halfSpinorBundleChargeConjEquiv_mk, s.chargeConj.cliffordRestriction_mk (Extend.inl χ hχ p),
+    vectorFrame_chargeConj_inl, Orientation.HalfSpinModel.toPositiveHalfSpinors_conjEquiv,
     SeibergWitten.cliffordRestriction_positiveHalfSpinorsConjEquiv, map_neg,
-    toPositiveHalfSpinors_symm_positiveHalfSpinorsConjEquiv (hρ := hρ)]
-  exact AssociatedBundle.mk_neg (P := s.chargeConj.P) _ _
+    toPositiveHalfSpinors_symm_positiveHalfSpinorsConjEquiv (hρ := hρ),
+    AssociatedBundle.mk_neg (P := s.chargeConj.P) (Extend.inl χ hχ p)]
 
 /-- **Charge conjugation of spinors reverses the quadratic two-form**: `q_x(j ψ) = -q_x(ψ)` on the
 positive half-spinors. Since charge conjugation of connections negates the curvature, this turns
@@ -136,9 +136,10 @@ theorem quadraticTwoForm_halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E
         (s.halfSpinorBundleChargeConjEquiv o hQ b hρ hρ' j hj (map_one _) x ψ) =
       -s.quadraticTwoForm o hQ b ρ hρ x ψ := by
   obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
-  rw [halfSpinorBundleChargeConjEquiv_mk, quadraticTwoForm_mk]
-  refine (s.chargeConj.quadraticTwoForm_mk (Extend.inl χ hχ p) _).trans ?_
-  rw [vectorFrame_chargeConj_inl, Orientation.HalfSpinModel.toPositiveHalfSpinors_conjEquiv,
+  -- `rw` does not unfold `chargeConj`, so the point `[p, 1]` of `s.chargeConj.P x` is explicit.
+  rw [halfSpinorBundleChargeConjEquiv_mk, quadraticTwoForm_mk,
+    s.chargeConj.quadraticTwoForm_mk (Extend.inl χ hχ p), vectorFrame_chargeConj_inl,
+    Orientation.HalfSpinModel.toPositiveHalfSpinors_conjEquiv,
     SeibergWitten.quadraticTwoForm_positiveHalfSpinorsConjEquiv, Submodule.coe_neg, map_neg]
 
 end TauCeti.SpinCStructure
