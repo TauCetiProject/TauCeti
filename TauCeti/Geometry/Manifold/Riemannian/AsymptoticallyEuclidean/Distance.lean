@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 import Mathlib.Algebra.Order.Chebyshev
-import TauCeti.Analysis.Normed.Module.Ball.Exterior
+import TauCeti.Analysis.Convex.Segment
 import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Asymptotics
 import TauCeti.Topology.MetricSpace.Annulus
 

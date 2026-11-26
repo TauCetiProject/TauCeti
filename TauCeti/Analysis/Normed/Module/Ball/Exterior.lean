@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
-public import Mathlib.Analysis.Convex.Segment
 public import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Convex.PathConnected
@@ -39,8 +38,7 @@ coincide. This uniqueness result and the corresponding filled-hull alternative a
 `TauCeti/Analysis/Normed/Module/FilledHull.lean`.
 
 The file also records how nonzero scalar dilation acts on the complement of a closed ball
-(`TauCeti.smul_compl_closedBall`) and bounds the norm along an outward radial segment
-(`TauCeti.norm_mem_segment_smul_bounds`).
+(`TauCeti.smul_compl_closedBall`).
 
 ## Main results
 
@@ -56,8 +54,6 @@ The file also records how nonzero scalar dilation acts on the complement of a cl
   is path-connected in a real normed space of dimension at least two.
 * `TauCeti.smul_compl_closedBall` — nonzero scalar multiplication maps `(closedBall x r)ᶜ` onto
   `(closedBall (c • x) (‖c‖ * r))ᶜ`.
-* `TauCeti.norm_mem_segment_smul_bounds` — every point on the segment from `x` to `c • x`
-  (`1 ≤ c`) satisfies `‖x‖ ≤ ‖z‖ ≤ c * ‖x‖`.
 
 ## References
 
@@ -168,20 +164,5 @@ theorem smul_compl_closedBall {𝕜 F : Type*} [NormedField 𝕜] [SeminormedAdd
     c • (closedBall x r)ᶜ = (closedBall (c • x) (‖c‖ * r))ᶜ := by
   rw [← Set.image_smul, Set.image_compl_eq (IsUnit.mk0 c hc).smul_bijective,
     Set.image_smul, smul_closedBall' hc]
-
-/-- Every point `z` on the segment from `x` to `c • x` with `1 ≤ c` satisfies `‖x‖ ≤ ‖z‖` and
-`‖z‖ ≤ c * ‖x‖`. -/
-theorem norm_mem_segment_smul_bounds {c : ℝ} (hc : 1 ≤ c) {x z : E}
-    (hz : z ∈ segment ℝ x (c • x)) :
-    ‖x‖ ≤ ‖z‖ ∧ ‖z‖ ≤ c * ‖x‖ := by
-  rw [segment_eq_image] at hz
-  obtain ⟨τ, ⟨hτ0, hτ1⟩, rfl⟩ := hz
-  have h1 : 1 ≤ (1 - τ) + τ * c := by nlinarith
-  have h2 : (1 - τ) + τ * c ≤ c := by nlinarith
-  have hcomb : (1 - τ) • x + τ • (c • x) = ((1 - τ) + τ * c) • x := by
-    rw [smul_smul, ← add_smul]
-  dsimp only
-  rw [hcomb, norm_smul, Real.norm_of_nonneg (zero_le_one.trans h1)]
-  exact ⟨le_mul_of_one_le_left (norm_nonneg x) h1, mul_le_mul_of_nonneg_right h2 (norm_nonneg x)⟩
 
 end TauCeti

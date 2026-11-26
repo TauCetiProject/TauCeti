@@ -70,6 +70,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
 * `TauCeti.eq_of_mem_segment_zero_left_of_norm_eq` — the norm separates the points of `[0, w]`.
 * `TauCeti.norm_mem_Icc_of_mem_segment` — a chord of length at most `r` between two vectors of
   norm `r` stays in the annulus `r / 2 ≤ ‖z‖ ≤ r`.
+* `TauCeti.norm_mem_segment_smul_bounds` — every point on the segment from `x` to `c • x`
+  (`1 ≤ c`) satisfies `‖x‖ ≤ ‖z‖ ≤ c * ‖x‖`.
 * `TauCeti.mem_segment_zero_left_iff_real_inner_eq_norm_mul_and_norm_le` and
   `TauCeti.zero_mem_segment_iff_real_inner_eq_neg_norm_mul` — the two criteria in a real inner
   product space.
@@ -281,6 +283,21 @@ theorem zero_notMem_segment_of_norm_sub_smul_lt {T c : E} {μ : ℝ} (hμ : 0 < 
   linarith
 
 end Normed
+
+/-- Every point `z` on the segment from `x` to `c • x` with `1 ≤ c` satisfies `‖x‖ ≤ ‖z‖` and
+`‖z‖ ≤ c * ‖x‖`. -/
+theorem norm_mem_segment_smul_bounds {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    {c : ℝ} (hc : 1 ≤ c) {x z : E} (hz : z ∈ segment ℝ x (c • x)) :
+    ‖x‖ ≤ ‖z‖ ∧ ‖z‖ ≤ c * ‖x‖ := by
+  rw [segment_eq_image] at hz
+  obtain ⟨τ, ⟨hτ0, hτ1⟩, rfl⟩ := hz
+  have h1 : 1 ≤ (1 - τ) + τ * c := by nlinarith
+  have h2 : (1 - τ) + τ * c ≤ c := by nlinarith
+  have hcomb : (1 - τ) • x + τ • (c • x) = ((1 - τ) + τ * c) • x := by
+    rw [smul_smul, ← add_smul]
+  dsimp only
+  rw [hcomb, norm_smul, Real.norm_of_nonneg (zero_le_one.trans h1)]
+  exact ⟨le_mul_of_one_le_left (norm_nonneg x) h1, mul_le_mul_of_nonneg_right h2 (norm_nonneg x)⟩
 
 /-! ### Half-open affine segments -/
 
