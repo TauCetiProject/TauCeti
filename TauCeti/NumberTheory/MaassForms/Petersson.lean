@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
-public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 public import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Basic
 public import TauCeti.Analysis.Complex.ModularForms.CongruenceSubgroups.QuotientMeasure
 public import TauCeti.NumberTheory.MaassForms.Automorphic
 public import TauCeti.NumberTheory.MaassForms.CuspIntegral
+public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Character
+public import TauCeti.NumberTheory.ModularForms.Petersson.Basic
 
 /-!
 # Square-integrability and the Petersson inner product at weight `0`
@@ -23,7 +24,8 @@ sets up both at weight `0`.
 The group whose fundamental domains are used is the *effective* image
 `PΓ₀(N) = gamma0PSL N` of `Γ₀(N)` in `PSL(2, ℝ)`, not `Γ₀(N)` itself: `-I ∈ Γ₀(N)` acts trivially
 on `ℍ`, so no subset of `ℍ` is a fundamental domain for `Γ₀(N)`. Both groups have the same orbits,
-and the covolume of `PΓ₀(N)` is `[SL(2, ℤ) : Γ₀(N)] · π / 3` (`covolume_gamma0PSL`).
+and each of its fundamental domains has area `[SL(2, ℤ) : Γ₀(N)] · π / 3`
+(`CongruenceSubgroup.quotientVolume_Gamma0_univ`, `volume_dirichletDomain_gamma0PSL`).
 
 For a function `f` automorphic with nebentypus `χ`, the norm `‖f‖` is invariant under
 `PΓ₀(N)`, since `|χ(d)| = 1` at every unit `d`; hence square-integrability on one fundamental
@@ -33,8 +35,9 @@ fundamental domain (`IsAutomorphic.petersson_eq_setIntegral`). To have a definit
 pair of functions, `petersson N f g` integrates over one fixed fundamental domain, the Dirichlet
 domain of `PΓ₀(N)` centred at `2i`. This is a fundamental domain because `2i` has trivial
 stabilizer in the image of `PSL(2, ℤ)`: it lies in the interior of the standard fundamental
-domain (`TauCeti.ModularGroup.mem_freeLocus_of_mem_fdo`). (The point `i` would not do: `S` fixes
-it, and the Dirichlet domain centred at `i` has twice the area of a fundamental domain.)
+domain (`TauCeti.ModularGroup.mem_freeLocus_of_mem_fdo`), so the same centre works at every
+level. (At level `1` the point `i` would not do: `S` fixes it, and the Dirichlet domain centred at
+`i` has twice the area of a fundamental domain.)
 
 The product is linear in the first slot and conjugate-linear in the second, conjugate-symmetric,
 and positive definite on continuous square-integrable automorphic functions; it is invariant under
@@ -47,14 +50,15 @@ every element of `PSL(2, ℝ)` normalizing `PΓ₀(N)`, such as the image of the
 * `TauCeti.MaassForms.IsSquareIntegrable N f`: `|f|²` is integrable over some measurable
   fundamental domain of `PΓ₀(N)`.
 * `TauCeti.MaassForms.petersson N f g`: the integral of `f * conj g` over the Dirichlet domain of
-  `PΓ₀(N)` centred at `2i`.
+  `PΓ₀(N)` centred at `2i`, that is, the weight-`0` pairing `UpperHalfPlane.peterssonInner 0`
+  of `g` and `f` over that domain.
 
 ## Main results
 
-* `TauCeti.MaassForms.covolume_gamma0PSL`, `TauCeti.MaassForms.covolume_gamma0PSL_eq_mul_prod`:
-  the covolume of `PΓ₀(N)` is `[SL(2, ℤ) : Γ₀(N)] · π / 3 = (π / 3) · N · ∏_{p ∣ N} (1 + 1 / p)`.
 * `TauCeti.MaassForms.isFundamentalDomain_dirichletDomain_gamma0PSL`: the Dirichlet domain of
   `PΓ₀(N)` centred at `2i` is a measurable fundamental domain.
+* `TauCeti.MaassForms.volume_dirichletDomain_gamma0PSL`: its area is
+  `[SL(2, ℤ) : Γ₀(N)] · π / 3`.
 * `TauCeti.MaassForms.IsAutomorphic.isSquareIntegrable_iff`: for an automorphic function,
   square-integrability over any one fundamental domain is square-integrability.
 * `TauCeti.MaassForms.IsSquareIntegrable.memLp`,
@@ -111,30 +115,6 @@ theorem sl2zToPSL2R_mem_gamma0PSL {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
 instance : DiscreteTopology (gamma0PSL N) :=
   Subgroup.discreteTopology_map_sl2zToPSL2R _
 
-/-- **The covolume of `PΓ₀(N)`** is `[SL(2, ℤ) : Γ₀(N)] · π / 3`, the index of `Γ₀(N)` times the
-area of the level-one quotient. -/
-theorem covolume_gamma0PSL [NeZero N] :
-    covolume (gamma0PSL N) ℍ = (Gamma0 N).index * ENNReal.ofReal (Real.pi / 3) := by
-  rw [gamma0PSL, ← Subgroup.quotientVolume_univ,
-    Subgroup.quotientVolume_univ_eq_index_mul_of_neg_one_mem _ (by simp [Gamma0_mem])]
-
-/-- **Dedekind's form of the covolume of `PΓ₀(N)`**: `(π / 3) · N · ∏_{p ∣ N} (1 + 1 / p)`. -/
-theorem covolume_gamma0PSL_eq_mul_prod [NeZero N] :
-    covolume (gamma0PSL N) ℍ =
-      ENNReal.ofReal (Real.pi / 3 * N * ∏ p ∈ N.primeFactors, (1 + (p : ℝ)⁻¹)) := by
-  have hp0 {p : ℕ} (hp : p ∈ N.primeFactors) : (p : ℝ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr (Nat.prime_of_mem_primeFactors hp).ne_zero
-  have hprod : (∏ p ∈ N.primeFactors, (p : ℝ)) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun _ ↦ hp0
-  have hindex : ((Gamma0 N).index : ℝ) = N * ∏ p ∈ N.primeFactors, (1 + (p : ℝ)⁻¹) := by
-    have h := congrArg (Nat.cast (R := ℝ)) (Gamma0_index_mul_prod_primeFactors (N := N))
-    push_cast at h
-    rw [eq_div_of_mul_eq hprod h, mul_div_assoc, ← Finset.prod_div_distrib]
-    refine congrArg _ (Finset.prod_congr rfl fun p hp ↦ ?_)
-    field_simp [hp0 hp]
-  rw [covolume_gamma0PSL, ← ENNReal.ofReal_natCast, ← ENNReal.ofReal_mul (Nat.cast_nonneg _),
-    hindex]
-  ring_nf
-
 /-! ### The centre `2i` and the Dirichlet domain -/
 
 /-- The point `2i` lies in the open standard fundamental domain. -/
@@ -151,19 +131,30 @@ theorem isFundamentalDomain_dirichletDomain_gamma0PSL :
   Subgroup.isFundamentalDomain_dirichletDomain _ <| ModularGroup.mem_freeLocus_of_mem_fdo
     (Subgroup.map_sl2zToPSL2R_le_range_psl2zToPSL2R _) pt_zero_two_mem_fdo
 
-/-! ### Invariance of `|f|` and of `f * conj g` -/
+/-- **The area of the Dirichlet domain of `PΓ₀(N)`** is the area `[SL(2, ℤ) : Γ₀(N)] · π / 3` of
+`Γ₀(N) \ ℍ`. -/
+theorem volume_dirichletDomain_gamma0PSL [NeZero N] :
+    volume (dirichletDomain (gamma0PSL N) (pt 0 2)) =
+      (Gamma0 N).index * ENNReal.ofReal (Real.pi / 3) := by
+  rw [← isFundamentalDomain_dirichletDomain_gamma0PSL.covolume_eq_volume, gamma0PSL,
+    ← Subgroup.quotientVolume_univ, quotientVolume_Gamma0_univ]
 
-/-- The nebentypus takes values of norm `1` on the lower-right entries of `Γ₀(N)`. -/
-private theorem norm_char_apply_one_one {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) :
-    ‖χ ((γ 1 1 : ℤ) : ZMod N)‖ = 1 :=
-  DirichletCharacter.unit_norm_eq_one χ (isUnit_intCast_apply_one_one_of_mem_Gamma0 hγ).unit
+/-! ### Invariance of `|f|` and of `f * conj g` -/
 
 /-- **The absolute value of an automorphic function is `PΓ₀(N)`-invariant**, since the
 nebentypus has absolute value `1` on units. -/
 theorem IsAutomorphic.norm_apply_smul (hf : IsAutomorphic N χ f) {g : PSL(2, ℝ)}
     (hg : g ∈ gamma0PSL N) (z : ℍ) : ‖f (g • z)‖ = ‖f z‖ := by
   obtain ⟨γ, hγ, rfl⟩ := mem_gamma0PSL.mp hg
-  rw [sl2zToPSL2R_smul, hf.apply_smul hγ, norm_mul, norm_char_apply_one_one hγ, one_mul]
+  rw [sl2zToPSL2R_smul, hf.apply_smul hγ, norm_mul, χ.norm_apply_one_one_of_mem_Gamma0 hγ, one_mul]
+
+/-- **The support of an automorphic function is `PΓ₀(N)`-invariant**, since its absolute value
+is (`IsAutomorphic.norm_apply_smul`). -/
+theorem IsAutomorphic.smul_setOf_ne_zero (hf : IsAutomorphic N χ f) {σ : PSL(2, ℝ)}
+    (hσ : σ ∈ gamma0PSL N) : σ • {z | f z ≠ 0} = {z | f z ≠ 0} := by
+  ext z
+  rw [mem_smul_set_iff_inv_smul_mem, mem_ofPred_eq, mem_ofPred_eq, ← norm_ne_zero_iff,
+    hf.norm_apply_smul (inv_mem hσ), norm_ne_zero_iff]
 
 /-- **For automorphic `f` and `g` with the same nebentypus, `f * conj g` is
 `PΓ₀(N)`-invariant**: the factors `χ(d)` and `conj χ(d)` multiply to `|χ(d)|² = 1`. -/
@@ -172,7 +163,7 @@ theorem IsAutomorphic.mul_conj_apply_smul (hf : IsAutomorphic N χ f) (hg : IsAu
     f (σ • z) * conj (g (σ • z)) = f z * conj (g z) := by
   obtain ⟨γ, hγ, rfl⟩ := mem_gamma0PSL.mp hσ
   rw [sl2zToPSL2R_smul, hf.apply_smul hγ, hg.apply_smul hγ, map_mul,
-    mul_mul_mul_comm, RCLike.mul_conj, norm_char_apply_one_one hγ]
+    mul_mul_mul_comm, RCLike.mul_conj, χ.norm_apply_one_one_of_mem_Gamma0 hγ]
   simp
 
 /-! ### Square-integrability -/
@@ -207,7 +198,7 @@ theorem isSquareIntegrable_zero : IsSquareIntegrable N 0 :=
 /-- At positive level every constant is square-integrable: `Γ₀(N) \ ℍ` has finite area. -/
 theorem isSquareIntegrable_const [NeZero N] (c : ℂ) : IsSquareIntegrable N fun _ ↦ c := by
   refine ⟨_, isFundamentalDomain_dirichletDomain_gamma0PSL, integrableOn_const ?_⟩
-  rw [← isFundamentalDomain_dirichletDomain_gamma0PSL.covolume_eq_volume, covolume_gamma0PSL]
+  rw [volume_dirichletDomain_gamma0PSL]
   exact ENNReal.mul_ne_top (ENNReal.natCast_ne_top _) ENNReal.ofReal_ne_top
 
 theorem IsSquareIntegrable.const_smul (hf : IsSquareIntegrable N f) (c : ℂ) :
@@ -249,47 +240,63 @@ theorem IsSquareIntegrable.integrableOn_mul_conj {χ' : DirichletCharacter ℂ N
 variable (N) in
 /-- **The Petersson inner product at weight `0`**, `⟨f, g⟩ = ∫_F f * conj g dμ` over the Dirichlet
 domain `F` of `PΓ₀(N)` centred at `2i`, for the invariant measure `dμ = dx dy / y²` and with no
-normalization by the covolume. It is linear in `f` and conjugate-linear in `g`. For automorphic
-`f` and `g` with the same nebentypus the integral is the same over every measurable fundamental
-domain of `PΓ₀(N)` (`IsAutomorphic.petersson_eq_setIntegral`). -/
+normalization by the covolume (`petersson_eq_integral`). It is linear in `f` and conjugate-linear
+in `g`, so it is the weight-`0` pairing `UpperHalfPlane.peterssonInner 0 F` with its arguments
+swapped, since that pairing is conjugate-linear in its first argument. For automorphic `f` and
+`g` with the same nebentypus the integral is the same over every measurable fundamental domain of
+`PΓ₀(N)` (`IsAutomorphic.petersson_eq_setIntegral`). -/
 noncomputable def petersson (f g : ℍ → ℂ) : ℂ :=
-  ∫ z in dirichletDomain (gamma0PSL N) (pt 0 2), f z * conj (g z)
+  peterssonInner 0 (dirichletDomain (gamma0PSL N) (pt 0 2)) g f
 
 variable (N) in
 theorem petersson_def (f g : ℍ → ℂ) :
-    petersson N f g = ∫ z in dirichletDomain (gamma0PSL N) (pt 0 2), f z * conj (g z) := (rfl)
+    petersson N f g = peterssonInner 0 (dirichletDomain (gamma0PSL N) (pt 0 2)) g f := (rfl)
+
+/-- The weight-`0` Petersson integrand of `g` and `f` is `f * conj g`. -/
+private theorem upperHalfPlane_petersson_zero (f g : ℍ → ℂ) :
+    UpperHalfPlane.petersson 0 g f = fun z ↦ f z * conj (g z) := by
+  ext z
+  simp [UpperHalfPlane.petersson, mul_comm]
+
+variable (N) in
+/-- **The Petersson product as an integral**: `⟨f, g⟩ = ∫_F f * conj g dμ` over the Dirichlet
+domain `F` of `PΓ₀(N)` centred at `2i`. -/
+theorem petersson_eq_integral (f g : ℍ → ℂ) :
+    petersson N f g = ∫ z in dirichletDomain (gamma0PSL N) (pt 0 2), f z * conj (g z) := by
+  rw [petersson_def, peterssonInner_def, upperHalfPlane_petersson_zero]
 
 /-- **Independence of the fundamental domain.** For `f` and `g` automorphic with the same
 nebentypus, the Petersson product is the integral of `f * conj g` over any measurable
 fundamental domain of `PΓ₀(N)`. -/
 theorem IsAutomorphic.petersson_eq_setIntegral (hf : IsAutomorphic N χ f)
     (hg : IsAutomorphic N χ g) {F : Set ℍ} (hF : IsFundamentalDomain (gamma0PSL N) F) :
-    petersson N f g = ∫ z in F, f z * conj (g z) :=
-  isFundamentalDomain_dirichletDomain_gamma0PSL.setIntegral_eq hF fun σ z ↦ by
+    petersson N f g = ∫ z in F, f z * conj (g z) := by
+  rw [petersson_eq_integral]
+  exact isFundamentalDomain_dirichletDomain_gamma0PSL.setIntegral_eq hF fun σ z ↦ by
     rw [Subgroup.smul_def, hf.mul_conj_apply_smul hg σ.property]
 
 /-- **Conjugate symmetry**: `conj ⟨f, g⟩ = ⟨g, f⟩`. -/
-theorem petersson_conj_symm (f g : ℍ → ℂ) : conj (petersson N f g) = petersson N g f := by
-  rw [petersson, petersson, ← integral_conj]
-  simp [mul_comm]
+@[simp]
+theorem petersson_conj_symm (f g : ℍ → ℂ) : conj (petersson N f g) = petersson N g f :=
+  peterssonInner_conj_symm 0 _ f g
 
 @[simp]
-theorem petersson_zero_left (g : ℍ → ℂ) : petersson N 0 g = 0 := by
-  simp [petersson]
+theorem petersson_zero_left (g : ℍ → ℂ) : petersson N 0 g = 0 :=
+  peterssonInner_zero_right 0 _ g
 
 @[simp]
-theorem petersson_zero_right (f : ℍ → ℂ) : petersson N f 0 = 0 := by
-  simp [petersson]
+theorem petersson_zero_right (f : ℍ → ℂ) : petersson N f 0 = 0 :=
+  peterssonInner_zero_left 0 _ f
 
 @[simp]
 theorem petersson_smul_left (c : ℂ) (f g : ℍ → ℂ) :
-    petersson N (c • f) g = c * petersson N f g := by
-  simp only [petersson, Pi.smul_apply, smul_eq_mul, mul_assoc, integral_const_mul]
+    petersson N (c • f) g = c * petersson N f g :=
+  peterssonInner_smul_right 0 _ c g f
 
 @[simp]
 theorem petersson_smul_right (c : ℂ) (f g : ℍ → ℂ) :
-    petersson N f (c • g) = conj c * petersson N f g := by
-  rw [← petersson_conj_symm, petersson_smul_left, map_mul, petersson_conj_symm]
+    petersson N f (c • g) = conj c * petersson N f g :=
+  peterssonInner_smul_left 0 _ c g f
 
 /-- **Additivity in the first slot**, when `f₁ * conj g` and `f₂ * conj g` are integrable on the
 Dirichlet domain, as they are for square-integrable automorphic functions
@@ -298,8 +305,8 @@ theorem petersson_add_left {f₁ f₂ : ℍ → ℂ}
     (h₁ : IntegrableOn (fun z ↦ f₁ z * conj (g z)) (dirichletDomain (gamma0PSL N) (pt 0 2)))
     (h₂ : IntegrableOn (fun z ↦ f₂ z * conj (g z)) (dirichletDomain (gamma0PSL N) (pt 0 2))) :
     petersson N (f₁ + f₂) g = petersson N f₁ g + petersson N f₂ g := by
-  simp only [petersson, Pi.add_apply, add_mul]
-  exact integral_add h₁ h₂
+  rw [← upperHalfPlane_petersson_zero] at h₁ h₂
+  exact peterssonInner_add_right 0 _ g f₁ f₂ h₁ h₂
 
 /-- **Additivity in the second slot**, when `f * conj g₁` and `f * conj g₂` are integrable on the
 Dirichlet domain. -/
@@ -307,29 +314,25 @@ theorem petersson_add_right {g₁ g₂ : ℍ → ℂ}
     (h₁ : IntegrableOn (fun z ↦ f z * conj (g₁ z)) (dirichletDomain (gamma0PSL N) (pt 0 2)))
     (h₂ : IntegrableOn (fun z ↦ f z * conj (g₂ z)) (dirichletDomain (gamma0PSL N) (pt 0 2))) :
     petersson N f (g₁ + g₂) = petersson N f g₁ + petersson N f g₂ := by
-  simp only [petersson, Pi.add_apply, map_add, mul_add]
-  exact integral_add h₁ h₂
+  rw [← upperHalfPlane_petersson_zero] at h₁ h₂
+  exact peterssonInner_add_left 0 _ g₁ g₂ f h₁ h₂
 
 /-- **The Petersson norm**: `⟨f, f⟩` is the real number `∫_F |f|² dμ`. -/
 theorem petersson_self (f : ℍ → ℂ) :
     petersson N f f = ((∫ z in dirichletDomain (gamma0PSL N) (pt 0 2), ‖f z‖ ^ 2 : ℝ) : ℂ) := by
-  rw [petersson, ← integral_complex_ofReal]
-  simp [RCLike.mul_conj]
+  simp [petersson_def, peterssonInner_self_eq_ofReal, normSq_eq_norm_sq]
 
-theorem re_petersson_self_nonneg (f : ℍ → ℂ) : 0 ≤ (petersson N f f).re := by
-  rw [petersson_self, ofReal_re]
-  exact setIntegral_nonneg_of_ae (.of_forall fun _ ↦ by positivity)
+theorem re_petersson_self_nonneg (f : ℍ → ℂ) : 0 ≤ (petersson N f f).re :=
+  peterssonInner_self_re_nonneg 0 _ f
 
 /-- **The Petersson product of two constants** is their product times the covolume
 `[SL(2, ℤ) : Γ₀(N)] · π / 3`. In particular the constant `1` has squared norm `π / 3` at level `1`
 (`petersson_one_one_level_one`). -/
 theorem petersson_const_const [NeZero N] (c d : ℂ) :
     petersson N (fun _ ↦ c) (fun _ ↦ d) = c * conj d * ((Gamma0 N).index * Real.pi / 3 : ℝ) := by
-  rw [petersson, setIntegral_const, Measure.real,
-    ← isFundamentalDomain_dirichletDomain_gamma0PSL.covolume_eq_volume, covolume_gamma0PSL,
-    ENNReal.toReal_mul, ENNReal.toReal_natCast, ENNReal.toReal_ofReal (by positivity),
-    Complex.real_smul, mul_comm]
-  ring_nf
+  simp [petersson_eq_integral, Measure.real, volume_dirichletDomain_gamma0PSL,
+    ENNReal.toReal_ofReal (by positivity : 0 ≤ Real.pi / 3)]
+  ring
 
 /-- **The area of the level-one quotient as a Petersson norm**: at level `1` the constant `1` has
 squared norm `π / 3`. -/
@@ -349,12 +352,9 @@ theorem IsAutomorphic.petersson_self_eq_zero_iff (hf : IsAutomorphic N χ f) (hf
     (.of_forall fun _ ↦ by positivity) hint] at h
   -- the set where `f` does not vanish is `PΓ₀(N)`-invariant and null on a fundamental domain
   have hnull : volume {z | f z ≠ 0} = 0 := by
-    refine hF.measure_zero_of_invariant _ (fun σ ↦ ?_) ?_
-    · ext z
-      rw [mem_smul_set_iff_inv_smul_mem, mem_ofPred_eq, mem_ofPred_eq, ← norm_ne_zero_iff,
-        Subgroup.smul_def, hf.norm_apply_smul (σ⁻¹).property, norm_ne_zero_iff]
-    · rw [← Measure.restrict_apply (isOpen_ne_fun hfc continuous_const).measurableSet]
-      exact measure_mono_null (fun z hz ↦ by simpa using hz) (ae_iff.mp h)
+    refine hF.measure_zero_of_invariant _ (fun σ ↦ hf.smul_setOf_ne_zero σ.property) ?_
+    rw [← Measure.restrict_apply (isOpen_ne_fun hfc continuous_const).measurableSet]
+    exact measure_mono_null (fun z hz ↦ by simpa using hz) (ae_iff.mp h)
   exact (hfc.ae_eq_iff_eq volume continuous_zero).mp (ae_iff.mpr (by simpa using hnull))
 
 /-- **Invariance under the normalizer.** If `σ ∈ PSL(2, ℝ)` normalizes `PΓ₀(N)`, the Petersson
@@ -367,7 +367,7 @@ theorem IsAutomorphic.petersson_comp_smul (hf : IsAutomorphic N χ f) (hg : IsAu
   have hσF : IsFundamentalDomain (gamma0PSL N) (σ • dirichletDomain (gamma0PSL N) (pt 0 2)) :=
     hF.smul_of_eq_conjAct_pointwise_smul
       (measurePreserving_smul σ⁻¹ volume).quasiMeasurePreserving hσ.symm
-  rw [hf.petersson_eq_setIntegral hg hσF, petersson, ← image_smul,
+  rw [hf.petersson_eq_setIntegral hg hσF, petersson_eq_integral, ← image_smul,
     (measurePreserving_smul σ volume).setIntegral_image_emb (measurableEmbedding_const_smul σ)]
 
 end TauCeti.MaassForms
