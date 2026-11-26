@@ -160,6 +160,14 @@ theorem actionAngleCover_add_intCast_mul (θ I : ι → ℝ) (m : ι → ℤ) :
     simp only [Pi.add_apply, Pi.neg_apply, Int.cast_neg]
     ring⟩)
 
+/-- The action–angle covering map only depends on the angles modulo `p`: angles with the same
+classes in the torus give the same covector. -/
+theorem actionAngleCover_congr_coe {θ θ' : ι → ℝ}
+    (h : (fun i ↦ (θ i : AddCircle p)) = fun i ↦ (θ' i : AddCircle p)) (I : ι → ℝ) :
+    actionAngleCover p (θ, I) = actionAngleCover p (θ', I) :=
+  CotangentBundle.ext h fun v ↦
+    (actionAngleCover_snd_apply p (θ, I) v).trans (actionAngleCover_snd_apply p (θ', I) v).symm
+
 /-- **The action–angle covering map is surjective.** Every covector of the torus is `∑ j, I_j dθ_j`
 at some `[θ]`, its actions being `I`. -/
 theorem surjective_actionAngleCover :

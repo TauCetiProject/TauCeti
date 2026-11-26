@@ -75,6 +75,8 @@ there.
 * `TauCeti.sq_sub_inner_sq_eq_of_hasDerivAt`: `ℓ²` is constant along integral curves of `H`.
 * `TauCeti.centralForceHamiltonian_eq_of_hasDerivAt`: `H` is constant along integral curves of `H`
   avoiding the collision set.
+* `TauCeti.hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian`: time reversal,
+  `s ↦ (q(-s), -p(-s))` is again a motion.
 * `TauCeti.stdSymplecticForm_poissonBracket_inner_rungeLenz`: conservation of the Runge–Lenz
   vector, `{⟪A, e⟫, H} = 0`.
 * `TauCeti.norm_rungeLenz_eq_of_hasDerivAt_kepler`: `‖A‖` is constant along Kepler motions
@@ -591,6 +593,24 @@ theorem centralForceHamiltonian_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ
     (fun u hu ↦
       (hasFDerivAt_centralForceHamiltonian (hU u hu).hasDerivAt (hq u hu)).differentiableAt)
     ht₀ ht
+
+/-- **Time reversal of central-force motion.** If `γ = (q, p)` solves Hamilton's equations for
+`H(q, p) = ‖p‖² / (2m) + U(‖q‖)` at time `-t`, off the collision set and with `U` differentiable
+at `‖q‖`, then the reversed motion `s ↦ (q(-s), -p(-s))` solves them at time `t`. -/
+theorem hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ}
+    {γ : ℝ → V × V} {t : ℝ}
+    (hγ : HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
+      (centralForceHamiltonian m U) (γ (-t))) (-t))
+    (hq : (γ (-t)).1 ≠ 0) (hU : DifferentiableAt ℝ U ‖(γ (-t)).1‖) :
+    HasDerivAt (fun s ↦ ((γ (-s)).1, -(γ (-s)).2))
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U)
+        ((γ (-t)).1, -(γ (-t)).2)) t := by
+  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian hU.hasDerivAt hq] at hγ
+  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian
+    (x := ((γ (-t)).1, -(γ (-t)).2)) hU.hasDerivAt hq]
+  have h := ((ContinuousLinearMap.id ℝ V).prodMap (-ContinuousLinearMap.id ℝ V)).hasFDerivAt
+    |>.comp_hasDerivAt t (hγ.scomp t (hasDerivAt_neg t))
+  exact h.congr_deriv (by ext <;> simp)
 
 /-- Angular momentum rotates the Runge–Lenz vector. In any dimension, for the plane
 specified by `u, w`, the bracket is the component of the infinitesimal rotation of `A`.

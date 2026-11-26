@@ -278,18 +278,14 @@ minimal. -/
 theorem exists_finite_free_surjection (M : GradedModuleCat.{max uA v} 𝒜) [Module.Finite A M] :
     ∃ (I : Type (max uA v)) (_ : Finite I) (d : I → ℤ) (f : free 𝒜 d ⟶ M),
       Function.Surjective f.hom := by
-  let S : Set M := {x | ∃ p, x ∈ M.grading.piece p}
-  have hspan : Submodule.span A S = ⊤ := M.grading.span_setOf_exists_mem_piece_eq_top A
-  obtain ⟨s, hs, h⟩ := (Submodule.fg_span_iff_fg_span_finset_subset S).mp
-    (hspan.symm ▸ Module.Finite.fg_top)
-  have hdeg : ∀ i : s, ∃ p, (i : M) ∈ M.grading.piece p := fun i => hs i.property
-  choose d hd using hdeg
+  obtain ⟨s, hs, hspan⟩ := M.grading.exists_finset_span_eq_top A
+  choose d hd using fun i : s => hs i i.property
   let x : ∀ i : s, M.grading.piece (d i) := fun i => ⟨i, hd i⟩
   refine ⟨s, inferInstance, d, freeLift x, (freeLift_surjective_iff x).mpr ?_⟩
   have hrange : (Set.range fun i : s => (x i : M)) = (s : Set M) := by
     ext y
     simp [x]
-  rw [hrange, ← h, hspan]
+  rw [hrange, hspan]
 
 /-- Over a left Noetherian algebra, a finitely generated graded module admits a two-term
 presentation by finite graded free modules. Both maps preserve the internal grading. -/

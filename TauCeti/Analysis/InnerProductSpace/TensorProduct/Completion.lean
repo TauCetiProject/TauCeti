@@ -52,6 +52,9 @@ space, whether or not `E` and `F` are complete. This file develops the operators
   `B(E) →⋆ₐ[𝕜] B(E ⊗̂ F)` (`ContinuousLinearMap.rTensorCompletionStarAlgHom`), injective and
   isometric when `F ≠ 0`. When `F = 0` the completed tensor product is `0`, so every amplification
   is `0`.
+  Composing with this homomorphism amplifies a representation `π : A → B(E)` to
+  `a ↦ π a ⊗ 1` (`NonUnitalStarAlgHom.rTensorCompletion`), and symmetrically `b ↦ 1 ⊗ ρ b`
+  (`NonUnitalStarAlgHom.lTensorCompletion`); the two amplifications commute.
 * The flip `E ⊗ F ≃ F ⊗ E` extends to a unitary `E ⊗̂ F ≃ F ⊗̂ E`, which exchanges the two
   amplifications (`ContinuousLinearMap.lTensorCompletion_commIsometry_completion`,
   `ContinuousLinearMap.rTensorCompletion_commIsometry_completion`) and the factors of `f ⊗ g`
@@ -812,6 +815,50 @@ theorem star_lTensorCompletion [CompleteSpace F] (g : F →L[𝕜] F) :
   simp only [star_eq_adjoint, adjoint_lTensorCompletion]
 
 end ContinuousLinearMap
+
+/-! ### Amplifications of representations -/
+
+namespace NonUnitalStarAlgHom
+
+variable {A B : Type*} [NonUnitalRing A] [StarRing A] [Module 𝕜 A] [NonUnitalRing B] [StarRing B]
+  [Module 𝕜 B] [CompleteSpace E] [CompleteSpace F]
+
+variable (F) in
+/-- The **left amplification** `a ↦ π a ⊗ 1` of a representation `π : A → B(E)` to the completed
+tensor product `E ⊗̂ F`. -/
+def rTensorCompletion (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) :
+    A →⋆ₙₐ[𝕜] (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F)) :=
+  (ContinuousLinearMap.rTensorCompletionStarAlgHom 𝕜 E F).toNonUnitalStarAlgHom.comp π
+
+variable (E) in
+/-- The **right amplification** `b ↦ 1 ⊗ ρ b` of a representation `ρ : B → B(F)` to the completed
+tensor product `E ⊗̂ F`. -/
+def lTensorCompletion (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) :
+    B →⋆ₙₐ[𝕜] (Completion (E ⊗[𝕜] F) →L[𝕜] Completion (E ⊗[𝕜] F)) :=
+  (ContinuousLinearMap.lTensorCompletionStarAlgHom 𝕜 E F).toNonUnitalStarAlgHom.comp ρ
+
+omit [CompleteSpace F] in
+/-- The left amplification of `π` sends `a` to `π a ⊗ 1`. -/
+@[simp]
+theorem rTensorCompletion_apply (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E)) (a : A) :
+    π.rTensorCompletion F a = (π a).rTensorCompletion F :=
+  ContinuousLinearMap.rTensorCompletionStarAlgHom_apply (π a)
+
+omit [CompleteSpace E] in
+/-- The right amplification of `ρ` sends `b` to `1 ⊗ ρ b`. -/
+@[simp]
+theorem lTensorCompletion_apply (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) (b : B) :
+    ρ.lTensorCompletion E b = (ρ b).lTensorCompletion E :=
+  ContinuousLinearMap.lTensorCompletionStarAlgHom_apply (ρ b)
+
+/-- The amplifications `π a ⊗ 1` and `1 ⊗ ρ b` commute. -/
+theorem commute_rTensorCompletion_lTensorCompletion (π : A →⋆ₙₐ[𝕜] (E →L[𝕜] E))
+    (ρ : B →⋆ₙₐ[𝕜] (F →L[𝕜] F)) (a : A) (b : B) :
+    Commute (π.rTensorCompletion F a) (ρ.lTensorCompletion E b) := by
+  rw [rTensorCompletion_apply, lTensorCompletion_apply]
+  exact ContinuousLinearMap.commute_rTensorCompletion_lTensorCompletion (π a) (ρ b)
+
+end NonUnitalStarAlgHom
 
 namespace TensorProduct
 
