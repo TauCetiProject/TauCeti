@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.SymmetricPower.Manifold
-public import TauCeti.Topology.Sym.Incidence
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
+import TauCeti.Geometry.Manifold.ChartedSpace
 
 /-!
 # Holomorphic sheets of the incidence correspondence
@@ -91,14 +91,9 @@ theorem exists_isOpen_mdifferentiableOn_ofFn_eq {v : Y → Sym α n} {s : Set Y}
   let := symChartedSpace (K := ℂ) (α := α) (n := n)
   obtain ⟨p, hp⟩ := Sym.ofFn_surjective (v y₀)
   -- pairwise disjoint coordinate patches `V i` around the points `p i`
-  obtain ⟨U₀, hU₀, hdisj⟩ := (finite_range p).t2_separation
-  let V : Fin n → Set α := fun i => U₀ (p i) ∩ (chartAt ℂ (p i)).source
-  have hVo (i : Fin n) : IsOpen (V i) := (hU₀ (p i)).2.inter (chartAt ℂ (p i)).open_source
-  have hpV (i : Fin n) : p i ∈ V i := ⟨(hU₀ (p i)).1, mem_chart_source ℂ (p i)⟩
-  have hVsub (i : Fin n) : V i ⊆ (chartAt ℂ (p i)).source := inter_subset_right
-  have hVdisj : Pairwise (Function.onFun Disjoint V) := fun i j hij =>
-    (hdisj (mem_range_self i) (mem_range_self j)
-      ((Sym.nodup_coe_ofFn_iff.1 (hp ▸ hy₀)).ne hij)).mono inter_subset_left inter_subset_left
+  obtain ⟨V, hVo, hVsub, hpV, hVdisj⟩ :=
+    exists_pairwise_disjoint_isOpen_subset_chartAt_source (H := ℂ)
+      (Sym.nodup_coe_ofFn_iff.1 (hp ▸ hy₀))
   have hm : ∑ _i : Fin n, 1 = n := by simp
   have hq : Nonempty (∀ i, Sym (V i) 1) := ⟨fun i => Sym.ofFn fun _ => ⟨p i, hpV i⟩⟩
   -- the tuples with one point in each patch form an open neighbourhood `W` of `v y₀`
