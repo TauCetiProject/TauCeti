@@ -153,16 +153,8 @@ theorem isJHolomorphicOn_prodMk_mul_normalModelStructure_iff (hs : IsOpen s)
         (fun p ↦ (φ p.1, g p.1 * p.2)) (s ×ˢ Set.univ) ↔
       ∀ z ∈ s, g z * ν' z - conjWirtingerDeriv g z 1 = conj (deriv φ z) * ν (φ z) * g z ∧
         g z * μ' z = conj (deriv φ z) * μ (φ z) * conj (g z) := by
-  -- on the open set `s × ℂ`, holomorphicity within the set is holomorphicity at each point
-  have hon : IsJHolomorphicOn (normalModelStructure ν' μ') (normalModelStructure ν μ)
-        (fun p ↦ (φ p.1, g p.1 * p.2)) (s ×ˢ Set.univ) ↔
-      ∀ z ∈ s, ∀ w, IsJHolomorphicAt (normalModelStructure ν' μ') (normalModelStructure ν μ)
-        (fun p ↦ (φ p.1, g p.1 * p.2)) (z, w) :=
-    ⟨fun h z hz w ↦ (h.isJHolomorphicWithinAt ⟨hz, trivial⟩).isJHolomorphicAt_of_mem_nhds
-        ((hs.prod isOpen_univ).mem_nhds ⟨hz, trivial⟩),
-      fun h ↦ (isJHolomorphicOn_iff _ _ _ _).2 fun p hp ↦
-        (h p.1 hp.1 p.2).isJHolomorphicWithinAt⟩
-  rw [hon]
+  rw [(hs.prod isOpen_univ).isJHolomorphicOn_iff, Set.forall_prod_set]
+  simp only [Set.mem_univ, forall_const]
   refine forall₂_congr fun z hz ↦ ?_
   have hz' : s ∈ nhds z := hs.mem_nhds hz
   simp only [isJHolomorphicAt_prodMk_mul_normalModelStructure_iff
