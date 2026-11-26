@@ -84,7 +84,9 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_residueField_eq_one`: the residue field of a local ring `A` has length one
   over `A`.
 * `TauCeti.natCard_eq_pow_of_length_eq` and `TauCeti.natCard_eq_pow_length_toNat`: a module of
-  finite length `ℓ` over a local ring whose residue field has `q` elements has `q ^ ℓ` elements.
+  finite length `ℓ` over a local ring whose residue field has `q` elements has `q ^ ℓ` elements;
+  conversely, by `TauCeti.length_eq_iff_natCard_eq_pow`, it has length `n` iff it has `q ^ n`
+  elements.
 * `TauCeti.length_self_eq_top_of_ringKrullDim_pos`: a ring of positive Krull dimension has infinite
   length over itself.
 * `Ideal.length_quotient_eq_one`: `length (A ⧸ 𝔪) = 1` for a maximal (left) ideal `𝔪` of a ring
@@ -464,6 +466,18 @@ theorem natCard_eq_pow_length_toNat [Finite M] :
   have : IsArtinian A M := isArtinian_of_finite
   have : IsNoetherian A M := isNoetherian_of_finite A M
   exact natCard_eq_pow_of_length_eq (ENat.natCast_toNat Module.length_ne_top).symm
+
+/-- Over a local ring whose residue field is finite with `q` elements, a module has length `n`
+exactly when it has `q ^ n` elements. -/
+theorem length_eq_iff_natCard_eq_pow [Finite (ResidueField A)] (n : ℕ) :
+    Module.length A M = n ↔ Nat.card M = Nat.card (ResidueField A) ^ n := by
+  refine ⟨natCard_eq_pow_of_length_eq, fun h ↦ ?_⟩
+  have hq : 1 < Nat.card (ResidueField A) := Finite.one_lt_card
+  have : Finite M := Nat.finite_of_card_ne_zero (by rw [h]; positivity)
+  have : IsArtinian A M := isArtinian_of_finite
+  have : IsNoetherian A M := isNoetherian_of_finite A M
+  rw [natCard_eq_pow_length_toNat (A := A)] at h
+  rw [← ENat.natCast_toNat Module.length_ne_top, Nat.pow_right_injective hq h]
 
 end LocalRing
 
