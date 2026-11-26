@@ -34,8 +34,13 @@ relative to a fixed family of objects; here no covering is chosen.
   sheaves, so the category of `G`-torsors is a groupoid.
 * `CategoryTheory.Sheaf.Torsor.trivial G`: the trivial torsor, `G` acting on itself by left
   multiplication.
+* `CategoryTheory.Sheaf.Torsor.toSheaf` and `CategoryTheory.Sheaf.Torsor.isoMk`: the faithful
+  forgetful functor to sheaves of sets, and isomorphisms of torsors from equivariant isomorphisms
+  of sheaves.
 * `CategoryTheory.Sheaf.Torsor.trivialHomEquiv`: morphisms from the trivial torsor to `P` are
   the global sections of `P`.
+* `CategoryTheory.Sheaf.Torsor.nonempty_trivial_iso_of_isTerminal`: a torsor with a section over
+  a terminal object is trivial.
 * `CategoryTheory.Sheaf.Torsor.isoOfSection`: a section of `P` along a functor `u` identifies
   the restrictions of `G` and of `P` along `u`.
 * `CategoryTheory.Sheaf.Torsor.exists_sections_eq_of_smul_invariant`: a `G`-invariant morphism
@@ -160,6 +165,48 @@ instance : IsGroupoid (Torsor G) where
     · ext1; simp
 
 variable (G) in
+/-- The forgetful functor from `G`-torsors to sheaves of types. -/
+@[expose, simps]
+def toSheaf : Torsor G ⥤ Sheaf J (Type w) where
+  obj P := P.sheaf
+  map φ := φ.hom
+
+/-- The forgetful functor from torsors to sheaves is faithful: morphisms of torsors are
+determined by their underlying morphisms of sheaves. -/
+instance : (toSheaf G).Faithful where
+  map_injective h := hom_ext h
+
+/-- An isomorphism of `G`-torsors from an isomorphism of the underlying sheaves whose forward
+morphism is `G`-equivariant. The body is exposed so that the underlying isomorphism of sheaves
+is `e` by definition, also where the sheaves are fibres of a pseudofunctor. -/
+@[expose] def isoMk {P Q : Torsor G} (e : P.sheaf ≅ Q.sheaf)
+    (he : ∀ (U : Cᵒᵖ) (g : G.obj.obj U) (p : P.sheaf.obj.obj U),
+      e.hom.hom.app U (g • p) = g • e.hom.hom.app U p) : P ≅ Q where
+  hom := ⟨e.hom, he⟩
+  inv := ⟨e.inv, fun U g q ↦ by
+    have h₁ (p : P.sheaf.obj.obj U) : e.inv.hom.app U (e.hom.hom.app U p) = p :=
+      congrArg (fun k : P.sheaf ⟶ P.sheaf ↦ k.hom.app U p) e.hom_inv_id
+    have h₂ (q : Q.sheaf.obj.obj U) : e.hom.hom.app U (e.inv.hom.app U q) = q :=
+      congrArg (fun k : Q.sheaf ⟶ Q.sheaf ↦ k.hom.app U q) e.inv_hom_id
+    rw [← h₂ q, ← he, h₁, h₁]⟩
+  hom_inv_id := by ext1; exact e.hom_inv_id
+  inv_hom_id := by ext1; exact e.inv_hom_id
+
+/-- The underlying isomorphism of sheaves of `isoMk e he` is `e`. -/
+@[simp]
+lemma isoMk_hom_hom {P Q : Torsor G} (e : P.sheaf ≅ Q.sheaf)
+    (he : ∀ (U : Cᵒᵖ) (g : G.obj.obj U) (p : P.sheaf.obj.obj U),
+      e.hom.hom.app U (g • p) = g • e.hom.hom.app U p) : (isoMk e he).hom.hom = e.hom :=
+  (rfl)
+
+/-- The inverse of `isoMk e he` lies over the inverse of `e`. -/
+@[simp]
+lemma isoMk_inv_hom {P Q : Torsor G} (e : P.sheaf ≅ Q.sheaf)
+    (he : ∀ (U : Cᵒᵖ) (g : G.obj.obj U) (p : P.sheaf.obj.obj U),
+      e.hom.hom.app U (g • p) = g • e.hom.hom.app U p) : (isoMk e he).inv.hom = e.inv :=
+  (rfl)
+
+variable (G) in
 /-- The trivial `G`-torsor: `G` acting on itself by left multiplication.
 
 The body is exposed because the sections of the trivial torsor are, by definition, the sections
@@ -213,6 +260,14 @@ lemma trivialHomEquiv_symm_apply_hom_app (P : Torsor G) (s : P.sheaf.obj.section
     (g : G.obj.obj U) :
     ((trivialHomEquiv P).symm s).hom.hom.app U g = g • s.val U := by
   rfl
+
+/-- A torsor with a section over a terminal object is isomorphic to the trivial torsor: the
+restrictions of the section form a global section. -/
+lemma nonempty_trivial_iso_of_isTerminal (P : Torsor G) {T : C} (hT : IsTerminal T)
+    (p : P.sheaf.obj.obj (op T)) : Nonempty (trivial G ≅ P) :=
+  ⟨asIso ((trivialHomEquiv P).symm ⟨fun W ↦ P.sheaf.obj.map (hT.from W.unop).op p,
+    fun _ ↦ (Functor.map_comp_apply _ _ _ _).symm.trans
+      (congrArg (fun k ↦ P.sheaf.obj.map k p) (Quiver.Hom.unop_inj (hT.hom_ext _ _)))⟩)⟩
 
 /-- A section `s` of a `G`-torsor `P` along a functor `u : D ⥤ C`, that is a family of sections
 `s d` of `P` over `u d` compatible with restriction, identifies `u.op ⋙ G` with `u.op ⋙ P`: a
