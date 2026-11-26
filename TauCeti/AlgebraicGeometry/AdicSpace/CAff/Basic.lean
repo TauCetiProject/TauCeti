@@ -18,8 +18,8 @@ import TauCeti.RingTheory.Huber.RingOfDefinition
 This file bundles complete Hausdorff Huber pairs `(A, A⁺)` into a category `TauCeti.CAff.{u}` whose
 morphisms `X ⟶ Y` are continuous ring homomorphisms `X.ring →+* Y.ring` carrying `X.pair.plus` into
 `Y.pair.plus`. Its opposite category `CAff.{u}ᵒᵖ` is the category of affinoid adic spaces in the
-wide sense — prior to imposing any sheafiness hypothesis on `(A, A⁺)` — on which the rational
-covering site and Yoneda-adic spaces are built.
+wide sense — prior to imposing any sheafiness hypothesis on `(A, A⁺)` — which carries the
+rational-covering site `CAff.ratTopology` (in `CAff/RationalSite.lean`).
 
 ## Main definitions
 

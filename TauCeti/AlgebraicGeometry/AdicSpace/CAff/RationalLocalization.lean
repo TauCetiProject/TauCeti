@@ -562,11 +562,9 @@ theorem rationalLocalizationRestrict_toRingHom_apply {X : CAff.{u}}
     rw [rationalLocalizationHom_comp_rationalLocalizationRestrict]
     refine Pair.Hom.ext (RingHom.ext fun x ↦ ?_)
     rw [comp_toRingHom, RingHom.comp_apply]
-    change (X.rationalLocalizationHom T' s' hT').toRingHom x =
-      g_pair.toRingHom ((X.rationalLocalizationHom T s hT).toRingHom x)
-    rw [pairHomOfRationalSubsetSubset_toRingHom]
-    dsimp only [rationalLocalizationHom]
-    rw [P.toRingHom_toCompletionLocHom, P.toRingHom_toCompletionLocHom]
+    dsimp only [f_pair, rationalLocalizationHom]
+    rw [pairHomOfRationalSubsetSubset_toRingHom, P.toRingHom_toCompletionLocHom,
+      P.toRingHom_toCompletionLocHom]
     exact (RingHom.congr_fun (ringHomOfRationalSubsetSubset_comp_toCompletionLoc P X.pair.plus
       X.pair.isRingOfIntegralElements.isPowerBounded_of_mem
       T s (Localization.Away s) hden T' s' (Localization.Away s') hden' hsub) x).symm
@@ -740,10 +738,10 @@ theorem exists_comp {X Y Z : CAff.{u}} {φ : X ⟶ Y} {ψ : Y ⟶ Z}
       · have hle : Ideal.map eIso.inv.toRingHom (Ideal.span (T₂ : Set Y.ring)) ≤
             Ideal.comap eIso.hom.toRingHom (Ideal.span (T₂ : Set Y.ring)) :=
           Ideal.map_le_iff_le_comap.mpr fun y hy ↦ by
-            change eIso.hom.toRingHom (eIso.inv.toRingHom y) ∈ Ideal.span (T₂ : Set Y.ring)
-            rw [← RingHom.comp_apply, ← comp_toRingHom, eIso.inv_hom_id, id_toRingHom,
-              RingHom.id_apply]
-            exact hy
+            have h := RingHom.congr_fun (comp_toRingHom eIso.inv eIso.hom) y
+            rw [eIso.inv_hom_id, id_toRingHom, RingHom.id_apply, RingHom.comp_apply] at h
+            rw [Ideal.mem_comap]
+            simpa [← h] using hy
         exact hle hx
       · have hx' := Ideal.mem_map_of_mem eIso.inv.toRingHom hx
         rwa [← RingHom.comp_apply, ← comp_toRingHom, eIso.hom_inv_id, id_toRingHom,
@@ -865,9 +863,8 @@ theorem isPullback_baseChange {X Y X' Y' : CAff.{u}} {φ : X ⟶ X'} {φ' : Y �
         rw [← Function.comp_apply (f := ψ.spaComap) (g := b.spaComap), ← comp_spaComap, ← hab',
           comp_spaComap]
         exact hφ.mapsTo_spaComap _
-      change b.spaComap w ∈ Subtype.val ⁻¹'
-        rationalSubset Y.pair.plus (T.image ψ.toRingHom) (ψ.toRingHom s)
-      rwa [← Pair.Hom.spaComap_preimage_rationalSubset ψ T s]
+      exact Set.mem_preimage.mp
+        ((Set.ext_iff.mp (Pair.Hom.spaComap_preimage_rationalSubset ψ T s) (b.spaComap w)).mp hw)
     refine ⟨χ.op, Quiver.Hom.unop_inj (hφ.hom_ext ?_), Quiver.Hom.unop_inj ?_⟩
     · rw [← op_comp, Quiver.Hom.unop_op, ← Category.assoc, comp_baseChange, Category.assoc,
         hφ'.fac, ← hab']

@@ -76,7 +76,7 @@ private noncomputable def presentationLimitRationalEquiv (Y : CAff.{u})
   let _ := isTopologicalRing_locUniformSpace P q.num q.den _ q.hasDenominatorPower
   (Equiv.ofBijective _ (bijective_presentationLimitRationalIso_hom (P := P) Y.pair.plus
     Y.pair.isRingOfIntegralElements.isPowerBounded_of_mem q hq)).trans
-    (Y.rationalLocalizationRingEquiv q.num q.den hq).toEquiv.symm
+    (Y.rationalLocalizationRingEquiv q.num q.den hq).symm.toEquiv
 
 private theorem presentationLimitRationalEquiv_top (Y : CAff.{u})
     (T₀ : Finset Y.ring) (s₀ : Y.ring)
@@ -99,10 +99,8 @@ private theorem presentationLimitRationalEquiv_top (Y : CAff.{u})
   refine (Y.rationalLocalizationRingEquiv T₀ s₀ hT₀).injective ?_
   rw [rationalLocalizationHom_toRingHom_apply]
   dsimp only [presentationLimitRationalEquiv]
-  rw [Equiv.trans_apply]
-  change (Y.rationalLocalizationRingEquiv T₀ s₀ hT₀).toEquiv
-    ((Y.rationalLocalizationRingEquiv T₀ s₀ hT₀).toEquiv.symm _) = _
-  rw [Equiv.apply_symm_apply, Equiv.ofBijective_apply]
+  rw [Equiv.trans_apply, RingEquiv.toEquiv_eq_coe, RingEquiv.coe_toEquiv,
+    RingEquiv.apply_symm_apply, Equiv.ofBijective_apply]
   have htop :
       (presentationLimitTopEquiv Y b :
         presentationLimit (P := P) Y.pair.plus ⊤) =
@@ -137,13 +135,9 @@ private theorem presentationLimitRationalEquiv_restrict (Y : CAff.{u})
   refine (Y.rationalLocalizationRingEquiv q₂.num q₂.den hq₂).injective ?_
   rw [rationalLocalizationRestrict_toRingHom_apply]
   dsimp only [presentationLimitRationalEquiv]
-  rw [Equiv.trans_apply, Equiv.trans_apply]
-  change ringHomOfRationalSubsetSubset _ _ _ _ _ _ _ _ _ _ _ _
-      ((Y.rationalLocalizationRingEquiv q₁.num q₁.den hq₁).toEquiv
-        ((Y.rationalLocalizationRingEquiv q₁.num q₁.den hq₁).toEquiv.symm _)) =
-    (Y.rationalLocalizationRingEquiv q₂.num q₂.den hq₂).toEquiv
-      ((Y.rationalLocalizationRingEquiv q₂.num q₂.den hq₂).toEquiv.symm _)
-  rw [Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+  rw [Equiv.trans_apply, Equiv.trans_apply, RingEquiv.toEquiv_eq_coe, RingEquiv.toEquiv_eq_coe,
+    RingEquiv.coe_toEquiv, RingEquiv.coe_toEquiv, RingEquiv.apply_symm_apply,
+    RingEquiv.apply_symm_apply]
   let e₁ := presentationLimitPresheafInCommRingCat_obj P Y.pair.plus
     (Opposite.op (spaBasicOpen Y.pair.plus q₁.num q₁.den))
   have hInv := congrArg (fun f ↦
@@ -308,10 +302,10 @@ private theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u
       presentationLimit (P := P) Y.pair.plus (U i) ≃
         (Y.rationalLocalization (T i) (s i) (hT i)).ring :=
     presentationLimitRationalEquiv Y (p i) (hT i)
+  have hU (i : ι) : U i ∈ spaRationalOpens Y.pair.plus :=
+    spaBasicOpen_mem_spaRationalOpens (hT i)
   choose T' s' hT' hUij using fun i j ↦ mem_spaRationalOpens_iff_exists_spaBasicOpen.mp <|
-    inf_mem_spaRationalOpens
-      (show U i ∈ spaRationalOpens Y.pair.plus from spaBasicOpen_mem_spaRationalOpens (hT i))
-      (show U j ∈ spaRationalOpens Y.pair.plus from spaBasicOpen_mem_spaRationalOpens (hT j))
+    inf_mem_spaRationalOpens (hU i) (hU j)
   have hinter (i j : ι) :
       rationalSubset Y.pair.plus (T' i j) (s' i j) =
         rationalSubset Y.pair.plus (T i) (s i) ∩ rationalSubset Y.pair.plus (T j) (s j) := by
@@ -320,10 +314,10 @@ private theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u
           ↥(ValuationSpectrum.spa Y.pair.plus)) ∈ U i ⊓ U j :=
         (hUij i j) ▸ mem_spaBasicOpen.mpr hw
       exact ⟨mem_spaBasicOpen.mp hw'.1, mem_spaBasicOpen.mp hw'.2⟩
-    · exact mem_spaBasicOpen.mp <| (hUij i j) ▸
-        (show (⟨w, rationalSubset_subset_spa _ _ _ hw₁⟩ :
-          ↥(ValuationSpectrum.spa Y.pair.plus)) ∈ U i ⊓ U j from
-          ⟨mem_spaBasicOpen.mpr hw₁, mem_spaBasicOpen.mpr hw₂⟩)
+    · have hw' : (⟨w, rationalSubset_subset_spa _ _ _ hw₁⟩ :
+          ↥(ValuationSpectrum.spa Y.pair.plus)) ∈ U i ⊓ U j :=
+        ⟨mem_spaBasicOpen.mpr hw₁, mem_spaBasicOpen.mpr hw₂⟩
+      exact mem_spaBasicOpen.mp <| (hUij i j) ▸ hw'
   have hpull (i j : ι) :=
     isPullback_rationalLocalizationRestrict (hT i) (hT j) (hT' i j) (hinter i j)
   have : (Presieve.ofArrows (fun i ↦ op (Y.rationalLocalization (T i) (s i) (hT i)))
@@ -410,7 +404,16 @@ theorem IsRationalLocalization.isSheafyForEveryPresentation {X Y : CAff.{u}} {φ
         (hX.isSheaf P X.ringOfDefinition_le_plus)⟩
   let eIso := hφ.isoCanonical
   let eCan : (X.rationalLocalization T₀ s₀ hφ.isOpen_span).ring ≃+* Y.ring :=
-    (ringPresheaf.mapIso eIso.op.op).commRingCatIsoToRingEquiv
+    { toFun := eIso.hom.toRingHom
+      invFun := eIso.inv.toRingHom
+      map_mul' := eIso.hom.toRingHom.map_mul
+      map_add' := eIso.hom.toRingHom.map_add
+      left_inv := fun z ↦ by
+        rw [← RingHom.comp_apply, ← comp_toRingHom, eIso.hom_inv_id, id_toRingHom,
+          RingHom.id_apply]
+      right_inv := fun y ↦ by
+        rw [← RingHom.comp_apply, ← comp_toRingHom, eIso.inv_hom_id, id_toRingHom,
+          RingHom.id_apply] }
   let eRing : UniformSpace.Completion (Localization.Away s₀) ≃+* Y.ring :=
     (rationalLocalizationRingEquiv X T₀ s₀ hφ.isOpen_span).symm.trans eCan
   have heRing_cont : Continuous eRing :=
@@ -423,17 +426,14 @@ theorem IsRationalLocalization.isSheafyForEveryPresentation {X Y : CAff.{u}} {φ
     ext y
     refine ⟨?_, fun hy ↦ ?_⟩
     · rintro ⟨a, ha, rfl⟩
+      dsimp only [eRing]
+      rw [RingEquiv.coe_toRingHom, RingEquiv.trans_apply]
       refine eIso.hom.map_mem_plus _ ((mem_rationalLocalization_plus_iff X T₀ s₀ _ _).mpr ?_)
-      change (rationalLocalizationRingEquiv X T₀ s₀ hφ.isOpen_span)
-        ((rationalLocalizationRingEquiv X T₀ s₀ hφ.isOpen_span).symm a) ∈ _
-      rw [RingEquiv.apply_symm_apply]
-      exact ha
+      rwa [RingEquiv.apply_symm_apply]
     · refine ⟨(rationalLocalizationRingEquiv X T₀ s₀ hφ.isOpen_span) (eIso.inv.toRingHom y),
         (mem_rationalLocalization_plus_iff X T₀ s₀ _ _).mp (eIso.inv.map_mem_plus y hy), ?_⟩
-      change eIso.hom.toRingHom
-        ((rationalLocalizationRingEquiv X T₀ s₀ hφ.isOpen_span).symm
-          ((rationalLocalizationRingEquiv X T₀ s₀ hφ.isOpen_span) (eIso.inv.toRingHom y))) = y
-      rw [RingEquiv.symm_apply_apply]
+      dsimp only [eRing]
+      rw [RingEquiv.coe_toRingHom, RingEquiv.trans_apply, RingEquiv.symm_apply_apply]
       exact eCan.right_inv y
   exact (isSheafyForEveryPresentation_iff_of_ringEquiv eRing heRing_cont heRing_symm_cont
     hplus).mp hBplus
@@ -495,11 +495,11 @@ theorem isRationalSheafy_iff_isSheafyForEveryPresentation (X : CAff.{u}) [IsTate
       let w' : ↥(ValuationSpectrum.spa Bplus) := ⟨w.val, hY_plus ▸ w.property⟩
       obtain ⟨k, hwk⟩ := Opens.mem_iSup.mp <| hcov ▸ mem_spaBasicOpen.mpr
         (spaComapLoc_mem_rationalSubset P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ w')
-      have hw' : w'.val ∈ rationalSubset Bplus (T' k) (s' k) :=
+      have hw' : w.val ∈ rationalSubset Bplus (T' k) (s' k) :=
         mem_spaBasicOpen.mp <| hU'_eq k ▸
           (mem_locOpensComap P X.pair.plus T₀ s₀ (Localization.Away s₀) hden₀ (V k) w').mpr hwk
-      exact Set.mem_iUnion.mpr ⟨k, show w.val ∈ rationalSubset Y.pair.plus (T' k) (s' k) from
-        congrArg (rationalSubset · (T' k) (s' k)) hY_plus ▸ hw'⟩
+      rw [← hY_plus] at hw'
+      exact Set.mem_iUnion.mpr ⟨k, hw'⟩
   -- Apply `hrat` to `X.rationalLocalizationHom T₀ s₀ hT₀` and the rational cover `(T', s')`.
   have hLim_Q₀ := (isSheafFor_presentationLimitPresheaf_comp_iff_of_pairOfDefinition
     Y.pairOfDefinition Q₀ Y.pair.plus

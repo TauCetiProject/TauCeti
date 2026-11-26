@@ -165,17 +165,17 @@ theorem mem_rationalCoverPresieve_iff {X : CAff.{u}} {ι : Type*} {T : ι → Fi
   simpa using Presieve.ofArrows.mk i
 
 /-- **The rational coverage on `CAffᵒᵖ`.** Covering presieves of `op X` are the presieves
-`X.rationalCoverPresieve T s` attached to finite rational coverings `(T, s)` of `X`. Pullback
-stability along an arbitrary morphism `f : op Y ⟶ op X` (corresponding to `ψ : X ⟶ Y`, not
-necessarily adic) covers each open preimage `ψ.spaComap⁻¹(R(T i / s i))` by rational subsets of
-`Spa(Y)`, extracts a finite subcover by quasi-compactness of `Spa(Y)`, and lifts each piece via
-the universal property of rational localization. -/
+`X.rationalCoverPresieve T s` attached to finite rational coverings `(T, s)` of `X`. This
+coverage is pullback-stable along arbitrary (not necessarily adic) morphisms in `CAffᵒᵖ`. -/
 def rationalCoverage : Coverage (CAff.{u}ᵒᵖ) where
   coverings U :=
     {R | ∃ (ι : Type u) (_ : Finite ι) (T : ι → Finset (unop U).ring)
       (s : ι → (unop U).ring) (hcov : IsRationalCovering (unop U) T s),
       R = (unop U).rationalCoverPresieve T s hcov.isOpen_span}
   pullback := by
+    -- Cover each open preimage `ψ.spaComap⁻¹(R(T i / s i))` by rational subsets of `Spa(Y₀)`,
+    -- extract a finite subcover by quasi-compactness of `Spa(Y₀)`, and lift each piece via the
+    -- universal property of rational localization.
     rintro U V f R ⟨ι, _, T, s, hcov, rfl⟩
     let X₀ := unop U; let Y₀ := unop V; let ψ : X₀ ⟶ Y₀ := f.unop
     obtain ⟨𝒲, h𝒲_rat, h𝒲_fin, h𝒲_sub, h𝒲_cov⟩ :=

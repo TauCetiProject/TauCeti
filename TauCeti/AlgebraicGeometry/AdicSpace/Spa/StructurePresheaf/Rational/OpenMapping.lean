@@ -158,10 +158,12 @@ theorem isClosedEmbedding_presentationLimitMap_of_isSheafFor_spaRationalOpens
       ConcreteCategory.congr_hom (congrArg (fun f ↦ f.hom) eW₀.inv_hom_id) x
     have hy : eW₀.inv.hom.val x₁ = eW₀.inv.hom.val x₂ := hSheaf.isSeparatedFor.ext fun _ _ hg ↦ by
       cases hg with | mk k =>
-      refine (ConcreteCategory.bijective_of_isIso
-        (eqToHom (presentationLimitPresheaf_obj P Aplus (op (V k))))).1 ?_
-      change (eqToHom (presentationLimitPresheaf_obj P Aplus (op (V k)))).hom.val _ =
-        (eqToHom (presentationLimitPresheaf_obj P Aplus (op (V k)))).hom.val _
+      have hτ_inj : Function.Injective
+          (eqToHom (presentationLimitPresheaf_obj P Aplus (op (V k)))).hom.val :=
+        Function.LeftInverse.injective
+          (g := (eqToHom (presentationLimitPresheaf_obj P Aplus (op (V k))).symm).hom.val)
+          fun y ↦ (eqToIso (presentationLimitPresheaf_obj P Aplus (op (V k)))).hom_inv_id_apply y
+      refine hτ_inj ?_
       rw [eqToHom_apply_presentationLimitPresheaf_map_apply,
         eqToHom_apply_presentationLimitPresheaf_map_apply, hinv x₁, hinv x₂]
       exact congrFun hx k

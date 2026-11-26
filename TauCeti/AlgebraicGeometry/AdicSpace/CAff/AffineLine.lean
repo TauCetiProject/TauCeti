@@ -137,7 +137,7 @@ theorem eval_affineLineVar (X : CAff.{u}) (a : X.ring) :
 /-- Extensionality for morphisms out of `CAff.affineLine`: two morphisms `CAff.affineLine ⟶ X` are
 equal if they agree on the coordinate `CAff.affineLineVar`. -/
 @[ext]
-theorem eq_of_toRingHom_affineLineVar {X : CAff.{u}} {f g : affineLine.{u} ⟶ X}
+theorem affineLine_hom_ext {X : CAff.{u}} {f g : affineLine.{u} ⟶ X}
     (hX : f.toRingHom affineLineVar = g.toRingHom affineLineVar) : f = g := by
   apply Pair.Hom.ext
   refine (RingHom.cancel_right (f := affineLineRingEquiv.toRingHom)
@@ -153,7 +153,7 @@ theorem eq_of_toRingHom_affineLineVar {X : CAff.{u}} {f g : affineLine.{u} ⟶ X
 @[simp]
 theorem eval_comp {X Y : CAff.{u}} (a : X.ring) (f : X ⟶ Y) :
     eval X a ≫ f = eval Y (f.toRingHom a) :=
-  eq_of_toRingHom_affineLineVar (by simp)
+  affineLine_hom_ext (by simp)
 
 /-- Morphisms `CAff.affineLine ⟶ X` in `CAff` correspond bijectively to elements of `X.ring` via
 evaluation at `CAff.affineLineVar`. -/
@@ -161,7 +161,7 @@ noncomputable def evalEquiv (X : CAff.{u}) : X.ring ≃ (affineLine.{u} ⟶ X) w
   toFun := eval X
   invFun f := f.toRingHom affineLineVar
   left_inv a := eval_affineLineVar X a
-  right_inv _ := eq_of_toRingHom_affineLineVar (eval_affineLineVar X _)
+  right_inv _ := affineLine_hom_ext (eval_affineLineVar X _)
 
 @[simp]
 theorem evalEquiv_apply (X : CAff.{u}) (a : X.ring) : evalEquiv X a = eval X a := (rfl)
