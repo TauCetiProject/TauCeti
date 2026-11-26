@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.InvariantForm.RankOne
 public import TauCeti.RepresentationTheory.SU2.LieGroup
 import TauCeti.Geometry.Lie.Integration
-import TauCeti.RepresentationTheory.SU2.NormalSubgroup
 
 /-!
 # The rank-one homomorphisms `SU(2) → G` of the roots of a compact Lie group
@@ -41,13 +40,12 @@ the one-parameter subgroup of `v = dφ(diag(i, -i))`, which has period `2π`: `e
 `TauCeti.RepresentationTheory.SU2.LieGroup`). For the rank-one homomorphism of a root this says
 that `α∨` lies in the period lattice `Λ_ℤ = (2π)⁻¹ ker(exp_G)`: **the coroot is an integral
 cocharacter**. If `v ≠ 0`, then `φ` is not trivial, and its kernel lies in the center `{1, -1}` of
-`SU(2)` (`ContMDiffMonoidMorphism.ker_le_center_of_lieMap_ne_zero`, from
-`TauCeti.SU2.ker_le_center`). This applies to every rank-one homomorphism, since `α(α∨) = 2`
-forces `α∨ ≠ 0`.
+`SU(2)` (`ContMDiffMonoidMorphism.ker_le_center_of_lieMap_ne_zero`, also in
+`TauCeti.RepresentationTheory.SU2.LieGroup`). This applies to every rank-one homomorphism, since
+`α(α∨) = 2` forces `α∨ ≠ 0`.
 
 ## Main results
 
-* `ContMDiffMonoidMorphism.ker_le_center_of_lieMap_ne_zero`: the kernel bound.
 * `LinearMap.BilinForm.exists_contMDiffMonoidMorphism_of_lie_eq_smul`,
   `TauCeti.IsRootPlane.exists_contMDiffMonoidMorphism`: the rank-one homomorphism of a root, with
   its coroot calibration.
@@ -68,41 +66,6 @@ open Module
 open scoped ContDiff Manifold
 
 open TauCeti
-
-namespace ContMDiffMonoidMorphism
-
--- Use the operator-norm topology under which `GL(2, ℂ)` is a Lie group, as in
--- `TauCeti.RepresentationTheory.SU2.LieGroup`.
-attribute [local instance 100] LieRing.ofAssociativeRing
-attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
-  TauCeti.normedAlgebraRatOfReal
-attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
-attribute [local instance] ContMDiffMul.boundarylessManifold
-
-open scoped Matrix.Norms.Operator
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
-
-/-- **The kernel bound.** A smooth homomorphism `φ : SU(2) → G` with `dφ(diag(i, -i)) ≠ 0` has
-kernel contained in the center `{1, -1}` of `SU(2)`, read through the identification of the
-special unitary subgroup of `GL(2, ℂ)` with the matrix group `SU(2)`. This applies to the rank-one
-homomorphism of a root, whose differential sends `diag(i, -i)` to the coroot. -/
-theorem ker_le_center_of_lieMap_ne_zero
-    (φ : ContMDiffMonoidMorphism 𝓘(ℝ, SU2.lieAlgebra.toSubmodule) I ∞
-      (GLSpecialUnitary (Fin 2) ℂ) G)
-    (hφ : lieMap φ SU2.torusGenerator ≠ 0) :
-    (φ.toMonoidHom.comp (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm.toMonoidHom).ker ≤
-      Subgroup.center SU2 := by
-  refine SU2.ker_le_center fun h ↦ hφ ?_
-  -- A trivial composite forces `φ` itself to be trivial, whose differential vanishes.
-  have h1 : φ = 1 := DFunLike.ext _ _ fun x ↦ by
-    simpa using DFunLike.congr_fun h (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ x)
-  rw [h1, lieMap_one]
-  rfl
-
-end ContMDiffMonoidMorphism
 
 open LieAlgebra.Orthogonal
 

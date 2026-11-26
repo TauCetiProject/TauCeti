@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.RepresentationTheory.SU2.StandardBasis
 public import TauCeti.Topology.Algebra.Quaternion.Unitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
+import TauCeti.RepresentationTheory.SU2.NormalSubgroup
 
 /-!
 # `SU(2)` as a compact simply connected Lie group
@@ -31,7 +32,8 @@ derivations, is identified with `𝔰𝔲(2)` by the differential of the inclusi
 The element `diag(i, -i)` of the native Lie algebra (`TauCeti.SU2.torusGenerator`) generates the
 diagonal torus `diag(e^{is}, e^{-is})` of `SU(2)`. So a smooth homomorphism `φ` out of `SU(2)`
 sends the diagonal torus to the one-parameter subgroup of `dφ(diag(i, -i))`, which has period
-`2π`.
+`2π`. If `dφ(diag(i, -i)) ≠ 0`, then `φ` is not trivial, so its kernel lies in the center
+`{1, -1}` of `SU(2)` (`TauCeti.SU2.ker_le_center`).
 
 The Lie group `GL(2, ℂ)` and its Lie algebra use the topology of the operator norm on matrices,
 `Matrix.linftyOpTopologicalSpace`, as in `TauCeti.RepresentationTheory.SU2.StandardBasis`. It is
@@ -54,6 +56,8 @@ for the entrywise topology first and then used under the operator-norm instances
   diagonal torus to the one-parameter subgroup of `dφ(diag(i, -i))`.
 * `ContMDiffMonoidMorphism.lieExp_two_pi_smul_lieMap_torusGenerator`: that one-parameter subgroup
   has period `2π`, so `exp(2π dφ(diag(i, -i))) = 1`.
+* `ContMDiffMonoidMorphism.ker_le_center_of_lieMap_ne_zero`: if `dφ(diag(i, -i)) ≠ 0`, the kernel
+  of `φ` lies in the center `{1, -1}` of `SU(2)`.
 -/
 
 public section
@@ -263,5 +267,22 @@ theorem lieExp_two_pi_smul_lieMap_torusGenerator
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   dsimp only
   rw [← map_torusExp, SU2.torusExp_eq_one_iff.mpr ⟨1, by ring⟩, map_one, map_one]
+
+/-- **The kernel bound.** A smooth homomorphism `φ : SU(2) → G` with `dφ(diag(i, -i)) ≠ 0` has
+kernel contained in the center `{1, -1}` of `SU(2)`, read through the identification of the
+special unitary subgroup of `GL(2, ℂ)` with the matrix group `SU(2)`. This applies to the rank-one
+homomorphism of a root, whose differential sends `diag(i, -i)` to the coroot. -/
+theorem ker_le_center_of_lieMap_ne_zero
+    (φ : ContMDiffMonoidMorphism 𝓘(ℝ, SU2.lieAlgebra.toSubmodule) I ∞
+      (GLSpecialUnitary (Fin 2) ℂ) G)
+    (hφ : lieMap φ SU2.torusGenerator ≠ 0) :
+    (φ.toMonoidHom.comp (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ).symm.toMonoidHom).ker ≤
+      Subgroup.center SU2 := by
+  refine SU2.ker_le_center fun h ↦ hφ ?_
+  -- A trivial composite forces `φ` itself to be trivial, whose differential vanishes.
+  have h1 : φ = 1 := DFunLike.ext _ _ fun x ↦ by
+    simpa using DFunLike.congr_fun h (GLSpecialUnitary.continuousMulEquiv (Fin 2) ℂ x)
+  rw [h1, lieMap_one]
+  rfl
 
 end ContMDiffMonoidMorphism
