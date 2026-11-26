@@ -35,6 +35,10 @@ is irreducible of dimension one, while its generic point is an open subspace of 
 * `TauCeti.IsPureDimensional.of_isOpenEmbedding` and
   `TauCeti.isPureDimensional_iff_forall_of_isOpenEmbedding`: locality of pure dimension on spaces
   whose irreducible components have all nonempty open parts of full dimension.
+* `TauCeti.isPureDimensional_iff_topologicalKrullDim_eq`: an irreducible space is pure of
+  dimension `d` exactly when its Krull dimension is `d`.
+* `TauCeti.IsPureDimensional.of_isOpenEmbedding_of_irreducibleSpace`: on such a space, if it is
+  irreducible, one nonempty open subspace of pure dimension `d` forces pure dimension `d`.
 
 ## References
 
@@ -147,5 +151,29 @@ theorem isPureDimensional_iff_forall_of_isOpenEmbedding {ι : Type*} {Y : ι →
   have hne : (Z ∩ Set.range (e i)).Nonempty := ⟨x, hx, hi⟩
   rw [← hdim Z hZ _ (he i).isOpen_range hne, ← (he i).isEmbedding.topologicalKrullDim_preimage,
     hY i _ (preimage_mem_irreducibleComponents hZ (he i) hne)]
+
+omit [TopologicalSpace Y] in
+/-- An irreducible space is pure-dimensional of dimension `d` exactly when its Krull dimension
+is `d`. -/
+theorem isPureDimensional_iff_topologicalKrullDim_eq [IrreducibleSpace X] :
+    IsPureDimensional d X ↔ topologicalKrullDim X = d := by
+  simp only [isPureDimensional_iff, irreducibleComponents_eq_singleton, Set.mem_singleton_iff,
+    forall_eq, (Homeomorph.Set.univ X).isHomeomorph.topologicalKrullDim_eq]
+
+/-- Let `X` be an irreducible space in which every nonempty open part of an irreducible component
+has the Krull dimension of the component. If a nonempty open subspace of `X` is pure-dimensional
+of dimension `d`, then so is `X`. -/
+theorem IsPureDimensional.of_isOpenEmbedding_of_irreducibleSpace [IrreducibleSpace X] [Nonempty Y]
+    (hdim : ∀ Z ∈ irreducibleComponents X, ∀ U : Set X, IsOpen U → (Z ∩ U).Nonempty →
+      topologicalKrullDim ↥(Z ∩ U) = topologicalKrullDim Z)
+    {e : Y → X} (he : IsOpenEmbedding e) (hY : IsPureDimensional d Y) : IsPureDimensional d X := by
+  intro Z hZ
+  obtain ⟨y⟩ := ‹Nonempty Y›
+  -- The only irreducible component of `X` is `X` itself, so it meets the range of `e`.
+  have hne : (Z ∩ Set.range e).Nonempty := by
+    rw [irreducibleComponents_eq_singleton, Set.mem_singleton_iff] at hZ
+    exact ⟨e y, hZ ▸ Set.mem_univ _, y, rfl⟩
+  rw [← hdim Z hZ _ he.isOpen_range hne, ← he.isEmbedding.topologicalKrullDim_preimage,
+    hY _ (preimage_mem_irreducibleComponents hZ he hne)]
 
 end TauCeti
