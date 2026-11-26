@@ -22,10 +22,6 @@ converge when the other factor decays faster than any geometric sequence, as for
 
 ## Main results
 
-* `PowerSeries.isUnit_one_sub_of_constantCoeff_eq_zero`,
-  `PowerSeries.isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero`,
-  `PowerSeries.isUnit_one_sub_X_pow_succ`: `1 - f`, `1 - f ^ (n + 1)`, and `1 - X ^ (n + 1)` are
-  units when `constantCoeff f = 0`.
 * `PowerSeries.norm_coeff_invOfUnit_coe_le`: for a polynomial `p` and a unit `u`, the `k`-th
   coefficient of `invOfUnit p u` is at most `‖u⁻¹‖ * (1 + ‖u⁻¹‖ * ∑ᵢ ‖pᵢ‖) ^ k`. When `u` is the
   constant coefficient of `p`, `invOfUnit p u` is the inverse of `p`.
@@ -36,27 +32,6 @@ public section
 namespace PowerSeries
 
 open Finset
-
-section Ring
-
-variable {R : Type*} [Ring R]
-
-/-- A power series of the form `1 - f` is a unit whenever `f` has zero constant coefficient. -/
-theorem isUnit_one_sub_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0) :
-    IsUnit (1 - f) :=
-  isUnit_iff_constantCoeff.mpr (by simp [hf])
-
-/-- A power series of the form `1 - f ^ (n + 1)` is a unit whenever `f` has zero constant
-coefficient. -/
-theorem isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0)
-    (n : ℕ) : IsUnit (1 - f ^ (n + 1)) :=
-  isUnit_one_sub_of_constantCoeff_eq_zero (by simp [hf])
-
-/-- Every series `1 - X ^ (n + 1)` is a unit in `R⟦X⟧`. -/
-theorem isUnit_one_sub_X_pow_succ (n : ℕ) : IsUnit (1 - (X : R⟦X⟧) ^ (n + 1)) :=
-  isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero constantCoeff_X n
-
-end Ring
 
 variable {R : Type*} [SeminormedRing R]
 

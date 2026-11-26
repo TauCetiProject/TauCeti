@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
+public import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -31,6 +32,10 @@ coefficients `map f` acts on the constant coefficient.
   `(1 - X) H_a = H_c - X H_b`.
 * `PowerSeries.coeff_mul_of_ne_zero`: for `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` is
   `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
+* `PowerSeries.isUnit_one_sub_of_constantCoeff_eq_zero`,
+  `PowerSeries.isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero`,
+  `PowerSeries.isUnit_one_sub_X_pow_succ`: `1 - f`, `1 - f ^ (n + 1)`, and `1 - X ^ (n + 1)` are
+  units when `constantCoeff f = 0`.
 * `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
   power series, has zero coefficients from `s` on.
 -/
@@ -121,6 +126,27 @@ theorem coeff_mul_of_ne_zero (f g : R⟦X⟧) {k : ℕ} (hk : k ≠ 0) :
   simp [add_right_comm]
 
 end Coeff
+
+section Unit
+
+variable {R : Type*} [Ring R]
+
+/-- A power series of the form `1 - f` is a unit whenever `f` has zero constant coefficient. -/
+theorem isUnit_one_sub_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0) :
+    IsUnit (1 - f) :=
+  isUnit_iff_constantCoeff.mpr (by simp [hf])
+
+/-- A power series of the form `1 - f ^ (n + 1)` is a unit whenever `f` has zero constant
+coefficient. -/
+theorem isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantCoeff f = 0)
+    (n : ℕ) : IsUnit (1 - f ^ (n + 1)) :=
+  isUnit_one_sub_of_constantCoeff_eq_zero (by simp [hf])
+
+/-- Every series `1 - X ^ (n + 1)` is a unit in `R⟦X⟧`. -/
+theorem isUnit_one_sub_X_pow_succ (n : ℕ) : IsUnit (1 - (X : R⟦X⟧) ^ (n + 1)) :=
+  isUnit_one_sub_pow_succ_of_constantCoeff_eq_zero constantCoeff_X n
+
+end Unit
 
 end PowerSeries
 

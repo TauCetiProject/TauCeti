@@ -198,7 +198,7 @@ theorem expand_expand (d e : ℕ+) (f : R⸨X⸩) :
 theorem mapRingHom_expand {S : Type*} [CommSemiring S] (φ : R →+* S) (d : ℕ+) (f : R⸨X⸩) :
     HahnSeries.mapRingHom φ (expand R d f) = expand S d (HahnSeries.mapRingHom φ f) := by
   rw [HahnSeries.mapRingHom_apply, HahnSeries.mapRingHom_apply, expand_apply, expand_apply]
-  exact HahnSeries.map_embDomain (mulOrderEmbedding d) f (φ : ZeroHom R S)
+  exact HahnSeries.map_embDomain (Int.mulOrderEmbedding d) f (φ : ZeroHom R S)
 
 /-- On power series, expansion of Laurent series is Mathlib's `PowerSeries.expand`. -/
 theorem expand_coe {R : Type*} [CommRing R] (d : ℕ+) (f : R⟦X⟧) :
