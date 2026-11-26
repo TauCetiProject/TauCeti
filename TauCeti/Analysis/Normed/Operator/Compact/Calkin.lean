@@ -38,8 +38,11 @@ has norm exactly `1`.
 * `TauCeti.compactOperatorIdeal`: the compact operators as a two-sided ideal of `E →L[𝕜] E`.
 * `TauCeti.CalkinAlgebra`: the Calkin algebra `(E →L[𝕜] E) ⧸ compactOperatorIdeal 𝕜 E`.
 * `TauCeti.CalkinAlgebra.mk`: the quotient map, as a `𝕜`-algebra homomorphism.
-* `TauCeti.CalkinAlgebra.mk_eq_zero_iff`, `TauCeti.CalkinAlgebra.mk_eq_mk_iff`: the kernel of the
-  quotient map is the compact operators.
+* `TauCeti.CalkinAlgebra.mk_eq_zero_iff`, `TauCeti.CalkinAlgebra.mk_eq_mk_iff`,
+  `TauCeti.CalkinAlgebra.ker_mk`: the kernel of the quotient map is the compact operators.
+* `TauCeti.CalkinAlgebra.lift`, `TauCeti.CalkinAlgebra.algHom_ext`: the universal property of the
+  quotient map among algebra homomorphisms.
+* `TauCeti.CalkinAlgebra.continuous_mk`: the quotient map is continuous.
 * `TauCeti.CalkinAlgebra.norm_mk_eq`, `TauCeti.CalkinAlgebra.norm_mk_le_norm_add` and
   `TauCeti.CalkinAlgebra.exists_norm_add_lt`: the quotient norm is the essential norm.
 * `TauCeti.CalkinAlgebra.subsingleton_iff`, `TauCeti.CalkinAlgebra.nontrivial_iff`: the Calkin
@@ -47,6 +50,8 @@ has norm exactly `1`.
 * `TauCeti.CalkinAlgebra.norm_one`: for infinite-dimensional complete `E`, `‖mk 1‖ = 1`.
 * `TauCeti.CalkinAlgebra.mk_star`, `TauCeti.CalkinAlgebra.mk_adjoint`: on a Hilbert space,
   `mk T† = star (mk T)`.
+* `TauCeti.CalkinAlgebra.mkStarAlgHom`: on a Hilbert space, the quotient map as a unital
+  `⋆`-algebra homomorphism.
 
 ## References
 
@@ -130,14 +135,68 @@ theorem mk_eq_mk_iff {S T : E →L[𝕜] E} : mk 𝕜 E S = mk 𝕜 E T ↔ IsCo
 
 /-- The quotient map sends composition of operators to multiplication in the Calkin algebra. -/
 @[simp]
-theorem mk_comp (S T : E →L[𝕜] E) : mk 𝕜 E (S.comp T) = mk 𝕜 E S * mk 𝕜 E T :=
-  map_mul (mk 𝕜 E) S T
+theorem mk_comp (S T : E →L[𝕜] E) : mk 𝕜 E (S.comp T) = mk 𝕜 E S * mk 𝕜 E T := by
+  rw [← ContinuousLinearMap.mul_def, map_mul]
+
+/-- The kernel of the quotient map to the Calkin algebra is the ideal of compact operators. -/
+@[simp]
+theorem ker_mk : TwoSidedIdeal.ker (mk 𝕜 E) = compactOperatorIdeal 𝕜 E := by
+  ext T
+  rw [TwoSidedIdeal.mem_ker, mk_eq_zero_iff, mem_compactOperatorIdeal]
+
+/-! ### The universal property -/
+
+section Lift
+
+variable {A : Type*} [Semiring A] [Algebra 𝕜 A]
+
+/-- Two algebra homomorphisms out of the Calkin algebra agree when their compositions with the
+quotient map agree. -/
+@[ext 1100]
+theorem algHom_ext ⦃f g : CalkinAlgebra 𝕜 E →ₐ[𝕜] A⦄ (h : f.comp (mk 𝕜 E) = g.comp (mk 𝕜 E)) :
+    f = g :=
+  AlgHom.ext <| mk_surjective.forall.mpr (DFunLike.congr_fun h)
+
+/-- An algebra homomorphism out of the bounded operators that vanishes on the compact operators
+descends to the Calkin algebra. -/
+def lift (f : (E →L[𝕜] E) →ₐ[𝕜] A) (hf : ∀ T : E →L[𝕜] E, IsCompactOperator T → f T = 0) :
+    CalkinAlgebra 𝕜 E →ₐ[𝕜] A :=
+  let hf' : ∀ T ∈ compactOperatorIdeal 𝕜 E, (f : (E →L[𝕜] E) →ₙ+* A) T = 0 :=
+    fun T hT ↦ hf T (mem_compactOperatorIdeal.mp hT)
+  { TwoSidedIdeal.Quotient.lift _ (f : (E →L[𝕜] E) →ₙ+* A) hf' with
+    map_one' := by
+      rw [← TwoSidedIdeal.Quotient.mk_one, MulHom.toFun_eq_coe, NonUnitalRingHom.coe_toMulHom,
+        TwoSidedIdeal.Quotient.lift_mk]
+      exact map_one f
+    commutes' := fun c ↦ by
+      rw [← TwoSidedIdeal.Quotient.mk_algebraMap, MulHom.toFun_eq_coe,
+        NonUnitalRingHom.coe_toMulHom, TwoSidedIdeal.Quotient.lift_mk]
+      exact f.commutes c }
+
+@[simp]
+theorem lift_mk (f : (E →L[𝕜] E) →ₐ[𝕜] A)
+    (hf : ∀ T : E →L[𝕜] E, IsCompactOperator T → f T = 0) (T : E →L[𝕜] E) :
+    lift f hf (mk 𝕜 E T) = f T :=
+  TwoSidedIdeal.Quotient.lift_mk (compactOperatorIdeal 𝕜 E) (f : (E →L[𝕜] E) →ₙ+* A) _ T
+
+@[simp]
+theorem lift_comp_mk (f : (E →L[𝕜] E) →ₐ[𝕜] A)
+    (hf : ∀ T : E →L[𝕜] E, IsCompactOperator T → f T = 0) :
+    (lift f hf).comp (mk 𝕜 E) = f :=
+  AlgHom.ext <| lift_mk f hf
+
+end Lift
 
 /-! ### The essential norm -/
 
 /-- The quotient map to the Calkin algebra does not increase norms. -/
 theorem norm_mk_le (T : E →L[𝕜] E) : ‖mk 𝕜 E T‖ ≤ ‖T‖ :=
   TwoSidedIdeal.Quotient.norm_mk_le _ T
+
+/-- The quotient map to the Calkin algebra is continuous. -/
+@[fun_prop]
+theorem continuous_mk : Continuous (mk 𝕜 E) :=
+  (TwoSidedIdeal.Quotient.continuous_mk _).congr fun T ↦ (mk_apply T).symm
 
 /-- The norm of `T` in the Calkin algebra is at most the norm of every compact perturbation
 of `T`. -/
@@ -167,8 +226,8 @@ the Calkin algebra of `E` is nontrivial. -/
 theorem nontrivial [CompleteSpace 𝕜] (hE : ¬ FiniteDimensional 𝕜 E) :
     Nontrivial (CalkinAlgebra 𝕜 E) := by
   refine ⟨0, 1, fun h ↦ hE (FiniteDimensional.of_isCompactOperator_id (𝕜 := 𝕜) ?_)⟩
-  rw [← map_one (mk 𝕜 E), eq_comm, mk_eq_zero_iff] at h
-  exact h
+  rwa [← map_one (mk 𝕜 E), eq_comm, mk_eq_zero_iff, ContinuousLinearMap.one_def,
+    ContinuousLinearMap.coe_id'] at h
 
 /-- Over a locally compact field, every operator on a finite-dimensional space is compact, so the
 Calkin algebra of a finite-dimensional space is zero. -/
@@ -204,7 +263,7 @@ theorem norm_one [CompleteSpace 𝕜] [CompleteSpace E] (hE : ¬ FiniteDimension
     ‖(1 : CalkinAlgebra 𝕜 E)‖ = 1 := by
   have := nontrivial hE
   refine le_antisymm ?_ (one_le_norm_one _)
-  rw [← map_one (mk 𝕜 E)]
+  rw [← map_one (mk 𝕜 E), ContinuousLinearMap.one_def]
   exact (norm_mk_le _).trans ContinuousLinearMap.norm_id_le
 
 /-! ### Hilbert spaces -/
@@ -222,8 +281,18 @@ theorem mk_star (T : H →L[ℂ] H) : mk ℂ H (star T) = star (mk ℂ H T) := b
 image. -/
 @[simp]
 theorem mk_adjoint (T : H →L[ℂ] H) :
-    mk ℂ H (ContinuousLinearMap.adjoint T) = star (mk ℂ H T) :=
-  mk_star T
+    mk ℂ H (ContinuousLinearMap.adjoint T) = star (mk ℂ H T) := by
+  rw [← ContinuousLinearMap.star_eq_adjoint, mk_star]
+
+variable (H) in
+/-- On a complex Hilbert space, the quotient map to the Calkin algebra as a unital
+`⋆`-algebra homomorphism. -/
+noncomputable def mkStarAlgHom : (H →L[ℂ] H) →⋆ₐ[ℂ] CalkinAlgebra ℂ H :=
+  { mk ℂ H with map_star' := mk_star }
+
+@[simp]
+theorem coe_mkStarAlgHom : ⇑(mkStarAlgHom H) = mk ℂ H :=
+  (rfl)
 
 noncomputable example : CStarAlgebra (CalkinAlgebra ℂ H) := inferInstance
 
