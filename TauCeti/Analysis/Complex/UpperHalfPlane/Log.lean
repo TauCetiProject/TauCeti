@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.Complex.UpperHalfPlane.Basic
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Topology.Bornology.BoundedOperation
+import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 
 /-!
 # The logarithm maps the upper half-plane onto a strip
@@ -21,6 +24,11 @@ The rescaled exponential `z ↦ exp (π z) + a` is the corresponding coordinate 
 `0 < z.im < 1` of height `1`: it maps the open strip onto the upper half-plane, the closed strip
 onto the closed upper half-plane with `a` removed, the two boundary lines onto the real line with
 `a` removed, and the negative and positive ends of the strip to `a` and to infinity.
+
+Conversely, for real `p < q` the coordinate `w ↦ log ((w - q) / (w - p)) / π` is a holomorphic
+bijection of the upper half-plane onto that strip. It sends the real points `q` and `p` to the
+negative and positive ends of the strip, and is continuous at every other real point `r`, which it
+sends to a point of the lower boundary line.
 -/
 
 public section
@@ -77,8 +85,7 @@ theorem bijOn_exp_pi_mul_add_strip (a : ℝ) :
     BijOn (fun z : ℂ => cexp (π * z) + a) {z : ℂ | z.im ∈ Ioo 0 1} upperHalfPlaneSet := by
   refine (invOn_log_sub_div_pi_exp_pi_mul_add_strip a).bijOn
     (fun z hz => ?_) fun w (hw : 0 < w.im) => ?_
-  · change 0 < (cexp (π * z) + a).im
-    rw [add_im, ofReal_im, add_zero, exp_im]
+  · rw [mem_ofPred_eq, add_im, ofReal_im, add_zero, exp_im]
     refine mul_pos (Real.exp_pos _) (Real.sin_pos_of_pos_of_lt_pi ?_ ?_) <;>
       simp only [mul_im, ofReal_re, ofReal_im, zero_mul, add_zero] <;>
       nlinarith [Real.pi_pos, hz.1, hz.2]
@@ -95,8 +102,7 @@ theorem bijOn_exp_pi_mul_add_closedStrip (a : ℝ) :
     BijOn (fun z : ℂ => cexp (π * z) + a) {z : ℂ | z.im ∈ Icc 0 1}
       ({w : ℂ | 0 ≤ w.im} \ {(a : ℂ)}) := by
   refine (invOn_log_sub_div_pi_exp_pi_mul_add a).bijOn (fun z hz => ⟨?_, ?_⟩) fun w hw => ?_
-  · change 0 ≤ (cexp (π * z) + a).im
-    rw [add_im, ofReal_im, add_zero, exp_im]
+  · rw [mem_ofPred_eq, add_im, ofReal_im, add_zero, exp_im]
     refine mul_nonneg (Real.exp_pos _).le (Real.sin_nonneg_of_nonneg_of_le_pi ?_ ?_) <;>
       simp only [mul_im, ofReal_re, ofReal_im, zero_mul, add_zero] <;>
       nlinarith [Real.pi_pos, hz.1, hz.2]
@@ -106,9 +112,8 @@ theorem bijOn_exp_pi_mul_add_closedStrip (a : ℝ) :
     exact ⟨div_nonneg (arg_nonneg_iff.mpr hw') Real.pi_pos.le,
       (div_le_one Real.pi_pos).mpr (arg_le_pi _)⟩
 
-/-- `exp (π z) + a` maps the two boundary lines of the strip of height `1` bijectively onto the
-real line with `a` removed: the lower line onto the points to the right of `a`, the upper line
-onto those to its left. -/
+/-- `exp (π z) + a` maps the union of the two boundary lines of the strip of height `1`
+bijectively onto the real line with `a` removed. -/
 theorem bijOn_exp_pi_mul_add_strip_boundary (a : ℝ) :
     BijOn (fun z : ℂ => cexp (π * z) + a) {z : ℂ | z.im = 0 ∨ z.im = 1}
       ({w : ℂ | w.im = 0} \ {(a : ℂ)}) := by
@@ -118,8 +123,7 @@ theorem bijOn_exp_pi_mul_add_strip_boundary (a : ℝ) :
     fun w hw => ⟨le_of_eq (Eq.symm hw.1), hw.2⟩
   refine ((invOn_log_sub_div_pi_exp_pi_mul_add a).mono hsub hsub').bijOn
     (fun z hz => ⟨?_, ?_⟩) fun w hw => ?_
-  · change (cexp (π * z) + a).im = 0
-    rw [add_im, ofReal_im, add_zero, exp_im]
+  · rw [mem_ofPred_eq, add_im, ofReal_im, add_zero, exp_im]
     rcases hz with h | h <;> simp [h]
   · simp
   · have him : (w - a).im = 0 := by simpa using hw.1
@@ -144,5 +148,98 @@ theorem tendsto_exp_pi_mul_add_comap_re_atTop (a : ℝ) :
     tendsto_comap_iff.mpr (by
       simpa [comp_def] using tendsto_comap.const_mul_atTop Real.pi_pos)
   exact (tendsto_add_const_cobounded (a : ℂ)).comp (tendsto_exp_comap_re_atTop.comp h)
+
+/-! ### A logarithmic coordinate of the upper half-plane -/
+
+/-- A point of the upper half-plane differs from every real number. -/
+private theorem sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet {w : ℂ} (hw : w ∈ upperHalfPlaneSet)
+    (p : ℝ) : w - p ≠ 0 :=
+  sub_ne_zero.mpr fun h => by simp [h] at hw
+
+/-- For `p < q`, the coordinate `w ↦ log ((w - q) / (w - p)) / π` maps the upper half-plane
+bijectively onto the open strip of height `1`. -/
+theorem bijOn_log_sub_div_sub_div_pi {p q : ℝ} (hpq : p < q) :
+    BijOn (fun w : ℂ => log ((w - q) / (w - p)) / π) upperHalfPlaneSet
+      {z : ℂ | z.im ∈ Ioo 0 1} := by
+  have hL : BijOn (fun w : ℂ => log w / π) upperHalfPlaneSet {z : ℂ | z.im ∈ Ioo 0 1} := by
+    simpa using
+      (bijOn_exp_pi_mul_add_strip 0).symm (invOn_log_sub_div_pi_exp_pi_mul_add_strip 0).symm
+  exact hL.comp (bijOn_sub_div_sub_upperHalfPlaneSet hpq)
+
+/-- For `p < q`, the coordinate `w ↦ log ((w - q) / (w - p)) / π` is holomorphic on the upper
+half-plane. -/
+theorem differentiableOn_log_sub_div_sub_div_pi {p q : ℝ} (hpq : p < q) :
+    DifferentiableOn ℂ (fun w : ℂ => log ((w - q) / (w - p)) / π) upperHalfPlaneSet := by
+  intro w hw
+  have hm := (bijOn_sub_div_sub_upperHalfPlaneSet hpq).mapsTo hw
+  rw [mem_ofPred_eq] at hm
+  have hd : DifferentiableAt ℂ (fun w : ℂ => (w - q) / (w - p)) w := by
+    fun_prop (disch := exact sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet hw p)
+  exact ((hd.clog (mem_slitPlane_iff.mpr (.inr hm.ne'))).div_const _).differentiableWithinAt
+
+/-- For `p < q`, the coordinate `w ↦ log ((w - q) / (w - p)) / π` tends to the negative end of the
+strip at the real point `q`. -/
+theorem tendsto_log_sub_div_sub_div_pi_comap_re_atBot {p q : ℝ} (hpq : p < q) :
+    Tendsto (fun w : ℂ => log ((w - q) / (w - p)) / π) (𝓝[upperHalfPlaneSet] q)
+      (comap re atBot ⊓ 𝓟 {z : ℂ | z.im ∈ Ioo 0 1}) := by
+  refine tendsto_inf.mpr ⟨tendsto_comap_iff.mpr ?_, tendsto_principal.mpr
+    (eventually_nhdsWithin_of_forall fun w hw => (bijOn_log_sub_div_sub_div_pi hpq).mapsTo hw)⟩
+  have hm : Tendsto (fun w : ℂ => (w - q) / (w - p)) (𝓝 (q : ℂ)) (𝓝 0) := by
+    have : ContinuousAt (fun w : ℂ => (w - q) / (w - p)) q :=
+      (continuousAt_id.sub continuousAt_const).div (continuousAt_id.sub continuousAt_const)
+        (sub_ne_zero.mpr (ofReal_injective.ne hpq.ne'))
+    simpa using this.tendsto
+  have hnorm : Tendsto (fun w : ℂ => ‖(w - q) / (w - p)‖) (𝓝[upperHalfPlaneSet] q) (𝓝[>] 0) :=
+    tendsto_nhdsWithin_iff.mpr ⟨by simpa using (hm.mono_left nhdsWithin_le_nhds).norm,
+      eventually_nhdsWithin_of_forall fun w hw => norm_pos_iff.mpr
+        (div_ne_zero (sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet hw q)
+          (sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet hw p))⟩
+  simpa [comp_def, div_ofReal_re, log_re] using
+    (Real.tendsto_log_nhdsGT_zero.comp hnorm).atBot_div_const Real.pi_pos
+
+/-- For `p < q`, the coordinate `w ↦ log ((w - q) / (w - p)) / π` tends to the positive end of the
+strip at the real point `p`. -/
+theorem tendsto_log_sub_div_sub_div_pi_comap_re_atTop {p q : ℝ} (hpq : p < q) :
+    Tendsto (fun w : ℂ => log ((w - q) / (w - p)) / π) (𝓝[upperHalfPlaneSet] p)
+      (comap re atTop ⊓ 𝓟 {z : ℂ | z.im ∈ Ioo 0 1}) := by
+  refine tendsto_inf.mpr ⟨tendsto_comap_iff.mpr ?_, tendsto_principal.mpr
+    (eventually_nhdsWithin_of_forall fun w hw => (bijOn_log_sub_div_sub_div_pi hpq).mapsTo hw)⟩
+  have hnum : Tendsto (fun w : ℂ => ‖w - q‖) (𝓝[upperHalfPlaneSet] p) (𝓝 ‖(p : ℂ) - q‖) :=
+    ((continuous_sub_right (q : ℂ)).norm.tendsto _).mono_left nhdsWithin_le_nhds
+  have hden : Tendsto (fun w : ℂ => ‖w - p‖) (𝓝[upperHalfPlaneSet] p) (𝓝[>] 0) :=
+    tendsto_nhdsWithin_iff.mpr ⟨by simpa using
+      ((continuous_sub_right (p : ℂ)).norm.tendsto (p : ℂ)).mono_left nhdsWithin_le_nhds,
+      eventually_nhdsWithin_of_forall fun w hw =>
+        norm_pos_iff.mpr (sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet hw p)⟩
+  have hnorm : Tendsto (fun w : ℂ => ‖(w - q) / (w - p)‖) (𝓝[upperHalfPlaneSet] p) atTop :=
+    (hnum.pos_mul_atTop (norm_pos_iff.mpr (sub_ne_zero.mpr (ofReal_injective.ne hpq.ne)))
+      (tendsto_inv_nhdsGT_zero.comp hden)).congr fun w => by
+        rw [comp_apply, norm_div, div_eq_mul_inv]
+  simpa [comp_def, div_ofReal_re, log_re] using
+    (Real.tendsto_log_atTop.comp hnorm).atTop_div_const Real.pi_pos
+
+/-- For `p < q` and a real point `r` outside `[p, q]`, the coordinate
+`w ↦ log ((w - q) / (w - p)) / π` tends to the point `log ((r - q) / (r - p)) / π` of the lower
+boundary line of the strip at `r`. -/
+theorem tendsto_log_sub_div_sub_div_pi_of_notMem_Icc {p q r : ℝ} (hpq : p < q)
+    (hr : r ∉ Icc p q) :
+    Tendsto (fun w : ℂ => log ((w - q) / (w - p)) / π) (𝓝[upperHalfPlaneSet] r)
+      (𝓝[{z : ℂ | z.im ∈ Ioo 0 1}] ((Real.log ((r - q) / (r - p)) / π : ℝ) : ℂ)) := by
+  have hpos : 0 < (r - q) / (r - p) := by
+    rcases not_and_or.mp hr with h | h
+    · exact div_pos_of_neg_of_neg (by linarith [not_le.mp h]) (by linarith [not_le.mp h])
+    · exact div_pos (by linarith [not_le.mp h]) (by linarith [not_le.mp h])
+  have hrp : r - p ≠ 0 := fun h => by simp [h] at hpos
+  have hval : ((r : ℂ) - q) / ((r : ℂ) - p) = (((r - q) / (r - p) : ℝ) : ℂ) := by push_cast; ring
+  refine tendsto_nhdsWithin_iff.mpr ⟨?_, eventually_nhdsWithin_of_forall fun w hw =>
+    (bijOn_log_sub_div_sub_div_pi hpq).mapsTo hw⟩
+  have hc : ContinuousAt (fun w : ℂ => log ((w - q) / (w - p)) / π) r := by
+    refine (ContinuousAt.clog ?_ ?_).div_const _
+    · exact (continuousAt_id.sub continuousAt_const).div (continuousAt_id.sub continuousAt_const)
+        (by exact_mod_cast hrp)
+    · rw [hval]
+      exact ofReal_mem_slitPlane.mpr hpos
+  have := hc.tendsto.mono_left (nhdsWithin_le_nhds (s := upperHalfPlaneSet))
+  rwa [hval, ← ofReal_log hpos.le, ← ofReal_div] at this
 
 end TauCeti

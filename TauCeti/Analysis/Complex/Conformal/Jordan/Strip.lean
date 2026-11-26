@@ -42,17 +42,18 @@ the same arc are related by the translation action of `ℝ`.
   closed strip, and whose lower boundary lines have intersecting images, differ by a translation on
   the closed strip.
 
-The exponential `z ↦ exp (π z)` maps the strip onto the upper half-plane, the lower boundary line
-onto the positive and the upper one onto the negative real axis, and the two ends to `0` and `∞`
-(`TauCeti.bijOn_exp_pi_mul_add_strip` and its companions). Existence follows from Carathéodory's
-theorem on the closed upper half-plane,
+The exponential `z ↦ exp (π z)` maps the open strip onto the upper half-plane, the closed strip onto
+the closed upper half-plane with `0` removed, the union of the two boundary lines onto the real line
+with `0` removed, and the two ends to `0` and `∞` (`TauCeti.bijOn_exp_pi_mul_add_strip` and its
+companions). Existence follows from Carathéodory's theorem on the closed upper half-plane,
 `TauCeti.exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier`, with `∞` sent to
 `y`, after translating a preimage of `x` to `0`. For uniqueness, the real Möbius transformation
 `w ↦ (w - 1) / w` and the logarithm give a holomorphic bijection of the upper half-plane onto the
-strip sending the real points `1`, `0` and `-1` to the negative end, the positive end and the point
-`log 2 / π` of the lower boundary line. Composed with it, two strip maps with the same limits at the
-ends and at that point become conformal maps of the upper half-plane onto `Ω` with the same limits
-at three real points, which coincide by the three-point normalization
+strip (`TauCeti.bijOn_log_sub_div_sub_div_pi` and its companions) sending the real points `1`, `0`
+and `-1` to the negative end, the positive end and the point `log 2 / π` of the lower boundary line.
+Composed with it, two strip maps with the same limits at the ends and at that point become conformal
+maps of the upper half-plane onto `Ω` with the same limits at three real points, which coincide by
+the three-point normalization
 `TauCeti.eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn`.
 
 The uniqueness statements assume that the two maps meet on their lower boundary lines. The
@@ -128,86 +129,6 @@ theorem exists_continuousOn_bijOn_strip_of_isJordanCurve_frontier {Ω : Set ℂ}
 
 /-! ### Uniqueness up to translation -/
 
-/-- The logarithmic coordinate `w ↦ log ((w - 1) / w) / π` of the upper half-plane, a holomorphic
-bijection onto the strip sending the real points `1`, `0` and `-1` to the negative end, the positive
-end and the point `log 2 / π` of the lower boundary line. -/
-private theorem bijOn_log_sub_one_div_div_pi :
-    BijOn (fun w : ℂ => log ((w - 1) / w) / π) upperHalfPlaneSet {z : ℂ | z.im ∈ Ioo 0 1} := by
-  have hm : BijOn (fun w : ℂ => (w - 1) / w) upperHalfPlaneSet upperHalfPlaneSet := by
-    simpa using bijOn_sub_div_sub_upperHalfPlaneSet (p := 0) (q := 1) zero_lt_one
-  have hL : BijOn (fun w : ℂ => log w / π) upperHalfPlaneSet {z : ℂ | z.im ∈ Ioo 0 1} := by
-    simpa using
-      (bijOn_exp_pi_mul_add_strip 0).symm (invOn_log_sub_div_pi_exp_pi_mul_add_strip 0).symm
-  exact hL.comp hm
-
-/-- The logarithmic coordinate is holomorphic on the upper half-plane. -/
-private theorem differentiableOn_log_sub_one_div_div_pi :
-    DifferentiableOn ℂ (fun w : ℂ => log ((w - 1) / w) / π) upperHalfPlaneSet := by
-  intro w (hw : 0 < w.im)
-  have hw0 : w ≠ 0 := fun h => by simp [h] at hw
-  have hm : 0 < ((w - 1) / w).im := by
-    simpa using (bijOn_sub_div_sub_upperHalfPlaneSet (p := 0) (q := 1) zero_lt_one).mapsTo
-      (show w ∈ upperHalfPlaneSet from hw)
-  have hslit : (w - 1) / w ∈ slitPlane := mem_slitPlane_iff.mpr (.inr hm.ne')
-  have hd : DifferentiableAt ℂ (fun w : ℂ => (w - 1) / w) w := by fun_prop (disch := exact hw0)
-  exact ((hd.clog hslit).div_const _).differentiableWithinAt
-
-/-- The logarithmic coordinate tends to the negative end of the strip at the real point `1`. -/
-private theorem tendsto_log_sub_one_div_div_pi_one :
-    Tendsto (fun w : ℂ => log ((w - 1) / w) / π) (𝓝[upperHalfPlaneSet] 1)
-      (comap re atBot ⊓ 𝓟 {z : ℂ | z.im ∈ Ioo 0 1}) := by
-  refine tendsto_inf.mpr ⟨tendsto_comap_iff.mpr ?_, tendsto_principal.mpr
-    (eventually_nhdsWithin_of_forall fun w hw => bijOn_log_sub_one_div_div_pi.mapsTo hw)⟩
-  have hm : Tendsto (fun w : ℂ => (w - 1) / w) (𝓝 1) (𝓝 0) := by
-    have : ContinuousAt (fun w : ℂ => (w - 1) / w) 1 :=
-      (continuousAt_id.sub continuousAt_const).div continuousAt_id one_ne_zero
-    simpa using this.tendsto
-  have hnorm : Tendsto (fun w : ℂ => ‖(w - 1) / w‖) (𝓝[upperHalfPlaneSet] 1) (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, eventually_nhdsWithin_of_forall fun w (hw : 0 < w.im) =>
-      norm_pos_iff.mpr fun h => ?_⟩
-    · simpa using (hm.mono_left nhdsWithin_le_nhds).norm
-    · have := (bijOn_sub_div_sub_upperHalfPlaneSet (p := 0) (q := 1) zero_lt_one).mapsTo
-        (show w ∈ upperHalfPlaneSet from hw)
-      simp [UpperHalfPlane.upperHalfPlaneSet, h] at this
-  simpa [comp_def, div_ofReal_re, log_re] using
-    (Real.tendsto_log_nhdsGT_zero.comp hnorm).atBot_div_const Real.pi_pos
-
-/-- The logarithmic coordinate tends to the positive end of the strip at the real point `0`. -/
-private theorem tendsto_log_sub_one_div_div_pi_zero :
-    Tendsto (fun w : ℂ => log ((w - 1) / w) / π) (𝓝[upperHalfPlaneSet] 0)
-      (comap re atTop ⊓ 𝓟 {z : ℂ | z.im ∈ Ioo 0 1}) := by
-  refine tendsto_inf.mpr ⟨tendsto_comap_iff.mpr ?_, tendsto_principal.mpr
-    (eventually_nhdsWithin_of_forall fun w hw => bijOn_log_sub_one_div_div_pi.mapsTo hw)⟩
-  have hsub : upperHalfPlaneSet ⊆ ({0}ᶜ : Set ℂ) := fun w (hw : 0 < w.im) h => by
-    simp [show w = 0 from h] at hw
-  have hinv : Tendsto (fun w : ℂ => w⁻¹) (𝓝[upperHalfPlaneSet] 0) (cobounded ℂ) :=
-    tendsto_inv₀_nhdsNE_zero.mono_left (nhdsWithin_mono _ hsub)
-  have hm : Tendsto (fun w : ℂ => (w - 1) / w) (𝓝[upperHalfPlaneSet] 0) (cobounded ℂ) := by
-    refine ((tendsto_const_sub_cobounded (1 : ℂ)).comp hinv).congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with w (hw : 0 < w.im)
-    have hw0 : w ≠ 0 := fun h => by simp [h] at hw
-    simp [comp_apply, sub_div, div_self hw0]
-  simpa [comp_def, div_ofReal_re, log_re] using
-    (Real.tendsto_log_atTop.comp (tendsto_norm_cobounded_atTop.comp hm)).atTop_div_const
-      Real.pi_pos
-
-/-- The logarithmic coordinate is continuous at the real point `-1`, where it takes the value
-`log 2 / π` on the lower boundary line. -/
-private theorem tendsto_log_sub_one_div_div_pi_neg_one :
-    Tendsto (fun w : ℂ => log ((w - 1) / w) / π) (𝓝[upperHalfPlaneSet] (-1))
-      (𝓝[{z : ℂ | z.im ∈ Ioo 0 1}] ((Real.log 2 / π : ℝ) : ℂ)) := by
-  refine tendsto_nhdsWithin_iff.mpr ⟨?_, eventually_nhdsWithin_of_forall fun w hw =>
-    bijOn_log_sub_one_div_div_pi.mapsTo hw⟩
-  have hc : ContinuousAt (fun w : ℂ => log ((w - 1) / w) / π) (-1) := by
-    have h2 : ((-1 : ℂ) - 1) / -1 = 2 := by norm_num
-    refine (ContinuousAt.clog ?_ ?_).div_const _
-    · exact (continuousAt_id.sub continuousAt_const).div continuousAt_id (by norm_num)
-    · rw [h2]; exact ofReal_mem_slitPlane.mpr two_pos
-  have hval : log (((-1 : ℂ) - 1) / -1) / π = ((Real.log 2 / π : ℝ) : ℂ) := by
-    have h2 : ((-1 : ℂ) - 1) / -1 = ((2 : ℝ) : ℂ) := by norm_num
-    rw [h2, ← ofReal_log zero_le_two, ofReal_div]
-  exact hval ▸ hc.tendsto.mono_left nhdsWithin_le_nhds
-
 /-- Uniqueness of strip maps normalized at the point `log 2 / π` of the lower boundary line. -/
 private theorem eqOn_of_tendsto_log_two_div_pi {Ω : Set ℂ} (hΩb : IsBounded Ω)
     (hΩJ : IsJordanCurve (frontier Ω)) {u v : ℂ → ℂ}
@@ -221,13 +142,13 @@ private theorem eqOn_of_tendsto_log_two_div_pi {Ω : Set ℂ} (hΩb : IsBounded 
     (huw : Tendsto u (𝓝[{z | z.im ∈ Ioo 0 1}] ((Real.log 2 / π : ℝ) : ℂ)) (𝓝 w))
     (hvw : Tendsto v (𝓝[{z | z.im ∈ Ioo 0 1}] ((Real.log 2 / π : ℝ) : ℂ)) (𝓝 w)) :
     EqOn u v {z | z.im ∈ Ioo 0 1} := by
-  set L : ℂ → ℂ := fun w => log ((w - 1) / w) / π
-  have hL := bijOn_log_sub_one_div_div_pi
-  have hLd := differentiableOn_log_sub_one_div_div_pi
-  have h1 := tendsto_log_sub_one_div_div_pi_one
-  have h0 := tendsto_log_sub_one_div_div_pi_zero
-  have h2 := tendsto_log_sub_one_div_div_pi_neg_one
-  have hEq : EqOn (u ∘ L) (v ∘ L) upperHalfPlaneSet :=
+  have hL := bijOn_log_sub_div_sub_div_pi zero_lt_one
+  have hLd := differentiableOn_log_sub_div_sub_div_pi zero_lt_one
+  have h1 := tendsto_log_sub_div_sub_div_pi_comap_re_atBot zero_lt_one
+  have h0 := tendsto_log_sub_div_sub_div_pi_comap_re_atTop zero_lt_one
+  have h2 := tendsto_log_sub_div_sub_div_pi_of_notMem_Icc (r := -1) zero_lt_one (by norm_num)
+  rw [show ((-1 : ℝ) - 1) / (-1 - 0) = 2 by norm_num] at h2
+  have hEq : EqOn (u ∘ _) (v ∘ _) upperHalfPlaneSet :=
     eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn (x₁ := 1) (x₂ := 0) (x₃ := -1) hΩb hΩJ
       (hu.comp hLd hL.mapsTo) (hv.comp hLd hL.mapsTo) (huΩ.comp hL) (hvΩ.comp hL)
       one_ne_zero (by norm_num) (by norm_num)
@@ -322,7 +243,7 @@ theorem exists_eqOn_add_of_continuousOn_strip {Ω : Set ℂ} (hΩb : IsBounded �
   have hsub : {z : ℂ | z.im ∈ Ioo 0 1} ⊆ {z : ℂ | z.im ∈ Icc 0 1} := fun z hz =>
     Ioo_subset_Icc_self hz
   have hclosure : {z : ℂ | z.im ∈ Icc 0 1} ⊆ closure {z : ℂ | z.im ∈ Ioo 0 1} := by
-    change Complex.im ⁻¹' Icc 0 1 ⊆ closure (Complex.im ⁻¹' Ioo 0 1)
+    simp only [← mem_preimage, ofPred_mem_eq]
     rw [closure_preimage_im, closure_Ioo zero_ne_one]
   have hmem {z : ℂ} (hz : z.im = 0) : z ∈ {z : ℂ | z.im ∈ Icc 0 1} := by simp [hz]
   have hlim {f : ℂ → ℂ} (hf : ContinuousOn f {z | z.im ∈ Icc 0 1}) {z : ℂ} (hz : z.im = 0) :
