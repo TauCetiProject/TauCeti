@@ -12,7 +12,6 @@ public import TauCeti.Analysis.PDE.HeatKernel.TemperedDistribution
 import Mathlib.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
-import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # The heat semigroup on Besov spaces
@@ -115,41 +114,6 @@ namespace TauCeti
 
 open TemperedDistribution
 
-/-- **The gain of the heat flow on the weights.** For `σ ≥ 0` and `c > 0` there is `A` with
-`(4^j)^σ exp(-c (4^j - 1) t) ≤ A max 1 (t^{-σ})` for every `j` and every `t > 0`. -/
-private theorem exists_rpow_mul_exp_le {σ c : ℝ} (hσ : 0 ≤ σ) (hc : 0 < c) :
-    ∃ A, 0 ≤ A ∧ ∀ (j : ℕ) {t : ℝ}, 0 < t →
-      ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t))) ≤ A * max 1 (t ^ (-σ)) := by
-  obtain ⟨M, hM0, hM⟩ := exists_rpow_mul_exp_neg_mul_le hσ hc
-  refine ⟨rexp c * M, by positivity, fun j t ht ↦ ?_⟩
-  have h4 : (1 : ℝ) ≤ 4 ^ j := one_le_pow₀ (by norm_num)
-  rcases le_total t 1 with h1 | h1
-  · -- For `t ≤ 1`, write `(4^j)^σ = (4^j t)^σ t^{-σ}` and use the bound at `x = 4^j t`.
-    have hx : ((4 : ℝ) ^ j) ^ σ = (4 ^ j * t) ^ σ * t ^ (-σ) := by
-      rw [mul_rpow (by positivity) ht.le, mul_assoc, ← rpow_add ht, add_neg_cancel, rpow_zero,
-        mul_one]
-    have he : -(c * ((4 ^ j - 1) * t)) = c * t + -(c * (4 ^ j * t)) := by ring
-    calc ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))
-        = rexp (c * t) * ((4 ^ j * t) ^ σ * rexp (-(c * (4 ^ j * t)))) * t ^ (-σ) := by
-          rw [hx, he, exp_add]
-          ring
-      _ ≤ rexp c * M * t ^ (-σ) := by
-          have hct : rexp (c * t) ≤ rexp c := exp_le_exp.2 (by nlinarith)
-          have hMx := hM (4 ^ j * t) (by positivity)
-          gcongr
-      _ ≤ rexp c * M * max 1 (t ^ (-σ)) := by gcongr; exact le_max_right _ _
-  · -- For `t ≥ 1` the exponential only decreases in `t`, so use the bound at `x = 4^j`.
-    have he : -(c * ((4 ^ j - 1) * 1)) = c + -(c * 4 ^ j) := by ring
-    calc ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))
-        ≤ ((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * 1))) := by
-          gcongr
-      _ = rexp c * (((4 : ℝ) ^ j) ^ σ * rexp (-(c * 4 ^ j))) := by
-          rw [he, exp_add]
-          ring
-      _ ≤ rexp c * M := by gcongr; exact hM _ (by positivity)
-      _ ≤ rexp c * M * max 1 (t ^ (-σ)) := le_mul_of_one_le_right (by positivity)
-          (le_max_left _ _)
-
 namespace BesovSpace
 
 variable [CompleteSpace F] {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -167,29 +131,17 @@ private theorem exists_littlewoodPaleyBlock_heatSemigroup_eq_and_rpow_mul_norm_l
             2 ^ (s' * j) * ‖g‖ ≤ C * max 1 ((t : ℝ) ^ (-σ)) * (2 ^ (s * j) * ‖f‖) := by
   obtain ⟨C, c, hC1, hc, hCc⟩ :=
     exists_littlewoodPaleyBlock_heatSemigroup_eq_and_norm_le (F := F) φ
-  obtain ⟨A, hA0, hA⟩ := exists_rpow_mul_exp_le hσ hc
+  obtain ⟨A, hA0, hA⟩ := exists_two_rpow_mul_exp_neg_le hσ hc
   have hC0 : 0 ≤ C := zero_le_one.trans hC1
   refine ⟨C * A, mul_nonneg hC0 hA0, fun {s s' p} _ hs' t ht j u f hf ↦ ?_⟩
   obtain ⟨g, hg, hgn⟩ := hCc j t u f hf
   refine ⟨g, hg, ?_⟩
-  -- Raising the order from `s` to `s + 2σ` multiplies the weight `2^{js}` by `(4^j)^σ`.
-  have h4 : (4 : ℝ) ^ j = 2 ^ (2 * j : ℝ) := by
-    rw [rpow_mul zero_le_two, rpow_natCast, rpow_two]
-    norm_num
-  have hw : (2 : ℝ) ^ ((s + 2 * σ) * j) = ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) := by
-    rw [h4, ← rpow_mul zero_le_two, ← rpow_add two_pos]
-    ring_nf
-  have hs'j : (2 : ℝ) ^ (s' * j) ≤ ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) :=
-    (rpow_le_rpow_of_exponent_le one_le_two
-      (mul_le_mul_of_nonneg_right hs' j.cast_nonneg)).trans_eq hw
   calc 2 ^ (s' * j) * ‖g‖
-      ≤ ((4 : ℝ) ^ j) ^ σ * 2 ^ (s * j) * (C * rexp (-(c * ((4 ^ j - 1) * t))) * ‖f‖) :=
-        mul_le_mul hs'j hgn (norm_nonneg _) (by positivity)
-    _ = C * (((4 : ℝ) ^ j) ^ σ * rexp (-(c * ((4 ^ j - 1) * t)))) * (2 ^ (s * j) * ‖f‖) := by
-        ring
-    _ ≤ C * (A * max 1 ((t : ℝ) ^ (-σ))) * (2 ^ (s * j) * ‖f‖) :=
-        mul_le_mul_of_nonneg_right
-          (mul_le_mul_of_nonneg_left (hA j (by positivity)) hC0) (by positivity)
+      ≤ 2 ^ (s' * j) * (C * rexp (-(c * ((4 ^ j - 1) * t))) * ‖f‖) := by gcongr
+    _ = C * (2 ^ (s' * j) * rexp (-(c * ((4 ^ j - 1) * t)))) * ‖f‖ := by ring
+    _ ≤ C * (A * max 1 ((t : ℝ) ^ (-σ)) * 2 ^ (s * j)) * ‖f‖ :=
+        mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
+          (hA hs' j (NNReal.coe_pos.2 (pos_iff_ne_zero.2 ht))) hC0) (norm_nonneg _)
     _ = C * A * max 1 ((t : ℝ) ^ (-σ)) * (2 ^ (s * j) * ‖f‖) := by ring
 
 /-- **The heat flow preserves Besov membership.** If `u ∈ B^s_{p,q}`, then `e^{tΔ} u ∈ B^s_{p,q}`
