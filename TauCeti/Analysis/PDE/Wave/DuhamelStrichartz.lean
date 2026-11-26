@@ -44,8 +44,9 @@ solution uniformly on `[0, T] × E`. Since a strong solution of the forced equat
 given by Duhamel's formula (`TauCeti.IsWaveSolutionOn.eq_waveDuhamelSolution`), both estimates
 hold for strong solutions, with the data `u(0)` and `∂ₜu(0)`.
 
-For `r < ∞` the three dyadic `ℓ¹` sums improve to square sums, the Littlewood–Paley forms of the
-homogeneous Sobolev norms of the data:
+For `r < ∞` the three dyadic `ℓ¹` sums improve to square sums. The first two are the
+Littlewood–Paley forms of the `\dot H^γ` and `\dot H^{γ - 1}` norms of the data, and the third is
+the dyadic `ℓ²` sum of the norms of the forcing blocks:
 
 `‖u‖_{L^q([0, T]; L^r_x)} ≤ C ((∑ⱼ 2^{2jγ} ‖Pⱼ f‖₂²)^{1/2}`
 `  + (∑ⱼ 2^{2j(γ - 1)} ‖Pⱼ g‖₂²)^{1/2}`

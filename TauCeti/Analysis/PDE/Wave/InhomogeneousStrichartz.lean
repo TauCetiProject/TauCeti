@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.Analysis.Fourier.Bernstein
 import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import TauCeti.Analysis.PDE.Wave.Endpoint
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecificLimits.DyadicSum
@@ -96,9 +97,10 @@ It is summed over the blocks as follows, along any time exponent `q ≥ 1`.
   (`TauCeti.exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow`)
   bounds `‖u(t)‖_r` by the `L^r` norm of `(∑ₗ |Pₗ u(t)|²)^{1/2}`, and since `q, r ≥ 2`,
   Minkowski's inequality for square sums (`MeasureTheory.eLpNorm_tsum_sq_rpow_le`), first in
-  `L^r_x` and then in `L^q_t`, leaves `(∑ₗ ‖Pₗ u‖²_{L^q_t L^r_x})^{1/2}`. Each block `Pₗ u` is
-  bounded as above by `C 2^{l(γ + γ₁ - 1)} ‖Pₗ F‖_{L^{p₁}_t L^{r₁'}_x}`. No Littlewood–Paley
-  inequality is needed on the side of the forcing, so `r₁ = ∞` is allowed there.
+  `L^r_x` and then in `L^q_t`, leaves `(∑ₗ ‖Pₗ u‖²_{L^q_t L^r_x})^{1/2}`
+  (`ContDiffBump.exists_eLpNorm_eLpNorm_le_mul_tsum_eLpNorm_eLpNorm_fourierMultiplierCLM_sq_rpow`).
+  Each block `Pₗ u` is bounded as above by `C 2^{l(γ + γ₁ - 1)} ‖Pₗ F‖_{L^{p₁}_t L^{r₁'}_x}`. No
+  Littlewood–Paley inequality is needed on the side of the forcing, so `r₁ = ∞` is allowed there.
 
 ## Main declarations
 
@@ -546,36 +548,6 @@ theorem exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
 
 /-! ### The retarded estimate in square-sum form -/
 
-omit [Nontrivial E] in
-/-- At each time, the retarded Duhamel integral `u(t)` satisfies
-`‖u(t)‖_r ≤ A (∑ₗ (∑_{|d| < L} ‖Φ_{d + l, l}(t)‖_r)²)^{1/2}`, where `Φⱼₗ` is the retarded integral
-of `Pⱼ Pⱼ Qₗ Pₗ F`, for `2 ≤ r` and a constant `A` of the reverse Littlewood–Paley inequality in
-`L^r`: that inequality bounds `‖u(t)‖_r` by the `L^r` norm of `(∑ₗ |Pₗ u(t)|²)^{1/2}`, Minkowski's
-inequality in `L^{r/2}` by the square sum of the `‖Pₗ u(t)‖_r`, and each of these is bounded by
-the decomposition of the block. -/
-private theorem eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_mul_tsum_sq_rpow {L : ℕ}
-    (hL : ∀ j k : ℤ, j + L ≤ k → ∀ ξ : E, φ.littlewoodPaley j ξ * φ.littlewoodPaley k ξ = 0)
-    {m : ℤ → Lp ℂ ∞ (volume : Measure E)}
-    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
-    {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : Integrable F) {r : ℝ≥0∞} (hr : 2 ≤ r) {A : ℝ≥0}
-    (hA : ∀ f : Lp ℂ 2 (volume : Measure E), eLpNorm f r volume ≤
-      A * eLpNorm (fun x ↦ (∑' j, ‖Lp.fourierMultiplierCLM ℂ (m j) f x‖ₑ ^ 2) ^ (2⁻¹ : ℝ)) r volume)
-    (t : ℝ) :
-    eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
-        Lp ℂ 2 (volume : Measure E))) r volume ≤
-      A * (∑' l, (∑ d ∈ Finset.Ioo (-(L : ℤ)) L, eLpNorm ((∫ s in Set.Iio t,
-        waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ (m (d + l))
-          (Lp.fourierMultiplierCLM ℂ (m (d + l))
-            (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
-          Lp ℂ 2 (volume : Measure E))) r volume) ^ 2) ^ (2⁻¹ : ℝ) := by
-  refine (hA _).trans ?_
-  gcongr
-  refine (eLpNorm_tsum_sq_rpow_le (fun l ↦ (Lp.aestronglyMeasurable _).eNorm) hr).trans ?_
-  simp_rw [eLpNorm_eNorm _ (Lp.aestronglyMeasurable _)]
-  gcongr with l
-  exact φ.eLpNorm_fourierMultiplierCLM_setIntegral_Iio_waveSinPropagator_sub_le_sum hL hm hF
-    (one_le_two.trans hr) l t
-
 /-- **Littlewood–Paley summation of the retarded estimates in square-sum form.** Let `2 ≤ q`,
 `2 ≤ r < ∞` and `1 ≤ r₁'`. If the retarded Duhamel integrals of the squared blocks `Pⱼ Pⱼ G`
 satisfy
@@ -602,46 +574,39 @@ private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_
             eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m j) (F s)) r₁' volume) p₁
               volume) ^ 2) ^ (2⁻¹ : ℝ) := by
   obtain ⟨A, hA⟩ :=
-    exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow
-      (F := ℂ) φ (ENNReal.one_lt_two.trans_le hr) hr_top
+    φ.exists_eLpNorm_eLpNorm_le_mul_tsum_eLpNorm_eLpNorm_fourierMultiplierCLM_sq_rpow
+      (F := ℂ) (ρ := (volume : Measure ℝ)) hq hr hr_top
   obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
   have hK := ENNReal.coe_toNNReal (φ.memLp_fourierInv_dyadicDilate φ.invSumSq 0 1).eLpNorm_ne_top
   set K := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invSumSq 0)) 1 volume
   set S := Finset.Ioo (-(L : ℤ)) L
   set K₀ : ℝ≥0 := ∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal
   refine ⟨A * (C * K.toNNReal * K₀), fun m hm F hF ↦ ?_⟩
-  -- `bₗ(t) = ∑_{|d| < L} ‖Φ_{d + l, l}(t)‖_r` bounds `‖Pₗ u(t)‖_r`.
+  -- `bₗ(t) = ∑_{|d| < L} ‖Φ_{d + l, l}(t)‖_r` bounds `‖Pₗ u(t)‖_r`, where `Φⱼₗ` is the retarded
+  -- integral of `Pⱼ Pⱼ Qₗ Pₗ F`.
   set b : ℤ → ℝ → ℝ≥0∞ := fun l t ↦ ∑ d ∈ S, eLpNorm ((∫ s in Set.Iio t,
         waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ (m (d + l))
           (Lp.fourierMultiplierCLM ℂ (m (d + l))
             (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
           Lp ℂ 2 (volume : Measure E))) r volume
-  have hb (l : ℤ) : AEMeasurable (b l) volume :=
-    Finset.aemeasurable_fun_sum _ fun d _ ↦
-      φ.aemeasurable_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_dyadicMultiplier hF r (d + l) l
-  have hsq (c : ℝ≥0∞) (z : ℤ → ℝ≥0∞) :
-      (∑' l, (c * z l) ^ 2) ^ (2⁻¹ : ℝ) = c * (∑' l, z l ^ 2) ^ (2⁻¹ : ℝ) := by
-    simp_rw [mul_pow c, ENNReal.tsum_mul_left]
-    rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
-    congr 1
-    exact_mod_cast ENNReal.pow_rpow_inv_natCast two_ne_zero c
-  -- The pointwise square-function bound, then Minkowski's inequality in `L^{q/2}` and the bound on
-  -- each `‖bₗ‖_{L^q_t}`.
+  -- The square-function bound, the decomposition of each block and the bound on each
+  -- `‖bₗ‖_{L^q_t}`.
   calc eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
           Lp ℂ 2 (volume : Measure E))) r volume) q volume
-      ≤ eLpNorm (fun t ↦ (A : ℝ≥0∞) * (∑' l, b l t ^ 2) ^ (2⁻¹ : ℝ)) q volume :=
-        eLpNorm_mono_eNorm ((aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
-          hF.aestronglyMeasurable).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
+      ≤ A * (∑' l, eLpNorm (fun t ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m l)
+          (∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) : Lp ℂ 2 (volume : Measure E)))
+            r volume) q volume ^ 2) ^ (2⁻¹ : ℝ) :=
+        hA m hm _ (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
+          hF.aestronglyMeasurable)
+    _ ≤ A * (∑' l, eLpNorm (b l) q volume ^ 2) ^ (2⁻¹ : ℝ) := by
+        gcongr with l
+        exact eLpNorm_mono_eNorm (((Lp.fourierMultiplierCLM ℂ (m l)).continuous
+          |>.comp_aestronglyMeasurable (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
+            hF.aestronglyMeasurable)).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
           fun t ↦ by
             simpa only [eNorm_eq_self] using
-              φ.eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_mul_tsum_sq_rpow hL hm hF hr
-                (hA m hm) t
-    _ = A * eLpNorm (fun t ↦ (∑' l, b l t ^ 2) ^ (2⁻¹ : ℝ)) q volume :=
-        eLpNorm_const_mul_ennreal
-          ((AEMeasurable.tsum fun l ↦ (hb l).pow_const 2).pow_const _).aestronglyMeasurable
-    _ ≤ A * (∑' l, eLpNorm (b l) q volume ^ 2) ^ (2⁻¹ : ℝ) := by
-        gcongr
-        exact eLpNorm_tsum_sq_rpow_le hb hq
+              φ.eLpNorm_fourierMultiplierCLM_setIntegral_Iio_waveSinPropagator_sub_le_sum hL hm hF
+                (one_le_two.trans hr) l t
     _ ≤ A * (∑' l, (C * K * K₀ * (ENNReal.ofReal (((2 : ℝ) ^ l) ^ σ) * eLpNorm (fun s ↦
           eLpNorm (Lp.fourierMultiplierCLM ℂ (m l) (F s)) r₁' volume) p₁ volume)) ^ 2) ^
             (2⁻¹ : ℝ) := by
@@ -649,7 +614,8 @@ private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_
         exact φ.eLpNorm_sum_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le
           (one_le_two.trans hq) hr₁' hC L hm hF l
     _ = _ := by
-        rw [hsq, ENNReal.coe_mul, ENNReal.coe_mul, ENNReal.coe_mul, hK]
+        rw [ENNReal.tsum_mul_sq_rpow_inv_two, ENNReal.coe_mul, ENNReal.coe_mul, ENNReal.coe_mul,
+          hK]
         ring
 
 /-- **The retarded Strichartz estimate for the wave equation with forcing in square-sum form.**
