@@ -63,18 +63,16 @@ namespace TauCeti
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
 
-/-- The linear map `(y, s) ↦ (L y, s 0)`, for `L` the parametrization of the coordinate
-hyperplane, through which the flow-out of the hyperplane factors. -/
-private noncomputable def hyperplaneTimeProj (n : ℕ) :
-    EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) × ℝ :=
-  ((euclideanHalfSpaceBoundaryParam n).comp (ContinuousLinearMap.fst ℝ _ _)).prod
-    ((EuclideanSpace.proj (0 : Fin 1)).comp (ContinuousLinearMap.snd ℝ _ _))
-
-@[simp]
-private theorem hyperplaneTimeProj_apply
-    (q : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1)) :
-    hyperplaneTimeProj n q = (euclideanHalfSpaceBoundaryParam n q.1, q.2 0) :=
-  (rfl)
+/-- The flow-out `(y, s) ↦ Ψ (L y) (s 0)` of the coordinate hyperplane, for `L` its
+parametrization, factors through the continuous linear map `(y, s) ↦ (L y, s 0)`. -/
+private theorem flowOut_euclideanHalfSpaceBoundaryParam_eq_comp
+    (Ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → EuclideanSpace ℝ (Fin (n + 1))) :
+    (fun q : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1) ↦
+      Ψ (euclideanHalfSpaceBoundaryParam n q.1) (q.2 0)) =
+      (fun q : EuclideanSpace ℝ (Fin (n + 1)) × ℝ ↦ Ψ q.1 q.2) ∘
+        (euclideanHalfSpaceBoundaryParam n).prodMap (EuclideanSpace.proj (0 : Fin 1)) := by
+  funext q
+  simp only [comp_apply, ContinuousLinearMap.coe_prodMap', Prod.map_apply', PiLp.proj_apply]
 
 /-- **The derivative of the flow-out of the coordinate hyperplane.** Let `Ψ z t` be differentiable
 at `(L y₀, 0)`, `L` the parametrization of the coordinate hyperplane, with `Ψ z 0 = z`, and let the
@@ -91,7 +89,10 @@ private theorem injective_fderiv_flowOut_euclideanHalfSpaceBoundaryParam
     Injective (fderiv ℝ (fun q : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1) ↦
       Ψ (euclideanHalfSpaceBoundaryParam n q.1) (q.2 0)) (y₀, 0)) := by
   let L := euclideanHalfSpaceBoundaryParam n
-  let π := hyperplaneTimeProj n
+  -- The flow-out factors through `π : (y, s) ↦ (L y, s 0)`.
+  let π := L.prodMap (EuclideanSpace.proj (0 : Fin 1))
+  have hπ (q : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1)) : π q = (L q.1, q.2 0) := by
+    simp only [π, ContinuousLinearMap.coe_prodMap', Prod.map_apply', PiLp.proj_apply]
   set D := fderiv ℝ (fun q : EuclideanSpace ℝ (Fin (n + 1)) × ℝ ↦ Ψ q.1 q.2) (L y₀, 0)
   -- `D` is the identity on the first factor, since `Ψ z 0 = z`, and sends `(0, 1)` to `w₀`.
   have hDinl (z : EuclideanSpace ℝ (Fin (n + 1))) : D (z, 0) = z := by
@@ -105,13 +106,17 @@ private theorem injective_fderiv_flowOut_euclideanHalfSpaceBoundaryParam
       |>.unique hw
   have hDπ (q : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1)) :
       D (π q) = L q.1 + q.2 0 • w₀ := by
-    rw [hyperplaneTimeProj_apply, show (L q.1, q.2 0) = (L q.1, (0 : ℝ)) +
+    rw [hπ, show (L q.1, q.2 0) = (L q.1, (0 : ℝ)) +
       q.2 0 • ((0 : EuclideanSpace ℝ (Fin (n + 1))), (1 : ℝ)) by simp, map_add, map_smul, hDinl,
       hDinr]
   have hΨπ : HasFDerivAt (fun q : EuclideanSpace ℝ (Fin (n + 1)) × ℝ ↦ Ψ q.1 q.2) D
-      (π (y₀, 0)) := hΨ.hasFDerivAt
+      (π (y₀, 0)) := by
+    rw [hπ, PiLp.zero_apply]
+    exact hΨ.hasFDerivAt
   have hd : HasFDerivAt (fun q : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1) ↦
-      Ψ (L q.1) (q.2 0)) (D.comp π) (y₀, 0) := hΨπ.comp (y₀, 0) π.hasFDerivAt
+      Ψ (L q.1) (q.2 0)) (D.comp π) (y₀, 0) := by
+    rw [flowOut_euclideanHalfSpaceBoundaryParam_eq_comp]
+    exact hΨπ.comp (y₀, 0) π.hasFDerivAt
   rw [hd.fderiv]
   rintro ⟨y₁, s₁⟩ ⟨y₂, s₂⟩ h
   have h₁ : L y₁ + s₁ 0 • w₀ = L y₂ + s₂ 0 • w₀ := by
@@ -127,6 +132,14 @@ private theorem injective_fderiv_flowOut_euclideanHalfSpaceBoundaryParam
   ext i
   rw [Subsingleton.elim i 0]
   exact hs
+
+/-- The extended chart of `∂M × [0, ∞)` at `(a, t₀)` reads `(x, t) ↦ (extChartAt a x, t)`. -/
+private theorem extChartAt_boundary_prod_euclideanHalfSpace_apply
+    (a : ↥((𝓡∂ (n + 1)).boundary M)) (t₀ : EuclideanHalfSpace 1)
+    (p : ↥((𝓡∂ (n + 1)).boundary M) × EuclideanHalfSpace 1) :
+    extChartAt ((𝓡 n).prod (𝓡∂ 1)) (a, t₀) p = (extChartAt (𝓡 n) a p.1, p.2.val) := by
+  simp only [extChartAt_prod, PartialEquiv.prod_coe, extChartAt_self_apply,
+    modelWithCornersEuclideanHalfSpace_apply]
 
 variable [IsManifold (𝓡∂ (n + 1)) ∞ M]
 
@@ -198,37 +211,39 @@ theorem isLocalDiffeomorphAt_flowOut_boundary (v : (x : M) → TangentSpace (�
   let φ := extChartAt (𝓡∂ (n + 1)) (a : M)
   obtain ⟨Ψ, U, hU, ε, hε, hΨ, hΨ0, hmono, -, hΨcurve, w₀, hw, hw0⟩ :=
     exists_contDiffOn_chartFlow_of_isOutwardPointing_neg v hv.contMDiffOn univ_mem ha
-  -- The flow-out read in charts: `(y, s) ↦ Ψ (L y) (s 0)`, for `L` the boundary parametrization.
+  -- The flow-out read in charts is `(y, s) ↦ Ψ (L y) (s 0)`, for `L` the boundary
+  -- parametrization: the chart flow `Ψ` composed with `π : (y, s) ↦ (L y, s 0)`.
   let L := euclideanHalfSpaceBoundaryParam n
-  let g : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1) → EuclideanSpace ℝ (Fin (n + 1)) :=
-    fun q ↦ Ψ (L q.1) (q.2 0)
-  let π := hyperplaneTimeProj n
-  have hg : ContDiffOn ℝ ∞ g (π ⁻¹' (interior U ×ˢ Ioo (-ε) ε)) :=
+  let π := L.prodMap (EuclideanSpace.proj (0 : Fin 1))
+  have hπ (q : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin 1)) : π q = (L q.1, q.2 0) := by
+    simp only [π, ContinuousLinearMap.coe_prodMap', Prod.map_apply', PiLp.proj_apply]
+  have hg : ContDiffOn ℝ ∞ ((fun q : EuclideanSpace ℝ (Fin (n + 1)) × ℝ ↦ Ψ q.1 q.2) ∘ π)
+      (π ⁻¹' (interior U ×ˢ Ioo (-ε) ε)) :=
     hΨ.comp π.contDiff.contDiffOn fun q hq ↦ ⟨interior_subset hq.1, hq.2⟩
-  -- The extended chart of `∂M × [0, ∞)` at `p₀`, and the chart image of `p₀`.
-  have hext (p : ↥((𝓡∂ (n + 1)).boundary M) × EuclideanHalfSpace 1) :
-      extChartAt ((𝓡 n).prod (𝓡∂ 1)) p₀ p = (extChartAt (𝓡 n) a p.1, p.2.val) := by
-    simp only [extChartAt_prod, PartialEquiv.prod_coe, extChartAt_self_apply,
-      modelWithCornersEuclideanHalfSpace_apply, p₀]
-  have hp₀ : extChartAt ((𝓡 n).prod (𝓡∂ 1)) p₀ p₀ = (extChartAt (𝓡 n) a a, 0) := hext p₀
+  -- `(0 : EuclideanHalfSpace 1).val` is `0` by definition of its `Zero` instance.
+  have hp₀ : extChartAt ((𝓡 n).prod (𝓡∂ 1)) p₀ p₀ = (extChartAt (𝓡 n) a a, 0) := by
+    rw [extChartAt_boundary_prod_euclideanHalfSpace_apply]
+    rfl
   have hLa : L (extChartAt (𝓡 n) a a) = φ a := boundaryParam_extChartAt (mem_extChartAt_source a)
   have hΦa : Φ (p₀.1 : M) (p₀.2.val 0) = a := (hΦ a a.property 0 (mem_of_mem_nhds hW) le_rfl).1
   refine isLocalDiffeomorphAt_of_injective_fderiv_of_mem_range_iff hg
     ((isOpen_interior.prod isOpen_Ioo).preimage π.continuous) ?_ (by simp) ?_ (by simp)
     (fun q hq ↦ ?_) ?_ ?_
-  · rw [hp₀, mem_preimage, hyperplaneTimeProj_apply, hLa]
+  · rw [hp₀, mem_preimage, hπ, PiLp.zero_apply, hLa]
     exact ⟨mem_interior_iff_mem_nhds.2 hU, by simpa using neg_lt_zero.2 hε, by simpa using hε⟩
-  · rw [hp₀]
-    refine injective_fderiv_flowOut_euclideanHalfSpaceBoundaryParam ?_ hΨ0 (hLa ▸ hw) hw0
-    exact hLa ▸ (hΨ.contDiffAt (prod_mem_nhds hU (Ioo_mem_nhds (neg_lt_zero.2 hε) hε)))
-      |>.differentiableAt (by simp)
+  · rw [hp₀, ← flowOut_euclideanHalfSpaceBoundaryParam_eq_comp]
+    rw [← hLa] at hw hU
+    exact injective_fderiv_flowOut_euclideanHalfSpaceBoundaryParam
+      ((hΨ.contDiffAt (prod_mem_nhds hU (Ioo_mem_nhds (neg_lt_zero.2 hε) hε))).differentiableAt
+        (by simp)) hΨ0 hw hw0
   · -- The zeroth coordinate of `Ψ (L y) s` has the sign of `s`.
+    rw [mem_preimage, hπ, mem_prod] at hq
     have hle := (hmono (L q.1) (interior_subset hq.1)).le_iff_le ⟨neg_lt_zero.2 hε, hε⟩ hq.2
     simp only [hΨ0, euclideanHalfSpaceBoundaryParam_apply_zero, L] at hle
     simp only [range_modelWithCornersEuclideanHalfSpace, ModelWithCorners.range_prod,
       modelWithCornersSelf_coe, range_id, mem_prod, mem_univ, true_and, mem_ofPred_eq]
     exact hle
-  · simp only [g, hp₀, hLa, hΦa]
+  · simp only [comp_apply, hp₀, hπ, PiLp.zero_apply, hLa, hΦa]
     exact hΨ0 _
   · simp only [hΦa]
     filter_upwards [eventually_flowOut_eq_extChartAt_symm v hv hW hΦ hU hε hΨ0 hΨcurve,
@@ -236,8 +251,9 @@ theorem isLocalDiffeomorphAt_flowOut_boundary (v : (x : M) → TangentSpace (�
         (extChartAt_source_mem_nhds (I := 𝓡∂ (n + 1)) (a : M))] with p hp hpφ
     have hxφ : p.1 ∈ (extChartAt (𝓡 n) a).source := by
       rw [extChartAt_source, boundaryChartedSpace_chartAt_source]
-      exact extChartAt_source (I := 𝓡∂ (n + 1)) (a : M) ▸ hpφ
-    rw [hp, hext]
-    simp only [g, boundaryParam_extChartAt hxφ, L]
+      rw [mem_preimage, extChartAt_source] at hpφ
+      exact hpφ
+    rw [hp, extChartAt_boundary_prod_euclideanHalfSpace_apply]
+    simp only [comp_apply, hπ, boundaryParam_extChartAt hxφ, L]
 
 end TauCeti
