@@ -210,6 +210,22 @@ end NonUnital
 
 section Unital
 
+/-- A positive contraction `e` bounds the value of a positive functional on the positive
+square of `1 - e` by the norm of the functional minus the real part of its value at `e`. -/
+theorem norm_map_star_one_sub_mul_one_sub_le {A : Type*}
+    [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+    (f : A →P[ℂ] ℂ) {e : A} (he : 0 ≤ e) (he₁ : ‖e‖ ≤ 1) :
+    ‖f (star (1 - e) * (1 - e))‖ ≤ ‖(f : A →L[ℂ] ℂ)‖ - (f e).re := by
+  have hnonneg : 0 ≤ 1 - e :=
+    sub_nonneg.mpr ((CStarAlgebra.norm_le_one_iff_of_nonneg e he).mp he₁)
+  have hnorm : ‖1 - e‖ ≤ 1 :=
+    (CStarAlgebra.norm_le_one_iff_of_nonneg _ hnonneg).mpr (sub_le_self _ he)
+  have hle : f ((1 - e) * (1 - e)) ≤ f (1 - e) :=
+    f.mono (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one hnonneg hnorm)
+  rw [← Complex.re_eq_norm.mpr (f.map_nonneg (star_mul_self_nonneg _)), hnonneg.star_eq]
+  simpa only [map_sub, ← f.ofReal_opNorm_eq_map_one, Complex.sub_re, Complex.ofReal_re] using
+    (Complex.le_def.mp hle).1
+
 /-- Pulling a positive functional on a unital C⋆-algebra back along a star homomorphism that
 preserves `1` preserves its operator norm. -/
 theorem opNorm_comp_ofClass_of_map_one {A B F : Type*}
