@@ -12,10 +12,10 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
 The averaged Frobenius inequality has a main coefficient `P * m * b * (T / N) / 2`,
 where `P` counts the tops, `T` counts the thick set, and `N` is the size of the ambient
-group. Dividing by this coefficient makes the first two costs involving the scale `a`
+group. Dividing by this coefficient makes the first two costs involving the scale term `a`
 proportional to `a / (m * b)` and `a * m / (k * b)`. The term that already contains `T`
-does not incur a reciprocal thick-set density. With `m` near the square root of the scale,
-the resulting upper bound is a square root times a small power of the scale.
+does not incur a reciprocal thick-set density. With `m` near the square root of the scale `x`,
+the resulting upper bound is `x ^ (1/2)` times a small power of `x`.
 
 The bracket is from Levent Alpöge's formalization of the Riemann hypothesis for Dirichlet
 L-functions (`Formalism.LFunctionChainParameters.ThickSetMeanBounds.proposition_size_bound`
