@@ -27,24 +27,23 @@ lattice of submodules.
   `F p`.
 * `isSeparated_ofSubmodules_iff_iInf`, `isSeparated_ofSubmodules_iff_forall_mem`: the filtration
   is separated exactly when `⨅ p, F p = ⊥`, that is, when only `0` lies in every `F p`.
-* `toSpanSingleton_comp_quotientCone_π_eq_iff`: through
-  `ModuleCat.cokernelIsoRangeQuotient`, the maps `R ⟶ M`, `1 ↦ x` and `1 ↦ y`, agree in the
-  quotient `M / F^p` exactly when `x - y ∈ F p`.
+* `comp_quotientCone_π_ofSubmodules_eq_iff`: through `ModuleCat.cokernelIsoRangeQuotient`, two
+  maps `f g : A ⟶ M` agree in the quotient `M / F^p` exactly when `f a - g a ∈ F p` for all `a`.
 -/
 
 public section
 
 open CategoryTheory Opposite
 
-universe u
+universe v u
 
 namespace CategoryTheory.FilteredObject
 
-variable {R : Type u} [Ring R] {M : Type u} [AddCommGroup M] [Module R M]
+variable {R : Type u} [Ring R] {M : Type v} [AddCommGroup M] [Module R M]
 
 /-- The decreasingly filtered module with steps an antitone family `F` of submodules. -/
 noncomputable abbrev ofSubmodules (F : ℤ → Submodule R M) (hF : Antitone F) :
-    FilteredObject (ModuleCat.{u} R) ℤᵒᵖ where
+    FilteredObject (ModuleCat.{v} R) ℤᵒᵖ where
   X := ModuleCat.of R M
   filtration.toMonoOver :=
     { obj p := MonoOver.mk (hf := ModuleCat.mono_as_hom'_subtype (X := ModuleCat.of R M) (F p.unop))
@@ -116,24 +115,12 @@ theorem isSeparated_ofSubmodules_iff_forall_mem (F : ℤ → Submodule R M) (hF 
     (ofSubmodules F hF).IsSeparated ↔ ∀ x, (∀ p, x ∈ F p) → x = 0 := by
   simp_rw [isSeparated_ofSubmodules_iff_iInf, Submodule.eq_bot_iff, Submodule.mem_iInf]
 
-/-- The map `R ⟶ M`, `1 ↦ x` (Mathlib's `LinearMap.toSpanSingleton`), into the underlying module
-of `ofSubmodules F hF`, seen as the vertex of its cone of quotients. -/
-noncomputable def toSpanSingleton (F : ℤ → Submodule R M) (hF : Antitone F) (x : M) :
-    ModuleCat.of R R ⟶ (ofSubmodules F hF).quotientCone.pt :=
-  ModuleCat.ofHom (LinearMap.toSpanSingleton R M x)
-
-/-- `toSpanSingleton F hF x` sends `1` to `x`. -/
-@[simp]
-theorem toSpanSingleton_hom_one (F : ℤ → Submodule R M) (hF : Antitone F) (x : M) :
-    (toSpanSingleton F hF x).hom 1 = x :=
-  one_smul R x
-
-/-- The maps `R ⟶ M`, `1 ↦ x` and `1 ↦ y`, agree in the quotient `M / F p` exactly when
-`x - y ∈ F p`. -/
-theorem toSpanSingleton_comp_quotientCone_π_eq_iff (F : ℤ → Submodule R M) (hF : Antitone F)
-    (p : ℤ) (x y : M) :
-    toSpanSingleton F hF x ≫ (ofSubmodules F hF).quotientCone.π.app (op p) =
-      toSpanSingleton F hF y ≫ (ofSubmodules F hF).quotientCone.π.app (op p) ↔ x - y ∈ F p := by
+/-- Two maps into the underlying module of `ofSubmodules F hF`, seen as the vertex of its cone of
+quotients, agree in the quotient `M / F p` exactly when their difference lands in `F p`. -/
+theorem comp_quotientCone_π_ofSubmodules_eq_iff (F : ℤ → Submodule R M) (hF : Antitone F)
+    (p : ℤ) {A : ModuleCat.{v} R} (f g : A ⟶ (ofSubmodules F hF).quotientCone.pt) :
+    f ≫ (ofSubmodules F hF).quotientCone.π.app (op p) =
+      g ≫ (ofSubmodules F hF).quotientCone.π.app (op p) ↔ ∀ a, f.hom a - g.hom a ∈ F p := by
   -- The quotient `M / F^p` of the diagram is by definition the cokernel of the inclusion of
   -- `F^p`, and its projection the cokernel projection, which Mathlib identifies with
   -- `M ⟶ M ⧸ F p`.
@@ -143,14 +130,14 @@ theorem toSpanSingleton_comp_quotientCone_π_eq_iff (F : ℤ → Submodule R M) 
   have hπ : (ofSubmodules F hF).quotientCone.π.app (op p) ≫ e.hom =
       ModuleCat.ofHom (LinearMap.range ((ofSubmodules F hF).stepι (op p)).hom).mkQ :=
     ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom _
+  have key (x y : M) : (LinearMap.range ((ofSubmodules F hF).stepι (op p)).hom).mkQ x =
+      (LinearMap.range ((ofSubmodules F hF).stepι (op p)).hom).mkQ y ↔ x - y ∈ F p := by
+    rw [Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq, stepι_hom_ofSubmodules]
+    exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ z.property, fun h ↦ ⟨⟨x - y, h⟩, rfl⟩⟩
   rw [← cancel_mono e.hom, Category.assoc, Category.assoc, hπ, ModuleCat.hom_ext_iff,
-    LinearMap.ext_ring_iff]
-  -- `toSpanSingleton F hF x` sends `1` to `x`, but its codomain `quotientCone.pt` is only
-  -- definitionally `M`, so the composite is evaluated at `1` by `change` rather than `rw`.
-  change (LinearMap.range ((ofSubmodules F hF).stepι (op p)).hom).mkQ ((1 : R) • x) =
-      (LinearMap.range ((ofSubmodules F hF).stepι (op p)).hom).mkQ ((1 : R) • y) ↔ x - y ∈ F p
-  rw [one_smul, one_smul, Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq,
-    stepι_hom_ofSubmodules]
-  exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ z.property, fun h ↦ ⟨⟨x - y, h⟩, rfl⟩⟩
+    LinearMap.ext_iff]
+  -- The codomain `quotientCone.pt` of `f` and `g` is only definitionally `M`, so `key` is applied
+  -- up to unfolding rather than by rewriting.
+  exact forall_congr' fun a ↦ key (f.hom a) (g.hom a)
 
 end CategoryTheory.FilteredObject

@@ -44,7 +44,7 @@ open FilteredObject
 /-- The constant filtration `F^p = ℤ` of `ℤ` is exhaustive. -/
 theorem isExhaustive_const_top :
     (ofSubmodules (fun _ ↦ (⊤ : Submodule ℤ ℤ)) antitone_const).IsExhaustive :=
-  (isExhaustive_ofSubmodules_iff _ _).2 fun _ hN ↦ top_le_iff.1 (hN 0)
+  isExhaustive_of_step_eq_top _ (i := op (0 : ℤ)) (by rw [step_ofSubmodules, map_top])
 
 /-- The constant filtration `F^p = ℤ` of `ℤ` is not separated. -/
 theorem not_isSeparated_const_top :
@@ -55,7 +55,7 @@ theorem not_isSeparated_const_top :
 /-- The zero filtration `F^p = 0` of `ℤ` is separated. -/
 theorem isSeparated_const_bot :
     (ofSubmodules (fun _ ↦ (⊥ : Submodule ℤ ℤ)) antitone_const).IsSeparated :=
-  (isSeparated_ofSubmodules_iff _ _).2 fun _ hN ↦ le_bot_iff.1 (hN 0)
+  isSeparated_of_step_eq_bot _ (i := op (0 : ℤ)) (by rw [step_ofSubmodules, map_bot])
 
 /-- The zero filtration `F^p = 0` of `ℤ` is not exhaustive. -/
 theorem not_isExhaustive_const_bot :
@@ -80,8 +80,9 @@ noncomputable abbrev adicFiltration (ℓ : ℤ) : FilteredObject (ModuleCat.{0} 
 
 /-- The `ℓ`-adic filtration of `ℤ` is exhaustive: its step `F^0` is `ℤ`. -/
 theorem isExhaustive_adicFiltration (ℓ : ℤ) : (adicFiltration ℓ).IsExhaustive :=
-  (isExhaustive_ofSubmodules_iff _ _).2 fun N hN ↦ top_le_iff.1 (by
-    simpa [adicStep, Ideal.span_singleton_one] using hN 0)
+  isExhaustive_of_step_eq_top _ (i := op (0 : ℤ)) (by
+    rw [step_ofSubmodules]
+    simp [adicStep, Ideal.span_singleton_one])
 
 /-- The `ℓ`-adic filtration of `ℤ`, for `|ℓ| ≠ 1`, is separated: an integer divisible by every
 power of `ℓ` is `0`. -/
@@ -120,7 +121,9 @@ theorem not_isComplete_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) :
   rw [FilteredObject.isComplete_iff]
   rintro ⟨hL⟩
   set s := adicPartialSum ℓ
-  let g (k : ℕ) := toSpanSingleton (adicStep ℓ) (antitone_adicStep ℓ) (s k)
+  -- The maps `ℤ ⟶ ℤ`, `1 ↦ sₖ`, into the vertex of the cone of quotients.
+  let g (k : ℕ) : ModuleCat.of ℤ ℤ ⟶ (adicFiltration ℓ).quotientCone.pt :=
+    ModuleCat.ofHom (LinearMap.toSpanSingleton ℤ ℤ (s k))
   let c : Limits.Cone (adicFiltration ℓ).quotientDiagram :=
     { pt := ModuleCat.of ℤ ℤ
       π :=
@@ -128,23 +131,20 @@ theorem not_isComplete_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) :
           naturality p q f := by
             simp only [Functor.const_obj_obj, Functor.const_obj_map, Category.id_comp,
               Category.assoc, Limits.Cone.w]
-            refine (toSpanSingleton_comp_quotientCone_π_eq_iff (adicStep ℓ)
-              (antitone_adicStep ℓ) q.unop _ _).2 ?_
-            rw [adicStep, Ideal.mem_span_singleton, ← dvd_neg, neg_sub]
-            exact pow_dvd_adicPartialSum_sub ℓ (Int.toNat_le_toNat (leOfHom f.unop)) } }
+            refine (comp_quotientCone_π_ofSubmodules_eq_iff (adicStep ℓ)
+              (antitone_adicStep ℓ) q.unop _ _).2 fun a ↦ ?_
+            have h : s q.unop.toNat - s p.unop.toNat ∈ adicStep ℓ q.unop := by
+              rw [adicStep, Ideal.mem_span_singleton, ← dvd_neg, neg_sub]
+              exact pow_dvd_adicPartialSum_sub ℓ (Int.toNat_le_toNat (leOfHom f.unop))
+            -- `g k` sends `a` to `a • sₖ`.
+            have h' := Submodule.smul_mem _ a h
+            rwa [smul_sub] at h' } }
   set n : ℤ := (hL.lift c).hom (1 : ℤ)
-  have hlift : hL.lift c = toSpanSingleton (adicStep ℓ) (antitone_adicStep ℓ) n :=
-    ModuleCat.hom_ext (LinearMap.ext_ring (toSpanSingleton_hom_one _ _ n).symm)
   have hdvd (k : ℕ) : ℓ ^ k ∣ (1 + ℓ) * n - 1 := by
-    have h : toSpanSingleton (adicStep ℓ) (antitone_adicStep ℓ) n ≫
-        (adicFiltration ℓ).quotientCone.π.app (op (k : ℤ)) =
-        toSpanSingleton (adicStep ℓ) (antitone_adicStep ℓ) (s k) ≫
-          (adicFiltration ℓ).quotientCone.π.app (op (k : ℤ)) := by
-      rw [← hlift]
-      exact hL.fac c (op (k : ℤ))
-    have h' := (toSpanSingleton_comp_quotientCone_π_eq_iff (adicStep ℓ) (antitone_adicStep ℓ)
-      k n (s k)).1 h
-    rw [adicStep, Ideal.mem_span_singleton, Int.toNat_natCast] at h'
+    have h' : n - (1 : ℤ) • s k ∈ adicStep ℓ k :=
+      (comp_quotientCone_π_ofSubmodules_eq_iff (adicStep ℓ) (antitone_adicStep ℓ) k
+        (hL.lift c) (g k)).1 (hL.fac c (op (k : ℤ))) 1
+    rw [one_smul, adicStep, Ideal.mem_span_singleton, Int.toNat_natCast] at h'
     have : (1 + ℓ) * n - 1 = (1 + ℓ) * (n - s k) - (-ℓ) ^ k := by
       have := one_add_mul_adicPartialSum ℓ k
       linear_combination this
