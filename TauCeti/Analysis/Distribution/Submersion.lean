@@ -55,7 +55,6 @@ constant along parallel hyperplanes, and coordinate charts followed by projectio
   function `φ` is that of `T` with the fibre integral of `φ`.
 * `Distribution.lineDerivOp_compCLMOfSubmersion_eq_zero`: the pullback along a linear map `A` has
   vanishing derivatives along `ker A`.
-* `ContinuousLinearMap.surjective_fderiv_of_surjective`: a surjective linear map is a submersion.
 
 ## References
 
@@ -68,14 +67,6 @@ noncomputable section
 
 open Set TopologicalSpace TestFunction MeasureTheory LineDeriv
 open scoped Distributions ContDiff
-
-/-- **A surjective linear map is a submersion**: its derivative, the map itself, is surjective at
-every point. -/
-theorem ContinuousLinearMap.surjective_fderiv_of_surjective {𝕜 E E' : Type*}
-    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E']
-    [NormedSpace 𝕜 E'] {A : E →L[𝕜] E'} (hA : Function.Surjective A) (x : E) :
-    Function.Surjective (fderiv 𝕜 A x) := by
-  rwa [A.fderiv]
 
 namespace Distribution
 

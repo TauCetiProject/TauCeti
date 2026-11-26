@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.Submersion
 public import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Analysis.Distribution.TestFunction.FourierAtom
 import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables

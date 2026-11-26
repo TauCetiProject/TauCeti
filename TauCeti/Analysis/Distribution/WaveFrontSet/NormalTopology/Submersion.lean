@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.FDeriv.Basic
 public import TauCeti.Analysis.Distribution.WaveFrontSet.NormalTopology.LatticeSeries
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Submersion
 import TauCeti.Algebra.Module.ZLattice.Scaling
-import TauCeti.Analysis.Distribution.TestFunction.Compact
 import TauCeti.Analysis.Normed.Module.Cone
 
 /-!
@@ -116,20 +116,18 @@ private theorem exists_seminorm_localFourier_le (hAΩ : MapsTo A Ω Ω')
   rw [localFourier_compCLMOfSubmersion_linear_eq_tsum hAΩ _ hχ1 L hL ξ]
   exact hpV u ξ hξ
 
-/-- **The pullback on a compact set of test functions.** For a compact set `Q` of real test
-functions on `Ω`, the values `A^* T ψ`, `ψ ∈ Q`, are bounded by a continuous seminorm of
-`𝓓'_Γ(Ω')`. -/
-private theorem exists_seminorm_apply_le (hAΩ : MapsTo A Ω Ω') (hA : Function.Surjective A)
-    (hΓ : IsOpen (((Ω' : Set E') ×ˢ {0}ᶜ) \ Γ))
+/-- **The pullback on a compact set of test functions.** For a compact set `Q` of complex test
+functions supported in a common compact subset `K` of `Ω`, the values `A^* T φ`, `φ ∈ Q`, are
+bounded by a continuous seminorm of `𝓓'_Γ(Ω')`. -/
+private theorem exists_seminorm_localFourier_zero_le (hAΩ : MapsTo A Ω Ω')
+    (hA : Function.Surjective A) (hΓ : IsOpen (((Ω' : Set E') ×ˢ {0}ᶜ) \ Γ))
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
-    {Q : Set 𝓓(Ω, ℝ)} (hQ : IsCompact Q) :
-    ∃ p : Seminorm ℂ (WaveFrontSpace Ω' Γ), Continuous p ∧ ∀ u : WaveFrontSpace Ω' Γ, ∀ ψ ∈ Q,
-      ‖compCLMOfSubmersion volume volume A A.contDiff.contDiffOn hAΩ
-        (fun x _ ↦ surjective_fderiv_of_surjective hA x) u.toDistribution ψ‖ ≤ p u := by
-  -- The complexified test functions of `Q` are supported in one compact set `K`.
-  set Qc : Set 𝓓(Ω, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM '' Q
-  have hQc : IsCompact Qc := hQ.image (postcompCLM _).continuous
-  obtain ⟨K, hKΩ, hQK⟩ := TestFunction.exists_compacts_forall_tsupport_subset_of_isCompact hQc
+    {K : Compacts E} (hKΩ : (K : Set E) ⊆ Ω) {Q : Set 𝓓(Ω, ℂ)} (hQ : IsCompact Q)
+    (hQK : ∀ φ ∈ Q, tsupport φ ⊆ K) :
+    ∃ p : Seminorm ℂ (WaveFrontSpace Ω' Γ), Continuous p ∧ ∀ u : WaveFrontSpace Ω' Γ, ∀ φ ∈ Q,
+      ‖(compCLMOfSubmersion volume volume A A.contDiff.contDiffOn hAΩ
+        (fun x _ ↦ surjective_fderiv_of_surjective hA x) u.toDistribution).localFourier φ 0‖ ≤
+          p u := by
   -- Since `Aᵀ` is injective, no covector of `Γ` is sent to `0`.
   have hinj : Function.Injective (A†) :=
     ContinuousLinearMap.adjoint_injective_iff_denseRange.2 hA.denseRange
@@ -140,18 +138,12 @@ private theorem exists_seminorm_apply_le (hAΩ : MapsTo A Ω Ω') (hA : Function
   obtain ⟨L, _, _, hL⟩ :=
     ZLattice.exists_forall_add_mem_eq_zero_of_isBounded χ.hasCompactSupport.isCompact.isBounded
   obtain ⟨p, hp, hpQ⟩ := exists_continuous_seminorm_norm_tsum_le (A†) hε
-    (fun p hp η hη ↦ hχΓ p hp η (by simpa using hη)) L hQc
-  refine ⟨p, hp, fun u ψ hψ ↦ ?_⟩
-  -- `A^* T ψ` is the localized Fourier transform of `A^* T` with cutoff `ψ` at `0`.
-  set ψc := postcompCLM (𝕜 := ℝ) ofRealCLM ψ
-  set S := compCLMOfSubmersion volume volume A A.contDiff.contDiffOn hAΩ
-    (fun x _ ↦ surjective_fderiv_of_surjective hA x) u.toDistribution
-  have hψc : S ψ = S.localFourier ψc 0 := by
-    rw [localFourier_at_zero, complexPairing_postcompCLM_ofRealCLM]
-  rw [hψc, localFourier_compCLMOfSubmersion_linear_eq_tsum hAΩ _
-    (hχ1.mono (image_mono (hQK _ ⟨ψ, hψ, rfl⟩))) L hL 0]
+    (fun p hp η hη ↦ hχΓ p hp η (by simpa using hη)) L hQ
+  refine ⟨p, hp, fun u φ hφ ↦ ?_⟩
+  rw [localFourier_compCLMOfSubmersion_linear_eq_tsum hAΩ _
+    (hχ1.mono (image_mono (hQK φ hφ))) L hL 0]
   simp only [zero_add]
-  exact hpQ u ψc ⟨ψ, hψ, rfl⟩
+  exact hpQ u φ hφ
 
 /-- The pullback `A^* : 𝓓'_Γ(Ω') → 𝓓'_{Aᵀ Γ}(Ω)` as a linear map, before its continuity is
 proved. -/
@@ -184,21 +176,13 @@ def pullbackLinearCLM (A : E →L[ℝ] E') (hAΩ : MapsTo A Ω Ω') (hA : Functi
     (hΓ : IsOpen (((Ω' : Set E') ×ˢ {0}ᶜ) \ Γ))
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) :
     WaveFrontSpace Ω' Γ →L[ℂ] WaveFrontSpace Ω (pullbackLinearCone A Γ) :=
-  ⟨pullbackLinearₗ hAΩ hA, by
-    refine continuous_linearMap_of_le _ ?_ fun j ↦ ?_
-    · -- Continuity into `𝓓'(Ω)`: the values on a compact set of test functions.
-      refine continuous_of_tendsto_nhds_zero (toDistribution ∘ₗ pullbackLinearₗ hAΩ hA) ?_
-      refine CompactConvergenceCLM.hasBasis_nhds_zero.tendsto_right_iff.2 fun ⟨Q, V'⟩ ⟨hQ, hV'⟩ ↦ ?_
-      obtain ⟨r, hr, hrV'⟩ := Metric.mem_nhds_iff.1 hV'
-      obtain ⟨p, hp, hpQ⟩ := exists_seminorm_apply_le hAΩ hA hΓ hcone hΓ0 hQ
-      filter_upwards [(hp.tendsto' 0 0 (map_zero p)) (Iio_mem_nhds hr)] with u hu ψ hψ
-      have h := hpQ u ψ hψ
-      rw [LinearMap.coe_comp, Function.comp_apply, toDistribution_pullbackLinearₗ]
-      exact hrV' (mem_ball_zero_iff.2 (h.trans_lt hu))
-    · -- The seminorms of the target.
-      obtain ⟨p, hp, hpj⟩ := exists_seminorm_localFourier_le hAΩ hA hΓ hcone hΓ0 j
-      refine ⟨p, hp, fun u ↦ seminorm_le_bound j _ (apply_nonneg _ _) fun ξ hξ ↦ ?_⟩
-      simpa only [toDistribution_pullbackLinearₗ] using hpj u ξ hξ⟩
+  ⟨pullbackLinearₗ hAΩ hA, continuous_linearMap_of_forall_isCompact_le _
+    (fun _ hKΩ _ hQ hQK ↦ by
+      simpa only [toDistribution_pullbackLinearₗ] using
+        exists_seminorm_localFourier_zero_le hAΩ hA hΓ hcone hΓ0 hKΩ hQ hQK)
+    fun j ↦ by
+      simpa only [toDistribution_pullbackLinearₗ] using
+        exists_seminorm_localFourier_le hAΩ hA hΓ hcone hΓ0 j⟩
 
 @[simp]
 theorem toDistribution_pullbackLinearCLM (hAΩ : MapsTo A Ω Ω') (hA : Function.Surjective A)

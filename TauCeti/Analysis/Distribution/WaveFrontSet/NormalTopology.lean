@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import TauCeti.Analysis.Distribution.WaveFrontSet.LineDeriv
+import TauCeti.Analysis.Distribution.TestFunction.Compact
 import TauCeti.Analysis.Normed.Module.Seminorm.WeightedSup
 
 /-!
@@ -60,6 +61,9 @@ differentiation and restriction to an open subset are continuous linear maps of 
   `TauCeti.WaveFrontSpace.continuous_iff`, `TauCeti.WaveFrontSpace.continuous_of_le`,
   `TauCeti.WaveFrontSpace.continuous_linearMap_iff`: convergence and continuity of maps into
   `𝓓'_Γ(Ω)`.
+* `TauCeti.WaveFrontSpace.continuous_linearMap_of_forall_isCompact_le`: a linear map into
+  `𝓓'_Γ(Ω)` is continuous when its values on compact sets of test functions and its decay
+  estimates are bounded by continuous seminorms.
 * `TauCeti.WaveFrontSpace.exists_continuous_seminorm_norm_complexPairing_le`: on a compact set of
   test functions, the values of the members of `𝓓'_Γ(Ω)` are bounded by a continuous seminorm.
 * `TauCeti.WaveFrontSpace.inclusionCLM`, `TauCeti.WaveFrontSpace.smulLeftCLM`,
@@ -538,6 +542,36 @@ theorem continuous_linearMap_iff {F : Type*} [AddCommGroup F] [Module ℂ F] [To
     Continuous A ↔ Continuous (toDistribution ∘ₗ A) ∧
       ∀ i, Continuous ((WaveFrontSpace.seminorm i).comp A) :=
   continuous_iff
+
+/-- **Continuity of linear maps into `𝓓'_Γ(Ω)` from estimates.** A linear map `A` into `𝓓'_Γ(Ω)`
+is continuous when two families of estimates hold with continuous seminorms `q`:
+- for every compact set `Q` of complex test functions supported in a common compact subset of
+  `Ω`, the bound `‖A u (φ)‖ ≤ q u` on `Q`, stated as `‖(A u).localFourier φ 0‖ ≤ q u`;
+- for every seminorm index `(φ, V, N)`, the decay estimate
+  `(1 + ‖η‖) ^ N ‖(A u).localFourier φ η‖ ≤ q u` for `η ∈ V`. -/
+theorem continuous_linearMap_of_forall_isCompact_le {F : Type*} [AddCommGroup F] [Module ℂ F]
+    [TopologicalSpace F] [IsTopologicalAddGroup F] (A : F →ₗ[ℂ] WaveFrontSpace Ω Γ)
+    (h₁ : ∀ K : Compacts E, (K : Set E) ⊆ Ω → ∀ Q : Set 𝓓(Ω, ℂ), IsCompact Q →
+      (∀ φ ∈ Q, tsupport φ ⊆ K) → ∃ q : Seminorm ℂ F, Continuous q ∧
+        ∀ u, ∀ φ ∈ Q, ‖(A u).toDistribution.localFourier φ 0‖ ≤ q u)
+    (h₂ : ∀ i : WaveFrontSeminormIndex Ω Γ, ∃ q : Seminorm ℂ F, Continuous q ∧ ∀ u, ∀ η ∈ i.cone,
+      (1 + ‖η‖) ^ i.order * ‖(A u).toDistribution.localFourier i.cutoff η‖ ≤ q u) :
+    Continuous A := by
+  refine continuous_linearMap_of_le _ ?_ fun i ↦ ?_
+  · -- Continuity into `𝓓'(Ω)`: the values on a compact set of real test functions.
+    refine continuous_of_tendsto_nhds_zero (toDistribution ∘ₗ A) ?_
+    refine CompactConvergenceCLM.hasBasis_nhds_zero.tendsto_right_iff.2 fun ⟨Q, V⟩ ⟨hQ, hV⟩ ↦ ?_
+    obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hV
+    -- The complexified test functions of `Q` are supported in one compact set `K`.
+    have hQc := hQ.image (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM).continuous
+    obtain ⟨K, hKΩ, hQK⟩ := TestFunction.exists_compacts_forall_tsupport_subset_of_isCompact hQc
+    obtain ⟨q, hq, hqQ⟩ := h₁ K hKΩ _ hQc hQK
+    filter_upwards [(hq.tendsto' 0 0 (map_zero q)) (Iio_mem_nhds hr)] with u hu ψ hψ
+    have h := hqQ u _ ⟨ψ, hψ, rfl⟩
+    rw [localFourier_at_zero, complexPairing_postcompCLM_ofRealCLM] at h
+    exact hrV (mem_ball_zero_iff.2 (h.trans_lt hu))
+  · obtain ⟨q, hq, hqi⟩ := h₂ i
+    exact ⟨q, hq, fun u ↦ seminorm_le_bound i _ (apply_nonneg _ _) (hqi u)⟩
 
 /-- **Distributions on a compact set of test functions.** For a compact set `Q` of complex test
 functions, `‖T φ‖` is bounded, uniformly for `φ ∈ Q`, by a continuous seminorm of `T` in

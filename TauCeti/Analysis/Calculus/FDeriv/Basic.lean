@@ -23,6 +23,8 @@ scalar functions recover both functions as differentiable.
   derivative does not vanish.
 * `TauCeti.differentiableAt_of_fderiv_surjective`: a function is differentiable wherever its
   derivative is surjective.
+* `ContinuousLinearMap.surjective_fderiv_of_surjective`: a surjective continuous linear map has
+  surjective derivative at every point, so it is a submersion.
 * `TauCeti.differentiableAt_and_of_differentiableAt_comb`: if two combinations `a F + b G` and
   `c F + d G` with `a d - b c ≠ 0` are differentiable at a point, so are `F` and `G`.
 * `Asymptotics.IsBigO.hasFDerivWithinAt_zero`, `Asymptotics.IsBigO.hasFDerivAt_zero`: a function
@@ -116,6 +118,14 @@ theorem Asymptotics.IsBigO.hasFDerivAt_zero (h : f =O[𝓝 x] g)
   exact (nhdsWithin_univ x ▸ h).hasFDerivWithinAt_zero hg hgx (Set.mem_univ x)
 
 end Domination
+
+/-- **A surjective linear map is a submersion**: its derivative, the map itself, is surjective at
+every point. -/
+theorem ContinuousLinearMap.surjective_fderiv_of_surjective {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {A : E →L[𝕜] F} (hA : Function.Surjective A) (x : E) :
+    Function.Surjective (fderiv 𝕜 A x) := by
+  rwa [A.fderiv]
 
 /-- A `C`-Lipschitz function has derivative of extended norm at most `C` everywhere. -/
 theorem LipschitzWith.eNorm_fderiv_le (𝕜 : Type*) [NontriviallyNormedField 𝕜] {G H : Type*}

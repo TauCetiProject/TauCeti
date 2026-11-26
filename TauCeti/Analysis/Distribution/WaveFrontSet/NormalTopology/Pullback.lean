@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.NormalTopology
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Basic
 import TauCeti.Algebra.Module.ZLattice.Scaling
-import TauCeti.Analysis.Distribution.TestFunction.Compact
 import TauCeti.Analysis.Distribution.WaveFrontSet.NormalTopology.LatticeSeries
 import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Normed.Module.Cone
@@ -52,8 +51,8 @@ supported in `K` is the lattice series
 `𝓓'_Γ(W)`, for the projection `(ξ, η) ↦ ξ` transposing `ι`, are those of
 `TauCeti.WaveFrontSpace.exists_continuous_seminorm_one_add_norm_pow_mul_norm_tsum_le`
 and `TauCeti.WaveFrontSpace.exists_continuous_seminorm_norm_tsum_le`. For the topology of
-`𝓓'(U)`, a compact set of test functions has its supports in one compact set `K`
-(`TestFunction.exists_compacts_forall_tsupport_subset_of_isCompact`).
+`𝓓'(U)`, the criterion `TauCeti.WaveFrontSpace.continuous_linearMap_of_forall_isCompact_le`
+needs these estimates only on compact sets of test functions supported in one compact set `K`.
 
 ## Main declarations
 
@@ -200,38 +199,30 @@ private theorem disjoint_prod_zero_pullbackInlCone (hΓ0 : ∀ p ∈ Γ, p.2 ≠
   · exact hN x (hKU hx) η hη0 hη
 
 
-/-- **The pullback on a compact set of test functions.** For a compact set `Q` of real test
-functions on `U`, the values `ι^* T ψ`, `ψ ∈ Q`, are bounded by a continuous seminorm of
-`𝓓'_Γ(W)`. -/
-private theorem exists_seminorm_pullbackInl_apply_le
+/-- **The pullback on a compact set of test functions.** For a compact set `Q` of complex test
+functions supported in a common compact subset `K` of `U`, the values `ι^* T ψ`, `ψ ∈ Q`, are
+bounded by a continuous seminorm of `𝓓'_Γ(W)`. -/
+private theorem exists_seminorm_localFourier_zero_pullbackInl_le
     (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     (hΓ : IsOpen (((W : Set (WithLp 2 (E × D))) ×ˢ {0}ᶜ) \ Γ))
     (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
     (hN : ∀ x ∈ U, ∀ η : D, η ≠ 0 → (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ Γ)
-    {Q : Set 𝓓(U, ℝ)} (hQ : IsCompact Q) :
+    {K : Compacts E} (hKU : (K : Set E) ⊆ U) {Q : Set 𝓓(U, ℂ)} (hQ : IsCompact Q)
+    (hQK : ∀ ψ ∈ Q, tsupport ψ ⊆ K) :
     ∃ p : Seminorm ℂ (WaveFrontSpace W Γ), Continuous p ∧ ∀ u : WaveFrontSpace W Γ, ∀ ψ ∈ Q,
-      ‖u.toDistribution.pullbackInl hU (notMem_waveFrontSet hN u) ψ‖ ≤ p u := by
-  -- The complexified test functions of `Q` are supported in one compact set `K`.
-  set Qc : Set 𝓓(U, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM '' Q
-  have hQc : IsCompact Qc := hQ.image (postcompCLM _).continuous
-  obtain ⟨K, hKU, hQK⟩ := TestFunction.exists_compacts_forall_tsupport_subset_of_isCompact hQc
+      ‖(u.toDistribution.pullbackInl hU (notMem_waveFrontSet hN u)).localFourier ψ 0‖ ≤ p u := by
   obtain ⟨ε, hε, δ, hδ, χ, hχ1, hχΓ⟩ := exists_cutoff_forall_notMem hU hΓ hcone hΓ0 K.isCompact
     hKU isClosed_singleton (mem_singleton 0) forall_smul_mem_singleton_zero
     (disjoint_prod_zero_pullbackInlCone hΓ0 hN hKU)
   obtain ⟨L, _, _, hL⟩ :=
     ZLattice.exists_forall_add_mem_eq_zero_of_isBounded χ.hasCompactSupport.isCompact.isBounded
   obtain ⟨p, hp, hpQ⟩ := exists_continuous_seminorm_norm_tsum_le (fstL 2 ℝ E D) hε
-    (fun p hp ζ hζ ↦ hχΓ p hp ζ (by simpa using hζ)) L hQc
+    (fun p hp ζ hζ ↦ hχΓ p hp ζ (by simpa using hζ)) L hQ
   refine ⟨p, hp, fun u ψ hψ ↦ ?_⟩
-  -- `ι^* T ψ` is the localized Fourier transform of `ι^* T` with cutoff `ψ` at `0`.
-  set ψc := postcompCLM (𝕜 := ℝ) ofRealCLM ψ
-  have hψc : u.toDistribution.pullbackInl hU (notMem_waveFrontSet hN u) ψ =
-      (u.toDistribution.pullbackInl hU (notMem_waveFrontSet hN u)).localFourier ψc 0 := by
-    rw [localFourier_at_zero, complexPairing_postcompCLM_ofRealCLM]
-  rw [hψc, localFourier_pullbackInl_eq_tsum _ hU _ hδ (fun x hx ↦ hχ1 x (hQK _ ⟨ψ, hψ, rfl⟩ hx)) L
-    hL hε (exists_decay_localFourier (mem_singleton 0) hε.le hχΓ u) 0]
+  rw [localFourier_pullbackInl_eq_tsum _ hU _ hδ (fun x hx ↦ hχ1 x (hQK ψ hψ hx)) L hL hε
+    (exists_decay_localFourier (mem_singleton 0) hε.le hχΓ u) 0]
   simp only [zero_add]
-  exact hpQ u ψc ⟨ψ, hψ, rfl⟩
+  exact hpQ u ψ hψ
 
 end Measurable
 
@@ -274,20 +265,13 @@ def pullbackInlCLM (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
     WaveFrontSpace W Γ →L[ℂ] WaveFrontSpace U (pullbackInlCone Γ) :=
   ⟨pullbackInlₗ hU hN, by
     borelize E D
-    refine continuous_linearMap_of_le _ ?_ fun j ↦ ?_
-    · -- Continuity into `𝓓'(U)`: the values on a compact set of test functions.
-      refine continuous_of_tendsto_nhds_zero (toDistribution ∘ₗ pullbackInlₗ hU hN) ?_
-      refine CompactConvergenceCLM.hasBasis_nhds_zero.tendsto_right_iff.2 fun ⟨Q, V'⟩ ⟨hQ, hV'⟩ ↦ ?_
-      obtain ⟨r, hr, hrV'⟩ := Metric.mem_nhds_iff.1 hV'
-      obtain ⟨p, hp, hpQ⟩ := exists_seminorm_pullbackInl_apply_le hU hΓ hcone hΓ0 hN hQ
-      filter_upwards [(hp.tendsto' 0 0 (map_zero p)) (Iio_mem_nhds hr)] with u hu ψ hψ
-      have h := hpQ u ψ hψ
-      rw [LinearMap.coe_comp, Function.comp_apply, toDistribution_pullbackInlₗ]
-      exact hrV' (mem_ball_zero_iff.2 (h.trans_lt hu))
-    · -- The seminorms of the target.
-      obtain ⟨p, hp, hpj⟩ := exists_seminorm_localFourier_pullbackInl_le hU hΓ hcone hΓ0 hN j
-      refine ⟨p, hp, fun u ↦ seminorm_le_bound j _ (apply_nonneg _ _) fun ξ hξ ↦ ?_⟩
-      simpa only [toDistribution_pullbackInlₗ] using hpj u ξ hξ⟩
+    exact continuous_linearMap_of_forall_isCompact_le _
+      (fun _ hKU _ hQ hQK ↦ by
+        simpa only [toDistribution_pullbackInlₗ] using
+          exists_seminorm_localFourier_zero_pullbackInl_le hU hΓ hcone hΓ0 hN hKU hQ hQK)
+      fun j ↦ by
+        simpa only [toDistribution_pullbackInlₗ] using
+          exists_seminorm_localFourier_pullbackInl_le hU hΓ hcone hΓ0 hN j⟩
 
 @[simp]
 theorem toDistribution_pullbackInlCLM (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
