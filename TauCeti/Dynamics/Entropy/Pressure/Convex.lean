@@ -103,9 +103,7 @@ theorem netPressureEntourage_smul_add_smul_le (ht₀ : 0 < t) (ht₁ : t < 1)
       t * netPressureEntourage T φ U + ((1 - t : ℝ) : EReal) * netPressureEntourage T ψ U := by
   have h1t : (0 : ℝ) < 1 - t := sub_pos.mpr ht₁
   by_cases hT : netPressureEntourage T φ U = ⊤ ∨ netPressureEntourage T ψ U = ⊤
-  · obtain ⟨ha, hb⟩ : netPressureEntourage T φ U ≠ ⊥ ∧ netPressureEntourage T ψ U ≠ ⊥ := by
-      rcases hT with hT | hT <;> simp_all
-    rw [EReal.coe_mul_add_coe_mul_eq_top ht₀ h1t ha hb hT]
+  · rw [EReal.coe_mul_add_coe_mul_eq_top_of_ne_or_ne ht₀ h1t h h' hT]
     exact le_top
   obtain ⟨hφ, hψ⟩ := not_or.mp hT
   replace h1t := h1t.le
@@ -134,9 +132,7 @@ theorem topologicalPressure_smul_add_smul_le [UniformSpace X] (ht₀ : 0 ≤ t) 
   rcases ht₁.eq_or_lt with rfl | ht₁
   · simp
   by_cases hT : topologicalPressure T φ = ⊤ ∨ topologicalPressure T ψ = ⊤
-  · obtain ⟨ha, hb⟩ : topologicalPressure T φ ≠ ⊥ ∧ topologicalPressure T ψ ≠ ⊥ := by
-      rcases hT with hT | hT <;> simp_all
-    rw [EReal.coe_mul_add_coe_mul_eq_top ht₀ (sub_pos.mpr ht₁) ha hb hT]
+  · rw [EReal.coe_mul_add_coe_mul_eq_top_of_ne_or_ne ht₀ (sub_pos.mpr ht₁) h h' hT]
     exact le_top
   obtain ⟨hφ, hψ⟩ := not_or.mp hT
   rw [topologicalPressure_le_iff]
