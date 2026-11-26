@@ -8,7 +8,9 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 public import TauCeti.Analysis.Sobolev.W1p.Multiplication
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Indicator
+import TauCeti.Analysis.Sobolev.W1p.Density
 
 /-!
 # Sobolev functions vanishing on a part of the boundary
@@ -30,8 +32,11 @@ finite `p`; that case lives with the Lipschitz-domain theory.
 The space shrinks as `Γ` grows and depends on `Γ` only through its closure. When `Γ` misses `Ω`,
 as a boundary part does, it contains `W^{1,p}_0(Ω)`; this can fail when `Γ` meets `Ω`, for
 instance when `Γ` contains a nonempty open subset of `Ω`. Multiplication by a smooth function
-bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`. Its invariance under rigid
-motions is in `TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables`.
+bounded together with its gradient preserves it, as for `W^{1,p}_0(Ω)`. For finite `p`, the
+restriction to `Ω` of a whole-space Sobolev function vanishing outside a compact set disjoint from
+`closure Γ` lies in it, as a compactly supported function lies in `W^{1,p}_0(Ω)`; this is how
+generators composed with a non-smooth change of variables are recognized. Its invariance under
+changes of variables is in `TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables`.
 
 ## Main declarations
 
@@ -50,6 +55,10 @@ motions is in `TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables`.
 * `TauCeti.w1pVanishingOnSubmodule_frontier`: at `Γ = frontier Ω` it is `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.contDiffSMul_mem_w1pVanishingOnSubmodule`: it is stable under multiplication by
   smooth functions bounded with their gradients.
+* `TauCeti.W1p.restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule`: a whole-space Sobolev
+  function times a cutoff supported away from `closure Γ`, restricted to `Ω`, lies in it.
+* `TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact`: so does the restriction of a
+  whole-space Sobolev function vanishing outside a compact set disjoint from `closure Γ`.
 * `TauCeti.W1pVanishingOn.instNormedAddCommGroup` and
   `TauCeti.W1pVanishingOn.instInnerProductSpace`: shortcut instances, registered locally by files
   applying abstract Hilbert space results to `W^{1,2}_Γ(Ω)`.
@@ -278,6 +287,69 @@ theorem W1p.contDiffSMul_mem_w1pVanishingOnSubmodule {psi : E → ℝ} {M : ℝ}
   simp only [mem_preimage, SetLike.mem_coe, W1p.contDiffSMulL_apply, hΦ]
   exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
     (hΦφ ▸ hφ.mono_left (tsupport_mul_subset_right (f := psi) (g := φ)))
+
+/-! ### Whole-space Sobolev functions supported away from `closure Γ` -/
+
+/-- **A whole-space Sobolev function cut off away from `closure Γ` vanishes on `Γ`.** Let
+`w ∈ W^{1,p}(ℝⁿ)`, `1 ≤ p < ∞`, and let `ψ` be smooth with `|ψ| ≤ M`, `‖∇ψ‖ ≤ M` and
+`tsupport ψ` disjoint from `closure Γ`. Then the restriction of `ψ w` to `Ω` lies in
+`W^{1,p}_Γ(Ω)`, for every open `Ω`.
+
+Neither `ψ` nor `w` is assumed compactly supported: `w` is a limit of test functions on the whole
+space, and the cutoff carries each of them to a generator of `W^{1,p}_Γ(Ω)`. This is the analogue
+of `TauCeti.W1p.restrictL_contDiffSMul_mem_w1p0Submodule`, which asks `tsupport ψ ⊆ Ω` instead. -/
+theorem W1p.restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule (hp : p ≠ (∞ : ℝ≥0∞)) {psi : E → ℝ}
+    (hpsi : ContDiff ℝ ∞ psi) {M : ℝ} (hM : 0 ≤ M)
+    (hpsiM : ∀ x ∈ (⊤ : Opens E), |psi x| ≤ M) (hgradM : ∀ x ∈ (⊤ : Opens E), ‖∇ psi x‖ ≤ M)
+    (hts : Disjoint (tsupport psi) (closure Γ)) (w : W1p mu ⊤ p) :
+    W1p.restrictL (le_top : Omega ≤ ⊤) (W1p.contDiffSMul psi hpsi hM hpsiM hgradM w) ∈
+      w1pVanishingOnSubmodule mu Omega p Γ := by
+  -- The functions with this property form a closed set containing every test function.
+  have hclosed : IsClosed {v : W1p mu ⊤ p | W1p.restrictL (le_top : Omega ≤ ⊤)
+      (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM v) ∈ w1pVanishingOnSubmodule mu Omega p Γ} :=
+    (w1pVanishingOnSubmodule mu Omega p Γ).isClosed.preimage
+      ((W1p.restrictL le_top).comp (W1p.contDiffSMulL psi hpsi hM hpsiM hgradM)).continuous
+  have hmem := w1p0Submodule_subset_of_isClosed hclosed (fun phi => ?_)
+    (W1p.mem_w1p0Submodule_top hp w)
+  · simpa only [mem_ofPred_eq, W1p.contDiffSMulL_apply] using hmem
+  -- The product `ψ φ` is a test function on the whole space with support inside that of `ψ`.
+  obtain ⟨Phi, hPhi⟩ : ∃ Phi : 𝓓((⊤ : Opens E), ℝ), ⇑Phi = psi * (phi : E → ℝ) :=
+    ⟨⟨psi * (phi : E → ℝ), hpsi.mul phi.contDiff, phi.hasCompactSupport.mul_left,
+      subset_univ _⟩, rfl⟩
+  rw [mem_ofPred_eq, W1p.contDiffSMulL_apply,
+    W1p.contDiffSMul_ofTestFunctionₗ hpsi hM hpsiM hgradM phi Phi hPhi]
+  exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
+    (hPhi ▸ hts.mono_left tsupport_mul_subset_left)
+
+/-- **A compactly supported whole-space Sobolev function vanishing near `closure Γ` lies in
+`W^{1,p}_Γ(Ω)`.** If `w ∈ W^{1,p}(ℝⁿ)`, `1 ≤ p < ∞`, vanishes almost everywhere outside a compact
+set `K` disjoint from `closure Γ`, then its restriction to any open `Ω` lies in `W^{1,p}_Γ(Ω)`.
+
+No regularity of `Ω` or `Γ` is needed: a smooth cutoff equal to one on `K` and supported away
+from `closure Γ` leaves `w` unchanged. This is the analogue for `W^{1,p}_Γ` of
+`TauCeti.W1p.mem_w1p0Submodule_of_isCompact`; it applies to the composite of a generator with a
+Lipschitz change of variables, which is no longer smooth. -/
+theorem W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact (hp : p ≠ (∞ : ℝ≥0∞)) {K : Set E}
+    (hK : IsCompact K) (hKΓ : Disjoint K (closure Γ)) {w : W1p mu ⊤ p}
+    (hw : ∀ᵐ x ∂mu.restrict ((⊤ : Opens E) : Set E), x ∉ K → W1p.value w x = 0) :
+    W1p.restrictL (le_top : Omega ≤ ⊤) w ∈ w1pVanishingOnSubmodule mu Omega p Γ := by
+  obtain ⟨chi, M, hchi, -, hchi_one, -, hchi_ts, hM0, hchiM, hchigradM⟩ :=
+    hK.exists_contDiff_cutoff_with_bounds isClosed_closure.isOpen_compl
+      (subset_compl_iff_disjoint_right.2 hKΓ)
+  -- The cutoff is one on `K`, off which `w` vanishes, so it leaves `w` unchanged.
+  have hchiw : W1p.contDiffSMul chi hchi hM0 (fun x _ => hchiM x) (fun x _ => hchigradM x) w =
+      w := by
+    refine W1p.ext_value (Lp.ext ?_)
+    filter_upwards [W1p.value_contDiffSMul_ae hchi hM0 (fun x _ => hchiM x)
+      (fun x _ => hchigradM x) w, hw] with x h1 h2
+    rw [h1]
+    by_cases hxK : x ∈ K
+    · -- The cutoff is one on a neighbourhood of `K`.
+      rw [mem_singleton_iff.1 (mem_preimage.1 (interior_subset (hchi_one hxK))), one_smul]
+    · rw [h2 hxK, smul_zero]
+  rw [← hchiw]
+  exact W1p.restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule hp hchi hM0 _ _
+    (subset_compl_iff_disjoint_right.1 hchi_ts) w
 
 /-! ### Shortcut instances for the Hilbert space `W^{1,2}_Γ(Ω)`
 

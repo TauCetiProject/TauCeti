@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Sobolev.Trace.Kernel
 public import TauCeti.Analysis.Sobolev.Trace.Multiplication
 public import TauCeti.Analysis.Sobolev.Trace.Translation
-import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.SpecialFunctions.LinearCutoff
+import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import TauCeti.Analysis.Sobolev.Wkp.Translation
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
@@ -90,6 +90,15 @@ private def vanishingNear (p : ℝ≥0∞) [Fact (1 ≤ p)] (a c : ℝ) (ℓ : E
     rw [FunLike.coe_smul]
     exact tsupport_smul_subset_right (fun _ => r) φ
 
+/-- The carrier of `vanishingNear` is the image of the test functions whose support is disjoint
+from `{x | x.fst = a ∧ ℓ x.snd ≤ c}`, the generating set of `w1pVanishingOnSubmodule`. -/
+private theorem coe_vanishingNear (a c : ℝ) (ℓ : E →L[ℝ] ℝ) :
+    SetLike.coe (vanishingNear p a c ℓ) =
+      (fun φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ) =>
+        W1p.restrictL le_top (W1p.ofTestFunctionₗ volume ⊤ p φ)) ''
+        {φ | Disjoint (tsupport φ) {x | x.fst = a ∧ ℓ x.snd ≤ c}} :=
+  rfl
+
 /-- `W^{1,p}_0(H)` lies in the closure: a test function on `H` extends to one on `ℝ × E` supported
 in `H`, away from the boundary hyperplane. -/
 private theorem w1p0Submodule_subset_closure_vanishingNear (a c : ℝ) (ℓ : E →L[ℝ] ℝ) :
@@ -107,33 +116,6 @@ private theorem w1p0Submodule_subset_closure_vanishingNear (a c : ℝ) (ℓ : E 
       (TestFunction.monoCLM ℝ φ)), W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := p) φ]
       with x h₁ h₂
     rw [h₁, h₂, hcoe]
-
-/-- A whole-space Sobolev function multiplied by a smooth cutoff whose support is disjoint from
-`K` restricts to an element of the closure. -/
-private theorem restrictL_contDiffSMul_mem_closure_vanishingNear (hp : p ≠ (∞ : ℝ≥0∞)) {a c : ℝ}
-    {ℓ : E →L[ℝ] ℝ} {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) {M : ℝ} (hM : 0 ≤ M)
-    (hχM : ∀ x, |χ x| ≤ M) (hgradM : ∀ x, ‖∇ χ x‖ ≤ M)
-    (hχK : Disjoint (tsupport χ) {x | x.fst = a ∧ ℓ x.snd ≤ c})
-    (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p) :
-    W1p.restrictL le_top (W1p.contDiffSMul χ hχ hM (fun x _ => hχM x) (fun x _ => hgradM x) w) ∈
-      closure (SetLike.coe (vanishingNear p a c ℓ)) := by
-  let F := (W1p.restrictL (U := normalHalfSpace (E := E) a) le_top).comp
-    (W1p.contDiffSMulL χ hχ hM (fun x _ => hχM x) (fun x _ => hgradM x) :
-      W1p (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p →L[ℝ] _)
-  suffices key : F w ∈ closure (SetLike.coe (vanishingNear p a c ℓ)) by
-    simpa only [F, ContinuousLinearMap.coe_comp, Function.comp_apply,
-      W1p.contDiffSMulL_apply] using key
-  refine (W1p.denseRange_ofTestFunctionₗ_top hp).induction_on (p := fun w => F w ∈ closure _) w
-    (isClosed_closure.preimage F.continuous) fun ψ => subset_closure ?_
-  refine ⟨TestFunction.smulLeftCLM hχ ψ, hχK.mono_left ((TestFunction.tsupport_smulLeftCLM_subset
-    hχ ψ).trans inter_subset_left), congrArg _ (W1p.ext_value (Lp.ext ?_))⟩
-  filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := p)
-      (TestFunction.smulLeftCLM hχ ψ),
-    W1p.value_contDiffSMul_ae (mu := volume) (Omega := ⊤) hχ hM (fun x _ => hχM x)
-      (fun x _ => hgradM x) (W1p.ofTestFunctionₗ volume ⊤ p ψ),
-    W1p.value_ofTestFunctionₗ_ae (mu := volume) (p := p) ψ] with x h₁ h₂ h₃
-  rw [h₁, ContinuousLinearMap.coe_coe, W1p.contDiffSMulL_apply, h₂, h₃,
-    TestFunction.smulLeftCLM_apply]
 
 /-! ### Tangential translation -/
 
@@ -212,7 +194,17 @@ private theorem mem_closure_vanishingNear_of_ae_eq_zero (hp : p ≠ (∞ : ℝ�
         tsupport_linearCutoff_subset L (by positivity : (0 : ℝ) ≤ 3 / τ) (c + τ / 3) hx
       linarith [hxK.2]
   -- The cutoff part is the restriction of `χ w`.
-  have hχv := restrictL_contDiffSMul_mem_closure_vanishingNear hp hχ hM hχM hgradM hχK w
+  -- `K` is closed, and the generators of `W^{1,p}_K(H)` are those of `vanishingNear`.
+  have hKc : IsClosed {x : WithLp 2 (ℝ × E) | x.fst = a ∧ ℓ x.snd ≤ c} :=
+    (isClosed_eq (f := fun x : WithLp 2 (ℝ × E) => x.fst) (by fun_prop) continuous_const).inter
+      (isClosed_le (f := fun x : WithLp 2 (ℝ × E) => ℓ x.snd) (by fun_prop) continuous_const)
+  have hχv : W1p.restrictL le_top
+      (W1p.contDiffSMul χ hχ hM (fun x _ => hχM x) (fun x _ => hgradM x) w) ∈
+        closure (SetLike.coe (vanishingNear p a c ℓ)) := by
+    have h := W1p.restrictL_contDiffSMul_mem_w1pVanishingOnSubmodule
+      (Omega := normalHalfSpace (E := E) a) hp hχ hM (fun x _ => hχM x) (fun x _ => hgradM x)
+      (hKc.closure_eq.symm ▸ hχK) w
+    rwa [← SetLike.mem_coe, coe_w1pVanishingOnSubmodule, hKc.closure_eq, ← coe_vanishingNear] at h
   rw [W1p.restrictL_contDiffSMul] at hχv
   have hsub : v = (v - χv) + χv := (sub_add_cancel v χv).symm
   rw [hsub]

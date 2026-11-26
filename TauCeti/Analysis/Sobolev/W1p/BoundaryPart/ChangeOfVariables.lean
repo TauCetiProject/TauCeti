@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
+import TauCeti.Dynamics.Ergodic.MeasurePreserving
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -31,6 +32,18 @@ changes of variables, in particular rigid motions, the transport also holds at `
 (`TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule`), and for rigid motions it is an
 equivalence (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`).
 
+For finite `p` smoothness is not needed: a Lipschitz, proper, measure-preserving `Φ` transports
+`W^{1,p}_Γ` in the same way
+(`TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_lipschitzWith`), and a
+measure-preserving homeomorphism that is Lipschitz in both directions gives an equivalence
+(`TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff_of_lipschitzWith`). Then
+`φ ∘ Φ` is no longer a generator, but it is a whole-space Sobolev function vanishing outside the
+compact set `Φ⁻¹(tsupport φ)`, which misses `closure (Φ⁻¹(Γ))`, and such functions restrict into
+`W^{1,p}_{Φ⁻¹(Γ)}(U)` (`TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact`). The
+shears `(t, y) ↦ (t - γ y, y)` flattening the graph of a Lipschitz function `γ` are of this kind
+(`TauCeti.graphFlattening`), which is how boundary parts of a Lipschitz domain are carried to parts
+of a hyperplane.
+
 ## Main results
 
 * `TauCeti.W1p.compL_mem_w1pVanishingOnSubmodule`: for `p < ∞`, precomposition with a smooth
@@ -44,6 +57,16 @@ equivalence (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_i
   changes of variables, for every exponent `1 ≤ p ≤ ∞`.
 * `TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`: rigid motions for every
   exponent `1 ≤ p ≤ ∞`.
+* `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_lipschitzWith`: Lipschitz
+  proper measure-preserving changes of variables, for `1 ≤ p < ∞`.
+* `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff_of_lipschitzWith`: the
+  equivalence for bi-Lipschitz measure-preserving homeomorphisms, for `1 ≤ p < ∞`.
+
+## References
+
+* S. Bauer, D. Pauly, M. Schomburg, *The Maxwell compactness property in bounded weak Lipschitz
+  domains with mixed boundary conditions*, SIAM J. Math. Anal. 48 (2016), Lemma 3.1 and
+  Appendix A (boundary parts are transported by bi-Lipschitz charts).
 -/
 
 public section
@@ -51,7 +74,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory Set TopologicalSpace
-open scoped Distributions ENNReal Topology ContDiff
+open scoped Distributions ENNReal NNReal Topology ContDiff
 
 namespace TauCeti
 
@@ -180,12 +203,85 @@ theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule (hΦc : ContDiff 
   refine map_mem_w1pVanishingOnSubmodule_of_compOfIsProperMap hΦc hΦp _ (fun φ => ?_) hu
   refine W1p.ext_value (Lp.ext ?_)
   filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hUV hΦl hM _,
-    (hUV ▸ hΦ.restrict_preimage V.isOpen.measurableSet :
-      MeasurePreserving Φ (mu.restrict U) (nu.restrict V)).quasiMeasurePreserving.ae
+    (hΦ.restrict_of_preimage_eq V.isOpen.measurableSet hUV).quasiMeasurePreserving.ae
       (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := nu) (p := p) (le_top : V ≤ ⊤) φ),
     W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : U ≤ ⊤) _]
     with x h1 h2 h3
   rw [h1, h2, h3, TestFunction.compOfIsProperMap_apply]
+
+/-- **Lipschitz measure-preserving changes of variables preserve vanishing on a boundary part.**
+Let `p < ∞`, and let `Φ` be Lipschitz, proper and measure-preserving, with `U = Φ⁻¹(V)`. Then
+precomposition with `Φ` maps `W^{1,p}_Γ(V)` into `W^{1,p}_{Φ⁻¹(Γ)}(U)`.
+
+Unlike `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule`, `Φ` need not be smooth,
+so this applies to the shear `(t, y) ↦ (t - γ y, y)` flattening the graph of a Lipschitz `γ`. The
+composite `φ ∘ Φ` of a generator is then only Lipschitz, but it is a whole-space Sobolev function
+vanishing outside the compact set `Φ⁻¹(tsupport φ)`, which misses `closure (Φ⁻¹(Γ))`
+(`TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact`). This adapts the
+compact-support argument of `TauCeti.W1p.compMeasurePreservingL_mem_w1p0Submodule`, where the
+compact set `Φ⁻¹(tsupport φ)` lies in `U` instead of missing `closure (Φ⁻¹(Γ))`. -/
+theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_lipschitzWith
+    (hp : p ≠ (∞ : ℝ≥0∞)) {K : ℝ≥0} (hΦL : LipschitzWith K Φ) (hΦp : IsProperMap Φ)
+    (hΦ : MeasurePreserving Φ mu nu) (hUV : (U : Set E) = Φ ⁻¹' V)
+    (hΦl : LocallyLipschitzOn U Φ) (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) {Γ : Set E'}
+    {u : W1p nu V p} (hu : u ∈ w1pVanishingOnSubmodule nu V p Γ) :
+    W1p.compMeasurePreservingL hΦ hUV hΦl hM u ∈ w1pVanishingOnSubmodule mu U p (Φ ⁻¹' Γ) := by
+  refine w1pVanishingOnSubmodule_subset_of_isClosed
+    ((w1pVanishingOnSubmodule mu U p (Φ ⁻¹' Γ)).isClosed.preimage
+      (W1p.compMeasurePreservingL hΦ hUV hΦl hM).continuous) (fun φ hφ => ?_) hu
+  -- The composite of the generator `φ` with `Φ`, as a Sobolev function on the whole space.
+  have htop : ((⊤ : Opens E) : Set E) = Φ ⁻¹' ((⊤ : Opens E') : Set E') := by simp
+  set w : W1p mu ⊤ p := W1p.compMeasurePreservingL hΦ htop
+    hΦL.locallyLipschitz.locallyLipschitzOn (fun x _ => norm_fderiv_le_of_lipschitz ℝ hΦL)
+    (W1p.ofTestFunctionₗ nu ⊤ p φ)
+  have hw : ∀ᵐ x ∂mu.restrict ((⊤ : Opens E) : Set E), W1p.value w x = φ (Φ x) := by
+    filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ htop _ _ _,
+      (hΦ.restrict_of_preimage_eq (⊤ : Opens E').isOpen.measurableSet htop
+        ).quasiMeasurePreserving.ae (testFunctionLp_apply_ae (mu := nu) p φ)] with x h1 h2
+    rw [h1, W1p.value_ofTestFunctionₗ, h2]
+  have hmem := W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact (Omega := U) hp
+    (hΦp.isCompact_preimage φ.hasCompactSupport.isCompact)
+    ((hφ.preimage Φ).mono_right (hΦp.continuous.closure_preimage_subset Γ)) (w := w) (by
+      filter_upwards [hw] with x hx hxK
+      rw [hx]
+      exact image_eq_zero_of_notMem_tsupport hxK)
+  -- On `U`, the restriction of `w` is the composite of the restricted generator with `Φ`.
+  have heq : W1p.compMeasurePreservingL hΦ hUV hΦl hM
+      (W1p.restrictL (le_top : V ≤ ⊤) (W1p.ofTestFunctionₗ nu ⊤ p φ)) =
+      W1p.restrictL (le_top : U ≤ ⊤) w := by
+    refine W1p.ext_value (Lp.ext ?_)
+    filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hUV hΦl hM _,
+      (hΦ.restrict_of_preimage_eq V.isOpen.measurableSet hUV).quasiMeasurePreserving.ae
+        (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := nu) (p := p) (le_top : V ≤ ⊤) φ),
+      W1p.value_restrictL_ae (le_top : U ≤ ⊤) w,
+      hw.filter_mono (ae_mono (Measure.restrict_mono (subset_univ _) le_rfl))] with x h1 h2 h3 h4
+    rw [h1, h2, h3, h4]
+  rw [mem_preimage, heq]
+  exact hmem
+
+/-- **Invariance of `W^{1,p}_Γ` under bi-Lipschitz measure-preserving homeomorphisms.** Let
+`p < ∞` and let `e` be a measure-preserving homeomorphism such that `e` and `e⁻¹` are Lipschitz,
+with `U = e⁻¹(V)`. Then `u ∘ e` lies in `W^{1,p}_{e⁻¹(Γ)}(U)` exactly when `u` lies in
+`W^{1,p}_Γ(V)`. -/
+theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff_of_lipschitzWith
+    (hp : p ≠ (∞ : ℝ≥0∞)) (e : E ≃ₜ E') {K K' : ℝ≥0} (he : LipschitzWith K e)
+    (he' : LipschitzWith K' e.symm) (hΦ : MeasurePreserving e mu nu)
+    (hUV : (U : Set E) = e ⁻¹' V) (hΦl : LocallyLipschitzOn U e)
+    (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ e x‖ ≤ M) {Γ : Set E'} {u : W1p nu V p} :
+    W1p.compMeasurePreservingL hΦ hUV hΦl hM u ∈ w1pVanishingOnSubmodule mu U p (e ⁻¹' Γ) ↔
+      u ∈ w1pVanishingOnSubmodule nu V p Γ := by
+  refine ⟨fun hu => ?_, W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_lipschitzWith
+    hp he e.isProperMap hΦ hUV hΦl hM⟩
+  have hΨ : MeasurePreserving e.symm nu mu := by
+    have h := MeasurePreserving.symm e.toMeasurableEquiv (by rwa [e.toMeasurableEquiv_coe])
+    rwa [e.toMeasurableEquiv_symm_coe] at h
+  have hVU : (V : Set E') = e.symm ⁻¹' U := by
+    rw [hUV, Homeomorph.preimage_symm, e.image_preimage]
+  have h := W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_lipschitzWith hp he'
+    e.symm.isProperMap hΨ hVU he'.locallyLipschitz.locallyLipschitzOn
+    (fun x _ => norm_fderiv_le_of_lipschitz ℝ he') hu
+  rwa [W1p.compMeasurePreservingL_compMeasurePreservingL _ _ _ _ _ _ _ _
+    (fun x _ => e.apply_symm_apply x), ← preimage_comp, e.self_comp_symm, preimage_id] at h
 
 end MeasurePreserving
 
