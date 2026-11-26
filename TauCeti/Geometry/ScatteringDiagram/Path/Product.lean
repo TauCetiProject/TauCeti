@@ -76,6 +76,30 @@ theorem crossingEventProduct_eq_noncommProd (e : x ⟶ y) (t : ℝ)
     crossingEventProduct ν label hcomm e t =
       (signedCrossingEvent ν x y t).noncommProd (fun a => label a.1 ^ a.2) comm := (rfl)
 
+/-- The event product over signed crossings is the product of the signed factors
+over the wall indices crossed at that time. -/
+theorem crossingEventProduct_eq_crossingWalls (e : x ⟶ y) (t : ℝ)
+    (comm : (crossingWalls x y t : Set ι).Pairwise fun i j =>
+      Commute (label i ^ (if 0 < ν i (y.val - x.val) then -1 else 1 : ℤ))
+        (label j ^ (if 0 < ν j (y.val - x.val) then -1 else 1 : ℤ))) :
+    crossingEventProduct ν label hcomm e t =
+      (crossingWalls x y t).noncommProd
+        (fun i => label i ^ (if 0 < ν i (y.val - x.val) then -1 else 1 : ℤ)) comm := by
+  rw [crossingEventProduct_eq_noncommProd ν label hcomm e t
+    (signedCrossingEvent_pairwise ν label hcomm e t)]
+  symm
+  refine Finset.noncommProd_bij _ _ _ _
+    (fun i _ => (i, if 0 < ν i (y.val - x.val) then -1 else 1)) ?_ ?_ ?_ ?_
+  · intro i hi
+    exact (mem_signedCrossingEvent ν x y t i _).mpr ⟨(mem_crossingWalls x y t i).mp hi, rfl⟩
+  · intro i _ j _ h
+    exact congrArg Prod.fst h
+  · rintro ⟨i, k⟩ hk
+    obtain ⟨hi, rfl⟩ := (mem_signedCrossingEvent ν x y t i k).mp hk
+    exact ⟨i, (mem_crossingWalls x y t i).mpr hi, rfl⟩
+  · intro _ _
+    rfl
+
 /-- A time with no signed crossing contributes the identity. -/
 @[simp]
 theorem crossingEventProduct_empty (e : x ⟶ y) (t : ℝ)
@@ -271,22 +295,14 @@ theorem segmentPathProduct_eq_prod (e : x ⟶ y) :
       crossingEventProduct ν label (fun _ _ _ => Commute.all _ _) e t =
         ∏ j, if (j, t) ∈ crossings x y then
           label j ^ (if 0 < ν j (y.val - x.val) then -1 else 1 : ℤ) else 1 := by
-    rw [crossingEventProduct_eq_noncommProd ν label _ e t
+    rw [crossingEventProduct_eq_crossingWalls ν label _ e t
       (fun _ _ _ _ _ => Commute.all _ _), Finset.noncommProd_eq_prod]
-    have hs : signedCrossingEvent ν x y t = (crossingWalls x y t).image
-        (fun j => (j, (if 0 < ν j (y.val - x.val) then -1 else 1 : ℤ))) := by
-      ext ⟨j, s⟩
-      simp [mem_signedCrossingEvent, eq_comm]
-    rw [hs]
-    rw [Finset.prod_image]
-    · have hs : crossingWalls x y t = Finset.univ.filter (fun j => (j, t) ∈ crossings x y) := by
-        ext j
-        simp
-      simpa only [hs, Prod.fst, Prod.snd] using Finset.prod_filter
-        (s := Finset.univ) (fun j => (j, t) ∈ crossings x y)
-        (fun j => label j ^ (if 0 < ν j (y.val - x.val) then -1 else 1 : ℤ))
-    · intro a _ b _ hab
-      exact (Prod.mk.inj hab).1
+    have hs : crossingWalls x y t = Finset.univ.filter (fun j => (j, t) ∈ crossings x y) := by
+      ext j
+      simp
+    simpa only [hs] using Finset.prod_filter (s := Finset.univ)
+      (fun j => (j, t) ∈ crossings x y)
+      (fun j => label j ^ (if 0 < ν j (y.val - x.val) then -1 else 1 : ℤ))
   rw [segmentPathProduct_def, List.map_reverse, List.prod_reverse]
   rw [funext hevent]
   rw [← List.prod_toFinset _ (pairwise_orderedCrossingTimes e).nodup,

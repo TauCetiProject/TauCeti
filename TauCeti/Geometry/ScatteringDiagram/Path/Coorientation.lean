@@ -11,8 +11,9 @@ public import TauCeti.Geometry.ScatteringDiagram.Path.Product
 # Changes of coorientation for wall transport
 
 Positive rescaling of the representative normal preserves transport. A negative rescaling
-preserves it when the corresponding wall label is inverted. This applies independently to
-each indexed wall, including several coincident walls at one crossing.
+preserves it when the corresponding wall label is inverted and the normal's kernel is contained
+in the direction of the wall's affine span. This applies independently to each indexed wall,
+including several coincident walls at one crossing.
 -/
 
 public section
@@ -41,22 +42,6 @@ theorem commute_coorientationLabels (r : ι → ℝ) (i j : ι)
 
 variable [Finite ι]
 
-private theorem crossingEventProduct_eq_crossingWalls
-    {x y : WallComplement W} (e : x ⟶ y) (t : ℝ) :
-    ∃ h, crossingEventProduct ν label hcomm e t =
-      (crossingWalls x y t).noncommProd
-        (fun i => label i ^ (if 0 < ν i (y.val - x.val) then -1 else 1 : ℤ)) h := by
-  classical
-  let embed : ι ↪ ι × ℤ :=
-    ⟨fun i => (i, if 0 < ν i (y.val - x.val) then -1 else 1), fun _ _ h => congrArg Prod.fst h⟩
-  have hs : signedCrossingEvent ν x y t = (crossingWalls x y t).map embed := by
-    rw [signedCrossingEvent_def, Finset.map_eq_image]
-    rfl
-  rw [crossingEventProduct_eq_noncommProd ν label hcomm e t
-    (signedCrossingEvent_pairwise ν label hcomm e t)]
-  exact ⟨_, (Finset.noncommProd_congr hs (fun _ _ => rfl) _).trans
-    (Finset.noncommProd_map _ embed _ _)⟩
-
 private theorem signedLabel_smul {v r : ℝ} (hv : v ≠ 0) (hr : r ≠ 0) (g : G) :
     (if 0 < r then g else g⁻¹) ^ (if 0 < r * v then -1 else 1 : ℤ) =
       g ^ (if 0 < v then -1 else 1 : ℤ) := by
@@ -68,19 +53,27 @@ private theorem signedLabel_smul {v r : ℝ} (hv : v ≠ 0) (hr : r ≠ 0) (g : 
 
 variable {x y : WallComplement W}
 
-/-- Independent nonzero rescalings preserve a simultaneous crossing product when labels
-of the negatively rescaled walls are inverted. -/
+/-- Independent nonzero rescalings preserve a simultaneous crossing product when the labels of
+negatively rescaled walls are inverted and each normal's kernel lies in its wall's affine-span
+direction. -/
 theorem crossingEventProduct_smul_coorientation
     (hν : ∀ i, LinearMap.ker (ν i) ≤ (affineSpan ℝ (W i)).direction)
     (r : ι → ℝ) (hr : ∀ i, r i ≠ 0) (e : x ⟶ y) (t : ℝ) :
     crossingEventProduct (fun i => r i • ν i) (fun i => if 0 < r i then label i else (label i)⁻¹)
         (commute_coorientationLabels label hcomm r) e t =
       crossingEventProduct ν label hcomm e t := by
-  obtain ⟨_, h₁⟩ := crossingEventProduct_eq_crossingWalls
+  have hpairwise (μ : ι → V →ₗ[ℝ] ℝ) (a : ι → G)
+      (ha : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (a i) (a j)) :
+      (crossingWalls x y t : Set ι).Pairwise fun i j =>
+        Commute (a i ^ (if 0 < μ i (y.val - x.val) then -1 else 1 : ℤ))
+          (a j ^ (if 0 < μ j (y.val - x.val) then -1 else 1 : ℤ)) := by
+    intro i hi j hj _
+    exact (ha i j (affineSpan_eq_of_mem_crossingWalls e hi hj)).zpow_zpow _ _
+  rw [crossingEventProduct_eq_crossingWalls
     (fun i => r i • ν i) (fun i => if 0 < r i then label i else (label i)⁻¹)
       (commute_coorientationLabels label hcomm r) e t
-  obtain ⟨_, h₂⟩ := crossingEventProduct_eq_crossingWalls ν label hcomm e t
-  rw [h₁, h₂]
+      (hpairwise _ _ (commute_coorientationLabels label hcomm r)),
+    crossingEventProduct_eq_crossingWalls ν label hcomm e t (hpairwise ν label hcomm)]
   refine Finset.noncommProd_congr rfl (fun i hi => ?_) _
   obtain ⟨ht, hm⟩ := (mem_crossings x y i t).mp ((mem_crossingWalls x y t i).mp hi)
   have hv : ν i (y.val - x.val) ≠ 0 := by
@@ -89,8 +82,8 @@ theorem crossingEventProduct_smul_coorientation
     exact hν i hz
   simpa only [LinearMap.smul_apply, smul_eq_mul] using signedLabel_smul hv (hr i) (label i)
 
-/-- Independent changes of normal representative preserve segment transport when each
-negatively rescaled wall carries the inverse label. -/
+/-- Independent nonzero rescalings preserve segment transport when each negatively rescaled wall
+carries the inverse label and each normal's kernel lies in its wall's affine-span direction. -/
 theorem segmentPathProduct_smul_coorientation
     (hν : ∀ i, LinearMap.ker (ν i) ≤ (affineSpan ℝ (W i)).direction)
     (r : ι → ℝ) (hr : ∀ i, r i ≠ 0) (e : x ⟶ y) :
@@ -122,8 +115,8 @@ theorem wallPathProduct_smul_pos (r : ι → ℝ) (hr : ∀ i, 0 < r i) (p : Adm
   rw [wallPathProduct_eq_prod_signedCrossingEvents, wallPathProduct_eq_prod_signedCrossingEvents,
     signedCrossingEvents_smul _ _ hr]
 
-/-- Any nonzero rescaling leaves transport unchanged if the labels of precisely the
-negatively rescaled walls are inverted. -/
+/-- Independent nonzero rescalings preserve polygonal transport when the labels of negatively
+rescaled walls are inverted and each normal's kernel lies in its wall's affine-span direction. -/
 theorem wallPathProduct_smul_coorientation
     (hν : ∀ i, LinearMap.ker (ν i) ≤ (affineSpan ℝ (W i)).direction)
     (r : ι → ℝ) (hr : ∀ i, r i ≠ 0) (p : AdmissiblePLPath x y) :
