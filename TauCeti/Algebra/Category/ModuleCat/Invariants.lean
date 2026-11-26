@@ -18,7 +18,9 @@ given limit cone concretely: its leg `c.pt ⟶ J.obj *` is injective
 (`ModuleCat.injective_π_app_star_of_isLimit`), and its range is the submodule
 `ModuleCat.invariants J` of the elements fixed by every `J.map g`
 (`ModuleCat.range_π_app_star_of_isLimit`). So the cone point is identified with the invariants,
-whose inclusion is itself a limit cone (`ModuleCat.isLimitInvariantsCone`).
+whose inclusion is itself a limit cone (`ModuleCat.isLimitInvariantsCone`). In particular every
+action of a monoid, of any universe, on modules has a limit
+(`ModuleCat.hasLimitsOfShape_singleObj`), and so has every action on complexes of modules.
 
 This is the form in which limit cones over an action, such as the one by which the transfer of a
 finite quotient covering exhibits the homology of the base as the invariants of the homology of the
@@ -79,6 +81,11 @@ def isLimitInvariantsCone : IsLimit (invariantsCone J) where
   uniq s m hm := by
     ext x
     exact Subtype.ext congr($(hm (SingleObj.star G)).hom x)
+
+/-- **Actions on modules have limits**, the submodules of invariants (`isLimitInvariantsCone`),
+whatever the universe of the acting monoid. -/
+instance hasLimitsOfShape_singleObj : HasLimitsOfShape (SingleObj G) (ModuleCat.{v} R) :=
+  ⟨fun J ↦ ⟨⟨⟨_, isLimitInvariantsCone J⟩⟩⟩⟩
 
 include hc in
 /-- **The leg of a limit cone over an action is injective.** For a limit cone `c` over
