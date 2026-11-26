@@ -27,7 +27,8 @@ Such a homomorphism `φ` describes the local ring `eA` completely: its maximal i
 This survives any ring homomorphism `F : A → A'` compatible with a field homomorphism `k → k'`
 whose image spans `A'` over `k'`: every element of `F(e) A'` is then `c F(e) + m` with `m`
 nilpotent, and an idempotent of this form is `0` or `F(e)`
-(`IsIdempotentElem.eq_zero_or_eq_of_eq_algebraMap_mul_add`), so `F(e)` stays primitive.
+(`IsIdempotentElem.eq_zero_or_eq_of_eq_algebraMap_mul_add`), so `F(e)` stays primitive provided
+`F(e) ≠ 0`.
 
 ## Main results
 
