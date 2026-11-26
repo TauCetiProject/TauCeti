@@ -16,255 +16,113 @@ For a Hopf algebra `H` over a commutative semiring `R`:
 
 * `(TauCeti.Coop H)ᵐᵒᵖ` is unconditionally a Hopf algebra (`MulOpposite.instHopfAlgebraCoop`)
   whose antipode is induced directly from the antipode `S` of `H`.
-* When the antipode `S` of `H` is bijective, both `Hᵐᵒᵖ` (`MulOpposite.hopfAlgebra`) and
-  `TauCeti.Coop H` (`TauCeti.Coop.hopfAlgebra`) carry Hopf algebra structures whose antipode is
-  induced by `S⁻¹` (`TauCeti.HopfAlgebra.inverseAntipode`).
+* When the antipode `S` of `H` is bijective, `Hᵐᵒᵖ` (`MulOpposite.hopfAlgebra`) carries a Hopf
+  algebra structure whose antipode is induced by `S⁻¹` (`TauCeti.HopfAlgebra.inverseAntipode`).
 
 ## Main declarations
 
 * `MulOpposite.instHopfAlgebraCoop`: the `HopfAlgebra` instance on `(Coop H)ᵐᵒᵖ`.
 * `MulOpposite.hopfAlgebra`: the `HopfAlgebra` structure on `Hᵐᵒᵖ` when `S` is bijective.
-* `TauCeti.Coop.hopfAlgebra`: the `HopfAlgebra` structure on `Coop H` when `S` is bijective.
 -/
 
 @[expose] public section
 
 open scoped TensorProduct
 
-namespace TauCeti.Coop
-
-section HopfAlgebra
-
-variable {R H : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
-
-/-- Left antipode axiom for `Coop H` when the antipode of `H` is bijective. -/
-private theorem coop_mul_antipode_rTensor_comul
-    (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
-    let S : Coop H →ₗ[R] Coop H :=
-      (linearEquiv R H).symm.toLinearMap ∘ₗ
-        TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ (linearEquiv R H).toLinearMap
-    LinearMap.mul' R (Coop H) ∘ₗ S.rTensor (Coop H) ∘ₗ Coalgebra.comul =
-      Algebra.linearMap R (Coop H) ∘ₗ Coalgebra.counit := by
-  let S : Coop H →ₗ[R] Coop H :=
-    (linearEquiv R H).symm.toLinearMap ∘ₗ
-      TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ (linearEquiv R H).toLinearMap
-  refine LinearMap.ext fun x ↦ ?_
-  induction x with | mk x =>
-  apply val_injective
-  have hL :
-      (linearEquiv R H).toLinearMap ∘ₗ LinearMap.mul' R (Coop H) ∘ₗ S.rTensor (Coop H) ∘ₗ
-        TensorProduct.map (linearEquiv R H).symm.toLinearMap (linearEquiv R H).symm.toLinearMap =
-        LinearMap.mul' R H ∘ₗ (TauCeti.HopfAlgebra.inverseAntipode hS).rTensor H :=
-    TensorProduct.ext' fun a b ↦ rfl
-  have hL' := LinearMap.congr_fun hL (TensorProduct.comm R H H (Coalgebra.comul (R := R) x))
-  simpa [comul_mk] using
-    hL'.trans (TauCeti.HopfAlgebra.mul_inverseAntipode_rTensor_comm_comul_apply hS x)
-
-/-- Right antipode axiom for `Coop H` when the antipode of `H` is bijective. -/
-private theorem coop_mul_antipode_lTensor_comul
-    (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
-    let S : Coop H →ₗ[R] Coop H :=
-      (linearEquiv R H).symm.toLinearMap ∘ₗ
-        TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ (linearEquiv R H).toLinearMap
-    LinearMap.mul' R (Coop H) ∘ₗ S.lTensor (Coop H) ∘ₗ Coalgebra.comul =
-      Algebra.linearMap R (Coop H) ∘ₗ Coalgebra.counit := by
-  let S : Coop H →ₗ[R] Coop H :=
-    (linearEquiv R H).symm.toLinearMap ∘ₗ
-      TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ (linearEquiv R H).toLinearMap
-  refine LinearMap.ext fun x ↦ ?_
-  induction x with | mk x =>
-  apply val_injective
-  have hL :
-      (linearEquiv R H).toLinearMap ∘ₗ LinearMap.mul' R (Coop H) ∘ₗ S.lTensor (Coop H) ∘ₗ
-        TensorProduct.map (linearEquiv R H).symm.toLinearMap (linearEquiv R H).symm.toLinearMap =
-        LinearMap.mul' R H ∘ₗ (TauCeti.HopfAlgebra.inverseAntipode hS).lTensor H :=
-    TensorProduct.ext' fun a b ↦ rfl
-  have hL' := LinearMap.congr_fun hL (TensorProduct.comm R H H (Coalgebra.comul (R := R) x))
-  simpa [comul_mk] using
-    hL'.trans (TauCeti.HopfAlgebra.mul_inverseAntipode_lTensor_comm_comul_apply hS x)
-
-/-- When the antipode `S` of `H` is bijective, `Coop H` is a Hopf algebra with antipode `S⁻¹`. -/
-@[instance_reducible]
-noncomputable def hopfAlgebra
-    (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
-    HopfAlgebra R (Coop H) where
-  antipode := (linearEquiv R H).symm.toLinearMap ∘ₗ
-    TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ (linearEquiv R H).toLinearMap
-  mul_antipode_rTensor_comul := by exact coop_mul_antipode_rTensor_comul hS
-  mul_antipode_lTensor_comul := by exact coop_mul_antipode_lTensor_comul hS
-
-/-- Action of the antipode on `TauCeti.Coop H` under `Coop.hopfAlgebra`. -/
-@[simp]
-theorem antipode_mk_hopfAlgebra
-    (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) (a : H) :
-    letI := hopfAlgebra hS
-    HopfAlgebra.antipode R (mk a) = mk (TauCeti.HopfAlgebra.inverseAntipode hS a) :=
-  rfl
-
-end HopfAlgebra
-
-end TauCeti.Coop
-
 namespace MulOpposite
 
 open TauCeti
 
+/-- Transports the left and right antipode axioms along an anti-multiplicative `R`-linear
+equivalence `e : K ≃ₗ[R] H` whose inverse commutes with comultiplication up to a map `f`. -/
+private theorem antipode_axioms_of_anti {R H K : Type*} [CommSemiring R]
+    [Semiring H] [Bialgebra R H] [Semiring K] [Bialgebra R K]
+    (e : K ≃ₗ[R] H) (S : H →ₗ[R] H)
+    (hmul : ∀ a b : H, e.symm a * e.symm b = e.symm (b * a))
+    (hone : e.symm 1 = 1)
+    (hcounit : ∀ a : H, Coalgebra.counit (R := R) (e.symm a) = Coalgebra.counit (R := R) a)
+    (f : H ⊗[R] H →ₗ[R] H ⊗[R] H)
+    (hcomul : ∀ a : H, Coalgebra.comul (R := R) (e.symm a) =
+      TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap (f (Coalgebra.comul (R := R) a)))
+    (hl : ∀ a : H, LinearMap.mul' R H
+        (S.lTensor H (TensorProduct.comm R H H (f (Coalgebra.comul (R := R) a)))) =
+      algebraMap R H (Coalgebra.counit (R := R) a))
+    (hr : ∀ a : H, LinearMap.mul' R H
+        (S.rTensor H (TensorProduct.comm R H H (f (Coalgebra.comul (R := R) a)))) =
+      algebraMap R H (Coalgebra.counit (R := R) a)) :
+    let SK : K →ₗ[R] K := e.symm.toLinearMap ∘ₗ S ∘ₗ e.toLinearMap
+    LinearMap.mul' R K ∘ₗ SK.rTensor K ∘ₗ Coalgebra.comul =
+        Algebra.linearMap R K ∘ₗ Coalgebra.counit ∧
+      LinearMap.mul' R K ∘ₗ SK.lTensor K ∘ₗ Coalgebra.comul =
+        Algebra.linearMap R K ∘ₗ Coalgebra.counit := by
+  intro SK
+  have hR (z : H ⊗[R] H) :
+      LinearMap.mul' R K
+          (SK.rTensor K (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap z)) =
+        e.symm (LinearMap.mul' R H (S.lTensor H (TensorProduct.comm R H H z))) := by
+    induction z using TensorProduct.inductionOn with
+    | add u v hu hv => simp only [map_add, hu, hv]
+    | tmul a b => simp [SK, hmul]
+  have hL (z : H ⊗[R] H) :
+      LinearMap.mul' R K
+          (SK.lTensor K (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap z)) =
+        e.symm (LinearMap.mul' R H (S.rTensor H (TensorProduct.comm R H H z))) := by
+    induction z using TensorProduct.inductionOn with
+    | add u v hu hv => simp only [map_add, hu, hv]
+    | tmul a b => simp [SK, hmul]
+  constructor <;>
+  · refine LinearMap.ext fun x ↦ ?_
+    obtain ⟨a, rfl⟩ := e.symm.surjective x
+    simp only [LinearMap.comp_apply, Algebra.linearMap_apply, Algebra.algebraMap_eq_smul_one,
+      hcomul, hcounit]
+    first | rw [hR, hl] | rw [hL, hr]
+    simp [Algebra.algebraMap_eq_smul_one, hone]
+
 variable {R H : Type*} [CommSemiring R] [Semiring H] [HopfAlgebra R H]
 
-/-- Left antipode axiom for `(Coop H)ᵐᵒᵖ`. -/
-private theorem opCoop_mul_antipode_rTensor_comul :
-    let e : Coop H ≃ₗ[R] H := Coop.linearEquiv R H
+private theorem opCoop_antipode_axioms :
+    let e := Coop.unopLinearEquiv R H
     let S : (Coop H)ᵐᵒᵖ →ₗ[R] (Coop H)ᵐᵒᵖ :=
-      (opLinearEquiv R).toLinearMap ∘ₗ e.symm.toLinearMap ∘ₗ
-        HopfAlgebra.antipode R ∘ₗ e.toLinearMap ∘ₗ (opLinearEquiv R).symm.toLinearMap
+      e.symm.toLinearMap ∘ₗ HopfAlgebra.antipode R ∘ₗ e.toLinearMap
     LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.rTensor (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.comul =
-      Algebra.linearMap R (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.counit := by
-  let e : Coop H ≃ₗ[R] H := Coop.linearEquiv R H
-  let S : (Coop H)ᵐᵒᵖ →ₗ[R] (Coop H)ᵐᵒᵖ :=
-    (opLinearEquiv R).toLinearMap ∘ₗ e.symm.toLinearMap ∘ₗ
-      HopfAlgebra.antipode R ∘ₗ e.toLinearMap ∘ₗ (opLinearEquiv R).symm.toLinearMap
-  refine LinearMap.ext fun x ↦ ?_
-  induction x using MulOpposite.rec' with | h x =>
-  induction x with | mk x =>
-  have hL :
-      LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.rTensor (Coop H)ᵐᵒᵖ ∘ₗ
-        TensorProduct.map (opLinearEquiv R).toLinearMap (opLinearEquiv R).toLinearMap ∘ₗ
-        TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap ∘ₗ
-        (TensorProduct.comm R H H).toLinearMap =
-        (opLinearEquiv R).toLinearMap ∘ₗ e.symm.toLinearMap ∘ₗ
-          LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).lTensor H :=
-    TensorProduct.ext' fun a b ↦ rfl
-  have hL' := LinearMap.congr_fun hL (Coalgebra.comul (R := R) x)
-  change (LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.rTensor (Coop H)ᵐᵒᵖ)
-      (Coalgebra.comul (R := R) (op (Coop.mk x))) = _
-  rw [comul_op, Coop.comul_mk]
-  have hL'' : (LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.rTensor (Coop H)ᵐᵒᵖ)
-      (TensorProduct.map (opLinearEquiv R).toLinearMap (opLinearEquiv R).toLinearMap
-        (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap
-          (TensorProduct.comm R H H (Coalgebra.comul (R := R) x)))) =
-      (opLinearEquiv R).toLinearMap (e.symm.toLinearMap
-        (LinearMap.mul' R H ((HopfAlgebra.antipode R).lTensor H (Coalgebra.comul (R := R) x)))) :=
-    hL'
-  rw [hL'', HopfAlgebra.mul_antipode_lTensor_comul_apply]
-  simp [Algebra.algebraMap_eq_smul_one, e]
-
-/-- Right antipode axiom for `(Coop H)ᵐᵒᵖ`. -/
-private theorem opCoop_mul_antipode_lTensor_comul :
-    let e : Coop H ≃ₗ[R] H := Coop.linearEquiv R H
-    let S : (Coop H)ᵐᵒᵖ →ₗ[R] (Coop H)ᵐᵒᵖ :=
-      (opLinearEquiv R).toLinearMap ∘ₗ e.symm.toLinearMap ∘ₗ
-        HopfAlgebra.antipode R ∘ₗ e.toLinearMap ∘ₗ (opLinearEquiv R).symm.toLinearMap
-    LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.lTensor (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.comul =
-      Algebra.linearMap R (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.counit := by
-  let e : Coop H ≃ₗ[R] H := Coop.linearEquiv R H
-  let S : (Coop H)ᵐᵒᵖ →ₗ[R] (Coop H)ᵐᵒᵖ :=
-    (opLinearEquiv R).toLinearMap ∘ₗ e.symm.toLinearMap ∘ₗ
-      HopfAlgebra.antipode R ∘ₗ e.toLinearMap ∘ₗ (opLinearEquiv R).symm.toLinearMap
-  refine LinearMap.ext fun x ↦ ?_
-  induction x using MulOpposite.rec' with | h x =>
-  induction x with | mk x =>
-  have hL :
-      LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.lTensor (Coop H)ᵐᵒᵖ ∘ₗ
-        TensorProduct.map (opLinearEquiv R).toLinearMap (opLinearEquiv R).toLinearMap ∘ₗ
-        TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap ∘ₗ
-        (TensorProduct.comm R H H).toLinearMap =
-        (opLinearEquiv R).toLinearMap ∘ₗ e.symm.toLinearMap ∘ₗ
-          LinearMap.mul' R H ∘ₗ (HopfAlgebra.antipode R).rTensor H :=
-    TensorProduct.ext' fun a b ↦ rfl
-  have hL' := LinearMap.congr_fun hL (Coalgebra.comul (R := R) x)
-  change (LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.lTensor (Coop H)ᵐᵒᵖ)
-      (Coalgebra.comul (R := R) (op (Coop.mk x))) = _
-  rw [comul_op, Coop.comul_mk]
-  have hL'' : (LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.lTensor (Coop H)ᵐᵒᵖ)
-      (TensorProduct.map (opLinearEquiv R).toLinearMap (opLinearEquiv R).toLinearMap
-        (TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap
-          (TensorProduct.comm R H H (Coalgebra.comul (R := R) x)))) =
-      (opLinearEquiv R).toLinearMap (e.symm.toLinearMap
-        (LinearMap.mul' R H ((HopfAlgebra.antipode R).rTensor H (Coalgebra.comul (R := R) x)))) :=
-    hL'
-  rw [hL'', HopfAlgebra.mul_antipode_rTensor_comul_apply]
-  simp [Algebra.algebraMap_eq_smul_one, e]
+        Algebra.linearMap R (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.counit ∧
+      LinearMap.mul' R (Coop H)ᵐᵒᵖ ∘ₗ S.lTensor (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.comul =
+        Algebra.linearMap R (Coop H)ᵐᵒᵖ ∘ₗ Coalgebra.counit :=
+  antipode_axioms_of_anti (Coop.unopLinearEquiv R H) (HopfAlgebra.antipode R)
+    (fun _ _ ↦ rfl) rfl (fun _ ↦ rfl) (TensorProduct.comm R H H).toLinearMap
+    (fun a ↦ by
+      simp only [Coop.unopLinearEquiv_symm_apply, LinearEquiv.coe_coe]
+      rw [comul_op, Coop.comul_mk, ← LinearMap.comp_apply, ← TensorProduct.map_comp]
+      rfl)
+    (fun a ↦ by simp [HopfAlgebra.mul_antipode_lTensor_comul_apply])
+    (fun a ↦ by simp [HopfAlgebra.mul_antipode_rTensor_comul_apply])
 
 noncomputable instance instHopfAlgebraCoop : HopfAlgebra R (Coop H)ᵐᵒᵖ where
   antipode :=
-    (opLinearEquiv R).toLinearMap ∘ₗ (Coop.linearEquiv R H).symm.toLinearMap ∘ₗ
-      HopfAlgebra.antipode R ∘ₗ (Coop.linearEquiv R H).toLinearMap ∘ₗ
-      (opLinearEquiv R).symm.toLinearMap
-  mul_antipode_rTensor_comul := by exact opCoop_mul_antipode_rTensor_comul
-  mul_antipode_lTensor_comul := by exact opCoop_mul_antipode_lTensor_comul
+    (Coop.unopLinearEquiv R H).symm.toLinearMap ∘ₗ HopfAlgebra.antipode R ∘ₗ
+      (Coop.unopLinearEquiv R H).toLinearMap
+  mul_antipode_rTensor_comul := by exact opCoop_antipode_axioms.1
+  mul_antipode_lTensor_comul := by exact opCoop_antipode_axioms.2
 
 @[simp]
 theorem antipode_op_coop (a : H) :
     HopfAlgebra.antipode R (op (Coop.mk a)) = op (Coop.mk (HopfAlgebra.antipode R a)) :=
   rfl
 
-/-- Left antipode axiom for `Hᵐᵒᵖ` when the antipode of `H` is bijective. -/
-private theorem mulOpposite_mul_antipode_rTensor_comul
+private theorem mulOpposite_antipode_axioms
     (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
+    let e := (opLinearEquiv R (M := H)).symm
     let S : Hᵐᵒᵖ →ₗ[R] Hᵐᵒᵖ :=
-      (opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
-        (opLinearEquiv R).symm.toLinearMap
+      e.symm.toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ e.toLinearMap
     LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.rTensor Hᵐᵒᵖ ∘ₗ Coalgebra.comul =
-      Algebra.linearMap R Hᵐᵒᵖ ∘ₗ Coalgebra.counit := by
-  let S : Hᵐᵒᵖ →ₗ[R] Hᵐᵒᵖ :=
-    (opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
-      (opLinearEquiv R).symm.toLinearMap
-  refine LinearMap.ext fun x ↦ ?_
-  induction x using MulOpposite.rec' with | h x =>
-  have hL :
-      LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.rTensor Hᵐᵒᵖ ∘ₗ
-        TensorProduct.map (opLinearEquiv R).toLinearMap (opLinearEquiv R).toLinearMap =
-        (opLinearEquiv R).toLinearMap ∘ₗ LinearMap.mul' R H ∘ₗ
-          (TauCeti.HopfAlgebra.inverseAntipode hS).lTensor H ∘ₗ
-          (TensorProduct.comm R H H).toLinearMap :=
-    TensorProduct.ext' fun a b ↦ by simp [S]
-  have hL' := LinearMap.congr_fun hL (Coalgebra.comul (R := R) x)
-  change (LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.rTensor Hᵐᵒᵖ)
-      (Coalgebra.comul (R := R) (op x)) = _
-  rw [comul_op]
-  have hL'' : (LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.rTensor Hᵐᵒᵖ)
-      (TensorProduct.map (opLinearEquiv R).toLinearMap (opLinearEquiv R).toLinearMap
-        (Coalgebra.comul (R := R) x)) =
-      (opLinearEquiv R).toLinearMap (LinearMap.mul' R H
-        ((TauCeti.HopfAlgebra.inverseAntipode hS).lTensor H
-          (TensorProduct.comm R H H (Coalgebra.comul (R := R) x)))) :=
-    hL'
-  rw [hL'']
-  simp [Algebra.algebraMap_eq_smul_one]
-
-/-- Right antipode axiom for `Hᵐᵒᵖ` when the antipode of `H` is bijective. -/
-private theorem mulOpposite_mul_antipode_lTensor_comul
-    (hS : Function.Bijective (HopfAlgebra.antipode R : H →ₗ[R] H)) :
-    let S : Hᵐᵒᵖ →ₗ[R] Hᵐᵒᵖ :=
-      (opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
-        (opLinearEquiv R).symm.toLinearMap
-    LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.lTensor Hᵐᵒᵖ ∘ₗ Coalgebra.comul =
-      Algebra.linearMap R Hᵐᵒᵖ ∘ₗ Coalgebra.counit := by
-  let S : Hᵐᵒᵖ →ₗ[R] Hᵐᵒᵖ :=
-    (opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
-      (opLinearEquiv R).symm.toLinearMap
-  refine LinearMap.ext fun x ↦ ?_
-  induction x using MulOpposite.rec' with | h x =>
-  have hL :
-      LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.lTensor Hᵐᵒᵖ ∘ₗ
-        TensorProduct.map (opLinearEquiv R).toLinearMap (opLinearEquiv R).toLinearMap =
-        (opLinearEquiv R).toLinearMap ∘ₗ LinearMap.mul' R H ∘ₗ
-          (TauCeti.HopfAlgebra.inverseAntipode hS).rTensor H ∘ₗ
-          (TensorProduct.comm R H H).toLinearMap :=
-    TensorProduct.ext' fun a b ↦ by simp [S]
-  have hL' := LinearMap.congr_fun hL (Coalgebra.comul (R := R) x)
-  change (LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.lTensor Hᵐᵒᵖ)
-      (Coalgebra.comul (R := R) (op x)) = _
-  rw [comul_op]
-  have hL'' : (LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.lTensor Hᵐᵒᵖ)
-      (TensorProduct.map (opLinearEquiv R).toLinearMap (opLinearEquiv R).toLinearMap
-        (Coalgebra.comul (R := R) x)) =
-      (opLinearEquiv R).toLinearMap (LinearMap.mul' R H
-        ((TauCeti.HopfAlgebra.inverseAntipode hS).rTensor H
-          (TensorProduct.comm R H H (Coalgebra.comul (R := R) x)))) :=
-    hL'
-  rw [hL'']
-  simp [Algebra.algebraMap_eq_smul_one]
+        Algebra.linearMap R Hᵐᵒᵖ ∘ₗ Coalgebra.counit ∧
+      LinearMap.mul' R Hᵐᵒᵖ ∘ₗ S.lTensor Hᵐᵒᵖ ∘ₗ Coalgebra.comul =
+        Algebra.linearMap R Hᵐᵒᵖ ∘ₗ Coalgebra.counit :=
+  antipode_axioms_of_anti (opLinearEquiv R (M := H)).symm
+    (TauCeti.HopfAlgebra.inverseAntipode hS) (fun _ _ ↦ rfl) rfl (fun _ ↦ rfl) LinearMap.id
+    (fun _ ↦ rfl)
+    (fun a ↦ TauCeti.HopfAlgebra.mul_inverseAntipode_lTensor_comm_comul_apply hS a)
+    (fun a ↦ TauCeti.HopfAlgebra.mul_inverseAntipode_rTensor_comm_comul_apply hS a)
 
 /-- When the antipode `S` of `H` is bijective, `Hᵐᵒᵖ` is a Hopf algebra with antipode `S⁻¹`. -/
 @[instance_reducible]
@@ -273,8 +131,8 @@ noncomputable def hopfAlgebra
     HopfAlgebra R Hᵐᵒᵖ where
   antipode := (opLinearEquiv R).toLinearMap ∘ₗ TauCeti.HopfAlgebra.inverseAntipode hS ∘ₗ
     (opLinearEquiv R).symm.toLinearMap
-  mul_antipode_rTensor_comul := by exact mulOpposite_mul_antipode_rTensor_comul hS
-  mul_antipode_lTensor_comul := by exact mulOpposite_mul_antipode_lTensor_comul hS
+  mul_antipode_rTensor_comul := by exact (mulOpposite_antipode_axioms hS).1
+  mul_antipode_lTensor_comul := by exact (mulOpposite_antipode_axioms hS).2
 
 /-- Action of the antipode on `Hᵐᵒᵖ` under `MulOpposite.hopfAlgebra`. -/
 @[simp]

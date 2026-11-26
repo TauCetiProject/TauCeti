@@ -205,21 +205,13 @@ variable [CommSemiring R] [Semiring H] [Bialgebra R H]
 action and comultiplication as the coaction. -/
 instance instSelf : IsRightHopfModule R H H where
   coact_op_smul h m := by
-    have hmul :
-        (opSMulTensor R H H).rTensor H
-            (Comodule.tensorCombine (R := R) (C := H) (M := H) (N := H)
-              (Coalgebra.comul (R := R) m ⊗ₜ[R] Coalgebra.comul (R := R) h)) =
-          Coalgebra.comul (R := R) m * Coalgebra.comul (R := R) h := by
-      induction Coalgebra.comul (R := R) m using TensorProduct.inductionOn with
-      | add x y hx hy =>
-        simp only [TensorProduct.add_tmul, map_add, add_mul, hx, hy]
-      | tmul m₁ m₂ =>
-        induction Coalgebra.comul (R := R) h using TensorProduct.inductionOn with
-        | add x y hx hy =>
-          simp only [TensorProduct.tmul_add, map_add, mul_add, hx, hy]
-        | tmul h₁ h₂ =>
-          simp [Algebra.TensorProduct.tmul_mul_tmul]
-    simpa [Comodule.instSelf_coact, Bialgebra.comul_mul] using hmul.symm
+    let := Comodule.tensor R H H H
+    have hmap := LinearMap.congr_fun
+      (Comodule.Hom.regularMul (R := R) (H := H)).map_coact (m ⊗ₜ[R] h)
+    simp only [LinearMap.comp_apply, Comodule.Hom.regularMul_toLinearMap, LinearMap.mul'_apply,
+      Comodule.tensor_coact, Comodule.tensorCoact_tmul, Comodule.instSelf_coact] at hmap
+    rw [Comodule.instSelf_coact, opSMulTensor_self]
+    exact hmap.symm
 
 /-- On the regular right `H`-Hopf module, `opSMulHom` coincides with `Comodule.Hom.regularMul`. -/
 @[simp]

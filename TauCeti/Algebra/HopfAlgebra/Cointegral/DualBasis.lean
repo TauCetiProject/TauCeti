@@ -161,7 +161,7 @@ theorem IsRightCointegral.sum_apply_antipode_mul_smul {φ : Module.Dual R H}
           ∑ i ∈ r.index, φ (HopfAlgebra.antipode R (r.right i) * y) • r.left i := by
       rw [← r.eq]
       simp [map_sum]
-    rw [← hR, ← leftIntegral_tensor_antipode ht y, hL]
+    rw [← hR, ← rTensor_mulLeft_lTensor_antipode_comul_of_mem_leftIntegral ht y, hL]
   have hSt : φ (HopfAlgebra.antipode R t) = 1 := by
     have ht_eq := hpair t
     have hLHS : ∑ i ∈ r.index, φ (HopfAlgebra.antipode R (r.right i) * t) • r.left i =
@@ -183,7 +183,7 @@ theorem IsLeftCointegral.sum_apply_mul_antipode_smul {φ : Module.Dual R H}
     (hφ : IsLeftCointegral φ) {t : H} (ht : t ∈ rightIntegral R H) (htφ : φ t = 1)
     {ι : Type*} (r : Coalgebra.Repr R t ι) (x : H) :
     ∑ i ∈ r.index, φ (x * HopfAlgebra.antipode R (r.left i)) • r.right i = x := by
-  let f : (Coop H)ᵐᵒᵖ ≃ₗ[R] H := Coop.opLinearEquiv R H
+  let f : (Coop H)ᵐᵒᵖ ≃ₗ[R] H := Coop.unopLinearEquiv R H
   let φ' : Module.Dual R (Coop H)ᵐᵒᵖ := φ ∘ₗ f.toLinearMap
   have hφ' : IsRightCointegral φ' := hφ.opCoop
   have ht' : f.symm t ∈ leftIntegral R (Coop H)ᵐᵒᵖ := by simpa [f] using ht

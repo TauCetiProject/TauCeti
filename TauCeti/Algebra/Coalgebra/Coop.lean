@@ -19,7 +19,7 @@ present, `R`-algebra) structure as `A`, with the same counit and the reversed co
 ## Main declarations
 
 * `TauCeti.Coop`: the co-opposite type wrapper.
-* `TauCeti.Coop.linearEquiv`, `TauCeti.Coop.opLinearEquiv`, `TauCeti.Coop.algEquiv`: canonical
+* `TauCeti.Coop.linearEquiv`, `TauCeti.Coop.unopLinearEquiv`, `TauCeti.Coop.algEquiv`: canonical
   equivalences `Coop A ≃ A` and `(Coop A)ᵐᵒᵖ ≃ A`.
 * `TauCeti.Coop.instCoalgebra`, `TauCeti.Coop.instBialgebra`: coalgebra and bialgebra instances on
   `Coop A`.
@@ -195,17 +195,17 @@ theorem linearEquiv_symm_apply [Semiring R] [AddCommMonoid A] [Module R A] (a : 
 
 variable (R A) in
 /-- The canonical `R`-linear equivalence `(Coop A)ᵐᵒᵖ ≃ₗ[R] A`. -/
-def opLinearEquiv [Semiring R] [AddCommMonoid A] [Module R A] : (Coop A)ᵐᵒᵖ ≃ₗ[R] A :=
+def unopLinearEquiv [Semiring R] [AddCommMonoid A] [Module R A] : (Coop A)ᵐᵒᵖ ≃ₗ[R] A :=
   (MulOpposite.opLinearEquiv R).symm.trans (linearEquiv R A)
 
 @[simp]
-theorem opLinearEquiv_apply [Semiring R] [AddCommMonoid A] [Module R A] (x : (Coop A)ᵐᵒᵖ) :
-    opLinearEquiv R A x = x.unop.val :=
+theorem unopLinearEquiv_apply [Semiring R] [AddCommMonoid A] [Module R A] (x : (Coop A)ᵐᵒᵖ) :
+    unopLinearEquiv R A x = x.unop.val :=
   rfl
 
 @[simp]
-theorem opLinearEquiv_symm_apply [Semiring R] [AddCommMonoid A] [Module R A] (a : A) :
-    (opLinearEquiv R A).symm a = MulOpposite.op (mk a) :=
+theorem unopLinearEquiv_symm_apply [Semiring R] [AddCommMonoid A] [Module R A] (a : A) :
+    (unopLinearEquiv R A).symm a = MulOpposite.op (mk a) :=
   rfl
 
 variable (A) in
@@ -387,7 +387,6 @@ section Bialgebra
 variable [CommSemiring R] [Semiring A] [Bialgebra R A]
 
 noncomputable instance instBialgebra : Bialgebra R (Coop A) :=
-  let e : Coop A ≃ₗ[R] A := linearEquiv R A
   Bialgebra.mk' R (Coop A)
     (Bialgebra.counit_one (R := R) (A := A))
     (fun {a b} ↦ Bialgebra.counit_mul (R := R) a.val b.val)
@@ -395,23 +394,17 @@ noncomputable instance instBialgebra : Bialgebra R (Coop A) :=
       rw [← mk_one, comul_mk, Bialgebra.comul_one, Algebra.TensorProduct.one_def]
       simp [Algebra.TensorProduct.one_def])
     (fun {a b} ↦ by
-      have hmul (u v : A ⊗[R] A) :
-          TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap
-              ((TensorProduct.comm R A A) (u * v)) =
-            TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap
-                ((TensorProduct.comm R A A) u) *
-              TensorProduct.map e.symm.toLinearMap e.symm.toLinearMap
-                ((TensorProduct.comm R A A) v) := by
-        induction u using TensorProduct.inductionOn with
-        | add u₁ u₂ h₁ h₂ => simp [add_mul, map_add, h₁, h₂]
-        | tmul u₁ u₂ =>
-          induction v using TensorProduct.inductionOn with
-          | add v₁ v₂ h₁ h₂ => simp [mul_add, map_add, h₁, h₂]
-          | tmul v₁ v₂ => simp [Algebra.TensorProduct.tmul_mul_tmul, e]
       induction a with | mk a =>
       induction b with | mk b =>
-      simp only [← mk_mul, comul_mk, Bialgebra.comul_mul]
-      exact hmul _ _)
+      let f : A ⊗[R] A →ₐ[R] Coop A ⊗[R] Coop A :=
+        (Algebra.TensorProduct.map (algEquiv R A).symm.toAlgHom
+          (algEquiv R A).symm.toAlgHom).comp (Algebra.TensorProduct.comm R A A).toAlgHom
+      have hf (z : A ⊗[R] A) :
+          TensorProduct.map (linearEquiv R A).symm.toLinearMap
+              (linearEquiv R A).symm.toLinearMap (TensorProduct.comm R A A z) = f z :=
+        rfl
+      simp only [← mk_mul, comul_mk, Bialgebra.comul_mul, hf]
+      exact map_mul f (Coalgebra.comul (R := R) a) (Coalgebra.comul (R := R) b))
 
 end Bialgebra
 
