@@ -25,6 +25,14 @@ depends on the words assigned to the generators that occur, so changing the word
 changes the substitution only at the letters of that generator, and substituting words of length at
 most `k` multiplies the length of a word by at most `k`. Two such substitutions compose to the
 substitution of the substituted words, and substituting every generator by itself is the identity.
+
+Dually, `FreeGroup.substituteConsts` substitutes words for the constant letters of a word in
+variables and letters and keeps the variables; this is the replacement of letters in the steps of
+recompression for word equations. Replacing variables by words in variables and letters, keeping
+the letters, is `FreeGroup.substituteVars` applied to the word with its letters retagged as letters
+of the output (`FreeGroup.substituteVars_substituteVars_map`). Both operations have the same
+composition and identity laws, and substitution for the variables commutes with substitution for
+the letters (`FreeGroup.substituteVars_substituteConsts`).
 -/
 
 public section
@@ -313,6 +321,111 @@ theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} {w : List ((X �
   h.of_flatMap_substituteLetter fun
     | (.inl x, b), hx => hU x b hx
     | (.inr _, _), _ => List.cons_ne_nil _ _
+
+/-- Substituting for the variables after replacing each variable `x` by a word `τ x` in variables
+and letters, keeping the letters, is substituting the composite assignment. -/
+@[simp]
+theorem substituteVars_substituteVars_map {Y : Type*} (σ : Y → List (A × Bool))
+    (τ : X → List ((Y ⊕ A) × Bool)) (w : List ((X ⊕ A) × Bool)) :
+    substituteVars σ (substituteVars τ (w.map (Prod.map (Sum.map id Sum.inr) id))) =
+      substituteVars (fun x => substituteVars σ (τ x)) w := by
+  rw [substituteVars, substituteVars, flatMap_substituteLetter_flatMap_substituteLetter,
+    flatMap_substituteLetter_map, substituteVars]
+  refine flatMap_substituteLetter_congr ?_
+  rintro ⟨x | a, b⟩ _ <;> simp [substituteVars]
+
+/-- Replacing every variable by itself, keeping the letters, leaves a word unchanged. -/
+@[simp]
+theorem substituteVars_singleton_true_map (w : List ((X ⊕ A) × Bool)) :
+    substituteVars (fun x => [(Sum.inl x, true)]) (w.map (Prod.map (Sum.map id Sum.inr) id)) =
+      w := by
+  rw [substituteVars, flatMap_substituteLetter_map]
+  conv_rhs => rw [← flatMap_substituteLetter_singleton_true w]
+  refine flatMap_substituteLetter_congr ?_
+  rintro ⟨x | a, b⟩ _ <;> rfl
+
+/-- Substitute words over `B^{±1}` for the letters of a word in variables `X` and letters of `A`,
+without free reduction, keeping the variables: a letter `a` becomes `ψ a`, its inverse becomes the
+formal inverse of `ψ a`, and a variable is kept. Unlike a renaming, this can erase letters or
+replace them by longer words. -/
+@[expose] def substituteConsts {B : Type*} (ψ : A → List (B × Bool)) (w : List ((X ⊕ A) × Bool)) :
+    List ((X ⊕ B) × Bool) :=
+  w.flatMap (substituteLetter
+    (Sum.elim (fun x => [(Sum.inl x, true)]) fun a => (ψ a).map (Prod.map Sum.inr id)))
+
+section Consts
+
+variable {B : Type*} (ψ : A → List (B × Bool))
+
+/-- The empty word has no letters to replace. -/
+@[simp]
+theorem substituteConsts_nil : substituteConsts ψ ([] : List ((X ⊕ A) × Bool)) = [] :=
+  List.flatMap_nil
+
+/-- Substitution for the letters proceeds letter by letter. -/
+theorem substituteConsts_cons (y : (X ⊕ A) × Bool) (w : List ((X ⊕ A) × Bool)) :
+    substituteConsts ψ (y :: w) = substituteConsts ψ [y] ++ substituteConsts ψ w := by
+  simp [substituteConsts]
+
+/-- Letters are replaced in each part of a concatenation. -/
+@[simp]
+theorem substituteConsts_append (w w' : List ((X ⊕ A) × Bool)) :
+    substituteConsts ψ (w ++ w') = substituteConsts ψ w ++ substituteConsts ψ w' :=
+  List.flatMap_append
+
+/-- A variable is kept. -/
+@[simp]
+theorem substituteConsts_singleton_inl (x : X) (b : Bool) :
+    substituteConsts ψ [(Sum.inl x, b)] = [(Sum.inl x, b)] := by
+  cases b <;> simp [substituteConsts, invRev]
+
+/-- A positive letter is replaced by its assigned word. -/
+@[simp]
+theorem substituteConsts_singleton_inr (a : A) :
+    substituteConsts (X := X) ψ [(Sum.inr a, true)] = (ψ a).map (Prod.map Sum.inr id) := by
+  simp [substituteConsts]
+
+/-- A negative letter is replaced by the formal inverse of its assigned word. -/
+@[simp]
+theorem substituteConsts_singleton_inr_false (a : A) :
+    substituteConsts (X := X) ψ [(Sum.inr a, false)] =
+      (invRev (ψ a)).map (Prod.map Sum.inr id) := by
+  simp [substituteConsts, invRev, List.map_reverse]
+
+/-- Substitution for the letters commutes with formal inverses. -/
+theorem substituteConsts_invRev (w : List ((X ⊕ A) × Bool)) :
+    substituteConsts ψ (invRev w) = invRev (substituteConsts ψ w) :=
+  flatMap_substituteLetter_invRev _ w
+
+/-- Substituting for every letter its own one-letter word leaves a word unchanged. -/
+@[simp]
+theorem substituteConsts_singleton_true (w : List ((X ⊕ A) × Bool)) :
+    substituteConsts (fun a => [(a, true)]) w = w := by
+  conv_rhs => rw [← flatMap_substituteLetter_singleton_true w]
+  refine flatMap_substituteLetter_congr ?_
+  rintro ⟨x | a, b⟩ _ <;> rfl
+
+/-- Substituting words for the letters twice is substituting the substituted words. -/
+theorem substituteConsts_substituteConsts {C : Type*} (ψ' : B → List (C × Bool))
+    (w : List ((X ⊕ A) × Bool)) :
+    substituteConsts ψ' (substituteConsts ψ w) =
+      substituteConsts (fun a => (ψ a).flatMap (substituteLetter ψ')) w := by
+  rw [substituteConsts, substituteConsts, flatMap_substituteLetter_flatMap_substituteLetter,
+    substituteConsts]
+  refine flatMap_substituteLetter_congr ?_
+  rintro ⟨x | a, b⟩ _ <;> simp [List.map_flatMap]
+
+/-- Substituting the words `σ x` for the variables and then `ψ` for the letters is substituting
+`ψ` for the letters and then, for each variable `x`, the image of `σ x` under `ψ`. -/
+theorem substituteVars_substituteConsts (σ : X → List (A × Bool)) (w : List ((X ⊕ A) × Bool)) :
+    substituteVars (fun x => (σ x).flatMap (substituteLetter ψ)) (substituteConsts ψ w) =
+      (substituteVars σ w).flatMap (substituteLetter ψ) := by
+  rw [substituteVars, substituteConsts, flatMap_substituteLetter_flatMap_substituteLetter,
+    substituteVars, flatMap_substituteLetter_flatMap_substituteLetter]
+  refine flatMap_substituteLetter_congr ?_
+  rintro ⟨x | a, b⟩ _ <;> simp
+
+end Consts
 
 end Vars
 
