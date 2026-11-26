@@ -251,10 +251,6 @@ theorem two_mul_card_eq_finrank {K : Type*} [Field K] [NumberField K] (Φ : CMTy
     2 * Nat.card Φ = Module.finrank ℚ K := by
   rw [← Φ.card_ringHom_eq_two_mul, Nat.card_eq_fintype_card, Embeddings.card]
 
-/-- A ring with finitely many complex embeddings carries finitely many CM types. -/
-instance [Finite (E →+* ℂ)] : Finite (CMType E) :=
-  Finite.of_injective _ (SetLike.coe_injective (A := CMType E))
-
 /-- Relative to a reference CM type `Φ₀`, a CM type `Φ` is determined by the embeddings of `Φ₀`
 it contains: an embedding `ψ ∉ Φ₀` lies in `Φ` exactly when `star ψ ∈ Φ₀` does not. -/
 def equivSet (Φ₀ : CMType E) : CMType E ≃ Set Φ₀ where
