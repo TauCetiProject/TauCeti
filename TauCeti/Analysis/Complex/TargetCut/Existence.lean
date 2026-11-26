@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
+import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import Mathlib.Analysis.Real.Cardinality
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
@@ -38,8 +39,8 @@ is injective wherever it is nonzero: every nonconstant pseudoholomorphic sphere 
 somewhere.
 
 Let `M` be a finite-dimensional Hausdorff `C¹` manifold, possibly with boundary or corners, and let
-`u : ℂ → M` be `C¹` with injective derivative at `z₀`. For every point `y ≠ u z₀`, every `n` and
-every `ε > 0` there is a closed set `D ⊆ M`, not containing `y`, which `u` meets transversally at
+`u : ℂ → M` be `C¹` with injective derivative at `z₀`. For every point `y`, every `n` and every
+`ε > 0` there is a closed set `D ⊆ M`, not containing `y`, which `u` meets transversally at
 every point of `u⁻¹(D)` and which `u` meets in at least `n` points within `ε` of `z₀`
 (`TauCeti.exists_isTransverseCutAt_of_injective_mfderiv`). When `u` has a limit `y` at `∞` the
 full preimage of such a cut is finite, and with `n = 2` it stabilizes `u`: its points together with
@@ -63,8 +64,9 @@ radius `r` the cut is the image under `φ⁻¹` of the compact set of points `v`
   where the cut is not cut out by a single equation. The candidates for such points are isolated,
   since `f` has invertible derivative there, hence countably many
   (`TauCeti.countable_of_forall_injective_fderiv`), so all but countably many radii avoid them.
-* **The point `y`.** The radius is small enough that the inverse of the chart does not take the
-  value `y` on the closed ball around `φ (u z₀)`.
+* **The point `y`.** If `y ≠ u z₀`, the radius is small enough that the inverse of the chart does
+  not take the value `y` on the closed ball around `φ (u z₀)`. If `y = u z₀`, the set `C` avoids
+  `f z₀`, so the only point `φ (u z₀)` of the chart sent to `y` is not on the cut.
 
 No properness of `u` and no limit at `∞` is needed for the existence of the cut; the limit only
 enters the finiteness of the full preimage.
@@ -96,6 +98,25 @@ open Filter Function Metric Set Topology
 open scoped Manifold
 
 namespace TauCeti
+
+/-- The points equal to `x` or different from `y` form a neighbourhood of `x`. -/
+private lemma setOf_eq_or_ne_mem_nhds {X : Type*} [TopologicalSpace X] [T1Space X] (x y : X) :
+    {z | z = x ∨ z ≠ y} ∈ 𝓝 x := by
+  by_cases h : x = y
+  · exact univ_mem' fun z ↦ (em (z = y)).imp_left fun hz ↦ hz.trans h.symm
+  · exact mem_of_superset (isOpen_ne.mem_nhds h) fun z hz ↦ Or.inr hz
+
+/-- A dense set meets every open set `U` containing a non-isolated point `a` in `n` points of
+`U` other than `a`. -/
+private lemma exists_finset_subset_inter_diff {X : Type*} [TopologicalSpace X] [T1Space X]
+    {R U : Set X} (hR : Dense R) (hU : IsOpen U) {a : X} [(𝓝[≠] a).NeBot] (ha : a ∈ U) (n : ℕ) :
+    ∃ C : Finset X, ↑C ⊆ R ∩ (U \ {a}) ∧ C.card = n := by
+  refine Set.Infinite.exists_subset_card_eq (fun hfin ↦ ?_) n
+  obtain ⟨c, hc⟩ :=
+    (((infinite_of_mem_nhds a (hU.mem_nhds ha)).sdiff (finite_singleton a)).sdiff hfin).nonempty
+  obtain ⟨c', hc'U, hc'R⟩ :=
+    hR.inter_open_nonempty _ ((hU.sdiff isClosed_singleton).sdiff hfin.isClosed) ⟨c, hc⟩
+  exact hc'U.2 ⟨hc'R, hc'U.1⟩
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -174,11 +195,8 @@ private lemma exists_hasStrictFDerivAt_extChartAt_comp [FiniteDimensional ℝ E]
     -- model at `extChartAt I (u z₀) (u z₀)`, identified with `E` only definitionally.
     rfl
   have hinj : Injective A := fun a b hab ↦ hz₀ (by rwa [← hA, ← hA])
-  obtain ⟨g, hg⟩ :=
-    LinearMap.exists_leftInverse_of_injective (A : ℂ →ₗ[ℝ] E) (LinearMap.ker_eq_bot.2 hinj)
-  obtain ⟨ℓ, hℓ⟩ : ∃ ℓ : E →L[ℝ] ℂ, ℓ.comp A = ContinuousLinearMap.id ℝ ℂ :=
-    ⟨LinearMap.toContinuousLinearMap g,
-      ContinuousLinearMap.ext fun w ↦ by simpa using LinearMap.congr_fun hg w⟩
+  obtain ⟨ℓ, hℓ'⟩ := ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hinj
+  have hℓ : ℓ.comp A = .id ℝ ℂ := ContinuousLinearMap.ext hℓ'
   have hcd : ContDiffAt ℝ 1 (extChartAt I (u z₀) ∘ u) z₀ :=
     contMDiffAt_iff_contDiffAt.1
       ((contMDiffAt_extChartAt' (mem_chart_source H (u z₀))).comp z₀ hu.contMDiffAt)
@@ -240,13 +258,13 @@ private lemma isClosed_extChartAt_symm_image {x₀ : M} {ℓ : E →L[ℝ] ℂ} 
 
 /-- **Existence of transverse target cuts.** Let `u : ℂ → M` be a `C¹` map into a
 finite-dimensional Hausdorff manifold, possibly with boundary or corners, whose derivative at
-`z₀` is injective. For every point `y ≠ u z₀`, every `n` and every `ε > 0` there is a closed set
-`D ⊆ M` not containing `y` such that `u` meets `D` transversally at every point of the full
+`z₀` is injective. For every point `y`, every `n` and every `ε > 0` there is a closed set `D ⊆ M`
+not containing `y` such that `u` meets `D` transversally at every point of the full
 preimage `u⁻¹(D)` (`TauCeti.IsTransverseCutAt`), and `u⁻¹(D)` contains `n` distinct points within
 `ε` of `z₀`. -/
 theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) {z₀ : ℂ} (hz₀ : Injective (mfderiv 𝓘(ℝ, ℂ) I u z₀)) {y : M}
-    (hy : u z₀ ≠ y) (n : ℕ) {ε : ℝ} (hε : 0 < ε) :
+    (n : ℕ) {ε : ℝ} (hε : 0 < ε) :
     ∃ D : Set M, IsClosed D ∧ y ∉ D ∧ (∀ z ∈ u ⁻¹' D, IsTransverseCutAt u D z) ∧
       ∃ s : Finset ℂ, s.card = n ∧ ∀ z ∈ s, u z ∈ D ∧ dist z z₀ < ε := by
   set x₀ := u z₀
@@ -254,11 +272,11 @@ theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
   have hmd (z : ℂ) : MDifferentiableAt 𝓘(ℝ, ℂ) I u z := hu.mdifferentiableAt one_ne_zero
   have hx₀ : x₀ ∈ (chartAt H x₀).source := mem_chart_source H x₀
   -- `f = ℓ ∘ φ ∘ u` is a local diffeomorphism at `z₀`, and the open ball of radius `r₀` of the
-  -- chart lies in the chart and avoids `y`.
+  -- chart lies in the chart and avoids `y` unless `y = x₀`.
   obtain ⟨ℓ, hstrict⟩ := exists_hasStrictFDerivAt_extChartAt_comp hu hz₀
   set f : ℂ → ℂ := fun w ↦ ℓ (φ (u w))
   obtain ⟨r₀, hr₀, hr₀K⟩ :=
-    exists_ball_inter_range_subset_extChartAt (I := I) (isOpen_ne.mem_nhds hy)
+    exists_ball_inter_range_subset_extChartAt (I := I) (setOf_eq_or_ne_mem_nhds x₀ y)
   -- `f` maps the points `W` near `z₀` well inside the chart onto a neighbourhood of `f z₀`.
   set W := ball z₀ ε ∩ (u ⁻¹' (chartAt H x₀).source ∩ {z | dist (φ (u z)) (φ x₀) < r₀ / 2})
   have hW : W ∈ 𝓝 z₀ := by
@@ -270,17 +288,14 @@ theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
   have hfW : interior (f '' W) ∈ 𝓝 (f z₀) := by
     rw [interior_mem_nhds, ← hstrict.map_nhds_eq_of_equiv]
     exact image_mem_map hW
-  -- By Sard's theorem the regular values of `f` are dense, so `n` of them are taken on `W`.
+  -- By Sard's theorem the regular values of `f` are dense, so `n` of them other than `f z₀` are
+  -- taken on `W`.
   set R := {c | ∀ z ∈ u ⁻¹' (chartAt H x₀).source, f z = c → Surjective (fderiv ℝ f z)}
   have hR : Dense R := dense_setOf_forall_surjective_fderiv
     (fun z hz ↦ differentiableAt_comp_extChartAt_comp (hmd z) hz ℓ) rfl
-  obtain ⟨C, hCR, hCn⟩ : ∃ C : Finset ℂ, ↑C ⊆ R ∩ interior (f '' W) ∧ C.card = n := by
-    refine Set.Infinite.exists_subset_card_eq (fun hfin ↦ ?_) n
-    obtain ⟨c, hc⟩ := ((infinite_of_mem_nhds _ hfW).sdiff hfin).nonempty
-    obtain ⟨c', hc'U, hc'R⟩ := hR.inter_open_nonempty _
-      (isOpen_interior.sdiff hfin.isClosed) ⟨c, hc⟩
-    exact hc'U.2 ⟨hc'R, hc'U.1⟩
-  have hw (c : ℂ) (hc : c ∈ C) : ∃ z ∈ W, f z = c := interior_subset (hCR hc).2
+  obtain ⟨C, hCR, hCn⟩ :=
+    exists_finset_subset_inter_diff hR isOpen_interior (mem_of_mem_nhds hfW) n
+  have hw (c : ℂ) (hc : c ∈ C) : ∃ z ∈ W, f z = c := interior_subset (hCR hc).2.1
   choose! w hwW hwf using hw
   -- A radius `r` at which the cut is transverse.
   obtain ⟨r, hr, htr⟩ := exists_mem_Ioo_forall_isTransverseCutAt hmd (fun c hc ↦ (hCR hc).1) hr₀
@@ -290,8 +305,11 @@ theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
   refine ⟨φ.symm '' (closedBall (φ x₀) r ∩ range I ∩ ℓ ⁻¹' C), ?_, ?_, htr, C.image w, ?_,
     fun z hz ↦ ?_⟩
   · exact isClosed_extChartAt_symm_image C.finite_toSet hK
-  · rintro ⟨v, hv, hvy⟩
-    exact (hD hv).2 hvy
+  · -- The only point of the chart sent to `x₀` is `φ x₀`, which is off the cut as `f z₀ ∉ C`.
+    rintro ⟨v, hv, hvy⟩
+    obtain ⟨hvt, hvx₀ | hvy'⟩ := hD hv
+    · exact (hCR hv.2).2.2 (by rw [← φ.right_inv hvt, hvx₀]; rfl)
+    · exact hvy' hvy
   · refine Finset.card_image_of_injOn (fun a ha b hb hab ↦ ?_) |>.trans hCn
     rw [← hwf a ha, ← hwf b hb, hab]
   · obtain ⟨c, hc, rfl⟩ := Finset.mem_image.1 hz
@@ -300,34 +318,34 @@ theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
       (congrArg (· ∈ (C : Set ℂ)) (hwf c hc)).mpr hc⟩, mem_ball.1 hwz⟩
 
 /-- **Stabilizing target cuts.** Let `u : ℂ → M` be a `C¹` sphere component into a
-finite-dimensional Hausdorff manifold, with a limit `y` at `∞` and a point `z₀` with `u z₀ ≠ y` at
-which its derivative is injective. Then there is a closed set `D ⊆ M` which `u` meets transversally
+finite-dimensional Hausdorff manifold, with a limit `y` at `∞` and a point `z₀` at which its
+derivative is injective. Then there is a closed set `D ⊆ M` which `u` meets transversally
 at every point of `u⁻¹(D)`, and whose full preimage `u⁻¹(D)` is finite and contains two distinct
 points. These points together with `∞` make the sphere a stable curve, and the isotropy of `u` is
 finite (`TauCeti.finite_markedIsotropy_of_injective_mfderiv`). -/
 theorem exists_isTransverseCutAt_finite_nontrivial_preimage {u : ℂ → M}
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) {y : M} (hy : Tendsto u (cocompact ℂ) (𝓝 y)) {z₀ : ℂ}
-    (hz₀ : Injective (mfderiv 𝓘(ℝ, ℂ) I u z₀)) (hz₀y : u z₀ ≠ y) :
+    (hz₀ : Injective (mfderiv 𝓘(ℝ, ℂ) I u z₀)) :
     ∃ D : Set M, IsClosed D ∧ (∀ z ∈ u ⁻¹' D, IsTransverseCutAt u D z) ∧
       (u ⁻¹' D).Finite ∧ (u ⁻¹' D).Nontrivial := by
   obtain ⟨D, hD, hyD, htr, t, ht, htD⟩ :=
-    exists_isTransverseCutAt_of_injective_mfderiv hu hz₀ hz₀y 2 one_pos
+    exists_isTransverseCutAt_of_injective_mfderiv hu hz₀ 2 one_pos
   refine ⟨D, hD, htr, finite_preimage_of_isTransverseCutAt hu.continuous hD
     (hy.eventually (hD.isOpen_compl.mem_nhds hyD)) htr, ?_⟩
   obtain ⟨a, b, hab, rfl⟩ := Finset.card_eq_two.1 ht
   exact ⟨a, (htD a (by simp)).1, b, (htD b (by simp)).1, hab⟩
 
 /-- **Finite isotropy of sphere components of rank two.** A `C¹` map `u : ℂ → M` into a
-finite-dimensional Hausdorff manifold, with a limit `y` at `∞` and a point `z₀` with `u z₀ ≠ y` at
-which its derivative is injective, is invariant under only finitely many automorphisms of the
+finite-dimensional Hausdorff manifold, with a limit `y` at `∞` and a point `z₀` at which its
+derivative is injective, is invariant under only finitely many automorphisms of the
 sphere fixing `∞` and a given set `P` of further special points. Finiteness follows from the
 stabilizing target cut of `TauCeti.exists_isTransverseCutAt_finite_nontrivial_preimage`. -/
 theorem finite_markedIsotropy_of_injective_mfderiv {u : ℂ → M}
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) {y : M} (hy : Tendsto u (cocompact ℂ) (𝓝 y)) {z₀ : ℂ}
-    (hz₀ : Injective (mfderiv 𝓘(ℝ, ℂ) I u z₀)) (hz₀y : u z₀ ≠ y) (P : Set ℂ) :
+    (hz₀ : Injective (mfderiv 𝓘(ℝ, ℂ) I u z₀)) (P : Set ℂ) :
     Finite (markedIsotropy u P) := by
   obtain ⟨D, -, -, hfin, hnt⟩ :=
-    exists_isTransverseCutAt_finite_nontrivial_preimage hu hy hz₀ hz₀y
+    exists_isTransverseCutAt_finite_nontrivial_preimage hu hy hz₀
   exact finite_markedIsotropy hfin (hnt.mono subset_union_right)
 
 end TauCeti
