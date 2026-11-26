@@ -655,7 +655,8 @@ of `u' + A(t) u = ι* g` with `g ∈ L²(a, b; H)` and initial value `ι v₀`, 
 For a parabolic equation `∂ₜu - ∂ᵢ(aⁱʲ(t, x) ∂ⱼu) = f` whose coefficients `aⁱʲ` are symmetric and
 uniformly elliptic with a bounded time derivative, applied to `A(t)` the energy form of `a(t, ·)`
 on `H¹₀(Ω)`, this says `∂ₜu ∈ L²(0, T; L²(Ω))` and `u ∈ L^∞(0, T; H¹₀(Ω))` when
-`f ∈ L²(0, T; L²(Ω))` and `u(0) ∈ H¹₀(Ω)`; that instantiation is not formalized here. This is
+`f ∈ L²(0, T; L²(Ω))` and `u(0) ∈ H¹₀(Ω)`; this instantiation is
+`TauCeti.PDE.exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm_of_lipschitz`. This is
 the time-dependent counterpart of Evans, §7.1.3, Theorem 5, which treats time-independent
 coefficients. For `L = 0` it recovers the bound
 `A u u ≤ A v₀ v₀ + ∫ₐᵇ ‖g‖²` of the time-independent theorem

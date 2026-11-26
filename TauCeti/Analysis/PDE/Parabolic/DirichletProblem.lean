@@ -509,16 +509,31 @@ private theorem le_energyFormH1_add_inner [DecidableEq ι]
   rw [← Submodule.norm_coe v, hn, hi]
   linarith
 
-omit [mu.IsAddHaarMeasure] in
-/-- A measurable principal coefficient, uniformly elliptic on `Ω`, has an essentially bounded
-energy density. -/
-private theorem memLp_energyIntegrand_zero_zero [DecidableEq ι]
+/-- For a measurable principal coefficient, uniformly elliptic on `Ω` and symmetric almost
+everywhere, the shifted principal part `A₀ = -∂ᵢ(aⁱʲ ∂ⱼ ·) + λ/2` is a bounded operator
+`H¹₀(Ω) → H⁻¹(Ω)` that is symmetric and coercive with constant `λ/2`. -/
+private theorem exists_principal_symm_coercive [DecidableEq ι]
     (ha : AEStronglyMeasurable a (mu.restrict Omega))
-    (hell : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam) :
-    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
-  memLp_energyIntegrand_of_bounds (b := fun _ => 0) (c := fun _ => 0) (beta := 0) (gamma := 0)
-    hell.upper_nonneg ha aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => hell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+    (hell : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hsymm : ∀ᵐ x ∂mu.restrict Omega, (a x).IsSymm) :
+    ∃ A₀ : W1p0 mu Omega 2 →L[ℝ] StrongDual ℝ (W1p0 mu Omega 2),
+      (∀ v w : W1p0 mu Omega 2, A₀ v w = energyFormH1 a 0 0 (v : W1p mu Omega 2)
+        (w : W1p mu Omega 2) + lam / 2 * ⟪W1p0.valueL v, W1p0.valueL w⟫_ℝ) ∧
+      (∀ v w : W1p0 mu Omega 2, A₀ v w = A₀ w v) ∧
+      ∀ v : W1p0 mu Omega 2, lam / 2 * ‖v‖ ^ 2 ≤ A₀ v v := by
+  obtain ⟨A₀, hA₀⟩ : ∃ A₀ : W1p0 mu Omega 2 →L[ℝ] StrongDual ℝ (W1p0 mu Omega 2),
+      ∀ v w : W1p0 mu Omega 2, A₀ v w = energyFormH1 a 0 0 (v : W1p mu Omega 2)
+        (w : W1p mu Omega 2) + lam / 2 * ⟪W1p0.valueL v, W1p0.valueL w⟫_ℝ :=
+    ⟨(lam / 2) • ((W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual ∘L
+      W1p0.valueL) + energyFormH1L0 (hell.memLp_energyIntegrand_zero_zero ha), fun v w => by
+        simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+          ContinuousLinearMap.gelfandDual_apply, energyFormH1L0_apply, smul_eq_mul, Pi.zero_def]
+        ring⟩
+  refine ⟨A₀, hA₀, fun v w => ?_, fun v => (le_energyFormH1_add_inner ha hell v).trans_eq
+    (hA₀ v v).symm⟩
+  exact (hA₀ v w).trans <| (congrArg₂ (· + ·)
+    (energyFormH1_comm_of_isSymm_ae (c := 0) hsymm (v : W1p mu Omega 2) (w : W1p mu Omega 2))
+    (congrArg (lam / 2 * ·) (real_inner_comm _ _))).trans (hA₀ w v).symm
 
 /-- On `H¹₀(Ω)`, pointwise bounded measurable lower-order coefficients contribute the `L²`
 pairing of `TauCeti.PDE.lowerOrderL`, restricted to `H¹₀(Ω)`, with the value. -/
@@ -579,22 +594,9 @@ theorem exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm [Decidable
         u =ᵐ[volume.restrict (Ioo t₀ t₁)] v ∧ v t₀ = u₀ := by
   have hlam : 0 < lam := hell.pos
   have hcoeff : MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict Omega) :=
-    memLp_energyIntegrand_zero_zero ha hell
+    hell.memLp_energyIntegrand_zero_zero ha
   -- The symmetric coercive part `A₀ = -div(a ∇ ·) + λ/2`; the rest goes into the forcing.
-  obtain ⟨A₀, hA₀⟩ : ∃ A₀ : W1p0 mu Omega 2 →L[ℝ] StrongDual ℝ (W1p0 mu Omega 2),
-      ∀ v w : W1p0 mu Omega 2, A₀ v w = energyFormH1 a 0 0 (v : W1p mu Omega 2)
-        (w : W1p mu Omega 2) + lam / 2 * ⟪W1p0.valueL v, W1p0.valueL w⟫_ℝ :=
-    ⟨(lam / 2) • ((W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual ∘L
-      W1p0.valueL) + energyFormH1L0 hcoeff, fun v w => by
-        simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
-          ContinuousLinearMap.gelfandDual_apply, energyFormH1L0_apply, smul_eq_mul, Pi.zero_def]
-        ring⟩
-  have hsymm₀ (v w : W1p0 mu Omega 2) : A₀ v w = A₀ w v :=
-    (hA₀ v w).trans <| (congrArg₂ (· + ·)
-      (energyFormH1_comm_of_isSymm_ae (c := 0) hsymm (v : W1p mu Omega 2) (w : W1p mu Omega 2))
-      (congrArg (lam / 2 * ·) (real_inner_comm _ _))).trans (hA₀ w v).symm
-  have hcoer (v : W1p0 mu Omega 2) : lam / 2 * ‖v‖ ^ 2 ≤ A₀ v v :=
-    (le_energyFormH1_add_inner ha hell v).trans_eq (hA₀ v v).symm
+  obtain ⟨A₀, hA₀, hsymm₀, hcoer⟩ := exists_principal_symm_coercive ha hell hsymm
   -- The lower-order terms, moved into the `L²` forcing `g = F - (⟪b, ∇u⟫ + c u) + (λ/2) u`.
   obtain ⟨M, hM⟩ := exists_energyFormH1_eq_principal_add_inner hcoeff hb hc hb_bound hc_bound
   have hinj : Function.Injective (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) :=
@@ -717,26 +719,23 @@ private theorem exists_principal_symm_coercive_lipschitz [DecidableEq ι] {L : �
       (∀ t ∈ Icc t₀ t₁, ∀ v w : W1p0 mu Omega 2, A t v w = A t w v) ∧
       (∀ t ∈ Icc t₀ t₁, ∀ v : W1p0 mu Omega 2, lam / 2 * ‖v‖ ^ 2 ≤ A t v v) ∧
       ∀ s ∈ Icc t₀ t₁, ∀ t ∈ Icc t₀ t₁, ‖A t - A s‖ ≤ max L 0 * |t - s| := by
-  classical
-  have hcoeff (t : ℝ) (ht : t ∈ Icc t₀ t₁) := memLp_energyIntegrand_zero_zero (ha t ht) (hell t ht)
-  obtain ⟨A, hA⟩ : ∃ A : ℝ → W1p0 mu Omega 2 →L[ℝ] StrongDual ℝ (W1p0 mu Omega 2),
-      ∀ t ∈ Icc t₀ t₁, ∀ v w : W1p0 mu Omega 2, A t v w = energyFormH1 (a t) 0 0
-        (v : W1p mu Omega 2) (w : W1p mu Omega 2) + lam / 2 * ⟪W1p0.valueL v, W1p0.valueL w⟫_ℝ := by
-    refine ⟨fun t => if h : MemLp (fun x => energyIntegrand (a t x) 0 0) ⊤ (mu.restrict Omega)
-      then (lam / 2) • ((W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual ∘L
-        W1p0.valueL) + energyFormH1L0 h else 0, fun t ht v w => ?_⟩
-    simp only [hcoeff t ht, ↓reduceDIte, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.gelfandDual_apply, energyFormH1L0_apply, smul_eq_mul, Pi.zero_def]
-    ring
-  refine ⟨A, hA, fun t ht v w => ?_, fun t ht v => ?_, fun s hs t ht => ?_⟩
-  · exact (hA t ht v w).trans <| (congrArg₂ (· + ·)
-      (energyFormH1_comm_of_isSymm_ae (c := 0) (hsymm t ht) (v : W1p mu Omega 2)
-        (w : W1p mu Omega 2))
-      (congrArg (lam / 2 * ·) (real_inner_comm _ _))).trans (hA t ht w v).symm
-  · exact (le_energyFormH1_add_inner (ha t ht) (hell t ht) v).trans_eq (hA t ht v v).symm
+  have hcoeff (t : ℝ) (ht : t ∈ Icc t₀ t₁) := (hell t ht).memLp_energyIntegrand_zero_zero (ha t ht)
+  -- At each `t ∈ [t₀, t₁]`, `A(t)` is the symmetric coercive part of the time-independent case.
+  have hex (t : ℝ) : ∃ A₀ : W1p0 mu Omega 2 →L[ℝ] StrongDual ℝ (W1p0 mu Omega 2), t ∈ Icc t₀ t₁ →
+      (∀ v w : W1p0 mu Omega 2, A₀ v w = energyFormH1 (a t) 0 0 (v : W1p mu Omega 2)
+        (w : W1p mu Omega 2) + lam / 2 * ⟪W1p0.valueL v, W1p0.valueL w⟫_ℝ) ∧
+      (∀ v w : W1p0 mu Omega 2, A₀ v w = A₀ w v) ∧
+      ∀ v : W1p0 mu Omega 2, lam / 2 * ‖v‖ ^ 2 ≤ A₀ v v := by
+    by_cases ht : t ∈ Icc t₀ t₁
+    · exact (exists_principal_symm_coercive (ha t ht) (hell t ht) (hsymm t ht)).imp
+        fun _ h _ => h
+    · exact ⟨0, fun h => absurd h ht⟩
+  choose A hA using hex
+  refine ⟨A, fun t ht => (hA t ht).1, fun t ht => (hA t ht).2.1, fun t ht => (hA t ht).2.2,
+    fun s hs t ht => ?_⟩
   -- The difference `A(t) - A(s)` is the energy form of `a(t, ·) - a(s, ·)`.
   refine ContinuousLinearMap.opNorm_le_bound₂ _ (by positivity) fun v v' => ?_
-  rw [sub_apply, sub_apply, hA t ht v v', hA s hs v v', add_sub_add_right_eq_sub,
+  rw [sub_apply, sub_apply, (hA t ht).1 v v', (hA s hs).1 v v', add_sub_add_right_eq_sub,
     Real.norm_eq_abs, ← Submodule.norm_coe v, ← Submodule.norm_coe v']
   have hL : L * |t - s| ≤ max L 0 * |t - s| :=
     mul_le_mul_of_nonneg_right (le_max_left _ _) (abs_nonneg _)
@@ -813,7 +812,7 @@ theorem exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm_of_lipschi
     exists_principal_symm_coercive_lipschitz (L := L) ha hell hsymm hLip
   -- The lower-order terms and the mass shift, moved into the `L²` forcing.
   obtain ⟨M, hMsplit, hMu⟩ := exists_lowerOrder_memLp_apply
-    (hI.mono fun t ht => memLp_energyIntegrand_zero_zero (ha t ht) (hell t ht)) hb hc hb_bound
+    (hI.mono fun t ht => (hell t ht).memLp_energyIntegrand_zero_zero (ha t ht)) hb hc hb_bound
     hc_bound hu
   have hg : MemLp (fun t => F t - M t (u t) + (lam / 2) • W1p0.valueL (u t)) 2
       (volume.restrict (Ioo t₀ t₁)) :=
