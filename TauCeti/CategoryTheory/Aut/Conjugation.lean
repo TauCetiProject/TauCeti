@@ -56,7 +56,7 @@ variable {x y z : C}
 /-- Mathlib's two conjugations along an isomorphism, `Aut.autMulEquivOfIso` and `Iso.conjAut`,
 agree. -/
 theorem autMulEquivOfIso_eq_conjAut (e : x ≅ y) : autMulEquivOfIso e = e.conjAut :=
-  MulEquiv.ext fun a ↦ Aut.ext (by rw [Iso.conjAut_apply]; rfl)
+  MulEquiv.ext fun a ↦ Aut.ext (by rw [Iso.conjAut_apply, autMulEquivOfIso_apply_asIso])
 
 /-- Conjugation along the identity is the identity. -/
 @[simp]
