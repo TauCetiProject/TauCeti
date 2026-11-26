@@ -68,14 +68,20 @@ theorem analyticAt_gammaFactor_of_re_pos
     (inv_ne_zero (χ.gammaFactor_ne_zero_of_re_pos hs))
   simpa only [Pi.inv_def, inv_inv] using h
 
+/-- The completed L-function is the gamma factor times the L-function on the open right
+half-plane, with the same totalized values as Mathlib at `1`. -/
+theorem completedLFunction_eq_gammaFactor_mul_LFunction {z : ℂ} (hz : 0 < z.re) :
+    χ.completedLFunction z = χ.gammaFactor z * χ.LFunction z := by
+  have hz0 : z ≠ 0 := by rintro rfl; simp at hz
+  rw [χ.LFunction_eq_completed_div_gammaFactor z (.inl hz0)]
+  exact (mul_div_cancel₀ _ (χ.gammaFactor_ne_zero_of_re_pos hz)).symm
+
 /-- On the half-plane of absolute convergence, the completed Dirichlet function is its
 archimedean gamma factor times its Dirichlet series. -/
 theorem completedLFunction_eq_gammaFactor_mul_LSeries {s : ℂ} (hs : 1 < s.re) :
     χ.completedLFunction s = χ.gammaFactor s * LSeries (χ ·) s := by
-  have hs0 : s ≠ 0 := by rintro rfl; norm_num at hs
-  have hΓ : χ.gammaFactor s ≠ 0 := χ.gammaFactor_ne_zero_of_re_pos (by linarith)
-  rw [← χ.LFunction_eq_LSeries hs, χ.LFunction_eq_completed_div_gammaFactor s (.inl hs0)]
-  exact (mul_div_cancel₀ _ hΓ).symm
+  rw [← χ.LFunction_eq_LSeries hs]
+  exact χ.completedLFunction_eq_gammaFactor_mul_LFunction (zero_lt_one.trans hs)
 
 /-- Every Dirichlet character has a meromorphic completed L-function on the whole plane. -/
 theorem meromorphic_completedLFunction : Meromorphic χ.completedLFunction := by
@@ -114,14 +120,11 @@ theorem analyticAt_completedLFunction {s : ℂ} (h0 : s ≠ 0 ∨ N ≠ 1)
   exact χ.differentiableAt_completedLFunction z hz0 hz1
 
 /-- Near a point of the positive half-plane, the completed L-function is the gamma factor times
-`χ.LFunction` (Mathlib's `LFunction_eq_completed_div_gammaFactor`, solved for the completed
-function). -/
+`χ.LFunction`. -/
 private lemma completedLFunction_eventuallyEq_gammaFactor_mul {s : ℂ} (hs : 0 < s.re) :
     χ.completedLFunction =ᶠ[𝓝 s] χ.gammaFactor * χ.LFunction := by
   filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds hs] with z hz
-  dsimp only [Pi.mul_apply]
-  rw [χ.LFunction_eq_completed_div_gammaFactor z (.inl (by rintro rfl; simp at hz))]
-  exact (mul_div_cancel₀ _ (χ.gammaFactor_ne_zero_of_re_pos hz)).symm
+  simpa only [Pi.mul_apply] using χ.completedLFunction_eq_gammaFactor_mul_LFunction hz
 
 /-- On the positive half-plane away from the possible pole at `s = 1`, Mathlib's completed
 Dirichlet L-function and `χ.LFunction` have the same analytic order. No primitivity assumption is
