@@ -39,8 +39,12 @@ The limit is only shown to be continuous. That it is pseudoholomorphic for the s
 `J(z₀, ·)` frozen at the bubbling point and nonconstant needs the convergence of the derivatives
 of the rescaled maps, which is not treated here; given that convergence, these are
 `TauCeti.SmoothTwoForm.isComplexLinearMap_of_tendsto_rescale` and
-`TauCeti.SmoothTwoForm.tendsto_floerEnergyDensity_rescale`. That it extends to a sphere needs
-removal of singularities, which is not provided either.
+`TauCeti.SmoothTwoForm.tendsto_floerEnergyDensity_rescale`. Removal of singularities, which extends
+a finite-energy `C³` solution on the plane to the sphere, is in
+`TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`
+(`TauCeti.SymplecticForm.exists_contMDiff_onePoint_elim_of_finite_energy`, for maps into a
+finite-dimensional inner product space). Applying it to the limit still needs the limit to be
+shown such a finite-energy `C³` solution, which is not treated here.
 
 ## References
 
