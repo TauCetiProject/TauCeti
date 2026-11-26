@@ -49,6 +49,8 @@ derivative applies.
 * `TauCeti.SmoothForm.contMDiffAt_apply_vectorField`,
   `TauCeti.SmoothForm.contMDiff_apply_vectorField`: a smooth real one-form evaluated on a vector
   field that is `C^n` at a point (resp. everywhere) is `C^n` there.
+* `TauCeti.SmoothForm.degreeOneEquiv_apply_inj`: a smooth one-form at `x` is determined by its
+  section at `x`.
 * `TauCeti.SmoothForm.degreeOneEquiv_mpullback_apply`,
   `TauCeti.SmoothForm.degreeOneEquiv_mpullback`: the section of a pulled-back one-form evaluates a
   tangent vector through the differential of the map, so it is the original section composed with
@@ -344,19 +346,28 @@ theorem degreeOneEquiv_coe_apply (φ : SmoothForm I M F 1) (x : M) (v : TangentS
     (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] F) v = φ.val x ![v] := by
   rw [ContinuousLinearMap.coe_coe, degreeOneEquiv_apply_apply_vec]
 
+/-- The sections of two smooth one-forms agree at `x` exactly when the forms agree at `x`. -/
+theorem degreeOneEquiv_apply_inj {φ ψ : SmoothForm I M F 1} {x : M} :
+    degreeOneEquiv φ x = degreeOneEquiv ψ x ↔ φ.val x = ψ.val x := by
+  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_,
+    fun h ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
+  · have hv : v = fun _ ↦ v 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
+    rw [hv, ← degreeOneEquiv_apply_apply, ← degreeOneEquiv_apply_apply, h]
+  · rw [degreeOneEquiv_apply_apply, degreeOneEquiv_apply_apply, h]
+
+/-- The section of a smooth one-form vanishes at `x` exactly when the form vanishes at `x`. -/
+theorem degreeOneEquiv_apply_eq_zero_iff {φ : SmoothForm I M F 1} {x : M} :
+    degreeOneEquiv φ x = 0 ↔ φ.val x = 0 := by
+  have h := degreeOneEquiv_apply_inj (φ := φ) (ψ := 0) (x := x)
+  rw [map_zero] at h
+  simpa using h
+
 /-- The section of a smooth one-form, read as a linear map, vanishes at `x` exactly when the form
 vanishes at `x`. -/
 theorem degreeOneEquiv_coe_eq_zero_iff {φ : SmoothForm I M F 1} {x : M} :
     (degreeOneEquiv φ x : TangentSpace I x →ₗ[ℝ] F) = 0 ↔ φ.val x = 0 := by
-  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, fun h ↦ LinearMap.ext fun v ↦ ?_⟩
-  · have hv : ![v 0] = v := by
-      ext i
-      fin_cases i
-      rfl
-    rw [← hv, ← degreeOneEquiv_coe_apply, h, LinearMap.zero_apply,
-      ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-  · rw [degreeOneEquiv_coe_apply, h, LinearMap.zero_apply,
-      ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
+  rw [← ContinuousLinearMap.toLinearMap_zero, ContinuousLinearMap.coe_inj,
+    degreeOneEquiv_apply_eq_zero_iff]
 
 /-- The section of a smooth one-form is nonzero at `x` when the form does not vanish at `x`. -/
 theorem degreeOneEquiv_ne_zero {φ : SmoothForm I M F 1} {x : M} (h : φ.val x ≠ 0) :
@@ -371,10 +382,7 @@ theorem degreeOneEquiv_eq_smul {φ ψ : SmoothForm I M F 1} {x : M} {c : ℝ}
 /-- The sections of `ψ` and `φ` at `x` differ by the factor `c` exactly when `ψ = c φ` at `x`. -/
 theorem degreeOneEquiv_eq_smul_iff {φ ψ : SmoothForm I M F 1} {x : M} {c : ℝ} :
     degreeOneEquiv ψ x = c • degreeOneEquiv φ x ↔ ψ.val x = c • φ.val x := by
-  refine ⟨fun h ↦ ContinuousAlternatingMap.ext fun v ↦ ?_, degreeOneEquiv_eq_smul⟩
-  have hv : v = fun _ ↦ v 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
-  rw [hv, ContinuousAlternatingMap.smul_apply, ← degreeOneEquiv_apply_apply,
-    ← degreeOneEquiv_apply_apply, h, _root_.smul_apply]
+  simpa using degreeOneEquiv_apply_inj (φ := ψ) (ψ := c • φ) (x := x)
 
 /-- The linear functional `RoughForm.eval` of a smooth real one-form at `x` is its section, read as
 a linear map. -/

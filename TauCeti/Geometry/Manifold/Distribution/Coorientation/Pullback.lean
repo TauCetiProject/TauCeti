@@ -112,6 +112,17 @@ theorem coe_annihilatorPullback_apply {n : WithTop ℕ∞} {x : M}
       (p : TangentSpace J (f x) →L[ℝ] ℝ) ∘L mfderiv I J f x :=
   (rfl)
 
+/-- The inverse identification composes a covector with the inverse of the differential. -/
+@[simp]
+theorem coe_annihilatorPullback_symm_apply {n : WithTop ℕ∞} {x : M}
+    (hf : IsLocalDiffeomorphAt I J n f x) (hn : n ≠ 0)
+    (hD : (D' (f x)).comap (mfderiv I J f x).toLinearMap = D x)
+    (q : annihilatorSpace I D x) :
+    ((hf.annihilatorPullback hn hD).symm q : TangentSpace J (f x) →L[ℝ] ℝ) =
+      (q : TangentSpace I x →L[ℝ] ℝ) ∘L
+        (hf.mfderivToContinuousLinearEquiv hn).symm.toContinuousLinearMap :=
+  (rfl)
+
 end IsLocalDiffeomorphAt
 
 namespace IsLocalDiffeomorph
@@ -209,6 +220,7 @@ theorem IsCoorientation.pullback {o' : Π y : N, Orientation ℝ (annihilatorSpa
     have hσy : ContinuousAt (fun z ↦ TotalSpace.mk' (F →L[ℝ] ℝ)
         (E := fun z : N ↦ TangentSpace J z →L[ℝ] ℝ) z (σ' z : TangentSpace J z →L[ℝ] ℝ)) (f y) :=
       hσ'.continuousAt (Filter.mem_of_superset (hVo.mem_nhds hy) hVU)
+    simp only [IsLocalDiffeomorphAt.coe_annihilatorPullback_apply]
     exact continuousAt_mk_comp_mfderiv
       (Ψ := fun z ↦ TotalSpace.mk' (F →L[ℝ] ℝ) (E := fun z : N ↦ TangentSpace J z →L[ℝ] ℝ)
         (f z) (σ' (f z) : TangentSpace J (f z) →L[ℝ] ℝ)) (g := id) (fun _ ↦ rfl)
@@ -232,19 +244,17 @@ theorem mpullback_val_ne_zero_and_ker_eq (hf : IsLocalDiffeomorph I J ∞ f)
   have hpull : degreeOneEquiv (mpullback f hf.contMDiff β) x =
       ((hf x).annihilatorPullback (by simp) (hD x)
         ⟨degreeOneEquiv β (f x), degreeOneEquiv_mem_annihilatorSpace (hβ (f x)).2⟩ :
-          TangentSpace I x →L[ℝ] ℝ) :=
-    degreeOneEquiv_mpullback hf.contMDiff β x
+          TangentSpace I x →L[ℝ] ℝ) := by
+    rw [IsLocalDiffeomorphAt.coe_annihilatorPullback_apply, degreeOneEquiv_mpullback]
   refine ⟨fun h ↦ degreeOneEquiv_ne_zero (hβ (f x)).1 ?_, ?_⟩
   · -- A covector pulling back to zero along the bijective differential is zero.
-    have h0 : degreeOneEquiv (mpullback f hf.contMDiff β) x = 0 := by
-      rw [← degreeOneEquiv_coe_eq_zero_iff, LinearMap.ext_iff] at h
-      exact ContinuousLinearMap.ext h
+    have h0 := degreeOneEquiv_apply_eq_zero_iff.2 h
     rw [hpull] at h0
     exact congrArg Subtype.val (((hf x).annihilatorPullback (by simp) (hD x)).map_eq_zero_iff.1
       (Subtype.ext h0))
-  · rw [← hD, ← (hβ (f x)).2, RoughForm.ker_eq_ker_eval, RoughForm.ker_eq_ker_eval, eval_val,
-      eval_val, degreeOneEquiv_mpullback hf.contMDiff β x, ContinuousLinearMap.toLinearMap_comp,
-      LinearMap.ker_comp]
+  · rw [← hD, ← (hβ (f x)).2]
+    simp only [RoughForm.ker_eq_ker_eval, eval_val]
+    simp [degreeOneEquiv_mpullback, LinearMap.ker_comp]
 
 /-- **The coorientation of a pulled-back defining form.** If `β` vanishes nowhere and has kernel
 `D'`, the coorientation of its pullback along a local diffeomorphism `f` is the pullback of the
@@ -264,9 +274,11 @@ theorem coorientation_mpullback (hf : IsLocalDiffeomorph I J ∞ f)
     (orientation_eq_coorientation_iff hβ b).2 (by
       rw [FiniteDimensional.basisSingleton_apply])
   -- Its image `(β_(f x) ∘ df_x)` is a basis of `D⁰_x` with the coorientation of `f^* β`.
+  have hmap : (b.map ((hf x).annihilatorPullback (by simp) (hD x)) 0 :
+      TangentSpace I x →L[ℝ] ℝ) = degreeOneEquiv (mpullback f hf.contMDiff β) x := by
+    simp [b, degreeOneEquiv_mpullback]
   rw [IsLocalDiffeomorph.pullbackCoorientation_apply, ← hb, ← Basis.orientation_map, eq_comm,
-    orientation_eq_coorientation_iff, Basis.map_apply, FiniteDimensional.basisSingleton_apply,
-    IsLocalDiffeomorphAt.coe_annihilatorPullback_apply, degreeOneEquiv_mpullback hf.contMDiff β x]
+    orientation_eq_coorientation_iff, hmap]
 
 end SmoothForm
 
