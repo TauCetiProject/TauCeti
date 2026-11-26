@@ -35,7 +35,7 @@ identity slice, `η_U.map : (x ⟶ y) → (η_U x ⟶ η_U y)` is bijective with
   `GerbeMorphismPullback.homPresheafMap_app_presheafHomObjHomEquiv`,
   `GerbeMorphismPullback.homSheafMap`.
 * `GerbeMorphismPullback.homPresheafMap_injective`,
-  `GerbeMorphismPullback.homPresheafMap_imageSieve`,
+  `GerbeMorphismPullback.homPresheafMap_imageSieve_mem`,
   `GerbeMorphismPullback.homSheafMap_isIso`, `GerbeMorphismPullback.homSheafIso`,
   `BandedMorphism.map_bijective`, `BandedMorphism.full`.
 
@@ -148,7 +148,7 @@ include bF bG in
 /-- **Local surjectivity.** For a band-preserving transformation from a gerbe to a pseudofunctor
 with groupoid fibres, the image sieve of every section of the target presheaf of morphisms is
 covering: local anchors exist by the gerbe condition. -/
-theorem homPresheafMap_imageSieve [F.IsGerbe J] [∀ V : C, IsGroupoid (G.obj (.mk (op V)))]
+theorem homPresheafMap_imageSieve_mem [F.IsGerbe J] [∀ V : C, IsGroupoid (G.obj (.mk (op V)))]
     (T : Over U) (s : (G.presheafHom ((η.app (.mk (op U))).toFunctor.obj x)
       ((η.app (.mk (op U))).toFunctor.obj y)).obj (op T)) :
     Presheaf.imageSieve (homPresheafMap η x y) s ∈ J.over U T := by
@@ -178,7 +178,7 @@ include bF bG in
 surjective. -/
 theorem homSheafMap_isLocallySurjective (x y : F.obj (.mk (op U))) :
     Sheaf.IsLocallySurjective (homSheafMap η J x y) where
-  imageSieve_mem s := homPresheafMap_imageSieve η bF bG _ s
+  imageSieve_mem s := homPresheafMap_imageSieve_mem η bF bG _ s
 
 include bF bG in
 /-- **The sheaves of morphisms are isomorphic.** For a band-preserving morphism of gerbes, the
