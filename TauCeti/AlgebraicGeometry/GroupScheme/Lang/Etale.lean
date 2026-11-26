@@ -9,10 +9,13 @@ public import TauCeti.AlgebraicGeometry.GroupScheme.Lang.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Etale.FormallyEtale
 import TauCeti.AlgebraicGeometry.Frobenius.FixedPoints
 import TauCeti.AlgebraicGeometry.Frobenius.Thickening
+import TauCeti.AlgebraicGeometry.GroupScheme.Etale
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Finite.Colimits
 import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.RationalPoint.Finite
+-- Apply the general étale kernel theorem using the construction of the Lang kernel.
+import all TauCeti.AlgebraicGeometry.GroupScheme.Lang.Basic
 
 /-!
 # Étaleness of the Lang map
@@ -44,9 +47,8 @@ universe u
 variable (k : Type u) [Field k] {p : ℕ} [Fact p.Prime] [CharP k p] (a : ℕ)
   (ha : Nat.card k = p ^ a) (G : CommGrp (Over (Spec (CommRingCat.of k))))
 
-/-- The Lang map is formally étale. In a first-order lifting square, the Frobenius of the lift
-is determined by the given point on the closed subscheme. Dividing it by the prescribed Lang
-image gives the unique lift. -/
+/-- The Lang map of any commutative group scheme over a finite field is formally étale, without
+any finiteness assumption on the group scheme. -/
 theorem formallyEtale_langMap : AlgebraicGeometry.FormallyEtale
     (langMap k a ha G).hom.hom.hom.left := by
   rw [AlgebraicGeometry.formallyEtale_iff_existsUnique_lift_quotient]
@@ -68,6 +70,8 @@ theorem formallyEtale_langMap : AlgebraicGeometry.FormallyEtale
     have ha1 : Nat.card k = 1 := by simpa [Nat.eq_zero_of_le_zero h] using ha
     exact (not_nontrivial_iff_subsingleton.mpr ((Nat.card_eq_one_iff_unique.mp ha1).1))
       inferInstance
+  -- Frobenius factors through the square-zero closed subscheme. Dividing the resulting
+  -- Frobenius value by the prescribed Lang image gives the unique lift.
   obtain ⟨v, hv⟩ := exists_comp_SpecMap_quotient_mk_eq_iterateFrobenius hB I hI ha0
   have hv' : v ≫ j.left = (qPowerFrobeniusOver k a ha T').left := by
     rw [qPowerFrobeniusOver_left, qPowerFrobenius_eq_iterated]
@@ -109,19 +113,10 @@ instance etale_langMap [LocallyOfFinitePresentation G.X.hom] :
 
 /-- The scheme-theoretic kernel of the Lang map is étale over the finite field. -/
 instance etale_langKernel [LocallyOfFinitePresentation G.X.hom] :
-    Etale (langKernel k a ha G).X.hom :=
-  MorphismProperty.of_isPullback (P := @Etale)
-    (by simpa only [Over.forget_map, Over.toUnit_left] using
-      (isPullback_langKernelι k a ha G).map (Over.forget _))
+    Etale (langKernel k a ha G).X.hom := by
+  rw [langKernel]
+  exact Grp.etale_kernel_hom ((CommGrp.forget₂Grp _).map (langMap k a ha G))
     (etale_langMap k a ha G)
-
-/-- Frobenius acts as the identity on the scheme-theoretic Lang kernel. -/
-@[simp]
-theorem qPowerFrobeniusOver_langKernel :
-    qPowerFrobeniusOver k a ha (langKernel k a ha G).X = 𝟙 _ := by
-  apply (cancel_mono (langKernelι k a ha G)).mp
-  rw [Category.id_comp]
-  exact (exists_comp_langKernelι_iff k a ha _).mp ⟨𝟙 _, Category.id_comp _⟩
 
 /-- The disjoint union of the rational points of the group maps isomorphically to the
 scheme-theoretic Lang kernel. Each component is the lift of the corresponding rational point
