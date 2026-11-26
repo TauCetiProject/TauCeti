@@ -17,7 +17,9 @@ The jet of a section `ξ : ℝ × ℝ → V` of a trivial bundle over a domain o
 A first-order operator with coefficient field `M : ℝ × ℝ → L(V × V × V, W)` acts on jets
 pointwise, `f ↦ (z ↦ M z (f z))`. For a measure `μ` on the plane and `M` essentially bounded for
 `μ`, this is a bounded operator `L²(μ, V × V × V) → L²(μ, W)` (`TauCeti.jetOperator`), the
-operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`. It depends
+operator-valued multiplication operator `MeasureTheory.Lp.operatorMultiplication 2`. It is additive
+in `M` (`TauCeti.jetOperator_add`), and multiplying `M` by an essentially bounded scalar function
+multiplies its values pointwise (`TauCeti.coeFn_jetOperator_smul`). It depends
 Lipschitz-continuously on `M` in `L^∞` (`TauCeti.norm_jetOperator_sub_le`), hence continuously
 along families of coefficient fields continuous in `L^∞` (`TauCeti.continuousOn_jetOperator`).
 
@@ -91,6 +93,16 @@ theorem jetOperator_add {μ : Measure (ℝ × ℝ)} {M N : ℝ × ℝ → V × V
     coeFn_jetOperator hN f, Lp.coeFn_add (jetOperator μ M f) (jetOperator μ N f)]
     with z h h₁ h₂ h₃
   rw [add_apply, h₃, Pi.add_apply, h, h₁, h₂, Pi.add_apply, add_apply]
+
+/-- Multiplying the coefficient field by an essentially bounded scalar function `b` multiplies the
+values of the first-order operator by `b`. -/
+theorem coeFn_jetOperator_smul {μ : Measure (ℝ × ℝ)} {b : ℝ × ℝ → ℝ}
+    {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hb : MemLp b ∞ μ) (hM : MemLp M ∞ μ)
+    (f : Lp (V × V × V) 2 μ) :
+    jetOperator μ (fun z ↦ b z • M z) f =ᵐ[μ] fun z ↦ b z • jetOperator μ M f z := by
+  filter_upwards [coeFn_jetOperator (M := fun z ↦ b z • M z) (hb.smul hM) f,
+    coeFn_jetOperator hM f] with z h₁ h₂
+  rw [h₁, h₂, smul_apply]
 
 /-- An almost everywhere bound `‖M z‖ ≤ C` on the coefficient field bounds the first-order
 operator by `C`. -/

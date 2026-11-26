@@ -46,7 +46,8 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
 * `Matrix.isUnimodular_apply_of_isUnit_det` and `Matrix.GeneralLinearGroup.isUnimodular_apply`:
   every row of an invertible square matrix is unimodular, and
   `Matrix.GeneralLinearGroup.isUnimodular_vecMul_iff`: right-multiplying by an invertible matrix
-  preserves unimodularity.
+  preserves unimodularity; over a commutative semiring so does left-multiplying a column vector,
+  `Matrix.GeneralLinearGroup.isUnimodular_mulVec_iff`.
 * `TauCeti.Module.isUnimodular_pi_iff`: a finitely indexed coordinate vector `v : ι → R` over a
   semiring is unimodular if and only if `∑ i, v i * b i = 1` for some `b`.
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a directly finite local semiring, a vector
@@ -179,6 +180,15 @@ theorem Matrix.GeneralLinearGroup.isUnimodular_vecMul_iff {R m : Type*} [Semirin
       (LinearMap.ext fun x ↦ by simp [Matrix.vecMul_vecMul])
       (LinearMap.ext fun x ↦ by simp [Matrix.vecMul_vecMul])
   exact e.isUnimodular_apply_iff
+
+/-- Over a commutative semiring, left-multiplying a column vector by an invertible matrix
+preserves unimodularity. -/
+@[simp]
+theorem Matrix.GeneralLinearGroup.isUnimodular_mulVec_iff {R m : Type*} [CommSemiring R]
+    [Fintype m] [DecidableEq m] (g : Matrix.GeneralLinearGroup m R) {v : m → R} :
+    Module.IsUnimodular R ((g : Matrix m m R) *ᵥ v) ↔ Module.IsUnimodular R v := by
+  simpa using (LinearMap.GeneralLinearGroup.toLinearEquiv
+    (Units.map (Matrix.toLinAlgEquiv' (R := R) (n := m)).toMonoidHom g)).isUnimodular_apply_iff
 
 /-- Every row of an invertible matrix over a semiring is unimodular. -/
 theorem Matrix.GeneralLinearGroup.isUnimodular_apply {R m : Type*} [Semiring R] [Fintype m]

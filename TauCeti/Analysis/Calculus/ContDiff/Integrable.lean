@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+import Mathlib.MeasureTheory.Integral.IntegrableOn
 
 /-!
 # Integrability of dominated iterated derivatives
@@ -16,6 +17,9 @@ translates, each derivative below the available differentiability order is conti
 differentiable and integrable, and its first derivative has an integrable envelope on unit
 translates (`ContDiff.iteratedFDeriv_dominated`). These properties supply the analytic data for
 repeated differentiation under the integral sign.
+
+The iterated derivatives of a function that is `Cᵐ` on an open set are almost everywhere strongly
+measurable there, up to order `m` (`ContDiffOn.aestronglyMeasurable_iteratedFDeriv`).
 -/
 
 public section
@@ -46,3 +50,11 @@ theorem ContDiff.iteratedFDeriv_dominated (hf : ContDiff 𝕜 N f)
   · simpa using hfφ₀ z 0 (by simp)
   · rw [norm_fderiv_iteratedFDeriv]
     exact hfφ₁ z h hh
+
+/-- The iterated derivatives, up to order `m`, of a function that is `Cᵐ` on an open set `s` are
+almost everywhere strongly measurable on `s`. -/
+theorem ContDiffOn.aestronglyMeasurable_iteratedFDeriv {s : Set E} {m l : ℕ}
+    (hf : ContDiffOn 𝕜 m f s) (hs : IsOpen s) (hl : l ≤ m) :
+    AEStronglyMeasurable (iteratedFDeriv 𝕜 l f) (μ.restrict s) :=
+  (ContinuousOn.continuousOn_iteratedFDeriv hf hs (by exact_mod_cast hl)).aestronglyMeasurable
+    hs.measurableSet

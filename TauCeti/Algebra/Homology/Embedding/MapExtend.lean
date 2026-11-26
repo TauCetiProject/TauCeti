@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.Additive
 public import Mathlib.Algebra.Homology.Embedding.Extend
+public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 
 /-!
 # Functors commute with the extension of complexes
@@ -22,10 +23,19 @@ This lets statements about complexes indexed by `ℕ`, such as Čech complexes, 
 their extensions to `ℤ`, which is the indexing used for bounded complexes, compatibly with
 operations applied degreewise such as extension of scalars.
 
+For the same reason, extension commutes with colimits: in a degree `e.f i` the functor
+`e.extendFunctor C` is evaluation in degree `i`, and in the other degrees it is zero. So a colimit
+of complexes indexed by `ℕ`, such as relative singular chains along a decreasing family of closed
+sets, remains a colimit after extension to `ℤ`.
+
 ## Main definitions
 
 * `HomologicalComplex.mapExtendIso`: the isomorphism
   `F(K.extend e) ≅ (F K).extend e` of complexes of shape `c'`.
+
+## Main results
+
+* An instance saying that `e.extendFunctor C` preserves colimits of every shape that `C` has.
 -/
 
 public section
@@ -93,3 +103,21 @@ lemma mapExtendIso_hom_f {j : ι} {j' : ι'} (h : e.f j = j') :
   exact extend.mapXIso_hom_of_eq_some F K (e.r_f j)
 
 end HomologicalComplex
+
+namespace ComplexShape.Embedding
+
+variable {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'} (e : c.Embedding c')
+  (C : Type*) [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
+  {J : Type*} [Category* J] [HasColimitsOfShape J C]
+
+/-- Extension by zero along an embedding of complex shapes preserves colimits: in a degree `e.f i`
+it is evaluation in degree `i`, and in the other degrees it is zero. -/
+instance : PreservesColimitsOfShape J (e.extendFunctor C) :=
+  HomologicalComplex.preservesColimitsOfShape_of_eval _ fun i' ↦ by
+    by_cases hi' : ∃ i, e.f i = i'
+    · obtain ⟨i, hi⟩ := hi'
+      exact preservesColimitsOfShape_of_natIso (e.extendFunctorCompEvalIso C hi).symm
+    · exact Functor.preservesColimitsOfShape_of_isZero _
+        (Functor.isZero _ fun K ↦ K.isZero_extend_X e i' fun i h ↦ hi' ⟨i, h⟩) _
+
+end ComplexShape.Embedding

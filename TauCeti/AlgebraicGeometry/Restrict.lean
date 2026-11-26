@@ -37,6 +37,8 @@ global functions of the base change.
   restricts to an isomorphism over every open contained in its range.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_resLE_of_eq`: the restriction of `f` to an open `U`
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
+* `AlgebraicGeometry.Scheme.Hom.isPullback_morphismRestrict_homOfLE`: for opens `V ≤ U`, `f ∣_ V`
+  is the pullback of `f ∣_ U` along the inclusion `V ⟶ U`.
 * `AlgebraicGeometry.Scheme.Hom.exists_dense_open_of_comp_iso`: a property respecting isomorphisms
   that holds for the restriction of `f ≫ e.hom` over a dense open, for an isomorphism `e`, holds for
   the restriction of `f` over a dense open.
@@ -111,6 +113,16 @@ theorem Scheme.Hom.isPullback_resLE_of_eq (U : Y.Opens) {V : X.Opens} (h : V = f
     IsPullback (f.resLE U V h.le) V.ι U.ι f := by
   subst h
   simpa [Scheme.Hom.resLE_eq_morphismRestrict] using isPullback_morphismRestrict f U
+
+/-- For opens `V ≤ U` of the target, restricting `f` over `V` is the pullback of restricting it
+over `U` along the inclusion `V ⟶ U`. -/
+theorem Scheme.Hom.isPullback_morphismRestrict_homOfLE {U V : Y.Opens} (hVU : V ≤ U) :
+    IsPullback (X.homOfLE (f.preimage_mono hVU)) (f ∣_ V) (f ∣_ U) (Y.homOfLE hVU) := by
+  -- Paste onto the pullback square of `f ∣_ U` over `U.ι`.
+  refine (IsPullback.of_bot ?_ (morphismRestrict_homOfLE f V U hVU)
+    (isPullback_morphismRestrict f U)).flip
+  rw [Scheme.homOfLE_ι, Scheme.homOfLE_ι]
+  exact isPullback_morphismRestrict f V
 
 /-- A property respecting isomorphisms that holds for the restriction of `f ≫ e.hom` over a
 dense open, for an isomorphism of targets `e`, holds for the restriction of `f` over the preimage

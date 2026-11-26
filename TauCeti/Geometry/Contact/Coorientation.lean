@@ -17,8 +17,12 @@ elements of the annihilator line `ξ⁰ ⊆ T*M` (`TauCeti.CotangentBundle.annih
 contact form with kernel `ξ` is extra data: it exists exactly when `ξ` is *coorientable*, that is,
 when the line `ξ⁰` admits a continuous section vanishing nowhere, and exactly when the smooth line
 bundle `ξ⁰` is trivial. A continuous choice of nonzero covectors in `ξ⁰`, up to positive multiples,
-is a coorientation, and every coorientation is the coorientation of a contact form
-(`TauCeti.IsContactDistribution.exists_isContactForm_pos_smul`).
+is a coorientation (`TauCeti.IsCoorientation`), and every coorientation is the coorientation of a
+contact form (`TauCeti.IsContactDistribution.exists_isContactForm_pos_smul`,
+`TauCeti.IsContactDistribution.exists_isContactForm_coorientation_eq`). On a nonempty connected
+manifold a coorientable contact structure has exactly two coorientations, those of `α` and `-α` for
+any contact form `α` defining it (`TauCeti.IsCoorientation.ncard_setOf_isCoorientation`,
+`TauCeti.SmoothForm.coorientation_neg`).
 
 These statements specialize the results for smooth hyperplane fields in
 `TauCeti.Geometry.Manifold.Distribution.Coorientation`: a one-form with kernel a contact structure
@@ -34,6 +38,11 @@ which vanishes nowhere is a contact form
 * `TauCeti.IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_exists_trivialization`:
   a contact structure is the kernel of a global contact form exactly when its annihilator line
   bundle is smoothly trivial.
+* `TauCeti.IsContactDistribution.exists_isContactForm_coorientation_eq`: every coorientation of a
+  contact structure is the coorientation of a contact form.
+* `TauCeti.IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_exists_isCoorientation`
+  states that a contact structure is the kernel of a global contact form exactly when it has a
+  coorientation.
 
 ## References
 
@@ -118,6 +127,36 @@ theorem exists_isContactForm_kerDistribution_eq_iff_exists_trivialization [Nonem
   simp only [hD.isContactForm_and_kerDistribution_eq_iff]
   exact hD.isContMDiffDistribution.exists_smoothForm_ker_eq_iff_exists_trivialization
     hD.finrank_sub_one_add_one
+
+/-- **Every coorientation of a contact structure is the coorientation of a contact form.** On a
+Hausdorff σ-compact manifold, every coorientation `o` of a contact structure `D`
+(`TauCeti.IsCoorientation`) is the coorientation of a contact form with kernel `D`: one positive
+for `o` at every point. -/
+theorem exists_isContactForm_coorientation_eq (hD : IsContactDistribution I ∞ D)
+    {o : Π x : M, Orientation ℝ (CotangentBundle.annihilatorSpace I D x) (Fin 1)}
+    (ho : IsCoorientation I D o) :
+    ∃ (α : SmoothForm I M ℝ 1) (hα : ∀ x, α.val x ≠ 0 ∧ RoughForm.ker α.val x = D x),
+      α.IsContactForm ∧ α.coorientation hα = o := by
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  rcases isEmpty_or_nonempty M with hM | hM
+  · obtain ⟨hc, -⟩ := hD.isContactForm_and_kerDistribution_eq_iff (α := 0).2 isEmptyElim
+    exact ⟨0, isEmptyElim, hc, funext isEmptyElim⟩
+  obtain ⟨α, hα, rfl⟩ :=
+    ho.exists_coorientation_eq hD.isContMDiffDistribution hD.finrank_sub_one_add_one
+  exact ⟨α, hα, (hD.isContactForm_and_kerDistribution_eq_iff.2 hα).1, rfl⟩
+
+/-- **A contact structure is the kernel of a global contact form exactly when it has a
+coorientation.** On a Hausdorff σ-compact manifold, a contact structure `D` is the kernel of a
+contact form exactly when it has a coorientation (`TauCeti.IsCoorientation`). -/
+theorem exists_isContactForm_kerDistribution_eq_iff_exists_isCoorientation
+    (hD : IsContactDistribution I ∞ D) :
+    (∃ α : SmoothForm I M ℝ 1, α.IsContactForm ∧ α.kerDistribution = D) ↔
+      ∃ o, IsCoorientation I D o := by
+  have : IsManifold I (∞ + 1) M := .of_le (n := ∞) (by simp)
+  simp only [hD.isContactForm_and_kerDistribution_eq_iff]
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact ⟨fun _ ↦ ⟨isEmptyElim, isCoorientation_iff.2 isEmptyElim⟩, fun _ ↦ ⟨0, isEmptyElim⟩⟩
+  exact (hD.isContMDiffDistribution.exists_isCoorientation_iff hD.finrank_sub_one_add_one).symm
 
 end IsContactDistribution
 

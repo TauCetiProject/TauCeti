@@ -51,7 +51,9 @@ smaller: over `𝔽₂` with `q = x²` the polar form is zero while `O(q)` is `�
 * `TauCeti.QuadraticOrthogonal.pointsSubgroup` and `TauCeti.QuadraticOrthogonal.pointsMulEquiv`:
   the points of `O(q)` are the invertible matrices preserving `q_A`; by
   `TauCeti.QuadraticOrthogonal.hopfIdealPointsSubgroup_definingHopfIdeal` these are the matrices
-  cut out by the defining Hopf ideal. Transporting a point along an algebra morphism applies it to
+  cut out by the defining Hopf ideal, and by
+  `TauCeti.QuadraticOrthogonal.mem_definingPointsSubgroup_iff` an ambient quotient point lies in
+  `O(q)` exactly when its matrix does. Transporting a point along an algebra morphism applies it to
   the entries of the matrix (`TauCeti.QuadraticOrthogonal.coe_pointsMulEquiv_mapPoints`).
 * `TauCeti.QuadraticOrthogonal.pointsMulEquivOrthogonalGroup`: the points of `O(q)` are
   `TauCeti.QuadraticMap.orthogonalGroup (QuadraticForm.baseChangeForm q A)`, a point acting on
@@ -108,6 +110,15 @@ noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
   Set.range (fun i => relationMatrix R n q i i) ∪
     Set.range fun ij : Fin n × Fin n =>
       relationMatrix R n q ij.1 ij.2 + relationMatrix R n q ij.2 ij.1
+
+/-- The defining relations are the diagonal entries and the symmetric sums of the relation
+matrix. -/
+theorem relationSet_def :
+    relationSet R n q =
+      Set.range (fun i => relationMatrix R n q i i) ∪
+        Set.range fun ij : Fin n × Fin n =>
+          relationMatrix R n q ij.1 ij.2 + relationMatrix R n q ij.2 ij.1 := by
+  rw [relationSet]
 
 /-- Mapping the relation matrix through an algebra morphism gives the relation of the image of
 the generic matrix. -/
@@ -337,6 +348,19 @@ theorem hopfIdealPointsSubgroup_definingHopfIdeal :
     AlgHom.toRingHom_eq_coe, definingHopfIdeal_toIdeal_le_ker_iff, mem_pointsSubgroup_iff_isAltMod]
   -- The matrix of the point `p` is the image of the generic matrix under `p`.
   rw [relationMatrix_map, GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
+
+/-- **Membership in the points cut out by the defining Hopf ideal**: an ambient point of `GLₙ`
+lies in the subgroup cut out by the Hopf ideal of `O(q)` exactly when its matrix lies in
+`O(q)(A)`. -/
+@[simp↓]
+theorem mem_definingPointsSubgroup_iff
+    (g : HopfAlgebra.points (R := R) (H := GeneralLinear.coordinateHopfAlgebra R n)
+      (CommAlgCat.of R A)) :
+    g ∈ CommHopfAlgCat.quotientPointsSubgroup (GeneralLinear.coordinateHopfAlgebra R n)
+        (definingHopfIdeal R n q) (CommAlgCat.of R A) ↔
+      GeneralLinear.pointsMulEquiv n g ∈ pointsSubgroup R n q A := by
+  rw [← hopfIdealPointsSubgroup_definingHopfIdeal, GeneralLinear.mem_hopfIdealPointsSubgroup_iff,
+    MulEquiv.symm_apply_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
 
 /-- **The points identification**: the group of algebra-valued points of the coordinate Hopf
 algebra of `O(q)` is `O(q)(A)`. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Presheaf
+public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Cohomology.Pullback.Opens
 import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 
@@ -25,7 +25,11 @@ its pullback `f^* r`
 (`Scheme.Hom.cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_smul`).
 The existing `AlgebraicGeometry.Scheme.Hom.higherDirectImagePresheafToPresheafIso_hom_app_smul`
 handles restrictions of global functions of `Y`, acting on `Hⁿ(f⁻¹ U, M)` itself; the lemma here
-handles arbitrary functions on `V`, after applying `cohomologyOnPullbackι`.
+handles arbitrary functions on `V`, after applying `cohomologyOnPullbackι`. For quasi-compact
+quasi-separated `f`, quasi-coherent `M` and affine `V`, the same holds for the sections of the
+sheafification `Rⁿ f_* M` over `V`, read in `Hⁿ(f⁻¹ V, M)` through
+`AlgebraicGeometry.Scheme.Hom.higherDirectImageSectionsAddEquiv`
+(`Scheme.Hom.cohomologyOnPullbackι_higherDirectImageSectionsAddEquiv_symm_smul`).
 
 The proof computes the identification on homology classes of cycles of the injective resolution
 used to build the presheaf: the class of a cycle `s ∈ Γ(f⁻¹ V, Pⁿ)` goes to the class of `s` in
@@ -246,4 +250,29 @@ theorem cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_sm
   congr 2
   · exact _root_.map_smul ((Kmod.iCycles n).app (op V)).hom r z
   · exact proof_irrel_heq _ _
+
+/-- **Local functions act on the sections of `Rⁿ f_* M` through the open subscheme.** For a
+quasi-compact quasi-separated `f`, a quasi-coherent `M` and an affine open `V` of `Y`, read the
+sections of `Rⁿ f_* M` over `V` in the cohomology `Hⁿ(f⁻¹ V, M|_{f⁻¹ V})` of the open subscheme
+`f⁻¹ V`, through `higherDirectImageSectionsAddEquiv` and `Scheme.Opens.cohomologyOnPullbackι`.
+There a function `r` on `V` acts as its pullback `f^* r`, a global function of `f⁻¹ V`. This is
+the sheaf form of `cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_smul`. -/
+@[simp]
+theorem cohomologyOnPullbackι_higherDirectImageSectionsAddEquiv_symm_smul [QuasiCompact f]
+    [QuasiSeparated f] (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) {V : Y.Opens}
+    (hV : IsAffineOpen V) (r : Γ(Y, V)) (y : Γ((f.higherDirectImage n).obj M, V)) :
+    (f ⁻¹ᵁ V).cohomologyOnPullbackι M n
+        ((f.higherDirectImageSectionsAddEquiv M n hV).symm (r • y)) =
+      (f ⁻¹ᵁ V).topIso.inv (f.app V r) • (f ⁻¹ᵁ V).cohomologyOnPullbackι M n
+        ((f.higherDirectImageSectionsAddEquiv M n hV).symm y) := by
+  obtain ⟨x, rfl⟩ := (f.higherDirectImagePresheafSectionsLinearEquiv M n hV).surjective y
+  have e (z) : (f.higherDirectImageSectionsAddEquiv M n hV).symm
+      (f.higherDirectImagePresheafSectionsLinearEquiv M n hV z) =
+        (f.higherDirectImagePresheafToPresheafIso M n).hom.app (op V) z :=
+    (AddEquiv.symm_apply_eq _).2
+      (higherDirectImageSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app
+        _ _ _ _ _).symm
+  rw [← LinearEquiv.map_smul, e, e]
+  exact cohomologyOnPullbackι_higherDirectImagePresheafToPresheafIso_hom_app_smul f M n V r x
+
 end AlgebraicGeometry.Scheme.Hom

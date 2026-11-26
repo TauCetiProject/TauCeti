@@ -16,8 +16,9 @@ import TauCeti.Analysis.Normed.Operator.ClosedRange
 # Peetre's compact-error estimate
 
 An estimate `‖x‖ ≤ C * ‖T x‖ + ‖K x‖`, with `K` compact, forces the kernel of `T` to be
-finite dimensional. If the domain is complete, the estimate also makes `T` bounded below
-on any closed subspace disjoint from its kernel, and the range of `T` is closed over any
+finite dimensional; in particular a compact operator bounded below has finite-dimensional domain.
+If the domain is complete, the estimate also makes `T` bounded below on any closed subspace
+disjoint from its kernel, and the range of `T` is closed over any
 nontrivially normed field. The closed-range step needs no complement of the kernel: by the
 sequential criterion `ContinuousLinearMap.isClosed_range_of_exists_subseq_tendsto` from
 `TauCeti.Analysis.Normed.Operator.ClosedRange`, an operator has closed range as soon as every
@@ -126,6 +127,17 @@ theorem exists_compact_estimate_of_isCompactOperator_sub [NormedAddCommGroup F] 
           gcongr
           exacts [le_abs_self C, hT.trans (by gcongr)]
       _ ≤ |C| * ‖S x‖ + ‖a‖ * N := by nlinarith
+
+/-- A compact operator bounded below, `‖x‖ ≤ C * ‖K x‖`, has finite-dimensional domain. -/
+theorem _root_.IsCompactOperator.finiteDimensional_of_norm_le_mul_norm [CompleteSpace 𝕜]
+    {K : E →L[𝕜] G} (hK : IsCompactOperator K) (hbound : ∀ x, ‖x‖ ≤ C * ‖K x‖) :
+    FiniteDimensional 𝕜 E := by
+  obtain ⟨k, hk⟩ := NormedField.exists_lt_norm 𝕜 C
+  have := (0 : E →L[𝕜] E).finiteDimensional_ker_of_compact_estimate (C := 0) (K := k • K)
+    (hK.smul k) fun x ↦ by
+      simpa [norm_smul] using (hbound x).trans (mul_le_mul_of_nonneg_right hk.le (norm_nonneg _))
+  rw [ContinuousLinearMap.toLinearMap_zero, LinearMap.ker_zero] at this
+  exact Submodule.topEquiv.finiteDimensional
 
 section CompleteDomain
 

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Ring.Semireal.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.Trigonometric
+public import TauCeti.Analysis.RCLike.Basic
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -36,6 +38,9 @@ half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in 
 
 As a continuous real-linear equivalence, conjugation is its own inverse (`Complex.conjCLE_symm`,
 the counterpart of Mathlib's `Complex.conjLIE_symm`).
+
+The real part of `exp (θ * I) ^ j` is `cos (j θ)` (`Complex.re_exp_ofReal_mul_I_pow`), the real
+part of de Moivre's formula.
 
 Inversion preserves both the open and closed right half-planes: `z⁻¹` has positive
 (respectively nonnegative) real part exactly when `z` does (`Complex.inv_re_pos`,
@@ -79,13 +84,29 @@ point `z` of the closed upper half-plane does not decrease the norm
 through such a `z` has norm at least `(‖z‖ + s) / 2`
 (`Complex.norm_add_div_two_le_norm_add_ofReal_mul_I`).
 
+The difference of the real parts of two points is at most their distance
+(`Complex.re_sub_re_le_dist`), their squared distance is the sum of the squares of the differences
+of their real and imaginary parts (`Complex.sq_dist_eq_re_im`), and if the distance is at most the
+difference of the real parts then the imaginary parts agree
+(`Complex.im_eq_im_of_dist_le_re_sub_re`). A closed disc `closedBall c R` with `θ + R < c.re`,
+and an open disc `ball c R` with `θ + R ≤ c.re`, lie in the open half-plane `{z | θ < z.re}`
+(`Complex.closedBall_subset_setOfPred_lt_re`, `Complex.ball_subset_setOfPred_lt_re`).
+
 On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
 (`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
+
+At height `1 ≤ |Im s|`, a point `s` is at distance at least `1` from `1`
+(`Complex.one_le_norm_sub_one`), so `s ≠ 1` (`Complex.ne_one_of_one_le_abs_im`) and
+`‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`). For real `1 ≤ r`,
+`‖(r : ℂ) - 1‖ = r - 1` (`Complex.norm_ofReal_sub_one`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
 There is no ring homomorphism from `ℂ` to a semireal semiring, such as `ℝ` or any linearly
 ordered ring (`Complex.instIsEmptyRingHom`).
+
+An `n`-th root (`n ≠ 0`) of a complex number `w` with `w * conj w = 1` has its inverse as
+conjugate (`Complex.conj_eq_inv_of_pow_eq`).
 -/
 
 public section
@@ -329,6 +350,11 @@ namespace Complex
 
 open ComplexConjugate
 
+/-- The real part of `exp (θ * I) ^ j` is `cos (j θ)`: the real part of de Moivre's formula. -/
+@[simp]
+theorem re_exp_ofReal_mul_I_pow (θ : ℝ) (j : ℕ) : (exp (θ * I) ^ j).re = Real.cos (j * θ) := by
+  rw [← exp_natCast_mul, ← mul_assoc, ← ofReal_natCast, ← ofReal_mul, exp_ofReal_mul_I_re]
+
 /-- Complex conjugation, as a continuous real-linear equivalence, is its own inverse. -/
 @[simp]
 theorem conjCLE_symm : conjCLE.symm = conjCLE := by
@@ -456,6 +482,41 @@ theorem re_mem_Icc_of_normSq_sub_le (w : ℂ) {c : ℂ} {ρ : ℝ} (hρ : 0 ≤ 
     rw [norm_def, ← Real.sqrt_sq hρ]
     exact Real.sqrt_le_sqrt h
 
+/-- The difference of the real parts of two complex numbers is at most their distance. -/
+theorem re_sub_re_le_dist (z w : ℂ) : z.re - w.re ≤ dist z w := by
+  rw [dist_eq, ← sub_re]
+  exact re_le_norm _
+
+/-- The square of the distance between two complex numbers is the sum of the squares of the
+differences of their real and imaginary parts. -/
+theorem sq_dist_eq_re_im (z w : ℂ) : dist z w ^ 2 = (z.re - w.re) ^ 2 + (z.im - w.im) ^ 2 := by
+  rw [dist_eq_re_im, Real.sq_sqrt (by positivity)]
+
+/-- If the distance between two complex numbers is at most the difference of their real parts,
+then they have the same imaginary part. -/
+theorem im_eq_im_of_dist_le_re_sub_re {z w : ℂ} (h : dist z w ≤ z.re - w.re) : z.im = w.im := by
+  rw [dist_eq, ← sub_re] at h
+  rw [← sub_eq_zero, ← sub_im]
+  simpa only [RCLike.im_to_complex] using
+    RCLike.im_eq_zero_of_le (K := ℂ) (a := z - w) (by simpa only [RCLike.re_to_complex] using h)
+
+/-- A closed disc `closedBall c R` with `θ + R < c.re` lies in the open half-plane
+`{z | θ < z.re}`. -/
+theorem closedBall_subset_setOfPred_lt_re {c : ℂ} {R θ : ℝ} (h : θ + R < c.re) :
+    Metric.closedBall c R ⊆ {z | θ < z.re} := fun w hw ↦
+  Set.mem_ofPred.2 <| by
+    have : |w.re - c.re| ≤ R := by
+      simpa only [RCLike.re_to_complex] using RCLike.abs_re_sub_le_of_mem_closedBall hw
+    linarith [(abs_le.1 this).1]
+
+/-- An open disc `ball c R` with `θ + R ≤ c.re` lies in the open half-plane `{z | θ < z.re}`. -/
+theorem ball_subset_setOfPred_lt_re {c : ℂ} {R θ : ℝ} (h : θ + R ≤ c.re) :
+    Metric.ball c R ⊆ {z | θ < z.re} := fun w hw ↦
+  Set.mem_ofPred.2 <| by
+    have : c.re - R < w.re := by
+      simpa only [RCLike.re_to_complex] using (RCLike.re_mem_Ioo_of_mem_ball hw).1
+    linarith
+
 /-- Two complex numbers whose real parts have the same absolute value compare in norm as their
 imaginary parts compare in absolute value. -/
 theorem norm_le_norm_iff_abs_im_le_abs_im_of_abs_re_eq (z : ℂ) {w : ℂ} (h : |z.re| = |w.re|) :
@@ -496,6 +557,26 @@ theorem one_le_re_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ (1 + z).re := by
 theorem one_le_norm_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ ‖1 + z‖ :=
   (one_le_re_one_add hz).trans (re_le_norm _)
 
+/-- A point at height `1 ≤ |Im s|` is at distance at least `1` from `1`. -/
+theorem one_le_norm_sub_one {s : ℂ} (ht : 1 ≤ |s.im|) : 1 ≤ ‖s - 1‖ := by
+  have h := abs_im_le_norm (s - 1)
+  rw [sub_im, one_im, sub_zero] at h
+  exact ht.trans h
+
+/-- A point at height `1 ≤ |Im s|` is not `1`. -/
+theorem ne_one_of_one_le_abs_im {s : ℂ} (ht : 1 ≤ |s.im|) : s ≠ 1 := by
+  rintro rfl
+  norm_num at ht
+
+/-- At height `1 ≤ |Im s|`, `‖(s - 1)⁻¹‖ ≤ 1`. -/
+theorem norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹‖ ≤ 1 := by
+  rw [norm_inv]
+  exact inv_le_one_of_one_le₀ (one_le_norm_sub_one ht)
+
+/-- For real `1 ≤ r`, the norm of `(r : ℂ) - 1` is `r - 1`. -/
+theorem norm_ofReal_sub_one {r : ℝ} (h : 1 ≤ r) : ‖(r : ℂ) - 1‖ = r - 1 := by
+  rw [← ofReal_one, ← ofReal_sub, norm_real, Real.norm_of_nonneg (sub_nonneg.mpr h)]
+
 /-- A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`. -/
 theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + μ).im ≠ 0 :=
   fun h0 ↦ by
@@ -510,6 +591,15 @@ instance instIsEmptyRingHom {R : Type*} [NonAssocSemiring R] [IsSemireal R] :
     IsEmpty (ℂ →+* R) :=
   ⟨fun f => IsSemireal.one_add_ne_zero (IsSumSq.mul_self (f I)) <| by
     rw [← map_one f, ← map_mul, ← map_add, I_mul_I, add_neg_cancel, map_zero]⟩
+
+/-- An `n`-th root `z`, `n ≠ 0`, of a complex number `w` with `w * conj w = 1` lies on the unit
+circle, so its conjugate is its inverse. -/
+theorem conj_eq_inv_of_pow_eq {z w : ℂ} {n : ℕ} (hn : n ≠ 0) (hz : z ^ n = w)
+    (hw : w * conj w = 1) : conj z = z⁻¹ := by
+  have hw' : ‖w‖ = 1 := TauCeti.RCLike.mul_conj_eq_one_iff.1 hw
+  have hz' : ‖z‖ = 1 :=
+    (pow_eq_one_iff_of_nonneg (norm_nonneg z) hn).mp (by rw [← norm_pow, hz, hw'])
+  exact (inv_eq_conj hz').symm
 
 end Complex
 
