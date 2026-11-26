@@ -307,6 +307,7 @@ theorem adjoint_multiplicationOperator (a : Lp 𝕜 ∞ μ) :
 `B : V →L[ℝ] F →L[ℝ] G` into real Hilbert spaces and an essentially bounded `b`, the adjoint of the
 multiplication operator `f ↦ B (b ·) (f ·)` from `L²(α, F)` to `L²(α, G)` is the multiplication
 operator of the pointwise adjoints `v ↦ (B v)†`. -/
+@[simp]
 theorem _root_.ContinuousLinearMap.adjoint_holderL {V F G : Type*} [NormedAddCommGroup V]
     [NormedSpace ℝ V] [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
     [NormedAddCommGroup G] [InnerProductSpace ℝ G] [CompleteSpace G] (B : V →L[ℝ] F →L[ℝ] G)

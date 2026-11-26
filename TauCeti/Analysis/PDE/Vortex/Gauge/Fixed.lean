@@ -757,6 +757,7 @@ theorem gaugeFixedZerothOrder_eq_toEuclideanLin (w v : EuclideanSpace ℝ (Fin 4
   simp [gaugeFixedZerothOrder_apply, Matrix.toLpLin_apply, Matrix.mulVec, dotProduct]
 
 /-- The adjoint of the zeroth-order part at a value `w` is the transpose of its matrix. -/
+@[simp]
 theorem adjoint_gaugeFixedZerothOrder_apply (w v : EuclideanSpace ℝ (Fin 4)) :
     ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w) v =
       WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * v j := by
