@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.Topology.Algebra.Group.Defs
-public import TauCeti.GroupTheory.CrossedCocycle.Restriction
+public import TauCeti.GroupTheory.CrossedCocycle.Basic
 
 /-!
 # Continuity of crossed cocycles
