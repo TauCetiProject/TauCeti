@@ -40,18 +40,7 @@ variable (l R)
 
 /-- The involutive Lie automorphism `X ↦ -Xᵀ` of the symplectic Lie algebra. -/
 def cartanInvolution : sp l R ≃ₗ⁅R⁆ sp l R :=
-  (TauCeti.negTransposeLieEquiv (l ⊕ l) R).ofSubalgebras (sp l R) (sp l R) (by
-    ext X
-    constructor
-    · rintro ⟨Y, hY, rfl⟩
-      -- Subalgebra images use the underlying Lie homomorphism. Expose its function
-      -- so the public evaluation lemma for negative transpose applies.
-      change TauCeti.negTransposeLieEquiv (l ⊕ l) R Y ∈ sp l R
-      rw [TauCeti.negTransposeLieEquiv_apply]
-      exact (sp l R).neg_mem (transpose_mem_sp hY)
-    · intro hX
-      refine ⟨-Xᵀ, (sp l R).neg_mem (transpose_mem_sp hX), ?_⟩
-      simp)
+  (sp l R).restrictNegTranspose fun _ ↦ transpose_mem_sp
 
 variable {l R}
 

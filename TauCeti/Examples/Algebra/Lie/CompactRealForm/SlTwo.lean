@@ -15,6 +15,7 @@ public import TauCeti.Algebra.Lie.SpecialLinear.ConjTranspose
 public import TauCeti.Examples.Algebra.Lie.CartanInvolution.Complex
 import Mathlib.Analysis.Complex.Basic
 import TauCeti.Algebra.Lie.Sl2.Killing
+import TauCeti.LinearAlgebra.Matrix.Trace.Positive
 
 /-!
 # The compact real form of `𝔰𝔩₂(ℂ)` and the Cartan involution of `𝔰𝔩₂(ℝ)`
@@ -99,7 +100,7 @@ theorem isCompactConjugation_slFinTwoCompactConj : IsCompactConjugation slFinTwo
   toIsLieConjugation := isLieConjugation_slFinTwoCompactConj
   pos X hX := by
     rw [killingHermitianForm_slFinTwoCompactConj_apply_self]
-    exact mul_pos (by norm_num) (slFinTwo_trace_mul_conjTranspose_self_pos hX)
+    exact mul_pos (by norm_num) (trace_mul_conjTranspose_self_pos fun h ↦ hX (Subtype.ext h))
 
 /-- `τ h = -h`. -/
 theorem slFinTwoCompactConj_slFinTwoBasis_two :
@@ -152,7 +153,7 @@ example :
   refine ⟨?_, ?_, ?_⟩ <;> module
 
 /-- The entrywise conjugation commutes with `X ↦ -X*`. -/
-theorem slFinTwoEntrywiseConj_comm (X : sl (Fin 2) ℂ) :
+theorem slFinTwoEntrywiseConj_slFinTwoCompactConj_comm (X : sl (Fin 2) ℂ) :
     slFinTwoEntrywiseConj (slFinTwoCompactConj X) =
       slFinTwoCompactConj (slFinTwoEntrywiseConj X) :=
   Subtype.ext (by ext i j; simp)
@@ -168,22 +169,20 @@ theorem mem_realForm_slFinTwoEntrywiseConj_iff {X : sl (Fin 2) ℂ} :
 /-- The Cartan involution `θ = στ` of the real form `Fix σ` of `𝔰𝔩₂(ℂ)`. -/
 local notation "θ" =>
   isLieConjugation_slFinTwoEntrywiseConj.restrictRealForm isLieConjugation_slFinTwoCompactConj
-    slFinTwoEntrywiseConj_comm
+    slFinTwoEntrywiseConj_slFinTwoCompactConj_comm
 
 /-- **`θ = στ` is a Cartan involution of `Fix σ`.** -/
 example : (θ).IsCartanInvolution :=
   isCompactConjugation_slFinTwoCompactConj.isCartanInvolution_restrictRealForm
-    isLieConjugation_slFinTwoEntrywiseConj slFinTwoEntrywiseConj_comm
+    isLieConjugation_slFinTwoEntrywiseConj slFinTwoEntrywiseConj_slFinTwoCompactConj_comm
 
 /-- **On `Fix σ` the Cartan involution `θ = στ` is `X ↦ -Xᵀ`.** -/
 theorem coe_restrictRealForm_slFinTwo_apply
     (X : isLieConjugation_slFinTwoEntrywiseConj.realForm) :
     ((θ X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) =
       -((X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ)ᵀ := by
-  have hX := congrArg Subtype.val (IsLieConjugation.apply_coe_realForm _ X)
-  rw [coe_slFinTwoEntrywiseConj_apply] at hX
-  rw [IsLieConjugation.coe_restrictRealForm_apply, coe_slFinTwoCompactConj_apply,
-    ← transpose_transpose ((X : sl (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ)ᴴ, hX]
+  rw [IsLieConjugation.coe_restrictRealForm_apply_eq_apply_apply]
+  simp
 
 /-- **`𝔨 = 𝔰𝔬(2)`**: the fixed subalgebra of `θ` on `Fix σ` is the skew-symmetric matrices. -/
 theorem mem_fixedSubalgebra_restrictRealForm_slFinTwo_iff
@@ -266,24 +265,14 @@ theorem restrictRealForm_slFinTwoRealFormEquiv (Y : sl (Fin 2) ℝ) :
 /-- The complex-linear Chevalley involution `X ↦ -Xᵀ` of `𝔰𝔩₂(ℂ)`: `h ↦ -h`, `e ↦ -f`, `f ↦ -e`,
 with no conjugation of scalars. -/
 def slFinTwoChevalleyInvolution : sl (Fin 2) ℂ ≃ₗ⁅ℂ⁆ sl (Fin 2) ℂ :=
-  (negTransposeLieEquiv (Fin 2) ℂ).ofSubalgebras (sl (Fin 2) ℂ) (sl (Fin 2) ℂ) (by
-    ext X
-    constructor
-    · rintro ⟨Y, hY, rfl⟩
-      -- Subalgebra images use the underlying Lie homomorphism. Expose its function
-      -- so the public evaluation lemma for negative transpose applies.
-      change negTransposeLieEquiv (Fin 2) ℂ Y ∈ sl (Fin 2) ℂ
-      rw [negTransposeLieEquiv_apply]
-      exact neg_transpose_mem_sl hY
-    · intro hX
-      exact ⟨-Xᵀ, neg_transpose_mem_sl hX, by simp⟩)
+  (sl (Fin 2) ℂ).restrictNegTranspose fun _ ↦ transpose_mem_sl
 
 /-- `slFinTwoChevalleyInvolution` sends `X` to `-Xᵀ`. -/
 @[simp]
 theorem coe_slFinTwoChevalleyInvolution_apply (X : sl (Fin 2) ℂ) :
     (slFinTwoChevalleyInvolution X : Matrix (Fin 2) (Fin 2) ℂ) =
-      -(X : Matrix (Fin 2) (Fin 2) ℂ)ᵀ := by
-  simp [slFinTwoChevalleyInvolution]
+      -(X : Matrix (Fin 2) (Fin 2) ℂ)ᵀ :=
+  LieSubalgebra.coe_restrictNegTranspose_apply _ _ X
 
 /-- The Chevalley involution sends `h ↦ -h`. -/
 theorem slFinTwoChevalleyInvolution_slFinTwoBasis_two :
