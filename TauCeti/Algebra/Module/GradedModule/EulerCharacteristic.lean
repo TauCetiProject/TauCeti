@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import TauCeti.Algebra.Module.GradedModule.Homology
 
 import Mathlib.RingTheory.Noetherian.Basic
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.LinearAlgebra.Dimension.RankNullity
 
 /-!
@@ -65,13 +66,6 @@ variable [AddRightCancelMonoid ι] (G : InternalGrading K V ι) {d : V →ₗ[K]
 
 variable (hd : d ∘ₗ d = 0)
 
-/-- The degree-`p` cycles of `d`, viewed in `V`, are the elements of degree `p` in its kernel. -/
-private theorem map_subtype_ker_piece (p : ι) :
-    ((G.ker hhom).piece p).map (LinearMap.ker d).subtype = G.piece p ⊓ LinearMap.ker d := by
-  ext x
-  simp only [Submodule.mem_map, mem_ker_piece, Submodule.mem_inf]
-  exact ⟨fun ⟨z, hz, hzx⟩ ↦ hzx ▸ ⟨hz, z.property⟩, fun ⟨hx, hk⟩ ↦ ⟨⟨x, hk⟩, hx, rfl⟩⟩
-
 include hd in
 /-- The degree-`p` boundaries of `d`, viewed in `V`, are the elements of degree `p` in its
 image. -/
@@ -107,7 +101,7 @@ theorem finrank_piece_eq_finrank_homology_piece_add (p : ι) :
     ext z
     rw [LinearMap.mem_ker, LinearMap.homologyπ_eq_zero_iff, LinearMap.mem_boundariesInKer]
   rw [hH, hker, ← Submodule.finrank_map_subtype_eq (LinearMap.ker d) ((G.ker hhom).piece p),
-    map_subtype_ker_piece, ← Submodule.finrank_map_subtype_eq _ (_ ⊓ _),
+    G.map_subtype_ker_piece hhom, ← Submodule.finrank_map_subtype_eq _ (_ ⊓ _),
     map_subtype_ker_piece_inf_boundariesInKer G hhom hd] at hZ
   omega
 
@@ -116,22 +110,6 @@ end AddRightCancelMonoid
 section AddCommGroup
 
 variable [AddCommGroup ι] {A : Type*} [AddCommGroup A]
-
-omit [DecidableEq ι] in
-/-- A finitely supported family of natural numbers, weighted by a sign-changing `w`, cancels
-against its shift by `r`. -/
-private theorem finsum_smul_add_finsum_smul_add_eq_zero {b : ι → ℕ}
-    (hb : (Function.support b).Finite) {r : ι} {w : ι → A} (hw : ∀ p, w (p + r) = -w p) :
-    ∑ᶠ p, b p • w p + ∑ᶠ p, b (p + r) • w p = 0 := by
-  have hfin : ∀ u : ι → A, Function.HasFiniteSupport fun p ↦ b p • u p := fun u ↦
-    hb.subset fun p hp h0 ↦ hp (by simp [h0])
-  rw [← finsum_comp_equiv (Equiv.subRight r) (f := fun p ↦ b (p + r) • w p)]
-  simp only [Equiv.subRight_apply, sub_add_cancel]
-  rw [← finsum_add_distrib (hfin _) (hfin _)]
-  refine finsum_eq_zero_of_forall_eq_zero fun q ↦ ?_
-  have hq := hw (q - r)
-  rw [sub_add_cancel] at hq
-  rw [← smul_add, hq, neg_add_cancel, smul_zero]
 
 variable [IsNoetherianRing K] [HasRankNullity.{v} K] [StrongRankCondition K]
   [Module.Finite K V] (G : InternalGrading K V ι) {d : V →ₗ[K] V} {r : ι}
@@ -167,7 +145,7 @@ theorem finsum_finrank_homology_piece_smul {w : ι → A} (hw : ∀ p, w (p + r)
   simp only [hrank, add_smul]
   rw [finsum_add_distrib (((hfin hhfin w).union (hfin hbfin w)).subset (Function.support_add _ _))
       (hfin hbr _), finsum_add_distrib (hfin hhfin _) (hfin hbfin _), add_assoc,
-    finsum_smul_add_finsum_smul_add_eq_zero hbfin hw, add_zero]
+    finsum_smul_add_finsum_comp_add_right_smul_eq_zero hbfin hw, add_zero]
 
 end AddCommGroup
 

@@ -524,7 +524,7 @@ theorem eq_trefoilAlexanderGrading_of_isKnotGrading {M A : (trefoil ![1, 2]).Gen
 /-! ### Hat knot Floer homology -/
 
 /-- The hat knot Floer differential of the trefoil diagram squares to zero, since it vanishes. -/
-theorem hatDifferential_trefoil_comp_self (χ : Fin 3 → ℤ) :
+theorem hatDifferential_trefoil_comp_self_eq_zero (χ : Fin 3 → ℤ) :
     (trefoil ![1, 2]).hatDifferential χ ∘ₗ (trefoil ![1, 2]).hatDifferential χ = 0 := by
   rw [hatDifferential_trefoil, LinearMap.zero_comp]
 
@@ -532,7 +532,7 @@ theorem hatDifferential_trefoil_comp_self (χ : Fin 3 → ℤ) :
 the homology is the chain group, spanned by the three generators. -/
 theorem finrank_hatHomology_trefoil (χ : Fin 3 → ℤ) :
     Module.finrank (ZMod 2)
-      ((trefoil ![1, 2]).hatHomology χ (hatDifferential_trefoil_comp_self χ)) = 3 := by
+      ((trefoil ![1, 2]).hatHomology χ (hatDifferential_trefoil_comp_self_eq_zero χ)) = 3 := by
   rw [(((trefoil ![1, 2]).hatDifferential χ).homologyEquivOfEqZero _
       (hatDifferential_trefoil χ)).finrank_eq,
     Module.finrank_finsupp_self, Fintype.card_congr (trefoilGeneratorEquiv _).symm,
@@ -544,7 +544,8 @@ gradings `1`, `-1`, `0` of `x₀`, `x₁`, `x₂`, the Laurent polynomial
 `∑_{m, a} (-1)^m dim HFK̂_m(a) T^a` is the symmetrized Alexander polynomial of the trefoil. -/
 theorem finsum_finrank_hatHomologyGrading_piece_smul_trefoil :
     ∑ᶠ p : ℤ × ℤ, Module.finrank (ZMod 2)
-        ((isKnotGrading_trefoil.hatHomologyGrading (hatDifferential_trefoil_comp_self 1)).piece p) •
+        ((isKnotGrading_trefoil.hatHomologyGrading
+          (hatDifferential_trefoil_comp_self_eq_zero 1)).piece p) •
         (p.1.negOnePow • T p.2 : ℤ[T;T⁻¹]) =
       T 1 - 1 + T (-1) := by
   rw [IsKnotGrading.finsum_finrank_hatHomologyGrading_piece_smul, gradedEulerChar_trefoil]

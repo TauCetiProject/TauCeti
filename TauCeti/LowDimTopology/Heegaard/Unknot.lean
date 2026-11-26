@@ -86,6 +86,10 @@ def genusZero : HeegaardRegionSystem 0 Empty Unit B where
 
 variable {B}
 
+@[simp]
+theorem genusZero_basepoint (b : B) : (genusZero B).basepoint b = () :=
+  (rfl)
+
 /-- The genus-zero diagram has a single generator, the empty tuple. -/
 instance : Unique (genusZero B).Generator where
   default := ⟨1, fun i => i.elim0⟩
@@ -116,9 +120,9 @@ theorem isKnotGrading_genusZero (w z : B) :
     (genusZero B).IsKnotGrading (fun _ => 2) w z 0 0 where
   maslov_sub_maslov {x y D} _ := by
     rw [maslovIndex_genusZero]
-    simp [genusZero]
+    simp
   alexander_sub_alexander {x y D} _ := by
-    simp [genusZero]
+    simp
 
 /-- **The hat differential of the genus-zero diagram vanishes**: every domain has even Maslov
 index `2 D`, never one. -/
@@ -132,7 +136,7 @@ theorem hatDifferential_genusZero : (genusZero B).hatDifferential (fun _ => 2) =
   omega
 
 /-- The hat differential of the genus-zero diagram squares to zero, since it vanishes. -/
-theorem hatDifferential_genusZero_comp_self :
+theorem hatDifferential_genusZero_comp_self_eq_zero :
     (genusZero B).hatDifferential (fun _ => 2) ∘ₗ (genusZero B).hatDifferential (fun _ => 2) =
       0 := by
   rw [hatDifferential_genusZero, LinearMap.zero_comp]
@@ -141,7 +145,7 @@ theorem hatDifferential_genusZero_comp_self :
 so the homology is the chain group, spanned by the single generator. -/
 theorem finrank_hatHomology_genusZero :
     Module.finrank (ZMod 2)
-      ((genusZero B).hatHomology (fun _ => 2) hatDifferential_genusZero_comp_self) = 1 := by
+      ((genusZero B).hatHomology (fun _ => 2) hatDifferential_genusZero_comp_self_eq_zero) = 1 := by
   rw [(((genusZero B).hatDifferential fun _ => 2).homologyEquivOfEqZero _
       hatDifferential_genusZero).finrank_eq, Module.finrank_finsupp_self, Fintype.card_unique]
 
@@ -150,7 +154,7 @@ the single generator has Maslov and Alexander gradings `0`. -/
 theorem finsum_finrank_hatHomologyGrading_piece_smul_genusZero (w z : B) :
     ∑ᶠ p : ℤ × ℤ, Module.finrank (ZMod 2)
         (((isKnotGrading_genusZero w z).hatHomologyGrading
-          hatDifferential_genusZero_comp_self).piece p) •
+          hatDifferential_genusZero_comp_self_eq_zero).piece p) •
         (p.1.negOnePow • T p.2 : ℤ[T;T⁻¹]) =
       1 := by
   rw [IsKnotGrading.finsum_finrank_hatHomologyGrading_piece_smul, gradedEulerChar_def]
