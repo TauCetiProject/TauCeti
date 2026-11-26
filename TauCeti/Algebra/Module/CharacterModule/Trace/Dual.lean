@@ -6,11 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.CharacterModule.MatlisGenerator
-public import Mathlib.LinearAlgebra.PerfectPairing.Basic
-public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
-import TauCeti.Algebra.Module.Injective.Bidual
 import Mathlib.LinearAlgebra.TensorProduct.Associator
-import TauCeti.Algebra.Module.CharacterModule
 
 /-!
 # Comparing linear duals and additive characters by a trace
@@ -25,11 +21,8 @@ vanishes on an `R`-submodule exactly when its additive character vanishes there.
 annihilators computed by linear duality agree with those computed by additive duality, even
 though the trace character itself need not be injective as an additive map.
 
-`CharacterModule.IsMatlisGenerator.liftPairing` recovers an `R`-valued bilinear pairing from an
-`R`-linear pairing into additive characters. Its trace determines it uniquely. Scaling both
-the trace and the additive pairing by the same unit leaves it unchanged. If the additive
-pairing identifies one module with the character module of a finitely generated module, the
-recovered pairing is perfect.
+Pairing applications are developed in
+`TauCeti.Algebra.Module.CharacterModule.Trace.Pairing`.
 
 These comparisons are the algebraic input for expressing finite Cartier duality and its local
 annihilators over self-injective coefficient rings. No Galois action or Tate twist is imposed
@@ -94,10 +87,11 @@ theorem IsMatlisGenerator.dualEquiv_symm_apply (η : CharacterModule M) (m : M) 
 
 /-- Trace comparison commutes with precomposition by a coefficient map. This includes the
 inverse automorphisms used in contragredient actions. -/
-theorem IsMatlisGenerator.dualEquiv_dualMap
-    {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) (g : Module.Dual R N) :
-    hχ.dualEquiv M (f.dualMap g) = CharacterModule.dual f (hχ.dualEquiv N g) := by
-  ext m
+theorem IsMatlisGenerator.dualEquiv_comp_dualMap
+    {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) :
+    (hχ.dualEquiv M).toLinearMap.comp f.dualMap =
+      (CharacterModule.dual f).comp (hχ.dualEquiv N).toLinearMap := by
+  ext g m
   exact (hχ.dualEquiv_apply _ _).trans (hχ.dualEquiv_apply g (f m)).symm
 
 /-- Replacing a trace by a unit multiple scales the comparison by that unit. -/
@@ -125,76 +119,5 @@ theorem IsMatlisGenerator.comap_ker_dual_subtype (S : Submodule R M) :
   · intro h
     ext m
     exact h m m.property
-
-variable {N : Type*} [AddCommGroup N] [Module R N]
-
-/-- The `R`-valued bilinear pairing whose trace is the given `R`-linear pairing into additive
-characters. -/
-def IsMatlisGenerator.liftPairing (b : M →ₗ[R] CharacterModule N) : M →ₗ[R] N →ₗ[R] R :=
-  (hχ.dualEquiv N).symm.toLinearMap.comp b
-
-/-- Composing a lifted pairing with the trace recovers its additive character. -/
-@[simp]
-theorem IsMatlisGenerator.dualEquiv_liftPairing (b : M →ₗ[R] CharacterModule N) (m : M) :
-    hχ.dualEquiv N (hχ.liftPairing b m) = b m :=
-  (hχ.dualEquiv N).apply_symm_apply (b m)
-
-/-- The trace identity characterizing the lifted pairing. -/
-@[simp]
-theorem IsMatlisGenerator.trace_liftPairing_apply (b : M →ₗ[R] CharacterModule N) (m : M) (n : N) :
-    χ (hχ.liftPairing b m n) = b m n := by
-  rw [← hχ.dualEquiv_apply, hχ.dualEquiv_liftPairing]
-
-/-- The trace identity holds with every scalar inserted, as required to recover an `R`-valued
-pairing from an additive duality. -/
-theorem IsMatlisGenerator.trace_mul_liftPairing_apply
-    (b : M →ₗ[R] CharacterModule N) (r : R) (m : M) (n : N) :
-    χ (r * hχ.liftPairing b m n) = b (r • m) n := by
-  rw [map_smul, smul_apply, ← hχ.trace_liftPairing_apply b m (r • n), map_smul, smul_eq_mul]
-
-/-- A bilinear pairing is the lifted pairing exactly when its trace is the original additive
-pairing. This proves uniqueness without requiring the trace to be additively injective. -/
-theorem IsMatlisGenerator.liftPairing_eq_iff (b : M →ₗ[R] CharacterModule N)
-    (B : M →ₗ[R] N →ₗ[R] R) :
-    hχ.liftPairing b = B ↔ ∀ m n, χ (B m n) = b m n := by
-  refine ⟨fun h m n ↦ h ▸ hχ.trace_liftPairing_apply b m n, fun h ↦ ?_⟩
-  apply LinearMap.ext
-  intro m
-  apply (hχ.dualEquiv N).injective
-  ext n
-  simp only [hχ.dualEquiv_apply, hχ.trace_liftPairing_apply, h]
-
-/-- Scaling the trace and the additive pairing by the same unit leaves the recovered
-`R`-valued pairing unchanged. -/
-theorem IsMatlisGenerator.liftPairing_units_smul (b : M →ₗ[R] CharacterModule N) (u : Rˣ) :
-    (hχ.units_smul u).liftPairing ((u : R) • b) = hχ.liftPairing b := by
-  apply ((hχ.units_smul u).liftPairing_eq_iff _ _).mpr
-  intro m n
-  simpa only [smul_apply, smul_eq_mul, LinearMap.smul_apply, map_smul] using
-    hχ.trace_mul_liftPairing_apply b (u : R) m n
-
-/-- Trace transport preserves the bijectivity of the map into the dual. -/
-theorem IsMatlisGenerator.bijective_liftPairing_iff (b : M →ₗ[R] CharacterModule N) :
-    Function.Bijective (hχ.liftPairing b) ↔ Function.Bijective b :=
-  (hχ.dualEquiv N).symm.bijective.of_comp_iff' b
-
-/-- A perfect additive duality with a finitely generated module over a finite ring with a
-Matlis generator lifts to a perfect `R`-valued pairing. Reflexivity is supplied by
-self-injectivity of the ring, so neither module is required to be free. -/
-theorem IsMatlisGenerator.isPerfPair_liftPairing [Module.Finite R N]
-    (b : M →ₗ[R] CharacterModule N) (hb : Function.Bijective b) :
-    (hχ.liftPairing b).IsPerfPair := by
-  let : Module.Injective R R := hχ.moduleInjective
-  exact LinearMap.IsPerfPair.of_bijective _ ((hχ.bijective_liftPairing_iff b).mpr hb)
-
-/-- The orthogonal of a submodule for the lifted pairing is computed by the original additive
-pairing. The submodule condition is needed to detect vanishing after applying the trace. -/
-@[simp high]
-theorem IsMatlisGenerator.mem_orthogonalBilin_liftPairing_iff
-    (b : M →ₗ[R] CharacterModule N) (S : Submodule R M) (n : N) :
-    n ∈ S.orthogonalBilin (hχ.liftPairing b) ↔ ∀ m ∈ S, b m n = 0 := by
-  rw [Submodule.mem_orthogonalBilin]
-  simpa only [LinearMap.flip_apply, hχ.trace_liftPairing_apply] using
-    (hχ.forall_apply_eq_zero_iff S ((hχ.liftPairing b).flip n)).symm
 
 end CharacterModule
