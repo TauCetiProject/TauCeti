@@ -888,15 +888,6 @@ exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization
       (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j := by
     rw [equivRealProdCLM_symm_realChart]
     exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
-  -- Beyond `s = 1` the output end lies outside the disc `‖w‖ ≤ 2 exp (2π)` of the input ends.
-  have hinf (ζ : ℝ × ℝ) (hζ : 1 < ζ.1) (j : ι) :
-      Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j := by
-    intro h
-    have h₁ := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
-    rw [Prod.mk.eta, h] at h₁
-    have : Real.exp (2 * π) < Real.exp (2 * π * ζ.1) :=
-      Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
-    linarith [hout j, norm_nonneg (a j)]
   choose C R _ hend using fun i ↦
     exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_movingEnds
       ω hH hHs hHout hHouts ha hsep hout i (hX i) (hx i) (hnd i) (hJe i) (hJex i) (hJeq i)
@@ -905,7 +896,8 @@ exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization
   obtain ⟨Cout, Rout, -, hendOut⟩ :=
     exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_movingEnds
       ω hH hHs hHout hHouts ha hout hXout hxout hndout hJout hJoutx hJoutq
-      (fun ζ hζ ↦ hJ _ (hinf ζ (by linarith))) (fun ζ hζ ↦ hu _ (hinf ζ (by linarith))) hFout
+      (fun ζ hζ ↦ hJ _ (equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith)))
+      (fun ζ hζ ↦ hu _ (equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith))) hFout
       huxout hδout
   exact
     exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearization_add_of_movingEnds_of_ends
