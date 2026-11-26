@@ -46,12 +46,19 @@ composite of those from `𝔬` to `𝔬'` and from `𝔬'` to `𝔬''`
 (`TauCeti.MorseOrientation.mem_reversalSet_iff_xor`). So the integral Morse homology of `(f, X)` is
 determined, up to canonical isomorphism, by `f` and `X` alone.
 
+Equivalently, `𝔬'` is obtained from `𝔬` by transporting its orientations into the charts of `𝔬'`
+(`TauCeti.MorseOrientation.transport`), which keeps the integral boundary
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_transport`), and then reversing them on the
+reversal set (`TauCeti.MorseOrientation.transport_reverse_reversalSet`).
+
 When the charts agree, the reversal set of `𝔬` and `𝔬.reverse S` is `S`
 (`TauCeti.MorseOrientation.reversalSet_reverse`), and the conjugation above is
 `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_reverse`.
 
 ## Main definitions
 
+* `TauCeti.MorseOrientation.transport`: the orientations of `𝔬` carried into the Morse charts of
+  `𝔬'`.
 * `TauCeti.MorseOrientation.reversalSet`: the critical points at which two choices of orientation
   data orient the unstable manifold oppositely.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseComplexIso`: the isomorphism of integral Morse chain
@@ -59,6 +66,10 @@ When the charts agree, the reversal set of `𝔬` and `𝔬.reverse S` is `S`
 
 ## Main results
 
+* `TauCeti.MorseOrientation.transport_reverse_reversalSet`: the orientations of `𝔬`, transported
+  into the charts of `𝔬'` and reversed on the reversal set, are those of `𝔬'`.
+* `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundary_transport`: transporting orientation data
+  keeps the integral boundary.
 * `TauCeti.MorseOrientation.mem_reversalSet_iff_xor`: reversal sets compose by symmetric
   difference.
 * `TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_reversalSet`: the boundary
@@ -160,6 +171,48 @@ theorem reversalSet_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f)) [Decidable
   · simpa [hp] using (Module.Ray.ne_neg_self (𝔬.orientation p)).symm
   · simp [hp]
 
+variable (𝔬 𝔬') in
+/-- **Transport of orientation data to other Morse charts.** The orientation data with the Morse
+charts of `𝔬'` and, at each critical point `p`, the orientation of `𝔬` carried along the change of
+negative coordinates `(𝔬.chart p).negativeChange (𝔬'.chart p)` from the chart of `𝔬` to that of
+`𝔬'`. Both orient the unstable manifold of `p` in the same way, so the integral boundary does not
+change (`TauCeti.IsAdaptedPseudoGradient.signedMorseBoundaryCoeff_transport`). -/
+-- The body is exposed: the type of `orientation` depends on `chart`, and stating
+-- `transport_orientation` needs `(𝔬.transport 𝔬').chart` to reduce to `𝔬'.chart`.
+@[expose]
+noncomputable def transport : MorseOrientation f X where
+  chart := 𝔬'.chart
+  coord_mfderiv_chart := 𝔬'.coord_mfderiv_chart
+  orientation p := Orientation.map _ ((𝔬.chart p).negativeChange (𝔬'.chart p)) (𝔬.orientation p)
+
+variable (𝔬 𝔬') in
+/-- Transported orientation data have the Morse charts of the target data. -/
+@[simp]
+theorem transport_chart : (𝔬.transport 𝔬').chart = 𝔬'.chart :=
+  rfl
+
+variable (𝔬 𝔬') in
+/-- The orientation of the transported data at `p` is the orientation of `𝔬` carried along the
+change of negative coordinates. -/
+@[simp]
+theorem transport_orientation (p : criticalPoints 𝓘(ℝ, E) f) :
+    (𝔬.transport 𝔬').orientation p =
+      Orientation.map _ ((𝔬.chart p).negativeChange (𝔬'.chart p)) (𝔬.orientation p) :=
+  rfl
+
+variable (𝔬 𝔬') in
+/-- **Two choices of orientation data differ by a transport and a reversal**: reversing the
+orientations of `𝔬`, transported into the Morse charts of `𝔬'`, at the points of the reversal
+set gives `𝔬'`, since two orientations of a finite-dimensional real vector space are equal or
+opposite. -/
+theorem transport_reverse_reversalSet [DecidablePred (· ∈ 𝔬.reversalSet 𝔬')] :
+    (𝔬.transport 𝔬').reverse (𝔬.reversalSet 𝔬') = 𝔬' := by
+  -- `reverse_eq_mk` reverses on the reversal set itself, with another decidability instance.
+  classical
+  convert (𝔬.transport 𝔬').reverse_eq_mk 𝔬'.orientation
+  · exact mem_reversalSet_iff
+  · rfl
+
 variable [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
 
 /-- **Reversal sets compose by symmetric difference.** For three choices of orientation data, a
@@ -206,6 +259,37 @@ namespace IsAdaptedPseudoGradient
 
 variable [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
   {hX : IsAdaptedPseudoGradient f X} {𝔬 𝔬' : MorseOrientation f X} {hf : IsMorse 𝓘(ℝ, E) f}
+
+variable (hf) in
+include hf in
+/-- **Transporting orientation data keeps the boundary coefficients**: the signed counts of
+trajectories do not depend on the Morse charts, once the orientations are carried along the
+changes of negative coordinates. -/
+@[simp]
+theorem signedMorseBoundaryCoeff_transport (p q : criticalPoints 𝓘(ℝ, E) f) :
+    hX.signedMorseBoundaryCoeff (𝔬.transport 𝔬') p q = hX.signedMorseBoundaryCoeff 𝔬 p q := by
+  by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
+  · rw [signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq,
+      signedMorseBoundaryCoeff_of_morseIndex_eq_add_one hpq]
+    exact signedTrajectoryCount_map_negativeChange (𝔬.coord_mfderiv_chart p)
+      (𝔬'.coord_mfderiv_chart p) (𝔬.coord_mfderiv_chart q) (𝔬'.coord_mfderiv_chart q) hf _ _ hpq
+  · simp [hpq]
+
+/-- **Transporting orientation data keeps the integral boundary.** -/
+@[simp]
+theorem signedMorseBoundary_transport (R : Type*) [Ring R] :
+    hX.signedMorseBoundary (𝔬.transport 𝔬') hf R = hX.signedMorseBoundary 𝔬 hf R :=
+  Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ by
+    rw [signedMorseBoundary_single_apply, signedMorseBoundary_single_apply,
+      signedMorseBoundaryCoeff_transport hf]
+
+/-- **Transporting orientation data keeps the graded integral boundary.** -/
+@[simp]
+theorem signedMorseBoundaryAt_transport (R : Type*) [Ring R] (n : ℕ) :
+    hX.signedMorseBoundaryAt (𝔬.transport 𝔬') hf R n = hX.signedMorseBoundaryAt 𝔬 hf R n :=
+  Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ by
+    rw [signedMorseBoundaryAt_single_apply, signedMorseBoundaryAt_single_apply,
+      signedMorseBoundaryCoeff_transport hf]
 
 variable (𝔬 𝔬' hf) in
 include hf in
