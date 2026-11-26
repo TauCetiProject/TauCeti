@@ -8,69 +8,63 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RingTheory.Valuation.ValuationRing
-public import Mathlib.RingTheory.Valuation.ValuationSubring
 import Mathlib.LinearAlgebra.Matrix.ElementaryRowOperations
-import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Data.Matrix.Mul
 
 /-!
-# Hermite normal form over valuation domains and valued-field matrix integrality
+# Hermite reduction over pre-valuation rings
 
-Over a valuation domain `A`, any two elements are comparable by divisibility
-(`ValuationRing.dvd_total`). Consequently, elementary row transvections in `GL n A` can clear any
-single entry of a column against a pivot row without altering rows outside that pair or columns
-where both rows vanish. Iterating this clearing step along an embedding `ι : k ↪ n` ordered by a
-column weight `wt : k → ℕ` yields a rectangular Hermite factorization `y = U_ι * D` with
-`U ∈ GL n A`, `D` block upper triangular for `wt`, and `U⁻¹_ι * y = D`. Transposing gives a
-column-clearing matrix `V ∈ GL n A` killing all columns of `M * V` outside `Set.range ι`.
-
-We also record two companion facts for matrices over valued rings and fields: an entrywise
-valuation bound for matrix products (`Matrix.valuation_mul_le`) and the determinant criterion for
-an invertible matrix over a valued field `F` to lie in the image of `GL n v.valuationSubring`
-(`Matrix.GeneralLinearGroup.mem_range_map_valuationSubring_iff`).
+Over a pre-valuation ring `A` (a commutative ring in which divisibility is total, including
+valuation domains and their quotients such as `ℤ / p^n`), elementary row transvections in `GL n A`
+can clear any single entry of a column against a pivot row without altering rows outside that pair
+or columns where both rows vanish. Iterating this clearing step along an embedding `ι : k ↪ n`
+ordered by a column weight `wt : k → α` into any linear order `α` yields a rectangular Hermite
+factorization `y = U_ι * D` with `U ∈ GL n A`, `D` block upper triangular for `wt`, and
+`U⁻¹_ι * y = D`. Here `D` is not canonical and is only guaranteed to be block upper triangular for
+the chosen weight `wt`. Transposing gives a column-clearing matrix `V ∈ GL n A` killing all columns
+of `M * V` outside `Set.range ι`.
 
 ## Main results
 
-* `Matrix.exists_gl_mul_apply_eq_zero`: over a valuation domain, a product of elementary row
-  transvections clears a single entry `(i, a)` using a distinct pivot row `i₀`.
-* `Matrix.exists_gl_mul_eq_zero_on`: clears an arbitrary finite set `t` of rows in column `a`
-  against a pivot row `i₀ ∉ t`.
-* `Matrix.exists_hermite_factorization_of_valuationRing`: rectangular Hermite factorization
+* `Matrix.exists_gl_mul_apply_eq_zero_of_preValuationRing`: over a pre-valuation ring, a product of
+  elementary row transvections clears a single entry `(i, a)` using a distinct pivot row `i₀`.
+* `Matrix.exists_gl_mul_eq_zero_on_of_preValuationRing`: clears an arbitrary finite set `t` of rows
+  in column `a` against a pivot row `i₀ ∉ t`.
+* `Matrix.exists_hermite_factorization_of_preValuationRing`: rectangular Hermite factorization
   `y = U.val.submatrix id ι * D` with `D.BlockTriangular wt` and `U⁻¹.val.submatrix ι id * y = D`.
-* `Matrix.exists_mul_gl_eq_zero_of_notMem_range`: transposed form clearing the columns of `M * V`
-  outside `Set.range ι`.
-* `Matrix.valuation_mul_le`: entrywise valuation bound `v ((A * B) a b) ≤ c * d`.
-* `Matrix.GeneralLinearGroup.mem_range_map_valuationSubring_iff`: `g : GL n F` lies in the image
-  of `GL n v.valuationSubring` if and only if all entries have valuation at most `1` and
-  `v g.val.det = 1`.
+* `Matrix.exists_mul_gl_apply_eq_zero_off_range_of_preValuationRing`: transposed form clearing all
+  columns of `M * V` outside `Set.range ι`.
 
 ## References
 
 * N. Bourbaki, *Commutative Algebra*, Chapter VI, §1 (valuation rings and divisibility).
-* L. Alpöge, Lean formalization of the Riemann hypothesis for Dirichlet `L`-functions,
-  `New.IsValuationPair.hermite`, `New.IsValuationPair.exists_mul_clear_cols`, `New.v_matrix_mul_le`,
-  and `New.mem_intGL_iff_det` in `src/Lib/General/LinearAlgebra/HermiteForm.lean`,
-  <https://github.com/leanprover-community/riemann-hypothesis/tree/dba5aded4bf7>.
+* Adapted from `grh-lean` (<https://github.com/lsernau/grh-lean>, commit
+  `72fead102f663d5c7a407964a13dc0cf9d977207`,
+  file `grh/src/Lib/General/LinearAlgebra/HermiteForm.lean`,
+  `New.IsValuationPair.hermite` and `New.IsValuationPair.exists_mul_clear_cols`,
+  Copyright 2026 Anthropic, PBC, Apache 2.0).
 -/
 
 public section
 
-open Finset Matrix ValuationRing
+open Finset Matrix
 
 namespace Matrix
 
-section ValuationDomain
+section PreValuationRing
 
-variable {A n k : Type*} [CommRing A] [IsDomain A] [ValuationRing A] [Fintype n] [DecidableEq n]
+variable {A n k : Type*} [CommRing A] [PreValuationRing A] [Fintype n] [DecidableEq n]
 
-/-- Over a valuation domain, given distinct rows `i₀ ≠ i` of a matrix `y` and a column `a`, some
+/-- Over a pre-valuation ring, given distinct rows `i₀ ≠ i` of a matrix `y` and a column `a`, some
 `W : GL n A` clears the entry `(i, a)` of `W * y`, leaves every row other than `i₀` and `i`
 unchanged, and leaves every column where both rows `i₀` and `i` vanish unchanged. -/
-theorem exists_gl_mul_apply_eq_zero (y : Matrix n k A) {i₀ i : n} (hne : i₀ ≠ i) (a : k) :
+theorem exists_gl_mul_apply_eq_zero_of_preValuationRing (y : Matrix n k A) {i₀ i : n}
+    (hne : i₀ ≠ i) (a : k) :
     ∃ W : GL n A,
       (W.val * y) i a = 0 ∧
       (∀ (r : n) (j : k), r ≠ i₀ → r ≠ i → (W.val * y) r j = y r j) ∧
       ∀ (r : n) (j : k), y i₀ j = 0 → y i j = 0 → (W.val * y) r j = y r j := by
-  obtain ⟨z, hz⟩ | ⟨x, hx⟩ := dvd_total (y i₀ a) (y i a)
+  obtain ⟨z, hz⟩ | ⟨x, hx⟩ := ValuationRing.dvd_total (y i₀ a) (y i a)
   · let W : GL n A := GeneralLinearGroup.transvection i i₀ hne.symm (-z)
     refine ⟨W, ?_, ?_, ?_⟩
     · simp [W, transvection_mul_apply_same, hz, mul_comm]
@@ -97,10 +91,11 @@ theorem exists_gl_mul_apply_eq_zero (y : Matrix n k A) {i₀ i : n} (hne : i₀ 
         · simp [hrow_i₀, hj₀, hji]
         · exact hother r j hr₀ hri
 
-/-- Over a valuation domain, for a matrix `y`, a column `a`, a pivot row `i₀`, and a finite set
+/-- Over a pre-valuation ring, for a matrix `y`, a column `a`, a pivot row `i₀`, and a finite set
 `t` of rows with `i₀ ∉ t`, some `W : GL n A` clears column `a` in all rows of `t` and leaves every
 column in which `i₀` and all rows of `t` vanish unchanged. -/
-theorem exists_gl_mul_eq_zero_on (y : Matrix n k A) (a : k) {i₀ : n} {t : Finset n} (hi₀ : i₀ ∉ t) :
+theorem exists_gl_mul_eq_zero_on_of_preValuationRing (y : Matrix n k A) (a : k) {i₀ : n}
+    {t : Finset n} (hi₀ : i₀ ∉ t) :
     ∃ W : GL n A, (∀ i ∈ t, (W.val * y) i a = 0) ∧
       ∀ j : k, y i₀ j = 0 → (∀ i ∈ t, y i j = 0) → ∀ r : n, (W.val * y) r j = y r j := by
   induction t using Finset.induction_on with
@@ -108,7 +103,8 @@ theorem exists_gl_mul_eq_zero_on (y : Matrix n k A) (a : k) {i₀ : n} {t : Fins
   | insert i t hi ih =>
     obtain ⟨hne, hi₀⟩ : i₀ ≠ i ∧ i₀ ∉ t := by simpa using hi₀
     obtain ⟨W, W_zero, W_keep⟩ := ih hi₀
-    obtain ⟨V, V_zero, V_other, V_keep⟩ := (W.val * y).exists_gl_mul_apply_eq_zero hne a
+    obtain ⟨V, V_zero, V_other, V_keep⟩ :=
+      (W.val * y).exists_gl_mul_apply_eq_zero_of_preValuationRing hne a
     refine ⟨V * W, fun r hr ↦ ?_, fun j hj₀ hjt r ↦ ?_⟩ <;>
       rw [Units.val_mul, Matrix.mul_assoc]
     · obtain rfl | hrt := mem_insert.1 hr
@@ -118,12 +114,12 @@ theorem exists_gl_mul_eq_zero_on (y : Matrix n k A) (a : k) {i₀ : n} {t : Fins
       have W_col : ∀ r : n, (W.val * y) r j = y r j := W_keep j hj₀ hjt
       rw [V_keep r j ((W_col i₀).trans hj₀) ((W_col i).trans hji), W_col]
 
-/-- **Rectangular Hermite factorization over a valuation domain.** Given an embedding `ι : k ↪ n`,
-an `n × k` matrix `y` over a valuation domain `A`, and a column weight `wt : k → ℕ`, there exist
-`U : GL n A` and `D : Matrix k k A` such that `D` is block upper triangular for `wt`,
-`y = U.val.submatrix id ι * D`, and `U⁻¹.val.submatrix ι id * y = D`. -/
-theorem exists_hermite_factorization_of_valuationRing [Fintype k] (y : Matrix n k A) (ι : k ↪ n)
-    (wt : k → ℕ := 0) :
+/-- **Rectangular Hermite factorization over a pre-valuation ring.** Given an embedding `ι : k ↪ n`,
+an `n × k` matrix `y` over a pre-valuation ring `A`, and a column weight `wt : k → α` into a linear
+order `α`, there exist `U : GL n A` and `D : Matrix k k A` such that `D` is block upper triangular
+for `wt`, `y = U.val.submatrix id ι * D`, and `U⁻¹.val.submatrix ι id * y = D`. -/
+theorem exists_hermite_factorization_of_preValuationRing [Fintype k] {α : Type*} [LinearOrder α]
+    (y : Matrix n k A) (ι : k ↪ n) (wt : k → α) :
     ∃ (U : GL n A) (D : Matrix k k A),
       D.BlockTriangular wt ∧
       y = U.val.submatrix id ι * D ∧
@@ -138,8 +134,9 @@ theorem exists_hermite_factorization_of_valuationRing [Fintype k] (y : Matrix n 
     | empty => exact ⟨1, by simp [IsReduced]⟩
     | insert a s ha hmax ih =>
       obtain ⟨U, hs⟩ := ih
-      obtain ⟨W, hcol, hkeep⟩ := (U.val * y).exists_gl_mul_eq_zero_on a (i₀ := ι a)
-        (t := ((insert a s).map ι)ᶜ) (by simp)
+      obtain ⟨W, hcol, hkeep⟩ :=
+        (U.val * y).exists_gl_mul_eq_zero_on_of_preValuationRing a (i₀ := ι a)
+          (t := ((insert a s).map ι)ᶜ) (by simp)
       have s_cols : ∀ j ∈ s, ∀ r : n, (W.val * (U.val * y)) r j = (U.val * y) r j := by
         intro j hj r
         refine hkeep j (hs j hj (ι a) fun b hb hba ↦ absurd (ι.injective hba.symm) (ha ∘ (· ▸ hb)))
@@ -162,75 +159,37 @@ theorem exists_hermite_factorization_of_valuationRing [Fintype k] (y : Matrix n 
   · have hrows (i : n) (hi : i ∉ Set.range ι) (j : k) : (U.val * y) i j = 0 :=
       hzero j (mem_univ j) i fun b _ h ↦ absurd ⟨b, h.symm⟩ hi
     calc
-      y = U⁻¹.val * (U.val * y) := by simp [← Matrix.mul_assoc]
-      _ = U⁻¹.val.submatrix id ι * (U.val * y).submatrix ι id := ext fun i j ↦
-        (Fintype.sum_of_injective ι ι.injective _ _ (by simp +contextual [hrows]) fun _ ↦ rfl).symm
+      y = (U⁻¹.val * (U.val * y)).submatrix id id := by simp [← Matrix.mul_assoc]
+      _ = U⁻¹.val.submatrix id ι * (U.val * y).submatrix ι id :=
+        submatrix_mul_of_injective_right U⁻¹.val (U.val * y) id ι id ι.injective
+          fun i j hij ↦ by_contra fun hi ↦ hij (hrows i hi j)
   · ext i j
     simp [Matrix.mul_apply]
 
-/-- **Transposed Hermite reduction over a valuation domain.** For a `k × n` matrix `M` over a
-valuation domain `A` and an embedding `ι : k ↪ n`, some `V : GL n A` clears all columns of `M * V`
-outside `Set.range ι`. -/
-theorem exists_mul_gl_eq_zero_of_notMem_range (M : Matrix k n A) (ι : k ↪ n) :
+/-- **Transposed Hermite reduction over a pre-valuation ring.** For a `k × n` matrix `M` over a
+pre-valuation ring `A` and an embedding `ι : k ↪ n`, some `V : GL n A` clears all columns of
+`M * V` outside `Set.range ι`. -/
+theorem exists_mul_gl_apply_eq_zero_off_range_of_preValuationRing (M : Matrix k n A) (ι : k ↪ n) :
     ∃ V : GL n A, ∀ (a : k) (j : n), j ∉ Set.range ι → (M * V.val) a j = 0 := by
   let _ : Fintype k := Fintype.ofInjective ι ι.injective
-  obtain ⟨U, D, -, h_form, -⟩ := Mᵀ.exists_hermite_factorization_of_valuationRing ι
+  obtain ⟨U, D, -, h_form, -⟩ :=
+    Mᵀ.exists_hermite_factorization_of_preValuationRing ι (fun _ ↦ ())
   have h_rows : U⁻¹.val * Mᵀ = (1 : Matrix n n A).submatrix id ι * D := by
-    rw [h_form, ← Matrix.mul_assoc]
-    congr 1
-    ext i j
-    have hmul : (U⁻¹.val * U.val) i (ι j) = (1 : Matrix n n A) i (ι j) := by
-      rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
-    simp only [Matrix.mul_apply, submatrix_apply, id_eq] at hmul ⊢
-    exact hmul
-  let V : GL n A :=
-    ⟨U⁻¹.valᵀ, U.valᵀ,
-      by rw [← transpose_mul, ← Units.val_mul, mul_inv_cancel]; simp,
-      by rw [← transpose_mul, ← Units.val_mul, inv_mul_cancel]; simp⟩
+    rw [h_form, ← Matrix.mul_assoc, ← submatrix_id_id U⁻¹.val,
+      ← submatrix_mul U⁻¹.val U.val id id ι Function.bijective_id,
+      ← Units.val_mul, inv_mul_cancel, Units.val_one]
+  let V : GL n A := (GeneralLinearGroup.transposeMulEquiv n U⁻¹).unop
   refine ⟨V, fun a j hj ↦ ?_⟩
   have h_entry : ((1 : Matrix n n A).submatrix id ι * D) j a = 0 := by
     simp only [Matrix.mul_apply, submatrix_apply, id_eq, Matrix.one_apply]
     refine Finset.sum_eq_zero fun b _ ↦ ?_
-    simp [show j ≠ ι b from fun h ↦ hj ⟨b, h.symm⟩]
+    have hjb : j ≠ ι b := fun h ↦ hj ⟨b, h.symm⟩
+    simp [hjb]
   have hMV : (M * V.val) a j = (U⁻¹.val * Mᵀ) j a := by
-    simpa [V] using congrFun₂ (Matrix.transpose_mul M V.val) j a
+    have hV : V.val = U⁻¹.valᵀ := GeneralLinearGroup.coe_unop_transposeMulEquiv n U⁻¹
+    rw [← transpose_apply (M * V.val), Matrix.transpose_mul, hV, transpose_transpose]
   exact hMV.trans ((congrFun₂ h_rows j a).trans h_entry)
 
-end ValuationDomain
-
-section ValuedMatrix
-
-/-- Entrywise valuation bound for matrix products: if every entry of `A` has valuation at most `c`
-and every entry of `B` has valuation at most `d`, then every entry of `A * B` has valuation at most
-`c * d`. -/
-theorem valuation_mul_le {R Γ₀ m n l : Type*} [Ring R] [LinearOrderedCommMonoidWithZero Γ₀]
-    [Fintype n] (v : Valuation R Γ₀) {A : Matrix m n R} {B : Matrix n l R} {c d : Γ₀}
-    (hA : ∀ (a : m) (b : n), v (A a b) ≤ c) (hB : ∀ (a : n) (b : l), v (B a b) ≤ d)
-    (a : m) (b : l) :
-    v ((A * B) a b) ≤ c * d :=
-  v.map_sum_le fun i _ ↦ (map_mul v _ _).trans_le (mul_le_mul' (hA a i) (hB i b))
-
-/-- **Determinant criterion for integral invertible matrices over a valued field.** An invertible
-matrix `g : GL n F` lies in the image of `GL n v.valuationSubring` if and only if all of its
-entries have valuation at most `1` and `v g.val.det = 1`. -/
-theorem GeneralLinearGroup.mem_range_map_valuationSubring_iff {F Γ₀ n : Type*} [Field F]
-    [LinearOrderedCommGroupWithZero Γ₀] [Fintype n] [DecidableEq n]
-    (v : Valuation F Γ₀) (g : GL n F) :
-    g ∈ (GeneralLinearGroup.map v.valuationSubring.subtype).range ↔
-      (∀ a b : n, v (g.val a b) ≤ 1) ∧ v g.val.det = 1 := by
-  have unit_iff (A : Matrix n n v.valuationSubring) :
-      IsUnit A.det ↔ v (v.valuationSubring.subtype.mapMatrix A).det = 1 := by
-    rw [← v.valuationSubring.subtype.map_det]
-    exact (Valuation.integer.integers v).isUnit_iff_valuation_eq_one
-  refine ⟨?_, fun ⟨h_int, h_det⟩ ↦ ?_⟩
-  · rintro ⟨u, rfl⟩
-    exact ⟨fun a b ↦ (u.val a b).prop,
-      (unit_iff u.val).1 ((Matrix.isUnit_iff_isUnit_det _).1 u.isUnit)⟩
-  · let A : Matrix n n v.valuationSubring := fun a b ↦ ⟨g.val a b, h_int a b⟩
-    refine ⟨GeneralLinearGroup.mk'' A ((unit_iff A).2 h_det), ?_⟩
-    ext a b
-    rfl
-
-end ValuedMatrix
+end PreValuationRing
 
 end Matrix
