@@ -74,16 +74,18 @@ variable {T G : Type*} [Group T] [Group G]
 
 /-- Correct an element to a fixed element by left multiplication from an invariant
 subgroup with surjective Lang map. The defect must lie in the subgroup's image. -/
+@[to_additive exists_fixed_neg_add_of_surjective_id_sub
+  /-- Correct an element to a fixed element by adding an element from an invariant subgroup
+  on which the difference map `t ↦ t - f t` is surjective. -/]
 theorem exists_fixed_inv_mul_of_surjective_commutatorMap (ι : T →* G)
     (f : T →* T) (F : G →* G) (hι : ∀ t, F (ι t) = ι (f t))
-    (hf : Function.Surjective (commutatorMap f)) {n : G}
+    (hf : Function.Surjective (fun t ↦ t / f t)) {n : G}
     (hn : n / F n ∈ ι.range) :
     ∃ t : T, F ((ι t)⁻¹ * n) = (ι t)⁻¹ * n := by
   obtain ⟨d, hd⟩ := hn
-  obtain ⟨t, ht⟩ := hf d
-  simp only [commutatorMap_apply] at ht
+  obtain ⟨t, rfl⟩ := hf d
   have hc : ι t / F (ι t) = n / F n := by
-    rw [hι, ← map_div, ht, hd]
+    simpa only [hι, map_div] using hd
   refine ⟨t, ?_⟩
   apply mul_left_cancel (a := ι t)
   calc
@@ -94,20 +96,23 @@ theorem exists_fixed_inv_mul_of_surjective_commutatorMap (ι : T →* G)
 
 /-- Fixed points in the image of an equivariant map lift if its kernel is parametrized by an
 invariant group with surjective Lang map. The parametrization need not be injective. -/
+@[to_additive exists_fixed_lift_of_surjective_id_sub
+  /-- A fixed point in the image lifts to a fixed point when the difference map
+  `t ↦ t - f t` is surjective on a group parametrizing the kernel. -/]
 theorem exists_fixed_lift_of_surjective_commutatorMap {H : Type*} [Group H]
-    (ψ : G →* H) (j : T →* G) (hker : j.range = ψ.ker)
+    (ψ : G →* H) (j : T →* G) (hex : Function.MulExact j ψ)
     (f : T →* T) (F : G →* G) (F' : H →* H)
     (hψ : ∀ x, ψ (F x) = F' (ψ x)) (hj : ∀ t, F (j t) = j (f t))
-    (hf : Function.Surjective (commutatorMap f)) {y : H} (hy_range : y ∈ Set.range ψ)
+    (hf : Function.Surjective (fun t ↦ t / f t)) {y : H} (hy_range : y ∈ Set.range ψ)
     (hy : F' y = y) :
     ∃ x : G, F x = x ∧ ψ x = y := by
   obtain ⟨n, hn⟩ := hy_range
   have hd : n / F n ∈ j.range := by
-    rw [hker, mem_ker, map_div, hψ, hn, hy, div_self']
+    apply (hex _).mp
+    rw [map_div, hψ, hn, hy, div_self']
   obtain ⟨t, ht⟩ := j.exists_fixed_inv_mul_of_surjective_commutatorMap f F hj hf hd
   refine ⟨(j t)⁻¹ * n, ht, ?_⟩
-  have htker : ψ (j t) = 1 := mem_ker.mp (hker ▸ ⟨t, rfl⟩)
-  simp [htker, hn]
+  simp [hex.apply_apply_eq_one, hn]
 
 end Group
 
@@ -121,19 +126,7 @@ theorem AddMonoidHom.exists_fixed_lift_of_surjective_sub_id {T G H : Type*}
     (hψ : ∀ x, ψ (F x) = F' (ψ x)) (hj : ∀ t, F (j t) = j (f t))
     (hf : Function.Surjective (fun t => f t - t)) {y : H} (hy_range : y ∈ Set.range ψ)
     (hy : F' y = y) : ∃ x : G, F x = x ∧ ψ x = y := by
-  have hker : j.toMultiplicative.range = ψ.toMultiplicative.ker := by
-    rw [MonoidHom.coe_toMultiplicative_range, MonoidHom.coe_toMultiplicative_ker,
-      hex.addMonoidHom_ker_eq]
-  have hlang : Function.Surjective (MonoidHom.commutatorMap f.toMultiplicative) := by
-    intro t
-    obtain ⟨s, hs⟩ := hf (-t.toAdd)
-    refine ⟨Multiplicative.ofAdd s, Multiplicative.ext ?_⟩
-    simpa only [MonoidHom.commutatorMap_apply, toAdd_div, AddMonoidHom.coe_toMultiplicative,
-      Function.comp_apply, toAdd_ofAdd, neg_sub, neg_neg] using congrArg Neg.neg hs
-  obtain ⟨z, hz⟩ := hy_range
-  obtain ⟨x, hx, hxy⟩ := ψ.toMultiplicative.exists_fixed_lift_of_surjective_commutatorMap
-    j.toMultiplicative hker f.toMultiplicative F.toMultiplicative F'.toMultiplicative
-    (fun x => congrArg Multiplicative.ofAdd (hψ x.toAdd))
-    (fun t => congrArg Multiplicative.ofAdd (hj t.toAdd)) hlang
-    ⟨Multiplicative.ofAdd z, congrArg Multiplicative.ofAdd hz⟩ (congrArg Multiplicative.ofAdd hy)
-  exact ⟨x.toAdd, congrArg Multiplicative.toAdd hx, congrArg Multiplicative.toAdd hxy⟩
+  apply ψ.exists_fixed_lift_of_surjective_id_sub j hex f F F' hψ hj _ hy_range hy
+  intro t
+  obtain ⟨s, hs⟩ := hf (-t)
+  exact ⟨s, by simpa only [neg_sub, neg_neg] using congrArg Neg.neg hs⟩

@@ -43,7 +43,7 @@ theorem existsUnique_fixed_lift_of_finite_ker (ψ : G →* H) {F : G →* G} {F'
     exact Subgroup.disjoint_def.mp hker k.property
       (TauCeti.mem_fixedSubgroup.mpr (congrArg Subtype.val hk))
   obtain ⟨x, hfixed, himage⟩ := ψ.exists_fixed_lift_of_surjective_commutatorMap
-    ψ.ker.subtype ψ.ker.range_subtype f F F' heq (fun _ ↦ rfl)
+    ψ.ker.subtype (mulExact_iff.mpr ψ.ker.range_subtype.symm) f F F' heq (fun _ ↦ rfl)
     hf.commutatorMap_surjective hy_range hy
   refine ⟨x, ⟨hfixed, himage⟩, ?_⟩
   rintro z ⟨hz, hzy⟩

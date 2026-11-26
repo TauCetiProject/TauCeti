@@ -42,8 +42,7 @@ theorem surjective_sum_mul_coefficientFrobenius {f : ℕ} (hf : 0 < f) {s : Fins
     (fun i => (a i).order) (by
       obtain ⟨i, hi, hi₀⟩ := ha
       exact ⟨i, mem_filter.mpr ⟨hi, hi₀⟩⟩)
-  simp_rw [coefficientFrobenius_iterate, ← RingEquiv.coe_toRingHom (coefficientFrobenius _ _),
-    coefficientFrobenius_toRingHom]
+  simp_rw [coefficientFrobenius_iterate, coe_coefficientFrobenius]
   apply surjective_sum_mul_mapRingHom_of_surjective_coeff s a _ (a j).order
   · intro i hi
     rcases eq_or_ne (a i) 0 with hz | hn

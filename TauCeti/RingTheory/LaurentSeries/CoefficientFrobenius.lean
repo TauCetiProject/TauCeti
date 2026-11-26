@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.RingTheory.HahnSeries.Map
-import Mathlib.FieldTheory.Finite.Basic
 
 /-!
 # Coefficient Frobenius on Laurent series
@@ -47,48 +46,57 @@ theorem coefficientFrobenius_symm_toRingHom (f : ℕ) :
       mapRingHom ((iterateFrobeniusEquiv k p f).symm : k →+* k) := by
   rw [coefficientFrobenius, mapRingEquiv_symm, mapRingEquiv_toRingHom]
 
+/-- Coefficient Frobenius acts as the Hahn-series map of the iterated Frobenius. -/
+theorem coe_coefficientFrobenius (f : ℕ) :
+    ⇑(coefficientFrobenius (k := k) p f) = mapRingHom (iterateFrobenius k p f) := by
+  simpa only [RingEquiv.coe_toRingHom] using
+    congrArg DFunLike.coe (coefficientFrobenius_toRingHom (k := k) p f)
+
+/-- Inverse coefficient Frobenius acts as the Hahn-series map of the inverse scalar map. -/
+theorem coe_coefficientFrobenius_symm (f : ℕ) :
+    ⇑(coefficientFrobenius (k := k) p f).symm =
+      mapRingHom ((iterateFrobeniusEquiv k p f).symm : k →+* k) := by
+  simpa only [RingEquiv.coe_toRingHom] using
+    congrArg DFunLike.coe (coefficientFrobenius_symm_toRingHom (k := k) p f)
+
 /-- The coefficient of a Laurent series is raised to `p^f` by coefficient Frobenius. -/
 @[simp]
 theorem coeff_coefficientFrobenius (f : ℕ) (x : k⸨X⸩) (j : ℤ) :
     (coefficientFrobenius p f x).coeff j = x.coeff j ^ p ^ f := by
-  rw [← RingEquiv.coe_toRingHom, coefficientFrobenius_toRingHom, coeff_mapRingHom,
-    iterateFrobenius_def]
+  rw [coe_coefficientFrobenius, coeff_mapRingHom, iterateFrobenius_def]
 
 /-- Inverse coefficient Frobenius applies the inverse scalar Frobenius to each coefficient. -/
 @[simp]
 theorem coeff_coefficientFrobenius_symm (f : ℕ) (x : k⸨X⸩) (j : ℤ) :
     ((coefficientFrobenius p f).symm x).coeff j =
       (iterateFrobeniusEquiv k p f).symm (x.coeff j) := by
-  rw [← RingEquiv.coe_toRingHom, coefficientFrobenius_symm_toRingHom, coeff_mapRingHom,
-    RingEquiv.coe_toRingHom]
+  rw [coe_coefficientFrobenius_symm, coeff_mapRingHom, RingEquiv.coe_toRingHom]
 
 /-- Coefficient Frobenius preserves Laurent-series order. -/
 @[simp]
 theorem order_coefficientFrobenius (f : ℕ) (x : k⸨X⸩) :
     (coefficientFrobenius p f x).order = x.order := by
-  rw [← RingEquiv.coe_toRingHom, coefficientFrobenius_toRingHom,
+  rw [coe_coefficientFrobenius,
     order_mapRingHom_of_injective x (iterateFrobeniusEquiv k p f).injective]
 
 /-- Inverse coefficient Frobenius preserves Laurent-series order. -/
 @[simp]
 theorem order_coefficientFrobenius_symm (f : ℕ) (x : k⸨X⸩) :
     ((coefficientFrobenius p f).symm x).order = x.order := by
-  rw [← RingEquiv.coe_toRingHom, coefficientFrobenius_symm_toRingHom,
+  rw [coe_coefficientFrobenius_symm,
     order_mapRingHom_of_injective x (iterateFrobeniusEquiv k p f).symm.injective]
 
 /-- Coefficient Frobenius acts on a monomial without changing its exponent. -/
 @[simp]
 theorem coefficientFrobenius_single (f : ℕ) (j : ℤ) (a : k) :
     coefficientFrobenius p f (single j a) = single j (a ^ p ^ f) := by
-  rw [← RingEquiv.coe_toRingHom, coefficientFrobenius_toRingHom, mapRingHom_single,
-    iterateFrobenius_def]
+  rw [coe_coefficientFrobenius, mapRingHom_single, iterateFrobenius_def]
 
 /-- Coefficient Frobenius restricts to coefficientwise Frobenius on power series. -/
 @[simp]
 theorem coefficientFrobenius_coe (f : ℕ) (x : k⟦X⟧) :
     coefficientFrobenius p f (x : k⸨X⸩) = (PowerSeries.map (iterateFrobenius k p f) x : k⸨X⸩) := by
-  rw [← RingEquiv.coe_toRingHom, coefficientFrobenius_toRingHom, mapRingHom_apply,
-    map_ofPowerSeries]
+  rw [coe_coefficientFrobenius, mapRingHom_apply, map_ofPowerSeries]
 
 /-- The zeroth coefficient Frobenius is the identity. -/
 @[simp]
@@ -115,45 +123,44 @@ theorem coefficientFrobenius_iterate (f n : ℕ) :
   simpa only [← iterateFrobenius_mul_apply, coeff_coefficientFrobenius, iterateFrobenius_def]
     using h.iterate_right n x
 
-section FiniteField
+section Algebra
 
-variable (k₀ : Type*) [Field k₀] [Algebra k₀ k]
+variable (k₀ : Type*) [CommSemiring k₀] [Algebra k₀ k] {f : ℕ}
 
-/-- Coefficient Frobenius over the Laurent series of an embedded field of cardinality `p ^ f`.
-The scalar embedding maps each Laurent coefficient through the given field embedding. -/
-noncomputable def coefficientFrobeniusAlgEquiv {f : ℕ} (hcard : Nat.card k₀ = p ^ f) :
+/-- Coefficient Frobenius is linear over the Laurent series of a base semiring
+whose image is fixed by the `p ^ f` power map. -/
+noncomputable def coefficientFrobeniusAlgEquiv
+    (hfix : ∀ a : k₀, (algebraMap k₀ k a) ^ (p ^ f) = algebraMap k₀ k a) :
     letI := coefficientAlgebra ℤ k₀ k
     k⸨X⸩ ≃ₐ[k₀⸨X⸩] k⸨X⸩ := by
   letI := coefficientAlgebra ℤ k₀ k
-  haveI : Finite k₀ := Nat.finite_of_card_ne_zero <|
-    hcard.trans_ne (pow_ne_zero _ (expChar_ne_zero k p))
-  letI := Fintype.ofFinite k₀
   refine AlgEquiv.ofRingEquiv (f := coefficientFrobenius p f) fun x => ?_
   ext j
-  rw [algebraMap_coefficientAlgebra, coeff_coefficientFrobenius, coeff_mapRingHom,
-    ← map_pow, ← hcard, Nat.card_eq_fintype_card, FiniteField.pow_card]
+  rw [algebraMap_coefficientAlgebra, coeff_coefficientFrobenius, coeff_mapRingHom, hfix]
+
+variable (hfix : ∀ a : k₀, (algebraMap k₀ k a) ^ (p ^ f) = algebraMap k₀ k a)
 
 /-- Forgetting the base Laurent series recovers coefficient Frobenius. -/
 @[simp]
-theorem coefficientFrobeniusAlgEquiv_toRingEquiv {f : ℕ} (hcard : Nat.card k₀ = p ^ f) :
+theorem coefficientFrobeniusAlgEquiv_toRingEquiv :
     letI := coefficientAlgebra ℤ k₀ k
-    (coefficientFrobeniusAlgEquiv (k := k) p k₀ hcard).toRingEquiv = coefficientFrobenius p f := by
+    (coefficientFrobeniusAlgEquiv (k := k) p k₀ hfix).toRingEquiv = coefficientFrobenius p f := by
   rfl
 
 /-- The algebra automorphism acts on a Laurent series by coefficient Frobenius. -/
 @[simp]
-theorem coefficientFrobeniusAlgEquiv_apply {f : ℕ} (hcard : Nat.card k₀ = p ^ f) (x : k⸨X⸩) :
+theorem coefficientFrobeniusAlgEquiv_apply (x : k⸨X⸩) :
     letI := coefficientAlgebra ℤ k₀ k
-    coefficientFrobeniusAlgEquiv p k₀ hcard x = coefficientFrobenius p f x :=
+    coefficientFrobeniusAlgEquiv p k₀ hfix x = coefficientFrobenius p f x :=
   (rfl)
 
 /-- The inverse algebra automorphism acts by inverse coefficient Frobenius. -/
 @[simp]
-theorem coefficientFrobeniusAlgEquiv_symm_apply {f : ℕ} (hcard : Nat.card k₀ = p ^ f) (x : k⸨X⸩) :
+theorem coefficientFrobeniusAlgEquiv_symm_apply (x : k⸨X⸩) :
     letI := coefficientAlgebra ℤ k₀ k
-    (coefficientFrobeniusAlgEquiv p k₀ hcard).symm x = (coefficientFrobenius p f).symm x :=
+    (coefficientFrobeniusAlgEquiv p k₀ hfix).symm x = (coefficientFrobenius p f).symm x :=
   (rfl)
 
-end FiniteField
+end Algebra
 
 end TauCeti.LaurentSeries

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.LaurentSeries
 public import TauCeti.RingTheory.HahnSeries.Map
-import TauCeti.RingTheory.LaurentSeries.Lattice
+import TauCeti.RingTheory.LaurentSeries.Multiplication
 import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
@@ -35,7 +35,7 @@ theorem surjective_sum_mul_mapRingHom_of_surjective_coeff {R ι : Type*} [Ring R
     Surjective (fun x : R⸨X⸩ => ∑ i ∈ s, a i * mapRingHom (τ i) x) := by
   classical
   choose! A hA using fun i (hi : i ∈ s) ↦
-    mem_lattice_iff_exists.mp ((mem_lattice_iff_le_orderTop (R := R)).mpr (hm i hi))
+    exists_single_mul_of_le_orderTop (hm i hi)
   have hconst (i : ι) (hi : i ∈ s) : PowerSeries.constantCoeff (A i) = (a i).coeff m := by
     simpa [coeff_single_mul, PowerSeries.coeff_coe, PowerSeries.coeff_zero_eq_constantCoeff_apply]
       using congr($(hA i hi).coeff m)
@@ -55,8 +55,11 @@ theorem surjective_sum_mul_mapRingHom_of_surjective_coeff {R ι : Type*} [Ring R
       refine sum_congr rfl fun i hi ↦ ?_
       simp only [map_mul, mapRingHom_single, map_one]
       rw [mapRingHom_apply, map_ofPowerSeries]
-      rw [← mul_assoc, ((a i).commute_single_one d).eq, ← hA i hi,
-        ← mul_assoc, hshift, mul_assoc]
+      let y : R⸨X⸩ := PowerSeries.map (τ i) x
+      calc
+        a i * (single d 1 * y) = single d 1 * (a i * y) := ((a i).commute_single_one d).left_comm y
+        _ = single d 1 * (single m 1 * ((A i : R⸨X⸩) * y)) := by rw [← hA i hi, mul_assoc]
+        _ = single b.order 1 * ((A i : R⸨X⸩) * y) := by rw [← mul_assoc, hshift]
     _ = b := b.single_order_mul_powerSeriesPart
 
 end TauCeti.LaurentSeries

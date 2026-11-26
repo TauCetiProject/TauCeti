@@ -48,39 +48,36 @@ theorem isSplitEpi_of_surjective_sum_mul_iterate
     simp only [Φ, LinearEquiv.ofBijective_apply]
     exact forall_congr' fun _ => eq_comm
   let K := D.sub g.hom.ker (fun _ => frobenius_mem_ker g)
-  let F : (D' →ₗ[L] D) ≃ₛₗ[(σ : L →+* L)] _ := (Φ D').arrowCongr (Φ D)
-  let F' := (Φ D').conj
-  let Ψ : (D' →ₗ[L] K) ≃ₛₗ[(σ : L →+* L)] (D' →ₗ[L] K) := (Φ D').arrowCongr (Φ K)
-  have hpost (t : D' →ₗ[L] D) : g.hom.comp (F t) = F' (g.hom.comp t) := by
-    simpa only [F, F', LinearEquiv.conj, (fixed_iff g.hom).mpr g.hom_frobenius] using
+  let action (A : FiniteIsocrystal.{u} σ) : (D' →ₗ[L] A) →+ (D' →ₗ[L] A) :=
+    ((Φ D').arrowCongr (Φ A)).toLinearMap.toAddMonoidHom
+  let post := (g.hom.compRight L (M := D')).toAddMonoidHom
+  let incl := (g.hom.ker.subtype.compRight L (M := D')).toAddMonoidHom
+  have hpost (t : D' →ₗ[L] D) : post (action D t) = action D' (post t) := by
+    simpa only [action, post, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap,
+      LinearMap.compRight_apply, (fixed_iff g.hom).mpr g.hom_frobenius] using
       (LinearEquiv.arrowCongr_comp (Φ D') (Φ D) (Φ D') t g.hom).symm
-  have hincl (t : D' →ₗ[L] K) : F (g.hom.ker.subtype.comp t) = g.hom.ker.subtype.comp (Ψ t) := by
+  have hincl (t : D' →ₗ[L] K) : action D (incl t) = incl (action K t) := by
     have hι : (Φ K).arrowCongr (Φ D) g.hom.ker.subtype = g.hom.ker.subtype := by
       simpa only [subι_hom] using
         (fixed_iff _).mpr (D.subι _ (fun _ => frobenius_mem_ker g)).hom_frobenius
-    simpa only [F, Ψ, hι] using
+    simpa only [action, incl, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap,
+      LinearMap.compRight_apply, hι] using
       LinearEquiv.arrowCongr_comp (Φ D') (Φ K) (Φ D) t g.hom.ker.subtype
-  obtain ⟨s, hfix, hsection⟩ :=
-    (g.hom.compRight L (M := D')).toAddMonoidHom.exists_fixed_lift_of_surjective_sub_id
-      (g.hom.ker.subtype.compRight L).toAddMonoidHom
-      ((LinearMap.exact_subtype_ker_map g.hom).compRight_of_injective (T := L) D'
-        g.hom.ker.injective_subtype)
-      Ψ.toLinearMap.toAddMonoidHom F.toLinearMap.toAddMonoidHom F'.toLinearMap.toAddMonoidHom
-      (by simpa only [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap,
-        LinearMap.compRight_apply] using hpost)
-      (by simpa only [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap,
-        LinearMap.compRight_apply] using hincl)
-      (Ψ.toLinearMap.surjective_sub_id_of_surjective_sum_mul_iterate σ.toRingEquiv hσ)
-      (y := LinearMap.id) (by
-        obtain ⟨t, ht⟩ := ((epi_iff_surjective g).mp inferInstance).surjective_linearMapComp_left
-          (LinearMap.id (R := L) (M := D'))
-        exact ⟨t, by simpa only [LinearMap.toAddMonoidHom_coe, LinearMap.compRight_apply] using ht⟩)
-      (by simpa only [F', LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap] using
-        (Φ D').conj_id)
-  have hs : F s = s := by
-    simpa only [LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap] using hfix
-  refine IsSplitEpi.mk' ⟨ofHom s ((fixed_iff s).mp hs), hom_ext ?_⟩
-  simpa only [hom_comp, hom_ofHom, hom_id, LinearMap.toAddMonoidHom_coe,
-    LinearMap.compRight_apply] using hsection
+  obtain ⟨s, hfix, hsection⟩ := post.exists_fixed_lift_of_surjective_sub_id incl
+    ((LinearMap.exact_subtype_ker_map g.hom).compRight_of_injective (T := L) D'
+      g.hom.ker.injective_subtype) (action K) (action D) (action D') hpost hincl
+    (((Φ D').arrowCongr (Φ K)).toLinearMap.surjective_sub_id_of_surjective_sum_mul_iterate
+      σ.toRingEquiv hσ)
+    (y := LinearMap.id) (by
+      obtain ⟨t, ht⟩ := ((epi_iff_surjective g).mp inferInstance).surjective_linearMapComp_left
+        (LinearMap.id (R := L) (M := D'))
+      exact ⟨t, by simpa only [post, LinearMap.toAddMonoidHom_coe, LinearMap.compRight_apply]
+        using ht⟩)
+    (by simpa only [action, LinearEquiv.conj, LinearMap.toAddMonoidHom_coe,
+      LinearEquiv.coe_toLinearMap] using (Φ D').conj_id)
+  refine IsSplitEpi.mk' ⟨ofHom s ((fixed_iff s).mp ?_), hom_ext ?_⟩
+  · simpa only [action, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_toLinearMap] using hfix
+  · simpa only [post, hom_comp, hom_ofHom, hom_id, LinearMap.toAddMonoidHom_coe,
+      LinearMap.compRight_apply] using hsection
 
 end TauCeti.FiniteIsocrystal

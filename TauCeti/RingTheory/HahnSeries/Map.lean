@@ -175,6 +175,12 @@ theorem mapRingEquiv_toRingHom (e : R ≃+* S) :
     (mapRingEquiv (Γ := Γ) e : R⟦Γ⟧ →+* S⟦Γ⟧) = mapRingHom (e : R →+* S) :=
   (rfl)
 
+/-- Applying the induced equivalence applies the underlying coefficientwise ring map. -/
+@[simp]
+theorem mapRingEquiv_apply (e : R ≃+* S) (x : R⟦Γ⟧) :
+    mapRingEquiv e x = mapRingHom (e : R →+* S) x :=
+  (rfl)
+
 /-- Inverting the induced equivalence inverts the equivalence of coefficients. -/
 @[simp]
 theorem mapRingEquiv_symm (e : R ≃+* S) :
