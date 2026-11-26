@@ -58,6 +58,8 @@ norm come from the C⋆-order: `y⋆(x⋆x)y ≤ ‖x‖² y⋆y` and the trace 
   `CStarMatrix.normalizedTwoNorm_sub_mul_mul_le_of_norm_le_one`: `‖x - cxc‖₂ ≤ 2‖x‖‖c - 1‖₂` for a
   contraction `c`; `CStarMatrix.normalizedTwoNorm_sub_one_sq_le`: `‖h - 1‖₂² ≤ re tr_k(1 - h²)`
   for a positive contraction `h`.
+* `CStarMatrix.normalizedTwoNorm_map_mul_sub_le_of_normalizedTwoNorm_sub_le`: contractive maps
+  into `M_k` that are close in `‖·‖₂` have close multiplicativity defects.
 * `CStarMatrix.normalizedTrace_reindexₐ`, `CStarMatrix.normalizedTwoNorm_reindexₐ`: `tr_k` and
   `‖·‖₂` do not depend on the labelling of the index type, so the statements below over `n ⊕ m`
   and `n × m` give those over `Fin (k + l)` and `Fin (k * l)`.
@@ -537,6 +539,53 @@ theorem normalizedTwoNorm_sub_one_sq_le [DecidableEq n] {h : CStarMatrix n n ℂ
     noncomm_ring
   rw [e]
   exact sub_le_self _ (nsmul_nonneg (sub_nonneg.2 hle) 2)
+
+/-- **Close maps have close multiplicativity defects.** If `φ, ψ : A → M_k` are contractive and
+`‖ψ(x) - φ(x)‖₂ ≤ c‖x‖` for every `x`, then
+`‖ψ(ab) - ψ(a)ψ(b)‖₂ ≤ ‖φ(ab) - φ(a)φ(b)‖₂ + 3c‖a‖‖b‖`. -/
+theorem normalizedTwoNorm_map_mul_sub_le_of_normalizedTwoNorm_sub_le {A : Type*}
+    [NonUnitalNormedRing A] {φ ψ : A → CStarMatrix n n ℂ} (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖)
+    (hψ : ∀ a, ‖ψ a‖ ≤ ‖a‖) {c : ℝ} (h : ∀ a, normalizedTwoNorm (ψ a - φ a) ≤ c * ‖a‖)
+    (a b : A) :
+    normalizedTwoNorm (ψ (a * b) - ψ a * ψ b) ≤
+      normalizedTwoNorm (φ (a * b) - φ a * φ b) + 3 * c * ‖a‖ * ‖b‖ := by
+  rcases lt_or_ge c 0 with hc | hc
+  · -- For `c < 0` the hypothesis forces `A = 0` and `ψ 0 = φ 0`.
+    have h0 (x : A) : x = 0 := by
+      by_contra hx
+      have := (normalizedTwoNorm_nonneg _).trans (h x)
+      nlinarith [norm_pos_iff.2 hx]
+    have hψφ : ψ 0 = φ 0 := sub_eq_zero.1 <| (normalizedTwoNorm_eq_zero_iff).1 <|
+      le_antisymm ((h 0).trans (by simp)) (normalizedTwoNorm_nonneg _)
+    simp [h0 a, h0 b, hψφ]
+  have e : ψ (a * b) - ψ a * ψ b = (ψ (a * b) - φ (a * b)) + (φ (a * b) - φ a * φ b) +
+      ((φ a - ψ a) * φ b + ψ a * (φ b - ψ b)) := by
+    noncomm_ring
+  rw [e]
+  have h1 : normalizedTwoNorm (ψ (a * b) - φ (a * b)) ≤ c * ‖a‖ * ‖b‖ := by
+    refine (h _).trans ?_
+    rw [mul_assoc c ‖a‖]
+    gcongr
+    exact norm_mul_le a b
+  have h2 : normalizedTwoNorm ((φ a - ψ a) * φ b) ≤ c * ‖a‖ * ‖b‖ := by
+    refine (normalizedTwoNorm_mul_le_normalizedTwoNorm_mul_norm _ _).trans ?_
+    rw [normalizedTwoNorm_sub_comm]
+    exact mul_le_mul (h a) (hφ b) (norm_nonneg _) (by positivity)
+  have h3 : normalizedTwoNorm (ψ a * (φ b - ψ b)) ≤ c * ‖a‖ * ‖b‖ := by
+    refine (normalizedTwoNorm_mul_le_norm_mul_normalizedTwoNorm _ _).trans ?_
+    rw [normalizedTwoNorm_sub_comm]
+    calc ‖ψ a‖ * normalizedTwoNorm (ψ b - φ b) ≤ ‖a‖ * (c * ‖b‖) :=
+          mul_le_mul (hψ a) (h b) (normalizedTwoNorm_nonneg _) (norm_nonneg _)
+      _ = c * ‖a‖ * ‖b‖ := by ring
+  calc normalizedTwoNorm ((ψ (a * b) - φ (a * b)) + (φ (a * b) - φ a * φ b) +
+        ((φ a - ψ a) * φ b + ψ a * (φ b - ψ b)))
+      ≤ normalizedTwoNorm (ψ (a * b) - φ (a * b)) + normalizedTwoNorm (φ (a * b) - φ a * φ b) +
+        (normalizedTwoNorm ((φ a - ψ a) * φ b) + normalizedTwoNorm (ψ a * (φ b - ψ b))) :=
+        (normalizedTwoNorm_add_le _ _).trans (add_le_add (normalizedTwoNorm_add_le _ _)
+          (normalizedTwoNorm_add_le _ _))
+    _ ≤ c * ‖a‖ * ‖b‖ + normalizedTwoNorm (φ (a * b) - φ a * φ b) +
+        (c * ‖a‖ * ‖b‖ + c * ‖a‖ * ‖b‖) := by gcongr
+    _ = normalizedTwoNorm (φ (a * b) - φ a * φ b) + 3 * c * ‖a‖ * ‖b‖ := by ring
 
 /-- `k tr_k(x) = Tr(x)`, also for `k = 0`, where both sides vanish. -/
 theorem card_mul_normalizedTrace (x : CStarMatrix n n ℂ) :
