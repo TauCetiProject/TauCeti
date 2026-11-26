@@ -144,6 +144,55 @@ lemma monotone_twistedCubicalChainFiltration (hX : Monotone X) :
     Monotone (twistedCubicalChainFiltration L X) :=
   fun _ _ h ↦ twistedCubicalChainFiltration_mono L (hX h)
 
+/-- The stage of the cubical filtration at an empty subset is zero. -/
+@[simp]
+lemma twistedCubicalChainFiltration_eq_bot {a : ℤ} (ha : X a = ∅) :
+    twistedCubicalChainFiltration L X a = ⊥ := by
+  have : IsEmpty (X a) := by rw [ha]; exact Set.isEmpty_coe_sort.2 rfl
+  -- An empty space has no singular cubes, so its normalized cubical chains vanish in every degree.
+  have hZ : IsZero ((pullback (X := TopCat.of ↥(X a)) (ContinuousMap.subtypeVal (X a))).obj
+      L).normalizedTwistedCubicalChainComplex :=
+    (IsZero.iff_id_eq_zero _).2 <| HomologicalComplex.hom_ext _ _ fun _ ↦ ModuleCat.hom_ext <|
+      NormalizedTwistedCubicalChain.hom_ext fun c ↦ (IsEmpty.false (c 0)).elim
+  exact Subobject.mk_eq_bot_iff_zero.2
+    (((ComplexShape.embeddingDownNat.extendFunctor _).map_isZero hZ).eq_of_src _ _)
+
+/-- The stage of the cubical filtration at the whole space is everything. -/
+@[simp]
+lemma twistedCubicalChainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) :
+    twistedCubicalChainFiltration L X b = ⊤ := by
+  let s : C(Y, X b) := ⟨fun y ↦ ⟨y, Set.eq_univ_iff_forall.1 hb y⟩, by fun_prop⟩
+  -- Every singular cube of `Y` lies in `X b`, so the inclusion of the normalized cubical chains of
+  -- `X b` is onto in every degree.
+  have (n : ℕ) : Epi ((normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
+      (ContinuousMap.subtypeVal (X b)) L).f n) := by
+    refine ⟨fun g h hgh ↦ ModuleCat.hom_ext <| NormalizedTwistedCubicalChain.hom_ext fun c ↦
+      LinearMap.ext fun x ↦ ?_⟩
+    obtain ⟨c, rfl⟩ : ∃ c', (ContinuousMap.subtypeVal (X b)).comp c' = c := ⟨s.comp c, rfl⟩
+    have hx := NormalizedTwistedCubicalChain.map_ofCube (X := TopCat.of ↥(X b))
+      (f := ContinuousMap.subtypeVal (X b)) (L := L) c x
+    rw [normalizedTwistedCubicalChainComplexMap_f] at hgh
+    -- Evaluate the composites with `ofCube` produced by the extensionality lemma at `x`.
+    change g.hom (NormalizedTwistedCubicalChain.ofCube L _ x) =
+      h.hom (NormalizedTwistedCubicalChain.ofCube L _ x)
+    rw [← hx]
+    exact congrArg (fun φ ↦ φ.hom
+      (NormalizedTwistedCubicalChain.ofCube (X := TopCat.of ↥(X b)) _ c x)) hgh
+  have (n : ℕ) : IsIso ((normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
+      (ContinuousMap.subtypeVal (X b)) L).f n) := by
+    have : Mono ((normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
+        (ContinuousMap.subtypeVal (X b)) L).f n) := (ModuleCat.mono_iff_injective _).2 <| by
+      rw [normalizedTwistedCubicalChainComplexMap_f]
+      exact NormalizedTwistedCubicalChain.map_injective Subtype.val_injective n
+    exact isIso_of_mono_of_epi _
+  have := HomologicalComplex.Hom.isIso_of_components
+    (normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X b))
+      (ContinuousMap.subtypeVal (X b)) L)
+  have : IsIso (twistedCubicalChainFiltrationι L X b) := by
+    rw [twistedCubicalChainFiltrationι]
+    infer_instance
+  exact Subobject.mk_eq_top_of_isIso _
+
 /-- The abutment of the cubical spectral sequence of a filtered space with local coefficients in
 degree `-n` is the normalized cubical homology `Hₙ(Y; L)`. -/
 def twistedCubicalChainFiltrationAbutmentIso (hX : Monotone X) (n : ℕ) :
@@ -186,7 +235,7 @@ lemma twistedCubicalChainFiltrationι_comp_extendMap (q : ℤ) :
 
 /-- The comparison map carries each stage of the cubical filtration into the same stage of the
 simplicial filtration. -/
-lemma twistedCubicalToSingularMap_factors_twistedChainFiltration (q : ℤ) :
+lemma factors_twistedChainFiltration_twistedCubicalToSingularMap (q : ℤ) :
     (twistedChainFiltration.{u, v, v} L X q).Factors
       ((twistedCubicalChainFiltration L X q).arrow ≫
         extendMap (twistedCubicalToSingularMap L) ComplexShape.embeddingDownNat) := by
@@ -207,14 +256,14 @@ def twistedCubicalToSingularFiltrationMap (hX : Monotone X) :
     CochainComplex.filtrationFunctor _ (monotone_twistedCubicalChainFiltration L hX) ⟶
       CochainComplex.filtrationFunctor _ (monotone_twistedChainFiltration.{u, v, v} L hX) :=
   CochainComplex.filtrationFunctorMap _ _ _
-    (twistedCubicalToSingularMap_factors_twistedChainFiltration L)
+    (factors_twistedChainFiltration_twistedCubicalToSingularMap L)
 
 /-- `TauCeti.LocalCoefficientSystem.twistedCubicalToSingularFiltrationMap` is the morphism of
 filtration functors given by the comparison map of `Y`. -/
 lemma twistedCubicalToSingularFiltrationMap_def (hX : Monotone X) :
     twistedCubicalToSingularFiltrationMap L hX =
       CochainComplex.filtrationFunctorMap _ _ _
-        (twistedCubicalToSingularMap_factors_twistedChainFiltration L) :=
+        (factors_twistedChainFiltration_twistedCubicalToSingularMap L) :=
   (rfl)
 
 /-- On the stage `F_q`, identified with the cubical chains of `X q`, the morphism of filtrations is

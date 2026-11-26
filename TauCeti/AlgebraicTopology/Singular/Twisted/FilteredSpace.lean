@@ -115,6 +115,47 @@ lemma monotone_twistedChainFiltration (hX : Monotone X) :
     Monotone (twistedChainFiltration L X) :=
   fun _ _ h ↦ twistedChainFiltration_mono L (hX h)
 
+/-- The stage of the filtration of twisted chains at an empty subset is zero. -/
+@[simp]
+lemma twistedChainFiltration_eq_bot {a : ℤ} (ha : X a = ∅) : twistedChainFiltration L X a = ⊥ := by
+  have : IsEmpty (X a) := by rw [ha]; exact Set.isEmpty_coe_sort.2 rfl
+  -- An empty space has no singular simplices, so its twisted chains vanish in every degree.
+  have hZ : IsZero (twistedChainComplex
+      ((pullback (X := TopCat.of ↥(X a)) (ContinuousMap.subtypeVal (X a))).obj L)) :=
+    (IsZero.iff_id_eq_zero _).2 <| HomologicalComplex.hom_ext _ _ fun _ ↦
+      twistedChainComplex_hom_ext _ fun σ ↦ isEmptyElim (initialVertex σ).as
+  exact Subobject.mk_eq_bot_iff_zero.2
+    (((ComplexShape.embeddingDownNat.extendFunctor _).map_isZero hZ).eq_of_src _ _)
+
+/-- The stage of the filtration of twisted chains at the whole space is everything. -/
+@[simp]
+lemma twistedChainFiltration_eq_top {b : ℤ} (hb : X b = Set.univ) :
+    twistedChainFiltration L X b = ⊤ := by
+  let s : Y ⟶ TopCat.of ↥(X b) :=
+    TopCat.ofHom ⟨fun y ↦ ⟨y, Set.eq_univ_iff_forall.1 hb y⟩, by fun_prop⟩
+  have hs : s ≫ TopCat.ofHom (ContinuousMap.subtypeVal (X b)) = 𝟙 Y := rfl
+  -- Every singular simplex of `Y` lies in `X b`, so the inclusion of the twisted chains of `X b`
+  -- is onto in every degree.
+  have (k : ℕ) :
+      Epi ((twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal (X b))) L).f k) := by
+    refine ⟨fun g h hgh ↦ twistedChainComplex_hom_ext _ fun τ ↦ ?_⟩
+    obtain ⟨σ, rfl⟩ : ∃ σ, (TopCat.toSSet.map
+        (TopCat.ofHom (ContinuousMap.subtypeVal (X b)))).app _ σ = τ :=
+      ⟨(TopCat.toSSet.map s).app _ τ, by rw [← ConcreteCategory.comp_apply, ← NatTrans.comp_app,
+        ← Functor.map_comp, hs, CategoryTheory.Functor.map_id, NatTrans.id_app,
+        ConcreteCategory.id_apply]⟩
+    exact (ιTwistedChainComplex_twistedChainComplexMap_f_assoc _ L k σ g).symm.trans <|
+      (congrArg (_ ≫ ·) hgh).trans (ιTwistedChainComplex_twistedChainComplexMap_f_assoc _ L k σ h)
+  have (k : ℕ) :
+      IsIso ((twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal (X b))) L).f k) :=
+    isIso_of_mono_of_epi _
+  have := HomologicalComplex.Hom.isIso_of_components
+    (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal (X b))) L)
+  have : IsIso (twistedChainFiltrationι L X b) := by
+    rw [twistedChainFiltrationι]
+    infer_instance
+  exact Subobject.mk_eq_top_of_isIso _
+
 /-- **The abutment of the spectral sequence of a filtered space with local coefficients** in
 degree `-n` is the twisted homology `Hₙ(Y; L)`. -/
 def twistedChainFiltrationAbutmentIso (hX : Monotone X) (n : ℕ) :

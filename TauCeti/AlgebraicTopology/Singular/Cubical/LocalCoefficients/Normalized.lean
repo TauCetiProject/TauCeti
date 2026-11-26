@@ -178,21 +178,6 @@ theorem degenerate_le_comap_map (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v�
     exact ofCube_mem_degenerate (hc.comp f) _
 
 open scoped Classical in
-/-- The component of the summand of a cube at another cube vanishes. -/
-theorem ofCube_apply_of_ne {n : ℕ} {c c' : SingularCube X n} (h : c' ≠ c)
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) : ofCube L c a c' = 0 := by
-  rw [ofCube_eq_lof, DirectSum.lof_eq_of]
-  exact DirectSum.of_eq_of_ne _ _ _ h
-
-/-- The component of the summand of a cube at that cube is its coefficient. -/
-@[simp]
-theorem ofCube_apply_self {n : ℕ} (c : SingularCube X n)
-    (a : L.obj (FundamentalGroupoid.mk (c 0))) : ofCube L c a c = a := by
-  classical
-  rw [ofCube_eq_lof, DirectSum.lof_eq_of]
-  exact DirectSum.of_eq_same _ _
-
-open scoped Classical in
 /-- The restriction of a chain to the degenerate cubes is a degenerate chain. -/
 private theorem filter_isDegenerate_mem_degenerate {n : ℕ} (y : L.TwistedCubicalChain n) :
     (DFinsupp.filter IsDegenerate y : L.TwistedCubicalChain n) ∈ degenerate L n := by
@@ -241,29 +226,6 @@ theorem mem_degenerate_iff {n : ℕ} (x : L.TwistedCubicalChain n) :
         · rw [DFinsupp.filter_apply_neg _ hc, hx c hc]
     rw [← hxf]
     exact filter_isDegenerate_mem_degenerate x
-
-/-- An injective map of spaces preserves the component of a chain at each cube, at the image
-cube. -/
-theorem map_apply_comp_of_injective {f : C(X, Y)} (hf : Function.Injective f)
-    {L : LocalCoefficientSystem.{u, v₂, w} R Y} {n : ℕ}
-    (x : ((pullback f).obj L).TwistedCubicalChain n) (c : SingularCube X n) :
-    map f L n x (f.comp c) = x c := by
-  -- The summand of a cube `c` for `f⁎L` is definitionally the summand of `f.comp c` for `L`, so
-  -- the two sides live in the same module only up to unfolding the pullback; the cases where both
-  -- sides are built from the same components close by `rfl`.
-  induction x using induction_on with
-  | zero => exact (congrArg (· (f.comp c)) (map_zero (map f L n))).trans rfl
-  | ofCube c' a =>
-    rw [map_ofCube]
-    by_cases h : c' = c
-    · subst h
-      exact (ofCube_apply_self (L := L) (f.comp c') a).trans (ofCube_apply_self c' a).symm
-    · exact (ofCube_apply_of_ne (L := L) (c := f.comp c') (fun h' ↦ h
-        (ContinuousMap.postcomp_injective f hf h').symm) a).trans
-          (ofCube_apply_of_ne (Ne.symm h) a).symm
-  | add y z hy hz =>
-    rw [map_add, DirectSum.add_apply, DirectSum.add_apply, hy, hz]
-    rfl
 
 /-- Along an injective map, a chain is degenerate exactly when its image is. -/
 theorem map_mem_degenerate_iff_of_injective {f : C(X, Y)} (hf : Function.Injective f)
