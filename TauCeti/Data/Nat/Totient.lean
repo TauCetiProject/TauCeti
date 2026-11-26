@@ -24,6 +24,8 @@ the reciprocal form used for Euler products over a field of characteristic zero.
 * `TauCeti.Nat.totient_le_two_iff`: `φ(n) ≤ 2` iff `n ∈ {0, 1, 2, 3, 4, 6}`.
 * `TauCeti.Nat.prod_inv_one_sub_inv_eq_div_totient`: for `n ≠ 0`,
   `∏_{p ∣ n} (1 - 1 / p)⁻¹ = n / φ(n)`.
+* `Nat.totient_mul_of_primeFactors_subset`: if `k` introduces no new prime factors into `n`,
+  then `φ(nk) = k φ(n)`.
 -/
 
 public section
@@ -76,3 +78,23 @@ theorem prod_inv_one_sub_inv_eq_div_totient {K : Type*} [Field K] [CharZero K] {
   rw [Finset.prod_inv_distrib, h, div_mul_cancel_left₀ (Nat.cast_ne_zero.mpr hn)]
 
 end TauCeti.Nat
+
+/-- Multiplying `n` by a factor `k` supported on the primes of `n` multiplies its totient by `k`.
+The formula includes `n = 0` and `k = 0`. -/
+theorem Nat.totient_mul_of_primeFactors_subset {n k : ℕ} (h : k.primeFactors ⊆ n.primeFactors) :
+    (n * k).totient = k * n.totient := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  have hs : (n * k).primeFactors = n.primeFactors := by
+    rw [Nat.primeFactors_mul hn hk, Finset.union_eq_left.mpr h]
+  have hpos : 0 < ∏ p ∈ n.primeFactors, p :=
+    Nat.pos_of_dvd_of_pos (Nat.prod_primeFactors_dvd n) (Nat.pos_of_ne_zero hn)
+  apply Nat.eq_of_mul_eq_mul_right hpos
+  calc
+    (n * k).totient * ∏ p ∈ n.primeFactors, p = (n * k) * ∏ p ∈ n.primeFactors, (p - 1) := by
+      simpa only [hs] using Nat.totient_mul_prod_primeFactors (n * k)
+    _ = k * (n * ∏ p ∈ n.primeFactors, (p - 1)) := by ac_rfl
+    _ = (k * n.totient) * ∏ p ∈ n.primeFactors, p := by
+      rw [mul_assoc k, Nat.totient_mul_prod_primeFactors]
