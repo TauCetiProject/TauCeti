@@ -46,8 +46,7 @@ stabilizer is a circle.
   `g ^ 2 = 1`.
 * `TauCeti.Lie.exists_isOfFinOrder_smul_eq_exists_smul_ne_of_mem_isotropy`: for a smooth action
   of a compact Lie group, a point whose isotropy algebra contains an element `ξ` with `ξ_M ≠ 0` is
-  fixed by an element of finite order that acts nontrivially, taken in the closure of
-  `{exp (t ξ)}`, whose points of finite order are dense.
+  fixed by an element of finite order that moves some point of `M`.
 * `TauCeti.Lie.exists_isOpen_dense_forall_isotropy_eq_bot`: an effective smooth action of a
   compact commutative Lie group on a connected manifold is locally free on a dense open set.
 * `TauCeti.Lie.dense_setOf_isotropy_eq_bot`, `TauCeti.Lie.exists_isotropy_eq_bot`: the locally
