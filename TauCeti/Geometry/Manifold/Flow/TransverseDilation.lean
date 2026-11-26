@@ -350,7 +350,7 @@ theorem exists_contDiff_hasFDerivAt_flowOf_add_smul (hu : ℓ u = 1) {s₀ s₁ 
           flowOf (I := 𝓘(ℝ, E)) (fun z ↦ u + a • Z z) (s₁ - s₀) (s₀ • u) = s₁ • u ∧
           HasFDerivAt (flowOf (I := 𝓘(ℝ, E)) (fun z ↦ u + a • Z z) (s₁ - s₀))
             (1 + (Real.exp a - 1) • (1 - ℓ.smulRight u)) (s₀ • u) := by
-  obtain ⟨Ψ, hΨ, hΨ₀, hΨ₁, hΨ'⟩ := exists_contDiff_step h
+  obtain ⟨Ψ, hΨ, -, hΨ₀, hΨ₁, -, hΨ'⟩ := exists_contDiff_step h
   refine ⟨Ψ, hΨ, hΨ₀, hΨ₁, hΨ', fun z ↦ transverseDilationField u ℓ Ψ z - u,
     (contDiff_transverseDilationField (hΨ.of_le (by simp))).sub contDiff_const,
     fun z hz ↦ by simp [transverseDilationField_eq_of_deriv_eq_zero (hΨ' _ hz)],

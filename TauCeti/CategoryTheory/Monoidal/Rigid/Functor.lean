@@ -78,11 +78,13 @@ equivalence.
   by `CategoryTheory.Functor.mapRightDualIso_hom_whiskerRight_evaluation`, natural by
   `CategoryTheory.Functor.mapRightDualIso_hom_naturality`, and computed for identities and
   composites by `CategoryTheory.Functor.mapRightDualIso_id` and
-  `CategoryTheory.Functor.mapRightDualIso_comp`;
+  `CategoryTheory.Functor.mapRightDualIso_comp`; as a mate of the identity it is
+  `CategoryTheory.Functor.mapRightDualIso_hom_eq_rightMate`;
 * `CategoryTheory.Functor.mapLeftDualIso`: the comparison `F.obj (ᘁY) ≅ ᘁ(F.obj Y)`,
   characterized by `CategoryTheory.Functor.whiskerLeft_mapLeftDualIso_hom_evaluation`, with its
   inverse compatible with coevaluation by
-  `CategoryTheory.Functor.coevaluation_mapLeftDualIso_inv_whiskerRight`;
+  `CategoryTheory.Functor.coevaluation_mapLeftDualIso_inv_whiskerRight`, and expressed as a left
+  mate of the identity by `CategoryTheory.Functor.mapLeftDualIso_hom_eq_leftMate`;
 * `CategoryTheory.NatTrans.app_comp_mapRightDualIso_hom_comp_rightAdjointMate` and
   `CategoryTheory.Iso.hom_app_comp_mapRightDualIso_hom`: the comparison is natural with respect to
   monoidal natural transformations and isomorphisms;
@@ -238,6 +240,20 @@ theorem coevaluation_whiskerLeft_mapRightDualIso_inv (X : C) [HasRightDual X]
   rw [mapRightDualIso, ExactPairing.rightDualIso_inv, ExactPairing.coevaluation_comp_rightMate]
   simp
 
+/-- The comparison `F.mapRightDualIso X` is the mate of the identity of `F.obj X`, from the image
+pairing `F.mapExactPairing X Xᘁ` to the chosen pairing of `F.obj X`. -/
+theorem mapRightDualIso_hom_eq_rightMate (X : C) [HasRightDual X] [HasRightDual (F.obj X)] :
+    (F.mapRightDualIso X).hom =
+      ExactPairing.rightMate HasRightDual.exact (F.mapExactPairing X Xᘁ) (𝟙 (F.obj X)) := by
+  rw [mapRightDualIso, ExactPairing.rightDualIso_hom]
+
+/-- The inverse of the comparison `F.mapRightDualIso X` is the mate of the identity of `F.obj X`,
+from the chosen pairing of `F.obj X` to the image pairing `F.mapExactPairing X Xᘁ`. -/
+theorem mapRightDualIso_inv_eq_rightMate (X : C) [HasRightDual X] [HasRightDual (F.obj X)] :
+    (F.mapRightDualIso X).inv =
+      ExactPairing.rightMate (F.mapExactPairing X Xᘁ) HasRightDual.exact (𝟙 (F.obj X)) := by
+  rw [mapRightDualIso, ExactPairing.rightDualIso_inv]
+
 /-- Naturality of `F.mapRightDualIso`: it intertwines the image of the mate of `f` with the mate
 of the image of `f`. -/
 @[reassoc]
@@ -320,6 +336,20 @@ theorem coevaluation_mapLeftDualIso_inv_whiskerRight (Y : C) [HasLeftDual Y]
       ε F ≫ F.map (η_ (ᘁY) Y) ≫ δ F (ᘁY) Y := by
   rw [mapLeftDualIso, ExactPairing.leftDualIso_inv, ExactPairing.coevaluation_comp_leftMate]
   simp
+
+/-- The comparison `F.mapLeftDualIso Y` is the left mate of the identity of `F.obj Y`, from the
+image pairing `F.mapExactPairing (ᘁY) Y` to the chosen pairing of `F.obj Y`. -/
+theorem mapLeftDualIso_hom_eq_leftMate (Y : C) [HasLeftDual Y] [HasLeftDual (F.obj Y)] :
+    (F.mapLeftDualIso Y).hom =
+      ExactPairing.leftMate HasLeftDual.exact (F.mapExactPairing (ᘁY) Y) (𝟙 (F.obj Y)) := by
+  rw [mapLeftDualIso, ExactPairing.leftDualIso_hom]
+
+/-- The inverse of the comparison `F.mapLeftDualIso Y` is the left mate of the identity of
+`F.obj Y`, from the chosen pairing of `F.obj Y` to the image pairing `F.mapExactPairing (ᘁY) Y`. -/
+theorem mapLeftDualIso_inv_eq_leftMate (Y : C) [HasLeftDual Y] [HasLeftDual (F.obj Y)] :
+    (F.mapLeftDualIso Y).inv =
+      ExactPairing.leftMate (F.mapExactPairing (ᘁY) Y) HasLeftDual.exact (𝟙 (F.obj Y)) := by
+  rw [mapLeftDualIso, ExactPairing.leftDualIso_inv]
 
 /-! ### Internal Hom comparisons -/
 
