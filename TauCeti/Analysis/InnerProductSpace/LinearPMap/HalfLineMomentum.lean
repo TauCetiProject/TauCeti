@@ -159,6 +159,12 @@ theorem halfLineMomentum_apply (φ : 𝓓(Ω₊, ℂ)) :
   LinearMap.domainOperator_apply_mk ι₊ (ι₊ ∘ₗ momentumTest ℏ)
     TestFunction.ambientToLp_restrict_injective φ _
 
+/-- `halfLineMomentum_apply`, stated through the linear map `ι₊` and `momentumTest`. -/
+private theorem halfLineMomentum_ambientToLp (φ : 𝓓(Ω₊, ℂ)) :
+    halfLineMomentum ℏ ⟨ι₊ φ, ambientToLp_mem_domain_halfLineMomentum φ⟩ =
+      ι₊ (momentumTest ℏ φ) :=
+  halfLineMomentum_apply φ
+
 /-- A representative of the half-line momentum of the class of a test function `φ` is
 `q ↦ iℏ φ'(q)`. -/
 theorem coeFn_halfLineMomentum_apply (φ : 𝓓(Ω₊, ℂ)) :
@@ -246,10 +252,9 @@ private theorem integral_deriv_add_mul_smul_eq_zero (hℏ : ℏ ≠ 0) {c : ℝ}
   set φ : 𝓓(Ω₊, ℂ) := TestFunction.postcompCLM (𝕜 := ℝ) ofRealCLM ⟨g, hg, hgc, hgs⟩
   have hφg (x : ℝ) : φ x = g x := postcompCLM_ofRealCLM_apply _ x
   have hsymm : ⟪ι₊ (momentumTest ℏ φ), u⟫_ℂ = ⟪ι₊ φ, ((c : ℂ) * ℏ * I) • u⟫_ℂ := by
-    have h := (LinearPMap.adjoint_isFormalAdjoint dense_domain_halfLineMomentum).symm
+    rw [← halfLineMomentum_ambientToLp, ← hAu]
+    exact (LinearPMap.adjoint_isFormalAdjoint dense_domain_halfLineMomentum).symm
       ⟨ι₊ φ, ambientToLp_mem_domain_halfLineMomentum φ⟩ ⟨u, hu⟩
-    simpa only [ContinuousLinearMap.coe_coe, halfLineMomentum_apply,
-      ← momentumTest_apply, hAu] using h
   -- The class of `iℏ (φ' + c φ)` is orthogonal to `u`.
   have h0 : ⟪ι₊ (momentumTest ℏ φ + ((I * ℏ * c : ℂ)) • φ), u⟫_ℂ = 0 := by
     rw [map_add, map_smul, inner_add_left, inner_smul_left, hsymm, inner_smul_right]
@@ -356,11 +361,9 @@ theorem mem_ker_subScalar_neg_I_adjoint_halfLineMomentum_iff (hℏ : 0 < ℏ) {u
     have hcond : ∀ x : (halfLineMomentum ℏ).domain,
         ⟪(-I) • u, (x : L²₊)⟫_ℂ = ⟪u, halfLineMomentum ℏ x⟫_ℂ := by
       rintro ⟨_, hφ⟩
-      obtain ⟨φ, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ _).mp hφ
-      simpa only [ContinuousLinearMap.coe_coe, halfLineMomentum_apply,
-        ← momentumTest_apply, inner_conj_symm] using
-        congrArg (starRingEnd ℂ)
-          (inner_ambientToLp_Ioi_momentumTest_of_ae_eq hℏ.ne' hv φ).symm
+      obtain ⟨φ, rfl⟩ : ∃ φ, ι₊ φ = _ := mem_domain_halfLineMomentum_iff.mp hφ
+      rw [halfLineMomentum_ambientToLp, ← inner_conj_symm,
+        ← inner_ambientToLp_Ioi_momentumTest_of_ae_eq hℏ.ne' hv, inner_conj_symm]
     have hdom : u ∈ (halfLineMomentum ℏ)†.domain :=
       LinearPMap.mem_adjoint_domain_of_exists u ⟨_, hcond⟩
     exact LinearPMap.mem_ker_subScalar_iff.mpr

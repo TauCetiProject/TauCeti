@@ -15,7 +15,7 @@ import TauCeti.Analysis.Normed.Operator.Banach
 
 For normed spaces `D`, `H`, `K`, an injective `ι : D →L H` and `A : D →L K`, this file
 characterizes when the partial operator `LinearMap.domainOperator ι A hι` of the underlying linear
-maps (see `TauCeti.Topology.Algebra.Module.LinearPMap.CommonDomain`), with domain `range ι` and
+maps (see `TauCeti.LinearAlgebra.LinearPMap.CommonDomain`), with domain `range ι` and
 acting by `ι x ↦ A x`, is closed, and when `K = H`, which scalars are its resolvent points.
 
 * **Closedness.** If `D` is complete, the partial operator is closed when the norm of `D` is

@@ -92,6 +92,11 @@ def toL2Operator : L2Form I M k →ₗ.[ℝ] L2Form I M k' :=
 theorem domain_toL2Operator : (toL2Operator T).domain = LinearMap.range (toL2Form I M k) :=
   LinearMap.domain_domainOperator _ _ _
 
+/-- The class of a compactly supported smooth form lies in the domain of `toL2Operator T`. -/
+theorem toL2Form_mem_domain_toL2Operator (α : compactlySupportedForms I M k) :
+    toL2Form I M k α ∈ (toL2Operator T).domain :=
+  LinearMap.apply_mem_domain_domainOperator _ _ _ α
+
 /-- `toL2Operator T` sends the class of a compactly supported smooth form `α` to the class
 of `T α`. -/
 @[simp]
@@ -274,11 +279,12 @@ theorem toL2Operator_codifferential_le_weakCodifferential (o : Manifold.Orientat
 
 /-- On an oriented boundaryless manifold, the weak exterior derivative of the class of a
 compactly supported smooth form is the class of its exterior derivative. -/
+@[simp]
 theorem weakExtDeriv_toL2Form (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + l = m)
     (α : compactlySupportedForms I M k) (h : toL2Form I M k α ∈ (weakExtDeriv o hkl).domain) :
     weakExtDeriv o hkl ⟨toL2Form I M k α, h⟩ =
       toL2Form I M (k + 1) (compactlySupportedForms.mextDerivₗ I M k α) := by
-  rw [← toL2Operator_apply _ α (LinearMap.apply_mem_domain_domainOperator _ _ _ α)]
+  rw [← toL2Operator_apply _ α (toL2Form_mem_domain_toL2Operator _ α)]
   exact ((toL2Operator_mextDerivₗ_le_weakExtDeriv o hkl).2 rfl).symm
 
 /-- On an oriented boundaryless manifold, the weak codifferential of the class of a compactly
@@ -288,7 +294,7 @@ theorem weakCodifferential_toL2Form (o : Manifold.Orientation I M (Fin m)) (hkl 
     (h : toL2Form I M (k + 1) β ∈ (weakCodifferential I M k).domain) :
     weakCodifferential I M k ⟨toL2Form I M (k + 1) β, h⟩ =
       toL2Form I M k (codifferential o hkl β) := by
-  rw [← toL2Operator_apply _ β (LinearMap.apply_mem_domain_domainOperator _ _ _ β)]
+  rw [← toL2Operator_apply _ β (toL2Form_mem_domain_toL2Operator _ β)]
   exact ((toL2Operator_codifferential_le_weakCodifferential o hkl).2 rfl).symm
 
 /-- On an oriented boundaryless manifold, the weak exterior derivative is densely defined. -/
@@ -304,12 +310,13 @@ theorem dense_domain_weakCodifferential (o : Manifold.Orientation I M (Fin m))
 
 /-- On an oriented boundaryless manifold, a compactly supported smooth form is weakly closed
 exactly when it is closed. -/
+@[simp]
 theorem toL2Form_mem_ker_weakExtDeriv_iff (o : Manifold.Orientation I M (Fin m))
     (hkl : k + 1 + l = m) (α : compactlySupportedForms I M k) :
     toL2Form I M k α ∈ (weakExtDeriv o hkl).ker ↔
       compactlySupportedForms.mextDerivₗ I M k α = 0 := by
   have hα := (toL2Operator_mextDerivₗ_le_weakExtDeriv o hkl).1
-    (LinearMap.apply_mem_domain_domainOperator _ _ _ α)
+    (toL2Form_mem_domain_toL2Operator _ α)
   rw [LinearPMap.coe_mem_ker_iff (x := ⟨_, hα⟩), weakExtDeriv_toL2Form,
     LinearMap.map_eq_zero_iff _ toL2Form_injective]
 
@@ -319,7 +326,7 @@ theorem toL2Form_mem_ker_weakCodifferential_iff (o : Manifold.Orientation I M (F
     (hkl : k + 1 + l = m) (β : compactlySupportedForms I M (k + 1)) :
     toL2Form I M (k + 1) β ∈ (weakCodifferential I M k).ker ↔ codifferential o hkl β = 0 := by
   have hβ := (toL2Operator_codifferential_le_weakCodifferential o hkl).1
-    (LinearMap.apply_mem_domain_domainOperator _ _ _ β)
+    (toL2Form_mem_domain_toL2Operator _ β)
   rw [LinearPMap.coe_mem_ker_iff (x := ⟨_, hβ⟩), weakCodifferential_toL2Form o hkl,
     LinearMap.map_eq_zero_iff _ toL2Form_injective]
 
