@@ -36,7 +36,8 @@ Hamiltonian perturbation is free, the universal operator has dense range, and it
   variations, for `W` a neighbourhood of the graph of `u` over a nonempty open set `O ⊆ U`, is zero
   (`TauCeti.SymplecticForm.eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator`). The
   covector field `η = ⟪h, ·⟫` on `U` is a weak cokernel element of the universal operator: by
-  Green's formula on the jets of test sections it annihilates `D_u ξ` for every test section `ξ`,
+  Green's formula on the jets of test sections it annihilates `D_u ξ` for every test section `ξ`
+  (`TauCeti.SymplecticForm.setIntegral_inner_floerLinearization_eq_zero_of_mem_orthogonal_range`),
   and it annihilates the change `F(K_s + δK) - F(K_s) = -X_{δK}(u)` of the Floer operator. Weak
   cokernel elements of the universal operator vanish
   (`ae_eq_zero_of_integral_floerLinearization_of_integral_floerOperator_add_sub`, in the namespace
@@ -173,6 +174,24 @@ private theorem memLpLoc_innerField (hU : MeasurableSet U) (h : Lp V 2 (volume.r
   ((Lp.memLp h).memLpLoc.clm_comp (innerSL ℝ)).congr_ae
     (indicator_ae_eq_restrict hU.nullMeasurableSet).symm
 
+/-- **Elements orthogonal to the range are weak cokernel elements.** When the coefficient field of
+the linearized operator on conformal jets is essentially bounded on `U`, an element `h ∈ L²(U, V)`
+orthogonal to the range of the realization `D_u : W^{1,2}_0(U, V) → L²(U, V)` annihilates `D_u ξ`
+for every test section `ξ` on `U`: `∫_U ⟪h, D_u ξ⟫ = 0`. -/
+theorem setIntegral_inner_floerLinearization_eq_zero_of_mem_orthogonal_range
+    (hρ : IsWeight U ρ)
+    (hM : MemLp (ω.floerConformalJetCoeff ρ J Ks Kt u) ∞ (volume.restrict U))
+    {h : Lp V 2 (volume.restrict U)}
+    (hD : h ∈ (ω.floerConformalSobolevOperator U ρ J Ks Kt u).rangeᗮ) {ξ : ℝ × ℝ → V}
+    (hξ : ξ ∈ testSection V U) :
+    ∫ z in U, ⟪h z, ω.floerLinearization J Ks Kt u ξ z⟫_ℝ = 0 := by
+  have h0 := (Submodule.mem_orthogonal' _ _).1 hD _ (LinearMap.mem_range_self _
+    ⟨(memLp_jet hρ hξ).toLp (jet ρ ξ), jetSubmodule_le_H1 (toLp_jet_mem_jetSubmodule hρ hξ)⟩)
+  rw [MeasureTheory.L2.inner_def] at h0
+  rw [← h0]
+  exact integral_congr_ae ((floerConformalSobolevOperator_toLp_jet_ae_eq ω hρ hM hξ).mono
+    fun z hz ↦ congrArg (fun v ↦ ⟪h z, v⟫_ℝ) hz.symm)
+
 /-- **Hamiltonian variations detect the cokernel of the linearized Floer operator on
 `W^{1,2}`.** Let `U` be a connected open set with a conformal weight `ρ`, let `J` be `C²` with
 `J(z, u z)² = -1` and the Hamiltonians `K_s`, `K_t` be `C³` near the graph of a map `u` which is
@@ -203,14 +222,9 @@ theorem eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator (hρ : IsW
     rw [innerField, indicator_of_mem hzU, innerSL_apply_norm] at hn
     simpa using hn
   · -- Orthogonality to the range of `D_u`, on the jet of the test section `ξ`.
-    have hξT : ξ ∈ testSection V U :=
-      mem_testSection_iff.2 ⟨hξ.of_le (WithTop.coe_le_coe.2 le_top), hξc, hξU⟩
-    have h0 := (Submodule.mem_orthogonal' _ _).1 hD _ (LinearMap.mem_range_self _
-      ⟨(memLp_jet hρ hξT).toLp (jet ρ ξ), jetSubmodule_le_H1 (toLp_jet_mem_jetSubmodule hρ hξT)⟩)
-    rw [MeasureTheory.L2.inner_def] at h0
-    rw [integral_innerField_apply hUm, ← h0]
-    exact integral_congr_ae ((floerConformalSobolevOperator_toLp_jet_ae_eq ω hρ hM hξT).mono
-      fun z hz ↦ congrArg (fun v ↦ ⟪h z, v⟫_ℝ) hz.symm)
+    rw [integral_innerField_apply hUm]
+    exact setIntegral_inner_floerLinearization_eq_zero_of_mem_orthogonal_range hρ hM hD
+      (mem_testSection_iff.2 ⟨hξ.of_le (WithTop.coe_le_coe.2 le_top), hξc, hξU⟩)
   · -- Orthogonality to the variation `δK`, whose change of the Floer operator is `-X_{δK}(u)`.
     have hX : MemLp (fun z ↦ -ω.hamiltonianVectorField (δK z) (u z)) 2 (volume.restrict U) :=
       (ω.memLp_hamiltonianVectorField_comp (hδK.of_le (WithTop.coe_le_coe.2 le_top)) hc hUm huc
