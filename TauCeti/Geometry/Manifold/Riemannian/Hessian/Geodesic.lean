@@ -6,10 +6,7 @@ Authors: Otis Chodosh
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-public import TauCeti.Geometry.Manifold.Riemannian.Curve.Speed
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 
 /-!
 # Scalar Hessians along curves
@@ -60,9 +57,7 @@ theorem hasDerivAt_deriv_comp_curve
   have hG := hgrad.mdifferentiableAt (by simp) |>.comp t hγd
   have hGcoord := differentiableAt_sectionCoord γ (fun r ↦ mgradient I f (γ r)) hG
     (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t))
-  obtain ⟨u, hu, hγu⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hγ
-  have hVcoord := differentiableAt_sectionCoord_curveVelocity (I := I) (E := E) (γ := γ)
-    (hγu.mono interior_subset) isOpen_interior (mem_interior_iff_mem_nhds.mpr hu)
+  have hVcoord := hγ.differentiableAt_sectionCoord_curveVelocity (E := E)
   have hd := (isMetricCompatible_leviCivitaConnection I).hasDerivAt_inner_alongCurve
     hγd hGcoord hVcoord
   rw [alongCurve_pullback _ _ _ (hasMFDerivAt_curveVelocity hγd)
@@ -85,8 +80,8 @@ variable [IsManifold I ∞ M] [T2Space M] [I.Boundaryless]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {x : M}
 
-/-- Restriction to an endpoint exponential ray has second derivative equal to the diagonal
-native Hessian at the endpoint. -/
+/-- The second derivative of `s ↦ f (riemannianExp I M x (s • v))` at `s = 0` equals
+the diagonal Hessian of `f` at the base point `x`. -/
 theorem deriv_deriv_comp_riemannianExp (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
     (v : TangentSpace I x) :
     deriv (deriv (fun s : ℝ ↦ f (riemannianExp I M x (s • v)))) 0 =
