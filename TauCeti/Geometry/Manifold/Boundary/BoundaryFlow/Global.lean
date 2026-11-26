@@ -19,7 +19,8 @@ point of `M` exists for all positive time and stays in the interior of `M` at ev
 (`TauCeti.exists_isMIntegralCurveOn_Ici_of_isOutwardPointing_neg`). So the forward integral curve
 `TauCeti.forwardIntegralCurve v x` is an integral curve on `[0, ∞)`
 (`TauCeti.isMIntegralCurveOn_forwardIntegralCurve_of_isOutwardPointing_neg`), in the interior at
-positive times (`TauCeti.forwardIntegralCurve_mem_interior_of_isOutwardPointing_neg`), and the
+positive times (`TauCeti.forwardIntegralCurve_mem_interior_of_isOutwardPointing_neg`), satisfies
+the flow law (`TauCeti.forwardIntegralCurve_add_of_isOutwardPointing_neg`), and the
 flow-out `(x, t) ↦ forwardIntegralCurve v x t` of the boundary is injective on `∂M × [0, ∞)`
 (`TauCeti.injOn_forwardIntegralCurve_of_isOutwardPointing_neg`).
 
@@ -52,9 +53,10 @@ collar is defined on all of `∂W × (-∞, 0)`, lies in the interior of `W` and
   inward field on a compact manifold with boundary, with the curves in the interior at positive
   times.
 * `TauCeti.isMIntegralCurveOn_forwardIntegralCurve_of_isOutwardPointing_neg`,
-  `TauCeti.forwardIntegralCurve_mem_interior_of_isOutwardPointing_neg` and
+  `TauCeti.forwardIntegralCurve_mem_interior_of_isOutwardPointing_neg`,
+  `TauCeti.forwardIntegralCurve_add_of_isOutwardPointing_neg` and
   `TauCeti.injOn_forwardIntegralCurve_of_isOutwardPointing_neg`: the forward integral curves of an
-  inward field and the injectivity of the flow-out of the boundary.
+  inward field, their flow law, and the injectivity of the flow-out of the boundary.
 * `TauCeti.IsOutwardPointingField.isMIntegralCurveOn_Iic_forwardIntegralCurve_neg`,
   `TauCeti.IsOutwardPointingField.forwardIntegralCurve_neg_mem_interior` and
   `TauCeti.IsOutwardPointingField.injOn_forwardIntegralCurve_neg`: the backward flow of an outward
@@ -78,23 +80,6 @@ namespace TauCeti
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
   [IsManifold (𝓡∂ (n + 1)) ∞ M]
-
-namespace IsOutwardPointingField
-
-variable {V : (x : M) → TangentSpace (𝓡∂ (n + 1)) x}
-
-/-- The negative of an outward-pointing field is smooth. -/
-private theorem contMDiff_neg (hV : IsOutwardPointingField V) :
-    ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞
-      (fun x ↦ (⟨x, (-V) x⟩ : TangentBundle (𝓡∂ (n + 1)) M)) :=
-  fun x ↦ (hV.contMDiff x).neg_section
-
-/-- The negative of an outward-pointing field points inward along the boundary. -/
-private theorem isOutwardPointing_neg_neg (hV : IsOutwardPointingField V) (a : M)
-    (ha : a ∈ (𝓡∂ (n + 1)).boundary M) : IsOutwardPointing a (-(-V) a) := by
-  simpa using hV.isOutwardPointing ha
-
-end IsOutwardPointingField
 
 section Inward
 
@@ -171,6 +156,19 @@ theorem isMIntegralCurveOn_forwardIntegralCurve_of_isOutwardPointing_neg
     IsMIntegralCurveOn (forwardIntegralCurve v x) v (Ici 0) :=
   isMIntegralCurveOn_forwardIntegralCurve
     ((exists_isMIntegralCurveOn_Ici_of_isOutwardPointing_neg hv hin x).imp fun _ h ↦ ⟨h.1, h.2.1⟩)
+
+/-- **The flow law of an inward field.** On a compact Hausdorff manifold with boundary, for a
+smooth vector field pointing inward along the boundary, following its forward integral curve for
+time `s ≥ 0` and then for time `t ≥ 0` is following it for time `s + t`. -/
+theorem forwardIntegralCurve_add_of_isOutwardPointing_neg
+    (hv : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞
+      (fun x ↦ (⟨x, v x⟩ : TangentBundle (𝓡∂ (n + 1)) M)))
+    (hin : ∀ a ∈ (𝓡∂ (n + 1)).boundary M, IsOutwardPointing a (-v a)) (x : M) {s t : ℝ}
+    (hs : 0 ≤ s) (ht : 0 ≤ t) :
+    forwardIntegralCurve v (forwardIntegralCurve v x s) t = forwardIntegralCurve v x (s + t) :=
+  forwardIntegralCurve_add (hv.of_le (by simp))
+    ((exists_isMIntegralCurveOn_Ici_of_isOutwardPointing_neg hv hin x).imp fun _ h ↦ ⟨h.1, h.2.1⟩)
+    hs ht
 
 /-- On a compact Hausdorff manifold with boundary, the forward integral curve of a smooth vector
 field pointing inward along the boundary lies in the interior at every positive time. -/

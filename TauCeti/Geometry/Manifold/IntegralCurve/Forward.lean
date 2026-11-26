@@ -20,7 +20,8 @@ The **forward integral curve** `TauCeti.forwardIntegralCurve v x` is an integral
 `[0, ∞)` starting at `x`, whenever one exists (`TauCeti.isMIntegralCurveOn_forwardIntegralCurve`),
 and the constant curve at `x` otherwise. For a separated manifold and a `C¹` field it is the only
 one: every integral curve on `[0, ∞)` agrees with the forward integral curve through its starting
-point (`IsMIntegralCurveOn.eqOn_forwardIntegralCurve`). Uniqueness of integral curves on intervals
+point (`IsMIntegralCurveOn.eqOn_forwardIntegralCurve`), and forward integral curves satisfy the
+flow law (`TauCeti.forwardIntegralCurve_add`). Uniqueness of integral curves on intervals
 with endpoints (`IsMIntegralCurveOn.eqOn_of_isPreconnected`) holds at boundary points, so no
 interior-point hypothesis enters.
 
@@ -46,6 +47,7 @@ integral curve of `v`.
 * `TauCeti.isMIntegralCurveOn_forwardIntegralCurve`, `TauCeti.forwardIntegralCurve_zero` and
   `IsMIntegralCurveOn.eqOn_forwardIntegralCurve`: the forward integral curve is an integral curve
   on `[0, ∞)` from `x`, and the only one.
+* `TauCeti.forwardIntegralCurve_add`: the flow law of forward integral curves.
 * `TauCeti.exists_isMIntegralCurveOn_Ici_of_forall_exists_isMIntegralCurveOn_Ico`: a uniform time
   of forward existence gives forward integral curves on `[0, ∞)`.
 
@@ -118,6 +120,23 @@ theorem eqOn_forwardIntegralCurve [IsManifold I 1 M] [T2Space M]
 end IsMIntegralCurveOn
 
 namespace TauCeti
+
+/-- **The flow law of forward integral curves.** On a separated `C¹` manifold, possibly with
+boundary, if some integral curve of a `C¹` field `v` on `[0, ∞)` starts at `x`, then following the
+forward integral curve from `x` for time `s ≥ 0` and then the one from the point reached for time
+`t ≥ 0` is following the forward integral curve from `x` for time `s + t`. -/
+theorem forwardIntegralCurve_add [IsManifold I 1 M] [T2Space M]
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (h : ∃ γ : ℝ → M, γ 0 = x ∧ IsMIntegralCurveOn γ v (Ici 0)) {s t : ℝ} (hs : 0 ≤ s)
+    (ht : 0 ≤ t) :
+    forwardIntegralCurve v (forwardIntegralCurve v x s) t = forwardIntegralCurve v x (s + t) := by
+  -- The forward integral curve from `x`, restarted at time `s`, is an integral curve on `[0, ∞)`.
+  have hγ : IsMIntegralCurveOn (forwardIntegralCurve v x ∘ (· + s)) v (Ici 0) :=
+    ((isMIntegralCurveOn_forwardIntegralCurve h).comp_add s).mono fun r hr ↦
+      show 0 ≤ r + s by linarith [mem_Ici.1 hr]
+  have := hγ.eqOn_forwardIntegralCurve hv (mem_Ici.2 ht)
+  rw [comp_apply, comp_apply, zero_add, add_comm t s] at this
+  exact this.symm
 
 section UniformTime
 
