@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Colimits
 public import Mathlib.Algebra.Category.FGModuleCat.Limits
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.CategoryTheory.Tannaka.Hull.Equivalence
 public import TauCeti.CategoryTheory.Tannaka.Reconstruction.Coalgebra
 
@@ -195,11 +196,3 @@ theorem reconstructionEquivalence_functor :
   rfl
 
 end CategoryTheory.Functor
-
-/-- The values of a functor to finitely generated modules, regarded as modules, are finitely
-generated. This lets `CategoryTheory.Functor.reconstructionEquivalence` apply to a fibre functor
-`w : C ⥤ FGModuleCat K` through `w ⋙ forget₂ (FGModuleCat K) (ModuleCat K)`. -/
-instance FGModuleCat.finite_comp_forget₂_obj {R : Type*} [Ring R] {D : Type v} [Category.{w} D]
-    (F : D ⥤ FGModuleCat.{u} R) (X : D) :
-    Module.Finite R ((F ⋙ forget₂ (FGModuleCat R) (ModuleCat R)).obj X) :=
-  (F.obj X).property

@@ -45,6 +45,9 @@ every morphism `g`. No tensor structure on `C` is used.
 * `CategoryTheory.Functor.reconstructionTransition`: the transition coalgebra maps.
 * `CategoryTheory.Functor.reconstructionCoalgebra`: the coalgebra `B` of `ω`.
 * `CategoryTheory.Functor.toReconstructionCoalgebra`: the canonical coalgebra maps `A_s^∨ → B`.
+* `CategoryTheory.Functor.liftReconstructionCoalgebra`: the coalgebra map out of `B` induced by
+  compatible coalgebra maps out of the stages, unique by
+  `CategoryTheory.Functor.reconstructionCoalgebra_coalgHom_ext`.
 * `CategoryTheory.Functor.reconstructionStageComodule`: the `A_s^∨`-comodule structure on `ω Y`
   for `Y` in the hull of `X_s`.
 * `CategoryTheory.Functor.reconstructionComodule`: the `B`-comodule structure on `ω Y`.
@@ -232,6 +235,47 @@ theorem toReconstructionCoalgebra_comp_reconstructionTransition {s t : Finset (S
   classical
   exact @Module.DirectLimit.ofCoalgHom_comp K _ _ _ _ ω.ReconstructionStage _ _
     (fun _ ↦ inferInstance) (fun s t h ↦ ω.reconstructionTransition s t h) s t h
+
+section Lift
+
+variable {D : Type*} [AddCommMonoid D] [Module K D] [Coalgebra K D]
+  (g : ∀ s, ω.ReconstructionStage s →ₗc[K] D)
+  (hg : ∀ s t h, (g t).comp (ω.reconstructionTransition s t h) = g s)
+
+open scoped Classical in
+/-- **The universal property of the coalgebra of `ω`.** A family of coalgebra maps out of the
+stages, compatible with the transition maps, induces a coalgebra map out of the coalgebra
+of `ω` (`Module.DirectLimit.liftCoalgHom`). -/
+noncomputable def liftReconstructionCoalgebra : ω.reconstructionCoalgebra →ₗc[K] D :=
+  @Module.DirectLimit.liftCoalgHom K _ _ _ _ ω.ReconstructionStage _ _ (fun _ ↦ inferInstance)
+    (fun s t h ↦ ω.reconstructionTransition s t h) D _ _ _ g hg
+
+/-- The coalgebra map induced by compatible stage maps restricts to them on each stage. -/
+@[simp]
+theorem liftReconstructionCoalgebra_comp_toReconstructionCoalgebra
+    (s : Finset (SmallModel.{u} C)) :
+    (ω.liftReconstructionCoalgebra g hg).comp (ω.toReconstructionCoalgebra s) = g s := by
+  classical
+  exact @Module.DirectLimit.liftCoalgHom_comp_ofCoalgHom K _ _ _ _ ω.ReconstructionStage _ _
+    (fun _ ↦ inferInstance) (fun s t h ↦ ω.reconstructionTransition s t h) D _ _ _ g hg s
+
+/-- The coalgebra map induced by compatible stage maps, evaluated on the image of a stage. -/
+@[simp]
+theorem liftReconstructionCoalgebra_toReconstructionCoalgebra_apply
+    (s : Finset (SmallModel.{u} C)) (x : ω.ReconstructionStage s) :
+    ω.liftReconstructionCoalgebra g hg (ω.toReconstructionCoalgebra s x) = g s x :=
+  CoalgHom.congr_fun (ω.liftReconstructionCoalgebra_comp_toReconstructionCoalgebra g hg s) x
+
+/-- Coalgebra maps out of the coalgebra of `ω` agree when they agree on every stage. -/
+@[ext]
+theorem reconstructionCoalgebra_coalgHom_ext {φ ψ : ω.reconstructionCoalgebra →ₗc[K] D}
+    (h : ∀ s, φ.comp (ω.toReconstructionCoalgebra s) = ψ.comp (ω.toReconstructionCoalgebra s)) :
+    φ = ψ := by
+  classical
+  exact @Module.DirectLimit.coalgHom_ext K _ _ _ _ ω.ReconstructionStage _ _
+    (fun _ ↦ inferInstance) (fun s t h ↦ ω.reconstructionTransition s t h) D _ _ _ φ ψ h
+
+end Lift
 
 /-! ### The comodules of the values of `ω` -/
 
