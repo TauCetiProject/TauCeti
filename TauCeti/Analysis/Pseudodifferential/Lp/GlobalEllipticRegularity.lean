@@ -39,9 +39,6 @@ the `Lᵖ` elliptic theory of `T` on the whole space, in the namespace `TauCeti.
 * `IsUniformlyEllipticAbove.map_toDistrCLM_ker_quantizeUniformBesselPotentialSpace`:
   **the kernel does not depend on the order.** As a space of tempered distributions, the kernel of
   `T` on `H^{s,p}` is the same for every real `s`.
-* `IsUniformlySmoothing.exists_quantizeBesselPotentialSpace`: the quantization of a uniformly
-  smoothing symbol extends to a bounded operator `H^{r,p} → H^{σ,p}` for all real `r` and `σ`, the
-  `Lᵖ` form of `TauCeti.Symbol.IsUniformlySmoothing.hasSobolevExtension_quantizeUniformCLM`.
 
 The lower-order term `‖u‖_{H^{r,p}}` in the estimate cannot be dropped, since a uniformly elliptic
 operator may have a kernel: for a smooth compactly supported `ψ` equal to `1` near `0`, the symbol
@@ -59,8 +56,9 @@ symbol `b` of order `-m` with `Op(b) Op(a) = 1 + Op(q)` and `Op(a) Op(b) = 1 + O
 space, for uniformly smoothing symbols `q` and `q'`. A uniformly smoothing symbol is uniform of
 every order, so `Op(q)` is bounded `H^{r,p} → H^{σ,p}` for all real `r` and `σ`
 (`TauCeti.Symbol.IsUniformlySmoothing.exists_quantizeBesselPotentialSpace`). By density of the
-Schwartz functions in `H^{s,p}`, the two operator identities hold on `H^{s,p}`, which gives the
-parametrix and the estimate. For `u ∈ H^{t,p}` with `T u ∈ H^{s - m,p}` the identity
+Schwartz functions in `H^{s,p}`, the two operator identities hold on `H^{s,p}`
+(`TauCeti.Symbol.toDistr_apply_apply_eq_add_of_comp_eq_id_add`), which gives the parametrix and the
+estimate. For `u ∈ H^{t,p}` with `T u ∈ H^{s - m,p}` the identity
 `u = Op(b) (T u) - Op(q) u` of tempered distributions shows `u ∈ H^{s,p}`: the operators `Op(b)` on
 the different spaces `H^{σ,p}` agree on tempered distributions
 (`HasBesselPotentialSpaceExtension.toDistr_quantizeUniformBesselPotentialSpace_congr` in the
@@ -88,54 +86,9 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m R : ℝ}
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-! ### Uniformly smoothing symbols on `H^{s,p}` -/
-
-/-- **Uniformly smoothing symbols gain every number of derivatives on `H^{s,p}`.** Let
-`1 < p < ∞`. The quantization of a uniformly smoothing symbol extends from Schwartz functions to a
-bounded operator `H^{r,p} → H^{σ,p}` for all real `r` and `σ`. -/
-theorem IsUniformlySmoothing.exists_quantizeBesselPotentialSpace {q : Symbol n V W m}
-    (hq : q.IsUniformlySmoothing) (hp : 1 < p) (hp_top : p ≠ ∞) (r σ : ℝ) :
-    ∃ K : H^{r, p}(CoordinateSpace n, V) →L[ℂ] H^{σ, p}(CoordinateSpace n, W),
-      K ∘L SchwartzMap.toBesselPotentialSpaceCLM r p =
-        SchwartzMap.toBesselPotentialSpaceCLM σ p ∘L quantizeUniformCLM q hq.isUniform := by
-  obtain ⟨q', hq', hqq'⟩ := isUniformlySmoothing_iff.1 hq (r - σ)
-  refine ⟨BesselPotentialSpace.inclusion (by linarith) ∘L
-    q'.quantizeUniformBesselPotentialSpace hq' r p, ContinuousLinearMap.ext fun u ↦ ?_⟩
-  simp [quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hq' r hp hp_top,
-    quantizeUniformCLM_congr hq.isUniform hq' hqq'.symm]
-
 /-! ### The parametrix -/
 
 variable {a : Symbol n V W m}
-
-/-- The parametrix identity on Bessel-potential spaces: if `Op(b) Op(a) = 1 + Op(q)` on Schwartz
-space and `K` extends `Op(q)` to `H^{σ,p} → H^{ρ,p}`, then `Op(b) (Op(a) u) = u + K u` as tempered
-distributions for every `u ∈ H^{σ,p}`. -/
-private theorem toDistr_quantizeUniformBesselPotentialSpace_comp_eq_add (hp : 1 < p)
-    (hp_top : p ≠ ∞) {m' : ℝ} {hau : a.IsUniform} {b : Symbol n W V m'} {hb : b.IsUniform}
-    {q : Symbol n V V 0} {hq : q.IsUniform}
-    (hbaq : quantizeUniformCLM b hb ∘L quantizeUniformCLM a hau =
-      ContinuousLinearMap.id ℂ _ + quantizeUniformCLM q hq)
-    {σ ρ : ℝ} {K : H^{σ, p}(CoordinateSpace n, V) →L[ℂ] H^{ρ, p}(CoordinateSpace n, V)}
-    (hK : K ∘L SchwartzMap.toBesselPotentialSpaceCLM σ p =
-      SchwartzMap.toBesselPotentialSpaceCLM ρ p ∘L quantizeUniformCLM q hq)
-    (u : H^{σ, p}(CoordinateSpace n, V)) :
-    (b.quantizeUniformBesselPotentialSpace hb (σ - m) p
-        (a.quantizeUniformBesselPotentialSpace hau σ p u)).toDistr =
-      u.toDistr + (K u).toDistr := by
-  have key : BesselPotentialSpace.toDistrCLM _ V _ p ∘L
-      b.quantizeUniformBesselPotentialSpace hb (σ - m) p ∘L
-        a.quantizeUniformBesselPotentialSpace hau σ p =
-      BesselPotentialSpace.toDistrCLM _ V _ p +
-        BesselPotentialSpace.toDistrCLM _ V _ p ∘L K := by
-    refine BesselPotentialSpace.continuousLinearMap_ext hp_top fun w ↦ ?_
-    have hw := congr($hbaq w)
-    have hKw := congr($hK w)
-    simp only [ContinuousLinearMap.comp_apply, add_apply,
-      ContinuousLinearMap.id_apply] at hw hKw
-    simp [quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hau σ hp hp_top,
-      quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hb (σ - m) hp hp_top, hw, hKw]
-  simpa using congr($key u)
 
 /-- **The parametrix on `H^{s,p}`.** Let `a` be a symbol of order `m` whose estimates hold uniformly
 in the position and which is uniformly elliptic above some radius, let `1 < p < ∞`, and let
@@ -160,8 +113,12 @@ theorem IsUniformlyEllipticAbove.exists_quantizeUniformBesselPotentialSpace_para
     b.quantizeUniformBesselPotentialSpace hb (s - m) p, fun r hrs ↦ ?_, fun r hrs ↦ ?_⟩
   · obtain ⟨K, hK⟩ := hq.exists_quantizeBesselPotentialSpace hp hp_top r s
     refine ⟨K, ContinuousLinearMap.ext fun u ↦ BesselPotentialSpace.ext ?_⟩
-    simpa using toDistr_quantizeUniformBesselPotentialSpace_comp_eq_add hp hp_top hbaq
-      (K := K ∘L BesselPotentialSpace.inclusion hrs)
+    simpa using toDistr_apply_apply_eq_add_of_comp_eq_id_add hp_top hbaq
+      (ContinuousLinearMap.ext
+        (quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hau _ hp hp_top))
+      (ContinuousLinearMap.ext
+        (quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hb _ hp hp_top))
+      (R := K ∘L BesselPotentialSpace.inclusion hrs)
       (ContinuousLinearMap.ext fun w ↦ by simpa using congr($hK w)) u
   · obtain ⟨K', hK'⟩ := hq'.exists_quantizeBesselPotentialSpace hp hp_top r (s - m)
     have ha' := hau.hasBesselPotentialSpaceExtension hp hp_top
@@ -170,8 +127,12 @@ theorem IsUniformlyEllipticAbove.exists_quantizeUniformBesselPotentialSpace_para
     rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
       ha'.toDistr_quantizeUniformBesselPotentialSpace_congr ha' rfl hp_top
         (BesselPotentialSpace.toDistr_inclusion _ _)]
-    simpa using toDistr_quantizeUniformBesselPotentialSpace_comp_eq_add hp hp_top habq
-      (K := K' ∘L BesselPotentialSpace.inclusion hrs)
+    simpa using toDistr_apply_apply_eq_add_of_comp_eq_id_add hp_top habq
+      (ContinuousLinearMap.ext
+        (quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hb _ hp hp_top))
+      (ContinuousLinearMap.ext
+        (quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hau _ hp hp_top))
+      (R := K' ∘L BesselPotentialSpace.inclusion hrs)
       (ContinuousLinearMap.ext fun w ↦ by simpa using congr($hK' w)) f
 
 /-! ### The global elliptic estimate -/
@@ -229,7 +190,11 @@ theorem IsUniformlyEllipticAbove.memSobolev_of_memSobolev_quantizeUniformBesselP
       hu.toBesselPotentialSpace_toDistr.symm
   have hid : u.toDistr = (b.quantizeUniformBesselPotentialSpace hb (s - m) p
       hu.toBesselPotentialSpace).toDistr - (K u).toDistr := by
-    rw [← hBv, toDistr_quantizeUniformBesselPotentialSpace_comp_eq_add hp hp_top hbaq hK u,
+    rw [← hBv, toDistr_apply_apply_eq_add_of_comp_eq_id_add hp_top hbaq
+      (ContinuousLinearMap.ext
+        (quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hau _ hp hp_top))
+      (ContinuousLinearMap.ext
+        (quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hb _ hp hp_top)) hK u,
       add_sub_cancel_right]
   rw [hid]
   exact (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring)).sub

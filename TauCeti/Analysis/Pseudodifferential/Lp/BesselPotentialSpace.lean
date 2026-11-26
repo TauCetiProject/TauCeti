@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 public import TauCeti.Analysis.Pseudodifferential.Lp.CalderonZygmund
+public import TauCeti.Analysis.Pseudodifferential.Symbol.UniformlySmoothing
 import TauCeti.Analysis.Pseudodifferential.Frequency.BesselConjugation
 
 /-!
@@ -56,6 +57,10 @@ functions.
   the lemmas after it), its compatibility with raising the order, with the inclusions
   `H^{s,p} ⊆ H^{r,p}`, with composition and across exponents, and the multiplication operators of
   symbols `f(x)`.
+* `TauCeti.Symbol.IsUniformlySmoothing.exists_quantizeBesselPotentialSpace`: the quantization of a
+  uniformly smoothing symbol extends to a bounded operator `H^{r,p} → H^{σ,p}` for all real `r`
+  and `σ`, the `Lᵖ` form of
+  `TauCeti.Symbol.IsUniformlySmoothing.hasSobolevExtension_quantizeUniformCLM`.
 
 ## References
 
@@ -116,6 +121,21 @@ theorem IsUniform.hasBesselPotentialSpaceExtension (ha : a.IsUniform) (hp : 1 < 
     (hp_top : p ≠ ∞) : a.HasBesselPotentialSpaceExtension ha p :=
   hasBesselPotentialSpaceExtension_iff.2 fun s ↦
     quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM ha s hp hp_top
+
+
+/-- **Uniformly smoothing symbols gain every number of derivatives on `H^{s,p}`.** Let
+`1 < p < ∞`. The quantization of a uniformly smoothing symbol extends from Schwartz functions to a
+bounded operator `H^{r,p} → H^{σ,p}` for all real `r` and `σ`. -/
+theorem IsUniformlySmoothing.exists_quantizeBesselPotentialSpace {q : Symbol n V W m}
+    (hq : q.IsUniformlySmoothing) (hp : 1 < p) (hp_top : p ≠ ∞) (r σ : ℝ) :
+    ∃ K : H^{r, p}(CoordinateSpace n, V) →L[ℂ] H^{σ, p}(CoordinateSpace n, W),
+      K ∘L SchwartzMap.toBesselPotentialSpaceCLM r p =
+        SchwartzMap.toBesselPotentialSpaceCLM σ p ∘L quantizeUniformCLM q hq.isUniform := by
+  obtain ⟨q', hq', hqq'⟩ := isUniformlySmoothing_iff.1 hq (r - σ)
+  refine ⟨BesselPotentialSpace.inclusion (by linarith) ∘L
+    q'.quantizeUniformBesselPotentialSpace hq' r p, ContinuousLinearMap.ext fun u ↦ ?_⟩
+  simp [quantizeUniformBesselPotentialSpace_toBesselPotentialSpaceCLM hq' r hp hp_top,
+    quantizeUniformCLM_congr hq.isUniform hq' hqq'.symm]
 
 end Symbol
 
