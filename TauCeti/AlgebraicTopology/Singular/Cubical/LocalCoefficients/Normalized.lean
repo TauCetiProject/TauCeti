@@ -199,20 +199,17 @@ private theorem filter_isDegenerate_mem_degenerate {n : ℕ} (y : L.TwistedCubic
   induction y using induction_on with
   | zero => simp [DFinsupp.filter_zero]
   | ofCube c a =>
+    -- `DirectSum.of` is `DFinsupp.single`, so filtering a single cube keeps it or kills it.
     by_cases hc : IsDegenerate c
     · have h : (DFinsupp.filter IsDegenerate (ofCube L c a) : L.TwistedCubicalChain n) =
-          ofCube L c a := DirectSum.ext fun c' ↦ by
-        by_cases hc' : IsDegenerate c'
-        · exact DFinsupp.filter_apply_pos _ hc'
-        · rw [DFinsupp.filter_apply_neg _ hc', ofCube_apply_of_ne (by rintro rfl; exact hc' hc)]
+          ofCube L c a := by
+        rw [ofCube_eq_lof, DirectSum.lof_eq_of]
+        exact DFinsupp.filter_single_pos _ _ hc
       rw [h]
       exact ofCube_mem_degenerate hc a
-    · have h : (DFinsupp.filter IsDegenerate (ofCube L c a) : L.TwistedCubicalChain n) = 0 :=
-        DirectSum.ext fun c' ↦ by
-          by_cases hc' : IsDegenerate c'
-          · rw [DFinsupp.filter_apply_pos _ hc', ofCube_apply_of_ne
-              (by rintro rfl; exact hc hc'), DirectSum.zero_apply]
-          · exact DFinsupp.filter_apply_neg _ hc'
+    · have h : (DFinsupp.filter IsDegenerate (ofCube L c a) : L.TwistedCubicalChain n) = 0 := by
+        rw [ofCube_eq_lof, DirectSum.lof_eq_of]
+        exact DFinsupp.filter_single_neg _ _ hc
       rw [h]
       exact Submodule.zero_mem _
   | add y z hy hz =>

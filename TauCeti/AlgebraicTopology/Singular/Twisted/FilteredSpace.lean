@@ -7,8 +7,9 @@ module
 
 public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
-public import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
 import TauCeti.Algebra.Homology.Embedding.ExtendSubobject
+import TauCeti.Topology.Category.TopCat.Subspace
 
 /-!
 # The filtration of twisted chains by subspaces

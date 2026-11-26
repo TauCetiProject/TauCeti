@@ -20,9 +20,8 @@ form an increasing filtration of the normalized cubical chains of `Y` with coeff
 induces a monomorphism of normalized cubical chains with local coefficients
 (`TauCeti.LocalCoefficientSystem.mono_normalizedTwistedCubicalChainComplexMap`). This is the
 cubical counterpart of the filtration of simplicial singular chains with local coefficients,
-`TauCeti.LocalCoefficientSystem.twistedChainFiltration`. For the preimages of the skeleta of the
-base of a fibration it is the Serre filtration with local coefficients on the total space, in the
-cubical chains of Serre and of Barraud–Cornea.
+`TauCeti.LocalCoefficientSystem.twistedChainFiltration`. Over the skeletal filtration of the base
+of a fibration, its spectral sequence is the Serre spectral sequence with local coefficients.
 
 The comparison map `TauCeti.LocalCoefficientSystem.twistedCubicalToSingularMap` from cubical to
 simplicial chains with local coefficients is natural in the space
@@ -123,26 +122,21 @@ variable {X}
 
 /-- For `X a ⊆ X b`, the inclusion of the cubical chains of `X a` into those of `Y` factors
 through the cubical chains of `X b`. -/
-private lemma exists_comp_twistedCubicalChainFiltrationι {a b : ℤ} (hab : X a ⊆ X b) :
-    ∃ g, g ≫ twistedCubicalChainFiltrationι L X b = twistedCubicalChainFiltrationι L X a :=
-  -- The composite of the inclusions `X a ⊆ X b ⊆ Y` is the inclusion of `X a` by definition.
-  ⟨extendMap (normalizedTwistedCubicalChainComplexCoefficientMap
-      ((pullbackCompIso (X := TopCat.of ↥(X a)) (Y := TopCat.of ↥(X b))
-        (ContinuousMap.inclusion hab) (ContinuousMap.subtypeVal (X b))).hom.app L) ≫
-      normalizedTwistedCubicalChainComplexMap (X := TopCat.of ↥(X a)) (Y := TopCat.of ↥(X b))
-        (ContinuousMap.inclusion hab)
-        ((pullback (X := TopCat.of ↥(X b)) (ContinuousMap.subtypeVal (X b))).obj L)) _,
-    (extendMap_comp _ _ _).symm.trans <| congrArg (extendMap · _) <|
-      (Category.assoc _ _ _).trans
-        (normalizedTwistedCubicalChainComplexMap_comp (X := TopCat.of ↥(X a))
-          (Y := TopCat.of ↥(X b)) (ContinuousMap.inclusion hab)
-          (ContinuousMap.subtypeVal (X b)) L).symm⟩
+@[reassoc (attr := simp)]
+lemma extendMap_subsetNormalizedTwistedCubicalChainComplexMap_comp_twistedCubicalChainFiltrationι
+    {a b : ℤ} (hab : X a ⊆ X b) :
+    extendMap (subsetNormalizedTwistedCubicalChainComplexMap L hab) ComplexShape.embeddingDownNat ≫
+        twistedCubicalChainFiltrationι L X b =
+      twistedCubicalChainFiltrationι L X a :=
+  (extendMap_comp _ _ _).symm.trans <| congrArg (extendMap · _)
+    (subsetNormalizedTwistedCubicalChainComplexMap_normalizedTwistedCubicalChainComplexMap L hab)
 
 /-- The cubical filtration is monotone in the subsets. -/
 lemma twistedCubicalChainFiltration_mono {a b : ℤ} (hab : X a ⊆ X b) :
     twistedCubicalChainFiltration L X a ≤ twistedCubicalChainFiltration L X b :=
-  have ⟨_, hg⟩ := exists_comp_twistedCubicalChainFiltrationι L hab
-  Subobject.mk_le_mk_of_comm _ hg
+  Subobject.mk_le_mk_of_comm _
+    (extendMap_subsetNormalizedTwistedCubicalChainComplexMap_comp_twistedCubicalChainFiltrationι
+      L hab)
 
 /-- An increasing family of subsets gives an increasing filtration of cubical chains with local
 coefficients. -/
@@ -192,7 +186,7 @@ lemma twistedCubicalChainFiltrationι_comp_extendMap (q : ℤ) :
 
 /-- The comparison map carries each stage of the cubical filtration into the same stage of the
 simplicial filtration. -/
-lemma factors_twistedChainFiltration (q : ℤ) :
+lemma twistedCubicalToSingularMap_factors_twistedChainFiltration (q : ℤ) :
     (twistedChainFiltration.{u, v, v} L X q).Factors
       ((twistedCubicalChainFiltration L X q).arrow ≫
         extendMap (twistedCubicalToSingularMap L) ComplexShape.embeddingDownNat) := by
@@ -212,13 +206,15 @@ cubical chains of `Y` by those of the `X q` to the filtration of the simplicial 
 def twistedCubicalToSingularFiltrationMap (hX : Monotone X) :
     CochainComplex.filtrationFunctor _ (monotone_twistedCubicalChainFiltration L hX) ⟶
       CochainComplex.filtrationFunctor _ (monotone_twistedChainFiltration.{u, v, v} L hX) :=
-  CochainComplex.filtrationFunctorMap _ _ _ (factors_twistedChainFiltration L)
+  CochainComplex.filtrationFunctorMap _ _ _
+    (twistedCubicalToSingularMap_factors_twistedChainFiltration L)
 
 /-- `TauCeti.LocalCoefficientSystem.twistedCubicalToSingularFiltrationMap` is the morphism of
 filtration functors given by the comparison map of `Y`. -/
 lemma twistedCubicalToSingularFiltrationMap_def (hX : Monotone X) :
     twistedCubicalToSingularFiltrationMap L hX =
-      CochainComplex.filtrationFunctorMap _ _ _ (factors_twistedChainFiltration L) :=
+      CochainComplex.filtrationFunctorMap _ _ _
+        (twistedCubicalToSingularMap_factors_twistedChainFiltration L) :=
   (rfl)
 
 /-- On the stage `F_q`, identified with the cubical chains of `X q`, the morphism of filtrations is
