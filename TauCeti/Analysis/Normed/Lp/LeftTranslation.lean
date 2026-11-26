@@ -45,8 +45,8 @@ Specializing to `X = G` gives the sequence-space counterpart of
 * `lp.norm_leftTranslation_one_sub`: `‖L_g u - u‖₁ = ∑' x, ‖u (g⁻¹ • x) - u x‖`.
 * `lp.bcfPairing_leftTranslation`: `⟨L_g u, f⟩ = ⟨u, f (g • ·)⟩`.
 * `lp.leftTranslationUnitary`, `lp.leftTranslation_mem_unitary`, `lp.coe_leftTranslation_mul`,
-  `lp.adjoint_leftTranslation`, `lp.star_coe_leftTranslation`: unitary-operator API on `ℓ²(X, E)`
-  for an inner product space `E`.
+  `lp.star_coe_leftTranslation`: unitary-operator API on `ℓ²(X, E)` for an inner product space
+  `E`.
 -/
 
 public section
@@ -257,16 +257,6 @@ theorem coe_leftTranslation_mul (g h : G) :
           lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) := by
   simpa only [coe_leftTranslationUnitary, MulMemClass.coe_mul] using
     congrArg Subtype.val (map_mul (leftTranslationUnitary (X := X) (E := E) (𝕜 := 𝕜)) g h)
-
-/-- The Hilbert-space adjoint of left translation by `g` on `ℓ²(X, E)` is left translation by
-`g⁻¹`. -/
-theorem adjoint_leftTranslation (g : G) :
-    ContinuousLinearMap.adjoint
-        (leftTranslation 2 𝕜 (X := X) (E := E) g :
-          lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) =
-      (leftTranslation 2 𝕜 (X := X) (E := E) g⁻¹ :
-        lp (fun _ : X ↦ E) 2 →L[𝕜] lp (fun _ : X ↦ E) 2) := by
-  rw [LinearIsometryEquiv.adjoint_eq_symm, leftTranslation_symm]
 
 /-- The `star` of left translation by `g` on `ℓ²(X, E)` is left translation by `g⁻¹`. -/
 theorem star_coe_leftTranslation (g : G) :

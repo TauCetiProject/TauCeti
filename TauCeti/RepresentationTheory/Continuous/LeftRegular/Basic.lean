@@ -208,12 +208,10 @@ theorem countHilbertBasis_conjStarAlgEquiv_leftRegular {G 𝕜 : Type*} [Group G
       (lp.leftTranslation 2 𝕜 (X := G) (E := 𝕜) g :
         lp (fun _ : G ↦ 𝕜) 2 →L[𝕜] lp (fun _ : G ↦ 𝕜) 2) := by
   ext ξ t
-  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply_apply, LinearIsometryEquiv.coe_coe'',
-    lp.leftTranslation_apply, smul_eq_mul, L2.countHilbertBasis_repr_apply,
-    ae_count_iff.1 (coeFn_leftRegular (𝕜 := 𝕜) count 2 g
-      ((L2.countHilbertBasis 𝕜 G).repr.symm ξ)) t]
-  dsimp only
-  rw [← L2.countHilbertBasis_repr_apply ((L2.countHilbertBasis 𝕜 G).repr.symm ξ) (g⁻¹ * t),
-    (L2.countHilbertBasis 𝕜 G).repr.apply_symm_apply]
+  have h := ae_count_iff.1 (coeFn_leftRegular (𝕜 := 𝕜) count 2 g
+    ((L2.countHilbertBasis 𝕜 G).repr.symm ξ)) t
+  have hsymm : ((L2.countHilbertBasis 𝕜 G).repr.symm ξ) (g⁻¹ * t) = ξ (g⁻¹ * t) := by
+    rw [← L2.countHilbertBasis_repr_apply, (L2.countHilbertBasis 𝕜 G).repr.apply_symm_apply]
+  simp [h, hsymm]
 
 end MeasureTheory.Measure

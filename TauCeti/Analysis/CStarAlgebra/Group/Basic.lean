@@ -12,6 +12,7 @@ public import TauCeti.Analysis.CStarAlgebra.State.Tracial
 public import TauCeti.Analysis.Normed.Lp.LeftTranslation
 public import TauCeti.Analysis.VonNeumannAlgebra.Group.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 import TauCeti.Analysis.InnerProductSpace.Operator.VectorFunctional
 
 /-!
@@ -33,12 +34,14 @@ automatically, without any countability assumption on `Γ`.
   `TauCeti.groupAlgebraToReducedGroupCStarAlgebra_eq_sum` and dense range
   (`TauCeti.denseRange_groupAlgebraToReducedGroupCStarAlgebra`).
 * When singletons are measurable (`[MeasurableSingletonClass Γ]`),
-  `MeasureTheory.Measure.countHilbertBasis_conjStarAlgEquiv_leftRegular` (and
-  `TauCeti.countHilbertBasis_conjStarAlgEquiv_sum_leftRegularUnitary`) identifies the left regular
-  representation under `(MeasureTheory.L2.countHilbertBasis ℂ Γ).repr` with
-  `lp.leftTranslation 2 𝕜`, and restricting `TauCeti.groupVonNeumannTrace Γ` yields the canonical
-  faithful tracial state `TauCeti.reducedGroupCStarAlgebraTrace Γ : C*_r(Γ) →L[ℂ] ℂ` (bundled as a
-  positive functional `TauCeti.reducedGroupCStarAlgebraTracePositive Γ : C*_r(Γ) →P[ℂ] ℂ` with
+  `MeasureTheory.Measure.countHilbertBasis_conjStarAlgEquiv_leftRegular`,
+  `TauCeti.countHilbertBasis_conjStarAlgEquiv_sum_leftRegularUnitary`, and
+  `TauCeti.reducedGroupCStarAlgebraEquivOfApply` identify `C*_r(Γ)` under
+  `(MeasureTheory.L2.countHilbertBasis ℂ Γ).repr` with `generatedCStarAlgebra ℂ lam` for any
+  operator family `lam` satisfying `(lam g ξ) h = ξ (g⁻¹ * h)` (by
+  `TauCeti.coe_leftTranslation_eq_of_apply`). Restricting `TauCeti.groupVonNeumannTrace Γ` yields
+  the canonical faithful tracial state `TauCeti.reducedGroupCStarAlgebraTrace Γ : C*_r(Γ) →L[ℂ] ℂ`
+  (bundled as `TauCeti.reducedGroupCStarAlgebraTracePositive Γ : C*_r(Γ) →P[ℂ] ℂ` with
   `TauCeti.isTracialState_reducedGroupCStarAlgebraTracePositive`), evaluating `f ∈ ℂ[Γ]` at
   `f.coeff 1`.
 
@@ -185,15 +188,12 @@ theorem inclusion_groupAlgebraToReducedGroupCStarAlgebra (f : MonoidAlgebra ℂ 
         (groupAlgebraToReducedGroupCStarAlgebra Γ f) =
       groupAlgebraToVonNeumannAlgebra Γ f := by
   apply Subtype.ext
-  change ((groupAlgebraToReducedGroupCStarAlgebra Γ f : reducedGroupCStarAlgebra Γ) :
-      Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) =
-    ((groupAlgebraToVonNeumannAlgebra Γ f : (groupVonNeumannAlgebra Γ).toStarSubalgebra) :
-      Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ))
+  rw [← StarSubalgebra.subtype_apply (groupVonNeumannAlgebra Γ).toStarSubalgebra,
+    ← StarAlgHom.comp_apply, StarSubalgebra.subtype_comp_inclusion, StarSubalgebra.subtype_apply,
+    ← StarSubalgebra.subtype_apply (groupVonNeumannAlgebra Γ).toStarSubalgebra]
   induction f using MonoidAlgebra.induction_linear with
   | zero => simp
-  | add f₁ f₂ ih₁ ih₂ =>
-    rw [map_add (groupAlgebraToReducedGroupCStarAlgebra Γ), AddMemClass.coe_add,
-      map_add (groupAlgebraToVonNeumannAlgebra Γ), AddMemClass.coe_add, ih₁, ih₂]
+  | add f₁ f₂ ih₁ ih₂ => simp [ih₁, ih₂]
   | single g c => simp
 
 /-- Every element of `StarAlgebra.adjoin ℂ (Set.range leftRegular)` lies in the image of
@@ -228,19 +228,20 @@ theorem denseRange_groupAlgebraToReducedGroupCStarAlgebra :
 
 end MeasurableMul
 
+/-- Any operator family `lam` on `ℓ²(Γ, E)` satisfying `(lam g ξ) h = ξ (g⁻¹ * h)` coincides
+with `lp.leftTranslation 2 𝕜 g`. -/
+theorem coe_leftTranslation_eq_of_apply {Γ 𝕜 E : Type*} [Group Γ] [NormedRing 𝕜]
+    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+    {lam : Γ → (lp (fun _ : Γ ↦ E) 2 →L[𝕜] lp (fun _ : Γ ↦ E) 2)}
+    (hlam : ∀ g ξ h, lam g ξ h = ξ (g⁻¹ * h)) (g : Γ) :
+    (lp.leftTranslation 2 𝕜 (X := Γ) (E := E) g :
+      lp (fun _ : Γ ↦ E) 2 →L[𝕜] lp (fun _ : Γ ↦ E) 2) = lam g := by
+  ext ξ h
+  simp [hlam]
+
 section Trace
 
 variable {Γ : Type*} [Group Γ] [MeasurableSpace Γ] [MeasurableMul Γ] [MeasurableSingletonClass Γ]
-
-/-- Conjugating `(leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ)` in `B(L²(Γ))` by
-`(L2.countHilbertBasis ℂ Γ).repr` gives `lp.leftTranslation 2 ℂ g` on `ℓ²(Γ, ℂ)`. -/
-theorem countHilbertBasis_conjStarAlgEquiv_leftRegularUnitary (g : Γ) :
-    (L2.countHilbertBasis ℂ Γ).repr.conjStarAlgEquiv
-        ((leftRegularUnitary Γ g : reducedGroupCStarAlgebra Γ) :
-          Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) =
-      (lp.leftTranslation 2 ℂ (X := Γ) (E := ℂ) g :
-        lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) :=
-  Measure.countHilbertBasis_conjStarAlgEquiv_leftRegular g
 
 /-- Conjugating a finite linear combination of left regular unitaries in `B(L²(Γ))` by
 `(L2.countHilbertBasis ℂ Γ).repr` gives the corresponding combination of
@@ -254,6 +255,59 @@ theorem countHilbertBasis_conjStarAlgEquiv_sum_leftRegularUnitary
       ∑ f ∈ F, c f • (lp.leftTranslation 2 ℂ (X := Γ) (E := ℂ) f :
         lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) := by
   simp [map_sum, Measure.countHilbertBasis_conjStarAlgEquiv_leftRegular]
+
+/-- Any family `lam : Γ → B(ℓ²(Γ, ℂ))` satisfying `(lam g ξ) h = ξ (g⁻¹ * h)` generates a
+C⋆-subalgebra ⋆-isomorphic to `reducedGroupCStarAlgebra Γ`, via conjugation by
+`(L2.countHilbertBasis ℂ Γ).repr`. -/
+def reducedGroupCStarAlgebraEquivOfApply
+    {lam : Γ → (lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)}
+    (hlam : ∀ g ξ h, lam g ξ h = ξ (g⁻¹ * h)) :
+    reducedGroupCStarAlgebra Γ ≃⋆ₐ[ℂ] generatedCStarAlgebra ℂ lam :=
+  generatedCStarAlgebraEquiv (L2.countHilbertBasis ℂ Γ).repr.conjStarAlgEquiv
+    (L2.countHilbertBasis ℂ Γ).repr.continuous_conjStarAlgEquiv
+    (L2.countHilbertBasis ℂ Γ).repr.symm.continuous_conjStarAlgEquiv
+    fun g ↦ (Measure.countHilbertBasis_conjStarAlgEquiv_leftRegular g).trans
+      (coe_leftTranslation_eq_of_apply hlam g)
+
+/-- Coercing `reducedGroupCStarAlgebraEquivOfApply hlam x` to `B(ℓ²(Γ, ℂ))` applies conjugation by
+`(L2.countHilbertBasis ℂ Γ).repr`. -/
+@[simp, norm_cast]
+theorem coe_reducedGroupCStarAlgebraEquivOfApply
+    {lam : Γ → (lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)}
+    (hlam : ∀ g ξ h, lam g ξ h = ξ (g⁻¹ * h)) (x : reducedGroupCStarAlgebra Γ) :
+    (reducedGroupCStarAlgebraEquivOfApply hlam x :
+        lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) =
+      (L2.countHilbertBasis ℂ Γ).repr.conjStarAlgEquiv
+        (x : Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) :=
+  coe_generatedCStarAlgebraEquiv_apply _ _ _ _ x
+
+/-- Coercing `(reducedGroupCStarAlgebraEquivOfApply hlam).symm y` to `B(L²(Γ))` applies inverse
+conjugation by `(L2.countHilbertBasis ℂ Γ).repr`. -/
+@[simp, norm_cast]
+theorem coe_reducedGroupCStarAlgebraEquivOfApply_symm
+    {lam : Γ → (lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)}
+    (hlam : ∀ g ξ h, lam g ξ h = ξ (g⁻¹ * h)) (y : generatedCStarAlgebra ℂ lam) :
+    ((reducedGroupCStarAlgebraEquivOfApply hlam).symm y :
+        Lp ℂ 2 (Measure.count : Measure Γ) →L[ℂ] Lp ℂ 2 (Measure.count : Measure Γ)) =
+      (L2.countHilbertBasis ℂ Γ).repr.conjStarAlgEquiv.symm
+        (y : lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) :=
+  coe_generatedCStarAlgebraEquiv_symm_apply _ _ _ _ y
+
+/-- `reducedGroupCStarAlgebraEquivOfApply hlam` is continuous. -/
+@[fun_prop]
+theorem continuous_reducedGroupCStarAlgebraEquivOfApply
+    {lam : Γ → (lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)}
+    (hlam : ∀ g ξ h, lam g ξ h = ξ (g⁻¹ * h)) :
+    Continuous (reducedGroupCStarAlgebraEquivOfApply hlam) :=
+  continuous_generatedCStarAlgebraEquiv _ _ _ _
+
+/-- The inverse of `reducedGroupCStarAlgebraEquivOfApply hlam` is continuous. -/
+@[fun_prop]
+theorem continuous_reducedGroupCStarAlgebraEquivOfApply_symm
+    {lam : Γ → (lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)}
+    (hlam : ∀ g ξ h, lam g ξ h = ξ (g⁻¹ * h)) :
+    Continuous (reducedGroupCStarAlgebraEquivOfApply hlam).symm :=
+  continuous_generatedCStarAlgebraEquiv_symm _ _ _ _
 
 variable (Γ)
 
@@ -359,16 +413,37 @@ theorem reducedGroupCStarAlgebraTrace_mul_comm (x y : reducedGroupCStarAlgebra �
     map_mul (StarSubalgebra.inclusion (reducedGroupCStarAlgebra_le_groupVonNeumannAlgebra Γ))]
   exact groupVonNeumannTrace_mul_comm _ _
 
-private theorem starOrderedRingOfClosed {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-    [CompleteSpace H] (S : StarSubalgebra ℂ (H →L[ℂ] H)) [IsClosed (S : Set (H →L[ℂ] H))] :
-    StarOrderedRing S :=
-  Subtype.starOrderedRing (𝕜 := ℂ) S
-
 /-- The order on `reducedGroupCStarAlgebra Γ` inherited from the Loewner order on operators makes
-it a star-ordered ring, matching the continuous functional calculus order. -/
+it a star-ordered ring, matching the continuous functional calculus order. This specializes
+`starOrderedRing_generatedCStarAlgebra` through the semireducible definition
+`reducedGroupCStarAlgebra`, avoiding a typeclass synthesis failure/timeout on `L²(Γ)`. -/
 instance instStarOrderedRingReducedGroupCStarAlgebra :
     StarOrderedRing (reducedGroupCStarAlgebra Γ) :=
-  starOrderedRingOfClosed _
+  starOrderedRing_generatedCStarAlgebra _
+
+/-- Pulling back `reducedGroupCStarAlgebraTrace Γ` along
+`(reducedGroupCStarAlgebraEquivOfApply hlam).symm` computes the vector state at `lp.single 2 1 1`.
+-/
+theorem reducedGroupCStarAlgebraTrace_symm_equivOfApply [DecidableEq Γ]
+    {lam : Γ → (lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)}
+    (hlam : ∀ g ξ h, lam g ξ h = ξ (g⁻¹ * h)) (x : generatedCStarAlgebra ℂ lam) :
+    reducedGroupCStarAlgebraTrace Γ ((reducedGroupCStarAlgebraEquivOfApply hlam).symm x) =
+      ⟪lp.single 2 (1 : Γ) (1 : ℂ),
+        (x : lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2) (lp.single 2 (1 : Γ) (1 : ℂ))⟫_ℂ := by
+  rw [reducedGroupCStarAlgebraTrace_apply, coe_reducedGroupCStarAlgebraEquivOfApply_symm,
+    LinearIsometryEquiv.symm_conjStarAlgEquiv_apply_apply]
+  have hre : ⟪L2.countHilbertBasis ℂ Γ 1, (L2.countHilbertBasis ℂ Γ).repr.symm
+      ((x : lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)
+        ((L2.countHilbertBasis ℂ Γ).repr (L2.countHilbertBasis ℂ Γ 1)))⟫_ℂ =
+      ⟪(L2.countHilbertBasis ℂ Γ).repr (L2.countHilbertBasis ℂ Γ 1),
+        (x : lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)
+          ((L2.countHilbertBasis ℂ Γ).repr (L2.countHilbertBasis ℂ Γ 1))⟫_ℂ := by
+    simpa only [LinearIsometryEquiv.apply_symm_apply] using
+      ((L2.countHilbertBasis ℂ Γ).repr.inner_map_map (L2.countHilbertBasis ℂ Γ 1)
+        ((L2.countHilbertBasis ℂ Γ).repr.symm
+          ((x : lp (fun _ : Γ ↦ ℂ) 2 →L[ℂ] lp (fun _ : Γ ↦ ℂ) 2)
+            ((L2.countHilbertBasis ℂ Γ).repr (L2.countHilbertBasis ℂ Γ 1))))).symm
+  rw [hre, (L2.countHilbertBasis ℂ Γ).repr_self]
 
 variable (Γ) in
 /-- **The canonical tracial state** `τ(x) = ⟪δ₁, x δ₁⟫_ℂ` on `reducedGroupCStarAlgebra Γ`,
