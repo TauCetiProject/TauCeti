@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup
 public import TauCeti.MeasureTheory.Group.NormBall
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SublevelGrowth
+import TauCeti.Analysis.Matrix.L2OpNorm
 import Mathlib.Topology.Algebra.Group.Units
 
 /-!
@@ -97,7 +98,7 @@ theorem measure_setOf_norm_mul_le_le (ν : Measure S) [ν.IsMulLeftInvariant]
     ν {s | ‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ≤ R} ≤
       ENNReal.ofReal ((1 + 2 * R ^ 2 / ε) ^ finrank ℝ (Matrix n n 𝕜)) *
         ν {s | ‖(((j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜) - 1‖ ≤ ε} := by
-  let : NormedSpace ℝ (Matrix n n 𝕜) := Matrix.l2OpRealNormedSpace
+  let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
   -- In `unitaryGroupOf J` the inverse has the norm of the element.
   have hset : {s | ‖(((y * j s : unitaryGroupOf J) : GL n 𝕜) : Matrix n n 𝕜)‖ ≤ R} =
       {s | ‖(((y : GL n 𝕜) * (unitaryGroupOf J).subtype.comp j s : GL n 𝕜) : Matrix n n 𝕜)‖ ≤ R ∧

@@ -143,14 +143,6 @@ open scoped Matrix.Norms.L2Operator
 
 variable {𝕜 : Type*} [RCLike 𝕜] {A : Matrix n n 𝕜}
 
-/-- The real normed-space structure for the L2 operator norm on matrices over an `RCLike`
-field, using the existing pointwise real module structure. -/
-@[expose, instance_reducible]
-noncomputable def l2OpRealNormedSpace : NormedSpace ℝ (Matrix n n 𝕜) where
-  norm_smul_le r M := by
-    rw [← algebraMap_smul 𝕜 r M]
-    exact (norm_smul_le _ _).trans_eq (by rw [norm_algebraMap'])
-
 /-- For a unitary Gram matrix `A`, an element `g` of `unitaryGroupOf A` and its inverse
 `A⁻¹ * star g * A` have the same operator norm. -/
 theorem norm_val_inv_of_mem_unitaryGroupOf (hA : A ∈ unitary (Matrix n n 𝕜)) {g : GL n 𝕜}
