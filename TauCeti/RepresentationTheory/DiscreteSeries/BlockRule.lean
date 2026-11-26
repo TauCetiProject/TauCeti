@@ -5,31 +5,39 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Group.Unbundled.Int
-public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fintype.Card
 public import Mathlib.Data.Int.Order.Units
 import TauCeti.Algebra.Ring.Int.Units
+import TauCeti.Data.Finset.Card
 
 /-!
 # Block rule combinatorics for discrete series theta lifts
 
-For unitary dual pairs `(U(p, q), U(r, s))` of ranks `n = p + q` and `n' = r + s`, the
-Harish-Chandra parameters `λ` and `λ'` of corresponding discrete series representations are related
-by inserting a symmetric block `[|n' - n|]` into the smaller parameter with a sign rule for common
-entries. Doubling all entries turns half-integers into integers of fixed parity.
+For unitary dual pairs `(U(p, q), U(r, s))` of ranks `n = p + q` and `n' = r + s`, the doubled
+Harish-Chandra parameters `l = 2λ` and `l' = 2λ'` are shifted by the rank and character shifts
+`shiftedEntry` (`l' r - 2γ + n` and `l c - 2γ' + n'`). After these shifts, the larger shifted
+parameter is obtained by inserting the doubled symmetric block `[|n' - n|]` into the smaller
+shifted parameter, together with a sign rule determined by the sign of each common shifted value.
+This file formalizes this combinatorial block-insertion criterion, its equivalence with signed
+matching, its symmetries, and its recentered and floor/ceiling character-weight forms.
 
 ## Main definitions and results
 
 * `TauCeti.DiscreteSeries.doubledBlock`, `TauCeti.DiscreteSeries.centeredBlock`,
   `TauCeti.DiscreteSeries.shiftedEntry`: doubled symmetric/centered blocks and shifted parameter
   entries.
-* `TauCeti.DiscreteSeries.IsBlockRule`, `TauCeti.DiscreteSeries.IsMatching`, and
-  `TauCeti.DiscreteSeries.isBlockRule_iff_isMatching`: equivalence between block insertion and
-  signed matching on arbitrary finite index types.
+* `TauCeti.DiscreteSeries.right_matched_or_central_and_left_matched_of_image_eq_union` and
+  `TauCeti.DiscreteSeries.image_eq_union_and_signs_of_right_matched_or_central`: finite-set
+  criteria relating block insertion and signed matching with central entries.
+* `TauCeti.DiscreteSeries.IsValidParams`, `TauCeti.DiscreteSeries.IsBlockRule`,
+  `TauCeti.DiscreteSeries.IsMatching`, and `TauCeti.DiscreteSeries.isBlockRule_iff_isMatching`:
+  parameter validity, block-insertion and signed-matching predicates, and their equivalence on
+  arbitrary finite index types.
 * `TauCeti.DiscreteSeries.IsBlockRule.symm`, `.neg`, `.neg_signs`, `.shift`,
-  `.shiftedEntry_ne_zero`, and `TauCeti.DiscreteSeries.isBlockRule_iff_of_offsets`: symmetries,
-  nonvanishing, and recentered form.
+  `.shiftedEntry_ne_zero`, `TauCeti.DiscreteSeries.isBlockRule_iff_of_offsets`,
+  `TauCeti.DiscreteSeries.isBlockRule_iff_of_floor`, and
+  `TauCeti.DiscreteSeries.isBlockRule_iff_of_ceil`: symmetries, nonvanishing, and recentered and
+  floor/ceiling characterizations.
 
 ## References
 
@@ -76,7 +84,7 @@ theorem shiftedEntry_def {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) (i :
 @[simp] theorem doubledBlock_zero : doubledBlock 0 = ∅ := by simp [doubledBlock_def]
 
 /-- An integer lies in `doubledBlock d` iff `|x| < d` and `x + d - 1` is even. -/
-@[simp] theorem mem_doubledBlock {d : ℕ} {x : ℤ} :
+@[simp, grind =] theorem mem_doubledBlock {d : ℕ} {x : ℤ} :
     x ∈ doubledBlock d ↔ |x| < d ∧ Even (x + d - 1) := by
   simp only [doubledBlock_def, Finset.mem_image, Finset.mem_range, abs_lt, Int.even_iff]
   refine ⟨fun ⟨_, _, _⟩ ↦ by omega, fun _ ↦ ⟨(((d : ℤ) - 1 - x) / 2).toNat, by omega, by omega⟩⟩
@@ -97,7 +105,7 @@ theorem shiftedEntry_def {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) (i :
   simp [centeredBlock_def]
 
 /-- An integer `x` lies in `centeredBlock e d` iff `x - 2 * e ∈ doubledBlock d`. -/
-@[simp] theorem mem_centeredBlock {e : ℤ} {d : ℕ} {x : ℤ} :
+@[simp, grind =] theorem mem_centeredBlock {e : ℤ} {d : ℕ} {x : ℤ} :
     x ∈ centeredBlock e d ↔ x - 2 * e ∈ doubledBlock d := by
   simp only [centeredBlock_def, Finset.mem_image]
   exact ⟨fun ⟨y, hy, hxy⟩ ↦ by rwa [← hxy, add_sub_cancel_left],
@@ -111,11 +119,8 @@ theorem shiftedEntry_def {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) (i :
 /-- Negating `centeredBlock e d` gives `centeredBlock (-e) d`. -/
 @[simp] theorem image_neg_centeredBlock (e : ℤ) (d : ℕ) :
     (centeredBlock e d).image Neg.neg = centeredBlock (-e) d := by
-  calc (centeredBlock e d).image Neg.neg
-    _ = ((doubledBlock d).image Neg.neg).image fun x ↦ 2 * (-e) + x := by
-        simp only [centeredBlock_def, image_image, Function.comp_def]
-        congr 1; ext x; omega
-    _ = centeredBlock (-e) d := by rw [image_neg_doubledBlock, centeredBlock_def]
+  rw [centeredBlock_def, Finset.image_comm (f' := Neg.neg) (g' := fun x ↦ 2 * (-e) + x)
+    (fun x ↦ by omega), image_neg_doubledBlock, centeredBlock_def]
 
 /-- Negating `l` and replacing `γ` by `m - γ` negates `shiftedEntry`. -/
 @[simp] theorem shiftedEntry_neg {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) :
@@ -131,40 +136,33 @@ theorem shiftedEntry_def {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) (i :
 theorem shiftedEntry_injective {ι : Type*} {γ : ℤ} {m : ℕ} {l : ι → ℤ} (hl : l.Injective) :
     (shiftedEntry γ m l).Injective := fun _ _ hxy ↦ hl (by simpa [shiftedEntry_def] using hxy)
 
-/-- The even character shift preserves the parity of `l i + m + d - 1` at each index. -/
-theorem even_shiftedEntry_add_sub_one {ι : Type*} {γ : ℤ} {m d : ℕ} {l : ι → ℤ} (i : ι) :
-    Even (shiftedEntry γ m l i + d - 1) ↔ Even (l i + (m : ℤ) + d - 1) := by
+/-- The even character shift preserves the parity of `l i + m + k` at each index. -/
+@[simp] theorem even_shiftedEntry_add {ι : Type*} {γ : ℤ} {m : ℕ} {l : ι → ℤ} (i : ι) (k : ℤ) :
+    Even (shiftedEntry γ m l i + k) ↔ Even (l i + (m : ℤ) + k) := by
   simp only [shiftedEntry_def, Int.even_iff]
   omega
 
-/-- If `univ.image b = univ.image a ∪ doubledBlock d` with `b` injective and
-`card R = card C + d`, then the union is disjoint and `a` is injective. -/
-private theorem disjoint_and_injective_of_image_eq_union {C R : Type*} [Fintype C] [Fintype R]
-    {a : C → ℤ} {b : R → ℤ} {d : ℕ} (hcard : card R = card C + d) (hb : b.Injective)
-    (hentries : univ.image b = univ.image a ∪ doubledBlock d) :
-    Disjoint (univ.image a) (doubledBlock d) ∧ a.Injective := by
-  have hunion := card_union_add_card_inter (univ.image a) (doubledBlock d)
-  rw [← hentries, card_image_of_injective _ hb, card_univ, hcard, card_doubledBlock] at hunion
-  have ha : (univ.image a).card ≤ card C := card_image_le.trans_eq card_univ
-  refine ⟨disjoint_iff_inter_eq_empty.2 (card_eq_zero.1 (by omega)), fun c₁ c₂ hc ↦
-    card_image_iff.1 (by rw [card_univ]; omega) (mem_univ c₁) (mem_univ c₂) hc⟩
-
-/-- From the block rule to signed matching for integer vectors `a : C → ℤ` and `b : R → ℤ` with
-`b` injective and `card R = card C + d`. -/
-theorem exists_matched_of_entries_eq {C R : Type*} [Fintype C] [Fintype R] {s : C → ℤˣ}
-    {t : R → ℤˣ} {a : C → ℤ} {b : R → ℤ} {d : ℕ} (hcard : card R = card C + d)
-    (hb : b.Injective) (hparity : ∀ r : R, Even (b r + d - 1))
+/-- Finite-set criterion from block insertion to signed matching under the cardinality lower bound
+`card C + d ≤ card R`, injectivity of `b`, and parity `Even (b r + d - 1)` on the larger side `R`.
+Every larger-side entry is either matched to a smaller-side entry or central (`|b r| < d`), while
+every smaller-side entry `a c` is matched to some `b r`. -/
+theorem right_matched_or_central_and_left_matched_of_image_eq_union {C R : Type*} [Fintype C]
+    [Fintype R] {s : C → ℤˣ} {t : R → ℤˣ} {a : C → ℤ} {b : R → ℤ} {d : ℕ}
+    (hcard : card C + d ≤ card R) (hb : b.Injective) (hparity : ∀ r : R, Even (b r + d - 1))
     (hentries : univ.image b = univ.image a ∪ doubledBlock d)
     (hpos : ∀ (c : C) (r : R), a c = b r → 0 < a c → s c = t r)
     (hneg : ∀ (c : C) (r : R), a c = b r → a c < 0 → s c = -t r) :
     (∀ r : R, (∃ c : C, b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r) ∨ |b r| < d) ∧
       ∀ c : C, ∃ r : R, b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r := by
-  have hdisjoint := (disjoint_and_injective_of_image_eq_union hcard hb hentries).1
+  have hdisjoint : Disjoint (univ.image a) (doubledBlock d) :=
+    (Finset.disjoint_and_injOn_of_add_le_card_image_union <| by
+      rw [← hentries, card_image_of_injective _ hb, card_univ, card_univ, card_doubledBlock]
+      exact hcard).1
   have hmatched (c : C) (r : R) (heq : a c = b r) :
       b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r := by
     have hnot : b r ∉ doubledBlock d :=
       heq ▸ Finset.disjoint_left.1 hdisjoint (Finset.mem_image_of_mem a (mem_univ c))
-    have houtside : (d : ℤ) < |b r| := by grind [mem_doubledBlock, hparity r, lt_abs, abs_lt]
+    have houtside : (d : ℤ) < |b r| := by grind [hparity r, lt_abs, abs_lt]
     refine ⟨heq.symm, Int.lt_units_mul_iff.2 ⟨houtside, ?_, ?_⟩⟩
     · intro h
       simp [hpos c r heq (h.trans_eq heq.symm)]
@@ -178,41 +176,48 @@ theorem exists_matched_of_entries_eq {C R : Type*} [Fintype C] [Fintype R] {s : 
       (hentries.superset (Finset.mem_union_left _ (Finset.mem_image_of_mem a (mem_univ c))))
     exact ⟨r, hmatched c r hr.symm⟩
 
-/-- From signed matching to the block rule for integer vectors `a : C → ℤ` and `b : R → ℤ` with
-`card R = card C + d`. -/
-theorem entries_eq_of_exists_matched {C R : Type*} [Fintype C] [Fintype R] {s : C → ℤˣ}
-    {t : R → ℤˣ} {a : C → ℤ} {b : R → ℤ} {d : ℕ} (hcard : card R = card C + d)
-    (hb : b.Injective) (hparity : ∀ r : R, Even (b r + d - 1))
+/-- Finite-set criterion from signed matching to block insertion under the cardinality lower bound
+`card C + d ≤ card R`, injectivity of `b`, and parity `Even (b r + d - 1)` for central larger-side
+entries (`|b r| < d`). Requiring only that each larger-side entry `b r` be matched or central
+recovers `univ.image b = univ.image a ∪ doubledBlock d` and both sign rules. -/
+theorem image_eq_union_and_signs_of_right_matched_or_central {C R : Type*} [Fintype C] [Fintype R]
+    {s : C → ℤˣ} {t : R → ℤˣ} {a : C → ℤ} {b : R → ℤ} {d : ℕ} (hcard : card C + d ≤ card R)
+    (hb : b.Injective) (hparity : ∀ r : R, |b r| < d → Even (b r + d - 1))
     (hrows : ∀ r : R, (∃ c : C, b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r) ∨ |b r| < d) :
     univ.image b = univ.image a ∪ doubledBlock d ∧
       (∀ (c : C) (r : R), a c = b r → 0 < a c → s c = t r) ∧
       ∀ (c : C) (r : R), a c = b r → a c < 0 → s c = -t r := by
-  have hsub : univ.image b ⊆ univ.image a ∪ doubledBlock d := fun x hx ↦ by
-    obtain ⟨r, -, rfl⟩ := Finset.mem_image.1 hx; grind [mem_doubledBlock, hparity r, hrows r]
+  have hsub : univ.image b ⊆ univ.image a ∪ doubledBlock d :=
+    Finset.image_subset_iff.2 fun r _ ↦ by
+      rcases hrows r with ⟨c, hc, _⟩ | hlt
+      · exact mem_union_left _ (hc ▸ mem_image_of_mem a (mem_univ c))
+      · exact mem_union_right _ (mem_doubledBlock.2 ⟨hlt, hparity r hlt⟩)
   have hcount : (univ.image a ∪ doubledBlock d).card ≤ (univ.image b).card :=
     (card_union_le _ _).trans <| by
-      rw [card_image_of_injective _ hb, card_univ, hcard, card_doubledBlock]
-      exact Nat.add_le_add_right card_image_le d
+      rw [card_image_of_injective _ hb, card_univ, card_doubledBlock]
+      exact (Nat.add_le_add_right (card_image_le.trans_eq card_univ) d).trans hcard
   have hentries : univ.image b = univ.image a ∪ doubledBlock d :=
     Finset.eq_of_subset_of_card_le hsub hcount
-  obtain ⟨hdisj, ha⟩ := disjoint_and_injective_of_image_eq_union hcard hb hentries
+  obtain ⟨hdisj, ha_on⟩ := Finset.disjoint_and_injOn_of_add_le_card_image_union <| by
+    rw [← hentries, card_image_of_injective _ hb, card_univ, card_univ, card_doubledBlock]
+    exact hcard
   have hsign (c : C) (r : R) (heq : a c = b r) :
       (0 < b r → s c = t r) ∧ (b r < 0 → s c = -t r) := by
     have hnot : ¬ |b r| < d := fun hlt ↦
       Finset.disjoint_left.1 hdisj (heq ▸ Finset.mem_image_of_mem a (mem_univ c))
-        (mem_doubledBlock.2 ⟨hlt, hparity r⟩)
+        (mem_doubledBlock.2 ⟨hlt, hparity r hlt⟩)
     obtain ⟨c', hc', hlt⟩ := (hrows r).resolve_right hnot
-    obtain rfl : c' = c := ha (hc'.symm.trans heq.symm)
+    obtain rfl : c' = c := ha_on (mem_univ c') (mem_univ c) (hc'.symm.trans heq.symm)
     simpa only [← eq_inv_mul_iff_mul_eq, Int.units_inv_eq_self, mul_one, mul_neg_one]
       using (Int.lt_units_mul_iff.1 hlt).2
   exact ⟨hentries, fun c r heq h ↦ (hsign c r heq).1 (h.trans_eq heq),
     fun c r heq h ↦ (hsign c r heq).2 (heq.symm.trans_lt h)⟩
 
-/-- The block rule with opposite-sign separation `gap` relating two signed integer parameters
-`l : ι₁ → ℤ` and `l' : ι₂ → ℤ` with character shifts `γ, γ' : ℤ`. Taking
-`gap = 500 * (card ι₁ + card ι₂) ^ 3` recovers the separated block rule for unitary dual pairs. -/
-structure IsBlockRule {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
-    (gap : ℕ) (s : ι₁ → ℤˣ) (t : ι₂ → ℤˣ) (γ γ' : ℤ) (l : ι₁ → ℤ) (l' : ι₂ → ℤ) : Prop where
+/-- Parameter validity with opposite-sign separation `gap` for two signed integer vectors
+`l : ι₁ → ℤ` and `l' : ι₂ → ℤ`: distinct entries, parity matching `card - 1`, and separation by
+at least `2 * gap` between entries of opposite sign. -/
+structure IsValidParams {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+    (gap : ℕ) (s : ι₁ → ℤˣ) (t : ι₂ → ℤˣ) (l : ι₁ → ℤ) (l' : ι₂ → ℤ) : Prop where
   /-- The entries of `l` are distinct. -/
   injective_left : l.Injective
   /-- The entries of `l'` are distinct. -/
@@ -225,6 +230,13 @@ structure IsBlockRule {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
   gap_left : ∀ c₁ c₂ : ι₁, s c₁ ≠ s c₂ → 2 * (gap : ℤ) ≤ |l c₁ - l c₂|
   /-- Opposite-sign entries of `l'` are separated by at least `2 * gap`. -/
   gap_right : ∀ r₁ r₂ : ι₂, t r₁ ≠ t r₂ → 2 * (gap : ℤ) ≤ |l' r₁ - l' r₂|
+
+/-- The block rule with opposite-sign separation `gap` relating two signed integer parameters
+`l : ι₁ → ℤ` and `l' : ι₂ → ℤ` with character shifts `γ, γ' : ℤ`. Taking
+`gap = 500 * (card ι₁ + card ι₂) ^ 3` recovers the separated block rule for unitary dual pairs. -/
+structure IsBlockRule {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
+    (gap : ℕ) (s : ι₁ → ℤˣ) (t : ι₂ → ℤˣ) (γ γ' : ℤ) (l : ι₁ → ℤ) (l' : ι₂ → ℤ) : Prop
+    extends IsValidParams gap s t l l' where
   /-- When `card ι₁ ≤ card ι₂`, the shifted entries of `l'` equal those of `l` plus the block. -/
   entries_of_le : card ι₁ ≤ card ι₂ →
     univ.image (shiftedEntry γ (card ι₁) l') =
@@ -244,26 +256,15 @@ structure IsBlockRule {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
 
 /-- The signed matching formulation of the block rule with opposite-sign separation `gap`. -/
 structure IsMatching {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
-    (gap : ℕ) (s : ι₁ → ℤˣ) (t : ι₂ → ℤˣ) (γ γ' : ℤ) (l : ι₁ → ℤ) (l' : ι₂ → ℤ) : Prop where
-  /-- The entries of `l` are distinct. -/
-  injective_left : l.Injective
-  /-- The entries of `l'` are distinct. -/
-  injective_right : l'.Injective
-  /-- The entries of `l` have the parity of `card ι₁ - 1`. -/
-  parity_left : ∀ c : ι₁, Even (l c + card ι₁ - 1)
-  /-- The entries of `l'` have the parity of `card ι₂ - 1`. -/
-  parity_right : ∀ r : ι₂, Even (l' r + card ι₂ - 1)
-  /-- Opposite-sign entries of `l` are separated by at least `2 * gap`. -/
-  gap_left : ∀ c₁ c₂ : ι₁, s c₁ ≠ s c₂ → 2 * (gap : ℤ) ≤ |l c₁ - l c₂|
-  /-- Opposite-sign entries of `l'` are separated by at least `2 * gap`. -/
-  gap_right : ∀ r₁ r₂ : ι₂, t r₁ ≠ t r₂ → 2 * (gap : ℤ) ≤ |l' r₁ - l' r₂|
+    (gap : ℕ) (s : ι₁ → ℤˣ) (t : ι₂ → ℤˣ) (γ γ' : ℤ) (l : ι₁ → ℤ) (l' : ι₂ → ℤ) : Prop
+    extends IsValidParams gap s t l l' where
   /-- Each shifted entry of `l'` is matched or central. -/
-  right_matched : ∀ r : ι₂,
+  right_matched_or_central : ∀ r : ι₂,
     (∃ c : ι₁, shiftedEntry γ (card ι₁) l' r = shiftedEntry γ' (card ι₂) l c ∧
       |(card ι₂ : ℤ) - card ι₁| < (t r * s c : ℤˣ) * shiftedEntry γ (card ι₁) l' r) ∨
     |shiftedEntry γ (card ι₁) l' r| < (card ι₂ : ℤ) - card ι₁
   /-- Each shifted entry of `l` is matched or central. -/
-  left_matched : ∀ c : ι₁,
+  left_matched_or_central : ∀ c : ι₁,
     (∃ r : ι₂, shiftedEntry γ (card ι₁) l' r = shiftedEntry γ' (card ι₂) l c ∧
       |(card ι₂ : ℤ) - card ι₁| < (t r * s c : ℤˣ) * shiftedEntry γ (card ι₁) l' r) ∨
     |shiftedEntry γ' (card ι₂) l c| < (card ι₁ : ℤ) - card ι₂
@@ -271,50 +272,51 @@ structure IsMatching {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂]
 variable {ι₁ ι₂ : Type*} [Fintype ι₁] [Fintype ι₂] {gap : ℕ}
   {s : ι₁ → ℤˣ} {t : ι₂ → ℤˣ} {γ γ' : ℤ} {l : ι₁ → ℤ} {l' : ι₂ → ℤ}
 
+/-- Parameter validity is symmetric in the two spaces. -/
+theorem IsValidParams.symm (h : IsValidParams gap s t l l') : IsValidParams gap t s l' l :=
+  ⟨h.injective_right, h.injective_left, h.parity_right, h.parity_left, h.gap_right, h.gap_left⟩
+
 /-- The block rule is symmetric in the two spaces. -/
 theorem IsBlockRule.symm (h : IsBlockRule gap s t γ γ' l l') : IsBlockRule gap t s γ' γ l' l :=
-  ⟨h.injective_right, h.injective_left, h.parity_right, h.parity_left, h.gap_right, h.gap_left,
-    h.entries_of_ge, h.entries_of_le,
+  ⟨h.toIsValidParams.symm, h.entries_of_ge, h.entries_of_le,
     fun r c heq hr ↦ (h.sign_of_pos c r heq.symm (hr.trans_eq heq)).symm,
     fun r c heq hr ↦ by rw [h.sign_of_neg c r heq.symm (heq.symm.trans_lt hr), neg_neg]⟩
 
 /-- Signed matching is symmetric in the two spaces. -/
 theorem IsMatching.symm (h : IsMatching gap s t γ γ' l l') : IsMatching gap t s γ' γ l' l :=
-  ⟨h.injective_right, h.injective_left, h.parity_right, h.parity_left, h.gap_right, h.gap_left,
-    fun c ↦ (h.left_matched c).imp_left fun ⟨r, heq, hlt⟩ ↦
+  ⟨h.toIsValidParams.symm,
+    fun c ↦ (h.left_matched_or_central c).imp_left fun ⟨r, heq, hlt⟩ ↦
       ⟨r, heq.symm, by rwa [abs_sub_comm, mul_comm (s c), ← heq]⟩,
-    fun r ↦ (h.right_matched r).imp_left fun ⟨c, heq, hlt⟩ ↦
+    fun r ↦ (h.right_matched_or_central r).imp_left fun ⟨c, heq, hlt⟩ ↦
       ⟨c, heq.symm, by rwa [abs_sub_comm, mul_comm (s c), ← heq]⟩⟩
 
 /-- When `card ι₁ ≤ card ι₂`, every index `c : ι₁` in a matching is paired with some `r : ι₂`. -/
 theorem IsMatching.exists_right_of_le (h : IsMatching gap s t γ γ' l l') (hle : card ι₁ ≤ card ι₂)
     (c : ι₁) : ∃ r : ι₂, shiftedEntry γ (card ι₁) l' r = shiftedEntry γ' (card ι₂) l c ∧
       |(card ι₂ : ℤ) - card ι₁| < (t r * s c : ℤˣ) * shiftedEntry γ (card ι₁) l' r :=
-  (h.left_matched c).resolve_right ((by omega : (card ι₁ : ℤ) - card ι₂ ≤ 0).trans
+  (h.left_matched_or_central c).resolve_right ((by omega : (card ι₁ : ℤ) - card ι₂ ≤ 0).trans
     (abs_nonneg _)).not_gt
 
 private theorem isBlockRule_iff_isMatching_of_le (hle : card ι₁ ≤ card ι₂) :
     IsBlockRule gap s t γ γ' l l' ↔ IsMatching gap s t γ γ' l l' := by
   obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le hle
   have hdiff : (card ι₂ : ℤ) - card ι₁ = d := by omega
+  have hpar (h : IsValidParams gap s t l l') (r : ι₂) :
+      Even (shiftedEntry γ (card ι₁) l' r + d - 1) := by
+    rw [add_sub_assoc, even_shiftedEntry_add]
+    simpa only [hd, Nat.cast_add, add_sub_assoc, add_assoc] using h.parity_right r
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨hrows, hcols⟩ := exists_matched_of_entries_eq hd
-      (shiftedEntry_injective h.injective_right)
-      (fun r ↦ (even_shiftedEntry_add_sub_one r).2 (by
-        simpa only [hd, Nat.cast_add, ← add_assoc] using h.parity_right r))
+  · obtain ⟨hrows, hcols⟩ := right_matched_or_central_and_left_matched_of_image_eq_union hd.ge
+      (shiftedEntry_injective h.injective_right) (hpar h.toIsValidParams)
       (by simpa [hd] using h.entries_of_le hle) h.sign_of_pos h.sign_of_neg
-    exact ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right, h.gap_left,
-      h.gap_right, fun r ↦ by simpa [hdiff] using hrows r,
+    exact ⟨h.toIsValidParams, fun r ↦ by simpa [hdiff] using hrows r,
       fun c ↦ Or.inl (by simpa [hdiff] using hcols c)⟩
-  · obtain ⟨hentries, hpos, hneg⟩ := entries_eq_of_exists_matched hd
-      (shiftedEntry_injective h.injective_right)
-      (fun r ↦ (even_shiftedEntry_add_sub_one r).2 (by
-        simpa only [hd, Nat.cast_add, ← add_assoc] using h.parity_right r))
-      (fun r ↦ by simpa [hdiff] using h.right_matched r)
-    exact ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right, h.gap_left,
-      h.gap_right, fun _ ↦ by simpa [hd] using hentries, fun hge ↦ by
-        have hzero : d = 0 := by omega
-        simpa [hzero, Nat.sub_eq_zero_of_le hle] using hentries.symm, hpos, hneg⟩
+  · obtain ⟨hentries, hpos, hneg⟩ := image_eq_union_and_signs_of_right_matched_or_central hd.ge
+      (shiftedEntry_injective h.injective_right) (fun r _ ↦ hpar h.toIsValidParams r)
+      (fun r ↦ by simpa [hdiff] using h.right_matched_or_central r)
+    exact ⟨h.toIsValidParams, fun _ ↦ by simpa [hd] using hentries, fun hge ↦ by
+      have hzero : d = 0 := by omega
+      simpa [hzero, Nat.sub_eq_zero_of_le hle] using hentries.symm, hpos, hneg⟩
 
 /-- The block rule holds if and only if the signed matching condition holds. -/
 theorem isBlockRule_iff_isMatching :
@@ -328,7 +330,7 @@ theorem isBlockRule_iff_isMatching :
 the signs `s` preserves the block rule. -/
 theorem IsBlockRule.neg (h : IsBlockRule gap s t γ γ' l l') :
     IsBlockRule gap (-s) t (card ι₁ - γ) (card ι₂ - γ') (-l) (-l') := by
-  refine ⟨fun _ _ hij ↦ h.injective_left (neg_inj.mp hij),
+  refine ⟨⟨fun _ _ hij ↦ h.injective_left (neg_inj.mp hij),
     fun _ _ hij ↦ h.injective_right (neg_inj.mp hij),
     fun c ↦ by
       obtain ⟨k, hk⟩ := h.parity_left c
@@ -340,7 +342,7 @@ theorem IsBlockRule.neg (h : IsBlockRule gap s t γ γ' l l') :
       simpa [sub_neg_eq_add, neg_add_eq_sub, abs_sub_comm] using
         h.gap_left c₁ c₂ (fun heq ↦ hne (by simp [heq])),
     fun r₁ r₂ hne ↦ by
-      simpa [sub_neg_eq_add, neg_add_eq_sub, abs_sub_comm] using h.gap_right r₁ r₂ hne,
+      simpa [sub_neg_eq_add, neg_add_eq_sub, abs_sub_comm] using h.gap_right r₁ r₂ hne⟩,
     ?_, ?_, ?_, ?_⟩
   all_goals simp only [shiftedEntry_neg]
   · exact fun hle ↦ by rw [← image_image, ← image_image, h.entries_of_le hle, image_union,
@@ -358,12 +360,12 @@ theorem IsBlockRule.neg_signs (h : IsBlockRule gap s t γ γ' l l') :
 /-- Shifting `γ, γ'` by `u, u'` and `l, l'` by `2u', 2u` preserves the block rule. -/
 theorem IsBlockRule.shift (h : IsBlockRule gap s t γ γ' l l') (u u' : ℤ) :
     IsBlockRule gap s t (γ + u) (γ' + u') (fun c ↦ l c + 2 * u') (fun r ↦ l' r + 2 * u) := by
-  refine ⟨fun _ _ hij ↦ h.injective_left (by simpa using hij),
+  refine ⟨⟨fun _ _ hij ↦ h.injective_left (by simpa using hij),
     fun _ _ hij ↦ h.injective_right (by simpa using hij),
     fun c ↦ by obtain ⟨k, hk⟩ := h.parity_left c; exact ⟨k + u', by omega⟩,
     fun r ↦ by obtain ⟨k, hk⟩ := h.parity_right r; exact ⟨k + u, by omega⟩,
     fun c₁ c₂ hne ↦ by simpa [add_sub_add_right_eq_sub] using h.gap_left c₁ c₂ hne,
-    fun r₁ r₂ hne ↦ by simpa [add_sub_add_right_eq_sub] using h.gap_right r₁ r₂ hne,
+    fun r₁ r₂ hne ↦ by simpa [add_sub_add_right_eq_sub] using h.gap_right r₁ r₂ hne⟩,
     ?_, ?_, ?_, ?_⟩
   all_goals simp only [shiftedEntry_add]
   exacts [h.entries_of_le, h.entries_of_ge, h.sign_of_pos, h.sign_of_neg]
@@ -379,31 +381,55 @@ offsets `p = card ι₁ - 2γ + 2e` and `p' = card ι₂ - 2γ' + 2e`. -/
 theorem isBlockRule_iff_of_offsets {e p p' : ℤ} (hle : card ι₁ ≤ card ι₂)
     (hp : (card ι₁ : ℤ) - 2 * γ = p - 2 * e) (hp' : (card ι₂ : ℤ) - 2 * γ' = p' - 2 * e) :
     IsBlockRule gap s t γ γ' l l' ↔
-      l.Injective ∧ l'.Injective ∧
-      (∀ c : ι₁, Even (l c + card ι₁ - 1)) ∧ (∀ r : ι₂, Even (l' r + card ι₂ - 1)) ∧
-      (∀ c₁ c₂ : ι₁, s c₁ ≠ s c₂ → 2 * (gap : ℤ) ≤ |l c₁ - l c₂|) ∧
-      (∀ r₁ r₂ : ι₂, t r₁ ≠ t r₂ → 2 * (gap : ℤ) ≤ |l' r₁ - l' r₂|) ∧
+      IsValidParams gap s t l l' ∧
       univ.image (fun r : ι₂ ↦ l' r + p) =
         univ.image (fun c : ι₁ ↦ l c + p') ∪ centeredBlock e (card ι₂ - card ι₁) ∧
       ∀ (c : ι₁) (r : ι₂), l c + p' = l' r + p → (s c ≠ t r ↔ l c + p' < 2 * e) := by
-  have hrow r : l' r + p = 2 * e + shiftedEntry γ (card ι₁) l' r := by grind [shiftedEntry_def]
-  have hcol c : l c + p' = 2 * e + shiftedEntry γ' (card ι₂) l c := by grind [shiftedEntry_def]
-  have himg_r : univ.image (fun r : ι₂ ↦ 2 * e + shiftedEntry γ (card ι₁) l' r) =
-      (univ.image (shiftedEntry γ (card ι₁) l')).image (fun x : ℤ ↦ 2 * e + x) := image_image.symm
-  have himg_c : univ.image (fun c : ι₁ ↦ 2 * e + shiftedEntry γ' (card ι₂) l c) =
-      (univ.image (shiftedEntry γ' (card ι₂) l)).image (fun x : ℤ ↦ 2 * e + x) := image_image.symm
-  simp only [hrow, hcol, himg_r, himg_c, centeredBlock_def, ← Finset.image_union, add_right_inj,
-    add_lt_iff_neg_left, (Finset.image_injective (add_right_injective (2 * e))).eq_iff]
-  refine ⟨fun h ↦ ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right,
-    h.gap_left, h.gap_right, h.entries_of_le hle, fun c r heq ↦
+  have hrow : (fun r : ι₂ ↦ l' r + p) = (fun x : ℤ ↦ 2 * e + x) ∘ shiftedEntry γ (card ι₁) l' :=
+    funext fun r ↦ by grind [shiftedEntry_def]
+  have hcol : (fun c : ι₁ ↦ l c + p') = (fun x : ℤ ↦ 2 * e + x) ∘ shiftedEntry γ' (card ι₂) l :=
+    funext fun c ↦ by grind [shiftedEntry_def]
+  rw [hrow, hcol, Finset.image_comp, Finset.image_comp]
+  simp only [congr_fun hrow, congr_fun hcol, Function.comp_apply, centeredBlock_def,
+    ← Finset.image_union, add_right_inj, add_lt_iff_neg_left,
+    (Finset.image_injective (add_right_injective (2 * e))).eq_iff]
+  refine ⟨fun h ↦ ⟨h.toIsValidParams, h.entries_of_le hle, fun c r heq ↦
       ⟨fun hne ↦ by by_contra hnot; exact hne (h.sign_of_pos c r heq
           ((not_lt.1 hnot).lt_of_ne' (h.shiftedEntry_ne_zero hle c))),
       fun hlt ↦ Int.units_ne_iff_eq_neg.2 (h.sign_of_neg c r heq hlt)⟩⟩,
-    fun ⟨hinj, hinj', hpar, hpar', hgap, hgap', hentries, hsign⟩ ↦
-      ⟨hinj, hinj', hpar, hpar', hgap, hgap', fun _ ↦ hentries,
+    fun ⟨hvalid, hentries, hsign⟩ ↦
+      ⟨hvalid, fun _ ↦ hentries,
       fun hge ↦ by simpa [le_antisymm hle hge] using hentries.symm,
       fun c r heq hc ↦ not_not.1 fun hne ↦ hc.not_gt ((hsign c r heq).1 hne),
       fun c r heq hc ↦ Int.units_ne_iff_eq_neg.1 ((hsign c r heq).2 hc)⟩⟩
+
+/-- Floor character-weight characterization of the block rule for `card ι₁ ≤ card ι₂` at center `e`,
+with shifts `γ = e + ⌊card ι₁ / 2⌋` and `γ' = e + ⌊card ι₂ / 2⌋` and offsets `card ι₁ % 2` and
+`card ι₂ % 2`. -/
+theorem isBlockRule_iff_of_floor (e : ℤ) (hle : card ι₁ ≤ card ι₂) :
+    IsBlockRule gap s t (e + (card ι₁ / 2 : ℕ)) (e + (card ι₂ / 2 : ℕ)) l l' ↔
+      IsValidParams gap s t l l' ∧
+      univ.image (fun r : ι₂ ↦ l' r + (card ι₁ % 2 : ℕ)) =
+        univ.image (fun c : ι₁ ↦ l c + (card ι₂ % 2 : ℕ)) ∪
+          centeredBlock e (card ι₂ - card ι₁) ∧
+      ∀ (c : ι₁) (r : ι₂), l c + (card ι₂ % 2 : ℕ) = l' r + (card ι₁ % 2 : ℕ) →
+        (s c ≠ t r ↔ l c + (card ι₂ % 2 : ℕ) < 2 * e) :=
+  isBlockRule_iff_of_offsets hle (by omega) (by omega)
+
+/-- Ceiling character-weight characterization of the block rule for `card ι₁ ≤ card ι₂` at center
+`e`, with shifts `γ = e + ⌈card ι₁ / 2⌉` and `γ' = e + ⌈card ι₂ / 2⌉` and offsets `-(card ι₁ % 2)`
+and `-(card ι₂ % 2)`. -/
+theorem isBlockRule_iff_of_ceil (e : ℤ) (hle : card ι₁ ≤ card ι₂) :
+    IsBlockRule gap s t (e + ((card ι₁ + 1) / 2 : ℕ)) (e + ((card ι₂ + 1) / 2 : ℕ)) l l' ↔
+      IsValidParams gap s t l l' ∧
+      univ.image (fun r : ι₂ ↦ l' r - (card ι₁ % 2 : ℕ)) =
+        univ.image (fun c : ι₁ ↦ l c - (card ι₂ % 2 : ℕ)) ∪
+          centeredBlock e (card ι₂ - card ι₁) ∧
+      ∀ (c : ι₁) (r : ι₂), l c - (card ι₂ % 2 : ℕ) = l' r - (card ι₁ % 2 : ℕ) →
+        (s c ≠ t r ↔ l c - (card ι₂ % 2 : ℕ) < 2 * e) := by
+  simpa only [sub_eq_add_neg] using
+    isBlockRule_iff_of_offsets (p := -((card ι₁ % 2 : ℕ) : ℤ))
+      (p' := -((card ι₂ % 2 : ℕ) : ℤ)) hle (by omega) (by omega)
 
 end
 
