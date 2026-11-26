@@ -32,6 +32,11 @@ ranks zero and one), `Spin(Q)` is exactly the group `μ₂(R)` of square roots o
   exactly when its square is `1`, when the scalars embed.
 * `CliffordAlgebra.normOneSpinGroup_eq_map_rootsOfUnity`: `Spin(Q) = μ₂` when the central scalars
   map bijectively onto `GSpin(Q)`.
+
+## References
+
+* B. Conrad, *Reductive group schemes*, Appendix C, §C.4, for the Clifford and spin groups of a
+  quadratic space over a ring.
 -/
 
 public section

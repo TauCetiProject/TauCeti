@@ -41,6 +41,11 @@ This file computes the points of the general spin group `GSpin(Q)`
 * `CliffordAlgebra.hyperbolicPlaneTorus`, `CliffordAlgebra.hyperbolicPlaneTorus_bijective`,
   `CliffordAlgebra.hyperbolicPlaneSpecialCliffordGroupEquiv`: `Kˣ × Kˣ ≃* GSpin(Q)` for a
   hyperbolic plane.
+
+## References
+
+* B. Conrad, *Reductive group schemes*, Appendix C, §C.4, for the Clifford and spin groups of a
+  quadratic space over a ring.
 -/
 
 public section
