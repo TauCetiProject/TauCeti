@@ -35,6 +35,13 @@ and a cutoff `ψ` with compact support in the chart target give the **chart cut-
 compressions of operators between bundles are evaluated. In terms of cut-off frames, it is the sum
 of the cut-off frame sections `ρ t⁻¹ bᵢ` with the pulled back coefficients `(ψ bᵢ*(u)) ∘ e`
 (`Bundle.Trivialization.chartCutoffSection_eq_sum`).
+
+On a compact manifold, finitely many chart cutoffs `ψᵢ` whose pullbacks add up to `1` can be
+chosen with each `(chartAt cᵢ)⁻¹(supp ψᵢ)` inside the base set of the trivialization at `cᵢ`,
+together with smooth functions `ρᵢ` supported in these base sets and equal to `1` on
+`(chartAt cᵢ)⁻¹(supp ψᵢ)` (`TauCeti.exists_sum_cutoffPullback_eq_one_and_baseSet_cutoff`). These
+are the data through which sections of a bundle are read in charts and frames, as in Sobolev
+norms of sections on a compact manifold.
 -/
 
 public section
@@ -198,3 +205,50 @@ theorem chartCutoffSection_eq_sum [FiniteDimensional ℂ F]
 end ChartCutoff
 
 end Bundle.Trivialization
+
+namespace TauCeti
+
+section Partition
+
+variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [FiniteDimensional ℝ EM]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace EM M] [T2Space M] [CompactSpace M]
+  [IsManifold 𝓘(ℝ, EM) ∞ M] {F : Type*} [TopologicalSpace F] {V : M → Type*}
+  [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+
+/-- **Chart cutoffs adapted to a vector bundle.** On a compact Hausdorff manifold, a fibre bundle
+`V` has finitely many points `cᵢ` and cutoffs `ψᵢ` with compact supports in the targets of the
+preferred charts at the `cᵢ`, whose pullbacks `ψᵢ ∘ chartAt cᵢ`, extended by `0`, add up to `1`,
+together with smooth functions `ρᵢ` supported in the base set of the trivialization of `V` at `cᵢ`
+and equal to `1` on `(chartAt cᵢ)⁻¹(supp ψᵢ)`. So `ρᵢ` cuts off frame sections and frame
+coefficients of `V` in that trivialization (`Bundle.Trivialization.cutoffFrameSection`,
+`Bundle.Trivialization.cutoffFrameCoeff`) without changing them over the support of the `i`-th
+cutoff. -/
+theorem exists_sum_cutoffPullback_eq_one_and_baseSet_cutoff :
+    ∃ (N : ℕ) (c : Fin N → M)
+      (ψ : ∀ i, 𝓓(⟨(chartAt EM (c i)).target, (chartAt EM (c i)).open_target⟩, ℝ))
+      (ρ : Fin N → C^∞⟮𝓘(ℝ, EM), M; ℝ⟯),
+      (∀ x, ∑ i, (chartAt EM (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
+        (ψ i) 1 x = 1) ∧ (∀ i, tsupport (ρ i) ⊆ (trivializationAt F V (c i)).baseSet) ∧
+        ∀ i, ∀ y ∈ tsupport (ψ i), ρ i ((chartAt EM (c i)).symm y) = 1 := by
+  obtain ⟨N, c, ψ, hψU, hψ⟩ := isCompact_univ.exists_sum_cutoffPullback_eq_one_of_mem_nhds
+    (E := EM) (M := M) (U := fun x ↦ (trivializationAt F V x).baseSet)
+    fun x _ ↦ (trivializationAt F V x).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x)
+  -- For each `i`, a smooth `ρᵢ` equal to `1` near the compact set `Kᵢ = (chartAt cᵢ)⁻¹(supp ψᵢ)`
+  -- and vanishing off the closure of an open set `Uᵢ` with `Kᵢ ⊆ Uᵢ ⊆ closure Uᵢ ⊆ baseSet`.
+  have hK (i : Fin N) : IsCompact ((chartAt EM (c i)).symm '' tsupport (ψ i)) :=
+    (ψ i).hasCompactSupport.isCompact.image_of_continuousOn
+      ((chartAt EM (c i)).continuousOn_symm.mono (ψ i).tsupport_subset)
+  choose U hUo hKU hUt using fun i ↦ normal_exists_closure_subset (hK i).isClosed
+    (trivializationAt F V (c i)).open_baseSet (hψU i).2
+  choose ρ hρ1 hρ0 _ using fun i ↦ exists_contMDiffMap_one_nhds_of_subset_interior
+    𝓘(ℝ, EM) (n := ⊤) (hK i).isClosed
+    ((hKU i).trans ((hUo i).subset_interior_iff.2 subset_closure))
+  refine ⟨N, c, ψ, ρ, fun x ↦ hψ x (mem_univ x), fun i ↦ ?_, fun i y hy ↦
+    (hρ1 i).self_of_nhdsSet _ (mem_image_of_mem _ hy)⟩
+  refine (closure_minimal (fun x hx ↦ ?_) isClosed_closure).trans (hUt i)
+  by_contra h
+  exact hx (hρ0 i x h)
+
+end Partition
+
+end TauCeti
