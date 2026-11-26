@@ -126,10 +126,6 @@ theorem ofPMF_dens (s : S) (y : Y) : (ofPMF init trans emit).dens s y = (emit s 
 theorem coe_ofPMF_dens (s : S) (y : Y) : ((ofPMF init trans emit).dens s y : ℝ≥0∞) = emit s y :=
   ENNReal.coe_toNNReal (PMF.apply_ne_top _ _)
 
-/-- The emission densities of `ofPMF init trans emit` sum to `1` over the observations. -/
-theorem tsum_ofPMF_dens (s : S) : ∑' y, ((ofPMF init trans emit).dens s y : ℝ≥0∞) = 1 := by
-  simp
-
 /-- The emission law of `ofPMF init trans emit` in the state `s` is the measure of `emit s`. -/
 theorem withDensity_ofPMF_dens (s : S) :
     (ofPMF init trans emit).ref.withDensity (fun y ↦ ((ofPMF init trans emit).dens s y : ℝ≥0∞)) =
