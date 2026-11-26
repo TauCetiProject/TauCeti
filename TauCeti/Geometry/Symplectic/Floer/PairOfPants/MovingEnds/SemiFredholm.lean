@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Patching
+import TauCeti.Topology.Separation.Basic
 
 /-!
 # The semi-Fredholm estimate of the linearized Floer operator on spheres with moving input ends
@@ -116,10 +117,8 @@ private noncomputable def movingEndsDomain (c : ι → ℂ) : Set (ℝ × ℝ) :
   {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}
 
 private theorem isOpen_movingEndsDomain [Finite ι] (c : ι → ℂ) :
-    IsOpen (movingEndsDomain c) := by
-  simp only [movingEndsDomain, ofPred_forall]
-  exact isOpen_iInter_of_finite fun i ↦
-    isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
+    IsOpen (movingEndsDomain c) :=
+  isOpen_forall_ne Complex.equivRealProdCLM.symm.continuous
 
 /-- The truncation `Σ_T` of a sphere with moving input ends, in real coordinates. -/
 private noncomputable def movingEndsTruncation (c a : ι → ℂ) (T : ℝ) : Set (ℝ × ℝ) :=
@@ -164,13 +163,6 @@ private theorem equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord {e : Option 
     (h : 0 < movingEndCoord c a e z) : e = none → Complex.equivRealProdCLM.symm z ≠ 0 := by
   rintro rfl
   exact equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none h
-
-/-- Away from `0`, the longitudinal coordinate of the output end exceeds `r` exactly off the disc
-`‖w‖ ≤ 2 exp (2πr)`. -/
-private theorem lt_movingEndCoord_none_iff {r : ℝ} {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 0) :
-    r < movingEndCoord c a none z ↔ 2 * Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖ :=
-  lt_fst_positiveEndCoord_inf_iff hz
 
 /-- Away from the center `c i`, the point read in the input end `i` is not the center of the end
 at `0` of the pair of pants. -/
@@ -229,7 +221,7 @@ private theorem movingEndCoord_le_one_of_ne (ha : ∀ i, a i ≠ 0)
   | none =>
     -- Beyond the height `1` of the output end, `‖w‖ > 2 exp (2π)`.
     have hw0 : w ≠ 0 := equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none (by linarith)
-    have hw := (lt_movingEndCoord_none_iff hw0).1 h
+    have hw := (lt_fst_positiveEndCoord_inf_iff hw0).1 h
     rw [mul_one] at hw
     obtain _ | j := e'
     · exact absurd rfl hee'
@@ -272,7 +264,7 @@ private theorem mem_movingEndsTruncation_iff (ha : ∀ i, a i ≠ 0) {T : ℝ} (
     rcases eq_or_ne w 0 with h0 | h0
     · rw [show Complex.equivRealProdCLM.symm z = 0 from h0, norm_zero]
       positivity
-    · exact not_lt.1 fun h ↦ (he none).not_gt ((lt_movingEndCoord_none_iff h0).2 h)
+    · exact not_lt.1 fun h ↦ (he none).not_gt ((lt_fst_positiveEndCoord_inf_iff h0).2 h)
 
 /-- The truncation `Σ_T` lies in the sphere. -/
 private theorem movingEndsTruncation_subset (ha : ∀ i, a i ≠ 0) (T : ℝ) :
@@ -330,7 +322,7 @@ private theorem exists_movingEndChart_eq (ha : ∀ i, a i ≠ 0) {e : Option ι}
     have h0 : Complex.equivRealProdCLM.symm z ≠ inf.endCenter := by
       rw [endCenter_inf]
       exact equivRealProdCLM_symm_ne_zero_of_pos_movingEndCoord_none h
-    exact ⟨endBandCoord inf z, by rw [endBandCoord_apply]; rfl,
+    exact ⟨endBandCoord inf z, by simp [movingEndCoord, endBandCoord_apply],
       positiveEndChart_endBandCoord inf h0⟩
   | some i =>
     set v := (Complex.equivRealProdCLM.symm z - c i) / a i
@@ -526,14 +518,12 @@ private theorem tsupport_movingEndCutoff_smul_subset {R₀ R : ℝ} (hR₀ : 0 <
   -- The cut-off section vanishes near every point where `s_e < R₀`.
   have hle : R₀ ≤ movingEndCoord c a e z := by
     refine le_of_not_gt fun h ↦ notMem_tsupport_iff_eventuallyEq.2 ?_ hz
-    rcases movingEndCutoff_eventuallyEq_zero_or_ne_zero hR₀.le e z with h₀ | h₀
+    rcases movingEndCutoff_eventuallyEq_zero_or_ne_zero (c := c) (a := a) hR₀.le e z with h₀ | h₀
     · filter_upwards [h₀] with w hw
-      rw [hw, Pi.zero_apply, zero_smul]
-      rfl
+      simp [hw]
     filter_upwards [(contDiffAt_movingEndCoord (n := 0) (fun i _ ↦ hzU i) h₀
       ha).continuousAt.eventually (Iio_mem_nhds h)] with w hw
-    rw [movingEndCutoff_eq_zero (le_of_lt hw), zero_smul]
-    rfl
+    simp [movingEndCutoff_eq_zero (le_of_lt hw)]
   obtain ⟨ζ, hζ, hζz⟩ := exists_movingEndChart_eq ha hzU (by linarith)
   exact ⟨ζ, ⟨by rw [mem_Ioi, hζ]; linarith, mem_univ _⟩, hζz⟩
 
@@ -552,8 +542,7 @@ private theorem tsupport_movingCoreCutoff_smul_subset {R₀ : ℝ} (hR₀ : 1 �
   filter_upwards [(contDiffAt_movingEndCoord (n := 0) (fun i _ ↦ hzU i) h₀
       ha).continuousAt.eventually (Ioi_mem_nhds h),
     (isOpen_movingEndsDomain c).mem_nhds hzU] with w hw hwU
-  rw [movingCoreCutoff_eq_zero ha hsep hout hR₀ hwU (le_of_lt hw), zero_smul]
-  rfl
+  simp [movingCoreCutoff_eq_zero ha hsep hout hR₀ hwU (le_of_lt hw)]
 
 end Geometry
 
@@ -603,51 +592,6 @@ private theorem setIntegral_sobolevDensity_comp_movingEndChart_le [Finite ι] (h
         (ae_of_all _ fun ζ ↦ sobolevDensity_nonneg _ ζ)
         (.of_forall fun _ hζ ↦ prod_mono (Ioi_subset_Ioi (by linarith)) subset_rfl hζ)
 
-omit [FiniteDimensional ℝ V] in
-/-- **The core piece.** On `Σ_{R₀}` a section agrees to first order with its cut-off
-`(1 - ∑_e β_e) ξ`, so its energy there is at most the energy of the cut-off section on
-`Σ_{R₀ + 1}`. -/
-private theorem setIntegral_sobolevDensity_le_movingCoreCutoff (ha : ∀ i, a i ≠ 0) {R₀ : ℝ}
-    (hR₀ : 1 ≤ R₀) {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ) (hξU : tsupport ξ ⊆ movingEndsDomain c) :
-    ∫ z in movingEndsTruncation c a R₀, sobolevDensity ξ z ≤
-      ∫ z in movingEndsTruncation c a (R₀ + 1),
-        sobolevDensity (fun w ↦ movingCoreCutoff c a R₀ w • ξ w) z := by
-  have hβξ := contDiff_movingCoreCutoff_smul ha (R₀ := R₀) (by linarith) hξ hξU
-  calc _ = ∫ z in movingEndsTruncation c a R₀,
-        sobolevDensity (fun w ↦ movingCoreCutoff c a R₀ w • ξ w) z := by
-        refine setIntegral_congr_fun (isCompact_movingEndsTruncation c a R₀).measurableSet
-          fun z hz ↦ ?_
-        obtain ⟨h₁, h₀⟩ := movingCoreCutoff_eq_one_and_fderiv_eq_zero ha hR₀ hz
-        have hzU := movingEndsTruncation_subset ha R₀ hz
-        rw [sobolevDensity_apply, sobolevDensity_apply, fderiv_fun_smul
-          ((contDiffAt_movingCoreCutoff ha (by linarith) hzU (n := 1)).differentiableAt
-            one_ne_zero) (hξ.differentiable two_ne_zero z), h₁, h₀]
-        simp
-    _ ≤ _ := setIntegral_mono_set (((continuous_sobolevDensity (hβξ.of_le one_le_two)
-        ).continuousOn).integrableOn_compact (isCompact_movingEndsTruncation _ _ _))
-        (ae_of_all _ fun z ↦ sobolevDensity_nonneg _ z)
-        (.of_forall fun _ hz ↦ movingEndsTruncation_mono c a (by linarith) hz)
-
-/-- The derivatives of the cutoffs at height `R₀` are bounded on the truncation `Σ_{R₀ + 1}`. -/
-private theorem exists_forall_norm_fderiv_movingCutoff_le (ha : ∀ i, a i ≠ 0) {R₀ : ℝ}
-    (hR₀ : 0 ≤ R₀) :
-    ∃ M, (∀ e, ∀ z ∈ movingEndsTruncation c a (R₀ + 1),
-        ‖fderiv ℝ (movingEndCutoff c a R₀ e) z‖ ≤ M) ∧
-      ∀ z ∈ movingEndsTruncation c a (R₀ + 1), ‖fderiv ℝ (movingCoreCutoff c a R₀) z‖ ≤ M := by
-  have hKU := movingEndsTruncation_subset (c := c) ha (R₀ + 1)
-  obtain ⟨M, hM⟩ := (isCompact_movingEndsTruncation c a (R₀ + 1)).exists_bound_of_continuousOn
-    (f := fun z ↦ ∑ e, ‖fderiv ℝ (movingEndCutoff c a R₀ e) z‖) <| continuousOn_finsetSum _
-      fun e _ z hz ↦ ((contDiffAt_movingEndCutoff ha hR₀ e (hKU hz) (n := 1)).continuousAt_fderiv
-        one_ne_zero).norm.continuousWithinAt
-  have hMs (z : ℝ × ℝ) (hz : z ∈ movingEndsTruncation c a (R₀ + 1)) :
-      ∑ e, ‖fderiv ℝ (movingEndCutoff c a R₀ e) z‖ ≤ M :=
-    (Real.le_norm_self _).trans (hM z hz)
-  refine ⟨M, fun e z hz ↦ (Finset.single_le_sum (fun e' _ ↦ norm_nonneg
-    (fderiv ℝ (movingEndCutoff c a R₀ e') z)) (Finset.mem_univ e)).trans (hMs z hz),
-    fun z hz ↦ ?_⟩
-  rw [fderiv_movingCoreCutoff ha hR₀ (hKU hz), norm_neg]
-  exact (norm_sum_le _ _).trans (hMs z hz)
-
 omit [Fintype ι] in
 /-- **The end estimate on a cut-off section.** If `D_u` controls the energy on the end `e` in its
 chart for sections supported beyond the height `Re < R₀`, then the energy of a section beyond
@@ -691,78 +635,6 @@ private theorem setIntegral_sobolevDensity_comp_movingEndChart_le_of_end [Finite
   exact (mul_le_mul_of_nonneg_right (le_max_left _ _) hD₀).trans
     (mul_le_mul_of_nonneg_left hD (le_max_right _ _))
 
-/-- **The core estimate.** If `D_u` satisfies the `L²` estimate `hint` on sections supported in
-`Σ_{R₀ + 1}`, the energy of a section on `Σ_{R₀}` is controlled by `D_u ξ` and by `ξ` on
-`Σ_{R₀ + 1}`, through the cut-off section `(1 - ∑_e β_e) ξ`; here `M` bounds the derivative of
-the core cutoff and `B` bounds `J` along `u` on `Σ_{R₀ + 1}`. -/
-private theorem setIntegral_sobolevDensity_le_of_movingCoreCutoff (ω : SymplecticForm V)
-    (ha : ∀ i, a i ≠ 0) (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π))
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
-    (hu : ∀ z ∈ movingEndsDomain c, ContDiffAt ℝ 1 u z) {R₀ : ℝ} (hR₀ : 1 < R₀) {C₀ : ℝ}
-    (hC₀ : 0 ≤ C₀)
-    (hint : ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → tsupport ξ ⊆ movingEndsTruncation c a (R₀ + 1) →
-      ∫ z in movingEndsTruncation c a (R₀ + 1),
-          (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2) ≤
-        C₀ * ∫ z in movingEndsTruncation c a (R₀ + 1),
-          (‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2 + ‖ξ z‖ ^ 2))
-    {M B : ℝ}
-    (hM : ∀ z ∈ movingEndsTruncation c a (R₀ + 1), ‖fderiv ℝ (movingCoreCutoff c a R₀) z‖ ≤ M)
-    (hB : ∀ z ∈ movingEndsTruncation c a (R₀ + 1), ‖J z (u z)‖ ≤ B) {ξ : ℝ × ℝ → V}
-    (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ) (hξU : tsupport ξ ⊆ movingEndsDomain c) :
-    ∫ z in movingEndsTruncation c a R₀, sobolevDensity ξ z ≤
-      C₀ * (2 * (∫ z, ‖ω.floerLinearization J Ks Kt u ξ z‖ ^ 2) +
-        2 * (M * (1 + B)) ^ 2 * (∫ z in movingEndsTruncation c a (R₀ + 1), ‖ξ z‖ ^ 2) +
-        ∫ z in movingEndsTruncation c a (R₀ + 1), ‖ξ z‖ ^ 2) +
-        ∫ z in movingEndsTruncation c a (R₀ + 1), ‖ξ z‖ ^ 2 := by
-  set K := movingEndsTruncation c a (R₀ + 1)
-  have hK : IsCompact K := isCompact_movingEndsTruncation c a _
-  have hKU : K ⊆ movingEndsDomain c := movingEndsTruncation_subset ha _
-  set ξc : ℝ × ℝ → V := fun w ↦ movingCoreCutoff c a R₀ w • ξ w
-  have hξc' : ContDiff ℝ 2 ξc :=
-    contDiff_movingCoreCutoff_smul ha (R₀ := R₀) (by linarith) hξ hξU
-  have hDc := ω.integral_norm_floerLinearization_fun_smul_sq_le (isOpen_movingEndsDomain c) hJ hKs
-    hKt hu hK
-    (fun z hz ↦ contDiffAt_movingCoreCutoff ha (by linarith) hz)
-    (fun z hz ↦ abs_movingCoreCutoff_le_one ha hsep hout hR₀.le hz)
-    (fun z hz ↦ mem_movingEndsTruncation_of_fderiv_movingCoreCutoff_ne_zero ha hsep hout hR₀ hz)
-    hM hB hξ hξc hξU
-  have hI {g : ℝ × ℝ → ℝ} (hg : Continuous g) : IntegrableOn g K :=
-    hg.continuousOn.integrableOn_compact hK
-  have hcont := hξc'.continuous
-  have hdcont := hξc'.continuous_fderiv two_ne_zero
-  have hDcont := ω.continuous_floerLinearization_of_tsupport_subset hJ hKs hKt hu
-    (hξc'.of_le one_le_two) ((tsupport_smul_subset_right _ _).trans hξU)
-  have hξcY : ∫ z in K, ‖ξc z‖ ^ 2 ≤ ∫ z in K, ‖ξ z‖ ^ 2 := by
-    refine setIntegral_mono_on (hI (by fun_prop)) (hI (by have := hξ.continuous; fun_prop))
-      hK.measurableSet fun z hz ↦ ?_
-    simp only [ξc, norm_smul, Real.norm_eq_abs]
-    gcongr
-    exact mul_le_of_le_one_left (norm_nonneg _)
-      (abs_movingCoreCutoff_le_one ha hsep hout hR₀.le (hKU hz))
-  have hDK : ∫ z in K, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 ≤
-      ∫ z, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 :=
-    setIntegral_le_integral (ω.integrable_norm_floerLinearization_sq hDcont hξc.smul_left)
-      (ae_of_all _ fun _ ↦ sq_nonneg _)
-  have hsplit : ∫ z in K, (‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 + ‖ξc z‖ ^ 2) =
-      (∫ z in K, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2) + ∫ z in K, ‖ξc z‖ ^ 2 :=
-    integral_add (hI (by fun_prop)) (hI (by fun_prop))
-  calc _ ≤ ∫ z in K, sobolevDensity ξc z :=
-        setIntegral_sobolevDensity_le_movingCoreCutoff ha hR₀.le hξ hξU
-    _ = (∫ z in K, (‖fderiv ℝ ξc z stdComplexLineReal‖ ^ 2 +
-          ‖fderiv ℝ ξc z stdComplexLineImag‖ ^ 2)) + ∫ z in K, ‖ξc z‖ ^ 2 := by
-        simp only [sobolevDensity_apply]
-        exact integral_add (hI (by fun_prop)) (hI (by fun_prop))
-    _ ≤ C₀ * ((∫ z in K, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2) +
-          ∫ z in K, ‖ξc z‖ ^ 2) + ∫ z in K, ‖ξ z‖ ^ 2 := by
-        gcongr
-        exact (hint hξc' (tsupport_movingCoreCutoff_smul_subset ha hsep hout hR₀.le hξU)).trans
-          (mul_le_mul_of_nonneg_left hsplit.le hC₀)
-    _ ≤ _ := by gcongr; linarith
-
 /-- **Patching at one height.** If `D_u` controls the energy on every end `e` in its chart for
 sections supported beyond the height `R e`, then for every height `R₀ > 1` above the `R e`, the
 energy of a section beyond `R₀ + 1` on the ends and on the truncation `Σ_{R₀}` is controlled by
@@ -800,8 +672,9 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ J' z (u z))
     fun z hz ↦ ((hJ z (hKU hz)).continuousAt.comp₂ continuousAt_id
       (hu z (hKU hz)).continuousAt).continuousWithinAt
-  obtain ⟨M, hMe, hMc⟩ := exists_forall_norm_fderiv_movingCutoff_le (c := c) ha
-    (R₀ := R₀) (by linarith)
+  obtain ⟨M, hMe, hMc⟩ := exists_forall_norm_fderiv_le hK
+    (fun e z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e (hKU hz))
+    fun z hz ↦ fderiv_movingCoreCutoff ha (by linarith) (hKU hz)
   -- The estimate on the compact core `K`.
   have : (volume : Measure (ℝ × ℝ)).IsAddHaarMeasure := Measure.prod.instIsAddHaarMeasure _ _
   obtain ⟨C₀, hC₀, hint⟩ :=
@@ -818,15 +691,24 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
   -- The ends through the end cutoffs, and the core through the core cutoff.
   have hends (e : Option ι) := ω.setIntegral_sobolevDensity_comp_movingEndChart_le_of_end
     (J := J') ha hsep hout hJ hKs hKt hu hR₀ e (hR e) (hend e) (hMe e) hB hξ hξc hξU
-  have hcore := ω.setIntegral_sobolevDensity_le_of_movingCoreCutoff (J := J') ha hsep hout hJ hKs
-    hKt hu hR₀ hC₀ hint hMc hB hξ hξc hξU
+  have hDc := ω.integral_norm_floerLinearization_fun_smul_sq_le (J := J')
+    (isOpen_movingEndsDomain c) hJ hKs hKt hu hK
+    (fun z hz ↦ contDiffAt_movingCoreCutoff ha (by linarith) hz)
+    (fun z hz ↦ abs_movingCoreCutoff_le_one ha hsep hout hR₀.le hz)
+    (fun z hz ↦ mem_movingEndsTruncation_of_fderiv_movingCoreCutoff_ne_zero ha hsep hout hR₀ hz)
+    hMc hB hξ hξc hξU
+  have hcore : ∫ z in movingEndsTruncation c a R₀, sobolevDensity ξ z ≤
+      C₀ * (2 * X + 2 * c' ^ 2 * Y + Y) + Y :=
+    (ω.setIntegral_sobolevDensity_le_mul_integral_floerLinearization_smul_add (J := J')
+      (isOpen_movingEndsDomain c) hJ hKs hKt hu
+      (isCompact_movingEndsTruncation c a R₀).measurableSet hK
+      (movingEndsTruncation_mono c a (by linarith)) hKU
+      (fun z hz ↦ contDiffAt_movingCoreCutoff ha (by linarith) hz)
+      (fun z hz ↦ abs_movingCoreCutoff_le_one ha hsep hout hR₀.le (hKU hz))
+      (fun z hz ↦ movingCoreCutoff_eq_one_and_fderiv_eq_zero ha hR₀.le hz) hC₀ hint hξ hξc hξU
+      (tsupport_movingCoreCutoff_smul_subset ha hsep hout hR₀.le hξU)).trans (by gcongr)
   -- Summing the pieces.
-  refine (add_le_add (Finset.sum_le_sum fun e (_ : e ∈ Finset.univ) ↦ hends e) hcore).trans ?_
-  have hS : 0 ≤ ∑ e, max (C e) 0 := Finset.sum_nonneg fun e _ ↦ le_max_right _ _
-  rw [← Finset.sum_mul, ← Finset.sum_mul]
-  nlinarith [mul_nonneg hS hX, mul_nonneg hS hY, mul_nonneg (mul_nonneg hS (sq_nonneg c')) hX,
-    mul_nonneg (mul_nonneg hS (sq_nonneg c')) hY, mul_nonneg hC₀ hX, mul_nonneg hC₀ hY,
-    mul_nonneg (mul_nonneg hC₀ (sq_nonneg c')) hX, mul_nonneg (mul_nonneg hC₀ (sq_nonneg c')) hY]
+  exact sum_add_le_mul_add (fun e ↦ le_max_right _ _) hC₀ hX hY hends hcore
 
 /-! ### The semi-Fredholm estimate -/
 

@@ -15,8 +15,12 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 The semi-Fredholm estimate of the linearized Floer operator `D_u` on a punctured domain `S` with
 cylindrical ends is patched together from estimates on the ends and an `L²` estimate on a compact
 truncation of `S`, by cutting a section off with functions that are smooth on `S`. This file
-records the two steps of the patching that do not depend on the domain.
+records the steps of the patching that do not depend on the domain.
 
+* `TauCeti.Floer.setIntegral_sobolevDensity_le_setIntegral_sobolevDensity_smul`: where a cutoff
+  `f` is `1` to first order, a section `ξ` and its cut-off `f ξ` have the same energy density.
+* `TauCeti.Floer.exists_forall_norm_fderiv_le`: one constant bounds, on a compact set, the
+  derivatives of finitely many end cutoffs `β_e` and of the core cutoff `1 - ∑_e β_e`.
 * `TauCeti.SymplecticForm.integral_norm_floerLinearization_fun_smul_sq_le`: for a function `f`
   smooth on an open set `S` with `|f| ≤ 1` there, whose derivative is supported in a compact set
   `K` and bounded by `M` there, and for `‖J‖ ≤ B` along `u` on `K`, a `C²` section `ξ` with compact
@@ -25,6 +29,12 @@ records the two steps of the patching that do not depend on the domain.
   family of compact truncations `K T`, an estimate at every height `R₀` of the energy on the ends
   beyond `R₀ + 1` plus the energy on `K R₀`, by `C' (X ξ + ∫_{K (R₀ + 1)} ‖ξ‖²)`, gives the estimate
   at a single height `T` of the energy on the ends beyond `T` plus the energy on `K T`.
+* `TauCeti.SymplecticForm.setIntegral_sobolevDensity_le_mul_integral_floerLinearization_smul_add`:
+  the core estimate. If `D_u` satisfies an `L²` estimate on sections supported in a compact set
+  `K`, and the cutoff `f` is `1` to first order on `K₀ ⊆ K` with `f ξ` supported in `K`, the
+  energy of `ξ` on `K₀` is at most `C₀ (∫ ‖D_u (f ξ)‖² + ∫_K ‖ξ‖²) + ∫_K ‖ξ‖²`.
+* `TauCeti.Floer.sum_add_le_mul_add`: the arithmetic that sums the end and core estimates into
+  one constant times `∫ ‖D_u ξ‖² + ∫_K ‖ξ‖²`.
 
 These are shared by the pair of pants (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm`)
 and the spheres with moving input ends
@@ -41,7 +51,49 @@ public section
 
 open Set MeasureTheory
 
+namespace TauCeti.Floer
+
+/-- **The core piece.** Let `f` be `1` to first order on a measurable set `K₀` contained in a
+compact set `K`. A section `ξ` agrees to first order with its cut-off `f ξ` on `K₀`, so its energy
+on `K₀` is at most the energy of `f ξ` on `K`. -/
+theorem setIntegral_sobolevDensity_le_setIntegral_sobolevDensity_smul {W : Type*}
+    [NormedAddCommGroup W] [NormedSpace ℝ W] {K₀ K : Set (ℝ × ℝ)} (hK₀ : MeasurableSet K₀)
+    (hK : IsCompact K) (hK₀K : K₀ ⊆ K) {f : ℝ × ℝ → ℝ} (hf : ∀ z ∈ K₀, DifferentiableAt ℝ f z)
+    (hf₀ : ∀ z ∈ K₀, f z = 1 ∧ fderiv ℝ f z = 0) {ξ : ℝ × ℝ → W} (hξ : Differentiable ℝ ξ)
+    (hfξ : ContDiff ℝ 1 fun z ↦ f z • ξ z) :
+    ∫ z in K₀, sobolevDensity ξ z ≤ ∫ z in K, sobolevDensity (fun w ↦ f w • ξ w) z := by
+  calc _ = ∫ z in K₀, sobolevDensity (fun w ↦ f w • ξ w) z := by
+        refine setIntegral_congr_fun hK₀ fun z hz ↦ ?_
+        obtain ⟨h₁, h₀⟩ := hf₀ z hz
+        rw [sobolevDensity_apply, sobolevDensity_apply, fderiv_fun_smul (hf z hz) (hξ z), h₁, h₀]
+        simp
+    _ ≤ _ := setIntegral_mono_set
+        ((continuous_sobolevDensity hfξ).continuousOn.integrableOn_compact hK)
+        (ae_of_all _ fun z ↦ sobolevDensity_nonneg _ z) (.of_forall fun _ hz ↦ hK₀K hz)
+
+/-- **Bounding the derivatives of the cutoffs.** For a finite family of functions `β e`, `C¹` at
+the points of a compact set `K`, and a function `g` with `D g = -∑_e D β_e` on `K` (such as the
+core cutoff `1 - ∑_e β_e`), one constant `M` bounds `‖D β_e‖` for every `e` and `‖D g‖` on `K`. -/
+theorem exists_forall_norm_fderiv_le {E F ι : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [Fintype ι] {K : Set E} (hK : IsCompact K)
+    {β : ι → E → F} (hβ : ∀ e, ∀ z ∈ K, ContDiffAt ℝ 1 (β e) z) {g : E → F}
+    (hg : ∀ z ∈ K, fderiv ℝ g z = -∑ e, fderiv ℝ (β e) z) :
+    ∃ M, (∀ e, ∀ z ∈ K, ‖fderiv ℝ (β e) z‖ ≤ M) ∧ ∀ z ∈ K, ‖fderiv ℝ g z‖ ≤ M := by
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ ∑ e, ‖fderiv ℝ (β e) z‖) <|
+    continuousOn_finsetSum _ fun e _ z hz ↦
+      ((hβ e z hz).continuousAt_fderiv one_ne_zero).norm.continuousWithinAt
+  have hMs (z : E) (hz : z ∈ K) : ∑ e, ‖fderiv ℝ (β e) z‖ ≤ M :=
+    (Real.le_norm_self _).trans (hM z hz)
+  refine ⟨M, fun e z hz ↦ (Finset.single_le_sum (fun e' _ ↦ norm_nonneg (fderiv ℝ (β e') z))
+    (Finset.mem_univ e)).trans (hMs z hz), fun z hz ↦ ?_⟩
+  rw [hg z hz, norm_neg]
+  exact (norm_sum_le _ _).trans (hMs z hz)
+
+end TauCeti.Floer
+
 namespace TauCeti.SymplecticForm
+
+open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -81,6 +133,66 @@ theorem integral_norm_floerLinearization_fun_smul_sq_le (ω : SymplecticForm V)
       hzS (hξS (tsupport_smul_subset_right _ _ h)))
     (hint hξ hξc hξS)
     (hint hfξ (hξc.smul_left (f := f)) ((tsupport_smul_subset_right _ _).trans hξS))
+
+/-- **The core estimate.** Let `f` be `C²` on an open set `S`, `1` to first order on a measurable
+set `K₀`, and `|f| ≤ 1` on a compact set `K ⊆ S` containing `K₀`. If `D_u` satisfies the `L²`
+estimate `hint` on sections supported in `K`, then a `C²` section `ξ` with compact support in `S`,
+whose cut-off `f ξ` is supported in `K`, satisfies
+`∫_{K₀} (‖∂s ξ‖² + ‖∂t ξ‖² + ‖ξ‖²) ≤ C₀ (∫ ‖D_u (f ξ)‖² + ∫_K ‖ξ‖²) + ∫_K ‖ξ‖²`. -/
+theorem setIntegral_sobolevDensity_le_mul_integral_floerLinearization_smul_add
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    {S : Set (ℝ × ℝ)} (hS : IsOpen S)
+    (hJ : ∀ z ∈ S, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ S, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ S, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ S, ContDiffAt ℝ 1 u z) {K₀ K : Set (ℝ × ℝ)} (hK₀ : MeasurableSet K₀)
+    (hK : IsCompact K) (hK₀K : K₀ ⊆ K) (hKS : K ⊆ S) {f : ℝ × ℝ → ℝ}
+    (hf : ∀ z ∈ S, ContDiffAt ℝ 2 f z) (hf₁ : ∀ z ∈ K, |f z| ≤ 1)
+    (hf₀ : ∀ z ∈ K₀, f z = 1 ∧ fderiv ℝ f z = 0) {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
+    (hint : ∀ ⦃η : ℝ × ℝ → V⦄, ContDiff ℝ 2 η → tsupport η ⊆ K →
+      ∫ z in K, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
+        C₀ * ∫ z in K, (‖ω.floerLinearization J Ks Kt u η z‖ ^ 2 + ‖η z‖ ^ 2))
+    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ) (hξS : tsupport ξ ⊆ S)
+    (hfξK : tsupport (fun z ↦ f z • ξ z) ⊆ K) :
+    ∫ z in K₀, sobolevDensity ξ z ≤
+      C₀ * ((∫ z, ‖ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z‖ ^ 2) +
+        ∫ z in K, ‖ξ z‖ ^ 2) + ∫ z in K, ‖ξ z‖ ^ 2 := by
+  set ξc : ℝ × ℝ → V := fun w ↦ f w • ξ w
+  have hξc' : ContDiff ℝ 2 ξc :=
+    (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
+      (fun z hz ↦ (hf z hz).contDiffWithinAt) hξ.contDiffOn hS hξS
+  have hcont := hξc'.continuous
+  have hdcont := hξc'.continuous_fderiv two_ne_zero
+  have hDcont := ω.continuous_floerLinearization_of_tsupport_subset hJ hKs hKt hu
+    (hξc'.of_le one_le_two) ((tsupport_smul_subset_right _ _).trans hξS)
+  have hI {g : ℝ × ℝ → ℝ} (hg : Continuous g) : IntegrableOn g K :=
+    hg.continuousOn.integrableOn_compact hK
+  have hξcY : ∫ z in K, ‖ξc z‖ ^ 2 ≤ ∫ z in K, ‖ξ z‖ ^ 2 := by
+    refine setIntegral_mono_on (hI (by fun_prop)) (hI (by have := hξ.continuous; fun_prop))
+      hK.measurableSet fun z hz ↦ ?_
+    simp only [ξc, norm_smul, Real.norm_eq_abs]
+    gcongr
+    exact mul_le_of_le_one_left (norm_nonneg _) (hf₁ z hz)
+  have hDK : ∫ z in K, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 ≤
+      ∫ z, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 :=
+    setIntegral_le_integral (ω.integrable_norm_floerLinearization_sq hDcont hξc.smul_left)
+      (ae_of_all _ fun _ ↦ sq_nonneg _)
+  have hsplit : ∫ z in K, (‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2 + ‖ξc z‖ ^ 2) =
+      (∫ z in K, ‖ω.floerLinearization J Ks Kt u ξc z‖ ^ 2) + ∫ z in K, ‖ξc z‖ ^ 2 :=
+    integral_add (hI (by fun_prop)) (hI (by fun_prop))
+  calc _ ≤ ∫ z in K, sobolevDensity ξc z :=
+        setIntegral_sobolevDensity_le_setIntegral_sobolevDensity_smul hK₀ hK hK₀K
+          (fun z hz ↦ (hf z (hKS (hK₀K hz))).differentiableAt two_ne_zero) hf₀
+          (hξ.differentiable two_ne_zero) (hξc'.of_le one_le_two)
+    _ = (∫ z in K, (‖fderiv ℝ ξc z stdComplexLineReal‖ ^ 2 +
+          ‖fderiv ℝ ξc z stdComplexLineImag‖ ^ 2)) + ∫ z in K, ‖ξc z‖ ^ 2 := by
+        simp only [sobolevDensity_apply]
+        exact integral_add (hI (by fun_prop)) (hI (by fun_prop))
+    _ ≤ _ := by
+        gcongr
+        refine (hint hξc' hfξK).trans ?_
+        rw [hsplit]
+        exact mul_le_mul_of_nonneg_left (add_le_add hDK hξcY) hC₀
 
 end TauCeti.SymplecticForm
 
@@ -130,5 +242,26 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
     Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
       fun ζ _ ↦ sobolevDensity_nonneg _ ζ
   nlinarith [mul_le_mul_of_nonneg_left hY hC₁]
+
+/-- **Summing the pieces of the patching.** If the energy `E e` on each end `e` is at most
+`C e (2 X + 2 c² Y)` with `C e ≥ 0`, and the energy `E₀` on the core is at most
+`C₀ (2 X + 2 c² Y + Y) + Y` with `C₀ ≥ 0`, where `X` and `Y` are the nonnegative `L²` norms of
+`D_u ξ` and of `ξ` on a compact part of the domain, then the total energy is at most
+`(∑_e C e (2 + 2 c²) + C₀ (3 + 2 c²) + 1) (X + Y)`. -/
+theorem sum_add_le_mul_add {ι : Type*} [Fintype ι] {E C : ι → ℝ} {E₀ C₀ c X Y : ℝ}
+    (hC : ∀ e, 0 ≤ C e) (hC₀ : 0 ≤ C₀) (hX : 0 ≤ X) (hY : 0 ≤ Y)
+    (hE : ∀ e, E e ≤ C e * (2 * X + 2 * c ^ 2 * Y))
+    (hE₀ : E₀ ≤ C₀ * (2 * X + 2 * c ^ 2 * Y + Y) + Y) :
+    ∑ e, E e + E₀ ≤ (∑ e, C e * (2 + 2 * c ^ 2) + C₀ * (3 + 2 * c ^ 2) + 1) * (X + Y) := by
+  have hcX := mul_nonneg (sq_nonneg c) hX
+  have h₁ : 2 * X + 2 * c ^ 2 * Y ≤ (2 + 2 * c ^ 2) * (X + Y) := by linarith
+  have h₂ : 2 * X + 2 * c ^ 2 * Y + Y ≤ (3 + 2 * c ^ 2) * (X + Y) := by linarith
+  calc ∑ e, E e + E₀ ≤ ∑ e, C e * (2 + 2 * c ^ 2) * (X + Y) +
+        (C₀ * ((3 + 2 * c ^ 2) * (X + Y)) + (X + Y)) := by
+        gcongr with e
+        · rw [mul_assoc]
+          exact (hE e).trans (mul_le_mul_of_nonneg_left h₁ (hC e))
+        · exact hE₀.trans (by gcongr; linarith)
+    _ = _ := by rw [← Finset.sum_mul]; ring
 
 end TauCeti.Floer
