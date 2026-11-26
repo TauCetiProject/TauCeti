@@ -95,7 +95,7 @@ namespace TauCeti.Vortex
 
 /-- Coordinates in `H^s(ℂ)` of a field also serve, through the inclusion, at every lower order
 `r`, with no larger norm. -/
-private theorem norm_inclusion_le_and_ae_eq {r s : ℝ} (h : r ≤ s) (hr : 0 ≤ r)
+theorem norm_inclusion_le_and_ae_eq {r s : ℝ} (h : r ≤ s) (hr : 0 ≤ r)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} {u : Fin 4 → H^{s}(ℂ)}
     (hu : ∀ a, ⇑(inclusionLp (hr.trans h) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) :
     ‖fun a ↦ inclusion h (u a)‖ ≤ ‖u‖ ∧

@@ -13,7 +13,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
 import TauCeti.MeasureTheory.Function.Lp.Norm
-import TauCeti.MeasureTheory.Function.Lp.Operator.HolderAdjoint
+import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 import TauCeti.MeasureTheory.Function.Lp.PiLp
 import TauCeti.MeasureTheory.Measure.Restrict
 
@@ -932,20 +932,6 @@ theorem
 
 /-! ### Weighted Sobolev estimates for the adjoints -/
 
-/-- The adjoint of the zeroth-order part `Z(w, ·)` at a value `w` is multiplication by the
-transpose of the matrix `gaugeFixedZerothOrderMatrix w`. -/
-private theorem adjoint_gaugeFixedZerothOrder_apply (w y : EuclideanSpace ℝ (Fin 4)) :
-    ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w) y =
-      WithLp.toLp 2 fun i ↦ ∑ j, gaugeFixedZerothOrderMatrix w j i * y j := by
-  ext i
-  have h := EuclideanSpace.inner_single_right i (1 : ℝ)
-    (ContinuousLinearMap.adjoint (gaugeFixedZerothOrder w) y)
-  simp only [one_mul, conj_trivial] at h
-  rw [← h, adjoint_inner_left]
-  simp only [gaugeFixedZerothOrder_apply, PiLp.single_apply, mul_comm, ite_mul, one_mul, zero_mul,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, PiLp.inner_apply, RCLike.inner_apply,
-    conj_trivial]
-
 /-- **The coordinates of the adjoint zeroth-order term.** For every order `k` there is a constant
 `C` with the following property. Let `b` be the `L∞` class of a smooth field `β` whose coordinates
 have derivatives bounded by `M` through order `k`, and let `u : Fin 4 → H^(k+1)(ℂ)` be coordinates
@@ -968,11 +954,13 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_adjoint_holderL (k : ℕ)
   have hZ (i j : Fin 4) :=
     contDiff_and_norm_iteratedFDeriv_gaugeFixedZerothOrderMatrix_le hβ hβb j i
   have hk : (k : ℝ) ≤ k + 1 := by linarith
+  obtain ⟨hun, hu'⟩ := norm_inclusion_le_and_ae_eq hk (Nat.cast_nonneg k)
+    (y := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • h z) hu
   -- `exp(c ρ) Z(β, ·)† h` is `0 + A (exp(c ρ) h)` for the transposed matrix
   -- `A = (gaugeFixedZerothOrderMatrix β)ᵀ`.
   obtain ⟨W, hW, hWn⟩ := hCb (fun i j z ↦ gaugeFixedZerothOrderMatrix (β z) j i)
     (fun i j ↦ (hZ i j).1) M (fun i j ↦ (hZ i j).2) _ 0
-    (fun i ↦ inclusion hk (u i)) 0 (fun i ↦ by rw [inclusionLp_inclusion]; exact hu i)
+    (fun i ↦ inclusion hk (u i)) 0 hu'
     (fun i ↦ by simpa [Pi.zero_def] using Lp.coeFn_zero ℂ 2 volume)
   refine ⟨W, fun i ↦ (hW i).trans ?_, hWn.trans ?_⟩
   · rw [adjoint_holderL_apply, holderL_apply_apply]
@@ -984,8 +972,6 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_adjoint_holderL (k : ℕ)
   · rw [norm_zero, zero_add]
     have hM : 0 ≤ M := (norm_nonneg _).trans (hβb 0 0 (Nat.zero_le k) 0)
     gcongr
-    exact (pi_norm_le_iff_of_nonneg (norm_nonneg u)).2 fun i ↦
-      (norm_inclusion_apply_le hk _).trans (norm_le_pi_norm u i)
 
 /-- Coordinates of `exp(c ρ) F` and `exp(c ρ) G` in `H^k(ℂ)` give coordinates of
 `exp(c ρ) (F - G)`, for `F, G ∈ L²`. -/
@@ -1063,7 +1049,7 @@ private theorem exists_forall_exists_mem_ker_inner_sub_eq_zero_and_inclusionLp_a
     ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge)
     ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge) (fun η hη hηc ↦ by
       rw [integral_inner_sobolevFieldValues_gaugeFixedAdjoint hx.continuous hax y₀ hη hηc,
-        show sobolevGaugeFixedOperator a y₀ = 0 from hy₀]) hem 0
+        ← ContinuousLinearMap.coe_coe (sobolevGaugeFixedOperator a), LinearMap.mem_ker.1 hy₀]) hem 0
     fun i ↦ .of_forall fun z ↦ by simp
   refine ⟨y₀, hy₀, horth, u₀, hu₀, hu₀n.trans ?_⟩
   rw [norm_zero, zero_add, mul_assoc]
@@ -1156,6 +1142,8 @@ theorem exists_forall_norm_exp_mul_smul_adjoint_orthogonalRightInverse_le_of_for
       rw [adjoint_inner_left, inner_zero_left, comp_apply, real_inner_comm,
         hQ.inner_eq_zero f y₀ hy₀]
   have hk1 : (k : ℝ) ≤ k + 1 := by linarith
+  obtain ⟨hu₀n', hu₀'⟩ := norm_inclusion_le_and_ae_eq hk1 (Nat.cast_nonneg k)
+    (y := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues y₀ z) hu₀
   -- Weak solutions of `L_x w = 0` are values of the kernel, orthogonal to `g - y₀` and to `Q f`.
   obtain ⟨u, hu, hun⟩ := hK₂b x D hx hsol hframe hD hD₀ hxb (Measure.restrict_coe_opens_top _)
     (sobolevFieldValues ∘L Q)
@@ -1172,14 +1160,12 @@ theorem exists_forall_norm_exp_mul_smul_adjoint_orthogonalRightInverse_le_of_for
       rw [← L2.inner_def]
       exact horth y hy)
     (fun i ↦ w i - inclusion hk1 (u₀ i)) fun i ↦ coeFn_inclusionLp_sub_ae_eq_exp_mul_smul_sub
-      (hw i) (by rw [inclusionLp_inclusion]; exact hu₀ i)
+      (hw i) (hu₀' i)
   refine ⟨u, fun i ↦ (hu i).trans (.of_forall fun z ↦ by rw [map_sub, hQe, sub_zero]),
     hun.trans ?_⟩
   calc K₂ * ‖fun i ↦ w i - inclusion hk1 (u₀ i)‖ ≤ K₂ * (‖w‖ + ‖u₀‖) := by
         gcongr
-        exact (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦ (norm_sub_le _ _).trans
-          (add_le_add (norm_le_pi_norm w i)
-            ((norm_inclusion_apply_le hk1 _).trans (norm_le_pi_norm u₀ i)))
+        exact (norm_sub_le w fun i ↦ inclusion hk1 (u₀ i)).trans (by gcongr)
     _ ≤ K₂ * (‖w‖ + K₀ * ‖w‖) := by gcongr
     _ = K₂ * (1 + K₀) * ‖w‖ := by ring
 
@@ -1387,17 +1373,16 @@ theorem
     hKSb x D hx hxb hsol hframe hD hD₀ (a p₀) hax _ β M hb hβ hβb _ u₀ hu₀
   obtain ⟨ug, hug, hugn⟩ := hKAb x D hx hbound hxb hsol hframe hD hD₀ (a p₀) hax g w hw
   obtain ⟨W, hW, hWn⟩ := hCtb _ β M c hb hβ hβb _ ug hug
+  obtain ⟨huSn', huS'⟩ := norm_inclusion_le_and_ae_eq hk1 (Nat.cast_nonneg k) huS
   -- `(Q†)' g = Q† (Q (Z y₀) - Z† (Q† g))`, and the estimate for `Q†` applies.
   obtain ⟨u, hu, hun⟩ := hKAb x D hx hbound hxb hsol hframe hD hD₀ (a p₀) hax _
     (fun i ↦ inclusion hk1 (uS i) - W i) fun i ↦ coeFn_inclusionLp_sub_ae_eq_exp_mul_smul_sub
-      (by rw [inclusionLp_inclusion]; exact huS i) (hW i)
+      (huS' i) (hW i)
   refine ⟨u, fun i ↦ (hu i).trans (.of_forall fun z ↦ ?_), hun.trans ?_⟩
   · rw [fderiv_adjoint_orthogonalRightInverse_apply_eq hx hsol hframe hax ha v g hy₀ horth]
   calc KA * ‖fun i ↦ inclusion hk1 (uS i) - W i‖ ≤ KA * (‖uS‖ + ‖W‖) := by
         gcongr
-        exact (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦ (norm_sub_le _ _).trans
-          (add_le_add ((norm_inclusion_apply_le hk1 _).trans (norm_le_pi_norm uS i))
-            (norm_le_pi_norm W i))
+        exact (norm_sub_le (fun i ↦ inclusion hk1 (uS i)) W).trans (by gcongr)
     _ ≤ KA * (KS * M * (K₀ * ‖w‖) + Ct * M * (KA * ‖w‖)) := by
         gcongr
         · exact huSn.trans (by gcongr)

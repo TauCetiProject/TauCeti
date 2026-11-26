@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -21,6 +22,10 @@ via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving
 * `1`, `algebraMap`, and `A * B` laws (`operatorMultiplication_one`,
   `operatorMultiplication_algebraMap`, `operatorMultiplication_comp_operatorMultiplication`);
 * the `L²` adjoint `adjoint_operatorMultiplication` and `operatorMultiplicationStarAlgHom`;
+* more generally, for a continuous bilinear map `B : E →L[ℝ] F →L[ℝ] G` into real Hilbert
+  spaces, the `L²` adjoint of Hölder multiplication `f ↦ B(b, f)` by `b ∈ L^∞(μ; E)` is Hölder
+  multiplication by the pointwise adjoints `B(b x, ·)†`, that is by `adjointRealCLM ∘L B`
+  (`ContinuousLinearMap.adjoint_holderL_apply`);
 * the symmetry `⟪A f, ι ∘ g⟫ = ⟪ι ∘ f, A g⟫` on `L²` for an `ι`-symmetric symbol `A`
   (`inner_operatorMultiplication_compLpL`, and `inner_compLpL_compLpL` for a constant one);
 * `‖operatorMultiplication p A‖ = ‖A‖` and `isometry_operatorMultiplication` for `[SigmaFinite μ]`.
@@ -343,3 +348,26 @@ def operatorMultiplicationStarAlgHom :
 end Hilbert
 
 end MeasureTheory.Lp
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α E F G : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup G] [InnerProductSpace ℝ G] [CompleteSpace G]
+
+/-- **The adjoint of a Hölder multiplication operator.** For a continuous bilinear map
+`B : E →L[ℝ] F →L[ℝ] G` into real Hilbert spaces and `b ∈ L^∞(μ; E)`, the Hilbert space adjoint
+of multiplication `f ↦ B(b, f)` from `L²(μ; F)` to `L²(μ; G)` is multiplication by the pointwise
+adjoints `B(b x, ·)†`. -/
+theorem adjoint_holderL_apply (B : E →L[ℝ] F →L[ℝ] G) (b : Lp E ∞ μ) (h : Lp G 2 μ) :
+    adjoint (B.holderL μ ∞ 2 2 b) h = (adjointRealCLM ∘L B).holderL μ ∞ 2 2 b h := by
+  refine ext_inner_right ℝ fun f ↦ ?_
+  rw [adjoint_inner_left, L2.inner_def, L2.inner_def, holderL_apply_apply, holderL_apply_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_holder (r := 2) B b f, coeFn_holder (r := 2) (adjointRealCLM ∘L B) b h]
+    with x h₁ h₂
+  rw [h₁, h₂, comp_apply, adjointRealCLM_apply, adjoint_inner_left]
+
+end ContinuousLinearMap
