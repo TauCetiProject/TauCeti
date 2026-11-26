@@ -10,6 +10,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.SmoothSeries
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
@@ -66,6 +67,9 @@ converges in every `C^N` norm, so it is a smooth function, with Fourier coeffici
 * `TauCeti.UnitAddTorus.tsum_smul_mFourier_mem_smoothFunctions` and
   `TauCeti.UnitAddTorus.tsum_smul_mFourier_mem_smoothFunctions_of_bounded`: a trigonometric series
   with rapidly decreasing coefficients is a smooth function.
+* `TauCeti.UnitAddTorus.tsum_smul_mFourier_mem_smoothFunctions_of_norm_le` and
+  `TauCeti.UnitAddTorus.mFourierCoeff_tsum_smul_mFourier_of_norm_le`: a trigonometric series whose
+  coefficients are dominated by those of a smooth function is smooth, with those coefficients.
 * `LinearMap.hasSum_mFourierCoeff_smul_apply`: a continuous linear map applied to a
   smooth function `f` is the sum of its values on the Fourier monomials, weighted by the Fourier
   coefficients of `f`.
@@ -312,7 +316,7 @@ theorem summable_norm_mFourierCoeff_mul_pow {f : UnitAddTorus d → ℂ} (hf : f
     Summable fun n ↦ ‖mFourierCoeff f n‖ * (1 + R * ‖n‖) ^ N := by
   obtain ⟨M, hM⟩ := exists_derivBound hf (N + Fintype.card d + 1)
   refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
-    (summable_pi_int_inv_one_add_norm_pow.mul_left
+    ((summable_pi_int_one_add_norm_pow_inv (lt_add_one _)).mul_left
       ((1 + R) ^ N * (2 ^ (N + Fintype.card d + 2) * M)))
   have h1 : (1 + R * ‖n‖) ^ N ≤ (1 + R) ^ N * (1 + ‖n‖) ^ N := by
     rw [← mul_pow]
@@ -400,7 +404,7 @@ theorem _root_.LinearMap.hasSum_mFourierCoeff_smul_apply {F : Type*} [NormedAddC
   rw [SummationFilter.unconditional_filter, Metric.tendsto_nhds]
   intro δ hδ
   have hε : 0 < δ / (|C| + 1) := by positivity
-  filter_upwards [eventually_derivBound_sub_sum f.2 N hε] with s hs
+  filter_upwards [eventually_derivBound_sub_sum f.property N hε] with s hs
   have hT' := hT (f - ∑ n ∈ s, mFourierCoeff (f : UnitAddTorus d → ℂ) n • mFourierSmooth n) _
     (by simpa using hs)
   rw [dist_eq_norm, ← norm_neg, neg_sub]
@@ -470,7 +474,7 @@ theorem tsum_smul_mFourier_mem_smoothFunctions_of_bounded {c : (d → ℤ) → �
   obtain ⟨C₀, hC₀⟩ := hc 0
   obtain ⟨C, hC⟩ := hc K
   refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
-    (summable_pi_int_inv_one_add_norm_pow.mul_left (2 ^ K * (C₀ + C)))
+    ((summable_pi_int_one_add_norm_pow_inv (lt_add_one _)).mul_left (2 ^ K * (C₀ + C)))
   have hpow : (1 + ‖n‖) ^ K ≤ 2 ^ K * (1 + ‖n‖ ^ K) := by
     calc (1 + ‖n‖) ^ K ≤ 2 ^ (K - 1) * (1 ^ K + ‖n‖ ^ K) := add_pow_le zero_le_one (norm_nonneg n) K
       _ ≤ 2 ^ K * (1 + ‖n‖ ^ K) := by
@@ -490,13 +494,44 @@ theorem tsum_smul_mFourier_mem_smoothFunctions_of_bounded {c : (d → ℤ) → �
     _ = (1 + ‖n‖) ^ K * ‖c n‖ := by ring
     _ ≤ 2 ^ K * (C₀ + C) := hK
 
+/-- If the coefficients `c` are dominated by a constant multiple of the Fourier coefficients of a
+smooth function `g`, then `‖c n‖ * ‖n‖ ^ k` is summable for every `k`. -/
+theorem summable_norm_mul_pow_of_norm_le_mul_norm_mFourierCoeff {g : UnitAddTorus d → ℂ}
+    (hg : g ∈ smoothFunctions d) {c : (d → ℤ) → ℂ} {C : ℝ}
+    (hc : ∀ n, ‖c n‖ ≤ C * ‖mFourierCoeff g n‖) (k : ℕ) :
+    Summable fun n ↦ ‖c n‖ * ‖n‖ ^ k := by
+  refine Summable.of_nonneg_of_le (fun n ↦ by positivity) (fun n ↦ ?_)
+    ((summable_norm_mFourierCoeff_mul_pow hg zero_le_one k).mul_left C)
+  rw [one_mul, ← mul_assoc]
+  exact mul_le_mul (hc n) (pow_le_pow_left₀ (norm_nonneg _) (by linarith) k) (by positivity)
+    ((norm_nonneg _).trans (hc n))
+
+/-- **Coefficients dominated by those of a smooth function give a smooth function.** If
+`‖c n‖ ≤ C * ‖mFourierCoeff g n‖` for a smooth function `g`, then the trigonometric series
+`∑ n, c n • mFourier n` is a smooth function on the torus. -/
+theorem tsum_smul_mFourier_mem_smoothFunctions_of_norm_le {g : UnitAddTorus d → ℂ}
+    (hg : g ∈ smoothFunctions d) {c : (d → ℤ) → ℂ} {C : ℝ}
+    (hc : ∀ n, ‖c n‖ ≤ C * ‖mFourierCoeff g n‖) :
+    (fun z ↦ ∑' n, c n • mFourier n z) ∈ smoothFunctions d :=
+  tsum_smul_mFourier_mem_smoothFunctions
+    (summable_norm_mul_pow_of_norm_le_mul_norm_mFourierCoeff hg hc)
+
+/-- If `‖c n‖ ≤ C * ‖mFourierCoeff g n‖` for a smooth function `g`, then the Fourier coefficients of
+the trigonometric series `∑ n, c n • mFourier n` are the `c n`. -/
+theorem mFourierCoeff_tsum_smul_mFourier_of_norm_le {g : UnitAddTorus d → ℂ}
+    (hg : g ∈ smoothFunctions d) {c : (d → ℤ) → ℂ} {C : ℝ}
+    (hc : ∀ n, ‖c n‖ ≤ C * ‖mFourierCoeff g n‖) (n : d → ℤ) :
+    mFourierCoeff (fun z ↦ ∑' m, c m • mFourier m z) n = c n :=
+  mFourierCoeff_tsum_smul_mFourier
+    (by simpa using summable_norm_mul_pow_of_norm_le_mul_norm_mFourierCoeff hg hc 0) n
+
 /-! ### Fourier coefficients as linear forms -/
 
 /-- The `n`-th Fourier coefficient as a complex-linear form on the smooth functions. -/
 def mFourierCoeffₗ (n : d → ℤ) : smoothFunctions d →ₗ[ℂ] ℂ where
   toFun f := mFourierCoeff (f : UnitAddTorus d → ℂ) n
-  map_add' f g := mFourierCoeff_add (integrable_of_mem_smoothFunctions f.2)
-    (integrable_of_mem_smoothFunctions g.2) n
+  map_add' f g := mFourierCoeff_add (integrable_of_mem_smoothFunctions f.property)
+    (integrable_of_mem_smoothFunctions g.property) n
   map_smul' c _ := mFourierCoeff_smul c _ n
 
 @[simp]

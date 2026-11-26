@@ -83,8 +83,8 @@ omit [Fact p.Prime] in
 @[simp]
 private theorem padicCompletionUnitsNormHom_apply (x : ↑(padicCompletionUnits p L))
     (m : ℕ) :
-    (padicCompletionUnitsNormHom p K L x).1 m =
-      padicCompletionPowerClassNorm p K L m (x.1 m) := by
+    (padicCompletionUnitsNormHom p K L x).val m =
+      padicCompletionPowerClassNorm p K L m (x.val m) := by
   simp only [padicCompletionUnitsNormHom, padicCompletionUnitsLift_apply]
 
 /-- The `ℤ_p`-linear norm `A(L) → A(K)` induced by the field norm at every finite level.
@@ -106,8 +106,8 @@ def padicCompletionUnitsNorm :
 /-- The completed norm is computed by the norm on each power-class coordinate. -/
 @[simp]
 theorem padicCompletionUnitsNorm_apply (x : Additive ↑(padicCompletionUnits p L)) (m : ℕ) :
-    (padicCompletionUnitsNorm p K L x).toMul.1 m =
-      padicCompletionPowerClassNorm p K L m (x.toMul.1 m) := by
+    (padicCompletionUnitsNorm p K L x).toMul.val m =
+      padicCompletionPowerClassNorm p K L m (x.toMul.val m) := by
   simpa only [padicCompletionUnitsNorm, LinearMap.coe_mk, AddHom.coe_mk, toMul_ofMul] using
     padicCompletionUnitsNormHom_apply p K L x.toMul m
 
@@ -138,13 +138,13 @@ theorem padicCompletionUnitsNorm_aut (σ : L ≃ₐ[K] L)
   apply Additive.toMul.injective
   ext m
   simp only [padicCompletionUnitsNorm_apply, toMul_ofMul, padicCompletionUnitsAut_apply]
-  induction x.1 m using QuotientGroup.induction_on with
+  induction x.val m using QuotientGroup.induction_on with
   | H y =>
     simp only [padicCompletionPowerClassMap_mk, padicCompletionPowerClassNorm_mk]
     simpa only [padicCompletionUnitsOf_apply, QuotientGroup.mk'_apply,
       RingHom.toMonoidHom_eq_coe,
       RingEquiv.toRingHom_eq_coe, AlgEquiv.toRingEquiv_toRingHom] using
-      congrArg (fun z : ↑(padicCompletionUnits p K) ↦ z.1 m)
+      congrArg (fun z : ↑(padicCompletionUnits p K) ↦ z.val m)
       (padicCompletionUnitsOf_norm_algEquiv p K L σ y)
 
 /-- The group algebra acts through its augmentation after applying the completed norm.

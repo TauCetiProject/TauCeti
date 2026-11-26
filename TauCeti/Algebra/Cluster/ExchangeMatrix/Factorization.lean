@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation.Basic
 public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Matrix.RowCol
 
@@ -224,13 +224,15 @@ theorem matrixMutation_eq_mul (hkk : B (row k) k = 0) (hε : ε = 1 ∨ ε = -1)
     linear_combination (B (row k) j)⁻ * (posPart_sub_negPart (B i k)) +
       (B i k)⁺ * (posPart_sub_negPart (B (row k) j))
 
-omit [Fintype I] in
+omit [Fintype I] [Fintype K] in
 /-- Mutation preserves rank after scalar change to any commutative ring. In particular,
 choosing `R = ℚ` gives preservation of rational column rank. -/
 theorem rank_matrixMutation [Finite I] {R : Type*} [CommRing R] (hkk : B (row k) k = 0) :
     ((matrixMutation row B k).map (Int.castRingHom R)).rank =
       (B.map (Int.castRingHom R)).rank := by
   let := Fintype.ofFinite I
+  have : Finite K := Finite.of_injective row row.injective
+  let := Fintype.ofFinite K
   have hL : IsUnit ((matrixMutationLeft row B k 1).map (Int.castRingHom R)).det := by
     apply Matrix.isUnit_det_of_left_inverse
     rw [← Matrix.map_mul, matrixMutationLeft_mul_self]
@@ -245,15 +247,16 @@ theorem rank_matrixMutation [Finite I] {R : Type*} [CommRing R] (hkk : B (row k)
 omit [Fintype I] [Fintype K] in
 /-- Mutation preserves independence of the columns after scalar change. This applies in
 particular to rational independence, with no full-rank assumption on the mutable block. -/
-theorem linearIndependent_col_matrixMutation_iff [Finite I] [Finite K] {R : Type*}
-    [CommRing R] [Nontrivial R]
+theorem linearIndependent_col_matrixMutation_iff [Finite I] {R : Type*} [CommRing R]
     (hkk : B (row k) k = 0) :
     LinearIndependent R ((matrixMutation row B k).map (Int.castRingHom R)).col ↔
       LinearIndependent R (B.map (Int.castRingHom R)).col := by
-  let := Fintype.ofFinite I
-  let := Fintype.ofFinite K
-  simp_rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank,
-    ← rank_eq_finrank_span_cols, rank_matrixMutation row B k hkk]
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact iff_of_true linearIndependent_of_subsingleton linearIndependent_of_subsingleton
+  · have : Finite K := Finite.of_injective row row.injective
+    let := Fintype.ofFinite K
+    simp only [linearIndependent_iff_card_eq_finrank_span, Set.finrank,
+      Matrix.finrank_span_range_col, rank_matrixMutation row B k hkk]
 
 end Products
 

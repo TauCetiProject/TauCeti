@@ -5,11 +5,15 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.RepresentationTheory.Coinvariants
 public import TauCeti.RepresentationTheory.Coset
 public import TauCeti.RepresentationTheory.Rep.ChangeOfGroup
 public import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.Algebra.Module.NatInt
+import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The relative norm and the relative transfer of a subgroup
@@ -43,10 +47,25 @@ subgroup in the two degrees where Tate cohomology is not ordinary group cohomolo
 
 * `Representation.relNorm_comp_norm`: `N_{G/H} ∘ N_H = N_G`.
 * `Representation.norm_comp_relTransfer`: `N_H ∘ N_{G/H}' = N_G`.
+* `Representation.IntertwiningMap.map_relNorm`, `Representation.IntertwiningMap.map_relNorm_comp`:
+  intertwining maps commute with the relative norm, also of restricted representations.
 * `Representation.relNorm_apply_eq_self`: the relative norm carries `H`-fixed vectors to `G`-fixed
   vectors, over any semiring.
 * `Representation.relNorm_apply_of_forall_apply_eq`: on `G`-fixed vectors the relative norm is
   `[G : H] • ·`, over any semiring.
+* `Representation.relNorm_apply_eq_relIndex_nsmul_relNorm_apply`,
+  `Representation.inverse_index_smul_relNorm_apply_of_le`: along a tower `H' ≤ H`, on `H`-fixed
+  vectors the relative norm of `H'` is `[H : H']` times the relative norm of `H`, so the relative
+  norm normalized by the index does not depend on the subgroup.
+* `Representation.relNorm_sub_index_nsmul_mem`: modulo the augmentation submodule of `G` the
+  relative norm is `[G : H] • ·`.
+* `Representation.relNorm_linHom_apply`, `Representation.relNorm_linHom_apply_comm`,
+  `Representation.relNorm_linHom_mem`, `Representation.relNorm_linHom_apply_of_mem`: relative-norm
+  averaging of linear maps under conjugation, sending `H`-equivariant maps to `G`-equivariant maps
+  and scaling projections onto `G`-invariant submodules by `[G : H]`.
+* `Representation.isProj_inv_index_smul_relNorm_linHom`: when `[G : H]` is invertible, the
+  normalized relative norm of a projection onto a `G`-invariant submodule is again a projection
+  onto it.
 * `Representation.relTransfer_mem_coinvariantsKer`: the relative transfer carries the augmentation
   submodule of `G` into the augmentation submodule of `H`.
 * `Representation.relTransfer_sub_index_nsmul_mem`: modulo the augmentation submodule of `G` the
@@ -101,6 +120,23 @@ theorem relNorm_apply (x : V) : relNorm ρ H x = ∑ q : G ⧸ H, ρ q.out x := 
 chosen coset representatives. -/
 theorem relTransfer_apply (x : V) : relTransfer ρ H x = ∑ q : G ⧸ H, ρ q.out⁻¹ x := by
   simp [relTransfer]
+
+variable (H) in
+/-- An intertwining map commutes with the relative norm. -/
+@[simp]
+theorem IntertwiningMap.map_relNorm {W : Type*} [AddCommMonoid W] [Module R W]
+    {σ : Representation R G W} (f : IntertwiningMap ρ σ) (x : V) :
+    f (relNorm ρ H x) = relNorm σ H (f x) := by
+  simp only [relNorm_apply, map_sum, f.isIntertwining]
+
+/-- An intertwining map of representations of `G` commutes with the relative norm of the
+restrictions along `φ : K →* G`. -/
+@[simp]
+theorem IntertwiningMap.map_relNorm_comp {K W : Type*} [Group K] [AddCommMonoid W] [Module R W]
+    {σ : Representation R G W} (f : IntertwiningMap ρ σ) (φ : K →* G) (L : Subgroup K)
+    [Fintype (K ⧸ L)] (x : V) :
+    f (relNorm (ρ.comp φ) L x) = relNorm (σ.comp φ) L (f x) := by
+  simpa only [IntertwiningMap.coe_res] using (f.res φ).map_relNorm L x
 
 end Defs
 
@@ -187,9 +223,108 @@ theorem relNorm_apply_of_forall_apply_eq {x : V} (hx : ∀ g : G, ρ g x = x) :
     Finset.sum_const, Finset.card_univ]
   simp [Subgroup.index, Nat.card_eq_fintype_card]
 
+/-- **The relative norm along a tower.** For subgroups `H' ≤ H` of finite index and an `H`-fixed
+vector `x`, the relative norm of `H'` is `[H : H']` times the relative norm of `H`: each coset of
+`H` is the union of `[H : H']` cosets of `H'`. -/
+theorem relNorm_apply_eq_relIndex_nsmul_relNorm_apply {H' : Subgroup G} [Fintype (G ⧸ H')]
+    (hle : H' ≤ H) {x : V} (hx : ∀ h : H, ρ h x = x) :
+    relNorm ρ H' x = H'.relIndex H • relNorm ρ H x := by
+  have : H'.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
+  have : H.FiniteIndex := Subgroup.finiteIndex_of_le hle
+  -- Let `G` act on `V` through `ρ`, so that `g • y` is `ρ g y` by definition.
+  let _ : MulAction G V := MulAction.compHom V ρ
+  have hsmul (g : G) (y : V) : g • y = ρ g y := rfl
+  have key := Subgroup.sum_out_smul_eq_relIndex_nsmul hle (m := x) fun h hh ↦
+    (hsmul h x).trans (hx ⟨h, hh⟩)
+  simp only [hsmul] at key
+  -- `key` sums over the instances `Subgroup.fintypeQuotientOfFiniteIndex`; any two `Fintype`
+  -- instances on a type are equal, so replace the given ones by them.
+  have e' : ‹Fintype (G ⧸ H')› = Subgroup.fintypeQuotientOfFiniteIndex := Subsingleton.elim _ _
+  have e : ‹Fintype (G ⧸ H)› = Subgroup.fintypeQuotientOfFiniteIndex := Subsingleton.elim _ _
+  rw [relNorm_apply, relNorm_apply, e', e, key]
+
+/-- **The normalized relative norm does not depend on the subgroup.** For subgroups `H' ≤ H` with
+`[G : H']` invertible and an `H`-fixed vector `x`, dividing the relative norm by the index gives
+the same vector for `H'` and for `H`. -/
+theorem inverse_index_smul_relNorm_apply_of_le {H' : Subgroup G} [Fintype (G ⧸ H')]
+    (hle : H' ≤ H) (hu : IsUnit (H'.index : R)) {x : V} (hx : ∀ h : H, ρ h x = x) :
+    Ring.inverse (H'.index : R) • relNorm ρ H' x = Ring.inverse (H.index : R) • relNorm ρ H x := by
+  rw [← Subgroup.relIndex_mul_index hle, Nat.cast_mul] at hu
+  have hr := ((Nat.cast_commute _ _).isUnit_mul_iff.1 hu).1
+  rw [relNorm_apply_eq_relIndex_nsmul_relNorm_apply ρ hle hx, ← Subgroup.relIndex_mul_index hle,
+    Nat.cast_mul, Ring.inverse_mul (Or.inl hr), mul_smul, Ring.inverse_natCast_smul_nsmul hr]
+
 end FixedVectors
 
 end Semiring
+
+section LinHom
+
+variable [CommSemiring R] [AddCommMonoid V] [Module R V] {H : Subgroup G} [Fintype (G ⧸ H)]
+
+/-- The relative norm of the conjugation action on linear maps between two representations sums
+`σ q.out ∘ f ∘ ρ q.out⁻¹` over the chosen coset representatives of `H`. -/
+theorem relNorm_linHom_apply {W : Type*} [AddCommMonoid W] [Module R W]
+    (ρ : Representation R G V) (σ : Representation R G W) (f : V →ₗ[R] W) (x : V) :
+    relNorm (linHom ρ σ) H f x = ∑ q : G ⧸ H, σ q.out (f (ρ q.out⁻¹ x)) := by
+  simp only [relNorm_apply, LinearMap.sum_apply, linHom_apply, LinearMap.comp_apply]
+
+/-- Averaging an `H`-equivariant linear map `f` over a left transversal of `H` via `relNorm`
+produces a `G`-equivariant linear map. -/
+theorem relNorm_linHom_apply_comm {W : Type*} [AddCommMonoid W] [Module R W]
+    (ρ : Representation R G V) (σ : Representation R G W)
+    {f : V →ₗ[R] W} (hf : ∀ h : H, ∀ x : V, f (ρ h x) = σ h (f x))
+    (g : G) (x : V) :
+    relNorm (linHom ρ σ) H f (ρ g x) = σ g (relNorm (linHom ρ σ) H f x) := by
+  have hfix (h : H) : linHom ρ σ h f = f := by
+    ext y
+    rw [linHom_apply, LinearMap.comp_apply, LinearMap.comp_apply, ← hf h,
+      ← mul_apply_eq_comp (ρ h), ← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
+  have h := LinearMap.congr_fun (relNorm_apply_eq_self (linHom ρ σ) hfix g) (ρ g x)
+  rw [linHom_apply, LinearMap.comp_apply, LinearMap.comp_apply, ← mul_apply_eq_comp (ρ g⁻¹),
+    ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self] at h
+  exact h.symm
+
+/-- If `S` is a `G`-invariant submodule and `f` maps into `S`, then `relNorm (linHom ρ ρ) H f`
+also maps into `S`. -/
+theorem relNorm_linHom_mem (ρ : Representation R G V) {S : Submodule R V}
+    (hS : ∀ g : G, ∀ x ∈ S, ρ g x ∈ S) {f : V →ₗ[R] V} (hf : ∀ x : V, f x ∈ S) (x : V) :
+    relNorm (linHom ρ ρ) H f x ∈ S := by
+  rw [relNorm_linHom_apply]
+  exact Submodule.sum_mem S fun q _ ↦ hS q.out _ (hf _)
+
+/-- If `S` is a `G`-invariant submodule and `f` fixes `S` pointwise, then `relNorm (linHom ρ ρ) H f`
+acts on `S` as multiplication by the index `[G : H]`. -/
+theorem relNorm_linHom_apply_of_mem (ρ : Representation R G V) {S : Submodule R V}
+    (hS : ∀ g : G, ∀ x ∈ S, ρ g x ∈ S) {f : V →ₗ[R] V} (hf : ∀ x ∈ S, f x = x)
+    {x : V} (hx : x ∈ S) :
+    relNorm (linHom ρ ρ) H f x = H.index • x := by
+  have hterm (q : G ⧸ H) : ρ q.out (f (ρ q.out⁻¹ x)) = x := by
+    rw [hf _ (hS q.out⁻¹ x hx), ← mul_apply_eq_comp (ρ q.out), ← map_mul, mul_inv_cancel, map_one,
+      one_apply_eq_self]
+  rw [relNorm_linHom_apply, Finset.sum_congr rfl fun q _ ↦ hterm q, Finset.sum_const,
+    Finset.card_univ, Subgroup.index_eq_card, Nat.card_eq_fintype_card]
+
+end LinHom
+
+section Semifield
+
+variable [Semifield R] [AddCommMonoid V] [Module R V] {H : Subgroup G} [Fintype (G ⧸ H)]
+
+/-- **Averaging a projection.** If `S` is a `G`-invariant submodule, `f` is a projection onto `S`
+and the index `[G : H]` is invertible, then `[G : H]⁻¹ • relNorm (linHom ρ ρ) H f` is again a
+projection onto `S`. It is `G`-equivariant when `f` is `H`-equivariant, by
+`Representation.relNorm_linHom_apply_comm`. -/
+theorem isProj_inv_index_smul_relNorm_linHom (ρ : Representation R G V) {S : Submodule R V}
+    (hS : ∀ g : G, ∀ x ∈ S, ρ g x ∈ S)
+    {f : V →ₗ[R] V} (hf : LinearMap.IsProj S f) (hH : (H.index : R) ≠ 0) :
+    LinearMap.IsProj S ((H.index : R)⁻¹ • relNorm (linHom ρ ρ) H f) where
+  map_mem x := S.smul_mem _ (relNorm_linHom_mem ρ hS hf.map_mem x)
+  map_id x hx := by
+    rw [LinearMap.smul_apply, relNorm_linHom_apply_of_mem ρ hS hf.map_id hx,
+      ← Nat.cast_smul_eq_nsmul R, smul_smul, inv_mul_cancel₀ hH, one_smul]
+
+end Semifield
 
 section Ring
 
@@ -225,11 +360,14 @@ variable [Fintype (G ⧸ H)]
 index. -/
 theorem relTransfer_sub_index_nsmul_mem (x : V) :
     relTransfer ρ H x - H.index • x ∈ Coinvariants.ker ρ := by
-  have hrw : relTransfer ρ H x - H.index • x = ∑ q : G ⧸ H, (ρ (q.out : G)⁻¹ x - x) := by
-    rw [relTransfer_apply, Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ]
-    simp [Subgroup.index, Nat.card_eq_fintype_card]
-  rw [hrw]
-  exact Submodule.sum_mem _ fun q _ => Coinvariants.sub_mem_ker _ _
+  rw [relTransfer_apply, H.index_eq_card, Nat.card_eq_fintype_card, ← Finset.card_univ]
+  exact sum_apply_sub_card_nsmul_mem_coinvariantsKer ρ _ (fun q : G ⧸ H ↦ (q.out : G)⁻¹) x
+
+/-- Modulo the augmentation submodule of `G`, the relative norm is multiplication by the index. -/
+theorem relNorm_sub_index_nsmul_mem (x : V) :
+    relNorm ρ H x - H.index • x ∈ Coinvariants.ker ρ := by
+  rw [relNorm_apply, H.index_eq_card, Nat.card_eq_fintype_card, ← Finset.card_univ]
+  exact sum_apply_sub_card_nsmul_mem_coinvariantsKer ρ _ (fun q : G ⧸ H ↦ q.out) x
 
 /-- The relative transfer carries the augmentation submodule of `G` into the augmentation
 submodule of `H`; it is therefore the transfer of `H` on coinvariants. -/

@@ -17,10 +17,11 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 A morphism of Serre graphs `f : Γ.Hom Δ` sends closed paths at `v` to closed paths at
 `f.mapV v`, and backtrack-homotopic paths to backtrack-homotopic paths. It therefore induces a
 homomorphism `PathGroup.map f` of reduced path groups, functorially in `f`. A morphism injective
-on darts sends reduced paths to reduced paths, so the induced homomorphism is injective; in
-particular the reduced path group of a subgraph embeds in that of the ambient graph, with image
-the reduced loops all of whose darts lie in the subgraph. Every reduced loop at `v` comes from the
-based core at `v`, and lies in a finite connected based subgraph.
+on the darts issuing from each vertex sends reduced paths to reduced paths, so the induced
+homomorphism is injective; in particular the reduced path group of a subgraph embeds in that of
+the ambient graph, with image the reduced loops all of whose darts lie in the subgraph. Every
+reduced loop at `v` comes from the based core at `v`, and lies in a finite connected based
+subgraph.
 
 A path `p` from `v` to `w` gives the change of base vertex `PathGroup.mulEquivOfPath p`,
 `g ↦ p⁻¹ g p`, which is natural in the graph.
@@ -40,8 +41,8 @@ tree loops to tree loops.
 ## Main results
 
 * `TauCeti.SerreGraph.PathGroup.map_id`, `TauCeti.SerreGraph.PathGroup.map_comp`: functoriality.
-* `TauCeti.SerreGraph.PathGroup.map_injective`: a morphism injective on darts induces an
-  injective homomorphism.
+* `TauCeti.SerreGraph.PathGroup.map_injective`: a morphism injective on the darts issuing from
+  each vertex induces an injective homomorphism.
 * `TauCeti.SerreGraph.PathGroup.mem_range_map_restrictInclusion_iff`: the image of the reduced
   path group of a subgraph.
 * `TauCeti.SerreGraph.PathGroup.exists_finite_connected_mem_range_map`: every reduced loop lies in
@@ -148,23 +149,25 @@ composite. -/
       map (g.comp f) (by rw [Hom.comp_mapV, Function.comp_apply, hf, hg]) a := by
   rw [map_comp g f hf hg, MonoidHom.comp_apply]
 
-/-! ### Morphisms injective on darts -/
+/-! ### Morphisms injective on the darts issuing from each vertex -/
 
-/-- A morphism injective on darts sends a reduced closed path to its image, which is again
-reduced. -/
-theorem toPath_map_of_injective (f : Γ.Hom Δ) (hf : Function.Injective f.mapE) {v : Γ.V}
+/-- A morphism injective on the darts issuing from each vertex sends a reduced closed path to its
+image, which is again reduced. -/
+theorem toPath_map_of_injective (f : Γ.Hom Δ)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e') {v : Γ.V}
     {w : Δ.V} (h : f.mapV v = w) (g : PathGroup Γ v) :
     (map f h g).toPath = (f.toPrefunctor.mapPath g.toPath).cast
       ((f.toPrefunctor_obj v).trans h) ((f.toPrefunctor_obj v).trans h) := by
   have h' : f.toPrefunctor.obj v = w := h
   subst h'
   rw [map_apply, toPath_ofPath, Quiver.Path.cast_rfl_rfl]
-  exact Path.reduce_eq_self_of_isReduced Δ _ ((f.isReduced_mapPath_iff Γ hf _).mpr g.isReduced)
+  exact Path.reduce_eq_self_of_isReduced Δ _ (f.isReduced_mapPath hf _ g.isReduced)
 
-/-- A morphism of Serre graphs injective on darts induces an injective homomorphism of reduced
-path groups. -/
-theorem map_injective (f : Γ.Hom Δ) (hf : Function.Injective f.mapE) {v : Γ.V} {w : Δ.V}
-    (h : f.mapV v = w) : Function.Injective (map f h) := by
+/-- A morphism of Serre graphs injective on the darts issuing from each vertex induces an
+injective homomorphism of reduced path groups. -/
+theorem map_injective (f : Γ.Hom Δ)
+    (hf : ∀ e e' : Γ.E, Γ.src e = Γ.src e' → f.mapE e = f.mapE e' → e = e') {v : Γ.V}
+    {w : Δ.V} (h : f.mapV v = w) : Function.Injective (map f h) := by
   have h' : f.toPrefunctor.obj v = w := h
   subst h'
   refine (injective_iff_map_eq_one _).mpr fun g hg => ?_
@@ -182,7 +185,7 @@ variable (S : Set Γ.E) (hS : ∀ e ∈ S, Γ.rev e ∈ S) {v w : Γ.V}
 graph. -/
 theorem map_restrictInclusion_injective :
     Function.Injective (map (Γ.restrictInclusion S hS) h) :=
-  map_injective _ Subtype.val_injective _
+  map_injective _ (fun _ _ _ h => Subtype.val_injective h) _
 
 /-- The image of the reduced path group of a subgraph consists of the reduced loops all of
 whose darts lie in the subgraph. -/
@@ -192,7 +195,7 @@ theorem mem_range_map_restrictInclusion_iff (g : PathGroup Γ w) :
   subst h'
   constructor
   · rintro ⟨a, rfl⟩ e he
-    rw [toPath_map_of_injective (Γ.restrictInclusion S hS) Subtype.val_injective,
+    rw [toPath_map_of_injective (Γ.restrictInclusion S hS) (fun _ _ _ h => Subtype.val_injective h),
       Path.darts_cast] at he
     exact Γ.mem_of_mem_darts_mapPath S hS a.toPath he
   · intro hg
@@ -419,7 +422,7 @@ restricted tree to the tree loops of the tree. -/
 @[simp] theorem map_restrictInclusion_loop (hTS : T.darts ⊆ S) {w : Γ.V}
     (h : (Γ.restrictInclusion S hS).mapV v = w) (e : (Γ.restrict S hS).E) :
     PathGroup.map (Γ.restrictInclusion S hS) h ((T.restrict S hS hTS).loop v e) =
-      T.loop w e.1 := by
+      T.loop w e.val := by
   simpa using (T.restrict S hS hTS).map_loop v (Γ.restrictInclusion S hS) T
     (fun _ he => (T.mem_restrict_darts S hS hTS).mp he) h e
 

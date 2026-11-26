@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 import Mathlib.Analysis.MeanInequalities
+import Mathlib.MeasureTheory.Function.LpSpace.Complete
 
 /-!
 # `Lʳ` seminorms of the pieces of a function
@@ -22,11 +23,17 @@ in `ℝᴺ` their plain sum satisfies
 sets, and for `r = ∞` it is the bound of each piece by `‖g‖_∞`. Such sums arise when a function is
 cut into many pieces of comparable size, as in the dyadic decompositions behind the Christ–Kiselev
 lemma.
+
+A function `f` in `Lᵖ(t ∩ s)` extends by zero off a measurable set `s` to a function in `Lᵖ(t)`
+(`TauCeti.memLp_indicator_of_memLp_restrict_inter`).
+
+Conversely, a bound `M` on the `Lᵖ` seminorms of the restrictions `1_{A k} f` to an exhausting
+sequence of measurable sets bounds `‖f‖_p` (`TauCeti.eLpNorm_le_of_forall_eLpNorm_indicator_le`).
 -/
 
 public section
 
-open MeasureTheory
+open MeasureTheory Filter
 open scoped ENNReal
 
 namespace TauCeti
@@ -34,7 +41,8 @@ namespace TauCeti
 /-- **Hölder's inequality for disjoint pieces.** For `1 ≤ r`, the `Lʳ` seminorms of the restrictions
 of `g` to the members of a finite family of `N` pairwise disjoint measurable sets add up to at most
 `N^{1 - 1/r} ‖g‖_r`. -/
-theorem sum_eLpNorm_indicator_le {α ι F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
+theorem sum_eLpNorm_indicator_le {α ι F : Type*} [MeasurableSpace α] [TopologicalSpace F]
+    [ESeminormedAddMonoid F]
     {μ : Measure α} {r : ℝ≥0∞} (hr : 1 ≤ r) (s : Finset ι) {J : ι → Set α}
     (hJ : ∀ i ∈ s, MeasurableSet (J i)) (hd : (s : Set ι).PairwiseDisjoint J) (g : α → F) :
     ∑ i ∈ s, eLpNorm ((J i).indicator g) r μ ≤
@@ -80,5 +88,31 @@ theorem sum_eLpNorm_indicator_le {α ι F : Type*} [MeasurableSpace α] [NormedA
         rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul]
         congr 2
         field_simp
+
+/-- A function in `Lᵖ(t ∩ s)`, extended by zero off the measurable set `s`, lies in `Lᵖ(t)`. -/
+theorem memLp_indicator_of_memLp_restrict_inter {α ε : Type*} [MeasurableSpace α]
+    [TopologicalSpace ε] [ESeminormedAddMonoid ε] {μ : Measure α} {p : ℝ≥0∞} {s t : Set α}
+    {f : α → ε} (hs : MeasurableSet s) (hf : MemLp f p (μ.restrict (t ∩ s))) :
+    MemLp (s.indicator f) p (μ.restrict t) := by
+  rwa [memLp_indicator_iff_restrict hs.nullMeasurableSet, Measure.restrict_restrict hs,
+    Set.inter_comm]
+
+/-- **Exhaustion.** If the restrictions of `f` to measurable sets `A k` have `Lᵖ` seminorm at
+most `M`, and almost every point where `f` does not vanish lies in `A k` for all large `k`, then
+`‖f‖_p ≤ M`. -/
+theorem eLpNorm_le_of_forall_eLpNorm_indicator_le {α E : Type*} [MeasurableSpace α]
+    [SeminormedAddGroup E] {μ : Measure α} {p : ℝ≥0∞} {f : α → E}
+    (hf : AEStronglyMeasurable f μ) {A : ℕ → Set α} (hA : ∀ k, MeasurableSet (A k)) {M : ℝ≥0∞}
+    (hM : ∀ k, eLpNorm ((A k).indicator f) p μ ≤ M)
+    (hmem : ∀ᵐ x ∂μ, f x ≠ 0 → ∀ᶠ k in atTop, x ∈ A k) : eLpNorm f p μ ≤ M := by
+  refine Lp.eLpNorm_le_of_ae_tendsto (u := atTop) (f := fun k ↦ (A k).indicator f)
+    (Eventually.of_forall hM) (fun k ↦ hf.indicator (hA k)) hf ?_
+  filter_upwards [hmem] with x hx
+  refine tendsto_const_nhds.congr' ?_
+  by_cases h0 : f x = 0
+  · exact Eventually.of_forall fun k ↦
+      ((Set.indicator_apply_eq_self (s := A k) (f := f)).2 fun _ ↦ h0).symm
+  · filter_upwards [hx h0] with k hk
+    rw [Set.indicator_of_mem hk]
 
 end TauCeti

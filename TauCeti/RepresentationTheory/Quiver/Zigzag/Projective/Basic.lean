@@ -76,6 +76,55 @@ theorem isIdempotentElem_zigzagVertexIdempotent (i : V) :
     IsIdempotentElem (zigzagVertexIdempotent k G i) :=
   zigzagMk_vertexIdempotent_mul_self k G i
 
+/-- The vertex idempotent has degree zero. -/
+theorem zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero (i : V) :
+    zigzagVertexIdempotent k G i ∈ zigzagIntegerGrade k G 0 := by
+  -- Normalize the integer zero to the cast required by the extension-by-zero lemma.
+  rw [show (0 : ℤ) = (0 : ℕ) from rfl, zigzagIntegerGrade_ofNat]
+  exact zigzagMk_mem_zigzagGrade k G (PathAlgebra.vertexIdempotent_mem_grade_zero _)
+
+/-- On the left, a vertex idempotent cuts an element of path length two down to its volume
+coordinate at that vertex. -/
+theorem zigzagMk_vertexIdempotent_mul_of_mem_zigzagIntegerGrade_two
+    (hns : ∀ i : V, ∃ j, G.Adj i j) {y : nonisolatedZigzagQuotient k G}
+    (hy : y ∈ zigzagIntegerGrade k G 2) (v : V) :
+    zigzagMk k G (vertexIdempotent k (vertex G v)) * y =
+      (zigzagBasis k G hns).coord (.inr (.inr v)) y • zigzagVolume k G v := by
+  classical
+  rw [← Nat.cast_ofNat (R := ℤ) (n := 2), zigzagIntegerGrade_ofNat,
+    zigzagGrade_two_eq_span_range_zigzagVolume] at hy
+  induction hy using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v', rfl⟩ := hx
+    rw [zigzagBasis_coord_zigzagVolume]
+    rcases eq_or_ne v' v with rfl | h
+    · simp
+    · rw [zigzagMk_vertexIdempotent_mul_zigzagVolume_of_ne k G h.symm, ite_eq_right h, zero_smul]
+  | zero => simp
+  | add x y _ _ hx hy => rw [mul_add, hx, hy, map_add, add_smul]
+  | smul r x _ hx => rw [mul_smul_comm, hx, map_smul, smul_eq_mul, mul_smul]
+
+/-- On the right, a vertex idempotent cuts an element of path length two down to its volume
+coordinate at that vertex. -/
+theorem mul_zigzagMk_vertexIdempotent_of_mem_zigzagIntegerGrade_two
+    (hns : ∀ i : V, ∃ j, G.Adj i j) {y : nonisolatedZigzagQuotient k G}
+    (hy : y ∈ zigzagIntegerGrade k G 2) (v : V) :
+    y * zigzagMk k G (vertexIdempotent k (vertex G v)) =
+      (zigzagBasis k G hns).coord (.inr (.inr v)) y • zigzagVolume k G v := by
+  classical
+  rw [← Nat.cast_ofNat (R := ℤ) (n := 2), zigzagIntegerGrade_ofNat,
+    zigzagGrade_two_eq_span_range_zigzagVolume] at hy
+  induction hy using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨v', rfl⟩ := hx
+    rw [zigzagBasis_coord_zigzagVolume]
+    rcases eq_or_ne v' v with rfl | h
+    · simp
+    · rw [zigzagVolume_mul_zigzagMk_vertexIdempotent_of_ne k G h.symm, ite_eq_right h, zero_smul]
+  | zero => simp
+  | add x y _ _ hx hy => rw [add_mul, hx, hy, map_add, add_smul]
+  | smul r x _ hx => rw [smul_mul_assoc, hx, map_smul, smul_eq_mul, mul_smul]
+
 /-- The left projective of the zigzag relation quotient at `i`, namely the principal left ideal
 `Z e_i`. -/
 noncomputable def zigzagProjective (i : V) : Ideal (nonisolatedZigzagQuotient k G) :=
@@ -232,10 +281,10 @@ noncomputable def zigzagProjectiveBasisFun (i : V) :
     ZigzagProjectiveBasisIndex G i → zigzagProjective k G i
   | .inl _ => zigzagProjectiveGenerator k G i
   | .inr (.inl d) =>
-      ⟨zigzagMk k G (ofArrow (arrow G d.1.adj)),
+      ⟨zigzagMk k G (ofArrow (arrow G d.val.adj)),
         (mem_zigzagProjective_iff k G).2 (by
-          simpa only [zigzagVertexIdempotent, d.2] using
-            zigzagMk_ofArrow_mul_vertexIdempotent k G d.1)⟩
+          simpa only [zigzagVertexIdempotent, d.property] using
+            zigzagMk_ofArrow_mul_vertexIdempotent k G d.val)⟩
   | .inr (.inr _) =>
       ⟨zigzagVolume k G i,
         (mem_zigzagProjective_iff k G).2
@@ -256,7 +305,7 @@ theorem coe_zigzagProjectiveBasisFun_inl (i : V) (a : Unit) :
 @[simp]
 theorem coe_zigzagProjectiveBasisFun_inr_inl (i : V) (d : {d : G.Dart // d.fst = i}) :
     (zigzagProjectiveBasisFun k G i (.inr (.inl d)) : nonisolatedZigzagQuotient k G) =
-      zigzagMk k G (ofArrow (arrow G d.1.adj)) :=
+      zigzagMk k G (ofArrow (arrow G d.val.adj)) :=
   (rfl)
 
 @[simp]
@@ -270,7 +319,7 @@ private def zigzagProjectiveBasisIndexEmbedding (i : V) :
     ZigzagProjectiveBasisIndex G i ↪ ZigzagBasisIndex G where
   toFun
     | .inl _ => .inl i
-    | .inr (.inl d) => .inr (.inl d.1)
+    | .inr (.inl d) => .inr (.inl d.val)
     | .inr (.inr _) => .inr (.inr i)
   inj' a b h := by
     rcases a with _ | d | _
@@ -292,7 +341,7 @@ private def zigzagProjectiveBasisIndexEmbedding (i : V) :
 theorem linearIndependent_zigzagProjectiveBasisFun (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V) :
     LinearIndependent k (zigzagProjectiveBasisFun k G i) := by
   let val : zigzagProjective k G i →ₗ[k] nonisolatedZigzagQuotient k G :=
-    { toFun := fun x => x.1
+    { toFun := fun x => x.val
       map_add' := fun _ _ => rfl
       map_smul' := fun _ _ => rfl }
   refine LinearIndependent.of_comp val ?_
@@ -306,7 +355,7 @@ theorem linearIndependent_zigzagProjectiveBasisFun (hns : ∀ i : V, ∃ j, G.Ad
           nonisolatedZigzagQuotient k G) = zigzagBasisFun k G (.inl i)
       rw [coe_zigzagProjectiveBasisFun_inl, zigzagBasisFun_inl]
     · change (zigzagProjectiveBasisFun k G i (.inr (.inl d)) :
-          nonisolatedZigzagQuotient k G) = zigzagBasisFun k G (.inr (.inl d.1))
+          nonisolatedZigzagQuotient k G) = zigzagBasisFun k G (.inr (.inl d.val))
       rw [coe_zigzagProjectiveBasisFun_inr_inl, zigzagBasisFun_inr_inl]
     · change (zigzagProjectiveBasisFun k G i (.inr (.inr ())) :
           nonisolatedZigzagQuotient k G) = zigzagBasisFun k G (.inr (.inr i))
@@ -364,7 +413,7 @@ private theorem mul_zigzagVertexIdempotent_mem_span_range_zigzagProjectiveBasisF
 theorem span_range_zigzagProjectiveBasisFun_eq_top (i : V) :
     Submodule.span k (Set.range (zigzagProjectiveBasisFun k G i)) = ⊤ := by
   let val : zigzagProjective k G i →ₗ[k] nonisolatedZigzagQuotient k G :=
-    { toFun := fun x => x.1
+    { toFun := fun x => x.val
       map_add' := fun _ _ => rfl
       map_smul' := fun _ _ => rfl }
   let S : Submodule k (nonisolatedZigzagQuotient k G) :=
@@ -377,7 +426,7 @@ theorem span_range_zigzagProjectiveBasisFun_eq_top (i : V) :
     · rintro _ ⟨x, rfl⟩
       -- Expose the local inclusion so the fixed-point membership criterion applies.
       change (x : nonisolatedZigzagQuotient k G) ∈ S
-      rw [← (mem_zigzagProjective_iff k G).mp x.2]
+      rw [← (mem_zigzagProjective_iff k G).mp x.property]
       exact mul_zigzagVertexIdempotent_mem_span_range_zigzagProjectiveBasisFun k G i x
   apply Submodule.map_injective_of_injective (f := val) Subtype.val_injective
   rw [Submodule.map_top, ← hS, Submodule.map_span, ← Set.range_comp]

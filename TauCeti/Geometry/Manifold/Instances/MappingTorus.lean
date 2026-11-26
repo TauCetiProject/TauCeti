@@ -70,6 +70,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   `C^n` local diffeomorphism.
 * `TauCeti.SmoothMappingTorus.mk_eq_mk_iff`, `TauCeti.SmoothMappingTorus.mk_add_intCast`: when two
   points of `ℝ × M` have the same class.
+* `TauCeti.SmoothMappingTorus.uncurry_mk_image_Icc_prod_univ`: every point is the class of a point
+  of `[0, 1] × M`, so the mapping torus of a diffeomorphism of a compact manifold is compact.
 * `TauCeti.SmoothMappingTorus.contMDiff_proj`, `TauCeti.SmoothMappingTorus.range_mk`: the
   projection is `C^n`, and its fibres are the images of the fibre inclusions. It is continuous
   with no smoothness hypotheses (`TauCeti.SmoothMappingTorus.continuous_proj`).
@@ -91,6 +93,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   injective.
 * `TauCeti.SmoothMappingTorus.range_mfderiv_mk`: the tangent space of the fibre through `[t, x]`
   is the kernel of the differential of the projection.
+* `TauCeti.SmoothMappingTorus.mfderiv_mk_add_intCast`: the seam identity
+  `d(ι_(t + k)) = d(ι_t) ∘ dφ^k` for the differentials of the fibre inclusions `ι_t : x ↦ [t, x]`.
 
 ## References
 
@@ -297,6 +301,12 @@ theorem uncurry_mk_surjective : Function.Surjective (Function.uncurry (mk φ)) :
 theorem continuous_uncurry_mk : Continuous (Function.uncurry (mk φ)) :=
   continuous_quot_mk.comp (continuous_ofProd φ)
 
+/-- The mapping torus of a diffeomorphism of a `σ`-compact manifold is `σ`-compact: it is the
+continuous image of `ℝ × M`. -/
+instance [SigmaCompactSpace M] : SigmaCompactSpace (SmoothMappingTorus φ) := by
+  rw [← isSigmaCompact_univ_iff, ← (uncurry_mk_surjective φ).range_eq]
+  exact isSigmaCompact_range (continuous_uncurry_mk φ)
+
 /-- Two points of `ℝ × M` have the same class in the mapping torus exactly when they differ by
 the action of an integer. -/
 theorem mk_eq_mk_iff {t s : ℝ} {x y : M} :
@@ -332,6 +342,21 @@ theorem mk_injective (t : ℝ) : Function.Injective (mk φ t) := fun x y h ↦ b
   obtain ⟨k, hk, rfl⟩ := (mk_eq_mk_iff φ).1 h
   obtain rfl : k = 0 := by exact_mod_cast (add_eq_left.mp hk.symm)
   simp
+
+/-- Every point of the mapping torus is the class of a point of `[0, 1] × M`: shift the real
+coordinate by its integer part. -/
+theorem uncurry_mk_image_Icc_prod_univ :
+    Function.uncurry (mk φ) '' (Icc (0 : ℝ) 1 ×ˢ univ) = univ := by
+  refine eq_univ_of_forall fun z ↦ ?_
+  obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
+  refine ⟨(Int.fract t, (φ ^ ⌊t⌋) x), ⟨⟨Int.fract_nonneg t, (Int.fract_lt_one t).le⟩, trivial⟩, ?_⟩
+  simp only [Function.uncurry_apply_pair]
+  rw [← mk_add_intCast, Int.fract_add_floor]
+
+/-- The mapping torus of a diffeomorphism of a compact manifold is compact. -/
+instance instCompactSpace [CompactSpace M] : CompactSpace (SmoothMappingTorus φ) :=
+  ⟨uncurry_mk_image_Icc_prod_univ φ ▸
+    (isCompact_Icc.prod isCompact_univ).image (continuous_uncurry_mk φ)⟩
 
 section Manifold
 
@@ -450,6 +475,28 @@ theorem flow_mk (s t : ℝ) (x : M) : flow φ s (mk φ t x) = mk φ (t + s) x :=
 theorem proj_flow (s : ℝ) (z : SmoothMappingTorus φ) : proj φ (flow φ s z) = proj φ z + s := by
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
+
+/-- In the coordinates `(t, x)`, the suspension flow lifts to the translation
+`(t, x) ↦ (t + s, x)` of `ℝ × M`. -/
+theorem flow_comp_uncurry_mk (s : ℝ) :
+    flow φ s ∘ Function.uncurry (mk φ) = Function.uncurry (mk φ) ∘ Prod.map (· + s) id :=
+  funext fun p ↦ flow_mk φ s p.1 p.2
+
+/-- The suspension flow covers the rotation of the circle by `s`. -/
+theorem proj_comp_flow (s : ℝ) : proj φ ∘ flow φ s = (· + (s : UnitAddCircle)) ∘ proj φ :=
+  funext fun z ↦ proj_flow φ s z
+
+/-- No point of the mapping torus is a rest point of the suspension flow: the time-`1 / 2` map
+moves the projection to the base circle by `1 / 2`. -/
+theorem exists_flow_ne {φ : M ≃ₘ^n⟮I, I⟯ M} (z : SmoothMappingTorus φ) : ∃ s, flow φ s z ≠ z := by
+  refine ⟨1 / 2, fun h ↦ ?_⟩
+  have hproj := congrArg (proj φ) h
+  rw [proj_flow, add_eq_left, AddCircle.coe_eq_zero_iff] at hproj
+  obtain ⟨k, hk⟩ := hproj
+  rw [zsmul_eq_mul, mul_one] at hk
+  have h2 : ((2 * k : ℤ) : ℝ) = 1 := by push_cast; rw [hk]; norm_num
+  have h2' : 2 * k = 1 := by exact_mod_cast h2
+  omega
 
 /-- The time-`k` map of the suspension flow, for an integer `k`, returns each fibre to itself
 by `φ ^ k`. -/
@@ -673,6 +720,35 @@ theorem injective_mfderiv_mk (hn : n ≠ 0) (t : ℝ) (x : M) :
   rw [mfderiv_mk_apply φ hn, mfderiv_mk_apply φ hn] at hvw
   exact congrArg Prod.snd ((Manifold.tangentSpaceProdEquiv (t, x)).symm.injective
     (((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv hn (t, x)).injective hvw))
+
+/-- The seam identity `[t + k, x] = [t, φ^k x]` for the differentials of the fibre inclusions:
+`d(ι_(t + k))_x = d(ι_t)_(φ^k x) ∘ dφ^k_x`. -/
+@[simp]
+theorem mfderiv_mk_add_intCast (hn : n ≠ 0) (t : ℝ) (k : ℤ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + k)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((φ ^ k) x) (mfderiv I I (φ ^ k) x v) := by
+  have h : mk φ (t + k) = mk φ t ∘ (φ ^ k) := funext fun y ↦ mk_add_intCast φ t k y
+  rw [h]
+  exact mfderiv_comp_apply_of_eq x ((contMDiff_mk φ t _).mdifferentiableAt hn)
+    ((φ ^ k).mdifferentiable hn x) rfl v
+
+/-- The seam identity `[t + j, x] = [t, φ^[j] x]` for the differentials of the fibre inclusions,
+for a natural number `j`. -/
+@[simp]
+theorem mfderiv_mk_add_natCast (hn : n ≠ 0) (t : ℝ) (j : ℕ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + j)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((⇑φ)^[j] x) (mfderiv I I (⇑φ)^[j] x v) := by
+  have h := mfderiv_mk_add_intCast φ hn t j x v
+  rwa [Int.cast_natCast, zpow_natCast, Diffeomorph.coe_pow] at h
+
+/-- The seam identity `[t + 1, x] = [t, φ x]` for the differentials of the fibre inclusions:
+`d(ι_(t + 1))_x = d(ι_t)_(φ x) ∘ dφ_x`. -/
+@[simp]
+theorem mfderiv_mk_add_one (hn : n ≠ 0) (t : ℝ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + 1)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) (φ x) (mfderiv I I φ x v) := by
+  have h := mfderiv_mk_add_natCast φ hn t 1 x v
+  rwa [Nat.cast_one, Function.iterate_one] at h
 
 end
 

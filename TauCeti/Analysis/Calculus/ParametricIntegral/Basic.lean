@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import TauCeti.Topology.Compactness.Compact
 public import TauCeti.Topology.Compactness.Normed
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
 /-!
@@ -23,7 +24,9 @@ forms and kernel integrals.
 The file also differentiates a parametrized interval integral `x ↦ ∫ t in a..b, G (x, t)` in a
 real parameter `x` at a point `x₀`, assuming only that `G` is `C¹` on an open set containing the
 compact segment `{x₀} × [a, b]`: the derivative is the integral of the partial derivative of `G`
-in `x`.
+in `x`. When `G` is `C²` there, the integral can be differentiated twice at `x₀`, and its second
+derivative is the integral of the second partial derivatives
+(`TauCeti.hasDerivAt_deriv_intervalIntegral_of_contDiffOn`).
 
 Iterated derivatives also pass under an interval integral `x ↦ ∫ s in a..b, u s x` of a family of
 `C^N` functions, provided each derivative `D^k (u s) x`, `k ≤ N`, is measurable in `s` and bounded
@@ -142,6 +145,49 @@ theorem hasDerivAt_intervalIntegral_of_contDiffOn {G : ℝ × ℝ → F}
   · exact Filter.Eventually.of_forall fun t ht x hx ↦
       hC (x, t) ⟨hx, Set.uIoc_subset_uIcc ht⟩
   · exact Filter.Eventually.of_forall fun t ht x hx ↦ hdiff t ht x hx
+
+/-- **Differentiating twice under a parametrized interval integral.** If `G` is `C²` on an open
+set containing the segment `{x₀} × [a, b]`, then the second partial derivatives
+`∂²G/∂x² (x₀, t)` are interval integrable, and the derivative of `x ↦ ∫ t in a..b, G (x, t)` is
+differentiable at `x₀` with derivative their integral. -/
+theorem hasDerivAt_deriv_intervalIntegral_of_contDiffOn {G : ℝ × ℝ → F}
+    {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hG : ContDiffOn ℝ 2 G U) {x₀ a b : ℝ}
+    (hsub : {x₀} ×ˢ Set.uIcc a b ⊆ U) :
+    IntervalIntegrable (fun t ↦ deriv (deriv fun x ↦ G (x, t)) x₀) volume a b ∧
+      HasDerivAt (deriv fun x ↦ ∫ t in a..b, G (x, t))
+        (∫ t in a..b, deriv (deriv fun x ↦ G (x, t)) x₀) x₀ := by
+  obtain ⟨u, v, huo, _, hu, hv, huv⟩ :=
+    generalized_tube_lemma isCompact_singleton isCompact_uIcc hU hsub
+  have hx₀u : x₀ ∈ u := hu (Set.mem_singleton x₀)
+  have hsub' {x : ℝ} (hx : x ∈ u) : {x} ×ˢ Set.uIcc a b ⊆ U := by
+    rintro ⟨y, t⟩ ⟨hy, ht⟩
+    rw [Set.mem_singleton_iff] at hy
+    subst hy
+    exact huv ⟨hx, hv ht⟩
+  -- the partial derivative in the first variable, `C¹` on `U`
+  set G₁ : ℝ × ℝ → F := fun z ↦ fderiv ℝ G z (1, 0)
+  have hG₁ : ContDiffOn ℝ 1 G₁ U :=
+    (hG.fderiv_of_isOpen hU (by norm_num)).clm_apply contDiffOn_const
+  have hderiv : deriv (fun x ↦ ∫ t in a..b, G (x, t)) =ᶠ[nhds x₀]
+      fun x ↦ ∫ t in a..b, G₁ (x, t) := by
+    filter_upwards [huo.mem_nhds hx₀u] with x hx
+    exact (hasDerivAt_intervalIntegral_of_contDiffOn hU (hG.of_le (by norm_num))
+      (hsub' hx)).2.deriv
+  obtain ⟨hint, hmain⟩ := hasDerivAt_intervalIntegral_of_contDiffOn hU hG₁ hsub
+  -- on `[a, b]`, the partial derivative of `G₁` is the second partial derivative of `G`
+  have hpt : Set.EqOn (fun t ↦ fderiv ℝ G₁ (x₀, t) (1, 0))
+      (fun t ↦ deriv (deriv fun x ↦ G (x, t)) x₀) (Set.uIcc a b) := by
+    intro t ht
+    have h₁ : deriv (fun x ↦ G (x, t)) =ᶠ[nhds x₀] fun x ↦ G₁ (x, t) := by
+      filter_upwards [huo.mem_nhds hx₀u] with x hx
+      exact (hasDerivAt_slice_left ((hG.differentiableOn (by norm_num) _ (huv ⟨hx, hv ht⟩))
+        |>.differentiableAt (hU.mem_nhds (huv ⟨hx, hv ht⟩)))).deriv
+    simp only [h₁.deriv_eq]
+    exact fderiv_apply_mk_one_zero ((hG₁.differentiableOn one_ne_zero _ (huv ⟨hx₀u, hv ht⟩))
+      |>.differentiableAt (hU.mem_nhds (huv ⟨hx₀u, hv ht⟩)))
+  refine ⟨hint.congr_uIoo fun t ht ↦ hpt (Set.uIoo_subset_uIcc_self ht), ?_⟩
+  rw [← intervalIntegral.integral_congr hpt]
+  exact hmain.congr_of_eventuallyEq hderiv
 
 /-! ### Iterated derivatives under an interval integral -/
 
@@ -365,7 +411,7 @@ theorem contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv {G : Type*}
   have hW : IsOpen (U ×ˢ (univ : Set α)) := hU.prod isOpen_univ
   have hmem : ∀ y, (x₀, id y) ∈ U ×ˢ (univ : Set α) := fun y ↦ ⟨hx₀, mem_univ y⟩
   choose C hC using fun k : Iic m ↦ isCompact_univ.exists_eventually_norm_le hW
-    (fun y _ ↦ (hcont k (hkn k k.2)).continuousAt (hW.mem_nhds (hmem y))) (fun y _ ↦ hmem y)
+    (fun y _ ↦ (hcont k (hkn k k.property)).continuousAt (hW.mem_nhds (hmem y))) (fun y _ ↦ hmem y)
   obtain ⟨V, hV, hVo, hx₀V⟩ := mem_nhds_iff.1 (eventually_all.2 hC)
   refine ⟨V, hVo, hx₀V, ?_⟩
   have hs : IsOpen (U ∩ V) := hU.inter hVo

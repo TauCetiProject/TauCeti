@@ -6,15 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Laurent.Series
+import Mathlib.Analysis.Normed.Algebra.Spectrum
+import TauCeti.Analysis.Contour.Cauchy.Circle
 import TauCeti.Topology.MetricSpace.EBall
 
 /-!
 # Laurent series expansion, uniqueness, removable singularities, and differentiation
 
-Let `E` be a complex normed space. Building on the two-circle Cauchy integral formula and radius
-invariance of `TauCeti.circleLaurentCoeff` from `TauCeti.Analysis.Complex.Laurent.Basic` together
-with `TauCeti.HasLaurentSeriesOnAnnulus` from `TauCeti.Analysis.Complex.Laurent.Series`, this file
-proves:
+Let `E` be a complex normed space. Building on the two-circle Cauchy integral formula from
+`TauCeti.Analysis.Contour.Cauchy.Circle` and radius invariance of `TauCeti.circleLaurentCoeff`
+from `TauCeti.Analysis.Complex.Laurent.Basic` together with `TauCeti.HasLaurentSeriesOnAnnulus`
+from `TauCeti.Analysis.Complex.Laurent.Series`, this file proves:
 
 1. **Cauchy-Laurent geometric expansions on circles** (without completeness): the nonnegative circle
    Laurent series on `C(c, R)` sums inside `Metric.ball c R` to the outer Cauchy integral, and the
@@ -28,9 +30,12 @@ proves:
    `Metric.eball c R \ Metric.closedBall c r` (`0 ≤ r`, `ENNReal.ofReal r < R`, allowing `r = 0` and
    `R = ⊤`) and complex-differentiable outside a countable subset admits a convergent Laurent series
    with coefficients `circleLaurentCoeff f c ρ` for any `ρ ∈ (r, R)`.
-4. **Removable-singularity characterization** (for complete `E`): a convergent Laurent series on a
-   punctured disk `Metric.eball c R \ {c}` agrees near `c` with a function analytic at `c` if and
-   only if all negative-degree coefficients vanish.
+4. **Removable-singularity characterization and global singular representatives** (for complete
+   `E`): a convergent Laurent series on a punctured disk `Metric.eball c R \ {c}` agrees near `c`
+   with a function analytic at `c` if and only if all negative-degree coefficients vanish (so two
+   such series differ by an analytic germ exactly when their negative coefficients agree), and
+   every punctured-neighborhood holomorphic germ splits into a global representative analytic on
+   `{c}ᶜ` (vanishing along `Filter.cocompact ℂ`) plus a germ analytic at `c`.
 5. **Term-by-term differentiation** (for complete `E`): differentiating a convergent Laurent series
    shifts coefficients by `n ↦ (n + 1) • a (n + 1)`.
 
@@ -41,12 +46,18 @@ proves:
 * `TauCeti.HasLaurentSeriesOnAnnulus.circleLaurentCoeff_eq` and
   `TauCeti.HasLaurentSeriesOnAnnulus.coeff_unique`: circle-integral coefficient formula and
   uniqueness of Laurent expansions.
+* `TauCeti.circleLaurentCoeff_inv_sub_of_lt_norm`: the Laurent coefficients of a simple pole
+  `(a - z)⁻¹` on a circle about `c` of radius `ρ` with `0 < ρ < ‖a - c‖`.
 * `TauCeti.hasLaurentSeriesOnAnnulus_of_differentiable_off_countable`,
   `DifferentiableOn.hasLaurentSeriesOnAnnulus`, and
   `TauCeti.differentiableOn_iff_exists_hasLaurentSeriesOnAnnulus`: Laurent's theorem on concentric
   open annuli.
-* `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_eventuallyEq_iff`: removable singularities on
-  punctured disks via vanishing of negative Laurent coefficients.
+* `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_eventuallyEq_iff` and
+  `TauCeti.exists_analyticOnNhd_compl_singleton_tendsto_cocompact_sub_analyticAt`: removable
+  singularities on punctured disks and global `{c}ᶜ`-analytic singular representatives.
+* `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_sub_eventuallyEq_iff` and
+  `TauCeti.HasLaurentSeriesOnAnnulus.laurentNegPart_eq_iff`: equality of singular germs modulo
+  analytic germs on punctured disks via negative Laurent coefficients and `laurentNegPart`.
 * `TauCeti.HasLaurentSeriesOnAnnulus.deriv` and
   `TauCeti.HasLaurentSeriesOnAnnulus.hasSum_deriv`: term-by-term differentiation of Laurent series.
 
@@ -238,6 +249,36 @@ theorem coeff_unique {f : ℂ → E} {a b : ℤ → E} {c : ℂ} {r : ℝ} {R : 
 
 end HasLaurentSeriesOnAnnulus
 
+/-- The Laurent coefficients of the simple pole `z ↦ (a - z)⁻¹` on a circle about `c` of radius
+`ρ` with `0 < ρ < ‖a - c‖` (so `a` lies outside the disc) are those of its geometric expansion
+`∑_{n ≥ 0} (z - c) ^ n / (a - c) ^ (n + 1)`. -/
+theorem circleLaurentCoeff_inv_sub_of_lt_norm {a c : ℂ} {ρ : ℝ} (hρ : 0 < ρ) (hρa : ρ < ‖a - c‖)
+    (n : ℤ) :
+    circleLaurentCoeff (fun z => (a - z)⁻¹) c ρ n = if 0 ≤ n then (a - c) ^ (-n - 1) else 0 := by
+  have hd : a - c ≠ 0 := norm_pos_iff.1 (hρ.trans hρa)
+  -- `(a - z)⁻¹ = (a - c)⁻¹ (1 - (z - c) (a - c)⁻¹)⁻¹` is a geometric series in `z - c`.
+  have hp := (((hasFPowerSeriesOnBall_inverse_one_sub_smul ℂ (a - c)⁻¹).comp_sub c).const_smul
+    (c := (a - c)⁻¹)).hasLaurentSeriesOnAnnulus
+  rw [zero_add, eNorm_inv hd, inv_inv] at hp
+  have hfun : EqOn ((a - c)⁻¹ • fun z => Ring.inverse (1 - (z - c) • (a - c)⁻¹))
+      (fun z => (a - z)⁻¹) (eball c ‖a - c‖ₑ \ closedBall c 0) := fun z _ ↦ by
+    simp only [Pi.smul_apply, smul_eq_mul]
+    rw [Ring.inverse_eq_inv', ← mul_inv]
+    congr 1
+    field_simp
+    ring
+  have hρa' : ENNReal.ofReal ρ < ‖a - c‖ₑ := by
+    rwa [← ofReal_norm, ENNReal.ofReal_lt_ofReal_iff (norm_pos_iff.2 hd)]
+  rw [(hp.congr hfun).circleLaurentCoeff_eq hρ hρa' n]
+  split_ifs with hn
+  · lift n to ℕ using hn
+    -- `hasFPowerSeriesOnBall_inverse_one_sub_smul` states its series as a bare lambda, which
+    -- `FormalMultilinearSeries.smul_apply` cannot match, so unfold `coeff`, the scalar action on
+    -- the series and `(n : ℤ).toNat = n` by definition.
+    change (a - c)⁻¹ • ContinuousMultilinearMap.mkPiRing ℂ (Fin n) ((a - c)⁻¹ ^ n) 1 = _
+    simp [ContinuousMultilinearMap.mkPiRing_apply, zpow_sub_one₀ hd, mul_comm]
+  · rfl
+
 /-- **Pointwise Laurent expansion on a closed annulus.** If `f` is continuous on the closed annulus
 `Metric.closedBall c R \ Metric.ball c r` (`0 < r`) and complex-differentiable outside a countable
 set in the open annulus, then at every `w ∈ Metric.ball c R \ Metric.closedBall c r` and for every
@@ -408,7 +449,68 @@ theorem exists_analyticAt_eventuallyEq_iff {f : ℂ → E} {a : ℤ → E} {c : 
   exact eventually_nhdsWithin_iff.2
     (Eventually.of_forall fun z hzc => (Function.update_of_ne hzc _ _).symm)
 
+/-- **Equality of singular germs modulo analytic germs via Laurent coefficients.** Two functions
+admitting Laurent expansions on punctured disks around `c` differ on `𝓝[≠] c` by a function
+analytic at `c` if and only if they have the same negative-degree Laurent coefficients. -/
+theorem exists_analyticAt_sub_eventuallyEq_iff {f₁ f₂ : ℂ → E} {a₁ a₂ : ℤ → E} {c : ℂ}
+    {R₁ R₂ : ℝ≥0∞} (h₁ : HasLaurentSeriesOnAnnulus f₁ a₁ c 0 R₁)
+    (h₂ : HasLaurentSeriesOnAnnulus f₂ a₂ c 0 R₂) :
+    (∃ g : ℂ → E, AnalyticAt ℂ g c ∧ f₁ - f₂ =ᶠ[𝓝[≠] c] g) ↔
+      ∀ k : ℕ, a₁ (-((k : ℤ) + 1)) = a₂ (-((k : ℤ) + 1)) := by
+  have hmin : ENNReal.ofReal 0 < min R₁ R₂ := by
+    simpa only [ENNReal.ofReal_zero] using lt_min h₁.outerRadius_pos h₂.outerRadius_pos
+  have hsub := (h₁.mono le_rfl (min_le_left _ _) hmin).sub
+    (h₂.mono le_rfl (min_le_right _ _) hmin)
+  simpa only [Pi.sub_def, sub_eq_zero] using hsub.exists_analyticAt_eventuallyEq_iff
+
+/-- Two functions admitting Laurent expansions on punctured disks around `c` have the same global
+negative Laurent part `laurentNegPart` if and only if their difference agrees on `𝓝[≠] c` with a
+function analytic at `c`. -/
+theorem laurentNegPart_eq_iff {f₁ f₂ : ℂ → E} {a₁ a₂ : ℤ → E} {c : ℂ} {R₁ R₂ : ℝ≥0∞}
+    (h₁ : HasLaurentSeriesOnAnnulus f₁ a₁ c 0 R₁)
+    (h₂ : HasLaurentSeriesOnAnnulus f₂ a₂ c 0 R₂) :
+    laurentNegPart a₁ c = laurentNegPart a₂ c ↔
+      ∃ g : ℂ → E, AnalyticAt ℂ g c ∧ f₁ - f₂ =ᶠ[𝓝[≠] c] g := by
+  refine ⟨fun hneg => ?_, fun h => ?_⟩
+  · refine ⟨laurentPosPart a₁ c - laurentPosPart a₂ c,
+      (h₁.analyticOnNhd_laurentPosPart c (mem_eball_self h₁.outerRadius_pos)).sub
+        (h₂.analyticOnNhd_laurentPosPart c (mem_eball_self h₂.outerRadius_pos)), ?_⟩
+    filter_upwards [h₁.eventuallyEq_laurentPosPart_add_laurentNegPart,
+      h₂.eventuallyEq_laurentPosPart_add_laurentNegPart] with w hw₁ hw₂
+    simp only [Pi.sub_apply, hw₁, hw₂, Pi.add_apply, congrFun hneg w, add_sub_add_right_eq_sub]
+  · have hk := (h₁.exists_analyticAt_sub_eventuallyEq_iff h₂).mp h
+    funext w
+    simp_rw [laurentNegPart_def, hk]
+
 end HasLaurentSeriesOnAnnulus
+
+/-- **Global singular representative of an isolated singularity.** If `f : ℂ → E` is
+complex-differentiable on a punctured neighborhood of `c : ℂ`, its negative Laurent part on a small
+punctured disk around `c` defines a function `q : ℂ → E` that is complex-analytic on the entire
+punctured plane `{c}ᶜ`, vanishes along `Filter.cocompact ℂ`, and differs from `f` on `𝓝[≠] c` by a
+function complex-analytic at `c`. -/
+theorem exists_analyticOnNhd_compl_singleton_tendsto_cocompact_sub_analyticAt
+    {f : ℂ → E} {c : ℂ} (hf : ∀ᶠ z in 𝓝[≠] c, DifferentiableAt ℂ f z) :
+    ∃ q : ℂ → E, AnalyticOnNhd ℂ q {c}ᶜ ∧ Tendsto q (cocompact ℂ) (𝓝 0) ∧
+      ∃ g : ℂ → E, AnalyticAt ℂ g c ∧ ∀ᶠ z in 𝓝[≠] c, f z - q z = g z := by
+  obtain ⟨R, hR_pos, hR⟩ := eventually_nhds_iff_ball.mp (eventually_nhdsWithin_iff.mp hf)
+  let R' : ℝ≥0∞ := ENNReal.ofReal R
+  have hf_ann : DifferentiableOn ℂ f (eball c R' \ closedBall c 0) := by
+    rw [eball_ofReal, closedBall_zero]
+    exact fun z ⟨hz_ball, hz_ne⟩ => (hR z hz_ball hz_ne).differentiableWithinAt
+  have hρR : ENNReal.ofReal (R / 2) < R' :=
+    (ENNReal.ofReal_lt_ofReal_iff hR_pos).mpr (half_lt_self hR_pos)
+  have hL : HasLaurentSeriesOnAnnulus f (circleLaurentCoeff f c (R / 2)) c 0 R' :=
+    hf_ann.hasLaurentSeriesOnAnnulus le_rfl (half_pos hR_pos) hρR
+  refine ⟨laurentNegPart (circleLaurentCoeff f c (R / 2)) c,
+    by simpa only [closedBall_zero] using hL.analyticOnNhd_laurentNegPart,
+    hL.tendsto_laurentNegPart_cocompact,
+    laurentPosPart (circleLaurentCoeff f c (R / 2)) c,
+    hL.analyticOnNhd_laurentPosPart c (mem_eball_self hL.outerRadius_pos), ?_⟩
+  filter_upwards [sdiff_mem_nhdsWithin_compl (ball_mem_nhds c hR_pos) {c}] with z hz
+  have hz_ann : z ∈ eball c R' \ closedBall c 0 := by
+    rwa [eball_ofReal, closedBall_zero]
+  exact sub_eq_of_eq_add (hL.eq_laurentPosPart_add_laurentNegPart hz_ann)
 
 /-! ### Term-by-term differentiation of Laurent series -/
 

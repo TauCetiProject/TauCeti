@@ -16,6 +16,9 @@ public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import TauCeti.Analysis.RCLike.Sum
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
+import TauCeti.LinearAlgebra.Matrix.Trace.IsIntegral
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Endomorphisms of finite order
@@ -26,20 +29,20 @@ integral domain, and so is every root of its characteristic polynomial when the 
 finite and free; and if `n` is invertible in the coefficient field then `f` is semisimple, because
 `X ^ n - 1` is then squarefree.
 
-The roots of unity are algebraic integers, so as soon as the characteristic polynomial splits the
-trace, being the sum of those roots, is one too. Splitting is not a real hypothesis: base change to
-an algebraic closure leaves the trace alone beyond transporting it along the field embedding
-(`LinearMap.trace_baseChange`), and an element of the base field whose image is integral over `ℤ`
-was already integral over `ℤ`. So the trace of an endomorphism of finite order is an algebraic
-integer over **any** field.
+If `f ^ a = f ^ b` with `a ≠ b`, then `f` is integral over any ring `R` below `k`, and so is its
+trace. Finite order is the case `b = 0`: the trace of an endomorphism of finite order is an
+algebraic integer over **any** field.
 
 Over an algebraically closed field semisimplicity is diagonalizability, so the eigenspaces of such
 an `f` decompose the space. Every power of `f` acts on the `μ`-eigenspace as the scalar `μ ^ m`,
 which turns the trace of `f ^ m` into the sum `∑ μ, dim(V_μ) * μ ^ m` over the eigenvalues.
 
-That sum is what makes the trace transform predictably under a ring endomorphism `σ` of the
-coefficient field: the dimensions are natural numbers and so are fixed by `σ`, so if `σ` raises
-every `n`-th root of unity to the `j`-th power then `σ (tr f) = tr (f ^ j)`. Over `ℂ` complex
+Without semisimplicity the trace of `f ^ m` is still the sum of `μ ^ m` over the roots `μ` of the
+characteristic polynomial of `f`, counted with multiplicity
+(`Matrix.trace_aeval_eq_sum_roots_charpoly_of_splits`). That sum is what makes the trace transform
+predictably under a ring endomorphism `σ` of the coefficient field: the multiplicities are natural
+numbers and so are fixed by `σ`, so if `σ` raises every `n`-th root of unity to the `j`-th power
+then `σ (tr f) = tr (f ^ j)`, whether or not `n` is invertible in the field. Over `ℂ` complex
 conjugation is such a `σ`, with `j = n - 1`, since it sends a root of unity `μ` to
 `μ⁻¹ = μ ^ (n - 1)`; that instance is the source of `conj (χ g) = χ g⁻¹` for characters of complex
 representations.
@@ -58,12 +61,14 @@ on endomorphisms.
   invertible in the field, is semisimple.
 * `Module.End.isIntegral_trace_of_pow_eq_one`: over any field, the trace of an endomorphism of
   finite order is integral over `ℤ`.
+* `Module.End.isIntegral_trace_of_pow_eq_pow`: an endomorphism with two equal distinct powers
+  has trace integral over every ring below the field.
 * `Module.End.trace_pow_eq_sum_eigenvalue_pow`: over an algebraically closed field, the trace of
   `f ^ m` is the sum of the `m`-th powers of the eigenvalues of `f`, weighted by the dimensions of
   the eigenspaces.
-* `Module.End.map_trace_eq_trace_pow`: a ring endomorphism raising every `n`-th root of unity to
-  the `j`-th power sends the trace of an endomorphism of finite order `n` to the trace of its
-  `j`-th power.
+* `Module.End.map_trace_eq_trace_pow`: over an algebraically closed field, a ring endomorphism
+  raising every `n`-th root of unity to the `j`-th power sends the trace of an endomorphism of
+  finite order `n` to the trace of its `j`-th power, with no condition on the characteristic.
 * `Module.End.conj_trace_eq_trace_pow_sub_one`: over `ℂ`, the conjugate of the trace of an
   endomorphism of finite order `n` is the trace of its inverse `f ^ (n - 1)`.
 * `Module.End.exists_eq_smul_of_norm_trace_eq_finrank`: over `ℂ`, an endomorphism of finite order
@@ -116,30 +121,33 @@ end CommRing
 
 variable {k : Type u} {V : Type w} [Field k] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
 
-/-- The trace of an endomorphism of finite order is an algebraic integer once its characteristic
-polynomial splits: the trace is then the sum of the roots, and each of those is an `n`-th root of
-unity. This is the splitting case of `Module.End.isIntegral_trace_of_pow_eq_one`, which subsumes
-it, so it stays private. -/
-private theorem isIntegral_trace_of_pow_eq_one_of_splits {f : End k V} {n : ℕ} (hn : n ≠ 0)
-    (hf : f ^ n = 1) (hsplits : f.charpoly.Splits) : IsIntegral ℤ (LinearMap.trace k V f) := by
-  rw [Module.End.trace_eq_sum_roots_charpoly_of_splits hsplits]
-  refine IsIntegral.multiset_sum fun μ hμ => IsIntegral.of_pow (Nat.pos_of_ne_zero hn) ?_
-  rw [pow_eq_one_of_isRoot_charpoly hf (isRoot_of_mem_roots hμ)]
-  exact isIntegral_one
+omit [FiniteDimensional k V] in
+/-- **An endomorphism with two equal distinct powers has integral trace**: if `f ^ a = f ^ b` with
+`a ≠ b`, then the trace of `f` is integral over every ring `R` below `k`. If `V` is not
+finite-dimensional, `LinearMap.trace` is `0` by convention, so the statement holds trivially. -/
+theorem isIntegral_trace_of_pow_eq_pow {R : Type*} [CommRing R] [Algebra R k] {f : End k V}
+    {a b : ℕ} (hab : a ≠ b) (h : f ^ a = f ^ b) : IsIntegral R (LinearMap.trace k V f) := by
+  by_cases hfin : Module.Finite k V
+  swap
+  · rw [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin, LinearMap.zero_apply]
+    exact isIntegral_zero
+  wlog hlt : a < b generalizing a b
+  · exact this hab.symm h.symm (hab.lt_or_gt.resolve_left hlt)
+  -- The matrix of `f` is killed by the monic polynomial `X ^ b - X ^ a` over `R`.
+  have : Nontrivial R := (algebraMap R k).domain_nontrivial
+  let bs := Module.Free.chooseBasis k V
+  have hM : IsIntegral R (LinearMap.toMatrixAlgEquiv bs f) := by
+    refine ⟨X ^ b - X ^ a, monic_X_pow_sub (by rw [degree_X_pow]; exact_mod_cast hlt), ?_⟩
+    simp [Polynomial.eval₂_sub, Polynomial.eval₂_X_pow, ← map_pow, h]
+  rw [LinearMap.trace_eq_matrix_trace k bs]
+  exact Matrix.isIntegral_trace hM
 
+omit [FiniteDimensional k V] in
 /-- **The trace of an endomorphism of finite order is an algebraic integer**, over an arbitrary
-field. When the characteristic polynomial splits the trace is a sum of roots of unity; that
-splitting hypothesis is removed by base change to an algebraic closure, which preserves both the
-order of `f` and, up to the field embedding, its trace, and an element of `k` whose image in the
-closure is integral over `ℤ` is itself integral over `ℤ`. -/
+field: if `f ^ n = 1` with `n ≠ 0`, then the trace of `f` is integral over `ℤ`. -/
 theorem isIntegral_trace_of_pow_eq_one {f : End k V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
-    IsIntegral ℤ (LinearMap.trace k V f) := by
-  have hbase : f.baseChange (AlgebraicClosure k) ^ n = 1 := by
-    rw [← LinearMap.baseChange_pow, hf, LinearMap.baseChange_one]
-  have hint := isIntegral_trace_of_pow_eq_one_of_splits (k := AlgebraicClosure k) hn hbase
-    (IsAlgClosed.splits _)
-  rw [LinearMap.trace_baseChange] at hint
-  exact hint.tower_bot (algebraMap k (AlgebraicClosure k)).injective
+    IsIntegral ℤ (LinearMap.trace k V f) :=
+  isIntegral_trace_of_pow_eq_pow hn (by rwa [pow_zero])
 
 omit [FiniteDimensional k V] in
 /-- An endomorphism `f` with `f ^ n = 1` for some `n` invertible in `k` is semisimple, because it
@@ -154,15 +162,21 @@ section Eigenspace
 
 variable {f : End k V} {n : ℕ}
 
-/-- The trace of `f ^ m` on the `μ`-eigenspace of `f` is `dim(V_μ) * μ ^ m`, because `f ^ m` acts
-there as the scalar `μ ^ m`. -/
+omit [FiniteDimensional k V] in
+/-- The trace of `f ^ m` on the `μ`-eigenspace of `f` is `finrank k (f.eigenspace μ) * μ ^ m`,
+because `f ^ m` acts there as the scalar `μ ^ m`. If the eigenspace is not finite-dimensional, both
+`LinearMap.trace` and `finrank` are `0` by convention, so both sides vanish. -/
 theorem trace_pow_restrict_eigenspace (f : End k V) (μ : k) (m : ℕ) :
     LinearMap.trace k _ ((f ^ m).restrict (mapsTo_pow_eigenspace f μ m)) =
       (finrank k (f.eigenspace μ) : k) * μ ^ m := by
+  by_cases hfin : Module.Finite k (f.eigenspace μ)
+  swap
+  · simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin, Module.finrank_of_not_finite hfin]
   have hrestrict : (f ^ m).restrict (mapsTo_pow_eigenspace f μ m) = μ ^ m • LinearMap.id := by
     ext x
     refine (LinearMap.coe_restrict_apply _ x).trans ?_
-    simpa using End.aeval_apply_of_mem_apply_eq_smul (p := X ^ m) (End.mem_eigenspace_iff.1 x.2)
+    simpa using End.aeval_apply_of_mem_apply_eq_smul (p := X ^ m)
+        (End.mem_eigenspace_iff.1 x.property)
   rw [hrestrict, map_smul, LinearMap.trace_id, smul_eq_mul, mul_comm]
 
 variable [IsAlgClosed k]
@@ -186,19 +200,28 @@ theorem trace_pow_eq_sum_eigenvalue_pow (hn : (n : k) ≠ 0) (hf : f ^ n = 1) (m
     (End.finite_hasEigenvalue f) (mapsTo_pow_eigenspace f · m)]
   exact Finset.sum_congr rfl fun μ _ => trace_pow_restrict_eigenspace f μ m
 
+omit [FiniteDimensional k V] in
 /-- **A ring endomorphism raising the roots of unity to the `j`-th power raises an endomorphism of
 finite order to the `j`-th power, as far as the trace can see**: if `f ^ n = 1` and `σ μ = μ ^ j`
-for every `n`-th root of unity `μ`, then `σ (tr f) = tr (f ^ j)`. Both sides are the sum
-`∑ μ, dim(V_μ) · μ ^ j` over the eigenvalues, since a ring homomorphism fixes the dimensions,
-which enter as natural numbers. -/
-theorem map_trace_eq_trace_pow {j : ℕ} (hn : (n : k) ≠ 0) (hf : f ^ n = 1) (σ : k →+* k)
+for every `n`-th root of unity `μ`, then `σ (tr f) = tr (f ^ j)`. For finite-dimensional `V`, both
+sides are the sum of `μ ^ j` over the roots `μ` of the characteristic polynomial of `f`, counted
+with multiplicity, and those roots are `n`-th roots of unity. If `V` is not finite-dimensional,
+`LinearMap.trace` is `0` by convention, so both sides are `0`. -/
+theorem map_trace_eq_trace_pow {j : ℕ} (hf : f ^ n = 1) (σ : k →+* k)
     (hσ : ∀ μ : k, μ ^ n = 1 → σ μ = μ ^ j) :
     σ (LinearMap.trace k V f) = LinearMap.trace k V (f ^ j) := by
-  conv_lhs => rw [← pow_one f]
-  rw [trace_pow_eq_sum_eigenvalue_pow hn hf 1, trace_pow_eq_sum_eigenvalue_pow hn hf j, map_sum]
-  refine Finset.sum_congr rfl fun μ hμ => ?_
-  rw [map_mul, map_natCast, pow_one,
-    hσ μ (pow_eq_one_of_hasEigenvalue hf ((End.finite_hasEigenvalue f).mem_toFinset.1 hμ))]
+  by_cases hfin : Module.Finite k V
+  swap
+  · simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin]
+  classical
+  let b := Module.Free.chooseBasis k V
+  have h := Matrix.trace_aeval_eq_sum_roots_charpoly_of_splits
+    (IsAlgClosed.splits (LinearMap.toMatrix b b f).charpoly) (X ^ j)
+  rw [aeval_X_pow, LinearMap.toMatrix_pow, ← LinearMap.trace_eq_matrix_trace,
+    LinearMap.charpoly_toMatrix] at h
+  rw [h, Module.End.trace_eq_sum_roots_charpoly_of_splits (IsAlgClosed.splits _), map_multiset_sum]
+  refine congrArg Multiset.sum (Multiset.map_congr rfl fun μ hμ ↦ ?_)
+  simp [hσ μ (pow_eq_one_of_isRoot_charpoly hf (isRoot_of_mem_roots hμ))]
 
 end Eigenspace
 
@@ -206,12 +229,14 @@ section Complex
 
 variable {V : Type w} [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
 
+omit [FiniteDimensional ℂ V] in
 /-- **Complex conjugation of the trace inverts the endomorphism.** If `f ^ n = 1` with `n ≠ 0`, then
-the conjugate of the trace of `f` is the trace of its inverse `f ^ (n - 1)`: the eigenvalues of `f`
-are `n`-th roots of unity, and conjugation inverts those. -/
+the conjugate of the trace of `f` is the trace of its inverse `f ^ (n - 1)`. For finite-dimensional
+`V`, the eigenvalues of `f` are `n`-th roots of unity, and conjugation inverts those. If `V` is not
+finite-dimensional, `LinearMap.trace` is `0` by convention, so both sides are `0`. -/
 theorem conj_trace_eq_trace_pow_sub_one {f : End ℂ V} {n : ℕ} (hn : n ≠ 0) (hf : f ^ n = 1) :
     (starRingEnd ℂ) (LinearMap.trace ℂ V f) = LinearMap.trace ℂ V (f ^ (n - 1)) :=
-  map_trace_eq_trace_pow (Nat.cast_ne_zero.2 hn) hf (starRingEnd ℂ) fun μ hμ => by
+  map_trace_eq_trace_pow hf (starRingEnd ℂ) fun μ hμ => by
     rw [← Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hμ hn)]
     exact inv_eq_of_mul_eq_one_right
       (by rw [← pow_succ', Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hn), hμ])

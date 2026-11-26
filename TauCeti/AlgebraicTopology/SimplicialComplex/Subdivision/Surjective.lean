@@ -48,35 +48,35 @@ namespace BarycentricSubdivision
 
 /-- A numbering of the vertices of a face. -/
 abbrev VertexOrder {K : AbstractSimplicialComplex ι} (σ : Face K) :=
-  Fin σ.1.card ≃ {v // v ∈ σ.1}
+  Fin σ.val.card ≃ {v // v ∈ σ.val}
 
 /-- The first `i + 1` vertices in a fixed ordering of a face. -/
 private def orderedPrefixVertices {K : AbstractSimplicialComplex ι} {σ : Face K}
-    (e : VertexOrder σ) (i : Fin σ.1.card) : Finset ι :=
-  (Finset.Iic i).image fun j => (e j).1
+    (e : VertexOrder σ) (i : Fin σ.val.card) : Finset ι :=
+  (Finset.Iic i).image fun j => (e j).val
 
 private theorem orderedPrefixVertices_nonempty {K : AbstractSimplicialComplex ι} {σ : Face K}
-    (e : VertexOrder σ) (i : Fin σ.1.card) : (orderedPrefixVertices e i).Nonempty := by
-  exact ⟨(e i).1, Finset.mem_image.2 ⟨i, Finset.mem_Iic.2 le_rfl, rfl⟩⟩
+    (e : VertexOrder σ) (i : Fin σ.val.card) : (orderedPrefixVertices e i).Nonempty := by
+  exact ⟨(e i).val, Finset.mem_image.2 ⟨i, Finset.mem_Iic.2 le_rfl, rfl⟩⟩
 
 private theorem orderedPrefixVertices_subset {K : AbstractSimplicialComplex ι} {σ : Face K}
-    (e : VertexOrder σ) (i : Fin σ.1.card) : orderedPrefixVertices e i ⊆ σ.1 := by
+    (e : VertexOrder σ) (i : Fin σ.val.card) : orderedPrefixVertices e i ⊆ σ.val := by
   intro v hv
   obtain ⟨j, -, rfl⟩ := Finset.mem_image.1 hv
-  exact (e j).2
+  exact (e j).property
 
 /-- The face on the first `i + 1` vertices in a fixed ordering. -/
 private noncomputable def orderedPrefixFace {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) (i : Fin σ.1.card) : Face K :=
-  ⟨orderedPrefixVertices e i, K.isRelLowerSet_faces.mem_of_le σ.2
+    (e : VertexOrder σ) (i : Fin σ.val.card) : Face K :=
+  ⟨orderedPrefixVertices e i, K.isRelLowerSet_faces.mem_of_le σ.property
     (orderedPrefixVertices_subset e i) (orderedPrefixVertices_nonempty e i)⟩
 
 private theorem orderedPrefixFace_val {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) (i : Fin σ.1.card) :
-    (orderedPrefixFace σ e i).1 = orderedPrefixVertices e i := rfl
+    (e : VertexOrder σ) (i : Fin σ.val.card) :
+    (orderedPrefixFace σ e i).val = orderedPrefixVertices e i := rfl
 
 private theorem orderedPrefixFace_mono {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) {i j : Fin σ.1.card} (hij : i ≤ j) :
+    (e : VertexOrder σ) {i j : Fin σ.val.card} (hij : i ≤ j) :
     orderedPrefixFace σ e i ≤ orderedPrefixFace σ e j := by
   intro v hv
   obtain ⟨k, hki, rfl⟩ := Finset.mem_image.1 hv
@@ -84,8 +84,8 @@ private theorem orderedPrefixFace_mono {K : AbstractSimplicialComplex ι} (σ : 
     ⟨k, Finset.mem_Iic.2 ((Finset.mem_Iic.1 hki).trans hij), rfl⟩
 
 private theorem card_orderedPrefixFace {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) (i : Fin σ.1.card) :
-    (orderedPrefixFace σ e i).1.card = i.1 + 1 := by
+    (e : VertexOrder σ) (i : Fin σ.val.card) :
+    (orderedPrefixFace σ e i).val.card = i.val + 1 := by
   rw [orderedPrefixFace_val]
   rw [orderedPrefixVertices, Finset.card_image_iff.mpr]
   · exact Fin.card_Iic i
@@ -98,9 +98,9 @@ private noncomputable def orderedSubdivisionFaces {K : AbstractSimplicialComplex
 
 private theorem orderedSubdivisionFaces_nonempty {K : AbstractSimplicialComplex ι}
     (σ : Face K) (e : VertexOrder σ) : (orderedSubdivisionFaces σ e).Nonempty := by
-  have hσ : 0 < σ.1.card := Finset.card_pos.mpr
-    (K.isRelLowerSet_faces.prop_of_mem σ.2)
-  let i : Fin σ.1.card := ⟨0, hσ⟩
+  have hσ : 0 < σ.val.card := Finset.card_pos.mpr
+    (K.isRelLowerSet_faces.prop_of_mem σ.property)
+  let i : Fin σ.val.card := ⟨0, hσ⟩
   exact ⟨orderedPrefixFace σ e i,
     Finset.mem_image.2 ⟨i, Finset.mem_univ _, rfl⟩⟩
 
@@ -151,11 +151,11 @@ private theorem sum_range_ite_le_sub (f : ℕ → ℝ) {j n : ℕ} (hjn : j < n)
 /-- The barycentric-subdivision coordinates associated to an ordered coordinate sequence. -/
 private noncomputable def orderedCoordinates {K : AbstractSimplicialComplex ι} (σ : Face K)
     (e : VertexOrder σ) (c : ℕ → ℝ) : Face K →₀ ℝ :=
-  ∑ i : Fin σ.1.card, Finsupp.single (orderedPrefixFace σ e i) (orderedWeight c i)
+  ∑ i : Fin σ.val.card, Finsupp.single (orderedPrefixFace σ e i) (orderedWeight c i)
 
 private theorem orderedWeight_nonneg (c : ℕ → ℝ) {n : ℕ}
     (hc : ∀ {k}, k < n → c (k + 1) ≤ c k) (i : Fin n) : 0 ≤ orderedWeight c i := by
-  exact mul_nonneg (by positivity) (sub_nonneg.2 (hc i.2))
+  exact mul_nonneg (by positivity) (sub_nonneg.2 (hc i.isLt))
 
 private theorem sum_orderedWeight (c : ℕ → ℝ) (n : ℕ)
     (hsum : ∑ k ∈ Finset.range n, c k = 1) (hcard : c n = 0) :
@@ -170,12 +170,12 @@ private theorem sum_orderedWeight (c : ℕ → ℝ) (n : ℕ)
     _ = 1 := by rw [sum_range_succ_mul_sub, hsum, hcard, mul_zero, sub_zero]
 
 private theorem orderedCoordinates_nonneg {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) (c : ℕ → ℝ) (hc : ∀ {k}, k < σ.1.card → c (k + 1) ≤ c k)
+    (e : VertexOrder σ) (c : ℕ → ℝ) (hc : ∀ {k}, k < σ.val.card → c (k + 1) ≤ c k)
     (ρ : Face K) : 0 ≤ orderedCoordinates σ e c ρ := by
   rw [orderedCoordinates]
   -- Expose evaluation of the finite `Finsupp` sum so nonnegativity reduces coordinatewise.
   change 0 ≤ Finsupp.applyAddHom ρ
-    (∑ i : Fin σ.1.card, Finsupp.single (orderedPrefixFace σ e i) (orderedWeight c i))
+    (∑ i : Fin σ.val.card, Finsupp.single (orderedPrefixFace σ e i) (orderedWeight c i))
   rw [map_sum]
   apply Finset.sum_nonneg
   intro i _
@@ -184,18 +184,18 @@ private theorem orderedCoordinates_nonneg {K : AbstractSimplicialComplex ι} (σ
   · simp [h]
 
 private theorem orderedCoordinates_sum {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) (c : ℕ → ℝ) (hsum : ∑ k ∈ Finset.range σ.1.card, c k = 1)
-    (hcard : c σ.1.card = 0) : (orderedCoordinates σ e c).sum (fun _ r => r) = 1 := by
+    (e : VertexOrder σ) (c : ℕ → ℝ) (hsum : ∑ k ∈ Finset.range σ.val.card, c k = 1)
+    (hcard : c σ.val.card = 0) : (orderedCoordinates σ e c).sum (fun _ r => r) = 1 := by
   rw [orderedCoordinates, ← Finsupp.sum_finsetSum_index (fun _ => rfl) (fun _ _ _ => rfl)]
   simp only [Finsupp.sum_single_index]
-  exact sum_orderedWeight c σ.1.card hsum hcard
+  exact sum_orderedWeight c σ.val.card hsum hcard
 
 private theorem orderedCoordinates_support {K : AbstractSimplicialComplex ι} (σ : Face K)
     (e : VertexOrder σ) (c : ℕ → ℝ) :
     (orderedCoordinates σ e c).support ⊆ orderedSubdivisionFaces σ e := by
   intro ρ hρ
   by_contra hnot
-  have hne : ∀ i : Fin σ.1.card, orderedPrefixFace σ e i ≠ ρ := by
+  have hne : ∀ i : Fin σ.val.card, orderedPrefixFace σ e i ≠ ρ := by
     intro i hi
     apply hnot
     exact Finset.mem_image.2 ⟨i, Finset.mem_univ _, hi⟩
@@ -203,8 +203,8 @@ private theorem orderedCoordinates_support {K : AbstractSimplicialComplex ι} (�
   exact (Finsupp.mem_support_iff.mp hρ) hz
 
 private theorem orderedCoordinates_mem {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) (c : ℕ → ℝ) (hc : ∀ {k}, k < σ.1.card → c (k + 1) ≤ c k)
-    (hsum : ∑ k ∈ Finset.range σ.1.card, c k = 1) (hcard : c σ.1.card = 0) :
+    (e : VertexOrder σ) (c : ℕ → ℝ) (hc : ∀ {k}, k < σ.val.card → c (k + 1) ≤ c k)
+    (hsum : ∑ k ∈ Finset.range σ.val.card, c k = 1) (hcard : c σ.val.card = 0) :
     orderedCoordinates σ e c ∈ convexHull ℝ ((fun ρ => Finsupp.single ρ (1 : ℝ)) ''
       (orderedSubdivisionFaces σ e : Set (Face K))) := by
   rw [mem_standardSimplex_iff]
@@ -213,31 +213,31 @@ private theorem orderedCoordinates_mem {K : AbstractSimplicialComplex ι} (σ : 
 
 private noncomputable def orderedStandardSimplex {K : AbstractSimplicialComplex ι}
     (σ : Face K) (e : VertexOrder σ) (c : ℕ → ℝ)
-    (hc : ∀ {k}, k < σ.1.card → c (k + 1) ≤ c k)
-    (hsum : ∑ k ∈ Finset.range σ.1.card, c k = 1) (hcard : c σ.1.card = 0) :
+    (hc : ∀ {k}, k < σ.val.card → c (k + 1) ≤ c k)
+    (hsum : ∑ k ∈ Finset.range σ.val.card, c k = 1) (hcard : c σ.val.card = 0) :
     StandardSimplex (orderedSubdivisionFaces σ e) :=
   ⟨orderedCoordinates σ e c, by simpa using orderedCoordinates_mem σ e c hc hsum hcard⟩
 
 /-- The point of the barycentric subdivision determined by a face, an ordering of its vertices,
 and a decreasing sequence of barycentric coordinates. -/
 noncomputable def orderedSubdivisionPoint {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) (c : ℕ → ℝ) (hc : ∀ {k}, k < σ.1.card → c (k + 1) ≤ c k)
-    (hsum : ∑ k ∈ Finset.range σ.1.card, c k = 1) (hcard : c σ.1.card = 0) :
+    (e : VertexOrder σ) (c : ℕ → ℝ) (hc : ∀ {k}, k < σ.val.card → c (k + 1) ≤ c k)
+    (hsum : ∑ k ∈ Finset.range σ.val.card, c k = 1) (hcard : c σ.val.card = 0) :
     Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       K.toPreAbstractSimplicialComplex) :=
   faceInclusion _ (orderedSubdivisionFace σ e)
     (orderedStandardSimplex σ e c hc hsum hcard)
 
 private theorem orderedSubdivisionPoint_val {K : AbstractSimplicialComplex ι} (σ : Face K)
-    (e : VertexOrder σ) (c : ℕ → ℝ) (hc : ∀ {k}, k < σ.1.card → c (k + 1) ≤ c k)
-    (hsum : ∑ k ∈ Finset.range σ.1.card, c k = 1) (hcard : c σ.1.card = 0) :
+    (e : VertexOrder σ) (c : ℕ → ℝ) (hc : ∀ {k}, k < σ.val.card → c (k + 1) ≤ c k)
+    (hsum : ∑ k ∈ Finset.range σ.val.card, c k = 1) (hcard : c σ.val.card = 0) :
     (orderedSubdivisionPoint σ e c hc hsum hcard : Face K →₀ ℝ) =
       orderedCoordinates σ e c := by
   exact faceInclusion_val _ (orderedSubdivisionFace σ e)
     (orderedStandardSimplex σ e c hc hsum hcard)
 
 private theorem mem_orderedPrefixVertices_iff {K : AbstractSimplicialComplex ι}
-    (σ : Face K) (e : VertexOrder σ) {v : ι} (hv : v ∈ σ.1) (i : Fin σ.1.card) :
+    (σ : Face K) (e : VertexOrder σ) {v : ι} (hv : v ∈ σ.val) (i : Fin σ.val.card) :
     v ∈ orderedPrefixVertices e i ↔ e.symm ⟨v, hv⟩ ≤ i := by
   constructor
   · intro h
@@ -253,8 +253,8 @@ private theorem mem_orderedPrefixVertices_iff {K : AbstractSimplicialComplex ι}
       ⟨e.symm ⟨v, hv⟩, Finset.mem_Iic.2 h, by simp⟩
 
 private theorem orderedWeight_mul_card_prefix_inv {K : AbstractSimplicialComplex ι}
-    (σ : Face K) (e : VertexOrder σ) (c : ℕ → ℝ) (i : Fin σ.1.card) :
-    orderedWeight c i * ((orderedPrefixFace σ e i).1.card : ℝ)⁻¹ = c i.1 - c (i.1 + 1) := by
+    (σ : Face K) (e : VertexOrder σ) (c : ℕ → ℝ) (i : Fin σ.val.card) :
+    orderedWeight c i * ((orderedPrefixFace σ e i).val.card : ℝ)⁻¹ = c i.val - c (i.val + 1) := by
   rw [orderedWeight, card_orderedPrefixFace]
   field_simp
   norm_num [Nat.cast_add, Nat.cast_one]
@@ -263,7 +263,7 @@ private theorem orderedWeight_mul_card_prefix_inv {K : AbstractSimplicialComplex
 private theorem barycentricSubdivisionLinearMap_orderedCoordinates
     {K : AbstractSimplicialComplex ι} (σ : Face K) (e : VertexOrder σ) (c : ℕ → ℝ) :
     barycentricSubdivisionLinearMap K (orderedCoordinates σ e c) =
-      ∑ i : Fin σ.1.card, orderedWeight c i • faceBarycenter K (orderedPrefixFace σ e i) := by
+      ∑ i : Fin σ.val.card, orderedWeight c i • faceBarycenter K (orderedPrefixFace σ e i) := by
   rw [orderedCoordinates, map_sum]
   apply Finset.sum_congr rfl
   intro i _
@@ -272,9 +272,9 @@ private theorem barycentricSubdivisionLinearMap_orderedCoordinates
 /-- The shared ordered-coordinate construction maps back to the original simplex point. -/
 theorem barycentricSubdivisionRealizationMap_orderedSubdivisionPoint
     {K : AbstractSimplicialComplex ι} (σ : Face K) (e : VertexOrder σ) (c : ℕ → ℝ)
-    (hc : ∀ {k}, k < σ.1.card → c (k + 1) ≤ c k)
-    (hsum : ∑ k ∈ Finset.range σ.1.card, c k = 1) (hcard : c σ.1.card = 0)
-    (x : StandardSimplex σ.1) (hcoord : ∀ i : Fin σ.1.card, c i.1 = x.1 (e i).1) :
+    (hc : ∀ {k}, k < σ.val.card → c (k + 1) ≤ c k)
+    (hsum : ∑ k ∈ Finset.range σ.val.card, c k = 1) (hcard : c σ.val.card = 0)
+    (x : StandardSimplex σ.val) (hcoord : ∀ i : Fin σ.val.card, c i.val = x.val (e i).val) :
     barycentricSubdivisionRealizationMap K (orderedSubdivisionPoint σ e c hc hsum hcard) =
       faceInclusion K σ x := by
   apply Subtype.ext
@@ -282,34 +282,34 @@ theorem barycentricSubdivisionRealizationMap_orderedSubdivisionPoint
   rw [barycentricSubdivisionRealizationMap_val, orderedSubdivisionPoint_val, faceInclusion_val]
   rw [barycentricSubdivisionLinearMap_orderedCoordinates]
   simp only [Finset.sum_apply', Finsupp.smul_apply, smul_eq_mul, faceBarycenter_apply]
-  by_cases hv : v ∈ σ.1
-  · let j : Fin σ.1.card := e.symm ⟨v, hv⟩
+  by_cases hv : v ∈ σ.val
+  · let j : Fin σ.val.card := e.symm ⟨v, hv⟩
     calc
-      ∑ i : Fin σ.1.card, orderedWeight c i *
-          (if v ∈ (orderedPrefixFace σ e i).1 then
-            ((orderedPrefixFace σ e i).1.card : ℝ)⁻¹ else 0) =
-          ∑ i : Fin σ.1.card, if j ≤ i then c i.1 - c (i.1 + 1) else 0 := by
+      ∑ i : Fin σ.val.card, orderedWeight c i *
+          (if v ∈ (orderedPrefixFace σ e i).val then
+            ((orderedPrefixFace σ e i).val.card : ℝ)⁻¹ else 0) =
+          ∑ i : Fin σ.val.card, if j ≤ i then c i.val - c (i.val + 1) else 0 := by
         apply Finset.sum_congr rfl
         intro i _
         by_cases hji : j ≤ i
-        · have hmem : v ∈ (orderedPrefixFace σ e i).1 :=
+        · have hmem : v ∈ (orderedPrefixFace σ e i).val :=
             (mem_orderedPrefixVertices_iff σ e hv i).2 hji
           simp only [hmem, hji, ↓reduceIte]
           exact orderedWeight_mul_card_prefix_inv σ e c i
-        · have hmem : v ∉ (orderedPrefixFace σ e i).1 := fun h =>
+        · have hmem : v ∉ (orderedPrefixFace σ e i).val := fun h =>
             hji ((mem_orderedPrefixVertices_iff σ e hv i).1 h)
           simp [hmem, hji]
-      _ = ∑ i ∈ Finset.range σ.1.card,
-            if j.1 ≤ i then c i - c (i + 1) else 0 := by
+      _ = ∑ i ∈ Finset.range σ.val.card,
+            if j.val ≤ i then c i - c (i + 1) else 0 := by
         rw [← Fin.sum_univ_eq_sum_range]
         apply Finset.sum_congr rfl
         intro i _
         rfl
-      _ = c j.1 - c σ.1.card := sum_range_ite_le_sub c j.2
-      _ = x.1 v := by
+      _ = c j.val - c σ.val.card := sum_range_ite_le_sub c j.isLt
+      _ = x.val v := by
         rw [hcard, sub_zero, hcoord j]
-        exact congrArg (fun w : {v // v ∈ σ.1} => x.1 w.1) (e.apply_symm_apply ⟨v, hv⟩)
-  · have hprefix : ∀ i : Fin σ.1.card, v ∉ (orderedPrefixFace σ e i).1 :=
+        exact congrArg (fun w : {v // v ∈ σ.val} => x.val w.val) (e.apply_symm_apply ⟨v, hv⟩)
+  · have hprefix : ∀ i : Fin σ.val.card, v ∉ (orderedPrefixFace σ e i).val :=
       fun i hvi => hv (orderedPrefixVertices_subset e i hvi)
     simp only [hprefix, ↓reduceIte, mul_zero, Finset.sum_const_zero]
     exact (Finsupp.notMem_support_iff.mp
@@ -318,10 +318,10 @@ theorem barycentricSubdivisionRealizationMap_orderedSubdivisionPoint
 /-- The shared ordered-coordinate construction is continuous when all its used coordinates are. -/
 theorem continuous_orderedSubdivisionPoint {K : AbstractSimplicialComplex ι} {α : Type*}
     [TopologicalSpace α] (σ : Face K) (e : VertexOrder σ) (c : α → ℕ → ℝ)
-    (hc : ∀ a {k}, k < σ.1.card → c a (k + 1) ≤ c a k)
-    (hsum : ∀ a, ∑ k ∈ Finset.range σ.1.card, c a k = 1)
-    (hcard : ∀ a, c a σ.1.card = 0)
-    (hcontinuous : ∀ k ≤ σ.1.card, Continuous fun a => c a k) :
+    (hc : ∀ a {k}, k < σ.val.card → c a (k + 1) ≤ c a k)
+    (hsum : ∀ a, ∑ k ∈ Finset.range σ.val.card, c a k = 1)
+    (hcard : ∀ a, c a σ.val.card = 0)
+    (hcontinuous : ∀ k ≤ σ.val.card, Continuous fun a => c a k) :
     Continuous fun a => orderedSubdivisionPoint σ e (c a) (hc a) (hsum a) (hcard a) := by
   apply (continuous_faceInclusion _ (orderedSubdivisionFace σ e)).comp
   apply continuous_induced_rng.mpr
@@ -331,7 +331,7 @@ theorem continuous_orderedSubdivisionPoint {K : AbstractSimplicialComplex ι} {�
   -- expose that coordinate, then expand the finite `Finsupp.single` sum pointwise.
   change Continuous (fun a => orderedCoordinates σ e (c a) ρ)
   rw [show (fun a => orderedCoordinates σ e (c a) ρ) = fun a =>
-      ∑ i : Fin σ.1.card,
+      ∑ i : Fin σ.val.card,
         if orderedPrefixFace σ e i = ρ then orderedWeight (c a) i else 0 by
     funext a
     rw [orderedCoordinates, Finset.sum_apply']
@@ -343,7 +343,7 @@ theorem continuous_orderedSubdivisionPoint {K : AbstractSimplicialComplex ι} {�
   by_cases hi : orderedPrefixFace σ e i = ρ
   · simp only [hi, ↓reduceIte, orderedWeight]
     exact continuous_const.mul
-      ((hcontinuous i.1 i.2.le).sub (hcontinuous (i.1 + 1) (Nat.succ_le_of_lt i.2)))
+      ((hcontinuous i.val i.isLt.le).sub (hcontinuous (i.val + 1) (Nat.succ_le_of_lt i.isLt)))
   · simp only [hi, ↓reduceIte]
     exact continuous_const
 
@@ -352,51 +352,51 @@ end BarycentricSubdivision
 /-- The vertices in the carrier of `x`, numbered in decreasing order of their barycentric
 coordinate. An arbitrary finite numbering breaks ties. -/
 private noncomputable def orderedVertex {K : AbstractSimplicialComplex ι} (x : Realization K) :
-    Fin (carrier K x).1.card ≃ {v // v ∈ (carrier K x).1} :=
-  let e : Fin (carrier K x).1.card ≃ {v // v ∈ (carrier K x).1} :=
+    Fin (carrier K x).val.card ≃ {v // v ∈ (carrier K x).val} :=
+  let e : Fin (carrier K x).val.card ≃ {v // v ∈ (carrier K x).val} :=
     (Fintype.equivFinOfCardEq (by simp)).symm
-  (Tuple.sort (fun i => OrderDual.toDual (x.1 (e i).1))).trans e
+  (Tuple.sort (fun i => OrderDual.toDual (x.val (e i).val))).trans e
 
 private theorem orderedVertex_antitone {K : AbstractSimplicialComplex ι} (x : Realization K)
-    {i j : Fin (carrier K x).1.card} (hij : i ≤ j) :
-    x.1 (orderedVertex x j).1 ≤ x.1 (orderedVertex x i).1 := by
-  let e : Fin (carrier K x).1.card ≃ {v // v ∈ (carrier K x).1} :=
+    {i j : Fin (carrier K x).val.card} (hij : i ≤ j) :
+    x.val (orderedVertex x j).val ≤ x.val (orderedVertex x i).val := by
+  let e : Fin (carrier K x).val.card ≃ {v // v ∈ (carrier K x).val} :=
     (Fintype.equivFinOfCardEq (by simp)).symm
   simpa only [orderedVertex, Equiv.trans_apply, Function.comp_apply,
     OrderDual.toDual_le_toDual, e] using
-    Tuple.monotone_sort (fun i => OrderDual.toDual (x.1 (e i).1)) hij
+    Tuple.monotone_sort (fun i => OrderDual.toDual (x.val (e i).val)) hij
 
 private theorem sum_orderedVertex {K : AbstractSimplicialComplex ι} (x : Realization K)
     (g : ι → ℝ) :
-    ∑ i : Fin (carrier K x).1.card, g (orderedVertex x i).1 =
-      ∑ v ∈ (carrier K x).1, g v := by
+    ∑ i : Fin (carrier K x).val.card, g (orderedVertex x i).val =
+      ∑ v ∈ (carrier K x).val, g v := by
   calc
-    ∑ i : Fin (carrier K x).1.card, g (orderedVertex x i).1 =
-        ∑ v : {v // v ∈ (carrier K x).1}, g v.1 := by
+    ∑ i : Fin (carrier K x).val.card, g (orderedVertex x i).val =
+        ∑ v : {v // v ∈ (carrier K x).val}, g v.val := by
       exact Fintype.sum_equiv (orderedVertex x) _ _ fun _ => rfl
-    _ = ∑ v ∈ (carrier K x).1, g v := Finset.sum_attach _ _
+    _ = ∑ v ∈ (carrier K x).val, g v := Finset.sum_attach _ _
 
 /-- Extend the decreasing list of carrier coordinates by zero after its last term. -/
 private noncomputable def orderedCoord {K : AbstractSimplicialComplex ι} (x : Realization K)
     (k : ℕ) : ℝ :=
-  if h : k < (carrier K x).1.card then x.1 (orderedVertex x ⟨k, h⟩).1 else 0
+  if h : k < (carrier K x).val.card then x.val (orderedVertex x ⟨k, h⟩).val else 0
 
 private theorem orderedCoord_of_lt {K : AbstractSimplicialComplex ι} (x : Realization K)
-    {k : ℕ} (hk : k < (carrier K x).1.card) :
-    orderedCoord x k = x.1 (orderedVertex x ⟨k, hk⟩).1 := by
+    {k : ℕ} (hk : k < (carrier K x).val.card) :
+    orderedCoord x k = x.val (orderedVertex x ⟨k, hk⟩).val := by
   rw [orderedCoord]
   split
   · congr
   · contradiction
 
 private theorem orderedCoord_card {K : AbstractSimplicialComplex ι} (x : Realization K) :
-    orderedCoord x (carrier K x).1.card = 0 := by
+    orderedCoord x (carrier K x).val.card = 0 := by
   simp [orderedCoord]
 
 private theorem orderedCoord_succ_le {K : AbstractSimplicialComplex ι} (x : Realization K)
-    {k : ℕ} (hk : k < (carrier K x).1.card) : orderedCoord x (k + 1) ≤ orderedCoord x k := by
+    {k : ℕ} (hk : k < (carrier K x).val.card) : orderedCoord x (k + 1) ≤ orderedCoord x k := by
   rw [orderedCoord_of_lt x hk]
-  by_cases hks : k + 1 < (carrier K x).1.card
+  by_cases hks : k + 1 < (carrier K x).val.card
   · rw [orderedCoord_of_lt x hks]
     exact orderedVertex_antitone x (Fin.mk_le_mk.mpr (Nat.le_succ k))
   · rw [orderedCoord]
@@ -404,17 +404,17 @@ private theorem orderedCoord_succ_le {K : AbstractSimplicialComplex ι} (x : Rea
     exact Realization.nonneg K x _
 
 private theorem sum_orderedCoord {K : AbstractSimplicialComplex ι} (x : Realization K) :
-    ∑ k ∈ Finset.range (carrier K x).1.card, orderedCoord x k = 1 := by
+    ∑ k ∈ Finset.range (carrier K x).val.card, orderedCoord x k = 1 := by
   rw [← Fin.sum_univ_eq_sum_range]
   calc
-    ∑ i : Fin (carrier K x).1.card, orderedCoord x i =
-        ∑ i : Fin (carrier K x).1.card, x.1 (orderedVertex x i).1 := by
+    ∑ i : Fin (carrier K x).val.card, orderedCoord x i =
+        ∑ i : Fin (carrier K x).val.card, x.val (orderedVertex x i).val := by
       apply Finset.sum_congr rfl
       intro i _
-      exact orderedCoord_of_lt x i.2
-    _ = ∑ v ∈ (carrier K x).1, x.1 v := sum_orderedVertex x x.1
+      exact orderedCoord_of_lt x i.isLt
+    _ = ∑ v ∈ (carrier K x).val, x.val v := sum_orderedVertex x x.val
     _ = 1 := by
-      let x' : StandardSimplex (carrier K x).1 := ⟨x.1, mem_convexHull_carrier K x⟩
+      let x' : StandardSimplex (carrier K x).val := ⟨x.val, mem_convexHull_carrier K x⟩
       simpa only [Finsupp.sum, carrier_val] using StandardSimplex.sum_eq_one x'
 
 /-- The point of the barycentric subdivision obtained by sorting the barycentric coordinates of
@@ -429,13 +429,13 @@ private noncomputable def subdivisionPreimage {K : AbstractSimplicialComplex ι}
 private theorem barycentricSubdivisionRealizationMap_subdivisionPreimage
     {K : AbstractSimplicialComplex ι} (x : Realization K) :
     barycentricSubdivisionRealizationMap K (subdivisionPreimage x) = x := by
-  let x' : StandardSimplex (carrier K x).1 := ⟨x.1, mem_convexHull_carrier K x⟩
+  let x' : StandardSimplex (carrier K x).val := ⟨x.val, mem_convexHull_carrier K x⟩
   calc
     barycentricSubdivisionRealizationMap K (subdivisionPreimage x) =
         faceInclusion K (carrier K x) x' := by
       exact BarycentricSubdivision.barycentricSubdivisionRealizationMap_orderedSubdivisionPoint
         (carrier K x) (orderedVertex x) (orderedCoord x) (orderedCoord_succ_le x)
-        (sum_orderedCoord x) (orderedCoord_card x) x' (fun i => orderedCoord_of_lt x i.2)
+        (sum_orderedCoord x) (orderedCoord_card x) x' (fun i => orderedCoord_of_lt x i.isLt)
     _ = x := by
       apply Subtype.ext
       exact faceInclusion_val K (carrier K x) x'

@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.EnergyEstimate.Lyapunov
-public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
+public import TauCeti.Analysis.ODE.EnergyEstimate.Reversal
 import TauCeti.Analysis.ODE.Tanh
 import TauCeti.MeasureTheory.Integral.Cosh
 
 /-!
-# The trajectory operator `d/ds - tanh s`
+# The trajectory operators `d/ds - tanh s` and `d/ds + tanh s`
 
 The coefficient `A(s) = -tanh(s) • id` on a finite-dimensional real inner product space `E` is the
 basic example of a trajectory operator with nonzero index. Its trajectory operator
@@ -36,6 +35,18 @@ agrees with the Morse-index formula
 since `A` has no negative eigenvalue at `-∞` and the eigenvalue `-1` of multiplicity `dim E` at
 `+∞`; the computation here does not use that formula but the explicit solutions.
 
+Reversing the coefficient, `s ↦ A(-s)† = tanh(s) • id`, gives the trajectory operator
+`d/ds + tanh s`, whose kernel and cokernel are exchanged with those of `D`:
+
+* its kernel consists of the paths `(cosh s)⁻¹ • x` for `x ∈ E`, which solve `v' = -tanh(s) v`;
+* it is onto, since its cokernel is the kernel of `D`;
+* it is Fredholm of index `dim E`, the negative of the index of `D`, by the reversal law
+  `TauCeti.WeakDerivStep.index_trajectoryOperator_adjoint_comp_neg`.
+
+For `E = ℝ` this says that `d/ds + tanh s` has kernel spanned by `sech s`, cokernel `0` and
+index `1`. Written as `d/ds - B(s)` with `B = tanh • id` run backwards, whose eigenvalue crosses
+from `1` to `-1`, this is again `index (d/ds - B(s)) = -SF(B)`.
+
 ## Main declarations
 
 * `TauCeti.squareIntegrableSolutions_neg_tanh_smul_id`: the only square-integrable solution of
@@ -48,6 +59,15 @@ since `A` has no negative eigenvalue at `-∞` and the eigenvalue `-1` of multip
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_neg_tanh_smul_id` and
   `TauCeti.WeakDerivStep.index_trajectoryOperator_neg_tanh_smul_id`: `D` is Fredholm of index
   `-dim E`.
+* `TauCeti.WeakDerivStep.mem_ker_trajectoryOperator_tanh_smul_id_iff` and
+  `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator_tanh_smul_id`: the kernel of
+  `d/ds + tanh s` consists of the classes of `(cosh s)⁻¹ • x`, and its `Module.finrank` equals
+  that of `F` on any real Banach space `F` (so it has dimension `dim F` when `F` is
+  finite-dimensional).
+* `TauCeti.WeakDerivStep.range_trajectoryOperator_tanh_smul_id`: `d/ds + tanh s` is onto.
+* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_tanh_smul_id` and
+  `TauCeti.WeakDerivStep.index_trajectoryOperator_tanh_smul_id`: `d/ds + tanh s` is Fredholm of
+  index `dim E`.
 
 ## References
 
@@ -125,10 +145,58 @@ theorem ker_trajectoryOperator_neg_tanh_smul_id
   rw [← Submodule.subsingleton_iff_eq_bot]
   exact (kerTrajectoryOperatorEquiv continuous_neg_tanh_smul_id AL hAL).toEquiv.subsingleton
 
+/-- **The kernel of `d/ds + tanh s`.** For the `L∞` class `AL` of `s ↦ tanh(s) • id` on a real
+Banach space `F`, an element `u` of `W^{1,2}(ℝ, F)` lies in the kernel of `u ↦ u' + AL u` exactly
+when its value is almost everywhere `(cosh s)⁻¹ • x` for some `x ∈ F`. For `F = ℝ` the kernel is
+the line spanned by `sech`. -/
+theorem mem_ker_trajectoryOperator_tanh_smul_id_iff
+    {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ F)
+    {u : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))} :
+    u ∈ (trajectoryOperator (p := 2) AL).ker ↔ ∃ x : F,
+      ⇑(prev (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) u)
+        =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ (Real.cosh s)⁻¹ • x := by
+  constructor
+  · -- An element of the kernel is a solution of `v' = -tanh(s) v`, hence `(cosh s)⁻¹ • v 0`.
+    intro hu
+    obtain ⟨v, hv, huv⟩ := exists_hasDerivAt_of_trajectoryOperator_eq_zero continuous_tanh_smul_id
+      hAL hu
+    refine ⟨v 0, ?_⟩
+    rwa [eq_inv_cosh_smul_of_hasDerivAt (v := v) fun s ↦ by simpa using hv s] at huv
+  · -- Conversely `(cosh s)⁻¹ • x` is the value of an element of the kernel, which is `u`.
+    rintro ⟨x, hx⟩
+    obtain ⟨w, hw, hwx⟩ := exists_trajectoryOperator_eq_zero_of_hasDerivAt (p := 2) hAL
+      (fun s ↦ (hasDerivAt_inv_cosh_smul x s).congr_deriv (by simp [smul_comm (Real.tanh s)]))
+      (memLp_inv_cosh.smul (memLp_top_const x))
+    rwa [show u = w from ext (Lp.ext (hx.trans hwx.symm))]
+
+/-- **The kernel of `d/ds + tanh s` has the `Module.finrank` of `F`.** For the `L∞` class `AL` of
+`s ↦ tanh(s) • id` on a real Banach space `F`, the kernel of `u ↦ u' + AL u` on `W^{1,2}(ℝ, F)` has
+`Module.finrank` equal to `Module.finrank ℝ F`, since every solution of `v' = -tanh(s) v` is square
+integrable. For finite-dimensional `F` this says the kernel has dimension `dim F`. -/
+theorem finrank_ker_trajectoryOperator_tanh_smul_id
+    {AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ F) :
+    Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker = Module.finrank ℝ F := by
+  rw [finrank_ker_trajectoryOperator continuous_tanh_smul_id AL hAL,
+    squareIntegrableSolutions_tanh_smul_id, finrank_top]
+
 end Banach
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+
+/-- If `AL` is the class of `s ↦ c(s) • id`, then `-AL` is the class of `s ↦ -c(s) • id`. -/
+private theorem neg_ae_eq_neg_smul_id {c : ℝ → ℝ}
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ c s • ContinuousLinearMap.id ℝ E) :
+    -AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ (-c s) • ContinuousLinearMap.id ℝ E := by
+  filter_upwards [Lp.coeFn_neg AL, hAL] with s hneg hs
+  rw [hneg, Pi.neg_apply, hs, neg_smul]
 
 /-- The class `-AL` is that of `s ↦ tanh(s) • id`. -/
 private theorem neg_ae_eq_tanh_smul_id
@@ -136,18 +204,16 @@ private theorem neg_ae_eq_tanh_smul_id
       fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) :
     -AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ E := by
-  filter_upwards [Lp.coeFn_neg AL, hAL] with s hneg hs
-  rw [hneg, Pi.neg_apply, hs, neg_smul, neg_neg]
+  simpa using neg_ae_eq_neg_smul_id hAL
 
-/-- Scalar multiples of the identity are self-adjoint, so `AL` is also the class of the adjoint
-coefficients. -/
-private theorem ae_eq_adjoint_of_ae_eq_neg_tanh_smul_id [FiniteDimensional ℝ E]
+/-- Scalar multiples of the identity are self-adjoint, so the class `AL` of `s ↦ c(s) • id` is
+also the class of the adjoint coefficients. -/
+private theorem ae_eq_adjoint_of_ae_eq_smul_id [FiniteDimensional ℝ E] {c : ℝ → ℝ}
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
-      fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) :
+      fun s ↦ c s • ContinuousLinearMap.id ℝ E) :
     ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), AL s = ContinuousLinearMap.adjoint (AL s) := by
   filter_upwards [hAL] with s hs
-  rw [hs, (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 fun x y ↦ by
-    simp [real_inner_smul_left, real_inner_smul_right]).adjoint_eq]
+  simp [hs, ContinuousLinearMap.adjoint_id]
 
 /-- **The cokernel of `d/ds - tanh s`.** For the `L∞` class `AL` of `s ↦ -tanh(s) • id`, a path
 `v ∈ L²(ℝ, E)` is orthogonal to the range of `u ↦ u' + AL u` exactly when it is almost
@@ -161,7 +227,7 @@ theorem mem_orthogonal_range_trajectoryOperator_neg_tanh_smul_id_iff [FiniteDime
       ∃ x : E, v =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun s ↦ (Real.cosh s)⁻¹ • x := by
   have hneg := neg_ae_eq_tanh_smul_id hAL
   rw [orthogonal_range_trajectoryOperator_eq_map_ker
-    (ae_eq_adjoint_of_ae_eq_neg_tanh_smul_id hAL)]
+    (ae_eq_adjoint_of_ae_eq_smul_id hAL)]
   constructor
   · -- An element of the kernel of the formal adjoint is a solution of `w' = -tanh(s) w`.
     rintro ⟨z, hz, rfl⟩
@@ -182,17 +248,24 @@ theorem mem_orthogonal_range_trajectoryOperator_neg_tanh_smul_id_iff [FiniteDime
 `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm` applies. -/
 private theorem neg_tanh_smul_id_hypotheses :
     Continuous (fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) ∧
-      (∀ s, ((-Real.tanh s) • ContinuousLinearMap.id ℝ E).toLinearMap.IsSymmetric) ∧
-      (∀ v : E, 1 * ‖v‖ ≤ ‖ContinuousLinearMap.id ℝ E v‖) ∧
-      (∀ v : E, 1 * ‖v‖ ≤ ‖(-ContinuousLinearMap.id ℝ E) v‖) ∧
+      (ContinuousLinearMap.id ℝ E).HasLyapunovForm ∧
+      (-ContinuousLinearMap.id ℝ E).HasLyapunovForm ∧
       Tendsto (fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) atBot
         (𝓝 (ContinuousLinearMap.id ℝ E)) ∧
       Tendsto (fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) atTop
         (𝓝 (-ContinuousLinearMap.id ℝ E)) := by
-  refine ⟨Real.continuous_tanh.neg.smul continuous_const, fun s x y ↦ ?_, by simp, by simp,
-    by simpa using Real.tendsto_tanh_atBot.neg.smul_const (ContinuousLinearMap.id ℝ E),
-    by simpa using Real.tendsto_tanh_atTop.neg.smul_const (ContinuousLinearMap.id ℝ E)⟩
-  simp [real_inner_smul_left, real_inner_smul_right]
+  have hsym (s : ℝ) : ((-Real.tanh s) • ContinuousLinearMap.id ℝ E).toLinearMap.IsSymmetric :=
+    fun x y ↦ by simp [real_inner_smul_left, real_inner_smul_right]
+  have hbot : Tendsto (fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) atBot
+      (𝓝 (ContinuousLinearMap.id ℝ E)) := by
+    simpa using Real.tendsto_tanh_atBot.neg.smul_const (ContinuousLinearMap.id ℝ E)
+  have htop : Tendsto (fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) atTop
+      (𝓝 (-ContinuousLinearMap.id ℝ E)) := by
+    simpa using Real.tendsto_tanh_atTop.neg.smul_const (ContinuousLinearMap.id ℝ E)
+  exact ⟨Real.continuous_tanh.neg.smul continuous_const,
+    ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos (by simp),
+    ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop one_pos (by simp),
+    hbot, htop⟩
 
 variable [FiniteDimensional ℝ E]
 
@@ -203,11 +276,9 @@ theorem isFredholm_trajectoryOperator_neg_tanh_smul_id
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) :
     (trajectoryOperator (p := 2) AL).IsFredholm := by
-  obtain ⟨hA, hsym, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
+  obtain ⟨hA, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
   exact isFredholm_trajectoryOperator_of_hasLyapunovForm hA
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos hminus)
-    (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop one_pos hplus)
-    hbot htop AL hAL
+    hminus hplus hbot htop AL hAL
 
 /-- **The index of `d/ds - tanh s` is `-dim E`.** For the `L∞` class `AL` of `s ↦ -tanh(s) • id`
 on a finite-dimensional real inner product space `E`, the trajectory operator `u ↦ u' + AL u`
@@ -217,21 +288,68 @@ theorem index_trajectoryOperator_neg_tanh_smul_id
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ (-Real.tanh s) • ContinuousLinearMap.id ℝ E) :
     (trajectoryOperator (p := 2) AL).index = -(Module.finrank ℝ E : ℤ) := by
-  obtain ⟨hA, hsym, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
+  obtain ⟨hA, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
   -- The coefficients are symmetric, so `AL` is also the class of their adjoints.
   have hadj : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ ContinuousLinearMap.adjoint ((-Real.tanh s) • ContinuousLinearMap.id ℝ E) := by
     filter_upwards [hAL] with s hs
-    rw [hs, (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 (hsym s)).adjoint_eq]
+    simp [hs, ContinuousLinearMap.adjoint_id]
   rw [index_trajectoryOperator_of_hasLyapunovForm hA
-      (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym hbot one_pos hminus)
-      (ContinuousLinearMap.hasLyapunovForm_of_tendsto_of_isSymmetric hsym htop one_pos hplus)
-      hbot htop AL AL hAL hadj,
+      hminus hplus hbot htop AL AL hAL hadj,
     finrank_ker_trajectoryOperator continuous_neg_tanh_smul_id AL hAL,
-    finrank_ker_trajectoryOperator continuous_tanh_smul_id (-AL) (neg_ae_eq_tanh_smul_id hAL),
-    squareIntegrableSolutions_neg_tanh_smul_id, squareIntegrableSolutions_tanh_smul_id,
-    finrank_bot, finrank_top]
+    finrank_ker_trajectoryOperator_tanh_smul_id (neg_ae_eq_tanh_smul_id hAL),
+    squareIntegrableSolutions_neg_tanh_smul_id, finrank_bot]
   simp
+
+/-- The class `AL` of `s ↦ tanh(s) • id` is that of the reversal `s ↦ A(-s)†` of the coefficient
+`A(s) = -tanh(s) • id` of `d/ds - tanh s`. -/
+private theorem ae_eq_adjoint_neg_tanh_smul_id_neg
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ E) :
+    AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ ContinuousLinearMap.adjoint ((-Real.tanh (-s)) • ContinuousLinearMap.id ℝ E) := by
+  filter_upwards [hAL] with s hs
+  simp [hs, ContinuousLinearMap.adjoint_id]
+
+/-- **The trajectory operator `d/ds + tanh s` is Fredholm.** For the `L∞` class `AL` of
+`s ↦ tanh(s) • id` on a finite-dimensional real inner product space `E`, the operator
+`u ↦ u' + AL u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm. Its coefficient is the reversal of
+that of `d/ds - tanh s`. -/
+theorem isFredholm_trajectoryOperator_tanh_smul_id
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) AL).IsFredholm := by
+  obtain ⟨hA, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
+  exact isFredholm_trajectoryOperator_adjoint_comp_neg hA
+    hminus hplus hbot htop AL (ae_eq_adjoint_neg_tanh_smul_id_neg hAL)
+
+/-- **The trajectory operator `d/ds + tanh s` is onto.** For the `L∞` class `AL` of
+`s ↦ tanh(s) • id` on a finite-dimensional real inner product space `E`, the operator
+`u ↦ u' + AL u` maps `W^{1,2}(ℝ, E)` onto `L²(ℝ, E)`: its cokernel is the kernel of
+`d/ds - tanh s`, which is zero. -/
+theorem range_trajectoryOperator_tanh_smul_id
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) AL).range = ⊤ :=
+  LinearMap.range_eq_top.2 <| (surjective_trajectoryOperator_iff_ker_neg_eq_bot
+    (ae_eq_adjoint_of_ae_eq_smul_id hAL)
+    (isFredholm_trajectoryOperator_tanh_smul_id hAL).isClosed_range).2
+    (ker_trajectoryOperator_neg_tanh_smul_id (neg_ae_eq_neg_smul_id hAL))
+
+/-- **The index of `d/ds + tanh s` is `dim E`.** For the `L∞` class `AL` of `s ↦ tanh(s) • id`
+on a finite-dimensional real inner product space `E`, the trajectory operator `u ↦ u' + AL u` from
+`W^{1,2}(ℝ, E)` to `L²(ℝ, E)` has index `dim E`: its kernel is `{(cosh s)⁻¹ • x | x ∈ E}` and its
+cokernel is zero. This is minus the index of `d/ds - tanh s`, the trajectory operator of the
+reversed coefficient. For `E = ℝ` the index is `1`. -/
+theorem index_trajectoryOperator_tanh_smul_id
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ Real.tanh s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) AL).index = Module.finrank ℝ E := by
+  obtain ⟨hA, hminus, hplus, hbot, htop⟩ := neg_tanh_smul_id_hypotheses (E := E)
+  have hneg := neg_ae_eq_neg_smul_id hAL
+  rw [index_trajectoryOperator_adjoint_comp_neg hA
+      hminus hplus hbot htop (-AL) AL hneg (ae_eq_adjoint_neg_tanh_smul_id_neg hAL),
+    index_trajectoryOperator_neg_tanh_smul_id hneg, neg_neg]
 
 end WeakDerivStep
 

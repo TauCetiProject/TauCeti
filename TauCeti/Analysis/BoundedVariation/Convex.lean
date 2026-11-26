@@ -27,8 +27,9 @@ finite measure by a closed half-space does not increase its perimeter, and deduc
 intersecting such a set with a convex set does not increase its perimeter either. In particular
 the perimeter is monotone under inclusion of convex sets: a convex set has perimeter at most that
 of any null-measurable set of finite measure containing it, and bounded convex sets have finite
-perimeter. Cutting by the half-spaces bounding large cubes also shows that a set of finite
-measure is the limit of bounded subsets whose perimeters converge to its own.
+perimeter. Consequently every convex set has locally finite perimeter. Cutting by the half-spaces
+bounding large cubes also shows that a set of finite measure is the limit of bounded subsets whose
+perimeters converge to its own.
 
 Monotonicity under convex inclusion is how perimeters of convex bodies are compared. For a
 convex body `K` containing the ball `closedBall c r`, the outer parallel body
@@ -55,6 +56,11 @@ across a slab of width `1 / (n + 1)` because the normal components agree on the 
 * `Convex.perimeter_inter_le`: `P(s ∩ C) ≤ P(s)` for `C` convex and `μ s < ∞`.
 * `Convex.perimeter_le_of_subset`: `P(K) ≤ P(L)` for `K` convex and `K ⊆ L`, `μ L < ∞`.
 * `Convex.perimeter_lt_top`: a bounded convex set has finite perimeter.
+* `Convex.perimeter_lt_top_of_isBounded_opens`: every convex set has finite perimeter in every
+  bounded open set.
+* `Convex.exists_opens_totalVariationOn_indicator_ne_top`: every bounded set lies in an open set in
+  which a given convex set has finite perimeter, the local finiteness hypothesis of the structure
+  theorems for sets of finite perimeter.
 
 ## References
 
@@ -113,7 +119,7 @@ private theorem exists_normal_extension (f : StrongDual ℝ E) (hf : f ≠ 0) (c
     simp [hψ, hx, hw, Real.smoothTransition.zero_of_nonpos h₀]
   · rw [hdivψ x hx, norm_neg, norm_mul]
     exact mul_le_mul (hM _) (hfφ x) (norm_nonneg _) ((norm_nonneg _).trans (hM 0))
-  · rw [hdivψ x hx, Real.smoothTransition.deriv_of_neg (by linarith), zero_mul, neg_zero]
+  · rw [hdivψ x hx, Real.smoothTransition.deriv_of_nonpos (by linarith), zero_mul, neg_zero]
 
 
 variable [MeasurableSpace E] {μ : Measure E} {Ω : Opens E} {s : Set E}
@@ -415,5 +421,28 @@ theorem _root_.Convex.perimeter_lt_top [BorelSpace E] [μ.IsAddHaarMeasure] {K :
   rw [perimeter_ball hr]
   exact ENNReal.mul_lt_top (ENNReal.mul_lt_top (by simp) ENNReal.ofReal_lt_top)
     measure_ball_lt_top
+
+/-- Every convex set, bounded or not, has finite perimeter in every bounded open set `Ω`, since
+there it agrees with its intersection with a ball containing `Ω`, which is a bounded convex
+set. -/
+theorem _root_.Convex.perimeter_lt_top_of_isBounded_opens [BorelSpace E] [μ.IsAddHaarMeasure]
+    {K : Set E} (hK : Convex ℝ K) (hΩ : Bornology.IsBounded (Ω : Set E)) : perimeter μ Ω K < ∞ := by
+  obtain ⟨r, hΩr⟩ := hΩ.subset_ball 0
+  calc perimeter μ Ω K ≤ perimeter μ ⟨ball 0 r, isOpen_ball⟩ K := perimeter_mono hΩr
+    _ = perimeter μ ⟨ball 0 r, isOpen_ball⟩ (K ∩ ball 0 r) :=
+      perimeter_congr_of_inter_eq (by simp)
+    _ ≤ perimeter μ ⊤ (K ∩ ball 0 r) := perimeter_mono le_top
+    _ < ∞ :=
+      (hK.inter (convex_ball 0 r)).perimeter_lt_top (isBounded_ball.subset inter_subset_right)
+
+/-- **Convex sets have locally finite perimeter.** Every bounded set `C` lies in an open set `U` in
+which a convex set `K` has finite perimeter, `totalVariationOn μ U (K.indicator 1) ≠ ∞`. -/
+theorem _root_.Convex.exists_opens_totalVariationOn_indicator_ne_top [BorelSpace E]
+    [μ.IsAddHaarMeasure] {K C : Set E} (hK : Convex ℝ K) (hC : Bornology.IsBounded C) :
+    ∃ U : Opens E, C ⊆ (U : Set E) ∧ totalVariationOn μ U (K.indicator 1) ≠ ∞ := by
+  obtain ⟨r, hr⟩ := hC.subset_ball 0
+  refine ⟨⟨ball 0 r, isOpen_ball⟩, hr, ?_⟩
+  rw [← perimeter_def]
+  exact (hK.perimeter_lt_top_of_isBounded_opens (Ω := ⟨ball 0 r, isOpen_ball⟩) isBounded_ball).ne
 
 end TauCeti

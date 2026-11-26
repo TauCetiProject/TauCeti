@@ -27,26 +27,36 @@ Verma module lie in `λ - Q₊`, category `O` is cut out by finitely many such c
 finite-height intervals make characters supported on them multiplicable. For a rational
 realization of an integral matrix the root lattice lies in every weight lattice
 `TauCeti.CartanRealization.CoweightLattice.weightLattice`, and a weight is dominant exactly when its
-integral coroot coordinates are nonnegative, so dominance is decidable on the weight lattice.
+integral coroot coordinates are nonnegative, so dominance is decidable on the weight lattice. The
+simple roots also span a positive root cone inside the weight lattice; it is pointed, finitely
+generated for a finite index set, and consists of the elements of `Q₊` that lie in the lattice.
 
 ## Main definitions
 
 * `TauCeti.CartanRealization.rootLattice`: the root lattice `Q`.
 * `TauCeti.CartanRealization.posRootCone`: the positive root cone `Q₊`.
+* `TauCeti.CartanRealization.CoweightLattice.posRootCone`: the positive root cone of the weight
+  lattice `P`, the natural span of the simple roots in `P`.
 * `TauCeti.CartanRealization.height`: the height on `Q₊`.
 * `TauCeti.CartanRealization.RootLE`: the order `μ ≤ λ` given by `λ - μ ∈ Q₊`.
 * `TauCeti.CartanRealization.IsDominant`: the dominance predicate `λ(hᵢ) ≥ 0` for all `i`.
+* `TauCeti.CartanRealization.restrictRootLatticeEquiv`: the canonical isomorphism
+  `R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice` induced by restriction of functionals.
 
 ## Main results
 
 * `TauCeti.CartanRealization.linearIndependent_nat_root`: the simple roots are independent over
   `ℕ`, so `Q₊` is the natural span of an independent family.
 * `TauCeti.CartanRealization.isPointed_posRootCone`: `Q₊ ∩ (-Q₊) = 0`.
+* `TauCeti.CartanRealization.isAddFG_posRootCone`: for a finite index set `Q₊` is finitely
+  generated.
 * `TauCeti.CartanRealization.height_eq_sum`: `ht(∑ᵢ nᵢ αᵢ) = ∑ᵢ nᵢ`.
 * `TauCeti.CartanRealization.RootLE.antisymm`: the order on weights is antisymmetric.
 * `TauCeti.CartanRealization.finite_setOf_rootLE_height_le`: **finite-height intervals**, the set
   of `μ ≤ λ` with `ht(λ - μ) ≤ n` is finite.
 * `TauCeti.CartanRealization.CoweightLattice.rootLattice_le_weightLattice`: `Q ⊆ P`.
+* `TauCeti.CartanRealization.CoweightLattice.coe_mem_posRootCone_iff`: the positive root cone of
+  `P` is the part of `Q₊` in `P`.
 * `TauCeti.CartanRealization.CoweightLattice.isDominant_coe_iff`: dominance of an integral weight
   is nonnegativity of its coroot coordinates.
 
@@ -113,6 +123,60 @@ theorem rootLattice_eq_bot [IsEmpty I] : R.rootLattice = ⊥ := by
 theorem posRootCone_eq_bot [IsEmpty I] : R.posRootCone = ⊥ := by
   simp [posRootCone]
 
+/-- For a finite index set the positive root cone is finitely generated, so every function on
+weights supported in finitely many cones `λ - Q₊` is a character (`HahnSeries.ofConeBounded`). -/
+instance isAddFG_posRootCone [Finite I] : IsAddFG R.posRootCone.toAddSubmonoid := by
+  rw [posRootCone_def, Submodule.span_nat_eq_addSubmonoidClosure]
+  infer_instance
+
+section Restrict
+
+variable (M : Submodule K H) (hc : R.corootSpan ≤ M) (hs : M ⊔ R.cartanCenter = ⊤)
+
+/-- Restriction of functionals to `M` maps `R.rootLattice` onto
+`(R.restrict M hc hs).rootLattice`. -/
+theorem range_domRestrict_dualRestrict_rootLattice :
+    LinearMap.range ((M.dualRestrict.restrictScalars ℤ).domRestrict R.rootLattice) =
+      (R.restrict M hc hs).rootLattice := by
+  rw [LinearMap.range_domRestrict, rootLattice_def, rootLattice_def, Submodule.map_span,
+    ← Set.range_comp]
+  exact congrArg (Submodule.span ℤ) <| congrArg Set.range <| funext fun i ↦
+    LinearMap.ext fun m ↦ (R.restrict_root_apply M hc hs i m).symm
+
+/-- Restriction of functionals to `M` maps `R.rootLattice` isomorphically onto
+`(R.restrict M hc hs).rootLattice`. -/
+noncomputable def restrictRootLatticeEquiv :
+    R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice :=
+  (LinearEquiv.ofInjective ((M.dualRestrict.restrictScalars ℤ).domRestrict R.rootLattice) <|
+    (injective_iff_map_eq_zero _).mpr fun φ hφ ↦ Subtype.ext <| by
+      have hker : ∀ ξ ∈ R.rootLattice, ∀ z ∈ R.cartanCenter, ξ z = 0 := fun ξ hξ ↦ by
+        rw [rootLattice_def] at hξ
+        induction hξ using Submodule.span_induction with
+        | mem _ hα => obtain ⟨i, rfl⟩ := hα; exact fun z hz ↦ (R.mem_cartanCenter_iff z).mp hz i
+        | zero => exact fun _ _ ↦ rfl
+        | add _ _ _ _ ih₁ ih₂ => exact fun z hz ↦ by simp [ih₁ z hz, ih₂ z hz]
+        | smul _ _ _ ih => exact fun z hz ↦ by simp [ih z hz]
+      ext x
+      obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
+      have hm' : (φ : Dual K H) m = 0 := congr($(hφ) ⟨m, hm⟩)
+      simp [hm', hker φ φ.property z hz]).trans
+    (LinearEquiv.ofEq _ _ (R.range_domRestrict_dualRestrict_rootLattice M hc hs))
+
+/-- Under `restrictRootLatticeEquiv`, a root-lattice functional is restricted along `M.subtype`. -/
+@[simp]
+theorem coe_restrictRootLatticeEquiv_apply (φ : R.rootLattice) :
+    (R.restrictRootLatticeEquiv M hc hs φ : Dual K M) = (φ : Dual K H).comp M.subtype := (rfl)
+
+/-- `restrictRootLatticeEquiv` sends each simple root of `R` to the corresponding simple root of
+`R.restrict M hc hs`. -/
+@[simp]
+theorem restrictRootLatticeEquiv_root (i : I) :
+    R.restrictRootLatticeEquiv M hc hs ⟨R.root i, R.root_mem_rootLattice i⟩ =
+      ⟨(R.restrict M hc hs).root i, (R.restrict M hc hs).root_mem_rootLattice i⟩ :=
+  Subtype.ext <| LinearMap.ext fun m ↦ (R.restrict_root_apply M hc hs i m).symm
+
+end Restrict
+
 section CharZero
 
 variable [CharZero K]
@@ -133,7 +197,7 @@ noncomputable def height : R.posRootCone →+ ℕ :=
 
 /-- The height is the `LinearIndependent.natSpanHeight` of the simple roots. -/
 theorem height_apply (x : R.posRootCone) :
-    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.2⟩ :=
+    R.height x = R.linearIndependent_nat_root.natSpanHeight ⟨x, R.posRootCone_def ▸ x.property⟩ :=
   (rfl)
 
 /-- The height of a natural combination of the simple roots is the sum of its coefficients. -/
@@ -196,7 +260,7 @@ as a named relation because one dual space carries the orders of several realiza
 theorem rootLE_eq_ofAddSubmonoid_le [CharZero K] :
     R.RootLE = (PartialOrder.ofAddSubmonoid R.isPointed_posRootCone).le := by
   ext μ lam
-  simp [rootLE_iff]
+  simp [rootLE_iff, PartialOrder.ofAddSubmonoid_le_iff]
 
 /-- The order on weights is invariant under translation. -/
 @[simp]
@@ -271,6 +335,39 @@ theorem isDominant_coe_iff (lam : L.weightLattice) :
   simp only [isDominant_iff, Pi.le_def, Pi.zero_apply, corootCoordinates_apply]
   refine forall_congr' fun i ↦ ?_
   rw [← L.coe_coroot i, ← L.cast_pairing, Int.cast_nonneg_iff]
+
+/-- The positive root cone of the weight lattice: the natural span of the simple roots in `P`. -/
+def posRootCone : Submodule ℕ L.weightLattice :=
+  Submodule.span ℕ (Set.range L.root)
+
+theorem posRootCone_def : L.posRootCone = Submodule.span ℕ (Set.range L.root) := (rfl)
+
+/-- The positive root cone of the weight lattice is pointed. -/
+theorem isPointed_posRootCone : L.posRootCone.toAddSubmonoid.IsPointed :=
+  fun _ h h' ↦
+    (L.linearIndependent_root.restrict_scalars' ℕ).eq_zero_of_mem_natSpan_of_neg_mem h h'
+
+/-- A weight lies in the positive root cone of the weight lattice exactly when it lies in the
+positive root cone of the realization. -/
+theorem coe_mem_posRootCone_iff {φ : L.weightLattice} :
+    (φ : Dual ℚ H) ∈ R.posRootCone ↔ φ ∈ L.posRootCone := by
+  let ι : L.weightLattice →ₗ[ℕ] Dual ℚ H := L.weightLattice.subtype.restrictScalars ℕ
+  have hι : Function.Injective ι := Subtype.val_injective
+  have h : R.posRootCone = L.posRootCone.map ι := by
+    rw [posRootCone_def, CartanRealization.posRootCone_def, ← Submodule.span_image,
+      ← Set.range_comp]
+    congr 2
+    funext i
+    exact (L.coe_root i).symm
+  rw [h]
+  exact ⟨fun ⟨ψ, hψ, he⟩ ↦ hι he ▸ hψ, fun hφ ↦ ⟨φ, hφ, rfl⟩⟩
+
+/-- For a finite index set the positive root cone of the weight lattice is finitely generated, so
+every function on `P` supported in finitely many cones `λ - Q₊` is a character supported on the
+weight lattice (`HahnSeries.ofConeBounded`). -/
+instance isAddFG_posRootCone [Finite I] : IsAddFG L.posRootCone.toAddSubmonoid := by
+  rw [posRootCone_def, Submodule.span_nat_eq_addSubmonoidClosure]
+  infer_instance
 
 end CoweightLattice
 

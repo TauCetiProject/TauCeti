@@ -290,7 +290,7 @@ theorem trace_raiseLowerEnd_of_eq_zero {mu : Module.Dual K H} {alpha : H → K} 
   have key : raiseLowerEnd M hx hy (mu : H → K) =
       (killingExtend mu x * killingExtend mu y) • LinearMap.id := by
     refine LinearMap.ext fun m ↦ Subtype.ext ?_
-    have hm := mem_genWeightSpace_iff_forall_lie_eq_smul.mp m.2
+    have hm := mem_genWeightSpace_iff_forall_lie_eq_smul.mp m.property
     rw [coe_raiseLowerEnd_apply, hm ⟨x, hxH⟩, lie_smul, hm ⟨y, hyH⟩, smul_smul,
       killingExtend_apply_cartan mu ⟨x, hxH⟩, killingExtend_apply_cartan mu ⟨y, hyH⟩]
     simp

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Logic.Equiv.PartialEquiv
 public import Mathlib.LinearAlgebra.Projectivization.Basic
-public import TauCeti.Algebra.Field.Fin.Tuple
+public import TauCeti.Algebra.GroupWithZero.Fin.Tuple
 public import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -44,6 +44,8 @@ of complex projective space are built.
   (`Projectivization.mk_single_mem_affineOpen_iff`).
 * `Projectivization.affineChart_symm_trans_source` and
   `Projectivization.affineChart_symm_trans_apply`: the domain and formula of the transition maps.
+* `Projectivization.affineChart_symm_trans_eq_inv_of_ne`: on the projective line, the change
+  between the two affine charts is `z ↦ 1 / z`.
 * `Projectivization.affineChart_apply_affineChart_symm`: a map of projective spaces given in
   homogeneous coordinates, read in standard affine charts.
 
@@ -130,10 +132,10 @@ the `i`-th homogeneous coordinate is nonzero, it is given by the ratios of the o
 that one, enumerated by `Fin.succAbove i`. Its inverse sends `z` to `[Fin.insertNth i 1 z]`. -/
 noncomputable def affineChart (i : Fin (n + 1)) : PartialEquiv (ℙ K (Fin (n + 1) → K)) (Fin n → K)
     where
-  toFun := Projectivization.lift (fun v j ↦ v.1 (i.succAbove j) / v.1 i) fun a b t h ↦ by
+  toFun := Projectivization.lift (fun v j ↦ v.val (i.succAbove j) / v.val i) fun a b t h ↦ by
     have ht : t ≠ 0 := by
       rintro rfl
-      exact a.2 (by simpa using h)
+      exact a.property (by simpa using h)
     ext j
     simp [h, mul_div_mul_left _ _ ht]
   invFun z := mk K (Fin.insertNth (α := fun _ ↦ K) i 1 z)
@@ -213,6 +215,15 @@ theorem affineChart_symm_trans_apply (i j : Fin (n + 1)) (z : Fin n → K) :
       fun k ↦ Fin.insertNth (α := fun _ ↦ K) i 1 z (j.succAbove k) /
         Fin.insertNth (α := fun _ ↦ K) i 1 z j :=
   (rfl)
+
+/-- The change between the two affine charts of the projective line is `z ↦ 1 / z`. -/
+theorem affineChart_symm_trans_eq_inv_of_ne {i j : Fin 2} (h : i ≠ j) :
+    ⇑((affineChart (K := K) i).symm.trans (affineChart j)) = fun z _ ↦ (z 0)⁻¹ := by
+  funext z k
+  obtain ⟨l, hl⟩ := Fin.exists_succAbove_eq h
+  rw [affineChart_symm_trans_apply, Subsingleton.elim k l]
+  dsimp only
+  rw [hl, Fin.insertNth_apply_same, Fin.insertNth_apply_of_ne_fin_two h, one_div]
 
 
 /-- A map `f` of projective spaces sending `[w]` to `[F w]` for `w = Fin.insertNth i 1 z`, read in

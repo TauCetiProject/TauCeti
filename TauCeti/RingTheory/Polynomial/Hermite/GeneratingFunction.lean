@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Calculus.Deriv.Polynomial
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 
+import Mathlib.RingTheory.Polynomial.Tower
+
 /-!
 # The exponential generating function of the probabilists' Hermite polynomials
 
@@ -26,6 +28,8 @@ completeness arguments for the Hermite functions.
 
 * `Polynomial.hasSum_hermite_generating_function`: for complex `x` and `t`, the series
   `∑ Hₙ(x) · tⁿ / n!` converges to `exp (x · t - t² / 2)` (`HasSum` form).
+* `TauCeti.summable_norm_aeval_hermite_mul_pow_div_factorial`: absolute summability of the
+  Hermite exponential generating series for all `x t : ℂ`.
 * `Polynomial.hermite_generating_function`: the real `tsum` form, obtained by casting `ℝ → ℂ`.
 
 ## Proof outline
@@ -84,6 +88,11 @@ theorem _root_.Polynomial.hasSum_hermite_generating_function (x t : ℂ) :
   simp [iteratedDeriv_cexp_quadratic]
   ring
 
+/-- The Hermite exponential generating series is absolutely summable for all `x t : ℂ`. -/
+theorem summable_norm_aeval_hermite_mul_pow_div_factorial (x t : ℂ) :
+    Summable fun n : ℕ => ‖aeval x (hermite n) * t ^ n / n.factorial‖ :=
+  (Polynomial.hasSum_hermite_generating_function x t).summable.norm
+
 /-- **Exponential generating function of the probabilists' Hermite polynomials.** For all real `x`
 and `t`,
 `∑' n, Hₙ(x) · tⁿ / n! = exp (x · t - t² / 2)`,
@@ -96,7 +105,7 @@ theorem _root_.Polynomial.hermite_generating_function (x t : ℝ) :
   · ext n
     push_cast
     congr 2
-    exact (aeval_algHom_apply (Complex.ofRealAm.restrictScalars ℤ) x (hermite n)).symm
+    exact (aeval_algebraMap_apply ℂ x (hermite n)).symm
   · simp
 
 end TauCeti

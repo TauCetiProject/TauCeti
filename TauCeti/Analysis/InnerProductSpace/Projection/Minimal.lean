@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Convex.Hull
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.MetricSpace.Bounded
 
 import Mathlib.Algebra.Order.Monoid.Canonical.Basic
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
+import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Linarith
@@ -19,41 +21,93 @@ import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
 /-!
-# Nested convex projections and norm-convergent tail convex combinations in Hilbert spaces
+# Convex projections: nonexpansiveness, nested projections and tail convex combinations
 
 Let `K : ℕ → Set E` be a decreasing sequence of convex subsets of a real inner product space `E`,
 and let `p n ∈ K n` minimize the distance `‖u - w‖` to a fixed point `u : E` over `w ∈ K n`. When
 the distances `‖u - p n‖` are bounded above, the parallelogram identity gives
 `‖p m - p n‖ ^ 2 ≤ 2 * (‖u - p n‖ ^ 2 - ‖u - p m‖ ^ 2)` for `m ≤ n`, so `p` is a Cauchy sequence.
 
-Applying this at `u = 0` to the closed tail convex hulls `closure (convexHull ℝ (f '' Set.Ici n))`
+In particular, in a complete real inner product space a decreasing sequence of nonempty closed
+convex sets, the first of which is bounded, has a common point: the points of least norm converge
+to it. This needs no weak topology. As a consequence, if a continuous linear map `J` out of such a
+space sends points of norm at most `R + ε` to within `ε` of `g`, for every `ε > 0`, then `g = J w`
+for some `w` of norm at most `R`: the sets of approximate preimages are nested, closed, convex and
+bounded. This realizes limits of approximations with controlled norms, for instance in a Sobolev
+space defined as a completion.
+
+Applying the nested-intersection result to the closed tail convex hulls
+`closure (convexHull ℝ (f '' Set.Ici n))`
 of a bounded sequence `f : ℕ → E` in a complete real inner product space yields a Hilbert-space form
 of Mazur's lemma without passing through the weak topology: there exists a sequence `w : ℕ → E` of
 finite tail convex combinations `w n ∈ convexHull ℝ (f '' Set.Ici n)` that converges in norm.
 
+A point `p ∈ K` of a convex set is a nearest point of `K` to `x` exactly when it satisfies the
+variational inequality `⟪x - p, w - p⟫ ≤ 0` for every `w ∈ K` (Mathlib's
+`norm_eq_iInf_iff_real_inner_le_zero`). Two solutions of such variational inequalities are no
+farther apart than the points they solve for, so the nearest point is unique and a nonempty
+complete convex set has a `1`-Lipschitz nearest-point map. Lipschitz maps do not increase
+Hausdorff measures, so this map compares the boundary areas of nested convex sets.
+
 ## Main results
 
+* `TauCeti.norm_sub_le_norm_sub_of_inner_sub_le_zero`: solutions of variational inequalities are
+  nonexpansive.
+* `Convex.exists_lipschitzWith_one_forall_inner_le_zero`: a nonempty complete convex set has a
+  `1`-Lipschitz nearest-point map.
 * `TauCeti.cauchySeq_of_antitone_convex_norm_sub_le`: metric projections onto a decreasing sequence
   of convex sets with bounded distances form a Cauchy sequence.
 * `TauCeti.exists_tendsto_of_antitone_isClosed_convex_norm_sub_le`: in a complete real inner product
   space, those metric projections converge in norm to a point of `⋂ n, K n`.
+* `TauCeti.nonempty_iInter_of_antitone_isClosed_convex`: nested nonempty closed convex sets, the
+  first of which is bounded, have a common point.
+* `ContinuousLinearMap.exists_norm_le_apply_eq_of_forall`: approximate preimages with norms at most
+  `R + ε` for every `ε > 0` give an exact preimage of norm at most `R`.
 * `TauCeti.exists_tendsto_mem_convexHull_image_Ici`: every bounded sequence in a complete real inner
   product space admits a norm-convergent sequence of finite tail convex combinations.
 * `TauCeti.exists_tendsto_sum_smul_of_isBounded_range`: explicit-coefficient form giving finite sets
   `s n : Finset ℕ` and nonnegative weights `w n` summing to `1` such that
   `∑ i ∈ s n, w n i • f (n + i)` converges in norm.
+* `TauCeti.exists_mem_forall_norm_le_of_isComplete_convex`: over any `RCLike` field, a nonempty
+  complete convex set has an element of least norm.
 -/
 
 public section
 
 open Filter Set
-open scoped Topology
+open scoped RealInnerProductSpace Topology
 
 namespace TauCeti
 
 section InnerProduct
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- **Solutions of variational inequalities are nonexpansive.** If `p` and `p'` satisfy the
+variational inequalities `⟪x - p, p' - p⟫ ≤ 0` and `⟪x' - p', p - p'⟫ ≤ 0`, as nearest points
+`p` of a convex set to `x` and `p'` to `x'` do, then `‖p - p'‖ ≤ ‖x - x'‖`. -/
+theorem norm_sub_le_norm_sub_of_inner_sub_le_zero {x x' p p' : E} (h : ⟪x - p, p' - p⟫ ≤ 0)
+    (h' : ⟪x' - p', p - p'⟫ ≤ 0) : ‖p - p'‖ ≤ ‖x - x'‖ := by
+  have hxx : x - x' = (x - p) - (x' - p') + (p - p') := by abel
+  rw [← neg_sub p p', inner_neg_right] at h
+  have hsq : ‖p - p'‖ ^ 2 ≤ ⟪x - x', p - p'⟫ := by
+    rw [hxx, inner_add_left, inner_sub_left, real_inner_self_eq_norm_sq]
+    linarith
+  nlinarith [real_inner_le_norm (x - x') (p - p'), norm_nonneg (p - p'), norm_nonneg (x - x')]
+
+/-- **The nearest-point map of a convex set is `1`-Lipschitz.** A nonempty complete convex set
+`K` in a real inner product space admits a `1`-Lipschitz map `P` sending each point `x` to a point
+`P x ∈ K` satisfying the variational inequality `⟪x - P x, w - P x⟫ ≤ 0` for every `w ∈ K`, so
+that `P x` is the nearest point of `K` to `x`. -/
+theorem _root_.Convex.exists_lipschitzWith_one_forall_inner_le_zero {K : Set E}
+    (hK : Convex ℝ K) (hKc : IsComplete K) (hne : K.Nonempty) :
+    ∃ P : E → E, LipschitzWith 1 P ∧ ∀ x, P x ∈ K ∧ ∀ w ∈ K, ⟪x - P x, w - P x⟫ ≤ 0 := by
+  choose P hPK hP using exists_norm_eq_iInf_of_complete_convex hne hKc hK
+  have hvar (x : E) : ∀ w ∈ K, ⟪x - P x, w - P x⟫ ≤ 0 :=
+    (norm_eq_iInf_iff_real_inner_le_zero hK (hPK x)).1 (hP x)
+  refine ⟨P, LipschitzWith.of_dist_le_mul fun x y => ?_, fun x => ⟨hPK x, hvar x⟩⟩
+  simpa [dist_eq_norm] using
+    norm_sub_le_norm_sub_of_inner_sub_le_zero (hvar x _ (hPK y)) (hvar y _ (hPK x))
 
 /-- Let `K : ℕ → Set E` be a decreasing sequence of convex sets in a real inner product space, and
 suppose `p n ∈ K n` minimizes `‖u - w‖` over `w ∈ K n`. If the minimal distances `‖u - p n‖` are
@@ -129,6 +183,58 @@ theorem exists_tendsto_of_antitone_isClosed_convex_norm_sub_le {K : ℕ → Set 
   exact (hclosed n).mem_of_tendsto hv
     ((eventually_ge_atTop n).mono fun m hm ↦ hanti hm (hp_mem m))
 
+/-- **Nested closed convex sets in a Hilbert space meet.** In a complete real inner product space,
+a decreasing sequence of nonempty closed convex sets, the first of which is bounded, has nonempty
+intersection. -/
+theorem nonempty_iInter_of_antitone_isClosed_convex {K : ℕ → Set E} (hanti : Antitone K)
+    (hne : ∀ n, (K n).Nonempty) (hclosed : ∀ n, IsClosed (K n)) (hconv : ∀ n, Convex ℝ (K n))
+    (hbdd : Bornology.IsBounded (K 0)) : (⋂ n, K n).Nonempty := by
+  choose p hp_mem hp_eq using fun n ↦
+    exists_norm_eq_iInf_of_complete_convex (hne n) (hclosed n).isComplete (hconv n) 0
+  have hp_min (n : ℕ) (w : E) (hw : w ∈ K n) : ‖(0 : E) - p n‖ ≤ ‖(0 : E) - w‖ := by
+    rw [hp_eq n]
+    exact ciInf_le ⟨0, forall_mem_range.2 fun _ ↦ norm_nonneg _⟩ (⟨w, hw⟩ : K n)
+  obtain ⟨C, hC⟩ := (Metric.isBounded_iff_subset_closedBall 0).1 hbdd
+  obtain ⟨v, hv, -⟩ := exists_tendsto_of_antitone_isClosed_convex_norm_sub_le hanti hclosed hconv
+    hp_mem hp_min ⟨C, forall_mem_range.2 fun n ↦ by
+      simpa using hC (hanti (Nat.zero_le n) (hp_mem n))⟩
+  exact ⟨v, hv⟩
+
+open Metric in
+/-- **Exact preimages from approximate ones.** Let `J : E →L[ℝ] F` be a continuous linear map out
+of a complete real inner product space. If for every `ε > 0` some point of norm at most `R + ε` is
+sent within `ε` of `g`, then `g = J w` for some `w` of norm at most `R`. -/
+theorem _root_.ContinuousLinearMap.exists_norm_le_apply_eq_of_forall {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (J : E →L[ℝ] F) {g : F} {R : ℝ}
+    (h : ∀ ε > 0, ∃ v, ‖v‖ ≤ R + ε ∧ ‖J v - g‖ ≤ ε) : ∃ w, ‖w‖ ≤ R ∧ J w = g := by
+  set K : ℕ → Set E := fun n ↦ closedBall 0 (R + 1 / (n + 1)) ∩ J ⁻¹' closedBall g (1 / (n + 1))
+  have hK : Antitone K := by
+    intro n k hnk
+    have h1 : (1 : ℝ) / (k + 1) ≤ 1 / (n + 1) :=
+      one_div_le_one_div_of_le (by positivity) (by exact_mod_cast Nat.add_le_add_right hnk 1)
+    exact inter_subset_inter (closedBall_subset_closedBall (by linarith))
+      (preimage_mono (closedBall_subset_closedBall h1))
+  obtain ⟨w, hw⟩ := nonempty_iInter_of_antitone_isClosed_convex hK
+    (fun n ↦ by
+      obtain ⟨v, hv, hJv⟩ := h (1 / (n + 1)) (by positivity)
+      exact ⟨v, by rwa [mem_closedBall, dist_zero_right], by
+        rwa [mem_preimage, mem_closedBall, dist_eq_norm]⟩)
+    (fun n ↦ isClosed_closedBall.inter (isClosed_closedBall.preimage J.continuous))
+    (fun n ↦ (convex_closedBall _ _).inter ((convex_closedBall _ _).linear_preimage J.toLinearMap))
+    (isBounded_closedBall.subset inter_subset_left)
+  have hw' (n : ℕ) := mem_iInter.1 hw n
+  refine ⟨w, le_of_forall_pos_lt_add fun ε hε ↦ ?_, ?_⟩
+  · obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
+    have h1 := (hw' n).1
+    rw [mem_closedBall, dist_zero_right] at h1
+    linarith
+  · rw [← sub_eq_zero, ← norm_le_zero_iff]
+    refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
+    obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
+    have h2 := (hw' n).2
+    rw [mem_preimage, mem_closedBall, dist_eq_norm] at h2
+    linarith
+
 /-- **Norm-convergent tail convex combinations in a Hilbert space.** Every bounded sequence
 `f : ℕ → E` in a complete real inner product space admits a vector `v : E` and a sequence
 `w : ℕ → E` of finite convex combinations `w n ∈ convexHull ℝ (f '' Set.Ici n)` such that `w`
@@ -144,34 +250,17 @@ theorem exists_tendsto_mem_convexHull_image_Ici {f : ℕ → E}
     ⟨f n, subset_closure (subset_convexHull ℝ _ ⟨n, self_mem_Ici, rfl⟩)⟩
   have hK_closed (n : ℕ) : IsClosed (K n) := isClosed_closure
   have hK_conv (n : ℕ) : Convex ℝ (K n) := (convex_convexHull ℝ _).closure
-  choose p hp_mem hp_eq using fun n ↦
-    exists_norm_eq_iInf_of_complete_convex (hK_ne n) (hK_closed n).isComplete (hK_conv n) 0
-  have hp_min (n : ℕ) (w : E) (hw : w ∈ K n) : ‖(0 : E) - p n‖ ≤ ‖(0 : E) - w‖ := by
-    rw [hp_eq n]
-    exact ciInf_le ⟨0, forall_mem_range.2 fun _ ↦ norm_nonneg _⟩ (⟨w, hw⟩ : K n)
-  obtain ⟨C, hC⟩ := (Metric.isBounded_iff_subset_closedBall 0).1 hbdd
-  have hp_bdd : BddAbove (range fun n ↦ ‖(0 : E) - p n‖) := by
-    refine ⟨C, forall_mem_range.2 fun n ↦ ?_⟩
-    have hfn : f n ∈ K n := subset_closure (subset_convexHull ℝ _ ⟨n, self_mem_Ici, rfl⟩)
-    have hfnC : ‖f n‖ ≤ C := by simpa using hC (mem_range_self n)
-    calc
-      ‖(0 : E) - p n‖ ≤ ‖(0 : E) - f n‖ := hp_min n (f n) hfn
-      _ = ‖f n‖ := by simp
-      _ ≤ C := hfnC
-  obtain ⟨v, -, hp_tendsto⟩ := exists_tendsto_of_antitone_isClosed_convex_norm_sub_le
-    hK_anti hK_closed hK_conv hp_mem hp_min hp_bdd
+  obtain ⟨v, hv⟩ := nonempty_iInter_of_antitone_isClosed_convex hK_anti hK_ne hK_closed hK_conv
+    ((isBounded_convexHull.2 (hbdd.subset (image_subset_range _ _))).closure)
   have hw_ex (n : ℕ) :
-      ∃ w ∈ convexHull ℝ (f '' Ici n), dist (p n) w < 1 / ((n : ℝ) + 1) :=
-    Metric.mem_closure_iff.1 (hp_mem n) _ (by positivity)
+      ∃ w ∈ convexHull ℝ (f '' Ici n), dist v w < 1 / ((n : ℝ) + 1) :=
+    Metric.mem_closure_iff.1 (mem_iInter.1 hv n) _ (by positivity)
   choose w hw_mem hw_dist using hw_ex
   refine ⟨v, w, hw_mem, ?_⟩
   rw [tendsto_iff_dist_tendsto_zero]
-  have hbound (n : ℕ) : dist (w n) v ≤ 1 / ((n : ℝ) + 1) + dist (p n) v :=
-    (dist_triangle (w n) (p n) v).trans <|
-      add_le_add ((dist_comm (w n) (p n)).trans_le (hw_dist n).le) le_rfl
-  refine squeeze_zero (fun _ ↦ dist_nonneg) hbound ?_
-  simpa using tendsto_one_div_add_atTop_nhds_zero_nat.add
-    (tendsto_iff_dist_tendsto_zero.1 hp_tendsto)
+  exact squeeze_zero (fun _ ↦ dist_nonneg)
+    (fun n ↦ (dist_comm (w n) v).trans_le (hw_dist n).le)
+    tendsto_one_div_add_atTop_nhds_zero_nat
 
 /-- **Explicit norm-convergent tail convex combinations in a Hilbert space.** Every bounded
 sequence `f : ℕ → E` in a complete real inner product space admits a vector `v : E`, finite index
@@ -199,5 +288,37 @@ theorem exists_tendsto_sum_smul_of_isBounded_range {f : ℕ → E}
 end Complete
 
 end InnerProduct
+
+section RCLike
+
+open scoped InnerProductSpace
+
+/-- **Minimal-norm element of a complete convex set.** In an inner product space over an `RCLike`
+field `𝕜`, a nonempty complete set which is convex for a real scalar action compatible with that
+of `𝕜` has an element of least norm. The field `𝕜` is explicit, since only the instances on `E`
+mention it. -/
+theorem exists_mem_forall_norm_le_of_isComplete_convex (𝕜 : Type*) {E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+    {C : Set E} (hne : C.Nonempty)
+    (hc : IsComplete C) (hconv : Convex ℝ C) : ∃ η ∈ C, ∀ w ∈ C, ‖η‖ ≤ ‖w‖ := by
+  -- The real inner product `re ⟪x, y⟫` is built on the given `NormedSpace ℝ E`, rather than taken
+  -- from `InnerProductSpace.rclikeToReal`, whose real scalar action is the restriction of the
+  -- `𝕜`-action and is not syntactically the given one in which `C` is convex.
+  let : InnerProductSpace ℝ E :=
+    { ‹NormedSpace ℝ E› with
+      inner x y := RCLike.re ⟪x, y⟫_𝕜
+      norm_sq_eq_re_inner := norm_sq_eq_re_inner
+      conj_inner_symm x y := inner_re_symm (𝕜 := 𝕜) y x
+      add_left x y z := by rw [inner_add_left, map_add]
+      smul_left x y r := by
+        rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), inner_smul_left, RCLike.conj_ofReal,
+          RCLike.re_ofReal_mul, conj_trivial] }
+  obtain ⟨η, hηC, hη⟩ := exists_norm_eq_iInf_of_complete_convex hne hc hconv 0
+  refine ⟨η, hηC, fun w hw ↦ ?_⟩
+  have := ciInf_le (f := fun w : C ↦ ‖(0 : E) - w‖)
+    ⟨0, forall_mem_range.2 fun _ ↦ norm_nonneg _⟩ ⟨w, hw⟩
+  rwa [← hη, zero_sub, norm_neg, zero_sub, norm_neg] at this
+
+end RCLike
 
 end TauCeti

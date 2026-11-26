@@ -12,13 +12,16 @@ import TauCeti.Analysis.Calculus.FDeriv.Equiv
 /-!
 # The degree formula for integrals
 
-Let `E` be a finite-dimensional real inner product space and `f : E → E` a proper `C¹` map. For
-every continuous compactly supported `g : E → F` with values in a real normed space,
+Let `E` be a finite-dimensional real inner product space and `f : E → E` a proper differentiable
+map. For every strongly measurable `g : E → F` with values in a real normed space such that
+`det Df(x) • g (f x)` is integrable,
 
 `∫ det Df(x) • g (f x) dx = deg f • ∫ g(y) dy`,
 
 where `deg f` is the homological degree of `f` for any orientation of `E`, used on both source
 and target (`TauCeti.HomologicalOrientation.integral_det_fderiv_smul_comp_eq_degree_smul_integral`).
+In particular this holds for a proper `C¹` map `f` and every continuous compactly supported `g`
+(`integral_det_fderiv_smul_comp_eq_degree_smul_integral_of_hasCompactSupport`).
 For a two-form `β = b dy₁ ∧ dy₂` on the plane the pullback is `f^* β = (b ∘ f) det Df dx₁ ∧ dx₂`, so
 this is the classical formula `∫ f^* β = deg f ∫ β` for compactly supported top-degree forms, here
 proved with the degree defined by local homology rather than by counting preimages of regular
@@ -36,9 +39,9 @@ negative. It splits the regular set into the measurable sets where the Jacobian 
 negative, where the area formula with multiplicity
 (`TauCeti.lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv`) identifies the
 pushforward of `|det Df| dx` with the counting density `N^±(y) dy`
-(`TauCeti.map_withDensity_abs_det_fderiv_eq_withDensity_encard`). For a proper `C¹` map the
-integrand is continuous with compact support, hence integrable. The second half is that
-`N⁺(y) - N⁻(y) = deg f` at every regular value `y`
+(`TauCeti.map_withDensity_abs_det_fderiv_eq_withDensity_encard`). For a proper `C¹` map and a
+continuous compactly supported `g` the integrand is continuous with compact support, hence
+integrable. The second half is that `N⁺(y) - N⁻(y) = deg f` at every regular value `y`
 (`TauCeti.HomologicalOrientation.degree_eq_ncard_sub_ncard`), and that almost every point is a
 regular value by Sard's theorem (`MeasureTheory.addHaar_image_eq_zero_of_det_fderivWithin_eq_zero`).
 
@@ -59,6 +62,8 @@ of a regular fibre by `TauCeti.HomologicalOrientation.degree_comap_eq_ncard_sub_
 
 * `TauCeti.HomologicalOrientation.integral_det_fderiv_smul_comp_eq_degree_smul_integral`: the
   degree formula.
+* `integral_det_fderiv_smul_comp_eq_degree_smul_integral_of_hasCompactSupport`:
+  the degree formula for continuous compactly supported functions.
 * `TauCeti.HomologicalOrientation.integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral`:
   the degree formula for maps between open subsets.
 
@@ -85,25 +90,17 @@ variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDime
   [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
 
 /-- **The degree formula for integrals.** Let `o` be an orientation of the finite-dimensional real
-inner product space `E`, and let `f : E → E` be a proper `C¹` map. For every continuous compactly
-supported `g : E → F`,
+inner product space `E`, and let `f : E → E` be a proper differentiable map. For every strongly
+measurable `g : E → F` such that `det Df(x) • g (f x)` is integrable,
 
 `∫ det Df(x) • g (f x) dx = deg f • ∫ g(y) dy`,
 
 where `deg f` is the degree of `f` for the orientation `o` on both source and target. -/
 theorem integral_det_fderiv_smul_comp_eq_degree_smul_integral (o : HomologicalOrientation E E n)
-    (hE : finrank ℝ E = n) {f : C(E, E)} (hf : ContDiff ℝ 1 f) (hp : IsProperMap f) {g : E → F}
-    (hg : Continuous g) (hgc : HasCompactSupport g) :
+    (hE : finrank ℝ E = n) {f : C(E, E)} (hd : Differentiable ℝ f) (hp : IsProperMap f)
+    {g : E → F} (hg : StronglyMeasurable g)
+    (hint : Integrable fun x ↦ (fderiv ℝ f x).det • g (f x)) :
     ∫ x, (fderiv ℝ f x).det • g (f x) = o.degree o hE f • ∫ y, g y := by
-  have hd : Differentiable ℝ f := hf.differentiable one_ne_zero
-  -- The integrand is continuous with compact support, since `f` is proper.
-  have hgf : HasCompactSupport (g ∘ f) :=
-    IsCompact.of_isClosed_subset (hp.isCompact_preimage hgc) (isClosed_tsupport _)
-      (closure_minimal (by rw [support_comp_eq_preimage]; exact preimage_mono (subset_tsupport g))
-        ((isClosed_tsupport g).preimage f.continuous))
-  have hint : Integrable fun x ↦ (fderiv ℝ f x).det • g (f x) :=
-    ((ContinuousLinearMap.continuous_det.comp (hf.continuous_fderiv one_ne_zero)).smul
-      (hg.comp f.continuous)).integrable_of_hasCompactSupport hgf.smul_left
   -- By Sard's theorem almost every point is a regular value.
   have hsard : ∀ᵐ y, ∀ x ∈ f ⁻¹' {y}, (fderiv ℝ f x).det ≠ 0 := by
     have h0 := addHaar_image_eq_zero_of_det_fderivWithin_eq_zero (μ := volume) (f := f)
@@ -116,10 +113,31 @@ theorem integral_det_fderiv_smul_comp_eq_degree_smul_integral (o : HomologicalOr
     (hp.isCompact_preimage isCompact_singleton).finite_of_hasFDerivAt
       (fun x _ ↦ (hd x).hasFDerivAt) fun x hx ↦
         ⟨_, ((fderiv ℝ f x).toContinuousLinearEquivOfDetNeZero (hy x hx)).antilipschitzWith⟩
-  rw [integral_det_fderiv_smul_comp_eq_integral_ncard_sub_ncard_smul hd hfin
-      hg.stronglyMeasurable hint, ← Int.cast_smul_eq_zsmul ℝ, ← integral_smul]
+  rw [integral_det_fderiv_smul_comp_eq_integral_ncard_sub_ncard_smul hd hfin hg hint,
+    ← Int.cast_smul_eq_zsmul ℝ, ← integral_smul]
   refine integral_congr_ae (hsard.mono fun y hy ↦ ?_)
   simp [o.degree_eq_ncard_sub_ncard hE hp (fun x _ ↦ (hd x).hasFDerivAt) hy]
+
+/-- **The degree formula for integrals of compactly supported functions.** Let `o` be an
+orientation of the finite-dimensional real inner product space `E`, and let `f : E → E` be a proper
+`C¹` map. For every continuous compactly supported `g : E → F`,
+
+`∫ det Df(x) • g (f x) dx = deg f • ∫ g(y) dy`,
+
+where `deg f` is the degree of `f` for the orientation `o` on both source and target. -/
+theorem integral_det_fderiv_smul_comp_eq_degree_smul_integral_of_hasCompactSupport
+    (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n) {f : C(E, E)} (hf : ContDiff ℝ 1 f)
+    (hp : IsProperMap f) {g : E → F} (hg : Continuous g) (hgc : HasCompactSupport g) :
+    ∫ x, (fderiv ℝ f x).det • g (f x) = o.degree o hE f • ∫ y, g y := by
+  -- The integrand is continuous with compact support, since `f` is proper.
+  have hgf : HasCompactSupport (g ∘ f) :=
+    IsCompact.of_isClosed_subset (hp.isCompact_preimage hgc) (isClosed_tsupport _)
+      (closure_minimal (by rw [support_comp_eq_preimage]; exact preimage_mono (subset_tsupport g))
+        ((isClosed_tsupport g).preimage f.continuous))
+  exact o.integral_det_fderiv_smul_comp_eq_degree_smul_integral hE (hf.differentiable one_ne_zero)
+    hp hg.stronglyMeasurable
+    (((ContinuousLinearMap.continuous_det.comp (hf.continuous_fderiv one_ne_zero)).smul
+      (hg.comp f.continuous)).integrable_of_hasCompactSupport hgf.smul_left)
 
 /-- **The degree formula for integrals over open subsets.** Let `o` be an orientation of the
 finite-dimensional real inner product space `E`, let `U` and `V` be open subsets of `E`, oriented
@@ -151,10 +169,10 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     rw [Subtype.isCompact_iff, image_preimage_eq_of_subset fun y hy ↦ ⟨⟨y, hgV hy⟩, rfl⟩]
     exact hgc
   have hC : IsCompact (Subtype.val '' (f ⁻¹' (Subtype.val ⁻¹' tsupport g))) :=
-    (hp.isCompact_preimage hK).image continuous_subtype_val
+    (hp.isCompact_preimage hK).image continuous_subtypeVal
   have hCs : Subtype.val '' (f ⁻¹' (Subtype.val ⁻¹' tsupport g)) ⊆ U := by
     rintro _ ⟨z, -, rfl⟩
-    exact z.2
+    exact z.property
   have hint' : ∀ c : E → ℝ, ContinuousOn c U → IntegrableOn (fun x ↦ c x • g (φ x)) U :=
     fun c hc ↦ (((hc.smul (hg.comp_continuousOn hφd.continuousOn)).mono hCs).integrableOn_compact'
       hC hC.measurableSet).of_forall_sdiff_eq_zero hs.measurableSet fun x hx ↦ by
@@ -210,7 +228,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     · rintro ⟨hwU, hw⟩
       exact ⟨⟨w, hwU⟩, (hφ ⟨w, hwU⟩).symm.trans hw, rfl⟩
     · rintro ⟨z, hz, rfl⟩
-      exact ⟨z.2, (hφ z).trans hz⟩
+      exact ⟨z.property, (hφ z).trans hz⟩
   have hfin : ∀ᵐ y, ((U : Set E) ∩ φ ⁻¹' {y}).Finite := hsard.mono fun y hy ↦ by
     refine (IsCompact.finite_inter_preimage_of_hasFDerivAt ?_ (fun x hx ↦ hd x hx.1) fun x hx ↦
       ⟨_, ((fderiv ℝ φ x).toContinuousLinearEquivOfDetNeZero
@@ -218,7 +236,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
     rw [hfib, preimage_comp]
     exact (hp.isCompact_preimage (Subtype.isCompact_iff.2
       ((finite_singleton y).subset (image_preimage_subset _ _)).isCompact)).image
-        continuous_subtype_val
+        continuous_subtypeVal
   -- The area formula with multiplicity on an open subset of `U` where the Jacobian does not
   -- vanish, applied to the measurable map `ψ`.
   have harea : ∀ S : Set E, IsOpen S → S ⊆ U → (∀ x ∈ S, (fderiv ℝ φ x).det ≠ 0) →
@@ -258,7 +276,7 @@ theorem integral_det_fderiv_smul_comp_eq_degree_comap_smul_integral
   · simp [hgy]
   have hyV : y ∈ (V : Set E) := hgV (subset_tsupport g hgy)
   rw [o.degree_comap_eq_ncard_sub_ncard hE hp hφ (f' := fderiv ℝ φ) (y := ⟨y, hyV⟩)
-    (fun x _ ↦ hd x x.2) fun x hx ↦ hy x x.2 ((hφ x).trans (congrArg Subtype.val hx))]
+    (fun x _ ↦ hd x x.property) fun x hx ↦ hy x x.property ((hφ x).trans (congrArg Subtype.val hx))]
   push_cast
   rw [sub_smul]
 

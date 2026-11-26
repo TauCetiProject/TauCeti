@@ -9,14 +9,12 @@ public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.Valuation.Basic
 
-import Mathlib.Algebra.Polynomial.Eval.Coeff
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Data.Finset.Order
-import Mathlib.Algebra.Polynomial.Monic
 import Mathlib.Tactic.ComputeDegree
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
-import Mathlib.RingTheory.Valuation.Integers
+import TauCeti.Algebra.Polynomial.Eval.Nonarchimedean
 
 /-!
 # Valuations of roots of monic polynomials
@@ -30,9 +28,8 @@ most one. These estimates do not require the ring to be commutative or the value
 have inverses. With values in a group with zero, the leading term of a polynomial that need not be
 monic dominates at any `t` with `1 ≤ ν t` at which each lower coefficient has value below
 `ν (leadingCoeff p) * ν t`, and so, over a division ring, at every `t` of large enough value.
-The last estimate, that at a root of a monic cubic with unit discriminant the
-derivative is a unit, is stated over a commutative ring with values in a group with zero, so that
-it can compute in the ring of integers `ν.integer`.
+The last estimate, that at a root of a monic cubic with `ν`-integral quadratic and linear
+coefficients and unit discriminant the derivative is a unit, is stated over a commutative ring.
 
 ## Main results
 
@@ -45,6 +42,12 @@ it can compute in the ring of integers `ν.integer`.
   `Valuation.exists_map_eval_eq_leadingCoeff_mul_pow`: the non-monic forms, at `t` with `1 ≤ ν t`
   whose value is large compared with the lower coefficients, and over a division ring at every `t`
   of large enough value.
+* `Valuation.exists_pow_le_map_coeff_of_root_monic` and
+  `Valuation.exists_map_coeff_le_mul_pow_of_root`: a root `t` is bounded above by a lower
+  coefficient of a monic polynomial it annihilates and, if `ν t ≠ 0`, below by a ratio of two
+  coefficients of any polynomial it annihilates that has a coefficient of nonzero value. Over an
+  integral extension these bounds compare the values of a valuation with those of its
+  restriction.
 * `Valuation.le_one_of_root_monic`: a root of a monic polynomial with `ν`-integral coefficients
   has value at most one.
 * `Valuation.map_quadratic_eq_of_one_lt` and `Valuation.one_lt_map_sq_add_mul_sub_iff`:
@@ -53,8 +56,9 @@ it can compute in the ring of integers `ν.integer`.
   of a chord sum, read in its slope `λ`.
 * `Valuation.map_cubic_eq_of_one_lt` and `Valuation.le_one_of_root_cubic`: the two statements above
   for the monic cubic `t³ + at² + bt + c`, which is the shape a Weierstrass equation takes.
-* `Valuation.map_cubic_deriv_eq_one`: at a root of such a cubic whose discriminant has value `1`,
-  the derivative `3t² + 2at + b` has value `1`.
+* `Valuation.map_cubic_deriv_eq_one`: at a root of a monic cubic `t³ + at² + bt + c` whose
+  discriminant has value `1`, and whose coefficients `a`, `b` (but not necessarily `c`) are
+  `ν`-integral, the derivative `3t² + 2at + b` has value `1`.
 
 The cubic bounds apply to the Weierstrass equation: a root of the cubic is integral at every
 prime where its coefficients are integral. The companion estimate, for a polynomial expression
@@ -66,8 +70,9 @@ Adapted from Michael Stoll's `EllipticCurves` project
 (`github.com/MichaelStollBayreuth/EllipticCurves`, Apache-2.0, commit `66889eada51a`),
 `EllipticCurves/Mathlib/Basic.lean`, section `Valuation`, together with the cubic specializations
 from `EllipticCurves/WeakMordellWeil.lean`, section `Cubic`. `map_cubic_deriv_eq_one` follows the
-private lemma of that name in the same section at the later revision `3bfe124`, with the Bézout
-identity it takes as a hypothesis there proved here.
+private lemma of that name in the same section at the later revision `3bfe124`, without its
+hypothesis `ν c ≤ 1`: here `c` is eliminated with the root equation, and the Bézout identity that
+the source takes as a hypothesis is not needed.
 -/
 
 public section
@@ -90,21 +95,14 @@ lemma eq_one_of_mul_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hab : ν (a * b)
 
 /-- **The leading term of a polynomial dominates its value when it dominates each lower term**:
 if `ν (p.coeff i) * ν t ^ i < ν (leadingCoeff p) * ν t ^ natDegree p` for every
-`i < natDegree p`, then `ν (p.eval t) = ν (leadingCoeff p) * ν t ^ natDegree p`. -/
+`i < natDegree p`, then `ν (p.eval t) = ν (leadingCoeff p) * ν t ^ natDegree p`. This is the
+valuation form of `IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow`. -/
 lemma map_eval_eq_leadingCoeff_mul_pow {p : L[X]}
     (hp : ∀ i < p.natDegree, ν (p.coeff i) * ν t ^ i < ν p.leadingCoeff * ν t ^ p.natDegree) :
     ν (p.eval t) = ν p.leadingCoeff * ν t ^ p.natDegree := by
-  set n := p.natDegree with hn
-  rcases Nat.eq_zero_or_pos n with h0 | h0
-  · simp [eval_eq_sum_range, ← hn, h0, leadingCoeff]
-  have heval : p.eval t = (∑ i ∈ Finset.range n, p.coeff i * t ^ i) + p.leadingCoeff * t ^ n := by
-    rw [eval_eq_sum_range, Finset.sum_range_succ, leadingCoeff]
-  have hlt : ν (∑ i ∈ Finset.range n, p.coeff i * t ^ i) < ν (p.leadingCoeff * t ^ n) := by
-    rw [map_mul, map_pow]
-    refine ν.map_sum_lt (zero_le.trans_lt (hp 0 h0)).ne' fun i hi ↦ ?_
-    rw [map_mul, map_pow]
-    exact hp i (Finset.mem_range.mp hi)
-  rw [heval, ν.map_add_eq_of_lt_right hlt, map_mul, map_pow]
+  have h := IsNonarchimedean.apply_eval_eq_leadingCoeff_mul_pow (f := ν) ν.map_add ν.map_neg
+    (p := p) (t := t) fun i hi ↦ by simpa only [map_mul, map_pow] using hp i hi
+  rwa [map_mul, map_pow] at h
 
 /-- If `p` is monic with coefficients that are integral for the valuation `ν` and `1 < ν t`,
 then the value of `p` at `t` is dominated by the leading term: `ν (p.eval t) = ν t ^ p.natDegree`.
@@ -152,11 +150,63 @@ theorem exists_map_eval_eq_leadingCoeff_mul_pow {K : Type*} [DivisionRing K] (ν
     rintro rfl
     simp at hi
   have hlc : 0 < ν p.leadingCoeff := by
-    rw [zero_lt_iff, ne_eq, ν.zero_iff, leadingCoeff_eq_zero]
+    rw [pos_iff_ne_zero, ne_eq, ν.zero_iff, leadingCoeff_eq_zero]
     exact hp
   have hi' := (hM _ (Finset.mem_image_of_mem _ (Finset.mem_range.mpr hi))).trans_lt
     ((le_max_right _ _).trans_lt ht)
   rwa [div_lt_iff₀ hlc, mul_comm] at hi'
+
+/-- **Some lower coefficient bounds a root of a monic polynomial from above.** If `t` is a root
+of a monic polynomial `p`, then `ν t ^ (natDegree p - i) ≤ ν (p.coeff i)` for some
+`i < natDegree p`: otherwise the leading term `t ^ natDegree p` would dominate `p.eval t`. -/
+theorem exists_pow_le_map_coeff_of_root_monic (ν : Valuation L Γ₀) {p : L[X]} (hp : p.Monic)
+    (heq : p.eval t = 0) : ∃ i < p.natDegree, ν t ^ (p.natDegree - i) ≤ ν (p.coeff i) := by
+  by_contra! h
+  -- `p ≠ 1` has positive degree, and then `ν t ≠ 0`, as `ν (p.coeff 0) < ν t ^ natDegree p`
+  have hn : p.natDegree ≠ 0 := fun hn ↦ by
+    rw [hp.natDegree_eq_zero.mp hn, eval_one] at heq
+    simpa using congrArg ν heq
+  have ht : ν t ≠ 0 := fun ht ↦ by
+    simpa [ht, zero_pow hn] using h 0 (Nat.pos_of_ne_zero hn)
+  have hdom := ν.map_eval_eq_leadingCoeff_mul_pow (p := p) (t := t) fun i hi ↦ by
+    rw [hp.leadingCoeff, ν.map_one, one_mul]
+    calc ν (p.coeff i) * ν t ^ i < ν t ^ (p.natDegree - i) * ν t ^ i :=
+          mul_lt_mul_of_pos_right (h i hi) (pow_pos (pos_iff_ne_zero.mpr ht) i)
+      _ = ν t ^ p.natDegree := by rw [← pow_add, Nat.sub_add_cancel hi.le]
+  rw [heq, map_zero, hp.leadingCoeff, ν.map_one, one_mul] at hdom
+  exact pow_ne_zero _ ht hdom.symm
+
+/-- **A root is bounded from below by a ratio of two coefficients.** If `t` is a root of `p` with
+`ν t ≠ 0` and some coefficient of `p` has nonzero value, then there are `i < j` with
+`ν (p.coeff i) ≠ 0` and `ν (p.coeff i) ≤ ν (p.coeff j) * ν t ^ (j - i)`. -/
+theorem exists_map_coeff_le_mul_pow_of_root (ν : Valuation L Γ₀) {p : L[X]}
+    (heq : p.eval t = 0) (ht : ν t ≠ 0) (hp : ∃ k, ν (p.coeff k) ≠ 0) :
+    ∃ i j, i < j ∧ ν (p.coeff i) ≠ 0 ∧ ν (p.coeff i) ≤ ν (p.coeff j) * ν t ^ (j - i) := by
+  classical
+  set i := Nat.find hp
+  have hi : ν (p.coeff i) ≠ 0 := Nat.find_spec hp
+  have hlow (j : ℕ) (hj : j < i) : ν (p.coeff j) = 0 := not_not.mp (Nat.find_min hp hj)
+  refine ⟨i, ?_⟩
+  by_contra! h
+  -- the term of index `i` strictly dominates every other term of `p.eval t`
+  have hti : ν (p.coeff i * t ^ i) ≠ 0 := by
+    rw [map_mul, map_pow]
+    exact mul_ne_zero hi (pow_ne_zero _ ht)
+  have hmem : i ∈ Finset.range (p.natDegree + 1) :=
+    Finset.mem_range_succ_iff.mpr (le_natDegree_of_ne_zero fun h0 ↦ hi (by rw [h0, map_zero]))
+  have hrest : ν (∑ j ∈ (Finset.range (p.natDegree + 1)).erase i, p.coeff j * t ^ j) <
+      ν (p.coeff i * t ^ i) := by
+    refine ν.map_sum_lt hti fun j hj ↦ ?_
+    rw [map_mul, map_pow, map_mul, map_pow]
+    rcases lt_or_gt_of_ne (Finset.ne_of_mem_erase hj) with hji | hij
+    · rw [hlow j hji, zero_mul]
+      exact pos_iff_ne_zero.mpr (by simpa using hti)
+    · calc ν (p.coeff j) * ν t ^ j = ν (p.coeff j) * ν t ^ (j - i) * ν t ^ i := by
+            rw [mul_assoc, ← pow_add, Nat.sub_add_cancel hij.le]
+        _ < ν (p.coeff i) * ν t ^ i :=
+            mul_lt_mul_of_pos_right (h j hij hi) (pow_pos (pos_iff_ne_zero.mpr ht) i)
+  rw [eval_eq_sum_range, ← Finset.add_sum_erase _ _ hmem] at heq
+  exact hti (by rw [← ν.map_add_eq_of_lt_left hrest, heq, map_zero])
 
 end Group
 
@@ -231,27 +281,44 @@ end Cubic
 
 section CubicDerivative
 
-variable {L Γ : Type*} [CommRing L] [LinearOrderedCommGroupWithZero Γ] (ν : Valuation L Γ)
+variable {L Γ : Type*} [CommRing L] [LinearOrderedCommMonoidWithZero Γ] (ν : Valuation L Γ)
   {t a b c : L}
 
-/-- **At a root of a monic cubic with integral coefficients and unit discriminant, the derivative
-is a unit.** If `t³ + at² + bt + c = 0`, the coefficients are integral and the discriminant
-`a²b² - 4b³ - 4a³c - 27c² + 18abc` of the cubic has value `1`, then `3t² + 2at + b` has value `1`.
-The Bézout identity between the cubic and its derivative writes the discriminant, at a root, as
-the derivative times a polynomial in `t`, `a`, `b`, `c` with integer coefficients. -/
-lemma map_cubic_deriv_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1)
+/-- **At a root of a monic cubic with `ν`-integral `a`, `b` and unit discriminant, the derivative
+is a unit.** If `t³ + at² + bt + c = 0`, the coefficients `a`, `b` are integral and the
+discriminant `a²b² - 4b³ - 4a³c - 27c² + 18abc` of the cubic has value `1`, then
+`3t² + 2at + b` has value `1`. At a root, the discriminant is `s² ((a² - 3b) - s)` for the
+derivative `s = 3t² + 2at + b`; integrality of `c` and `t` is not needed. -/
+lemma map_cubic_deriv_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1)
     (heq : t ^ 3 + a * t ^ 2 + b * t + c = 0)
     (hd : ν (a ^ 2 * b ^ 2 - 4 * b ^ 3 - 4 * a ^ 3 * c - 27 * c ^ 2 + 18 * a * b * c) = 1) :
     ν (3 * t ^ 2 + 2 * a * t + b) = 1 := by
-  have ht := ν.le_one_of_root_cubic ha hb hc heq
-  rw [← mem_integer_iff] at ha hb hc ht
-  -- Both factors are polynomial expressions in `t`, `a`, `b`, `c`, so they lie in the subring
-  -- `ν.integer`; `aesop` closes such membership goals with its `SetLike` rules.
-  refine ν.eq_one_of_mul_eq_one (b := (2 * a ^ 2 - 6 * b) * t ^ 2
-      + (2 * a ^ 3 - 7 * a * b + 9 * c) * t + (a ^ 2 * b - 4 * b ^ 2 + 3 * a * c))
-    ((mem_integer_iff _ _).1 (by aesop)) ((mem_integer_iff _ _).1 (by aesop)) ?_
-  convert hd using 2
-  linear_combination (-(18 * b - 6 * a ^ 2) * t - (15 * a * b - 4 * a ^ 3 - 27 * c)) * heq
+  have hc : c = -(t ^ 3 + a * t ^ 2 + b * t) := by linear_combination heq
+  subst hc
+  have hdisc : a ^ 2 * b ^ 2 - 4 * b ^ 3 - 4 * a ^ 3 * (-(t ^ 3 + a * t ^ 2 + b * t)) -
+      27 * (-(t ^ 3 + a * t ^ 2 + b * t)) ^ 2 + 18 * a * b * (-(t ^ 3 + a * t ^ 2 + b * t)) =
+      (3 * t ^ 2 + 2 * a * t + b) ^ 2 * ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b)) := by
+    ring
+  have h3b : ν (3 * b) ≤ 1 := by
+    have h3 : 3 * b = b + b + b := by ring
+    rw [h3]
+    exact ν.map_add_le (ν.map_add_le hb hb) hb
+  have hK : ν (a ^ 2 - 3 * b) ≤ 1 :=
+    ν.map_sub_le (by rw [map_pow]; exact pow_le_one' ha 2) h3b
+  -- The derivative `s` is a root of the monic cubic `s³ - (a² - 3b) s² + disc`, so it is integral.
+  have hs : ν (3 * t ^ 2 + 2 * a * t + b) ≤ 1 :=
+    ν.le_one_of_root_cubic ((ν.map_sub_swap (3 * b) (a ^ 2)).trans_le hK)
+      (ν.map_zero.trans_le zero_le) hd.le (by linear_combination hdisc)
+  have hK' : ν ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b)) ≤ 1 := ν.map_sub_le hK hs
+  rw [hdisc, map_mul, map_pow] at hd
+  refine ν.eq_one_of_mul_eq_one (b := (3 * t ^ 2 + 2 * a * t + b) *
+      ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b))) hs
+    (by rw [map_mul]; exact mul_le_one' hs hK') ?_
+  have hmul : (3 * t ^ 2 + 2 * a * t + b) * ((3 * t ^ 2 + 2 * a * t + b) *
+      ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b))) = (3 * t ^ 2 + 2 * a * t + b) ^ 2 *
+      ((a ^ 2 - 3 * b) - (3 * t ^ 2 + 2 * a * t + b)) := by ring
+  rw [hmul, map_mul, map_pow]
+  exact hd
 
 end CubicDerivative
 

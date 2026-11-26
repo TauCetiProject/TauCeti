@@ -35,11 +35,19 @@ just curves with the same `j`-invariant, exactly when they are homothetic. This 
 fact that `j(τ) = j(τ')` exactly when `τ' ∈ SL(2, ℤ) τ` (`TauCeti.ModularGroup.j_eq_j_iff`), since
 the lattice of `γ τ` is `(c τ + d)⁻¹ (ℤ τ + ℤ)`.
 
+## Main definitions
+
+* `TauCeti.PeriodPairHomothetyClass.j`, `TauCeti.PeriodPairHomothetyClass.jEquiv`: the
+  `j`-invariant on `TauCeti.PeriodPairHomothetyClass` and the classification bijection
+  `TauCeti.PeriodPairHomothetyClass ≃ ℂ`.
+
 ## Main results
 
 * `PeriodPair.weierstrassCurve_j_eq_iff`,
   `PeriodPair.exists_variableChange_smul_weierstrassCurve_eq_iff`: `E_Λ` and `E_{Λ'}` have the same
   `j`-invariant, or are related by a change of variables, exactly when `Λ'` is homothetic to `Λ`.
+* `PeriodPair.leftOrder_lattice_eq_of_weierstrassCurve_j_eq`: period pairs with the same
+  Weierstrass `j`-invariant have the same complex scalar multiplier order `leftOrder`.
 * `WeierstrassCurve.exists_variableChange_smul_weierstrassCurve_periodPair_eq`: every elliptic curve
   over `ℂ` is a change of variables of the curve of some `ℤ τ + ℤ`.
 * `WeierstrassCurve.exists_periodPair_nonempty_addEquiv`: every elliptic curve `E` over `ℂ` has
@@ -76,9 +84,10 @@ namespace PeriodPair
 variable {L L' : PeriodPair}
 
 /-- **The `j`-invariant classifies lattices up to homothety**: `E_Λ` and `E_{Λ'}` have the same
-`j`-invariant exactly when `Λ' = c Λ` for some `c ∈ ℂˣ`. -/
+`j`-invariant exactly when `Λ` and `Λ'` are homothetic (`Λ' = c Λ` for some `c ∈ ℂˣ`). -/
 theorem weierstrassCurve_j_eq_iff :
-    L.weierstrassCurve.j = L'.weierstrassCurve.j ↔ ∃ c : ℂˣ, L'.lattice = (c • L).lattice := by
+    L.weierstrassCurve.j = L'.weierstrassCurve.j ↔ L.Homothetic L' := by
+  rw [homothetic_def]
   refine ⟨fun hj ↦ ?_, fun ⟨c, h⟩ ↦ (weierstrassCurve_j_eq_of_lattice_eq_smul h).symm⟩
   -- Write `Λ = c₁ (ℤ τ + ℤ)` and `Λ' = c₂ (ℤ τ' + ℤ)`; then `j(τ) = j(τ')`, so `τ' = γ τ`.
   obtain ⟨c₁, τ, h₁⟩ := L.exists_lattice_eq_smul_periodPair
@@ -95,21 +104,26 @@ theorem weierstrassCurve_j_eq_iff :
     lattice_smul_eq_of_lattice_eq _ h₁', ← mul_smul]
 
 /-- **Isomorphic curves come from homothetic lattices**: `E_{Λ'}` is a change of variables of
-`E_Λ` exactly when `Λ' = c Λ` for some `c ∈ ℂˣ`. -/
+`E_Λ` exactly when `Λ` and `Λ'` are homothetic (`Λ' = c Λ` for some `c ∈ ℂˣ`). -/
 theorem exists_variableChange_smul_weierstrassCurve_eq_iff :
-    (∃ C : VariableChange ℂ, C • L.weierstrassCurve = L'.weierstrassCurve) ↔
-      ∃ c : ℂˣ, L'.lattice = (c • L).lattice := by
+    (∃ C : VariableChange ℂ, C • L.weierstrassCurve = L'.weierstrassCurve) ↔ L.Homothetic L' := by
   rw [← weierstrassCurve_j_eq_iff]
   refine ⟨fun ⟨C, hC⟩ ↦ ?_, exists_variableChange_of_j_eq _ _⟩
   simp only [← hC, variableChange_j]
+
+/-- Period pairs with the same Weierstrass `j`-invariant have the same complex multiplier order. -/
+theorem leftOrder_lattice_eq_of_weierstrassCurve_j_eq
+    (h : L.weierstrassCurve.j = L'.weierstrassCurve.j) :
+    L.lattice.leftOrder = L'.lattice.leftOrder :=
+  (weierstrassCurve_j_eq_iff.mp h).leftOrder_lattice_eq
 
 /-- **A lattice with `g₃ = 0` has complex multiplication by `i`**: it is preserved by every fourth
 root of unity. Indeed `j = 1728`, so the lattice is homothetic to `ℤ i + ℤ`. -/
 theorem lattice_smul_eq_self_of_g₃_eq_zero (h : L.g₃ = 0) {c : ℂˣ} (hc : (c : ℂ) ^ 4 = 1) :
     (c • L).lattice = L.lattice := by
-  obtain ⟨d, hd⟩ := weierstrassCurve_j_eq_iff.mp
+  obtain ⟨d, hd⟩ := homothetic_def.mp (weierstrassCurve_j_eq_iff.mp
     ((UpperHalfPlane.weierstrassCurve_j_periodPair _).trans
-      (TauCeti.ModularForm.j_I.trans (weierstrassCurve_j_eq_1728_iff.mpr h).symm))
+      (TauCeti.ModularForm.j_I.trans (weierstrassCurve_j_eq_1728_iff.mpr h).symm)))
   exact lattice_smul_eq_self_of_lattice_eq_smul hd
     (lattice_smul_eq_self_of_pow_eq_one (ζ := Units.mk0 Complex.I I_ne_zero)
       (by simpa using Complex.isPrimitiveRoot_I) UpperHalfPlane.lattice_I_smul_periodPair_I hc)
@@ -118,9 +132,9 @@ theorem lattice_smul_eq_self_of_g₃_eq_zero (h : L.g₃ = 0) {c : ℂˣ} (hc : 
 root of unity. Indeed `j = 0`, so the lattice is homothetic to `ℤ ρ + ℤ`. -/
 theorem lattice_smul_eq_self_of_g₂_eq_zero (h : L.g₂ = 0) {c : ℂˣ} (hc : (c : ℂ) ^ 6 = 1) :
     (c • L).lattice = L.lattice := by
-  obtain ⟨d, hd⟩ := weierstrassCurve_j_eq_iff.mp
+  obtain ⟨d, hd⟩ := homothetic_def.mp (weierstrassCurve_j_eq_iff.mp
     ((UpperHalfPlane.weierstrassCurve_j_periodPair _).trans
-      (TauCeti.ModularForm.j_ρ.trans (weierstrassCurve_j_eq_zero_iff.mpr h).symm))
+      (TauCeti.ModularForm.j_ρ.trans (weierstrassCurve_j_eq_zero_iff.mpr h).symm)))
   -- `ρ` is a primitive cube root of unity, and `c` or `-c` is a cube root of unity.
   have hρ : IsPrimitiveRoot ((Units.mk0 (UpperHalfPlane.ρ : ℂ) UpperHalfPlane.ρ.ne_zero : ℂˣ) : ℂ)
       3 := by
@@ -143,8 +157,8 @@ theorem lattice_smul_eq_self_of_g₂_eq_zero (h : L.g₂ = 0) {c : ℂˣ} (hc : 
 theorem lattice_eq_iff_g₂_eq_and_g₃_eq : L.lattice = L'.lattice ↔ L.g₂ = L'.g₂ ∧ L.g₃ = L'.g₃ := by
   refine ⟨g₂_eq_and_g₃_eq_of_lattice_eq, fun ⟨h₂, h₃⟩ ↦ ?_⟩
   -- The curves agree, so `Λ' = c Λ` for some `c ∈ ℂˣ`; then `c⁴ g₂ = g₂` and `c⁶ g₃ = g₃`.
-  obtain ⟨c, hc⟩ := (weierstrassCurve_j_eq_iff (L := L) (L' := L')).mp (by
-    rw [weierstrassCurve_j, weierstrassCurve_j, h₂, h₃])
+  obtain ⟨c, hc⟩ := homothetic_def.mp ((weierstrassCurve_j_eq_iff (L := L) (L' := L')).mp (by
+    rw [weierstrassCurve_j, weierstrassCurve_j, h₂, h₃]))
   rw [hc]
   have hc₀ : (c : ℂ) ≠ 0 := c.ne_zero
   obtain ⟨hg₂, hg₃⟩ := g₂_eq_and_g₃_eq_of_lattice_eq hc
@@ -195,6 +209,45 @@ theorem weierstrassCurve_eq_iff_lattice_eq :
     weierstrassCurve_eq_of_lattice_eq⟩
 
 end PeriodPair
+
+namespace TauCeti.PeriodPairHomothetyClass
+
+/-- The `j`-invariant of a homothety class of complex lattices. -/
+def j : PeriodPairHomothetyClass → ℂ :=
+  lift (fun L ↦ L.weierstrassCurve.j) fun _ _ ↦ PeriodPair.weierstrassCurve_j_eq_iff.mpr
+
+/-- On the homothety class of `L`, `j` is the `j`-invariant of `L.weierstrassCurve`. -/
+@[simp] theorem j_mk (L : PeriodPair) : (mk L).j = L.weierstrassCurve.j := lift_mk _ _ L
+
+/-- On the homothety class of `ℤ τ + ℤ`, `j` is the modular invariant `TauCeti.ModularForm.j τ`. -/
+theorem j_mk_periodPair (τ : ℍ) : (mk τ.periodPair).j = TauCeti.ModularForm.j τ :=
+  (j_mk _).trans (weierstrassCurve_j_periodPair τ)
+
+/-- **The `j`-invariant separates homothety classes of complex lattices.** -/
+theorem j_injective : Function.Injective j :=
+  PeriodPairHomothetyClass.ind fun L ↦ PeriodPairHomothetyClass.ind fun L' h ↦
+    mk_eq_mk_iff.mpr <| PeriodPair.weierstrassCurve_j_eq_iff.mp <|
+      (j_mk L).symm.trans (h.trans (j_mk L'))
+
+/-- Every complex number is the `j`-invariant of a homothety class of complex lattices. -/
+theorem j_surjective : Function.Surjective j := fun z ↦
+  let ⟨τ, hτ⟩ := TauCeti.ModularForm.j_surjective z
+  ⟨mk τ.periodPair, (j_mk_periodPair τ).trans hτ⟩
+
+/-- **Classification of complex lattices up to homothety by the `j`-invariant.** -/
+def jEquiv : PeriodPairHomothetyClass ≃ ℂ := Equiv.ofBijective j ⟨j_injective, j_surjective⟩
+
+/-- Applying `PeriodPairHomothetyClass.jEquiv` evaluates `PeriodPairHomothetyClass.j`. -/
+@[simp] theorem jEquiv_apply (x : PeriodPairHomothetyClass) : jEquiv x = x.j := (rfl)
+
+/-- The `j`-invariant of `jEquiv.symm z` is `z`. -/
+@[simp] theorem j_jEquiv_symm (z : ℂ) : (jEquiv.symm z).j = z := jEquiv.apply_symm_apply z
+
+/-- `jEquiv.symm` recovers a homothety class from its `j`-invariant. -/
+@[simp] theorem jEquiv_symm_j (x : PeriodPairHomothetyClass) : jEquiv.symm x.j = x :=
+  jEquiv.symm_apply_apply x
+
+end TauCeti.PeriodPairHomothetyClass
 
 /-! ### Every complex elliptic curve comes from a lattice -/
 

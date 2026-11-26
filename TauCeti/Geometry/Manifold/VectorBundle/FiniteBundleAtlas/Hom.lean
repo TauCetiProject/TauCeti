@@ -55,6 +55,9 @@ compact space (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
   section of the hom bundle in two charts differ by the coordinate changes of both bundles, which
   for a `V`-valued one-form are the derivative of the chart transition and the coordinate change
   of `V` (`TauCeti.FiniteBundleAtlas.fderiv_transition`).
+* `TauCeti.FiniteBundleAtlas.image_tangentHom`, `TauCeti.FiniteBundleAtlas.overlap_tangentHom`,
+  `TauCeti.FiniteBundleAtlas.transition_tangentHom`: the atlas of `V`-valued one-forms has the
+  chart images, overlaps and transitions of `A`.
 -/
 
 public section
@@ -176,6 +179,20 @@ theorem coord_hom (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x) (y : E) :
   rw [coord_def (A.hom h) i, hom_trivializationAt_apply]
   rfl
 
+/-- **Hom sections act chartwise over the base sets.** At every point `y` whose preimage under
+chart `i` lies in the base sets of the trivializations of `V₁` and `V₂` at the centre of the chart,
+applying the chart reading of a section `φ` of the hom bundle to the chart reading of a section `s`
+of `V₁` gives the chart reading of the section `x ↦ φ x (s x)` of `V₂`. -/
+theorem coord_hom_apply_of_mem_baseSet (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x)
+    (s : ∀ x, V₁ x) {y : E} (h₁ : (A.chart i).symm y ∈ (A.triv i).baseSet)
+    (h₂ : (A.chart i).symm y ∈ (trivializationAt F₂ V₂ (A.center i)).baseSet) :
+    (A.hom h).coord i φ y (A.coord i s y) = (A.ofBaseSet h).coord i (fun x ↦ φ x (s x)) y := by
+  rw [coord_hom, ContinuousLinearMap.inCoordinates_eq h₁ h₂, coord_def, coord_def (A.ofBaseSet h) i]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    Trivialization.continuousLinearEquivAt_symm_apply, Trivialization.symm_apply_apply_mk _ h₁,
+    Trivialization.continuousLinearEquivAt_apply]
+  rfl
+
 /-- **Hom sections act chartwise.** On the image of a chart, applying the chart reading of a
 section `φ` of the hom bundle to the chart reading of a section `s` of `V₁` gives the chart reading
 of the section `x ↦ φ x (s x)` of `V₂`. -/
@@ -183,14 +200,8 @@ theorem coord_hom_apply (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x) (s 
     (hy : y ∈ A.image i) :
     (A.hom h).coord i φ y (A.coord i s y) = (A.ofBaseSet h).coord i (fun x ↦ φ x (s x)) y := by
   have hdom := A.symm_mem_dom hy
-  have h₁ := A.dom_subset_baseSet i hdom
-  have h₂ : (A.chart i).symm y ∈ (trivializationAt F₂ V₂ (A.center i)).baseSet :=
-    h i (subset_closure hdom)
-  rw [coord_hom, ContinuousLinearMap.inCoordinates_eq h₁ h₂, coord_def, coord_def (A.ofBaseSet h) i]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    Trivialization.continuousLinearEquivAt_symm_apply, Trivialization.symm_apply_apply_mk _ h₁,
-    Trivialization.continuousLinearEquivAt_apply]
-  rfl
+  exact A.coord_hom_apply_of_mem_baseSet h i φ s (A.dom_subset_baseSet i hdom)
+    (h i (subset_closure hdom))
 
 /-- **Change of chart for hom sections.** On the overlap of charts `i` and `i'`, the reading in
 chart `i'` of a section of the hom bundle is its reading in chart `i` at the transition point,
@@ -273,6 +284,22 @@ one-forms on the charts of a finite bundle atlas of `V`. -/
 abbrev tangentHom :
     FiniteBundleAtlas E M (E →L[ℝ] F) (fun x ↦ TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x) :=
   A.tangent.hom A.closure_dom_subset_baseSet
+
+/-- The chart images of the atlas of `V`-valued one-forms are those of `A`. -/
+@[simp]
+theorem image_tangentHom (i : Fin A.n) : A.tangentHom.image i = A.image i :=
+  (image_hom (A := A.tangent) i).trans (image_ofBaseSet i)
+
+/-- The chart overlaps of the atlas of `V`-valued one-forms are those of `A`. -/
+@[simp]
+theorem overlap_tangentHom (i i' : Fin A.n) : A.tangentHom.overlap i i' = A.overlap i i' :=
+  (overlap_hom (A := A.tangent) i i').trans (overlap_ofBaseSet i i')
+
+/-- The chart transitions of the atlas of `V`-valued one-forms are those of `A`. -/
+@[simp]
+theorem transition_tangentHom (i i' : Fin A.n) :
+    A.tangentHom.transition i i' = A.transition i i' :=
+  (transition_ofBaseSet (A := A.tangent) i i').trans (transition_ofBaseSet i i')
 
 /-- A `V`-valued one-form read in a chart of `A.tangentHom` is its value at the corresponding point
 of `M` expressed in the preferred trivializations of the tangent bundle and of `V` at the centre

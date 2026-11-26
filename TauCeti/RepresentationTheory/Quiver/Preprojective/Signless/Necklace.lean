@@ -224,7 +224,7 @@ private theorem necklaceFunctional_relator_mul_ofPath (hW : IsSignlessNecklaceWe
   -- The product with the backtrack along `w` is the closed path `p` followed by the backtrack,
   -- whose necklace is a rotation of `v w L`.
   have hrot (w : G.neighborSet v) :
-      necklaceFunctional k G W (backtrackElem G k ((G.mem_neighborSet v w).1 w.2) *
+      necklaceFunctional k G W (backtrackElem G k ((G.mem_neighborSet v w).1 w.property) *
           ofPath ⟨vertex G v, vertex G v, p⟩) =
         W ((v :: (w : V) :: p.vertices.dropLast.map (vertexEquiv G).symm : List V) :
           Cycle V) := by
@@ -239,36 +239,32 @@ private theorem necklaceFunctional_relator_mul_ofPath (hW : IsSignlessNecklaceWe
   exact (isSignlessNecklaceWeight_iff G W).mp hW v _ (isChain_append_dropLast_vertices G p)
     (head?_dropLast_vertices G p)
 
-variable [Finite V]
+/-- Under the signless necklace relations, the necklace functional kills the products of the
+signless relators with elements of the path algebra. -/
+private theorem necklaceFunctional_signlessPreprojectiveRelator_mul
+    (hW : IsSignlessNecklaceWeight G W) (u : DoubledQuiver G)
+    (y : pathAlgebra k (DoubledQuiver G)) :
+    necklaceFunctional k G W (signlessPreprojectiveRelator k u * y) = 0 := by
+  obtain ⟨v, rfl⟩ := exists_eq_vertex G u
+  -- Expand the factor after the relator in the path basis.
+  rw [signlessPreprojectiveRelator_congr k _ _ (instFintypeStarVertex G v)]
+  induction y using induction_linear with
+  | zero => simp
+  | add y z hy hz => rw [mul_add, map_add, hy, hz, add_zero]
+  | single p c =>
+    rw [single_eq_smul_ofPath, mul_smul_comm, map_smul,
+      necklaceFunctional_relator_mul_ofPath hW, smul_zero]
 
 /-- **The necklace functional kills the signless relation ideal** when its weight satisfies the
 signless necklace relations. -/
 theorem DoubledQuiver.necklaceFunctional_eq_zero_of_mem_signlessPreprojectiveIdeal
     (hW : IsSignlessNecklaceWeight G W) {x : pathAlgebra k (DoubledQuiver G)}
     (hx : x ∈ signlessPreprojectiveIdeal k (DoubledQuiver G)) :
-    necklaceFunctional k G W x = 0 := by
-  rw [signlessPreprojectiveIdeal_eq_span] at hx
-  suffices h : ∀ a b, necklaceFunctional k G W (a * x * b) = 0 by simpa using h 1 1
-  induction hx using TwoSidedIdeal.span_induction with
-  | mem x hx =>
-    obtain ⟨u, rfl⟩ := hx
-    obtain ⟨v, rfl⟩ := exists_eq_vertex G u
-    intro a b
-    dsimp only
-    -- Rotate the relator to the front, then expand the remaining factor in the path basis.
-    rw [mul_assoc, necklaceFunctional_mul_comm, mul_assoc,
-      signlessPreprojectiveRelator_congr k _ _ (instFintypeStarVertex G v)]
-    induction b * a using induction_linear with
-    | zero => simp
-    | add y z hy hz => rw [mul_add, map_add, hy, hz, add_zero]
-    | single p c =>
-      rw [single_eq_smul_ofPath, mul_smul_comm, map_smul,
-        necklaceFunctional_relator_mul_ofPath hW, smul_zero]
-  | zero => simp
-  | add x y _ _ hx hy => intro a b; rw [mul_add, add_mul, map_add, hx, hy, add_zero]
-  | neg x _ hx => intro a b; rw [mul_neg, neg_mul, map_neg, hx, neg_zero]
-  | left_absorb c x _ hx => intro a b; simpa only [mul_assoc] using hx (a * c) b
-  | right_absorb c x _ hx => intro a b; simpa only [mul_assoc] using hx a (c * b)
+    necklaceFunctional k G W x = 0 :=
+  map_eq_zero_of_mem_signlessPreprojectiveIdeal _ (necklaceFunctional_mul_comm W)
+    (necklaceFunctional_signlessPreprojectiveRelator_mul hW) hx
+
+variable [Finite V]
 
 variable (k G W) in
 /-- The **signless necklace functional**: for a weight `W` on necklaces satisfying the signless
@@ -276,11 +272,8 @@ necklace relations, the necklace functional descends to the signless preprojecti
 sends the class of a closed path to the weight of its necklace, and kills commutators. -/
 noncomputable def signlessNecklaceFunctional (hW : IsSignlessNecklaceWeight G W) :
     signlessPreprojectiveAlgebra k (DoubledQuiver G) →ₗ[k] k :=
-  (signlessPreprojectiveMk k _).toLinearMap.liftOfSurjective
-    (signlessPreprojectiveMk_surjective k _)
-    ⟨necklaceFunctional k G W, fun _ hx => LinearMap.mem_ker.mpr
-      (necklaceFunctional_eq_zero_of_mem_signlessPreprojectiveIdeal hW
-        ((signlessPreprojectiveMk_eq_zero_iff k _).mp (LinearMap.mem_ker.mp hx)))⟩
+  signlessPreprojectiveTraceLift (necklaceFunctional k G W) (necklaceFunctional_mul_comm W)
+    (necklaceFunctional_signlessPreprojectiveRelator_mul hW)
 
 variable (hW : IsSignlessNecklaceWeight G W)
 
@@ -290,22 +283,19 @@ necklace functional of that element. -/
 theorem signlessNecklaceFunctional_signlessPreprojectiveMk (x : pathAlgebra k (DoubledQuiver G)) :
     signlessNecklaceFunctional k G W hW (signlessPreprojectiveMk k _ x) =
       necklaceFunctional k G W x :=
-  LinearMap.equivOfSurjective_apply _ _
+  signlessPreprojectiveTraceLift_signlessPreprojectiveMk _ _ _ x
 
 /-- **The signless necklace functional is a trace.** -/
 theorem signlessNecklaceFunctional_mul_comm
     (x y : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :
-    signlessNecklaceFunctional k G W hW (x * y) = signlessNecklaceFunctional k G W hW (y * x) := by
-  obtain ⟨x, rfl⟩ := signlessPreprojectiveMk_surjective k _ x
-  obtain ⟨y, rfl⟩ := signlessPreprojectiveMk_surjective k _ y
-  simp only [← map_mul, signlessNecklaceFunctional_signlessPreprojectiveMk,
-    necklaceFunctional_mul_comm]
+    signlessNecklaceFunctional k G W hW (x * y) = signlessNecklaceFunctional k G W hW (y * x) :=
+  signlessPreprojectiveTraceLift_mul_comm _ _ _ x y
 
 /-- **The signless necklace functional kills the commutator submodule.** -/
 theorem commutatorSubmodule_le_ker_signlessNecklaceFunctional :
     commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G)) ≤
       LinearMap.ker (signlessNecklaceFunctional k G W hW) :=
-  (commutatorSubmodule_le_ker_iff _).2 (signlessNecklaceFunctional_mul_comm hW)
+  commutatorSubmodule_le_ker_signlessPreprojectiveTraceLift _ _ _
 
 /-- **A closed path whose necklace has nonzero weight is not a sum of commutators** in the
 signless preprojective algebra, for a weight satisfying the signless necklace relations: its

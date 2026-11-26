@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.NaiveHeight
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.End.InvertibleTwo
 import TauCeti.LinearAlgebra.QuadraticForm.OfParallelogram
+import TauCeti.Order.Northcott.Comparison
 
 /-!
 # The canonical (Néron–Tate) height
@@ -314,14 +315,9 @@ the naïve height — or, through Mathlib's `Northcott` instance for `Point.naiv
 field height. -/
 instance [W.toAffine.IsElliptic] [Northcott (Point.naiveHeight (W := W))] :
     Northcott (Point.canonicalHeight (W := W)) := by
-  -- `abs_canonicalHeight_sub_naiveHeight_le` gives a `D` for which `canonicalHeight Q ≤ B` forces
-  -- `naiveHeight Q ≤ B + D`, so every sublevel set of the former sits inside a finite sublevel
-  -- set of the latter.
+  -- The two heights differ by a bounded amount, so they are Northcott together.
   obtain ⟨D, hD⟩ := Point.abs_canonicalHeight_sub_naiveHeight_le (W := W)
-  refine ⟨fun B ↦ (Northcott.finite_le (h := Point.naiveHeight (W := W)) (B + D)).subset ?_⟩
-  intro Q hQ
-  simp only [Set.mem_ofPred_eq] at hQ ⊢
-  linarith [(abs_le.1 (hD Q)).1]
+  exact (TauCeti.northcott_iff_of_abs_sub_le D hD).2 inferInstance
 
 /-- **A point of canonical height zero is torsion.** The hypothesis is `Northcott` for the
 canonical height, the class this API takes finiteness from; the instance above supplies it from

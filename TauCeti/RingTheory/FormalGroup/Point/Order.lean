@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.FormalGroup.AddInv
 -- Proof-only: the pure-power coefficients of a formal group law, lower bounds for the order of
 -- substitutions, and the order of `F(X, Y) - X - Y`.
-import TauCeti.RingTheory.FormalGroup.LazardRing.Basic
+import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 

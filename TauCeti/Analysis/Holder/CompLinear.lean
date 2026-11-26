@@ -7,10 +7,13 @@ module
 
 public import TauCeti.Analysis.Holder.Iterated
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 
 /-!
-# Linear changes of coordinates in bounded Hölder spaces
+# Composition with linear maps in bounded Hölder spaces
 
 Precomposition by a continuous linear map acts boundedly on `CkHolderSpace`. The derivative
 of order `i` is pulled back in all `i` arguments, and the top Hölder seminorm acquires the
@@ -18,12 +21,119 @@ additional factor `‖e‖^α`. Invertible linear coordinate changes therefore g
 linear equivalences. These maps transport spatial initial data together with parabolic
 changes of coordinates.
 
-The construction uses Mathlib's `ContinuousLinearMap.iteratedFDeriv_comp_right` and
-`ContinuousMultilinearMap.compContinuousLinearMapL`.
+Postcomposition by a continuous linear map `g : F →L[ℝ] G` of the values also acts boundedly
+(`TauCeti.CkHolderSpace.compLeftL`), with operator norm at most `‖g‖`: every derivative of `g ∘ f`
+is `g` applied to the corresponding derivative of `f`. For instance, the real part of a
+complex-valued bounded `C^{k,α}` map is a real-valued one. The same holds locally: on an open set,
+postcomposition by `T` multiplies the Hölder constant of the top derivative by `‖T‖`
+(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left`), and this also holds on a set that
+need not be open, at each point of which the map is `Cⁿ`
+(`ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt`), and for finite sums
+`x ↦ ∑ₗ A l (g l x)` on such a set (`TauCeti.holderOnWith_iteratedFDeriv_sum_comp_left`). Bounds
+in norm and Hölder bounds of the components `g l` combine into such bounds for the sum
+(`TauCeti.norm_iteratedFDeriv_le_and_holderOnWith_sum_comp_left`), which assembles a map with
+finite-dimensional values from its coordinates in a basis.
+
+The constructions use Mathlib's `ContinuousLinearMap.iteratedFDeriv_comp_right`,
+`ContinuousMultilinearMap.compContinuousLinearMapL`,
+`ContinuousLinearMap.iteratedFDeriv_comp_left` and
+`ContinuousLinearMap.compContinuousMultilinearMapL`.
 -/
 
 public section
 noncomputable section
+
+/-- Composing on the left with a continuous linear map `T` keeps a Hölder bound on the top
+derivative field over a set `s` at each point of which `f` is `Cⁿ`, multiplying its constant by
+`‖T‖`: on `s`, the top derivative of `T ∘ f` is that of `f` followed by `A ↦ T ∘ A`, an operator
+of norm at most `‖T‖`. The set `s` need not be open, e.g. a closed half-disc inside an open set
+on which `f` is `Cⁿ`. -/
+theorem ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt {X Y Z : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (T : Y →L[ℝ] Z) {f : X → Y} {s : Set X} {n : ℕ}
+    {C α : NNReal} (hf : ∀ z ∈ s, ContDiffAt ℝ n f z)
+    (h : HolderOnWith C α (iteratedFDeriv ℝ n f) s) :
+    HolderOnWith (‖T‖₊ * C) α (iteratedFDeriv ℝ n fun x ↦ T (f x)) s := by
+  set L := compContinuousMultilinearMapL ℝ (fun _ : Fin n ↦ X) Y Z T
+  have hL : ‖L‖₊ ≤ ‖T‖₊ := NNReal.coe_le_coe.mp T.norm_compContinuousMultilinearMapL_le
+  have hLf := L.lipschitzWith.holderWith.comp_holderOnWith h
+  simp only [NNReal.coe_one, NNReal.rpow_one, one_mul] at hLf
+  have hd (z : X) (hz : z ∈ s) : iteratedFDeriv ℝ n (fun x ↦ T (f x)) z =
+      L (iteratedFDeriv ℝ n f z) := by
+    rw [compContinuousMultilinearMapL_apply]
+    exact T.iteratedFDeriv_comp_left (hf z hz) le_rfl
+  intro x hx y hy
+  rw [hd x hx, hd y hy]
+  exact hLf.mono_const (mul_le_mul_of_nonneg_right hL zero_le) x hx y hy
+
+/-- Composing on the left with a continuous linear map `T` keeps a Hölder bound on the top
+derivative field over an open set, multiplying its constant by `‖T‖`: on the set, the top
+derivative of `T ∘ f` is that of `f` followed by `A ↦ T ∘ A`, an operator of norm at most `‖T‖`. -/
+theorem ContinuousLinearMap.holderOnWith_iteratedFDeriv_comp_left {X Y Z : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (T : Y →L[ℝ] Z) {f : X → Y} {s : Set X} {n : ℕ}
+    {C α : NNReal} (hs : IsOpen s) (hf : ContDiffOn ℝ n f s)
+    (h : HolderOnWith C α (iteratedFDeriv ℝ n f) s) :
+    HolderOnWith (‖T‖₊ * C) α (iteratedFDeriv ℝ n fun x ↦ T (f x)) s :=
+  T.holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt
+    (fun _ hz ↦ hf.contDiffAt (hs.mem_nhds hz)) h
+
+namespace TauCeti
+
+/-- **Hölder bounds for finite sums of postcompositions, on any set.** If each `g l` is `Cⁿ` at
+every point of `s` and its `n`-th derivative is `α`-Hölder on `s` with constant `C l`, then the
+`n`-th derivative of `x ↦ ∑ₗ A l (g l x)` is `α`-Hölder on `s` with constant `∑ₗ ‖A l‖ C l`. The
+set `s` need not be open, e.g. a closed half-disc inside an open set on which each `g l` is
+`Cⁿ`. -/
+theorem holderOnWith_iteratedFDeriv_sum_comp_left {ι X Y Z : Type*} [Fintype ι]
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (A : ι → Y →L[ℝ] Z) {g : ι → X → Y} {s : Set X}
+    {n : ℕ} {α : NNReal} {C : ι → NNReal} (hg : ∀ l, ∀ z ∈ s, ContDiffAt ℝ n (g l) z)
+    (h : ∀ l, HolderOnWith (C l) α (iteratedFDeriv ℝ n (g l)) s) :
+    HolderOnWith (∑ l, ‖A l‖₊ * C l) α (iteratedFDeriv ℝ n fun x ↦ ∑ l, A l (g l x)) s :=
+  (HolderOnWith.sum (s := Finset.univ) fun l _ ↦
+    (A l).holderOnWith_iteratedFDeriv_comp_left_of_contDiffAt (hg l) (h l)).congr fun z hz ↦
+      (iteratedFDeriv_fun_sum_apply (f := fun l x ↦ A l (g l x)) fun l _ ↦
+        (A l).contDiff.contDiffAt.comp z (hg l z hz)).symm
+
+/-- **Assembling `Cⁿ` and Hölder bounds of finitely many components.** Let each `g l` be `Cⁿ` at
+every point of a set `s`, with `n`-th derivative bounded in norm by `K c l` and `α`-Hölder on `s`
+with constant `K c l`. Then the `n`-th derivative of `x ↦ ∑ₗ A l (g l x)` is bounded in norm by
+`(∑ₗ ‖A l‖) K ∑ₗ c l` and `α`-Hölder on `s` with that constant. For the coordinates `g l` of a map
+in a finite basis `b` and `A l t = t • b l`, this turns coordinatewise bounds into bounds for the
+map. -/
+theorem norm_iteratedFDeriv_le_and_holderOnWith_sum_comp_left {ι X Y Z : Type*} [Fintype ι]
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [NormedAddCommGroup Z] [NormedSpace ℝ Z] (A : ι → Y →L[ℝ] Z) {g : ι → X → Y} {s : Set X}
+    {n : ℕ} {α K : NNReal} {c : ι → NNReal} (hg : ∀ l, ∀ z ∈ s, ContDiffAt ℝ n (g l) z)
+    (hb : ∀ l, (∀ z ∈ s, ‖iteratedFDeriv ℝ n (g l) z‖ ≤ K * c l) ∧
+      HolderOnWith (K * c l) α (iteratedFDeriv ℝ n (g l)) s) :
+    (∀ z ∈ s, ‖iteratedFDeriv ℝ n (fun x ↦ ∑ l, A l (g l x)) z‖ ≤
+        ((∑ l, ‖A l‖₊) * K * ∑ l, c l : NNReal)) ∧
+      HolderOnWith ((∑ l, ‖A l‖₊) * K * ∑ l, c l) α
+        (iteratedFDeriv ℝ n fun x ↦ ∑ l, A l (g l x)) s := by
+  have hc (l : ι) : c l ≤ ∑ l', c l' :=
+    Finset.single_le_sum (f := c) (fun _ _ ↦ zero_le) (Finset.mem_univ l)
+  refine ⟨fun z hz ↦ ?_, ?_⟩
+  · refine (norm_iteratedFDeriv_sum_comp_left_le Finset.univ A fun l _ ↦ hg l z hz).trans ?_
+    calc
+      _ ≤ ∑ l, ‖A l‖ * (K * ∑ l', (c l' : ℝ)) :=
+        Finset.sum_le_sum fun l _ ↦ mul_le_mul_of_nonneg_left
+          (((hb l).1 z hz).trans (by
+            gcongr
+            exact_mod_cast hc l)) (norm_nonneg _)
+      _ = _ := by
+        rw [← Finset.sum_mul]
+        push_cast
+        ring
+  · have hC : ∑ l, ‖A l‖₊ * (K * ∑ l', c l') = (∑ l, ‖A l‖₊) * K * ∑ l, c l := by
+      rw [← Finset.sum_mul]
+      ring
+    rw [← hC]
+    exact holderOnWith_iteratedFDeriv_sum_comp_left A hg
+      fun l ↦ (hb l).2.mono_const (mul_le_mul' le_rfl (hc l))
+
+end TauCeti
 
 namespace TauCeti.CkHolderSpace
 
@@ -34,6 +144,8 @@ variable {k : ℕ} {α : ℝ≥0} {E E' E'' F : Type*}
   [NormedAddCommGroup E'] [NormedSpace ℝ E']
   [NormedAddCommGroup E''] [NormedSpace ℝ E'']
   [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+section compLinear
 
 private theorem holderWith_iteratedFDeriv_comp (e : E →L[ℝ] E')
     (f : CkHolderSpace k α E' F) :
@@ -83,7 +195,7 @@ private theorem iteratedFDeriv_compLinear (e : E →L[ℝ] E') (f : CkHolderSpac
       (f.iteratedFDeriv i (e x)).compContinuousLinearMap (fun _ ↦ e) := by
   rw [← iteratedFDeriv_eq, ← iteratedFDeriv_eq]
   rw [coe_compLinear]
-  exact e.iteratedFDeriv_comp_right f.contDiff x (by exact_mod_cast Nat.le_of_lt_succ i.2)
+  exact e.iteratedFDeriv_comp_right f.contDiff x (by exact_mod_cast Nat.le_of_lt_succ i.isLt)
 
 /-- A linear change of coordinates multiplies the norm by at most
 `max(1, ‖e‖)^k max(1, ‖e‖^α)`. -/
@@ -100,7 +212,7 @@ private theorem norm_compLinear_le (e : E →L[ℝ] E') (f : CkHolderSpace k α 
     refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
     rw [← iteratedFDeriv_eq, coe_compLinear]
     refine (e.norm_iteratedFDeriv_comp_right_le f.contDiff x
-      (by exact_mod_cast Nat.le_of_lt_succ i.2)).trans ?_
+      (by exact_mod_cast Nat.le_of_lt_succ i.isLt)).trans ?_
     rw [iteratedFDeriv_eq f i]
     calc
       _ ≤ ‖f.iteratedFDeriv i‖ * C := mul_le_mul
@@ -186,5 +298,101 @@ theorem compLinearCLE_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E' F) :
 theorem compLinearCLE_symm_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E F) :
     (compLinearCLE e).symm f = compLinearL (e.symm : E' →L[ℝ] E) f :=
   (rfl)
+
+end compLinear
+
+section compLeft
+
+variable {G G' : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  [NormedAddCommGroup G'] [NormedSpace ℝ G']
+
+private theorem iteratedFDeriv_comp_left (g : F →L[ℝ] G) (f : CkHolderSpace k α E F) {i : ℕ}
+    (hi : i ≤ k) (x : E) :
+    _root_.iteratedFDeriv ℝ i (g ∘ f) x =
+      g.compContinuousMultilinearMap (_root_.iteratedFDeriv ℝ i f x) :=
+  g.iteratedFDeriv_comp_left f.contDiff.contDiffAt (by exact_mod_cast hi)
+
+private theorem holderWith_iteratedFDeriv_comp_left (g : F →L[ℝ] G)
+    (f : CkHolderSpace k α E F) :
+    HolderWith (‖g‖₊ * nnHolderNorm α (_root_.iteratedFDeriv ℝ k f)) α
+      (_root_.iteratedFDeriv ℝ k (g ∘ f)) :=
+  holderOnWith_univ.mp (g.holderOnWith_iteratedFDeriv_comp_left isOpen_univ
+    f.contDiff.contDiffOn (holderOnWith_univ.mpr f.memHolder_iteratedFDeriv.holderWith))
+
+/-- Postcomposition of a bounded `C^{k,α}` map with a continuous linear map. -/
+private def compLeft (g : F →L[ℝ] G) (f : CkHolderSpace k α E F) : CkHolderSpace k α E G :=
+  ofContDiff (g ∘ f) (g.contDiff.comp f.contDiff)
+    (fun i hi ↦ ⟨‖g‖ * ‖f‖, fun x ↦ by
+      rw [iteratedFDeriv_comp_left g f hi x]
+      exact (g.norm_compContinuousMultilinearMap_le _).trans
+        (mul_le_mul_of_nonneg_left (f.norm_iteratedFDeriv_apply_le hi x) (norm_nonneg g))⟩)
+    (holderWith_iteratedFDeriv_comp_left g f).memHolder
+
+private theorem coe_compLeft (g : F →L[ℝ] G) (f : CkHolderSpace k α E F) :
+    ⇑(compLeft g f) = g ∘ f := by
+  simp [compLeft]
+
+/-- Postcomposition with `g` multiplies the norm by at most `‖g‖`. -/
+private theorem norm_compLeft_le (g : F →L[ℝ] G) (f : CkHolderSpace k α E F) :
+    ‖compLeft g f‖ ≤ ‖g‖ * ‖f‖ := by
+  have hfield (i : Fin (k + 1)) :
+      ‖(compLeft g f).iteratedFDeriv i‖ ≤ ‖g‖ * ‖f.iteratedFDeriv i‖ := by
+    refine (BoundedContinuousFunction.norm_le (by positivity)).2 fun x ↦ ?_
+    rw [← iteratedFDeriv_eq, coe_compLeft, iteratedFDeriv_comp_left g f (Nat.lt_succ_iff.1 i.isLt),
+      iteratedFDeriv_eq f i]
+    exact (g.norm_compContinuousMultilinearMap_le _).trans
+      (mul_le_mul_of_nonneg_left (BoundedContinuousFunction.norm_coe_le_norm _ _) (norm_nonneg g))
+  have htop : (nnHolderNorm α (_root_.iteratedFDeriv ℝ k (compLeft g f)) : ℝ) ≤
+      ‖g‖ * nnHolderNorm α (_root_.iteratedFDeriv ℝ k f) := by
+    rw [coe_compLeft]
+    exact_mod_cast (holderWith_iteratedFDeriv_comp_left g f).nnholderNorm_le
+  rw [norm_eq, norm_eq, mul_add, Finset.mul_sum]
+  exact add_le_add (Finset.sum_le_sum fun i _ ↦ hfield i) htop
+
+/-- Postcomposition with a continuous linear map `g` of the values, as a bounded linear operator
+between spaces of bounded `C^{k,α}` maps. -/
+def compLeftL (g : F →L[ℝ] G) : CkHolderSpace k α E F →L[ℝ] CkHolderSpace k α E G :=
+  LinearMap.mkContinuous
+    { toFun := compLeft g
+      map_add' f₁ f₂ := ext fun x ↦ by simp [coe_compLeft, coe_add]
+      map_smul' c f := ext fun x ↦ by simp [coe_compLeft, coe_smul] }
+    ‖g‖ (norm_compLeft_le g)
+
+private theorem compLeftL_eq_compLeft (g : F →L[ℝ] G) (f : CkHolderSpace k α E F) :
+    compLeftL g f = compLeft g f :=
+  (rfl)
+
+@[simp]
+theorem compLeftL_apply (g : F →L[ℝ] G) (f : CkHolderSpace k α E F) (x : E) :
+    compLeftL g f x = g (f x) := by
+  rw [compLeftL_eq_compLeft, coe_compLeft, Function.comp_apply]
+
+theorem coe_compLeftL (g : F →L[ℝ] G) (f : CkHolderSpace k α E F) :
+    ⇑(compLeftL g f) = g ∘ f :=
+  funext (compLeftL_apply g f)
+
+/-- The derivative fields of `g ∘ f` are those of `f` followed by `g`. -/
+@[simp]
+theorem iteratedFDeriv_compLeftL (g : F →L[ℝ] G) (f : CkHolderSpace k α E F)
+    (i : Fin (k + 1)) (x : E) :
+    (compLeftL g f).iteratedFDeriv i x = g.compContinuousMultilinearMap (f.iteratedFDeriv i x) := by
+  rw [← iteratedFDeriv_eq, ← iteratedFDeriv_eq, coe_compLeftL]
+  exact iteratedFDeriv_comp_left g f (Nat.lt_succ_iff.1 i.isLt) x
+
+/-- The operator norm of postcomposition with `g` is at most `‖g‖`. -/
+theorem norm_compLeftL_le (g : F →L[ℝ] G) :
+    ‖compLeftL (k := k) (α := α) (E := E) g‖ ≤ ‖g‖ :=
+  LinearMap.mkContinuous_norm_le _ (norm_nonneg g) _
+
+@[simp]
+theorem compLeftL_id (f : CkHolderSpace k α E F) : compLeftL (.id ℝ F) f = f :=
+  ext fun _ ↦ by simp
+
+@[simp]
+theorem compLeftL_compLeftL (g : F →L[ℝ] G) (g' : G →L[ℝ] G') (f : CkHolderSpace k α E F) :
+    compLeftL g' (compLeftL g f) = compLeftL (g'.comp g) f :=
+  ext fun _ ↦ by simp
+
+end compLeft
 
 end TauCeti.CkHolderSpace

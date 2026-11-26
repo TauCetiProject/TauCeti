@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Completion
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Rename
 
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
@@ -61,6 +62,14 @@ of `(Pair.powerBounded K).polydisc n` over a nontrivially normed ultrametric fie
 
 ## Main results
 
+* `TauCeti.Huber.restrictedMvPowerSeriesCompletion_ringHom_ext`: continuous ring homomorphisms out
+  of `A⟨T₁, …, Tₙ⟩` are determined by their values on constants and coordinates.
+* `TauCeti.Huber.toMvPowerSeries_polydiscVar`: the power series of the coordinate `Tᵢ` is `X i`.
+* `TauCeti.Huber.toMvPowerSeries_apply_eq_rename`: a continuous ring homomorphism between closed
+  polydiscs fixing constants and sending variables to variables renames power series.
+* `TauCeti.Huber.topologicalClosure_map_weightedSubring_le`: for a subring `R` of `A`, the series
+  with coefficients in `R` lie in the closure of `R[T₁, …, Tₙ]`; hence for an open `R` that closure
+  is open (`TauCeti.Huber.isOpen_topologicalClosure_closure_polydiscVar`).
 * `TauCeti.Huber.Pair.polydiscPlus_eq_topologicalClosure`: `S.polydiscPlus n` is the topological
   closure of `A⁺[T₁, …, Tₙ]` in `A⟨T₁, …, Tₙ⟩`.
 * `TauCeti.Huber.Pair.map_polydiscPlus_equiv`: `restrictedMvPowerSeriesCompletionEquiv` maps
@@ -96,6 +105,56 @@ noncomputable abbrev Pair.polydiscVar (n : ℕ) (A : Type*) [CommRing A] [Topolo
     weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight) :
       restrictedMvPowerSeriesCompletion n A)
 
+/-- Two continuous ring homomorphisms out of `A⟨T₁, …, Tₙ⟩` into a Hausdorff ring are equal as
+soon as they agree on the constants and on every coordinate variable `Tᵢ`. -/
+theorem restrictedMvPowerSeriesCompletion_ringHom_ext {A : Type*} [CommRing A] [TopologicalSpace A]
+    [NonarchimedeanRing A] {n : ℕ} {B : Type*} [Semiring B] [TopologicalSpace B] [T2Space B]
+    {f g : restrictedMvPowerSeriesCompletion n A →+* B} (hf : Continuous f) (hg : Continuous g)
+    (hC : ∀ a, f (algebraMap A _ a) = g (algebraMap A _ a))
+    (hX : ∀ i, f (Pair.polydiscVar n A i) = g (Pair.polydiscVar n A i)) : f = g :=
+  completion_weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight hf hg
+    (fun a ↦ by simpa only [algebraMap_completion_weightedRestrictedSubring_apply] using hC a) hX
+
+/-- The power series of the coordinate variable `Tᵢ` of `A⟨T₁, …, Tₙ⟩` is the variable `X i`.
+(Not `@[simp]`: `simp` proves it through `TauCeti.Huber.toMvPowerSeries_coe`.) -/
+theorem toMvPowerSeries_polydiscVar {A : Type*} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [NonarchimedeanRing A] [CompleteSpace A] [T0Space A] {n : ℕ}
+    (i : Fin n) : toMvPowerSeries n A (Pair.polydiscVar n A i) = MvPowerSeries.X i := by
+  rw [toMvPowerSeries_coe, coe_weightedX]
+
+/-- **A continuous ring homomorphism `A⟨T₁, …, Tₖ⟩ → A⟨T₁, …, Tₗ⟩` that fixes the constants and
+sends each variable `Tᵢ` to `T_{e i}` renames power series along `e`**, over a complete Hausdorff
+base: on power series (`TauCeti.Huber.toMvPowerSeries`) it is `MvPowerSeries.rename e`. -/
+theorem toMvPowerSeries_apply_eq_rename {A : Type*} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [NonarchimedeanRing A] [CompleteSpace A] [T0Space A] {k l : ℕ}
+    (e : Fin k ↪ Fin l)
+    {φ : restrictedMvPowerSeriesCompletion k A →+* restrictedMvPowerSeriesCompletion l A}
+    (hφ : Continuous φ) (hC : ∀ a, φ (algebraMap A _ a) = algebraMap A _ a)
+    (hX : ∀ i, φ (Pair.polydiscVar k A i) = Pair.polydiscVar l A (e i))
+    (f : restrictedMvPowerSeriesCompletion k A) :
+    toMvPowerSeries l A (φ f) = MvPowerSeries.rename e (toMvPowerSeries k A f) := by
+  have h : (restrictedMvPowerSeriesCompletionEquiv l A).toRingHom.comp φ =
+      (weightedRename e _ _ fun _ ↦ subset_rfl).comp
+        (restrictedMvPowerSeriesCompletionEquiv k A).toRingHom := by
+    refine restrictedMvPowerSeriesCompletion_ringHom_ext
+      (uniformContinuous_restrictedMvPowerSeriesCompletionEquiv.continuous.comp hφ)
+      ((continuous_weightedRename _ _ _ _).comp
+        uniformContinuous_restrictedMvPowerSeriesCompletionEquiv.continuous) (fun a ↦ ?_)
+      fun i ↦ ?_
+    · simp only [RingHom.comp_apply, hC]
+      simp [algebraMap_completion_weightedRestrictedSubring_apply, weightedRename_weightedC]
+    · simp [hX, weightedRename_weightedX]
+  have h' := congr(($h f : MvPowerSeries (Fin l) A))
+  rw [toMvPowerSeries_apply, toMvPowerSeries_apply]
+  simpa [coe_weightedRename] using h'
+
+/-- Every coordinate variable `Tᵢ` of `A⟨T₁, …, Tₙ⟩` is power-bounded. -/
+theorem Pair.isPowerBounded_polydiscVar (n : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [IsHuberRing A] (i : Fin n) :
+    IsPowerBounded (Pair.polydiscVar n A i) :=
+  (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mp
+    (isWeightBounded_completion_weightedX isWeightFamily_one_weight) i
+
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
 
 /-- **The affinoid relative closed unit polydisc `(A⟨T₁, …, Tₙ⟩, A⁺⟨T₁, …, Tₙ⟩)`** over a Huber
@@ -119,22 +178,22 @@ theorem Pair.polydiscVar_mem_polydiscPlus (S : Pair A) (n : ℕ) (i : Fin n) :
     S.weightedC_mul_weightedX_mem_weighted_completion_plus (k := n)
       isWeightFamily_one_weight (i := i) (Set.mem_singleton (1 : A))
 
-/-- Every polynomial with coefficients in `S.plus` maps into the unclosed subring generated by the
-image of `S.plus` and the coordinate variables `T₁, …, Tₙ`. -/
-private theorem coe_weightedPolynomialHom_mem_closure (S : Pair A) (n : ℕ)
+/-- Every polynomial with coefficients in a subring `R` of `A` maps into the unclosed subring
+generated by the image of `R` and the coordinate variables `T₁, …, Tₙ`. -/
+private theorem coe_weightedPolynomialHom_mem_closure (R : Subring A) (n : ℕ)
     (p : MvPolynomial (Fin n) A)
-    (hp : ∀ ν, p.coeff ν ∈ weightMul (fun _ : Fin n ↦ ({1} : Set A)) ν S.plus.toAddSubgroup) :
+    (hp : ∀ ν, p.coeff ν ∈ weightMul (fun _ : Fin n ↦ ({1} : Set A)) ν R.toAddSubgroup) :
     ((weightedPolynomialHom (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight p :
       weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight) :
       restrictedMvPowerSeriesCompletion n A) ∈
       Subring.closure
-        (algebraMap A (restrictedMvPowerSeriesCompletion n A) '' S.plus ∪
+        (algebraMap A (restrictedMvPowerSeriesCompletion n A) '' R ∪
           Set.range (Pair.polydiscVar n A)) := by
   let Q : Subring
       (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight) :=
-    (Subring.closure (algebraMap A (restrictedMvPowerSeriesCompletion n A) '' S.plus ∪
+    (Subring.closure (algebraMap A (restrictedMvPowerSeriesCompletion n A) '' R ∪
       Set.range (Pair.polydiscVar n A))).comap Completion.coeRingHom
-  have hQ_C : ∀ a ∈ S.plus,
+  have hQ_C : ∀ a ∈ R,
       weightedC (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight a ∈ Q := fun a ha ↦ by
     rw [Subring.mem_comap]
     exact algebraMap_completion_weightedRestrictedSubring_apply n A
@@ -154,6 +213,59 @@ private theorem coe_weightedPolynomialHom_mem_closure (S : Pair A) (n : ℕ)
       (weightedPolynomialHom_monomial_mem isWeightFamily_one_weight hQ_X) (hp ν)
   exact hmemQ
 
+/-- **The closure in `A⟨T₁, …, Tₙ⟩` of the series with coefficients in a subring `R` lies in the
+closure of `R[T₁, …, Tₙ]`**: a restricted series with coefficients in `R` is a limit of its
+truncations, which are polynomials with coefficients in `R`. -/
+theorem topologicalClosure_map_weightedSubring_le (R : Subring A) (n : ℕ) :
+    ((weightedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight R).map
+        Completion.coeRingHom).topologicalClosure ≤
+      (Subring.closure (algebraMap A (restrictedMvPowerSeriesCompletion n A) '' R ∪
+        Set.range (Pair.polydiscVar n A))).topologicalClosure := by
+  set P₀ := Subring.closure
+    (algebraMap A (restrictedMvPowerSeriesCompletion n A) '' R ∪
+      Set.range (Pair.polydiscVar n A))
+  refine Subring.topologicalClosure_minimal _ ?_ P₀.isClosed_topologicalClosure
+  rw [Subring.map_le_iff_le_comap]
+  intro f hf
+  rw [Subring.mem_comap, ← SetLike.mem_coe, Subring.topologicalClosure_coe]
+  have hf_cl : f ∈ closure
+      {g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight |
+        (g : restrictedMvPowerSeriesCompletion n A) ∈ P₀} := by
+    rw [mem_closure_iff_nhds]
+    intro V hV
+    rw [← nhds_translation_add_neg f, Filter.mem_comap] at hV
+    obtain ⟨W, hW, hWV⟩ := hV
+    obtain ⟨U, -, hU⟩ :=
+      (hasBasis_nhds_zero_weightedTopology (k := n) (A := A)
+        isWeightFamily_one_weight).mem_iff.mp hW
+    obtain ⟨p, hp, hfp⟩ :=
+      exists_mvPolynomial_sub_mem_weightedNhd_of_mem_weightedSubring isWeightFamily_one_weight
+        hf U
+    have hpf : weightedPolynomialHom _ isWeightFamily_one_weight p - f ∈
+        weightedNhd _ isWeightFamily_one_weight U.toAddSubgroup := by
+      simpa only [neg_sub] using
+        (weightedNhd _ isWeightFamily_one_weight U.toAddSubgroup).neg_mem hfp
+    exact ⟨weightedPolynomialHom _ isWeightFamily_one_weight p,
+      hWV (hU (by simpa only [SetLike.mem_coe, sub_eq_add_neg] using hpf)),
+      coe_weightedPolynomialHom_mem_closure R n p hp⟩
+  exact image_closure_subset_closure_image
+    (Completion.continuous_coe _) (Set.mem_image_of_mem _ hf_cl) |>
+    closure_mono (by rintro _ ⟨g, hg, rfl⟩; exact hg)
+
+/-- **For an open subring `R` of `A`, the closure of `R[T₁, …, Tₙ]` in `A⟨T₁, …, Tₙ⟩` is open**:
+it contains the closure of the open subring of series with coefficients in `R`. -/
+theorem isOpen_topologicalClosure_closure_polydiscVar {R : Subring A} (hR : IsOpen (R : Set A))
+    (n : ℕ) :
+    IsOpen ((Subring.closure (algebraMap A (restrictedMvPowerSeriesCompletion n A) '' R ∪
+      Set.range (Pair.polydiscVar n A))).topologicalClosure :
+        Set (restrictedMvPowerSeriesCompletion n A)) := by
+  have hopen := Completion.isOpen_topologicalClosure_map_coeRingHom
+    (isOpen_weightedSubring (T := fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight hR)
+  rw [← Subring.coe_toAddSubgroup]
+  refine AddSubgroup.isOpen_of_mem_nhds _ (g := 0) (Filter.mem_of_superset
+    (hopen.mem_nhds (zero_mem _)) fun _ hx ↦ ?_)
+  exact topologicalClosure_map_weightedSubring_le R n hx
+
 /-- **`S.polydiscPlus n` is the plain topological closure in `A⟨T₁, …, Tₙ⟩` of the subring
 generated by the image of `A⁺` and `T₁, …, Tₙ`**, with no integral closure needed (Scholze,
 *Étale cohomology of diamonds*, §24, after Proposition 24.4; Wedhorn, *Adic Spaces*,
@@ -162,39 +274,10 @@ theorem Pair.polydiscPlus_eq_topologicalClosure (S : Pair A) (n : ℕ) :
     S.polydiscPlus n =
       (Subring.closure (algebraMap A (restrictedMvPowerSeriesCompletion n A) '' S.plus ∪
         Set.range (Pair.polydiscVar n A))).topologicalClosure := by
-  set P₀ := Subring.closure
-    (algebraMap A (restrictedMvPowerSeriesCompletion n A) '' S.plus ∪
-      Set.range (Pair.polydiscVar n A))
   refine le_antisymm ?_ ?_
   · rw [Pair.polydiscPlus, Pair.polydisc, Pair.completion_plus, completionPlus_def,
       S.weighted_plus_one_weight]
-    refine Subring.topologicalClosure_minimal _ ?_ P₀.isClosed_topologicalClosure
-    rw [Subring.map_le_iff_le_comap]
-    intro f hf
-    rw [Subring.mem_comap, ← SetLike.mem_coe, Subring.topologicalClosure_coe]
-    have hf_cl : f ∈ closure
-        {g : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight |
-          (g : restrictedMvPowerSeriesCompletion n A) ∈ P₀} := by
-      rw [mem_closure_iff_nhds]
-      intro V hV
-      rw [← nhds_translation_add_neg f, Filter.mem_comap] at hV
-      obtain ⟨W, hW, hWV⟩ := hV
-      obtain ⟨U, -, hU⟩ :=
-        (hasBasis_nhds_zero_weightedTopology (k := n) (A := A)
-          isWeightFamily_one_weight).mem_iff.mp hW
-      obtain ⟨p, hp, hfp⟩ :=
-        exists_mvPolynomial_sub_mem_weightedNhd_of_mem_weightedSubring isWeightFamily_one_weight
-          hf U
-      have hpf : weightedPolynomialHom _ isWeightFamily_one_weight p - f ∈
-          weightedNhd _ isWeightFamily_one_weight U.toAddSubgroup := by
-        simpa only [neg_sub] using
-          (weightedNhd _ isWeightFamily_one_weight U.toAddSubgroup).neg_mem hfp
-      exact ⟨weightedPolynomialHom _ isWeightFamily_one_weight p,
-        hWV (hU (by simpa only [SetLike.mem_coe, sub_eq_add_neg] using hpf)),
-        coe_weightedPolynomialHom_mem_closure S n p hp⟩
-    exact image_closure_subset_closure_image
-      (Completion.continuous_coe _) (Set.mem_image_of_mem _ hf_cl) |>
-      closure_mono (by rintro _ ⟨g, hg, rfl⟩; exact hg)
+    exact topologicalClosure_map_weightedSubring_le S.plus n
   · refine Subring.topologicalClosure_minimal _ (Subring.closure_le.mpr ?_)
       ((S.polydiscPlus n).toAddSubgroup.isClosed_of_isOpen
         (S.polydisc n).isRingOfIntegralElements.isOpen)
@@ -271,7 +354,7 @@ private theorem isWeightBounded_of_mem_plus {S : Pair A} {U : Pair C} (z : Pair.
     (t : Fin n → U.plus) :
     IsWeightBounded z.toRingHom (fun _ : Fin n ↦ ({1} : Set A)) (fun i ↦ (t i : C)) :=
   (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun i ↦
-    U.isRingOfIntegralElements.isPowerBounded_of_mem (t i).2
+    U.isRingOfIntegralElements.isPowerBounded_of_mem (t i).property
 
 /-- **Evaluation of `S.polydisc n` at a tuple `t : Fin n → U.plus`** along a base morphism
 `z : Pair.Hom S U` into a complete Hausdorff Huber pair `U`. -/
@@ -291,7 +374,7 @@ noncomputable def Pair.polydisc.evalHom {S : Pair A} {U : Pair C}
     (fun i c hc ↦ by
       obtain rfl : c = 1 := Set.mem_singleton_iff.mp hc
       rw [map_one, one_mul, weightedEvalHomCompletion_coe, weightedEvalHom_weightedX]
-      exact (t i).2)
+      exact (t i).property)
 
 @[simp]
 theorem Pair.polydisc.toRingHom_evalHom_weightedC {S : Pair A}
@@ -351,12 +434,12 @@ noncomputable def Pair.polydisc.homEquiv {S : Pair A} {U : Pair C}
     {h : Pair.Hom (S.polydisc n) U //
       h.comp (S.weightedCompletionHom isWeightFamily_one_weight) = z} ≃
       (Fin n → U.plus) where
-  toFun h i := ⟨h.1.toRingHom (Pair.polydiscVar n A i),
-    h.1.map_mem_plus _ (S.polydiscVar_mem_polydiscPlus n i)⟩
+  toFun h i := ⟨h.val.toRingHom (Pair.polydiscVar n A i),
+    h.val.map_mem_plus _ (S.polydiscVar_mem_polydiscPlus n i)⟩
   invFun t := ⟨Pair.polydisc.evalHom z t,
     Pair.polydisc.evalHom_comp_weightedCompletionHom z t⟩
   left_inv h := Subtype.ext <| Pair.polydisc.hom_ext
-    ((Pair.polydisc.evalHom_comp_weightedCompletionHom z _).trans h.2.symm)
+    ((Pair.polydisc.evalHom_comp_weightedCompletionHom z _).trans h.property.symm)
     fun i ↦ Pair.polydisc.toRingHom_evalHom_polydiscVar z _ i
   right_inv t := funext fun i ↦ Subtype.ext <|
     Pair.polydisc.toRingHom_evalHom_polydiscVar z t i
@@ -366,7 +449,7 @@ theorem Pair.polydisc.homEquiv_apply {S : Pair A} {U : Pair C}
     (z : Pair.Hom S U) (n : ℕ)
     (h : {h : Pair.Hom (S.polydisc n) U //
       h.comp (S.weightedCompletionHom isWeightFamily_one_weight) = z}) (i : Fin n) :
-    (Pair.polydisc.homEquiv z n h i : C) = h.1.toRingHom (Pair.polydiscVar n A i) :=
+    (Pair.polydisc.homEquiv z n h i : C) = h.val.toRingHom (Pair.polydiscVar n A i) :=
   (rfl)
 
 @[simp]
@@ -390,7 +473,8 @@ noncomputable def Pair.polydisc.taylorHom (S : Pair A) {n : ℕ}
         algebraMap A (restrictedMvPowerSeriesCompletion n A) (a i : A),
       add_mem (S.polydiscVar_mem_polydiscPlus n i)
         (algebraMap_completion_weightedRestrictedSubring_apply n A isWeightFamily_one_weight
-          (a i : A) ▸ S.weightedC_mem_weighted_completion_plus isWeightFamily_one_weight (a i).2)⟩
+          (a i : A) ▸ S.weightedC_mem_weighted_completion_plus isWeightFamily_one_weight
+              (a i).property)⟩
 
 @[simp]
 theorem Pair.polydisc.taylorHom_comp_weightedCompletionHom (S : Pair A) {n : ℕ}

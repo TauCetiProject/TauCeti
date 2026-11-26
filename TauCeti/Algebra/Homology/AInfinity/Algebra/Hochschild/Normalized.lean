@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 public import TauCeti.Algebra.Homology.AInfinity.Algebra.Hochschild.Complex
-public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit
-public import TauCeti.LinearAlgebra.TensorCoalgebra.Degenerate
+public import TauCeti.Algebra.Homology.AInfinity.Algebra.Unit.Degenerate
 
 /-!
 # Normalized Hochschild cochains of a strictly unital `A∞` algebra
@@ -84,8 +83,8 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
     (hj : x j = e) (h𝒟j : 𝒟 j = -1) :
     𝒜.taylor (gradedCoderiv (𝒜.grading.shift 1) F q
         (of R A ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R x))) =
-      (if j.1 = 0 ∧ 0 < n then negOnePowCast R q • F (subword R x 1 n) else 0) +
-        (if j.1 = n ∧ 0 < n then 𝒜.grading.koszulTwist 1 (F (subword R x 0 n)) else 0) := by
+      (if j.val = 0 ∧ 0 < n then negOnePowCast R q • F (subword R x 1 n) else 0) +
+        (if j.val = n ∧ 0 < n then 𝒜.grading.koszulTwist 1 (F (subword R x 0 n)) else 0) := by
   rw [gradedCoderiv_of_tprod_of_homogeneous _ F q _ x 𝒟 hx]
   simp only [map_sum, map_smul]
   have hjn := j.isLt
@@ -93,9 +92,9 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
   have hterm : ∀ p ∈ Finset.range (n + 1), ∀ d ∈ Finset.range (n + 1 + 1),
       (((q * ∑ i ∈ Finset.range p, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0).negOnePow : ℤ) : R) •
           𝒜.taylor (splice R x 0 (n + 1) p d (F (subword R x p d))) =
-        (if p = 1 ∧ d = n ∧ (j.1 = 0 ∧ 0 < n) then negOnePowCast R q • F (subword R x 1 n)
+        (if p = 1 ∧ d = n ∧ (j.val = 0 ∧ 0 < n) then negOnePowCast R q • F (subword R x 1 n)
           else 0) +
-        (if p = 0 ∧ d = n ∧ (j.1 = n ∧ 0 < n) then
+        (if p = 0 ∧ d = n ∧ (j.val = n ∧ 0 < n) then
           𝒜.grading.koszulTwist 1 (F (subword R x 0 n)) else 0) := by
     intro p hp d hd
     rw [Finset.mem_range] at hp hd
@@ -103,7 +102,7 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
     swap
     · simp (disch := omega) only [splice_eq_zero_of_not_fits R _ _ hfit, map_zero, smul_zero,
         ite_eq_right, add_zero]
-    by_cases hblock : p ≤ j.1 ∧ j.1 < p + d
+    by_cases hblock : p ≤ j.val ∧ j.val < p + d
     · -- The collapsed block contains the unit, so `F` kills it.
       simp (disch := omega) only [LinearMap.mem_ker.mp (hFe (subword_mem_degenerateWords x
         ⟨j, hblock.1, hblock.2, hj⟩)), splice_zero, map_zero, smul_zero, ite_eq_right, add_zero]
@@ -138,106 +137,6 @@ private theorem taylor_gradedCoderiv_of_tprod (h : 𝒜.StrictUnit e)
     Finset.sum_ite_eq', Finset.mem_range]
   congr 1 <;> split_ifs <;> first | rfl | omega
 
-/-- The `(p, d)` summand of the bar differential of a word with the unit at position `j`, after
-applying a normalized cochain `F`: it is supported on the two collapses `[a, e]` and `[e, a]`
-of the unit with a neighbouring letter. -/
-private theorem sign_smul_apply_splice_taylor_subword (h : 𝒜.StrictUnit e)
-    (hFe : degenerateWords R A e ≤ LinearMap.ker F) {n : ℕ} (x : Fin (n + 1) → A)
-    (𝒟 : Fin (n + 1) → ℤ) (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i)) (j : Fin (n + 1))
-    (hj : x j = e) (p : ℕ) (hp : p ∈ Finset.range (n + 1)) (d : ℕ)
-    (hd : d ∈ Finset.range (n + 1 + 1)) :
-    (((∑ i ∈ Finset.range p, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0).negOnePow : ℤ) : R) •
-          F (splice R x 0 (n + 1) p d (𝒜.taylor (subword R x p d))) =
-        (if p = j.1 ∧ d = 2 ∧ j.1 + 1 ≤ n then
-          negOnePowCast R (∑ i ∈ Finset.range j.1, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) •
-            F (splice R x 0 (n + 1) j.1 2
-              (if h : j.1 + 1 < n + 1 then x ⟨j.1 + 1, h⟩ else 0)) else 0) +
-        (if p = j.1 - 1 ∧ d = 2 ∧ 1 ≤ j.1 then
-          negOnePowCast R
-              (∑ i ∈ Finset.range (j.1 - 1), if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) •
-            negOnePowCast R (𝒟 ⟨j.1 - 1, by omega⟩ + 1) •
-            F (splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩)) else 0) := by
-  have hjn := j.isLt
-  rw [Finset.mem_range] at hp hd
-  by_cases hfit : 0 < d ∧ p + d ≤ n + 1
-  swap
-  · simp (disch := omega) only [splice_eq_zero_of_not_fits R _ _ hfit, map_zero, smul_zero,
-      ite_eq_right, add_zero]
-  by_cases hblock : p ≤ j.1 ∧ j.1 < p + d
-  swap
-  · -- The unit survives in the spliced word, which `F` kills.
-    obtain ⟨y, ⟨k, hk⟩, hy⟩ := exists_splice_eq_of_tprod R x hfit.2
-      (𝒜.taylor (subword R x p d)) hblock
-    simp (disch := omega) only [hy,
-      LinearMap.mem_ker.mp
-        (hFe (of_tprod_mem_degenerateWords ⟨n + 1 + 1 - d, by omega⟩ y ⟨k, hk.trans hj⟩)),
-      smul_zero, ite_eq_right, add_zero]
-  by_cases hd2 : d = 2
-  swap
-  · -- The collapsed block contains the unit and does not have two letters.
-    have hzero : 𝒜.taylor (subword R x p d) = 0 := by
-      rw [subword_eq_of_tprod R x hfit.1 hfit.2]
-      exact h.taylor_of_tprod_eq_zero ⟨d, hfit.1⟩ hd2 _
-        ⟨⟨j.1 - p, by dsimp only; omega⟩, by
-          rw [← hj]; exact congrArg x (Fin.ext (by simp; omega))⟩
-    simp (disch := omega) only [hzero, splice_zero, map_zero, smul_zero, ite_eq_right, add_zero]
-  subst hd2
-  rcases Nat.lt_or_ge p j.1 with hpj | hpj
-  · -- The block `[a, e]` collapses to the Koszul twist of `a`.
-    obtain rfl : p = j.1 - 1 := by omega
-    simp (disch := omega) only [true_and, ite_eq_right, ite_eq_left, zero_add]
-    rw [subword_two_eq R x hfit.2]
-    have hj' : (⟨j.1 - 1 + 1, by omega⟩ : Fin (n + 1)) = j := Fin.ext (by simp; omega)
-    rw [hj', hj, h.taylor_of_two_unit_right,
-      𝒜.grading.koszulTwist_one_apply_of_mem
-        (by simpa [InternalGrading.shift_piece] using hx ⟨j.1 - 1, by omega⟩),
-      splice_smul, map_smul]
-    simp only [negOnePowCast_eq_intCast]
-  · -- The block `[e, a]` collapses to `a`.
-    obtain rfl : p = j.1 := by omega
-    simp (disch := omega) only [true_and, ite_eq_right, ite_eq_left, add_zero]
-    rw [subword_two_eq R x hfit.2, Fin.eta, hj, h.taylor_of_two_unit_left,
-      negOnePowCast_eq_intCast, dite_eq_left (by omega)]
-
-/-- The `F{m}` half of the Hochschild differential of a normalized cochain on a homogeneous word
-with the unit at position `j`: only the collapses of the two-letter blocks `[e, a]` and `[a, e]`
-around the unit survive. -/
-private theorem apply_barDifferential_of_tprod (h : 𝒜.StrictUnit e)
-    (hFe : degenerateWords R A e ≤ LinearMap.ker F) {n : ℕ} (x : Fin (n + 1) → A)
-    (𝒟 : Fin (n + 1) → ℤ) (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i)) (j : Fin (n + 1))
-    (hj : x j = e) :
-    F (𝒜.barDifferential (of R A ⟨n + 1, n.succ_pos⟩ (PiTensorProduct.tprod R x))) =
-      (if j.1 + 1 ≤ n then
-        negOnePowCast R (∑ i ∈ Finset.range j.1, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) •
-          F (splice R x 0 (n + 1) j.1 2
-            (if h : j.1 + 1 < n + 1 then x ⟨j.1 + 1, h⟩ else 0)) else 0) +
-      (if 1 ≤ j.1 then
-        negOnePowCast R (∑ i ∈ Finset.range (j.1 - 1), if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) •
-          negOnePowCast R (𝒟 ⟨j.1 - 1, by omega⟩ + 1) •
-          F (splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩)) else 0) := by
-  have hjn := j.isLt
-  rw [barDifferential_def, gradedCoderiv_of_tprod_of_homogeneous _ _ 1 _ x 𝒟 hx]
-  simp only [map_sum, map_smul, one_mul]
-  have hterm := sign_smul_apply_splice_taylor_subword h hFe x 𝒟 hx j hj
-  rw [Finset.sum_congr rfl fun p hp ↦ Finset.sum_congr rfl fun d hd ↦ hterm p hp d hd]
-  -- Each of the two families of terms is supported at a single pair `(p, d)`.
-  simp only [Finset.sum_add_distrib, ite_and, Finset.sum_ite_irrel, Finset.sum_const_zero,
-    Finset.sum_ite_eq', Finset.mem_range]
-  congr 1 <;> split_ifs <;> first | rfl | omega
-
-/-- A homogeneous cochain of degree `q` sends the first `n` letters of a homogeneous word of
-length `n + 1` to the piece of degree `S n + q + 1`, where `S n` is the sum of their degrees. -/
-private theorem apply_subword_mem_piece
-    (hF : LinearMap.IsHomogeneous F (gradedPiece (𝒜.grading.shift 1))
-      (𝒜.grading.shift 1).piece q)
-    {n : ℕ} (x : Fin (n + 1) → A) (𝒟 : Fin (n + 1) → ℤ)
-    (hx : ∀ i, x i ∈ (𝒜.grading.shift 1).piece (𝒟 i)) :
-    F (subword R x 0 n) ∈
-      𝒜.grading.piece ((∑ i ∈ Finset.range n, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0) + q + 1) := by
-  have hsub := subword_mem_gradedPiece x (fun i ↦ if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0)
-    (fun i ↦ by simpa only [Fin.is_lt, dite_true, Fin.eta] using hx i) 0 n
-  simpa [InternalGrading.shift_piece] using hF.map_mem hsub
-
 /-- The Hochschild differential of a normalized cochain vanishes on a homogeneous word containing
 the unit. -/
 private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
@@ -251,58 +150,20 @@ private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
   rw [hochschildDifferential_eq_brace_sub, LinearMap.sub_apply, LinearMap.smul_apply, brace_def,
     brace_def, LinearMap.comp_apply, LinearMap.comp_apply, ← barDifferential_def,
     taylor_gradedCoderiv_of_tprod h hFe x 𝒟 hx j hj h𝒟j,
-    apply_barDifferential_of_tprod h hFe x 𝒟 hx j hj]
-  -- The partial sums of the degrees of the letters.
-  set S : ℕ → ℤ := fun p ↦ ∑ i ∈ Finset.range p, if h : i < n + 1 then 𝒟 ⟨i, h⟩ else 0
-    with hS
-  have hSsucc (p : ℕ) (hp : p < n + 1) : S (p + 1) = S p + 𝒟 ⟨p, hp⟩ := by
-    simp only [hS, Finset.sum_range_succ, dite_eq_left hp]
+    h.apply_barDifferential_of_tprod_of_ker hFe x j hj]
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · simp
-  rcases Nat.eq_zero_or_pos j.1 with hj0 | hj0
-  · -- A unit in the first position: the collapse `m₂(e, F(⋯))` cancels that of `[e, a]`.
-    have hW : splice R x 0 (n + 1) j.1 2 (if h : j.1 + 1 < n + 1 then x ⟨j.1 + 1, h⟩ else 0) =
-        subword R x 1 n := by
-      rw [dite_eq_left (by omega)]
-      exact splice_two_succ_eq_subword R hn hj0 x
-    simp (disch := omega) only [ite_eq_right, ite_eq_left, add_zero]
-    rw [hW, hj0, Finset.sum_range_zero, negOnePowCast_zero, one_smul, sub_self]
-  rcases Nat.lt_or_ge j.1 n with hjlt | hjge
-  · -- An interior unit: the collapses of `[a, e]` and `[e, a]` cancel.
-    have hW : splice R x 0 (n + 1) j.1 2 (if h : j.1 + 1 < n + 1 then x ⟨j.1 + 1, h⟩ else 0) =
-        splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩) := by
-      rw [dite_eq_left (by omega)]
-      exact splice_two_succ_eq_splice_two_pred R hj0 hjlt x
-    simp (disch := omega) only [ite_eq_right, ite_eq_left, add_zero]
-    rw [hW, smul_smul, ← negOnePowCast_add, ← add_smul]
-    have hsign : negOnePowCast R (S j.1) +
-        negOnePowCast R (S (j.1 - 1) + (𝒟 ⟨j.1 - 1, by omega⟩ + 1)) = 0 := by
-      have := hSsucc (j.1 - 1) (by omega)
-      rw [Nat.sub_add_cancel hj0] at this
-      rw [this, ← add_assoc, negOnePowCast_add (R := R) _ 1, negOnePowCast_one, mul_neg_one,
-        add_neg_cancel]
-    simp only [hS] at hsign
-    rw [hsign, zero_smul, smul_zero, sub_zero]
-  · -- A unit in the last position: the collapse `m₂(F(⋯), e)` cancels that of `[a, e]`.
-    have hW : splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩) = subword R x 0 n :=
-      splice_two_pred_eq_subword R (by omega) x
-    -- The value of `F` on the first `n` letters has degree `S n + q` after suspension.
-    have hdeg : F (subword R x 0 n) ∈ 𝒜.grading.piece (S n + q + 1) :=
-      apply_subword_mem_piece hF x 𝒟 hx
-    simp (disch := omega) only [ite_eq_right, ite_eq_left, zero_add]
-    rw [hW, smul_smul, ← negOnePowCast_add, 𝒜.grading.koszulTwist_one_apply_of_mem hdeg,
-      ← negOnePowCast_eq_intCast, smul_smul, ← negOnePowCast_add, ← sub_smul]
-    have hSn : S n = S (j.1 - 1) + 𝒟 ⟨j.1 - 1, by omega⟩ := by
-      rw [← hSsucc]
-      congr 1
-      omega
-    -- The two coefficients agree: both are `(-1)^(S n + q + 1)`.
-    convert zero_smul R (F (subword R x 0 n)) using 2
-    rw [sub_eq_zero]
-    congr 1
-    simp only [hS] at hSn ⊢
-    rw [hSn]
-    ring
+  by_cases hj0 : j.val = 0
+  · simp (disch := omega) [hj0]
+  by_cases hjn' : j.val = n
+  · have hF' : LinearMap.IsHomogeneous F (ReducedTensorWords.grading (𝒜.grading.shift 1)).piece
+        (𝒜.grading.shift 1).piece q := by
+      rwa [ReducedTensorWords.grading_piece]
+    have hkt := hF'.koszulTwist_apply 1 (subword R x 0 n)
+    rw [InternalGrading.koszulTwist_one_shift_one, LinearMap.neg_apply, one_mul,
+      ← negOnePowCast_eq_intCast] at hkt
+    simp (disch := omega) [hn, hjn', neg_eq_iff_eq_neg.mp hkt]
+  · simp (disch := omega) [hj0, hjn']
 
 /-- **The Hochschild differential preserves normalized cochains.**  If `e` is a strict unit and
 the cochain `F` of degree `q` vanishes on every word containing `e`, so does its Hochschild
@@ -349,7 +210,7 @@ def normalizedD (h : 𝒜.StrictUnit e) (p q : ℤ) (hpq : p + 1 = q) :
     normalizedCochains 𝒜 e p →ₗ[R] normalizedCochains 𝒜 e q :=
   (d 𝒜 p q hpq).restrict fun F hF ↦ by
     rw [mem_normalizedCochains, coe_d]
-    exact h.degenerateWords_le_ker_hochschildDifferential ((mem_cochains 𝒜).mp F.2)
+    exact h.degenerateWords_le_ker_hochschildDifferential ((mem_cochains 𝒜).mp F.property)
       (mem_normalizedCochains.mp hF)
 
 @[simp]
@@ -409,7 +270,7 @@ def normalizedBracket {E : ℤ} (he : e ∈ 𝒜.grading.piece E) {p q n : ℤ} 
       rw [mem_normalizedCochains, coe_bracket]
       exact degenerateWords_le_ker_gerstenhaberBracket _ p q
         (E := E - 1) (by rwa [InternalGrading.shift_piece, sub_add_cancel])
-        (mem_normalizedCochains.mp F.2) (mem_normalizedCochains.mp G.2)⟩)
+        (mem_normalizedCochains.mp F.property) (mem_normalizedCochains.mp G.property)⟩)
     (fun _ _ _ ↦ Subtype.ext (by simp))
     (fun _ _ _ ↦ Subtype.ext (by simp))
     (fun _ _ _ ↦ Subtype.ext (by simp))

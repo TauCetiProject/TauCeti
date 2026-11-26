@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.GroupTheory.Nilpotent
-import Mathlib.Order.Atoms.Finite
 import Mathlib.Topology.Separation.Connected
+import TauCeti.GroupTheory.Index.Coatom
 import TauCeti.GroupTheory.PGroup
 import TauCeti.Topology.Algebra.Group.Generation
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Step
@@ -100,10 +100,7 @@ theorem eq_top_of_forall_not_le_openNormalSubgroup_index_eq (hG : IsProP p G)
     rw [QuotientGroup.comap_map_mk', Subgroup.comap_top] at hcomap
     exact hUproper (by simpa [sup_comm] using hcomap)
   let _ : Finite Q := Subgroup.quotient_finite_of_isOpen U.toSubgroup U.isOpen
-  let _ : Fintype Q := Fintype.ofFinite Q
-  let _ : Finite (Subgroup Q) :=
-    Finite.of_injective (fun L : Subgroup Q ↦ (L : Set Q)) SetLike.coe_injective
-  obtain ⟨M, hM, hKM⟩ := (eq_top_or_exists_le_coatom K).resolve_left hKproper
+  obtain ⟨M, hM, hKM⟩ := Subgroup.exists_isCoatom_le_of_finiteIndex hKproper
   have hQU : IsPGroup p Q := isProP_iff.mp hG U
   let _ : Group.IsNilpotent Q := hQU.isNilpotent
   let hMnormal : M.Normal :=
@@ -187,14 +184,14 @@ theorem eq_top_of_le_map_proPFrattini_of_sup_eq_top {P : Subgroup G}
   have : CompactSpace P := isCompact_iff_compactSpace.mp hPc.isCompact
   have hNP : N ≤ P := hN.trans (Subgroup.map_subtype_le _)
   have hHP : H.subgroupOf P = ⊤ := by
-    refine hP.eq_top_of_sup_proPFrattini_eq_top (hH.preimage continuous_subtype_val)
+    refine hP.eq_top_of_sup_proPFrattini_eq_top (hH.preimage continuous_subtypeVal)
       (top_unique fun x _ ↦ ?_)
     have hx : (x : G) ∈ H ⊔ N := hsup ▸ Subgroup.mem_top _
     obtain ⟨h, hh, n, hn, hhn⟩ := Subgroup.mem_sup_of_normal_right.mp hx
     obtain ⟨m, hm, rfl⟩ := hN hn
     -- The `H`-component `h = x * m⁻¹` of `x` lies in `P`, since `x` and `m` do.
     have hhP : h ∈ P := by
-      simpa [← hhn] using P.mul_mem x.2 (P.inv_mem m.2)
+      simpa [← hhn] using P.mul_mem x.property (P.inv_mem m.property)
     have hxm : x = ⟨h, hhP⟩ * m := Subtype.ext hhn.symm
     exact hxm ▸ Subgroup.mul_mem_sup (Subgroup.mem_subgroupOf.mpr hh) hm
   have hPH : P ≤ H := Subgroup.subgroupOf_eq_top.mp hHP

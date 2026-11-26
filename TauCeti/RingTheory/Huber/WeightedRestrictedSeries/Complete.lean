@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.UniformRing
 public import Mathlib.Topology.Algebra.UniformFilterBasis
 
 import Mathlib.Algebra.Regular.Pi
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 
 /-!
 # Completeness of the weighted restricted power series over a complete base
@@ -73,6 +74,8 @@ specialisations are discharged with.
   bounded, `A⟨X⟩_T` over a Hausdorff base is Hausdorff.
 * `TauCeti.Huber.completeSpace_weightedRestrictedSubring` : Wedhorn 5.49(3) — with every weight
   bounded, `A⟨X⟩_T` over a complete base is complete.
+* `TauCeti.Huber.isDomain_completion_weightedRestrictedSubring` : with every weight bounded,
+  the completion of `A⟨X⟩_T` over a complete Hausdorff nonarchimedean domain is a domain.
 * `TauCeti.Huber.continuous_coeff_one_weight`,
   `TauCeti.Huber.t0Space_weightedRestrictedSubring_one_weight`,
   `TauCeti.Huber.uniformContinuous_coeff_one_weight` and
@@ -85,6 +88,10 @@ specialisations are discharged with.
   the plain restricted-series ring, whenever that ring is complete and Hausdorff.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionAlgEquiv` : the same comparison as an
   `A`-algebra equivalence.
+* `TauCeti.Huber.toMvPowerSeries` : the power series of an element of `A⟨X₁,…,Xₖ⟩`, an injective
+  ring homomorphism (`TauCeti.Huber.toMvPowerSeries_injective`) sending a restricted series to
+  itself and a constant `a` to `C a` (`TauCeti.Huber.toMvPowerSeries_coe`,
+  `TauCeti.Huber.toMvPowerSeries_algebraMap`).
 * `TauCeti.Huber.uniformContinuous_restrictedMvPowerSeriesCompletionEquiv` and
   `TauCeti.Huber.uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm` : the
   comparison and its inverse are uniformly continuous. The inverse is the canonical map into
@@ -251,7 +258,8 @@ theorem completeSpace_weightedRestrictedSubring [CompleteSpace A] {T : Fin k →
     intro U
     obtain ⟨M, hMF, hM⟩ := exists_mem_forall_coeff_sub_mem_weightMul hF ha U
     obtain ⟨f₀, hf₀⟩ := hF.1.nonempty_of_mem hMF
-    filter_upwards [isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f₀.2) U] with ν hν
+    filter_upwards [isWeightedRestricted_iff.mp (mem_weightedRestrictedSubring.mp f₀.property) U]
+        with ν hν
     simpa [hg] using sub_mem hν (hM f₀ hf₀ ν)
   refine ⟨⟨g, mem_weightedRestrictedSubring.mpr hres⟩, ?_⟩
   rw [← tendsto_id', ← tendsto_sub_nhds_zero_iff,
@@ -276,6 +284,18 @@ instance completeSpace_weightedRestrictedSubring_one_weight [CompleteSpace A] :
     CompleteSpace (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A))
       isWeightFamily_one_weight) :=
   completeSpace_weightedRestrictedSubring _ isBounded_weightPow_one_weight
+
+/-- **The completion of `A⟨X⟩_T` over a complete Hausdorff nonarchimedean domain is a domain**
+whenever every weight is bounded: the uncompleted subring has no zero divisors, and completeness
+and Hausdorffness identify the completion with it. -/
+theorem isDomain_completion_weightedRestrictedSubring [T0Space A] [CompleteSpace A] [IsDomain A]
+    {T : Fin k → Set A} (hT : IsWeightFamily T) (hb : ∀ ν, IsBounded (weightPow T ν)) :
+    IsDomain (UniformSpace.Completion (weightedRestrictedSubring T hT)) :=
+  letI : T0Space (weightedRestrictedSubring T hT) := t0Space_weightedRestrictedSubring hT hb
+  letI : CompleteSpace (weightedRestrictedSubring T hT) :=
+    completeSpace_weightedRestrictedSubring hT hb
+  letI : IsDomain (weightedRestrictedSubring T hT) := NoZeroDivisors.to_isDomain _
+  (UniformSpace.Completion.completeRingEquivSelf _).toMulEquiv.isDomain _
 
 end Uniform
 
@@ -324,6 +344,46 @@ theorem coe_restrictedMvPowerSeriesCompletionEquiv_symm :
     ⇑(restrictedMvPowerSeriesCompletionEquiv k A).symm
       = ((↑) : _ → restrictedMvPowerSeriesCompletion k A) :=
   UniformSpace.Completion.coe_completeRingEquivSelf_symm _
+
+variable (k A) in
+/-- **The power series of an element of `A⟨X₁,…,Xₖ⟩`**, as a ring homomorphism: the comparison
+`TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` followed by the inclusion of the restricted
+series into all power series. -/
+noncomputable def toMvPowerSeries :
+    restrictedMvPowerSeriesCompletion k A →+* MvPowerSeries (Fin k) A :=
+  (Subring.subtype _).comp (restrictedMvPowerSeriesCompletionEquiv k A).toRingHom
+
+/-- The power series of `f ∈ A⟨X₁,…,Xₖ⟩` is the underlying series of its image under the
+comparison `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv`. -/
+theorem toMvPowerSeries_apply (f : restrictedMvPowerSeriesCompletion k A) :
+    toMvPowerSeries k A f = (restrictedMvPowerSeriesCompletionEquiv k A f : _) :=
+  (rfl)
+
+/-- The power series of a restricted series, regarded as an element of its completion, is that
+series. -/
+@[simp]
+theorem toMvPowerSeries_coe
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    toMvPowerSeries k A (f : restrictedMvPowerSeriesCompletion k A) = f := by
+  rw [toMvPowerSeries_apply, restrictedMvPowerSeriesCompletionEquiv_coe]
+
+/-- The power series of a constant `a ∈ A⟨X₁,…,Xₖ⟩` is the constant series `C a`. (Not `@[simp]`:
+`simp` proves it through `TauCeti.Huber.toMvPowerSeries_coe`.) -/
+theorem toMvPowerSeries_algebraMap (a : A) :
+    toMvPowerSeries k A (algebraMap A (restrictedMvPowerSeriesCompletion k A) a) =
+      MvPowerSeries.C a := by
+  rw [algebraMap_completion_weightedRestrictedSubring_apply, toMvPowerSeries_coe, coe_weightedC]
+
+/-- An element of `A⟨X₁,…,Xₖ⟩` is determined by its power series. -/
+theorem toMvPowerSeries_injective : Function.Injective (toMvPowerSeries k A) :=
+  Subtype.val_injective.comp (restrictedMvPowerSeriesCompletionEquiv k A).injective
+
+/-- Two elements of `A⟨X₁,…,Xₖ⟩` are equal as soon as their power series have the same
+coefficients. -/
+theorem ext_toMvPowerSeries_coeff {f g : restrictedMvPowerSeriesCompletion k A}
+    (h : ∀ ν, MvPowerSeries.coeff ν (toMvPowerSeries k A f) =
+      MvPowerSeries.coeff ν (toMvPowerSeries k A g)) : f = g :=
+  toMvPowerSeries_injective (MvPowerSeries.ext h)
 
 /-- The comparison is uniformly continuous: it is the uniform bijection between a complete
 Hausdorff space and its completion. -/

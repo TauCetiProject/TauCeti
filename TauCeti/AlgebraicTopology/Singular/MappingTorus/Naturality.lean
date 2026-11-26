@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.MappingTorus.Basic
-import TauCeti.AlgebraicTopology.SimplicialSet.Homology.HomotopyInvariance
+import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 
 /-!
 # Naturality of the Wang mapping-cone map
@@ -29,7 +29,6 @@ public section
 noncomputable section
 
 open AlgebraicTopology CategoryTheory Limits MonoidalCategory
-open scoped Simplicial
 
 universe w v u
 
@@ -65,15 +64,7 @@ lemma singularChainHomotopy_hom_naturality (φ : F ≃ₜ F) (R : C) (ψ : G ≃
     change monodromyHomotopy ψ (TopCat.I.homeomorph p.2, g p.1) =
       map φ ψ g h (monodromyHomotopy φ (TopCat.I.homeomorph p.2, p.1))
     exact (map_monodromyHomotopy φ ψ g h (TopCat.I.homeomorph p.2) p.1).symm
-  have hu : TopCat.toSSet.map (TopCat.ofHom g) ▷ Δ[1] ≫ hψ.toSSet.h =
-      hφ.toSSet.h ≫ TopCat.toSSet.map (TopCat.ofHom (map φ ψ g h)) := by
-    simp only [TopCat.Homotopy.toSSet, Category.assoc]
-    rw [← whisker_exchange_assoc (TopCat.toSSet.map (TopCat.ofHom g))
-      SSet.stdSimplex.toSSetObjI]
-    rw [Functor.LaxMonoidal.μ_natural_left_assoc]
-    simp only [← Functor.map_comp]
-    rw [ht]
-  exact hφ.toSSet.chainComplexMap_hom_comm hψ.toSSet hu R i j
+  exact TopCat.Homotopy.singularChainComplexFunctorObjMap_hom_comm hφ hψ ht R i j
 
 variable [HasBinaryBiproducts C]
 

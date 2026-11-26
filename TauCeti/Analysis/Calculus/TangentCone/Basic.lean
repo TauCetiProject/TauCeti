@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Complex.Basic
+import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Calculus.TangentCone.Pi
 import Mathlib.Analysis.Complex.ReImTopology
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pi.Prod
 
 /-!
 # Tangent cones of linear subspaces and of curves
@@ -19,24 +21,38 @@ import Mathlib.Analysis.Complex.ReImTopology
 Basic facts about Mathlib's tangent cone `tangentConeAt` in topological modules.
 The subspace calculation lets flattening charts identify their model subspaces with intrinsic
 tangent spaces, while the curve lemma places velocities of invariant flows in the tangent cones
-of their invariant sets. Differentials carry positive tangent cones into positive tangent cones,
-which lets chart transitions of a manifold with corners compare the corners of the model.
+of their invariant sets. Polyhedral cones cut out by independent linear coordinates, and their
+faces inside the kernels of the coordinates defining them, determine derivatives, so that corner
+charts can test germs on a face. Differentials carry positive tangent cones into positive tangent
+cones, which lets chart transitions of a manifold with corners compare the corners of the model.
 
 ## Main results
 
 * `Submodule.tangentConeAt_eq`: the tangent cone of a closed subspace at one of its points is the
   subspace itself.
 * `TauCeti.uniqueDiffOn_pi_halfSpace`: a coordinate half-space is a set of unique differentiability.
+* `ContinuousLinearMap.uniqueDiffOn_halfSpace`: a closed half-space `{a ≤ ℓ}` of a real normed
+  space is a set of unique differentiability.
 * `TauCeti.uniqueDiffOn_pi_Ici`: a closed coordinate orthant is a set of unique differentiability.
+* `TauCeti.uniqueDiffOn_preimage_Ici_of_surjective`: so is its preimage under a surjective
+  continuous linear map, and `TauCeti.uniqueDiffOn_ker_setOf_nonneg`: a face of such a cone has
+  unique derivatives within the kernel of the coordinates defining the face.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
+* `TauCeti.uniqueDiffOn_closedBall`: a closed ball of positive radius is a set of unique
+  differentiability.
+* `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
 * `IsPreconnected.uniqueDiffOn`: a preconnected set of reals containing two distinct points is a
   set of unique differentiability.
 * `HasDerivAt.mem_tangentConeAt`: the velocity of a curve lying in a set is tangent to the set.
 * `HasFDerivWithinAt.mapsTo_posTangentConeAt`: a differential carries positive tangent cones into
   positive tangent cones.
+* `ContinuousLinearEquiv.mem_posTangentConeAt_image_iff`: a continuous linear equivalence carries
+  positive tangent cones onto positive tangent cones.
 * `HasDerivWithinAt.mem_posTangentConeAt`: the right derivative of a curve which frequently lies
   in a set, just after the base time, is a positive tangent vector of that set.
+* `TauCeti.fderiv_apply_eq_self_of_mem_tangentConeAt`: a map fixing a set has derivative the
+  identity on the tangent cone of that set.
 -/
 
 public section
@@ -97,16 +113,90 @@ theorem TauCeti.uniqueDiffOn_pi_halfSpace {ι : Type*} (i : ι) (a : ℝ) :
   exact mem_of_superset ((isOpen_lt continuous_const (continuous_apply i)).mem_nhds ha)
     fun x hx ↦ hx.le
 
+/-- A closed half-space `{x | a ≤ ℓ x}` of a real normed space has unique derivatives, including
+on its boundary hyperplane. -/
+theorem ContinuousLinearMap.uniqueDiffOn_halfSpace {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (ℓ : E →L[ℝ] ℝ) (a : ℝ) : UniqueDiffOn ℝ {x | a ≤ ℓ x} := by
+  by_cases hℓ : ℓ = 0
+  · by_cases ha : a ≤ 0
+    · simp [hℓ, ha]
+    · simp [hℓ, ha, uniqueDiffOn_empty]
+  obtain ⟨w, hw⟩ := ContinuousLinearMap.exists_ne_zero hℓ
+  -- The point `((a + 1) / ℓ w) • w` lies in the open half-space `{a < ℓ}`.
+  refine uniqueDiffOn_convex ((convex_Ici a).linear_preimage ℓ.toLinearMap)
+    ⟨((a + 1) / ℓ w) • w, mem_interior_iff_mem_nhds.2 <| mem_of_superset
+      ((isOpen_lt continuous_const ℓ.continuous).mem_nhds ?_) fun x (hx : a < ℓ x) ↦ hx.le⟩
+  simp [div_mul_cancel₀ _ hw]
+
 /-- A closed coordinate orthant `{x | ∀ i, a i ≤ x i}` has unique derivatives, including at its
 corners. -/
 theorem TauCeti.uniqueDiffOn_pi_Ici {ι : Type*} (a : ι → ℝ) : UniqueDiffOn ℝ (Ici a) := by
   rw [← pi_univ_Ici]
   exact UniqueDiffOn.univ_pi fun i ↦ uniqueDiffOn_Ici (a i)
 
+/-- The preimage of a closed orthant `{u | ∀ i, a i ≤ u i}` of finitely many real coordinates under
+a surjective continuous linear map has unique derivatives, including at its corners. -/
+theorem TauCeti.uniqueDiffOn_preimage_Ici_of_surjective {E ι : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Finite ι] {q : E →L[ℝ] ι → ℝ} (hq : Function.Surjective q)
+    (a : ι → ℝ) : UniqueDiffOn ℝ (q ⁻¹' Ici a) := by
+  apply uniqueDiffOn_convex ((convex_Ici a).linear_preimage (q : E →ₗ[ℝ] ι → ℝ))
+  obtain ⟨w, hw⟩ := hq (a + 1)
+  -- Near `w` every coordinate of `q` stays above the corresponding coordinate of `a`.
+  have hopen : IsOpen (q ⁻¹' univ.pi fun i ↦ Ioi (a i)) :=
+    (isOpen_set_pi finite_univ fun i _ ↦ isOpen_Ioi).preimage q.continuous
+  have hsub : q ⁻¹' univ.pi (fun i ↦ Ioi (a i)) ⊆ q ⁻¹' Ici a :=
+    fun v hv i ↦ (hv i (mem_univ i)).le
+  refine ⟨w, interior_maximal hsub hopen fun i _ ↦ ?_⟩
+  simp [hw]
+
+/-- Let `q` be a surjective continuous linear map to finitely many real coordinates and `t` a set
+of these coordinates. In the kernel of the coordinates in `t`, the cone on which every coordinate
+of `q` is nonnegative has unique derivatives, including at its vertex `0`. This cone is the face of
+`q ⁻¹' Ici 0` on which the coordinates in `t` vanish. -/
+theorem TauCeti.uniqueDiffOn_ker_setOf_nonneg {E ι : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [Finite ι] {q : E →L[ℝ] ι → ℝ} (hq : Function.Surjective q) (t : Set ι) :
+    UniqueDiffOn ℝ
+      {v : (ContinuousLinearMap.pi fun i : t ↦ (ContinuousLinearMap.proj (i : ι)).comp q).ker |
+        ∀ i, 0 ≤ q v i} := by
+  classical
+  let qt := ContinuousLinearMap.pi fun i : t ↦ (ContinuousLinearMap.proj (i : ι)).comp q
+  -- The coordinates off `t`, restricted to the kernel, are still surjective.
+  let q' : qt.ker →L[ℝ] {i // i ∉ t} → ℝ := ContinuousLinearMap.pi fun i ↦
+    ((ContinuousLinearMap.proj (i : ι)).comp q).comp qt.ker.subtypeL
+  have hq' : Function.Surjective q' := fun u ↦ by
+    obtain ⟨w, hw⟩ := hq fun i ↦ if h : i ∈ t then 0 else u ⟨i, h⟩
+    refine ⟨⟨w, ContinuousLinearMap.mem_ker_pi_proj_comp.mpr fun i hi ↦ by simp [hw, hi]⟩, ?_⟩
+    funext i
+    simp [q', hw, i.property]
+  convert uniqueDiffOn_preimage_Ici_of_surjective hq' 0 using 1
+  -- On the kernel the coordinates in `t` vanish, so only the others constrain the cone.
+  ext v
+  refine ⟨fun h i ↦ h i, fun h i ↦ ?_⟩
+  by_cases hi : i ∈ t
+  · exact (ContinuousLinearMap.mem_ker_pi_proj_comp.mp v.property i hi).ge
+  · exact h ⟨i, hi⟩
+
 /-- A closed half-plane `{z : ℂ | a ≤ z.im}` has unique derivatives, including on its boundary. -/
 theorem TauCeti.uniqueDiffOn_setOfPred_le_im (a : ℝ) : UniqueDiffOn ℝ {z : ℂ | a ≤ z.im} :=
   uniqueDiffOn_convex (convex_halfSpace_im_ge a)
     ⟨Complex.I * (a + 1), by rw [Complex.interior_setOfPred_le_im]; simp⟩
+
+/-- A closed ball of positive radius in a real normed space has unique derivatives, including on
+its boundary sphere. -/
+theorem TauCeti.uniqueDiffOn_closedBall {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (x : E) {r : ℝ} (hr : 0 < r) : UniqueDiffOn ℝ (Metric.closedBall x r) :=
+  uniqueDiffOn_convex (convex_closedBall x r)
+    ⟨x, mem_interior_iff_mem_nhds.mpr (Metric.closedBall_mem_nhds x hr)⟩
+
+/-- A real direction `v` is tangent to the horizontal line `{y : ℂ | y.im = c}` at each of its
+points. -/
+theorem TauCeti.mem_tangentConeAt_setOf_im_eq {c : ℝ} {v w : ℂ} (hw : w.im = c) (hv : v.im = 0) :
+    v ∈ tangentConeAt ℝ {y : ℂ | y.im = c} w := by
+  have hseg : segment ℝ w (w + v) ⊆ {y : ℂ | y.im = c} := by
+    rw [segment_eq_image']
+    rintro _ ⟨θ, -, rfl⟩
+    simp [hw, hv]
+  simpa using mem_tangentConeAt_of_segment_subset hseg
 
 /-- A preconnected set of reals containing two distinct points has unique derivatives. -/
 theorem IsPreconnected.uniqueDiffOn {s : Set ℝ} (hs : IsPreconnected s) {a b : ℝ} (ha : a ∈ s)
@@ -130,6 +220,15 @@ theorem HasFDerivWithinAt.mapsTo_posTangentConeAt {E F : Type*} [NormedAddCommGr
   · exact hds.mono fun n hn ↦ ⟨x + d n, hn, by simp⟩
   · exact h.lim hd₀ hds hcd
 
+/-- A continuous linear equivalence `e` identifies the positive tangent cone of `e '' s` at `e x`
+with the image of the positive tangent cone of `s` at `x`. -/
+@[simp]
+theorem ContinuousLinearEquiv.mem_posTangentConeAt_image_iff {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] (e : E ≃L[ℝ] F) {s : Set E}
+    {x y : E} : e y ∈ posTangentConeAt (e '' s) (e x) ↔ y ∈ posTangentConeAt s x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ e.hasFDerivAt.hasFDerivWithinAt.mapsTo_posTangentConeAt h⟩
+  simpa [e.symm_image_image] using e.symm.hasFDerivAt.hasFDerivWithinAt.mapsTo_posTangentConeAt h
+
 /-- If a curve `x` has right derivative `w` at `t` and lies in `s` at times arbitrarily close to
 `t` from the right, then `w` is a positive tangent vector of `s` at `x t`. -/
 theorem HasDerivWithinAt.mem_posTangentConeAt {E : Type*} [NormedAddCommGroup E]
@@ -141,3 +240,11 @@ theorem HasDerivWithinAt.mem_posTangentConeAt {E : Type*} [NormedAddCommGroup E]
       fun τ ⟨h, hτ⟩ ↦ ⟨le_of_lt hτ, h⟩
   refine posTangentConeAt_mono ((image_mono inter_subset_right).trans (image_preimage_subset x s))
     (by simpa using (hx.mono inter_subset_left).hasFDerivWithinAt.mapsTo_posTangentConeAt h1)
+
+/-- A map that is differentiable at `x ∈ s` and fixes every point of `s` has derivative the
+identity on the tangent cone of `s` at `x`. -/
+theorem TauCeti.fderiv_apply_eq_self_of_mem_tangentConeAt {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {s : Set E} {r : E → E} {x v : E} (hr : DifferentiableAt 𝕜 r x)
+    (hrs : EqOn r id s) (hx : x ∈ s) (hv : v ∈ tangentConeAt 𝕜 s x) : fderiv 𝕜 r x v = v :=
+  hr.hasFDerivAt.hasFDerivWithinAt.unique_on
+    ((hasFDerivWithinAt_id x s).congr (fun _ hy ↦ hrs hy) (hrs hx)) hv

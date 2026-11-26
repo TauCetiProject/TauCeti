@@ -108,7 +108,7 @@ theorem isTightMeasureSet_of_map_eval_of_continuity_modulus [LindelofSpace α]
   choose δ hδpos hδ using fun k : ℕ ↦
     h_mod (1 / (k + 1)) Nat.one_div_pos_of_nat (ε' (.inl k)) (by exact_mod_cast hε'pos _)
   choose Q hQ hQS using fun t : T ↦ isTightMeasureSet_iff_exists_isCompact_measure_compl_le.mp
-    (h_eval t (hTD t.2)) (ε' (.inr t)) (by exact_mod_cast hε'pos _)
+    (h_eval t (hTD t.property)) (ε' (.inr t)) (by exact_mod_cast hε'pos _)
   -- The bad events: oscillating at scale `1 / (k + 1)`, or leaving `Q t` at time `t`.
   set B : ℕ ⊕ T → Set C(α, X) := Sum.elim
     (fun k ↦ {γ | ∃ s t, dist s t < δ k ∧ 1 / (k + 1 : ℝ) ≤ dist (γ s) (γ t)})
@@ -118,7 +118,7 @@ theorem isTightMeasureSet_of_map_eval_of_continuity_modulus [LindelofSpace α]
     · refine (Metric.uniformEquicontinuous_iff.mpr fun e he ↦ ?_).equicontinuous
       obtain ⟨k, hk⟩ := exists_nat_one_div_lt he
       refine ⟨δ k, hδpos k, fun s t hst γ ↦ ?_⟩
-      have hγ : γ.1 ∉ B (.inl k) := fun h ↦ γ.2 (mem_iUnion.mpr ⟨_, h⟩)
+      have hγ : γ.val ∉ B (.inl k) := fun h ↦ γ.property (mem_iUnion.mpr ⟨_, h⟩)
       simp only [hB, Sum.elim_inl, mem_ofPred_eq, not_exists, not_and, not_le] at hγ
       exact (hγ s t hst).trans hk
     · intro t ht

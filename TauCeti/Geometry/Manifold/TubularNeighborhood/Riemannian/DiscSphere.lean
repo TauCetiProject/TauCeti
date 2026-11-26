@@ -60,25 +60,25 @@ theorem exists_isClosedEmbedding_normalExp_disc
     {O : Set N} (hO : IsOpen O) (hfO : range f ⊆ O) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
-    let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
+    let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     ∃ r : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ x, 0 < r x) ∧
-      {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ⊆ f.normalExpDomain hn ∧
-      f.normalExp hn '' {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ⊆ O ∧
-      IsOpenEmbedding (({p : TotalSpace P ν | ‖p.2‖ < r p.proj}).domRestrict
+      {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ⊆ f.normalExpDomain hn ∧
+      f.normalExp hn '' {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ⊆ O ∧
+      IsOpenEmbedding (({p : TotalSpace P ν | ‖p.snd‖ < r p.proj}).domRestrict
         (f.normalExp hn)) ∧
-      IsClosedEmbedding (({p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj}).domRestrict
+      IsClosedEmbedding (({p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj}).domRestrict
         (f.normalExp hn)) ∧
-      IsClosedEmbedding (({p : TotalSpace P ν | ‖p.2‖ = r p.proj}).domRestrict
+      IsClosedEmbedding (({p : TotalSpace P ν | ‖p.snd‖ = r p.proj}).domRestrict
         (f.normalExp hn)) ∧
-      closure (f.normalExp hn '' {p : TotalSpace P ν | ‖p.2‖ < r p.proj}) =
-        f.normalExp hn '' {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ∧
-      frontier (f.normalExp hn '' {p : TotalSpace P ν | ‖p.2‖ < r p.proj}) =
-        f.normalExp hn '' {p : TotalSpace P ν | ‖p.2‖ = r p.proj} := by
+      closure (f.normalExp hn '' {p : TotalSpace P ν | ‖p.snd‖ < r p.proj}) =
+        f.normalExp hn '' {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ∧
+      frontier (f.normalExp hn '' {p : TotalSpace P ν | ‖p.snd‖ < r p.proj}) =
+        f.normalExp hn '' {p : TotalSpace P ν | ‖p.snd‖ = r p.proj} := by
   let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
-  let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
+  let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
   let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
   let : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
   let : ∀ x, InnerProductSpace ℝ (ν x) := fun x => inferInstance
@@ -105,19 +105,20 @@ theorem exists_isClosedEmbedding_normalExp_disc
     obtain ⟨r, hr, -, hdisc⟩ := Φ.open_source.exists_contMDiffMap_norm_le_subset_bundle
       (I := I) (V := ν) (n := ⊤) hzero (continuous_const (y := (1 : ℝ)))
       (fun _ => zero_lt_one)
-    have hD : {p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj} ⊆ Φ.source := fun p hp => hdisc p.proj p.2 hp
+    have hD : {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ⊆ Φ.source := fun p hp => hdisc p.proj p.snd
+        hp
     have hrc := r.contMDiff.continuous
     have hd : IsClosedEmbedding
-        ({p : TotalSpace P ν | ‖p.2‖ ≤ r p.proj}.domRestrict Φ) :=
+        ({p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj}.domRestrict Φ) :=
       Φ.toOpenPartialHomeomorph.isClosedEmbedding_domRestrict_norm_le_bundle hrc hD
     have hsphere : IsClosedEmbedding
-        ({p : TotalSpace P ν | ‖p.2‖ = r p.proj}.domRestrict Φ) :=
+        ({p : TotalSpace P ν | ‖p.snd‖ = r p.proj}.domRestrict Φ) :=
       Φ.toOpenPartialHomeomorph.isClosedEmbedding_domRestrict_norm_eq_bundle hrc
-        (fun p (hp : ‖p.2‖ = r p.proj) => hD (le_of_eq hp))
+        (fun p (hp : ‖p.snd‖ = r p.proj) => hD (le_of_eq hp))
     have hopen : IsOpenEmbedding
-        ({p : TotalSpace P ν | ‖p.2‖ < r p.proj}.domRestrict Φ) :=
+        ({p : TotalSpace P ν | ‖p.snd‖ < r p.proj}.domRestrict Φ) :=
       Φ.toOpenPartialHomeomorph.isOpenEmbedding_domRestrict_norm_lt_bundle hrc
-        (fun p (hp : ‖p.2‖ < r p.proj) => hD (le_of_lt hp))
+        (fun p (hp : ‖p.snd‖ < r p.proj) => hD (le_of_lt hp))
     refine ⟨r, hr, hD.trans hdomain, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [← hΦ]
       exact (Φ.toPartialEquiv.mapsTo.mono_left hD).image_subset.trans htarget

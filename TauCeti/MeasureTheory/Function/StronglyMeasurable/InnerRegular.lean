@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Regular
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
 
 /-!
 # Continuous functions are a.e. strongly measurable for inner regular measures
@@ -38,9 +40,15 @@ integrable `f` lives on a σ-finite set, and there the inner regular case applie
 * `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul`: the product `f • g` of an
   a.e. finitely strongly measurable `f` (for instance an integrable one) and a continuous `g` is
   a.e. strongly measurable.
+* `MeasureTheory.Integrable.smul_bdd_of_continuous`: the product `f • g` of an integrable
+  weight `f` and a norm-bounded continuous map `g` is integrable.
 * `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply`: a continuous family of
   continuous linear maps `g` applied to an a.e. finitely strongly measurable `f`, for instance an
   `Lᵖ` function with `p < ∞`, is a.e. strongly measurable.
+* `MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continuous`: a separately
+  continuous zero-preserving family `g : α → γ → β` applied to an a.e. finitely strongly
+  measurable `f : α → γ` is a.e. strongly measurable, covering point-norm continuous group actions
+  without operator-norm continuity.
 -/
 
 public section
@@ -109,6 +117,16 @@ theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_smul {𝕜 : 
       hf.ae_eq_mk⟩).smul hg.aestronglyMeasurable_of_sigmaFinite)
     fun x hx ↦ by simp [hx]
 
+/-- The pointwise scalar product `x ↦ f x • g x` of an integrable weight `f` and a norm-bounded
+continuous map `g` is integrable for a measure inner regular with respect to compact sets on sets
+of finite measure, without assuming σ-finiteness of `μ` or second countability. -/
+theorem MeasureTheory.Integrable.smul_bdd_of_continuous {𝕜 E : Type*}
+    [NormedAddCommGroup 𝕜] [NormedAddCommGroup E] [SMulWithZero 𝕜 E] [IsBoundedSMul 𝕜 E]
+    {f : α → 𝕜} (hf : Integrable f μ) {g : α → E} (C : ℝ) (hg : Continuous g)
+    (hC : ∀ x, ‖g x‖ ≤ C) : Integrable (fun x ↦ f x • g x) μ :=
+  (hf.norm.mul_const C).mono' (hf.aefinStronglyMeasurable.aestronglyMeasurable_smul hg)
+    (.of_forall fun x ↦ (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _)))
+
 /-- A continuous family `g` of continuous linear maps applied to an a.e. finitely strongly
 measurable function `f`, for instance an `Lᵖ` function with `p < ∞`, is a.e. strongly measurable,
 for a measure that is inner regular with respect to compact sets on sets of finite measure. As in
@@ -125,3 +143,20 @@ theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply {�
       (AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
         hf.ae_eq_mk⟩))
     fun x hx ↦ by simp [hx]
+
+/-- A separately continuous zero-preserving family `g : α → γ → β` applied to an a.e. finitely
+strongly measurable function `f : α → γ` is a.e. strongly measurable, for a measure that is inner
+regular with respect to compact sets on sets of finite measure. Unlike
+`MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_clm_apply`, `x ↦ g x` need only be
+pointwise continuous rather than norm-continuous. -/
+theorem MeasureTheory.AEFinStronglyMeasurable.aestronglyMeasurable_apply_continuous {γ : Type*}
+    [TopologicalSpace γ] [T2Space γ] [Zero γ] [Zero β] {f : α → γ}
+    (hf : AEFinStronglyMeasurable f μ) {g : α → γ → β} (hg₁ : ∀ y, Continuous fun x ↦ g x y)
+    (hg₂ : ∀ x, Continuous fun y ↦ g x y) (hg₀ : ∀ x, g x 0 = 0) :
+    AEStronglyMeasurable (fun x ↦ g x (f x)) μ :=
+  hf.aestronglyMeasurable_of_restrict
+    ((AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
+      hf.ae_eq_mk⟩).apply_of_forall_of_continuousAt
+      (fun y ↦ (hg₁ y).aestronglyMeasurable_of_sigmaFinite)
+      (.of_forall fun x ↦ (hg₂ x).continuousAt))
+    fun x hx ↦ by simp [hx, hg₀]

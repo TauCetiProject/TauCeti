@@ -23,7 +23,9 @@ maximal atlas makes a chart a local diffeomorphism, so Mathlib's
 assumption on the charted space.
 
 Under `IsManifold` at nonzero regularity, the preferred extended chart also sends an intrinsic
-interior point to coordinates with a neighborhood inside the extended chart target.
+interior point to coordinates with a neighborhood inside the extended chart target, and its inverse
+sends a point of its target to an interior point exactly when that point lies in the interior of
+the range of the model.
 -/
 
 public section
@@ -76,6 +78,18 @@ theorem isInteriorPoint_iff_mem_interior_range (hk : k ≠ 0)
     I.IsInteriorPoint x ↔ I (e x) ∈ interior (range I) := by
   simpa only [ModelWithCorners.IsInteriorPoint, extChartAt_self_apply] using
     (e.isLocalDiffeomorphAt_of_mem_maximalAtlas he hx).isInteriorPoint_iff hk
+
+/-- The inverse preferred chart at `α` sends a point `z` of its target to an interior point
+exactly when `z` lies in the interior of the range of the model, at any nonzero manifold
+regularity. -/
+theorem isInteriorPoint_extChartAt_symm_iff [IsManifold I k M] (hk : k ≠ 0) (α : M) {z : E}
+    (hz : z ∈ (extChartAt I α).target) :
+    I.IsInteriorPoint ((extChartAt I α).symm z) ↔ z ∈ interior (range I) := by
+  have hsrc : (extChartAt I α).symm z ∈ (chartAt H α).source := by
+    rw [← extChartAt_source I]
+    exact (extChartAt I α).map_target hz
+  rw [isInteriorPoint_iff_mem_interior_range hk (IsManifold.chart_mem_maximalAtlas α) hsrc,
+    ← Function.comp_apply (f := I), ← extChartAt_coe, (extChartAt I α).right_inv hz]
 
 /-- For two charts of the maximal atlas with nonzero differentiability exponent around a point
 `x`, if the first reads `x` in the interior of its extended target, so does the second. -/

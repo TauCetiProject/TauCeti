@@ -105,7 +105,8 @@ theorem cartanMatrix_transpose_mul_extEulerMatrix_eq_diagonal
     extEulerPairing (isExtensionClosed_finiteModules.{u, u} A)
       (isExtensionClosed_finiteModules.{u, u} A) hadm
   have hΦ (X Y : FGModuleCat.{u} A) :
-      Φ (ExactK0.of X) (ExactK0.of Y) = extEuler.{u} k (hadm.isEulerAdmissible X.2 Y.2) :=
+      Φ (ExactK0.of X) (ExactK0.of Y) = extEuler.{u} k (hadm.isEulerAdmissible X.property
+          Y.property) :=
     extEulerPairing_of_of _ _ hadm X Y
   have hb (x : I) :
       (simpleClassBasis S hSnoniso hSexhaustive).map

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Adjoint.Centralizer.Basic
 public import TauCeti.LinearAlgebra.End.NilpotentCentralizer
+import TauCeti.Algebra.Lie.AdjointAction.Regular
+import TauCeti.Algebra.Lie.GeneralLinear.NilpotentOrbit
 import TauCeti.Combinatorics.Enumerative.Partition.ColumnSquares
 
 /-!
@@ -27,7 +29,7 @@ nilpotent orbits by their Jordan types: the orbit has the maximal dimension `n²
 the one-row partition `(n)`; every other nilpotent orbit has dimension at most `n² - n - 2`, with
 equality exactly for the partition `(n - 1, 1)`. So the subregular orbit has dimension two less
 than the regular one. These are the group-level counterparts of the tangent-space calculations for
-`sl n` in `TauCeti.Algebra.Lie.GeneralLinear.NilpotentOrbit`.
+`gl n` and `sl n` in `TauCeti.Algebra.Lie.GeneralLinear.NilpotentOrbit`.
 
 All statements are written additively, so no truncated subtraction occurs. The Jordan partition
 is that of the endomorphism `Matrix.toLinAlgEquiv' X` of `Fin n → k`.
@@ -71,14 +73,15 @@ theorem finrank_range_ad_add_sum_sq_conjugate_parts
         ((End.jordanPartition (toLinAlgEquiv' (cotangentDualMatrixEquiv x)) hx).conjugate.parts.map
           (· ^ 2)).sum =
       n * n := by
-  -- The kernel of `ad x` is carried onto the centralizer of the matrix of `x`.
-  have hker : finrank k (LinearMap.ker (LieAlgebra.ad k _ x)) =
-      finrank k (Subalgebra.centralizer k {cotangentDualMatrixEquiv x}) := by
-    rw [← Subalgebra.finrank_toSubmodule, ← map_cotangentDualMatrixEquiv_ker_ad,
-      LinearEquiv.finrank_map_eq]
-  rw [← finrank_centralizer_eq_sum_sq_conjugate_jordanPartition, ← hker,
-    LinearMap.finrank_range_add_finrank_ker, cotangentDualMatrixEquiv.finrank_eq]
-  simp [finrank_matrix]
+  let := LieRing.ofAssociativeRing (A := Matrix (Fin n) (Fin n) k)
+  let e := (Derivation.cotangentDualLieEquiv (R := k) (H := coordinateHopfAlgebra k n)).trans
+    (tangentLieEquivMatrix (R := k) (B := k) n)
+  have he : e x = cotangentDualMatrixEquiv x := by
+    rw [LieEquiv.trans_apply, tangentLieEquivMatrix_apply, Derivation.cotangentDualLieEquiv_apply,
+      ← cotangentDualMatrixEquiv_apply]
+  rw [← e.finrank_range_ad_apply x, he]
+  simpa only [Fintype.card_fin, sq] using
+    (cotangentDualMatrixEquiv x).finrank_range_ad_add_sum_sq_conjugate_parts hx
 
 section CharZero
 
@@ -126,7 +129,7 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_le
         ((x, 1) : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)) × k)
         (Module.isUnimodular_mk_one x))) + n ≤ n * n := by
   have h := finrank_range_ad_add_sum_sq_conjugate_parts x hx
-  have hle := (End.jordanPartition _ hx).conjugate.le_sum_sq_parts
+  have hle := (End.jordanPartition _ hx).conjugate.le_sum_pow_parts two_ne_zero
   have hcard := finrank_fin_fun k (n := n)
   rw [topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad]
   norm_cast

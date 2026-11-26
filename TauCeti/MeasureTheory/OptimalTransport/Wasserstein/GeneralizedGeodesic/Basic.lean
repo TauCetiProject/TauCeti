@@ -56,12 +56,17 @@ uniqueness of the step and the discrete energy estimates.
 
 * `TauCeti.exists_isGeneralizedGeodesicPlan`: on a Polish metric space, every finite base measure
   `μ` and two measures coupled with it carry such a three-plan, for every nonzero exponent.
+* `TauCeti.IsCoupling.isGeneralizedGeodesicPlan_map`: an optimal coupling `π` of `μ` and `ν`
+  gives the generalized-geodesic plan `(x, x, y)₊ π` from `μ` to `ν` based at `μ`.
 * `TauCeti.IsGeneralizedGeodesicPlan.generalizedGeodesic_zero` and
   `TauCeti.IsGeneralizedGeodesicPlan.generalizedGeodesic_one`: the generalized geodesic runs from
   `ν₀` to `ν₁`.
 * `TauCeti.hasFiniteMoment_generalizedGeodesic` and `TauCeti.exists_coe_eq_generalizedGeodesic`:
   generalized geodesics between laws of finite `q`-th moment stay in laws of finite `q`-th moment,
   so those between laws of `P₂(E)` run in `P₂(E)`.
+* `TauCeti.dist_sq_le_of_eq_generalizedGeodesic`: the squared `W₂` distance between two points
+  along a generalized geodesic at times `s` and `r` is at most `(r - s) ^ 2` times the quadratic
+  cost of the endpoint coupling.
 * `TauCeti.wassersteinEDist_generalizedGeodesic_sq_add_le`: the convexity inequality for an
   arbitrary three-plan with first marginal `μ`, against the three transport integrals of the plan.
 * `TauCeti.IsGeneralizedGeodesicPlan.wassersteinEDist_sq_add_le` and
@@ -134,6 +139,37 @@ end IsGeneralizedGeodesicPlan
 
 end ThreePlan
 
+section Diagonal
+
+variable {X : Type*} [TopologicalSpace X] [WeakPseudoEMetricSpace X] [MeasurableSpace X] {p : ℝ≥0∞}
+  {π : Measure (X × X)} {μ ν : Measure X}
+
+/-- **Optimal couplings out of the base law are generalized-geodesic plans.** If `π` is a coupling
+of `μ` and `ν` realizing `W_p (μ, ν)`, then the law of `(x, x, y)` under `π` is a
+generalized-geodesic plan from `μ` to `ν` based at `μ`: its projection to the first two
+coordinates is the diagonal coupling of `μ`, of cost `0`, and its projection to the first and last
+coordinates is `π`. The ground distance only has to be almost everywhere measurable under the
+diagonal coupling; this holds when it is measurable, and also when the diagonal is measurable,
+since the distance then vanishes almost everywhere under the diagonal coupling. -/
+theorem IsCoupling.isGeneralizedGeodesicPlan_map (hπ : IsCoupling π μ ν)
+    (hopt : eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π = wassersteinEDist p μ ν)
+    (hd : AEMeasurable (fun z : X × X ↦ edist z.1 z.2) (graphPlan id μ)) :
+    IsGeneralizedGeodesicPlan p (π.map fun z ↦ (z.1, z.1, z.2)) μ μ ν := by
+  have hg : Measurable fun z : X × X ↦ (z.1, z.1, z.2) := by fun_prop
+  have hleft : (π.map fun z ↦ (z.1, z.1, z.2)).map (Prod.map id Prod.fst) = graphPlan id μ := by
+    rw [Measure.map_map (by fun_prop) hg, graphPlan_def, ← hπ.fst_eq, Measure.fst,
+      Measure.map_map (by fun_prop) measurable_fst]
+    simp [Function.comp_def]
+  have hright : (π.map fun z ↦ (z.1, z.1, z.2)).map (Prod.map id Prod.snd) = π := by
+    rw [Measure.map_map (by fun_prop) hg]
+    simp [Function.comp_def]
+  refine ⟨by rw [hleft]; exact isCoupling_graphPlan_id μ, ?_, by rw [hright]; exact hπ,
+    by rw [hright]; exact hopt⟩
+  rw [hleft, eLpNorm_edist_graphPlan_id_eq_zero hd p,
+    wassersteinEDist_self_of_aemeasurable_edist hd p]
+
+end Diagonal
+
 section Polish
 
 variable {X : Type*} [MetricSpace X] [CompleteSpace X] [SecondCountableTopology X]
@@ -175,6 +211,14 @@ def generalizedGeodesic (γ : Measure (E × E × E)) (t : ℝ) : Measure E :=
 theorem generalizedGeodesic_def (γ : Measure (E × E × E)) (t : ℝ) :
     generalizedGeodesic γ t = γ.map fun w ↦ (1 - t) • w.2.1 + t • w.2.2 := by
   rw [generalizedGeodesic]
+
+/-- The generalized geodesic at time `t` is the interpolation at time `t` of the endpoint coupling
+`γ.snd`: the law of `(1 - t) • y₀ + t • y₁` under `γ.snd`. -/
+theorem generalizedGeodesic_eq_map_snd [MeasurableAdd₂ E] [MeasurableConstSMul ℝ E]
+    (γ : Measure (E × E × E)) (t : ℝ) :
+    generalizedGeodesic γ t = γ.snd.map fun z ↦ (1 - t) • z.1 + t • z.2 := by
+  rw [generalizedGeodesic_def, Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
+  rfl
 
 /-- The generalized geodesic of a probability measure is a curve of probability measures. -/
 instance isProbabilityMeasure_generalizedGeodesic (γ : Measure (E × E × E))
@@ -338,6 +382,35 @@ theorem exists_coe_eq_generalizedGeodesic {γ : Measure (E × E × E)}
   let P : ProbabilityMeasure E := ⟨generalizedGeodesic γ t, inferInstance⟩
   have hP : (P : Measure E) = generalizedGeodesic γ t := ProbabilityMeasure.coe_mk _ _
   exact ⟨WassersteinSpace.mk P (hP ▸ hm), by rw [WassersteinSpace.coe_mk, hP]⟩
+
+variable [CompleteSpace E]
+
+/-- **Distance between two points along a generalized geodesic.** For a measure `γ` on `E × E × E`
+and laws `νs`, `νr` in `P₂(E)` equal to `generalizedGeodesic γ s` and `generalizedGeodesic γ r`,
+`W₂ (νs, νr) ^ 2 ≤ (r - s) ^ 2 ∫ ‖y₀ - y₁‖ ^ 2 dγ`. -/
+theorem dist_sq_le_of_eq_generalizedGeodesic {γ : Measure (E × E × E)} {s r : ℝ}
+    {νs νr : WassersteinSpace 2 E}
+    (hνs : ((νs : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ s)
+    (hνr : ((νr : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ r) :
+    dist νs νr ^ 2 ≤ (r - s) ^ 2 * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd := by
+  set f : E × E → E × E := fun z ↦ ((1 - s) • z.1 + s • z.2, (1 - r) • z.1 + r • z.2)
+  have hf_meas : Measurable f := by fun_prop
+  have hcoupl : IsCoupling (γ.snd.map f) ((νs : ProbabilityMeasure E) : Measure E)
+      ((νr : ProbabilityMeasure E) : Measure E) := by
+    constructor
+    · rw [hνs, generalizedGeodesic_eq_map_snd, Measure.fst_map_prodMk (by fun_prop) (by fun_prop)]
+    · rw [hνr, generalizedGeodesic_eq_map_snd, Measure.snd_map_prodMk (by fun_prop) (by fun_prop)]
+  refine (WassersteinSpace.dist_sq_le_integral hcoupl).trans ?_
+  rw [integral_map (f := fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) hf_meas.aemeasurable (by fun_prop)]
+  have hpoint : ∀ z : E × E, ‖(f z).1 - (f z).2‖ ^ 2 = (r - s) ^ 2 * ‖z.1 - z.2‖ ^ 2 := fun z ↦ by
+    have hsub : ((1 - s) • z.1 + s • z.2) - ((1 - r) • z.1 + r • z.2) =
+        (r - s) • (z.1 - z.2) := by
+      simp only [sub_smul, one_smul, smul_sub]
+      abel
+    dsimp [f]
+    rw [hsub, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+  simp_rw [hpoint, integral_const_mul]
+  exact le_rfl
 
 end Moment
 

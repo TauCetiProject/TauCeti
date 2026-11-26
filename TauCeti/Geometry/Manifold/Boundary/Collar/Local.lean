@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Chart
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Local collars of a manifold with boundary
@@ -52,6 +55,11 @@ boundary, which is what Hirsch's bump-function argument does and what this file 
 
 * `TauCeti.EuclideanHalfSpace.exists_normalIio_subset`: the segments `[0, ε)` are a neighbourhood
   basis of the origin of the one-dimensional half-space model.
+* `TauCeti.EuclideanHalfSpace.contMDiffOn_normalRay`: the normal ray is smooth on `[0, ∞)`.
+* `TauCeti.EuclideanHalfSpace.contMDiff_interiorEmbedding` and
+  `TauCeti.EuclideanHalfSpace.contMDiffOn_interiorEmbedding_symm`: `interiorEmbedding` is smooth,
+  and so is its inverse on the open half-space, so charts of a boundaryless manifold followed by it
+  are smooth charts of interior points.
 * `TauCeti.exists_isProductCollarChart_of_mem_boundary`: **every boundary point has a product
   collar chart.** This is the shrinking step.
 * `TauCeti.IsProductCollarChart.image_source_inter_boundary`: a product collar chart carries the
@@ -105,11 +113,11 @@ def normalRay (r : ℝ) : EuclideanHalfSpace 1 := ⟨toLp 2 fun _ ↦ max r 0, l
 
 /-- The normal coordinate of a point of the normal ray. -/
 @[simp]
-theorem normalRay_coe_apply (r : ℝ) : (normalRay r).1 0 = max r 0 := (rfl)
+theorem normalRay_coe_apply (r : ℝ) : (normalRay r).val 0 = max r 0 := (rfl)
 
 /-- The origin of the one-dimensional half-space model has vanishing normal coordinate. -/
 @[simp]
-theorem val_zero_apply : (0 : EuclideanHalfSpace 1).1 0 = 0 := (rfl)
+theorem val_zero_apply : (0 : EuclideanHalfSpace 1).val 0 = 0 := (rfl)
 
 /-- The normal ray starts at the origin. -/
 @[simp]
@@ -121,11 +129,11 @@ theorem normalRay_zero : normalRay 0 = 0 := by
 
 /-- The normal ray parametrizes the one-dimensional half-space model by its normal coordinate. -/
 @[simp]
-theorem normalRay_normalCoord (t : EuclideanHalfSpace 1) : normalRay (t.1 0) = t := by
+theorem normalRay_normalCoord (t : EuclideanHalfSpace 1) : normalRay (t.val 0) = t := by
   refine EuclideanHalfSpace.ext _ _ ?_
   ext i
   rw [Subsingleton.elim i 0]
-  simp [normalRay, max_eq_left t.2]
+  simp [normalRay, max_eq_left t.property]
 
 /-- The normal ray is the inverse of the model with corners of the half-line, applied to the
 reals viewed as `ℝ¹`. -/
@@ -141,25 +149,40 @@ theorem continuous_normalRay : Continuous normalRay := by
   refine Continuous.subtype_mk ?_ _
   fun_prop
 
+/-- The normal ray along a nonnegative `C^k` function is `C^k` into the one-dimensional
+half-space model. -/
+theorem _root_.ContMDiff.normalRay {E' H' M : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I : ModelWithCorners ℝ E' H'} [TopologicalSpace M]
+    [ChartedSpace H' M] {k : WithTop ℕ∞} {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) k f)
+    (hf0 : ∀ x, 0 ≤ f x) : ContMDiff I (𝓡∂ 1) k fun x ↦ normalRay (f x) := by
+  have hcoord : ContMDiff I 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) k
+      fun x ↦ (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm (f x) :=
+    (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm.contDiff.contMDiff.comp hf
+  have hrange (x : M) : (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm (f x) ∈ range (𝓡∂ 1) := by
+    rw [range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
+    simpa using hf0 x
+  exact ((𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hcoord hrange).congr fun x ↦ normalRay_eq_symm _
+
 /-- A point of the one-dimensional half-space model vanishes exactly when its normal coordinate
 does. -/
 @[simp]
-theorem eq_zero_iff {t : EuclideanHalfSpace 1} : t = 0 ↔ t.1 0 = 0 := by
+theorem eq_zero_iff {t : EuclideanHalfSpace 1} : t = 0 ↔ t.val 0 = 0 := by
   refine ⟨fun h ↦ by rw [h]; rfl, fun h ↦ ?_⟩
   rw [← normalRay_normalCoord t, h, normalRay_zero]
 
 /-- The initial segment `[0, ε)` of the one-dimensional half-space model: the points whose normal
 coordinate is smaller than `ε`. It is empty for `ε ≤ 0`, and is the model factor of the collar
 boxes below. -/
-def normalIio (ε : ℝ) : Set (EuclideanHalfSpace 1) := {t | t.1 0 < ε}
+def normalIio (ε : ℝ) : Set (EuclideanHalfSpace 1) := {t | t.val 0 < ε}
 
 /-- Membership in the initial segment is one inequality on the normal coordinate. -/
 @[simp]
-theorem mem_normalIio {ε : ℝ} {t : EuclideanHalfSpace 1} : t ∈ normalIio ε ↔ t.1 0 < ε := (Iff.rfl)
+theorem mem_normalIio {ε : ℝ} {t : EuclideanHalfSpace 1} : t ∈ normalIio ε ↔ t.val 0 < ε :=
+    (Iff.rfl)
 
 /-- The initial segments are open, being sublevel sets of the continuous normal coordinate. -/
 theorem isOpen_normalIio (ε : ℝ) : IsOpen (normalIio ε) := by
-  have : Continuous fun t : EuclideanHalfSpace 1 ↦ t.1 0 := by fun_prop
+  have : Continuous fun t : EuclideanHalfSpace 1 ↦ t.val 0 := by fun_prop
   exact isOpen_Iio.preimage this
 
 /-- The initial segment `[0, ε)` of the one-dimensional half-space model as an open subspace. It
@@ -170,7 +193,7 @@ def normalIioOpens (ε : ℝ) : TopologicalSpace.Opens (EuclideanHalfSpace 1) :=
 /-- Membership in the open initial segment is one inequality on the normal coordinate. -/
 @[simp]
 theorem mem_normalIioOpens {ε : ℝ} {t : EuclideanHalfSpace 1} :
-    t ∈ normalIioOpens ε ↔ t.1 0 < ε := mem_normalIio
+    t ∈ normalIioOpens ε ↔ t.val 0 < ε := mem_normalIio
 
 /-- An initial segment of positive height contains the origin.
 
@@ -192,8 +215,8 @@ theorem exists_normalIio_subset {W : Set (EuclideanHalfSpace 1)} (hW : IsOpen W)
   have h0' : (0 : ℝ) ∈ normalRay ⁻¹' W := by simpa using h0
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hpre 0 h0'
   refine ⟨ε, hε, fun t ht ↦ ?_⟩
-  have hmem : t.1 0 ∈ Metric.ball (0 : ℝ) ε := by
-    rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_nonneg t.2]
+  have hmem : t.val 0 ∈ Metric.ball (0 : ℝ) ε := by
+    rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_nonneg t.property]
     exact ht
   have := hball hmem
   rwa [mem_preimage, normalRay_normalCoord] at this
@@ -203,22 +226,22 @@ theorem exists_normalIio_subset {W : Set (EuclideanHalfSpace 1)} (hW : IsOpen W)
 as a product with a half-open interval. -/
 def homeomorphNormalIio (ε : ℝ) : ↥(normalIio ε) ≃ₜ ↥(Set.Ico (0 : ℝ) ε) where
   toEquiv :=
-    { toFun := fun t ↦ ⟨t.1.1 0, t.1.2, mem_normalIio.1 t.2⟩
-      invFun := fun r ↦ ⟨normalRay r.1, by
-        rw [mem_normalIio, normalRay_coe_apply, max_eq_left r.2.1]
-        exact r.2.2⟩
-      left_inv := fun t ↦ Subtype.ext (normalRay_normalCoord t.1)
+    { toFun := fun t ↦ ⟨t.val.val 0, t.val.property, mem_normalIio.1 t.property⟩
+      invFun := fun r ↦ ⟨normalRay r.val, by
+        rw [mem_normalIio, normalRay_coe_apply, max_eq_left r.property.1]
+        exact r.property.2⟩
+      left_inv := fun t ↦ Subtype.ext (normalRay_normalCoord t.val)
       right_inv := fun r ↦ Subtype.ext (by
-        have hr : (normalRay r.1).1 0 = r.1 := by
-          rw [normalRay_coe_apply, max_eq_left r.2.1]
+        have hr : (normalRay r.val).val 0 = r.val := by
+          rw [normalRay_coe_apply, max_eq_left r.property.1]
         exact hr) }
   continuous_toFun := by fun_prop
-  continuous_invFun := (continuous_normalRay.comp continuous_subtype_val).subtype_mk _
+  continuous_invFun := (continuous_normalRay.comp continuous_subtypeVal).subtype_mk _
 
 /-- The interval identification is the normal coordinate. -/
 @[simp]
 theorem coe_homeomorphNormalIio {ε : ℝ} (t : ↥(normalIio ε)) :
-    (homeomorphNormalIio ε t : ℝ) = t.1.1 0 := (rfl)
+    (homeomorphNormalIio ε t : ℝ) = t.val.val 0 := (rfl)
 
 /-- The origin of the one-dimensional half-space model, as a point of the open initial segment
 `normalIioOpens ε` of positive height. -/
@@ -239,7 +262,7 @@ def homeomorphNormalIioOpens (ε : ℝ) : normalIioOpens ε ≃ₜ Ico (0 : ℝ)
 /-- The interval reading of the open initial segment is the normal coordinate. -/
 @[simp]
 theorem coe_homeomorphNormalIioOpens {ε : ℝ} (t : normalIioOpens ε) :
-    (homeomorphNormalIioOpens ε t : ℝ) = (t : EuclideanHalfSpace 1).1 0 := (rfl)
+    (homeomorphNormalIioOpens ε t : ℝ) = (t : EuclideanHalfSpace 1).val 0 := (rfl)
 
 /-- The inverse of the interval reading of the open initial segment is the normal ray. -/
 @[simp]
@@ -270,19 +293,19 @@ theorem homeomorphNormalIioOpens_one_symm_zero :
 one-dimensional half-space. -/
 private def expRay (t : ℝ) : EuclideanHalfSpace 1 := normalRay (Real.exp t)
 
-private theorem expRay_coe_apply (t : ℝ) : (expRay t).1 0 = Real.exp t := by
+private theorem expRay_coe_apply (t : ℝ) : (expRay t).val 0 = Real.exp t := by
   simp [expRay, (Real.exp_pos t).le]
 
-private theorem range_expRay : range expRay = {s | 0 < s.1 0} := by
+private theorem range_expRay : range expRay = {s | 0 < s.val 0} := by
   ext s
-  refine ⟨?_, fun hs => ⟨Real.log (s.1 0), ?_⟩⟩
+  refine ⟨?_, fun hs => ⟨Real.log (s.val 0), ?_⟩⟩
   · rintro ⟨t, rfl⟩
     simpa [expRay_coe_apply] using Real.exp_pos t
   · rw [expRay, Real.exp_log hs, normalRay_normalCoord]
 
 private theorem isOpenEmbedding_expRay : IsOpenEmbedding expRay := by
-  have hcoord : Continuous fun s : EuclideanHalfSpace 1 => s.1 0 := by fun_prop
-  have hcomp : (fun s : EuclideanHalfSpace 1 => s.1 0) ∘ expRay = Real.exp :=
+  have hcoord : Continuous fun s : EuclideanHalfSpace 1 => s.val 0 := by fun_prop
+  have hcomp : (fun s : EuclideanHalfSpace 1 => s.val 0) ∘ expRay = Real.exp :=
     funext expRay_coe_apply
   refine ⟨IsEmbedding.of_comp (continuous_normalRay.comp Real.continuous_exp) hcoord
     (hcomp ▸ Real.isOpenEmbedding_exp.isEmbedding), ?_⟩
@@ -300,14 +323,14 @@ def interiorEmbedding (n : ℕ) (v : EuclideanSpace ℝ (Fin (n + 1))) :
 /-- The zeroth coordinate of `interiorEmbedding` is the exponential of the zeroth coordinate. -/
 @[simp]
 theorem interiorEmbedding_coe_apply_zero (n : ℕ) (v : EuclideanSpace ℝ (Fin (n + 1))) :
-    (interiorEmbedding n v).1 0 = Real.exp (v 0) := by
+    (interiorEmbedding n v).val 0 = Real.exp (v 0) := by
   rw [interiorEmbedding, collarDiffeomorph_apply_zero, Prod.map_snd, expRay_coe_apply,
     euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_snd]
 
 /-- The other coordinates of `interiorEmbedding` are unchanged. -/
 @[simp]
 theorem interiorEmbedding_coe_apply_succ (n : ℕ) (v : EuclideanSpace ℝ (Fin (n + 1)))
-    (i : Fin n) : (interiorEmbedding n v).1 i.succ = v i.succ := by
+    (i : Fin n) : (interiorEmbedding n v).val i.succ = v i.succ := by
   rw [interiorEmbedding, collarDiffeomorph_apply_succ, Prod.map_fst, id_eq,
     euclideanHalfSpaceBoundaryNormalEquiv_symm_apply_fst, euclideanHalfSpaceBoundaryProj_apply]
 
@@ -321,19 +344,64 @@ theorem isOpenEmbedding_interiorEmbedding (n : ℕ) :
 
 /-- The image of `interiorEmbedding` is the open half-space, the interior of the model. -/
 theorem range_interiorEmbedding (n : ℕ) :
-    range (interiorEmbedding n) = {y | 0 < y.1 0} := by
+    range (interiorEmbedding n) = {y | 0 < y.val 0} := by
   ext y
   refine ⟨?_, fun hy => ?_⟩
   · rintro ⟨v, rfl⟩
     rw [mem_ofPred_eq, interiorEmbedding_coe_apply_zero]
     exact Real.exp_pos _
   · refine ⟨euclideanHalfSpaceBoundaryNormalEquiv n
-      (((collarDiffeomorph (k := ⊤) n).symm y).1, Real.log (y.1 0)), ?_⟩
+      (((collarDiffeomorph (k := ⊤) n).symm y).1, Real.log (y.val 0)), ?_⟩
     rw [interiorEmbedding, ContinuousLinearEquiv.symm_apply_apply, Prod.map_apply, id_eq]
     conv_rhs => rw [← (collarDiffeomorph (k := ⊤) n).apply_symm_apply y]
     refine congrArg _ (Prod.ext rfl ?_)
     rw [expRay, Real.exp_log hy, ← collarDiffeomorph_symm_apply_snd_apply_zero (k := ⊤),
       normalRay_normalCoord]
+
+/-- The normal ray is `C^k` on the nonnegative reals, where it is the inverse of the model with
+corners of the half-line. -/
+theorem contMDiffOn_normalRay {k : WithTop ℕ∞} :
+    ContMDiffOn 𝓘(ℝ) (𝓡∂ 1) k normalRay (Ici 0) := by
+  refine ((𝓡∂ 1).contMDiffOn_symm.comp
+    (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm.contDiff.contMDiff.contMDiffOn
+    fun r hr ↦ ?_).congr fun r _ ↦ normalRay_eq_symm r
+  rw [mem_preimage, range_modelWithCornersEuclideanHalfSpace, mem_ofPred_eq]
+  simpa using hr
+
+/-- `interiorEmbedding` is `C^k`, from `ℝⁿ⁺¹` to the half-space with its model with corners. -/
+theorem contMDiff_interiorEmbedding (n : ℕ) {k : WithTop ℕ∞} :
+    ContMDiff (𝓡 (n + 1)) (𝓡∂ (n + 1)) k (interiorEmbedding n) := by
+  have hval : ContDiff ℝ k fun v ↦ (interiorEmbedding n v).val := by
+    refine contDiff_piLp' 2 fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i
+    · simp only [interiorEmbedding_coe_apply_zero]
+      exact Real.contDiff_exp.comp (contDiff_piLp_apply 2)
+    · simp only [interiorEmbedding_coe_apply_succ]
+      exact contDiff_piLp_apply 2
+  exact ((𝓡∂ (n + 1)).contMDiffOn_symm.comp_contMDiff hval.contMDiff
+    fun v ↦ ⟨interiorEmbedding n v, rfl⟩).congr fun v ↦ ((𝓡∂ (n + 1)).left_inv _).symm
+
+/-- The inverse of `interiorEmbedding` is `C^k` on the open half-space, its image. -/
+theorem contMDiffOn_interiorEmbedding_symm (n : ℕ) {k : WithTop ℕ∞} :
+    ContMDiffOn (𝓡∂ (n + 1)) (𝓡 (n + 1)) k
+      ((isOpenEmbedding_interiorEmbedding n).toOpenPartialHomeomorph (interiorEmbedding n)).symm
+      {y | 0 < y.val 0} := by
+  let g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) :=
+    fun v ↦ WithLp.toLp 2 (Fin.cons (Real.log (v 0)) fun j : Fin n ↦ v j.succ)
+  have hg : ContDiffOn ℝ k g {v | 0 < v 0} := by
+    refine contDiffOn_piLp' 2 fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i
+    · simp only [g, Fin.cons_zero]
+      exact Real.contDiffOn_log.comp (contDiffOn_piLp_apply 2) fun v (hv : 0 < v 0) ↦ hv.ne'
+    · simp only [g, Fin.cons_succ]
+      exact contDiffOn_piLp_apply 2
+  have hie (y : EuclideanHalfSpace (n + 1)) (hy : 0 < y.val 0) :
+      interiorEmbedding n (g y.val) = y := by
+    refine EuclideanHalfSpace.ext _ _ (PiLp.ext fun i ↦ Fin.cases ?_ (fun j ↦ ?_) i)
+    · simp [g, Real.exp_log hy]
+    · simp [g]
+  refine ((hg.contMDiffOn.comp (𝓡∂ (n + 1)).contMDiff.contMDiffOn fun y hy ↦ hy).congr
+    fun y hy ↦ ?_)
+  conv_lhs => rw [← hie y hy]
+  exact (isOpenEmbedding_interiorEmbedding n).toOpenPartialHomeomorph_left_inv
 
 end EuclideanHalfSpace
 
@@ -362,7 +430,7 @@ structure IsProductCollarChart (k : WithTop ℕ∞)
   /-- The inverse of the chart is `C^k`. -/
   contMDiffOn_symm : ContMDiffOn ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k φ.symm φ.target
   /-- The boundary is the zero slice of the normal coordinate. -/
-  mem_boundary_iff : ∀ y ∈ φ.source, y ∈ (𝓡∂ (n + 1)).boundary M ↔ (φ y).2.1 0 = 0
+  mem_boundary_iff : ∀ y ∈ φ.source, y ∈ (𝓡∂ (n + 1)).boundary M ↔ (φ y).2.val 0 = 0
 
 namespace IsProductCollarChart
 
@@ -383,7 +451,7 @@ theorem mem_sourceOpens (h : IsProductCollarChart k φ V ε) {x : M} :
 submanifold of the canonical boundary manifold. -/
 def sourceBoundaryOpens (h : IsProductCollarChart k φ V ε) :
     TopologicalSpace.Opens ↥((𝓡∂ (n + 1)).boundary M) :=
-  TopologicalSpace.Opens.comap ⟨Subtype.val, continuous_subtype_val⟩ h.sourceOpens
+  TopologicalSpace.Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ h.sourceOpens
 
 /-- A boundary point belongs to the boundary part of the chart source exactly when its ambient
 point belongs to the chart source. -/
@@ -468,8 +536,8 @@ def homeomorphProd (h : IsProductCollarChart k φ V ε) :
 
 private def sourceInterHomeomorphSourceBoundaryOpens (h : IsProductCollarChart k φ V ε) :
     ↥(φ.source ∩ (𝓡∂ (n + 1)).boundary M) ≃ₜ h.sourceBoundaryOpens where
-  toFun x := ⟨⟨x, x.2.2⟩, h.mem_sourceBoundaryOpens.2 x.2.1⟩
-  invFun x := ⟨x.1.1, h.mem_sourceBoundaryOpens.1 x.2, x.1.2⟩
+  toFun x := ⟨⟨x, x.property.2⟩, h.mem_sourceBoundaryOpens.2 x.property.1⟩
+  invFun x := ⟨x.val.val, h.mem_sourceBoundaryOpens.1 x.property, x.val.property⟩
   left_inv x := Subtype.ext (rfl)
   right_inv x := Subtype.ext (Subtype.ext (rfl))
   continuous_toFun := by fun_prop
@@ -487,7 +555,7 @@ def homeomorphProdOpens (h : IsProductCollarChart k φ V ε) :
 theorem coe_homeomorphProdOpens_fst_eq_homeomorphProd_fst (h : IsProductCollarChart k φ V ε)
     (y : h.sourceOpens) :
     (((h.homeomorphProdOpens y).1 : ↥((𝓡∂ (n + 1)).boundary M)) : M) =
-      ((h.homeomorphProd ⟨y, h.mem_sourceOpens.1 y.2⟩).1 : M) :=
+      ((h.homeomorphProd ⟨y, h.mem_sourceOpens.1 y.property⟩).1 : M) :=
   (rfl)
 
 /-- The normal component of the open-subspace local collar agrees with that of
@@ -495,7 +563,7 @@ theorem coe_homeomorphProdOpens_fst_eq_homeomorphProd_fst (h : IsProductCollarCh
 theorem coe_homeomorphProdOpens_snd_eq_homeomorphProd_snd (h : IsProductCollarChart k φ V ε)
     (y : h.sourceOpens) :
     ((h.homeomorphProdOpens y).2 : EuclideanHalfSpace 1) =
-      ((h.homeomorphProd ⟨y, h.mem_sourceOpens.1 y.2⟩).2 : EuclideanHalfSpace 1) :=
+      ((h.homeomorphProd ⟨y, h.mem_sourceOpens.1 y.property⟩).2 : EuclideanHalfSpace 1) :=
   (rfl)
 
 /-- The second component of the local collar is the normal coordinate.
@@ -512,7 +580,7 @@ homeomorphism down: it is the chart, read in the box. -/
 @[simp]
 theorem map_homeomorphProd_fst (h : IsProductCollarChart k φ V ε) (y : ↥φ.source) :
     φ ((h.homeomorphProd y).1 : M) = ((φ y).1, 0) := by
-  exact φ.right_inv (h.fst_zero_mem_target y.2)
+  exact φ.right_inv (h.fst_zero_mem_target y.property)
 
 /-- The second component of the open-subspace local collar is the normal coordinate. -/
 @[simp]
@@ -541,7 +609,7 @@ neighbourhood basis.
 
 This is the local half of the collar neighbourhood theorem; the global statement patches these
 boxes along the whole boundary. -/
-theorem exists_isProductCollarChart_of_mem_boundary (hk : k ≠ 0) {x : M}
+theorem exists_isProductCollarChart_of_mem_boundary {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) :
     ∃ (φ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1))
       (V : Set (EuclideanSpace ℝ (Fin n))) (ε : ℝ),
@@ -552,7 +620,7 @@ theorem exists_isProductCollarChart_of_mem_boundary (hk : k ≠ 0) {x : M}
   -- the boundary point is read in the collar chart as a point of the zero slice
   have hx0 : (collarChart e x).2 = 0 :=
     EuclideanHalfSpace.eq_zero_iff.2
-      ((mem_boundary_iff_collarChart_snd_apply_zero_eq_zero hk (chart_mem_atlas _ x) hxe).1 hx)
+      ((mem_boundary_iff_collarChart_snd_apply_zero_eq_zero hxe).1 hx)
   have hxt : ((collarChart e x).1, (collarChart e x).2) ∈ (collarChart e).target :=
     (collarChart e).map_source hxs
   -- shrink an ambient box to a box of the form `V × [0, ε)`
@@ -589,19 +657,20 @@ theorem exists_isProductCollarChart_of_mem_boundary (hk : k ≠ 0) {x : M}
     exact (contMDiffOn_collarChart_symm (IsManifold.chart_mem_maximalAtlas x)).mono hBsub
   · intro y hy
     rw [hcoe]
-    exact mem_boundary_iff_collarChart_snd_apply_zero_eq_zero hk (chart_mem_atlas _ x) (hsub hy)
+    exact mem_boundary_iff_collarChart_snd_apply_zero_eq_zero (hsub hy)
 
-/-- **A local collar neighbourhood of a boundary point.** Every boundary point of a `C^k`
-manifold with boundary, `k ≠ 0`, has an open neighbourhood `U` homeomorphic to the product of its
-part `U ∩ ∂M` of the boundary with a half-open interval `[0, ε)`.
+/-- **A local collar neighbourhood of a boundary point.** Every boundary point of a charted
+space modeled on a Euclidean half-space has an open neighbourhood `U` homeomorphic to the product
+of its part `U ∩ ∂M` of the boundary with a half-open interval `[0, ε)`.
 
 This is the local collar; the collar neighbourhood theorem is the statement that the `U` can be
 taken to be a single neighbourhood of the whole boundary, with `U ∩ ∂M = ∂M`. -/
-theorem exists_homeomorph_prod_Ico_of_mem_boundary (hk : k ≠ 0) {x : M}
+theorem exists_homeomorph_prod_Ico_of_mem_boundary {x : M}
     (hx : x ∈ (𝓡∂ (n + 1)).boundary M) :
     ∃ (U : Set M) (ε : ℝ), IsOpen U ∧ x ∈ U ∧ 0 < ε ∧
       Nonempty (↥U ≃ₜ ↥(U ∩ (𝓡∂ (n + 1)).boundary M) × ↥(Set.Ico (0 : ℝ) ε)) := by
-  obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary hk hx
+  -- Take `k = 0`: every charted space is a `C^0` manifold, so no smoothness of `M` is assumed.
+  obtain ⟨φ, V, ε, hxφ, h⟩ := exists_isProductCollarChart_of_mem_boundary (k := 0) hx
   exact ⟨φ.source, ε, φ.open_source, hxφ, h.height_pos,
     ⟨h.homeomorphProd.trans
       ((Homeomorph.refl _).prodCongr (EuclideanHalfSpace.homeomorphNormalIio ε))⟩⟩

@@ -89,12 +89,13 @@ private theorem exists_fourierCoeff_eq_inner {T : HardySpace →L[ℂ] HardySpac
       ContinuousLinearMap.adjoint_inner_left]
   -- Off the diagonal one summand vanishes; on it, the correction `c` cancels the double count.
   have hcol (d : ℕ) : fourierCoeff b d = ⟪hardyBasis d, T (hardyBasis 0)⟫_ℂ := by
-    rw [hb, fourierCoeff_star, coe_fourierBasis, fourierCoeff_fourierLp, hT]
+    rw [hb, Lp.fourierCoeff_star, RCLike.star_def, coe_fourierBasis, fourierCoeff_fourierLp, hT]
     rcases Nat.eq_zero_or_pos d with rfl | hd
     · simpa [c] using hA 0
     · simp [HardySpace.fourierCoeff_eq_zero _ (by omega : -(d : ℤ) < 0), hd.ne']
   have hrow (d : ℕ) : fourierCoeff b (-d) = ⟪hardyBasis 0, T (hardyBasis d)⟫_ℂ := by
-    rw [hb, fourierCoeff_star, coe_fourierBasis, fourierCoeff_fourierLp, neg_neg, hA]
+    rw [hb, Lp.fourierCoeff_star, RCLike.star_def, coe_fourierBasis, fourierCoeff_fourierLp,
+      neg_neg, hA]
     rcases Nat.eq_zero_or_pos d with rfl | hd
     · simpa [c] using hT 0
     · simp [HardySpace.fourierCoeff_eq_zero _ (by omega : -(d : ℤ) < 0), hd.ne']

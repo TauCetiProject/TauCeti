@@ -61,16 +61,21 @@ private theorem eulerDegree_injective :
     (Scheme.IsCurveOver.coheight_le_one (k := k))
     (bijective_baseRingToGlobalSections k).surjective (genus_eq_zero k)
 
+/-- The global functions on the projective line over a field `k` form a one-dimensional
+`k`-vector space: `dim_k H⁰(ℙ¹_k, 𝒪) = 1`. -/
+theorem finrank_cohomology_zero_trivial :
+    Module.finrank k
+      (Scheme.Modules.Cohomology (InvertibleSheaf.trivial (projectiveLine k)).obj 0) = 1 :=
+  (cohomologyZeroTrivialLinearEquiv k).finrank_eq.trans (Module.finrank_self k)
+
 /-- The degree of `𝒪(1)` on the projective line is one. -/
 private theorem eulerDegree_twistingSheaf_one : InvertibleSheaf.eulerDegree k (ℒ 1) = 1 := by
   have : Subsingleton (Scheme.Modules.Cohomology (Proj.twistingSheaf 𝒜 1) 1) :=
     (Pi.basisFun k (Fin 2)).subsingleton_cohomology_twistingSheaf_of_neg_card_lt
       (by norm_num) (by decide)
-  have h₀ : Module.finrank k
-      (Scheme.Modules.Cohomology (InvertibleSheaf.trivial (projectiveLine k)).obj 0) = 1 :=
-    (cohomologyZeroTrivialLinearEquiv k).finrank_eq.trans (Module.finrank_self k)
   simp only [InvertibleSheaf.eulerDegree_eq_finrank_sub,
-    finrank_cohomology_zero_twistingSheaf, Module.finrank_zero_of_subsingleton, h₀]
+    finrank_cohomology_zero_twistingSheaf, Module.finrank_zero_of_subsingleton,
+    finrank_cohomology_zero_trivial]
   norm_num
 
 /-- Every twisting sheaf `𝒪(n)` on the projective line has degree `n`, for `n : ℤ`. -/
@@ -103,6 +108,12 @@ lemma picardDegreeEquiv_symm_apply (n : ℤ) :
     (picardDegreeEquiv k).symm n = Additive.ofMul (LineBundleClass.mk (ℒ n)) := by
   apply (picardDegreeEquiv k).injective
   simp
+
+/-- Degree on the projective line is additive, so inverting a line-bundle class negates its
+degree. -/
+lemma eulerDegree_inv (a : LineBundleClass (projectiveLine k)) :
+    LineBundleClass.eulerDegree k a⁻¹ = -LineBundleClass.eulerDegree k a := by
+  simpa using map_neg (picardDegreeEquiv k) (Additive.ofMul a)
 
 /-- A line bundle on the projective line is isomorphic to `𝒪(n)` exactly when its degree is `n`.
 Thus the integer in the twisting-sheaf classification is unique. -/

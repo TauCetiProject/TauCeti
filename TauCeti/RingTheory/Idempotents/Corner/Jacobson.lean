@@ -41,6 +41,10 @@ recognise a corner ring as basic.
 
 * `IsIdempotentElem.isUnit_corner_iff`: `x` is a unit of `eAe` if and only if `1 - e + x` is a
   unit of `A`.
+* `IsIdempotentElem.isUnit_compress_iff_of_commute`: for `c` commuting with `e`, the compression
+  `ece` is a unit of `eAe` if and only if `1 - e + ce` is a unit of `A`.
+* `IsIdempotentElem.exists_mul_mul_eq_of_isUnit_compress`: for `v` commuting with `e`, if `eve`
+  is a unit of `eAe` then `v z e = e` for some `z`.
 * `IsIdempotentElem.mem_jacobson_corner_iff`: an element of `eAe` lies in its Jacobson radical
   if and only if it lies in the Jacobson radical of `A`.
 * `IsIdempotentElem.jacobson_corner`: `J(eAe) = eJ(A)e`, as ideals of the corner.
@@ -61,39 +65,60 @@ variable {A : Type*} [Ring A] {e : A} (he : IsIdempotentElem e)
 
 /-- **Units of a corner ring.** An element `x` of the corner `eAe` is a unit there exactly when
 `1 - e + x` is a unit of `A`. -/
-theorem isUnit_corner_iff {x : he.Corner} : IsUnit x ↔ IsUnit (1 - e + x.1) := by
+theorem isUnit_corner_iff {x : he.Corner} : IsUnit x ↔ IsUnit (1 - e + x.val) := by
   constructor
   · -- `x ↦ 1 - e + x` is a monoid homomorphism `eAe → A`: the cross terms vanish.
     let φ : he.Corner →* A :=
-      { toFun y := 1 - e + y.1
+      { toFun y := 1 - e + y.val
         map_one' := by simp
         map_mul' y z := by
-          have h : (1 - e + y.1) * (1 - e + z.1) =
-              1 - e - e + e * e + (z.1 - e * z.1) + (y.1 - y.1 * e) + y.1 * z.1 := by
+          have h : (1 - e + y.val) * (1 - e + z.val) =
+              1 - e - e + e * e + (z.val - e * z.val) + (y.val - y.val * e) + y.val * z.val := by
             noncomm_ring
           rw [h, he.eq, he.mul_corner_val, he.corner_val_mul, Corner.val_mul]
           abel }
     exact fun h => h.map φ
   · rintro h
     obtain ⟨w, hw₁, hw₂⟩ := isUnit_iff_exists.mp h
-    have hl : e * (1 - e + x.1) = x.1 := by
+    have hl : e * (1 - e + x.val) = x.val := by
       rw [mul_add, mul_sub, mul_one, he.eq, sub_self, zero_add, he.mul_corner_val]
-    have hr : (1 - e + x.1) * e = x.1 := by
+    have hr : (1 - e + x.val) * e = x.val := by
       rw [add_mul, sub_mul, one_mul, he.eq, sub_self, zero_add, he.corner_val_mul]
-    have h₁ : x.1 * w = e := by rw [← hl, mul_assoc, hw₁, mul_one]
-    have h₂ : w * x.1 = e := by rw [← hr, ← mul_assoc, hw₂, one_mul]
+    have h₁ : x.val * w = e := by rw [← hl, mul_assoc, hw₁, mul_one]
+    have h₂ : w * x.val = e := by rw [← hr, ← mul_assoc, hw₂, one_mul]
     -- The inverse of `x` in the corner is `e * w * e`.
-    have h₃ : x.1 * (e * w * e) = e := by
+    have h₃ : x.val * (e * w * e) = e := by
       rw [← mul_assoc, ← mul_assoc, he.corner_val_mul, h₁, he.eq]
-    have h₄ : e * w * e * x.1 = e := by
+    have h₄ : e * w * e * x.val = e := by
       rw [mul_assoc, he.mul_corner_val, mul_assoc, h₂, he.eq]
     exact isUnit_iff_exists.mpr ⟨he.compress w,
       Subtype.ext (by rwa [Corner.val_mul, val_compress, Corner.val_one]),
       Subtype.ext (by rwa [Corner.val_mul, val_compress, Corner.val_one])⟩
 
+/-- **Corner units of a commuting element.** If `c` commutes with `e`, the compression `ece` of
+`c` is a unit of the corner `eAe` exactly when `1 - e + ce` is a unit of `A`. -/
+theorem isUnit_compress_iff_of_commute {c : A} (hc : Commute e c) :
+    IsUnit (he.compress c) ↔ IsUnit (1 - e + c * e) := by
+  rw [he.isUnit_corner_iff, val_compress, hc.eq, mul_assoc, he.eq]
+
+/-- **A commuting element that is a corner unit is invertible against `e`.** If `v` commutes with
+`e` and its compression `eve` is a unit of the corner `eAe`, then `v z e = e` for some `z`. -/
+theorem exists_mul_mul_eq_of_isUnit_compress {v : A} (hv : Commute e v)
+    (h : IsUnit (he.compress v)) : ∃ z, v * z * e = e := by
+  obtain ⟨u, hu⟩ := h
+  refine ⟨(u⁻¹ : he.Cornerˣ).val.val, ?_⟩
+  have h := congrArg Subtype.val u.mul_inv
+  rw [hu, Corner.val_mul, val_compress, Corner.val_one] at h
+  have h1 := he.mul_corner_val (u⁻¹ : he.Cornerˣ).val
+  calc v * (u⁻¹ : he.Cornerˣ).val.val * e = v * (u⁻¹ : he.Cornerˣ).val.val := by
+        rw [mul_assoc, he.corner_val_mul]
+    _ = e * v * e * (u⁻¹ : he.Cornerˣ).val.val := by
+        rw [mul_assoc (e * v), h1, hv.eq, mul_assoc, h1]
+    _ = e := h
+
 /-- `1 - e + (1 + y)` is `1 + y` for an element `y` of the corner. -/
 private theorem one_sub_add_val_one_add (y : he.Corner) :
-    1 - e + (1 + y : he.Corner).1 = 1 + y.1 := by
+    1 - e + (1 + y : he.Corner).val = 1 + y.val := by
   rw [Corner.val_add, Corner.val_one]
   abel
 
@@ -101,22 +126,22 @@ private theorem one_sub_add_val_one_add (y : he.Corner) :
 the corner `eAe` lies in `Ring.jacobson eAe` exactly when it lies in `Ring.jacobson A`. -/
 @[simp]
 theorem mem_jacobson_corner_iff {x : he.Corner} :
-    x ∈ Ring.jacobson he.Corner ↔ x.1 ∈ Ring.jacobson A := by
+    x ∈ Ring.jacobson he.Corner ↔ x.val ∈ Ring.jacobson A := by
   constructor
   · intro hx
     refine TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left.mpr fun a => ?_
     -- `1 + x * (e * a * e)` is a unit of the corner; read it in `A` and swap the factors.
-    have hu : IsUnit (1 + x.1 * (e * a * e)) := by
+    have hu : IsUnit (1 + x.val * (e * a * e)) := by
       have := he.isUnit_corner_iff.mp
         (TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_right.mp hx (he.compress a))
       rwa [he.one_sub_add_val_one_add, Corner.val_mul, val_compress] at this
-    have hxa : x.1 * (e * a * e) = x.1 * (a * e) := by
+    have hxa : x.val * (e * a * e) = x.val * (a * e) := by
       rw [mul_assoc e a e, ← mul_assoc, he.corner_val_mul]
     rwa [hxa, TauCeti.isUnit_one_add_mul_comm, mul_assoc, he.mul_corner_val] at hu
   · intro hx
     refine TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left.mpr fun y => ?_
-    have hu : IsUnit (1 + y.1 * x.1) :=
-      TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left.mp hx y.1
+    have hu : IsUnit (1 + y.val * x.val) :=
+      TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left.mp hx y.val
     rw [he.isUnit_corner_iff, he.one_sub_add_val_one_add]
     exact hu
 

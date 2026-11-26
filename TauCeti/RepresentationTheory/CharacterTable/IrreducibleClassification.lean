@@ -126,7 +126,7 @@ theorem exists_isIrreducible_finrank_eq (i : ι) :
   ⟨Fin (d i) → k, inferInstance, inferInstance, blockRepresentation e i,
     isIrreducible_blockRepresentation e i, Module.finrank_fin_fun k⟩
 
-omit [IsAlgClosed k] [Finite ι] in
+omit [IsAlgClosed k] [Finite ι] [Finite G] in
 include e in
 /-- **The block index is in bijection with the isomorphism classes of simple `k[G]`-modules.** This
 is the group-algebra case of `RingEquiv.nonempty_equiv_simpleSubmoduleClasses_of_pi`, the

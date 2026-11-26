@@ -36,7 +36,7 @@ private theorem blockIncl_zero_injective (a : ℕ) :
       blockIncl R q a 0 z ⊗ₜ[R] (1 : stage R q 0) = z := by
     induction z using TensorProduct.inductionOn with
     | tmul x y =>
-      have hy0 := (stage_eq_bot_of_le_one (R := R) (q := q) (n := 0) (by omega)).le y.2
+      have hy0 := (stage_eq_bot_of_le_one (R := R) (q := q) (n := 0) (by omega)).le y.property
       obtain ⟨r, hr⟩ := Algebra.mem_bot.mp hy0
       have hy : y = algebraMap R _ r := Subtype.ext hr.symm
       subst y

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.PermutationTriple.BlockQuotient
+public import TauCeti.Combinatorics.PermutationTriple.Passport.BranchPoints
 public import TauCeti.Combinatorics.PermutationTriple.Primitivity.Basic
 public import TauCeti.Combinatorics.PermutationTriple.SmallDegrees
 public import TauCeti.GroupTheory.Perm.ComputedCycleType
@@ -20,6 +21,15 @@ convention, so the triples below use their componentwise inverses.
 
 The comparison certifies the listed records against the complete combinatorial classification;
 it does not assert that the database contains every ordered triple or every Belyi map.
+
+The database tabulates at most one ordered passport from each orbit of the branch-point action.
+Through degree four every inhabited ordered passport consists of a single class, and the records
+realize every unordered cycle datum exactly once. Hence every connected class of degree at most
+four lies in the branch-point orbit of the class of exactly one record, and every inhabited
+passport of degree at most four, once its branch points are reordered and its reference subgroup
+conjugated, is the passport of exactly one record. Up to conjugating reference subgroups, the
+records' passports therefore form a set of representatives of the branch-point orbits of inhabited
+passports of degree at most four.
 
 Distinct records have distinct isomorphism classes of triples. Exactly four records are
 imprimitive, and each of them primitivizes to the record `2T1-2_2_1.1-a`: its monodromy action has
@@ -88,11 +98,11 @@ def smallDegreeRecords : List SmallDegreeRecord :=
 theorem smallDegreeRecords_length : smallDegreeRecords.length = 13 := by decide
 
 /-- The full ordered cycle datum attached to an LMFDB record. -/
-def computedCycleData (r : SmallDegreeRecord) := (r.degree, r.triple.1.cycleData)
+def computedCycleData (r : SmallDegreeRecord) := (r.degree, r.triple.val.cycleData)
 
 /-- The cycle partitions with their branch-point order forgotten. -/
 def computedUnorderedCycleData (r : SmallDegreeRecord) : ℕ × Multiset (Multiset ℕ) :=
-  (r.degree, r.triple.1.unorderedCycleData)
+  (r.degree, r.triple.val.unorderedCycleData)
 
 /-- The thirteen frozen records have pairwise distinct ordered cycle data, hence represent
 distinct connected-triple isomorphism classes in their respective degrees. -/
@@ -133,7 +143,7 @@ theorem unorderedCycleData_eq_classification (n : ℕ) (hn : n ≤ 4) :
   (((smallDegreeRecords.filter (fun r => r.degree = n)).map
     (fun r => (computedUnorderedCycleData r).2)).toFinset) =
       (Finset.univ : Finset (ConnectedTriple n)).image
-        (fun t => t.1.unorderedCycleData) := by
+        (fun t => t.val.unorderedCycleData) := by
   interval_cases n
   · decide +kernel
   · rw [PermutationTriple.image_unorderedCycleData_one]
@@ -184,7 +194,7 @@ theorem isoClass_nodup : (smallDegreeRecords.map SmallDegreeRecord.isoClass).Nod
 
 /-- Exactly four frozen records are imprimitive, all of degree four. -/
 theorem map_label_filter_not_isPrimitive :
-    (smallDegreeRecords.filter fun r ↦ ¬ r.triple.1.IsPrimitive).map SmallDegreeRecord.label =
+    (smallDegreeRecords.filter fun r ↦ ¬ r.triple.val.IsPrimitive).map SmallDegreeRecord.label =
       ["4T1-4_4_1.1.1.1-a", "4T1-4_4_2.2-a", "4T2-2.2_2.2_2.2-a", "4T3-4_2.2_2.1.1-a"] := by
   decide +kernel
 
@@ -192,38 +202,121 @@ theorem map_label_filter_not_isPrimitive :
 triple of every imprimitive record has a nonempty block, maximal among blocks, with two translates,
 and the quotient by these translates has the isomorphism class of the record `2T1-2_2_1.1-a`. -/
 theorem exists_isoClass_blockQuotient_eq {r : SmallDegreeRecord} (hr : r ∈ smallDegreeRecords)
-    (hprim : ¬ r.triple.1.IsPrimitive) :
-    ∃ B : Set (Fin r.degree), IsBlock r.triple.1.monodromyGroup B ∧ B.Nonempty ∧
-      (∀ C : Set (Fin r.degree), IsBlock r.triple.1.monodromyGroup C → B ⊆ C →
+    (hprim : ¬ r.triple.val.IsPrimitive) :
+    ∃ B : Set (Fin r.degree), IsBlock r.triple.val.monodromyGroup B ∧ B.Nonempty ∧
+      (∀ C : Set (Fin r.degree), IsBlock r.triple.val.monodromyGroup C → B ⊆ C →
         C = B ∨ C = Set.univ) ∧
-      ∃ e : orbit r.triple.1.monodromyGroup B ≃ Fin 2, ∃ q ∈ smallDegreeRecords,
+      ∃ e : orbit r.triple.val.monodromyGroup B ≃ Fin 2, ∃ q ∈ smallDegreeRecords,
         q.label = "2T1-2_2_1.1-a" ∧
           q.isoClass = ⟨2, ConnectedIsoClass.mk
-            ⟨r.triple.1.blockQuotient B e, r.triple.1.isConnected_blockQuotient B e⟩⟩ := by
+            ⟨r.triple.val.blockQuotient B e, r.triple.val.isConnected_blockQuotient B e⟩⟩ := by
   classical
   -- The nine primitive records are excluded by the finite primitivity test, and each of the four
   -- imprimitive ones has the block `{0, 2}`, checked against every finite block containing it.
-  have key : ∃ B : Finset (Fin r.degree), r.triple.1.isBlockBool B = true ∧ B.Nonempty ∧
-      (∀ D : Finset (Fin r.degree), r.triple.1.isBlockBool D = true → B ⊆ D →
+  have key : ∃ B : Finset (Fin r.degree), r.triple.val.isBlockBool B = true ∧ B.Nonempty ∧
+      (∀ D : Finset (Fin r.degree), r.triple.val.isBlockBool D = true → B ⊆ D →
         D = B ∨ D = Finset.univ) ∧
-      B.card * 2 = r.degree ∧ B.image r.triple.1.σ0 ≠ B ∧ B.image r.triple.1.σ1 ≠ B := by
+      B.card * 2 = r.degree ∧ B.image r.triple.val.σ0 ≠ B ∧ B.image r.triple.val.σ1 ≠ B := by
     simp only [smallDegreeRecords, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals first
       | exact absurd (by decide +kernel) hprim
       | exact ⟨{0, 2}, by decide +kernel⟩
   obtain ⟨B, hB, hBne, hmax, hcard, h0, h1⟩ := key
-  have hB' := (r.triple.1.isBlockBool_eq_true_iff B).mp hB
+  have hB' := (r.triple.val.isBlockBool_eq_true_iff B).mp hB
   have hBne' : (B : Set (Fin r.degree)).Nonempty := Finset.coe_nonempty.mpr hBne
-  obtain ⟨e, he⟩ := exists_blockQuotient_eq_ofTwo_swap r.triple.2.isPretransitive hB'
+  obtain ⟨e, he⟩ := exists_blockQuotient_eq_ofTwo_swap r.triple.property.isPretransitive hB'
     (by rwa [Set.ncard_coe_finset]) (by rwa [← Finset.coe_image, Ne, Finset.coe_inj])
     (by rwa [← Finset.coe_image, Ne, Finset.coe_inj])
   -- The quotient is the triple of the record `2T1-2_2_1.1-a` itself.
-  refine ⟨B, hB', hBne', r.triple.1.eq_or_eq_univ_of_forall_isBlockBool hmax, e,
+  refine ⟨B, hB', hBne', r.triple.val.eq_or_eq_univ_of_forall_isBlockBool hmax, e,
     smallDegreeRecords[1], List.getElem_mem _, rfl, ?_⟩
   rw [SmallDegreeRecord.isoClass_def]
   exact congrArg (fun t ↦ (⟨2, ConnectedIsoClass.mk t⟩ : Σ n, ConnectedIsoClass n))
     (Subtype.ext he.symm)
+
+/-! ### Branch-point orbits -/
+
+namespace SmallDegreeRecord
+
+/-- The class of a record lies in the branch-point orbit of the class of `t` exactly when the
+record has the degree and the unordered cycle data of `t`. -/
+theorem exists_isoClass_eq_smul_mk_iff {r : SmallDegreeRecord} {n : ℕ} (t : ConnectedTriple n) :
+    (∃ ρ : (Perm (Fin 3))ᵐᵒᵖ, r.isoClass = ⟨n, ρ • ConnectedIsoClass.mk t⟩) ↔
+      computedUnorderedCycleData r = (n, t.val.unorderedCycleData) := by
+  obtain ⟨_, m, s, hm⟩ := r
+  simp only [isoClass_def, computedUnorderedCycleData, Sigma.mk.inj_iff, Prod.mk.injEq]
+  constructor
+  · rintro ⟨ρ, rfl, h⟩
+    exact ⟨rfl, ((ConnectedIsoClass.mk_mem_orbit_iff_unorderedCycleData_eq_of_degree_le_four hm
+      t s).mp ⟨ρ, (eq_of_heq h).symm⟩).symm⟩
+  · rintro ⟨rfl, h⟩
+    obtain ⟨ρ, hρ⟩ :=
+      (ConnectedIsoClass.mk_mem_orbit_iff_unorderedCycleData_eq_of_degree_le_four hm t s).mpr h.symm
+    exact ⟨ρ, rfl, heq_of_eq hρ.symm⟩
+
+/-- Through degree four, the class of a record is a class `c` exactly when the passport of the
+record's triple is, up to conjugating its reference subgroup, any passport containing `c`. -/
+theorem exists_conjugate_passportOf_eq_iff {r : SmallDegreeRecord} {n : ℕ}
+    {P : PassportSpec n} {c : ConnectedIsoClass n} (hc : c ∈ P.classSet) :
+    (∃ τ : Perm (Fin r.degree),
+        (⟨r.degree, r.triple.passportOf.conjugate τ⟩ : Σ n, PassportSpec n) = ⟨n, P⟩) ↔
+      r.isoClass = ⟨n, c⟩ := by
+  obtain ⟨_, m, s, hm⟩ := r
+  simp only [isoClass_def, Sigma.mk.inj_iff]
+  -- Both sides force the degrees to agree; afterwards they compare passports and classes.
+  constructor
+  · rintro ⟨τ, rfl, h⟩
+    have hs : PassportSpec.HasPassport s P :=
+      (s.hasPassport_iff_exists_conjugate_passportOf _).mpr ⟨τ, eq_of_heq h⟩
+    rw [PassportSpec.classSet_eq_singleton_of_degree_le_four hm _ s hs,
+      Finset.mem_singleton] at hc
+    exact ⟨rfl, heq_of_eq hc.symm⟩
+  · rintro ⟨rfl, h⟩
+    rw [← eq_of_heq h, PassportSpec.mem_classSet, ConnectedIsoClass.hasPassport_mk,
+      s.hasPassport_iff_exists_conjugate_passportOf] at hc
+    obtain ⟨τ, hτ⟩ := hc
+    exact ⟨τ, rfl, heq_of_eq hτ⟩
+
+/-- Through degree four, the class of a record lies in the branch-point orbit of a class `c` exactly
+when the passport of the record's triple is, up to conjugating its reference subgroup, a
+reordering of any passport containing `c`. -/
+theorem exists_conjugate_passportOf_eq_smul_iff {r : SmallDegreeRecord} {n : ℕ}
+    {P : PassportSpec n} {c : ConnectedIsoClass n} (hc : c ∈ P.classSet) :
+    (∃ (ρ : (Perm (Fin 3))ᵐᵒᵖ) (τ : Perm (Fin r.degree)),
+        (⟨r.degree, r.triple.passportOf.conjugate τ⟩ : Σ n, PassportSpec n) = ⟨n, ρ • P⟩) ↔
+      ∃ ρ : (Perm (Fin 3))ᵐᵒᵖ, r.isoClass = ⟨n, ρ • c⟩ :=
+  exists_congr fun ρ ↦
+    exists_conjugate_passportOf_eq_iff ((PassportSpec.smul_mem_classSet_smul_iff ρ c P).mpr hc)
+
+end SmallDegreeRecord
+
+/-- **The frozen records represent the branch-point orbits of low-degree classes.** Every connected
+isomorphism class of degree at most four lies in the branch-point orbit of the class of exactly one
+frozen record. -/
+theorem existsUnique_isoClass_eq_smul {n : ℕ} (hn : n ≤ 4) (c : ConnectedIsoClass n) :
+    ∃! r, r ∈ smallDegreeRecords ∧ ∃ ρ : (Perm (Fin 3))ᵐᵒᵖ, r.isoClass = ⟨n, ρ • c⟩ := by
+  obtain ⟨t, rfl⟩ := ConnectedIsoClass.mk_surjective c
+  simp only [SmallDegreeRecord.exists_isoClass_eq_smul_mk_iff]
+  have ht : t.val.unorderedCycleData ∈ (Finset.univ : Finset (ConnectedTriple n)).image
+      (fun t ↦ t.val.unorderedCycleData) := Finset.mem_image_of_mem _ (Finset.mem_univ t)
+  rw [← unorderedCycleData_eq_classification n hn] at ht
+  simp only [List.mem_toFinset, List.mem_map, List.mem_filter, decide_eq_true_eq] at ht
+  obtain ⟨r, ⟨hr, hrn⟩, hrt⟩ := ht
+  exact ⟨r, ⟨hr, Prod.ext hrn hrt⟩, fun r' ⟨hr', hr't⟩ ↦
+    List.inj_on_of_nodup_map computedUnorderedCycleData_nodup hr' hr
+      (hr't.trans (Prod.ext hrn hrt).symm)⟩
+
+/-- **The passports of the frozen records represent the low-degree inhabited passports.** Every
+inhabited passport of degree at most four, once its branch points are reordered and its reference
+subgroup is conjugated, is the passport of the triple of exactly one frozen record. -/
+theorem existsUnique_conjugate_passportOf_eq_smul {n : ℕ} (hn : n ≤ 4) {P : PassportSpec n}
+    (hP : P.classSet.Nonempty) :
+    ∃! r, r ∈ smallDegreeRecords ∧ ∃ (ρ : (Perm (Fin 3))ᵐᵒᵖ) (τ : Perm (Fin r.degree)),
+      (⟨r.degree, r.triple.passportOf.conjugate τ⟩ : Σ n, PassportSpec n) = ⟨n, ρ • P⟩ := by
+  obtain ⟨c, hc⟩ := hP
+  simpa only [SmallDegreeRecord.exists_conjugate_passportOf_eq_smul_iff hc] using
+    existsUnique_isoClass_eq_smul hn c
 
 end LMFDB
 end PermutationTriple

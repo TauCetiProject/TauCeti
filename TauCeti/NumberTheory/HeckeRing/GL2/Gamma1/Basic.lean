@@ -66,7 +66,7 @@ for this subgroup would not be found here anyway. -/
 instance : IsHeckeTriple (Delta0 N) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) :=
   IsHeckeTriple.of_diagonal
     (fun _ hg ↦ Gamma0Image_le_Delta0 N
-      ((Gamma0Image_def N).symm ▸ Subgroup.map_mono (Gamma1_in_Gamma0 N) hg))
+      ((Gamma0Image_def N).symm ▸ Subgroup.map_mono (Gamma1_le_Gamma0 N) hg))
     (Delta0_le_commensurator_map N (Gamma1 N))
 
 end HeckeRing.GL2

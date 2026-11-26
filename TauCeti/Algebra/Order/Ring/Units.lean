@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Ring.Units
 import Mathlib.Algebra.Ring.Int.Units
 import Mathlib.GroupTheory.IndexNormal
+public import TauCeti.GroupTheory.Index.Two
 
 /-!
 # The sign group of a linearly ordered ring
@@ -28,6 +29,8 @@ Being of index `2`, the quotient `Rˣ ⧸ Units.posSubgroup R` is *the* two-elem
 * `Units.signEquiv`: the sign isomorphism `Rˣ ⧸ Units.posSubgroup R ≃* ℤˣ`, with
   `Units.signEquiv_mk_eq_one_iff` and `Units.signEquiv_mk_eq_neg_one_iff` reading its two values
   off the sign of a unit.
+* `Units.signAddHom`: the same sign written additively, `Additive Rˣ →+ ZMod 2`, sending negative
+  units to `1` and positive units to `0` (`Units.signAddHom_ofMul`).
 -/
 
 public section
@@ -51,7 +54,8 @@ determined by any of its nonzero powers. -/
 instance instHasUniqueRootsPosSubgroup (R : Type*) [Semiring R] [LinearOrder R]
     [IsStrictOrderedRing R] : HasUniqueRoots (Units.posSubgroup R) where
   pow_left_injective _ hn x y h := Subtype.ext <| Units.ext <|
-    (pow_left_inj₀ ((Units.mem_posSubgroup _).1 x.2).le ((Units.mem_posSubgroup _).1 y.2).le
+    (pow_left_inj₀ ((Units.mem_posSubgroup _).1 x.property).le
+        ((Units.mem_posSubgroup _).1 y.property).le
       hn).1 (by simpa using congrArg (fun z : Units.posSubgroup R ↦ ((z : Rˣ) : R)) h)
 
 variable {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
@@ -109,5 +113,23 @@ theorem signEquiv_mk_eq_one_iff (u : Rˣ) :
     rcases Int.units_eq_one_or (signEquiv R (QuotientGroup.mk u)) with h1 | h1
     · exact absurd ((signEquiv_mk_eq_one_iff u).mp h1) (asymm h)
     · exact h1
+
+variable (R) in
+/-- **The additive sign of a linearly ordered ring**, with values in `ZMod 2`: `1` on negative
+units and `0` on positive units. It is the character `Subgroup.indexTwoCharacter` of the
+index-two subgroup `Units.posSubgroup R` of positive units, written additively. -/
+noncomputable def signAddHom : Additive Rˣ →+ ZMod 2 :=
+  MonoidHom.toAdditiveLeft ((Units.posSubgroup R).indexTwoCharacter (Units.index_posSubgroup R))
+
+@[simp]
+theorem signAddHom_ofMul (u : Rˣ) :
+    signAddHom R (Additive.ofMul u) = if (u : R) < 0 then 1 else 0 := by
+  rw [signAddHom, MonoidHom.coe_toAdditiveLeft, Function.comp_apply, Function.comp_apply,
+    toMul_ofMul]
+  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
+  · simp only [hu, ↓reduceIte]
+    exact Subgroup.toAdd_indexTwoCharacter_of_notMem _ (mt (Units.mem_posSubgroup u).1 hu.not_gt)
+  · simp only [hu.not_gt, ↓reduceIte]
+    exact Subgroup.toAdd_indexTwoCharacter_of_mem _ ((Units.mem_posSubgroup u).2 hu)
 
 end Units

@@ -115,6 +115,21 @@ theorem asIdeal_mem_integralIdealsPrimeTo_ratModulus_iff {v : HeightOneSpectrum 
     (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm).trans <|
       Ideal.isPrimeTo_asIdeal_iff.trans mem_ratModulus_support_iff.not
 
+variable {n hn} in
+/-- A nonzero ideal of `𝓞 ℚ` is coprime to `ratModulus n hn` exactly when its absolute norm is
+coprime to `n`. -/
+theorem isCoprimeTo_ratModulus_iff {J : Ideal (𝓞 ℚ)} (hJ : J ≠ ⊥) :
+    (ratModulus n hn).IsCoprimeTo J ↔ (Ideal.absNorm J).Coprime n := by
+  rw [Modulus.isCoprimeTo_iff_sup_eq_top, and_iff_right hJ, ← Ideal.isCoprime_iff_sup_eq,
+    ratModulus_finitePart]
+  conv_lhs => rw [← Rat.RingOfIntegers.ideal_span_absNorm_eq_self J]
+  rw [Ideal.isCoprime_span_singleton_iff, ← Nat.isCoprime_iff_coprime]
+  constructor
+  · intro hc
+    simpa only [map_natCast] using hc.map Rat.ringOfIntegersEquiv.toRingHom
+  · intro hc
+    simpa only [map_natCast, map_intCast] using hc.map Rat.ringOfIntegersEquiv.symm.toRingHom
+
 /-- **Reduction modulo the finite part of `ratModulus n hn` is reduction modulo `n`**, transported
 along `Rat.ringOfIntegersEquiv : 𝓞 ℚ ≃+* ℤ`. -/
 noncomputable def ratModulusResidueEquiv : 𝓞 ℚ ⧸ (ratModulus n hn).finitePart ≃+* ZMod n :=
@@ -149,7 +164,7 @@ private theorem exists_zmodUnitsToRayClass_eq_idealClass
   set a := Ideal.absNorm (I : Ideal (𝓞 ℚ)) with ha_def
   have ha : a ≠ 0 := by
     rw [ha_def, Ne, Ideal.absNorm_eq_zero_iff]
-    exact (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)).1
+    exact (Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.property)).1
   -- The norm generates `I`, so the ray class of `I` is the principal ray class of the norm.
   obtain ⟨x, hxa, hIx⟩ := exists_idealClass_eq_principalRayClass
     (Rat.RingOfIntegers.ideal_span_absNorm_eq_self (I : Ideal (𝓞 ℚ))).symm
@@ -395,7 +410,7 @@ theorem ratFiniteModulusEquivZMod_idealClass (I : integralIdealsPrimeTo (ratFini
     ratFiniteModulusEquivZMod n hn (idealClass (ratFiniteModulus n hn) I) = u := by
   -- The two moduli have the same finite part, hence the same integral ideals prime to them.
   have hI : (I : Ideal (𝓞 ℚ)) ∈ integralIdealsPrimeTo (ratModulus n hn) := by
-    have := Modulus.mem_integralIdealsPrimeTo.mp I.2
+    have := Modulus.mem_integralIdealsPrimeTo.mp I.property
     rw [Modulus.isCoprimeTo_iff_sup_eq_top, ratFiniteModulus_finitePart] at this
     rwa [Modulus.mem_integralIdealsPrimeTo, Modulus.isCoprimeTo_iff_sup_eq_top,
       ratModulus_finitePart]

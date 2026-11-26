@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Sphere
-public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel
+public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Sublevel.Basic
 
 /-!
 # Smooth closed disc bundles
@@ -50,10 +50,10 @@ variable {B : Type*} {V : B → Type*} {F : Type*}
 
 /-- Identify the closed disc bundle with the regular sublevel, without changing points. -/
 private def discSublevelHomeomorph (hrpos : ∀ b, 0 < r b) :
-    {p : TotalSpace F V // ‖p.2‖ ≤ r p.proj} ≃ₜ
+    {p : TotalSpace F V // ‖p.snd‖ ≤ r p.proj} ≃ₜ
       {p : TotalSpace F V // sphereBundleEquation r p ≤ 0} :=
   Homeomorph.setCongr
-    (s := {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj})
+    (s := {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj})
     (t := {p : TotalSpace F V | sphereBundleEquation r p ≤ 0})
     (Set.ext fun p => (sphereBundleEquation_le_zero_iff r p (hrpos p.proj).le).symm)
 
@@ -63,7 +63,7 @@ Install this atlas locally. The half-space model has the same dimension as the t
 def discBundleChartedSpace (hr : ContMDiff I 𝓘(ℝ) n r) (hn : 1 ≤ n)
     (hrpos : ∀ b, 0 < r b) (hdim : Module.finrank ℝ (E × F) = d + 1) :
     ChartedSpace (EuclideanHalfSpace (d + 1))
-      {p : TotalSpace F V // ‖p.2‖ ≤ r p.proj} := by
+      {p : TotalSpace F V // ‖p.snd‖ ≤ r p.proj} := by
   let : IsContMDiffRiemannianBundle I 1 F V := .of_le hn
   let hreg := isRegularValue_sphereBundleEquation (F := F) (V := V)
     (hr.of_le hn) (fun b => (hrpos b).ne')
@@ -77,12 +77,12 @@ replaced by the equivalent squared-norm inequality. The set congruence preserves
 Use this with `rw`: the general pullback-chart simp lemma rewrites the left-hand side first. -/
 theorem discBundleChartedSpace_chartAt (hr : ContMDiff I 𝓘(ℝ) n r) (hn : 1 ≤ n)
     (hrpos : ∀ b, 0 < r b) (hdim : Module.finrank ℝ (E × F) = d + 1)
-    (p : {p : TotalSpace F V // ‖p.2‖ ≤ r p.proj}) :
+    (p : {p : TotalSpace F V // ‖p.snd‖ ≤ r p.proj}) :
     letI : IsContMDiffRiemannianBundle I 1 F V := .of_le hn
     let hreg := isRegularValue_sphereBundleEquation (F := F) (V := V)
       (hr.of_le hn) (fun b => (hrpos b).ne')
     let e := Homeomorph.setCongr
-      (s := {p : TotalSpace F V | ‖p.2‖ ≤ r p.proj})
+      (s := {p : TotalSpace F V | ‖p.snd‖ ≤ r p.proj})
       (t := {p : TotalSpace F V | sphereBundleEquation r p ≤ 0})
       (Set.ext fun p => (sphereBundleEquation_le_zero_iff r p (hrpos p.proj).le).symm)
     @chartAt (EuclideanHalfSpace (d + 1)) _ _ _
@@ -103,7 +103,7 @@ theorem discBundleChartedSpace_chartAt (hr : ContMDiff I 𝓘(ℝ) n r) (hn : 1 
 theorem isManifold_discBundle (hr : ContMDiff I 𝓘(ℝ) n r) (hn : 1 ≤ n)
     (hrpos : ∀ b, 0 < r b) (hdim : Module.finrank ℝ (E × F) = d + 1) :
     letI := discBundleChartedSpace (F := F) (V := V) hr hn hrpos hdim
-    IsManifold (𝓡∂ (d + 1)) n {p : TotalSpace F V // ‖p.2‖ ≤ r p.proj} := by
+    IsManifold (𝓡∂ (d + 1)) n {p : TotalSpace F V // ‖p.snd‖ ≤ r p.proj} := by
   let : IsContMDiffRiemannianBundle I 1 F V := .of_le hn
   let hreg := isRegularValue_sphereBundleEquation (F := F) (V := V)
     (hr.of_le hn) (fun b => (hrpos b).ne')
@@ -116,8 +116,8 @@ theorem isManifold_discBundle (hr : ContMDiff I 𝓘(ℝ) n r) (hn : 1 ≤ n)
 theorem boundary_discBundle (hr : ContMDiff I 𝓘(ℝ) n r) (hn : 1 ≤ n)
     (hrpos : ∀ b, 0 < r b) (hdim : Module.finrank ℝ (E × F) = d + 1) :
     letI := discBundleChartedSpace (F := F) (V := V) hr hn hrpos hdim
-    (𝓡∂ (d + 1)).boundary {p : TotalSpace F V // ‖p.2‖ ≤ r p.proj} =
-      {p : {p : TotalSpace F V // ‖p.2‖ ≤ r p.proj} | ‖p.1.2‖ = r p.1.proj} := by
+    (𝓡∂ (d + 1)).boundary {p : TotalSpace F V // ‖p.snd‖ ≤ r p.proj} =
+      {p : {p : TotalSpace F V // ‖p.snd‖ ≤ r p.proj} | ‖p.val.snd‖ = r p.val.proj} := by
   let : IsContMDiffRiemannianBundle I 1 F V := .of_le hn
   let hreg := isRegularValue_sphereBundleEquation (F := F) (V := V)
     (hr.of_le hn) (fun b => (hrpos b).ne')
@@ -133,23 +133,23 @@ theorem boundary_discBundle (hr : ContMDiff I 𝓘(ℝ) n r) (hn : 1 ≤ n)
   have hb : (𝓡∂ (d + 1)).boundary
       {p : TotalSpace F V // sphereBundleEquation r p ≤ 0} =
       {p : {p : TotalSpace F V // sphereBundleEquation r p ≤ 0} |
-        sphereBundleEquation r p.1 = 0} :=
+        sphereBundleEquation r p.val = 0} :=
     boundary_scalarRegularSublevel hreg hdim hn (contMDiff_sphereBundleEquation hr)
   rw [hb, Homeomorph.coe_pullbackDiffeomorph]
   ext p
   -- Set congruence preserves the total-space point; only its sublevel proof changes.
-  exact sphereBundleEquation_eq_zero_iff r p.1 (hrpos p.1.proj).le
+  exact sphereBundleEquation_eq_zero_iff r p.val (hrpos p.val.proj).le
 
 /-- The manifold interior of the closed disc bundle is exactly its open disc bundle. -/
 theorem interior_discBundle (hr : ContMDiff I 𝓘(ℝ) n r) (hn : 1 ≤ n)
     (hrpos : ∀ b, 0 < r b) (hdim : Module.finrank ℝ (E × F) = d + 1) :
     letI := discBundleChartedSpace (F := F) (V := V) hr hn hrpos hdim
-    (𝓡∂ (d + 1)).interior {p : TotalSpace F V // ‖p.2‖ ≤ r p.proj} =
-      {p : {p : TotalSpace F V // ‖p.2‖ ≤ r p.proj} | ‖p.1.2‖ < r p.1.proj} := by
+    (𝓡∂ (d + 1)).interior {p : TotalSpace F V // ‖p.snd‖ ≤ r p.proj} =
+      {p : {p : TotalSpace F V // ‖p.snd‖ ≤ r p.proj} | ‖p.val.snd‖ < r p.val.proj} := by
   let := discBundleChartedSpace (F := F) (V := V) hr hn hrpos hdim
   rw [← ModelWithCorners.compl_boundary, boundary_discBundle hr hn hrpos hdim]
   ext p
-  have hp : ‖p.1.2‖ ≤ r p.1.proj := p.2
+  have hp : ‖p.val.snd‖ ≤ r p.val.proj := p.property
   simp only [mem_compl_iff, mem_ofPred_eq]
   exact ⟨hp.lt_of_ne, ne_of_lt⟩
 

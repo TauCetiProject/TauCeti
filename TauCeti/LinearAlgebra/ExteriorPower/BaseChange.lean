@@ -54,13 +54,13 @@ theorem ExteriorAlgebra.baseChangeEquiv_symm_map_exteriorPower (n : ℕ) :
 
 namespace TauCeti.exteriorPower
 
+omit [CommRing A] [Algebra R A] in
 /-- Scalar extension of the inclusion of a homogeneous exterior power into the exterior algebra
 remains injective, because the grading splits the inclusion. -/
-theorem baseChange_subtype_injective (n : ℕ) :
+theorem baseChange_subtype_injective [Semiring A] [Algebra R A] (n : ℕ) :
     Function.Injective ((⋀[R]^n M).subtype.baseChange A) := by
-  intro x y h
-  exact DirectSum.toBaseChange_injective (S := A) (fun i ↦ ⋀[R]^i M) n
-    (Subtype.ext h)
+  rw [LinearMap.baseChange_eq_lTensor, LinearMap.lTensor_inj_iff_rTensor_inj]
+  exact DirectSum.subtype_rTensor_injective (fun i ↦ ⋀[R]^i M) A n
 
 /-- Exterior powers commute with extension of scalars over arbitrary commutative rings. -/
 noncomputable def equivBaseChange (n : ℕ) :
@@ -77,6 +77,15 @@ theorem subtype_baseChange_equivBaseChange (n : ℕ) (x : ⋀[A]^n (A ⊗[R] M))
       (ExteriorAlgebra.baseChangeEquiv R M A).symm (x : ExteriorAlgebra A (A ⊗[R] M)) := by
   exact (LinearEquiv.ofInjective_symm_apply _ (h := baseChange_subtype_injective A n) _).trans
     (LinearEquiv.ofSubmodules_apply _ _ x)
+
+/-- In the exterior algebra, the inverse exterior-power comparison is the exterior-algebra
+comparison. -/
+@[simp]
+theorem coe_equivBaseChange_symm_tmul (n : ℕ) (a : A) (x : ⋀[R]^n M) :
+    ((equivBaseChange A n).symm (a ⊗ₜ[R] x) : ExteriorAlgebra A (A ⊗[R] M)) =
+      ExteriorAlgebra.baseChangeEquiv R M A (a ⊗ₜ[R] (x : ExteriorAlgebra R M)) := by
+  rw [← AlgEquiv.symm_apply_eq, ← subtype_baseChange_equivBaseChange,
+    LinearEquiv.apply_symm_apply, LinearMap.baseChange_tmul, Submodule.coe_subtype]
 
 /-- A wedge of pure tensors corresponds to the product of the scalars tensored with the wedge. -/
 @[simp]

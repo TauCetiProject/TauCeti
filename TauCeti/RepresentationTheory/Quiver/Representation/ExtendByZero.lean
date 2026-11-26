@@ -93,10 +93,10 @@ open Classical in
 `u'` is the action of the arrow of `Q'` over `α` ending at `u'`, applied to the component at its
 source, if there is such an arrow, and zero otherwise. -/
 noncomputable def extendByZeroMap (M : QuiverRep.{u, v', w', t} k Q') {v w : Q} (α : v ⟶ w) :
-    (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) →ₗ[k]
-      ∀ u' : φ.Fiber w, QuiverRep.vertexSpace k Q' M u'.1 :=
+    (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val) →ₗ[k]
+      ∀ u' : φ.Fiber w, QuiverRep.vertexSpace k Q' M u'.val :=
   LinearMap.pi fun u' ↦
-    if h : ∃ (u : φ.Fiber v) (a : u.1 ⟶ u'.1), (φ.map a).cast u.2 u'.2 = α then
+    if h : ∃ (u : φ.Fiber v) (a : u.val ⟶ u'.val), (φ.map a).cast u.property u'.property = α then
       (QuiverRep.mapₗ k Q' M h.choose_spec.choose.toPath).comp (LinearMap.proj h.choose)
     else 0
 
@@ -104,9 +104,10 @@ variable {φ} in
 /-- Two arrows of `Q'` over the same arrow of `Q` and with the same target act the same way on the
 extension by zero: they have the same source, and then they coincide. -/
 private theorem mapₗ_eq_of_cast_eq (M : QuiverRep.{u, v', w', t} k Q') {v w : Q} {α : v ⟶ w}
-    {u₁ u₂ : φ.Fiber v} {u' : φ.Fiber w} {a₁ : u₁.1 ⟶ u'.1} {a₂ : u₂.1 ⟶ u'.1}
-    (h₁ : (φ.map a₁).cast u₁.2 u'.2 = α) (h₂ : (φ.map a₂).cast u₂.2 u'.2 = α)
-    (x : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) :
+    {u₁ u₂ : φ.Fiber v} {u' : φ.Fiber w} {a₁ : u₁.val ⟶ u'.val} {a₂ : u₂.val ⟶ u'.val}
+    (h₁ : (φ.map a₁).cast u₁.property u'.property = α) (h₂ : (φ.map a₂).cast u₂.property u'.property
+        = α)
+    (x : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val) :
     QuiverRep.mapₗ k Q' M a₁.toPath (x u₁) = QuiverRep.mapₗ k Q' M a₂.toPath (x u₂) := by
   obtain ⟨u, rfl⟩ := u₁
   obtain ⟨u', rfl⟩ := u'
@@ -117,10 +118,11 @@ private theorem mapₗ_eq_of_cast_eq (M : QuiverRep.{u, v', w', t} k Q') {v w : 
 
 /-- On a component over which `α` has a lift `a`, the extension by zero acts by `a`. -/
 theorem extendByZeroMap_apply_of_cast_eq (M : QuiverRep.{u, v', w', t} k Q') {v w : Q}
-    {α : v ⟶ w} (x : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) {u : φ.Fiber v}
-    {u' : φ.Fiber w} (a : u.1 ⟶ u'.1) (ha : (φ.map a).cast u.2 u'.2 = α) :
+    {α : v ⟶ w} (x : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val) {u : φ.Fiber v}
+    {u' : φ.Fiber w} (a : u.val ⟶ u'.val) (ha : (φ.map a).cast u.property u'.property = α) :
     φ.extendByZeroMap M α x u' = QuiverRep.mapₗ k Q' M a.toPath (x u) := by
-  have h : ∃ (u : φ.Fiber v) (a : u.1 ⟶ u'.1), (φ.map a).cast u.2 u'.2 = α := ⟨u, a, ha⟩
+  have h : ∃ (u : φ.Fiber v) (a : u.val ⟶ u'.val), (φ.map a).cast u.property u'.property = α := ⟨u,
+      a, ha⟩
   rw [extendByZeroMap, LinearMap.pi_apply, dite_eq_left_of_eq_true (eq_true h),
     LinearMap.comp_apply, LinearMap.proj_apply]
   exact mapₗ_eq_of_cast_eq M h.choose_spec.choose_spec ha x
@@ -129,15 +131,15 @@ theorem extendByZeroMap_apply_of_cast_eq (M : QuiverRep.{u, v', w', t} k Q') {v 
 at its source to the component at its target. -/
 @[simp]
 theorem extendByZeroMap_map_apply (M : QuiverRep.{u, v', w', t} k Q') {u u' : Q'} (a : u ⟶ u')
-    (x : ∀ u'' : φ.Fiber (φ.obj u), QuiverRep.vertexSpace k Q' M u''.1) :
+    (x : ∀ u'' : φ.Fiber (φ.obj u), QuiverRep.vertexSpace k Q' M u''.val) :
     φ.extendByZeroMap M (φ.map a) x ⟨u', rfl⟩ = QuiverRep.mapₗ k Q' M a.toPath (x ⟨u, rfl⟩) :=
   φ.extendByZeroMap_apply_of_cast_eq M x (u := ⟨u, rfl⟩) (u' := ⟨u', rfl⟩) a
     (Quiver.Hom.cast_rfl_rfl _)
 
 /-- On a component over which `α` has no lift, the extension by zero acts by zero. -/
 theorem extendByZeroMap_apply_of_not_exists (M : QuiverRep.{u, v', w', t} k Q') {v w : Q}
-    {α : v ⟶ w} (x : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) {u' : φ.Fiber w}
-    (h : ¬ ∃ (u : φ.Fiber v) (a : u.1 ⟶ u'.1), (φ.map a).cast u.2 u'.2 = α) :
+    {α : v ⟶ w} (x : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val) {u' : φ.Fiber w}
+    (h : ¬ ∃ (u : φ.Fiber v) (a : u.val ⟶ u'.val), (φ.map a).cast u.property u'.property = α) :
     φ.extendByZeroMap M α x u' = 0 := by
   rw [extendByZeroMap, LinearMap.pi_apply, dite_eq_right_of_eq_false (eq_false h),
     LinearMap.zero_apply]
@@ -151,7 +153,7 @@ which has at most one point; this names it without choosing a preimage of `v`. -
 noncomputable def extendByZeroRep (M : QuiverRep.{u, v', w', t} k Q') :
     QuiverRep.{u, v, w, max v' t} k Q :=
   Paths.lift
-    { obj := fun v ↦ ModuleCat.of k (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1)
+    { obj := fun v ↦ ModuleCat.of k (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val)
       map := fun α ↦ ModuleCat.ofHom (φ.extendByZeroMap M α) }
 
 variable (M : QuiverRep.{u, v', w', t} k Q')
@@ -161,14 +163,14 @@ fiber there. -/
 @[simp]
 theorem extendByZeroRep_obj (v : Q) :
     (φ.extendByZeroRep M).obj (v : Paths Q) =
-      ModuleCat.of k (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) :=
+      ModuleCat.of k (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val) :=
   (rfl)
 
 /-- The actual vertex space of the extension by zero is linearly equivalent to the product
 of the original vertex spaces over the fiber. -/
 noncomputable def extendByZeroRepFiberEquiv (v : Q) :
     QuiverRep.vertexSpace k Q (φ.extendByZeroRep M) v ≃ₗ[k]
-      (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) :=
+      (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val) :=
   (eqToIso (φ.extendByZeroRep_obj M v)).toLinearEquiv
 
 /-- Over an image vertex, the actual vertex space of the extension by zero is linearly equivalent
@@ -180,7 +182,7 @@ noncomputable def extendByZeroRepVertexSpaceEquiv (u : Q') :
     { default := ⟨u, rfl⟩, uniq := fun _ ↦ Subsingleton.elim _ _ }
   exact (φ.extendByZeroRepFiberEquiv M (φ.obj u)).trans
     (LinearEquiv.piUnique k (fun u' : φ.Fiber (φ.obj u) ↦
-      QuiverRep.vertexSpace k Q' M u'.1))
+      QuiverRep.vertexSpace k Q' M u'.val))
 
 /-- The vertex-space equivalence over an image vertex evaluates at the unique fiber point. -/
 @[simp]
@@ -203,7 +205,7 @@ theorem isZero_extendByZeroRep_obj_of_not_mem_range (v : Q)
     (hv : v ∉ Set.range φ.obj) :
     Limits.IsZero ((φ.extendByZeroRep M).obj (v : Paths Q)) := by
   rw [extendByZeroRep_obj]
-  let : IsEmpty (φ.Fiber v) := ⟨fun u ↦ hv ⟨u.1, u.2⟩⟩
+  let : IsEmpty (φ.Fiber v) := ⟨fun u ↦ hv ⟨u.val, u.property⟩⟩
   exact ModuleCat.isZero_of_subsingleton _
 
 /-- An arrow of `Q` acts on the extension by zero by `TauCeti.QuiverEmbedding.extendByZeroMap`,
@@ -232,15 +234,15 @@ variable {M} {N : QuiverRep.{u, v', w', t} k Q'}
 
 /-- The component over a vertex of the extension by zero of a morphism `f`: `f` over the fiber. -/
 noncomputable def extendByZeroApp (f : M ⟶ N) (v : Q) :
-    (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) →ₗ[k]
-      ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' N u.1 :=
-  LinearMap.piMap fun u ↦ (f.app u.1).hom
+    (∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val) →ₗ[k]
+      ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' N u.val :=
+  LinearMap.piMap fun u ↦ (f.app u.val).hom
 
 /-- The component of the extension by zero of `f` over the point `u` of a fiber is `f` at `u`. -/
 @[simp]
 theorem extendByZeroApp_apply (f : M ⟶ N) (v : Q)
-    (x : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) (u : φ.Fiber v) :
-    φ.extendByZeroApp f v x u = f.app u.1 (x u) :=
+    (x : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val) (u : φ.Fiber v) :
+    φ.extendByZeroApp f v x u = f.app u.val (x u) :=
   (rfl)
 
 /-- A morphism of representations commutes with the retyped action of a path. -/
@@ -257,7 +259,7 @@ theorem extendByZeroMap_comp_extendByZeroApp (f : M ⟶ N) {v w : Q} (α : v ⟶
       φ.extendByZeroMap N α ∘ₗ φ.extendByZeroApp f v := by
   refine LinearMap.ext fun x ↦ funext fun u' ↦ ?_
   simp only [LinearMap.comp_apply, extendByZeroApp_apply]
-  by_cases h : ∃ (u : φ.Fiber v) (a : u.1 ⟶ u'.1), (φ.map a).cast u.2 u'.2 = α
+  by_cases h : ∃ (u : φ.Fiber v) (a : u.val ⟶ u'.val), (φ.map a).cast u.property u'.property = α
   · obtain ⟨u, a, ha⟩ := h
     rw [φ.extendByZeroMap_apply_of_cast_eq M x a ha,
       φ.extendByZeroMap_apply_of_cast_eq N _ a ha, extendByZeroApp_apply]
@@ -322,7 +324,7 @@ instance : (φ.extendByZeroFunctor k : QuiverRep.{u, v', w', t} k Q' ⥤ _).Addi
 
 /-- A morphism between extensions by zero commutes with the action of every arrow of `Q`. -/
 private theorem app_extendByZeroMap (g : φ.extendByZeroRep M ⟶ φ.extendByZeroRep N) {v w : Q}
-    (α : v ⟶ w) (z : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.1) :
+    (α : v ⟶ w) (z : ∀ u : φ.Fiber v, QuiverRep.vertexSpace k Q' M u.val) :
     g.app w (φ.extendByZeroMap M α z) = φ.extendByZeroMap N α (g.app v z) := by
   have h := g.naturality α.toPath
   rw [extendByZeroRep_map_toPath, extendByZeroRep_map_toPath] at h
@@ -343,9 +345,9 @@ open Classical in
 extensions by zero: the component of `g` over `φ u`, read on the one point of the fiber. -/
 private noncomputable def preimageApp (g : φ.extendByZeroRep M ⟶ φ.extendByZeroRep N) (u : Q') :
     QuiverRep.vertexSpace k Q' M u →ₗ[k] QuiverRep.vertexSpace k Q' N u :=
-  LinearMap.proj (φ := fun u' : φ.Fiber (φ.obj u) ↦ QuiverRep.vertexSpace k Q' N u'.1) ⟨u, rfl⟩ ∘ₗ
+  LinearMap.proj (φ := fun u' : φ.Fiber (φ.obj u) ↦ QuiverRep.vertexSpace k Q' N u'.val) ⟨u, rfl⟩ ∘ₗ
     (g.app (φ.obj u)).hom ∘ₗ
-      LinearMap.single k (fun u' : φ.Fiber (φ.obj u) ↦ QuiverRep.vertexSpace k Q' M u'.1) ⟨u, rfl⟩
+      LinearMap.single k (fun u' : φ.Fiber (φ.obj u) ↦ QuiverRep.vertexSpace k Q' M u'.val) ⟨u, rfl⟩
 
 open Classical in
 private theorem preimageApp_apply (g : φ.extendByZeroRep M ⟶ φ.extendByZeroRep N) (u : Q')
@@ -361,7 +363,7 @@ private theorem preimageApp_mapₗ (g : φ.extendByZeroRep M ⟶ φ.extendByZero
       QuiverRep.mapₗ k Q' N a.toPath (preimageApp φ g u y) := by
   classical
   have hsingle : (Pi.single ⟨u', rfl⟩ (QuiverRep.mapₗ k Q' M a.toPath y) :
-      ∀ u'' : φ.Fiber (φ.obj u'), QuiverRep.vertexSpace k Q' M u''.1) =
+      ∀ u'' : φ.Fiber (φ.obj u'), QuiverRep.vertexSpace k Q' M u''.val) =
       φ.extendByZeroMap M (φ.map a) (Pi.single ⟨u, rfl⟩ y) := by
     refine funext fun u'' ↦ ?_
     obtain rfl : u'' = ⟨u', rfl⟩ := Subsingleton.elim _ _
@@ -409,8 +411,8 @@ of its spaces is a product of at most one space of `M`. -/
 theorem isFinDim_extendByZeroRep (hM : IsFinDim k Q' M) :
     IsFinDim k Q (φ.extendByZeroRep M) := by
   refine isFinDim_iff.mpr fun (v : Q) ↦ ?_
-  have (u : φ.Fiber v) : Module.Finite k (QuiverRep.vertexSpace k Q' M u.1) :=
-    isFinDim_iff.mp hM u.1
+  have (u : φ.Fiber v) : Module.Finite k (QuiverRep.vertexSpace k Q' M u.val) :=
+    isFinDim_iff.mp hM u.val
   have : Finite (φ.Fiber v) := Finite.of_subsingleton
   exact Module.Finite.pi
 

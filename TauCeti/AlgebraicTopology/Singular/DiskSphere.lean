@@ -182,6 +182,18 @@ lemma singularHomologyDiskBoundaryPairIso_zero_hom :
         (TopCat.disk.{w} 0).singularHomology₀ε R := by
   rfl
 
+/-- In dimension zero, the inverse of the identification `H₀(D⁰, ∅) ≅ R` is the class of the point
+of `D⁰`. -/
+lemma singularHomologyDiskBoundaryPairIso_zero_inv :
+    (singularHomologyDiskBoundaryPairIso R 0).inv =
+      singularHomology₀Section R (diskCenter.{w} 0) ≫
+        (diskBoundaryPair.{w} 0).singularHomologyπ R 0 := by
+  refine ((Iso.comp_hom_eq_id _).1 ?_).symm
+  rw [singularHomologyDiskBoundaryPairIso_zero_hom]
+  -- The relative and absolute homology of `D⁰` agree only up to unfolding.
+  erw [Category.assoc, IsIso.hom_inv_id_assoc]
+  exact singularHomology₀Section_singularHomology₀ε R _
+
 end HigherDegrees
 
 section CubePairHomology
@@ -236,16 +248,16 @@ lemma diskBoundaryPairToComplDiskCenter_fst :
 private def complDiskCenterHomeomorph :
     ↥(Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 \ {0}) ≃ₜ
       ↥({diskCenter n}ᶜ : Set (TopCat.disk.{w} n)) where
-  toFun z := ⟨(ULift.up ⟨z, z.2.1⟩ :
+  toFun z := ⟨(ULift.up ⟨z, z.property.1⟩ :
       ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)),
-    fun h ↦ z.2.2 ((congrArg (fun w : TopCat.disk.{w} n ↦
+    fun h ↦ z.property.2 ((congrArg (fun w : TopCat.disk.{w} n ↦
       ((w : ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
         EuclideanSpace ℝ (Fin n))) h).trans (coe_diskCenter_down n))⟩
   invFun w := ⟨((w : TopCat.disk.{w} n) :
       ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down,
     ((w : TopCat.disk.{w} n) :
-      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.2,
-    fun h ↦ w.2 (ULift.ext (Subtype.ext ((Set.mem_singleton_iff.1 h).trans
+      ULift.{w} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down.property,
+    fun h ↦ w.property (ULift.ext (Subtype.ext ((Set.mem_singleton_iff.1 h).trans
       (coe_diskCenter_down n).symm)))⟩
   left_inv _ := rfl
   right_inv _ := rfl

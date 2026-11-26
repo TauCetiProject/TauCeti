@@ -89,14 +89,14 @@ theorem exists_laurentExponents_of_isPreconnected {S : Set E} (hSne : S.Nonempty
       AnalyticAt 𝕜 w (x, 0) ∧ w (x, 0) ≠ 0 ∧
         ∀ᶠ b in 𝓝 (x, (0 : 𝕜)), b.2 ≠ 0 → r i b = b.2 ^ e i * w b := by
   classical
-  let e : I → S → ℤ := fun i x ↦ (h i x x.2).choose
-  let w : I → (x : S) → E × 𝕜 → 𝕜 := fun i x ↦ (h i x x.2).choose_spec.2.choose
-  have he_prop (i : I) (x : S) : P i (e i x) := (h i x x.2).choose_spec.1
+  let e : I → S → ℤ := fun i x ↦ (h i x x.property).choose
+  let w : I → (x : S) → E × 𝕜 → 𝕜 := fun i x ↦ (h i x x.property).choose_spec.2.choose
+  have he_prop (i : I) (x : S) : P i (e i x) := (h i x x.property).choose_spec.1
   have hw (i : I) (x : S) :
-      AnalyticAt 𝕜 (w i x) (x.1, 0) ∧ w i x (x.1, 0) ≠ 0 ∧
-        ∀ᶠ b in 𝓝 (x.1, (0 : 𝕜)), b.2 ≠ 0 →
+      AnalyticAt 𝕜 (w i x) (x.val, 0) ∧ w i x (x.val, 0) ≠ 0 ∧
+        ∀ᶠ b in 𝓝 (x.val, (0 : 𝕜)), b.2 ≠ 0 →
           r i b = b.2 ^ e i x * w i x b :=
-    (h i x x.2).choose_spec.2.choose_spec
+    (h i x x.property).choose_spec.2.choose_spec
   let e' (i : I) (x : E) : ℤ := if hx : x ∈ S then e i ⟨x, hx⟩ else 0
   have he_local (i : I) (x : E) (hx : x ∈ S) :
       ∀ᶠ y in 𝓝[S] x, e' i y = e' i x := by

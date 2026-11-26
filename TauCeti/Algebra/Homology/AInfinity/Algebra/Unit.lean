@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.AInfinity.Algebra
+public import TauCeti.Algebra.Homology.AInfinity.Curved.Algebra
 
 /-!
 # Strict units for `A∞` algebras
@@ -15,6 +15,10 @@ This file records strict units for the uncurved `A∞` algebras of
 operation is a two-sided unit and whose other operations vanish whenever one input is the unit.
 The higher-operation condition is stated on arbitrary input families, so it can be used directly
 with the unsuspended operations without exposing the bar coderivation.
+
+The strict units of `𝒜` are exactly those of `𝒜` regarded as a curved `A∞` algebra
+(`TauCeti.AInfinityAlgebra.strictUnit_toCurvedAInfinityAlgebra_iff`), and the characteristic unit
+equations and uniqueness are transferred from `TauCeti.CurvedAInfinityAlgebra.StrictUnit`.
 
 The uniqueness theorem and the elimination lemmas are the basic interface used by the later
 strictly unital morphism and augmentation constructions.  On the suspended Taylor map, a word
@@ -56,21 +60,31 @@ structure StrictUnit (𝒜 : AInfinityAlgebra R A) (e : A) : Prop where
 
 attribute [simp] StrictUnit.binary_left StrictUnit.binary_right
 
+/-- The strict units of an uncurved `A∞` algebra are those of it as a curved one. -/
+@[simp]
+theorem strictUnit_toCurvedAInfinityAlgebra_iff {𝒜 : AInfinityAlgebra R A} {e : A} :
+    𝒜.toCurvedAInfinityAlgebra.StrictUnit e ↔ 𝒜.StrictUnit e := by
+  refine ⟨fun ⟨h₀, hl, hr, hh⟩ ↦ ⟨?_, ?_, ?_, ?_⟩, fun ⟨h₀, hl, hr, hh⟩ ↦ ⟨?_, ?_, ?_, ?_⟩⟩ <;>
+    simp only [toCurvedAInfinityAlgebra_grading, toCurvedAInfinityAlgebra_m] at * <;> assumption
+
 namespace StrictUnit
 
 variable {𝒜 : AInfinityAlgebra R A} {e e' : A}
+
+/-- A strict unit of `𝒜` is a strict unit of `𝒜` regarded as a curved `A∞` algebra. -/
+theorem toCurvedAInfinityAlgebra (h : 𝒜.StrictUnit e) : 𝒜.toCurvedAInfinityAlgebra.StrictUnit e :=
+  strictUnit_toCurvedAInfinityAlgebra_iff.2 h
 
 /-! ### The characteristic unit equations -/
 
 /-- A strict unit is closed under the unary `A∞` operation. -/
 @[simp]
 theorem unary_eq_zero (h : 𝒜.StrictUnit e) : 𝒜.m 1 ![e] = 0 := by
-  simpa using h.higher 1 (by decide) ![e] ⟨0, rfl⟩
+  simpa using h.toCurvedAInfinityAlgebra.unary_eq_zero
 
 /-- A strict unit is a cycle for the differential. -/
 theorem differential_eq_zero (h : 𝒜.StrictUnit e) : 𝒜.differential e = 0 := by
-  rw [differential_apply]
-  exact h.unary_eq_zero
+  simpa using h.toCurvedAInfinityAlgebra.differential_eq_zero
 
 /-- The higher operations vanish when a specified input is the strict unit. -/
 theorem m_eq_zero_of_eq_unit (h : 𝒜.StrictUnit e) {n : ℕ} (hn : n ≠ 2)
@@ -86,12 +100,12 @@ theorem mem_shift_one_piece (h : 𝒜.StrictUnit e) : e ∈ (𝒜.grading.shift 
 
 /-- The suspended Taylor map vanishes on a word of length other than two containing the strict
 unit. -/
-theorem taylor_of_tprod_eq_zero (h : 𝒜.StrictUnit e) (n : {n : ℕ // 0 < n}) (hn : n.1 ≠ 2)
-    (x : Fin n.1 → A) (hx : ∃ i, x i = e) :
+theorem taylor_of_tprod_eq_zero (h : 𝒜.StrictUnit e) (n : {n : ℕ // 0 < n}) (hn : n.val ≠ 2)
+    (x : Fin n.val → A) (hx : ∃ i, x i = e) :
     𝒜.taylor (ReducedTensorWords.of R A n (PiTensorProduct.tprod R x)) = 0 := by
   obtain ⟨i, hi⟩ := hx
   rw [taylor_of_tprod]
-  exact h.higher n.1 hn _ ⟨i, by rw [hi, 𝒜.grading.koszulTwist_apply_of_mem_zero h.degree_zero]⟩
+  exact h.higher n.val hn _ ⟨i, by rw [hi, 𝒜.grading.koszulTwist_apply_of_mem_zero h.degree_zero]⟩
 
 /-- On the two-letter word `[e, y]` the suspended Taylor map returns `y`. -/
 @[simp]
@@ -110,10 +124,8 @@ theorem taylor_of_two_unit_right (h : 𝒜.StrictUnit e) (y : A) :
 /-! ### Uniqueness -/
 
 /-- A strict unit of an `A∞` algebra is unique. -/
-theorem eq (h : 𝒜.StrictUnit e) (h' : 𝒜.StrictUnit e') : e = e' := by
-  calc
-    e = 𝒜.m 2 ![e', e] := (h'.binary_left e).symm
-    _ = e' := h.binary_right e'
+theorem eq (h : 𝒜.StrictUnit e) (h' : 𝒜.StrictUnit e') : e = e' :=
+  h.toCurvedAInfinityAlgebra.eq h'.toCurvedAInfinityAlgebra
 
 end StrictUnit
 
