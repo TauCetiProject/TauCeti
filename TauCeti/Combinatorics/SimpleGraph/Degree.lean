@@ -20,6 +20,10 @@ neighbours are new leaves.
 A pretransitive action preserving adjacency makes all degrees equal when each neighbour
 set is finite, without requiring a finite vertex set.
 
+A vertex outside a finite set `s` has, among the vertices of `s`, as many neighbours in `G` and in
+`Gᶜ` together as `s` has vertices: the degree count behind `SimpleGraph.degree_compl`, relative to
+`s`.
+
 ## Main results
 
 * `SimpleGraph.degree_eq_of_pretransitive`: a pretransitive graph action preserves degrees.
@@ -27,6 +31,8 @@ set is finite, without requiring a finite vertex set.
   distinct neighbours, both different from any given vertex.
 * `SimpleGraph.exists_injective_adj_ne_of_three_le_degree`: the same, as an injective
   `Fin 2`-indexed family.
+* `SimpleGraph.card_filter_adj_add_card_filter_compl_adj`: the neighbours in `s` of a vertex
+  outside `s`, in `G` and in `Gᶜ`, number `#s` together.
 -/
 
 public section
@@ -74,5 +80,17 @@ theorem degree_eq_of_pretransitive
         · intro h
           exact hact g h }
   exact (e.degree_eq i).symm
+
+open Finset in
+/-- A vertex `v` outside `s` has `#s` neighbours in `s` in `G` and `Gᶜ` together:
+`#{w ∈ s | G.Adj v w} + #{w ∈ s | Gᶜ.Adj v w} = #s`, since `v` is adjacent to each vertex of
+`s` in exactly one of `G` and `Gᶜ`. -/
+theorem card_filter_adj_add_card_filter_compl_adj {V : Type*} {G : SimpleGraph V}
+    [DecidableEq V] [DecidableRel G.Adj] {s : Finset V} {v : V} (hv : v ∉ s) :
+    #{w ∈ s | G.Adj v w} + #{w ∈ s | Gᶜ.Adj v w} = #s := by
+  rw [← card_filter_add_card_filter_not (s := s) (G.Adj v)]
+  congr 2
+  refine filter_congr fun w hw ↦ ?_
+  simp [compl_adj, show v ≠ w from fun hvw ↦ hv (hvw ▸ hw)]
 
 end SimpleGraph
