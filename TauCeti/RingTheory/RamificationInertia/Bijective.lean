@@ -79,7 +79,7 @@ theorem inertiaDeg_eq_one_of_surjective {S T : Type*} [CommRing S] [CommRing T]
     ⟨(algebraMap (S ⧸ q.under S) (T ⧸ q)).injective, fun y ↦ ?_⟩
   obtain ⟨x, rfl⟩ := Quotient.mk_surjective y
   obtain ⟨s, rfl⟩ := h x
-  exact ⟨Quotient.mk _ s, rfl⟩
+  exact ⟨Quotient.mk _ s, Quotient.algebraMap_mk_of_liesOver ..⟩
 
 /-- The ramification index over `R` is invariant under `R`-algebra isomorphisms: the image of an
 ideal `P` under `e : S ≃ₐ[R] T` has the same ramification index over `R` as `P`. -/
