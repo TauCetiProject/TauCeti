@@ -24,35 +24,6 @@ public noncomputable section
 
 open TauCeti
 
-namespace LinearIsometryEquiv
-
-variable {V W U : Type*}
-  [NormedAddCommGroup V] [InnerProductSpace ℝ V]
-  [NormedAddCommGroup W] [InnerProductSpace ℝ W]
-  [NormedAddCommGroup U] [InnerProductSpace ℝ U]
-
-/-- A real linear isometry preserves the negative squared length. -/
-def negNormSqFormIsometryEquiv (e : V ≃ₗᵢ[ℝ] W) :
-    (negNormSqForm V).IsometryEquiv (negNormSqForm W) where
-  toLinearEquiv := e.toLinearEquiv
-  map_app' v := by simp
-
-@[simp]
-theorem negNormSqFormIsometryEquiv_apply (e : V ≃ₗᵢ[ℝ] W) (v : V) :
-    e.negNormSqFormIsometryEquiv v = e v := (rfl)
-
-@[simp]
-theorem negNormSqFormIsometryEquiv_refl :
-    (LinearIsometryEquiv.refl ℝ V).negNormSqFormIsometryEquiv =
-      QuadraticMap.IsometryEquiv.refl (negNormSqForm V) := (rfl)
-
-@[simp]
-theorem negNormSqFormIsometryEquiv_trans (e : V ≃ₗᵢ[ℝ] W) (f : W ≃ₗᵢ[ℝ] U) :
-    (e.trans f).negNormSqFormIsometryEquiv =
-      e.negNormSqFormIsometryEquiv.trans f.negNormSqFormIsometryEquiv := (rfl)
-
-end LinearIsometryEquiv
-
 namespace CliffordAlgebra.NegativeMetric
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]

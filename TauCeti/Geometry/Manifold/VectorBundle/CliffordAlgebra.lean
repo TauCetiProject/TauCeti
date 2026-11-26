@@ -100,6 +100,18 @@ theorem star_mk {b : B} (p : Fr b) (x : C) :
   exact (CliffordAlgebra.map_star
     (Unitary.linearIsometryEquiv _).negNormSqFormIsometryEquiv.toIsometry x).symm
 
+private theorem equivOfIsometry_trans_apply {U W X : Type*}
+    [NormedAddCommGroup U] [InnerProductSpace ℝ U]
+    [NormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [NormedAddCommGroup X] [InnerProductSpace ℝ X]
+    (e : U ≃ₗᵢ[ℝ] W) (f : W ≃ₗᵢ[ℝ] X) (x : CliffordAlgebra (negNormSqForm U)) :
+    CliffordAlgebra.equivOfIsometry f.negNormSqFormIsometryEquiv
+        (CliffordAlgebra.equivOfIsometry e.negNormSqFormIsometryEquiv x) =
+      CliffordAlgebra.equivOfIsometry (e.trans f).negNormSqFormIsometryEquiv x := by
+  simpa only [AlgEquiv.trans_apply, LinearIsometryEquiv.negNormSqFormIsometryEquiv_trans] using
+    DFunLike.congr_fun (CliffordAlgebra.equivOfIsometry_trans
+      e.negNormSqFormIsometryEquiv f.negNormSqFormIsometryEquiv) x
+
 /-- The canonical algebra identification of the associated fibre with the Clifford algebra
 of the negative squared norm on the actual fibre. -/
 def fiberAlgEquiv (b : B) : CliffordAlgebraBundle F E V b ≃ₐ[ℝ]
@@ -123,10 +135,9 @@ theorem fiberAlgEquiv_mk {b : B} (p : Fr b) (x : C) :
   have hc : AssociatedBundle.mk OG p x = frameAlgEquiv p₀ (g • x) := by
     rw [frameAlgEquiv_apply]
     exact ((AssociatedBundle.mk_eq_mk_iff (p := p₀) (q := p)).2 rfl).symm
-  dsimp only [fiberAlgEquiv, AlgEquiv.trans_apply]
-  rw [hc, AlgEquiv.symm_apply_apply, Unitary.smul_clifford_eq, Unitary.cliffordAlgEquiv_def,
-    ← AlgEquiv.trans_apply, CliffordAlgebra.equivOfIsometry_trans,
-    ← LinearIsometryEquiv.negNormSqFormIsometryEquiv_trans, hp]
+  rw [hc]
+  simp only [fiberAlgEquiv, p₀, AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply,
+    Unitary.smul_clifford_eq, Unitary.cliffordAlgEquiv_def, equivOfIsometry_trans_apply, ← hp]
 
 /-- The fibre's Clifford norm is the intrinsic scalar-part norm of its image. -/
 theorem norm_eq_regularNorm (b : B) (x : CliffordAlgebraBundle F E V b) :
@@ -188,6 +199,37 @@ theorem algHom_ext {S : Type*} [Semiring S] [Algebra ℝ S] {b : B}
     obtain ⟨y, rfl⟩ := e.surjective x
     exact AlgHom.congr_fun he y
 
+/-- A linear map satisfying the negative Clifford relation extends to an algebra homomorphism
+from the Clifford fibre. -/
+def lift {S : Type*} [Semiring S] [Algebra ℝ S] (b : B) (f : E b →ₗ[ℝ] S)
+    (hf : ∀ v, f v ^ 2 = algebraMap ℝ S (-‖v‖ ^ 2)) :
+    CliffordAlgebraBundle F E V b →ₐ[ℝ] S :=
+  (CliffordAlgebra.lift (negNormSqForm (E b))
+    ⟨f, fun v ↦ by simpa only [pow_two, negNormSqForm_apply] using hf v⟩).comp
+      (fiberAlgEquiv b).toAlgHom
+
+@[simp]
+theorem lift_ι {S : Type*} [Semiring S] [Algebra ℝ S] (b : B) (f : E b →ₗ[ℝ] S)
+    (hf : ∀ v, f v ^ 2 = algebraMap ℝ S (-‖v‖ ^ 2)) (v : E b) :
+    lift (F := F) (V := V) b f hf (ι b v) = f v := by
+  simp [lift]
+
+/-- An algebra homomorphism from the Clifford fibre is the lift exactly when it restricts
+to the given linear map on generators. -/
+theorem lift_unique {S : Type*} [Semiring S] [Algebra ℝ S] (b : B) (f : E b →ₗ[ℝ] S)
+    (hf : ∀ v, f v ^ 2 = algebraMap ℝ S (-‖v‖ ^ 2))
+    (g : CliffordAlgebraBundle F E V b →ₐ[ℝ] S) :
+    g.toLinearMap.comp (ι b) = f ↔ g = lift b f hf := by
+  constructor
+  · intro h
+    apply algHom_ext
+    intro v
+    simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, lift_ι] using
+      LinearMap.congr_fun h v
+  · rintro rfl
+    ext v
+    exact lift_ι b f hf v
+
 /-- The fibrewise Clifford algebra has the usual dimension, including dimension one in rank zero. -/
 @[simp]
 theorem finrank_eq (b : B) :
@@ -210,6 +252,12 @@ theorem involute_ι (b : B) (v : E b) :
     involute b (ι (F := F) (E := E) (V := V) b v) = -ι (F := F) (E := E) (V := V) b v := by
   apply (fiberAlgEquiv b).injective
   simp [involute, ι]
+
+/-- Applying the fibrewise grade involution twice gives the original element. -/
+@[simp]
+theorem involute_involute (b : B) (x : CliffordAlgebraBundle F E V b) :
+    involute b (involute b x) = x := by
+  simp [involute, AlgEquiv.trans_apply]
 
 section Smooth
 
@@ -350,15 +398,37 @@ def map (b : B) : CliffordAlgebraBundle F E V b ≃ₐ[ℝ] CliffordAlgebraBundl
     ((CliffordAlgebra.equivOfIsometry (Φ b).negNormSqFormIsometryEquiv).trans
       (fiberAlgEquiv b).symm)
 
+/-- The identity fibrewise isometry induces the identity Clifford algebra equivalence. -/
+@[simp]
+theorem map_refl (b : B) :
+    map (F := F) (F' := F) (V := V) (fun b ↦ LinearIsometryEquiv.refl ℝ (E b)) b =
+      AlgEquiv.refl := by
+  apply AlgEquiv.ext
+  intro x
+  simp only [map, AlgEquiv.trans_apply, LinearIsometryEquiv.negNormSqFormIsometryEquiv_refl,
+    CliffordAlgebra.equivOfIsometry_refl, AlgEquiv.coe_refl, id_eq, AlgEquiv.symm_apply_apply]
+
+/-- The induced algebra equivalences compose in the order of the underlying fibrewise isometries. -/
+@[simp]
+theorem map_trans {F'' : Type*} [NormedAddCommGroup F''] [NormedSpace ℝ F'']
+    [FiniteDimensional ℝ F''] {E'' : B → Type*} [∀ b, NormedAddCommGroup (E'' b)]
+    [∀ b, InnerProductSpace ℝ (E'' b)] [TopologicalSpace (TotalSpace F'' E'')]
+    [FiberBundle F'' E''] [VectorBundle ℝ F'' E''] [ContinuousFiberNorm F'' E'']
+    [Fact (Module.finrank ℝ V = Module.finrank ℝ F'')]
+    (Ψ : ∀ b, E' b ≃ₗᵢ[ℝ] E'' b) (b : B) :
+    (map (F := F) (F' := F') (V := V) Φ b).trans (map (F' := F'') Ψ b) =
+      map (fun b ↦ (Φ b).trans (Ψ b)) b := by
+  apply AlgEquiv.ext
+  intro x
+  simp only [map, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply, equivOfIsometry_trans_apply]
+
 @[simp]
 theorem map_mk {b : B} (p : Fr b) (x : C) :
     map Φ b (AssociatedBundle.mk OG p x) =
       AssociatedBundle.mk OG (OrthonormalFrameBundle.Fiber.map (F' := F') Φ p) x := by
   apply (fiberAlgEquiv b).injective
-  rw [map, AlgEquiv.trans_apply, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply,
-    fiberAlgEquiv_mk, fiberAlgEquiv_mk, OrthonormalFrameBundle.Fiber.frame_map,
-    LinearIsometryEquiv.negNormSqFormIsometryEquiv_trans, ← CliffordAlgebra.equivOfIsometry_trans]
-  rfl
+  simp only [map, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply, fiberAlgEquiv_mk,
+    OrthonormalFrameBundle.Fiber.frame_map, equivOfIsometry_trans_apply]
 
 @[simp]
 theorem map_ι (b : B) (v : E b) :
