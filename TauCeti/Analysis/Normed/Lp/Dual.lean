@@ -43,6 +43,8 @@ norms of its values on the unit coordinate vectors
 * `lp.sum_norm_rpow_le_of_forall_norm_sum_mul_le`: for `p < ∞`, finitely many coefficients
   `zᵢ` whose pairing `c ↦ ∑ cᵢ zᵢ` is bounded by `B ‖c‖_q` on `ℓ^q` have
   `∑ ‖zᵢ‖ ^ p ≤ B ^ p`.
+* `lp.exists_memℓp_and_norm_le_of_forall_norm_sum_mul_le`: a real family dominated by such
+  coefficients, `‖xᵢ‖ ≤ A ‖zᵢ‖`, lies in `ℓᵖ` with norm at most `A B`, also for `p = ∞`.
 * `lp.dualEquiv`: the isometric equivalence `ℓᵖ ≃ₗᵢ (ℓ^q)*`.
 * `ContinuousLinearMap.norm_rpow_eq_tsum_norm_lp_single_rpow`: for `1 < q < ∞`, the `p`-th
   power of the norm of a functional on `ℓ^q` is the sum of the `p`-th powers of the norms of its
@@ -191,6 +193,36 @@ theorem sum_norm_rpow_le_of_forall_norm_sum_mul_le (hp : p ≠ ∞) (s : Finset 
     _ ≤ B ^ p.toReal := by
         gcongr
         exact LinearMap.mkContinuous_norm_le _ hB _
+
+omit [Fact (1 ≤ p)] in
+/-- **Coordinates controlled by a bounded pairing.** For Hölder conjugate exponents `p` and `q`,
+let `zᵢ` be coefficients whose finite pairings `c ↦ ∑ i ∈ s, cᵢ zᵢ` are bounded by `B ‖c‖_q` on
+`ℓ^q`. Then every real family `x` with `‖xᵢ‖ ≤ A ‖zᵢ‖` lies in `ℓᵖ`, with norm at most `A B`. -/
+theorem exists_memℓp_and_norm_le_of_forall_norm_sum_mul_le {x : ι → ℝ} (z : ι → 𝕜) {A B : ℝ}
+    (hA : 0 ≤ A) (hB : 0 ≤ B) (hxz : ∀ i, ‖x i‖ ≤ A * ‖z i‖)
+    (h : ∀ (s : Finset ι) (c : lp (fun _ : ι ↦ 𝕜) q), ‖∑ i ∈ s, c i * z i‖ ≤ B * ‖c‖) :
+    ∃ hx : Memℓp x p, ‖(⟨x, hx⟩ : lp (fun _ : ι ↦ ℝ) p)‖ ≤ A * B := by
+  classical
+  -- Each coefficient is bounded by `B`: pair with a unit coordinate vector.
+  have hz (i : ι) : ‖z i‖ ≤ B := by
+    simpa [lp.single_apply, lp.norm_single (zero_lt_one.trans_le Fact.out)] using
+      h {i} (lp.single q i 1)
+  have hle (i : ι) : ‖x i‖ ≤ A * B := (hxz i).trans (by gcongr; exact hz i)
+  rcases eq_or_ne p ∞ with rfl | hp
+  · exact ⟨memℓp_infty ⟨A * B, by rintro _ ⟨i, rfl⟩; exact hle i⟩,
+      lp.norm_le_of_forall_le (by positivity) hle⟩
+  · have hp0 : 0 < p.toReal := ENNReal.toReal_pos (ENNReal.HolderConjugate.ne_zero p q) hp
+    have hsum (s : Finset ι) : ∑ i ∈ s, ‖x i‖ ^ p.toReal ≤ (A * B) ^ p.toReal := by
+      calc ∑ i ∈ s, ‖x i‖ ^ p.toReal ≤ ∑ i ∈ s, (A * ‖z i‖) ^ p.toReal :=
+            Finset.sum_le_sum fun i _ ↦ Real.rpow_le_rpow (norm_nonneg _) (hxz i) hp0.le
+        _ = A ^ p.toReal * ∑ i ∈ s, ‖z i‖ ^ p.toReal := by
+            rw [Finset.mul_sum]
+            exact Finset.sum_congr rfl fun i _ ↦ Real.mul_rpow hA (norm_nonneg _)
+        _ ≤ A ^ p.toReal * B ^ p.toReal := by
+            gcongr
+            exact sum_norm_rpow_le_of_forall_norm_sum_mul_le hp s z hB (h s)
+        _ = (A * B) ^ p.toReal := (Real.mul_rpow hA hB).symm
+    exact ⟨memℓp_gen' hsum, lp.norm_le_of_forall_sum_le hp0 (by positivity) hsum⟩
 
 variable (𝕜 ι p q)
 

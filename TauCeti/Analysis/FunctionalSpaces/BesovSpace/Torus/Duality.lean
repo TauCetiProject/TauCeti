@@ -55,6 +55,11 @@ Bahouri–Chemin–Danchin, Proposition 2.76: testing `Λ` on the trigonometric 
 (`MeasureTheory.Lp.toDual`, an isometry for all Hölder conjugate exponents, including `p = 1` and
 `p = ∞`) and of `ℓ^{q'}` turns these values into the bound.
 
+The construction of the pairing through the enlarged blocks and the norming argument adapt the
+Euclidean formalization in `TauCeti/Analysis/FunctionalSpaces/BesovSpace/Duality.lean` and
+`TauCeti/Analysis/FunctionalSpaces/BesovSpace/Norming.lean` from tempered distributions on `ℝᵈ` to
+Fourier coefficients on the torus.
+
 ## Main declarations
 
 * `TauCeti.UnitAddTorus.BesovSpace.monomial`: the trigonometric monomial `eₙ` as an element of
@@ -101,71 +106,11 @@ attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 
 variable {φ : ContDiffBump (0 : EuclideanSpace ℝ d)}
 
-/-! ### Integrals of blocks against functions -/
-
 /-- The volume of the torus is a finite measure. -/
 private theorem isFiniteMeasure_volume : IsFiniteMeasure (volume : Measure (UnitAddTorus d)) :=
   inferInstanceAs (IsFiniteMeasure (Measure.pi fun _ ↦ AddCircle.haarAddCircle))
 
 attribute [local instance] isFiniteMeasure_volume
-
-/-- The pieces of the Littlewood–Paley partition are even on the lattice. -/
-private theorem inhomogeneousLittlewoodPaley_latticePoint_neg (j : ℕ) (n : d → ℤ) :
-    φ.inhomogeneousLittlewoodPaley j (latticePoint (-n)) =
-      φ.inhomogeneousLittlewoodPaley j (latticePoint n) := by
-  have h : latticePoint (-n) = -latticePoint n := by
-    ext i
-    simp
-  rw [h, φ.inhomogeneousLittlewoodPaley_neg]
-
-/-- The pieces `ψₖ` and `ψᵢ` do not meet unless `i` lies in the window `k - L ≤ i < k + L`, for the
-overlap width `L = φ.littlewoodPaleyOverlap φ`. -/
-private theorem inhomogeneousLittlewoodPaley_mul_eq_zero_of_notMem_Ico {k i : ℕ}
-    (hi : i ∉ Finset.Ico (k - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ))
-    (ξ : EuclideanSpace ℝ d) :
-    φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ = 0 := by
-  rw [Finset.mem_Ico, not_and_or, not_le, not_lt] at hi
-  rcases hi with hi | hi
-  · rw [mul_comm]
-    exact φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ (by omega) ξ
-  · exact φ.inhomogeneousLittlewoodPaley_mul_eq_zero φ hi ξ
-
-/-- `ψₖ = ∑_{k - L ≤ i < k + L} ψₖ ψᵢ`: the pieces sum to one, and only those in the window meet
-`ψₖ`. -/
-private theorem sum_Ico_inhomogeneousLittlewoodPaley_mul (k : ℕ) (ξ : EuclideanSpace ℝ d) :
-    ∑ i ∈ Finset.Ico (k - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ),
-      φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ =
-      φ.inhomogeneousLittlewoodPaley k ξ := by
-  have h := (φ.hasSum_inhomogeneousLittlewoodPaley ξ).mul_left (φ.inhomogeneousLittlewoodPaley k ξ)
-  rw [mul_one] at h
-  exact (hasSum_sum_of_ne_finset_zero fun i hi ↦
-    inhomogeneousLittlewoodPaley_mul_eq_zero_of_notMem_Ico hi ξ).unique h
-
-/-- **Integrating a block against a function.** For `g ∈ Lʳ(𝕋ᵈ)`,
-`∫ (Δₖ a) g = ∑ₙ ψₖ(n) a(n) ĝ(-n)`, where the sum has finitely many nonzero terms. -/
-private theorem integral_littlewoodPaleyBlockLp_mul {p r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ r)]
-    (k : ℕ) (a : (d → ℤ) → ℂ) (g : Lp ℂ r (volume : Measure (UnitAddTorus d))) :
-    ∫ x, littlewoodPaleyBlockLp φ p k a x * g x =
-      ∑' n, (φ.inhomogeneousLittlewoodPaley k (latticePoint n) : ℂ) * a n *
-        mFourierCoeff g (-n) := by
-  set S := (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ k * φ.rOut)).toFinset
-  have hS (n : d → ℤ) (hn : n ∉ S) : φ.inhomogeneousLittlewoodPaley k (latticePoint n) = 0 :=
-    inhomogeneousLittlewoodPaley_eq_zero_of_notMem k hn
-  have hg : Integrable g volume := (Lp.memLp g).integrable Fact.out
-  have hint (n : d → ℤ) : Integrable (fun x ↦ mFourier n x * g x) volume :=
-    hg.bdd_mul (c := 1) (mFourier n).continuous.aestronglyMeasurable
-      (Eventually.of_forall fun x ↦ (norm_mFourier_apply n x).le)
-  rw [tsum_eq_sum (s := S) fun n hn ↦ by rw [hS n hn, Complex.ofReal_zero, zero_mul, zero_mul]]
-  have hae : (fun x ↦ littlewoodPaleyBlockLp φ p k a x * g x) =ᵐ[volume] fun x ↦
-      ∑ n ∈ S, (φ.inhomogeneousLittlewoodPaley k (latticePoint n) : ℂ) * a n *
-        (mFourier n x * g x) := by
-    filter_upwards [coeFn_littlewoodPaleyBlockLp (p := p) hS a] with x hx
-    rw [hx, Finset.sum_mul]
-    exact Finset.sum_congr rfl fun n _ ↦ by ring
-  rw [integral_congr_ae hae, integral_finsetSum _ fun n _ ↦ (hint n).const_mul _]
-  refine Finset.sum_congr rfl fun n _ ↦ ?_
-  rw [integral_const_mul, mFourierCoeff, neg_neg]
-  simp only [smul_eq_mul]
 
 /-! ### The enlarged blocks -/
 
@@ -185,7 +130,7 @@ private theorem integral_littlewoodPaleyBlockLp_mul_enlargedBlockLp {p p' : ℝ�
   rw [integral_littlewoodPaleyBlockLp_mul]
   refine tsum_congr fun n ↦ ?_
   have h := congrArg (fun x : ℝ ↦ (x : ℂ) * a n * b (-n))
-    (sum_Ico_inhomogeneousLittlewoodPaley_mul (φ := φ) k (latticePoint n))
+    (φ.sum_Ico_inhomogeneousLittlewoodPaley_mul k (latticePoint n))
   push_cast at h
   rw [← mFourierCoeffCLM_apply, enlargedBlockLp, map_sum, ← h, Finset.mul_sum, Finset.sum_mul,
     Finset.sum_mul]
@@ -279,7 +224,7 @@ variable {s : ℝ} {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [
 variable (φ s p p' q q') in
 /-- The **duality pairing** `⟨u, w⟩ = ∑ₖ ∫ (Δₖ u) (Δ⁺ₖ w)` of `u ∈ B^s_{p,q}(𝕋ᵈ)` and
 `w ∈ B^{-s}_{p',q'}(𝕋ᵈ)`, for Hölder conjugate pairs `p, p'` and `q, q'`. Here
-`Δ⁺ₖ = ∑_{k + 1 - L ≤ j < k + L} Δⱼ`, with `L = φ.littlewoodPaleyOverlap φ`, is the identity on the
+`Δ⁺ₖ = ∑_{k - L ≤ j < k + L} Δⱼ`, with `L = φ.littlewoodPaleyOverlap φ`, is the identity on the
 frequencies of `Δₖ`. The pairing is the sum of the series `∑ₖ ∑ₙ ψₖ(n) u(n) w(-n)`
 (`TauCeti.UnitAddTorus.BesovSpace.hasSum_pairing`), which is `∑ₙ u(n) w(-n)` when `u` is a
 trigonometric polynomial (`TauCeti.UnitAddTorus.BesovSpace.pairing_eq_sum_of_support_subset`). -/
@@ -321,8 +266,7 @@ private theorem lpPairing_weightedBlocks_enlargedWeightedBlocks (u : BesovSpace 
       ∑' n, (φ.inhomogeneousLittlewoodPaley k (latticePoint n) : ℂ) * u.coeff n *
         w.coeff (-n) := by
   have hweight : (((2 : ℝ) ^ (-s * k) : ℝ) : ℂ) * (((2 : ℝ) ^ (s * k) : ℝ) : ℂ) = 1 := by
-    rw [← Complex.ofReal_mul, ← Real.rpow_add two_pos]
-    simp
+    rw [← Complex.ofReal_mul, Real.rpow_neg_mul_mul_rpow_mul two_pos, Complex.ofReal_one]
   rw [weightedBlocks_apply, enlargedWeightedBlocks_apply, map_smul, map_smul,
     smul_apply, smul_smul, hweight, one_smul,
     ContinuousLinearMap.lpPairing_eq_integral]
@@ -412,12 +356,6 @@ def monomial (n : d → ℤ) : BesovSpace φ s p q :=
 theorem coeff_monomial (n : d → ℤ) : (monomial φ s p q n).coeff = Pi.single n 1 :=
   (rfl)
 
-/-- The Fourier coefficients of a finite sum are the sums of the Fourier coefficients. -/
-private theorem coeff_sum {ι : Type*} (t : Finset ι) (u : ι → BesovSpace φ s p q) :
-    (∑ i ∈ t, u i).coeff = ∑ i ∈ t, (u i).coeff := by
-  have h := map_sum (coeffₗ φ s p q) u t
-  simpa only [coeffₗ_apply] using h
-
 /-- **Trigonometric polynomials are combinations of monomials.** If the coefficients of `u` vanish
 outside a finite set `t`, then `u = ∑_{n ∈ t} u(n) eₙ`. -/
 theorem eq_sum_monomial_of_support_subset {t : Finset (d → ℤ)} {u : BesovSpace φ s p q}
@@ -440,57 +378,7 @@ private theorem littlewoodPaleyBlockLp_mul_eq_zero {j k : ℕ}
   rw [← map_zero (littlewoodPaleyBlockLp φ p j)]
   refine littlewoodPaleyBlockLp_congr fun n ↦ ?_
   rw [Pi.zero_apply, mul_zero, ← mul_assoc, ← Complex.ofReal_mul,
-    inhomogeneousLittlewoodPaley_mul_eq_zero_of_notMem_Ico hk, Complex.ofReal_zero, zero_mul]
-
-/-- **A bound by window sums.** If every weighted block of `v ∈ B^s_{p,q}(𝕋ᵈ)` is at most `K`
-times the sum of `‖bᵢ‖` over the window `j - L ≤ i < j + L`, for some `b ∈ ℓ^q`, then
-`‖v‖ ≤ K (2 L) ‖b‖`. -/
-private theorem norm_le_of_forall_rpow_mul_norm_le_sum_Ico [Fact (1 ≤ q)] {K : ℝ} (hK : 0 ≤ K)
-    {L : ℕ} (v : BesovSpace φ s p q) (b : lp (fun _ : ℕ ↦ ℝ) q)
-    (h : ∀ j : ℕ, 2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j v.coeff‖ ≤
-      K * ∑ i ∈ Finset.Ico (j - L) (j + L), ‖b i‖) :
-    ‖v‖ ≤ K * (2 * L) * ‖b‖ := by
-  obtain ⟨w, hw, hwn⟩ := lp.exists_eq_sum_Ico_sub_add_and_norm_le (lp.normSeq b) L
-  rw [← norm_weightedBlocks]
-  calc ‖v.weightedBlocks‖ ≤ ‖K • w‖ :=
-        lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
-          rw [norm_weightedBlocks_apply, lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
-          simp only [lp.normSeq_apply]
-          exact (h j).trans (Real.le_norm_self _)
-    _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]
-    _ ≤ K * (2 * L * ‖b‖) := by
-        gcongr
-        exact hwn.trans_eq (by rw [lp.norm_normSeq])
-    _ = K * (2 * L) * ‖b‖ := by ring
-
-/-- For the overlap width `L`, `ψₖ (1 - ∑_{i < N} ψᵢ) = ∑_{k - L ≤ i < k + L, N ≤ i} ψₖ ψᵢ`: the
-pieces `ψᵢ` with `i` at least `L` away from `k` do not meet `ψₖ`. -/
-private theorem mul_one_sub_sum_range_eq_sum_Ico (k N : ℕ) (ξ : EuclideanSpace ℝ d) :
-    φ.inhomogeneousLittlewoodPaley k ξ *
-        (1 - ∑ i ∈ Finset.range N, φ.inhomogeneousLittlewoodPaley i ξ) =
-      ∑ i ∈ Finset.Ico (k - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ),
-        if N ≤ i then φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ
-        else 0 := by
-  set W := Finset.Ico (k - φ.littlewoodPaleyOverlap φ) (k + φ.littlewoodPaleyOverlap φ)
-  have hz (i : ℕ) (hi : i ∉ W) :
-      φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ = 0 :=
-    inhomogeneousLittlewoodPaley_mul_eq_zero_of_notMem_Ico hi ξ
-  have hW := sum_Ico_inhomogeneousLittlewoodPaley_mul (φ := φ) k ξ
-  have hN : ∑ i ∈ Finset.range N,
-      φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ =
-      ∑ i ∈ W, if i < N then
-        φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ else 0 := by
-    rw [← Finset.sum_filter]
-    refine (Finset.sum_subset (fun i hi ↦ ?_) fun i hi hi' ↦ hz i fun hiW ↦ hi' ?_).symm
-    · simp only [Finset.mem_filter, Finset.mem_range] at hi ⊢
-      exact hi.2
-    · simp only [Finset.mem_filter, Finset.mem_range] at hi ⊢
-      exact ⟨hiW, hi⟩
-  rw [mul_sub, mul_one, Finset.mul_sum, hN]
-  nth_rw 1 [← hW]
-  rw [← Finset.sum_sub_distrib]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  split_ifs <;> first | omega | ring
+    φ.inhomogeneousLittlewoodPaley_mul_eq_zero_of_notMem_Ico hk, Complex.ofReal_zero, zero_mul]
 
 variable (φ) in
 /-- The coefficients `(∑_{i < N} ψᵢ(n)) c(n)` of the smooth truncation `S_N c = ∑_{i < N} ψᵢ c`. -/
@@ -534,7 +422,7 @@ private theorem littlewoodPaleyBlockLp_sub_truncation (k N : ℕ) (u : BesovSpac
   simp_rw [hite, ← map_sum]
   refine littlewoodPaleyBlockLp_congr fun n ↦ ?_
   have h := congrArg (fun x : ℝ ↦ (x : ℂ) * u.coeff n)
-    (mul_one_sub_sum_range_eq_sum_Ico (φ := φ) k N (latticePoint n))
+    (φ.mul_one_sub_sum_range_eq_sum_Ico k N (latticePoint n))
   push_cast [apply_ite (fun x : ℝ ↦ (x : ℂ))] at h
   rw [Finset.sum_mul] at h
   simp only [ite_mul, zero_mul, mul_assoc] at h
@@ -605,9 +493,8 @@ variable (φ s q) in
 private def blockOf (k : ℕ) (g : Lp ℂ p (volume : Measure (UnitAddTorus d))) : BesovSpace φ s p q :=
   ⟨fun n ↦ (φ.inhomogeneousLittlewoodPaley k (latticePoint n) : ℂ) * mFourierCoeff g n,
     memBesov_of_finite_support <| (finite_setOf_norm_latticePoint_le (ι := d)
-      (2 ^ k * φ.rOut)).toFinset.finite_toSet.subset fun n hn ↦ by_contra fun h ↦
-      hn (by simp only [inhomogeneousLittlewoodPaley_eq_zero_of_notMem k h, Complex.ofReal_zero,
-        zero_mul])⟩
+      (2 ^ k * φ.rOut)).toFinset.finite_toSet.subset
+      (support_inhomogeneousLittlewoodPaley_mul_subset k _)⟩
 
 private theorem coeff_blockOf (k : ℕ)
     (g : Lp ℂ p (volume : Measure (UnitAddTorus d))) :
@@ -619,9 +506,7 @@ private theorem support_coeff_blockOf_subset (k : ℕ)
     (g : Lp ℂ p (volume : Measure (UnitAddTorus d))) :
     Function.support (blockOf φ s q k g).coeff ⊆
       (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ k * φ.rOut)).toFinset :=
-  fun n hn ↦ by_contra fun h ↦ hn (by
-    simp only [coeff_blockOf, inhomogeneousLittlewoodPaley_eq_zero_of_notMem k h,
-      Complex.ofReal_zero, zero_mul])
+  support_inhomogeneousLittlewoodPaley_mul_subset k _
 
 private theorem blockOf_smul (k : ℕ) (a : ℂ)
     (g : Lp ℂ p (volume : Measure (UnitAddTorus d))) :
@@ -719,8 +604,8 @@ private theorem toDual_littlewoodPaleyBlockLp_apply (Λ : StrongDual ℂ (BesovS
       (blockOf φ s q k g).coeff n * Λ (monomial φ s p q n) =
       ∑' n, (blockOf φ s q k g).coeff n * Λ (monomial φ s p q n) :=
     (tsum_eq_sum fun n hn ↦ by
-      simp only [coeff_blockOf, inhomogeneousLittlewoodPaley_eq_zero_of_notMem k hn,
-        Complex.ofReal_zero, zero_mul]).symm
+      rw [Function.notMem_support.1 fun h ↦ hn (support_coeff_blockOf_subset k g h),
+        zero_mul]).symm
   rw [Lp.toDual_apply, integral_littlewoodPaleyBlockLp_mul,
     apply_eq_sum_of_support_subset Λ (support_coeff_blockOf_subset k g), hfin,
     ← (Equiv.neg (d → ℤ)).tsum_eq]
@@ -729,67 +614,21 @@ private theorem toDual_littlewoodPaleyBlockLp_apply (Λ : StrongDual ℂ (BesovS
     neg_neg]
   ring
 
-/-- **Assembling the blocks.** If the blocks of `e` satisfy `‖Δₖ e‖_{p'} ≤ B 2^{ks}`, and there are
-`zₖ` with `2^{-ks} ‖Δₖ e‖_{p'} ≤ 2 ‖zₖ‖` whose finite pairings with `ℓ^q` satisfy
-`‖∑_{k ∈ t} cₖ zₖ‖ ≤ B ‖c‖_q`, then `e ∈ B^{-s}_{p',q'}(𝕋ᵈ)` with norm at most `2 B`. -/
+/-- **Assembling the blocks.** If there are `zₖ` with `2^{-ks} ‖Δₖ e‖_{p'} ≤ 2 ‖zₖ‖` whose finite
+pairings with `ℓ^q` satisfy `‖∑_{k ∈ t} cₖ zₖ‖ ≤ B ‖c‖_q`, then `e ∈ B^{-s}_{p',q'}(𝕋ᵈ)` with norm
+at most `2 B`. -/
 private theorem exists_memBesov_and_norm_le_of_forall {e : (d → ℤ) → ℂ} {B : ℝ} (hB : 0 ≤ B)
-    (hsingle : ∀ k : ℕ, ‖littlewoodPaleyBlockLp φ p' k e‖ ≤ B * 2 ^ (s * k)) (z : ℕ → ℂ)
+    (z : ℕ → ℂ)
     (hz : ∀ k : ℕ, (2 : ℝ) ^ (-s * k) * ‖littlewoodPaleyBlockLp φ p' k e‖ ≤ 2 * ‖z k‖)
     (hzc : ∀ (t : Finset ℕ) (c : lp (fun _ : ℕ ↦ ℂ) q), ‖∑ k ∈ t, c k * z k‖ ≤ B * ‖c‖) :
     ∃ h : MemBesov φ (-s) p' q' e, ‖(⟨e, h⟩ : BesovSpace φ (-s) p' q')‖ ≤ 2 * B := by
-  have hle (k : ℕ) : ‖(2 : ℝ) ^ (-s * k) * ‖littlewoodPaleyBlockLp φ p' k e‖‖ ≤ 2 * B := by
-    rw [Real.norm_of_nonneg (by positivity)]
-    calc (2 : ℝ) ^ (-s * k) * ‖littlewoodPaleyBlockLp φ p' k e‖
-        ≤ 2 ^ (-s * k) * (B * 2 ^ (s * k)) := by gcongr; exact hsingle k
-      _ = B := by
-          rw [mul_left_comm, ← Real.rpow_add two_pos, neg_mul, neg_add_cancel, Real.rpow_zero,
-            mul_one]
-      _ ≤ 2 * B := by linarith
-  rcases eq_or_ne q' ∞ with rfl | hq'
-  · -- For `q' = ∞` the single-block bounds suffice.
-    refine ⟨memBesov_def.2 (memℓp_infty ⟨2 * B, by rintro _ ⟨k, rfl⟩; exact hle k⟩), ?_⟩
-    rw [norm_eq_ciSup]
-    exact ciSup_le fun k ↦ (Real.le_norm_self _).trans (hle k)
-  · -- For `q' < ∞` the partial sums are bounded through the coordinates of the pairing.
-    have hq'0 : 0 < q'.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq'
-    have hsum (t : Finset ℕ) : ∑ k ∈ t, ‖(2 : ℝ) ^ (-s * k) *
-        ‖littlewoodPaleyBlockLp φ p' k e‖‖ ^ q'.toReal ≤ (2 * B) ^ q'.toReal := by
-      calc ∑ k ∈ t, ‖(2 : ℝ) ^ (-s * k) * ‖littlewoodPaleyBlockLp φ p' k e‖‖ ^ q'.toReal
-          ≤ ∑ k ∈ t, (2 * ‖z k‖) ^ q'.toReal := Finset.sum_le_sum fun k _ ↦
-            Real.rpow_le_rpow (norm_nonneg _)
-              ((Real.norm_of_nonneg (by positivity)).trans_le (hz k)) hq'0.le
-        _ = 2 ^ q'.toReal * ∑ k ∈ t, ‖z k‖ ^ q'.toReal := by
-            rw [Finset.mul_sum]
-            exact Finset.sum_congr rfl fun k _ ↦ Real.mul_rpow zero_le_two (norm_nonneg _)
-        _ ≤ 2 ^ q'.toReal * B ^ q'.toReal := by
-            gcongr
-            exact lp.sum_norm_rpow_le_of_forall_norm_sum_mul_le hq' t z hB (hzc t)
-        _ = (2 * B) ^ q'.toReal := (Real.mul_rpow zero_le_two hB).symm
-    refine ⟨memBesov_def.2 (memℓp_gen' hsum), ?_⟩
-    rw [← norm_weightedBlocks]
-    refine lp.norm_le_of_forall_sum_le hq'0 (by positivity) fun t ↦ ?_
-    simp_rw [norm_weightedBlocks_apply]
-    refine (Finset.sum_congr rfl fun k _ ↦ ?_).trans_le (hsum t)
-    rw [Real.norm_of_nonneg (by positivity)]
-
-/-- **The blocks of the coefficients of a functional.** If the sums `∑_{k ∈ t} ψₖ ĝₖ` satisfy the
-bound of `exists_norm_sum_blockOf_le` with constant `K`, then the coefficients `e(n) = Λ(e₋ₙ)` of a
-functional `Λ` have blocks `‖Δₖ e‖_{p'} ≤ ‖Λ‖ K 2^{ks}`, by testing `Λ` on `ψₖ ĝ`. -/
-private theorem norm_littlewoodPaleyBlockLp_apply_monomial_neg_le {K : ℝ} (hK : 0 ≤ K)
-    (hKt : ∀ (t : Finset ℕ) (g : ℕ → Lp ℂ p (volume : Measure (UnitAddTorus d)))
-      (w : lp (fun _ : ℕ ↦ ℝ) q), (∀ k ∈ t, 2 ^ (s * k) * ‖g k‖ ≤ w k) →
-      ‖∑ k ∈ t, blockOf φ s q k (g k)‖ ≤ K * ‖w‖)
-    (Λ : StrongDual ℂ (BesovSpace φ s p q)) (k : ℕ) :
-    ‖littlewoodPaleyBlockLp φ p' k fun n ↦ Λ (monomial φ s p q (-n))‖ ≤ ‖Λ‖ * K * 2 ^ (s * k) := by
-  rw [← (Lp.toDual ℂ (volume : Measure (UnitAddTorus d)) p' p).norm_map]
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun g ↦ ?_
-  rw [toDual_littlewoodPaleyBlockLp_apply]
-  have h := hKt {k} (fun _ ↦ g) (lp.single q k (2 ^ (s * k) * ‖g‖)) (by simp)
-  rw [Finset.sum_singleton, lp.norm_single (zero_lt_one.trans_le Fact.out),
-    Real.norm_of_nonneg (by positivity)] at h
-  calc ‖Λ (blockOf φ s q k g)‖ ≤ ‖Λ‖ * ‖blockOf φ s q k g‖ := Λ.le_opNorm _
-    _ ≤ ‖Λ‖ * (K * (2 ^ (s * k) * ‖g‖)) := by gcongr
-    _ = _ := by ring
+  obtain ⟨hx, hxn⟩ := lp.exists_memℓp_and_norm_le_of_forall_norm_sum_mul_le (p := q')
+    (x := fun k : ℕ ↦ (2 : ℝ) ^ (-s * k) * ‖littlewoodPaleyBlockLp φ p' k e‖) z zero_le_two hB
+    (fun k ↦ (Real.norm_of_nonneg (by positivity)).trans_le (hz k)) hzc
+  refine ⟨memBesov_def.2 hx, (le_of_eq ?_).trans hxn⟩
+  rw [← norm_weightedBlocks, ← lp.norm_normSeq]
+  exact congrArg norm (lp.ext (funext fun k ↦
+    (lp.normSeq_apply _ k).trans (norm_weightedBlocks_apply _ k)))
 
 /-- **Pairing the tested values with `ℓ^q`.** Under the bound of `exists_norm_sum_blockOf_le` with
 constant `K`, for functions `gₖ` with `‖gₖ‖_p ≤ 1` the values `zₖ = 2^{-ks} ∫ (Δₖ e) gₖ` satisfy
@@ -818,7 +657,7 @@ private theorem norm_sum_mul_toDual_apply_le {K : ℝ}
         refine hKt t _ _ fun k _ ↦ ?_
         rw [lp.normSeq_apply, norm_smul, norm_mul, Complex.norm_real,
           Real.norm_of_nonneg (by positivity), ← mul_assoc, mul_left_comm,
-          ← Real.rpow_add two_pos, neg_mul, add_neg_cancel, Real.rpow_zero, mul_one]
+          Real.rpow_mul_mul_rpow_neg_mul two_pos, mul_one]
         exact mul_le_of_le_one_right (norm_nonneg _) (hg1 k)
     _ = ‖Λ‖ * K * ‖c‖ := by rw [lp.norm_normSeq, mul_assoc]
 
@@ -848,7 +687,6 @@ private theorem exists_memBesov_apply_monomial_neg_and_norm_le :
   choose g hg1 hg using hnear
   obtain ⟨h, hn⟩ := exists_memBesov_and_norm_le_of_forall (φ := φ) (s := s) (p' := p')
     (q := q) (q' := q') (by positivity)
-    (norm_littlewoodPaleyBlockLp_apply_monomial_neg_le hK (fun t g w ↦ hKt t g w) Λ)
     (fun k ↦ ((2 ^ (-s * k) : ℝ) : ℂ) * T (littlewoodPaleyBlockLp φ p' k e) (g k))
     (fun k ↦ by
       rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
