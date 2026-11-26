@@ -25,8 +25,9 @@ a property of the subspace `C(X)`:
 
 * `⟨X⟩` is closed under tensor products exactly when `C(X) * C(X) ≤ C(X)`, and it contains the
   unit exactly when `1 ∈ C(X)`;
-* `X` is a sum of units exactly when `C(X)` lies in the scalars `K ∙ 1`; in particular the
-  subquotients of finite sums of units are again sums of units.
+* `X` is a sum of units exactly when `C(X)` lies in the scalars `K ∙ 1`, that is, exactly when
+  its coaction is trivial; in particular the subquotients of finite sums of units are again sums
+  of units.
 
 For a commutative Hopf algebra `H`, a coefficient space closed under multiplication spans, with
 `1`, a finite-dimensional subbialgebra, which is then a Hopf subalgebra. Conversely a
@@ -47,6 +48,8 @@ Tannakian categories.
   `TauCeti.FGComoduleCat.isMonoidal_subquotientHull_iff`: the unit and monoidal variants.
 * `TauCeti.FGComoduleCat.isSumOfUnits_iff_matrixCoefficientSubmodule_le`: `X` is a sum of units
   exactly when `C(X) ≤ K ∙ 1`.
+* `TauCeti.FGComoduleCat.isSumOfUnits_iff_coact_eq_tmul_one`: `X` is a sum of units exactly when
+  its coaction is trivial, `x ↦ x ⊗ 1`.
 * `TauCeti.FGComoduleCat.subquotientHull_tensorUnit_iff_isSumOfUnits`: the hull of the unit
   consists of the sums of units.
 * `TauCeti.FGComoduleCat.exists_not_isSumOfUnits_tensorLE_subquotientHull_iff`: a finite comodule
@@ -181,6 +184,14 @@ theorem isSumOfUnits_iff_matrixCoefficientSubmodule_le :
     exact iSup_le fun _ ↦ matrixCoefficientSubmodule_tensorUnit.le
   · simpa using ((1 : GroupLike K H).matrixCoefficientSubmodule_le_span_singleton_iff
       (M := X)).1 (by simpa using h)
+
+/-- **Sums of units are the comodules with trivial coaction.** A finite comodule is a sum of
+units exactly when its coaction is `x ↦ x ⊗ 1`. -/
+theorem isSumOfUnits_iff_coact_eq_tmul_one :
+    IsSumOfUnits X ↔
+      ∀ x : X, Comodule.coact (R := K) (C := H) (M := X) x = x ⊗ₜ[K] (1 : H) := by
+  rw [isSumOfUnits_iff_matrixCoefficientSubmodule_le]
+  simpa using (1 : GroupLike K H).matrixCoefficientSubmodule_le_span_singleton_iff (M := X)
 
 /-- **Subquotients of sums of units are sums of units.** The finite-sum and subquotient hull of
 the tensor unit consists exactly of the sums of units. -/
