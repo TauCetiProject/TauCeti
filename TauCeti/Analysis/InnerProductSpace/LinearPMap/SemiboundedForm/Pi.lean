@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SemiboundedForm
 public import TauCeti.Analysis.Normed.Operator.LinearPMap.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 /-!
 # Finite orthogonal sums of semibounded forms
@@ -29,6 +30,8 @@ form against vectors supported in one coordinate separates the coordinates.
 ## Main declarations
 
 * `TauCeti.SemiboundedForm.pi`: the orthogonal sum of a finite family of semibounded forms.
+* `TauCeti.SemiboundedForm.mem_pi_domain`: `x` lies in the domain of the sum exactly when each
+  coordinate `x i` lies in the domain of `q i`.
 * `TauCeti.SemiboundedForm.isLowerBound_pi`: common lower bounds pass to the sum.
 * `TauCeti.SemiboundedForm.piFormSpaceEquiv`: the form space of the sum is isometric to the
   Hilbert direct sum of the form spaces.
@@ -101,9 +104,28 @@ def pi : SemiboundedForm 𝕜 (PiLp 2 H) where
 
 /-- The domain of the orthogonal sum: the vectors of `PiLp 2 H` whose coordinates lie in the form
 domains. -/
-@[simp]
 theorem pi_domain : (pi q).domain = piLp 2 fun i ↦ (q i).domain :=
   (rfl)
+
+variable {q} in
+/-- A vector lies in the domain of the orthogonal sum exactly when each coordinate `x i` lies in
+the domain of `q i`. -/
+@[simp]
+theorem mem_pi_domain {x : PiLp 2 H} : x ∈ (pi q).domain ↔ ∀ i, x i ∈ (q i).domain :=
+  Submodule.mem_piLp
+
+/-- A family of vectors `u i` of the form domains gives a vector of the domain of the orthogonal
+sum. -/
+theorem toLp_mem_pi_domain (u : ∀ i, (q i).domain) :
+    WithLp.toLp 2 (fun i ↦ (u i : H i)) ∈ (pi q).domain :=
+  Submodule.toLp_mem_piLp u
+
+variable {q} in
+/-- A vector of the `i`-th form domain placed in the `i`-th coordinate, with `0` elsewhere, lies in
+the domain of the orthogonal sum. -/
+theorem single_mem_pi_domain [DecidableEq ι] {i : ι} {w : H i} (hw : w ∈ (q i).domain) :
+    PiLp.single 2 i w ∈ (pi q).domain :=
+  Submodule.single_mem_piLp hw
 
 /-- The `i`-th coordinate of a vector of the domain of the orthogonal sum, as a vector of the
 `i`-th form domain: `Submodule.piLpProj` read on `(pi q).domain`. -/
@@ -139,8 +161,7 @@ theorem dense_pi_domain (hd : ∀ i, Dense ((q i).domain : Set (H i))) :
 /-- Pairing the orthogonal sum with a vector `w` placed in the `i`-th coordinate, and `0`
 elsewhere, gives the `i`-th form. -/
 theorem pi_form_single [DecidableEq ι] (u : (pi q).domain) (i : ι) (w : (q i).domain) :
-    (pi q).form u ⟨PiLp.single 2 i (w : H i),
-        pi_domain q ▸ Submodule.single_mem_piLp (s := fun i ↦ (q i).domain) w.property⟩ =
+    (pi q).form u ⟨PiLp.single 2 i (w : H i), single_mem_pi_domain w.property⟩ =
       (q i).form (piCoord q i u) w := by
   rw [pi_form_apply, Fintype.sum_eq_single i fun j hj ↦ ?_]
   · exact congrArg _ (Subtype.ext (by simp))
@@ -209,8 +230,7 @@ theorem piFormSpaceEquiv_toFormSpace (u : (pi q).domain) (i : ι) :
 @[simp]
 theorem piFormSpaceEquiv_symm_toLp (u : ∀ i, (q i).domain) :
     (piFormSpaceEquiv q hα hαi).symm (WithLp.toLp 2 fun i ↦ (q i).toFormSpace (hαi i) (u i)) =
-      (pi q).toFormSpace hα
-        ⟨WithLp.toLp 2 fun i ↦ (u i : H i), pi_domain q ▸ Submodule.toLp_mem_piLp u⟩ := by
+      (pi q).toFormSpace hα ⟨WithLp.toLp 2 fun i ↦ (u i : H i), toLp_mem_pi_domain q u⟩ := by
   rw [LinearIsometryEquiv.symm_apply_eq]
   ext i
   rw [piFormSpaceEquiv_toFormSpace]
@@ -258,7 +278,7 @@ theorem operator_pi (hd : ∀ i, Dense ((q i).domain : Set (H i))) :
   · intro hx
     choose u hu huv using hx
     obtain rfl : x = WithLp.toLp 2 fun i ↦ (u i : H i) := PiLp.ext fun i ↦ (hu i).symm
-    let u' : (pi q).domain := ⟨_, Submodule.toLp_mem_piLp u⟩
+    let u' : (pi q).domain := ⟨_, toLp_mem_pi_domain q u⟩
     have hui (i : ι) : piCoord q i u' = u i := Subtype.ext (coe_piCoord q i u')
     refine ⟨u', rfl, fun v ↦ ?_⟩
     rw [pi_form_apply, PiLp.inner_apply]
