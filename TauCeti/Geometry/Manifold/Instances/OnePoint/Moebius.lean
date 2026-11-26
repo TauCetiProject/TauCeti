@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import TauCeti.Analysis.Matrix.Normed
+public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
@@ -267,10 +268,8 @@ instance instContMDiffSMul :
 /-- **Möbius transformations of the projective line are analytic.** For `𝕜 = ℂ`, every
 transformation `z ↦ (a * z + b) / (c * z + d)` of the Riemann sphere is holomorphic, and hence a
 biholomorphism `Diffeomorph.constSmul 𝓘(ℂ) ω g` with inverse the transformation of `g⁻¹`. -/
-instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(𝕜) ω (GL (Fin 2) 𝕜) (OnePoint 𝕜) where
-  contMDiff_const_smul g :=
-    ContMDiffSMul.contMDiff_const_smul (I := 𝓘(𝕜, Matrix (Fin 2) (Fin 2) 𝕜)) (I' := 𝓘(𝕜))
-      (n := ω) (M := OnePoint 𝕜) g
+instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(𝕜) ω (GL (Fin 2) 𝕜) (OnePoint 𝕜) :=
+  ContMDiffSMul.contMDiffConstSMul 𝓘(𝕜, Matrix (Fin 2) (Fin 2) 𝕜)
 
 end OnePoint
 
