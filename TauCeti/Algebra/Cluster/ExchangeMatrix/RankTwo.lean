@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.ExchangeMatrix.Mutation.Basic
 public import TauCeti.Algebra.Cluster.ExchangeMatrix.CartanCompanion
+public import TauCeti.Algebra.Cluster.ExchangeMatrix.Word.Basic
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 public import TauCeti.SetTheory.Cardinal.Finite
 
+import Mathlib.Algebra.Order.Star.Rat
 import Mathlib.Data.Set.Finite.Basic
 
 /-!
@@ -24,6 +26,11 @@ two-finiteness condition uses `bound = 3`.
 These statements concern matrix mutation classes, not finiteness of cluster variables:
 skew-symmetrizable matrices with off-diagonal entry product of absolute value at least four
 also have finite matrix mutation classes on two indices.
+
+For a skew-symmetrizable matrix on at most two indices, the Cartan companion is of finite
+type exactly when the absolute off-diagonal products are at most three. Consequently some
+companion in the mutation class is of finite type exactly when the whole class satisfies
+that product bound.
 
 ## References
 
@@ -191,5 +198,93 @@ theorem foldl_matrixMutation_apply_mul_apply_of_card_le_two
     w.foldl (matrixMutation (Function.Embedding.refl K)) B i j *
       w.foldl (matrixMutation (Function.Embedding.refl K)) B j i = B i j * B j i := by
   rcases h.foldl_matrixMutation_eq_or_eq_neg_of_card_le_two hK w with hw | hw <;> simp [hw]
+
+omit [DecidableEq K] in
+private theorem posDef_weighted_of_card_le_two (A : Matrix K K ℤ) (d : K → ℚ)
+    (hK : Nat.card K ≤ 2) (hd : ∀ i, 0 < d i) (hdiag : ∀ i, A i i = 2)
+    (hsym : ∀ i j, d i * (A i j : ℚ) = d j * (A j i : ℚ))
+    (hbound : ∀ i j, i ≠ j → (A i j : ℚ) * (A j i : ℚ) ≤ 3) :
+    (Matrix.of fun i j ↦ d i * (A i j : ℚ)).PosDef := by
+  classical
+  let M := Matrix.of fun i j ↦ d i * (A i j : ℚ)
+  change M.PosDef
+  by_cases hpair : ∃ i j : K, i ≠ j
+  · let := Fintype.ofFinite K
+    obtain ⟨i, j, hij⟩ := hpair
+    refine Matrix.PosDef.of_dotProduct_mulVec_pos ?_ ?_
+    · exact Matrix.IsHermitian.ext fun k l ↦ by
+        simpa only [M, Matrix.of_apply, star_trivial] using hsym l k
+    · intro x hx
+      simp only [M, dotProduct, mulVec, Pi.star_apply, star_trivial, Matrix.of_apply,
+        Fintype.sum_eq_add_of_natCard_le_two hK hij, hdiag, Int.cast_ofNat]
+      -- Complete the square, leaving an off-diagonal product bound as the second coefficient.
+      have hquad :
+          2 * (x i * (d i * 2 * x i + d i * (A i j : ℚ) * x j) +
+            x j * (d j * (A j i : ℚ) * x i + d j * 2 * x j)) =
+          d i * (2 * x i + (A i j : ℚ) * x j) ^ 2 +
+            d j * (4 - (A i j : ℚ) * (A j i : ℚ)) * (x j) ^ 2 := by
+        linear_combination -((2 * x i + (A i j : ℚ) * x j) * x j) * hsym i j
+      apply (mul_pos_iff_of_pos_left (show (0 : ℚ) < 2 by norm_num)).mp
+      rw [hquad]
+      by_cases hxj : x j = 0
+      · have hxi : x i ≠ 0 := fun hi0 ↦ hx (funext fun k ↦ by
+          rcases Finite.eq_or_eq_of_card_le_two hK hij k with rfl | rfl
+          · exact hi0
+          · exact hxj)
+        simpa [hxj] using
+          mul_pos (hd i) (sq_pos_of_ne_zero (mul_ne_zero (by norm_num : (2 : ℚ) ≠ 0) hxi))
+      · have hp : 0 < 4 - (A i j : ℚ) * (A j i : ℚ) := by linarith [hbound i j hij]
+        exact add_pos_of_nonneg_of_pos (mul_nonneg (hd i).le (sq_nonneg _))
+          (mul_pos (mul_pos (hd j) hp) (sq_pos_of_ne_zero hxj))
+  · have hM : M = diagonal (fun i ↦ 2 * d i) := by
+      ext i j
+      have hij : i = j := by
+        by_contra hne
+        exact hpair ⟨i, j, hne⟩
+      subst j
+      simp [M, hdiag, mul_comm]
+    rw [hM]
+    exact Matrix.PosDef.diagonal (fun i ↦ mul_pos (by norm_num) (hd i))
+
+/-- For a skew-symmetrizable matrix on at most two indices, the Cartan companion is of finite
+type exactly when every off-diagonal entry product has absolute value at most three. -/
+theorem isFiniteType_cartanCompanion_iff_of_card_le_two
+    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (hK : Nat.card K ≤ 2) :
+    IsFiniteType B.cartanCompanion ↔ ∀ i j, i ≠ j → |B i j * B j i| ≤ 3 := by
+  constructor
+  · intro hB i j hij
+    have hprod := hB.apply_mul_apply_mem_of_ne hij
+    simp only [cartanCompanion_apply_of_ne _ hij, cartanCompanion_apply_of_ne _ hij.symm,
+      neg_mul_neg, ← abs_mul, Set.mem_insert_iff, Set.mem_singleton_iff] at hprod
+    omega
+  · intro hbound
+    let A := B.cartanCompanion
+    let d (i : K) : ℚ := s i
+    have hd (i : K) : 0 < d i := by
+      dsimp only [d]
+      exact_mod_cast h.pos i
+    have hsym (i j : K) : d i * (A i j : ℚ) = d j * (A j i : ℚ) := by
+      dsimp only [d, A]
+      exact_mod_cast h.mul_cartanCompanion_apply i j
+    have hsmall (i j : K) (hij : i ≠ j) : (A i j : ℚ) * (A j i : ℚ) ≤ 3 := by
+      have hp : A i j * A j i ≤ 3 := by
+        simpa only [A, cartanCompanion_apply_of_ne _ hij,
+          cartanCompanion_apply_of_ne _ hij.symm, neg_mul_neg, ← abs_mul] using hbound i j hij
+      exact_mod_cast hp
+    exact isFiniteType_of B.cartanCompanion_apply_self
+      (fun _ _ hij ↦ B.cartanCompanion_nonpos_of_ne hij) hd
+      (posDef_weighted_of_card_le_two A d hK hd B.cartanCompanion_apply_self hsym hsmall)
+
+/-- On at most two indices, the mutation class has a finite-type Cartan companion exactly
+when every off-diagonal product in the class has absolute value at most three. -/
+theorem exists_isFiniteType_cartanCompanion_matrixMutationWord_iff_of_card_le_two
+    {B : Matrix K K ℤ} {s : K → ℤ} (h : B.IsSkewSymmetrizer s) (hK : Nat.card K ≤ 2) :
+    (∃ w, IsFiniteType (matrixMutationWord (Function.Embedding.refl K) B w).cartanCompanion) ↔
+      ∀ w : List K, ∀ i j, i ≠ j →
+        |matrixMutationWord (Function.Embedding.refl K) B w i j *
+          matrixMutationWord (Function.Embedding.refl K) B w j i| ≤ 3 := by
+  simp only [matrixMutationWord_eq_foldl, cartanCompanion_foldl_matrixMutation_of_card_le_two hK,
+    exists_const, forall_abs_foldl_matrixMutation_mul_le_iff_of_card_le_two hK]
+  exact h.isFiniteType_cartanCompanion_iff_of_card_le_two hK
 
 end Matrix.IsSkewSymmetrizer
