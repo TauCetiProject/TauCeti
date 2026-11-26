@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.BoundedDomain
 import TauCeti.Analysis.Holder.BoundaryInterpolation
 import TauCeti.Analysis.Holder.LipschitzDomain
-import TauCeti.Analysis.Sobolev.LipschitzDomain.GraphPatch
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -83,7 +82,7 @@ local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 a bounded set with Lipschitz graph boundary (`Set.HasLipschitzGraphBoundary`), for instance a
 bounded set with `C^{2,α}` boundary (`Set.HasC2HolderBoundary`). Let `L`, `M`
 and `B` be given. Then there is a constant `C` with the following property. Let `a` have entries
-`α`-Hölder with constant `L` and bounded by `M` on `closure Ω`, and let `b` and `c` be `α`-Hölder
+`α`-Hölder with constant `L` and bounded by `M` on `Ω`, and let `b` and `c` be `α`-Hölder
 with constant `B` and bounded by `B` on `Ω`. Let `φ` be `C²` on an open set containing
 `closure Ω`, with `|φ| ≤ P` on `closure Ω` and `D²φ` `α`-Hölder with constant `Q` there. Then
 `‖Dφ‖` and `‖D²φ‖` are bounded by `C (P + Q)` on `closure Ω`, and
@@ -93,8 +92,7 @@ theorem exists_norm_le_and_holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mu
     (hα1 : α ≤ 1) {Ω : Set E} (hΩ : Bornology.IsBounded Ω) (hbdry : Ω.HasLipschitzGraphBoundary)
     (L M B : ℝ≥0) :
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c : E → ℝ},
-      (∀ i j, HolderOnWith L α (fun z => a z i j) (closure Ω)) →
-      (∀ z ∈ closure Ω, ∀ i j, |a z i j| ≤ M) →
+      (∀ i j, HolderOnWith L α (fun z => a z i j) Ω) → (∀ z ∈ Ω, ∀ i j, |a z i j| ≤ M) →
       HolderOnWith B α b Ω → (∀ z ∈ Ω, ‖b z‖ ≤ B) →
       HolderOnWith B α c Ω → (∀ z ∈ Ω, |c z| ≤ B) →
       ∀ {U : Set E} {φ : E → ℝ} {P Q : ℝ≥0}, IsOpen U → closure Ω ⊆ U →
@@ -131,11 +129,10 @@ theorem exists_norm_le_and_holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mu
   -- `φ` and `Dφ` are `α`-Hölder on `Ω` with constant `C₃ N₁`.
   obtain ⟨hHφ, hHDφ⟩ := hC₃ hU hΩU hφ hφN hDN hD2N
   refine ⟨fun z hz => (hAD z hz).1.trans ?_, fun z hz => (hAD z hz).2.trans ?_,
-    (holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul (fun i j => (hL i j).mono hΩcl)
-      (fun z hz => hM z (hΩcl hz)) hHb hb hHc hc hHφ hHDφ (hQ.mono hΩcl)
-      (fun z hz => hφN z (hΩcl hz)) (fun z hz => hDN z (hΩcl hz))
+    (holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul hL hM hHb hb hHc hc hHφ hHDφ
+      (hQ.mono hΩcl) (fun z hz => hφN z (hΩcl hz)) (fun z hz => hDN z (hΩcl hz))
       (fun z hz => hD2N z (hΩcl hz))).mono_const ?_,
-    fun z hz => (abs_sum_smul_fderiv_fderiv_add_fderiv_add_mul_le (hM z (hΩcl hz)) (hb z hz)
+    fun z hz => (abs_sum_smul_fderiv_fderiv_add_fderiv_add_mul_le (hM z hz) (hb z hz)
       (hc z hz) (hφN z (hΩcl hz)) (hDN z (hΩcl hz)) (hD2N z (hΩcl hz))).trans ?_⟩
   · gcongr; exact le_self_add.trans le_self_add
   · gcongr; exact le_self_add.trans le_self_add
@@ -223,7 +220,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_eqOn_front
     hα1.le hΩ hbdry.hasLipschitzGraphBoundary L M B
   refine ⟨C₀ * (1 + C₁) + C₁ + 1, fun {a b c} hEll hEll' hL hM hHb hb hHc hc {U u φ N P Q K V}
     hU hΩU hu hφ hbd hN hP hQ hV hK => ?_⟩
-  obtain ⟨hφ1, hφ2, hLφ, -⟩ := hC₁ hL hM hHb hb hHc hc hU hΩU hφ hP hQ
+  obtain ⟨hφ1, hφ2, hLφ, -⟩ := hC₁ (fun i j => (hL i j).mono subset_closure)
+    (fun z hz => hM z (subset_closure hz)) hHb hb hHc hc hU hΩU hφ hP hQ
   have hcd (f : E → ℝ) (hf : ContDiffOn ℝ 2 f U) (z : E) (hz : z ∈ closure Ω) :
       ContDiffAt ℝ 2 f z := hf.contDiffAt (hU.mem_nhds (hΩU hz))
   -- The zero-boundary estimate for `w = u - φ`, with `𝓛 w = 𝓛 u - 𝓛 φ`.
@@ -300,7 +298,8 @@ theorem exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_eqOn_fronti
     hα1.le hΩ hbdry.hasLipschitzGraphBoundary L M B
   refine ⟨C₀ * (1 + 2 * C₁) + C₁ + 1, fun {a b c} hEll hEll' hL hM hHb hb hHc hc hc0
     {U u φ P Q K F V} hU hΩU hu hφ hbd hP hQ hV hK hF => ?_⟩
-  obtain ⟨hφ1, hφ2, hLφ, hLφF⟩ := hC₁ hL hM hHb hb hHc hc hU hΩU hφ hP hQ
+  obtain ⟨hφ1, hφ2, hLφ, hLφF⟩ := hC₁ (fun i j => (hL i j).mono subset_closure)
+    (fun z hz => hM z (subset_closure hz)) hHb hb hHc hc hU hΩU hφ hP hQ
   have hcd (f : E → ℝ) (hf : ContDiffOn ℝ 2 f U) (z : E) (hz : z ∈ closure Ω) :
       ContDiffAt ℝ 2 f z := hf.contDiffAt (hU.mem_nhds (hΩU hz))
   have hLw (z : E) (hz : z ∈ Ω) := sum_smul_fderiv_fderiv_add_fderiv_add_mul_sub (a := a) (b := b)
