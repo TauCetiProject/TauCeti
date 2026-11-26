@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LSeries.Liouville
 public import TauCeti.NumberTheory.LSeries.Totient
 public import TauCeti.NumberTheory.LSeries.TwoPowOmega
+import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerProduct
 
 /-!
 # The series of `2^ω`, `μ²`, `λ` and `φ` as quotients of zeta values
@@ -48,11 +49,8 @@ theorem LSeries_two_pow_omega_moebius_sq_liouville {s : ℂ} (hs : 1 < s.re) :
         riemannZeta s ^ 2 / riemannZeta (2 * s) ∧
       _root_.LSeries (fun n ↦ (moebius n : ℂ) ^ 2) s = riemannZeta s / riemannZeta (2 * s) ∧
       _root_.LSeries (fun n ↦ (liouville n : ℂ)) s = riemannZeta (2 * s) / riemannZeta s := by
-  have hs2 : 1 < (2 * s).re := by
-    simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-    linarith
   refine ⟨(LSeriesHasSum_two_pow_cardDistinctFactors hs).LSeries_eq,
-    (eq_div_iff (riemannZeta_ne_zero_of_one_lt_re hs2)).mpr ?_,
+    (eq_div_iff (riemannZeta_ne_zero_of_one_lt_re (one_lt_re_two_mul hs))).mpr ?_,
     (LSeriesHasSum_liouville hs).LSeries_eq⟩
   rw [mul_comm, ← riemannZeta_eq_mul_LSeries_moebius_sq hs]
 

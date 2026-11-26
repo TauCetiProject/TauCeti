@@ -34,7 +34,9 @@ public section
 
 namespace TauCeti
 
-private theorem one_lt_re_two_mul {s : ℂ} (hs : 1 < s.re) : 1 < (2 * s).re := by
+/-- If `Re s > 1`, then `Re (2 * s) > 1`, so `2 * s` also lies in the half-plane
+of absolute convergence of `ζ`. -/
+theorem one_lt_re_two_mul {s : ℂ} (hs : 1 < s.re) : 1 < (2 * s).re := by
   simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
   linarith
 
