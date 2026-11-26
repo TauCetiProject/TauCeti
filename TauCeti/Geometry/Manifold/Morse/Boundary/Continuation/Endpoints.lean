@@ -162,7 +162,8 @@ private theorem image_flow_unstableSet_inter_preimage_stableSet (Φ : M → M) (
       (hX₁.flow t ∘ Φ ∘ hX₀.flow s) ⁻¹' hX₁.flow.stableSet q) =
       hX₀.flow.unstableSet p ∩ Φ ⁻¹' hX₁.flow.stableSet q := by
   have hinv (z : M) : hX₀.flow s (hX₀.flow (-s) z) = z := by
-    rw [← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
+    rw [← Flow.map_add]
+    simp
   ext z
   simp only [mem_image, mem_inter_iff, mem_preimage, comp_apply, Flow.apply_mem_stableSet_iff]
   refine ⟨?_, fun hz ↦ ⟨hX₀.flow (-s) z, ?_, hinv z⟩⟩
@@ -198,12 +199,12 @@ private theorem transportedComparison_flow_comp (hf₀ : IsMorse 𝓘(ℝ, E) f�
   refine ContinuousLinearMap.ext fun c ↦ ?_
   have hF : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (hX₀.flow s) y (hX₀.unstableFrame (𝔬₀.chart p) y c) =
       Real.exp s • hX₀.unstableFrame (𝔬₀.chart p) z c := by
-    rw [unstableFrame_flow (𝔬₀.coord_mfderiv_chart p) hTp s c, smul_smul, ← Real.exp_add,
-      add_neg_cancel, Real.exp_zero, one_smul]
+    rw [unstableFrame_flow (𝔬₀.coord_mfderiv_chart p) hTp s c]
+    simp [smul_smul, ← Real.exp_add]
   simp only [transportedComparison_apply, smul_apply, hd, ContinuousLinearMap.comp_apply,
     comp_apply]
-  rw [hF, stableNormal_mfderiv_flow (𝔬₁.coord_mfderiv_chart q) hTq, map_smul, map_smul, smul_smul,
-    ← Real.exp_add, add_comm t s]
+  rw [hF, stableNormal_mfderiv_flow (𝔬₁.coord_mfderiv_chart q) hTq]
+  simp [smul_smul, ← Real.exp_add, add_comm]
 
 /-- **The signed count is invariant under the end flows**: it is the same along
 `Φ_t^{X₁} ∘ Φ ∘ Φ_s^{X₀}` as along `Φ`. -/

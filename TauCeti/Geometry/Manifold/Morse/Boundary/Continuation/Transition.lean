@@ -498,7 +498,9 @@ theorem eventually_continuationTransition_apply_eq_flow :
     have h := hX₀.eqOn_timeDependentFlowOf_flow_of_lt hY (τ := a) (x := x)
       (fun u hu ↦ hA u hu.le) ha₀ (show a ∈ Iic a₀ from ha)
     simp only [timeDependentFlowOf_self] at h
-    conv_rhs => rw [h, ← Flow.map_add, sub_add_sub_cancel, sub_self, Flow.map_zero_apply]
+    -- The flows at times `a₀ - a` and `a - a₀` cancel.
+    conv_rhs => rw [h, ← Flow.map_add]
+    simp
   have h₁ (w : M) : timeDependentFlowOf (continuationSpaceField C V) b₀ b w =
       hX₁.flow (b - b₀) w := by
     have h := hX₁.eqOn_timeDependentFlowOf_flow_of_gt hY (τ := b₀) (x := w)
