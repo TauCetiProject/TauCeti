@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 public import Mathlib.Algebra.CharZero.Infinite
 public import Mathlib.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.LSeries.Conjugate
 
 /-!
 # The trivial ideal weight and Dedekind zeta coefficients
@@ -19,6 +20,8 @@ the Dedekind zeta function.  There is one necessary exception: Mathlib's coeffic
 integral ideals and therefore has value `1` at index zero, contributed by the zero ideal, whereas
 an `ArithmeticFunction` has value zero there.  Since `LSeries` ignores its zero coefficient, the
 two coefficient systems define the same series.
+The natural-valued coefficients also show that the totalized series is real at every real
+argument (`TauCeti.dedekindZeta_ofReal_re`), whether or not it converges.
 
 Since `1 * 1 = 1` pointwise, the same identification shows that regrouping has no
 pointwise-product formula as soon as some norm is attained by two ideals
@@ -61,6 +64,16 @@ theorem dedekindZetaCoeff_zero : dedekindZetaCoeff K 0 = 1 := by
 theorem dedekindZeta_eq_LSeries_dedekindZetaCoeff (s : ℂ) :
     NumberField.dedekindZeta K s = LSeries (fun n ↦ (dedekindZetaCoeff K n : ℂ)) s := by
   simp [NumberField.dedekindZeta, dedekindZetaCoeff]
+
+variable {K} in
+/-- The Dedekind zeta Dirichlet series is real at every real argument, including its
+zero value when the series does not converge. -/
+theorem dedekindZeta_ofReal_re (s : ℝ) :
+    ((NumberField.dedekindZeta K s).re : ℂ) = NumberField.dedekindZeta K s := by
+  simp only [dedekindZeta_eq_LSeries_dedekindZetaCoeff]
+  apply Complex.conj_eq_iff_re.mp
+  simpa [Pi.star_def, Complex.star_def] using
+    (LSeries.LSeries_star (fun n ↦ (dedekindZetaCoeff K n : ℂ)) (s : ℂ)).symm
 
 private def normFiberSubtypeEquiv {n : ℕ} (hn : n ≠ 0) :
     {I : (Ideal (𝓞 K))⁰ // Ideal.absNorm (I : Ideal (𝓞 K)) = n} ≃
