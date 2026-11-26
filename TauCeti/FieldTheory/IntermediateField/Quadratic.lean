@@ -29,7 +29,8 @@ finite Galois extensions this also identifies each index-two subgroup as the sta
 nonzero square root (`exists_sq_mem_range_apply_eq_self_iff_of_index_eq_two`).
 Two square roots of nonzero radicands generate the same simple extension exactly when the
 radicands lie in the same square class (`isSquare_mul_of_adjoin_simple_eq`, which needs `2 ≠ 0`,
-and its converse `adjoin_simple_eq_of_isSquare_mul`).
+and its converse `adjoin_simple_eq_of_isSquare_mul`), and a square root lying in `K(x)` but not in
+`K` is then a `K`-multiple of `x` (`exists_algebraMap_mul_eq_of_mem_adjoin_simple`).
 The finrank lemmas live here because they combine the normal form with intermediate-field
 scalar restriction for one quadratic tower step.
 Iterating the degree doubling, `Finset.finrank_adjoin_eq_two_pow_card` shows that a finite set of
@@ -285,6 +286,28 @@ theorem mem_adjoin_simple_of_isSquare_mul {a c : K} {x y : L}
   rcases sq_eq_sq_iff_eq_or_eq_neg.mp hsq with h | h
   · exact h ▸ hmem
   · exact h ▸ neg_mem hmem
+
+/-- **A square root in a simple quadratic field is a multiple of the generator.** Let `x` and `y` be
+square roots of elements of `K` in a field extension `L / K` with `2 ≠ 0`. If `y` lies in `K(x)`
+but not in `K`, then `y = q x` for some `q ∈ K`: writing `y = p + q x`, the cross term `2 p q x` of
+`y²` must lie in `K`, so `p q = 0`, and `q ≠ 0` since `y ∉ K`. -/
+theorem exists_algebraMap_mul_eq_of_mem_adjoin_simple [NeZero (2 : K)] {a c : K} {x y : L}
+    (hx : x ^ 2 = algebraMap K L a) (hy : y ^ 2 = algebraMap K L c)
+    (hyx : y ∈ IntermediateField.adjoin K {x}) (hyb : y ∉ (⊥ : IntermediateField K L)) :
+    ∃ q : K, algebraMap K L q * x = y := by
+  have : NeZero (2 : L) :=
+    NeZero.nat_of_injective (n := 2) (f := algebraMap K L) (algebraMap K L).injective
+  have hx2 : x ^ 2 ∈ (⊥ : IntermediateField K L) := by
+    rw [hx]; exact IntermediateField.algebraMap_mem _ _
+  have hxb : x ∉ (⊥ : IntermediateField K L) := fun hxb ↦ hyb (by
+    rwa [IntermediateField.adjoin_simple_eq_bot_iff.mpr hxb] at hyx)
+  obtain ⟨p, q, hp, hq, rfl⟩ := (mem_sup_adjoin_sq hx2).mp (by rwa [bot_sup_eq])
+  have hpq : p * q = 0 := (add_mul_sq_mem_iff_mul_eq_zero hx2 hxb hp hq).mp (by
+    rw [hy]; exact IntermediateField.algebraMap_mem _ _)
+  obtain ⟨q₀, rfl⟩ := IntermediateField.mem_bot.mp hq
+  rcases mul_eq_zero.mp hpq with rfl | hq0
+  · exact ⟨q₀, (zero_add _).symm⟩
+  · exact (hyb (by rw [hq0, zero_mul, add_zero]; exact hp)).elim
 
 /-- **Same simple quadratic field from a shared square class.** Let `x` and `y` be square roots of
 nonzero `a` and `c` in a field extension `L / K`. If `a · c` is a square in `K`, then the simple
