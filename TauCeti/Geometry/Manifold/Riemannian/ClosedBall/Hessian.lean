@@ -29,7 +29,7 @@ In particular `Hess (1 - |x|²) = -2 g` (`TauCeti.hessian_one_sub_norm_sq_closed
 second boundary defining function `ρ' = (2 + ⟪a, x⟫)(1 - |x|²)`, `Hess ρ' = (2 + ⟪a, x⟫) Hess ρ` on
 vectors `u` with `dι u` orthogonal to `x`; at a boundary point these are exactly the vectors tangent
 to the boundary sphere. For `‖a‖ ≤ 1` both Hessians are negative on every nonzero such vector, so
-this sign does not depend on the defining function.
+the two defining functions `ρ` and `ρ'` give the same sign there.
 
 ## Main statements
 
@@ -151,8 +151,8 @@ theorem hessian_two_add_inner_mul_one_sub_norm_sq_closedBall_of_inner_eq_zero (a
 /-- For `‖a‖ ≤ 1`, the Hessian of the defining function `ρ' = (2 + ⟪a, x⟫)(1 - |x|²)` of the closed
 unit ball is negative on every nonzero vector `u` with `dι u` orthogonal to `x`; at a boundary point
 these are exactly the nonzero vectors tangent to the boundary sphere. Together with
-`TauCeti.hessian_one_sub_norm_sq_closedBall_apply_self_neg`, the sign of the Hessian there does not
-depend on the defining function. -/
+`TauCeti.hessian_one_sub_norm_sq_closedBall_apply_self_neg`, the Hessians of `ρ'` and of
+`ρ = 1 - |x|²` have the same (negative) sign on these vectors. -/
 theorem hessian_two_add_inner_mul_one_sub_norm_sq_closedBall_apply_self_neg {a : E}
     (ha : ‖a‖ ≤ 1) (x : closedBall (0 : E) 1) {u : TangentSpace (𝓡∂ n) x} (hu0 : u ≠ 0)
     (hu : ⟪(x : E), mvfderiv (𝓡∂ n) (Subtype.val : closedBall (0 : E) 1 → E) x u⟫ = 0) :
