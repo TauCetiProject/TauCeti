@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.SeibergWitten.NormalModel.Expansion
 public import TauCeti.Analysis.PDE.SeibergWitten.RescaledNorm
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
-import TauCeti.Topology.Algebra.Module.Alternating.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # The quadratic estimate for the flat Seiberg–Witten equations in the rescaled norms

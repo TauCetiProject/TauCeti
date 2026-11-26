@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Topology.ContinuousMap.Ascoli
-import TauCeti.Topology.Algebra.Module.Alternating.FiniteDimensional
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
