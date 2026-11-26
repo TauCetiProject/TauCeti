@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Jacobson.Ideal
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
@@ -37,8 +36,6 @@ differences of the remaining columns.
   the determinant.
 * `Matrix.det_eq_add_of_row_eq_add`: additivity of the determinant in one row, for matrices that
   agree in every other row.
-* `Matrix.adjugate_last_last_eq_det_submatrix_castSucc`: the corner entry of the adjugate of a
-  matrix indexed by `Fin (n + 1)` is its leading principal minor of order `n`.
 * `Matrix.det_sum_unique`: the determinant of a matrix on `m ⊕ n`, for singletons `m` and `n`.
 * `Matrix.sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero`: the alternating sum of the maximal
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
@@ -151,13 +148,6 @@ theorem det_eq_add_of_row_eq_add {m R : Type*} [Fintype m] [DecidableEq m] [Comm
     ext j k
     by_cases hj : j = i <;> simp [updateRow_apply, hj, hX]
   conv_lhs => rw [← updateRow_eq_self A i, h_row, det_updateRow_add, h_update B hB, h_update C hC]
-
-/-- The corner entry of the adjugate of a matrix indexed by `Fin (n + 1)` is its leading principal
-minor of order `n`. -/
-theorem adjugate_last_last_eq_det_submatrix_castSucc {R : Type*} [CommRing R] {n : ℕ}
-    (Z : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
-    Z.adjugate (Fin.last n) (Fin.last n) = (Z.submatrix Fin.castSucc Fin.castSucc).det := by
-  simp [adjugate_fin_succ_eq_det_submatrix, ← two_mul, pow_mul]
 
 /-- **A nonzero minor lifts along a ring homomorphism.** If the minor of `A.map f` on rows `r` and
 columns `c` is nonzero, so is the minor of `A` on the same rows and columns. No injectivity of `f`
