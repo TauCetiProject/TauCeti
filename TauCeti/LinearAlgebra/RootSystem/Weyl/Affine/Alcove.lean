@@ -364,19 +364,22 @@ private lemma exists_wallWord_apply_mem_closedFundamentalAlcove_aux {x : N}
       List.length_append, List.length_singleton, hk, AffineEquiv.coe_mul, Function.comp_apply]
     omega
 
-/-- A point whose roots are bounded below by integers can be carried into the closed fundamental
-alcove by a wall word. Each letter removes one separating affine root. The node `none` denotes
-`s_{θ,1}` and `some i` denotes `s_{αᵢ,0}`. -/
+/-- A point `y` whose roots are bounded below by integers can be carried into the closed
+fundamental alcove by a wall word with exactly one letter for each affine root separating a point
+`x` of the fundamental alcove from `y`: each letter removes one separating affine root, and none
+separates `x` from the endpoint. The node `none` denotes `s_{θ,1}` and `some i` denotes
+`s_{αᵢ,0}`. -/
 theorem exists_wallWord_apply_mem_closedFundamentalAlcove {x y : N}
     (hx : x ∈ fundamentalAlcove P b) (hy : ∀ j, ∃ n : ℤ, (n : R) < P.root' j y) :
     ∃ ω : List (Option b.support),
       let f := (ω.map fun k ↦ k.elim (P.affineCoreflection b.highestRoot 1)
         (fun i ↦ P.affineCoreflection i 0)).prod
-      f y ∈ closedFundamentalAlcove P b ∧
-        ω.length + (P.separatingAffineRoots x (f y)).ncard =
-          (P.separatingAffineRoots x y).ncard := by
-  simpa only [separatingAffineRoots_eq_sepSet b hx] using
-    exists_wallWord_apply_mem_closedFundamentalAlcove_aux b hy
+      f y ∈ closedFundamentalAlcove P b ∧ ω.length = (P.separatingAffineRoots x y).ncard := by
+  obtain ⟨ω, hω, hcount⟩ := exists_wallWord_apply_mem_closedFundamentalAlcove_aux b hy
+  refine ⟨ω, hω, ?_⟩
+  have hend := separatingAffineRoots_eq_empty_of_mem_closedFundamentalAlcove hx hω
+  rw [separatingAffineRoots_eq_sepSet b hx] at hend ⊢
+  rwa [hend, Set.ncard_empty, add_zero] at hcount
 
 /-- **The reflections in the walls of the fundamental alcove carry a point into the closed
 fundamental alcove.** If a subgroup `G` of the affine automorphisms of the coweight space contains
@@ -536,14 +539,14 @@ theorem eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove {f : N ≃�
   simp [AffineEquiv.apply_eq_linear_add f y, hf0, hlin]
 
 /-- An element of the affine Weyl group has an inverse expressed as a word in wall reflections,
-with at most one letter per affine root separating a fundamental-alcove point from its image.
+with exactly one letter per affine root separating a fundamental-alcove point from its image.
 The node `none` denotes `s_{θ,1}` and `some i` denotes `s_{αᵢ,0}`. -/
 theorem exists_wallWord_eq_inv_of_mem_affineWeylGroup {f : N ≃ᵃ[R] N}
     (hf : f ∈ P.affineWeylGroup) {x : N} (hx : x ∈ fundamentalAlcove P b) :
     ∃ ω : List (Option b.support),
       (ω.map fun k ↦ k.elim (P.affineCoreflection b.highestRoot 1)
         (fun i ↦ P.affineCoreflection i 0)).prod = f⁻¹ ∧
-      ω.length ≤ (P.separatingAffineRoots x (f x)).ncard := by
+      ω.length = (P.separatingAffineRoots x (f x)).ncard := by
   obtain ⟨ω, hω, hcount⟩ := exists_wallWord_apply_mem_closedFundamentalAlcove b hx
     (P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup hf
       (fun j ↦ ⟨-1, by simpa using neg_one_lt_root'_of_mem_fundamentalAlcove hx j⟩))
@@ -559,7 +562,7 @@ theorem exists_wallWord_eq_inv_of_mem_affineWeylGroup {f : N ≃ᵃ[R] N}
     (mul_mem hg hf) hx (mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove.mpr
       ⟨hω, P.root'_apply_ne_intCast_of_mem_affineWeylGroup (mul_mem hg hf)
         (root'_ne_intCast_of_mem_fundamentalAlcove hx)⟩)
-  exact ⟨ω, eq_inv_of_mul_eq_one_left hgf, by omega⟩
+  exact ⟨ω, eq_inv_of_mul_eq_one_left hgf, hcount⟩
 
 /-- Two elements of the affine Weyl group carrying the same point into the fundamental alcove are
 equal. -/
