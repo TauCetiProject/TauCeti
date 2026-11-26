@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import TauCeti.Analysis.CStarAlgebra.SpatialNorm
+public import TauCeti.Analysis.InnerProductSpace.LinearMap
 public import TauCeti.Analysis.Normed.Module.NonUnitalSubalgebra
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
 
@@ -225,7 +226,7 @@ theorem eq_minSliceRight_iff [CompleteSpace A] {ψ : StrongDual 𝕜 B}
     {T : minTensor A B →L[𝕜] A} :
     T = minSliceRight A B ψ ↔ ∀ x, T (toMinTensor A B x) = tensorComponent (ψ : B →ₗ[𝕜] 𝕜) x :=
   ⟨by rintro rfl x; exact minSliceRight_toMinTensor ψ x,
-    fun h ↦ minTensor_continuousLinearMap_ext fun x ↦ by rw [h, minSliceRight_toMinTensor]⟩
+    fun h ↦ minTensor_continuousLinearMap_ext fun a b ↦ by rw [h, minSliceRight_toMinTensor]⟩
 
 /-- `minSliceLeft A B φ` is the unique bounded linear map `A ⊗_min B → B` that restricts to the
 left slice map on the algebraic tensor product. -/
@@ -234,41 +235,41 @@ theorem eq_minSliceLeft_iff [CompleteSpace B] {φ : StrongDual 𝕜 A}
     T = minSliceLeft A B φ ↔
       ∀ x, T (toMinTensor A B x) = tensorComponent (φ : A →ₗ[𝕜] 𝕜) (TensorProduct.comm 𝕜 A B x) :=
   ⟨by rintro rfl x; exact minSliceLeft_toMinTensor φ x,
-    fun h ↦ minTensor_continuousLinearMap_ext fun x ↦ by rw [h, minSliceLeft_toMinTensor]⟩
+    fun h ↦ minTensor_continuousLinearMap_ext fun a b ↦ by rw [h, minSliceLeft_toMinTensor]⟩
 
 /-- The right slice map of the zero functional is zero. -/
 @[simp]
 theorem minSliceRight_zero [CompleteSpace A] : minSliceRight A B (0 : StrongDual 𝕜 B) = 0 :=
-  minTensor_continuousLinearMap_ext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun a b ↦ by simp
 
 /-- The left slice map of the zero functional is zero. -/
 @[simp]
 theorem minSliceLeft_zero [CompleteSpace B] : minSliceLeft A B (0 : StrongDual 𝕜 A) = 0 :=
-  minTensor_continuousLinearMap_ext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun a b ↦ by simp
 
 /-- The right slice map is additive in the functional. -/
 @[simp]
 theorem minSliceRight_add [CompleteSpace A] (ψ₁ ψ₂ : StrongDual 𝕜 B) :
     minSliceRight A B (ψ₁ + ψ₂) = minSliceRight A B ψ₁ + minSliceRight A B ψ₂ :=
-  minTensor_continuousLinearMap_ext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun a b ↦ by simp
 
 /-- The left slice map is additive in the functional. -/
 @[simp]
 theorem minSliceLeft_add [CompleteSpace B] (φ₁ φ₂ : StrongDual 𝕜 A) :
     minSliceLeft A B (φ₁ + φ₂) = minSliceLeft A B φ₁ + minSliceLeft A B φ₂ :=
-  minTensor_continuousLinearMap_ext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun a b ↦ by simp
 
 /-- The right slice map is homogeneous in the functional. -/
 @[simp]
 theorem minSliceRight_smul [CompleteSpace A] (c : 𝕜) (ψ : StrongDual 𝕜 B) :
     minSliceRight A B (c • ψ) = c • minSliceRight A B ψ :=
-  minTensor_continuousLinearMap_ext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun a b ↦ by simp
 
 /-- The left slice map is homogeneous in the functional. -/
 @[simp]
 theorem minSliceLeft_smul [CompleteSpace B] (c : 𝕜) (φ : StrongDual 𝕜 A) :
     minSliceLeft A B (c • φ) = c • minSliceLeft A B φ :=
-  minTensor_continuousLinearMap_ext fun x ↦ by simp
+  minTensor_continuousLinearMap_ext fun a b ↦ by simp
 
 /-- The right slice map has norm at most `‖ψ‖`. -/
 theorem norm_minSliceRight_le [CompleteSpace A] (ψ : StrongDual 𝕜 B) :
