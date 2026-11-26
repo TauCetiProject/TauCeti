@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Splitting
 public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartQuantization
 public import TauCeti.Analysis.Pseudodifferential.Manifold.PrincipalSymbol
 
@@ -21,6 +23,18 @@ locally finite sum of such operators is one too
 (`TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators`); this file shows that the
 patched quantization is one.
 
+Conversely, on a compact manifold of positive dimension every classical pseudodifferential
+operator is a finite sum of chart quantizations, exactly and not only modulo an operator of order
+`-∞` as in `TauCeti.exists_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`.
+Every operator splits as `P = ∑ᵢ φᵢ P ψᵢ` for finitely many pairs of cutoffs `φᵢ`, `ψᵢ`, each pair
+in one chart of the maximal atlas (`TauCeti.exists_forall_eq_sum_mulLeft_comp_comp_mulLeft`). In
+that chart `φᵢ P ψᵢ` is the chart quantization of the symbol of a chart compression of `P`
+(`OpenPartialHomeomorph.chartQuantization_eq_mulLeft_comp_comp_mulLeft`). So the classical
+pseudodifferential operators of order `m` on a compact manifold are the span of the chart
+quantizations of classical symbols of order `m`, and a property of operators that is preserved
+by finite sums holds for all of them once it holds for chart quantizations. This fails in
+dimension `0` as soon as `M` has two points, since a chart then sees a single point.
+
 ## Main results
 
 * `TauCeti.patchedQuantization`: the **patched quantization** `∑ᵢ φᵢ Op(aᵢ) ψᵢ` of classical
@@ -30,6 +44,11 @@ patched quantization is one.
 * `TauCeti.classicalPrincipalSymbol_patchedQuantization`: its principal symbol is the locally
   finite sum of the principal symbols of the chart quantizations, which
   `OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization` computes.
+* `TauCeti.exists_eq_sum_chartQuantization`: on a compact manifold of positive dimension, every
+  classical pseudodifferential operator of order `m` is a finite sum of chart quantizations of
+  classical symbols of order `m`.
+* `TauCeti.classicalPseudodifferentialOperators_eq_span_chartQuantization`: there, the classical
+  pseudodifferential operators of order `m` are the span of the chart quantizations.
 
 ## References
 
@@ -111,5 +130,68 @@ theorem classicalPrincipalSymbol_patchedQuantization [IsManifold 𝓘(ℝ, Coord
     (fun i ↦
       (e i).chartQuantization_mem_classicalPseudodifferentialOperators (he i) (φ i) (ψ i) (a i))
     (patchedQuantization_mem_classicalPseudodifferentialOperators he φ ψ a hS) x ξ
+
+/-! ### Operators on a compact manifold are finite sums of chart quantizations -/
+
+section Compact
+
+variable [CompactSpace M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [NeZero n]
+  {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+  C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+
+/-- **On a compact manifold, a classical pseudodifferential operator is a finite sum of chart
+quantizations.** If `M` is compact and modelled on `ℝⁿ` with `n ≠ 0`, every classical
+pseudodifferential operator `P` of order `m` is exactly `∑ᵢ Op_{eᵢ}(aᵢ)` for finitely many charts
+`eᵢ` of the maximal atlas, cutoffs `φᵢ`, `ψᵢ` in their targets and classical symbols `aᵢ` of order
+`m`, with no remainder of order `-∞`. -/
+theorem exists_eq_sum_chartQuantization (hP : P ∈ classicalPseudodifferentialOperators m) :
+    ∃ (k : ℕ) (e : Fin k → OpenPartialHomeomorph M (CoordinateSpace n))
+      (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+      (φ ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)) (a : Fin k → ClassicalSymbol n ℂ ℂ m),
+      P = ∑ i, (e i).chartQuantization (he i) (φ i) (ψ i) (a i) := by
+  obtain ⟨ι, _, e, he, φ, ψ, hP'⟩ :=
+    exists_forall_eq_sum_mulLeft_comp_comp_mulLeft (E := CoordinateSpace n) (M := M)
+  -- Each piece `φᵢ P ψᵢ` is the chart quantization of the symbol of the compression of `P` by `φᵢ`
+  -- and `ψᵢ`, localized by cutoffs equal to `1` on their supports.
+  choose a ha using fun i ↦ (mem_classicalPseudodifferentialOperators_iff.1 hP).2 (e i) (he i)
+    (φ i) (ψ i)
+  choose φ₁ hφ₁ using fun i ↦ TestFunction.exists_eventually_eq_one (n := ⊤)
+    (φ i).hasCompactSupport.isCompact (φ i).tsupport_subset
+  choose ψ₁ hψ₁ using fun i ↦ TestFunction.exists_eventually_eq_one (n := ⊤)
+    (ψ i).hasCompactSupport.isCompact (ψ i).tsupport_subset
+  -- Enumerate the pieces by `Fin k`.
+  let eqv := (Fintype.equivFin ι).symm
+  refine ⟨Fintype.card ι, fun j ↦ e (eqv j), fun j ↦ he (eqv j), fun j ↦ φ₁ (eqv j),
+    fun j ↦ ψ₁ (eqv j), fun j ↦ a (eqv j), ?_⟩
+  rw [eqv.sum_comp fun i ↦ (e i).chartQuantization (he i) (φ₁ i) (ψ₁ i) (a i),
+    Finset.sum_congr rfl fun i _ ↦ (e i).chartQuantization_eq_mulLeft_comp_comp_mulLeft (he i)
+      (ha i) (fun y hy ↦ (hφ₁ i).1.self_of_nhdsSet y hy)
+      (fun y hy ↦ (hψ₁ i).1.self_of_nhdsSet y hy)]
+  exact hP' P
+
+variable (n M m) in
+/-- **The classical pseudodifferential operators on a compact manifold are spanned by chart
+quantizations.** If `M` is compact and modelled on `ℝⁿ` with `n ≠ 0`, the classical
+pseudodifferential operators of order `m` are the complex span of the chart quantizations
+`Op_e(a)` of classical symbols `a` of order `m`, over all charts `e` of the maximal atlas and all
+cutoffs in their targets.
+
+In dimension `0` this fails as soon as `M` has two points: a chart then has a single point in its
+source, so chart quantizations only multiply each value of a function by a constant, while every
+operator, such as the exchange of the two values, is a classical pseudodifferential operator
+(`TauCeti.mem_classicalPseudodifferentialOperators_of_dim_eq_zero`). -/
+theorem classicalPseudodifferentialOperators_eq_span_chartQuantization :
+    classicalPseudodifferentialOperators (M := M) m = Submodule.span ℂ
+      {Q | ∃ (e : OpenPartialHomeomorph M (CoordinateSpace n))
+        (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+        (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (a : ClassicalSymbol n ℂ ℂ m),
+        e.chartQuantization he φ ψ a = Q} := by
+  refine le_antisymm (fun P hP ↦ ?_) (Submodule.span_le.2 ?_)
+  · obtain ⟨k, e, he, φ, ψ, a, rfl⟩ := exists_eq_sum_chartQuantization hP
+    exact Submodule.sum_mem _ fun i _ ↦ Submodule.subset_span ⟨e i, he i, φ i, ψ i, a i, rfl⟩
+  · rintro _ ⟨e, he, φ, ψ, a, rfl⟩
+    exact e.chartQuantization_mem_classicalPseudodifferentialOperators he φ ψ a
+
+end Compact
 
 end TauCeti
