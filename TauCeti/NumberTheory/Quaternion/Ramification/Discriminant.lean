@@ -233,10 +233,10 @@ theorem not_isRamifiedAtPrime_of_not_dvd (p : ℕ) [hp : Fact p.Prime]
   rw [← hvp] at h2 ha ha' hb hb'
   rw [isRamifiedAtPrime_iff_isRamifiedAt]
   exact not_isRamifiedAt_of_valuation_eq_one
-    (valuation_eq_one_of_not_dvd v two_ne_zero (by simpa using h2)
+    (valuation_eq_one_of_not_dvd v (by simpa using h2)
       (by simpa using (prime_natGenerator v).ne_one))
-    (valuation_eq_one_of_not_dvd v a.ne_zero ha ha')
-    (valuation_eq_one_of_not_dvd v b.ne_zero hb hb')
+    (valuation_eq_one_of_not_dvd v ha ha')
+    (valuation_eq_one_of_not_dvd v hb hb')
 
 variable (a b)
 

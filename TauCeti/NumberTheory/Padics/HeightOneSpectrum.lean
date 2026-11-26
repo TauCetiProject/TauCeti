@@ -24,7 +24,7 @@ corresponding to a rational prime `p` with the ideal `(p)`.
   prime, as an instance.
 * `Rat.HeightOneSpectrum.valuation_eq_one_iff_padicValRat_eq_zero`: a nonzero rational number is
   a unit at `v` exactly when its `p`-adic valuation vanishes.
-* `Rat.HeightOneSpectrum.valuation_eq_one_of_not_dvd`: a nonzero rational number whose numerator
+* `Rat.HeightOneSpectrum.valuation_eq_one_of_not_dvd`: a rational number whose numerator
   and denominator are prime to `p` is a unit at `v`.
 * `Rat.HeightOneSpectrum.asIdeal_primesEquiv_symm`: the height-one prime of `R` corresponding to
   the prime `p` is `(p)`.
@@ -79,11 +79,12 @@ theorem valuation_eq_one_iff_padicValRat_eq_zero (v : HeightOneSpectrum R) {x : 
   rw [(valuation_equiv_padicValuation v).eq_one_iff_eq_one]
   simp [Rat.padicValuation, hx]
 
-/-- A nonzero rational number whose numerator and denominator are prime to the rational prime
+/-- A rational number whose numerator and denominator are prime to the rational prime
 `natGenerator v` is a unit at the height-one prime `v`. -/
-theorem valuation_eq_one_of_not_dvd (v : HeightOneSpectrum R) {x : ℚ} (hx : x ≠ 0)
+theorem valuation_eq_one_of_not_dvd (v : HeightOneSpectrum R) {x : ℚ}
     (hnum : ¬natGenerator v ∣ x.num.natAbs) (hden : ¬natGenerator v ∣ x.den) :
     v.valuation ℚ x = 1 := by
+  have hx : x ≠ 0 := by rintro rfl; exact hnum (by simp)
   rw [valuation_eq_one_iff_padicValRat_eq_zero v hx, coe_primesEquiv, padicValRat_def, padicValInt,
     multiplicity_eq_zero_of_not_dvd hnum, multiplicity_eq_zero_of_not_dvd hden, sub_self]
 
