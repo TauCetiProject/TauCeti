@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Data.Fin.Tuple.Basic
 
 /-!
@@ -28,9 +29,14 @@ product type of the products of terms (`ENNReal.prod_tsum`). Restricting a serie
 by a pointwise `ite` restricts the index to `{x ∈ A | p x}` (`ENNReal.tsum_subtype_ite`), and
 a fiber-constant series over `A` regroups by fiber cardinalities (`ENNReal.tsum_encard_sep_eq_mul`).
 
+A family of finite terms bounded outside a finite set of indices by a family with finite sum has
+finite sum. This is the comparison test for eventual majorants of tail probabilities.
+
 ## Main declarations
 
 * `HasSum.toReal`: a series in `ℝ≥0∞` with finite sum has the termwise `toReal` sum.
+* `Filter.EventuallyLE.ennreal_tsum_lt_top`: comparison with a cofinitely larger family of finite
+  sum.
 * `ENNReal.tsum_indicator_one`: summing the indicator of `s` with value one gives `s.encard`.
 * `ENNReal.le_one_add_tsum_pow_indicator`: `y ≤ 1 + ∑ₖ 2^k 1{2^k < y}`.
 * `ENNReal.prod_tsum`: `∏ i, ∑' y, f i y = ∑' x : ∀ i, κ i, ∏ i, f i (x i)`.
@@ -40,6 +46,7 @@ a fiber-constant series over `A` regroups by fiber cardinalities (`ENNReal.tsum_
 
 public section
 
+open Filter
 open scoped ENNReal
 
 /-- Applying `ENNReal.toReal` termwise preserves a series with finite sum. -/
@@ -48,6 +55,18 @@ theorem HasSum.toReal {ι : Type*} {f : ι → ℝ≥0∞} {s : ℝ≥0∞}
   have hfin : ∑' i, f i ≠ ∞ := by rwa [h.tsum_eq]
   simpa only [← ENNReal.tsum_toReal_eq (_root_.ne_top_of_tsum_ne_top hfin), h.tsum_eq]
     using ENNReal.hasSum_toReal hfin
+
+/-- A family of finite extended nonnegative reals has finite sum if, outside a finite set of
+indices, it is bounded by a family with finite sum. -/
+theorem Filter.EventuallyLE.ennreal_tsum_lt_top {ι : Type*} {f b : ι → ℝ≥0∞}
+    (h : f ≤ᶠ[cofinite] b) (hf : ∀ i, f i ≠ ∞) (hb : (∑' i, b i) < ∞) :
+    (∑' i, f i) < ∞ := by
+  -- Apply the real comparison test `Summable.of_norm_bounded_eventually` to the `toReal` terms.
+  have hs : Summable fun i ↦ (f i).toReal :=
+    (ENNReal.summable_toReal hb.ne).of_norm_bounded_eventually <| h.mono fun i hi ↦ by
+      rw [Real.norm_of_nonneg ENNReal.toReal_nonneg]
+      exact ENNReal.toReal_mono (_root_.ne_top_of_tsum_ne_top hb.ne i) hi
+  simpa only [ENNReal.ofReal_toReal (hf _)] using hs.tsum_ofReal_lt_top
 
 /-- Summing the indicator of a set with value one counts its elements. -/
 theorem ENNReal.tsum_indicator_one {β : Type*} (s : Set β) :

@@ -21,7 +21,8 @@ locally convex topology of their fixed-compact support stages
 (`ContMDiffSection.compactlySupportedTopology`), computed in the preferred trivializations
 `trivializationAt F V x`. Every covering family of smooth frames gives the same topology
 (`TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology`), so this choice is
-only a normalization. The topology is Hausdorff.
+only a normalization. The topology is Hausdorff and makes the bundle tests a locally convex
+real topological vector space.
 
 A continuous linear functional `T : BundleTest I F V →L_c[ℝ] ℝ` is a distribution paired with
 `V`-valued tests; the space of these functionals carries the topology of uniform convergence on
@@ -54,6 +55,8 @@ charts whose source does not contain `x`
 
 * `TauCeti.BundleTest I F V`: the compactly supported smooth sections of `V`, with their test
   topology.
+* `TauCeti.BundleTest.ofCompactlySupportedCLE`: compactly supported smooth sections with the
+  test topology of any covering family of smooth frames, continuously identified with bundle tests.
 * `Bundle.Trivialization.chartTestCLM`: extension of native test functions on a chart target to
   bundle tests, as a continuous linear map.
 * `Bundle.Trivialization.chartDistributionCLM`: the local representative of a functional on bundle
@@ -61,6 +64,7 @@ charts whose source does not contain `x`
 * `TauCeti.BundleTest.ext_chartDistributionCLM`: functionals on bundle tests are determined by
   their local representatives.
 * `TauCeti.BundleTest.delta`: the point mass at a point with a covector on the fibre.
+* `TauCeti.DualDensityTest I M F V`: the bundle tests with values in `V →L[ℝ] |Λ|`.
 * `TauCeti.BundleDistribution I M F V`: the distributional sections of `V`, the continuous linear
   functionals on the tests with values in `V →L[ℝ] |Λ|`.
 
@@ -188,6 +192,10 @@ theorem neg_apply (s : BundleTest I F V) (x : M) : (-s) x = -s x :=
 theorem sub_apply (s t : BundleTest I F V) (x : M) : (s - t) x = s x - t x :=
   rfl
 
+theorem sum_apply {ι : Type*} (u : Finset ι) (s : ι → BundleTest I F V) (x : M) :
+    (∑ i ∈ u, s i) x = ∑ i ∈ u, s i x :=
+  map_sum (AddMonoidHom.mk' (fun t : BundleTest I F V ↦ t x) fun a b ↦ add_apply a b x) s u
+
 variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 
 /-- The topology on bundle tests is the test topology of any covering family of smooth frames
@@ -200,9 +208,68 @@ theorem instTopologicalSpace_eq_compactlySupportedTopology [LocallyCompactSpace 
   compactlySupportedTopology_eq_of_covers _ _ _ (fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩)
     e U hU hcover
 
+section CompactlySupportedCLE
+
+variable [LocallyCompactSpace E] {ι : Type*} (e : ι → Trivialization F (π F V))
+  [∀ i, MemTrivializationAtlas (e i)] (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+  (hcover : ∀ x : M, ∃ i, x ∈ U i)
+
+/-- The existing algebraic wrapper from compactly supported sections to native bundle tests is a
+continuous linear equivalence for any covering smooth atlas's final locally convex topology. -/
+def ofCompactlySupportedCLE :
+    let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+    compactlySupported I F ∞ V ≃L[ℝ] BundleTest I F V := by
+  let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+  have ht := instTopologicalSpace_eq_compactlySupportedTopology (I := I) e U hU hcover
+  refine ContinuousLinearEquiv.mk (ofCompactlySupported I F V) ?_ ?_
+  -- The native wrapper is the identity linear equivalence on the existing type synonym.
+  -- Once the public topology comparison is rewritten, both continuity goals are continuity of id.
+  · rw [ht]
+    exact @continuous_id (compactlySupported I F ∞ V)
+      (compactlySupportedTopology (I := I) (n := ∞) e U hU)
+  · rw [ht]
+    exact @continuous_id (compactlySupported I F ∞ V)
+      (compactlySupportedTopology (I := I) (n := ∞) e U hU)
+
+/-- The continuous native wrapper retains exactly the original algebraic wrapper. -/
+@[simp]
+theorem ofCompactlySupportedCLE_toLinearEquiv :
+    let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+    (ofCompactlySupportedCLE e U hU hcover).toLinearEquiv = ofCompactlySupported I F V := by
+  unfold ofCompactlySupportedCLE
+  rfl
+
+/-- Passing through the continuous native wrapper preserves every fibre value. -/
+@[simp]
+theorem ofCompactlySupportedCLE_apply (s : compactlySupported I F ∞ V) (x : M) :
+    let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+    ofCompactlySupportedCLE e U hU hcover s x = s.val x := by
+  simpa only [ofCompactlySupportedCLE, ContinuousLinearEquiv.coe_mk] using
+    congrFun (coe_ofCompactlySupported s) x
+
+/-- The inverse continuous native wrapper also preserves every fibre value. -/
+@[simp]
+theorem ofCompactlySupportedCLE_symm_apply (s : BundleTest I F V) (x : M) :
+    let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+    ((ofCompactlySupportedCLE e U hU hcover).symm s).val x = s x := by
+  let _ := compactlySupportedTopology (I := I) (n := ∞) e U hU
+  -- Native test evaluation is evaluation after the inverse original algebraic wrapper.
+  rw [← ContinuousLinearEquiv.coe_symm_toLinearEquiv, ofCompactlySupportedCLE_toLinearEquiv]
+
+end CompactlySupportedCLE
+
 instance : T2Space (BundleTest I F V) :=
   t2Space_compactlySupportedTopology (I := I) (n := ∞) _ _ _
     fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩
+
+instance : IsTopologicalAddGroup (BundleTest I F V) :=
+  isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := ∞) _ _ _
+
+instance : ContinuousSMul ℝ (BundleTest I F V) :=
+  continuousSMul_compactlySupportedTopology (I := I) (n := ∞) _ _ _
+
+instance : LocallyConvexSpace ℝ (BundleTest I F V) :=
+  locallyConvexSpace_compactlySupportedTopology (I := I) (n := ∞) _ _ _
 
 /-- Evaluation of bundle tests at a point is continuous. -/
 theorem continuous_eval_const (x : M) : Continuous fun s : BundleTest I F V ↦ s x := by
@@ -433,12 +500,18 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
 
+/-- The bundle tests with values in the **`V`-dual densities**, the bundle of continuous linear
+maps from `V` to the density line `TauCeti.DensityBundle I M`. These are the tests on which the
+distributional sections of `V` act. -/
+abbrev DualDensityTest :=
+  BundleTest I (F →L[ℝ] ℝ) (fun x ↦ V x →L[ℝ] DensityBundle I M x)
+
 /-- The **distributional sections** of a smooth vector bundle `V`: the continuous linear
 functionals on the bundle tests with values in the `V`-dual densities, the bundle of continuous
 linear maps from `V` to the density line `TauCeti.DensityBundle I M`. The density factor is what
 lets a section `u` of `V` act on such a test `s` without a choice of measure on `M`, through the
 integral of the density `x ↦ s x (u x)`. -/
 abbrev BundleDistribution :=
-  BundleTest I (F →L[ℝ] ℝ) (fun x ↦ V x →L[ℝ] DensityBundle I M x) →L_c[ℝ] ℝ
+  DualDensityTest I M F V →L_c[ℝ] ℝ
 
 end TauCeti

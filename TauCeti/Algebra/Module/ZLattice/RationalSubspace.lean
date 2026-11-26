@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 import Mathlib.RingTheory.Localization.Integer
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # The lattice of integral points of a rational subspace
@@ -411,9 +412,8 @@ theorem intPoints_ker_mulVecLin {m : Type*} (A : Matrix m ι ℤ) :
     Pi.zero_apply]
   exact forall_congr' fun i ↦ by
     have hcast : ((A *ᵥ z) i : ℚ) =
-        (A.map ((↑) : ℤ → ℚ) *ᵥ (fun j ↦ (z j : ℚ))) i := by
-      simpa only [Int.coe_castRingHom, Function.comp_def] using
-        RingHom.map_mulVec (Int.castRingHom ℚ) A z i
+        (A.map ((↑) : ℤ → ℚ) *ᵥ (fun j ↦ (z j : ℚ))) i :=
+      (congrFun (map_intCast_mulVec A z) i).symm
     rw [← hcast, Int.cast_eq_zero]
 
 end Matrix

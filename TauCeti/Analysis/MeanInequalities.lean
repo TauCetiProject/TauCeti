@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.MeanInequalities
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
+import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonMaclaurin
 
 /-!
 # Mean inequalities
@@ -54,13 +57,20 @@ The triangle inequality for the Euclidean norm on `ℝ²`, applied to finitely m
 defined as the Euclidean combination of two component norms, each subadditive, such as the norm
 of a higher-order Sobolev space.
 
+Maclaurin's inequalities `S_l^k ≤ S_k^l` between the elementary symmetric means
+`S_j = σ_j(s) / binom(card s, j)` of a multiset `s` (`Multiset.esymm_div_choose_pow_le_pow`) take
+over `ℝ` the equivalent root form `S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l`, on the cone
+`σ_1, …, σ_l > 0` and for nonnegative reals. The closed nonnegative orthant lies in the closure of
+the cone, and on its boundary part `σ_l` vanishes. At `k = 1` and `l = card s` this is the
+inequality of arithmetic and geometric means.
+
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
+* `Real.prod_rpow_inv_card_add_le`: the same at equal weights `1 / n`.
+* `Real.concaveOn_prod_rpow`: the geometric mean is concave on the nonnegative orthant.
 * `Real.sq_add_sq_le_rpow_mul_rpow`: two interpolation bounds combine into one for the Euclidean
   norms of the pairs.
-* `Real.mul_rpow_mul_mul_rpow_of_add_eq_one`: the two-point weighted geometric mean is
-  positively homogeneous.
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
   `Real.geom_mean_lt_arith_mean2_weighted_div_mul`: two-point weighted AM-GM after normalizing
   by positive scalars, with the strict form.
@@ -70,8 +80,6 @@ of a higher-order Sobolev space.
   in a bound `M ≤ A + B M^θ N^(1 - θ)`.
 * `Real.mul_rpow_mul_rpow_le_half_add`: Young's inequality
   `K X^θ F^(1 - θ) ≤ F / 2 + (2 K)^(1/θ) X`, which absorbs half of `F`.
-* `Real.pow_mul_le_rpow_mul_rpow`: `s^(a + b) u ≤ M` gives
-  `s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
@@ -83,11 +91,16 @@ of a higher-order Sobolev space.
   `ℓᵖ` expression of `f` by `c` times that of `g`.
 * `Real.Lp_const_of_nonneg`: the finite `ℓᵖ` expression of a constant `t ≥ 0` over `s` is
   `#s ^ (1 / p) * t`.
+* `Real.prod_le_sqrt_sum_sq_div_sqrt_card_pow`: AM-GM comparing a product of nonnegative
+  numbers with their root mean square, `∏ i ∈ s, σ i ≤ (√(∑ i ∈ s, σ i ^ 2) / √#s) ^ #s`.
+* `Multiset.esymm_div_choose_rpow_le_rpow`,
+  `Multiset.esymm_div_choose_rpow_le_rpow_of_nonneg`: Maclaurin's inequalities in root form, on
+  the cone `σ_1, …, σ_l > 0` and for nonnegative reals.
 
 ## References
 
 * G. H. Hardy, J. E. Littlewood and G. Pólya, *Inequalities*, 2nd ed., Cambridge University Press
-  1952, Chapter II.
+  1952, Chapter II (§2.22 for Maclaurin's inequalities).
 -/
 
 public section
@@ -127,6 +140,45 @@ theorem prod_rpow_add_prod_rpow_le_prod_add_rpow {ι : Type*} (s : Finset ι) {w
         mul_le_of_le_one_right (hw i hi) (div_self_le_one _)
     _ = 1 := hw'
 
+/-- The geometric mean `(∏ i, μ i) ^ (1 / n)`, `n = card ι ≥ 1`, is positively homogeneous:
+`(∏ i, t * μ i) ^ (1 / n) = t * (∏ i, μ i) ^ (1 / n)` for `t ≥ 0` and `μ ≥ 0`. -/
+theorem prod_mul_rpow_inv_card {ι : Type*} [Fintype ι] [Nonempty ι] {t : ℝ} (ht : 0 ≤ t)
+    {μ : ι → ℝ} (hμ : ∀ i, 0 ≤ μ i) :
+    (∏ i, t * μ i) ^ (Fintype.card ι : ℝ)⁻¹ = t * (∏ i, μ i) ^ (Fintype.card ι : ℝ)⁻¹ := by
+  rw [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ,
+    mul_rpow (pow_nonneg ht _) (Finset.prod_nonneg fun i _ ↦ hμ i),
+    pow_rpow_inv_natCast ht Fintype.card_ne_zero]
+
+/-- **Superadditivity of the geometric mean.** For nonnegative families `a` and `b` indexed by a
+nonempty finite type, `(∏ i, a i) ^ (1 / n) + (∏ i, b i) ^ (1 / n) ≤ (∏ i, (a i + b i)) ^ (1 / n)`,
+where `n = card ι`. This is `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow` at equal weights. -/
+theorem prod_rpow_inv_card_add_le {ι : Type*} [Fintype ι] [Nonempty ι] {a b : ι → ℝ}
+    (ha : ∀ i, 0 ≤ a i) (hb : ∀ i, 0 ≤ b i) :
+    (∏ i, a i) ^ (Fintype.card ι : ℝ)⁻¹ + (∏ i, b i) ^ (Fintype.card ι : ℝ)⁻¹ ≤
+      (∏ i, (a i + b i)) ^ (Fintype.card ι : ℝ)⁻¹ := by
+  rw [← finsetProd_rpow _ _ fun i _ ↦ ha i, ← finsetProd_rpow _ _ fun i _ ↦ hb i,
+    ← finsetProd_rpow _ _ fun i _ ↦ add_nonneg (ha i) (hb i)]
+  exact prod_rpow_add_prod_rpow_le_prod_add_rpow Finset.univ
+    (fun _ _ ↦ inv_nonneg.2 (Nat.cast_nonneg _))
+    (by simp [Finset.card_univ, Fintype.card_ne_zero]) (fun i _ ↦ ha i) fun i _ ↦ hb i
+
+/-- **Concavity of the geometric mean.** The geometric mean `μ ↦ (∏ i, μ i) ^ (1 / n)`,
+`n = card ι`, is concave on the nonnegative orthant. -/
+theorem concaveOn_prod_rpow {ι : Type*} [Fintype ι] :
+    ConcaveOn ℝ {μ : ι → ℝ | ∀ i, 0 ≤ μ i}
+      fun μ ↦ (∏ i, μ i) ^ (Fintype.card ι : ℝ)⁻¹ := by
+  -- The nonnegative orthant is the product `Set.univ.pi fun _ ↦ Set.Ici 0` of half-lines.
+  have hconv : Convex ℝ {μ : ι → ℝ | ∀ i, 0 ≤ μ i} := by
+    simpa [Set.pi] using convex_pi (s := Set.univ) fun i _ ↦ convex_Ici (0 : ℝ)
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · exact (concaveOn_const 1 hconv).congr fun μ _ ↦ by simp
+  refine ⟨hconv, fun μ hμ ν hν a b ha hb _ ↦ ?_⟩
+  -- Superadditivity applied to `a • μ` and `b • ν`.
+  have hsuper := prod_rpow_inv_card_add_le (fun i ↦ mul_nonneg ha (hμ i))
+    (fun i ↦ mul_nonneg hb (hν i))
+  rw [prod_mul_rpow_inv_card ha hμ, prod_mul_rpow_inv_card hb hν] at hsuper
+  simpa using hsuper
+
 /-- Two interpolation bounds `a ≤ a₀ ^ (1 - θ) a₁ ^ θ` and `b ≤ b₀ ^ (1 - θ) b₁ ^ θ` combine into
 the interpolation bound for the squared Euclidean norms of the pairs `(a, b)`, `(a₀, b₀)` and
 `(a₁, b₁)`, by Hölder's inequality for two terms. -/
@@ -155,13 +207,6 @@ theorem rpow_one_sub_mul_rpow_eq_div_mul {A B a b θ : ℝ} (ha : 0 < a) (hb : 0
   have := (rpow_pos_of_pos ha (1 - θ)).ne'
   have := (rpow_pos_of_pos hb θ).ne'
   field_simp
-
-/-- **Homogeneity of the two-point weighted geometric mean.** For weights with `a + b = 1` and
-`t, x, y ≥ 0`, `(t x) ^ a (t y) ^ b = t (x ^ a y ^ b)`. -/
-theorem mul_rpow_mul_mul_rpow_of_add_eq_one {t x y a b : ℝ} (ht : 0 ≤ t) (hx : 0 ≤ x)
-    (hy : 0 ≤ y) (hab : a + b = 1) : (t * x) ^ a * (t * y) ^ b = t * (x ^ a * y ^ b) := by
-  rw [mul_rpow ht hx, mul_rpow ht hy, mul_mul_mul_comm,
-    ← rpow_add' ht (by rw [hab]; exact one_ne_zero), hab, rpow_one]
 
 /-- **Normalized weighted AM-GM.** For positive normalizers `a` and `b`, the weighted geometric
 mean of `A` and `B` is at most the weighted arithmetic mean of `A / a` and `B / b` times the
@@ -213,23 +258,6 @@ theorem le_div_add_rpow_mul_of_le_add_mul_rpow_mul_rpow {M A B N θ : ℝ} (hθ0
       _ ≤ _ := by gcongr
   rw [div_add' _ _ _ (by linarith), le_div_iff₀ (by linarith)]
   nlinarith
-
-/-- If `s^(a + b) u ≤ M` with `s, u ≥ 0` and `b > 0`, then
-`s^a u ≤ M^(a / (a + b)) u^(b / (a + b))`: split `s^a u` as
-`(s^(a + b) u)^(a / (a + b)) u^(b / (a + b))`. -/
-theorem pow_mul_le_rpow_mul_rpow {s u M : ℝ} {a b : ℕ} (hb : 0 < b) (hs : 0 ≤ s) (hu : 0 ≤ u)
-    (hM : s ^ (a + b) * u ≤ M) :
-    s ^ a * u ≤ M ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
-  have hsplit : s ^ a * u = (s ^ (a + b) * u) ^ ((a : ℝ) / (a + b)) * u ^ ((b : ℝ) / (a + b)) := by
-    rw [mul_rpow (by positivity) hu, ← rpow_natCast s (a + b), ← rpow_mul hs,
-      mul_assoc, ← rpow_add' hu (by field_simp; positivity)]
-    push_cast
-    have hmul : ((a : ℝ) + b) * (a / (a + b)) = a := by field_simp
-    have hsum : (a : ℝ) / (a + b) + b / (a + b) = 1 := by field_simp
-    rw [hmul, hsum, rpow_one, rpow_natCast]
-  rw [hsplit]
-  exact mul_le_mul_of_nonneg_right (rpow_le_rpow (by positivity) hM (by positivity))
-    (by positivity)
 
 /-- **Young's inequality for absorption.**
 `K X^θ F^(1-θ) ≤ F / 2 + (2 K)^(1/θ) X` for `K, X, F ≥ 0` and `0 < θ ≤ 1`. -/
@@ -413,14 +441,10 @@ theorem Lp_le_mul_Lp_of_nonneg {ι : Type*} (s : Finset ι) {f g : ι → ℝ} {
         · exact Finset.sum_nonneg fun i hi ↦ rpow_nonneg (hf i hi) p
         · exact hf i hi
         · exact hfg i hi
-    _ ≤ c * (∑ i ∈ s, g i ^ p) ^ (1 / p) := by
-        rcases hc.eq_or_lt with rfl | hc
-        · simp [zero_rpow hp.ne', zero_rpow (inv_ne_zero hp.ne')]
-        have hg (i : ι) (hi : i ∈ s) : 0 ≤ g i :=
-          nonneg_of_mul_nonneg_right (by simpa [mul_comm] using (hf i hi).trans (hfg i hi)) hc
-        rw [Finset.sum_congr rfl fun i hi ↦ mul_rpow hc.le (hg i hi), ← Finset.mul_sum,
-          mul_rpow (rpow_nonneg hc.le p) (Finset.sum_nonneg fun i hi ↦ rpow_nonneg (hg i hi) p),
-          ← rpow_mul hc.le, mul_one_div_cancel hp.ne', rpow_one]
+    _ = c * (∑ i ∈ s, g i ^ p) ^ (1 / p) := by
+        simp only [mul_rpow_of_nonneg_left hc]
+        rw [← Finset.mul_sum, mul_rpow_of_nonneg_left (rpow_nonneg hc p), one_div,
+          rpow_rpow_inv hc hp.ne']
 
 /-- The finite `ℓᵖ` expression of a constant `t ≥ 0` over `s` is `#s ^ (1 / p) * t`. -/
 theorem Lp_const_of_nonneg {ι : Type*} (s : Finset ι) {t p : ℝ} (ht : 0 ≤ t) (hp : p ≠ 0) :
@@ -428,4 +452,65 @@ theorem Lp_const_of_nonneg {ι : Type*} (s : Finset ι) {t p : ℝ} (ht : 0 ≤ 
   rw [Finset.sum_const, nsmul_eq_mul, mul_rpow s.card.cast_nonneg (rpow_nonneg ht p), one_div,
     rpow_rpow_inv ht hp]
 
+/-- **Arithmetic and geometric means** for nonnegative numbers, comparing the product with the
+root mean square: `∏ i ∈ s, σ i ≤ (√(∑ i ∈ s, σ i ^ 2) / √#s) ^ #s`. -/
+theorem prod_le_sqrt_sum_sq_div_sqrt_card_pow {ι : Type*} (s : Finset ι) (σ : ι → ℝ)
+    (hσ : ∀ i ∈ s, 0 ≤ σ i) :
+    ∏ i ∈ s, σ i ≤ (√(∑ i ∈ s, σ i ^ 2) / √(s.card : ℝ)) ^ s.card := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  have hS : 0 ≤ ∑ i ∈ s, σ i ^ 2 := Finset.sum_nonneg fun i _ ↦ sq_nonneg _
+  have hnR : (0 : ℝ) < s.card := Nat.cast_pos.mpr hs.card_pos
+  -- AM-GM for the squares `σᵢ²`, with unit weights.
+  have hamgm := geom_mean_le_arith_mean s (fun _ ↦ (1 : ℝ)) (fun i ↦ σ i ^ 2)
+    (fun _ _ ↦ zero_le_one) (by simpa using hnR) (fun i _ ↦ sq_nonneg _)
+  simp only [rpow_one, Finset.sum_const, nsmul_eq_mul, mul_one, one_mul] at hamgm
+  rw [rpow_inv_le_iff_of_pos (Finset.prod_nonneg fun i _ ↦ sq_nonneg _)
+    (div_nonneg hS hnR.le) hnR, rpow_natCast, Finset.prod_pow] at hamgm
+  have hrhs : (∑ i ∈ s, σ i ^ 2) / s.card = (√(∑ i ∈ s, σ i ^ 2) / √(s.card : ℝ)) ^ 2 := by
+    rw [div_pow, sq_sqrt hS, sq_sqrt hnR.le]
+  rw [hrhs, ← pow_mul, pow_mul'] at hamgm
+  exact (pow_le_pow_iff_left₀ (Finset.prod_nonneg hσ)
+    (pow_nonneg (div_nonneg (sqrt_nonneg _) (sqrt_nonneg _)) _) two_ne_zero).mp hamgm
+
 end Real
+
+namespace Multiset
+
+variable (s : Multiset ℝ)
+
+/-- **Maclaurin's inequalities**: if `σ_1(s), …, σ_l(s) > 0`, then the elementary symmetric means
+`S_j = σ_j(s) / binom(card s, j)` satisfy `S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l`. -/
+theorem esymm_div_choose_rpow_le_rpow {k l : ℕ} (hk : 1 ≤ k) (hkl : k ≤ l)
+    (hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j) :
+    (s.esymm l / (card s).choose l) ^ (1 / (l : ℝ)) ≤
+      (s.esymm k / (card s).choose k) ^ (1 / (k : ℝ)) := by
+  have hk₀ := s.esymm_div_choose_pos (hpos k (Finset.mem_Icc.mpr ⟨hk, hkl⟩))
+  have hl₀ := s.esymm_div_choose_pos (hpos l (Finset.mem_Icc.mpr ⟨hk.trans hkl, le_rfl⟩))
+  have hpow := s.esymm_div_choose_pow_le_pow hkl hpos
+  have hlR : (0 : ℝ) < l := by exact_mod_cast hk.trans hkl
+  -- Take the `(k l)`-th root of `S_l^k ≤ S_k^l`.
+  have hroot := Real.rpow_le_rpow (by positivity) hpow (by positivity : 0 ≤ 1 / ((k : ℝ) * l))
+  rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul hl₀.le,
+    ← Real.rpow_mul hk₀.le] at hroot
+  convert hroot using 2 <;> field_simp
+
+/-- **Maclaurin's inequalities** for nonnegative reals: if every element of `s` is nonnegative,
+then the elementary symmetric means `S_j = σ_j(s) / binom(card s, j)` satisfy
+`S_l^{1/l} ≤ S_k^{1/k}` for `1 ≤ k ≤ l`. At `k = 1` and `l = card s` this is the inequality of
+arithmetic and geometric means. -/
+theorem esymm_div_choose_rpow_le_rpow_of_nonneg {k l : ℕ} (hk : 1 ≤ k) (hkl : k ≤ l)
+    (hs : ∀ a ∈ s, 0 ≤ a) :
+    (s.esymm l / (card s).choose l) ^ (1 / (l : ℝ)) ≤
+      (s.esymm k / (card s).choose k) ^ (1 / (k : ℝ)) := by
+  by_cases hpos : ∀ j ∈ Finset.Icc 1 l, 0 < s.esymm j
+  · exact s.esymm_div_choose_rpow_le_rpow hk hkl hpos
+  push Not at hpos
+  obtain ⟨j, hj, hj₀⟩ := hpos
+  have hl : s.esymm l = 0 :=
+    esymm_eq_zero_of_le hs (hj₀.antisymm (esymm_nonneg hs j)) (Finset.mem_Icc.mp hj).2
+  have hlR : (1 / (l : ℝ)) ≠ 0 := one_div_ne_zero (by have := hk.trans hkl; positivity)
+  rw [hl, zero_div, Real.zero_rpow hlR]
+  exact Real.rpow_nonneg (div_nonneg (esymm_nonneg hs k) (Nat.cast_nonneg _)) _
+
+end Multiset

@@ -9,13 +9,17 @@ public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 
 /-!
 # Finite localization of test functions
 
 A test function can be written as a finite sum of tests subordinate to any open cover of its
-support. Consequently, an additive map on test functions which vanishes locally vanishes globally;
-continuity of the additive map is not required. If `E` is finite-dimensional, every compact
+support; for a cover by finitely many open sets and one further open set `Z`, the piece supported
+in `Z` can be kept separate
+(`TestFunction.exists_add_sum_eq_of_tsupport_subset_biUnion_union`). Consequently, an additive
+map on test functions which vanishes locally vanishes globally; continuity of the additive map is
+not required. If `E` is finite-dimensional, every compact
 subset of the domain also has a cutoff test function equal to one on a neighbourhood of it, every
 point of the domain has a test function with a prescribed value there, supported in a given
 neighbourhood of the point, and every point of the domain has a test function equal to one near it
@@ -24,7 +28,9 @@ infinite dimension every test function is zero (`TestFunction.eq_zero_of_not_fin
 Near a point where a complex test function `φ` does not vanish, every complex test function
 supported close enough to the point is a smooth multiple of `φ`
 (`TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul`); this is how localization
-arguments replace one cutoff by another.
+arguments replace one cutoff by another. The multiplier is a quotient `χ / φ`, which is smooth
+when no zero of `φ` lies in the closed support of `χ`
+(`ContDiff.mul_inv_of_forall_notMem_tsupport`).
 A compact set `K` in the interior of a compact set `K'` has a complex smooth cutoff supported in
 `K'` and equal to one on `K` (`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`).
 
@@ -96,10 +102,8 @@ theorem cutoffCLM_apply (hχ : ContDiff ℝ n χ) (hχU : tsupport χ ∩ Ω ⊆
 
 /-- Multiplying by a cutoff does not enlarge the support of a test function. -/
 theorem tsupport_cutoffCLM_subset (hχ : ContDiff ℝ n χ) (hχU : tsupport χ ∩ Ω ⊆ U)
-    (φ : 𝓓^{n}(Ω, F)) : tsupport (cutoffCLM hχ hχU φ : E → F) ⊆ tsupport χ ∩ tsupport φ := by
-  have h : (cutoffCLM hχ hχU φ : E → F) = χ • ⇑φ := funext (cutoffCLM_apply hχ hχU φ)
-  rw [h]
-  exact subset_inter (tsupport_smul_subset_left _ _) (tsupport_smul_subset_right _ _)
+    (φ : 𝓓^{n}(Ω, F)) : tsupport (cutoffCLM hχ hχU φ : E → F) ⊆ tsupport χ ∩ tsupport φ :=
+  tsupport_subset_inter_of_apply_eq_smul (cutoffCLM_apply hχ hχU φ)
 
 end Cutoff
 
@@ -137,6 +141,35 @@ theorem exists_sum_subordinate (φ : 𝓓^{n}(Ω, F)) {ι : Type*} (U : ι → S
     simpa [ψ, norm_smul, abs_of_nonneg (hχ0 i x)] using
       mul_le_of_le_one_left (norm_nonneg (φ x)) hle
 
+omit [FiniteDimensional ℝ E] in
+/-- A test function supported in `(⋃ i ∈ t, U i) ∪ Z`, for finitely many open sets `U i` and an
+open set `Z`, is the sum of a test function supported in `Z` and test functions supported in the
+`U i`. -/
+theorem exists_add_sum_eq_of_tsupport_subset_biUnion_union (φ : 𝓓^{n}(Ω, F)) {ι : Type*}
+    {t : Finset ι} {U : ι → Set E} (hU : ∀ i, IsOpen (U i)) {Z : Set E} (hZ : IsOpen Z)
+    (hφ : tsupport φ ⊆ (⋃ i ∈ t, U i) ∪ Z) :
+    ∃ (φ₀ : 𝓓^{n}(Ω, F)) (φs : t → 𝓓^{n}(Ω, F)),
+      tsupport φ₀ ⊆ Z ∧ (∀ i, tsupport (φs i) ⊆ U i) ∧ φ₀ + ∑ i, φs i = φ := by
+  classical
+  obtain ⟨s, ψ, hψ, hsum, -⟩ := φ.exists_sum_subordinate
+    (fun i : Option t ↦ i.elim Z fun i ↦ U i) (by rintro (_ | i); exacts [hZ, hU i])
+    fun x hx ↦ by
+      rcases hφ hx with hx | hx
+      · obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 hx
+        exact mem_iUnion.2 ⟨some ⟨i, hi⟩, hxi⟩
+      · exact mem_iUnion.2 ⟨none, hx⟩
+  -- Extend the pieces by zero from `s` to all of `Option t`.
+  let φs : Option t → 𝓓^{n}(Ω, F) := fun i ↦ if h : i ∈ s then ψ ⟨i, h⟩ else 0
+  have hφs (i : Option t) : tsupport (φs i) ⊆ i.elim Z fun i ↦ U i := by
+    by_cases h : i ∈ s
+    · simpa [φs, h] using hψ ⟨i, h⟩
+    · simp [φs, h]
+  refine ⟨φs none, fun i ↦ φs (some i), hφs none, fun i ↦ hφs (some i),
+    (Fintype.sum_option φs).symm.trans ?_⟩
+  rw [← hsum, ← Finset.sum_subset (Finset.subset_univ s) fun i _ h ↦ by simp [φs, h],
+    ← Finset.sum_coe_sort s]
+  exact Finset.sum_congr rfl fun i _ ↦ by simp [φs]
+
 /-- A compact subset `K` of an open set `W` contained in the domain has a test function with values
 in `[0, 1]`, equal to one on a neighbourhood of `K`, whose topological support lies in `W`. -/
 theorem exists_cutoff_tsupport_subset {K W : Set E} (hK : IsCompact K) (hW : IsOpen W)
@@ -161,6 +194,19 @@ theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω
     ∃ χ : 𝓓^{n}(Ω, ℝ), (∀ᶠ x in 𝓝ˢ K, χ x = 1) ∧ ∀ x, χ x ∈ Icc 0 1 := by
   obtain ⟨χ, hχ01, hχ1, -⟩ := exists_cutoff_tsupport_subset (n := n) hK Ω.isOpen hKΩ subset_rfl
   exact ⟨χ, hχ1, hχ01⟩
+
+/-- Every point of the domain has a test function that is equal to one near it. -/
+theorem exists_eventually_eq_one_nhds {x : E} (hx : x ∈ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ y in 𝓝 x, χ y = 1 :=
+  (exists_eventually_eq_one isCompact_singleton (singleton_subset_iff.2 hx)).imp fun _ h ↦ by
+    simpa only [nhdsSet_singleton] using h.1
+
+/-- Two test functions on `Ω` have a common cutoff test function on `Ω` equal to one on a
+neighbourhood of the union of their supports. -/
+theorem exists_eventually_eq_one_nhdsSet_tsupport_union (φ ψ : 𝓓^{n}(Ω, F)) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (tsupport φ ∪ tsupport ψ), χ x = 1 :=
+  (exists_eventually_eq_one (φ.hasCompactSupport.isCompact.union ψ.hasCompactSupport.isCompact)
+    (union_subset φ.tsupport_subset ψ.tsupport_subset)).imp fun _ h ↦ h.1
 
 /-- Every point of the domain has a test function taking a prescribed value at it and supported
 in a given neighbourhood of it. -/
@@ -238,15 +284,9 @@ theorem exists_mem_nhds_forall_exists_contDiff_eq_mul
   refine ⟨interior (χ ⁻¹' {1}), isOpen_interior.mem_nhds (hχ1 rfl), fun ψ hψ ↦ ?_⟩
   -- Write `ψ = φ (θ ψ)` with the function `θ = χ / φ`, which vanishes near the zeros of `φ`.
   let θ : E → ℂ := fun y ↦ (χ y : ℂ) * (φ y)⁻¹
-  have hθ : ContDiff ℝ n θ := by
-    refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-    by_cases hy : φ y = 0
-    · have hy' : y ∉ tsupport χ := fun h ↦ hχs h hy
-      refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hy'] with z hz
-      simp [θ, hz]
-    · exact (Complex.ofRealCLM.contDiff.comp (hχ.of_le (mod_cast le_top))).contDiffAt.mul
-        (φ.contDiff.contDiffAt.fun_inv hy)
+  have hθ : ContDiff ℝ n θ :=
+    (Complex.ofRealCLM.contDiff.comp (hχ.of_le (mod_cast le_top))).mul_inv_of_forall_notMem_tsupport
+      φ.contDiff fun y hy h ↦ hχs (tsupport_comp_subset (map_zero _) χ h) hy
   refine ⟨fun y ↦ θ y * ψ y, hθ.mul ψ.contDiff, fun y ↦ ?_⟩
   by_cases hψy : ψ y = 0
   · simp [hψy]

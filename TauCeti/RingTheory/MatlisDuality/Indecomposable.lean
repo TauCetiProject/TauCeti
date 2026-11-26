@@ -65,7 +65,7 @@ theorem isIndecomposableModule_iff [Module Aᵐᵒᵖ N] [IsScalarTower R Aᵐ�
        map_zero' := LinearMap.ext fun _ ↦ MatlisDual.ext fun _ ↦ by simp
        map_add' _ _ := LinearMap.ext fun _ ↦ MatlisDual.ext fun _ ↦ by simp } :
       (Module.End Aᵐᵒᵖ N)ᵐᵒᵖ →+* Module.End A (MatlisDual R E N))
-    ((bijective_mapOp hE hN hN).comp unop_bijective))
+    ((bijective_mapOp hE hN).comp unop_bijective))
     (nontrivial_iff (nontrivial_linearMap_of_isMaximal hE))
 
 /-- **Matlis duality preserves and reflects indecomposability of left modules**: for a left
@@ -81,7 +81,7 @@ theorem isIndecomposableModule_op_iff [Module A N] [IsScalarTower R A N]
        map_zero' := LinearMap.ext fun _ ↦ MatlisDual.ext fun _ ↦ by simp
        map_add' _ _ := LinearMap.ext fun _ ↦ MatlisDual.ext fun _ ↦ by simp } :
       (Module.End A N)ᵐᵒᵖ →+* Module.End Aᵐᵒᵖ (MatlisDual R E N))
-    ((bijective_map hE hN hN).comp unop_bijective))
+    ((bijective_map hE hN).comp unop_bijective))
     (nontrivial_iff (nontrivial_linearMap_of_isMaximal hE))
 
 end TauCeti.MatlisDual

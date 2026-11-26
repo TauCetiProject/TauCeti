@@ -19,12 +19,16 @@ public import Mathlib.Data.Set.Function
 * `Set.mapsTo_preimage_of_apply_eq`: a map compatible with maps `q` and `q'` to a common type
   carries preimages under `q` into preimages under `q'`.
 * `Set.mem_univ_pi_sdiff_update_iff`: membership in `univ.pi A \ univ.pi (Function.update A k B)`.
+* `Set.bijOn_preimage_iff`: a map restricts to a bijection from the preimage of `t` onto `t` if
+  and only if it is injective on that preimage and `t` is contained in its range.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
 * `Function.Injective.apply_mem_iff_of_eq_self`: such a map preserves membership in every set
   containing `K`.
 * `Function.Injective.apply_notMem_pair`: an injective map sends a point other than `b` and `c`
   outside the pair `{f b, f c}`.
+* `Function.Injective.val_mem_of_subset_insert`: an injective map into a set `T ⊆ insert z₀ S`
+  sends every point other than a preimage of `z₀` into `S`.
 -/
 
 public section
@@ -68,6 +72,13 @@ theorem mem_univ_pi_sdiff_update_iff {ι : Type*} [DecidableEq ι] {γ : ι → 
   · simpa only [Function.update_self] using h
   · simpa only [Function.update_of_ne hik] using hx i
 
+/-- A map restricts to a bijection from the preimage of `t` onto `t` if and only if it is
+injective on that preimage and `t` is contained in its range. -/
+theorem bijOn_preimage_iff {t : Set β} :
+    BijOn f (f ⁻¹' t) t ↔ InjOn f (f ⁻¹' t) ∧ t ⊆ range f :=
+  ⟨fun h ↦ ⟨h.injOn, h.surjOn.trans (image_subset_range _ _)⟩, fun ⟨hinj, hsub⟩ ↦ by
+    simpa only [image_preimage_eq_of_subset hsub] using hinj.bijOn_image⟩
+
 end Set
 
 open Set
@@ -92,5 +103,12 @@ theorem apply_mem_iff_of_eq_self {α : Type*} {f : α → α} (hf : Injective f)
 theorem apply_notMem_pair {α : Sort*} {β : Type*} {f : α → β} (hf : Injective f) {a b c : α}
     (hb : a ≠ b) (hc : a ≠ c) : f a ∉ ({f b, f c} : Set β) := by
   simp [hf.ne hb, hf.ne hc]
+
+/-- An injective map `e` into a set `T ⊆ insert z₀ S` with `e a₀ = z₀` sends every `a ≠ a₀`
+into `S`. -/
+theorem val_mem_of_subset_insert {α : Sort*} {β : Type*} {T S : Set β} {z₀ : β} {e : α → T}
+    (he : Injective e) (hT : T ⊆ insert z₀ S) {a₀ a : α} (he₀ : (e a₀).val = z₀)
+    (ha : a ≠ a₀) : (e a).val ∈ S :=
+  mem_of_mem_insert_of_ne (hT (e a).property) fun h ↦ ha (he (Subtype.ext (h.trans he₀.symm)))
 
 end Function.Injective

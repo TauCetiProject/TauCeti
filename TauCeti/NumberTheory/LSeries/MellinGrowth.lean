@@ -73,11 +73,8 @@ theorem _root_.WeakFEPair.Λ₀_eq_integral_add_smul_integral (P : WeakFEPair E)
   let G := (Ioi 1).indicator (fun u ↦ P.g u - P.g₀)
   have hF : MellinConvergent F s := (mellinConvergent_indicator_Ioi_iff zero_le_one).mpr hf
   have hG : MellinConvergent G (P.k - s) := (mellinConvergent_indicator_Ioi_iff zero_le_one).mpr hg
-  have hi : MellinConvergent (fun x ↦ G x⁻¹) (s - P.k) := by
-    have hi := (MellinConvergent.comp_rpow (f := G) (s := s - P.k)
-      (a := -1) (by norm_num)).mpr
-      (by simpa only [Complex.ofReal_neg, Complex.ofReal_one, div_neg, div_one, neg_sub] using hG)
-    simpa only [rpow_neg_one] using hi
+  have hi : MellinConvergent (fun x ↦ G x⁻¹) (s - P.k) :=
+    (mellinConvergent_comp_inv_iff G (s - P.k)).mpr (by rwa [neg_sub])
   have ht : MellinConvergent (fun x ↦ P.ε • (x : ℂ) ^ (-(P.k : ℂ)) • G x⁻¹) s := by
     apply MellinConvergent.const_smul
     apply MellinConvergent.cpow_smul.mpr

@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
 public import TauCeti.Topology.Algebra.Valued.Integer
+import Mathlib.RingTheory.Valuation.Discrete.RankOne
 
 /-!
 # Discrete valuation rings and finite residue fields of nonarchimedean fields
@@ -27,6 +28,8 @@ finite-dimensionality of `K` over a complete field of scalars.
 * By Riesz's theorem, a field whose valuation ring is a discrete valuation ring with finite
   residue field is finite-dimensional over every complete nontrivially normed field acting
   continuously on it: its valuation ring is a totally bounded neighbourhood of `0`.
+* A complete field with a discrete valuation of rank one and finite residue field is locally
+  compact, by Mathlib's characterization of proper complete discretely valued fields.
 
 These are the inputs for recognising a subfield of a discretely valued `p`-adic field, such as the
 field fixed by a Frobenius lift, as a finite extension of `ℚ_[p]`.
@@ -44,6 +47,8 @@ field fixed by a Frobenius lift, as a finite extension of `ℚ_[p]`.
 * `Valued.integer.finiteDimensional_of_finite_residueField`: a field with discrete valuation ring
   and finite residue field is finite-dimensional over a complete nontrivially normed field of
   scalars.
+* `Valued.integer.locallyCompactSpace_of_finite_residueField`: a complete field with a rank-one
+  discrete valuation and finite residue field is locally compact.
 
 ## References
 
@@ -91,6 +96,14 @@ theorem _root_.RingHom.isDiscreteValuationRing_integer_of_norm_map_eq {L : Type*
   have : IsCyclic (Valued.v : Valuation L ℝ≥0).valueGroup := Subgroup.isCyclic_of_le hle
   -- As for `K`, `𝒪[L]` is by definition the carrier of `Valued.v.valuationSubring`.
   exact inferInstanceAs (IsDiscreteValuationRing (Valued.v : Valuation L ℝ≥0).valuationSubring)
+
+/-- If the valuation ring of a nonarchimedean field is a discrete valuation ring with uniformizer
+`ϖ`, every element of norm less than `1` has norm at most `‖ϖ‖`. -/
+theorem _root_.Irreducible.norm_le_of_norm_lt_one [IsDiscreteValuationRing 𝒪[K]] {ϖ : 𝒪[K]}
+    (hϖ : Irreducible ϖ) {x : K} (hx : ‖x‖ < 1) : ‖x‖ ≤ ‖ϖ‖ := by
+  have hmem : (⟨x, mem_iff.2 hx.le⟩ : 𝒪[K]) ∈ (𝓂[K] : Set 𝒪[K]) := mem_maximalIdeal_iff.2 hx
+  rw [hϖ.maximalIdeal_eq_closedBall, mem_closedBall_zero_iff] at hmem
+  simpa using hmem
 
 end Discrete
 
@@ -147,5 +160,29 @@ theorem finiteDimensional_of_finite_residueField [IsDiscreteValuationRing 𝒪[K
   exact Metric.closedBall_mem_nhds 0 one_pos
 
 end FiniteDimensional
+
+section LocallyCompact
+
+open scoped WithZero
+
+variable {K : Type*} [Field K] [Valued K ℤᵐ⁰]
+
+/-- **Local compactness of a complete discretely valued field.** A complete field whose valuation
+`Valued.v` is discrete of rank one, with finite residue field `𝓀[K]`, is locally compact. -/
+theorem locallyCompactSpace_of_finite_residueField [CompleteSpace K]
+    [(Valued.v : Valuation K ℤᵐ⁰).IsRankOneDiscrete] [Finite 𝓀[K]] : LocallyCompactSpace K := by
+  -- `𝒪[K]` is the valuation subring of `Valued.v`, a discrete valuation ring.
+  have : IsDiscreteValuationRing 𝒪[K] :=
+    inferInstanceAs (IsDiscreteValuationRing (Valued.v : Valuation K ℤᵐ⁰).valuationSubring)
+  -- A rank-one normalization supplies a norm whose uniform structure is that of `Valued.v`.
+  let _ : (Valued.v : Valuation K ℤᵐ⁰).RankOne :=
+    Valuation.IsRankOneDiscrete.rankOne _ (by norm_num : (1 : ℝ≥0) < 2)
+  let _ : NormedField K := Valued.toNormedField K ℤᵐ⁰
+  have : ProperSpace K :=
+    properSpace_iff_completeSpace_and_isDiscreteValuationRing_integer_and_finite_residueField.mpr
+      ⟨inferInstance, inferInstance, inferInstance⟩
+  infer_instance
+
+end LocallyCompact
 
 end Valued.integer

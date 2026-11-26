@@ -54,7 +54,9 @@ each geometry supplies its own semi-Fredholm estimate and its own Rellich theore
   closed range, Fredholmness and the index are constant once one member is Fredholm
   (`TauCeti.StripSobolev.isFredholm_and_index_eq_of_isPreconnected`). This is the abstract
   stability `ContinuousOn.isFredholm_of_isPreconnected`, which needs the target `L²` space to be a
-  Hilbert space, so `W` is an inner product space there.
+  Hilbert space, so `W` is an inner product space there. Convergence in `L^∞` along any filter
+  follows from uniform closeness on the strip
+  (`TauCeti.StripSobolev.tendsto_eLpNorm_sub_of_forall_dist_lt`).
 
 ## References
 
@@ -115,19 +117,13 @@ private theorem le_sqrt_max_mul_of_sq_le {a b C : ℝ} (hb : 0 ≤ b)
 
 /-- The squared `L²` norm of the jet of a `C¹` element of `S` vanishing for `|s| ≥ R` is at most
 its `W^{1,2}` energy over `[-R, R] × [0, 1]`. -/
-private theorem sq_norm_jetLp_le_setIntegral {ξ : S} (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V))
+theorem sq_norm_jetLp_le_setIntegral {ξ : S} (hξ : ContDiff ℝ 1 (ξ : ℝ × ℝ → V))
     {R : ℝ} (hR : ∀ s t, R ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0) :
     ‖jetLp S ξ‖ ^ 2 ≤ ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1,
       (‖fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0)‖ ^ 2 + ‖fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1)‖ ^ 2 +
-        ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) := by
-  have := hξ.continuous_fderiv (by norm_num)
-  have := hξ.continuous
-  have hK : IsCompact (Icc (-R) R ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  rw [sq_norm_jetLp, integral_strip_eq_setIntegral_of_jet_eq_zero hR fun z hz ↦ by simp [hz]]
-  refine setIntegral_mono_on ?_ ?_ (measurableSet_Icc.prod measurableSet_Icc)
-    fun z _ ↦ sq_norm_jet_le _ z
-  · exact ((continuous_jet hξ).norm.pow 2).continuousOn.integrableOn_compact hK
-  · exact ContinuousOn.integrableOn_compact hK (Continuous.continuousOn (by fun_prop))
+        ‖(ξ : ℝ × ℝ → V) z‖ ^ 2) :=
+  (sq_norm_jetLp_le_integral ξ hξ).trans_eq (integral_strip_eq_setIntegral_of_jet_eq_zero hR
+    fun _ ↦ norm_partialDeriv_sq_add_norm_sq_eq_zero_of_jet_eq_zero)
 
 /-- **The pointwise step of Peetre's argument.** Let `ξ` be a `C¹` element of a space `S` of
 sections with square integrable jets, vanishing for `|s| ≥ R`, and suppose that the first-order
@@ -174,8 +170,7 @@ theorem norm_restrictValue_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W}
       C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
     ‖restrictValue T (jetLp S ξ)‖ ≤
       √(max C' 0) * ‖jetOperator stripMeasure M (jetLp S ξ)‖ := by
-  have hint := integrable_of_jet_eq_zero hR (hξ.norm.pow 2)
-    fun z h ↦ by rw [jet_apply, Prod.mk_eq_zero] at h; simp [h.1]
+  have hint := integrable_norm_sq_of_continuous hξ hR
   have hsub : ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ≤
       ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure :=
     setIntegral_mono_set hint (Eventually.of_forall fun z ↦ by positivity)
@@ -255,6 +250,25 @@ theorem norm_le_mul_norm_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
     _ = c * (1 + c') * d := by ring
 
 end Operator
+
+/-- **Continuity in `L^∞` from uniform closeness on the strip.** Along a filter `l`, a family of
+fields `M μ` on `ℝ × ℝ` that eventually become uniformly close to `M x` on the strip `ℝ × [0, 1]`,
+with `M μ - M x` eventually a.e. strongly measurable, tends to `M x` in `L^∞` of the strip. -/
+theorem tendsto_eLpNorm_sub_of_forall_dist_lt {X E : Type*} [NormedAddCommGroup E]
+    {M : X → ℝ × ℝ → E} {l : Filter X} {x : X}
+    (hM : ∀ᶠ μ in l, AEStronglyMeasurable (M μ - M x) stripMeasure)
+    (h : ∀ r > 0, ∀ᶠ μ in l, ∀ z : ℝ × ℝ, z.2 ∈ Icc (0 : ℝ) 1 → dist (M μ z) (M x z) < r) :
+    Tendsto (fun μ ↦ eLpNorm (M μ - M x) ∞ stripMeasure) l (𝓝 0) := by
+  rw [ENNReal.tendsto_nhds_zero]
+  intro ε hε
+  obtain ⟨r, -, hr, hrε⟩ := ENNReal.lt_iff_exists_real_btwn.1 hε
+  filter_upwards [hM, h r (ENNReal.ofReal_pos.1 hr)] with μ hmeas hμ
+  refine le_trans ?_ hrε.le
+  rw [eLpNorm_exponent_top hmeas]
+  refine eLpNormEssSup_le_of_ae_bound ?_
+  filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
+  rw [Pi.sub_apply, ← dist_eq_norm]
+  exact (hμ z hz.2).le
 
 section Family
 

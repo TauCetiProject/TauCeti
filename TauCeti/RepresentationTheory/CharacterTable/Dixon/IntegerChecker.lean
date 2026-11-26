@@ -30,6 +30,8 @@ identity, and preserves the integer-stage API used by the rational solver.
   of a successful certificate sum to the sum of the character degrees of the group.
 * `TauCeti.ClassData.IsIntegerCharacterTableSpec.exists_equiv_characterTable`: the rows of the
   character table, numbered along a successful certificate, with their values and degrees.
+* `TauCeti.ClassData.IsIntegerCharacterTableSpec.irreducibleCharacters_eq_range`: the irreducible
+  characters are the rows of a successful certificate, read through the class numbering.
 -/
 
 public section
@@ -114,6 +116,13 @@ theorem centralCharacterRow_complexTableOfInteger
 theorem isCharacterTableSpec :
     IsCharacterTableSpec G (d.complexTableOfInteger table) :=
   IsExactCharacterTableSpec.isCharacterTableSpec h (Int.castRingHom ℂ) fun x => by simp
+
+/-- **The rows of a certified integer table are the irreducible characters** of `G`: the
+irreducible complex characters are exactly the functions `g ↦ table i (d.index g)`. -/
+theorem irreducibleCharacters_eq_range :
+    irreducibleCharacters ℂ G = Set.range fun i g => (table i (d.index g) : ℂ) := by
+  simpa only [eq_intCast] using
+    IsExactCharacterTableSpec.irreducibleCharacters_eq_range h (Int.castRingHom ℂ) fun x ↦ by simp
 
 /-- **The degree vector of a certified integer table sums to the sum of the character degrees** of
 `G`: the identity column of the cast table is the degree vector, and it lists the character

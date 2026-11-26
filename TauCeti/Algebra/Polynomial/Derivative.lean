@@ -63,6 +63,9 @@ Over a `ℚ≥0`-algebra, such as a division ring of characteristic zero, the de
 (`Polynomial.derivative_surjective`): every polynomial has an antiderivative. In positive
 characteristic `p` it is not (`Polynomial.derivative_not_surjective_of_charP`), as `X ^ (p - 1)`
 has no antiderivative.
+
+As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
+relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
 -/
 
 public section
@@ -362,5 +365,13 @@ theorem derivative_pow_eq_sum {R : Type*} [Semiring R] (f : R[X]) (n : ℕ) :
     congr 1
     refine Finset.sum_congr rfl fun k hk ↦ ?_
     rw [mul_assoc, ← pow_succ, show n - 1 - k + 1 = n - k by grind]
+
+/-- **The Weyl relation** `d x = x d + 1` between the derivative and multiplication by `X`, as
+linear endomorphisms of `R[X]`. -/
+theorem derivative_mul_mulLeft_X {R : Type*} [CommSemiring R] :
+    (derivative : Module.End R R[X]) * LinearMap.mulLeft R X =
+      LinearMap.mulLeft R X * derivative + 1 := by
+  refine LinearMap.ext fun p ↦ ?_
+  simp [derivative_mul, add_comm]
 
 end Polynomial
