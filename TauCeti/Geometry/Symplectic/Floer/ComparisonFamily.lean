@@ -43,11 +43,13 @@ there the energy estimate needs no integrability hypotheses.
 The file also fixes one choice of `ρ` and `L`: `TauCeti.Floer.comparisonCutoff` and
 `TauCeti.Floer.comparisonNeckLength`, built from `Real.smoothTransition`.
 
-The neck cannot be switched on at `R = 1` with constant speed. For `L(R) = max (R - 1) 0` the
-family is not differentiable in `R` at `R = 1` wherever `K` varies in `s` beyond the neck: there
-the family is `ρ(R) K(s - L(R), t)`, and `L` has derivative `0` from the left and `1` from the
-right (`TauCeti.Floer.not_differentiableAt_cutoffNeckFamily_max_sub_one`). More generally, any
-corner of the neck length is a corner of the family
+The neck cannot be switched on at `R = 1` with constant speed. For `L(R) = max (R - 1) 0` and
+a cutoff `ρ` differentiable and nonzero at `R = 1`, the family is not differentiable in `R` at
+`R = 1` at each point `(s, t)` beyond the neck where `σ ↦ K(σ, t)` has nonzero derivative at
+`s - L(1)`: there the family is `ρ(R) K(s - L(R), t)`, and `L` has derivative `0` from the left
+and `1` from the right (`TauCeti.Floer.not_differentiableAt_cutoffNeckFamily_max_sub_one`). More
+generally, a corner of the neck length at `R₀` is a corner of the family at such points beyond the
+neck, whenever `ρ` is differentiable at `R₀` with `ρ(R₀) ≠ 0`
 (`TauCeti.Floer.not_differentiableAt_cutoffNeckFamily_of_hasDerivWithinAt`).
 
 The domain here is a coordinate rectangle with a single neck: this is the model near one neck.
@@ -71,8 +73,10 @@ with three necks is `TauCeti.Floer.cappedComparisonPerturbation`.
   `TauCeti.Floer.cutoffNeckFamily_comparison_of_two_le`: for the chosen `ρ` and `L`, the family
   is the zero perturbation at `R = 0`, equals `K` on the collar `2/3 ≤ R ≤ 3/2`, and has a neck of
   length `R - 1` for `R ≥ 2`.
-* `TauCeti.Floer.not_differentiableAt_cutoffNeckFamily_max_sub_one`: the neck length
-  `max (R - 1) 0` gives a family that is not differentiable at `R = 1`.
+* `TauCeti.Floer.not_differentiableAt_cutoffNeckFamily_max_sub_one`: for a cutoff
+  differentiable and nonzero at `1`, the neck length `max (R - 1) 0` gives a family that is not
+  differentiable in `R` at `R = 1` at points beyond the neck where `σ ↦ K(σ, t)` has nonzero
+  derivative.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_cutoffNeckFamily`: the curvature of `K_R`.
 * `TauCeti.SmoothTwoForm.integral_abs_hamiltonianCurvature_cutoffNeckFamily_le`: the integrated
   curvature bound, uniform over the family.
