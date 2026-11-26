@@ -62,7 +62,9 @@ topological genus.
 * `TauCeti.RiemannSurface.subsingleton_divisorCechCohomology_one_of_degree_gt`: `H¹(X, 𝒪_D) = 0`
   for `deg D > 2 g_an - 2`.
 * `TauCeti.RiemannSurface.analyticGenus_eq_genus`: the analytic genus is the topological
-  genus.
+  genus, so that `χ(X) = 2 - 2 genus X`
+  (`TauCeti.RiemannSurface.eulerChar_eq_two_sub_two_mul_genus`) and `h⁰(Ω) = genus X`
+  (`TauCeti.RiemannSurface.finrank_holomorphicOneForms_eq_genus`).
 
 ## References
 
@@ -431,6 +433,20 @@ theorem analyticGenus_eq_genus : analyticGenus X = genus X := by
   rw [hK.degree_eq_neg_eulerChar] at h
   rw [genus_def]
   omega
+
+/-- **`χ = 2 - 2g`.** A compact connected Hausdorff Riemann surface has Euler characteristic
+`2 - 2 genus X`, since a canonical divisor has degree `-χ(X) = 2 g_an - 2`. -/
+theorem eulerChar_eq_two_sub_two_mul_genus : eulerChar X = 2 - 2 * genus X := by
+  obtain ⟨K, hK⟩ := exists_isCanonicalDivisor (X := X)
+  have h := hK.degree_eq_two_mul_analyticGenus_sub_two
+  rw [hK.degree_eq_neg_eulerChar, analyticGenus_eq_genus] at h
+  omega
+
+/-- **`h⁰(Ω) = g`.** On a compact connected Hausdorff Riemann surface, the holomorphic `1`-forms
+have dimension the topological genus. -/
+theorem finrank_holomorphicOneForms_eq_genus :
+    Module.finrank ℂ (holomorphicOneForms X) = genus X := by
+  rw [finrank_holomorphicOneForms_eq_analyticGenus, analyticGenus_eq_genus]
 
 end AnalyticGenus
 
