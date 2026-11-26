@@ -174,23 +174,38 @@ theorem mem_middleSpace_iff {x : M} :
 theorem w_mem_middleSpace : D.w ∈ D.middleSpace :=
   D.mem_middleSpace_iff.mpr ⟨D.associated_e_w, D.associated_f_w⟩
 
+/-- The coordinates `v ↦ (B e₋ₖ v, B eₖ v)` dual to the vectors `eₖ` and `e₋ₖ`. -/
+private def coords : M →ₗ[R] Fin ℓ ⊕ Fin ℓ → R :=
+  LinearMap.pi (Sum.elim (fun k ↦ associated Q (D.f k)) fun k ↦ associated Q (D.e k))
+
+/-- Pairing with `e₋ₖ` and `eₖ` sends the vectors `eᵢ`, `e₋ᵢ` to the standard basis vectors. -/
+private theorem linearIndependent_coords_comp :
+    LinearIndependent R (D.coords ∘ Sum.elim D.e D.f) := by
+  classical
+  convert Pi.linearIndependent_single_one (Fin ℓ ⊕ Fin ℓ) R using 1
+  funext i k
+  rcases i with i | i <;> rcases k with k | k <;> simp [coords, Pi.single_apply, eq_comm]
+
+/-- The vectors `eᵢ` and `e₋ᵢ` of a Bessel datum are linearly independent. -/
+theorem linearIndependent_e_f : LinearIndependent R (Sum.elim D.e D.f) :=
+  D.linearIndependent_coords_comp.of_comp
+
+theorem linearIndependent_e : LinearIndependent R D.e :=
+  D.linearIndependent_e_f.comp _ Sum.inl_injective
+
 /-- The span of the vectors `e₋ℓ, …, e₋₁, e₁, …, e_ℓ` of a Bessel datum and its middle space are
 complementary: `V = ⟨e₋ℓ, …, e_ℓ⟩ ⊕ V_ℓ`. -/
 theorem isCompl_span_middleSpace :
     IsCompl (Submodule.span R (Set.range D.e ∪ Set.range D.f)) D.middleSpace := by
   classical
   constructor
-  · -- Pairing with `e₋ₖ` and `eₖ` reads off the coefficients of a vector of the span.
-    rw [Submodule.disjoint_def, ← Set.Sum.elim_range]
-    intro v hv hvm
-    obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun R).mp hv
-    obtain ⟨he, hf⟩ := D.mem_middleSpace_iff.mp hvm
-    have hc : c = 0 := by
-      funext k
-      rcases k with k | k
-      · simpa [Fintype.sum_sum_type, map_sum, associated_isSymm R Q (D.f k)] using hf k
-      · simpa [Fintype.sum_sum_type, map_sum, associated_isSymm R Q (D.e k)] using he k
-    simp [hc]
+  · -- The middle space lies in the kernel of the coordinates.
+    rw [← Set.Sum.elim_range]
+    refine (Submodule.range_ker_disjoint D.linearIndependent_coords_comp).mono_right
+      fun v hv ↦ ?_
+    obtain ⟨he, hf⟩ := D.mem_middleSpace_iff.mp hv
+    rw [LinearMap.mem_ker]
+    ext (k | k) <;> simp [coords, he, hf]
   · -- Subtract from `v` its projection `∑ B(e₋ᵢ, v) eᵢ + ∑ B(eᵢ, v) e₋ᵢ` onto the span.
     rw [codisjoint_iff, eq_top_iff]
     intro v _
@@ -287,26 +302,12 @@ variable {K : Type u} {V : Type v} [Field K] [Invertible (2 : K)] [AddCommGroup 
 /-- The vectors `eᵢ`, `e₋ᵢ` and `w` of a Bessel datum are linearly independent. -/
 theorem linearIndependent :
     LinearIndependent K (Sum.elim (Sum.elim D.e D.f) fun _ : Unit ↦ D.w) := by
-  rw [Fintype.linearIndependent_iff]
-  intro g hg
-  simp only [Fintype.sum_sum_type, Sum.elim_inl, Sum.elim_inr, Finset.univ_unique,
-    Finset.sum_singleton] at hg
-  -- Pair the vanishing combination with `e₋ₖ`, `eₖ` and `w` in turn.
-  have hf (k : Fin ℓ) : g (.inl (.inl k)) = 0 := by
-    simpa [map_sum, LinearMap.sum_apply] using congrArg (fun x ↦ associated Q x (D.f k)) hg
-  have he (k : Fin ℓ) : g (.inl (.inr k)) = 0 := by
-    simpa [map_sum, LinearMap.sum_apply] using congrArg (fun x ↦ associated Q x (D.e k)) hg
-  have hw : g (.inr ()) = 0 := by
-    simpa [map_sum, LinearMap.sum_apply, associated_eq_self_apply, D.apply_w_ne_zero] using
-      congrArg (fun x ↦ associated Q x D.w) hg
-  rintro ((k | k) | ⟨⟩)
-  exacts [hf k, he k, hw]
-
-theorem linearIndependent_e : LinearIndependent K D.e :=
-  (D.linearIndependent.comp _ Sum.inl_injective).comp _ Sum.inl_injective
-
-theorem linearIndependent_e_f : LinearIndependent K (Sum.elim D.e D.f) :=
-  D.linearIndependent.comp _ Sum.inl_injective
+  -- `w` is a nonzero vector of the middle space, which meets the span of the `e±ᵢ` trivially.
+  refine D.linearIndependent_e_f.sum_type (linearIndependent_unique_iff.mpr D.w_ne_zero) ?_
+  rw [Set.Sum.elim_range]
+  refine D.isCompl_span_middleSpace.disjoint.mono_right (Submodule.span_le.mpr ?_)
+  rintro _ ⟨_, rfl⟩
+  exact D.w_mem_middleSpace
 
 /-- The `j`-th subspace of the flag has dimension `j` for `j ≤ ℓ`. -/
 theorem finrank_flag {j : ℕ} (hj : j ≤ ℓ) : finrank K (D.flag j) = j := by
