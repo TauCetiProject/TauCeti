@@ -86,7 +86,8 @@ gains a derivative, so on the unit disc the discs `u_{Q, ξ}` and `u_{Q', ξ'}` 
 differ by at most `C (‖ξ - ξ'‖ + ε)`, with `C` depending only on `F`. In the normal disc families
 of the large-parameter analysis, `Q` is the Beltrami coefficient of the almost complex structure in
 coordinates centred at a point of the curve and `ξ` a unit normal vector there, so this is the
-continuity of the family in the base point.
+estimate from which continuity of the family in the base point is to be derived, once it is
+transferred through the rescaling.
 
 The contraction adapts the small-coefficient Beltrami fixed point
 `TauCeti.exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv`
@@ -654,9 +655,9 @@ private theorem norm_kField_sub_le (hξ : ‖ξ‖ ≤ 1) (hK0 : K 0 = 0)
     nlinarith
   have hε : ∀ x ∈ closedBall (0 : F) 4, ‖K x - K x‖ ≤ 0 := fun x _ ↦ by
     rw [sub_self, norm_zero]
-  -- The norm of the zero derivative difference is read off from the Lipschitz bound at `y = x`.
-  have hε' : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ K x - fderiv ℝ K x‖ ≤ 0 := fun x hx ↦
-    (h2 x hx x hx).trans (by rw [sub_self, norm_zero, mul_zero])
+  have hε' : ∀ x ∈ closedBall (0 : F) 4, ‖fderiv ℝ K x - fderiv ℝ K x‖ ≤ 0 := fun x _ ↦ by
+    rw [sub_self]
+    exact (norm_zero (E := F →L[ℝ] F →L[ℝ] F)).le
   refine (norm_kField_sub_kField_le hξ hξ hK0 hK0 hd hd h1 h1 h2 hε hε' hf hg hDd
     (fun z ↦ norm_discMap_sub_discMap_le ξ f g z.property)
     (fun z w ↦ norm_discMap_sub_discMap_sub_le ξ f g z.property w.property)).trans
@@ -983,9 +984,7 @@ private theorem norm_discSource_sub_discSource_le (hℓ : ‖ℓ‖ ≤ 1) (hξ 
       ((mapsTo_fixedPointMap hℓ hξ hK).restrict _ _ _ ⟨g, hmem'⟩) =
         ‖fixedPointMap ℓ K' ξ' g - fixedPointMap ℓ K ξ g‖ := by
     rw [Subtype.dist_eq, MapsTo.val_restrict_apply, dist_eq_norm]
-    dsimp only
-    nth_rewrite 1 [← hfix']
-    rfl
+    exact congrArg (‖· - fixedPointMap ℓ K ξ g‖) hfix'.symm
   have hK2 : (1 : ℝ) - ((2⁻¹ : ℝ≥0) : ℝ) = 2⁻¹ := by norm_num
   rw [e1, e2, hK2, div_inv_eq_mul] at h
   have h2 : ‖fixedPointMap ℓ K' ξ' g - fixedPointMap ℓ K ξ g‖ ≤
