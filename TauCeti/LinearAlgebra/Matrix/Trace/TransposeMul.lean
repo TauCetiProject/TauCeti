@@ -69,6 +69,7 @@ theorem trace_transpose_mul_self_nonneg [Ring R] [LinearOrder R] [IsOrderedRing 
 
 /-- Over a strictly ordered ring the trace pairing of a matrix with itself vanishes only at
 zero. -/
+@[simp]
 theorem trace_transpose_mul_self_eq_zero_iff [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
     {A : Matrix m n R} : (Aᵀ * A).trace = 0 ↔ A = 0 := by
   rw [← vec_dotProduct_vec, dotProduct_self_eq_zero, vec_eq_zero_iff]

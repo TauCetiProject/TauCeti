@@ -132,9 +132,9 @@ constants are parameters, not hidden existential data.
 * `TauCeti.PDE.UniformlyEllipticOn.add_bounded`: adding a bounded coefficient
   perturbation preserves uniform ellipticity with lower constant `λ - μ` when the
   perturbation size `μ` is smaller than `λ`.
-* `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `S = (A + Aᵀ) / 2` of a matrix `A`,
-  linear (`_add`, `_smul`, `_neg`, `_sum`), transpose-invariant (`_transpose`) and commuting with
-  congruences `A ↦ O A Oᵀ` (`_mul_mul_transpose`). `S` and `tr (Sᵀ S)` vanish iff `Aᵀ = -A`
+* `TauCeti.PDE.coefficientSymmetricPart`: the symmetric part `S = (A + Aᵀ) / 2` of `A`, linear
+  (`_zero`, `_add`, `_smul`, `_neg`, `_sum`), transpose-invariant (`_transpose`) and commuting
+  with congruences `A ↦ O A Oᵀ` (`_mul_mul_transpose`). `S` and `tr (Sᵀ S)` vanish iff `Aᵀ = -A`
   (`_eq_zero_iff`, `TauCeti.PDE.trace_transpose_coefficientSymmetricPart_mul_self_eq_zero_iff`).
 * `TauCeti.PDE.UniformlyEllipticOn.transpose` and
   `TauCeti.PDE.UniformlyEllipticOn.coefficientSymmetricPart`: transposing or replacing a
@@ -195,6 +195,9 @@ lemma coefficientSymmetricPart_transpose (A : Matrix n n ℝ) :
     coefficientSymmetricPart Aᵀ = coefficientSymmetricPart A := by
   rw [coefficientSymmetricPart_def, coefficientSymmetricPart_def, transpose_transpose, add_comm]
 
+lemma coefficientSymmetricPart_zero : coefficientSymmetricPart (0 : Matrix n n ℝ) = 0 := by
+  rw [coefficientSymmetricPart_def, transpose_zero, add_zero, smul_zero]
+
 lemma coefficientSymmetricPart_add (A B : Matrix n n ℝ) :
     coefficientSymmetricPart (A + B) = coefficientSymmetricPart A + coefficientSymmetricPart B := by
   rw [coefficientSymmetricPart_def, coefficientSymmetricPart_def, coefficientSymmetricPart_def,
@@ -210,12 +213,8 @@ lemma coefficientSymmetricPart_neg (A : Matrix n n ℝ) :
   rw [← neg_one_smul ℝ A, coefficientSymmetricPart_smul, neg_one_smul]
 
 lemma coefficientSymmetricPart_sum {ι : Type*} (s : Finset ι) (A : ι → Matrix n n ℝ) :
-    coefficientSymmetricPart (∑ a ∈ s, A a) = ∑ a ∈ s, coefficientSymmetricPart (A a) := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert a s ha ih =>
-    rw [Finset.sum_insert ha, Finset.sum_insert ha, coefficientSymmetricPart_add, ih]
+    coefficientSymmetricPart (∑ a ∈ s, A a) = ∑ a ∈ s, coefficientSymmetricPart (A a) :=
+  map_sum (AddMonoidHom.mk' coefficientSymmetricPart coefficientSymmetricPart_add) A s
 
 /-- The symmetric part vanishes exactly on skew-symmetric matrices. -/
 lemma coefficientSymmetricPart_eq_zero_iff {A : Matrix n n ℝ} :
