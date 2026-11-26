@@ -46,7 +46,7 @@ birational, that is, the rational map of a partial isomorphism over `k`
 (`AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_eq_one_iff_exists_partialIso`), and then
 `X` and `Y` are birational over `k`. The pullback along the inverse of a partial isomorphism is
 the inverse of the pullback
-(`AlgebraicGeometry.Scheme.PartialIso.functionFieldMap_symm_toRationalMap`).
+(`AlgebraicGeometry.Scheme.PartialIso.functionFieldMap_toRationalMap_symm`).
 
 ## Main results
 
@@ -65,7 +65,7 @@ the inverse of the pullback
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_eq_one_iff_exists_partialIso`: for
   separated `X` and `Y`, a dominant `k`-rational map has topological degree `1` exactly when it
   is the rational map of a partial isomorphism over `k`.
-* `AlgebraicGeometry.Scheme.PartialIso.functionFieldMap_symm_toRationalMap`: the pullback along
+* `AlgebraicGeometry.Scheme.PartialIso.functionFieldMap_toRationalMap_symm`: the pullback along
   `φ⁻¹` is the inverse of the pullback along `φ`.
 
 ## References
@@ -130,7 +130,8 @@ instance PartialIso.isIso_functionFieldMap_toRationalMap (φ : X.PartialIso Y) :
 /-- **The pullback along the inverse is the inverse of the pullback.** For a partial isomorphism
 `φ` of integral schemes, the pullback of rational functions along `φ⁻¹` is the inverse of the
 pullback along `φ`. -/
-theorem PartialIso.functionFieldMap_symm_toRationalMap (φ : X.PartialIso Y) :
+@[simp]
+theorem PartialIso.functionFieldMap_toRationalMap_symm (φ : X.PartialIso Y) :
     φ.symm.toRationalMap.functionFieldMap = inv φ.toRationalMap.functionFieldMap := by
   refine IsIso.eq_inv_of_hom_inv_id ?_
   rw [← RationalMap.functionFieldMap_comp,
