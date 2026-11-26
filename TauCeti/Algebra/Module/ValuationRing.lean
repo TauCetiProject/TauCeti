@@ -14,6 +14,8 @@ public import TauCeti.Algebra.Module.Presentation.Quadratic
 
 import Mathlib.LinearAlgebra.Dimension.Localization
 import Mathlib.LinearAlgebra.Dimension.Torsion.Finite
+import TauCeti.Algebra.Module.Torsion.Basic
+import TauCeti.LinearAlgebra.Submodule.Fin
 
 /-!
 # Finitely presented modules over a valuation ring
@@ -118,26 +120,6 @@ private theorem exists_linearEquiv_pivot {n : ℕ} {N : Submodule V (Fin (n + 1)
       funLeft_apply, hT]
     exact dvd_add (hdvd k hk _) (dvd_mul_of_dvd_left (hdvd k hk j₀) _)
 
-omit [IsDomain V] [ValuationRing V] in
-/-- Splitting off the first coordinate: if `N ≤ V^(n+1)` contains `a e_0` and the first coordinate
-of each of its elements is divisible by `a`, then `N` consists of the vectors whose first
-coordinate is divisible by `a` and whose tail lies in the image `N₂` of `N` under `Fin.tail`. -/
-private theorem mem_iff_dvd_and_mem_map_tail {n : ℕ} {N : Submodule V (Fin (n + 1) → V)} {a : V}
-    (ha : Pi.single 0 a ∈ N) (hdvd : ∀ k ∈ N, a ∣ k 0) (y : Fin (n + 1) → V) :
-    y ∈ N ↔ a ∣ y 0 ∧ funLeft V V Fin.succ y ∈ N.map (funLeft V V Fin.succ) := by
-  refine ⟨fun hy ↦ ⟨hdvd y hy, mem_map_of_mem hy⟩, ?_⟩
-  rintro ⟨⟨d, hd⟩, ⟨k, hk, hky⟩⟩
-  obtain ⟨e, he⟩ := hdvd k hk
-  -- `y = k + (d - e) • a e_0`, comparing coordinates.
-  have : y = k + (d - e) • Pi.single 0 a := by
-    ext j
-    refine Fin.cases ?_ (fun i ↦ ?_) j
-    · simp [hd, he]
-      ring
-    · simpa using congr_fun hky.symm i
-  rw [this]
-  exact add_mem hk (smul_mem _ _ ha)
-
 /-- **Stacked bases over a valuation ring.** A finitely generated submodule `N` of `V^n` over a
 valuation ring `V` is carried by an automorphism of `V^n` onto the diagonal submodule
 `∏ i, (x i)`. -/
@@ -169,7 +151,7 @@ theorem exists_linearEquiv_map_eq_pi_span_singleton {n : ℕ} (N : Submodule V (
     refine ⟨Φ.trans E₃, Fin.cons (k₀ j₀) y, ?_⟩
     ext z
     rw [LinearEquiv.coe_trans, Submodule.map_comp, mem_map_equiv,
-      mem_iff_dvd_and_mem_map_tail hΦ hΦdvd, mem_pi, Fin.forall_fin_succ]
+      mem_iff_dvd_apply_zero_and_funLeft_succ_mem_map hΦ hΦdvd, mem_pi, Fin.forall_fin_succ]
     simp only [Set.mem_univ, true_implies, Fin.cons_zero, Fin.cons_succ, Ideal.mem_span_singleton]
     refine and_congr (by simp [E₃]) ?_
     have hz : funLeft V V Fin.succ (E₃.symm z) = E₂.symm (funLeft V V Fin.succ z) := by
@@ -198,10 +180,9 @@ theorem IsQuadraticallyPresented.of_isTorsion [Module.FinitePresentation V M]
   have : Module.Free V (ker π) := Module.free_of_flat_of_isLocalRing
   have hrank : finrank V (ker π) = n := by
     -- The quotient `V^n ⧸ ker π ≃ M` is torsion, so it has rank zero.
-    have hQ : Module.IsTorsion V ((Fin n → V) ⧸ ker π) := fun x ↦ by
-      obtain ⟨a, ha⟩ := hM (x := π.quotKerEquivOfSurjective hπ x)
-      refine ⟨a, (π.quotKerEquivOfSurjective hπ).injective ?_⟩
-      rw [Submonoid.smul_def, map_smul, ← Submonoid.smul_def, ha, map_zero]
+    have hQ : Module.IsTorsion V ((Fin n → V) ⧸ ker π) :=
+      hM.of_surjective (f := (π.quotKerEquivOfSurjective hπ).symm.toLinearMap)
+        (π.quotKerEquivOfSurjective hπ).symm.surjective
     have h := rank_quotient_add_rank_of_isDomain (ker π)
     rw [Module.rank_eq_zero_iff_isTorsion.2 hQ, zero_add, rank_fin_fun] at h
     exact finrank_eq_of_rank_eq h
@@ -232,10 +213,9 @@ theorem exists_linearEquiv_pi_quotient_span_singleton_of_isTorsion [Module.Finit
   obtain ⟨⟨a, ha⟩, h⟩ :=
     hM (x := e.symm (Pi.single i (Submodule.Quotient.mk (1 : V) : V ⧸ Ideal.span {x i})))
   rw [Submonoid.mk_smul, ← map_smul, LinearEquiv.map_eq_zero_iff] at h
-  have h' := congr_fun h i
-  rw [Pi.smul_apply, Pi.single_eq_same, Pi.zero_apply, ← Submodule.Quotient.mk_smul,
-    Submodule.Quotient.mk_eq_zero, smul_eq_mul, mul_one, hi, Ideal.span_singleton_eq_bot.2 rfl,
-    Ideal.mem_bot] at h'
-  exact nonZeroDivisors.ne_zero ha h'
+  have h' : x i ∣ a := by
+    simpa [Algebra.smul_def, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton] using
+      congr_fun h i
+  exact nonZeroDivisors.ne_zero ha (zero_dvd_iff.1 (hi ▸ h'))
 
 end TauCeti

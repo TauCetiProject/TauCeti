@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.FittingIdeal.BaseChange
 public import TauCeti.RingTheory.FittingIdeal.Extension
 public import TauCeti.RingTheory.FittingIdeal.Matrix
 
+import TauCeti.Algebra.Module.Torsion.Basic
+
 /-!
 # Fitting ideals over a valuation ring
 
@@ -19,7 +21,8 @@ integers `O_C` of a complete algebraically closed nonarchimedean field is the mo
 This file shows that the zeroth Fitting ideal behaves on such modules like the determinant of a
 square matrix.
 
-* `Fitt₀(M)` is principal, since it is finitely generated and `V` is a Bézout ring.
+* `Fitt₀(M)` is principal, since it is finitely generated and `V` is a Bézout ring. This part
+  holds over every Bézout ring.
 * `Fitt₀` is multiplicative on short exact sequences `0 → A → B → C → 0` with `C` finitely
   presented. For `C` torsion, `C` is quadratically presented
   (`TauCeti.IsQuadraticallyPresented.of_isTorsion`), and this is the Dasgupta–Kakde formula for
@@ -32,8 +35,8 @@ sequences although such modules have no finite composition series in general.
 
 ## Main results
 
-* `TauCeti.fittingIdeal_isPrincipal`: over a valuation ring, the Fitting ideals of a finitely
-  presented module are principal.
+* `TauCeti.fittingIdeal_isPrincipal`: over a Bézout ring, such as a valuation ring, the Fitting
+  ideals of a finitely presented module are principal.
 * `TauCeti.fittingIdeal_eq_mul_of_exact_of_finitePresentation`: over a valuation ring,
   `Fitt₀(B) = Fitt₀(A) Fitt₀(C)` for a short exact sequence `0 → A → B → C → 0` of finite modules
   with `C` finitely presented.
@@ -52,12 +55,15 @@ open Module LinearMap
 
 namespace TauCeti
 
-variable {V M : Type*} [CommRing V] [IsDomain V] [ValuationRing V] [AddCommGroup M] [Module V M]
+variable {V M : Type*} [CommRing V] [AddCommGroup M] [Module V M]
 
-/-- Over a valuation ring, the Fitting ideals of a finitely presented module are principal. -/
-theorem fittingIdeal_isPrincipal [Module.FinitePresentation V M] (k : ℕ) :
+/-- Over a Bézout ring, such as a valuation ring, the Fitting ideals of a finitely presented
+module are principal. -/
+theorem fittingIdeal_isPrincipal [IsBezout V] [Module.FinitePresentation V M] (k : ℕ) :
     (fittingIdeal V M k).IsPrincipal :=
   IsBezout.isPrincipal_of_FG _ (fittingIdeal_fg k)
+
+variable [IsDomain V] [ValuationRing V]
 
 variable {A B C : Type*} [AddCommGroup A] [Module V A] [AddCommGroup B] [Module V B]
   [AddCommGroup C] [Module V C] {i : A →ₗ[V] B} {q : B →ₗ[V] C}
@@ -73,10 +79,7 @@ theorem fittingIdeal_eq_mul_of_exact_of_finitePresentation [Module.Finite V A] [
   by_cases hC : Module.IsTorsion V C
   · exact fittingIdeal_eq_mul_of_exact hi hq hiq (.of_isTorsion hC)
   -- A torsion `B` would have the torsion quotient `C`.
-  have hB : ¬ Module.IsTorsion V B := fun hB ↦ hC fun ⦃c⦄ ↦ by
-    obtain ⟨b, rfl⟩ := hq c
-    obtain ⟨a, ha⟩ := hB (x := b)
-    exact ⟨a, by rw [Submonoid.smul_def, ← map_smul, ← Submonoid.smul_def, ha, map_zero]⟩
+  have hB : ¬ Module.IsTorsion V B := fun hB ↦ hC (hB.of_surjective hq)
   rw [← fittingIdeal_zero_ne_bot_iff_isTorsion, not_not] at hB hC
   rw [hB, hC, Ideal.mul_bot]
 
