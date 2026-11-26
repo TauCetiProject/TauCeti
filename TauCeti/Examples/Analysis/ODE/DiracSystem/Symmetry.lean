@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.ODE.DiracSystem.RealPotential
 public import TauCeti.Analysis.ODE.DiracSystem.Symmetry
 
 /-!
@@ -13,7 +14,7 @@ public import TauCeti.Analysis.ODE.DiracSystem.Symmetry
 * **A real constant potential.** For `q = c` real at `z = 0`, conjugating
   `M_c(t, 0) = diag(e^{ct}, e^{-ct})` by `Ω` gives `diag(e^{-ct}, e^{ct})`, which is the matrix of
   the potential `-c` (`TauCeti.Examples.DiracSystem.diracFundamentalMatrix_neg_const_zero`), in
-  agreement with `TauCeti.diracFundamentalMatrix_ofReal_const_zero` at `-c`.
+  agreement with `TauCeti.diracFundamentalMatrix_ofReal_const_spectralParam_zero` at `-c`.
 * **The free case.** For `q = 0` the fundamental matrix is a rotation and commutes with `Ω`, as
   `-0 = 0` requires (`TauCeti.Examples.DiracSystem.commute_diracFundamentalMatrix_zero_potential`).
   Reading the sign change as `M_{-q} = M_q⁻¹` would give the inverse rotation
@@ -34,7 +35,7 @@ theorem diracFundamentalMatrix_neg_const_zero (c : ℝ) {t : ℝ} (ht : 0 ≤ t)
       !![(Real.exp (-(c * t)) : ℂ), 0; 0, (Real.exp (c * t) : ℂ)] := by
   rw [diracFundamentalMatrix_neg_potential
     (continuousOn_const.locallyIntegrableOn measurableSet_Ici) ht,
-    diracFundamentalMatrix_ofReal_const_zero]
+    diracFundamentalMatrix_ofReal_const_spectralParam_zero]
   simp
 
 /-- The two computations of the fundamental matrix of the potential `-c` at `z = 0` agree: by
@@ -43,7 +44,8 @@ real constant potential at `-c`. -/
 example (c : ℝ) {t : ℝ} (ht : 0 ≤ t) :
     diracFundamentalMatrix (-fun _ ↦ (c : ℂ)) t 0 =
       diracFundamentalMatrix (fun _ ↦ ((-c : ℝ) : ℂ)) t 0 := by
-  rw [diracFundamentalMatrix_neg_const_zero c ht, diracFundamentalMatrix_ofReal_const_zero]
+  rw [diracFundamentalMatrix_neg_const_zero c ht,
+    diracFundamentalMatrix_ofReal_const_spectralParam_zero]
   simp
 
 /-- **The free fundamental matrix commutes with `Ω`.** For the zero potential, `-0 = 0`, so the
