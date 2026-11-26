@@ -79,8 +79,9 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   truncation modulo `p ^ n` for `m ≤ n`, the fibres of the truncation are closed balls, and the
   truncations converge to `x`.
 * `PadicInt.continuous_appr`: the truncation modulo `p ^ n` is locally constant.
-* `PadicInt.pow_appr_eq_pow_appr`: raising an element of `p`-power order to the truncated
-  exponent is independent of the truncation level, once that level is large enough.
+* `PadicInt.pow_appr_eq_pow_appr`, `PadicInt.appr_nsmul_eq_appr_nsmul`: raising an element of
+  `p`-power order to the truncated exponent (or multiplying an element of `p`-power additive order
+  by the truncated scalar) is independent of the truncation level, once that level annihilates it.
 * `PadicInt.quotientSpanPowEquivZMod`, `PadicInt.quotientSpanPowEquivZMod_mk`: `toZModPow n`
   identifies `ℤ_[p] ⧸ (p ^ n)` with `ZMod (p ^ n)`, sending the class of `x` to `toZModPow n x`.
 * `PadicInt.span_singleton_eq_span_pow_valuation`, `PadicInt.quotientSpanEquivZMod`,
@@ -636,5 +637,14 @@ every truncation level `n ≥ m`. This is what makes the `p`-adic power well def
 theorem pow_appr_eq_pow_appr (x : ℤ_[p]) {m : ℕ} (hg : g ^ p ^ m = 1) (hmn : m ≤ n) :
     g ^ x.appr n = g ^ x.appr m :=
   pow_eq_pow_of_modEq (x.appr_modEq hmn) hg
+
+/-- Multiplying an element annihilated by `p ^ m` and `p ^ n` by the `p`-adic truncations at `m`
+and `n` gives the same value `x.appr m • g = x.appr n • g`. -/
+theorem appr_nsmul_eq_appr_nsmul {M : Type*} [AddMonoid M] (x : ℤ_[p]) {m n : ℕ} {g : M}
+    (hm : p ^ m • g = 0) (hn : p ^ n • g = 0) :
+    x.appr m • g = x.appr n • g := by
+  rcases le_total m n with hmn | hnm
+  · exact (nsmul_eq_nsmul_of_modEq (x.appr_modEq hmn) hm).symm
+  · exact nsmul_eq_nsmul_of_modEq (x.appr_modEq hnm) hn
 
 end PadicInt

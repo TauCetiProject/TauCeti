@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
+public import TauCeti.Data.ZMod.PrincipalUnits
 public import TauCeti.NumberTheory.Padics.PadicIntegers
 public import TauCeti.NumberTheory.Padics.PrincipalUnits
 public import TauCeti.RingTheory.Henselian.Basic
@@ -38,7 +40,13 @@ is `TauCeti.isProP_iff_le_unitsPrincipal_one` in `TauCeti.NumberTheory.Padics.Pr
   with `TauCeti.padicIntUnitsEquivProd_symm_apply`,
   `TauCeti.coe_padicIntUnitsEquivProd_apply_fst`, `TauCeti.toZMod_padicIntUnitsEquivProd_apply_fst`
   and `TauCeti.coe_padicIntUnitsEquivProd_apply_snd` describing its two components.
-* `TauCeti.card_rootsOfUnity_padicInt`: `μ_{p-1}` has `p - 1` elements.
+* `TauCeti.card_rootsOfUnity_padicInt`, `TauCeti.hasEnoughRootsOfUnity_padicInt`,
+  `TauCeti.isUnit_natCard_rootsOfUnity_prime_pow`, and
+  `TauCeti.hasEnoughRootsOfUnity_padicInt_exponent_rootsOfUnity_prime_pow`: `μ_{p-1}` has `p - 1`
+  elements (a unit in `ℤ_p`), and `ℤ_p` has enough `(p - 1)`-st roots of unity (in particular for
+  the exponent of `rootsOfUnity (p - 1) (ZMod (p ^ r))`).
+* `TauCeti.padicTeichmuller`: the Teichmüller character `(ZMod p)ˣ →* ℤ_pˣ`, uniquely characterized
+  as the multiplicative section of `PadicInt.toZMod` (`TauCeti.eq_padicTeichmuller`).
 
 ## References
 
@@ -161,5 +169,74 @@ variable (p) in
 theorem card_rootsOfUnity_padicInt : Nat.card (rootsOfUnity (p - 1) ℤ_[p]) = p - 1 := by
   have h := card_rootsOfUnity ℤ_[p]
   rwa [PadicInt.card_residueField] at h
+
+variable (p) in
+/-- The `p`-adic integers contain enough `(p - 1)`-st roots of unity. -/
+theorem hasEnoughRootsOfUnity_padicInt : HasEnoughRootsOfUnity ℤ_[p] (p - 1) := by
+  have : NeZero (p - 1) := ⟨Nat.sub_ne_zero_of_lt hp.out.one_lt⟩
+  exact HasEnoughRootsOfUnity.of_card_le (card_rootsOfUnity_padicInt p).ge
+
+variable (p) in
+/-- For a prime `p` and `r ≠ 0`, the cardinality `p - 1` of `rootsOfUnity (p - 1) (ZMod (p ^ r))`
+is a unit in `ℤ_[p]`. -/
+theorem isUnit_natCard_rootsOfUnity_prime_pow (r : ℕ) (hr : r ≠ 0) :
+    IsUnit (Nat.card (rootsOfUnity (p - 1) (ZMod (p ^ r))) : ℤ_[p]) := by
+  rw [ZMod.natCard_rootsOfUnity_prime_pow p r hr, PadicInt.isUnit_natCast_iff]
+  exact Nat.not_dvd_of_pos_of_lt (Nat.sub_pos_of_lt hp.out.one_lt)
+    (Nat.sub_lt hp.out.pos Nat.one_pos)
+
+variable (p) in
+/-- For a prime `p` and `r ≠ 0`, `ℤ_[p]` contains enough roots of unity for the exponent `p - 1`
+of `rootsOfUnity (p - 1) (ZMod (p ^ r))`. -/
+theorem hasEnoughRootsOfUnity_padicInt_exponent_rootsOfUnity_prime_pow (r : ℕ) (hr : r ≠ 0) :
+    HasEnoughRootsOfUnity ℤ_[p] (Monoid.exponent (rootsOfUnity (p - 1) (ZMod (p ^ r)))) := by
+  rw [ZMod.exponent_rootsOfUnity_prime_pow p r hr]
+  exact hasEnoughRootsOfUnity_padicInt p
+
+variable (p) in
+/-- **The `p`-adic Teichmüller character** `ω : (ZMod p)ˣ →* ℤ_[p]ˣ`, transporting the Henselian
+Teichmüller lift `TauCeti.teichmuller ℤ_[p]` along `PadicInt.residueField : ResidueField ℤ_[p] ≃+*
+ZMod p`. It is the unique multiplicative section of `PadicInt.toZMod`
+(`TauCeti.eq_padicTeichmuller`). -/
+noncomputable def padicTeichmuller : (ZMod p)ˣ →* ℤ_[p]ˣ :=
+  (teichmuller ℤ_[p]).comp (Units.mapEquiv PadicInt.residueField.symm.toMulEquiv).toMonoidHom
+
+/-- The Teichmüller character reduces to the identity modulo `p`. -/
+@[simp]
+theorem toZMod_padicTeichmuller (a : (ZMod p)ˣ) :
+    PadicInt.toZMod (padicTeichmuller p a : ℤ_[p]) = a := by
+  rw [PadicInt.toZMod_eq_residueField_comp_residue, RingHom.comp_apply, padicTeichmuller,
+    MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, residue_teichmuller]
+  exact PadicInt.residueField.apply_symm_apply (a : ZMod p)
+
+/-- The Teichmüller character is the unique multiplicative section of `PadicInt.toZMod`. -/
+theorem eq_padicTeichmuller (ω : (ZMod p)ˣ →* ℤ_[p]ˣ)
+    (hω : ∀ a, PadicInt.toZMod (ω a : ℤ_[p]) = a) :
+    ω = padicTeichmuller p := by
+  have hsec : ω.comp (Units.mapEquiv PadicInt.residueField.toMulEquiv).toMonoidHom =
+      teichmuller ℤ_[p] := by
+    refine eq_teichmuller ℤ_[p] _ fun x ↦ ?_
+    apply PadicInt.residueField.injective
+    have h := hω (Units.mapEquiv PadicInt.residueField.toMulEquiv x)
+    rwa [PadicInt.toZMod_eq_residueField_comp_residue, RingHom.comp_apply] at h
+  refine MonoidHom.ext fun a ↦ ?_
+  have h := DFunLike.congr_fun hsec (Units.mapEquiv PadicInt.residueField.symm.toMulEquiv a)
+  have ha : Units.mapEquiv PadicInt.residueField.toMulEquiv
+      (Units.mapEquiv PadicInt.residueField.symm.toMulEquiv a) = a :=
+    Units.ext (PadicInt.residueField.apply_symm_apply (a : ZMod p))
+  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, ha] at h
+  exact h
+
+/-- The Teichmüller character is injective. -/
+theorem padicTeichmuller_injective : Function.Injective (padicTeichmuller p) := fun a b h ↦
+  Units.ext <| by simpa using congrArg (fun u : ℤ_[p]ˣ ↦ PadicInt.toZMod (u : ℤ_[p])) h
+
+/-- For an odd prime `p`, the Teichmüller character sends `-1` to `-1`. -/
+@[simp]
+theorem padicTeichmuller_neg_one (hp2 : p ≠ 2) : padicTeichmuller p (-1) = -1 := by
+  have hneg : Units.mapEquiv PadicInt.residueField.symm.toMulEquiv (-1 : (ZMod p)ˣ) = -1 :=
+    Units.ext (by simp)
+  rw [padicTeichmuller, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, hneg,
+    teichmuller_neg_one ℤ_[p] (by rw [PadicInt.card_residueField]; exact hp.out.odd_of_ne_two hp2)]
 
 end TauCeti

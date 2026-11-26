@@ -11,6 +11,8 @@ public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 public import TauCeti.RepresentationTheory.LinearCharacter.Eigenspace
 public import TauCeti.RingTheory.Idempotents.Module
+public import TauCeti.RingTheory.Idempotents.SquareRootOne
+import TauCeti.Algebra.Ring.Units
 
 /-!
 # Character idempotents of a finite group algebra
@@ -62,6 +64,9 @@ algebraic closure, only a domain, because the characters here are one-dimensiona
 * `TauCeti.sum_charIdempotent`: for a finite commutative group with enough roots of unity, the
   character idempotents sum to `1`.
 * `TauCeti.completeOrthogonalIdempotents_charIdempotent`: they form a complete orthogonal family.
+* `TauCeti.halfOneAdd_of_eq_sum_charIdempotent`, `TauCeti.halfOneAdd_neg_of_eq_sum_charIdempotent`:
+  when `2` is invertible and `c ∈ H` satisfies `c * c = 1`, the plus and minus idempotents
+  `½ (1 ± c)` are the sums of `e_χ` over even (`χ c = 1`) and odd (`χ c = -1`) characters.
 * `TauCeti.mem_charIdempotent_smul_top_iff`: the eigencharacter criterion for the isotypic
   component `e_χ M`.
 * `TauCeti.isInternal_charIdempotent_smul_top`: the isotypic decomposition `M = ⨁_χ e_χ M`.
@@ -251,6 +256,50 @@ theorem isInternal_charIdempotent_smul_top {S M : Type*} [Semiring S] [AddCommMo
     [DecidableEq (H →* Oˣ)] (hH : IsUnit (Nat.card H : O)) :
     DirectSum.IsInternal fun χ : H →* Oˣ ↦ charIdempotent χ • (⊤ : Submodule S M) :=
   isInternal_smul_top (completeOrthogonalIdempotents_charIdempotent hH)
+
+/-- **Plus idempotent as the sum of even character idempotents.** When `2` is invertible in `O`
+and `c ∈ H` satisfies `c * c = 1`, the idempotent `½ (1 + c)` in `O[H]` equals the sum of the
+character idempotents `e_χ` over all characters `χ` with `χ c = 1`. -/
+theorem halfOneAdd_of_eq_sum_charIdempotent [Invertible (2 : O)] (hH : IsUnit (Nat.card H : O))
+    {c : H} (hc : c * c = 1) [DecidablePred fun χ : H →* Oˣ ↦ χ c = 1] :
+    halfOneAdd O (of O H c) = ∑ χ : H →* Oˣ with χ c = 1, charIdempotent χ := by
+  calc halfOneAdd O (of O H c)
+      = halfOneAdd O (of O H c) * ∑ χ : H →* Oˣ, charIdempotent χ := by
+        rw [sum_charIdempotent hH, mul_one]
+    _ = ∑ χ : H →* Oˣ, halfOneAdd O (of O H c) * charIdempotent χ := Finset.mul_sum _ _ _
+    _ = ∑ χ : H →* Oˣ, if χ c = 1 then charIdempotent χ else 0 := by
+        refine Finset.sum_congr rfl fun χ _ ↦ ?_
+        rw [halfOneAdd_def, smul_mul_assoc, add_mul, one_mul, of_apply, single_mul_charIdempotent]
+        have hc' : χ c * χ c = 1 := by rw [← map_mul, hc, map_one]
+        rcases Units.mul_self_eq_one_iff.mp hc' with h1 | hm1
+        · simp [h1, ← two_smul O]
+        · have hne1 : χ c ≠ 1 :=
+            (Units.ne_one_iff_eq_neg_one_of_mul_self_eq_one hc'
+              (isUnit_of_invertible (2 : O))).mpr hm1
+          rw [ite_eq_right_iff.mpr fun h ↦ absurd h hne1]
+          simp [hm1]
+    _ = ∑ χ : H →* Oˣ with χ c = 1, charIdempotent χ := by rw [Finset.sum_filter]
+
+/-- **Minus idempotent as the sum of odd character idempotents.** When `2` is invertible in `O`
+and `c ∈ H` satisfies `c * c = 1`, the idempotent `½ (1 - c)` in `O[H]` equals the sum of the
+character idempotents `e_χ` over all characters `χ` with `χ c = -1`. -/
+theorem halfOneAdd_neg_of_eq_sum_charIdempotent [Invertible (2 : O)] (hH : IsUnit (Nat.card H : O))
+    {c : H} (hc : c * c = 1) [DecidablePred fun χ : H →* Oˣ ↦ χ c = -1] :
+    halfOneAdd O (-of O H c) = ∑ χ : H →* Oˣ with χ c = -1, charIdempotent χ := by
+  classical
+  have hpart :
+      (∑ χ : H →* Oˣ with χ c = 1, charIdempotent χ) +
+        (∑ χ : H →* Oˣ with χ c = -1, charIdempotent χ) = 1 := by
+    rw [← sum_charIdempotent (O := O) (H := H) hH,
+      ← Finset.sum_filter_add_sum_filter_not Finset.univ (fun χ : H →* Oˣ ↦ χ c = 1)]
+    congr 1
+    refine Finset.sum_congr (Finset.filter_congr fun χ _ ↦ ?_) fun _ _ ↦ rfl
+    exact (Units.ne_one_iff_eq_neg_one_of_mul_self_eq_one (u := χ c)
+      (by rw [← map_mul, hc, map_one]) (isUnit_of_invertible (2 : O))).symm
+  have hsum : halfOneAdd O (of O H c) + halfOneAdd O (-of O H c) = 1 :=
+    halfOneAdd_add_halfOneAdd_neg O (of O H c)
+  rw [halfOneAdd_of_eq_sum_charIdempotent hH hc] at hsum
+  exact add_left_cancel (hsum.trans hpart.symm)
 
 end CommGroup
 

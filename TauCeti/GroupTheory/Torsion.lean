@@ -53,6 +53,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 
 ## Main results
 
+* `AddCommGroup.primaryComponent.isAddPGroup`: the `p`-primary component of an abelian group is an
+  additive `p`-group.
 * `TauCeti.isAddPGroup_iff_primaryComponent_eq_top`: `M` is `p`-primary torsion exactly when its
   `p`-primary component is all of `M`.
 * `TauCeti.primaryComponent_eq_bot_of_injective_nsmul`: injective multiplication by `p`
@@ -78,6 +80,12 @@ additive inverses. -/
 theorem AddCommGroup.primaryComponent_toAddSubmonoid {G : Type*} [AddCommGroup G] (p : ℕ) :
     (AddCommGroup.primaryComponent G p).toAddSubmonoid = AddCommMonoid.primaryComponent G p :=
   (rfl)
+
+/-- The additive `p`-primary component of an abelian group is an additive `p`-group. This is the
+additive companion to `CommGroup.primaryComponent.isPGroup`. -/
+theorem AddCommGroup.primaryComponent.isAddPGroup {G : Type*} [AddCommGroup G] {p : ℕ} :
+    IsAddPGroup p (AddCommGroup.primaryComponent G p) := fun g ↦
+  (AddCommGroup.mem_primaryComponent.mp g.property).imp fun _ hk ↦ Subtype.ext <| by simpa using hk
 
 namespace TauCeti
 

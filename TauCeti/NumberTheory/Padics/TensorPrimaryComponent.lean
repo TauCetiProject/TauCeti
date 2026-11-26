@@ -8,8 +8,10 @@ module
 public import Mathlib.GroupTheory.Exponent
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.RingHoms
+public import TauCeti.NumberTheory.Padics.Module
 import TauCeti.GroupTheory.Torsion
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -31,8 +33,14 @@ product. On the `p`-primary part, which is killed by `p ^ N`, a `p`-adic scalar 
 truncation modulo `p ^ N`. The inverse uses an integer `c` with `c ≡ 1 (mod p ^ N)` and `m ∣ c`,
 so that `x ↦ c • x` is the projection of `A` onto its `p`-primary component.
 
+Since every `p`-primary abelian group carries a canonical `ℤ_p`-module structure and every additive
+homomorphism out of it into a `ℤ_p`-module is `ℤ_p`-linear (`IsAddPGroup.padicIntModule` and
+`IsAddPGroup.map_padicInt_smul` in `TauCeti.NumberTheory.Padics.Module`), the comparison upgrades to
+a natural `ℤ_p`-linear equivalence `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A`.
+
 This is how the discriminant group of a lattice over `ℤ` is compared with the discriminant group
-of its localization at `p`.
+of its localization at `p`, and how the `p`-primary ideal class group of a number field is
+identified with `ℤ_p ⊗[ℤ] Cl(K)`.
 
 ## Main declarations
 
@@ -44,6 +52,10 @@ of its localization at `p`.
   `p` vanishes in `ℤ_p ⊗[ℤ] A`.
 * `TauCeti.AddCommGroup.tmul_eq_one_tmul_appr`: on an element killed by `p ^ N`, a `p`-adic
   scalar acts through its truncation modulo `p ^ N`.
+* `TauCeti.AddCommGroup.primaryComponentLinearEquivPadicIntTensor`: the natural `ℤ_p`-linear
+  equivalence `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A`, natural with respect to
+  `TauCeti.AddCommGroup.primaryComponentMap`
+  (`TauCeti.AddCommGroup.primaryComponentLinearEquivPadicIntTensor_naturality`).
 
 This is the case of finite `ℤ`-modules of the comparison `Â ⊗ M ≅ M̂` between scalar extension
 to a completion and completion, since the `p`-adic completion of `A` is its `p`-primary component.
@@ -215,4 +227,44 @@ theorem primaryComponentEquivPadicIntTensor_apply (hA : AddMonoid.ExponentExists
     AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom_coe, TensorProduct.mk_apply,
     AddSubgroup.coe_subtype]
 
+variable {p : ℕ} [Fact p.Prime] {A B : Type*} [AddCommGroup A] [AddCommGroup B]
+
+variable (p A) in
+/-- **The `ℤ_p`-linear identification `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A`.** For an abelian group `A` of
+finite exponent, `x ↦ 1 ⊗ x` is a `ℤ_p`-linear equivalence from the `p`-primary component of `A`
+onto its scalar extension to `ℤ_p`. -/
+noncomputable def primaryComponentLinearEquivPadicIntTensor (hA : AddMonoid.ExponentExists A) :
+    AddCommGroup.primaryComponent A p ≃ₗ[ℤ_[p]] ℤ_[p] ⊗[ℤ] A :=
+  { primaryComponentEquivPadicIntTensor p A hA with
+    map_smul' := fun a x ↦
+      IsAddPGroup.map_padicInt_smul AddCommGroup.primaryComponent.isAddPGroup
+        (primaryComponentEquivPadicIntTensor p A hA).toAddMonoidHom a x }
+
+/-- The `ℤ_p`-linear equivalence `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A` sends `x` to `1 ⊗ x`. -/
+@[simp]
+theorem primaryComponentLinearEquivPadicIntTensor_apply (hA : AddMonoid.ExponentExists A)
+    (x : AddCommGroup.primaryComponent A p) :
+    primaryComponentLinearEquivPadicIntTensor p A hA x = (1 : ℤ_[p]) ⊗ₜ[ℤ] (x : A) :=
+  primaryComponentEquivPadicIntTensor_apply hA x
+
+/-- On pure tensors `1 ⊗ x` with `x` in `A[p^∞]`, the inverse recovers `x`. -/
+@[simp]
+theorem primaryComponentLinearEquivPadicIntTensor_symm_one_tmul (hA : AddMonoid.ExponentExists A)
+    (x : AddCommGroup.primaryComponent A p) :
+    (primaryComponentLinearEquivPadicIntTensor p A hA).symm ((1 : ℤ_[p]) ⊗ₜ[ℤ] (x : A)) = x := by
+  rw [← primaryComponentLinearEquivPadicIntTensor_apply hA x, LinearEquiv.symm_apply_apply]
+
+/-- **Naturality of `A[p^∞] ≃ₗ[ℤ_p] ℤ_p ⊗[ℤ] A`.** For any additive homomorphism `f : A →+ B`
+between groups of finite exponent, the `ℤ_p`-linear comparison intertwines `primaryComponentMap`
+with scalar extension `LinearMap.baseChange ℤ_[p] f.toIntLinearMap`. -/
+theorem primaryComponentLinearEquivPadicIntTensor_naturality
+    (hA : AddMonoid.ExponentExists A) (hB : AddMonoid.ExponentExists B) (f : A →+ B) :
+    (primaryComponentLinearEquivPadicIntTensor p B hB).toLinearMap.comp
+        (primaryComponentMap p f) =
+      (LinearMap.baseChange ℤ_[p] f.toIntLinearMap).comp
+        (primaryComponentLinearEquivPadicIntTensor p A hA).toLinearMap := by
+  ext x
+  simp
+
 end TauCeti.AddCommGroup
+

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Ideal.Norm.RelNorm
 import TauCeti.NumberTheory.RamificationInertia.Galois
 
@@ -32,6 +33,9 @@ in general by unique factorisation into prime ideals.
 
 * `Ideal.prod_smul_eq_map_relNorm`: `∏ g : G, g • I = (I.relNorm R).map (algebraMap R S)` in a
   finite torsion-free Galois extension of Dedekind domains.
+* `Ideal.map_algebraMap_relNorm_eq_prod_galRestrict`: for a Galois extension `L / K` of fraction
+  fields with `S` the integral closure of `R` in `L`,
+  `Ideal.map (algebraMap R S) (Ideal.relNorm R I) = ∏ σ : L ≃ₐ[K] L, Ideal.map (galRestrict σ) I`.
 * `Ideal.prod_smul_eq_span_absNorm`: `∏ g : G, g • I = Ideal.span {(Ideal.absNorm I : S)}` when
   `G` is a Galois group of `S` over `ℤ`.
 
@@ -123,5 +127,29 @@ theorem prod_smul_eq_span_absNorm {S : Type*} [CommRing S] [IsDedekindDomain S]
     ∏ g : G, g • I = span {(absNorm I : S)} := by
   rw [prod_smul_eq_map_relNorm ℤ G I, relNorm_int, map_span, Set.image_singleton, eq_intCast,
     Int.cast_natCast]
+
+/-- **Extending the relative ideal norm yields the Galois orbit product.** For a finite Galois
+extension `L / K` of fraction fields of Dedekind domains `S / R` with `S` the integral closure of
+`R` in `L`, extending `Ideal.relNorm R I` back to `S` equals the product of all Galois conjugates
+of `I`. -/
+theorem map_algebraMap_relNorm_eq_prod_galRestrict (R K L S : Type*)
+    [CommRing R] [IsDedekindDomain R] [CommRing S] [IsDedekindDomain S]
+    [Field K] [Field L] [Algebra R K] [Algebra S L] [Algebra R S] [Algebra K L] [Algebra R L]
+    [IsScalarTower R K L] [IsScalarTower R S L] [IsFractionRing R K] [IsFractionRing S L]
+    [IsIntegralClosure S R L] [FiniteDimensional K L] [IsGalois K L]
+    [Module.Finite R S] [Module.IsTorsionFree R S] (I : Ideal S) :
+    Ideal.map (algebraMap R S) (Ideal.relNorm R I) =
+      ∏ σ : L ≃ₐ[K] L, Ideal.map (galRestrict R K L S σ : S →+* S) I := by
+  let : MulSemiringAction (L ≃ₐ[K] L) S :=
+    MulSemiringAction.compHom S (galRestrict R K L S).toMonoidHom
+  have hsmul (σ : L ≃ₐ[K] L) (x : S) : σ • x = galRestrict R K L S σ x := rfl
+  have : SMulDistribClass (L ≃ₐ[K] L) S L := ⟨fun σ x s ↦ by
+    simp [Algebra.smul_def, hsmul, algebraMap_galRestrict_apply]⟩
+  have : IsGaloisGroup (L ≃ₐ[K] L) R S :=
+    IsGaloisGroup.of_isFractionRing (L ≃ₐ[K] L) R S K L
+  rw [← prod_smul_eq_map_relNorm R (L ≃ₐ[K] L) I]
+  refine Finset.prod_congr rfl fun σ _ ↦ ?_
+  rw [Ideal.pointwise_smul_def]
+  congr 1
 
 end Ideal

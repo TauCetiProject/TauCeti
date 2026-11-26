@@ -7,8 +7,13 @@ module
 
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.Data.Nat.Totient
+public import Mathlib.GroupTheory.Exponent
+public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
+public import Mathlib.RingTheory.RootsOfUnity.Basic
+import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Index
 import Mathlib.GroupTheory.OrderOfElement
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
 import Mathlib.RingTheory.Artinian.Module
 -- Supplies completeness of Artinian local rings, needed by the Henselian instance.
 import Mathlib.RingTheory.AdicCompletion.Noetherian
@@ -16,6 +21,7 @@ import Mathlib.RingTheory.ZMod.LocalRing
 import TauCeti.Data.ZMod.ExactDivisor
 import TauCeti.Data.ZMod.LocalRing
 import TauCeti.RingTheory.Henselian.Basic
+import TauCeti.RingTheory.Henselian.Teichmuller
 
 /-!
 # Units congruent to one modulo a prime
@@ -30,7 +36,9 @@ Consequently, for `n` coprime to `p` and an integer `a` prime to `p`, reduction 
 bijection from the `n`-th roots of `a` modulo `p ^ k` (`k ≠ 0`) to those modulo `p`. Surjectivity
 is Hensel's lemma `TauCeti.HenselianLocalRing.exists_pow_eq_of_residue_pow_eq` in the Henselian
 local ring `ZMod (p ^ k)`, and injectivity holds because two `n`-th roots of `a` with the same
-reduction differ by a principal unit whose `n`-th power is `1`.
+reduction differ by a principal unit whose `n`-th power is `1`. Applying the Henselian
+roots-of-unity comparison `TauCeti.rootsOfUnityMulEquivUnitsResidueField` to `ZMod (p ^ r)`
+likewise identifies its `(p - 1)`-st roots of unity with `(ZMod p)ˣ` via reduction.
 
 ## Main results
 
@@ -46,6 +54,10 @@ reduction differ by a principal unit whose `n`-th power is `1`.
   modulo `N` that is `1` modulo `N / p` is a square.
 * `ZMod.natCard_nthRoots_prime_pow_eq_natCard_nthRoots`: for `n` coprime to `p`, a unit `a` has
   as many `n`-th roots modulo `p ^ k` as modulo `p`.
+* `ZMod.rootsOfUnityEquivUnitsPrime`, `ZMod.natCard_rootsOfUnity_prime_pow`, and
+  `ZMod.rootsOfUnityPrimePowEquiv`: for `r ≠ 0`, reduction modulo `p` identifies
+  `rootsOfUnity (p - 1) (ZMod (p ^ r))` with `(ZMod p)ˣ` (so it is cyclic of cardinality and
+  exponent `p - 1`) and identifies the `(p - 1)`-st roots of unity across prime-power levels.
 
 ## References
 
@@ -173,6 +185,101 @@ theorem natCard_nthRoots_prime_pow_eq_natCard_nthRoots {p n k : ℕ} [Fact p.Pri
     exact ⟨x, by simpa using hx, by
       rw [(residue_eq_residue_iff_castHom_eq p (k + 1) x x₀).mp hxx₀,
         map_natCast, natCast_zmod_val]⟩
+
+/-! ### The `(p - 1)`-st roots of unity modulo a prime power -/
+
+/-- **Reduction identifies the `(p - 1)`-st roots of unity modulo `p ^ r` with `(ZMod p)ˣ`.** For a
+prime `p` and `r ≠ 0`, `ZMod.unitsMap` restricts to a multiplicative equivalence
+`rootsOfUnity (p - 1) (ZMod (p ^ r)) ≃* (ZMod p)ˣ`, obtained from the Henselian comparison
+`TauCeti.rootsOfUnityMulEquivUnitsResidueField` on `ZMod (p ^ r)`. -/
+noncomputable def rootsOfUnityEquivUnitsPrime (p r : ℕ) [Fact p.Prime] (hr : r ≠ 0) :
+    rootsOfUnity (p - 1) (ZMod (p ^ r)) ≃* (ZMod p)ˣ :=
+  have : NeZero r := ⟨hr⟩
+  letI : IsArtinianRing (ZMod (p ^ r)) := isArtinian_of_finite
+  have : Finite (IsLocalRing.ResidueField (ZMod (p ^ r))) :=
+    Finite.of_equiv _ (residueFieldPrimePow p r).symm.toEquiv
+  have hcard : p - 1 = Nat.card (IsLocalRing.ResidueField (ZMod (p ^ r))) - 1 := by
+    rw [Nat.card_congr (residueFieldPrimePow p r).toEquiv, Nat.card_zmod]
+  (MulEquiv.subgroupCongr (by rw [hcard])).trans
+    ((TauCeti.rootsOfUnityMulEquivUnitsResidueField (ZMod (p ^ r))).trans
+      (Units.mapEquiv (residueFieldPrimePow p r).toMulEquiv))
+
+@[simp]
+theorem rootsOfUnityEquivUnitsPrime_apply (p r : ℕ) [Fact p.Prime] (hr : r ≠ 0)
+    (u : rootsOfUnity (p - 1) (ZMod (p ^ r))) :
+    rootsOfUnityEquivUnitsPrime p r hr u = unitsMap (dvd_pow_self p hr) u.val := by
+  have : NeZero r := ⟨hr⟩
+  apply Units.ext
+  simp [rootsOfUnityEquivUnitsPrime, MulEquiv.subgroupCongr_apply, unitsMap_val]
+
+/-- **Cardinality of the `(p - 1)`-st roots of unity modulo `p ^ r`.** For a prime `p` and `r ≠ 0`,
+there are `p - 1` roots of unity of order dividing `p - 1` in `ZMod (p ^ r)`. -/
+theorem natCard_rootsOfUnity_prime_pow (p r : ℕ) [hp : Fact p.Prime] (hr : r ≠ 0) :
+    Nat.card (rootsOfUnity (p - 1) (ZMod (p ^ r))) = p - 1 := by
+  rw [Nat.card_congr (rootsOfUnityEquivUnitsPrime p r hr).toEquiv,
+    Nat.card_eq_fintype_card, card_units_eq_totient, Nat.totient_prime hp.out]
+
+/-- **Reduction between prime-power levels identifies the `(p - 1)`-st roots of unity.** For a
+prime `p` and nonzero exponents `s` and `r`, the reductions to `(ZMod p)ˣ` induce a multiplicative
+equivalence `rootsOfUnity (p - 1) (ZMod (p ^ s)) ≃* rootsOfUnity (p - 1) (ZMod (p ^ r))`. When
+`r ≤ s`, this equivalence agrees with `ZMod.unitsMap` (`ZMod.coe_rootsOfUnityPrimePowEquiv`). -/
+noncomputable def rootsOfUnityPrimePowEquiv (p : ℕ) [Fact p.Prime] {s r : ℕ}
+    (hs : s ≠ 0) (hr : r ≠ 0) :
+    rootsOfUnity (p - 1) (ZMod (p ^ s)) ≃* rootsOfUnity (p - 1) (ZMod (p ^ r)) :=
+  (rootsOfUnityEquivUnitsPrime p s hs).trans (rootsOfUnityEquivUnitsPrime p r hr).symm
+
+@[simp]
+theorem rootsOfUnityPrimePowEquiv_symm (p : ℕ) [Fact p.Prime] {s r : ℕ}
+    (hs : s ≠ 0) (hr : r ≠ 0) :
+    (rootsOfUnityPrimePowEquiv p hs hr).symm = rootsOfUnityPrimePowEquiv p hr hs :=
+  (rfl)
+
+theorem rootsOfUnityEquivUnitsPrime_rootsOfUnityPrimePowEquiv (p : ℕ) [Fact p.Prime] {s r : ℕ}
+    (hs : s ≠ 0) (hr : r ≠ 0) (u : rootsOfUnity (p - 1) (ZMod (p ^ s))) :
+    rootsOfUnityEquivUnitsPrime p r hr (rootsOfUnityPrimePowEquiv p hs hr u) =
+      rootsOfUnityEquivUnitsPrime p s hs u :=
+  (rootsOfUnityEquivUnitsPrime p r hr).apply_symm_apply _
+
+@[simp]
+theorem unitsMap_prime_rootsOfUnityPrimePowEquiv (p : ℕ) [Fact p.Prime] {s r : ℕ}
+    (hs : s ≠ 0) (hr : r ≠ 0) (u : rootsOfUnity (p - 1) (ZMod (p ^ s))) :
+    unitsMap (dvd_pow_self p hr) (rootsOfUnityPrimePowEquiv p hs hr u).val =
+      unitsMap (dvd_pow_self p hs) u.val := by
+  rw [← rootsOfUnityEquivUnitsPrime_apply p r hr,
+    rootsOfUnityEquivUnitsPrime_rootsOfUnityPrimePowEquiv,
+    rootsOfUnityEquivUnitsPrime_apply]
+
+/-- When `r ≤ s`, `ZMod.rootsOfUnityPrimePowEquiv` acts on underlying units as reduction modulo
+`p ^ r` (`ZMod.unitsMap`). -/
+theorem coe_rootsOfUnityPrimePowEquiv {p s r : ℕ} [Fact p.Prime] (hrs : r ≤ s)
+    (hs : s ≠ 0) (hr : r ≠ 0) (u : rootsOfUnity (p - 1) (ZMod (p ^ s))) :
+    (rootsOfUnityPrimePowEquiv p hs hr u : (ZMod (p ^ r))ˣ) =
+      unitsMap (pow_dvd_pow p hrs) u.val := by
+  have hmem : unitsMap (pow_dvd_pow p hrs) u.val ∈ rootsOfUnity (p - 1) (ZMod (p ^ r)) := by
+    rw [mem_rootsOfUnity, ← map_pow, (mem_rootsOfUnity (p - 1) u.val).mp u.property, map_one]
+  suffices rootsOfUnityPrimePowEquiv p hs hr u = ⟨unitsMap (pow_dvd_pow p hrs) u.val, hmem⟩ by
+    exact congrArg Subtype.val this
+  apply (rootsOfUnityEquivUnitsPrime p r hr).injective
+  rw [rootsOfUnityEquivUnitsPrime_rootsOfUnityPrimePowEquiv, rootsOfUnityEquivUnitsPrime_apply,
+    rootsOfUnityEquivUnitsPrime_apply, ← MonoidHom.comp_apply, unitsMap_comp]
+
+/-- The `(p - 1)`-st roots of unity in `ZMod (p ^ r)` form a cyclic group for `r ≠ 0`. -/
+theorem isCyclic_rootsOfUnity_prime_pow (p r : ℕ) [Fact p.Prime] (hr : r ≠ 0) :
+    IsCyclic (rootsOfUnity (p - 1) (ZMod (p ^ r))) :=
+  isCyclic_of_surjective (rootsOfUnityEquivUnitsPrime p r hr).symm
+    (rootsOfUnityEquivUnitsPrime p r hr).symm.surjective
+
+/-- The `(p - 1)`-st roots of unity in `ZMod (p ^ r)` have exponent `p - 1` for `r ≠ 0`. -/
+theorem exponent_rootsOfUnity_prime_pow (p r : ℕ) [Fact p.Prime] (hr : r ≠ 0) :
+    Monoid.exponent (rootsOfUnity (p - 1) (ZMod (p ^ r))) = p - 1 := by
+  have := isCyclic_rootsOfUnity_prime_pow p r hr
+  rw [IsCyclic.exponent_eq_card, natCard_rootsOfUnity_prime_pow p r hr]
+
+/-- For an odd prime `p`, `-1` is a `(p - 1)`-st root of unity in `ZMod (p ^ r)`. -/
+theorem neg_one_mem_rootsOfUnity_prime_pow {p : ℕ} [hp : Fact p.Prime] (hp2 : p ≠ 2) (r : ℕ) :
+    (-1 : (ZMod (p ^ r))ˣ) ∈ rootsOfUnity (p - 1) (ZMod (p ^ r)) := by
+  rw [mem_rootsOfUnity]
+  exact (hp.out.even_sub_one hp2).neg_one_pow
 
 /-! Modulo `9`, the units `4` and `7` are `2 ^ 2` and `4 ^ 2`. The hypothesis that `p` is odd is
 needed: `5` is congruent to one modulo `2` but is not a square modulo `8`. -/
