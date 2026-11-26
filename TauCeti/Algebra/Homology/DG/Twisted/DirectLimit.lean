@@ -31,16 +31,16 @@ cohomology the continuation maps therefore form a functor `ι ⥤ ModuleCat R` i
 A **subsystem** (`TauCeti.ContinuationSystem.Subsystem`) is a choice of sets `S i ⊆ P i` of
 generators which the twisted differentials, the continuation cocycles and some choice of the
 parametrized cocycles never leave. The subcomplexes of the `S i` and the quotient complexes of
-their complements then also form functors on cohomology
-(`TauCeti.ContinuationSystem.Subsystem.subHomologyFunctor`,
-`TauCeti.ContinuationSystem.Subsystem.quotientHomologyFunctor`), and the maps of the long exact
+their complements then also form continuation systems
+(`TauCeti.ContinuationSystem.Subsystem.toSub`, `TauCeti.ContinuationSystem.Subsystem.toQuotient`),
+so their cohomology groups form functors on `ι` too, and the maps of the long exact
 sequences of the short exact sequences `0 → S i → P i → P i ∖ S i → 0` are natural transformations
 between them, the connecting morphism included (`TauCeti.ContinuationSystem.Subsystem.homologyδ`).
 When colimits of shape `ι` are exact, as filtered colimits of modules are, the colimit of these
 long exact sequences is exact at each of its three kinds of terms
-(`TauCeti.ContinuationSystem.Subsystem.exact_colimMap_homologyι_homologyπ`,
-`TauCeti.ContinuationSystem.Subsystem.exact_colimMap_homologyπ_homologyδ`,
-`TauCeti.ContinuationSystem.Subsystem.exact_colimMap_homologyδ_homologyι`).
+(`TauCeti.ContinuationSystem.Subsystem.exact_map_colim_homologyι_homologyπ`,
+`TauCeti.ContinuationSystem.Subsystem.exact_map_colim_homologyπ_homologyδ`,
+`TauCeti.ContinuationSystem.Subsystem.exact_map_colim_homologyδ_homologyι`).
 
 In Floer theory the generators carry actions, the differentials and the continuation cocycles of
 monotone homotopies do not raise them, and the generators of action below a level `a` form a
@@ -56,6 +56,8 @@ least `a`, the algebraic content of the tautological long exact sequence of symp
 * `TauCeti.ContinuationSystem.homologyFunctor`: their cohomology in degree `n`, a functor on `ι`.
 * `TauCeti.ContinuationSystem.const`: the constant system of a single twisting cocycle.
 * `TauCeti.ContinuationSystem.Subsystem`: sets of generators spanning subcomplexes throughout.
+* `TauCeti.ContinuationSystem.Subsystem.toSub`, `TauCeti.ContinuationSystem.Subsystem.toQuotient`:
+  the continuation systems of their subcomplexes and of the quotient complexes.
 * `TauCeti.ContinuationSystem.IsActionNonincreasing`: actions which the differentials,
   continuation cocycles and some parametrized cocycles do not raise, and their sublevel
   subsystems.
@@ -66,9 +68,9 @@ least `a`, the algebraic content of the tautological long exact sequence of symp
   `TauCeti.ContinuationSystem.Subsystem.exact_homologyπ_homologyδ`,
   `TauCeti.ContinuationSystem.Subsystem.exact_homologyδ_homologyι`: the long exact sequence of a
   subsystem, as sequences of functors on `ι`.
-* `TauCeti.ContinuationSystem.Subsystem.exact_colimMap_homologyι_homologyπ`,
-  `TauCeti.ContinuationSystem.Subsystem.exact_colimMap_homologyπ_homologyδ`,
-  `TauCeti.ContinuationSystem.Subsystem.exact_colimMap_homologyδ_homologyι`: its colimit is exact
+* `TauCeti.ContinuationSystem.Subsystem.exact_map_colim_homologyι_homologyπ`,
+  `TauCeti.ContinuationSystem.Subsystem.exact_map_colim_homologyπ_homologyδ`,
+  `TauCeti.ContinuationSystem.Subsystem.exact_map_colim_homologyδ_homologyι`: its colimit is exact
   when colimits of shape `ι` are.
 
 ## References
@@ -169,13 +171,36 @@ def const {P : Type uP} [Fintype P] [DecidableEq P] {ind : P → ℤ}
   nonempty_refl _ := ⟨ParametrizedCocycle.ofEq rfl⟩
   nonempty_comp _ _ _ _ _ := ⟨ParametrizedCocycle.ofEq (ContinuationCocycle.refl_comp h _)⟩
 
+section Const
+
+variable {P : Type uP} [Fintype P] [DecidableEq P] {ind : P → ℤ} (m : TwistingCocycle 𝒜 d P ind)
+
+@[simp]
+theorem const_P (i : ι) : (const h ι m).P i = P :=
+  (rfl)
+
+@[simp]
+theorem const_ind (i : ι) : (const h ι m).ind i = ind :=
+  (rfl)
+
+@[simp]
+theorem const_m (i : ι) : (const h ι m).m i = m :=
+  (rfl)
+
+@[simp]
+theorem const_ν {i j : ι} (hij : i ≤ j) :
+    (const h ι m).ν hij = ContinuationCocycle.refl h.map_one_eq_zero m :=
+  (rfl)
+
 /-- The cohomology functor of a constant continuation system has identity maps. -/
-theorem homologyFunctor_const_map {P : Type uP} [Fintype P] [DecidableEq P] {ind : P → ℤ}
-    (m : TwistingCocycle 𝒜 d P ind) (n : ℤ) {i j : ι} (g : i ⟶ j) :
+theorem homologyFunctor_const_map (n : ℤ) {i j : ι} (g : i ⟶ j) :
     ((const h ι m).homologyFunctor hM n).map g = 𝟙 _ := by
-  rw [homologyFunctor_map]
-  exact (congrArg (HomologicalComplex.homologyMap · n)
-    (ContinuationCocycle.continuationHom_refl hM)).trans (HomologicalComplex.homologyMap_id _ n)
+  have hn := congrArg (HomologicalComplex.homologyMap · n)
+    (ContinuationCocycle.continuationHom_refl (mP := m) hM)
+  rw [HomologicalComplex.homologyMap_id] at hn
+  exact hn
+
+end Const
 
 /-! ### Subsystems -/
 
@@ -220,88 +245,110 @@ theorem comp_ν_eq_zero {i j k : ι} (hij : i ≤ j) (hjk : j ≤ k) :
     ∀ x y, x ∈ T.carrier i → y ∉ T.carrier k → ((S.ν hij).comp h (S.ν hjk)).ν x y = 0 :=
   ContinuationCocycle.comp_ν_eq_zero_of_forall_eq_zero h _ _ (T.ν_eq_zero hij) (T.ν_eq_zero hjk)
 
-/-- The restriction of the continuation cocycle `ν hij` to the subcomplexes. -/
-noncomputable abbrev subν {i j : ι} (hij : i ≤ j) :=
-  (S.ν hij).restrictSubcomplex (T.carrier i) (T.m_eq_zero i) (T.carrier j) (T.m_eq_zero j)
-    (T.ν_eq_zero hij)
+/-- The twisted differential never enters the complement of the subcomplex from outside. -/
+theorem compl_m_eq_zero (i : ι) :
+    ∀ x y, x ∉ (T.carrier i)ᶜ → y ∈ (T.carrier i)ᶜ → (S.m i).m x y = 0 :=
+  (S.m i).forall_eq_zero_of_compl (T.m_eq_zero i) fun _ ↦ Iff.rfl
 
-/-- The restriction of the continuation cocycle `ν hij` to the quotient complexes of the
-complements. -/
-noncomputable abbrev quotientν {i j : ι} (hij : i ≤ j) :=
-  (S.ν hij).restrictQuotient (T.carrier i)ᶜ
-    ((S.m i).forall_eq_zero_of_compl (T.m_eq_zero i) fun _ ↦ Iff.rfl) (T.carrier j)ᶜ
-    ((S.m j).forall_eq_zero_of_compl (T.m_eq_zero j) fun _ ↦ Iff.rfl)
-    ((S.ν hij).forall_eq_zero_of_compl (T.ν_eq_zero hij) (fun _ ↦ Iff.rfl) fun _ ↦ Iff.rfl)
+/-- The continuation cocycles never enter the complements of the subcomplexes from outside. -/
+theorem compl_ν_eq_zero {i j : ι} (hij : i ≤ j) :
+    ∀ x y, x ∉ (T.carrier i)ᶜ → y ∈ (T.carrier j)ᶜ → (S.ν hij).ν x y = 0 :=
+  (S.ν hij).forall_eq_zero_of_compl (T.ν_eq_zero hij) (fun _ ↦ Iff.rfl) fun _ ↦ Iff.rfl
 
-/-- The cohomology of the subcomplexes of a subsystem in degree `n`, a functor on `ι`. -/
+/-- The Kronecker cocycle never enters the complement of the subcomplex from outside. -/
+theorem compl_refl_ν_eq_zero (i : ι) :
+    ∀ x y, x ∉ (T.carrier i)ᶜ → y ∈ (T.carrier i)ᶜ →
+      (ContinuationCocycle.refl h.map_one_eq_zero (S.m i)).ν x y = 0 :=
+  apply_eq_zero_of_compl (T.refl_ν_eq_zero i) (fun _ ↦ Iff.rfl) fun _ ↦ Iff.rfl
+
+/-- The composite of two continuation cocycles of the system never enters the complements of the
+subcomplexes from outside. -/
+theorem compl_comp_ν_eq_zero {i j k : ι} (hij : i ≤ j) (hjk : j ≤ k) :
+    ∀ x y, x ∉ (T.carrier i)ᶜ → y ∈ (T.carrier k)ᶜ → ((S.ν hij).comp h (S.ν hjk)).ν x y = 0 :=
+  apply_eq_zero_of_compl (T.comp_ν_eq_zero hij hjk) (fun _ ↦ Iff.rfl) fun _ ↦ Iff.rfl
+
+/-! ### The continuation systems of the subcomplexes and of the quotient complexes -/
+
+/-- The **continuation system of the subcomplexes** of a subsystem: the restrictions of the
+twisting cocycles and of the continuation cocycles to the generators of the subsystem. -/
 @[expose]
-noncomputable def subHomologyFunctor (n : ℤ) : ι ⥤ ModuleCat.{max uP uM} R :=
-  HomologicalComplex.homologyFunctorOfHomotopy
-    (fun i ↦ ((S.m i).restrict (T.carrier i)
-      ((S.m i).mul_eq_zero_of_forall_eq_zero (T.m_eq_zero i))).twistedCochainComplex dM hM)
-    (fun _ _ hij ↦ (T.subν hij).continuationHom hM)
-    (fun i ↦ by
-      obtain ⟨η, hη⟩ := T.exists_refl i
-      refine ⟨((η.restrictSubcomplex _ _ _ _ (T.refl_ν_eq_zero i) _ hη).homotopy hM).trans
-        (.ofEq ?_)⟩
-      rw [ContinuationCocycle.restrictSubcomplex_refl, ContinuationCocycle.continuationHom_refl])
-    (fun _ _ _ hij hjk ↦ by
-      obtain ⟨η, hη⟩ := T.exists_comp hij hjk
-      refine ⟨((η.restrictSubcomplex _ _ _ _ (T.comp_ν_eq_zero hij hjk) _ hη).homotopy
-        hM).trans (.ofEq ?_)⟩
-      rw [ContinuationCocycle.restrictSubcomplex_comp h _ _ _ _ _ (T.m_eq_zero _) _ _
-        (T.ν_eq_zero hij) (T.ν_eq_zero hjk), ContinuationCocycle.continuationHom_comp])
-    n
+def toSub : ContinuationSystem.{w, uR, uA, uP} 𝒜 d h ι where
+  P i := T.carrier i
+  ind i x := S.ind i x
+  m i := (S.m i).restrict (T.carrier i) ((S.m i).mul_eq_zero_of_forall_eq_zero (T.m_eq_zero i))
+  ν _ _ hij := (S.ν hij).restrictSubcomplex _ (T.m_eq_zero _) _ (T.m_eq_zero _) (T.ν_eq_zero hij)
+  nonempty_refl i := by
+    obtain ⟨η, hη⟩ := T.exists_refl i
+    rw [← ContinuationCocycle.restrictSubcomplex_refl h.map_one_eq_zero _ (T.m_eq_zero i)
+      (T.refl_ν_eq_zero i)]
+    exact ⟨η.restrictSubcomplex _ _ _ _ _ _ hη⟩
+  nonempty_comp _ _ _ hij hjk := by
+    obtain ⟨η, hη⟩ := T.exists_comp hij hjk
+    rw [← ContinuationCocycle.restrictSubcomplex_comp h _ _ _ _ _ (T.m_eq_zero _) _ _
+      (T.ν_eq_zero hij) (T.ν_eq_zero hjk) (T.comp_ν_eq_zero hij hjk)]
+    exact ⟨η.restrictSubcomplex _ _ _ _ _ _ hη⟩
 
-/-- The cohomology of the quotient complexes of a subsystem, spanned by the generators outside
-it, in degree `n`, a functor on `ι`. -/
+/-- The **continuation system of the quotient complexes** of a subsystem: the restrictions of the
+twisting cocycles and of the continuation cocycles to the generators outside the subsystem. -/
 @[expose]
-noncomputable def quotientHomologyFunctor (n : ℤ) : ι ⥤ ModuleCat.{max uP uM} R :=
-  HomologicalComplex.homologyFunctorOfHomotopy
-    (fun i ↦ ((S.m i).restrict (T.carrier i)ᶜ ((S.m i).mul_eq_zero_of_forall_eq_zero'
-      ((S.m i).forall_eq_zero_of_compl (T.m_eq_zero i) fun _ ↦ Iff.rfl))).twistedCochainComplex
-        dM hM)
-    (fun _ _ hij ↦ (T.quotientν hij).continuationHom hM)
-    (fun i ↦ by
-      obtain ⟨η, hη⟩ := T.exists_refl i
-      refine ⟨((η.restrictQuotient _ _ _ _ (apply_eq_zero_of_compl (T.refl_ν_eq_zero i)
-        (fun _ ↦ Iff.rfl) fun _ ↦ Iff.rfl) _ (apply_eq_zero_of_compl hη
-        (fun _ ↦ Iff.rfl) fun _ ↦ Iff.rfl)).homotopy hM).trans (.ofEq ?_)⟩
-      rw [ContinuationCocycle.restrictQuotient_refl, ContinuationCocycle.continuationHom_refl])
-    (fun i j k hij hjk ↦ by
-      obtain ⟨η, hη⟩ := T.exists_comp hij hjk
-      refine ⟨((η.restrictQuotient _ _ _ _ (apply_eq_zero_of_compl (T.comp_ν_eq_zero hij hjk)
-        (fun _ ↦ Iff.rfl) fun _ ↦ Iff.rfl) _ (apply_eq_zero_of_compl hη
-        (fun _ ↦ Iff.rfl) fun _ ↦ Iff.rfl)).homotopy hM).trans (.ofEq ?_)⟩
-      rw [ContinuationCocycle.restrictQuotient_comp h _ _ (T.carrier i)ᶜ _ (T.carrier j)ᶜ _
-        (T.carrier k)ᶜ,
-        ContinuationCocycle.continuationHom_comp])
-    n
+def toQuotient : ContinuationSystem.{w, uR, uA, uP} 𝒜 d h ι where
+  P i := ↥(T.carrier i)ᶜ
+  ind i x := S.ind i x
+  m i := (S.m i).restrict (T.carrier i)ᶜ ((S.m i).mul_eq_zero_of_forall_eq_zero'
+    (T.compl_m_eq_zero i))
+  ν _ _ hij := (S.ν hij).restrictQuotient _ (T.compl_m_eq_zero _) _ (T.compl_m_eq_zero _)
+    (T.compl_ν_eq_zero hij)
+  nonempty_refl i := by
+    obtain ⟨η, hη⟩ := T.exists_refl i
+    rw [← ContinuationCocycle.restrictQuotient_refl h.map_one_eq_zero _ (T.compl_m_eq_zero i)
+      (T.compl_refl_ν_eq_zero i)]
+    exact ⟨η.restrictQuotient _ _ _ _ (T.compl_refl_ν_eq_zero i) _
+      (apply_eq_zero_of_compl hη (fun _ ↦ Iff.rfl) fun _ ↦ Iff.rfl)⟩
+  nonempty_comp _ _ _ hij hjk := by
+    obtain ⟨η, hη⟩ := T.exists_comp hij hjk
+    rw [← ContinuationCocycle.restrictQuotient_comp h _ _ _ _ _ (T.compl_m_eq_zero _) _ _
+      (T.compl_ν_eq_zero hij) (T.compl_ν_eq_zero hjk) (T.compl_comp_ν_eq_zero hij hjk)]
+    exact ⟨η.restrictQuotient _ _ _ _ (T.compl_comp_ν_eq_zero hij hjk) _
+      (apply_eq_zero_of_compl hη (fun _ ↦ Iff.rfl) fun _ ↦ Iff.rfl)⟩
 
 @[simp]
-theorem subHomologyFunctor_obj (n : ℤ) (i : ι) :
-    (T.subHomologyFunctor hM n).obj i = (((S.m i).restrict (T.carrier i)
-      ((S.m i).mul_eq_zero_of_forall_eq_zero (T.m_eq_zero i))).twistedCochainComplex dM hM).homology
-        n :=
+theorem toSub_P (i : ι) : T.toSub.P i = T.carrier i :=
   (rfl)
 
 @[simp]
-theorem subHomologyFunctor_map (n : ℤ) {i j : ι} (g : i ⟶ j) :
-    (T.subHomologyFunctor hM n).map g =
-      HomologicalComplex.homologyMap ((T.subν (leOfHom g)).continuationHom hM) n :=
+theorem toSub_ind (i : ι) (x : T.carrier i) : T.toSub.ind i x = S.ind i x :=
   (rfl)
 
 @[simp]
-theorem quotientHomologyFunctor_obj (n : ℤ) (i : ι) :
-    (T.quotientHomologyFunctor hM n).obj i = (((S.m i).restrict (T.carrier i)ᶜ
-      ((S.m i).mul_eq_zero_of_forall_eq_zero' ((S.m i).forall_eq_zero_of_compl (T.m_eq_zero i)
-        fun _ ↦ Iff.rfl))).twistedCochainComplex dM hM).homology n :=
+theorem toSub_m (i : ι) :
+    T.toSub.m i =
+      (S.m i).restrict (T.carrier i) ((S.m i).mul_eq_zero_of_forall_eq_zero (T.m_eq_zero i)) :=
   (rfl)
 
 @[simp]
-theorem quotientHomologyFunctor_map (n : ℤ) {i j : ι} (g : i ⟶ j) :
-    (T.quotientHomologyFunctor hM n).map g =
-      HomologicalComplex.homologyMap ((T.quotientν (leOfHom g)).continuationHom hM) n :=
+theorem toSub_ν {i j : ι} (hij : i ≤ j) :
+    T.toSub.ν hij = (S.ν hij).restrictSubcomplex (T.carrier i) (T.m_eq_zero i) (T.carrier j)
+      (T.m_eq_zero j) (T.ν_eq_zero hij) :=
+  (rfl)
+
+@[simp]
+theorem toQuotient_P (i : ι) : T.toQuotient.P i = ↥(T.carrier i)ᶜ :=
+  (rfl)
+
+@[simp]
+theorem toQuotient_ind (i : ι) (x : ↥(T.carrier i)ᶜ) : T.toQuotient.ind i x = S.ind i x :=
+  (rfl)
+
+@[simp]
+theorem toQuotient_m (i : ι) :
+    T.toQuotient.m i = (S.m i).restrict (T.carrier i)ᶜ
+      ((S.m i).mul_eq_zero_of_forall_eq_zero' (T.compl_m_eq_zero i)) :=
+  (rfl)
+
+@[simp]
+theorem toQuotient_ν {i j : ι} (hij : i ≤ j) :
+    T.toQuotient.ν hij = (S.ν hij).restrictQuotient (T.carrier i)ᶜ (T.compl_m_eq_zero i)
+      (T.carrier j)ᶜ (T.compl_m_eq_zero j) (T.compl_ν_eq_zero hij) :=
   (rfl)
 
 /-! ### The long exact sequence of a subsystem -/
@@ -313,15 +360,17 @@ theorem shortExact (i : ι) :
   (S.m i).restrictShortComplex_shortExact hM _ _ _ _
 
 /-- The maps induced on cohomology by the inclusions of the subcomplexes, natural in `i`. -/
-noncomputable def homologyι (n : ℤ) : T.subHomologyFunctor hM n ⟶ S.homologyFunctor hM n where
+noncomputable def homologyι (n : ℤ) :
+    T.toSub.homologyFunctor hM n ⟶ S.homologyFunctor hM n where
   app i := HomologicalComplex.homologyMap
     ((ContinuationCocycle.ofRestrict (S.m i) h.map_one_eq_zero (T.carrier i)
       (T.m_eq_zero i)).continuationHom hM) n
-  naturality i j g :=
-    ((HomologicalComplex.homologyMap_comp _ _ n).symm.trans (congrArg
-      (HomologicalComplex.homologyMap · n) (ContinuationCocycle.ofRestrict_continuationHom_comp h
-        (S.ν (leOfHom g)) _ (T.m_eq_zero i) _ (T.m_eq_zero j) (T.ν_eq_zero (leOfHom g))
-          hM).symm)).trans (HomologicalComplex.homologyMap_comp _ _ n)
+  naturality _ _ g := by
+    have hn := congrArg (HomologicalComplex.homologyMap · n)
+      (ContinuationCocycle.ofRestrict_continuationHom_comp h (S.ν (leOfHom g)) _ (T.m_eq_zero _) _
+        (T.m_eq_zero _) (T.ν_eq_zero (leOfHom g)) hM)
+    rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp] at hn
+    exact hn.symm
 
 @[simp]
 theorem homologyι_app (n : ℤ) (i : ι) :
@@ -332,26 +381,29 @@ theorem homologyι_app (n : ℤ) (i : ι) :
 
 /-- The maps induced on cohomology by the projections onto the quotient complexes, natural in
 `i`. -/
-noncomputable def homologyπ (n : ℤ) : S.homologyFunctor hM n ⟶ T.quotientHomologyFunctor hM n where
+noncomputable def homologyπ (n : ℤ) :
+    S.homologyFunctor hM n ⟶ T.toQuotient.homologyFunctor hM n where
   app i := HomologicalComplex.homologyMap
     ((ContinuationCocycle.toRestrict (S.m i) h.map_one_eq_zero (T.carrier i)ᶜ
-      ((S.m i).forall_eq_zero_of_compl (T.m_eq_zero i) fun _ ↦ Iff.rfl)).continuationHom hM) n
-  naturality _ _ g :=
-    ((HomologicalComplex.homologyMap_comp _ _ n).symm.trans (congrArg
-      (HomologicalComplex.homologyMap · n) (ContinuationCocycle.toRestrict_continuationHom_comp h
-        (S.ν (leOfHom g)) hM _ _ _ _ _).symm)).trans (HomologicalComplex.homologyMap_comp _ _ n)
+      (T.compl_m_eq_zero i)).continuationHom hM) n
+  naturality _ _ g := by
+    have hn := congrArg (HomologicalComplex.homologyMap · n)
+      (ContinuationCocycle.toRestrict_continuationHom_comp h (S.ν (leOfHom g)) hM _
+        (T.compl_m_eq_zero _) _ (T.compl_m_eq_zero _) (T.compl_ν_eq_zero (leOfHom g)))
+    rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_comp] at hn
+    exact hn.symm
 
 @[simp]
 theorem homologyπ_app (n : ℤ) (i : ι) :
     (T.homologyπ hM n).app i = HomologicalComplex.homologyMap
       ((ContinuationCocycle.toRestrict (S.m i) h.map_one_eq_zero (T.carrier i)ᶜ
-        ((S.m i).forall_eq_zero_of_compl (T.m_eq_zero i) fun _ ↦ Iff.rfl)).continuationHom hM) n :=
+        (T.compl_m_eq_zero i)).continuationHom hM) n :=
   (rfl)
 
 /-- The connecting morphisms `H^n(P i ∖ S i) ⟶ H^(n+1)(S i)` of the long exact sequences of the
 subcomplexes, natural in `i`. -/
 noncomputable def homologyδ (n : ℤ) :
-    T.quotientHomologyFunctor hM n ⟶ T.subHomologyFunctor hM (n + 1) where
+    T.toQuotient.homologyFunctor hM n ⟶ T.toSub.homologyFunctor hM (n + 1) where
   app i := (T.shortExact hM i).δ n (n + 1) rfl
   naturality _ _ g :=
     ((S.ν (leOfHom g)).restrictShortComplexMap_δ h hM _ _ _ _ _ _ _ _ (T.ν_eq_zero (leOfHom g)) n
@@ -365,11 +417,11 @@ theorem homologyδ_app (n : ℤ) (i : ι) :
 @[reassoc (attr := simp)]
 theorem homologyι_comp_homologyπ (n : ℤ) : T.homologyι hM n ≫ T.homologyπ hM n = 0 := by
   ext i : 2
-  exact ((HomologicalComplex.homologyMap_comp _ _ n).symm.trans (congrArg
-    (HomologicalComplex.homologyMap · n)
-      ((S.m i).ofRestrict_continuationHom_comp_toRestrict_continuationHom hM (T.carrier i)
-        (T.carrier i)ᶜ (T.m_eq_zero i) fun _ ↦ Iff.rfl))).trans
-    (HomologicalComplex.homologyMap_zero _ _ n)
+  have hn := congrArg (HomologicalComplex.homologyMap · n)
+    ((S.m i).ofRestrict_continuationHom_comp_toRestrict_continuationHom hM (T.carrier i)
+      (T.carrier i)ᶜ (T.m_eq_zero i) fun _ ↦ Iff.rfl)
+  rw [HomologicalComplex.homologyMap_comp, HomologicalComplex.homologyMap_zero] at hn
+  exact hn
 
 @[reassoc (attr := simp)]
 theorem homologyπ_comp_homologyδ (n : ℤ) : T.homologyπ hM n ≫ T.homologyδ hM n = 0 := by
@@ -406,26 +458,20 @@ variable [HasColimitsOfShape ι (ModuleCat.{max uP uM} R)]
 
 /-- **The direct limit is exact at the whole complexes**: when colimits of shape `ι` are exact,
 `lim H^n(S i) ⟶ lim H^n(P i) ⟶ lim H^n(P i ∖ S i)` is exact. -/
-theorem exact_colimMap_homologyι_homologyπ (n : ℤ) :
-    (ShortComplex.mk (colimMap (T.homologyι hM n)) (colimMap (T.homologyπ hM n)) (by
-      rw [← colim_map, ← colim_map, ← Functor.map_comp, homologyι_comp_homologyπ,
-        Functor.map_zero])).Exact :=
+theorem exact_map_colim_homologyι_homologyπ (n : ℤ) :
+    ((ShortComplex.mk _ _ (T.homologyι_comp_homologyπ hM n)).map colim).Exact :=
   (T.exact_homologyι_homologyπ hM n).map colim
 
 /-- **The direct limit is exact at the quotient complexes**: when colimits of shape `ι` are exact,
 `lim H^n(P i) ⟶ lim H^n(P i ∖ S i) ⟶ lim H^(n+1)(S i)` is exact. -/
-theorem exact_colimMap_homologyπ_homologyδ (n : ℤ) :
-    (ShortComplex.mk (colimMap (T.homologyπ hM n)) (colimMap (T.homologyδ hM n)) (by
-      rw [← colim_map, ← colim_map, ← Functor.map_comp, homologyπ_comp_homologyδ,
-        Functor.map_zero])).Exact :=
+theorem exact_map_colim_homologyπ_homologyδ (n : ℤ) :
+    ((ShortComplex.mk _ _ (T.homologyπ_comp_homologyδ hM n)).map colim).Exact :=
   (T.exact_homologyπ_homologyδ hM n).map colim
 
 /-- **The direct limit is exact at the subcomplexes**: when colimits of shape `ι` are exact,
 `lim H^n(P i ∖ S i) ⟶ lim H^(n+1)(S i) ⟶ lim H^(n+1)(P i)` is exact. -/
-theorem exact_colimMap_homologyδ_homologyι (n : ℤ) :
-    (ShortComplex.mk (colimMap (T.homologyδ hM n)) (colimMap (T.homologyι hM (n + 1))) (by
-      rw [← colim_map, ← colim_map, ← Functor.map_comp, homologyδ_comp_homologyι,
-        Functor.map_zero])).Exact :=
+theorem exact_map_colim_homologyδ_homologyι (n : ℤ) :
+    ((ShortComplex.mk _ _ (T.homologyδ_comp_homologyι hM n)).map colim).Exact :=
   (T.exact_homologyδ_homologyι hM n).map colim
 
 end Subsystem
