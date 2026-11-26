@@ -205,7 +205,7 @@ theorem hsymmInt_isSymmetric (m : ℤ) : (hsymmInt σ R m).IsSymmetric := by
   unfold hsymmInt
   split_ifs
   · exact MvPolynomial.hsymm_isSymmetric σ R _
-  · exact (MvPolynomial.symmetricSubalgebra σ R).zero_mem
+  · exact MvPolynomial.IsSymmetric.zero
 
 end hsymmInt
 
