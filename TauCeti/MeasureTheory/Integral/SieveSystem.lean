@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.MeasureTheory.Integral.Pi
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Algebra.Monoid
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Sieve systems
@@ -256,18 +257,6 @@ private theorem pi_integrand_eq (i : ℕ) (p q : ℕ → ∀ v, U v) (ξ : ∀ v
     comp_update (fun y : ∀ v, U v ↦ y v) r i _
   simp only [h, Pi.mul_apply, prod_mul_distrib]
 
-/-- Schur's product theorem for finitely many kernels: the entrywise product of finitely many
-positive semidefinite matrices is positive semidefinite. -/
-private theorem posSemidef_of_prod {σ κ : Type*} {A : σ → κ → κ → ℂ}
-    (hA : ∀ v, (Matrix.of (A v)).PosSemidef) (s : Finset σ) :
-    (Matrix.of fun k l ↦ ∏ v ∈ s, A v k l).PosSemidef := by
-  classical
-  induction s using Finset.induction with
-  | empty => simpa [vecMulVec] using posSemidef_vecMulVec_self_star (1 : κ → ℂ)
-  | insert v s hv ih =>
-    simp only [prod_insert hv]
-    exact (hA v).hadamard ih
-
 /-- **The product of finitely many sieve systems.** If `J v` is a sieve system on `C v` for each
 `v` in a finite type `τ`, all with the same `n`, then the products `∏_v J v i (fun k ↦ p k v)
 (fun k ↦ q k v)` form a sieve system on `∀ v, C v`, with the product measure, entry maps, maps
@@ -303,8 +292,8 @@ theorem pi (K : ∀ v, SieveSystem (u v) (ι v) n (J v) (ψ v) (En v) (Λ v) (β
     simp only [prod_mul_distrib]
   case posSemidef =>
     intro κ _ a t ha
-    exact posSemidef_of_prod
-      (fun v ↦ (K v).posSemidef (fun k j ↦ a k j v) (t v) fun k ↦ by simp [ha]) univ
+    exact posSemidef_schur_finset_prod (s := univ) fun v _ ↦
+      (K v).posSemidef (fun k j ↦ a k j v) (t v) fun k ↦ by simp [ha]
   case continuous =>
     have h_comp (v : τ) : Continuous fun p : ℕ → ∀ v, U v ↦ fun k ↦ p k v :=
       continuous_pi fun k ↦ (continuous_apply v).comp (continuous_apply k)
