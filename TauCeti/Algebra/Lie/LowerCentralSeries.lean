@@ -22,6 +22,10 @@ weight less than the sum of their weights. This is the weight bound needed to st
 monomials without lowering weight, and to construct finite weighted enveloping-algebra quotients.
 No characteristic or algebraic-closure hypothesis is used.
 
+The quotient `L ⧸ C k` is nilpotent of class at most `k`, and a Lie homomorphism into a Lie
+algebra whose `k`-th lower central term vanishes kills `C k`. These are the facts used to evaluate
+universal elements of free nilpotent Lie algebras in a nilpotent Lie algebra.
+
 ## References
 
 * N. Jacobson, *Lie Algebras*, Interscience (1962), Chapters II and V, for the lower central
@@ -105,6 +109,24 @@ theorem _root_.Module.Basis.repr_lie_eq_zero_of_weight_lt {ι : Type*}
 
 end Bracket
 
+section Quotient
+
+variable (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- The quotient of a Lie algebra by the `k`-th term of its lower central series has vanishing
+`k`-th lower central term: it is nilpotent of class at most `k`. -/
+theorem lowerCentralSeries_quotient_lowerCentralSeries_eq_bot (k : ℕ) :
+    lowerCentralSeries R (L ⧸ lowerCentralSeries R L L k) (L ⧸ lowerCentralSeries R L L k) k =
+      ⊥ := by
+  rw [← LieIdeal.lowerCentralSeries_map_eq k (LieIdeal.surjective_mkQ _), LieIdeal.map_eq_bot_iff,
+    LieIdeal.mkQ_ker]
+
+/-- The quotient of a Lie algebra by a term of its lower central series is nilpotent. -/
+instance (k : ℕ) : LieRing.IsNilpotent (L ⧸ lowerCentralSeries R L L k) :=
+  (isNilpotent_iff R _ _).mpr ⟨k, lowerCentralSeries_quotient_lowerCentralSeries_eq_bot R L k⟩
+
+end Quotient
+
 section Basis
 
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
@@ -130,3 +152,18 @@ theorem exists_basis_weight_lowerCentralSeries :
 end Basis
 
 end TauCeti
+
+namespace LieHom
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+
+/-- A Lie homomorphism into a Lie algebra whose `k`-th lower central term vanishes kills the
+`k`-th lower central term of its source. -/
+theorem lowerCentralSeries_le_ker (f : L →ₗ⁅R⁆ L') {k : ℕ}
+    (hk : LieModule.lowerCentralSeries R L' L' k = ⊥) :
+    LieModule.lowerCentralSeries R L L k ≤ f.ker := by
+  intro x hx
+  have := LieIdeal.map_lowerCentralSeries_le k (f := f) (LieIdeal.mem_map hx)
+  rwa [hk, LieSubmodule.mem_bot, ← LieHom.mem_ker] at this
+
+end LieHom

@@ -48,6 +48,8 @@ of the canonical map from the free nilpotent Lie algebra into the truncated enve
 * `TauCeti.FreeLieAlgebra.factor_bchElement`: the elements of different classes are compatible.
 * `TauCeti.FreeLieAlgebra.bchElement_three`: the element of class three is the cubic
   Baker–Campbell–Hausdorff polynomial.
+* `TauCeti.FreeLieAlgebra.bchElement_one` and `TauCeti.FreeLieAlgebra.bchElement_two`: the
+  elements of classes one and two are `X + Y` and `X + Y + ½ ⁅X, Y⁆`.
 
 ## References
 
@@ -165,5 +167,26 @@ theorem bchElement_three :
     ← Ideal.exp_bch_of_pow_four_eq_bot _ hI (hmem X) (hmem Y)]
   simp only [map_add, map_smul, LieHom.map_lie, Ring.lie_def, map_add, map_sub,
     map_mul, map_rat_smul]
+
+/-- The Baker–Campbell–Hausdorff element of class two is the class of `X + Y + ½ ⁅X, Y⁆`. -/
+theorem bchElement_two :
+    bchElement 2 = LieSubmodule.Quotient.mk (X + Y + (1 / 2 : ℚ) • ⁅X, Y⁆) := by
+  rw [← factor_bchElement (show 2 ≤ 3 by norm_num), bchElement_three, LieIdeal.factor_apply]
+  refine (Submodule.Quotient.eq _).mpr ?_
+  have hmem : ∀ a b c : 𝔣, ⁅a, ⁅b, c⁆⁆ ∈ LieModule.lowerCentralSeries ℚ 𝔣 𝔣 2 := fun a b c => by
+    rw [LieModule.lowerCentralSeries_succ, LieModule.lowerCentralSeries_succ,
+      LieModule.lowerCentralSeries_zero]
+    exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top a)
+      (LieSubmodule.lie_mem_lie (LieSubmodule.mem_top b) (LieSubmodule.mem_top c))
+  rw [add_sub_cancel_left]
+  exact Submodule.smul_mem _ _ (add_mem (hmem _ _ _) (hmem _ _ _))
+
+/-- The Baker–Campbell–Hausdorff element of class one is the class of `X + Y`. -/
+theorem bchElement_one : bchElement 1 = LieSubmodule.Quotient.mk (X + Y) := by
+  rw [← factor_bchElement (show 1 ≤ 2 by norm_num), bchElement_two, LieIdeal.factor_apply]
+  refine (Submodule.Quotient.eq _).mpr ?_
+  rw [add_sub_cancel_left, LieModule.lowerCentralSeries_succ, LieModule.lowerCentralSeries_zero]
+  exact Submodule.smul_mem _ _
+    (LieSubmodule.lie_mem_lie (LieSubmodule.mem_top _) (LieSubmodule.mem_top _))
 
 end TauCeti.FreeLieAlgebra
