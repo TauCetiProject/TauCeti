@@ -57,6 +57,8 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 * `TauCeti.isPseudoholomorphic_ofComplexManifold_subtype_val`,
   `TauCeti.isPseudoholomorphic_ofComplexManifold_inclusion`: inclusions of open subsets are
   pseudoholomorphic.
+* `TauCeti.mfderiv_symm_apply_I_of_mem_maximalAtlas`: for a holomorphic chart of a complex curve,
+  the coordinate vector `∂ₜ` is `j ∂ₛ`.
 * `MDifferentiableAt.mfderiv_ofComplexManifold_apply`: the real differential of a holomorphic map
   commutes with the almost complex structures.
 * `TauCeti.mdifferentiableAt_iff_mvfderiv_ofComplexManifold_apply`: a real differentiable complex
@@ -299,6 +301,18 @@ theorem _root_.MDifferentiableAt.mfderiv_ofComplexManifold_apply
   (isPseudoholomorphicAt_ofComplexManifold_iff.2 hf).mfderiv_apply_commute v
 
 end Pseudoholomorphic
+
+/-- **Coordinate vectors of a holomorphic chart.** For a holomorphic chart `φ` of a complex curve
+`X` and a point `z` of its target, the coordinate vector `∂ₜ = dφ⁻¹ i` is `j ∂ₛ`, where
+`∂ₛ = dφ⁻¹ 1` and `j` is the almost complex structure of `X`. -/
+theorem mfderiv_symm_apply_I_of_mem_maximalAtlas {X : Type*} [TopologicalSpace X]
+    [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) ∞ X] {φ : OpenPartialHomeomorph X ℂ}
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℂ) 1 X) {z : ℂ} (hz : z ∈ φ.target) :
+    mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z Complex.I =
+      ofComplexManifold ℂ X (φ.symm z) (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) φ.symm z (1 : ℂ)) := by
+  have h := (mdifferentiableAt_symm_of_mem_maximalAtlas hφ hz).mfderiv_ofComplexManifold_apply
+    (1 : ℂ)
+  rwa [ofComplexManifold_apply (M := ℂ), smul_eq_mul, mul_one] at h
 
 /-- A real differentiable complex valued function on a complex manifold is holomorphic at a point
 exactly when its real differential there is complex linear: it takes `j v` to `i` times its value

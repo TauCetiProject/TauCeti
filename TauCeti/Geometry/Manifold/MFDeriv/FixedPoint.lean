@@ -98,7 +98,12 @@ preserves it, whether or not the diffeomorphism preserves an orientation
 Lefschetz signs form a geometric sequence (`TauCeti.fixedPointSign_iterate_succ`): if `f` is
 differentiable at `x` and `x` is a nondegenerate fixed point of `f^[k + 1]`, then
 `sgn det (1 - D ^ (k + 1)) = sgn det (1 - D) * ((-1) ^ i₋) ^ k`, where `i₋` counts the real
-eigenvalues of `D` below `-1`.
+eigenvalues of `D` below `-1`. The signs themselves are read off the eigenvalues
+(`TauCeti.fixedPointSign_iterate`): if `f` is differentiable at the fixed point `x` and
+`fixedPointDet I f^[k] x ≠ 0`, the Lefschetz sign of `f^[k]` at `x` is
+`(-1) ^ i₊ * (-1) ^ ((k + 1) * i₋)`, where `i₊` counts the real eigenvalues of `D` above `1`, both
+with algebraic multiplicity. At a nondegenerate fixed point it is `(-1) ^ i₊`
+(`TauCeti.IsNondegenerateFixedPt.fixedPointSign_eq`).
 
 ## Main definitions
 
@@ -174,6 +179,11 @@ eigenvalues of `D` below `-1`.
 * `TauCeti.fixedPointSign_iterate_succ`: at a fixed point `x` where `f` is differentiable, the
   Lefschetz signs of the iterates `f^[k + 1]` at which `x` is nondegenerate form a geometric
   sequence.
+* `TauCeti.fixedPointSign_iterate`, `TauCeti.IsNondegenerateFixedPt.fixedPointSign_eq`: on a
+  finite-dimensional real model, at a fixed point where `f` is differentiable with fixed-point
+  derivative `D`, the Lefschetz sign of `f^[k]` is `(-1) ^ i₊ * (-1) ^ ((k + 1) * i₋)` when
+  `fixedPointDet I f^[k] x ≠ 0`, and that of a nondegenerate fixed point is `(-1) ^ i₊`, for the
+  numbers `i₊` and `i₋` of real eigenvalues of `D` in `(1, ∞)` and `(-∞, -1)`.
 
 ## References
 
@@ -1031,6 +1041,42 @@ theorem fixedPointSign_iterate_succ [FiniteDimensional ℝ E] (hx : IsFixedPt f 
     fixedPointDet_iterate hx hf, fixedPointDet_eq_det_id_sub_fixedPointDerivative hx,
     ← Module.End.one_eq_id, D.sign_det_one_sub_pow_succ k hk]
   simp [D, pow_mul']
+
+/-- **The Lefschetz signs of the iterates from the eigenvalues.** Let `x` be a fixed point of `f`,
+at which `f` is differentiable with fixed-point derivative `D`, and suppose
+`fixedPointDet I f^[k] x ≠ 0`. Then the Lefschetz sign of `f^[k]` at `x` is
+`(-1) ^ i₊ * (-1) ^ ((k + 1) * i₋)`, where `i₊` and `i₋` count the real roots of the characteristic
+polynomial of `D` in `(1, ∞)` and in `(-∞, -1)`, with multiplicity. -/
+theorem fixedPointSign_iterate [FiniteDimensional ℝ E] (hx : IsFixedPt f x)
+    (hf : MDifferentiableAt I I f x) {k : ℕ} (h : fixedPointDet I f^[k] x ≠ 0) :
+    fixedPointSign I f^[k] x =
+      (-1) ^ ((fixedPointDerivative I f ⟨x, hx⟩).charpoly.roots.filter (1 < ·)).card *
+        (-1) ^ ((k + 1) *
+          ((fixedPointDerivative I f ⟨x, hx⟩).charpoly.roots.filter (· < -1)).card) := by
+  -- The tangent space is the model space `E`.
+  have : FiniteDimensional ℝ (TangentSpace I x) := ‹FiniteDimensional ℝ E›
+  set D := fixedPointDerivative I f ⟨x, hx⟩
+  have hk : (1 - D ^ k).det ≠ 0 := by
+    rwa [fixedPointDet_iterate hx hf, ← Module.End.one_eq_id] at h
+  rw [fixedPointSign_eq_sign h, fixedPointDet_iterate hx hf, ← Module.End.one_eq_id,
+    D.sign_det_one_sub_pow k hk]
+  simp
+
+/-- **The Lefschetz sign from the eigenvalues.** At a nondegenerate fixed point `x` of `f`, on a
+manifold modelled on a finite-dimensional real space, the Lefschetz sign is `(-1) ^ i₊`, where
+`i₊` counts the real roots of the characteristic polynomial of the fixed-point derivative in
+`(1, ∞)`, with multiplicity. -/
+theorem IsNondegenerateFixedPt.fixedPointSign_eq [FiniteDimensional ℝ E]
+    (h : IsNondegenerateFixedPt I f x) :
+    fixedPointSign I f x =
+      (-1) ^ ((fixedPointDerivative I f ⟨x, h.isFixedPt⟩).charpoly.roots.filter (1 < ·)).card := by
+  -- The tangent space is the model space `E`.
+  have : FiniteDimensional ℝ (TangentSpace I x) := ‹FiniteDimensional ℝ E›
+  have hdet := h.fixedPointDet_ne_zero
+  rw [fixedPointDet_eq_det_id_sub_fixedPointDerivative h.isFixedPt, ← Module.End.one_eq_id] at hdet
+  rw [h.fixedPointSign_eq_sign, fixedPointDet_eq_det_id_sub_fixedPointDerivative h.isFixedPt,
+    ← Module.End.one_eq_id, LinearMap.sign_det_one_sub _ hdet]
+  simp
 
 end Sign
 
