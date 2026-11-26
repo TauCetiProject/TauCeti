@@ -35,6 +35,12 @@ noncomputable def cyclicFamilyRayClass (ψ : PrimitiveDirichletCharacter) :
     Finset (PrimitiveRayClassCharacter ℚ) :=
   ψ.cyclicFamily.map toPrimitiveRayClassCharacter.toEmbedding
 
+/-- Defining equation of `cyclicFamilyRayClass`: the image of the cyclic family under the
+dictionary, as a `Finset.map`. -/
+theorem cyclicFamilyRayClass_def (ψ : PrimitiveDirichletCharacter) :
+    ψ.cyclicFamilyRayClass = ψ.cyclicFamily.map toPrimitiveRayClassCharacter.toEmbedding :=
+  (rfl)
+
 /-- A primitive ray class character of `ℚ` belongs to the image family precisely when its
 Dirichlet counterpart belongs to the original cyclic family. -/
 theorem mem_cyclicFamilyRayClass {ψ : PrimitiveDirichletCharacter}
