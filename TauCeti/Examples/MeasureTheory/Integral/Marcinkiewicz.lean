@@ -96,6 +96,16 @@ theorem rankOneOperator_add_le {g : ℝ → ℝ} (hg : AEMeasurable g (volume.re
         lintegral_mono fun x => eNorm_add_le _ _
     _ = _ := lintegral_add_left' hg.eNorm _
 
+/-- For `0 < r < ∞`, the threshold `r < I a^{-1/2}` forces `a < (I / r)²`. -/
+private theorem lt_div_rpow_two_of_lt_mul_rpow_neg_half {r I a : ℝ≥0∞} (hr : r ≠ 0)
+    (hr' : r ≠ ⊤) (h : r < I * a ^ (-(1 / 2 : ℝ))) : a < (I / r) ^ (2 : ℝ) := by
+  -- Multiplying through gives `r a^{1/2} < I`, so `a^{1/2} < I / r`; then square.
+  have h₁ : a ^ (1 / 2 : ℝ) < I / r := by
+    rw [ENNReal.rpow_neg, ← div_eq_mul_inv, ENNReal.lt_div_iff_mul_lt (Or.inr hr') (Or.inr hr),
+      mul_comm] at h
+    rwa [ENNReal.lt_div_iff_mul_lt (Or.inl hr) (Or.inl hr')]
+  rwa [one_div, ENNReal.rpow_inv_lt_iff two_pos] at h₁
+
 /-- The distribution function of the rank-one operator: `T g` lies in weak `L²`, with
 `r² |{T g > r}| ≤ 2 (∫_0^1 |g|)²`. -/
 theorem rpow_two_mul_volume_lt_rankOneOperator_le (g : ℝ → ℝ) (r : ℝ≥0∞) :
@@ -109,20 +119,16 @@ theorem rpow_two_mul_volume_lt_rankOneOperator_le (g : ℝ → ℝ) (r : ℝ≥0
   rcases eq_or_ne r ⊤ with rfl | hr'
   · simp
   -- Otherwise `r < I ‖y‖^{-1/2}` forces `‖y‖ < (I / r)²`.
-  have hsub : {y : ℝ | r < I * ‖y‖ₑ ^ (-(1 / 2 : ℝ))} ⊆ Metric.eball 0 ((I / r) ^ (2 : ℝ)) := by
-    intro y hy
-    rw [mem_ofPred_eq, ENNReal.rpow_neg, ← div_eq_mul_inv,
-      ENNReal.lt_div_iff_mul_lt (Or.inr hr') (Or.inr hr), mul_comm,
-      ← ENNReal.lt_div_iff_mul_lt (Or.inl hr) (Or.inl hr'), one_div,
-      ENNReal.rpow_inv_lt_iff two_pos] at hy
-    rwa [Metric.mem_eball, edist_zero_right]
+  have hsub : {y : ℝ | r < I * ‖y‖ₑ ^ (-(1 / 2 : ℝ))} ⊆ Metric.eball 0 ((I / r) ^ (2 : ℝ)) :=
+    fun y hy => by
+      rw [Metric.mem_eball, edist_zero_right]
+      exact lt_div_rpow_two_of_lt_mul_rpow_neg_half hr hr' hy
   calc r ^ (2 : ℝ) * volume {y : ℝ | r < I * ‖y‖ₑ ^ (-(1 / 2 : ℝ))}
       ≤ r ^ (2 : ℝ) * volume (Metric.eball (0 : ℝ) ((I / r) ^ (2 : ℝ))) := by
         gcongr
     _ = 2 * I ^ (2 : ℝ) := by
       rw [Real.volume_eball, ENNReal.div_rpow_of_nonneg _ _ zero_le_two, mul_left_comm,
-        ENNReal.mul_div_cancel (ENNReal.rpow_pos (pos_iff_ne_zero.2 hr) hr').ne'
-          (ENNReal.rpow_ne_top_of_nonneg zero_le_two hr')]
+        ENNReal.mul_div_cancel (by positivity) (by finiteness)]
 
 /-- **Weak type `(1, 2)`.** The rank-one operator satisfies the weak type `(1, 2)` bound with
 constant `2`, in the form of the hypotheses of the off-diagonal Marcinkiewicz theorem. -/
@@ -206,10 +212,10 @@ theorem not_exists_lintegral_rankOneOperator_rpow_le :
 `(1, 2)` and, by the Cauchy–Schwarz inequality, the weak type `(2, 2)` bounds with constant `2`. -/
 theorem rpow_two_mul_volume_lt_eNorm_setIntegral_mul_abs_rpow_le (f : ℝ → ℝ) (r : ℝ≥0∞) :
     r ^ (2 : ℝ) * volume {y | r < ‖(∫ x in Icc 0 1, f x) * |y| ^ (-(1 / 2 : ℝ))‖ₑ} ≤
-      2 * (∫⁻ x in Icc 0 1, ‖f x‖ₑ) ^ (2 : ℝ) :=
-  (mul_le_mul_right (measure_mono fun y hy =>
-    lt_of_lt_of_le hy (eNorm_setIntegral_mul_abs_rpow_le_rankOneOperator f y)) _).trans
-    (rpow_two_mul_volume_lt_rankOneOperator_le f r)
+      2 * (∫⁻ x in Icc 0 1, ‖f x‖ₑ) ^ (2 : ℝ) := by
+  refine le_trans ?_ (rpow_two_mul_volume_lt_rankOneOperator_le f r)
+  gcongr
+  exact eNorm_setIntegral_mul_abs_rpow_le_rankOneOperator f _
 
 /-- **The linear rank-one operator is not of strong type `(4/3, 2)`.** No finite constant `C`
 bounds `∫ |T f|²` by `C (∫ |f|^{4/3})^{3/2}` for `T f (y) = (∫_0^1 f) |y|^{-1/2}`. -/
