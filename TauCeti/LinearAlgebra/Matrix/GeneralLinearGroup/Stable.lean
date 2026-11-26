@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.IsPerfect
-public import TauCeti.Algebra.Colimit.DirectLimit
+public import TauCeti.Algebra.Colimit.Abelianization
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 
 /-!
@@ -21,12 +21,14 @@ subgroup** `E_∞(A)` is the union of the images of the elementary subgroups `E 
 The finite-size relations of `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary`
 become exact statements in the limit: `E_∞(A)` is a normal subgroup of `GL_∞(A)`, and it is the
 commutator subgroup of `GL_∞(A)`. Hence algebraic `K₁(A) = GL_∞(A) / E_∞(A)` is an abelian group,
-the abelianization of `GL_∞(A)`. Homomorphisms on invertible matrices which are compatible with
-stabilization and take values in an abelian group, such as Connes' odd pairing with cyclic
-cohomology, factor through it. A ring homomorphism, applied to the entries of invertible matrices,
-induces a homomorphism of stable general linear groups, functorially. It carries `E_∞` into
-`E_∞`, onto when the ring homomorphism is surjective, and its abelianization is the induced
-homomorphism of algebraic `K₁`.
+the abelianization of `GL_∞(A)`. Since abelianization commutes with directed colimits, `K₁(A)` is
+also the direct limit of the abelianizations of the finite-rank groups `GL (Fin n) A`; the
+quotients `GL (Fin n) A / E n A` themselves need not be groups. Homomorphisms on invertible
+matrices which are compatible with stabilization and take values in an abelian group, such as
+Connes' odd pairing with cyclic cohomology, factor through it. A ring homomorphism, applied to
+the entries of invertible matrices, induces a homomorphism of stable general linear groups,
+functorially. It carries `E_∞` into `E_∞`, onto when the ring homomorphism is surjective, and its
+abelianization is the induced homomorphism of algebraic `K₁`.
 
 At a finite size with two distinct indices, the invertible matrices commuting with every
 elementary matrix are the scalar matrices with central entry. A stabilization `u ⊕ 1` of
@@ -55,6 +57,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 * `TauCeti.StableGeneralLinearGroup.map`: the homomorphism `GL_∞(A) →* GL_∞(B)` induced by a
   ring homomorphism.
 * `TauCeti.AlgebraicK1.map`: the homomorphism `K₁(A) →* K₁(B)` induced by a ring homomorphism.
+* `TauCeti.AlgebraicK1.directLimitAbelianizationEquiv`: `K₁(A)` is the direct limit of the
+  abelianizations of the groups `GL (Fin n) A` along stabilization.
 
 ## Main results
 
@@ -72,10 +76,15 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
   and hence the center of `GL_∞(A)`, is trivial.
 * `TauCeti.AlgebraicK1.mk_eq_one_iff`, `TauCeti.AlgebraicK1.ker_mk`,
   `TauCeti.AlgebraicK1.ker_mk_eq_iSup`: kernel of `AlgebraicK1.mk` at finite size.
+* `TauCeti.AlgebraicK1.mk_eq_one_iff_exists_mem_commutator`: the class of an invertible matrix
+  is trivial exactly when some stabilization of it is a product of commutators.
 * `TauCeti.StableGeneralLinearGroup.map_id`, `TauCeti.StableGeneralLinearGroup.map_comp`,
   `TauCeti.StableGeneralLinearGroup.map_map`: functoriality of the stable general linear group.
 * `TauCeti.StableGeneralLinearGroup.map_injective`: an injective ring homomorphism induces an
   injective homomorphism of stable general linear groups.
+* `TauCeti.StableGeneralLinearGroup.exists_map_eq_one_of_map_ringOf_eq_one`: an element of
+  `GL_∞` of a stage of a directed system of rings that becomes trivial in `GL_∞` of the direct
+  limit is already trivial at a later stage.
 * `TauCeti.StableGeneralLinearGroup.map_elementarySubgroup_le`,
   `TauCeti.StableGeneralLinearGroup.map_elementarySubgroup_eq_of_surjective`: the induced
   homomorphism carries `E_∞(A)` into `E_∞(B)`, and onto it when the ring homomorphism is
@@ -169,6 +178,16 @@ theorem stabilizeGL_eq_reindexGL_fromBlocksGL (m k : ℕ) (u : GL (Fin m) A) :
   obtain ⟨j, rfl⟩ := finSumFinEquiv.surjective j
   rcases i with i | i <;> rcases j with j | j <;>
     simp [coe_stabilizeGL_apply, Matrix.one_apply, Fin.ext_iff] <;> omega
+
+/-- Stabilizing the reindexing of `u` along an enumeration `e` of a finite index type to size
+`m + k` is the reindexing of `u ⊕ 1` along the enumeration of `ι ⊕ Fin k` built from `e`. -/
+theorem stabilizeGL_reindexGL {ι : Type*} [Fintype ι] [DecidableEq ι] {m : ℕ} (e : ι ≃ Fin m)
+    (k : ℕ) (u : GL ι A) :
+    stabilizeGL A (Nat.le_add_right m k) (e.reindexGL A u) =
+      ((e.sumCongr (Equiv.refl (Fin k))).trans finSumFinEquiv).reindexGL A
+        (fromBlocksGL (u, 1)) := by
+  rw [stabilizeGL_eq_reindexGL_fromBlocksGL, ← Equiv.reindexGL_trans_reindexGL,
+    MulEquiv.trans_apply, Equiv.reindexGL_sumCongr_fromBlocksGL, map_one]
 
 /-- Stabilization is extension by the identity along the inclusion `Fin m ↪ Fin n` of the first
 `m` indices. -/
@@ -624,6 +643,53 @@ def ofUnits : Aˣ →* AlgebraicK1 A :=
 theorem ofUnits_apply (u : Aˣ) : ofUnits A u = mk A 1 (GeneralLinearGroup.scalar (Fin 1) u) :=
   (rfl)
 
+/-! ### `K₁` as a colimit of finite-rank abelianizations -/
+
+variable (A) in
+/-- **Algebraic `K₁` is the direct limit of the abelianizations of the `GL (Fin n) A`**, along the
+homomorphisms induced by stabilization, the class of the abelianization of `u : GL (Fin n) A`
+going to the class of `u` in `K₁(A)`.
+
+This is the comparison with finite rank through groups: the quotients of `GL (Fin n) A` by the
+elementary subgroups need not be groups, since `E n A` need not be normal in `GL (Fin n) A`. -/
+def directLimitAbelianizationEquiv :
+    DirectLimit (fun n : ℕ ↦ Group.Abelianization (GL (Fin n) A))
+        (fun _ _ h ↦ Group.Abelianization.map (stabilizeGL A h)) ≃* AlgebraicK1 A :=
+  (DirectLimit.abelianizationEquiv _ _).symm
+
+/-- The identification of the direct limit of the finite-rank abelianizations with `K₁(A)` sends
+the class of the abelianization of `u : GL (Fin n) A` to the class of `u` in `K₁(A)`. -/
+@[simp]
+theorem directLimitAbelianizationEquiv_mk (n : ℕ) (u : GL (Fin n) A) :
+    directLimitAbelianizationEquiv A ⟦⟨n, Group.Abelianization.of u⟩⟧ = mk A n u := by
+  rw [directLimitAbelianizationEquiv, MulEquiv.symm_apply_eq, mk_apply,
+    StableGeneralLinearGroup.of_apply, DirectLimit.abelianizationEquiv_mk]
+
+/-- The identification of the direct limit of the finite-rank abelianizations with `K₁(A)` sends
+the class of `x : Group.Abelianization (GL (Fin n) A)` to its image under the homomorphism
+induced by `AlgebraicK1.mk A n`. -/
+theorem directLimitAbelianizationEquiv_of (n : ℕ) (x : Group.Abelianization (GL (Fin n) A)) :
+    directLimitAbelianizationEquiv A (DirectLimit.Monoid.of _ _ n x) =
+      Group.Abelianization.lift (mk A n) x := by
+  obtain ⟨u, rfl⟩ := Group.Abelianization.surjective_of _ x
+  rw [DirectLimit.Monoid.of_apply, directLimitAbelianizationEquiv_mk,
+    Group.Abelianization.lift_apply_of]
+
+/-- The inverse of `directLimitAbelianizationEquiv` sends the class of `u : GL (Fin n) A` in
+`K₁(A)` to the class of the abelianization of `u` in the direct limit. -/
+@[simp]
+theorem directLimitAbelianizationEquiv_symm_mk (n : ℕ) (u : GL (Fin n) A) :
+    (directLimitAbelianizationEquiv A).symm (mk A n u) = ⟦⟨n, Group.Abelianization.of u⟩⟧ := by
+  rw [MulEquiv.symm_apply_eq, directLimitAbelianizationEquiv_mk]
+
+/-- The class of an invertible matrix in algebraic `K₁` is trivial exactly when some
+stabilization of the matrix is a product of commutators of invertible matrices. -/
+theorem mk_eq_one_iff_exists_mem_commutator {n : ℕ} {u : GL (Fin n) A} :
+    mk A n u = 1 ↔ ∃ k, ∃ h : n ≤ k, stabilizeGL A h u ∈ commutator (GL (Fin k) A) := by
+  rw [mk_apply, ← MonoidHom.mem_ker, Group.Abelianization.ker_of,
+    StableGeneralLinearGroup.of_apply, ← DirectLimit.Monoid.of_apply]
+  exact DirectLimit.Monoid.of_mem_commutator_iff
+
 end AlgebraicK1
 
 /-! ## Functoriality -/
@@ -689,6 +755,39 @@ theorem map_injective {f : A →+* B} (hf : Function.Injective f) : Function.Inj
   rw [map_of, (of_injective n).eq_iff' (map_one _),
     (Units.map_injective (Matrix.map_injective hf)).eq_iff' (map_one _)] at hx
   rw [hx, map_one]
+
+/-- An element of `GL_∞(Gᵢ)` that becomes trivial in `GL_∞` of the direct limit of a directed
+system of rings `Gᵢ` is already trivial in `GL_∞(Gⱼ)` for some `j ≥ i`. -/
+theorem exists_map_eq_one_of_map_ringOf_eq_one {ι : Type*} [Preorder ι] [IsDirectedOrder ι]
+    [Nonempty ι] {G : ι → Type*} [∀ i, Ring (G i)] {f : ∀ i j, i ≤ j → G i →+* G j}
+    [DirectedSystem G (f · · ·)] {i : ι} {x : StableGeneralLinearGroup (G i)}
+    (hx : map (DirectLimit.Ring.of G f i) x = 1) :
+    ∃ j, ∃ hij : i ≤ j, map (f i j hij) x = 1 := by
+  classical
+  obtain ⟨n, u, rfl⟩ := exists_of x
+  rw [map_of, (of_injective n).eq_iff' (map_one _), Units.ext_iff] at hx
+  have hmat : (u : Matrix (Fin n) (Fin n) (G i)).map (DirectLimit.Ring.of G f i) =
+      (1 : Matrix (Fin n) (Fin n) (G i)).map (DirectLimit.Ring.of G f i) := by
+    simpa [Matrix.map_one _ (map_zero _) (map_one _)] using hx
+  have hentry (p : Fin n × Fin n) : ∃ k, ∃ hik : i ≤ k,
+      f i k hik ((u : Matrix (Fin n) (Fin n) (G i)) p.1 p.2) =
+        f i k hik ((1 : Matrix (Fin n) (Fin n) (G i)) p.1 p.2) := by
+    have hp := congrFun₂ hmat p.1 p.2
+    simp only [Matrix.map_apply, DirectLimit.Ring.of_apply] at hp
+    obtain ⟨k, hik, _, hk⟩ := Quotient.exact hp
+    exact ⟨k, hik, hk⟩
+  choose k hik hk using hentry
+  obtain ⟨j₀, hj₀⟩ := Finset.exists_le (Finset.univ.image k)
+  obtain ⟨j, hij, hj₀j⟩ := exists_ge_ge i j₀
+  refine ⟨j, hij, ?_⟩
+  rw [map_of, ← map_one (of (G j) n)]
+  congr 1
+  refine Units.ext (Matrix.ext fun p q ↦ ?_)
+  have hkj : k (p, q) ≤ j := (hj₀ _ (Finset.mem_image_of_mem _ (Finset.mem_univ _))).trans hj₀j
+  simp only [RingHom.toMonoidHom_eq_coe, Units.coe_map, MonoidHom.coe_ofClass,
+    RingHom.mapMatrix_apply, map_apply, Units.val_one]
+  rw [← DirectedSystem.map_map' f (hik (p, q)) hkj, hk (p, q), DirectedSystem.map_map']
+  by_cases hpq : p = q <;> simp [Matrix.one_apply, hpq]
 
 /-- An element of `GL_∞(A × B)` is determined by its images in `GL_∞(A)` and `GL_∞(B)`: the
 homomorphisms induced by the two projections are jointly injective. -/

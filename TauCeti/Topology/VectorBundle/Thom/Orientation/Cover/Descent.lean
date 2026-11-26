@@ -73,8 +73,10 @@ cohomology with values in any injective module
 (`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`, in the same
 namespace).
 
-The lifts of cochains to the orientation cover are stated with the orientations indexed by a type
-`ι : Type`, so the base, the fibres and the ring live in `Type` here.
+The base, the fibres and the ring lie in any common universe `w`, and the orientations are indexed
+by a type `ι : Type`, such as `Fin r`. Representations, their associated local systems and the
+equivariant cap product need the acting group in the universe `w`, so `ℤˣ` acts through its copy
+`ULift ℤˣ` there (`IsQuotientCoveringMap.ulift`).
 
 ## Main definitions and results
 
@@ -110,11 +112,13 @@ open Bundle CategoryTheory Module MonoidalCategory TauCeti.LocalCoefficientSyste
 
 namespace TauCeti.VectorBundleOrientationCover
 
-variable {B : Type} [TopologicalSpace B] {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [FiniteDimensional ℝ F] {E : B → Type} [TopologicalSpace (TotalSpace F E)]
+universe w
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [FiniteDimensional ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
   [VectorBundle ℝ F E] {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
-  (k : Type) [CommRing k]
+  (k : Type w) [CommRing k]
 
 /-- The action of `ℤˣ` on the total space of the Thom pair of the orientation cover, lifted from the
 deck involution (`TauCeti.VectorBundleOrientationCover.thomPairFstMulAction`). -/
@@ -147,14 +151,15 @@ variable (F E) in
 cocycle on the orientation cover.** Let `E → B` be a real vector bundle of rank `r`, `B'` its
 orientation double cover and `E'` the pull-back of `E` to `B'`, and let `k` be a commutative ring.
 A relative cocycle `φ` of degree `r` of `(E', E'₀)` which the deck involution negates
-(`TopPair.IsSemiInvariantCocycle` for the sign character of `ℤˣ`) and whose class is a Thom class of
-`E'` gives `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)`, with coefficients in the orientation local system
-`o(E)` (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). -/
+(`TopPair.IsSemiInvariantCocycle` for the sign character of `ℤˣ`, acting through its copy
+`ULift ℤˣ`: `TauCeti.uliftIntUnitsSign`) and whose class is a Thom class of `E'` gives
+`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)`, with coefficients in the orientation local system `o(E)`
+(`TauCeti.VectorBundleOrientationCover.signLocalSystem`). -/
 def thomPairSingularHomologyIsoTwistedHomology
     {φ : (TopPair.singularCochainComplex
       (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
       (ModuleCat.of k k) k (ModuleCat.of k k)).cycles (finrank ℝ F)}
-    (hφ : TopPair.IsSemiInvariantCocycle (Units.map (Int.castRingHom k).toMonoidHom) φ)
+    (hφ : TopPair.IsSemiInvariantCocycle (uliftIntUnitsSign.{w} k) φ)
     (hu : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
       ((TopPair.singularCochainComplex
         (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
@@ -162,32 +167,35 @@ def thomPairSingularHomologyIsoTwistedHomology
     (p : ℕ) :
     (thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
       twistedHomology (signLocalSystem F E k hι) p :=
-  haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).isCancelSMul
+  haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).ulift.{w}.isCancelSMul
+  -- `ℤˣ` acts through its copy `ULift ℤˣ` in the universe of the spaces, as representations and
+  -- associated local systems require.
   haveI := quasiIso_singularChainsRepCap_thomPair (F := F)
-    (E := (projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) (G := ℤˣ)
-    (B := VectorBundleOrientationCover F E ι) thomPair_map_smul thomPairProj_smul
-    (Units.map (Int.castRingHom k).toMonoidHom) hφ hu
+    (E := (projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) (G := ULift.{w} ℤˣ)
+    (B := VectorBundleOrientationCover F E ι) (fun _ ↦ thomPair_map_smul _)
+    (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign k) hφ hu
   ((thomPair F E).twistedHomologyConstantIso (ModuleCat.of k k) _).symm ≪≫
     (HomologicalComplex.homologyFunctor _ _ _).mapIso
       ((thomPair F E).twistedChainComplexCoefficientIso
-        ((isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).associatedLocalSystemTrivialIso k
-          k)).symm ≪≫
+        ((isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).ulift.associatedLocalSystemTrivialIso
+          k k)).symm ≪≫
     (thomPair F _).twistedHomologyIsoHomologyCoinvariantsTensorObj k
-      (isQuotientCoveringMap_coverThomPairMap_fst F E ι hι)
-      (isQuotientCoveringMap_coverThomPairMap_snd F E ι hι) thomPair_map_smul
+      (isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).ulift
+      (isQuotientCoveringMap_coverThomPairMap_snd F E ι hι).ulift (fun _ ↦ thomPair_map_smul _)
       -- the pair and `p₀` are explicit so that the cap map is the one of the instance above:
       -- `thomPairProj_smul` reads the zeros of the fibres through `pullbackFiberZero` instead
-      (Rep.trivial k ℤˣ k) (TopPair.singularChainsRepCap
+      (Rep.trivial k (ULift.{w} ℤˣ) k) (TopPair.singularChainsRepCap
         (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-        (p₀ := thomPairProj F _) thomPairProj_smul (Units.map (Int.castRingHom k).toMonoidHom) hφ
-        thomPair_map_smul)
+        (p₀ := thomPairProj F _) (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign k) hφ
+        (fun _ ↦ thomPair_map_smul _))
       (p + finrank ℝ F) ≪≫
     (HomologicalComplex.homologyFunctor _ _ _).mapIso (HomologicalComplex.mapExtendIso _ _ _) ≪≫
     HomologicalComplex.extendHomologyIso _ _ (ComplexShape.embeddingDownNatAdd_f _ p) ≪≫
     (HomologicalComplex.homologyFunctor _ _ p).mapIso
       ((NatIso.mapHomologicalComplex (Rep.tensorLeftCompCoinvariantsTensorTrivialIso _ ≪≫
-        (Rep.coinvariantsTensor k ℤˣ).mapIso
-          (Rep.mkIso Representation.ofLinearCharacterIntCastEquivOfDistribMulAction)) _).app _) ≪≫
+        (Rep.coinvariantsTensor k (ULift.{w} ℤˣ)).mapIso
+          (Rep.mkIso (Representation.ofLinearCharacterEquivOfDistribMulAction
+            (uliftIntUnitsSign k) fun _ _ ↦ by simp [Units.smul_def]))) _).app _) ≪≫
     (HomologicalComplex.homologyFunctor _ _ p).mapIso
       (coinvariantsTensorSingularChainsRepIsoTwisted hι k)
 
@@ -262,7 +270,7 @@ with injective values both cohomologies are the duals `Hom(-, N)` of the corresp
 by the universal coefficient theorem (`TopPair.singularKronecker_bijective` and
 `TauCeti.LocalCoefficientSystem.twistedKronecker_bijective`). -/
 theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace
-    [CompactSpace B] (N : ModuleCat.{0} k) [Injective N] (p : ℕ) :
+    [CompactSpace B] (N : ModuleCat.{w} k) [Injective N] (p : ℕ) :
     Nonempty ((thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
       (signLocalSystem F E k hι).twistedCohomology k N p) := by
   obtain ⟨e⟩ := nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace

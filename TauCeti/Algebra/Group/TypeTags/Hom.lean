@@ -30,6 +30,8 @@ which Mathlib's duality theory for finite abelian groups states its results, wit
 * `AddMonoidHom.toMultiplicativeLeftAddEquiv_apply`: applying
   `AddMonoidHom.toMultiplicativeLeftAddEquiv` evaluates to `Additive.ofMul` of
   `AddMonoidHom.toMultiplicativeLeft`.
+* `MonoidHom.toAdditive_surjective_iff`: a monoid homomorphism read additively, through
+  `MonoidHom.toAdditive`, is surjective exactly when the homomorphism is.
 -/
 
 public section
@@ -72,3 +74,13 @@ theorem toMultiplicativeLeftAddEquiv_apply {M N : Type*} [AddMonoid M] [CommMono
   (rfl)
 
 end AddMonoidHom
+
+namespace MonoidHom
+
+/-- A monoid homomorphism read additively, through `MonoidHom.toAdditive`, is surjective exactly
+when the homomorphism is. -/
+theorem toAdditive_surjective_iff {α β : Type*} [MulOneClass α] [MulOneClass β] {f : α →* β} :
+    Function.Surjective f.toAdditive ↔ Function.Surjective f := by
+  rw [coe_toAdditive, Equiv.comp_surjective, Equiv.surjective_comp]
+
+end MonoidHom

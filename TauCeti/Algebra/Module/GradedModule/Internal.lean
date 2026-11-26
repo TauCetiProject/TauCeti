@@ -59,6 +59,8 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `TauCeti.InternalGrading.coe_decompose_ofDecomposition_piece_apply`: the decomposition carried by
   `ofDecomposition ℳ` is the given decomposition of `ℳ`, componentwise.
 * `TauCeti.InternalGrading.mem_ofRangeCoe_piece_iff`: piece membership for `ofRangeCoe`.
+* `TauCeti.InternalGrading.instGradedMonoidOfDecompositionPiece`: the pieces of
+  `ofDecomposition 𝒜` inherit the graded-monoid structure of `𝒜`.
 * `TauCeti.InternalGrading.instGradedSMulOfDecompositionSelf`: left multiplication respects the
   grading of a graded algebra.
 * `TauCeti.InternalGrading.linearMap_ext`: linear maps agree when they agree on homogeneous
@@ -160,6 +162,14 @@ noncomputable def ofDecomposition (ℳ : ι → Submodule R M) [DirectSum.Decomp
 theorem ofDecomposition_piece (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ] :
     (ofDecomposition ℳ).piece = ℳ := (rfl)
 
+/-- The pieces of `ofDecomposition 𝒜` are those of `𝒜`, so they inherit its graded-monoid
+structure. -/
+instance instGradedMonoidOfDecompositionPiece {A : Type*} [Semiring A] [Module R A]
+    [AddMonoid ι] (𝒜 : ι → Submodule R A) [DirectSum.Decomposition 𝒜]
+    [SetLike.GradedMonoid 𝒜] : SetLike.GradedMonoid (ofDecomposition 𝒜).piece := by
+  rw [ofDecomposition_piece]
+  infer_instance
+
 /-- Reconstructing an internal grading from any decomposition of its pieces recovers it. -/
 @[simp]
 theorem ofDecomposition_piece_eq (G : InternalGrading R M ι) [DirectSum.Decomposition G.piece] :
@@ -186,27 +196,6 @@ theorem isHomogeneous_ofDecomposition_piece_iff (ℳ : ι → Submodule R M)
       DirectSum.SetLike.IsHomogeneous ℳ U :=
   Iff.of_eq (congrArg (fun d ↦ @DirectSum.SetLike.IsHomogeneous _ _ _ _ _ _ _ ℳ d _ _ U)
     (Subsingleton.elim _ _))
-
-/-- If `ℳ` contains `1` in degree zero, so does `(ofDecomposition ℳ).piece`. -/
-instance (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
-    [One M] [Zero ι] [SetLike.GradedOne ℳ] :
-    SetLike.GradedOne (ofDecomposition ℳ).piece where
-  one_mem := by
-    rw [ofDecomposition_piece]
-    exact SetLike.GradedOne.one_mem
-
-/-- If `ℳ` is closed under graded multiplication, so is `(ofDecomposition ℳ).piece`. -/
-instance (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
-    [Mul M] [Add ι] [SetLike.GradedMul ℳ] :
-    SetLike.GradedMul (ofDecomposition ℳ).piece where
-  mul_mem {_ _ _ _} ha hb := by
-    rw [ofDecomposition_piece] at ha hb ⊢
-    exact SetLike.GradedMul.mul_mem ha hb
-
-/-- If `ℳ` forms a graded monoid, so does `(ofDecomposition ℳ).piece`. -/
-instance (ℳ : ι → Submodule R M) [DirectSum.Decomposition ℳ]
-    [Monoid M] [AddMonoid ι] [SetLike.GradedMonoid ℳ] :
-    SetLike.GradedMonoid (ofDecomposition ℳ).piece where
 
 /-- Left multiplication respects the grading of a graded algebra, viewed as the internal grading
 of its regular module. This is the counterpart of `TauCeti.instGradedSMulOppositeSelf` for the
