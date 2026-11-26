@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Module.Rat
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.GroupTheory.DoubleCoset.Mass
+public import TauCeti.Topology.Algebra.Group.LocallyConstant
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 import TauCeti.Topology.Algebra.Group.Subgroup
 
@@ -43,10 +44,11 @@ additive maps of the values, and is invariant under right translation
 ## Main definitions
 
 * `TauCeti.doubleCosetClassSum Γ K f`: the weighted class sum `∑_{Γ g K} f(g) / #(Γ ∩ g K g⁻¹)`.
-* `TauCeti.rightStabilizer f`: the subgroup of `k` with `f (g * k) = f g` for all `g`.
 * `TauCeti.HasFiniteType Γ K`: `(Γ, K)` has finite type.
 * `TauCeti.classIntegral Γ K f`: the class integral `[K : J]⁻¹ S_{Γ,J}(f)`,
-  `J = K ∩ rightStabilizer f`.
+  `J = K ∩ rightTranslationStabilizer f`, where `TauCeti.rightTranslationStabilizer f` (from
+  `TauCeti.Topology.Algebra.Group.LocallyConstant`) is the subgroup of `k` with `f (g * k) = f g`
+  for all `g`.
 
 ## References
 
@@ -59,8 +61,8 @@ additive maps of the values, and is invariant under right translation
 The definitions and the statements of change of level and of the properties of the class integral
 are adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026
 Anthropic PBC), `src/Lib/Adelic/Hecke/Basic.lean` (`New.classSum`, `New.classAut`,
-`New.classSum_eq_finsum_of_rep`) and `src/Lib/Adelic/Hecke/ClassSums.lean` (`New.rightStabilizer`,
-`New.HasFiniteType`, `New.classIntegral`, `New.classSum_eq_relIndex_smul`,
+`New.classSum_eq_finsum_of_rep`) and `src/Lib/Adelic/Hecke/ClassSums.lean` (`New.HasFiniteType`,
+`New.classIntegral`, `New.classSum_eq_relIndex_smul`,
 `New.classIntegral_eq_classSum_mul`, `New.classIntegral_sum`, `New.classIntegral_add`,
 `New.classIntegral_map_mul_right`); the proofs here go through the weighted orbit sums of
 `TauCeti/GroupTheory/DoubleCoset/Mass.lean`.
@@ -245,30 +247,19 @@ section ClassIntegral
 
 variable (Γ K : Subgroup G)
 
-/-- The subgroup of the `k ∈ G` with `f (g * k) = f g` for every `g`: the stabiliser of `f` under
-right translation. -/
-def rightStabilizer {X : Type*} (f : G → X) : Subgroup G where
-  carrier := {k | ∀ g, f (g * k) = f g}
-  mul_mem' {a b} ha hb g := by rw [← mul_assoc, hb, ha]
-  one_mem' g := by rw [mul_one]
-  inv_mem' {a} ha g := by rw [← ha, inv_mul_cancel_right]
-
-@[simp]
-theorem mem_rightStabilizer {X : Type*} {f : G → X} {k : G} :
-    k ∈ rightStabilizer f ↔ ∀ g, f (g * k) = f g :=
-  .rfl
-
-/-- **The class integral** `I_{Γ,K}(f) = [K : J]⁻¹ S_{Γ,J}(f)` with `J = K ∩ rightStabilizer f`.
+/-- **The class integral** `I_{Γ,K}(f) = [K : J]⁻¹ S_{Γ,J}(f)` with
+`J = K ∩ rightTranslationStabilizer f`.
 For `(Γ, K)` of finite type and `f` left `Γ`-invariant with open stabiliser it is the integral of
 `f` over `Γ \ G` for the Haar measure with `vol K = 1`, and any open `J ⊂ K` fixing `f` may be used
 (`TauCeti.classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum`). -/
 noncomputable def classIntegral (f : G → W) : W :=
-  ((rightStabilizer f ⊓ K).relIndex K : ℚ)⁻¹ • doubleCosetClassSum Γ (rightStabilizer f ⊓ K) f
+  ((rightTranslationStabilizer f ⊓ K).relIndex K : ℚ)⁻¹ •
+    doubleCosetClassSum Γ (rightTranslationStabilizer f ⊓ K) f
 
 theorem classIntegral_def (f : G → W) :
     classIntegral Γ K f =
-      ((rightStabilizer f ⊓ K).relIndex K : ℚ)⁻¹ •
-        doubleCosetClassSum Γ (rightStabilizer f ⊓ K) f :=
+      ((rightTranslationStabilizer f ⊓ K).relIndex K : ℚ)⁻¹ •
+        doubleCosetClassSum Γ (rightTranslationStabilizer f ⊓ K) f :=
   (rfl)
 
 variable {Γ K}
@@ -277,23 +268,24 @@ variable {Γ K}
 index fixing `f`, `I_{Γ,K}(f) = [K : J]⁻¹ S_{Γ,J}(f)`. -/
 theorem classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum {f : G → W}
     (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) {J : Subgroup G} (hJK : J ≤ K)
-    (hJf : J ≤ rightStabilizer f) [J.IsFiniteRelIndex K] :
+    (hJf : J ≤ rightTranslationStabilizer f) [J.IsFiniteRelIndex K] :
     classIntegral Γ K f = (J.relIndex K : ℚ)⁻¹ • doubleCosetClassSum Γ J f := by
-  -- `J ≤ S = rightStabilizer f ⊓ K`, `S_{Γ,J}(f) = [S : J] S_{Γ,S}(f)` and
+  -- `J ≤ S = rightTranslationStabilizer f ⊓ K`, `S_{Γ,J}(f) = [S : J] S_{Γ,S}(f)` and
   -- `[K : J] = [K : S][S : J]`.
-  set S := rightStabilizer f ⊓ K
+  set S := rightTranslationStabilizer f ⊓ K
   have hJS : J ≤ S := le_inf hJf hJK
   have hSK : S ≤ K := inf_le_right
   have : J.IsFiniteRelIndex S := ⟨fun h ↦ J.relIndex_ne_zero
     (by rw [← Subgroup.relIndex_mul_relIndex J S K hJS hSK, h, zero_mul])⟩
   have h_sum : doubleCosetClassSum Γ J f = J.relIndex S • doubleCosetClassSum Γ S f :=
-    doubleCosetClassSum_eq_relIndex_smul_of_le hl (fun k hk g ↦ (Subgroup.mem_inf.1 hk).1 g) hJS
+    doubleCosetClassSum_eq_relIndex_smul_of_le hl
+      (fun k hk ↦ mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 hk).1) hJS
   have h_ne : (J.relIndex S : ℚ) ≠ 0 := Nat.cast_ne_zero.2 (Subgroup.relIndex_ne_zero)
   rw [h_sum, classIntegral_def, ← Subgroup.relIndex_mul_relIndex J S K hJS hSK, Nat.cast_mul,
     mul_inv_rev, mul_smul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ h_ne]
 
 /-- If `K` fixes `f`, the class integral is the class sum. -/
-theorem classIntegral_eq_doubleCosetClassSum {f : G → W} (hK : K ≤ rightStabilizer f) :
+theorem classIntegral_eq_doubleCosetClassSum {f : G → W} (hK : K ≤ rightTranslationStabilizer f) :
     classIntegral Γ K f = doubleCosetClassSum Γ K f := by
   simp [classIntegral_def, inf_eq_right.2 hK]
 
@@ -303,20 +295,24 @@ variable [TopologicalSpace G] [IsTopologicalGroup G]
 `(Γ, K)` of finite type. -/
 theorem classIntegral_add (hK : HasFiniteType Γ K) {f f' : G → W}
     (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) (hl' : ∀ γ ∈ Γ, ∀ g, f' (γ * g) = f' g)
-    (hf : IsOpen (rightStabilizer f : Set G)) (hf' : IsOpen (rightStabilizer f' : Set G)) :
+    (hf : IsOpen (rightTranslationStabilizer f : Set G))
+    (hf' : IsOpen (rightTranslationStabilizer f' : Set G)) :
     classIntegral Γ K (f + f') = classIntegral Γ K f + classIntegral Γ K f' := by
   -- Compute all three at the open level `J = Stab f ∩ Stab f' ∩ K`.
-  set J := rightStabilizer f ⊓ rightStabilizer f' ⊓ K
+  set J := rightTranslationStabilizer f ⊓ rightTranslationStabilizer f' ⊓ K
   have hJK : J ≤ K := inf_le_right
-  have hJf : J ≤ rightStabilizer f := inf_le_left.trans inf_le_left
-  have hJf' : J ≤ rightStabilizer f' := inf_le_left.trans inf_le_right
+  have hJf : J ≤ rightTranslationStabilizer f := inf_le_left.trans inf_le_left
+  have hJf' : J ≤ rightTranslationStabilizer f' := inf_le_left.trans inf_le_right
   have : J.IsFiniteRelIndex K :=
     Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact ((hf.inter hf').inter hK.isOpen)
       hK.isCompact
   have := hK.finite_doubleCoset
   have := finite_doubleCoset_of_le (Γ := Γ) hJK
   rw [classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum
-      (fun γ hγ g ↦ by simp [hl γ hγ, hl' γ hγ]) hJK (fun k hk g ↦ by simp [hJf hk g, hJf' hk g]),
+      (fun γ hγ g ↦ by simp [hl γ hγ, hl' γ hγ]) hJK
+      (fun k hk ↦ mem_rightTranslationStabilizer.2 fun g ↦ by
+        simp [mem_rightTranslationStabilizer.1 (hJf hk) g,
+          mem_rightTranslationStabilizer.1 (hJf' hk) g]),
     classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum hl hJK hJf,
     classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum hl' hJK hJf', doubleCosetClassSum_add,
     smul_add]
@@ -324,15 +320,16 @@ theorem classIntegral_add (hK : HasFiniteType Γ K) {f f' : G → W}
 /-- **Additive maps commute with the class integral**, for `(Γ, K)` of finite type and `f` with open
 stabiliser. -/
 theorem map_classIntegral (hK : HasFiniteType Γ K) (φ : W →+ W') {f : G → W}
-    (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) (hf : IsOpen (rightStabilizer f : Set G)) :
+    (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) (hf : IsOpen (rightTranslationStabilizer f : Set G)) :
     φ (classIntegral Γ K f) = classIntegral Γ K (φ ∘ f) := by
-  have : (rightStabilizer f ⊓ K).IsFiniteRelIndex K :=
+  have : (rightTranslationStabilizer f ⊓ K).IsFiniteRelIndex K :=
     Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact (hf.inter hK.isOpen) hK.isCompact
   have := hK.finite_doubleCoset
-  have := finite_doubleCoset_of_le (Γ := Γ) (inf_le_right : rightStabilizer f ⊓ K ≤ K)
+  have := finite_doubleCoset_of_le (Γ := Γ) (inf_le_right : rightTranslationStabilizer f ⊓ K ≤ K)
   rw [classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum (f := φ ∘ f)
-      (J := rightStabilizer f ⊓ K) (fun γ hγ g ↦ by simp [hl γ hγ]) inf_le_right
-      (fun k hk g ↦ by simp [mem_rightStabilizer.1 (Subgroup.mem_inf.1 hk).1 g]),
+      (J := rightTranslationStabilizer f ⊓ K) (fun γ hγ g ↦ by simp [hl γ hγ]) inf_le_right
+      (fun k hk ↦ mem_rightTranslationStabilizer.2 fun g ↦ by
+        simp [mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 hk).1 g]),
     classIntegral_def, map_rat_smul, map_doubleCosetClassSum]
 
 omit [IsTopologicalGroup G] in
@@ -353,11 +350,12 @@ private theorem relIndex_eq_relIndex_conj (hK : HasFiniteType Γ K) {M : Subgrou
 /-- **The class integral is invariant under right translation**: for `(Γ, K)` of finite type and
 `f` left `Γ`-invariant with open stabiliser, `I_{Γ,K}(g ↦ f (g b)) = I_{Γ,K}(f)`. -/
 theorem classIntegral_comp_mul_right (hK : HasFiniteType Γ K) {f : G → W}
-    (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) (hf : IsOpen (rightStabilizer f : Set G)) (b : G) :
+    (hl : ∀ γ ∈ Γ, ∀ g, f (γ * g) = f g) (hf : IsOpen (rightTranslationStabilizer f : Set G))
+    (b : G) :
     classIntegral Γ K (fun g ↦ f (g * b)) = classIntegral Γ K f := by
   -- Compute at `J = Stab f ∩ K` and at `M = K ∩ b J b⁻¹`, which fixes `f (· b)`, with
   -- `b⁻¹ M b ⊂ J`; the indices match by `relIndex_eq_relIndex_conj`.
-  set J := rightStabilizer f ⊓ K
+  set J := rightTranslationStabilizer f ⊓ K
   have hJK : J ≤ K := inf_le_right
   have hJ_open : IsOpen (J : Set G) := hf.inter hK.isOpen
   set M := K ⊓ MulAut.conj b • J
@@ -382,16 +380,18 @@ theorem classIntegral_comp_mul_right (hK : HasFiniteType Γ K) {f : G → W}
     Subgroup.isFiniteRelIndex_of_isOpen_of_isCompact hbM_open hK.isCompact
   have h_index := relIndex_eq_relIndex_conj hK b inf_le_left (hbM.trans hJK)
   rw [← Subgroup.relIndex_mul_relIndex _ J K hbM hJK] at h_index
-  have hMf : M ≤ rightStabilizer fun g ↦ f (g * b) := fun k hk g ↦ by
-    have h := (Subgroup.mem_inf.1 hk).2
-    rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem] at h
-    simpa [MulAut.smul_def, mul_assoc] using mem_rightStabilizer.1 (Subgroup.mem_inf.1 h).1 (g * b)
+  have hMf : M ≤ rightTranslationStabilizer fun g ↦ f (g * b) := fun k hk ↦
+      mem_rightTranslationStabilizer.2 fun g ↦ by
+        have h := (Subgroup.mem_inf.1 hk).2
+        rw [Subgroup.mem_pointwise_smul_iff_inv_smul_mem] at h
+        simpa [MulAut.smul_def, mul_assoc] using
+          mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 h).1 (g * b)
   have h_ne : ((MulAut.conj b⁻¹ • M).relIndex J : ℚ) ≠ 0 :=
     Nat.cast_ne_zero.2 Subgroup.relIndex_ne_zero
   rw [classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum
       (fun γ hγ g ↦ by simp [mul_assoc, hl γ hγ]) inf_le_left hMf,
     doubleCosetClassSum_comp_mul_right hl
-      (fun k hk g ↦ mem_rightStabilizer.1 (Subgroup.mem_inf.1 hk).1 g) b hbM,
+      (fun k hk g ↦ mem_rightTranslationStabilizer.1 (Subgroup.mem_inf.1 hk).1 g) b hbM,
     classIntegral_eq_inv_relIndex_smul_doubleCosetClassSum hl hJK inf_le_left, h_index,
     Nat.cast_mul, mul_inv_rev, mul_smul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ h_ne]
 
