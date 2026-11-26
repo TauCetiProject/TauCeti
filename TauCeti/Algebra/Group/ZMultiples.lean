@@ -91,6 +91,16 @@ theorem intEquivOpZMultiples_vadd (hp : ¬ IsOfFinAddOrder p) (n : ℤ) (x : G) 
     intEquivOpZMultiples hp n +ᵥ x = x + n • p :=
   (rfl)
 
+@[simp]
+theorem intEquivOpZMultiples_symm_mk_zsmul_op (hp : ¬ IsOfFinAddOrder p) (n : ℤ) :
+    (intEquivOpZMultiples hp).symm ⟨n • AddOpposite.op p, zsmul_mem_zmultiples p n⟩ = n :=
+  intEquivZMultiples_symm_mk_zsmul hp n
+
+@[simp]
+theorem intEquivOpZMultiples_symm_zsmul (hp : ¬ IsOfFinAddOrder p) (a : (zmultiples p).op) :
+    (intEquivOpZMultiples hp).symm a • p = (a : Gᵃᵒᵖ).unop :=
+  intEquivZMultiples_symm_zsmul hp _
+
 /-- A surjective additive map sends an element whose `ℤ`-multiples exhaust the source to an element
 whose `ℤ`-multiples exhaust the target. -/
 theorem zmultiples_apply_eq_top_of_surjective {F H : Type*} [AddGroup H] [FunLike F G H]

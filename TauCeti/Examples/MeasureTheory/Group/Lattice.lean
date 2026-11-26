@@ -18,10 +18,10 @@ Worked examples for lattices in locally compact groups and the unfolding formula
 
 * *`θℤ ⊂ ℝ`.* For `θ > 0`, `[t, t + θ)` is a fundamental domain for the right translation action
   of `θℤ` on `ℝ` (`isAddFundamentalDomain_Ico_op_zmultiples`), so the covolume of `θℤ` for
-  Lebesgue measure is `θ` (`addCovolume_op_zmultiples`), and that of `ℤ` is `1`
-  (`addCovolume_op_zmultiples_one`). Weil's formula reads
+  Lebesgue measure is `θ` (`addCovolume_op_zmultiples`). Weil's formula reads
   `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` (`lintegral_eq_setLIntegral_Ico_tsum_add_intCast`). These
-  live in `TauCeti/MeasureTheory/Integral/IntervalIntegral/Periodic.lean`. Multiplying Lebesgue
+  live in `TauCeti/MeasureTheory/Integral/IntervalIntegral/Periodic.lean`. Here, the covolume of
+  `ℤ` is `1` (`addCovolume_op_zmultiples_one`), and multiplying Lebesgue
   measure by `c` multiplies the covolume by `c` (`addCovolume_op_zmultiples_smul_measure`, from
   `MeasureTheory.addCovolume_smul_measure`).
 * *The side of the coset sum.* In `S₃`, with `Γ = {1, (0 1)}` (`coe_Γ`) and `f` the indicator of
@@ -46,6 +46,11 @@ open MeasureTheory Set Function
 open scoped ENNReal
 
 /-! ### The lattice `θℤ ⊂ ℝ` -/
+
+/-- **The covolume of `ℤ` in `ℝ` is `1`.** -/
+theorem addCovolume_op_zmultiples_one :
+    addCovolume (AddSubgroup.op <| .zmultiples (1 : ℝ)) ℝ volume = 1 := by
+  simp
 
 /-- **Haar rescaling.** For Haar measure `c • volume` on `ℝ`, the covolume of `θℤ` is `c θ`. -/
 theorem addCovolume_op_zmultiples_smul_measure {θ : ℝ} (hθ : 0 < θ) (c : ℝ≥0∞) :

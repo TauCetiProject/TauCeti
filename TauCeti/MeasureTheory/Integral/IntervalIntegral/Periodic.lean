@@ -71,8 +71,7 @@ domain for `θℤ`, so `θℤ` has covolume `θ`, and unfolding over `[0, 1)` gi
 * `TauCeti.isAddFundamentalDomain_Ico_op_zmultiples`: `[t, t + θ)` is a fundamental domain for
   the right translation action of `θℤ` on `ℝ`, the `Ico` companion of Mathlib's
   `isAddFundamentalDomain_Ioc'`.
-* `TauCeti.addCovolume_op_zmultiples` and `TauCeti.addCovolume_op_zmultiples_one`: the covolume
-  of `θℤ` in `ℝ` is `θ`, and that of `ℤ` is `1`.
+* `TauCeti.addCovolume_op_zmultiples`: the covolume of `θℤ` in `ℝ` is `θ`.
 * `TauCeti.lintegral_eq_setLIntegral_Ico_tsum_add_intCast`: Weil's formula
   `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for `ℤ ⊂ ℝ` and measurable `f : ℝ → [0, ∞]`.
 * `Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero`: a continuous periodic function which
@@ -339,11 +338,6 @@ theorem addCovolume_op_zmultiples {θ : ℝ} (hθ : 0 < θ) :
     addCovolume (AddSubgroup.op <| .zmultiples θ) ℝ volume = ENNReal.ofReal θ := by
   rw [(isAddFundamentalDomain_Ico_op_zmultiples hθ 0 volume).covolume_eq_volume volume,
     Real.volume_Ico]
-  simp
-
-/-- **The covolume of `ℤ` in `ℝ` is `1`.** -/
-theorem addCovolume_op_zmultiples_one :
-    addCovolume (AddSubgroup.op <| .zmultiples (1 : ℝ)) ℝ volume = 1 := by
   simp
 
 /-- **Weil's formula for `ℤ ⊂ ℝ`**: `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for measurable
