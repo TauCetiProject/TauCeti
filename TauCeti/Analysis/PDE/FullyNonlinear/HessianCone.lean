@@ -17,8 +17,9 @@ The Hessian cone `Γ_k = {λ ∈ ℝⁿ | σ_1(λ) > 0, …, σ_k(λ) > 0}` (`Ta
 Gårding cone `Γ(σ_k, e)` of the elementary symmetric polynomial `σ_k` in the direction
 `e = (1, …, 1)` (`TauCeti.gardingCone_esymm_eq_hessianCone`, a restatement of
 `MvPolynomial.gardingCone_esymm`). Through this identification the Hessian cones inherit the
-properties of Gårding cones of symmetric homogeneous polynomials: they are open, invariant under
-permutations of the coordinates and under positive dilations. With `Γ_n ⊆ Γ_k ⊆ Γ_1` this makes
+properties of Gårding cones of symmetric homogeneous polynomials: they are invariant under
+permutations of the coordinates and under positive dilations. They are open, as finite
+intersections of the open sets `{σ_j > 0}`. With `Γ_n ⊆ Γ_k ⊆ Γ_1` this makes
 `Γ_k` an admissible cone for `1 ≤ k ≤ n` (`TauCeti.isAdmissibleCone_hessianCone`). The extreme
 cases are the positive orthant `Γ_n` (`TauCeti.hessianCone_self`) and the half-space `Γ_1`
 (`TauCeti.hessianCone_one`), and the cones are nested, `Γ_k ⊆ Γ_j` for `j ≤ k`
@@ -58,18 +59,10 @@ theorem gardingCone_esymm_eq_hessianCone (n k : ℕ) :
 
 /-- The Hessian cone `Γ_k` is open. -/
 theorem isOpen_hessianCone (n k : ℕ) : IsOpen (hessianCone n k) := by
-  rw [← gardingCone_esymm_eq_hessianCone]
-  by_cases hk : k ≤ n
-  · have h := isHyperbolic_esymm (σ := Fin n) (by simpa using hk)
-    exact isOpen_gardingCone h.isHomogeneous h.eval_pos.ne'
-  · -- Above the number of variables the cone is empty.
-    convert isOpen_empty
-    rw [gardingCone_esymm_eq_hessianCone, Set.eq_empty_iff_forall_notMem]
-    intro μ hμ
-    have hz : esymm (Fin n) ℝ k = 0 := by
-      rw [esymm_eq_multiset_esymm]
-      exact Multiset.esymm_of_card_lt (by simpa using not_le.1 hk)
-    simpa [hz] using (mem_hessianCone.1 hμ) k (mem_Icc.2 ⟨by omega, le_rfl⟩)
+  have h : hessianCone n k = ⋂ j ∈ Icc 1 k, {μ | 0 < eval μ (esymm (Fin n) ℝ j)} := by
+    ext; simp
+  rw [h]
+  exact isOpen_biInter_finset fun j _ ↦ isOpen_lt continuous_const (MvPolynomial.continuous_eval _)
 
 /-- The Hessian cone `Γ_k` is invariant under permutations of the coordinates. -/
 theorem comp_perm_mem_hessianCone (σ : Equiv.Perm (Fin n)) {μ : Fin n → ℝ}
