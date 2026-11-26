@@ -32,6 +32,9 @@ the extension is the flow at negative times.
 
 ## Main results
 
+* `TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff`: an open partial homeomorphism
+  of the model vector spaces, `C^n` in both directions, which sends exactly the points of the
+  source model range into the target model range, as a partial diffeomorphism of the model spaces.
 * `TauCeti.isLocalDiffeomorphAt_of_fderiv_eq_of_mem_range_iff`: the inverse function theorem at
   any point, boundary points included, for a map with a range-preserving chart extension.
 * `TauCeti.isLocalDiffeomorphAt_of_injective_fderiv_of_mem_range_iff`: in equal finite dimensions,
@@ -66,9 +69,11 @@ private theorem range_of_mem_target (Θ : OpenPartialHomeomorph E F)
 
 /-- An open partial homeomorphism `Θ` of the model vector spaces, `C^n` in both directions, which
 on its source sends exactly the points of the range of `I` into the range of `J`, as a partial
-diffeomorphism between the model spaces `H` and `G`. -/
-private noncomputable def modelPartialDiffeomorph (Θ : OpenPartialHomeomorph E F)
-    (hΘ : ContDiffOn 𝕂 n Θ Θ.source) (hΘsymm : ContDiffOn 𝕂 n Θ.symm Θ.target)
+diffeomorphism `J.symm ∘ Θ ∘ I` between the model spaces `H` and `G`. For the trivial models this
+is `TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph`. -/
+noncomputable def PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff
+    (Θ : OpenPartialHomeomorph E F) (hΘ : ContDiffOn 𝕂 n Θ Θ.source)
+    (hΘsymm : ContDiffOn 𝕂 n Θ.symm Θ.target)
     (hrange : ∀ z ∈ Θ.source, Θ z ∈ range J ↔ z ∈ range I) : PartialDiffeomorph I J H G n where
   toFun := J.symm ∘ Θ ∘ I
   invFun := I.symm ∘ Θ.symm ∘ J
@@ -98,12 +103,43 @@ private noncomputable def modelPartialDiffeomorph (Θ : OpenPartialHomeomorph E 
     (I.contMDiffOn_symm (n := n)).comp ((contMDiffOn_iff_contDiffOn.2 hΘsymm).comp
       (J.contMDiff (n := n)).contMDiffOn fun _ hh ↦ hh) fun _ hh ↦ range_of_mem_target Θ hrange hh
 
-/-- The partial diffeomorphism `modelPartialDiffeomorph Θ` is `Θ` read in the model spaces. -/
-private theorem coe_modelPartialDiffeomorph (Θ : OpenPartialHomeomorph E F)
-    (hΘ : ContDiffOn 𝕂 n Θ Θ.source) (hΘsymm : ContDiffOn 𝕂 n Θ.symm Θ.target)
-    (hrange : ∀ z ∈ Θ.source, Θ z ∈ range J ↔ z ∈ range I) :
-    ⇑(modelPartialDiffeomorph Θ hΘ hΘsymm hrange) = J.symm ∘ Θ ∘ I :=
+section OfMemRangeIff
+
+variable (Θ : OpenPartialHomeomorph E F) (hΘ : ContDiffOn 𝕂 n Θ Θ.source)
+  (hΘsymm : ContDiffOn 𝕂 n Θ.symm Θ.target) (hrange : ∀ z ∈ Θ.source, Θ z ∈ range J ↔ z ∈ range I)
+
+/-- `PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ` is `Θ` read in the model
+spaces. -/
+@[simp]
+theorem PartialDiffeomorph.coe_ofOpenPartialHomeomorphOfMemRangeIff :
+    ⇑(PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ hΘ hΘsymm hrange) =
+      J.symm ∘ Θ ∘ I :=
   (rfl)
+
+/-- The inverse of `PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ` is the inverse of
+`Θ` read in the model spaces. -/
+theorem PartialDiffeomorph.coe_ofOpenPartialHomeomorphOfMemRangeIff_symm :
+    ⇑(PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ hΘ hΘsymm hrange).symm =
+      I.symm ∘ Θ.symm ∘ J :=
+  (rfl)
+
+/-- The source of `PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ` is the preimage of
+the source of `Θ` under the model. -/
+@[simp]
+theorem PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff_source :
+    (PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ hΘ hΘsymm hrange).source =
+      I ⁻¹' Θ.source :=
+  (rfl)
+
+/-- The target of `PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ` is the preimage of
+the target of `Θ` under the model. -/
+@[simp]
+theorem PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff_target :
+    (PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ hΘ hΘsymm hrange).target =
+      J ⁻¹' Θ.target :=
+  (rfl)
+
+end OfMemRangeIff
 
 variable [CompleteSpace E] {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold I n M] [IsManifold J n N]
@@ -127,16 +163,19 @@ theorem isLocalDiffeomorphAt_of_fderiv_eq_of_mem_range_iff (hg : ContDiffOn 𝕂
     IsLocalDiffeomorphAt I J n f x := by
   obtain ⟨Θ, hΘg, hxΘ, hΘt, hΘsymm⟩ := ContDiffOn.exists_openPartialHomeomorph hg ht hxt hn he
   subst hΘg
-  let Ξ : PartialDiffeomorph I J H G n := modelPartialDiffeomorph Θ (hg.mono hΘt) hΘsymm
-    fun z hz ↦ hrange z (hΘt hz)
+  let Ξ : PartialDiffeomorph I J H G n :=
+    PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff Θ (hg.mono hΘt) hΘsymm
+      fun z hz ↦ hrange z (hΘt hz)
   -- The chart at `x`, the model partial diffeomorphism and the inverse chart at `f x`.
   have h₁ : IsLocalDiffeomorphAt I I n (chartAt H x) x :=
     (chartAt H x).isLocalDiffeomorphAt_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x)
       (mem_chart_source H x)
   have hΞx : chartAt H x x ∈ Ξ.source := by
-    simpa only [Ξ, modelPartialDiffeomorph, mem_preimage, extChartAt_coe,
-      Function.comp_apply] using hxΘ
-  have hΞcoe : ⇑Ξ = J.symm ∘ Θ ∘ I := coe_modelPartialDiffeomorph ..
+    rw [PartialDiffeomorph.ofOpenPartialHomeomorphOfMemRangeIff_source, mem_preimage,
+      ← Function.comp_apply (f := I), ← extChartAt_coe]
+    exact hxΘ
+  have hΞcoe : ⇑Ξ = J.symm ∘ Θ ∘ I :=
+    PartialDiffeomorph.coe_ofOpenPartialHomeomorphOfMemRangeIff ..
   have hΞ : Ξ (chartAt H x x) = chartAt G (f x) (f x) := by
     rw [hΞcoe, Function.comp_apply, Function.comp_apply, ← Function.comp_apply (f := I),
       ← extChartAt_coe, hgx, extChartAt_coe, Function.comp_apply, J.left_inv]
@@ -151,8 +190,7 @@ theorem isLocalDiffeomorphAt_of_fderiv_eq_of_mem_range_iff (hg : ContDiffOn 𝕂
     IsLocalDiffeomorphAt.comp (hf := h₁) (hg := h₂)
   refine (IsLocalDiffeomorphAt.comp (hf := h₁₂) (hg := h₃)).congr_of_eventuallyEq ?_
   filter_upwards [hfg] with y hy
-  rw [hy, extChartAt_coe_symm, extChartAt_coe, hΞcoe]
-  rfl
+  simp only [hy, extChartAt_coe_symm, extChartAt_coe, hΞcoe, Function.comp_apply]
 
 /-- **The inverse function theorem at boundary points**, injective form: between model vector
 spaces of the same finite dimension, it suffices in
