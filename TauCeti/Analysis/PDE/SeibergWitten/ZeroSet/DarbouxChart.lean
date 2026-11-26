@@ -11,6 +11,7 @@ import TauCeti.Analysis.InnerProductSpace.Gram.Perturbation
 import TauCeti.Analysis.InnerProductSpace.Comass
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
+import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 
 /-!
 # Density of the defect energy for large-parameter solutions in a Darboux chart

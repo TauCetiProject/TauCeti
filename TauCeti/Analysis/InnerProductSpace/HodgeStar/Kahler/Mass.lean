@@ -28,8 +28,7 @@ vector-valued representations of currents cannot be replaced by the Hilbert norm
 The same evaluation `ω(u, v) = ⟪J u, v⟫` shows that a linear map preserving `ω` does not change
 the Kähler component `G(e₀, e₁) + G(e₂, e₃)` of a two-form `G` in a unitary four-frame when `G`
 is pulled back along it
-(`TauCeti.AlmostComplexStructure.compContinuousLinearMap_apply_add_apply_eq`). Such a map satisfies
-`S J S† = J` (`TauCeti.AlmostComplexStructure.apply_apply_adjoint_apply`).
+(`TauCeti.AlmostComplexStructure.compContinuousLinearMap_apply_add_apply_eq`).
 
 ## References
 
@@ -120,20 +119,6 @@ theorem compContinuousLinearMap_apply_add_apply_eq (hV : finrank ℝ V = 4)
   refine ContinuousAlternatingMap.apply_add_apply_eq_of_cross_eq_zero
     (ω₀ := alternatingFormEquiv V 2 J.kahlerForm) hV ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ G <;>
     simp only [hω, hS, h₀, h₁, h₂₃, inner_neg_left, he] <;> norm_num
-
-omit hJ in
-/-- **A map preserving the Kähler form satisfies `S J S† = J`.** If `S` preserves the form
-`⟪J u, v⟫` of an almost complex structure `J`, then `S† J S = J`, so `-J S† J` is a left and hence,
-in finite dimension, a right inverse of `S`. -/
-theorem apply_apply_adjoint_apply {S : V →L[ℝ] V} (hS : ∀ u v, ⟪J (S u), S v⟫ = ⟪J u, v⟫)
-    (w : V) : S (J (S.adjoint w)) = J w := by
-  have hL (u : V) : S.adjoint (J (S u)) = J u :=
-    ext_inner_right ℝ fun v ↦ by rw [ContinuousLinearMap.adjoint_inner_left, hS]
-  have hleft : Function.LeftInverse (fun w ↦ -J (S.adjoint (J w))) S := fun u ↦ by
-    simp only [hL, J.apply_apply, neg_neg]
-  have hsurj : Function.Surjective S :=
-    (LinearMap.injective_iff_surjective (f := (S : V →ₗ[ℝ] V))).1 hleft.injective
-  simpa [J.apply_apply] using hleft.rightInverse_of_surjective hsurj (J w)
 
 end TauCeti.AlmostComplexStructure
 
