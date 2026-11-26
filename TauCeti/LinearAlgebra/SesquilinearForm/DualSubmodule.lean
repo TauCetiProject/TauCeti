@@ -124,9 +124,10 @@ theorem dualSubmodule_sup (N₁ N₂ : Submodule R V) :
     B.dualSubmodule hσ (N₁ ⊔ N₂) = B.dualSubmodule hσ N₁ ⊓ B.dualSubmodule hσ N₂ := by
   refine le_antisymm (le_inf (B.dualSubmodule_anti hσ le_sup_left)
     (B.dualSubmodule_anti hσ le_sup_right)) fun x hx y hy ↦ ?_
+  obtain ⟨hx₁, hx₂⟩ := Submodule.mem_inf.1 hx
   obtain ⟨y₁, hy₁, y₂, hy₂, rfl⟩ := Submodule.mem_sup.1 hy
   rw [map_add]
-  exact add_mem (hx.1 y₁ hy₁) (hx.2 y₂ hy₂)
+  exact add_mem (mem_dualSubmodule.1 hx₁ y₁ hy₁) (mem_dualSubmodule.1 hx₂ y₂ hy₂)
 
 /-- **Duals of images.** Let `B` and `B'` be forms on `V` and `W`, and `f : V → W`, `g : W → V`
 `R`-linear maps adjoint to each other, `B' w (f v) = B (g w) v`. The dual of the image `f N` is
@@ -151,7 +152,7 @@ the difference between a vector and its projection to `Z` along `Q`: `B z (P v) 
 theorem apply_projection_of_le_orthogonalBilin {Z Q : Submodule K V} (h : IsCompl Z Q)
     (hQ : Q ≤ Z.orthogonalBilin B) {z : V} (hz : z ∈ Z) (v : V) :
     B z (Z.projection Q h v) = B z v := by
-  have := hQ (Submodule.sub_projection_mem h v) z hz
+  have := Submodule.mem_orthogonalBilin.1 (hQ (Submodule.sub_projection_mem h v)) z hz
   rwa [map_sub, sub_eq_zero, eq_comm] at this
 
 /-- **Duality of projection and intersection.** Let `Z` be a subspace of `V` with a complement
@@ -209,7 +210,7 @@ variable {R K V : Type*} [CommRing R] [Field K] [Algebra R K]
 theorem dualSubmodule_eq_bilinFormDualSubmodule (B : LinearMap.BilinForm K V)
     (hσ : ∀ r : R, RingHom.id K (algebraMap R K r) ∈ (1 : Submodule R K)) (N : Submodule R V) :
     LinearMap.dualSubmodule B hσ N = B.dualSubmodule N :=
-  (rfl)
+  Submodule.ext fun _ ↦ mem_dualSubmodule.trans (BilinForm.mem_dualSubmodule B).symm
 
 end BilinForm
 
