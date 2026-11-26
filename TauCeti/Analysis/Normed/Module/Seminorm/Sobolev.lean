@@ -100,20 +100,29 @@ def endSobolevSeminorm (f : M →ₗ[𝕜] F) (D : Fin m → Module.End 𝕜 M) 
     ((WithLp.linearEquiv 2 𝕜 _).symm.toLinearMap ∘ₗ
       LinearMap.pi fun α ↦ f ∘ₗ ((monomialWord α.exponent).map D).prod)
 
+/-- The Sobolev seminorm along a family of operators is the `ℓ²` norm of the vector
+`(f(D^α x))_{|α| ≤ k}`. -/
+theorem endSobolevSeminorm_eq_norm (f : M →ₗ[𝕜] F) (D : Fin m → Module.End 𝕜 M) (k : ℕ)
+    (x : M) :
+    endSobolevSeminorm f D k x =
+      ‖WithLp.toLp 2 fun α : SobolevIndex m k ↦ f (((monomialWord α.exponent).map D).prod x)‖ := by
+  simp only [endSobolevSeminorm, Seminorm.comp_apply, coe_normSeminorm, coe_comp,
+    LinearEquiv.coe_coe, Function.comp_apply, WithLp.linearEquiv_symm_apply]
+  exact congrArg (‖WithLp.toLp 2 ·‖) (funext fun α ↦ pi_apply _ x α)
+
 /-- The Sobolev seminorm along a family of operators as an explicit square root of a sum of
 squares. -/
 theorem endSobolevSeminorm_apply (f : M →ₗ[𝕜] F) (D : Fin m → Module.End 𝕜 M) (k : ℕ) (x : M) :
     endSobolevSeminorm f D k x =
       √(∑ α : SobolevIndex m k, ‖f (((monomialWord α.exponent).map D).prod x)‖ ^ 2) := by
-  simp [endSobolevSeminorm, PiLp.norm_eq_of_L2]
+  simp [endSobolevSeminorm_eq_norm, PiLp.norm_eq_of_L2]
 
 /-- The term of an ordered monomial is bounded by the Sobolev seminorm:
 `‖f(D^α x)‖ ≤ Q^D_k(x)` for `|α| ≤ k`. -/
 theorem norm_apply_le_endSobolevSeminorm (f : M →ₗ[𝕜] F) (D : Fin m → Module.End 𝕜 M) {k : ℕ}
     (α : SobolevIndex m k) (x : M) :
     ‖f (((monomialWord α.exponent).map D).prod x)‖ ≤ endSobolevSeminorm f D k x :=
-  PiLp.norm_apply_le
-    (WithLp.toLp 2 fun α : SobolevIndex m k ↦ f (((monomialWord α.exponent).map D).prod x)) α
+  (PiLp.norm_apply_le _ α).trans_eq (endSobolevSeminorm_eq_norm f D k x).symm
 
 /-- **The Sobolev seminorm is bounded by the word seminorm**, `Q^D_k ≤ P^D_k`: every ordered
 monomial is a word, and the `ℓ²` norm of a finite family is at most its `ℓ¹` norm. -/
