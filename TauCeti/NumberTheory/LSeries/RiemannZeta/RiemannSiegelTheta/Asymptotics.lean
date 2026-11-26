@@ -53,7 +53,9 @@ theorem riemannSiegelTheta_eq_add_im_stirlingRemainder (T : ℝ) :
         T / 2 * Real.log π + (stirlingRemainder (1 / 4 + (T : ℂ) / 2 * I)).im := by
   rw [riemannSiegelTheta_eq_im_logGamma_sub, logGamma_eq_add_stirlingRemainder]
   simp only [add_im, sub_im, mul_im, log_re, log_im, ofReal_im]
-  simp
+  simp only [one_div, sub_re, add_re, inv_re, re_ofNat, normSq_ofNat, div_self_mul_self',
+    mul_re, div_ofNat_re, ofReal_re, I_re, mul_zero, div_ofNat_im, ofReal_im, zero_div, I_im,
+    mul_one, sub_self, add_zero, inv_im, im_ofNat, neg_zero, zero_add, sub_zero]
   ring
 
 /-- The modulus term: `0 ≤ (T/2) log |1/4 + iT/2| - (T/2) log (T/2) ≤ 1/(16T)` for `T > 0`. -/

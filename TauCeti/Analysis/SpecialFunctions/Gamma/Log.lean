@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Digamma
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
-import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.ContinuousLog.Basic
@@ -222,11 +221,8 @@ theorem hasDerivAt_im_logGamma_ofReal_add_mul_I {σ t : ℝ} (h : (σ : ℂ) + t
 `∫ t in 0..T, Re (digamma (σ + t i)) = Im (logGamma (σ + T i))`. -/
 theorem integral_re_digamma_ofReal_add_mul_I {σ : ℝ} (hσ : 0 < σ) (T : ℝ) :
     ∫ t in (0 : ℝ)..T, (digamma (σ + t * I)).re = (logGamma (σ + T * I)).im := by
-  have hψ : Continuous fun t : ℝ ↦ digamma (σ + t * I) :=
-    analyticOnNhd_digamma_re_pos.continuousOn.comp_continuous (by fun_prop) fun t => by
-      simpa using hσ
   have hre : Continuous fun t : ℝ ↦ (digamma (σ + t * I)).re :=
-    Complex.continuous_re.comp hψ
+    Complex.continuous_re.comp (continuous_digamma_ofReal_add_mul_I hσ)
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt
     (fun _ _ ↦ hasDerivAt_im_logGamma_ofReal_add_mul_I
       (Complex.mem_slitPlane_iff.mpr (Or.inl (by simpa using hσ))))

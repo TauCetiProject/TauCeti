@@ -60,11 +60,6 @@ namespace Real
 private theorem one_half_add_mul_I_mem_slitPlane (a : ℝ) : (1 / 2 + a * I : ℂ) ∈ slitPlane :=
   mem_slitPlane_iff.mpr (Or.inl (by simp))
 
-/-- `ψ` is continuous on the line `Re s = ½`. -/
-private theorem continuous_digamma_one_half_add_mul_I :
-    Continuous fun t : ℝ => Complex.digamma (1 / 2 + t * I) :=
-  analyticOnNhd_digamma_re_pos.continuousOn.comp_continuous (by fun_prop) fun t => by simp
-
 /-- The continuous phase `φ₂(a) = ph Γ(½ + ia)` with `φ₂(0) = 0` (DLMF 12.14.7),
 `φ₂(a) = ∫₀ᵃ Re ψ(½ + it) dt`. -/
 def gammaHalfPhase (a : ℝ) : ℝ :=
@@ -79,7 +74,9 @@ theorem gammaHalfPhase_def (a : ℝ) :
 theorem hasDerivAt_gammaHalfPhase (a : ℝ) :
     HasDerivAt gammaHalfPhase (Complex.digamma (1 / 2 + a * I)).re a := by
   rw [funext gammaHalfPhase_def]
-  exact ((continuous_re.comp continuous_digamma_one_half_add_mul_I).integral_hasStrictDerivAt
+  have hψ := continuous_digamma_ofReal_add_mul_I (σ := 1 / 2) (by norm_num)
+  push_cast at hψ
+  exact ((continuous_re.comp hψ).integral_hasStrictDerivAt
     0 a).hasDerivAt
 
 /-- `φ₂(0) = 0`. -/

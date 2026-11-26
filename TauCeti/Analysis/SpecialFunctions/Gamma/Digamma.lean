@@ -21,6 +21,7 @@ in particular on the right half-plane.
 
 * `Complex.analyticAt_digamma`: complex digamma is analytic away from the nonpositive integers.
 * `Complex.analyticOnNhd_digamma_re_pos`: complex digamma is analytic on the right half-plane.
+* `Complex.continuous_digamma_ofReal_add_mul_I`: continuity along vertical lines in that half-plane.
 -/
 
 public section
@@ -35,5 +36,11 @@ theorem analyticAt_digamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : Anal
 /-- The digamma function is analytic on the right half-plane `0 < Re s`. -/
 theorem analyticOnNhd_digamma_re_pos : AnalyticOnNhd ℂ digamma {s : ℂ | 0 < s.re} :=
   fun _ hs => analyticAt_digamma (ne_neg_natCast_of_re_pos hs)
+
+/-- The digamma function is continuous along every vertical line with positive real part. -/
+theorem continuous_digamma_ofReal_add_mul_I {σ : ℝ} (hσ : 0 < σ) :
+    Continuous fun t : ℝ ↦ digamma (σ + t * I) :=
+  analyticOnNhd_digamma_re_pos.continuousOn.comp_continuous (by fun_prop) fun _ ↦ by
+    simpa using hσ
 
 end Complex

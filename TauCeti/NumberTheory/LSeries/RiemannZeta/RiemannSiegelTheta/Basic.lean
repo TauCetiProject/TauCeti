@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Log
-import TauCeti.Analysis.Complex.SlitPlane
-import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Digamma
 import TauCeti.Analysis.Contour.Argument.Lift
 
@@ -104,10 +102,8 @@ theorem riemannSiegelTheta_eq_im_logGamma_sub (T : ℝ) :
     (f := fun t : ℝ => ((digamma (((1 / 4 : ℝ) : ℂ) + (t : ℂ) * I)).re - Real.log π) / 2)
     (by norm_num)]
   simp only [zero_div, smul_eq_mul, intervalIntegral.integral_div]
-  have hψ : Continuous fun t : ℝ => digamma (((1 / 4 : ℝ) : ℂ) + (t : ℂ) * I) :=
-    analyticOnNhd_digamma_re_pos.continuousOn.comp_continuous (by fun_prop) fun _ ↦ by norm_num
   have hre : Continuous fun t : ℝ => (digamma (((1 / 4 : ℝ) : ℂ) + (t : ℂ) * I)).re :=
-    Complex.continuous_re.comp hψ
+    Complex.continuous_re.comp (continuous_digamma_ofReal_add_mul_I (by norm_num))
   rw [intervalIntegral.integral_sub
     (hre.intervalIntegrable 0 (T / 2)) intervalIntegrable_const]
   rw [integral_re_digamma_ofReal_add_mul_I (σ := 1 / 4) (by norm_num) (T / 2),
