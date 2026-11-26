@@ -30,7 +30,9 @@ containing `0`, is uniqueness of lifts (`IsCoveringMap.eqOn_of_comp_eqOn`).
 ## Main definitions and results
 
 * `TauCeti.distLog`: the distinguished logarithm, `0` when `φ` has no continuous logarithm
-  vanishing at `0`.
+  vanishing at `0` (`TauCeti.distLog_of_not_exists`, with the special cases
+  `TauCeti.distLog_of_not_continuous`, `TauCeti.distLog_of_apply_zero_ne_one` and
+  `TauCeti.distLog_of_apply_eq_zero`).
 * `TauCeti.existsUnique_distLog`: existence and uniqueness of that logarithm, with
   `TauCeti.distLog_eq_iff` characterizing `distLog φ` among all functions.
 * `TauCeti.eqOn_distLog`: a continuous logarithm on a preconnected set containing `0`, vanishing
@@ -97,6 +99,23 @@ theorem distLog_apply_zero (φ : ℝ → ℂ) : distLog φ 0 = 0 := by
   split_ifs with h
   · exact h.choose_spec.2.1
   · rfl
+
+/-- The junk value: when `φ` has no continuous logarithm vanishing at `0`, `distLog φ` is `0`. -/
+theorem distLog_of_not_exists (h : ¬ ∃ ψ : ℝ → ℂ, Continuous ψ ∧ ψ 0 = 0 ∧ ∀ t, cexp (ψ t) = φ t) :
+    distLog φ = 0 := by
+  simp only [distLog, h, ↓reduceDIte]
+
+/-- The distinguished logarithm of a discontinuous function is `0`. -/
+theorem distLog_of_not_continuous (hφ : ¬ Continuous φ) : distLog φ = 0 :=
+  distLog_of_not_exists fun ⟨_, hψ, _, hψφ⟩ ↦ hφ <| funext hψφ ▸ continuous_exp.comp' hψ
+
+/-- The distinguished logarithm of a function with `φ 0 ≠ 1` is `0`. -/
+theorem distLog_of_apply_zero_ne_one (h0 : φ 0 ≠ 1) : distLog φ = 0 :=
+  distLog_of_not_exists fun ⟨_, _, hψ0, hψφ⟩ ↦ h0 <| by rw [← hψφ, hψ0, exp_zero]
+
+/-- The distinguished logarithm of a function with a zero is `0`. -/
+theorem distLog_of_apply_eq_zero {t : ℝ} (ht : φ t = 0) : distLog φ = 0 :=
+  distLog_of_not_exists fun ⟨_, _, _, hψφ⟩ ↦ exp_ne_zero _ <| (hψφ t).trans ht
 
 /-- The distinguished logarithm is continuous. -/
 theorem continuous_distLog (hφ : Continuous φ) (h0 : φ 0 = 1) (hne : ∀ t, φ t ≠ 0) :
