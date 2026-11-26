@@ -59,6 +59,8 @@ expansion here of the function read in the scaling coordinate of the cusp.
   `TauCeti.UpperHalfPlane.laurentQExpansion_inv` and their companions: the field operations.
 * `TauCeti.UpperHalfPlane.orderTop_laurentQExpansion`: the order at `i∞`.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_eq_zero_iff`: uniqueness of the expansion.
+* `TauCeti.UpperHalfPlane.analyticAt_cuspFunction_iff_orderTop_laurentQExpansion_nonneg`: the
+  cusp function is analytic at `0` exactly when the expansion has no negative powers of `q`.
 * `TauCeti.UpperHalfPlane.hasSum_laurentQExpansion`: convergence near `i∞`.
 * `TauCeti.UpperHalfPlane.laurentQExpansion_eq_laurentQExpansion_iff`: the `q`-expansion
   principle.
@@ -320,6 +322,15 @@ the cusp function vanishes on a punctured neighbourhood of `0`. -/
 theorem laurentQExpansion_eq_zero_iff (hf : MeromorphicAt (cuspFunction h f) 0) :
     laurentQExpansion h f = 0 ↔ ∀ᶠ q in 𝓝[≠] 0, cuspFunction h f q = 0 := by
   rw [← HahnSeries.orderTop_eq_top, orderTop_laurentQExpansion hf, meromorphicOrderAt_eq_top_iff]
+
+/-- **Holomorphy at `i∞`.** A function meromorphic at `i∞` has a cusp function analytic at `0`
+exactly when its Laurent `q`-expansion has no negative powers of `q`. -/
+theorem analyticAt_cuspFunction_iff_orderTop_laurentQExpansion_nonneg
+    (hf : MeromorphicAt (cuspFunction h f) 0) :
+    AnalyticAt ℂ (cuspFunction h f) 0 ↔ 0 ≤ (laurentQExpansion h f).orderTop := by
+  rw [orderTop_laurentQExpansion hf]
+  refine ⟨fun han ↦ han.meromorphicOrderAt_nonneg, fun h0 ↦ ?_⟩
+  simpa using analyticAt_cuspFunction_qParam_pow_mul (k := 0) hf (by simpa using h0)
 
 /-! ### Field operations -/
 

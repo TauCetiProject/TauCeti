@@ -219,6 +219,11 @@ theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
   -- Mathlib states the `-I` law with the constant function `(-1) ^ k`; as a scalar it is `•`.
   exact ModularForm.SL_smul_slash k A f ((-1 : ℂ) ^ k)
 
+/-- At weight `0` the slash action of `SL(2, ℤ)` is composition with the Möbius action. -/
+theorem SL_slash_zero (f : ℍ → ℂ) (A : SL(2, ℤ)) : f ∣[(0 : ℤ)] A = fun τ ↦ f (A • τ) := by
+  funext τ
+  rw [_root_.ModularForm.SL_slash_apply, neg_zero, zpow_zero, mul_one]
+
 /-- In odd weight, a function invariant under the weight-`k` slash action of `-1` vanishes,
 because `f ∣[k] (-1) = -f`. -/
 theorem eq_zero_of_slash_neg_one_eq (h : f ∣[k] (-1 : SL(2, ℤ)) = f) (hk : Odd k) : f = 0 := by

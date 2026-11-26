@@ -59,6 +59,8 @@ hypothesis on `-1 ∈ Γ` or on the regularity of the cusps is needed.
   `-1` vanishes.
 * `TauCeti.isWeakForm_inv_discriminant`, `TauCeti.not_exists_modularForm_coe_eq_inv_discriminant`:
   `Δ⁻¹` is a weak form and not a modular form.
+* `TauCeti.isWeakForm_discriminant_zpow`: every integer power `Δ ^ m` is a weak form of weight
+  `12 m`.
 * `TauCeti.IsWeakForm.exists_forall_isBigO_exp`: on a finite-index subgroup, one exponential
   growth rate bounds a weak form at every cusp.
 * `TauCeti.IsWeakForm.eventually_exists_modularForm_coe_eq_mul_discriminant_pow`,
@@ -326,6 +328,25 @@ theorem isWeakForm_discriminant : IsWeakForm ⊤ 12 discriminant where
     rw [discriminant_slash]
     exact discriminant_isZeroAtImInfty.isBoundedAtImInfty.trans
       (isBigO_of_le _ fun _ ↦ by simp)⟩
+
+/-- Every integer power `Δ ^ m` of the discriminant is a weak form of weight `12 m` on
+`SL₂(ℤ)`. -/
+theorem isWeakForm_discriminant_zpow (m : ℤ) :
+    IsWeakForm ⊤ (12 * m) (fun τ ↦ discriminant τ ^ m) := by
+  cases m with
+  | ofNat n =>
+    convert isWeakForm_discriminant.pow n using 1
+    · rw [Int.ofNat_eq_natCast]
+      ring
+    · funext τ
+      simp
+  | negSucc n =>
+    convert isWeakForm_inv_discriminant.pow (n + 1) using 1
+    · rw [Int.negSucc_eq]
+      push_cast
+      ring
+    · funext τ
+      simp [zpow_negSucc]
 
 /-- **Uniform growth at the cusps.** On a finite-index subgroup `Γ`, a single real `C` bounds the
 growth of a weak form at every cusp: `f ∣[k] g = O(exp (C · Im τ))` as `Im τ → ∞` for every
