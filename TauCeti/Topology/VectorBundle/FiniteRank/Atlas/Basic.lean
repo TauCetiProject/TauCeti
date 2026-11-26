@@ -277,13 +277,8 @@ def totalSpaceHomeomorphOfCoordChangeEqId
       (A.charts n).coordChange i j x v = v)
     (p : TotalSpace Unit A.Fiber) :
     A.totalSpaceHomeomorphOfCoordChangeEqId hcoord p = ⟨A.rank p.proj, (⟨p.proj, rfl⟩, p.snd)⟩ := by
-  rw [totalSpaceHomeomorphOfCoordChangeEqId, Homeomorph.trans_apply,
-    totalSpaceHomeomorph_symm_apply]
-  refine (Homeomorph.sigmaCongrRight_apply _
-    (⟨A.rank p.proj, ⟨⟨p.proj, rfl⟩, p.snd⟩⟩ : A.GluedTotalSpace)).trans
-    (congrArg (Sigma.mk (A.rank p.proj)) ?_)
-  exact (congrFun (Bundle.Trivialization.coe_toHomeomorphOfBaseSetEqUniv _ _) _).trans
-    ((A.charts (A.rank p.proj)).globalTrivializationOfCoordChangeEqId_apply (hcoord _) _)
+  simp [totalSpaceHomeomorphOfCoordChangeEqId]
+  rfl
 
 /-- Inverse evaluation of `FiniteRankAtlas.totalSpaceHomeomorphOfCoordChangeEqId`. -/
 @[simp] theorem totalSpaceHomeomorphOfCoordChangeEqId_symm_apply
@@ -349,12 +344,9 @@ noncomputable def reconstructionHomeomorph :
         pointIndexedCoreFiberEquiv 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨p.proj, rfl⟩ p.snd⟩⟩ := by
   rw [reconstructionHomeomorph, Homeomorph.trans_apply, totalSpaceHomeomorph_symm_apply,
     gluedReconstructionHomeomorph]
-  refine (Homeomorph.sigmaCongrRight_apply _
-    (⟨(ofBundles 𝕜 r E).rank p.proj, ⟨⟨p.proj, rfl⟩, p.snd⟩⟩ :
-      (ofBundles 𝕜 r E).GluedTotalSpace)).trans
-    (congrArg (Sigma.mk (r p.proj)) ?_)
-  exact pointIndexedCoreHomeomorph_apply 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj))
-    ⟨⟨p.proj, rfl⟩, p.snd⟩
+  change (Homeomorph.sigmaCongrRight fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n))
+    ⟨r p.proj, ⟨⟨p.proj, rfl⟩, p.snd⟩⟩ = _
+  rw [Homeomorph.sigmaCongrRight_apply, pointIndexedCoreHomeomorph_apply]
 
 /-- The inverse comparison is the inverse preferred-chart fibre equivalence, followed
 by the canonical inclusion of that stratum into the reconstructed total space. -/
@@ -367,12 +359,11 @@ by the canonical inclusion of that stratum into the reconstructed total space. -
   rw [reconstructionHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
     gluedReconstructionHomeomorph]
   refine congrArg (ofBundles 𝕜 r E).totalSpaceHomeomorph ?_
-  refine (DFunLike.congr_fun (Homeomorph.sigmaCongrRight_symm
-    (fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n))) p).trans ?_
-  refine (Homeomorph.sigmaCongrRight_apply
-    (fun n => (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm) p).trans ?_
-  exact congrArg (Sigma.mk p.1)
-    (pointIndexedCoreHomeomorph_symm_apply 𝕜 (Fin p.1 → 𝕜) (E p.1) p.2)
+  change (Homeomorph.sigmaCongrRight fun n =>
+    pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm p = _
+  rw [Homeomorph.sigmaCongrRight_symm, Homeomorph.sigmaCongrRight_apply,
+    pointIndexedCoreHomeomorph_symm_apply]
+  rfl
 
 /-- The reconstruction comparison covers the identity map on the original base. -/
 @[simp] theorem proj_reconstructionHomeomorph

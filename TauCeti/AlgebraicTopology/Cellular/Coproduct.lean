@@ -74,13 +74,11 @@ coordinate identification `EuclideanSpace.equiv`. -/
 def sigmaDiskBoundaryPairIso :
     TopPair.sigma (fun _ : ι ↦ diskBoundaryPair.{w} n) ≅ sigmaDiskPair ι n :=
   TopPair.isoOfSubsetRange (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n) ≪≫
-    TopPair.ofSubsetIso (sigmaDiskHomeomorph ι n) fun p ↦
-      (TopPair.mem_range_sigma_map _).trans
-        ((diskBoundaryPair_map n ▸ (norm_diskHomeomorphClosedBall_eq_one_iff p.2).symm).trans
-          (congrArg (fun q : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1 ↦
-              q ∈ {q : Σ _ : ι, closedBall (0 : Fin n → ℝ) 1 | ‖(q.2 : Fin n → ℝ)‖ = 1})
-            (Homeomorph.sigmaCongrRight_apply
-              (fun _ : ι ↦ diskHomeomorphClosedBall n) p).symm).to_iff)
+    TopPair.ofSubsetIso (sigmaDiskHomeomorph ι n) fun p ↦ by
+      rw [TopPair.mem_range_sigma_map, diskBoundaryPair_map,
+        show sigmaDiskHomeomorph ι n p = ⟨p.1, diskHomeomorphClosedBall n p.2⟩ from
+          Homeomorph.sigmaCongrRight_apply _ p]
+      exact (norm_diskHomeomorphClosedBall_eq_one_iff p.2).symm
 
 private lemma sigmaDiskBoundaryPairIso_hom_fst_apply
     (p : (TopPair.sigma fun _ : ι ↦ diskBoundaryPair.{w} n).fst) :
@@ -88,8 +86,8 @@ private lemma sigmaDiskBoundaryPairIso_hom_fst_apply
       ⟨p.1, diskHomeomorphClosedBall n p.2⟩ := by
   rw [sigmaDiskBoundaryPairIso, Iso.trans_hom, TopPair.Hom.fst_comp, TopCat.comp_app,
     TopPair.isoOfSubsetRange_hom_fst_apply]
-  exact (TopPair.ofSubsetIso_hom_fst_apply _ _ p).trans
-    (Homeomorph.sigmaCongrRight_apply (fun _ : ι ↦ diskHomeomorphClosedBall n) p)
+  erw [TopPair.ofSubsetIso_hom, TopPair.ofSubsetMap_fst_apply]
+  exact Homeomorph.sigmaCongrRight_apply (fun _ : ι ↦ diskHomeomorphClosedBall n) p
 
 /-- On the ambient spaces, `TauCeti.sigmaDiskBoundaryPairIso` preserves the summand. -/
 @[simp]
