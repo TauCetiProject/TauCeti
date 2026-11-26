@@ -14,8 +14,9 @@ import Mathlib.Tactic.FinCases
 The six faces round a vertex `v` form a unit hexagon, which has two tilings: the three edges
 `(v,3)`, `(v−e₁,1)`, `(v−e₂,2)` (`highFlipEdges v`) and the three edges `(v,1)`, `(v,2)`,
 `(v−e₃,3)` (`lowFlipEdges v`). A flip at `v` replaces one of these triples in a set of edges by the
-other. Each triple has one edge of each direction, so a flip removes one lozenge of each type and
-adds one of each type.
+other. Each triple has one edge of each direction, so when `M` is a tiling (more generally, when
+`M` has at most one edge in each face round `v`) a flip removes one lozenge of each type and adds
+one of each type.
 
 ## Main definitions
 
@@ -256,8 +257,13 @@ theorem symmDiff_eq (h : IsFlipAt v M M')
   obtain ⟨A, B, hp, hAM, rfl⟩ := isFlipAt_iff_exists.1 h
   obtain ⟨hA, hB, hAB, hAB'⟩ := isTiling_and_isTiling_of_flipPair hp
   have hMB := disjoint_of_isTiling_of_subset hA hB hAB hM hAM
-  rw [← hAB', ← (hMB.mono_left Set.sdiff_subset).symmDiff_eq_sup, ← symmDiff_of_le hAM,
-    symmDiff_comm A M, symmDiff_assoc, symmDiff_symmDiff_cancel_left, hAB.symmDiff_eq_sup]
+  rw [← hAB']
+  ext e
+  have hAM : e ∈ A → e ∈ M := @hAM e
+  have hMB : e ∈ M → e ∉ B := @Set.disjoint_left.1 hMB e
+  have hAB : e ∈ A → e ∉ B := @Set.disjoint_left.1 hAB e
+  simp only [Set.mem_symmDiff, Set.mem_union, Set.mem_sdiff]
+  tauto
 
 /-- **Flips preserve tilings**: a flip of a tiling of a region is a tiling of the region. -/
 theorem isTiling (h : IsFlipAt v M M') (hM : IsTiling R M) : IsTiling R M' := by
