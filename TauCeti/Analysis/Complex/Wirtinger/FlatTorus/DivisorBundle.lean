@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.FlatTorus.Inverse
 public import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # The inverse of the Cauchy–Riemann operator on the divisor bundle of a flat line
@@ -65,6 +66,8 @@ of every degree over every finite cover
   sections.
 * `TauCeti.norm_divisorBundleCRInverse_le`: its norm is at most the largest norm bound of the
   summands.
+* `TauCeti.divisorBundleBeurling_ae_eq_of_ae_eq_conjWirtingerDeriv`: the Beurling transform
+  sends `∂bar u` to `∂u` on `C²` sections.
 * `TauCeti.norm_divisorBundleBeurling_apply`: the Beurling transform is an isometry.
 * `TauCeti.setIntegral_divisorBundleCRInverse_mul_conj_fderiv`,
   `TauCeti.norm_smul_divisorBundleBeurling_add_smul_le`: the inverse maps `L²` into `H¹`.
@@ -166,10 +169,7 @@ theorem norm_divisorBundleCRInverse_le :
         (|((j : ℕ) + 1 : ℝ) * θ₁ - round (((j : ℕ) + 1 : ℝ) * θ₁)| ^ 2 / ‖ω₁‖ ^ 2 +
           |((j : ℕ) + 1 : ℝ) * θ₂ - round (((j : ℕ) + 1 : ℝ) * θ₂)| ^ 2 / ‖ω₂‖ ^ 2)))⁻¹ :=
   PiLp.norm_piMap_le (Real.iSup_nonneg fun _ ↦ by positivity) fun j ↦
-    (norm_flatLineCRInverse_le hω (hθ j)).trans <| le_ciSup (finite_range fun j : Fin m ↦
-      (√(π ^ 2 / 2 *
-        (|((j : ℕ) + 1 : ℝ) * θ₁ - round (((j : ℕ) + 1 : ℝ) * θ₁)| ^ 2 / ‖ω₁‖ ^ 2 +
-          |((j : ℕ) + 1 : ℝ) * θ₂ - round (((j : ℕ) + 1 : ℝ) * θ₂)| ^ 2 / ‖ω₂‖ ^ 2)))⁻¹).bddAbove j
+    le_ciSup_of_le (finite_range _).bddAbove j (norm_flatLineCRInverse_le hω (hθ j))
 
 end Inverse
 
@@ -204,6 +204,23 @@ theorem divisorBundleBeurling_apply
 variable (hω : (conj ω₁ * ω₂).im ≠ 0)
 include hω
 
+/-- **The Beurling transform of the divisor bundle sends `∂bar u` to `∂u`.** If `ω₁, ω₂` are
+linearly independent over `ℝ`, `u j` is a `C²` section of `N ^ (j + 1)` for every `j`, and `f j`
+represents `∂bar (u j)` in lattice coordinates, then the component of index `j` of
+`divisorBundleBeurling ω₁ ω₂ θ₁ θ₂ m f` represents `∂ (u j)`. -/
+theorem divisorBundleBeurling_ae_eq_of_ae_eq_conjWirtingerDeriv {u : Fin m → ℂ → ℂ}
+    (hu : ∀ j, ContDiff ℝ 2 (u j))
+    (hu₁ : ∀ j z, u j (z + ω₁) = exp (2 * π * ↑(((j : ℕ) + 1 : ℝ) * θ₁) * I) * u j z)
+    (hu₂ : ∀ j z, u j (z + ω₂) = exp (2 * π * ↑(((j : ℕ) + 1 : ℝ) * θ₂) * I) * u j z)
+    {f : PiLp 2 (fun _ : Fin m ↦
+      Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)))}
+    (hf : ∀ j, f j =ᵐ[(volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)]
+      fun p ↦ conjWirtingerDeriv (u j) (p.1 * ω₁ + p.2 * ω₂) 1) (j : Fin m) :
+    divisorBundleBeurling ω₁ ω₂ θ₁ θ₂ m f j =ᵐ[(volume : Measure (ℝ × ℝ)).restrict
+      (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1)] fun p ↦ wirtingerDeriv (u j) (p.1 * ω₁ + p.2 * ω₂) 1 := by
+  rw [divisorBundleBeurling_apply]
+  exact flatLineBeurling_ae_eq_of_ae_eq_conjWirtingerDeriv hω (hu j) (hu₁ j) (hu₂ j) (hf j)
+
 /-- The Beurling transform of the divisor bundle is a contraction. -/
 theorem norm_divisorBundleBeurling_le : ‖divisorBundleBeurling ω₁ ω₂ θ₁ θ₂ m‖ ≤ 1 :=
   PiLp.norm_piMap_le zero_le_one fun _ ↦ norm_flatLineBeurling_le hω
@@ -215,15 +232,8 @@ theorem norm_smul_divisorBundleBeurling_add_smul_le
     (f : PiLp 2 (fun _ : Fin m ↦
       Lp ℂ 2 ((volume : Measure (ℝ × ℝ)).restrict (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1))))
     (v : ℂ) :
-    ‖v • divisorBundleBeurling ω₁ ω₂ θ₁ θ₂ m f + conj v • f‖ ≤ 2 * ‖v‖ * ‖f‖ := by
-  have hB : ‖divisorBundleBeurling ω₁ ω₂ θ₁ θ₂ m f‖ ≤ ‖f‖ :=
-    ((divisorBundleBeurling ω₁ ω₂ θ₁ θ₂ m).le_of_opNorm_le
-      (norm_divisorBundleBeurling_le hω) f).trans (one_mul _).le
-  calc ‖v • divisorBundleBeurling ω₁ ω₂ θ₁ θ₂ m f + conj v • f‖
-      ≤ ‖v‖ * ‖divisorBundleBeurling ω₁ ω₂ θ₁ θ₂ m f‖ + ‖v‖ * ‖f‖ := by
-        refine (norm_add_le _ _).trans_eq ?_
-        rw [norm_smul, norm_smul, RCLike.norm_conj]
-    _ ≤ 2 * ‖v‖ * ‖f‖ := by nlinarith [norm_nonneg v]
+    ‖v • divisorBundleBeurling ω₁ ω₂ θ₁ θ₂ m f + conj v • f‖ ≤ 2 * ‖v‖ * ‖f‖ :=
+  ContinuousLinearMap.norm_smul_apply_add_conj_smul_le (norm_divisorBundleBeurling_le hω) v f
 
 variable (hθ : ∀ j : Fin m, ((j : ℕ) + 1 : ℝ) * θ₁ ∉ range ((↑) : ℤ → ℝ) ∨
     ((j : ℕ) + 1 : ℝ) * θ₂ ∉ range ((↑) : ℤ → ℝ))
