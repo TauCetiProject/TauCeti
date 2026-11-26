@@ -56,6 +56,9 @@ specialization.
 * `TauCeti.Flow.IsMaximum.isMinimum_iff`, `TauCeti.Flow.IsMaximum.mem_smallest_iff`,
   `TauCeti.Flow.IsMaximum.mem_largest_iff` and
   `TauCeti.Flow.IsMaximum.existsUnique_isMinimum_iff`: the ordinary-flow specializations.
+* `TauCeti.Flow.IsMaximum.positiveReachable_source_iff` and
+  `TauCeti.Flow.IsMaximum.positiveReachable_sink_iff`: the residual source and sink sets of an
+  ordinary maximum flow do not depend on the chosen maximum flow.
 
 ## References
 
@@ -295,6 +298,26 @@ theorem existsUnique_isMinimum_iff (hst : s ≠ t) (hf : f.IsMaximum) :
         PositiveReachable (residualCapacity 0 cap f.toFun) v t := by
   rw [← funext (cutBound_zero_left cap)]
   exact ((isMaximum_toBoundedFlow f).2 hf).existsUnique_isMinimum_iff hst
+
+omit [DecidableEq V] in
+/-- Positive reachability from the source for the residual capacities is the same for all maximum
+ordinary `s`–`t` flows. -/
+theorem positiveReachable_source_iff (hst : s ≠ t) (hf : f.IsMaximum)
+    {g : Flow cap s t} (hg : g.IsMaximum) {v : V} :
+    PositiveReachable (residualCapacity 0 cap f.toFun) s v ↔
+      PositiveReachable (residualCapacity 0 cap g.toFun) s v :=
+  ((isMaximum_toBoundedFlow f).2 hf).positiveReachable_source_iff hst
+    ((isMaximum_toBoundedFlow g).2 hg)
+
+omit [DecidableEq V] in
+/-- Positive reachability of the sink for the residual capacities is the same for all maximum
+ordinary `s`–`t` flows. -/
+theorem positiveReachable_sink_iff (hst : s ≠ t) (hf : f.IsMaximum)
+    {g : Flow cap s t} (hg : g.IsMaximum) {v : V} :
+    PositiveReachable (residualCapacity 0 cap f.toFun) v t ↔
+      PositiveReachable (residualCapacity 0 cap g.toFun) v t :=
+  ((isMaximum_toBoundedFlow f).2 hf).positiveReachable_sink_iff hst
+    ((isMaximum_toBoundedFlow g).2 hg)
 
 end Flow.IsMaximum
 
