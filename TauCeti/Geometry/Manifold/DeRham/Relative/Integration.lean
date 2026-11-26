@@ -151,6 +151,15 @@ theorem relativeCoordinates_relativeDeRhamIntegration_f (p q : ℤ) (hpq : p + -
   -- `relativeCoordinates_map` is stated for the shifted cone map; they agree by unfolding.
   relativeCoordinates_map _ _ _ _ _ p q hpq x
 
+/-- Relative integration is compatible with the first projections of the two cocones: the first
+component of the relative integral of `(α, β)` is the integral of `α`. -/
+@[reassoc]
+theorem relativeDeRhamIntegration_fst :
+    relativeDeRhamIntegration I W ≫ fst (smoothCochainRestriction I W) =
+      fst (deRhamRestriction I W) ≫
+        extendMap (deRhamIntegration I M) ComplexShape.embeddingUpNat :=
+  shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ _
+
 namespace relativeSmoothCochainComplex
 
 /-- **The pairing of relative smooth cochains with pairs of chains.** For a smooth
