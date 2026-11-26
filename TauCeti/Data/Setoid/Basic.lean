@@ -17,8 +17,8 @@ This file records small generic additions to Mathlib's `Setoid` API.
 
 * `TauCeti.Setoid.map_of_le_mk`: the quotient map induced by a setoid inequality sends a
   representative to the same representative in the larger quotient.
-* `Setoid.comapQuotientEquiv_mk`: Mathlib's `Setoid.comapQuotientEquiv` sends `⟦x⟧` to
-  `⟨Quotient.mk s (f x), ⟨x, rfl⟩⟩`.
+* `Setoid.comapQuotientEquiv_mk` and `Setoid.comapQuotientEquiv_symm_mk`: Mathlib's
+  `Setoid.comapQuotientEquiv` sends `⟦x⟧` to `⟨Quotient.mk s (f x), ⟨x, rfl⟩⟩` and back.
 * `Setoid.comapValQuotientEquiv`, `Setoid.comapValQuotientEquiv_mk`, and
   `Setoid.comapValQuotientEquiv_symm_mk`: the quotient of `K` by the restricted setoid
   `s.comap (↑)` is in bijection with the image `Quotient.mk s '' K` of `K` in `Quotient s`,
@@ -51,18 +51,28 @@ end TauCeti
 
 namespace Setoid
 
+private theorem coe_quotientKerEquivRange_mk {α β : Type*} (f : α → β) (x : α) :
+    (quotientKerEquivRange f ⟦x⟧ : β) = f x := by
+  simp [quotientKerEquivRange, quotientKerEquivRangeKerLift]
+
 /-- Mathlib's `Setoid.comapQuotientEquiv` sends the equivalence class `⟦x⟧` to the class of
 `f x` in `Set.range (@Quotient.mk'' _ s ∘ f)`. -/
 @[simp]
 theorem comapQuotientEquiv_mk {α β : Type*} (f : α → β) (s : Setoid β) (x : α) :
     comapQuotientEquiv f s ⟦x⟧ = ⟨Quotient.mk s (f x), ⟨x, rfl⟩⟩ := by
   apply Subtype.ext
-  rw [comapQuotientEquiv, Equiv.trans_apply, quotientKerEquivRange, Equiv.trans_apply,
-    Set.equivOfEq_apply, quotientKerEquivRangeKerLift, Equiv.ofInjective_apply]
   have h : Quotient.congrRight (Setoid.ext_iff.1 (comap_eq (f := f) (r := s))) ⟦x⟧ =
       Quotient.mk (ker (Quotient.mk'' ∘ f)) x :=
     Quotient.congr_mk (Equiv.refl α) (Setoid.ext_iff.1 comap_eq) x
-  simp [h, Quotient.mk''_eq_mk]
+  simp [comapQuotientEquiv, h, coe_quotientKerEquivRange_mk, Quotient.mk''_eq_mk]
+
+/-- The inverse of `Setoid.comapQuotientEquiv` sends the range point represented by `x : α`
+back to `⟦x⟧`. -/
+@[simp]
+theorem comapQuotientEquiv_symm_mk {α β : Type*} (f : α → β) (s : Setoid β) (x : α)
+    (hx : Quotient.mk s (f x) ∈ Set.range (@Quotient.mk'' _ s ∘ f)) :
+    (comapQuotientEquiv f s).symm ⟨Quotient.mk s (f x), hx⟩ = ⟦x⟧ := by
+  simp [Equiv.symm_apply_eq]
 
 /-- Specializes Mathlib's `Setoid.comapQuotientEquiv` to the subtype inclusion `(↑) : K → α`,
 identifying the type of equivalence classes of `K` under the restriction `s.comap (↑)` with the
