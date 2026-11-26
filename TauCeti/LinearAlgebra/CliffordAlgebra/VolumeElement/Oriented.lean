@@ -164,6 +164,14 @@ theorem map_volumeElement (e : Q.IsometryEquiv Q') (he : ∀ v, ‖e v‖ = ‖v
 
 end Naturality
 
+/-- Casting the index type of the orientation along `n = n'` leaves the volume element
+unchanged. -/
+@[simp]
+theorem volumeElement_reindex_finCongr {n' : ℕ} [Fact (finrank ℝ V = n')] (h : n = n') :
+    volumeElement Q (Orientation.reindex ℝ V (finCongr h) o) = volumeElement Q o := by
+  subst h
+  simp [finCongr_refl, Orientation.reindex_refl]
+
 /-- The volume element is homogeneous of degree `n`: the grade involution multiplies it by
 `(-1) ^ n`. -/
 @[simp]
