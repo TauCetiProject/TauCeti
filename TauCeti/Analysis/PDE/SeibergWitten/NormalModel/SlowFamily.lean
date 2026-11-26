@@ -29,8 +29,9 @@ a kernel `K` of real dimension `2m`, so `L_x*` is injective with range orthogona
 *slow* variable of the model is the `K`-component of `Ξ`, and the *slow* equation the
 `K`-component of `P`; the other components are governed by the invertible fast blocks. This file
 computes the pairings of the paired row with `C¹` fields `κ` with `L_x κ = 0`, which only involve
-`Ξ`, and shows that in the divisor coordinates of `K` the paired row of
-a kernel-valued family is `2 ∂bar` of its coordinates.
+`Ξ`, and shows that in the divisor coordinates of `K` the base-coupling term of the paired row of
+a kernel-valued family, which is the whole paired row when `Η = 0`, is the kernel field whose
+coordinates are `2 ∂bar` of the coordinates of the family.
 
 **Pairing the paired row with the kernel.** For a continuous field `x`, compactly supported
 `C¹` families `Ξ`, `Η` and a `C¹` field `κ` with `L_x κ = 0`, pairing the paired row with `κ` over
@@ -76,7 +77,8 @@ projections, which are not treated here.
   paired row with a `C¹` field `κ` with `L_x κ = 0` gives `∂_s ⟨κ, Ξ⟩ - ∂_t ⟨J κ, Ξ⟩`; the paired
   family drops out.
 * `TauCeti.SeibergWitten.pairedBaseCoupling_fderiv_gaugeFixedKernelEquivCoeff_symm`: on a
-  kernel-valued family in divisor coordinates `c`, the paired row is `∂_s c + i ∂_t c`.
+  kernel-valued family in divisor coordinates `c`, the base-coupling term of the paired row (the
+  whole paired row when `Η = 0`) is the kernel field `E⁻¹ (∂_s c + i ∂_t c)`.
 * `flatDeformation_familyNormalModel_gaugeFixedKernelEquivCoeff_symm_eq_zero_iff_differentiable`:
   such a family solves the frozen model exactly when `c` is holomorphic.
 
@@ -186,8 +188,8 @@ private theorem exists_hasFDerivAt_gaugeFixedKernelEquivCoeff_symm_apply {c : �
     (LinearMap.toContinuousLinearMap L₀).hasFDerivAt.comp w hc.hasFDerivAt⟩
 
 include hx hhol hlim hD in
-/-- **The paired row of a kernel-valued family is `∂_s c + i ∂_t c`.** At a smooth field `x` with
-`∂bar_a α = 0`, `|α|² → 1` at infinity and zero divisor `D ∈ Sym^m ℂ`, let
+/-- **The base coupling of a kernel-valued family is `E⁻¹ (∂_s c + i ∂_t c)`.** At a smooth
+field `x` with `∂bar_a α = 0`, `|α|² → 1` at infinity and zero divisor `D ∈ Sym^m ℂ`, let
 `E : ker L_x ≃ ℂ^m` be the divisor coordinates of the kernel of `L_x`
 (`TauCeti.Vortex.gaugeFixedKernelEquivCoeff`). For a map `c` from the base to `ℂ^m`, real
 differentiable at `w`, the base coupling of the paired rows applied to the base derivative of the
@@ -204,7 +206,7 @@ theorem pairedBaseCoupling_fderiv_gaugeFixedKernelEquivCoeff_symm {c : ℂ → F
     exists_hasFDerivAt_gaugeFixedKernelEquivCoeff_symm_apply hx hhol hlim hD hc z
   rw [hder.fderiv, pairedBaseCoupling_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.comp_apply, ← hL, map_add, hL (I • _),
-    Vortex.gaugeFixedKernelEquivCoeff_symm_smul_I,
+    Vortex.gaugeFixedKernelEquivCoeff_symm_I_smul,
     Vortex.coe_gaugeFixedKernelAlmostComplexStructure_apply, ← hL]
 
 include hx hhol hlim hD in

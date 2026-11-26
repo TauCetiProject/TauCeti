@@ -77,7 +77,7 @@ The isomorphism is complex linear for the complex structure `J` of the kernel
 (`TauCeti.Vortex.gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure`). Followed by
 the coefficients of polynomials of degree less than `m`, it gives divisor coordinates
 `TauCeti.Vortex.gaugeFixedKernelEquivCoeff : ker L_x ≃ ℂ^m`, in which `J` is multiplication by `i`
-(`TauCeti.Vortex.gaugeFixedKernelEquivCoeff_symm_smul_I`).
+(`TauCeti.Vortex.gaugeFixedKernelEquivCoeff_symm_I_smul`).
 
 ## Main definitions
 
@@ -96,7 +96,7 @@ the coefficients of polynomials of degree less than `m`, it gives divisor coordi
   translation `y_v` to `v P_D'`.
 * `TauCeti.Vortex.gaugeFixedKernelEquivDegreeLT_gaugeFixedKernelAlmostComplexStructure`: it is
   complex linear for the complex structure `J` of the kernel.
-* `TauCeti.Vortex.gaugeFixedKernelEquivCoeff_symm_smul_I`: in divisor coordinates `J` is
+* `TauCeti.Vortex.gaugeFixedKernelEquivCoeff_symm_I_smul`: in divisor coordinates `J` is
   multiplication by `i`.
 
 ## References
@@ -439,7 +439,7 @@ theorem gaugeFixedKernelEquivCoeff_gaugeFixedKernelAlmostComplexStructure
 /-- The inverse of `gaugeFixedKernelEquivDegreeLT` is complex linear: the kernel element with
 divisor variation `i • R` is `J` applied to the kernel element with divisor variation `R`. -/
 @[simp]
-theorem gaugeFixedKernelEquivDegreeLT_symm_smul_I (R : degreeLT ℂ m) :
+theorem gaugeFixedKernelEquivDegreeLT_symm_I_smul (R : degreeLT ℂ m) :
     (gaugeFixedKernelEquivDegreeLT hx hhol hlim hD).symm (I • R) =
       gaugeFixedKernelAlmostComplexStructure x
         ((gaugeFixedKernelEquivDegreeLT hx hhol hlim hD).symm R) := by
@@ -450,7 +450,7 @@ theorem gaugeFixedKernelEquivDegreeLT_symm_smul_I (R : degreeLT ℂ m) :
 /-- In divisor coordinates `J` is multiplication by `i`: the kernel element with coordinates
 `i • v` is `J` applied to the kernel element with coordinates `v`. -/
 @[simp]
-theorem gaugeFixedKernelEquivCoeff_symm_smul_I (v : Fin m → ℂ) :
+theorem gaugeFixedKernelEquivCoeff_symm_I_smul (v : Fin m → ℂ) :
     (gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm (I • v) =
       gaugeFixedKernelAlmostComplexStructure x
         ((gaugeFixedKernelEquivCoeff hx hhol hlim hD).symm v) := by
