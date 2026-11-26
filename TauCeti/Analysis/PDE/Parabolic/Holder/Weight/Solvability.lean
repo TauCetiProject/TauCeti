@@ -525,7 +525,7 @@ theorem exists_norm_euclideanTerminalDataCLE_weighted_symm_le (hα₀ : 0 < α) 
     exists_norm_euclideanTerminalDataCLE_symm_le (ι := ι) hα₀ hα₁ hlam (weightedCoeffBound ι K L) T₀
   refine ⟨C, hC, fun T hT hTT₀ a b c dℓ d2ℓ ha hak hbk hck hdℓ hd2ℓ ↦ ?_⟩
   obtain ⟨ha', hb, hc⟩ := norm_weightedCoeff_le hak hbk hck hdℓ hd2ℓ
-  exact hest hT (by simpa using hTT₀) a _ _ ha ha' hb hc
+  exact hest T hT hTT₀ a _ _ ha ha' hb hc
 
 /-- **Lipschitz dependence of the weighted terminal-value solution operator on the
 coefficients.** Under the bounds of `exists_norm_euclideanTerminalDataCLE_weighted_symm_le`, for a
@@ -559,7 +559,7 @@ theorem exists_norm_euclideanTerminalDataCLE_weighted_symm_sub_le (hα₀ : 0 < 
     hak hbk hck hak' hbk' hck' hdℓ hd2ℓ ↦ ?_⟩
   obtain ⟨hak₁, hb, hc⟩ := norm_weightedCoeff_le hak hbk hck hdℓ hd2ℓ
   obtain ⟨hak₁', hb', hc'⟩ := norm_weightedCoeff_le hak' hbk' hck' hdℓ hd2ℓ
-  refine (hest hT (by simpa using hTT₀) a a' _ _ _ _ ha ha' hak₁ hb hc hak₁' hb' hc').trans ?_
+  refine (hest T hT hTT₀ a a' _ _ _ _ ha ha' hak₁ hb hc hak₁' hb' hc').trans ?_
   exact mul_le_mul_of_nonneg_left (weightedCoeff_sub_le_mul hdℓ hd2ℓ) hC |>.trans_eq (by ring)
 
 end Estimates

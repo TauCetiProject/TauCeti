@@ -19,6 +19,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Measure.Haar.Prod
+import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Integrals over closed rectangles in the plane
@@ -220,10 +221,9 @@ the integral of `f` over a set `K` is the integral of `f` composed with the refl
 preimage of `K`. -/
 theorem setIntegral_preimage_prodMap_neg_id (f : ℝ × ℝ → E) (K : Set (ℝ × ℝ)) :
     ∫ z in Prod.map Neg.neg id ⁻¹' K, f (Prod.map Neg.neg id z) = ∫ z in K, f z := by
-  have hmp : MeasurePreserving (Prod.map (Neg.neg : ℝ → ℝ) (id : ℝ → ℝ)) :=
-    (Measure.measurePreserving_neg volume).prod (MeasurePreserving.id volume)
-  exact hmp.setIntegral_preimage_emb
-    ((MeasurableEquiv.neg ℝ).measurableEmbedding.prodMap MeasurableEmbedding.id) f K
+  rw [← LinearIsometryEquiv.coe_negFst ℝ]
+  exact LinearIsometryEquiv.measurePreserving_negFst.setIntegral_preimage_emb
+    (LinearIsometryEquiv.negFst ℝ ℝ ℝ).toHomeomorph.measurableEmbedding f K
 
 /-- **Integrals over a reflected strip.** The integral of `f` over the strip `[-d, -c] × I` is
 the integral of its reflection `z ↦ f (-z.1, z.2)` over the strip `[c, d] × I`. -/

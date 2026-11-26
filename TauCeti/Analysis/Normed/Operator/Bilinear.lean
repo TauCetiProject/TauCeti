@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Pairing
@@ -16,6 +17,13 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 A family of continuous bilinear maps gives a continuous bilinear map into the product
 (`ContinuousLinearMap.piBilin`), with coordinatewise evaluation.
+
+Evaluating continuous linear maps at a fixed vector `v` (`ContinuousLinearMap.apply 𝕜 G v`) has
+operator norm at most `‖v‖` (`ContinuousLinearMap.opNorm_apply_apply_le`). Every continuous
+`R`-linear endomorphism of a commutative semiring `R` is its value at `1` times the identity
+(`ContinuousLinearMap.eq_apply_one_smul_id`), and every continuous `𝕜`-bilinear map
+`𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜` on a nontrivially normed field `𝕜` is its value at `(1, 1)` times
+`ContinuousLinearMap.mul 𝕜 𝕜` (`ContinuousLinearMap.eq_apply_one_one_smul_mul`).
 
 A continuous linear map `u : W →L[𝕜] V` pulls a continuous bilinear map `B` on `V` back to the
 bilinear map `B (u ·) (u ·)` on `W`. This operation is itself continuous and linear in `B`
@@ -65,8 +73,7 @@ adjoint `ContinuousLinearMap.pairingAdjoint B₀ X` is characterized by
 reverses products, fixes the identity, and tends to the identity as `B₀` stays near an
 invertible map and `X` tends to the identity. On Banach spaces the comparison operator
 `B₀⁻¹ ∘ B` also tends to the identity as both maps tend to the same invertible map
-(`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`). Evaluating a continuous linear map
-at a fixed vector `w` has operator norm at most `‖w‖` (`ContinuousLinearMap.norm_apply_le`).
+(`ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`).
 
 On normable spaces over nontrivially normed fields, with isometric scalar homomorphisms `σ₁₃`,
 `σ₂₃` and `σ₂₃` surjective, the flip of a continuous pairing `μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is
@@ -83,15 +90,28 @@ noncomputable section
 
 namespace ContinuousLinearMap
 
+/-- Every continuous `R`-linear endomorphism of a commutative semiring `R` with continuous scalar
+multiplication is its value at `1` times `ContinuousLinearMap.id R R`. -/
+theorem eq_apply_one_smul_id {R : Type*} [CommSemiring R] [TopologicalSpace R]
+    [ContinuousConstSMul R R] (D : R →L[R] R) :
+    D = D 1 • ContinuousLinearMap.id R R :=
+  ext_ring <| by simp
+
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {V W G : Type*} [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
   [SeminormedAddCommGroup W] [NormedSpace 𝕜 W] [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-/-- Evaluating a continuous linear map at a fixed vector `w` has operator norm at most `‖w‖`. -/
-theorem norm_apply_le (w : V) : ‖apply 𝕜 G w‖ ≤ ‖w‖ :=
-  opNorm_le_bound _ (norm_nonneg w) fun f ↦ by
-    rw [apply_apply, mul_comm]
-    exact f.le_opNorm w
+/-- Every continuous `𝕜`-bilinear map `𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜` on a nontrivially normed field `𝕜` is its
+value at `(1, 1)` times `ContinuousLinearMap.mul 𝕜 𝕜`. -/
+theorem eq_apply_one_one_smul_mul (H : 𝕜 →L[𝕜] 𝕜 →L[𝕜] 𝕜) :
+    H = H 1 1 • ContinuousLinearMap.mul 𝕜 𝕜 :=
+  ext_ring <| ext_ring <| by simp
+
+/-- Evaluating continuous linear maps at a fixed vector `v : V` has operator norm at most
+`‖v‖`. -/
+theorem opNorm_apply_apply_le (v : V) : ‖apply 𝕜 G v‖ ≤ ‖v‖ :=
+  opNorm_le_bound _ (norm_nonneg v) fun L ↦ by
+    simpa only [apply_apply, mul_comm] using L.le_opNorm v
 
 /-- A family of continuous bilinear maps is a continuous bilinear map into the product. -/
 def piBilin {ι : Type*} {G : ι → Type*}

@@ -19,12 +19,11 @@ parameter space `X` and finite index type `ι`, there are constants `a, b > 0` s
 The same constants work across all parameters and vectors, including in dimension zero.
 These uniform ellipticity bounds are used for segment-averaged inverse matrices.
 
-For a single matrix, `Matrix.toQuadraticForm'_le_sum_abs_mul_sq` gives the explicit upper bound
+For a single matrix, `Matrix.toQuadraticForm'_eq_mul_norm_sq` identifies `A.toQuadraticForm' ξ` on
+a one-dimensional index type with `A default default * ‖ξ‖²`, while
+`Matrix.toQuadraticForm'_le_sum_abs_mul_sq` gives the general explicit upper bound
 `A.toQuadraticForm' ξ ≤ (∑ᵢⱼ |Aᵢⱼ|) ‖ξ‖²`, so a bound on the entries of a coefficient field is an
-upper ellipticity bound (`Matrix.toQuadraticForm'_le_of_forall_abs_le`). On a one-dimensional
-Euclidean space indexed by a unique type `ι`, `Matrix.toQuadraticForm'_eq_mul_norm_sq_of_unique`
-evaluates the quadratic form as `A default default * ‖ξ‖²`, giving the corresponding lower
-ellipticity bound `Matrix.mul_norm_sq_le_toQuadraticForm'_of_unique`.
+upper ellipticity bound (`Matrix.toQuadraticForm'_le_of_forall_abs_le`).
 
 The statement is adapted from the
 [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/tree/e60bc39b18ef691263c66e2dba8d64726f18060d/formalization/FunctionalInequalities/Analysis/Matrix).
@@ -34,6 +33,15 @@ public section
 
 open Set Metric
 open scoped Matrix
+
+/-- Over a unique index type, the quadratic form of a real `1 × 1` matrix is its unique entry times
+`‖ξ‖²`. -/
+theorem Matrix.toQuadraticForm'_eq_mul_norm_sq {ι : Type*} [Unique ι] [Fintype ι] [DecidableEq ι]
+    (A : Matrix ι ι ℝ) (ξ : EuclideanSpace ℝ ι) :
+    A.toQuadraticForm' ξ = A default default * ‖ξ‖ ^ 2 := by
+  simp only [Matrix.toQuadraticForm'_apply, dotProduct, Matrix.mulVec, Finset.univ_unique,
+    Finset.sum_singleton, EuclideanSpace.real_norm_sq_eq]
+  ring
 
 /-- The quadratic form of a real matrix is bounded above by the sum of the absolute values of its
 entries times `‖ξ‖²`. -/
@@ -50,24 +58,6 @@ theorem Matrix.toQuadraticForm'_le_of_forall_abs_le {ι : Type*} [Fintype ι] [D
     A.toQuadraticForm' ξ ≤ (∑ _i : ι, ∑ _j : ι, M) * ‖ξ‖ ^ 2 :=
   (A.toQuadraticForm'_le_sum_abs_mul_sq ξ).trans (mul_le_mul_of_nonneg_right
     (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ hA i j) (sq_nonneg _))
-
-/-- On a one-dimensional Euclidean space indexed by a unique type `ι`, the quadratic form of a real
-matrix `A` equals its sole entry times `‖ξ‖²`. -/
-theorem Matrix.toQuadraticForm'_eq_mul_norm_sq_of_unique {ι : Type*} [Fintype ι] [DecidableEq ι]
-    [Unique ι] (A : Matrix ι ι ℝ) (ξ : EuclideanSpace ℝ ι) :
-    A.toQuadraticForm' ξ = A default default * ‖ξ‖ ^ 2 := by
-  simp only [Matrix.toQuadraticForm'_apply, dotProduct, Matrix.mulVec, Finset.univ_unique,
-    Finset.sum_singleton, EuclideanSpace.real_norm_sq_eq]
-  ring
-
-/-- On a one-dimensional Euclidean space indexed by a unique type `ι`, a lower bound
-`δ ≤ A default default` on the sole entry gives `δ * ‖ξ‖² ≤ A.toQuadraticForm' ξ`. -/
-theorem Matrix.mul_norm_sq_le_toQuadraticForm'_of_unique {ι : Type*} [Fintype ι] [DecidableEq ι]
-    [Unique ι] (A : Matrix ι ι ℝ) {δ : ℝ} (hA : δ ≤ A default default)
-    (ξ : EuclideanSpace ℝ ι) :
-    δ * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ := by
-  rw [A.toQuadraticForm'_eq_mul_norm_sq_of_unique ξ]
-  exact mul_le_mul_of_nonneg_right hA (sq_nonneg _)
 
 namespace TauCeti
 

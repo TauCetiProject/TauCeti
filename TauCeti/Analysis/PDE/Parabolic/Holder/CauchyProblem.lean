@@ -31,8 +31,8 @@ is well posed in the bounded order-two parabolic Hölder space: the initial-data
 Its inverse, the solution operator `(f, g) ↦ u`, is bounded uniformly over coefficients with fixed
 ellipticity and norm bounds and over horizons `T ≤ T₀`, and it depends continuously on the
 coefficients in operator norm. No symmetry of `a` and no sign condition on `c` is needed. By time
-reversal, the terminal-value problem `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = f`, `u(·, t₁) = g` on any
-slab `ℝⁿ × [t₀, t₁]` (`t₀ < t₁`) is well posed as well.
+reversal, the terminal-value problem `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = f`, `u(·, T) = g` is well
+posed as well.
 
 ## The argument
 
@@ -314,31 +314,29 @@ end Forward
 
 section Backward
 
-variable {t₀ t₁ : ℝ}
+variable {T : ℝ≥0}
 
 /-- **The terminal-value problem with variable coefficients is well posed.** For `0 < α < 1`, a
-slab `ℝⁿ × [t₀, t₁]` (`t₀ < t₁`) and coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}(ℝⁿ × [t₀, t₁])`
-with `lam ‖ξ‖² ≤ ξᵀ a ξ` and `0 < lam`, the terminal-data map
-`u ↦ (∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u, u(·, t₁))` is an isomorphism of Banach spaces from
+horizon `T > 0` and coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}(ℝⁿ × [0, T])` with
+`lam ‖ξ‖² ≤ ξᵀ a ξ` and `0 < lam`, the terminal-data map
+`u ↦ (∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u, u(·, T))` is an isomorphism of Banach spaces from
 `C_b^{2+α,1+α/2}` onto `C_b^{α,α/2} × C_b^{2,α}`. -/
 theorem isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL (hα₀ : 0 < α)
-    (hα₁ : α < 1) (ht : t₀ < t₁)
-    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
-    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
-    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) {lam : ℝ} (hlam : 0 < lam)
+    (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) {lam : ℝ} (hlam : 0 < lam)
     (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
       lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
     ((euclideanBackwardParabolicOperatorL hα₁.le a b c).prod
-      (spatialTraceL (F := ℝ) (hab := ht) ⟨t₁, right_mem_Icc.2 ht.le⟩)).IsInvertible := by
-  obtain ⟨T, h₁⟩ : ∃ T : ℝ≥0, (T : ℝ) = t₁ - t₀ :=
-    ⟨(t₁ - t₀).toNNReal, Real.coe_toNNReal _ (sub_nonneg.2 ht.le)⟩
-  have h₀ : (0 : ℝ) = t₁ - t₁ := (sub_self _).symm
-  have hT : (0 : ℝ) < T := h₁ ▸ sub_pos.2 ht
+      (spatialTraceL (F := ℝ) (hab := hT) ⟨T, right_mem_Icc.2 hT.le⟩)).IsInvertible := by
+  have h₀ : (0 : ℝ) = T - T := (sub_self _).symm
+  have h₁ : (T : ℝ) = T - 0 := (sub_zero _).symm
   have h : Function.Bijective ((euclideanBackwardParabolicOperatorL hα₁.le a b c).prod
-      (spatialTraceL (F := ℝ) (hab := ht) ⟨t₁, right_mem_Icc.2 ht.le⟩)) := by
+      (spatialTraceL (F := ℝ) (hab := hT) ⟨T, right_mem_Icc.2 hT.le⟩)) := by
     rw [euclideanBackwardParabolicOperatorL_def,
-      bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (T := t₁) (ha := h₀) (hb := h₁),
-      initialDataL_def, parabolicOperatorL_compLipschitzL_euclidean hα₁.le ht a b c]
+      bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (T := T) (ha := h₀) (hb := h₁),
+      initialDataL_def, parabolicOperatorL_compLipschitzL_euclidean hα₁.le hT a b c]
     exact bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT _ _ hlam
       (mul_norm_sq_le_toQuadraticForm'_compLipschitzL _ ha)
   -- A bijective bounded operator between Banach spaces is an isomorphism (open mapping).
@@ -348,17 +346,17 @@ theorem isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL (hα
 /-- **Existence and uniqueness for the terminal-value problem with variable coefficients.** Under
 the hypotheses of `isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL`, for every
 forcing `f ∈ C_b^{α,α/2}` and terminal datum `g ∈ C_b^{2,α}` there is exactly one
-`u ∈ C_b^{2+α,1+α/2}` with `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = f` and `u(·, t₁) = g`. -/
+`u ∈ C_b^{2+α,1+α/2}` with `∂ₜu + aⁱʲ ∂ᵢ∂ⱼu + bⁱ ∂ᵢu + c u = f` and `u(·, T) = g`. -/
 theorem bijective_euclideanBackwardParabolicOperatorL_prod_spatialTraceL (hα₀ : 0 < α)
-    (hα₁ : α < 1) (ht : t₀ < t₁)
-    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
-    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
-    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) {lam : ℝ} (hlam : 0 < lam)
+    (hα₁ : α < 1) (hT : (0 : ℝ) < T)
+    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ}
+    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ)
+    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) 0 T) ℝ) {lam : ℝ} (hlam : 0 < lam)
     (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
       lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
     Function.Bijective ((euclideanBackwardParabolicOperatorL hα₁.le a b c).prod
-      (spatialTraceL (F := ℝ) (hab := ht) ⟨t₁, right_mem_Icc.2 ht.le⟩)) :=
-  (isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ ht b c hlam
+      (spatialTraceL (F := ℝ) (hab := hT) ⟨T, right_mem_Icc.2 hT.le⟩)) :=
+  (isInvertible_euclideanBackwardParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT b c hlam
     ha).bijective
 
 end Backward

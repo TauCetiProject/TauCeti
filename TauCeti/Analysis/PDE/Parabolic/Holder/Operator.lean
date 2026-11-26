@@ -11,7 +11,6 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeSpace
 public import TauCeti.Analysis.Holder.Bilinear
 public import TauCeti.Analysis.Holder.Coefficient
 import TauCeti.Analysis.Matrix.QuadraticBounds
-import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Second-order parabolic operators on order-two parabolic Hölder spaces
@@ -70,9 +69,6 @@ trace. This is the whole-space comparison principle applied to the Hölder class
   `TauCeti.ParabolicC2HolderSpace.abs_le_exp_mul_mul_add_mul_of_abs_euclideanParabolicOperatorL_le`
   and `TauCeti.ParabolicC2HolderSpace.eq_of_euclideanParabolicOperatorL_eq`: the one-sided and
   two-sided a priori bounds and uniqueness for the Cauchy problem.
-* `TauCeti.ParabolicC2HolderSpace.realSecondOrderCoeff` and
-  `TauCeti.ParabolicC2HolderSpace.norm_realSecondOrderCoeff_le`: the second-order coefficient
-  field on the real line associated with a scalar coefficient `a ∈ C_b^{α,α/2}` and its norm bound.
 
 ## References
 
@@ -633,69 +629,5 @@ theorem eq_of_euclideanParabolicOperatorL_eq
   simpa [sub_apply, sub_eq_zero] using h
 
 end Euclidean
-
-/-! ### Scalar second-order coefficients on the real line -/
-
-section RealLine
-
-/-- A local shortcut for the norm on Hessians on the line. Without it, instance search for the
-operator norm on `(ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ`, the coefficient space of the second-order term,
-fails, for the reason explained above. -/
-local instance instNormedAddCommGroupRealHessian :
-    NormedAddCommGroup (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
-/-- A local shortcut for scalar operations on Hessians on the line, needed for the same reason. -/
-local instance instNormedSpaceRealHessian :
-    NormedSpace ℝ (ℝ →L[ℝ] ℝ →L[ℝ] ℝ) := inferInstance
-
-/-- The second-order coefficient field on the real line associated with a scalar coefficient
-`a ∈ C_b^{α,α/2}`: at `p` it sends a spatial Hessian `H` to `a p * H 1 1`. -/
-def realSecondOrderCoeff (a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    HolderSpace α (slab (E := ℝ) t₀ t₁) ((ℝ →L[ℝ] ℝ →L[ℝ] ℝ) →L[ℝ] ℝ) :=
-  (ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ a
-    (HolderSpace.const ((ContinuousLinearMap.apply ℝ ℝ 1).comp (ContinuousLinearMap.apply ℝ _ 1)))
-
-/-- Evaluation of `realSecondOrderCoeff a` at `p` and a Hessian `H`. -/
-@[simp]
-theorem realSecondOrderCoeff_apply (a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)
-    (p : slab (E := ℝ) t₀ t₁) (H : ℝ →L[ℝ] ℝ →L[ℝ] ℝ) :
-    realSecondOrderCoeff a p H = a p * H 1 1 := by
-  simp [realSecondOrderCoeff]
-
-/-- Applying `realSecondOrderCoeff a p` to `ContinuousLinearMap.mul ℝ ℝ` recovers `a p`. -/
-theorem realSecondOrderCoeff_apply_mul (a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ)
-    (p : slab (E := ℝ) t₀ t₁) :
-    realSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) = a p := by
-  simp
-
-/-- Uniform positivity of `a` gives uniform ellipticity of `realSecondOrderCoeff a`. -/
-theorem realSecondOrderCoeff_ellipticity {a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ} {δ : ℝ}
-    (ha : ∀ p, δ ≤ a p) (p : slab (E := ℝ) t₀ t₁) :
-    δ ≤ realSecondOrderCoeff a p (ContinuousLinearMap.mul ℝ ℝ) :=
-  (realSecondOrderCoeff_apply_mul a p).symm ▸ ha p
-
-/-- `realSecondOrderCoeff` is linear with respect to subtraction of scalar coefficients. -/
-@[simp]
-theorem realSecondOrderCoeff_sub (a a' : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    realSecondOrderCoeff (a - a') = realSecondOrderCoeff a - realSecondOrderCoeff a' :=
-  HolderSpace.ext fun p ↦ ContinuousLinearMap.ext fun H ↦ by
-    simp only [realSecondOrderCoeff_apply, HolderSpace.sub_apply, _root_.sub_apply, sub_mul]
-
-/-- **Norm bound for the real-line second-order coefficient.** The Hölder norm of
-`H ↦ a(·) * H 1 1` is at most the Hölder norm `‖a‖` of the scalar diffusion field, so uniform
-bounds and coefficient differences on `a` transfer directly to the parabolic operator. -/
-theorem norm_realSecondOrderCoeff_le (a : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) :
-    ‖realSecondOrderCoeff a‖ ≤ ‖a‖ := by
-  refine (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le a
-    ((ContinuousLinearMap.apply ℝ ℝ 1).comp
-      (ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)))).trans ?_
-  refine mul_le_of_le_one_right (norm_nonneg a) ?_
-  have h1 : ‖ContinuousLinearMap.apply ℝ ℝ (1 : ℝ)‖ ≤ 1 :=
-    (ContinuousLinearMap.norm_apply_le (1 : ℝ)).trans_eq norm_one
-  have h2 : ‖ContinuousLinearMap.apply ℝ (ℝ →L[ℝ] ℝ) (1 : ℝ)‖ ≤ 1 :=
-    (ContinuousLinearMap.norm_apply_le (1 : ℝ)).trans_eq norm_one
-  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
-    ((mul_le_mul h1 h2 (ContinuousLinearMap.opNorm_nonneg _) zero_le_one).trans_eq (mul_one 1))
-
-end RealLine
 
 end TauCeti.ParabolicC2HolderSpace

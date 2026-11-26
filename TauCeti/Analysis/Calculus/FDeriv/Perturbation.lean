@@ -45,7 +45,9 @@ then `f ∘ ψ` is `C¹`-close to `f` at every point, not only on `S`
 Perturbations are often built as compositions `g ∘ ψ` with maps `ψ` close to the identity in `C¹`
 (`TauCeti.IsNearId`). Such maps compose with an explicit bound (`TauCeti.IsNearId.comp`), and a
 `C¹`-open condition on `g` holds for `g ∘ ψ` once `ψ` is close enough to the identity
-(`TauCeti.eventually_forall_isNearId_comp`).
+(`TauCeti.eventually_forall_isNearId_comp`). Closeness in value and derivative at every point
+satisfies the triangle inequality (`TauCeti.norm_sub_and_norm_fderiv_sub_le_of_add_le`), so the
+`C¹` distances of successive perturbations add up.
 
 ## Main results
 
@@ -60,6 +62,8 @@ Perturbations are often built as compositions `g ∘ ψ` with maps `ψ` close to
 * `IsCompact.eventually_forall_norm_iterate_sub_le`: iterates of maps `C¹`-close everywhere.
 * `IsCompact.exists_pos_forall_norm_comp_sub_le`: composition with a compactly supported
   `C¹`-small perturbation of the identity.
+* `TauCeti.norm_sub_and_norm_fderiv_sub_le_of_add_le`: the triangle inequality for closeness in
+  value and derivative at every point.
 
 ## References
 
@@ -235,6 +239,19 @@ theorem IsCompact.exists_pos_forall_norm_comp_sub_le {S : Set E} (hS : IsCompact
     simp [hε.le]
 
 namespace TauCeti
+
+/-- **Closeness in value and derivative satisfies the triangle inequality.** If `f₁` is within
+`a` of `f₀` and `f₂` within `b` of `f₁`, in value and derivative at every point, then `f₂` is
+within any `c ≥ a + b` of `f₀`. -/
+theorem norm_sub_and_norm_fderiv_sub_le_of_add_le {f₀ f₁ f₂ : E → F} {a b c : ℝ}
+    (h₁₀ : ∀ y, ‖f₁ y - f₀ y‖ ≤ a) (h₁₁ : ∀ y, ‖fderiv 𝕜 f₁ y - fderiv 𝕜 f₀ y‖ ≤ a)
+    (h₂₀ : ∀ y, ‖f₂ y - f₁ y‖ ≤ b) (h₂₁ : ∀ y, ‖fderiv 𝕜 f₂ y - fderiv 𝕜 f₁ y‖ ≤ b)
+    (habc : a + b ≤ c) :
+    (∀ y, ‖f₂ y - f₀ y‖ ≤ c) ∧ ∀ y, ‖fderiv 𝕜 f₂ y - fderiv 𝕜 f₀ y‖ ≤ c :=
+  ⟨fun y ↦ (norm_sub_le_norm_sub_add_norm_sub _ (f₁ y) _).trans
+      ((add_comm a b ▸ add_le_add (h₂₀ y) (h₁₀ y)).trans habc),
+    fun y ↦ (norm_sub_le_norm_sub_add_norm_sub _ (fderiv 𝕜 f₁ y) _).trans
+      ((add_comm a b ▸ add_le_add (h₂₁ y) (h₁₁ y)).trans habc)⟩
 
 /-! ### Maps close to the identity in `C¹` -/
 

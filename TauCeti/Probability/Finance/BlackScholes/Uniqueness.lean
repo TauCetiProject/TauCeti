@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Finance.BlackScholes.Extension
 import TauCeti.Probability.Finance.BlackScholes.Smooth
-import TauCeti.Probability.Finance.Pricing.Comparison.Basic
+import TauCeti.Probability.Finance.Comparison
 
 /-!
 # Uniqueness of the Black–Scholes call and put prices
@@ -73,9 +73,8 @@ theorem eq_callValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     (hgrowth : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc 0 T → |C s t| ≤ A * (1 + s))
     (hterminal : ∀ ⦃s⦄, 0 < s → C s T = (s - K)⁺) :
     ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc 0 T → C s t = callValue s r σ K (T - t) :=
-  Finance.eq_of_pde_eq_of_terminal_eq (a := fun _ _ ↦ σ ^ 2 / 2) (r := fun _ _ ↦ r)
-    (Λ := σ ^ 2 / 2) (R := |r|) (A := A + 1) (fun _ _ _ _ ↦ by positivity)
-    (fun _ _ _ _ ↦ le_rfl) (fun _ _ _ _ ↦ le_rfl) hC
+  Finance.eq_of_pde_eq_of_terminal_eq (σ := fun _ _ ↦ σ) (r := fun _ ↦ r) (Λ := σ ^ 2)
+    (R := |r|) (A := A + 1) (fun _ _ _ _ ↦ le_rfl) (fun _ _ ↦ le_rfl) hC
     ((continuous_callValue hσ hK).comp (by fun_prop : Continuous fun p : ℝ × ℝ ↦ (p.1, T - p.2))
       |>.continuousOn)
     (fun s hs t ht ↦ by
@@ -89,8 +88,7 @@ theorem eq_callValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     (fun s hs t ht ↦ (contDiffAt_const.callValue (contDiffAt_const.sub contDiffAt_id) hs
       (sub_pos.2 ht.2) (n := 1) (r := r) (σ := σ) (K := K)).differentiableAt one_ne_zero)
     (fun s hs t ht ↦ by
-      simpa only [residual_def, div_mul_eq_mul_div] using
-        (hpde hs ht).trans (callValue_pde hK ht.2).symm)
+      simpa only [residual_def] using (hpde hs ht).trans (callValue_pde hK ht.2).symm)
     (fun s hs ↦ by rw [hterminal hs, sub_self, callValue_maturity_zero])
 
 /-- **Uniqueness of the Black–Scholes put price.** Let `σ > 0` and `K > 0`. Let `C(s, t)` be
@@ -107,9 +105,8 @@ theorem eq_putValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     (hgrowth : ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc 0 T → |C s t| ≤ A * (1 + s))
     (hterminal : ∀ ⦃s⦄, 0 < s → C s T = (K - s)⁺) :
     ∀ ⦃s⦄, 0 < s → ∀ ⦃t⦄, t ∈ Icc 0 T → C s t = putValue s r σ K (T - t) :=
-  Finance.eq_of_pde_eq_of_terminal_eq (a := fun _ _ ↦ σ ^ 2 / 2) (r := fun _ _ ↦ r)
-    (Λ := σ ^ 2 / 2) (R := |r|) (A := A + K * exp (|r| * T)) (fun _ _ _ _ ↦ by positivity)
-    (fun _ _ _ _ ↦ le_rfl) (fun _ _ _ _ ↦ le_rfl) hC
+  Finance.eq_of_pde_eq_of_terminal_eq (σ := fun _ _ ↦ σ) (r := fun _ ↦ r) (Λ := σ ^ 2)
+    (R := |r|) (A := A + K * exp (|r| * T)) (fun _ _ _ _ ↦ le_rfl) (fun _ _ ↦ le_rfl) hC
     ((continuous_putValue hσ hK).comp (by fun_prop : Continuous fun p : ℝ × ℝ ↦ (p.1, T - p.2))
       |>.continuousOn)
     (fun s hs t ht ↦ by
@@ -127,8 +124,7 @@ theorem eq_putValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     (fun s hs t ht ↦ (contDiffAt_const.putValue (contDiffAt_const.sub contDiffAt_id) hs
       (sub_pos.2 ht.2) (n := 1) (r := r) (σ := σ) (K := K)).differentiableAt one_ne_zero)
     (fun s hs t ht ↦ by
-      simpa only [residual_def, div_mul_eq_mul_div] using
-        (hpde hs ht).trans (putValue_pde hK ht.2).symm)
+      simpa only [residual_def] using (hpde hs ht).trans (putValue_pde hK ht.2).symm)
     (fun s hs ↦ by rw [hterminal hs, sub_self, putValue_maturity_zero])
 
 end TauCeti.BlackScholes

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.InitialData
-public import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
 
 /-!
 # Backward parabolic operators and time reversal
@@ -22,8 +21,7 @@ time derivative, the forward operator `P_R = ∂ₜ - A_R·D_x² - B_R·D_x - C_
 `P_R v = -(P_back u) ∘ R`. Hence `P_back u = g` if and only if `P_R v = -g ∘ R`, and the initial
 trace of `v` at `T - b` is the terminal trace of `u` at `b`. Consequently the terminal-data map
 `u ↦ (P_back u, u(·, b))` is bijective exactly when the initial-data map
-`v ↦ (P_R v, v(·, T - b))` of the reversed forward problem is, via the signed data-reversal
-linear isometric equivalence `TauCeti.ParabolicC2HolderSpace.terminalDataReverseLIE`.
+`v ↦ (P_R v, v(·, T - b))` of the reversed forward problem is.
 
 On `ℝⁿ = EuclideanSpace ℝ ι` with scalar coefficients `aⁱʲ`, `bⁱ`, `c`, the forward comparison
 principle then yields the backward one: for degenerate elliptic `a` and `c ≤ γ` with `0 ≤ γ`,
@@ -34,8 +32,6 @@ terminal-value problem.
 ## Main declarations
 
 * `TauCeti.ParabolicC2HolderSpace.backwardParabolicOperatorL`: the operator `P_back = ∂ₜ + L`.
-* `TauCeti.ParabolicC2HolderSpace.terminalDataReverseLIE`: the signed data reversal
-  `(f, g) ↦ (-f ∘ R, g)` as a linear isometric equivalence.
 * `TauCeti.ParabolicC2HolderSpace.parabolicOperatorL_timeReverseLIE`: `P_R v = -(P_back u) ∘ R`.
 * `TauCeti.ParabolicC2HolderSpace.backwardParabolicOperatorL_eq_iff`:
   `P_back u = g ↔ P_R v = -g ∘ R`.
@@ -133,34 +129,6 @@ variable {a b a' b' T : ℝ} {hab : a < b} {ha : a' = T - b} {hb : b' = T - a} (
   {B : HolderSpace α (slab (E := E) a b) ((E →L[ℝ] F) →L[ℝ] F)}
   {C : HolderSpace α (slab (E := E) a b) (F →L[ℝ] F)}
 
-/-- Signed data reversal `(f, g) ↦ (-f ∘ R, g)` transporting terminal-value data on `E × [a, b]`
-to initial-value data on `E × [a', b']` for `R (x, s) = (x, T - s)`, `a' = T - b`, `b' = T - a`, as
-a linear isometric equivalence. -/
-def terminalDataReverseLIE (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a) :
-    HolderSpace α (slab (E := E) a b) F × CkHolderSpace 2 α E F ≃ₗᵢ[ℝ]
-      HolderSpace α (slab (E := E) a' b') F × CkHolderSpace 2 α E F :=
-  ((HolderSpace.compIsometryEquivLIE α F (slabTimeReverse (E := E) T ha hb)).trans
-    (LinearIsometryEquiv.neg ℝ)).prodCongr
-    (LinearIsometryEquiv.refl ℝ (CkHolderSpace 2 α E F))
-
-/-- Forward evaluation of `terminalDataReverseLIE`. -/
-@[simp]
-theorem terminalDataReverseLIE_apply (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b) (hb : b' = T - a)
-    (d : HolderSpace α (slab (E := E) a b) F × CkHolderSpace 2 α E F) :
-    terminalDataReverseLIE T ha hb d =
-      (-(HolderSpace.compIsometryEquivLIE α F (slabTimeReverse (E := E) T ha hb) d.1), d.2) := by
-  simp [terminalDataReverseLIE]
-
-/-- Inverse evaluation of `terminalDataReverseLIE`. -/
-@[simp]
-theorem terminalDataReverseLIE_symm_apply (T : ℝ) {a b a' b' : ℝ} (ha : a' = T - b)
-    (hb : b' = T - a) (d : HolderSpace α (slab (E := E) a' b') F × CkHolderSpace 2 α E F) :
-    (terminalDataReverseLIE T ha hb).symm d =
-      (-(HolderSpace.compIsometryEquivLIE α F (slabTimeReverse (E := E) T ha hb).symm d.1),
-        d.2) := by
-  simp [terminalDataReverseLIE]
-  rfl
-
 /-- **Time reversal of the backward operator.** With `R (x, s) = (x, T - s)` and `v = u ∘ R`,
 the forward operator with the reversed coefficients `A ∘ R`, `B ∘ R`, `C ∘ R` satisfies
 `P_R v = -(P_back u) ∘ R`. -/
@@ -210,23 +178,30 @@ theorem bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff :
         (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith B)
         (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith C)) := by
   set R := slabTimeReverse (E := E) T ha hb
+  -- The data of the reversed problem are those of the backward problem transported by
+  -- `Φ (g, h) = (-g ∘ R, h)`, a bijection with inverse `(g, h) ↦ (-g ∘ R⁻¹, h)`.
+  set Φ : HolderSpace α (slab (E := E) a b) F × CkHolderSpace 2 α E F →
+      HolderSpace α (slab (E := E) a' b') F × CkHolderSpace 2 α E F :=
+    fun gh ↦ (-HolderSpace.compLipschitzL _ R.isometry.lipschitzWith gh.1, gh.2) with hΦ
+  have hΦb : Function.Bijective Φ := by
+    refine Function.bijective_iff_has_inverse.2
+      ⟨fun gh ↦ (-HolderSpace.compLipschitzL _ R.symm.isometry.lipschitzWith gh.1, gh.2),
+        fun gh ↦ ?_, fun gh ↦ ?_⟩ <;>
+      ext <;> simp [hΦ]
   have hcomp : ⇑(initialDataL (ht := ha ▸ hb ▸ sub_lt_sub_left hab T) hα
         (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith A)
         (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith B)
         (HolderSpace.compLipschitzL _ R.isometry.lipschitzWith C)) ∘
         timeReverseLIE T ha hb =
-      ⇑(terminalDataReverseLIE (α := α) (E := E) (F := F) T ha hb) ∘
-        (backwardParabolicOperatorL (ht := hab) hα A B C).prod
-          (spatialTraceL ⟨b, right_mem_Icc.2 hab.le⟩) := by
+      Φ ∘ (backwardParabolicOperatorL (ht := hab) hα A B C).prod
+        (spatialTraceL ⟨b, right_mem_Icc.2 hab.le⟩) := by
     funext u
     apply Prod.ext <;>
       simp only [Function.comp_apply, ContinuousLinearMap.prod_apply, initialDataL_fst,
-        initialDataL_snd, spatialTraceL_apply, terminalDataReverseLIE_apply,
-        HolderSpace.compIsometryEquivLIE_eq_compLipschitzL, parabolicOperatorL_timeReverseLIE,
+        initialDataL_snd, spatialTraceL_apply, hΦ, parabolicOperatorL_timeReverseLIE,
         spatialTrace_timeReverseLIE_left, R]
-  rw [← Function.Bijective.of_comp_iff'
-      (terminalDataReverseLIE (α := α) (E := E) (F := F) T ha hb).bijective,
-    ← hcomp, Function.Bijective.of_comp_iff _ (timeReverseLIE T ha hb).bijective]
+  rw [← Function.Bijective.of_comp_iff' hΦb, ← hcomp,
+    Function.Bijective.of_comp_iff _ (timeReverseLIE T ha hb).bijective]
 
 /-- At an interior remaining time `τ ∈ (0, t₁ - t₀)`, the time slice through `x` read backward
 from `t₁`, `σ ↦ u (x, t₁ - σ)`, has the negated recorded time derivative `-∂ₜu (x, t₁ - τ)` as its

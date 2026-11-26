@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.Iterated
-public import TauCeti.Analysis.SpecialFunctions.Sigmoid.Basic
+public import TauCeti.Analysis.SpecialFunctions.Sigmoid
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import TauCeti.Topology.MetricSpace.Holder
 
