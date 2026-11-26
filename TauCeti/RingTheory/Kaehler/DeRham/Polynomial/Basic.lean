@@ -274,6 +274,19 @@ theorem extDeriv_mem_supportedForms {s : Set σ}
     rw [extDeriv_mul]
     exact add_mem (mul_mem ihx hy) (mul_mem (involute_mem_supportedForms hx) ihy)
 
+private theorem exists_finset_mem_supportedForms_of_two
+    {α β γ : ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B])}
+    (hα : ∃ s : Finset σ, α ∈ supportedForms B (s : Set σ))
+    (hβ : ∃ s : Finset σ, β ∈ supportedForms B (s : Set σ))
+    (hγ : ∀ s : Set σ, α ∈ supportedForms B s → β ∈ supportedForms B s → γ ∈ supportedForms B s) :
+    ∃ s : Finset σ, γ ∈ supportedForms B (s : Set σ) := by
+  classical
+  obtain ⟨s₁, hs₁⟩ := hα
+  obtain ⟨s₂, hs₂⟩ := hβ
+  exact ⟨s₁ ∪ s₂, hγ _
+    (supportedForms_mono (Finset.coe_subset.mpr Finset.subset_union_left) hs₁)
+    (supportedForms_mono (Finset.coe_subset.mpr Finset.subset_union_right) hs₂)⟩
+
 /-- Every polynomial differential form uses only finitely many variables. -/
 theorem exists_finset_mem_supportedForms
     (α : ExteriorAlgebra (MvPolynomial σ B) (Ω[MvPolynomial σ B⁄B])) :
@@ -287,13 +300,8 @@ theorem exists_finset_mem_supportedForms
     induction v using Finsupp.induction_linear with
     | zero => exact ⟨∅, by simp⟩
     | add v₁ v₂ h₁ h₂ =>
-      obtain ⟨s₁, hs₁⟩ := h₁
-      obtain ⟨s₂, hs₂⟩ := h₂
-      refine ⟨s₁ ∪ s₂, ?_⟩
-      rw [map_add, map_add]
-      exact add_mem
-        (supportedForms_mono (Finset.coe_subset.mpr Finset.subset_union_left) hs₁)
-        (supportedForms_mono (Finset.coe_subset.mpr Finset.subset_union_right) hs₂)
+      exact exists_finset_mem_supportedForms_of_two h₁ h₂ fun _ hs₁ hs₂ ↦ by
+        simpa only [map_add] using add_mem hs₁ hs₂
     | single i p =>
       have hsingle : (KaehlerDifferential.mvPolynomialEquiv B σ).symm (Finsupp.single i p) =
           p • KaehlerDifferential.D B (MvPolynomial σ B) (X i) :=
@@ -305,17 +313,9 @@ theorem exists_finset_mem_supportedForms
           p.mem_supported_vars)
         (ι_D_X_mem_supportedForms (by simp))
   | mul α β hα hβ =>
-    obtain ⟨s₁, hs₁⟩ := hα
-    obtain ⟨s₂, hs₂⟩ := hβ
-    exact ⟨s₁ ∪ s₂, mul_mem
-      (supportedForms_mono (Finset.coe_subset.mpr Finset.subset_union_left) hs₁)
-      (supportedForms_mono (Finset.coe_subset.mpr Finset.subset_union_right) hs₂)⟩
+    exact exists_finset_mem_supportedForms_of_two hα hβ fun _ ↦ mul_mem
   | add α β hα hβ =>
-    obtain ⟨s₁, hs₁⟩ := hα
-    obtain ⟨s₂, hs₂⟩ := hβ
-    exact ⟨s₁ ∪ s₂, add_mem
-      (supportedForms_mono (Finset.coe_subset.mpr Finset.subset_union_left) hs₁)
-      (supportedForms_mono (Finset.coe_subset.mpr Finset.subset_union_right) hs₂)⟩
+    exact exists_finset_mem_supportedForms_of_two hα hβ fun _ ↦ add_mem
 
 end
 

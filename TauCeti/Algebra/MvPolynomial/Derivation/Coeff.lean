@@ -46,8 +46,7 @@ private def coeffTensorEquiv (R B σ : Type*) [CommSemiring R] [CommSemiring B] 
 
 private theorem coeffTensorEquiv_tmul (p : MvPolynomial σ R) (b : B) :
     coeffTensorEquiv R B σ (p ⊗ₜ[R] b) = b • MvPolynomial.map (algebraMap R B) p := by
-  rw [coeffTensorEquiv, AlgEquiv.trans_apply, Algebra.TensorProduct.comm_tmul,
-    AlgEquiv.coe_restrictScalars, MvPolynomial.algebraTensorAlgEquiv_tmul]
+  simp [coeffTensorEquiv]
 
 /-- Coefficientwise lift of a base derivation `d : Derivation R B B` to an `R`-derivation of
 `MvPolynomial σ B`, built from `Derivation.baseChange` and `MvPolynomial.algebraTensorAlgEquiv`. -/
@@ -60,9 +59,9 @@ def mapCoeffsMvPolynomial (d : Derivation R B B) :
 theorem mapCoeffsMvPolynomial_monomial (d : Derivation R B B) (m : σ →₀ ℕ) (b : B) :
     d.mapCoeffsMvPolynomial (monomial m b) = monomial m (d b) := by
   have hm (c : B) : coeffTensorEquiv R B σ (monomial m (1 : R) ⊗ₜ[R] c) = monomial m c := by
-    rw [coeffTensorEquiv_tmul, map_monomial, map_one, smul_monomial, smul_eq_mul, mul_one]
-  rw [← hm b, mapCoeffsMvPolynomial, Derivation.conjAlgEquiv_apply, AlgEquiv.symm_apply_apply,
-    Derivation.coe_restrictScalars, Derivation.baseChange_tmul, hm (d b)]
+    simp [coeffTensorEquiv_tmul, smul_monomial]
+  rw [← hm b]
+  simp [mapCoeffsMvPolynomial, Derivation.conjAlgEquiv_apply, hm (d b)]
 
 /-- `d.mapCoeffsMvPolynomial` applies `d` to every coefficient of a polynomial. -/
 @[simp]

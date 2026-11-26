@@ -58,11 +58,11 @@ theorem adjoin_range_C_union_range_X (R B σ : Type*) [CommSemiring R] [CommSemi
         (Set.range (_root_.MvPolynomial.C : B → _root_.MvPolynomial σ B) ∪
           Set.range _root_.MvPolynomial.X) =
       ⊤ := by
-  rw [eq_top_iff, ← Subalgebra.restrictScalars_top R (S := B) (A := _root_.MvPolynomial σ B),
-    ← _root_.MvPolynomial.adjoin_range_X (R := B) (σ := σ),
-    Algebra.Subalgebra.restrictScalars_adjoin, sup_le_iff]
-  refine ⟨?_, Algebra.adjoin_mono Set.subset_union_right⟩
-  rintro _ ⟨b, rfl⟩
-  exact Algebra.subset_adjoin (Or.inl ⟨b, rfl⟩)
+  ext p
+  simp only [Algebra.mem_top, iff_true]
+  induction p using _root_.MvPolynomial.induction_on with
+  | C b => exact Algebra.subset_adjoin (Or.inl ⟨b, rfl⟩)
+  | add p q hp hq => exact add_mem hp hq
+  | mul_X p i hp => exact mul_mem hp (Algebra.subset_adjoin (Or.inr ⟨i, rfl⟩))
 
 end TauCeti.MvPolynomial

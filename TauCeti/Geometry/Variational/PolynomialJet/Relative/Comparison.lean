@@ -84,9 +84,7 @@ theorem polyJetEquivRel_symm_comp_algebraMap :
       MvPolynomial.rename Sum.inl := by
   apply MvPolynomial.algHom_ext
   intro j
-  rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', MvPolynomial.algebraMap_eq,
-    AlgEquiv.coe_toAlgHom, MvPolynomial.rename_X, AlgEquiv.symm_apply_eq,
-    polyJetEquivRel_X_base]
+  simp [AlgEquiv.symm_apply_eq]
 
 /-- The inverse comparison sends a base polynomial coefficient `C b` to `rename Sum.inl b`. -/
 @[simp]
@@ -214,8 +212,13 @@ theorem coe_polyJetStageEquiv_symm (r : ℕ)
 theorem coe_polyJetStageEquiv (r : ℕ) (p : PolynomialJet.stage R ι α r) :
     (polyJetStageEquiv R ι α r p : RelJetAlgebra (MvPolynomial ι R) ι α) =
       polyJetEquivRel R ι α p := by
-  apply (polyJetEquivRel R ι α).symm.injective
-  rw [AlgEquiv.symm_apply_apply, ← coe_polyJetStageEquiv_symm, AlgEquiv.symm_apply_apply]
+  have h : (polyJetEquivRel R ι α).symm (polyJetStageEquiv R ι α r p) = p := by
+    have hsub := congrArg Subtype.val
+      (((polyJetEquivRel R ι α).symm.subalgebraMap
+        ((stage (MvPolynomial ι R) ι α r).restrictScalars R)).apply_symm_apply
+        ((Subalgebra.equivOfEq _ _ (map_stage_polyJetEquivRel_symm r)).symm p))
+    simpa [polyJetStageEquiv, -AlgEquiv.apply_symm_apply] using hsub
+  exact (polyJetEquivRel R ι α).symm_apply_eq.mp h
 
 /-- Increasing the jet-order bound enlarges the scalar-restricted relative stage subalgebra. -/
 theorem restrictScalars_stage_mono {r s : ℕ} (hrs : r ≤ s) :
