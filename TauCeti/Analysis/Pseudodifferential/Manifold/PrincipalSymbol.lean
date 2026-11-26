@@ -63,7 +63,11 @@ depends on the cutoffs only through their values at the point.
   (`TauCeti.classicalPrincipalSymbol_mem_homogeneousCotangentSymbols`), and
   `TauCeti.classicalPrincipalSymbolLinearMap` is the principal symbol as a linear map from the
   operators of order `m` to it, with kernel the operators of order `m - 1`
-  (`TauCeti.ker_classicalPrincipalSymbolLinearMap`).
+  (`TauCeti.ker_classicalPrincipalSymbolLinearMap`). The pointwise inverse of such a function
+  vanishing at no nonzero covector has degree `-m`
+  (`TauCeti.inv_mem_homogeneousCotangentSymbols`); applied to the principal symbol of an elliptic
+  operator, it is the principal symbol of its inverses up to lower order.
+* `TauCeti.classicalPrincipalSymbol_id`: the identity has principal symbol `1` in order `0`.
 * `TauCeti.classicalPrincipalSymbol_complexifyLinearMap`: the principal symbol of the
   complexification of a differential operator `D` of order at most `m` is `i ^ m` times its
   geometric principal symbol (`TauCeti.smoothPrincipalSymbol`) at nonzero covectors, the
@@ -280,6 +284,22 @@ theorem mem_homogeneousCotangentSymbols_iff
           s (e.symm p.1) ((innerSL ℝ p.2).comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e (e.symm p.1))))
           (e.target ×ˢ {η | η ≠ 0}) :=
   Iff.rfl
+
+omit [T2Space M] in
+/-- **Inverting a nonvanishing symbol.** If a smooth positively homogeneous function `s` of degree
+`m` on the cotangent bundle vanishes at no nonzero covector, its pointwise inverse `1 / s`, equal
+to `0` at the zero covectors, is smooth and positively homogeneous of degree `-m`. -/
+theorem inv_mem_homogeneousCotangentSymbols
+    {s : (x : M) → (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ}
+    (hs : s ∈ homogeneousCotangentSymbols n M m) (hs0 : ∀ x ξ, ξ ≠ 0 → s x ξ ≠ 0) :
+    (fun x ξ ↦ (s x ξ)⁻¹) ∈ homogeneousCotangentSymbols n M (-m) := by
+  obtain ⟨hs₁, hs₂, hs₃⟩ := hs
+  refine ⟨fun x ↦ by simp [hs₁ x], fun x ξ t ht ↦ ?_, fun e he ↦ (hs₃ e he).inv ?_⟩
+  · simp only [hs₂ x ξ t ht, mul_inv, Real.rpow_neg ht.le, Complex.ofReal_inv]
+  · -- In a chart, a nonzero frequency gives a nonzero covector, at which `s` does not vanish.
+    rintro ⟨y, η⟩ ⟨hy, hη⟩
+    exact hs0 _ _ ((innerSL_comp_mvfderiv_eq_zero_iff
+      (IsManifold.maximalAtlas_subset_of_le (by simp) he) (e.map_target hy)).not.2 hη)
 
 /-! ### The principal symbol on the cotangent bundle -/
 
@@ -566,6 +586,31 @@ theorem classicalPrincipalSymbol_sum {ι : Type*} (s : Finset ι)
       classicalPrincipalSymbol_add (hP i (Finset.mem_insert_self i s))
         (Submodule.sum_mem _ fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)),
       ih fun j hj ↦ hP j (Finset.mem_insert_of_mem hj)]
+
+/-- **The principal symbol of the identity** of order `0` is `1` at every nonzero covector. -/
+theorem classicalPrincipalSymbol_id (x : M) {ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ}
+    (hξ : ξ ≠ 0) : classicalPrincipalSymbol 0 LinearMap.id x ξ = 1 := by
+  -- Read the identity in the preferred chart `e` at `x`, with the cutoff `χ` equal to `1` at `e x`:
+  -- its chart symbol is `χ(y)²`, whose principal symbol is `χ(e x)² = 1` at the nonzero chart
+  -- frequency `η` of `ξ`.
+  set e := chartAt (CoordinateSpace n) x
+  have he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas x
+  have hx : x ∈ e.source := mem_chart_source _ x
+  set χ := (exists_cutoff_chartAt (n := n) x).choose
+  have hχ : χ (e x) = 1 := (exists_cutoff_chartAt (n := n) x).choose_spec.self_of_nhds
+  have hχχ : ContDiff ℝ ∞ fun y ↦ ((χ y * χ y : ℝ) : ℂ) • ContinuousLinearMap.id ℂ ℂ :=
+    (Complex.ofRealCLM.contDiff.comp (χ.contDiff.mul χ.contDiff)).smul contDiff_const
+  have hηξ := innerSL_toDual_symm_comp_inverse_mvfderiv
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx ξ
+  have hη : (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
+      (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse) ≠ 0 := fun h ↦ hξ <| by
+    rw [← hηξ, h, map_zero, ContinuousLinearMap.zero_comp]
+  have h := coefficient_principal_apply_eq_classicalPrincipalSymbol
+    id_mem_classicalPseudodifferentialOperators he χ χ
+    (ClassicalSymbol.quantizeSchwartzValue_ofSpatial_eq_complexChartCompression_id he χ χ hχχ) hx ξ
+  rw [ClassicalSymbol.coefficient_principal_ofSpatial _ _ hη, hχ] at h
+  simpa using h.symm
 
 /-! ### The principal symbol map -/
 
