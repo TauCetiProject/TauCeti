@@ -80,6 +80,9 @@ theorem wedge_wedgePow_wedgePow_apply_complexRealFrame {n k l : ℕ} (hn : finra
         ((isSymm_hermitianSesqForm hα).relEigenvalues hn) (MvPolynomial.esymm (Fin n) ℝ k) := by
   set u := (isSymm_hermitianSesqForm hα).relEigenvectorBasis hn
   rw [wedge_def, complexRealFrame_def]
+  simp only [Function.comp_def, Fin.cast_cast]
+  -- The goal is now the lemma's tuple, up to beta-reducing the pair family `b` below and
+  -- unfolding the coercion of `ofComplexModule E`.
   exact pairedWedge_wedgePow_wedgePow_apply_finProdFinEquiv α _ hkl
     (fun p : Fin n × Fin 2 ↦ ![u p.1, ofComplexModule E (u p.1)] p.2)
     ((isSymm_hermitianSesqForm hα).relEigenvalues hn) (apply_relEigenvectorBasis_eq_zero hα hn)

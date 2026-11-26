@@ -74,8 +74,7 @@ private theorem pairedWedge_wedgePow_succ_wedgePow_succ_apply_vecCons
   rw [hcons, ← curryLeftTopological_apply_apply (n := 2 * k + 1 + 1 + (2 * l + 1)),
     curryLeftTopological_pairedWedge (k := 2 * k + 1) (l := 2 * l + 1),
     Even.neg_one_pow ⟨k + 1, by ring⟩, one_smul,
-    pairedWedge_comm _ (fun a b ↦ mul_comm a b) (wedgePow α (k + 1)),
-    Even.neg_one_pow ⟨(k + 1) * (2 * l + 1), by ring⟩, one_smul,
+    pairedWedge_comm_of_even _ (fun a b ↦ mul_comm a b) ((even_two_mul _).mul_right _),
     Fin.comp_cast_comp_cast, Fin.comp_cast_comp_cast]
   -- The vector `q` in `α ^ (k + 1)`.
   have h₁ := pairedWedge_curryLeftTopological_wedgePow_succ_apply α k (wedgePow ω (l + 1)) q p T
@@ -83,8 +82,8 @@ private theorem pairedWedge_wedgePow_succ_wedgePow_succ_apply_vecCons
   -- The vector `q` in `ω ^ (l + 1)`, after moving `ι_q ω ^ (l + 1)` to the front and back.
   have h₂ := pairedWedge_curryLeftTopological_wedgePow_succ_apply ω l (wedgePow α (k + 1)) q p T
     (by omega) hω
-  rw [pairedWedge_comm _ (fun a b ↦ mul_comm a b) (wedgePow ω l),
-    Even.neg_one_pow ⟨l * (2 * (k + 1)), by ring⟩, one_smul, Fin.comp_cast_comp_cast] at h₂
+  rw [pairedWedge_comm_of_even _ (fun a b ↦ mul_comm a b) ((even_two_mul _).mul_right _),
+    Fin.comp_cast_comp_cast] at h₂
   -- `h₁` and `h₂` are the two summands, up to the definitional equalities
   -- `2 * (k + 1) = 2 * k + 1 + 1` and `2 * (l + 1) = 2 * l + 1 + 1` of the degrees.
   exact congrArg₂ (· + ·) h₁ h₂
@@ -111,21 +110,17 @@ private theorem pairedWedge_wedgePow_wedgePow_apply_esymm (α ω : E [⋀^Fin 2]
     rcases k with _ | k
     · -- `k = 0`: the top power of `ω`.
       obtain rfl : l = m + 1 := by omega
-      rw [pairedWedge_apply_zero_left, wedgePow_zero_apply, ContinuousLinearMap.mul_apply', one_mul,
-        Fin.comp_cast_comp_cast, Fin.cast_refl, Function.comp_id,
-        wedgePow_apply_finProdFinEquiv ω b hω₀₀ hω₀₁]
+      rw [pairedWedge_apply_zero_left, wedgePow_zero_apply, Fin.comp_cast_comp_cast, Fin.cast_refl,
+        Function.comp_id, wedgePow_apply_finProdFinEquiv ω b hω₀₀ hω₀₁]
       simp
     rcases l with _ | l
     · -- `l = 0`: the top power of `α`.
       obtain rfl : k = m := by omega
-      rw [pairedWedge_comm _ (fun a b ↦ mul_comm a b), Even.neg_one_pow ⟨0, by ring⟩, one_smul,
-        pairedWedge_apply_zero_left, wedgePow_zero_apply, ContinuousLinearMap.mul_apply', one_mul,
-        Fin.comp_cast_comp_cast, Fin.comp_cast_comp_cast, Fin.cast_refl, Function.comp_id,
+      rw [pairedWedge_comm_of_even _ (fun a b ↦ mul_comm a b) ((even_two_mul _).mul_right _),
+        pairedWedge_apply_zero_left, wedgePow_zero_apply, Fin.comp_cast_comp_cast,
+        Fin.comp_cast_comp_cast, Fin.cast_refl, Function.comp_id,
         wedgePow_apply_finProdFinEquiv_eq_mul_prod α b c hα₀₀ hα₀₁]
-      have hprod := Multiset.esymm_card_eq_prod (Finset.univ.val.map c)
-      rw [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin,
-        ← Finset.prod_eq_multiset_prod] at hprod
-      rw [hprod, Nat.factorial_zero, Nat.cast_one, mul_one]
+      simp [← Multiset.esymm_card_eq_prod, Finset.prod_eq_multiset_prod]
     -- Both powers are positive: expand along the first vector `q₀ = b (0, 0)`, which `α` and `ω`
     -- pair with the later vectors to zero, then use the induction hypothesis on the later pairs.
     have ih' := @ih (b ∘ Prod.map Fin.succ id) (c ∘ Fin.succ) (fun i j ↦ hα₀₀ _ _)
