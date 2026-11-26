@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
-public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+public import TauCeti.Analysis.Calculus.BumpFunction.UnitDisc
 
 /-!
 # Examples and non-examples of finite-regularity almost complex structures
@@ -42,25 +42,8 @@ namespace ContMDiffAlmostComplexStructure
 
 section Cutoff
 
-/-- A smooth cutoff on `ℂ`, equal to `1` on the closed unit disc and to `0` outside the open
-disc of radius `2`. -/
-def unitDiscCutoff : ContDiffBump (0 : ℂ) := ⟨1, 2, one_pos, one_lt_two⟩
-
-@[simp]
-theorem unitDiscCutoff_rIn : unitDiscCutoff.rIn = 1 := (rfl)
-
-@[simp]
-theorem unitDiscCutoff_rOut : unitDiscCutoff.rOut = 2 := (rfl)
-
-@[simp]
-theorem unitDiscCutoff_of_norm_le_one {z : ℂ} (hz : ‖z‖ ≤ 1) : unitDiscCutoff z = 1 :=
-  unitDiscCutoff.one_of_mem_closedBall (by simpa using hz)
-
-@[simp]
-theorem unitDiscCutoff_of_two_le_norm {z : ℂ} (hz : 2 ≤ ‖z‖) : unitDiscCutoff z = 0 :=
-  unitDiscCutoff.zero_of_le_dist (by simpa using hz)
-
-/-- The endomorphism field `χ • i + (1 - χ) • id` on `ℂ`, where `χ` is `unitDiscCutoff`. -/
+/-- The endomorphism field `χ • i + (1 - χ) • id` on `ℂ`, where `χ` is
+`TauCeti.unitDiscCutoff`. -/
 def cutoffField (z : ℂ) : ℂ →L[ℝ] ℂ :=
   unitDiscCutoff z • (Complex.I • ContinuousLinearMap.id ℝ ℂ) +
     (1 - unitDiscCutoff z) • ContinuousLinearMap.id ℝ ℂ
