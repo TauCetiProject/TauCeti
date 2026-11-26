@@ -111,11 +111,9 @@ theorem endSobolevSeminorm_apply (f : M →ₗ[𝕜] F) (D : Fin m → Module.En
 `‖f(D^α x)‖ ≤ Q^D_k(x)` for `|α| ≤ k`. -/
 theorem norm_apply_le_endSobolevSeminorm (f : M →ₗ[𝕜] F) (D : Fin m → Module.End 𝕜 M) {k : ℕ}
     (α : SobolevIndex m k) (x : M) :
-    ‖f (((monomialWord α.exponent).map D).prod x)‖ ≤ endSobolevSeminorm f D k x := by
-  rw [endSobolevSeminorm_apply]
-  exact Real.le_sqrt_of_sq_le (Finset.single_le_sum
-    (f := fun α : SobolevIndex m k ↦ ‖f (((monomialWord α.exponent).map D).prod x)‖ ^ 2)
-    (fun _ _ ↦ sq_nonneg _) (Finset.mem_univ α))
+    ‖f (((monomialWord α.exponent).map D).prod x)‖ ≤ endSobolevSeminorm f D k x :=
+  PiLp.norm_apply_le
+    (WithLp.toLp 2 fun α : SobolevIndex m k ↦ f (((monomialWord α.exponent).map D).prod x)) α
 
 /-- **The Sobolev seminorm is bounded by the word seminorm**, `Q^D_k ≤ P^D_k`: every ordered
 monomial is a word, and the `ℓ²` norm of a finite family is at most its `ℓ¹` norm. -/

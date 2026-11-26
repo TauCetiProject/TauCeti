@@ -274,8 +274,8 @@ theorem sobolevSeminorm_eq_endSobolevSeminorm (X : Fin m → LeftInvariantDeriva
 theorem sobolevSeminorm_apply (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
     (v : lieSmoothVectors I π) :
     sobolevSeminorm I π X k v =
-      √(∑ α : SobolevIndex m k, ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ ^ 2) :=
-  LinearMap.endSobolevSeminorm_apply _ _ k v
+      √(∑ α : SobolevIndex m k, ‖(wordAction I π X (monomialWord α.exponent) v : V)‖ ^ 2) := by
+  simp [sobolevSeminorm_eq_endSobolevSeminorm, LinearMap.endSobolevSeminorm_apply, wordAction]
 
 /-- **The Sobolev seminorms of the trivial representation are the norm**: `Q_k(v) = ‖v‖` for every
 `k`, since only the constant monomial acts nontrivially. -/
@@ -297,7 +297,8 @@ theorem sobolevSeminorm_trivial (X : Fin m → LeftInvariantDerivation I G) (k :
 /-- The Sobolev seminorm is bounded by the word seminorm: every ordered monomial is a word, and
 the `ℓ²` norm of a finite family is at most its `ℓ¹` norm. -/
 theorem sobolevSeminorm_le_wordSeminorm (X : Fin m → LeftInvariantDerivation I G) (k : ℕ)
-    (v : lieSmoothVectors I π) : sobolevSeminorm I π X k v ≤ wordSeminorm I π X k v :=
-  LinearMap.endSobolevSeminorm_le_endWordSeminorm _ _ k v
+    (v : lieSmoothVectors I π) : sobolevSeminorm I π X k v ≤ wordSeminorm I π X k v := by
+  rw [sobolevSeminorm_eq_endSobolevSeminorm, wordSeminorm_eq_endWordSeminorm]
+  exact LinearMap.endSobolevSeminorm_le_endWordSeminorm _ _ k v
 
 end ContRepresentation
