@@ -150,9 +150,9 @@ theorem Convex.exists_nontrivial_support_of_notMem_intrinsicInterior {E : Type*}
     refine hxi (TauCeti.mem_intrinsicInterior_iff_eventually.2 ⟨subset_affineSpan ℝ C hx, ?_⟩)
     obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.1 (mem_interior_iff_mem_nhds.1 h0)
     filter_upwards [Metric.ball_mem_nhds x hε] with y hy hyA
-    have hyV : y - x ∈ V := by
-      rw [show V = (affineSpan ℝ C).direction from (direction_affineSpan ℝ C).symm]
-      exact AffineSubspace.vsub_mem_direction hyA (subset_affineSpan ℝ C hx)
+    have hyV : y - x ∈ V :=
+      (direction_affineSpan ℝ C).le
+        (AffineSubspace.vsub_mem_direction hyA (subset_affineSpan ℝ C hx))
     have := hball (show (⟨y - x, hyV⟩ : V) ∈ Metric.ball 0 ε by simpa [dist_eq_norm] using hy)
     simpa [D] using this
   obtain ⟨w, hw0, hw⟩ := hD.exists_ne_zero_forall_closure_inner_sub_nonpos
@@ -183,8 +183,7 @@ theorem Convex.exists_strongDual_nontrivial_support_of_notMem_intrinsicInterior 
   let e : V ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ V)) :=
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
   have hxi' : e x ∉ intrinsicInterior ℝ (e '' C) := by
-    rw [show e '' C = e.toContinuousAffineEquiv '' C from rfl,
-      ContinuousAffineEquiv.intrinsicInterior_image]
+    rw [← e.coe_toContinuousAffineEquiv, ContinuousAffineEquiv.intrinsicInterior_image]
     rintro ⟨z, hz, hze⟩
     exact hxi (e.injective hze ▸ hz)
   obtain ⟨y, hle, c, ⟨c, hc, rfl⟩, hlt⟩ :=
