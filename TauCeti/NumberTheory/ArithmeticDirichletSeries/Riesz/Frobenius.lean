@@ -33,10 +33,10 @@ namespace TauCeti
 
 variable {G : Type*} [Group G] [IsMulCommutative G] [Finite G]
 
-open scoped Classical IsMulCommutative in
+open scoped IsMulCommutative in
 /-- Inverting the character averages inside a Riesz sum selects the mass of one group element
 at each index. The mass is its indicator averaged over the input finset. -/
-theorem sum_inv_mul_rieszSum_expect_eq_card_mul_rieszSum_expect_ite
+theorem sum_inv_mul_rieszSum_expect_eq_card_mul_rieszSum_expect_ite [DecidableEq G]
     (F : ℕ → Finset G) (b : ℕ → ℂ) (g : G) (y : ℝ) :
     (∑ χ : G →* ℂˣ, (↑(χ g)⁻¹ : ℂ) *
       rieszSum (fun n ↦ b n * 𝔼 h ∈ F n, (χ h : ℂ)) y) =
@@ -62,14 +62,13 @@ theorem sum_inv_mul_rieszSum_expect_eq_card_mul_rieszSum_expect_ite
       rw [hinv]
       ring
 
-open scoped Classical in
 /-- In a sum of capped ramps averaged over `F n`, constrain the group elements to `S` and give
 `g ∈ S` a positive cap `w g`. The character expansion uses a first Riesz sum at scale `a / w g`
 with coefficient at `n` equal to `b n` times the mean of the character over `F n`.
 
 It suffices to truncate the index sum at any common upper bound `N` on the integer parts of the
 rescaled cutoffs. No disjointness or nonemptiness condition on the sets `F n` is required. -/
-theorem sum_mul_expect_max_eq_sum_mul_rieszSum_expect
+theorem sum_mul_expect_max_eq_sum_mul_rieszSum_expect [DecidableEq G]
     (S : Finset G) (F : ℕ → Finset G) (b : ℕ → ℂ) (w : G → ℝ) (a : ℝ) (N : ℕ)
     (hw : ∀ g ∈ S, 0 < w g) (hN : ∀ g ∈ S, ⌊a / w g⌋₊ ≤ N) :
     (∑ n ∈ Icc 1 N, b n * 𝔼 h ∈ F n,
