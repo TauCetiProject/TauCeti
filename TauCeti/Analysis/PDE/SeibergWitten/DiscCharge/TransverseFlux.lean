@@ -79,13 +79,6 @@ theorem cutoffCurrent_eq_zero_of_notMem_closedBall (hc : 0 ≤ c) (hα : ContDif
   rw [Metric.mem_closedBall, dist_zero_right, not_le] at hw
   exact (hR z w hw).not_ge hle
 
-/-- A cutoff vanishing near `0` and equal to `1` on `(c, ∞)` has `c ≥ 0`. -/
-private theorem nonneg_of_eqOn_one (hχ₀ : χ =ᶠ[𝓝 0] 0) (hχc : EqOn χ 1 (Ioi c)) : 0 ≤ c := by
-  by_contra h
-  have h₁ := hχc (show (0 : ℝ) ∈ Ioi c from not_le.1 h)
-  rw [hχ₀.eq_of_nhds] at h₁
-  exact zero_ne_one h₁
-
 /-- **The flux through a normal fibre is the winding number at its boundary.** Let `α` be a `C²`
 section and `b` a `C¹` connection form, let the cutoff `χ` be `C¹`, vanish near `0` and equal `1`
 on `(c, ∞)`, and let `|α(z, w)|² > c` whenever `‖w‖ > R`. Then for every radius `ρ ≥ 0` with
@@ -96,7 +89,7 @@ theorem exists_int_sliceMoment_cutoffCurrent_eq (hα : ContDiff ℝ 2 α) (hb : 
     (hR : ∀ z w, R < ‖w‖ → c < normSq (α (z, w))) {ρ : ℝ} (hρ₀ : 0 ≤ ρ) (hρ : R < ρ) (z : E) :
     ∃ n : ℤ, Contour.windingNumber (fun θ ↦ α (z, circleMap 0 ρ θ)) (-π) π 0 = n ∧
       sliceMoment (cutoffCurrent χ b α) (fun _ ↦ (1 : ℝ)) z = 2 * π * n := by
-  have hc := nonneg_of_eqOn_one hχ₀ hχc
+  have hc := nonneg_of_cutoff_eventuallyEq_zero_of_eqOn_one hχ₀ hχc
   have hσ : ContDiff ℝ 2 fun w : ℂ ↦ (z, w) := contDiff_prodMk_right z
   have hbd (θ : ℝ) : χ (normSq (α (z, circleMap 0 ρ θ))) = 1 :=
     hχc (hR z _ (by rwa [norm_circleMap_zero, abs_of_nonneg hρ₀]))
@@ -106,7 +99,7 @@ theorem exists_int_sliceMoment_cutoffCurrent_eq (hα : ContDiff ℝ 2 α) (hb : 
   have hframe :
       ⇑(ContinuousLinearMap.inr ℝ E ℂ) ∘ ![(1 : ℂ), I] = ![((0 : E), (1 : ℂ)), (0, I)] := by
     ext i : 1
-    fin_cases i <;> rfl
+    fin_cases i <;> simp
   simp only [(hasFDerivAt_prodMk_right z _).fderiv, compContinuousLinearMap_apply, hframe] at hI
   rw [sliceMoment_def, ← hI, ← setIntegral_eq_integral_of_forall_compl_eq_zero
     (s := Metric.closedBall 0 ρ) fun w hw ↦ ?_]
@@ -126,7 +119,7 @@ theorem exists_int_forall_sliceMoment_cutoffCurrent_eq (hα : ContDiff ℝ 2 α)
     ∃ n : ℤ, (∀ z, sliceMoment (cutoffCurrent χ b α) (fun _ ↦ (1 : ℝ)) z = 2 * π * n) ∧
       ∀ z ρ, 0 ≤ ρ → R < ρ →
         Contour.windingNumber (fun θ ↦ α (z, circleMap 0 ρ θ)) (-π) π 0 = n := by
-  have hc := nonneg_of_eqOn_one hχ₀ hχc
+  have hc := nonneg_of_cutoff_eventuallyEq_zero_of_eqOn_one hχ₀ hχc
   set f := sliceMoment (cutoffCurrent χ b α) (fun _ ↦ (1 : ℝ))
   have hR₁ : R < max R 0 + 1 := by linarith [le_max_left R 0]
   have hρ₁ : 0 ≤ max R 0 + 1 := by linarith [le_max_right R 0]
@@ -178,7 +171,7 @@ theorem exists_int_integral_cutoffCurrent_wedge_smul_compContinuousLinearMap_fst
           extDeriv η x) ((e.prod Complex.basisOneI).reindex finSumFinEquiv)
           ∂((e.prod Complex.basisOneI).reindex finSumFinEquiv).addHaar =
         2 * π * n * k * ∫ z, β z e ∂e.addHaar := by
-  have hc := nonneg_of_eqOn_one hχ₀ hχc
+  have hc := nonneg_of_cutoff_eventuallyEq_zero_of_eqOn_one hχ₀ hχc
   obtain ⟨n, hflux, hwind⟩ := exists_int_forall_sliceMoment_cutoffCurrent_eq
     (hα.of_le (by norm_num)) (hb.of_le (by norm_num)) (hχ.of_le (by norm_num)) hχ₀ hχc hR
   refine ⟨n, hwind, ?_⟩
