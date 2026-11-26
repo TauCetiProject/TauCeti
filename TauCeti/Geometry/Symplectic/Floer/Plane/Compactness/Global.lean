@@ -60,6 +60,11 @@ pushforwards through `e` of the Hamiltonian vector fields of the perturbation ar
 closed disc, by compactness, and those of the end Hamiltonian `ε H(ε t)` by compactness of `M` and
 periodicity.
 
+The window cover, the diagonal assembly and the derivation of the window constants follow the
+whole-domain theorem for pairs of pants in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Global`, with the end charts of the pair
+of pants replaced by the end lift of the positive plane.
+
 Energy that escapes along the end is not seen by the limit: this is the breaking of Floer
 cylinders off the end, which is not treated here, nor are the regularity of the limit and the
 bubbles at the points of `Z`.
