@@ -274,8 +274,8 @@ theorem isSectionEllipticAt_adjoint_comp_iff
   -- The symbol of `B' B` is `(-1) ^ m b† b`, where `b` is the symbol of `B`.
   rw [sectionPrincipalSymbol_comp, hB.sectionPrincipalSymbol_eq_smul_adjoint, LinearMap.smul_comp,
     LinearMap.bijective_smul_iff (isUnit_neg_one.pow m)]
-  simpa [ContinuousLinearMap.isInvertible_iff_bijective, ContinuousLinearMap.coe_comp] using
-    ContinuousLinearMap.isInvertible_adjoint_comp_self_iff
+  simpa [ContinuousLinearMap.isUnit_iff_bijective, ContinuousLinearMap.coe_comp] using
+    ContinuousLinearMap.isUnit_adjoint_comp_self_iff
       (LinearMap.toContinuousLinearMap (sectionPrincipalSymbol I hx B ξ))
 
 /-- **The Laplacian at the end of a complex.** If `A'` is a formal adjoint of
