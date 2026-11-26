@@ -41,6 +41,7 @@ isomorphisms of local monodromy data, with the same constant.
 ## Main definitions
 
 * `TauCeti.LocalMonodromyDatum.residueRange D φ`: the image of `K` in `H ⧸ I`.
+* `TauCeti.LocalMonodromyDatum.residueMap D φ`: the injective map `K ⧸ φ⁻¹(I) → H ⧸ I`.
 * `TauCeti.LocalMonodromyDatum.IsAdmissible D φ`: the residue image is open and the tame
   character does not vanish on `φ⁻¹(I)`.
 * `TauCeti.LocalMonodromyDatum.IsAdmissible.residueIndex`: the residue index `f`.
@@ -100,6 +101,28 @@ theorem mem_residueRange {x : H ⧸ D.inertia} :
     x ∈ D.residueRange φ ↔ ∃ k, (φ k : H ⧸ D.inertia) = x :=
   Iff.rfl
 
+/-- The residue image as a set: the image of `K` in `H ⧸ I`. -/
+@[simp]
+theorem coe_residueRange :
+    (D.residueRange φ : Set (H ⧸ D.inertia)) = Set.range fun k ↦ (φ k : H ⧸ D.inertia) :=
+  Set.ext fun _ ↦ mem_residueRange
+
+/-- The **residue map** of `φ : K →ₜ* H`: the continuous homomorphism `K ⧸ φ⁻¹(I) → H ⧸ I`
+induced by `φ`. It is injective (`residueMap_injective`), with image the residue image. -/
+def residueMap : K ⧸ D.inertia.comap (φ : K →* H) →ₜ* H ⧸ D.inertia where
+  toMonoidHom := QuotientGroup.map _ D.inertia (φ : K →* H) le_rfl
+  continuous_toFun := (QuotientGroup.isQuotientMap_mk _).continuous_iff.2
+    (QuotientGroup.continuous_mk.comp φ.continuous)
+
+/-- The residue map sends the class of `k` to the class of `φ(k)`. -/
+@[simp]
+theorem residueMap_mk (k : K) : D.residueMap φ k = (φ k : H ⧸ D.inertia) :=
+  (rfl)
+
+/-- The residue map is injective. -/
+theorem residueMap_injective : Function.Injective (D.residueMap φ) :=
+  (QuotientGroup.map_injective_iff _ _ _ le_rfl).2 le_rfl
+
 /-- `φ : K →ₜ* H` is **admissible** for restricting the local monodromy datum `D`: the image of
 `K` in `H ⧸ I` is open, and the tame character does not vanish identically on `φ⁻¹(I)`. -/
 structure IsAdmissible : Prop where
@@ -112,11 +135,7 @@ variable {D φ}
 subgroup. The tame character does not vanish on the open subgroup `φ(K) ∩ I` of inertia. -/
 theorem IsAdmissible.of_isOpen_range (hφ : IsOpen (Set.range φ)) : D.IsAdmissible φ where
   isOpen_residueRange := by
-    have h : (D.residueRange φ : Set (H ⧸ D.inertia)) =
-        (QuotientGroup.mk : H → H ⧸ D.inertia) '' Set.range φ := by
-      rw [← Set.range_comp]
-      exact Set.ext fun _ ↦ mem_residueRange
-    rw [h]
+    rw [coe_residueRange, Set.range_comp' (QuotientGroup.mk : H → H ⧸ D.inertia) φ]
     exact QuotientGroup.isOpenMap_coe _ hφ
   exists_tame_ne_one := by
     let V : Subgroup D.inertia := (φ : K →* H).range.subgroupOf D.inertia
@@ -142,9 +161,7 @@ variable [CompactSpace K]
 variable (D φ) in
 /-- The residue image is closed, being the image of a compact group. -/
 theorem isClosed_residueRange : IsClosed (D.residueRange φ : Set (H ⧸ D.inertia)) := by
-  have h : (D.residueRange φ : Set (H ⧸ D.inertia)) = Set.range fun k ↦ (φ k : H ⧸ D.inertia) :=
-    Set.ext fun _ ↦ mem_residueRange
-  rw [h]
+  rw [coe_residueRange]
   exact (isCompact_range (QuotientGroup.continuous_mk.comp φ.continuous)).isClosed
 
 /-- The residue image is open exactly when it contains a positive power of the Frobenius class. -/
@@ -236,12 +253,8 @@ theorem exists_continuousMulEquiv_zHat {k₀ : K}
   -- `Fr ^ f`, and raising to the `f`-th power is injective on the torsion-free group `ℤ̂`.
   let I' := D.inertia.comap (φ : K →* H)
   have : IsClosed (I' : Set K) := D.isClosed_inertia.preimage φ.continuous
-  -- The induced embedding `ψ : K ⧸ φ⁻¹(I) → H ⧸ I`, carrying the lift of `k₀` to that of `Fr ^ f`.
-  let ψ : K ⧸ I' →ₜ* H ⧸ D.inertia :=
-    ⟨QuotientGroup.map I' D.inertia (φ : K →* H) le_rfl,
-      (QuotientGroup.isQuotientMap_mk I').continuous_iff.2
-        (QuotientGroup.continuous_mk.comp φ.continuous)⟩
-  have hψ : Function.Injective ψ := (QuotientGroup.map_injective_iff _ _ _ le_rfl).2 le_rfl
+  -- The residue map `ψ : K ⧸ φ⁻¹(I) → H ⧸ I` carries the lift of `k₀` to that of `Fr ^ f`.
+  let ψ := D.residueMap φ
   have hψk (x : zHat.{v}) :
       ψ (zHat.lift (k₀ : K ⧸ I') x) = zHat.lift (D.frobClass ^ h.residueIndex) x := by
     rw [zHat.map_lift]
@@ -272,7 +285,7 @@ theorem exists_continuousMulEquiv_zHat {k₀ : K}
     intro y
     induction y using QuotientGroup.induction_on with | H k => ?_
     obtain ⟨x, hx⟩ := hsub ⟨k, rfl⟩
-    exact ⟨x, hψ ((hψk x).trans hx)⟩
+    exact ⟨x, D.residueMap_injective φ ((hψk x).trans hx)⟩
   exact ⟨zHat.liftContinuousMulEquiv _ ⟨hinj, hsurj⟩, zHat.liftContinuousMulEquiv_apply_self _ _⟩
 
 end IsAdmissible
@@ -308,7 +321,7 @@ def comap : LocalMonodromyDatum ℓ K where
     -- `φ(Φ)` lies in the class `Fr ^ f`, and `φ` carries conjugation by `Φ` to conjugation by
     -- `φ(Φ)`.
     have hφΦ : (φ Φ : H ⧸ D.inertia) = D.frobClass ^ h.residueIndex :=
-      (congrArg (QuotientGroup.map _ D.inertia (φ : K →* H) le_rfl) hΦ).trans
+      (congrArg (D.residueMap φ) hΦ).trans
         h.exists_coe_eq_frobClass_pow.choose_spec
     have hconj : (φ : K →* H).subgroupComap D.inertia (MulAut.conjNormal Φ σ) =
         MulAut.conjNormal (φ Φ) ((φ : K →* H).subgroupComap D.inertia σ) :=
@@ -328,8 +341,8 @@ theorem comap_inertia : (D.comap φ h).inertia = D.inertia.comap (φ : K →* H)
 
 /-- The tame character of the restricted datum is the composite `t ∘ φ`. -/
 @[simp]
-theorem comap_tame_apply (σ : K) (hσ : σ ∈ (D.comap φ h).inertia) (hσ' : φ σ ∈ D.inertia) :
-    (D.comap φ h).tame ⟨σ, hσ⟩ = D.tame ⟨φ σ, hσ'⟩ :=
+theorem comap_tame_apply (σ : K) (hσ : σ ∈ (D.comap φ h).inertia) :
+    (D.comap φ h).tame ⟨σ, hσ⟩ = D.tame ⟨φ σ, (comap_inertia D φ h).le hσ⟩ :=
   (rfl)
 
 /-- The integer of the restricted datum is `q ^ f`, for the residue index `f`. -/
@@ -345,9 +358,10 @@ theorem coe_eq_comap_frobClass_pow_iff (k : K) (n : ℕ) :
   obtain ⟨k₀, hk₀⟩ : ∃ k₀ : K, (D.comap φ h).frobClass = k₀ ∧
       (φ k₀ : H ⧸ D.inertia) = D.frobClass ^ h.residueIndex :=
     ⟨_, rfl, h.exists_coe_eq_frobClass_pow.choose_spec⟩
-  rw [hk₀.1, ← QuotientGroup.mk_pow, eq_comm, QuotientGroup.eq, comap_inertia, Subgroup.mem_comap,
-    map_mul, map_inv, map_pow, ← QuotientGroup.eq, QuotientGroup.mk_pow,
-    MonoidHom.coe_ofClass, hk₀.2, ← pow_mul, eq_comm]
+  rw [hk₀.1]
+  -- The quotient by the restricted inertia is the quotient by `φ⁻¹(I)` (`comap_inertia`).
+  change (k : K ⧸ D.inertia.comap (φ : K →* H)) = (k₀ : K ⧸ D.inertia.comap (φ : K →* H)) ^ n ↔ _
+  rw [← (D.residueMap_injective φ).eq_iff, map_pow, residueMap_mk, residueMap_mk, hk₀.2, ← pow_mul]
 
 /-- **The Frobenius class of the restricted datum** consists of the elements `k` of `K` with
 `φ(k)` in the class `Fr ^ f`. -/
@@ -456,8 +470,8 @@ theorem residueIndex_isAdmissible_comp (hα : IsIso D D' α c) (h : D.IsAdmissib
 
 /-- **Isomorphisms restrict.** An isomorphism `α : D → D'` with constant `c` makes the identity of
 `K` an isomorphism from the restriction of `D` along `φ` to the restriction of `D'` along
-`α ∘ φ`, with the same constant `c`. For the inclusion of a closed subgroup `H₁ ⊆ H`, this is the
-isomorphism `D|_{H₁} → D'|_{α(H₁)}`. -/
+`α ∘ φ`, with the same constant `c`. For the inclusion `ι : H₁ → H` of a closed subgroup, the
+identity of `H₁` is an isomorphism from `D|_{H₁}` to the restriction of `D'` along `α ∘ ι`. -/
 theorem comap [IsTopologicalGroup K] [T2Space K] [TotallyDisconnectedSpace K]
     (hα : IsIso D D' α c) (h : D.IsAdmissible φ) :
     IsIso (D.comap φ h) (D'.comap ((α : H →ₜ* H').comp φ) (hα.isAdmissible_comp h))
