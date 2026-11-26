@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.TateAlgebra
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
+import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # The Weierstrass quotient and remainder as linear maps
@@ -83,14 +85,6 @@ namespace TauCeti.PowerSeries.IsMulDistinguished
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ} {s : ℕ}
   {g : PowerSeries.IsRestricted.subring (R := R) c}
 
-omit [IsUltrametricDist R] in
-/-- A polynomial of degree less than `s`, viewed as a power series, has zero coefficients from
-`s` on. -/
-private theorem coeff_coe_eq_zero_of_degree_lt {p : Polynomial R} {m : ℕ} (hp : p.degree < s)
-    (hm : s ≤ m) : (p : PowerSeries R).coeff m = 0 := by
-  rw [Polynomial.coeff_coe]
-  exact Polynomial.coeff_eq_zero_of_degree_lt (hp.trans_le (by exact_mod_cast hm))
-
 /-- Uniqueness of Weierstrass division, read in the restricted subring with a polynomial
 remainder. -/
 private theorem eq_and_eq_of_mul_add_polynomialToRestricted_eq
@@ -102,7 +96,8 @@ private theorem eq_and_eq_of_mul_add_polynomialToRestricted_eq
   have h' : (g : PowerSeries R) * q + r = (g : PowerSeries R) * q' + r' := by
     simpa using congrArg Subtype.val h
   obtain ⟨hq, hr⟩ := hg.eq_and_eq_of_mul_add_eq_mul_add hc q.property q'.property
-    (fun _ ↦ coeff_coe_eq_zero_of_degree_lt hr) (fun _ ↦ coeff_coe_eq_zero_of_degree_lt hr') h'
+    (fun _ ↦ Polynomial.coeff_coe_eq_zero_of_degree_lt hr)
+    (fun _ ↦ Polynomial.coeff_coe_eq_zero_of_degree_lt hr') h'
   exact ⟨Subtype.ext hq, Polynomial.coe_inj.mp hr⟩
 
 variable [CompleteSpace R]
@@ -254,8 +249,7 @@ theorem weierstrassMod_polynomialToRestricted_eq_modByMonic {p : Polynomial R}
     hg.weierstrassMod hc (polynomialToRestricted c f) = f %ₘ p := by
   have : Nontrivial R := hg.nontrivial
   apply hg.weierstrassMod_eq_of_mul_add_eq hc (q := polynomialToRestricted c (f /ₘ p))
-  · simpa [Polynomial.degree_eq_natDegree hp.ne_zero, hp.natDegree_eq] using
-      Polynomial.degree_modByMonic_lt f hp.monic
+  · exact hp.degree_modByMonic_lt f
   · rw [← map_mul, ← map_add, add_comm, Polynomial.modByMonic_add_div]
 
 /-- The Weierstrass remainder of `f` vanishes exactly when `g` divides `f` in the ring of
@@ -285,7 +279,7 @@ theorem gaussNorm_eq_max (f : PowerSeries.IsRestricted.subring (R := R) c) :
         ((hg.weierstrassMod hc f : PowerSeries R).gaussNorm norm c) := by
   conv_lhs => rw [← hg.mul_weierstrassDiv_add_weierstrassMod hc f]
   simpa using hg.gaussNorm_mul_add_eq_max hc (hg.weierstrassDiv hc f).property fun _ ↦
-    coeff_coe_eq_zero_of_degree_lt (hg.degree_weierstrassMod_lt hc f)
+    Polynomial.coeff_coe_eq_zero_of_degree_lt (hg.degree_weierstrassMod_lt hc f)
 
 /-- **The Weierstrass quotient bound** `‖q‖ ≤ ‖f‖ / ‖g‖`, for the Gauss norm at `c`. -/
 theorem gaussNorm_weierstrassDiv_le (f : PowerSeries.IsRestricted.subring (R := R) c) :

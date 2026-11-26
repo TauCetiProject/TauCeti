@@ -13,9 +13,9 @@ public import Mathlib.LinearAlgebra.TensorPower.Symmetric
 # Functoriality of symmetric tensor powers, and the symmetrization back into the tensor power
 
 This file equips Mathlib's symmetric tensor power with the linear map induced by a linear map of
-the underlying modules. It proves the expected action on pure tensors, identity law, and composition
-law. It also records that a symmetric power indexed by a finite type is finitely generated when its
-underlying module is.
+the underlying modules, and the linear equivalence induced by a linear equivalence. It proves the
+expected action on pure tensors, identity law, and composition law. It also records that a
+symmetric power indexed by a finite type is finitely generated when its underlying module is.
 
 It then builds the map back, `SymmetricPower.toTensorPower : Sym[R] ι M →ₗ[R] ⨂[R] (_ : ι), M`,
 for a finite index type. The **symmetrization** `∑_σ σ` of the tensor power is constant on the
@@ -33,6 +33,7 @@ inside the tensor power. That is the statement a Young symmetrizer of a one-row 
 ## Main definitions
 
 * `SymmetricPower.map` is the map induced on a symmetric tensor power.
+* `SymmetricPower.congr` is the linear equivalence induced by a linear equivalence.
 * `SymmetricPower.toTensorPower` is the symmetrization, from the symmetric power back into the
   tensor power.
 
@@ -135,6 +136,36 @@ theorem map_comp {P : Type*} [AddCommMonoid P] [Module R P] (f : M →ₗ[R] N) 
     map (ι := ι) (g.comp f) = (map (ι := ι) g).comp (map (ι := ι) f) := by
   ext m
   simp
+
+/-- A linear equivalence induces a linear equivalence on every symmetric tensor power. -/
+noncomputable def congr (e : M ≃ₗ[R] N) : Sym[R] ι M ≃ₗ[R] Sym[R] ι N :=
+  LinearEquiv.ofLinearMap (map e.toLinearMap) (map e.symm.toLinearMap)
+    (by rw [← map_comp, e.comp_symm, map_id]) (by rw [← map_comp, e.symm_comp, map_id])
+
+@[simp]
+theorem congr_toLinearMap (e : M ≃ₗ[R] N) : (congr (ι := ι) e).toLinearMap = map e.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem congr_symm (e : M ≃ₗ[R] N) : (congr (ι := ι) e).symm = congr e.symm :=
+  (rfl)
+
+/-- The equivalence induced by the identity is the identity on the symmetric power. -/
+@[simp]
+theorem congr_refl : congr (ι := ι) (LinearEquiv.refl R M) = LinearEquiv.refl R _ :=
+  LinearEquiv.toLinearMap_injective map_id
+
+/-- Symmetric powers preserve composition of linear equivalences. -/
+@[simp]
+theorem congr_trans {P : Type*} [AddCommMonoid P] [Module R P] (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) :
+    congr (ι := ι) (e.trans f) = (congr e).trans (congr f) :=
+  LinearEquiv.toLinearMap_injective (map_comp e.toLinearMap f.toLinearMap)
+
+/-- The induced equivalence sends a pure tensor to the tensor of the images. -/
+@[simp]
+theorem congr_tprod (e : M ≃ₗ[R] N) (m : ι → M) :
+    congr e (⨂ₛ[R] i, m i) = ⨂ₛ[R] i, e (m i) :=
+  map_tprod e.toLinearMap m
 
 /-- A symmetric power indexed by a finite type is finitely generated when the underlying module
 is finitely generated. -/

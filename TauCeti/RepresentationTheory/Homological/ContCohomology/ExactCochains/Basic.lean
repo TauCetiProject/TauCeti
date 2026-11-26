@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Additive
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact
+import TauCeti.RepresentationTheory.Continuous.TopRep.KernelCokernel
 import TauCeti.Topology.Algebra.Group.Profinite.Section
 
 /-!
@@ -58,6 +59,9 @@ in `ShortExact.lean`.
 
 ## Main results
 
+* `TauCeti.ContinuousCohomology.continuousCochainsFunctor_map_f_surjective_of_continuous_section`:
+  a coefficient map with a continuous section induces surjections on cochains over any topological
+  group, provided the source action is jointly continuous.
 * `TauCeti.ContinuousCohomology.cochainsMap_id_f_surjective_of_section`: invariant cochains lift
   along any coefficient map admitting a continuous family of sections `σ : G × Z → Y` that is
   equivariant in the sense `k • σ(h, z) = σ(k h, k • z)`, over a locally compact group.
@@ -215,29 +219,29 @@ variable {R : Type u} [Ring R] [TopologicalSpace R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   {Y Z : TopRep.{v} R G}
 
-variable [LocallyCompactSpace G]
+variable (hprod : ∀ (T : Type v) [TopologicalSpace T],
+  Continuous fun p : G × C(G, T) ↦ ContinuousMap.prodMk (ContinuousMap.const G p.1) p.2)
 
 /-- A continuous family `σ : G × Z → Y` of maps, transported to every level of the coinduced
-resolution by `σₙ₊₁ (h, φ) = (y ↦ σₙ (h, φ y))`. Continuity at each level uses continuity of
-evaluation on `C(G, -)`, which is where local compactness of `G` is used. -/
+resolution by `σₙ₊₁ (h, φ) = (y ↦ σₙ (h, φ y))`. Each step postcomposes the constant pairing map
+with the preceding level. -/
 private noncomputable def levelLift (σ : C(G × Z.V, Y.V)) :
     (n : ℕ) → C(G × (TopRep.resolutionX Z n).V, (TopRep.resolutionX Y n).V)
   | 0 => σ
-  | n + 1 => ContinuousMap.curry
-      ⟨fun p : (G × C(G, (TopRep.resolutionX Z n).V)) × G ↦ levelLift σ n (p.1.1, p.1.2 p.2),
-        (levelLift σ n).continuous.comp <| continuous_fst.fst.prodMk <|
-          continuous_eval.comp (continuous_fst.snd.prodMk continuous_snd)⟩
+  | n + 1 => ⟨fun p ↦ (levelLift σ n).comp
+      (ContinuousMap.prodMk (ContinuousMap.const G p.1) p.2),
+      (ContinuousMap.continuous_postcomp (levelLift σ n)).comp (hprod _)⟩
 
 private theorem levelLift_succ_apply (σ : C(G × Z.V, Y.V)) (n : ℕ) (h : G)
     (φ : C(G, (TopRep.resolutionX Z n).V)) (y : G) :
-    (levelLift σ (n + 1) (h, φ) : C(G, (TopRep.resolutionX Y n).V)) y =
-      levelLift σ n (h, φ y) :=
+    (levelLift hprod σ (n + 1) (h, φ) : C(G, (TopRep.resolutionX Y n).V)) y =
+      levelLift hprod σ n (h, φ y) :=
   (rfl)
 
 /-- Every level of the transported family is a section of the level map of `g`. -/
 private theorem resolutionMap_levelLift (σ : C(G × Z.V, Y.V)) (g : Y ⟶ Z)
     (hσ : ∀ h z, g.hom (σ (h, z)) = z) :
-    ∀ n h φ, (resolutionMap (ContinuousMonoidHom.id G) g n).hom (levelLift σ n (h, φ)) = φ
+    ∀ n h φ, (resolutionMap (ContinuousMonoidHom.id G) g n).hom (levelLift hprod σ n (h, φ)) = φ
   | 0, h, z => hσ h z
   | n + 1, h, (φ : C(G, (TopRep.resolutionX Z n).V)) => ContinuousMap.ext fun y ↦ by
     rw [resolutionMap_id_succ_apply, levelLift_succ_apply, resolutionMap_levelLift σ g hσ n]
@@ -246,53 +250,67 @@ private theorem resolutionMap_levelLift (σ : C(G × Z.V, Y.V)) (g : Y ⟶ Z)
 `k • σₙ (h, φ) = σₙ (k h, k • φ)`. -/
 private theorem ρ_levelLift (σ : C(G × Z.V, Y.V))
     (hσ : ∀ k h z, Y.ρ k (σ (h, z)) = σ (k * h, Z.ρ k z)) :
-    ∀ n k h φ, (TopRep.resolutionX Y n).ρ k (levelLift σ n (h, φ)) =
-      levelLift σ n (k * h, (TopRep.resolutionX Z n).ρ k φ)
+    ∀ n k h φ, (TopRep.resolutionX Y n).ρ k (levelLift hprod σ n (h, φ)) =
+      levelLift hprod σ n (k * h, (TopRep.resolutionX Z n).ρ k φ)
   | 0, k, h, z => hσ k h z
   | n + 1, k, h, (φ : C(G, (TopRep.resolutionX Z n).V)) => ContinuousMap.ext fun y ↦ by
     calc
-      ((TopRep.resolutionX Y (n + 1)).ρ k (levelLift σ (n + 1) (h, φ))) y =
+      ((TopRep.resolutionX Y (n + 1)).ρ k (levelLift hprod σ (n + 1) (h, φ))) y =
           (TopRep.resolutionX Y n).ρ k
-            ((levelLift σ (n + 1) (h, φ)) (k⁻¹ * y)) :=
+            ((levelLift hprod σ (n + 1) (h, φ)) (k⁻¹ * y)) :=
         TopRep.resolutionX_succ_ρ_apply_apply Y n k _ y
-      _ = levelLift σ n (k * h, (TopRep.resolutionX Z n).ρ k (φ (k⁻¹ * y))) := by
+      _ = levelLift hprod σ n (k * h, (TopRep.resolutionX Z n).ρ k (φ (k⁻¹ * y))) := by
         rw [levelLift_succ_apply]
         exact ρ_levelLift σ hσ n k h (φ (k⁻¹ * y))
-      _ = (levelLift σ (n + 1)
+      _ = (levelLift hprod σ (n + 1)
           (k * h, (TopRep.resolutionX Z (n + 1)).ρ k φ)) y := by
         rw [levelLift_succ_apply, TopRep.resolutionX_succ_ρ_apply_apply]
 
+include hprod in
 /-- **Invariant cochains lift along a map with an equivariant continuous family of sections.** If
 `σ : G × Z → Y` is continuous, `g (σ (h, z)) = z` and `k • σ (h, z) = σ (k h, k • z)`, then every
 homogeneous `n`-cochain of `Z` is the image of one of `Y`: the lift of `F` is
 `x ↦ σₙ (x, F x)`. -/
-theorem cochainsMap_id_f_surjective_of_section (g : Y ⟶ Z) (σ : C(G × Z.V, Y.V))
+private theorem cochainsMap_id_f_surjective_of_section_aux (g : Y ⟶ Z) (σ : C(G × Z.V, Y.V))
     (hσ : ∀ h z, g.hom (σ (h, z)) = z)
     (hσ' : ∀ k h z, Y.ρ k (σ (h, z)) = σ (k * h, Z.ρ k z)) (n : ℕ) :
     Function.Surjective ((cochainsMap (ContinuousMonoidHom.id G) g).f n).hom := by
   intro (F : (TopRep.resolutionX Z (n + 1)).ρ.invariants)
   let F₀ : C(G, (TopRep.resolutionX Z n).V) := F.val
   let L : C(G, (TopRep.resolutionX Y n).V) :=
-    ⟨fun x ↦ levelLift σ n (x, F₀ x), (levelLift σ n).continuous.comp
+    ⟨fun x ↦ levelLift hprod σ n (x, F₀ x), (levelLift hprod σ n).continuous.comp
       (continuous_id.prodMk F₀.continuous)⟩
   have hL : L ∈ (TopRep.resolutionX Y (n + 1)).ρ.invariants := fun k ↦ ContinuousMap.ext fun y ↦ by
     calc
       ((TopRep.resolutionX Y (n + 1)).ρ k L) y =
           (TopRep.resolutionX Y n).ρ k (L (k⁻¹ * y)) :=
         TopRep.resolutionX_succ_ρ_apply_apply Y n k L y
-      _ = levelLift σ n (y, F₀ y) := by
+      _ = levelLift hprod σ n (y, F₀ y) := by
         -- The invariant condition is stated for the successor resolution; unfold its action
         -- to apply the equivariance rule for `levelLift` at level `n`.
         change (TopRep.resolutionX Y n).ρ k
-          (levelLift σ n (k⁻¹ * y, F₀ (k⁻¹ * y))) = levelLift σ n (y, F₀ y)
-        rw [ρ_levelLift σ hσ', mul_inv_cancel_left]
+          (levelLift hprod σ n (k⁻¹ * y, F₀ (k⁻¹ * y))) = levelLift hprod σ n (y, F₀ y)
+        rw [ρ_levelLift hprod σ hσ', mul_inv_cancel_left]
         congr 2
         exact congrArg (fun F' : C(G, (TopRep.resolutionX Z n).V) ↦ F' y) (F.property k)
       _ = L y := rfl
   refine ⟨⟨L, hL⟩, Subtype.ext ((coe_cochainsMap_id_f_hom_apply g n ⟨L, hL⟩).trans ?_)⟩
   exact ContinuousMap.ext fun y ↦ by
     rw [resolutionMap_id_succ_apply]
-    exact resolutionMap_levelLift σ g hσ n y (F₀ y)
+    exact resolutionMap_levelLift hprod σ g hσ n y (F₀ y)
+
+/-- **Invariant cochains lift along a map with an equivariant continuous family of sections.** If
+`σ : G × Z → Y` is continuous, `g (σ (h, z)) = z` and `k • σ (h, z) = σ (k h, k • z)`, then every
+homogeneous `n`-cochain of `Z` is the image of one of `Y`: the lift of `F` is
+`x ↦ σₙ (x, F x)`. -/
+theorem cochainsMap_id_f_surjective_of_section [LocallyCompactSpace G] (g : Y ⟶ Z)
+    (σ : C(G × Z.V, Y.V)) (hσ : ∀ h z, g.hom (σ (h, z)) = z)
+    (hσ' : ∀ k h z, Y.ρ k (σ (h, z)) = σ (k * h, Z.ρ k z)) (n : ℕ) :
+    Function.Surjective ((cochainsMap (ContinuousMonoidHom.id G) g).f n).hom :=
+  cochainsMap_id_f_surjective_of_section_aux (fun T _ ↦ by
+    apply ContinuousMap.continuous_of_continuous_uncurry
+    exact continuous_fst.fst.prodMk <|
+      continuous_eval.comp (continuous_fst.snd.prodMk continuous_snd)) g σ hσ hσ' n
 
 end Lift
 
@@ -379,20 +397,28 @@ theorem continuous_ρ₃ : Continuous fun p : G × S.X₃ ↦ S.X₃.ρ p.1 p.2 
 
 end
 
+/-- The twisted section `(h, z) ↦ h • s (h⁻¹ • z)` is a continuous equivariant family
+of sections. -/
+private theorem exists_twisted_section :
+    ∃ σ : C(G × S.X₃, S.X₂), (∀ h z, S.g.hom (σ (h, z)) = z) ∧
+      ∀ k h z, S.X₂.ρ k (σ (h, z)) = σ (k * h, S.X₃.ρ k z) := by
+  obtain ⟨s, hs, hgs⟩ := hS.exists_continuous_section
+  let σ : C(G × S.X₃, S.X₂) :=
+    ⟨fun p ↦ S.X₂.ρ p.1 (s (S.X₃.ρ p.1⁻¹ p.2)), hS.continuous_ρ₂.comp <| continuous_fst.prodMk <|
+      hs.comp <| hS.continuous_ρ₃.comp (continuous_fst.inv.prodMk continuous_snd)⟩
+  have hσ (h : G) (z : S.X₃) : σ (h, z) = S.X₂.ρ h (s (S.X₃.ρ h⁻¹ z)) := rfl
+  refine ⟨σ, fun h z ↦ ?_, fun k h z ↦ ?_⟩
+  · simp [hσ, S.g.hom.isIntertwining, hgs, ← mul_apply_eq_comp, ← map_mul]
+  · simp [hσ, ← mul_apply_eq_comp, ← map_mul, mul_assoc]
+
 /-- **Continuous cochains lift along the second map** of a topologically short exact sequence,
 in every degree, over a locally compact group. The lift uses the twisted section
 `(h, z) ↦ h • s (h⁻¹ • z)`, which is continuous by joint continuity of the actions and
 equivariant. -/
 theorem cochainsMap_g_f_surjective [LocallyCompactSpace G] (n : ℕ) :
     Function.Surjective ((cochainsMap (ContinuousMonoidHom.id G) S.g).f n).hom := by
-  obtain ⟨s, hs, hgs⟩ := hS.exists_continuous_section
-  let σ : C(G × S.X₃, S.X₂) :=
-    ⟨fun p ↦ S.X₂.ρ p.1 (s (S.X₃.ρ p.1⁻¹ p.2)), hS.continuous_ρ₂.comp <| continuous_fst.prodMk <|
-      hs.comp <| hS.continuous_ρ₃.comp (continuous_fst.inv.prodMk continuous_snd)⟩
-  have hσ (h : G) (z : S.X₃) : σ (h, z) = S.X₂.ρ h (s (S.X₃.ρ h⁻¹ z)) := rfl
-  refine cochainsMap_id_f_surjective_of_section S.g σ (fun h z ↦ ?_) (fun k h z ↦ ?_) n
-  · simp [hσ, S.g.hom.isIntertwining, hgs, ← mul_apply_eq_comp, ← map_mul]
-  · simp [hσ, ← mul_apply_eq_comp, ← map_mul, mul_assoc]
+  obtain ⟨σ, hσ, hσ'⟩ := hS.exists_twisted_section
+  exact cochainsMap_id_f_surjective_of_section S.g σ hσ hσ' n
 
 /-- **The cochain sequence of a topologically short exact sequence is short exact.** After
 forgetting topologies, `0 → C•(G, X₁) → C•(G, X₂) → C•(G, X₃) → 0` is a short exact sequence of
@@ -410,6 +436,34 @@ theorem cochains_shortExact_moduleCat [LocallyCompactSpace G] :
 end TopShortExact
 
 end CategoryTheory.ShortComplex
+
+namespace TauCeti.ContinuousCohomology
+
+universe u v
+
+variable {R : Type u} [Ring R] [TopologicalSpace R]
+  {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  {Y Z : TopRep.{v} R G}
+
+/-- Over a topological group, a coefficient map admitting a continuous set-theoretic section
+induces a surjection on continuous homogeneous cochains in every degree,
+when the source action is jointly continuous. -/
+theorem continuousCochainsFunctor_map_f_surjective_of_continuous_section (g : Y ⟶ Z)
+    (hs : ∃ s : Z.V → Y.V, Continuous s ∧ ∀ z, g.hom (s z) = z)
+    (hρ : Continuous fun p : G × Y.V ↦ Y.ρ p.1 p.2) (n : ℕ) :
+    Function.Surjective (((continuousCochainsFunctor R G).map g).f n).hom := by
+  rw [continuousCochainsFunctor_map]
+  let S := ShortComplex.mk (TopRep.kerι g) g (TopRep.kerι_comp g)
+  have hS : S.TopShortExact :=
+    { isEmbedding_f := TopRep.isEmbedding_kerι g
+      exact := TopRep.exact_kerι g
+      exists_continuous_section := hs
+      continuous_ρ₂ := hρ }
+  obtain ⟨σ, hσ, hσ'⟩ := hS.exists_twisted_section
+  exact cochainsMap_id_f_surjective_of_section_aux
+    (fun _ _ ↦ ContinuousMap.continuous_prodMk_const) S.g σ hσ hσ' n
+
+end TauCeti.ContinuousCohomology
 
 namespace TauCeti
 

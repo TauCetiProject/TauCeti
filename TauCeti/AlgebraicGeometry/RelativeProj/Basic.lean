@@ -247,6 +247,14 @@ theorem relativeProjCover_X (U : X.AffineZariskiSite) :
     A.relativeProjCover.X U = Proj (A.gradedSectionsGrading U.toOpens) :=
   (rfl)
 
+/-- The charts of the relative `Proj` are compatible with the transition maps of its gluing
+datum. -/
+@[reassoc]
+theorem relativeProjGluingData_functor_map_comp_relativeProjCover_f
+    {U V : X.AffineZariskiSite} (i : U ⟶ V) :
+    A.relativeProjGluingData.functor.map i ≫ A.relativeProjCover.f V = A.relativeProjCover.f U :=
+  colimit.w _ _
+
 /-- Over an affine open `U`, the structure morphism of the relative `Proj` is the coefficient
 projection `Proj (⨁ n, Γ(Aₙ, U)) ⟶ Spec Γ(X, U)` followed by the chart `Spec Γ(X, U) ⟶ X`. -/
 @[reassoc]
@@ -272,6 +280,17 @@ theorem isPullback_relativeProjCover (U : X.AffineZariskiSite) :
     IsPullback (Proj.toSpecCoeff (A.gradedSectionsGrading U.toOpens) ≫ U.property.isoSpec.inv)
       (A.relativeProjCover.f U) U.toOpens.ι A.relativeProjToBase :=
   A.relativeProjGluingData.isPullback_natTrans_ι_toBase U
+
+/-- Over an affine open `U` of `X`, the relative `Proj` is `Proj (⨁ n, Γ(Aₙ, U))`, as the base
+change of its structure morphism along `U.property.fromSpec : Spec Γ(X, U) ⟶ X`. -/
+theorem isPullback_relativeProjCover_fromSpec
+    (U : X.AffineZariskiSite) :
+    IsPullback (Proj.toSpecCoeff (A.gradedSectionsGrading U.toOpens))
+      (A.relativeProjCover.f U) U.property.fromSpec A.relativeProjToBase :=
+  (A.isPullback_relativeProjCover U).of_iso (.refl _) U.property.isoSpec (.refl _) (.refl _)
+    (by simp) ((Category.comp_id _).trans (Category.id_comp _).symm)
+    (by simpa only [Iso.refl_hom, Category.comp_id] using U.property.isoSpec_hom_fromSpec.symm)
+    ((Category.comp_id _).trans (Category.id_comp _).symm)
 
 end Gluing
 
