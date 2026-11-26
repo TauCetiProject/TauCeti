@@ -69,8 +69,9 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [To
 
 variable (A k α) in
 /-- The elements of `C^{k,α}(A.image i)` vanishing at every point of the chart image whose
-preimage under chart `i` lies outside `L`: the chart-`i` components of the elements of
-`C^{k,α}(V)` vanishing off `L`. -/
+preimage under chart `i` lies outside `L`. This subspace contains the chart-`i` components of the
+elements of `C^{k,α}(V)` vanishing off `L`; for closed `L ⊆ A.dom i`, `α ≤ 1` and `k + 1 ≤ n`,
+every element of it is such a component, of its extension by zero `extendByZeroL`. -/
 def chartZeroOff (i : Fin A.n) (L : Set M) : Submodule ℝ (CkHolderSpaceOn k α (A.image i) F) where
   carrier := {f | ∀ y : A.image i, (A.chart i).symm y ∉ L → f y = 0}
   add_mem' {f g} hf hg y hy := by
@@ -178,6 +179,11 @@ private def extendByZeroₗ (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ 
     · simp only [RingHom.id_apply, Submodule.coe_smul, Pi.smul_apply,
         ofSection_chartSection_component]
 
+private theorem extendByZeroₗ_apply_self (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n)
+    (hL : IsClosed L) (hLi : L ⊆ A.dom i) (f : chartZeroOff A k α i L) :
+    (extendByZeroₗ hα hn hL hLi f : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F) i = f :=
+  ofSection_chartSection_component _ _
+
 private theorem toSection_extendByZeroₗ (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n)
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (f : chartZeroOff A k α i L) :
     toSection (extendByZeroₗ hα hn hL hLi f) =
@@ -199,8 +205,7 @@ def extendByZeroL (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n) (hL : I
         ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F) i) atTop
         (𝓝 ((v : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F) i)) :=
       ((continuous_apply i).comp continuous_subtypeVal).continuousAt.tendsto.comp hv
-    simp only [extendByZeroₗ, LinearMap.coe_mk, AddHom.coe_mk,
-      ofSection_chartSection_component] at hcomp
+    simp only [extendByZeroₗ_apply_self] at hcomp
     have hvi : (v : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F) i = f :=
       tendsto_nhds_unique hcomp (continuous_subtypeVal.continuousAt.tendsto.comp hu)
     -- The limit `v` vanishes off `L`, reading it in a chart through each point.
@@ -220,22 +225,22 @@ def extendByZeroL (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n) (hL : I
     refine eq_of_component_eq hLi hvL (fun x hx ↦ ?_) ?_
     · rw [toSection_extendByZeroₗ]
       exact chartSection_eq_zero_of_notMem _ hx
-    · rw [hvi, extendByZeroₗ, LinearMap.coe_mk, AddHom.coe_mk, ofSection_chartSection_component]
+    · rw [hvi, extendByZeroₗ_apply_self]
 
 /-- The underlying section of the extension by zero of `f` reads as `f` in chart `i` and vanishes
 off the domain of chart `i`. -/
 theorem toSection_extendByZeroL (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n) (hL : IsClosed L)
     (hLi : L ⊆ A.dom i) (f : chartZeroOff A k α i L) :
     toSection (extendByZeroL hα hn hL hLi f) =
-      A.chartSection i (f : CkHolderSpaceOn k α (A.image i) F).extend :=
-  toSection_extendByZeroₗ hα hn hL hLi f
+      A.chartSection i (f : CkHolderSpaceOn k α (A.image i) F).extend := by
+  rw [extendByZeroL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, toSection_extendByZeroₗ]
 
 /-- The chart-`i` component of the extension by zero of `f` is `f`. -/
 @[simp]
 theorem extendByZeroL_apply_self (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n) (hL : IsClosed L)
     (hLi : L ⊆ A.dom i) (f : chartZeroOff A k α i L) :
-    (extendByZeroL hα hn hL hLi f : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F) i = f :=
-  ofSection_chartSection_component _ _
+    (extendByZeroL hα hn hL hLi f : ∀ i : Fin A.n, CkHolderSpaceOn k α (A.image i) F) i = f := by
+  rw [extendByZeroL, ContinuousLinearMap.coeFn_ofSeqClosedGraph, extendByZeroₗ_apply_self]
 
 /-- The underlying section of the extension by zero vanishes off `L`. -/
 theorem toSection_extendByZeroL_eq_zero (hα : α ≤ 1) (hn : (k : WithTop ℕ∞) + 1 ≤ n)

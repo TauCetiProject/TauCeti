@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Holder.Little.Basic
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.ContDiff.Indicator
 import TauCeti.Analysis.Holder.Little.Cutoff
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.ChartSection
 import TauCeti.Geometry.Manifold.VectorBundle.Holder.ExtendByZero
@@ -33,8 +32,9 @@ Membership implies the chart condition by
 `TauCeti.HolderSection.mem_littleHolder_component_of_mem_littleHolder`. For the converse, write
 `w = ∑ᵢ ρᵢ w` for a smooth partition of unity `ρ` subordinate to the chart domains. The chart-`i`
 reading of `ρᵢ w` is `χ wᵢ`, where `χ` is `ρᵢ` read in chart `i` and extended by zero, a smooth
-function with compact support in the chart image. Multiplication by `χ` maps the little Hölder
-space of the chart image into the whole-space little Hölder space
+function with compact support in the chart image
+(`TauCeti.FiniteBundleAtlas.exists_contDiff_eqOn_comp_chart_symm`). Multiplication by `χ` maps
+the little Hölder space of the chart image into the whole-space little Hölder space
 (`TauCeti.CkHolderSpaceOn.cutoffSMulL_mem_littleHolder`), whose compactly supported elements are
 limits of smooth maps supported in any neighbourhood of their support
 (`CkHolderSpace.exists_mem_smoothBoundedDerivatives_hasCompactSupport_tsupport_subset_norm_sub_lt`).
@@ -75,34 +75,6 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensio
   [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] {A : FiniteBundleAtlas E M F V} {k : ℕ} {α : ℝ≥0}
-
-omit [FiniteDimensional ℝ E] [T2Space M] [NormedSpace ℝ F] [CompleteSpace F]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] in
-/-- A smooth function `ρ` on `M` whose support lies in the domain of chart `i`, read in chart `i`
-and extended by zero, is a smooth function on `E` vanishing off the chart image of the support of
-`ρ`. -/
-private theorem exists_contDiff_eqOn_comp_chart_symm {ρ : M → ℝ}
-    (hρ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ ρ) {i : Fin A.n} (hρi : tsupport ρ ⊆ A.dom i) :
-    ∃ χ : E → ℝ, ContDiff ℝ ∞ χ ∧ (∀ y ∉ A.chart i '' tsupport ρ, χ y = 0) ∧
-      ∀ y ∈ A.image i, χ y = ρ ((A.chart i).symm y) := by
-  set K := A.chart i '' tsupport ρ
-  have hK : IsCompact K := ((A.isCompact_closure_dom i).of_isClosed_subset (isClosed_tsupport ρ)
-    (hρi.trans subset_closure)).image_of_continuousOn
-      ((A.chart i).continuousOn.mono (hρi.trans (A.dom_subset_chart_source i)))
-  have hKt : K ⊆ (A.chart i).target :=
-    image_subset_iff.2 fun x hx ↦ (A.chart i).map_source (A.dom_subset_chart_source i (hρi hx))
-  have hχK (y : E) (hy : y ∉ K) :
-      (A.chart i).target.indicator (fun y ↦ ρ ((A.chart i).symm y)) y = 0 := by
-    by_cases hyt : y ∈ (A.chart i).target
-    · rw [indicator_of_mem hyt]
-      exact image_eq_zero_of_notMem_tsupport fun h ↦ hy ⟨_, h, (A.chart i).right_inv hyt⟩
-    · exact indicator_of_notMem hyt _
-  have hρc : ContDiffOn ℝ ∞ (fun y ↦ ρ ((A.chart i).symm y)) (A.chart i).target :=
-    contMDiffOn_iff_contDiffOn.1 (hρ.comp_contMDiffOn contMDiffOn_chart_symm)
-  refine ⟨_, hρc.contDiff_indicator_of_isClosed (A.chart i).open_target hK.isClosed hKt
-    fun y ⟨hyt, hy⟩ ↦ ⟨_, subset_tsupport ρ hy, (A.chart i).right_inv hyt⟩, hχK,
-    fun y hy ↦ indicator_of_mem ((A.image_subset_target_inter_preimage_baseSet i hy).1) _⟩
 
 /-- **Little Hölder functions in one chart extend to little Hölder sections.** For `α < 1`, let
 `K'` be a compact subset of the image of chart `i`, and let `g` be a compactly supported element of
@@ -156,13 +128,11 @@ private theorem exists_mem_littleHolder_toSection_eq_smul (hα : α < 1) {ρ : M
     ∃ v ∈ littleHolder A k α, toSection v = fun x ↦ ρ x • toSection w x := by
   -- The cutoff `χ`: `ρ` read in chart `i`, supported in the compact set `K ⊆ A.image i`.
   set K := A.chart i '' tsupport ρ
-  have hK : IsCompact K := ((A.isCompact_closure_dom i).of_isClosed_subset (isClosed_tsupport ρ)
-    (hρi.trans subset_closure)).image_of_continuousOn
-      ((A.chart i).continuousOn.mono (hρi.trans (A.dom_subset_chart_source i)))
+  have hK : IsCompact K := A.isCompact_chart_image_of_isClosed (isClosed_tsupport ρ) hρi
   have hKi : K ⊆ A.image i := by
     rintro _ ⟨x, hx, rfl⟩
     exact A.mem_image.2 ⟨x, hρi hx, rfl⟩
-  obtain ⟨χ, hχ, hχK, hχi⟩ := exists_contDiff_eqOn_comp_chart_symm (A := A) hρ hρi
+  obtain ⟨χ, hχ, hχK, hχi⟩ := A.exists_contDiff_eqOn_comp_chart_symm hρ hρi
   have hχK' : tsupport χ ⊆ K :=
     closure_minimal (fun y hy ↦ by_contra fun h ↦ hy (hχK y h)) hK.isClosed
   obtain ⟨C, -, hC⟩ := (HasCompactSupport.intro hK hχK).exists_bound_iteratedFDeriv_of_contDiff
@@ -193,7 +163,7 @@ private theorem exists_mem_littleHolder_toSection_eq_smul (hα : α < 1) {ρ : M
     (hgK.trans hKK'), toSection_extendByZeroL_eq hα.le hn hL hLi (fun x hx ↦ ?_) fun y ↦ ?_⟩
   · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (hρi h), zero_smul]
   · rw [CkHolderSpace.restrictOnL_apply, CkHolderSpaceOn.cutoffSMulL_apply_coe,
-      hχi y y.property, A.coord_fun_smul i _ _ y.property, coord_toSection]
+      hχi y.property, A.coord_fun_smul i _ _ y.property, coord_toSection]
 
 /-- **The little Hölder space of sections is characterized by vanishing small-scale modulus in the
 charts.** For `α < 1`, an element of `C^{k,α}(V)` lies in the little Hölder space `h^{k,α}(V)`,

@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Topology.ShrinkingLemma
 public import Mathlib.Topology.VectorBundle.Basic
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+import TauCeti.Analysis.Calculus.ContDiff.Indicator
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -83,6 +84,8 @@ closed upper half-plane are read in `ℂ` in
   for a `C¹` manifold.
 * `TauCeti.FiniteBundleAtlas.exists_bound_comp_chart_symm`: a `C¹` function read in a chart is
   bounded, with bounded derivative, on the chart image.
+* `TauCeti.FiniteBundleAtlas.exists_contDiff_eqOn_comp_chart_symm`: a `Cⁿ` function supported in
+  a chart domain, read in the chart and extended by zero, is `Cⁿ` on the model space.
 * `TauCeti.FiniteBundleAtlas.contMDiff_smul_chartSection`: a `Cⁿ` cutoff supported in a chart
   domain times a section that is `Cⁿ` in that chart is a `Cⁿ` section.
 * `TauCeti.FiniteBundleAtlas.contDiffOn_coord`: the chart coordinates of a `Cᵏ` section of a `Cᵏ`
@@ -356,6 +359,13 @@ theorem isCompact_chart_image_closure_dom (i : Fin A.n) :
     IsCompact (A.chart i '' closure (A.dom i)) :=
   (A.isCompact_closure_dom i).image_of_continuousOn
     ((A.chart i).continuousOn.mono (A.closure_dom_subset_source i))
+
+/-- The image under chart `i` of a closed subset of its domain is a compact set. -/
+theorem isCompact_chart_image_of_isClosed {i : Fin A.n} {L : Set M} (hL : IsClosed L)
+    (hLi : L ⊆ A.dom i) : IsCompact (A.chart i '' L) :=
+  ((A.isCompact_closure_dom i).of_isClosed_subset hL
+    (hLi.trans subset_closure)).image_of_continuousOn
+      ((A.chart i).continuousOn.mono (hLi.trans (A.dom_subset_chart_source i)))
 
 /-- The image of chart `i` lies in the image of the closure of the chart domain. -/
 theorem image_subset_chart_image_closure_dom (i : Fin A.n) :
@@ -709,6 +719,28 @@ theorem exists_bound_comp_chart_symm {G : Type*} [NormedAddCommGroup G] [NormedS
   exact ⟨B.toNNReal, L.toNNReal, fun z hz ↦
     ⟨(hB z (subset_closure hz)).trans (Real.le_coe_toNNReal _),
       (hL z (subset_closure hz)).trans (Real.le_coe_toNNReal _)⟩⟩
+
+/-- **Chart cutoffs.** A `Cⁿ` function `ρ` on `M` whose support lies in the domain of chart `i`,
+read in chart `i` and extended by zero, is a `Cⁿ` function on `E` vanishing off the chart image of
+the support of `ρ`. -/
+theorem exists_contDiff_eqOn_comp_chart_symm {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {n : WithTop ℕ∞} [IsManifold 𝓘(ℝ, E) n M] {ρ : M → G}
+    (hρ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, G) n ρ) {i : Fin A.n} (hρi : tsupport ρ ⊆ A.dom i) :
+    ∃ χ : E → G, ContDiff ℝ n χ ∧ (∀ y ∉ A.chart i '' tsupport ρ, χ y = 0) ∧
+      EqOn χ (fun y ↦ ρ ((A.chart i).symm y)) (A.image i) := by
+  set K := A.chart i '' tsupport ρ
+  have hKt : K ⊆ (A.chart i).target :=
+    image_subset_iff.2 fun x hx ↦ (A.chart i).map_source (A.dom_subset_chart_source i (hρi hx))
+  have hχK (y : E) (hy : y ∉ K) :
+      (A.chart i).target.indicator (fun y ↦ ρ ((A.chart i).symm y)) y = 0 := by
+    by_cases hyt : y ∈ (A.chart i).target
+    · rw [indicator_of_mem hyt]
+      exact image_eq_zero_of_notMem_tsupport fun h ↦ hy ⟨_, h, (A.chart i).right_inv hyt⟩
+    · exact indicator_of_notMem hyt _
+  refine ⟨_, (A.contDiffOn_comp_chart_symm hρ i).contDiff_indicator_of_isClosed
+    (A.chart i).open_target (A.isCompact_chart_image_of_isClosed (isClosed_tsupport ρ) hρi).isClosed
+    hKt fun y ⟨hyt, hy⟩ ↦ ⟨_, subset_tsupport ρ hy, (A.chart i).right_inv hyt⟩, hχK,
+    fun y hy ↦ indicator_of_mem ((A.image_subset_target_inter_preimage_baseSet i hy).1) _⟩
 
 end FiniteBundleAtlas
 
