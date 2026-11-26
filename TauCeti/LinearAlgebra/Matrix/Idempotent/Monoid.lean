@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
 public import Mathlib.LinearAlgebra.Dimension.DivisionRing
+public import TauCeti.Algebra.Ring.Pi
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.Equivalence
 public import TauCeti.RingTheory.Idempotents.Matrix
 
@@ -30,7 +31,9 @@ commutative monoid with zero the empty matrix. No cancellation is assumed.
   `e ⊕ r ∼ f ⊕ r` for some `r`; `V(A)` need not be cancellative.
 * Functoriality (`map`, `congr`), the product decomposition
   `prodEquiv : IdempotentMonoid (A × B) ≃+ IdempotentMonoid A × IdempotentMonoid B` (with
-  `prodEquiv_mk` and `prodEquiv_symm_mk_mk`), transposition over the opposite ring (`opEquiv`), the
+  `prodEquiv_mk` and `prodEquiv_symm_mk_mk`) and its version
+  `piEquiv : IdempotentMonoid (Π j, R j) ≃+ Π j, IdempotentMonoid (R j)` for finite products (with
+  `piEquiv_mk` and `piEquiv_symm_single_mk`), transposition over the opposite ring (`opEquiv`), the
   complement relation `mk_add_mk_one_sub` (`[f] + [1 - f] = [1]`), the ring
   group-completion normal form `exists_of_mk_sub_of_mk_one_eq`, and the division-ring rank
   isomorphisms `finrankAddEquiv : IdempotentMonoid D ≃+ ℕ` and `grothendieckAddGroupEquivInt`.
@@ -444,6 +447,87 @@ theorem prodEquiv_symm_mk_mk {e₁ : Matrix ι ι R} {e₂ : Matrix ι ι S} (he
   (prodEquiv R S).symm_apply_eq.2 (prodHom_mk_prodEquiv_symm he₁ he₂).symm
 
 end Prod
+
+section Pi
+
+/-! ### The idempotent monoid of a finite product -/
+
+variable {J : Type w} (R : J → Type u) [∀ j, NonUnitalSemiring (R j)]
+
+/-- Taking all components of an idempotent matrix over `Π j, R j`, on idempotent monoids. -/
+private noncomputable abbrev piHom :
+    IdempotentMonoid (∀ j, R j) →+ ∀ j, IdempotentMonoid (R j) :=
+  AddMonoidHom.pi fun j ↦ map (Pi.evalNonUnitalRingHom R j)
+
+variable {R}
+
+private theorem piHom_injective : Function.Injective (piHom R) := by
+  intro x y h
+  induction x using ind with | mk n e he
+  induction y using ind with | mk m f hf
+  rw [mk_eq_mk_iff, idempotentEquivalent_pi_iff]
+  exact fun j ↦ by simpa using congr_fun h j
+
+/-- An idempotent matrix supported in the factor `j` has the component `e` at `j` and the zero
+component elsewhere. -/
+private theorem piHom_mk_map_single [DecidableEq J] {j : J} {e : Matrix ι ι (R j)}
+    (he : IsIdempotentElem e) :
+    piHom R
+        (mk (e.map (Pi.single j)) (he.matrix_map_piSingle j)) =
+      Pi.single j (mk e he) := by
+  ext k
+  rw [AddMonoidHom.pi_apply, map_mk]
+  rcases eq_or_ne k j with rfl | hkj
+  · rw [Pi.single_eq_same]
+    exact mk_congr_matrix _ _ (by ext; simp)
+  · rw [Pi.single_eq_of_ne hkj, ← mk_zero (ι := ι)]
+    exact mk_congr_matrix _ _ (by ext; simp [Pi.single_eq_of_ne hkj])
+
+private theorem piHom_surjective [Finite J] : Function.Surjective (piHom R) := by
+  classical
+  cases nonempty_fintype J
+  intro x
+  -- `x` is the sum of the families `Pi.single j (x j)`, each the image of an idempotent matrix
+  -- supported in the factor `j`.
+  have hsingle (j : J) : Pi.single j (x j) ∈ AddMonoidHom.mrange (piHom R) := by
+    induction x j using ind with | mk n e he => exact ⟨_, piHom_mk_map_single he⟩
+  rw [← Finset.univ_sum_single x]
+  exact AddSubmonoid.sum_mem _ fun j _ ↦ hsingle j
+
+variable (R) in
+/-- **The idempotent monoid of a finite product.** `V(Π j, R j) ≃+ Π j, V(R j)`, sending the class
+of an idempotent matrix over `Π j, R j` to the classes of its components
+(`TauCeti.IdempotentMonoid.piEquiv_mk`). An idempotent matrix over a factor `R j` comes from the
+matrix over the product supported in that factor
+(`TauCeti.IdempotentMonoid.piEquiv_symm_single_mk`).
+Finiteness of `J` is used for surjectivity: all components of a matrix over the product have the
+same size, whereas a family of classes may need components of unbounded sizes. -/
+noncomputable def piEquiv [Finite J] : IdempotentMonoid (∀ j, R j) ≃+ ∀ j, IdempotentMonoid (R j) :=
+  AddEquiv.ofBijective (piHom R) ⟨piHom_injective, piHom_surjective⟩
+
+/-- The components of `TauCeti.IdempotentMonoid.piEquiv` are the maps induced by the evaluations. -/
+theorem piEquiv_apply [Finite J] (x : IdempotentMonoid (∀ j, R j)) (j : J) :
+    piEquiv R x j = map (Pi.evalNonUnitalRingHom R j) x :=
+  (rfl)
+
+/-- `TauCeti.IdempotentMonoid.piEquiv` sends the class of an idempotent matrix `e` over
+`Π j, R j` to the classes of its components `e.map (· j)`. -/
+@[simp]
+theorem piEquiv_mk [Finite J] {e : Matrix ι ι (∀ j, R j)} (he : IsIdempotentElem e) :
+    piEquiv R (mk e he) = fun j ↦ mk (e.map (· j)) (he.matrix_map (Pi.evalNonUnitalRingHom R j)) :=
+  funext fun _ ↦ map_mk _ e he
+
+/-- The inverse of `TauCeti.IdempotentMonoid.piEquiv` sends the class of an idempotent matrix `e`
+over the factor `R j`, placed at `j`, to the class of the matrix over `Π j, R j` supported in that
+factor. -/
+@[simp]
+theorem piEquiv_symm_single_mk [Finite J] [DecidableEq J] {j : J} {e : Matrix ι ι (R j)}
+    (he : IsIdempotentElem e) :
+    (piEquiv R).symm (Pi.single j (mk e he)) =
+      mk (e.map (Pi.single j)) (he.matrix_map_piSingle j) :=
+  (piEquiv R).symm_apply_eq.2 (piHom_mk_map_single he).symm
+
+end Pi
 
 section Opposite
 

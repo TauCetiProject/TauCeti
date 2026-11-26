@@ -78,7 +78,9 @@ In the chart at a point `α`, the equation becomes a coordinate Floer equation o
   `isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub`). The
   two vector fields together form the Hamiltonian one-form `X_K = ds ⊗ X_{K_s} + dt ⊗ X_{K_t}`
   read in the chart (`TauCeti.SmoothTwoForm.hamiltonianOneFormInChartAt`), the one-form of this
-  coordinate equation.
+  coordinate equation. A `Cⁿ` solution, `n ≠ 0`, on an open set with values in the chart source
+  has a `Cⁿ` coordinate expression solving this coordinate equation
+  (`TauCeti.SmoothTwoForm.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub`).
 
 Compactness of solutions with values in one chart, of either kind, is
 `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`, and the mean-value inequality in a chart
@@ -606,6 +608,32 @@ theorem isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComple
   have h' := congrArg ((trivializationAt E (TangentSpace I) α).symmL ℝ (u z)) h
   rwa [Trivialization.symmL_continuousLinearMapAt _ hb,
     Trivialization.symmL_continuousLinearMapAt _ hb] at h'
+
+/-- **Floer solutions in a chart solve the coordinate Floer equation.** Let `u` be `Cⁿ`, `n ≠ 0`,
+on an open set `U`, with values in the source of the chart at `α`, and solve the Floer equation for
+`J(z, u)` on `U`. Then its coordinate expression `v = extChartAt I α ∘ u` is `Cⁿ` on `U` and solves
+the coordinate Floer equation `∂ₜv - X(z, v) i = J(z, v) (∂ₛv - X(z, v) 1)` on `U`, for the
+structure `J` and the Hamiltonian one-form `X` of `K_s ds + K_t dt` read in the chart. -/
+theorem contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub (ω : SmoothTwoForm I M)
+    {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)} {n : WithTop ℕ∞}
+    [IsManifold I n M] {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u U)
+    (hn : n ≠ 0) (hus : MapsTo u U (extChartAt I α).source)
+    (hfl : ∀ z ∈ U, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+      (ω.perturbedMFDeriv Ks Kt u z).toLinearMap) :
+    ContDiffOn ℝ n (extChartAt I α ∘ u) U ∧ ∀ z ∈ U,
+      fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineImag -
+          ω.hamiltonianOneFormInChartAt α Ks Kt (z, (extChartAt I α ∘ u) z) stdComplexLineImag =
+        Floer.almostComplexInChartAt I α J (z, (extChartAt I α ∘ u) z)
+          (fderiv ℝ (extChartAt I α ∘ u) z stdComplexLineReal -
+            ω.hamiltonianOneFormInChartAt α Ks Kt (z, (extChartAt I α ∘ u) z)
+              stdComplexLineReal) := by
+  refine ⟨contMDiffOn_iff_contDiffOn.1 <| (contMDiffOn_extChartAt (n := n)).comp hu
+    fun z hz ↦ by rw [mem_preimage, ← extChartAt_source I]; exact hus hz, fun z hz ↦ ?_⟩
+  simpa only [hamiltonianOneFormInChartAt_stdComplexLineReal,
+    hamiltonianOneFormInChartAt_stdComplexLineImag, Function.comp_apply] using
+    (ω.isComplexLinearMap_perturbedMFDeriv_iff_fderiv_extChartAt_comp_stdComplexLineImag_sub
+      ((hu.mdifferentiableOn hn).mdifferentiableAt (hU.mem_nhds hz)) (hus hz)).1
+      (hfl z hz)
 
 omit [FiniteDimensional ℝ E] in
 /-- **Continuity of a Hamiltonian vector field at a point from its reading in one chart.** On a

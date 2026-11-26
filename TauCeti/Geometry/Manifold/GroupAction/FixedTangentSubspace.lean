@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.GroupTheory.GroupAction.Hom
@@ -57,9 +58,11 @@ differential `dψ_p` carries `V_p` onto `V_(ψ p)`
 (`Diffeomorph.map_fixedTangentSubspace`). A globally equivariant diffeomorphism therefore carries
 the fixed set, its parts `M^K_d` and the connected components of the fixed set onto those of `N`
 (`TauCeti.MulAction.image_fixedPoints_of_bijective`, `Diffeomorph.image_fixedPointsOfFinrank`,
-`Homeomorph.image_connectedComponentIn_fixedPoints`). No smoothness of the actions is used: where
-`k •` is not differentiable, the chain rule through a diffeomorphism still holds with both sides
-zero.
+`Homeomorph.image_connectedComponentIn_fixedPoints`). No smoothness of the actions is used in
+these diffeomorphism results: where `k •` is not differentiable, the chain rule through a
+diffeomorphism still holds with both sides zero. Applied to the diffeomorphisms `a •` of a group
+acting smoothly on `M`, they show that for a subgroup `K` every element of the centralizer of `K`
+maps each part `M^K_d` onto itself (`TauCeti.smul_mem_fixedPointsOfFinrank_iff`).
 
 ## Main definitions
 
@@ -97,6 +100,8 @@ zero.
   fixed tangent subspaces.
 * `Diffeomorph.image_fixedPointsOfFinrank`: an equivariant diffeomorphism carries each part
   `M^K_d` of the fixed set onto the corresponding part of the target.
+* `TauCeti.smul_mem_fixedPointsOfFinrank_iff`: the centralizer of a subgroup `K` preserves each
+  part `M^K_d` of the fixed set of `K`.
 -/
 
 public section
@@ -447,3 +452,28 @@ theorem image_fixedPointsOfFinrank (hn : n ≠ 0) (d : ℕ) :
 end Equivariant
 
 end Diffeomorph
+
+/-! ### The centralizer of a subgroup -/
+
+namespace TauCeti
+
+open scoped ContDiff Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [Group G] {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [MulAction G M]
+  {n : ℕ∞ω} [ContMDiffConstSMul I n G M] {K : Subgroup G}
+
+/-- **The centralizer of a subgroup preserves the parts of its fixed set.** If `a` commutes with
+every element of the subgroup `K`, the diffeomorphism `a • ·` commutes with the action of `K`, so
+`a • x` lies in `M^K_d` exactly when `x` does. -/
+theorem smul_mem_fixedPointsOfFinrank_iff (hn : n ≠ 0) {a : G}
+    (ha : a ∈ Subgroup.centralizer (K : Set G)) {x : M} {d : ℕ} :
+    a • x ∈ fixedPointsOfFinrank I K M d ↔ x ∈ fixedPointsOfFinrank I K M d := by
+  rw [← Diffeomorph.constSmul_apply (I := I) (n := n) a x]
+  refine (Diffeomorph.constSmul I n a).apply_mem_fixedPointsOfFinrank_iff hn fun k : K ↦
+    .of_forall fun y ↦ ?_
+  simp only [Function.comp_apply, Diffeomorph.constSmul_apply, Subgroup.smul_def, smul_smul,
+    Subgroup.mem_centralizer_iff.1 ha k k.property]
+
+end TauCeti

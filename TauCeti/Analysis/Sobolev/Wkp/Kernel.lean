@@ -9,10 +9,11 @@ public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import TauCeti.Analysis.MvPolynomial.PolynomialSpace
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
 import TauCeti.Analysis.MvPolynomial.Poincare
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 
 /-!
 # Polynomial kernel of the top weak derivative on `W^{m+1,p}(Ω)`
@@ -89,7 +90,7 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
 theorem iteratedGradientChain_eq_zero_of_mem_polynomialsDegLE {m k : ℕ} (hmk : m ≤ k)
     {q : EuclideanSpace ℝ ι → ℝ} (hq : q ∈ polynomialsDegLE ι m) :
     iteratedGradientChain q k = 0 := by
-  ext x
+  funext x
   rw [Pi.zero_apply, ← norm_eq_zero, norm_iteratedGradientChain,
     iteratedFDeriv_eq_zero_of_mem_polynomialsDegLE (Nat.lt_succ_of_le hmk) hq, Pi.zero_apply,
     norm_zero]
