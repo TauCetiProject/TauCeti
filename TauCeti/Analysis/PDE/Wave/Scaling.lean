@@ -168,9 +168,9 @@ scales like `2^{k(n/r - n/2 + 1/q)}` and is positive, since `W₊(t)` is unitary
 must agree. This is the case `k = 1` of
 `TauCeti.eq_of_eLpNorm_eLpNorm_phasePropagator_dilateLp_le`. -/
 theorem eq_of_eLpNorm_eLpNorm_halfWavePropagator_dilateLp_le {q r : ℝ≥0∞} (hq : q ≠ 0)
-    (hr : r ≠ 0) {s : ℝ} {f₀ : Lp ℂ 2 (volume : Measure E)} (hf₀ : f₀ ≠ 0) {B : ℝ≥0∞}
+    (hr : r ≠ 0) {s : ℝ} {f₀ : Lp F 2 (volume : Measure E)} (hf₀ : f₀ ≠ 0) {B : ℝ≥0∞}
     (hB : B ≠ ∞) {C : ℝ≥0}
-    (h : ∀ k : ℤ, eLpNorm (fun t ↦ eLpNorm (halfWavePropagator ℂ t
+    (h : ∀ k : ℤ, eLpNorm (fun t ↦ eLpNorm (halfWavePropagator F t
         (dilateLp volume ℝ 2 _ (zpow_pos two_pos k) f₀)) r volume) q volume ≤
       C * (ENNReal.ofReal (((2 : ℝ) ^ k) ^ (-s)) * B)) :
     s = finrank ℝ E / 2 - finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal := by

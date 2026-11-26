@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 
 /-!
 # Homogeneous Littlewood–Paley blocks under dyadic dilations
@@ -63,15 +64,6 @@ theorem fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow
       ← zpow_add₀ two_ne_zero]
   rw [Lp.fourierMultiplierCLM_dilateLp, hsym]
 
-/-- The weight `2^{js}` of the block `Pⱼ` is `2^{-ks}` times the weight `2^{(j+k)s}` of the block
-`P_{j+k}` onto which the dilation `D_{2^k}` moves it. -/
-private theorem ofReal_two_zpow_rpow_eq (s : ℝ) (j k : ℤ) :
-    ENNReal.ofReal (((2 : ℝ) ^ j) ^ s) =
-      ENNReal.ofReal (((2 : ℝ) ^ k) ^ (-s)) * ENNReal.ofReal (((2 : ℝ) ^ (j + k)) ^ s) := by
-  rw [← ENNReal.ofReal_mul (by positivity), zpow_add₀ two_ne_zero,
-    Real.mul_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity), mul_comm,
-    mul_assoc, mul_inv_cancel₀ (by positivity), mul_one]
-
 /-- Each weighted block `2^{js} ‖Pⱼ (D_{2^k} f)‖₂` is `2^{-ks}` times the weighted block
 `2^{(j+k)s} ‖P_{j+k} f‖₂`. -/
 private theorem ofReal_mul_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow
@@ -83,7 +75,10 @@ private theorem ofReal_mul_enorm_fourierMultiplierCLM_littlewoodPaley_dilateLp_t
       ENNReal.ofReal (((2 : ℝ) ^ k) ^ (-s)) * (ENNReal.ofReal (((2 : ℝ) ^ (j + k)) ^ s) *
         ‖Lp.fourierMultiplierCLM F (m (j + k)) f‖ₑ) := by
   rw [φ.fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow hm, LinearIsometryEquiv.eNorm_map,
-    ofReal_two_zpow_rpow_eq s j k, mul_assoc]
+    TauCeti.ofReal_zpow_add_rpow two_pos, ← mul_assoc, ← mul_assoc,
+    mul_right_comm _ _ (ENNReal.ofReal _),
+    ← ENNReal.ofReal_mul (by positivity), Real.rpow_neg (by positivity),
+    inv_mul_cancel₀ (by positivity), ENNReal.ofReal_one, one_mul]
 
 /-- **The dyadic `ℓ¹` sums under dyadic dilations.** For the normalized dilation `D_{2^k}` of
 `L²(V, F)` and every `s ∈ ℝ`,
