@@ -152,9 +152,9 @@ theorem exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq (hk : 
     eq_of_forall_projAugL_eq fun i ↦ ?_⟩
   rw [← augmentedConjWirtingerDerivL_compLeftL_proj, hu, hUy]
 
-/-- **Uniqueness for Maslov index three in `ℂⁿ`.** On the elements of `C^{1,α}(D, ι → ℂ)` with
-boundary values in `e^{3iθ/2} ℝ^ι`, the augmented operator `u ↦ (∂u/∂(conj z), u 0, ∂ₛu(0))` is
-injective. -/
+/-- **Uniqueness for the boundary condition `e^{3iθ/2} ℝⁿ` (Maslov index `3n`).** On the elements
+of `C^{1,α}(D, ι → ℂ)` with boundary values in `e^{3iθ/2} ℝ^ι`, the augmented operator
+`u ↦ (∂u/∂(conj z), u 0, ∂ₛu(0))` is injective. -/
 theorem injOn_augmentedConjWirtingerDerivL_pi :
     InjOn (augmentedConjWirtingerDerivL α (ι → ℂ)) (rotatingLinePiSubspace 3 α ι) := by
   intro u hu v hv huv
