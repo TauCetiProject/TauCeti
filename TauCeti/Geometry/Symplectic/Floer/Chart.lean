@@ -10,7 +10,6 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Family.Chart
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
@@ -121,10 +120,6 @@ them to the Floer equation.
 
 All statements are pointwise and need differentiability only at the point; the chart is any map
 with the pullback property there, not necessarily a chart of the manifold structure.
-
-For a smooth partial diffeomorphism `φ` with the pullback property on a set `C ⊆ φ.source`,
-structures tamed by `ω` over `C` read in the chart as structures tamed by `ω₀` over `φ(C)`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_mem_image`).
 
 ## References
 
@@ -730,23 +725,6 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_iff (hω : ω.IsNondegenerate)
   simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
     ContinuousLinearMap.coe_comp] at h hJv ⊢
   exact h.trans hJv.symm
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ V] in
-/-- **Tameness in a symplectic chart.** Let a smooth partial diffeomorphism `φ` pull `ω₀` back to
-the nondegenerate form `ω` at the points of a set `C ⊆ φ.source`, and let `J'` be the structures
-`J` read in the chart over `C`, `dφ_x ∘ J x = J' (φ x) ∘ dφ_x`. If `J x` is tamed by `ω` for
-`x ∈ C`, then `J' y` is tamed by `ω₀` for `y ∈ φ(C)`. -/
-theorem tames_of_mem_image (hω : ω.IsNondegenerate)
-    (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞)) {C : Set M}
-    {J : (x : M) → AlmostComplexStructure (TangentSpace I x)} {J' : V → AlmostComplexStructure V}
-    (hφ : ∀ x ∈ C, ∀ v w : TangentSpace I x,
-      ω.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
-    (hJJ' : ∀ x ∈ C, IsComplexLinearMap (J x) (J' (φ x)) (mvfderiv I φ x).toLinearMap)
-    (hCφ : C ⊆ φ.source) (hJt : ∀ x ∈ C, (hω.symplecticFormAt x).Tames (J x)) {y : V}
-    (hy : y ∈ φ '' C) : ω₀.Tames (J' y) := by
-  obtain ⟨x, hx, rfl⟩ := hy
-  exact hω.tames_of_isComplexLinearMap_mvfderiv
-    (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' x hx) (hJt x hx)
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
 
