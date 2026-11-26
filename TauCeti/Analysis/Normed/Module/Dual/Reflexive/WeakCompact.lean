@@ -118,13 +118,8 @@ theorem isCompact_toWeakSpace_of_isBounded_of_isSeqClosed
     (hF : Surjective (inclusionInDoubleDual 𝕜 F)) {s : Set F}
     (hb : IsBounded s) (hseq : IsSeqClosed (toWeakSpace 𝕜 F '' s)) :
     IsCompact (toWeakSpace 𝕜 F '' s) := by
-  refine isCompact_toWeakSpace_iff_isSeqCompact.2 fun u hu ↦ ?_
-  have hb' : IsBounded (range fun n ↦ (toWeakSpace 𝕜 F).symm (u n)) :=
-    hb.subset (range_subset_iff.2 fun n ↦ (toWeakSpace 𝕜 F).injective.mem_set_image.1 (hu n))
-  obtain ⟨x, φ, hφ, hlim⟩ := tendsto_subseq_toWeakSpace_of_isBounded hF hb'
-  have hlim' : Tendsto (fun n ↦ u (φ n)) atTop (𝓝 (toWeakSpace 𝕜 F x)) := by
-    simpa only [LinearEquiv.apply_symm_apply] using hlim
-  exact ⟨toWeakSpace 𝕜 F x, hseq (fun n ↦ hu (φ n)) hlim', φ, hφ, hlim'⟩
+  have hc := isCompact_closure_toWeakSpace_of_isBounded hF hb
+  exact ((isClosed_weakSpace_iff_isSeqClosed hc).2 hseq).closure_eq ▸ hc
 
 end Normed
 
