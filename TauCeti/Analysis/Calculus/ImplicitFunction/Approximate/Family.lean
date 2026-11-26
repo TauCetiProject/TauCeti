@@ -22,8 +22,8 @@ the polynomial profile `X (p, h) = x₀ p + ∑_{i < N} h^(i+1) • yᵢ p` has 
 `F (p, h, X (p, h)) = h^(N+1) • Q (p, h)`
 
 for a function `Q` that is jointly `C^k` in `p` and `h`
-(`TauCeti.exists_contDiff_forall_eq_pow_smul`). This is the parametric form of
-`TauCeti.exists_isBigO_pow_of_surjective`, which works at a single parameter and only gives
+(`TauCeti.exists_contDiff_forall_eq_pow_smul_of_fderiv_rightInverse`). This is the parametric
+form of `TauCeti.exists_isBigO_pow_of_surjective`, which works at a single parameter and only gives
 `F (h, X h) = O(h^(N+1))`.
 
 **The derivative ledger.** The statement keeps track of finitely many derivatives. If `F` and `x₀`
@@ -33,9 +33,10 @@ is the natural output for uniform estimates. On a compact set `K` of parameters 
 `|h| ≤ h₀`, the residual and its derivatives in `p` through order `k` are bounded by
 `C |h|^(N+1)`, with `C` depending only on `K`, `h₀` and the order of the derivative
 (`ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul` for a given residual
-identity, `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_pow`,
-`TauCeti.exists_forall_norm_le_mul_pow`). An estimate `F (p, h, X (p, h)) = O(h^(N+1))` at each `p`
-separately would give neither the uniformity in `p` nor the bounds on derivatives in `p`.
+identity, `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_fderiv_rightInverse`,
+`TauCeti.exists_forall_norm_le_mul_pow_of_fderiv_rightInverse`). An estimate
+`F (p, h, X (p, h)) = O(h^(N+1))` at each `p` separately would give neither the uniformity in `p`
+nor the bounds on derivatives in `p`.
 
 **The construction.** It is one order at a time and uses only Hadamard division in `h`
 (`ContDiff.exists_contDiff_sub_eq_smul`) and the averaged derivative
@@ -55,12 +56,12 @@ equations, which depend smoothly on the divisor.
 
 ## Main results
 
-* `TauCeti.exists_contDiff_forall_eq_pow_smul`: profiles of every finite order with `C^k`
-  coefficients whose residual is `h^(N+1)` times a jointly `C^k` function.
-* `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_pow`: the residual and its derivatives in the
-  parameter are `O(|h|^(N+1))` uniformly on compact sets of parameters.
-* `TauCeti.exists_forall_norm_le_mul_pow`: the residual is `O(|h|^(N+1))` uniformly on compact
-  sets of parameters, with continuous coefficients.
+* `TauCeti.exists_contDiff_forall_eq_pow_smul_of_fderiv_rightInverse`: profiles of every finite
+  order with `C^k` coefficients whose residual is `h^(N+1)` times a jointly `C^k` function.
+* `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_fderiv_rightInverse`: the residual and
+  its derivatives in the parameter are `O(|h|^(N+1))` uniformly on compact sets of parameters.
+* `TauCeti.exists_forall_norm_le_mul_pow_of_fderiv_rightInverse`: the residual is `O(|h|^(N+1))`
+  uniformly on compact sets of parameters, with continuous coefficients.
 
 ## References
 
@@ -132,8 +133,8 @@ for every parameter `p`, and let `R p` be a right inverse of the partial derivat
 `x ↦ F (p, 0, x)` at `x₀ p`. If `F` and `x₀` are `C^(k + N + 1)` and `R` is `C^(k + N)`, there are
 `C^k` coefficients `yᵢ` and a `C^k` function `Q` such that along the profile
 `x₀ p + ∑_{i < N} h^(i+1) • yᵢ p` the residual is `h^(N+1) • Q (p, h)`, for all `p` and `h`. -/
-theorem exists_contDiff_forall_eq_pow_smul {k : ℕ∞} {N : ℕ} {F : P × ℝ × E → G} {x₀ : P → E}
-    {R : P → G →L[ℝ] E} (hF : ContDiff ℝ (k + N + 1 : ℕ∞) F)
+theorem exists_contDiff_forall_eq_pow_smul_of_fderiv_rightInverse {k : ℕ∞} {N : ℕ}
+    {F : P × ℝ × E → G} {x₀ : P → E} {R : P → G →L[ℝ] E} (hF : ContDiff ℝ (k + N + 1 : ℕ∞) F)
     (hx₀ : ContDiff ℝ (k + N + 1 : ℕ∞) x₀) (hR : ContDiff ℝ (k + N : ℕ∞) R)
     (h₀ : ∀ p, F (p, 0, x₀ p) = 0)
     (hR' : ∀ p v, fderiv ℝ (fun x ↦ F (p, 0, x)) (x₀ p) (R p v) = v) :
@@ -181,15 +182,15 @@ theorem exists_contDiff_forall_eq_pow_smul {k : ℕ∞} {N : ℕ} {F : P × ℝ 
       exact hFQ' p h
 
 /-- **Uniform estimates for `C^k` families of approximate solutions.** Under the hypotheses of
-`TauCeti.exists_contDiff_forall_eq_pow_smul`, there are `C^k` coefficients `yᵢ` such that, on every
-compact set `K` of parameters and for `|h| ≤ h₀`, the derivatives in `p` through order `k` of the
-residual along the profile `x₀ p + ∑_{i < N} h^(i+1) • yᵢ p` are at most `C |h|^(N+1)`, with `C`
-depending only on the order, `K` and `h₀`. To have these bounds together with the residual
-identity for the same coefficients, apply
+`TauCeti.exists_contDiff_forall_eq_pow_smul_of_fderiv_rightInverse`, there are `C^k` coefficients
+`yᵢ` such that, on every compact set `K` of parameters and for `|h| ≤ h₀`, the derivatives in `p`
+through order `k` of the residual along the profile `x₀ p + ∑_{i < N} h^(i+1) • yᵢ p` are at most
+`C |h|^(N+1)`, with `C` depending only on the order, `K` and `h₀`. To have these bounds together
+with the residual identity for the same coefficients, apply
 `ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul` to the output of
-`TauCeti.exists_contDiff_forall_eq_pow_smul`. -/
-theorem exists_forall_norm_iteratedFDeriv_le_mul_pow {k : ℕ∞} {N : ℕ} {F : P × ℝ × E → G}
-    {x₀ : P → E} {R : P → G →L[ℝ] E} (hF : ContDiff ℝ (k + N + 1 : ℕ∞) F)
+`TauCeti.exists_contDiff_forall_eq_pow_smul_of_fderiv_rightInverse`. -/
+theorem exists_forall_norm_iteratedFDeriv_le_mul_pow_of_fderiv_rightInverse {k : ℕ∞} {N : ℕ}
+    {F : P × ℝ × E → G} {x₀ : P → E} {R : P → G →L[ℝ] E} (hF : ContDiff ℝ (k + N + 1 : ℕ∞) F)
     (hx₀ : ContDiff ℝ (k + N + 1 : ℕ∞) x₀) (hR : ContDiff ℝ (k + N : ℕ∞) R)
     (h₀ : ∀ p, F (p, 0, x₀ p) = 0)
     (hR' : ∀ p v, fderiv ℝ (fun x ↦ F (p, 0, x)) (x₀ p) (R p v) = v) :
@@ -197,7 +198,8 @@ theorem exists_forall_norm_iteratedFDeriv_le_mul_pow {k : ℕ∞} {N : ℕ} {F :
       IsCompact K → ∀ h₀ : ℝ, ∃ C, ∀ p ∈ K, ∀ h : ℝ, |h| ≤ h₀ →
         ‖iteratedFDeriv ℝ j (fun q ↦ F (q, h, x₀ q + ∑ i ∈ range N, h ^ (i + 1) • y i q)) p‖ ≤
           C * |h| ^ (N + 1) := by
-  obtain ⟨y, hy, Q, hQ, hFQ⟩ := exists_contDiff_forall_eq_pow_smul hF hx₀ hR h₀ hR'
+  obtain ⟨y, hy, Q, hQ, hFQ⟩ :=
+    exists_contDiff_forall_eq_pow_smul_of_fderiv_rightInverse hF hx₀ hR h₀ hR'
   exact ⟨y, hy, fun j hj K hK h₀ ↦ hQ.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul
     (f := fun q ↦ F (q.1, q.2, x₀ q.1 + ∑ i ∈ range N, q.2 ^ (i + 1) • y i q.1)) hFQ hj hK h₀⟩
 
@@ -206,14 +208,15 @@ for every `p`, and let `R p` be a right inverse of the partial derivative of `x 
 `x₀ p`. If `F` and `x₀` are `C^(N+1)` and `R` is `C^N`, there are continuous coefficients `yᵢ`
 such that, on every compact set `K` of parameters and for `|h| ≤ h₀`, the residual along the
 profile `x₀ p + ∑_{i < N} h^(i+1) • yᵢ p` is at most `C |h|^(N+1)`. -/
-theorem exists_forall_norm_le_mul_pow {N : ℕ} {F : P × ℝ × E → G} {x₀ : P → E}
-    {R : P → G →L[ℝ] E} (hF : ContDiff ℝ (N + 1) F) (hx₀ : ContDiff ℝ (N + 1) x₀)
+theorem exists_forall_norm_le_mul_pow_of_fderiv_rightInverse {N : ℕ} {F : P × ℝ × E → G}
+    {x₀ : P → E} {R : P → G →L[ℝ] E} (hF : ContDiff ℝ (N + 1) F) (hx₀ : ContDiff ℝ (N + 1) x₀)
     (hR : ContDiff ℝ N R) (h₀ : ∀ p, F (p, 0, x₀ p) = 0)
     (hR' : ∀ p v, fderiv ℝ (fun x ↦ F (p, 0, x)) (x₀ p) (R p v) = v) :
     ∃ y : ℕ → P → E, (∀ i, Continuous (y i)) ∧ ∀ K : Set P, IsCompact K → ∀ h₀ : ℝ, ∃ C,
       ∀ p ∈ K, ∀ h : ℝ, |h| ≤ h₀ →
         ‖F (p, h, x₀ p + ∑ i ∈ range N, h ^ (i + 1) • y i p)‖ ≤ C * |h| ^ (N + 1) := by
-  obtain ⟨y, hy, hb⟩ := exists_forall_norm_iteratedFDeriv_le_mul_pow (k := 0)
+  obtain ⟨y, hy, hb⟩ :=
+    exists_forall_norm_iteratedFDeriv_le_mul_pow_of_fderiv_rightInverse (k := 0)
     (by simpa using hF) (by simpa using hx₀) (by simpa using hR) h₀ hR'
   refine ⟨y, fun i ↦ (hy i).continuous, fun K hK h₀ ↦ ?_⟩
   simpa using hb 0 le_rfl K hK h₀
