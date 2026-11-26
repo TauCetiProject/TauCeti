@@ -23,7 +23,7 @@ with values in a division ring.
 This chart is initial among based charts in division rings: every based chart `M` in a division
 `R`-algebra `D` is the transport of `TauCeti.BasedChart.oreLocalization u Λ` along a unique
 `R`-algebra map `M.liftOreLocalization` from the skew field of fractions to `D`
-(`TauCeti.BasedChart.map_liftOreLocalization`, `TauCeti.BasedChart.eq_liftOreLocalization`).
+(`TauCeti.BasedChart.map_oreLocalization`, `TauCeti.BasedChart.eq_liftOreLocalization`).
 
 ## References
 
@@ -83,7 +83,7 @@ theorem liftOreLocalization_comp_numeratorAlgHom (M : BasedChart u Λ D) :
 /-- Every based chart in a division ring is the transport of the chart in the skew field of
 fractions along `TauCeti.BasedChart.liftOreLocalization`. -/
 @[simp]
-theorem map_liftOreLocalization (M : BasedChart u Λ D) :
+theorem map_oreLocalization (M : BasedChart u Λ D) :
     (oreLocalization u Λ).map M.liftOreLocalization (RingHom.injective _) = M := by
   simp only [oreLocalization, map_ofInjective, liftOreLocalization_comp_numeratorAlgHom,
     ofInjective_eval]
