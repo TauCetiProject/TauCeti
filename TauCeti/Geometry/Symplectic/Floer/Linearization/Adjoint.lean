@@ -44,7 +44,9 @@ Integrating by parts against this pairing gives the **formal adjoint**
   equation on which unique continuation for cokernel elements acts. Written through `ω` as the
   vector field `ζ = ω♭⁻¹ ∘ η` (`fderiv_flatEquiv_symm_apply`), at a point where `J` preserves `ω`
   the adjoint is `-ω♭` of `∂s ζ - J ∂t ζ + Aᵀ ζ`, a Cauchy–Riemann operator for `-J`, with
-  `A = ∂t J - C` and `ᵀ` the `ω`-transpose (`floerLinearizationAdjoint_eq_neg_flatEquiv`). From
+  `A = ∂t J - C` and `ᵀ` the `ω`-transpose (`floerLinearizationAdjoint_eq_neg_flatEquiv`); for a
+  constant structure `J₀` and the zero perturbation, `A = 0`
+  (`floerLinearizationAdjoint_const_eq_neg_flatEquiv`). From
   the first form, two adjoints differ on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`
   (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
   the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
@@ -280,6 +282,21 @@ theorem floerLinearizationAdjoint_eq_neg_flatEquiv (ω : SymplecticForm V)
     add_apply, AlmostComplexStructure.neg_apply, hc.apply_apply_eq_neg,
     LinearMap.coe_toContinuousLinearMap']
   ring
+
+/-- **The formal adjoint of constant data.** For a constant `ω`-invariant structure `J₀` and the
+zero perturbation, the formal adjoint along any map is `-ω♭ (∂s ζ - J₀ ∂t ζ)` for `ζ = ω♭⁻¹ ∘ η`:
+a Cauchy–Riemann operator for `-J₀`. -/
+theorem floerLinearizationAdjoint_const_eq_neg_flatEquiv (ω : SymplecticForm V)
+    {J₀ : AlmostComplexStructure V} (u : ℝ × ℝ → V) {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ}
+    (hη : DifferentiableAt ℝ η z) (h : ω.Invariant J₀) :
+    ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun _ _ ↦ 0) u η z =
+      -ω.flatEquiv (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineReal +
+        (-J₀) (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineImag)) := by
+  rw [ω.floerLinearizationAdjoint_eq_neg_flatEquiv (J := fun _ _ ↦ J₀) hη
+    (differentiableAt_const _) h,
+    ω.floerLinearizationCoeff_eq_zero_of_eq_base u (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)]
+  simp
 
 /-- **Comparing two formal adjoints.** At a point where `w ↦ J(w, u w)` and
 `w ↦ J₁(w, u₁ w)` are differentiable, the formal adjoints along two data sets differ on `η` by at
