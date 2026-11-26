@@ -170,7 +170,8 @@ variable [PreValuationRing (Localization.AtPrime P)]
 
 /-- **The localization at a prime as a valuation subring.** When the localization `B_P` is a
 valuation ring, it is realized inside the fraction field `L` as a valuation subring, whose
-elements are the fractions `a / s` with `s ∉ P` (`Ideal.mem_valuationSubringAtPrime_iff`). -/
+elements are the fractions `a / s` with `s ∉ P` (`Ideal.mem_valuationSubringAtPrime_iff`). It is a
+`B`-algebra and a localization of `B` at `P.primeCompl` (`IsLocalization`). -/
 noncomputable def valuationSubringAtPrime : ValuationSubring L :=
   .ofSubring (Localization.subalgebra.ofField L P.primeCompl
     (P.primeCompl_le_nonZeroDivisors_of_isFractionRing L)).toSubring
@@ -214,6 +215,39 @@ theorem isCenteredAt_valuationSubringAtPrime : (P.valuationSubringAtPrime L).IsC
         field_simp at hbs
         linear_combination hbs
       exact IsFractionRing.injective B L this ▸ P.mul_mem_left a hb
+
+/-- `B_P`, realized inside `L`, is a `B`-algebra through the algebra map `B → L`. -/
+noncomputable instance : Algebra B (P.valuationSubringAtPrime L) :=
+  ((algebraMap B L).codRestrict _
+    (isCenteredAt_valuationSubringAtPrime (P := P)).algebraMap_mem).toAlgebra
+
+/-- The algebra map `B → B_P`, followed by the inclusion of `B_P` into `L`, is the algebra map
+`B → L`. -/
+@[simp]
+theorem coe_algebraMap_valuationSubringAtPrime (b : B) :
+    (algebraMap B (P.valuationSubringAtPrime L) b : L) = algebraMap B L b :=
+  (rfl)
+
+/-- The algebra map `B → L` factors through `B_P`. -/
+instance : IsScalarTower B (P.valuationSubringAtPrime L) L :=
+  .of_algebraMap_eq fun b ↦ (coe_algebraMap_valuationSubringAtPrime (P := P) b).symm
+
+/-- `B_P`, realized inside `L`, is a localization of `B` at the complement of `P`. -/
+instance : IsLocalization P.primeCompl (P.valuationSubringAtPrime L) where
+  map_units s := by
+    rw [ValuationSubring.valuation_eq_one_iff, coe_algebraMap_valuationSubringAtPrime]
+    exact (isCenteredAt_valuationSubringAtPrime.valuation_algebraMap_eq_one_iff (s : B)).mpr
+      s.property
+  surj x := by
+    obtain ⟨a, s, hs, hx⟩ := mem_valuationSubringAtPrime_iff.mp x.property
+    refine ⟨(a, ⟨s, hs⟩), Subtype.ext ?_⟩
+    have := algebraMap_ne_zero_of_notMem (K := L) hs
+    simp only [MulMemClass.coe_mul, coe_algebraMap_valuationSubringAtPrime]
+    rw [hx]
+    field_simp
+  exists_of_eq {x y} h := ⟨1, by
+    have : algebraMap B L x = algebraMap B L y := by simpa using congrArg Subtype.val h
+    rw [IsFractionRing.injective B L this]⟩
 
 end Ideal
 
