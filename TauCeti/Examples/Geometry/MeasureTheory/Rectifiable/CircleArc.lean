@@ -9,6 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.Density
 public import TauCeti.MeasureTheory.Function.AreaFormula.Circle
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Topology.Circle.Metric
 
 /-!
 # The arcs of a circle near one of its points
@@ -37,49 +38,11 @@ open scoped ENNReal
 
 namespace TauCeti.Examples.CircleArc
 
-/-- `ρ` times the image of Lebesgue measure on `[φ - π, φ + π]` under `circleMap c ρ` is `H¹` on
-the circle `sphere c ρ`. -/
-theorem smul_map_volume_restrict_circleMap_Icc (c : ℂ) {ρ : ℝ} (hρ : 0 < ρ) (φ : ℝ) :
-    ENNReal.ofReal ρ • (volume.restrict (Icc (φ - π) (φ + π))).map (circleMap c ρ) =
-      μHE[1].restrict (sphere c ρ) := by
-  have himage : circleMap c ρ '' Icc (φ - π) (φ + π) = sphere c ρ := by
-    refine Subset.antisymm ((image_subset_range _ _).trans_eq ?_) ?_
-    · rw [range_circleMap, abs_of_pos hρ]
-    · have h := (periodic_circleMap c ρ).image_Ioc two_pi_pos (φ - π)
-      rw [range_circleMap, abs_of_pos hρ, show φ - π + 2 * π = φ + π by ring] at h
-      exact h.symm.subset.trans (image_mono Ioc_subset_Icc_self)
-  have h := LipschitzOnWith.map_withDensity_enorm_deriv_eq_euclideanHausdorffMeasure_restrict
-    ((lipschitzWith_circleMap c ρ).lipschitzOnWith (s := Icc (φ - π) (φ + π)))
-    ((injOn_circleMap_of_abs_sub_le' (a := φ - π) (b := φ + π) (c := c) hρ.ne'
-      (by linarith)).mono Ioo_subset_Ico_self)
-  have hd : (fun t ↦ ‖deriv (circleMap c ρ) t‖ₑ) = fun _ ↦ ENNReal.ofReal ρ :=
-    funext fun t ↦ by simp [deriv_circleMap, ← ofReal_norm, abs_of_pos hρ]
-  rwa [hd, withDensity_const, Measure.map_smul, himage] at h
-  exact (continuous_circleMap c ρ).aemeasurable
-
-/-- The chord from `circleMap c ρ φ` to `circleMap c ρ θ` has length `2ρ |sin ((θ - φ) / 2)|`. -/
-theorem dist_circleMap (c : ℂ) {ρ : ℝ} (hρ : 0 ≤ ρ) (θ φ : ℝ) :
-    dist (circleMap c ρ θ) (circleMap c ρ φ) = 2 * ρ * |sin ((θ - φ) / 2)| := by
-  have h : circleMap c ρ θ - circleMap c ρ φ =
-      ρ * Complex.exp (φ * Complex.I) * (Complex.exp (Complex.I * (θ - φ : ℝ)) - 1) := by
-    simp only [circleMap, Complex.ofReal_sub]
-    rw [mul_sub, mul_one, mul_assoc, ← Complex.exp_add]
-    ring_nf
-  rw [dist_eq_norm, h, norm_mul, norm_mul, Complex.norm_exp_ofReal_mul_I,
-    Complex.norm_exp_I_mul_ofReal_sub_one, Complex.norm_real, Real.norm_of_nonneg hρ, norm_mul,
-    Real.norm_two, Real.norm_eq_abs]
-  ring
-
 /-- For `|y| ≤ π / 2` and `0 < s ≤ 1`, `|sin y| < s` exactly when `|y| < arcsin s`. -/
 theorem abs_sin_lt_iff {y s : ℝ} (hy : |y| ≤ π / 2) (hs : s ∈ Icc (-1 : ℝ) 1) :
     |sin y| < s ↔ |y| < arcsin s := by
-  have hy' := abs_le.1 hy
-  have hsin : |sin y| = sin |y| := by
-    rcases le_total 0 y with h | h
-    · rw [abs_of_nonneg h, abs_of_nonneg (sin_nonneg_of_nonneg_of_le_pi h (by linarith [pi_pos]))]
-    · rw [abs_of_nonpos h, sin_neg, abs_of_nonpos]
-      exact sin_nonpos_of_nonpos_of_neg_pi_le h (by linarith [pi_pos])
-  rw [hsin, lt_arcsin_iff_sin_lt ⟨by linarith [abs_nonneg y, pi_pos], hy⟩ hs]
+  rw [abs_sin_eq_sin_abs_of_abs_le_pi (by linarith [pi_pos]),
+    lt_arcsin_iff_sin_lt ⟨by linarith [abs_nonneg y, pi_pos], hy⟩ hs]
 
 /-- The arc of `sphere c ρ` within distance `r` of `circleMap c ρ φ` is parametrised by the angles
 `θ ∈ [φ - π, φ + π]` with `|θ - φ| < 2 arcsin (r / (2ρ))`, for `0 < r ≤ 2ρ`. -/
@@ -92,7 +55,8 @@ theorem Icc_inter_preimage_ball (c : ℂ) {ρ r : ℝ} (hρ : 0 < ρ) (hr : 0 < 
       (div_le_one (by linarith)).2 hr2⟩
   have ha : arcsin (r / (2 * ρ)) ≤ π / 2 := arcsin_le_pi_div_two _
   ext θ
-  simp only [mem_inter_iff, mem_preimage, mem_ball, mem_Icc, mem_Ioo, dist_circleMap c hρ.le]
+  simp only [mem_inter_iff, mem_preimage, mem_ball, mem_Icc, mem_Ioo,
+    dist_circleMap_eq_two_mul_abs_sin, abs_of_pos hρ]
   constructor
   · rintro ⟨h, h1, h2⟩
     have hy : |(θ - φ) / 2| ≤ π / 2 := by
@@ -117,8 +81,9 @@ theorem euclideanHausdorffMeasure_sphere_inter_ball (c : ℂ) {ρ r : ℝ} (hρ 
   obtain ⟨φ, rfl⟩ : ∃ φ, circleMap c ρ φ = x := by
     rw [← mem_range, range_circleMap, abs_of_pos hρ]
     exact hx
-  rw [inter_comm, ← Measure.restrict_apply measurableSet_ball,
-    ← smul_map_volume_restrict_circleMap_Icc c hρ φ, smul_apply,
+  have hμ := smul_map_volume_restrict_circleMap c ρ (φ - π)
+  rw [abs_of_pos hρ, show φ - π + 2 * π = φ + π by ring] at hμ
+  rw [inter_comm, ← Measure.restrict_apply measurableSet_ball, ← hμ, smul_apply,
     Measure.map_apply (continuous_circleMap c ρ).measurable measurableSet_ball,
     Measure.restrict_apply (measurableSet_ball.preimage (continuous_circleMap c ρ).measurable),
     Icc_inter_preimage_ball c hρ hr hr2, Real.volume_Ioo, smul_eq_mul,
