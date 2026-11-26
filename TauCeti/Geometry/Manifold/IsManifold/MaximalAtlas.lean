@@ -28,6 +28,10 @@ finite smooth partition of unity each of whose pieces lies in the source of a ch
 given chart `e` over a compact subset of its target
 (`IsCompact.exists_smoothPartition_mem_maximalAtlas_eqOn_symm`).
 
+Any open neighbourhood `U` of a point `x` contains the source of a chart of the maximal atlas at
+`x`, the preferred chart at `x` restricted to `U`
+(`OpenPartialHomeomorph.exists_mem_maximalAtlas_source_subset`).
+
 Such charts see two distant regions of `M` at once. Since chart compressions of operators are
 taken in every chart of the maximal atlas, this lets a statement made in all charts control how an
 operator connects two distant points: this is how the composition of pseudodifferential operators
@@ -42,6 +46,18 @@ open scoped Manifold ContDiff
 universe u
 
 namespace OpenPartialHomeomorph
+
+/-- A chart of the maximal atlas at `x` whose source lies in a given open neighbourhood `U` of `x`:
+the preferred chart at `x`, restricted to `U`. -/
+theorem exists_mem_maximalAtlas_source_subset {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H]
+    {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {n : WithTop ℕ∞} [IsManifold I n M] {x : M} {U : Set M} (hU : IsOpen U) (hx : x ∈ U) :
+    ∃ c : OpenPartialHomeomorph M H,
+      c ∈ IsManifold.maximalAtlas I n M ∧ x ∈ c.source ∧ c.source ⊆ U := by
+  refine ⟨_, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x) hU, ?_⟩
+  rw [restr_source' _ _ hU]
+  exact ⟨⟨mem_chart_source H x, hx⟩, fun _ hy ↦ hy.2⟩
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
   [NormedSpace 𝕜 E] {M : Type*} [TopologicalSpace M] [ChartedSpace E M] {n : WithTop ℕ∞}
