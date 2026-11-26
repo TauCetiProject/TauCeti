@@ -148,7 +148,7 @@ theorem re_classicalPrincipalSymbol_averageMap_pos
         ((ρ g).symm x)))).re :=
     Finset.sum_pos (fun g _ ↦ hpos _ _ fun h ↦
       hξ (((ρ g).comp_mfderiv_eq_zero_iff (by simp) _).1 h)) Finset.univ_nonempty
-  rw [classicalPrincipalSymbol_averageMap ρ hP, invOf_eq_inv, mul_comm, ← div_eq_mul_inv,
+  rw [classicalPrincipalSymbol_averageMap ρ hP, invOf_eq_inv, inv_mul_eq_div,
     Complex.div_natCast_re, Complex.re_sum]
   exact div_pos hsum (by positivity)
 
