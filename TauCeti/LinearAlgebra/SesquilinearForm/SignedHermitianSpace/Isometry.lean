@@ -166,6 +166,12 @@ theorem ofMemIsometryGroup_apply {e : V ≃ₗ[K] V} (he : e ∈ H.form.isometry
     ofMemIsometryGroup he x = e x :=
   (rfl)
 
+/-- The linear equivalence underlying `ofMemIsometryGroup he` is `e`. -/
+@[simp]
+theorem toLinearEquiv_ofMemIsometryGroup {e : V ≃ₗ[K] V} (he : e ∈ H.form.isometryGroup) :
+    (ofMemIsometryGroup he).toLinearEquiv = e :=
+  (rfl)
+
 /-- The linear equivalence underlying an isometric equivalence of a space with itself lies in the
 unitary group of the space. -/
 theorem toLinearEquiv_mem_isometryGroup (f : IsometryEquiv H H) :
@@ -306,9 +312,8 @@ theorem SignedHermitianSpace.mem_isometryGroup_iff_signedHermitianAdjoint_eq_sym
     (H : SignedHermitianSpace K V σ ε) [FiniteDimensional K V] {g : V ≃ₗ[K] V} :
     g ∈ H.form.isometryGroup ↔
       signedHermitianAdjoint H (g : Module.End K V) = (g.symm : Module.End K V) := by
-  refine ⟨fun hg ↦ (signedHermitianAdjoint_eq_iff H).2 fun v w ↦ ?_,
-    fun hg ↦ LinearMap.mem_isometryGroup_iff.2 fun x y ↦ ?_⟩
-  · simpa using LinearMap.mem_isometryGroup_iff.1 hg v (g.symm w)
+  refine ⟨fun hg ↦ ?_, fun hg ↦ LinearMap.mem_isometryGroup_iff.2 fun x y ↦ ?_⟩
+  · simpa using signedHermitianHomAdjoint_isometryEquiv (IsometryEquiv.ofMemIsometryGroup hg)
   · have h := signedHermitianAdjoint_form_right H (g : Module.End K V) x (g y)
     rw [hg] at h
     simpa using h.symm

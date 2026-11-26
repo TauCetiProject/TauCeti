@@ -198,6 +198,15 @@ theorem signedHermitianHomAdjoint_comp [FiniteDimensional K V₂] (H₃ : Signed
       signedHermitianHomAdjoint H₁ H₂ X ∘ₗ signedHermitianHomAdjoint H₂ H₃ Y :=
   signedHermitianHomAdjoint_unique H₁ H₃ fun v w ↦ by simp
 
+/-- The adjoint commutes with scalars from a ring `F` of scalars of `K` that `σ` fixes:
+`(c • X)^τ = c • X^τ` when `σ c = c`, for instance for `c` in the base field of a quadratic
+extension. -/
+theorem signedHermitianHomAdjoint_smul_of_map_algebraMap {F : Type*} [CommSemiring F]
+    [Algebra F K] [Module F V₁] [Module F V₂] [IsScalarTower F K V₁] [IsScalarTower F K V₂]
+    {c : F} (hc : σ (algebraMap F K c) = algebraMap F K c) (X : V₁ →ₗ[K] V₂) :
+    signedHermitianHomAdjoint H₁ H₂ (c • X) = c • signedHermitianHomAdjoint H₁ H₂ X := by
+  rw [← algebraMap_smul K c X, LinearMap.map_smulₛₗ, hc, algebraMap_smul]
+
 end HomAdjoint
 
 /-! ### The adjoint of an endomorphism -/

@@ -242,7 +242,8 @@ def infinitesimalSymmetricSpace (hσ : ∀ c : F, σ (algebraMap F K c) = algebr
   zero_mem' := ⟨by simp, by simp⟩
   smul_mem' c T hT := by
     refine ⟨?_, ?_⟩
-    · rw [← algebraMap_smul K c T, LinearMap.map_smulₛₗ, hσ, hT.1, smul_neg]
+    · simpa [hT.1] using
+        signedHermitianHomAdjoint_smul_of_map_algebraMap (H₁.prod H₂) (H₁.prod H₂) (hσ c) T
     · rw [← algebraMap_smul K c T, map_smul, hT.2, smul_neg]
 
 variable {H₁ H₂} in
@@ -294,9 +295,7 @@ omit [FiniteDimensional K V₁] in
 /-- The off-diagonal block is linear over any ring of scalars `F` fixed by `σ`. -/
 theorem offDiagonalBlock_smul (hσ : ∀ c : F, σ (algebraMap F K c) = algebraMap F K c) (c : F)
     (X : V₂ →ₗ[K] V₁) : offDiagonalBlock H₁ H₂ (c • X) = c • offDiagonalBlock H₁ H₂ X := by
-  have h : signedHermitianHomAdjoint H₂ H₁ (c • X) = c • signedHermitianHomAdjoint H₂ H₁ X := by
-    rw [← algebraMap_smul K c X, LinearMap.map_smulₛₗ, hσ, algebraMap_smul]
-  ext v <;> simp [h]
+  ext v <;> simp [signedHermitianHomAdjoint_smul_of_map_algebraMap _ _ (hσ c)]
 
 /-- Away from characteristic `2`, the off-diagonal block `X ↦ δ(X)` is an `F`-linear isomorphism
 from `Hom(W₂, W₁)` onto the infinitesimal symmetric space, for any ring of scalars `F` fixed by
