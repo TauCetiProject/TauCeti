@@ -184,8 +184,7 @@ theorem condDistrib_multivariateGaussian_const {Ω : Type*} [MeasurableSpace Ω]
   · -- Positive variance is the rank-one case with every loading equal to `√v`.
     have hcov : (Matrix.of fun _ _ ↦ v : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) =
         vecMulVec (fun _ ↦ √v) (fun _ ↦ √v) := by
-      ext
-      simp [vecMulVec_apply, Real.mul_self_sqrt hv.le]
+      rw [vecMulVec_const_const, Real.mul_self_sqrt hv.le]
     rw [hcov] at hX
     have hsqrt : √v ≠ 0 := (Real.sqrt_pos.2 hv).ne'
     filter_upwards [condDistrib_multivariateGaussian_vecMulVec_self X m hX (k := k) hsqrt]
