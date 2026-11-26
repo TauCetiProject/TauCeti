@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
-import TauCeti.Geometry.Manifold.Measure.ChartIntegral
+import TauCeti.Geometry.Manifold.Measure.Chart
 
 /-!
 # Operators of order `-∞` on a compact manifold have smooth kernels
