@@ -367,28 +367,35 @@ theorem ofRepMap_apply (f : P.toRep ⟶ Q.toRep) (i : Paths (StepDirection.Windo
   exact congrArg (fun g : P.space.grade (d.windowDegree w i) →ₗ[ℂ]
     Q.space.grade (d.windowDegree w i) ↦ (g x).val) (repMapAt_windowDegree f i)
 
+/-- Restricting an assembled intertwiner recovers the original representation morphism. -/
+@[simp]
+theorem toRepMap_ofRepMap (f : P.toRep ⟶ Q.toRep) : toRepMap (ofRepMap f) = f := by
+  apply NatTrans.ext
+  funext i
+  rw [toRepMap_app]
+  apply ModuleCat.hom_ext
+  -- Express the two bundled maps on the same grade before comparing their ambient values.
+  change (ofRepMap f).isHomogeneous.restrict (d.windowDegree w i) = (f.app i).hom
+  exact LinearMap.ext fun x ↦ Subtype.ext
+    ((LinearMap.IsHomogeneous.coe_restrict_apply _ _ x).trans (ofRepMap_apply f i x))
+
+/-- Assembling the restrictions of an intertwiner recovers the original graded morphism. -/
+@[simp]
+theorem ofRepMap_toRepMap (f : P ⟶ Q) : ofRepMap (toRepMap f) = f := by
+  apply Hom.ext
+  apply linearMap_ext_on_window
+  intro i x
+  exact (ofRepMap_apply (toRepMap f) i x).trans (by
+    rw [toRepMap_app f (i : Paths _)]
+    exact LinearMap.IsHomogeneous.coe_restrict_apply _ _ x)
+
 /-- The window restriction functor is fully faithful. Every grade-preserving intertwiner can be
 recovered uniquely from its maps on the window grades. -/
 def fullyFaithfulToRepFunctor (w : NonemptyInterval ℤ) (d : StepDirection) :
     (toRepFunctor w d).FullyFaithful where
   preimage f := ofRepMap f.hom
-  map_preimage f := by
-    apply ObjectProperty.hom_ext
-    apply NatTrans.ext
-    funext i
-    simp only [toRepFunctor, ObjectProperty.homMk_hom, toRepMap_app]
-    apply ModuleCat.hom_ext
-    -- Express the two bundled maps on the same grade before comparing their ambient values.
-    change (ofRepMap f.hom).isHomogeneous.restrict (d.windowDegree w i) = (f.hom.app i).hom
-    exact LinearMap.ext fun x ↦ Subtype.ext
-      ((LinearMap.IsHomogeneous.coe_restrict_apply _ _ x).trans (ofRepMap_apply f.hom i x))
-  preimage_map f := by
-    apply Hom.ext
-    apply linearMap_ext_on_window
-    intro i x
-    exact (ofRepMap_apply (toRepMap f) i x).trans (by
-      rw [toRepMap_app f (i : Paths _)]
-      exact LinearMap.IsHomogeneous.coe_restrict_apply _ _ x)
+  map_preimage f := ObjectProperty.hom_ext _ (toRepMap_ofRepMap f.hom)
+  preimage_map f := ofRepMap_toRepMap f
 
 section Extension
 
