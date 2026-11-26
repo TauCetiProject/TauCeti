@@ -258,7 +258,8 @@ theorem exists_isOpen_contDiffAt_coeffEquiv_sobolevVortexDivisor (hk : 3 ≤ k)
   · -- Gauges keep the divisor of a vortex.
     obtain ⟨g, hg⟩ := hPy y hy hsoly
     simp only [D, ← hg]
-    exact congrArg (Sym.coeffEquiv ℂ m) (sobolevVortexDivisor_smul (by omega) g hsoly)
+    exact congrArg (Sym.coeffEquiv ℂ m)
+      (sobolevVortexDivisor_toFramedFieldSpace_smul (by omega) g hsoly)
   · -- `P` is a smooth family of vortices near `y`, so its divisor coefficients are smooth.
     obtain ⟨F, hF, hFev⟩ := exists_contDiffAt_eventually_coeffEquiv_sobolevVortexDivisor_eq
       (by omega) (hPc y hy)
