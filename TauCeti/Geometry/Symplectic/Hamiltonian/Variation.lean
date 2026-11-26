@@ -76,21 +76,44 @@ theorem exists_forall_lipschitzOnWith_hamiltonianVectorField (ω : SymplecticFor
   rw [mul_one] at h
   simpa only [Function.comp_def, hHper.apply_fract t] using h
 
+/-- Along a `C^n` path `x`, the linearized Hamiltonian vector fields `S_t = dX_{H_t}(x(t))` of a
+jointly `C^(n + 2)` Hamiltonian are `C^n` in `t`. -/
+theorem contDiff_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {n : WithTop ℕ∞}
+    {H : ℝ → V → ℝ} (hH : ContDiff ℝ (n + 2) (Function.uncurry H)) {x : ℝ → V}
+    (hx : ContDiff ℝ n x) :
+    ContDiff ℝ n fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
+  ContDiff.fderiv (f := fun t ↦ ω.hamiltonianVectorField (H t))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := n + 1)
+      (by rwa [add_assoc, one_add_one_eq_two])) hx le_rfl
+
 /-- Along a continuous path `x`, the linearized Hamiltonian vector fields
 `S_t = dX_{H_t}(x(t))` of a jointly `C²` Hamiltonian depend continuously on `t`. -/
 theorem continuous_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {H : ℝ → V → ℝ}
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V} (hx : Continuous x) :
-    Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) := by
-  have hF : ContDiff ℝ 1 (Function.uncurry fun t y ↦ ω.hamiltonianVectorField (H t) y) :=
-    ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
-  exact (hF.fderiv (contDiff_zero.2 hx) le_rfl).continuous
+    Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
+  (ω.contDiff_fderiv_hamiltonianVectorField_comp (n := 0) (by simpa using hH)
+    (contDiff_zero.2 hx)).continuous
+
+/-- Along a `p`-periodic path `x`, the linearized Hamiltonian vector fields
+`S_t = dX_{H_t}(x(t))` of a `p`-periodic time-dependent Hamiltonian `H` are `p`-periodic in `t`. -/
+theorem periodic_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    {p : ℝ} (hHp : Function.Periodic H p) {x : ℝ → V} (hxp : Function.Periodic x p) :
+    Function.Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) p :=
+  fun t ↦ by simp only [hHp t, hxp t]
+
+/-- An orbit `x' = X_{H_t}(x)` of a jointly `C^(n + 1)` time-dependent Hamiltonian `H` is
+`C^(n + 1)`: its right-hand side `X_{H_t}(x)` is jointly `C^n`. -/
+theorem contDiff_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V) {n : ℕ∞}
+    {H : ℝ → V → ℝ} (hH : ContDiff ℝ (n + 1) (Function.uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ (n + 1) x :=
+  contDiff_succ_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := n) (mod_cast hH)) hx
 
 /-- An orbit `x' = X_{H_t}(x)` of a jointly `C¹` time-dependent Hamiltonian `H` is `C¹`. -/
 theorem contDiff_one_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V)
     {H : ℝ → V → ℝ} (hH : ContDiff ℝ 1 (Function.uncurry H)) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ 1 x :=
-  contDiff_one_of_hasDerivAt (X := fun t ↦ ω.hamiltonianVectorField (H t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous hx
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) : ContDiff ℝ 1 x := by
+  simpa using ω.contDiff_of_hasDerivAt_hamiltonianVectorField (n := 0) (by simpa using hH) hx
 
 /-- Differentiating a Hamiltonian vector field in a parameter direction gives the Hamiltonian
 vector field of the actual parameter derivative of the Hamiltonian. -/
