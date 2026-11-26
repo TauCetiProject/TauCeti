@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Inner
@@ -33,6 +34,9 @@ they can be moved to the right-hand side of an equation
 For `p = 2`, the squared `L²` norm of an almost everywhere strongly measurable function is the
 integral of its squared pointwise norm (`MeasureTheory.lpNorm_two_sq_eq_integral_norm_sq`), the
 `p = 2` analogue of Mathlib's `MeasureTheory.lpNorm_one_eq_integral_norm`.
+
+For a right-invariant measure on an additive group, translation does not change the `Lᵖ` norm
+(`MeasureTheory.lpNorm_comp_sub_right`).
 
 Additional helpers convert `eLpNorm` estimates into bounds for the Bochner `L¹` integral
 `∫ x, ‖f x‖ ∂μ`:
@@ -157,5 +161,13 @@ theorem lpNorm_two_sq_eq_integral_norm_sq {f : α → F} (hf : AEStronglyMeasura
     ENNReal.toReal_ofNat, ← Real.rpow_natCast,
     ← Real.rpow_mul (integral_nonneg fun _ ↦ by positivity)]
   norm_num
+
+/-- **Translation invariance of `lpNorm`.** For a right-invariant measure on an additive group,
+translating a function does not change its `Lᵖ` norm: `‖u (· - c)‖_p = ‖u‖_p`. -/
+theorem lpNorm_comp_sub_right [AddGroup α] [MeasurableAdd α] [μ.IsAddRightInvariant] (u : α → F)
+    (c : α) : lpNorm (fun x ↦ u (x - c)) p μ = lpNorm u p μ := by
+  rw [← toReal_eLpNorm, ← toReal_eLpNorm]
+  conv_rhs => rw [← (measurePreserving_sub_right μ c).map_eq]
+  rw [(measurableEmbedding_subRight c).eLpNorm_map_measure, Function.comp_def]
 
 end MeasureTheory
