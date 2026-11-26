@@ -34,8 +34,9 @@ or the symplectic group (`W = J`), contains the polar factors of its elements.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.posDef_sqrt_mul_star`: the positive factor `√(A Aᴴ)` is positive
-  definite.
+* `Matrix.GeneralLinearGroup.posDef_sqrt_mul_star`,
+  `Matrix.GeneralLinearGroup.posDef_sqrt_star_mul`: the positive factors `√(A Aᴴ)` and `√(Aᴴ A)`
+  of the left and right polar decompositions are positive definite.
 * `Matrix.GeneralLinearGroup.existsUnique_posDef_mul_unitary`: existence and uniqueness of the
   polar decomposition `A = P U` with `P` positive definite and `U` unitary.
 * `Matrix.GeneralLinearGroup.coe_mul_inv_toUnits_polarUnitary`: the positive factor is `A U⁻¹`.
@@ -92,6 +93,11 @@ variable (A : GL n 𝕜)
 definite. -/
 theorem posDef_sqrt_mul_star : (CFC.sqrt ((A : Matrix n n 𝕜) * star (A : Matrix n n 𝕜))).PosDef :=
   isStrictlyPositive_iff_posDef.1 (Units.isStrictlyPositive_sqrt_mul_star A)
+
+/-- The positive factor `√(Aᴴ A)` of the right polar decomposition of an invertible matrix is
+positive definite. -/
+theorem posDef_sqrt_star_mul : (CFC.sqrt (star (A : Matrix n n 𝕜) * (A : Matrix n n 𝕜))).PosDef :=
+  isStrictlyPositive_iff_posDef.1 (Units.isStrictlyPositive_sqrt_star_mul A)
 
 /-- **The polar decomposition of an invertible matrix.** Every `A : GL n 𝕜` is uniquely a product
 `P U` of a positive definite matrix `P` and a unitary matrix `U`; over `ℝ`, `U` is orthogonal. -/
