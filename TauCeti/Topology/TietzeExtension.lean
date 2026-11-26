@@ -82,7 +82,7 @@ theorem exists_extension_eqOn_const (he : Topology.IsClosedEmbedding e) (f : C(X
 a space with the Tietze extension property. -/
 theorem surjective_comp_of_isClosedEmbedding {e : C(X₁, X)} (he : Topology.IsClosedEmbedding e) :
     Function.Surjective fun f : C(X, Y) ↦ f.comp e :=
-  fun f ↦ f.exists_extension he
+  fun f ↦ (f.exists_extension he).imp fun g hg ↦ by ext x; exact congr($hg x)
 
 /-- Restriction along a closed embedding into a normal space is a surjective algebra map on
 functions with values in a topological algebra with the Tietze extension property, such as `ℝ`
