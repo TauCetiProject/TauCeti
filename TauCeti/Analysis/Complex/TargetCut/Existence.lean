@@ -10,6 +10,8 @@ public import TauCeti.LinearAlgebra.AffineSpace.MarkingStabilizer
 public import Mathlib.Geometry.Manifold.ContMDiff.Defs
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.Real.Cardinality
@@ -20,7 +22,6 @@ import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
-import Mathlib.Topology.Compactness.Lindelof
 
 /-!
 # Existence of stabilizing target cuts
@@ -59,8 +60,8 @@ radius `r` the cut is the image under `φ⁻¹` of the compact set of points `v`
   zero set of `ℓ ∘ φ - c` for one `c ∈ C`, and `f - c` has invertible derivative there.
 * **The radius.** The points of `u⁻¹(D)` must not lie on the boundary sphere `‖v - φ (u z₀)‖ = r`,
   where the cut is not cut out by a single equation. The candidates for such points are isolated,
-  since `f` has invertible derivative there, hence countably many, so all but countably many radii
-  avoid them.
+  since `f` has invertible derivative there, hence countably many
+  (`TauCeti.countable_of_forall_injective_fderiv`), so all but countably many radii avoid them.
 * **The point `y`.** The radius is small enough that the inverse of the chart does not take the
   value `y` on the closed ball around `φ (u z₀)`.
 
@@ -113,6 +114,13 @@ private lemma mem_extChartAt_symm_image_iff {x₀ x : M} {ℓ : E →L[ℝ] ℂ}
   exact extChartAt_target_subset_range x₀
     ((extChartAt I x₀).map_source (by rw [extChartAt_source]; exact h.1))
 
+/-- The points of a closed ball of radius `r < r₀` in the model range with `ℓ v ∈ C` lie in every
+set containing the open ball of radius `r₀` in the model range. -/
+private lemma closedBall_inter_range_inter_preimage_subset {c : E} {r r₀ : ℝ} (hr : r < r₀)
+    {T : Set E} (hT : ball c r₀ ∩ range I ⊆ T) (ℓ : E →L[ℝ] ℂ) (C : Set ℂ) :
+    closedBall c r ∩ range I ∩ ℓ ⁻¹' C ⊆ T :=
+  fun _ hv ↦ hT ⟨closedBall_subset_ball hr hv.1.1, hv.1.2⟩
+
 /-- A point of the cut of a chart whose image lies strictly inside the ball, and at which
 `ℓ ∘ φ ∘ u` has invertible derivative, is a transverse intersection point of `u` with the cut:
 near it the cut is the zero set of `ℓ ∘ φ - c` for the value `c ∈ C` taken there. -/
@@ -140,43 +148,13 @@ private lemma isTransverseCutAt_extChartAt_symm_image {u : ℂ → M} {z : ℂ} 
 
 variable [IsManifold I 1 M]
 
-/-- A map into `M` which is differentiable at `z` and sends `z` into the source of a chart is
-differentiable at `z` when read in that chart. -/
-private lemma differentiableAt_extChartAt_comp {u : ℂ → M} {z : ℂ} {x₀ : M}
-    (hu : MDifferentiableAt 𝓘(ℝ, ℂ) I u z) (hz : u z ∈ (chartAt H x₀).source) :
-    DifferentiableAt ℝ (fun w ↦ extChartAt I x₀ (u w)) z :=
-  mdifferentiableAt_iff_differentiableAt.1 ((mdifferentiableAt_extChartAt hz).comp z hu)
-
-/-- Read in the chart centred at `u z`, the derivative of `u` at `z` is its manifold derivative. -/
-private lemma fderiv_extChartAt_comp {u : ℂ → M} {z : ℂ}
-    (hu : MDifferentiableAt 𝓘(ℝ, ℂ) I u z) :
-    fderiv ℝ (fun w ↦ extChartAt I (u z) (u w)) z = mfderiv 𝓘(ℝ, ℂ) I u z := by
-  have h := mfderiv_comp z (mdifferentiableAt_extChartAt (mem_chart_source H (u z))) hu
-  rw [mfderiv_extChartAt_self, mfderiv_eq_fderiv] at h
-  exact h
-
-/-- A surjective real linear endomorphism of `ℂ` is invertible. -/
-private lemma exists_continuousLinearEquiv_of_surjective {A : ℂ →L[ℝ] ℂ} (hA : Surjective A) :
-    ∃ L : ℂ ≃L[ℝ] ℂ, (L : ℂ →L[ℝ] ℂ) = A := by
-  refine ⟨(LinearEquiv.ofInjectiveEndo (A : ℂ →ₗ[ℝ] ℂ)
-    (LinearMap.injective_iff_surjective.2 hA)).toContinuousLinearEquiv, ?_⟩
-  ext w
-  simp
-
-/-- The points at which a map `f : ℂ → ℂ` takes a value in a finite set `C`, and at each of which it
-has surjective derivative, are isolated from each other, so there are countably many of them. -/
-private lemma countable_of_forall_surjective_fderiv {f : ℂ → ℂ} {C Z : Set ℂ} (hC : C.Finite)
-    (hZ : ∀ z ∈ Z, DifferentiableAt ℝ f z ∧ Surjective (fderiv ℝ f z) ∧ f z ∈ C) :
-    Z.Countable := by
-  refine (HereditarilyLindelofSpace.isLindelof Z).countable_of_isDiscrete
-    (isDiscrete_iff_nhdsNE.2 fun z hz ↦ inf_principal_eq_bot.2 ?_)
-  obtain ⟨hd, hs, -⟩ := hZ z hz
-  obtain ⟨L, hL⟩ := exists_continuousLinearEquiv_of_surjective hs
-  have hC' : (C \ {f z})ᶜ ∈ 𝓝 (f z) :=
-    ((hC.subset sdiff_subset).isClosed.isOpen_compl).mem_nhds fun h ↦ h.2 rfl
-  filter_upwards [(hL ▸ hd.hasFDerivAt).eventually_ne (c := f z) ⟨_, L.antilipschitzWith⟩,
-    nhdsWithin_le_nhds (hd.continuousAt.eventually hC')] with w hw hwC hwZ
-  exact hwC ⟨(hZ w hwZ).2.2, hw⟩
+/-- A map `u` into `M` which is differentiable at `z` and sends `z` into the source of a chart `φ`
+gives a map `ℓ ∘ φ ∘ u` differentiable at `z`, for every real linear `ℓ : E → ℂ`. -/
+private lemma differentiableAt_comp_extChartAt_comp {u : ℂ → M} {z : ℂ} {x₀ : M}
+    (hu : MDifferentiableAt 𝓘(ℝ, ℂ) I u z) (hz : u z ∈ (chartAt H x₀).source) (ℓ : E →L[ℝ] ℂ) :
+    DifferentiableAt ℝ (fun w ↦ ℓ (extChartAt I x₀ (u w))) z :=
+  ℓ.differentiableAt.comp z
+    (mdifferentiableAt_iff_differentiableAt.1 ((mdifferentiableAt_extChartAt hz).comp z hu))
 
 /-- Near a point `z₀` at which the derivative of `u` is injective, a real linear map `ℓ` from the
 model to `ℂ` turns `u`, read in the chart centred at `u z₀`, into a local diffeomorphism of `ℂ`:
@@ -185,12 +163,14 @@ private lemma exists_hasStrictFDerivAt_extChartAt_comp [FiniteDimensional ℝ E]
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) {z₀ : ℂ} (hz₀ : Injective (mfderiv 𝓘(ℝ, ℂ) I u z₀)) :
     ∃ ℓ : E →L[ℝ] ℂ, HasStrictFDerivAt (fun w ↦ ℓ (extChartAt I (u z₀) (u w)))
       ((ContinuousLinearEquiv.refl ℝ ℂ : ℂ ≃L[ℝ] ℂ) : ℂ →L[ℝ] ℂ) z₀ := by
-  have hmd : MDifferentiableAt 𝓘(ℝ, ℂ) I u z₀ := hu.mdifferentiableAt one_ne_zero
   set A := fderiv ℝ (fun w ↦ extChartAt I (u z₀) (u w)) z₀
-  have hinj : Injective A := by
-    have hA : A = mfderiv 𝓘(ℝ, ℂ) I u z₀ := fderiv_extChartAt_comp hmd
-    rw [hA]
-    exact hz₀
+  -- The chart centred at `u z₀` has the identity as derivative there.
+  have hA (v : ℂ) : A v = mfderiv 𝓘(ℝ, ℂ) I u z₀ v := by
+    have h := hu.continuous.continuousAt.fderiv_extChartAt_comp_apply
+      (mem_extChartAt_source (I := I) (u z₀)) v
+    rw [mfderiv_extChartAt_self] at h
+    exact h
+  have hinj : Injective A := fun a b hab ↦ hz₀ (by rwa [← hA, ← hA])
   obtain ⟨g, hg⟩ :=
     LinearMap.exists_leftInverse_of_injective (A : ℂ →ₗ[ℝ] E) (LinearMap.ker_eq_bot.2 hinj)
   obtain ⟨ℓ, hℓ⟩ : ∃ ℓ : E →L[ℝ] ℂ, ℓ.comp A = ContinuousLinearMap.id ℝ ℂ :=
@@ -200,25 +180,9 @@ private lemma exists_hasStrictFDerivAt_extChartAt_comp [FiniteDimensional ℝ E]
     contMDiffAt_iff_contDiffAt.1
       ((contMDiffAt_extChartAt' (mem_chart_source H (u z₀))).comp z₀ hu.contMDiffAt)
   have hfd : HasFDerivAt (fun w ↦ ℓ (extChartAt I (u z₀) (u w))) (ℓ.comp A) z₀ :=
-    ℓ.hasFDerivAt.comp z₀
-      (differentiableAt_extChartAt_comp hmd (mem_chart_source H (u z₀))).hasFDerivAt
+    ℓ.hasFDerivAt.comp z₀ (hcd.differentiableAt one_ne_zero).hasFDerivAt
   rw [hℓ] at hfd
   exact ⟨ℓ, (ℓ.contDiff.contDiffAt.comp z₀ hcd).hasStrictFDerivAt hfd one_ne_zero⟩
-
-omit [IsManifold I 1 M] in
-/-- A closed ball of the chart centred at `x₀`, intersected with the range of the model, on which
-the inverse of the chart is defined and does not take a given value `y ≠ x₀`. -/
-private lemma exists_closedBall_inter_range_subset [T1Space M] {x₀ y : M} (hy : x₀ ≠ y) :
-    ∃ r₀ > 0, closedBall (extChartAt I x₀ x₀) r₀ ∩ range I ⊆
-      (extChartAt I x₀).target ∩ {v | (extChartAt I x₀).symm v ≠ y} := by
-  have hy' : {v | (extChartAt I x₀).symm v ≠ y} ∈ 𝓝[range I] (extChartAt I x₀ x₀) := by
-    have : {x | x ≠ y} ∈ map (extChartAt I x₀).symm (𝓝[range I] (extChartAt I x₀ x₀)) := by
-      rw [map_extChartAt_symm_nhdsWithin_range]
-      exact isOpen_ne.mem_nhds hy
-    exact this
-  obtain ⟨δ, hδ, hδs⟩ :=
-    Metric.mem_nhdsWithin_iff.1 (inter_mem (extChartAt_target_mem_nhdsWithin x₀) hy')
-  exact ⟨δ / 2, half_pos hδ, fun v hv ↦ hδs ⟨closedBall_subset_ball (half_lt_self hδ) hv.1, hv.2⟩⟩
 
 /-- Let `C` be a finite set of regular values of `f = ℓ ∘ φ ∘ u` on the source of the chart `φ`.
 Then for all but countably many radii `r` the cut of the chart of radius `r` and values `C` is met
@@ -229,7 +193,7 @@ private lemma exists_mem_Ioo_forall_isTransverseCutAt {u : ℂ → M}
     (hC : ∀ c ∈ C, ∀ z ∈ u ⁻¹' (chartAt H x₀).source, ℓ (extChartAt I x₀ (u z)) = c →
       Surjective (fderiv ℝ (fun w ↦ ℓ (extChartAt I x₀ (u w))) z))
     {r₀ : ℝ} (hr₀ : 0 < r₀)
-    (hr₀K : closedBall (extChartAt I x₀ x₀) r₀ ∩ range I ⊆ (extChartAt I x₀).target) :
+    (hr₀K : ball (extChartAt I x₀ x₀) r₀ ∩ range I ⊆ (extChartAt I x₀).target) :
     ∃ r ∈ Ioo (r₀ / 2) r₀, ∀ z ∈ u ⁻¹'
       ((extChartAt I x₀).symm '' (closedBall (extChartAt I x₀ x₀) r ∩ range I ∩ ℓ ⁻¹' C)),
         IsTransverseCutAt u ((extChartAt I x₀).symm ''
@@ -237,21 +201,24 @@ private lemma exists_mem_Ioo_forall_isTransverseCutAt {u : ℂ → M}
   set φ := extChartAt I x₀
   set f : ℂ → ℂ := fun w ↦ ℓ (φ (u w))
   have hfd (z : ℂ) (hz : u z ∈ (chartAt H x₀).source) : DifferentiableAt ℝ f z :=
-    ℓ.differentiableAt.comp z (differentiableAt_extChartAt_comp (hu z) hz)
+    differentiableAt_comp_extChartAt_comp (hu z) hz ℓ
+  have hinv (z : ℂ) (hz : u z ∈ (chartAt H x₀).source) (hzC : f z ∈ (C : Set ℂ)) :
+      (fderiv ℝ f z).IsInvertible :=
+    ((fderiv ℝ f z).isInvertible_iff_injective_of_finrank_eq rfl).2
+      (LinearMap.injective_iff_surjective.2 (hC _ hzC z hz rfl))
   set Z := u ⁻¹' (chartAt H x₀).source ∩ {z | dist (φ (u z)) (φ x₀) ≤ r₀ ∧ f z ∈ (C : Set ℂ)}
-  have hZ : Z.Countable := countable_of_forall_surjective_fderiv C.finite_toSet
-    fun z hz ↦ ⟨hfd z hz.1, hC _ hz.2.2 z hz.1 rfl, hz.2.2⟩
+  have hZ : Z.Countable := countable_of_forall_injective_fderiv C.countable_toSet
+    fun z hz ↦ ⟨hfd z hz.1, (hinv z hz.1 hz.2.2).injective, hz.2.2⟩
   obtain ⟨r, hr, hrZ⟩ : ∃ r ∈ Ioo (r₀ / 2) r₀, ∀ z ∈ Z, dist (φ (u z)) (φ x₀) ≠ r := by
     by_contra! h
     have hcount : (Ioo (r₀ / 2) r₀).Countable :=
       (hZ.image fun z ↦ dist (φ (u z)) (φ x₀)).mono fun r hr ↦ h r hr
     exact (half_lt_self hr₀).not_ge (Cardinal.Real.Ioo_countable_iff.1 hcount)
-  have hK : closedBall (φ x₀) r ∩ range I ∩ ℓ ⁻¹' C ⊆ φ.target := fun v hv ↦
-    hr₀K ⟨closedBall_subset_closedBall hr.2.le hv.1.1, hv.1.2⟩
+  have hK := closedBall_inter_range_inter_preimage_subset hr.2 hr₀K ℓ C
   refine ⟨r, hr, fun z hz ↦ ?_⟩
   rw [mem_preimage, mem_extChartAt_symm_image_iff hK] at hz
   obtain ⟨hzs, hzr, hzC⟩ := hz
-  obtain ⟨L, hL⟩ := exists_continuousLinearEquiv_of_surjective (hC _ hzC z hzs rfl)
+  obtain ⟨L, hL⟩ := hinv z hzs hzC
   exact isTransverseCutAt_extChartAt_symm_image C.finite_toSet hK hzs
     (lt_of_le_of_ne hzr (hrZ z ⟨hzs, hzr.trans hr.2.le, hzC⟩)) hzC (hL ▸ (hfd z hzs).hasFDerivAt)
 
@@ -273,8 +240,7 @@ finite-dimensional Hausdorff manifold, possibly with boundary or corners, whose 
 `z₀` is injective. For every point `y ≠ u z₀`, every `n` and every `ε > 0` there is a closed set
 `D ⊆ M` not containing `y` such that `u` meets `D` transversally at every point of the full
 preimage `u⁻¹(D)` (`TauCeti.IsTransverseCutAt`), and `u⁻¹(D)` contains `n` distinct points within
-`ε` of `z₀`. The set `D` lies in a chart around `u z₀`, where it is cut out by finitely many
-regular values of a real linear map to `ℂ`. -/
+`ε` of `z₀`. -/
 theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) {z₀ : ℂ} (hz₀ : Injective (mfderiv 𝓘(ℝ, ℂ) I u z₀)) {y : M}
     (hy : u z₀ ≠ y) (n : ℕ) {ε : ℝ} (hε : 0 < ε) :
@@ -284,11 +250,12 @@ theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
   set φ := extChartAt I x₀
   have hmd (z : ℂ) : MDifferentiableAt 𝓘(ℝ, ℂ) I u z := hu.mdifferentiableAt one_ne_zero
   have hx₀ : x₀ ∈ (chartAt H x₀).source := mem_chart_source H x₀
-  -- `f = ℓ ∘ φ ∘ u` is a local diffeomorphism at `z₀`, and the closed ball of radius `r₀` of the
+  -- `f = ℓ ∘ φ ∘ u` is a local diffeomorphism at `z₀`, and the open ball of radius `r₀` of the
   -- chart lies in the chart and avoids `y`.
   obtain ⟨ℓ, hstrict⟩ := exists_hasStrictFDerivAt_extChartAt_comp hu hz₀
   set f : ℂ → ℂ := fun w ↦ ℓ (φ (u w))
-  obtain ⟨r₀, hr₀, hr₀K⟩ := exists_closedBall_inter_range_subset (I := I) hy
+  obtain ⟨r₀, hr₀, hr₀K⟩ :=
+    exists_ball_inter_range_subset_extChartAt (I := I) (isOpen_ne.mem_nhds hy)
   -- `f` maps the points `W` near `z₀` well inside the chart onto a neighbourhood of `f z₀`.
   set W := ball z₀ ε ∩ (u ⁻¹' (chartAt H x₀).source ∩ {z | dist (φ (u z)) (φ x₀) < r₀ / 2})
   have hW : W ∈ 𝓝 z₀ := by
@@ -303,7 +270,7 @@ theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
   -- By Sard's theorem the regular values of `f` are dense, so `n` of them are taken on `W`.
   set R := {c | ∀ z ∈ u ⁻¹' (chartAt H x₀).source, f z = c → Surjective (fderiv ℝ f z)}
   have hR : Dense R := dense_setOf_forall_surjective_fderiv
-    (fun z hz ↦ ℓ.differentiableAt.comp z (differentiableAt_extChartAt_comp (hmd z) hz)) rfl
+    (fun z hz ↦ differentiableAt_comp_extChartAt_comp (hmd z) hz ℓ) rfl
   obtain ⟨C, hCR, hCn⟩ : ∃ C : Finset ℂ, ↑C ⊆ R ∩ interior (f '' W) ∧ C.card = n := by
     refine Set.Infinite.exists_subset_card_eq (fun hfin ↦ ?_) n
     obtain ⟨c, hc⟩ := ((infinite_of_mem_nhds _ hfW).sdiff hfin).nonempty
@@ -315,13 +282,13 @@ theorem exists_isTransverseCutAt_of_injective_mfderiv {u : ℂ → M}
   -- A radius `r` at which the cut is transverse.
   obtain ⟨r, hr, htr⟩ := exists_mem_Ioo_forall_isTransverseCutAt hmd (fun c hc ↦ (hCR hc).1) hr₀
     fun v hv ↦ (hr₀K hv).1
-  have hK : closedBall (φ x₀) r ∩ range I ∩ ℓ ⁻¹' C ⊆ φ.target := fun v hv ↦
-    (hr₀K ⟨closedBall_subset_closedBall hr.2.le hv.1.1, hv.1.2⟩).1
+  have hD := closedBall_inter_range_inter_preimage_subset hr.2 hr₀K ℓ C
+  have hK : closedBall (φ x₀) r ∩ range I ∩ ℓ ⁻¹' C ⊆ φ.target := fun v hv ↦ (hD hv).1
   refine ⟨φ.symm '' (closedBall (φ x₀) r ∩ range I ∩ ℓ ⁻¹' C), ?_, ?_, htr, C.image w, ?_,
     fun z hz ↦ ?_⟩
   · exact isClosed_extChartAt_symm_image C.finite_toSet hK
   · rintro ⟨v, hv, hvy⟩
-    exact (hr₀K ⟨closedBall_subset_closedBall hr.2.le hv.1.1, hv.1.2⟩).2 hvy
+    exact (hD hv).2 hvy
   · refine Finset.card_image_of_injOn (fun a ha b hb hab ↦ ?_) |>.trans hCn
     rw [← hwf a ha, ← hwf b hb, hab]
   · obtain ⟨c, hc, rfl⟩ := Finset.mem_image.1 hz
@@ -350,9 +317,8 @@ theorem exists_isTransverseCutAt_finite_nontrivial_preimage {u : ℂ → M}
 /-- **Finite isotropy of sphere components of rank two.** A `C¹` map `u : ℂ → M` into a
 finite-dimensional Hausdorff manifold, with a limit `y` at `∞` and a point `z₀` with `u z₀ ≠ y` at
 which its derivative is injective, is invariant under only finitely many automorphisms of the
-sphere fixing `∞` and a given set `P` of further special points. The stabilizing target cut of
-`TauCeti.exists_isTransverseCutAt_finite_nontrivial_preimage` bounds their number by
-`TauCeti.card_markedIsotropy_dvd_factorial`. -/
+sphere fixing `∞` and a given set `P` of further special points. Finiteness follows from the
+stabilizing target cut of `TauCeti.exists_isTransverseCutAt_finite_nontrivial_preimage`. -/
 theorem finite_markedIsotropy_of_injective_mfderiv {u : ℂ → M}
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) {y : M} (hy : Tendsto u (cocompact ℂ) (𝓝 y)) {z₀ : ℂ}
     (hz₀ : Injective (mfderiv 𝓘(ℝ, ℂ) I u z₀)) (hz₀y : u z₀ ≠ y) (P : Set ℂ) :

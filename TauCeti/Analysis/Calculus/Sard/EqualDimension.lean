@@ -17,6 +17,8 @@ import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.MeasureTheory.Function.Jacobian
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.MeasureTheory.Measure.Haar.Unique
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import Mathlib.Topology.Compactness.Lindelof
 
 /-!
 # Sard's lemma in equal dimensions
@@ -46,6 +48,8 @@ to maps whose source has strictly larger dimension, where higher regularity is n
 * `TauCeti.dense_setOf_forall_surjective_fderiv`: the regular values of a map differentiable
   along a set, restricted to that set, are dense; `Differentiable.dense_compl_image_criticalPoints`
   is the case of a globally differentiable map.
+* `TauCeti.countable_of_forall_injective_fderiv`: the points at which a map takes a value in a
+  countable set and has injective derivative are countable.
 * `TauCeti.exists_norm_lt_forall_det_one_sub_ne_zero`: arbitrarily small regular values of the
   displacement `z ↦ z - g z` of a self-map, at which `det (1 - g')` does not vanish.
 
@@ -174,6 +178,29 @@ theorem _root_.Differentiable.dense_compl_image_criticalPoints
   refine (dense_setOf_forall_surjective_fderiv (s := univ) (fun x _ ↦ hf x) hdim).mono ?_
   rintro _ hy ⟨x, hx, rfl⟩
   exact hx (hy x (mem_univ x) rfl)
+
+omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F] [MeasurableSpace F]
+  [BorelSpace F] in
+/-- **Points of injective derivative over countably many values are countable.** Let `f` be a map
+from a finite-dimensional real normed space. The points at which `f` takes a value in a countable
+set `C` and has injective Fréchet derivative form a countable set, since near each of them `f`
+takes the same value nowhere else; `TauCeti.countable_setOf_mem_and_deriv_ne_zero` is the case of
+a map on a field. In equal dimensions an injective derivative is surjective, so together with
+`TauCeti.dense_setOf_forall_surjective_fderiv` this yields countable sets of regular values with
+countable preimages. -/
+theorem countable_of_forall_injective_fderiv {C : Set F} {Z : Set E} (hC : C.Countable)
+    (hZ : ∀ z ∈ Z, DifferentiableAt ℝ f z ∧ Injective (fderiv ℝ f z) ∧ f z ∈ C) :
+    Z.Countable := by
+  have hsub : Z ⊆ ⋃ c ∈ C, Z ∩ f ⁻¹' {c} := fun z hz ↦
+    mem_iUnion₂.2 ⟨f z, (hZ z hz).2.2, hz, rfl⟩
+  refine (hC.biUnion fun c _ ↦ ?_).mono hsub
+  refine (HereditarilyLindelofSpace.isLindelof _).countable_of_isDiscrete
+    (isDiscrete_iff_nhdsNE.2 fun z hz ↦ Filter.inf_principal_eq_bot.2 ?_)
+  obtain ⟨hd, hinj, -⟩ := hZ z hz.1
+  obtain ⟨K, -, hK⟩ :=
+    (fderiv ℝ f z : E →ₗ[ℝ] F).exists_antilipschitzWith (LinearMap.ker_eq_bot.2 hinj)
+  filter_upwards [hd.hasFDerivAt.eventually_ne ⟨K, hK⟩] with w hw hwZ
+  exact hw (hwZ.2.trans hz.2.symm)
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- **Regular values of `z ↦ z - g z` exist near `0`.** For a map `g` of a finite-dimensional real
