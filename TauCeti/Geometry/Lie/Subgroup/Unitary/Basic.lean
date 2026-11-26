@@ -14,6 +14,7 @@ public import TauCeti.Topology.Algebra.Star.Unitary
 public import Mathlib.Algebra.Lie.Classical
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Analysis.RCLike.Basic
+import TauCeti.Topology.Algebra.Star.RealModule
 
 /-!
 # The unitary group as an embedded Lie subgroup, and its Lie algebra
@@ -95,8 +96,7 @@ theorem forall_lieExp_mem_unitarySubgroup_iff_mem_skewAdjoint (x : R) :
     (∀ t : ℝ, lieExp ((unitsLieAlgebraLieEquiv (R := R)).symm (t • x)) ∈
         unitarySubgroup Rˣ) ↔ x ∈ skewAdjoint R := by
   -- A continuous additive involution is real-linear, so `star` is automatically `ℝ`-semilinear.
-  have : StarModule ℝ R :=
-    ⟨fun r x ↦ by simpa using map_real_smul (starAddEquiv (R := R)) continuous_star r x⟩
+  have : StarModule ℝ R := ContinuousStar.starModule_real
   rw [forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff,
     ← forall_exp_smul_mem_unitary_iff_mem_skewAdjoint]
   simp only [mem_unitarySubgroup_iff, Units.unitary_eq, Submonoid.mem_comap,

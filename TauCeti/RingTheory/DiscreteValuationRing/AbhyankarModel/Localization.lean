@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Basic
-import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 import TauCeti.Data.Nat.Cast.IsUnit
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
 import TauCeti.RingTheory.RegularLocalRing.Basic
@@ -58,17 +58,6 @@ open Polynomial IsLocalRing
 namespace TauCeti
 
 variable {B S : Type*} [CommRing B] [CommRing S] [Algebra B S] {ϖ u : B} {e d : ℕ} {β : S}
-
-/-- An `e`-th root `γ` of `u` and a `d`-th root `β` of `ϖ γ` define a map from the Abhyankar model
-sending `y` to `γ` and `x` to `β`. -/
-private theorem exists_algHom_abhyankarModel {γ : S} (hγ : γ ^ e = algebraMap B S u)
-    (hβ : β ^ d = algebraMap B S ϖ * γ) :
-    ∃ φ : abhyankarModel ϖ u e d →ₐ[B] S, φ (abhyankarModelRoot ϖ u e d) = β ∧
-      φ (algebraMap (standardTameCover B u e) _ (AdjoinRoot.root (X ^ e - C u))) = γ :=
-  ⟨AdjoinRoot.liftAlgHom _ (AdjoinRoot.liftAlgHom (X ^ e - C u) (Algebra.ofId B S) γ (by
-      simp [hγ])) β (by simp [hβ]),
-    AdjoinRoot.liftAlgHom_root _ _ _ _,
-    (AdjoinRoot.liftAlgHom_of _ _ _ _ _).trans (AdjoinRoot.liftAlgHom_root _ _ _ _)⟩
 
 variable [IsDomain B] [IsDiscreteValuationRing B]
 
@@ -148,20 +137,12 @@ theorem exists_algEquiv_localization_abhyankarModel (hϖ : Irreducible ϖ) (hu :
     have := h.pow (e * d)
     rw [hβ, isUnit_map_iff, IsUnit.mul_iff, isUnit_pow_iff he₀] at this
     exact hϖ.not_isUnit this.2
-  -- `(β ^ d) ^ e` and `ϖ ^ e` are associated, so `γ = β ^ d / ϖ` lies in the integrally closed
-  -- ring `S`, and `γ ^ e = u`.
-  have hβ' : (β ^ d) ^ e = algebraMap B S u * algebraMap B S ϖ ^ e := by
-    rw [← map_pow, ← map_mul, ← hβ]
-    ring
-  have hassoc : Associated (algebraMap B S ϖ ^ e) ((β ^ d) ^ e) :=
-    ⟨(hu.map (algebraMap B S)).unit, by
-      rw [IsUnit.unit_spec]
-      linear_combination -hβ'⟩
-  obtain ⟨γ, hγ'⟩ := (Associated.pow_iff he₀).mp hassoc
-  have hγ : (γ : S) ^ e = algebraMap B S u := by
-    apply mul_left_cancel₀ (pow_ne_zero e hϖS)
-    linear_combination congrArg (· ^ e) hγ' + hβ'
-  obtain ⟨φ, hφx, hφy⟩ := exists_algHom_abhyankarModel (d := d) hγ hγ'.symm
+  -- `γ = β ^ d / ϖ` lies in the integrally closed ring `S`, and `γ ^ e = u`.
+  obtain ⟨γ, hγ', hγ⟩ := exists_eq_mul_of_pow_eq_mul_pow (b := β ^ d) hϖS he₀
+    (by rw [← pow_mul, mul_comm, hβ, map_mul, map_pow])
+  set φ := abhyankarModelLift hγ hγ'
+  have hφx : φ (abhyankarModelRoot ϖ u e d) = β := abhyankarModelLift_root hγ hγ'
+  have hφy := abhyankarModelLift_algebraMap_root hγ hγ'
   set M := (maximalIdeal S).comap φ
   have : NeZero e := ⟨he₀⟩
   have : NeZero d := ⟨hd⟩
@@ -179,7 +160,7 @@ theorem exists_algEquiv_localization_abhyankarModel (hϖ : Irreducible ϖ) (hu :
   obtain ⟨_, _, hx⟩ := isDiscreteValuationRing_localization_abhyankarModel hϖ hu he hd M
   exact ⟨M, inferInstance, inferInstance, .ofBijective ψ
     ⟨IsDiscreteValuationRing.injective_of_map_ne_zero ψ hx (hψx ▸ hβ₀),
-      surjective_localization_abhyankarModel hϖ hγ' hβ₀ hβm hgen φ hφx hφy hx ψ hψ⟩, hψx⟩
+      surjective_localization_abhyankarModel hϖ hγ'.symm hβ₀ hβm hgen φ hφx hφy hx ψ hψ⟩, hψx⟩
 
 /-- Under the hypotheses of `TauCeti.exists_algEquiv_localization_abhyankarModel`, the integrally
 closed local domain `S` is a discrete valuation ring. -/

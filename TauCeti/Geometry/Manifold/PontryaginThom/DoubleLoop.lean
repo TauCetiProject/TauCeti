@@ -143,7 +143,8 @@ degree and with any coefficients. -/
 theorem injective_singularHomologyMap_map_map_of_transverse (f : SmoothEmbedding I J ∞ S Q)
     (hn : (∞ : ℕ∞ω) ≠ 0)
     (hdim : Module.finrank ℝ (Fin (n + 2) → ℝ) = Module.finrank ℝ V - Module.finrank ℝ E)
-    (φ : Trivialization (Fin (n + 2) → ℝ) (π (Fin (n + 2) → ℝ) fun x ↦ f.NormalSpace x hn))
+    (φ : Trivialization (Fin (n + 2) → ℝ)
+        (π (Fin (n + 2) → ℝ) fun x ↦ f.isImmersion.NormalSpace x hn))
     [φ.IsLinear ℝ] (hφ : φ.baseSet = univ)
     (hφs : letI := f.normalSpaceFiberBundle hn hdim
       ContMDiff (I.prod 𝓘(ℝ, Fin (n + 2) → ℝ)) (I.prod 𝓘(ℝ, Fin (n + 2) → ℝ)) ∞ φ)

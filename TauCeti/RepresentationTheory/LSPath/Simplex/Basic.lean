@@ -8,7 +8,7 @@ module
 public import Mathlib.Order.Fin.Basic
 public import TauCeti.Geometry.Convex.ConvexSpace.PrefixSum
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.IntervalBondGcd
-public import TauCeti.RepresentationTheory.LSPath.Realization
+public import TauCeti.RepresentationTheory.LSPath.Realization.Faithful
 
 import Mathlib.Data.Finset.Sort
 import TauCeti.Data.Fin.Tuple.Basic

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
+public import TauCeti.Topology.Homotopy.Isotopy.Basic
 
 /-!
 # Continuous evaluation of diffeomorphisms
@@ -16,7 +17,10 @@ On a compact source manifold with locally compact model, the weak Whitney topolo
 evaluation of `C^n` diffeomorphisms continuous in both the diffeomorphism and the point.
 For self-diffeomorphisms this gives continuity of the tautological action. The scoped
 `ContinuousEval` instance also lets `Path.evalHomotopy` (in
-`TauCeti.Topology.MappingSpace.Evaluation`) apply to diffeomorphisms.
+`TauCeti.Topology.MappingSpace.Evaluation`) apply to diffeomorphisms. A path of
+diffeomorphisms traces an isotopy through the homeomorphisms underlying its points
+(`Diffeomorph.isotopyOfPath`), so diffeomorphisms joined by a path are isotopic
+(`Diffeomorph.isotopic_of_joined`).
 -/
 
 public section
@@ -49,5 +53,26 @@ theorem applyContinuousSMul : ContinuousSMul (M ≃ₘ^n⟮I, I⟯ M) M :=
 
 scoped[TauCeti.DiffeomorphWeakWhitney] attribute [instance]
   Diffeomorph.applyContinuousSMul
+
+/-- A path `γ` of diffeomorphisms from `f` to `g`, for the weak Whitney topology, traces the
+isotopy `(t, x) ↦ γ t x` from `f` to `g`, every slice being a homeomorphism. -/
+noncomputable def isotopyOfPath {f g : M ≃ₘ^n⟮I, J⟯ N} (γ : Path f g) :
+    TauCeti.Isotopy (f.toHomeomorph : C(M, N)) g.toHomeomorph where
+  toFun p := γ p.1 p.2
+  continuous_toFun := by fun_prop
+  map_zero_left x := by simp
+  map_one_left x := by simp
+  prop' t := (γ t).toHomeomorph.isEmbedding
+
+/-- At time `t`, the isotopy traced by `γ` is the diffeomorphism `γ t`. -/
+@[simp]
+theorem isotopyOfPath_apply {f g : M ≃ₘ^n⟮I, J⟯ N} (γ : Path f g)
+    (p : unitInterval × M) : isotopyOfPath γ p = γ p.1 p.2 :=
+  (rfl)
+
+/-- Diffeomorphisms joined by a path for the weak Whitney topology are isotopic. -/
+theorem isotopic_of_joined {f g : M ≃ₘ^n⟮I, J⟯ N} (h : Joined f g) :
+    TauCeti.Isotopic (f.toHomeomorph : C(M, N)) g.toHomeomorph :=
+  .of_isotopy (isotopyOfPath h.somePath)
 
 end Diffeomorph

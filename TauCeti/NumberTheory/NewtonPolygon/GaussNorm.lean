@@ -101,6 +101,12 @@ theorem norm_coeff_mul_rpow_pow_le_iff (n : ℕ) (σ c : ℝ) :
     WithTop.untop₀_coe]
   constructor <;> intro h <;> linarith
 
+/-- An upper bound `b ^ (-c)` on one coefficient norm is the lower bound `c` on the height of that
+coefficient. A zero coefficient satisfies both bounds. -/
+theorem norm_coeff_le_rpow_neg_iff (n : ℕ) (c : ℝ) :
+    ‖f.coeff n‖ ≤ b ^ (-c) ↔ (c : WithTop ℝ) ≤ v (f.coeff n) := by
+  simpa using norm_coeff_mul_rpow_pow_le_iff f v hb hv n 0 c
+
 /-- A weighted coefficient norm equals `b ^ (-c)` exactly when the coefficient lies on the line
 of slope `σ` and intercept `c`. A zero coefficient satisfies neither condition. -/
 theorem norm_coeff_mul_rpow_pow_eq_iff (n : ℕ) (σ c : ℝ) :

@@ -23,12 +23,12 @@ Transporting the strong-exchange witness
 `TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange` to lifted words in `D.points A`
 and tracking the resulting torus correction shows that any word of pinned simple Weyl
 representatives spelling `1` in the Weyl group lies in the actual character-lattice torus `T_D(A)`
-(`ChevalleyDatum.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`).
+(`ChevalleyDatum.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one`).
 
 ## Main results
 
-* `TauCeti.DynkinType.ChevalleyDatum.weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one`:
-  any word of pinned simple Weyl representatives spelling `1` in the Weyl group lies in
+* `ChevalleyDatum.weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one`: any
+  word of pinned simple Weyl representatives spelling `1` in the Weyl group lies in
   `(D.torusPoints A).range`, over every commutative ring `A` and for every valid Dynkin type.
 
 ## References
@@ -52,7 +52,8 @@ private theorem exists_unit_weylWord_conj_weylElement (A : Type v) [CommRing A]
       (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.weylElement γ A s *
           ((l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod)⁻¹ =
         D.weylElement
-          ((t.simplyConnectedRootDatum ht).weylGroupToPerm (t.geckWeylWordProd ht l) γ) A s' := by
+          ((t.simplyConnectedRootDatum ht).weylGroupToPerm (t.simplyConnectedWeylWordProd ht l) γ)
+          A s' := by
   induction l generalizing γ s with
   | nil => exact ⟨s, by simp⟩
   | cons i l ih =>
@@ -60,8 +61,8 @@ private theorem exists_unit_weylWord_conj_weylElement (A : Type v) [CommRing A]
     refine ⟨Units.map (Int.castRingHom A).toMonoidHom
       (t.chevalleyWeylSign ht (t.simpleIndex ht i)
         ((t.simplyConnectedRootDatum ht).weylGroupToPerm
-          (t.geckWeylWordProd ht l) γ)) * s₁, ?_⟩
-    rw [List.map_cons, List.prod_cons, mul_inv_rev, geckWeylWordProd_cons,
+          (t.simplyConnectedWeylWordProd ht l) γ)) * s₁, ?_⟩
+    rw [List.map_cons, List.prod_cons, mul_inv_rev, simplyConnectedWeylWordProd_cons,
       RootPairing.weylGroupToPerm_ofIdx_mul_apply]
     calc
       D.weylElement (t.simpleIndex ht i) A 1 *
@@ -117,10 +118,10 @@ sending a positive root `γ` to a negative root, multiplying the lifted word on 
 private theorem exists_eraseIdx_weylWord_mul_weylElement (A : Type v) [CommRing A]
     {γ : Fin t.numRoots} (hγ : (t.simplyConnectedBase ht).IsPos γ) (l : List (Fin t.rank))
     (h : ¬(t.simplyConnectedBase ht).IsPos
-      ((t.simplyConnectedRootDatum ht).weylGroupToPerm (t.geckWeylWordProd ht l) γ)) :
+      ((t.simplyConnectedRootDatum ht).weylGroupToPerm (t.simplyConnectedWeylWordProd ht l) γ)) :
     ∃ p < l.length,
-      t.geckWeylWordProd ht (l.eraseIdx p) =
-        t.geckWeylWordProd ht l *
+      t.simplyConnectedWeylWordProd ht (l.eraseIdx p) =
+        t.simplyConnectedWeylWordProd ht l *
           RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ ∧
       ∃ r : Fin t.rank → Aˣ,
         (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod * D.weylElement γ A 1 =
@@ -135,12 +136,12 @@ private theorem exists_eraseIdx_weylWord_mul_weylElement (A : Type v) [CommRing 
   have hp' : p < l.length := by simpa using hp
   have hdrop' :
       (t.simplyConnectedRootDatum ht).weylGroupToPerm
-          (t.geckWeylWordProd ht (l.drop (p + 1))) γ =
+          (t.simplyConnectedWeylWordProd ht (l.drop (p + 1))) γ =
         t.simpleIndex ht l[p] := by
     simpa [e, ← List.map_drop] using hdrop
   have hwp' :
-      t.geckWeylWordProd ht (l.eraseIdx p) =
-        t.geckWeylWordProd ht l *
+      t.simplyConnectedWeylWordProd ht (l.eraseIdx p) =
+        t.simplyConnectedWeylWordProd ht l *
           RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht) γ := by
     simpa [e, List.eraseIdx_map] using hwp
   obtain ⟨s', hs'⟩ := D.exists_unit_weylWord_conj_weylElement A (l.drop (p + 1)) γ 1
@@ -169,13 +170,13 @@ private theorem exists_eraseIdx_weylWord_mul_weylElement (A : Type v) [CommRing 
 
 /-- **Any word of simple Weyl representatives spelling `1` in the Weyl group lies in the actual
 torus `T_D(A)`**, over an arbitrary commutative ring `A` and for every valid Dynkin type. -/
-theorem weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one (A : Type v) [CommRing A]
-    (l : List (Fin t.rank)) (hl : t.geckWeylWordProd ht l = 1) :
+theorem weylWord_mem_range_torusPoints_of_simplyConnectedWeylWordProd_eq_one (A : Type v)
+    [CommRing A] (l : List (Fin t.rank)) (hl : t.simplyConnectedWeylWordProd ht l = 1) :
     (l.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ (D.torusPoints A).range := by
   let _ := t.isReduced_simplyConnectedRootDatum ht
   let P := t.simplyConnectedRootDatum ht
   let b := t.simplyConnectedBase ht
-  suffices ∀ n (l' : List (Fin t.rank)), l'.length = n → t.geckWeylWordProd ht l' = 1 →
+  suffices ∀ n (l' : List (Fin t.rank)), l'.length = n → t.simplyConnectedWeylWordProd ht l' = 1 →
       (l'.map fun i => D.weylElement (t.simpleIndex ht i) A 1).prod ∈ (D.torusPoints A).range from
     this l.length l rfl hl
   intro n
@@ -184,16 +185,18 @@ theorem weylWord_mem_range_torusPoints_of_geckWeylWordProd_eq_one (A : Type v) [
     intro l' hlen hl'
     rcases List.eq_nil_or_concat l' with rfl | ⟨l₁, k, rfl⟩
     · exact ⟨1, by simp⟩
-    · rw [List.concat_eq_append, geckWeylWordProd_append, geckWeylWordProd_cons,
-        geckWeylWordProd_nil, mul_one] at hl'
+    · rw [List.concat_eq_append, simplyConnectedWeylWordProd_append,
+        simplyConnectedWeylWordProd_cons, simplyConnectedWeylWordProd_nil, mul_one] at hl'
       have hl₁ :
-          t.geckWeylWordProd ht l₁ = RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) :=
+          t.simplyConnectedWeylWordProd ht l₁ =
+            RootPairing.weylGroup.ofIdx P (t.simpleIndex ht k) :=
         (eq_inv_of_mul_eq_one_left hl').trans (RootPairing.weylGroup.ofIdx_inv_eq P _)
       have hkpos : b.IsPos (t.simpleIndex ht k) := by
         rw [← mem_posRoots, ← posRoots_rationalRootSystem]
         exact simpleIndex_mem_posRoots k
       have hkneg :
-          ¬b.IsPos (P.weylGroupToPerm (t.geckWeylWordProd ht l₁) (t.simpleIndex ht k)) := by
+          ¬b.IsPos
+            (P.weylGroupToPerm (t.simplyConnectedWeylWordProd ht l₁) (t.simpleIndex ht k)) := by
         rw [hl₁, RootPairing.weylGroupToPerm_ofIdx_apply, ← mem_posRoots]
         exact reflectionPerm_self_notMem_posRoots P b ((mem_posRoots P b _).mpr hkpos)
       obtain ⟨p, hp, hwp, r, hr⟩ :=
