@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
-import Mathlib.LinearAlgebra.Matrix.StdBasis
+import TauCeti.LinearAlgebra.Matrix.StdBasis
 
 /-!
 # The determinant of `X ↦ A * X * B`
@@ -32,10 +32,8 @@ Kronecker product `A ⊗ₖ Bᵀ` as its matrix. -/
 theorem toMatrix_stdBasis_mulLeft_comp_mulRight (A B : Matrix n n R) :
     LinearMap.toMatrix (stdBasis R n n) (stdBasis R n n)
       (LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) = A ⊗ₖ Bᵀ := by
-  have hrepr (X : Matrix n n R) (p : n × n) : (stdBasis R n n).repr X p = X p.1 p.2 := by
-    simp [stdBasis]
   ext ⟨i, j⟩ ⟨k, l⟩
-  simp [LinearMap.toMatrix_apply, stdBasis_eq_single, hrepr, Matrix.mul_apply,
+  simp [LinearMap.toMatrix_apply, stdBasis_eq_single, Matrix.mul_apply,
     Matrix.single_apply, ite_and, Finset.sum_ite_eq]
 
 /-- **The determinant of two-sided multiplication**: the `R`-linear map `X ↦ A * X * B` on

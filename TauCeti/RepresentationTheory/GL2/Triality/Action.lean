@@ -8,9 +8,9 @@ module
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
 public import TauCeti.RepresentationTheory.Tensor.Induction.Basic
 
-import Mathlib.LinearAlgebra.Matrix.StdBasis
 import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 import Mathlib.LinearAlgebra.TensorProduct.Basis
+import TauCeti.LinearAlgebra.Matrix.StdBasis
 
 /-!
 # The triality action of `GL₂ ≀ S₃` on `M₂ ⊗ R²`
@@ -85,12 +85,9 @@ private noncomputable def tripleBasis :
 the three vectors. -/
 private theorem tripleBasis_repr_vecMulVec_tmul (x : Fin 3 → Fin 2 → R) (i : Fin 3 → Fin 2) :
     (tripleBasis R).repr (vecMulVec (x 0) (x 2) ⊗ₜ x 1) i = ∏ k, x k (i k) := by
-  have hrepr (m : Matrix (Fin 2) (Fin 2) R) (p : Fin 2 × Fin 2) :
-      (Matrix.stdBasis R (Fin 2) (Fin 2)).repr m p = m p.1 p.2 := by
-    simp [Matrix.stdBasis]
   simp only [tripleBasis, Module.Basis.repr_reindex_apply, tripleIndexEquiv_symm_apply,
-    Module.Basis.tensorProduct_repr_tmul_apply, hrepr, Pi.basisFun_repr, vecMulVec_apply,
-    smul_eq_mul, Fin.prod_univ_three]
+    Module.Basis.tensorProduct_repr_tmul_apply, stdBasis_repr_apply, Pi.basisFun_repr,
+    vecMulVec_apply, smul_eq_mul, Fin.prod_univ_three]
   ring
 
 /-- The identification of `M₂(R) ⊗[R] R²` with the triple tensor power of `R²`, sending
