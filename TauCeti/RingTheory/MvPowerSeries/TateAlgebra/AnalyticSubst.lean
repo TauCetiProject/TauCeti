@@ -51,6 +51,8 @@ here allows radii that are not norms of elements of `R`, which no weight family 
   homomorphisms.
 * `TauCeti.MvPowerSeries.restrictedAnalyticSubst_zero_apply`: substituting zero gives the
   constant coefficient.
+* `TauCeti.MvPowerSeries.restrictedAnalyticSubst_algebraMap`: substituting constants is
+  evaluating.
 * `TauCeti.MvPowerSeries.restrictedAnalyticSubst_self` and
   `TauCeti.MvPowerSeries.restrictedAnalyticSubst_comp`: the identity and composition laws.
 * `TauCeti.MvPowerSeries.restrictedEval₂_restrictedAnalyticSubst`: evaluating `f(g)` at `b` is
@@ -93,6 +95,14 @@ theorem restrictedAnalyticSubst_apply (f : IsRestricted.subring (R := R) r) :
     restrictedAnalyticSubst g hg f =
       restrictedEval₂ (algebraMap R _) g (fun a ↦ (norm_algebraMap_isRestrictedSubring a).le) hg
         f := (rfl)
+
+variable {g hg} in
+/-- Substitutions of equal families of series agree, whatever the proofs of their norm bounds. -/
+theorem restrictedAnalyticSubst_congr {g' : Fin k → IsRestricted.subring (R := R) s}
+    {hg' : ∀ i, ‖g' i‖ ≤ r i} (h : g = g') (f : IsRestricted.subring (R := R) r) :
+    restrictedAnalyticSubst g hg f = restrictedAnalyticSubst g' hg' f := by
+  subst h
+  rfl
 
 /-- The substitution `f(g)` is the sum of the substituted monomials `fₜ gᵗ`. -/
 theorem hasSum_restrictedAnalyticSubst (f : IsRestricted.subring (R := R) r) :
@@ -191,6 +201,24 @@ theorem eq_restrictedAnalyticSubst
     (hX : ∀ i, ψ ⟨X i, isRestricted_monomial r (Finsupp.single i 1) 1⟩ = g i) :
     ψ = restrictedAnalyticSubst g hg :=
   AlgHom.toRingHom_injective <| eq_restrictedEval₂ _ g _ hg ψ.toRingHom hψ ψ.commutes hX
+
+/-- **Substituting constants is evaluating**: for constants `aᵢ ∈ R` with `‖aᵢ‖ ≤ rᵢ`, the
+substitution `f(a)` into `R{Y/s}` is the constant series of the value `f(a) ∈ R`. -/
+@[simp]
+theorem restrictedAnalyticSubst_algebraMap (a : Fin k → R) (ha : ∀ i, ‖a i‖ ≤ r i)
+    (f : IsRestricted.subring (R := R) r) :
+    restrictedAnalyticSubst (fun i ↦ algebraMap R (IsRestricted.subring (R := R) s) (a i))
+        (fun i ↦ (norm_algebraMap_isRestrictedSubring (a i)).trans_le (ha i)) f =
+      algebraMap R _ (restrictedEval₂ (RingHom.id R) a (fun _ ↦ le_rfl) ha f) := by
+  have hcont : Continuous (algebraMap R (IsRestricted.subring (R := R) s)) :=
+    (AddMonoidHomClass.isometry_of_norm _ norm_algebraMap_isRestrictedSubring).continuous
+  have h := eq_restrictedEval₂ (algebraMap R _) _
+    (fun b ↦ (norm_algebraMap_isRestrictedSubring b).le)
+    (fun i ↦ (norm_algebraMap_isRestrictedSubring (a i)).trans_le (ha i))
+    ((algebraMap R _).comp (restrictedEval₂ (RingHom.id R) a (fun _ ↦ le_rfl) ha))
+    (hcont.comp (continuous_restrictedEval₂ _ a _ ha))
+    (fun b ↦ by simp [restrictedEval₂_algebraMap]) fun i ↦ by simp [restrictedEval₂_X]
+  exact (DFunLike.congr_fun h f).symm
 
 /-- **Substituting the variables themselves is the identity.** -/
 theorem restrictedAnalyticSubst_self [NormOneClass R] :
