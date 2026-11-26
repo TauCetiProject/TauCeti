@@ -195,22 +195,17 @@ theorem W1p.norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_co
       ‖W1p.value w‖ ≤ C * ‖W1p.gradient w‖)
     {u : W1p mu V p} (hu : u ∈ w1pVanishingOnSubmodule mu V p Γ) :
     ‖W1p.value u‖ ≤ ‖(e : E →L[ℝ] E)‖ * C * ‖W1p.gradient u‖ := by
-  have hdet0 : LinearMap.det (e : E →ₗ[ℝ] E) ≠ 0 :=
-    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero
-  have hL : ∀ x ∈ (U : Set E), ‖fderiv ℝ e x‖ ≤ ‖(e : E →L[ℝ] E)‖ := fun x _ => by rw [e.fderiv]
-  have hdet : ∀ x ∈ (U : Set E), |(e : E →L[ℝ] E).det| ≤ |(fderiv ℝ e x).det| := fun x _ => by
-    rw [e.fderiv]
-  have hmaps : MapsTo e U V := hUV ▸ mapsTo_preimage e V
-  have hd : DifferentiableOn ℝ e U := e.differentiable.differentiableOn
-  have hi : InjOn e U := e.injective.injOn
-  have hd0 : 0 < |(e : E →L[ℝ] E).det| := abs_pos.2 hdet0
   -- With `w = u ∘ e` and `K = |det e| ^ (-1/p)`: `‖w‖ = K ‖u‖` and `‖∇w‖ ≤ ‖e‖ K ‖∇u‖`.
-  have hgrad := W1p.norm_gradient_compL_continuousLinearEquiv_le hp e hd hi hmaps hL hd0 hdet hUV u
-  have h := hC _ (W1p.compL_mem_w1pVanishingOnSubmodule e hp hd hi hmaps hL hd0 hdet e.contDiff
-    e.toHomeomorph.isProperMap hu)
-  rw [W1p.norm_value_compL_continuousLinearEquiv hp e hd hi hmaps hL hd0 hdet hUV u] at h
+  set w := W1p.compContinuousLinearEquivL (mu := mu) hp e hUV u
+  have hgrad := W1p.norm_gradient_compContinuousLinearEquivL_le hp e hUV u
+  have hw : w ∈ w1pVanishingOnSubmodule mu U p (e ⁻¹' Γ) :=
+    W1p.compL_mem_w1pVanishingOnSubmodule e hp _ _ _ _ _ _ e.contDiff e.toHomeomorph.isProperMap
+      hu
+  have h := hC w hw
+  rw [W1p.norm_value_compContinuousLinearEquivL hp e hUV u] at h
   set K := |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal
-  have hK : 0 < K := Real.rpow_pos_of_pos (abs_pos.2 (inv_ne_zero hdet0)) _
+  have hK : 0 < K := Real.rpow_pos_of_pos
+    (abs_pos.2 (inv_ne_zero (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero)) _
   rcases le_or_gt 0 C with hC0 | hC0
   · refine le_of_mul_le_mul_left ?_ hK
     calc K * ‖W1p.value u‖ ≤ C * (‖(e : E →L[ℝ] E)‖ * (K * ‖W1p.gradient u‖)) :=
@@ -218,8 +213,7 @@ theorem W1p.norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_co
       _ = K * (‖(e : E →L[ℝ] E)‖ * C * ‖W1p.gradient u‖) := by ring
   · -- A negative constant forces `u = 0`.
     refine W1p.norm_value_le_mul_norm_gradient_of_norm_value_le_of_nonpos (b := 0) ?_ le_rfl _
-    nlinarith [norm_nonneg (W1p.value u),
-      norm_nonneg (W1p.gradient (W1p.compL e hp hd hi hmaps hL hd0 hdet u))]
+    nlinarith [norm_nonneg (W1p.value u), norm_nonneg (W1p.gradient w)]
 
 /-- **The Poincaré–Friedrichs constant scales linearly under dilation.** Let `1 ≤ p < ∞`,
 `c > 0` and `V = c • U`. The inequality `‖u‖_{Lᵖ(U)} ≤ C ‖∇u‖_{Lᵖ(U)}` holds on `W^{1,p}_Γ(U)`
@@ -237,7 +231,8 @@ theorem W1p.forall_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodul
       (u : W1p mu V p) (hu : u ∈ w1pVanishingOnSubmodule mu V p (c • Γ)) :
       ‖W1p.value u‖ ≤ c * C * ‖W1p.gradient u‖ := by
     let e : E ≃L[ℝ] E := (LinearEquiv.smulOfNeZero ℝ E c hc.ne').toContinuousLinearEquiv
-    have he (x : E) : e x = c • x := rfl
+    have he (x : E) : e x = c • x := by
+      simp [e, LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.smulOfNeZero_apply]
     have hpre (s : Set E) : e ⁻¹' (c • s) = s := by
       ext x
       simp [he, smul_mem_smul_set_iff₀ hc.ne']

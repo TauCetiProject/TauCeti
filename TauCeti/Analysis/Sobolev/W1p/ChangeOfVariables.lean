@@ -65,10 +65,10 @@ half-space, where `TauCeti.W1p.halfSpaceTrace` and `TauCeti.W1p.extendByReflecti
   weak gradient is `DΦ* (∇u ∘ Φ)`, almost everywhere on `U`.
 * `TauCeti.W1p.norm_compL_le`, `TauCeti.W1p.opNorm_compL_le`: the norm bound.
 * `TauCeti.W1p.compL_mem_w1p0Submodule`: precomposition maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`.
-* `TauCeti.W1p.norm_value_compL_continuousLinearEquiv`,
-  `TauCeti.W1p.norm_gradient_compL_continuousLinearEquiv_le`: for a linear automorphism `e`, the
-  `Lᵖ` norm of the value scales by `|det e| ^ (-1/p)`, and that of the gradient by at most
-  `‖e‖ |det e| ^ (-1/p)`.
+* `TauCeti.W1p.compContinuousLinearEquivL`: precomposition with a linear automorphism `e`.
+* `TauCeti.W1p.norm_value_compContinuousLinearEquivL`,
+  `TauCeti.W1p.norm_gradient_compContinuousLinearEquivL_le`: the `Lᵖ` norm of the value scales by
+  `|det e| ^ (-1/p)`, and that of the gradient by at most `‖e‖ |det e| ^ (-1/p)`.
 * `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`: the chain rule for weak derivatives under a
   `C¹` change of variables.
 * `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`: its affine case `x ↦ A x + b`.
@@ -433,42 +433,69 @@ end ChangeOfVariables
 
 section LinearChangeOfVariables
 
-variable [mu.IsAddHaarMeasure] (hp : p ≠ ⊤) (e : E ≃L[ℝ] E) (hΦ : DifferentiableOn ℝ e U)
-  (hinj : InjOn e U) (hmaps : MapsTo e U V) (hL : ∀ x ∈ (U : Set E), ‖fderiv ℝ e x‖ ≤ L)
-  (hc : 0 < c) (hdet : ∀ x ∈ (U : Set E), c ≤ |(fderiv ℝ e x).det|)
+variable [mu.IsAddHaarMeasure] (hp : p ≠ ⊤) (e : E ≃L[ℝ] E) (hUV : (U : Set E) = e ⁻¹' V)
+
+/-- **Linear changes of variables in `W^{1,p}`.** Precomposition with a continuous linear
+automorphism `e` of `E`, as the operator `TauCeti.W1p.compL` from `W^{1,p}(V)` to `W^{1,p}(U)` for
+`U = e⁻¹(V)`, with the bounds `‖De‖ ≤ ‖e‖` and `|det e| ≤ |det De|`. -/
+@[expose]
+def W1p.compContinuousLinearEquivL : W1p mu V p →L[ℝ] W1p mu U p :=
+  W1p.compL e hp (L := ‖(e : E →L[ℝ] E)‖) (c := |(e : E →L[ℝ] E).det|)
+    e.differentiable.differentiableOn e.injective.injOn (hUV ▸ mapsTo_preimage e V)
+    (fun x _ => by rw [e.fderiv]) (abs_pos.2 (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero)
+    (fun x _ => by rw [e.fderiv])
+
+/-- The value of `W1p.compContinuousLinearEquivL hp e hUV u` is `u ∘ e`, almost everywhere on
+`U`. -/
+theorem W1p.value_compContinuousLinearEquivL_ae (u : W1p mu V p) :
+    W1p.value (W1p.compContinuousLinearEquivL hp e hUV u) =ᵐ[mu.restrict U]
+      fun x => W1p.value u (e x) :=
+  W1p.value_compL_ae e hp _ _ _ _ _ _ u
+
+/-- The weak gradient of `W1p.compContinuousLinearEquivL hp e hUV u` is `e* (∇u ∘ e)`, almost
+everywhere on `U`. -/
+theorem W1p.gradient_compContinuousLinearEquivL_ae (u : W1p mu V p) :
+    W1p.gradient (W1p.compContinuousLinearEquivL hp e hUV u) =ᵐ[mu.restrict U]
+      fun x => (e : E →L[ℝ] E).adjoint (W1p.gradient u (e x)) := by
+  filter_upwards [W1p.gradient_compL_ae e hp _ _ _ _ _ _ u] with x hx
+  rw [W1p.compContinuousLinearEquivL, hx, e.fderiv]
+
+/-- Precomposition with a linear automorphism maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. -/
+theorem W1p.compContinuousLinearEquivL_mem_w1p0Submodule {u : W1p mu V p}
+    (hu : u ∈ w1p0Submodule mu V p) :
+    W1p.compContinuousLinearEquivL hp e hUV u ∈ w1p0Submodule mu U p :=
+  W1p.compL_mem_w1p0Submodule e hp _ _ _ _ _ _ e.toHomeomorph.isProperMap hUV hu
 
 /-- **Linear changes of variables scale the `Lᵖ` norm.** For a linear automorphism `e` of `E` and
 `U = e⁻¹(V)`, the value of `u ∘ e` has `Lᵖ(U)` norm `|det e| ^ (-1/p)` times the `Lᵖ(V)` norm of
 the value of `u`. -/
-theorem W1p.norm_value_compL_continuousLinearEquiv (hUV : (U : Set E) = e ⁻¹' V)
-    (u : W1p mu V p) :
-    ‖W1p.value (W1p.compL e hp hΦ hinj hmaps hL hc hdet u)‖ =
+theorem W1p.norm_value_compContinuousLinearEquivL (u : W1p mu V p) :
+    ‖W1p.value (W1p.compContinuousLinearEquivL hp e hUV u)‖ =
       |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal * ‖W1p.value u‖ := by
   have h := Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage mu (W1p.value u) e p
     (s := V)
   rw [← hUV] at h
   rw [Lp.norm_def, Lp.norm_def,
-    eLpNorm_congr_ae (W1p.value_compL_ae e hp hΦ hinj hmaps hL hc hdet u), ← Function.comp_def, h,
+    eLpNorm_congr_ae (W1p.value_compContinuousLinearEquivL_ae hp e hUV u), ← Function.comp_def, h,
     ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]
 
 /-- **Linear changes of variables and the weak gradient.** For a linear automorphism `e` of `E`
 and `U = e⁻¹(V)`, the weak gradient of `u ∘ e` has `Lᵖ(U)` norm at most `‖e‖ |det e| ^ (-1/p)`
 times the `Lᵖ(V)` norm of the weak gradient of `u`. -/
-theorem W1p.norm_gradient_compL_continuousLinearEquiv_le (hUV : (U : Set E) = e ⁻¹' V)
-    (u : W1p mu V p) :
-    ‖W1p.gradient (W1p.compL e hp hΦ hinj hmaps hL hc hdet u)‖ ≤
+theorem W1p.norm_gradient_compContinuousLinearEquivL_le (u : W1p mu V p) :
+    ‖W1p.gradient (W1p.compContinuousLinearEquivL hp e hUV u)‖ ≤
       ‖(e : E →L[ℝ] E)‖ *
         (|(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal * ‖W1p.gradient u‖) := by
   have h := Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage mu (W1p.gradient u) e p
     (s := V)
   rw [← hUV] at h
   -- Pointwise, `∇(u ∘ e) = e* (∇u ∘ e)` and `‖e*‖ = ‖e‖`.
-  have hle : eLpNorm (W1p.gradient (W1p.compL e hp hΦ hinj hmaps hL hc hdet u)) p
+  have hle : eLpNorm (W1p.gradient (W1p.compContinuousLinearEquivL hp e hUV u)) p
       (mu.restrict U) ≤ ENNReal.ofReal ‖(e : E →L[ℝ] E)‖ * eLpNorm (W1p.gradient u ∘ e) p
         (mu.restrict U) := by
     refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul (Lp.aestronglyMeasurable _) ?_ p
-    filter_upwards [W1p.gradient_compL_ae e hp hΦ hinj hmaps hL hc hdet u] with x hx
-    rw [hx, e.fderiv]
+    filter_upwards [W1p.gradient_compContinuousLinearEquivL_ae hp e hUV u] with x hx
+    rw [hx]
     exact ((e : E →L[ℝ] E).adjoint.le_opNorm _).trans_eq (by simp)
   rw [h] at hle
   rw [Lp.norm_def, Lp.norm_def]
