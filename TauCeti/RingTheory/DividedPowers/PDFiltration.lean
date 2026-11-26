@@ -496,6 +496,12 @@ theorem pdFiltration_eq_pow [Algebra ℚ R] (hI : DividedPowers I) (n : ℕ) :
   rw [RatAlgebra.dpow_eq_inv_fact_smul I hI hx, Algebra.smul_def]
   exact (I ^ m).mul_mem_left _ (Ideal.pow_mem_pow hx m)
 
+private theorem pdFiltration_eq_bot_of_pow_eq_zero (hI : DividedPowers I) {k n : ℕ}
+    (hpow : hI.pdFiltration n = I ^ n) (hkI : I ^ k = 0) (hn : k ≤ n) :
+    hI.pdFiltration n = ⊥ := by
+  rw [hpow, ← Ideal.zero_eq_bot]
+  exact eq_bot_iff.mpr ((Ideal.pow_le_pow_right hn).trans hkI.le)
+
 namespace OfInvertibleFactorial
 
 /-- For `OfInvertibleFactorial.dividedPowers`, the divided power filtration equals `I ^ n`. -/
@@ -510,9 +516,8 @@ theorem pdFiltration_eq_pow [DecidablePred (fun x : R ↦ x ∈ I)] {k : ℕ}
 /-- For `OfInvertibleFactorial.dividedPowers`, the filtration vanishes from degree `k` onward. -/
 theorem pdFiltration_eq_bot [DecidablePred (fun x : R ↦ x ∈ I)] {k : ℕ}
     (hk_fac : IsUnit ((k - 1).factorial : R)) (hkI : I ^ k = 0) {n : ℕ} (hn : k ≤ n) :
-    (OfInvertibleFactorial.dividedPowers hk_fac hkI).pdFiltration n = ⊥ := by
-  rw [pdFiltration_eq_pow hk_fac hkI n, ← Ideal.zero_eq_bot]
-  exact eq_bot_iff.mpr ((Ideal.pow_le_pow_right hn).trans hkI.le)
+    (OfInvertibleFactorial.dividedPowers hk_fac hkI).pdFiltration n = ⊥ :=
+  pdFiltration_eq_bot_of_pow_eq_zero _ (pdFiltration_eq_pow hk_fac hkI n) hkI hn
 
 end OfInvertibleFactorial
 
@@ -530,9 +535,8 @@ theorem pdFiltration_eq_pow [DecidablePred (fun x : R ↦ x ∈ I)] (hI2 : I ^ 2
 degree `2` onward. -/
 theorem pdFiltration_eq_bot [DecidablePred (fun x : R ↦ x ∈ I)] (hI2 : I ^ 2 = 0) {n : ℕ}
     (hn : 2 ≤ n) :
-    (OfSquareZero.dividedPowers hI2).pdFiltration n = ⊥ := by
-  rw [pdFiltration_eq_pow hI2 n, ← Ideal.zero_eq_bot]
-  exact eq_bot_iff.mpr ((Ideal.pow_le_pow_right hn).trans hI2.le)
+    (OfSquareZero.dividedPowers hI2).pdFiltration n = ⊥ :=
+  pdFiltration_eq_bot_of_pow_eq_zero _ (pdFiltration_eq_pow hI2 n) hI2 hn
 
 end OfSquareZero
 

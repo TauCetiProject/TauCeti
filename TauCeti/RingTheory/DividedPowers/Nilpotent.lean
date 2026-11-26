@@ -195,16 +195,16 @@ theorem isPDNilpotent_iff_isNilpotent [Algebra ℚ R] :
 theorem OfInvertibleFactorial.isPDNilpotent [DecidablePred (fun x : R ↦ x ∈ I)] {k : ℕ}
     (hk_fac : IsUnit ((k - 1).factorial : R)) (hkI : I ^ k = 0) :
     (OfInvertibleFactorial.dividedPowers hk_fac hkI).IsPDNilpotent :=
-  (OfInvertibleFactorial.dividedPowers hk_fac hkI).isPDNilpotent_iff_exists_eq_bot.mpr
-    ⟨k, OfInvertibleFactorial.pdFiltration_eq_bot hk_fac hkI le_rfl⟩
+  (isPDNilpotent_iff_isNilpotent_of_pdFiltration_eq_pow _
+    (OfInvertibleFactorial.pdFiltration_eq_pow hk_fac hkI)).mpr ⟨k, hkI⟩
 
 /-- For `OfSquareZero.dividedPowers` on a square-zero ideal `I`, the divided power ideal is
 PD-nilpotent. -/
 @[simp]
 theorem OfSquareZero.isPDNilpotent [DecidablePred (fun x : R ↦ x ∈ I)] (hI2 : I ^ 2 = 0) :
     (OfSquareZero.dividedPowers hI2).IsPDNilpotent :=
-  (OfSquareZero.dividedPowers hI2).isPDNilpotent_iff_exists_eq_bot.mpr
-    ⟨2, OfSquareZero.pdFiltration_eq_bot hI2 le_rfl⟩
+  (isPDNilpotent_iff_isNilpotent_of_pdFiltration_eq_pow _
+    (OfSquareZero.pdFiltration_eq_pow hI2)).mpr ⟨2, hI2⟩
 
 /-- For `DividedPowers.IsNilpotent.dividedPowers`, the divided power ideal is PD-nilpotent. -/
 @[simp]
@@ -212,16 +212,16 @@ theorem IsNilpotent.isPDNilpotent {A : Type*} [CommRing A] {p : ℕ} [Fact p.Pri
     (hp : _root_.IsNilpotent (p : A)) {J : Ideal A} [DecidablePred (fun x ↦ x ∈ J)]
     (hJp : J ^ p = 0) :
     (DividedPowers.IsNilpotent.dividedPowers hp hJp).IsPDNilpotent :=
-  (DividedPowers.IsNilpotent.dividedPowers hp hJp).isPDNilpotent_iff_exists_eq_bot.mpr
-    ⟨p, by rw [IsNilpotent.pdFiltration_eq_pow hp hJp p, ← Ideal.zero_eq_bot, hJp]⟩
+  (isPDNilpotent_iff_isNilpotent_of_pdFiltration_eq_pow _
+    (IsNilpotent.pdFiltration_eq_pow hp hJp)).mpr ⟨p, hJp⟩
 
 /-- For `DividedPowers.CharP.dividedPowers`, the divided power ideal is PD-nilpotent. -/
 @[simp]
 theorem CharP.isPDNilpotent (A : Type*) [CommRing A] (p : ℕ) [_root_.CharP A p] [Fact p.Prime]
     {J : Ideal A} [DecidablePred (fun x ↦ x ∈ J)] (hJp : J ^ p = 0) :
     (DividedPowers.CharP.dividedPowers A p hJp).IsPDNilpotent :=
-  (DividedPowers.CharP.dividedPowers A p hJp).isPDNilpotent_iff_exists_eq_bot.mpr
-    ⟨p, by rw [CharP.pdFiltration_eq_pow A p hJp p, ← Ideal.zero_eq_bot, hJp]⟩
+  (isPDNilpotent_iff_isNilpotent_of_pdFiltration_eq_pow _
+    (CharP.pdFiltration_eq_pow A p hJp)).mpr ⟨p, hJp⟩
 
 end SpecialCases
 
