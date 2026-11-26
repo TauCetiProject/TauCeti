@@ -264,6 +264,12 @@ private noncomputable abbrev recordsHomeomorph (x y : criticalPoints 𝓘(ℝ, E
     (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense' x y)) (fun i ↦ i.property)
     (fun i ↦ hc i) (fun i ↦ i.property) fun i ↦ hc' i
 
+/-- The change of levels back is the inverse of the change of levels of the records. -/
+private theorem recordsHomeomorph_symm (x y : criticalPoints 𝓘(ℝ, E) f) :
+    (hX.recordsHomeomorph hf hdense hdense' hc hc' x y).symm =
+      hX.recordsHomeomorph hf hdense' hdense hc' hc x y :=
+  (rfl)
+
 /-- **Changing the levels of the trajectory spaces.** For two families of levels `c` and `c'`,
 dense between any two critical values and avoiding the critical values, reading the points of a
 broken trajectory on the levels of `c'` is a homeomorphism from the trajectory space from `x` to
@@ -280,15 +286,11 @@ noncomputable def morseBrokenTrajectorySpaceHomeomorph (x y : criticalPoints �
       Subtype.property _⟩⟩
   left_inv w := Subtype.ext <| by
     -- The records underlying both sides agree, as the change of levels back is the inverse.
-    have h := congrArg Subtype.val <|
-      (hX.recordsHomeomorph hf hdense hdense' hc hc' x y).symm_apply_apply
-        (inclusion (morseBrokenTrajectorySpace_subset _ _) w)
-    exact h
+    simp only [Subtype.coe_eta, ← recordsHomeomorph_symm hX hf hdense hdense' hc hc' x y,
+      Homeomorph.symm_apply_apply, coe_inclusion]
   right_inv w := Subtype.ext <| by
-    have h := congrArg Subtype.val <|
-      (hX.recordsHomeomorph hf hdense hdense' hc hc' x y).apply_symm_apply
-        (inclusion (morseBrokenTrajectorySpace_subset _ _) w)
-    exact h
+    simp only [Subtype.coe_eta, ← recordsHomeomorph_symm hX hf hdense hdense' hc hc' x y,
+      Homeomorph.apply_symm_apply, coe_inclusion]
   continuous_toFun := (continuous_subtypeVal.comp <|
     (hX.recordsHomeomorph hf hdense hdense' hc hc' x y).continuous.comp
       (continuous_inclusion _)).subtype_mk _
@@ -297,6 +299,16 @@ noncomputable def morseBrokenTrajectorySpaceHomeomorph (x y : criticalPoints �
       (continuous_inclusion _)).subtype_mk _
 
 variable {x y : criticalPoints 𝓘(ℝ, E) f}
+
+/-- The record underlying the change of levels of a point of a trajectory space is the change of
+levels of its record. -/
+private theorem inclusion_morseBrokenTrajectorySpaceHomeomorph
+    (w : hX.morseBrokenTrajectorySpace c x y) :
+    inclusion (morseBrokenTrajectorySpace_subset _ _)
+        (hX.morseBrokenTrajectorySpaceHomeomorph hf hdense hdense' hc hc' x y w) =
+      hX.recordsHomeomorph hf hdense hdense' hc hc' x y
+        (inclusion (morseBrokenTrajectorySpace_subset _ _) w) :=
+  (rfl)
 
 /-- The record on the new levels is the family of the points of the broken trajectory on them. -/
 @[simp]
@@ -316,11 +328,9 @@ theorem morseLevelPath_morseBrokenTrajectorySpaceHomeomorph
         (inclusion (morseBrokenTrajectorySpace_subset _ _)
           (hX.morseBrokenTrajectorySpaceHomeomorph hf hdense hdense' hc hc' x y w)) =
       hX.morseLevelPath hf (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))
-        (inclusion (morseBrokenTrajectorySpace_subset _ _) w) :=
-  hX.morseLevelPath_morseBrokenTrajectoryRecordsHomeomorph hf
-    (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))
-    (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense' x y)) (fun i ↦ i.property)
-    (fun i ↦ hc i) (fun i ↦ i.property) (fun i ↦ hc' i) _
+        (inclusion (morseBrokenTrajectorySpace_subset _ _) w) := by
+  rw [inclusion_morseBrokenTrajectorySpaceHomeomorph]
+  exact hX.morseLevelPath_morseBrokenTrajectoryRecordsHomeomorph ..
 
 /-- The inverse of a change of levels of the trajectory spaces is the change of levels back. -/
 @[simp]
@@ -336,7 +346,9 @@ theorem morseBrokenTrajectorySpaceHomeomorph_mem_morseBrokenTrajectorySpaceBound
     hX.morseBrokenTrajectorySpaceHomeomorph hf hdense hdense' hc hc' x y w ∈
         hX.morseBrokenTrajectorySpaceBoundary c' x y ↔
       w ∈ hX.morseBrokenTrajectorySpaceBoundary c x y := by
-  rw [mem_morseBrokenTrajectorySpaceBoundary, mem_morseBrokenTrajectorySpaceBoundary, not_iff_not]
+  rw [mem_morseBrokenTrajectorySpaceBoundary, mem_morseBrokenTrajectorySpaceBoundary, not_iff_not,
+    ← coe_inclusion (morseBrokenTrajectorySpace_subset _ _),
+    inclusion_morseBrokenTrajectorySpaceHomeomorph]
   exact hX.morseBrokenTrajectoryRecordsHomeomorph_mem_morseTrajectoryRecords_iff hf
     (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))
     (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense' x y)) (fun i ↦ i.property)

@@ -17,7 +17,8 @@ on a family of levels `c`, dense between any two critical values and avoiding th
 (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpace`), and the Barraud–Cornea cocycle
 (`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`) and the DG Morse complex
 (`TauCeti.IsAdaptedPseudoGradient.dgMorseComplex`) are built from a twisting chain system on these
-spaces. This file shows that the choice of the levels does not matter.
+spaces. This file shows that the choice of the levels does not matter for the cocycle and the
+complex: the change of levels is a bijection of the twisting chain systems which keeps both.
 
 For another such family `c'`, the change of levels
 (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceHomeomorph`) is a homeomorphism of the
@@ -31,7 +32,9 @@ levels keeps the Moore path of every broken trajectory, so it keeps the evaluati
 Hence the two chain systems have the same Barraud–Cornea cocycle
 (`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_chainSystemChangeLevels`) and the same DG
 Morse complex (`TauCeti.IsAdaptedPseudoGradient.dgMorseComplex_chainSystemChangeLevels`), with
-coefficients in every DG local system.
+coefficients in every DG local system. That the change of levels carries representing chain systems
+to representing chain systems, which would follow from `TopPair.IsCubicalRepresentative.map`
+along the change of levels, is not shown here.
 
 ## Main definitions
 
@@ -127,17 +130,17 @@ levels of `c` and on the levels of `c'`. -/
 theorem chainSystemChangeLevels_chainSystemChangeLevels
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
     hX.chainSystemChangeLevels hf hdense' hdense hc' hc ind
-        (hX.chainSystemChangeLevels hf hdense hdense' hc hc' ind S) = S :=
-  TwistingChainSystem.ext fun x y ↦ by
-    rw [chainSystemChangeLevels_chain, chainSystemChangeLevels_chain, ← LinearMap.comp_apply,
-      ← cubicalChainSumMap_comp]
-    -- The change of levels back is the inverse of the change of levels.
-    rw [← hX.morseBrokenTrajectorySpaceHomeomorph_symm hf hdense hdense' hc hc',
-      Homeomorph.symm_comp_toContinuousMap, cubicalChainSumMap_id, LinearMap.id_apply]
+        (hX.chainSystemChangeLevels hf hdense hdense' hc hc' ind S) = S := by
+  rw [chainSystemChangeLevels, chainSystemChangeLevels, TwistingChainSystem.map_map]
+  -- The change of levels back is the inverse of the change of levels.
+  simp_rw [← hX.morseBrokenTrajectorySpaceHomeomorph_symm hf hdense hdense' hc hc',
+    Homeomorph.symm_comp_toContinuousMap]
+  exact TwistingChainSystem.map_id S
 
 /-- **The Barraud–Cornea cocycle does not depend on the levels**: a twisting chain system on the
 trajectory spaces on the levels of `c` and the one it induces on the levels of `c'` have the same
 Barraud–Cornea cocycle. -/
+@[simp]
 theorem barraudCorneaCocycle_chainSystemChangeLevels
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
     hX.barraudCorneaCocycle hf hdense' hθ hc'
@@ -152,6 +155,7 @@ theorem barraudCorneaCocycle_chainSystemChangeLevels
 /-- **The DG Morse complex does not depend on the levels**: a twisting chain system on the
 trajectory spaces on the levels of `c`, graded by the Morse index, and the one it induces on the
 levels of `c'` have the same DG Morse complex, with coefficients in every DG local system. -/
+@[simp]
 theorem dgMorseComplex_chainSystemChangeLevels
     (S : TwistingChainSystem (fun x : criticalPoints 𝓘(ℝ, E) f ↦
       (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ)) (hX.morseBrokenTrajectorySpaceComp hc) R)

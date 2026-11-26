@@ -38,9 +38,7 @@ Two facts about the right-hand side, the **twisting sum** `TauCeti.twistingChain
   (`TauCeti.cubicalChainSumMap_twistingChainSum`).
 
 Twisting chain systems are carried along maps of the spaces that carry the composition maps to
-composition maps (`TauCeti.TwistingChainSystem.map`), functorially, and the twisting cocycle of
-such a push-forward is the twisting cocycle along the composite evaluation maps
-(`TauCeti.TwistingChainSystem.twistingCocycle_map`).
+composition maps (`TauCeti.TwistingChainSystem.map`), functorially.
 
 Consequently the push-forwards `q_* (s x y)` form a twisting cocycle with values in the
 differential graded algebra `C^□_*(G; R)` (`TauCeti.TwistingChainSystem.twistingCocycle`). When
@@ -69,9 +67,8 @@ with coefficients in a DG local system.
 * `TauCeti.cubicalChainSumMap_twistingChainSum`: push-forward along multiplicative evaluation maps.
 * `TauCeti.cubicalChainSumMap_twistingChainSum_of_comp`: push-forward along maps compatible with
   the composition maps.
-* `TauCeti.TwistingChainSystem.map_id`, `TauCeti.TwistingChainSystem.map_map`,
-  `TauCeti.TwistingChainSystem.twistingCocycle_map`: push-forwards of twisting chain systems are
-  functorial and compatible with the twisting cocycle.
+* `TauCeti.TwistingChainSystem.map_id`, `TauCeti.TwistingChainSystem.map_map`: push-forwards of
+  twisting chain systems are functorial.
 
 ## References
 
@@ -373,6 +370,7 @@ theorem map_id (S : TwistingChainSystem ind ι R) :
 
 /-- **Push-forwards compose**: pushing forward along `φ` and then along `ψ` is pushing forward
 along the composites. -/
+@[simp]
 theorem map_map {L : P → P → Type*} [∀ x y, TopologicalSpace (L x y)]
     {κ' : ∀ x y z, C(L x y × L y z, L x z)} {ψ : ∀ x y, C(N x y, L x y)}
     (hψ : ∀ x z y (u : N x z) (v : N z y), ψ x y (κ x z y (u, v)) = κ' x z y (ψ x z u, ψ z y v))
@@ -382,20 +380,6 @@ theorem map_map {L : P → P → Type*} [∀ x y, TopologicalSpace (L x y)]
         simp only [ContinuousMap.comp_apply, hφ, hψ] :=
   ext fun x y ↦ by
     rw [map_chain, map_chain, map_chain, cubicalChainSumMap_comp, LinearMap.comp_apply]
-
-/-- **The twisting cocycle of a push-forward**: pushing a twisting chain system forward along `φ`
-and then along multiplicative evaluation maps `q` gives the twisting cocycle of the system along
-the composites `q ∘ φ`. -/
-theorem twistingCocycle_map {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G]
-    {q : ∀ x y, C(N x y, G)}
-    (hq : ∀ x z y (u : N x z) (v : N z y), q x y (κ x z y (u, v)) = q x z u * q z y v)
-    (S : TwistingChainSystem ind ι R) :
-    (S.map φ hφ).twistingCocycle q hq =
-      S.twistingCocycle (fun x y ↦ (q x y).comp (φ x y)) fun x z y u v ↦ by
-        simp only [ContinuousMap.comp_apply, hφ, hq] :=
-  TwistingCocycle.ext fun x y ↦ by
-    rw [twistingCocycle_m, twistingCocycle_m, map_chain, cubicalChainSumMap_comp,
-      LinearMap.comp_apply]
 
 end TwistingChainSystem
 
