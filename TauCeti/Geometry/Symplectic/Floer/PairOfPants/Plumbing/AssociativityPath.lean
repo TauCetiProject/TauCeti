@@ -643,19 +643,14 @@ theorem puncturedSpherePerturbation_associativity_of_one_le (hτ : 1 ≤ τ) (hL
   congr 1
   exact (Fintype.sum_equiv (finRotate 3) _ _ fun i => by fin_cases i <;> simp).symm
 
-/-- The plumbing factor `exp (-2πL) / 4` of the neck length `L` is smooth in `L`. -/
-theorem contDiff_associativityFactor {n : WithTop ℕ∞} :
-    ContDiff ℝ n fun L : ℝ => Real.exp (-(2 * π * L)) / 4 := by
-  fun_prop
-
 /-- The centers of the associativity path with the plumbing factor `exp (-2πL) / 4` are
 continuous jointly in the neck length `L` and the parameter `τ`. -/
 theorem continuous_associativityCenter_apply (i : Fin 3) :
     Continuous fun q : ℝ × ℝ =>
       associativityCenter (Real.exp (-(2 * π * q.1)) / 4) q.2 i :=
   (continuous_apply i).comp ((contDiff_uncurry_associativityCenter (n := 0)).continuous.comp
-    ((contDiff_associativityFactor (n := 0)).continuous.comp continuous_fst |>.prodMk
-      continuous_snd))
+    ((by fun_prop : Continuous fun L : ℝ => Real.exp (-(2 * π * L)) / 4).comp continuous_fst
+      |>.prodMk continuous_snd))
 
 end Ends
 

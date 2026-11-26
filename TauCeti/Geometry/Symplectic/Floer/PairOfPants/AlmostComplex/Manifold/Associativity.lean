@@ -609,6 +609,7 @@ private theorem contMDiffAt_movingEnds_opens {T : Set ℝ} {hT : IsOpen T} {W : 
           v.val.2.2.1).toEndomorphism v.val.2.2.2)) u := by
   have hval := (contMDiff_subtypeVal (n := n) (I := 𝓘(ℝ).prod (𝓘(ℝ).prod (𝓘(ℝ, ℂ).prod I)))
     (U := paramOpens (M := M) T hT W hW)).contMDiffAt (x := u)
+  have hf : ContDiff ℝ n fun L : ℝ => Real.exp (-(2 * π * L)) / 4 := by fun_prop
   exact h₀.contMDiffAt_puncturedSphereAlmostComplex_associativity Jout hJout hJ hJp hJs hJoutp
     hJouts (f := fun v : paramOpens (M := M) T hT W hW => Real.exp (-(2 * π * v.val.1)) / 4)
     (τ := fun v => v.val.2.1) (g := fun v => v.val.2.2.1) (b := fun v => v.val.2.2.2)
@@ -616,8 +617,7 @@ private theorem contMDiffAt_movingEnds_opens {T : Set ℝ} {hT : IsOpen T} {W : 
       (by linarith [v.property.1]) _)
     (fun v => Floer.norm_associativityCenter_add_mul_exp_le_of_nonneg
       (by linarith [v.property.1]) _)
-    ((Floer.contDiff_associativityFactor.of_le le_top).contMDiff.contMDiffAt.comp u
-      (contMDiffAt_fst.comp u hval))
+    (hf.contMDiff.contMDiffAt.comp u (contMDiffAt_fst.comp u hval))
     (contMDiffAt_fst.comp u (contMDiffAt_snd.comp u hval))
     (contMDiffAt_fst.comp u (contMDiffAt_snd.comp u (contMDiffAt_snd.comp u hval)))
     (contMDiffAt_snd.comp u (contMDiffAt_snd.comp u (contMDiffAt_snd.comp u hval)))
