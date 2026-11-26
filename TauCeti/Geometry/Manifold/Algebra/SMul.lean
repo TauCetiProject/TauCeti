@@ -37,6 +37,7 @@ underlying real manifold.
 * `ContMDiffMul.contMDiffConstSMul`: smooth multiplication gives smooth left translations.
 * `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
   a type acting by `C^n` maps also acts by `C^n` maps.
+* `Submodule.contMDiffVAdd`: a submodule of a normed space acts on it by `C^n` translations.
 * `ContMDiffSMul.contMDiffConstSMul`: a `C^n` action is by `C^n` maps.
 * `ContMDiffSMul.contMDiff_smul_const`: the orbit maps `g ↦ g • x` of a `C^n` action are `C^n`.
 * `Subgroup.contMDiff_subtypeVal_of_contMDiffSMul`: a subgroup whose left multiplication on the
@@ -91,6 +92,13 @@ instance SetLike.contMDiffConstSMul {𝕜 : Type*} [NontriviallyNormedField 𝕜
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {G S : Type*} [SetLike S G] [SMul G M]
     [ContMDiffConstSMul I n G M] (s : S) : ContMDiffConstSMul I n s M where
   contMDiff_const_smul g := contMDiff_const_smul (g : G)
+
+/-- A submodule `W` of a normed space `V` acts on `V` by `C^n` translations, for the model `W` of
+`W` itself. -/
+instance Submodule.contMDiffVAdd {𝕜 : Type*} [NontriviallyNormedField 𝕜] {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace 𝕜 V] (W : Submodule 𝕜 V) {n : ℕ∞ω} :
+    ContMDiffVAdd 𝓘(𝕜, W) 𝓘(𝕜, V) n W V where
+  contMDiff_vadd := (W.subtypeL.contMDiff.comp contMDiff_fst).add contMDiff_snd
 
 /-- A `C^n` action is by `C^n` maps. This has to be a theorem instead of an instance because
 `ContMDiffSMul` depends on the model `I` of the acting type, which `ContMDiffConstSMul` doesn't. -/

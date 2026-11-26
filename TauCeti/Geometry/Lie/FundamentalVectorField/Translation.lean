@@ -24,12 +24,20 @@ the action of the abelian Lie algebra `V` by infinitesimal translations
 (`TauCeti.InfinitesimalAction.fundamental_multiplicative`). These are the generators of the
 phase-space translations of a symplectic vector space, whose moment maps are not equivariant.
 
+More generally, a linear subspace `W ≤ V` acts on `V` by translations, as the Lie group
+`Multiplicative W`. This action is smooth (`Submodule.contMDiffVAdd`), and its fundamental
+vector field of `ξ` is the constant vector field `ξ`, read in `V`
+(`TauCeti.fundamentalVectorField_multiplicative_submodule`). These are the symmetries of
+cotangent reduction by translations along a subspace.
+
 ## Main results
 
 * `TauCeti.fundamentalVectorField_multiplicative`: the fundamental vector fields of translations
   are constant.
 * `TauCeti.InfinitesimalAction.fundamental_multiplicative`: the fundamental vector fields of the
   translation action form the infinitesimal translation action.
+* `TauCeti.fundamentalVectorField_multiplicative_submodule`: the fundamental vector fields of
+  translations along a subspace are constant.
 -/
 
 public section
@@ -66,5 +74,24 @@ theorem InfinitesimalAction.fundamental_multiplicative {V : Type*} [NormedAddCom
   rw [InfinitesimalAction.fundamental_apply, fundamentalVectorField_multiplicative,
     InfinitesimalAction.translation_apply, LinearEquiv.coe_coe,
     ContinuousLinearEquiv.coe_toLinearEquiv]
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {V : Type*} [NormedAddCommGroup V]
+  [NormedSpace 𝕜 V] (W : Submodule 𝕜 V)
+
+/-- **The fundamental vector fields of translations along a subspace are constant.** For the
+action of `Multiplicative W` on `V` by translations, the fundamental vector field of `ξ` is the
+constant vector field `ξ`, read in `W ≤ V`. -/
+@[simp]
+theorem fundamentalVectorField_multiplicative_submodule
+    (ξ : GroupLieAlgebra 𝓘(𝕜, W) (Multiplicative W)) (x : V) :
+    fundamentalVectorField 𝓘(𝕜, V) ξ x =
+      (tangentSpaceCastModel 𝓘(𝕜, W) (1 : Multiplicative W) ξ : V) := by
+  rw [fundamentalVectorField_apply]
+  -- `Multiplicative W` carries the charts of `W`, so its orbit map is `w ↦ w + x`.
+  have h : mfderiv 𝓘(𝕜, W) 𝓘(𝕜, V) (fun g : Multiplicative W ↦ g • x) 1 =
+      fderiv 𝕜 (fun w : W ↦ W.subtypeL w + x) 0 := mfderiv_eq_fderiv
+  rw [h, fderiv_add_const, W.subtypeL.fderiv]
+  -- Both sides are `ξ`, read in the model space `V`.
+  rfl
 
 end TauCeti
