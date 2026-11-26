@@ -17,14 +17,16 @@ Because `ℤ` is a principal ideal domain and every generator of `TauCeti.Equiva
 strictly positive degree, every degree-zero idempotent endomorphism on a finite shifted free module
 over `EquivariantRing N` splits homogeneously
 (`EquivariantRing.exists_homogeneous_splitting_of_idempotent`), and its image admits a finite
-homogeneous `EquivariantRing N`-basis (`TauCeti.exists_homogeneous_basis_range_idempotent`).
+homogeneous `EquivariantRing N`-basis
+(`EquivariantRing.exists_homogeneous_basis_range_idempotent`).
 
 ## Main results
 
 * `TauCeti.EquivariantRing.exists_homogeneous_splitting_of_idempotent`: explicit homogeneous
   splitting `π ∘ₗ ι = id`, `ι ∘ₗ π = p` of a degree-zero idempotent over `EquivariantRing N`.
-* `TauCeti.exists_homogeneous_basis_range_idempotent`: the image of any degree-zero idempotent on a
-  finite sum of shifted copies of `EquivariantRing N` has a finite homogeneous basis.
+* `TauCeti.EquivariantRing.exists_homogeneous_basis_range_idempotent`: the image of any degree-zero
+  idempotent on a finite sum of shifted copies of `EquivariantRing N` has a finite homogeneous
+  basis.
 
 ## References
 
@@ -64,8 +66,6 @@ theorem exists_homogeneous_splitting_of_idempotent (N : ℕ) {I : Type*} [Finite
     (𝒜 := grading N) (fun _ ↦ grading_eq_bot_of_lt_zero N)
     (mem_range_of_mem_grading_zero N) s p hp hhom
 
-end EquivariantRing
-
 /-- **Integral homogeneous basis of an idempotent image over `EquivariantRing N`.**
 Every degree-zero idempotent `EquivariantRing N`-linear endomorphism `p` on a finite sum of shifted
 copies of `EquivariantRing N` (where the `j`th summand has shift `s j`) has a finite
@@ -76,15 +76,17 @@ theorem exists_homogeneous_basis_range_idempotent (N m : ℕ) (s : Fin m → ℤ
       (Fin m → EquivariantRing N))
     (hp : p.comp p = p)
     (hhom : ∀ (d : ℤ) (v : Fin m → EquivariantRing N),
-      (∀ j, v j ∈ EquivariantRing.grading N (d - s j)) →
-      ∀ j, p v j ∈ EquivariantRing.grading N (d - s j)) :
+      (∀ j, v j ∈ grading N (d - s j)) →
+      ∀ j, p v j ∈ grading N (d - s j)) :
     ∃ (n : ℕ)
       (b : Module.Basis (Fin n) (EquivariantRing N) (LinearMap.range p))
       (d : Fin n → ℤ),
-      ∀ i j, (b i).val j ∈ EquivariantRing.grading N (d i - s j) :=
+      ∀ i j, (b i).val j ∈ grading N (d i - s j) :=
   exists_homogeneous_basis_range_idempotent_of_connected
-    (𝒜 := EquivariantRing.grading N)
-    (fun _ ↦ EquivariantRing.grading_eq_bot_of_lt_zero N)
-    (EquivariantRing.mem_range_of_mem_grading_zero N) s p hp hhom
+    (𝒜 := grading N)
+    (fun _ ↦ grading_eq_bot_of_lt_zero N)
+    (mem_range_of_mem_grading_zero N) s p hp hhom
+
+end EquivariantRing
 
 end TauCeti

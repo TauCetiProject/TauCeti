@@ -11,13 +11,10 @@ import TauCeti.Data.Finsupp.Weight
 /-!
 # Positively weighted polynomial rings over ordered additive monoids
 
-For a weight function `w : σ → M` taking values in an ordered additive commutative monoid `M`:
-
-* If `0 ≤ w i` for every variable `i`, then every exponent vector `d : σ →₀ ℕ` has `0 ≤ d.weight w`,
-  so `MvPolynomial.weightedHomogeneousSubmodule R w m = ⊥` whenever `m < 0`.
-* If `0 < w i` for every variable `i`, then `d.weight w = 0 ↔ d = 0`, so the degree-zero weighted
-  homogeneous component of `φ : MvPolynomial σ R` is `C (φ.coeff 0)` and the degree-zero weighted
-  homogeneous submodule is the image of `algebraMap R (MvPolynomial σ R)`.
+For a weight function `w : σ → M` taking values in an ordered additive commutative monoid `M`,
+if `0 < w i` for every variable `i`, then `d.weight w = 0 ↔ d = 0`, so the degree-zero weighted
+homogeneous component of `φ : MvPolynomial σ R` is `C (φ.coeff 0)` and the degree-zero weighted
+homogeneous submodule is the image of `algebraMap R (MvPolynomial σ R)`.
 
 Note that Mathlib's `MvPolynomial.weightedHomogeneousComponent_zero` and
 `Finsupp.weight_eq_zero_iff_eq_zero` assume `[CanonicallyOrderedAdd M]`, which holds for `ℕ` but not
@@ -27,9 +24,8 @@ for `ℤ`.
 
 * `MvPolynomial.weightedHomogeneousComponent_zero_of_pos`: degree-zero weighted homogeneous
   component for strictly positive weights in an ordered additive monoid.
-* `MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_lt_zero`,
-  `MvPolynomial.weightedHomogeneousSubmodule_zero_eq_range`: negative-degree vanishing and
-  degree-zero characterization of `MvPolynomial.weightedHomogeneousSubmodule R w`.
+* `MvPolynomial.weightedHomogeneousSubmodule_zero_eq_range`: degree-zero characterization of
+  `MvPolynomial.weightedHomogeneousSubmodule R w`.
 * `MvPolynomial.weight_pos_of_connected`: converse positivity of weights when
   `MvPolynomial.weightedHomogeneousSubmodule R w` is connected and nonnegatively graded over a
   nontrivial ring.
@@ -57,15 +53,6 @@ theorem weightedHomogeneousComponent_zero_of_pos (φ : MvPolynomial σ R) {w : �
   · subst hd
     simp
   · simp [(d.weight_eq_zero_iff_of_pos hw).not.mpr hd, Ne.symm hd]
-
-variable (R) in
-/-- For nonnegative weights `w : σ → M`, every weighted homogeneous submodule of strictly negative
-degree vanishes. -/
-theorem weightedHomogeneousSubmodule_eq_bot_of_lt_zero {w : σ → M} (hw : ∀ i, 0 ≤ w i) {m : M}
-    (hm : m < 0) : weightedHomogeneousSubmodule R w m = ⊥ :=
-  (Submodule.eq_bot_iff _).mpr fun _ hφ ↦
-    IsWeightedHomogeneous.eq_zero_of_no_monomials hφ fun d ↦
-      ne_of_gt (lt_of_lt_of_le hm (d.weight_nonneg hw))
 
 variable (R) in
 /-- For strictly positive weights `w : σ → M`, the degree-zero weighted homogeneous submodule of

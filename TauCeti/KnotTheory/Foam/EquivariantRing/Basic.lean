@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.PositiveWeight
 import TauCeti.Data.Finsupp.Weight
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # The equivariant coefficient ring of `gl(N)` foams
@@ -129,7 +130,7 @@ theorem X_mem_grading (N : ℕ) (i : Fin N) :
 /-- `EquivariantRing N` vanishes in strictly negative degrees. -/
 theorem grading_eq_bot_of_lt_zero (N : ℕ) {d : ℤ} (hd : d < 0) : grading N d = ⊥ := by
   rw [grading_def]
-  exact MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_lt_zero ℤ (weight_nonneg N) hd
+  exact MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_neg (weight_nonneg N) hd
 
 private theorem weight_eq_two_mul (N : ℕ) (c : Fin N →₀ ℕ) :
     Finsupp.weight (weight N) c =
