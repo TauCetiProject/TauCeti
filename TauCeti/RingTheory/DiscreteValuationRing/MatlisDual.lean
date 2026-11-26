@@ -100,6 +100,10 @@ noncomputable def quotientEquivTorsionBySet {a : O} (ha : a ≠ 0) :
     (O ⧸ Ideal.span {a}) ≃ₗ[O]
       Submodule.torsionBySet O (K ⧸ range (Algebra.linearMap O K)) (Ideal.span {a}) := by
   have ha' : algebraMap O K a ≠ 0 := IsFractionRing.to_map_eq_zero_iff.not.2 ha
+  -- The field identity behind all three steps: `a * (t / a) = t` in `K`.
+  have hdiv (t : O) : algebraMap O K a * (t • (algebraMap O K a)⁻¹) = algebraMap O K t := by
+    rw [Algebra.smul_def]
+    field_simp
   have htors : Submodule.torsionBySet O (K ⧸ range (Algebra.linearMap O K)) (Ideal.span {a}) =
       Submodule.torsionBy O _ a :=
     Submodule.torsionBySet_span_singleton_eq a
@@ -108,8 +112,7 @@ noncomputable def quotientEquivTorsionBySet {a : O} (ha : a ≠ 0) :
     induction x using Submodule.Quotient.induction_on with | _ t =>
     rw [Ideal.Quotient.mk_eq_mk, divQuotient_mk, ← Submodule.Quotient.mk_smul,
       Submodule.Quotient.mk_eq_zero]
-    exact ⟨t, by rw [Algebra.linearMap_apply, Algebra.smul_def, Algebra.smul_def,
-      mul_left_comm, mul_inv_cancel₀ ha', mul_one]⟩
+    exact ⟨t, by rw [Algebra.linearMap_apply, Algebra.smul_def a, hdiv]⟩
   · rw [← LinearMap.ker_eq_bot, LinearMap.ker_codRestrict, eq_bot_iff]
     intro r hr
     induction r using Submodule.Quotient.induction_on with | _ r =>
@@ -118,7 +121,7 @@ noncomputable def quotientEquivTorsionBySet {a : O} (ha : a ≠ 0) :
     rw [Submodule.mem_bot, Submodule.Quotient.mk_eq_zero, Ideal.mem_span_singleton]
     refine ⟨s, IsFractionRing.injective O K ?_⟩
     rw [Algebra.linearMap_apply] at hs
-    rw [map_mul, hs, Algebra.smul_def, mul_left_comm, mul_inv_cancel₀ ha', mul_one]
+    rw [map_mul, hs, hdiv]
   · rintro ⟨x, hx⟩
     rw [htors, Submodule.mem_torsionBy_iff] at hx
     obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ x
@@ -126,8 +129,9 @@ noncomputable def quotientEquivTorsionBySet {a : O} (ha : a ≠ 0) :
     obtain ⟨r, hr⟩ := hx
     rw [Algebra.linearMap_apply] at hr
     refine ⟨Submodule.Quotient.mk r, Subtype.ext ?_⟩
-    rw [LinearMap.codRestrict_apply, Ideal.Quotient.mk_eq_mk, divQuotient_mk, Algebra.smul_def, hr,
-      Algebra.smul_def, mul_comm, ← mul_assoc, inv_mul_cancel₀ ha', one_mul]
+    rw [LinearMap.codRestrict_apply, Ideal.Quotient.mk_eq_mk, divQuotient_mk]
+    refine congrArg Submodule.Quotient.mk (mul_left_cancel₀ ha' ?_)
+    rw [hdiv, hr, Algebra.smul_def]
 
 omit [IsDomain O] [IsDiscreteValuationRing O] in
 @[simp]

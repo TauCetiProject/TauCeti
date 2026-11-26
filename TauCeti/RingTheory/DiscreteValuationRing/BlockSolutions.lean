@@ -9,6 +9,7 @@ public import Mathlib.Data.Matrix.Composition
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
 import TauCeti.RingTheory.DiscreteValuationRing.MvPolynomial
+import TauCeti.RingTheory.LocalRing.MvPolynomial
 import TauCeti.Algebra.MvPolynomial.Degrees
 import TauCeti.Algebra.MvPolynomial.Funext
 
@@ -337,16 +338,6 @@ private theorem le_sum_length_blockSolutions_of_eq_top {B : Type*} [Fintype B] {
   le_top.trans (hb.symm.trans_le (Finset.single_le_sum (f := fun b ↦ Module.length O
     (blockSolutions (ψ b) Rel (K ⧸ range (Algebra.linearMap O K)))) (fun _ _ ↦ zero_le)
     (Finset.mem_univ b)))
-
-/-- If an ideal `J` contains `ϖ ^ m * u` with `u` a unit, then `O ⧸ J` has length at most `m`. -/
-private theorem length_quotient_le_of_pow_mul_mem {ϖ : O} (hϖ : Irreducible ϖ) {J : Ideal O}
-    {m : ℕ} {u : O} (hu : IsUnit u) (hJ : ϖ ^ m * u ∈ J) :
-    Module.length O (O ⧸ J) ≤ m :=
-  calc Module.length O (O ⧸ J) ≤ Module.length O (O ⧸ Ideal.span {ϖ ^ m * u}) :=
-        length_quotient_anti ((Ideal.span_singleton_le_iff_mem J).2 hJ)
-    _ = m := by
-        rw [← Ring.ord, Ring.ord_eq_addVal, addVal_mul, addVal_pow, addVal_uniformizer hϖ,
-          (addVal_eq_zero_iff).2 hu, add_zero, nsmul_one]
 
 omit [Fintype n] [DecidableEq n] in
 /-- **Lengths from generic determinants of block homomorphisms.** Let `ψ_b : 𝒜 → M_{n_b}(O)` (`b ∈

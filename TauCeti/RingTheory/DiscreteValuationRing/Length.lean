@@ -21,6 +21,9 @@ import TauCeti.RingTheory.Length.Determinant
 The length of `R/I` for a nonzero ideal of a discrete valuation ring is the exponent of its
 maximal ideal in `I`. This is the local length calculation used for different ideals.
 
+An ideal containing `x` has colength at most `v(x)`
+(`IsDiscreteValuationRing.length_quotient_le_addVal`).
+
 An element is squarefree exactly when the length of the quotient by its principal
 ideal (`Ring.ord`) is at most one. This detects reducedness of principal divisors at
 codimension-one points.
@@ -128,6 +131,21 @@ theorem exists_matrix_span_range_row_eq {ι : Type*} [Finite ι] (R : Submodule 
     simp [Matrix.row_apply]
   rw [hrow, Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_top,
     Submodule.range_subtype]
+
+/-- An ideal containing `x` has colength at most the valuation of `x`. -/
+theorem length_quotient_le_addVal {J : Ideal O} {x : O} (hx : x ∈ J) :
+    Module.length O (O ⧸ J) ≤ addVal O x :=
+  (TauCeti.length_quotient_anti ((Ideal.span_singleton_le_iff_mem J).2 hx)).trans_eq
+    (Ring.ord_eq_addVal x)
+
+/-- If an ideal `J` contains `ϖ ^ m * u` with `ϖ` a uniformizer and `u` a unit, then `O ⧸ J` has
+length at most `m`. -/
+theorem length_quotient_le_of_pow_mul_mem {ϖ : O} (hϖ : Irreducible ϖ) {J : Ideal O} {m : ℕ}
+    {u : O} (hu : IsUnit u) (hJ : ϖ ^ m * u ∈ J) :
+    Module.length O (O ⧸ J) ≤ m := by
+  refine (length_quotient_le_addVal hJ).trans_eq ?_
+  rw [addVal_mul, addVal_pow, addVal_uniformizer hϖ, (addVal_eq_zero_iff).2 hu, add_zero,
+    nsmul_one]
 
 end IsDiscreteValuationRing
 
