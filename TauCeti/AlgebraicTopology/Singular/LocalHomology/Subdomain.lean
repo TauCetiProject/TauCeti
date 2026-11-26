@@ -212,11 +212,12 @@ private lemma complDeformation_zero_notMem (hg : IsClosedEmbedding g) (hc : IsCo
     (hκf : range κ = (range f)ᶜ) (ht : 0 < t) (x : ((g '' (collarPart c t)ᶜ)ᶜ : Set W)) :
     complDeformation hg hc ht (0, x) ∉ range (g ∘ κ) := by
   by_cases h : (x : W) ∈ g '' collarPart c t
-  · rw [complDeformation_of_mem hg hc ht _ h, ContinuousMap.HomotopyWith.apply_zero]
+  · rw [complDeformation_of_mem hg hc ht _ h, ContinuousMap.HomotopyWith.apply_zero,
+      ContinuousMap.comp_apply, ContinuousMap.inclusion_apply_coe, hc.coe_collarRetraction]
     rintro ⟨v, hv⟩
-    obtain ⟨y, hy⟩ := (hc.collarRetraction t ⟨_, symm_mem_collarPart hg h⟩).property
-    have hκy : κ v = f y := hg.injective (hv.trans (congrArg g hy.symm))
-    exact (hκf ▸ mem_range_self v : κ v ∈ (range f)ᶜ) (hκy ▸ mem_range_self y)
+    rw [Function.comp_apply] at hv
+    have hκv : κ v ∈ (range f)ᶜ := hκf ▸ mem_range_self v
+    exact hκv ⟨_, (hg.injective hv).symm⟩
   · rw [complDeformation, dite_eq_right h]
     exact (mem_image_collarPart_or_notMem x.property).resolve_left h
 
