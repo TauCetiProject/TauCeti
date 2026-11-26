@@ -108,6 +108,16 @@ theorem stageAction_stageMap_stageMap (hρ : ∀ i, ρ i (e i) (m i) = m i) {S T
   | add x x' hx hx' => rw [map_add, map_add, LinearMap.add_apply, hx, hx', map_add,
       LinearMap.add_apply, map_add]
 
+/-- Moving the factorwise action of `x` from the stage `S` on `y` from the stage `T` up from a
+common stage `V` to a larger stage `U` does not change it in the restricted tensor product. -/
+private theorem ofFinite_stageAction_stageMap (hρ : ∀ i, ρ i (e i) (m i) = m i)
+    {S T U V : Finset ι} (hVU : V ⊆ U) (hSV : S ⊆ V) (hTV : T ⊆ V) (hSU : S ⊆ U) (hTU : T ⊆ U)
+    (x : ⨂[R] i : S, A i) (y : ⨂[R] i : T, M i) :
+    ofFinite R M m V (stageAction ρ V (stageMap R e hSV x) (stageMap R m hTV y)) =
+      ofFinite R M m U (stageAction ρ U (stageMap R e hSU x) (stageMap R m hTU y)) := by
+  rw [← ofFinite_stageMap hVU, ← stageAction_stageMap_stageMap hρ hVU, stageMap_stageMap,
+    stageMap_stageMap]
+
 variable (m) in
 /-- The action of an element `x` of the stage `S` on the restricted tensor product: on the stage
 `T` it acts at the stage `S ∪ T`. -/
@@ -116,10 +126,8 @@ private def stageEndAux (hρ : ∀ i, ρ i (e i) (m i) = m i) (S : Finset ι) (x
   lift (fun T ↦ ofFinite R M m (S ∪ T) ∘ₗ
       stageAction ρ (S ∪ T) (stageMap R e Finset.subset_union_left x) ∘ₗ
         stageMap R m Finset.subset_union_right) fun T T' h y ↦ by
-    have hU : S ∪ T ⊆ S ∪ T' := Finset.union_subset_union_right h
     simp only [LinearMap.coe_comp, Function.comp_apply, stageMap_stageMap]
-    rw [← ofFinite_stageMap hU, ← stageAction_stageMap_stageMap hρ hU, stageMap_stageMap,
-      stageMap_stageMap]
+    exact (ofFinite_stageAction_stageMap hρ (Finset.union_subset_union_right h) _ _ _ _ x y).symm
 
 /-- The action of `x` from the stage `S` on an element of the stage `T` is computed at any common
 stage `U ⊇ S ∪ T`. -/
@@ -127,15 +135,13 @@ private theorem stageEndAux_ofFinite (hρ : ∀ i, ρ i (e i) (m i) = m i) {S T 
     (hS : S ⊆ U) (hT : T ⊆ U) (x : ⨂[R] i : S, A i) (y : ⨂[R] i : T, M i) :
     stageEndAux m hρ S x (ofFinite R M m T y) =
       ofFinite R M m U (stageAction ρ U (stageMap R e hS x) (stageMap R m hT y)) := by
-  have hU : S ∪ T ⊆ U := Finset.union_subset hS hT
   rw [stageEndAux, lift_ofFinite, LinearMap.comp_apply, LinearMap.comp_apply,
-    ← ofFinite_stageMap hU, ← stageAction_stageMap_stageMap hρ hU, stageMap_stageMap,
-    stageMap_stageMap]
+    ofFinite_stageAction_stageMap hρ (Finset.union_subset hS hT) _ _ hS hT]
 
 variable (m) in
 /-- The action of the stage `S` on the restricted tensor product, as a morphism of nonunital
 algebras. -/
-def stageEnd (he : ∀ i, IsIdempotentElem (e i)) (hρ : ∀ i, ρ i (e i) (m i) = m i)
+private def stageEnd (he : ∀ i, IsIdempotentElem (e i)) (hρ : ∀ i, ρ i (e i) (m i) = m i)
     (S : Finset ι) : (⨂[R] i : S, A i) →ₙₐ[R] Module.End R (RestrictedTensor R M m) where
   toFun := stageEndAux m hρ S
   map_smul' c x := hom_ext fun T ↦ LinearMap.ext fun y ↦ by
@@ -153,11 +159,22 @@ def stageEnd (he : ∀ i, IsIdempotentElem (e i)) (hρ : ∀ i, ρ i (e i) (m i)
 
 /-- The action of `x` from the stage `S` on an element of the stage `T` is computed at any common
 stage `U ⊇ S ∪ T`. -/
-theorem stageEnd_ofFinite (he : ∀ i, IsIdempotentElem (e i)) (hρ : ∀ i, ρ i (e i) (m i) = m i)
-    {S T U : Finset ι} (hS : S ⊆ U) (hT : T ⊆ U) (x : ⨂[R] i : S, A i) (y : ⨂[R] i : T, M i) :
+private theorem stageEnd_ofFinite (he : ∀ i, IsIdempotentElem (e i))
+    (hρ : ∀ i, ρ i (e i) (m i) = m i) {S T U : Finset ι} (hS : S ⊆ U) (hT : T ⊆ U)
+    (x : ⨂[R] i : S, A i) (y : ⨂[R] i : T, M i) :
     stageEnd m he hρ S x (ofFinite R M m T y) =
       ofFinite R M m U (stageAction ρ U (stageMap R e hS x) (stageMap R m hT y)) :=
   stageEndAux_ofFinite hρ hS hT x y
+
+omit [DecidableEq ι] [∀ i, SMulCommClass R (A i) (A i)] [∀ i, IsScalarTower R (A i) (A i)] in
+/-- The factorwise action `ρ i (a i) (v i)` differs from the reference `m i` only where
+`a i ≠ e i` or `v i ≠ m i`, because each idempotent `e i` fixes `m i`. -/
+theorem setOf_apply_ne_subset_union (hρ : ∀ i, ρ i (e i) (m i) = m i) (a : ∀ i, A i)
+    (v : ∀ i, M i) : {i | ρ i (a i) (v i) ≠ m i} ⊆ {i | a i ≠ e i} ∪ {i | v i ≠ m i} :=
+  fun i hi ↦ by
+    by_contra h
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_not] at h
+    exact hi (by rw [h.1, h.2, hρ])
 
 end RestrictedTensor
 
@@ -174,10 +191,10 @@ def action (he : ∀ i, IsIdempotentElem (e i)) (hρ : ∀ i, ρ i (e i) (m i) =
     RestrictedTensorAlgebra R A e he →ₙₐ[R] Module.End R (RestrictedTensor R M m) :=
   lift he (stageEnd m he hρ) fun S T h x ↦ RestrictedTensor.hom_ext fun V ↦ LinearMap.ext fun y ↦ by
     rw [LinearMap.comp_apply, LinearMap.comp_apply,
-      stageEnd_ofFinite he hρ (Finset.subset_union_left (s₂ := V))
-        (Finset.subset_union_right (s₁ := T)),
+      stageEnd_ofFinite he hρ (Finset.subset_union_left : T ⊆ T ∪ V)
+        (Finset.subset_union_right : V ⊆ T ∪ V),
       stageEnd_ofFinite he hρ (h.trans Finset.subset_union_left)
-        (Finset.subset_union_right (s₁ := T)), stageMap_stageMap]
+        (Finset.subset_union_right : V ⊆ T ∪ V), stageMap_stageMap]
 
 variable {ρ} {he : ∀ i, IsIdempotentElem (e i)}
 
@@ -196,10 +213,7 @@ theorem action_tprod_tprod (hρ : ∀ i, ρ i (e i) (m i) = m i) (a : ∀ i, A i
     (ha : {i | a i ≠ e i}.Finite) (v : ∀ i, M i) (hv : {i | v i ≠ m i}.Finite) :
     action ρ m he hρ (tprod R he a ha) (RestrictedTensor.tprod R m v hv) =
       RestrictedTensor.tprod R m (fun i ↦ ρ i (a i) (v i))
-        ((ha.union hv).subset fun i hi ↦ by
-          by_contra h
-          simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_not] at h
-          exact hi (by rw [h.1, h.2, hρ])) := by
+        ((ha.union hv).subset (setOf_apply_ne_subset_union hρ a v)) := by
   have haS : ∀ i ∉ ha.toFinset ∪ hv.toFinset, a i = e i := fun i hi ↦ by
     simpa using (Finset.notMem_union.mp hi).1
   have hvS : ∀ i ∉ ha.toFinset ∪ hv.toFinset, v i = m i := fun i hi ↦ by
@@ -207,8 +221,8 @@ theorem action_tprod_tprod (hρ : ∀ i, ρ i (e i) (m i) = m i) (a : ∀ i, A i
   rw [tprod_eq_ofFinite a ha _ haS, RestrictedTensor.tprod_eq_ofFinite v hv _ hvS,
     action_ofFinite_ofFinite hρ (subset_refl _) (subset_refl _), stageMap_self, stageMap_self,
     stageAction_tprod_tprod,
-    RestrictedTensor.tprod_eq_ofFinite _ _ (ha.toFinset ∪ hv.toFinset) fun i hi ↦ by
-      rw [haS i hi, hvS i hi, hρ]]
+    RestrictedTensor.tprod_eq_ofFinite _ _ (ha.toFinset ∪ hv.toFinset) fun i hi ↦ not_not.mp
+      fun h ↦ hi (by simpa using setOf_apply_ne_subset_union hρ a v h)]
 
 end RestrictedTensorAlgebra
 
