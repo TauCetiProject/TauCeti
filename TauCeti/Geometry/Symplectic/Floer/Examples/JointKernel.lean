@@ -100,16 +100,19 @@ theorem mk_injective :
 def classB : PeriodGroup area chernSphereProduct :=
   ((-2, 1) : ℤ × ℤ)
 
+theorem classB_def : classB = (((-2, 1) : ℤ × ℤ) : PeriodGroup area chernSphereProduct) :=
+  (rfl)
+
 /-- The class `B = (-2, 1)` has area `0`. -/
 @[simp]
 theorem area_classB : PeriodGroup.area area chernSphereProduct classB = 0 := by
-  rw [classB, PeriodGroup.area_mk, area_apply]
+  rw [classB_def, PeriodGroup.area_mk, area_apply]
   norm_num
 
 /-- The class `B = (-2, 1)` has first Chern number `-2`. -/
 @[simp]
 theorem chern_classB : PeriodGroup.chern area chernSphereProduct classB = -2 := by
-  rw [classB, PeriodGroup.chern_mk, chernSphereProduct_apply]
+  rw [classB_def, PeriodGroup.chern_mk, chernSphereProduct_apply]
   norm_num
 
 /-- The class `B = (-2, 1)` has degree `2 c₁(B) = -4`. -/
