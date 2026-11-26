@@ -64,9 +64,9 @@ nonnegative, every negative number is a resolvent point, and on a domain with th
 it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative. Its kernel consists
 of the values of the `u ∈ H¹_Γ(Ω)` with vanishing gradient
 (`TauCeti.PDE.mixedOperator_laplacian_apply_eq_zero_iff`), so `0` is a spectral value as soon as
-`H¹_Γ(Ω)` contains such a `u` with nonzero value. This happens for the Neumann Laplacian `-Δ_∅` on
-every nonempty bounded open set, where the constant `1` lies in `H¹_∅(Ω)`: `0` is the least point of
-its spectrum and `-Δ_∅` has no inverse
+`H¹_Γ(Ω)` contains such a `u` with nonzero value. This happens for the mixed Laplacian `-Δ_∅` (the
+Neumann Laplacian where `H¹_∅(Ω) = H¹(Ω)`) on every nonempty bounded open set, where the constant
+`1` lies in `H¹_∅(Ω)`: `0` is the least point of its spectrum and `-Δ_∅` has no inverse
 (`TauCeti.PDE.isLeast_spectrum_mixedOperator_laplacian_empty`).
 
 ## Main declarations
@@ -105,7 +105,7 @@ its spectrum and `-Δ_∅` has no inverse
 * `TauCeti.PDE.mixedOperator_laplacian_apply_eq_zero_iff`,
   `TauCeti.PDE.zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero` and
   `TauCeti.PDE.isLeast_spectrum_mixedOperator_laplacian_empty`: the kernel of `-Δ_Γ`, and the
-  eigenvalue `0` at the bottom of the spectrum of the Neumann Laplacian `-Δ_∅`.
+  eigenvalue `0` at the bottom of the spectrum of `-Δ_∅` on a bounded set.
 
 ## References
 
@@ -801,9 +801,9 @@ theorem zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero (hΓ : Dis
   have h := LinearPMap.eq_zero_of_apply_eq_smul h0 ⟨_, hdom⟩ (by rw [hker, zero_smul])
   exact hval (congrArg Subtype.val h)
 
-/-- **The Neumann Laplacian is not invertible.** On a nonempty bounded open set, `0` is the least
-point of the spectrum of the Neumann Laplacian `-Δ_∅`: the constant `1` lies in
-`H¹_∅(Ω) = H¹(Ω)` and has vanishing gradient, while every negative number is a resolvent point. -/
+/-- **The mixed Laplacian `-Δ_∅` is not invertible.** On a nonempty bounded open set, `0` is the
+least point of the spectrum of the mixed Laplacian `-Δ_∅`, which is the Neumann Laplacian where
+`H¹_∅(Ω) = H¹(Ω)`. In particular `-Δ_∅` has no inverse. -/
 theorem isLeast_spectrum_mixedOperator_laplacian_empty
     (hb : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
     (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty) :
@@ -814,30 +814,10 @@ theorem isLeast_spectrum_mixedOperator_laplacian_empty
   refine ⟨?_, fun kappa hkappa ↦ not_lt.1 fun h ↦
     (LinearPMap.mem_spectrum_iff _ _).1 hkappa
       (mem_resolventSet_mixedOperator_laplacian_of_neg (empty_disjoint _) h)⟩
-  -- A smooth bump equal to `1` on a ball containing `Ω` exhibits `1 ∈ H¹_∅(Ω)`.
-  obtain ⟨R, hR⟩ := hb.subset_closedBall 0
-  let φ : ContDiffBump (0 : EuclideanSpace ℝ ι) :=
-    ⟨max R 1, max R 1 + 1, by positivity, by linarith⟩
-  have hmem : (W1p.const 1 : W1p mu Omega 2) ∈ w1pVanishingOnSubmodule mu Omega 2 ∅ := by
-    refine W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz ENNReal.ofNat_ne_top
-      (φ.contDiff (n := 1)).locallyLipschitz φ.hasCompactSupport (by simp) ?_
-    filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) 1,
-      ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
-    rw [hx, φ.one_of_mem_closedBall (Metric.closedBall_subset_closedBall (le_max_left R 1)
-      (hR hxΩ))]
-  -- The constant `1` is nonzero in `L²(Ω)`, since `Ω` has positive measure.
-  have hval : W1p.value (W1p.const 1 : W1p mu Omega 2) ≠ 0 := by
-    intro h0
-    have : (ae (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))).NeBot :=
-      ae_restrict_neBot.2 (Omega.isOpen.measure_ne_zero mu hΩ)
-    have h1 : ∀ᵐ _ ∂mu.restrict (Omega : Set (EuclideanSpace ℝ ι)), (1 : ℝ) = 0 := by
-      filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) 1,
-        Lp.coeFn_zero ℝ 2 (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))] with _ hx hx0
-      rw [← hx, h0, hx0, Pi.zero_apply]
-    obtain ⟨-, h⟩ := h1.exists
-    exact one_ne_zero h
-  exact zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero (empty_disjoint _) hmem
-    hval (W1p.gradient_const 1)
+  -- The constant `1` lies in `H¹_∅(Ω)`, has nonzero value and vanishing gradient.
+  exact zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero (empty_disjoint _)
+    (W1p.const_mem_w1pVanishingOnSubmodule_empty ENNReal.ofNat_ne_top hb 1)
+    (W1p.value_const_ne_zero hΩ one_ne_zero) (W1p.gradient_const 1)
 
 end Laplacian
 
