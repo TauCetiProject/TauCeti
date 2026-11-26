@@ -63,7 +63,8 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`,
   `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
   Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
-  derivatives.
+  derivatives; `TauCeti.norm_iteratedFDeriv_coordinateDeriv_singleton_le` bounds each of the
+  latter by the former.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute; `TauCeti.coordinateDeriv_pair_comm`: so do two partial derivatives in one variable.
@@ -291,6 +292,21 @@ theorem norm_iteratedFDeriv_succ_le_sum_coordinateDeriv {k : ℕ} {f : Coordinat
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
   refine ((T j).norm_iteratedFDeriv_comp_left (hdf j).contDiffAt le_rfl).trans ?_
   exact mul_le_of_le_one_left (norm_nonneg _) (hT j)
+
+/-- Conversely to `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`, each `k`-th Fréchet
+derivative of a first partial derivative is bounded by the `(k + 1)`-st Fréchet derivative:
+`‖D^k (∂ⱼ f) x‖ ≤ ‖D^(k+1) f x‖`. -/
+theorem norm_iteratedFDeriv_coordinateDeriv_singleton_le {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ (k + 1) f) (j : Fin n) (x : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ k (coordinateDeriv [j] f) x‖ ≤ ‖iteratedFDeriv ℝ (k + 1) f x‖ := by
+  set ev := ContinuousLinearMap.apply ℝ A (EuclideanSpace.single j (1 : ℝ))
+  have hev : ‖ev‖ ≤ 1 :=
+    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun T ↦ by
+      simpa [ev] using T.le_opNorm (EuclideanSpace.single j (1 : ℝ))
+  have hcd : coordinateDeriv [j] f = ev ∘ fderiv ℝ f := funext (coordinateDeriv_singleton j f)
+  rw [hcd, ← norm_iteratedFDeriv_fderiv]
+  refine (ev.norm_iteratedFDeriv_comp_left (hf.fderiv_right le_rfl).contDiffAt le_rfl).trans ?_
+  exact mul_le_of_le_one_left (norm_nonneg _) hev
 
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
