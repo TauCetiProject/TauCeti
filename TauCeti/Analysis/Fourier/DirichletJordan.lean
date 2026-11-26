@@ -6,14 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
 public import TauCeti.Analysis.Fourier.SincKernel
 
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.BoundedVariation
 import TauCeti.Topology.EMetricSpace.BoundedVariation
-import TauCeti.Topology.Order.LeftRightLim
 
 /-!
 # Dirichlet–Jordan Fourier inversion
@@ -59,7 +57,7 @@ theorem tendsto_setIntegral_sincKernel_smul_Ioi_of_boundedVariationOn
     hv.mono (Ioc_subset_Ioc_right hd.2.le)
   have hnear (T : ℝ) :
       ‖∫ x in 0..d, sincKernel T x • (f x - f.rightLim 0)‖ < ε / 3 := by
-    refine (hdv.norm_intervalIntegral_smul_sub_rightLimit_le hl hd.1.le
+    refine (hdv.norm_intervalIntegral_smul_sub_const_le_of_tendsto_nhdsGT hl hd.1.le
       ((continuous_sincKernel T).intervalIntegrable _ _)
       (fun c _ ↦ norm_intervalIntegral_sincKernel_le T c d)).trans_lt ?_
     have h := (ENNReal.toReal_lt_toReal hdv ENNReal.ofReal_ne_top).2 hsmall
@@ -122,17 +120,21 @@ theorem MeasureTheory.Integrable.tendsto_intervalIntegral_fourierInv_fourier_of_
   have hmem : Icc (x - r) (x + r) ∈ 𝓝 x :=
     Icc_mem_nhds (by linarith) (by linarith)
   have hl : Function.rightLim (f ∘ left) 0 = f.leftLim x := by
-    have hmap : map right (𝓝[<] 0) = 𝓝[<] x := by simp [right]
-    have ht := hv.tendsto_leftLim_of_mem_nhdsLT (mem_nhdsWithin_of_mem_nhds hmem)
-    have hlim : (f ∘ right).leftLim 0 = f.leftLim x :=
-      leftLim_eq_of_tendsto (tendsto_map'_iff.mp (hmap.symm ▸ ht))
-    rw [← hlim]
-    simpa only [left, right, Function.comp_def, sub_eq_add_neg, neg_zero] using
-      TauCeti.rightLim_comp_neg (f ∘ right) (0 : ℝ)
+    have ha : StrictAnti left := fun _ _ huv ↦ sub_lt_sub_left huv x
+    have hc : ContinuousAt left 0 := by fun_prop
+    have hmap : Tendsto left (𝓝[>] 0) (𝓝[<] x) := by
+      simpa only [left, sub_zero] using
+        hc.continuousWithinAt.tendsto_nhdsWithin (ha.mapsTo_Ioi (a := 0))
+    exact rightLim_eq_of_tendsto
+      ((hv.tendsto_leftLim_of_mem_nhdsLT (mem_nhdsWithin_of_mem_nhds hmem)).comp hmap)
   have hrr : Function.rightLim (f ∘ right) 0 = f.rightLim x := by
-    have hmap : map right (𝓝[>] 0) = 𝓝[>] x := by simp [right]
-    have ht := hv.tendsto_rightLim_of_mem_nhdsGT (mem_nhdsWithin_of_mem_nhds hmem)
-    exact rightLim_eq_of_tendsto (tendsto_map'_iff.mp (hmap.symm ▸ ht))
+    have hm : StrictMono right := fun _ _ huv ↦ add_lt_add_right huv x
+    have hc : ContinuousAt right 0 := by fun_prop
+    have hmap : Tendsto right (𝓝[>] 0) (𝓝[>] x) := by
+      simpa only [right, add_zero] using
+        hc.continuousWithinAt.tendsto_nhdsWithin (hm.mapsTo_Ioi (a := 0))
+    exact rightLim_eq_of_tendsto
+      ((hv.tendsto_rightLim_of_mem_nhdsGT (mem_nhdsWithin_of_mem_nhds hmem)).comp hmap)
   have hl' := tendsto_setIntegral_sincKernel_smul_Ioi_of_boundedVariationOn hr
     (hf.comp_sub_left x).integrableOn hleft
   have hr' := tendsto_setIntegral_sincKernel_smul_Ioi_of_boundedVariationOn hr
@@ -145,17 +147,10 @@ theorem MeasureTheory.Integrable.tendsto_intervalIntegral_fourierInv_fourier_of_
     Tendsto (fun T : ℝ ↦ (∫ u in Ioi 0, sincKernel T u • f (x - u)) +
       ∫ u in Ioi 0, sincKernel T u • f (x + u)) atTop _).congr (fun T ↦ ?_)
   rw [hf.intervalIntegral_fourierInv_fourier_eq_integral_sinc]
-  have hcast (u : ℝ) : 2 * (T : ℂ) * (Real.sinc (2 * Real.pi * T * u) : ℂ) =
-      (sincKernel T u : ℂ) := by rw [sincKernel_apply]; push_cast; ring
-  simp only [hcast, Complex.coe_smul]
   have hi : Integrable (fun u ↦ sincKernel T u • f (x - u)) :=
     (hf.comp_sub_left x).sincKernel_smul T
   have hs := integral_add_compl (measurableSet_Ioi (a := (0 : ℝ))) hi
-  rw [compl_Ioi, integral_Iic_eq_integral_Iio] at hs
-  have hneg := (Measure.measurePreserving_neg (volume : Measure ℝ)).setIntegral_preimage_emb
-    (Homeomorph.neg ℝ).measurableEmbedding (fun u ↦ sincKernel T u • f (x - u)) (Iio 0)
-  have hpre : (fun u : ℝ ↦ -u) ⁻¹' Iio 0 = Ioi 0 := by ext u; simp
-  rw [hpre] at hneg
-  have hK (u : ℝ) : sincKernel T (-u) = sincKernel T u := by
-    simp [sincKernel_apply, mul_neg, Real.sinc_neg]
-  simpa only [← hneg, hK, sub_neg_eq_add] using hs
+  have hneg := integral_comp_neg_Ioi 0 (fun u ↦ sincKernel T u • f (x - u))
+  rw [neg_zero] at hneg
+  rw [compl_Ioi, ← hneg] at hs
+  simpa only [sincKernel_neg, sub_neg_eq_add] using hs

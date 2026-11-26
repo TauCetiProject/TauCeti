@@ -57,7 +57,8 @@ theorem ContinuousMap.lowerSemicontinuous_eVariationOn
 open Filter Set
 open scoped ENNReal
 
-/-- Bounded variation on a left neighbourhood gives convergence from the left. -/
+/-- Bounded variation on a left neighbourhood gives convergence from the left via
+`BoundedVariationOn.exists_tendsto_left` restricted to that neighbourhood. -/
 theorem BoundedVariationOn.tendsto_leftLim_of_mem_nhdsLT
     {α E : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
     [PseudoEMetricSpace E] [CompleteSpace E] {f : α → E} {s : Set α} {x : α}
@@ -66,7 +67,8 @@ theorem BoundedVariationOn.tendsto_leftLim_of_mem_nhdsLT
   apply tendsto_leftLim_of_tendsto
   simpa only [nhdsWithin_inter_of_mem hs] using hf.exists_tendsto_left x
 
-/-- Bounded variation on a right neighbourhood gives convergence from the right. -/
+/-- Bounded variation on a right neighbourhood gives convergence from the right via
+`BoundedVariationOn.exists_tendsto_right` restricted to that neighbourhood. -/
 theorem BoundedVariationOn.tendsto_rightLim_of_mem_nhdsGT
     {α E : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
     [PseudoEMetricSpace E] [CompleteSpace E] {f : α → E} {s : Set α} {x : α}
@@ -76,12 +78,15 @@ theorem BoundedVariationOn.tendsto_rightLim_of_mem_nhdsGT
   simpa only [nhdsWithin_inter_of_mem hs] using hf.exists_tendsto_right x
 
 /-- A function of bounded variation has arbitrarily small variation on sufficiently small
-half-open intervals to the right of a point. -/
+half-open intervals to the right of a point, by
+`BoundedVariationOn.tendsto_eVariationOn_Ioc_zero` in the order topology. -/
 theorem BoundedVariationOn.exists_eVariationOn_Ioc_lt
-    {α E : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α] [DenselyOrdered α]
+    {α E : Type*} [LinearOrder α] [DenselyOrdered α]
     [TopologicalSpace E] [WeakPseudoEMetricSpace E] {f : α → E} {a b : α} {η : ℝ≥0∞}
     (hf : BoundedVariationOn f (Ioc a b)) (hab : a < b) (hη : 0 < η) :
     ∃ d ∈ Ioo a b, eVariationOn f (Ioc a d) < η := by
+  let : TopologicalSpace α := Preorder.topology α
+  let : OrderTopology α := ⟨rfl⟩
   have hne : (nhdsWithin a (Ioi a)).NeBot := nhdsGT_neBot_of_exists_gt ⟨b, hab⟩
   have hmem : Ioc a b ∈ nhdsWithin a (Ioi a) :=
     mem_of_superset (Ioo_mem_nhdsGT hab) Ioo_subset_Ioc_self

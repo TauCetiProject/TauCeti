@@ -92,8 +92,9 @@ theorem BoundedVariationOn.norm_intervalIntegral_smul_sub_left_le
   linarith [(le_abs_self _).trans (hbound p hp), (neg_abs_le _).trans' (neg_le_neg (hbound q hq)),
     mul_le_mul_of_nonneg_left ((hsum a ⟨le_rfl, hab⟩ b ⟨hab, le_rfl⟩) ▸ hvar) hC₀]
 
-/-- Centering at the right limit excludes the left endpoint from the variation bound. -/
-theorem BoundedVariationOn.norm_intervalIntegral_smul_sub_rightLimit_le
+/-- Centering at the right limit excludes the left endpoint from the variation bound, by
+`eVariationOn.eVariationOn_Ioc_eq_Icc_of_continuousWithinAt`. -/
+theorem BoundedVariationOn.norm_intervalIntegral_smul_sub_const_le_of_tendsto_nhdsGT
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {f : ℝ → E} {g : ℝ → ℝ} {a b C : ℝ} {l : E}
     (hf : BoundedVariationOn f (Ioc a b)) (hl : Tendsto f (𝓝[>] a) (𝓝 l))

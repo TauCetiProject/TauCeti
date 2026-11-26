@@ -5,19 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Sinc
-public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Analysis.SpecialFunctions.SineIntegral
 
 import TauCeti.Analysis.Contour.WorkedExamples.HalfDisc.SineIntegral
 import TauCeti.Analysis.Fourier.RiemannLebesgue
+import TauCeti.MeasureTheory.Integral.OddSymmetric
 
 /-!
 # The sinc kernel for symmetric Fourier inversion
 
 The finite-height kernel has a bounded primitive given by `Real.integral_sin_mul_div_eq_sub`.
+The uniform bound uses `Real.abs_integral_sin_mul_div_le`.
 Its mass on a fixed positive half-window tends to one half by
-`TauCeti.Contour.tendsto_integral_sinc_atTop`. The tail estimate uses
+`TauCeti.Contour.tendsto_integral_sinc_atTop`. The symmetric window uses
+`intervalIntegral.integral_eq_two_smul_of_even`. The tail estimate uses
 `MeasureTheory.Integrable.tendsto_integral_sin_smul_atTop`.
 
 ## References
@@ -35,9 +36,21 @@ namespace TauCeti
 noncomputable def sincKernel (T u : ℝ) : ℝ :=
   2 * T * Real.sinc (2 * Real.pi * T * u)
 
-/-- The Fourier sinc kernel in terms of the normalized sinc function. -/
+/-- The Fourier sinc kernel in terms of Mathlib’s sinc function, which is `sin x / x` off zero. -/
 theorem sincKernel_apply (T u : ℝ) :
     sincKernel T u = 2 * T * Real.sinc (2 * Real.pi * T * u) := (rfl)
+
+/-- The sinc kernel is even in the spatial variable. -/
+@[simp] theorem sincKernel_neg (T u : ℝ) : sincKernel T (-u) = sincKernel T u := by
+  simp [sincKernel, mul_neg, Real.sinc_neg]
+
+/-- At the origin the sinc kernel is twice the truncation height. -/
+@[simp] theorem sincKernel_zero_right (T : ℝ) : sincKernel T 0 = 2 * T := by
+  simp [sincKernel]
+
+/-- At zero truncation height the sinc kernel vanishes. -/
+@[simp] theorem sincKernel_zero_left (u : ℝ) : sincKernel 0 u = 0 := by
+  simp [sincKernel]
 
 /-- For a fixed truncation height, the sinc kernel is continuous in the spatial variable. -/
 @[fun_prop]
@@ -122,6 +135,16 @@ theorem tendsto_intervalIntegral_sincKernel {d : ℝ} (hd : 0 < d) :
     dsimp
     ring_nf
   · field_simp [Real.pi_ne_zero]
+
+/-- The sinc kernel has limiting mass one on each fixed symmetric window of positive radius. -/
+theorem tendsto_intervalIntegral_neg_sincKernel {R : ℝ} (hR : 0 < R) :
+    Tendsto (fun T : ℝ ↦ ∫ u in -R..R, sincKernel T u) atTop (𝓝 1) := by
+  have hmass : (2 : ℝ) * (1 / 2) = 1 := by norm_num
+  have H := (tendsto_intervalIntegral_sincKernel hR).const_mul 2
+  rw [hmass] at H
+  refine H.congr fun T ↦ ?_
+  simpa only [smul_eq_mul] using
+    (intervalIntegral.integral_eq_two_smul_of_even (sincKernel_neg T) R).symm
 
 /-- The integral of the sinc kernel against an integrable function on a right tail tends to
 zero when the tail starts at a positive distance from the origin. -/
