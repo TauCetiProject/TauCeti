@@ -14,7 +14,7 @@ import TauCeti.Analysis.MellinInversion
 import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
-import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Analysis.SpecialFunctions.Beta.Substitution
 import TauCeti.MeasureTheory.Integral.Prod
 

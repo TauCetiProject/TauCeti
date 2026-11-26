@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Hodge.PeriodDomain
-public import TauCeti.Geometry.Hodge.WeightOne.RiemannForm
+public import TauCeti.Geometry.Hodge.WeightOne.RiemannForm.Basic
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.SymplecticGroup
@@ -254,7 +254,8 @@ noncomputable def hodgeStructure : HodgeStructure (isBaseChange_latticeToComplex
 
 /-- The complex-linear extension of the standard complex structure to `ℂ^{l ⊕ l}` is the matrix
 `J`. -/
-private theorem latticeComplexification_almostComplexStructure :
+@[simp]
+theorem latticeComplexification_almostComplexStructure :
     (almostComplexStructure l).latticeComplexification (isBaseChange_latticeToComplex l) =
       toLin' (J l ℂ) := by
   refine (isBaseChange_latticeToComplex l).algHom_ext _ _ fun x ↦ ?_

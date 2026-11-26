@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Stalk
 public import Mathlib.AlgebraicGeometry.Properties
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Local rings on the spectrum of a stalk
@@ -19,11 +20,16 @@ and pointwise ramification conditions.
 
 The local-ring comparison uses Mathlib's
 `isIso_specMap_stalkMap_localization` on an affine neighbourhood.
+
+Pulling sections back along `Spec 𝒪_{Y,y} ⟶ Y` takes germs at `y`
+(`Scheme.Hom.fromSpecStalk_comp_appLE`). Hence if a morphism `f` is constant on the generizations
+of `y`, the germ at `y` of the pullback of a section vanishing at `f y` is nilpotent
+(`Scheme.Hom.isNilpotent_germ_app`).
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory TopologicalSpace
 
 universe u
 
@@ -68,5 +74,41 @@ theorem height_eq_ringKrullDim_fromSpecStalk (X : Scheme.{u}) (x : X)
   rw [idealHeight_eq_coheight, ← ringKrullDim_stalk_eq_coheight]
   exact (ringKrullDim_eq_of_ringEquiv
     (asIso ((X.fromSpecStalk x).stalkMap q)).commRingCatIsoToRingEquiv).symm
+
+namespace Hom
+
+variable {X Y : Scheme.{u}} (f : Y ⟶ X)
+
+/-- The pullback of a section `s` along `Spec 𝒪_{Y,y} ⟶ Y ⟶ X` is the image of the germ at `y`
+of the pullback of `s` under `Γ(Spec 𝒪_{Y,y}, ⊤) ≅ 𝒪_{Y,y}`. -/
+theorem fromSpecStalk_comp_appLE {y : Y} {U : X.Opens} (hy : y ∈ f ⁻¹ᵁ U)
+    (e : ⊤ ≤ (Y.fromSpecStalk y ≫ f) ⁻¹ᵁ U) :
+    (Y.fromSpecStalk y ≫ f).appLE U ⊤ e =
+      f.app U ≫ Y.presheaf.germ (f ⁻¹ᵁ U) y hy ≫ (Scheme.ΓSpecIso _).inv := by
+  rw [comp_appLE]
+  simp only [Hom.appLE, fromSpecStalk_app hy, Category.assoc, ← Functor.map_comp]
+  -- The two restrictions compose to an endomorphism of an open of `Spec 𝒪_{Y,y}`; as the opens
+  -- form a poset, it is the identity.
+  rw [Subsingleton.elim (_ ≫ _) (𝟙 _), CategoryTheory.Functor.map_id, Category.comp_id]
+
+/-- If `f` maps every generization of `y` to `f y`, then for a section `s` near `f y` whose basic
+open misses `f y`, the germ at `y` of the pullback of `s` is nilpotent. -/
+theorem isNilpotent_germ_app {y : Y} (hgen : ∀ y', y' ⤳ y → f y' = f y) {U : X.Opens}
+    (hy : y ∈ f ⁻¹ᵁ U) {s : Γ(X, U)} (hs : f y ∉ X.basicOpen s) :
+    IsNilpotent (Y.presheaf.germ (f ⁻¹ᵁ U) y hy (f.app U s)) := by
+  -- The composite `Spec 𝒪_{Y,y} ⟶ Y ⟶ X` maps every point to `f y`.
+  have hg (z : Spec (Y.presheaf.stalk y)) : (Y.fromSpecStalk y ≫ f) z = f y := by
+    rw [Scheme.Hom.comp_apply]
+    refine hgen _ ?_
+    have := Set.mem_range_self (f := Y.fromSpecStalk y) z
+    rwa [range_fromSpecStalk] at this
+  have e := top_le_preimage _ hg (f.mem_preimage.mp hy)
+  -- Hence the pullback of `s` to `Spec 𝒪_{Y,y}` has empty basic open.
+  have h0 := basicOpen_appLE_eq_bot _ hg e hs
+  rw [fromSpecStalk_comp_appLE f hy, CommRingCat.comp_apply, CommRingCat.comp_apply,
+    basicOpen_eq_of_affine] at h0
+  exact (PrimeSpectrum.basicOpen_eq_bot_iff _).mp h0
+
+end Hom
 
 end AlgebraicGeometry.Scheme
