@@ -42,9 +42,12 @@ correspondence:
 Every prime of `𝓞 F` has a valuation subring of `F^alg` above it, and `G_F` acts transitively on
 the valuation subrings above it.
 
-The same statements hold for any Galois extension `L` of a number field in place of `F^alg`,
-with `𝓞 L` in place of `O`, by `TauCeti/RingTheory/Valuation/LocalizationAtCenter.lean` and
-`IsIntegralClosure.preValuationRing_atPrime`.
+For any Galois extension `L` of a number field in place of `F^alg`, with `𝓞 L` in place of `O`,
+`TauCeti/RingTheory/Valuation/LocalizationAtCenter.lean` and
+`IsIntegralClosure.preValuationRing_atPrime` give the correspondence with primes, its
+equivariance, and the decomposition, inertia and Frobenius comparisons. The existence and
+transitivity statements are proved here only for `F^alg`; transitivity for an infinite `L` needs
+a separate argument.
 
 ## Main results
 

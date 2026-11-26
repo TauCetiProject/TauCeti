@@ -39,6 +39,16 @@ centre `P`. For a group acting compatibly on `B` and `L`, the centre of `g • A
 
 The comparison of a valuation subring with the localization at its centre is in
 `TauCeti/RingTheory/Valuation/LocalizationAtCenter.lean`.
+
+## Provenance
+
+`ValuationSubring.IsCenteredAt.smul_sub_pow_mem_of_forall`, which restricts a `q`-power
+congruence from a valuation subring to its centre, is adapted from the restriction argument of
+the `riemann-hypothesis` formalisation (https://github.com/leanprover-community/riemann-hypothesis,
+branch `tc-galois-5-frobenius`, commit `c62bdab14fd`,
+`src/Lib/ClassField/Places/FrobeniusComparison.lean`, declaration `New.IsFrob.isArithFrobAt`).
+**Adapted, not copied**: it is stated here for any ring `B`, any group acting compatibly on `B`
+and `L`, and any exponent `q`, in terms of `ValuationSubring.IsCenteredAt`.
 -/
 
 public section

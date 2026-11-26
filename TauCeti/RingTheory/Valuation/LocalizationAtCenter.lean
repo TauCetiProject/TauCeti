@@ -73,6 +73,20 @@ and its equivariance `ValuationSubring.IsCenteredAt.smul` are in
   dominating a local ring and the localizations of a Prüfer domain.
 * [J. Neukirch, *Algebraic Number Theory*][Neukirch1992], Chapter I, §9, for decomposition and
   inertia groups and Frobenius elements at a prime.
+
+## Provenance
+
+The direction from a valuation subring to its centre of the Frobenius and inertia comparisons
+(`ValuationSubring.IsCenteredAt.isArithFrobAt_iff` and
+`ValuationSubring.IsCenteredAt.map_inertiaSubgroup_eq`) was first proved in the
+`riemann-hypothesis` formalisation (https://github.com/leanprover-community/riemann-hypothesis,
+branch `tc-galois-5-frobenius`, commit `c62bdab14fd`,
+`src/Lib/ClassField/Places/FrobeniusComparison.lean`, declarations `New.IsFrob.isArithFrobAt` and
+`New.inertiaGroup_le_inertia`). **Adapted, not copied**: those prove only that direction, for
+that project's `New.IsFrob` and the algebraic closure of a number field; here both directions are
+proved for any ring `B` whose localization at the centre is a valuation ring, the converse
+through the identification of a valuation subring with the localization at its centre, and they
+are stated with Mathlib's decomposition, inertia and Frobenius predicates.
 -/
 
 public section
