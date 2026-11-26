@@ -123,6 +123,20 @@ theorem contDiffOn_pairOfPantsPerturbation_comp_symm {n : ℕ∞} {m : WithTop �
     ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
       contMDiff_snd).contMDiffAt).contMDiffWithinAt
 
+/-- **The components of the perturbation are smooth in real coordinates.** For period-one `C³`
+Hamiltonians, each component `z ↦ K_z(w)` of the pair-of-pants perturbation, read in the real
+coordinates of `S = ℂ ∖ {0, 1}`, is `C³` jointly in `z ∈ S` and the target point. This is the
+regularity from which the Hamiltonian vector fields of the perturbation are `C²` in every chart
+(`TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt`). -/
+theorem contMDiffAt_uncurry_pairOfPantsPerturbation_apply (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q))) (w : ℂ)
+    (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
+    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
+      (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w) (z, x) :=
+  (((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
+    ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
+      contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
+
 /-- **The end Hamiltonian read in a chart is smooth.** For a period-one Hamiltonian `H_q` which is
 `C^n` on `ℝ × M` and a `C^n` partial diffeomorphism `φ` from `M` to a normed space `V`, the
 Hamiltonian `H'_q(t, φ⁻¹ y)` of the positive end `q` read in the chart is `C^n` jointly in the time
@@ -181,6 +195,19 @@ variable [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [FiniteDimensional 
   [IsManifold I ⊤ M] {ω : SmoothTwoForm I M} {ω₀ : SymplecticForm V}
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)}
   {J' : ℝ × ℝ → V → AlmostComplexStructure V}
+
+/-- **The Hamiltonian vector fields of the perturbation are `C²` in every chart.** For period-one
+`C³` Hamiltonians `H_q`, the Hamiltonian vector field of each component `z ↦ K_z(w)` of the
+pair-of-pants perturbation, read in the real coordinates of `S = ℂ ∖ {0, 1}` and in the chart of
+`M` at `α`, is `C²` on `S` times the chart target. -/
+theorem contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q))) (w : ℂ) (α : M) :
+    ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α
+        fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w)
+      (thricePuncturedSphereReal ×ˢ (extChartAt I α).target) :=
+  hω.contDiffOn_hamiltonianVectorFieldInChartAt
+    (contMDiffAt_uncurry_pairOfPantsPerturbation_apply hH hHs w) α
 
 /-- **Floer pairs of pants in a symplectic chart converge off finitely many bubbling points, for an
 energy bound over the part of the domain considered.** This is the compactness theorem for Floer

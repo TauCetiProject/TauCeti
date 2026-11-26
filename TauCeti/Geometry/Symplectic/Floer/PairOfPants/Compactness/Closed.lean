@@ -26,11 +26,11 @@ namespace `TauCeti.SmoothTwoForm` (`TauCeti.Geometry.Symplectic.Floer.Compactnes
 once its hypotheses are checked for the pair of pants.
 
 * **The data in the charts of `M`.** The Hamiltonian vector fields of the perturbation, read in the
-  chart at any point of `M`, are `C²` on `S` times the chart target: this is
-  `TauCeti.SmoothTwoForm.IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt` for the `C³`
-  family `z ↦ K_z(v)`, which is smooth jointly in `z ∈ S` and the target point
-  (`TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`). The almost complex structures read in the
-  charts are assumed `C²`.
+  chart at any point of `M`, are `C²` on `S` times the chart target
+  (`IsNondegenerate.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation` in the
+  namespace `TauCeti.SmoothTwoForm`), since the family `z ↦ K_z(v)` is `C³` jointly in `z ∈ S`
+  and the target point (`TauCeti.Floer.contMDiffAt_uncurry_pairOfPantsPerturbation_apply`). The
+  almost complex structures read in the charts are assumed `C²`.
 * **The energy bound.** The energy of a solution over any part of `S` is at most its topological
   energy `∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt` plus `B₀ + B₁ + B_∞`
   (`IsNondegenerate.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le` in the namespace
@@ -153,17 +153,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pairO
           ∀ z ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
   -- Each component `z ↦ K_z(w)` of the perturbation is `C³` jointly in `z ∈ S` and the target
   -- point, so its Hamiltonian vector field is `C²` in every chart.
-  have hK (w : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
-      ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
-        (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w) (z, x) :=
-    (((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
-      ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset
     he he_inj isOpen_thricePuncturedSphereReal hD hDS hJ
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK 1))
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK Complex.I)) (fun z hz ↦ hJt z (hDS hz))
-    hc hJc hLs hLt
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hH hHs 1)
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt_pairOfPantsPerturbation hH hHs Complex.I)
+    (fun z hz ↦ hJt z (hDS hz)) hc hJc hLs hLt
   refine ⟨δ, hδ, fun Ω u x A hΩ hΩD hu hfl hx hE hA htop ↦ ?_⟩
   have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hDS
   -- The energy over `Ω` is at most the topological energy plus `B₀ + B₁ + B_∞`.
