@@ -281,28 +281,6 @@ theorem sectionClassicalPrincipalSymbol_toSpanSingleton_comp_comp_cutoffFrameCoe
 
 /-! ### Quantization of principal symbols -/
 
-omit [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)]
-  [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)] [T2Space M]
-  [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [∀ x, Module ℝ (E x)] [VectorBundle ℝ V E]
-  [∀ x, Module ℝ (F x)] [VectorBundle ℝ W F] in
-/-- **A linear map in frames.** Over the common base set of trivializations `t` of `E` and `t'`
-of `F`, a linear map `L : E_x → F_x` is reassembled from its matrix entries
-`cⱼ*(t'ₓ (L (t⁻¹ₓ bₖ)))` in bases `(bₖ)` of `V` and `(cⱼ)` of `W`. -/
-private theorem sum_sum_coord_smul_symm_eq (t : Trivialization V (π V E))
-    [MemTrivializationAtlas t] (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
-    {x : M} (hx : x ∈ t.baseSet) (hx' : x ∈ t'.baseSet) (L : E x →ₗ[ℂ] F x) (u : E x) :
-    ∑ j, ∑ k, ((finBasis ℂ W).coord j (t'.continuousLinearMapAt ℂ x (L (t.symm x
-        (finBasis ℂ V k)))) * (finBasis ℂ V).coord k (t.continuousLinearMapAt ℂ x u)) •
-      t'.symm x (finBasis ℂ W j) = L u := by
-  conv_rhs => rw [← t.sum_repr_smul_symmL (finBasis ℂ V) hx u, map_sum]
-  simp only [map_smul]
-  conv_rhs => arg 2; ext k; rw [← t'.sum_repr_smul_symmL (finBasis ℂ W) hx'
-    (L (t.symmL ℂ x (finBasis ℂ V k))), Finset.smul_sum]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [smul_smul, t.symmL_apply hx, t'.symmL_apply hx', Basis.coord_apply, Basis.coord_apply,
-    mul_comm]
-
 /-- **Quantization over a common base set.** Let `t` and `t'` be trivializations of `E` and `F` in
 their atlases and `ρ` a real smooth function whose support is compact and contained in both base
 sets. For a smooth positively homogeneous `Hom(E, F)`-valued symbol `s` of degree `m`, the symbol
@@ -356,7 +334,8 @@ private theorem exists_mem_sectionClassicalPseudodifferentialOperators_eq_smul
   -- At a point of the support of `ρ`, `θ = 1` and the matrix entries reassemble `s(x, ξ)`.
   obtain ⟨hxE, hxF⟩ := hρ (subset_tsupport _ hx)
   have hθx : θ x = 1 := hθ₁.self_of_nhdsSet x (subset_tsupport _ hx)
-  rw [hθx, ← sum_sum_coord_smul_symm_eq t t' hxE hxF (s x ξ) u, Finset.smul_sum]
+  rw [hθx, ← t.sum_sum_coord_smul_symm t' (finBasis ℂ V) (finBasis ℂ W) hxE hxF (s x ξ) u,
+    Finset.smul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [Finset.smul_sum]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
