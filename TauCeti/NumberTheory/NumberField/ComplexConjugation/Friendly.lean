@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import Mathlib.RingTheory.RamificationInertia.Ramification
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.MaximalRealOrCMSubfield
 public import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+public import TauCeti.NumberTheory.RamificationInertia.Tower
 
 /-!
 # Friendly places
@@ -39,7 +41,13 @@ Unramified over `ℚ` means ramification index `1` over `ℤ`.
   subfield, a place is friendly exactly when it is unramified over `ℚ`.
 * `IsDedekindDomain.HeightOneSpectrum.isFriendly_iff_of_isTotallyReal`: in particular for totally
   real `K`.
+* `IsDedekindDomain.HeightOneSpectrum.isFriendly_iff_of_odd_finrank`: in a field of odd degree,
+  for instance `ℚ(2^(1/3))`, a place is friendly exactly when it is unramified over `ℚ`.
 * `IsDedekindDomain.HeightOneSpectrum.isFriendly_rat`: every prime of `ℚ` is friendly.
+* `IsDedekindDomain.HeightOneSpectrum.isFriendly_iff_inertiaDeg_eq_two`: in an imaginary quadratic
+  field a place is friendly exactly when it is inert over `ℚ`.
+* `IsDedekindDomain.HeightOneSpectrum.isFriendly_iff_mod_four_eq_three`: over `ℚ(i)`, a place is
+  friendly exactly when it lies above a prime `p ≡ 3 mod 4`.
 
 ## References
 
@@ -50,6 +58,28 @@ Unramified over `ℚ` means ramification index `1` over `ℤ`.
 public section
 
 open NumberField TauCeti.NumberField
+
+/-- If the algebra map `S → T` is surjective, a maximal ideal of `T` has inertia degree `1` over
+`S`. -/
+theorem Ideal.inertiaDeg_eq_one_of_surjective {S T : Type*} [CommRing S] [CommRing T]
+    [Algebra S T] (h : Function.Surjective (algebraMap S T)) (q : Ideal T) [q.IsMaximal] :
+    q.inertiaDeg S = 1 := by
+  have : (q.under S).IsMaximal := Ideal.comap_isMaximal_of_surjective _ h
+  rw [Ideal.inertiaDeg_eq_of_isMaximal (q.under S) q]
+  let : Field (S ⧸ q.under S) := Ideal.Quotient.field _
+  let : Field (T ⧸ q) := Ideal.Quotient.field _
+  refine Algebra.finrank_eq_one_iff_bijective_algebraMap.mpr
+    ⟨(algebraMap (S ⧸ q.under S) (T ⧸ q)).injective, fun y ↦ ?_⟩
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+  obtain ⟨s, rfl⟩ := h x
+  exact ⟨Ideal.Quotient.mk _ s, rfl⟩
+
+/-- If a subfield `F` of `K` is all of `K`, the map `𝓞 F → 𝓞 K` is surjective. -/
+theorem NumberField.RingOfIntegers.algebraMap_surjective_of_eq_top {K : Type*} [Field K]
+    {F : Subfield K} (hF : F = ⊤) : Function.Surjective (algebraMap (𝓞 F) (𝓞 K)) := by
+  intro x
+  have hx : (x : K) ∈ F := hF ▸ Subfield.mem_top _
+  exact ⟨⟨⟨x, hx⟩, (isIntegral_algebraMap_iff (A := F) (B := K)).mp x.isIntegral_coe⟩, rfl⟩
 
 namespace IsDedekindDomain.HeightOneSpectrum
 
@@ -107,10 +137,89 @@ theorem isFriendly_iff_of_isTotallyReal [IsTotallyReal K] (v : HeightOneSpectrum
     IsTotallyReal.maximalRealSubfield_eq_top] at h
   exact h maximalRealOrCMSubfield_eq_top_of_isTotallyReal
 
+/-- **Fields of odd degree.** A number field of odd degree over `ℚ` has no CM subfield, so a place
+is friendly exactly when it is unramified over `ℚ`. -/
+theorem isFriendly_iff_of_odd_finrank (h : Odd (Module.finrank ℚ K))
+    (v : HeightOneSpectrum (𝓞 K)) : IsFriendly v ↔ v.asIdeal.ramificationIdx ℤ = 1 :=
+  isFriendly_iff_of_not_isCMField (fun hK ↦
+    isCMField_maximalRealOrCMSubfield_iff_ne_maximalRealSubfield.mp hK
+      (maximalRealOrCMSubfield_eq_maximalRealSubfield_of_odd h)) v
+
 /-- **Every prime of `ℚ` is friendly.** -/
 @[simp]
 theorem isFriendly_rat (v : HeightOneSpectrum (𝓞 ℚ)) : IsFriendly v := by
   rw [isFriendly_iff_of_isTotallyReal]
   exact Ideal.ramificationIdx_eq_one v.asIdeal ℤ
+
+/-- **Imaginary quadratic fields.** If `K` is CM of degree `2` over `ℚ`, then `E_K = K` and
+`K⁺ = ℚ`, so a place of `K` is friendly exactly when it has inertia degree `2` over `ℚ`, that is,
+when it is inert over `ℚ` (inertia degree `2` forces ramification index `1`). -/
+theorem isFriendly_iff_inertiaDeg_eq_two [IsCMField K] (hK : Module.finrank ℚ K = 2)
+    (v : HeightOneSpectrum (𝓞 K)) : IsFriendly v ↔ v.asIdeal.inertiaDeg ℤ = 2 := by
+  have hE : maximalRealOrCMSubfield K = ⊤ := maximalRealOrCMSubfield_eq_top_of_isCMField
+  have hCM : IsCMField (maximalRealOrCMSubfield K) := by
+    refine isCMField_maximalRealOrCMSubfield_iff_ne_maximalRealSubfield.mpr fun h ↦ ?_
+    have : IsTotallyReal (⊤ : Subfield K) :=
+      isTotallyReal_iff_le_maximalRealSubfield.mpr (hE ▸ h ▸ le_rfl)
+    exact IsTotallyComplex.not_isTotallyReal (K := K) (isTotallyReal_top_iff.mp this)
+  have hKp : Module.finrank ℚ (maximalRealSubfield K) = 1 := by
+    have h := Module.finrank_mul_finrank ℚ (maximalRealSubfield K) K
+    rw [Algebra.IsQuadraticExtension.finrank_eq_two (maximalRealSubfield K) K, hK] at h
+    omega
+  -- `e f ≤ [F : ℚ]` for the places below and at `v`.
+  have hw : (v.asIdeal.under (𝓞 (maximalRealSubfield K))).ramificationIdx ℤ *
+      (v.asIdeal.under (𝓞 (maximalRealSubfield K))).inertiaDeg ℤ ≤ 1 :=
+    hKp ▸ RingOfIntegers.rank (maximalRealSubfield K) ▸
+      TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_le_finrank ℤ _
+  have hw₀ := (v.asIdeal.under (𝓞 (maximalRealSubfield K))).ramificationIdx_pos ℤ
+  have hw₀' := (v.asIdeal.under (𝓞 (maximalRealSubfield K))).inertiaDeg_pos ℤ
+  have hv : v.asIdeal.ramificationIdx ℤ * v.asIdeal.inertiaDeg ℤ ≤ 2 :=
+    hK ▸ RingOfIntegers.rank K ▸
+      TauCeti.RamificationInertia.ramificationIdx_mul_inertiaDeg_le_finrank ℤ v.asIdeal
+  have hv₀ := v.asIdeal.ramificationIdx_pos ℤ
+  -- `E_K = K`, so the place of `E_K` below `v` has the inertia degree of `v`.
+  have huv : v.asIdeal.inertiaDeg ℤ =
+      (v.asIdeal.under (𝓞 (maximalRealOrCMSubfield K))).inertiaDeg ℤ := by
+    rw [Ideal.inertiaDeg_tower (v.asIdeal.under (𝓞 (maximalRealOrCMSubfield K))) v.asIdeal,
+      Ideal.inertiaDeg_eq_one_of_surjective
+        (NumberField.RingOfIntegers.algebraMap_surjective_of_eq_top hE) v.asIdeal, mul_one]
+  have hw₁ : (v.asIdeal.under (𝓞 (maximalRealSubfield K))).inertiaDeg ℤ = 1 :=
+    le_antisymm (le_trans (Nat.le_mul_of_pos_left _ hw₀) hw) hw₀'
+  have hv₁ : v.asIdeal.inertiaDeg ℤ ≤ 2 := le_trans (Nat.le_mul_of_pos_left _ hv₀) hv
+  refine ⟨fun h ↦ ?_, fun h ↦ ⟨?_, fun _ ↦ ?_⟩⟩
+  · have := h.inertiaDeg_eq hCM
+    omega
+  · rw [h] at hv
+    omega
+  · omega
+
+/-- **`ℚ(i)`: a place is friendly exactly when it lies above a prime `p ≡ 3 mod 4`.** Here `ℚ(i)`
+is any `4`-th cyclotomic extension of `ℚ`. It is imaginary quadratic, so friendly places are the
+places inert over `ℚ` (`isFriendly_iff_inertiaDeg_eq_two`); the place above `2` has inertia
+degree `1`, and for odd `p` the inertia degree is the order of `p` modulo `4`. -/
+theorem isFriendly_iff_mod_four_eq_three [IsCyclotomicExtension {4} ℚ K]
+    (v : HeightOneSpectrum (𝓞 K)) (p : ℕ) [hp : Fact p.Prime]
+    [v.asIdeal.LiesOver (Ideal.span {(p : ℤ)})] : IsFriendly v ↔ p % 4 = 3 := by
+  have : IsCMField K := IsCyclotomicExtension.Rat.isCMField K (S := {4}) ⟨4, rfl, by norm_num⟩
+  have hK : Module.finrank ℚ K = 2 := by
+    rw [IsCyclotomicExtension.Rat.finrank 4 K]
+    decide
+  rw [isFriendly_iff_inertiaDeg_eq_two hK]
+  rcases hp.out.eq_two_or_odd' with rfl | hodd
+  · have : IsCyclotomicExtension {2 ^ (1 + 1)} ℚ K := by norm_num; infer_instance
+    simp [IsCyclotomicExtension.Rat.inertiaDeg_eq_of_prime_pow 2 1 K v.asIdeal]
+  · have h4 : ¬p ∣ 4 := fun h ↦ by
+      have := (Nat.prime_dvd_prime_iff_eq hp.out Nat.prime_two).mp
+        (hp.out.dvd_of_dvd_pow (show p ∣ 2 ^ 2 from h))
+      subst this
+      exact absurd hodd (by decide)
+    rw [IsCyclotomicExtension.Rat.inertiaDeg_eq_of_not_dvd p K v.asIdeal h4, ← ZMod.natCast_mod]
+    have hp4 : p % 4 = 1 ∨ p % 4 = 3 := by
+      rcases hodd with ⟨k, rfl⟩
+      omega
+    rcases hp4 with h | h <;> rw [h]
+    · simp
+    · simp only [Nat.cast_ofNat, iff_true]
+      exact orderOf_eq_prime (by decide) (by decide)
 
 end IsDedekindDomain.HeightOneSpectrum
