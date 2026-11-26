@@ -38,7 +38,8 @@ Over an arbitrary commutative ring `A`, a finite-index subgroup `H` of `SL(ι, A
 every root `(i, j)`, the normal closure of the transvections `e_ij(t)` with `t` in the ideal `m A`
 for some integer `m ≠ 0`. The transvection parameters lying in the normal core `N` of `H` form a
 subgroup of finite index `m` of the additive group of `A`, so `e_ij(m a) ∈ N` for every `a`, and
-`N`, being normal, contains the normal closure of these transvections.
+`N`, being normal, contains the normal closure of these transvections. This is the general-rank
+form of Serre's proof of [Serre 1970, §1.4, Proposition 1], stated there for `SL₂`.
 
 ## Main results
 
@@ -53,6 +54,8 @@ subgroup of finite index `m` of the additive group of `A`, so `e_ij(m a) ∈ N` 
 
 * B. Bakker and J. Tsimerman, *p-torsion monodromy representations of elliptic curves over
   geometric function fields*, Ann. of Math. 184 (2016), 709–744, remark after Theorem 2.
+* J.-P. Serre, *Le problème des groupes de congruence pour SL2*, Ann. of Math. (2) 92 (1970),
+  489–527, §1.4, Proposition 1.
 -/
 
 public section
@@ -90,7 +93,8 @@ namespace Subgroup
 variable {ι A : Type*} [Fintype ι] [DecidableEq ι] [CommRing A]
 
 /-- A finite-index subgroup of `SL(ι, A)` contains, for some integer `m ≠ 0`, the normal closure
-of the transvections `e_ij(t)` with `t` in the ideal `m A`. -/
+of the transvections `e_ij(t)` with `t` in the ideal `m A`. This is the general-rank form of
+Serre's argument for [Serre 1970, §1.4, Proposition 1]. -/
 theorem exists_normalClosure_transvection_span_le (H : Subgroup (SpecialLinearGroup ι A))
     [H.FiniteIndex] {i j : ι} (hij : i ≠ j) :
     ∃ m : ℕ, m ≠ 0 ∧
