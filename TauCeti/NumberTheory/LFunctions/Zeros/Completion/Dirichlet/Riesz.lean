@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Hadamard.Riesz
-public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
+public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Riesz
 import TauCeti.NumberTheory.LFunctions.Continued.Dirichlet
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.ContinuedL
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Growth
 import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Zeros
 
@@ -36,16 +34,12 @@ theorem exists_norm_rieszZeroSeries_le_of_zeroFreeRightOf {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) :
     ∃ C ≥ 0, ∀ σ : ℝ, ZeroFreeRightOf σ χ.LFunction → ∀ y ≥ 1,
       ‖rieszZeroSeries (dirichletData χ hχ).entireCompletion y‖ ≤ C * y ^ σ := by
+  rw [← dirichletData_continuedL χ hχ]
   have h := dirichletData_hasMeromorphicContinuation χ hχ
-  have hOrder := dirichletData_entireCompletion_orderLE_one χ hχ
-  refine ⟨_, tsum_nonneg (fun _ ↦ norm_nonneg _), fun σ hσ y hy ↦
-    hOrder.norm_rieszZeroSeries_le h.differentiable_entireCompletion (by norm_num) ?_ hy⟩
+  refine h.exists_norm_rieszZeroSeries_le_of_zeroFreeRightOf
+    (dirichletData_entireCompletion_orderLE_one χ hχ) (by norm_num) ?_
   intro ρ hρ
   have hρre := (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hρ).1
-  have hγ : (dirichletData χ hχ).gammaFactor ρ ≠ 0 := by
-    simpa only [dirichletData_gammaFactor] using χ.gammaFactor_ne_zero_of_re_pos hρre
-  have hpos := (h.entireCompletion_eq_zero_iff_meromorphicOrderAt_continuedL_pos hγ).mp hρ
-  rw [dirichletData_continuedL χ hχ] at hpos
-  exact le_of_not_gt fun hlt ↦ hpos.not_ge ((zeroFreeRightOf_iff.mp hσ) ρ hlt)
+  simpa only [dirichletData_gammaFactor] using χ.gammaFactor_ne_zero_of_re_pos hρre
 
 end DirichletCharacter.IsPrimitive
