@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.LocalRing.Pullback
 
 /-!
-# Units of a fibre product of rings
+# Membership in and units of a fibre product of rings
 
 For ring homomorphisms `f : R →+* T` and `g : S →+* T`, Mathlib's `RingHom.pullback f g` is the
 fibre product `R ×_T S`, the subring of pairs `(r, s)` of `R × S` with `f r = g s`. Its units are
@@ -30,6 +30,8 @@ are units.
 
 ## Main results
 
+* `RingHom.mem_pullback`: `x ∈ f.pullback g ↔ f x.1 = g x.2`, so that proofs need not unfold
+  the equaliser defining the pullback.
 * `RingHom.coe_pullbackUnitsEquiv_apply_fst`, `RingHom.coe_pullbackUnitsEquiv_apply_snd`: the
   isomorphism sends a unit to its two projections.
 * `RingHom.unitsMap_pullbackFst_pullbackUnitsEquiv_symm`,
@@ -46,6 +48,12 @@ public section
 namespace RingHom
 
 variable {R S T : Type*} [Ring R] [Ring S] [Semiring T] (f : R →+* T) (g : S →+* T)
+
+variable {f g} in
+/-- A pair `x : R × S` lies in the pullback of `f : R →+* T` and `g : S →+* T` exactly when
+`f x.1 = g x.2`. -/
+theorem mem_pullback {x : R × S} : x ∈ f.pullback g ↔ f x.1 = g x.2 :=
+  Iff.rfl
 
 /-- **Units of a fibre product.** `(R ×_T S)ˣ` is isomorphic to the subgroup of pairs `(u₁, u₂)`
 in `Rˣ × Sˣ` whose images in `Tˣ` agree, by sending a unit to its two projections. -/

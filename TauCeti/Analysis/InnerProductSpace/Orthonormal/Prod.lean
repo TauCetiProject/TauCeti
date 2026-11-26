@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
+import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 
 /-!
@@ -69,11 +70,7 @@ theorem orthonormal_append_toLp_iff {v : Fin k → V} {w : Fin l → W} :
     Orthonormal 𝕜 (Fin.append (fun i ↦ WithLp.toLp 2 (v i, (0 : W)))
       (fun j ↦ WithLp.toLp 2 ((0 : V), w j))) ↔ Orthonormal 𝕜 v ∧ Orthonormal 𝕜 w := by
   classical
-  have hne (i : Fin k) (j : Fin l) : Fin.castAdd l i ≠ Fin.natAdd k j := by
-    rw [Ne, Fin.ext_iff]
-    simp only [Fin.val_castAdd, Fin.val_natAdd]
-    omega
-  simp [orthonormal_iff_ite, Fin.forall_fin_add, forall_and, hne, (hne _ _).symm,
+  simp [orthonormal_iff_ite, Fin.forall_fin_add, forall_and,
     (Fin.castAdd_injective _ _).eq_iff, (Fin.natAdd_injective _ _).eq_iff]
 
 end TauCeti

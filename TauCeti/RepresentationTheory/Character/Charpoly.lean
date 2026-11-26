@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 public import TauCeti.RepresentationTheory.Character.Pow
 
@@ -27,6 +28,8 @@ determines the characteristic polynomial of `ρ g`.
   `Representation.charpoly_eq_iff_character_pow_eq`: in characteristic zero, the dimension and the
   character values on `g, g ^ 2, …, g ^ d` determine the characteristic polynomial of `ρ g`. The
   two representations may be of different monoids.
+* `Representation.det_eq_det_pow_of_character_eq`: in characteristic zero, if
+  `χ_{ρ'}(y) = χ_ρ(y ^ j)` on the powers `y` of `x`, then `det ρ'(x) = (det ρ(x)) ^ j`.
 * `Representation.charpoly_apply_eq_of_sq_eq_one`: in characteristic zero, if `g ^ 2 = 1`, then
   `charpoly (ρ g) = (X - 1) ^ a * (X + 1) ^ b` whenever `a + b = dim ρ` and `a - b = χ_ρ (g)`.
 
@@ -80,6 +83,22 @@ theorem charpoly_eq_iff_character_pow_eq {g : G} {h : H} (hVW : finrank k V = fi
     (ρ g).charpoly = (σ h).charpoly ↔ ∀ j, 0 < j → ρ.character (g ^ j) = σ.character (h ^ j) :=
   ⟨fun hgh j _ ↦ character_pow_eq_of_charpoly_eq hgh j, fun hgh ↦
     charpoly_eq_of_character_pow_eq hVW fun j hj _ ↦ hgh j hj⟩
+
+variable (ρ) in
+/-- **Determinants of power-map twists.** In characteristic zero, if the character of `ρ'` at every
+power `y` of `x` is the character of `ρ` at `y ^ j`, then `det ρ'(x) = (det ρ(x)) ^ j`. -/
+theorem det_eq_det_pow_of_character_eq (ρ' : Representation k G W) {x : G} {j : ℕ}
+    (h : ∀ y ∈ Submonoid.powers x, ρ'.character y = ρ.character (y ^ j)) :
+    (ρ' x).det = (ρ x).det ^ j := by
+  have hdim : finrank k W = finrank k V := by
+    have h1 := h 1 (one_mem _)
+    rw [one_pow, char_one, char_one] at h1
+    exact_mod_cast h1
+  have hcp : (ρ' x).charpoly = (ρ (x ^ j)).charpoly :=
+    charpoly_eq_of_character_pow_eq hdim fun i _ _ ↦ by
+      rw [h _ (pow_mem (Submonoid.mem_powers x) i), ← pow_mul, ← pow_mul, mul_comm]
+  rw [LinearMap.det_eq_sign_charpoly_coeff, hcp, hdim, ← LinearMap.det_eq_sign_charpoly_coeff,
+    map_pow, map_pow]
 
 /-- In characteristic zero, if `g ^ 2 = 1`, then the characteristic polynomial of `ρ g` is
 `(X - 1) ^ a * (X + 1) ^ b` for any `a` and `b` with `a + b = dim ρ` and `a - b = χ_ρ (g)`. -/
