@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.SingleObj
 public import Mathlib.GroupTheory.Perm.Fin
-public import TauCeti.CategoryTheory.Sites.Descent.BandCenter
+public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Basic
 
 /-!
 # Checks for the evaluation of intrinsic central sections
