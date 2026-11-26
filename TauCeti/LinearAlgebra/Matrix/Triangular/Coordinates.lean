@@ -92,8 +92,23 @@ def schurMatrixEquiv : SchurCoordinates ι R ≃ₗ[R] Matrix ι ι R :=
     rw [schurMatrixEquiv_apply_of_gt x (by simpa only [id_eq] using h), hx]
     rfl
 
-private theorem schurMatrixEquiv_single (ij : SchurLowerIndex ι) :
-    schurMatrixEquiv (R := R) (0, Pi.single ij 1) = Matrix.single ij.val.2 ij.val.1 1 := by
+/-- A singleton in the upper coordinates assembles to a single matrix entry. -/
+@[simp] theorem schurMatrixEquiv_single_upper (ij : {ij : ι × ι // ij.1 ≤ ij.2}) (a : R) :
+    schurMatrixEquiv (Pi.single ij a, 0) = Matrix.single ij.val.1 ij.val.2 a := by
+  ext i j
+  rcases le_or_gt i j with h | h
+  · have he : (⟨(i, j), h⟩ : {ij : ι × ι // ij.1 ≤ ij.2}) = ij ↔
+        ij.val.1 = i ∧ ij.val.2 = j := by
+      rw [eq_comm, Subtype.ext_iff, Prod.ext_iff]
+    simp only [schurMatrixEquiv_apply_of_le _ h, Pi.single_apply, Matrix.single_apply, he]
+  · simp only [schurMatrixEquiv_apply_of_gt _ h, Pi.zero_apply, Matrix.single_apply]
+    split_ifs with he
+    · exact (h.not_ge (he.1 ▸ he.2 ▸ ij.property)).elim
+    · rfl
+
+/-- A singleton in the strict lower coordinates assembles to the transposed matrix entry. -/
+@[simp] theorem schurMatrixEquiv_single_lower (ij : SchurLowerIndex ι) (a : R) :
+    schurMatrixEquiv (0, Pi.single ij a) = Matrix.single ij.val.2 ij.val.1 a := by
   ext i j
   by_cases h : j < i
   · have he : (⟨(j, i), h⟩ : SchurLowerIndex ι) = ij ↔
@@ -135,7 +150,7 @@ private theorem toMatrix'_schurLowerCommutator (T : Matrix ι ι S)
     LinearMap.toMatrix' (schurLowerCommutator T) ij kl =
       (if ij.val.2 = kl.val.2 then T kl.val.1 ij.val.1 else 0) -
         (if ij.val.1 = kl.val.1 then T ij.val.2 kl.val.2 else 0) := by
-  simp only [LinearMap.toMatrix'_apply, schurLowerCommutator_apply, schurMatrixEquiv_single,
+  simp only [LinearMap.toMatrix'_apply, schurLowerCommutator_apply, schurMatrixEquiv_single_lower,
     Matrix.sub_apply]
   obtain ⟨⟨i, j⟩, hij⟩ := ij
   obtain ⟨⟨k, l⟩, hkl⟩ := kl

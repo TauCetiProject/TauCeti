@@ -8,13 +8,16 @@ module
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.LinearAlgebra.Matrix.Triangular.Coordinates
 import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
-# Unitary triangular matrices over `ℝ` and `ℂ`
+# Topology of triangular matrix coordinates
 
-The algebraic API for triangular matrices lives in `TauCeti.LinearAlgebra.Matrix.Triangular`. This
-file adds the fact about them that needs the order on an `RCLike` field: a unitary upper
+The upper and strict lower entries of a square matrix give a continuous linear equivalence with
+the product of the two coordinate spaces. Over an `RCLike` field, a unitary upper
 triangular matrix with positive diagonal is the identity. In Lie-theoretic language the unitary
 group meets the upper triangular matrices with positive diagonal only in `1`, the identity
 `K ∩ A N = 1` behind the uniqueness of the Iwasawa decomposition, the `QR` factorization and the
@@ -24,6 +27,7 @@ Cholesky factorization.
 
 * `Matrix.IsUpperTriangular.eq_one_of_mem_unitaryGroup`: a unitary upper triangular matrix with
   positive diagonal is the identity.
+* `TauCeti.schurMatrixCLE`: the continuous linear equivalence that assembles the coordinates.
 -/
 
 public section
@@ -61,3 +65,46 @@ theorem IsUpperTriangular.eq_one_of_mem_unitaryGroup {M : Matrix ι ι 𝕜}
   · rw [one_apply_ne hij.ne', hM hij]
 
 end Matrix
+
+namespace TauCeti
+
+variable {𝕜 ι R : Type*} [CommSemiring 𝕜] [LinearOrder ι] [Semiring R]
+  [Algebra 𝕜 R] [TopologicalSpace R]
+
+/-- Assemble a matrix from its upper and strict lower coordinates, as a continuous linear
+equivalence for the product topologies. -/
+noncomputable def schurMatrixCLE : SchurCoordinates ι R ≃L[𝕜] Matrix ι ι R where
+  toLinearEquiv := schurMatrixEquiv.restrictScalars 𝕜
+  continuous_toFun := by
+    refine continuous_matrix fun i j ↦ ?_
+    -- Scalar restriction keeps the underlying assembly function.
+    change Continuous (fun x : SchurCoordinates ι R ↦ schurMatrixEquiv x i j)
+    rcases le_or_gt i j with h | h
+    · simp only [schurMatrixEquiv_apply_of_le _ h]
+      exact (continuous_apply _).comp continuous_fst
+    · simp only [schurMatrixEquiv_apply_of_gt _ h]
+      exact (continuous_apply _).comp continuous_snd
+  continuous_invFun := by
+    -- The inverse of the restricted map also has the same underlying function.
+    change Continuous (fun A : Matrix ι ι R ↦ schurMatrixEquiv.symm A)
+    have hUpper (ij : {ij : ι × ι // ij.1 ≤ ij.2}) :
+        Continuous (fun A : Matrix ι ι R ↦ (schurMatrixEquiv.symm A).1 ij) := by
+      simp only [Matrix.schurMatrixEquiv_symm_fst]
+      exact continuous_id.matrix_elem _ _
+    have hLower (ij : SchurLowerIndex ι) :
+        Continuous (fun A : Matrix ι ι R ↦ (schurMatrixEquiv.symm A).2 ij) := by
+      simp only [Matrix.schurMatrixEquiv_symm_snd]
+      exact continuous_id.matrix_elem _ _
+    exact (continuous_pi hUpper).prodMk (continuous_pi hLower)
+
+/-- Continuous linear assembly agrees with the algebraic entry assembly. -/
+@[simp] theorem schurMatrixCLE_apply (x : SchurCoordinates ι R) :
+    schurMatrixCLE (𝕜 := 𝕜) x = schurMatrixEquiv x :=
+  (rfl)
+
+/-- Reading coordinates with the continuous linear split agrees with the algebraic split. -/
+@[simp] theorem _root_.Matrix.schurMatrixCLE_symm_apply (A : Matrix ι ι R) :
+    (schurMatrixCLE (𝕜 := 𝕜)).symm A = schurMatrixEquiv.symm A :=
+  (rfl)
+
+end TauCeti

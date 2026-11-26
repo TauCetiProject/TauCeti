@@ -45,7 +45,7 @@ theorem _root_.Matrix.UnitaryGroup.lintegral_image_schurMatrix (U : Matrix.unita
     {s : Set (SchurCoordinates (Fin n) ℂ)} (hs : NullMeasurableSet s volume)
     (hinj : Set.InjOn (schurMatrix U) s) (g : Matrix (Fin n) (Fin n) ℂ → ℝ≥0∞) :
     (∫⁻ A in schurMatrix U '' s, g A) =
-      ∫⁻ x in s, ENNReal.ofReal (|(spectralAngularFDeriv (fun ij ↦ -star (x.2 ij))).det| *
+      ∫⁻ x in s, ENNReal.ofReal (|(schurAngularFDeriv x.2).det| *
         ∏ ij : FinStrictUpper n, ‖x.1 ⟨(ij.val.1, ij.val.1), le_rfl⟩ -
           x.1 ⟨(ij.val.2, ij.val.2), le_rfl⟩‖ ^ 2) *
         g (schurMatrix U x) := by
