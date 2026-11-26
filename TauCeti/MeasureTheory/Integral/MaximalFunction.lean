@@ -1141,4 +1141,30 @@ end VectorValued
 
 end Haar
 
+section Real
+
+variable {E : Type*} [NormedAddCommGroup E]
+
+/-- **The maximal function of a truncation.** If the averages of `‖g‖` over the closed balls
+`B(x, r)`, `0 < r ≤ δ`, are at most `c`, then the maximal function at `x` of `g` truncated to
+`B(x, δ)` is at most `c`. -/
+theorem maximalFunction_indicator_closedBall_le {g : ℝ → E} {x δ : ℝ} {c : ℝ≥0∞} (hδ : 0 < δ)
+    (hc : ∀ r ∈ Ioc 0 δ, (∫⁻ y in closedBall x r, ‖g y‖ₑ) / volume (closedBall x r) ≤ c) :
+    maximalFunction volume ((closedBall x δ).indicator g) x ≤ c := by
+  refine maximalFunction_le fun r hr => ?_
+  rw [setLAverage_eq]
+  simp_rw [eNorm_indicator_eq_indicator_eNorm]
+  rw [lintegral_indicator measurableSet_closedBall,
+    Measure.restrict_restrict measurableSet_closedBall]
+  rcases le_or_gt r δ with hrδ | hδr
+  · refine le_trans (ENNReal.div_le_div (lintegral_mono_set
+      (inter_subset_right.trans ball_subset_closedBall)) ?_) (hc r ⟨hr, hrδ⟩)
+    rw [Real.volume_ball, Real.volume_closedBall]
+  · refine le_trans (ENNReal.div_le_div (lintegral_mono_set inter_subset_left) ?_)
+      (hc δ ⟨hδ, le_rfl⟩)
+    rw [Real.volume_ball, Real.volume_closedBall]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+
+end Real
+
 end TauCeti
