@@ -38,10 +38,11 @@ The proof combines Chevalley's restriction theorem with Chevalley's theorem for 
   (`RootPairing.weylGroupCorootRepInvariantsEquiv`). These form a polynomial algebra on `dim H`
   generators (`RootPairing.exists_bijective_aeval_weylGroupCorootRep_of_base`).
 
-The degrees of the basic invariants of `L` are therefore the degrees of its root system: every
-system of basic invariants of the Weyl invariants `Sym(M*)^W` of `R` gives one of `S(L)^L` with the
-same degrees (`LieSubalgebra.exists_bijective_aeval_lieInvariants_of_weylGroupRootRep_dual`), so
-any degree identity proved for root systems transfers to them.
+So every system of basic invariants of the Weyl invariants `Sym(M*)^W` of `R` gives a system of
+basic invariants of `S(L)^L` with exactly the same degrees
+(`LieSubalgebra.exists_bijective_aeval_lieInvariants_of_weylGroupRootRep_dual`), and any degree
+identity proved for a system of basic invariants of a root system holds for the system of `L` built
+from it.
 
 ## Main results
 
@@ -109,9 +110,10 @@ theorem exists_bijective_aeval_lieInvariants_of_weylGroupCorootRep {κ : Type*}
   exact H.exists_bijective_aeval_lieInvariants_of_linearInvariants (f := e ∘ f) hf
     ((MvPolynomial.bijective_aeval_algEquiv_comp_iff e).mpr hbij)
 
-/-- **The degrees of the basic invariants of `L` are those of its root system.** Every system of
-basic invariants of the Weyl invariant polynomials `Sym(M*)^W` on the weight space `M = H*` of the
-root system of `H` gives a system of basic invariants of `S(L)^L` with the same degrees. -/
+/-- **A system of basic invariants of the root system gives one of `L` with the same degrees.**
+Every system of basic invariants of the Weyl invariant polynomials `Sym(M*)^W` on the weight space
+`M = H*` of the root system of `H` gives a system of basic invariants of `S(L)^L` with the same
+degrees. -/
 theorem exists_bijective_aeval_lieInvariants_of_weylGroupRootRep_dual {κ : Type*}
     {f : κ → (rootSystem H).weylGroupRootRep.dual.symmetricAlgebraInvariants} {d : κ → ℕ}
     (hf : ∀ k, (f k : _root_.SymmetricAlgebra K (Dual K (Dual K H))) ∈
