@@ -47,12 +47,14 @@ stated, and `N`, `N'` are the neck data of the two compositions
   `∑ i, B i + Bout + 2 (BG + BG')` for bounds `B i`, `Bout`, `BG`, `BG'` of the Hamiltonians
   (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le`,
   and `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le`
-  for a symplectic vector space target).
+  for a symplectic vector space target), and so is its integral over every region
+  (`TauCeti.SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_associativityPerturbation_le`).
 
 So the two ends of the family are the plumbed data of the two compositions, which break into the
 two composed products as the neck length `L` grows, and its curvature bound is the input to
-energy bounds for its Floer solutions that are uniform over the family. The energy identity, the
-moduli spaces over the family and their boundary are not treated here.
+energy bounds for its Floer solutions that are uniform over the family. The energy identity is in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Associativity`; the moduli spaces over the
+family and their boundary are not treated here.
 
 ## References
 
@@ -527,6 +529,37 @@ theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le
       hHs hHout hHouts hf₀ hf₃ τ hB hBout u).trans le_self_add
   · exact lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le_of_one_lt ω hH hHs
       hHout hHouts hG' hG's hL hτ hB hBout hBG' u
+
+/-- **The integrated curvature of the associativity family is bounded uniformly over every
+region.** Under the hypotheses of
+`SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le`, the integral of
+the curvature of the member of the family at any `τ` along any map, over any region `s`, is at most
+`∑ i, B i + Bout + 2 (BG + BG')` in absolute value. -/
+theorem abs_setIntegral_hamiltonianCurvature_associativityPerturbation_le
+    (ω : SmoothTwoForm I M) (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H i)))
+    (hHout : Periodic Hout 1) (hHouts : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry Hout))
+    (hG : Periodic G 1) (hGs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry G))
+    (hG' : Periodic G' 1) (hG's : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry G'))
+    (hL : 4 < L) (τ : ℝ) {B : Fin 3 → ℝ} {Bout BG BG' : ℝ} (hB : ∀ i t x, |H i t x| ≤ B i)
+    (hBout : ∀ t x, |Hout t x| ≤ Bout) (hBG : ∀ t x, |G t x| ≤ BG)
+    (hBG' : ∀ t x, |G' t x| ≤ BG') (u : ℝ × ℝ → M) (s : Set (ℝ × ℝ)) :
+    |∫ z in s, ω.hamiltonianCurvature
+        (fun z x ↦ associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm z) x
+          Complex.I) z (u z)| ≤ ∑ i, B i + Bout + 2 * (BG + BG') := by
+  have hB₀ (i : Fin 3) : 0 ≤ B i := (abs_nonneg _).trans (hB i 0 (u 0))
+  have hBout₀ : 0 ≤ Bout := (abs_nonneg _).trans (hBout 0 (u 0))
+  have hBG₀ : 0 ≤ BG := (abs_nonneg _).trans (hBG 0 (u 0))
+  have hBG'₀ : 0 ≤ BG' := (abs_nonneg _).trans (hBG' 0 (u 0))
+  have hsum₀ : 0 ≤ ∑ i, B i := Finset.sum_nonneg fun i _ ↦ hB₀ i
+  rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ← Real.eNorm_eq_ofReal_abs,
+    ENNReal.ofReal_add (by positivity) (by positivity), ENNReal.ofReal_add hsum₀ hBout₀,
+    ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hB₀ i, ENNReal.ofReal_mul zero_le_two,
+    ENNReal.ofReal_add hBG₀ hBG'₀, ENNReal.ofReal_ofNat]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans ((setLIntegral_le_lintegral _ _).trans
+    (ω.lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le hH hHs hHout hHouts hG hGs
+      hG' hG's hL τ hB hBout hBG hBG' u))
 
 end TauCeti.SmoothTwoForm
 

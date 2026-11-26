@@ -253,6 +253,14 @@ theorem cylindricalEndLift_add_ofReal (q : Puncture) (L : ℝ) (z : ℂ) :
     endCenter_inf, endScale_inf, mul_add, Complex.exp_add]
   ring
 
+/-- The input end `1` pushed forward by the plumbing map is the end of center `ψ(1)` and scale
+`-f` read through the end lift at `0`, where `f` is the plumbing factor. -/
+theorem plumbingMap_cylindricalEndLift_one (q : Puncture) (L : ℝ) (z : ℂ) :
+    q.plumbingMap L (one.cylindricalEndLift z) =
+      q.plumbingMap L 1 + -q.plumbingFactor L * zero.cylindricalEndLift z := by
+  simp only [plumbingMap_apply, cylindricalEndLift_one, cylindricalEndLift_zero]
+  ring
+
 /-- The chain rule for the gluing law: the derivative of the end lift of `q` at `z + L` is the
 plumbing factor times the derivative of the end lift of `∞` at `z`. -/
 theorem deriv_cylindricalEndLift_add_ofReal (q : Puncture) (L : ℝ) (z : ℂ) :

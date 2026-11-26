@@ -220,6 +220,14 @@ theorem cylindricalEndLift_eq (q : Puncture) (z : ℂ) :
     q.cylindricalEndLift z = q.endCenter + q.endScale * Complex.exp (-(2 * (π : ℂ)) * z) := by
   cases q <;> simp <;> ring
 
+/-- Every end lift is the end lift at `0` scaled by twice the scale of the end and centred at the
+center of the end: the end `q` is the input end of center `c_q` and scale `2 b_q` of a sphere with
+moving input ends. -/
+theorem cylindricalEndLift_eq_add_mul_cylindricalEndLift_zero (q : Puncture) (z : ℂ) :
+    q.cylindricalEndLift z = q.endCenter + 2 * q.endScale * zero.cylindricalEndLift z := by
+  rw [cylindricalEndLift_eq, cylindricalEndLift_zero]
+  ring
+
 /-- In polar form, the end lift traverses the circle of radius `‖b_q‖ exp (-2πs)` about the
 center `c_q` of the end clockwise, starting at the argument of the scale `b_q`. -/
 theorem cylindricalEndLift_ofReal_add_ofReal_mul_I (q : Puncture) (x t : ℝ) :
