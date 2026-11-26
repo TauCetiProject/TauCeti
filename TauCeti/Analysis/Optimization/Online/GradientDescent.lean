@@ -211,8 +211,8 @@ theorem regret_ogd_le_mul_sqrt (hc : IsComplete K) (hK : Convex ℝ K) (x₀ : E
 /-- **The one-step inequality of online gradient descent**, divided by the step. If `K` is
 complete and convex, `u ∈ K` and `η t > 0`, then the iterates `x = ogd K η g x₀` satisfy
 `⟪g t, x t - u⟫ ≤ (‖x t - u‖ ^ 2 - ‖x (t + 1) - u‖ ^ 2) / (2 * η t) + η t / 2 * ‖g t‖ ^ 2`. -/
-theorem inner_ogd_sub_le (hc : IsComplete K) (hK : Convex ℝ K) {η : ℕ → ℝ} (g : ℕ → E) (x₀ : E)
-    {t : ℕ} (hη : 0 < η t) {u : E} (hu : u ∈ K) :
+theorem inner_ogd_sub_le (hc : IsComplete K) (hK : Convex ℝ K) (η : ℕ → ℝ) (g : ℕ → E) (x₀ : E)
+    (t : ℕ) (hη : 0 < η t) {u : E} (hu : u ∈ K) :
     ⟪g t, ogd K η g x₀ t - u⟫ ≤
       (‖ogd K η g x₀ t - u‖ ^ 2 - ‖ogd K η g x₀ (t + 1) - u‖ ^ 2) / (2 * η t) +
         η t / 2 * ‖g t‖ ^ 2 := by
@@ -248,14 +248,14 @@ theorem sum_inner_ogd_sub_le_of_antitone (hc : IsComplete K) (hK : Convex ℝ K)
     intro n hn
     induction n with
     | zero =>
-      have h0 := inner_ogd_sub_le hc hK g x₀ hn hu
+      have h0 := inner_ogd_sub_le hc hK η g x₀ 0 hn hu
       simp only [zero_add, sum_range_one] at h0 ⊢
       have := div_le_div_of_nonneg_right (hdist 0) (by positivity : (0 : ℝ) ≤ 2 * η 0)
       rw [sub_div] at h0
       linarith
     | succ n ih =>
       have hn' : 0 < η n := hn.trans_le (hη n.le_succ)
-      have h1 := inner_ogd_sub_le hc hK g x₀ hn hu
+      have h1 := inner_ogd_sub_le hc hK η g x₀ (n + 1) hn hu
       rw [sum_range_succ _ (n + 1), sum_range_succ _ (n + 1)]
       have hcoef : 1 / (2 * η n) ≤ 1 / (2 * η (n + 1)) := by
         gcongr
