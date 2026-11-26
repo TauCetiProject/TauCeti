@@ -178,13 +178,6 @@ theorem ramificationBound_ne_zero : ramificationBound a b ≠ 0 := by
 
 variable {a b}
 
-/-- Ramification of `ℍ[ℚ,a,b]` at the rational prime below a finite place `v` of `ℚ` is
-ramification at `v`. -/
-theorem isRamifiedAtPrime_natGenerator_iff (v : HeightOneSpectrum (𝓞 ℚ)) :
-    IsRamifiedAtPrime a b (natGenerator v) ↔ IsRamifiedAt a b v := by
-  rw [isRamifiedAtPrime_iff_isRamifiedAt,
-    (primesEquiv (R := 𝓞 ℚ)).symm_apply_eq.2 (Subtype.ext (coe_primesEquiv v).symm)]
-
 /-- A prime `p` divides the discriminant `D` of `ℍ[ℚ,a,b]` exactly when `ℍ[ℚ,a,b]` is ramified at
 `p`. -/
 @[simp]

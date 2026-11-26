@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
+import TauCeti.NumberTheory.Padics.PadicValRat
 
 /-!
 # Units at the height-one primes of `ℚ`
@@ -85,8 +86,8 @@ theorem valuation_eq_one_of_not_dvd (v : HeightOneSpectrum R) {x : ℚ}
     (hnum : ¬natGenerator v ∣ x.num.natAbs) (hden : ¬natGenerator v ∣ x.den) :
     v.valuation ℚ x = 1 := by
   have hx : x ≠ 0 := by rintro rfl; exact hnum (by simp)
-  rw [valuation_eq_one_iff_padicValRat_eq_zero v hx, coe_primesEquiv, padicValRat_def, padicValInt,
-    multiplicity_eq_zero_of_not_dvd hnum, multiplicity_eq_zero_of_not_dvd hden, sub_self]
+  rw [valuation_eq_one_iff_padicValRat_eq_zero v hx, coe_primesEquiv]
+  exact (padicValRat.eq_zero_iff hx).2 ⟨hnum, hden⟩
 
 omit [IsFractionRing R ℚ] in
 /-- The height-one prime of `R` corresponding to the prime `p` under `primesEquiv` is the ideal

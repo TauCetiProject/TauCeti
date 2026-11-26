@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.BaseChange
 public import TauCeti.NumberTheory.HilbertSymbol.Archimedean
+public import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.QuadraticForm.Global.ProductFormula
 
 /-!
@@ -62,6 +63,9 @@ number of ramified places is even.
   place at which `2`, `a` and `b` are units.
 * `TauCeti.QuaternionAlgebra.even_card_ramifiedFinitePlaces_add_card_ramifiedRealPlaces`: the
   number of ramified places is even.
+* `TauCeti.QuaternionAlgebra.isRamifiedAtPrime_iff_isRamifiedAt`,
+  `TauCeti.QuaternionAlgebra.isRamifiedAtPrime_natGenerator_iff`: over `ℚ`, ramification at a
+  prime `p` is ramification at the finite place above `p`.
 
 ## References
 
@@ -351,6 +355,14 @@ theorem isRamifiedAtPrime_iff_isRamifiedAt (p : ℕ) [hp : Fact p.Prime] :
     IsRamifiedAtPrime a b p ↔
       IsRamifiedAt a b ((Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm ⟨p, hp.out⟩) := by
   rw [isRamifiedAtPrime_def, isRamifiedAt_def, hilbertSymbol_unitAtFinitePlace_rat ⟨p, hp.out⟩]
+
+/-- Ramification of `ℍ[ℚ,a,b]` at the rational prime below a finite place `v` of `ℚ` is
+ramification at `v`. -/
+theorem isRamifiedAtPrime_natGenerator_iff (v : HeightOneSpectrum (𝓞 ℚ)) :
+    IsRamifiedAtPrime a b (Rat.HeightOneSpectrum.natGenerator v) ↔ IsRamifiedAt a b v := by
+  rw [isRamifiedAtPrime_iff_isRamifiedAt,
+    (Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm_apply_eq.2
+      (Subtype.ext (Rat.HeightOneSpectrum.coe_primesEquiv v).symm)]
 
 end Rat
 
