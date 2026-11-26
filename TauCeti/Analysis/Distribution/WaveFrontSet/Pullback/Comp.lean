@@ -296,9 +296,8 @@ theorem notMem_waveFrontSet_compCLMOfSubmersion_inl {W : Opens (WithLp 2 (E × D
       (W.isOpen.mem_nhds (hU hx))
   simp only at hadj
   rw [(eventuallyEq_of_mem (U.isOpen.mem_nhds hx) hgK).fderiv_eq, hKι,
-    fderiv_comp x hKx (inlL2 ℝ E D).differentiableAt, (inlL2 ℝ E D).fderiv,
-    ContinuousLinearMap.adjoint_comp, adjoint_inlL2, ContinuousLinearMap.comp_apply, inlL2_apply,
-    hadj, fstL_apply, toLp_fst]
+    fderiv_comp x hKx (inlL2 ℝ E D).differentiableAt]
+  simp [ContinuousLinearMap.adjoint_comp, adjoint_inlL2, hadj]
 
 /-- **Restricting a pullback along a submersion** (Hörmander I, Theorem 8.2.4). Let `F` be a
 submersion from an open set `W` of `E × D` into `Ω'`, with `U × {0} ⊆ W`, and let the wave front
@@ -395,43 +394,16 @@ theorem pullbackInl_compCLMOfSubmersion {W : Opens (WithLp 2 (E × D))}
   have hRapp (Θ' : 𝓓(tripleDomain hF.continuousOn Ω', ℝ)) :
       R Θ' = S (fiberIntegralCLM volume volume (tripleAdd F) hK hKΩ hKsurj Θ') :=
     compCLMOfSubmersion_apply volume volume hK hKΩ hKsurj S Θ'
-  -- The bumps `ρ_n ⊗ σ_k` on `D × E'` have integral one.
-  have hprod (n k : ℕ) :
-      ∫ d : WithLp 2 (D × E'), (ρ n).normed volume d.fst * (σ k).normed volume d.snd = 1 := by
-    rw [← (volume_preserving_symm_measurableEquiv_toLp_prod D E').symm.integral_comp']
-    simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, toLp_fst, toLp_snd]
-    rw [Measure.volume_eq_prod, integral_prod_mul, ContDiffBump.integral_normed,
-      ContDiffBump.integral_normed, one_mul]
   -- (1) Joint convergence to the restriction of `K^* S` to `E × {0}`.
   have hJ : Tendsto (fun p : ℕ × ℕ ↦ R (Θ p.1 p.2)) (atTop ×ˢ atTop)
       (𝓝 (R.pullbackInl hUq hRq ψ)) := by
-    refine tendsto_pullbackInl R hUq hRq ψ (l := atTop ×ˢ atTop)
-      (ρ := fun p d ↦ (ρ p.1).normed volume d.fst * (σ p.2).normed volume d.snd)
-      (r := fun p ↦ (ρ p.1).rOut + (σ p.2).rOut) (M := 1) (f := fun p ↦ Θ p.1 p.2)
-      (Eventually.of_forall fun p ↦ ?_) ?_ (Eventually.of_forall fun p ↦ ?_) ?_
-      (Eventually.of_forall fun p q ↦ ?_)
-    · exact ((integral_congr_ae (Eventually.of_forall fun d ↦ abs_of_nonneg
-        (mul_nonneg ((ρ p.1).nonneg_normed _) ((σ p.2).nonneg_normed _)))).trans
-          (hprod p.1 p.2)).le
-    · simp_rw [hprod]
-      exact tendsto_const_nhds
-    · intro d hd
-      rw [mem_support, mul_ne_zero_iff] at hd
-      have h₁ : d.fst ∈ ball (0 : D) (ρ p.1).rOut := by
-        rw [← (ρ p.1).support_normed_eq (μ := volume)]
-        exact hd.1
-      have h₂ : d.snd ∈ ball (0 : E') (σ p.2).rOut := by
-        rw [← (σ p.2).support_normed_eq (μ := volume)]
-        exact hd.2
-      rw [mem_ball_zero_iff] at h₁ h₂
-      exact mem_closedBall_zero_iff.2
-        ((WithLp.prod_norm_le_norm_fst_add_norm_snd d).trans (add_le_add h₁.le h₂.le))
-    · have h₀ := ((ContDiffBump.tendsto_rOut_shrinking (c := (0 : D)) (half_pos hr)).comp
-        tendsto_fst).add ((ContDiffBump.tendsto_rOut_shrinking (c := (0 : E')) (half_pos hr)).comp
-          (tendsto_snd (f := (atTop : Filter ℕ))))
-      rw [add_zero] at h₀
-      exact h₀
-    · simp [Θ, tripleBump_apply]
+    refine tendsto_pullbackInl_prod_bump R hUq hRq ψ (ρ := fun p ↦ ρ p.1)
+      (σ := fun p ↦ σ p.2) ?_ (Eventually.of_forall fun p q ↦ by simp [Θ, tripleBump_apply])
+    have h₀ := ((ContDiffBump.tendsto_rOut_shrinking (c := (0 : D)) (half_pos hr)).comp
+      tendsto_fst).add ((ContDiffBump.tendsto_rOut_shrinking (c := (0 : E')) (half_pos hr)).comp
+        (tendsto_snd (f := (atTop : Filter ℕ))))
+    rw [add_zero] at h₀
+    exact h₀
   -- (2) For fixed `n`, the fibre integrals along `K` are mollifications of those along `F`.
   have hmol (n k : ℕ) : closedBall (0 : E') (σ k).rOut +
       tsupport (fiberIntegralCLM volume volume F hF hFW hsurj (Φ n)) ⊆ (Ω' : Set E') := by

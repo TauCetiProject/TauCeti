@@ -608,6 +608,47 @@ theorem tendsto_pullbackInl_tensorBump [MeasurableSpace D] [BorelSpace D] (T : �
       simpa only [(σ i).support_normed_eq] using ball_subset_closedBall)
     hσ (Eventually.of_forall fun _ ↦ tensorBump_apply _ _ _)
 
+/-- **The pullback to `E × {0}` as a limit over products of bumps.** Let `D₁ × D₂` be a product of
+finite-dimensional spaces. If `ρ i` and `σ i` are bumps centred at `0` in `D₁` and `D₂` whose outer
+radii tend to zero, and `f i` are the test functions `(x, (y, z)) ↦ ψ x ρ_i y σ_i z` for the
+normalized bumps, then `T (f i)` tends to the pullback of `T` evaluated at `ψ`. -/
+theorem tendsto_pullbackInl_prod_bump {D₁ D₂ : Type*} [NormedAddCommGroup D₁]
+    [InnerProductSpace ℝ D₁] [FiniteDimensional ℝ D₁] [MeasurableSpace D₁] [BorelSpace D₁]
+    [NormedAddCommGroup D₂] [InnerProductSpace ℝ D₂] [FiniteDimensional ℝ D₂] [MeasurableSpace D₂]
+    [BorelSpace D₂] {W : Opens (WithLp 2 (E × WithLp 2 (D₁ × D₂)))} (T : 𝓓'(W, ℂ))
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : WithLp 2 (D₁ × D₂)))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : WithLp 2 (D₁ × D₂), η ≠ 0 →
+      (toLp 2 (x, (0 : WithLp 2 (D₁ × D₂))), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
+    (ψ : 𝓓(U, ℝ)) {ι : Type*} {l : Filter ι} {ρ : ι → ContDiffBump (0 : D₁)}
+    {σ : ι → ContDiffBump (0 : D₂)} (hr : Tendsto (fun i ↦ (ρ i).rOut + (σ i).rOut) l (𝓝 0))
+    {f : ι → 𝓓(W, ℝ)} (hf : ∀ᶠ i in l, ∀ p,
+      f i p = ψ p.fst * ((ρ i).normed volume p.snd.fst * (σ i).normed volume p.snd.snd)) :
+    Tendsto (fun i ↦ T (f i)) l (𝓝 (T.pullbackInl hU h ψ)) := by
+  -- The products `ρ_i ⊗ σ_i` are nonnegative of integral one, supported in the closed balls of
+  -- radii `rOut (ρ i) + rOut (σ i)`.
+  have hprod (i : ι) :
+      ∫ d : WithLp 2 (D₁ × D₂), (ρ i).normed volume d.fst * (σ i).normed volume d.snd = 1 := by
+    rw [← (volume_preserving_symm_measurableEquiv_toLp_prod D₁ D₂).symm.integral_comp']
+    simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, toLp_fst, toLp_snd]
+    rw [Measure.volume_eq_prod, integral_prod_mul, ContDiffBump.integral_normed,
+      ContDiffBump.integral_normed, one_mul]
+  refine tendsto_pullbackInl T hU h ψ
+    (ρ := fun i d ↦ (ρ i).normed volume d.fst * (σ i).normed volume d.snd) (M := 1)
+    (Eventually.of_forall fun i ↦ ?_) (by simp_rw [hprod, tendsto_const_nhds])
+    (Eventually.of_forall fun i d hd ↦ ?_) hr hf
+  · exact ((integral_congr_ae (Eventually.of_forall fun d ↦ abs_of_nonneg
+      (mul_nonneg ((ρ i).nonneg_normed _) ((σ i).nonneg_normed _)))).trans (hprod i)).le
+  · rw [mem_support, mul_ne_zero_iff] at hd
+    have h₁ : d.fst ∈ ball (0 : D₁) (ρ i).rOut := by
+      rw [← (ρ i).support_normed_eq (μ := volume)]
+      exact hd.1
+    have h₂ : d.snd ∈ ball (0 : D₂) (σ i).rOut := by
+      rw [← (σ i).support_normed_eq (μ := volume)]
+      exact hd.2
+    rw [mem_ball_zero_iff] at h₁ h₂
+    exact mem_closedBall_zero_iff.2
+      ((WithLp.prod_norm_le_norm_fst_add_norm_snd d).trans (add_le_add h₁.le h₂.le))
+
 /-! ### Linearity and agreement with the restriction of continuous functions -/
 
 /-- `T (ψ ⊗ ρ_n)` tends to the pullback of `T` at `ψ` for the normalized bumps `ρ_n`. -/
