@@ -23,7 +23,7 @@ an abstract subgroup, by the exponentials of its Lie subalgebra
 (`LieSubalgebra.integralLeafSubgroup_eq_closure_lieExp_image`), `Subgroup.map` commutes with
 `Subgroup.closure`, and `φ ∘ lieExp = lieExp ∘ lieMap φ` (`map_lieExp`).
 
-With the Galois coinsertion of `TauCeti.Lie.gc_integralLeafSubgroup_lieSubalgebraOfSubgroup`,
+With the Galois connection `TauCeti.Lie.gc_integralLeafSubgroup_lieSubalgebraOfSubgroup`,
 naturality turns into an adjunction for images: the image of a connected immersed subgroup `K`
 lies in an arbitrary subgroup `Q'` exactly when `K` lies in the integral leaf subgroup of the
 preimage of `lieSubalgebraOfSubgroup Q'` under the Lie map
