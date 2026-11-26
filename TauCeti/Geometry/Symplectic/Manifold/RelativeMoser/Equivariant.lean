@@ -218,10 +218,8 @@ private theorem exists_equivariant_diffeomorph_of_opens [ContinuousSMul G M] (W 
   refine ⟨Φ, fun x hx ↦ (hΦU x).trans (congrArg Subtype.val (hΨK x hx)),
     ⟨Subtype.val '' C, hC.image continuous_subtypeVal, hΦC⟩,
     SmoothForm.eventually_mpullback_eq_of_subtype_val_comp_eq Φ.contMDiff Ψ.contMDiff hcomp hΨ,
-    fun x hx hjet ↦
-      ContinuousLinearMap.ext fun v ↦
-        (Manifold.mfderiv_apply_of_subtype_val_comp_eq (I' := I) hcomp.symm v).symm.trans
-          (DFunLike.congr_fun (hΨ1 x hx hjet) v), fun a x ↦ ?_⟩
+    fun x hx hjet ↦ (Manifold.mfderiv_eq_id_iff_of_comp_subtype_val hcomp.symm).1 (hΨ1 x hx hjet),
+    fun a x ↦ ?_⟩
   -- `Φ` is `Ψ` on the invariant set `U` and the identity off it.
   by_cases hx : x ∈ U
   · rw [← Opens.coe_smul_invariantCore W a ⟨x, hx⟩, hΦU, hΨG, Opens.coe_smul_invariantCore,

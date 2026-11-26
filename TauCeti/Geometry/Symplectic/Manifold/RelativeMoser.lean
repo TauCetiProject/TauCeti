@@ -633,9 +633,8 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq_of_mpullback_eq
       mfderiv I I Φ (f q) = ContinuousLinearMap.id ℝ (TangentSpace I (f q)) := by
     have hη : (σ₁ - σ₀).val (f q) = 0 := by
       rw [AddSubgroupClass.coe_sub, Pi.sub_apply, hq, sub_self]
-    exact ContinuousLinearMap.ext fun v ↦
-      (Manifold.mfderiv_apply_of_subtype_val_comp_eq (I' := I) hcomp.symm v).symm.trans
-        (DFunLike.congr_fun (hΨ1 (g q) (mem_range_self q) (hβW1 q hη)) v)
+    exact (Manifold.mfderiv_eq_id_iff_of_comp_subtype_val hcomp.symm).1
+      (hΨ1 (g q) (mem_range_self q) (hβW1 q hη))
   have hrange : Subtype.val '' range g = range f := (range_comp _ _).symm
   exact ⟨Φ, fun q ↦ (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q))),
     ⟨Subtype.val '' C, hC.image continuous_subtypeVal, hΦC⟩,

@@ -579,7 +579,8 @@ variable (G : Type*) {X : Type*} [TopologicalSpace G] [CompactSpace G] [Topologi
 /-- The **invariant core** of an open set `U` under a jointly continuous action of a compact space
 `G`: the open set of points whose whole orbit lies in `U`. For a monoid action it is the largest
 invariant open subset of `U` (`TopologicalSpace.Opens.invariantCore_le`,
-`TopologicalSpace.Opens.smul_mem_invariantCore`), and the monoid acts on it. -/
+`TopologicalSpace.Opens.smul_mem_invariantCore`, `TopologicalSpace.Opens.le_invariantCore_iff`),
+and the monoid acts on it. -/
 def invariantCore (U : Opens X) : Opens X :=
   ⟨{x | ∀ g : G, g • x ∈ U}, TauCeti.isOpen_setOf_forall_smul_mem U.isOpen⟩
 
@@ -588,6 +589,15 @@ variable {G}
 @[simp]
 theorem mem_invariantCore {U : Opens X} {x : X} : x ∈ U.invariantCore G ↔ ∀ g : G, g • x ∈ U :=
   Iff.rfl
+
+/-- An open set lies in the invariant core of `U` exactly when every translate of it lies in `U`. -/
+theorem le_invariantCore_iff {U V : Opens X} :
+    V ≤ U.invariantCore G ↔ ∀ g : G, ∀ x ∈ V, g • x ∈ U :=
+  ⟨fun h g _ hx ↦ mem_invariantCore.1 (h hx) g, fun h _ hx ↦ mem_invariantCore.2 fun g ↦ h g _ hx⟩
+
+/-- Taking invariant cores preserves inclusions of open sets. -/
+theorem invariantCore_mono : Monotone (invariantCore G : Opens X → Opens X) :=
+  fun _ _ h ↦ le_invariantCore_iff.2 fun g _ hx ↦ h (mem_invariantCore.1 hx g)
 
 end SMul
 
@@ -603,6 +613,11 @@ theorem invariantCore_le (U : Opens X) : U.invariantCore G ≤ U := fun x hx ↦
 theorem smul_mem_invariantCore {U : Opens X} {x : X} (hx : x ∈ U.invariantCore G) (g : G) :
     g • x ∈ U.invariantCore G :=
   mem_invariantCore.2 fun h ↦ by simpa [smul_smul] using mem_invariantCore.1 hx (h * g)
+
+/-- An open set equals its invariant core exactly when it is invariant. -/
+theorem invariantCore_eq_self_iff {U : Opens X} :
+    U.invariantCore G = U ↔ ∀ g : G, ∀ x ∈ U, g • x ∈ U :=
+  (invariantCore_le G U).ge_iff_eq.symm.trans le_invariantCore_iff
 
 /-- A monoid acting continuously on `X` acts on the invariant core of every open subset. -/
 instance (U : Opens X) : MulAction G (U.invariantCore G) where
