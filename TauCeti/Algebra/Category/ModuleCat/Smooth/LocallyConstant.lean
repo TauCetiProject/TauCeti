@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.TensorProduct.Quotient
 public import TauCeti.Algebra.Category.ModuleCat.Smooth.Coreflection
+public import TauCeti.RingTheory.Pure.Basic
 public import TauCeti.Topology.LocallyConstant.CharFn
+public import TauCeti.Topology.LocallyConstant.CompactSupport.Ideal
 
 /-!
 # Smooth and complete modules over locally constant functions
@@ -21,6 +24,11 @@ on `U`.
   (`TauCeti.smoothModules`) for the family of ideals `TauCeti.compactOpenIdeal T Λ U` of functions
   vanishing on `U` (`TauCeti.smoothModules_compactOpenIdeal_iff`), so the general theory of smooth
   modules applies; in particular the smooth part `M^s = ⋃_U 1_U·M` is `TauCeti.smoothPart`.
+  Equivalently, `M^s = C_c(T, Λ) • M` for the ideal `C_c(T, Λ)` of compactly supported functions
+  (`TauCeti.smoothPart_compactOpenIdeal_eq_smul_top`), and the multiplication map
+  `C_c(T, Λ) ⊗ M → M` is injective with image `M^s`
+  (`TauCeti.compactlySupportedTensorEquivSmoothPart`). So `M` is smooth exactly when
+  `C_c(T, Λ) ⊗ M → M` is bijective (`TauCeti.smoothModules_compactOpenIdeal_iff_bijective`).
 * `M` is *complete* (`TauCeti.completeModules`) when the canonical map `M → M^c` is bijective,
   where `M^c = lim_U 1_U·M` (`TauCeti.completePart`) is the limit over the compact opens, with
   transition maps multiplication by `1_V` for `V ⊆ U`.
@@ -44,6 +52,8 @@ point.
 
 * `TauCeti.compactOpenIdeal T Λ U`: the ideal of `C(T, Λ)` of functions vanishing on `U`.
 * `TauCeti.completePart T Λ M`: the module `M^c = lim_U 1_U·M`.
+* `TauCeti.compactlySupportedTensorEquivSmoothPart T Λ M`: the isomorphism
+  `C_c(T, Λ) ⊗ M ≅ M^s`, `f ⊗ m ↦ f • m`.
 * `TauCeti.toCompletePart T Λ M`: the canonical map `M → M^c`, `m ↦ (1_U • m)_U`.
 * `TauCeti.completeModules T Λ`: the modules `M` for which `M → M^c` is bijective.
 * `TauCeti.smoothCompleteEquivalence T Λ`: the equivalence between smooth and complete modules.
@@ -164,6 +174,60 @@ theorem smoothModules_compactOpenIdeal_self_iff [Nontrivial Λ] :
   exact isCompact_univ_iff.1 (hU ▸ U.isCompact)
 
 end Smooth
+
+/-! ### Smooth modules and compactly supported functions -/
+
+section CompactlySupported
+
+open LocallyConstant TensorProduct
+
+variable {M : Type v} [AddCommGroup M] [Module (LocallyConstant T Λ) M]
+
+/-- The smooth part of a module `M` is `C_c(T, Λ) • M`, the submodule spanned by the `f • m` with
+`f` a compactly supported locally constant function. -/
+theorem smoothPart_compactOpenIdeal_eq_smul_top :
+    smoothPart (compactOpenIdeal T Λ) M = compactlySupportedIdeal T Λ • ⊤ := by
+  refine le_antisymm (fun m hm => ?_) (Submodule.smul_le.2 fun f hf m _ => ?_)
+  · obtain ⟨U, hU⟩ := mem_smoothPart_compactOpenIdeal_iff.1 hm
+    rw [← hU]
+    exact Submodule.smul_mem_smul U.charFn_mem_compactlySupportedIdeal Submodule.mem_top
+  · obtain ⟨U, hU⟩ := exists_charFn_mul_eq_of_mem_compactlySupportedIdeal hf
+    exact mem_smoothPart_compactOpenIdeal_iff.2 ⟨U, by rw [← mul_smul, hU]⟩
+
+variable (T Λ M) in
+/-- The isomorphism `C_c(T, Λ) ⊗ M ≅ M^s`, `f ⊗ m ↦ f • m`, between the tensor product of a
+`C(T, Λ)`-module `M` with the ideal `C_c(T, Λ)` of compactly supported functions and the smooth
+part of `M`. The multiplication map `C_c(T, Λ) ⊗ M → M` is injective for every `M`, since the
+ideal `C_c(T, Λ)` is pure, and its image is `M^s`. -/
+noncomputable def compactlySupportedTensorEquivSmoothPart :
+    compactlySupportedIdeal T Λ ⊗[LocallyConstant T Λ] M ≃ₗ[LocallyConstant T Λ]
+      smoothPart (compactOpenIdeal T Λ) M :=
+  (LinearEquiv.ofInjective
+    ((TensorProduct.lid _ M).toLinearMap ∘ₗ (compactlySupportedIdeal T Λ).subtype.rTensor M)
+    ((TensorProduct.lid _ M).injective.comp
+      (Ideal.subtype_rTensor_injective_of_pure _ M))).trans
+    (LinearEquiv.ofEq _ _ (by
+      rw [Ideal.subtype_rTensor_range, smoothPart_compactOpenIdeal_eq_smul_top]))
+
+@[simp]
+theorem compactlySupportedTensorEquivSmoothPart_tmul_coe (f : compactlySupportedIdeal T Λ)
+    (m : M) :
+    (compactlySupportedTensorEquivSmoothPart T Λ M (f ⊗ₜ m) : M) =
+      (f : LocallyConstant T Λ) • m := by
+  simp [compactlySupportedTensorEquivSmoothPart]
+
+/-- A `C(T, Λ)`-module `M` is smooth exactly when the multiplication map
+`C_c(T, Λ) ⊗ M → M`, `f ⊗ m ↦ f • m`, is bijective. -/
+theorem smoothModules_compactOpenIdeal_iff_bijective {M : ModuleCat.{v} (LocallyConstant T Λ)} :
+    smoothModules (compactOpenIdeal T Λ) M ↔ Function.Bijective
+      ((TensorProduct.lid _ M).toLinearMap ∘ₗ (compactlySupportedIdeal T Λ).subtype.rTensor M) := by
+  rw [smoothModules_compactOpenIdeal_iff, Function.Bijective, ← LinearMap.range_eq_top,
+    Ideal.subtype_rTensor_range, ← smoothPart_compactOpenIdeal_eq_smul_top, Submodule.eq_top_iff']
+  simp only [mem_smoothPart_compactOpenIdeal_iff, iff_and_self]
+  exact fun _ =>
+    (TensorProduct.lid _ M).injective.comp (Ideal.subtype_rTensor_injective_of_pure _ M)
+
+end CompactlySupported
 
 /-! ### The complete part -/
 
