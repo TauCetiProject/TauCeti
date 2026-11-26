@@ -36,9 +36,11 @@ derivative is a combination of approximate identities concentrating to the right
 points, so its pairing with `u` converges to `∑ᵢ |vᵢ₊₁ - vᵢ|` as `c → ∞`.
 
 For the indicator of a set `s`, almost every point is a Lebesgue point with value `0` or `1`.
-Counting alternations between points of `s` and of its complement gives the sharp
-one-dimensional isoperimetric inequality and its rigidity:
+Counting alternations between points of `s` and of its complement gives a local perimeter bound,
+the sharp one-dimensional isoperimetric inequality and its rigidity:
 
+* a set, null-measurable in an open interval `V`, that charges both itself and its complement in
+  `V` has perimeter at least `1` in `V` (`TauCeti.Real.one_le_perimeter_of_ordConnected`);
 * a null-measurable `s ⊆ ℝ` of positive finite measure has perimeter at least `2`
   (`TauCeti.Real.two_le_perimeter`);
 * if `s` has finite measure and does not agree almost everywhere with any interval, then it has
@@ -59,6 +61,8 @@ set containing `x` and `0` in any other open set (`TauCeti.Real.perimeter_Iio`,
 
 * `TauCeti.Real.ofReal_sum_abs_sub_le_totalVariationOn`: the variation of `u` along Lebesgue
   points in `Ω` is at most `|Du|(Ω)`.
+* `TauCeti.Real.one_le_perimeter_of_ordConnected`: a set charging both itself and its complement
+  in an open interval has perimeter at least one there.
 * `TauCeti.Real.two_le_perimeter`, `TauCeti.Real.four_le_perimeter`,
   `TauCeti.Real.perimeter_Ioo` and `TauCeti.Real.perimeter_eq_two_iff`.
 * `TauCeti.Real.perimeter_Iio` and `TauCeti.Real.perimeter_Ioi`: the perimeter of a half-line.
@@ -244,21 +248,60 @@ theorem ofReal_sum_abs_sub_le_totalVariationOn {Ω : Opens ℝ} {u : ℝ → ℝ
     rw [Real.closedBall_eq_Icc]
     exact ⟨by linarith [inv_pos.2 hc0], hy.2⟩
 
-/-- Monotone Lebesgue points of the indicator of a measurable set `s` bound its perimeter from
-below by the number of alternations between `s` and its complement. -/
-private theorem ofReal_sum_le_perimeter {s : Set ℝ} (hs : MeasurableSet s) {m : ℕ}
-    {x : Fin (m + 1) → ℝ} (hx : Monotone x)
+/-- Monotone Lebesgue points of the indicator of a measurable set `s`, spanning an interval in
+`V`, bound its perimeter in `V` from below by the number of alternations between `s` and its
+complement. -/
+private theorem ofReal_sum_le_perimeter {s : Set ℝ} (hs : MeasurableSet s) {V : Opens ℝ} {m : ℕ}
+    {x : Fin (m + 1) → ℝ} (hx : Monotone x) (hV : Icc (x 0) (x (Fin.last m)) ⊆ V)
     (hxs : ∀ i, Tendsto (fun r => ⨍ y in closedBall (x i) r,
       ‖s.indicator 1 y - s.indicator (1 : ℝ → ℝ) (x i)‖) (𝓝[>] 0) (𝓝 0)) :
     ENNReal.ofReal (∑ i : Fin m,
       |s.indicator 1 (x i.succ) - s.indicator (1 : ℝ → ℝ) (x i.castSucc)|)
-      ≤ perimeter volume ⊤ s := by
-  have hu : LocallyIntegrableOn (s.indicator (1 : ℝ → ℝ)) ((⊤ : Opens ℝ) : Set ℝ) := by
+      ≤ perimeter volume V s := by
+  have hu : LocallyIntegrableOn (s.indicator (1 : ℝ → ℝ)) V := by
     rw [Pi.one_def]
     exact ((locallyIntegrable_const 1).indicator hs).locallyIntegrableOn _
   rw [perimeter_def]
-  exact ofReal_sum_abs_sub_le_totalVariationOn (v := fun i => s.indicator 1 (x i)) hu hx
-    (by simp) hxs
+  exact ofReal_sum_abs_sub_le_totalVariationOn (v := fun i => s.indicator 1 (x i)) hu hx hV hxs
+
+/-- A measurable set `s ⊆ ℝ` that charges both itself and its complement in an open interval `V`
+has perimeter at least one in `V`. -/
+private theorem one_le_perimeter_of_ordConnected_of_measurableSet {s : Set ℝ}
+    (hs : MeasurableSet s) {V : Opens ℝ} (hV : (V : Set ℝ).OrdConnected)
+    (h1 : volume (s ∩ V) ≠ 0) (h0 : volume (sᶜ ∩ V) ≠ 0) : 1 ≤ perimeter volume V s := by
+  set P : ℝ → Prop := fun x => Tendsto (fun r => ⨍ y in closedBall x r,
+    ‖s.indicator 1 y - s.indicator (1 : ℝ → ℝ) x‖) (𝓝[>] 0) (𝓝 0)
+  have hae : ∀ᵐ x, P x := IsUnifLocDoublingMeasure.ae_tendsto_average_closedBall_norm_sub volume
+    (f := s.indicator (1 : ℝ → ℝ)) ((locallyIntegrable_const 1).indicator hs)
+  -- Two ordered Lebesgue points in `V` bound the perimeter by the jump of the indicator.
+  have key {p q : ℝ} (hpq : p ≤ q) (hp : p ∈ V) (hq : q ∈ V) (hp' : P p) (hq' : P q) :
+      ENNReal.ofReal |s.indicator 1 q - s.indicator (1 : ℝ → ℝ) p| ≤ perimeter volume V s := by
+    simpa using ofReal_sum_le_perimeter hs (x := ![p, q])
+      (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i; simpa using hpq) (hV.out hp hq)
+      (Fin.forall_fin_two.2 ⟨hp', hq'⟩)
+  -- Lebesgue points of `s` and of its complement in `V`, in either order.
+  obtain ⟨a, ⟨has, haV⟩, ha⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae h1
+    (ae_restrict_of_ae hae)
+  obtain ⟨b, ⟨hbs, hbV⟩, hb⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae h0
+    (ae_restrict_of_ae hae)
+  rcases le_total a b with h | h
+  · simpa [has, notMem_of_mem_compl hbs] using key h haV hbV ha hb
+  · simpa [has, notMem_of_mem_compl hbs] using key h hbV haV hb ha
+
+/-- **A local lower bound for the perimeter on the line.** A set `s ⊆ ℝ`, null-measurable in an
+open interval `V`, that charges both itself and its complement in `V` has perimeter at least one
+in `V`. -/
+theorem one_le_perimeter_of_ordConnected {s : Set ℝ} {V : Opens ℝ}
+    (hs : NullMeasurableSet s (volume.restrict V)) (hV : (V : Set ℝ).OrdConnected)
+    (h1 : volume (s ∩ V) ≠ 0) (h0 : volume (sᶜ ∩ V) ≠ 0) : 1 ≤ perimeter volume V s := by
+  have hts := hs.toMeasurable_ae_eq
+  have hvol {u u' : Set ℝ} (h : u =ᵐ[volume.restrict V] u') :
+      volume (u ∩ V) = volume (u' ∩ V) := by
+    rw [← Measure.restrict_apply' V.isOpen.measurableSet,
+      ← Measure.restrict_apply' V.isOpen.measurableSet, measure_congr h]
+  rw [← perimeter_congr_ae hts]
+  exact one_le_perimeter_of_ordConnected_of_measurableSet (measurableSet_toMeasurable _ _) hV
+    (by rwa [hvol hts]) (by rwa [hvol hts.compl])
 
 /-- A null-measurable set agrees almost everywhere with a measurable set of the same perimeter
 and measure. -/
@@ -289,8 +332,8 @@ private theorem two_le_perimeter_of_measurableSet {s : Set ℝ} (hs : Measurable
   -- A Lebesgue point of `s`, with Lebesgue points of the complement on either side.
   obtain ⟨b, hbs, hb⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae h0 (ae_restrict_of_ae hae)
   obtain ⟨⟨a, hab, has, ha⟩, c, hbc, hcs, hc⟩ := exists_notMem_lt_and_gt hfin hae b b
-  have h := ofReal_sum_le_perimeter hs (x := ![a, b, c])
-    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i <;> simp [hab.le, hbc.le])
+  have h := ofReal_sum_le_perimeter hs (V := ⊤) (x := ![a, b, c])
+    (Fin.monotone_iff_le_succ.2 fun i => by fin_cases i <;> simp [hab.le, hbc.le]) (by simp)
     (fun i => by fin_cases i <;> assumption)
   simpa [Fin.sum_univ_succ, has, hbs, hcs, one_add_one_eq_two] using h
 
@@ -319,9 +362,9 @@ private theorem four_le_perimeter_of_measurableSet {s : Set ℝ} (hs : Measurabl
     exact h I hI (ae_eq_set.2 ⟨measure_mono_null h₁ hnull, measure_mono_null h₂ hnull⟩)
   -- Lebesgue points of the complement on either side.
   obtain ⟨⟨a, hab, has, ha⟩, c, hb'c, hcs, hc⟩ := exists_notMem_lt_and_gt hfin hae b b'
-  have h := ofReal_sum_le_perimeter hs (x := ![a, b, z, b', c])
+  have h := ofReal_sum_le_perimeter hs (V := ⊤) (x := ![a, b, z, b', c])
     (Fin.monotone_iff_le_succ.2 fun i => by
-      fin_cases i <;> simp [hab.le, hbz.le, hzb'.le, hb'c.le])
+      fin_cases i <;> simp [hab.le, hbz.le, hzb'.le, hb'c.le]) (by simp)
     (fun i => by fin_cases i <;> assumption)
   have h4 : (1 + (1 + (1 + 1)) : ℝ) = 4 := by norm_num
   simpa [Fin.sum_univ_succ, has, hbs, hzs, hb's, hcs, h4] using h

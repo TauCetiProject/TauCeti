@@ -71,19 +71,11 @@ theorem residue_deriv_eq_zero {g : ℂ → ℂ} {z₀ : ℂ} (hg : MeromorphicAt
     have hev : g =ᶠ[𝓝[≠] z₀] fun z ↦ h z + ∑ k : Fin N, a k / (z - z₀) ^ (k.val + 1) := hgh
     filter_upwards [hev.nhdsNE_deriv, self_mem_nhdsWithin,
       nhdsWithin_le_nhds hh.eventually_analyticAt] with z hz hzne hhz
-    have hsub : z - z₀ ≠ 0 := sub_ne_zero.mpr hzne
-    have hmono : ∀ k : Fin N, HasDerivAt (fun w ↦ a k / (w - z₀) ^ (k.val + 1))
-        (-((k.val : ℂ) + 1) * a k / (z - z₀) ^ (k.val + 1 + 1)) z := fun k ↦ by
-      have := ((((hasDerivAt_id' z).sub_const z₀).fun_pow (k.val + 1)).fun_inv
-        (pow_ne_zero _ hsub)).const_mul (a k)
-      convert this using 1
-      · simp [div_eq_mul_inv]
-      · simp only [Nat.add_sub_cancel, mul_one]
-        field_simp
-        push_cast
-        ring
-    rw [hz, (hhz.differentiableAt.hasDerivAt.fun_add
-      (HasDerivAt.fun_sum fun k _ ↦ hmono k)).deriv, Fin.sum_univ_succ]
+    have hsum : HasDerivAt (fun w ↦ ∑ k : Fin N, a k / (w - z₀) ^ (k.val + 1))
+        (∑ k : Fin N, -((k.val : ℂ) + 1) * a k / (z - z₀) ^ (k.val + 1 + 1)) z :=
+      (hasDerivAt_sum_div_sub_pow a hzne).congr_deriv
+        (Finset.sum_congr rfl fun k _ ↦ by push_cast; ring)
+    rw [hz, (hhz.differentiableAt.hasDerivAt.fun_add hsum).deriv, Fin.sum_univ_succ]
     simp
   rw [residue_of_laurent_expansion hh.deriv hderiv]
   simp

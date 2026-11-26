@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Analysis.InnerProductSpace.HilbertSchmidt.Inner
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.HilbertSchmidt
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 
@@ -34,6 +35,11 @@ a chart with the inverse Gram matrix of the chart frame.
   vanishes off the closure of the nonzero locus of `σ`, and of `τ`.
 * `CovariantDerivative.innerCovariantDerivative_self_eq_zero_iff`: `⟪∇σ, ∇σ⟫` vanishes exactly
   where `∇σ` does.
+* `CovariantDerivative.norm_le_sqrt_innerCovariantDerivative`: the operator norm of `∇σ` is at
+  most its Hilbert–Schmidt norm.
+* `CovariantDerivative.norm_apply_le_sqrt_innerCovariantDerivative` and
+  `CovariantDerivative.norm_apply_orthonormalBasis_le_sqrt_innerCovariantDerivative`: the
+  covariant derivative of `σ` in a direction is bounded by the Hilbert–Schmidt norm of `∇σ`.
 * `CovariantDerivative.contMDiff_innerCovariantDerivative`: `⟪∇σ, ∇τ⟫` is smooth for smooth
   sections.
 -/
@@ -93,6 +99,30 @@ theorem innerCovariantDerivative_self_nonneg (σ : Π x : M, V x) (x : M) :
 theorem innerCovariantDerivative_self_eq_zero_iff (σ : Π x : M, V x) (x : M) :
     cov.innerCovariantDerivative σ σ x = 0 ↔ cov σ x = 0 :=
   (cov σ x).hilbertSchmidtInner_self_eq_zero_iff
+
+/-- The operator norm of `∇σ` at `x` is at most its Hilbert–Schmidt norm `√⟪∇σ, ∇σ⟫`. -/
+theorem norm_le_sqrt_innerCovariantDerivative (σ : Π x : M, V x) (x : M) :
+    ‖cov σ x‖ ≤ √(cov.innerCovariantDerivative σ σ x) := by
+  refine (Real.le_sqrt (norm_nonneg (cov σ x)) (cov.innerCovariantDerivative_self_nonneg σ x)).2 ?_
+  let b := stdOrthonormalBasis ℝ (TangentSpace I x)
+  rw [cov.innerCovariantDerivative_eq_sum σ σ x b]
+  simpa only [real_inner_self_eq_norm_sq] using
+    (cov σ x).opNorm_sq_le_sum_norm_apply_sq_orthonormalBasis b
+
+/-- The covariant derivative of `σ` in the direction `v` is bounded by the Hilbert–Schmidt norm:
+`‖∇_v σ‖ ≤ √⟪∇σ, ∇σ⟫ ‖v‖`. -/
+theorem norm_apply_le_sqrt_innerCovariantDerivative (σ : Π x : M, V x) (x : M)
+    (v : TangentSpace I x) :
+    ‖cov σ x v‖ ≤ √(cov.innerCovariantDerivative σ σ x) * ‖v‖ :=
+  (cov σ x).le_of_opNorm_le (cov.norm_le_sqrt_innerCovariantDerivative σ x) v
+
+/-- The covariant derivative of `σ` along a vector of an orthonormal basis is bounded by the
+Hilbert–Schmidt norm: `‖∇_{eᵢ} σ‖ ≤ √⟪∇σ, ∇σ⟫`. -/
+theorem norm_apply_orthonormalBasis_le_sqrt_innerCovariantDerivative (σ : Π x : M, V x) (x : M)
+    {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℝ (TangentSpace I x)) (i : ι) :
+    ‖cov σ x (b i)‖ ≤ √(cov.innerCovariantDerivative σ σ x) := by
+  simpa only [b.orthonormal.1 i, mul_one] using
+    cov.norm_apply_le_sqrt_innerCovariantDerivative σ x (b i)
 
 /-- `⟪∇σ, ∇τ⟫` vanishes where `∇σ` does. -/
 theorem innerCovariantDerivative_eq_zero_of_apply_eq_zero_left {x : M} (h : cov σ x = 0) :

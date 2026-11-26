@@ -30,12 +30,8 @@ Appendix A.3):
   (`TauCeti.span_range_algebraMap_eq_top`).
 * `TauCeti.length_quotient_span_singleton_eq_finsum_ord`: for `A` local, that length is
   `Σ_m ord_{B_m}(b) [κ(B_m) : κ(A)]` over the maximal ideals `m` of `B`.
-  `TauCeti.length_quotient_span_singleton_eq_finsum` decomposes the `A`-length over the
-  localizations `C_q` of `C = B ⧸ bB`, using `MaximalSpectrum.toPiLocalizationEquiv` and
-  `IsLocalRing.length_restrictScalars` over `C_q`. The length identities
-  `TauCeti.length_localization_quotient_span_singleton` and
-  `Ideal.length_residueField_localization_quotient` rewrite these local lengths in terms of
-  `B_m`, where `m` is the preimage of `q`.
+  It is the principal case of `Ideal.length_quotient_eq_finsum_length_localization`, which
+  decomposes the `A`-length of `B ⧸ J` over the localizations of `B` at its maximal ideals.
 
 Together they give `ord_A N_{L/K}(b) = Σ_m [κ(B_m) : κ(A)] ord_{B_m}(b)`, the coefficient identity
 behind the pushforward of principal divisors along finite maps (Fulton, Proposition 1.4(b)).
@@ -45,6 +41,11 @@ the local rings of a scheme at the points of a fibre) and the residue degree rea
 of `B ⧸ m`. The orders are transported from `B_m` to `R m` by `TauCeti.Ring.ord_ringEquiv`.
 `TauCeti.ordFrac_norm_eq_finprod_of_isLocalization` is the same identity when `B` is a localization
 of a ring `B₀` and the orders are taken in localizations of `B₀` at the primes `m ∩ B₀`.
+
+When `B` is free over `A`, the norm `N_{B/A}(b)` lies in `A` and the first step reads
+`length_A (B ⧸ bB) = ord_A N_{B/A}(b)` directly in `A`
+(`TauCeti.length_quotient_span_singleton_eq_ord_norm`), with no fraction fields and no
+hypothesis that `B` is a domain: `B ⧸ bB` is the cokernel of a matrix of multiplication by `b`.
 -/
 
 public section
@@ -100,6 +101,28 @@ theorem ordFrac_norm_eq_coe_of_length_eq {b : B} (hb : b ≠ 0) {n : ℕ}
       exact ⟨b * a, ⟨a, mul_comm a b⟩, by rw [LinearEquiv.ofInjective_apply]; simp [φ, f]⟩
   rw [← (Submodule.Quotient.equiv _ _ e he).length_eq,
     (Submodule.Quotient.restrictScalarsEquiv A (Ideal.span {b})).length_eq, hn]
+
+section Free
+
+variable {A B : Type*} [CommRing A] [IsDomain A] [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+  [CommRing B] [Algebra A B] [Module.Free A B] [Module.Finite A B]
+
+/-- **The length of `B ⧸ bB` is the order of the norm**, for a finite free algebra `B` over a
+Noetherian domain `A` of dimension at most one: `B ⧸ bB` is the cokernel of multiplication by `b`,
+whose determinant is `N_{B/A}(b)`. -/
+theorem length_quotient_span_singleton_eq_ord_norm {b : B} (hb : Algebra.norm A b ≠ 0) :
+    Module.length A (B ⧸ Ideal.span {b}) = Ring.ord A (Algebra.norm A b) := by
+  classical
+  let e := Module.Free.chooseBasis A B
+  have hrange : (Ideal.span {b}).restrictScalars A = LinearMap.range (Algebra.lmul A B b) := by
+    ext x
+    simp [Ideal.mem_span_singleton', mul_comm]
+  rw [Algebra.norm_apply, ← LinearMap.det_toMatrix e] at hb ⊢
+  rw [← (Submodule.Quotient.restrictScalarsEquiv A (Ideal.span {b})).length_eq, hrange,
+    e.length_quotient_range_eq_length_quotient_range_toMatrix,
+    Matrix.length_quotient_range_mulVecLin_eq_ord_det _ hb]
+
+end Free
 
 section Fraction
 

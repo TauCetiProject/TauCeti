@@ -162,10 +162,8 @@ theorem sigPos_sub_sigNeg_crossingForm_eq_zero_of_ker_eq_bot {B : E →L[ℝ] E 
     (hB : B.ker = ⊥) (V' : E →L[ℝ] E →L[ℝ] ℝ) :
     (sigPos (crossingForm B V') : ℤ) - sigNeg (crossingForm B V') = 0 := by
   have h₀ : Module.finrank ℝ B.ker = 0 := by rw [hB, finrank_bot]
-  have hpos := sigPos_le_finrank (crossingForm B V')
-  have hneg := sigPos_le_finrank (-crossingForm B V')
-  rw [sigPos_neg] at hneg
-  omega
+  simp [QuadraticForm.sigPos_eq_zero_of_finrank_eq_zero _ h₀,
+    QuadraticForm.sigNeg_eq_zero_of_finrank_eq_zero _ h₀]
 
 /-- The crossing form of a nondegenerate form lives on the zero space, so its signature
 vanishes. -/
