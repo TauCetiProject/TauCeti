@@ -136,6 +136,15 @@ theorem chartFixedPointMap_apply (c : OpenPartialHomeomorph M H) (f : C(M, M))
     chartFixedPointMap I c f z = c.extend I (f ((c.extend I).symm z)) :=
   (rfl)
 
+/-- The fixed points of the coordinate expression of `f` in the chart `c` are the coordinates of
+the fixed points of `f` in the chart. -/
+theorem chartFixedPointMap_apply_eq_self_iff {c : OpenPartialHomeomorph M H} {f : C(M, M)}
+    {z : chartFixedPointDomain I c f} :
+    chartFixedPointMap I c f z = z ↔ f ((c.extend I).symm z) = (c.extend I).symm z := by
+  rw [chartFixedPointMap_apply]
+  refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, (c.extend I).right_inv z.property.1]⟩
+  rw [← c.extend_left_inv (I := I) z.property.2, h]
+
 variable [FiniteDimensional ℝ E]
 
 variable (I) in
@@ -161,19 +170,19 @@ theorem chartLocalFixedPointIndex_of_mem {c : OpenPartialHomeomorph M H} {f : C(
   simp only [chartLocalFixedPointIndex, hx, hfx, and_self, ↓reduceDIte]
 
 /-- The index read in the chart `c` is `0` unless `x` and `f x` lie in the chart. -/
+@[simp]
 theorem chartLocalFixedPointIndex_of_notMem {c : OpenPartialHomeomorph M H} {f : C(M, M)} {x : M}
     (h : ¬(x ∈ c.source ∧ f x ∈ c.source)) : chartLocalFixedPointIndex I c f x = 0 := by
   simp only [chartLocalFixedPointIndex, h, ↓reduceDIte]
 
 /-- The local fixed-point index read in a chart vanishes at a point which is not fixed. -/
+@[simp]
 theorem chartLocalFixedPointIndex_of_ne (c : OpenPartialHomeomorph M H) {f : C(M, M)} {x : M}
     (hfx : f x ≠ x) : chartLocalFixedPointIndex I c f x = 0 := by
   by_cases h : x ∈ c.source ∧ f x ∈ c.source
   · rw [chartLocalFixedPointIndex_of_mem h.1 h.2]
     refine ContinuousMap.localFixedPointIndex_of_ne _ fun heq ↦ hfx ?_
-    rw [chartFixedPointMap_apply, c.extend_left_inv h.1] at heq
-    rw [← c.extend_source (I := I)] at h
-    exact (c.extend I).injOn h.2 h.1 heq
+    rwa [chartFixedPointMap_apply_eq_self_iff, c.extend_left_inv h.1] at heq
   · exact chartLocalFixedPointIndex_of_notMem h
 
 /-- **Comparison of local indices read in charts.** Let `x` be a fixed point of `f : M → M`, and
@@ -307,7 +316,7 @@ theorem localFixedPointIndex_of_frequently_eq {f : C(M, M)} {x : M}
         exact hz (hzψ.symm.trans (congrArg Subtype.val heq))
     refine hψt.frequently ((h.and_eventually (nhdsWithin_le_nhds (hψ.and hV))).mono ?_)
     rintro z ⟨hfz, hzψ, hzV⟩
-    rw [chartFixedPointMap_apply, hzψ, c.extend_left_inv hzV.1, hfz]
+    rwa [chartFixedPointMap_apply_eq_self_iff, hzψ, c.extend_left_inv hzV.1]
   · exact localFixedPointIndex_of_ne hfx
 
 /-- **The local fixed-point index at a fixed point with `det (1 - df_x) ≠ 0`** is the Lefschetz sign
