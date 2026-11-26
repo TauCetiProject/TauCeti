@@ -72,6 +72,9 @@ In the language of `TauCeti.LowDimTopology.Heegaard.Grading` and
 * `TauCeti.GridDiagram.isMaslovGrading_maslovO`, `TauCeti.GridDiagram.isMaslovGrading_maslovX`,
   `TauCeti.OddComponentGridDiagram.isAlexanderFunction_alexanderℤ`: the grid gradings are Maslov
   gradings and an Alexander function of the multi-pointed Heegaard diagram.
+* `TauCeti.GridDiagram.isMaslovGrading_withBasepoints_inl_iff`,
+  `TauCeti.GridDiagram.isMaslovGrading_withBasepoints_inr_iff`: `M_O` and `M_X` are the only
+  Maslov gradings of these diagrams, up to a constant.
 
 ## References
 
@@ -316,6 +319,28 @@ theorem isMaslovGrading_maslovX :
     rw [isDomainBetween_withBasepoints] at hD
     simp only [Equiv.symm_apply_apply, maslovIndex_withBasepoints]
     exact (G.maslovIndex_sub_two_mul_sum_basepoint_inr_of_isDomainBetween hD).symm
+
+/-- The Maslov gradings of the diagram pointed at the `O`-markings are exactly the shifts of the
+`O`-Maslov grading of grid homology. -/
+theorem isMaslovGrading_withBasepoints_inl_iff {gr : G.heegaardRegionSystem.Generator → ℚ} :
+    (G.heegaardRegionSystem.withBasepoints fun c =>
+        G.heegaardRegionSystem.basepoint (Sum.inl c)).IsMaslovGrading 1 gr ↔
+      ∃ q : ℚ, gr = fun g => G.maslovO (G.gridStateEquivGenerator.symm g) + q :=
+  ⟨fun h => G.isMaslovGrading_maslovO.exists_eq_add h fun x y =>
+      let ⟨D, hD⟩ := G.exists_isDomainBetween x y
+      ⟨D, (G.heegaardRegionSystem.isDomainBetween_withBasepoints _).2 hD⟩,
+    fun ⟨q, hq⟩ => hq ▸ G.isMaslovGrading_maslovO.add_const q⟩
+
+/-- The Maslov gradings of the diagram pointed at the `X`-markings are exactly the shifts of the
+`X`-Maslov grading of grid homology. -/
+theorem isMaslovGrading_withBasepoints_inr_iff {gr : G.heegaardRegionSystem.Generator → ℚ} :
+    (G.heegaardRegionSystem.withBasepoints fun c =>
+        G.heegaardRegionSystem.basepoint (Sum.inr c)).IsMaslovGrading 1 gr ↔
+      ∃ q : ℚ, gr = fun g => G.maslovX (G.gridStateEquivGenerator.symm g) + q :=
+  ⟨fun h => G.isMaslovGrading_maslovX.exists_eq_add h fun x y =>
+      let ⟨D, hD⟩ := G.exists_isDomainBetween x y
+      ⟨D, (G.heegaardRegionSystem.isDomainBetween_withBasepoints _).2 hD⟩,
+    fun ⟨q, hq⟩ => hq ▸ G.isMaslovGrading_maslovX.add_const q⟩
 
 end AllDomains
 
