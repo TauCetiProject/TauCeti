@@ -15,7 +15,9 @@ import TauCeti.Geometry.Lie.Adjoint.Compact
 import TauCeti.Geometry.Lie.CartanThreeForm
 import TauCeti.Geometry.Lie.Exponential.Commute
 import TauCeti.Geometry.Lie.Integration
+import TauCeti.Geometry.Lie.ModelTransport
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SimplyConnected
+import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 
 /-!
 # The third homotopy group of a compact Lie group
@@ -54,6 +56,8 @@ a product of circles (`TauCeti.nonempty_continuousMulEquiv_pi_circle`).
   group with non-abelian Lie algebra receives a smooth homomorphism from `Spin(3)` with injective
   differential which is not null-homotopic.
 * `TauCeti.Lie.nontrivial_homotopyGroup_three`: such a group has nontrivial `π₃`.
+* `TauCeti.Lie.nontrivial_homotopyGroup_three_of_not_isMulCommutative`: so has a noncommutative
+  compact connected Lie group, for any model with corners.
 * `TauCeti.Lie.nonempty_continuousMulEquiv_pi_circle_of_subsingleton_homotopyGroup_three`: a
   compact connected Lie group with trivial `π₃` is a torus.
 
@@ -169,6 +173,28 @@ theorem nontrivial_homotopyGroup_three (hG : ¬IsLieAbelian (LeftInvariantDeriva
   refine hr ▸ HomotopyGroup.nontrivial_of_not_nullhomotopic r fun hn ↦ hφ ?_
   rw [hrφ]
   exact (hn.comp_left _).comp_right _
+
+section Transport
+
+attribute [local instance] BoundarylessModel.interiorChartedSpace
+
+omit [I.Boundaryless] [ChartedSpace H G] [LieGroup I ∞ G] in
+/-- **A noncommutative compact connected Lie group has nontrivial third homotopy group**, at every
+base point, for a Lie group modelled with corners on any finite-dimensional real normed space in
+the lowest universe. -/
+theorem nontrivial_homotopyGroup_three_of_not_isMulCommutative {H' : Type*} [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E H'} [ChartedSpace H' G] [LieGroup J ∞ G] [PreconnectedSpace G]
+    (hG : ¬IsMulCommutative G) (g : G) : Nontrivial (HomotopyGroup (Fin 3) G g) := by
+  -- A connected Lie group with abelian Lie algebra is commutative, so the Lie algebra of `G` is not
+  -- abelian, and neither is that of its copy modelled on `E` itself, which has the same topology.
+  have hab : ¬IsLieAbelian (LeftInvariantDerivation 𝓘(ℝ, E) (BoundarylessModel J G)) := fun h ↦
+    hG (have : IsLieAbelian (LeftInvariantDerivation J G) :=
+      (BoundarylessModel.interiorLieEquiv J (M := G)).injective.isLieAbelian h
+    isMulCommutative_of_isLieAbelian J)
+  have := nontrivial_homotopyGroup_three hab (BoundarylessModel.homeomorph J G g)
+  exact (HomotopyGroup.homeomorphEquiv (BoundarylessModel.homeomorph J G) g).nontrivial
+
+end Transport
 
 include I in
 /-- **A compact connected Lie group with trivial third homotopy group is a torus**: it is

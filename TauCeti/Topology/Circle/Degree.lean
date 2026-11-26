@@ -58,6 +58,9 @@ The same angle for an unbundled map `w : I → Circle` is `Circle.sweptAngle w`,
 * `Circle.degree_eq_of_homotopy`: the degree is invariant under free homotopies of loops.
 * `Circle.degree_eq_of_homotopy_div_norm`: the loops of directions of the two ends of a
   homotopy of closed curves in `ℂ` avoiding `0` have the same degree.
+* `Circle.eq_zero_of_homotopy_div_norm_exp`: a curve whose direction turns uniformly through a
+  multiple `a` of a full turn is homotopic away from `0` to a curve of constant direction only if
+  `a = 0`.
 * `Circle.degree_symm_trans_trans`: the degree is invariant under change of basepoint.
 * `Circle.degree_trans`, `Circle.degree_symm`: the degree of a concatenation of loops is the sum
   of the degrees, and reversing a loop negates its degree.
@@ -431,6 +434,26 @@ theorem degree_eq_of_homotopy_div_norm {x y : Circle} (γ₀ : Path x x) (γ₁ 
       Complex.ofReal_inv, inv_mul_eq_div]
   exact degree_eq_of_homotopy γ₀ γ₁ G (fun t => Circle.ext (by rw [hG, h₀]))
     (fun t => Circle.ext (by rw [hG, h₁])) (fun s => Circle.ext (by rw [hG, hG, hF]))
+
+/-- If a homotopy of closed curves in `ℂ` avoiding `0` joins a curve whose loop of directions
+turns uniformly through the angle `a` from `θ₀`, with `exp a = 1`, to a curve of constant direction
+`θ₀`, then `a = 0`. -/
+theorem eq_zero_of_homotopy_div_norm_exp {θ₀ a : ℝ} (ha : exp a = 1) (F : C(I × I, ℂ))
+    (hne : ∀ st, F st ≠ 0) (h₀ : ∀ s : I, (exp (θ₀ + a * s) : ℂ) = F (0, s) / ‖F (0, s)‖)
+    (h₁ : ∀ s : I, (exp θ₀ : ℂ) = F (1, s) / ‖F (1, s)‖) (hF : ∀ s, F (s, 0) = F (s, 1)) :
+    a = 0 := by
+  let γ₀ : Path (exp θ₀) (exp θ₀) :=
+    { toFun := fun s ↦ exp (θ₀ + a * s)
+      continuous_toFun := by fun_prop
+      source' := by simp
+      target' := by rw [Set.Icc.coe_one, mul_one, exp_add, ha, mul_one] }
+  have hdeg : degree γ₀ = 0 :=
+    (degree_eq_of_homotopy_div_norm γ₀ (Path.refl (exp θ₀)) F hne h₀ h₁ hF).trans (degree_refl _)
+  have hθ := sub_eq_degree_mul γ₀ (θ := fun s : I ↦ θ₀ + a * s) (by fun_prop) fun _ ↦ rfl
+  rw [hdeg] at hθ
+  simp only [Set.Icc.coe_one, Set.Icc.coe_zero, mul_one, mul_zero, add_zero, Int.cast_zero,
+    zero_mul] at hθ
+  linarith
 
 /-- Homotopic loops, relative to their basepoint, have the same degree. -/
 theorem degree_eq_of_homotopic {x : Circle} {γ₀ γ₁ : Path x x} (h : γ₀.Homotopic γ₁) :

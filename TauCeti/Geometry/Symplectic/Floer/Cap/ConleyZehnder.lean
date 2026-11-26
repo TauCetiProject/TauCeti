@@ -26,9 +26,11 @@ caps differ by the sphere `D' -ᵥ D ∈ π₂(M, x)`,
 
 (`TauCeti.Floer.IsSmoothBasedCap.frameConleyZehnderIndex_eq_sub_two_mul_firstChernHom`), with
 `c₁` the first Chern number `TauCeti.SmoothTwoForm.IsNondegenerate.firstChernHom` of an almost
-complex structure tamed by `σ`. Equivalently the grading `μ = -CZ` of capped orbits increases by
-`2 c₁(D' -ᵥ D)` when the cap `D` is replaced by `D'`, while the capped action increases by the area
-`σ(D' -ᵥ D)`: this is the recapping law of the grading of capped Hamiltonian Floer theory.
+complex structure tamed by `σ`. Replacing the cap `D` by `D'` also lowers the capped action by the
+area `σ(D' -ᵥ D)` (`TauCeti.Floer.RawCap.action_vadd`), so the index moves with the action: this is
+the recapping law of the grading of capped Hamiltonian Floer theory, which in the sign convention
+of `TauCeti.SymplecticForm.conleyZehnderIndex` is the index itself
+(`TauCeti.Floer.SphericalCapClass.grading`).
 
 The frames are taken complex linear for `J` over the caps, constant on the three edges of the
 square where the caps sit at the base point, and symplectic along `γ`, where they are therefore
@@ -60,8 +62,13 @@ Consequently the **Conley–Zehnder index of a smooth cap**,
 two-form, as the index read in any such frame
 (`TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq`), and the recapping law holds for it
 without reference to frames or to an almost complex structure
-(`TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom`). Its descent to
-raw caps and cap classes is in `TauCeti/Geometry/Symplectic/Floer/Cap/Grading.lean`.
+(`TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom`). When `Φ`
+starts at the identity and ends at a map `P` without the eigenvalue `1`, as the linearized flow
+along a nondegenerate periodic orbit, the index of a smooth cap is an integer
+(`TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq`), with parity given by
+`sign det (1 - P)`
+(`TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`).
+Its descent to raw caps and cap classes is in `TauCeti/Geometry/Symplectic/Floer/Cap/Grading.lean`.
 
 ## Main definitions
 
@@ -79,6 +86,12 @@ raw caps and cap classes is in `TauCeti/Geometry/Symplectic/Floer/Cap/Grading.le
 * `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq`,
   `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom`: the index of a
   smooth cap in any such frame, and its recapping law.
+* `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_const`: along the constant cap of a loop that
+  stays at its base point `x`, the index is the index of `Φ` on the single tangent space `T_x M`.
+* `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq`: the index along a
+  nondegenerate orbit is an integer.
+* `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`: its parity
+  is the sign of `det (1 - P)` for the end value `P` of `Φ`.
 
 ## References
 
@@ -436,6 +449,35 @@ theorem IsSmoothBasedCap.conleyZehnderIndex_eq (h : σ.IsNondegenerate)
     (G := EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h).choose_spec
   hu.frameConleyZehnderIndex_loop_eq hχ hχ'.1 hχ₀ hχ'.2 hΦ hΦσ
 
+/-- **The index of a constant cap.** Let `u` be the constant cap of a loop `γ` that stays at its
+base point `x`, such as the loop of a constant periodic orbit. Along it the tangent bundle is framed
+by the identity of `T_x M`, so the Conley–Zehnder index of `Φ` along `(γ, u)` is the
+Conley–Zehnder index of the path `t ↦ Φ(t)` of linear symplectic maps of the single symplectic
+vector space `(T_x M, σ_x)`, read on the model space `E` of `T_x M` as any path `Ψ` with
+`Ψ(t) = Φ(t)`. -/
+theorem IsSmoothBasedCap.conleyZehnderIndex_const (h : σ.IsNondegenerate)
+    (hu : IsSmoothBasedCap I γ fun _ ↦ x)
+    {Φ : ∀ t, TangentSpace I (γ 0) ≃L[ℝ] TangentSpace I (γ t)}
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) {A B : E →L[ℝ] E}
+    (Ψ : Path A B)
+    (hΨ : ∀ t v w, h.symplecticFormAt x (Ψ t v) (Ψ t w) = h.symplecticFormAt x v w)
+    (hΨΦ : ∀ t v, Ψ t v = Φ t v) :
+    hu.conleyZehnderIndex h hΦ hΦσ =
+      SymplecticForm.conleyZehnderIndex (V := E) (h.symplecticFormAt x) Ψ hΨ := by
+  -- The identity of `T_x M` is a symplectic frame along the constant cap, constant on its edges.
+  have hχ : IsSymplecticFrame σ (W := E) (h.symplecticFormAt x) (fun _ : ℝ × ℝ ↦ x)
+      fun _ ↦ ContinuousLinearEquiv.refl ℝ E :=
+    ⟨(FiberBundle.continuous_totalSpaceMk E (TangentSpace I) x).comp continuous_snd,
+      fun _ v w ↦ (h.symplecticFormAt_apply x v w).symm⟩
+  -- Read in the identity frame, the path is `Φ` itself. The model `E` and `T_x M` are the same
+  -- type only up to unfolding `TangentSpace`, so the steps are composed as terms.
+  exact (hu.conleyZehnderIndex_eq h hχ (fun _ _ _ _ _ _ ↦ rfl) hΦ hΦσ).trans
+    ((frameConleyZehnderIndex_def _ _ _).trans
+      (SymplecticForm.conleyZehnderIndex_congr _ _ _ _ fun t ↦
+        ContinuousLinearMap.ext fun v ↦ (framePath_apply _ _ t v).trans (hΨΦ t v).symm))
+
 /-- **The recapping law for smooth caps.** For two smooth based caps `u` and `u'` of a loop `γ`,
 the Conley–Zehnder index of `Φ` along `(γ, u')` is its index along `(γ, u)` minus twice the first
 Chern number of the sphere `D' -ᵥ D` by which their raw caps differ. -/
@@ -461,6 +503,49 @@ theorem IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom (h : σ
   rw [hu.conleyZehnderIndex_eq h hχ hχ₀, hu'.conleyZehnderIndex_eq h hχ' hχ₀']
   exact hu.frameConleyZehnderIndex_eq_sub_two_mul_firstChernHom h hJ.tames hu' hχc hχc' hχJ hχJ'
     hχ₀ hχ₀' (fun t ↦ hχ.apply_apply (0, t)) (fun t ↦ hχ'.apply_apply (0, t)) hΦ hΦσ
+
+/-- **The index of a smooth cap of a nondegenerate orbit is an integer.** If the family `Φ` starts
+at the identity and its endpoint `Φ(1)` fixes no nonzero vector, as the linearized flow along a
+nondegenerate periodic orbit does, the Conley–Zehnder index of `Φ` along the capped loop `(γ, u)` is
+an integer. -/
+theorem IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq (h : σ.IsNondegenerate)
+    (hu : IsSmoothBasedCap I γ u) {Φ : ∀ t, TangentSpace I (γ 0) ≃L[ℝ] TangentSpace I (γ t)}
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) (hΦ₀ : ∀ v, Φ 0 v = v)
+    (hΦ₁ : ∀ v, Φ 1 v = v → v = 0) : ∃ k : ℤ, hu.conleyZehnderIndex h hΦ hΦσ = k := by
+  have : Fact _ := ⟨h.two_mul_finrank_euclideanSpace x⟩
+  obtain ⟨χ, hχ, hχ₀⟩ := hu.exists_isSymplecticFrame_eq_on_edges
+    (G := EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h
+  -- A frame over the cap that is constant on its three other edges is periodic along `γ`.
+  rw [hu.conleyZehnderIndex_eq h hχ hχ₀]
+  exact exists_int_frameConleyZehnderIndex_eq _
+    (apply_zero_eq_apply_one_of_eq_on_edges hχ₀ fun _ _ ↦ rfl) hΦ hΦσ hΦ₀ hΦ₁
+
+/-- **The parity of the index of a smooth cap.** Let `u` be a smooth based cap of a loop `γ` in a
+manifold of dimension `2 n` with a fiberwise nondegenerate two-form `σ`, and let `Φ` be a
+continuous family of linear maps along `γ` preserving `σ`, starting at the identity, whose end
+value is an endomorphism `P` of `T_(γ 0) M` without the eigenvalue `1`, such as the linearized
+flow along a nondegenerate periodic orbit. Then the Conley–Zehnder index of `Φ` along the capped
+loop `(γ, u)` is an integer `k` with `(-1) ^ (n - k) = sign det (1 - P)`. -/
+theorem IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq
+    (h : σ.IsNondegenerate) (hu : IsSmoothBasedCap I γ u)
+    {Φ : ∀ t, TangentSpace I (γ 0) ≃L[ℝ] TangentSpace I (γ t)}
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) (hΦ₀ : ∀ v, Φ 0 v = v)
+    {P : TangentSpace I (γ 0) →ₗ[ℝ] TangentSpace I (γ 0)} (hP : ∀ v, Φ 1 v = P v)
+    (hPdet : LinearMap.det (1 - P) ≠ 0) :
+    ∃ k : ℤ, hu.conleyZehnderIndex h hΦ hΦσ = k ∧
+      ((((finrank ℝ E / 2 : ℕ) : ℤ) - k).negOnePow : ℤ) =
+        SignType.sign (LinearMap.det (1 - P)) := by
+  have : Fact _ := ⟨h.two_mul_finrank_euclideanSpace x⟩
+  obtain ⟨χ, hχ, hχ₀⟩ := hu.exists_isSymplecticFrame_eq_on_edges
+    (G := EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h
+  -- A frame over the cap that is constant on its three other edges is periodic along `γ`.
+  rw [hu.conleyZehnderIndex_eq h hχ hχ₀]
+  exact exists_int_frameConleyZehnderIndex_eq_and_negOnePow_eq _
+    (apply_zero_eq_apply_one_of_eq_on_edges hχ₀ fun _ _ ↦ rfl) hΦ hΦσ hΦ₀ hP hPdet
 
 end SmoothCap
 

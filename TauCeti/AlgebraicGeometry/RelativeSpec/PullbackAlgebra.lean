@@ -32,9 +32,9 @@ quasicoherent algebra `A` on `Y` and any commutative algebra `B` on `X`, algebra
 `f^* A ⟶ B` correspond to algebra maps `A ⟶ f_* B`. The bijection is transposition along the
 pullback–pushforward adjunction of modules. It preserves algebra maps because that adjunction is
 monoidal (`CategoryTheory.Adjunction.isMonHom_homEquiv_iff`), and the multiplication of `f^* A` is
-that of `A` transported along the tensor comparison of pullback, which is invertible as `A` is
-quasicoherent. The algebra `B` need not be quasicoherent, so that `B` can be the structure sheaf
-of an arbitrary scheme.
+that of `A` transported along the tensor comparison of pullback, which is invertible for
+arbitrary module sheaves (`Scheme.Modules.isIso_pullback_δ`). The algebra `B` need not be
+quasicoherent, so that `B` can be the structure sheaf of an arbitrary scheme.
 
 Pullback of algebras is pseudofunctorial: the identity and composition isomorphisms
 `𝟙^* A ≅ A` and `f^* g^* A ≅ (f ≫ g)^* A` are those of the underlying modules, and the bijection

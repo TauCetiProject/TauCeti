@@ -24,7 +24,9 @@ continuity of the ordered eigenvalues there (`Matrix.continuousAt_eigenvalues₀
 gap of `M x₀` persists near `x₀` (`Matrix.eventually_eigenvalues₀_lt`), and differentiability of
 the entries at a point makes the ordered eigenvalues move by `O(‖x - x₀‖)`
 (`Matrix.isBigO_eigenvalues₀_sub`). On the real vector space of Hermitian matrices the ordered
-eigenvalues are continuous (`Matrix.continuous_eigenvalues₀_selfAdjoint`). Along any filter, if
+eigenvalues are continuous (`Matrix.continuous_eigenvalues₀_selfAdjoint`), so the Hermitian
+matrices whose ordered eigenvalues lie in an open set form an open set
+(`Matrix.isOpen_setOf_eigenvalues₀_mem`). Along any filter, if
 `‖A i - B i‖ → 0` in the Euclidean operator norm for Hermitian `A i` and `B i`, then selected
 ordered eigenvalues of `A i` converge to the limit of the corresponding eigenvalues of `B i`
 (`Filter.Tendsto.eigenvalues₀_of_tendsto_l2_opNorm_sub_zero`); the sizes may vary. Continuity
@@ -89,6 +91,13 @@ theorem continuous_eigenvalues₀_selfAdjoint :
     Continuous (fun A : selfAdjoint.submodule ℝ (Matrix n n 𝕜) ↦
       A.property.isHermitian.eigenvalues₀) :=
   continuous_eigenvalues₀.comp (continuous_subtypeVal.subtype_mk fun A ↦ A.property.isHermitian)
+
+/-- The Hermitian matrices whose ordered eigenvalue vector lies in an open set `Ω` form an open
+set. -/
+theorem isOpen_setOf_eigenvalues₀_mem {Ω : Set (Fin (Fintype.card n) → ℝ)} (hΩ : IsOpen Ω) :
+    IsOpen {A : selfAdjoint.submodule ℝ (Matrix n n 𝕜) |
+      A.property.isHermitian.eigenvalues₀ ∈ Ω} :=
+  hΩ.preimage continuous_eigenvalues₀_selfAdjoint
 
 open Filter Topology in
 /-- **Spectral gaps persist.** For a family of Hermitian matrices whose entries are continuous at

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
@@ -12,7 +13,10 @@ import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Topology.Covering.AddCircle
 import Mathlib.Topology.Homotopy.Lifting
+import TauCeti.Algebra.AddCircle
+import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.Topology
 import TauCeti.Topology.Instances.AddCircle.Lift
 
 /-!
@@ -32,7 +36,10 @@ circle-valued homotopies lift smoothly as well. A `C^n` map `g : [0, 1] × M →
 restriction to time zero lifts to a continuous `f : M → ℝ` has a `C^n` lift `G` with
 `G (0, x) = f x` (`AddCircle.exists_contMDiff_lift_unitInterval_prod`): Mathlib's homotopy lifting
 for covering maps (`IsCoveringMap.liftHomotopy`) gives a continuous lift, and a continuous lift of
-a `C^n` map through a `C^n` local diffeomorphism is `C^n`.
+a `C^n` map through a `C^n` local diffeomorphism is `C^n`. For the same reason a `C^n` map from a
+simply connected manifold to a torus `ι → AddCircle T` has a `C^n` lift to `ι → ℝ`
+(`AddCircle.exists_contMDiff_lift_pi_of_simplyConnectedSpace`), by Mathlib's lifting criterion for
+covering maps (`IsCoveringMap.existsUnique_continuousMap_lifts`).
 
 Near `0` the projection `ℝ → AddCircle T` also has a smooth section defined on the whole circle
 (`AddCircle.exists_contMDiff_coe_eq_of_norm_lt`): the chart at `0`, cut off by a smooth bump
@@ -46,6 +53,8 @@ function.
   `C^n` lift of one of these two kinds; `Diffeomorph.exists_addCircle_lift_degree` states this
   with an integer degree `d = ±1`.
 * `AddCircle.exists_contMDiff_lift_unitInterval_prod`: smooth homotopy lifting for the circle.
+* `AddCircle.exists_contMDiff_lift_pi_of_simplyConnectedSpace`: smooth torus-valued maps on a
+  simply connected manifold lift to `ι → ℝ`.
 * `AddCircle.exists_contMDiff_coe_eq_of_norm_lt`: a smooth real function on the circle which is
   a section of the projection `ℝ → AddCircle T` near `0`.
 
@@ -110,6 +119,23 @@ theorem exists_contMDiff_lift_unitInterval_prod {g : unitInterval × M → AddCi
   -- The continuous lift is `C^n` because the projection is a `C^n` local diffeomorphism.
   exact ContMDiff.of_comp_isLocalDiffeomorph (isLocalDiffeomorph_coe T n)
     (ContinuousMap.continuous _) (by rw [hlift]; exact hg)
+
+/-- **Smooth lifts of torus-valued maps on simply connected manifolds.** A `C^n` map `g` from a
+simply connected manifold to the torus `ι → AddCircle T` has a `C^n` lift `G : M → ι → ℝ`,
+`g x = ([G x i])ᵢ`. -/
+theorem exists_contMDiff_lift_pi_of_simplyConnectedSpace [SimplyConnectedSpace M] {ι : Type*}
+    [Fintype ι] {g : M → ι → AddCircle T}
+    (hg : ContMDiff I (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n g) :
+    ∃ G : M → ι → ℝ, ContMDiff I 𝓘(ℝ, ι → ℝ) n G ∧
+      ∀ x, (fun i ↦ (G x i : AddCircle T)) = g x := by
+  have := I.locallyPathConnectedSpace_of_chartedSpace M
+  obtain ⟨x₀⟩ := (inferInstance : Nonempty M)
+  obtain ⟨t₀, ht₀⟩ := exists_pi_coe_eq (g x₀)
+  obtain ⟨G, ⟨-, hG⟩, -⟩ := (isCoveringMap_coe_pi T (ι := ι)).existsUnique_continuousMap_lifts
+    ⟨g, hg.continuous⟩ x₀ t₀ ht₀
+  -- The continuous lift is `C^n` because the projection is a `C^n` local diffeomorphism.
+  exact ⟨G, ContMDiff.of_comp_isLocalDiffeomorph (isLocalDiffeomorph_coe_pi T n) G.continuous
+    (by rw [hG]; exact hg), fun x ↦ congrFun hG x⟩
 
 end Homotopy
 

@@ -23,8 +23,9 @@ vector of `W`, that is, when the restriction of `Q` to `W` is zero.
 
 * `QuadraticMap.isTotallyIsotropic_iff_restrict_eq_zero`: total isotropy is the vanishing of the
   restricted form.
-* `QuadraticMap.isTotallyIsotropic_comp_iff`: total isotropy for `Q.comp f` is total isotropy of
-  the image under `f`.
+* `QuadraticMap.isTotallyIsotropic_comp_iff`, `QuadraticMap.Isometry.isTotallyIsotropic_map_iff`,
+  and `QuadraticMap.IsTotallyIsotropic.map_isometryEquiv`: total isotropy under linear maps and
+  quadratic isometries.
 * `QuadraticMap.maximal_isTotallyIsotropic_bot_iff`: the zero submodule is maximal totally
   isotropic exactly when the form is anisotropic.
 * `QuadraticMap.IsTotallyIsotropic.eq_zero_of_polar_eq_zero`: for a form with trivial radical and
@@ -82,13 +83,21 @@ theorem isTotallyIsotropic_comp_iff {f : M' →ₗ[R] M} {T : Submodule R M'} :
   simp only [isTotallyIsotropic_iff, Submodule.mem_map, forall_exists_index, and_imp,
     forall_apply_eq_imp_iff₂, comp_apply]
 
+/-- Under a quadratic isometry, the image of a submodule is totally isotropic if and only if the
+submodule is totally isotropic. -/
+@[simp]
+theorem Isometry.isTotallyIsotropic_map_iff {Q₁ : QuadraticMap R M' N}
+    (f : Q₁ →qᵢ Q) {T : Submodule R M'} :
+    Q.IsTotallyIsotropic (T.map f.toLinearMap) ↔ Q₁.IsTotallyIsotropic T := by
+  have hcomp : Q.comp f.toLinearMap = Q₁ := QuadraticMap.ext f.map_app
+  rw [← isTotallyIsotropic_comp_iff, hcomp]
+
 /-- The image of a totally isotropic submodule under an isometric equivalence `e : Q ≃ Q'` is
 totally isotropic for `Q'`. -/
 theorem IsTotallyIsotropic.map_isometryEquiv {Q' : QuadraticMap R M' N}
     (hW : Q.IsTotallyIsotropic W) (e : Q.IsometryEquiv Q') :
-    Q'.IsTotallyIsotropic (W.map e.toLinearEquiv.toLinearMap) := by
-  rintro _ ⟨v, hv, rfl⟩
-  exact (e.map_app v).trans (hW v hv)
+    Q'.IsTotallyIsotropic (W.map e.toLinearEquiv.toLinearMap) :=
+  e.toIsometry.isTotallyIsotropic_map_iff.mpr hW
 
 /-- The preimage of a totally isotropic submodule under a linear map `f` is totally isotropic
 for `Q.comp f`. -/

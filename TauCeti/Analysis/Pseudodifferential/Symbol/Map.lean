@@ -12,10 +12,11 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
 by isomorphisms of `V` and `W`, or the passage `ℓ ∘ a ∘ e` to a scalar entry
-(`TauCeti.Symbol.entryMap`), has the same order (`TauCeti.Symbol.map`), and commutes with
-mixed, spatial and frequency derivatives (`TauCeti.Symbol.mixedDeriv_map`,
-`TauCeti.Symbol.spatialDeriv_map`, `TauCeti.Symbol.frequencyDeriv_map`). In particular, if
-every value of a symbol commutes with an operator `T`, so do the values of its derivatives
+(`TauCeti.Symbol.entryMap`) and back (`TauCeti.Symbol.singleEntryMap`), has the same order
+(`TauCeti.Symbol.map`), and commutes with mixed, spatial and frequency derivatives
+(`TauCeti.Symbol.mixedDeriv_map`, `TauCeti.Symbol.spatialDeriv_map`,
+`TauCeti.Symbol.frequencyDeriv_map`). In particular, if every value of a symbol commutes with an
+operator `T`, so do the values of its derivatives
 (`TauCeti.Symbol.commute_coefficient_spatialDeriv`,
 `TauCeti.Symbol.commute_coefficient_frequencyDeriv`).
 
@@ -99,6 +100,19 @@ def entryMap (ℓ : W →L[ℂ] ℂ) (e : V) : (V →L[ℂ] W) →L[ℝ] (ℂ �
 @[simp]
 theorem entryMap_apply (ℓ : W →L[ℂ] ℂ) (e : V) (T : V →L[ℂ] W) :
     entryMap ℓ e T = ℓ ∘L T ∘L ContinuousLinearMap.toSpanSingleton ℂ e :=
+  (rfl)
+
+/-- The map `T ↦ w ∘ T ∘ K` of coefficients, placing a scalar entry `T : ℂ →L[ℂ] ℂ` into
+`V →L[ℂ] W` along a functional `K` on `V` and a vector `w ∈ W`; in the opposite direction to
+`TauCeti.Symbol.entryMap`. Summing the images `a.map (singleEntryMap K w)` of scalar symbols over
+dual bases assembles a matrix-valued symbol from its entries. -/
+def singleEntryMap (K : V →L[ℂ] ℂ) (w : W) : (ℂ →L[ℂ] ℂ) →L[ℝ] (V →L[ℂ] W) :=
+  ((ContinuousLinearMap.compL ℂ V ℂ W (ContinuousLinearMap.toSpanSingleton ℂ w)).comp
+    ((ContinuousLinearMap.compL ℂ V ℂ ℂ).flip K)).restrictScalars ℝ
+
+@[simp]
+theorem singleEntryMap_apply (K : V →L[ℂ] ℂ) (w : W) (T : ℂ →L[ℂ] ℂ) :
+    singleEntryMap K w T = ContinuousLinearMap.toSpanSingleton ℂ w ∘L T ∘L K :=
   (rfl)
 
 theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)

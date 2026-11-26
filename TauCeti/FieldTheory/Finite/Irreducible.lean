@@ -27,6 +27,8 @@ when reading off cycle types of Galois groups by reduction modulo primes.
   from `X`.
 * `Polynomial.mem_normalizedFactors_X_pow_card_pow_sub_X_iff`: for `n ≠ 0`, the normalized factors
   of `X ^ q ^ n - X` are the monic irreducible polynomials whose degree divides `n`.
+* `Irreducible.exists_aeval_eq_zero_of_natDegree_dvd_finrank`: an irreducible polynomial over a
+  field has a root in every finite field extension whose degree its degree divides.
 
 ## References
 
@@ -57,6 +59,16 @@ theorem mem_normalizedFactors_X_pow_card_pow_sub_X_iff {K : Type*} [Field K] [Fi
     fun ⟨hm, hi, hd⟩ ↦ ⟨hi, hm, hi.natDegree_dvd_iff_dvd_X_pow_card_pow_sub_X.mp hd⟩⟩
 
 end Polynomial
+
+/-- An irreducible polynomial over a field whose degree divides the degree `[L : K]` of a finite
+field extension `L` has a root in `L`: `AdjoinRoot p` embeds into `L`. -/
+theorem Irreducible.exists_aeval_eq_zero_of_natDegree_dvd_finrank {K : Type*} [Field K]
+    {p : K[X]} (hp : Irreducible p) {L : Type*} [Field L] [Algebra K L] [Finite L]
+    (h : p.natDegree ∣ Module.finrank K L) : ∃ x : L, aeval x p = 0 := by
+  have := Fact.mk hp
+  obtain ⟨f⟩ := FiniteField.nonempty_algHom_of_finrank_dvd (F := K) (K := AdjoinRoot p) (L := L)
+    (dvd_trans (dvd_of_eq finrank_quotient_span_eq_natDegree) h)
+  exact ⟨f (AdjoinRoot.root p), AdjoinRoot.aeval_algHom_eq_zero p f⟩
 
 namespace TauCeti
 

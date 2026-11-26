@@ -77,13 +77,13 @@ theorem IsCanonicalExtension.apply_pow {χ : Γ → k} {ψ : Γ ⋊[φ] S → k}
 coprime to `|Γ ⋊ S|`, if `χ (g ^ j) = χ g` for every `g`, then the canonical extension `ψ` of `χ`
 satisfies `ψ (x ^ j) = ψ x` for every `x`. -/
 theorem IsCanonicalExtension.apply_pow_eq_self (hcop : (Nat.card Γ).Coprime (Nat.card S))
-    {χ : Γ → k} (hχ : χ ∈ irreducibleCharacters k Γ) (hinv : ∀ s g, χ (φ s g) = χ g)
-    {ψ : Γ ⋊[φ] S → k} (hψ : IsCanonicalExtension φ χ ψ) {j : ℕ}
+    {χ : Γ → k} (hχ : χ ∈ irreducibleCharacters k Γ) {ψ : Γ ⋊[φ] S → k}
+    (hψ : IsCanonicalExtension φ χ ψ) {j : ℕ}
     (hj : j.Coprime (Nat.card (Γ ⋊[φ] S))) (hχj : ∀ g, χ (g ^ j) = χ g) (x : Γ ⋊[φ] S) :
     ψ (x ^ j) = ψ x := by
   have h := hψ.apply_pow hj
   rw [show (fun g => χ (g ^ j)) = χ from funext hχj] at h
-  exact congrFun ((existsUnique_canonicalExtension hcop hχ hinv).unique h hψ) x
+  exact congrFun ((existsUnique_canonicalExtension hcop hχ hψ.apply_aut).unique h hψ) x
 
 omit [Finite Γ] [Finite S] in
 /-- A power `j'` that is `1` modulo `|Γ|` and `j` modulo `|S|`, for `j` coprime to `|Γ ⋊ S|`:
@@ -105,8 +105,8 @@ private theorem exists_pow_eq_self_and_pow_eq (hcop : (Nat.card Γ).Coprime (Nat
 For `|Γ|` and `|S|` coprime, the canonical extension `ψ` of an `S`-invariant irreducible character
 `χ` has the same field of values: `ℚ(ψ) = ℚ(χ)`. -/
 theorem IsCanonicalExtension.adjoin_range_eq (hcop : (Nat.card Γ).Coprime (Nat.card S))
-    {χ : Γ → k} (hχ : χ ∈ irreducibleCharacters k Γ) (hinv : ∀ s g, χ (φ s g) = χ g)
-    {ψ : Γ ⋊[φ] S → k} (hψ : IsCanonicalExtension φ χ ψ) :
+    {χ : Γ → k} (hχ : χ ∈ irreducibleCharacters k Γ) {ψ : Γ ⋊[φ] S → k}
+    (hψ : IsCanonicalExtension φ χ ψ) :
     adjoin ℚ (Set.range ψ) = adjoin ℚ (Set.range χ) := by
   have : NeZero (Nat.card (Γ ⋊[φ] S)) := ⟨Nat.card_pos.ne'⟩
   obtain ⟨K, ζ, _, hζ⟩ := HasEnoughRootsOfUnity.exists_intermediateField_isCyclotomicExtension ℚ
@@ -123,7 +123,7 @@ theorem IsCanonicalExtension.adjoin_range_eq (hcop : (Nat.card Γ).Coprime (Nat.
         (irreducibleCharacters_subset_virtualCharacters hχ)]
     exact map_mono _ (IntermediateField.fixedField_le fun σ hσ =>
       (IsPrimitiveRoot.mem_cyclotomicPowerStabilizer_iff _ _ _ _).2 <|
-        hψ.apply_pow_eq_self hcop hχ hinv (ZMod.val_coe_unit_coprime _)
+        hψ.apply_pow_eq_self hcop hχ (ZMod.val_coe_unit_coprime _)
           ((IsPrimitiveRoot.mem_cyclotomicPowerStabilizer_iff _ _ _ _).1 hσ))
   · rintro _ ⟨g, rfl⟩
     exact ⟨inl g, congrFun (isCanonicalExtension_iff.1 hψ).2.1 g⟩
@@ -132,8 +132,8 @@ theorem IsCanonicalExtension.adjoin_range_eq (hcop : (Nat.card Γ).Coprime (Nat.
 p. 1470). For `|Γ|` and `|S|` coprime, the canonical extension `ψ` of an `S`-invariant
 irreducible character takes an integer value at every element of `S`. -/
 theorem IsCanonicalExtension.exists_int_eq_apply_inr (hcop : (Nat.card Γ).Coprime (Nat.card S))
-    {χ : Γ → k} (hχ : χ ∈ irreducibleCharacters k Γ) (hinv : ∀ s g, χ (φ s g) = χ g)
-    {ψ : Γ ⋊[φ] S → k} (hψ : IsCanonicalExtension φ χ ψ) (s : S) :
+    {χ : Γ → k} (hχ : χ ∈ irreducibleCharacters k Γ) {ψ : Γ ⋊[φ] S → k}
+    (hψ : IsCanonicalExtension φ χ ψ) (s : S) :
     ∃ z : ℤ, ψ (inr s) = z := by
   have : NeZero (Nat.card (Γ ⋊[φ] S)) := ⟨Nat.card_pos.ne'⟩
   obtain ⟨K, ζ, _, hζ⟩ := HasEnoughRootsOfUnity.exists_intermediateField_isCyclotomicExtension ℚ
@@ -150,7 +150,7 @@ theorem IsCanonicalExtension.exists_int_eq_apply_inr (hcop : (Nat.card Γ).Copri
     obtain ⟨j', hj', hΓ, hS⟩ := exists_pow_eq_self_and_pow_eq (φ := φ) hcop
       (ZMod.val_coe_unit_coprime (hζ.autToPow ℚ σ))
     rw [Function.comp_apply, Function.comp_apply, ← hS, map_pow]
-    exact hψ.apply_pow_eq_self hcop hχ hinv hj' (fun g => by rw [hΓ]) _
+    exact hψ.apply_pow_eq_self hcop hχ hj' (fun g => by rw [hΓ]) _
   have hirr := (isCanonicalExtension_iff.1 hψ).1
   have hmem : ψ (inr s) ∈ adjoin ℚ (Set.range (ψ ∘ inr)) := subset_adjoin _ _ ⟨s, rfl⟩
   rw [hζ.adjoin_range_eq_map_fixedField_cyclotomicPowerStabilizer hS
@@ -168,9 +168,8 @@ theorem IsCanonicalExtension.exists_int_eq_apply_inr (hcop : (Nat.card Γ).Copri
 and `|S|` coprime, the canonical extension `ψ` of an `S`-invariant irreducible character `χ` has
 the same field of values as `χ`, and its values on `S` are integers. -/
 theorem canonicalExtension_values (hcop : (Nat.card Γ).Coprime (Nat.card S)) {χ : Γ → k}
-    (hχ : χ ∈ irreducibleCharacters k Γ) (hinv : ∀ s g, χ (φ s g) = χ g)
-    {ψ : Γ ⋊[φ] S → k} (hψ : IsCanonicalExtension φ χ ψ) :
+    (hχ : χ ∈ irreducibleCharacters k Γ) {ψ : Γ ⋊[φ] S → k} (hψ : IsCanonicalExtension φ χ ψ) :
     adjoin ℚ (Set.range ψ) = adjoin ℚ (Set.range χ) ∧ ∀ s : S, ∃ z : ℤ, ψ (inr s) = z :=
-  ⟨hψ.adjoin_range_eq hcop hχ hinv, hψ.exists_int_eq_apply_inr hcop hχ hinv⟩
+  ⟨hψ.adjoin_range_eq hcop hχ, hψ.exists_int_eq_apply_inr hcop hχ⟩
 
 end TauCeti

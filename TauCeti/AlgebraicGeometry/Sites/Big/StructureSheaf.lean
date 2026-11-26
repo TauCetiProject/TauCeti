@@ -53,6 +53,9 @@ fpqc topology, `μ_n`, regarded as a sheaf for `J`, is still the kernel of the `
 * `AlgebraicGeometry.Scheme.isLimitMuKernelFork`: `μ_n` is the kernel of `powHom`.
 * `AlgebraicGeometry.Scheme.isLimitMuKernelForkMap`: the same holds for every topology coarser
   than the fpqc topology, such as the étale topology.
+* `AlgebraicGeometry.Scheme.GmOverMapPullbackIso`, `AlgebraicGeometry.Scheme.muOverMapPullbackIso`:
+  for `f : T ⟶ S`, the restrictions of `𝔾_m` and `μ_n` of `S` to the big site of `T` are `𝔾_m` and
+  `μ_n` of `T`, compatibly with `muToGm` and `powHom`.
 
 ## References
 
@@ -122,6 +125,23 @@ noncomputable def bigStructureSheafObjSpecIso (R : CommRingCat.{u}) (h : Spec R 
     (bigStructureSheaf S).obj.obj (op (Over.mk h)) ≅ R :=
   Scheme.ΓSpecIso R
 
+/-- The value of the big structure sheaf on an affine `S`-scheme `Spec R` is the ring `R`, as a
+ring equivalence on the scalar ring `bigRingCatSheaf S` of the modules over the big site. -/
+noncomputable def bigRingCatSheafObjSpecRingEquiv (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
+    (bigRingCatSheaf S).obj.obj (op (Over.mk h)) ≃+* R :=
+  -- By `bigRingCatSheaf_obj` (`rfl`), the scalar ring is the ring of the big structure sheaf.
+  (bigStructureSheafObjSpecIso S R h).commRingCatIsoToRingEquiv
+
+@[simp]
+lemma bigRingCatSheafObjSpecRingEquiv_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S)
+    (a : Γ(Spec R, ⊤)) : bigRingCatSheafObjSpecRingEquiv S R h a = (Scheme.ΓSpecIso R).hom a :=
+  (rfl)
+
+@[simp]
+lemma bigRingCatSheafObjSpecRingEquiv_symm_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S) (r : R) :
+    (bigRingCatSheafObjSpecRingEquiv S R h).symm r = (Scheme.ΓSpecIso R).inv r :=
+  (rfl)
+
 /-- The additive group `𝔾_a : T ↦ Γ(T, O_T)` on the big fpqc site over `S`: the underlying
 sheaf of abelian groups of the big structure sheaf. -/
 @[expose]
@@ -149,7 +169,7 @@ lemma Ga_map_apply {T T' : Over S} (f : T ⟶ T') (a : Γ(T'.left, ⊤)) :
 noncomputable def gaObjSpecEquiv (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
     (Ga S).obj.obj (op (Over.mk h)) ≃+ R :=
   -- By `Ga_obj` (`rfl`), the value of `𝔾_a` is the additive group of the big structure sheaf.
-  (bigStructureSheafObjSpecIso S R h).commRingCatIsoToRingEquiv.toAddEquiv
+  (bigRingCatSheafObjSpecRingEquiv S R h).toAddEquiv
 
 @[simp]
 lemma gaObjSpecEquiv_apply (R : CommRingCat.{u}) (h : Spec R ⟶ S) (a : Γ(Spec R, ⊤)) :
@@ -347,5 +367,80 @@ lemma isZero_mu_one : IsZero (mu S 1) :=
   IsZero.of_full_of_faithful_of_isZero (sheafToPresheaf _ _) _ <|
     Functor.isZero _ fun T ↦
       AddCommGrpCat.isZero_of_subsingleton (.of (Additive (rootsOfUnity 1 Γ(T.unop.left, ⊤))))
+
+section OverMapPullback
+
+/-! ### Restriction along a morphism of base schemes
+
+For a morphism `f : T ⟶ S`, the functor `Over.map f : Over T ⥤ Over S` regards a `T`-scheme as an
+`S`-scheme, and pulling back sheaves along it restricts sheaves on the big site of `S` to the big
+site of `T` (`CategoryTheory.GrothendieckTopology.overMapPullback`). The sheaves `𝔾_m` and `μ_n`
+of `S` restrict to those of `T`, compatibly with the inclusion `μ_n ⟶ 𝔾_m` and the `n`-th power
+map. -/
+
+variable {S} {T : Scheme.{u}} (f : T ⟶ S)
+
+/-- The restriction of `𝔾_m` of `S` to the big site of `T`, along `f : T ⟶ S`, is `𝔾_m` of `T`:
+both send a `T`-scheme `X` to `Γ(X, O_X)ˣ`. -/
+noncomputable def GmOverMapPullbackIso :
+    (fpqcTopology.overMapPullback AddCommGrpCat.{u} f).obj (Gm S) ≅ Gm T :=
+  -- Both sheaves have the same sections and restriction maps, by definition.
+  Iso.refl _
+
+@[simp]
+lemma GmOverMapPullbackIso_hom_hom_app_apply (X : (Over T)ᵒᵖ)
+    (a : ((fpqcTopology.overMapPullback AddCommGrpCat.{u} f).obj (Gm S)).obj.obj X) :
+    (GmOverMapPullbackIso f).hom.hom.app X a = a :=
+  (rfl)
+
+@[simp]
+lemma GmOverMapPullbackIso_inv_hom_app_apply (X : (Over T)ᵒᵖ) (a : (Gm T).obj.obj X) :
+    (GmOverMapPullbackIso f).inv.hom.app X a = a :=
+  (rfl)
+
+/-- The restriction of `μ_n` of `S` to the big site of `T`, along `f : T ⟶ S`, is `μ_n` of `T`:
+both send a `T`-scheme `X` to the `n`-th roots of unity of `Γ(X, O_X)`. -/
+noncomputable def muOverMapPullbackIso (n : ℕ) :
+    (fpqcTopology.overMapPullback AddCommGrpCat.{u} f).obj (mu S n) ≅ mu T n :=
+  -- Both sheaves have the same sections and restriction maps, by definition.
+  Iso.refl _
+
+@[simp]
+lemma muOverMapPullbackIso_hom_hom_app_apply (n : ℕ) (X : (Over T)ᵒᵖ)
+    (a : ((fpqcTopology.overMapPullback AddCommGrpCat.{u} f).obj (mu S n)).obj.obj X) :
+    (muOverMapPullbackIso f n).hom.hom.app X a = a :=
+  (rfl)
+
+@[simp]
+lemma muOverMapPullbackIso_inv_hom_app_apply (n : ℕ) (X : (Over T)ᵒᵖ) (a : (mu T n).obj.obj X) :
+    (muOverMapPullbackIso f n).inv.hom.app X a = a :=
+  (rfl)
+
+/-- The restriction of the `n`-th power map of `𝔾_m` of `S` along `f : T ⟶ S` is the `n`-th power
+map of `𝔾_m` of `T`. -/
+@[reassoc]
+lemma GmOverMapPullbackIso_hom_comp_powHom (n : ℕ) :
+    (GmOverMapPullbackIso f).hom ≫ powHom T n =
+      (fpqcTopology.overMapPullback AddCommGrpCat.{u} f).map (powHom S n) ≫
+        (GmOverMapPullbackIso f).hom := by
+  ext ⟨X⟩ a
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, AddCommGrpCat.hom_comp,
+    AddMonoidHom.comp_apply, GmOverMapPullbackIso_hom_hom_app_apply]
+  exact (powHom_app_apply T n X a).trans (powHom_app_apply S n ((Over.map f).obj X) a).symm
+
+/-- The restriction of the inclusion `μ_n ⟶ 𝔾_m` of `S` along `f : T ⟶ S` is the inclusion
+`μ_n ⟶ 𝔾_m` of `T`. -/
+@[reassoc]
+lemma muOverMapPullbackIso_hom_comp_muToGm (n : ℕ) :
+    (muOverMapPullbackIso f n).hom ≫ muToGm T n =
+      (fpqcTopology.overMapPullback AddCommGrpCat.{u} f).map (muToGm S n) ≫
+        (GmOverMapPullbackIso f).hom := by
+  ext ⟨X⟩ a
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app, AddCommGrpCat.hom_comp,
+    AddMonoidHom.comp_apply, GmOverMapPullbackIso_hom_hom_app_apply,
+    muOverMapPullbackIso_hom_hom_app_apply]
+  exact (muToGm_app_apply T n X a).trans (muToGm_app_apply S n ((Over.map f).obj X) a).symm
+
+end OverMapPullback
 
 end AlgebraicGeometry.Scheme

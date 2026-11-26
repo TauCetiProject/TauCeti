@@ -152,11 +152,11 @@ theorem add {p₁ p₂ q₁ q₂ : H →L[ℂ] H} (hp₁₂ : p₁ * p₂ = 0) (
   have hv₂' : TauCeti.IsPartialIsometry v₂ :=
     ContinuousLinearMap.isPartialIsometry_iff_starMul.1 hv₂
   have hstar_mul : star v₁ * v₂ = 0 :=
-    hv₁'.star_mul_eq_zero hv₂' (by rwa [hv₁q, hv₂q])
+    (hv₁'.star_mul_eq_zero_iff hv₂').mpr (by rwa [hv₁q, hv₂q])
   have hortho : IsStarOrtho v₁ v₂ := by
     refine ⟨?_, by simpa only [star_mul, star_star, star_zero] using congrArg star hstar_mul⟩
-    simpa only [star_star] using
-      hv₁'.star.star_mul_eq_zero hv₂'.star (by simpa only [star_star, hv₁p, hv₂p] using hp₁₂)
+    simpa only [star_star] using (hv₁'.star.star_mul_eq_zero_iff hv₂'.star).mpr
+      (by simpa only [star_star, hv₁p, hv₂p] using hp₁₂)
   have hadd_p : star (v₁ + v₂) * (v₁ + v₂) = p₁ + p₂ := by
     rw [hortho.star_add_mul_add, hv₁p, hv₂p]
   have hadd_q : (v₁ + v₂) * star (v₁ + v₂) = q₁ + q₂ := by

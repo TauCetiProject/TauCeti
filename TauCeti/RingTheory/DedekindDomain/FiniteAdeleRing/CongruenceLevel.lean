@@ -40,7 +40,8 @@ the residue fields of `R` are finite.
 
 * `IsDedekindDomain.FiniteAdeleRing.integralGL`: the inclusion `GL_n(Ô) → GL_n(𝔸_f)`, an open
   embedding (`isOpenEmbedding_integralGL`) with range the matrices whose entries and inverse
-  entries are integral (`mem_range_integralGL_iff`).
+  entries are integral (`mem_range_integralGL_iff`), compatible with determinants
+  (`det_integralGL`).
 * `IsDedekindDomain.FiniteAdeleRing.mem_range_mapGL_of_det_eq_one`: a matrix in `GL_n(K)` of
   determinant `1` whose diagonal image lies in `GL_n(Ô)` comes from `SL_n(R)`.
 * `IsDedekindDomain.FiniteAdeleRing.principalLevel`, `level1`, `level0`: the levels `K(N)`,
@@ -101,6 +102,15 @@ theorem integralGL_inv_apply (g : GL (Fin n) (integralAdeles R K)) (i j : Fin n)
     (↑(integralGL K n g)⁻¹ : Matrix (Fin n) (Fin n) 𝔸ᶠ[R, K]) i j =
       (↑g⁻¹ : Matrix (Fin n) (Fin n) (integralAdeles R K)) i j :=
   (rfl)
+
+/-- The determinant of the image in `GL_n(𝔸_f)` of a matrix of `GL_n(Ô)` is the image in `𝔸_f^×`
+of its determinant. -/
+@[simp]
+theorem det_integralGL (g : GL (Fin n) (integralAdeles R K)) :
+    Matrix.GeneralLinearGroup.det (integralGL K n g) =
+      Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])
+        (Matrix.GeneralLinearGroup.det g) :=
+  Matrix.GeneralLinearGroup.map_det _ g
 
 variable (K n) in
 /-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is injective. -/

@@ -53,7 +53,10 @@ and, since the rows of an invertible matrix are unimodular, it gives every such 
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a directly finite local semiring, a vector
   with finitely many coordinates is unimodular if and only if one of its coordinates is a unit.
 * `Module.IsUnimodular.ringHom_comp`: applying a ring homomorphism to the coordinates preserves
-  unimodularity.
+  unimodularity, and `RingEquiv.isUnimodular_comp_iff`: applying a ring isomorphism leaves it
+  unchanged.
+* `TauCeti.Module.isUnimodular_pi_prod_iff`: a coordinate vector over a product `R × S` is
+  unimodular exactly when both of its components are.
 * `TauCeti.forall_mul_eq_mul_iff_exists_units`: two coordinate families generating the unit ideal
   are unit multiples of one another exactly when their `2 × 2` minors vanish.
 * `LinearMap.kerProdEquivOfApplyEqOne`: if a linear functional `f` takes the value `1` at `v`, then
@@ -245,6 +248,28 @@ theorem Module.IsUnimodular.ringHom_comp {R S ι : Type*} [Semiring R] [Semiring
   have := Fintype.ofFinite ι
   obtain ⟨b, hb⟩ := TauCeti.Module.isUnimodular_pi_iff.mp hv
   exact TauCeti.Module.isUnimodular_pi_iff.mpr ⟨f ∘ b, by simp [← map_mul, ← map_sum, hb]⟩
+
+/-- Applying a ring isomorphism to the coordinates leaves unimodularity unchanged. -/
+@[simp]
+theorem RingEquiv.isUnimodular_comp_iff {R S ι : Type*} [Semiring R] [Semiring S] [Finite ι]
+    (e : R ≃+* S) {v : ι → R} :
+    Module.IsUnimodular S (e ∘ v) ↔ Module.IsUnimodular R v :=
+  ⟨fun h ↦ by simpa [Function.comp_def] using h.ringHom_comp (e.symm : S →+* R),
+    fun h ↦ by simpa using h.ringHom_comp (e : R →+* S)⟩
+
+/-- A coordinate vector over a product of semirings is unimodular exactly when both of its
+components are. -/
+theorem TauCeti.Module.isUnimodular_pi_prod_iff {R S ι : Type*} [Semiring R] [Semiring S]
+    [Finite ι] {v : ι → R × S} :
+    Module.IsUnimodular (R × S) v ↔
+      Module.IsUnimodular R (Prod.fst ∘ v) ∧ Module.IsUnimodular S (Prod.snd ∘ v) := by
+  refine ⟨fun h ↦ ⟨h.ringHom_comp (RingHom.fst R S), h.ringHom_comp (RingHom.snd R S)⟩,
+    fun ⟨h₁, h₂⟩ ↦ ?_⟩
+  have := Fintype.ofFinite ι
+  obtain ⟨b₁, hb₁⟩ := isUnimodular_pi_iff.mp h₁
+  obtain ⟨b₂, hb₂⟩ := isUnimodular_pi_iff.mp h₂
+  exact isUnimodular_pi_iff.mpr ⟨fun i ↦ (b₁ i, b₂ i), Prod.ext (by simpa [Prod.fst_sum] using hb₁)
+    (by simpa [Prod.snd_sum] using hb₂)⟩
 
 namespace TauCeti
 

@@ -177,6 +177,17 @@ assumed, and `L` is an arbitrary real number. Applied to `f` and to `-f`, the le
 first-order Taylor remainder of a function with `L`-Lipschitz derivative by `L / 2 * ‖h‖ ^ 2`,
 the inequality behind the convergence analysis of gradient methods (Y. Nesterov, *Lectures on
 convex optimization*, 2nd ed., Springer, 2018, Lemma 1.2.3).
+
+## A polynomial majorant for the derivative
+
+If `f : ℝ → E` has derivative `f' r` within `[t, u]` and `‖f' r‖ ≤ C (r - t) ^ n` on `[t, u)`, then
+`‖f u - f t‖ ≤ C (u - t) ^ (n + 1) / (n + 1)`
+(`TauCeti.norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_left`); the same holds with the bound
+`C (u - r) ^ n` (`TauCeti.norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_right`). Together they
+give the two-sided form: if `‖f' r‖ ≤ C |r - s| ^ n` on `[a, b]`, then
+`‖f u - f s‖ ≤ C |u - s| ^ (n + 1) / (n + 1)` for `s`, `u` in `[a, b]`
+(`TauCeti.norm_image_sub_le_of_norm_deriv_le_mul_abs_sub_pow`). These integrate the bounds on the
+derivatives of Taylor residuals.
 -/
 
 public section
@@ -928,5 +939,69 @@ theorem le_add_fderiv_add_of_lipschitz
   le_add_apply_add_of_norm_sub_le (fun y hy ↦ (hf y hy).hasFDerivAt.hasFDerivWithinAt) hL
 
 end Descent
+
+section PolynomialMajorant
+
+open Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The mean value inequality with a derivative bound growing like a power of the distance to the
+left endpoint: if `‖f' r‖ ≤ C (r - t) ^ n` on `[t, u)`, then
+`‖f u - f t‖ ≤ C (u - t) ^ (n + 1) / (n + 1)`. -/
+theorem norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_left {f f' : ℝ → E} {t u C : ℝ} {n : ℕ}
+    (htu : t ≤ u) (hf : ∀ r ∈ Icc t u, HasDerivWithinAt f (f' r) (Icc t u) r)
+    (hbound : ∀ r ∈ Ico t u, ‖f' r‖ ≤ C * (r - t) ^ n) :
+    ‖f u - f t‖ ≤ C * (u - t) ^ (n + 1) / (n + 1) := by
+  refine image_norm_le_of_norm_deriv_right_le_deriv_boundary (f := fun r ↦ f r - f t)
+    (B := fun r ↦ C * (r - t) ^ (n + 1) / (n + 1))
+    (fun r hr ↦ ((hf r hr).sub_const (f t)).continuousWithinAt)
+    (fun r hr ↦ ((hf r (Ico_subset_Icc_self hr)).sub_const (f t)).mono_of_mem_nhdsWithin
+      (Icc_mem_nhdsGE_of_mem hr)) (by simp) (fun r ↦ ?_) hbound (right_mem_Icc.2 htu)
+  convert ((((hasDerivAt_id' r).sub_const t).fun_pow (n + 1)).const_mul C).div_const
+    ((n : ℝ) + 1) using 1
+  push_cast
+  field_simp
+
+/-- The mean value inequality with a derivative bound growing like a power of the distance to the
+right endpoint: if `‖f' r‖ ≤ C (u - r) ^ n` on `[t, u)`, then
+`‖f u - f t‖ ≤ C (u - t) ^ (n + 1) / (n + 1)`. -/
+theorem norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_right {f f' : ℝ → E} {t u C : ℝ} {n : ℕ}
+    (htu : t ≤ u) (hf : ∀ r ∈ Icc t u, HasDerivWithinAt f (f' r) (Icc t u) r)
+    (hbound : ∀ r ∈ Ico t u, ‖f' r‖ ≤ C * (u - r) ^ n) :
+    ‖f u - f t‖ ≤ C * (u - t) ^ (n + 1) / (n + 1) := by
+  have key := image_norm_le_of_norm_deriv_right_le_deriv_boundary (f := fun r ↦ f r - f t)
+    (fun r hr ↦ ((hf r hr).sub_const (f t)).continuousWithinAt)
+    (fun r hr ↦ ((hf r (Ico_subset_Icc_self hr)).sub_const (f t)).mono_of_mem_nhdsWithin
+      (Icc_mem_nhdsGE_of_mem hr))
+    (B := fun r ↦ C * ((u - t) ^ (n + 1) - (u - r) ^ (n + 1)) / (n + 1)) (by simp)
+    (fun r ↦ ?_) hbound (right_mem_Icc.2 htu)
+  · simpa using key
+  · convert (((((hasDerivAt_id' r).const_sub u).fun_pow (n + 1)).const_sub
+      ((u - t) ^ (n + 1))).const_mul C).div_const ((n : ℝ) + 1) using 1
+    push_cast
+    field_simp
+
+/-- The mean value inequality with a derivative bound growing like a power of the distance to a
+base point `s`: if `‖f' r‖ ≤ C |r - s| ^ n` on `[a, b]`, then for `s`, `u` in `[a, b]`, in either
+order, `‖f u - f s‖ ≤ C |u - s| ^ (n + 1) / (n + 1)`. -/
+theorem norm_image_sub_le_of_norm_deriv_le_mul_abs_sub_pow {f f' : ℝ → E} {a b s u C : ℝ}
+    {n : ℕ}
+    (hf : ∀ r ∈ Icc a b, HasDerivWithinAt f (f' r) (Icc a b) r)
+    (hbound : ∀ r ∈ Icc a b, ‖f' r‖ ≤ C * |r - s| ^ n) (hs : s ∈ Icc a b) (hu : u ∈ Icc a b) :
+    ‖f u - f s‖ ≤ C * |u - s| ^ (n + 1) / (n + 1) := by
+  rcases le_total s u with hsu | hus
+  · have hsub : Icc s u ⊆ Icc a b := Icc_subset_Icc hs.1 hu.2
+    rw [abs_of_nonneg (sub_nonneg.2 hsu)]
+    refine norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_left hsu
+      (fun r hr ↦ (hf r (hsub hr)).mono hsub) fun r hr ↦ ?_
+    simpa [abs_of_nonneg (sub_nonneg.2 hr.1)] using hbound r (hsub (Ico_subset_Icc_self hr))
+  · have hsub : Icc u s ⊆ Icc a b := Icc_subset_Icc hu.1 hs.2
+    rw [norm_sub_rev, abs_of_nonpos (sub_nonpos.2 hus), neg_sub]
+    refine norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_right hus
+      (fun r hr ↦ (hf r (hsub hr)).mono hsub) fun r hr ↦ ?_
+    simpa [abs_of_nonpos (sub_nonpos.2 hr.2.le)] using hbound r (hsub (Ico_subset_Icc_self hr))
+
+end PolynomialMajorant
 
 end TauCeti
