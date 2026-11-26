@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.ScalarVariation
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Family
 
 /-!
 # Scalar curvature evolution under Ricci flow
@@ -103,7 +104,7 @@ private theorem variation_eq_neg_two_ricciTensor
   have hn := (g.hasDerivAt_apply_apply_comp (c := id) (t := t) mdifferentiableAt_id y u v).unique
     (hflow y u v)
   rw [hcov.ricciTensor_eq_ricciTensor_leviCivitaConnection
-    (fun y u v ↦ by simpa only [metric_apply] using hg y u v) y] at hn
+    (g.metric_apply_eq_inner_of_apply_eq_inner hg) y] at hn
   simpa using hn
 
 /-- **Scalar curvature evolution under Ricci flow.** For a smooth family of native metrics
@@ -136,7 +137,7 @@ theorem hasDerivAt_scalarCurvature_of_ricciFlow
     change traceCLM ℝ (TangentSpace I y) ((g.metric t y).inverse ∘L
       ((leviCivitaConnection I M).ricciTensor y).toContinuousBilinearMap) = _
     rw [ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace (g.metric t y)
-      (fun u v ↦ by simpa only [metric_apply] using hg y u v),
+      (g.metric_apply_eq_inner_of_apply_eq_inner hg y),
       LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap, scalarCurvature_apply]
   -- The inverse metric and the Ricci tensor, read on the model space.
   let A : (E →L[ℝ] ℝ) →L[ℝ] E := (g.metric t x).inverse
@@ -146,7 +147,7 @@ theorem hasDerivAt_scalarCurvature_of_ricciFlow
       -2 * traceCLM ℝ E ((A ∘L Ric) ∘L (A ∘L Ric)) := by
     rw [ContinuousLinearMap.comp_smul, ContinuousLinearMap.smul_comp, map_smul, smul_eq_mul]
   rw [(hcov t).ricciTensor_eq_ricciTensor_leviCivitaConnection
-    (fun y u v ↦ by simpa only [metric_apply] using hg y u v) x, hscal]
+    (g.metric_apply_eq_inner_of_apply_eq_inner hg) x, hscal]
   have harith (L T : ℝ) : -L - -2 * L - -2 * T = L + 2 * T := by ring
   exact hd.congr_deriv ((congrArg (_ - ·) htr).trans (harith _ _))
 
@@ -164,10 +165,9 @@ theorem hasDerivAt_scalarCurvature_sum_of_ricciFlow
     HasDerivAt (fun s ↦ (r s).scalarCurvature x)
       (laplaceBeltrami I (r t).scalarCurvature x +
         2 * ∑ i, ∑ j, ((cov t).ricciTensor x (b i) (b j)) ^ 2) t := by
-  have hLC := ((g.metric t).isLeviCivitaConnection_iff_of_apply_eq_inner
-      (fun y u v ↦ by simpa only [metric_apply] using hg y u v)).mp (hcov t)
+  have hLC := g.isLeviCivitaConnection_of_apply_eq_inner (hcov t) hg
   have hsq := ContinuousLinearMap.traceCLM_inverse_comp_self_eq_sum_sq (g.metric t x)
-        (fun u v ↦ by simpa only [metric_apply] using hg x u v)
+        (g.metric_apply_eq_inner_of_apply_eq_inner hg x)
     ((cov t).ricciTensor x).toContinuousBilinearMap
     (fun u v ↦ CovariantDerivative.IsMetricCompatible.ricciTensor_comm (cov := cov t)
       hLC.isMetricCompatible hLC.torsion x u v) b

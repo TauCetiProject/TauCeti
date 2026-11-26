@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Trace
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Existence
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Family
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.Regularity
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
@@ -122,6 +123,20 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   (g : ContMDiffNondegenerateMetricFamily I M IP P) {c : ℝ → P}
   {cov : ℝ → CovariantDerivative I E (fun x : M ↦ TangentSpace I x)} {t : ℝ}
+
+omit [T2Space M] [IsManifold IP 1 P]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- Along a parameter curve, the members of the family have smooth Levi-Civita connections. -/
+private theorem exists_isLeviCivitaConnection_comp (c : ℝ → P) :
+    ∃ cov : ℝ → CovariantDerivative I E (fun x : M ↦ TangentSpace I x),
+      (∀ s, (g.metric (c s)).IsLeviCivitaConnection (cov s)) ∧
+        ∀ s, CovariantDerivative.ContMDiffCovariantDerivative (cov s) ∞ :=
+  ⟨fun s ↦ (g.metric (c s)).leviCivitaConnection,
+    fun s ↦ (g.metric (c s)).isLeviCivitaConnection_leviCivitaConnection,
+    fun s ↦
+      (g.metric (c s)).isLeviCivitaConnection_leviCivitaConnection.contMDiffCovariantDerivative
+        le_rfl⟩
 
 omit [T2Space M] in
 /-- The trace of the first variation `h = δ_u g` against the installed metric is a smooth
@@ -236,7 +251,8 @@ private theorem sum_palatini_deriv_difference (x : M) {ι : Type*} [Fintype ι]
       g.metricTrace_deriv_difference_eq_rieszDual_divBilinearTensor_sub_mgradient hc hcov hg y,
       sub_add_cancel]
   rw [hLC.isMetricCompatible.sum_palatini_eq_divergence_sub_laplaceBeltrami
-    (fun _ hU z ↦ g.apply_eq_leviCivitaConnection_of_apply_eq_inner (hcov t) hg hU z) hC hτ'
+    (fun _ hU z ↦ congr($(g.apply_eq_leviCivitaConnection_of_apply_eq_inner (hcov t) hg hU) z))
+    hC hτ'
     (.of_forall (g.trace_deriv_difference_eq_mvfderiv hc hcov hg)) e, hX,
     divergence_add I _ _ x hC.metricTrace (mdifferentiableAt_mgradient hτ'),
     ← laplaceBeltrami_def, laplaceBeltrami_smul I _ hτ]
@@ -259,8 +275,8 @@ private theorem traceCLM_inverse_comp_eq (x : M) {K : E →L[ℝ] E →L[ℝ] �
   have hdiv (y : M) : (CovariantDerivative.leviCivitaConnection I M).divBilinearTensor
       (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y =
       (cov t).divBilinearTensor (g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1)) y :=
-    CovariantDerivative.divBilinearTensor_congr _ _ fun _ hY ↦ ContinuousLinearMap.ext fun z ↦
-      (g.apply_eq_leviCivitaConnection_of_apply_eq_inner (hcov t) hg hY z).symm
+    CovariantDerivative.divBilinearTensor_congr _ _ fun _ hY ↦
+      (g.apply_eq_leviCivitaConnection_of_apply_eq_inner (hcov t) hg hY).symm
   simp only [hdiv]
   rw [← g.sum_palatini_deriv_difference hc hcov hg x e]
   calc
@@ -268,7 +284,7 @@ private theorem traceCLM_inverse_comp_eq (x : M) {K : E →L[ℝ] E →L[ℝ] �
     _ = traceCLM ℝ (TangentSpace I x) ((g.metric (c t) x).inverse ∘L Kx) := rfl
     _ = LinearMap.BilinMap.metricTrace Kx.toBilinForm :=
       ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace (g.metric (c t) x)
-        (fun u v ↦ by simpa only [metric_apply] using hg x u v) Kx
+        (g.metric_apply_eq_inner_of_apply_eq_inner hg x) Kx
     _ = ∑ j, Kx (e j) (e j) := by
       simpa only [ContinuousLinearMap.toBilinForm_apply] using
         LinearMap.BilinMap.metricTrace_eq_sum Kx.toBilinForm e
@@ -299,7 +315,7 @@ private theorem hasDerivAt_scalarCurvature_of_hasDerivAt_ricciTensor
   refine (ContMDiffRiemannianMetric.hasDerivAt_scalarCurvature_of_hasDerivAt_ricciTensor
     (hr.mono fun s hs ↦ hs ▸ hcov s) hh hK).congr_deriv ?_
   rw [← hr.self_of_nhds, (hcov t).ricciTensor_eq_ricciTensor_leviCivitaConnection
-    (fun y u v ↦ by simpa only [metric_apply] using hg y u v) x]
+    (g.metric_apply_eq_inner_of_apply_eq_inner hg) x]
   -- Both sides read the tangent fibre as the model space.
   rfl
 
@@ -328,11 +344,7 @@ theorem hasDerivAt_scalarCurvature (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
           g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1) x) ∘L ((g.metric (c t) x).inverse ∘L
             ((CovariantDerivative.leviCivitaConnection I M).ricciTensor
               x).toContinuousBilinearMap))) t := by
-  let cov (s : ℝ) := (g.metric (c s)).leviCivitaConnection
-  have hcov (s : ℝ) : (g.metric (c s)).IsLeviCivitaConnection (cov s) :=
-    (g.metric (c s)).isLeviCivitaConnection_leviCivitaConnection
-  have (s : ℝ) : CovariantDerivative.ContMDiffCovariantDerivative (cov s) ∞ :=
-    (hcov s).contMDiffCovariantDerivative le_rfl
+  obtain ⟨cov, hcov, _⟩ := g.exists_isLeviCivitaConnection_comp c
   let B (s : ℝ) : E →L[ℝ] E →L[ℝ] ℝ := ((cov s).ricciTensor x).toContinuousBilinearMap
   have hB : HasDerivAt (F := E →L[ℝ] E →L[ℝ] ℝ) B (deriv B t) t := by
     apply DifferentiableAt.hasDerivAt (𝕜 := ℝ) (F := E →L[ℝ] E →L[ℝ] ℝ)
@@ -367,8 +379,8 @@ theorem hasDerivAt_scalarCurvature_sum (hc : ContMDiffAt 𝓘(ℝ) IP 2 c t)
   let Ric : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ :=
     ((CovariantDerivative.leviCivitaConnection I M).ricciTensor x).toContinuousBilinearMap
   let G : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ := g.metric (c t) x
-  have hG (u v : TangentSpace I x) : G u v = inner ℝ u v := by
-    simpa only [G, metric_apply] using hg x u v
+  have hG (u v : TangentSpace I x) : G u v = inner ℝ u v :=
+    g.metric_apply_eq_inner_of_apply_eq_inner hg x u v
   have hinv : G.IsInvertible := (g.metric (c t)).isInvertible x
   -- The tangent fibre and model give the same contraction, a metric trace of `h ∘ g⁻¹ ∘ Ric`.
   calc
@@ -399,15 +411,10 @@ theorem hasDerivAt_scalarCurvature_of_derivBilinearTensor_eq_zero
           g.variation (c t) (mfderiv 𝓘(ℝ) IP c t 1) x) ∘L ((g.metric (c t) x).inverse ∘L
             ((CovariantDerivative.leviCivitaConnection I M).ricciTensor
               x).toContinuousBilinearMap))) t := by
-  let cov (s : ℝ) := (g.metric (c s)).leviCivitaConnection
-  have hcov (s : ℝ) : (g.metric (c s)).IsLeviCivitaConnection (cov s) :=
-    (g.metric (c s)).isLeviCivitaConnection_leviCivitaConnection
-  have (s : ℝ) : CovariantDerivative.ContMDiffCovariantDerivative (cov s) ∞ :=
-    (hcov s).contMDiffCovariantDerivative le_rfl
+  obtain ⟨cov, hcov, _⟩ := g.exists_isLeviCivitaConnection_comp c
   have hK := g.hasDerivAt_ricciTensor_zero_of_derivBilinearTensor_eq_zero hc hcov
     (hh.mono fun y hy ↦ ((cov t).derivBilinearTensor_congr fun _ hY ↦
-      ContinuousLinearMap.ext fun z ↦
-        g.apply_eq_leviCivitaConnection_of_apply_eq_inner (hcov t) hg hY z).trans hy)
+      g.apply_eq_leviCivitaConnection_of_apply_eq_inner (hcov t) hg hY).trans hy)
   -- The inverse metric, read on the model space, where `Ric'` vanishes.
   let A : (E →L[ℝ] ℝ) →L[ℝ] E := (g.metric (c t) x).inverse
   have hA : traceCLM ℝ E (A ∘L (0 : E →L[ℝ] E →L[ℝ] ℝ)) = 0 := by
