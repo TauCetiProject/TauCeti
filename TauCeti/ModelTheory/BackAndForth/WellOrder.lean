@@ -72,9 +72,10 @@ private theorem exists_typeLT_Ioi_eq {γ δ : Ordinal.{u}} (hM : typeLT M = ω ^
     exact isSuccLimit_mul_left (isSuccLimit_opow_left isSuccLimit_omega0
       (pos_of_gt (lt_add_one γ)).ne')
       (pos_iff_ne_zero.2 hδ)
-  have hsucc := hlim.succ_lt (typein_lt_type (α := M) (· < ·) m)
-  have hne : Nonempty (Set.Ioi m) := ⟨⟨Ordinal.enum (α := M) (· < ·) ⟨_, hsucc⟩,
-    (typein_lt_typein (· < ·)).1 <| (typein_enum (· < ·) hsucc).symm ▸ lt_succ _⟩⟩
+  -- So `M` has no maximum.
+  have hne : Nonempty (Set.Ioi m) :=
+    let ⟨n, hn⟩ := (isSuccPrelimit_type_lt_iff.1 hlim.isSuccPrelimit).exists_gt m
+    ⟨⟨n, hn⟩⟩
   -- The final segment of a multiple of the additively principal `ω ^ (γ + 1)` is a multiple.
   obtain ⟨θ, hθ⟩ := (isPrincipal_add_omega0_opow (γ + 1)).dvd_type_lt_Ioi
     (hM ▸ dvd_mul_right _ _) m
@@ -137,10 +138,8 @@ private theorem omegaPowMul (γ : Ordinal.{u}) : OmegaPowMul γ := by
     have hN' : typeLT N = ω ^ γ * (ω * ε) := by rw [hN, opow_add_one, mul_assoc]
     refine (BFEquiv.add_one γ _ _).2 ⟨ih M N _ _ (mul_ne_zero omega0_ne_zero hδ)
       (mul_ne_zero omega0_ne_zero hε) hM' hN', fun m => ?_, fun n => ?_⟩
-    · obtain ⟨n, hn⟩ := ih.forth hε hM hN m
-      exact ⟨n, hn⟩
-    · obtain ⟨m, hm⟩ := ih.forth hδ hN hM n
-      exact ⟨m, hm.symm⟩
+    · exact ih.forth hε hM hN m
+    · exact (ih.forth hδ hN hM n).imp fun _ h => h.symm
   | limit γ hγ ih =>
     intro M N _ _ _ _ δ ε hδ hε hM hN
     -- Below a limit level `γ`, a multiple of `ω ^ γ` is a multiple of `ω ^ β` for every `β < γ`.
