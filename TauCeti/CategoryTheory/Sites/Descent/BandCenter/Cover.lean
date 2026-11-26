@@ -19,10 +19,10 @@ arrows of `R` (`IntrinsicBandSections.IsCompatible`).
 
 For an object `x` over `U`, the evaluated automorphisms `ev_(𝟙, i^* x)(z_i)` of the pullbacks
 `i^* x` commute with the gluing isomorphisms of the canonical descent datum of `x`
-(`IntrinsicBandSections.coverTransition`): over a common refinement `q = f₁ ≫ i₁ = f₂ ≫ i₂` both
-pulled-back components are the component of `z_q`, and that component is natural. So they form an
-automorphism of the descent datum (`IntrinsicBandSections.coverIso`). No cover or prestack
-hypothesis is needed for this.
+(`IntrinsicBandSections.map_localAut_hom_comp_hom`): over a common refinement
+`q = f₁ ≫ i₁ = f₂ ≫ i₂` both pulled-back components are the component of `z_q`, and that component
+is natural. So they form an automorphism of the descent datum (`IntrinsicBandSections.coverIso`).
+No cover or prestack hypothesis is needed for this.
 
 When `R` covers `U` and `F` is a prestack, the canonical descent functor is fully faithful, and
 lifting gives an automorphism `coverAut(R, z, x)` of `x`, the unique one restricting to
@@ -32,7 +32,7 @@ lifting gives an automorphism `coverAut(R, z, x)` of `x`, the unique one restric
 categorical centre of the fibre over `U` (`IntrinsicBandSections.coverCenter`), again unique with
 its local components (`IntrinsicBandSections.coverCenter_unique`). The restrictions of a section
 `s ∈ ZF(U)` descend to its component `s(U, 𝟙)`. The same descent argument shows that `ZF` is
-separated for the topology (`IntrinsicBandSections.bandCenterSeparated`). This is the gluing step,
+separated for the topology (`IntrinsicBandSections.eq_of_restrict_eq`). This is the gluing step,
 on the fixed base `U`, of the varying-base part of the Stacks Project, Lemma 8.11.8 (06NY).
 
 ## Main definitions
@@ -44,7 +44,7 @@ on the fixed base `U`, of the varying-base part of the Stacks Project, Lemma 8.1
 
 ## Main results
 
-* `IntrinsicBandSections.coverTransition`: the local evaluations commute with the gluing
+* `IntrinsicBandSections.map_localAut_hom_comp_hom`: the local evaluations commute with the gluing
   isomorphisms.
 * `IntrinsicBandSections.coverIso_one`, `IntrinsicBandSections.coverIso_inv`,
   `IntrinsicBandSections.coverIso_mul`: the identity family, inverse and product families.
@@ -58,7 +58,7 @@ on the fixed base `U`, of the varying-base part of the Stacks Project, Lemma 8.1
   `IntrinsicBandSections.coverCenter_unique`, `IntrinsicBandSections.coverCenter_one`,
   `IntrinsicBandSections.coverCenter_inv`, `IntrinsicBandSections.coverCenter_mul`,
   `IntrinsicBandSections.coverCenter_restrict`.
-* `IntrinsicBandSections.bandCenterSeparated`: sections agreeing on a covering sieve are equal.
+* `IntrinsicBandSections.eq_of_restrict_eq`: sections agreeing on a covering sieve are equal.
 
 ## References
 
@@ -145,8 +145,8 @@ theorem IsCompatible.map_localAut_hom (hz : IsCompatible z) (x : F.obj (.mk (op 
 
 /-- **The local evaluations commute with the gluing isomorphisms** of the canonical descent datum
 of `x`, for a compatible family on any sieve. -/
-theorem coverTransition (hz : IsCompatible z) (x : F.obj (.mk (op U))) ⦃Y : C⦄ (q : Y ⟶ U)
-    ⦃i₁ i₂ : R.arrows.category⦄ (f₁ : Y ⟶ i₁.obj.left) (f₂ : Y ⟶ i₂.obj.left)
+theorem map_localAut_hom_comp_hom (hz : IsCompatible z) (x : F.obj (.mk (op U))) ⦃Y : C⦄
+    (q : Y ⟶ U) ⦃i₁ i₂ : R.arrows.category⦄ (f₁ : Y ⟶ i₁.obj.left) (f₂ : Y ⟶ i₂.obj.left)
     (hf₁ : f₁ ≫ i₁.obj.hom = q) (hf₂ : f₂ ≫ i₂.obj.hom = q) :
     (F.map f₁.op.toLoc).toFunctor.map (localAut z x i₁).asIso.hom ≫
         ((F.toDescentData fun i : R.arrows.category ↦ i.obj.hom).obj x).hom q f₁ f₂ hf₁ hf₂ =
@@ -164,7 +164,7 @@ def coverIso (hz : IsCompatible z) (x : F.obj (.mk (op U))) :
     (F.toDescentData fun i : R.arrows.category ↦ i.obj.hom).obj x ≅
       (F.toDescentData fun i : R.arrows.category ↦ i.obj.hom).obj x :=
   DescentData.isoMk (fun i ↦ (localAut z x i).asIso)
-    (fun _ q _ _ f₁ f₂ hf₁ hf₂ ↦ coverTransition hz x q f₁ f₂ hf₁ hf₂)
+    (fun _ q _ _ f₁ f₂ hf₁ hf₂ ↦ map_localAut_hom_comp_hom hz x q f₁ f₂ hf₁ hf₂)
 
 @[simp]
 theorem coverIso_hom_hom (hz : IsCompatible z) (x : F.obj (.mk (op U))) (i : R.arrows.category) :
@@ -341,15 +341,14 @@ theorem coverCenter_one (hR : R ∈ J U) : coverCenter (F := F) hR isCompatible_
 theorem coverCenter_inv (hR : R ∈ J U) (hz : IsCompatible z) :
     coverCenter hR hz.inv = (coverCenter hR hz)⁻¹ := by
   refine Units.ext (CatCenter.ext _ _ fun x ↦ ?_)
-  rw [coverCenter_app, coverAut_inv, coverCenter_inv_app, Aut.inv_asIso, Iso.symm_hom]
+  simp [hz]
 
 /-- The product family descends to the product centre unit. -/
 @[simp]
 theorem coverCenter_mul (hR : R ∈ J U) (hz : IsCompatible z) (hw : IsCompatible w) :
     coverCenter hR (hz.mul hw) = coverCenter hR hz * coverCenter hR hw := by
   refine Units.ext (CatCenter.ext _ _ fun x ↦ ?_)
-  rw [coverCenter_app, coverAut_mul, Aut.mul_asIso, Iso.trans_hom, Units.val_mul,
-    CatCenter.mul_app', coverCenter_app, coverCenter_app]
+  simp [hz, hw, CatCenter.mul_app']
 
 /-- The restrictions of a section `s ∈ ZF(U)` descend to its component `s(U, 𝟙)`. -/
 @[simp]
@@ -360,7 +359,7 @@ theorem coverCenter_restrict (hR : R ∈ J U) (s : IntrinsicBandSections F U) :
 
 /-- **Separation.** Two central sections over `U` whose restrictions along every arrow of a
 covering sieve agree are equal. No gerbe, groupoid or commutativity hypothesis is needed. -/
-theorem bandCenterSeparated (hR : R ∈ J U) {s t : IntrinsicBandSections F U}
+theorem eq_of_restrict_eq (hR : R ∈ J U) {s t : IntrinsicBandSections F U}
     (h : ∀ ⦃V : C⦄ (f : V ⟶ U), R f → restrict f s = restrict f t) : s = t := by
   ext V a x
   have hR' : R.pullback a ∈ J V := J.pullback_stable a hR
