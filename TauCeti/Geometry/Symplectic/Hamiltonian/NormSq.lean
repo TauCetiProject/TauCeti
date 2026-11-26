@@ -21,10 +21,10 @@ The Hamiltonian vector field of `a ‖x‖²` is `-2 a J x`
 (`TauCeti.SymplecticForm.hamiltonianVectorField_mul_norm_sq`), so its flow is a rotation along the
 complex lines of `J` (`TauCeti.AlmostComplexStructure.eq_cos_smul_add_sin_smul_of_hasDerivAt`).
 Its integral curves are `cos (2 a t) x - sin (2 a t) J x`
-(`TauCeti.SymplecticForm.eq_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq`), and a nonconstant
-one has period `T` exactly when `a T ∈ πℤ`
+(`TauCeti.SymplecticForm.eq_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq`), and one not
+starting at the origin has period `T` exactly when `a T ∈ πℤ`
 (`TauCeti.SymplecticForm.periodic_iff_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq`). So
-`a ‖x‖²` has a nonconstant `1`-periodic orbit exactly when `a ∈ πℤ`
+`a ‖x‖²` has a `1`-periodic orbit away from the origin exactly when `a ∈ πℤ`
 (`TauCeti.SymplecticForm.exists_periodic_one_ne_zero_hamiltonianVectorField_mul_norm_sq_iff`).
 For a slope `a ∉ πℤ` the only `1`-periodic orbit is the constant orbit at the origin
 (`TauCeti.SymplecticForm.eq_zero_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq_of_periodic`),
@@ -41,10 +41,10 @@ orbit at the origin. They match the Reeb periods `k π` of the unit sphere
 
 * `TauCeti.SymplecticForm.eq_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq`: the integral
   curves of `X_{a ‖x‖²} = -2 a J x` are the rotations `cos (2 a t) x - sin (2 a t) J x`.
-* `TauCeti.SymplecticForm.periodic_iff_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq`: a
-  nonconstant integral curve has period `T` exactly when `a T ∈ πℤ`.
+* `TauCeti.SymplecticForm.periodic_iff_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq`: an
+  integral curve not starting at the origin has period `T` exactly when `a T ∈ πℤ`.
 * `TauCeti.SymplecticForm.exists_periodic_one_ne_zero_hamiltonianVectorField_mul_norm_sq_iff`:
-  `a ‖x‖²` has a nonconstant `1`-periodic orbit exactly when `a ∈ πℤ`.
+  `a ‖x‖²` has a `1`-periodic orbit away from the origin exactly when `a ∈ πℤ`.
 
 ## References
 
@@ -120,8 +120,8 @@ theorem periodic_iff_of_hasDerivAt_hamiltonianVectorField_mul_norm_sq
       constructor <;> intro hk <;> linarith
 
 /-- **The degenerate slopes are the multiples of `π`.** If `V` is nonzero and its inner product is
-the metric `ω(·, J ·)`, the Hamiltonian `y ↦ a ‖y‖²` has a nonconstant `1`-periodic orbit exactly
-when `a` is an integer multiple of `π`. -/
+the metric `ω(·, J ·)`, the Hamiltonian `y ↦ a ‖y‖²` has a `1`-periodic orbit through a nonzero
+point exactly when `a` is an integer multiple of `π`. (For `a = 0` such an orbit is constant.) -/
 theorem exists_periodic_one_ne_zero_hamiltonianVectorField_mul_norm_sq_iff [Nontrivial V]
     (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (a : ℝ) :
     (∃ γ : ℝ → V, (∀ t, HasDerivAt γ (ω.hamiltonianVectorField (fun y ↦ a * ‖y‖ ^ 2) (γ t)) t) ∧
