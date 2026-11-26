@@ -52,6 +52,8 @@ this file to restate both.
   translation.
 * `Submodule.units_smul_eq_smul_of_val_eq`: a unit of an `R`-algebra coming from `c : R`
   translates submodules as `c` does.
+* `Submodule.zpow_smul_le_zpow_smul`: translates of a submodule by powers of such a unit shrink
+  as the exponent grows.
 * `Subalgebra.smul_toSubmodule_eq_smul_toSubmodule_iff`: translates `s C` and `t C` by ambient
   units agree exactly when `s⁻¹ t` is a unit of `C`.
 * `Submodule.pow_smul_mem_pow_smul`: the ambient-scalar bridge — an element of `M₀` scaled by
@@ -117,6 +119,18 @@ theorem units_smul_eq_smul_of_val_eq {R A M : Type*} [CommSemiring R] [Semiring 
     (h : (a : A) = algebraMap R A c) (N : Submodule R M) : a • N = c • N := by
   ext x
   simp only [mem_smul_pointwise_iff_exists, Units.smul_def, h, algebraMap_smul]
+
+/-- If `a` is the image in `Aˣ` of `c : R`, the translates `aⁿ N` of a submodule `N` shrink as the
+exponent `n` grows: `a ^ n • N ≤ a ^ m • N` for `m ≤ n`. -/
+theorem zpow_smul_le_zpow_smul {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] {a : Aˣ} {c : R}
+    (h : (a : A) = algebraMap R A c) {m n : ℤ} (hmn : m ≤ n) (N : Submodule R M) :
+    a ^ n • N ≤ a ^ m • N := by
+  obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (sub_nonneg.2 hmn)
+  rw [show n = m + k by omega, zpow_add, mul_smul, zpow_natCast]
+  refine pointwise_smul_le_pointwise_smul_iff.2 ?_
+  rw [units_smul_eq_smul_of_val_eq (c := c ^ k) (by rw [Units.val_pow_eq_pow_val, h, map_pow])]
+  exact N.smul_le_self_of_tower _
 
 variable {A : Type*} [CommRing A] {M : Type*} [AddCommMonoid M] [Module A M]
 

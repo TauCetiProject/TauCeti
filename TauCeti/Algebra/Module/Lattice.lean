@@ -81,8 +81,6 @@ of `L`.
   multiplies submodules as a uniformizer does.
 * `Submodule.exists_units_maximalIdeal_smul_eq`: over a discrete valuation ring, some uniformizer,
   viewed as a nonzero scalar of the fraction field, multiplies every submodule as `𝔪` does.
-* `Submodule.zpow_smul_le_zpow_smul`: translates of a submodule by powers of the image of a ring
-  element shrink as the exponent grows.
 * `Submodule.exists_smul_eq_zpow_smul`: over a discrete valuation ring, every nonzero scalar of
   the fraction field translates submodules as a power of a uniformizer does.
 * `Submodule.smul_eq_self_of_maximalIdeal_smul_lt`: a homothety placing a submodule `M` between
@@ -803,18 +801,6 @@ theorem _root_.Submodule.exists_units_maximalIdeal_smul_eq :
     (map_ne_zero_iff _ (IsFractionRing.injective R K)).2 hϖ.ne_zero
   exact ⟨ϖ, Units.mk0 _ hϖ0, hϖ, rfl,
     Submodule.maximalIdeal_smul_eq_units_smul hϖ (Units.val_mk0 hϖ0)⟩
-
-omit [IsDomain R] [IsFractionRing R K] [IsDiscreteValuationRing R] in
-/-- If `π` is the image in `Kˣ` of `ϖ : R`, the translates `πⁿ N` of a submodule `N` shrink as the
-exponent `n` grows: `π ^ n • N ≤ π ^ m • N` for `m ≤ n`. -/
-theorem _root_.Submodule.zpow_smul_le_zpow_smul {ϖ : R} {π : Kˣ} (hπ : (π : K) = algebraMap R K ϖ)
-    {m n : ℤ} (h : m ≤ n) (N : Submodule R V') : π ^ n • N ≤ π ^ m • N := by
-  obtain ⟨k, hk⟩ := Int.eq_ofNat_of_zero_le (sub_nonneg.2 h)
-  rw [show n = m + k by omega, zpow_add, mul_smul, zpow_natCast]
-  refine Submodule.pointwise_smul_le_pointwise_smul_iff.2 ?_
-  rw [Submodule.units_smul_eq_smul_of_val_eq (c := ϖ ^ k)
-    (by rw [Units.val_pow_eq_pow_val, hπ, map_pow])]
-  exact N.smul_le_self_of_tower _
 
 /-- On submodules over a discrete valuation ring, every nonzero scalar of its fraction field acts
 as an integral power of a uniformizer, since it is a unit of the ring times such a power. -/
