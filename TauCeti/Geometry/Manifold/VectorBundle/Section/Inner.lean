@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.VectorBundle.Riemannian
+public import TauCeti.Analysis.InnerProductSpace.Complex
+public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
@@ -21,7 +23,11 @@ Let `V` be a real vector bundle over a manifold `M` whose fibres carry inner pro
 support, so does this function, and for a continuous Riemannian bundle it is continuous, hence
 integrable for every measure that is finite on compact sets. For a `C^n` Riemannian bundle, pairing
 with a fixed `C^n` section `τ` is a map `t ↦ ⟪t, τ⟫` from `C^n` sections to `C^n` functions, linear
-over `C^n(M)` (`ContMDiffSection.innerSection`).
+over `C^n(M)` (`ContMDiffSection.innerSection`). If `V` is a complex bundle, the complex-linear
+extension `⟪s x, r x⟫_ℂ = ⟪s x, r x⟫ - i ⟪s x, i r x⟫` of `⟪s x, ·⟫` is a complex-valued `C^n`
+function (`ContMDiffSection.complexInner`), complex-linear in `r`
+(`ContMDiffSection.complexInnerSection`); when multiplication by `i` preserves the inner products,
+it is the Hermitian metric whose real part they are.
 
 For a locally finite measure that is positive on open sets of a Hausdorff σ-compact manifold, the
 pairing `∫ ⟪s, u⟫ dμ` with compactly supported smooth sections `s` separates smooth sections
@@ -31,6 +37,8 @@ supported smooth functions `φ` shows that the continuous function `⟪u, u⟫` 
 ## Main results
 
 * `ContMDiffSection.innerSection`: pairing with a fixed section, linear over the smooth functions.
+* `ContMDiffSection.complexInnerSection`: the complex pairing with a fixed section of a complex
+  bundle, complex-linear.
 * `ContMDiffSection.integrable_inner`: the pointwise inner product of two sections, one of which
   has compact support, is integrable; `ContMDiff.integrable_inner_bundle` is its form for sections
   given as functions.
@@ -136,5 +144,57 @@ theorem eq_zero_of_forall_integral_inner_eq_zero [MeasurableSpace M] [FiniteDime
     simp only [ψ, ContMDiffMap.coeFn_mk]
   have hu := (hcont.ae_eq_iff_eq μ continuous_const).1 hae
   exact ext fun x ↦ inner_self_eq_zero.1 (congr_fun hu x)
+
+end ContMDiffSection
+
+/-! ### The complex pairing of sections of complex bundles -/
+
+namespace ContMDiffSection
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)] [∀ x, Module ℂ (V x)]
+  [∀ x, IsScalarTower ℝ ℂ (V x)] [FiberBundle F V] [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+  {n : ℕ∞ω} [IsContMDiffRiemannianBundle I n F V]
+
+/-- The complex pairing `x ↦ ⟪s x, r x⟫_ℂ = ⟪s x, r x⟫ - i ⟪s x, i r x⟫` of two `C^n` sections of
+a complex bundle whose fibres carry real inner products, the complex-linear extension of
+`⟪s x, ·⟫` (`Module.Dual.extendRCLike`), as a complex-valued `C^n` function. When multiplication
+by `i` preserves the inner products, it is the Hermitian metric whose real part they are
+(`TauCeti.extendRCLike_innerₗ_smul_left`, `TauCeti.conj_extendRCLike_innerₗ`). -/
+noncomputable def complexInner (s r : Cₛ^n⟮I; F, V⟯) : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ :=
+  ⟨fun x ↦ Module.Dual.extendRCLike (𝕜 := ℂ) (innerₗ _ (s x)) (r x), by
+    have h₁ := s.contMDiff.inner_bundle r.contMDiff
+    have h₂ := s.contMDiff.inner_bundle (Complex.I • r).contMDiff
+    refine ((Complex.ofRealCLM.contMDiff.comp h₁).sub
+      ((contMDiff_const (c := Complex.I)).mul (Complex.ofRealCLM.contMDiff.comp h₂))).congr
+      fun x ↦ ?_
+    simp [TauCeti.extendRCLike_innerₗ_apply]⟩
+
+@[simp]
+theorem complexInner_apply (s r : Cₛ^n⟮I; F, V⟯) (x : M) :
+    complexInner s r x = Module.Dual.extendRCLike (𝕜 := ℂ) (innerₗ _ (s x)) (r x) :=
+  (rfl)
+
+/-- Pairing with a fixed `C^n` section `s` of a complex bundle, `r ↦ (x ↦ ⟪s x, r x⟫_ℂ)`
+(`ContMDiffSection.complexInner`), as a complex-linear map from `C^n` sections to complex-valued
+`C^n` functions. -/
+noncomputable def complexInnerSection (s : Cₛ^n⟮I; F, V⟯) :
+    Cₛ^n⟮I; F, V⟯ →ₗ[ℂ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ where
+  toFun := complexInner s
+  map_add' r r' := by
+    ext x
+    simp
+  map_smul' c r := by
+    ext x
+    simp [ContMDiffMap.complex_smul_apply]
+
+@[simp]
+theorem complexInnerSection_apply (s r : Cₛ^n⟮I; F, V⟯) (x : M) :
+    complexInnerSection s r x = Module.Dual.extendRCLike (𝕜 := ℂ) (innerₗ _ (s x)) (r x) :=
+  (rfl)
 
 end ContMDiffSection
