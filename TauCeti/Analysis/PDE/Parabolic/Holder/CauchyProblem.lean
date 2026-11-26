@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Backward
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Schauder
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.Analysis.PDE.Ellipticity.Basic
 
@@ -115,24 +116,9 @@ private theorem lineMap_heatCoeff_ellipticity
         (Matrix.of fun i j ↦ AffineMap.lineMap heatCoeff a s i j p).toQuadraticForm' ξ ∧
       (Matrix.of fun i j ↦ AffineMap.lineMap heatCoeff a s i j p).toQuadraticForm' ξ ≤
         max 1 Lam * ‖ξ‖ ^ 2 := by
-  simp only [of_lineMap_heatCoeff_apply, Matrix.toQuadraticForm'_add,
-    Matrix.toQuadraticForm'_smul, _root_.add_apply, _root_.smul_apply,
-    PDE.toQuadraticForm'_one, smul_eq_mul]
-  have h₁ := ha p ξ
-  have h₂ := ha' p ξ
-  have hξ := sq_nonneg ‖ξ‖
-  have hs₀ : 0 ≤ 1 - s := sub_nonneg.2 hs.2
-  constructor
-  · have hm₁ : min 1 lam * ‖ξ‖ ^ 2 ≤ ‖ξ‖ ^ 2 :=
-      mul_le_of_le_one_left hξ (min_le_left _ _)
-    have hm₂ : min 1 lam * ‖ξ‖ ^ 2 ≤ lam * ‖ξ‖ ^ 2 :=
-      mul_le_mul_of_nonneg_right (min_le_right _ _) hξ
-    nlinarith [mul_le_mul_of_nonneg_left hm₁ hs₀, mul_le_mul_of_nonneg_left (hm₂.trans h₁) hs.1]
-  · have hM₁ : ‖ξ‖ ^ 2 ≤ max 1 Lam * ‖ξ‖ ^ 2 :=
-      le_mul_of_one_le_left hξ (le_max_left _ _)
-    have hM₂ : Lam * ‖ξ‖ ^ 2 ≤ max 1 Lam * ‖ξ‖ ^ 2 :=
-      mul_le_mul_of_nonneg_right (le_max_right _ _) hξ
-    nlinarith [mul_le_mul_of_nonneg_left hM₁ hs₀, mul_le_mul_of_nonneg_left (h₂.trans hM₂) hs.1]
+  rw [of_lineMap_heatCoeff_apply, ← AffineMap.lineMap_apply_module]
+  exact ⟨Matrix.min_one_mul_norm_sq_le_toQuadraticForm'_lineMap hs (ha p ξ),
+    Matrix.toQuadraticForm'_lineMap_le_max_one_mul_norm_sq hs (ha' p ξ)⟩
 
 /-- The segment of initial-data operators from the heat operator to `P` is the initial-data
 operator of the segment of coefficients. -/

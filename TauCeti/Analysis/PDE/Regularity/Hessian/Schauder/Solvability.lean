@@ -51,8 +51,8 @@ solvability of the Dirichlet problem for `L` in `C^{2,α}(Ω)`.
   on the whole space (`TauCeti.CkHolderSpaceOn.exists_contDiff_eq`, the extension lemma for
   `C^{2,α}` domains), and `w` vanishes on `∂Ω`, where it is the limit of `u`. The coefficients
   extend from `Ω` to `α`-Hölder functions on `closure Ω` with the same norms
-  (`TauCeti.HolderSpace.exists_holderOnWith_closure`), and ellipticity passes to `closure Ω` by
-  continuity. The global Schauder estimate with the maximum principle
+  (`TauCeti.HolderSpace.exists_holderOnWith_closure_and_norm_le`), and ellipticity passes to
+  `closure Ω` by continuity. The global Schauder estimate with the maximum principle
   (`exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_add_fderiv_add_mul_of_nonpos`, in
   the `TauCeti.PDE` namespace) then bounds `|w|`, `‖Dw‖`, `‖D²w‖` and the Hölder constant of `D²w`
   on `closure Ω` by a multiple of the `C^{0,α}(Ω)` norm of `L u`, with a constant depending only on
@@ -85,21 +85,6 @@ open scoped NNReal
 
 variable {n : ℕ} {α : ℝ≥0} {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {E' : Type*}
   [NormedAddCommGroup E'] [NormedSpace ℝ E']
-
-/-- An element of `C^{0,α}(Ω)`, `α > 0`, agrees on `Ω` with a function on `ℝ^{n+1}` that is
-`α`-Hölder on `closure Ω` with constant its norm and bounded there by its norm. -/
-private theorem exists_holderOnWith_closure_and_abs_le (hα₀ : 0 < α) (f : HolderSpace α Ω ℝ) :
-    ∃ g : EuclideanSpace ℝ (Fin (n + 1)) → ℝ, (∀ z (hz : z ∈ Ω), g z = f ⟨z, hz⟩) ∧
-      HolderOnWith ‖f‖₊ α g (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) ∧
-      ∀ z ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), |g z| ≤ ‖f‖ := by
-  obtain ⟨g, hg, hgH⟩ := HolderSpace.exists_holderOnWith_closure
-    (s := (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) hα₀ f
-  refine ⟨g, fun z hz ↦ hg ⟨z, hz⟩, hgH, fun z hz ↦ ?_⟩
-  -- The bound passes from `Ω` to its closure by continuity.
-  refine le_on_closure (f := fun z ↦ |g z|) (g := fun _ ↦ ‖f‖) (fun y hy ↦ ?_)
-    (hgH.continuousOn hα₀).abs continuousOn_const hz
-  rw [hg ⟨y, hy⟩]
-  exact HolderSpace.abs_apply_le_norm f _
 
 /-- An element `u` of `C^{2,α}(Ω)` vanishing on `∂Ω`, for a bounded `Ω` with `C^{2,α}` boundary and
 `α > 0`, is the restriction of a function `w` that is `C²` on the whole space, vanishes on `∂Ω`, and
@@ -149,45 +134,6 @@ private theorem mul_norm_sq_le_toQuadraticForm'_of_mem_closure
     (continuous_id.matrix_mulVec continuous_const)).comp_continuousOn
       (continuousOn_pi.2 fun i ↦ continuousOn_pi.2 fun j ↦ hA i j)
 
-/-- An element `u` of `C^{2,α}(Ω)` agreeing on `Ω` with a function `w` whose value, first and second
-derivatives are bounded by `N` on `Ω`, and whose second derivative is `α`-Hölder on `Ω` with
-constant `N`, has norm at most `4 N`. -/
-private theorem norm_le_of_forall_norm_iteratedFDeriv_le {u : CkHolderSpaceOn 2 α Ω ℝ}
-    {w : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hwu : ∀ x : Ω, w x = u x) {N : ℝ≥0}
-    (h0 : ∀ x : Ω, |w x| ≤ N) (h1 : ∀ x : Ω, ‖fderiv ℝ w x‖ ≤ N)
-    (h2 : ∀ x : Ω, ‖_root_.iteratedFDeriv ℝ 2 w x‖ ≤ N)
-    (hH : HolderOnWith N α (_root_.iteratedFDeriv ℝ 2 w) Ω) : ‖u‖ ≤ 4 * N := by
-  have he : (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))).domRestrict (_root_.iteratedFDeriv ℝ 2 w) =
-      (u.iteratedFDeriv (Fin.last 2) : Ω → EuclideanSpace ℝ (Fin (n + 1)) [×2]→L[ℝ] ℝ) :=
-    funext fun x ↦ u.iteratedFDeriv_eq hwu (Fin.last 2) x
-  have h := hH.holderWith
-  rw [he] at h
-  refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith (M := fun _ ↦ (N : ℝ))
-    (fun _ ↦ N.property) (fun i x ↦ ?_) h).trans_eq ?_
-  · rw [← u.iteratedFDeriv_eq hwu i x]
-    fin_cases i
-    · simpa [_root_.norm_iteratedFDeriv_zero] using h0 x
-    · simpa [norm_iteratedFDeriv_one] using h1 x
-    · exact h2 x
-  · simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-    push_cast
-    ring
-
-/-- A drift `∑ᵢ bⁱ eᵢ` whose components are `α`-Hölder on `s` with constants `Cᵢ` and bounded there
-by `Cᵢ` is `α`-Hölder on `s` with constant `∑ᵢ Cᵢ` and bounded there by `∑ᵢ Cᵢ`. -/
-private theorem holderOnWith_sum_smul_single_and_norm_le {s : Set (EuclideanSpace ℝ (Fin (n + 1)))}
-    {Bc : Fin (n + 1) → EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {C : Fin (n + 1) → ℝ≥0}
-    (hH : ∀ i, HolderOnWith (C i) α (Bc i) s) (hB : ∀ i, ∀ z ∈ s, |Bc i z| ≤ C i) :
-    HolderOnWith (∑ i, C i) α (fun z ↦ ∑ i, Bc i z • EuclideanSpace.single i (1 : ℝ)) s ∧
-      ∀ z ∈ s, ‖∑ i, Bc i z • EuclideanSpace.single i (1 : ℝ)‖ ≤ ∑ i, (C i : ℝ) := by
-  refine ⟨HolderOnWith.sum (s := Finset.univ) fun i _ ↦ HolderOnWith.of_dist_le
-    (f := fun z ↦ Bc i z • EuclideanSpace.single i (1 : ℝ)) fun x hx y hy ↦ ?_,
-    fun z hz ↦ (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ ?_)⟩
-  · rw [dist_eq_norm, ← sub_smul, norm_smul, PiLp.norm_single, norm_one, mul_one, ← dist_eq_norm]
-    exact (hH i).dist_le hx hy
-  · rw [norm_smul, PiLp.norm_single, norm_one, mul_one, Real.norm_eq_abs]
-    exact hB i z hz
-
 variable (hΩ : (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))).IsLipschitzDomain E')
   (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))
 
@@ -215,17 +161,20 @@ theorem exists_norm_le_mul_norm_nonDivergenceOperatorL (hα₀ : 0 < α) (hα₁
       hα₀ hα₁ hb hbdry (∑ _i : Fin (n + 1), ∑ _j : Fin (n + 1), (K : ℝ)) K K B hlam
   refine ⟨8 * C, by positivity, fun a b c ha hak hbk hck hc u hu ↦ ?_⟩
   -- The coefficients, extended to `α`-Hölder functions on `closure Ω`.
-  choose A hAeq hAH hAbd using fun i j ↦ exists_holderOnWith_closure_and_abs_le hα₀ (a i j)
-  choose Bc hBeq hBH hBbd using fun i ↦ exists_holderOnWith_closure_and_abs_le hα₀ (b i)
-  obtain ⟨Cc, hCeq, hCH, hCbd⟩ := exists_holderOnWith_closure_and_abs_le hα₀ c
+  have hext (f : HolderSpace α Ω ℝ) := HolderSpace.exists_holderOnWith_closure_and_norm_le
+    (s := (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) hα₀ f
+  choose A hAeq hAH hAbd using fun i j ↦ hext (a i j)
+  choose Bc hBeq hBH hBbd using fun i ↦ hext (b i)
+  obtain ⟨Cc, hCeq, hCH, hCbd⟩ := hext c
   have hAK (i j) {z} (hz : z ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :
-      |A i j z| ≤ K := (hAbd i j z hz).trans (hak i j)
+      |A i j z| ≤ K := ((Real.norm_eq_abs _).symm.trans_le (hAbd i j z hz)).trans (hak i j)
   -- The drift as a vector field, `α`-Hölder on `Ω` and bounded there by `B`.
-  set bv : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) :=
-    fun z ↦ ∑ i, Bc i z • EuclideanSpace.single i (1 : ℝ)
-  obtain ⟨hbvH, hbvB⟩ := holderOnWith_sum_smul_single_and_norm_le (C := fun _ ↦ K)
-    (fun i ↦ ((hBH i).mono subset_closure).mono_const (by exact_mod_cast hbk i))
-    (fun i z hz ↦ (hBbd i z (subset_closure hz)).trans (hbk i))
+  set bv := fun z ↦ ∑ i, Bc i z • EuclideanSpace.single i (1 : ℝ)
+  have hbvH : HolderOnWith B α bv Ω := (HolderOnWith.sum (s := Finset.univ) fun i _ ↦
+    (((hBH i).mono subset_closure).mono_const (by exact_mod_cast hbk i)).smul_const
+      (EuclideanSpace.single i (1 : ℝ))).mono_const (by simp [B])
+  have hbvB (z) (hz : z ∈ Ω) : ‖bv z‖ ≤ B := (norm_sum_le_of_le (n := fun _ ↦ (K : ℝ)) _ fun i _ ↦
+    by simpa [norm_smul] using (hBbd i z (subset_closure hz)).trans (hbk i)).trans_eq (by simp [B])
   obtain ⟨w, hw, hwu, hw0, V, hwH⟩ := exists_contDiff_eq_and_holderOnWith_closure hα₀ hbdry hb hu
   -- On `Ω` the operator of the global estimate is `L u`.
   have hLu (z) (hz : z ∈ Ω) :
@@ -233,30 +182,28 @@ theorem exists_norm_le_mul_norm_nonDivergenceOperatorL (hα₀ : 0 < α) (hα₁
           (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) + fderiv ℝ w z (bv z) +
         Cc z * w z = nonDivergenceOperatorL hΩ hb hα₁.le a b c u ⟨z, hz⟩ := by
     rw [nonDivergenceOperatorL_apply hΩ hb hα₁.le u hwu]
-    simp only [Matrix.of_apply, hAeq _ _ z hz, hCeq z hz, bv, map_sum, map_smul, smul_eq_mul,
-      hBeq _ z hz]
+    simp [hAeq _ _ ⟨z, hz⟩, hCeq ⟨z, hz⟩, bv, hBeq _ ⟨z, hz⟩]
   obtain ⟨h0, h2, h1, h2'⟩ := hC (a := fun z ↦ Matrix.of fun i j ↦ A i j z) (b := bv) (c := Cc)
-    (fun z hz ↦ mul_norm_sq_le_toQuadraticForm'_of_mem_closure hAeq
+    (fun z hz ↦ mul_norm_sq_le_toQuadraticForm'_of_mem_closure (fun i j z hz ↦ hAeq i j ⟨z, hz⟩)
       (fun i j ↦ (hAH i j).continuousOn hα₀) ha hz)
     (fun z hz ξ ↦ Matrix.toQuadraticForm'_le_of_forall_abs_le (fun i j ↦ hAK i j hz) ξ)
     (fun i j ↦ (hAH i j).mono_const (by exact_mod_cast hak i j)) (fun z hz i j ↦ hAK i j hz)
-    (hbvH.mono_const (by simp [B])) (fun z hz ↦ (hbvB z hz).trans_eq (by simp [B]))
+    hbvH hbvB
     (((hCH.mono subset_closure).mono_const (by exact_mod_cast hck)).mono_const hKB)
-    (fun z hz ↦ ((hCbd z (subset_closure hz)).trans hck).trans (by exact_mod_cast hKB))
-    (fun z hz ↦ hCeq z hz ▸ hc ⟨z, hz⟩) isOpen_univ (subset_univ _) hw.contDiffOn hw0 hwH
+    (fun z hz ↦ by simpa using ((hCbd z (subset_closure hz)).trans hck).trans (mod_cast hKB))
+    (fun z hz ↦ hCeq ⟨z, hz⟩ ▸ hc ⟨z, hz⟩) isOpen_univ (subset_univ _) hw.contDiffOn hw0 hwH
     (K := ‖nonDivergenceOperatorL hΩ hb hα₁.le a b c u‖₊)
     (F := ‖nonDivergenceOperatorL hΩ hb hα₁.le a b c u‖₊)
     (HolderSpace.holderOnWith_of_apply_eq (s := (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))
       (nonDivergenceOperatorL hΩ hb hα₁.le a b c u) fun x ↦ (hLu x.val x.property).symm)
     (fun z hz ↦ (hLu z hz).symm ▸ HolderSpace.abs_apply_le_norm _ _)
   -- Read the norm of `u` off the bounds on `w` and its derivatives.
-  refine (norm_le_of_forall_norm_iteratedFDeriv_le hwu
-    (fun x ↦ (h0 x (subset_closure x.property)).trans ?_)
-    (fun x ↦ by exact_mod_cast h1 x (subset_closure x.property))
-    (fun x ↦ by exact_mod_cast h2' x (subset_closure x.property))
+  refine (norm_le_of_forall_norm_iteratedFDeriv_le hwu (fun i hi x ↦ ?_)
     (h2.mono subset_closure)).trans_eq (by push_cast; ring)
-  push_cast
-  exact mul_le_mul_of_nonneg_left (le_add_of_nonneg_left (norm_nonneg _)) C.property
+  interval_cases i
+  · simpa using (h0 x (subset_closure x.property)).trans (by push_cast; gcongr; simp)
+  · simpa [norm_iteratedFDeriv_one] using h1 x (subset_closure x.property)
+  · exact_mod_cast h2' x (subset_closure x.property)
 
 /-! ### The method of continuity -/
 

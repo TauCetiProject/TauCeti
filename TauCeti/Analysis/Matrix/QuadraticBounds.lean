@@ -24,8 +24,9 @@ a one-dimensional index type with `A default default * ‖ξ‖²`, while
 `Matrix.toQuadraticForm'_le_sum_abs_mul_sq` gives the general explicit upper bound
 `A.toQuadraticForm' ξ ≤ (∑ᵢⱼ |Aᵢⱼ|) ‖ξ‖²`, so a bound on the entries of a coefficient field is an
 upper ellipticity bound (`Matrix.toQuadraticForm'_le_of_forall_abs_le`). Along the segment from
-the identity to a matrix with lower bound `λ`, the lower bound `min 1 λ` holds
-(`Matrix.min_one_mul_norm_sq_le_toQuadraticForm'_lineMap`); this is the ellipticity of the
+the identity to a matrix with bounds `λ` and `Λ`, the bounds `min 1 λ` and `max 1 Λ` hold
+(`Matrix.min_one_mul_norm_sq_le_toQuadraticForm'_lineMap` and
+`Matrix.toQuadraticForm'_lineMap_le_max_one_mul_norm_sq`); this is the ellipticity of the
 operators `(1 - t) Δ + t L` of the method of continuity.
 
 The statement is adapted from the
@@ -68,14 +69,30 @@ theorem Matrix.min_one_mul_norm_sq_le_toQuadraticForm'_lineMap {ι : Type*} [Fin
     [DecidableEq ι] {A : Matrix ι ι ℝ} {lam s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1)
     {ξ : EuclideanSpace ℝ ι} (hA : lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) :
     min 1 lam * ‖ξ‖ ^ 2 ≤ (AffineMap.lineMap (1 : Matrix ι ι ℝ) A s).toQuadraticForm' ξ := by
-  rw [AffineMap.lineMap_apply_module, Matrix.toQuadraticForm'_add, Matrix.toQuadraticForm'_smul,
+  simp only [AffineMap.lineMap_apply_module, Matrix.toQuadraticForm'_add,
     Matrix.toQuadraticForm'_smul, _root_.add_apply, _root_.smul_apply,
-    _root_.smul_apply, TauCeti.PDE.toQuadraticForm'_one, smul_eq_mul, smul_eq_mul]
+    TauCeti.PDE.toQuadraticForm'_one, smul_eq_mul]
   have hξ := sq_nonneg ‖ξ‖
   have hm₁ : min 1 lam * ‖ξ‖ ^ 2 ≤ ‖ξ‖ ^ 2 := mul_le_of_le_one_left hξ (min_le_left _ _)
   have hm₂ : min 1 lam * ‖ξ‖ ^ 2 ≤ lam * ‖ξ‖ ^ 2 := mul_le_mul_of_nonneg_right (min_le_right _ _) hξ
   nlinarith [mul_le_mul_of_nonneg_left hm₁ (sub_nonneg.2 hs.2),
     mul_le_mul_of_nonneg_left (hm₂.trans hA) hs.1]
+
+/-- An upper quadratic bound `ξᵀ A ξ ≤ Λ ‖ξ‖²` gives the upper bound `max 1 Λ ‖ξ‖²` at every point
+`(1 - s) 1 + s A`, `s ∈ [0, 1]`, of the segment from the identity matrix to `A`. -/
+theorem Matrix.toQuadraticForm'_lineMap_le_max_one_mul_norm_sq {ι : Type*} [Fintype ι]
+    [DecidableEq ι] {A : Matrix ι ι ℝ} {Lam s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1)
+    {ξ : EuclideanSpace ℝ ι} (hA : A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) :
+    (AffineMap.lineMap (1 : Matrix ι ι ℝ) A s).toQuadraticForm' ξ ≤ max 1 Lam * ‖ξ‖ ^ 2 := by
+  simp only [AffineMap.lineMap_apply_module, Matrix.toQuadraticForm'_add,
+    Matrix.toQuadraticForm'_smul, _root_.add_apply, _root_.smul_apply,
+    TauCeti.PDE.toQuadraticForm'_one, smul_eq_mul]
+  have hξ := sq_nonneg ‖ξ‖
+  have hM₁ : ‖ξ‖ ^ 2 ≤ max 1 Lam * ‖ξ‖ ^ 2 := le_mul_of_one_le_left hξ (le_max_left _ _)
+  have hM₂ : Lam * ‖ξ‖ ^ 2 ≤ max 1 Lam * ‖ξ‖ ^ 2 :=
+    mul_le_mul_of_nonneg_right (le_max_right _ _) hξ
+  nlinarith [mul_le_mul_of_nonneg_left hM₁ (sub_nonneg.2 hs.2),
+    mul_le_mul_of_nonneg_left (hA.trans hM₂) hs.1]
 
 namespace TauCeti
 
