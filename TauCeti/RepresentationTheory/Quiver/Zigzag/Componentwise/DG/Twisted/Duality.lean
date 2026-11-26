@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.Algebra.Homology.ShortComplex.PerfectPairing
 public import TauCeti.CategoryTheory.DG.GradedHomology
+public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.TracePairing
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Componentwise.DG.Twisted.Trace
 
@@ -18,8 +19,8 @@ For a finite simple graph `G` and `X : TauCeti.ZigzagProjectiveTwistedClosure k 
 presentation `(v, hv)`, composing in degrees `(d, 2 - d)` and applying `trace` defines
 `dgHomPairing`, which is perfect over any commutative ring `k` for unit weights `c : V → kˣ`
 (`dgHomPairing_isPerfPair`). Opposite weights across edges in `X` descend `dgHomPairing` to
-`homologyPairing`, perfect over self-injective rings and fields, giving unconditional bipartite
-all-object 2-Calabi–Yau Serre duality `bipartiteHomologyDuality`.
+`homologyPairing`, perfect over self-injective rings (`Module.Baer k k`) and fields, giving
+bipartite all-object 2-Calabi–Yau Serre duality `bipartiteHomologyDuality`.
 
 ## References
 
@@ -47,24 +48,6 @@ section CommRing
 
 variable [CommRing k]
 
-private def homCongr {C : Type*} [DGCategory k C] {M M' N N' : C} (hM : M = M') (hN : N = N')
-    (n : ℤ) : DGHom k n M N ≃ₗ[k] DGHom k n M' N' :=
-  let e := eqToIso (congrArg₂ (fun A B ↦ (dgHomComplex k A B).X n) hM hN)
-  { toFun := e.hom.hom, invFun := e.inv.hom, map_add' := map_add _, map_smul' := map_smul _
-    left_inv _ := by subst M' N'; rfl, right_inv _ := by subst M' N'; rfl }
-
-private theorem homCongr_comp {C : Type*} [DGCategory k C] {M M' N N' P P' : C}
-    (hM : M = M') (hN : N = N') (hP : P = P') {p q n : ℤ}
-    (f : DGHom k p M N) (g : DGHom k q N P) (h : p + q = n) :
-    homCongr k hM hP n (dgComp k f g h) =
-      dgComp k (homCongr k hM hN p f) (homCongr k hN hP q g) h := by subst M' N' P'; rfl
-
-private def piSwap {α β : Type*} (M : α → β → Type*)
-    [∀ a b, AddCommMonoid (M a b)] [∀ a b, Module k (M a b)] :
-    (∀ b a, M a b) ≃ₗ[k] (∀ a b, M a b) :=
-  { toFun g a b := g b a, invFun g b a := g a b, map_add' _ _ := rfl, map_smul' _ _ := rfl
-    left_inv _ := rfl, right_inv _ := rfl }
-
 /-- The chain-level composition-supertrace pairing between complementary degrees `d` and `2 - d`
 in `ZigzagProjectiveTwistedClosure k G`, depending on a vertex presentation `(v, hv)` of `X`. -/
 def dgHomPairing (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
@@ -75,8 +58,7 @@ def dgHomPairing (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
     (fun _ _ _ ↦ by rw [dgComp_add, map_add]) (fun _ _ _ ↦ by rw [dgComp_smul, map_smul])
 
 /-- `dgHomPairing` evaluates the degree-two supertrace of `X` on the enriched composite `dgComp`. -/
-@[simp]
-theorem dgHomPairing_apply (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
+@[simp] theorem dgHomPairing_apply (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
     (v : X.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i)) (d : ℤ)
     (f : DGHom k d X Y) (g : DGHom k (2 - d) Y X) :
     dgHomPairing k G c X Y v hv d f g = trace k G c X v hv (dgComp k f g (add_sub_cancel d 2)) :=
@@ -91,21 +73,12 @@ theorem dgHomPairing_flip (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k 
       (d * (2 - d)).negOnePow • trace k G c Y w hw (dgComp k g f (sub_add_cancel 2 d)) :=
   trace_comp k G c X Y v w hv hw hc d f g
 
-private def leftEntryEquiv {X Y : ZigzagProjectiveTwistedClosure k G}
-    (v : X.obj.ι → V) (w : Y.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
-    (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (d : ℤ) (i : X.obj.ι) (j : Y.obj.ι) :
-    DGHom k d (X.obj.X i) (Y.obj.X j) ≃ₗ[k]
-      DGHom k (d + ((Y.obj.X j).shift - (X.obj.X i).shift)) (D (v i)) (D (w j)) :=
-  (DGShiftClosure.dgHomEquiv k (X.obj.X i) (Y.obj.X j) d).trans
-    (homCongr k (hv i) (hw j) (d + ((Y.obj.X j).shift - (X.obj.X i).shift)))
-
 private def rightEntryEquiv {X Y : ZigzagProjectiveTwistedClosure k G}
     (v : X.obj.ι → V) (w : Y.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
     (hw : ∀ j, (Y.obj.X j).obj.obj = D (w j)) (d : ℤ) (i : X.obj.ι) (j : Y.obj.ι) :
     DGHom k (2 - d) (Y.obj.X j) (X.obj.X i) ≃ₗ[k]
       DGHom k (2 - (d + ((Y.obj.X j).shift - (X.obj.X i).shift))) (D (w j)) (D (v i)) :=
-  ((DGShiftClosure.dgHomEquiv k (Y.obj.X j) (X.obj.X i) (2 - d)).trans
-    (homCongr k (hw j) (hv i) ((2 - d) + ((X.obj.X i).shift - (Y.obj.X j).shift)))).trans
+  (entryHomEquiv k G (Y.obj.X j) (X.obj.X i) (w j) (v i) (hw j) (hv i) (2 - d)).trans
     ((dgHomComplex k (D (w j)) (D (v i))).XIsoOfEq (by omega)).toLinearEquiv
 
 private def diagTerm (c : V → kˣ) (X : ZigzagProjectiveTwistedClosure k G)
@@ -114,8 +87,18 @@ private def diagTerm (c : V → kˣ) (X : ZigzagProjectiveTwistedClosure k G)
   (X.obj.X i).shift.negOnePow • (c (v i) : k) •
     (zigzagAlgebraTrace k G).comp ((Submodule.subtype _).comp
       ((E (v i) (v i) 2).toLinearMap.comp ((castDeg k (by omega)).comp
-        ((homCongr k (hv i) (hv i) (2 + ((X.obj.X i).shift - (X.obj.X i).shift))).toLinearMap.comp
-          (DGShiftClosure.dgHomEquiv k (X.obj.X i) (X.obj.X i) 2).toLinearMap))))
+        (entryHomEquiv k G (X.obj.X i) (X.obj.X i) (v i) (v i) (hv i) (hv i) 2).toLinearMap)))
+
+private theorem diagTerm_apply (c : V → kˣ) (X : ZigzagProjectiveTwistedClosure k G)
+    (v : X.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i)) (i : X.obj.ι)
+    (h : DGHom k 2 (X.obj.X i) (X.obj.X i)) :
+    (X.obj.X i).shift.negOnePow • ((c (v i) : k) * zigzagAlgebraTrace k G
+      (E (v i) (v i) 2 (castDeg k (by omega)
+        ((eqToIso (congrArg₂ (fun A B ↦ (dgHomComplex k A B).X
+          (2 + ((X.obj.X i).shift - (X.obj.X i).shift))) (hv i) (hv i))).hom.hom
+          (DGShiftClosure.dgHomEquiv k (X.obj.X i) (X.obj.X i) 2 h))) :
+        AlgCat.carrier (zigzagAlgebra k G))) = diagTerm k G c X v hv i h := by
+  simp [diagTerm, entryHomEquiv_apply, dgHomCongr_def]
 
 private theorem diagTerm_dgComp (c : V → kˣ) {X Y : ZigzagProjectiveTwistedClosure k G}
     (v : X.obj.ι → V) (w : Y.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
@@ -127,32 +110,29 @@ private theorem diagTerm_dgComp (c : V → kˣ) {X Y : ZigzagProjectiveTwistedCl
           (d + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow) •
         zigzagAlgebraProjectiveDGHomWeightedTracePairing k G c (v i) (w j)
           (d + ((Y.obj.X j).shift - (X.obj.X i).shift))
-          (leftEntryEquiv k G v w hv hw d i j f) (rightEntryEquiv k G v w hv hw d i j g) := by
+          (entryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) d f)
+          (rightEntryEquiv k G v w hv hw d i j g) := by
+  let dij := d + ((Y.obj.X j).shift - (X.obj.X i).shift)
+  let f' := entryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) d f
+  let g' := rightEntryEquiv k G v w hv hw d i j g
   have hentry : castDeg k (by omega)
-      (homCongr k (hv i) (hv i) (2 + ((X.obj.X i).shift - (X.obj.X i).shift))
-        (DGShiftClosure.dgHomEquiv k (X.obj.X i) (X.obj.X i) 2
-          (dgComp k f g (add_sub_cancel d 2)))) =
-      (((X.obj.X i).shift - (Y.obj.X j).shift) *
-        (d + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow •
-        dgComp k (leftEntryEquiv k G v w hv hw d i j f)
-          (rightEntryEquiv k G v w hv hw d i j g) (add_sub_cancel _ 2) := by
-    simp only [DGShiftClosure.dgHomEquiv_dgComp, DGFullSubcategory.dgComp_eq, map_zsmul_unit]
-    congr 1; rw [homCongr_comp k (hv i) (hw j) (hv i)]
-    simp only [leftEntryEquiv, rightEntryEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
-      ← castDeg_def]
+      (entryHomEquiv k G (X.obj.X i) (X.obj.X i) (v i) (v i) (hv i) (hv i) 2
+        (dgComp k f g (add_sub_cancel d 2))) =
+      (((X.obj.X i).shift - (Y.obj.X j).shift) * dij).negOnePow •
+        dgComp k f' g' (add_sub_cancel dij 2) := by
+    rw [entryHomEquiv_dgComp k G (X.obj.X i) (Y.obj.X j) (X.obj.X i) (v i) (w j) (v i)
+      (hv i) (hw j) (hv i) f g (add_sub_cancel d 2), map_zsmul_unit]
+    congr 1
+    simp only [g', rightEntryEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, ← castDeg_def]
     rw [dgComp_castDeg k (by omega) (by omega : 2 + ((X.obj.X i).shift - (X.obj.X i).shift) = 2)]
   dsimp only [diagTerm, LinearMap.smul_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
     Submodule.coe_subtype, smul_eq_mul]
   conv_lhs =>
     rw [hentry, map_zsmul_unit, Submodule.coe_smul_of_tower, map_zsmul_unit, mul_smul_comm,
       smul_smul, coe_zigzagAlgebraProjectiveDGHomEquivCornerOfDegree_apply, castDeg_self]
-  exact (congrArg
-    (((X.obj.X i).shift.negOnePow *
-      (((X.obj.X i).shift - (Y.obj.X j).shift) *
-        (d + ((Y.obj.X j).shift - (X.obj.X i).shift))).negOnePow) • ·)
-    (zigzagAlgebraProjectiveDGHomWeightedTracePairing_apply k G c (v i) (w j)
-      (d + ((Y.obj.X j).shift - (X.obj.X i).shift))
-      (leftEntryEquiv k G v w hv hw d i j f) (rightEntryEquiv k G v w hv hw d i j g))).symm
+  exact (congrArg (((X.obj.X i).shift.negOnePow *
+      (((X.obj.X i).shift - (Y.obj.X j).shift) * dij).negOnePow) • ·)
+    (zigzagAlgebraProjectiveDGHomWeightedTracePairing_apply k G c (v i) (w j) dij f' g')).symm
 
 /-- Unit vertex weights make `dgHomPairing` a perfect pairing over any commutative ring `k`. -/
 instance dgHomPairing_isPerfPair (c : V → kˣ) (X Y : ZigzagProjectiveTwistedClosure k G)
@@ -166,25 +146,22 @@ instance dgHomPairing_isPerfPair (c : V → kˣ) (X Y : ZigzagProjectiveTwistedC
   let eL : DGHom k d X Y ≃ₗ[k] ∀ i j, DGHom k (dij i j) (D (v i)) (D (w j)) :=
     ((DGTwistedObject.dgHomEquiv k X Y d).trans
       (DGAdditiveClosure.dgHomEquiv k X.obj Y.obj d)).trans
-      (LinearEquiv.piCongrRight fun i ↦
-        LinearEquiv.piCongrRight fun j ↦ leftEntryEquiv k G v w hv hw d i j)
+      (LinearEquiv.piCongrRight fun i ↦ LinearEquiv.piCongrRight fun j ↦
+        entryHomEquiv k G (X.obj.X i) (Y.obj.X j) (v i) (w j) (hv i) (hw j) d)
   let eR : DGHom k (2 - d) Y X ≃ₗ[k] ∀ i j, DGHom k (2 - dij i j) (D (w j)) (D (v i)) :=
     (((DGTwistedObject.dgHomEquiv k Y X (2 - d)).trans
-      (DGAdditiveClosure.dgHomEquiv k Y.obj X.obj (2 - d))).trans (piSwap k _)).trans
+      (DGAdditiveClosure.dgHomEquiv k Y.obj X.obj (2 - d))).trans (LinearEquiv.piComm k _)).trans
       (LinearEquiv.piCongrRight fun i ↦
         LinearEquiv.piCongrRight fun j ↦ rightEntryEquiv k G v w hv hw d i j)
   let P := LinearMap.piPairing fun i : X.obj.ι ↦ LinearMap.piPairing fun j : Y.obj.ι ↦
     sgn i j • zigzagAlgebraProjectiveDGHomWeightedTracePairing k G c (v i) (w j) (dij i j)
   convert (inferInstance : (P.compl₁₂ eL.toLinearMap eR.toLinearMap).IsPerfPair)
-  ext f g
-  rw [dgHomPairing_apply, trace_apply]
-  simp only [P, eL, eR, piSwap, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe,
-    LinearEquiv.trans_apply, LinearMap.piPairing_apply, LinearEquiv.piCongrRight_apply,
-    LinearEquiv.coe_mk, LinearMap.smul_apply, DGTwistedObject.dgHomEquiv_dgComp,
-    DGAdditiveClosure.dgHomEquiv_dgComp]
+  ext f g; rw [dgHomPairing_apply, trace_apply]
+  simp only [P, eL, eR, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+    LinearMap.piPairing_apply, LinearEquiv.piCongrRight_apply, LinearEquiv.piComm_apply,
+    LinearMap.smul_apply, DGTwistedObject.dgHomEquiv_dgComp, DGAdditiveClosure.dgHomEquiv_dgComp]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  change diagTerm k G c X v hv i (∑ j, _) = _
-  rw [map_sum]
+  rw [diagTerm_apply (hv := hv), map_sum]
   exact Finset.sum_congr rfl fun j _ ↦ diagTerm_dgComp k G c v w hv hw d i j _ _
 
 /-- Under opposite weights across edges in `X`, `dgHomPairing` satisfies the graded Leibniz rule. -/
@@ -202,8 +179,7 @@ theorem dgHomPairing_d (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
   exact hd.symm
 
 /-- `homologyTrace` evaluates on `TauCeti.dgHomologyClass` to the chain-level supertrace `trace`. -/
-@[simp]
-theorem homologyTrace_dgHomologyClass (c : V → k) (X : ZigzagProjectiveTwistedClosure k G)
+@[simp] theorem homologyTrace_dgHomologyClass (c : V → k) (X : ZigzagProjectiveTwistedClosure k G)
     (v : X.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
     (hc : ∀ i j, G.Adj (v i) (v j) → c (v j) = -c (v i))
     (h : DGHom k 2 X X) (hh : dgDifferential k 2 h = 0) :
@@ -213,9 +189,8 @@ theorem homologyTrace_dgHomologyClass (c : V → k) (X : ZigzagProjectiveTwisted
     (dgHomologyClass k h hh)
   obtain ⟨b, hb⟩ := (dgHomologyClass_eq_iff k _ hh).mp
     ((homologyπ_eq_dgHomologyClass k z).symm.trans hz)
-  have hd : (K.d (2 - 1) 2).hom b = dgDifferential k 1 b := rfl
-  rw [← hz, homologyTrace_homologyπ, eq_add_of_sub_eq hb.symm, hd, map_add,
-    trace_dgDifferential k G c X v hv hc, zero_add]
+  rw [← hz, homologyTrace_homologyπ, eq_add_of_sub_eq hb.symm, map_add]
+  exact (congrArg (· + _) (trace_dgDifferential k G c X v hv hc b)).trans (zero_add _)
 
 /-- The descended cohomology pairing induced by `dgHomPairing`. -/
 def homologyPairing (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
@@ -253,9 +228,9 @@ theorem homologyPairing_eq_compr₂_homologyTrace (c : V → k)
     dgHomPairing_apply]
 
 /-- On `TauCeti.dgHomologyClass` representatives, `homologyPairing` evaluates `dgHomPairing`. -/
-@[simp]
-theorem homologyPairing_dgHomologyClass (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)
-    (v : X.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+@[simp] theorem homologyPairing_dgHomologyClass (c : V → k)
+    (X Y : ZigzagProjectiveTwistedClosure k G) (v : X.obj.ι → V)
+    (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
     (hc : ∀ i₁ i₂, G.Adj (v i₁) (v i₂) → c (v i₂) = -c (v i₁)) (d : ℤ)
     (f : DGHom k d X Y) (g : DGHom k (2 - d) Y X)
     (hf : dgDifferential k d f = 0) (hg : dgDifferential k (2 - d) g = 0) :
@@ -275,17 +250,33 @@ theorem isPerfPair_homologyPairing_of_baer (hk : Module.Baer k k) (c : V → kˣ
     (dgHomPairing k G (fun u ↦ (c u : k)) X Y v hv)
     (fun ha f g ↦ dgHomPairing_d k G (fun u ↦ (c u : k)) X Y v hv hc ha f g) d
 
+/-- The Serre duality linear equivalence `Hom^d(X, Y) ≃ₗ[k] Dual(Hom^{2 - d}(Y, X))` over a
+self-injective commutative ring (`Module.Baer k k`). -/
+def homologyDuality (hk : Module.Baer k k) (c : V → kˣ) (X Y : ZigzagProjectiveTwistedClosure k G)
+    (v : X.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (hc : ∀ i₁ i₂, G.Adj (v i₁) (v i₂) → (c (v i₂) : k) = -(c (v i₁) : k)) (d : ℤ) :
+    (dgHomComplex k X Y).homology d ≃ₗ[k] Module.Dual k ((dgHomComplex k Y X).homology (2 - d)) :=
+  have := isPerfPair_homologyPairing_of_baer k G hk c X Y v hv hc d
+  (homologyPairing k G (fun u ↦ (c u : k)) X Y v hv hc d).toPerfPair
+
+/-- `homologyDuality` evaluates at cohomology classes `a` and `b` via `homologyPairing`. -/
+@[simp] theorem homologyDuality_apply (hk : Module.Baer k k) (c : V → kˣ)
+    (X Y : ZigzagProjectiveTwistedClosure k G) (v : X.obj.ι → V)
+    (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
+    (hc : ∀ i₁ i₂, G.Adj (v i₁) (v i₂) → (c (v i₂) : k) = -(c (v i₁) : k)) (d : ℤ)
+    (a : (dgHomComplex k X Y).homology d) (b : (dgHomComplex k Y X).homology (2 - d)) :
+    homologyDuality k G hk c X Y v hv hc d a b =
+      homologyPairing k G (fun u ↦ (c u : k)) X Y v hv hc d a b := (rfl)
+
 /-- Unit weights `±1` associated to a chosen `2`-coloring of a bipartite graph `G`. -/
-def bipartiteWeight (hG : G.IsBipartite) : V → kˣ :=
-  fun u ↦ if (hG.some u : ℕ) = 0 then 1 else -1
+def bipartiteWeight (hG : G.IsBipartite) : V → kˣ := fun u ↦ if (hG.some u : ℕ) = 0 then 1 else -1
 
 omit [Finite V] in
 /-- Adjacent vertices of a bipartite graph carry opposite `bipartiteWeight` values. -/
 theorem bipartiteWeight_adj (hG : G.IsBipartite) {u₁ u₂ : V} (hadj : G.Adj u₁ u₂) :
     (bipartiteWeight k G hG u₂ : k) = -(bipartiteWeight k G hG u₁ : k) := by
   have hne : (hG.some u₁ : ℕ) ≠ (hG.some u₂ : ℕ) := fun h ↦ hG.some.valid hadj (Fin.ext h)
-  have hlt₁ := (hG.some u₁).isLt; have hlt₂ := (hG.some u₂).isLt
-  dsimp only [bipartiteWeight]
+  have hlt₁ := (hG.some u₁).isLt; have hlt₂ := (hG.some u₂).isLt; dsimp only [bipartiteWeight]
   by_cases h₁ : (hG.some u₁ : ℕ) = 0
   · simp [h₁, show (hG.some u₂ : ℕ) ≠ 0 by omega]
   · simp [h₁, show (hG.some u₂ : ℕ) = 0 by omega]
@@ -304,6 +295,21 @@ theorem isPerfPair_bipartiteHomologyPairing_of_baer (hk : Module.Baer k k) (hG :
     (bipartiteHomologyPairing k G hG X Y d).IsPerfPair :=
   isPerfPair_homologyPairing_of_baer k G hk (bipartiteWeight k G hG) X Y _ _ _ d
 
+/-- All-object 2-Calabi–Yau Serre duality `Hom^d(X, Y) ≃ₗ[k] Dual(Hom^{2 - d}(Y, X))` for a
+bipartite graph `G` over a self-injective commutative ring (`Module.Baer k k`). -/
+def bipartiteHomologyDuality (hk : Module.Baer k k) (hG : G.IsBipartite)
+    (X Y : ZigzagProjectiveTwistedClosure k G) (d : ℤ) :
+    (dgHomComplex k X Y).homology d ≃ₗ[k] Module.Dual k ((dgHomComplex k Y X).homology (2 - d)) :=
+  have := isPerfPair_bipartiteHomologyPairing_of_baer k G hk hG X Y d
+  (bipartiteHomologyPairing k G hG X Y d).toPerfPair
+
+/-- `bipartiteHomologyDuality` evaluates at `a` and `b` via `bipartiteHomologyPairing`. -/
+@[simp] theorem bipartiteHomologyDuality_apply (hk : Module.Baer k k) (hG : G.IsBipartite)
+    (X Y : ZigzagProjectiveTwistedClosure k G) (d : ℤ)
+    (a : (dgHomComplex k X Y).homology d) (b : (dgHomComplex k Y X).homology (2 - d)) :
+    bipartiteHomologyDuality k G hk hG X Y d a b = bipartiteHomologyPairing k G hG X Y d a b :=
+  (rfl)
+
 end CommRing
 
 section Field
@@ -320,26 +326,11 @@ theorem isPerfPair_homologyPairing (c : V → kˣ) (X Y : ZigzagProjectiveTwiste
     (dgHomPairing k G (fun u ↦ (c u : k)) X Y v hv)
     (fun ha f g ↦ dgHomPairing_d k G (fun u ↦ (c u : k)) X Y v hv hc ha f g) d
 
-/-- The Serre duality linear equivalence `Hom^d(X, Y) ≃ₗ[k] Dual(Hom^{2 - d}(Y, X))`. -/
-def homologyDuality (c : V → kˣ) (X Y : ZigzagProjectiveTwistedClosure k G)
-    (v : X.obj.ι → V) (hv : ∀ i, (X.obj.X i).obj.obj = D (v i))
-    (hc : ∀ i₁ i₂, G.Adj (v i₁) (v i₂) → (c (v i₂) : k) = -(c (v i₁) : k)) (d : ℤ) :
-    (dgHomComplex k X Y).homology d ≃ₗ[k] Module.Dual k ((dgHomComplex k Y X).homology (2 - d)) :=
-  have := isPerfPair_homologyPairing k G c X Y v hv hc d
-  (homologyPairing k G (fun u ↦ (c u : k)) X Y v hv hc d).toPerfPair
-
 /-- Over a field `k` and a bipartite graph `G`, `bipartiteHomologyPairing` is perfect. -/
 instance isPerfPair_bipartiteHomologyPairing (hG : G.IsBipartite)
     (X Y : ZigzagProjectiveTwistedClosure k G) (d : ℤ) :
     (bipartiteHomologyPairing k G hG X Y d).IsPerfPair :=
   isPerfPair_homologyPairing k G (bipartiteWeight k G hG) X Y _ _ _ d
-
-/-- All-object 2-Calabi–Yau Serre duality `Hom^d(X, Y) ≃ₗ[k] Dual(Hom^{2 - d}(Y, X))` on
-`ZigzagProjectiveTwistedClosure k G` for a bipartite graph `G` over a field `k`. -/
-def bipartiteHomologyDuality (hG : G.IsBipartite)
-    (X Y : ZigzagProjectiveTwistedClosure k G) (d : ℤ) :
-    (dgHomComplex k X Y).homology d ≃ₗ[k] Module.Dual k ((dgHomComplex k Y X).homology (2 - d)) :=
-  (bipartiteHomologyPairing k G hG X Y d).toPerfPair
 
 end Field
 

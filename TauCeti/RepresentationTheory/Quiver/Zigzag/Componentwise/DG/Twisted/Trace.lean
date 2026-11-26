@@ -53,28 +53,32 @@ local notation "E" => zigzagAlgebraProjectiveDGHomEquivCornerOfDegree k G
 local notation "𝒱" => DGFullSubcategory (fun M ↦ ∃ i : V, M = D i)
 local notation "𝒮" => DGShiftClosure 𝒱
 
-private def homCongr {M M' N N' : DGRightModuleCat.{u, u, u}
-      (IsDGAlgebra.gradedOpposite (G := zigzagAlgebraInternalGrading k G)
-        (isDGAlgebra_zero (zigzagAlgebraInternalGrading k G).piece))}
-    (hM : M = M') (hN : N = N') (n : ℤ) :
-    DGHom k n M N ≃ₗ[k] DGHom k n M' N' :=
-  (eqToIso (congrArg₂ (fun A B ↦ (dgHomComplex k A B).X n) hM hN)).toLinearEquiv
-
-private theorem homCongr_comp {M M' N N' P P' : DGRightModuleCat.{u, u, u}
-      (IsDGAlgebra.gradedOpposite (G := zigzagAlgebraInternalGrading k G)
-        (isDGAlgebra_zero (zigzagAlgebraInternalGrading k G).piece))}
-    (hM : M = M') (hN : N = N') (hP : P = P') {p q n : ℤ}
-    (f : DGHom k p M N) (g : DGHom k q N P) (h : p + q = n) :
-    homCongr k G hM hP n (dgComp k f g h) =
-      dgComp k (homCongr k G hM hN p f) (homCongr k G hN hP q g) h := by
-  subst M' N' P'
-  rfl
-
-private def entryHomEquiv (X Y : 𝒮) (i j : V)
+/-- Unpack homogeneous degree-`n` morphisms between shifted vertex summands `X` and `Y` into
+degree-`n + (Y.shift - X.shift)` morphisms between their underlying vertex projectives. -/
+def entryHomEquiv (X Y : 𝒮) (i j : V)
     (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j) (n : ℤ) :
     DGHom k n X Y ≃ₗ[k] DGHom k (n + (Y.shift - X.shift)) (D i) (D j) :=
   (DGShiftClosure.dgHomEquiv k X Y n).trans
-    (homCongr k G hX hY (n + (Y.shift - X.shift)))
+    (dgHomCongr k hX hY (n + (Y.shift - X.shift)))
+
+/-- `entryHomEquiv` applies `DGShiftClosure.dgHomEquiv` followed by `TauCeti.dgHomCongr`. -/
+theorem entryHomEquiv_apply (X Y : 𝒮) (i j : V)
+    (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j) (n : ℤ) (f : DGHom k n X Y) :
+    entryHomEquiv k G X Y i j hX hY n f =
+      dgHomCongr k hX hY (n + (Y.shift - X.shift)) (DGShiftClosure.dgHomEquiv k X Y n f) :=
+  (rfl)
+
+/-- `entryHomEquiv` sends a homogeneous composite `dgComp k f g h` to the signed composite of the
+transported entries. -/
+theorem entryHomEquiv_dgComp (X Y W : 𝒮) (i j l : V)
+    (hX : X.obj.obj = D i) (hY : Y.obj.obj = D j) (hW : W.obj.obj = D l) {p q n : ℤ}
+    (f : DGHom k p X Y) (g : DGHom k q Y W) (h : p + q = n) :
+    entryHomEquiv k G X W i l hX hW n (dgComp k f g h) =
+      ((W.shift - Y.shift) * (p + (Y.shift - X.shift))).negOnePow •
+        dgComp k (entryHomEquiv k G X Y i j hX hY p f)
+          (entryHomEquiv k G Y W j l hY hW q g) (by omega) := by
+  simp only [entryHomEquiv_apply, DGShiftClosure.dgHomEquiv_dgComp, DGFullSubcategory.dgComp_eq,
+    map_zsmul_unit, dgHomCongr_dgComp k hX hY hW]
 
 private def diagonalHomEquiv (X : 𝒮) (i : V) (hX : X.obj.obj = D i) :
     DGHom k 2 X X ≃ₗ[k] DGHom k 2 (D i) (D i) :=
@@ -88,16 +92,12 @@ private theorem diagonalHomEquiv_comp (X Y : 𝒮) (i j : V)
       ((X.shift - Y.shift) * (p + (Y.shift - X.shift))).negOnePow •
         dgComp k (entryHomEquiv k G X Y i j hX hY p f)
           (entryHomEquiv k G Y X j i hY hX q g) (by omega) := by
-  simp only [diagonalHomEquiv, entryHomEquiv, LinearEquiv.trans_apply,
-    Iso.toLinearEquiv_apply, ← castDeg_def, DGShiftClosure.dgHomEquiv_dgComp,
-    DGFullSubcategory.dgComp_eq, map_zsmul_unit]
+  simp only [diagonalHomEquiv, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, ← castDeg_def,
+    entryHomEquiv_dgComp k G X Y X i j i hX hY hX f g h, map_zsmul_unit]
   congr 1
-  rw [homCongr_comp k G hX hY hX]
-  simpa only [entryHomEquiv, LinearEquiv.trans_apply, castDeg_self] using
-    (castDeg_dgComp k (p' := p + (Y.shift - X.shift))
-      (n := 2 + (X.shift - X.shift)) (n' := 2) rfl (by omega)
-      (entryHomEquiv k G X Y i j hX hY p f)
-      (entryHomEquiv k G Y X j i hY hX q g) (by omega)).symm
+  simpa only [castDeg_self] using (castDeg_dgComp k (p' := p + (Y.shift - X.shift))
+    (n := 2 + (X.shift - X.shift)) (n' := 2) rfl (by omega)
+    (entryHomEquiv k G X Y i j hX hY p f) (entryHomEquiv k G Y X j i hY hX q g) (by omega)).symm
 
 private def vertexTrace (a : k) (i : V) : DGHom k 2 (D i) (D i) →ₗ[k] k :=
   a • (zigzagAlgebraTrace k G).comp ((Submodule.subtype _).comp (E i i 2).toLinearMap)
@@ -228,9 +228,9 @@ theorem trace_apply (c : V → k) (X : ZigzagProjectiveTwistedClosure k G)
                 (DGAdditiveClosure.dgHomEquiv k X.obj X.obj 2
                   (DGTwistedObject.dgHomEquiv k X X 2 f) i i)))) : Z)) := by
   simp only [trace, LinearMap.comp_apply, matrixTrace, LinearMap.coe_mk, AddHom.coe_mk,
-    shiftedVertexTrace, LinearMap.smul_apply, diagonalHomEquiv, entryHomEquiv,
+    shiftedVertexTrace, LinearMap.smul_apply, diagonalHomEquiv, entryHomEquiv_apply,
     LinearEquiv.trans_apply, Iso.toLinearEquiv_apply, LinearEquiv.coe_coe,
-    ← castDeg_def, vertexTrace_apply, homCongr]
+    ← castDeg_def, vertexTrace_apply, dgHomCongr_def]
 
 /-- Complementary-degree compositions of actual formal twisted objects satisfy graded cyclicity. -/
 theorem trace_comp (c : V → k) (X Y : ZigzagProjectiveTwistedClosure k G)

@@ -55,13 +55,11 @@ def piPairing (p : ∀ i, M i →ₗ[R] N i →ₗ[R] R) : (∀ i, M i) →ₗ[R
     (fun _ _ _ ↦ by simp [smul_eq_mul, Finset.mul_sum])
 
 /-- `LinearMap.piPairing` evaluates to the sum of the coordinate pairings. -/
-@[simp]
-theorem piPairing_apply (p : ∀ i, M i →ₗ[R] N i →ₗ[R] R) (x : ∀ i, M i) (y : ∀ i, N i) :
+@[simp] theorem piPairing_apply (p : ∀ i, M i →ₗ[R] N i →ₗ[R] R) (x : ∀ i, M i) (y : ∀ i, N i) :
     piPairing p x y = ∑ i, p i (x i) (y i) := (rfl)
 
 /-- Flipping `LinearMap.piPairing` flips every coordinate pairing. -/
-@[simp]
-theorem flip_piPairing (p : ∀ i, M i →ₗ[R] N i →ₗ[R] R) :
+@[simp] theorem flip_piPairing (p : ∀ i, M i →ₗ[R] N i →ₗ[R] R) :
     (piPairing p).flip = piPairing fun i ↦ (p i).flip := by ext y x; simp
 
 private theorem piPairing_bijective_left (p : ∀ i, M i →ₗ[R] N i →ₗ[R] R)
@@ -77,14 +75,12 @@ private theorem piPairing_bijective_left (p : ∀ i, M i →ₗ[R] N i →ₗ[R]
     fun φ ↦ ⟨fun i ↦ (p i).toPerfPair.symm (φ.comp (LinearMap.single R N i)),
       LinearMap.ext fun y ↦ ?_⟩⟩
   conv_rhs => rw [← Finset.univ_sum_single y, map_sum]
-  exact Finset.sum_congr rfl fun i _ ↦
-    DFunLike.congr_fun ((p i).apply_symm_toPerfPair_self _) (y i)
+  exact Finset.sum_congr rfl fun i _ ↦ DFunLike.congr_fun ((p i).apply_symm_toPerfPair_self _) (y i)
 
 /-- A finite product of perfect pairings is a perfect pairing. -/
 instance piPairing_isPerfPair (p : ∀ i, M i →ₗ[R] N i →ₗ[R] R) [∀ i, (p i).IsPerfPair] :
-    (piPairing p).IsPerfPair where
-  bijective_left := piPairing_bijective_left p
-  bijective_right := flip_piPairing p ▸ piPairing_bijective_left fun i ↦ (p i).flip
+    (piPairing p).IsPerfPair :=
+  ⟨piPairing_bijective_left p, flip_piPairing p ▸ piPairing_bijective_left fun i ↦ (p i).flip⟩
 
 end CommSemiring
 

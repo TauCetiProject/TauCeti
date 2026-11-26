@@ -82,11 +82,10 @@ identifies linearly with the signed graded corner `e_i Z e_j ∩ Z_d` of the zig
 def vertexObjectHomologyEquivCorner (i j : V) (d : ℤ) :
     (dgHomComplex k (vertexObject k G i) (vertexObject k G j)).homology d ≃ₗ[k]
       ↥(cornerSubmodule k (e i) (e j) ⊓ A d) :=
-  (((isQuasiFullyFaithful_vertexEmbedding k G).homologyLinearEquiv
-      ⟨D i, i, rfl⟩ ⟨D j, j, rfl⟩ d).symm.trans
+  let u : 𝒱 := ⟨D i, i, rfl⟩; let w : 𝒱 := ⟨D j, j, rfl⟩
+  (((isQuasiFullyFaithful_vertexEmbedding k G).homologyLinearEquiv u w d).symm.trans
     (eqToIso (congrArg (fun K ↦ K.homology d)
-      (DGFullSubcategory.dgHomComplex_eq (R := k) (⟨D i, i, rfl⟩ : 𝒱)
-        ⟨D j, j, rfl⟩))).toLinearEquiv).trans
+      (DGFullSubcategory.dgHomComplex_eq (R := k) u w))).toLinearEquiv).trans
     (((eqToIso (congrArg (fun m ↦ (dgHomComplex k (D i) (D j)).homology m)
         (neg_neg d).symm)).toLinearEquiv.trans
       (zigzagAlgebraProjectiveHomologyEquivCorner k G i j (-d))).trans
@@ -97,8 +96,7 @@ theorem subsingleton_homology_vertexObject_self_of_ne (i : V) {d : ℤ}
     (hd0 : d ≠ 0) (hd2 : d ≠ 2) :
     Subsingleton ((dgHomComplex k (vertexObject k G i) (vertexObject k G i)).homology d) := by
   refine (vertexObjectHomologyEquivCorner k G i i d).toEquiv.subsingleton_congr.mpr ?_
-  rw [cornerSubmodule_zigzagAlgebra_self_inf_integerGrade]
-  simp only [hd0, hd2, ↓reduceIte]
+  rw [cornerSubmodule_zigzagAlgebra_self_inf_integerGrade]; simp only [hd0, hd2, ↓reduceIte]
   infer_instance
 
 /-- Cohomology between two vertex objects vanishes outside degrees `{0, 1, 2}`. -/
@@ -133,8 +131,7 @@ variable [Finite V] [Field k]
 open scoped Classical in
 /-- Over a field `k`, `finrank Hom^d(vertexObject i, vertexObject j)` is `1` in degrees `0, 2`
 when `i = j`, `1` in degree `1` when `G.Adj i j`, and `0` otherwise. -/
-@[simp]
-theorem finrank_homology_vertexObject (i j : V) (d : ℤ) :
+@[simp] theorem finrank_homology_vertexObject (i j : V) (d : ℤ) :
     Module.finrank k ((dgHomComplex k (vertexObject k G i) (vertexObject k G j)).homology d) =
       if i = j then if d = 0 ∨ d = 2 then 1 else 0
       else if G.Adj i j ∧ d = 1 then 1 else 0 :=
@@ -144,8 +141,7 @@ theorem finrank_homology_vertexObject (i j : V) (d : ℤ) :
 open scoped Classical in
 /-- Total graded `Hom` dimension between vertex objects is `2` on the diagonal, `1` on edges, and
 `0` on non-edges. -/
-@[simp]
-theorem dgTotalHomFinrank_vertexObject (i j : V) :
+@[simp] theorem dgTotalHomFinrank_vertexObject (i j : V) :
     dgTotalHomFinrank k (vertexObject k G i) (vertexObject k G j) =
       if i = j then 2 else if G.Adj i j then 1 else 0 := by
   classical
@@ -157,8 +153,7 @@ theorem dgTotalHomFinrank_vertexObject (i j : V) :
 open scoped Classical in
 /-- The graded Euler pairing `χ(vertexObject i, vertexObject j)` equals the symmetric generalized
 Cartan pairing of `G`: `2` on the diagonal, `-1` on edges, and `0` on non-edges. -/
-@[simp]
-theorem dgEulerPairing_vertexObject (i j : V) :
+@[simp] theorem dgEulerPairing_vertexObject (i j : V) :
     dgEulerPairing k (vertexObject k G i) (vertexObject k G j) =
       if i = j then 2 else if G.Adj i j then -1 else 0 := by
   classical
@@ -212,14 +207,12 @@ def eulerMatrix : Matrix V V ℤ :=
   Matrix.of fun i j ↦ dgEulerPairing k (vertexObject k G i) (vertexObject k G j)
 
 /-- Entry `(i, j)` of `eulerMatrix k G` is `dgEulerPairing k (vertexObject i) (vertexObject j)`. -/
-@[simp]
-theorem eulerMatrix_apply (i j : V) :
+@[simp] theorem eulerMatrix_apply (i j : V) :
     eulerMatrix k G i j = dgEulerPairing k (vertexObject k G i) (vertexObject k G j) := (rfl)
 
 open scoped Classical Matrix in
 /-- `eulerMatrix k G` is symmetric (`(eulerMatrix k G)ᵀ = eulerMatrix k G`). -/
-@[simp]
-theorem transpose_eulerMatrix : (eulerMatrix k G)ᵀ = eulerMatrix k G := by
+@[simp] theorem transpose_eulerMatrix : (eulerMatrix k G)ᵀ = eulerMatrix k G := by
   ext i j; simp [eq_comm, SimpleGraph.adj_comm]
 
 end Field
@@ -256,8 +249,7 @@ private theorem eulerRankOne_triple_of_adj {r s : V} (hadj : G.Adj r s) :
 
 /-- The numerical Seidel–Thomas twist matrix `R_r` on `ℤ^V`, representing the action
 `[F] ↦ [F] - χ(E_r, F)[E_r]` in the vertex basis `[E_i]` (`i : V`) under `Matrix.mulVec`. -/
-def eulerTwistMatrix (r : V) : Matrix V V ℤ :=
-  1 - eulerRankOne k G r
+def eulerTwistMatrix (r : V) : Matrix V V ℤ := 1 - eulerRankOne k G r
 
 /-- Entry `(i, j)` of `eulerTwistMatrix k G r`. -/
 theorem eulerTwistMatrix_apply (r i j : V) :
@@ -269,14 +261,12 @@ theorem eulerTwistMatrix_apply (r i j : V) :
 theorem eulerTwistMatrix_mulVec_single (r j : V) :
     (eulerTwistMatrix k G r).mulVec (Pi.single j 1) =
       Pi.single j 1 - eulerMatrix k G r j • Pi.single r 1 := by
-  ext i
-  rw [Matrix.mulVec_single_one, Matrix.col_apply, eulerTwistMatrix_apply]
+  ext i; rw [Matrix.mulVec_single_one, Matrix.col_apply, eulerTwistMatrix_apply]
   simp only [Pi.sub_apply, Pi.smul_apply, Pi.single_apply, smul_eq_mul,
     mul_ite, mul_one, mul_zero, eq_comm]
 
 /-- For a `2`-spherical vertex object `E_r`, `eulerTwistMatrix k G r` is an involution. -/
-@[simp]
-theorem eulerTwistMatrix_mul_self (r : V) :
+@[simp] theorem eulerTwistMatrix_mul_self (r : V) :
     eulerTwistMatrix k G r * eulerTwistMatrix k G r = 1 := by
   simp only [eulerTwistMatrix, sub_mul, mul_sub, one_mul, mul_one, eulerRankOne_mul_self, two_zsmul]
   abel
@@ -291,8 +281,7 @@ theorem eulerTwistMatrix_mul_comm_of_not_adj {r s : V} (hnadj : ¬ G.Adj r s) :
         eulerRankOne k G u * eulerRankOne k G w = 0 := by
       rw [eulerRankOne_mul, show eulerMatrix k G u w = 0 by simp [hne, hn], zero_smul]
     simp only [eulerTwistMatrix, sub_mul, mul_sub, one_mul, mul_one,
-      hmul r s hrs hnadj, hmul s r (Ne.symm hrs) (fun h ↦ hnadj h.symm), sub_zero]
-    abel
+      hmul r s hrs hnadj, hmul s r (Ne.symm hrs) (fun h ↦ hnadj h.symm), sub_zero]; abel
 
 /-- Numerical twists at adjacent vertices satisfy `R_r * R_s * R_r = R_s * R_r * R_s`. -/
 theorem eulerTwistMatrix_braid_of_adj {r s : V} (hadj : G.Adj r s) :
@@ -303,8 +292,7 @@ theorem eulerTwistMatrix_braid_of_adj {r s : V} (hadj : G.Adj r s) :
         1 - eulerRankOne k G u - eulerRankOne k G w +
           eulerRankOne k G u * eulerRankOne k G w + eulerRankOne k G w * eulerRankOne k G u := by
     simp only [eulerTwistMatrix, sub_mul, mul_sub, one_mul, mul_one,
-      eulerRankOne_mul_self, eulerRankOne_triple_of_adj k G h, two_zsmul]
-    abel
+      eulerRankOne_mul_self, eulerRankOne_triple_of_adj k G h, two_zsmul]; abel
   rw [expand hadj, expand hadj.symm]; abel
 
 end EulerReflection
@@ -330,8 +318,7 @@ theorem det_eulerTwistMatrix_pathGraph_two (k : Type) [Field k] (r : Fin 2) :
     (eulerTwistMatrix k (SimpleGraph.pathGraph 2) r).det = -1 := by
   fin_cases r <;> simp [Matrix.det_fin_two, eulerTwistMatrix_apply, SimpleGraph.pathGraph_adj]
 
-/-- Seidel–Thomas Check (`A₂`): both three-fold products `A * B * A` and `B * A * B` of the `A₂`
-numerical twist matrices equal `!![0, -1; -1, 0]`. -/
+/-- Seidel–Thomas Check (`A₂`): both `A * B * A` and `B * A * B` equal `!![0, -1; -1, 0]`. -/
 theorem eulerTwistMatrix_pathGraph_two_braid (k : Type) [Field k] :
     eulerTwistMatrix k (SimpleGraph.pathGraph 2) 0 *
         eulerTwistMatrix k (SimpleGraph.pathGraph 2) 1 *
@@ -344,8 +331,8 @@ theorem eulerTwistMatrix_pathGraph_two_braid (k : Type) [Field k] :
   have hABA : eulerTwistMatrix k (SimpleGraph.pathGraph 2) 0 *
       eulerTwistMatrix k (SimpleGraph.pathGraph 2) 1 *
       eulerTwistMatrix k (SimpleGraph.pathGraph 2) 0 = !![(0 : ℤ), -1; -1, 0] := by
-    rw [eulerTwistMatrix_pathGraph_two_zero, eulerTwistMatrix_pathGraph_two_one]
-    ext i j; fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+    rw [eulerTwistMatrix_pathGraph_two_zero, eulerTwistMatrix_pathGraph_two_one]; ext i j
+    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
   exact ⟨hABA, hbraid.symm.trans hABA⟩
 
 end TauCeti.ZigzagProjectiveTwistedClosure

@@ -49,50 +49,51 @@ def dgHomologyClass {n : ℤ} {X Y : C} (f : DGHom R n X Y) (hf : dgDifferential
     (dgHomComplex R X Y).homology n :=
   dgHomologyClassLinearMap R n X Y ⟨f, hf⟩
 
-private theorem dgHomologyClass_hom {n : ℤ} {X Y : C}
+private theorem dgHomologyClass_toLinearEquiv {n : ℤ} {X Y : C}
     (f : DGHom R n X Y) (hf : dgDifferential R n f = 0) :
-    (dgGradedHomologyIso R n X Y).hom.hom (dgHomologyClass R f hf) =
+    (dgGradedHomologyIso R n X Y).toLinearEquiv (dgHomologyClass R f hf) =
       Submodule.Quotient.mk (p := LinearMap.range
         ((dgHomComplex R X Y).sc' (n - 1) n (n + 1)).moduleCatToCycles) ⟨f, hf⟩ := by
   let e := dgGradedHomologyIso R n X Y
-  change e.hom (e.inv _) = _; exact e.inv_hom_id_apply _
+  rw [Iso.toLinearEquiv_apply, dgHomologyClass, dgHomologyClassLinearMap, LinearMap.comp_apply,
+    ← LinearMap.comp_apply e.hom.hom e.inv.hom, ← ModuleCat.hom_comp, e.inv_hom_id,
+    ModuleCat.hom_id, LinearMap.id_apply, ShortComplex.moduleCatLeftHomologyData_π_hom,
+    Submodule.mkQ_apply]
 
 /-- Zero represents the zero cohomology class in every degree. -/
-@[simp]
-theorem dgHomologyClass_zero (n : ℤ) (X Y : C) :
+@[simp] theorem dgHomologyClass_zero (n : ℤ) (X Y : C) :
     dgHomologyClass R (0 : DGHom R n X Y) (map_zero _) = 0 :=
   (dgHomologyClassLinearMap R n X Y).map_zero
 
 /-- `TauCeti.dgHomologyClass` preserves addition of cocycles. -/
-@[simp]
-theorem dgHomologyClass_add {n : ℤ} {X Y : C} (f g : DGHom R n X Y)
+@[simp] theorem dgHomologyClass_add {n : ℤ} {X Y : C} (f g : DGHom R n X Y)
     (hf : dgDifferential R n f = 0) (hg : dgDifferential R n g = 0) :
     dgHomologyClass R (f + g) (by rw [map_add, hf, hg, add_zero]) =
       dgHomologyClass R f hf + dgHomologyClass R g hg :=
   (dgHomologyClassLinearMap R n X Y).map_add ⟨f, hf⟩ ⟨g, hg⟩
 
 /-- `TauCeti.dgHomologyClass` preserves scalar multiplication of cocycles. -/
-@[simp]
-theorem dgHomologyClass_smul {n : ℤ} {X Y : C} (r : R) (f : DGHom R n X Y)
+@[simp] theorem dgHomologyClass_smul {n : ℤ} {X Y : C} (r : R) (f : DGHom R n X Y)
     (hf : dgDifferential R n f = 0) :
     dgHomologyClass R (r • f) (by rw [map_smul, hf, smul_zero]) = r • dgHomologyClass R f hf :=
   (dgHomologyClassLinearMap R n X Y).map_smul r ⟨f, hf⟩
 
 /-- `TauCeti.dgHomologyClass` preserves negation of cocycles. -/
-@[simp]
-theorem dgHomologyClass_neg {n : ℤ} {X Y : C} (f : DGHom R n X Y) (hf : dgDifferential R n f = 0) :
+@[simp] theorem dgHomologyClass_neg {n : ℤ} {X Y : C} (f : DGHom R n X Y)
+    (hf : dgDifferential R n f = 0) :
     dgHomologyClass R (-f) (by rw [map_neg, hf, neg_zero]) = -dgHomologyClass R f hf :=
   (dgHomologyClassLinearMap R n X Y).map_neg ⟨f, hf⟩
 
 /-- Every degree-`n` cohomology class has a closed degree-`n` representative. -/
 theorem exists_dgHomologyClass_eq {n : ℤ} {X Y : C} (c : (dgHomComplex R X Y).homology n) :
     ∃ (f : DGHom R n X Y) (hf : dgDifferential R n f = 0), dgHomologyClass R f hf = c := by
-  let e := dgGradedHomologyIso R n X Y
-  obtain ⟨f, hf⟩ : ∃ f, Submodule.Quotient.mk f = e.hom.hom c := by
-    induction e.hom.hom c using Submodule.Quotient.induction_on with | H f => exact ⟨f, rfl⟩
-  refine ⟨f.1, f.2, e.toLinearEquiv.injective ?_⟩
-  change e.hom.hom (dgHomologyClass R f.1 f.2) = e.hom.hom c
-  exact (dgHomologyClass_hom R f.1 f.2).trans hf
+  obtain ⟨f, hf⟩ : ∃ f, Submodule.Quotient.mk f =
+      (dgGradedHomologyIso R n X Y).toLinearEquiv c := by
+    induction (dgGradedHomologyIso R n X Y).toLinearEquiv c using Submodule.Quotient.induction_on
+    with | H f => exact ⟨f, rfl⟩
+  have hf0 : dgDifferential R n f.1 = 0 := f.2
+  refine ⟨f.1, hf0, (dgGradedHomologyIso R n X Y).toLinearEquiv.injective ?_⟩
+  rw [dgHomologyClass_toLinearEquiv, hf]
 
 /-- Two closed degree-`n` morphisms represent the same cohomology class iff their difference is a
 coboundary. -/
@@ -100,15 +101,13 @@ theorem dgHomologyClass_eq_iff {n : ℤ} {X Y : C} {f g : DGHom R n X Y}
     (hf : dgDifferential R n f = 0) (hg : dgDifferential R n g = 0) :
     dgHomologyClass R f hf = dgHomologyClass R g hg ↔
       ∃ h : DGHom R (n - 1) X Y, ((dgHomComplex R X Y).d (n - 1) n).hom h = f - g := by
-  let e := dgGradedHomologyIso R n X Y
   let S := (dgHomComplex R X Y).sc' (n - 1) n (n + 1)
-  refine ⟨fun heq ↦ ?_, fun ⟨h, hh⟩ ↦ e.toLinearEquiv.injective ?_⟩
-  · have h' := congrArg e.hom.hom heq
-    rw [dgHomologyClass_hom, dgHomologyClass_hom] at h'
+  refine ⟨fun heq ↦ ?_, fun ⟨h, hh⟩ ↦ (dgGradedHomologyIso R n X Y).toLinearEquiv.injective ?_⟩
+  · have h' := congrArg (dgGradedHomologyIso R n X Y).toLinearEquiv heq
+    rw [dgHomologyClass_toLinearEquiv, dgHomologyClass_toLinearEquiv] at h'
     obtain ⟨h, hh⟩ := (Submodule.Quotient.eq (LinearMap.range S.moduleCatToCycles)).mp h'
     exact ⟨h, congrArg Subtype.val hh⟩
-  · change e.hom.hom (dgHomologyClass R f hf) = e.hom.hom (dgHomologyClass R g hg)
-    rw [dgHomologyClass_hom, dgHomologyClass_hom]
+  · rw [dgHomologyClass_toLinearEquiv, dgHomologyClass_toLinearEquiv]
     exact (Submodule.Quotient.eq (LinearMap.range S.moduleCatToCycles)).mpr ⟨h, Subtype.ext hh⟩
 
 /-- A closed degree-`n` morphism represents zero in cohomology iff it is a coboundary. -/
@@ -119,8 +118,7 @@ theorem dgHomologyClass_eq_zero_iff {n : ℤ} {X Y : C} {f : DGHom R n X Y}
   rw [← dgHomologyClass_zero R n X Y, dgHomologyClass_eq_iff, sub_zero]
 
 /-- Exact coboundaries `dgDifferential R m h` vanish in degree-`m + 1` cohomology. -/
-@[simp]
-theorem dgHomologyClass_dgDifferential {m : ℤ} {X Y : C} (h : DGHom R m X Y) :
+@[simp] theorem dgHomologyClass_dgDifferential {m : ℤ} {X Y : C} (h : DGHom R m X Y) :
     dgHomologyClass R (dgDifferential R m h) (dgDifferential_dgDifferential R h) = 0 := by
   rw [dgHomologyClass_eq_zero_iff]
   exact ⟨castDeg R (by omega : m = m + 1 - 1) h, by
@@ -132,18 +130,17 @@ private theorem exists_iCycles_and_dgHomologyClass {n : ℤ} {X Y : C} (f : DGHo
       dgHomologyClass R f hf = ((dgHomComplex R X Y).homologyπ n).hom x := by
   let K := dgHomComplex R X Y; let S := K.sc' (n - 1) n (n + 1)
   let e := K.cyclesIsoSc' (n - 1) n (n + 1) (by simp) (by simp)
-  let eH := K.homologyIsoSc' (n - 1) n (n + 1) (by simp) (by simp)
   let c : S.moduleCatLeftHomologyData.K := ⟨f, hf⟩
   refine ⟨(S.moduleCatCyclesIso.inv ≫ e.inv).hom c, ?_, ?_⟩
-  · have h : (S.moduleCatCyclesIso.inv ≫ e.inv) ≫ K.iCycles n = S.moduleCatLeftHomologyData.i := by
-      rw [Category.assoc, HomologicalComplex.cyclesIsoSc'_inv_iCycles]
-      exact S.moduleCatCyclesIso_inv_iCycles
-    exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) c
-  · have h : S.moduleCatLeftHomologyData.π ≫ (S.moduleCatHomologyIso.inv ≫ eH.inv) =
-        (S.moduleCatCyclesIso.inv ≫ e.inv) ≫ K.homologyπ n := by
-      rw [← Category.assoc, ← S.moduleCatCyclesIso_inv_π, Category.assoc, Category.assoc,
-        HomologicalComplex.π_homologyIsoSc'_inv]
-    exact LinearMap.congr_fun (congrArg ModuleCat.Hom.hom h) c
+  · rw [← LinearMap.comp_apply (K.iCycles n).hom, ← ModuleCat.hom_comp, Category.assoc,
+      HomologicalComplex.cyclesIsoSc'_inv_iCycles, S.moduleCatCyclesIso_inv_iCycles,
+      ShortComplex.moduleCatLeftHomologyData_i_hom, Submodule.subtype_apply]
+  · rw [dgHomologyClass, dgHomologyClassLinearMap, LinearMap.comp_apply,
+      ← LinearMap.comp_apply _ S.moduleCatLeftHomologyData.π.hom, ← ModuleCat.hom_comp,
+      ← LinearMap.comp_apply (K.homologyπ n).hom, ← ModuleCat.hom_comp]
+    refine LinearMap.congr_fun (congrArg ModuleCat.Hom.hom ?_) c
+    rw [dgGradedHomologyIso, Iso.trans_inv, ← Category.assoc, ← S.moduleCatCyclesIso_inv_π,
+      Category.assoc, Category.assoc, HomologicalComplex.π_homologyIsoSc'_inv]
 
 /-- `TauCeti.dgHomologyClass` agrees with `HomologicalComplex.homologyπ` on any lifting cycle. -/
 theorem dgHomologyClass_eq_homologyπ {n : ℤ} {X Y : C} {f : DGHom R n X Y}
@@ -167,8 +164,8 @@ theorem dgDifferential_iCycles {n : ℤ} {X Y : C} (x : (dgHomComplex R X Y).cyc
   LinearMap.congr_fun (congrArg ModuleCat.Hom.hom ((dgHomComplex R X Y).iCycles_d n (n + 1))) x
 
 /-- `HomologicalComplex.homologyπ` evaluates a cycle `x` to `dgHomologyClass` of `iCycles x`. -/
-@[simp]
-theorem homologyπ_eq_dgHomologyClass {n : ℤ} {X Y : C} (x : (dgHomComplex R X Y).cycles n) :
+theorem homologyπ_eq_dgHomologyClass {n : ℤ} {X Y : C}
+    (x : (dgHomComplex R X Y).cycles n) :
     ((dgHomComplex R X Y).homologyπ n).hom x =
       dgHomologyClass R (((dgHomComplex R X Y).iCycles n).hom x) (dgDifferential_iCycles R x) :=
   (dgHomologyClass_eq_homologyπ R (dgDifferential_iCycles R x) x rfl).symm
@@ -181,8 +178,7 @@ theorem map_dgDifferential_eq_zero {C' : Type u'} [DGCategory R C'] {X Y : C} {X
     LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (φ.comm n (n + 1))) f
 
 /-- `HomologicalComplex.homologyMap` acts on `dgHomologyClass` through representatives. -/
-@[simp]
-theorem homologyMap_dgHomologyClass {C' : Type u'} [DGCategory R C'] {X Y : C} {X' Y' : C'}
+@[simp] theorem homologyMap_dgHomologyClass {C' : Type u'} [DGCategory R C'] {X Y : C} {X' Y' : C'}
     (φ : dgHomComplex R X Y ⟶ dgHomComplex R X' Y') {n : ℤ} {f : DGHom R n X Y}
     (hf : dgDifferential R n f = 0) :
     (HomologicalComplex.homologyMap φ n).hom (dgHomologyClass R f hf) =
@@ -219,38 +215,35 @@ private def dgConcreteGradedComp (X Y Z : C) {p q n : ℤ} (h : p + q = n) :
   let SXZ := (dgHomComplex R X Z).sc' (n - 1) n (n + 1)
   (LinearMap.mk₂ R
     (fun f g ↦ Submodule.Quotient.mk (p := LinearMap.range SXZ.moduleCatToCycles)
-      ⟨dgComp R f.1 g.1 h, dgDifferential_dgComp_eq_zero R f.2 g.2 h⟩)
+      ⟨dgComp R f.1 g.1 h, LinearMap.mem_ker.2 (dgDifferential_dgComp_eq_zero R
+        (LinearMap.mem_ker.1 f.2) (LinearMap.mem_ker.1 g.2) h)⟩)
     (fun f f' g ↦ by
       rw [← Submodule.Quotient.mk_add]
-      exact congrArg Submodule.Quotient.mk (Subtype.ext (add_dgComp R f.1 f'.1 g.1 h)))
+      exact congrArg _ (Subtype.ext (add_dgComp R f.1 f'.1 g.1 h)))
     (fun r f g ↦ by
       rw [← Submodule.Quotient.mk_smul]
-      exact congrArg Submodule.Quotient.mk (Subtype.ext (smul_dgComp R r f.1 g.1 h)))
+      exact congrArg _ (Subtype.ext (smul_dgComp R r f.1 g.1 h)))
     (fun f g g' ↦ by
       rw [← Submodule.Quotient.mk_add]
-      exact congrArg Submodule.Quotient.mk (Subtype.ext (dgComp_add R f.1 g.1 g'.1 h)))
+      exact congrArg _ (Subtype.ext (dgComp_add R f.1 g.1 g'.1 h)))
     (fun r f g ↦ by
       rw [← Submodule.Quotient.mk_smul]
-      exact congrArg Submodule.Quotient.mk (Subtype.ext (dgComp_smul R r f.1 g.1 h)))).liftQ₂
+      exact congrArg _ (Subtype.ext (dgComp_smul R r f.1 g.1 h)))).liftQ₂
     (LinearMap.range SXY.moduleCatToCycles) (LinearMap.range SYZ.moduleCatToCycles)
     (by
-      rintro _ ⟨f₀, rfl⟩; ext g
-      have hk : ((dgHomComplex R X Z).d (n - 1) n).hom (dgComp R f₀ g.1 (by omega)) =
-          dgComp R (((dgHomComplex R X Y).d (p - 1) p).hom f₀) g.1 h := by
-        have hg0 : dgDifferential R q g.1 = 0 := g.2
-        rw [dgHomComplex_d_dgComp R (by omega : p - 1 + 1 = p) rfl (by omega : n - 1 + 1 = n)
-          f₀ g.1 (by omega), hg0, dgComp_zero, smul_zero, add_zero]
-      exact (Submodule.Quotient.mk_eq_zero _).mpr ⟨_, Subtype.ext hk⟩)
+      rintro _ ⟨f₀, rfl⟩; ext g; have hg0 : dgDifferential R q g.1 = 0 := LinearMap.mem_ker.1 g.2
+      refine (Submodule.Quotient.mk_eq_zero _).mpr ⟨dgComp R f₀ g.1 (by omega), Subtype.ext ?_⟩
+      simp only [LinearMap.codRestrict_apply, SXZ, SXY, shortComplexFunctor'_obj_f]
+      rw [dgHomComplex_d_dgComp R (by omega : p - 1 + 1 = p) rfl (by omega : n - 1 + 1 = n)
+        f₀ g.1 (by omega), hg0, dgComp_zero, smul_zero, add_zero])
     (by
-      rintro _ ⟨g₀, rfl⟩; ext f
-      have hk : ((dgHomComplex R X Z).d (n - 1) n).hom
-          (p.negOnePow • dgComp R f.1 g₀ (by omega)) =
-          dgComp R f.1 (((dgHomComplex R Y Z).d (q - 1) q).hom g₀) h := by
-        have hf0 : dgDifferential R p f.1 = 0 := f.2
-        rw [Units.smul_def, map_zsmul, ← Units.smul_def,
-          dgHomComplex_d_dgComp R rfl (by omega : q - 1 + 1 = q) (by omega : n - 1 + 1 = n)
-            f.1 g₀ (by omega), hf0, zero_dgComp, zero_add, smul_smul, Int.units_mul_self, one_smul]
-      exact (Submodule.Quotient.mk_eq_zero _).mpr ⟨_, Subtype.ext hk⟩)
+      rintro _ ⟨g₀, rfl⟩; ext f; have hf0 : dgDifferential R p f.1 = 0 := LinearMap.mem_ker.1 f.2
+      refine (Submodule.Quotient.mk_eq_zero _).mpr
+        ⟨p.negOnePow • dgComp R f.1 g₀ (by omega), Subtype.ext ?_⟩
+      simp only [LinearMap.codRestrict_apply, SXZ, SYZ, shortComplexFunctor'_obj_f]
+      rw [Units.smul_def, map_zsmul, ← Units.smul_def,
+        dgHomComplex_d_dgComp R rfl (by omega : q - 1 + 1 = q) (by omega : n - 1 + 1 = n)
+          f.1 g₀ (by omega), hf0, zero_dgComp, zero_add, smul_smul, Int.units_mul_self, one_smul])
 
 /-- Bilinear graded composition on canonical cohomology of DG Hom complexes, in Mathlib's enriched
 factor order (`dgHomologyComp R X Y Z h [f] [g] = [dgComp R f g h]`). -/
@@ -258,23 +251,21 @@ def dgHomologyComp (X Y Z : C) {p q n : ℤ} (h : p + q = n) :
     (dgHomComplex R X Y).homology p →ₗ[R]
       (dgHomComplex R Y Z).homology q →ₗ[R] (dgHomComplex R X Z).homology n :=
   ((dgConcreteGradedComp R X Y Z h).compl₁₂
-    (dgGradedHomologyIso R p X Y).hom.hom (dgGradedHomologyIso R q Y Z).hom.hom).compr₂
-    (dgGradedHomologyIso R n X Z).inv.hom
+    (dgGradedHomologyIso R p X Y).toLinearEquiv.toLinearMap
+    (dgGradedHomologyIso R q Y Z).toLinearEquiv.toLinearMap).compr₂
+    (dgGradedHomologyIso R n X Z).toLinearEquiv.symm.toLinearMap
 
 /-- `TauCeti.dgHomologyComp` evaluates on cohomology classes to the class of their DG composite. -/
-@[simp]
-theorem dgHomologyComp_dgHomologyClass {X Y Z : C} {p q n : ℤ} (h : p + q = n)
+@[simp] theorem dgHomologyComp_dgHomologyClass {X Y Z : C} {p q n : ℤ} (h : p + q = n)
     (f : DGHom R p X Y) (g : DGHom R q Y Z)
     (hf : dgDifferential R p f = 0) (hg : dgDifferential R q g = 0) :
     dgHomologyComp R X Y Z h (dgHomologyClass R f hf) (dgHomologyClass R g hg) =
       dgHomologyClass R (dgComp R f g h) (dgDifferential_dgComp_eq_zero R hf hg h) := by
-  let eXZ := dgGradedHomologyIso R n X Z
-  apply eXZ.toLinearEquiv.injective
-  dsimp only [dgHomologyComp, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply]
-  change eXZ.hom.hom (eXZ.inv.hom _) = eXZ.hom.hom _
-  rw [show eXZ.hom.hom (eXZ.inv.hom _) = _ from eXZ.inv_hom_id_apply _,
-    dgHomologyClass_hom, dgHomologyClass_hom, dgHomologyClass_hom]
-  rfl
+  apply (dgGradedHomologyIso R n X Z).toLinearEquiv.injective
+  rw [dgHomologyComp, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe,
+    LinearEquiv.coe_coe, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply,
+    dgHomologyClass_toLinearEquiv, dgHomologyClass_toLinearEquiv, dgHomologyClass_toLinearEquiv,
+    dgConcreteGradedComp, LinearMap.liftQ₂_mk, LinearMap.mk₂_apply]
 
 /-- Graded cohomology composition is associative. -/
 theorem dgHomologyComp_assoc {W X Y Z : C} {p q r pq qr n : ℤ}
@@ -291,16 +282,16 @@ theorem dgHomologyComp_assoc {W X Y Z : C} {p q r pq qr n : ℤ}
     (Subtype.ext (dgComp_assoc R f g k hpq hqr (by omega)))
 
 /-- Left composition with `dgHomologyId` is the identity on graded cohomology in every degree. -/
-@[simp]
-theorem dgHomologyId_dgHomologyComp {X Y : C} {n : ℤ} (a : (dgHomComplex R X Y).homology n) :
+@[simp] theorem dgHomologyId_dgHomologyComp {X Y : C} {n : ℤ}
+    (a : (dgHomComplex R X Y).homology n) :
     dgHomologyComp R X X Y (zero_add n) (dgHomologyId R X) a = a := by
   obtain ⟨f, hf, rfl⟩ := exists_dgHomologyClass_eq R a
   rw [dgHomologyId_def, dgHomologyComp_dgHomologyClass]
   exact congrArg (dgHomologyClassLinearMap R n X Y) (Subtype.ext (dgId_dgComp R f))
 
 /-- Right composition with `dgHomologyId` is the identity on graded cohomology in every degree. -/
-@[simp]
-theorem dgHomologyComp_dgHomologyId {X Y : C} {n : ℤ} (a : (dgHomComplex R X Y).homology n) :
+@[simp] theorem dgHomologyComp_dgHomologyId {X Y : C} {n : ℤ}
+    (a : (dgHomComplex R X Y).homology n) :
     dgHomologyComp R X Y Y (add_zero n) a (dgHomologyId R Y) = a := by
   obtain ⟨f, hf, rfl⟩ := exists_dgHomologyClass_eq R a
   rw [dgHomologyId_def, dgHomologyComp_dgHomologyClass]
@@ -329,8 +320,7 @@ variable {R : Type v} [CommRing R] {C : Type u} {D : Type u'} [DGCategory R C] [
   (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C D)
 
 /-- Every DG functor preserves `TauCeti.dgHomologyId`. -/
-@[simp]
-theorem homologyMap_dgHomologyId (X : C) :
+@[simp] theorem homologyMap_dgHomologyId (X : C) :
     (homologyMap (F.map X X) 0).hom (dgHomologyId R X) = dgHomologyId R (F.obj X) := by
   rw [dgHomologyId_def, dgHomologyId_def, homologyMap_dgHomologyClass]
   exact congrArg (dgHomologyClassLinearMap R 0 (F.obj X) (F.obj X))
