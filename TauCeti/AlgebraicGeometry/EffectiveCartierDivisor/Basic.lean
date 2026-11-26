@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
+public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
 import TauCeti.Algebra.Regular.SMul
 
@@ -50,8 +51,11 @@ need not generate proper ideals; a zero equation is permitted only on the empty 
 Pullback along an arbitrary morphism `f : X ⟶ Y` from an integral scheme also preserves effective
 Cartier divisors, provided the generic point of `X` does not map into the divisor
 (`IsEffectiveCartier.comap_of_isIntegral`): the pulled-back local equation is then a nonzero
-element of a domain. In particular an effective Cartier divisor not containing a point `η` meets
-the closure of `η`, with its reduced induced structure, properly
+element of a domain. This holds along every dominant morphism of integral schemes
+(`IsEffectiveCartier.comap_of_isDominant`), because the generic point is not on a
+divisor (`IsEffectiveCartier.genericPoint_notMem_support`). In particular an effective Cartier
+divisor not containing a point `η` meets the closure of `η`, with its reduced induced structure,
+properly
 (`IsEffectiveCartier.comap_subschemeι_vanishingIdeal_closure_singleton`).
 
 Sums, nonnegative multiples, and finite sums are effective Cartier, and conversely any factor of an
@@ -296,6 +300,29 @@ theorem IsEffectiveCartier.comap_of_isIntegral {I : Y.IdealSheafData} (hI : I.Is
     rw [← mem_supportSet_iff_mem_support, mem_supportSet_iff_of_mem (U := ⟨V, hV⟩) hξ, hIV, h0]
     simp
   rwa [support_comap, ← SetLike.mem_coe, Closeds.coe_preimage] at h
+
+/-- **The generic point is not on a divisor.** On an integral scheme, the support of an effective
+Cartier divisor does not contain the generic point: a local equation is a nonzero function, so it
+does not vanish on a dense open set. -/
+theorem IsEffectiveCartier.genericPoint_notMem_support [IsIntegral X] {I : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) : genericPoint X ∉ I.support := by
+  obtain ⟨U, hξU, a, ha, hUa⟩ := (isEffectiveCartier_iff I).mp hI (genericPoint X)
+  have : Nonempty U.val := ⟨⟨_, hξU⟩⟩
+  have ha₀ : a ≠ 0 := fun h ↦ one_ne_zero (ha (show a • (1 : Γ(X, U)) = a • 0 by simp [h]))
+  rw [← mem_supportSet_iff_mem_support, mem_supportSet_iff_of_mem hξU, hUa,
+    Scheme.mem_zeroLocus_iff]
+  intro h
+  obtain ⟨y, hy⟩ := (Opens.ne_bot_iff_nonempty _).mp
+    fun h' : X.basicOpen a = ⊥ ↦ ha₀ ((basicOpen_eq_bot_iff a).mp h')
+  exact h a (Ideal.mem_span_singleton_self a) <|
+    ((genericPoint_spec X).mem_open_set_iff (X.basicOpen a).isOpen).mpr ⟨y, trivial, hy⟩
+
+/-- **Pullback along a dominant morphism.** The inverse image of an effective Cartier divisor
+along a dominant morphism of integral schemes is an effective Cartier divisor. -/
+theorem IsEffectiveCartier.comap_of_isDominant [IsIntegral X] [IsIntegral Y]
+    {I : Y.IdealSheafData} (hI : I.IsEffectiveCartier) (f : X ⟶ Y) [IsDominant f] :
+    (I.comap f).IsEffectiveCartier :=
+  hI.comap_of_isIntegral f (f.genericPoint_eq_of_isDominant ▸ hI.genericPoint_notMem_support)
 
 /-- **Meeting the closure of a point properly.** An effective Cartier divisor `I` whose support does
 not contain a point `η` pulls back to an effective Cartier divisor on the closure of `η`, with its

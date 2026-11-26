@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import TauCeti.Algebra.BigOperators.Finprod
 public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Rank
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
@@ -124,3 +125,27 @@ theorem finrank_comp_eq_finsum_of_isClosedImmersion {K : Type u} [Field K] {Z Y 
   rw [residueDegree_comp, residueDegree_eq_one_of_surjectiveOnStalks i z, mul_one]
 
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.IdealSheafData
+
+universe u
+
+/-- **Finitely many local lengths are nonzero.** For a closed subscheme of `X` finite over a field,
+the length of `𝒪_{X,x} ⧸ I_x` vanishes outside the finitely many points of the subscheme, so the
+local-length sums of `Scheme.Hom.finrank_comp_eq_finsum_of_isClosedImmersion` are finite sums. -/
+theorem finite_support_length_stalkIdeal {K : Type u} [Field K] {X : Scheme.{u}}
+    (I : X.IdealSheafData) (f : X ⟶ Spec (.of K)) [IsFinite (I.subschemeι ≫ f)] :
+    (Function.support fun x : X ↦
+      (Module.length (X.presheaf.stalk x) (X.presheaf.stalk x ⧸ I.stalkIdeal x)).toNat).Finite := by
+  have : Finite I.subscheme := by
+    have := (I.subschemeι ≫ f).finite_preimage (Set.toFinite (Set.univ : Set (Spec (.of K))))
+    rwa [Set.preimage_univ, Set.finite_univ_iff] at this
+  refine (Set.finite_range I.subschemeι).subset fun x hx ↦ ?_
+  by_contra h
+  have hx' : I.stalkIdeal x = ⊤ := by
+    by_contra h'
+    exact h (range_subschemeι I ▸ (I.mem_support_iff_stalkIdeal_ne_top x).mpr h')
+  apply hx
+  simp [hx']
+
+end AlgebraicGeometry.Scheme.IdealSheafData
