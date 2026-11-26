@@ -238,6 +238,12 @@ theorem gspRootDatum_root_positiveLong (i : Fin n) :
     (gspRootDatum.{u} n).root (.positiveLong i) = (Finsupp.single (ULift.up i) 2, -1) := by
   rw [← flip_gspinOddRootDatum, RootPairing.flip_root, gspinOddRootDatum_coroot_positiveLong]
 
+/-- For `i ≠ j`, the root `ε_{i+1} - ε_{j+1}` of `GSp₂ₙ`, with `ε₀`-coordinate zero. -/
+theorem gspRootDatum_root_difference {i j : Fin n} (hij : i ≠ j) :
+    (gspRootDatum.{u} n).root (.difference i j hij) =
+      (Finsupp.single (ULift.up i) 1 - Finsupp.single (ULift.up j) 1, 0) := by
+  rw [gspRootDatum_root, Symplectic.diagonalRootDatum_root_difference, multiplierCoordinate]
+
 /-- For `i < j`, the root `ε_{i+1} + ε_{j+1} - ε₀` of `GSp₂ₙ`. -/
 theorem gspRootDatum_root_positiveSum {i j : Fin n} (hij : i < j) :
     (gspRootDatum.{u} n).root (.positiveSum i j hij) =

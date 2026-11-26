@@ -244,16 +244,9 @@ theorem toGspCharacterLattice_simpleRoot (i : Fin g) :
 /-- Before the last node, the simple root is `eᵢ - eᵢ₊₁`. -/
 theorem simpleRoot_of_lt (i : Fin g) (h : (i : ℕ) + 1 < g) :
     simpleRoot i = standardWeight i - standardWeight ⟨i + 1, h⟩ := by
-  rw [simpleRoot, AddEquiv.symm_apply_eq]
-  ext j
-  · simp [Symplectic.diagonalSimpleRootIndex_of_lt i h,
-      Symplectic.diagonalRootDatum_root_difference, Finsupp.single_apply, Pi.single_apply,
-      ULift.ext_iff, eq_comm]
-  · have := GeneralSpin.two_mul_multiplierCoordinate.{0} g
-      (Symplectic.diagonalSimpleRootIndex g i)
-    simp [Symplectic.diagonalSimpleRootIndex_of_lt i h,
-      Symplectic.diagonalRootDatum_root_difference, SplitTorus.dotPairing_apply] at this ⊢
-    omega
+  rw [simpleRoot, AddEquiv.symm_apply_eq, Symplectic.diagonalSimpleRootIndex_of_lt i h,
+    gspRootDatum_root_difference]
+  ext <;> simp [Finsupp.single_apply, Pi.single_apply, ULift.ext_iff, eq_comm]
 
 /-- At the last node, the simple root is `2e_g - e_t`. -/
 theorem simpleRoot_of_not_lt (i : Fin g) (h : ¬(i : ℕ) + 1 < g) :
