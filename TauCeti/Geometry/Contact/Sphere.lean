@@ -101,6 +101,11 @@ It is a contact form (`TauCeti.SymplecticForm.isContactForm_sphereContactForm`).
 def sphereContactForm : SmoothForm (𝓡 n) (sphere (0 : E) 1) ℝ 1 :=
   SmoothForm.mpullback (↑) contMDiff_coe_sphere ω.radialPrimitive
 
+/-- The contact form of the sphere is the pullback of the radial primitive along the inclusion. -/
+theorem sphereContactForm_def :
+    ω.sphereContactForm n = SmoothForm.mpullback (↑) contMDiff_coe_sphere ω.radialPrimitive :=
+  (rfl)
+
 /-- The contact form of the sphere evaluates a tangent vector `v` at `x` as `ω(x, v) / 2`, with
 `v` read in `E`. -/
 @[simp]
