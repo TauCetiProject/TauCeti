@@ -54,6 +54,10 @@ the periods is assumed.
   `TauCeti.NovikovModule.kernelComp_mem`: the composite kernel is supported.
 * `TauCeti.NovikovModule.finite_support_kernelComp`: a composite of kernels with finite outputs
   has finite outputs.
+* `TauCeti.NovikovModule.kernelComp_assoc`,
+  `TauCeti.NovikovModule.finite_support_kernelComp_left`,
+  `TauCeti.NovikovModule.finite_support_kernelComp_right`: associativity and outer-sum support
+  finiteness for threefold composites of kernels.
 * `TauCeti.NovikovModule.kernelMap_kernelMap`: composition of maps is composition of kernels.
 * `TauCeti.NovikovModule.kernelMap_add`, `TauCeti.NovikovModule.kernelMap_zero`: the map is
   additive in the kernel.
@@ -355,6 +359,56 @@ theorem ite_eq_kernelComp [DecidableEq S₀] (m : S₀ → S₂ → R) :
   ext p₀ p₂
   rw [kernelComp_apply, finsum_eq_single _ p₀ fun q hq ↦ by simp [Ne.symm hq]]
   simp
+
+/-- **Associativity of kernel composition** at `(x, q)` under finite joint intermediate support. -/
+theorem kernelComp_assoc {S : Type*} {m : S → S₁ → R} {m' : S₁ → S₂ → R}
+    {m'' : S₂ → S₀ → R} {x : S} {q : S₀}
+    (hf : {r : S₁ × S₂ | m x r.1 ≠ 0 ∧ m' r.1 r.2 ≠ 0 ∧ m'' r.2 q ≠ 0}.Finite) :
+    kernelComp (kernelComp m m') m'' x q = kernelComp m (kernelComp m' m'') x q := by
+  have h₁₂₃ : HasFiniteSupport (uncurry fun p₁ p₂ => m x p₁ * m' p₁ p₂ * m'' p₂ q) :=
+    hf.subset fun r hr => ⟨left_ne_zero_of_mul (left_ne_zero_of_mul hr),
+      right_ne_zero_of_mul (left_ne_zero_of_mul hr), right_ne_zero_of_mul hr⟩
+  calc kernelComp (kernelComp m m') m'' x q
+      = ∑ᶠ p₂, ∑ᶠ p₁, m x p₁ * m' p₁ p₂ * m'' p₂ q := by
+        rw [kernelComp_apply]
+        refine finsum_congr fun p₂ => ?_
+        by_cases hp₂ : m'' p₂ q = 0
+        · simp [hp₂]
+        · rw [kernelComp_apply, finsum_mul' _ _
+            ((hf.preimage (fun a _ b _ h => congrArg Prod.fst h : Set.InjOn (·, p₂) _)).subset
+              fun p₁ hp₁ => ⟨left_ne_zero_of_mul hp₁, right_ne_zero_of_mul hp₁, hp₂⟩)]
+    _ = ∑ᶠ p₁, ∑ᶠ p₂, m x p₁ * m' p₁ p₂ * m'' p₂ q := (finsum_comm h₁₂₃).symm
+    _ = kernelComp m (kernelComp m' m'') x q := by
+        rw [kernelComp_apply]
+        refine finsum_congr fun p₁ => ?_
+        by_cases hp₁ : m x p₁ = 0
+        · simp [hp₁]
+        · rw [kernelComp_apply, mul_finsum' _ _
+            ((hf.preimage (Prod.mk_right_injective p₁).injOn).subset
+              fun p₂ hp₂ => ⟨hp₁, left_ne_zero_of_mul hp₂, right_ne_zero_of_mul hp₂⟩)]
+          exact finsum_congr fun p₂ => mul_assoc _ _ _
+
+/-- Finite joint intermediate support bounds the outer summation support of `(m ∘ m') ∘ m''`. -/
+theorem finite_support_kernelComp_left {S : Type*} {m : S → S₁ → R}
+    {m' : S₁ → S₂ → R} {m'' : S₂ → S₀ → R} {x : S} {q : S₀}
+    (hf : {r : S₁ × S₂ | m x r.1 ≠ 0 ∧ m' r.1 r.2 ≠ 0 ∧ m'' r.2 q ≠ 0}.Finite) :
+    (support fun p₂ => kernelComp m m' x p₂ * m'' p₂ q).Finite :=
+  (hf.image Prod.snd).subset fun p₂ hp₂ => by
+    obtain ⟨p₁, hp₁⟩ := exists_ne_zero_of_finsum_ne_zero
+      (kernelComp_apply m m' x p₂ ▸ left_ne_zero_of_mul hp₂)
+    exact ⟨(p₁, p₂), ⟨left_ne_zero_of_mul hp₁, right_ne_zero_of_mul hp₁,
+      right_ne_zero_of_mul hp₂⟩, rfl⟩
+
+/-- Finite joint intermediate support bounds the outer summation support of `m ∘ (m' ∘ m'')`. -/
+theorem finite_support_kernelComp_right {S : Type*} {m : S → S₁ → R}
+    {m' : S₁ → S₂ → R} {m'' : S₂ → S₀ → R} {x : S} {q : S₀}
+    (hf : {r : S₁ × S₂ | m x r.1 ≠ 0 ∧ m' r.1 r.2 ≠ 0 ∧ m'' r.2 q ≠ 0}.Finite) :
+    (support fun p₁ => m x p₁ * kernelComp m' m'' p₁ q).Finite :=
+  (hf.image Prod.fst).subset fun p₁ hp₁ => by
+    obtain ⟨p₂, hp₂⟩ := exists_ne_zero_of_finsum_ne_zero
+      (kernelComp_apply m' m'' p₁ q ▸ right_ne_zero_of_mul hp₁)
+    exact ⟨(p₁, p₂), ⟨left_ne_zero_of_mul hp₁, left_ne_zero_of_mul hp₂,
+      right_ne_zero_of_mul hp₂⟩, rfl⟩
 
 variable {C C' : ℝ} {m : S₁ → S₀ → R} {m' : S₀ → S₂ → R}
 

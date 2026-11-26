@@ -69,13 +69,24 @@ one-dimensional moduli spaces, which are not constructed here.
 
 * `TauCeti.NovikovModule.kernelReadout`: the graded identification of functional and operator
   kernels.
+* `TauCeti.NovikovModule.combinationReadout`: the graded identification of no-input cap functionals
+  and combinations.
+* `TauCeti.NovikovModule.evalFunctional`: the right-evaluation functional on `C ⊗ C^∨`, whose
+  operator readout is the identity kernel.
 * `TauCeti.NovikovModule.functionalBoundary`: a functional kernel composed with the Koszul total
   differential of `X ⊗ C₀^∨`.
 
 ## Main results
 
-* `TauCeti.NovikovModule.functionalBoundary_kernelReadout`: the readout intertwines the Hom
-  differential of operators with the boundary of functionals.
+* `TauCeti.NovikovModule.kernelComp_kernelReadout_right`,
+  `TauCeti.NovikovModule.eq_negOnePowCast_mul_kernelReadout`: precomposition and sign-inversion
+  rules for `kernelReadout`.
+* `TauCeti.NovikovModule.functionalBoundary_kernelReadout`,
+  `TauCeti.NovikovModule.kernelReadout_functionalBoundary_of_deg`,
+  `TauCeti.NovikovModule.functionalBoundary_combinationReadout_eq_zero_iff`,
+  `TauCeti.NovikovModule.functionalBoundary_evalFunctional`: the readout intertwines the Hom
+  differential of operators with the boundary of functionals, closed cap functionals give cocycles,
+  and `evalFunctional` is closed.
 * `TauCeti.NovikovModule.kernelMap_kernelProduct_eq_add_of_functionalBoundary_eq_zero`: the
   Leibniz rule from a closed product functional.
 * `TauCeti.NovikovModule.sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary`:
@@ -184,6 +195,24 @@ theorem kernelReadout_apply_eq_kernelReadout_apply_iff {d₀ : S₀ → ℤ} {φ
   refine ⟨fun h => ?_, fun h => by rw [kernelReadout_apply, kernelReadout_apply, h]⟩
   simpa [kernelReadout_apply, ← mul_assoc] using congrArg (negOnePowCast R (d₀ q) * ·) h
 
+/-- If the operator readout of `f` at `(x, q)` is `(-1)^k` times `g x q`, then `f x q` is
+`(-1)^k` times the operator readout of `g` there. -/
+theorem eq_negOnePowCast_mul_kernelReadout {d₀ : S₀ → ℤ} {f g : S → S₀ → R} {x : S} {q : S₀}
+    {k : ℤ} (h : kernelReadout d₀ f x q = negOnePowCast R k * g x q) :
+    f x q = negOnePowCast R k * kernelReadout d₀ g x q := by
+  rw [← kernelReadout_kernelReadout d₀ f, kernelReadout_apply, h, kernelReadout_apply]
+  ring
+
+/-- Operator readout at the output commutes with precomposition by any input kernel. -/
+@[simp]
+theorem kernelComp_kernelReadout_right {S₁ : Type*} (d₀ : S₀ → ℤ) (t : S → S₁ → R)
+    (s : S₁ → S₀ → R) :
+    kernelComp t (kernelReadout d₀ s) = kernelReadout d₀ (kernelComp t s) := by
+  funext x q
+  rw [kernelComp_apply, kernelReadout_apply, kernelComp_apply,
+    (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (d₀ q))).mul_finsum]
+  exact finsum_congr fun p => by rw [kernelReadout_apply]; ring
+
 end Readout
 
 section Boundary
@@ -234,6 +263,25 @@ theorem functionalBoundary_kernelReadout {t : S → S₀ → R}
       negOnePowCast_mul_self (R := R) (d x) +
     (-(negOnePowCast R (d₀ q) * kernelComp δ t x q)) * negOnePowCast_mul_self (R := R) j
 
+/-- **Operator readout of a functional boundary.** When `φ` has operator degree `j`
+(`φ(y, p) ≠ 0 → d₀ p = d y + j`), reading out `functionalBoundary d d₀ δ δ₀ φ` gives
+`δ ∘ (readout φ) - (-1)^j (readout φ) ∘ δ₀`. -/
+theorem kernelReadout_functionalBoundary_of_deg {φ : S → S₀ → R}
+    (hφ : ∀ y p, φ y p ≠ 0 → d₀ p = d y + j) (x : S) (q : S₀) :
+    kernelReadout d₀ (functionalBoundary d d₀ δ δ₀ φ) x q =
+      kernelComp δ (kernelReadout d₀ φ) x q -
+        negOnePowCast R j * kernelComp (kernelReadout d₀ φ) δ₀ x q := by
+  have ht : ∀ y p, kernelReadout d₀ φ y p ≠ 0 → d₀ p = d y + j := fun y p h =>
+    hφ y p fun hp => h (by simp [kernelReadout_apply, hp])
+  have hb := functionalBoundary_kernelReadout (δ := δ) (δ₀ := δ₀) ht x q
+  rw [kernelReadout_kernelReadout d₀ φ] at hb
+  rw [kernelReadout_apply, hb, kernelReadout_apply, negOnePowCast_add, negOnePowCast_one]
+  linear_combination
+    (-(negOnePowCast R j * kernelComp (kernelReadout d₀ φ) δ₀ x q) +
+        negOnePowCast R j * negOnePowCast R j * kernelComp δ (kernelReadout d₀ φ) x q) *
+      negOnePowCast_mul_self (R := R) (d₀ q) +
+    kernelComp δ (kernelReadout d₀ φ) x q * negOnePowCast_mul_self (R := R) j
+
 /-- **Closed functionals are chain maps.** For an operator kernel `t` of degree `0`, the readout
 of `t` is annihilated by the total differential at `x ⊗ q^∨` exactly when the composite kernels
 `∑ t(x, p) δ₀(p, q)` and `∑ δ(x, x') t(x', q)` agree there. For all `x` and `q` this says that the
@@ -265,6 +313,105 @@ theorem functionalBoundary_kernelReadout_eq_kernelReadout_iff {k s : S → S₀ 
   simp only [negOnePowCast_neg, negOnePowCast_one, neg_one_mul, sub_neg_eq_add]
 
 end Boundary
+
+section Combination
+
+/-- **Combination readout of a no-input cap functional.** Multiplying `ε : S₀ → R` at `q` by
+`(-1)^(d₀ q)` identifies cap functionals on `C₀^∨` with combinations in `C₀`. -/
+def combinationReadout (d₀ : S₀ → ℤ) (ε : S₀ → R) (q : S₀) : R :=
+  negOnePowCast R (d₀ q) * ε q
+
+/-- A coefficient of the combination readout of a cap functional. -/
+theorem combinationReadout_apply (d₀ : S₀ → ℤ) (ε : S₀ → R) (q : S₀) :
+    combinationReadout d₀ ε q = negOnePowCast R (d₀ q) * ε q := (rfl)
+
+/-- Combination readout is an involution. -/
+@[simp]
+theorem combinationReadout_combinationReadout (d₀ : S₀ → ℤ) (ε : S₀ → R) :
+    combinationReadout d₀ (combinationReadout d₀ ε) = ε := by
+  funext q; simp [combinationReadout_apply, ← mul_assoc]
+
+@[simp]
+theorem combinationReadout_zero (d₀ : S₀ → ℤ) :
+    combinationReadout (R := R) d₀ 0 = 0 := by funext q; simp [combinationReadout_apply]
+
+@[simp]
+theorem combinationReadout_add (d₀ : S₀ → ℤ) (ε ε' : S₀ → R) :
+    combinationReadout d₀ (ε + ε') = combinationReadout d₀ ε + combinationReadout d₀ ε' := by
+  funext q; simp [combinationReadout_apply, mul_add]
+
+@[simp]
+theorem combinationReadout_neg (d₀ : S₀ → ℤ) (ε : S₀ → R) :
+    combinationReadout d₀ (-ε) = -combinationReadout d₀ ε := by
+  funext q; simp [combinationReadout_apply]
+
+@[simp]
+theorem combinationReadout_sub (d₀ : S₀ → ℤ) (ε ε' : S₀ → R) :
+    combinationReadout d₀ (ε - ε') = combinationReadout d₀ ε - combinationReadout d₀ ε' := by
+  funext q; simp [combinationReadout_apply, mul_sub]
+
+@[simp]
+theorem combinationReadout_smul (d₀ : S₀ → ℤ) (c : R) (ε : S₀ → R) :
+    combinationReadout d₀ (c • ε) = c • combinationReadout d₀ ε := by
+  funext q; simp only [combinationReadout_apply, Pi.smul_apply, smul_eq_mul]; ring
+
+@[simp]
+theorem combinationReadout_inj {d₀ : S₀ → ℤ} {ε ε' : S₀ → R} :
+    combinationReadout d₀ ε = combinationReadout d₀ ε' ↔ ε = ε' :=
+  ⟨fun h => by simpa using congrArg (combinationReadout d₀) h, fun h => h ▸ rfl⟩
+
+/-- **Closed cap functionals give cocycles** for combinations of constant degree parity `j`. -/
+theorem functionalBoundary_combinationReadout_eq_zero_iff {d₀ : S₀ → ℤ} {δ₀ : S₀ → S₀ → R}
+    {e : S₀ → R} {j : ℤ} (he : ∀ p, e p ≠ 0 → Even (d₀ p - j)) (q : S₀) :
+    functionalBoundary (fun _ : Unit => 0) d₀ 0 δ₀ (fun _ => combinationReadout d₀ e) () q = 0 ↔
+      ∑ᶠ p, e p * δ₀ p q = 0 := by
+  have hcomp : kernelComp (fun _ : Unit => combinationReadout d₀ e) δ₀ () q =
+      negOnePowCast R j * ∑ᶠ p, e p * δ₀ p q := by
+    rw [kernelComp_apply, (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self j)).mul_finsum]
+    refine finsum_congr fun p => ?_
+    by_cases hp : e p = 0
+    · simp [combinationReadout_apply, hp]
+    · have hd : d₀ p = (d₀ p - j) + j := by ring
+      rw [combinationReadout_apply, hd, negOnePowCast_add, negOnePowCast_even (he p hp), one_mul,
+        mul_assoc]
+  rw [functionalBoundary_apply, kernelComp_apply]
+  simp only [Pi.zero_apply, zero_mul, finsum_zero, zero_add, zero_sub, hcomp, neg_eq_zero]
+  refine ⟨fun h => ?_, fun h => by rw [h, mul_zero, mul_zero]⟩
+  simpa only [← mul_assoc, negOnePowCast_mul_self, one_mul, mul_zero] using
+    congrArg (fun x => negOnePowCast R j * (negOnePowCast R (d₀ q) * x)) h
+
+end Combination
+
+section EvalFunctional
+
+/-- **The right-evaluation functional** `γ_min : C ⊗ C^∨ → R`, taking value `(-1)^(d p)` on the
+diagonal `p = q` and `0` elsewhere, whose operator readout is the identity kernel. -/
+def evalFunctional [DecidableEq S] (d : S → ℤ) (p q : S) : R :=
+  if p = q then negOnePowCast R (d p) else 0
+
+/-- A value of the right-evaluation functional. -/
+theorem evalFunctional_apply [DecidableEq S] (d : S → ℤ) (p q : S) :
+    evalFunctional d p q = if p = q then negOnePowCast R (d p) else 0 := (rfl)
+
+/-- The operator readout of the right-evaluation functional is the identity kernel. -/
+@[simp]
+theorem kernelReadout_evalFunctional [DecidableEq S] (d : S → ℤ) :
+    kernelReadout d (evalFunctional (R := R) d) = fun p q => if p = q then 1 else 0 := by
+  funext p q
+  obtain rfl | hpq := eq_or_ne p q <;> simp [kernelReadout_apply, evalFunctional_apply, *]
+
+/-- **Differential compatibility:** `evalFunctional` is closed under `functionalBoundary`. -/
+@[simp]
+theorem functionalBoundary_evalFunctional [DecidableEq S] (d : S → ℤ) (δ : S → S → R) :
+    functionalBoundary d d δ δ (evalFunctional d) = 0 := by
+  funext p q
+  rw [functionalBoundary_apply, kernelComp_apply, kernelComp_apply,
+    finsum_eq_single _ q fun r hr => by simp [evalFunctional_apply, hr],
+    finsum_eq_single _ p fun r hr => by simp [evalFunctional_apply, hr.symm]]
+  simp only [evalFunctional_apply, ↓reduceIte, negOnePowCast_add, Pi.zero_apply]
+  linear_combination (-(negOnePowCast R (d q) * δ p q)) * negOnePowCast_mul_self (R := R) (d p)
+
+end EvalFunctional
 
 section Product
 
