@@ -88,6 +88,16 @@ def latticeDir : Fin 3 → ℤ × ℤ := ![(1, 0), (0, 1), (1, 1)]
 
 @[simp] theorem latticeDir_two : latticeDir 2 = (1, 1) := (rfl)
 
+/-- A step along `e₂` and then along `e₁` is a step along `e₃`. -/
+@[simp] theorem add_latticeDir_one_add_latticeDir_zero (v : ℤ × ℤ) :
+    v + (0, 1) + (1, 0) = v + (1, 1) := by
+  ext <;> simp [add_assoc]
+
+/-- A step along `e₁` and then along `e₂` is a step along `e₃`. -/
+@[simp] theorem add_latticeDir_zero_add_latticeDir_one (v : ℤ × ℤ) :
+    v + (1, 0) + (0, 1) = v + (1, 1) := by
+  ext <;> simp [add_assoc]
+
 /-- An edge of the triangular lattice: the segment from `v` to `v + latticeDir k`. Every edge of
 the lattice has exactly one such name. -/
 @[ext]
@@ -687,6 +697,26 @@ theorem mem_vertices_of_mem_endpoints {f : TriFace} {e : TriEdge} {u : ℤ × �
     (he : e ∈ f.edges) (hu : u ∈ e.endpoints) : u ∈ f.vertices := by
   rcases TriEdge.mem_endpoints.1 hu with rfl | rfl
   exacts [v_mem_vertices_of_mem_edges he, target_mem_vertices_of_mem_edges he]
+
+/-- The vertices of a face are the endpoints of any two distinct edges of the face. -/
+theorem mem_vertices_iff_of_ne {f : TriFace} {i j : Fin 3} (hij : i ≠ j) {u : ℤ × ℤ} :
+    u ∈ f.vertices ↔ u ∈ (f.edge i).endpoints ∨ u ∈ (f.edge j).endpoints := by
+  refine ⟨fun hu => ?_, fun hu => hu.elim (mem_vertices_of_mem_endpoints (f.edge_mem_edges i))
+    (mem_vertices_of_mem_endpoints (f.edge_mem_edges j))⟩
+  obtain ⟨⟨x, y⟩, _ | _⟩ := f <;> fin_cases i <;> fin_cases j <;>
+    simp_all [Prod.ext_iff] <;> omega
+
+/-- A face has only one vertex off each of its edges. -/
+theorem eq_of_notMem_endpoints {f : TriFace} {i : Fin 3} {u u' : ℤ × ℤ}
+    (hu : u ∈ f.vertices) (hu' : u' ∈ f.vertices) (h : u ∉ (f.edge i).endpoints)
+    (h' : u' ∉ (f.edge i).endpoints) : u = u' := by
+  obtain ⟨⟨x, y⟩, _ | _⟩ := f <;> fin_cases i <;> simp_all [Prod.ext_iff] <;> omega
+
+/-- The vertex of a face off one edge lies on each other edge. -/
+theorem mem_endpoints_of_notMem {f : TriFace} {i j : Fin 3} (hij : i ≠ j)
+    {u : ℤ × ℤ} (hu : u ∈ f.vertices) (hui : u ∉ (f.edge i).endpoints) :
+    u ∈ (f.edge j).endpoints :=
+  ((mem_vertices_iff_of_ne hij).1 hu).resolve_left hui
 
 end TriFace
 

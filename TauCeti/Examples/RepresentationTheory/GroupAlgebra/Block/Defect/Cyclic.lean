@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.Defs
-public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect
+public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Defect.Basic
 
 /-!
 # The defect of the block of `k[C_p]`
