@@ -23,8 +23,8 @@ Both results include singular matrices and the empty index type.
 `New.ostrowski_taussky` and `New.one_le_re_of_mem_roots_charpoly_inv_mul` in
 `src/Lib/General/Analysis/GaussianIntegral.lean` in grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
-The normalized Hermitian-part formulation `Matrix.PosSemidef.re_det_le_norm_det` is derived
-here from that comparison.
+The normalized Hermitian-part formulation
+`Matrix.PosSemidef.norm_det_le_norm_det_of_two_smul_eq` is derived here from that comparison.
 
 ## References
 
@@ -79,20 +79,15 @@ theorem Matrix.PosSemidef.norm_det_le_two_pow_mul {A H : Matrix ι ι ℂ}
     simp [M, ← two_smul ℂ, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc]
   rwa [hnorm, one_le_div (norm_pos_iff.2 hdet)] at hprod
 
-/-- **Ostrowski–Taussky inequality.** The determinant of a positive-semidefinite Hermitian
-part is at most the modulus of the original complex matrix's determinant. -/
-theorem Matrix.PosSemidef.re_det_le_norm_det {A : Matrix ι ι ℂ}
-    (hH : ((2 : ℂ)⁻¹ • (A + Aᴴ)).PosSemidef) :
-    ((2 : ℂ)⁻¹ • (A + Aᴴ)).det.re ≤ ‖A.det‖ := by
-  have htwo : (2 : ℂ) • ((2 : ℂ)⁻¹ • (A + Aᴴ)) = A + Aᴴ := by simp
+/-- **Ostrowski–Taussky inequality.** If `H` is a positive-semidefinite Hermitian part of
+`A`, given by `2 • H = A + Aᴴ`, then `‖det H‖ ≤ ‖det A‖`. -/
+theorem Matrix.PosSemidef.norm_det_le_norm_det_of_two_smul_eq {A H : Matrix ι ι ℂ}
+    (hH : H.PosSemidef) (h2 : (2 : ℂ) • H = A + Aᴴ) : ‖H.det‖ ≤ ‖A.det‖ := by
   have hsum : (A + Aᴴ).PosSemidef := by
-    rw [← htwo]
+    rw [← h2]
     exact hH.smul (by norm_num : (0 : ℂ) ≤ 2)
   have h := hsum.norm_det_le_two_pow_mul (A := A) (by simpa using
     (Matrix.PosSemidef.zero : (0 : Matrix ι ι ℂ).PosSemidef))
-  have hnorm : ‖((2 : ℂ)⁻¹ • (A + Aᴴ)).det‖ ≤ ‖A.det‖ := by
-    rw [← htwo, det_smul, norm_mul, norm_pow] at h
-    norm_num only [Complex.norm_ofNat] at h
-    simpa only [one_div] using
-      le_of_mul_le_mul_left h (by positivity : (0 : ℝ) < 2 ^ Fintype.card ι)
-  exact (Complex.re_le_norm _).trans hnorm
+  rw [← h2, det_smul, norm_mul, norm_pow] at h
+  norm_num only [Complex.norm_ofNat] at h
+  exact le_of_mul_le_mul_left h (by positivity : (0 : ℝ) < 2 ^ Fintype.card ι)
