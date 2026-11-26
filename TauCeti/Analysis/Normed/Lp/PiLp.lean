@@ -500,9 +500,7 @@ theorem norm_piMap_le {T : ∀ i, E i →L[𝕜] F i} {C : ℝ} (hC : 0 ≤ C) (
   refine ContinuousLinearMap.opNorm_le_bound _ hC fun x ↦ ?_
   -- Compare coordinatewise with the vector of coordinate norms of `x`, scaled by `C`.
   calc ‖piMap p T x‖ ≤ ‖C • WithLp.toLp p (fun i ↦ ‖x i‖)‖ := norm_mono fun i ↦ by
-        rw [piMap_apply, smul_apply, toLp_apply, smul_eq_mul, norm_mul, _root_.norm_norm,
-          Real.norm_of_nonneg hC]
-        exact (T i).le_of_opNorm_le (hT i) (x i)
+        simpa [abs_of_nonneg hC] using (T i).le_of_opNorm_le (hT i) (x i)
     _ = C * ‖x‖ := by rw [norm_smul, Real.norm_of_nonneg hC, norm_norm]
 
 end PiLp
