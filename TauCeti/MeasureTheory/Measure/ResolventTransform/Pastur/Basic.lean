@@ -323,10 +323,8 @@ private lemma hasDerivAt_of_pastur_eq {f : ℂ → ℂ} (t : ℝ≥0) {z : ℂ}
       (1 - (t : ℂ) * deriv (resolventTransform ν) (z + t * f z))) z := by
   let ζ : ℂ → ℂ := fun w ↦ w + t * f w
   let d : ℂ := deriv (resolventTransform ν) (ζ z)
-  have hm_deriv : HasDerivAt (resolventTransform ν) d (ζ z) := by
-    have h := hasDerivAt_resolventTransform_of_im_ne_zero (μ := ν) hζ0
-    dsimp only [d]
-    rwa [h.deriv]
+  have hm_deriv : HasDerivAt (resolventTransform ν) d (ζ z) :=
+    (hasDerivAt_resolventTransform_of_im_ne_zero (μ := ν) hζ0).differentiableAt.hasDerivAt
   let Φ : ℂ → ℂ := fun u ↦ u - (t : ℂ) * resolventTransform ν u
   have hΦ_deriv : HasDerivAt Φ (1 - (t : ℂ) * d) (ζ z) :=
     (hasDerivAt_id (ζ z)).sub (hm_deriv.const_mul (t : ℂ))
@@ -353,14 +351,21 @@ private lemma norm_mul_deriv_resolventTransform_lt_one_of_eq (t : ℝ≥0) {z w 
     _ = 1 - z.im / (z + t * w).im := hb
     _ < 1 := by linarith
 
+private lemma one_sub_mul_deriv_ne_zero_of_eq (t : ℝ≥0) {z w : ℂ}
+    (hz : z.im ≠ 0) (hzw : 0 ≤ z.im * w.im)
+    (hw : w = resolventTransform ν (z + t * w)) :
+    1 - (t : ℂ) * deriv (resolventTransform ν) (z + t * w) ≠ 0 := by
+  refine sub_ne_zero.2 fun h ↦ ?_
+  have hlt := norm_mul_deriv_resolventTransform_lt_one_of_eq t hz hzw hw
+  rw [← h, norm_one] at hlt
+  exact lt_irrefl 1 hlt
+
 private lemma differentiableOn_pasturAux (t : ℝ≥0) :
     DifferentiableOn ℂ (pasturAux ν t) {z : ℂ | 0 < z.im} := by
   intro z (hz : 0 < z.im)
   obtain ⟨hwim, hweq⟩ := pasturAux_spec (ν := ν) t hz
   have hζpos : 0 < (z + t * pasturAux ν t z).im := im_add_nnreal_mul_pos t hz hwim
-  have hlt := norm_mul_deriv_resolventTransform_lt_one_of_eq t hz.ne' (mul_nonneg hz.le hwim) hweq
-  have hjac : 1 - (t : ℂ) * deriv (resolventTransform ν) (z + t * pasturAux ν t z) ≠ 0 :=
-    sub_ne_zero.2 fun h ↦ (norm_one (α := ℂ) ▸ h ▸ hlt).false
+  have hjac := one_sub_mul_deriv_ne_zero_of_eq t hz.ne' (mul_nonneg hz.le hwim) hweq
   have heq : ∀ᶠ w in 𝓝 z, pasturAux ν t w = resolventTransform ν (w + t * pasturAux ν t w) := by
     filter_upwards [(isOpen_lt continuous_const continuous_im).mem_nhds hz] with w hw
     exact (pasturAux_spec t hw).2
@@ -526,12 +531,9 @@ theorem norm_mul_deriv_resolventTransform_add_mul_resolventTransform_pastur_lt_o
 theorem one_sub_mul_deriv_resolventTransform_add_mul_resolventTransform_pastur_ne_zero (t : ℝ≥0)
     {z : ℂ} (hz : z.im ≠ 0) :
     1 - (t : ℂ) * deriv (resolventTransform ν)
-      (z + t * resolventTransform (ν.pastur t) z) ≠ 0 := by
-  intro h
-  have hlt :=
-    norm_mul_deriv_resolventTransform_add_mul_resolventTransform_pastur_lt_one (ν := ν) t hz
-  rw [← sub_eq_zero.1 h, norm_one] at hlt
-  exact lt_irrefl 1 hlt
+      (z + t * resolventTransform (ν.pastur t) z) ≠ 0 :=
+  one_sub_mul_deriv_ne_zero_of_eq t hz
+    (im_mul_im_resolventTransform_nonneg (ν.pastur t) z) (resolventTransform_pastur_eq t hz)
 
 /-- **Complex derivative of the Pastur resolvent transform.** Off the real axis,
 `m_{ν.pastur t}'(z) = m_ν'(ζ) / (1 - t m_ν'(ζ))` where `ζ = z + t m_{ν.pastur t}(z)`. -/

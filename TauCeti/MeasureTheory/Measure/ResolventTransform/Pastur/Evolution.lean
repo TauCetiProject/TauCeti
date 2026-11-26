@@ -151,16 +151,17 @@ theorem hasDerivWithinAt_resolventTransform_pastur_Ici {z : ℂ} (hz : z.im ≠ 
     let ζ : ℝ → ℂ := fun s ↦ z + (s.toNNReal : ℂ) * f s
     let d : ℂ := deriv (resolventTransform ν) (ζ t)
     have hζ0 : (ζ t).im ≠ 0 := im_add_mul_resolventTransform_pastur_ne_zero t.toNNReal hz
-    have hm_deriv : HasDerivAt (resolventTransform ν) d (ζ t) := by
-      have h := hasDerivAt_resolventTransform_of_im_ne_zero (μ := ν) hζ0
-      dsimp only [d]; rwa [h.deriv]
+    have hm_deriv : HasDerivAt (resolventTransform ν) d (ζ t) :=
+      (hasDerivAt_resolventTransform_of_im_ne_zero (μ := ν) hζ0).differentiableAt.hasDerivAt
     have ht_coe_c : ((t.toNNReal : ℝ) : ℂ) = (t : ℂ) :=
       congrArg Complex.ofReal (Real.coe_toNNReal t ht)
-    have hjac : 1 - (t : ℂ) * d ≠ 0 := ht_coe_c ▸
-      one_sub_mul_deriv_resolventTransform_add_mul_resolventTransform_pastur_ne_zero
+    have hjac : 1 - (t : ℂ) * d ≠ 0 := by
+      rw [← ht_coe_c]
+      exact one_sub_mul_deriv_resolventTransform_add_mul_resolventTransform_pastur_ne_zero
         (ν := ν) t.toNNReal hz
-    have hderiv_z : deriv (resolventTransform (ν.pastur t.toNNReal)) z = d / (1 - (t : ℂ) * d) :=
-      ht_coe_c ▸ (hasDerivAt_resolventTransform_pastur (ν := ν) t.toNNReal hz).deriv
+    have hderiv_z : deriv (resolventTransform (ν.pastur t.toNNReal)) z = d / (1 - (t : ℂ) * d) := by
+      rw [← ht_coe_c]
+      exact (hasDerivAt_resolventTransform_pastur (ν := ν) t.toNNReal hz).deriv
     -- Limits of the numerator `f s * Q (ζ s)` and denominator `1 - t * Q (ζ s)` as `s → t`
     let Q : ℂ → ℂ := dslope (resolventTransform ν) (ζ t)
     have hQd : Q (ζ t) = d := dslope_same (resolventTransform ν) (ζ t)

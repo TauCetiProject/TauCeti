@@ -120,7 +120,7 @@ theorem pastur_dirac (a : ℝ) (t : ℝ≥0) :
   have hprod : resolventTransform (semicircleReal a t) z *
       ((a : ℂ) - (z + (t : ℂ) * resolventTransform (semicircleReal a t) z)) = 1 := by
     linear_combination -hq
-  rw [resolventTransform_dirac, resolvent, Ring.inverse_eq_inv']
+  rw [resolventTransform_dirac, Complex.resolvent_real_eq_inv]
   exact eq_inv_of_mul_eq_one_left hprod
 
 /-- **Semicircle laws are closed under the Pastur semigroup.** -/
