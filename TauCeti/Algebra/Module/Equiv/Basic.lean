@@ -37,15 +37,18 @@ characterized by the equivalence intertwining the two endomorphisms.
 * `LinearEquiv.homCongrRight`: an isomorphism of targets induces an equivalence of hom spaces
   over the auxiliary scalar semiring.
 
-* `LinearEquiv.map_ker_of_intertwine` and `LinearEquiv.map_range_of_intertwine`: transport of
-  kernels and ranges across an intertwining semilinear equivalence.
+* `LinearEquiv.map_ker_of_intertwine`, `LinearEquiv.map_range_of_intertwine`, and
+  `LinearEquiv.bijective_restrict_iff_of_intertwine`: transport of kernels, ranges, and restricted
+  bijectivity across an intertwining semilinear equivalence.
 * `LinearEquiv.conj_pow` and `LinearEquiv.ker_conj`: conjugation by a semilinear equivalence
   commutes with powers and transports kernels.
 * `LinearEquiv.eq_conjRingEquiv_apply_iff`: the conjugate `f ∘ d ∘ f⁻¹` of an endomorphism
   by a semilinear equivalence is the unique endomorphism `e` with `e ∘ f = f ∘ d`; it squares
   to zero when `d` does (`LinearEquiv.conjRingEquiv_apply_comp_self`).
-* `LinearEquiv.toPermHom_smul_coe`: the permutation of the module underlying a linear
-  automorphism moves the set underlying a submodule to the set underlying its image.
+* `LinearEquiv.toPermHom_smul_coe` and `LinearEquiv.coe_toLinearMap_pow`: the permutation of the
+  module underlying a linear automorphism moves the set underlying a submodule to the set
+  underlying its image, and coercing a power of a linear automorphism to a linear endomorphism
+  commutes with taking powers.
 * `LinearEquiv.smulOfUnit_apply`: `LinearEquiv.smulOfUnit u` acts as multiplication by `u`.
 * `LinearEquiv.toLinearMap_smulOfNeZero`: `LinearEquiv.smulOfNeZero K V c hc` is `c • id` as a
   linear map.
@@ -166,6 +169,23 @@ theorem map_range_of_intertwine
   · rintro ⟨b, rfl⟩
     exact ⟨f (e.symm b), ⟨e.symm b, rfl⟩, by rw [← h, e.apply_symm_apply]⟩
 
+/-- If a semilinear equivalence `e` intertwines endomorphisms `f` and `g` pointwise
+(`g (e d) = e (f d)`), then `f` restricts to a bijection on an invariant submodule `p` if and only
+if `g` restricts to a bijection on `p.map e`. -/
+theorem bijective_restrict_iff_of_intertwine
+    (e : M ≃ₛₗ[σ] N) (f : M →ₗ[R] M) (g : N →ₗ[S] N)
+    (h : ∀ d, g (e d) = e (f d)) {p : Submodule R M} {q : Submodule S N}
+    (hpq : Submodule.map (e : M →ₛₗ[σ] N) p = q)
+    {hp : ∀ x ∈ p, f x ∈ p} {hq : ∀ y ∈ q, g y ∈ q} :
+    Function.Bijective (f.restrict hp) ↔ Function.Bijective (g.restrict hq) := by
+  subst hpq
+  let eSub := p.equivMapOfInjective (e : M →ₛₗ[σ] N) e.injective
+  have hcomp : ⇑(g.restrict hq) ∘ ⇑eSub = ⇑eSub ∘ ⇑(f.restrict hp) := by
+    funext x
+    exact Subtype.ext (h x.val)
+  rw [← Function.Bijective.of_comp_iff (g.restrict hq) eSub.bijective, hcomp,
+    Function.Bijective.of_comp_iff' eSub.bijective (f.restrict hp)]
+
 end Intertwining
 
 section ConjRingEquiv
@@ -233,6 +253,19 @@ theorem toPermHom_smul_coe (g : M ≃ₗ[R] M) (p : Submodule R M) :
   ext x
   simp only [Set.mem_smul_set, SetLike.mem_coe, Submodule.mem_map, MulAction.toPermHom_apply,
     Equiv.Perm.smul_def, MulAction.toPerm_apply, LinearEquiv.smul_def, LinearEquiv.coe_coe]
+
+/-- Coercing a power of a linear automorphism to a linear endomorphism commutes with taking
+powers. -/
+theorem coe_toLinearMap_pow (e : M ≃ₗ[R] M) (n : ℕ) :
+    (↑(e ^ n) : M →ₗ[R] M) = (e : M →ₗ[R] M) ^ n := by
+  induction n with
+  | zero => rw [pow_zero, pow_zero, coe_toLinearMap_one, Module.End.one_eq_id]
+  | succ n ih => rw [pow_succ, coe_toLinearMap_mul, ih, pow_succ]
+
+/-- A power of `LinearEquiv.ofBijective f hf`, coerced back to `M →ₗ[R] M`, is `f ^ n`. -/
+theorem coe_ofBijective_pow {f : M →ₗ[R] M} (hf : Function.Bijective f) (n : ℕ) :
+    (↑(ofBijective f hf ^ n) : M →ₗ[R] M) = f ^ n :=
+  coe_toLinearMap_pow (ofBijective f hf) n
 
 end PermHom
 

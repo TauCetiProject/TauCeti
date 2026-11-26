@@ -17,8 +17,9 @@ A linear map `f : M → N` intertwines endomorphisms `dM` and `dN` when `dN ∘ 
 file records that intertwining is stable under composition, the step behind the composition law
 of cochain maps assembled from maps commuting with differentials. It also records that
 precomposition with a retraction of a section is a section of precomposition
-(`LinearMap.lcomp_comp_lcomp_eq_id`), that commuting squares `f' ∘ e₁ = e₂ ∘ f` and
-`g' ∘ e₁' = e₂' ∘ g` give the commuting square of products
+(`LinearMap.lcomp_comp_lcomp_eq_id`), that powers of precomposition by an endomorphism equal
+precomposition by the corresponding power (`LinearMap.lcomp_pow`), that commuting squares
+`f' ∘ e₁ = e₂ ∘ f` and `g' ∘ e₁' = e₂' ∘ g` give the commuting square of products
 (`LinearMap.prodMap_comp_prodCongr_eq_of_comp_eq`), that negation commutes with every linear
 map (`LinearMap.comp_neg_eq_neg_comp`), and that a composite `P ∘ L` is bijective exactly when
 `L` is injective, `P` is onto, and the kernel of `P` is complementary to the range of `L`
@@ -46,6 +47,18 @@ theorem lcomp_comp_lcomp_eq_id {R M N F : Type*} [CommSemiring R] [AddCommMonoid
     {p : F →ₗ[R] M} (hpi : p ∘ₗ i = .id) : lcomp R N i ∘ₗ lcomp R N p = .id := by
   ext x : 1
   simp [lcomp_apply', comp_assoc, hpi]
+
+/-- The `n`-th power of precomposition by an endomorphism `T` is precomposition by `T ^ n`. -/
+@[simp]
+theorem lcomp_pow {R S M D : Type*} [Semiring R] [Semiring S] [AddCommMonoid M] [AddCommMonoid D]
+    [Module R M] [Module R D] [Module S D] [SMulCommClass R S D] (T : Module.End R M) (n : ℕ) :
+    (lcomp S D T : Module.End S (M →ₗ[R] D)) ^ n = lcomp S D (T ^ n) := by
+  induction n with
+  | zero => ext φ x; simp
+  | succ n ih =>
+    rw [pow_succ, pow_succ', Module.End.mul_eq_comp, Module.End.mul_eq_comp, ih]
+    ext φ x
+    simp [lcomp_apply]
 
 /-- Commuting squares `f' ∘ e₁ = e₂ ∘ f` and `g' ∘ e₁' = e₂' ∘ g` of linear maps give the
 commuting square `(f' × g') ∘ (e₁ × e₁') = (e₂ × e₂') ∘ (f × g)` of their products. -/

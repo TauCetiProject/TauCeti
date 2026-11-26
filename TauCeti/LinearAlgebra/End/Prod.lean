@@ -13,7 +13,8 @@ import TauCeti.RingTheory.SimpleModule.Basic
 /-!
 # Products of endomorphisms
 
-This file proves that nilpotence and semisimplicity are preserved by componentwise products of
+This file proves componentwise power and restricted-bijectivity rules for product endomorphisms,
+shows that nilpotence and semisimplicity are preserved by componentwise products of
 endomorphisms, and describes the endomorphisms commuting with a componentwise product `f × g`
 when `f` and `g` have coprime minimal polynomials: they are themselves componentwise products.
 Since the minimal polynomial of `f × g` divides the product of those of `f` and `g`, this
@@ -21,6 +22,8 @@ coprimality passes to iterated products.
 
 ## Main declarations
 
+* `LinearMap.prodMap_pow` and `LinearMap.bijective_restrict_prodMap_iff`: componentwise powers and
+  restricted bijectivity on product submodules for `LinearMap.prodMap`.
 * `IsNilpotent.prodMap`: a product of nilpotent endomorphisms is nilpotent.
 * `Module.End.IsSemisimple.prodMap`: a product of semisimple endomorphisms is semisimple.
 * `Module.End.commute_prodMap_iff_of_isCoprime`: if `f` and `g` have coprime minimal polynomials,
@@ -32,9 +35,43 @@ coprimality passes to iterated products.
 
 public section
 
-namespace TauCeti
-
 open LinearMap Polynomial
+
+namespace LinearMap
+
+section Semiring
+
+variable {R M₁ M₂ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R M₁]
+  [AddCommMonoid M₂] [Module R M₂]
+
+/-- A power of a componentwise product of endomorphisms is the componentwise product of the
+powers. -/
+@[simp]
+theorem prodMap_pow (f : Module.End R M₁) (g : Module.End R M₂) (n : ℕ) :
+    f.prodMap g ^ n = (f ^ n).prodMap (g ^ n) :=
+  (map_pow (LinearMap.prodMapRingHom R M₁ M₂) (f, g) n).symm
+
+/-- Restricting a componentwise product `f.prodMap g` to a product submodule `p.prod q` is
+bijective if and only if both component restrictions are bijective. -/
+theorem bijective_restrict_prodMap_iff {f : Module.End R M₁} {g : Module.End R M₂}
+    {p : Submodule R M₁} {q : Submodule R M₂}
+    {hpq : ∀ x ∈ p.prod q, f.prodMap g x ∈ p.prod q}
+    {hp : ∀ x ∈ p, f x ∈ p} {hq : ∀ x ∈ q, g x ∈ q} :
+    Function.Bijective ((f.prodMap g).restrict hpq) ↔
+      Function.Bijective (f.restrict hp) ∧ Function.Bijective (g.restrict hq) := by
+  let e := p.prodEquiv q
+  have hcomp : ⇑e ∘ ⇑((f.prodMap g).restrict hpq) =
+      ⇑((f.restrict hp).prodMap (g.restrict hq)) ∘ ⇑e := by
+    funext x
+    ext <;> simp [e]
+  rw [← Function.Bijective.of_comp_iff' e.bijective, hcomp,
+    Function.Bijective.of_comp_iff _ e.bijective, LinearMap.coe_prodMap, Prod.map_bijective]
+
+end Semiring
+
+end LinearMap
+
+namespace TauCeti
 
 section
 
@@ -45,22 +82,13 @@ section Semiring
 variable {K : Type u} {V : Type v} {W : Type w}
 variable [Semiring K] [AddCommMonoid V] [Module K V] [AddCommMonoid W] [Module K W]
 
-/-- A power of a componentwise product of endomorphisms is the componentwise product of the
-powers. -/
-@[simp]
-private theorem _root_.Module.End.prodMap_pow (f : Module.End K V) (g : Module.End K W) (n : ℕ) :
-    (f.prodMap g) ^ n = (f ^ n).prodMap (g ^ n) := by
-  induction n with
-  | zero => exact LinearMap.prodMap_one.symm
-  | succ n hn => rw [pow_succ, pow_succ, pow_succ, hn, LinearMap.prodMap_mul]
-
 /-- The componentwise product of two nilpotent endomorphisms is nilpotent. -/
 theorem _root_.IsNilpotent.prodMap {f : Module.End K V} {g : Module.End K W}
     (hf : IsNilpotent f) (hg : IsNilpotent g) : IsNilpotent (f.prodMap g) := by
   obtain ⟨m, hm⟩ := hf
   obtain ⟨n, hn⟩ := hg
   refine ⟨m + n, ?_⟩
-  rw [Module.End.prodMap_pow, pow_add, hm, zero_mul, pow_add, hn, mul_zero,
+  rw [LinearMap.prodMap_pow, pow_add, hm, zero_mul, pow_add, hn, mul_zero,
     LinearMap.prodMap_zero]
 
 end Semiring

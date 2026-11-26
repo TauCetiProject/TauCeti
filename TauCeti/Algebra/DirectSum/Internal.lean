@@ -9,16 +9,18 @@ public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.LinearAlgebra.Basis.Basic
 public import Mathlib.LinearAlgebra.Pi
+import TauCeti.Algebra.DirectSum.Exact
 import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # Internal direct sums from explicit equivalences
 
 This file provides reusable infrastructure for direct sums of submodules.  The generic
-`DirectSum.piInclusion`, `DirectSum.piSubmodule`, and `DirectSum.piSubmoduleEquiv` declarations
-describe their componentwise inclusion and range, while `DirectSum.isInternal_of_lof` gives a
-criterion for proving that a family of submodules is an internal direct sum by identifying its
-summands with the components of a linear equivalence.
+`DirectSum.piInclusion`, `DirectSum.piSubmodule`, `DirectSum.piSubmoduleEquiv`,
+`DirectSum.isCompl_piSubmodule_iff`, and `DirectSum.bijective_restrict_lmap_iff` declarations
+describe their componentwise inclusion, range, complementarity, and restricted summandwise maps,
+while `DirectSum.isInternal_of_lof` gives a criterion for proving that a family of submodules is an
+internal direct sum by identifying its summands with the components of a linear equivalence.
 
 A second group of declarations concerns maps between decompositions.
 `DirectSum.decompose_map_eq_sum` computes a target component by summing source components
@@ -169,6 +171,49 @@ theorem DirectSum.lof_mem_piSubmodule {R ι : Type*} {M : ι → Type*} [Semirin
     DirectSum.lof R ι M i x ∈ DirectSum.piSubmodule N := by
   refine ⟨DirectSum.lof R ι (fun i ↦ N i) i x, ?_⟩
   exact DirectSum.piInclusion_lof N i x
+
+/-- Pulling back the full dependent-product submodule `Submodule.pi Set.univ N` along
+`DirectSum.coeFnLinearMap` gives `DirectSum.piSubmodule N`. -/
+theorem DirectSum.comap_coeFnLinearMap_pi_univ {R ι : Type*} {M : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (N : ∀ i, Submodule R (M i)) :
+    (Submodule.pi Set.univ N).comap (_root_.DirectSum.coeFnLinearMap R) =
+      DirectSum.piSubmodule N := by
+  ext x
+  simp
+
+/-- Two componentwise direct-sum submodules `DirectSum.piSubmodule p` and `DirectSum.piSubmodule q`
+are complementary if and only if `p i` and `q i` are complementary at every index `i`. -/
+@[simp]
+theorem DirectSum.isCompl_piSubmodule_iff {R ι : Type*} {M : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] {p q : ∀ i, Submodule R (M i)} :
+    IsCompl (DirectSum.piSubmodule p) (DirectSum.piSubmodule q) ↔
+      ∀ i, IsCompl (p i) (q i) := by
+  classical
+  simp only [isCompl_iff, disjoint_iff, codisjoint_iff, eq_bot_iff, eq_top_iff]
+  refine ⟨fun ⟨hdisj, hcod⟩ i ↦ ⟨fun v hv ↦ ?_, fun v _ ↦ ?_⟩,
+    fun h ↦ ⟨fun x hx ↦ DFinsupp.ext fun i ↦
+      (h i).1 ⟨(DirectSum.mem_piSubmodule_iff p x).mp hx.1 i,
+        (DirectSum.mem_piSubmodule_iff q x).mp hx.2 i⟩, fun x hx_top ↦ ?_⟩⟩
+  · have h0 := congrArg (_root_.DirectSum.component R ι M i)
+      (hdisj ⟨DirectSum.lof_mem_piSubmodule p i ⟨v, hv.1⟩,
+        DirectSum.lof_mem_piSubmodule q i ⟨v, hv.2⟩⟩)
+    simpa using h0
+  · obtain ⟨u, hu, w, hw, hEq⟩ :=
+      Submodule.mem_sup.mp (hcod (x := _root_.DirectSum.lof R ι M i v) Submodule.mem_top)
+    have hEq_i := congrArg (_root_.DirectSum.component R ι M i) hEq
+    exact Submodule.mem_sup.mpr
+      ⟨u i, (DirectSum.mem_piSubmodule_iff p u).mp hu i,
+        w i, (DirectSum.mem_piSubmodule_iff q w).mp hw i,
+        by simpa [← _root_.DirectSum.apply_eq_component] using hEq_i⟩
+  · clear hx_top
+    induction x using _root_.DirectSum.induction_on with
+    | zero => exact zero_mem _
+    | of i v =>
+      obtain ⟨u, hu, w, hw, hEq⟩ := Submodule.mem_sup.mp ((h i).2 (x := v) Submodule.mem_top)
+      rw [← hEq, map_add, ← _root_.DirectSum.lof_eq_of R, ← _root_.DirectSum.lof_eq_of R]
+      exact add_mem (Submodule.mem_sup_left (DirectSum.lof_mem_piSubmodule p i ⟨u, hu⟩))
+        (Submodule.mem_sup_right (DirectSum.lof_mem_piSubmodule q i ⟨w, hw⟩))
+    | add x y hx hy => exact add_mem hx hy
 
 /-- Restrict an internal direct sum decomposition along an injective linear map `f` which detects
 membership in the summands and whose range contains every homogeneous projection of each of its
@@ -696,6 +741,29 @@ theorem coe_decompose_summand (x : ⨁ i, M i) (i : ι) :
 end Module
 
 end DirectSum
+
+namespace TauCeti
+
+/-- Restricting `DirectSum.lmap f` to `DirectSum.piSubmodule p` is bijective if and only if every
+summand restriction `(f i).restrict` is bijective. -/
+theorem DirectSum.bijective_restrict_lmap_iff {R ι : Type*} {M : ι → Type*} [Semiring R]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] {f : ∀ i, Module.End R (M i)}
+    {p : ∀ i, Submodule R (M i)}
+    {hp : ∀ x ∈ DirectSum.piSubmodule p, _root_.DirectSum.lmap f x ∈ DirectSum.piSubmodule p}
+    {hpi : ∀ i, ∀ x ∈ p i, f i x ∈ p i} :
+    Function.Bijective ((_root_.DirectSum.lmap f).restrict hp) ↔
+      ∀ i, Function.Bijective ((f i).restrict (hpi i)) := by
+  let e := DirectSum.piSubmoduleEquiv p
+  have hcomp : ⇑((_root_.DirectSum.lmap f).restrict hp) ∘ ⇑e =
+      ⇑e ∘ ⇑(_root_.DirectSum.lmap fun i ↦ (f i).restrict (hpi i)) := by
+    funext x
+    apply Subtype.ext
+    ext i
+    simp [e]
+  rw [← Function.Bijective.of_comp_iff _ e.bijective, hcomp,
+    Function.Bijective.of_comp_iff' e.bijective, _root_.DirectSum.bijective_lmap_iff]
+
+end TauCeti
 
 /-- **A basis split along the fibers of a map gives an internal direct sum**: if `b` is a basis of
 `M` and `w : ι → κ` is any map of the index type, then the spans of the basis vectors in the fibers
