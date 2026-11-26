@@ -347,10 +347,15 @@ private theorem localConjugate_pullbackLocalIsos {V : C} (f : V ⟶ U) (e : Loca
     localConjugate j.obj.hom (pullbackLocalIsos f e j) ((F.map f.op.toLoc).toFunctor.mapAut x a) =
       Aut.autMulEquivOfIso ((pullbackCompIso f j.obj.hom).app y)
         (localConjugate (j.obj.hom ≫ f) (e ⟨Over.mk (j.obj.hom ≫ f), j.property⟩) a) := by
+  -- The composition isomorphism at `x` followed by `pullbackLocalIsos f e j` is `e` at `j ≫ f`
+  -- followed by the composition isomorphism at `y`, so the two conjugations agree.
+  have h : (pullbackCompIso f j.obj.hom).app x ≪≫ pullbackLocalIsos f e j =
+      e ⟨Over.mk (j.obj.hom ≫ f), j.property⟩ ≪≫ (pullbackCompIso f j.obj.hom).app y := by
+    simp [pullbackLocalIsos]
   rw [localConjugate, localConjugate, ← Functor.mapAut_comp,
-    Functor.mapAut_eq_autMulEquivOfIso_app (pullbackCompIso f j.obj.hom), pullbackLocalIsos,
-    ← MulEquiv.trans_apply, ← Aut.autMulEquivOfIso_trans, Iso.self_symm_id_assoc,
-    Aut.autMulEquivOfIso_trans, MulEquiv.trans_apply]
+    Functor.mapAut_eq_autMulEquivOfIso_app (pullbackCompIso f j.obj.hom)]
+  simpa only [Aut.autMulEquivOfIso_trans, MulEquiv.trans_apply] using
+    DFunLike.congr_fun (congrArg Aut.autMulEquivOfIso h) _
 
 /-- **Base change.** For `f : V ⟶ U`, the restriction along `f` of the transport of `a` along
 local isomorphisms on a covering sieve `R` of `U` is the transport of the restriction of `a` along
