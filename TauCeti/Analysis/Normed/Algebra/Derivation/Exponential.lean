@@ -7,24 +7,41 @@ module
 
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.Exponential
+import TauCeti.Analysis.Normed.Operator.Exponential
 
 /-!
-# The exponential of a bounded derivation is multiplicative
+# Exponentials of operators satisfying a bilinear Leibniz rule
 
-Let `B` be a Banach algebra over `𝕜 = ℝ` or `ℂ`, not necessarily unital or commutative, and let
-`D : B → B` be a bounded derivation, meaning a continuous linear map satisfying the Leibniz rule
-`D (x * y) = x * D y + D x * y`. Then the operator exponential `exp D = ∑ Dⁿ / n!`, computed in
-the Banach algebra of bounded operators on `B`, is multiplicative:
+Let `β : E × F → G` be a continuous bilinear map between Banach spaces over `𝕜 = ℝ` or `ℂ`, and
+let `D₁`, `D₂`, `D₃` be bounded operators on `E`, `F`, `G` satisfying the Leibniz rule
 
-`exp D (x * y) = exp D x * exp D y`.
+`D₃ (β x y) = β (D₁ x) y + β x (D₂ y)`.
 
-Since `exp D` is invertible in the operator algebra, with inverse `exp (-D)`
-(`NormedSpace.invertibleExp`), it is then an automorphism of `B`. Applied to the derivations
-`t • D`, this makes every `exp (t • D)` an automorphism; the Singer–Wermer theorem composes
-characters with these automorphisms.
+Then the operator exponentials `exp Dᵢ = ∑ Dᵢⁿ / n!`, computed in the Banach algebras of bounded
+operators, satisfy
+
+`exp D₃ (β x y) = β (exp D₁ x) (exp D₂ y)`
+
+(`ContinuousLinearMap.exp_apply_apply_of_leibniz`). Two special cases are used in Tau Ceti.
+
+* For the multiplication of a Banach algebra `B`, not necessarily unital or commutative, and a
+  bounded derivation `D` of `B`, `D (x * y) = x * D y + D x * y`, this says that `exp D` is
+  multiplicative (`ContinuousLinearMap.exp_apply_mul_of_derivation`). Since `exp D` is invertible
+  in the operator algebra, with inverse `exp (-D)` (`NormedSpace.invertibleExp`), it is then an
+  automorphism of `B`. Applied to the derivations `t • D`, this makes every `exp (t • D)` an
+  automorphism; the Singer–Wermer theorem composes characters with these automorphisms.
+* For the bracket of a finite-dimensional real Lie algebra and a derivation `D = ad X`, it says
+  that `exp (ad X)` is a Lie algebra automorphism. These are the inner automorphisms
+  `exp (s ad X)` of `TauCeti.Algebra.Lie.InvariantForm.Exponential`, which realize the root
+  reflections of a compact Lie algebra.
+
+The proof differentiates `t ↦ exp (-t D₃) (β (exp (t D₁) x) (exp (t D₂) y))`, whose derivative
+vanishes by the Leibniz rule, so that it is constant.
 
 ## Main results
 
+* `ContinuousLinearMap.exp_apply_apply_of_leibniz`: the exponentials of operators satisfying the
+  Leibniz rule for a bilinear map are compatible with it.
 * `ContinuousLinearMap.exp_apply_mul_of_derivation`: the exponential of a bounded derivation is
   multiplicative.
 
@@ -42,40 +59,54 @@ open NormedSpace
 
 namespace ContinuousLinearMap
 
-variable {𝕜 B : Type*} [RCLike 𝕜] [NonUnitalNormedRing B] [NormedSpace 𝕜 B]
+variable {𝕜 : Type*} [RCLike 𝕜]
+
+section Bilinear
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [CompleteSpace G]
+
+/-- **Exponentials of operators satisfying the Leibniz rule for a bilinear map.** If a continuous
+bilinear map `β` and bounded operators `D₁`, `D₂`, `D₃` satisfy
+`D₃ (β x y) = β (D₁ x) y + β x (D₂ y)`, then `exp D₃ (β x y) = β (exp D₁ x) (exp D₂ y)`. -/
+theorem exp_apply_apply_of_leibniz (β : E →L[𝕜] F →L[𝕜] G) {D₁ : E →L[𝕜] E} {D₂ : F →L[𝕜] F}
+    {D₃ : G →L[𝕜] G} (hD : ∀ x y, D₃ (β x y) = β (D₁ x) y + β x (D₂ y)) (x : E) (y : F) :
+    exp D₃ (β x y) = β (exp D₁ x) (exp D₂ y) := by
+  -- The function `K t = exp (-t • D₃) (β (exp (t • D₁) x) (exp (t • D₂) y))` has derivative zero
+  -- by the Leibniz rule, so it is constant, equal to its value `β x y` at `t = 0`.
+  let K : 𝕜 → G := fun t ↦ exp (t • -D₃) (β (exp (t • D₁) x) (exp (t • D₂) y))
+  have hK (t : 𝕜) : HasDerivAt K 0 t := by
+    have hm : HasDerivAt (fun s : 𝕜 ↦ β (exp (s • D₁) x) (exp (s • D₂) y))
+        (β (exp (t • D₁) x) (exp (t • D₂) (D₂ y)) + β (exp (t • D₁) (D₁ x)) (exp (t • D₂) y)) t :=
+      β.hasDerivAt_of_bilinear (fun _ ↦ hasDerivAt_exp_smul_apply D₁ t x)
+        (fun _ ↦ hasDerivAt_exp_smul_apply D₂ t y)
+    convert (hasDerivAt_exp_smul_const (-D₃) t).clm_apply hm using 1
+    -- The derivative is `exp (t • -D₃) (m' - D₃ m)` with
+    -- `m = β (exp (t • D₁) x) (exp (t • D₂) y)`; it vanishes by the Leibniz rule once `D₁` and
+    -- `D₂` are moved past `exp (t • D₁)` and `exp (t • D₂)`.
+    simp only [mul_apply_eq_comp, neg_apply, map_neg, map_add, hD, apply_exp_smul_apply, smul_neg]
+    abel
+  have hK10 : K 1 = K 0 :=
+    is_const_of_deriv_eq_zero (fun t ↦ (hK t).differentiableAt) (fun t ↦ (hK t).deriv) 1 0
+  have hinv : exp D₃ * exp (-D₃) = 1 := by
+    -- `exp_add_of_commute` is stated for normed `ℚ`-algebras; the operator algebra is one by
+    -- restriction of scalars from `𝕜`.
+    let _ : NormedAlgebra ℚ (G →L[𝕜] G) := NormedAlgebra.restrictScalars ℚ 𝕜 _
+    rw [← exp_add_of_commute (Commute.refl D₃).neg_right, add_neg_cancel, exp_zero]
+  simp only [K, one_smul, zero_smul, exp_zero, one_apply_eq_self] at hK10
+  rw [← hK10, ← mul_apply_eq_comp, hinv, one_apply_eq_self]
+
+end Bilinear
+
+variable {B : Type*} [NonUnitalNormedRing B] [NormedSpace 𝕜 B]
   [IsScalarTower 𝕜 B B] [SMulCommClass 𝕜 B B] [CompleteSpace B]
 
 /-- **The exponential of a bounded derivation is multiplicative.** If a continuous linear map
 `D : B → B` on a Banach algebra satisfies `D (x * y) = x * D y + D x * y`, then
 `exp D (x * y) = exp D x * exp D y`. -/
 theorem exp_apply_mul_of_derivation (D : B →L[𝕜] B) (hD : ∀ x y, D (x * y) = x * D y + D x * y)
-    (x y : B) : exp D (x * y) = exp D x * exp D y := by
-  have hE (t : 𝕜) (z : B) : HasDerivAt (fun s : 𝕜 ↦ exp (s • D) z) (exp (t • D) (D z)) t := by
-    simpa [mul_apply_eq_comp] using
-      (hasDerivAt_exp_smul_const D t).clm_apply (hasDerivAt_const t z)
-  -- `D` commutes with each `exp (t • D)`.
-  have hcomm (t : 𝕜) (z : B) : D (exp (t • D) z) = exp (t • D) (D z) := by
-    simpa [mul_apply_eq_comp] using
-      congr($(((Commute.refl D).smul_right t).exp_right) z)
-  -- The function `G t = exp (-t • D) (exp (t • D) x * exp (t • D) y)` has derivative zero by the
-  -- Leibniz rule, so it is constant, equal to its value `x * y` at `t = 0`.
-  let G : 𝕜 → B := fun t ↦ exp (t • -D) (exp (t • D) x * exp (t • D) y)
-  have hG (t : 𝕜) : HasDerivAt G 0 t := by
-    have hm : HasDerivAt (fun s : 𝕜 ↦ exp (s • D) x * exp (s • D) y)
-        (exp (t • D) x * exp (t • D) (D y) + exp (t • D) (D x) * exp (t • D) y) t :=
-      (mul 𝕜 B).hasDerivAt_of_bilinear (fun _ ↦ hE t x) (fun _ ↦ hE t y)
-    convert (hasDerivAt_exp_smul_const (-D) t).clm_apply hm using 1
-    -- The derivative is `exp (t • -D) (m' - D m)` with `m = exp (t • D) x * exp (t • D) y`; it
-    -- vanishes by the Leibniz rule once `D` is moved past `exp (t • D)`.
-    simp [mul_apply_eq_comp, hD, hcomm]
-  have hG10 : G 1 = G 0 :=
-    is_const_of_deriv_eq_zero (fun t ↦ (hG t).differentiableAt) (fun t ↦ (hG t).deriv) 1 0
-  have hinv : exp D * exp (-D) = 1 := by
-    -- `exp_add_of_commute` is stated for normed `ℚ`-algebras; the operator algebra is one by
-    -- restriction of scalars from `𝕜`.
-    let _ : NormedAlgebra ℚ (B →L[𝕜] B) := NormedAlgebra.restrictScalars ℚ 𝕜 _
-    rw [← exp_add_of_commute (Commute.refl D).neg_right, add_neg_cancel, exp_zero]
-  simp only [G, one_smul, zero_smul, exp_zero, one_apply_eq_self] at hG10
-  rw [← hG10, ← mul_apply_eq_comp, hinv, one_apply_eq_self]
+    (x y : B) : exp D (x * y) = exp D x * exp D y :=
+  (mul 𝕜 B).exp_apply_apply_of_leibniz (fun x y ↦ by simp [hD, add_comm]) x y
 
 end ContinuousLinearMap
