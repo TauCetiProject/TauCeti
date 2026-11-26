@@ -20,6 +20,18 @@ zero-freeness to the right of `θ`. An upper bound instead allows a rightmost re
 the Laplace transform of the error has residue `-m / ρ` at a zero `ρ` of multiplicity `m`.
 For the rational field the real exception is impossible, so either one-sided bound at
 all exponents greater than `1 / 2` implies the Riemann hypothesis.
+
+This is the classical oscillation argument for `ψ(x) - x`: a one-sided bound makes the Laplace
+transform of the error a transform of a function of constant sign, and Landau's theorem places its
+first singularity on the real axis.
+
+## References
+
+* E. Landau, *Über einen Satz von Tschebyschef*, Math. Ann. **61** (1905).
+* A. E. Ingham, *The Distribution of Prime Numbers*, Cambridge Tracts in Mathematics and
+  Mathematical Physics **30**, Cambridge University Press, 1932, Chapter V.
+* H. L. Montgomery and R. C. Vaughan, *Multiplicative Number Theory I. Classical Theory*,
+  Cambridge Studies in Advanced Mathematics **97**, Cambridge University Press, 2007, Chapter 15.
 -/
 
 public section
@@ -30,17 +42,6 @@ open scoped ComplexOrder
 namespace TauCeti
 
 open LFunctions
-
-/-- Substituting `x = exp u` turns an eventual bound `f x ≤ C * x ^ θ` into an almost-everywhere
-bound `f (exp u) ≤ C * exp (θ * u)` on a ray, the form the Laplace-transform results take. -/
-private lemma exists_ae_le_exp_of_eventually_le_rpow {f : ℝ → ℝ} {θ C : ℝ}
-    (h : ∀ᶠ x in atTop, f x ≤ C * x ^ θ) :
-    ∃ u₀, ∀ᵐ u ∂volume.restrict (Ioi u₀), f (Real.exp u) ≤ C * Real.exp (θ * u) := by
-  obtain ⟨u₀, hu₀⟩ := eventually_atTop.mp (Real.tendsto_exp_atTop.eventually h)
-  refine ⟨u₀, ?_⟩
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
-  rw [mul_comm θ u, Real.exp_mul]
-  exact hu₀ u (le_of_lt hu)
 
 /-- The Riemann hypothesis follows from bounds `P C (1 / 2 + ε)`, one for each `ε > 0`, as soon as
 each bound `P C σ` with `σ > 1 / 2` excludes zeros of `ζ_ℚ` to the right of `σ`. -/
@@ -79,8 +80,10 @@ theorem zeroFreeRightOf_dedekindZetaC_of_eventually_neg_rpow_le_primePsi_sub {θ
     exact neg_nonneg.mpr (re_meromorphicTrailingCoeffAt_primePsiErrorTransform_neg K
       (hθ.trans_lt hβ.1) hp).le
   have hn := (hasLaplace_toMeromorphicNFOn_of_ae_le_exp hg hF hL hsign).1
-  exact (zeroFreeRightOf_dedekindZetaC_iff_primePsiErrorTransform K hθ).mpr fun s hs ↦ by
-    simpa only [← meromorphicOrderAt_fun_neg] using hn s hs
+  refine
+    (zeroFreeRightOf_dedekindZetaC_iff_forall_meromorphicOrderAt_primePsiErrorTransform_nonneg
+      K hθ).mpr fun s hs ↦ ?_
+  simpa only [← meromorphicOrderAt_fun_neg] using hn s hs
 
 /-- Under an eventual upper bound for `ψ_K(x) - x` by `C * x ^ θ`, either `ζ_K` has no zero
 in `Re s > θ`, or it has a real zero in `(θ, 1)` whose real part bounds those of all zeros. -/
@@ -93,7 +96,9 @@ theorem zeroFreeRightOf_or_exists_rightmost_real_zero_of_eventually_primePsi_sub
   rcases hasLaplace_toMeromorphicNFOn_or_exists_rightmost_real_pole_of_ae_le_exp hg
       ((meromorphicNFOn_primePsiErrorTransform K).meromorphicOn.mono_set (subset_univ _))
       (fun _ hs ↦ hasLaplace_primePsi_sub_exp K hs) with ⟨hn, -⟩ | ⟨β, hβ, hβ₁, hp, -, -, hn, -⟩
-  · exact .inl ((zeroFreeRightOf_dedekindZetaC_iff_primePsiErrorTransform K hθ).mpr hn)
+  · exact .inl
+      ((zeroFreeRightOf_dedekindZetaC_iff_forall_meromorphicOrderAt_primePsiErrorTransform_nonneg
+        K hθ).mpr hn)
   have hβne : β ≠ 1 := by
     rintro rfl
     exact hp.not_ge (by simpa using
@@ -102,7 +107,8 @@ theorem zeroFreeRightOf_or_exists_rightmost_real_zero_of_eventually_primePsi_sub
   exact .inr ⟨β, ⟨hβ, hβ₁.lt_of_ne hβne⟩,
     (meromorphicOrderAt_primePsiErrorTransform_neg_iff K
       (Complex.ofReal_ne_zero.mpr hβ₀.ne')).mp hp,
-    (zeroFreeRightOf_dedekindZetaC_iff_primePsiErrorTransform K hβ₀.le).mpr hn⟩
+    (zeroFreeRightOf_dedekindZetaC_iff_forall_meromorphicOrderAt_primePsiErrorTransform_nonneg
+      K hβ₀.le).mpr hn⟩
 
 /-- An eventual upper bound for `ψ_K(x) - x` by `C * x ^ θ` excludes zeros in `Re s > θ`
 if `ζ_K` has no real zeros in `(θ, 1)`. -/

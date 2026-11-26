@@ -215,7 +215,8 @@ theorem meromorphicOrderAt_primePsiErrorTransform_neg_iff {ρ : ℂ} (h₀ : ρ 
 
 /-- On a right half-plane not containing the origin, zero-freeness of `ζ_K` is equivalent
 to absence of poles of the prime ideal error transform. -/
-theorem zeroFreeRightOf_dedekindZetaC_iff_primePsiErrorTransform {θ : ℝ} (hθ : 0 ≤ θ) :
+theorem zeroFreeRightOf_dedekindZetaC_iff_forall_meromorphicOrderAt_primePsiErrorTransform_nonneg
+    {θ : ℝ} (hθ : 0 ≤ θ) :
     ZeroFreeRightOf θ (dedekindZetaC K) ↔
       ∀ s : ℂ, θ < s.re → 0 ≤ meromorphicOrderAt (primePsiErrorTransform K) s := by
   rw [zeroFreeRightOf_iff]
