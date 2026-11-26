@@ -505,9 +505,10 @@ private theorem weakForm_neg (u φ : W1p mu Omega 2) :
   rw [energyFormH1_neg_left, h₁, h₂, h₃]
   ring
 
-/-- **The two-sided bound for weak solutions with small lower-order coefficients in `L^q`.** Under
-the hypotheses of `TauCeti.PDE.exists_ae_value_le_add_of_small_lowerOrder`, with the same `η` and
-`C`, a weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem
+/-- **The two-sided bound for weak solutions with small lower-order coefficients in `L^q`.** There
+are constants `η, C > 0`, depending only on `n`, `q` and `mu`, such that under the hypotheses of
+`TauCeti.PDE.exists_ae_value_le_add_of_small_lowerOrder` with these constants, a weak solution
+`u ∈ H¹₀(Ω)` of the Dirichlet problem
 
 `-∂ᵢ(aⁱʲ ∂ⱼu + eⁱ u) + bⁱ ∂ᵢu + c u = g + ∂ᵢFⁱ` in `Ω`, `u = 0` on `∂Ω`,
 
