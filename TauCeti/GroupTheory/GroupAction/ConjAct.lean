@@ -151,6 +151,7 @@ theorem mem_conjAct_smul_of_mem_center {G : Type*} [Group G] {H : Subgroup G} {z
 /-- **Conjugation does not change the image in a commutative group**: for a homomorphism `f` to
 a commutative group, the conjugate `g H g⁻¹` has the same image as `H`, since `f (g x g⁻¹) = f x`.
 For instance, conjugate subgroups of `GL_n(R)` have the same determinant image. -/
+@[simp]
 theorem map_conjAct_smul {G M : Type*} [Group G] [CommGroup M] (H : Subgroup G) (f : G →* M)
     (g : ConjAct G) : (g • H).map f = H.map f := by
   ext y

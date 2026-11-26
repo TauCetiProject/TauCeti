@@ -126,6 +126,11 @@ theorem comap_mapGL_GL2Borel : (GL2Borel (ZMod N)).comap (mapGL (ZMod N)) = Gamm
   ext γ
   simp [Gamma0_mem]
 
+/-- The determinant `a d - b c = 1` of `γ ∈ SL(2, ℤ)`, reduced modulo `N`. -/
+private lemma intCast_det_fin_two_zmod (γ : SL(2, ℤ)) :
+    ((γ 0 0 : ℤ) : ZMod N) * γ 1 1 - γ 0 1 * γ 1 0 = 1 := by
+  rw [← Int.cast_mul, ← Int.cast_mul, ← Int.cast_sub, ← det_fin_two, γ.det_coe, Int.cast_one]
+
 /-- The preimage in `SL(2, ℤ)` of `TauCeti.GL2Gamma1 (ZMod N)` is `Γ₁(N)`. In `SL(2, ℤ)` the two
 conditions `a ≡ 1` and `c ≡ 0` force the third condition `d ≡ 1` of `Γ₁(N)` through the
 determinant. -/
@@ -135,10 +140,7 @@ theorem comap_mapGL_GL2Gamma1 : (GL2Gamma1 (ZMod N)).comap (mapGL (ZMod N)) = Ga
   simp only [Subgroup.mem_comap, GL2Gamma1.mem_iff, mapGL_coe_matrix, algebraMap_int_eq,
     map_apply_coe, Matrix.map_apply, Int.coe_castRingHom, Gamma1_mem]
   refine ⟨fun ⟨h₀, h₁⟩ ↦ ⟨h₀, ?_, h₁⟩, fun ⟨h₀, _, h₁⟩ ↦ ⟨h₀, h₁⟩⟩
-  have hdet : ((γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 : ℤ) : ZMod N) = 1 := by
-    rw [← det_fin_two, γ.det_coe, Int.cast_one]
-  push_cast at hdet
-  simpa [h₀, h₁] using hdet
+  simpa [h₀, h₁] using intCast_det_fin_two_zmod N γ
 
 /-- The kernel of the reduction `SL(2, ℤ) → GL₂(ℤ / N)`, the preimage of the trivial level, is
 `Γ(N)`. -/
@@ -182,10 +184,8 @@ theorem two_mul_projectiveIndex_GL2Gamma1_zmod (hN : 3 ≤ N) :
 /-- **The degree of `X₁(p)` over the `j`-line is `(p² - 1) / 2`** for an odd prime `p`. -/
 theorem two_mul_projectiveIndex_GL2Gamma1_zmod_prime {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2) :
     2 * (GL2Gamma1 (ZMod p)).projectiveIndex = (p - 1) * (p + 1) := by
-  have : Fact p.Prime := ⟨hp⟩
-  rw [two_mul_projectiveIndex_GL2Gamma1_zmod p (by have := hp.two_le; omega), Gamma1_index,
-    Gamma0_prime_index p hp, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
-    Nat.totient_prime hp]
+  rw [two_mul_projectiveIndex_GL2Gamma1_zmod p (by have := hp.two_le; omega),
+    Gamma1_prime_index p hp]
 
 /-- The preimage in `SL(2, ℤ)` of the level `Γ₁^μ(N) = TauCeti.GL2Mirabolic (ZMod N)` is `Γ₁(N)`.
 In `SL(2, ℤ)` the two conditions `c ≡ 0` and `d ≡ 1` force the third condition `a ≡ 1` of
@@ -196,10 +196,7 @@ theorem comap_mapGL_GL2Mirabolic : (GL2Mirabolic (ZMod N)).comap (mapGL (ZMod N)
   simp only [Subgroup.mem_comap, GL2Mirabolic.mem_iff, mapGL_coe_matrix, algebraMap_int_eq,
     map_apply_coe, Matrix.map_apply, Int.coe_castRingHom, Gamma1_mem]
   refine ⟨fun ⟨h₀, h₁⟩ ↦ ⟨?_, h₁, h₀⟩, fun ⟨_, h₁, h₀⟩ ↦ ⟨h₀, h₁⟩⟩
-  have hdet : ((γ 0 0 * γ 1 1 - γ 0 1 * γ 1 0 : ℤ) : ZMod N) = 1 := by
-    rw [← det_fin_two, γ.det_coe, Int.cast_one]
-  push_cast at hdet
-  simpa [h₀, h₁] using hdet
+  simpa [h₀, h₁] using intCast_det_fin_two_zmod N γ
 
 /-- **`[GL₂(ℤ / N) : Γ₁^μ] = [SL(2, ℤ) : Γ₁(N)]`**, the index of `TauCeti.GL2Gamma1 (ZMod N)`. -/
 theorem index_GL2Mirabolic_zmod : (GL2Mirabolic (ZMod N)).index = (Gamma1 N).index := by

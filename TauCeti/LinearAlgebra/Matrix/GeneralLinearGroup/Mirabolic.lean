@@ -45,8 +45,8 @@ generation of `GL₂` over a field.
   `g 1 1 = 1`.
 * `TauCeti.GL2Mirabolic.mem_iff_exists_mk`: the elements of `P` are exactly the matrices
   `!![a, b; 0, 1]` with `a` a unit.
-* `TauCeti.GL2Mirabolic.map_det`, `TauCeti.GL2Mirabolic.neg_one_mem_iff`: over a commutative ring
-  the determinant maps `P` onto the units, and `-1 ∈ P` only when `-1 = 1`.
+* `TauCeti.GL2Mirabolic.neg_one_mem_iff`: `-1 ∈ P` only when `-1 = 1`.
+* `TauCeti.GL2Mirabolic.map_det`: over a commutative ring the determinant maps `P` onto the units.
 * `TauCeti.GL2Mirabolic.le_gl2Borel`: `P` lies in the Borel subgroup.
 * `TauCeti.GL2Mirabolic.inf_center_eq_bot`: `P ∩ Z = 1`.
 * `TauCeti.GL2Mirabolic.center_sup_eq_gl2Borel`: `Z ⊔ P = B`.
@@ -180,6 +180,10 @@ theorem scalar_mem_iff (u : Rˣ) :
   simp only [mem_iff, GeneralLinearGroup.coe_scalar, Matrix.scalar_apply]
   simp [Units.val_eq_one]
 
+/-- `-1` lies in the mirabolic subgroup exactly when `-1 = 1` in `R`. -/
+theorem neg_one_mem_iff : (-1 : GL (Fin 2) R) ∈ GL2Mirabolic R ↔ (-1 : R) = 1 := by
+  simp [mem_iff]
+
 end GL2Mirabolic
 
 end Ring
@@ -201,10 +205,6 @@ theorem det_eq {g : GL (Fin 2) R} (hg : g ∈ GL2Mirabolic R) :
 `u`. -/
 theorem map_det : (GL2Mirabolic R).map Matrix.GeneralLinearGroup.det = ⊤ :=
   eq_top_iff.mpr fun u _ ↦ ⟨GL2Borel.mk u 1 0, (mk_mem_iff _ _ _).mpr rfl, by simp⟩
-
-/-- `-1` lies in the mirabolic subgroup exactly when `-1 = 1` in `R`. -/
-theorem neg_one_mem_iff : (-1 : GL (Fin 2) R) ∈ GL2Mirabolic R ↔ (-1 : R) = 1 := by
-  simp [mem_iff]
 
 variable (R) in
 /-- The mirabolic subgroup lies in the Borel subgroup. -/

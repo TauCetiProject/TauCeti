@@ -27,10 +27,7 @@ namespace TauCeti.Examples.LevelSubgroup
 
 /-- `[SL(2, ℤ) : Γ₁(5)] = φ(5) (5 + 1) = 24`. -/
 theorem index_gamma1_five : (Gamma1 5).index = 24 := by
-  have hp : Nat.Prime 5 := Nat.prime_five
-  have : Fact (Nat.Prime 5) := ⟨hp⟩
-  rw [Gamma1_index, Gamma0_prime_index 5 hp, Nat.card_eq_fintype_card,
-    ZMod.card_units_eq_totient, Nat.totient_prime hp]
+  rw [Gamma1_prime_index 5 Nat.prime_five]
 
 /-- The level `Γ₁(5)` has index `24`. -/
 theorem index_GL2Gamma1_five : (GL2Gamma1 (ZMod 5)).index = 24 := by
