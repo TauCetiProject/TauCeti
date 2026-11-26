@@ -83,8 +83,8 @@ def verschiebung (n : ℕ) : NonUnitalBigWittVector (S / n) R →+ NonUnitalBigW
 @[simp]
 theorem toBigWitt_verschiebung (n : ℕ) (x : NonUnitalBigWittVector (S / n) R) :
     toBigWitt (verschiebung n x) =
-      BigWittVector.verschiebung (R := Unitization ℤ R) n (toBigWitt x) :=
-  toBigWitt_verschiebungFun n x
+      BigWittVector.verschiebung (R := Unitization ℤ R) n (toBigWitt x) := by
+  rw [verschiebung, AddMonoidHom.coe_mk, ZeroHom.coe_mk, toBigWitt_verschiebungFun]
 
 /-- The coordinates of the Verschiebung, extended by zero outside the truncation set. -/
 theorem coordinates_verschiebung (n : ℕ) (x : NonUnitalBigWittVector (S / n) R) (m : ℕ) :

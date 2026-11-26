@@ -23,7 +23,7 @@ multiplicative, and on ghost components it is given by
 Additivity is proved by comparing ghost components over an integral polynomial ring, where the
 ghost map is injective, and specialising along the coordinatewise map induced by
 `MvPolynomial.counit`; the ghost formula itself is the divisor-sum identity
-`ghostPolynomial_ite_dvd`, valid over every semiring.
+`TauCeti.BigWitt.ghostPolynomial_ite_dvd` of `TauCeti.RingTheory.WittVector.Big.Ghost`.
 
 ## Main definitions
 
@@ -32,11 +32,10 @@ ghost map is injective, and specialising along the coordinatewise map induced by
 
 ## Main results
 
-* `TauCeti.BigWitt.ghostPolynomial_ite_dvd`: the ghost components of a coordinate sequence
-  spread out along the multiples of `n`.
 * `TauCeti.BigWittVector.coeff_verschiebung`: the coordinates of `V_n x`.
-* `TauCeti.BigWittVector.ghostMap_verschiebung_mul` and
-  `TauCeti.BigWittVector.ghostMap_verschiebung_of_not_dvd`: the ghost components of `V_n x`.
+* `TauCeti.BigWittVector.ghostMap_verschiebung`: the ghost components of `V_n x`, with the
+  special cases `TauCeti.BigWittVector.ghostMap_verschiebung_mul` and
+  `TauCeti.BigWittVector.ghostMap_verschiebung_of_not_dvd`.
 * `TauCeti.BigWittVector.verschiebung_map` and `TauCeti.BigWittVector.restrict_verschiebung`:
   the Verschiebung commutes with coefficient maps and with restriction.
 * `TauCeti.BigWittVector.verschiebung_one` and
@@ -54,47 +53,6 @@ public section
 noncomputable section
 
 namespace TauCeti
-
-open Finset
-
-namespace BigWitt
-
-variable {R : Type*} [Semiring R]
-
-/-- **Ghost components of a spread-out sequence.** Moving the coordinate of index `e` to index
-`n * e` and putting zeros at the indices not divisible by `n` multiplies the ghost components by
-`n` and spreads them out the same way:
-`w_m(x') = n * w_{m/n}(x)` if `n ∣ m` and `w_m(x') = 0` otherwise. -/
-theorem ghostPolynomial_ite_dvd (n m : ℕ) (x : ℕ → R) :
-    ghostPolynomial m (fun k ↦ if n ∣ k then x (k / n) else 0) =
-      if n ∣ m then n * ghostPolynomial (m / n) x else 0 := by
-  rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  -- a term indexed by a divisor `d` of `m` not divisible by `n` is `d * 0 ^ (m / d) = 0`
-  have hzero : ∀ d ∈ m.divisors, ¬n ∣ d →
-      (d : R) * (if n ∣ d then x (d / n) else 0) ^ (m / d) = 0 := fun d hd hnd ↦ by
-    rw [ite_eq_right hnd,
-      zero_pow (Nat.div_pos (Nat.divisor_le hd) (Nat.pos_of_mem_divisors hd)).ne', mul_zero]
-  rw [ghostPolynomial_eq_sum]
-  split_ifs with hnm
-  · -- the divisors of `n * k` divisible by `n` are the `n * e` with `e ∣ k`
-    obtain ⟨k, rfl⟩ := hnm
-    have hn : 0 < n := Nat.pos_of_ne_zero (left_ne_zero_of_mul hm)
-    have hk : k ≠ 0 := right_ne_zero_of_mul hm
-    rw [Nat.mul_div_cancel_left k hn, ghostPolynomial_eq_sum, mul_sum,
-      ← sum_subset (s₁ := k.divisors.map ⟨(n * ·), mul_right_injective₀ hn.ne'⟩), sum_map]
-    · refine sum_congr rfl fun e _ ↦ ?_
-      simp only [Function.Embedding.coeFn_mk, dvd_mul_right, ite_true,
-        Nat.mul_div_cancel_left e hn, Nat.mul_div_mul_left k e hn, Nat.cast_mul, mul_assoc]
-    · intro d hd
-      obtain ⟨e, he, rfl⟩ := mem_map.1 hd
-      exact Nat.mem_divisors.2 ⟨mul_dvd_mul_left n (Nat.dvd_of_mem_divisors he), hm⟩
-    · intro d hd hdmap
-      refine hzero d hd fun ⟨e, he⟩ ↦ hdmap (mem_map.2 ⟨e, Nat.mem_divisors.2 ⟨?_, hk⟩, he.symm⟩)
-      exact (Nat.mul_dvd_mul_iff_left hn).1 (he ▸ Nat.dvd_of_mem_divisors hd)
-  · exact sum_eq_zero fun d hd ↦ hzero d hd fun hnd ↦ hnm (hnd.trans (Nat.dvd_of_mem_divisors hd))
-
-end BigWitt
 
 namespace BigWittVector
 
@@ -171,6 +129,12 @@ theorem coeff_verschiebung_of_not_dvd (n : ℕ) (x : BigWittVector (S / n) R) {m
     (h : ¬n ∣ m) : (verschiebung n x).coeff m = 0 := by
   rw [coeff_verschiebung, ite_eq_right h]
 
+/-- The ghost components of the Verschiebung:
+`w_m(V_n x) = n * w_{m/n}(x)` if `n ∣ m` and `w_m(V_n x) = 0` otherwise. -/
+theorem ghostMap_verschiebung (n : ℕ) (x : BigWittVector (S / n) R) (m : S) :
+    ghostMap (verschiebung n x) m = if n ∣ m then n * ghostPolynomial (m / n) x.coeff else 0 := by
+  rw [ghostMap_apply, funext (coeff_verschiebung n x), ghostPolynomial_ite_dvd]
+
 /-- The ghost components of the Verschiebung at multiples of `n`:
 `w_{n k}(V_n x) = n * w_k(x)`. -/
 @[simp]
@@ -178,22 +142,22 @@ theorem ghostMap_verschiebung_mul (n : ℕ) (x : BigWittVector (S / n) R) (k : S
     ghostMap (verschiebung n x) ⟨n * k, TruncationSet.mem_div.mp k.property⟩ =
       n * ghostMap x k := by
   have hn : 0 < n := Nat.pos_of_mul_pos_right (S.pos_of_mem (TruncationSet.mem_div.mp k.property))
-  rw [ghostMap_apply, ghostMap_apply]
-  refine (ghostPolynomial_verschiebungFun n x _).trans ?_
-  rw [ite_eq_left (dvd_mul_right n k), Nat.mul_div_cancel_left _ hn]
+  rw [ghostMap_verschiebung, ite_eq_left (dvd_mul_right n k), Nat.mul_div_cancel_left _ hn,
+    ghostMap_apply]
 
 /-- The ghost components of the Verschiebung vanish at indices not divisible by `n`. -/
 @[simp]
 theorem ghostMap_verschiebung_of_not_dvd (n : ℕ) (x : BigWittVector (S / n) R) {m : S}
     (h : ¬n ∣ m) : ghostMap (verschiebung n x) m = 0 := by
-  rw [ghostMap_apply]
-  exact (ghostPolynomial_verschiebungFun n x m).trans (ite_eq_right h)
+  rw [ghostMap_verschiebung, ite_eq_right h]
 
 /-- The Verschiebung commutes with coefficient homomorphisms. -/
 @[simp]
 theorem verschiebung_map (n : ℕ) (f : R →+* R') (x : BigWittVector (S / n) R) :
-    verschiebung n (map f x) = map f (verschiebung n x) :=
-  verschiebungFun_map n f x
+    verschiebung n (map f x) = map f (verschiebung n x) := by
+  ext m
+  simp only [coeff_verschiebung, coeff_map]
+  split_ifs <;> simp
 
 /-- The Verschiebung commutes with restriction to smaller truncation sets. -/
 theorem restrict_verschiebung (n : ℕ) (h : T ≤ S) (x : BigWittVector (S / n) R) :
