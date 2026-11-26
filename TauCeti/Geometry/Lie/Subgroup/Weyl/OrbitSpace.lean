@@ -95,24 +95,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- A proper surjective map `p : X → Z` whose fibres are the classes of a setoid `r` on `X` induces
-a homeomorphism `X / r ≃ₜ Z`: the induced bijection is continuous, and closed because its composite
-with the quotient map `X → X / r` is the closed map `p`. -/
-private def homeomorphOfIsProperMap {X Z : Type*} [TopologicalSpace X] [TopologicalSpace Z]
-    {r : Setoid X} (p : X → Z) (hp : IsProperMap p) (hsurj : Function.Surjective p)
-    (hr : ∀ x y, p x = p y ↔ r x y) : Quotient r ≃ₜ Z :=
-  have hbij : Function.Bijective (Quotient.lift p fun x y ↦ (hr x y).mpr) :=
-    ⟨fun x y ↦ Quotient.inductionOn₂ x y fun x y hxy ↦ Quotient.sound ((hr x y).mp hxy),
-      fun z ↦ (hsurj z).elim fun x hx ↦ ⟨Quotient.mk r x, hx⟩⟩
-  (Equiv.ofBijective _ hbij).toHomeomorphOfContinuousClosed (hp.continuous.quotient_lift _)
-    (.of_comp_surjective Quotient.mk_surjective continuous_quotient_mk' hp.isClosedMap)
-
-private theorem homeomorphOfIsProperMap_mk {X Z : Type*} [TopologicalSpace X]
-    [TopologicalSpace Z] {r : Setoid X} (p : X → Z) (hp : IsProperMap p)
-    (hsurj : Function.Surjective p) (hr : ∀ x y, p x = p y ↔ r x y) (x : X) :
-    homeomorphOfIsProperMap p hp hsurj hr (Quotient.mk r x) = p x :=
-  rfl
-
 /-! ### The adjoint orbit space -/
 
 section Compact
@@ -151,14 +133,18 @@ Weyl group.** For a maximal torus `T` of a compact Lie group `G`, the inclusion 
 def IsMaximalTorus.weylOrbitHomeomorph (hT : IsMaximalTorus T) :
     Quotient (T.weylAdjointRepresentation (I := I)).orbitRel ≃ₜ
       Quotient (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel :=
-  homeomorphOfIsProperMap _ hT.isProperMap_orbitRel_mk_coe
-    (fun y ↦ by
-      induction y using Quotient.inductionOn' with | h X => ?_
-      obtain ⟨g, hg⟩ := hT.exists_Ad_mem_lieSubalgebraOfSubgroup X
-      refine ⟨⟨Ad (I := I) g X, hg⟩,
-        Quotient.sound' ((Representation.orbitRel_apply _).mpr ⟨g, ?_⟩)⟩
-      simp)
-    fun X Y ↦ Quotient.eq.trans (hT.orbitRel_weylAdjointRepresentation_iff X Y).symm
+  have hp := hT.isProperMap_orbitRel_mk_coe
+  have hsurj : Function.Surjective fun X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule ↦
+      Quotient.mk (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
+        (X : LeftInvariantDerivation I G) := fun y ↦ by
+    induction y using Quotient.inductionOn' with | h X => ?_
+    obtain ⟨g, hg⟩ := hT.exists_Ad_mem_lieSubalgebraOfSubgroup X
+    refine ⟨⟨Ad (I := I) g X, hg⟩,
+      Quotient.sound' ((Representation.orbitRel_apply _).mpr ⟨g, ?_⟩)⟩
+    simp
+  (Homeomorph.Quotient.congrRight fun X Y ↦
+      (hT.orbitRel_weylAdjointRepresentation_iff X Y).trans Quotient.eq.symm).trans
+    ((hp.isClosedMap.isQuotientMap hp.continuous hsurj).homeomorph (f := ⟨_, hp.continuous⟩))
 
 /-- The homeomorphism `IsMaximalTorus.weylOrbitHomeomorph` sends the Weyl orbit of `X ∈ 𝔱` to the
 adjoint orbit of `X`. -/
@@ -168,7 +154,7 @@ theorem IsMaximalTorus.weylOrbitHomeomorph_mk (hT : IsMaximalTorus T)
     hT.weylOrbitHomeomorph (Quotient.mk _ X) =
       Quotient.mk (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.orbitRel
         (X : LeftInvariantDerivation I G) :=
-  homeomorphOfIsProperMap_mk _ _ _ _ X
+  (rfl)
 
 end Compact
 
@@ -282,13 +268,18 @@ def IsMaximalTorus.weylCoadjointOrbitHomeomorph (hT : IsMaximalTorus T)
     (hB' : LinearMap.SeparatingLeft B) :
     Quotient (T.weylAdjointRepresentation (I := I)).orbitRel ≃ₜ
       Quotient (coadjointRepresentation ℝ I G).orbitRel :=
-  homeomorphOfIsProperMap _ (isProperMap_orbitRel_mk_coadjointRepresentation hB')
-    (fun y ↦ by
-      induction y using Quotient.inductionOn' with | h ν => ?_
-      obtain ⟨g, X, hX, hgX⟩ := hT.exists_coadjointRepresentation_apply_eq hB hB' ν
-      refine ⟨⟨X, hX⟩, ?_⟩
-      rw [← hgX, Representation.orbitRel_mk_apply])
-    fun X Y ↦ Quotient.eq.trans (hT.orbitRel_coadjointRepresentation_iff hB hB' X Y)
+  have hp := isProperMap_orbitRel_mk_coadjointRepresentation (T := T) hB'
+  have hsurj : Function.Surjective fun X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule ↦
+      Quotient.mk (coadjointRepresentation ℝ I G).orbitRel
+        (B (evalOne (X : LeftInvariantDerivation I G))) := fun y ↦ by
+    induction y using Quotient.inductionOn' with | h ν => ?_
+    obtain ⟨g, X, hX, hgX⟩ := hT.exists_coadjointRepresentation_apply_eq hB hB' ν
+    refine ⟨⟨X, hX⟩, ?_⟩
+    dsimp only
+    rw [← hgX, Representation.orbitRel_mk_apply]
+  (Homeomorph.Quotient.congrRight fun X Y ↦
+      (hT.orbitRel_coadjointRepresentation_iff hB hB' X Y).symm.trans Quotient.eq.symm).trans
+    ((hp.isClosedMap.isQuotientMap hp.continuous hsurj).homeomorph (f := ⟨_, hp.continuous⟩))
 
 /-- The homeomorphism `IsMaximalTorus.weylCoadjointOrbitHomeomorph` sends the Weyl orbit of
 `X ∈ 𝔱` to the coadjoint orbit of `B (X, ·)`. -/
@@ -299,7 +290,7 @@ theorem IsMaximalTorus.weylCoadjointOrbitHomeomorph_mk (hT : IsMaximalTorus T)
     hT.weylCoadjointOrbitHomeomorph hB hB' (Quotient.mk _ X) =
       Quotient.mk (coadjointRepresentation ℝ I G).orbitRel
         (B (evalOne (X : LeftInvariantDerivation I G))) :=
-  homeomorphOfIsProperMap_mk _ _ _ _ X
+  (rfl)
 
 end Coadjoint
 
