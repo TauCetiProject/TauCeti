@@ -28,9 +28,10 @@ with respect to the quasi-isomorphisms, in the sense of Mathlib's
 `CategoryTheory.Functor.IsRightDerivedFunctor`: a left Kan extension along `DerivedCategory.Qh`.
 It is an absolute right derived functor: for every functor `G`, `RF ⋙ G` is a right derived
 functor of `F.mapHomotopyCategory (.up ℤ) ⋙ DerivedCategory.Qh ⋙ G`
-(`CategoryTheory.Functor.isRightDerivedFunctor_comp`). It is triangulated, and its value on a
-K-injective complex `I` is `F(I)` (`CategoryTheory.Functor.rightDerivedFunctorObjIso`), naturally in
-`I` (`CategoryTheory.Functor.rightDerivedFunctorObjIso_hom_naturality`). An exact functor is its own
+(`CategoryTheory.Functor.isRightDerivedFunctor_rightDerivedFunctor_comp`). It is triangulated,
+and its value on a K-injective complex `I` is `F(I)`
+(`CategoryTheory.Functor.rightDerivedFunctorObjIso`), naturally in `I`
+(`CategoryTheory.Functor.rightDerivedFunctorObjIso_hom_naturality`). An exact functor is its own
 right derived functor: `F.rightDerivedFunctor ≅ F.mapDerivedCategory`
 (`CategoryTheory.Functor.rightDerivedFunctorIsoMapDerivedCategory`); in particular the right derived
 functor of the identity is the identity (`CategoryTheory.Functor.rightDerivedFunctorIdIso`).
@@ -89,10 +90,12 @@ instance : F.rightDerivedFunctor.IsRightDerivedFunctor F.rightDerivedFunctorUnit
   (kInjectiveReplacementAdjunction C).isRightDerivedFunctor_whiskerRightUnit _ _
 
 /-- The right derived functor is an absolute right derived functor: for every functor
-`G : D(D) ⥤ H`, the composite `RF ⋙ G` is a right derived functor of `F ⋙ G`, with the
+`G : D(D) ⥤ H`, the composite `RF ⋙ G` is a right derived functor of
+`F.mapHomotopyCategory (.up ℤ) ⋙ Qh ⋙ G` with respect to the quasi-isomorphisms, with the
 transformation induced by `F.rightDerivedFunctorUnith`. Natural transformations out of `RF ⋙ G`
 are therefore determined by their values on the images of all complexes. -/
-instance isRightDerivedFunctor_comp {H : Type*} [Category* H] (G : DerivedCategory D ⥤ H) :
+instance isRightDerivedFunctor_rightDerivedFunctor_comp {H : Type*} [Category* H]
+    (G : DerivedCategory D ⥤ H) :
     (F.rightDerivedFunctor ⋙ G).IsRightDerivedFunctor
       (whiskerRight F.rightDerivedFunctorUnith G ≫ (associator _ _ _).hom)
       (HomotopyCategory.quasiIso C (.up ℤ)) := by

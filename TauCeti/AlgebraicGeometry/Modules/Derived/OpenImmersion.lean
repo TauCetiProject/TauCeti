@@ -37,10 +37,10 @@ For an open immersion `j : U ⟶ X`, this file compares the total direct image
 
 Natural transformations out of `Rj_*` and out of `Rj_* ⋙ G` for any functor `G` are constructed and
 compared through the universal property of right derived functors
-(`CategoryTheory.Functor.isRightDerivedFunctor_comp`), so that they are determined by their values
-on all complexes; isomorphisms are checked on K-injective complexes, where `Rj_*` is computed
-termwise. These are the inputs of the gluing of objects of `D(𝒪_X)` along two opens,
-`TauCeti.AlgebraicGeometry.Coherent.exists_derivedGluing_two_opens`.
+(`CategoryTheory.Functor.isRightDerivedFunctor_rightDerivedFunctor_comp`), so that they are
+determined by their values on all complexes; isomorphisms are checked on K-injective complexes,
+where `Rj_*` is computed termwise. These are the inputs of the gluing of objects of `D(𝒪_X)` along
+two opens, `TauCeti.AlgebraicGeometry.Coherent.exists_derivedGluing_two_opens`.
 
 ## References
 
@@ -387,7 +387,7 @@ variable {X : Scheme.{u}} {U V W : X.Opens} [HasDerivedCategory.{w₁} U.toSchem
   [HasDerivedCategory.{w₂} V.toScheme.Modules] [HasDerivedCategory.{w₃} W.toScheme.Modules]
   [HasDerivedCategory.{w₄} X.Modules]
 
-/-- **Restriction maps are isomorphisms away from the smaller open.** For opens `W ≤ V` and `U` of
+/-- **Restriction maps are isomorphisms away from `V \ W`.** For opens `W ≤ V` and `U` of
 `X` with `U ⊓ V ≤ W`, the restriction map `R(V.ι)_* K ⟶ R(W.ι)_* (K|_W)` becomes an isomorphism
 after restriction to `U`, for every `K ∈ D(𝒪_V)`. It is computed on a K-injective replacement of
 `K`, whose restriction to `W` is K-injective, from the corresponding isomorphism of module sheaves
