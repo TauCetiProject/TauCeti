@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Group.ProperlyDiscontinuous
-public import TauCeti.Topology.Algebra.GroupAction.Quotient
+public import TauCeti.MeasureTheory.Group.FundamentalDomain.Compact
 
 /-!
 # Fundamental domains for discrete subgroups
@@ -75,14 +75,6 @@ theorem exists_isFundamentalDomain_measure_lt_top [MeasurableSpace T] [BorelSpac
     ∃ D : Set T, MeasurableSet D ∧ IsFundamentalDomain Λ D μ ∧ μ D < ∞ := by
   have : Countable Λ := countable_of_Lindelof_of_discrete
   obtain ⟨D, hDm, hD⟩ := Λ.exists_isFundamentalDomain_mul_left μ
-  obtain ⟨K, hK, hKΛ⟩ :=
-    TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact.mp ‹_›
-  refine ⟨D, hDm, hD, lt_of_le_of_lt ?_ (hK.measure_lt_top (μ := μ))⟩
-  -- The translates `g • K` cover `D`, and the pieces `g • K ∩ D` add up to `μ K`.
-  calc μ D ≤ μ (⋃ g : Λ, g • K ∩ D) := measure_mono fun x hx ↦ by
-          obtain ⟨g, hg⟩ := hKΛ x
-          exact mem_iUnion.mpr ⟨g⁻¹, ⟨g • x, hg, inv_smul_smul g x⟩, hx⟩
-    _ ≤ ∑' g : Λ, μ (g • K ∩ D) := measure_iUnion_le _
-    _ = μ K := (hD.measure_eq_tsum K).symm
+  exact ⟨D, hDm, hD, hD.measure_lt_top_of_compactSpace⟩
 
 end Subgroup
