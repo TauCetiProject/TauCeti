@@ -1321,8 +1321,7 @@ theorem mul_norm_gradient_sq_le_energyFormH1_self_of_zero_drift
   have hmem := ae_mem_restrict (mu := mu) (Omega := Omega)
   rw [energyFormH1_congr_ae .rfl (hmem.mono hb_zero) .rfl]
   exact mul_norm_gradient_sq_le_energyFormH1_self
-    (memLp_energyIntegrand_of_bounds (beta := 0) h.upper_nonneg ha aestronglyMeasurable_const hc
-      (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) hc_bound) .rfl
+    (h.memLp_energyIntegrand_zero_drift ha hc hc_bound) .rfl
     (hmem.mono fun x hx xi => by
       simpa [Matrix.toQuadraticForm'_apply] using h.lower_bound hx xi)
     (hmem.mono hc_nonneg) u
