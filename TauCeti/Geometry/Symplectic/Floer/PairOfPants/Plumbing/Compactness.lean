@@ -26,9 +26,11 @@ result is the four-punctured sphere `Σ_L = ℂ ∖ {0, 1, ψ_L(1)}`, where `ψ_
 `TauCeti.Floer.plumbedPerturbation`. As `L → ∞` these domains break into the two pairs of pants:
 this is the broken-product end of the one-parameter families of four-punctured spheres that prove
 the associativity of the pair-of-pants product. This file proves the interior part of
-Gromov–Floer compactness at that end, for a symplectic vector space target `(V, ω)` and, through
-symplectic charts, for a manifold target with a nondegenerate two-form (see the paragraph on
-manifold targets below).
+Gromov–Floer compactness at that end, for a symplectic vector space target `(V, ω)`, through
+symplectic charts for a manifold target with a nondegenerate two-form (see the paragraph on
+manifold targets below), and for a closed manifold target, with no condition on the images of the
+solutions and convergence read after applying an injective map `e : M → F` (see the paragraph on
+closed manifolds below).
 
 Fix a truncation `S_R` (`TauCeti.ThricePuncturedSphere.truncation`) and let `L ≥ 2R + 2`. On the
 receiving pair of pants, `S_R` lies in `Σ_L` and the plumbed datum there is the datum of `S`
@@ -108,10 +110,10 @@ exhausting domains in a closed manifold
 `TauCeti.SmoothTwoForm`) applies on each whole piece, as for a vector space target, and gives the
 convergence of `uₖ` on `S` and of `uₖ ∘ ψ_{Lₖ}` on `S` off sets of bubbling points meeting every
 compact subset of `S` in finitely many points
-(`exists_tendstoLocallyUniformlyOn_comp_subseq_off_discrete_plumbedPerturbation`). These are the
-limit pairs of pants of the broken-product end of the associativity family. Their regularity, the
-bubbles at the bubbling points and the breaking of Floer cylinders off the neck are not treated
-here.
+(`exists_tendstoLocallyUniformlyOn_comp_subseq_off_discrete_plumbedPerturbation`). These limits
+are the candidates for the two pieces of a broken-product limit of the associativity family; that
+they solve the Floer equation, extend over the bubbling points and come with bubbles and broken
+cylinders is not treated here.
 
 ## References
 
@@ -144,13 +146,24 @@ private theorem TauCeti.ThricePuncturedSphere.Puncture.preimage_truncation_subse
   simp only [mem_ofPred_eq, equivRealProdCLM_symm_realChart]
   exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL (truncation_mono hRL hw)
 
-/-- As `Lₖ → ∞`, the interiors of the truncations `S_{(Lₖ - 2)/2}`, read in real coordinates,
-eventually contain every compact subset of `S`. -/
-private theorem TauCeti.ThricePuncturedSphere.eventually_subset_preimage_interior_truncation
-    {L : ℕ → ℝ} (hL : Tendsto L atTop atTop) {C : Set (ℝ × ℝ)} (hC : IsCompact C)
-    (hCS : C ⊆ Floer.thricePuncturedSphereReal) :
-    ∀ᶠ k in atTop,
-      C ⊆ Complex.equivRealProdCLM.symm ⁻¹' interior (truncation ((L k - 2) / 2)) := by
+/-- As `Lₖ → ∞`, the interiors `Uₖ` of the truncations `S_{(Lₖ - 2)/2}`, read in real coordinates,
+exhaust `S`: they are open subsets of the truncations, hence of `S`, they eventually contain every
+compact subset of `S`, and `2 * ((Lₖ - 2) / 2) + 2 ≤ Lₖ`. -/
+private theorem TauCeti.ThricePuncturedSphere.exhaustion_interior_truncation
+    {L : ℕ → ℝ} (hL : Tendsto L atTop atTop) :
+    (∀ k, IsOpen (Complex.equivRealProdCLM.symm ⁻¹' interior (truncation ((L k - 2) / 2)))) ∧
+      (∀ k, Complex.equivRealProdCLM.symm ⁻¹' interior (truncation ((L k - 2) / 2)) ⊆
+        Complex.equivRealProdCLM.symm ⁻¹' truncation ((L k - 2) / 2)) ∧
+      (∀ k, Complex.equivRealProdCLM.symm ⁻¹' interior (truncation ((L k - 2) / 2)) ⊆
+        Floer.thricePuncturedSphereReal) ∧
+      (∀ C, IsCompact C → C ⊆ Floer.thricePuncturedSphereReal → ∀ᶠ k in atTop,
+        C ⊆ Complex.equivRealProdCLM.symm ⁻¹' interior (truncation ((L k - 2) / 2))) ∧
+      ∀ k, 2 * ((L k - 2) / 2) + 2 ≤ L k := by
+  refine ⟨fun _ ↦ isOpen_interior.preimage Complex.equivRealProdCLM.symm.continuous,
+    fun _ ↦ preimage_mono interior_subset,
+    fun _ ↦ (preimage_mono interior_subset).trans
+      (Floer.preimage_truncation_subset_thricePuncturedSphereReal _),
+    fun C hC hCS ↦ ?_, fun _ ↦ by linarith⟩
   obtain ⟨R, hR⟩ := exists_subset_interior_truncation
     (hC.image Complex.equivRealProdCLM.symm.continuous) (image_subset_iff.2 hCS)
   filter_upwards [hL.eventually_ge_atTop (2 * R + 2)] with k hk
@@ -454,17 +467,7 @@ theorem exists_tendstoLocallyUniformlyOn_subseq_off_discrete_plumbedPerturbation
   have hS : IsOpen (thricePuncturedSphereReal ×ˢ (univ : Set V)) :=
     isOpen_thricePuncturedSphereReal.prod isOpen_univ
   -- The pieces are exhausted by the interiors of the truncations `S_{(Lₖ - 2)/2}`.
-  set U : ℕ → Set (ℝ × ℝ) :=
-    fun k ↦ Complex.equivRealProdCLM.symm ⁻¹' interior (truncation ((L k - 2) / 2))
-  have hU (k : ℕ) : IsOpen (U k) :=
-    isOpen_interior.preimage Complex.equivRealProdCLM.symm.continuous
-  have hUT (k : ℕ) : U k ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation ((L k - 2) / 2) :=
-    preimage_mono interior_subset
-  have hUS (k : ℕ) : U k ⊆ thricePuncturedSphereReal :=
-    (hUT k).trans (preimage_truncation_subset_thricePuncturedSphereReal _)
-  have hUC : ∀ C, IsCompact C → C ⊆ thricePuncturedSphereReal → ∀ᶠ k in atTop, C ⊆ U k :=
-    fun _ hC hCS ↦ eventually_subset_preimage_interior_truncation hL hC hCS
-  have hLR (k : ℕ) : 2 * ((L k - 2) / 2) + 2 ≤ L k := by linarith
+  obtain ⟨hU, hUT, hUS, hUC, hLR⟩ := exhaustion_interior_truncation hL
   choose hub hflb hintb hEb using fun k ↦ receiving_piece ω hq hHb hHbs hab (hL4 k) (hLR k)
     (hU k) (hUT k) (hu k) (hfl k) (fun z hz ↦ hJΩ k z (hUT k hz)) (hE k)
   choose hua hfla hinta hEa using fun k ↦ inserted_piece ω hq hHa hHb hHas hHbs hab (hL4 k)
@@ -989,17 +992,7 @@ theorem exists_tendstoLocallyUniformlyOn_comp_subseq_off_discrete_plumbedPerturb
       ∀ y ∈ thricePuncturedSphereReal \ Z',
         Tendsto (fun n ↦ u (σ n) (realChart (q.plumbingMap (L (σ n))) y)) atTop (𝓝 (v' y)) := by
   -- The pieces are exhausted by the interiors of the truncations `S_{(Lₖ - 2)/2}`.
-  set U : ℕ → Set (ℝ × ℝ) :=
-    fun k ↦ Complex.equivRealProdCLM.symm ⁻¹' interior (truncation ((L k - 2) / 2))
-  have hU (k : ℕ) : IsOpen (U k) :=
-    isOpen_interior.preimage Complex.equivRealProdCLM.symm.continuous
-  have hUT (k : ℕ) : U k ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation ((L k - 2) / 2) :=
-    preimage_mono interior_subset
-  have hUS (k : ℕ) : U k ⊆ thricePuncturedSphereReal :=
-    (hUT k).trans (preimage_truncation_subset_thricePuncturedSphereReal _)
-  have hUC : ∀ C, IsCompact C → C ⊆ thricePuncturedSphereReal → ∀ᶠ k in atTop, C ⊆ U k :=
-    fun _ hC hCS ↦ eventually_subset_preimage_interior_truncation hL hC hCS
-  have hLR (k : ℕ) : 2 * ((L k - 2) / 2) + 2 ≤ L k := by linarith
+  obtain ⟨hU, hUT, hUS, hUC, hLR⟩ := exhaustion_interior_truncation hL
   -- Restricted to each piece, the solutions solve the Floer equation of that pair of pants.
   have hb (k : ℕ) := floer_restrict_receiving hω hq hHb hHbs hab (hL4 k) (hLR k) (hu k) (hfl k)
     (hE k) (hU k) (hUT k)
