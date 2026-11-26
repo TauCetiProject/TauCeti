@@ -83,6 +83,10 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
 private def corr (f g : H) (t : ℝ) : ℂ :=
   ⟪g, U t f⟫_ℂ - ⟪e, f⟫_ℂ * ⟪g, e⟫_ℂ
 
+private theorem corr_apply (f g : H) (t : ℝ) :
+    corr U e f g t = ⟪g, U t f⟫_ℂ - ⟪e, f⟫_ℂ * ⟪g, e⟫_ℂ :=
+  rfl
+
 private theorem continuous_corr (f g : H) : Continuous (corr U e f g) :=
   (continuous_const.inner (U.continuous_orbit f)).sub continuous_const
 
@@ -129,6 +133,15 @@ private theorem inner_one_right (g : Lp ℂ 2 μ) :
     ⟪g, (one : Lp ℂ 2 μ)⟫_ℂ = conj (∫ x, g x ∂μ) := by
   rw [← inner_conj_symm, inner_one_left]
 
+private theorem coeFn_one : (one : Lp ℂ 2 μ) =ᵐ[μ] fun _ => (1 : ℂ) := by
+  filter_upwards [indicatorConstLp_coeFn (p := 2) (μ := μ) (hs := MeasurableSet.univ)
+    (hμs := measure_ne_top μ univ) (c := (1 : ℂ))] with x hx
+  rw [one, hx, indicator_univ]
+
+private theorem inner_one_one [IsProbabilityMeasure μ] : ⟪(one : Lp ℂ 2 μ), one⟫_ℂ = 1 := by
+  rw [inner_one_left, integral_congr_ae coeFn_one]
+  simp
+
 variable [AddAction ℝ X] [MeasurableVAdd₂ ℝ X] [VAddInvariantMeasure ℝ X μ]
 
 private theorem corr_koopmanGroup (f g : Lp ℂ 2 μ) (t : ℝ) :
@@ -142,6 +155,11 @@ private theorem corr_koopmanGroup (f g : Lp ℂ 2 μ) (t : ℝ) :
   -- come from `InnerProductSpace.toNormedSpace`; the right side uses the `L2` inner product and
   -- `Lp.instNormedSpace` directly. These agree definitionally but not reducibly.
   rfl
+
+private theorem koopmanGroup_one (t : ℝ) :
+    koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t one = one := by
+  rw [one, koopmanGroup_indicatorConstLp μ ℂ 2]
+  simp only [preimage_univ]
 
 /-- The centered correlation of two indicator functions. -/
 private theorem corr_indicatorConstLp {A B : Set X} (hA : MeasurableSet A) (hB : MeasurableSet B)
@@ -294,21 +312,11 @@ theorem isWeaklyMixing_of_forall_eigenfunction [IsProbabilityMeasure μ]
     IsWeaklyMixing μ := by
   set U := koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top
   have hU : U.IsUnitary := koopmanGroup_isUnitary μ ℂ
-  have hone : (one : Lp ℂ 2 μ) =ᵐ[μ] fun _ => (1 : ℂ) := by
-    filter_upwards [indicatorConstLp_coeFn (p := 2) (μ := μ) (hs := MeasurableSet.univ)
-      (hμs := measure_ne_top μ univ) (c := (1 : ℂ))] with x hx
-    rw [one, hx, indicator_univ]
-  have hone_one : ⟪(one : Lp ℂ 2 μ), one⟫_ℂ = 1 := by
-    rw [inner_one_left, integral_congr_ae hone]
-    simp
   refine isWeaklyMixing_iff_tendsto_average_norm_inner_koopmanGroup.2 fun f g => ?_
-  have hfg := hU.tendsto_average_norm_inner_sub_of_forall_mem_eigenspace hone_one ?_ ?_ f g
-  · have hfg' : Tendsto (fun T : ℝ => T⁻¹ * ∫ t in (0 : ℝ)..T, ‖corr U one f g t‖) atTop
-        (𝓝 0) := hfg
-    simpa only [U, corr_koopmanGroup] using hfg'
-  · intro t
-    exact (koopmanGroup_indicatorConstLp μ ℂ 2 ENNReal.ofNat_ne_top MeasurableSet.univ
-      (measure_ne_top μ univ) 1 t).trans (by simp only [preimage_univ]; rfl)
+  have hfg := hU.tendsto_average_norm_inner_sub_of_forall_mem_eigenspace inner_one_one
+    koopmanGroup_one ?_ f g
+  · simp only [← corr_apply U one] at hfg
+    simpa only [U, corr_koopmanGroup] using hfg
   -- every Koopman eigenvector is a multiple of `1`
   · intro ω u hu
     obtain ⟨c, hc⟩ := h u (Lp.aestronglyMeasurable u) (ω / (2 * Real.pi)) fun t => by
@@ -318,7 +326,7 @@ theorem isWeaklyMixing_of_forall_eigenfunction [IsProbabilityMeasure μ]
       push_cast
       field_simp
     refine ⟨c, Lp.ext ?_⟩
-    filter_upwards [hc, Lp.coeFn_smul c (one : Lp ℂ 2 μ), hone] with x h₁ h₂ h₃
+    filter_upwards [hc, Lp.coeFn_smul c (one : Lp ℂ 2 μ), coeFn_one] with x h₁ h₂ h₃
     rw [h₁, h₂, Pi.smul_apply, h₃, smul_eq_mul, mul_one, Function.const_apply]
 
 /-- **The eigenfunction criterion for weak mixing.** A jointly measurable action of `ℝ` preserving
