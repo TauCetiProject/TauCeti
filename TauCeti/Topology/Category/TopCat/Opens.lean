@@ -40,7 +40,10 @@ homeomorphic to `V`. The two descriptions agree, as do the resulting image opens
 * `TopologicalSpace.Opens.exists_compacts_map_inclusion'_eq`: a compact subset of `X` lying in an
   open set `U` is the image of a compact subset of `U` under its inclusion.
 * `TopologicalSpace.Opens.inclusionSites`, `TopologicalSpace.Opens.inclusionSitesCompIso`: for
-  `V ≤ U`, the opens of `V` viewed in `U`, and the identification of their images in `X`.
+  `V ≤ U`, the opens of `V` viewed in `U`, and the identification of their images in `X`;
+  `TopologicalSpace.Opens.coe_inclusionSites_obj` and
+  `TopologicalSpace.Opens.mem_inclusionSites_obj` describe the carrier in `U` as the image along
+  `Set.inclusion`.
 * `TopologicalSpace.Opens.relativeOpen`, `TopologicalSpace.Opens.relativeOpenIso`,
   `TopologicalSpace.Opens.relativeSites`: the open `V` of the subspace `U`, its homeomorphism
   with `V`, and the induced equivalence of opens.
@@ -119,14 +122,28 @@ def inclusionSites (h : V ≤ U) : Opens V ⥤ Opens U :=
   Topology.IsOpenEmbedding.functor (X := TopCat.of V) (Y := TopCat.of U)
     (f := (Opens.toTopCat X).map (homOfLE h)) (isOpenEmbedding_of_le h)
 
+/-- The open of `U` underlying an open `D` of `V` is the image of `D` along the inclusion
+`V → U`. -/
+@[simp]
+lemma coe_inclusionSites_obj (h : V ≤ U) (D : Opens V) :
+    ((inclusionSites h).obj D : Set U) = Set.inclusion h '' D :=
+  rfl
+
+/-- A point of `U` lies in the open of `U` underlying an open `D` of `V` exactly when it is the
+inclusion of a point of `D`. -/
+lemma mem_inclusionSites_obj (h : V ≤ U) (D : Opens V) (x : U) :
+    x ∈ (inclusionSites h).obj D ↔ ∃ y ∈ D, Set.inclusion h y = x :=
+  Iff.rfl
+
 /-- Taking an open of `V` to `U` and then to `X` is taking it to `X` directly. -/
 def inclusionSitesCompIso (h : V ≤ U) :
     inclusionSites h ⋙ U.isOpenEmbedding.functor ≅ V.isOpenEmbedding.functor :=
   NatIso.ofComponents (fun T ↦ eqToIso (by
     apply Opens.ext
-    -- Both opens functors take direct images, first along inclusion and then subtype value.
-    change Subtype.val '' (Set.inclusion h '' (T : Set V)) = Subtype.val '' (T : Set V)
-    rw [← Set.image_comp]
+    -- The opens functor of `U` has source `Opens ((toTopCat X).obj U)`, so `rw` cannot see the
+    -- composite; state both sides as direct images along the subtype values.
+    change Subtype.val '' ((inclusionSites h).obj T : Set U) = Subtype.val '' (T : Set V)
+    rw [coe_inclusionSites_obj, ← Set.image_comp]
     rfl)) (by intro T T' f; exact Subsingleton.elim _ _)
 
 /-- The open V viewed as an open of the subspace U. -/

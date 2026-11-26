@@ -9,7 +9,6 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
 public import TauCeti.Algebra.Homology.Ext.Map.AcyclicResolution
 public import Mathlib.CategoryTheory.Sites.Over
 public import TauCeti.CategoryTheory.Sites.Pullback
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Terminal
 
 /-!
@@ -152,6 +151,9 @@ lemma cohomologyPresheafObjIsoOver_resolutionClass {n : ℕ} (s : (K.X n).obj.ob
   let c := (freeYonedaSheafSectionsEquiv J U (K.X n)).symm s
   rw [cohomologyPresheafEvaluationIsoFunctorOverH_hom_app_apply]
   congr 1
+  -- The right-hand class uses `s` as a section of `G.obj (K.X n)` at `Over.mk (𝟙 U)`, which is
+  -- the carrier `(K.X n).obj.obj (op U)` only after unfolding `overPullback`. The rewrites below
+  -- that mention this transported section therefore need `erw`.
   erw [Sheaf.H'.resolutionClass_def, Sheaf.H'.resolutionClass_def]
   erw [CochainComplex.mk₀_comp_extMk, extEquiv_extMk]
   congr 1
@@ -161,6 +163,8 @@ lemma cohomologyPresheafObjIsoOver_resolutionClass {n : ℕ} (s : (K.X n).obj.ob
     (Over.mk (𝟙 U)) (K.X n)
     ((J.sheafPullbackFreeYonedaIso U (Over.mk (𝟙 U))).hom ≫ c)).symm
   dsimp only [sheafPullbackFreeYonedaIso, c] at hv
+  -- `hv` is stated for `Over.forget U` and the over-site representable, which become the
+  -- carriers of the goal only after unfolding the continuous pushforward.
   erw [IsIso.hom_inv_id_assoc, AddEquiv.apply_symm_apply] at hv
   -- `overPullback` is continuous pushforward; its representable has the same op/unop object.
   exact hv

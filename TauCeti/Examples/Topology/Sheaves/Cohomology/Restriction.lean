@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.Cohomology.Forget
+public import TauCeti.Topology.Sheaves.SheafCondition.Sites
 public import Mathlib.Data.ZMod.Basic
 
 /-!

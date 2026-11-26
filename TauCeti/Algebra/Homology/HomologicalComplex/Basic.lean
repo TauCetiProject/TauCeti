@@ -582,8 +582,7 @@ lemma map_augmentation_exact {hι : ι ≫ K.d 0 1 = 0}
 /-- A functor preserving homology keeps a cochain complex exact in every positive degree. -/
 lemma map_exactAt_succ (hK : ∀ j, K.ExactAt (j + 1)) (j : ℕ) :
     ((G.mapHomologicalComplex (.up ℕ)).obj K).ExactAt (j + 1) :=
-  (HomologicalComplex.exactAt_iff' _ j (j + 1) (j + 2) (by simp) (by simp)).2
-    (((HomologicalComplex.exactAt_iff' K j (j + 1) (j + 2) (by simp) (by simp)).1 (hK j)).map G)
+  (show (K.sc (j + 1)).Exact from hK j).map G
 
 end CochainComplex
 

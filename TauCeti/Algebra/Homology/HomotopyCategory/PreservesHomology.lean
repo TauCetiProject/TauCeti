@@ -18,10 +18,6 @@ degree `i` is naturally isomorphic to taking homology first and then applying `F
 same holds on the homotopy category
 (`CategoryTheory.Functor.mapHomotopyCategoryCompHomologyFunctorIso`), where both functors are
 induced from the homological-complex level.
-
-The comparison `CategoryTheory.Functor.mapHomotopyCategoryCompIso` for a composite of functors is
-computed on the class of a complex by
-`CategoryTheory.Functor.mapHomotopyCategoryCompIso_hom_app_quotient_obj` and its inverse form.
 -/
 
 public section
@@ -87,29 +83,5 @@ lemma mapHomotopyCategoryCompHomologyFunctorIso_inv_app (K : HomologicalComplex 
   -- the two identities are on the same object, written once through `HomotopyCategory.quotient`
   -- applied to `F` of `K` and once through `F.mapHomotopyCategory` of the class of `K`
   rfl
-
-section CompIso
-
-variable {V W W' : Type*} [Category* V] [Category* W] [Category* W'] [Preadditive V]
-  [Preadditive W] [Preadditive W'] {F₁ : V ⥤ W} {G₁ : W ⥤ W'} {H₁ : V ⥤ W'} (e : F₁ ⋙ G₁ ≅ H₁)
-  [F₁.Additive] [G₁.Additive] [H₁.Additive]
-
-/-- On the class of a complex, `mapHomotopyCategoryCompIso` is the class of the
-homological-complex comparison `mapHomologicalComplexCompIso`. -/
-@[simp]
-lemma mapHomotopyCategoryCompIso_hom_app_quotient_obj (K : HomologicalComplex V c) :
-    (mapHomotopyCategoryCompIso e c).hom.app ((HomotopyCategory.quotient V c).obj K) =
-      (HomotopyCategory.quotient W' c).map ((mapHomologicalComplexCompIso e c).hom.app K) :=
-  Quotient.natTransLift_app _ _ _ _ K
-
-/-- On the class of a complex, the inverse of `mapHomotopyCategoryCompIso` is the class of the
-inverse of `mapHomologicalComplexCompIso`. -/
-@[simp]
-lemma mapHomotopyCategoryCompIso_inv_app_quotient_obj (K : HomologicalComplex V c) :
-    (mapHomotopyCategoryCompIso e c).inv.app ((HomotopyCategory.quotient V c).obj K) =
-      (HomotopyCategory.quotient W' c).map ((mapHomologicalComplexCompIso e c).inv.app K) :=
-  Quotient.natTransLift_app _ _ _ _ K
-
-end CompIso
 
 end CategoryTheory.Functor

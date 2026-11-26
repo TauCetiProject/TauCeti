@@ -136,6 +136,22 @@ private def godementHomologyIso (n : ℕ) :
 end Resolution
 
 variable (X R) in
+/-- Global sections of a complex of module sheaves, viewed as abelian groups, are the sections
+over `⊤` of the underlying complex of abelian presheaves. -/
+private def moduleForgetChainNatIso :
+    (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex (.up ℕ) ⋙
+        (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}).mapHomologicalComplex (.up ℕ) ≅
+      (forgetSheaf X R).mapHomologicalComplex (.up ℕ) ⋙
+        (sheafToPresheaf _ AddCommGrpCat.{u}).mapHomologicalComplex (.up ℕ) ⋙
+          ((evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj (op ⊤)).mapHomologicalComplex (.up ℕ) :=
+  Functor.mapHomologicalComplexCompIso
+      (Sheaf.ΓCompIsoSheafComposeCompΓ _ _ isTerminalTop ≪≫
+        Functor.isoWhiskerLeft _ (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop ≪≫
+          sheafSectionsNatIsoEvaluation _ _)) _ ≪≫
+    (Functor.mapHomologicalComplexCompIso (Iso.refl _) _).symm ≪≫
+    Functor.isoWhiskerLeft _ (Functor.mapHomologicalComplexCompIso (Iso.refl _) _).symm
+
+variable (X R) in
 /-- **Derived global sections of module sheaves compute the cohomology of the underlying abelian
 sheaves.** For sheaves of modules over a commutative ring on any topological space, the abelian
 group underlying `RⁿΓ(F)` is naturally isomorphic to the `Ext`-based cohomology `Hⁿ(X, U F)` of
@@ -155,12 +171,7 @@ def moduleCohomologyForgetComparison
         _ n).symm ≪≫
     -- the global sections of the Godement terms are the sections over `⊤` of the abelian terms
     Functor.isoWhiskerLeft (godementResolution (ModuleCat.{u} R) X)
-      (Functor.isoWhiskerRight (Functor.mapHomologicalComplexCompIso
-          (Sheaf.ΓCompIsoSheafComposeCompΓ _ _ isTerminalTop ≪≫
-            Functor.isoWhiskerLeft _ (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop ≪≫
-              sheafSectionsNatIsoEvaluation _ _)) _ ≪≫
-          (Functor.mapHomologicalComplexCompIso (Iso.refl _) _).symm ≪≫
-          Functor.isoWhiskerLeft _ (Functor.mapHomologicalComplexCompIso (Iso.refl _) _).symm)
+      (Functor.isoWhiskerRight (moduleForgetChainNatIso X R)
         (HomologicalComplex.homologyFunctor _ _ n)) ≪≫
     -- evaluation at `⊤` commutes with the cohomology of complexes of presheaves
     Functor.isoWhiskerLeft (godementResolution (ModuleCat.{u} R) X ⋙
@@ -220,12 +231,7 @@ private def moduleComplexForgetHomologyIso (n : ℕ) :
       ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex (.up ℕ))
       ((forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}).mapHomologicalComplexCompHomologyFunctorIso
         _ n).symm ≪≫
-    Functor.isoWhiskerRight (Functor.mapHomologicalComplexCompIso
-          (Sheaf.ΓCompIsoSheafComposeCompΓ _ _ isTerminalTop ≪≫
-            Functor.isoWhiskerLeft _ (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop ≪≫
-              sheafSectionsNatIsoEvaluation _ _)) _ ≪≫
-          (Functor.mapHomologicalComplexCompIso (Iso.refl _) _).symm ≪≫
-          Functor.isoWhiskerLeft _ (Functor.mapHomologicalComplexCompIso (Iso.refl _) _).symm)
+    Functor.isoWhiskerRight (moduleForgetChainNatIso X R)
         (HomologicalComplex.homologyFunctor _ (.up ℕ) n) ≪≫
     Functor.isoWhiskerLeft ((forgetSheaf X R).mapHomologicalComplex (.up ℕ) ⋙
         (sheafToPresheaf _ AddCommGrpCat.{u}).mapHomologicalComplex (.up ℕ))
@@ -340,12 +346,7 @@ private def moduleForgetChainIso (K : CochainComplex (X.Sheaf (ModuleCat.{u} R))
     (((evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj (op ⊤)).mapHomologicalComplex _).obj
       (((sheafToPresheaf _ AddCommGrpCat.{u}).mapHomologicalComplex _).obj
         (forgetModuleComplex K)) :=
-  (Functor.mapHomologicalComplexCompIso
-    (Sheaf.ΓCompIsoSheafComposeCompΓ _ _ isTerminalTop ≪≫
-      Functor.isoWhiskerLeft _ (Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop ≪≫
-        sheafSectionsNatIsoEvaluation _ _)) _ ≪≫
-    (Functor.mapHomologicalComplexCompIso (Iso.refl _) _).symm ≪≫
-    Functor.isoWhiskerLeft _ (Functor.mapHomologicalComplexCompIso (Iso.refl _) _).symm).app K
+  (moduleForgetChainNatIso X R).app K
 private lemma moduleForgetChainIso_hom_f (K : CochainComplex (X.Sheaf (ModuleCat.{u} R)) ℕ)
     (i : ℕ) :
     (moduleForgetChainIso K).hom.f i =
@@ -478,38 +479,6 @@ private lemma moduleForgetCyclesComparison_restrict_iCycles {F : X.Sheaf (Module
   rw [sheafRestrictSectionsTopIso_hom_app] at h'
   exact h'
 
-private lemma forgottenI_open_resolutionClass {F : X.Sheaf (ModuleCat.{u} R)}
-    (I : InjectiveResolution F) {n : ℕ}
-    (s : ((forgetModuleComplex I.cocomplex).X n).obj.obj (op U))
-    (hs : ((forgetModuleComplex I.cocomplex).d n (n + 1)).hom.app (op U) s = 0) :
-    let IU := U.sheafRestrict.mapInjectiveResolution I
-    (U.cohomologyPresheafObjIsoSheafRestrictH
-      ((forgetSheaf X R).obj F) n).hom
-      (Sheaf.H'.resolutionClass (forgottenIota I)
-        (CochainComplex.map_augmentation_comp_d (forgetSheaf X R) I.ι_f_zero_comp_complex_d)
-        (CochainComplex.map_augmentation_exact (forgetSheaf X R) I.exact₀)
-        (CochainComplex.map_exactAt_succ (forgetSheaf X R) I.cocomplex_exactAt_succ)
-        U s hs) =
-    (Sheaf.cohomologyPresheafEvaluationIsoFunctorH (Opens.grothendieckTopology U) n
-      isTerminalTop).hom.app
-      ((forgetSheaf (TopCat.of U) R).obj (U.sheafRestrict.obj F))
-      (Sheaf.H'.resolutionClass (forgottenIota (X := TopCat.of U) (R := R)
-          IU)
-        (CochainComplex.map_augmentation_comp_d (forgetSheaf (TopCat.of U) R)
-          IU.ι_f_zero_comp_complex_d)
-        (CochainComplex.map_augmentation_exact (forgetSheaf (TopCat.of U) R) IU.exact₀)
-        (CochainComplex.map_exactAt_succ (forgetSheaf (TopCat.of U) R) IU.cocomplex_exactAt_succ)
-        (⊤ : Opens U)
-        ((I.cocomplex.X n).obj.map (overTopMap U).left.op s)
-        (HomologicalComplex.d_app_map_eq_zero
-          (((sheafToPresheaf _ AddCommGrpCat.{u}).mapHomologicalComplex (.up ℕ)).obj
-            (forgetModuleComplex I.cocomplex)) (overTopMap U).left.op s hs)) := by
-  exact cohomologyPresheafObjIsoSheafRestrictH_resolutionClass U (forgetModuleComplex I.cocomplex)
-    (forgottenIota I)
-    (CochainComplex.map_augmentation_comp_d (forgetSheaf X R) I.ι_f_zero_comp_complex_d)
-    (CochainComplex.map_augmentation_exact (forgetSheaf X R) I.exact₀)
-    (CochainComplex.map_exactAt_succ (forgetSheaf X R) I.cocomplex_exactAt_succ) s hs
-
 private def moduleCycleClass {F : X.Sheaf (ModuleCat.{u} R)} (I : InjectiveResolution F)
     (n : ℕ) (z : (moduleSectionsComplex I.cocomplex).cycles n) :=
   Sheaf.H'.resolutionClass (forgottenIota I)
@@ -531,8 +500,12 @@ private lemma moduleCycleClass_restriction {F : X.Sheaf (ModuleCat.{u} R)}
       (moduleCycleClass (X := TopCat.of U) (R := R) (U.sheafRestrict.mapInjectiveResolution I) n
         (HomologicalComplex.cyclesMap (rightDerivedΓRestrictionComplexMap U I) n z)) := by
   dsimp only [moduleCycleClass]
-  rw [Sheaf.H'.cohomologyPresheaf_map_resolutionClass, forgottenI_open_resolutionClass]
+  rw [Sheaf.H'.cohomologyPresheaf_map_resolutionClass,
+    cohomologyPresheafObjIsoSheafRestrictH_resolutionClass U (forgetModuleComplex I.cocomplex)]
   congr 2
+  -- The general theorem states its cocycle proof for the restricted forgotten complex, and the
+  -- restricted resolution states it for the forgotten restricted complex; proofs are irrelevant.
+  on_goal 2 => exact proof_irrel_heq _ _
   have hc := moduleForgetCyclesComparison_restrict_iCycles U I n z
   rw [moduleForgetCyclesComparison_iCycles] at hc
   rw [hc]
@@ -585,21 +558,8 @@ private lemma moduleCohomologyForgetIsoOfInjectiveResolution_restriction {F : X.
     ((forgetSheaf (TopCat.of U) R).obj (U.sheafRestrict.obj F))
     (moduleCycleClass (X := TopCat.of U) (R := R) (U.sheafRestrict.mapInjectiveResolution I) n
       (HomologicalComplex.cyclesMap (rightDerivedΓRestrictionComplexMap U I) n z)) = _
-  have hb := ConcreteCategory.congr_hom
-    ((Sheaf.cohomologyPresheafEvaluationIsoFunctorH (Opens.grothendieckTopology X) n
-      isTerminalTop).hom_inv_id_app ((forgetSheaf X R).obj F))
-    (moduleCycleClass I n z)
-  -- Inverse cancellation uses cohomology at the terminal open as its native carrier.
-  change (Sheaf.cohomologyPresheafEvaluationIsoFunctorH (Opens.grothendieckTopology X) n
-    isTerminalTop).inv.app ((forgetSheaf X R).obj F)
-    ((Sheaf.cohomologyPresheafEvaluationIsoFunctorH (Opens.grothendieckTopology X) n
-      isTerminalTop).hom.app ((forgetSheaf X R).obj F)
-      (moduleCycleClass I n z)) = moduleCycleClass I n z at hb
-  exact (moduleCycleClass_restriction U I n z).symm.trans
-    (congrArg (fun x ↦ (U.cohomologyPresheafObjIsoSheafRestrictH
-      ((forgetSheaf X R).obj F) n).hom
-      ((((forgetSheaf X R).obj F).cohomologyPresheaf n).map
-        (homOfLE (show U ≤ ⊤ from le_top)).op x)) hb.symm)
+  rw [Iso.hom_inv_id_app_apply]
+  exact (moduleCycleClass_restriction U I n z).symm
 
 /-- The existing module/abelian cohomology comparison commutes with native open restriction. -/
 theorem moduleCohomologyForgetComparison_restriction (F : X.Sheaf (ModuleCat.{u} R)) (n : ℕ) :

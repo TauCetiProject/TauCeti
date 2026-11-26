@@ -8,7 +8,6 @@ module
 public import TauCeti.CategoryTheory.Sites.GlobalSections
 
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
-public import Mathlib.CategoryTheory.Sites.GlobalSections
 public import Mathlib.CategoryTheory.Sites.Whiskering
 
 /-!

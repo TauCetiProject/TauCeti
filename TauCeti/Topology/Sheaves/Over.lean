@@ -13,7 +13,6 @@ public import TauCeti.CategoryTheory.Sites.GlobalSections
 public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 public import Mathlib.Topology.Sheaves.Over
-public import Mathlib.Topology.Category.TopCat.Opens
 public import TauCeti.Topology.Category.TopCat.Opens
 
 /-!
@@ -162,16 +161,9 @@ def sheafRestrictSectionsTopIso (U : Opens X) :
     (sheafSections (Opens.grothendieckTopology X) A).obj (op U) ≅
       U.sheafRestrict ⋙
         (sheafSections (Opens.grothendieckTopology U) A).obj
-          (op (⊤ : Opens U)) := by
-  have hU : (Topology.IsOpenEmbedding.functor (f := U.inclusion') U.isOpenEmbedding).obj
-      (⊤ : Opens U) = U := by
-    ext x
-    -- The opens image functor takes the direct image under the bundled subtype inclusion.
-    change (x ∈ Subtype.val '' (Set.univ : Set U)) ↔ x ∈ U
-    simp
-  refine NatIso.ofComponents (fun F ↦ F.obj.mapIso (eqToIso hU).op) ?_
-  intro F G f
-  exact (f.hom.naturality (eqToIso hU).hom.op).symm
+          (op (⊤ : Opens U)) :=
+  NatIso.ofComponents (fun F ↦ F.obj.mapIso (eqToIso U.isOpenEmbedding_obj_top).op)
+    (fun f ↦ (f.hom.naturality (eqToIso U.isOpenEmbedding_obj_top).hom.op).symm)
 
 /-- Sections on an open set are the global sections of the restricted sheaf. -/
 def sheafRestrictΓIso (U : Opens X)
@@ -306,7 +298,7 @@ lemma relativeSheafEquivalence_functor_obj_map (h : V ≤ U)
       F.obj.map ((Opens.map (relativeOpenIso h).hom).map f).op := rfl
 
 private lemma relativeSites_inverse_top (h : V ≤ U) :
-    (relativeSites h).inverse.obj (⊤ : Opens V) = ⊤ := rfl
+    (relativeSites h).inverse.obj (⊤ : Opens V) = ⊤ := Opens.map_top _
 private def relativeSectionsTopIso (h : V ≤ U) :
     (sheafSections (Opens.grothendieckTopology (relativeOpen h)) A).obj (op ⊤) ≅
     (relativeSheafEquivalence (A := A) h).functor ⋙
@@ -333,10 +325,11 @@ private lemma relativeΓIso_hom_app_ΓRes_top (h : V ≤ U)
     Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.symm_hom,
     Category.assoc, Sheaf.ΓNatIsoSheafSections_inv_app_ΓRes,
     Sheaf.ΓNatIsoSheafSections_hom_app_eq_ΓRes]
-  -- `relativeSites_inverse_top` holds by `rfl`, so the remaining open map is the identity.
-  exact (congrArg (F.ΓRes (op ⊤) ≫ ·) ((Category.comp_id _).trans
-    ((congrArg F.obj.map (Quiver.Hom.op_unop _)).trans (F.obj.map_id _)))).trans
-    (Category.comp_id _)
+  -- The transport component is the restriction along the top-preservation map, which `ΓRes_map`
+  -- absorbs; the two top opens agree by `relativeSites_inverse_top`.
+  -- The goal is only type-correct up to unfolding `relativeSheafEquivalence`, so `rw` and `simp`
+  -- cannot cancel the trailing identity; cancel it by `congrArg` instead.
+  exact (congrArg (F.ΓRes (op ⊤) ≫ ·) (Category.comp_id _)).trans (Sheaf.ΓRes_map F _)
 
 /-- Relative global-sections transport acts by the restriction on every open. -/
 @[reassoc]
@@ -399,18 +392,5 @@ lemma nestedRestrictionIso_hom_app_hom_app (h : V ≤ U)
   -- not type-correct at implicit transparency and `rw [← F.obj.map_comp]` finds no match.
   erw [← CategoryTheory.Functor.map_comp]
   congr 1
-
-/-- Every sheaf on the empty subspace is zero when the coefficient category has zero morphisms. -/
-lemma isZero_sheaf_bot [HasZeroMorphisms A]
-    (F : (TopCat.of (⊥ : Opens X)).Sheaf A) : IsZero F := by
-  apply (IsZero.iff_id_eq_zero F).2
-  apply Sheaf.hom_ext
-  apply NatTrans.ext
-  funext T
-  have hT : T.unop = ⊥ := by
-    apply Opens.ext
-    ext x
-    exact False.elim x.property
-  exact (F.isTerminalOfEqEmpty hT).hom_ext _ _
 
 end TopologicalSpace.Opens

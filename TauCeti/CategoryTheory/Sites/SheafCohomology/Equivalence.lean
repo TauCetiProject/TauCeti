@@ -8,7 +8,6 @@ module
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
 public import TauCeti.Algebra.Homology.Ext.Map.AcyclicResolution
 public import TauCeti.CategoryTheory.Sites.Equivalence
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 
 /-!
 # Sheaf cohomology along an equivalence of sites
@@ -148,6 +147,9 @@ lemma cohomologyPresheafEvaluationIsoSheafCongr_resolutionClass (V : D) {n : ℕ
     simp only [c, freeYonedaSheafSectionsEquiv_symm_naturality_right, hs, map_zero]
   have hcE : cE ≫ KE.d n (n + 1) = 0 := by
     dsimp only [cE]
+    -- `s` is a section of `L.X n` at `e.inverse.obj V`, used here as a section of
+    -- `KE.X n = E.obj (L.X n)` at `V`; the carriers agree only after unfolding `sheafCongr`, so
+    -- `rw` cannot match the free-Yoneda naturality lemma.
     erw [freeYonedaSheafSectionsEquiv_symm_naturality_right, hs, map_zero]
   have hforward : adj.extEquiv ((Ext.mk₀ ξ.hom).comp
         (L.extMk ι hι hι' hL c hc) (zero_add n)) =
@@ -158,13 +160,15 @@ lemma cohomologyPresheafEvaluationIsoSheafCongr_resolutionClass (V : D) {n : ℕ
     apply (freeYonedaSheafSectionsEquiv K V (KE.X n)).injective
     have hv := sheafCongrInverseFreeYonedaIso_evaluation J K e V (L.X n) c
     dsimp only [c, cE, KE, E, adj, ξ, Functor.mapHomologicalComplex_obj_X] at hv ⊢
+    -- The same carrier identification: the section equivalence for `E.obj (L.X n)` at `V` is
+    -- applied to `s`, typed at `L.X n` and `e.inverse.obj V`, so only `erw` can cancel it.
     erw [AddEquiv.apply_symm_apply] at hv ⊢
     exact hv
   have hm := Sheaf.H'.resolutionClass_def (K := KE) (E.map ι)
     (map_augmentation_comp_d E hι) (map_augmentation_exact E hι')
     (map_exactAt_succ E hL) V s hs
   rw [Sheaf.H'.resolutionClass_def]
-  erw [hm]
+  rw [hm]
   -- The evaluated comparison is inverse adjunction on Ext followed by the free-Yoneda iso.
   dsimp only [cohomologyPresheafEvaluationIsoSheafCongr]
   change (Ext.mk₀ ξ.inv).comp

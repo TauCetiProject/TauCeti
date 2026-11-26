@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.RightDerived
+public import TauCeti.Algebra.Homology.HomotopyCategory.Functor
 public import TauCeti.Algebra.Homology.HomotopyCategory.PreservesHomology
 public import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Map
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
 public import TauCeti.Algebra.Homology.Ext.AcyclicResolution
 public import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology

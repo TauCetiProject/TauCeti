@@ -8,7 +8,6 @@ module
 public import Mathlib.CategoryTheory.Preadditive.Injective.Preserves
 public import TauCeti.Topology.Sheaves.Over
 
-public import Mathlib.Topology.Sheaves.Over
 public import TauCeti.CategoryTheory.Sites.ExtensionByZero
 public import TauCeti.Topology.Sheaves.Skyscraper
 

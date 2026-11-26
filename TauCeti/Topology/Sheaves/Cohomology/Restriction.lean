@@ -7,14 +7,11 @@ module
 
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Equivalence
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Over
-public import TauCeti.CategoryTheory.Sites.ExtensionByZero
 public import TauCeti.Topology.Sheaves.Cohomology.Instances
 public import TauCeti.CategoryTheory.Abelian.RightDerived
 public import TauCeti.Topology.Sheaves.ExtensionByZero
-public import Mathlib.Topology.Sheaves.Over
 public import TauCeti.Topology.Sheaves.Over
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Exactness
-public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # Cohomology depends only on the restricted sheaf
@@ -239,14 +236,13 @@ def rightDerivedΓRestrictionComplexMap {F : X.Sheaf (ModuleCat.{u} R)}
       (ComplexShape.up ℕ)).obj I.cocomplex ⟶
     ((Sheaf.Γ (Opens.grothendieckTopology U) (ModuleCat.{u} R)).mapHomologicalComplex
       (ComplexShape.up ℕ)).obj ((U.sheafRestrict (C := ModuleCat.{u} R)).mapInjectiveResolution
-        I).cocomplex := by
-  let H := U.sheafRestrict (C := ModuleCat.{u} R)
-  exact (NatTrans.mapHomologicalComplex
+        I).cocomplex :=
+  (NatTrans.mapHomologicalComplex
       (Sheaf.natTransΓRes (Opens.grothendieckTopology X) (ModuleCat.{u} R) (op U) ≫
         (sheafRestrictΓIso U).hom) _).app I.cocomplex ≫
     (Functor.mapHomologicalComplexCompIso
-      (Iso.refl (H ⋙ Sheaf.Γ (Opens.grothendieckTopology U) (ModuleCat.{u} R))) _).inv.app
-        I.cocomplex
+      (Iso.refl (U.sheafRestrict (C := ModuleCat.{u} R) ⋙
+        Sheaf.Γ (Opens.grothendieckTopology U) (ModuleCat.{u} R))) _).inv.app I.cocomplex
 
 /-- Each cochain component is section restriction followed by the open/global comparison. -/
 @[simp]
@@ -255,7 +251,12 @@ lemma rightDerivedΓRestrictionComplexMap_f {F : X.Sheaf (ModuleCat.{u} R)}
     (rightDerivedΓRestrictionComplexMap U I).f j =
       (I.cocomplex.X j).ΓRes (op U) ≫
         (sheafRestrictΓIso U).hom.app (I.cocomplex.X j) := by
-  rfl
+  -- The codomain is typed through `mapInjectiveResolution`, so only `dsimp` can unfold components.
+  dsimp only [rightDerivedΓRestrictionComplexMap, HomologicalComplex.comp_f,
+    NatTrans.mapHomologicalComplex_app_f, Functor.mapHomologicalComplexCompIso_inv_app_f,
+    Iso.refl_inv, NatTrans.id_app, NatTrans.comp_app, Sheaf.natTransΓRes_app]
+  -- The composition comparison contributes the identity of the restricted sections.
+  exact Category.comp_id _
 
 /-- Compute native derived restriction using the cochain restriction on any resolution. -/
 theorem rightDerivedΓRestriction_app_injectiveResolution {F : X.Sheaf (ModuleCat.{u} R)}
@@ -382,18 +383,22 @@ def relativeΓComplexMap (h : V ≤ U)
     ((Sheaf.Γ (Opens.grothendieckTopology V) (ModuleCat.{u} R)).mapHomologicalComplex
       (.up ℕ)).obj
       (((relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor.mapInjectiveResolution
-        I).cocomplex) := by
-  let T := (relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor
-  exact (NatTrans.mapHomologicalComplex (relativeΓIso h).hom _).app I.cocomplex ≫
+        I).cocomplex) :=
+  (NatTrans.mapHomologicalComplex (relativeΓIso h).hom _).app I.cocomplex ≫
     (Functor.mapHomologicalComplexCompIso
-      (Iso.refl (T ⋙ Sheaf.Γ (Opens.grothendieckTopology V) (ModuleCat.{u} R))) _).inv.app
-        I.cocomplex
+      (Iso.refl ((relativeSheafEquivalence (A := ModuleCat.{u} R) h).functor ⋙
+        Sheaf.Γ (Opens.grothendieckTopology V) (ModuleCat.{u} R))) _).inv.app I.cocomplex
 /-- Components of the resolution comparison are the relative Γ comparison. -/
 @[simp]
 lemma relativeΓComplexMap_f (h : V ≤ U)
     {F : (TopCat.of (relativeOpen h)).Sheaf (ModuleCat.{u} R)} (I : InjectiveResolution F) (j : ℕ) :
-    (relativeΓComplexMap h I).f j = (relativeΓIso h).hom.app (I.cocomplex.X j) :=
-  Category.comp_id _
+    (relativeΓComplexMap h I).f j = (relativeΓIso h).hom.app (I.cocomplex.X j) := by
+  -- The codomain is typed through `mapInjectiveResolution`, so only `dsimp` can unfold components.
+  dsimp only [relativeΓComplexMap, HomologicalComplex.comp_f,
+    NatTrans.mapHomologicalComplex_app_f, Functor.mapHomologicalComplexCompIso_inv_app_f,
+    Iso.refl_inv, NatTrans.id_app]
+  -- The composition comparison contributes the identity of the transported sections.
+  exact Category.comp_id _
 
 /-- The derived relative comparison is computed on any chosen injective resolution. -/
 lemma relativeDerivedΓIso_app (h : V ≤ U)
