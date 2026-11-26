@@ -695,8 +695,8 @@ inverse `Q`, and let `K₁`, `K₂` be subspaces of `W^{1,2} × S₁` and `W^{1,
 kernels `E₁`, `E₂` of the stabilized pieces. The pregluing `p = neckPreglue R` of an element of
 `K₁ × K₂`, corrected into the kernel of `A` along the range of `Q`, is `p k - Q (A (p k))`
 (`TauCeti.CylinderSobolev.coe_gluedKernelMap_apply`). For the stabilized glued operator
-`A = D_R ⊕ j_R` and long necks it is an isomorphism `E₁ × E₂ ≃ E_R`
-(`TauCeti.CylinderSobolev.exists_forall_ge_forall_bijective_gluedKernelMap`). -/
+`A = D_R ⊕ j_R`, long necks and right inverses `Q` of bounded norm it is an isomorphism
+`E₁ × E₂ ≃ E_R` (`TauCeti.CylinderSobolev.exists_forall_ge_forall_bijective_gluedKernelMap`). -/
 noncomputable def gluedKernelMap {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     (A : H1 V × (S₁ × S₂) →L[ℝ] Y) (Q : Y →L[ℝ] H1 V × (S₁ × S₂))
     (hQ : Function.RightInverse Q A) (K₁ : Submodule ℝ (H1 V × S₁))
@@ -719,8 +719,9 @@ inverse `Q`, and let `K₁`, `K₂` be subspaces of `W^{1,2} × S₁` and `W^{1,
 map sends `k = ((ξ₁, σ₁), (ξ₂, σ₂))` in `K₁ × K₂` to the stabilizer component of its corrected
 pregluing `TauCeti.CylinderSobolev.gluedKernelMap`, namely `b_R k = (σ₁, σ₂) - (Q (A (p k))).2`
 for the pregluing `p k` (`TauCeti.CylinderSobolev.gluedObstructionMap_apply`). For the stabilized
-glued operator `A = D_R ⊕ j_R` and the kernels `E₁`, `E₂` of the stabilized pieces it is the middle
-map of the exact sequence `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`
+glued operator `A = D_R ⊕ j_R`, the kernels `E₁`, `E₂` of the stabilized pieces, long necks and
+right inverses `Q` of bounded norm it is the middle map of the exact sequence
+`0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`
 (`TauCeti.CylinderSobolev.exists_forall_ge_forall_exists_linearEquiv_exact_gluedKernelMap`). -/
 noncomputable def gluedObstructionMap {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
     (A : H1 V × (S₁ × S₂) →L[ℝ] Y) (Q : Y →L[ℝ] H1 V × (S₁ × S₂))
