@@ -121,6 +121,13 @@ noncomputable def rankTwoTensorBialgEquiv (R : Type v) [CommSemiring R] :
   (MonoidAlgebra.domCongrBialgEquiv R R finTwoMulEquiv.{u}).trans
     ((MonoidAlgebra.prodTensorBialgEquiv R).trans (rankTwoTensorAux R))
 
+private theorem rankTwoTensorBialgEquiv_apply (R : Type v) [CommSemiring R]
+    (x : MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) :
+    rankTwoTensorBialgEquiv.{u} R x =
+      rankTwoTensorAux R (MonoidAlgebra.prodTensorBialgEquiv R
+        (MonoidAlgebra.domCongrBialgEquiv R R finTwoMulEquiv.{u} x)) :=
+  rfl
+
 /-- The rank-two tensor presentation sends a monomial `single m r` to
 `T (m.toAdd ⟨0⟩) ⊗ₜ (C r * T (m.toAdd ⟨1⟩))`. -/
 @[simp]
@@ -134,11 +141,9 @@ theorem rankTwoTensorBialgEquiv_single (R : Type v) [CommSemiring R]
       MonoidAlgebra.single (Multiplicative.ofAdd (m.toAdd ⟨0⟩),
         Multiplicative.ofAdd (m.toAdd ⟨1⟩)) r := by
     simp [MonoidAlgebra.domCongrBialgEquiv]
-  rw [rankTwoTensorBialgEquiv, ← BialgEquiv.coe_toBialgHom, BialgEquiv.trans_toBialgHom,
-    BialgEquiv.trans_toBialgHom, BialgHom.comp_apply, BialgHom.comp_apply,
-    BialgEquiv.coe_toBialgHom, BialgEquiv.coe_toBialgHom, BialgEquiv.coe_toBialgHom, hdom,
-    MonoidAlgebra.prodTensorBialgEquiv_single, rankTwoTensorAux_tmul]
-  simp only [AddMonoidAlgebra.toMultiplicativeBialgEquiv_symm_single, toAdd_ofAdd,
+  simp only [rankTwoTensorBialgEquiv_apply, hdom,
+    MonoidAlgebra.prodTensorBialgEquiv_single, rankTwoTensorAux_tmul,
+    AddMonoidAlgebra.toMultiplicativeBialgEquiv_symm_single, toAdd_ofAdd,
     LaurentPolynomial.single_eq_C_mul_T, map_one, one_mul]
 
 /-- Evaluating a tensor-product point transported along `rankTwoTensorBialgEquiv` at any character
@@ -153,11 +158,10 @@ theorem mapDomain_rankTwoTensorBialgEquiv_single {R A : Type*} [CommSemiring R]
         MultiplicativeGroup.pointsMulEquiv p.2 ^ m.toAdd ⟨1⟩ : Aˣ) : A) := by
   have hp1 : p.1.ofConv = laurentEval (R := R) (MultiplicativeGroup.pointsMulEquiv p.1) := by simp
   have hp2 : p.2.ofConv = laurentEval (R := R) (MultiplicativeGroup.pointsMulEquiv p.2) := by simp
-  rw [BialgHom.mapDomain_apply_apply, BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom,
-    rankTwoTensorBialgEquiv_single, map_one, one_mul,
-    AffineGroup.Product.pointsMulEquiv_symm_apply, ofConv_toConv,
-    Algebra.TensorProduct.productMap_apply_tmul, hp1, hp2, laurentEval_T, laurentEval_T,
-    Units.val_mul]
+  simp only [BialgHom.mapDomain_apply_apply, BialgEquiv.toBialgHom_eq_coe,
+    BialgEquiv.coe_toBialgHom, rankTwoTensorBialgEquiv_single, map_one, one_mul,
+    AffineGroup.Product.pointsMulEquiv_symm_apply, Algebra.TensorProduct.productMap_apply_tmul,
+    hp1, hp2, laurentEval_T, Units.val_mul]
 
 /-- Reading the two split-torus coordinates of a tensor-product point transported along
 `rankTwoTensorBialgEquiv`. -/

@@ -40,7 +40,7 @@ structure (`[Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]`).
   corresponding to `(p, q)` evaluating on a base-changed `R`-point `g` to the value of
   `characterGroup R (.ofAdd (p, q))` at the corresponding point of `S(R)`, coerced from `Rˣ` to
   `R` (`TauCeti.DeligneTorus.ofConv_characterLatticeEquiv_symm`), and complex conjugation swapping
-  the two coordinates (`TauCeti.DeligneTorus.characterLatticeEquiv_smul_conjAe`).
+  the two coordinates (`TauCeti.DeligneTorus.characterLatticeEquiv_conjAe_smul`).
 
 ## Main definitions
 
@@ -66,7 +66,7 @@ structure (`[Algebra ℝ R] [Algebra ℂ R] [IsScalarTower ℝ ℂ R]`).
   on real points.
 * `TauCeti.DeligneTorus.characterGroup_muConj`, `TauCeti.DeligneTorus.characterGroup_one_one`,
   `TauCeti.DeligneTorus.ofConv_characterLatticeEquiv_symm`,
-  `TauCeti.DeligneTorus.characterLatticeEquiv_smul_conjAe`.
+  `TauCeti.DeligneTorus.characterLatticeEquiv_conjAe_smul`.
 
 ## References
 
@@ -269,9 +269,9 @@ private lemma val_toMul_characterLatticeEquiv_symm (pq : ℤ × ℤ) :
           (Multiplicative.ofAdd ((Finsupp.uliftFinTwoAddEquiv ℤ).symm pq)) 1) := by
   simp only [characterLatticeEquiv, AddEquiv.symm_trans_apply,
     MulEquiv.toAdditive_apply_symm_apply, MulEquiv.symm_trans_apply, MulEquiv.symm_symm,
-    BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom]
-  rw [AddEquiv.additiveMultiplicative_symm_apply, toMul_ofMul, BialgEquiv.val_mapGroupLike,
+    BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom, BialgEquiv.val_mapGroupLike,
     TauCeti.MonoidAlgebra.val_groupLikeEquiv_symm, toMul_ofMul]
+  rw [AddEquiv.additiveMultiplicative_symm_apply, toMul_ofMul]
 
 /-- **Evaluation of the algebraic character lattice on base-changed points**: evaluating a
 base-changed `R`-point `g` of `S_ℂ` at the group-like element corresponding to `pq : ℤ × ℤ` under
@@ -282,33 +282,35 @@ theorem ofConv_characterLatticeEquiv_symm (pq : ℤ × ℤ)
     (g : WithConv (baseChangeComplex →ₐ[ℂ] R)) :
     g.ofConv ((characterLatticeEquiv.symm pq).toMul : baseChangeComplex) =
       (characterGroup R (.ofAdd pq) (baseChangeComplexPointsMulEquiv R g) : R) := by
+  rcases pq with ⟨p, q⟩
   rw [val_toMul_characterLatticeEquiv_symm,
     ← BialgHom.mapDomain_apply_apply (A := R) baseChangeSplitTorusBialgEquiv.toBialgHom g,
     baseChangeSplitTorusBialgEquiv_toBialgHom, BialgHom.mapDomain_comp, MonoidHom.comp_apply,
-    mapDomain_baseChangeComplexBialgEquiv_symm,
-    SplitTorus.mapDomain_rankTwoTensorBialgEquiv_single]
-  simp only [MulEquiv.apply_symm_apply, toAdd_ofAdd,
-    Finsupp.uliftFinTwoAddEquiv_symm_apply_zero, Finsupp.uliftFinTwoAddEquiv_symm_apply_one]
-  rw [← Prod.mk.eta (p := pq), characterGroup_apply]
+    mapDomain_baseChangeComplexBialgEquiv_symm]
+  simp
 
 private lemma conjAe_symm : Complex.conjAe.symm = Complex.conjAe :=
   AlgEquiv.ext fun z ↦ by rw [AlgEquiv.symm_apply_eq]; simp
 
-private lemma ofConv_smul_conjAe (g : WithConv (baseChangeComplex →ₐ[ℂ] ℂ))
+private lemma ofConv_conjAe_smul (g : WithConv (baseChangeComplex →ₐ[ℂ] ℂ))
     (z : ℂ ⊗[ℝ] S) :
     g.ofConv (Complex.conjAe • z) =
       star (((baseChangeComplexPointsMulEquiv ℂ).symm
         (AlgHom.mapValue Complex.conjAe.toAlgHom
           (baseChangeComplexPointsMulEquiv ℂ g))).ofConv z) := by
-  rw [g.ofConv.apply_scalarAut_smul Complex.conjAe z, conjAe_symm,
-    ofConv_baseChangeComplexPointsMulEquiv_symm, AlgHom.mapValue_apply, ofConv_toConv,
-    ofConv_baseChangeComplexPointsMulEquiv, Complex.star_def, ← Complex.conjAe_coe]
+  simp [g.ofConv.apply_scalarAut_smul Complex.conjAe z, conjAe_symm]
+
+private lemma characterGroup_swap_conj (pq : ℤ × ℤ) (f : WithConv (S →ₐ[ℝ] ℂ)) :
+    characterGroup ℂ (.ofAdd pq.swap) f =
+      star (characterGroup ℂ (.ofAdd pq) (AlgHom.mapValue Complex.conjAe.toAlgHom f)) := by
+  rw [characterGroup_apply, characterGroup_apply, complexSplitting_conj]
+  simp [mul_comm]
 
 /-- **Galois equivariance of the algebraic character lattice**: the action of complex conjugation
 `Complex.conjAe` on `Additive (GroupLike ℂ baseChangeComplex)` corresponds under
 `characterLatticeEquiv` to swapping the two coordinates `(p, q) ↦ (q, p)`. -/
 @[simp]
-theorem characterLatticeEquiv_smul_conjAe
+theorem characterLatticeEquiv_conjAe_smul
     (x : Additive (_root_.GroupLike ℂ baseChangeComplex)) :
     characterLatticeEquiv (Complex.conjAe • x) = (characterLatticeEquiv x).swap := by
   apply Multiplicative.ofAdd.injective
@@ -317,21 +319,13 @@ theorem characterLatticeEquiv_smul_conjAe
   let g : WithConv (baseChangeComplex →ₐ[ℂ] ℂ) := (baseChangeComplexPointsMulEquiv ℂ).symm f
   have hf : baseChangeComplexPointsMulEquiv ℂ g = f :=
     (baseChangeComplexPointsMulEquiv ℂ).apply_symm_apply f
-  have hconj : characterGroup ℂ (.ofAdd (characterLatticeEquiv x).swap) f =
-      star (characterGroup ℂ (.ofAdd (characterLatticeEquiv x))
-        (AlgHom.mapValue Complex.conjAe.toAlgHom f)) := by
-    have h := characterGroup_conj (characterLatticeEquiv x).1
-      (characterLatticeEquiv x).2 f
-    rw [← Prod.mk.eta (p := characterLatticeEquiv x)] at h
-    simpa [Prod.swap] using (congrArg star h).symm
   rw [← hf, ← ofConv_characterLatticeEquiv_symm, AddEquiv.symm_apply_apply,
-    Additive.toMul_smul, TauCeti.ScalarAut.val_smul, ofConv_smul_conjAe, hf]
-  rw [hconj, Units.coe_star]
+    Additive.toMul_smul, TauCeti.ScalarAut.val_smul, ofConv_conjAe_smul, hf,
+    characterGroup_swap_conj, Units.coe_star]
   congr 1
   have h1 := ofConv_characterLatticeEquiv_symm (R := ℂ) (characterLatticeEquiv x)
     ((baseChangeComplexPointsMulEquiv ℂ).symm (AlgHom.mapValue Complex.conjAe.toAlgHom f))
-  rw [AddEquiv.symm_apply_apply, MulEquiv.apply_symm_apply] at h1
-  exact h1
+  rwa [AddEquiv.symm_apply_apply, MulEquiv.apply_symm_apply] at h1
 
 end Characters
 
