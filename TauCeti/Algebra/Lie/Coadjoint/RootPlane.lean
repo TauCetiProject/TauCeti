@@ -78,6 +78,8 @@ Hessian (`TauCeti.Algebra.Lie.Coadjoint.Height`) and the dimension of the orbit
   coordinates.
 * `TauCeti.IsRootPlane.le_orthogonal`: for an invariant form, root planes with
   `α(H)² ≠ α'(H)²` for some `H ∈ t` are orthogonal.
+* `TauCeti.IsRootPlane.apply_eq_zero_of_forall_lie_eq_zero`: for an invariant form, a root plane
+  with a nonzero root is orthogonal to every element commuting with `t`.
 * `TauCeti.lie_mem_of_lie_eq_smul`: if every `H ∈ t` rotates a pair `x, y` by `α(H)`
   (`⁅H, x⁆ = α(H) y`, `⁅H, y⁆ = -α(H) x`, as `v, J v` on a root plane) and `t` contains every
   element commuting with it, then `⁅x, y⁆ ∈ t`; an invariant form pairs `H ∈ t` with `⁅x, y⁆` to
@@ -267,6 +269,25 @@ theorem apply_lie_lie_eq_zero_of_le_orthogonal (h : IsRootPlane B t α E J)
   have hzero : B (J v) (J' w) = 0 := horth (J' w).property _ (J v).property
   rw [h.lie_left, h'.lie_left]
   simp [hzero]
+
+/-- **A root plane is orthogonal to the centralizer of `t`.** For an invariant form `B` and a root
+plane with a nonzero root, `B(H, v) = 0` for every `H` commuting with `t` and every `v` in the
+plane. In particular a root plane is orthogonal to an abelian `t`. -/
+theorem apply_eq_zero_of_forall_lie_eq_zero [NoZeroDivisors R] (h : IsRootPlane B t α E J)
+    (hB : B.lieInvariant L) (hα : α ≠ 0) {H : L} (hH : ∀ H' : t, ⁅(H' : L), H⁆ = 0) (v : E) :
+    B H v = 0 := by
+  obtain ⟨H', hH'⟩ : ∃ H' : t, α H' ≠ 0 := by
+    by_contra! h'
+    exact hα (LinearMap.ext h')
+  -- Invariance under `H'`: `α(H') B(H, J w) = B(H, ⁅H', w⁆) = -B(⁅H', H⁆, w) = 0`.
+  have key (w : E) : α H' * B H (J w) = 0 := by
+    have hinv := hB (H' : L) H (w : L)
+    rw [hH H', map_zero, LinearMap.zero_apply, h.lie_apply, map_smul, smul_eq_mul] at hinv
+    linear_combination hinv
+  -- Every `v` is `-J (J v)`.
+  have hv := key (J v)
+  rw [h.apply_apply, Submodule.coe_neg, map_neg, mul_neg, neg_eq_zero] at hv
+  exact (mul_eq_zero.mp hv).resolve_left hH'
 
 end Orthogonal
 

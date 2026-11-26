@@ -32,15 +32,16 @@ A continuous linear map applied after a Hölder function is Hölder, the constan
 the operator norm (`ContinuousLinearMap.holderWith_comp`). Evaluating a Hölder family of
 continuous linear maps at a fixed vector `v` multiplies the Hölder constant by `‖v‖`
 (`HolderOnWith.clm_apply_const`), so a vector of norm at most one keeps it
-(`HolderOnWith.clm_apply_of_norm_le_one`); evaluating it at a bounded Hölder family of vectors
-obeys the product rule (`HolderOnWith.clm_apply`). Flipping the arguments of a Hölder family of
+(`HolderOnWith.clm_apply_of_norm_le_one`). Flipping the arguments of a Hölder family of
 bilinear maps keeps the Hölder constant (`HolderOnWith.clm_flip`).
 
 Composing a family of bilinear maps with two families of linear maps, `(f x).bilinearComp (g x)
 (h x)`, preserves Hölder continuity when the three families are bounded
 (`ContinuousLinearMap.holderOnWith_bilinearComp`); this is how a second derivative transforms
-under a change of variables. Likewise the bilinear maps `(h, k) ↦ B x h k • c x` form a Hölder
-family when `B` and `c` are Hölder and bounded
+under a change of variables. Applying a bounded Hölder family of bilinear maps to a bounded Hölder
+family of vectors in its second slot, `(f x).flip (g x)`, gives a Hölder family of linear maps
+(`ContinuousLinearMap.holderOnWith_flip_apply`). Likewise the bilinear maps
+`(h, k) ↦ B x h k • c x` form a Hölder family when `B` and `c` are Hölder and bounded
 (`ContinuousLinearMap.holderOnWith_smulRightL_flip_comp`).
 
 For a scalar-valued continuous multilinear map `L`, the map `L.smulRight (g x - g y)` has norm at
@@ -210,6 +211,39 @@ theorem holderOnWith_bilinearComp {α Kf Kg Kh Mf Mg Mh : ℝ≥0} {f : X → E 
       push_cast
       ring
 
+/-- Applying a family of bilinear maps to a family of vectors in its second slot preserves Hölder
+continuity on a set when both families are bounded there: `x ↦ (f x).flip (g x)`, the linear map
+`v ↦ f x v (g x)`, is Hölder with constant `Kf Mg + Mf Kg`. This is the bilinear estimate
+`ContinuousLinearMap.holderOnWith_comp₂` for the bilinear map `(f, g) ↦ f.flip g`. -/
+theorem holderOnWith_flip_apply {α Kf Kg Mf Mg : ℝ≥0} {f : X → E →L[𝕜] F →L[𝕜] G} {g : X → F}
+    {s : Set X} (hf : HolderOnWith Kf α f s) (hg : HolderOnWith Kg α g s)
+    (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) (hgnorm : ∀ x ∈ s, ‖g x‖ ≤ Mg) :
+    HolderOnWith (Kf * Mg + Mf * Kg) α (fun x ↦ (f x).flip (g x)) s := by
+  -- Proved directly rather than from `holderOnWith_comp₂`: instance search does not find the
+  -- operator norm on maps whose domain is itself a space of bilinear maps, which the constant
+  -- `‖B‖₊` of `holderOnWith_comp₂` needs for `B = (f, g) ↦ f.flip g`.
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have hfd := hf.dist_le hx hy
+  have hgd := hg.dist_le hx hy
+  rw [dist_eq_norm (f x) (f y)] at hfd
+  rw [dist_eq_norm (g x) (g y)] at hgd
+  rw [dist_eq_norm]
+  refine opNorm_le_bound _ (by positivity) fun v => ?_
+  have hsplit : ((f x).flip (g x) - (f y).flip (g y)) v =
+      (f x - f y) v (g x) + f y v (g x - g y) := by
+    simp only [sub_apply, flip_apply, map_sub]
+    abel
+  rw [hsplit]
+  calc ‖(f x - f y) v (g x) + f y v (g x - g y)‖
+      ≤ ‖f x - f y‖ * ‖v‖ * ‖g x‖ + ‖f y‖ * ‖v‖ * ‖g x - g y‖ :=
+        (norm_add_le _ _).trans (add_le_add ((f x - f y).le_opNorm₂ v (g x))
+          ((f y).le_opNorm₂ v (g x - g y)))
+    _ ≤ Kf * dist x y ^ (α : ℝ) * ‖v‖ * Mg + Mf * ‖v‖ * (Kg * dist x y ^ (α : ℝ)) := by
+        have := hgnorm x hx
+        have := hfnorm y hy
+        gcongr
+    _ = ↑(Kf * Mg + Mf * Kg) * dist x y ^ (α : ℝ) * ‖v‖ := by push_cast; ring
+
 section SMulRight
 
 variable [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
@@ -323,14 +357,5 @@ theorem clm_flip {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
     {f : X → E →L[𝕜] F →L[𝕜] G} {s : Set X} (hf : HolderOnWith C α f s) :
     HolderOnWith C α (fun x ↦ (f x).flip) s :=
   (ContinuousLinearMap.flipₗᵢ' E F G (RingHom.id 𝕜) (RingHom.id 𝕜)).isometry.comp_holderOnWith hf
-
-/-- Evaluating a family of continuous linear maps at a family of vectors, both Hölder and bounded
-on `s`, gives a Hölder function on `s`, with constant `Mf Kv + Mv Kf`. -/
-theorem clm_apply [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {α Kf Kv Mf Mv : ℝ≥0}
-    {f : X → F →L[𝕜] G} {v : X → F} {s : Set X} (hf : HolderOnWith Kf α f s)
-    (hv : HolderOnWith Kv α v s) (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) (hvnorm : ∀ x ∈ s, ‖v x‖ ≤ Mv) :
-    HolderOnWith (Mf * Kv + Mv * Kf) α (fun x ↦ f x (v x)) s :=
-  ((ContinuousLinearMap.id 𝕜 (F →L[𝕜] G)).holderOnWith_comp₂ hf hv hfnorm hvnorm).mono_const
-    (mul_le_of_le_one_left zero_le ContinuousLinearMap.norm_id_le)
 
 end HolderOnWith
