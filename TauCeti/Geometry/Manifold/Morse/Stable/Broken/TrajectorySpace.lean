@@ -39,7 +39,10 @@ Indexed by the critical points (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTraj
 these are the hypotheses `hι` and `hA` of
 `TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`. A twisting chain system on these
 spaces is carried to the Barraud–Cornea cocycle
-(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`).
+(`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle`). Under the Morse–Smale condition the
+Morse index drops strictly along a broken trajectory, so the trajectory space from `x` to `y` is
+empty unless `y` has smaller index than `x`
+(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBrokenTrajectorySpace_eq_empty_of_le`).
 
 ## Main definitions
 
@@ -55,6 +58,9 @@ spaces is carried to the Barraud–Cornea cocycle
 * `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceComp_assoc`,
   `IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceComp_mem_morseBrokenTrajectorySpaceBoundary`:
   the composition maps of the trajectory spaces are associative and land in the boundary.
+* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBrokenTrajectorySpace_eq_empty_of_le`: under
+  the Morse–Smale condition, the trajectory space from `x` to `y` is empty when the index of `x` is
+  at most that of `y`.
 
 ## References
 
@@ -136,6 +142,20 @@ theorem morseBrokenTrajectorySpace_subset (x y : M) :
 theorem value_lt_of_mem_morseBrokenTrajectorySpace {x y : M} {w : c ⁻¹' Ioo (f y) (f x) → M}
     (hw : w ∈ hX.morseBrokenTrajectorySpace c x y) : f y < f x :=
   hX.value_lt_of_mem_morseBrokenTrajectoryRecords hw.1 hw.2
+
+/-- **The index drops along a trajectory space.** Under the Morse–Smale condition, the trajectory
+space from `x` to `y` is empty when the Morse index of `x` is at most that of `y`: a broken
+trajectory from `x` to `y ≠ x` has at least one component, and each component lowers the index. -/
+theorem IsMorseSmale.morseBrokenTrajectorySpace_eq_empty_of_le (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f) {x y : M}
+    (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y) :
+    hX.morseBrokenTrajectorySpace c x y = ∅ := by
+  refine eq_empty_of_forall_notMem fun w ⟨hne, hw⟩ ↦ ?_
+  obtain ⟨k, x', z, h0, hk, -, hxne, hz, -⟩ := hX.mem_morseBrokenTrajectoryRecords.1 hw
+  have hle := h.add_manifoldMorseIndex_le_of_chain hf h0 hk hxne hz
+  rcases k with _ | k
+  · exact hne (h0.symm.trans hk)
+  · omega
 
 variable {x z y : M}
 
