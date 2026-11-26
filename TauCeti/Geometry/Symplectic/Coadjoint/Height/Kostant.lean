@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.Convex.DualHull
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Weyl
--- Proof-only: root-plane decompositions of maximal abelian subspaces, and density of the regular
+-- Proof-only: root-plane decompositions over a maximal torus, and density of the regular
 -- elements of `t` by the Baire property of locally compact spaces.
 import Mathlib.Topology.Baire.LocallyCompactRegular
-import TauCeti.Algebra.Lie.InvariantForm.RootPlane.Decomposition
+import TauCeti.Geometry.Lie.Subgroup.Torus.RootPlane
 import TauCeti.Topology.Algebra.Module.Baire
 
 /-!
@@ -55,8 +55,6 @@ theorem needs connectedness.
 
 ## Main results
 
-* `TauCeti.Lie.IsMaximalTorus.exists_isRootPlaneDecomposition`: the Lie algebra of a maximal torus
-  carries a root-plane decomposition with a regular element.
 * `TauCeti.IsRootPlaneDecomposition.exists_forall_orbitMap_coadjointRepresentation_apply_le`: the
   height of a regular element of `t` attains its maximum on the coadjoint orbit at a Weyl group
   point.
@@ -135,44 +133,6 @@ end TauCeti.IsRootPlaneDecomposition
 /-! ### The projected orbit lies in the convex hull of the projected Weyl orbit -/
 
 namespace TauCeti.Lie
-
-omit [IsMulCommutative T] in
-/-- **Root-plane decompositions over a maximal torus.** Let `T` be a maximal torus of a compact Lie
-group, `B` a symmetric positive definite invariant form on `𝔤`, and `t` the image of the Lie
-algebra `𝔱` of `T` under the evaluation `e` at the identity. Then `t` is a maximal abelian subspace
-of `𝔤`, so its root planes form a root-plane decomposition `𝔤 = t + Σ F_k` with two-dimensional
-planes, and some `X ∈ t` is regular: no root vanishes at it. -/
-theorem IsMaximalTorus.exists_isRootPlaneDecomposition [CompactSpace G] (hT : IsMaximalTorus T)
-    (hBs : B.IsSymm) (hpos : ∀ a, a ≠ 0 → 0 < B a a) (hB : B.lieInvariant (GroupLieAlgebra I G))
-    (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
-      (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-        BoundarylessManifold.isInteriorPoint).toLinearEquiv.toLinearMap) :
-    ∃ (r : ℕ) (α : Fin r → Dual ℝ t) (F : Fin r → Submodule ℝ (GroupLieAlgebra I G))
-      (J : (k : Fin r) → End ℝ (F k)),
-      IsRootPlaneDecomposition B t α F J ∧ (∀ k, finrank ℝ (F k) = 2) ∧
-        ∃ X : t, ∀ k, α k X ≠ 0 := by
-  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
-  have := hT.isTorus.isMulCommutative
-  set e := leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-    BoundarylessManifold.isInteriorPoint
-  have he (D : LeftInvariantDerivation I G) (hD : D ∈ lieSubalgebraOfSubgroup (I := I) T) :
-      e D ∈ t := by
-    rw [ht]
-    exact ⟨D, hD, rfl⟩
-  refine exists_isRootPlaneDecomposition_of_forall_lt hBs hpos hB ?_ fun s hts hs ↦ ?_
-  · -- `t` is abelian, since `𝔱` is.
-    rw [ht]
-    rintro _ ⟨D, hD, rfl⟩ _ ⟨D', hD', rfl⟩
-    simp only [LinearEquiv.coe_coe, LieEquiv.coe_toLinearEquiv]
-    rw [← LieEquiv.map_lie, lie_eq_zero_of_mem_lieSubalgebraOfSubgroup hD hD', map_zero]
-  -- `t` is maximal abelian: an element `Y` of a larger abelian subspace has `e⁻¹ Y` commuting with
-  -- `𝔱`, so `e⁻¹ Y ∈ 𝔱` by maximality of `T`, and `Y ∈ t`.
-  obtain ⟨Y, hYs, hYt⟩ := IsConcreteLE.exists_of_lt hts
-  refine hYt ?_
-  rw [← e.apply_symm_apply Y]
-  refine he _ (hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun D hD ↦ ?_)
-  have h := hs Y hYs (e D) (hts.le (he D hD))
-  rwa [← e.apply_symm_apply Y, ← LieEquiv.map_lie, EmbeddingLike.map_eq_zero_iff] at h
 
 /-- **The projected coadjoint orbit lies in the convex hull of the projected Weyl orbit.** This is
 one half of Kostant's convexity theorem. Let `T` be a maximal torus of a compact Lie group `G`, `B`

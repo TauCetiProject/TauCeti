@@ -39,16 +39,6 @@ variable {A M ι : Type*} [Ring A] [TopologicalSpace A] [NeBot (𝓝[{x : A | Is
   [AddCommGroup M] [Module A M] [TopologicalSpace M] [ContinuousAdd M] [ContinuousSMul A M]
   [BaireSpace M] [Countable ι]
 
-/-- **A Baire module is not a countable union of proper closed submodules.** Over a ring in
-which zero is a limit of units, some vector of a Baire topological module lies outside each
-member of a countable family of proper closed submodules. -/
-theorem exists_forall_notMem_of_isClosed (p : ι → Submodule A M)
-    (hc : ∀ i, IsClosed (p i : Set M)) (hp : ∀ i, p i ≠ ⊤) : ∃ x : M, ∀ i, x ∉ p i := by
-  by_contra! h
-  obtain ⟨i, hi⟩ := nonempty_interior_of_iUnion_of_closed hc
-    (Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr (h x))
-  exact hp i ((p i).eq_top_of_nonempty_interior' hi)
-
 /-- **Vectors avoiding countably many proper closed submodules are dense.** Over a ring in which
 zero is a limit of units, the vectors of a Baire topological module lying outside each member of
 a countable family of proper closed submodules form a dense set. -/
@@ -59,5 +49,12 @@ theorem dense_setOf_forall_notMem_of_isClosed (p : ι → Submodule A M)
   refine dense_iInter_of_isOpen (fun i ↦ (hc i).isOpen_compl) fun i ↦
     interior_eq_empty_iff_dense_compl.1 (Set.not_nonempty_iff_eq_empty.1 fun hi ↦ ?_)
   exact hp i ((p i).eq_top_of_nonempty_interior' hi)
+
+/-- **A Baire module is not a countable union of proper closed submodules.** Over a ring in
+which zero is a limit of units, some vector of a Baire topological module lies outside each
+member of a countable family of proper closed submodules. -/
+theorem exists_forall_notMem_of_isClosed (p : ι → Submodule A M)
+    (hc : ∀ i, IsClosed (p i : Set M)) (hp : ∀ i, p i ≠ ⊤) : ∃ x : M, ∀ i, x ∉ p i :=
+  (dense_setOf_forall_notMem_of_isClosed p hc hp).nonempty
 
 end Submodule
