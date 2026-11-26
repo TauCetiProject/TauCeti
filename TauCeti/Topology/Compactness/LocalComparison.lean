@@ -155,7 +155,7 @@ theorem IsPreconnected.exists_eventually_forall_inv_le_div_le_of_locally
   rw [hp'] at hl
   have hx' : 0 < v i x := by
     by_contra! hn
-    rw [show w i x = 0 from max_eq_right hn, mul_zero] at hl
+    simp only [w, max_eq_right hn, mul_zero] at hl
     exact (not_le_of_gt zero_lt_one) hl
-  rw [show w i x = v i x from max_eq_left hx'.le] at hl hu
+  simp only [w, max_eq_left hx'.le] at hl hu
   exact ⟨(inv_le_iff_one_le_mul₀' (zero_lt_one.trans_le hC)).2 hl, hu⟩
