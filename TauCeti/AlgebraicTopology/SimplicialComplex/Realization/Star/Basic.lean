@@ -77,6 +77,15 @@ theorem isOpen_biInter_openStarRealization (σ : Finset ι) :
     IsOpen (⋂ v ∈ σ, K.openStarRealization v) :=
   isOpen_biInter_finset fun v _ => K.isOpen_openStarRealization v
 
+/-- The open simplex of a maximal face, the points whose carrier is that face, is open: by
+maximality it is the intersection of the open stars of the vertices of the face. -/
+theorem isOpen_setOf_support_eq_of_maximal {σ : Finset ι} (hσ : Maximal (· ∈ K) σ) :
+    IsOpen {x : Realization K | x.val.support = σ} := by
+  convert K.isOpen_biInter_openStarRealization σ using 1
+  ext x
+  rw [mem_biInter_openStarRealization_iff]
+  exact ⟨fun h => h.ge, fun h => (hσ.2 (support_mem K x) h).antisymm h⟩
+
 /-- Every realization point belongs to an open vertex star. -/
 theorem exists_mem_openStarRealization (x : Realization K) :
     ∃ v, x ∈ K.openStarRealization v := by

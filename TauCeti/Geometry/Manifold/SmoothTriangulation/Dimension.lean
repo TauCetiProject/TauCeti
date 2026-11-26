@@ -18,7 +18,8 @@ directions of the simplex, the vectors of `σ → ℝ` with coordinate sum zero.
 subspace `TauCeti.singleParityCheckCode ℝ σ` of dimension `|σ| - 1`, so `|σ| ≤ dim E + 1`
 (`TauCeti.IsSimplexImmersion.card_le`). Hence a smooth triangulation `κ : |K| ≃ₜ M` of a manifold
 modelled on `E` has no simplices of dimension above `dim E`
-(`TauCeti.IsSmoothTriangulation.card_le`, `TauCeti.IsSmoothTriangulation.dimension_le`).
+(`TauCeti.IsSmoothTriangulation.card_le`, `TauCeti.IsSmoothTriangulation.dimension_le`), and a
+face with `dim E + 1` vertices is maximal (`TauCeti.IsSmoothTriangulation.maximal_of_card_eq`).
 
 This is the upper half of purity: the triangulating complex of an `n`-manifold has no simplices
 of dimension above `n`.
@@ -56,6 +57,15 @@ has at most `dim E + 1` vertices. -/
 theorem IsSmoothTriangulation.card_le {K : AbstractSimplicialComplex ι} {κ : Realization K ≃ₜ M}
     (h : IsSmoothTriangulation I n κ) {σ : Finset ι} (hσ : σ ∈ K) : σ.card ≤ finrank ℝ E + 1 :=
   (isSmoothTriangulation_iff.mp h ⟨σ, hσ⟩).card_le
+
+/-- In a smooth triangulation of a manifold modelled on a finite-dimensional space `E`, a face
+with `dim E + 1` vertices is maximal. -/
+theorem IsSmoothTriangulation.maximal_of_card_eq {K : AbstractSimplicialComplex ι}
+    {κ : Realization K ≃ₜ M} (h : IsSmoothTriangulation I n κ) {σ : Finset ι} (hσ : σ ∈ K)
+    (hcard : σ.card = finrank ℝ E + 1) : Maximal (· ∈ K) σ :=
+  ⟨hσ, fun τ hτ hστ => (Finset.eq_of_subset_of_card_le hστ (by
+    have := h.card_le hτ
+    omega)).ge⟩
 
 /-- A smooth triangulation of a manifold modelled on a finite-dimensional space `E` has dimension
 at most `dim E`: it has no simplices of dimension above that of the manifold. -/
