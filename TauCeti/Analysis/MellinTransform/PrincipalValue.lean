@@ -35,21 +35,6 @@ open scoped FourierTransform
 
 namespace MellinConvergent
 
-private theorem tendsto_oneSided_smul_comp_of_strictAnti
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : ℝ → E} {φ w : ℝ → ℝ} {a x : ℝ}
-    (hφ : φ a = x) (hc : ContinuousAt φ a) (ha : StrictAnti φ) (hw : ContinuousAt w a)
-    (hl : Tendsto f (𝓝[<] x) (𝓝 (f.leftLim x)))
-    (hr : Tendsto f (𝓝[>] x) (𝓝 (f.rightLim x))) :
-    Tendsto (fun u ↦ w u • f (φ u)) (𝓝[<] a) (𝓝 (w a • f.rightLim x)) ∧
-      Tendsto (fun u ↦ w u • f (φ u)) (𝓝[>] a) (𝓝 (w a • f.leftLim x)) := by
-  have hφL : Tendsto φ (𝓝[<] a) (𝓝[>] x) :=
-    hφ ▸ hc.continuousWithinAt.tendsto_nhdsWithin ha.mapsTo_Iio
-  have hφR : Tendsto φ (𝓝[>] a) (𝓝[<] x) :=
-    hφ ▸ hc.continuousWithinAt.tendsto_nhdsWithin ha.mapsTo_Ioi
-  exact ⟨(hw.tendsto.mono_left nhdsWithin_le_nhds).smul (hr.comp hφL),
-    (hw.tendsto.mono_left nhdsWithin_le_nhds).smul (hl.comp hφR)⟩
-
 /-- **Principal-value Mellin inversion.** If the Mellin integral of `f` converges absolutely
 on the line `Re s = σ` and `f` has bounded variation near `x > 0`, truncating the inverse integral
 symmetrically in height recovers the mean of the one-sided limits at `x`. The proof transfers
@@ -78,23 +63,23 @@ theorem tendsto_truncated_mellinInv_mellin
   have hφa : StrictAnti φ := fun _ _ hab ↦ Real.exp_lt_exp.mpr (neg_lt_neg hab)
   have hφc : ContinuousAt φ u₀ := by fun_prop
   have hwv : LocallyBoundedVariationOn w univ := by
-    obtain h | h := le_total 0 (-σ)
-    · have hm : Monotone w := fun _ _ huv ↦
-        Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left huv h)
-      exact (hm.monotoneOn univ).locallyBoundedVariationOn
-    · have hm : Monotone (-w) := fun _ _ huv ↦
-        neg_le_neg (Real.exp_le_exp.mpr (mul_le_mul_of_nonpos_left huv h))
-      intro a b ha hb
-      simpa only [BoundedVariationOn, eVariationOn.neg] using
-        (hm.monotoneOn univ).locallyBoundedVariationOn a b ha hb
+    intro a b _ _
+    have hdiff : ContDiffOn ℝ 1 w (Icc a b) := by fun_prop
+    obtain ⟨_, hLip⟩ := hdiff.exists_lipschitzOnWith one_ne_zero (convex_Icc _ _) isCompact_Icc
+    rw [univ_inter]
+    exact hLip.comp_boundedVariationOn (g := id) (mapsTo_id _) <| by
+      simpa only [univ_inter] using
+        (monotone_id.monotoneOn univ).locallyBoundedVariationOn a b trivial trivial
   obtain ⟨r, hr, hgv⟩ := hv.exists_Icc_smul_comp (hφ.symm ▸ hmem) univ_mem hφc
     (Or.inr (hφa.antitone.antitoneOn _)) hwv
   have H := hgi.tendsto_intervalIntegral_fourierInv_fourier_of_boundedVariationOn hr hgv
-  obtain ⟨hGL', hGR'⟩ := tendsto_oneSided_smul_comp_of_strictAnti hφ hφc hφa
-    (by fun_prop : ContinuousAt w u₀)
-    (hv.tendsto_leftLim_of_mem_nhdsLT (mem_nhdsWithin_of_mem_nhds hmem))
-    (hv.tendsto_rightLim_of_mem_nhdsGT (mem_nhdsWithin_of_mem_nhds hmem))
-  rw [leftLim_eq_of_tendsto hGL', rightLim_eq_of_tendsto hGR', ← smul_add,
+  have hwc : ContinuousAt w u₀ := by fun_prop
+  have hl := (hv.tendsto_rightLim_of_mem_nhdsGT (mem_nhdsWithin_of_mem_nhds hmem)).comp
+    (hφ ▸ hφc.continuousWithinAt.tendsto_nhdsWithin hφa.mapsTo_Iio)
+  have hr' := (hv.tendsto_leftLim_of_mem_nhdsLT (mem_nhdsWithin_of_mem_nhds hmem)).comp
+    (hφ ▸ hφc.continuousWithinAt.tendsto_nhdsWithin hφa.mapsTo_Ioi)
+  rw [leftLim_eq_of_tendsto (f := g) (hwc.continuousWithinAt.tendsto.smul hl),
+    rightLim_eq_of_tendsto (f := g) (hwc.continuousWithinAt.tendsto.smul hr'), ← smul_add,
     add_comm (f.rightLim x)] at H
   have hheight : Tendsto (fun T : ℝ ↦ T / (2 * Real.pi)) atTop atTop := by
     simpa only [div_eq_mul_inv, mul_comm, id_eq] using
