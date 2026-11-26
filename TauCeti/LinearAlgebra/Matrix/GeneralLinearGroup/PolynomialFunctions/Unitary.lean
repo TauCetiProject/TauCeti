@@ -38,6 +38,8 @@ so it is a proper Zariski-closed subset of the real matrices.
 
 ## Main results
 
+* `MvPolynomial.eq_of_eval_eq_on_pi_unitaryGroup`: two polynomials in the entries of a family of
+  square complex matrices indexed by `Φ` that agree on every tuple of unitary matrices are equal.
 * `MvPolynomial.eq_of_eval_eq_on_unitaryGroup`: two polynomials in the entries of a complex
   matrix that agree on the unitary group are equal. This is the unitary counterpart of Mathlib's
   `MvPolynomial.eq_of_eval_eq_on_gl`.
@@ -56,21 +58,22 @@ namespace MvPolynomial
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- **The unitary group is Zariski dense in the complex matrices.** Two polynomials in the entries
-of a square complex matrix that take the same value at every unitary matrix are equal. -/
-theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (ι × ι) ℂ}
-    (h : ∀ U ∈ Matrix.unitaryGroup ι ℂ,
-      eval (fun ij => U ij.1 ij.2) p = eval (fun ij => U ij.1 ij.2) q) :
+/-- **Zariski density of `U(n)^Φ` in `M_n(ℂ)^Φ`.** Two polynomials in the entries of a family of
+square complex matrices indexed by `Φ` that take the same value at every tuple of unitary matrices
+are equal. -/
+theorem eq_of_eval_eq_on_pi_unitaryGroup {Φ : Type*} {p q : MvPolynomial (Φ × ι × ι) ℂ}
+    (h : ∀ U : Φ → Matrix ι ι ℂ, (∀ τ, U τ ∈ Matrix.unitaryGroup ι ℂ) →
+      eval (fun x => U x.1 x.2.1 x.2.2) p = eval (fun x => U x.1 x.2.1 x.2.2) q) :
     p = q := by
   refine MvPolynomial.funext fun x => ?_
   -- Only the shape `U * diagonal d * V` of the singular value decomposition is used; it is
   -- transported from `Fin (Fintype.card ι)` along an enumeration of `ι`.
-  obtain ⟨d, U, V, hA⟩ : ∃ (d : ι → ℂ) (U V : Matrix.unitaryGroup ι ℂ),
-      Matrix.of (fun i j => x (i, j)) = (U : Matrix ι ι ℂ) * Matrix.diagonal d * V := by
+  have hsvd (τ : Φ) : ∃ (d : ι → ℂ) (U V : Matrix.unitaryGroup ι ℂ),
+      Matrix.of (fun i j => x (τ, i, j)) = (U : Matrix ι ι ℂ) * Matrix.diagonal d * V := by
     let e := Fintype.equivFin ι
     obtain ⟨d, U, V, hUV⟩ : ∃ (d : Fin (Fintype.card ι) → ℂ)
         (U V : Matrix.unitaryGroup (Fin (Fintype.card ι)) ℂ),
-        (Matrix.of fun i j => x (i, j)).submatrix e.symm e.symm =
+        (Matrix.of fun i j => x (τ, i, j)).submatrix e.symm e.symm =
           (U : Matrix _ _ ℂ) * Matrix.diagonal d * (V : Matrix _ _ ℂ) :=
       ⟨_, Matrix.exists_unitary_mul_diagonal_mul_unitary _⟩
     refine ⟨d ∘ e, ⟨(U : Matrix _ _ ℂ).submatrix e e, Matrix.submatrix_equiv_mem_unitary.mpr
@@ -79,16 +82,19 @@ theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (ι × ι) ℂ}
     rw [← Matrix.submatrix_diagonal_equiv, Matrix.submatrix_mul_equiv,
       Matrix.submatrix_mul_equiv, ← hUV, Matrix.submatrix_submatrix]
     simp
-  -- Substituting `U * diagonal z * V` for the matrix of variables, as a polynomial in `z`.
-  let F : ι × ι → MvPolynomial ι ℂ := fun ij =>
-    ∑ k, C ((U : Matrix ι ι ℂ) ij.1 k * (V : Matrix ι ι ℂ) k ij.2) * X k
-  have hF (z : ι → ℂ) (r : MvPolynomial (ι × ι) ℂ) :
-      eval z (aeval F r) = eval (fun ij => ((U : Matrix ι ι ℂ) * Matrix.diagonal z * V) ij.1 ij.2)
-        r := by
-    rw [map_aeval, show (eval z).comp (algebraMap ℂ (MvPolynomial ι ℂ)) = RingHom.id ℂ by
-      ext; simp]
+  choose d U V hA using hsvd
+  -- Substituting `U τ * diagonal z_τ * V τ` for the matrix of variables, as a polynomial in `z`.
+  let F : Φ × ι × ι → MvPolynomial (Φ × ι) ℂ := fun ⟨τ, i, j⟩ =>
+    ∑ k, C ((U τ : Matrix ι ι ℂ) i k * (V τ : Matrix ι ι ℂ) k j) * X (τ, k)
+  have hF (z : Φ × ι → ℂ) (r : MvPolynomial (Φ × ι × ι) ℂ) :
+      eval z (aeval F r) =
+        eval (fun y => ((U y.1 : Matrix ι ι ℂ) * Matrix.diagonal (fun k => z (y.1, k)) * V y.1)
+          y.2.1 y.2.2) r := by
+    have hcomp : (eval z).comp (algebraMap ℂ (MvPolynomial (Φ × ι) ℂ)) = RingHom.id ℂ := by
+      ext; simp
+    rw [map_aeval, hcomp]
     -- `eval y` is `eval₂Hom (RingHom.id ℂ) y` by definition.
-    refine congrArg (fun y => eval y r) (_root_.funext fun ij => ?_)
+    refine congrArg (fun y => eval y r) (_root_.funext fun ⟨τ, i, j⟩ => ?_)
     rw [Matrix.mul_apply]
     simp only [F, map_sum, map_mul, eval_C, eval_X, Matrix.mul_diagonal]
     exact Finset.sum_congr rfl fun k _ => by ring
@@ -101,15 +107,28 @@ theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (ι × ι) ℂ}
     refine MvPolynomial.funext_set (fun _ => Metric.sphere (0 : ℂ) 1) (fun _ => hS)
       fun z hz => ?_
     rw [hF, hF]
-    refine h _ (mul_mem (mul_mem U.property ?_) V.property)
-    refine Matrix.diagonal_mem_unitary.mpr (Pi.mem_unitary_iff.mpr fun i => ?_)
+    refine h (fun τ => (U τ : Matrix ι ι ℂ) * Matrix.diagonal (fun k => z (τ, k)) * V τ)
+      fun τ => mul_mem (mul_mem (U τ).property ?_) (V τ).property
+    refine Matrix.diagonal_mem_unitary.mpr (Pi.mem_unitary_iff.mpr fun k => ?_)
     -- A complex number of modulus one is unitary: `conj z * z = ‖z‖ ^ 2 = 1`.
     rw [Unitary.mem_iff_star_mul_self, Complex.star_def, Complex.conj_mul',
-      mem_sphere_zero_iff_norm.mp (hz i trivial)]
+      mem_sphere_zero_iff_norm.mp (hz (τ, k) trivial)]
     norm_num
-  have hx : x = fun ij => ((U : Matrix ι ι ℂ) * Matrix.diagonal d * V) ij.1 ij.2 :=
-    _root_.funext fun ij => congrFun (congrFun hA ij.1) ij.2
-  rw [hx, ← hF, ← hF, hpq]
+  have hx : x = fun y => ((U y.1 : Matrix ι ι ℂ) * Matrix.diagonal (d y.1) * V y.1) y.2.1 y.2.2 :=
+    _root_.funext fun ⟨τ, i, j⟩ => congrFun (congrFun (hA τ) i) j
+  rw [hx, ← hF (fun y => d y.1 y.2) p, ← hF (fun y => d y.1 y.2) q, hpq]
+
+/-- **The unitary group is Zariski dense in the complex matrices.** Two polynomials in the entries
+of a square complex matrix that take the same value at every unitary matrix are equal. -/
+theorem eq_of_eval_eq_on_unitaryGroup {p q : MvPolynomial (ι × ι) ℂ}
+    (h : ∀ U ∈ Matrix.unitaryGroup ι ℂ,
+      eval (fun ij => U ij.1 ij.2) p = eval (fun ij => U ij.1 ij.2) q) :
+    p = q := by
+  let e : ι × ι ≃ Unit × ι × ι := (Equiv.punitProd (ι × ι)).symm
+  apply (renameEquiv ℂ e).injective
+  refine eq_of_eval_eq_on_pi_unitaryGroup fun U hU => ?_
+  simpa only [renameEquiv_apply, eval_rename, Function.comp_def, e, Equiv.punitProd_symm_apply]
+    using h (U ()) (hU ())
 
 end MvPolynomial
 
