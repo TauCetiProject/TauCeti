@@ -709,6 +709,22 @@ theorem reducedSingularHomologyFunctor_map_unitSphereMap {n : ℕ} (hE : finrank
     LinearIsometry.ext fun x ↦ by simp [← hl]
   exact reducedSingularHomologyFunctor_map_list_prod_reflection R hE l
 
+/-- **A linear isometry acts on the top homology of a sphere by the sign of its determinant.**
+For a real inner product space `E` of dimension `n + 2` and a linear isometry `f : E →ₗᵢ[ℝ] E`,
+the restriction of `f` to the unit sphere `S` induces multiplication by `sign (det f) = ±1` on
+`Hₙ₊₁(S)`. -/
+theorem singularHomologyFunctor_map_unitSphereMap {n : ℕ} (hE : finrank ℝ E = n + 2)
+    (f : E →ₗᵢ[ℝ] E) :
+    ((AlgebraicTopology.singularHomologyFunctor C (n + 1)).obj R).map
+        (TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩) =
+      (SignType.sign (LinearMap.det f.toLinearMap) : ℤ) • 𝟙 _ := by
+  -- In positive degrees ordinary and reduced homology agree naturally.
+  have h := (reducedSingularHomologySuccIso R n).hom.naturality
+    (TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩)
+  rw [reducedSingularHomologyFunctor_map_unitSphereMap R hE] at h
+  rw [← cancel_epi ((reducedSingularHomologySuccIso R n).hom.app _), ← h]
+  simp
+
 /-- **Change of basis for the generators of the homology of spheres.**  For two orthonormal bases
 `b` and `c` of a real inner product space, indexed by `Fin (n + 1)`, the generator of `H_redₙ(S)`
 determined by `c` is `sign (det_b c) = ±1` times the generator determined by `b`. -/

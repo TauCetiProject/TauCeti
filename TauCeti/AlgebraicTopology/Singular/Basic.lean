@@ -110,6 +110,14 @@ lemma singularHomologyFunctor_obj_map [CategoryWithHomology C] (n : ℕ) {X Y : 
     ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map f =
       SSet.homologyMap (TopCat.toSSet.map f) R n := rfl
 
+/-- The singular homology functor with coefficients in `R` sends a continuous map `f` to the map in
+homology of its singular chain map. -/
+lemma singularHomologyFunctor_obj_map_eq_homologyMap [CategoryWithHomology C] (n : ℕ)
+    {X Y : TopCat.{w}} (f : X ⟶ Y) :
+    ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map f =
+      HomologicalComplex.homologyMap
+        (((AlgebraicTopology.singularChainComplexFunctor C).obj R).map f) n := rfl
+
 /-- The map of the singular homology functor applied to a class `μ` typed in `SSet.homology` of
 the singular simplicial set, rewritten as the simplicial homology map. The left side applies a
 map out of the homology functor's object to `μ`, which agrees with `SSet.homology` only after
