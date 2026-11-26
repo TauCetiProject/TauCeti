@@ -151,8 +151,8 @@ section Lines
 
 variable {R : Type*} [CommRing R] [NoZeroDivisors R] {e₁ e₂ : R}
 
-/-- If `1 - e₁ e₂ ≠ 0`, the shear sends the line `F = r G` onto the line
-`(1 + e₂ r) F' = (e₁ + r) G'`, and no other row lands there. -/
+/-- If `1 - e₁ e₂ ≠ 0`, a row `v` lies on the line `F = r G` exactly when `v A(e₁, e₂)` lies on
+the line `(1 + e₂ r) F' = (e₁ + r) G'`. -/
 theorem vecMul_integralShear_eq_mul_iff (h : 1 - e₁ * e₂ ≠ 0) (r : R) (v : Fin 2 → R) :
     (1 + e₂ * r) * (v ᵥ* integralShear e₁ e₂) 0 = (e₁ + r) * (v ᵥ* integralShear e₁ e₂) 1 ↔
       v 0 = r * v 1 := by
@@ -162,12 +162,14 @@ theorem vecMul_integralShear_eq_mul_iff (h : 1 - e₁ * e₂ ≠ 0) (r : R) (v :
   simp only [vecMul_integralShear, Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [← sub_eq_zero, key, mul_eq_zero, or_iff_right h, sub_eq_zero]
 
-/-- If `1 - e₁ e₂ ≠ 0`, the shear sends the axis `F = 0` onto the line `F' = e₁ G'`. -/
+/-- If `1 - e₁ e₂ ≠ 0`, a row `v` lies on the axis `F = 0` exactly when `v A(e₁, e₂)` lies on
+the line `F' = e₁ G'`. -/
 theorem vecMul_integralShear_zero_eq_iff (h : 1 - e₁ * e₂ ≠ 0) (v : Fin 2 → R) :
     (v ᵥ* integralShear e₁ e₂) 0 = e₁ * (v ᵥ* integralShear e₁ e₂) 1 ↔ v 0 = 0 := by
   simpa using vecMul_integralShear_eq_mul_iff h 0 v
 
-/-- If `1 - e₁ e₂ ≠ 0`, the shear sends the axis `G = 0` onto the line `G' = e₂ F'`. -/
+/-- If `1 - e₁ e₂ ≠ 0`, a row `v` lies on the axis `G = 0` exactly when `v A(e₁, e₂)` lies on
+the line `G' = e₂ F'`. -/
 theorem vecMul_integralShear_one_eq_iff (h : 1 - e₁ * e₂ ≠ 0) (v : Fin 2 → R) :
     (v ᵥ* integralShear e₁ e₂) 1 = e₂ * (v ᵥ* integralShear e₁ e₂) 0 ↔ v 1 = 0 := by
   have key : (v 1 + e₂ * v 0) - e₂ * (v 0 + e₁ * v 1) = (1 - e₁ * e₂) * v 1 := by
