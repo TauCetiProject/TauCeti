@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
+public import TauCeti.Analysis.Sobolev.W1p.Localization
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 public import TauCeti.Analysis.Sobolev.W1p.Multiplication
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
@@ -64,6 +65,10 @@ functions are only Lipschitz.
   `Ω`, and more generally `TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule`: restriction from a
   larger open set `U` maps `W^{1,p}_0(U)` into it when `Γ` misses `U`.
 * `TauCeti.w1pVanishingOnSubmodule_frontier`: at `Γ = frontier Ω` it is `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule_of_mem_w1pVanishingOnSubmodule` and
+  `TauCeti.W1p.localizeL_mem_w1pVanishingOnSubmodule`: restriction to a smaller open set preserves
+  it, and so does localization by a cutoff `ψ` to a larger one (`TauCeti.W1p.localizeL`), where only
+  the part of `Γ` on `tsupport ψ` matters.
 * `TauCeti.W1pVanishingOn.valueL`: its value map into `Lᵖ(Ω)`, injective
   (`TauCeti.W1pVanishingOn.valueL_injective`), with dense range for `p = 2` when
   `Γ` misses `Ω` (`TauCeti.W1pVanishingOn.denseRange_valueL_two`) and compact when the value map
@@ -290,6 +295,63 @@ theorem w1pVanishingOnSubmodule_frontier :
   rw [W1p.restrictL_ofTestFunctionₗ_eq_of_eqOn le_top (ψ := ψ) fun x hx => by
     rw [hψ, indicator_of_mem hx]]
   exact W1p.ofTestFunctionₗ_mem_w1p0Submodule ψ
+
+/-! ### Restriction and localization -/
+
+/-- **Restriction preserves vanishing on `Γ`**: for open sets `U ≤ Ω`, the restriction to `U` of an
+element of `W^{1,p}_Γ(Ω)` lies in `W^{1,p}_Γ(U)`. -/
+theorem W1p.restrictL_mem_w1pVanishingOnSubmodule_of_mem_w1pVanishingOnSubmodule {U : Opens E}
+    (hU : U ≤ Omega) {u : W1p mu Omega p} (hu : u ∈ w1pVanishingOnSubmodule mu Omega p Γ) :
+    W1p.restrictL hU u ∈ w1pVanishingOnSubmodule mu U p Γ := by
+  refine w1pVanishingOnSubmodule_subset_of_isClosed
+    ((w1pVanishingOnSubmodule mu U p Γ).isClosed.preimage (W1p.restrictL hU).continuous)
+    (fun φ hφ => ?_) hu
+  rw [mem_preimage, W1p.restrictL_restrictL]
+  exact W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule hφ
+
+/-- **Localization by a cutoff moves vanishing on `Γ'` to vanishing on `Γ`.** For open sets
+`U ≤ Ω` and a smooth `ψ` with `Ω ∩ tsupport ψ ⊆ U`, the cutoff product `ψ u` of
+`u ∈ W^{1,p}_{Γ'}(U)`, extended by zero to `Ω` (`TauCeti.W1p.localizeL`), lies in `W^{1,p}_Γ(Ω)`
+as soon as `closure Γ` and `closure Γ'` agree on `tsupport ψ` in the sense
+`closure Γ ∩ tsupport ψ ⊆ closure Γ'`. Only the part of `Γ` where `ψ` may be nonzero matters; for
+`Γ = Γ'` the condition holds trivially. -/
+theorem W1p.localizeL_mem_w1pVanishingOnSubmodule {U : Opens E} (hU : U ≤ Omega) {psi : E → ℝ}
+    {M : ℝ} (hpsi : ContDiff ℝ ∞ psi) (hM : 0 ≤ M) (hpsiM : ∀ x ∈ U, |psi x| ≤ M)
+    (hgradM : ∀ x ∈ U, ‖∇ psi x‖ ≤ M) (hs : (Omega : Set E) ∩ tsupport psi ⊆ U) {Γ' : Set E}
+    (hΓ : closure Γ ∩ tsupport psi ⊆ closure Γ') {u : W1p mu U p}
+    (hu : u ∈ w1pVanishingOnSubmodule mu U p Γ') :
+    W1p.localizeL hU psi hpsi hM hpsiM hgradM hs u ∈ w1pVanishingOnSubmodule mu Omega p Γ := by
+  refine w1pVanishingOnSubmodule_subset_of_isClosed
+    ((w1pVanishingOnSubmodule mu Omega p Γ).isClosed.preimage
+      (W1p.localizeL hU psi hpsi hM hpsiM hgradM hs).continuous) (fun φ hφ => ?_) hu
+  -- The product `ψ φ` is a test function on the whole space with support inside those of `ψ`
+  -- and `φ`.
+  obtain ⟨Φ, hΦφ⟩ : ∃ Φ : 𝓓((⊤ : Opens E), ℝ), ⇑Φ = fun x => psi x * φ x :=
+    ⟨⟨fun x => psi x * φ x, hpsi.mul φ.contDiff, φ.hasCompactSupport.mul_left, subset_univ _⟩,
+      rfl⟩
+  -- Localizing the generator `φ` gives the generator `ψ φ`: off `U`, `ψ` vanishes on `Ω`.
+  have hΦ : W1p.localizeL hU psi hpsi hM hpsiM hgradM hs
+      (W1p.restrictL (le_top : U ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p φ)) =
+      W1p.restrictL (le_top : Omega ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p Φ) := by
+    refine W1p.ext_value (Lp.ext ?_)
+    have hφU := (ae_restrict_iff' U.isOpen.measurableSet).1
+      (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : U ≤ ⊤) φ)
+    filter_upwards [W1p.value_localizeL_ae hU hpsi hM hpsiM hgradM hs
+        (W1p.restrictL (le_top : U ≤ ⊤) (W1p.ofTestFunctionₗ mu ⊤ p φ)),
+      ae_restrict_of_ae hφU,
+      W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : Omega ≤ ⊤) Φ,
+      ae_restrict_mem Omega.isOpen.measurableSet] with x hx hφx hΦx hxΩ
+    rw [hx, hΦx, hΦφ]
+    by_cases hxU : x ∈ (U : Set E)
+    · rw [indicator_of_mem hxU, hφx hxU, smul_eq_mul]
+    · simp [indicator_of_notMem hxU,
+        image_eq_zero_of_notMem_tsupport (fun hxs => hxU (hs ⟨hxΩ, hxs⟩))]
+  rw [mem_preimage, hΦ]
+  refine W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule
+    (disjoint_left.2 fun x hxΦ hxΓ => ?_)
+  rw [hΦφ] at hxΦ
+  exact disjoint_left.1 hφ (tsupport_mul_subset_right hxΦ)
+    (hΓ ⟨hxΓ, tsupport_mul_subset_left hxΦ⟩)
 
 /-! ### The value map -/
 
