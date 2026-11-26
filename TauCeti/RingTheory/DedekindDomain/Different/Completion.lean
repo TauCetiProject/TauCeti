@@ -173,13 +173,10 @@ theorem differentIdeal_adicCompletionIntegers_eq_maximalIdeal_pow :
       IsLocalRing.maximalIdeal (w.adicCompletionIntegers L) ^
         multiplicity w.asIdeal (differentIdeal R B) := by
   have : Module.Finite R B := IsIntegralClosure.finite R K L B
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible (w.adicCompletionIntegers L)
-  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
+  rw [← multiplicity_differentIdeal_adicCompletionIntegers (K := K) (L := L) v w]
+  exact (differentIdeal _ _).eq_maximalIdeal_pow_multiplicity
     (differentIdeal_ne_bot_of_isSeparable (R := v.adicCompletionIntegers K)
-      (K := v.adicCompletion K) (L := w.adicCompletion L)) hϖ
-  rw [← multiplicity_differentIdeal_adicCompletionIntegers (K := K) (L := L) v w, hn,
-    ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, multiplicity_pow_self_of_prime
-      (Ideal.prime_of_isPrime (IsDiscreteValuationRing.not_a_field _) inferInstance)]
+      (K := v.adicCompletion K) (L := w.adicCompletion L))
 
 /-- **Completed complementary-module length formula**: `length 𝒪_v (C_w / 𝒪_w) = d(w ∣ v) * f`. -/
 theorem length_traceDual_adicCompletionIntegers_quotient :
