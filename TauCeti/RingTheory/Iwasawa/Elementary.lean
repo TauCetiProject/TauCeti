@@ -37,6 +37,8 @@ characteristic polynomial is `∏ Fⱼ ^ nⱼ`.
 
 ## Main results
 
+* `TauCeti.Iwasawa.isTorsion_elementary_iff`: over a domain `O` with `ϖ ≠ 0` and nonzero `Fⱼ`, an
+  elementary module `Elementary O ϖ r m F n` is torsion over `O⟦X⟧` iff `r = 0`.
 * `TauCeti.Iwasawa.exists_isPseudoIsomorphism_elementary`: every finitely generated
   `O⟦X⟧`-module admits a pseudo-isomorphism onto an elementary module, with every exponent
   positive and every `Fⱼ` irreducible and distinguished.
@@ -60,6 +62,42 @@ abbrev Elementary (O : Type*) [CommRing O] (ϖ : O) (r : ℕ) {a b : ℕ} (m : F
     (F : Fin b → O[X]) (n : Fin b → ℕ) : Type _ :=
   (Fin r → O⟦X⟧) × (∀ i, O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m i)}) ×
     ∀ j, O⟦X⟧ ⧸ Ideal.span {((F j ^ n j : O[X]) : O⟦X⟧)}
+
+section Torsion
+
+/-- If an elementary module `Elementary O ϖ r m F n` over a nontrivial commutative ring `O` is
+torsion, its free rank `r` vanishes. -/
+theorem eq_zero_of_isTorsion_elementary {O : Type*} [CommRing O] [Nontrivial O] {ϖ : O}
+    {r a b : ℕ} {m : Fin a → ℕ} {F : Fin b → O[X]} {n : Fin b → ℕ}
+    (hE : Module.IsTorsion O⟦X⟧ (Elementary O ϖ r m F n)) : r = 0 :=
+  Fin.isEmpty_iff.mp <| isTorsion_pi_self_iff.mp <|
+    hE.of_injective (f := LinearMap.inl _ _ _) LinearMap.inl_injective
+
+/-- A rank-zero elementary module `Elementary O ϖ 0 m F n` over a domain `O` with `ϖ ≠ 0` and
+nonzero horizontal factors is torsion over `O⟦X⟧`. -/
+theorem isTorsion_elementary {O : Type*} [CommRing O] [IsDomain O] {ϖ : O} (hϖ : ϖ ≠ 0)
+    {a b : ℕ} (m : Fin a → ℕ) {F : Fin b → O[X]} (hF : ∀ j, F j ≠ 0) (n : Fin b → ℕ) :
+    Module.IsTorsion O⟦X⟧ (Elementary O ϖ 0 m F n) := by
+  have hvert (i : Fin a) : Module.IsTorsion O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m i)}) :=
+    Ideal.isTorsion_quotient_of_mem (Ideal.mem_span_singleton_self _)
+      (mem_nonZeroDivisors_of_ne_zero
+        (by rw [map_pow]; exact pow_ne_zero _ (by simpa using C_injective.ne hϖ)))
+  have hhor (j : Fin b) : Module.IsTorsion O⟦X⟧
+      (O⟦X⟧ ⧸ Ideal.span {((F j ^ n j : O[X]) : O⟦X⟧)}) :=
+    Ideal.isTorsion_quotient_of_mem (Ideal.mem_span_singleton_self _)
+      (mem_nonZeroDivisors_of_ne_zero
+        ((Polynomial.coe_eq_zero_iff).not.mpr (pow_ne_zero _ (hF j))))
+  exact (Module.IsTorsion.pi Fin.elim0).prod
+    ((Module.IsTorsion.pi hvert).prod (Module.IsTorsion.pi hhor))
+
+/-- Over a domain `O` with `ϖ ≠ 0` and nonzero horizontal factors `Fⱼ`, an elementary module
+`Elementary O ϖ r m F n` is torsion over `O⟦X⟧` if and only if `r = 0`. -/
+theorem isTorsion_elementary_iff {O : Type*} [CommRing O] [IsDomain O] {ϖ : O} (hϖ : ϖ ≠ 0)
+    {r a b : ℕ} {m : Fin a → ℕ} {F : Fin b → O[X]} (hF : ∀ j, F j ≠ 0) {n : Fin b → ℕ} :
+    Module.IsTorsion O⟦X⟧ (Elementary O ϖ r m F n) ↔ r = 0 :=
+  ⟨eq_zero_of_isTorsion_elementary, fun hr ↦ hr ▸ isTorsion_elementary hϖ m hF n⟩
+
+end Torsion
 
 variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
   [IsAdicComplete (maximalIdeal O) O] {ϖ : O} {M : Type*} [AddCommGroup M] [Module O⟦X⟧ M]

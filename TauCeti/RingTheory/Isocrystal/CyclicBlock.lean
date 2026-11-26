@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.Isocrystal.StandardBlock
-public import TauCeti.RingTheory.LaurentSeries.Frobenius
+public import TauCeti.RingTheory.LaurentSeries.CoefficientFrobenius
 public import TauCeti.RingTheory.LaurentSeries.Ramified
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import TauCeti.FieldTheory.IsAlgClosed.FrobeniusFixedPoints
@@ -30,8 +30,8 @@ coprime:
    valuation generates `v(Lˣ)`, `D(s, r)` has no proper nontrivial
    `standardBlockFrobenius σ π s r`-stable `L`-subspaces when `Nat.Coprime s.natAbs r`.
 2. **Existence (`TauCeti.exists_injective_intertwines_standardBlock`).** Over `k((π))` with `k`
-   algebraically closed of characteristic `p > 0` and `σ = coefficientFrobenius p f k`, every
-   nontrivial finite isocrystal `(V, Φ)` admits an injective `k((π))`-linear intertwiner
+   algebraically closed of characteristic `p > 0` and `σ = LaurentSeries.coefficientFrobenius p f`,
+   every nontrivial finite isocrystal `(V, Φ)` admits an injective `k((π))`-linear intertwiner
    `D(s, r) ↪ V` for some coprime `s : ℤ`, `r : ℕ+`.
 
 ## References
@@ -524,16 +524,6 @@ private theorem exists_min_slope_coeffs {k : Type*} [Field k] {n : ℕ}
     _root_.LaurentSeries.coeff_expand_mul]
   exact HahnSeries.coeff_order_eq_zero.not.2 (neg_ne_zero.2 hi₀_ne)
 
-private theorem coe_powerSeries_map_iterateFrobenius {p : ℕ} [Fact p.Prime] {f : ℕ}
-    {k : Type*} [Field k] [CharP k p] [PerfectRing k p] (g : k⟦X⟧) :
-    ((PowerSeries.map (_root_.iterateFrobenius k p f) g : k⟦X⟧) : LaurentSeries k) =
-      coefficientFrobenius p f k g := by
-  have : ExpChar k p := expChar_prime k p
-  ext m
-  by_cases hm : m < 0
-  · simp [PowerSeries.coeff_coe, hm, zero_pow (pow_ne_zero f (Fact.out : p.Prime).ne_zero)]
-  · simp [PowerSeries.coeff_coe, hm, PowerSeries.coeff_map, _root_.iterateFrobenius_def]
-
 private theorem exists_laurent_companion_solution {p : ℕ} [Fact p.Prime] {f : ℕ+}
     {k : Type*} [Field k] [CharP k p] [IsAlgClosed k] {n : ℕ} (s : ℤ) (r : ℕ+)
     (a : Fin (n + 1) → LaurentSeries k) (b : Fin (n + 1) → k⟦X⟧)
@@ -543,13 +533,13 @@ private theorem exists_laurent_companion_solution {p : ℕ} [Fact p.Prime] {f : 
     ∃ z : Fin (n + 1) → LaurentSeries k,
       (∃ i, z i ≠ 0) ∧
       HahnSeries.single s 1 * z 0 =
-        _root_.LaurentSeries.expand k r (-a 0) * coefficientFrobenius p f k (z (Fin.last n)) ∧
+        _root_.LaurentSeries.expand k r (-a 0) *
+          LaurentSeries.coefficientFrobenius p f (z (Fin.last n)) ∧
       ∀ j : Fin n, HahnSeries.single s 1 * z j.succ =
-        coefficientFrobenius p f k (z j.castSucc) +
+        LaurentSeries.coefficientFrobenius p f (z j.castSucc) +
           _root_.LaurentSeries.expand k r (-a j.succ) *
-            coefficientFrobenius p f k (z (Fin.last n)) := by
-  have : ExpChar k p := expChar_prime k p
-  let σ := coefficientFrobenius p f k
+            LaurentSeries.coefficientFrobenius p f (z (Fin.last n)) := by
+  let σ := LaurentSeries.coefficientFrobenius (k := k) p f
   obtain ⟨x, ⟨i₁, hi₁⟩, hx0, hxs⟩ :=
     exists_powerSeries_companion_solution f.ne_zero n b hb0
   let z : Fin (n + 1) → LaurentSeries k :=
@@ -558,11 +548,12 @@ private theorem exists_laurent_companion_solution {p : ℕ} [Fact p.Prime] {f : 
     ((map_ne_zero_iff _ HahnSeries.ofPowerSeries_injective).2 hi₁)⟩, ?_, ?_⟩
   · have hx0' : (x 0 : LaurentSeries k) = (b 0 : LaurentSeries k) * σ (x (Fin.last n)) := by
       have h := congrArg (HahnSeries.ofPowerSeries ℤ k) hx0
-      rwa [map_mul, HahnSeries.ofPowerSeries_apply, coe_powerSeries_map_iterateFrobenius] at h
+      rwa [map_mul, HahnSeries.ofPowerSeries_apply,
+        ← LaurentSeries.coefficientFrobenius_coe (p := p) (f : ℕ)] at h
     rw [hb 0] at hx0'
     have hx0'' := congrArg (HahnSeries.single s 1 * ·) hx0'
     simp only [z, σ, Fin.val_zero, Nat.cast_zero, mul_zero, HahnSeries.single_zero_one, one_mul,
-      sub_zero, map_mul, coefficientFrobenius_single, one_pow] at hx0'' ⊢
+      sub_zero, map_mul, LaurentSeries.coefficientFrobenius_single, one_pow] at hx0'' ⊢
     rw [hx0'']
     simp only [← mul_assoc, HahnSeries.single_mul_single, one_mul]
     rw [mul_comm (HahnSeries.single (s + -s * (n + 1 : ℤ)) 1), Fin.val_last, mul_assoc,
@@ -571,8 +562,9 @@ private theorem exists_laurent_companion_solution {p : ℕ} [Fact p.Prime] {f : 
     have hxs' : (x j.succ : LaurentSeries k) =
         σ (x j.castSucc) + (b j.succ : LaurentSeries k) * σ (x (Fin.last n)) := by
       have h := congrArg (HahnSeries.ofPowerSeries ℤ k) (hxs j)
-      rwa [map_add, map_mul, HahnSeries.ofPowerSeries_apply, coe_powerSeries_map_iterateFrobenius,
-        coe_powerSeries_map_iterateFrobenius] at h
+      rwa [map_add, map_mul, HahnSeries.ofPowerSeries_apply,
+        ← LaurentSeries.coefficientFrobenius_coe (p := p) (f : ℕ),
+        ← LaurentSeries.coefficientFrobenius_coe (p := p) (f : ℕ)] at h
     rw [hb j.succ] at hxs'
     have hxs'' := congrArg (HahnSeries.single (-s * (j.val : ℤ)) 1 * ·) hxs'
     have hlhs : HahnSeries.single s 1 * z j.succ =
@@ -582,9 +574,11 @@ private theorem exists_laurent_companion_solution {p : ℕ} [Fact p.Prime] {f : 
       rw [show s + -s * ((j.val : ℤ) + 1) = -s * (j.val : ℤ) by ring]
     rw [hlhs, hxs'', mul_add]
     congr 1
-    · simp only [z, σ, Fin.val_castSucc, map_mul, coefficientFrobenius_single, one_pow]
-    · simp only [σ, Fin.val_succ, Nat.cast_add, Nat.cast_one, map_mul, coefficientFrobenius_single,
-        one_pow, z, Fin.val_last, ← mul_assoc, HahnSeries.single_mul_single, one_mul]
+    · simp only [z, σ, Fin.val_castSucc, map_mul, LaurentSeries.coefficientFrobenius_single,
+        one_pow]
+    · simp only [σ, Fin.val_succ, Nat.cast_add, Nat.cast_one, map_mul,
+        LaurentSeries.coefficientFrobenius_single, one_pow, z, Fin.val_last, ← mul_assoc,
+        HahnSeries.single_mul_single, one_mul]
       rw [mul_comm (HahnSeries.single _ 1), mul_assoc,
         show -s * (j.val : ℤ) + -s * ((n : ℤ) + 1 - (↑j + 1)) = -s * (n : ℤ) by ring,
         ← mul_assoc]
@@ -613,22 +607,27 @@ private theorem map_pi_comm_shiftVecEquiv_zpow {L V : Type*} [Field L] [AddCommG
 private theorem shiftVecEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : ℕ+}
     {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
     {V : Type*} [AddCommGroup V] [Module (LaurentSeries k) V]
-    {Φ : V →ₛₗ[(coefficientFrobenius p f k : LaurentSeries k →+* LaurentSeries k)] V}
+    {Φ : V →ₛₗ[(LaurentSeries.coefficientFrobenius (k := k) p f :
+      LaurentSeries k →+* LaurentSeries k)] V}
     {v₀ : V} {n : ℕ} {a : Fin (n + 1) → LaurentSeries k}
     (hrel : Φ^[n + 1] v₀ + ∑ i : Fin (n + 1), a i • Φ^[i.val] v₀ = 0)
     (s : ℤ) (r : ℕ+) (z : Fin (n + 1) → LaurentSeries k)
     (hz0 : HahnSeries.single s 1 * z 0 =
-      _root_.LaurentSeries.expand k r (-a 0) * coefficientFrobenius p f k (z (Fin.last n)))
+      _root_.LaurentSeries.expand k r (-a 0) *
+        LaurentSeries.coefficientFrobenius p f (z (Fin.last n)))
     (hzs : ∀ j : Fin n, HahnSeries.single s 1 * z j.succ =
-      coefficientFrobenius p f k (z j.castSucc) +
+      LaurentSeries.coefficientFrobenius p f (z j.castSucc) +
         _root_.LaurentSeries.expand k r (-a j.succ) *
-          coefficientFrobenius p f k (z (Fin.last n))) :
+          LaurentSeries.coefficientFrobenius p f (z (Fin.last n))) :
     (fun l ↦ Φ (∑ i : Fin (n + 1), _root_.LaurentSeries.contract r (z i) l • Φ^[i.val] v₀)) =
       (shiftVecEquiv (LaurentSeries k) V (HahnSeries.single 1 1)
         (HahnSeries.single_ne_zero one_ne_zero) r ^ s)
         (fun l ↦ ∑ i : Fin (n + 1), _root_.LaurentSeries.contract r (z i) l • Φ^[i.val] v₀) := by
   let L := LaurentSeries k
-  let σ := coefficientFrobenius p f k
+  let σ := LaurentSeries.coefficientFrobenius (k := k) p f
+  have hcontract (g : L) (l : Fin r) :
+      _root_.LaurentSeries.contract r (σ g) l = σ (_root_.LaurentSeries.contract r g l) := by
+    ext m; simp [σ]
   let π : L := HahnSeries.single 1 1
   have hπ : π ≠ 0 := HahnSeries.single_ne_zero one_ne_zero
   let S_V := shiftVecEquiv L V π hπ r
@@ -639,7 +638,7 @@ private theorem shiftVecEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : �
       smulVec (_root_.LaurentSeries.contract r (σ (z i))) (Φ^[i.val + 1] v₀) := by
     ext l
     simp only [w, smulVec, σ, map_sum, Finset.sum_apply, map_smulₛₗ, RingHom.coe_coe,
-      ← iterate_succ_apply' Φ, Nat.succ_eq_add_one, y, ← contract_coefficientFrobenius]
+      ← iterate_succ_apply' Φ, Nat.succ_eq_add_one, y, hcontract]
   have hS_eq : (S_V ^ s) w = ∑ i : Fin (n + 1),
       smulVec (_root_.LaurentSeries.contract r (HahnSeries.single s 1 * z i)) (Φ^[i.val] v₀) := by
     have hw_vec : w = ∑ i : Fin (n + 1), smulVec (y i) (Φ^[i.val] v₀) := by
@@ -672,18 +671,20 @@ private theorem shiftVecEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : �
 private theorem eigenvector_of_laurent_companion_solution {p : ℕ} [Fact p.Prime] {f : ℕ+}
     {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
     {V : Type*} [AddCommGroup V] [Module (LaurentSeries k) V]
-    {Φ : V →ₛₗ[(coefficientFrobenius p f k : LaurentSeries k →+* LaurentSeries k)] V}
+    {Φ : V →ₛₗ[(LaurentSeries.coefficientFrobenius (k := k) p f :
+      LaurentSeries k →+* LaurentSeries k)] V}
     {v₀ : V} {n : ℕ}
     (hli : LinearIndependent (LaurentSeries k) fun i : Fin (n + 1) ↦ Φ^[i.val] v₀)
     {a : Fin (n + 1) → LaurentSeries k}
     (hrel : Φ^[n + 1] v₀ + ∑ i : Fin (n + 1), a i • Φ^[i.val] v₀ = 0)
     (s : ℤ) (r : ℕ+) (z : Fin (n + 1) → LaurentSeries k) (hz_ne : ∃ i, z i ≠ 0)
     (hz0 : HahnSeries.single s 1 * z 0 =
-      _root_.LaurentSeries.expand k r (-a 0) * coefficientFrobenius p f k (z (Fin.last n)))
+      _root_.LaurentSeries.expand k r (-a 0) *
+        LaurentSeries.coefficientFrobenius p f (z (Fin.last n)))
     (hzs : ∀ j : Fin n, HahnSeries.single s 1 * z j.succ =
-      coefficientFrobenius p f k (z j.castSucc) +
+      LaurentSeries.coefficientFrobenius p f (z j.castSucc) +
         _root_.LaurentSeries.expand k r (-a j.succ) *
-          coefficientFrobenius p f k (z (Fin.last n))) :
+          LaurentSeries.coefficientFrobenius p f (z (Fin.last n))) :
     ∃ w₀ : V, w₀ ≠ 0 ∧
       Φ^[r] w₀ = (HahnSeries.single 1 1 : LaurentSeries k) ^ s • w₀ := by
   let L := LaurentSeries k
@@ -705,7 +706,8 @@ private theorem eigenvector_of_laurent_companion_solution {p : ℕ} [Fact p.Prim
   let T : (Fin r → V) → (Fin r → V) := fun u l ↦ Φ (u l)
   have hTw : T w = (S_V ^ s) w := shiftVecEquiv_laurent_companion hrel s r z hz0 hzs
   have hcomm : Function.Commute T ⇑(S_V ^ s) :=
-    fun u ↦ map_pi_comm_shiftVecEquiv_zpow π hπ (coefficientFrobenius_single_one 1) r s u
+    fun u ↦ map_pi_comm_shiftVecEquiv_zpow π hπ
+      (by rw [LaurentSeries.coefficientFrobenius_single, one_pow]) r s u
   have hTiter : ∀ m : ℕ, T^[m] w = (S_V ^ s)^[m] w := fun m ↦ by
     induction m with
     | zero => simp
@@ -723,7 +725,8 @@ private theorem eigenvector_of_laurent_companion_solution {p : ℕ} [Fact p.Prim
 private theorem exists_eigenvector_of_minimal_relation {p : ℕ} [Fact p.Prime] {f : ℕ+}
     {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
     {V : Type*} [AddCommGroup V] [Module (LaurentSeries k) V]
-    {Φ : V →ₛₗ[(coefficientFrobenius p f k : LaurentSeries k →+* LaurentSeries k)] V}
+    {Φ : V →ₛₗ[(LaurentSeries.coefficientFrobenius (k := k) p f :
+      LaurentSeries k →+* LaurentSeries k)] V}
     {v₀ : V} {n : ℕ}
     (hli : LinearIndependent (LaurentSeries k) fun i : Fin (n + 1) ↦ Φ^[i.val] v₀)
     {a : Fin (n + 1) → LaurentSeries k}
@@ -804,25 +807,25 @@ theorem exists_injective_intertwines_standardBlock {p : ℕ} [Fact p.Prime] {f :
     {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
     {V : Type*} [AddCommGroup V] [Module (LaurentSeries k) V]
     [FiniteDimensional (LaurentSeries k) V] [Nontrivial V]
-    {Φ : V →ₛₗ[(coefficientFrobenius p f k : LaurentSeries k →+* LaurentSeries k)] V}
+    {Φ : V →ₛₗ[(LaurentSeries.coefficientFrobenius (k := k) p f :
+      LaurentSeries k →+* LaurentSeries k)] V}
     (hΦ : Bijective Φ) :
     ∃ (s : ℤ) (r : ℕ+), s.natAbs.Coprime r ∧
       ∃ ι : (Fin r → LaurentSeries k) →ₗ[LaurentSeries k] V,
         Injective ι ∧
-        ∀ x, ι (standardBlockFrobenius (coefficientFrobenius p f k)
+        ∀ x, ι (standardBlockFrobenius (LaurentSeries.coefficientFrobenius (k := k) p f)
           (HahnSeries.single 1 1) s r x) = Φ (ι x) := by
-  have : ExpChar k p := expChar_prime k p
   obtain ⟨v₀, hv₀⟩ := exists_ne (0 : V)
   obtain ⟨n, a, hli, hrel, ha0⟩ := exists_minimal_orbit_relation hΦ.injective hv₀
   obtain ⟨s, r, hcop, w₀, hw₀, hΦw₀⟩ :=
     exists_eigenvector_of_minimal_relation hli hrel ha0
   let ι := Fintype.linearCombination (LaurentSeries k) fun j : Fin r ↦ Φ^[j.val] w₀
-  have hinter : ∀ x, ι (standardBlockFrobenius (coefficientFrobenius p f k)
+  have hinter : ∀ x, ι (standardBlockFrobenius (LaurentSeries.coefficientFrobenius (k := k) p f)
       (HahnSeries.single 1 1) s r x) = Φ (ι x) :=
     fun x ↦ cyclicBlockHom_intertwines hΦw₀ x
   have hstab : ∀ x ∈ LinearMap.ker ι,
-      standardBlockFrobenius (coefficientFrobenius p f k) (HahnSeries.single 1 1) s r x ∈
-        LinearMap.ker ι := fun x hx ↦ by
+      standardBlockFrobenius (LaurentSeries.coefficientFrobenius (k := k) p f)
+        (HahnSeries.single 1 1) s r x ∈ LinearMap.ker ι := fun x hx ↦ by
     rw [LinearMap.mem_ker] at hx ⊢; rw [hinter x, hx, map_zero]
   have hker_ne_top : LinearMap.ker ι ≠ ⊤ := fun htop ↦ by
     have hmem : Pi.single 0 1 ∈ LinearMap.ker ι := htop ▸ Submodule.mem_top
@@ -831,6 +834,9 @@ theorem exists_injective_intertwines_standardBlock {p : ℕ} [Fact p.Prime] {f :
     exact hw₀ hmem
   have hvπ : Valued.v (HahnSeries.single (1 : ℤ) (1 : k)) ≠ 1 := by
     simp [_root_.LaurentSeries.valuation_single_zpow]
+  have hval (x : LaurentSeries k) :
+      Valued.v (LaurentSeries.coefficientFrobenius p (f : ℕ) x) = Valued.v x := by
+    rw [LaurentSeries.coe_coefficientFrobenius, LaurentSeries.valuation_mapRingHom]
   have hgen : ∀ x : LaurentSeries k, x ≠ 0 →
       ∃ n : ℤ, Valued.v x = Valued.v (HahnSeries.single (1 : ℤ) (1 : k)) ^ n := fun x hx ↦
     ⟨x.order, by
@@ -839,10 +845,11 @@ theorem exists_injective_intertwines_standardBlock {p : ℕ} [Fact p.Prime] {f :
       congr 1
       simp⟩
   have hker_bot : LinearMap.ker ι = ⊥ :=
-    (eq_bot_or_eq_top_of_standardBlockFrobenius_stable (coefficientFrobenius p f k)
+    (eq_bot_or_eq_top_of_standardBlockFrobenius_stable
+      (LaurentSeries.coefficientFrobenius (k := k) p f)
       (HahnSeries.single 1 1) (HahnSeries.single_ne_zero one_ne_zero)
-      (coefficientFrobenius_single_one 1) Valued.v valuation_coefficientFrobenius hvπ hgen
-      hcop hstab).resolve_right hker_ne_top
+      (by rw [LaurentSeries.coefficientFrobenius_single, one_pow])
+      Valued.v hval hvπ hgen hcop hstab).resolve_right hker_ne_top
   exact ⟨s, r, hcop, ι, LinearMap.ker_eq_bot.1 hker_bot, hinter⟩
 
 end SubBlock

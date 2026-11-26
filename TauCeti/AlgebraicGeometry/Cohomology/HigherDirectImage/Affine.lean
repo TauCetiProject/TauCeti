@@ -92,7 +92,9 @@ theorem isZero_higherDirectImage_succ_of_isBasis (M : X.Modules) (q : ℕ) {B : 
   -- the sections over `V` of `f_* I^•` are by definition the sections over `f⁻¹ V` of `I^•`
   exact Sheaf.H'.exists_d_hom_app_eq_of_resolution
     (K := ((toSheaf X).mapHomologicalComplex _).obj P.cocomplex) ((toSheaf X).map (P.ι.f 0))
-    (P.map_ι_f_zero_comp_d (toSheaf X)) (P.exact₀_map (toSheaf X)) (P.exactAt_succ_map (toSheaf X))
+    (CochainComplex.map_augmentation_comp_d (toSheaf X) P.ι_f_zero_comp_complex_d)
+    (CochainComplex.map_augmentation_exact (toSheaf X) P.exact₀)
+    (CochainComplex.map_exactAt_succ (toSheaf X) P.cocomplex_exactAt_succ)
     (f ⁻¹ᵁ V) (fun j k ↦ Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque
       (P.cocomplex.X j) k (f ⁻¹ᵁ V)) q (hM V hV) s hs
 

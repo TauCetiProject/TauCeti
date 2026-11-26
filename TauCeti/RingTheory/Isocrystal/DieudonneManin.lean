@@ -12,20 +12,22 @@ public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.Algebra.Category.FiniteIsocrystal.Basic
 public import TauCeti.RingTheory.Isocrystal.CyclicBlock
 public import TauCeti.RingTheory.Isocrystal.StandardBlock
-public import TauCeti.RingTheory.LaurentSeries.Frobenius
+public import TauCeti.RingTheory.LaurentSeries.CoefficientFrobenius
 import Mathlib.Data.Rat.Lemmas
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Quotient.Basic
 import TauCeti.LinearAlgebra.FiniteDimensional.Semilinear
+import TauCeti.RingTheory.LaurentSeries.Basic
+import TauCeti.RingTheory.LaurentSeries.DifferenceEquation.Frobenius
 
 /-!
 # Equal-characteristic Dieudonné–Manin classification
 
 Over `L = k((π))` with `k` an algebraically closed field of characteristic `p > 0` and
-`σ = coefficientFrobenius p f k` the arithmetic `p^f`-Frobenius acting on coefficients and fixing
-`π = X`, every finite isocrystal `(V, Φ)` admits a basis decomposed into simple standard blocks
-`D(s, r)` of coprime slopes `s / r`, and the resulting multiset of block slopes is unique.
+`σ = LaurentSeries.coefficientFrobenius p f` the arithmetic `p^f`-Frobenius acting on coefficients
+and fixing `π = X`, every finite isocrystal `(V, Φ)` admits a basis decomposed into simple standard
+blocks `D(s, r)` of coprime slopes `s / r`, and the resulting multiset of block slopes is unique.
 
 ## Main definitions
 
@@ -115,147 +117,6 @@ theorem CyclicSlopeDecomposition.sum_rank_eq_finrank {L V : Type*} [Field L] [Ad
   rw [Module.finrank_eq_card_basis D.basis, Fintype.card_sigma]
   simp
 
-private noncomputable def semilinearConjAddHom {L V₁ V₂ : Type*} [Field L]
-    [AddCommGroup V₁] [Module L V₁] [AddCommGroup V₂] [Module L V₂] {σ : L ≃+* L}
-    (Φ₁ : V₁ →ₛₗ[(σ : L →+* L)] V₁) (hΦ₁ : Bijective Φ₁)
-    (Φ₂ : V₂ →ₛₗ[(σ : L →+* L)] V₂) :
-    (V₁ →ₗ[L] V₂) →+ (V₁ →ₗ[L] V₂) :=
-  let e₁ := LinearEquiv.ofBijective Φ₁ hΦ₁
-  { toFun h :=
-      { toFun x := Φ₂ (h (e₁.symm x))
-        map_add' x y := by rw [map_add, map_add, map_add]
-        map_smul' c x := by
-          change Φ₂ (h (e₁.symm (c • x))) = c • Φ₂ (h (e₁.symm x))
-          rw [map_smulₛₗ, RingHom.coe_coe, h.map_smul, map_smulₛₗ, RingHom.coe_coe,
-            σ.apply_symm_apply] }
-    map_zero' := by ext; exact map_zero Φ₂
-    map_add' _ _ := by ext; exact map_add Φ₂ _ _ }
-
-private theorem semilinearConjAddHom_apply {L V₁ V₂ : Type*} [Field L]
-    [AddCommGroup V₁] [Module L V₁] [AddCommGroup V₂] [Module L V₂] {σ : L ≃+* L}
-    (Φ₁ : V₁ →ₛₗ[(σ : L →+* L)] V₁) (hΦ₁ : Bijective Φ₁)
-    (Φ₂ : V₂ →ₛₗ[(σ : L →+* L)] V₂) (h : V₁ →ₗ[L] V₂) (x : V₁) :
-    semilinearConjAddHom Φ₁ hΦ₁ Φ₂ h x =
-      Φ₂ (h ((LinearEquiv.ofBijective Φ₁ hΦ₁).symm x)) :=
-  rfl
-
-private theorem semilinearConjAddHom_iterate {L V₁ V₂ : Type*} [Field L]
-    [AddCommGroup V₁] [Module L V₁] [AddCommGroup V₂] [Module L V₂] {σ : L ≃+* L}
-    (Φ₁ : V₁ →ₛₗ[(σ : L →+* L)] V₁) (hΦ₁ : Bijective Φ₁)
-    (Φ₂ : V₂ →ₛₗ[(σ : L →+* L)] V₂) (m : ℕ) (h : V₁ →ₗ[L] V₂) (x : V₁) :
-    ((semilinearConjAddHom Φ₁ hΦ₁ Φ₂)^[m] h) x =
-      Φ₂^[m] (h ((LinearEquiv.ofBijective Φ₁ hΦ₁).symm^[m] x)) := by
-  induction m generalizing x with
-  | zero => simp
-  | succ m ih =>
-    rw [iterate_succ_apply', semilinearConjAddHom_apply, ih, ← iterate_succ_apply' Φ₂,
-      ← iterate_succ_apply]
-
-private theorem semilinearConjAddHom_iterate_single {p : ℕ} [Fact p.Prime] {f : ℕ}
-    {k : Type*} [Field k] [CharP k p] [PerfectRing k p] (s s' : ℤ) (r r' : ℕ+)
-    (h₀ : (Fin r' → LaurentSeries k) →ₗ[LaurentSeries k] (Fin r → LaurentSeries k))
-    (j : Fin r') (i : Fin r) :
-    let σ : LaurentSeries k ≃+* LaurentSeries k := coefficientFrobenius p f k
-    let π : LaurentSeries k := HahnSeries.single 1 1
-    let Φ := standardBlockFrobenius σ π s r
-    let Φ' := standardBlockFrobenius σ π s' r'
-    ((semilinearConjAddHom Φ' (standardBlockFrobenius_bijective
-        (HahnSeries.single_ne_zero one_ne_zero)) Φ)^[r * r'] h₀) (Pi.single j 1) i =
-      HahnSeries.single (s * (r' : ℤ) - s' * (r : ℤ)) 1 * σ^[r * r'] (h₀ (Pi.single j 1) i) := by
-  let L := LaurentSeries k
-  let σ : L ≃+* L := coefficientFrobenius p f k
-  let π : L := HahnSeries.single 1 1
-  have hπ : π ≠ 0 := HahnSeries.single_ne_zero one_ne_zero
-  have hσπ : σ π = π := coefficientFrobenius_single_one 1
-  let Φ' := standardBlockFrobenius σ π s' r'
-  let hΦ' : Bijective Φ' := standardBlockFrobenius_bijective hπ
-  let e := LinearEquiv.ofBijective Φ' hΦ'
-  have he_symm :
-      e.symm^[r * r'] (Pi.single j (1 : L)) = π ^ (-(s' * (r : ℤ))) • Pi.single j 1 := by
-    have hfwd : e^[r * r'] (π ^ (-(s' * (r : ℤ))) • Pi.single j (1 : L)) = Pi.single j 1 := by
-      refine funext fun l ↦ ?_
-      change Φ'^[r * r'] (π ^ (-(s' * (r : ℤ))) • (Pi.single j (1 : L) : Fin r' → L)) l =
-        (Pi.single j (1 : L) : Fin r' → L) l
-      rw [mul_comm (r : ℕ) (r' : ℕ), standardBlockFrobenius_iterate_rank_mul_apply hσπ]
-      have hσπz : σ^[r' * r] (π ^ (-(s' * (r : ℤ)))) = π ^ (-(s' * (r : ℤ))) :=
-        iterate_fixed (by rw [map_zpow₀, hσπ]) _
-      rw [Pi.smul_apply, smul_eq_mul, iterate_map_mul, hσπz, zpow_neg]
-      by_cases hj : l = j
-      · subst hj; simp [mul_inv_cancel₀ (zpow_ne_zero _ hπ)]
-      · simp [hj]
-    have hinv := LeftInverse.iterate (e.symm_apply_apply : LeftInverse e.symm e) (r * r')
-      (π ^ (-(s' * (r : ℤ))) • Pi.single j 1)
-    rwa [hfwd] at hinv
-  have hσπz' : σ^[r * r'] (π ^ (-(s' * (r : ℤ)))) = π ^ (-(s' * (r : ℤ))) :=
-    iterate_fixed (by rw [map_zpow₀, hσπ]) _
-  dsimp only
-  rw [semilinearConjAddHom_iterate, he_symm, map_smul,
-    standardBlockFrobenius_iterate_rank_mul_apply hσπ, Pi.smul_apply, smul_eq_mul,
-    iterate_map_mul, hσπz']
-  have hsingle : (HahnSeries.single (s * (r' : ℤ) - s' * (r : ℤ)) (1 : k) : L) =
-      π ^ (-(s' * (r : ℤ))) * π ^ (s * (r' : ℤ)) := by
-    rw [← zpow_add₀ hπ]
-    dsimp only [π]
-    rw [← TauCeti.LaurentSeries.val_unitX, ← Units.val_zpow_eq_zpow_val,
-      TauCeti.LaurentSeries.val_unitX_zpow, add_comm, sub_eq_add_neg]
-  rw [hsingle]
-  ring
-
-private theorem surjective_hom_standardBlockFrobenius_sub_id {p : ℕ} [Fact p.Prime] {f : ℕ}
-    (hf : f ≠ 0) {k : Type*} [Field k] [CharP k p] [IsAlgClosed k] (s s' : ℤ) (r r' : ℕ+)
-    (u : (Fin r' → LaurentSeries k) →ₗ[LaurentSeries k] (Fin r → LaurentSeries k)) :
-    ∃ h : (Fin r' → LaurentSeries k) →ₗ[LaurentSeries k] (Fin r → LaurentSeries k),
-      ∀ x,
-        standardBlockFrobenius (coefficientFrobenius p f k) (HahnSeries.single 1 1) s r (h x) -
-          h (standardBlockFrobenius (coefficientFrobenius p f k)
-            (HahnSeries.single 1 1) s' r' x) =
-        u (standardBlockFrobenius (coefficientFrobenius p f k)
-          (HahnSeries.single 1 1) s' r' x) := by
-  let L := LaurentSeries k
-  let σ : L ≃+* L := coefficientFrobenius p f k
-  let π : L := HahnSeries.single 1 1
-  let Φ := standardBlockFrobenius σ π s r
-  let Φ' := standardBlockFrobenius σ π s' r'
-  have hΦ' : Bijective Φ' :=
-    standardBlockFrobenius_bijective (HahnSeries.single_ne_zero one_ne_zero)
-  let T := semilinearConjAddHom Φ' hΦ' Φ
-  let N : ℕ+ := r * r'
-  let d : ℤ := s * (r' : ℤ) - s' * (r : ℤ)
-  choose k_coeff hk_coeff using fun (j : Fin r') (i : Fin r) ↦
-    surjective_iterate_coefficientFrobenius_sub (p := p) hf N d (u (Pi.single j 1) i)
-  let k₀ : (Fin r' → L) →ₗ[L] (Fin r → L) :=
-    (Pi.basisFun L (Fin r')).constr L fun j i ↦ k_coeff j i
-  have hkN : T^[N] k₀ - k₀ = u := by
-    refine (Pi.basisFun L (Fin r')).ext fun j ↦ funext fun i ↦ ?_
-    rw [LinearMap.sub_apply, Pi.sub_apply, Pi.basisFun_apply, PNat.mul_coe,
-      semilinearConjAddHom_iterate_single (p := p) (f := f)]
-    dsimp only [k₀]
-    rw [← Pi.basisFun_apply L (Fin r') j, Basis.constr_basis, ← PNat.mul_coe]
-    simpa [L, σ, N, d] using hk_coeff j i
-  let h : (Fin r' → L) →ₗ[L] (Fin r → L) := ∑ m ∈ Finset.range N, T^[m] k₀
-  have hTh : T h - h = u := by
-    have hmap : T h = ∑ m ∈ Finset.range N, T^[m + 1] k₀ := by
-      rw [map_sum]
-      exact Finset.sum_congr rfl fun m _ ↦ (iterate_succ_apply' T m k₀).symm
-    rw [hmap, ← Finset.sum_sub_distrib, Finset.sum_range_sub (fun m ↦ T^[m] k₀), iterate_zero,
-      id_eq, hkN]
-  refine ⟨h, fun x ↦ ?_⟩
-  have hx := LinearMap.congr_fun hTh (Φ' x)
-  rw [LinearMap.sub_apply, semilinearConjAddHom_apply] at hx
-  change Φ (h ((LinearEquiv.ofBijective Φ' hΦ').symm ((LinearEquiv.ofBijective Φ' hΦ') x))) -
-      h (Φ' x) = u (Φ' x) at hx
-  rw [(LinearEquiv.ofBijective Φ' hΦ').symm_apply_apply] at hx
-  exact hx
-
-private theorem cyclicSlopeDecomposition_intertwiner {L V : Type*} [Field L]
-    [AddCommGroup V] [Module L V] {σ : L ≃+* L} {Φ : V →ₛₗ[(σ : L →+* L)] V} {π : L}
-    (D : CyclicSlopeDecomposition Φ π) (b : Fin D.blocks) (z : Fin (D.rank b) → L) :
-    ((Pi.basisFun L (Fin (D.rank b))).constr L fun j ↦ D.basis ⟨b, j⟩)
-        (standardBlockFrobenius σ π (D.exponent b) (D.rank b) z) =
-      Φ (((Pi.basisFun L (Fin (D.rank b))).constr L fun j ↦ D.basis ⟨b, j⟩) z) := by
-  refine intertwines_standardBlockFrobenius_of_single _ (fun j ↦ ?_) z
-  simp only [← Pi.basisFun_apply L (Fin (D.rank b)), Basis.constr_basis, D.frobenius_basis]
-
 private theorem bijective_mapQ {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
     {σ : L ≃+* L} (Φ : V →ₛₗ[(σ : L →+* L)] V) (hΦ : Bijective Φ)
     (W : Submodule L V) (hW : W ≤ W.comap Φ) [FiniteDimensional L (V ⧸ W)] :
@@ -310,94 +171,53 @@ private theorem sectionDefectMap_apply {L V : Type*} [Field L] [AddCommGroup V] 
         hΦ_Q).symm y)) - sec₀ y :=
   congrArg Subtype.val ((LinearEquiv.ofInjective ι hι).apply_symm_apply _)
 
-private theorem semilinearSplittingHom {p : ℕ} [Fact p.Prime] {f : ℕ+}
-    {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
-    {V : Type*} [AddCommGroup V] [Module (LaurentSeries k) V]
-    {W : Submodule (LaurentSeries k) V} {s : ℤ} {r : ℕ+}
-    (Φ_Q : (V ⧸ W) →ₛₗ[(coefficientFrobenius p f k : LaurentSeries k →+* LaurentSeries k)]
-      (V ⧸ W))
-    (D_Q : CyclicSlopeDecomposition Φ_Q (HahnSeries.single 1 1))
-    (u : (V ⧸ W) →ₗ[LaurentSeries k] (Fin r → LaurentSeries k)) :
-    ∃ h : (V ⧸ W) →ₗ[LaurentSeries k] (Fin r → LaurentSeries k), ∀ y,
-      standardBlockFrobenius (coefficientFrobenius p f k) (HahnSeries.single 1 1) s r (h y) -
-        h (Φ_Q y) = u (Φ_Q y) := by
-  let L := LaurentSeries k
-  let σ := coefficientFrobenius p f k
-  let π : L := HahnSeries.single 1 1
-  let e_b (b : Fin D_Q.blocks) : (Fin (D_Q.rank b) → L) →ₗ[L] (V ⧸ W) :=
-    (Pi.basisFun L (Fin (D_Q.rank b))).constr L fun j ↦ D_Q.basis ⟨b, j⟩
-  choose h_b hh_b using fun b : Fin D_Q.blocks ↦
-    surjective_hom_standardBlockFrobenius_sub_id f.ne_zero s (D_Q.exponent b) r (D_Q.rank b)
-      (u.comp (e_b b))
-  let h : (V ⧸ W) →ₗ[L] (Fin r → L) :=
-    D_Q.basis.constr L fun ⟨b, j⟩ ↦ h_b b (Pi.single j 1)
-  have h_eb (b : Fin D_Q.blocks) : h.comp (e_b b) = h_b b :=
-    (Pi.basisFun L (Fin (D_Q.rank b))).ext fun j ↦ by simp [e_b, h]
-  let T₁ : (V ⧸ W) →ₛₗ[(σ : L →+* L)] (Fin r → L) :=
-    { toFun y := standardBlockFrobenius σ π s r (h y) - h (Φ_Q y)
-      map_add' x y := by rw [Φ_Q.map_add, h.map_add, map_add, h.map_add]; abel
-      map_smul' c x := by
-        change standardBlockFrobenius σ π s r (h (c • x)) - h (Φ_Q (c • x)) =
-          σ c • (standardBlockFrobenius σ π s r (h x) - h (Φ_Q x))
-        rw [h.map_smul, map_smulₛₗ, RingHom.coe_coe, map_smulₛₗ, RingHom.coe_coe,
-          h.map_smul, smul_sub] }
-  let T₂ : (V ⧸ W) →ₛₗ[(σ : L →+* L)] (Fin r → L) :=
-    { toFun y := u (Φ_Q y)
-      map_add' x y := by rw [map_add, map_add]
-      map_smul' c x := by
-        change u (Φ_Q (c • x)) = σ c • u (Φ_Q x)
-        rw [map_smulₛₗ, RingHom.coe_coe, u.map_smul] }
-  have hh_Q_lin : T₁ = T₂ := D_Q.basis.ext fun ⟨b, j⟩ ↦ by
-    have hbasis : e_b b (Pi.single j 1) = D_Q.basis ⟨b, j⟩ := by
-      rw [← Pi.basisFun_apply L (Fin (D_Q.rank b)) j, Basis.constr_basis]
-    change standardBlockFrobenius σ π s r (h (D_Q.basis ⟨b, j⟩)) -
-        h (Φ_Q (D_Q.basis ⟨b, j⟩)) = u (Φ_Q (D_Q.basis ⟨b, j⟩))
-    have heb (z) : h (e_b b z) = h_b b z := LinearMap.congr_fun (h_eb b) z
-    rw [← hbasis, heb, ← cyclicSlopeDecomposition_intertwiner D_Q b, heb]
-    exact hh_b b (Pi.single j 1)
-  exact ⟨h, LinearMap.congr_fun hh_Q_lin⟩
-
 private theorem semilinearSplittingSection {p : ℕ} [Fact p.Prime] {f : ℕ+}
     {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
     {V : Type*} [AddCommGroup V] [Module (LaurentSeries k) V]
-    (Φ : V →ₛₗ[(coefficientFrobenius p f k : LaurentSeries k →+* LaurentSeries k)] V)
+    (Φ : V →ₛₗ[(LaurentSeries.coefficientFrobenius (k := k) p f :
+      LaurentSeries k →+* LaurentSeries k)] V)
     (hΦ : Bijective Φ) {s : ℤ} {r : ℕ+}
     (ι : (Fin r → LaurentSeries k) →ₗ[LaurentSeries k] V) (hι : Injective ι)
-    (hinter : ∀ x, ι (standardBlockFrobenius (coefficientFrobenius p f k)
+    (hinter : ∀ x, ι (standardBlockFrobenius (LaurentSeries.coefficientFrobenius (k := k) p f)
       (HahnSeries.single 1 1) s r x) = Φ (ι x))
     (hW : LinearMap.range ι ≤ (LinearMap.range ι).comap Φ)
-    (D_Q : CyclicSlopeDecomposition ((LinearMap.range ι).mapQ (LinearMap.range ι) Φ hW)
-      (HahnSeries.single 1 1)) :
+    [FiniteDimensional (LaurentSeries k) (V ⧸ LinearMap.range ι)] :
     ∃ sec : (V ⧸ LinearMap.range ι) →ₗ[LaurentSeries k] V,
       (∀ y, (LinearMap.range ι).mkQ (sec y) = y) ∧
       (∀ y, Φ (sec y) = sec ((LinearMap.range ι).mapQ (LinearMap.range ι) Φ hW y)) := by
   classical
   let L := LaurentSeries k
+  let σ := LaurentSeries.coefficientFrobenius (k := k) p f
   let Φ_Q := (LinearMap.range ι).mapQ (LinearMap.range ι) Φ hW
-  have : FiniteDimensional L (V ⧸ LinearMap.range ι) := Module.Finite.of_basis D_Q.basis
   have hΦ_Q : Bijective Φ_Q := bijective_mapQ Φ hΦ (LinearMap.range ι) hW
+  let b_Q := Module.finBasis L (V ⧸ LinearMap.range ι)
   let sec₀ : (V ⧸ LinearMap.range ι) →ₗ[L] V :=
-    D_Q.basis.constr L fun ij ↦ Classical.choose ((LinearMap.range ι).mkQ_surjective (D_Q.basis ij))
+    b_Q.constr L fun ij ↦ Classical.choose ((LinearMap.range ι).mkQ_surjective (b_Q ij))
   have hsec₀_comp : (LinearMap.range ι).mkQ.comp sec₀ = LinearMap.id :=
-    D_Q.basis.ext fun ij ↦ by
+    b_Q.ext fun ij ↦ by
       simpa [sec₀] using
-        Classical.choose_spec ((LinearMap.range ι).mkQ_surjective (D_Q.basis ij))
+        Classical.choose_spec ((LinearMap.range ι).mkQ_surjective (b_Q ij))
   have hsec₀ (y : V ⧸ LinearMap.range ι) : (LinearMap.range ι).mkQ (sec₀ y) = y :=
     LinearMap.congr_fun hsec₀_comp y
   let u := sectionDefectMap Φ ι hι hW hΦ_Q sec₀ hsec₀
-  obtain ⟨h, hh_Q⟩ := semilinearSplittingHom (s := s) Φ_Q D_Q u
+  let e_Q := LinearEquiv.ofBijective Φ_Q hΦ_Q
+  let Φ_blk := standardBlockFrobenius σ (HahnSeries.single 1 1) s r
+  let e_blk := LinearEquiv.ofBijective Φ_blk
+    (standardBlockFrobenius_bijective (HahnSeries.single_ne_zero one_ne_zero))
+  obtain ⟨h, hh⟩ :=
+    (e_Q.arrowCongr e_blk).toLinearMap.surjective_sub_id_of_surjective_sum_mul_iterate
+      σ (fun s a ha ↦ LaurentSeries.surjective_sum_mul_coefficientFrobenius (p := p) f.pos a ha) u
   refine ⟨sec₀ - ι.comp h, fun y ↦ ?_, fun y ↦ ?_⟩
   · simp only [LinearMap.sub_apply, LinearMap.comp_apply, map_sub, hsec₀]
     rw [Submodule.mkQ_apply,
       (Submodule.Quotient.mk_eq_zero (LinearMap.range ι)).2 (LinearMap.mem_range.2 ⟨h y, rfl⟩),
       sub_zero]
-  · have h1 := congrArg ι (hh_Q y)
-    dsimp only [Φ_Q] at h1
-    rw [map_sub, hinter, sectionDefectMap_apply] at h1
+  · have h1 := congrArg ι (LinearMap.congr_fun hh (Φ_Q y))
+    change ι (Φ_blk (h (e_Q.symm (e_Q y))) - h (Φ_Q y)) = ι (u (Φ_Q y)) at h1
+    rw [e_Q.symm_apply_apply, map_sub, hinter, sectionDefectMap_apply] at h1
     change Φ (ι (h y)) - ι (h (Φ_Q y)) =
-        Φ (sec₀ ((LinearEquiv.ofBijective Φ_Q hΦ_Q).symm (LinearEquiv.ofBijective Φ_Q hΦ_Q y))) -
-          sec₀ (Φ_Q y) at h1
-    rw [(LinearEquiv.ofBijective Φ_Q hΦ_Q).symm_apply_apply] at h1
+        Φ (sec₀ (e_Q.symm (e_Q y))) - sec₀ (Φ_Q y) at h1
+    rw [e_Q.symm_apply_apply] at h1
     simp only [LinearMap.sub_apply, LinearMap.comp_apply, map_sub]
     rw [sub_eq_sub_iff_add_eq_add] at h1 ⊢
     rw [add_comm (sec₀ _)]
@@ -556,7 +376,8 @@ theorem CyclicSlopeDecomposition.exists {p : ℕ} [Fact p.Prime] (f : ℕ+)
     (k : Type*) [Field k] [CharP k p] [IsAlgClosed k]
     (V : Type*) [AddCommGroup V] [Module (LaurentSeries k) V]
     [FiniteDimensional (LaurentSeries k) V]
-    (Φ : V →ₛₗ[(coefficientFrobenius p f k : LaurentSeries k →+* LaurentSeries k)] V)
+    (Φ : V →ₛₗ[(LaurentSeries.coefficientFrobenius (k := k) p f :
+      LaurentSeries k →+* LaurentSeries k)] V)
     (hΦ : Bijective Φ) :
     Nonempty (CyclicSlopeDecomposition Φ (HahnSeries.single 1 1)) := by
   classical
@@ -582,7 +403,7 @@ theorem CyclicSlopeDecomposition.exists {p : ℕ} [Fact p.Prime] (f : ℕ+)
       omega
     have hΦ_Q : Bijective Φ_Q := bijective_mapQ Φ hΦ W hW
     obtain ⟨D_Q⟩ := ih (Module.finrank (LaurentSeries k) (V ⧸ W)) hlt (V ⧸ W) Φ_Q hΦ_Q rfl
-    obtain ⟨sec, hq_sec, hΦ_sec⟩ := semilinearSplittingSection Φ hΦ ι hι hinter hW D_Q
+    obtain ⟨sec, hq_sec, hΦ_sec⟩ := semilinearSplittingSection Φ hΦ ι hι hinter hW
     exact ⟨cyclicSlopeDecomposition_cons Φ (HahnSeries.single 1 1) hcop ι hι hinter hW D_Q sec
       hq_sec hΦ_sec⟩
 
@@ -790,32 +611,35 @@ theorem dieudonneManinEqualChar (p : ℕ) [Fact p.Prime] (f : ℕ+)
     (k : Type*) [Field k] [CharP k p] [IsAlgClosed k]
     (V : Type*) [AddCommGroup V] [Module (LaurentSeries k) V]
     [FiniteDimensional (LaurentSeries k) V]
-    (Φ : V →ₛₗ[(coefficientFrobenius p f k : LaurentSeries k →+* LaurentSeries k)] V)
+    (Φ : V →ₛₗ[(LaurentSeries.coefficientFrobenius (k := k) p f :
+      LaurentSeries k →+* LaurentSeries k)] V)
     (hΦ : Function.Bijective Φ) :
     ∃ D : CyclicSlopeDecomposition Φ (HahnSeries.single 1 1),
       ∀ D' : CyclicSlopeDecomposition Φ (HahnSeries.single 1 1), D.slopes = D'.slopes := by
-  have : ExpChar k p := expChar_prime k p
   obtain ⟨D⟩ := CyclicSlopeDecomposition.exists f k V Φ hΦ
   have hvπ : Valued.v (HahnSeries.single (1 : ℤ) (1 : k)) ≠ 1 := by
     simp [_root_.LaurentSeries.valuation_single_zpow]
+  have hval (x : LaurentSeries k) :
+      Valued.v (LaurentSeries.coefficientFrobenius p (f : ℕ) x) = Valued.v x := by
+    rw [LaurentSeries.coe_coefficientFrobenius, LaurentSeries.valuation_mapRingHom]
   exact ⟨D, fun D' ↦ CyclicSlopeDecomposition.slopes_eq_of_valuation Valued.v
-    valuation_coefficientFrobenius (HahnSeries.single_ne_zero one_ne_zero) hvπ
-    (coefficientFrobenius_single_one 1) D D'⟩
+    hval (HahnSeries.single_ne_zero one_ne_zero) hvπ
+    (by rw [LaurentSeries.coefficientFrobenius_single, one_pow]) D D'⟩
 
 /-- **Dieudonné–Manin classification for `FiniteIsocrystal` in equal characteristic.** Every
-object `D : FiniteIsocrystal σ` over `k((π))` (where `σ.toRingEquiv = coefficientFrobenius p f k`)
-admits a coprime cyclic slope decomposition whose slope multiset is unique
-(Kedlaya 2005, §4.5, 4.5.3–4.5.8, pp. 497–499). -/
+object `D : FiniteIsocrystal σ` over `k((π))`
+(where `σ.toRingEquiv = LaurentSeries.coefficientFrobenius p f`) admits a coprime cyclic slope
+decomposition whose slope multiset is unique (Kedlaya 2005, §4.5, 4.5.3–4.5.8, pp. 497–499). -/
 theorem FiniteIsocrystal.dieudonneManinEqualChar (p : ℕ) [Fact p.Prime] (f : ℕ+)
     {E k : Type*} [CommRing E] [Field k] [CharP k p] [IsAlgClosed k]
     [Algebra E (LaurentSeries k)] {σ : LaurentSeries k ≃ₐ[E] LaurentSeries k}
-    (hσ : σ.toRingEquiv = coefficientFrobenius p f k)
+    (hσ : σ.toRingEquiv = LaurentSeries.coefficientFrobenius p f)
     (D : FiniteIsocrystal.{u} σ) :
     ∃ dec : CyclicSlopeDecomposition (σ := σ.toRingEquiv) D.frobenius (HahnSeries.single 1 1),
       ∀ dec' : CyclicSlopeDecomposition (σ := σ.toRingEquiv) D.frobenius (HahnSeries.single 1 1),
         dec.slopes = dec'.slopes := by
   have hgen : ∀ {σ₀ : LaurentSeries k ≃+* LaurentSeries k}
-      (h : σ₀ = coefficientFrobenius p f k)
+      (h : σ₀ = LaurentSeries.coefficientFrobenius p f)
       (Φ : D →ₛₗ[(σ₀ : LaurentSeries k →+* LaurentSeries k)] D),
       Bijective Φ →
         ∃ dec : CyclicSlopeDecomposition Φ (HahnSeries.single 1 1),

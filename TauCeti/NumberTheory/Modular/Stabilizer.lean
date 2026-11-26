@@ -67,6 +67,11 @@ positive-determinant matrix fixing a point as elliptic.
   `TauCeti.ModularGroup.ellipticOrder_ρ`, `TauCeti.ModularGroup.ellipticOrder_pos`,
   `TauCeti.ModularGroup.ellipticOrder_le_three` and
   `TauCeti.ModularGroup.cardStabilizerOnOrbit_eq_two_mul_ellipticOrder`.
+* `TauCeti.ModularGroup.ellipticOrderOnSubgroupOrbit`: the effective elliptic order `e_P` of an
+  orbit of a subgroup `Γ ≤ SL(2, ℤ)`, the stabiliser order in the image of `Γ` in `PSL(2, ℤ)`, with
+  `TauCeti.ModularGroup.cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit`
+  (`|Stab_Γ P| = |Γ ∩ {±I}| · e_P`) and
+  `TauCeti.ModularGroup.ellipticOrderOnSubgroupOrbit_top_mk` (at level one it is `ellipticOrder`).
 
 ## References
 
@@ -313,6 +318,84 @@ theorem ellipticOrder_le_three (q : MulAction.orbitRel.Quotient SL(2, ℤ) ℍ) 
   · rw [hρ, ellipticOrder_ρ]
   · rw [ellipticOrder_eq_one_of_orbit_ne_I_of_orbit_ne_ρ hI hρ]
     omega
+
+/-! ### The effective elliptic order of a subgroup orbit -/
+
+section Subgroup
+
+variable {Γ : Subgroup SL(2, ℤ)}
+
+/-- **The effective elliptic order `e_P` of a `Γ`-orbit of `ℍ`**: the order of the stabiliser of
+any point of the orbit in the image of `Γ` in `PSL(2, ℤ)`, the group acting effectively on `ℍ`.
+It is the order of the matrix stabiliser divided by `|Γ ∩ {±I}|`
+(`cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit`). For `Γ = SL(2, ℤ)` it
+is the level-one elliptic order `ellipticOrder` (`ellipticOrderOnSubgroupOrbit_top_mk`): `2` on
+the orbit of `i`, `3` on the orbit of `ρ` and `1` elsewhere. -/
+noncomputable def ellipticOrderOnSubgroupOrbit
+    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) : ℕ :=
+  Quotient.liftOn' o
+    (fun p ↦ Nat.card (stabilizer (Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) p))
+    fun _ b h ↦ by
+      obtain ⟨g, rfl⟩ := h
+      obtain ⟨γ, hγ, hg⟩ := Subgroup.mem_map.mp g.property
+      refine card_stabilizer_of_orbitRel
+        (mem_orbit_iff.mpr ⟨⟨QuotientGroup.mk' _ γ, γ, hγ, rfl⟩, ?_⟩)
+      dsimp only
+      rw [Subgroup.smul_def g, ← hg, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
+        ← ModularGroup.sl_moeb]
+      exact (Subgroup.smul_def _ _).trans (UpperHalfPlane.pslMk_smul γ b)
+
+/-- Evaluating the effective elliptic order on the orbit of `p` recovers the order of the
+stabiliser of `p` in the image of `Γ` in `PSL(2, ℤ)`. -/
+@[simp]
+theorem ellipticOrderOnSubgroupOrbit_mk (p : ℍ) :
+    ellipticOrderOnSubgroupOrbit
+        (Quotient.mk'' p : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) =
+      Nat.card (stabilizer (Γ.map (QuotientGroup.mk' (Subgroup.center SL(2, ℤ)))) p) :=
+  (rfl)
+
+/-- **At level one the effective elliptic order is `ellipticOrder`**: for `Γ = SL(2, ℤ)` the
+image of `Γ` in `PSL(2, ℤ)` is all of `PSL(2, ℤ)`, so the two orders agree on the orbit of every
+`p`. With `ellipticOrder_I`, `ellipticOrder_ρ` and
+`ellipticOrder_eq_one_of_orbit_ne_I_of_orbit_ne_ρ` this gives the values `2`, `3` and `1`. -/
+theorem ellipticOrderOnSubgroupOrbit_top_mk (p : ℍ) :
+    ellipticOrderOnSubgroupOrbit
+        (Quotient.mk'' p :
+          orbitRel.Quotient ((⊤ : Subgroup SL(2, ℤ)) : Subgroup (GL (Fin 2) ℝ)) ℍ) =
+      ellipticOrder (Quotient.mk'' p) := by
+  rw [ellipticOrderOnSubgroupOrbit_mk, ellipticOrder_mk,
+    Subgroup.map_top_of_surjective _ (QuotientGroup.mk'_surjective _)]
+  -- `⊤` acts on `ℍ` through its inclusion, which is `Subgroup.topEquiv`
+  exact (card_stabilizer_congr Subgroup.topEquiv (f := id) p
+    (fun g ↦ by rw [id_eq, id_eq, Subgroup.topEquiv_apply, Subgroup.smul_def]) fun _ h ↦ h).symm
+
+/-- **The matrix stabiliser order is `|Γ ∩ {±I}|` times the effective elliptic order.** -/
+theorem cardStabilizerOnOrbit_eq_card_center_mul_ellipticOrderOnSubgroupOrbit
+    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
+    cardStabilizerOnOrbit o =
+      Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) * ellipticOrderOnSubgroupOrbit o := by
+  induction o using Quotient.inductionOn' with
+  | h p =>
+    rw [cardStabilizerOnOrbit_mk, ellipticOrderOnSubgroupOrbit_mk,
+      ← card_stabilizer_eq_card_center_mul_card_stabilizer_psl]
+    -- `Γ` and its image in `GL(2, ℝ)` act on `ℍ` through the same Möbius transformations, by
+    -- definition of the action of `SL(2, ℤ)` on `ℍ` (`ModularGroup.sl_moeb` is `rfl`)
+    exact card_stabilizer_congr
+      (Γ.equivMapOfInjective _ Matrix.SpecialLinearGroup.mapGL_injective) (f := id) p
+      (fun _ ↦ rfl) fun _ h ↦ h
+
+/-- The effective elliptic order is positive. -/
+theorem ellipticOrderOnSubgroupOrbit_pos
+    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
+    0 < ellipticOrderOnSubgroupOrbit o := by
+  induction o using Quotient.inductionOn' with
+  | h p =>
+    have h := card_stabilizer_eq_card_center_mul_card_stabilizer_psl (Γ := Γ) p
+    have : 0 < Nat.card (stabilizer Γ p) := Nat.card_pos
+    rw [ellipticOrderOnSubgroupOrbit_mk]
+    exact Nat.pos_of_mul_pos_left (h ▸ this)
+
+end Subgroup
 
 end ModularGroup
 

@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Dimension.RankNullity
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Injective and surjective semilinear endomorphisms of finite-dimensional spaces
@@ -23,7 +25,9 @@ the descending chain of iterated images `(Submodule.map f)^[n] ⊤` stabilizes b
 `LinearMap.map_iterate_map_top_finrank`), so `f` restricts to a bijection on
 `(Submodule.map f)^[Module.finrank K V] ⊤` (`LinearMap.bijective_restrict_iterate_map_top`). We
 also record that the representation matrix of a surjective semilinear endomorphism in a finite
-basis has unit determinant (`LinearMap.isUnit_det_basis_matrix_of_surjectiveₛₗ`).
+basis has unit determinant (`LinearMap.isUnit_det_basis_matrix_of_surjectiveₛₗ`), and that
+solvability of scalar difference polynomials transfers to surjectivity of `Φ - 1`
+(`LinearMap.surjective_sub_id_of_surjective_sum_mul_iterate`).
 -/
 
 public section
@@ -266,5 +270,59 @@ theorem bijective_restrict_iterate_map_top {K V : Type*} [DivisionRing K] [AddCo
     obtain ⟨x, hx, hfx⟩ := hy
     exact ⟨⟨x, hx⟩, Subtype.ext hfx⟩
   exact ⟨injective_of_surjectiveₛₗ hsurj, hsurj⟩
+
+section
+
+open Finset Function
+
+/-- If every scalar difference polynomial in `σ` with at least one nonzero coefficient acts
+surjectively, then `Φ - 1` is surjective for each finite-dimensional `σ`-semilinear endomorphism. -/
+theorem surjective_sub_id_of_surjective_sum_mul_iterate {K V : Type*} [Field K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] (σ : K ≃+* K)
+    (hσ : ∀ (s : Finset ℕ) (a : ℕ → K), (∃ i ∈ s, a i ≠ 0) →
+      Surjective (fun x : K => ∑ i ∈ s, a i * σ^[i] x))
+    (Φ : V →ₛₗ[(σ : K →+* K)] V) : Surjective (fun x => Φ x - x) := by
+  classical
+  intro v
+  -- The first `finrank + 1` iterates of the target vector satisfy a nonzero relation.
+  let n := Module.finrank K V
+  let u (i : Fin (n + 1)) := Φ^[n - i.val] v
+  have hu : ¬ LinearIndependent K u := by
+    intro h
+    simpa [n] using h.fintype_card_le_finrank
+  obtain ⟨a, ha, i₀, hi₀⟩ := Fintype.not_linearIndependent_iff.mp hu
+  -- Untwist each relation coefficient by the corresponding Frobenius power.
+  let c (i : Fin (n + 1)) := σ.symm^[n - i.val] (a i)
+  have hinverse : LeftInverse σ σ.symm := σ.apply_symm_apply
+  have hinv (i : Fin (n + 1)) : σ^[n - i.val] (c i) = a i := hinverse.iterate _ _
+  let d := Function.extend Fin.val c 0
+  have hd : ∃ i ∈ Finset.range (n + 1), d i ≠ 0 := by
+    refine ⟨i₀, Finset.mem_range.mpr i₀.isLt, ?_⟩
+    simp only [d, Fin.val_injective.extend_apply]
+    intro hi
+    apply hi₀
+    rw [← hinv i₀, hi]
+    exact iterate_fixed (map_zero σ) _
+  obtain ⟨z, hz⟩ := hσ _ d hd (-1)
+  let w (i : Fin (n + 1)) := (c i * σ^[i.val] z) • v
+  have hsum : ∑ i, w i = -v := by
+    have hz' : (∑ i : Fin (n + 1), c i * σ^[i.val] z) = -1 := by
+      simpa only [← Fin.sum_univ_eq_sum_range, d, Fin.val_injective.extend_apply] using hz
+    simp only [w, ← sum_smul, hz', neg_one_smul]
+  have hiter (i : Fin (n + 1)) :
+      Φ^[n - i.val] (w i) = σ^[n] z • (a i • u i) := by
+    have hindex : n - i.val + i.val = n := Nat.sub_add_cancel (by omega)
+    have hscalar : σ^[n - i.val] (c i * σ^[i.val] z) = σ^[n] z * a i := by
+      rw [iterate_map_mul, hinv, ← iterate_add_apply, hindex, mul_comm]
+    simp only [w, u, TauCeti.iterate_map_smulₛₗ Φ, RingEquiv.coe_toRingHom, hscalar, smul_smul]
+  -- The iterated terms sum to zero, and their starting terms sum to `-v`.
+  refine ⟨∑ i : Fin (n + 1), ∑ j ∈ Finset.range (n - i.val), Φ^[j] (w i), ?_⟩
+  dsimp only
+  rw [map_sum, ← sum_sub_distrib]
+  simp_rw [TauCeti.map_sum_iterate_sub, hiter]
+  rw [sum_sub_distrib, ← smul_sum]
+  simp [ha, hsum]
+
+end
 
 end LinearMap
