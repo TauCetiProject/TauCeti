@@ -23,11 +23,11 @@ isomorphism `α : Q ⊗_{A₁} P₁ ≃ Q ⊗_{A₂} P₂`; its patched module i
 
 This file proves the half of Milnor's patching theorem that constructs modules over `D`: when
 `π₁` or `π₂` is surjective and `P₁`, `P₂` are finitely generated projective, the patched module
-`M` is a finitely generated projective `D`-module, and the base-change maps
+`M` is a finitely generated projective `D`-module, and the comparison maps
 `A₁ ⊗_D M → P₁` and `A₂ ⊗_D M → P₂`, `s ⊗ (x, y) ↦ s • x` and `s ⊗ (x, y) ↦ s • y`, are
 isomorphisms. They identify the patching triple `(A₁ ⊗_D M, A₂ ⊗_D M, α_M)` of `M` with
 `(P₁, P₂, α)`, compatibly with the gluing isomorphisms
-(`TauCeti.PatchedModule.map_baseChangeSnd_commSqEquiv`). Together with full faithfulness
+(`TauCeti.PatchedModule.map_compareSnd_commSqEquiv`). Together with full faithfulness
 (`TauCeti.BalancedExtension.existsUnique_map_eq_and_map_eq`), this says that extension of
 scalars from `D` to patching triples is an equivalence on finitely generated projective modules.
 Applied to the square of opposite rings, it describes finitely generated projective right modules
@@ -35,19 +35,19 @@ over a fibre product of rings, as used for the Mayer–Vietoris sequence of alge
 
 ## Main definitions
 
-* `TauCeti.PatchedModule.baseChangeFst h α`, `TauCeti.PatchedModule.baseChangeSnd h α`: the
-  base-change maps `A₁ ⊗_D M → P₁` and `A₂ ⊗_D M → P₂`.
-* `TauCeti.PatchedModule.baseChangeFstEquiv`, `TauCeti.PatchedModule.baseChangeSndEquiv`: these
+* `TauCeti.PatchedModule.compareFst h α`, `TauCeti.PatchedModule.compareSnd h α`: the
+  comparison maps `A₁ ⊗_D M → P₁` and `A₂ ⊗_D M → P₂`.
+* `TauCeti.PatchedModule.compareFstEquiv`, `TauCeti.PatchedModule.compareSndEquiv`: these
   maps as isomorphisms, for finitely generated projective triples with a surjective leg.
 
 ## Main results
 
-* `TauCeti.PatchedModule.map_baseChangeSnd_commSqEquiv`: the base-change maps intertwine the
+* `TauCeti.PatchedModule.map_compareSnd_commSqEquiv`: the comparison maps intertwine the
   gluing isomorphism of `M` with `α`.
 * `TauCeti.finite_patchedModule`, `TauCeti.projective_patchedModule`: with one surjective leg,
   the patched module of a finitely generated projective triple is finitely generated projective.
-* `TauCeti.PatchedModule.bijective_baseChangeFst`, `TauCeti.PatchedModule.bijective_baseChangeSnd`:
-  its base-change maps are bijective.
+* `TauCeti.PatchedModule.bijective_compareFst`, `TauCeti.PatchedModule.bijective_compareSnd`:
+  its comparison maps are bijective.
 
 ## Implementation notes
 
@@ -86,45 +86,45 @@ variable {D A₁ A₂ Q : Type*} [Ring D] [Ring A₁] [Ring A₂] [Ring Q]
 
 namespace PatchedModule
 
-section BaseChange
+section Compare
 
 variable {P₁ P₂ : Type*} [AddCommGroup P₁] [Module A₁ P₁] [AddCommGroup P₂] [Module A₂ P₂]
   (h : π₁.comp p₁ = π₂.comp p₂) (α : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂)
 
-/-- The base-change map `A₁ ⊗_D M(P₁, P₂, α) → P₁`, `s ⊗ (x, y) ↦ s • x`, induced by the first
+/-- The comparison map `A₁ ⊗_D M(P₁, P₂, α) → P₁`, `s ⊗ (x, y) ↦ s • x`, induced by the first
 projection of the patched module. -/
-def baseChangeFst : BalancedExtension p₁ (PatchedModule h α) →ₗ[A₁] P₁ :=
+def compareFst : BalancedExtension p₁ (PatchedModule h α) →ₗ[A₁] P₁ :=
   BalancedExtension.lift (fstHom h α)
 
-/-- The base-change map `A₂ ⊗_D M(P₁, P₂, α) → P₂`, `s ⊗ (x, y) ↦ s • y`, induced by the second
+/-- The comparison map `A₂ ⊗_D M(P₁, P₂, α) → P₂`, `s ⊗ (x, y) ↦ s • y`, induced by the second
 projection of the patched module. -/
-def baseChangeSnd : BalancedExtension p₂ (PatchedModule h α) →ₗ[A₂] P₂ :=
+def compareSnd : BalancedExtension p₂ (PatchedModule h α) →ₗ[A₂] P₂ :=
   BalancedExtension.lift (sndHom h α)
 
 @[simp]
-theorem baseChangeFst_tmul (s : A₁) (x : PatchedModule h α) :
-    baseChangeFst h α (tmul p₁ s x) = s • x.fst := by
-  simp [baseChangeFst]
+theorem compareFst_tmul (s : A₁) (x : PatchedModule h α) :
+    compareFst h α (tmul p₁ s x) = s • x.fst := by
+  simp [compareFst]
 
 @[simp]
-theorem baseChangeSnd_tmul (s : A₂) (x : PatchedModule h α) :
-    baseChangeSnd h α (tmul p₂ s x) = s • x.snd := by
-  simp [baseChangeSnd]
+theorem compareSnd_tmul (s : A₂) (x : PatchedModule h α) :
+    compareSnd h α (tmul p₂ s x) = s • x.snd := by
+  simp [compareSnd]
 
-/-- The base-change maps form a morphism from the patching triple `(A₁ ⊗_D M, A₂ ⊗_D M, α_M)` of
+/-- The comparison maps form a morphism from the patching triple `(A₁ ⊗_D M, A₂ ⊗_D M, α_M)` of
 the patched module `M = M(P₁, P₂, α)` to `(P₁, P₂, α)`: they intertwine the gluing isomorphism
 `α_M` with `α`. -/
-theorem map_baseChangeSnd_commSqEquiv
+theorem map_compareSnd_commSqEquiv
     (x : BalancedExtension π₁ (BalancedExtension p₁ (PatchedModule h α))) :
-    BalancedExtension.map π₂ (baseChangeSnd h α) (commSqEquiv h _ x) =
-      α (BalancedExtension.map π₁ (baseChangeFst h α) x) := by
+    BalancedExtension.map π₂ (compareSnd h α) (commSqEquiv h _ x) =
+      α (BalancedExtension.map π₁ (compareFst h α) x) := by
   induction x using BalancedExtension.induction_on with
   | tmul t z =>
     induction z using BalancedExtension.induction_on with
     | tmul s m =>
       -- `t ⊗ (s • m.fst) = (t * π₁ s) • (1 ⊗ m.fst)`, which `α` sends to
       -- `(t * π₁ s) • (1 ⊗ m.snd) = t ⊗ (s • m.snd)`.
-      simp only [commSqEquiv_tmul, map_tmul, baseChangeSnd_tmul, baseChangeFst_tmul, one_smul,
+      simp only [commSqEquiv_tmul, map_tmul, compareSnd_tmul, compareFst_tmul, one_smul,
         tmul_smul]
       rw [tmul_eq_smul_one_tmul (f := π₁), map_smul, apply_one_tmul_fst]
       simp
@@ -134,46 +134,46 @@ theorem map_baseChangeSnd_commSqEquiv
 variable {P₁' P₂' : Type*} [AddCommGroup P₁'] [Module A₁ P₁'] [AddCommGroup P₂'] [Module A₂ P₂']
   {α' : BalancedExtension π₁ P₁' →ₗ[Q] BalancedExtension π₂ P₂'}
 
-/-- The first base-change map is natural in morphisms of patching triples. -/
+/-- The first comparison map is natural in morphisms of patching triples. -/
 @[simp]
-theorem baseChangeFst_map_map (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →ₗ[A₂] P₂')
+theorem compareFst_map_map (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →ₗ[A₂] P₂')
     (hg : ∀ x, α' (BalancedExtension.map π₁ g₁ x) = BalancedExtension.map π₂ g₂ (α x))
     (x : BalancedExtension p₁ (PatchedModule h α)) :
-    baseChangeFst h α' (BalancedExtension.map p₁ (PatchedModule.map g₁ g₂ hg) x) =
-      g₁ (baseChangeFst h α x) :=
-  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : baseChangeFst h α' ∘ₗ
-    BalancedExtension.map p₁ (PatchedModule.map g₁ g₂ hg) = g₁ ∘ₗ baseChangeFst h α) x
+    compareFst h α' (BalancedExtension.map p₁ (PatchedModule.map g₁ g₂ hg) x) =
+      g₁ (compareFst h α x) :=
+  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : compareFst h α' ∘ₗ
+    BalancedExtension.map p₁ (PatchedModule.map g₁ g₂ hg) = g₁ ∘ₗ compareFst h α) x
 
-/-- The second base-change map is natural in morphisms of patching triples. -/
+/-- The second comparison map is natural in morphisms of patching triples. -/
 @[simp]
-theorem baseChangeSnd_map_map (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →ₗ[A₂] P₂')
+theorem compareSnd_map_map (g₁ : P₁ →ₗ[A₁] P₁') (g₂ : P₂ →ₗ[A₂] P₂')
     (hg : ∀ x, α' (BalancedExtension.map π₁ g₁ x) = BalancedExtension.map π₂ g₂ (α x))
     (x : BalancedExtension p₂ (PatchedModule h α)) :
-    baseChangeSnd h α' (BalancedExtension.map p₂ (PatchedModule.map g₁ g₂ hg) x) =
-      g₂ (baseChangeSnd h α x) :=
-  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : baseChangeSnd h α' ∘ₗ
-    BalancedExtension.map p₂ (PatchedModule.map g₁ g₂ hg) = g₂ ∘ₗ baseChangeSnd h α) x
+    compareSnd h α' (BalancedExtension.map p₂ (PatchedModule.map g₁ g₂ hg) x) =
+      g₂ (compareSnd h α x) :=
+  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : compareSnd h α' ∘ₗ
+    BalancedExtension.map p₂ (PatchedModule.map g₁ g₂ hg) = g₂ ∘ₗ compareSnd h α) x
 
-end BaseChange
+end Compare
 
 section Triple
 
 variable (h : π₁.comp p₁ = π₂.comp p₂) {P : Type*} [AddCommGroup P] [Module D P]
 
-/-- On the patching triple of a `D`-module `P`, the first base-change map undoes the extension of
+/-- On the patching triple of a `D`-module `P`, the first comparison map undoes the extension of
 `p ↦ (1 ⊗ p, 1 ⊗ p)`. -/
 @[simp]
-theorem baseChangeFst_map_toPatchedModule (x : BalancedExtension p₁ P) :
-    baseChangeFst h _ (BalancedExtension.map p₁ (toPatchedModule h P) x) = x :=
-  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : baseChangeFst h _ ∘ₗ
+theorem compareFst_map_toPatchedModule (x : BalancedExtension p₁ P) :
+    compareFst h _ (BalancedExtension.map p₁ (toPatchedModule h P) x) = x :=
+  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : compareFst h _ ∘ₗ
     BalancedExtension.map p₁ (toPatchedModule h P) = LinearMap.id) x
 
-/-- On the patching triple of a `D`-module `P`, the second base-change map undoes the extension of
+/-- On the patching triple of a `D`-module `P`, the second comparison map undoes the extension of
 `p ↦ (1 ⊗ p, 1 ⊗ p)`. -/
 @[simp]
-theorem baseChangeSnd_map_toPatchedModule (x : BalancedExtension p₂ P) :
-    baseChangeSnd h _ (BalancedExtension.map p₂ (toPatchedModule h P) x) = x :=
-  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : baseChangeSnd h _ ∘ₗ
+theorem compareSnd_map_toPatchedModule (x : BalancedExtension p₂ P) :
+    compareSnd h _ (BalancedExtension.map p₂ (toPatchedModule h P) x) = x :=
+  LinearMap.congr_fun (BalancedExtension.hom_ext fun m ↦ by simp : compareSnd h _ ∘ₗ
     BalancedExtension.map p₂ (toPatchedModule h P) = LinearMap.id) x
 
 end Triple
@@ -188,13 +188,13 @@ variable {P₁ P₂ : Type*} [AddCommGroup P₁] [Module A₁ P₁] [AddCommGrou
   (h : π₁.comp p₁ = π₂.comp p₂)
 
 /-- The conclusions of Milnor's patching theorem for one triple: its patched module is finitely
-generated projective and both base-change maps are bijective. -/
+generated projective and both comparison maps are bijective. -/
 private structure IsPatched (α : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂) :
     Prop where
   finite : Module.Finite D (PatchedModule h α)
   projective : Module.Projective D (PatchedModule h α)
-  bijective_fst : Function.Bijective (baseChangeFst h α)
-  bijective_snd : Function.Bijective (baseChangeSnd h α)
+  bijective_fst : Function.Bijective (compareFst h α)
+  bijective_snd : Function.Bijective (compareSnd h α)
 
 /-- The conclusions of Milnor's patching theorem pass to retracts of patching triples. -/
 private theorem IsPatched.of_retract {α : BalancedExtension π₁ P₁ →ₗ[Q] BalancedExtension π₂ P₂}
@@ -213,10 +213,10 @@ private theorem IsPatched.of_retract {α : BalancedExtension π₁ P₁ →ₗ[Q
     (by simpa [i, r] using LinearMap.congr_fun hrg₁ m.fst)
     (by simpa [i, r] using LinearMap.congr_fun hrg₂ m.snd)
   refine ⟨.of_surjective r fun x ↦ ⟨i x, LinearMap.congr_fun hri x⟩, .of_split i r hri, ?_, ?_⟩
-  · exact Function.bijective_of_retract hβ.bijective_fst (baseChangeFst_map_map h α g₁ g₂ hg)
-      (baseChangeFst_map_map h β r₁ r₂ hr) (map_map_of_comp_eq_id hri) (LinearMap.congr_fun hrg₁)
-  · exact Function.bijective_of_retract hβ.bijective_snd (baseChangeSnd_map_map h α g₁ g₂ hg)
-      (baseChangeSnd_map_map h β r₁ r₂ hr) (map_map_of_comp_eq_id hri) (LinearMap.congr_fun hrg₂)
+  · exact Function.bijective_of_retract hβ.bijective_fst (compareFst_map_map h α g₁ g₂ hg)
+      (compareFst_map_map h β r₁ r₂ hr) (map_map_of_comp_eq_id hri) (LinearMap.congr_fun hrg₁)
+  · exact Function.bijective_of_retract hβ.bijective_snd (compareSnd_map_map h α g₁ g₂ hg)
+      (compareSnd_map_map h β r₁ r₂ hr) (map_map_of_comp_eq_id hri) (LinearMap.congr_fun hrg₂)
 
 variable (hD : ∀ a₁ a₂, π₁ a₁ = π₂ a₂ → ∃! d, p₁ d = a₁ ∧ p₂ d = a₂)
 
@@ -229,15 +229,15 @@ private theorem isPatched_commSqEquiv (F : Type*) [AddCommGroup F] [Module D F] 
   have hs₁ := BalancedExtension.map_surjective (f := p₁) hF.2
   have hs₂ := BalancedExtension.map_surjective (f := p₂) hF.2
   refine ⟨.equiv (patchedModuleEquiv h hD F), .of_equiv (patchedModuleEquiv h hD F),
-    ⟨fun x x' hxx' ↦ ?_, fun x ↦ ⟨_, baseChangeFst_map_toPatchedModule h x⟩⟩,
-    ⟨fun x x' hxx' ↦ ?_, fun x ↦ ⟨_, baseChangeSnd_map_toPatchedModule h x⟩⟩⟩
+    ⟨fun x x' hxx' ↦ ?_, fun x ↦ ⟨_, compareFst_map_toPatchedModule h x⟩⟩,
+    ⟨fun x x' hxx' ↦ ?_, fun x ↦ ⟨_, compareSnd_map_toPatchedModule h x⟩⟩⟩
   · obtain ⟨x, rfl⟩ := hs₁ x
     obtain ⟨x', rfl⟩ := hs₁ x'
-    simp only [baseChangeFst_map_toPatchedModule] at hxx'
+    simp only [compareFst_map_toPatchedModule] at hxx'
     rw [hxx']
   · obtain ⟨x, rfl⟩ := hs₂ x
     obtain ⟨x', rfl⟩ := hs₂ x'
-    simp only [baseChangeSnd_map_toPatchedModule] at hxx'
+    simp only [compareSnd_map_toPatchedModule] at hxx'
     rw [hxx']
 
 end Retract
@@ -436,10 +436,10 @@ private theorem IsPatched.of_swap (hα : IsPatched h.symm α.symm.toLinearMap) :
     IsPatched h α.toLinearMap := by
   have := hα.finite
   have := hα.projective
-  have h₁ : baseChangeFst h α.toLinearMap = baseChangeSnd h.symm α.symm.toLinearMap ∘ₗ
+  have h₁ : compareFst h α.toLinearMap = compareSnd h.symm α.symm.toLinearMap ∘ₗ
       (BalancedExtension.congr p₁ (swapEquiv h α)).toLinearMap :=
     BalancedExtension.hom_ext fun m ↦ by simp
-  have h₂ : baseChangeSnd h α.toLinearMap = baseChangeFst h.symm α.symm.toLinearMap ∘ₗ
+  have h₂ : compareSnd h α.toLinearMap = compareFst h.symm α.symm.toLinearMap ∘ₗ
       (BalancedExtension.congr p₂ (swapEquiv h α)).toLinearMap :=
     BalancedExtension.hom_ext fun m ↦ by simp
   refine ⟨.equiv (swapEquiv h α).symm, .of_equiv (swapEquiv h α).symm, ?_, ?_⟩
@@ -497,50 +497,50 @@ namespace PatchedModule
 
 include hD hπ in
 /-- **Milnor patching: base change recovers `P₁`.** Over a fibre-product square with a surjective
-leg, for finitely generated projective `P₁`, `P₂` and an isomorphism `α`, the base-change map
+leg, for finitely generated projective `P₁`, `P₂` and an isomorphism `α`, the comparison map
 `A₁ ⊗_D M(P₁, P₂, α) → P₁` is bijective. -/
-theorem bijective_baseChangeFst : Function.Bijective (baseChangeFst h α.toLinearMap) :=
+theorem bijective_compareFst : Function.Bijective (compareFst h α.toLinearMap) :=
   (isPatched h α hD hπ).bijective_fst
 
 include hD hπ in
 /-- **Milnor patching: base change recovers `P₂`.** Over a fibre-product square with a surjective
-leg, for finitely generated projective `P₁`, `P₂` and an isomorphism `α`, the base-change map
+leg, for finitely generated projective `P₁`, `P₂` and an isomorphism `α`, the comparison map
 `A₂ ⊗_D M(P₁, P₂, α) → P₂` is bijective. -/
-theorem bijective_baseChangeSnd : Function.Bijective (baseChangeSnd h α.toLinearMap) :=
+theorem bijective_compareSnd : Function.Bijective (compareSnd h α.toLinearMap) :=
   (isPatched h α hD hπ).bijective_snd
 
-/-- The base-change isomorphism `A₁ ⊗_D M(P₁, P₂, α) ≃ P₁`, `s ⊗ (x, y) ↦ s • x`, over a
+/-- The comparison isomorphism `A₁ ⊗_D M(P₁, P₂, α) ≃ P₁`, `s ⊗ (x, y) ↦ s • x`, over a
 fibre-product square with a surjective leg, for finitely generated projective `P₁`, `P₂`. -/
-noncomputable def baseChangeFstEquiv :
+noncomputable def compareFstEquiv :
     BalancedExtension p₁ (PatchedModule h α.toLinearMap) ≃ₗ[A₁] P₁ :=
-  .ofBijective _ (bijective_baseChangeFst h α hD hπ)
+  .ofBijective _ (bijective_compareFst h α hD hπ)
 
-/-- The base-change isomorphism `A₂ ⊗_D M(P₁, P₂, α) ≃ P₂`, `s ⊗ (x, y) ↦ s • y`, over a
+/-- The comparison isomorphism `A₂ ⊗_D M(P₁, P₂, α) ≃ P₂`, `s ⊗ (x, y) ↦ s • y`, over a
 fibre-product square with a surjective leg, for finitely generated projective `P₁`, `P₂`. -/
-noncomputable def baseChangeSndEquiv :
+noncomputable def compareSndEquiv :
     BalancedExtension p₂ (PatchedModule h α.toLinearMap) ≃ₗ[A₂] P₂ :=
-  .ofBijective _ (bijective_baseChangeSnd h α hD hπ)
+  .ofBijective _ (bijective_compareSnd h α hD hπ)
 
 @[simp]
-theorem baseChangeFstEquiv_apply (x : BalancedExtension p₁ (PatchedModule h α.toLinearMap)) :
-    baseChangeFstEquiv h α hD hπ x = baseChangeFst h α.toLinearMap x := (rfl)
+theorem compareFstEquiv_apply (x : BalancedExtension p₁ (PatchedModule h α.toLinearMap)) :
+    compareFstEquiv h α hD hπ x = compareFst h α.toLinearMap x := (rfl)
 
 @[simp]
-theorem baseChangeSndEquiv_apply (x : BalancedExtension p₂ (PatchedModule h α.toLinearMap)) :
-    baseChangeSndEquiv h α hD hπ x = baseChangeSnd h α.toLinearMap x := (rfl)
+theorem compareSndEquiv_apply (x : BalancedExtension p₂ (PatchedModule h α.toLinearMap)) :
+    compareSndEquiv h α hD hπ x = compareSnd h α.toLinearMap x := (rfl)
 
-/-- The inverse of `baseChangeFstEquiv` sends the first component of `m ∈ M(P₁, P₂, α)` to
+/-- The inverse of `compareFstEquiv` sends the first component of `m ∈ M(P₁, P₂, α)` to
 `1 ⊗ m`. -/
 @[simp]
-theorem baseChangeFstEquiv_symm_fst (m : PatchedModule h α.toLinearMap) :
-    (baseChangeFstEquiv h α hD hπ).symm m.fst = tmul p₁ 1 m :=
+theorem compareFstEquiv_symm_fst (m : PatchedModule h α.toLinearMap) :
+    (compareFstEquiv h α hD hπ).symm m.fst = tmul p₁ 1 m :=
   (LinearEquiv.symm_apply_eq _).2 (by simp)
 
-/-- The inverse of `baseChangeSndEquiv` sends the second component of `m ∈ M(P₁, P₂, α)` to
+/-- The inverse of `compareSndEquiv` sends the second component of `m ∈ M(P₁, P₂, α)` to
 `1 ⊗ m`. -/
 @[simp]
-theorem baseChangeSndEquiv_symm_snd (m : PatchedModule h α.toLinearMap) :
-    (baseChangeSndEquiv h α hD hπ).symm m.snd = tmul p₂ 1 m :=
+theorem compareSndEquiv_symm_snd (m : PatchedModule h α.toLinearMap) :
+    (compareSndEquiv h α hD hπ).symm m.snd = tmul p₂ 1 m :=
   (LinearEquiv.symm_apply_eq _).2 (by simp)
 
 end PatchedModule

@@ -68,8 +68,8 @@ The extension of the zero module is zero by the `Subsingleton` instances of
 * `TauCeti.BalancedExtension.includeRight_surjective`: along a surjective ring homomorphism,
   every element of `S ⊗_R P` is a tensor `1 ⊗ p`.
 * `TauCeti.BalancedExtension.exists_map_eq_of_surjective`: along a surjective ring homomorphism,
-  every `S`-linear map out of the extension of a projective module is extended from an
-  `R`-linear map.
+  every `S`-linear map `S ⊗_R P → S ⊗_R P'` between extensions, with `P` projective, is
+  `map f g` for an `R`-linear `g`.
 * Extension of scalars along any `f` sends finitely generated `R`-modules to finitely generated
   `S`-modules and projective `R`-modules to projective `S`-modules (instances), hence finitely
   generated projective modules to finitely generated projective modules. No flatness or
@@ -655,10 +655,11 @@ instance [Module.Projective R P] : Module.Projective S (BalancedExtension f P) :
 
 /-- **Maps out of the extension of a projective module lift along a surjection.** If `f` is
 surjective and `P` is projective, every `S`-linear map `S ⊗_R P → S ⊗_R P'` is the extension
-`S ⊗_R g` of an `R`-linear map `g : P → P'`: the map `p' ↦ 1 ⊗ p'` is onto
-(`includeRight_surjective`), so `p ↦ φ (1 ⊗ p)` lifts through it. -/
+`S ⊗_R g` of an `R`-linear map `g : P → P'`. -/
 theorem exists_map_eq_of_surjective (hf : Function.Surjective f) [Module.Projective R P]
     (φ : BalancedExtension f P →ₗ[S] BalancedExtension f P') : ∃ g : P →ₗ[R] P', map f g = φ := by
+  -- The map `p' ↦ 1 ⊗ p'` is onto (`includeRight_surjective`), so `p ↦ φ (1 ⊗ p)` lifts through
+  -- it by projectivity of `P`.
   -- Let `R` act on `S ⊗_R P'` through `f`, so that both `p' ↦ 1 ⊗ p'` and `p ↦ φ (1 ⊗ p)` are
   -- `R`-linear.
   let : Module R (BalancedExtension f P') := Module.compHom _ f
