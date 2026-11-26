@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.PL.Structure
 public import TauCeti.Topology.Homeomorph.Congr
-import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.CoordinateComplex
+import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.ImageComplex
 import TauCeti.Topology.PL.Inverse.Polyhedron
 
 /-!
@@ -51,12 +51,22 @@ theorem IsPLMap.symm {f : M ≃ₜ N} (hf : s.IsPLMap t f) : t.IsPLMap s f.symm 
   have hG (y : Realization t.K) : G (y.val : t.ι → ℝ) =
       ((s.e.symm (f.symm (t.e y))).val : s.ι → ℝ) :=
     (injective_realization_coe t.K).extend_apply _ _ y
-  have hleft : LeftInvOn G F s.K.coordinateComplex.space := by
-    rw [space_coordinateComplex]
+  have hcoords : s.K.linearExtension (fun v => Pi.single v (1 : ℝ)) =
+      (fun x : Realization s.K => (x.val : s.ι → ℝ)) := by
+    funext x
+    ext i
+    simp +contextual [linearExtension_apply, Finsupp.linearCombination_apply,
+      Pi.single_apply, Finsupp.sum]
+  let K := s.K.imageComplex (fun v => Pi.single v (1 : ℝ))
+    (by simpa only [hcoords] using injective_realization_coe s.K)
+  have hspace : K.space = range fun x : Realization s.K => (x.val : s.ι → ℝ) := by
+    rw [space_imageComplex, hcoords]
+  have hleft : LeftInvOn G F K.space := by
+    rw [hspace]
     rintro _ ⟨x, rfl⟩
     simp only [hFf, hG, Homeomorph.apply_symm_apply, Homeomorph.symm_apply_apply]
-  have himage : F '' s.K.coordinateComplex.space = t.K.coordinateComplex.space := by
-    simp only [space_coordinateComplex, ← range_comp]
+  have himage : F '' K.space = range fun y : Realization t.K => (y.val : t.ι → ℝ) := by
+    rw [hspace, ← range_comp]
     apply Subset.antisymm
     · rintro _ ⟨x, rfl⟩
       exact ⟨t.e.symm (f (s.e x)), (hFf x).symm⟩
@@ -64,11 +74,11 @@ theorem IsPLMap.symm {f : M ≃ₜ N} (hf : s.IsPLMap t f) : t.IsPLMap s f.symm 
       refine ⟨s.e.symm (f.symm (t.e y)), ?_⟩
       simp only [Function.comp_apply, hFf, Homeomorph.apply_symm_apply,
         Homeomorph.symm_apply_apply]
-  have hF' : IsPLOn F s.K.coordinateComplex.space := by
-    rwa [space_coordinateComplex]
-  have hG' := hF'.inverse_of_leftInvOn (K := s.K.coordinateComplex) (g := G)
-    s.K.finite_faces_coordinateComplex hleft
-  rw [himage, space_coordinateComplex] at hG'
+  have hF' : IsPLOn F K.space := by
+    rwa [hspace]
+  have hG' := hF'.inverse_of_leftInvOn (K := K) (g := G)
+    (finite_faces_imageComplex_iff.mpr (Set.toFinite _)) hleft
+  rw [himage] at hG'
   exact isPLMap_iff.mpr ⟨G, hG', hG⟩
 
 /-- PL regularity of a homeomorphism is equivalent to PL regularity of its inverse. -/
@@ -106,13 +116,8 @@ theorem map_plHomeomorphSubgroup :
     s.plHomeomorphSubgroup.map (Homeomorph.homeoCongr e : (M ≃ₜ M) →* (N ≃ₜ N)) =
       (s.map e).plHomeomorphSubgroup := by
   ext f
-  constructor
-  · rintro ⟨g, hg, rfl⟩
-    exact (s.isPLMap_homeoCongr_iff e).2 hg
-  · intro hf
-    refine ⟨Homeomorph.homeoCongr e.symm f, ?_, by ext; simp⟩
-    have h := ((s.map e).isPLMap_homeoCongr_iff e.symm).2 hf
-    simpa using h
+  rw [Subgroup.map_equiv_eq_comap_symm, Subgroup.mem_comap, Homeomorph.homeoCongr_symm]
+  simpa using ((s.map e).isPLMap_homeoCongr_iff e.symm (f := f))
 
 /-- A homeomorphism transporting a PL structure induces an isomorphism of its PL
 homeomorphism groups, by conjugating representatives. -/
