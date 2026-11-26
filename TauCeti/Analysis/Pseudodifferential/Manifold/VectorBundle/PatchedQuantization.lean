@@ -54,6 +54,14 @@ operators of order `-∞`
 class defined by its matrix entries in cut-off frames (`TauCeti.sectionEntry`) agrees with the class
 of patched quantizations.
 
+These are the bundle versions of the scalar
+`TauCeti.mulLeft_sum_comp_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`,
+`TauCeti.sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators` and
+`TauCeti.exists_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`
+(`Manifold/Smoothing.lean`), and the proofs follow theirs. The compact theorem adapts the scalar
+one to charts restricted to the base sets of the trivializations, with the cutoffs summing to `1`
+supplied by `TauCeti.exists_sum_complexCutoffPullback_eq_one`.
+
 ## Main results
 
 * `sum_smul_sub_sum_sectionChartQuantization_mem_sectionSmoothingPseudodifferentialOperators`:
@@ -212,35 +220,23 @@ theorem exists_sub_sum_sectionChartQuantization_mem_sectionSmoothingPseudodiffer
     (hsource x).subset.trans (inter_subset_right.trans inter_subset_left)
   have hF (x : M) : (e x).source ⊆ (trivializationAt W F x).baseSet :=
     (hsource x).subset.trans (inter_subset_right.trans inter_subset_right)
-  -- A smooth partition of unity `f` subordinate to the sources of these charts; on the compact
-  -- space `M` only the finitely many `x ∈ s` have `f x ≠ 0`.
-  obtain ⟨f, hf⟩ := SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, CoordinateSpace n)
-    isClosed_univ (fun x ↦ (e x).source) (fun x ↦ (e x).open_source) fun x _ ↦
-      mem_iUnion.2 ⟨x, by
-        rw [hsource x]
-        exact ⟨mem_chart_source _ x, mem_baseSet_trivializationAt V E x,
-          mem_baseSet_trivializationAt W F x⟩⟩
-  have hs := f.locallyFinite.finite_nonempty_of_compact
-  -- Each `f x` is the pullback of a cutoff `ρ x` in the chart `e x`; `χ x` and `ψ x` are cutoffs
-  -- equal to `1` near the supports of `ρ x` and `χ x`, and `a x` is the chart symbol of `P`.
-  choose ρ hρ using fun x ↦ (e x).exists_cutoffPullback_one_eq (he x)
-    (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (subset_univ _)) (hf x)
+  -- Cutoffs `ρ x` in the charts `e x` at the finitely many `x ∈ s` whose pullbacks add up to `1`;
+  -- `χ x` and `ψ x` are cutoffs equal to `1` near the supports of `ρ x` and `χ x`, and `a x` is
+  -- the chart symbol of `P`.
+  obtain ⟨s, ρ, hρ⟩ := exists_sum_complexCutoffPullback_eq_one e he fun x ↦ by
+    rw [hsource x]
+    exact ⟨mem_chart_source _ x, mem_baseSet_trivializationAt V E x,
+      mem_baseSet_trivializationAt W F x⟩
   choose χ hχ using fun x ↦ TestFunction.exists_eventually_eq_one (n := ⊤)
     (ρ x).hasCompactSupport.isCompact (ρ x).tsupport_subset
   choose ψ hψ using fun x ↦ TestFunction.exists_eventually_eq_one (n := ⊤)
     (χ x).hasCompactSupport.isCompact (χ x).tsupport_subset
-  refine ⟨hs.toFinset, e, he, hE, hF, χ, ψ, fun m P hP ↦ ?_⟩
+  refine ⟨s, e, he, hE, hF, χ, ψ, fun m P hP ↦ ?_⟩
   choose a ha using fun x ↦ exists_quantizeSchwartzValue_eq_apply_chartCutoffSection (he x)
     (trivializationAt V E x) (hE x) hP (trivializationAt W F x) (hF x) (ρ x) (χ x)
-  refine ⟨a, sub_sum_sectionChartQuantization_mem_sectionSmoothingPseudodifferentialOperators
-    hE hF hP ?_ (fun x _ ↦ (hχ x).1) (fun x _ ↦ ha x) (fun x _ y hy ↦ (hχ x).1.self_of_nhdsSet y hy)
-    (fun x _ y hy ↦ (hψ x).1.self_of_nhdsSet y hy)⟩
-  ext p
-  have hsum : ∑ x ∈ hs.toFinset, f x p = 1 :=
-    f.sum_finsupport' p (mem_univ p) fun x hx ↦ hs.mem_toFinset.2 ⟨p, (f.mem_finsupport p).1 hx⟩
-  simp only [ContMDiffMap.coe_sum, Finset.sum_apply,
-    OpenPartialHomeomorph.complexCutoffPullback_one_apply, hρ, ContMDiffMap.coe_one, Pi.one_apply]
-  exact_mod_cast hsum
+  exact ⟨a, sub_sum_sectionChartQuantization_mem_sectionSmoothingPseudodifferentialOperators
+    hE hF hP hρ (fun x _ ↦ (hχ x).1) (fun x _ ↦ ha x)
+    (fun x _ y hy ↦ (hχ x).1.self_of_nhdsSet y hy) (fun x _ y hy ↦ (hψ x).1.self_of_nhdsSet y hy)⟩
 
 variable (n M V E W F m) in
 /-- **On a compact manifold, the classical pseudodifferential operators between bundles are the

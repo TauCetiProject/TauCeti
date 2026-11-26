@@ -345,32 +345,21 @@ theorem exists_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperator
           P - ∑ x ∈ s, (chartAt (CoordinateSpace n) x).chartQuantization
               (IsManifold.chart_mem_maximalAtlas x) (φ x) (ψ x) (a x) ∈
             smoothingPseudodifferentialOperators := by
-  -- A smooth partition of unity `f` subordinate to the chart sources; on the compact space `M`
-  -- only the finitely many `x ∈ s` have `f x ≠ 0`.
-  obtain ⟨f, hf⟩ :=
-    SmoothPartitionOfUnity.exists_isSubordinate_chartAt_source 𝓘(ℝ, CoordinateSpace n) M
-  have hs := f.locallyFinite.finite_nonempty_of_compact
-  -- Each `f x` is the pullback of a cutoff `ρ x` in the chart at `x`; `χ x` and `ψ x` are cutoffs
-  -- equal to `1` near the supports of `ρ x` and `χ x`, and `a x` is the chart symbol of `P`.
-  choose ρ hρ using fun x ↦ OpenPartialHomeomorph.exists_cutoffPullback_one_eq
-    (IsManifold.chart_mem_maximalAtlas x) (isCompact_univ.of_isClosed_subset (isClosed_tsupport _)
-      (subset_univ _)) (hf x)
+  -- Cutoffs `ρ x` in the charts at the finitely many `x ∈ s` whose pullbacks add up to `1`;
+  -- `χ x` and `ψ x` are cutoffs equal to `1` near the supports of `ρ x` and `χ x`, and `a x` is
+  -- the chart symbol of `P`.
+  obtain ⟨s, ρ, hρ⟩ := exists_sum_complexCutoffPullback_eq_one (M := M)
+    (chartAt (CoordinateSpace n)) IsManifold.chart_mem_maximalAtlas
+    (mem_chart_source (CoordinateSpace n))
   choose χ hχ using fun x ↦ TestFunction.exists_eventually_eq_one (n := ⊤)
     (ρ x).hasCompactSupport.isCompact (ρ x).tsupport_subset
   choose ψ hψ using fun x ↦ TestFunction.exists_eventually_eq_one (n := ⊤)
     (χ x).hasCompactSupport.isCompact (χ x).tsupport_subset
-  refine ⟨hs.toFinset, χ, ψ, fun m P hP ↦ ?_⟩
+  refine ⟨s, χ, ψ, fun m P hP ↦ ?_⟩
   choose a ha using fun x ↦ (mem_classicalPseudodifferentialOperators_iff.1 hP).2 _
     (IsManifold.chart_mem_maximalAtlas x) (ρ x) (χ x)
-  refine ⟨a, sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators
-    hP ?_ (fun x _ ↦ (hχ x).1) (fun x _ ↦ ha x) (fun x _ y hy ↦ (hχ x).1.self_of_nhdsSet y hy)
+  exact ⟨a, sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators
+    hP hρ (fun x _ ↦ (hχ x).1) (fun x _ ↦ ha x) (fun x _ y hy ↦ (hχ x).1.self_of_nhdsSet y hy)
     (fun x _ y hy ↦ (hψ x).1.self_of_nhdsSet y hy)⟩
-  ext p
-  have hsum : ∑ x ∈ hs.toFinset, f x p = 1 :=
-    f.sum_finsupport' p (mem_univ p) fun x hx ↦ hs.mem_toFinset.2 ⟨p, (f.mem_finsupport p).1 hx⟩
-  simp only [ContMDiffMap.coe_sum, Finset.sum_apply,
-    OpenPartialHomeomorph.complexCutoffPullback_one_apply, hρ,
-    ContMDiffMap.coe_one, Pi.one_apply]
-  exact_mod_cast hsum
 
 end TauCeti
