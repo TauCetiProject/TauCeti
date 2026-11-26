@@ -261,6 +261,26 @@ theorem continuous_sum_map_conj_mul_esymm_erase (m k : ℕ) :
   simp only [Function.comp_def, key]
   fun_prop
 
+/-- **The zeroth-order term through the elementary symmetric chart.** There is a continuous function
+`Φ` of `m` coefficients such that, for every `m`-element multiset `s`, the term
+`∑_{w ∈ s} \bar w e_k(s ∖ w)` is `Φ` of the signed coefficients `(-1)^(m-i) e_{m-i}(s)` of `s`. -/
+private theorem exists_continuous_sum_map_conj_mul_esymm_erase_eq (m k : ℕ) :
+    ∃ Φ : (Fin m → ℂ) → ℂ, Continuous Φ ∧ ∀ s : Multiset ℂ, Multiset.card s = m →
+      (s.map fun w ↦ conj w * (s.erase w).esymm k).sum =
+        Φ fun i ↦ (-1) ^ (m - (i : ℕ)) * s.esymm (m - i) :=
+  ⟨fun v ↦ (((Sym.coeffHomeomorph ℂ m).symm v : Multiset ℂ).map
+      fun w ↦ conj w * (((Sym.coeffHomeomorph ℂ m).symm v : Multiset ℂ).erase w).esymm k).sum,
+    (continuous_sum_map_conj_mul_esymm_erase m k).comp (Sym.coeffHomeomorph ℂ m).symm.continuous,
+    fun s hs ↦ by
+      simp only [Sym.coeffHomeomorph_symm_apply, Sym.coeffEquiv_symm_esymm hs, Sym.coe_mk]⟩
+
+/-- The signed coefficient tuple `z ↦ ((-1)^(m-i) e_{m-i}(R₀ z))ᵢ` is continuous on `U` when the
+elementary symmetric functions `e_j(R₀ z)`, `1 ≤ j ≤ m`, are. -/
+private theorem continuousOn_signed_esymm {m : ℕ} {U : Set ℂ} {R₀ : ℂ → Multiset ℂ}
+    (hR₀ : ∀ j ∈ Finset.Icc 1 m, ContinuousOn (fun z ↦ (R₀ z).esymm j) U) :
+    ContinuousOn (fun z (i : Fin m) ↦ (-1) ^ (m - (i : ℕ)) * (R₀ z).esymm (m - i)) U :=
+  continuousOn_pi.2 fun i ↦ continuousOn_const.mul (hR₀ _ (Finset.mem_Icc.2 ⟨by omega, by omega⟩))
+
 /-- **The zeroth-order term depends continuously on the coefficients.** If `R₀ z` has `m` elements
 for `z ∈ U` and its elementary symmetric functions `e_j(R₀ z)`, `1 ≤ j ≤ m`, are continuous on
 `U`, then so is `z ↦ ∑_{w ∈ R₀ z} \bar w e_k(R₀ z ∖ w)`. -/
@@ -268,14 +288,8 @@ theorem continuousOn_sum_map_conj_mul_esymm_erase {m k : ℕ} {U : Set ℂ} {R�
     (hcard : ∀ z ∈ U, Multiset.card (R₀ z) = m)
     (hR₀ : ∀ j ∈ Finset.Icc 1 m, ContinuousOn (fun z ↦ (R₀ z).esymm j) U) :
     ContinuousOn (fun z ↦ ((R₀ z).map fun w ↦ conj w * ((R₀ z).erase w).esymm k).sum) U := by
-  have hγ : ContinuousOn
-      (fun z (i : Fin m) ↦ (-1) ^ (m - (i : ℕ)) * (R₀ z).esymm (m - i)) U :=
-    continuousOn_pi.2 fun i ↦ continuousOn_const.mul
-      (hR₀ _ (Finset.mem_Icc.2 ⟨by omega, by omega⟩))
-  refine ((continuous_sum_map_conj_mul_esymm_erase m k).comp_continuousOn
-    ((Sym.coeffHomeomorph ℂ m).symm.continuous.comp_continuousOn hγ)).congr fun z hz ↦ ?_
-  simp only [Function.comp_apply, Sym.coeffHomeomorph_symm_apply,
-    Sym.coeffEquiv_symm_esymm (hcard z hz), Sym.coe_mk]
+  obtain ⟨Φ, hΦ, hΦR⟩ := exists_continuous_sum_map_conj_mul_esymm_erase_eq m k
+  exact (hΦ.comp_continuousOn (continuousOn_signed_esymm hR₀)).congr fun z hz ↦ hΦR _ (hcard z hz)
 
 /-- **The zeroth-order term converges with the coefficients.** Let `R n z` and `R₀ z` have `m`
 elements for `z ∈ U`, an open set. If the elementary symmetric functions `e_j(R n z)` converge
@@ -294,12 +308,9 @@ theorem tendstoLocallyUniformlyOn_sum_map_conj_mul_esymm_erase {ι : Type*} {l :
       (fun z ↦ ((R₀ z).map fun w ↦ conj w * ((R₀ z).erase w).esymm k).sum) l U := by
   have hmem (i : Fin m) : m - (i : ℕ) ∈ Finset.Icc 1 m := Finset.mem_Icc.2 ⟨by omega, by omega⟩
   -- Read both sides through the coefficient tuples of the elementary symmetric chart.
+  obtain ⟨Φ, hΦ, hΦR⟩ := exists_continuous_sum_map_conj_mul_esymm_erase_eq m k
   set β : ι → ℂ → Fin m → ℂ := fun n z i ↦ (-1) ^ (m - (i : ℕ)) * (R n z).esymm (m - i)
   set γ : ℂ → Fin m → ℂ := fun z i ↦ (-1) ^ (m - (i : ℕ)) * (R₀ z).esymm (m - i)
-  set Φ : (Fin m → ℂ) → ℂ := fun v ↦ (((Sym.coeffHomeomorph ℂ m).symm v : Multiset ℂ).map
-    fun w ↦ conj w * (((Sym.coeffHomeomorph ℂ m).symm v : Multiset ℂ).erase w).esymm k).sum
-  have hΦ : Continuous Φ := (continuous_sum_map_conj_mul_esymm_erase m k).comp
-    (Sym.coeffHomeomorph ℂ m).symm.continuous
   refine (tendstoLocallyUniformlyOn_iff_forall_isCompact hU).2 fun K hKU hK ↦ ?_
   have hβ : TendstoUniformlyOn β γ l K := by
     rw [Metric.tendstoUniformlyOn_iff]
@@ -309,15 +320,10 @@ theorem tendstoLocallyUniformlyOn_sum_map_conj_mul_esymm_erase {ι : Type*} {l :
       with n hn z hz
     refine (dist_pi_lt_iff hε).2 fun i ↦ ?_
     simpa [β, γ, dist_eq_norm, ← mul_sub, norm_mul, norm_pow] using hn i z hz
-  have hγ : ContinuousOn γ K :=
-    continuousOn_pi.2 fun i ↦ continuousOn_const.mul ((hR₀ _ (hmem i)).mono hKU)
-  refine ((hK.image_of_continuousOn hγ).comp_tendstoUniformlyOn
-    (fun _ _ ↦ hΦ.continuousAt) hβ).congr (.of_forall fun n z hz ↦ ?_) |>.congr_right
-      fun z hz ↦ ?_
-  · simp only [Φ, β, Sym.coeffHomeomorph_symm_apply,
-      Sym.coeffEquiv_symm_esymm (hcard n z (hKU hz)), Sym.coe_mk]
-  · simp only [Φ, γ, Sym.coeffHomeomorph_symm_apply,
-      Sym.coeffEquiv_symm_esymm (hcard₀ z (hKU hz)), Sym.coe_mk]
+  have hγ : ContinuousOn γ K := (continuousOn_signed_esymm hR₀).mono hKU
+  exact ((hK.image_of_continuousOn hγ).comp_tendstoUniformlyOn (fun _ _ ↦ hΦ.continuousAt)
+    hβ).congr (.of_forall fun n z hz ↦ (hΦR _ (hcard n z (hKU hz))).symm) |>.congr_right
+      fun z hz ↦ (hΦR _ (hcard₀ z (hKU hz))).symm
 
 /-- **The equation of elementary symmetric functions passes to locally uniform limits.** Let
 `U ⊆ ℂ` be open. Along a filter `l`, let `R n z` be a multiset of exactly `m` complex numbers, for
