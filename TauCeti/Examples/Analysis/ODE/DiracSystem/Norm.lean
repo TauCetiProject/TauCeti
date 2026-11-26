@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.DiracSystem.Norm
 public import Mathlib.Analysis.Matrix.Normed
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 
 /-!
 # Checks for constant potentials of the Dirac system

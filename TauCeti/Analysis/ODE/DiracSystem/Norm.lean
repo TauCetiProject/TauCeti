@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.DiracSystem.Basic
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
-import Mathlib.Analysis.Complex.RealDeriv
 
 /-!
 # The norm of the Dirac fundamental matrix
