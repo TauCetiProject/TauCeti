@@ -9,13 +9,15 @@ public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.LimitFormula
+public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
+public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
+public import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.LFunctions.DedekindZeta.UnitQuotient
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
-import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.DedekindZeta
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
@@ -55,6 +57,8 @@ discriminant of a `ℤ`-basis of `𝔞` through the trace form, which is `Tr x =
 
 * `TauCeti.NumberField.absNorm_mul_sqrt_abs_discr_of_image_eq`: the covolume of an ideal lattice.
 * `TauCeti.NumberField.chowlaSelberg_classMean`: the Chowla–Selberg formula in class-mean form.
+* `TauCeti.NumberField.chowlaSelberg_classMean_fundamentalDiscriminantChar`: the same formula for
+  the quadratic character of the discriminant of `K`, with no hypothesis on `ζ_K`.
 
 ## References
 
@@ -484,5 +488,34 @@ theorem chowlaSelberg_classMean (hK : finrank ℚ K = 2) (σ : K →+* ℂ) (D :
     rw [hk_def, hD, Int.cast_neg, abs_neg, Int.cast_natCast, Nat.abs_cast]
     ring
   exact classMean_eq_of_value_deriv hk hw h1 h2 hkπ
+
+/-- **The Chowla–Selberg formula in class-mean form, for the character of the field.** Let `K` be
+an imaginary quadratic field, `σ` a complex embedding of `K`, and `χ_K` the quadratic character
+`(d_K / ·)` of the discriminant `d_K` of `K`, at level `|d_K|`. Let `τ_C` be points of the upper
+half-plane such that the image under `σ` of some fractional ideal of the class `C` is homothetic
+to `ℤ + ℤ τ_C`. Then the mean over the ideal classes of the logarithmic periods
+`log (4 π Im τ_C |η(τ_C)|⁴)` is `γ + log (2π / √|d_K|) - L'(1, χ_K) / L(1, χ_K)`. This is
+`chowlaSelberg_classMean` with the factorisation `ζ_K = ζ · L(·, χ_K)` supplied by
+`dedekindZeta_eq_riemannZeta_mul_LFunction`. -/
+theorem chowlaSelberg_classMean_fundamentalDiscriminantChar [IsTotallyComplex K]
+    (hK : finrank ℚ K = 2) (σ : K →+* ℂ) (τ : ClassGroup (𝓞 K) → ℍ)
+    (hτ : ∀ C, ∃ I : (FractionalIdeal (𝓞 K)⁰ K)ˣ, ClassGroup.mk K I = C ∧
+      ∃ c : ℂ, c ≠ 0 ∧ σ '' ((I : FractionalIdeal (𝓞 K)⁰ K) : Set K) =
+        (c * ·) '' (Submodule.span ℤ {(1 : ℂ), (τ C : ℂ)} : Set ℂ)) :
+    (((∑ C, (τ C).logPeriod) / classNumber K : ℝ) : ℂ) =
+      ((Real.eulerMascheroniConstant + Real.log (2 * π / √(discr K).natAbs) : ℝ) : ℂ) -
+        deriv (DirichletCharacter.LFunction ((Multiquadratic.fundamentalDiscriminantChar
+          (discr K) (Multiquadratic.isFundamentalDiscr_discr hK)).ringHomComp
+            (Int.castRingHom ℂ))) 1 /
+        DirichletCharacter.LFunction ((Multiquadratic.fundamentalDiscriminantChar (discr K)
+          (Multiquadratic.isFundamentalDiscr_discr hK)).ringHomComp (Int.castRingHom ℂ)) 1 := by
+  have hodd : ¬ Even (nrComplexPlaces K) := by
+    rw [Nat.not_even_iff_odd]
+    exact ⟨0, by have := IsTotallyComplex.finrank K; omega⟩
+  have hdK : discr K < 0 := lt_of_le_of_ne
+    (not_lt.mp (mt (InfinitePlace.even_nrComplexPlaces_iff_zero_lt_discr K).mpr hodd))
+    (NeZero.ne (discr K))
+  exact chowlaSelberg_classMean hK σ (discr K).natAbs (by omega) _
+    (fun _ hs ↦ dedekindZeta_eq_riemannZeta_mul_LFunction hK hs) τ hτ
 
 end TauCeti.NumberField
