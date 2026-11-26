@@ -380,11 +380,6 @@ theorem W1p.contDiffComp_mem_w1p0Submodule (hp : p ≠ ∞) {F : ℝ → ℝ} {M
     rw [deriv_comp_neg, nnNorm_neg]; exact hM _
   have hG0 : (fun s => F (-s)) 0 = 0 := by simp [hF0]
   have hneg : -u ∈ w1p0Submodule mu Omega p := (w1p0Submodule mu Omega p).toSubmodule.neg_mem hu
-  have hpos (w : W1p mu Omega p) :
-      ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (W1p.posPart hp w) x := by
-    filter_upwards [(W1p.value_posPart hp w) ▸ Lp.coeFn_posPart (W1p.value w)] with x hx
-    rw [hx]
-    exact le_max_right _ _
   have heq : W1p.contDiffComp hp hF hM hF0 u =
       W1p.contDiffComp hp hF hM hF0 (W1p.posPart hp u) +
         W1p.contDiffComp hp hG hGM hG0 (W1p.posPart hp (-u)) := by
@@ -405,9 +400,9 @@ theorem W1p.contDiffComp_mem_w1p0Submodule (hp : p ≠ ∞) {F : ℝ → ℝ} {M
   rw [heq]
   exact (w1p0Submodule mu Omega p).toSubmodule.add_mem
     (W1p.contDiffComp_mem_w1p0Submodule_of_ae_nonneg hp hF hM hF0
-      (W1p.posPart_mem_w1p0Submodule hp hu) (hpos u))
+      (W1p.posPart_mem_w1p0Submodule hp hu) (W1p.value_posPart_nonneg_ae hp u))
     (W1p.contDiffComp_mem_w1p0Submodule_of_ae_nonneg hp hG hGM hG0
-      (W1p.posPart_mem_w1p0Submodule hp hneg) (hpos (-u)))
+      (W1p.posPart_mem_w1p0Submodule hp hneg) (W1p.value_posPart_nonneg_ae hp (-u)))
 
 /-- **Truncated squares.** For `t > 0` and a nonnegative `v ∈ W^{1,p}_0(Ω)`, the truncated
 square `v² / (1 + t v²)` lies in `W^{1,p}_0(Ω)`, with gradient `2 v ∇v / (1 + t v²)²`. Unlike `v²`,
