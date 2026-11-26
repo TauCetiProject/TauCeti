@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.SimpleGraph.AdjMatrix
+public import TauCeti.Combinatorics.SimpleGraph.AdjMatrix.Basic
 public import TauCeti.Combinatorics.SimpleGraph.Dart.Matrix
 import Mathlib.Combinatorics.SimpleGraph.DegreeSum
 import TauCeti.Algebra.Polynomial.XPow.Regular
