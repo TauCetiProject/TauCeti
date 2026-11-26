@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Contractible
-public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Diffeomorphism.Sphere.Frame
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Iwasawa
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Positive
 import TauCeti.Geometry.Diffeomorphism.Inversion
-import TauCeti.Topology.Homotopy.Contractible
+import Mathlib.Topology.Algebra.Star.Unitary
+import TauCeti.Topology.Algebra.Group.EquivariantSplitting
+import TauCeti.Topology.Homotopy.HomotopyEquiv
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -27,10 +28,10 @@ times the fibre of the retraction over the identity.
 The construction starts from the frame `TauCeti.sphereFrame p f` of a diffeomorphism `f` at `p`:
 the point `f p` followed by the derivative of `f` at `p` applied to the standard basis of the
 tangent model. It is a basis (`TauCeti.linearIndependent_sphereFrame_diffeomorph`), each of its
-vectors depends continuously on `f` (`TauCeti.continuous_sphereFrame_diffeomorph`), and composing
-`f` with an orthogonal transformation `A` applies `A` to it
-(`TauCeti.sphereFrame_unitSphereEquiv_comp`). The orthogonal factor of the Iwasawa decomposition
-`TauCeti.iwasawaHomeomorph` of the matrix of this frame
+vectors depends continuously on `f` (`TauCeti.continuous_sphereFrame_diffeomorph`), and
+postcomposing `f` with an orthogonal transformation `A`, that is, passing to `A ∘ f`, applies `A` to
+every frame vector (`TauCeti.sphereFrame_unitSphereEquiv_comp`). The orthogonal factor of the
+Iwasawa decomposition `TauCeti.iwasawaHomeomorph` of the matrix of this frame
 (`Matrix.GeneralLinearGroup.iwasawaUnitaryFactor`), that is, its Gram–Schmidt
 orthonormalisation, therefore depends continuously and `O(n + 1)`-equivariantly on `f`.
 Normalised to be `1` at the identity, it is the retraction
@@ -41,13 +42,17 @@ Normalised to be `1` at the identity, it is the retraction
   the base point.
 
 Equivariance splits `Diff(Sⁿ)` as a product, `f ↦ (r f, (orthogonalToDiffSphere n m (r f))⁻¹ * f)`
-(`TauCeti.diffSphereHomeomorphProd`), the second factor being the fibre `{f | r f = 1}`: the
-diffeomorphisms fixing `p` whose frame there has the same Gram–Schmidt orthonormalisation as the
-frame of the identity (`TauCeti.diffSphereToOrthogonal_eq_one_iff`). Consequently, if that
-fibre is contractible, then the reference inclusion is a homotopy equivalence with homotopy inverse
-`r` (`TauCeti.orthogonalToDiffSphereHomotopyEquiv`). For `n = 3` this reduces the Smale
-conjecture to the contractibility of the fibre (`TauCeti.smaleConjecture_of_contractibleSpace`,
-in `TauCeti.Geometry.Diffeomorphism.Smale.OrthogonalRetraction`); for `n = 2` the same reduction
+(`TauCeti.diffSphereHomeomorphProd`, an instance of the general splitting
+`TauCeti.homeomorphProdFiber` along an equivariant map to the acting group), the second factor
+being the fibre `{f | r f = 1}`: the diffeomorphisms fixing `p` whose frame there has the same
+Gram–Schmidt orthonormalisation as the frame of the identity
+(`TauCeti.diffSphereToOrthogonal_eq_one_iff`). Consequently, if that fibre is contractible, then
+the reference inclusion is a homotopy equivalence with homotopy inverse `r`
+(`TauCeti.orthogonalToDiffSphereHomotopyEquiv`), since a product with a contractible factor
+deforms onto a slice (`ContinuousMap.HomotopyEquiv.prodContractibleAt`). For `n = 3` this reduces
+the Smale conjecture to the contractibility of the fibre
+(`TauCeti.smaleConjecture_of_contractibleSpace`, in
+`TauCeti.Geometry.Diffeomorphism.Smale.OrthogonalRetraction`); for `n = 2` the same reduction
 applies to Smale's theorem `Diff(S²) ≃ O(3)`. This is the first step of the arguments of Smale and
 Hatcher, which identify the fibre, up to homotopy, with the diffeomorphisms of the disc `Dⁿ`
 fixing a neighbourhood of its boundary.
@@ -69,7 +74,9 @@ fixing a neighbourhood of its boundary.
 * `TauCeti.orthogonalToDiffSphere_diffSphereToOrthogonal_apply_self`: it agrees with `f` at `p`.
 * `TauCeti.diffSphereToOrthogonal_eq_one_iff`: `f` lies in the fibre over `1` exactly when its
   frame is the frame of the identity times an upper triangular matrix with positive diagonal; in
-  particular it fixes `p` (`TauCeti.apply_eq_self_of_diffSphereToOrthogonal_eq_one`).
+  particular it fixes `p` (`TauCeti.apply_eq_self_of_diffSphereToOrthogonal_eq_one`), and every
+  diffeomorphism equal to the identity near `p` lies in it
+  (`TauCeti.diffSphereToOrthogonal_eq_one_of_eventuallyEq_id`).
 
 ## References
 
@@ -80,8 +87,8 @@ fixing a neighbourhood of its boundary.
 
 public section
 
-open Metric Matrix Function
-open scoped Manifold ContDiff EuclideanSpace TauCeti.ManifoldWeakWhitney
+open Metric Matrix Function Filter
+open scoped Manifold ContDiff EuclideanSpace Topology TauCeti.ManifoldWeakWhitney
   TauCeti.DiffeomorphWeakWhitney
 
 namespace TauCeti
@@ -124,14 +131,14 @@ private noncomputable def frameGL (hm : 1 ≤ m)
 private theorem coe_frameGL (hm : 1 ≤ m)
     (f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :
     (frameGL p hm f : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) = frameMatrix p f :=
-  rfl
+  (isUnit_frameMatrix p hm f).unit_spec
 
 private theorem continuous_frameGL (hm : 1 ≤ m) : Continuous (frameGL (m := m) p hm) := by
   refine IsOpenUnits.isOpenEmbedding_unitsVal.isEmbedding.isInducing.continuous_iff.mpr
     (continuous_matrix fun i j ↦ ?_)
   simp only [Function.comp_apply, coe_frameGL, frameMatrix_apply]
-  exact (continuous_apply i).comp
-    ((PiLp.continuous_ofLp 2 _).comp (continuous_sphereFrame_diffeomorph p hm j))
+  exact (continuous_apply i).comp ((PiLp.continuous_ofLp 2 _).comp
+    ((continuous_apply j).comp (continuous_sphereFrame_diffeomorph p hm)))
 
 /-- Composing with an orthogonal transformation multiplies the frame matrix by it. -/
 private theorem frameGL_orthogonalToDiffSphere_mul (hm : 1 ≤ m)
@@ -142,11 +149,12 @@ private theorem frameGL_orthogonalToDiffSphere_mul (hm : 1 ≤ m)
   have hcoe : ⇑(orthogonalToDiffSphere n m A * f) =
       (UnitaryGroup.toLinearIsometryEquiv A).unitSphereEquiv ∘ f := by
     rw [Diffeomorph.coe_mul, coe_orthogonalToDiffSphere]
-  rw [Units.val_mul, Unitary.val_toUnits_apply, coe_frameGL, coe_frameGL]
-  ext i j
-  rw [frameMatrix_apply, hcoe, sphereFrame_unitSphereEquiv_comp, Function.comp_apply,
-    UnitaryGroup.toLinearIsometryEquiv_apply, WithLp.ofLp_toLp, ← col_frameMatrix]
-  exact congrFun col_mul_eq_mulVec_col.symm i
+  rw [Units.val_mul, Unitary.val_toUnits_apply, coe_frameGL, coe_frameGL, ← col_inj]
+  -- Column by column: the `j`-th frame vector of `A ∘ f` is `A` applied to that of `f`.
+  funext j
+  rw [col_mul_eq_mulVec_col, col_frameMatrix, col_frameMatrix, hcoe,
+    sphereFrame_unitSphereEquiv_comp, Function.comp_apply,
+    UnitaryGroup.toLinearIsometryEquiv_apply, WithLp.ofLp_toLp]
 
 /-- The first column of the orthogonal factor of the frame matrix is `f p`. -/
 private theorem col_zero_iwasawaUnitaryFactor_frameGL (hm : 1 ≤ m)
@@ -175,6 +183,16 @@ noncomputable def diffSphereToOrthogonal (hm : 1 ≤ m)
     Matrix.orthogonalGroup (Fin (n + 1)) ℝ :=
   (frameGL p hm f).iwasawaUnitaryFactor * (frameGL p hm 1).iwasawaUnitaryFactor⁻¹
 
+/-- The matrix of frame coordinates `v` against the frame of `g` gives the corresponding linear
+combination of the frame vectors. -/
+private theorem frameMatrix_mulVec
+    (g : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 →
+      sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (v : Fin (n + 1) → ℝ) :
+    frameMatrix p g *ᵥ v = (∑ i, v i • sphereFrame p g i).ofLp := by
+  rw [mulVec_eq_sum, WithLp.ofLp_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [op_smul_eq_smul, WithLp.ofLp_smul, ← col_frameMatrix, col_def]
+
 variable (hm : 1 ≤ m)
 
 /-- The orthogonal retraction is continuous for the weak Whitney topology. -/
@@ -184,6 +202,7 @@ theorem continuous_diffSphereToOrthogonal :
     continuous_const
 
 /-- The orthogonal retraction is equivariant for left multiplication by orthogonal maps. -/
+@[simp]
 theorem diffSphereToOrthogonal_orthogonalToDiffSphere_mul
     (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
     (f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :
@@ -198,29 +217,38 @@ theorem diffSphereToOrthogonal_one : diffSphereToOrthogonal (n := n) (m := m) p 
   mul_inv_cancel _
 
 /-- The orthogonal retraction is a left inverse of the reference inclusion
-`O(n + 1) → Diff(Sⁿ)`. Not a simp lemma: `TauCeti.orthogonalToDiffSphere_apply` unfolds the
-inclusion first. -/
+`O(n + 1) → Diff(Sⁿ)`. -/
+@[simp]
 theorem diffSphereToOrthogonal_orthogonalToDiffSphere (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
     diffSphereToOrthogonal p hm (orthogonalToDiffSphere n m A) = A := by
   simpa using diffSphereToOrthogonal_orthogonalToDiffSphere_mul p hm A 1
 
 /-- The orthogonal map produced by the retraction agrees with the diffeomorphism at the base
-point. Not a simp lemma, for the same reason as
-`TauCeti.diffSphereToOrthogonal_orthogonalToDiffSphere`. -/
+point. -/
+@[simp]
 theorem orthogonalToDiffSphere_diffSphereToOrthogonal_apply_self
     (f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :
     orthogonalToDiffSphere n m (diffSphereToOrthogonal p hm f) p = f p := by
   set K₁ := (frameGL p hm 1).iwasawaUnitaryFactor
-  -- `K₁` sends `e₀` to `p`, and `r f * K₁`, the orthogonal factor of the frame of `f`, to `f p`.
-  have hp : (p : EuclideanSpace ℝ (Fin (n + 1))).ofLp =
-      (K₁ : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) *ᵥ Pi.single 0 1 := by
-    rw [mulVec_single_one, col_zero_iwasawaUnitaryFactor_frameGL, Diffeomorph.one_apply]
+  -- `r f * K₁` is the orthogonal factor of the frame of `f`.
   have hK : diffSphereToOrthogonal p hm f * K₁ = (frameGL p hm f).iwasawaUnitaryFactor :=
     inv_mul_cancel_right _ _
   apply Subtype.ext
   apply WithLp.ofLp_injective
-  rw [ofLp_orthogonalToDiffSphere_apply, hp, mulVec_mulVec, ← Submonoid.coe_mul, hK,
-    mulVec_single_one, col_zero_iwasawaUnitaryFactor_frameGL]
+  -- `K₁` sends `e₀` to `p`, and `r f * K₁` sends it to `f p`.
+  calc (orthogonalToDiffSphere n m (diffSphereToOrthogonal p hm f) p :
+          EuclideanSpace ℝ (Fin (n + 1))).ofLp
+      = (diffSphereToOrthogonal p hm f : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) *ᵥ
+          (p : EuclideanSpace ℝ (Fin (n + 1))).ofLp :=
+        ofLp_orthogonalToDiffSphere_apply n m _ p
+    _ = (diffSphereToOrthogonal p hm f : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) *ᵥ
+          ((K₁ : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) *ᵥ Pi.single 0 1) := by
+        rw [mulVec_single_one, col_zero_iwasawaUnitaryFactor_frameGL, Diffeomorph.one_apply]
+    _ = ((diffSphereToOrthogonal p hm f * K₁ : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
+          Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) *ᵥ Pi.single 0 1 := by
+        rw [mulVec_mulVec, Submonoid.coe_mul]
+    _ = (f p : EuclideanSpace ℝ (Fin (n + 1))).ofLp := by
+        rw [hK, mulVec_single_one, col_zero_iwasawaUnitaryFactor_frameGL]
 
 /-- A diffeomorphism in the fibre of the orthogonal retraction over `1` fixes the base point. -/
 theorem apply_eq_self_of_diffSphereToOrthogonal_eq_one
@@ -236,16 +264,12 @@ private theorem frameMatrix_eq_mul_iff
     (B : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) :
     frameMatrix p f = frameMatrix p g * B ↔
       ∀ j, sphereFrame p f j = ∑ i, B i j • sphereFrame p g i := by
-  refine ⟨fun h j ↦ WithLp.ofLp_injective (p := 2) (V := Fin (n + 1) → ℝ) ?_, fun h ↦ ?_⟩
-  · funext k
-    have hkj := congrFun (congrFun h k) j
-    rw [frameMatrix_apply, Matrix.mul_apply] at hkj
-    simp only [hkj, frameMatrix_apply, WithLp.ofLp_sum, WithLp.ofLp_smul, Finset.sum_apply,
-      Pi.smul_apply, smul_eq_mul, mul_comm]
-  · ext k j
-    rw [frameMatrix_apply, Matrix.mul_apply, h j]
-    simp only [frameMatrix_apply, WithLp.ofLp_sum, WithLp.ofLp_smul, Finset.sum_apply,
-      Pi.smul_apply, smul_eq_mul, mul_comm]
+  -- Column by column, through the coordinates `ofLp` of `ℝⁿ⁺¹`.
+  rw [← col_inj, funext_iff]
+  refine forall_congr' fun j ↦ ?_
+  rw [col_mul_eq_mulVec_col, col_frameMatrix, frameMatrix_mulVec,
+    (WithLp.ofLp_injective 2).eq_iff]
+  simp only [col_apply]
 
 /-- **The fibre of the orthogonal retraction.** A diffeomorphism `f` is sent to `1` exactly when
 its frame at `p` is obtained from the frame of the identity by an upper triangular matrix with
@@ -257,36 +281,26 @@ theorem diffSphereToOrthogonal_eq_one_iff
       ∃ b ∈ posUpperTriangularGroup (Fin (n + 1)) ℝ, ∀ j,
         sphereFrame p f j =
           ∑ i, (b : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) i j • sphereFrame p id i := by
-  set U₁ := (frameGL p hm 1).iwasawaUnitaryFactor
-  -- In `GL`, left multiplication by `k = U₁⁻¹` is left multiplication by `star U₁`.
-  set k : GL (Fin (n + 1)) ℝ := Unitary.toUnits U₁⁻¹
-  have hk (g : GL (Fin (n + 1)) ℝ) :
-      ((k * g : GL (Fin (n + 1)) ℝ) : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) =
-        star (U₁ : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) * g := by
-    rw [Units.val_mul, Unitary.val_toUnits_apply, ← Unitary.star_eq_inv, Unitary.coe_star]
-  -- `r f = 1` says that `f` and the identity have the same orthogonal factor `U₁`.
-  have hr : diffSphereToOrthogonal p hm f = 1 ↔
-      k * frameGL p hm f ∈ posUpperTriangularGroup (Fin (n + 1)) ℝ := by
-    rw [diffSphereToOrthogonal, mul_inv_eq_one, GeneralLinearGroup.iwasawaUnitaryFactor_eq_iff,
-      PosUpperTriangularGroup.mem_iff, hk]
-  -- The triangular factor of the identity's frame.
-  have hb₁ : k * frameGL p hm 1 ∈ posUpperTriangularGroup (Fin (n + 1)) ℝ := by
-    rw [PosUpperTriangularGroup.mem_iff, hk]
-    exact (GeneralLinearGroup.iwasawaUnitaryFactor_eq_iff _ _).mp rfl
+  -- `r f = 1` says that the frame matrices of `f` and of the identity have the same orthogonal
+  -- factor, that is, they differ by a positive upper triangular matrix.
+  rw [diffSphereToOrthogonal, mul_inv_eq_one,
+    GeneralLinearGroup.iwasawaUnitaryFactor_eq_iwasawaUnitaryFactor_iff]
   have hframe (b : GL (Fin (n + 1)) ℝ) : frameGL p hm f = frameGL p hm 1 * b ↔
       ∀ j, sphereFrame p f j = ∑ i, (b : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) i j •
         sphereFrame p id i := by
     rw [← frameMatrix_eq_mul_iff, ← Units.val_inj, Units.val_mul, coe_frameGL, coe_frameGL,
       Diffeomorph.coe_one]
-  rw [hr]
-  constructor
-  · intro h
-    refine ⟨(frameGL p hm 1)⁻¹ * frameGL p hm f, ?_, (hframe _).mp (mul_inv_cancel_left _ _).symm⟩
-    have := mul_mem (inv_mem hb₁) h
-    rwa [_root_.mul_inv_rev, mul_assoc, inv_mul_cancel_left] at this
-  · rintro ⟨b, hb, hfb⟩
-    rw [(hframe b).mpr hfb, ← mul_assoc]
-    exact mul_mem hb₁ hb
+  refine ⟨fun h ↦ ⟨_, h, (hframe _).mp (mul_inv_cancel_left _ _).symm⟩, ?_⟩
+  rintro ⟨b, hb, hfb⟩
+  rwa [(hframe b).mpr hfb, inv_mul_cancel_left]
+
+/-- A diffeomorphism equal to the identity near `p` lies in the fibre of the orthogonal retraction
+over `1`: its frame at `p` is the frame of the identity. -/
+theorem diffSphereToOrthogonal_eq_one_of_eventuallyEq_id
+    {f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m} (hf : ⇑f =ᶠ[𝓝 p] id) :
+    diffSphereToOrthogonal p hm f = 1 :=
+  (diffSphereToOrthogonal_eq_one_iff p hm f).mpr
+    ⟨1, one_mem _, fun j ↦ by simp [hf.sphereFrame_eq, Matrix.one_apply]⟩
 
 end Retraction
 
@@ -294,46 +308,48 @@ section Product
 
 variable (p : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (hm : 1 ≤ m)
 
+/-- The action of `O(n + 1)` on `Diff(Sⁿ)` by left multiplication through the reference
+inclusion. -/
+private noncomputable abbrev orthogonalMulAction :
+    MulAction (Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
+      (Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :=
+  MulAction.compHom _ (orthogonalToDiffSphere n m)
+
+attribute [local instance] orthogonalMulAction
+
+private theorem continuousSMul_orthogonalMulAction :
+    ContinuousSMul (Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
+      (Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :=
+  ⟨((continuous_orthogonalToDiffSphere n m).comp continuous_fst).mul continuous_snd⟩
+
+attribute [local instance] continuousSMul_orthogonalMulAction
+
 /-- **`Diff(Sⁿ)` is `O(n + 1)` times the fibre of the orthogonal retraction.** The homeomorphism
 sends `f` to `(r f, A⁻¹ f)`, where `r f = diffSphereToOrthogonal p hm f` and `A` is the
-diffeomorphism induced by `r f`; its inverse multiplies the two factors. -/
+diffeomorphism induced by `r f`; its inverse multiplies the two factors. It is the splitting
+`TauCeti.homeomorphProdFiber` for the action of `O(n + 1)` on `Diff(Sⁿ)` by left multiplication
+through the reference inclusion, along the equivariant retraction. -/
 noncomputable def diffSphereHomeomorphProd :
     Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m ≃ₜ
       Matrix.orthogonalGroup (Fin (n + 1)) ℝ ×
         {f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m //
-          diffSphereToOrthogonal p hm f = 1} where
-  toFun f := (diffSphereToOrthogonal p hm f,
-    ⟨(orthogonalToDiffSphere n m (diffSphereToOrthogonal p hm f))⁻¹ * f, by
-      rw [← map_inv, diffSphereToOrthogonal_orthogonalToDiffSphere_mul, inv_mul_cancel]⟩)
-  invFun x := orthogonalToDiffSphere n m x.1 * x.2
-  left_inv f := mul_inv_cancel_left _ _
-  right_inv := by
-    rintro ⟨A, g, hg⟩
-    have hA : diffSphereToOrthogonal p hm (orthogonalToDiffSphere n m A * g) = A := by
-      rw [diffSphereToOrthogonal_orthogonalToDiffSphere_mul, hg, mul_one]
-    ext : 1
-    · exact hA
-    · exact Subtype.ext (by simp only [hA, inv_mul_cancel_left])
-  continuous_toFun := by
-    have hr := continuous_diffSphereToOrthogonal (n := n) (m := m) p hm
-    exact hr.prodMk ((((continuous_orthogonalToDiffSphere n m).comp hr).inv.mul
-      continuous_id).subtype_mk _)
-  continuous_invFun :=
-    ((continuous_orthogonalToDiffSphere n m).comp continuous_fst).mul
-      (continuous_subtypeVal.comp continuous_snd)
+          diffSphereToOrthogonal p hm f = 1} :=
+  homeomorphProdFiber (diffSphereToOrthogonal p hm) (continuous_diffSphereToOrthogonal p hm)
+    (diffSphereToOrthogonal_orthogonalToDiffSphere_mul p hm)
 
 @[simp]
 theorem diffSphereHomeomorphProd_apply_fst
     (f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :
     (diffSphereHomeomorphProd p hm f).1 = diffSphereToOrthogonal p hm f :=
-  (rfl)
+  homeomorphProdFiber_apply_fst _ _ _ f
 
 @[simp]
 theorem coe_diffSphereHomeomorphProd_apply_snd
     (f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :
     ((diffSphereHomeomorphProd p hm f).2 : Diff (𝓡 n) _ m) =
       (orthogonalToDiffSphere n m (diffSphereToOrthogonal p hm f))⁻¹ * f :=
-  (rfl)
+  (coe_homeomorphProdFiber_apply_snd _ _ _ f).trans
+    (congrArg (· * f) (map_inv (orthogonalToDiffSphere n m) _))
 
 @[simp]
 theorem diffSphereHomeomorphProd_symm_apply
@@ -341,38 +357,21 @@ theorem diffSphereHomeomorphProd_symm_apply
       {f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m //
         diffSphereToOrthogonal p hm f = 1}) :
     (diffSphereHomeomorphProd p hm).symm x = orthogonalToDiffSphere n m x.1 * x.2 :=
-  (rfl)
+  homeomorphProdFiber_symm_apply _ _ _ x
 
 /-- **The reference inclusion is a homotopy equivalence if the fibre is contractible.** If the
 fibre over `1` of the orthogonal retraction is contractible, then the reference inclusion
-`O(n + 1) → Diff(Sⁿ)` is a homotopy equivalence, with homotopy inverse the retraction. -/
+`O(n + 1) → Diff(Sⁿ)` is a homotopy equivalence, with homotopy inverse the retraction: it is the
+slice of `O(n + 1)` at the identity of the fibre
+(`ContinuousMap.HomotopyEquiv.prodContractibleAt`), followed by the product decomposition
+`TauCeti.diffSphereHomeomorphProd`. -/
 noncomputable def orthogonalToDiffSphereHomotopyEquiv
     [ContractibleSpace {f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m //
       diffSphereToOrthogonal p hm f = 1}] :
     ContinuousMap.HomotopyEquiv (Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
-      (Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) where
-  toFun := continuousOrthogonalToDiffSphere n m
-  invFun := ⟨diffSphereToOrthogonal p hm, continuous_diffSphereToOrthogonal p hm⟩
-  left_inv := by
-    convert ContinuousMap.Homotopic.refl (ContinuousMap.id (Matrix.orthogonalGroup (Fin (n + 1)) ℝ))
-    ext1 A
-    rw [ContinuousMap.comp_apply, continuousOrthogonalToDiffSphere_apply, ContinuousMap.coe_mk,
-      ContinuousMap.id_apply]
-    exact diffSphereToOrthogonal_orthogonalToDiffSphere p hm A
-  right_inv := by
-    let Φ := diffSphereHomeomorphProd p hm
-    let o : {f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m //
-        diffSphereToOrthogonal p hm f = 1} := ⟨1, diffSphereToOrthogonal_one p hm⟩
-    -- The fibre is contractible, so its identity is homotopic to the constant map at `1`.
-    have hF : (ContinuousMap.const _ o).Homotopic (ContinuousMap.id _) :=
-      ContinuousMap.homotopic_of_contractibleSpace _ _
-    -- Transport `id × const 1 ≃ id` along the product decomposition `Φ`.
-    have h := (ContinuousMap.Homotopic.refl (⟨Φ.symm, Φ.symm.continuous⟩ : C(_, _))).comp
-      ((((ContinuousMap.Homotopic.refl (ContinuousMap.id _)).prodMap hF)).comp
-        (ContinuousMap.Homotopic.refl (⟨Φ, Φ.continuous⟩ : C(_, _))))
-    convert h using 1 <;> ext1 f
-    · simp [Φ, o]
-    · simp [Φ]
+      (Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m) :=
+  (ContinuousMap.HomotopyEquiv.prodContractibleAt _ ⟨1, diffSphereToOrthogonal_one p hm⟩).trans
+    (diffSphereHomeomorphProd p hm).symm.toHomotopyEquiv
 
 /-- The homotopy equivalence `TauCeti.orthogonalToDiffSphereHomotopyEquiv` is the reference
 inclusion. -/
@@ -381,7 +380,11 @@ theorem orthogonalToDiffSphereHomotopyEquiv_toFun
     [ContractibleSpace {f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m //
       diffSphereToOrthogonal p hm f = 1}] :
     (orthogonalToDiffSphereHomotopyEquiv p hm).toFun = continuousOrthogonalToDiffSphere n m :=
-  (rfl)
+  ContinuousMap.ext fun A ↦ by
+    change (diffSphereHomeomorphProd p hm).symm
+      (ContinuousMap.HomotopyEquiv.prodContractibleAt _ ⟨1, diffSphereToOrthogonal_one p hm⟩ A) = _
+    rw [ContinuousMap.HomotopyEquiv.prodContractibleAt_apply, diffSphereHomeomorphProd_symm_apply,
+      continuousOrthogonalToDiffSphere_apply, mul_one]
 
 /-- The homotopy inverse in `TauCeti.orthogonalToDiffSphereHomotopyEquiv` is the orthogonal
 retraction. -/
@@ -390,7 +393,7 @@ theorem coe_orthogonalToDiffSphereHomotopyEquiv_symm
     [ContractibleSpace {f : Diff (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) m //
       diffSphereToOrthogonal p hm f = 1}] :
     ⇑(orthogonalToDiffSphereHomotopyEquiv p hm).symm = diffSphereToOrthogonal p hm :=
-  (rfl)
+  funext fun f ↦ by simp [orthogonalToDiffSphereHomotopyEquiv]
 
 end Product
 

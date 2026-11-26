@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.Homotopy.Path
+import TauCeti.Topology.Homotopy.Contractible
 
 /-!
 # Homotopy equivalences: path connectedness, products, and slices of a cylinder
@@ -51,6 +52,9 @@ homotopy equivalence is one too, with the same homotopy inverse.
   of the sets of path components.
 * `ContinuousMap.HomotopyEquiv.prodCongr_apply`: the product of two homotopy equivalences acts
   componentwise.
+* `ContinuousMap.HomotopyEquiv.prodContractibleAt`: for `Y` contractible and any point `y` of `Y`,
+  the slice `x ↦ (x, y)` is a homotopy equivalence `X ≃ₕ X × Y`, with homotopy inverse the
+  projection.
 * `ContinuousMap.HomotopyEquiv.prodContractible`: the homotopy equivalence `X × Y ≃ₕ X` given by
   the projection, for `Y` contractible.
 * `ContinuousMap.HomotopyEquiv.prodIcc`: the slice `x ↦ (x, t)` is a homotopy equivalence
@@ -184,21 +188,41 @@ theorem HomotopyEquiv.prodCongr_apply (h₁ : X ≃ₕ Y) (h₂ : Z ≃ₕ Z')
     (x : X × Z) : h₁.prodCongr h₂ x = (h₁ x.1, h₂ x.2) :=
   (rfl)
 
-variable (X Y) in
-/-- The projection `X × Y → X` is a homotopy equivalence when `Y` is contractible: its homotopy
-inverse includes `X` at a point of `Y` to which `Y` contracts. -/
-noncomputable def HomotopyEquiv.prodContractible [ContractibleSpace Y] :
-    (X × Y) ≃ₕ X where
-  toFun := fst
-  invFun := (ContinuousMap.id X).prodMk (const X (id_nullhomotopic Y).choose)
-  left_inv := by
-    obtain ⟨H⟩ := (id_nullhomotopic Y).choose_spec
-    exact Homotopic.symm ⟨{
+variable (X) in
+/-- **A product with a contractible space deforms onto each of its slices.** For contractible `Y`
+and a point `y` of `Y`, the slice `x ↦ (x, y)` is a homotopy equivalence `X ≃ₕ X × Y`, with
+homotopy inverse the projection: a homotopy from the constant map at `y` to the identity of `Y`
+moves the second coordinate. -/
+def HomotopyEquiv.prodContractibleAt [ContractibleSpace Y] (y : Y) : X ≃ₕ X × Y where
+  toFun := (ContinuousMap.id X).prodMk (const X y)
+  invFun := fst
+  left_inv := Homotopic.refl _
+  right_inv := by
+    obtain ⟨H⟩ := homotopic_of_contractibleSpace (const Y y) (ContinuousMap.id Y)
+    exact ⟨{
       toFun q := (q.2.1, H (q.1, q.2.2))
       continuous_toFun := by fun_prop
       map_zero_left _ := by simp
       map_one_left _ := by simp }⟩
-  right_inv := Homotopic.refl _
+
+/-- The slice homotopy equivalence sends `x` to `(x, y)`. -/
+@[simp]
+theorem HomotopyEquiv.prodContractibleAt_apply [ContractibleSpace Y] (y : Y) (x : X) :
+    HomotopyEquiv.prodContractibleAt X y x = (x, y) :=
+  (rfl)
+
+/-- The homotopy inverse of the slice homotopy equivalence is the projection. -/
+@[simp]
+theorem HomotopyEquiv.prodContractibleAt_symm_apply [ContractibleSpace Y] (y : Y) (q : X × Y) :
+    (HomotopyEquiv.prodContractibleAt X y).symm q = q.1 :=
+  (rfl)
+
+variable (X Y) in
+/-- The projection `X × Y → X` is a homotopy equivalence when `Y` is contractible: its homotopy
+inverse includes `X` at a point of `Y` to which `Y` contracts. -/
+noncomputable def HomotopyEquiv.prodContractible [ContractibleSpace Y] :
+    (X × Y) ≃ₕ X :=
+  (HomotopyEquiv.prodContractibleAt X (id_nullhomotopic Y).choose).symm
 
 /-- The underlying map of the homotopy equivalence `X × Y ≃ₕ X` for contractible `Y` is the
 projection. -/

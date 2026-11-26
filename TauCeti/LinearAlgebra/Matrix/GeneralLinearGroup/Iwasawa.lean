@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Positive
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitary
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Positive
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Basic
 
 import Mathlib.Topology.Algebra.Group.Matrix
@@ -66,17 +67,18 @@ statement here is topological; the real smooth diffeomorphism is supplied in
 * `TauCeti.iwasawaHomeomorph_apply`: the decomposition multiplies the three factors.
 * `TauCeti.iwasawaHomeomorph_symm_unitary_eq_iff`: the unitary factor is characterized by the
   positive upper-triangular remainder.
-* `TauCeti.iwasawaHomeomorph_symm_mul_fst`: the unitary factor is equivariant for left
-  multiplication by unitary matrices.
 * `Matrix.GeneralLinearGroup.iwasawaUnitaryFactor`: the unitary factor as an element of the
   unitary group, continuous and equivariant for left multiplication by unitary matrices.
 * `Matrix.GeneralLinearGroup.iwasawaUnitaryFactor_eq_iff`: the unitary factor is the unitary `U`
   for which `star U * g` is upper triangular with positive diagonal
   (`Matrix.GeneralLinearGroup.star_iwasawaUnitaryFactor_mul_isUpperTriangular`,
   `Matrix.GeneralLinearGroup.star_iwasawaUnitaryFactor_mul_diag_pos`).
+* `Matrix.GeneralLinearGroup.iwasawaUnitaryFactor_eq_iwasawaUnitaryFactor_iff`: `g` and `h` have
+  the same unitary factor exactly when `h⁻¹ * g` is upper triangular with positive diagonal.
 * `Matrix.GeneralLinearGroup.col_zero_eq_smul_col_zero_iwasawaUnitaryFactor`,
   `Matrix.GeneralLinearGroup.col_zero_iwasawaUnitaryFactor`: the first column of `g` is a positive
-  multiple of the first column of the unitary factor, and equal to it when it is a unit vector.
+  multiple of the first column of the unitary factor, and equal to it when it has Hermitian length
+  one, `star c ⬝ᵥ c = 1` (not length for the sup norm of the column type).
 * `TauCeti.coe_iwasawaHomeomorph_symm_diagonal`,
   `TauCeti.coe_iwasawaHomeomorph_symm_unitriangular`: formulas for the other two factors.
 * `Matrix.GeneralLinearGroup.existsUnique_iwasawa`: every invertible matrix over `𝕜` is uniquely
@@ -370,7 +372,7 @@ theorem iwasawaHomeomorph_symm_unitary_eq_iff (g k : GL (Fin n) 𝕜)
 
 /-- The unitary Iwasawa factor is equivariant for left multiplication by unitary matrices: the
 unitary factor of `k * g` is `k` times the unitary factor of `g`. -/
-theorem iwasawaHomeomorph_symm_mul_fst {k : GL (Fin n) 𝕜}
+private theorem iwasawaHomeomorph_symm_mul_fst {k : GL (Fin n) 𝕜}
     (hk : k ∈ unitarySubgroup (GL (Fin n) 𝕜)) (g : GL (Fin n) 𝕜) :
     (((iwasawaHomeomorph 𝕜 n).symm (k * g)).1 : GL (Fin n) 𝕜) =
       k * ((iwasawaHomeomorph 𝕜 n).symm g).1 := by
@@ -427,11 +429,12 @@ theorem coe_iwasawaUnitaryFactor (g : GL (Fin n) 𝕜) :
 /-- The unitary Iwasawa factor depends continuously on the matrix. -/
 theorem continuous_iwasawaUnitaryFactor :
     Continuous (iwasawaUnitaryFactor (𝕜 := 𝕜) (n := n)) :=
-  (Units.continuous_val.comp (continuous_subtypeVal.comp
-    (continuous_fst.comp (iwasawaHomeomorph 𝕜 n).symm.continuous))).subtype_mk _
+  ((unitarySubgroupUnitsHomeomorph (Matrix (Fin n) (Fin n) 𝕜)).continuous.comp
+    (continuous_fst.comp (iwasawaHomeomorph 𝕜 n).symm.continuous)).congr fun _ ↦
+      unitarySubgroupUnitsHomeomorph_apply _
 
 /-- The unitary Iwasawa factor is equivariant for left multiplication by unitary matrices. -/
-theorem iwasawaUnitaryFactor_toUnits_mul (A : unitaryGroup (Fin n) 𝕜) (g : GL (Fin n) 𝕜) :
+theorem iwasawaUnitaryFactor_toUnits_mul (g : GL (Fin n) 𝕜) (A : unitaryGroup (Fin n) 𝕜) :
     iwasawaUnitaryFactor (Unitary.toUnits A * g) = A * g.iwasawaUnitaryFactor := by
   have hA : Unitary.toUnits A ∈ unitarySubgroup (GL (Fin n) 𝕜) :=
     mem_unitarySubgroup_GL_iff_mem_unitaryGroup.mpr (by simp)
@@ -465,6 +468,26 @@ theorem star_iwasawaUnitaryFactor_mul_diag_pos (g : GL (Fin n) 𝕜) (i : Fin n)
     0 < (star (g.iwasawaUnitaryFactor : Matrix (Fin n) (Fin n) 𝕜) * g) i i :=
   ((iwasawaUnitaryFactor_eq_iff g _).mp rfl).2 i
 
+/-- Two invertible matrices `g` and `h` have the same unitary Iwasawa factor exactly when `h⁻¹ * g`
+is upper triangular with positive diagonal. -/
+theorem iwasawaUnitaryFactor_eq_iwasawaUnitaryFactor_iff (g h : GL (Fin n) 𝕜) :
+    g.iwasawaUnitaryFactor = h.iwasawaUnitaryFactor ↔
+      h⁻¹ * g ∈ posUpperTriangularGroup (Fin n) 𝕜 := by
+  set k : GL (Fin n) 𝕜 := Unitary.toUnits h.iwasawaUnitaryFactor
+  have hk : k ∈ unitarySubgroup (GL (Fin n) 𝕜) :=
+    mem_unitarySubgroup_GL_iff_mem_unitaryGroup.mpr (by simp [k])
+  have hcoe (x : GL (Fin n) 𝕜) : ((k⁻¹ * x : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) =
+      star (h.iwasawaUnitaryFactor : Matrix (Fin n) (Fin n) 𝕜) * x := by
+    rw [Units.val_mul, coe_inv_eq_star_of_mem_unitarySubgroup hk, Unitary.val_toUnits_apply]
+  -- The remainder `k⁻¹ * h` of `h` after its unitary factor `k` is positive upper triangular.
+  have hb : k⁻¹ * h ∈ posUpperTriangularGroup (Fin n) 𝕜 := by
+    rw [PosUpperTriangularGroup.mem_iff, hcoe]
+    exact (iwasawaUnitaryFactor_eq_iff h _).mp rfl
+  -- So `k⁻¹ * g` is positive upper triangular iff `(k⁻¹ * h)⁻¹ * (k⁻¹ * g) = h⁻¹ * g` is.
+  rw [iwasawaUnitaryFactor_eq_iff, ← hcoe, ← PosUpperTriangularGroup.mem_iff,
+    ← (posUpperTriangularGroup (Fin n) 𝕜).mul_mem_cancel_left (inv_mem hb), ← mul_assoc,
+    _root_.mul_inv_rev, inv_inv, mul_inv_cancel_right]
+
 /-- The first column of an invertible matrix `g` is the first column of its unitary Iwasawa factor
 `U`, scaled by the top-left entry of the upper triangular remainder `star U * g`, which is positive
 (`star_iwasawaUnitaryFactor_mul_diag_pos`). -/
@@ -489,10 +512,10 @@ theorem col_zero_eq_smul_col_zero_iwasawaUnitaryFactor {n : ℕ} (g : GL (Fin (n
   conv_lhs => rw [hg]
   rw [col_mul_eq_mulVec_col, hcol, mulVec_smul, mulVec_single_one]
 
-/-- If the first column of `g` is a unit vector, it is also the first column of the unitary
-Iwasawa factor of `g`. In general the first column of `g` is a positive multiple of that column,
-the first vector of the Gram–Schmidt process (`col_zero_eq_smul_col_zero_iwasawaUnitaryFactor`,
-`star_iwasawaUnitaryFactor_mul_diag_pos`). -/
+/-- If the first column `c` of `g` has Hermitian length one, `star c ⬝ᵥ c = 1`, it is also the
+first column of the unitary Iwasawa factor of `g`. In general the first column of `g` is a
+positive multiple of that column, the first vector of the Gram–Schmidt process
+(`col_zero_eq_smul_col_zero_iwasawaUnitaryFactor`, `star_iwasawaUnitaryFactor_mul_diag_pos`). -/
 theorem col_zero_iwasawaUnitaryFactor {n : ℕ} (g : GL (Fin (n + 1)) 𝕜)
     (hg : star ((g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0) ⬝ᵥ
       (g : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜).col 0 = 1) :
