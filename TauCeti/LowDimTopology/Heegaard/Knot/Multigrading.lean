@@ -36,11 +36,16 @@ the multigrading modulo this subgroup does not depend on the choice.
 
 In a link diagram in the sense of Ozsváth and Szabó, each component of `Σ - α` contains exactly
 one `w` and one `z`, both on the same component of the link, so the domain of that component of
-`Σ - α` has vanishing multiplicity vector. If the diagram pointed at the `w`'s alone has no nonzero
-periodic domain, as for a link in `S³`, every domain from a generator to itself is a combination
-of these components plus a periodic domain, so the subgroup vanishes and the multigrading is a
-vector of integers
-(`TauCeti.HeegaardRegionSystem.periodicComponentAlexanderValues_eq_bot_of_forall_eq_zero`).
+`Σ - α` has vanishing multiplicity vector. Every domain from a generator to itself is a combination
+of these components plus a domain with multiplicity zero at the `w`'s, so the subgroup vanishes,
+and the multigrading is a vector of integers, as soon as the multiplicity vector vanishes on the
+latter domains
+(`TauCeti.HeegaardRegionSystem.periodicComponentAlexanderValues_eq_bot_of_forall_eq_zero`). With
+two or more `w`'s these need not be zero: if `A` and `B` are the components of `Σ - α` and of
+`Σ - β` through the same `w`, then `A - B` is one of them. For a link in `S³` they are combinations
+of components of `Σ - α` and of `Σ - β`, each with vanishing multiplicity vector, but the
+components of `Σ - β` are not formalized here, so the results below that need the subgroup to
+vanish take this as a hypothesis.
 
 The multigrading has the properties that the link Floer complex uses.
 
@@ -77,7 +82,8 @@ relative spin^c structures is geometric and is not formalized here.
 ## Main results
 
 * `TauCeti.HeegaardRegionSystem.periodicComponentAlexanderValues_eq_bot_of_forall_eq_zero`:
-  the subgroup vanishes for a link diagram whose `w`-pointed diagram has no periodic domains.
+  the subgroup vanishes for a link diagram when the multiplicity vector vanishes on the domains
+  with multiplicity zero at the `w`'s whose boundary is a combination of whole curves.
 * `TauCeti.HeegaardRegionSystem.IsDomainBetween.coe_relativeComponentAlexanderGrading_eq` and
   `TauCeti.HeegaardRegionSystem.IsDomainBetween.relativeComponentAlexanderGrading_eq`: the
   multigrading is the multiplicity vector of every domain from `x` to `y`, modulo the subgroup, or
@@ -202,24 +208,27 @@ theorem periodicComponentAlexanderValues_eq_bot_iff :
 /-- **A criterion for an integral Alexander multigrading.** Let `ι` pick out the `w`'s of a link
 diagram, lying in distinct components of `Σ - α`, and suppose that the domain of each of these
 components has vanishing Alexander multiplicity vector, as when it contains exactly one `w` and
-one `z`, both on the same component of the link. If the only domain with multiplicity zero at the
-`w`'s whose boundary is a combination of whole curves is zero, that is, if the diagram pointed at
-the `w`'s alone has no nonzero periodic domain, as for a link in `S³`, then the periodic values
-vanish: a domain whose boundary is a combination of whole curves is a combination of these
-components of `Σ - α`. -/
+one `z`, both on the same component of the link. If every domain with multiplicity zero at the
+`w`'s whose boundary is a combination of whole curves has vanishing Alexander multiplicity vector,
+then the periodic values vanish: a domain whose boundary is a combination of whole curves is such
+a domain plus a combination of these components of `Σ - α`. With two or more `w`'s, the domains
+with multiplicity zero at the `w`'s include the differences `A - B` of the components of `Σ - α`
+and `Σ - β` through the same `w`, so `hP` does not ask them to be zero. -/
 theorem periodicComponentAlexanderValues_eq_bot_of_forall_eq_zero {W : Type*} [Finite W]
     {ι : W → Basepoint}
     (hι : ∀ i j, H.SameAlphaComponent (H.basepoint (ι i)) (H.basepoint (ι j)) → i = j)
     (hP : ∀ P : Region → ℤ, H.alphaArcBoundary (H.alphaBoundary P) = 0 →
-      H.betaArcBoundary (H.betaBoundary P) = 0 → (∀ i, P (H.basepoint (ι i)) = 0) → P = 0)
+      H.betaArcBoundary (H.betaBoundary P) = 0 → (∀ i, P (H.basepoint (ι i)) = 0) →
+        H.componentAlexanderMultiplicity ws zs P = 0)
     (hA : ∀ i, H.componentAlexanderMultiplicity ws zs
       (H.alphaComponentDomain (H.basepoint (ι i))) = 0) :
     H.periodicComponentAlexanderValues ws zs = ⊥ := by
   have := Fintype.ofFinite W
   refine periodicComponentAlexanderValues_eq_bot_iff.mpr fun E hα hβ => ?_
-  -- `E` minus its components of `Σ - α` through the `w`'s vanishes at the `w`'s, hence is zero
-  have hE : E = ∑ i, E (H.basepoint (ι i)) • H.alphaComponentDomain (H.basepoint (ι i)) := by
-    rw [← sub_eq_zero]
+  -- `E` minus its components of `Σ - α` through the `w`'s vanishes at the `w`'s
+  have hE : H.componentAlexanderMultiplicity ws zs E = H.componentAlexanderMultiplicity ws zs
+      (∑ i, E (H.basepoint (ι i)) • H.alphaComponentDomain (H.basepoint (ι i))) := by
+    rw [← sub_eq_zero, ← map_sub]
     refine hP _ (by simp only [map_sub, map_sum, map_zsmul, hα, smul_zero, Finset.sum_const_zero,
         alphaArcBoundary_alphaBoundary_alphaComponentDomain, sub_zero])
       (by simp only [map_sub, map_sum, map_zsmul, hβ, betaBoundary_alphaComponentDomain,
@@ -395,7 +404,7 @@ theorem coe_relativeComponentAlexanderGrading_eq_of_coeff_fullCoefficient_ne_zer
   simp [hm]
 
 /-- **The full differential preserves the Alexander multigrading.** When the periodic values
-vanish, as for a link in `S³`, a term `∏_b X_b ^ m b` of the full coefficient from `x` to `y` has
+vanish, a term `∏_b X_b ^ m b` of the full coefficient from `x` to `y` has
 relative Alexander multigrading `A_q(x, y) = ∑_{z ∈ zs q} m z - ∑_{w ∈ ws q} m w`. Grading
 `∏_b X_b ^ m b · y` by `A_q(y) + ∑_{z ∈ zs q} m z - ∑_{w ∈ ws q} m w` in the `q`-th grading, the
 full differential preserves every Alexander grading. -/
