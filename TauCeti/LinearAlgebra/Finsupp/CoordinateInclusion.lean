@@ -66,7 +66,7 @@ theorem coordinateInclusion_injective (n : ℕ) :
   (Finsupp.mapDomain_injective Fin.val_injective).comp
     (Finsupp.linearEquivFunOnFinite R M (Fin n)).symm.injective
 
-/-- The image of the coordinate inclusion of `R^n` consists of the finitely supported functions
+/-- The image of the coordinate inclusion of `M^n` consists of the finitely supported functions
 vanishing from coordinate `n` on. -/
 theorem range_coordinateInclusion (n : ℕ) :
     LinearMap.range (coordinateInclusion (R := R) (M := M) n) = Finsupp.supported M R (Iio n) := by
@@ -91,7 +91,7 @@ theorem coordinateInclusion_of_support_subset_range {n : ℕ} {v : ℕ →₀ M}
   · rw [coordinateInclusion_apply_of_le _ (Nat.le_of_not_gt hm)]
     exact (Finsupp.notMem_support_iff.1 fun hmem ↦ hm (Finset.mem_range.1 (hv hmem))).symm
 
-/-- The coordinate inclusions are compatible with the inclusions `R^m → R^n` onto the first
+/-- The coordinate inclusions are compatible with the inclusions `M^m → M^n` onto the first
 coordinates. -/
 @[simp]
 theorem coordinateInclusion_comp_extendByZero_castLE {m n : ℕ} (h : m ≤ n) :

@@ -172,27 +172,6 @@ section Coordinates
 
 variable {A}
 
-/-- A sum `∑ j, w j * x j` over `Fin n` against a single basis vector. -/
-private theorem sum_mul_single_apply (n : ℕ) (w : Fin n → A) (k : ℕ) (a : A) :
-    ∑ j : Fin n, w j * single k a (j : ℕ) = if h : k < n then w ⟨k, h⟩ * a else 0 := by
-  split_ifs with h
-  · rw [Fintype.sum_eq_single ⟨k, h⟩ fun j hj ↦ by
-      rw [single_eq_of_ne fun hjk ↦ hj (Fin.ext hjk), mul_zero]]
-    simp
-  · exact Finset.sum_eq_zero fun j _ ↦ by
-      rw [single_eq_of_ne fun hjk ↦ h (by have := j.isLt; omega), mul_zero]
-
-/-- On a vector supported on the first `n` coordinates, a right-linear map is the matrix of its
-values on the basis vectors `e₀, …, e_{n-1}`. -/
-private theorem map_apply_eq_sum_of_mem_supported (f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)) {n : ℕ}
-    {x : ℕ →₀ A} (hx : x ∈ supported A Aᵐᵒᵖ (Finset.range n : Set ℕ)) (i : ℕ) :
-    f x i = ∑ k : Fin n, f (single k 1) i * x k := by
-  conv_lhs =>
-    rw [← coordinateInclusion_coordinateRestriction hx, coordinateInclusion_eq_sum, map_sum]
-  rw [finsetSum_apply]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [map_single_eq_op_smul, Finsupp.smul_apply, op_smul_eq_mul, coordinateRestriction_apply]
-
 /-- The matrix of the values of a right-linear map on the basis vectors `e₀, …, e_{n-1}`,
 truncated to the first `n` coordinates. -/
 private def coordMatrix (f : (ℕ →₀ A) →ₗ[Aᵐᵒᵖ] (ℕ →₀ A)) (n : ℕ) : Matrix (Fin n) (Fin n) A :=
