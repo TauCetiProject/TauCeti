@@ -107,13 +107,11 @@ theorem eventually_exists_admissible_cutoffs {ε : ℝ} (hε : 0 < ε) (hε' : �
         pow_le_pow_left₀ ((rpow_pos_of_pos hx' _).le.trans hlogb) (hlogb'.trans hpowx) _
       _ = x := by rw [← rpow_mul_natCast hx'.le]; norm_num
   · apply (log_le_log_iff (by positivity) hx₁').mp
-    rw [log_pow]
-    norm_num
+    rw [log_pow, Nat.cast_ofNat]
     linarith [hlog₁.1, (le_abs_self _).trans hgrowx]
   · have h : (x₁ : ℝ) ^ (1000000 : ℕ) ≤ b := by
       apply (log_le_log_iff (by positivity) hb').mp
-      rw [log_pow]
-      norm_num
+      rw [log_pow, Nat.cast_ofNat]
       exact (mul_le_mul_of_nonneg_left hlog₁.2 (by norm_num)).trans (hsepx.trans hlogb)
     rw [← Nat.cast_le (α := ℝ), Nat.cast_pow]
     exact h
