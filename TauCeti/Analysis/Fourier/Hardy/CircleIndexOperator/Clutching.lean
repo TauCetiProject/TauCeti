@@ -71,20 +71,15 @@ theorem one_le_norm_homotopyAffine_circleIndexSymbolScalar (t : unitInterval) (z
       have hs₀ : 1 + s ≤ 0 := by linarith
       linarith [mul_nonpos_of_nonneg_of_nonpos t.property.1 hs₀])
 
-/-- The compact strip `Circle × [-1, 1]` works for every cutoff and homotopy time. Outside it the
-homotopy has invertible complex values. -/
-theorem isCompact_strip_and_isUnit_homotopyAffine_outside_strip :
-    let strip := (Set.univ : Set Circle) ×ˢ Set.Icc (-1 : ℝ) 1
-    IsCompact strip ∧ ∀ (ρ : FrequencyCutoff (CoordinateSpace 1)) (t : unitInterval)
-        (p : Circle × ℝ), p ∉ strip →
-      IsUnit (ContinuousMap.Homotopy.affine (circleIndexSymbolScalar ρ) circleIndexAffineScalar
-        (t, p)) := by
-  refine ⟨isCompact_univ.prod isCompact_Icc, ?_⟩
-  intro ρ t ⟨z, s⟩ hout
-  have hs : 1 ≤ |s| := by
-    by_contra! h
-    exact hout ⟨Set.mem_univ _, (abs_lt.mp h).1.le, (abs_lt.mp h).2.le⟩
-  have hnorm := one_le_norm_homotopyAffine_circleIndexSymbolScalar ρ t z hs
+/-- Outside the strip `Circle × [-1, 1]`, the homotopy from the full symbol to the affine
+representative has invertible values at every time. -/
+theorem isUnit_homotopyAffine_outside_strip (t : unitInterval) (p : Circle × ℝ)
+    (hp : p ∉ (Set.univ : Set Circle) ×ˢ Set.Icc (-1 : ℝ) 1) :
+    IsUnit (ContinuousMap.Homotopy.affine (circleIndexSymbolScalar ρ) circleIndexAffineScalar
+      (t, p)) := by
+  have hs : 1 < |p.2| := lt_of_not_ge fun h ↦
+    hp (Set.mem_prod.mpr ⟨Set.mem_univ _, Set.mem_Icc.mpr (abs_le.mp h)⟩)
+  have hnorm := one_le_norm_homotopyAffine_circleIndexSymbolScalar ρ t p.1 hs.le
   exact isUnit_iff_ne_zero.mpr (norm_pos_iff.mp (zero_lt_one.trans_le hnorm))
 
 /-- The full symbol scalar on the unit square, with normalized covector ranging from `-1` to `1`.

@@ -142,13 +142,9 @@ theorem coefficient_toSymbol_circleFourierIndexSymbol_eq_circleIndexSymbolScalar
     (x s : ℝ) :
     (circleFourierIndexSymbol ρ).toSymbol.coefficient (ι x, ι (2 * s)) =
       circleIndexSymbolScalar ρ (Circle.exp (2 * Real.pi * x), s) • ContinuousLinearMap.id ℂ ℂ := by
-  rw [circleIndexSymbolScalar_apply, coefficient_toSymbol_circleFourierIndexSymbol]
-  apply congrArg (· • ContinuousLinearMap.id ℂ ℂ)
-  simp only [LinearIsometryEquiv.symm_apply_apply, fourier_coe_apply,
-    Int.cast_one, Complex.ofReal_one, mul_one, div_one,
-    Circle.coe_exp, Complex.ofReal_mul, Complex.ofReal_ofNat,
-    mul_pos_iff_of_pos_left (zero_lt_two : (0 : ℝ) < 2)]
-  ring_nf
+  rw [circleIndexSymbolScalar_apply, coefficient_toSymbol_circleFourierIndexSymbol, fourier_one]
+  have hs : 0 < 2 * s ↔ 0 < s := mul_pos_iff_of_pos_left zero_lt_two
+  simp [AddCircle.toCircle_apply_mk, hs]
 
 /-- Evaluating the full coefficient at `1` recovers the cylinder scalar. -/
 @[simp↓] theorem coefficient_toSymbol_circleFourierIndexSymbol_apply_one (x s : ℝ) :
