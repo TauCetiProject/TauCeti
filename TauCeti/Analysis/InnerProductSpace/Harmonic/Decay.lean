@@ -436,6 +436,21 @@ private lemma norm_sub_le_of_mem_ball_of_eight_mul_le {x₀ y z : E} {ρ R M : �
       ≤ 2 ^ finrank ℝ E * finrank ℝ E * M * (2 * ρ) / (R / 4) := by gcongr
     _ = _ := by field_simp; ring
 
+/-- For `8 ρ ≤ R`, a bound `‖u - c‖ ≤ M` on `ball x₀ (R / 2)` keeps every value of `u` on
+`ball x₀ ρ` within `2^(n + 3) n M ρ / R` of its average over that ball. -/
+private lemma norm_sub_setAverage_le_of_mem_ball_of_eight_mul_le {x₀ y : E} {ρ R M : ℝ} {c : F}
+    (hu : HarmonicOnNhd u (ball x₀ R)) (hM : ∀ x ∈ ball x₀ (R / 2), ‖u x - c‖ ≤ M)
+    (hρ : 0 < ρ) (h8 : 8 * ρ ≤ R) (hy : y ∈ ball x₀ ρ) :
+    ‖u y - ⨍ z in ball x₀ ρ, u z ∂μ‖ ≤ 2 ^ (finrank ℝ E + 3) * finrank ℝ E * M * ρ / R := by
+  have hiu : IntegrableOn u (ball x₀ ρ) μ :=
+    (hu.mono (closedBall_subset_ball (by linarith))).integrableOn_ball
+  have h := Convex.set_average_mem (convex_closedBall (u y) _) isClosed_closedBall
+    (measure_ball_pos μ x₀ hρ).ne' measure_ball_lt_top.ne
+    ((ae_restrict_mem measurableSet_ball).mono fun z hz ↦ by
+      rw [mem_closedBall, dist_eq_norm, norm_sub_rev]
+      exact norm_sub_le_of_mem_ball_of_eight_mul_le hu hM hρ h8 hy hz) hiu
+  rwa [mem_closedBall, dist_eq_norm, norm_sub_rev] at h
+
 /-- The decay of the mean oscillation for small balls, `8 ρ ≤ R`, with constant `2^(3n + 6) n²`. -/
 private lemma setIntegral_ball_norm_sub_setAverage_sq_le_of_eight_mul_le {x₀ : E} {ρ R : ℝ}
     (hu : HarmonicOnNhd u (ball x₀ R)) {c : F}
@@ -454,19 +469,10 @@ private lemma setIntegral_ball_norm_sub_setAverage_sq_le_of_eight_mul_le {x₀ :
     Real.sq_sqrt (by positivity)
   have hv : HarmonicOnNhd (fun x ↦ u x - c) (ball x₀ R) := hu.sub (harmonicOnNhd_const c)
   set L := 2 ^ (n + 3) * n * M * ρ / R
-  have hlip : ∀ y ∈ ball x₀ ρ, ∀ z ∈ ball x₀ ρ, ‖u y - u z‖ ≤ L := fun y hy z hz ↦
-    norm_sub_le_of_mem_ball_of_eight_mul_le hu
-      (fun x hx ↦ Real.le_sqrt_of_sq_le (norm_sq_le_of_mem_ball_half hR hv hint hx)) hρ h8 hy hz
   -- Every value of `u` on `ball x₀ ρ` therefore lies within `L` of the average.
-  have hiu : IntegrableOn u (ball x₀ ρ) μ :=
-    (hu.mono (closedBall_subset_ball (by linarith))).integrableOn_ball
-  have hdev : ∀ y ∈ ball x₀ ρ, ‖u y - ⨍ z in ball x₀ ρ, u z ∂μ‖ ≤ L := fun y hy ↦ by
-    have h := Convex.set_average_mem (convex_closedBall (u y) L) isClosed_closedBall
-      (measure_ball_pos μ x₀ hρ).ne' measure_ball_lt_top.ne
-      ((ae_restrict_mem measurableSet_ball).mono fun z hz ↦ by
-        rw [mem_closedBall, dist_eq_norm, norm_sub_rev]
-        exact hlip y hy z hz) hiu
-    rwa [mem_closedBall, dist_eq_norm, norm_sub_rev] at h
+  have hdev : ∀ y ∈ ball x₀ ρ, ‖u y - ⨍ z in ball x₀ ρ, u z ∂μ‖ ≤ L := fun y hy ↦
+    norm_sub_setAverage_le_of_mem_ball_of_eight_mul_le hu
+      (fun x hx ↦ Real.le_sqrt_of_sq_le (norm_sq_le_of_mem_ball_half hR hv hint hx)) hρ h8 hy
   calc ∫ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ^ 2 ∂μ
       ≤ ∫ _ in ball x₀ ρ, L ^ 2 ∂μ := by
         refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ by positivity)
@@ -566,18 +572,9 @@ private lemma setIntegral_ball_norm_sub_setAverage_le_of_eight_mul_le {x₀ : E}
       rw [mem_closedBall] at hz
       linarith [dist_triangle z x x₀]
   set L := 2 ^ (n + 3) * n * M * ρ / R
-  have hlip : ∀ y ∈ ball x₀ ρ, ∀ z ∈ ball x₀ ρ, ‖u y - u z‖ ≤ L := fun y hy z hz ↦
-    norm_sub_le_of_mem_ball_of_eight_mul_le hu hM hρ h8 hy hz
   -- Every value of `u` on `ball x₀ ρ` therefore lies within `L` of the average.
-  have hiu : IntegrableOn u (ball x₀ ρ) μ :=
-    (hu.mono (closedBall_subset_ball (by linarith))).integrableOn_ball
-  have hdev : ∀ y ∈ ball x₀ ρ, ‖u y - ⨍ z in ball x₀ ρ, u z ∂μ‖ ≤ L := fun y hy ↦ by
-    have h := Convex.set_average_mem (convex_closedBall (u y) L) isClosed_closedBall
-      (measure_ball_pos μ x₀ hρ).ne' measure_ball_lt_top.ne
-      ((ae_restrict_mem measurableSet_ball).mono fun z hz ↦ by
-        rw [mem_closedBall, dist_eq_norm, norm_sub_rev]
-        exact hlip y hy z hz) hiu
-    rwa [mem_closedBall, dist_eq_norm, norm_sub_rev] at h
+  have hdev : ∀ y ∈ ball x₀ ρ, ‖u y - ⨍ z in ball x₀ ρ, u z ∂μ‖ ≤ L := fun y hy ↦
+    norm_sub_setAverage_le_of_mem_ball_of_eight_mul_le hu hM hρ h8 hy
   calc ∫ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ∂μ
       ≤ ∫ _ in ball x₀ ρ, L ∂μ :=
         integral_mono_of_nonneg (ae_of_all _ fun _ ↦ norm_nonneg _)

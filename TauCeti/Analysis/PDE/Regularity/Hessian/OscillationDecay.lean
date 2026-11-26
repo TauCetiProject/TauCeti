@@ -210,11 +210,7 @@ theorem exists_contDiffOn_ae_eq_and_sum_smul_fderiv_fderiv_eq_zero (hlam : 0 < l
         fderiv ℝ (fderiv ℝ g) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = 0 := by
   -- The operator is the Laplacian in the coordinates given by a linear automorphism `e`; an upper
   -- bound on the quadratic form, which `e` requires, is the norm of the attached bilinear form.
-  have hA' : ∀ ξ : EuclideanSpace ℝ ι,
-      A.toQuadraticForm' ξ ≤ ‖matrixBilinearForm A‖ * ‖ξ‖ ^ 2 := fun ξ =>
-    (le_abs_self _).trans (abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le (fun η ζ => by
-      rw [← matrixBilinearForm_apply, ← Real.norm_eq_abs]
-      exact (matrixBilinearForm A).le_opNorm₂ η ζ) ξ)
+  have hA' := toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq A
   obtain ⟨e, -, -, -, he⟩ := exists_continuousLinearEquiv_laplacian_comp_eq (F := ℝ) hlam hA hA'
   have hmp : MeasurePreserving e (mu.map e.symm) mu := e.measurePreserving_map_symm mu
   have hemb : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
