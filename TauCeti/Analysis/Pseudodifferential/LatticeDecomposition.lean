@@ -40,9 +40,10 @@ argument: such families of pieces, and sums of series of symbols.
 
 For the pieces `aⱼ`, a construction applied to each piece typically decays away from the lattice
 point `j` like `(1 + ‖x - j‖²) ^ (-n)`, whose sum over `j ∈ ℤⁿ` is bounded; the two ends then
-assemble the pieces into a symbol with uniform estimates. This gives the composition of uniform
-symbols (`TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Expansion`) and the left symbol of
-the right quantization of a uniform symbol (`TauCeti.Analysis.Pseudodifferential.Adjoint.Uniform`).
+assemble the pieces into a symbol with uniform estimates. This gives the asymptotic expansion of
+the composition of uniform symbols
+(`TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Expansion`) and the left symbol of the
+right quantization of a uniform symbol (`TauCeti.Analysis.Pseudodifferential.Adjoint.Uniform`).
 
 ## References
 

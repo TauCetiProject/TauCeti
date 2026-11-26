@@ -47,6 +47,8 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
 * `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if derivatives below order `N`
   are differentiable and those up to order `N` are integrable, then
   `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
+* `TauCeti.one_add_norm_pow_mul_norm_fourier_le`: inhomogeneous form
+  `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N * B` when both `∫ ‖f‖` and `∫ ‖D^N f‖` are at most `B`.
 * `TauCeti.one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset`: if `f` is `C^N`, its closed
   support `tsupport f` is contained in any set `S` of finite outer volume and its derivatives of
   order at most `N` are bounded by `C`, then `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N C vol(S)`.
@@ -137,6 +139,24 @@ theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ}
   · exact le_of_mul_le_mul_right (heq ▸ hle) (lt_of_le_of_ne (by positivity) (Ne.symm h))
 
 open MeasureTheory Real in
+/-- **Inhomogeneous Fourier decay from `L¹` derivative bounds.** If the derivatives of `f` below
+order `N` are differentiable, those of order at most `N` are integrable, and both `∫ ‖f‖` and
+`∫ ‖D^N f‖` are bounded by `B`, then `(1 + ‖w‖) ^ N ‖𝓕 f w‖ ≤ 2 ^ N * B`. -/
+theorem one_add_norm_pow_mul_norm_fourier_le {N : ℕ} {B : ℝ}
+    (hf : ∀ n < N, Differentiable ℝ (iteratedFDeriv ℝ n f))
+    (hf' : ∀ n ≤ N, Integrable (iteratedFDeriv ℝ n f))
+    (h0 : ∫ v, ‖f v‖ ≤ B) (hN : ∫ v, ‖iteratedFDeriv ℝ N f v‖ ≤ B) (w : V) :
+    (1 + ‖w‖) ^ N * ‖𝓕 f w‖ ≤ 2 ^ N * B := by
+  rcases le_total ‖w‖ 1 with hw | hw
+  · exact mul_le_mul (pow_le_pow_left₀ (by positivity) (by linarith) N)
+      ((norm_fourier_le_integral_norm f w).trans h0) (norm_nonneg _) (by positivity)
+  · have hN' := (pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv hf hf' w).trans hN
+    calc (1 + ‖w‖) ^ N * ‖𝓕 f w‖ ≤ (2 * ‖w‖) ^ N * ‖𝓕 f w‖ := by gcongr; linarith
+      _ = 2 ^ N * (‖w‖ ^ N * ‖𝓕 f w‖) := by ring
+      _ ≤ 2 ^ N * ((2 * π * ‖w‖) ^ N * ‖𝓕 f w‖) := by gcongr; nlinarith [two_le_pi]
+      _ ≤ 2 ^ N * B := by gcongr
+
+open MeasureTheory Real in
 /-- **Explicit decay of the Fourier transform.** If `f` is `C^N`, its closed support `tsupport f`
 is contained in any set `S` of finite outer volume, and its derivatives of order at most `N` are
 bounded by `C`, then
@@ -167,22 +187,9 @@ theorem one_add_norm_pow_mul_norm_fourier_le_of_tsupport_subset {N : ℕ} (hf : 
   have hle : ∀ p ≤ N, ∫ x, ‖iteratedFDeriv ℝ p f x‖ ≤ C * volume.real (tsupport f) := fun p hp ↦ by
     refine (integral_mono (hint p hp).norm hind (hbound p hp)).trans_eq ?_
     rw [integral_indicator_const _ hT, smul_eq_mul, mul_comm]
-  have h0 : ‖𝓕 f w‖ ≤ C * volume.real (tsupport f) :=
-    (norm_fourier_le_integral_norm f w).trans (by simpa using hle 0 (Nat.zero_le _))
-  rcases le_total ‖w‖ 1 with hw | hw
-  · have h2 : (1 + ‖w‖) ^ N ≤ 2 ^ N := by gcongr; linarith
-    exact mul_le_mul h2 h0 (norm_nonneg _) (by positivity)
-  · have hN := (pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv
-      (fun n hn ↦ hf.differentiable_iteratedFDeriv (by exact_mod_cast hn)) hint w).trans
-      (hle N le_rfl)
-    calc (1 + ‖w‖) ^ N * ‖𝓕 f w‖ ≤ (2 * ‖w‖) ^ N * ‖𝓕 f w‖ := by
-          gcongr
-          linarith
-      _ = 2 ^ N * (‖w‖ ^ N * ‖𝓕 f w‖) := by ring
-      _ ≤ 2 ^ N * ((2 * π * ‖w‖) ^ N * ‖𝓕 f w‖) := by
-          gcongr
-          nlinarith [two_le_pi]
-      _ ≤ 2 ^ N * (C * volume.real (tsupport f)) := by gcongr
+  exact one_add_norm_pow_mul_norm_fourier_le
+    (fun n hn ↦ hf.differentiable_iteratedFDeriv (by exact_mod_cast hn)) hint
+    (by simpa [norm_iteratedFDeriv_zero] using hle 0 (Nat.zero_le _)) (hle N le_rfl) w
 
 open MeasureTheory Real in
 /-- **Fourier decay with a frequency-dependent bound.** If `f` is `C^N`, its closed support

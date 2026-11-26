@@ -27,9 +27,9 @@ formula `Op(a #_u b) u = Op(a) (Op(b) u)` on Schwartz space
 of a symbol from its quantization
 (`TauCeti.Symbol.coefficient_eq_uniformSharp_of_forall_quantizeSchwartzValue_eq`) then gives
 associativity (`TauCeti.Symbol.uniformSharp_assoc`), the right identity law
-(`TauCeti.Symbol.uniformSharp_const_id`), and exact composition with frequency multipliers and
-Mathlib's Bessel potentials (`TauCeti.Symbol.uniformSharp_ofFrequency`,
-`TauCeti.Symbol.uniformSharp_besselPotential`).
+(`TauCeti.Symbol.uniformSharp_const_id`), and exact composition with frequency multipliers and the
+Bessel-potential symbols `TauCeti.Symbol.besselPotential`
+(`TauCeti.Symbol.uniformSharp_ofFrequency`, `TauCeti.Symbol.uniformSharp_besselPotential`).
 
 ## References
 
@@ -129,8 +129,9 @@ theorem IsUniformlySmoothing.uniformSharp_left (hb : b.IsUniformlySmoothing)
 
 /-- Composing any symbol `a` on the right with a uniformly smoothing symbol `b` yields a smoothing
 symbol. -/
-theorem IsSmoothing.uniformSharp_left (hbs : b.IsUniformlySmoothing) (a : Symbol n W U m')
-    (hb : b.IsUniform := hbs.isUniform) : (a.uniformSharp b hb).IsSmoothing :=
+theorem IsUniformlySmoothing.isSmoothing_uniformSharp_left (hbs : b.IsUniformlySmoothing)
+    (a : Symbol n W U m') (hb : b.IsUniform := hbs.isUniform) :
+    (a.uniformSharp b hb).IsSmoothing :=
   isSmoothing_iff.2 fun m'' ↦ by
     obtain ⟨b', hb'u, hb'⟩ := isUniformlySmoothing_iff.1 hbs (m'' - m')
     exact ⟨Symbol.inclusion (by linarith) (a.uniformSharp b' hb'u),
@@ -311,7 +312,8 @@ theorem uniformSharp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ
   refine coefficient_eq_uniformSharp_of_forall_quantizeSchwartzValue_eq a (hb.uniformSharp hc)
     fun u _ x ↦ ?_
   rw [quantizeSchwartzValue_uniformSharp (a.uniformSharp b hb) hc,
-    quantizeSchwartzValue_uniformSharp a hb, quantizeUniformCLM_uniformSharp hb hc]; rfl
+    quantizeSchwartzValue_uniformSharp a hb, quantizeUniformCLM_uniformSharp hb hc,
+    ContinuousLinearMap.comp_apply]
 
 /-- **Exact composition with a frequency multiplier on the right.** Composing any symbol `a` on the
 right with `ofFrequency g hg hgbound` gives `a.comp (ofFrequency g hg hgbound)`. -/
@@ -363,28 +365,6 @@ theorem uniformSharp_const_id [CompleteSpace V] [CompleteSpace W] (a : Symbol n 
     a.uniformSharp (const (ContinuousLinearMap.id ℂ V)) h =
       Symbol.inclusion (add_zero m').ge a := by
   rw [uniformSharp_const, comp_const_id]
-
-/-- **Composition with a frequency multiplier on the left** for a uniform symbol `a`:
-`c(D) (Op(a) u) = Op(c #_u a) u`, where `c #_u a` is uniform of order `m' + m`. -/
-theorem quantizeSchwartzValue_ofFrequency_uniformSharp [CompleteSpace W] [CompleteSpace U]
-    {a : Symbol n V W m} (ha : a.IsUniform) {c : CoordinateSpace n → W →L[ℂ] U}
-    (hc : ContDiff ℝ ∞ c)
-    (hcbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k c ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' - k) / 2))
-    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
-    quantizeSchwartzValue ((ofFrequency c hc hcbound).uniformSharp a ha).coefficient u x =
-      quantizeFrequencyCLM c (quantizeUniformCLM a ha u) x := by
-  rw [quantizeSchwartzValue_uniformSharp _ ha, quantizeSchwartzValue_ofFrequency]
-
-/-- **Composition with Mathlib's Bessel multiplier on the left** for a uniform symbol `a`:
-`J^s (Op(a) u) = Op((besselPotential s) #_u a) u`. -/
-theorem quantizeSchwartzValue_besselPotential_uniformSharp [CompleteSpace W]
-    {a : Symbol n V W m} (ha : a.IsUniform) (s : ℝ) (u : 𝓢(CoordinateSpace n, V))
-    (x : CoordinateSpace n) :
-    quantizeSchwartzValue ((besselPotential s : Symbol n W W s).uniformSharp a ha).coefficient u x =
-      SchwartzMap.fourierMultiplierCLM W
-        (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))
-        (quantizeUniformCLM a ha u) x := by
-  rw [quantizeSchwartzValue_uniformSharp _ ha, quantizeSchwartzValue_besselPotential]
 
 end Algebra
 
