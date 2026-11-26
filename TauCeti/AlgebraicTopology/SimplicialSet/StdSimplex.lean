@@ -56,6 +56,8 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
 * `SSet.fstStdSimplexZeroIso`: the projection `K ⊗ Δ[0] ⟶ K` is an isomorphism.
 
 * `SSet.boundary.isConnected`: the boundary `∂Δ[n + 2]` is connected.
+* `SSet.boundary.edgeZero`: the degenerate edge at vertex `0` of `∂Δ[n + 1]`, whose underlying
+  simplex is constant (`SSet.boundary.edgeZero_val`).
 -/
 
 public section
@@ -348,5 +350,16 @@ instance boundary.isConnected (n : ℕ) : (∂Δ[n + 2] : SSet.{u}).IsConnected 
       ⟨stdSimplex.edge.{u} _ 0 k (Fin.zero_le k), by simp [boundary_obj_eq_univ]⟩
       (Subtype.ext (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl))
       (Subtype.ext (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)))).symm
+
+/-- The degenerate edge at vertex `0` of the boundary of a positive-dimensional simplex. -/
+noncomputable def boundary.edgeZero (n : ℕ) : (∂Δ[n + 1] : SSet.{u}) _⦋1⦌ :=
+  (∂Δ[n + 1] : SSet.{u}).σ 0
+    ⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩
+
+/-- The underlying simplex of `boundary.edgeZero` is constant at vertex `0`. -/
+@[simp]
+lemma boundary.edgeZero_val (n : ℕ) :
+    (boundary.edgeZero.{u} n).val = stdSimplex.const (n + 1) 0 _ :=
+  stdSimplex.ext _ _ fun _ ↦ rfl
 
 end SSet

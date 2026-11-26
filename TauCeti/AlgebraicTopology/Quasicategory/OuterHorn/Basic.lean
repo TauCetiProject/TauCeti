@@ -15,7 +15,11 @@ In a quasicategory `C`, the outer horns `Λ[n + 2, 0]` cannot be filled in gener
 when their initial edge, from `0` to `1`, is an equivalence. Conversely, an edge all of whose
 outer horns `Λ[n + 2, 0]` can be filled is an equivalence (HTT Proposition 1.2.4.3). Passing to
 the opposite quasicategory `Cᵒᵖ` gives the dual criterion for the final outer horns
-`Λ[n + 2, Fin.last (n + 2)]` whose final edge, from `n + 1` to `n + 2`, is an equivalence.
+`Λ[n + 2, Fin.last (n + 2)]` whose final edge, from `n + 1` to `n + 2`, is an equivalence. The
+filling holds relative to an inner fibration `p : X ⟶ S` of quasicategories: a horn
+`Λ[n + 2, 0] ⟶ X` whose initial edge is an equivalence lifts against `p` over every
+`(n + 2)`-simplex of `S` (`SSet.InnerFibration.hasLift_horn_zero`); the absolute theorem is the case
+of the map `C ⟶ Δ[0]`.
 
 Together with inner horn filling, the two special outer horn theorems imply Joyal's criterion: a
 simplicial set is a Kan complex exactly when it is a quasicategory in which every edge is an
@@ -24,14 +28,15 @@ equivalence. In particular, the core `C.core` of a quasicategory is a Kan comple
 (`SSet.isGreatest_core`).
 
 The proof for `Λ[n + 2, 0]` follows Kerodon: under the isomorphism `Δ[1] ⋆ Δ[n] ≅ Δ[n + 2]`, the
-horn `Λ[n + 2, 0]` is the pushout-join `(Λ[1, 0] ⋆ Δ[n]) ∪ (Δ[1] ⋆ ∂Δ[n])`, so filling it amounts
-to lifting an edge, with prescribed source, along the restriction of cones `C_{/σ} ⟶ C_{/∂σ}` for
-the face `σ : Δ[n] ⟶ C` opposite to the vertices `0` and `1`. This restriction is a right
-fibration, and right fibrations lift equivalences with prescribed source. The edge to be lifted is
-an equivalence because its image in `C` is, and the projection `C_{/∂σ} ⟶ C` is a right fibration,
-which reflects equivalences. These facts about right fibrations are in
-`TauCeti.AlgebraicTopology.Quasicategory.RightFibration`, and the lifting property of the
-restriction of cones is `SSet.slice.hasLift_of_isEquivalence`.
+horn `Λ[n + 2, 0]` is the pushout-join `(Λ[1, 0] ⋆ Δ[n]) ∪ (Δ[1] ⋆ ∂Δ[n])`, so a lifting problem
+from it to `p` amounts to lifting an edge, with prescribed source, along the relative slice map
+`X_{/σ} ⟶ X_{/∂σ} ×_{S_{/∂σ ≫ p}} S_{/σ ≫ p}` for the face `σ : Δ[n] ⟶ X` opposite to the vertices
+`0` and `1`. This map is a right fibration (`SSet.slice.rightFibration_restrictionMap`), and right
+fibrations lift equivalences with prescribed source. The edge to be lifted is an equivalence
+because its image in `X` is, and the projection from the target of the relative slice map to `X`
+is a right fibration, which reflects equivalences
+(`SSet.slice.hasLift_restrictionMap_of_isEquivalence`). These facts about right fibrations are in
+`TauCeti.AlgebraicTopology.Quasicategory.RightFibration.Basic`.
 
 Conversely, filling the horns `Λ[2, 0]` and `Λ[3, 0]` with initial edge `e` produces a right
 inverse of `e` and shows that it is also a left inverse. Reversing simplices via
@@ -39,6 +44,8 @@ inverse of `e` and shows that it is also a left inverse. Reversing simplices via
 
 ## Main results
 
+* `SSet.InnerFibration.hasLift_horn_zero`: **Joyal's theorem** on special outer horns
+  `Λ[n + 2, 0]`, relative to an inner fibration of quasicategories.
 * `SSet.Quasicategory.hornFilling_zero`, `SSet.Quasicategory.hornFilling_last`: **Joyal's theorem**
   on special outer horns `Λ[n + 2, 0]` and `Λ[n + 2, Fin.last (n + 2)]`.
 * `SSet.Quasicategory.exists_fill_of_ne_last`: a horn `Λ[d + 1, i]` with `i` not the last vertex
@@ -72,17 +79,76 @@ namespace SSet
 
 open Edge
 
-namespace Quasicategory
+namespace InnerFibration
 
-variable {C : SSet.{u}}
+variable {X S : SSet.{u}}
 
-/-- Under `Δ[1] ⋆ Δ[n] ≅ Δ[n + 2]`, the horn `Λ[n + 2, 0]` is the pushout-join
-`(Λ[1, 0] ⋆ Δ[n]) ∪ (Δ[1] ⋆ ∂Δ[n])`: a horn `Λ[N, 0]`, `2 ≤ N`, whose initial edge is an
-equivalence extends along it by `SSet.slice.hasLift_of_isEquivalence` for `∂Δ[n] ⟶ Δ[n]`. -/
-private lemma hornFilling_zero_aux [Quasicategory C] (N : ℕ) (hN : 2 ≤ N)
-    (σ₀ : (Λ[N, 0] : SSet) ⟶ C) (H : Finset.card {(0 : Fin (N + 1)), 0, 1} ≤ N)
+/-- Lifting along the pushout-join `(Λ[1, 0] ⋆ Δ[n]) ∪ (Δ[1] ⋆ ∂Δ[n]) ⟶ Δ[1] ⋆ Δ[n]` against an
+inner fibration `p` to a quasicategory, when the edge `Δ[1] ⟶ Δ[1] ⋆ ∂Δ[n]` is sent to an
+equivalence. Through the universal property of slices, the square is a lifting problem from
+`Λ[1, 0]` to the relative slice map of `p` along `∂Δ[n] ⟶ Δ[n]`, at the restriction `P` of the top
+map to `Δ[n]`, which `SSet.slice.hasLift_restrictionMap_of_isEquivalence` solves. -/
+private lemma hasLift_unionJoin [Quasicategory S] (p : X ⟶ S) [InnerFibration p] (n : ℕ)
+    {t : (Subcomplex.unionJoin Λ[1, 0] ∂Δ[n] : SSet) ⟶ X} {c : Δ[1].join Δ[n] ⟶ S}
+    (sq : CommSq t (Subcomplex.unionJoin Λ[1, 0] ∂Δ[n]).ι p c)
+    (h : (Edge.mk' (yonedaEquiv
+      (join.inl _ _ ≫ Subcomplex.unionJoin.ι₂ Λ[1, 0] ∂Δ[n] ≫ t))).IsEquivalence) :
+    sq.HasLift := by
+  -- The two pieces `a` and `b` of `t` on `Λ[1, 0] ⋆ Δ[n]` and `Δ[1] ⋆ ∂Δ[n]`, and the map `c`
+  -- below them, give a vertex `A` of `X_{/P}` and an edge `B` of the target of the relative
+  -- slice map from its restriction.
+  have hpush := Subcomplex.unionJoin.isPushout Λ[1, 0] ∂Δ[n]
+  let a := Subcomplex.unionJoin.ι₁ Λ[1, 0] ∂Δ[n] ≫ t
+  let b := Subcomplex.unionJoin.ι₂ Λ[1, 0] ∂Δ[n] ≫ t
+  let P := join.inr _ _ ≫ a
+  have hw : join.map (𝟙 _) ∂Δ[n].ι ≫ a = join.map Λ[1, 0].ι (𝟙 _) ≫ b := hpush.w_assoc _
+  have hb : join.inr _ _ ≫ b = ∂Δ[n].ι ≫ P := by simpa [P] using (join.inr _ _ ≫= hw).symm
+  have ha : a ≫ p = join.map Λ[1, 0].ι (𝟙 _) ≫ c := by simp [a, sq.w]
+  have hb' : b ≫ p = join.map (𝟙 _) ∂Δ[n].ι ≫ c := by simp [b, sq.w]
+  have hc : join.inr _ _ ≫ c = P ≫ p := by
+    rw [Category.assoc, ha, join.inr_map_assoc, Category.id_comp]
+  let A : (Λ[1, 0] : SSet) ⟶ slice P := slice.homEquiv.symm ⟨a, rfl⟩
+  let B₁ : Δ[1] ⟶ slice (∂Δ[n].ι ≫ P) := slice.homEquiv.symm ⟨b, hb⟩
+  let B₂ : Δ[1] ⟶ slice (P ≫ p) := slice.homEquiv.symm ⟨c, hc⟩
+  let f₁ : slice (∂Δ[n].ι ≫ P) ⟶ slice (∂Δ[n].ι ≫ P ≫ p) := slice.map (𝟙 _) p (by simp)
+  let f₂ : slice (P ≫ p) ⟶ slice (∂Δ[n].ι ≫ P ≫ p) := slice.map ∂Δ[n].ι (𝟙 S) (by simp)
+  let B : Δ[1] ⟶ pullback f₁ f₂ :=
+    pullback.lift B₁ B₂ (slice.hom_ext (by simp [B₁, B₂, f₁, f₂, hb']))
+  have sq' : CommSq A Λ[1, 0].ι (slice.restrictionMap ∂Δ[n].ι p P) B :=
+    ⟨pullback.hom_ext
+      (by
+        simp only [B, f₁, f₂, Category.assoc, slice.restrictionMap_fst, pullback.lift_fst]
+        exact slice.hom_ext (by simp [A, B₁, hw]))
+      (by
+        simp only [B, f₁, f₂, Category.assoc, slice.restrictionMap_snd, pullback.lift_snd]
+        exact slice.hom_ext (by simp [A, B₂, ha]))⟩
+  have := slice.hasLift_restrictionMap_of_isEquivalence p P ∂Δ[n].ι sq' (by
+    rwa [pullback.lift_fst_assoc, slice.comp_π, Equiv.apply_symm_apply])
+  -- The lift is a map `Δ[1] ⋆ Δ[n] ⟶ X` extending `a` and `b`, over `c`.
+  have e₁ : sq'.lift ≫ slice.restrictionMap ∂Δ[n].ι p P ≫ pullback.fst _ _ = B₁ := by
+    rw [sq'.fac_right_assoc, pullback.lift_fst]
+  have e₂ : sq'.lift ≫ slice.restrictionMap ∂Δ[n].ι p P ≫ pullback.snd _ _ = B₂ := by
+    rw [sq'.fac_right_assoc, pullback.lift_snd]
+  have h₁ := congrArg (fun F ↦ (slice.homEquiv F).val) e₁
+  have h₂ := congrArg (fun F ↦ (slice.homEquiv F).val) e₂
+  rw [slice.homEquiv_comp_restrictionMap_fst_coe, Equiv.apply_symm_apply] at h₁
+  rw [slice.homEquiv_comp_restrictionMap_snd_coe, Equiv.apply_symm_apply] at h₂
+  exact ⟨⟨{ l := (slice.homEquiv sq'.lift).val
+            fac_left := hpush.hom_ext
+              (by
+                rw [Subcomplex.unionJoin.ι₁_ι_assoc, ← slice.homEquiv_comp_coe, sq'.fac_left,
+                  Equiv.apply_symm_apply])
+              (by rw [Subcomplex.unionJoin.ι₂_ι_assoc, h₁])
+            fac_right := h₂ }⟩⟩
+
+/-- `SSet.InnerFibration.hasLift_horn_zero` for a horn `Λ[N, 0]` with `2 ≤ N`, written as
+`N = 1 + n + 1`: under `Δ[1] ⋆ Δ[n] ≅ Δ[1 + n + 1]` the horn is the pushout-join
+`(Λ[1, 0] ⋆ Δ[n]) ∪ (Δ[1] ⋆ ∂Δ[n])`, and its initial edge is the edge `Δ[1] ⟶ Δ[1] ⋆ ∂Δ[n]`. -/
+private lemma hasLift_horn_zero_aux [Quasicategory S] (p : X ⟶ S) [InnerFibration p] (N : ℕ)
+    (hN : 2 ≤ N) {σ₀ : (Λ[N, 0] : SSet) ⟶ X} {τ : Δ[N] ⟶ S} (sq : CommSq σ₀ Λ[N, 0].ι p τ)
+    (H : Finset.card {(0 : Fin (N + 1)), 0, 1} ≤ N)
     (h : (Edge.mk' (σ₀.app _ (horn.edge N 0 0 1 (Fin.zero_le _) H))).IsEquivalence) :
-    ∃ σ : Δ[N] ⟶ C, σ₀ = Λ[N, 0].ι ≫ σ := by
+    sq.HasLift := by
   obtain ⟨n, rfl⟩ : ∃ n, N = 1 + n + 1 := ⟨N - 2, by omega⟩
   let E := join.stdSimplexIso 1 n
   let U := Subcomplex.unionJoin Λ[1, 0] ∂Δ[n]
@@ -90,53 +156,51 @@ private lemma hornFilling_zero_aux [Quasicategory C] (N : ℕ) (hN : 2 ≤ N)
     rw [join.preimage_unionJoin_horn_boundary n one_ne_zero 0, Fin.castLE_zero]
   -- The isomorphism `E` restricts to an isomorphism `I` between `U` and the horn.
   let I := Subcomplex.isoOfPreimageEq E hU
-  -- The two pieces `a` and `b` of `I.hom ≫ σ₀` on `Λ[1, 0] ⋆ Δ[n]` and `Δ[1] ⋆ ∂Δ[n]`, a vertex
-  -- `A` of `C_{/p}` for the face `p : Δ[n] ⟶ C` and an edge `B` of `C_{/∂p}` from its restriction.
-  have hpush := Subcomplex.unionJoin.isPushout Λ[1, 0] ∂Δ[n]
-  let a := Subcomplex.unionJoin.ι₁ Λ[1, 0] ∂Δ[n] ≫ I.hom ≫ σ₀
-  let b := Subcomplex.unionJoin.ι₂ Λ[1, 0] ∂Δ[n] ≫ I.hom ≫ σ₀
-  let p := join.inr _ _ ≫ a
-  have hw : join.map (𝟙 _) ∂Δ[n].ι ≫ a = join.map Λ[1, 0].ι (𝟙 _) ≫ b := hpush.w_assoc _
-  have hb : join.inr _ _ ≫ b = ∂Δ[n].ι ≫ p := by
-    calc join.inr _ _ ≫ b = join.inr _ _ ≫ join.map Λ[1, 0].ι (𝟙 _) ≫ b := by
-          rw [join.inr_map_assoc, Category.id_comp]
-      _ = ∂Δ[n].ι ≫ p := by rw [← hw, join.inr_map_assoc]
-  let A : (Λ[1, 0] : SSet) ⟶ slice p := slice.homEquiv.symm ⟨a, rfl⟩
-  let B : Δ[1] ⟶ slice (∂Δ[n].ι ≫ p) := slice.homEquiv.symm ⟨b, hb⟩
-  have sq : CommSq A Λ[1, 0].ι (slice.map ∂Δ[n].ι (𝟙 C) (by simp)) B :=
-    ⟨slice.hom_ext (by
-      rw [slice.homEquiv_comp_map_coe, slice.homEquiv_comp_coe, Equiv.apply_symm_apply,
-        Equiv.apply_symm_apply, Category.comp_id, hw])⟩
-  -- The edge underlying `B` is the initial edge of `σ₀`.
-  have hB : (Edge.mk' (yonedaEquiv (B ≫ slice.π (∂Δ[n].ι ≫ p)))).IsEquivalence := by
-    have hedge : yonedaEquiv (join.inl _ _ ≫ Subcomplex.unionJoin.ι₂ Λ[1, 0] ∂Δ[n] ≫ I.hom) =
-        horn.edge (1 + n + 1) 0 0 1 (Fin.zero_le _) H := by
-      refine injective_of_mono (Subcomplex.ι.{u} Λ[1 + n + 1, 0] |>.app _) ?_
-      rw [← yonedaEquiv_comp, Category.assoc, Category.assoc, Subcomplex.isoOfPreimageEq_hom_ι E hU,
-        Subcomplex.unionJoin.ι₂_ι_assoc, join.inl_map_assoc, Category.id_comp]
-      exact join.yonedaEquiv_inl_comp_stdSimplexIso_hom_eq_edge n
-    refine (isEquivalence_iff_of_edge_eq ?_).1 h
-    rw [mk'_edge, mk'_edge, slice.comp_π, Equiv.apply_symm_apply, ← hedge, ← yonedaEquiv_comp]
-    simp only [b, Category.assoc]
-  have := slice.hasLift_of_isEquivalence p ∂Δ[n].ι sq hB
-  let τ := (slice.homEquiv sq.lift).val
-  have hτ : U.ι ≫ τ = I.hom ≫ σ₀ := hpush.hom_ext
-    (by
-      rw [Subcomplex.unionJoin.ι₁_ι_assoc, ← slice.homEquiv_comp_coe, sq.fac_left,
-        Equiv.apply_symm_apply])
-    (by
-      have h := congrArg (fun F ↦ (slice.homEquiv F).val) sq.fac_right
-      rw [slice.homEquiv_comp_map_coe, Equiv.apply_symm_apply, Category.comp_id] at h
-      rw [Subcomplex.unionJoin.ι₂_ι_assoc, h])
-  exact ⟨E.inv ≫ τ, by
-    rw [← Subcomplex.isoOfPreimageEq_inv_ι_assoc E hU, hτ, I.inv_hom_id_assoc]⟩
+  have sq' : CommSq (I.hom ≫ σ₀) U.ι p (E.hom ≫ τ) := ⟨by
+    rw [Category.assoc, sq.w, ← Category.assoc, Subcomplex.isoOfPreimageEq_hom_ι E hU,
+      Category.assoc]⟩
+  -- The edge `Δ[1] ⟶ Δ[1] ⋆ ∂Δ[n]` is the initial edge of the horn.
+  have hedge : yonedaEquiv (join.inl _ _ ≫ Subcomplex.unionJoin.ι₂ Λ[1, 0] ∂Δ[n] ≫ I.hom) =
+      horn.edge (1 + n + 1) 0 0 1 (Fin.zero_le _) H := by
+    refine injective_of_mono (Subcomplex.ι.{u} Λ[1 + n + 1, 0] |>.app _) ?_
+    rw [← yonedaEquiv_comp, Category.assoc, Category.assoc, Subcomplex.isoOfPreimageEq_hom_ι E hU,
+      Subcomplex.unionJoin.ι₂_ι_assoc, join.inl_map_assoc, Category.id_comp]
+    exact join.yonedaEquiv_inl_comp_stdSimplexIso_hom_eq_edge n
+  have := hasLift_unionJoin p n sq' (by
+    rwa [← Category.assoc, ← Category.assoc, yonedaEquiv_comp, Category.assoc, hedge])
+  exact ⟨⟨{ l := E.inv ≫ sq'.lift
+            fac_left := by
+              rw [← Subcomplex.isoOfPreimageEq_inv_ι_assoc E hU, sq'.fac_left, I.inv_hom_id_assoc]
+            fac_right := by rw [Category.assoc, sq'.fac_right, E.inv_hom_id_assoc] }⟩⟩
+
+/-- **Joyal's theorem on special outer horns, relative form** (HTT Proposition 1.2.4.3, Kerodon
+Theorem 4.4.2.6): for an inner fibration `p : X ⟶ S` to a quasicategory, a commutative square from
+the horn inclusion `Λ[n + 2, 0] ⟶ Δ[n + 2]` to `p` has a lift when the initial edge of the horn,
+from `0` to `1`, is an equivalence of `X`. -/
+theorem hasLift_horn_zero [Quasicategory S] (p : X ⟶ S) [InnerFibration p] {n : ℕ}
+    {σ₀ : (Λ[n + 2, 0] : SSet) ⟶ X} {τ : Δ[n + 2] ⟶ S} (sq : CommSq σ₀ Λ[n + 2, 0].ι p τ)
+    (h : (Edge.mk' (σ₀.app _ (horn.edge (n + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsEquivalence) :
+    sq.HasLift :=
+  hasLift_horn_zero_aux p (n + 2) (by omega) sq _ h
+
+end InnerFibration
+
+namespace Quasicategory
+
+variable {C : SSet.{u}}
 
 /-- **Joyal's theorem on special outer horns** (HTT Proposition 1.2.4.3): in a quasicategory, a
-horn `Λ[n + 2, 0]` whose initial edge, from `0` to `1`, is an equivalence can be filled. -/
+horn `Λ[n + 2, 0]` whose initial edge, from `0` to `1`, is an equivalence can be filled. This is
+`SSet.InnerFibration.hasLift_horn_zero` for the map to `Δ[0]`. -/
 theorem hornFilling_zero [Quasicategory C] {n : ℕ} (σ₀ : (Λ[n + 2, 0] : SSet) ⟶ C)
     (h : (Edge.mk' (σ₀.app _ (horn.edge (n + 2) 0 0 1 (Fin.zero_le _) (by simp)))).IsEquivalence) :
-    ∃ σ : Δ[n + 2] ⟶ C, σ₀ = Λ[n + 2, 0].ι ≫ σ :=
-  hornFilling_zero_aux (n + 2) (by omega) σ₀ _ h
+    ∃ σ : Δ[n + 2] ⟶ C, σ₀ = Λ[n + 2, 0].ι ≫ σ := by
+  let t := stdSimplex.isTerminalObj₀.from C
+  have := (quasicategory_iff_of_isTerminal t stdSimplex.isTerminalObj₀).1 inferInstance
+  have sq : CommSq σ₀ Λ[n + 2, 0].ι t (stdSimplex.isTerminalObj₀.from _) :=
+    ⟨stdSimplex.isTerminalObj₀.hom_ext _ _⟩
+  have := InnerFibration.hasLift_horn_zero t sq h
+  exact ⟨sq.lift, sq.fac_left.symm⟩
 
 /-- In a quasicategory, a horn `Λ[d + 1, i]` with `i` not the last vertex can be filled when it is
 inner, or when `i = 0` and its initial edge is an equivalence. This combines inner horn filling

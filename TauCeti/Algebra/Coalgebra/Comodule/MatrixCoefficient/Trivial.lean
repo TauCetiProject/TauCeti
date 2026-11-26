@@ -27,8 +27,12 @@ coefficient calculation, a trivial comodule's coefficient subalgebra is the bott
 
 ## Main declarations
 
+* `TauCeti.Comodule.matrixCoefficientSubmodule_le_span_singleton_of_coact_eq`: a coaction
+  `m ↦ m ⊗ c` has all its coefficients on the line spanned by `c`.
 * `TauCeti.Comodule.groupLike_matrixCoefficientSubmodule_le_span_singleton`.
 * `TauCeti.Comodule.groupLike_rankOne_matrixCoefficientSubmodule_eq_span_singleton`.
+* `GroupLike.matrixCoefficientSubmodule_le_span_singleton_iff`: conversely, a free comodule
+  with coefficients on the line spanned by `g` has the coaction `m ↦ m ⊗ g`.
 * `TauCeti.Comodule.groupLike_matrixCoefficientSubalgebra_le_adjoin_singleton`.
 * `TauCeti.Comodule.groupLike_rankOne_matrixCoefficientSubalgebra_eq_adjoin_singleton`.
 * `TauCeti.Comodule.trivial_rankOne_matrixCoefficientSubmodule_eq_span_singleton_one`.
@@ -56,6 +60,15 @@ section GroupLikeSubmodule
 variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
 variable {M : Type w} [AddCommMonoid M] [Module R M]
 
+/-- If the coaction sends every `m` to `m ⊗ c`, all matrix coefficients lie in the line
+spanned by `c`, without any freeness assumption on the comodule. -/
+theorem matrixCoefficientSubmodule_le_span_singleton_of_coact_eq [Comodule R C M] (c : C)
+    (h : ∀ m : M, coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] c) :
+    matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤ R ∙ c := by
+  refine matrixCoefficientSubmodule_le fun φ m ↦ ?_
+  simpa [matrixCoefficient_def, h] using
+    (Submodule.smul_mem (R ∙ c) (φ m) (Submodule.mem_span_singleton_self c))
+
 /-- A matrix coefficient of a group-like comodule lies in the line spanned by its group-like
 element. -/
 theorem groupLike_matrixCoefficient_mem_span_singleton (g : GroupLike R C) (φ : M →ₗ[R] R) (m : M) :
@@ -72,8 +85,8 @@ theorem groupLike_matrixCoefficientSubmodule_le_span_singleton (g : GroupLike R 
     matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤
       Submodule.span R ({(g : C)} : Set C) := by
   let : Comodule R C M := groupLike (R := R) (C := C) (M := M) g
-  exact matrixCoefficientSubmodule_le (R := R) (C := C) (M := M)
-    (groupLike_matrixCoefficient_mem_span_singleton (R := R) (C := C) g)
+  exact matrixCoefficientSubmodule_le_span_singleton_of_coact_eq (g : C)
+    (groupLike_coact_apply g)
 
 /-- The group-like element is a matrix coefficient of the rank-one group-like comodule. -/
 theorem groupLike_mem_rankOne_matrixCoefficientSet (g : GroupLike R C) :
@@ -101,6 +114,35 @@ theorem groupLike_rankOne_matrixCoefficientSubmodule_eq_span_singleton (g : Grou
       (C := C) g)
 
 end GroupLikeSubmodule
+
+section GroupLikeCoact
+
+variable [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable {M : Type w} [AddCommMonoid M] [Module R M] [Comodule R C M]
+
+/-- **Coefficients on a group-like line force the group-like coaction.** A free comodule has all
+its matrix coefficients in the line spanned by a group-like element `g` exactly when its
+coaction is `m ↦ m ⊗ g`. A coefficient `c(φ, m)` on that line is `φ m • g`, as the counit shows,
+and the coaction is determined by its coefficients along a basis. -/
+theorem _root_.GroupLike.matrixCoefficientSubmodule_le_span_singleton_iff [Module.Free R M]
+    (g : GroupLike R C) :
+    matrixCoefficientSubmodule (R := R) (C := C) (M := M) ≤ R ∙ (g : C) ↔
+      ∀ m : M, coact (R := R) (C := C) (M := M) m = m ⊗ₜ[R] (g : C) := by
+  refine ⟨fun h m ↦ ?_, matrixCoefficientSubmodule_le_span_singleton_of_coact_eq (g : C)⟩
+  · have hc (φ : M →ₗ[R] R) : matrixCoefficient (R := R) (C := C) φ m = φ m • (g : C) := by
+      obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.1
+        (h (matrixCoefficient_mem_submodule (R := R) (C := C) φ m))
+      have hε : r = φ m := by
+        simpa using congrArg (Coalgebra.counit (R := R) (A := C)) hr
+      rw [← hr, hε]
+    -- Both sides have the same coordinates `c(bᵢ*, m)` along a basis `(bᵢ)` of `M`.
+    classical
+    let b := Module.Free.chooseBasis R M
+    refine (TensorProduct.equivFinsuppOfBasisLeft b).injective (Finsupp.ext fun i ↦ ?_)
+    simp [TensorProduct.equivFinsuppOfBasisLeft_apply, LinearMap.rTensor_def,
+      ← matrixCoefficient_def, hc]
+
+end GroupLikeCoact
 
 section GroupLikeSubalgebra
 
