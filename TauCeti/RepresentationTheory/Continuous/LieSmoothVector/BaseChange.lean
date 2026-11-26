@@ -19,9 +19,9 @@ the real Lie algebra of left-invariant derivations. The derived action extends `
 
 For a finite family `Z` in `𝔤` this file defines the word seminorms
 `P^Z_k(v) = ∑_{|w| ≤ k} ‖dπ(Z_w) v‖` (`ContRepresentation.baseChangeWordSeminorm`), as the word
-seminorms `ContRepresentation.endWordSeminorm` along the operators `dπ(Z_j)`. For `Z = 1 ⊗ X` they
-are the real word seminorms of `X` (`ContRepresentation.baseChangeWordSeminorm_one_tmul`). The
-comparison `ContRepresentation.endWordSeminorm_le_of_eq_sum` for families of operators, which also
+seminorms `Seminorm.endWordSeminorm` of the norm along the operators `dπ(Z_j)`. For `Z = 1 ⊗ X`
+they are the real word seminorms of `X` (`ContRepresentation.baseChangeWordSeminorm_one_tmul`). The
+comparison `Seminorm.endWordSeminorm_le_of_eq_sum` for families of operators, which also
 gives the real comparison `ContRepresentation.wordSeminorm_le_of_eq_sum`, shows: if
 `Y j = ∑ i, c j i • Z i` with `c j i ∈ 𝕜`, then `P^Y_k ≤ (1 + ∑ j, ∑ i, ‖c j i‖)^k P^Z_k`
 (`ContRepresentation.baseChangeWordSeminorm_le_of_eq_sum`). Every finite family in `𝔤` is a
@@ -75,16 +75,19 @@ variable [Fintype κ]
 
 variable (I π) in
 /-- The word seminorm `P^Z_k(v) = ∑_{|w| ≤ k} ‖dπ(Z_w) v‖` on smooth vectors, along a family `Z`
-of `𝕜 ⊗[ℝ] Lie(G)`: the word seminorm along the operators `dπ(Z_j)`. -/
+of `𝕜 ⊗[ℝ] Lie(G)`: the word seminorm of the norm of `V` along the operators `dπ(Z_j)`. -/
 def baseChangeWordSeminorm (Z : κ → 𝕜 ⊗[ℝ] LeftInvariantDerivation I G) (k : ℕ) :
     Seminorm 𝕜 (lieSmoothVectors I π) :=
-  endWordSeminorm (fun j ↦ lieSmoothVectorsBaseChangeDerivedAction I π (Z j)) k
+  ((normSeminorm 𝕜 V).comp (lieSmoothVectors I π).subtype).endWordSeminorm
+    (fun j ↦ lieSmoothVectorsBaseChangeDerivedAction I π (Z j)) k
 
-/-- The word seminorm along `Z` is the word seminorm along the operators `dπ(Z_j)`. -/
+/-- The word seminorm along `Z` is the word seminorm of the norm of `V` along the operators
+`dπ(Z_j)`. -/
 theorem baseChangeWordSeminorm_eq_endWordSeminorm
     (Z : κ → 𝕜 ⊗[ℝ] LeftInvariantDerivation I G) (k : ℕ) :
     baseChangeWordSeminorm I π Z k =
-      endWordSeminorm (fun j ↦ lieSmoothVectorsBaseChangeDerivedAction I π (Z j)) k :=
+      ((normSeminorm 𝕜 V).comp (lieSmoothVectors I π).subtype).endWordSeminorm
+        (fun j ↦ lieSmoothVectorsBaseChangeDerivedAction I π (Z j)) k :=
   (rfl)
 
 /-- **The word seminorms of `1 ⊗ X` are the real word seminorms of `X`.** -/
@@ -103,7 +106,7 @@ theorem baseChangeWordSeminorm_le_of_eq_sum (Z : κ → 𝕜 ⊗[ℝ] LeftInvari
     baseChangeWordSeminorm I π Y k v ≤
       (1 + ∑ j, ∑ i, ‖c j i‖) ^ k * baseChangeWordSeminorm I π Z k v := by
   simp only [baseChangeWordSeminorm_eq_endWordSeminorm]
-  exact endWordSeminorm_le_of_eq_sum _ c (fun j ↦ by simp [hY j]) k v
+  exact Seminorm.endWordSeminorm_le_of_eq_sum _ _ c (fun j ↦ by simp [hY j]) k v
 
 /-! ### Real and `𝕜`-bases -/
 

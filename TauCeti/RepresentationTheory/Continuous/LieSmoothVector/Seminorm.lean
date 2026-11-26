@@ -35,8 +35,9 @@ the derived action lowers the order by one: if `Y = ∑ i, c i • X i`, then
 `k` gives distinct words of length at most `k + 1`.
 
 The word seminorms and these properties are stated once for the word seminorms
-`P^D_k(v) = ∑_{|w| ≤ k} ‖D_w v‖` along any family `D` of operators on the smooth vectors
-(`ContRepresentation.endWordSeminorm`); the word seminorms along `X` are the case `D i = dπ(X_i)`.
+`P^D_k(x) = ∑_{|w| ≤ k} p(D_w x)` of a seminorm `p` along any family `D` of operators on a module
+(`Seminorm.endWordSeminorm`); the word seminorms along `X` are the case of the norm on the smooth
+vectors and `D i = dπ(X_i)`.
 
 ## Main definitions
 
@@ -49,8 +50,8 @@ The word seminorms and these properties are stated once for the word seminorms
 * `TauCeti.SobolevIndex m k`: the exponent vectors `α : Fin m → ℕ` with `|α| ≤ k`.
 * `ContRepresentation.wordAction I π X w`: the operator `dπ(X_w)` of a word `w`, for a
   representation over any ring.
-* `ContRepresentation.endWordSeminorm D k`: the word seminorm `P^D_k` along a family `D` of
-  operators on the smooth vectors.
+* `Seminorm.endWordSeminorm p D k`: the word seminorm `P^D_k` of a seminorm `p` along a family `D`
+  of operators.
 * `ContRepresentation.wordSeminorm I π X k`: the word seminorm `P_k`.
 * `ContRepresentation.sobolevSeminorm I π X k`: the Sobolev seminorm `Q_k`.
 
@@ -60,9 +61,9 @@ The word seminorms and these properties are stated once for the word seminorms
   seminorms as explicit sums.
 * `TauCeti.BoundedWord.sum_succ`: a sum over the words of length at most `k + 1`, split into the
   empty word and the words `w i` with `|w| ≤ k`.
-* `ContRepresentation.endWordSeminorm_succ`: `P^D_{k+1}(v) = ‖v‖ + ∑ i, P^D_k(D_i v)`.
-* `ContRepresentation.endWordSeminorm_apply_le_of_eq_sum`: if `A = ∑ i, c i • D i`, then
-  `P^D_k(A v) ≤ (∑ i, ‖c i‖) P^D_{k+1}(v)`.
+* `Seminorm.endWordSeminorm_succ`: `P^D_{k+1}(x) = p(x) + ∑ i, P^D_k(D_i x)`.
+* `Seminorm.endWordSeminorm_apply_le_of_eq_sum`: if `A = ∑ i, c i • D i`, then
+  `P^D_k(A x) ≤ (∑ i, ‖c i‖) P^D_{k+1}(x)`.
 * `ContRepresentation.wordSeminorm_zero`: `P_0` is the norm.
 * `ContRepresentation.wordSeminorm_succ`: `P_{k+1}(v) = ‖v‖ + ∑ i, P_k(dπ(X_i) v)`.
 * `ContRepresentation.sobolevSeminorm_le_wordSeminorm`: `Q_k ≤ P_k`.
@@ -245,6 +246,77 @@ end BoundedWord
 
 end TauCeti
 
+namespace Seminorm
+
+open TauCeti
+
+/-! ### The word seminorms along a family of operators -/
+
+variable {𝕜 M ι : Type*} [SeminormedCommRing 𝕜] [AddCommGroup M] [Module 𝕜 M] [Fintype ι]
+
+/-- The word seminorm `P^D_k(x) = ∑_{|w| ≤ k} p(D_w x)` of a seminorm `p` along a family `D` of
+operators, summed over all words `w = [i₁, …, iₙ]` in `ι` of length at most `k`, where
+`D_w = D_{i₁} ∘ ⋯ ∘ D_{iₙ}`. For the norm on the smooth vectors and `D i = dπ(X_i)` this is
+`ContRepresentation.wordSeminorm`. -/
+def endWordSeminorm (p : Seminorm 𝕜 M) (D : ι → Module.End 𝕜 M) (k : ℕ) : Seminorm 𝕜 M :=
+  ∑ w : BoundedWord ι k, p.comp ((List.ofFn w.2).map D).prod
+
+/-- The word seminorm along a family of operators as an explicit sum over words. -/
+theorem endWordSeminorm_apply (p : Seminorm 𝕜 M) (D : ι → Module.End 𝕜 M) (k : ℕ) (x : M) :
+    p.endWordSeminorm D k x = ∑ w : BoundedWord ι k, p (((List.ofFn w.2).map D).prod x) := by
+  rw [← FunLike.coeAddMonoidHom_apply]
+  simp [endWordSeminorm, map_sum, Finset.sum_apply]
+
+/-- The word seminorm of order zero is the seminorm `p`. -/
+@[simp]
+theorem endWordSeminorm_zero (p : Seminorm 𝕜 M) (D : ι → Module.End 𝕜 M) (x : M) :
+    p.endWordSeminorm D 0 x = p x := by
+  rw [endWordSeminorm_apply, Fintype.sum_sigma, Fin.sum_univ_one]
+  simp
+
+/-- **The recursion for the word seminorms.** `P^D_{k+1}(x) = p(x) + ∑ i, P^D_k(D_i x)`: a word
+of length at most `k + 1` is empty or a word of length at most `k` followed by a letter `i`, and
+`D_{w i} x = D_w D_i x`. -/
+theorem endWordSeminorm_succ (p : Seminorm 𝕜 M) (D : ι → Module.End 𝕜 M) (k : ℕ) (x : M) :
+    p.endWordSeminorm D (k + 1) x = p x + ∑ i, p.endWordSeminorm D k (D i x) := by
+  rw [endWordSeminorm_apply, BoundedWord.sum_succ (M := ℝ)]
+  simp only [BoundedWord.ofFn_nil, BoundedWord.ofFn_snoc, List.map_nil, List.prod_nil,
+    List.map_append, List.prod_append, List.map_cons, List.prod_cons, mul_one,
+    one_apply_eq_self, mul_apply_eq_comp, endWordSeminorm_apply]
+
+/-- The word seminorms increase with the order: `P^D_k ≤ P^D_{k+1}`. -/
+theorem endWordSeminorm_le_succ (p : Seminorm 𝕜 M) (D : ι → Module.End 𝕜 M) (k : ℕ) (x : M) :
+    p.endWordSeminorm D k x ≤ p.endWordSeminorm D (k + 1) x := by
+  classical
+  rw [endWordSeminorm_apply, endWordSeminorm_apply]
+  exact Finset.sum_le_sum_of_injOn BoundedWord.castSucc BoundedWord.castSucc_injective.injOn
+    (Finset.subset_univ _) (fun _ _ ↦ le_rfl) fun _ _ _ ↦ apply_nonneg _ _
+
+/-- The word seminorms increase with the order: `P^D_k ≤ P^D_l` for `k ≤ l`. -/
+theorem endWordSeminorm_mono (p : Seminorm 𝕜 M) (D : ι → Module.End 𝕜 M) {k l : ℕ} (hkl : k ≤ l)
+    (x : M) : p.endWordSeminorm D k x ≤ p.endWordSeminorm D l x :=
+  monotone_nat_of_le_succ (fun n ↦ p.endWordSeminorm_le_succ D n x) hkl
+
+/-- **The derivative estimate along a family element.** `P^D_k(D_i x) ≤ P^D_{k+1}(x)`. -/
+theorem endWordSeminorm_apply_le (p : Seminorm 𝕜 M) (D : ι → Module.End 𝕜 M) (k : ℕ) (i : ι)
+    (x : M) : p.endWordSeminorm D k (D i x) ≤ p.endWordSeminorm D (k + 1) x := by
+  rw [endWordSeminorm_succ]
+  exact le_add_of_nonneg_of_le (apply_nonneg _ _) (Finset.single_le_sum
+    (f := fun i ↦ p.endWordSeminorm D k (D i x)) (fun _ _ ↦ apply_nonneg _ _) (Finset.mem_univ i))
+
+/-- **The derivative estimate.** If `A = ∑ i, c i • D i`, then
+`P^D_k(A x) ≤ (∑ i, ‖c i‖) P^D_{k+1}(x)`. -/
+theorem endWordSeminorm_apply_le_of_eq_sum (p : Seminorm 𝕜 M) (D : ι → Module.End 𝕜 M) (k : ℕ)
+    {A : Module.End 𝕜 M} (c : ι → 𝕜) (hA : A = ∑ i, c i • D i) (x : M) :
+    p.endWordSeminorm D k (A x) ≤ (∑ i, ‖c i‖) * p.endWordSeminorm D (k + 1) x := by
+  rw [hA, LinearMap.sum_apply, Finset.sum_mul]
+  refine (Finset.le_sum_of_subadditive _ (map_zero _).le (map_add_le_add _) _ _).trans
+    (Finset.sum_le_sum fun i _ ↦ ?_)
+  rw [LinearMap.smul_apply, map_smul_eq_mul]
+  exact mul_le_mul_of_nonneg_left (p.endWordSeminorm_apply_le D k i x) (norm_nonneg _)
+
+end Seminorm
+
 namespace ContRepresentation
 
 open TauCeti
@@ -313,110 +385,40 @@ variable {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 V] [SMulCommClass �
 
 variable {π}
 
-/-! ### The word seminorms along a family of operators -/
+/-! ### The word seminorms along a family of Lie algebra elements -/
 
 variable {ι : Type*}
 
 variable [Fintype ι]
-
-section EndWordSeminorm
-
-omit [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G]
-
-/-- The word seminorm `P^D_k(v) = ∑_{|w| ≤ k} ‖D_w v‖` on smooth vectors along a family `D` of
-operators, summed over all words `w = [i₁, …, iₙ]` in `ι` of length at most `k`, where
-`D_w = D_{i₁} ∘ ⋯ ∘ D_{iₙ}`. For `D i = dπ(X_i)` this is `ContRepresentation.wordSeminorm`. -/
-def endWordSeminorm (D : ι → Module.End 𝕜 (lieSmoothVectors I π)) (k : ℕ) :
-    Seminorm 𝕜 (lieSmoothVectors I π) :=
-  ∑ w : BoundedWord ι k,
-    (normSeminorm 𝕜 V).comp ((lieSmoothVectors I π).subtype ∘ₗ ((List.ofFn w.2).map D).prod)
-
-/-- The word seminorm along a family of operators as an explicit sum over words. -/
-theorem endWordSeminorm_apply (D : ι → Module.End 𝕜 (lieSmoothVectors I π)) (k : ℕ)
-    (v : lieSmoothVectors I π) :
-    endWordSeminorm D k v = ∑ w : BoundedWord ι k, ‖(((List.ofFn w.2).map D).prod v : V)‖ := by
-  rw [← FunLike.coeAddMonoidHom_apply]
-  simp [endWordSeminorm, map_sum, Finset.sum_apply]
-
-/-- The word seminorm of order zero is the norm of `V`. -/
-@[simp]
-theorem endWordSeminorm_zero (D : ι → Module.End 𝕜 (lieSmoothVectors I π))
-    (v : lieSmoothVectors I π) : endWordSeminorm D 0 v = ‖(v : V)‖ := by
-  rw [endWordSeminorm_apply, Fintype.sum_sigma, Fin.sum_univ_one]
-  simp
-
-/-- **The recursion for the word seminorms.** `P^D_{k+1}(v) = ‖v‖ + ∑ i, P^D_k(D_i v)`: a word
-of length at most `k + 1` is empty or a word of length at most `k` followed by a letter `i`, and
-`D_{w i} v = D_w D_i v`. -/
-theorem endWordSeminorm_succ (D : ι → Module.End 𝕜 (lieSmoothVectors I π)) (k : ℕ)
-    (v : lieSmoothVectors I π) :
-    endWordSeminorm D (k + 1) v = ‖(v : V)‖ + ∑ i, endWordSeminorm D k (D i v) := by
-  rw [endWordSeminorm_apply, BoundedWord.sum_succ (M := ℝ)]
-  simp only [BoundedWord.ofFn_nil, BoundedWord.ofFn_snoc, List.map_nil, List.prod_nil,
-    List.map_append, List.prod_append, List.map_cons, List.prod_cons, mul_one,
-    one_apply_eq_self, mul_apply_eq_comp, endWordSeminorm_apply]
-
-/-- The word seminorms increase with the order: `P^D_k ≤ P^D_{k+1}`. -/
-theorem endWordSeminorm_le_succ (D : ι → Module.End 𝕜 (lieSmoothVectors I π)) (k : ℕ)
-    (v : lieSmoothVectors I π) : endWordSeminorm D k v ≤ endWordSeminorm D (k + 1) v := by
-  classical
-  rw [endWordSeminorm_apply, endWordSeminorm_apply]
-  exact Finset.sum_le_sum_of_injOn BoundedWord.castSucc BoundedWord.castSucc_injective.injOn
-    (Finset.subset_univ _) (fun _ _ ↦ le_rfl) fun _ _ _ ↦ norm_nonneg _
-
-/-- The word seminorms increase with the order: `P^D_k ≤ P^D_l` for `k ≤ l`. -/
-theorem endWordSeminorm_mono (D : ι → Module.End 𝕜 (lieSmoothVectors I π)) {k l : ℕ}
-    (hkl : k ≤ l) (v : lieSmoothVectors I π) : endWordSeminorm D k v ≤ endWordSeminorm D l v :=
-  monotone_nat_of_le_succ (fun n ↦ endWordSeminorm_le_succ D n v) hkl
-
-/-- **The derivative estimate along a family element.** `P^D_k(D_i v) ≤ P^D_{k+1}(v)`. -/
-theorem endWordSeminorm_apply_le (D : ι → Module.End 𝕜 (lieSmoothVectors I π)) (k : ℕ)
-    (i : ι) (v : lieSmoothVectors I π) :
-    endWordSeminorm D k (D i v) ≤ endWordSeminorm D (k + 1) v := by
-  rw [endWordSeminorm_succ]
-  exact le_add_of_nonneg_of_le (norm_nonneg _) (Finset.single_le_sum
-    (f := fun i ↦ endWordSeminorm D k (D i v)) (fun _ _ ↦ apply_nonneg _ _) (Finset.mem_univ i))
-
-/-- **The derivative estimate.** If `A = ∑ i, c i • D i`, then
-`P^D_k(A v) ≤ (∑ i, ‖c i‖) P^D_{k+1}(v)`. -/
-theorem endWordSeminorm_apply_le_of_eq_sum (D : ι → Module.End 𝕜 (lieSmoothVectors I π))
-    (k : ℕ) {A : Module.End 𝕜 (lieSmoothVectors I π)} (c : ι → 𝕜) (hA : A = ∑ i, c i • D i)
-    (v : lieSmoothVectors I π) :
-    endWordSeminorm D k (A v) ≤ (∑ i, ‖c i‖) * endWordSeminorm D (k + 1) v := by
-  rw [hA, LinearMap.sum_apply, Finset.sum_mul]
-  refine (Finset.le_sum_of_subadditive _ (map_zero _).le (map_add_le_add _) _ _).trans
-    (Finset.sum_le_sum fun i _ ↦ ?_)
-  rw [LinearMap.smul_apply, map_smul_eq_mul]
-  exact mul_le_mul_of_nonneg_left (endWordSeminorm_apply_le D k i v) (norm_nonneg _)
-
-end EndWordSeminorm
-
-/-! ### The word seminorms along a family of Lie algebra elements -/
 
 variable (I π) in
 /-- The word seminorm `P_k(v) = ∑_{|w| ≤ k} ‖dπ(X_w) v‖` on smooth vectors, summed over all
 words `w` in `ι` of length at most `k`. -/
 def wordSeminorm (X : ι → LeftInvariantDerivation I G) (k : ℕ) :
     Seminorm 𝕜 (lieSmoothVectors I π) :=
-  endWordSeminorm (fun i ↦ lieSmoothVectorsDerivative I π (X i)) k
+  ((normSeminorm 𝕜 V).comp (lieSmoothVectors I π).subtype).endWordSeminorm
+    (fun i ↦ lieSmoothVectorsDerivative I π (X i)) k
 
-/-- The word seminorm along `X` is the word seminorm along the operators `dπ(X_i)`. -/
+/-- The word seminorm along `X` is the word seminorm of the norm of `V` along the operators
+`dπ(X_i)`. -/
 theorem wordSeminorm_eq_endWordSeminorm (X : ι → LeftInvariantDerivation I G) (k : ℕ) :
-    wordSeminorm I π X k = endWordSeminorm (fun i ↦ lieSmoothVectorsDerivative I π (X i)) k :=
+    wordSeminorm I π X k =
+      ((normSeminorm 𝕜 V).comp (lieSmoothVectors I π).subtype).endWordSeminorm
+        (fun i ↦ lieSmoothVectorsDerivative I π (X i)) k :=
   (rfl)
 
 /-- The word seminorm as an explicit sum over words. -/
 theorem wordSeminorm_apply (X : ι → LeftInvariantDerivation I G) (k : ℕ)
     (v : lieSmoothVectors I π) :
     wordSeminorm I π X k v =
-      ∑ w : BoundedWord ι k, ‖(wordAction I π X (List.ofFn w.2) v : V)‖ :=
-  endWordSeminorm_apply _ k v
+      ∑ w : BoundedWord ι k, ‖(wordAction I π X (List.ofFn w.2) v : V)‖ := by
+  simp [wordSeminorm_eq_endWordSeminorm, Seminorm.endWordSeminorm_apply, wordAction]
 
 /-- The word seminorm of order zero is the norm of `V`. -/
 @[simp]
 theorem wordSeminorm_zero (X : ι → LeftInvariantDerivation I G) (v : lieSmoothVectors I π) :
-    wordSeminorm I π X 0 v = ‖(v : V)‖ :=
-  endWordSeminorm_zero _ v
+    wordSeminorm I π X 0 v = ‖(v : V)‖ := by
+  simp [wordSeminorm_eq_endWordSeminorm]
 
 /-- **The recursion for the word seminorms.** `P_{k+1}(v) = ‖v‖ + ∑ i, P_k(dπ(X_i) v)`: a word
 of length at most `k + 1` is empty or a word of length at most `k` followed by a letter `i`, and
@@ -424,20 +426,21 @@ of length at most `k + 1` is empty or a word of length at most `k` followed by a
 theorem wordSeminorm_succ (X : ι → LeftInvariantDerivation I G) (k : ℕ)
     (v : lieSmoothVectors I π) :
     wordSeminorm I π X (k + 1) v =
-      ‖(v : V)‖ + ∑ i, wordSeminorm I π X k (lieSmoothVectorsDerivative I π (X i) v) :=
-  endWordSeminorm_succ _ k v
+      ‖(v : V)‖ + ∑ i, wordSeminorm I π X k (lieSmoothVectorsDerivative I π (X i) v) := by
+  simp only [wordSeminorm_eq_endWordSeminorm, Seminorm.endWordSeminorm_succ, Seminorm.comp_apply,
+    coe_normSeminorm, Submodule.coe_subtype]
 
 /-! ### Monotonicity and the derivative estimate -/
 
 /-- The word seminorms increase with the order: `P_k ≤ P_{k+1}`. -/
 theorem wordSeminorm_le_succ (X : ι → LeftInvariantDerivation I G) (k : ℕ)
     (v : lieSmoothVectors I π) : wordSeminorm I π X k v ≤ wordSeminorm I π X (k + 1) v :=
-  endWordSeminorm_le_succ _ k v
+  Seminorm.endWordSeminorm_le_succ _ _ k v
 
 /-- The word seminorms increase with the order: `P_k ≤ P_l` for `k ≤ l`. -/
 theorem wordSeminorm_mono (X : ι → LeftInvariantDerivation I G) {k l : ℕ} (hkl : k ≤ l)
     (v : lieSmoothVectors I π) : wordSeminorm I π X k v ≤ wordSeminorm I π X l v :=
-  endWordSeminorm_mono _ hkl v
+  Seminorm.endWordSeminorm_mono _ _ hkl v
 
 /-- **The derivative estimate along a family element.** `P_k(dπ(X_i) v) ≤ P_{k+1}(v)` for the
 word seminorms along any family `X`. -/
@@ -445,11 +448,18 @@ theorem wordSeminorm_lieSmoothVectorsDerivative_le (X : ι → LeftInvariantDeri
     (k : ℕ) (i : ι) (v : lieSmoothVectors I π) :
     wordSeminorm I π X k (lieSmoothVectorsDerivative I π (X i) v) ≤
       wordSeminorm I π X (k + 1) v :=
-  endWordSeminorm_apply_le _ k i v
+  Seminorm.endWordSeminorm_apply_le _ _ k i v
 
 section RealCombination
 
 variable [NormedAlgebra ℝ 𝕜] [IsScalarTower ℝ 𝕜 V]
+
+/-- The derived action of a real combination `∑ i, c i • X i` is the `𝕜`-combination
+`∑ i, c i • dπ(X_i)` of operators on the smooth vectors. -/
+theorem lieSmoothVectorsDerivative_sum_smul (X : ι → LeftInvariantDerivation I G) (c : ι → ℝ) :
+    lieSmoothVectorsDerivative I π (∑ i, c i • X i) =
+      ∑ i, algebraMap ℝ 𝕜 (c i) • lieSmoothVectorsDerivative I π (X i) := by
+  simp [lieSmoothVectorsDerivative_sum, lieSmoothVectorsDerivative_smul, algebraMap_smul]
 
 /-- **The derivative estimate.** If `Y = ∑ i, c i • X i`, then
 `P_k(dπ(Y) v) ≤ (∑ i, |c i|) P_{k+1}(v)`. -/
@@ -458,11 +468,11 @@ theorem wordSeminorm_lieSmoothVectorsDerivative_le_of_eq_sum
     (c : ι → ℝ) (hY : Y = ∑ i, c i • X i) (v : lieSmoothVectors I π) :
     wordSeminorm I π X k (lieSmoothVectorsDerivative I π Y v) ≤
       (∑ i, |c i|) * wordSeminorm I π X (k + 1) v := by
-  have h := endWordSeminorm_apply_le_of_eq_sum (fun i ↦ lieSmoothVectorsDerivative I π (X i)) k
-    (fun i ↦ algebraMap ℝ 𝕜 (c i)) (A := lieSmoothVectorsDerivative I π Y)
-    (by simp [hY, lieSmoothVectorsDerivative_sum, lieSmoothVectorsDerivative_smul,
-      algebraMap_smul]) v
-  simp only [norm_algebraMap', Real.norm_eq_abs] at h
+  have h := Seminorm.endWordSeminorm_apply_le_of_eq_sum
+    ((normSeminorm 𝕜 V).comp (lieSmoothVectors I π).subtype)
+    (fun i ↦ lieSmoothVectorsDerivative I π (X i)) k (fun i ↦ algebraMap ℝ 𝕜 (c i))
+    (A := lieSmoothVectorsDerivative I π Y) (by rw [hY, lieSmoothVectorsDerivative_sum_smul]) v
+  simp only [← wordSeminorm_eq_endWordSeminorm, norm_algebraMap', Real.norm_eq_abs] at h
   exact h
 
 /-- **The derivative estimate for a basis** (`P_k(dπ(Y) v) ≤ C_{Y} P_{k+1}(v)`). For a real basis
