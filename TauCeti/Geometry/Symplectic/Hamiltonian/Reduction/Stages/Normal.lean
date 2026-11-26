@@ -23,7 +23,7 @@ where `K` acts on `M` through `ι` and `R` is the residual group: `p` is surject
 differential `dp : 𝔤 → 𝔯` at the identity is surjective, and `ker dp ≤ range dι`. No exactness
 of the groups themselves is needed. For a closed normal subgroup `N`, the intended instance is
 `K = N` with its inclusion and `R = G ⧸ N` with the projection; the Lie-algebra conditions are
-then the exactness of `𝔫 → 𝔤 → 𝔤 ⧸ 𝔫` on tangent Lie algebras
+then the exactness of `𝔫 → 𝔤 → Lie(G ⧸ N)` of the differentials `dι` and `dp` at the identity
 (`Subgroup.ker_groupLieAlgebraMap_mk'` and `Subgroup.surjective_groupLieAlgebraMap_mk'`). The
 two reductions at zero are:
 
