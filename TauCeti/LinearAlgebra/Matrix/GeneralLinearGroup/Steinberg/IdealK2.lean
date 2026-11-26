@@ -221,8 +221,8 @@ theorem mk_surjective : Function.Surjective (mk I) :=
 variable {I} in
 /-- An element of `St'(R, I)` is trivial in `St(R, I)` exactly when it lies in the cross subgroup.
 -/
-theorem mk_eq_one_iff {y : kerFst I} : mk I y = 1 ↔ (y : SteinbergGroup I.double) ∈ cross I := by
-  rw [mk, QuotientGroup.mk'_apply, QuotientGroup.eq_one_iff, mem_subgroupOf]
+theorem mk_eq_one_iff {y : kerFst I} : mk I y = 1 ↔ (y : SteinbergGroup I.double) ∈ cross I :=
+  (QuotientGroup.eq_one_iff y).trans mem_subgroupOf
 
 variable {I} in
 /-- Two homomorphisms out of `St(R, I)` agree when they agree on the classes of `St'(R, I)`. -/
@@ -358,10 +358,17 @@ def kerFst : Subgroup (AlgebraicK2 I.double) :=
   (AlgebraicK2.map I.doubleFst).ker
 
 variable {I} in
+/-- An element of `K₂(R ⊕ I)` lies in `K₂'(R, I)` exactly when the projection kills it. -/
+@[simp]
+theorem mem_kerFst_iff {x : AlgebraicK2 I.double} :
+    x ∈ kerFst I ↔ AlgebraicK2.map I.doubleFst x = 1 :=
+  MonoidHom.mem_ker
+
+variable {I} in
 /-- An element of `K₂'(R, I)` lies in `St'(R, I)`. -/
 theorem coe_mem_kerFst (x : kerFst I) :
     ((x : AlgebraicK2 I.double) : SteinbergGroup I.double) ∈ IdealSteinbergGroup.kerFst I := by
-  simpa using congrArg Subtype.val (MonoidHom.mem_ker.1 x.property)
+  simpa using congrArg Subtype.val (mem_kerFst_iff.1 x.property)
 
 /-- The homomorphism `K₂'(R, I) →* K₂(R, I)` sending an element of `K₂(R ⊕ I)` killed by the
 projection to its class in `St(R, I)`. It is surjective with kernel the cross commutators
@@ -382,7 +389,7 @@ theorem ofKerFst_surjective : Function.Surjective (ofKerFst I) := by
   obtain ⟨y, rfl⟩ := IdealSteinbergGroup.mk_surjective I w
   have hy := IdealSteinbergGroup.mk_mem_idealAlgebraicK2_iff.1 hw
   refine ⟨⟨⟨y, hy⟩, ?_⟩, Subtype.ext (coe_ofKerFst_apply I _)⟩
-  simpa [kerFst, ← OneMemClass.coe_eq_one] using IdealSteinbergGroup.mem_kerFst_iff.1 y.property
+  simpa [← OneMemClass.coe_eq_one] using IdealSteinbergGroup.mem_kerFst_iff.1 y.property
 
 /-- The kernel of `K₂'(R, I) →* K₂(R, I)` consists of the cross commutators. -/
 theorem ker_ofKerFst :
