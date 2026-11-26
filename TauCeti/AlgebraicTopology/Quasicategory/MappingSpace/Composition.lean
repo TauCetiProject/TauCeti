@@ -59,6 +59,14 @@ parametrized statement about `X` (`SSet.triangleSpace.exists_triangle_of_horn₃
 * J. Lurie, *Higher Topos Theory*, Corollary 2.3.2.5 (restriction to the spine of `Δ[2]` is a
   trivial fibration exactly for quasicategories).
 * J. Lurie, *Kerodon*, §4.6.9 (composition of morphisms).
+
+The construction follows the existing postcomposition of right mapping spaces in
+`TauCeti.AlgebraicTopology.Quasicategory.Postcomposition`: `SSet.mappingSpace.comp` is built
+like `SSet.rightMappingSpace.postcomp`, as a chosen section of a trivial fibration followed by
+an edge restriction, and its independence of the section (`SSet.mappingSpace.exists_homotopy_comp`)
+is proved like `SSet.rightMappingSpace.exists_homotopy_postcomp`, by applying
+`SSet.exists_homotopy_of_rlp_monomorphisms` to the trivial fibration
+(`SSet.triangleSpace.exists_homotopy_edge₀₂`).
 -/
 
 public section
