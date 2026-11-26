@@ -30,10 +30,17 @@ pair of projections of the chart data (`TauCeti.SobolevSection.chartValueL_prodE
 to the components of its two projections. It commutes with the inclusions of order `k + 1` into
 order `k`, with multiplication by smooth functions, and with the inclusions of `Cᵏ` sections.
 
+The same construction applies to one-forms: a one-form with values in `V ×ᵇ V'` is read in the
+charts of `(A.prod h).tangentHom` as the `prod` of the readings of its two components
+(`TauCeti.FiniteBundleAtlas.coord_tangentHom_prod`), so `W^{k,p}` of `V ×ᵇ V'`-valued one-forms is
+isomorphic to the product of `W^{k,p}` of `V`-valued and of `V'`-valued one-forms
+(`TauCeti.SobolevSection.tangentHomProdEquiv`).
+
 ## Main definitions
 
 * `TauCeti.SobolevSection.prodEquiv`: the isomorphism
   `W^{k,p}(V ×ᵇ V') ≃L[ℝ] W^{k,p}(V) × W^{k,p}(V')`.
+* `TauCeti.SobolevSection.tangentHomProdEquiv`: the same isomorphism for one-forms.
 
 ## Main results
 
@@ -49,6 +56,10 @@ order `k`, with multiplication by smooth functions, and with the inclusions of `
   `TauCeti.SobolevSection.prodEquiv_ofContMDiffSection`: compatibility with the inclusion of order
   `k + 1` into order `k`, with smooth multiplication and with `Cᵏ` sections; the `_symm_` forms
   state the same for the inverse.
+* `TauCeti.SobolevSection.chartValueL_tangentHomProdEquiv_fst_ae`,
+  `TauCeti.SobolevSection.chartValueL_tangentHomProdEquiv_snd_ae`,
+  `TauCeti.SobolevSection.chartValueL_tangentHomProdEquiv_symm_ae`: the chart data of the
+  isomorphism of one-forms and of its inverse.
 -/
 
 public section
@@ -474,6 +485,367 @@ theorem prodEquiv_symm_ofContMDiffSection [IsManifold 𝓘(ℝ, E) k M]
         (ofContMDiffSection A μ p k s, ofContMDiffSection (A.ofBaseSet h) μ p k t) =
       ofContMDiffSection (A.prod h) μ p k σ := by
   rw [ContinuousLinearEquiv.symm_apply_eq, prodEquiv_ofContMDiffSection hσ]
+
+
+/-! ### One-forms with values in a product bundle -/
+
+section TangentHom
+
+variable [IsManifold 𝓘(ℝ, E) 1 M] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [∀ x, IsTopologicalAddGroup (V' x)]
+  [∀ x, ContinuousSMul ℝ (V' x)]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
+  [FiniteDimensional ℝ F'] in
+private theorem coe_image_tangentHom_prod (i : Fin A.n) :
+    ((A.prod h).tangentHom.sectionChartData.image i : Set E) = A.image i :=
+  ((A.prod h).sectionChartData_image_tangentHom i).trans
+    (congrArg SetLike.coe (FiniteBundleAtlas.image_prod i))
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
+  [FiniteDimensional ℝ F'] [NormedSpace ℝ F] [VectorBundle ℝ F V]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, AddCommGroup (V x)] in
+private theorem coe_image_tangentHom_ofBaseSet (i : Fin A.n) :
+    ((A.ofBaseSet h).tangentHom.sectionChartData.image i : Set E) = A.image i :=
+  ((A.ofBaseSet h).sectionChartData_image_tangentHom i).trans
+    (congrArg SetLike.coe (image_ofBaseSet i))
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
+  [FiniteDimensional ℝ F'] in
+private theorem image_tangentHom_prod (i : Fin A.n) :
+    (A.prod h).tangentHom.sectionChartData.image i = A.tangentHom.sectionChartData.image i :=
+  SetLike.coe_injective ((coe_image_tangentHom_prod i).trans
+    (A.sectionChartData_image_tangentHom i).symm)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
+  [FiniteDimensional ℝ F'] in
+private theorem image_tangentHom_ofBaseSet (i : Fin A.n) :
+    (A.ofBaseSet h).tangentHom.sectionChartData.image i =
+      A.tangentHom.sectionChartData.image i :=
+  SetLike.coe_injective ((coe_image_tangentHom_ofBaseSet i).trans
+    (A.sectionChartData_image_tangentHom i).symm)
+
+omit [μ.IsAddHaarMeasure] [FiniteDimensional ℝ E] [BorelSpace E] [FiniteDimensional ℝ F]
+  [FiniteDimensional ℝ F'] in
+/-- An almost everywhere statement on the image of a chart of `(A.prod h).tangentHom` is one on
+the image of the corresponding chart of `A`. -/
+theorem _root_.TauCeti.FiniteBundleAtlas.ae_image_tangentHom_prod_iff {i : Fin A.n}
+    {P : E → Prop} :
+    (∀ᵐ y ∂μ.restrict ((A.prod h).tangentHom.sectionChartData.image i), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
+  rw [coe_image_tangentHom_prod]
+
+omit [μ.IsAddHaarMeasure] [FiniteDimensional ℝ E] [BorelSpace E] [FiniteDimensional ℝ F]
+  [FiniteDimensional ℝ F'] [NormedSpace ℝ F] [VectorBundle ℝ F V]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, AddCommGroup (V x)] in
+/-- An almost everywhere statement on the image of a chart of `(A.ofBaseSet h).tangentHom` is one
+on the image of the corresponding chart of `A`. -/
+theorem _root_.TauCeti.FiniteBundleAtlas.ae_image_tangentHom_ofBaseSet_iff {i : Fin A.n}
+    {P : E → Prop} :
+    (∀ᵐ y ∂μ.restrict ((A.ofBaseSet h).tangentHom.sectionChartData.image i), P y) ↔
+      ∀ᵐ y ∂μ.restrict (A.image i), P y := by
+  rw [coe_image_tangentHom_ofBaseSet]
+
+variable (h μ p k) in
+/-- The components of the first projection of a tuple of components on the charts of
+`(A.prod h).tangentHom`. -/
+private def tangentHomFstData :
+    (A.prod h).tangentHom.sectionChartData.SobolevData μ p k →L[ℝ]
+      A.tangentHom.sectionChartData.SobolevData μ p k :=
+  fiberMapData μ p k (ContinuousLinearMap.compL ℝ E (F × F') F (ContinuousLinearMap.fst ℝ F F'))
+    fun i ↦ (image_tangentHom_prod (A := A) (h := h) i).ge
+
+variable (h μ p k) in
+/-- The components of the second projection of a tuple of components on the charts of
+`(A.prod h).tangentHom`. -/
+private def tangentHomSndData :
+    (A.prod h).tangentHom.sectionChartData.SobolevData μ p k →L[ℝ]
+      (A.ofBaseSet h).tangentHom.sectionChartData.SobolevData μ p k :=
+  fiberMapData μ p k (ContinuousLinearMap.compL ℝ E (F × F') F' (ContinuousLinearMap.snd ℝ F F'))
+    fun i ↦ ((image_tangentHom_ofBaseSet (A := A) (h := h) i).trans
+      (image_tangentHom_prod (A := A) (h := h) i).symm).le
+
+variable (h μ p k) in
+/-- The components on the charts of `(A.prod h).tangentHom` of the first inclusion of a tuple of
+components on the charts of `A.tangentHom`. -/
+private def tangentHomInlData :
+    A.tangentHom.sectionChartData.SobolevData μ p k →L[ℝ]
+      (A.prod h).tangentHom.sectionChartData.SobolevData μ p k :=
+  fiberMapData μ p k (ContinuousLinearMap.compL ℝ E F (F × F') (ContinuousLinearMap.inl ℝ F F'))
+    fun i ↦ (image_tangentHom_prod (A := A) (h := h) i).le
+
+variable (h μ p k) in
+/-- The components on the charts of `(A.prod h).tangentHom` of the second inclusion of a tuple of
+components on the charts of `(A.ofBaseSet h).tangentHom`. -/
+private def tangentHomInrData :
+    (A.ofBaseSet h).tangentHom.sectionChartData.SobolevData μ p k →L[ℝ]
+      (A.prod h).tangentHom.sectionChartData.SobolevData μ p k :=
+  fiberMapData μ p k (ContinuousLinearMap.compL ℝ E F' (F × F') (ContinuousLinearMap.inr ℝ F F'))
+    fun i ↦ ((image_tangentHom_prod (A := A) (h := h) i).trans
+      (image_tangentHom_ofBaseSet (A := A) (h := h) i).symm).le
+
+private theorem chartValueL_tangentHomFstData_ae
+    (w : (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) (i : Fin A.n) :
+    A.tangentHom.sectionChartData.chartValueL μ p k i (tangentHomFstData h μ p k w)
+      =ᵐ[μ.restrict (A.image i)] fun y ↦ (ContinuousLinearMap.fst ℝ F F').comp
+        ((A.prod h).tangentHom.sectionChartData.chartValueL μ p k i w y) :=
+  (A.ae_image_tangentHom_iff μ i).1 <| chartValueL_ae_of_eq_fiberMap μ p k
+    (C₁ := (A.prod h).tangentHom.sectionChartData) (C₂ := A.tangentHom.sectionChartData)
+    (ContinuousLinearMap.compL ℝ E (F × F') F (ContinuousLinearMap.fst ℝ F F')) (i₁ := i) (i₂ := i)
+    (image_tangentHom_prod (A := A) (h := h) i).ge (w₁ := w) (fiberMapData_apply μ p k _ _ w i)
+
+private theorem chartValueL_tangentHomSndData_ae
+    (w : (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) (i : Fin A.n) :
+    (A.ofBaseSet h).tangentHom.sectionChartData.chartValueL μ p k i (tangentHomSndData h μ p k w)
+      =ᵐ[μ.restrict (A.image i)] fun y ↦ (ContinuousLinearMap.snd ℝ F F').comp
+        ((A.prod h).tangentHom.sectionChartData.chartValueL μ p k i w y) :=
+  (FiniteBundleAtlas.ae_image_tangentHom_ofBaseSet_iff (A := A) (h := h)).1 <|
+    chartValueL_ae_of_eq_fiberMap μ p k
+    (C₁ := (A.prod h).tangentHom.sectionChartData)
+    (C₂ := (A.ofBaseSet h).tangentHom.sectionChartData)
+    (ContinuousLinearMap.compL ℝ E (F × F') F' (ContinuousLinearMap.snd ℝ F F')) (i₁ := i)
+    (i₂ := i) ((image_tangentHom_ofBaseSet (A := A) (h := h) i).trans
+      (image_tangentHom_prod (A := A) (h := h) i).symm).le (w₁ := w)
+    (fiberMapData_apply μ p k _ _ w i)
+
+private theorem chartValueL_tangentHomInlData_add_inrData_ae
+    (u : A.tangentHom.sectionChartData.SobolevData μ p k)
+    (v : (A.ofBaseSet h).tangentHom.sectionChartData.SobolevData μ p k) (i : Fin A.n) :
+    (A.prod h).tangentHom.sectionChartData.chartValueL μ p k i
+        (tangentHomInlData h μ p k u + tangentHomInrData h μ p k v)
+      =ᵐ[μ.restrict (A.image i)] fun y ↦
+        (A.tangentHom.sectionChartData.chartValueL μ p k i u y).prod
+          ((A.ofBaseSet h).tangentHom.sectionChartData.chartValueL μ p k i v y) := by
+  have hu := chartValueL_ae_of_eq_fiberMap μ p k (C₁ := A.tangentHom.sectionChartData)
+    (C₂ := (A.prod h).tangentHom.sectionChartData)
+    (ContinuousLinearMap.compL ℝ E F (F × F') (ContinuousLinearMap.inl ℝ F F')) (i₁ := i)
+    (i₂ := i) (image_tangentHom_prod (A := A) (h := h) i).le (w₁ := u)
+    (w₂ := tangentHomInlData h μ p k u) (fiberMapData_apply μ p k _ _ u i)
+  have hv := chartValueL_ae_of_eq_fiberMap μ p k
+    (C₁ := (A.ofBaseSet h).tangentHom.sectionChartData)
+    (C₂ := (A.prod h).tangentHom.sectionChartData)
+    (ContinuousLinearMap.compL ℝ E F' (F × F') (ContinuousLinearMap.inr ℝ F F')) (i₁ := i)
+    (i₂ := i) ((image_tangentHom_prod (A := A) (h := h) i).trans
+      (image_tangentHom_ofBaseSet (A := A) (h := h) i).symm).le (w₁ := v)
+    (w₂ := tangentHomInrData h μ p k v) (fiberMapData_apply μ p k _ _ v i)
+  refine (FiniteBundleAtlas.ae_image_tangentHom_prod_iff (A := A) (h := h)).1 ?_
+  filter_upwards [hu, hv, Lp.coeFn_add
+    ((A.prod h).tangentHom.sectionChartData.chartValueL μ p k i (tangentHomInlData h μ p k u))
+    ((A.prod h).tangentHom.sectionChartData.chartValueL μ p k i (tangentHomInrData h μ p k v))]
+    with y hu hv hadd
+  rw [map_add, hadd, Pi.add_apply, hu, hv]
+  ext z <;> simp
+
+omit [μ.IsAddHaarMeasure] [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
+  [FiniteDimensional ℝ F'] in
+/-- On the image of a chart, the chart data of the section chart data of `(A.prod h).tangentHom`
+read a one-form as the pair of the readings of its components. -/
+private theorem sectionChartData_coord_tangentHom_prod_ae (i : Fin A.n)
+    (θ : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] (V ×ᵇ V') x) :
+    (A.prod h).tangentHom.sectionChartData.coord i θ =ᵐ[μ.restrict (A.image i)] fun y ↦
+      (A.tangentHom.sectionChartData.coord i
+          (fun x ↦ (ContinuousLinearMap.fst ℝ (V x) (V' x)).comp (θ x)) y).prod
+        ((A.ofBaseSet h).tangentHom.sectionChartData.coord i
+          (fun x ↦ (ContinuousLinearMap.snd ℝ (V x) (V' x)).comp (θ x)) y) := by
+  filter_upwards [ae_restrict_mem (A.image i).isOpen.measurableSet] with y hy
+  have hy₁ : y ∈ (A.prod h).tangentHom.sectionChartData.image i := by
+    rw [← SetLike.mem_coe, coe_image_tangentHom_prod]
+    exact hy
+  have hy₂ : y ∈ A.tangentHom.sectionChartData.image i := by
+    rw [← SetLike.mem_coe, A.sectionChartData_image_tangentHom]
+    exact hy
+  have hy₃ : y ∈ (A.ofBaseSet h).tangentHom.sectionChartData.image i := by
+    rw [← SetLike.mem_coe, coe_image_tangentHom_ofBaseSet]
+    exact hy
+  exact ((A.prod h).tangentHom.sectionChartData_coord_of_mem θ hy₁).trans
+    ((FiniteBundleAtlas.coord_tangentHom_prod A h i θ hy).trans (congrArg₂ ContinuousLinearMap.prod
+      (A.tangentHom.sectionChartData_coord_of_mem _ hy₂).symm
+      ((A.ofBaseSet h).tangentHom.sectionChartData_coord_of_mem _ hy₃).symm))
+
+variable (A h μ p k)
+
+/-- The first component of `TauCeti.SobolevSection.tangentHomProdEquiv`. -/
+private def tangentHomFstL :
+    SobolevSection (A.prod h).tangentHom μ p k →L[ℝ] SobolevSection A.tangentHom μ p k :=
+  ((tangentHomFstData h μ p k).comp
+      ((A.prod h).tangentHom.sectionChartData.sobolevSections μ p k).subtypeL).codRestrict
+    (A.tangentHom.sectionChartData.sobolevSections μ p k) fun w ↦ by
+      obtain ⟨θ, hθ⟩ := (A.prod h).tangentHom.sectionChartData.exists_section μ p k w
+      refine (A.tangentHom.sectionChartData.mem_sobolevSections_iff μ p k).2
+        ⟨fun x ↦ (ContinuousLinearMap.fst ℝ (V x) (V' x)).comp (θ x), fun i ↦
+          (A.ae_image_tangentHom_iff μ i).2 ?_⟩
+      filter_upwards [chartValueL_tangentHomFstData_ae
+          (w : (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) i,
+        (FiniteBundleAtlas.ae_image_tangentHom_prod_iff (A := A) (h := h)).1 (hθ i),
+        sectionChartData_coord_tangentHom_prod_ae (h := h) (μ := μ) i θ] with y h₁ h₂ h₃
+      rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, h₁, h₂, h₃,
+        ContinuousLinearMap.fst_comp_prod]
+
+/-- The second component of `TauCeti.SobolevSection.tangentHomProdEquiv`. -/
+private def tangentHomSndL :
+    SobolevSection (A.prod h).tangentHom μ p k →L[ℝ]
+      SobolevSection (A.ofBaseSet h).tangentHom μ p k :=
+  ((tangentHomSndData h μ p k).comp
+      ((A.prod h).tangentHom.sectionChartData.sobolevSections μ p k).subtypeL).codRestrict
+    ((A.ofBaseSet h).tangentHom.sectionChartData.sobolevSections μ p k) fun w ↦ by
+      obtain ⟨θ, hθ⟩ := (A.prod h).tangentHom.sectionChartData.exists_section μ p k w
+      refine ((A.ofBaseSet h).tangentHom.sectionChartData.mem_sobolevSections_iff μ p k).2
+        ⟨fun x ↦ (ContinuousLinearMap.snd ℝ (V x) (V' x)).comp (θ x), fun i ↦
+          (FiniteBundleAtlas.ae_image_tangentHom_ofBaseSet_iff (A := A) (h := h)).2 ?_⟩
+      filter_upwards [chartValueL_tangentHomSndData_ae
+          (w : (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) i,
+        (FiniteBundleAtlas.ae_image_tangentHom_prod_iff (A := A) (h := h)).1 (hθ i),
+        sectionChartData_coord_tangentHom_prod_ae (h := h) (μ := μ) i θ] with y h₁ h₂ h₃
+      rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, h₁, h₂, h₃,
+        ContinuousLinearMap.snd_comp_prod]
+
+/-- The inverse of `TauCeti.SobolevSection.tangentHomProdEquiv`. -/
+private def tangentHomPairL :
+    SobolevSection A.tangentHom μ p k × SobolevSection (A.ofBaseSet h).tangentHom μ p k →L[ℝ]
+      SobolevSection (A.prod h).tangentHom μ p k :=
+  ((tangentHomInlData h μ p k).comp
+      ((A.tangentHom.sectionChartData.sobolevSections μ p k).subtypeL.comp
+        (ContinuousLinearMap.fst ℝ _ _)) +
+    (tangentHomInrData h μ p k).comp
+      (((A.ofBaseSet h).tangentHom.sectionChartData.sobolevSections μ p k).subtypeL.comp
+        (ContinuousLinearMap.snd ℝ _ _))).codRestrict
+    ((A.prod h).tangentHom.sectionChartData.sobolevSections μ p k) fun w ↦ by
+      obtain ⟨s, hs⟩ := A.tangentHom.sectionChartData.exists_section μ p k w.1
+      obtain ⟨t, ht⟩ := (A.ofBaseSet h).tangentHom.sectionChartData.exists_section μ p k w.2
+      refine ((A.prod h).tangentHom.sectionChartData.mem_sobolevSections_iff μ p k).2
+        ⟨fun x ↦ ((s x).prod (t x) : TangentSpace 𝓘(ℝ, E) x →L[ℝ] (V ×ᵇ V') x), fun i ↦
+          (FiniteBundleAtlas.ae_image_tangentHom_prod_iff (A := A) (h := h)).2 ?_⟩
+      filter_upwards [chartValueL_tangentHomInlData_add_inrData_ae (h := h)
+          (w.1 : A.tangentHom.sectionChartData.SobolevData μ p k)
+          (w.2 : (A.ofBaseSet h).tangentHom.sectionChartData.SobolevData μ p k) i,
+        (A.ae_image_tangentHom_iff μ i).1 (hs i),
+        (FiniteBundleAtlas.ae_image_tangentHom_ofBaseSet_iff (A := A) (h := h)).1 (ht i),
+        sectionChartData_coord_tangentHom_prod_ae (h := h) (μ := μ) i
+          fun x ↦ ((s x).prod (t x) : TangentSpace 𝓘(ℝ, E) x →L[ℝ] (V ×ᵇ V') x)]
+        with y h₁ h₂ h₃ h₄
+      simp only [ContinuousLinearMap.fst_comp_prod, ContinuousLinearMap.snd_comp_prod] at h₄
+      rw [add_apply, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, Submodule.subtypeL_apply,
+        ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', h₁, h₄, h₂, h₃]
+
+private theorem coe_tangentHomFstL (w : SobolevSection (A.prod h).tangentHom μ p k) :
+    (tangentHomFstL A h μ p k w : A.tangentHom.sectionChartData.SobolevData μ p k) =
+      tangentHomFstData h μ p k w := by
+  simp [tangentHomFstL]
+
+private theorem coe_tangentHomSndL (w : SobolevSection (A.prod h).tangentHom μ p k) :
+    (tangentHomSndL A h μ p k w : (A.ofBaseSet h).tangentHom.sectionChartData.SobolevData μ p k) =
+      tangentHomSndData h μ p k w := by
+  simp [tangentHomSndL]
+
+private theorem coe_tangentHomPairL (u : SobolevSection A.tangentHom μ p k)
+    (v : SobolevSection (A.ofBaseSet h).tangentHom μ p k) :
+    (tangentHomPairL A h μ p k (u, v) :
+        (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) =
+      tangentHomInlData h μ p k u + tangentHomInrData h μ p k v := by
+  simp [tangentHomPairL]
+
+/-- **One-forms with values in a product bundle.** The Sobolev space `W^{k,p}` of one-forms with
+values in `V ×ᵇ V'`, on the charts of `(A.prod h).tangentHom`, is isomorphic to the product of the
+Sobolev spaces of `V`-valued one-forms on the charts of `A.tangentHom` and of `V'`-valued
+one-forms on the charts of `(A.ofBaseSet h).tangentHom`. Its chart data are the compositions of
+the chart data with the two projections of `F × F'`
+(`TauCeti.SobolevSection.chartValueL_tangentHomProdEquiv_fst_ae`,
+`TauCeti.SobolevSection.chartValueL_tangentHomProdEquiv_snd_ae`). -/
+def tangentHomProdEquiv :
+    SobolevSection (A.prod h).tangentHom μ p k ≃L[ℝ]
+      SobolevSection A.tangentHom μ p k × SobolevSection (A.ofBaseSet h).tangentHom μ p k :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    ((tangentHomFstL A h μ p k).prod (tangentHomSndL A h μ p k)) (tangentHomPairL A h μ p k)
+    (h₂ := ContinuousLinearMap.ext fun w ↦ SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
+      (FiniteBundleAtlas.ae_image_tangentHom_prod_iff (A := A) (h := h)).2 <| by
+      dsimp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      filter_upwards [chartValueL_tangentHomInlData_add_inrData_ae (h := h)
+          (tangentHomFstData h μ p k w) (tangentHomSndData h μ p k w) i,
+        chartValueL_tangentHomFstData_ae
+          (w : (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) i,
+        chartValueL_tangentHomSndData_ae
+          (w : (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) i]
+        with y h₁ h₂ h₃
+      rw [ContinuousLinearMap.prod_apply, coe_tangentHomPairL, coe_tangentHomFstL,
+        coe_tangentHomSndL, h₁, h₂, h₃]
+      ext z <;> simp)
+    (h₁ := ContinuousLinearMap.ext fun w ↦ by
+      obtain ⟨u, v⟩ := w
+      dsimp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      refine Prod.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
+          (A.ae_image_tangentHom_iff μ i).2 ?_)
+        (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
+          (FiniteBundleAtlas.ae_image_tangentHom_ofBaseSet_iff (A := A) (h := h)).2 ?_)
+      · filter_upwards [chartValueL_tangentHomFstData_ae (tangentHomPairL A h μ p k (u, v) :
+            (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) i,
+          chartValueL_tangentHomInlData_add_inrData_ae (h := h)
+            (u : A.tangentHom.sectionChartData.SobolevData μ p k)
+            (v : (A.ofBaseSet h).tangentHom.sectionChartData.SobolevData μ p k) i] with y h₁ h₂
+        rw [ContinuousLinearMap.prod_apply, coe_tangentHomFstL, h₁, coe_tangentHomPairL, h₂,
+          ContinuousLinearMap.fst_comp_prod]
+      · filter_upwards [chartValueL_tangentHomSndData_ae (tangentHomPairL A h μ p k (u, v) :
+            (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) i,
+          chartValueL_tangentHomInlData_add_inrData_ae (h := h)
+            (u : A.tangentHom.sectionChartData.SobolevData μ p k)
+            (v : (A.ofBaseSet h).tangentHom.sectionChartData.SobolevData μ p k) i] with y h₁ h₂
+        rw [ContinuousLinearMap.prod_apply, coe_tangentHomSndL, h₁, coe_tangentHomPairL, h₂,
+          ContinuousLinearMap.snd_comp_prod])
+
+private theorem tangentHomProdEquiv_apply (w : SobolevSection (A.prod h).tangentHom μ p k) :
+    tangentHomProdEquiv A h μ p k w = (tangentHomFstL A h μ p k w, tangentHomSndL A h μ p k w) := by
+  rw [tangentHomProdEquiv, ContinuousLinearEquiv.coe_ofContinuousLinearMap,
+    ContinuousLinearMap.prod_apply]
+
+private theorem tangentHomProdEquiv_symm_apply
+    (w : SobolevSection A.tangentHom μ p k × SobolevSection (A.ofBaseSet h).tangentHom μ p k) :
+    (tangentHomProdEquiv A h μ p k).symm w = tangentHomPairL A h μ p k w := by
+  rw [tangentHomProdEquiv, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap]
+
+variable {A h μ p k}
+
+/-- The chart data of the first component of `tangentHomProdEquiv A h μ p k w` are the chart data
+of `w` followed by the first projection. -/
+theorem chartValueL_tangentHomProdEquiv_fst_ae (w : SobolevSection (A.prod h).tangentHom μ p k)
+    (i : Fin A.n) :
+    A.tangentHom.sectionChartData.chartValueL μ p k i (tangentHomProdEquiv A h μ p k w).1
+      =ᵐ[μ.restrict (A.image i)] fun y ↦ (ContinuousLinearMap.fst ℝ F F').comp
+        ((A.prod h).tangentHom.sectionChartData.chartValueL μ p k i w y) := by
+  simp only [tangentHomProdEquiv_apply, coe_tangentHomFstL]
+  exact chartValueL_tangentHomFstData_ae
+    (w : (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) i
+
+/-- The chart data of the second component of `tangentHomProdEquiv A h μ p k w` are the chart
+data of `w` followed by the second projection. -/
+theorem chartValueL_tangentHomProdEquiv_snd_ae (w : SobolevSection (A.prod h).tangentHom μ p k)
+    (i : Fin A.n) :
+    (A.ofBaseSet h).tangentHom.sectionChartData.chartValueL μ p k i
+        (tangentHomProdEquiv A h μ p k w).2
+      =ᵐ[μ.restrict (A.image i)] fun y ↦ (ContinuousLinearMap.snd ℝ F F').comp
+        ((A.prod h).tangentHom.sectionChartData.chartValueL μ p k i w y) := by
+  simp only [tangentHomProdEquiv_apply, coe_tangentHomSndL]
+  exact chartValueL_tangentHomSndData_ae
+    (w : (A.prod h).tangentHom.sectionChartData.SobolevData μ p k) i
+
+/-- The chart data of `(tangentHomProdEquiv A h μ p k).symm (u, v)` are the `prod` of the chart
+data of `u` and of `v`. -/
+theorem chartValueL_tangentHomProdEquiv_symm_ae (u : SobolevSection A.tangentHom μ p k)
+    (v : SobolevSection (A.ofBaseSet h).tangentHom μ p k) (i : Fin A.n) :
+    (A.prod h).tangentHom.sectionChartData.chartValueL μ p k i
+        ((tangentHomProdEquiv A h μ p k).symm (u, v))
+      =ᵐ[μ.restrict (A.image i)] fun y ↦
+        (A.tangentHom.sectionChartData.chartValueL μ p k i u y).prod
+          ((A.ofBaseSet h).tangentHom.sectionChartData.chartValueL μ p k i v y) := by
+  rw [tangentHomProdEquiv_symm_apply, coe_tangentHomPairL]
+  exact chartValueL_tangentHomInlData_add_inrData_ae (h := h)
+    (u : A.tangentHom.sectionChartData.SobolevData μ p k)
+    (v : (A.ofBaseSet h).tangentHom.sectionChartData.SobolevData μ p k) i
+
+end TangentHom
 
 end SobolevSection
 

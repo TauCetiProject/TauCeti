@@ -1,0 +1,160 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import Mathlib.Topology.VectorBundle.Constructions
+
+/-!
+# Hom bundles into a direct sum
+
+Let `E₁ → B` and `E₂ ×ᵇ E₃ → B'` be vector bundles, the second a fibrewise product. A fibrewise
+linear map `ϕ : E₁ x → E₂ y × E₃ y` is read in the trivializations of the product bundle as the
+pair of the readings of its two components, at every point `y` in both base sets
+(`ContinuousLinearMap.inCoordinates_prod_eq`). Consequently a section `x ↦ (ϕ x).prod (ψ x)` of the
+bundle of linear maps into a product is `C^n` exactly when both components are
+(`ContMDiffWithinAt.clm_bundle_prod`).
+
+## Main results
+
+* `ContinuousLinearMap.inCoordinates_prod_eq`, `ContinuousLinearMap.inCoordinates_prod`: the
+  coordinate expression of a linear map into a product is the `prod` of the coordinate
+  expressions of its components.
+* `ContMDiffWithinAt.clm_bundle_prod`, `ContMDiffAt.clm_bundle_prod`,
+  `ContMDiffOn.clm_bundle_prod`, `ContMDiff.clm_bundle_prod`: the fibrewise `prod` of two `C^n`
+  Hom-bundle sections is `C^n`.
+-/
+
+public section
+
+open Bundle Set
+open scoped Manifold Topology
+
+section InCoordinates
+
+variable {𝕜 B B' F₁ F₂ F₃ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [TopologicalSpace B']
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+  {E₁ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜 (E₁ x)]
+  [∀ x, TopologicalSpace (E₁ x)] [TopologicalSpace (TotalSpace F₁ E₁)]
+  [FiberBundle F₁ E₁] [VectorBundle 𝕜 F₁ E₁]
+  {E₂ : B' → Type*} [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜 (E₂ x)]
+  [∀ x, TopologicalSpace (E₂ x)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
+  {E₃ : B' → Type*} [∀ x, AddCommGroup (E₃ x)] [∀ x, Module 𝕜 (E₃ x)]
+  [∀ x, TopologicalSpace (E₃ x)] [TopologicalSpace (TotalSpace F₃ E₃)]
+  [FiberBundle F₃ E₃] [VectorBundle 𝕜 F₃ E₃]
+
+/-- Read in the trivializations of a fibrewise product bundle, a linear map into the product is the
+pair of the readings of its two components, at every point of both base sets. -/
+theorem ContinuousLinearMap.inCoordinates_prod_eq {x₀ x : B} {y₀ y : B'}
+    (hy₂ : y ∈ (trivializationAt F₂ E₂ y₀).baseSet)
+    (hy₃ : y ∈ (trivializationAt F₃ E₃ y₀).baseSet) (ϕ : E₁ x →L[𝕜] (E₂ ×ᵇ E₃) y) :
+    inCoordinates F₁ E₁ (F₂ × F₃) (E₂ ×ᵇ E₃) x₀ x y₀ y ϕ =
+      (inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y ((ContinuousLinearMap.fst 𝕜 _ _).comp ϕ)).prod
+        (inCoordinates F₁ E₁ F₃ E₃ x₀ x y₀ y ((ContinuousLinearMap.snd 𝕜 _ _).comp ϕ)) := by
+  ext v <;> simp [inCoordinates, Trivialization.continuousLinearMapAt_apply,
+    Trivialization.linearMapAt_apply, hy₂, hy₃, Trivialization.Prod.toFun']
+
+/-- Read in the trivializations of a fibrewise product bundle, the `prod` of two linear maps is the
+pair of their readings, at every point of both base sets. -/
+theorem ContinuousLinearMap.inCoordinates_prod {x₀ x : B} {y₀ y : B'}
+    (hy₂ : y ∈ (trivializationAt F₂ E₂ y₀).baseSet)
+    (hy₃ : y ∈ (trivializationAt F₃ E₃ y₀).baseSet) (ϕ : E₁ x →L[𝕜] E₂ y)
+    (ψ : E₁ x →L[𝕜] E₃ y) :
+    inCoordinates F₁ E₁ (F₂ × F₃) (E₂ ×ᵇ E₃) x₀ x y₀ y
+        (ϕ.prod ψ : E₁ x →L[𝕜] (E₂ ×ᵇ E₃) y) =
+      (inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y ϕ).prod (inCoordinates F₁ E₁ F₃ E₃ x₀ x y₀ y ψ) :=
+  by rw [inCoordinates_prod_eq hy₂ hy₃, fst_comp_prod, snd_comp_prod]
+
+end InCoordinates
+
+section Smooth
+
+variable {𝕜 B F₁ F₂ F₃ M : Type*} {n : WithTop ℕ∞} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] {HB : Type*} [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM] {HM : Type*} [TopologicalSpace HM]
+  {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+  {E₁ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜 (E₁ x)]
+  [∀ x, TopologicalSpace (E₁ x)] [TopologicalSpace (TotalSpace F₁ E₁)]
+  [FiberBundle F₁ E₁] [VectorBundle 𝕜 F₁ E₁]
+  {E₂ : B → Type*} [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜 (E₂ x)]
+  [∀ x, TopologicalSpace (E₂ x)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
+  [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
+  {E₃ : B → Type*} [∀ x, AddCommGroup (E₃ x)] [∀ x, Module 𝕜 (E₃ x)]
+  [∀ x, TopologicalSpace (E₃ x)] [TopologicalSpace (TotalSpace F₃ E₃)]
+  [FiberBundle F₃ E₃] [VectorBundle 𝕜 F₃ E₃]
+  [∀ x, IsTopologicalAddGroup (E₃ x)] [∀ x, ContinuousSMul 𝕜 (E₃ x)]
+  {b : M → B} {ϕ : ∀ m, E₁ (b m) →L[𝕜] E₂ (b m)} {ψ : ∀ m, E₁ (b m) →L[𝕜] E₃ (b m)}
+  {s : Set M} {x₀ : M}
+
+/-- The fibrewise `prod` of two `C^n` Hom-bundle sections is a `C^n` section of the Hom bundle into
+the fibrewise product. -/
+theorem ContMDiffWithinAt.clm_bundle_prod
+    (hϕ : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) (b m) (ϕ m)) s x₀)
+    (hψ : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃) (E := fun x ↦ E₁ x →L[𝕜] E₃ x) (b m) (ψ m)) s x₀) :
+    ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ × F₃)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ × F₃) (E := fun x ↦ E₁ x →L[𝕜] (E₂ ×ᵇ E₃) x) (b m)
+        ((ϕ m).prod (ψ m))) s x₀ := by
+  rw [contMDiffWithinAt_hom_bundle] at hϕ hψ ⊢
+  refine ⟨hϕ.1, ?_⟩
+  have hb : ∀ᶠ m in 𝓝[s] x₀, b m ∈ (trivializationAt F₂ E₂ (b x₀)).baseSet ∧
+      b m ∈ (trivializationAt F₃ E₃ (b x₀)).baseSet :=
+    hϕ.1.continuousWithinAt.eventually
+      (((trivializationAt F₂ E₂ (b x₀)).open_baseSet.inter
+        (trivializationAt F₃ E₃ (b x₀)).open_baseSet).mem_nhds
+          ⟨mem_baseSet_trivializationAt F₂ E₂ (b x₀), mem_baseSet_trivializationAt F₃ E₃ (b x₀)⟩)
+  refine (((ContinuousLinearMap.prodₗᵢ 𝕜).toContinuousLinearEquiv.contDiff
+    (n := n)).comp_contMDiffWithinAt (hϕ.2.prodMk_space hψ.2)).congr_of_eventuallyEq ?_ ?_
+  · filter_upwards [hb] with m hm
+    exact ContinuousLinearMap.inCoordinates_prod hm.1 hm.2 _ _
+  · exact ContinuousLinearMap.inCoordinates_prod (mem_baseSet_trivializationAt F₂ E₂ (b x₀))
+      (mem_baseSet_trivializationAt F₃ E₃ (b x₀)) _ _
+
+/-- The fibrewise `prod` of two `C^n` Hom-bundle sections is a `C^n` section of the Hom bundle into
+the fibrewise product. -/
+theorem ContMDiffAt.clm_bundle_prod
+    (hϕ : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) (b m) (ϕ m)) x₀)
+    (hψ : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃) (E := fun x ↦ E₁ x →L[𝕜] E₃ x) (b m) (ψ m)) x₀) :
+    ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ × F₃)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ × F₃) (E := fun x ↦ E₁ x →L[𝕜] (E₂ ×ᵇ E₃) x) (b m)
+        ((ϕ m).prod (ψ m))) x₀ :=
+  ContMDiffWithinAt.clm_bundle_prod hϕ hψ
+
+/-- The fibrewise `prod` of two `C^n` Hom-bundle sections is a `C^n` section of the Hom bundle into
+the fibrewise product. -/
+theorem ContMDiffOn.clm_bundle_prod
+    (hϕ : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) (b m) (ϕ m)) s)
+    (hψ : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃) (E := fun x ↦ E₁ x →L[𝕜] E₃ x) (b m) (ψ m)) s) :
+    ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ × F₃)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ × F₃) (E := fun x ↦ E₁ x →L[𝕜] (E₂ ×ᵇ E₃) x) (b m)
+        ((ϕ m).prod (ψ m))) s :=
+  fun x hx ↦ (hϕ x hx).clm_bundle_prod (hψ x hx)
+
+/-- The fibrewise `prod` of two `C^n` Hom-bundle sections is a `C^n` section of the Hom bundle into
+the fibrewise product. -/
+theorem ContMDiff.clm_bundle_prod
+    (hϕ : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) (b m) (ϕ m)))
+    (hψ : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃) (E := fun x ↦ E₁ x →L[𝕜] E₃ x) (b m) (ψ m))) :
+    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ × F₃)) n
+      (fun m ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ × F₃) (E := fun x ↦ E₁ x →L[𝕜] (E₂ ×ᵇ E₃) x) (b m)
+        ((ϕ m).prod (ψ m))) :=
+  fun x ↦ (hϕ x).clm_bundle_prod (hψ x)
+
+end Smooth
