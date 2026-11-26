@@ -64,10 +64,11 @@ by `𝔛(G)`, so it is the push-forward of its pull-back `ν` to `𝔛(G)`
 a cylinder into the cylinders of the patterns on a window `E` containing every edge that shares a
 vertex with an edge of `F`, it suffices to show `∫ γ^w_F([ω]_E | η) dμ(η) = μ[ω]_E` for dimer
 configurations `ω`. The partition function `Z^w_F(η)` only depends on `η` near `F`
-(`SimpleGraph.dimerPartitionFunction_eq_of_forall_adj`), so the integrand is the constant
-`w(ω ∩ F) / Z^w_F(ω)` on `[ω]_{E ∖ F}` and `0` off it, and the cylinder identities summed over the
-completion set `Ω_F(ω)` give `w(ω ∩ F) / Z^w_F(ω) · μ[ω]_{E ∖ F} = μ[ω]_E`
-(`SimpleGraph.IsDimerGibbs.ofReal_mul_measure_setOf_forall_mem_notMem_eq`). Hence `ν` is Gibbs
+(`SimpleGraph.dimerPartitionFunction_congr_of_isDimerConfiguration`), so the integrand is the
+constant `w(ω ∩ F) / Z^w_F(ω)` on `[ω]_{E ∖ F}` and `0` off it, and the cylinder identities summed
+over the completion set `Ω_F(ω)` give `w(ω ∩ F) / Z^w_F(ω) · μ[ω]_{E ∖ F} = μ[ω]_E`
+(`SimpleGraph.IsDimerGibbs.ofReal_mul_measure_setOf_forall_mem_notMem_eq`,
+`SimpleGraph.IsDimerGibbs.lintegral_dimerBoltzmann_setOf_forall_mem_eq`). Hence `ν` is Gibbs
 (`SimpleGraph.IsDimerGibbs.isGibbs_comap_val`), and a measure is dimer Gibbs iff it is the
 push-forward of a Gibbs probability measure of `γ^w`
 (`SimpleGraph.isDimerGibbs_iff_exists_isGibbs`).
@@ -269,15 +270,7 @@ theorem dimerBoltzmann_cylinder_congr (w : G.edgeSet → ℝ) (F s : Finset G.ed
     (hs : ∀ e ∈ s, e ∉ F → ω₁ e = ω₂ e) :
     G.dimerBoltzmann w F ω₁ (cylinder s t) = G.dimerBoltzmann w F ω₂ (cylinder s t) := by
   classical
-  have hD (η : F → Bool) : G.IsDimerConfiguration (updateFinset ω₁ F η) ↔
-      G.IsDimerConfiguration (updateFinset ω₂ F η) := by
-    rw [isDimerConfiguration_updateFinset_iff, isDimerConfiguration_updateFinset_iff,
-      image_restrict_dimerCompletionSet_eq h₁ h₂ hF]
-  have hW (η : F → Bool) :
-      G.dimerWeight w F (updateFinset ω₁ F η) = G.dimerWeight w F (updateFinset ω₂ F η) :=
-    dimerWeight_congr w fun e he => by
-      rw [updateFinset_apply_of_mem he, updateFinset_apply_of_mem he]
-  have hZ := dimerPartitionFunction_eq_of_forall_adj w F h₁ h₂ hF
+  have hZ := dimerPartitionFunction_congr_of_isDimerConfiguration w F h₁ h₂ hF
   have hC (η : F → Bool) :
       s.restrict (updateFinset ω₁ F η) = s.restrict (updateFinset ω₂ F η) := by
     funext ⟨e, he⟩
@@ -286,8 +279,10 @@ theorem dimerBoltzmann_cylinder_congr (w : G.edgeSet → ℝ) (F s : Finset G.ed
     · simp only [Finset.restrict_def, updateFinset_apply_of_notMem heF, hs e he heF]
   rw [dimerBoltzmann_apply_eq_sum_updateFinset w F ω₁ (.cylinder s ht),
     dimerBoltzmann_apply_eq_sum_updateFinset w F ω₂ (.cylinder s ht)]
-  refine Finset.sum_congr (Finset.filter_congr fun η _ => hD η) fun η _ => ?_
-  simp only [indicator_apply, mem_cylinder, hC η, hW η, hZ]
+  refine Finset.sum_congr
+    (Finset.filter_congr fun η _ => isDimerConfiguration_updateFinset_congr h₁ h₂ hF η)
+    fun η _ => ?_
+  simp only [indicator_apply, mem_cylinder, hC η, dimerWeight_updateFinset_congr w F ω₁ ω₂ η, hZ]
 
 variable (Γ hΓ) in
 /-- The mass of a set under `γ^w_F(· | ω)` on `𝔛(G)` is the Boltzmann mass of the set of
@@ -396,10 +391,8 @@ along the inclusion gives it back. -/
 theorem IsDimerGibbs.map_comap_val {w : G.edgeSet → ℝ} {μ : Measure (G.edgeSet → Bool)}
     (hμ : G.IsDimerGibbs w μ) :
     (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)).map Subtype.val = μ := by
-  refine ((MeasurableEmbedding.subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe).map_comap
-    μ).trans ?_
-  rw [Subtype.range_coe]
-  refine Measure.restrict_eq_self_of_ae_mem ?_
+  refine (map_comap_subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe μ).trans
+    (Measure.restrict_eq_self_of_ae_mem ?_)
   rw [ae_iff]
   simpa using hμ.measure_setOf_not_isDimerConfiguration
 
@@ -409,28 +402,60 @@ theorem IsDimerGibbs.isProbabilityMeasure_comap_val {w : G.edgeSet → ℝ}
     {μ : Measure (G.edgeSet → Bool)} (hμ : G.IsDimerGibbs w μ) :
     IsProbabilityMeasure (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)) := by
   have := hμ.isProbabilityMeasure
-  have h := congrArg (fun m : Measure (G.edgeSet → Bool) => m univ) (hμ.map_comap_val Γ hΓ)
-  simp only [Measure.map_apply measurable_subtypeVal MeasurableSet.univ, preimage_univ,
-    measure_univ] at h
-  exact ⟨h⟩
+  exact (MeasurableEmbedding.subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe)
+    |>.isProbabilityMeasure_comap
+      (by simpa [ae_iff] using hμ.measure_setOf_not_isDimerConfiguration)
+
+variable (Γ hΓ) in
+/-- **The DLR equation on a cylinder.** Let `μ` be dimer Gibbs for a positive `w`, `ω` a dimer
+configuration and `E` a finite set containing every edge sharing a vertex with an edge of `F`.
+Then integrating `γ^w_F([ω]_E | η)` against the pull-back of `μ` to `𝔛(G)` gives `μ[ω]_E`. -/
+theorem IsDimerGibbs.lintegral_dimerBoltzmann_setOf_forall_mem_eq {w : G.edgeSet → ℝ}
+    (hw : ∀ e, 0 < w e) {μ : Measure (G.edgeSet → Bool)} (hμ : G.IsDimerGibbs w μ)
+    {F E : Finset G.edgeSet}
+    (hE : ∀ e ∈ F, ∀ e' : G.edgeSet, (∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (e' : Sym2 V)) → e' ∈ E)
+    {ω : G.edgeSet → Bool} (hω : G.IsDimerConfiguration ω) :
+    ∫⁻ η, G.dimerBoltzmann w F η.val {ζ | ∀ e ∈ E, ζ e = ω e}
+        ∂μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _) =
+      μ {η | ∀ e ∈ E, η e = ω e} := by
+  classical
+  have hC : MeasurableSet {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e} := by
+    convert SymbolicDynamics.FullShift.measurableSet_cylinder (E \ F) ω using 1
+    ext θ
+    simp [SymbolicDynamics.FullShift.cylinder]
+  calc ∫⁻ η, G.dimerBoltzmann w F η.val {ζ | ∀ e ∈ E, ζ e = ω e} ∂μ.comap Subtype.val
+      = ∫⁻ η, {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e}.indicator
+          (fun _ => ENNReal.ofReal (G.dimerWeight w F ω / G.dimerPartitionFunction w F ω))
+          η.val ∂μ.comap Subtype.val := by
+        refine lintegral_congr fun η => ?_
+        rw [dimerBoltzmann_setOf_forall_mem_eq w hE hω (mem_dimerSubshift.1 η.property)]
+        by_cases hη : η.val ∈ {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e}
+        · rw [indicator_of_mem hη, indicator_of_mem hη,
+            dimerPartitionFunction_congr_of_isDimerConfiguration w F
+              (mem_dimerSubshift.1 η.property) hω
+              fun e he ⟨f, hf, v, hve, hvf⟩ => hη e (hE f hf e ⟨v, hvf, hve⟩) he]
+        · rw [indicator_of_notMem hη, indicator_of_notMem hη]
+    _ = ∫⁻ θ, {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e}.indicator
+          (fun _ => ENNReal.ofReal (G.dimerWeight w F ω / G.dimerPartitionFunction w F ω))
+          θ ∂μ := by
+        rw [← lintegral_map (measurable_const.indicator hC) measurable_subtypeVal,
+          hμ.map_comap_val Γ hΓ]
+    _ = μ {η | ∀ e ∈ E, η e = ω e} := by
+        rw [lintegral_indicator_const hC,
+          hμ.ofReal_mul_measure_setOf_forall_mem_notMem_eq hw hE hω]
 
 variable (Γ hΓ) in
 /-- **Dimer Gibbs measures come from Gibbs measures.** The pull-back to `𝔛(G)` of a dimer Gibbs
-measure `μ` is a Gibbs measure of `γ^w`. By the DLR equations on cylinder events it suffices to
-check `∫ γ^w_F([ω]_E | η) dμ(η) = μ[ω]_E` for dimer configurations `ω` and finite `E` containing
-every edge sharing a vertex with an edge of `F`. The integrand is `w(ω ∩ F) / Z^w_F(ω)` on
-`[ω]_{E ∖ F}` and `0` off it, the partition function being constant on `[ω]_{E ∖ F}`, and the
-cylinder identities summed over the completion set `Ω_F(ω)` give the claim. -/
+measure `μ` is a Gibbs measure of `γ^w`. -/
 theorem IsDimerGibbs.isGibbs_comap_val {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e)
     {μ : Measure (G.edgeSet → Bool)} (hμ : G.IsDimerGibbs w μ) :
     (dimerSpecification Γ hΓ hw).IsGibbs (μ.comap (Subtype.val : G.dimerSubshift Γ hΓ → _)) := by
   classical
-  have hmap := hμ.map_comap_val Γ hΓ
   have := hμ.isProbabilityMeasure_comap_val Γ hΓ
   refine TauCeti.Specification.isGibbs_iff_forall_lintegral_eq.2 fun F A hA => ?_
   simp only [dimerSpecification_kernel, dimerKernel_apply_preimage_val]
   rw [← Measure.map_apply measurable_subtypeVal (MeasurableSet.of_mem_measurableCylinders hA),
-    hmap]
+    hμ.map_comap_val Γ hΓ]
   obtain ⟨s, t, -, rfl⟩ := (mem_measurableCylinders A).1 hA
   -- enlarge the window to contain every edge sharing a vertex with an edge of `F`
   set E : Finset G.edgeSet := s ∪ (G.finite_setOf_exists_mem_and_mem F).toFinset
@@ -461,29 +486,8 @@ theorem IsDimerGibbs.isGibbs_comap_val {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < 
         {η | ∀ e ∈ E, η e = ω e} := by
       ext η
       simp [funext_iff]
-    have hC : MeasurableSet {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e} := by
-      convert SymbolicDynamics.FullShift.measurableSet_cylinder (E \ F) ω using 1
-      ext θ
-      simp [SymbolicDynamics.FullShift.cylinder]
     rw [hset]
-    calc ∫⁻ η, G.dimerBoltzmann w F η.val {ζ | ∀ e ∈ E, ζ e = ω e} ∂μ.comap Subtype.val
-        = ∫⁻ η, {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e}.indicator
-            (fun _ => ENNReal.ofReal (G.dimerWeight w F ω / G.dimerPartitionFunction w F ω))
-            η.val ∂μ.comap Subtype.val := by
-          refine lintegral_congr fun η => ?_
-          rw [dimerBoltzmann_setOf_forall_mem_eq w hE hω (mem_dimerSubshift.1 η.property)]
-          by_cases hη : η.val ∈ {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e}
-          · rw [indicator_of_mem hη, indicator_of_mem hη,
-              dimerPartitionFunction_eq_of_forall_adj w F (mem_dimerSubshift.1 η.property) hω
-                fun e he ⟨f, hf, v, hve, hvf⟩ => hη e (hE f hf e ⟨v, hvf, hve⟩) he]
-          · rw [indicator_of_notMem hη, indicator_of_notMem hη]
-      _ = ∫⁻ θ, {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e}.indicator
-            (fun _ => ENNReal.ofReal (G.dimerWeight w F ω / G.dimerPartitionFunction w F ω))
-            θ ∂μ := by
-          rw [← hmap, lintegral_map (measurable_const.indicator hC) measurable_subtypeVal, hmap]
-      _ = μ {η | ∀ e ∈ E, η e = ω e} := by
-          rw [lintegral_indicator_const hC,
-            hμ.ofReal_mul_measure_setOf_forall_mem_notMem_eq hw hE hω]
+    exact hμ.lintegral_dimerBoltzmann_setOf_forall_mem_eq Γ hΓ hw hE hω
   · -- no dimer configuration has the pattern `p`: both sides vanish
     have hnull : {η : G.edgeSet → Bool | E.restrict η = p} ⊆ {ω | ¬ G.IsDimerConfiguration ω} :=
       fun η hη hD => hp ⟨η, hD, hη⟩

@@ -44,7 +44,8 @@ and a configuration `ω : G.edgeSet → Bool`, the weight of `ω` on `F` is
   over the completion set `Ω_F(ω)`, the cylinder identities give
   `w(ω ∩ F) / Z^w_F(ω) · μ[ω]_{E ∖ F} = μ[ω]_E`
   (`SimpleGraph.IsDimerGibbs.ofReal_mul_measure_setOf_forall_mem_notMem_eq`), using that
-  `Z^w_F(ω)` only depends on `ω` near `F` (`SimpleGraph.dimerPartitionFunction_eq_of_forall_adj`).
+  `Z^w_F(ω)` only depends on `ω` near `F`
+  (`SimpleGraph.dimerPartitionFunction_congr_of_isDimerConfiguration`).
 
 **Gauge invariance.** Replacing `w(uv)` by `w(uv) g(u) g(v)` for a positive `g`
 (`SimpleGraph.gaugeWeight`) multiplies `w(ω ∩ F)` by the product of `g` over the vertices covered
@@ -100,6 +101,14 @@ theorem dimerWeight_congr (w : G.edgeSet → ℝ) {F : Finset G.edgeSet} {ω ω'
     (h : ∀ e ∈ F, ω e = ω' e) : G.dimerWeight w F ω = G.dimerWeight w F ω' := by
   simp only [dimerWeight_def]
   exact Finset.prod_congr (Finset.filter_congr fun e he => by rw [h e he]) fun _ _ => rfl
+
+/-- The weight on `F` of the gluing of a configuration `η` on `F` to `ω` off `F` does not depend
+on `ω`. -/
+theorem dimerWeight_updateFinset_congr [DecidableEq G.edgeSet] (w : G.edgeSet → ℝ)
+    (F : Finset G.edgeSet) (ω₁ ω₂ : G.edgeSet → Bool) (η : F → Bool) :
+    G.dimerWeight w F (updateFinset ω₁ F η) = G.dimerWeight w F (updateFinset ω₂ F η) :=
+  dimerWeight_congr w fun e he => by
+    rw [updateFinset_apply_of_mem he, updateFinset_apply_of_mem he]
 
 /-- For `Λ ⊆ Δ`, the weight on `Δ` is the product of the weights on `Λ` and on `Δ ∖ Λ`. -/
 theorem dimerWeight_eq_mul_sdiff [DecidableEq G.edgeSet] (w : G.edgeSet → ℝ)
@@ -225,17 +234,16 @@ theorem dimerPartitionFunction_eq_sum_updateFinset [DecidableEq G.edgeSet] (w : 
 /-- **Locality of the partition function.** For dimer configurations `ω₁`, `ω₂` agreeing on the
 edges outside `F` that share a vertex with an edge of `F`, `Z^w_F(ω₁) = Z^w_F(ω₂)`: their
 completion sets have the same restrictions to `F`. -/
-theorem dimerPartitionFunction_eq_of_forall_adj (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
+theorem dimerPartitionFunction_congr_of_isDimerConfiguration (w : G.edgeSet → ℝ)
+    (F : Finset G.edgeSet)
     {ω₁ ω₂ : G.edgeSet → Bool} (h₁ : G.IsDimerConfiguration ω₁) (h₂ : G.IsDimerConfiguration ω₂)
     (hF : ∀ e ∉ F, (∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)) → ω₁ e = ω₂ e) :
     G.dimerPartitionFunction w F ω₁ = G.dimerPartitionFunction w F ω₂ := by
   classical
   rw [dimerPartitionFunction_eq_sum_updateFinset, dimerPartitionFunction_eq_sum_updateFinset]
-  refine Finset.sum_congr (Finset.filter_congr fun η _ => ?_) fun η _ =>
-    dimerWeight_congr w fun e he => by
-      rw [updateFinset_apply_of_mem he, updateFinset_apply_of_mem he]
-  rw [isDimerConfiguration_updateFinset_iff, isDimerConfiguration_updateFinset_iff,
-    image_restrict_dimerCompletionSet_eq h₁ h₂ hF]
+  exact Finset.sum_congr
+    (Finset.filter_congr fun η _ => isDimerConfiguration_updateFinset_congr h₁ h₂ hF η)
+    fun η _ => dimerWeight_updateFinset_congr w F ω₁ ω₂ η
 
 /-! ### Support -/
 
@@ -429,9 +437,7 @@ theorem IsDimerGibbs.cylinder {w : G.edgeSet → ℝ} {μ : Measure (G.edgeSet �
 
 /-- **The cylinder identities, summed over a completion set.** Let `μ` be dimer Gibbs for a
 positive `w`, `ω` a dimer configuration and `E` a finite set containing every edge sharing a vertex
-with an edge of `F`. Up to a `μ`-null set, the cylinder `[ω]_{E ∖ F}` is the disjoint union of the
-cylinders `[ω']_E`, `ω' ∈ Ω_F(ω)`, and the cylinder identities give
-`w(ω ∩ F) / Z^w_F(ω) · μ[ω]_{E ∖ F} = μ[ω]_E`. -/
+with an edge of `F`. Then `w(ω ∩ F) / Z^w_F(ω) · μ[ω]_{E ∖ F} = μ[ω]_E`. -/
 theorem IsDimerGibbs.ofReal_mul_measure_setOf_forall_mem_notMem_eq {w : G.edgeSet → ℝ}
     (hw : ∀ e, 0 < w e) {μ : Measure (G.edgeSet → Bool)} (hμ : G.IsDimerGibbs w μ)
     {F E : Finset G.edgeSet}
