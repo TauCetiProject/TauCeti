@@ -9,6 +9,7 @@ import Mathlib.GroupTheory.GroupAction.SubMulAction.OfFixingSubgroup
 
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.GroupTheory.GroupAction.FixingSubgroup
+public import TauCeti.Topology.Algebra.GroupAction.GermKernel
 
 /-!
 # Diffeomorphisms fixing a subset pointwise or near the subset
@@ -152,22 +153,19 @@ theorem toRelativeHomeomorphHom_apply (s : Set M) (f : fixingSubgroup (I := I) (
 
 /-- The subgroup of self-diffeomorphisms equal to the identity on a neighbourhood of `s`. For the
 boundary of a manifold these are the diffeomorphisms that are the identity near the boundary, the
-group of Smale's theorem on the diffeomorphisms of the square. -/
-def nhdsFixingSubgroup (s : Set M) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) where
-  carrier := {f | ∀ᶠ x in 𝓝ˢ s, f x = x}
-  one_mem' := by
-    rw [Set.mem_ofPred_eq]
-    exact .of_forall fun _ ↦ rfl
-  mul_mem' {f g} (hf : ∀ᶠ x in 𝓝ˢ s, f x = x) (hg : ∀ᶠ x in 𝓝ˢ s, g x = x) :=
-    (hf.and hg).mono fun x hx ↦ by rw [mul_apply, hx.2, hx.1]
-  inv_mem' {f} (hf : ∀ᶠ x in 𝓝ˢ s, f x = x) := hf.mono fun x hx ↦ by
-    rw [inv_apply, ← hx, Diffeomorph.symm_apply_apply, hx]
+group of Smale's theorem on the diffeomorphisms of the square.
+
+It is the intersection over `x ∈ s` of the germ kernels `TauCeti.MulAction.germKernel` of the
+tautological action of `M ≃ₘ^n⟮I, I⟯ M` on `M`. -/
+def nhdsFixingSubgroup (s : Set M) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) :=
+  ⨅ x ∈ s, TauCeti.MulAction.germKernel (M ≃ₘ^n⟮I, I⟯ M) x
 
 /-- Membership in `nhdsFixingSubgroup s` is being the identity on a neighbourhood of `s`. -/
 @[simp]
 theorem mem_nhdsFixingSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
-    f ∈ nhdsFixingSubgroup (I := I) (n := n) s ↔ ∀ᶠ x in 𝓝ˢ s, f x = x :=
-  Iff.rfl
+    f ∈ nhdsFixingSubgroup (I := I) (n := n) s ↔ ∀ᶠ x in 𝓝ˢ s, f x = x := by
+  simp only [nhdsFixingSubgroup, Subgroup.mem_iInf, TauCeti.MulAction.mem_germKernel, smul_def,
+    eventually_nhdsSet_iff_forall]
 
 /-- Being the identity near a larger set gives a smaller subgroup. -/
 theorem nhdsFixingSubgroup_antitone {s t : Set M} (hst : s ⊆ t) :
@@ -203,8 +201,10 @@ theorem nhdsFixingSubgroup_union (s t : Set M) :
 /-- A diffeomorphism equal to the identity near `s` fixes `s` pointwise. -/
 theorem nhdsFixingSubgroup_le_fixingSubgroup (s : Set M) :
     nhdsFixingSubgroup (I := I) (n := n) s ≤ fixingSubgroup (I := I) (n := n) s :=
-  fun _ hf ↦ mem_fixingSubgroup_of_forall fun _ hx ↦
-    (mem_nhdsFixingSubgroup_iff.mp hf).self_of_nhdsSet _ hx
+  fun f hf ↦ mem_fixingSubgroup_of_forall fun x hx ↦ by
+    rw [← smul_def, ← MulAction.mem_stabilizer_iff]
+    exact TauCeti.MulAction.germKernel_le_stabilizer x
+      (Subgroup.mem_iInf.mp (Subgroup.mem_iInf.mp hf x) hx)
 
 end Diffeomorph
 
