@@ -200,6 +200,25 @@ theorem halfSpinorEquivProd_symm_mk_zero (hω : ω ≠ 0) {x : X}
     smul_zero, smul_eq_mul,
     div_mul_cancel₀ _ (pow_ne_zero 2 (Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hv)))]
 
+/-- **The inverse of the splitting, trivial component**: `(s.halfSpinorEquivProd h₂ hω hv).symm z`
+has inner product `z.1` with `v`; in particular the complementary summand `symm (0, l)` is
+orthogonal to `v`. -/
+@[simp]
+theorem inner_halfSpinorEquivProd_symm (hω : ω ≠ 0) {x : X}
+    {v : s.halfSpinorBundle o hQ b ρ hρ ε x} (hv : v ≠ 0) (z : ℂ × s.determinantLine x) :
+    ⟪v, (s.halfSpinorEquivProd h₂ hω hv).symm z⟫_ℂ = z.1 := by
+  simpa using congrArg Prod.fst
+    (halfSpinorEquivProd_apply (h₂ := h₂) hω hv ((s.halfSpinorEquivProd h₂ hω hv).symm z)).symm
+
+/-- **The inverse of the splitting, determinant-line component**: the determinant pairing of `v`
+with `(s.halfSpinorEquivProd h₂ hω hv).symm z` is `z.2`. -/
+@[simp]
+theorem halfSpinorDetAlternatingMap_halfSpinorEquivProd_symm (hω : ω ≠ 0) {x : X}
+    {v : s.halfSpinorBundle o hQ b ρ hρ ε x} (hv : v ≠ 0) (z : ℂ × s.determinantLine x) :
+    s.halfSpinorDetAlternatingMap h₂ ω x ![v, (s.halfSpinorEquivProd h₂ hω hv).symm z] = z.2 := by
+  simpa using congrArg Prod.snd
+    (halfSpinorEquivProd_apply (h₂ := h₂) hω hv ((s.halfSpinorEquivProd h₂ hω hv).symm z)).symm
+
 /-- **The decomposition along `v`**: every `ψ ∈ W^ε_x` is `α v + β`, with `α = ⟪v, ψ⟫ / ‖v‖²` and
 `β` the vector of the complementary summand whose determinant-line component is `ω(v, ψ)`
 (`TauCeti.SpinCStructure.halfSpinorEquivProd_apply`). -/

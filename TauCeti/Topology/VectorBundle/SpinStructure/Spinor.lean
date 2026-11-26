@@ -744,7 +744,7 @@ theorem halfSpinorDetAlternatingMap_mk_mk
   rw [← halfSpinorDetAlternatingMap_mk h₂]
   congr 1
   ext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp
 
 /-- The fibrewise descent of the model determinant pairing (`TauCeti.AssociatedBundle.bilinearMap`)
 applied to `(v, ψ)` is the alternating map `TauCeti.SpinCStructure.halfSpinorDetAlternatingMap`
@@ -756,9 +756,7 @@ theorem bilinearMap_halfSpinorDetPairing_apply
     AssociatedBundle.bilinearMap (P := s.P) (halfSpinorDetPairing ω)
         (halfSpinorDetPairing_smul_smul h₂ ω) x v ψ =
       s.halfSpinorDetAlternatingMap h₂ ω x ![v, ψ] := by
-  rw [halfSpinorDetAlternatingMap, LinearMap.IsAlt.toAlternatingMap_apply,
-    ContinuousLinearMap.toLinearMap₁₂_apply_apply_apply, Matrix.cons_val_zero,
-    Matrix.cons_val_one, Matrix.cons_val_zero]
+  simp [halfSpinorDetAlternatingMap]
 
 /-- For a nonzero `ω` and `S^ε` of complex dimension two, the linear map `⋀² W^ε_x → L_x` induced
 by the determinant pairing is bijective: it is onto the line `L_x`, and both sides are lines. -/

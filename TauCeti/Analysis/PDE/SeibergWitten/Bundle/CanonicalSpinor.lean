@@ -343,9 +343,9 @@ variable (hJ hJ₂ hJ₀ hF e h₀ h₂) in
 /-- **The fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x` of the positive half-spinors** of the canonical
 `Spinᶜ` structure of a rank-four bundle with an orthogonal complex structure `J`: the complex linear
 isomorphism `W⁺_x ≃ ℂ × Λ²_ℂ (E x, J x)` sending `ψ` to `(⟪u₀(x), ψ⟫, ω(u₀(x), ψ))`, the
-coefficient along the canonical spinor `u₀`
-(`TauCeti.OrthonormalFrameBundle.canonicalSpinor`) and the determinant pairing with `u₀` read in
-the anticanonical line `K⁻¹ = Λ²_ℂ (E, J)` through
+inner product with the canonical spinor `u₀` (`TauCeti.OrthonormalFrameBundle.canonicalSpinor`),
+which is `‖u‖²` times the coefficient of `ψ` along `u₀(x)`, and the determinant pairing with
+`u₀` read in the anticanonical line `K⁻¹ = Λ²_ℂ (E, J)` through
 `TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquivDetBundle`. It sends `u₀` to the
 generator `(‖u‖², 0)` of the trivial summand
 (`TauCeti.OrthonormalFrameBundle.canonicalHalfSpinorEquivProd_canonicalSpinor`), so a positive
@@ -365,7 +365,7 @@ def canonicalHalfSpinorEquivProd (x : X) :
     ((ContinuousLinearEquiv.refl ℂ ℂ).prodCongr
       (canonicalDeterminantLineEquivDetBundle hJ hJ₂ hJ₀ hF e h₀ h₂ hJc x))
 
-/-- The fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x` sends `ψ` to the coefficient `⟪u₀(x), ψ⟫` and the
+/-- The fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x` sends `ψ` to the inner product `⟪u₀(x), ψ⟫` and the
 determinant pairing `ω(u₀(x), ψ)` read in `K⁻¹_x`. -/
 @[simp]
 theorem canonicalHalfSpinorEquivProd_apply {x : X}
@@ -408,6 +408,31 @@ theorem smul_canonicalSpinor_add_canonicalHalfSpinorEquivProd_symm_zero {x : X}
   rw [← canonicalHalfSpinorEquivProd_symm_mk_zero (G := G) hJc hrank hω hu₀ x,
     ContinuousLinearEquiv.map_add, ContinuousLinearEquiv.apply_symm_apply,
     ContinuousLinearEquiv.apply_symm_apply, Prod.mk_add_mk, add_zero, zero_add]
+
+/-- **The inverse of the fibrewise splitting, trivial component**: `W⁺_x ≃ ℂ × K⁻¹_x` sends a
+vector with inner product `z.1` with `u₀(x)` to `z`; in particular the complementary summand
+`symm (0, l)` is orthogonal to `u₀(x)`. -/
+@[simp]
+theorem inner_canonicalSpinor_canonicalHalfSpinorEquivProd_symm (x : X)
+    (z : ℂ × DetBundle ℂ G Jc.Fiber x) :
+    ⟪canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x,
+        (canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x).symm z⟫_ℂ =
+      z.1 := by
+  simpa using congrArg Prod.fst (canonicalHalfSpinorEquivProd_apply (G := G) hJc hrank hω hu₀
+    ((canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x).symm z)).symm
+
+/-- **The inverse of the fibrewise splitting, anticanonical component**: the determinant pairing of
+`u₀(x)` with `(canonicalHalfSpinorEquivProd … x).symm z`, read in `K⁻¹_x`, is `z.2`. -/
+@[simp]
+theorem canonicalDeterminantLineEquivDetBundle_canonicalHalfSpinorEquivProd_symm (x : X)
+    (z : ℂ × DetBundle ℂ G Jc.Fiber x) :
+    canonicalDeterminantLineEquivDetBundle (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc x
+        ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorDetAlternatingMap hrank ω x
+          ![canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x,
+            (canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x).symm
+              z]) = z.2 := by
+  simpa using congrArg Prod.snd (canonicalHalfSpinorEquivProd_apply (G := G) hJc hrank hω hu₀
+    ((canonicalHalfSpinorEquivProd (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc hrank hω hu₀ x).symm z)).symm
 
 include hJV hu in
 /-- **The fibrewise splitting `W⁺_x ≃ ℂ × K⁻¹_x` in a unitary frame.** When the model spinor `u`
