@@ -148,6 +148,54 @@ theorem exists_padicIntLevel_le (U : OpenSubgroup (Multiplicative ℤ_[p])) :
 
 end Level
 
+section LevelRescaling
+
+open Multiplicative
+
+variable {p : ℕ} [Fact p.Prime]
+
+private noncomputable def padicIntLevelMulHom (p : ℕ) [Fact p.Prime] (n : ℕ) :
+    Multiplicative ℤ_[p] →* ↥(padicIntLevel p n) :=
+  (AddMonoidHom.mulLeft ((p : ℤ_[p]) ^ n)).toMultiplicative.codRestrict
+    (padicIntLevel p n).toSubgroup fun x ↦ (mem_padicIntLevel_iff p n).2 (dvd_mul_right _ x.toAdd)
+
+private theorem coe_padicIntLevelMulHom_apply (p : ℕ) [Fact p.Prime] (n : ℕ)
+    (x : Multiplicative ℤ_[p]) :
+    (padicIntLevelMulHom p n x : Multiplicative ℤ_[p]) =
+      ofAdd ((p : ℤ_[p]) ^ n * x.toAdd) :=
+  (rfl)
+
+/-- Multiplication by `p ^ n` gives the topological group isomorphism onto `p ^ n ℤ_p`. -/
+noncomputable def padicIntLevelMulEquiv (p : ℕ) [Fact p.Prime] (n : ℕ) :
+    Multiplicative ℤ_[p] ≃ₜ* ↥(padicIntLevel p n) := by
+  let f := padicIntLevelMulHom p n
+  have hcont : Continuous f := by
+    apply Topology.IsInducing.subtypeVal.continuous_iff.mpr
+    simpa only [f, Function.comp_def, Pi.mul_apply, coe_padicIntLevelMulHom_apply] using
+      continuous_ofAdd.comp (continuous_const.mul continuous_toAdd :
+        Continuous fun x : Multiplicative ℤ_[p] ↦ (p : ℤ_[p]) ^ n * x.toAdd)
+  have hn : (p : ℤ_[p]) ^ n ≠ 0 := pow_ne_zero n (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
+  have hinj : Function.Injective f := by
+    intro x y h
+    have hmul := congrArg (fun z : ↥(padicIntLevel p n) ↦ (z : Multiplicative ℤ_[p])) h
+    simp only [f, coe_padicIntLevelMulHom_apply, ofAdd.injective.eq_iff] at hmul
+    exact ofAdd.symm.injective (mul_left_cancel₀ hn hmul)
+  have hsurj : Function.Surjective f := by
+    intro y
+    obtain ⟨x, hx⟩ := (mem_padicIntLevel_iff p n).1 y.property
+    refine ⟨ofAdd x, Subtype.ext ?_⟩
+    simp only [f, coe_padicIntLevelMulHom_apply, toAdd_ofAdd, ← hx, ofAdd_toAdd]
+  let e := MulEquiv.ofBijective f ⟨hinj, hsurj⟩
+  exact ⟨e, hcont, hcont.continuous_symm_of_equiv_compact_to_t2 (f := e.toEquiv)⟩
+
+/-- The ambient value of level rescaling is multiplication by `p ^ n`. -/
+@[simp]
+theorem coe_padicIntLevelMulEquiv_apply (n : ℕ) (x : Multiplicative ℤ_[p]) :
+    (padicIntLevelMulEquiv p n x : Multiplicative ℤ_[p]) = ofAdd ((p : ℤ_[p]) ^ n * x.toAdd) :=
+  coe_padicIntLevelMulHom_apply p n x
+
+end LevelRescaling
+
 /-- The additive group of the `p`-adic integers, written multiplicatively, is pro-`p`: every open
 normal subgroup contains a level `p ^ m ℤ_p`, whose quotient is `ℤ ⧸ p ^ m`. -/
 theorem isProP_multiplicative_padicInt (p : ℕ) [Fact p.Prime] :

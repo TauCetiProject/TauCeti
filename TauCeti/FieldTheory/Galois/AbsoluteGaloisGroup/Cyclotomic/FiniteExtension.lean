@@ -130,6 +130,17 @@ theorem relIndex_range_localCyclotomicCharacter_dvd_finrank [Algebra.IsSeparable
       (le_sup_left (a := (absoluteGaloisGroupExtend K L IsSepClosed.lift).range)
         (b := (localCyclotomicCharacter p K).ker))
 
+/-- A finite separable extension of a field with surjective cyclotomic character has open
+cyclotomic image in `ℤ_pˣ`. -/
+theorem isOpen_range_localCyclotomicCharacter_of_surjective [Algebra.IsSeparable K L]
+    (h : Function.Surjective (localCyclotomicCharacter p K)) :
+    IsOpen ((localCyclotomicCharacter p L).range : Set ℤ_[p]ˣ) := by
+  have hindex := relIndex_range_localCyclotomicCharacter_dvd_finrank p K L
+  rw [MonoidHom.range_eq_top.mpr h, Subgroup.relIndex_top_right] at hindex
+  have : (localCyclotomicCharacter p L).range.FiniteIndex :=
+    ⟨ne_zero_of_dvd_ne_zero Module.finrank_pos.ne' hindex⟩
+  exact Subgroup.isOpen_of_isClosed_of_finiteIndex _ (isClosed_range_localCyclotomicCharacter p L)
+
 /-! ### The cyclotomic image of a finite extension of `ℚ_p` -/
 
 variable [Algebra ℚ_[p] K] [FiniteDimensional ℚ_[p] K]
@@ -146,12 +157,8 @@ theorem range_localCyclotomicCharacter_le_ratPadic :
 /-- **The cyclotomic image of a finite extension `K` of `ℚ_p` is open in `ℤ_pˣ`**: it is closed,
 and its index divides `[K : ℚ_p]` since the cyclotomic character of `G_{ℚ_p}` is surjective. -/
 theorem isOpen_range_localCyclotomicCharacter :
-    IsOpen ((localCyclotomicCharacter p K).range : Set ℤ_[p]ˣ) := by
-  have hindex : (localCyclotomicCharacter p K).range.index ∣ Module.finrank ℚ_[p] K := by
-    simpa [range_localCyclotomicCharacter_ratPadic] using
-      (range_localCyclotomicCharacter_le_ratPadic p K).2
-  have : (localCyclotomicCharacter p K).range.FiniteIndex :=
-    ⟨ne_zero_of_dvd_ne_zero Module.finrank_pos.ne' hindex⟩
-  exact Subgroup.isOpen_of_isClosed_of_finiteIndex _ (isClosed_range_localCyclotomicCharacter p K)
+    IsOpen ((localCyclotomicCharacter p K).range : Set ℤ_[p]ˣ) :=
+  isOpen_range_localCyclotomicCharacter_of_surjective p ℚ_[p] K
+    (surjective_localCyclotomicCharacter_ratPadic p)
 
 end TauCeti

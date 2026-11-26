@@ -200,6 +200,15 @@ theorem toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three {s : K}
   · refine absurd ((mul_eq_zero.mp ?_).resolve_left h2) hne
     linear_combination (-1) * hfix + (ξ ^ 3 + ξ * (ξ ^ 16 - ξ ^ 12 + ξ ^ 8 - ξ ^ 4 + 1)) * h4
 
+/-- If `-2` is a square in `K`, then `-1` is excluded from its dyadic cyclotomic image:
+the character values are `1` or `3` modulo eight. -/
+theorem neg_one_notMem_range_localCyclotomicCharacter_of_sq_eq_neg_two {s : K}
+    (hs : s ^ 2 = -2) : (-1 : ℤ_[2]ˣ) ∉ (localCyclotomicCharacter 2 K).range := by
+  rintro ⟨σ, hσ⟩
+  have hmod := toZModPow_three_localCyclotomicCharacter_eq_one_or_eq_three hs σ
+  rw [hσ, Units.val_neg, Units.val_one, map_neg, map_one] at hmod
+  rcases hmod with hmod | hmod <;> exact absurd hmod (by decide)
+
 variable (p K) in
 /-- The image of the cyclotomic character is closed in `ℤ_pˣ`. -/
 theorem isClosed_range_localCyclotomicCharacter :
