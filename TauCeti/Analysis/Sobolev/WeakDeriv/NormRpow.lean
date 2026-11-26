@@ -48,8 +48,9 @@ they are multiples of the coordinates of the gradient `p ‖x‖ ^ (p - 2) x` of
 second weak derivatives of norm powers are their classical ones.
 
 The radial field `x ↦ ‖x‖ ^ p • x`, the gradient of `‖x‖ ^ (p + 2) / (p + 2)`, is weakly
-differentiable with its classical derivative for `p > -1`, where it is continuous, by the removable
-point lemma; at `p = -1`, the unit radial field, it is assembled from the coordinates above.
+differentiable with its classical derivative for `p > -max 1 d`: in dimension zero every function
+is constant, and otherwise, including the unit radial field at `p = -1`, it is assembled from the
+coordinates above.
 
 ## Main declarations
 
@@ -66,11 +67,11 @@ point lemma; at `p = -1`, the unit radial field, it is assembled from the coordi
   weakly differentiable on every open set, with their classical derivatives.
 * `TauCeti.abs_norm_rpow_mul_inner_le`, `TauCeti.norm_norm_rpow_smul_innerSL_add_le`: the products
   are bounded by `‖v‖ ‖x‖ ^ (s + 1)` and their derivatives by `(1 + |s|) ‖v‖ ‖x‖ ^ s`.
-* `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`: for `p > -1`, the radial field `‖x‖ ^ p • x` is
-  weakly differentiable on every open set, with its classical derivative.
+* `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`: for `p > -max 1 d`, the radial field
+  `‖x‖ ^ p • x` is weakly differentiable on every open set, with its classical derivative; for
+  `p ≤ -1` it is unbounded or discontinuous at the origin.
 * `TauCeti.locallyIntegrable_norm_rpow_smul_id_add_smulRight_pow`: for `p > -1`, the `d`-th power
   of the norm of that derivative is locally integrable.
-* `TauCeti.hasWeakFDerivOn_norm_rpow_neg_one_smul_self`: for `d ≥ 2`, so is the unit radial field.
 -/
 
 public section
@@ -541,39 +542,31 @@ theorem locallyIntegrable_norm_rpow_smul_id_add_smulRight_pow {p : ℝ} (hp : -1
   gcongr
   exact norm_rpow_smul_id_add_smulRight_le p x
 
-/-- **The weak derivative of the radial field.** For `p > -1`, the radial field
+/-- **The weak derivative of the radial field.** For `p > -max 1 (dim E)`, that is for `p > -1` in
+every dimension, including zero, and for `p > -dim E` in positive dimension, the radial field
 `x ↦ ‖x‖ ^ p • x` has its classical derivative `‖x‖ ^ p id + p ‖x‖ ^ (p - 2) ⟪x, ·⟫ x`, taken away
-from the origin, as weak derivative on every open set. -/
-theorem hasWeakFDerivOn_norm_rpow_smul_self {p : ℝ} (hp : -1 < p) (Ω : Opens E) :
+from the origin, as weak derivative on every open set. For `p ≤ -1` the field is unbounded or
+discontinuous at the origin; at `p = -1` it is the unit radial field `x / ‖x‖`. The derivative has
+size `O(‖x‖ ^ p)`, locally integrable exactly when `p > -dim E`. -/
+theorem hasWeakFDerivOn_norm_rpow_smul_self {p : ℝ}
+    (hp : -max 1 (Module.finrank ℝ E : ℝ) < p) (Ω : Opens E) :
     HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ p • x)
       (fun x ↦ ‖x‖ ^ p • ContinuousLinearMap.id ℝ E +
         ((p * ‖x‖ ^ (p - 2)) • innerSL ℝ x).smulRight x) := by
-  refine hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
-    (continuous_norm_rpow_smul_self hp).continuousOn (LocallyIntegrable.locallyIntegrableOn ?_ _)
-    fun _ hx ↦ hasFDerivAt_norm_rpow_smul_self_of_ne p hx.2
   rcases Nat.eq_zero_or_pos (Module.finrank ℝ E) with hd | hd
   · -- A space of dimension zero is a point, on which every function is constant.
     have : Subsingleton E := Module.finrank_zero_iff.1 hd
-    exact (continuous_of_const fun x y ↦ by rw [Subsingleton.elim x y]).locallyIntegrable
-  · have : (1 : ℝ) ≤ Module.finrank ℝ E := by exact_mod_cast hd
-    exact locallyIntegrable_rpow_smul_id_add_smulRight (by linarith)
-
-/-- **The weak derivative of the unit radial field.** If `dim E ≥ 2`, the unit radial field
-`x ↦ ‖x‖⁻¹ • x`, which is discontinuous at the origin, has its classical derivative
-`‖x‖⁻¹ id - ‖x‖⁻³ ⟪x, ·⟫ x`, taken away from the origin, as weak derivative on every open set. This
-is the exponent `p = -1` of `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`. -/
-theorem hasWeakFDerivOn_norm_rpow_neg_one_smul_self (hd : 1 < Module.finrank ℝ E)
-    (Ω : Opens E) :
-    HasWeakFDerivOn μ Ω (fun x : E ↦ ‖x‖ ^ (-1 : ℝ) • x)
-      (fun x ↦ ‖x‖ ^ (-1 : ℝ) • ContinuousLinearMap.id ℝ E +
-        ((-1 * ‖x‖ ^ ((-1 : ℝ) - 2)) • innerSL ℝ x).smulRight x) := by
+    exact hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
+      (continuous_of_const fun x y ↦ by rw [Subsingleton.elim x y]).continuousOn
+      ((continuous_of_const fun x y ↦ by rw [Subsingleton.elim x y]).locallyIntegrable
+        |>.locallyIntegrableOn _)
+      fun _ hx ↦ hasFDerivAt_norm_rpow_smul_self_of_ne p hx.2
+  have hp' : -(Module.finrank ℝ E : ℝ) < p := by
+    rwa [max_eq_right (by exact_mod_cast hd)] at hp
   set b := stdOrthonormalBasis ℝ E
   refine (hasWeakFDerivOn_iff_coordinates b.toBasis).2 fun i ↦ ?_
-  -- The coordinates are the components `‖x‖⁻¹ ⟪x, bᵢ⟫` of the unit radial field.
-  have hs : -(Module.finrank ℝ E : ℝ) < -1 := by
-    have : (1 : ℝ) < Module.finrank ℝ E := by exact_mod_cast hd
-    linarith
-  convert hasWeakFDerivOn_norm_rpow_mul_inner (μ := μ) hs (b i) Ω using 1
+  -- The coordinates are the products `‖x‖ ^ p ⟪x, bᵢ⟫`.
+  convert hasWeakFDerivOn_norm_rpow_mul_inner (μ := μ) hp' (b i) Ω using 1
   · funext x
     simp [OrthonormalBasis.repr_apply_apply, real_inner_comm]
   · funext x
@@ -581,7 +574,6 @@ theorem hasWeakFDerivOn_norm_rpow_neg_one_smul_self (hd : 1 < Module.finrank ℝ
     simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
       Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
       OrthonormalBasis.repr_apply_apply]
-    rw [show (-1 : ℝ) - 2 = -3 by norm_num]
     simp only [add_apply, smul_apply, ContinuousLinearMap.id_apply,
       ContinuousLinearMap.smulRight_apply, coe_innerSL_apply, smul_eq_mul, inner_add_right,
       inner_smul_right, real_inner_comm]
