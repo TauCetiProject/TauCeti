@@ -25,9 +25,13 @@ substitution, so these morphisms compose. Forgetting colors is a functor `LM.toA
 `Assoc^⊗`, and `LM.toFinPointed : LM^⊗ ⥤ Fin_*` is its composite with `Assoc.toFinPointed`.
 
 Coloring every element by `a` is a fully faithful functor `Assoc.toLM : Assoc^⊗ ⥤ LM^⊗` over
-`Fin_*`, the inclusion of the associative operad. Every inert map of `Fin_*` lifts, with a given
-source, to `LM^⊗` (`LM.Hom.ofInert`), and every morphism of `LM^⊗` over an inert map is strongly
-coCartesian for `LM.toFinPointed`.
+`Fin_*`, the inclusion of the associative operad. The target of a morphism of `LM^⊗` is its source
+colored along the underlying map (`LM.pushforwardColor`), and a map of `Fin_*` lifts with a given
+source exactly when each of its fibres over the elements other than the basepoint contains at most
+one input colored `m` (`LM.exists_hom_toAssoc_base_eq_iff`). In particular every inert map of
+`Fin_*` lifts, with a given source, to `LM^⊗` (`LM.Hom.ofInert`); every morphism over an inert map
+is that lift up to the identification of its target, and is strongly coCartesian for
+`LM.toFinPointed`.
 
 ## Main definitions
 
@@ -36,6 +40,8 @@ coCartesian for `LM.toFinPointed`.
 * `TauCeti.LM`: the category of operators `LM^⊗`.
 * `TauCeti.LM.toAssoc`, `TauCeti.LM.toFinPointed`: the functors to `Assoc^⊗` and `Fin_*`.
 * `TauCeti.Assoc.toLM`: the inclusion `Assoc^⊗ ⥤ LM^⊗`.
+* `TauCeti.LM.pushforwardColor`: the colors of the target of a lift of a map of `Fin_*`.
+* `TauCeti.LM.Hom.ofBase`: the lift of a map of `Fin_*` with a given source, when it exists.
 * `TauCeti.LM.Hom.ofInert`: the lift of an inert map of `Fin_*` with a given source.
 
 ## Main results
@@ -43,6 +49,9 @@ coCartesian for `LM.toFinPointed`.
 * `TauCeti.LM.homLiftEquiv`: lifts over a fixed pointed map decompose into colored output lifts.
 * `TauCeti.Assoc.fullyFaithfulToLM`: the inclusion `Assoc^⊗ ⥤ LM^⊗` is fully faithful.
 * `TauCeti.Assoc.toLM_comp_toFinPointed`: the inclusion lies over `Fin_*`.
+* `TauCeti.LM.exists_hom_toAssoc_base_eq_iff`: the maps of `Fin_*` that lift with a given source.
+* `TauCeti.LM.Hom.ofInert_comp_eqToHom`: every morphism over an inert map is `LM.Hom.ofInert`, up to
+  the identification of its target.
 * `TauCeti.LM.isStronglyCocartesian_of_isInert`: every morphism over an inert map is strongly
   coCartesian for `LM.toFinPointed`.
 
@@ -185,6 +194,13 @@ lemma toAssoc_obj (X : LM.{u}) : toAssoc.obj X = X.toAssocObj := (rfl)
 @[simp]
 lemma toAssoc_map (f : X ⟶ Y) : toAssoc.map f = f.toAssoc := (rfl)
 
+/-- An identification of objects of `LM^⊗` forgets to that of the underlying objects. -/
+@[simp]
+lemma eqToHom_toAssoc (h : X = Y) :
+    (eqToHom h).toAssoc = eqToHom (congrArg toAssocObj h) := by
+  subst h
+  rfl
+
 instance : toAssoc.{u}.Faithful where
   map_injective h := hom_ext h
 
@@ -207,12 +223,10 @@ instance isHomLift_base (f : X ⟶ Y) : toFinPointed.IsHomLift f.toAssoc.base f 
 
 /-- A morphism lies over a map of `Fin_*` exactly when that map is its underlying map. -/
 lemma isHomLift_iff {f : X ⟶ Y} {g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len} :
-    toFinPointed.IsHomLift g f ↔ f.toAssoc.base = g := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ isHomLift_base f⟩
-  -- Restate `h` over `toFinPointed.obj X` and `toFinPointed.obj Y`, as
-  -- `IsHomLift.eq_of_isHomLift` requires.
-  have : toFinPointed.IsHomLift (R := toFinPointed.obj X) (S := toFinPointed.obj Y) g f := h
-  exact (IsHomLift.eq_of_isHomLift (p := toFinPointed) g f).symm
+    toFinPointed.IsHomLift g f ↔ f.toAssoc.base = g :=
+  -- The endpoints are fixed explicitly, since `g` mentions `X` and `Y` only through their
+  -- lengths.
+  isHomLift_iff_map_eq (p := toFinPointed) (a := X) (b := Y)
 
 /-- The canonical inert projection to the single output with color `Y.color j`. -/
 def ρ (j : Fin Y.len) : Y ⟶ ⟨1, fun _ ↦ Y.color j⟩ where
@@ -225,20 +239,14 @@ lemma ρ_toAssoc (j : Fin Y.len) : (ρ j).toAssoc = Assoc.ρ j := (rfl)
 /-- The lift to `Assoc^⊗` assembled by `Assoc.homLiftEquiv` from the underlying lifts of a
 family of colored output lifts. The objects of `Assoc.homLiftEquiv` are fixed explicitly here:
 its statement mentions them only through their lengths, as in `FinPointed.mk X.len`, and
-unification cannot solve `?X.len =?= X.len` for `?X`. Here and in `assocLift_word` the type of
-the family fixes `X` and `Y`, so the proofs below need not supply them. -/
+unification cannot solve `?X.len =?= X.len` for `?X`. Here the type of the family fixes `X` and
+`Y`, so the proofs below need not supply them. -/
 private def assocLift (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len)
     (f : (j : Fin Y.len) → {f : X ⟶ LM.mk 1 (fun _ ↦ Y.color j) //
       toFinPointed.IsHomLift (g ≫ FinPointed.ρ j) f}) :
     {f : X.toAssocObj ⟶ Y.toAssocObj // Assoc.toFinPointed.IsHomLift g f} :=
   (Assoc.homLiftEquiv (X := X.toAssocObj) (Y := Y.toAssocObj) g).symm fun j ↦
     ⟨(f j).val.toAssoc, Assoc.isHomLift_iff.2 (isHomLift_iff.1 (f j).property)⟩
-
-private lemma assocLift_word (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len)
-    (f : (j : Fin Y.len) → {f : X ⟶ LM.mk 1 (fun _ ↦ Y.color j) //
-      toFinPointed.IsHomLift (g ≫ FinPointed.ρ j) f}) (j : Fin Y.len) :
-    (assocLift g f).val.word j = (f j).val.toAssoc.word 0 :=
-  Assoc.homLiftEquiv_symm_apply_word (X := X.toAssocObj) (Y := Y.toAssocObj) g _ j
 
 /-- Lifts of a fixed pointed map are equivalent to families of lifts to its colored outputs.
 The forward map postcomposes with the canonical inert projections. The inverse assembles
@@ -251,25 +259,28 @@ def homLiftEquiv (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) :
     simp [isHomLift_iff.1 f.property])⟩
   invFun f :=
     ⟨⟨(assocLift g f).val, fun j ↦ by
-      simpa only [assocLift_word] using (f j).val.isProfile 0⟩,
+      rw [assocLift, Assoc.homLiftEquiv_symm_apply_word (X := X.toAssocObj) (Y := Y.toAssocObj)]
+      exact (f j).val.isProfile 0⟩,
       isHomLift_iff.2 (Assoc.isHomLift_iff.1 (assocLift g f).property)⟩
+  -- Both inverse laws are those of `Assoc.homLiftEquiv`, since forgetting the colors commutes
+  -- with the projections.
   left_inv f := by
-    apply Subtype.ext
-    apply hom_ext
-    apply Assoc.hom_ext
-    intro j
-    simp only [assocLift_word, comp_toAssoc, ρ_toAssoc, Assoc.comp_word, Assoc.ρ_word,
-      List.flatMap_singleton]
+    refine Subtype.ext (hom_ext ?_)
+    have h := congrArg Subtype.val
+      ((Assoc.homLiftEquiv (X := X.toAssocObj) (Y := Y.toAssocObj) g).symm_apply_apply
+        ⟨f.val.toAssoc, Assoc.isHomLift_iff.2 (isHomLift_iff.1 f.property)⟩)
+    refine Eq.trans (congrArg (fun F ↦
+      ((Assoc.homLiftEquiv (X := X.toAssocObj) (Y := Y.toAssocObj) g).symm F).val)
+      (funext fun j ↦ Subtype.ext ?_)) h
+    rw [Assoc.homLiftEquiv_apply_val]
+    rfl
   right_inv f := by
-    funext j
-    apply Subtype.ext
-    apply hom_ext
-    apply Assoc.hom_ext
-    intro k
-    have : k = 0 := Subsingleton.elim _ _
-    subst k
-    simp only [comp_toAssoc, ρ_toAssoc, Assoc.comp_word, Assoc.ρ_word, List.flatMap_singleton,
-      assocLift_word]
+    refine funext fun j ↦ Subtype.ext (hom_ext ?_)
+    have h := congrArg Subtype.val (congrFun
+      ((Assoc.homLiftEquiv (X := X.toAssocObj) (Y := Y.toAssocObj) g).apply_symm_apply
+        fun j ↦ ⟨(f j).val.toAssoc, Assoc.isHomLift_iff.2 (isHomLift_iff.1 (f j).property)⟩) j)
+    rw [Assoc.homLiftEquiv_apply_val] at h
+    exact h
 
 @[simp]
 lemma homLiftEquiv_apply_val
@@ -283,7 +294,7 @@ lemma homLiftEquiv_symm_apply_word
     (f : (j : Fin Y.len) → {f : X ⟶ LM.mk 1 (fun _ ↦ Y.color j) //
       toFinPointed.IsHomLift (g ≫ FinPointed.ρ j) f}) (j : Fin Y.len) :
     ((homLiftEquiv g).symm f).val.toAssoc.word j = (f j).val.toAssoc.word 0 :=
-  assocLift_word g f j
+  Assoc.homLiftEquiv_symm_apply_word (X := X.toAssocObj) (Y := Y.toAssocObj) g _ j
 
 /-- If the word of `f` over the output `j` is the single letter `i`, then the output `j` has
 the color of the input `i`. -/
@@ -316,8 +327,10 @@ theorem isStronglyCocartesian_of_isInert (φ : X ⟶ Y) (hφ : φ.toAssoc.base.I
     congrArg Hom.toAssoc hψ⟩)
 
 /-- The candidate target colors along a pointed map: an output is colored `m` when one of
-its preimages is. Every LM morphism has these target colors, but this coloring alone does
-not guarantee a lift: each ordered fibre must still have an admissible profile. -/
+its preimages is. Every LM morphism has these target colors (`Hom.mk_pushforwardColor_eq`), but
+this coloring alone does not guarantee a lift: a lift exists exactly when each fibre over an
+element other than the basepoint contains at most one input colored `m`
+(`exists_hom_toAssoc_base_eq_iff`). -/
 def pushforwardColor (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
     (j : Fin k) : Color :=
   if ∃ i, f.toFun i.succ = j.succ ∧ X.color i = .m then .m else .a
@@ -359,16 +372,22 @@ lemma Hom.color_eq_pushforwardColor (f : X ⟶ Y) (j : Fin Y.len) :
     obtain ⟨i, hi, hiC⟩ := List.mem_map.1 hm
     exact ⟨i, (f.toAssoc.mem_word_iff i j).1 hi, hiC⟩
 
+/-- An output with exactly one input has the color of that input. -/
+lemma pushforwardColor_eq_of_unique (X : LM.{u}) {k : ℕ}
+    (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k) {i : Fin X.len} {j : Fin k}
+    (hi : f.toFun i.succ = j.succ) (huniq : ∀ i', f.toFun i'.succ = j.succ → i' = i) :
+    X.pushforwardColor f j = X.color i := by
+  have hpre (i' : Fin X.len) : f.toFun i'.succ = j.succ ↔ i' = i :=
+    ⟨huniq i', fun h ↦ h ▸ hi⟩
+  cases hc : X.color i <;> simp [hpre, hc]
+
 /-- Along an inert map, each output has the color of its unique input. -/
 lemma pushforwardColor_eq_of_isInert (X : LM.{u}) {k : ℕ}
     (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k) (hf : f.IsInert)
     {i : Fin X.len} {j : Fin k} (hi : f.toFun i.succ = j.succ) :
-    X.pushforwardColor f j = X.color i := by
-  have hpre (i' : Fin X.len) : f.toFun i'.succ = j.succ ↔ i' = i := by
-    exact ⟨fun hi' ↦ Fin.succ_injective _
-      (((FinPointed.Hom.isInert_iff f).1 hf j.succ (Fin.succ_ne_zero j)).unique hi' hi),
-      fun h ↦ h ▸ hi⟩
-  cases hc : X.color i <;> simp [hpre, hc]
+    X.pushforwardColor f j = X.color i :=
+  X.pushforwardColor_eq_of_unique f hi fun _ hi' ↦ Fin.succ_injective _
+    (((FinPointed.Hom.isInert_iff f).1 hf j.succ (Fin.succ_ne_zero j)).unique hi' hi)
 
 /-- The lift of an inert map `f : ⟨n⟩ ⟶ ⟨k⟩` of `Fin_*` with source `X`: its target is `⟨k⟩`
 colored along `f`, and its words are the one-letter fibres of `f`. -/
@@ -389,11 +408,96 @@ lemma Hom.ofInert_toAssoc (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len �
     (hf : f.IsInert) : (Hom.ofInert X f hf).toAssoc = Assoc.Hom.ofBase f :=
   (rfl)
 
+/-- The target of every morphism is its source colored along its underlying map. -/
+lemma Hom.mk_pushforwardColor_eq (φ : X ⟶ Y) :
+    (⟨Y.len, X.pushforwardColor φ.toAssoc.base⟩ : LM.{u}) = Y :=
+  congrArg (LM.mk Y.len) (funext fun j ↦ (φ.color_eq_pushforwardColor j).symm)
+
+/-- Every morphism over an inert map is the lift `Hom.ofInert` of that map, followed by the
+identification `Hom.mk_pushforwardColor_eq` of its target with the source colored along that
+map. -/
+lemma Hom.ofInert_comp_eqToHom (φ : X ⟶ Y) (hφ : φ.toAssoc.base.IsInert) :
+    Hom.ofInert X φ.toAssoc.base hφ ≫ eqToHom φ.mk_pushforwardColor_eq = φ := by
+  refine hom_ext ?_
+  simp only [comp_toAssoc, eqToHom_toAssoc, eqToHom_refl, Category.comp_id]
+  exact Assoc.Hom.ext_of_isInert (by simp) (by simpa using hφ)
+
 /-- The lift of an inert map with a given source is strongly coCartesian. -/
 lemma isStronglyCocartesian_ofInert (X : LM.{u}) {k : ℕ}
     (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k) (hf : f.IsInert) :
     toFinPointed.IsStronglyCocartesian f (Hom.ofInert X f hf) := by
   simpa using isStronglyCocartesian_of_isInert (Hom.ofInert X f hf) (by simpa using hf)
+
+/-- The lift of a map `f : ⟨n⟩ ⟶ ⟨k⟩` of `Fin_*` with source `X` each of whose fibres over the
+elements other than the basepoint contains at most one input colored `m`. Its target is `⟨k⟩`
+colored along `f`, and its word over each output lists the inputs colored `a` increasingly,
+followed by the input colored `m` if there is one. -/
+def Hom.ofBase (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
+    (hf : ∀ (j : Fin k) (i i' : Fin X.len), f.toFun i.succ = j.succ → f.toFun i'.succ = j.succ →
+      X.color i = .m → X.color i' = .m → i = i') :
+    X ⟶ ⟨k, X.pushforwardColor f⟩ where
+  toAssoc :=
+    { base := f
+      word j := (List.finRange X.len).filter (fun i ↦ f.toFun i.succ = j.succ ∧ X.color i = .a) ++
+        (List.finRange X.len).filter (fun i ↦ f.toFun i.succ = j.succ ∧ X.color i = .m)
+      mem_word_iff i j := by cases hc : X.color i <;> simp [hc]
+      nodup_word j := ((List.nodup_finRange _).filter _).append ((List.nodup_finRange _).filter _)
+        (List.disjoint_left.2 fun i hi hi' ↦ by simp_all) }
+  isProfile j := by
+    change IsProfile (X.pushforwardColor f j) _
+    dsimp only
+    cases hc : X.pushforwardColor f j with
+    | a =>
+      rw [pushforwardColor_eq_a_iff] at hc
+      simp only [isProfile_a, List.map_append, List.mem_append, List.mem_map, List.mem_filter,
+        List.mem_finRange, true_and, decide_eq_true_eq, not_or, not_exists, not_and]
+      exact ⟨fun i hi hi' ↦ by simp [hi.2] at hi', fun i hi _ ↦ by simp [hc i hi.1] at hi⟩
+    | m =>
+      obtain ⟨i₀, hi₀, hc₀⟩ := (X.pushforwardColor_eq_m_iff f j).1 hc
+      -- The only input colored `m` over `j` is `i₀`.
+      have hM : (List.finRange X.len).filter
+          (fun i ↦ f.toFun i.succ = j.succ ∧ X.color i = .m) = [i₀] :=
+        List.Perm.eq_singleton ((List.perm_ext_iff_of_nodup ((List.nodup_finRange _).filter _)
+          (List.nodup_singleton i₀)).2 fun i ↦ by
+            simp only [List.mem_filter, List.mem_finRange, true_and, decide_eq_true_eq,
+              List.mem_singleton]
+            exact ⟨fun h ↦ hf j i i₀ h.1 hi₀ h.2 hc₀, fun h ↦ h ▸ ⟨hi₀, hc₀⟩⟩)
+      refine ⟨((List.finRange X.len).filter
+        (fun i ↦ f.toFun i.succ = j.succ ∧ X.color i = .a)).map X.color, ?_, ?_⟩
+      · simp +contextual
+      · rw [hM, List.map_append, List.map_singleton, hc₀]
+
+@[simp]
+lemma Hom.ofBase_toAssoc_base (X : LM.{u}) {k : ℕ} (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k)
+    (hf : ∀ (j : Fin k) (i i' : Fin X.len), f.toFun i.succ = j.succ → f.toFun i'.succ = j.succ →
+      X.color i = .m → X.color i' = .m → i = i') :
+    (Hom.ofBase X f hf).toAssoc.base = f :=
+  (rfl)
+
+/-- A map `f : ⟨n⟩ ⟶ ⟨k⟩` of `Fin_*` lifts to `LM^⊗` with source `X`, necessarily with target
+`⟨k⟩` colored along `f` (`Hom.mk_pushforwardColor_eq`), exactly when each of its fibres over the
+elements other than the basepoint contains at most one input colored `m`. -/
+theorem exists_hom_toAssoc_base_eq_iff (X : LM.{u}) {k : ℕ}
+    (f : FinPointed.mk.{u} X.len ⟶ FinPointed.mk k) :
+    (∃ φ : X ⟶ ⟨k, X.pushforwardColor f⟩, φ.toAssoc.base = f) ↔
+      ∀ (j : Fin k) (i i' : Fin X.len), f.toFun i.succ = j.succ → f.toFun i'.succ = j.succ →
+        X.color i = .m → X.color i' = .m → i = i' := by
+  refine ⟨fun ⟨φ, hφ⟩ j i i' hi hi' hc hc' ↦ ?_, fun hf ↦ ⟨Hom.ofBase X f hf, rfl⟩⟩
+  -- The word of `φ` over `j` is `w ++ [x]`, where no input of `w` is colored `m`.
+  have hp := φ.isProfile j
+  rw [show (⟨k, X.pushforwardColor f⟩ : LM.{u}).color j = .m from
+    (X.pushforwardColor_eq_m_iff f j).2 ⟨i, hi, hc⟩, isProfile_m] at hp
+  obtain ⟨l, hl, hw⟩ := hp
+  obtain ⟨w, w', hww', rfl, hw'⟩ := List.map_eq_append_iff.1 hw
+  obtain ⟨x, rfl, -⟩ := List.map_eq_singleton_iff.1 hw'
+  -- So every input colored `m` over `j` is the last letter `x`.
+  have hlast (i : Fin X.len) (hi : f.toFun i.succ = j.succ) (hc : X.color i = .m) : i = x := by
+    have hmem := (φ.toAssoc.mem_word_iff i j).2 (by rw [hφ]; exact hi)
+    rw [hww'] at hmem
+    rcases List.mem_append.1 hmem with h | h
+    · exact absurd (hc ▸ List.mem_map_of_mem h) hl
+    · exact List.mem_singleton.1 h
+  exact (hlast i hi hc).trans (hlast i' hi' hc').symm
 
 end LM
 
