@@ -61,8 +61,8 @@ only along the circle.
 
 * `TauCeti.CotangentBundle.polarCovector_smul_polarRadialUnit`: in polar coordinates `Φ_h` is
   `(r, θ) ↦ (θ, h(r))`.
-* `TauCeti.CotangentBundle.polarCovector_eq_zero_iff`: `Φ_h` sends the circle `‖q‖ = c` to the
-  zero section exactly when `h(c) = 0`.
+* `TauCeti.CotangentBundle.polarCovector_eq_zeroSection_iff`: `Φ_h` sends the circle `‖q‖ = c`
+  to the zero section exactly when `h(c) = 0`.
 * `TauCeti.CotangentBundle.eval₂_symplecticForm_mfderiv_polarCovector`:
   `Φ_h^* (dθ ∧ dI) = -(h'(r) / r) dx ∧ dy` on the punctured plane.
 * `TauCeti.CotangentBundle.forall_eval₂_symplecticForm_mfderiv_polarCovector_eq_det_iff`: `Φ_h` is
@@ -138,11 +138,14 @@ theorem torusActions_polarCovector (h : ℝ → ℝ) (q : V) :
 
 /-- **`Φ_h` sends the circle `‖q‖ = c` to the zero section exactly when `h(c) = 0`.** The covector
 `Φ_h(q)` is the zero covector over the polar angle of `q` exactly when `h(‖q‖) = 0`. -/
-theorem polarCovector_eq_zero_iff (h : ℝ → ℝ) (q : V) :
+theorem polarCovector_eq_zeroSection_iff (h : ℝ → ℝ) (q : V) :
     polarCovector b h q =
-        TotalSpace.mk' ((Fin 1 → ℝ) →L[ℝ] ℝ)
-          (fun _ ↦ (((polarAngle (b 0) (b 1) q).toReal : ℝ) : AddCircle (2 * π))) 0 ↔
+        zeroSection ((Fin 1 → ℝ) →L[ℝ] ℝ)
+          (fun y : Fin 1 → AddCircle (2 * π) ↦
+            TangentSpace (ModelWithCorners.pi fun _ : Fin 1 ↦ 𝓘(ℝ)) y →L[ℝ] ℝ)
+          (fun _ ↦ (((polarAngle (b 0) (b 1) q).toReal : ℝ) : AddCircle (2 * π))) ↔
       h ‖q‖ = 0 := by
+  rw [zeroSection]
   constructor
   · intro hq
     have h0 := congrFun (congrArg (torusActions (2 * π)) hq) 0
@@ -310,7 +313,8 @@ private theorem hasDerivAt_one_sub_sq_div_two (r : ℝ) :
 
 /-- **The profile `(1 - r²) / 2` is symplectic.** The map `(r, θ) ↦ (θ, I = (1 - r²) / 2)` pulls
 the canonical form `dθ ∧ dI` of `T*S¹` back to the area form `dx ∧ dy` of the punctured plane. It
-sends the unit circle to the zero section (`TauCeti.CotangentBundle.polarCovector_eq_zero_iff`). -/
+sends the unit circle to the zero section
+(`TauCeti.CotangentBundle.polarCovector_eq_zeroSection_iff`). -/
 theorem eval₂_symplecticForm_mfderiv_polarCovector_one_sub_sq_div_two {q : V} (hq : q ≠ 0)
     (u v : TangentSpace 𝓘(ℝ, V) q) :
     SmoothBundleForm.eval₂
