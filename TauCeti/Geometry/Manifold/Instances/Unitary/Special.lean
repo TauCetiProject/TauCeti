@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Geometry.Lie.Subgroup.Transport
 public import TauCeti.Geometry.Manifold.Instances.Unitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
@@ -60,8 +61,9 @@ structure, `open scoped Matrix.Norms.L2Operator` and enable
   smoothness of maps into the special unitary group, tested after coercion to the matrices.
 * `Matrix.specialUnitaryGroup.isSmoothEmbedding_inclusion_unitaryGroup`: the inclusion into the
   unitary group is a smooth embedding.
+* `Matrix.instContMDiffSMulMulVec`: the matrices act smoothly on column vectors `n → 𝕜`.
 * `Matrix.specialUnitaryGroup.instContMDiffSMul`: a smooth action of the matrices restricts to the
-  special unitary group.
+  special unitary group; in particular the special unitary group acts smoothly on `n → 𝕜`.
 
 ## References
 
@@ -202,6 +204,20 @@ theorem isSmoothEmbedding_inclusion_unitaryGroup :
   ⟨Unitary.isSmoothEmbedding_val.isImmersion_of_isImmersion_comp (by simp) isImmersion_val,
     .of_comp (continuous_inclusion specialUnitaryGroup_le_unitaryGroup) continuous_subtypeVal
       .subtypeVal⟩
+
+/-- The matrices act smoothly on column vectors, `A • v = A *ᵥ v` (`Matrix.smul_eq_mulVec`): the
+action is a real bilinear map of finite-dimensional spaces. -/
+instance _root_.Matrix.instContMDiffSMulMulVec {k : ℕ∞ω} :
+    ContMDiffSMul 𝓘(ℝ, Matrix n n 𝕜) 𝓘(ℝ, n → 𝕜) k (Matrix n n 𝕜) (n → 𝕜) where
+  contMDiff_smul := by
+    have h : ContMDiff (𝓘(ℝ, Matrix n n 𝕜).prod 𝓘(ℝ, n → 𝕜)) 𝓘(ℝ, Matrix n n 𝕜 × (n → 𝕜)) k
+        (@id (Matrix n n 𝕜 × (n → 𝕜))) := by
+      rw [contMDiff_prod_module_iff, ← contMDiff_prod_iff]; exact contMDiff_id
+    -- The action is the real bilinear map `(A, v) ↦ A *ᵥ v`.
+    let B : Matrix n n 𝕜 →ₗ[ℝ] (n → 𝕜) →ₗ[ℝ] (n → 𝕜) :=
+      LinearMap.mk₂ ℝ (fun A v ↦ A *ᵥ v) Matrix.add_mulVec (fun c A v ↦ Matrix.smul_mulVec c A v)
+        Matrix.mulVec_add (fun c A v ↦ Matrix.mulVec_smul A c v)
+    exact B.toContinuousBilinearMap.isBoundedBilinearMap.contDiff.contMDiff.comp h
 
 /-- Any `C^k` action (`k ≤ ∞`) of the matrices on a manifold restricts to a `C^k` action of the
 special unitary group. -/
