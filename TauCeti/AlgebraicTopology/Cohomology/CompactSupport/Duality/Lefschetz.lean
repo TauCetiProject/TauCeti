@@ -172,7 +172,7 @@ omit [T2Space X] [T2Space M] in
 private lemma compl_range_subset_compl_collarCompl {s : ℝ} (hs : 0 < s) :
     MapsTo (𝟙 (TopCat.of X)) ((range ι)ᶜ : Set (TopCat.of X))
       (collarCompl hι hιf hc hs : Set (TopCat.of X))ᶜ :=
-  fun _ hx ↦ compl_subset_compl.2 (image_subset_range ι _) hx
+  TopCat.mapsTo_id_compl (image_subset_range ι _)
 
 omit [T2Space X] [T2Space M] in
 /-- Restriction `Hᵖ(X, Cₛ) ⟶ Hᵖ(X, ∂X)` is an isomorphism. -/
@@ -201,7 +201,7 @@ private lemma isIso_restrict_interiorCompl {s t : ℝ} (hs : 0 < s) (ht : 0 < t)
       (TopPair.ofSubsetMap (𝟙 (TopCat.of M)) (TopCat.mapsTo_id_compl_compacts hle)) p) := by
   have hX : MapsTo (𝟙 (TopCat.of X)) (collarCompl hι hιf hc hs : Set (TopCat.of X))ᶜ
       (collarCompl hι hιf hc ht : Set (TopCat.of X))ᶜ :=
-    compl_subset_compl.2 (image_mono hle)
+    TopCat.mapsTo_id_compl (image_mono hle)
   -- In `X`, the restriction from `Kₜ` to `Kₛ` is an isomorphism, since both restrictions to `∂X`
   -- are.
   have := isIso_restrict hι hιf L hc hs p
