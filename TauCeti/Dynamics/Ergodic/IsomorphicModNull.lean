@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Data.Set.Restrict
 public import TauCeti.Dynamics.Ergodic.Factor
+public import TauCeti.MeasureTheory.Measure.Subtype
 public import Mathlib.MeasureTheory.Measure.Count
 
 /-!
@@ -273,6 +274,11 @@ def toMeasurableEquiv (e : IsomorphismModNull T μ S ν) : e.source ≃ᵐ e.tar
   measurable_toFun := (e.measurable_toFun.comp measurable_subtypeVal).subtype_mk
   measurable_invFun := (e.measurable_invFun.comp measurable_subtypeVal).subtype_mk
 
+/-- The measurable equivalence of an isomorphism mod 0 is the restriction of the forward map. -/
+theorem coe_toMeasurableEquiv (e : IsomorphismModNull T μ S ν) :
+    ⇑e.toMeasurableEquiv = e.mapsTo_toFun.restrict :=
+  (rfl)
+
 @[simp]
 theorem coe_toMeasurableEquiv_apply (e : IsomorphismModNull T μ S ν) (x : e.source) :
     (e.toMeasurableEquiv x : Y) = e.toFun x :=
@@ -293,10 +299,9 @@ theorem measurePreserving_toMeasurableEquiv (e : IsomorphismModNull T μ S ν) :
   rw [Measure.map_apply e.toMeasurableEquiv.measurable hA,
     comap_subtypeVal_apply e.measurableSet_source,
     comap_subtypeVal_apply e.measurableSet_target,
-    ← e.measurePreserving_toFun.measure_preimage hA'.nullMeasurableSet,
-    show ⇑e.toMeasurableEquiv = e.mapsTo_toFun.restrict from rfl,
-    e.mapsTo_toFun.image_val_preimage_restrict, inter_comm]
-  exact measure_inter_conull e.measure_compl_source
+    ← e.measurePreserving_toFun.measure_preimage hA'.nullMeasurableSet, coe_toMeasurableEquiv,
+    e.mapsTo_toFun.image_val_preimage_restrict, inter_comm,
+    measure_inter_conull e.measure_compl_source]
 
 /-- The measurable equivalence of an isomorphism mod 0 conjugates the restrictions of the two
 systems to the conull invariant sets. -/
@@ -304,24 +309,6 @@ theorem toMeasurableEquiv_restrict (e : IsomorphismModNull T μ S ν) (x : e.sou
     e.toMeasurableEquiv (MapsTo.restrict T e.source e.source e.mapsTo_source x) =
       MapsTo.restrict S e.target e.target e.mapsTo_target (e.toMeasurableEquiv x) :=
   Subtype.ext (e.toFun_comp x x.property)
-
-/-- Extending by a constant a map between measurable conull sets that preserves the restricted
-measures gives a measure-preserving map of the whole spaces. -/
-private theorem measurePreserving_extend_val {s : Set X} {t : Set Y} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) (hνt : ν tᶜ = 0) (hμs : μ sᶜ = 0) {g : s → t}
-    (hg : MeasurePreserving g (μ.comap (↑)) (ν.comap (↑))) (y₀ : Y) :
-    MeasurePreserving (extend (↑) (fun x ↦ (g x : Y)) fun _ ↦ y₀) μ ν := by
-  set F : X → Y := extend (↑) (fun x ↦ (g x : Y)) fun _ ↦ y₀
-  have hF : Measurable F := (MeasurableEmbedding.subtypeVal hs).measurable_extend
-    (measurable_subtypeVal.comp hg.measurable) measurable_const
-  refine ⟨hF, Measure.ext fun B hB ↦ ?_⟩
-  have hFg : ((↑) : s → X) ⁻¹' (F ⁻¹' B) = g ⁻¹' ((↑) ⁻¹' B) := by
-    rw [← preimage_comp, extend_comp Subtype.val_injective]
-    rfl
-  rw [Measure.map_apply hF hB, ← measure_inter_conull hμs, inter_comm,
-    ← Subtype.image_preimage_coe, ← comap_subtypeVal_apply hs, hFg,
-    hg.measure_preimage (measurable_subtypeVal hB).nullMeasurableSet,
-    comap_subtypeVal_apply ht, Subtype.image_preimage_coe, inter_comm, measure_inter_conull hνt]
 
 section OfMeasurableEquivRestrict
 
@@ -358,10 +345,8 @@ noncomputable def ofMeasurableEquivRestrict : IsomorphismModNull T μ S ν where
   toFun_invFun y hy := by
     rw [extend_val_apply hy, extend_val_apply (e.symm ⟨y, hy⟩).property, Subtype.coe_eta,
       e.apply_symm_apply]
-  measurePreserving_toFun :=
-    measurePreserving_extend_val hX₀ hY₀ hν hμ he _
-  measurePreserving_invFun :=
-    measurePreserving_extend_val hY₀ hX₀ hμ hν (he.symm e) _
+  measurePreserving_toFun := he.extend_subtypeVal hX₀ hY₀ hμ hν measurable_const
+  measurePreserving_invFun := (he.symm e).extend_subtypeVal hY₀ hX₀ hν hμ measurable_const
   toFun_comp x hx := by
     rw [extend_val_apply (hT hx), extend_val_apply hx]
     exact congrArg Subtype.val (h ⟨x, hx⟩)
