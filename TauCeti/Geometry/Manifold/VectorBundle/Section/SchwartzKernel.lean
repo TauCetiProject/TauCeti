@@ -493,9 +493,6 @@ private theorem tensorBasis_apply (k : Fin (Module.finrank ℝ F) × Fin (Module
   rw [tensorBasis, Module.Basis.map_apply, Module.Basis.tensorProduct_apply,
     ProjectiveTensor.linearEquiv_symm_apply]
 
-private instance : FiniteDimensional ℝ (ProjectiveTensor ℝ F F') :=
-  Module.Finite.of_basis (tensorBasis F F')
-
 /-- The coordinate functional of `tensorBasis` at `k`. -/
 private def tensorCoord (k : Fin (Module.finrank ℝ F) × Fin (Module.finrank ℝ F')) :
     ProjectiveTensor ℝ F F' →L[ℝ] ℝ :=
