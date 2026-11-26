@@ -43,13 +43,13 @@ Laguerre orthogonality relation, so the general formula is stated for every `j`.
 
 ## Main statements
 
-* `TauCeti.hasDerivAt_iteratedDeriv_exp_neg_mul_rpow`: for `t ≠ 0` or `j + 1 ≤ β`, the function
+* `Polynomial.hasDerivAt_iteratedDeriv_exp_neg_mul_rpow`: for `t ≠ 0` or `j + 1 ≤ β`, the function
   `iteratedDeriv j (fun s => exp (-s) * s ^ β)` has at `t` the derivative
   `(j + 1)! * (exp (-t) * t ^ (β - (j + 1))) * L_{j+1}^{(β - (j + 1))}(t)`.
-* `TauCeti.iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre`: for `t ≠ 0` or `j ≤ β`, the
+* `Polynomial.iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre`: for `t ≠ 0` or `j ≤ β`, the
   `j`-th derivative of `exp (-t) * t ^ β` at `t`, as `j! * (exp (-t) * t ^ (β - j))` times the
   value of `L_j^{(β - j)}` at `t`.
-* `TauCeti.laguerre_rodrigues`: the Rodrigues formula, for `0 < x` and every real `α`.
+* `Polynomial.laguerre_rodrigues`: the Rodrigues formula, for `0 < x` and every real `α`.
 
 ## References
 
@@ -60,9 +60,9 @@ Laguerre orthogonality relation, so the general formula is stated for every `j`.
 
 public section
 
-namespace TauCeti
+namespace Polynomial
 
-open Polynomial Real
+open Real
 
 /-- One step of the derivative formula: at every `t ≠ 0`, and at `t = 0` when `0 ≤ γ`,
 differentiating `exp (-t) * t ^ (γ + 1) * L_j^{(γ + 1)}(t)` lowers the parameter and raises the
@@ -119,7 +119,7 @@ origin is allowed),
 `dʲ/dtʲ (exp (-t) * t ^ β) = j! * (exp (-t) * t ^ (β - j)) * L_j^{(β - j)}(t)`.
 At `β = n + α`, `j = n` it reads
 `dⁿ/dtⁿ (exp (-t) * t ^ (n + α)) = n! * (exp (-t) * t ^ α) * Lₙ^{(α)}(t)`, which rearranges to the
-Rodrigues formula `TauCeti.laguerre_rodrigues` only for `t > 0`. -/
+Rodrigues formula `Polynomial.laguerre_rodrigues` only for `t > 0`. -/
 theorem iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre (β : ℝ) (j : ℕ) {t : ℝ}
     (ht : t ≠ 0 ∨ (j : ℝ) ≤ β) :
     iteratedDeriv j (fun s : ℝ => exp (-s) * s ^ β) t =
@@ -146,10 +146,10 @@ theorem hasDerivAt_iteratedDeriv_exp_neg_mul_rpow (β : ℝ) (j : ℕ) {t : ℝ}
 
 /-- The **Rodrigues formula** for the generalized Laguerre polynomials (DLMF 18.5.5 with
 Table 18.5.1), as an identity of real functions on `(0, ∞)`:
-`Lₙ^{(α)}(x) = x ^ (-α) * exp x / n! * dⁿ/dxⁿ (exp (-x) * x ^ (n + α))`. It is the case
-`β = n + α`, `j = n` of `TauCeti.iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre` for `x > 0`,
-after multiplying by `x ^ (-α) * exp x` to cancel the weight; the hypothesis `0 < x` is needed
-(at `x = 0`, `α = 1`, `n = 0` the left side is `1` and the right side is `0`). -/
+`Lₙ^{(α)}(x) = x ^ (-α) * exp x / n! * dⁿ/dxⁿ (exp (-x) * x ^ (n + α))`. It is the
+case `β = n + α`, `j = n` of `Polynomial.iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre` for
+`x > 0`, after multiplying by `x ^ (-α) * exp x` to cancel the weight; the hypothesis `0 < x` is
+needed (at `x = 0`, `α = 1`, `n = 0` the left side is `1` and the right side is `0`). -/
 theorem laguerre_rodrigues (α : ℝ) (n : ℕ) {x : ℝ} (hx : 0 < x) :
     (laguerre α n).eval x =
       x ^ (-α) * exp x / n.factorial *
@@ -160,4 +160,4 @@ theorem laguerre_rodrigues (α : ℝ) (n : ℕ) {x : ℝ} (hx : 0 < x) :
   have h₂ : (n.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.2 n.factorial_ne_zero
   field_simp
 
-end TauCeti
+end Polynomial
