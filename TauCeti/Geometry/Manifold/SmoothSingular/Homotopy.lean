@@ -424,7 +424,7 @@ def smoothSingularChainHomotopyInv (R : C)
     (he₁ : e₁.hom = SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R)
     (he₂ : e₂.hom = SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R) :
     Homotopy e₁.inv e₂.inv :=
-  e₁.homotopyInvOfHomEq e₂ (he₁.trans he₂.symm)
+  e₁.homotopyInv e₂ (.ofEq (he₁.trans he₂.symm))
 
 end TauCeti
 
@@ -445,8 +445,9 @@ def smoothSingularChainHomotopyInvNaturality {f : M → N₁} (hf : ContMDiff I 
     Homotopy
       (SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R ≫ eN.inv)
       (eM.inv ≫ SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R) :=
-  eM.homotopyInvOfComm eN
-    (by rw [heM, heN, ← Functor.map_comp, ← Functor.map_comp, smoothSingularSubcomplexMap_ι hf])
+  (eM.invNaturality eN (.ofEq (by
+    rw [heM, heN, ← Functor.map_comp, ← Functor.map_comp,
+      smoothSingularSubcomplexMap_ι hf]))).symm
 
 /-- **Naturality on homology of the smooth-chain inverse isomorphism.** For a smooth map
 `f : M → N₁`, the inverse homology isomorphisms `(toHomologyIso n).inv` commute with pushforward on
@@ -463,10 +464,9 @@ theorem homologyMap_comp_toHomologyIso_inv_smoothSingular [CategoryWithHomology 
     SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R n ≫
         (eN.toHomologyIso n).inv =
       (eM.toHomologyIso n).inv ≫ SSet.homologyMap (smoothSingularSubcomplexMap f hf) R n :=
-  eM.homologyMap_comp_toHomologyIso_inv_of_comm eN
-    (fK := SSet.chainComplexMap (smoothSingularSubcomplexMap f hf) R)
-    (fL := SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R)
-    (by rw [heM, heN, ← Functor.map_comp, ← Functor.map_comp, smoothSingularSubcomplexMap_ι hf]) n
+  eM.homologyMap_comp_toHomologyIso_inv eN
+    (.ofEq (by rw [heM, heN, ← Functor.map_comp, ← Functor.map_comp,
+      smoothSingularSubcomplexMap_ι hf])) n
 
 end ContMDiff
 

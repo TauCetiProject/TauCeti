@@ -212,9 +212,9 @@ theorem toHomologyIso_smoothSingularChainHomotopyEquivOfRetract_eq [CategoryWith
     (hj₁.smoothSingularChainHomotopyEquivOfRetract hr₁ hΦ₁ hΦ₁₀ hΦ₁₁ R eN₁ heN₁).toHomologyIso n =
       (hj₂.smoothSingularChainHomotopyEquivOfRetract hr₂ hΦ₂ hΦ₂₀ hΦ₂₁ R eN₂ heN₂).toHomologyIso
         n :=
-  HomotopyEquiv.toHomologyIso_eq_of_hom_eq
-    ((hj₁.smoothSingularChainHomotopyEquivOfRetract_hom hr₁ hΦ₁ hΦ₁₀ hΦ₁₁ R eN₁ heN₁).trans
-      (hj₂.smoothSingularChainHomotopyEquivOfRetract_hom hr₂ hΦ₂ hΦ₂₀ hΦ₂₁ R eN₂ heN₂).symm) n
+  HomotopyEquiv.toHomologyIso_eq_of_homotopy
+    (.ofEq ((hj₁.smoothSingularChainHomotopyEquivOfRetract_hom hr₁ hΦ₁ hΦ₁₀ hΦ₁₁ R eN₁ heN₁).trans
+      (hj₂.smoothSingularChainHomotopyEquivOfRetract_hom hr₂ hΦ₂ hΦ₂₀ hΦ₂₁ R eN₂ heN₂).symm)) n
 
 end ContMDiff
 

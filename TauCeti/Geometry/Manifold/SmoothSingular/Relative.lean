@@ -519,7 +519,7 @@ def smoothSingularPairChainHomotopyEquivInvNaturality {f : M → N} (hf : ContMD
         (smoothSingularPairChainHomotopyEquiv J R V).inv) :=
   (smoothSingularPairChainHomotopyEquiv I R U).invNaturality
     (smoothSingularPairChainHomotopyEquiv J R V)
-    (smoothSingularPairChainHomotopyEquiv_hom_naturality R hf hUV)
+    (.ofEq (smoothSingularPairChainHomotopyEquiv_hom_naturality R hf hUV))
 
 /-- The forward map of `smoothSingularPairCochainHomotopyEquiv` commutes strictly with the cochain
 maps induced by a smooth map of pairs. -/
@@ -548,7 +548,7 @@ def smoothSingularPairCochainHomotopyEquivInvNaturality {f : M → N} (hf : Cont
           (TopPair.ofSubsetMap (TopCat.ofHom ⟨f, hf.continuous⟩) hUV)) :=
   ((smoothSingularPairCochainHomotopyEquiv J R k Y V).invNaturality
     (smoothSingularPairCochainHomotopyEquiv I R k Y U)
-    (smoothSingularPairCochainHomotopyEquiv_hom_naturality R k Y hf hUV).symm).symm
+    (.ofEq (smoothSingularPairCochainHomotopyEquiv_hom_naturality R k Y hf hUV).symm)).symm
 
 /-- `smoothSingularRelativeCohomologyIso` is natural in smooth maps of pairs. -/
 @[reassoc]

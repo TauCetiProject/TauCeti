@@ -55,20 +55,17 @@ and the open sets of the model space with convex image, which form a basis close
 intersection. The step for countable disjoint unions is
 `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup`.
 
-Also recorded here are the `0`-simplex inverse computations and homology-isomorphism corollaries
-(`TauCeti.smoothSingularChainHomotopyEquivOfContractible` for the reversed-time endpoint convention
-`Φ (0, ·) = c`, `Φ (1, ·) = id`), together with the unconditional smooth-chain homotopy
-equivalences for any real model space with corners
+Also recorded here are the `0`-simplex inverse computation for
+`TauCeti.smoothSingularChainHomotopyEquivOfContraction`, together with the unconditional
+smooth-chain homotopy equivalences for any real model space with corners
 (`ModelWithCorners.smoothSingularChainHomotopyEquivModelSpace`) and for any star-convex open subset
 of a real normed space (`StarConvex.smoothSingularChainHomotopyEquivOfStarConvex`).
 
 ## Main definitions and results
 
-* `TauCeti.smoothSingularChainHomotopyEquivOfContraction`,
-  `TauCeti.smoothSingularChainHomotopyEquivOfContractible`: on a smoothly contractible manifold,
+* `TauCeti.smoothSingularChainHomotopyEquivOfContraction`: on a smoothly contractible manifold,
   the inclusion of smooth singular chains into singular chains is a chain homotopy equivalence.
 * `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_contraction`,
-  `TauCeti.isIso_homologyMap_smoothSingularSubcomplex_ι_of_contractible`,
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty`,
   `TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex`: the inclusion is a
   quasi-isomorphism on a smoothly contractible manifold, on the empty manifold, and on an open set
@@ -252,53 +249,6 @@ theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomo
   exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF (F (1, ⟨x₀, hx₀⟩)) h₀
     (fun x ↦ Subtype.ext ((h₁ x).trans (h₁ _).symm)) hn
 
-/-- **Smooth-chain homotopy equivalence for smoothly contractible manifolds.** If `Φ : ℝ × M → M`
-is a smooth map joining a constant map `Φ (0, ·) = c` to the identity `Φ (1, ·) = id`, then the
-inclusion of smooth singular chains into continuous singular chains on `M` is a chain homotopy
-equivalence, obtained by time-reversing `Φ` and applying
-`smoothSingularChainHomotopyEquivOfContraction`. -/
-def smoothSingularChainHomotopyEquivOfContractible (c : M) {Φ : ℝ × M → M}
-    (hΦ : ContMDiff (𝓘(ℝ).prod I) I ∞ Φ) (hΦ₀ : ∀ x, Φ (0, x) = c)
-    (hΦ₁ : ∀ x, Φ (1, x) = x) (R : C) :
-    HomotopyEquiv ((smoothSingularSubcomplex I M : SSet).chainComplex R)
-      ((TopCat.toSSet.obj (TopCat.of M)).chainComplex R) :=
-  smoothSingularChainHomotopyEquivOfContraction R
-    (hΦ.comp ((contMDiff_const.sub contMDiff_fst).prodMk contMDiff_snd)) c
-    (fun x ↦ by simpa using hΦ₁ x) (fun x ↦ by simpa using hΦ₀ x)
-
-/-- The forward map of `smoothSingularChainHomotopyEquivOfContractible` is the inclusion of smooth
-singular chains into continuous singular chains on `M`. -/
-@[simp]
-theorem smoothSingularChainHomotopyEquivOfContractible_hom (c : M) {Φ : ℝ × M → M}
-    (hΦ : ContMDiff (𝓘(ℝ).prod I) I ∞ Φ) (hΦ₀ : ∀ x, Φ (0, x) = c)
-    (hΦ₁ : ∀ x, Φ (1, x) = x) (R : C) :
-    (smoothSingularChainHomotopyEquivOfContractible c hΦ hΦ₀ hΦ₁ R).hom =
-      SSet.chainComplexMap (smoothSingularSubcomplex I M).ι R :=
-  (rfl)
-
-/-- On a smoothly contractible manifold with contraction centre `c`, the homotopy inverse sends
-the summand of every singular `0`-simplex to the summand of the smooth `0`-simplex at `c`. -/
-@[reassoc (attr := simp)]
-theorem ι_smoothSingularChainHomotopyEquivOfContractible_inv_f_zero (c : M) {Φ : ℝ × M → M}
-    (hΦ : ContMDiff (𝓘(ℝ).prod I) I ∞ Φ) (hΦ₀ : ∀ x, Φ (0, x) = c)
-    (hΦ₁ : ∀ x, Φ (1, x) = x) (R : C) (σ : (TopCat.toSSet.obj (TopCat.of M)) _⦋0⦌) :
-    (TopCat.toSSet.obj (TopCat.of M)).ιChainComplex σ ≫
-        (smoothSingularChainHomotopyEquivOfContractible c hΦ hΦ₀ hΦ₁ R).inv.f 0 =
-      (smoothSingularSubcomplex I M : SSet).ιChainComplex ((SmoothSimplex.equiv₀ I M).symm c) :=
-  ι_smoothSingularChainHomotopyEquivOfContraction_inv_f_zero R _ c _ _ σ
-
-/-- On a smoothly contractible manifold, the inclusion of smooth singular simplices induces an
-isomorphism on homology in every degree (including degree zero). -/
-theorem isIso_homologyMap_smoothSingularSubcomplex_ι_of_contractible [CategoryWithHomology C]
-    (c : M) {Φ : ℝ × M → M} (hΦ : ContMDiff (𝓘(ℝ).prod I) I ∞ Φ)
-    (hΦ₀ : ∀ x, Φ (0, x) = c) (hΦ₁ : ∀ x, Φ (1, x) = x) (R : C) (n : ℕ) :
-    IsIso (SSet.homologyMap (smoothSingularSubcomplex I M).ι R n) := by
-  have h := ((smoothSingularChainHomotopyEquivOfContractible c hΦ hΦ₀ hΦ₁ R).toHomologyIso
-    n).isIso_hom
-  change IsIso (HomologicalComplex.homologyMap
-    (smoothSingularChainHomotopyEquivOfContractible c hΦ hΦ₀ hΦ₁ R).hom n) at h
-  rwa [smoothSingularChainHomotopyEquivOfContractible_hom] at h
-
 end TauCeti
 
 section ModelSpace
@@ -365,24 +315,12 @@ def smoothSingularChainHomotopyEquivOfStarConvex {U : TopologicalSpace.Opens V} 
     HomotopyEquiv ((smoothSingularSubcomplex 𝓘(ℝ, V) U : SSet).chainComplex R)
       ((TopCat.toSSet.obj (TopCat.of U)).chainComplex R) :=
   if hne : (U : Set V).Nonempty then
-    smoothSingularChainHomotopyEquivOfContractible ⟨c, hU.mem hne⟩
-      hU.contMDiff_smoothContraction
-      hU.smoothContraction_zero
-      hU.smoothContraction_one R
+    let hex := exists_contMDiff_contraction_of_starConvex (I := 𝓘(ℝ, V)) (by simpa using hU)
+    smoothSingularChainHomotopyEquivOfContraction R hex.choose_spec.1 ⟨c, hU.mem hne⟩
+      hex.choose_spec.2.1 (fun x ↦ Subtype.ext (by simpa using hex.choose_spec.2.2 x))
   else
     have : Subsingleton U := ⟨fun x _ ↦ False.elim (hne ⟨x.val, x.property⟩)⟩
     𝓘(ℝ, V).smoothSingularChainHomotopyEquivOfSubsingleton U R
-
-private lemma smoothSingularChainHomotopyEquivOfStarConvex_of_mem
-    {U : TopologicalSpace.Opens V} {c : V} (hU : StarConvex ℝ c (U : Set V)) (hc : c ∈ U)
-    (R : C) :
-    hU.smoothSingularChainHomotopyEquivOfStarConvex R =
-      smoothSingularChainHomotopyEquivOfContractible ⟨c, hc⟩
-        hU.contMDiff_smoothContraction
-        hU.smoothContraction_zero
-        hU.smoothContraction_one R := by
-  unfold smoothSingularChainHomotopyEquivOfStarConvex
-  exact dite_eq_left_of_eq_true (eq_true (⟨c, hc⟩ : (U : Set V).Nonempty))
 
 /-- The forward map of `smoothSingularChainHomotopyEquivOfStarConvex` is the inclusion of smooth
 singular chains into continuous singular chains on `U`. -/
@@ -406,8 +344,10 @@ theorem ι_smoothSingularChainHomotopyEquivOfStarConvex_inv_f_zero
         (hU.smoothSingularChainHomotopyEquivOfStarConvex R).inv.f 0 =
       (smoothSingularSubcomplex 𝓘(ℝ, V) U : SSet).ιChainComplex
         ((SmoothSimplex.equiv₀ 𝓘(ℝ, V) U).symm ⟨c, hc⟩) := by
-  rw [hU.smoothSingularChainHomotopyEquivOfStarConvex_of_mem hc R,
-    ι_smoothSingularChainHomotopyEquivOfContractible_inv_f_zero]
+  unfold smoothSingularChainHomotopyEquivOfStarConvex
+  rw [dite_eq_left_of_eq_true (eq_true ⟨c, hc⟩)]
+  exact ι_smoothSingularChainHomotopyEquivOfContraction_inv_f_zero (I := 𝓘(ℝ, V)) R _ ⟨c, hc⟩ _ _
+    σ
 
 end StarConvex
 

@@ -371,7 +371,7 @@ def smoothSingularChainHomotopyEquivInvNaturality {f : M → N}
       (SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom ⟨f, hf.continuous⟩)) R ≫
         (smoothSingularChainHomotopyEquiv J N R).inv) :=
   (smoothSingularChainHomotopyEquiv I M R).invNaturality (smoothSingularChainHomotopyEquiv J N R)
-    (smoothSingularChainHomotopyEquiv_hom_naturality R hf)
+    (.ofEq (smoothSingularChainHomotopyEquiv_hom_naturality R hf))
 
 /-! ### Cochain homotopy equivalence and singular cohomology comparison -/
 

@@ -21,11 +21,11 @@ transport and iteration of homotopies, and assembly of null-homotopies from comp
 `Homotopy.compSquare` composes specified square homotopies by postcomposing the first
 and precomposing the second, retaining their sum rather than choosing a new outer homotopy.
 
-`HomotopyEquiv.invNaturality` turns a strictly commutative square whose horizontal sides are the
-forward maps of chain homotopy equivalences, `e₁.hom ≫ b = a ≫ e₂.hom`, into a square of homotopy
-inverses commuting up to chain homotopy: `e₁.inv ≫ a` is homotopic to `b ≫ e₂.inv`. This is how a
-strictly natural chain homotopy equivalence, such as the inclusion of smooth singular chains into
-singular chains, has a homotopy inverse which is natural up to chain homotopy.
+`HomotopyEquiv.invNaturality` turns a homotopy-commutative square whose horizontal sides are the
+forward maps of chain homotopy equivalences, `Homotopy (e₁.hom ≫ b) (a ≫ e₂.hom)`, into a square
+of homotopy inverses commuting up to chain homotopy: `e₁.inv ≫ a` is homotopic to `b ≫ e₂.inv`.
+This is how a natural chain homotopy equivalence, such as the inclusion of smooth singular chains
+into singular chains, has a homotopy inverse which is natural up to chain homotopy.
 
 `HomotopyEquiv.homologyMap_inv` says that the inverse of a chain homotopy equivalence induces on
 homology the inverse of the map induced by its forward map, the inverse law of Mathlib's
@@ -99,11 +99,11 @@ equivalence `e : HomotopyEquiv K₁ L₁` to a morphism `i₂ : K₂ ⟶ L₂` t
 of `e.hom`, with transferred inverse `rL ≫ e.inv ≫ jK` and without assuming any homotopy on the
 composites `jK ≫ rK` or `jL ≫ rL`.
 
-`HomotopyEquiv.homotopyInvSquare` shows that a homotopy-commutative square between the forward maps
-of two homotopy equivalences induces a homotopy-commutative square in the opposite direction between
-their homotopy inverses, and hence a commutative square on homology via `toHomologyIso`. Taking
-identity vertical maps, `HomotopyEquiv.homotopyInv` shows that two homotopy equivalences with
-homotopic forward maps have homotopic inverses and induce the same isomorphism on homology.
+`HomotopyEquiv.homotopyInv` shows that two homotopy equivalences with homotopic forward maps
+have homotopic inverses and induce the same isomorphism on homology
+(`HomotopyEquiv.toHomologyIso_eq_of_homotopy`), and
+`HomotopyEquiv.homologyMap_comp_toHomologyIso_inv` records the induced naturality of
+`(e.toHomologyIso i).inv` on homology.
 
 `HomotopyEquiv.ofKernel` splits off a contractible direct summand: the kernel of an idempotent
 endomorphism `p` of a complex that is homotopic to zero is a deformation retract of the complex,
@@ -145,18 +145,18 @@ lemma compSquare_hom (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
   simp [compSquare]
 
 /-- **Naturality up to chain homotopy of homotopy inverses.** If the forward maps of chain
-homotopy equivalences `e₁` and `e₂` commute with `a` and `b`, that is `e₁.hom ≫ b = a ≫ e₂.hom`,
-then `e₁.inv ≫ a` is homotopic to `b ≫ e₂.inv`. -/
+homotopy equivalences `e₁` and `e₂` commute with `a` and `b` up to chain homotopy,
+`Homotopy (e₁.hom ≫ b) (a ≫ e₂.hom)`, then `e₁.inv ≫ a` is homotopic to `b ≫ e₂.inv`. -/
 def _root_.HomotopyEquiv.invNaturality (e₁ : HomotopyEquiv K₁ L₁) (e₂ : HomotopyEquiv K₂ L₂)
-    (w : e₁.hom ≫ b = a ≫ e₂.hom) :
+    (w : Homotopy (e₁.hom ≫ b) (a ≫ e₂.hom)) :
     Homotopy (e₁.inv ≫ a) (b ≫ e₂.inv) :=
   (Homotopy.ofEq (Category.comp_id (e₁.inv ≫ a)).symm).trans <|
     (e₂.homotopyHomInvId.symm.compLeft (e₁.inv ≫ a)).trans <|
-      (Homotopy.ofEq (by
-        simp only [Category.assoc]
-        rw [← reassoc_of% w])).trans <|
-        (e₁.homotopyInvHomId.compRight (b ≫ e₂.inv)).trans <|
-          Homotopy.ofEq (Category.id_comp (b ≫ e₂.inv))
+      (Homotopy.ofEq (by simp only [Category.assoc])).trans <|
+        ((w.symm.compRight e₂.inv).compLeft e₁.inv).trans <|
+          (Homotopy.ofEq (by simp only [Category.assoc])).trans <|
+            (e₁.homotopyInvHomId.compRight (b ≫ e₂.inv)).trans <|
+              Homotopy.ofEq (Category.id_comp (b ≫ e₂.inv))
 
 end Squares
 
@@ -663,46 +663,17 @@ section InverseUniqueness
 
 variable {K L K₁ L₁ K₂ L₂ : HomologicalComplex C c}
 
-/-- **Homotopy naturality of homotopy inverses.** Given homotopy equivalences `e₁` and `e₂` and a
-homotopy `fK ≫ e₂.hom ~ e₁.hom ≫ fL`, the composites `fL ≫ e₂.inv` and `e₁.inv ≫ fK` are
-homotopic via `fL ≫ e₂.inv ~ e₁.inv ≫ e₁.hom ≫ fL ≫ e₂.inv ~ e₁.inv ≫ fK ≫ e₂.hom ≫ e₂.inv ~
-e₁.inv ≫ fK`. -/
-@[no_expose]
-def homotopyInvSquare (e₁ : HomotopyEquiv K₁ L₁) (e₂ : HomotopyEquiv K₂ L₂)
-    {fK : K₁ ⟶ K₂} {fL : L₁ ⟶ L₂} (h : Homotopy (fK ≫ e₂.hom) (e₁.hom ≫ fL)) :
-    Homotopy (fL ≫ e₂.inv) (e₁.inv ≫ fK) :=
-  (Homotopy.ofEq (Category.id_comp (fL ≫ e₂.inv)).symm).trans
-    ((e₁.homotopyInvHomId.symm.compRight (fL ≫ e₂.inv)).trans
-      ((Homotopy.ofEq (by simp only [Category.assoc])).trans
-        (((h.symm.compRight e₂.inv).compLeft e₁.inv).trans
-          ((Homotopy.ofEq (by simp only [Category.assoc])).trans
-            (e₂.homotopyHomInvId.compLeftId (e₁.inv ≫ fK))))))
-
-/-- A commutative square between the forward maps of two homotopy equivalences induces a
-homotopy-commutative square between their homotopy inverses. -/
-@[no_expose]
-def homotopyInvOfComm (e₁ : HomotopyEquiv K₁ L₁) (e₂ : HomotopyEquiv K₂ L₂)
-    {fK : K₁ ⟶ K₂} {fL : L₁ ⟶ L₂} (h : fK ≫ e₂.hom = e₁.hom ≫ fL) :
-    Homotopy (fL ≫ e₂.inv) (e₁.inv ≫ fK) :=
-  e₁.homotopyInvSquare e₂ (.ofEq h)
-
 /-- **Uniqueness of homotopy inverses up to homotopy.** Two homotopy equivalences whose forward
 maps are homotopic have homotopic inverse maps (`e₁.inv ~ e₁.inv ≫ e₂.hom ≫ e₂.inv ~
 e₁.inv ≫ e₁.hom ≫ e₂.inv ~ e₂.inv`). -/
 @[no_expose]
 def homotopyInv (e₁ e₂ : HomotopyEquiv K L) (h : Homotopy e₁.hom e₂.hom) :
     Homotopy e₁.inv e₂.inv :=
-  (Homotopy.ofEq (Category.id_comp e₁.inv).symm).trans
-    ((e₂.homotopyInvSquare e₁
-      ((Homotopy.ofEq (Category.id_comp e₁.hom)).trans
-        (h.trans (Homotopy.ofEq (Category.comp_id e₂.hom).symm)))).trans
-      (Homotopy.ofEq (Category.comp_id e₂.inv)))
-
-/-- Two homotopy equivalences with the same forward map have homotopic inverse maps. -/
-@[no_expose]
-def homotopyInvOfHomEq (e₁ e₂ : HomotopyEquiv K L) (h : e₁.hom = e₂.hom) :
-    Homotopy e₁.inv e₂.inv :=
-  e₁.homotopyInv e₂ (.ofEq h)
+  (Homotopy.ofEq (Category.comp_id e₁.inv).symm).trans <|
+    (e₁.invNaturality e₂ (a := 𝟙 K) (b := 𝟙 L)
+      ((Homotopy.ofEq (Category.comp_id e₁.hom)).trans
+        (h.trans (Homotopy.ofEq (Category.id_comp e₂.hom).symm)))).trans <|
+      Homotopy.ofEq (Category.id_comp e₂.inv)
 
 /-- The forward morphism of `toHomologyIso` is `homologyMap e.hom`. -/
 @[simp]
@@ -723,12 +694,6 @@ lemma toHomologyIso_eq_of_homotopy {e₁ e₂ : HomotopyEquiv K L} (h : Homotopy
     e₁.toHomologyIso i = e₂.toHomologyIso i :=
   Iso.ext (h.homologyMap_eq i)
 
-/-- Two homotopy equivalences with the same forward map induce the same isomorphism on homology. -/
-lemma toHomologyIso_eq_of_hom_eq {e₁ e₂ : HomotopyEquiv K L} (h : e₁.hom = e₂.hom)
-    (i : ι) [K.HasHomology i] [L.HasHomology i] :
-    e₁.toHomologyIso i = e₂.toHomologyIso i :=
-  toHomologyIso_eq_of_homotopy (.ofEq h) i
-
 /-- **Naturality of the inverse homology isomorphism.** A homotopy-commutative square between the
 forward maps of two homotopy equivalences commutes on homology with the inverses of
 `toHomologyIso`. -/
@@ -738,19 +703,9 @@ lemma homologyMap_comp_toHomologyIso_inv (e₁ : HomotopyEquiv K₁ L₁) (e₂ 
     [K₁.HasHomology i] [L₁.HasHomology i] [K₂.HasHomology i] [L₂.HasHomology i] :
     HomologicalComplex.homologyMap fL i ≫ (e₂.toHomologyIso i).inv =
       (e₁.toHomologyIso i).inv ≫ HomologicalComplex.homologyMap fK i := by
-  simp only [toHomologyIso_inv, ← HomologicalComplex.homologyMap_comp]
-  exact (e₁.homotopyInvSquare e₂ h).homologyMap_eq i
-
-/-- A commutative square between the forward maps of two homotopy equivalences commutes on homology
-with the inverses of `toHomologyIso`. -/
-@[reassoc]
-lemma homologyMap_comp_toHomologyIso_inv_of_comm (e₁ : HomotopyEquiv K₁ L₁)
-    (e₂ : HomotopyEquiv K₂ L₂) {fK : K₁ ⟶ K₂} {fL : L₁ ⟶ L₂}
-    (h : fK ≫ e₂.hom = e₁.hom ≫ fL) (i : ι)
-    [K₁.HasHomology i] [L₁.HasHomology i] [K₂.HasHomology i] [L₂.HasHomology i] :
-    HomologicalComplex.homologyMap fL i ≫ (e₂.toHomologyIso i).inv =
-      (e₁.toHomologyIso i).inv ≫ HomologicalComplex.homologyMap fK i :=
-  e₁.homologyMap_comp_toHomologyIso_inv e₂ (.ofEq h) i
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp, toHomologyIso_hom, toHomologyIso_hom,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
+  exact (h.homologyMap_eq i).symm
 
 end InverseUniqueness
 

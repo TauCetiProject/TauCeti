@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Cone
 public import TauCeti.Geometry.Manifold.ContMDiff.EuclideanHalfSpace
 public import TauCeti.Geometry.Manifold.SmoothSingular.Transfer.Basic
 
@@ -14,11 +15,11 @@ import TauCeti.Geometry.Manifold.SmoothSingular.Contractible
 # Smooth-chain transfer on the closed half-line `[0, ∞)`
 
 This file constructs the inward domination of the closed half-line `EuclideanHalfSpace 1` (`[0, ∞)`)
-by the open half-line `TauCeti.openHalfLine` (`(0, ∞)`): the smooth inclusion
-`TauCeti.openHalfLineInclusion : openHalfLine → EuclideanHalfSpace 1`, the inward translation
+by the open half-line `TauCeti.Manifold.Cone.radiusDomain` (`(0, ∞)`): the smooth inclusion
+`TauCeti.openHalfLineInclusion : radiusDomain → EuclideanHalfSpace 1`, the inward translation
 `EuclideanHalfSpace.halfLineInwardTranslation : x ↦ x + 1`, and the global smooth inward
 deformation `TauCeti.halfLineInwardDeformation : (t, x) ↦ x + (1 - t)²` from `j ∘ r` to `id`,
-together with star-convexity of `openHalfLine` (`TauCeti.starConvex_openHalfLine`).
+together with star-convexity of `radiusDomain` (`TauCeti.starConvex_openHalfLine`).
 
 Applying `ContMDiff.smoothSingularChainHomotopyEquivOfRetract` along `r` and `Φ` transfers the
 star-convex chain homotopy equivalence of `(0, ∞)` to `[0, ∞)`
@@ -32,17 +33,17 @@ particular the boundary vertex `[0]`) to the interior smooth `0`-simplex `TauCet
 
 ## Main definitions and results
 
-* `TauCeti.openHalfLine`, `TauCeti.openHalfLineInclusion`,
-  `TauCeti.contMDiff_openHalfLineInclusion`: the open positive half-line `(0, ∞)` and its smooth
-  inclusion into `EuclideanHalfSpace 1`.
-* `EuclideanHalfSpace.halfLineInwardTranslation`, `TauCeti.contMDiff_halfLineInwardTranslation`:
-  the smooth inward translation `x ↦ x + 1` from `EuclideanHalfSpace 1` into `openHalfLine`.
+* `TauCeti.openHalfLineInclusion`, `TauCeti.contMDiff_openHalfLineInclusion`: the smooth inclusion
+  of the open positive half-line `(0, ∞)` (`Manifold.Cone.radiusDomain`) into
+  `EuclideanHalfSpace 1`.
+* `EuclideanHalfSpace.halfLineInwardTranslation`,
+  `EuclideanHalfSpace.contMDiff_halfLineInwardTranslation`: the smooth inward translation
+  `x ↦ x + 1` from `EuclideanHalfSpace 1` into `Manifold.Cone.radiusDomain`.
 * `TauCeti.halfLineInwardDeformation`, `TauCeti.contMDiff_halfLineInwardDeformation`,
-  `EuclideanHalfSpace.halfLineInwardDeformation_zero`,
-  `EuclideanHalfSpace.halfLineInwardDeformation_one`: the global smooth inward deformation
-  `(t, x) ↦ x + (1 - t)²` from `j ∘ r` to `id`.
+  `TauCeti.halfLineInwardDeformation_zero`, `TauCeti.halfLineInwardDeformation_one`: the global
+  smooth inward deformation `(t, x) ↦ x + (1 - t)²` from `j ∘ r` to `id`.
 * `TauCeti.starConvex_openHalfLine`: `(0, ∞)` is star-convex around `1`.
-* `TauCeti.halfLineOne`: the point `1` in `EuclideanHalfSpace 1`.
+* `TauCeti.halfLineOne`, `TauCeti.coe_halfLineOne_apply`: the point `1` in `EuclideanHalfSpace 1`.
 * `TauCeti.smoothSingularChainHomotopyEquivHalfLine`: concrete inward-translation transfer from
   `(0, ∞)` to `[0, ∞)`.
 * `TauCeti.ι_smoothSingularChainHomotopyEquivHalfLine_inv_f_zero`: the inverse sends every
@@ -60,25 +61,19 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-/-- The open positive half-line `(0, ∞)` as an open submanifold of `ℝ`. -/
-def openHalfLine : TopologicalSpace.Opens ℝ :=
-  ⟨Ioi 0, isOpen_Ioi⟩
+open Manifold.Cone
 
-/-- A real number belongs to `openHalfLine` if and only if it is positive. -/
-@[simp]
-theorem mem_openHalfLine_iff {x : ℝ} : x ∈ openHalfLine ↔ 0 < x :=
-  Iff.rfl
-
-/-- Inclusion of the open half-line `(0, ∞)` into the closed half-line `EuclideanHalfSpace 1`. -/
-def openHalfLineInclusion (y : openHalfLine) : EuclideanHalfSpace 1 :=
+/-- Inclusion of the open half-line `(0, ∞)` (`Manifold.Cone.radiusDomain`) into the closed
+half-line `EuclideanHalfSpace 1`. -/
+def openHalfLineInclusion (y : radiusDomain) : EuclideanHalfSpace 1 :=
   (𝓡∂ 1).symm (EuclideanSpace.single 0 y.val)
 
 /-- The `0`-th coordinate of `openHalfLineInclusion y` is `y`. -/
 @[simp]
-theorem coe_openHalfLineInclusion_apply (y : openHalfLine) :
+theorem coe_openHalfLineInclusion_apply (y : radiusDomain) :
     (openHalfLineInclusion y).val 0 = y.val := by
   have hy : 0 ≤ (EuclideanSpace.single 0 y.val : EuclideanSpace ℝ (Fin 1)) 0 := by
-    simpa using (mem_openHalfLine_iff.mp y.property).le
+    simpa using (mem_radiusDomain.mp y.property).le
   rw [openHalfLineInclusion, modelWithCornersEuclideanHalfSpace_symm_apply_of_le hy]
   simp
 
@@ -86,18 +81,18 @@ theorem coe_openHalfLineInclusion_apply (y : openHalfLine) :
 theorem contMDiff_openHalfLineInclusion :
     ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) ∞ openHalfLineInclusion :=
   contMDiff_subtypeVal.modelWithCornersEuclideanHalfSpace_symm_single fun y ↦
-    (mem_openHalfLine_iff.mp y.property).le
+    (mem_radiusDomain.mp y.property).le
 
 end TauCeti
 
 namespace EuclideanHalfSpace
 
-open TauCeti
+open TauCeti TauCeti.Manifold.Cone
 
 /-- Smooth inward translation `r(x) = x + 1` from the closed half-line `[0, ∞)` into its open
 interior `(0, ∞)`. -/
-def halfLineInwardTranslation (x : EuclideanHalfSpace 1) : openHalfLine :=
-  ⟨x.val 0 + 1, mem_openHalfLine_iff.mpr (add_pos_of_nonneg_of_pos x.property zero_lt_one)⟩
+def halfLineInwardTranslation (x : EuclideanHalfSpace 1) : radiusDomain :=
+  ⟨x.val 0 + 1, mem_radiusDomain.mpr (add_pos_of_nonneg_of_pos x.property zero_lt_one)⟩
 
 /-- The underlying real value of `halfLineInwardTranslation x` is `x.val 0 + 1`. -/
 @[simp]
@@ -105,16 +100,18 @@ theorem coe_halfLineInwardTranslation (x : EuclideanHalfSpace 1) :
     (x.halfLineInwardTranslation : ℝ) = x.val 0 + 1 :=
   (rfl)
 
+/-- The inward translation `r(x) = x + 1` is smooth from `EuclideanHalfSpace 1` to `(0, ∞)`. -/
+theorem contMDiff_halfLineInwardTranslation :
+    ContMDiff (𝓡∂ 1) 𝓘(ℝ, ℝ) ∞ halfLineInwardTranslation := by
+  rw [← ContMDiff.subtypeVal_comp_iff]
+  exact ((EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).contDiff.contMDiff.comp
+    (𝓡∂ 1).contMDiff).add contMDiff_const
+
 end EuclideanHalfSpace
 
 namespace TauCeti
 
-/-- The inward translation `r(x) = x + 1` is smooth from `EuclideanHalfSpace 1` to `(0, ∞)`. -/
-theorem contMDiff_halfLineInwardTranslation :
-    ContMDiff (𝓡∂ 1) 𝓘(ℝ, ℝ) ∞ EuclideanHalfSpace.halfLineInwardTranslation := by
-  rw [← ContMDiff.subtypeVal_comp_iff]
-  exact ((EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).contDiff.contMDiff.comp
-    (𝓡∂ 1).contMDiff).add contMDiff_const
+open Manifold.Cone
 
 /-- The inward deformation `Φ(t, x) = x + (1 - t)²` on `ℝ × [0, ∞)`: because `(1 - t)² ≥ 0` for all
 `t ∈ ℝ`, it stays in `[0, ∞)` globally in `t`, starts at `j(r(x)) = x + 1` at `t = 0`, and reaches
@@ -157,19 +154,13 @@ theorem contMDiff_halfLineInwardDeformation :
   exact hcoord.modelWithCornersEuclideanHalfSpace_symm_single fun p ↦
     add_nonneg p.2.property (sq_nonneg (1 - p.1))
 
-end TauCeti
-
-namespace EuclideanHalfSpace
-
-open TauCeti
-
 /-- At `t = 0`, `halfLineInwardDeformation` agrees with `j ∘ r`. -/
 @[simp]
 theorem halfLineInwardDeformation_zero (x : EuclideanHalfSpace 1) :
     halfLineInwardDeformation (0, x) = openHalfLineInclusion x.halfLineInwardTranslation := by
   ext i
   rw [Subsingleton.elim i 0, coe_halfLineInwardDeformation_apply, coe_openHalfLineInclusion_apply,
-    coe_halfLineInwardTranslation]
+    EuclideanHalfSpace.coe_halfLineInwardTranslation]
   ring
 
 /-- At `t = 1`, `halfLineInwardDeformation` is the identity on `[0, ∞)`. -/
@@ -180,17 +171,19 @@ theorem halfLineInwardDeformation_one (x : EuclideanHalfSpace 1) :
   rw [Subsingleton.elim i 0, coe_halfLineInwardDeformation_apply]
   ring
 
-end EuclideanHalfSpace
-
-namespace TauCeti
-
 /-- The open positive half-line `(0, ∞)` is star-convex around `1`. -/
-theorem starConvex_openHalfLine : StarConvex ℝ 1 (openHalfLine : Set ℝ) :=
-  (convex_Ioi (0 : ℝ)).starConvex (zero_lt_one : (1 : ℝ) ∈ Ioi 0)
+theorem starConvex_openHalfLine : StarConvex ℝ 1 (radiusDomain : Set ℝ) := by
+  rw [coe_radiusDomain]
+  exact (convex_Ioi (0 : ℝ)).starConvex (zero_lt_one : (1 : ℝ) ∈ Ioi 0)
 
 /-- The point `1` of the closed half-line `[0, ∞)`. -/
 def halfLineOne : EuclideanHalfSpace 1 :=
-  openHalfLineInclusion ⟨1, mem_openHalfLine_iff.mpr zero_lt_one⟩
+  openHalfLineInclusion ⟨1, mem_radiusDomain.mpr zero_lt_one⟩
+
+/-- The `0`-th coordinate of `halfLineOne` is `1`. -/
+@[simp]
+theorem coe_halfLineOne_apply : halfLineOne.val 0 = 1 :=
+  coe_openHalfLineInclusion_apply _
 
 /-- **Smooth-chain homotopy equivalence on `[0, ∞)` transferred from `(0, ∞)`.** Combining the
 star-convex equivalence on `(0, ∞)` (centred at `1`) with
@@ -202,10 +195,10 @@ def smoothSingularChainHomotopyEquivHalfLine
       ((smoothSingularSubcomplex (𝓡∂ 1) (EuclideanHalfSpace 1) : SSet).chainComplex R)
       ((TopCat.toSSet.obj (TopCat.of (EuclideanHalfSpace 1))).chainComplex R) :=
   contMDiff_openHalfLineInclusion.smoothSingularChainHomotopyEquivOfRetract
-    contMDiff_halfLineInwardTranslation
+    EuclideanHalfSpace.contMDiff_halfLineInwardTranslation
     contMDiff_halfLineInwardDeformation
-    EuclideanHalfSpace.halfLineInwardDeformation_zero
-    EuclideanHalfSpace.halfLineInwardDeformation_one R
+    halfLineInwardDeformation_zero
+    halfLineInwardDeformation_one R
     (starConvex_openHalfLine.smoothSingularChainHomotopyEquivOfStarConvex R)
     (starConvex_openHalfLine.smoothSingularChainHomotopyEquivOfStarConvex_hom R)
 
@@ -232,15 +225,14 @@ theorem ι_smoothSingularChainHomotopyEquivHalfLine_inv_f_zero
     ContMDiff.smoothSingularChainHomotopyEquivOfRetract_inv, HomologicalComplex.comp_f,
     HomologicalComplex.comp_f, SSet.ι_chainComplexMap_f_assoc,
     starConvex_openHalfLine.ι_smoothSingularChainHomotopyEquivOfStarConvex_inv_f_zero_assoc
-      (mem_openHalfLine_iff.mpr zero_lt_one) R,
+      (mem_radiusDomain.mpr zero_lt_one) R,
     SSet.ι_chainComplexMap_f]
   congr 1
   exact SmoothSimplex.smoothSingularSubcomplexMap_app_equiv₀_symm
-    contMDiff_openHalfLineInclusion ⟨1, mem_openHalfLine_iff.mpr zero_lt_one⟩
+    contMDiff_openHalfLineInclusion ⟨1, mem_radiusDomain.mpr zero_lt_one⟩
 
-/-- The smooth curve `t ↦ t²` in `[0, ∞)`, which meets the boundary `0` with vanishing velocity so
-that it extends smoothly across `t = 0` on all of `ℝ`, bundled as a smooth `1`-simplex from `0` to
-`1`. -/
+/-- The smooth curve `t ↦ t²` in `[0, ∞)`, which stays in `[0, ∞)` for every real `t` because
+`t² ≥ 0`, bundled as a smooth `1`-simplex from `0` to `1`. -/
 def halfLineBridge : SmoothSimplex (𝓡∂ 1) (EuclideanHalfSpace 1) 1 :=
   SmoothSimplex.ofCurve
     ((contDiff_id.pow 2).contMDiff.modelWithCornersEuclideanHalfSpace_symm_single sq_nonneg)
@@ -260,13 +252,14 @@ theorem ιChainComplex_halfLineBridge_d
   have h1 : (𝓡∂ 1).symm (EuclideanSpace.single 0 (1 : ℝ)) = halfLineOne := by
     ext i
     rw [Subsingleton.elim i 0, modelWithCornersEuclideanHalfSpace_symm_apply_of_le (by simp),
-      halfLineOne, coe_openHalfLineInclusion_apply]
+      coe_halfLineOne_apply]
     simp
   have h0 : (𝓡∂ 1).symm (EuclideanSpace.single 0 (0 : ℝ)) = (0 : EuclideanHalfSpace 1) := by
     ext i
     rw [Subsingleton.elim i 0, modelWithCornersEuclideanHalfSpace_symm_apply_of_le (by simp)]
+    change (EuclideanSpace.single 0 (0 : ℝ) : EuclideanSpace ℝ (Fin 1)) 0 =
+      (0 : EuclideanSpace ℝ (Fin 1)) 0
     simp
-    rfl
   simp [halfLineBridge, SmoothSimplex.δ_zero_ofCurve, SmoothSimplex.δ_one_ofCurve, h1, h0,
     sub_eq_add_neg]
 
