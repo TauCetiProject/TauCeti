@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.Cylinder.W1p
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Lemmas
 
 /-!
 # Quasilinear first-order sections on `W^{1,p}` of the cylinder
@@ -24,9 +25,12 @@ with coefficients `A(z, y) ∈ L(V, V)` and `G(z, y) ∈ V` depending on the dom
 and on the value `y` of the map. For the Floer equation
 `∂s u - X_{K_s}(u) + J(u) (∂t u - X_{K_t}(u)) = 0` one takes `A = J` and
 `G = -X_{K_s} - J X_{K_t}`. Transversality and gluing study the zeros of `F` near a reference map
-`w` as the zeros of a map between Banach spaces, in a chart `ξ ↦ w + ξ` with `ξ` in the Sobolev
-space `W^{1,p}(ℝ × S¹, V)` for `p > 2`, the dimension of the domain. This file constructs that
-map and its derivative.
+`w` in a chart `ξ ↦ w + ξ`, with `ξ` in the Sobolev space `W^{1,p}(ℝ × S¹, V)` for `p > 2`, the
+dimension of the domain. This file constructs the map `ξ ↦ F(w + ξ) - F(w)` between Banach spaces
+and its derivative. Its zeros are the solutions of `F(w + ξ) = F(w)`, which are the zeros of `F`
+near `w` when `w` is itself a solution, `F(w) = 0`. For a reference map with `F(w)` in `Lᵖ`, such
+as a pre-glued map, the chart map `ξ ↦ F(w + ξ)` of `F` is the section plus the constant `F(w)`,
+an affine shift with the same derivative.
 
 **The section.** For `x = (ξ, ξ_s, ξ_t)` in `W^{1,p}` (`TauCeti.CylinderSobolev.W1p`), with `ξ`
 read through its continuous representative (`TauCeti.CylinderSobolev.continuousValue`), and for
@@ -108,31 +112,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V
 
 /-! ### Preliminaries -/
 
-/-- The first component of the jet of an element of `W1p V p` is its continuous representative,
-almost everywhere on the strip. -/
-private theorem fst_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) :
-    ∀ᵐ z ∂stripMeasure, ((x : Lp (V × V × V) p stripMeasure) z).1 = continuousValue p x z := by
-  filter_upwards [coeFn_valueL x, valueL_ae_eq_continuousValue hp hpt x] with z h₁ h₂
-  rw [← h₁, h₂]
-
-omit [CompleteSpace V] in
-/-- The jet of a difference of elements of `W1p V p` is the difference of their jets, almost
-everywhere. -/
-private theorem coeFn_W1p_sub (x y : W1p V p) :
-    ∀ᵐ z ∂stripMeasure, ((x - y : W1p V p) : Lp (V × V × V) p stripMeasure) z =
-      (x : Lp (V × V × V) p stripMeasure) z - (y : Lp (V × V × V) p stripMeasure) z := by
-  filter_upwards [Lp.coeFn_sub (x : Lp (V × V × V) p stripMeasure) y] with z hz
-  rw [Submodule.coe_sub, hz, Pi.sub_apply]
-
-/-- Applying a measurable family of continuous linear maps to a measurable family of vectors is
-measurable. -/
-private theorem aestronglyMeasurable_clm_apply {W X : Type*} [NormedAddCommGroup W]
-    [NormedSpace ℝ W] [NormedAddCommGroup X] [NormedSpace ℝ X] {f : ℝ × ℝ → W →L[ℝ] X}
-    {g : ℝ × ℝ → W} (hf : AEStronglyMeasurable f stripMeasure)
-    (hg : AEStronglyMeasurable g stripMeasure) :
-    AEStronglyMeasurable (fun z ↦ f z (g z)) stripMeasure :=
-  (continuous_fst.clm_apply continuous_snd).comp_aestronglyMeasurable₂ hf hg
-
 omit [NormedSpace ℝ V] [CompleteSpace V] in
 /-- A coefficient continuous jointly in the domain point and the value, evaluated along a
 measurable map, is measurable. -/
@@ -141,33 +120,6 @@ private theorem aestronglyMeasurable_comp_uncurry {X : Type*} [TopologicalSpace 
     (hu : AEStronglyMeasurable u stripMeasure) :
     AEStronglyMeasurable (fun z ↦ A z (u z)) stripMeasure :=
   hA.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk hu)
-
-/-- An `Lᵖ` function dominated pointwise by a three-term combination of three other `Lᵖ`
-functions obeys the same bound in norm. -/
-private theorem norm_le_add_add_of_ae_norm_le {E F G H : Type*} [NormedAddCommGroup E]
-    [NormedAddCommGroup F] [NormedAddCommGroup G] [NormedAddCommGroup H] {f : Lp E p stripMeasure}
-    {g : Lp F p stripMeasure} {k : Lp G p stripMeasure} {m : Lp H p stripMeasure} {a b c : ℝ}
-    (ha : 0 ≤ a) (hb : 0 ≤ b) (hc : 0 ≤ c)
-    (hle : ∀ᵐ z ∂stripMeasure, ‖f z‖ ≤ a * ‖g z‖ + b * ‖k z‖ + c * ‖m z‖) :
-    ‖f‖ ≤ a * ‖g‖ + b * ‖k‖ + c * ‖m‖ := by
-  -- The last two terms are the pointwise norm of one `Lᵖ` function.
-  have h := Lp.norm_le_add_of_ae_norm_le (f := f) (g := g)
-    (h := b • Lp.normLp k + c • Lp.normLp m) ha zero_le_one (by
-      filter_upwards [hle, Lp.coeFn_normLp k, Lp.coeFn_normLp m,
-        Lp.coeFn_add (b • Lp.normLp k) (c • Lp.normLp m),
-        Lp.coeFn_smul b (Lp.normLp k), Lp.coeFn_smul c (Lp.normLp m)]
-        with z hz hk hm hadd hsk hsm
-      rw [one_mul, hadd, Pi.add_apply, hsk, hsm, Pi.smul_apply, Pi.smul_apply, hk, hm,
-        smul_eq_mul, smul_eq_mul, add_assoc] at *
-      exact hz.trans (add_le_add_right (Real.le_norm_self _) _))
-  calc ‖f‖ ≤ a * ‖g‖ + 1 * ‖b • Lp.normLp k + c • Lp.normLp m‖ := h
-    _ ≤ a * ‖g‖ + (b * ‖k‖ + c * ‖m‖) := by
-        rw [one_mul]
-        gcongr
-        refine (norm_add_le _ _).trans_eq ?_
-        rw [norm_smul, norm_smul, Real.norm_of_nonneg hb, Real.norm_of_nonneg hc,
-          Lp.norm_normLp, Lp.norm_normLp]
-    _ = a * ‖g‖ + b * ‖k‖ + c * ‖m‖ := by ring
 
 /-! ### The section -/
 
@@ -194,9 +146,9 @@ private theorem memLp_sectionFun (hp : 2 < p) (hpt : p ≠ ∞) (hA : Continuous
   have hx := Lp.aestronglyMeasurable (x : Lp (V × V × V) p stripMeasure)
   have hu : AEStronglyMeasurable (fun z ↦ w z + continuousValue p x z) stripMeasure :=
     hw.add (continuousValue p x).continuous.aestronglyMeasurable
-  have hAd := (aestronglyMeasurable_clm_apply (aestronglyMeasurable_comp_uncurry hA hu)
+  have hAd := (AEStronglyMeasurable.clm_apply (aestronglyMeasurable_comp_uncurry hA hu)
     (hb.add hx.snd.snd)).sub
-    (aestronglyMeasurable_clm_apply (aestronglyMeasurable_comp_uncurry hA hw) hb)
+    (AEStronglyMeasurable.clm_apply (aestronglyMeasurable_comp_uncurry hA hw) hb)
   have hGd :=
     (aestronglyMeasurable_comp_uncurry hG hu).sub (aestronglyMeasurable_comp_uncurry hG hw)
   refine (Lp.memLp (x : Lp (V × V × V) p stripMeasure)).of_le_mul (c := 1 + C + K * B + L)
@@ -265,8 +217,7 @@ theorem quasilinearSection_zero : quasilinearSection A G w b p 0 = 0 := by
   split_ifs with h
   · refine Lp.eq_zero_iff_ae_eq_zero.2 ?_
     filter_upwards [h.coeFn_toLp, Lp.coeFn_zero (V × V × V) p stripMeasure] with z hz h0
-    rw [hz, Pi.zero_apply, sectionFun, map_zero, FunLike.coe_zero, Pi.zero_apply,
-      Submodule.coe_zero, h0]
+    rw [hz, sectionFun, Submodule.coe_zero, h0]
     simp
   · rfl
 
@@ -304,24 +255,6 @@ private def linFun (A : ℝ × ℝ → V → V →L[ℝ] V) (A' : ℝ × ℝ →
     G' z (w z + continuousValue p x₀ z) ((h : Lp (V × V × V) p stripMeasure) z).1 +
     A' z (w z + continuousValue p x₀ z) (continuousValue p h z)
       ((x₀ : Lp (V × V × V) p stripMeasure) z).2.2
-
-
-omit [CompleteSpace V] in
-/-- The jet of a sum of elements of `W1p V p` is the sum of their jets, almost everywhere. -/
-private theorem coeFn_W1p_add (x y : W1p V p) :
-    ∀ᵐ z ∂stripMeasure, ((x + y : W1p V p) : Lp (V × V × V) p stripMeasure) z =
-      (x : Lp (V × V × V) p stripMeasure) z + (y : Lp (V × V × V) p stripMeasure) z := by
-  filter_upwards [Lp.coeFn_add (x : Lp (V × V × V) p stripMeasure) y] with z hz
-  rw [Submodule.coe_add, hz, Pi.add_apply]
-
-omit [CompleteSpace V] in
-/-- The jet of a multiple of an element of `W1p V p` is the multiple of its jet, almost
-everywhere. -/
-private theorem coeFn_W1p_smul (c : ℝ) (x : W1p V p) :
-    ∀ᵐ z ∂stripMeasure, ((c • x : W1p V p) : Lp (V × V × V) p stripMeasure) z =
-      c • (x : Lp (V × V × V) p stripMeasure) z := by
-  filter_upwards [Lp.coeFn_smul c (x : Lp (V × V × V) p stripMeasure)] with z hz
-  rw [Submodule.coe_smul, hz, Pi.smul_apply]
 
 /-- The pointwise bound on the expression of the linearization:
 `‖h_s + A(u₀) h_t + (A'(u₀) h) b + G'(u₀) h + (A'(u₀) h) ξ₀_t‖` is at most
@@ -383,11 +316,11 @@ private theorem exists_linFun (hAc : Continuous (Function.uncurry A))
       ((Lp.memLp _).norm.const_mul _).add ((Lp.memLp _).norm.const_mul _)
     refine hg.of_le ?_ (ae_of_all _ fun z ↦
       (norm_linFun_le hbB hAC hA'K hG'K x₀ h z).trans (Real.le_norm_self _))
-    exact (((hj.snd.fst.add (aestronglyMeasurable_clm_apply
+    exact (((hj.snd.fst.add (AEStronglyMeasurable.clm_apply
       (aestronglyMeasurable_comp_uncurry hAc hu₀) hj.snd.snd)).add
-      (aestronglyMeasurable_clm_apply (aestronglyMeasurable_clm_apply hA'u hj.fst) hb)).add
-      (aestronglyMeasurable_clm_apply (aestronglyMeasurable_comp_uncurry hG'c hu₀) hj.fst)).add
-      (aestronglyMeasurable_clm_apply (aestronglyMeasurable_clm_apply hA'u
+      (AEStronglyMeasurable.clm_apply (AEStronglyMeasurable.clm_apply hA'u hj.fst) hb)).add
+      (AEStronglyMeasurable.clm_apply (aestronglyMeasurable_comp_uncurry hG'c hu₀) hj.fst)).add
+      (AEStronglyMeasurable.clm_apply (AEStronglyMeasurable.clm_apply hA'u
         (continuousValue p h).continuous.aestronglyMeasurable) hx₀.snd.snd)
   let T : W1p V p →ₗ[ℝ] Lp V p stripMeasure :=
     { toFun h := (hmem h).toLp _
@@ -457,17 +390,6 @@ theorem quasilinearLinearization_apply_ae (hAc : Continuous (Function.uncurry A)
   exact H.choose_spec h
 
 /-! ### Strict differentiability -/
-
-/-- The continuous representatives of two elements of `W1p V p` are uniformly within the norm of
-the Sobolev embedding times their distance. -/
-private theorem norm_continuousValue_sub_le (x y : W1p V p) (z : ℝ × ℝ) :
-    ‖continuousValue p x z - continuousValue p y z‖ ≤ ‖continuousValue (V := V) p‖ * ‖x - y‖ := by
-  have h : continuousValue p x z - continuousValue p y z = continuousValue p (x - y) z := by
-    rw [map_sub]
-    rfl
-  have hle := (continuousValue (V := V) p).le_opNorm (x - y)
-  rw [h]
-  exact (BoundedContinuousFunction.norm_coe_le_norm _ _).trans hle
 
 omit [CompleteSpace V] in
 /-- The pointwise algebra of the first-order remainder of the section. Let `vᵢ` be the jets of
@@ -561,12 +483,12 @@ private theorem norm_remainder_le (hp : 2 < p) (hpt : p ≠ ∞)
         ε * (B + 1 + ‖continuousValue (V := V) p‖ * ‖x₂‖)) := by
   set E := ‖continuousValue (V := V) p‖
   have hB : 0 ≤ B := (norm_nonneg _).trans (hbB 0)
-  have key := norm_le_add_add_of_ae_norm_le
+  have key := Lp.norm_le_add_add_of_ae_norm_le
     (f := quasilinearSection A G w b p x₁ - quasilinearSection A G w b p x₂ -
       quasilinearLinearization A A' G' w b p x₀ (x₁ - x₂))
     (g := ((x₁ - x₂ : W1p V p) : Lp (V × V × V) p stripMeasure))
-    (k := (x₂ : Lp (V × V × V) p stripMeasure))
-    (m := ((x₂ - x₀ : W1p V p) : Lp (V × V × V) p stripMeasure))
+    (h := (x₂ : Lp (V × V × V) p stripMeasure))
+    (k := ((x₂ - x₀ : W1p V p) : Lp (V × V × V) p stripMeasure))
     (a := K * (E * ‖x₁ - x₀‖) + ε * B + ε) (b := ε * (E * ‖x₁ - x₂‖))
     (c := K * (E * ‖x₁ - x₂‖)) (by positivity) (by positivity) (by positivity) (by
       filter_upwards [Lp.coeFn_sub (quasilinearSection A G w b p x₁ -
@@ -577,29 +499,13 @@ private theorem norm_remainder_le (hp : 2 < p) (hpt : p ≠ ∞)
         quasilinearLinearization_apply_ae hAc hA'c hG'c hw hb hbB hAC hA'K hG'K x₀ (x₁ - x₂),
         coeFn_W1p_sub x₁ x₂, coeFn_W1p_sub x₂ x₀, fst_ae_eq_continuousValue hp hpt (x₁ - x₂)]
         with z e₁ e₂ e₃ e₄ e₅ e₆ e₇ e₈
-      have hξ : continuousValue p (x₁ - x₂) z =
-          continuousValue p x₁ z - continuousValue p x₂ z := by
-        rw [map_sub]
-        rfl
-      rw [hξ] at e₅ e₈
+      rw [continuousValue_sub_apply] at e₅ e₈
       rw [e₁, Pi.sub_apply, e₂, Pi.sub_apply, e₃, e₄, e₅]
       exact norm_remainder_apply_le hbB hAL hA'K z e₆ e₇ e₈ hε
         (norm_continuousValue_sub_le x₁ x₀ z) (norm_continuousValue_sub_le x₁ x₂ z) (hmA z) (hmG z))
   refine key.trans_eq ?_
   simp only [Submodule.norm_coe]
   ring
-
-omit [CompleteSpace V] in
-/-- The mean value inequality on a ball: if the derivative `F'` of `F` stays within `ε` of
-`F' y₀` on the ball of radius `δ` around `y₀`, then the Taylor remainder of `F` between two points
-of that ball, relative to `F' y₀`, is at most `ε` times their distance. -/
-private theorem norm_sub_sub_le_of_dist_lt {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    {F : V → X} {F' : V → V →L[ℝ] X} (hF : ∀ y, HasFDerivAt F (F' y) y) {y₀ y₁ y₂ : V}
-    {δ ε : ℝ} (hosc : ∀ y, dist y y₀ < δ → dist (F' y) (F' y₀) < ε) (h₁ : dist y₁ y₀ < δ)
-    (h₂ : dist y₂ y₀ < δ) : ‖F y₁ - F y₂ - F' y₀ (y₁ - y₂)‖ ≤ ε * ‖y₁ - y₂‖ :=
-  Convex.norm_image_sub_le_of_norm_hasFDerivWithin_le' (s := ball y₀ δ)
-    (fun y _ ↦ (hF y).hasFDerivWithinAt)
-    (fun y hy ↦ by simpa only [dist_eq_norm] using (hosc y hy).le) (convex_ball _ _) h₂ h₁
 
 /-- Elements of `W1p V p` within `r ≤ δ / (E + 1)` of `x₀`, with `E` the norm of the Sobolev
 embedding, have continuous representatives uniformly within `δ` of that of `x₀`. -/
@@ -616,14 +522,28 @@ private theorem dist_add_continuousValue_lt {x x₀ : W1p V p} {δ r : ℝ} (hδ
         rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
         nlinarith
 
-omit [CompleteSpace V] in
-/-- A map whose derivative has norm at most `K` everywhere is `K`-Lipschitz. -/
-private theorem lipschitzWith_of_hasFDerivAt {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] {F : V → X} {F' : V → V →L[ℝ] X} (hF : ∀ y, HasFDerivAt F (F' y) y)
-    (hF' : ∀ y, ‖F' y‖ ≤ K) : LipschitzWith K F :=
-  lipschitzWith_of_nnNorm_fderiv_le (fun y ↦ (hF y).differentiableAt) fun y ↦ by
-    rw [(hF y).fderiv, ← NNReal.coe_le_coe, coe_nnNorm]
-    exact hF' y
+/-- **The Taylor remainder along the continuous representatives.** If the derivatives `F' z` of
+the maps `F z` oscillate by less than `ε` at distance less than `δ`, uniformly in `z`, then for
+`x₁`, `x₂` within `r ≤ δ / (E + 1)` of `x₀`, the remainder of `F z` between `w + ξ₂` and `w + ξ₁`
+relative to `F' z (w + ξ₀)` is at most `ε ‖ξ₁ - ξ₂‖`. This is the mean value inequality on the ball
+of radius `δ` around `w + ξ₀`. -/
+private theorem norm_sub_sub_continuousValue_le {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] {F : ℝ × ℝ → V → X} {F' : ℝ × ℝ → V → V →L[ℝ] X}
+    (hF : ∀ z y, HasFDerivAt (F z) (F' z y) y) {δ ε r : ℝ} (hδ : 0 < δ)
+    (hosc : ∀ y y', dist y y' < δ → ∀ z, dist (F' z y) (F' z y') < ε)
+    (hrδ : r ≤ δ / (‖continuousValue (V := V) p‖ + 1)) {x₀ x₁ x₂ : W1p V p}
+    (h₁ : ‖x₁ - x₀‖ < r) (h₂ : ‖x₂ - x₀‖ < r) (z : ℝ × ℝ) :
+    ‖F z (w z + continuousValue p x₁ z) - F z (w z + continuousValue p x₂ z) -
+      F' z (w z + continuousValue p x₀ z) (continuousValue p x₁ z - continuousValue p x₂ z)‖ ≤
+        ε * ‖continuousValue p x₁ z - continuousValue p x₂ z‖ := by
+  have h := (convex_ball _ δ).norm_image_sub_le_of_norm_hasFDerivWithin_le'
+    (fun y _ ↦ (hF z y).hasFDerivWithinAt)
+    (fun y hy ↦ by
+      rw [← dist_eq_norm]
+      exact (hosc y _ (mem_ball.1 hy) z).le)
+    (dist_add_continuousValue_lt hδ hrδ h₂ (w z) z)
+    (dist_add_continuousValue_lt hδ hrδ h₁ (w z) z)
+  simpa only [add_sub_add_left_eq_sub] using h
 
 /-- The constants of the strict differentiability estimate: if `a₁, a₂ < r` with `r` at most
 `c / (4 (K E + 1))`, and `n₂ ≤ n₀ + 1`, then
@@ -661,8 +581,12 @@ theorem hasStrictFDerivAt_quasilinearSection (hp : 2 < p) (hpt : p ≠ ∞)
     (hG'K : ∀ z y, ‖G' z y‖ ≤ L) (hG'u : UniformEquicontinuous G') (x₀ : W1p V p) :
     HasStrictFDerivAt (quasilinearSection A G w b p)
       (quasilinearLinearization A A' G' w b p x₀) x₀ := by
-  have hAL (z : ℝ × ℝ) := lipschitzWith_of_hasFDerivAt (hA z) (hA'K z)
-  have hGL (z : ℝ × ℝ) := lipschitzWith_of_hasFDerivAt (hG z) (hG'K z)
+  have hAL (z : ℝ × ℝ) : LipschitzWith K (A z) := lipschitzOnWith_univ.1
+    (convex_univ.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
+      (fun y _ ↦ (hA z y).hasFDerivWithinAt) fun y _ ↦ NNReal.coe_le_coe.1 (hA'K z y))
+  have hGL (z : ℝ × ℝ) : LipschitzWith L (G z) := lipschitzOnWith_univ.1
+    (convex_univ.lipschitzOnWith_of_nnNorm_hasFDerivWithin_le
+      (fun y _ ↦ (hG z y).hasFDerivWithinAt) fun y _ ↦ NNReal.coe_le_coe.1 (hG'K z y))
   set E := ‖continuousValue (V := V) p‖
   have hE : 0 ≤ E := ContinuousLinearMap.opNorm_nonneg _
   have hB : 0 ≤ B := (norm_nonneg _).trans (hbB 0)
@@ -687,21 +611,15 @@ theorem hasStrictFDerivAt_quasilinearSection (hp : 2 < p) (hpt : p ≠ ∞)
   rw [Prod.dist_eq, max_lt_iff, dist_eq_norm, dist_eq_norm] at hx
   obtain ⟨h₁, h₂⟩ := hx
   simp only at h₁ h₂
-  have hmA (z : ℝ × ℝ) := norm_sub_sub_le_of_dist_lt (hA z)
-    (fun y hy ↦ hA'δ y _ (hy.trans_le (min_le_left _ _)) z)
-    (dist_add_continuousValue_lt hδ hrδ h₁ (w z) z)
-    (dist_add_continuousValue_lt hδ hrδ h₂ (w z) z)
-  have hmG (z : ℝ × ℝ) := norm_sub_sub_le_of_dist_lt (hG z)
-    (fun y hy ↦ hG'δ y _ (hy.trans_le (min_le_right _ _)) z)
-    (dist_add_continuousValue_lt hδ hrδ h₁ (w z) z)
-    (dist_add_continuousValue_lt hδ hrδ h₂ (w z) z)
-  simp only [add_sub_add_left_eq_sub] at hmA hmG
+  have hmA := norm_sub_sub_continuousValue_le (w := w) hA hδ
+    (fun y y' h ↦ hA'δ y y' (h.trans_le (min_le_left _ _))) hrδ h₁ h₂
+  have hmG := norm_sub_sub_continuousValue_le (w := w) hG hδ
+    (fun y y' h ↦ hG'δ y y' (h.trans_le (min_le_right _ _))) hrδ h₁ h₂
   refine (norm_remainder_le hp hpt hAc hGc hA'c hG'c hw hb hbB hAC hAL hGL hA'K hG'K hε.le
     hmA hmG).trans ?_
   have hx₂ : ‖x₂‖ ≤ ‖x₀‖ + 1 := by
     have := norm_le_insert' x₂ x₀
     linarith [min_le_left 1 (min (δ / (E + 1)) (c / (4 * (K * E + 1))))]
-  change _ ≤ c * ‖x₁ - x₂‖
   rw [mul_comm c]
   exact mul_le_mul_of_nonneg_left
     (mul_add_div_mul_le hB hE hc h₁ h₂ hrc (norm_nonneg _) hx₂) (norm_nonneg _)
