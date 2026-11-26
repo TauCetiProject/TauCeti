@@ -40,7 +40,10 @@ reindexing it begins with a chosen vector of either factor, followed by the rema
 their order
 (`Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
 `Module.Basis.coe_prod_reindex_finSumFinEquiv_cycleRange`). These are the bases of `M × N` that
-begin with a vector transverse to a hyperplane of one factor.
+begin with a vector transverse to a hyperplane of one factor. Similarly, for the unit basis of `R`
+and the coordinate basis of `Fin m → R`, reindexed by `Fin (m + 1)`, prepending the first
+component of each vector to its second gives the coordinate basis of `Fin (m + 1) → R`
+(`Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr`).
 
 A basis indexed by `Fin n × Fin 2`, reindexed by `Fin k` for `n * 2 = k`, lists its vectors in
 the interleaved order (`Module.Basis.coe_reindex_finProdFinEquiv`), as for Darboux bases
@@ -68,6 +71,9 @@ the first factor before that of the second (`Module.Basis.coe_reindex_prod_finPr
   `Fin (m + n)` or by `Fin k` for `m + n = k`.
 * `Module.Basis.addCases_basisFun_prod_reindex_finSumFinEquiv`: concatenating the components of
   the product of two coordinate bases gives the coordinate basis.
+* `Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr`: prepending
+  the first component of the product of the unit basis and a coordinate basis gives the coordinate
+  basis.
 * `Module.Basis.coe_prod_reindex_finSumFinEquiv_finCongr`,
   `Module.Basis.coe_prod_reindex_finSumFinEquiv_cycleRange`: the product basis beginning with the
   first vector of the first or of the second factor.
@@ -124,6 +130,21 @@ theorem coe_prod_reindex_finSumFinEquiv_trans_finCongr {k : ℕ} (b : Basis (Fin
   funext r
   rw [← coe_prod_reindex_finSumFinEquiv]
   simp [reindex_apply]
+
+/-- Prepending the first component to the second component of the product of the unit basis of
+`R` and the coordinate basis of `Fin m → R`, reindexed by `Fin (m + 1)`, gives the coordinate basis
+of `Fin (m + 1) → R`. -/
+theorem cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr (i : Fin (m + 1)) :
+    Fin.cons (α := fun _ ↦ R)
+        (((Basis.singleton (Fin 1) R).prod (Pi.basisFun R (Fin m))).reindex
+          (finSumFinEquiv.trans (finCongr (add_comm 1 m))) i).1
+        (((Basis.singleton (Fin 1) R).prod (Pi.basisFun R (Fin m))).reindex
+          (finSumFinEquiv.trans (finCongr (add_comm 1 m))) i).2 =
+      Pi.basisFun R (Fin (m + 1)) i := by
+  rw [coe_prod_reindex_finSumFinEquiv_trans_finCongr]
+  funext l
+  induction i using Fin.cases <;> induction l using Fin.cases <;>
+    simp [Fin.append_left_eq_cons, Pi.single_apply]
 
 /-- The product basis of `b` and `c` begins with `(b 0, 0)`: reindexed by `Fin (m + n + 1)`, it is
 `(b 0, 0)` followed by `(b 1, 0), …, (b m, 0), (0, c 0), …, (0, c (n - 1))`. -/

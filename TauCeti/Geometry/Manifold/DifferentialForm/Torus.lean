@@ -693,13 +693,10 @@ theorem mpullback_piCons_torusVolumeForm (p : Fin (m + 1) → ℝ) [∀ i, Fact 
   -- The differential of `Fin.cons` sends `b` to the coordinate basis of `Fin (m + 1) → ℝ`, so the
   -- left side takes the value `1` on `b`.
   have hd : (fun i ↦ mfderiv _ _ (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ))
-      (fun i ↦ AddCircle (p i)) ∞) q (b i)) = Pi.basisFun ℝ (Fin (m + 1)) := funext fun i ↦ by
-    refine (Diffeomorph.mfderiv_piCons_apply (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞ q
-      (b i).1 (b i).2).trans ?_
-    funext l
-    rw [hb]
-    induction i using Fin.cases <;> induction l using Fin.cases <;>
-      simp [Fin.append_left_eq_cons, Pi.single_apply]
+      (fun i ↦ AddCircle (p i)) ∞) q (b i)) = Pi.basisFun ℝ (Fin (m + 1)) := funext fun i ↦
+    (Diffeomorph.mfderiv_piCons_apply (fun _ ↦ 𝓘(ℝ)) (fun i ↦ AddCircle (p i)) ∞ q
+      (b i).1 (b i).2).trans
+      (Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr i)
   have hL : (SmoothForm.mpullback _ (Diffeomorph.piCons (fun _ ↦ 𝓘(ℝ))
       (fun i ↦ AddCircle (p i)) ∞).contMDiff (torusVolumeForm p)).val q b = 1 :=
     (SmoothForm.mpullback_apply _ _ _ q b).trans (by rw [hd, torusVolumeForm_apply_basisFun])
