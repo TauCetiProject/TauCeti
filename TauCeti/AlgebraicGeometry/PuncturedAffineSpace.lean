@@ -35,6 +35,9 @@ first column of a matrix.
 * `TauCeti.puncturedAffineSpaceOpens`: the open subset of `Spec R[Xᵢ]` where some coordinate is
   invertible.
 * `TauCeti.puncturedAffineSpace`: the punctured affine space as a scheme over `Spec R`.
+* `TauCeti.PuncturedAffineSpace.instCompactSpace`,
+  `TauCeti.PuncturedAffineSpace.instQuasiSeparatedSpace`: for finite `ι` punctured affine space
+  is quasi-compact, and it is always quasi-separated.
 * `TauCeti.PuncturedAffineSpace.range_specMap_subset_iff`: a morphism `Spec A ⟶ Spec R[Xᵢ]`
   factors through the punctured affine space exactly when the coordinates generate the unit
   ideal of `A`.
@@ -114,6 +117,19 @@ theorem puncturedAffineSpace_hom :
 theorem toAffineSpace_left :
     (toAffineSpace R ι).left = (puncturedAffineSpaceOpens R ι).ι :=
   (rfl)
+
+/-- For finitely many coordinates, punctured affine space is quasi-compact: it is the union of the
+finitely many basic opens `D(Xᵢ)` of the affine scheme `𝔸^ι_R`. -/
+instance instCompactSpace [Finite ι] : CompactSpace (puncturedAffineSpace R ι).left := by
+  have h : IsCompact (puncturedAffineSpaceOpens R ι : Set (Spec (.of (MvPolynomial ι R)))) := by
+    rw [puncturedAffineSpaceOpens_eq_iSup_basicOpen, TopologicalSpace.Opens.coe_iSup]
+    exact isCompact_iUnion fun i ↦ ((isAffineOpen_top _).basicOpen _).isCompact
+  exact isCompact_iff_compactSpace.mp h
+
+/-- Punctured affine space is quasi-separated, as an open subscheme of the affine scheme
+`𝔸^ι_R`. -/
+instance instQuasiSeparatedSpace : QuasiSeparatedSpace (puncturedAffineSpace R ι).left :=
+  (puncturedAffineSpaceOpens R ι).isOpen.isOpenEmbedding_subtypeVal.quasiSeparatedSpace
 
 variable {R ι}
 

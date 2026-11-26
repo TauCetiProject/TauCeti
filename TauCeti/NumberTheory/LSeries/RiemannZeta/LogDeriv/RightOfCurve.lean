@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import TauCeti.Algebra.Order.GroupWithZero.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv.Basic
 import TauCeti.NumberTheory.LFunctions.Zeros.ZeroFreeRegion.RiemannZeta
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
@@ -25,6 +26,9 @@ Write `L = log (|Im s| + 2)`. There are `0 < β < 1` and `C` such that every `s 
 
 * `TauCeti.riemannZeta_deriv_logDeriv_bound`: nonvanishing and the two pole-subtracted bounds on
   the region `1 - β / L ≤ Re s`.
+* `TauCeti.exists_neg_logDeriv_riemannZeta_eq_add_and_norm_le`: `-ζ′/ζ = G + 1/(s - 1)` with `G`
+  holomorphic on an open set containing `1 - c / log (|Im s| + 3) ≤ Re s` and
+  `‖G(s)‖ ≤ C log (|Im s| + 3)` there.
 
 ## Implementation notes
 
@@ -42,6 +46,11 @@ the `Re 1/(s₁ - ρ) ≥ 0` is at most the window sum at `s₁`, which is `O(L)
 `s` and `s₁` are `Finset` sums over the zeros of `ζ` in the disc of radius `4` about `2 + i Im s`
 (`TauCeti.finsum_window_eq_sum_riemannZetaZerosClosedBall`). The choice `η = 1/(2L)` keeps
 `Re s₁ ≤ 2` at every height, so no compactness argument is needed at bounded height.
+
+For `TauCeti.exists_neg_logDeriv_riemannZeta_eq_add_and_norm_le`, the region
+`1 - β / log (|Im s| + 3) ≤ Re s` lies in the open set strictly right of the curve, and on it
+`-ζ′/ζ - 1/(s - 1)` is the negative logarithmic derivative of the entire function `(s - 1) ζ(s)`
+(`DirichletCharacter.LFunctionTrivChar₁` at level one), which is holomorphic across `s = 1`.
 
 ## References
 
@@ -306,5 +315,58 @@ theorem riemannZeta_deriv_logDeriv_bound :
     nlinarith [abs_nonneg Cw]
   · exact norm_logDeriv_add_one_div_le_of_re_lt hCw hNear hzf hβ (min_le_left _ _)
       (min_le_right _ _) hs1 hs hsη
+
+/-- **The logarithmic derivative of `ζ` in the classical zero-free region.** There are `c > 0`,
+`C`, an open set `U` containing `R_c = {s : 1 - c / log (|Im s| + 3) ≤ Re s}`, and `G` holomorphic
+on `U`, such that every `s ∈ R_c` other than `1` has `ζ(s) ≠ 0` and `-ζ′/ζ(s) = G(s) + 1/(s - 1)`,
+and `‖G(s)‖ ≤ C log (|Im s| + 3)` on `R_c`. This is the shape of the hypotheses of Ingham's
+transfer theorem `TauCeti.LSeries.norm_sum_sub_mul_le_of_zeroFreeRegion`. -/
+theorem exists_neg_logDeriv_riemannZeta_eq_add_and_norm_le :
+    ∃ c C : ℝ, 0 < c ∧ ∃ U : Set ℂ, IsOpen U ∧
+      {s : ℂ | 1 - c / Real.log (|s.im| + 3) ≤ s.re} ⊆ U ∧
+      ∃ G : ℂ → ℂ, DifferentiableOn ℂ G U ∧
+        (∀ s : ℂ, s ≠ 1 → 1 - c / Real.log (|s.im| + 3) ≤ s.re →
+          riemannZeta s ≠ 0 ∧ -logDeriv riemannZeta s = G s + 1 / (s - 1)) ∧
+        ∀ s : ℂ, 1 - c / Real.log (|s.im| + 3) ≤ s.re → ‖G s‖ ≤ C * Real.log (|s.im| + 3) := by
+  obtain ⟨β, C, hβ, -, hζ⟩ := riemannZeta_deriv_logDeriv_bound
+  set U : Set ℂ := {s | 1 - β / Real.log (|s.im| + 2) < s.re}
+  have hlog (s : ℂ) : 0 < Real.log (|s.im| + 2) := Real.log_pos (by linarith [abs_nonneg s.im])
+  -- the region `R_β` lies strictly right of the curve of `riemannZeta_deriv_logDeriv_bound`
+  have hRU {s : ℂ} (hs : 1 - β / Real.log (|s.im| + 3) ≤ s.re) : s ∈ U := by
+    have : β / Real.log (|s.im| + 3) < β / Real.log (|s.im| + 2) :=
+      div_lt_div_of_pos_left hβ (hlog s) (Real.log_lt_log (by positivity) (by linarith))
+    exact (show 1 - β / Real.log (|s.im| + 2) < s.re by linarith)
+  have hζU {s : ℂ} (hs : s ∈ U) : riemannZeta s ≠ 0 := by
+    rcases eq_or_ne s 1 with rfl | hs1
+    · exact riemannZeta_one_ne_zero
+    · exact (hζ s hs1 (le_of_lt hs)).1
+  set G : ℂ → ℂ := fun s ↦ -logDeriv (DirichletCharacter.LFunctionTrivChar₁ 1) s
+  have hGU : DifferentiableOn ℂ G U := fun s hs ↦ by
+    have hd := DirichletCharacter.differentiable_LFunctionTrivChar₁ 1
+    exact ((((hd.analyticAt s).deriv).differentiableAt.div (hd s)
+      (DirichletCharacter.LFunctionTrivChar₁_one_ne_zero (hζU hs))).neg).differentiableWithinAt
+  have hGeq {s : ℂ} (hs1 : s ≠ 1) (hs : s ∈ U) :
+      G s = -(deriv riemannZeta s / riemannZeta s + 1 / (s - 1)) := by
+    simp only [G]
+    rw [one_div, ← logDeriv_apply, logDeriv_riemannZeta_add_inv_sub_one hs1 (hζU hs)]
+  refine ⟨β, max (max C 0) (‖G 1‖ / Real.log 3), hβ, U, ?_, fun s hs ↦ hRU hs, G, hGU,
+    fun s hs1 hs ↦ ⟨hζU (hRU hs), ?_⟩, fun s hs ↦ ?_⟩
+  · exact isOpen_lt (continuous_const.sub (continuous_const.div
+      (((continuous_abs.comp continuous_im).add continuous_const).log fun s ↦ by dsimp; positivity)
+      fun s ↦ (hlog s).ne')) continuous_re
+  · rw [hGeq hs1 (hRU hs), logDeriv_apply]
+    ring
+  rcases eq_or_ne s 1 with rfl | hs1
+  · have : Real.log 3 ≤ Real.log (|(1 : ℂ).im| + 3) := by simp
+    calc ‖G 1‖ = ‖G 1‖ / Real.log 3 * Real.log 3 :=
+          (div_mul_cancel₀ _ (Real.log_pos (by norm_num : (1 : ℝ) < 3)).ne').symm
+      _ ≤ _ := mul_le_mul (le_max_right _ _) this (Real.log_nonneg (by norm_num)) (by positivity)
+  rw [hGeq hs1 (hRU hs), norm_neg]
+  calc _ ≤ C * Real.log (|s.im| + 2) := (hζ s hs1 (le_of_lt (hRU hs))).2.2
+    _ ≤ max C 0 * Real.log (|s.im| + 2) :=
+        mul_le_mul_of_nonneg_right (le_max_left _ _) (hlog s).le
+    _ ≤ max (max C 0) (‖G 1‖ / Real.log 3) * Real.log (|s.im| + 3) :=
+        mul_le_mul (le_max_left _ _) (Real.log_le_log (by positivity) (by linarith)) (hlog s).le
+          (by positivity)
 
 end TauCeti

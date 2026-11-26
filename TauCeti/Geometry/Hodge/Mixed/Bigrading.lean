@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Hodge.Mixed.Conjugation
 import TauCeti.LinearAlgebra.Submodule.Compl
-import TauCeti.LinearAlgebra.Submodule.Prod
+import TauCeti.LinearAlgebra.Submodule.Prod.Basic
 import TauCeti.Order.CompactlyGenerated
 
 /-!

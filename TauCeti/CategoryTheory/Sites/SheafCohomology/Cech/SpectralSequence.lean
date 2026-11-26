@@ -53,9 +53,9 @@ first page need nothing more; the identification of the abutment needs the augme
   `HomologicalComplex₂.rowFiltrationSpectralSequencePageXIsoEInfty` for
   `(presheafCechDoubleComplex U I).flip`.
 
-The differential of the first page is not identified here with the Čech differential of the
-presheaf `Hᵏ(F)`, so the second page is not identified with the Čech cohomology
-`Hᵖ(U, Hᵏ(F))`.
+The differential of the first page is, up to sign, the Čech differential of the presheaf `Hᵏ(F)`
+(`TauCeti.CategoryTheory.cechToCohomologySpectralSequence_page_two_d`, in
+`TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.FirstDifferential`).
 
 ## References
 
