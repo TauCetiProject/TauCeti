@@ -15,19 +15,16 @@ import TauCeti.Data.ZMod.Divisibility
 This file adds to Mathlib's `ZMod.χ₄` and `ZMod.χ₈` the facts that `χ₄` is odd and `χ₈` is even,
 in the form used under reflection `b ↦ b'` with `n ∣ b + b'`, together with `χ₄ a ^ 2 = 1` for odd
 `a`, the normalization `a * χ₄ a ≡ 1 (mod 4)` for odd integers, the description of the
-zeros of `χ₈`, and the classical supplement formulas `χ₄ a = (-1) ^ ((a - 1) / 2)` and
-`χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd integers.
+zeros of `χ₈`, and the formula `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd integers.
 
 ## Main statements
 
 * `ZMod.χ₄_neg`, `ZMod.χ₈_neg`: `χ₄` is odd and `χ₈` is even.
-* `ZMod.χ₄_natAbs`, `ZMod.χ₈_natAbs`: values of `χ₄` and `χ₈` on `b.natAbs` for `b : ℤ`.
 * `ZMod.χ₄_two_mul_add_one`: `χ₄ (2 v + 1) = (-1) ^ v`.
 * `ZMod.χ₄_natCast_eq_neg_of_dvd_add`, `ZMod.χ₈_natCast_eq_of_dvd_add`: the same statements for
   natural numbers `b`, `b'` with `4 ∣ b + b'`, respectively `8 ∣ b + b'`.
 * `ZMod.int_mul_χ₄_modEq_one`: sign-normalizing an odd integer gives `1` modulo `4`.
 * `ZMod.χ₈_intCast_eq_zero_iff`: `χ₈ a = 0` exactly when `a` is even.
-* `ZMod.χ₄_intCast_eq_negOnePow`: `χ₄ a = (-1) ^ ((a - 1) / 2)` for odd `a`.
 * `ZMod.χ₈_intCast_eq_negOnePow`: `χ₈ a = (-1) ^ ((a² - 1) / 8)` for odd `a`.
 -/
 
@@ -45,24 +42,6 @@ theorem χ₈_neg (x : ZMod 8) : χ₈ (-x) = χ₈ x := by
   revert x
   decide
 
-/-- `χ₄ (b.natAbs)` agrees with `χ₄ b` up to the sign of `b`. -/
-theorem χ₄_natAbs (b : ℤ) : χ₄ (b.natAbs : ZMod 4) = (if b < 0 then -1 else 1) * χ₄ b := by
-  rcases lt_or_ge b 0 with hb | hb
-  · have h : (b.natAbs : ZMod 4) = -(b : ZMod 4) := by
-      rw [← Int.cast_natCast, show (b.natAbs : ℤ) = -b by omega, Int.cast_neg]
-    rw [ite_eq_left hb, neg_one_mul, h, χ₄_neg]
-  · have h : (b.natAbs : ZMod 4) = (b : ZMod 4) := by
-      rw [← Int.cast_natCast, show (b.natAbs : ℤ) = b by omega]
-    rw [ite_eq_right (not_lt.mpr hb), one_mul, h]
-
-/-- `χ₈` is even, so `χ₈ (b.natAbs) = χ₈ b` for every integer `b`. -/
-theorem χ₈_natAbs (b : ℤ) : χ₈ (b.natAbs : ZMod 8) = χ₈ b := by
-  rcases lt_or_ge b 0 with hb | hb
-  · have h : (b.natAbs : ZMod 8) = -(b : ZMod 8) := by
-      rw [← Int.cast_natCast, show (b.natAbs : ℤ) = -b by omega, Int.cast_neg]
-    rw [h, χ₈_neg]
-  · rw [← Int.cast_natCast, show (b.natAbs : ℤ) = b by omega]
-
 /-- If `4 ∣ b + b'`, then `χ₄ b' = -χ₄ b`, since `χ₄` is odd. -/
 theorem χ₄_natCast_eq_neg_of_dvd_add {b b' : ℕ} (h : 4 ∣ b + b') : χ₄ b' = -χ₄ b := by
   rw [natCast_eq_neg_of_dvd_add h, χ₄_neg]
@@ -76,16 +55,11 @@ theorem χ₄_two_mul_add_one (v : ℕ) : χ₄ ((2 * v + 1 : ℕ) : ZMod 4) = (
   rw [χ₄_eq_neg_one_pow (Nat.odd_iff.mp (odd_two_mul_add_one v)),
     show (2 * v + 1) / 2 = v by omega]
 
-/-- For odd `a : ℤ`, `χ₄ a * χ₄ a = 1`. -/
-theorem χ₄_intCast_mul_self {a : ℤ} (ha : Odd a) : χ₄ a * χ₄ a = 1 := by
-  have ha2 := Int.odd_iff.mp ha
-  rcases (by omega : a % 4 = 1 ∨ a % 4 = 3) with h | h
-  · rw [χ₄_int_one_mod_four h, one_mul]
-  · rw [χ₄_int_three_mod_four h, neg_one_mul, neg_neg]
-
 /-- For odd `a`, `χ₄ a * χ₄ a = 1`. -/
 theorem χ₄_natCast_mul_self {a : ℕ} (ha : Odd a) : χ₄ a * χ₄ a = 1 := by
-  simpa using χ₄_intCast_mul_self ((Int.odd_natCast a).mpr ha)
+  rcases Nat.odd_mod_four_iff.mp (Nat.odd_iff.mp ha) with h | h
+  · rw [χ₄_nat_one_mod_four h, one_mul]
+  · rw [χ₄_nat_three_mod_four h, neg_one_mul, neg_neg]
 
 /-- Multiplying an odd integer by its `χ₄` value gives its unique sign choice congruent to
 `1` modulo `4`. -/
@@ -101,19 +75,6 @@ theorem int_mul_χ₄_modEq_one {m : ℤ} (hm : Odd m) : m * χ₄ m ≡ 1 [ZMOD
 theorem χ₈_intCast_eq_zero_iff (a : ℤ) : χ₈ a = 0 ↔ 2 ∣ a := by
   rw [χ₈_int_eq_if_mod_eight, Int.dvd_iff_emod_eq_zero]
   split_ifs <;> simp_all
-
-/-- For odd `a`, `χ₄ a = (-1) ^ ((a - 1) / 2)`, the classical form of the first supplement to
-quadratic reciprocity. -/
-theorem χ₄_intCast_eq_negOnePow {a : ℤ} (ha : Odd a) :
-    (χ₄ a : ℤ) = ((a - 1) / 2).negOnePow := by
-  obtain ⟨k, rfl⟩ := ha
-  have hdiv : (2 * k + 1 - 1) / 2 = k := by omega
-  rw [hdiv, χ₄_int_eq_if_mod_four]
-  rcases Int.even_or_odd k with ⟨m, rfl⟩ | ⟨m, rfl⟩
-  · rw [Int.negOnePow_even _ ⟨m, rfl⟩]
-    split_ifs <;> first | rfl | omega
-  · rw [Int.negOnePow_odd _ ⟨m, rfl⟩]
-    split_ifs <;> first | rfl | omega
 
 /-- For odd `a`, `χ₈ a = (-1) ^ ((a² - 1) / 8)`, the classical form of the second supplement to
 quadratic reciprocity. -/

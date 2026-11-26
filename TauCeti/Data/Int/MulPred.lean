@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Order.Group.Unbundled.Int
 import Mathlib.Algebra.Ring.Int.Parity
 public import Mathlib.Data.Nat.Choose.Basic
-import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -26,15 +25,13 @@ More generally `0 ≤ s * (s - δ)` for every integer `δ` with `|δ| ≤ 1`: th
 The consecutive product `t * (t - 1)` is always even, so every integer satisfies `c ^ 2 ≡ c`
 modulo `2`, and the halved product `n * (n - 1) / 2` is an exact quotient. It satisfies the
 addition law `T(n + k) = T(n) + T(k) + n k` and the reflection `T(1 - n) = T(n)`, and on natural
-numbers it is the binomial coefficient `n.choose 2`. Similarly `n * (n ^ 2 - 1)` is always
-divisible by `3`.
+numbers it is the binomial coefficient `n.choose 2`.
 
 ## Main results
 
 * `Int.zero_le_mul_sub_one` : `0 ≤ t * (t - 1)`.
 * `Int.zero_le_mul_sub_of_abs_le_one` : `0 ≤ s * (s - δ)` whenever `|δ| ≤ 1`.
 * `Int.two_dvd_sq_sub_self` : `2 ∣ c ^ 2 - c`.
-* `Int.three_dvd_mul_sq_sub_one` : `3 ∣ n * (n ^ 2 - 1)`.
 * `Int.two_mul_mul_sub_one_ediv_two` : `n * (n - 1) / 2` is an exact quotient.
 * `Int.add_mul_add_sub_one_ediv_two` : the addition law for `n * (n - 1) / 2`.
 * `Int.mul_sub_one_ediv_two_ne_zero` : `n * (n - 1) / 2 ≠ 0` for `n ∉ {0, 1}`.
@@ -67,11 +64,6 @@ theorem zero_le_mul_sub_of_abs_le_one {δ : ℤ} (hδ : |δ| ≤ 1) (s : ℤ) : 
 theorem two_dvd_sq_sub_self (c : ℤ) : (2 : ℤ) ∣ c ^ 2 - c := by
   rw [sq, ← mul_sub_one]
   exact (even_mul_pred_self c).two_dvd
-
-/-- Every integer `n` satisfies `3 ∣ n * (n ^ 2 - 1)`. -/
-theorem three_dvd_mul_sq_sub_one (n : ℤ) : (3 : ℤ) ∣ n * (n ^ 2 - 1) := by
-  have hmod : ∀ x : ZMod 3, x * (x ^ 2 - 1) = 0 := by decide
-  exact (ZMod.intCast_zmod_eq_zero_iff_dvd _ 3).mp (by push_cast; exact hmod n)
 
 /-- The halved product `m (m - 1) / 2` of consecutive integers is an exact quotient. -/
 @[simp]
