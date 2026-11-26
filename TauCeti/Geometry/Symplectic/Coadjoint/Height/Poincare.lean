@@ -20,14 +20,15 @@ dimension two and roots `α_i : t → ℝ`. For `μ ∈ 𝔱` let `O_μ = G ⧸ 
 The height `f_X` is a perfect Morse function on `O_μ`
 (`Module.Dual.isPerfectMorse_orbitMap_coadjointRepresentation_apply`), its critical points are
 the Weyl group points `[n_w]`, indexed by `W / W_μ` (`weylQuotientEquivCriticalPoints`), and its
-Morse index at `[n_w]` is `2 n(w)`, where
+Morse index at `[n_w]` is `2 n(w)`
+(`manifoldMorseIndex_normalizerQuotientToCoadjointOrbit_eq_two_mul_card`), where
 
 `n(w) = #{i | α_i(w μ) α_i(X) > 0}`
 
-(`manifoldMorseIndex_normalizerQuotientToCoadjointOrbit_eq_two_mul_card`); all three are in the
-namespace `TauCeti.IsRootPlaneDecomposition`, like the results of this file. Combining them, this
-file computes every Betti number of `O_μ`, over every division ring `k`, from the Weyl orbit of
-`μ` and the signs of the roots, following Bott:
+and `w μ` is read in `t` (`TauCeti.Lie.weylOrbitPoint`). The Weyl indexing and the Morse index
+are in the namespace `TauCeti.IsRootPlaneDecomposition`, like the results of this file. Combining
+the three, this file computes every Betti number of `O_μ`, over every division ring `k`, from the
+Weyl orbit of `μ` and the signs of the roots, following Bott:
 
 * the Betti number `b_{2j}(O_μ; k)` is the number of points `p` of the Weyl orbit `W μ`, read in
   `t`, with `#{i | α_i(p) α_i(X) > 0} = j`
@@ -108,11 +109,8 @@ theorem card_stabilizer_mul_bettiNumber_quotient_stabilizer_coadjointRepresentat
         bettiNumber k (G ⧸ (coadjointRepresentation ℝ I G).stabilizer
           (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
             BoundarylessManifold.isInteriorPoint μ))) j =
-      {w : T.normalizerQuotient | 2 * #{i | 0 < α i ⟨leftInvariantDerivationLieEquivGroupLieAlgebra
-          (I := I) (G := G) BoundarylessManifold.isInteriorPoint
-            (T.weylAdjointRepresentation (I := I) w μ),
-          ht ▸ Submodule.mem_map_of_mem (T.weylAdjointRepresentation (I := I) w μ).property⟩ *
-        α i X} = j}.ncard := by
+      {w : T.normalizerQuotient |
+        2 * #{i | 0 < α i (weylOrbitPoint ht μ w) * α i X} = j}.ncard := by
   rw [Module.Dual.bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard _ k
     (hD.isMorse_orbitMap_coadjointRepresentation_apply
       (lieInvariant_of_isInvariantForm_adjointRepresentation hB) hsep hX) j]
@@ -133,11 +131,8 @@ theorem card_stabilizer_mul_bettiNumber_quotient_stabilizer_coadjointRepresentat
     refine ⟨fun ⟨hx, hj⟩ ↦ ⟨e.symm ⟨x, hx⟩, by simpa [S] using hj, by simp⟩, ?_⟩
     rintro ⟨c, hc, rfl⟩
     exact ⟨(e c).property, hc⟩
-  have hpreimage : QuotientGroup.mk ⁻¹' S = {w : T.normalizerQuotient | 2 * #{i | 0 <
-      α i ⟨leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-        BoundarylessManifold.isInteriorPoint (T.weylAdjointRepresentation (I := I) w μ),
-        ht ▸ Submodule.mem_map_of_mem (T.weylAdjointRepresentation (I := I) w μ).property⟩ *
-      α i X} = j} := by
+  have hpreimage : QuotientGroup.mk ⁻¹' S =
+      {w : T.normalizerQuotient | 2 * #{i | 0 < α i (weylOrbitPoint ht μ w) * α i X} = j} := by
     ext w
     rw [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_ofPred_eq, he,
       hD.manifoldMorseIndex_normalizerQuotientToCoadjointOrbit_eq_two_mul_card hB hF ht μ X w]
@@ -185,12 +180,14 @@ theorem bettiNumber_quotient_stabilizer_coadjointRepresentation_two_mul_eq_ncard
   · rintro ⟨_, ⟨⟨w, rfl⟩, hj⟩, rfl⟩
     rw [hD.manifoldMorseIndex_normalizerQuotientToCoadjointOrbit_eq_two_mul_card hB hF ht μ X w]
       at hj
-    exact ⟨⟨_, ht ▸ Submodule.mem_map_of_mem (T.weylAdjointRepresentation (I := I) w μ).property⟩,
-      ⟨⟨w, rfl⟩, by omega⟩, (orbitMap_normalizerQuotientToCoadjointOrbit hB μ w).symm⟩
+    exact ⟨weylOrbitPoint ht μ w, ⟨⟨w, coe_weylOrbitPoint ht μ w⟩, by omega⟩,
+      (congrArg B (coe_weylOrbitPoint ht μ w)).trans
+        (orbitMap_normalizerQuotientToCoadjointOrbit hB μ w).symm⟩
   · rintro ⟨p, ⟨⟨w, hw⟩, hj⟩, rfl⟩
-    obtain rfl : p = ⟨_, ht ▸ Submodule.mem_map_of_mem
-        (T.weylAdjointRepresentation (I := I) w μ).property⟩ := Subtype.ext hw
-    refine ⟨_, ⟨⟨w, rfl⟩, ?_⟩, orbitMap_normalizerQuotientToCoadjointOrbit hB μ w⟩
+    obtain rfl : p = weylOrbitPoint ht μ w :=
+      Subtype.ext (hw.trans (coe_weylOrbitPoint ht μ w).symm)
+    refine ⟨_, ⟨⟨w, rfl⟩, ?_⟩, (orbitMap_normalizerQuotientToCoadjointOrbit hB μ w).trans
+      (congrArg B (coe_weylOrbitPoint ht μ w)).symm⟩
     rw [hD.manifoldMorseIndex_normalizerQuotientToCoadjointOrbit_eq_two_mul_card hB hF ht μ X w,
       hj]
 
@@ -217,16 +214,9 @@ theorem card_stabilizer_smul_sum_monomial_bettiNumber_eq_sum_X_pow [Fintype T.no
           monomial j (bettiNumber k (G ⧸ (coadjointRepresentation ℝ I G).stabilizer
             (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
               BoundarylessManifold.isInteriorPoint μ))) j) =
-      ∑ w : T.normalizerQuotient, (Polynomial.X : ℕ[X]) ^ (2 * #{i | 0 <
-        α i ⟨leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-          BoundarylessManifold.isInteriorPoint (T.weylAdjointRepresentation (I := I) w μ),
-          ht ▸ Submodule.mem_map_of_mem (T.weylAdjointRepresentation (I := I) w μ).property⟩ *
-        α i X}) := by
-  set n : T.normalizerQuotient → ℕ := fun w ↦ #{i | 0 <
-    α i ⟨leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-      BoundarylessManifold.isInteriorPoint (T.weylAdjointRepresentation (I := I) w μ),
-      ht ▸ Submodule.mem_map_of_mem (T.weylAdjointRepresentation (I := I) w μ).property⟩ *
-    α i X}
+      ∑ w : T.normalizerQuotient,
+        (Polynomial.X : ℕ[X]) ^ (2 * #{i | 0 < α i (weylOrbitPoint ht μ w) * α i X}) := by
+  set n : T.normalizerQuotient → ℕ := fun w ↦ #{i | 0 < α i (weylOrbitPoint ht μ w) * α i X}
   -- Each `2 n(w)` is a Morse index, so at most the dimension of the orbit.
   have hn : ∀ w ∈ (Finset.univ : Finset T.normalizerQuotient), 2 * n w ∈ Finset.range
       (finrank ℝ (Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer

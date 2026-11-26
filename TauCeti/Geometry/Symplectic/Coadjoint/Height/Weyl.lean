@@ -66,6 +66,8 @@ holds for it
   `W / W_μ ≃ Crit(f_X)`.
 * `TauCeti.IsRootPlaneDecomposition.weylQuotientEquivCriticalPoints`: the same bijection for an
   `X` at which no root of a root-plane decomposition vanishes.
+* `TauCeti.Lie.weylOrbitPoint`: the point `e (w μ)` of the Weyl orbit of `μ`, read in the image
+  `t` of `𝔱`.
 
 ## Main results
 
@@ -359,6 +361,37 @@ theorem card_criticalPoints_orbitMap_coadjointRepresentation_of_stabilizer_eq_bo
 
 end Critical
 
+/-! ### Weyl orbit points in the image of the torus Lie algebra -/
+
+section OrbitPoint
+
+variable {t : Submodule ℝ (GroupLieAlgebra I G)}
+
+/-- **The Weyl orbit point `w μ`, read in `t`.** When `t` is the image of the Lie algebra `𝔱` of
+`T` under `e`, the image `e (w μ)` of a Weyl group element `w` applied to `μ ∈ 𝔱` lies in `t`. -/
+def weylOrbitPoint
+    (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
+      (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint).toLinearEquiv.toLinearMap)
+    (μ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) (w : T.normalizerQuotient) : t :=
+  ⟨leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+      BoundarylessManifold.isInteriorPoint (T.weylAdjointRepresentation (I := I) w μ),
+    ht ▸ Submodule.mem_map_of_mem (T.weylAdjointRepresentation (I := I) w μ).property⟩
+
+/-- The Weyl orbit point `w μ`, read in `t`, is `e (w μ)`. -/
+@[simp]
+theorem coe_weylOrbitPoint
+    (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
+      (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint).toLinearEquiv.toLinearMap)
+    (μ : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) (w : T.normalizerQuotient) :
+    (weylOrbitPoint ht μ w : GroupLieAlgebra I G) =
+      leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        BoundarylessManifold.isInteriorPoint (T.weylAdjointRepresentation (I := I) w μ) :=
+  (rfl)
+
+end OrbitPoint
+
 end TauCeti.Lie
 
 /-! ### Regular heights in a root-plane decomposition -/
@@ -530,10 +563,7 @@ theorem manifoldMorseIndex_normalizerQuotientToCoadjointOrbit_eq_two_mul_card [F
             BoundarylessManifold.isInteriorPoint μ))))
         (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap _ y X)
         (normalizerQuotientToCoadjointOrbit B hB μ w) =
-      2 * #{i | 0 < α i ⟨leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-          BoundarylessManifold.isInteriorPoint (T.weylAdjointRepresentation (I := I) w μ),
-          ht ▸ Submodule.mem_map_of_mem (T.weylAdjointRepresentation (I := I) w μ).property⟩ *
-        α i X} :=
+      2 * #{i | 0 < α i (weylOrbitPoint ht μ w) * α i X} :=
   hD.manifoldMorseIndex_orbitMap_coadjointRepresentation_apply_eq_two_mul_card
     (lieInvariant_of_isInvariantForm_adjointRepresentation hB) hF
     (orbitMap_normalizerQuotientToCoadjointOrbit hB μ w)
