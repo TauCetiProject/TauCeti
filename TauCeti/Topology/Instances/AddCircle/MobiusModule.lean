@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.CommRing
 
 import TauCeti.Topology.Circle.AddCircle
 import TauCeti.Topology.Order.IntermediateValue
@@ -23,9 +24,9 @@ of continuous sections of the Möbius line bundle: the line `ℝ u(t)` turns by 
 `t` runs once around the circle. Since `ρ = 2p − 1` for the idempotent `p = u uᵀ`, the module
 `M` is the image `pR²`.
 
-This file proves the two module statements which say that `M` is finitely generated projective and
-that the class `[M] − [R]` has order exactly two in `K₀(R)` (by the stable description of equality
-in `K₀`):
+This file proves that `M` is finitely generated projective and that the class `[M] − [R]` has
+order exactly two in `K₀(R)`, by the stable description of equality in `K₀` applied to two module
+statements:
 
 * `M ⊕ M ≅ R²`: the quarter turn `J (v₀, v₁) = (−v₁, v₀)` anticommutes with `ρ`, so it carries `M`
   onto the module on which `ρ` acts by `−1`, a complement of `M`.
@@ -51,6 +52,8 @@ in `K₀`):
 * `TauCeti.isEmpty_mobiusSections_prod_linearEquiv`: `M × Rᴺ` is not isomorphic to `Rᴺ⁺¹`.
 * `TauCeti.mobiusSections_order_two`: both statements together.
 * `TauCeti.not_free_mobiusSections`: `M` is finitely generated projective but not free.
+* `TauCeti.addOrderOf_classOf_mobiusSections`, `TauCeti.addOrderOf_kZero_mobiusSections`: the
+  class `[M] − [R]` has order exactly two, in the split `K₀` of left modules and in `K₀(R)`.
 
 ## References
 
@@ -401,5 +404,30 @@ theorem mobiusSections_order_two :
     Nonempty ((mobiusSections × mobiusSections) ≃ₗ[𝓒] (Fin 2 → 𝓒)) ∧
       ∀ N : ℕ, IsEmpty ((mobiusSections × (Fin N → 𝓒)) ≃ₗ[𝓒] (Fin (N + 1) → 𝓒)) :=
   ⟨⟨mobiusSectionsProdEquiv⟩, isEmpty_mobiusSections_prod_linearEquiv⟩
+
+/-! ### The class of the Möbius module in `K₀` -/
+
+/-- In the split `K₀` of finitely generated projective modules over `R = C(ℝ / ℤ, ℝ)`, the class
+`[M] − [R]` of the Möbius module `M` has order exactly two: `M ⊕ M ≅ R²` gives `2 ([M] − [R]) = 0`,
+and `M ⊕ Rᴺ ≇ Rᴺ⁺¹` for every `N` gives `[M] − [R] ≠ 0`. -/
+theorem addOrderOf_classOf_mobiusSections :
+    addOrderOf (FiniteProjectiveModules.classOf 𝓒 mobiusSections 1) = 2 := by
+  refine addOrderOf_eq_prime ?_ ?_
+  · rw [two_nsmul, ← FiniteProjectiveModules.classOf_prod,
+      FiniteProjectiveModules.classOf_congr mobiusSectionsProdEquiv]
+    exact FiniteProjectiveModules.classOf_free 𝓒 2
+  · rw [Ne, FiniteProjectiveModules.classOf_eq_zero_iff]
+    rintro ⟨N, ⟨φ⟩⟩
+    exact (isEmpty_mobiusSections_prod_linearEquiv N).false (Nat.add_comm 1 N ▸ φ)
+
+/-- In `K₀(R)` for `R = C(ℝ / ℤ, ℝ)`, the class `η = [M] − [R]` of the Möbius module `M`, regarded
+as a right module, has order exactly two. -/
+theorem addOrderOf_kZero_mobiusSections :
+    addOrderOf (SplitK0.of.{0} ((KZero.finiteProjectiveRightEquivalence 𝓒).functor.obj
+        (FiniteProjectiveModules.of 𝓒 mobiusSections)) -
+      SplitK0.of.{0} (finiteProjectiveModulesRegular 𝓒ᵐᵒᵖ)) = 2 := by
+  rw [← one_nsmul (SplitK0.of.{0} (finiteProjectiveModulesRegular 𝓒ᵐᵒᵖ)),
+    ← KZero.splitK0Equiv_symm_classOf, AddEquiv.addOrderOf_eq]
+  exact addOrderOf_classOf_mobiusSections
 
 end TauCeti
