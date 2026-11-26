@@ -132,16 +132,18 @@ example : unravelOrderCode fullCode ∈ linearOrderClass :=
   unravelOrderCode_mem_linearOrderClass fullCode
 
 /-- **A size of finite condensation classes that no simple graph has.** For every `c ∈ graphClass`,
-no finite condensation class of the order for `c` has the size of the finite part of the block of
-`[q]` for the constant-true code. -/
+no condensation class of the order for `c` has the size of the finite part of the block of `[q]`
+for the constant-true code (an infinite class has `ncard` `0`). -/
 theorem ncard_setOf_isNear_ne {c : RelationalConfiguration Language.graph ℕ}
-    (hc : c ∈ graphClass) (q : ℚ) {p : List ℚ × ℕ}
-    (hp : {p' | IsNear (unravelOrderRel (unravelColor c)) p p'}.Finite) :
+    (hc : c ∈ graphClass) (q : ℚ) (p : List ℚ × ℕ) :
     {p' | IsNear (unravelOrderRel (unravelColor c)) p p'}.ncard ≠
       {p' | IsNear (unravelOrderRel (unravelColor fullCode)) ([q], 0) p'}.ncard := by
-  rw [ncard_setOf_isNear_unravelOrderRel (finite_setOf_isNear_unravelOrderRel_iff.1 hp),
-    ncard_setOf_isNear_unravelOrderRel (by simp)]
-  exact fun h => UnravelTree.unravelColor_mk_true_ne hc q p.1 (Nat.add_right_cancel h).symm
+  rw [ncard_setOf_isNear_unravelOrderRel (p := ([q], 0)) (by simp)]
+  by_cases hp : {p' | IsNear (unravelOrderRel (unravelColor c)) p p'}.Finite
+  · rw [ncard_setOf_isNear_unravelOrderRel (finite_setOf_isNear_unravelOrderRel_iff.1 hp)]
+    exact fun h => UnravelTree.unravelColor_mk_true_ne hc q p.1 (Nat.add_right_cancel h).symm
+  · rw [Set.Infinite.ncard hp]
+    omega
 
 /-- The image of the constant-true code is isomorphic to the image of no code in `graphClass`. -/
 theorem not_isoSetoid_unravelOrderCode_fullCode {c : RelationalConfiguration Language.graph ℕ}
