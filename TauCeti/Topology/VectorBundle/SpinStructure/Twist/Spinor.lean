@@ -57,6 +57,9 @@ they form the tensor product vector bundles of `TauCeti.Topology.VectorBundle.Te
 * `TauCeti.SpinCStructure.continuous_twist_associatedBundle_iff`: a map out of a bundle associated
   to the twist with fibre `M` is continuous when it is continuous on
   `((P ×_X Q) × Spinᶜ(n)) × M`.
+* `TauCeti.SpinCStructure.continuous_twist_associatedBundleMk_fst_smul`,
+  `TauCeti.SpinCStructure.continuous_twist_associatedBundleMk_snd_one`: on
+  `((P ×_X Q) × Spinᶜ(n)) × M`, the classes `[p, h w]` and `[q, 1]` form continuous families.
 * `TauCeti.SpinCStructure.determinantLineTwistEquiv_mk`,
   `TauCeti.SpinCStructure.halfSpinorBundleTwistEquiv_mk`: the formulas in frames, and
   `TauCeti.SpinCStructure.determinantLineTwistEquiv_symm_tmul`,
@@ -132,6 +135,30 @@ theorem continuous_twist_associatedBundle_iff {M : Type*} [TopologicalSpace M]
     (Extend (FiberProd s.P Q) μ hμ) M).comp
       ((Extend.isOpenQuotientMap_totalSpaceMk_mk (FiberProd s.P Q) μ hμ).prodMap
         IsOpenQuotientMap.id)).continuous_comp_iff.symm
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V] [VectorBundle ℝ F V]
+  [∀ x, TopologicalSpace (Q x)] [FiberBundle Circle Q] [∀ x, MulAction Circleᵐᵒᵖ (Q x)]
+  [PrincipalBundle Circle Q] in
+/-- On `((P ×_X Q) × Spinᶜ(n)) × M`, the classes `[p, h w]` in the bundle associated to `P` with
+fibre `M` form a continuous family. -/
+theorem continuous_twist_associatedBundleMk_fst_smul {M : Type*} [TopologicalSpace M]
+    [MulAction SpinC M] [ContinuousSMul SpinC M] (s : SpinCStructure F V n) :
+    Continuous fun y : (TotalSpace (SpinC × Circle) (FiberProd s.P Q) × SpinC) × M ↦
+      TotalSpace.mk' M (E := AssociatedBundle SpinC s.P M) y.1.1.proj
+        (AssociatedBundle.mk SpinC y.1.1.snd.fst (y.1.2 • y.2)) :=
+  (FiberProd.continuous_totalSpaceMk_fst.comp (continuous_fst.comp continuous_fst))
+    |>.totalSpaceMk_associatedBundleMk ((continuous_snd.comp continuous_fst).smul continuous_snd)
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V] [VectorBundle ℝ F V] in
+/-- On `((P ×_X Q) × Spinᶜ(n)) × M`, the classes `[q, 1]` in the Hermitian line
+`E = Q ×_{U(1)} ℂ` form a continuous family. -/
+theorem continuous_twist_associatedBundleMk_snd_one {M : Type*} [TopologicalSpace M]
+    (s : SpinCStructure F V n) :
+    Continuous fun y : (TotalSpace (SpinC × Circle) (FiberProd s.P Q) × SpinC) × M ↦
+      TotalSpace.mk' ℂ (E := AssociatedBundle Circle Q ℂ) y.1.1.proj
+        (AssociatedBundle.mk Circle y.1.1.snd.snd (1 : ℂ)) :=
+  (FiberProd.continuous_totalSpaceMk_snd.comp (continuous_fst.comp continuous_fst))
+    |>.totalSpaceMk_associatedBundleMk continuous_const
 
 /-! ### The determinant line -/
 
@@ -260,12 +287,6 @@ theorem continuous_determinantLineTwistEquiv (s : SpinCStructure F V n) :
   -- On `((P ×_X Q) × Spinᶜ(n)) × ℂ`, the comparison is
   -- `(((p, q), h), w) ↦ [p, h w] ⊗ ([q, 1] ⊗ [q, 1])`.
   refine (continuous_twist_associatedBundle_iff Q s).2 ?_
-  have hp : Continuous fun y : (TotalSpace (SpinC × Circle) (FiberProd s.P Q) × SpinC) ×
-      DeterminantModel n ↦ TotalSpace.mk' SpinC y.1.1.proj y.1.1.snd.fst :=
-    FiberProd.continuous_totalSpaceMk_fst.comp (continuous_fst.comp continuous_fst)
-  have hq : Continuous fun y : (TotalSpace (SpinC × Circle) (FiberProd s.P Q) × SpinC) ×
-      DeterminantModel n ↦ TotalSpace.mk' Circle y.1.1.proj y.1.1.snd.snd :=
-    FiberProd.continuous_totalSpaceMk_snd.comp (continuous_fst.comp continuous_fst)
   have hc : Continuous fun y : (TotalSpace (SpinC × Circle) (FiberProd s.P Q) × SpinC) ×
       DeterminantModel n ↦
       TotalSpace.mk' (ProjectiveTensor ℂ (DeterminantModel n) (ProjectiveTensor ℂ ℂ ℂ))
@@ -274,10 +295,9 @@ theorem continuous_determinantLineTwistEquiv (s : SpinCStructure F V n) :
         (AssociatedBundle.mk SpinC y.1.1.snd.fst (y.1.2 • y.2) ⊗ₜ[ℂ]
           (AssociatedBundle.mk Circle y.1.1.snd.snd (1 : ℂ) ⊗ₜ[ℂ]
             AssociatedBundle.mk Circle y.1.1.snd.snd (1 : ℂ))) :=
-    (hp.totalSpaceMk_associatedBundleMk (continuous_smul.comp
-      ((continuous_snd.comp continuous_fst).prodMk continuous_snd))).tmul_section
-      ((hq.totalSpaceMk_associatedBundleMk continuous_const).tmul_section
-        (hq.totalSpaceMk_associatedBundleMk continuous_const))
+    (continuous_twist_associatedBundleMk_fst_smul Q s).tmul_section
+      ((continuous_twist_associatedBundleMk_snd_one Q s).tmul_section
+        (continuous_twist_associatedBundleMk_snd_one Q s))
   refine hc.congr fun y ↦ ?_
   exact (congrArg (TotalSpace.mk' (ProjectiveTensor ℂ (DeterminantModel n)
       (ProjectiveTensor ℂ ℂ ℂ)) (E := fun x ↦ s.determinantLine x ⊗[ℂ]
@@ -414,12 +434,6 @@ theorem continuous_halfSpinorBundleTwistEquiv (s : SpinCStructure F V 4) :
         v.proj (s.halfSpinorBundleTwistEquiv Q o hqf b ρ hρ ε v.proj v.snd) := by
   -- On `((P ×_X Q) × Spinᶜ(4)) × S^ε`, the comparison is `(((p, q), h), ψ) ↦ [p, h ψ] ⊗ [q, 1]`.
   refine (continuous_twist_associatedBundle_iff Q s).2 ?_
-  have hp : Continuous fun y : (TotalSpace (SpinC₄ × Circle) (FiberProd s.P Q) × SpinC₄) ×
-      o.HalfSpinModel hqf b ρ hρ ε ↦ TotalSpace.mk' SpinC₄ y.1.1.proj y.1.1.snd.fst :=
-    FiberProd.continuous_totalSpaceMk_fst.comp (continuous_fst.comp continuous_fst)
-  have hq : Continuous fun y : (TotalSpace (SpinC₄ × Circle) (FiberProd s.P Q) × SpinC₄) ×
-      o.HalfSpinModel hqf b ρ hρ ε ↦ TotalSpace.mk' Circle y.1.1.proj y.1.1.snd.snd :=
-    FiberProd.continuous_totalSpaceMk_snd.comp (continuous_fst.comp continuous_fst)
   have hc : Continuous fun y : (TotalSpace (SpinC₄ × Circle) (FiberProd s.P Q) × SpinC₄) ×
       o.HalfSpinModel hqf b ρ hρ ε ↦
       TotalSpace.mk' (ProjectiveTensor ℂ (o.HalfSpinModel hqf b ρ hρ ε) ℂ)
@@ -427,9 +441,8 @@ theorem continuous_halfSpinorBundleTwistEquiv (s : SpinCStructure F V 4) :
         y.1.1.proj
         (AssociatedBundle.mk SpinC₄ y.1.1.snd.fst (y.1.2 • y.2) ⊗ₜ[ℂ]
           AssociatedBundle.mk Circle y.1.1.snd.snd (1 : ℂ)) :=
-    (hp.totalSpaceMk_associatedBundleMk (continuous_smul.comp
-      ((continuous_snd.comp continuous_fst).prodMk continuous_snd))).tmul_section
-      (hq.totalSpaceMk_associatedBundleMk continuous_const)
+    (continuous_twist_associatedBundleMk_fst_smul Q s).tmul_section
+      (continuous_twist_associatedBundleMk_snd_one Q s)
   refine hc.congr fun y ↦ ?_
   exact (congrArg (TotalSpace.mk' (ProjectiveTensor ℂ (o.HalfSpinModel hqf b ρ hρ ε) ℂ)
       (E := fun x ↦ s.halfSpinorBundle o hqf b ρ hρ ε x ⊗[ℂ] AssociatedBundle Circle Q ℂ x)
