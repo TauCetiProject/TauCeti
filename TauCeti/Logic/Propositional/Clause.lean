@@ -67,6 +67,25 @@ public section
 
 open Std.Sat (Literal)
 
+namespace Std.Sat.Literal
+
+variable {V : Type*}
+
+@[simp]
+theorem negate_fst (l : Literal V) : l.negate.1 = l.1 := rfl
+
+@[simp]
+theorem negate_snd (l : Literal V) : l.negate.2 = !l.2 := rfl
+
+@[simp]
+theorem negate_mk (v : V) (b : Bool) : Literal.negate (v, b) = (v, !b) := rfl
+
+@[simp]
+theorem negate_negate (l : Literal V) : l.negate.negate = l := by
+  simp [negate]
+
+end Std.Sat.Literal
+
 namespace TauCeti.Propositional
 
 /-- A **clause** over the variables `V` is a finite set of literals. -/
@@ -167,14 +186,14 @@ theorem IsTautology.satisfies (h : C.IsTautology) (τ : V → Bool) : Satisfies 
   · exact satisfies_of_mem hl hτ
   · exact satisfies_of_mem hn (Bool.eq_not_of_ne hτ)
 
-/-- A clause is tautological exactly when every assignment satisfies it. For a clause that is not
-tautological, the assignment making each of its literals false is `v ↦ decide ((v, false) ∈ C)`. -/
+/-- A clause is tautological exactly when every assignment satisfies it. -/
 theorem isTautology_iff_forall_satisfies : C.IsTautology ↔ ∀ τ : V → Bool, Satisfies τ C := by
   classical
   refine ⟨fun h τ ↦ h.satisfies τ, fun h ↦ ?_⟩
+  -- If `C` is not tautological, `v ↦ decide ((v, false) ∈ C)` makes every literal of `C` false.
   obtain ⟨⟨v, b⟩, hl, hτ⟩ := h fun v ↦ decide ((v, false) ∈ C)
   refine ⟨(v, b), hl, ?_⟩
-  cases b <;> simp_all [Std.Sat.Literal.negate]
+  cases b <;> simp_all
 
 end Clause
 
@@ -344,7 +363,7 @@ satisfy `C`. -/
 theorem models_image_singleton_negate_iff :
     Models τ ((fun l ↦ ({l.negate} : Clause V)) '' (C : Set (Literal V))) ↔ ¬Satisfies τ C := by
   simp only [models_iff, Set.forall_mem_image, satisfies_singleton, Finset.mem_coe,
-    Std.Sat.Literal.negate]
+    Literal.negate_fst, Literal.negate_snd]
   rw [satisfies_iff]
   push Not
   exact forall₂_congr fun _ _ ↦ Bool.eq_not
@@ -367,12 +386,35 @@ namespace Clause
 variable [DecidableEq W] {f : V → W}
 
 @[simp]
-theorem mem_relabel {w : W} {b : Bool} : (w, b) ∈ C.relabel f ↔ ∃ v, (v, b) ∈ C ∧ f v = w := by
+theorem mem_relabel {l : Literal W} : l ∈ C.relabel f ↔ ∃ v, (v, l.2) ∈ C ∧ f v = l.1 := by
+  obtain ⟨w, b⟩ := l
   simp [relabel]
 
 @[simp]
 theorem relabel_empty : (∅ : Clause V).relabel f = ∅ := by
   simp [relabel]
+
+@[simp]
+theorem relabel_singleton : ({l} : Clause V).relabel f = {(f l.1, l.2)} :=
+  Finset.image_singleton _ _
+
+@[simp]
+theorem relabel_insert [DecidableEq V] :
+    (insert l C).relabel f = insert (f l.1, l.2) (C.relabel f) :=
+  Finset.image_insert _ _ _
+
+@[simp]
+theorem relabel_union [DecidableEq V] : (C ∪ D).relabel f = C.relabel f ∪ D.relabel f := by
+  simp [relabel, Finset.image_union]
+
+@[simp]
+theorem relabel_id [DecidableEq V] : C.relabel id = C := by
+  simp [relabel]
+
+@[simp]
+theorem relabel_relabel {X : Type*} [DecidableEq X] {g : W → X} :
+    (C.relabel f).relabel g = C.relabel (g ∘ f) := by
+  simp [relabel, Finset.image_image, Prod.map_comp_map]
 
 theorem vars_relabel [DecidableEq V] : (C.relabel f).vars = C.vars.image f := by
   ext w

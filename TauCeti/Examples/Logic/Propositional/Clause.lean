@@ -49,12 +49,12 @@ example [IsEmpty V] (F : CNF V) : F = ∅ ∨ F = {∅} :=
 
 -- `{x, ¬x}` is tautological.
 example [DecidableEq V] (x : V) : Clause.IsTautology ({(x, true), (x, false)} : Clause V) :=
-  Clause.isTautology_iff.2 ⟨(x, true), by simp, by simp [Std.Sat.Literal.negate]⟩
+  Clause.isTautology_iff.2 ⟨(x, true), by simp, by simp⟩
 
 -- `{x, ¬y}` is not tautological for distinct `x` and `y`.
 example [DecidableEq V] {x y : V} (hxy : x ≠ y) :
     ¬Clause.IsTautology ({(x, true), (y, false)} : Clause V) := by
-  simp [Clause.isTautology_iff, Std.Sat.Literal.negate, hxy, hxy.symm]
+  simp [Clause.isTautology_iff, hxy, hxy.symm]
 
 -- `{x, ¬y}` is false under `x ↦ false`, `y ↦ true`: `(x, true)` is the positive literal of `x`.
 example [DecidableEq V] {x y : V} (τ : V → Bool) (hx : τ x = false) (hy : τ y = true) :
@@ -130,5 +130,4 @@ example : ∃! τ : Fin 2 → Bool, Models τ (({{(0, false), (1, true)}, {(0, t
 -- Identifying the two variables of `{x, ¬y}` produces the tautology `{z, ¬z}`.
 example : Clause.IsTautology
     (({(0, true), (1, false)} : Clause (Fin 2)).relabel fun _ ↦ ()) := by
-  refine Clause.isTautology_iff.2 ⟨((), true), ?_, ?_⟩ <;>
-    simp [Std.Sat.Literal.negate]
+  refine Clause.isTautology_iff.2 ⟨((), true), ?_, ?_⟩ <;> simp
