@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
-public import TauCeti.Analysis.Normed.Lp.PiLp
+public import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
