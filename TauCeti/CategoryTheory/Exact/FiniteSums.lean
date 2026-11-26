@@ -5,7 +5,6 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Algebra.Homology.ShortComplex.Products
 public import TauCeti.CategoryTheory.Exact.Biproduct
 public import TauCeti.CategoryTheory.Exact.Split
 public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
@@ -25,16 +24,12 @@ whose arrows are the biproduct maps of the given inflations and deflations.
 
 public section
 
-open CategoryTheory CategoryTheory.Limits ZeroObject
+open CategoryTheory CategoryTheory.Limits
 
 namespace TauCeti.ExactStructure
 
 variable {C : Type*} [Category* C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   (E : ExactStructure C)
-
-/-- The zero short complex is a conflation. -/
-instance conflation_containsZero : E.Conflation.ContainsZero where
-  exists_zero := ⟨_, (IsZero.iff_id_eq_zero _).mpr (by ext), E.conflation_id_zero 0⟩
 
 /-- Conflations are closed under finite products in the category of short complexes. -/
 instance conflation_isClosedUnderFiniteProducts : E.Conflation.IsClosedUnderFiniteProducts := by
