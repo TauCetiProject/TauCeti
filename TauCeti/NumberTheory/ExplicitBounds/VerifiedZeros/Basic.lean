@@ -294,10 +294,6 @@ theorem dirichletGRHUpTo_one_iff {H : ℝ} :
   rw [DirichletCharacter.LFunction_modOne_eq] at h0
   exact h ρ h0 hre0 hre1 him
 
-/-- `DirichletGRHUpTo 1 0` holds unconditionally. -/
-theorem dirichletGRHUpTo_one_zero : DirichletGRHUpTo 1 0 :=
-  dirichletGRHUpTo_one_iff.mpr riemannHypothesisUpTo_zero
-
 /-- `RiemannHypothesisUpTo H` holds for all `H : ℝ` if and only if `RiemannHypothesis` holds. -/
 theorem forall_riemannHypothesisUpTo_iff :
     (∀ H : ℝ, RiemannHypothesisUpTo H) ↔ RiemannHypothesis := by

@@ -236,11 +236,4 @@ theorem IsPrimitive.zero_lt_divisor_completedLFunction_iff (hχ : χ.IsPrimitive
   · rw [← TauCeti.LFunctions.divisor_dirichletData_entireCompletion_of_ne_one χ hχ hne s,
       TauCeti.LFunctions.zero_lt_divisor_dirichletData_entireCompletion_iff χ hχ]
 
-/-- Every point of positive divisor of `χ.completedLFunction` for a primitive Dirichlet character
-`χ` lies in the open critical strip `0 < Re s < 1`. -/
-theorem IsPrimitive.re_mem_Ioo_of_zero_lt_divisor_completedLFunction (hχ : χ.IsPrimitive) {s : ℂ}
-    (hs : 0 < MeromorphicOn.divisor χ.completedLFunction Set.univ s) :
-    s.re ∈ Set.Ioo 0 1 :=
-  (hχ.zero_lt_divisor_completedLFunction_iff.mp hs).2
-
 end DirichletCharacter
