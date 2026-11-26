@@ -146,7 +146,7 @@ theorem isMulCrossedHom_crossedProjection :
 conjugation. -/
 theorem isMulCocycle₁_crossedProjection [IsMulCommutative N] :
     IsMulCocycle₁ h.crossedProjection :=
-  h.isMulCrossedHom_crossedProjection.map_mul
+  isMulCocycle₁_iff_isMulCrossedHom.mpr h.isMulCrossedHom_crossedProjection
 
 omit [N.Normal] in
 /-- Exactly the elements of the complement have trivial crossed projection. -/
@@ -211,66 +211,6 @@ theorem eq_conj_smul_iff_crossedProjection_eq_mul_inv {D' : Subgroup G} (h' : N.
       hD, h.crossedProjection_conj_coe_smul_eq]
 end IsComplement'
 
-/-! ### Global complements and normalized multiplicative crossed homomorphisms -/
-
-/-- A normalized multiplicative crossed homomorphism `G → N` has complementary `1`-locus, without
-any commutativity assumption on `N`. -/
-theorem isComplement'_oneLocus {c : G → N} (hc : TauCeti.IsMulCrossedHom c)
-    (hn : ∀ n : N, c n = n) : N.IsComplement' hc.oneLocus := by
-  apply isComplement'_of_disjoint_and_mul_eq_univ
-  · rw [disjoint_iff_inf_le]
-    intro g hg
-    have hz : c g = 1 := hc.mem_oneLocus.mp hg.2
-    rw [hn ⟨g, hg.1⟩] at hz
-    exact congrArg Subtype.val hz
-  · apply Set.eq_univ_iff_forall.mpr
-    intro g
-    let n : N := c g
-    refine ⟨n, n.property, (n : G)⁻¹ * g, hc.mem_oneLocus.mpr ?_, by simp⟩
-    rw [← coe_inv, hc.map_mul, hn, coe_inv, conjugationAction_inv_coe_smul_self, mul_inv_cancel]
-
-/-- Recovering the crossed projection from the `1`-locus returns the original normalized
-multiplicative crossed homomorphism. -/
-theorem crossedProjection_oneLocus {c : G → N} (hc : TauCeti.IsMulCrossedHom c)
-    (hn : ∀ n : N, c n = n) (g : G) :
-    (isComplement'_oneLocus hc hn).crossedProjection g = c g := by
-  obtain ⟨⟨n, d⟩, rfl⟩ := (isComplement'_oneLocus hc hn).surjective g
-  rw [IsComplement'.crossedProjection_mul, hc.map_mul, hc.mem_oneLocus.mp d.property,
-    MulDistribMulAction.smul_one, one_mul, hn]
-
-variable (N) in
-/-- Complements of a (not necessarily abelian) normal subgroup `N` correspond bijectively to
-normalized multiplicative crossed homomorphisms `G → N`. -/
-noncomputable def mulCrossedHomEquiv :
-    {D : Subgroup G // N.IsComplement' D} ≃
-      {c : G → N // TauCeti.IsMulCrossedHom c ∧ ∀ n : N, c n = n} where
-  toFun D := ⟨D.property.crossedProjection,
-    D.property.isMulCrossedHom_crossedProjection, D.property.crossedProjection_coe⟩
-  invFun c := ⟨c.property.1.oneLocus, isComplement'_oneLocus c.property.1 c.property.2⟩
-  left_inv D := Subtype.ext D.property.oneLocus_crossedProjection
-  right_inv c := Subtype.ext (funext (crossedProjection_oneLocus c.property.1 c.property.2))
-
-/-- The normalized multiplicative crossed homomorphism attached to a complement is its crossed
-projection. -/
-@[simp]
-theorem mulCrossedHomEquiv_apply (D : {D : Subgroup G // N.IsComplement' D}) (g : G) :
-    (N.mulCrossedHomEquiv D).val g = D.property.crossedProjection g := (rfl)
-
-/-- The complement attached to a normalized multiplicative crossed homomorphism is its `1`-locus. -/
-@[simp]
-theorem mulCrossedHomEquiv_symm_apply
-    (c : {c : G → N // TauCeti.IsMulCrossedHom c ∧ ∀ n : N, c n = n}) :
-    (N.mulCrossedHomEquiv.symm c).val = c.property.1.oneLocus := (rfl)
-
-/-- A normal subgroup `N` has a complement in `G` if and only if it admits a multiplicative crossed
-homomorphism `G → N` for conjugation that restricts to the identity on `N`. -/
-theorem exists_isComplement'_iff_isMulCrossedHom :
-    (∃ D : Subgroup G, N.IsComplement' D) ↔
-      ∃ c : G → N, TauCeti.IsMulCrossedHom c ∧ ∀ n : N, c n = n :=
-  ⟨fun ⟨_, hD⟩ => ⟨hD.crossedProjection, hD.isMulCrossedHom_crossedProjection,
-    hD.crossedProjection_coe⟩,
-    fun ⟨_, hc, hn⟩ => ⟨hc.oneLocus, isComplement'_oneLocus hc hn⟩⟩
-
 /-! ### Local complements and normalized crossed homomorphisms on an intermediate subgroup -/
 
 namespace IsLocalComplement
@@ -309,7 +249,7 @@ theorem isMulCrossedHom_leftProjection : TauCeti.IsMulCrossedHom h.leftProjectio
 /-- The left projection of a local complement `K` of an abelian normal subgroup `N` in `H`
 satisfies the `1`-cocycle identity for the conjugation action of `H` on `N`. -/
 theorem isMulCocycle₁_leftProjection [IsMulCommutative N] : IsMulCocycle₁ h.leftProjection :=
-  h.isMulCrossedHom_leftProjection.map_mul
+  isMulCocycle₁_iff_isMulCrossedHom.mpr h.isMulCrossedHom_leftProjection
 
 /-- The `1`-locus of the left projection of a local complement, viewed in `G`, is that local
 complement. -/
@@ -409,6 +349,61 @@ theorem smul_apply_equivSMul_symm_inclusion {c : H → N}
   rw [hx, hn, smul_inv_smul]
 
 end LocalDictionary
+
+/-! ### Global complements and normalized multiplicative crossed homomorphisms -/
+
+/-- A normalized multiplicative crossed homomorphism `G → N` has complementary `1`-locus, without
+any commutativity assumption on `N`. -/
+theorem isComplement'_oneLocus {c : G → N} (hc : TauCeti.IsMulCrossedHom c)
+    (hn : ∀ n : N, c n = n) : N.IsComplement' hc.oneLocus := by
+  rw [← isLocalComplement_top_iff, ← map_subgroupOf_eq_of_le (le_top : hc.oneLocus ≤ ⊤),
+    ← hc.oneLocus_comp_subtype]
+  exact isLocalComplement_map_oneLocus le_top (hc.comp_subtype ⊤) hn
+
+/-- Recovering the crossed projection from the `1`-locus returns the original normalized
+multiplicative crossed homomorphism. -/
+theorem crossedProjection_oneLocus {c : G → N} (hc : TauCeti.IsMulCrossedHom c)
+    (hn : ∀ n : N, c n = n) (g : G) :
+    (isComplement'_oneLocus hc hn).crossedProjection g = c g := by
+  have hl := isLocalComplement_map_oneLocus (le_top : N ≤ ⊤) (hc.comp_subtype ⊤) hn
+  have hle : (hc.comp_subtype ⊤).oneLocus.map (⊤ : Subgroup G).subtype ≤ hc.oneLocus := by
+    rw [hc.oneLocus_comp_subtype, map_subgroupOf_eq_of_le le_top]
+  exact (hl.leftProjection_eq_crossedProjection (isComplement'_oneLocus hc hn) hle
+    ⟨g, mem_top g⟩).symm.trans (leftProjection_map_oneLocus le_top (hc.comp_subtype ⊤) hn
+      ⟨g, mem_top g⟩)
+
+variable (N) in
+/-- Complements of a (not necessarily abelian) normal subgroup `N` correspond bijectively to
+normalized multiplicative crossed homomorphisms `G → N`. -/
+noncomputable def mulCrossedHomEquiv :
+    {D : Subgroup G // N.IsComplement' D} ≃
+      {c : G → N // TauCeti.IsMulCrossedHom c ∧ ∀ n : N, c n = n} where
+  toFun D := ⟨D.property.crossedProjection,
+    D.property.isMulCrossedHom_crossedProjection, D.property.crossedProjection_coe⟩
+  invFun c := ⟨c.property.1.oneLocus, isComplement'_oneLocus c.property.1 c.property.2⟩
+  left_inv D := Subtype.ext D.property.oneLocus_crossedProjection
+  right_inv c := Subtype.ext (funext (crossedProjection_oneLocus c.property.1 c.property.2))
+
+/-- The normalized multiplicative crossed homomorphism attached to a complement is its crossed
+projection. -/
+@[simp]
+theorem mulCrossedHomEquiv_apply (D : {D : Subgroup G // N.IsComplement' D}) (g : G) :
+    (N.mulCrossedHomEquiv D).val g = D.property.crossedProjection g := (rfl)
+
+/-- The complement attached to a normalized multiplicative crossed homomorphism is its `1`-locus. -/
+@[simp]
+theorem mulCrossedHomEquiv_symm_apply
+    (c : {c : G → N // TauCeti.IsMulCrossedHom c ∧ ∀ n : N, c n = n}) :
+    (N.mulCrossedHomEquiv.symm c).val = c.property.1.oneLocus := (rfl)
+
+/-- A normal subgroup `N` has a complement in `G` if and only if it admits a multiplicative crossed
+homomorphism `G → N` for conjugation that restricts to the identity on `N`. -/
+theorem exists_isComplement'_iff_isMulCrossedHom :
+    (∃ D : Subgroup G, N.IsComplement' D) ↔
+      ∃ c : G → N, TauCeti.IsMulCrossedHom c ∧ ∀ n : N, c n = n :=
+  ⟨fun ⟨_, hD⟩ => ⟨hD.crossedProjection, hD.isMulCrossedHom_crossedProjection,
+    hD.crossedProjection_coe⟩,
+    fun ⟨_, hc, hn⟩ => ⟨hc.oneLocus, isComplement'_oneLocus hc hn⟩⟩
 
 /-! ### Abelian normal subgroups: additive cocycles -/
 

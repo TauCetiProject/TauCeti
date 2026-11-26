@@ -31,9 +31,10 @@ representation:
   are closed under addition, and `1`-coboundaries are `1`-cocycles, for a distributive action.
 * `groupCohomology.zeroLocus`: the zero locus `{g | f g = 0}` is a subgroup of `G`, for any group
   action (not necessarily distributive) admitting the cocycle. As a set it is `f ⁻¹' {0}`
-  (`groupCohomology.coe_zeroLocus`), and on `Additive M` it agrees with `oneLocus`
-  (`groupCohomology.zeroLocus_eq_oneLocus`). `GroupCohomology/Cocycle/Topology.lean` shows it is
-  closed when `f` is continuous into a `T1` space, and deduces that such an `f` vanishing on a
+  (`groupCohomology.coe_zeroLocus`), and for distributive actions it agrees with `oneLocus` via
+  `Additive.toMul` (`groupCohomology.zeroLocus_eq_oneLocus`) and `Multiplicative.ofAdd`
+  (`groupCohomology.zeroLocus_eq_oneLocus_ofAdd`). `GroupCohomology/Cocycle/Topology.lean` shows it
+  is closed when `f` is continuous into a `T1` space, and deduces that such an `f` vanishing on a
   topological generating set vanishes everywhere.
 * `groupCohomology.IsCocycle₁.conj`: for a `G`-module `M`, a `1`-cocycle `c` on a subgroup `H`
   conjugates to the `1`-cocycle `x ↦ g • c (g⁻¹ * x * g)` on `g H g⁻¹`, and its zero locus is
@@ -106,6 +107,14 @@ theorem IsCocycle₁.isMulCrossedHom_toMul {G M : Type*} [Monoid G] [CommGroup M
   TauCeti.isMulCrossedHom_iff.mpr fun g h => by
     simpa only [toMul_add, Additive.toMul_smul] using congrArg Additive.toMul (hf g h)
 
+/-- An additive `1`-cocycle, read multiplicatively in `Multiplicative M` via
+`Multiplicative.ofAdd`, is a multiplicative crossed homomorphism. -/
+theorem IsCocycle₁.isMulCrossedHom_ofAdd {G M : Type*} [Monoid G] [AddCommGroup M]
+    [DistribMulAction G M] {f : G → M} (hf : IsCocycle₁ f) :
+    TauCeti.IsMulCrossedHom (fun g => Multiplicative.ofAdd (f g)) :=
+  TauCeti.isMulCrossedHom_iff.mpr fun g h => by
+    simpa only [ofAdd_add, Multiplicative.ofAdd_smul] using congrArg Multiplicative.ofAdd (hf g h)
+
 /-- The sum of two `1`-cocycles is a `1`-cocycle. -/
 theorem IsCocycle₁.add {G M : Type*} [Mul G] [AddCommGroup M] [DistribSMul G M] {f f' : G → M}
     (hf : IsCocycle₁ f) (hf' : IsCocycle₁ f') : IsCocycle₁ (f + f') := fun g h => by
@@ -119,6 +128,8 @@ theorem IsCoboundary₁.isCocycle₁ {G M : Type*} [Monoid G] [AddCommGroup M]
   intro g h
   rw [← hx, ← hx, ← hx, smul_sub, mul_smul]
   abel
+
+section ZeroLocus
 
 variable {G M : Type*} [Group G] [AddCommGroup M] [MulAction G M]
 
@@ -145,12 +156,21 @@ theorem mem_zeroLocus {f : G → M} (hf : IsCocycle₁ f) {g : G} : g ∈ zeroLo
 theorem coe_zeroLocus {f : G → M} (hf : IsCocycle₁ f) : (zeroLocus hf : Set G) = f ⁻¹' {0} :=
   (rfl)
 
-omit [AddCommGroup M] [MulAction G M] in
+end ZeroLocus
+
 /-- On `Additive N`, the zero locus of an additive `1`-cocycle agrees with the `1`-locus of its
 multiplicative form. -/
-theorem zeroLocus_eq_oneLocus {N : Type*} [CommGroup N] [MulDistribMulAction G N]
+theorem zeroLocus_eq_oneLocus {G N : Type*} [Group G] [CommGroup N] [MulDistribMulAction G N]
     {f : G → Additive N} (hf : IsCocycle₁ f) :
     zeroLocus hf = hf.isMulCrossedHom_toMul.oneLocus := by
+  ext g
+  simp
+
+/-- For a distributive action, the zero locus of an additive `1`-cocycle agrees with the `1`-locus
+of its multiplicative form in `Multiplicative M`. -/
+theorem zeroLocus_eq_oneLocus_ofAdd {G M : Type*} [Group G] [AddCommGroup M] [DistribMulAction G M]
+    {f : G → M} (hf : IsCocycle₁ f) :
+    zeroLocus hf = hf.isMulCrossedHom_ofAdd.oneLocus := by
   ext g
   simp
 
@@ -164,13 +184,9 @@ variable {G M : Type*} [Group G] [AddCommGroup M] [DistribMulAction G M] {H : Su
 namely `x ↦ g • c (g⁻¹ * x * g)`; the subgroups act on `M` by restriction. -/
 theorem IsCocycle₁.conj {c : H → M} (hc : IsCocycle₁ c) (g : G) :
     IsCocycle₁ fun x : ↥(MulAut.conj g • H) =>
-      g • c ((Subgroup.equivSMul (MulAut.conj g) H).symm x) := by
-  intro x y
-  dsimp only
-  rw [map_mul, hc, smul_add, Subgroup.smul_def, Subgroup.smul_def, smul_smul, smul_smul,
-    Subgroup.equivSMul_symm_apply_coe (MulAut.conj g) H x]
-  simp only [MulAut.smul_def, MulAut.conj_inv_apply]
-  group
+      g • c ((Subgroup.equivSMul (MulAut.conj g) H).symm x) := fun x y => by
+  simpa only [toAdd_mul, Multiplicative.toAdd_smul, toAdd_ofAdd] using
+    congrArg Multiplicative.toAdd ((hc.isMulCrossedHom_ofAdd.conj g).map_mul x y)
 
 /-- The zero locus of the conjugate `x ↦ g • c (g⁻¹ * x * g)` of a `1`-cocycle on `H`, viewed
 in `G`, is the conjugate by `g` of the zero locus of `c`. -/
@@ -178,15 +194,8 @@ in `G`, is the conjugate by `g` of the zero locus of `c`. -/
 theorem map_subtype_zeroLocus_conj {c : H → M} (hc : IsCocycle₁ c) (g : G) :
     (zeroLocus (hc.conj g)).map (MulAut.conj g • H).subtype =
       MulAut.conj g • (zeroLocus hc).map H.subtype := by
-  ext x
-  simp only [Subgroup.mem_map, mem_zeroLocus, smul_eq_zero_iff_eq,
-    Subgroup.mem_pointwise_smul_iff_inv_smul_mem, Subgroup.coe_subtype]
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact ⟨_, hy, Subgroup.equivSMul_symm_apply_coe (MulAut.conj g) H y⟩
-  · rintro ⟨z, hz, hzx⟩
-    refine ⟨Subgroup.equivSMul _ H z, by simpa using hz, ?_⟩
-    rw [Subgroup.equivSMul_apply_coe, hzx, smul_inv_smul]
+  rw [zeroLocus_eq_oneLocus_ofAdd, zeroLocus_eq_oneLocus_ofAdd]
+  exact hc.isMulCrossedHom_ofAdd.map_subtype_oneLocus_conj g
 
 end Conj
 
