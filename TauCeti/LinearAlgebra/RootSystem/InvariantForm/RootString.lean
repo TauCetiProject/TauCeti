@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.RootSystem.Chain
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Reduced
 
+import Mathlib.Tactic.Module
+
 /-!
 # Invariant forms along root strings
 
@@ -27,6 +29,13 @@ no finiteness or spanning assumption.
   sum is a root pair to `-1`.
 * `RootPairing.pairing_eq_one_of_root_eq_add`: a summand pairs to `1` with the root sum.
 * `RootPairing.root_add_notMem_of_root_eq_add`: a root sum cannot be extended to another root.
+* `RootPairing.abs_pairing_le_two_of_length_eq_one_or_two`,
+  `RootPairing.two_nsmul_add_notMem_range_root_of_length_eq`,
+  `RootPairing.two_nsmul_long_add_short_notMem_range_root`, and
+  `RootPairing.length_eq_one_and_eq_two_of_two_nsmul_add_mem_range_root`: Cartan bounds and
+  excluded or forced lengths along double steps for a `{1, 2}`-valued symmetrizing length function.
+* `RootPairing.root_add_mem_range_root_of_root_add_nsmul_mem`: along a positive root string through
+  non-opposite roots, if `β + n • α` is a root for `1 ≤ n`, then `β + α` is a root.
 * `RootPairing.chainBotCoeff_comm_of_root_add_mem`: `chainBotCoeff` is symmetric when the sum of
   two roots is a root.
 * `RootPairing.chainTopCoeff_eq_one_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two`: the reverse
@@ -326,6 +335,66 @@ theorem chainBotCoeff_eq_zero_of_add_of_length_eq
   norm_num at hδlen
   nlinarith [hβpos]
 
+/-- In a finite integral root pairing with a symmetrizing length function valued in `{1, 2}`,
+every Cartan pairing has absolute value at most `2`. -/
+theorem abs_pairing_le_two_of_length_eq_one_or_two [Finite I]
+    (length : I → ℤ)
+    (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
+    (hlen : ∀ α, length α = 1 ∨ length α = 2) (α β : I) :
+    |P.pairing α β| ≤ 2 := by
+  have : Module.IsReflexive ℤ M := .of_isPerfPair P.toLinearMap
+  have hpi (i j : I) : P.pairingIn ℤ i j = P.pairing i j := by
+    simpa using P.algebraMap_pairingIn ℤ i j
+  have hw := P.coxeterWeightIn_le_four ℤ α β
+  rw [coxeterWeightIn, hpi, hpi] at hw
+  have hs := hsym α β
+  rw [abs_le]
+  rcases hlen α with hα | hα <;> rcases hlen β with hβ | hβ <;> rw [hα, hβ] at hs <;>
+    constructor <;> nlinarith
+
+/-- In a finite integral root pairing with a symmetrizing length function valued in `{1, 2}`,
+`2 • α + β` is not a root whenever `α` and `β` are non-opposite roots of equal length. -/
+theorem two_nsmul_add_notMem_range_root_of_length_eq [Finite I]
+    (length : I → ℤ)
+    (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
+    (hlen : ∀ α, length α = 1 ∨ length α = 2) {α β : I}
+    (hαβ : length α = length β) (h0 : P.root α + P.root β ≠ 0) :
+    2 • P.root α + P.root β ∉ range P.root := fun ⟨γ, hγ⟩ => by
+  have hpos : 0 < length α := by rcases hlen α with _ | _ <;> omega
+  refine P.not_root_eq_add_nsmul_of_length_eq_of_two_le length hsym α β γ 2
+    hpos hαβ ?_ (fun hneg => h0 (by rw [hneg, add_neg_cancel])) (by omega)
+    (by rw [hγ]; module)
+  rcases hlen α with _ | _ <;> rcases hlen γ with _ | _ <;> omega
+
+/-- In a finite integral root pairing with a symmetrizing length function valued in `{1, 2}`,
+twice a length-two root plus a length-one root is never a root. -/
+theorem two_nsmul_long_add_short_notMem_range_root [Finite I]
+    (length : I → ℤ)
+    (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
+    (hlen : ∀ α, length α = 1 ∨ length α = 2) {α β : I}
+    (hα : length α = 2) (hβ : length β = 1) :
+    2 • P.root α + P.root β ∉ range P.root := fun ⟨ρ, hρ⟩ =>
+  absurd (P.n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_long
+    length hsym α β ρ 2 (P.abs_pairing_le_two_of_length_eq_one_or_two length hsym hlen α β)
+    hα hβ (hlen ρ) (by omega) (by rw [hρ]; module)).1 (by decide)
+
+/-- In a finite integral root pairing with a symmetrizing length function valued in `{1, 2}`,
+if `2 • α + β` is a root for non-opposite roots `α` and `β`, then `α` has length `1` and `β`
+has length `2`. -/
+theorem length_eq_one_and_eq_two_of_two_nsmul_add_mem_range_root [Finite I]
+    (length : I → ℤ)
+    (hsym : ∀ α β, length α * P.pairing β α = length β * P.pairing α β)
+    (hlen : ∀ α, length α = 1 ∨ length α = 2) {α β : I}
+    (h0 : P.root α + P.root β ≠ 0) (hmem : 2 • P.root α + P.root β ∈ range P.root) :
+    length α = 1 ∧ length β = 2 := by
+  rcases hlen α with hα | hα <;> rcases hlen β with hβ | hβ
+  · exact (P.two_nsmul_add_notMem_range_root_of_length_eq length hsym hlen (hα.trans hβ.symm)
+      h0 hmem).elim
+  · exact ⟨hα, hβ⟩
+  · exact (P.two_nsmul_long_add_short_notMem_range_root length hsym hlen hα hβ hmem).elim
+  · exact (P.two_nsmul_add_notMem_range_root_of_length_eq length hsym hlen (hα.trans hβ.symm)
+      h0 hmem).elim
+
 end
 
 section
@@ -349,6 +418,24 @@ section
 variable {I R M N : Type*} [Finite I] [CommRing R] [CharZero R] [IsDomain R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing I R M N} [P.IsCrystallographic] [P.IsReduced]
+
+/-- Along a positive root string through non-opposite roots in a reduced crystallographic root
+pairing, if `β + n • α` is a root for `1 ≤ n`, then `β + α` is also a root. -/
+theorem root_add_mem_range_root_of_root_add_nsmul_mem {α β : I} {n : ℕ} (hn : 1 ≤ n)
+    (h0 : P.root α + P.root β ≠ 0) (hmem : P.root β + n • P.root α ∈ range P.root) :
+    P.root β + P.root α ∈ range P.root := by
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  have : HasUniqueDiv M := .of_isTorsionFree R M
+  have hne : α ≠ β := fun heq => by
+    subst heq
+    have : (n + 1).AtLeastTwo := ⟨by omega⟩
+    exact P.nsmul_notMem_range_root (n := n + 1) (i := α)
+      (by simpa only [add_smul, one_smul, add_comm] using hmem)
+  have hlin := IsReduced.linearIndependent P hne (fun hneg => h0 (by rw [hneg, neg_add_cancel]))
+  have htop : n ≤ P.chainTopCoeff α β :=
+    (P.root_add_nsmul_mem_range_iff_le_chainTopCoeff hlin).mp hmem
+  simpa only [one_smul] using
+    (P.root_add_nsmul_mem_range_iff_le_chainTopCoeff (n := 1) hlin).mpr (le_trans hn htop)
 
 /-- The lower endpoint of the root string through two roots is symmetric when their sum is a
 root. -/

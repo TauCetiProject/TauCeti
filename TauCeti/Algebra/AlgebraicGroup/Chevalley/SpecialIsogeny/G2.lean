@@ -19,6 +19,11 @@ with `g2SpecialIsogenyRootSubgroup` on the positive and negative simple root sub
 it on all twelve root subgroups, and any endomorphism `D.points A →* D.points A` agreeing with it
 on the positive and negative simple root subgroups squares to `D.frobenius 3 1 A` on
 `D.elementarySubgroup A`.
+
+## References
+
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 10, Lemma 53 and Theorem 28.
+* R. W. Carter, *Simple Groups of Lie Type*, §§12.3–12.4.
 -/
 
 public section
@@ -147,8 +152,6 @@ variable {ht : G2.Valid}
 local notation "ΦG2" => G2.simplyConnectedRootDatum ht
 local notation "NG2" => G2.structureConstant ht
 
-private theorem sc_eq (i j : Fin 12) : NG2 i j = g2SC i j := structureConstant_G2 ht i j
-
 private theorem g2_sum_excluded_iff (α β : Fin G2.numRoots) :
     ((ΦG2).root α + (ΦG2).root β ∉ Set.range (ΦG2).root ∧ (ΦG2).root α + (ΦG2).root β ≠ 0) ↔
       (g2Root α + g2Root β ∉ Set.range g2Root ∧ g2Root α + g2Root β ≠ 0) :=
@@ -205,8 +208,8 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_long_sum {α β γ : F
   · rw [hfa, hfb, hfg, D.commutatorElement_rootSubgroup_of_g2_short_pair hfa hfb hfg
       ((g2_root_add_iff _ _ _).mpr hadd') ((g2_root_add_iff _ _ l).mpr hl)
       ((g2_root_add_iff _ _ m).mpr hm) A]
-    simp only [Int.toNat_one, pow_one, h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one,
-      structureConstant_G2, sc_eq]; congr 2
+    simp only [Int.toNat_one, pow_one, h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one]
+    congr 2; rw [structureConstant_G2 ht (fI α) (fI β), structureConstant_G2]
     have hc := (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr hdvd).symm
     push_cast at hc ⊢; linear_combination u * v * hc
 
@@ -232,7 +235,7 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_pair {i j k l m 
     g2_short_pair_partner i j k hi hj hk ((g2_root_add_iff i j k).mp hij)
   simp only [h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one, xG2_eq, hfi, hfj, hfk]
   rw [D.commutatorElement_rootSubgroup_G2_of_long_sum hfk ((g2_root_add_iff _ _ _).mpr hadd') A]
-  congr 2; simp only [structureConstant_G2, sc_eq]
+  congr 2; rw [structureConstant_G2 ht (fI i) (fI j), structureConstant_G2]
   have hc := (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr hdvd).symm
   push_cast at hc ⊢; linear_combination u ^ 3 * v ^ 3 * hc
 
@@ -258,8 +261,9 @@ theorem commutatorElement_g2SpecialIsogenyRootSubgroup_of_short_long
   rw [D.commutatorElement_rootSubgroup_of_g2_long_short (r.mpr r₁) (r.mpr r₂) (r.mpr r₃)
       (r.mpr r₄) A, mul_assoc (_ * _),
     (((mc ceg _ _).mul_left (mc czg _ _)).mul_right ((mc ced _ _).mul_left (mc czd _ _))).eq,
-    ← mul_assoc]
-  simp only [structureConstant_G2, sc_eq]
+    ← mul_assoc, structureConstant_G2 ht (fI β) (fI α), structureConstant_G2 ht (fI β) (fI ε),
+    structureConstant_G2 ht (fI β) (fI ζ), structureConstant_G2 ht (fI ζ) (fI ε)]
+  simp only [structureConstant_G2]
   have eq3 {a b : ℤ} (d : (3 : ℤ) ∣ a - b) : (a : A) = b :=
     (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr d).symm
   have e₁ := eq3 d₁; have e₂ := eq3 d₂; have e₃ := eq3 d₃; have e₄ := eq3 d₄
@@ -323,13 +327,15 @@ private theorem g2_words_of_halfTuple {H : Type*} [Group H]
   have hsl' (t w : A) : ⁅x a (ofAdd t), x b (ofAdd w)⁆ =
       x g (ofAdd ((s : A) * t * w)) * x d (ofAdd (t ^ 2 * w)) *
         x e (ofAdd ((s : A) * t ^ 3 * w)) * x z (ofAdd (2 * t ^ 3 * w ^ 2)) := by
-    rw [hsl t w]; simp only [sc_eq]; rw [hc4, hc3, hc2, hc1]
+    rw [hsl t w, structureConstant_G2 ht a b, structureConstant_G2 ht a g,
+      structureConstant_G2 ht a d, structureConstant_G2 ht d g, hc4, hc3, hc2, hc1]
     refine congrArg₂ _ (congrArg₂ _ (congrArg₂ _ ?_ ?_) ?_) ?_ <;> congr 2 <;> push_cast <;> ring
   obtain ⟨cgd, cge, cgz, cde, cdz, cez, _⟩ :=
     g2_short_long_factors_comm (a, b, g, d, e, z) (mem_g2ShortLongTuples hγ hδ hε hζ)
   have hadd (r : Fin 12) (w₁ w₂ : A) :
       x r (ofAdd w₁) * x r (ofAdd w₂) = x r (ofAdd (w₁ + w₂)) := by rw [← map_mul, ofAdd_add]
-  refine ⟨?_, ?_, ?_, by rw [hls, sc_eq, hcls, one_mul]; congr 2; linear_combination -u * hsA⟩
+  refine ⟨?_, ?_, ?_, by
+    rw [hls, structureConstant_G2 ht b e, hcls, one_mul]; congr 2; linear_combination -u * hsA⟩
   · rw [hsl' 1 (-u), hsl' (-1) (-u),
       (((hcomm cgz _ _).symm.mul_right (hcomm cdz _ _).symm).mul_right
         (hcomm cez _ _).symm).mul_mul_mul_comm _ _,
@@ -339,7 +345,8 @@ private theorem g2_words_of_halfTuple {H : Type*} [Group H]
       (by linear_combination -u * h3 : (1 : A) ^ 2 * -u + (-1 : A) ^ 2 * -u = u),
       (by ring : (s : A) * 1 ^ 3 * -u + (s : A) * (-1 : A) ^ 3 * -u = 0),
       (by ring : 2 * (1 : A) ^ 3 * (-u) ^ 2 + 2 * (-1 : A) ^ 3 * (-u) ^ 2 = 0)]; simp
-  · rw [hsp]; simp only [h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one, sc_eq]; congr 2
+  · rw [hsp]; simp only [h3, zero_mul, mul_zero, ofAdd_zero, map_one, mul_one]
+    congr 2; rw [structureConstant_G2 ht d a']
     have hcs := (CharP.intCast_eq_intCast A 3).mpr (Int.modEq_iff_dvd.mpr hcsp).symm
     push_cast at hcs; linear_combination -(s : A) * u * hcs - u * hsA
   · have q (w : A) : (x g (ofAdd ((s : A) * w)) * x d (ofAdd w))⁻¹ *

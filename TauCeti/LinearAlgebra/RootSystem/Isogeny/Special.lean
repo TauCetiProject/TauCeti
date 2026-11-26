@@ -244,6 +244,25 @@ theorem b2SpecialIsogeny_indexEquiv_simpleIndex (ht : (B 2).Valid) (i : Fin (B 2
       (b2SpecialIsogenyIndexEquiv_typeBSimpleIndex i)).trans
       (simpleIndex_B 2 ht (lengthPermRankTwo i)).symm)
 
+/-- The exponent of `b2SpecialIsogeny` at an assembled simple-root index is `(B 2).rootLength`. -/
+theorem b2SpecialIsogeny_exponent_simpleIndex (ht : (B 2).Valid) (i : Fin (B 2).rank) :
+    b2SpecialIsogeny.exponent ((B 2).simpleIndex ht i) = (B 2).rootLength i :=
+  (congrArg b2SpecialIsogeny.exponent (simpleIndex_B 2 ht i)).trans
+    ((b2SpecialIsogeny_exponent _).trans (b2SpecialIsogenyExponent_typeBSimpleIndex i))
+
+/-- The exponents of `b2SpecialIsogeny` symmetrize the Cartan pairing of `B₂`. -/
+theorem b2SpecialIsogeny_exponent_mul_pairing_comm (i j : Fin (2 * 2 ^ 2)) :
+    b2SpecialIsogeny.exponent i * (typeBSimplyConnectedRootDatum 2).pairing j i =
+      b2SpecialIsogeny.exponent j * (typeBSimplyConnectedRootDatum 2).pairing i j := by
+  simp only [b2SpecialIsogeny_exponent, ← RootPairing.root_coroot_eq_pairing,
+    toLinearMap_typeBSimplyConnectedRootDatum]
+  obtain ⟨a, rfl⟩ := b2Index_bijective.surjective i
+  obtain ⟨b, rfl⟩ := b2Index_bijective.surjective j
+  rw [b2SpecialIsogenyExponent_b2Index, b2SpecialIsogenyExponent_b2Index, root_b2Index,
+    root_b2Index, coroot_b2Index, coroot_b2Index]
+  revert a b
+  decide
+
 /-! ## `G₂` in characteristic three -/
 
 /-- The square of the transposed character-lattice special matrix of `G₂` is three times the
@@ -364,14 +383,26 @@ theorem g2SpecialIsogeny_exponent_eq_one_or_eq_three (i : Fin 12) :
     g2SpecialIsogeny.exponent i = 1 ∨ g2SpecialIsogeny.exponent i = 3 :=
   g2SpecialIsogeny_exponent i ▸ g2Length_eq_one_or_eq_three i
 
+private theorem castAdd_eq_castLE_g2 (i : Fin 2) :
+    (Fin.castAdd 10 i : Fin 12) = Fin.castLE (by omega) i :=
+  rfl
+
 /-- The `G₂` special isogeny permutes the assembled simple-root indices by `lengthPermRankTwo`. -/
 theorem g2SpecialIsogeny_indexEquiv_simpleIndex (ht : G2.Valid) (i : Fin G2.rank) :
     g2SpecialIsogeny.indexEquiv (G2.simpleIndex ht i) =
       G2.simpleIndex ht (lengthPermRankTwo i) :=
-  let hcast (j : Fin 2) : (Fin.castAdd 10 j : Fin 12) = Fin.castLE (by omega) j := rfl
-  (congrArg (⇑g2SpecialIsogeny.indexEquiv) ((simpleIndex_G2 ht i).trans (hcast i))).trans
+  (congrArg (⇑g2SpecialIsogeny.indexEquiv)
+      ((simpleIndex_G2 ht i).trans (castAdd_eq_castLE_g2 i))).trans
     (((g2SpecialIsogeny_indexEquiv_apply _).trans (g2SpecialIsogenyIndex_castLE i)).trans
-      ((hcast (lengthPermRankTwo i)).symm.trans (simpleIndex_G2 ht (lengthPermRankTwo i)).symm))
+      ((castAdd_eq_castLE_g2 (lengthPermRankTwo i)).symm.trans
+        (simpleIndex_G2 ht (lengthPermRankTwo i)).symm))
+
+/-- The exponent of `g2SpecialIsogeny` at an assembled simple-root index is `G2.rootLength`. -/
+theorem g2SpecialIsogeny_exponent_simpleIndex (ht : G2.Valid) (i : Fin G2.rank) :
+    g2SpecialIsogeny.exponent (G2.simpleIndex ht i) = G2.rootLength i :=
+  (congrArg g2SpecialIsogeny.exponent
+      ((simpleIndex_G2 ht i).trans (castAdd_eq_castLE_g2 i))).trans
+    ((g2SpecialIsogeny_exponent _).trans (g2Length_castLE i))
 
 /-! ## `F₄` in characteristic two -/
 
@@ -479,5 +510,17 @@ theorem f4SpecialIsogeny_indexEquiv_simpleIndex (ht : F4.Valid) (i : Fin F4.rank
   (congrArg (⇑f4SpecialIsogeny.indexEquiv) (simpleIndex_F4 ht i)).trans
     (((f4SpecialIsogeny_indexEquiv_apply _).trans (f4SpecialIsogenyIndex_castAdd i)).trans
       (simpleIndex_F4 ht (lengthPermF4 i)).symm)
+
+/-- The exponent of `f4SpecialIsogeny` at an assembled simple-root index is `F4.rootLength`. -/
+theorem f4SpecialIsogeny_exponent_simpleIndex (ht : F4.Valid) (i : Fin F4.rank) :
+    f4SpecialIsogeny.exponent (F4.simpleIndex ht i) = F4.rootLength i :=
+  (congrArg f4SpecialIsogeny.exponent (simpleIndex_F4 ht i)).trans
+    ((f4SpecialIsogeny_exponent _).trans (f4Length_castAdd i))
+
+/-- The exponents of `f4SpecialIsogeny` symmetrize the Cartan pairing of `F₄`. -/
+theorem f4SpecialIsogeny_exponent_mul_pairing_comm (i j : Fin 48) :
+    f4SpecialIsogeny.exponent i * f4SimplyConnectedRootDatum.pairing j i =
+      f4SpecialIsogeny.exponent j * f4SimplyConnectedRootDatum.pairing i j := by
+  simpa only [f4SpecialIsogeny_exponent] using f4Length_mul_pairing_comm i j
 
 end TauCeti.DynkinType

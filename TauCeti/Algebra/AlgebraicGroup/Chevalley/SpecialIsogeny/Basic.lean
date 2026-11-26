@@ -20,6 +20,11 @@ homomorphisms `α ↦ (u ↦ x_{indexEquiv α}(ε_α · u ^ exponent (indexEquiv
 exceptional isogenies (`b2SpecialIsogenyRootSubgroup`, `f4SpecialIsogenyRootSubgroup`, and
 `g2SpecialIsogenyRootSubgroup` with signs `g2SpecialIsogenySign`), and proves their formulas on
 signed simple roots, Steinberg Weyl words, and two-fold iteration (`D.frobenius p 1 A`).
+
+## References
+
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 10, Lemma 53 and Theorem 28.
+* R. W. Carter, *Simple Groups of Lie Type*, §§12.3–12.4.
 -/
 
 public section
@@ -153,8 +158,7 @@ private noncomputable def b2Pkg (ht : (B 2).Valid) : SpecialPkg (B 2) ht 2 where
     (ofEq_indexEquiv (eqB2 ht) b2SpecialIsogeny)).trans
       (b2SpecialIsogeny_indexEquiv_simpleIndex ht i)
   exp_simple i := (ofEq_exponent (eqB2 ht) b2SpecialIsogeny _).trans
-    ((congrArg b2SpecialIsogeny.exponent (simpleIndex_B 2 ht i)).trans
-      ((b2SpecialIsogeny_exponent _).trans (b2SpecialIsogenyExponent_typeBSimpleIndex i)))
+    (b2SpecialIsogeny_exponent_simpleIndex ht i)
 private theorem b2_ie (ht : (B 2).Valid) (α : Fin (B 2).numRoots) :
     (b2Pkg ht).iso.indexEquiv α = b2SpecialIsogeny.indexEquiv α :=
   congrArg (· α) (ofEq_indexEquiv (eqB2 ht) b2SpecialIsogeny)
@@ -231,8 +235,7 @@ private noncomputable def f4Pkg (ht : F4.Valid) : SpecialPkg F4 ht 2 where
     (ofEq_indexEquiv (eqF4 ht) f4SpecialIsogeny)).trans
       (f4SpecialIsogeny_indexEquiv_simpleIndex ht i)
   exp_simple i := (ofEq_exponent (eqF4 ht) f4SpecialIsogeny _).trans
-    ((congrArg f4SpecialIsogeny.exponent (simpleIndex_F4 ht i)).trans
-      ((f4SpecialIsogeny_exponent _).trans (f4Length_castAdd i)))
+    (f4SpecialIsogeny_exponent_simpleIndex ht i)
 private theorem f4_ie (ht : F4.Valid) (α : Fin F4.numRoots) :
     (f4Pkg ht).iso.indexEquiv α = f4SpecialIsogeny.indexEquiv α :=
   congrArg (· α) (ofEq_indexEquiv (eqF4 ht) f4SpecialIsogeny)
@@ -315,8 +318,7 @@ private noncomputable def g2Pkg (ht : G2.Valid) : SpecialPkg G2 ht 3 where
     (ofEq_indexEquiv (eqG2 ht) g2SpecialIsogeny)).trans
       (g2SpecialIsogeny_indexEquiv_simpleIndex ht i)
   exp_simple i := (ofEq_exponent (eqG2 ht) g2SpecialIsogeny _).trans
-    ((congrArg g2SpecialIsogeny.exponent (simpleIndex_G2 ht i)).trans
-      ((g2SpecialIsogeny_exponent _).trans (g2Length_castLE i)))
+    (g2SpecialIsogeny_exponent_simpleIndex ht i)
   ε_simple i := (congrArg g2SpecialIsogenySign (simpleIndex_G2 ht i)).trans
     (g2SpecialIsogenySign_castLE i)
 private theorem g2_ie (ht : G2.Valid) (α : Fin G2.numRoots) :

@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.LinearAlgebra.RootSystem.Isogeny.Basic
 
+import Mathlib.Tactic.Module
+
 /-!
 # Weyl-reflection compatibility of root-pairing isogenies
 
@@ -37,16 +39,16 @@ variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
 /-- **The weight map of a root-pairing isogeny intertwines Weyl reflections.** -/
 theorem weightMap_reflection (f : RootPairingIsogeny P Q) (i : ι) (x : M) :
     f.weightMap (P.reflection i x) = Q.reflection (f.indexEquiv i) (f.weightMap x) := by
-  rw [P.reflection_apply, Q.reflection_apply, map_sub, map_smul, f.root_weightMap, smul_smul,
-    RootPairing.coroot', RootPairing.coroot', LinearMap.flip_apply, LinearMap.flip_apply,
-    f.weight_coweight_transpose, f.coroot_coweightMap, map_smul, smul_eq_mul, mul_comm]
+  simp only [RootPairing.reflection_apply, LinearMap.flip_apply, map_sub, map_smul,
+    f.weight_coweight_transpose, f.root_weightMap, f.coroot_coweightMap]
+  module
 
 /-- **The coweight map of a root-pairing isogeny intertwines Weyl coreflections.** -/
 theorem coweightMap_coreflection (f : RootPairingIsogeny P Q) (i : ι) (y : N₂) :
     f.coweightMap (Q.coreflection (f.indexEquiv i) y) = P.coreflection i (f.coweightMap y) := by
-  rw [Q.coreflection_apply, P.coreflection_apply, map_sub, map_smul, f.coroot_coweightMap,
-    smul_smul, RootPairing.root', RootPairing.root', ← f.weight_coweight_transpose,
-    f.root_weightMap, map_smul, LinearMap.smul_apply, smul_eq_mul, mul_comm]
+  simp only [RootPairing.coreflection_apply, map_sub, map_smul, LinearMap.smul_apply,
+    ← f.weight_coweight_transpose, f.root_weightMap, f.coroot_coweightMap]
+  module
 
 end ReflectionMap
 

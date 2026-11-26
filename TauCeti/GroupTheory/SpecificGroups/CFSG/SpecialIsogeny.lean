@@ -351,36 +351,6 @@ is then short, and the defining characteristic when `i` is short. -/
 
 /-! ## The selected isogeny on the simple roots -/
 
--- The private lemmas below are the branch content of the uniform statements that follow. Each is
--- stated on one concrete pinned datum, where no index type depends on a Dynkin type variable, and
--- the uniform statement then closes each branch by rewriting to it. They are proved by chaining
--- equations in term mode rather than by `rw`, because rewriting a simple-root index under the
--- isogeny would abstract a term whose type is `Fin t.numRoots` on one side and the family
--- module's own literal count on the other.
-
--- The `G₂` root enumeration names its simple indices by `Fin.castLE`, while the uniform
--- `simpleIndex` dispatcher names them by `Fin.castAdd`. `Fin.castAdd` is `Fin.castLE` at a
--- particular inequality proof, so the two are the same index and only the syntax differs.
-private theorem castAdd_eq_castLE_g2 (i : Fin 2) :
-    (Fin.castAdd 10 i : Fin 12) = Fin.castLE (by omega) i :=
-  rfl
-
-private theorem b2SpecialIsogeny_exponent_simpleIndex (ht : (B 2).Valid) (i : Fin (B 2).rank) :
-    b2SpecialIsogeny.exponent ((B 2).simpleIndex ht i) = (B 2).rootLength i :=
-  (congrArg b2SpecialIsogeny.exponent (simpleIndex_B 2 ht i)).trans
-    ((b2SpecialIsogeny_exponent _).trans (b2SpecialIsogenyExponent_typeBSimpleIndex i))
-
-private theorem g2SpecialIsogeny_exponent_simpleIndex (ht : G2.Valid) (i : Fin G2.rank) :
-    g2SpecialIsogeny.exponent (G2.simpleIndex ht i) = G2.rootLength i :=
-  (congrArg g2SpecialIsogeny.exponent
-      ((simpleIndex_G2 ht i).trans (castAdd_eq_castLE_g2 i))).trans
-    ((g2SpecialIsogeny_exponent _).trans (g2Length_castLE i))
-
-private theorem f4SpecialIsogeny_exponent_simpleIndex (ht : F4.Valid) (i : Fin F4.rank) :
-    f4SpecialIsogeny.exponent (F4.simpleIndex ht i) = F4.rootLength i :=
-  (congrArg f4SpecialIsogeny.exponent (simpleIndex_F4 ht i)).trans
-    ((f4SpecialIsogeny_exponent _).trans (f4Length_castAdd i))
-
 /-- **The selected isogeny permutes the simple-root indices by the pinned length permutation.**
 This is the check that the node convention of the upstream isogeny is the one
 `TauCeti.SuzukiReeIndex.lengthPerm` fixes. -/
