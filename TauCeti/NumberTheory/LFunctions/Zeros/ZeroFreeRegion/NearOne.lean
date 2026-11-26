@@ -6,17 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.LogDeriv
-public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.Analysis.Complex.BorelCaratheodory
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.DerivBound
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Entire
 import TauCeti.NumberTheory.LFunctions.Zeros.ZeroFreeRegion.Dirichlet
 import TauCeti.NumberTheory.LFunctions.Zeros.ZeroFreeRegion.RiemannZeta
-import TauCeti.NumberTheory.LSeries.Moebius
 import TauCeti.NumberTheory.LSeries.Quadratic.Siegel
-import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
-import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 
 /-!
 # Uniform bounds for logarithmic derivatives near one
@@ -48,7 +46,8 @@ private theorem eventually_real_ne_zero_of_level_le_pow (B : ℕ) :
   obtain ⟨C, hC, hSiegel⟩ := Multiquadratic.quadratic_LFunction_siegel hε
   have hlog := (isLittleO_log_rpow_rpow_atTop 2 (s := 3 / 4) (by norm_num)).const_mul_left
     (405 * (B : ℝ) ^ 2)
-  filter_upwards [eventually_gt_atTop (1 : ℝ), hlog.bound (show 0 < C / 2 by positivity)]
+  have hC₂ : 0 < C / 2 := by positivity
+  filter_upwards [eventually_gt_atTop (1 : ℝ), hlog.bound hC₂]
     with y hy hlog q _ χ hq hquad hχ β hβ hz
   have hy₀ : 0 < y := zero_lt_one.trans hy
   have hq₃ : (3 : ℝ) ≤ q := by exact_mod_cast χ.three_le_level_of_ne_one hχ
@@ -106,8 +105,8 @@ private theorem eventually_LFunction_ne_zero_of_level_le_pow (B : ℕ) :
       _ ≤ log (y ^ (B + 2)) := by
         apply log_le_log (by positivity)
         rw [pow_add]
-        exact mul_le_mul hq (by linarith [show 4 ≤ y ^ 2 by nlinarith]) (by positivity)
-          (by positivity)
+        have hy₂ : 4 ≤ y ^ 2 := by nlinarith
+        exact mul_le_mul hq (by linarith) (by positivity) (by positivity)
       _ = _ := by rw [log_pow, Nat.cast_add]; norm_num
   have hsmall : 5 / y ≤ min c d / log ((q : ℝ) * (|s.im| + 3)) := by
     rw [div_le_div_iff₀ hy₀ hL₀]
@@ -135,130 +134,49 @@ private theorem eventually_LFunction_ne_zero_of_level_le_pow (B : ℕ) :
     have heq : (s.re : ℂ) = s := Complex.ext (by simp) (by simpa using him₀.symm)
     exact hreal q χ hq (MulChar.isQuadratic_iff_sq_eq_one.2 hsq) hχ s.re (by linarith) (heq ▸ hz)
 
--- This estimate applies to the same pole-removed function on the Borel–Carathéodory disc.
-open Classical in
-private theorem norm_poleRemoved_le {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q)
-    {s : ℂ} (hs : ‖s - 1‖ ≤ 1 / 2) :
-    ‖(if χ = 1 then LFunctionTrivChar₁ q else χ.LFunction) s‖ ≤ 8 * q := by
-  classical
-  have hre := (abs_re_le_norm (s - 1)).trans hs
-  rw [sub_re, one_re] at hre
-  have hsre : 1 / 2 ≤ s.re := by linarith [(abs_le.mp hre).1]
-  have hsabs : ‖s‖ ≤ 3 / 2 := by
-    calc
-      _ = ‖s - 1 + 1‖ := by rw [sub_add_cancel]
-      _ ≤ _ := by linarith [norm_add_le (s - 1) (1 : ℂ), norm_one (α := ℂ)]
-  have hquot : ‖s‖ / s.re ≤ 3 := by
-    rw [div_le_iff₀ (by linarith : 0 < s.re)]
-    linarith
-  by_cases hχ : χ = 1
-  · simp only [ite_eq_left hχ]
-    rcases eq_or_ne s 1 with rfl | h₁
-    · calc
-        ‖LFunctionTrivChar₁ q 1‖ ≤ 1 := by
-          -- At the pole the definition is the updated value, not `(s - 1) * L(s)`.
-          have hvalue : LFunctionTrivChar₁ q 1 = ∏ p ∈ q.primeFactors, (1 - (p : ℂ)⁻¹) :=
-            Function.update_self _ _ _
-          rw [hvalue, norm_prod]
-          refine Finset.prod_le_one₀ (fun p _ ↦ norm_nonneg _) fun p hp ↦ ?_
-          have hp₁ : (1 : ℝ) ≤ p := by
-            exact_mod_cast (Nat.prime_of_mem_primeFactors hp).one_lt.le
-          rw [← ofReal_natCast, ← ofReal_inv, ← ofReal_one, ← ofReal_sub,
-            norm_real, Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.mpr (inv_le_one_of_one_le₀ hp₁))]
-          linarith [inv_nonneg.mpr (show (0 : ℝ) ≤ p by positivity)]
-        _ ≤ 8 * (q : ℝ) := by
-          have : (1 : ℝ) ≤ q := by exact_mod_cast NeZero.one_le
-          linarith
-    · rw [LFunctionTrivChar₁_apply_of_ne_one q h₁, norm_mul]
-      have ht : 0 < ‖s - 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr h₁)
-      have hb := (1 : DirichletCharacter ℂ q).norm_LFunction_le (by linarith : 0 < s.re) (.inl h₁)
-      calc
-        _ ≤ ‖s - 1‖ * ((q : ℝ) * (‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re)) :=
-          mul_le_mul_of_nonneg_left hb ht.le
-        _ ≤ ‖s - 1‖ * ((q : ℝ) * (‖s - 1‖⁻¹ + 4)) := by
-          exact mul_le_mul_of_nonneg_left
-            (mul_le_mul_of_nonneg_left (by linarith only [hquot]) (Nat.cast_nonneg q)) ht.le
-        _ = (q : ℝ) * (1 + 4 * ‖s - 1‖) := by field_simp
-        _ ≤ 8 * q := by rw [mul_comm 8]; gcongr; linarith
-  · simp only [ite_eq_right hχ]
-    exact (χ.norm_LFunction_le_level_mul_norm_div_re hχ (by linarith : 0 < s.re)).trans (by
-      rw [mul_div_assoc, mul_comm 8]; gcongr; linarith)
-
-open Classical in
-private theorem inv_bound_le_norm_poleRemoved {q : ℕ} [NeZero q] (χ : DirichletCharacter ℂ q)
-    {y : ℝ} (hy : 1 ≤ y) :
-    1 / (2 * y ^ 2) ≤ ‖(if χ = 1 then LFunctionTrivChar₁ q else χ.LFunction) (1 + (y⁻¹ : ℝ))‖ := by
-  classical
-  let z : ℂ := 1 + (y⁻¹ : ℝ)
-  have hy₀ : 0 < y := lt_of_lt_of_le zero_lt_one hy
-  have hinv : 0 < y⁻¹ := inv_pos.mpr hy₀
-  have hz : 1 < z.re := by simpa [z] using hinv
-  have hz₁ : z ≠ 1 := by rintro h; simp [h] at hz
-  have heq : z.re - 1 = y⁻¹ := by simp [z]
-  have hζ := norm_riemannZeta_lt_one_add_one_div_sub_one (s := (z.re : ℂ)) (by simpa using hz)
-  simp only [ofReal_re, heq, one_div, inv_inv] at hζ
-  have hL : 1 / (2 * y) ≤ ‖χ.LFunction z‖ := by
-    refine le_trans ?_ (χ.norm_riemannZeta_two_mul_re_div_le_norm_LFunction hz)
-    rw [norm_div]
-    have hzeta : 0 < ‖riemannZeta z.re‖ :=
-      norm_pos_iff.mpr (riemannZeta_ne_zero_of_one_lt_re (by simpa using hz))
-    have hnum := (one_lt_riemannZeta_re (by linarith : 1 < 2 * z.re)).le.trans
-      (re_le_norm (riemannZeta ((2 * z.re : ℝ) : ℂ)))
-    push_cast at hnum
-    exact div_le_div₀ (norm_nonneg _) hnum hzeta (hζ.le.trans (by linarith))
-  by_cases hχ : χ = 1
-  · rw [ite_eq_left hχ, LFunctionTrivChar₁_apply_of_ne_one q hz₁, norm_mul, LFunctionTrivChar,
-      ← hχ]
-    have ht : ‖z - 1‖ = y⁻¹ := by simp [z, abs_of_nonneg hy₀.le]
-    rw [ht]
-    calc
-      _ = y⁻¹ * (1 / (2 * y)) := by field_simp
-      _ ≤ _ := mul_le_mul_of_nonneg_left hL hinv.le
-  · rw [ite_eq_right hχ]
-    exact (by gcongr; nlinarith : 1 / (2 * y ^ 2) ≤ 1 / (2 * y)).trans hL
-
-open Classical in
-private theorem eventually_poleRemoved_ne_zero_of_level_le_pow (B : ℕ) :
+private theorem eventually_entireLFunction_ne_zero_of_level_le_pow (B : ℕ) :
     ∀ᶠ y : ℝ in atTop, ∀ (q : ℕ) [NeZero q] (χ : DirichletCharacter ℂ q), (q : ℝ) ≤ y ^ B →
-      ∀ s : ℂ, ‖s - 1‖ ≤ 5 / y → (if χ = 1 then LFunctionTrivChar₁ q else χ.LFunction) s ≠ 0 := by
+      ∀ s : ℂ, ‖s - 1‖ ≤ 5 / y → χ.entireLFunction s ≠ 0 := by
   filter_upwards [eventually_LFunction_ne_zero_of_level_le_pow B] with y hzero q _ χ hq s hs
-  by_cases hχ : χ = 1
-  · rw [ite_eq_left hχ]
-    rcases eq_or_ne s 1 with rfl | hs₁
-    · exact LFunctionTrivChar₁_apply_one_ne_zero _
-    · rw [LFunctionTrivChar₁_apply_of_ne_one q hs₁, LFunctionTrivChar, ← hχ]
-      exact mul_ne_zero (sub_ne_zero.2 hs₁) (hzero q χ hq s hs hs₁)
-  · rw [ite_eq_right hχ]
-    rcases eq_or_ne s 1 with rfl | hs₁
-    · exact χ.LFunction_ne_zero_of_one_le_re (.inl hχ) (by simp)
-    · exact hzero q χ hq s hs hs₁
+  rcases eq_or_ne s 1 with rfl | hs₁
+  · exact χ.entireLFunction_ne_zero_of_one_le_re (by simp)
+  · by_cases hχ : χ = 1
+    · subst χ
+      rw [entireLFunction_one_apply hs₁]
+      exact mul_ne_zero (sub_ne_zero.2 hs₁) (hzero q 1 hq s hs hs₁)
+    · rw [entireLFunction_of_ne_one hχ]
+      exact hzero q χ hq s hs hs₁
 
 -- Compare the norm on the larger disc to the norm at a reference point to the right of one.
-open Classical in
-private theorem norm_poleRemoved_le_mul_reference {B q : ℕ} [NeZero q]
+private theorem norm_entireLFunction_le_mul_reference {B q : ℕ} [NeZero q]
     (χ : DirichletCharacter ℂ q) {y : ℝ} (hy : 1 ≤ y) (hq : (q : ℝ) ≤ y ^ B)
     {s : ℂ} (hs : ‖s - 1‖ ≤ 1 / 2) :
-    let F := if χ = 1 then LFunctionTrivChar₁ q else χ.LFunction
-    ‖F s‖ ≤ (16 * y ^ (B + 2)) * ‖F (1 + (y⁻¹ : ℝ))‖ := by
+    ‖χ.entireLFunction s‖ ≤ (16 * y ^ (B + 2)) * ‖χ.entireLFunction (1 + (y⁻¹ : ℝ))‖ := by
+  let z : ℂ := 1 + (y⁻¹ : ℝ)
+  have hy₀ : 0 < y := zero_lt_one.trans_le hy
+  have hz : 1 < z.re := by simpa [z] using inv_pos.mpr hy₀
+  have hdist : ‖z - 1‖ = y⁻¹ := by simp [z, abs_of_nonneg hy₀.le]
+  have hre : z.re - 1 = y⁻¹ := by simp [z]
+  have hlower : y⁻¹ / (1 + y) ≤ ‖χ.entireLFunction z‖ := by
+    simpa only [hdist, hre, inv_inv, min_eq_right (inv_le_one_of_one_le₀ hy)] using
+      χ.min_one_norm_sub_one_div_le_norm_entireLFunction hz
   calc
-    _ ≤ 8 * (q : ℝ) := norm_poleRemoved_le χ hs
+    _ ≤ 8 * (q : ℝ) := χ.norm_entireLFunction_le_eight_mul_level hs
     _ ≤ 8 * y ^ B := by gcongr
-    _ = (16 * y ^ (B + 2)) * (1 / (2 * y ^ 2)) := by rw [pow_add]; field_simp; ring
-    _ ≤ _ := mul_le_mul_of_nonneg_left (inv_bound_le_norm_poleRemoved χ hy) (by positivity)
+    _ = (16 * y ^ (B + 2)) * (y⁻¹ / (2 * y)) := by rw [pow_add]; field_simp; ring
+    _ ≤ _ := mul_le_mul_of_nonneg_left
+      ((div_le_div_of_nonneg_left (inv_nonneg.mpr hy₀.le) (by positivity) (by linarith)).trans
+        hlower) (by positivity)
 
-open Classical in
 private theorem eventually_norm_logDeriv_near_one_sq (B : ℕ) :
     ∀ᶠ y : ℝ in atTop, ∀ (q : ℕ) [NeZero q] (χ : DirichletCharacter ℂ q), (q : ℝ) ≤ y ^ B →
       ∀ s : ℂ, ‖s - 1‖ ≤ 1 / y ^ 2 →
-        let F := if χ = 1 then LFunctionTrivChar₁ q else χ.LFunction
-        F s ≠ 0 ∧ ‖logDeriv F s‖ ≤ y ^ 2 := by
-  classical
+        χ.entireLFunction s ≠ 0 ∧ ‖logDeriv χ.entireLFunction s‖ ≤ y ^ 2 := by
   have hlog : (fun y ↦ 6 * (B + 3 : ℝ) * log y) =o[atTop] (fun y : ℝ ↦ y) := by
     simpa only [rpow_one] using (isLittleO_log_rpow_atTop one_pos).const_mul_left (6 * (B + 3 : ℝ))
-  filter_upwards [eventually_gt_atTop (16 : ℝ), eventually_poleRemoved_ne_zero_of_level_le_pow B,
-    hlog.eventuallyLE] with y hy hzero hlog q _ χ hq s hs
-  dsimp only
-  set F := if χ = 1 then LFunctionTrivChar₁ q else χ.LFunction
+  filter_upwards [eventually_gt_atTop (16 : ℝ),
+    eventually_entireLFunction_ne_zero_of_level_le_pow B, hlog.eventuallyLE]
+    with y hy hzero hlog q _ χ hq s hs
   let r := y⁻¹
   let z : ℂ := 1 + (r : ℝ)
   have hy₀ : 0 < y := by linarith
@@ -269,13 +187,11 @@ private theorem eventually_norm_logDeriv_near_one_sq (B : ℕ) :
     ball_subset_ball' (by rw [hz]; linarith)
   have hdist {w : ℂ} (hw : w ∈ ball z (4 * r)) : ‖w - 1‖ ≤ 5 / y :=
     (mem_ball_iff_norm.1 (hsub hw)).le.trans_eq (by simp [r, div_eq_mul_inv])
-  have hF : Differentiable ℂ F := by
-    rcases eq_or_ne χ 1 with hχ | hχ
-    · simpa [F, hχ] using differentiable_LFunctionTrivChar₁ q
-    · simpa [F, hχ] using differentiable_LFunction hχ
-  have hF₀ (w : ℂ) (hw : w ∈ ball z (4 * r)) : F w ≠ 0 := hzero q χ hq w (hdist hw)
-  have hM (w : ℂ) (hw : w ∈ ball z (4 * r)) : ‖F w‖ ≤ (16 * y ^ (B + 2)) * ‖F z‖ :=
-    norm_poleRemoved_le_mul_reference χ hy₁ hq
+  have hF₀ (w : ℂ) (hw : w ∈ ball z (4 * r)) : χ.entireLFunction w ≠ 0 :=
+    hzero q χ hq w (hdist hw)
+  have hM (w : ℂ) (hw : w ∈ ball z (4 * r)) :
+      ‖χ.entireLFunction w‖ ≤ (16 * y ^ (B + 2)) * ‖χ.entireLFunction z‖ :=
+    norm_entireLFunction_le_mul_reference χ hy₁ hq
       ((hdist hw).trans ((div_le_iff₀ hy₀).2 (by linarith)))
   have hs' : ‖s - z‖ ≤ 2 * r := by
     have hsmall : 1 / y ^ 2 ≤ r := by dsimp [r]; rw [← one_div]; gcongr; nlinarith
@@ -289,7 +205,8 @@ private theorem eventually_norm_logDeriv_near_one_sq (B : ℕ) :
     linarith [log_le_log (by norm_num : (0 : ℝ) < 16) hy.le]
   calc
     _ ≤ 4 * (4 * r + ‖s - z‖) / (4 * r - ‖s - z‖) ^ 2 * log (16 * y ^ (B + 2)) :=
-      norm_logDeriv_le_of_forall_mem_ball_norm_le_mul hF.differentiableOn hF₀ hM hs''
+      norm_logDeriv_le_of_forall_mem_ball_norm_le_mul
+        χ.differentiable_entireLFunction.differentiableOn hF₀ hM hs''
     _ ≤ 4 * (6 * r) / (2 * r) ^ 2 * ((B + 3 : ℝ) * log y) := by
       have hlog₀ : 0 ≤ log (16 * y ^ (B + 2)) := log_nonneg (by
         have := one_le_pow₀ hy₁ (n := B + 2)
@@ -301,15 +218,13 @@ private theorem eventually_norm_logDeriv_near_one_sq (B : ℕ) :
       exact mul_le_mul_of_nonneg_left
         ((le_abs_self _).trans (by simpa only [Real.norm_eq_abs, abs_of_pos hy₀] using hlog)) hy₀.le
 
-open Classical in
 /-- Uniform near-one estimate for Dirichlet characters of level at most `X^A`. For sufficiently
 large `X`, the L-function, with the pole of the principal character removed, is nonvanishing on
 `‖s - 1‖ ≤ 1/X` and its logarithmic derivative there has norm at most `X`. -/
 theorem eventually_norm_logDeriv_poleRemoved_LFunction_le_near_one (A : ℕ) :
     ∀ᶠ X : ℝ in atTop, ∀ (q : ℕ) [NeZero q] (χ : DirichletCharacter ℂ q), (q : ℝ) ≤ X ^ A →
       ∀ s : ℂ, ‖s - 1‖ ≤ 1 / X →
-        let F := if χ = 1 then LFunctionTrivChar₁ q else χ.LFunction
-        F s ≠ 0 ∧ ‖logDeriv F s‖ ≤ X := by
+        χ.entireLFunction s ≠ 0 ∧ ‖logDeriv χ.entireLFunction s‖ ≤ X := by
   filter_upwards [eventually_ge_atTop (0 : ℝ),
     tendsto_sqrt_atTop.eventually (eventually_norm_logDeriv_near_one_sq (2 * A))]
     with X hX h q _ χ hq s hs

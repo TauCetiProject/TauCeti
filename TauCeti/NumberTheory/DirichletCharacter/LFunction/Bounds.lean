@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LSeries.SumCoeff
 public import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.NumberTheory.LSeries.Moebius
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
 import TauCeti.NumberTheory.PrimeFactors.Bounds
@@ -35,7 +36,8 @@ every character `χ` of level `N`, principal or nonprincipal.
 
 The bounds on `Re(s) > 0` above are for the native analytic continuation, not the Dirichlet
 series (which need not converge absolutely in this half-plane). No zero-free hypothesis is
-required.
+required. With the principal pole removed, `‖E_χ(s)‖ ≤ 8 N` on `‖s - 1‖ ≤ 1/2`, and the
+Möbius series gives a level-independent lower bound on `Re s > 1`.
 
 On `Re(s) ≥ 1 + 1 / A`, where the Dirichlet series converges absolutely, comparison with
 `ζ(Re s) < 1 + 1 / (Re s - 1)` gives `‖L(s, χ)‖ ≤ 1 + A`
@@ -181,6 +183,77 @@ theorem norm_LFunction_le {s : ℂ} (hs : 0 < s.re) (h1 : s ≠ 1 ∨ χ ≠ 1) 
       _ = (N : ℝ) * (‖s‖ / s.re) := mul_div_assoc _ _ _
       _ ≤ (N : ℝ) * (‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re) :=
           mul_le_mul_of_nonneg_left (le_add_of_nonneg_left (by positivity)) (Nat.cast_nonneg N)
+
+/-- On the closed disc `‖s - 1‖ ≤ 1/2`, the pole-removed L-function satisfies
+`‖E_χ(s)‖ ≤ 8 N`, including at `s = 1` for the principal character. -/
+theorem norm_entireLFunction_le_eight_mul_level {s : ℂ} (hs : ‖s - 1‖ ≤ 1 / 2) :
+    ‖χ.entireLFunction s‖ ≤ 8 * N := by
+  have hre : |s.re - 1| ≤ 1 / 2 := by simpa using (abs_re_le_norm (s - 1)).trans hs
+  have hsre : 1 / 2 ≤ s.re := by linarith [(abs_le.mp hre).1]
+  have hspos : 0 < s.re := by linarith
+  have hsabs : ‖s‖ ≤ 3 / 2 := by
+    linarith [norm_le_norm_sub_add s 1, norm_one (α := ℂ)]
+  have hquot : ‖s‖ / s.re ≤ 3 := (div_le_iff₀ hspos).2 (by linarith)
+  by_cases hχ : χ = 1
+  · subst χ
+    rw [entireLFunction_one]
+    rcases eq_or_ne s 1 with rfl | h₁
+    · calc
+        ‖LFunctionTrivChar₁ N 1‖ ≤ 1 := by
+          -- At the pole the definition is the updated value, not `(s - 1) * L(s)`.
+          have hvalue : LFunctionTrivChar₁ N 1 = ∏ p ∈ N.primeFactors, (1 - (p : ℂ)⁻¹) :=
+            Function.update_self _ _ _
+          rw [hvalue, norm_prod]
+          refine Finset.prod_le_one₀ (fun p _ ↦ norm_nonneg _) fun p hp ↦ ?_
+          have hp₁ : (1 : ℝ) ≤ p := by
+            exact_mod_cast (Nat.prime_of_mem_primeFactors hp).one_lt.le
+          have hnonneg : 0 ≤ 1 - (p : ℝ)⁻¹ := sub_nonneg.mpr (inv_le_one_of_one_le₀ hp₁)
+          have hle : ‖(1 - (p : ℝ)⁻¹ : ℝ)‖ ≤ 1 := by
+            rw [Real.norm_of_nonneg hnonneg]
+            exact sub_le_self _ (by positivity)
+          simpa using (norm_real (1 - (p : ℝ)⁻¹)).trans_le hle
+        _ ≤ 8 * (N : ℝ) := by
+          have hN : (1 : ℝ) ≤ N := Nat.one_le_cast.mpr NeZero.one_le
+          linarith
+    · rw [LFunctionTrivChar₁_apply_of_ne_one N h₁, norm_mul]
+      have ht : 0 < ‖s - 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr h₁)
+      have hb := (1 : DirichletCharacter ℂ N).norm_LFunction_le hspos (.inl h₁)
+      calc
+        _ ≤ ‖s - 1‖ * ((N : ℝ) * (‖s - 1‖⁻¹ + 1 + ‖s‖ / s.re)) :=
+          mul_le_mul_of_nonneg_left hb ht.le
+        _ ≤ ‖s - 1‖ * ((N : ℝ) * (‖s - 1‖⁻¹ + 4)) := by
+          exact mul_le_mul_of_nonneg_left
+            (mul_le_mul_of_nonneg_left (by linarith only [hquot]) (Nat.cast_nonneg N)) ht.le
+        _ = (N : ℝ) * (1 + 4 * ‖s - 1‖) := by field_simp
+        _ ≤ 8 * N := by rw [mul_comm 8]; gcongr; linarith
+  · rw [entireLFunction_of_ne_one hχ]
+    exact (χ.norm_LFunction_le_level_mul_norm_div_re hχ hspos).trans (by
+      rw [mul_div_assoc, mul_comm 8]; gcongr; linarith)
+
+/-- On `Re s > 1`, the norm of the pole-removed L-function is bounded below by
+`min 1 ‖s - 1‖ / (1 + (Re s - 1)⁻¹)`, independently of the level. -/
+theorem min_one_norm_sub_one_div_le_norm_entireLFunction {s : ℂ} (hs : 1 < s.re) :
+    min 1 ‖s - 1‖ / (1 + (s.re - 1)⁻¹) ≤ ‖χ.entireLFunction s‖ := by
+  have hζ := TauCeti.norm_riemannZeta_lt_one_add_one_div_sub_one (s := (s.re : ℂ))
+    (by simpa using hs)
+  have hL : 1 / (1 + (s.re - 1)⁻¹) ≤ ‖χ.LFunction s‖ := by
+    refine le_trans ?_ (χ.norm_riemannZeta_two_mul_re_div_le_norm_LFunction hs)
+    rw [norm_div]
+    have hden : 0 < ‖riemannZeta s.re‖ :=
+      norm_pos_iff.mpr (riemannZeta_ne_zero_of_one_lt_re (by simpa using hs))
+    have hnum := (TauCeti.one_lt_riemannZeta_re (by linarith : 1 < 2 * s.re)).le.trans
+      (re_le_norm (riemannZeta ((2 * s.re : ℝ) : ℂ)))
+    push_cast at hnum
+    exact div_le_div₀ (norm_nonneg _) hnum hden (by simpa [one_div] using hζ.le)
+  rw [div_eq_mul_one_div]
+  have hnonneg : (0 : ℝ) ≤ 1 / (1 + (s.re - 1)⁻¹) := by positivity
+  by_cases hχ : χ = 1
+  · subst χ
+    have hs₁ : s ≠ 1 := ne_of_apply_ne re (by simpa using hs.ne')
+    rw [entireLFunction_one, LFunctionTrivChar₁_apply_of_ne_one N hs₁, norm_mul, LFunctionTrivChar]
+    exact mul_le_mul (min_le_right _ _) hL hnonneg (norm_nonneg _)
+  · rw [entireLFunction_of_ne_one hχ]
+    exact (mul_le_mul_of_nonneg_right (min_le_left _ _) hnonneg).trans (by simpa using hL)
 
 omit [NeZero N] in
 /-- If `Re s ≥ 1 + 1 / A` with `A > 0`, then the Dirichlet series of `χ` has
