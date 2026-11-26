@@ -61,9 +61,10 @@ private theorem hasMellin_even_hurwitz_sum {N : ℕ} [NeZero N] {χ : DirichletC
       simp
     filter_upwards [ae_restrict_mem measurableSet_Ioi, hne] with x hx hx1
     rcases lt_or_gt_of_ne hx1 with hl | hr
-    · simp only [P, hurwitzEven_f_modif_of_mem_Ioo _ ⟨hx, hl⟩, mul_sub,
+    · simp only [P, hurwitzEvenFEPair_f_modif_of_mem_Ioo _ ⟨hx, hl⟩, mul_sub,
         sum_sub_distrib, ← sum_mul, hsum, zero_mul, sub_zero]
-    · simp only [P, hurwitzEven_f_modif_of_one_lt _ hr, mul_sub, sum_sub_distrib, hconst, sub_zero]
+    · simp only [P, hurwitzEvenFEPair_f_modif_of_one_lt _ hr, mul_sub, sum_sub_distrib,
+        hconst, sub_zero]
   rw [hvalue] at h
   exact (TauCeti.hasMellin_congr_ae hae).mp h
 
