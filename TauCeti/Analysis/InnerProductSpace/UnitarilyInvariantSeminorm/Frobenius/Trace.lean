@@ -95,8 +95,9 @@ theorem re_trace_adjoint_comp_le (A B : E →ₗ[𝕜] F) :
   (RCLike.re_le_norm _).trans (norm_trace_adjoint_comp_le A B)
 
 /-- **Adjoint invariance of the Frobenius seminorm**: `‖A†‖_F = ‖A‖_F`, since `A` and `A†` have
-the same singular values. -/
-@[simp]
+the same singular values. Not `@[simp]`: `simp` already proves it from
+`frobenius_apply_eq_sqrt_sum_sq_singularValues` and `LinearMap.singularValues_adjoint`, so the
+`simpNF` linter rejects the attribute. -/
 theorem frobenius_adjoint (A : E →ₗ[𝕜] F) : frobenius 𝕜 F E A.adjoint = frobenius 𝕜 E F A := by
   simp only [frobenius_apply_eq_sqrt_sum_sq_singularValues, LinearMap.singularValues_adjoint]
 
