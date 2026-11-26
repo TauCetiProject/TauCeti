@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.DGAlgebra
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
+import TauCeti.Order.WellFounded.Basic
 
 /-!
 # Relative classes in the algebra of cubical chains
@@ -288,45 +289,19 @@ private theorem exists_forall_of_forall_exists_of_lt
       ∃ c ∈ cubicalChainGrading (N x y) k (deg x y), V s x y c) :
     ∃ s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k,
       (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧ ∀ x y, V s x y (s x y) := by
-  -- The degrees of the finitely many pairs are bounded.
-  obtain ⟨L, hL⟩ := (Set.finite_range fun p : P × Q ↦ deg p.1 p.2).bddBelow
-  obtain ⟨U, hU⟩ := (Set.finite_range fun p : P × Q ↦ deg p.1 p.2).bddAbove
-  -- Induction on `d`: the condition holds at the pairs of degree greater than `U - d`.
-  have key (d : ℕ) : ∃ s : ∀ x y, normalizedCubicalChainAlgebra (N x y) k,
-      (∀ x y, s x y ∈ cubicalChainGrading (N x y) k (deg x y)) ∧
-      ∀ x y, U - d < deg x y → V s x y (s x y) := by
-    induction d with
-    | zero =>
-      refine ⟨0, fun _ _ ↦ zero_mem _, fun x y hxy ↦ ?_⟩
-      have : deg x y ≤ U := hU ⟨(x, y), rfl⟩
-      omega
-    | succ d ih =>
-      obtain ⟨s, hs, hd⟩ := ih
-      -- At the pairs of degree `U - d`, choose chains satisfying the condition.
-      have hnew (x : P) (y : Q) (hxy : deg x y = U - d) :
-          ∃ c ∈ cubicalChainGrading (N x y) k (deg x y), V s x y c :=
-        hex s x y hs fun x' y' h ↦ hd x' y' (by omega)
-      classical
-      let s' : ∀ x y, normalizedCubicalChainAlgebra (N x y) k := fun x y ↦
-        if hxy : deg x y = U - d then (hnew x y hxy).choose else s x y
-      have hs'new (x : P) (y : Q) (hxy : deg x y = U - d) : s' x y = (hnew x y hxy).choose :=
-        dite_eq_left hxy
-      have hs's (x : P) (y : Q) (hxy : deg x y ≠ U - d) : s' x y = s x y := dite_eq_right hxy
-      have hs' (x : P) (y : Q) : s' x y ∈ cubicalChainGrading (N x y) k (deg x y) := by
-        by_cases hxy : deg x y = U - d
-        · exact hs'new x y hxy ▸ (hnew x y hxy).choose_spec.1
-        · exact hs's x y hxy ▸ hs x y
-      refine ⟨s', hs', fun x y hxy ↦ ?_⟩
-      -- The new chains only change the pairs of degree `U - d`, which do not enter the
-      -- conditions at the pairs of degree at least `U - d`.
-      refine hV s s' x y _ hs hs' (fun x' y' h ↦ (hs's x' y' (by omega)).symm) ?_
-      by_cases hxy' : deg x y = U - d
-      · rw [hs'new x y hxy']
-        exact (hnew x y hxy').choose_spec.2
-      · rw [hs's x y hxy']
-        exact hd x y (by omega)
-  obtain ⟨s, hs, h⟩ := key (U - L + 1).toNat
-  exact ⟨s, hs, fun x y ↦ h x y (by have : L ≤ deg x y := hL ⟨(x, y), rfl⟩; omega)⟩
+  -- Recursion along the relation `q` precedes `p` when `q` has the larger degree, which is
+  -- well-founded on the finite type of pairs; the chains are taken in the graded pieces.
+  let r : P × Q → P × Q → Prop := fun q p ↦ deg p.1 p.2 < deg q.1 q.2
+  have : IsTrans (P × Q) r := ⟨fun _ _ _ h₁ h₂ ↦ h₂.trans h₁⟩
+  have : Std.Irrefl r := ⟨fun _ ↦ lt_irrefl _⟩
+  obtain ⟨G, hG⟩ := (Finite.wellFounded_of_trans_of_irrefl r).exists_forall_of_forall_exists
+    (X := fun p ↦ cubicalChainGrading (N p.1 p.2) k (deg p.1 p.2))
+    (fun G p c ↦ V (fun x y ↦ G (x, y)) p.1 p.2 c)
+    (fun p _ G G' hGG' ↦ hV _ _ p.1 p.2 _ (fun x y ↦ (G (x, y)).property)
+      (fun x y ↦ (G' (x, y)).property) fun x' y' h ↦ congrArg Subtype.val (hGG' (x', y') h))
+    fun p G hG ↦ (hex _ p.1 p.2 (fun x y ↦ (G (x, y)).property) fun x' y' h ↦ hG (x', y') h).elim
+      fun c hc ↦ ⟨⟨c, hc.1⟩, hc.2⟩
+  exact ⟨fun x y ↦ G (x, y), fun x y ↦ (G (x, y)).property, fun x y ↦ hG (x, y)⟩
 
 /-- **Families of chains with prescribed boundaries representing prescribed classes.** Let
 `deg x y` be the cohomological degree of the chain of the pair `(x, y)`, so that it is a chain of
