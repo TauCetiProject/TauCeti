@@ -44,8 +44,6 @@ functors are additive, so `mod C` is a full subcategory of `ModCat C`.
 * `TauCeti.ModCat.linear`: the scoped instance `Linear R (D ⥤+ AddCommGrpCat)` for an `R`-linear
   preadditive category `D`; after `open scoped TauCeti.ModCat`, specializing `D` to an opposite
   category gives `Linear R (ModCat D)`.
-* `TauCeti.isFinitelyPresentedFunctor_le_additiveFunctor`: finitely presented functors are
-  additive.
 
 ## References
 
@@ -118,11 +116,6 @@ the scoped instance `ModCat.linear` to the source `Dᵒᵖ`. -/
 example (R : Type*) [Ring R] [Linear R D] : Linear R (ModCat.{w} D) := inferInstance
 
 end Linear
-
-/-- Finitely presented functors are additive, so `mod C` is contained in `Mod C`. -/
-theorem isFinitelyPresentedFunctor_le_additiveFunctor :
-    isFinitelyPresentedFunctor C ≤ additiveFunctor Cᵒᵖ AddCommGrpCat.{v} :=
-  fun _ hF ↦ hF.additive
 
 namespace ModCat
 
