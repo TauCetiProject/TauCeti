@@ -298,12 +298,7 @@ private theorem leftBilinEquiv_apply (Y : Module.End ℝ V) (v w : V) :
     ω.leftBilinEquiv Y v w = ω (Y v) w :=
   BilinForm.toDual_def ω.nondegenerate
 
-/-- A vector is determined by its pairings under `ω`. -/
-private theorem eq_of_forall_apply_eq (ω : SymplecticForm V) {x y : V}
-    (h : ∀ w, ω x w = ω y w) : x = y :=
-  (ω.toBilinForm.toDual ω.nondegenerate).injective <| LinearMap.ext fun w ↦ by
-    simpa [BilinForm.toDual_def] using h w
-
+omit [FiniteDimensional ℝ V] in
 /-- For a `J`-invariant `ω`, the variations `Y` of `J` are the endomorphisms with
 `ω (Y (J v)) w = ω (Y v) (J w)`. -/
 private theorem Invariant.mem_tangentSpace_iff (h : ω.Invariant J) {Y : Module.End ℝ V} :

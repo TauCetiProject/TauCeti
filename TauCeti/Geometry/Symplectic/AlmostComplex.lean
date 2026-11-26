@@ -765,6 +765,12 @@ lemma separatingRight (ω : SymplecticForm V) :
     ω.toBilinForm.SeparatingRight :=
   (LinearMap.IsRefl.nondegenerate_iff_separatingRight ω.isRefl).mp ω.nondegenerate
 
+/-- A vector is determined by its pairings under `ω`. -/
+theorem eq_of_forall_apply_eq (ω : SymplecticForm V) {x y : V} (h : ∀ w, ω x w = ω y w) :
+    x = y :=
+  LinearMap.ker_eq_bot.1 (LinearMap.separatingLeft_iff_ker_eq_bot.1 ω.separatingLeft)
+    (LinearMap.ext h)
+
 /-- Nondegeneracy supplies a **hyperbolic partner**: every nonzero vector `x` admits a vector `y`
 with `ω x y = 1`. -/
 lemma exists_apply_eq_one (ω : SymplecticForm V) {x : V} (hx : x ≠ 0) : ∃ y : V, ω x y = 1 := by
