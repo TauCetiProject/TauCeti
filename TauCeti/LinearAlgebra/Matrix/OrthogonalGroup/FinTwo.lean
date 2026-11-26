@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Basic.Complex.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
-public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.ComplexAd
+public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Unitary
 
 /-!
 # Orthogonal `2 × 2` matrices
@@ -46,6 +46,11 @@ variable {R : Type*} [CommRing R] {A : Matrix (Fin 2) (Fin 2) R}
 theorem sq_add_sq_of_mem_orthogonalGroup_fin_two (hA : A ∈ orthogonalGroup (Fin 2) R) :
     A 0 0 ^ 2 + A 1 0 ^ 2 = 1 := by
   simpa [dotProduct, Fin.sum_univ_two, sq] using col_dotProduct_col_of_mem_orthogonalGroup hA 0 0
+
+/-- The first column of a real orthogonal `2 × 2` matrix is a unit vector, as complex numbers. -/
+theorem ofReal_sq_add_ofReal_sq_of_mem_orthogonalGroup_fin_two {A : Matrix (Fin 2) (Fin 2) ℝ}
+    (hA : A ∈ orthogonalGroup (Fin 2) ℝ) : (A 0 0 : ℂ) ^ 2 + (A 1 0 : ℂ) ^ 2 = 1 := by
+  exact_mod_cast sq_add_sq_of_mem_orthogonalGroup_fin_two hA
 
 /-- The two columns of an orthogonal `2 × 2` matrix are orthogonal. -/
 theorem mul_add_mul_of_mem_orthogonalGroup_fin_two (hA : A ∈ orthogonalGroup (Fin 2) R) :
@@ -94,7 +99,7 @@ theorem orthogonalPhase_def (g : orthogonalGroup (Fin 2) ℝ) :
 /-- The complex matrix of a rotation `g ∈ O(2)`, `det g = 1`, is `!![a, -b; b, a]`. -/
 theorem orthogonalComplexMatrix_eq_of_det_eq_one {g : orthogonalGroup (Fin 2) ℝ}
     (hg : (g : Matrix (Fin 2) (Fin 2) ℝ).det = 1) :
-    orthogonalComplexMatrix g =
+    (orthogonalComplexMatrix g : Matrix (Fin 2) (Fin 2) ℂ) =
       !![((g : Matrix (Fin 2) (Fin 2) ℝ) 0 0 : ℂ), -((g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 : ℂ);
         ((g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 : ℂ), ((g : Matrix (Fin 2) (Fin 2) ℝ) 0 0 : ℂ)] := by
   have hA := eq_of_mem_orthogonalGroup_fin_two_of_det_eq_one g.property hg
@@ -115,9 +120,7 @@ theorem conj_orthogonalPhase (g : orthogonalGroup (Fin 2) ℝ) :
 /-- The phase has absolute value one: its product with its complex conjugate is `1`. -/
 theorem orthogonalPhase_mul_conj (g : orthogonalGroup (Fin 2) ℝ) :
     orthogonalPhase g * starRingEnd ℂ (orthogonalPhase g) = 1 := by
-  have h : ((g : Matrix (Fin 2) (Fin 2) ℝ) 0 0 : ℂ) ^ 2 +
-      ((g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 : ℂ) ^ 2 = 1 := by
-    exact_mod_cast sq_add_sq_of_mem_orthogonalGroup_fin_two g.property
+  have h := ofReal_sq_add_ofReal_sq_of_mem_orthogonalGroup_fin_two g.property
   rw [conj_orthogonalPhase, orthogonalPhase_def]
   linear_combination h - ((g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 : ℂ) ^ 2 * I_sq
 

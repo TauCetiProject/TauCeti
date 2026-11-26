@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Orthogonal.ComplexAd
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.FinTwo
 public import TauCeti.RepresentationTheory.GL2.CompactCartan
 
@@ -56,9 +57,7 @@ theorem orthogonalAd_eq_of_det_eq_one {g : orthogonalGroup (Fin 2) ℝ}
 theorem compactCoordH_orthogonalAd_of_det_eq_one {g : orthogonalGroup (Fin 2) ℝ}
     (hg : (g : Matrix (Fin 2) (Fin 2) ℝ).det = 1) (M : Matrix (Fin 2) (Fin 2) ℂ) :
     compactCoordH (orthogonalAd (Fin 2) g M) = compactCoordH M := by
-  have h₀ : ((g : Matrix (Fin 2) (Fin 2) ℝ) 0 0 : ℂ) ^ 2 +
-      ((g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 : ℂ) ^ 2 = 1 := by
-    exact_mod_cast sq_add_sq_of_mem_orthogonalGroup_fin_two g.property
+  have h₀ := ofReal_sq_add_ofReal_sq_of_mem_orthogonalGroup_fin_two g.property
   rw [orthogonalAd_eq_of_det_eq_one hg, eta_fin_two M]
   simp [compactCoordH_apply]
   grind
@@ -85,9 +84,7 @@ theorem compactCoordY_orthogonalAd_of_det_eq_one {g : orthogonalGroup (Fin 2) �
 theorem compactCoordOne_orthogonalAd_of_det_eq_one {g : orthogonalGroup (Fin 2) ℝ}
     (hg : (g : Matrix (Fin 2) (Fin 2) ℝ).det = 1) (M : Matrix (Fin 2) (Fin 2) ℂ) :
     compactCoordOne (orthogonalAd (Fin 2) g M) = compactCoordOne M := by
-  have h₀ : ((g : Matrix (Fin 2) (Fin 2) ℝ) 0 0 : ℂ) ^ 2 +
-      ((g : Matrix (Fin 2) (Fin 2) ℝ) 1 0 : ℂ) ^ 2 = 1 := by
-    exact_mod_cast sq_add_sq_of_mem_orthogonalGroup_fin_two g.property
+  have h₀ := ofReal_sq_add_ofReal_sq_of_mem_orthogonalGroup_fin_two g.property
   rw [orthogonalAd_eq_of_det_eq_one hg, eta_fin_two M]
   simp [compactCoordOne_apply]
   grind
@@ -96,8 +93,8 @@ theorem compactCoordOne_orthogonalAd_of_det_eq_one {g : orthogonalGroup (Fin 2) 
 `TauCeti.compactCartanReflection`. -/
 @[simp]
 theorem orthogonalComplexMatrix_orthogonalDiagonalReflection :
-    orthogonalComplexMatrix (orthogonalDiagonalReflection ℝ (1 : Fin 2)) =
-      compactCartanReflection := by
+    (orthogonalComplexMatrix (orthogonalDiagonalReflection ℝ (1 : Fin 2)) :
+      Matrix (Fin 2) (Fin 2) ℂ) = compactCartanReflection := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [compactCartanReflection_def]
 
