@@ -99,9 +99,7 @@ theorem integral_toSphere_newtonianKernel_sub_smul_of_lt_norm {x : EuclideanSpac
     harmonicOnNhd_newtonianKernel_sub n x y fun hyx : y = x ↦ by
       rw [hyx, mem_closedBall_zero_iff] at hy
       exact hy.not_gt hsx
-  have hneg : newtonianKernel n (-x) = newtonianKernel n x := by
-    rw [newtonianKernel_def, newtonianKernel_def, norm_neg]
-  simpa [newtonianKernel_sub_comm n _ x, hneg] using
+  simpa [newtonianKernel_sub_comm n _ x, newtonianKernel_eq_of_norm_eq n (norm_neg x)] using
     hu.integral_toSphere_eq (μ := μ) (x₀ := 0) hs
 
 /-- **Newton's theorem inside a spherical shell.** For `‖x‖ < s`, the Newtonian potential at `x`
@@ -131,23 +129,20 @@ theorem integral_toSphere_newtonianKernel_sub_smul_of_norm_lt {x : EuclideanSpac
       newtonianKernel n (x - s • (θ : _)) = newtonianKernel n ((0 + ‖x‖ • (θ : _)) - s • η) := by
     intro θ
     have hθ : ‖(θ : EuclideanSpace ℝ (Fin n))‖ = 1 := norm_eq_of_mem_sphere θ
-    have hnorm : ‖x - s • (θ : EuclideanSpace ℝ (Fin n))‖ =
-        ‖(0 + ‖x‖ • (θ : EuclideanSpace ℝ (Fin n))) - s • η‖ := by
-      rw [zero_add, ← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sub_sq_real,
-        norm_sub_sq_real]
-      conv_lhs => rw [hxη]
-      simp only [norm_smul, norm_norm, hη, hθ, real_inner_smul_left, real_inner_smul_right,
-        real_inner_comm η]
-    rw [newtonianKernel_def, newtonianKernel_def, hnorm]
+    refine newtonianKernel_eq_of_norm_eq n ?_
+    rw [zero_add, ← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sub_sq_real,
+      norm_sub_sq_real]
+    conv_lhs => rw [hxη]
+    simp only [norm_smul, norm_norm, hη, hθ, real_inner_smul_left, real_inner_smul_right,
+      real_inner_comm η]
   have hu : HarmonicOnNhd (fun y ↦ newtonianKernel n (y - s • η)) (closedBall 0 ‖x‖) :=
     fun y hy ↦ harmonicOnNhd_newtonianKernel_sub n (s • η) y fun hyη : y = s • η ↦ by
       rw [hyη, mem_closedBall_zero_iff, norm_smul, hη, mul_one, Real.norm_of_nonneg hs.le] at hy
       exact hy.not_gt hxs
   have hconst : ∀ θ : sphere (0 : EuclideanSpace ℝ (Fin n)) 1,
-      newtonianKernel n (s • (θ : _)) = newtonianKernel n (0 - s • η) := by
-    intro θ
-    rw [newtonianKernel_def, newtonianKernel_def, zero_sub, norm_neg, norm_smul, norm_smul, hη,
-      norm_eq_of_mem_sphere θ]
+      newtonianKernel n (s • (θ : _)) = newtonianKernel n (0 - s • η) := fun θ ↦
+    newtonianKernel_eq_of_norm_eq n <| by
+      rw [zero_sub, norm_neg, norm_smul, norm_smul, hη, norm_eq_of_mem_sphere θ]
   simp_rw [hswap, hconst, hu.integral_toSphere_eq (μ := μ) (norm_nonneg x), integral_const]
 
 end Shell
@@ -193,32 +188,54 @@ theorem setIntegral_ball_newtonianKernel_sub_of_le_norm_sub {x c : EuclideanSpac
       rw [integral_toSphere_newtonianKernel_sub_smul_of_lt_norm hs.1.le (hs.2.trans_le hR)],
     integral_smul_const, smul_eq_mul, ← mul_assoc, integral_Ioo_pow_mul_toSphere_real_univ]
 
+/-- The Newtonian kernel at `x` times the volume `‖x‖ⁿ |B(0, 1)|` of the ball through `x` is
+`‖x‖² / (n (n - 2))`: the potential at `x` of the ball `B(0, ‖x‖)`, whose mass is placed at the
+centre. -/
+theorem pow_norm_mul_measureReal_ball_mul_newtonianKernel (x : EuclideanSpace ℝ (Fin n)) :
+    ‖x‖ ^ n * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) * newtonianKernel n x =
+      ‖x‖ ^ 2 / (n * (n - 2)) := by
+  rcases eq_or_ne n 0 with rfl | hn0
+  · simp
+  rcases eq_or_ne n 2 with rfl | hn2
+  · norm_num
+  have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn0
+  have hn2' : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn2)
+  have hω := (volume_real_unitBall_pos n).ne'
+  rcases (norm_nonneg x).eq_or_lt with hx | hx
+  · rw [← hx, zero_pow hn0, zero_pow two_ne_zero, zero_mul, zero_mul, zero_div]
+  rw [newtonianKernel_def]
+  calc ‖x‖ ^ n * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) *
+        ((n * (n - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
+          ‖x‖ ^ (2 - (n : ℝ)))
+      = (‖x‖ ^ n * ‖x‖ ^ (2 - (n : ℝ))) / (n * (n - 2)) := by field_simp
+    _ = ‖x‖ ^ 2 / (n * (n - 2)) := by
+      rw [← Real.rpow_natCast, ← Real.rpow_add hx]
+      norm_num
+
 /-- The surface measure of the unit sphere times the Newtonian kernel at radius `s > 0`, weighted
 by the radial Jacobian `s ^ (n - 1)`, is `s / (n - 2)`: the integrand of the potential of a ball
 at its centre. -/
 private theorem pow_mul_integral_toSphere_newtonianKernel_smul (hn : n ≠ 0) {s : ℝ} (hs : 0 < s) :
     s ^ (n - 1) * ∫ θ : sphere (0 : EuclideanSpace ℝ (Fin n)) 1,
         newtonianKernel n (s • (θ : _)) ∂volume.toSphere = s / ((n : ℝ) - 2) := by
-  have hω := (volume_real_unitBall_pos n).ne'
   have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn
+  have hsθ : ∀ θ : sphere (0 : EuclideanSpace ℝ (Fin n)) 1,
+      ‖s • (θ : EuclideanSpace ℝ (Fin n))‖ = s := fun θ ↦ by
+    rw [norm_smul, norm_eq_of_mem_sphere θ, mul_one, Real.norm_of_nonneg hs.le]
+  have hω := (volume_real_unitBall_pos n).ne'
   have hθ : ∀ θ : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, newtonianKernel n (s • (θ : _)) =
-      ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-        s ^ (2 - (n : ℝ)) := fun θ ↦ by
-    rw [newtonianKernel_def, norm_smul, norm_eq_of_mem_sphere θ, mul_one,
-      Real.norm_of_nonneg hs.le]
-  have hpow : s ^ (n - 1) * s ^ (2 - (n : ℝ)) = s := by
-    rw [← Real.rpow_natCast, Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hn), ← Real.rpow_add hs,
-      Nat.cast_one]
-    norm_num
+      s ^ 2 / (n * (n - 2)) / (s ^ n * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1)) :=
+    fun θ ↦ by
+      rw [eq_div_iff (mul_ne_zero (pow_ne_zero _ hs.ne') hω), mul_comm]
+      simpa [hsθ θ] using pow_norm_mul_measureReal_ball_mul_newtonianKernel
+        (s • (θ : EuclideanSpace ℝ (Fin n)))
+  have hpow : s ^ n = s ^ (n - 1) * s := by
+    rw [← pow_succ, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hn)]
   simp_rw [hθ, integral_const, smul_eq_mul, Measure.toSphere_real_apply_univ,
-    finrank_euclideanSpace_fin]
+    finrank_euclideanSpace_fin, hpow]
   rcases eq_or_ne ((n : ℝ) - 2) 0 with h2 | h2
   · simp [h2]
-  calc s ^ (n - 1) * (n * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) *
-        ((n * (n - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-          s ^ (2 - (n : ℝ))))
-      = (s ^ (n - 1) * s ^ (2 - (n : ℝ))) / ((n : ℝ) - 2) := by field_simp
-    _ = s / ((n : ℝ) - 2) := by rw [hpow]
+  field_simp
 
 /-- **The Newtonian potential of a ball, inside the ball.** For `n ≠ 2` and a point `x` of the
 closed ball `‖x - c‖ ≤ R`, the Newtonian potential of the ball `B(c, R)` is
@@ -232,14 +249,9 @@ theorem setIntegral_ball_newtonianKernel_sub_of_norm_sub_le (hn : n ≠ 2)
     {x c : EuclideanSpace ℝ (Fin n)} {R : ℝ} (hx : ‖x - c‖ ≤ R) :
     ∫ y in ball c R, newtonianKernel n (x - y) =
       R ^ 2 / (n * (n - 2)) + (R ^ 2 - ‖x - c‖ ^ 2) / (2 * n) := by
-  rcases subsingleton_or_nontrivial (EuclideanSpace ℝ (Fin n)) with hE | hE
-  · obtain rfl : n = 0 := by
-      simpa using (Module.finrank_zero_of_subsingleton (R := ℝ)
-        (M := EuclideanSpace ℝ (Fin n))).symm.trans finrank_euclideanSpace_fin |>.symm
-    simp [fun y : EuclideanSpace ℝ (Fin 0) ↦ Subsingleton.elim (x - y) 0]
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    exact not_nontrivial _ hE
+  rcases eq_or_ne n 0 with rfl | hn0
+  · simp
+  have : NeZero n := ⟨hn0⟩
   have hn' : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hn0
   have hn2 : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hn)
   rw [setIntegral_ball_eq_setIntegral_ball_zero_add]
@@ -248,21 +260,10 @@ theorem setIntegral_ball_newtonianKernel_sub_of_norm_sub_le (hn : n ≠ 2)
   -- The potential of the inner ball `B(0, ‖z‖)`, on whose sphere `z` lies, is that of a point mass.
   have hinner : ∫ y in ball (0 : EuclideanSpace ℝ (Fin n)) ‖z‖, newtonianKernel n (z - y) =
       ‖z‖ ^ 2 / (n * (n - 2)) := by
-    have hω := (volume_real_unitBall_pos n).ne'
-    have hpow : ‖z‖ ^ n * ‖z‖ ^ (2 - (n : ℝ)) = ‖z‖ ^ 2 := by
-      rcases (norm_nonneg z).eq_or_lt with hz | hz
-      · rw [← hz, zero_pow hn0, zero_mul, zero_pow two_ne_zero]
-      · rw [← Real.rpow_natCast, ← Real.rpow_add hz]
-        norm_num
     rw [setIntegral_ball_newtonianKernel_sub_of_le_norm_sub (by rw [sub_zero]), sub_zero,
       measureReal_def, Measure.addHaar_ball _ _ (norm_nonneg z), ENNReal.toReal_mul,
       ENNReal.toReal_ofReal (by positivity), ← measureReal_def, finrank_euclideanSpace_fin,
-      newtonianKernel_def]
-    calc ‖z‖ ^ n * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1) *
-          ((n * (n - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-            ‖z‖ ^ (2 - (n : ℝ)))
-        = (‖z‖ ^ n * ‖z‖ ^ (2 - (n : ℝ))) / (n * (n - 2)) := by field_simp
-      _ = ‖z‖ ^ 2 / (n * (n - 2)) := by rw [hpow]
+      pow_norm_mul_measureReal_ball_mul_newtonianKernel]
   rcases hx.eq_or_lt with hzR | hzR
   · rw [← hzR, hinner, sub_self, zero_div, add_zero]
   -- Split the ball into the closed inner ball and the shell `‖z‖ < ‖y‖ < R`.

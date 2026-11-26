@@ -52,11 +52,11 @@ origin. -/
 theorem setIntegral_ball_newtonianKernel_three_sub_of_one_le_norm
     {x : EuclideanSpace ℝ (Fin 3)} (hx : 1 ≤ ‖x‖) :
     ∫ y in ball 0 1, newtonianKernel 3 (x - y) = (3 * ‖x‖)⁻¹ := by
-  have hω := (volume_real_unitBall_pos 3).ne'
-  rw [setIntegral_ball_newtonianKernel_sub_of_le_norm_sub (by rwa [sub_zero]), sub_zero,
-    newtonianKernel_def]
-  norm_num [Real.rpow_neg_one]
-  field_simp
+  have hx0 : ‖x‖ ≠ 0 := (zero_lt_one.trans_le hx).ne'
+  have h := pow_norm_mul_measureReal_ball_mul_newtonianKernel x
+  rw [setIntegral_ball_newtonianKernel_sub_of_le_norm_sub (by rwa [sub_zero]), sub_zero]
+  norm_num at h
+  linear_combination (norm := (field_simp; ring)) h / ‖x‖ ^ 3
 
 /-- **The Newtonian potential of the unit ball of `ℝ³` on the unit sphere** is the constant
 `1 / 3`. In particular it does not vanish there, so it is not the solution of the Dirichlet
