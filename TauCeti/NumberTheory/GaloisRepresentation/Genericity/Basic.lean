@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.RingTheory.Polynomial.RootEnumeration
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 import TauCeti.Data.Multiset.Fintype
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
@@ -378,6 +379,31 @@ theorem isStronglyGenericAt_iff_of_isRootEnumeration {ι L : Type*} [Fintype ι]
     fun h ↦ ?_⟩
   obtain ⟨β, hβ⟩ := exists_isRootEnumeration_charpoly (E := AlgebraicClosure K) A
   exact ⟨β, hβ, (isStronglyGenericEigenvalues_iff_of_isRootEnumeration hβ hα hcard).2 h⟩
+
+/-- In dimension two the forbidden eigenvalue ratios are detected by trace and determinant
+over the base field. The criterion also applies to singular matrices, using the defining
+multiplication test for genericity. -/
+theorem isGenericAt_iff_of_card_eq_two {n k : Type*} [Fintype n] [DecidableEq n]
+    [Field k] (A : Matrix n n k) (hn : Fintype.card n = 2) (q : k) :
+    A.IsGenericAt q ↔ (1 + q) ^ 2 * A.det ≠ q * A.trace ^ 2 := by
+  let f := algebraMap k (AlgebraicClosure k)
+  obtain ⟨α, hα⟩ := A.charpoly_monic.exists_isRootEnumeration (E := AlgebraicClosure k)
+    (ι := Fin 2) (by simpa [Matrix.charpoly_natDegree_eq_dim] using hn)
+  have htr : f A.trace = α 0 + α 1 := by
+    rw [AddMonoidHom.map_trace, Matrix.trace_eq_sum_roots_charpoly, Matrix.charpoly_map,
+      isRootEnumeration_iff.mp hα]
+    exact Fin.sum_univ_two α
+  have hd : f A.det = α 0 * α 1 := by
+    rw [RingHom.map_det, RingHom.mapMatrix_apply, Matrix.det_eq_prod_roots_charpoly,
+      Matrix.charpoly_map, isRootEnumeration_iff.mp hα]
+    exact Fin.prod_univ_two α
+  rw [Matrix.isGenericAt_iff_of_isRootEnumeration hα (by simpa using hn.symm),
+    ← f.injective.ne_iff]
+  simp only [_root_.map_mul, _root_.map_add, _root_.map_one, _root_.map_pow, htr, hd]
+  have hfactor : (1 + f q) ^ 2 * (α 0 * α 1) - f q * (α 0 + α 1) ^ 2 =
+      (α 0 - f q * α 1) * (α 1 - f q * α 0) := by ring
+  rw [← sub_ne_zero, hfactor, mul_ne_zero_iff, sub_ne_zero, sub_ne_zero]
+  simp [TauCeti.isGenericEigenvalues_iff, Fin.forall_fin_two, f]
 
 /-- Strong genericity of a matrix is genericity at both `1` and `q`. -/
 theorem isStronglyGenericAt_iff_and :

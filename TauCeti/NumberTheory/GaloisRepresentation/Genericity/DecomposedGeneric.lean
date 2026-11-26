@@ -153,6 +153,30 @@ theorem IsDecomposedGenericPrime.isGenericAt (h : r.IsDecomposedGenericPrime p)
     (hσ : IsArithFrobAt (𝓞 F) σ Q) : r.IsGenericAt (Q.inertia Gal(L/F)) σ p :=
   h.2.2.2 Q σ hσ
 
+/-- A decomposed generic prime survives restriction to any intermediate base in which it
+splits completely, for the same representation field and the same rational prime. -/
+theorem IsDecomposedGenericPrime.restrictScalars
+    {F E L k n : Type*} [Field F] [NumberField F] [Field E] [NumberField E] [Field L]
+    [Algebra F L] [Algebra F E] [Algebra E L] [IsScalarTower F E L] [Field k] [Fintype n]
+    [DecidableEq n] {r : Gal(L/F) →* GL n k} {q : ℕ} (hq : r.IsDecomposedGenericPrime q)
+    (hsplit : ((span {(q : ℤ)}).primesOver (𝓞 E)).ncard = finrank ℚ E) :
+    (r.comp (AlgEquiv.restrictScalarsHom F : Gal(L/E) →* Gal(L/F))).IsDecomposedGenericPrime q := by
+  refine MonoidHom.isDecomposedGenericPrime_iff.mpr
+    ⟨hq.prime, hq.natCast_ne_zero, hsplit, fun Q _ _ σ hσ ↦ ?_⟩
+  have hnorm := absNorm_eq_of_ncard_primesOver_eq_finrank (Q.under (𝓞 E)) hsplit
+  have hcard : Nat.card (𝓞 E ⧸ Q.under (𝓞 E)) = Nat.card (𝓞 F ⧸ Q.under (𝓞 F)) := by
+    simpa only [absNorm_apply, Submodule.cardQuot_apply] using
+      hnorm.trans (hq.absNorm_eq (Q.under (𝓞 F))).symm
+  have hσF : IsArithFrobAt (𝓞 F) (σ.restrictScalars F) Q := by
+    intro x
+    -- Restricting scalars preserves the action of σ on 𝓞 L. Both residue fields have size q.
+    change σ • x - x ^ Nat.card (𝓞 F ⧸ Q.under (𝓞 F)) ∈ Q
+    rw [← hcard]
+    exact hσ x
+  obtain ⟨hI, hg⟩ := MonoidHom.isGenericAt_iff.mp (hq.isGenericAt Q hσF)
+  -- Restricting scalars leaves the action on the top ring of integers unchanged.
+  exact MonoidHom.isGenericAt_iff.mpr ⟨fun τ hτ ↦ hI (x := τ.restrictScalars F) hτ, hg⟩
+
 /-- **Decomposed genericity is invariant under extension of scalars.** A rational prime is
 decomposed generic for `r` exactly when it is decomposed generic for `r` with coefficients
 extended to a field extension `K` of `k`. -/

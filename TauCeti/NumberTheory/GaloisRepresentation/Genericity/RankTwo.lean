@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.GaloisRepresentation.Genericity.DecomposedGeneric
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Eigs
 import TauCeti.NumberTheory.NumberField.Frobenius
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
@@ -28,33 +27,6 @@ Theorem 5.2, and Darmon, Diamond and Taylor, *Fermat's Last Theorem*, Lemma 4.11
 -/
 
 public section
-
-open Polynomial
-
-/-- In dimension two the forbidden eigenvalue ratios are detected by trace and determinant
-over the base field. The criterion also applies to singular matrices, using the defining
-multiplication test for genericity. -/
-theorem Matrix.isGenericAt_iff_of_card_eq_two {n k : Type*} [Fintype n] [DecidableEq n]
-    [Field k] (A : Matrix n n k) (hn : Fintype.card n = 2) (q : k) :
-    A.IsGenericAt q ↔ (1 + q) ^ 2 * A.det ≠ q * A.trace ^ 2 := by
-  let f := algebraMap k (AlgebraicClosure k)
-  obtain ⟨α, hα⟩ := A.charpoly_monic.exists_isRootEnumeration (E := AlgebraicClosure k)
-    (ι := Fin 2) (by simpa [Matrix.charpoly_natDegree_eq_dim] using hn)
-  have htr : f A.trace = α 0 + α 1 := by
-    rw [AddMonoidHom.map_trace, Matrix.trace_eq_sum_roots_charpoly, Matrix.charpoly_map,
-      isRootEnumeration_iff.mp hα]
-    exact Fin.sum_univ_two α
-  have hd : f A.det = α 0 * α 1 := by
-    rw [RingHom.map_det, RingHom.mapMatrix_apply, Matrix.det_eq_prod_roots_charpoly,
-      Matrix.charpoly_map, isRootEnumeration_iff.mp hα]
-    exact Fin.prod_univ_two α
-  rw [Matrix.isGenericAt_iff_of_isRootEnumeration hα (by simpa using hn.symm),
-    ← f.injective.ne_iff]
-  simp only [map_mul, map_add, map_one, map_pow, htr, hd]
-  have hfactor : (1 + f q) ^ 2 * (α 0 * α 1) - f q * (α 0 + α 1) ^ 2 =
-      (α 0 - f q * α 1) * (α 1 - f q * α 0) := by ring
-  rw [← sub_ne_zero, hfactor, mul_ne_zero_iff, sub_ne_zero, sub_ne_zero]
-  simp [TauCeti.isGenericEigenvalues_iff, Fin.forall_fin_two, f]
 
 open NumberField Ideal Matrix
 
