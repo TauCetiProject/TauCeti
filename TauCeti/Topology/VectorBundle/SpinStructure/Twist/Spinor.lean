@@ -224,11 +224,8 @@ def determinantLineTwistEquiv (s : SpinCStructure F V n) (x : X) :
     (s.twist Q).determinantLine x ≃L[ℂ]
       s.determinantLine x ⊗[ℂ]
         (AssociatedBundle Circle Q ℂ x ⊗[ℂ] AssociatedBundle Circle Q ℂ x) :=
-  let e := determinantLineTwistLinearEquiv Q s ((FiberBundle.homeomorphAt SpinC s.P x).symm 1)
-    ((FiberBundle.homeomorphAt Circle Q x).symm 1)
-  { e with
-    continuous_toFun := IsModuleTopology.continuous_of_linearMap e.toLinearMap
-    continuous_invFun := IsModuleTopology.continuous_of_linearMap e.symm.toLinearMap }
+  (determinantLineTwistLinearEquiv Q s ((FiberBundle.homeomorphAt SpinC s.P x).symm 1)
+    ((FiberBundle.homeomorphAt Circle Q x).symm 1)).toContinuousLinearEquivOfIsModuleTopology
 
 /-- **The comparison of determinant lines in a frame**:
 `[[(p, q), h], w] ↦ [p, h w] ⊗ ([q, 1] ⊗ [q, 1])`. -/
@@ -240,7 +237,8 @@ theorem determinantLineTwistEquiv_mk (s : SpinCStructure F V n) {x : X} (p : s.P
           (Extend.mk μ hμ (FiberProd.mk p q) h) w) =
       AssociatedBundle.mk SpinC p (h • w) ⊗ₜ[ℂ]
         (AssociatedBundle.mk Circle q (1 : ℂ) ⊗ₜ[ℂ] AssociatedBundle.mk Circle q (1 : ℂ)) :=
-  determinantLineTwistLinearEquiv_mk Q s _ p _ q h w
+  (congrFun (LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology _) _).trans
+    (determinantLineTwistLinearEquiv_mk Q s _ p _ q h w)
 
 /-- **The comparison of determinant lines at `[(p, q), 1]`**:
 `[[(p, q), 1], w] ↦ [p, w] ⊗ ([q, 1] ⊗ [q, 1])`. -/
@@ -372,11 +370,9 @@ spaces (`TauCeti.SpinCStructure.continuous_halfSpinorBundleTwistEquiv`). -/
 def halfSpinorBundleTwistEquiv (s : SpinCStructure F V 4) (x : X) :
     (s.twist Q).halfSpinorBundle o hqf b ρ hρ ε x ≃L[ℂ]
       s.halfSpinorBundle o hqf b ρ hρ ε x ⊗[ℂ] AssociatedBundle Circle Q ℂ x :=
-  let e := halfSpinorBundleTwistLinearEquiv Q o hqf b ρ hρ ε s
-    ((FiberBundle.homeomorphAt SpinC₄ s.P x).symm 1) ((FiberBundle.homeomorphAt Circle Q x).symm 1)
-  { e with
-    continuous_toFun := IsModuleTopology.continuous_of_linearMap e.toLinearMap
-    continuous_invFun := IsModuleTopology.continuous_of_linearMap e.symm.toLinearMap }
+  (halfSpinorBundleTwistLinearEquiv Q o hqf b ρ hρ ε s
+    ((FiberBundle.homeomorphAt SpinC₄ s.P x).symm 1)
+    ((FiberBundle.homeomorphAt Circle Q x).symm 1)).toContinuousLinearEquivOfIsModuleTopology
 
 /-- **The comparison of half-spinor bundles in a frame**:
 `[[(p, q), h], ψ] ↦ [p, h ψ] ⊗ [q, 1]`. -/
@@ -387,7 +383,8 @@ theorem halfSpinorBundleTwistEquiv_mk (s : SpinCStructure F V 4) {x : X} (p : s.
         (AssociatedBundle.mk (P := Extend (FiberProd s.P Q) μ₄ hμ₄) SpinC₄
           (Extend.mk μ₄ hμ₄ (FiberProd.mk p q) h) ψ) =
       AssociatedBundle.mk SpinC₄ p (h • ψ) ⊗ₜ[ℂ] AssociatedBundle.mk Circle q (1 : ℂ) :=
-  halfSpinorBundleTwistLinearEquiv_mk Q o hqf b ρ hρ ε s _ p _ q h ψ
+  (congrFun (LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology _) _).trans
+    (halfSpinorBundleTwistLinearEquiv_mk Q o hqf b ρ hρ ε s _ p _ q h ψ)
 
 /-- **The comparison of half-spinor bundles at `[(p, q), 1]`**:
 `[[(p, q), 1], ψ] ↦ [p, ψ] ⊗ [q, 1]`. -/
