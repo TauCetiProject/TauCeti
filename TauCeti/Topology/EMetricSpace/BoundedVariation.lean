@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Uniform
-public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
 public import Mathlib.Order.Interval.Set.ProjIcc
 public import Mathlib.Topology.CompactOpen
@@ -20,9 +19,8 @@ This file transfers eventual upper bounds on the total variations of a family of
 `liminf` bound on the total variation of a pointwise limit. It also computes the variation of a
 composition with an antitone map on an interval, proves stability of bounded variation under
 addition and subtraction, shows that the variation is unchanged by postcomposition with a map
-that preserves the distances between the values of the function, proves bounded variation of
-constant extensions from closed intervals, and derives the Cauchy–Schwarz variation bound from
-geometric-mean increment bounds.
+that preserves the distances between the values of the function, and proves bounded variation of
+constant extensions from closed intervals.
 Total variation on continuous maps is lower semicontinuous for the compact-open topology,
 allowing measurable path-space applications. Nested finite subsets recover the full extended
 variation, while containing any prescribed sequence of finite subsets.
@@ -45,8 +43,6 @@ variation, while containing any prescribed sequence of finite subsets.
 * `TauCeti.eVariationOn_id_unitInterval` and `LipschitzWith.eVariationOn_unitInterval_le`: the
   identity of the unit interval has total variation `1`, so a `C`-Lipschitz map on the unit
   interval has total variation at most `C`.
-* `eVariationOn.Icc_le_of_dist_le_sqrt_mul_sqrt`: geometric-mean increment bounds against two
-  monotone functions imply the same bound on total variation over `[s, t]`.
 -/
 
 public section
@@ -292,29 +288,5 @@ theorem exists_monotone_finset_tendsto (f : α → E) (s : Set α) (q : ℕ → 
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le hw tendsto_const_nhds
     (fun n ↦ (hr n).symm ▸ mono f (hrp n))
     (fun n ↦ (mono f (hp n)).trans_eq (eq_iSup_finset f s))
-
-/-- If every ordered increment of `h` on `[s, t]` is bounded by the geometric mean of the
-corresponding increments of two monotone functions `f` and `g`, then the extended total variation
-of `h` on `[s, t]` satisfies the same Cauchy–Schwarz bound. -/
-theorem Icc_le_of_dist_le_sqrt_mul_sqrt {F : Type*} [PseudoMetricSpace F]
-    {f g : α → ℝ} {h : α → F} (hf : Monotone f) (hg : Monotone g) {s t : α}
-    (hle : ∀ u ∈ Icc s t, ∀ v ∈ Icc s t, u ≤ v →
-      dist (h v) (h u) ≤ √(f v - f u) * √(g v - g u)) :
-    eVariationOn h (Icc s t) ≤ ENNReal.ofReal (√(f t - f s) * √(g t - g s)) := by
-  rw [eVariationOn]
-  refine iSup_le fun ⟨n, u, humono, humem⟩ ↦ ?_
-  have hed : ∑ i ∈ Finset.range n, edist (h (u (i + 1))) (h (u i)) =
-      ENNReal.ofReal (∑ i ∈ Finset.range n, dist (h (u (i + 1))) (h (u i))) := by
-    rw [ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ dist_nonneg]
-    exact Finset.sum_congr rfl fun _ _ ↦ edist_dist _ _
-  rw [hed]
-  refine ENNReal.ofReal_le_ofReal <| (Finset.sum_le_sum fun i _ ↦
-    hle _ (humem i) _ (humem (i + 1)) (humono i.le_succ)).trans <|
-    (Real.sum_sqrt_mul_sqrt_le _ (fun i ↦ sub_nonneg.2 (hf (humono i.le_succ)))
-      (fun i ↦ sub_nonneg.2 (hg (humono i.le_succ)))).trans ?_
-  rw [Finset.sum_range_sub (f <| u ·), Finset.sum_range_sub (g <| u ·)]
-  exact mul_le_mul (Real.sqrt_le_sqrt (sub_le_sub (hf (humem n).2) (hf (humem 0).1)))
-    (Real.sqrt_le_sqrt (sub_le_sub (hg (humem n).2) (hg (humem 0).1)))
-    (Real.sqrt_nonneg _) (Real.sqrt_nonneg _)
 
 end eVariationOn

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Martingale.QuadraticVariation.Basic
 import Mathlib.Analysis.Normed.MulAction
-import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Probability.Martingale.Local.Centering
 import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Martingale.Local.InitialMultiplier
@@ -22,8 +21,8 @@ import TauCeti.Topology.EMetricSpace.BoundedVariation
 For real processes `M` and `N` on `ℝ≥0`, `C` is a **covariation** (`IsCovariation ℱ P M N C`) when
 `C` is strongly progressive for `ℱ`, has a.s. continuous paths of locally bounded variation starting
 at `0`, and compensates `M * N - M₀ * N₀ - C` as a native local martingale. Includes uniqueness
-(`IsCovariation.indist`), diagonal correspondence, polarization, bilinearity, orthogonality, and
-the Kunita–Watanabe inequalities.
+(`IsCovariation.indist`), diagonal correspondence, polarization, bilinearity, stopping, and
+orthogonality.
 
 ## References
 
@@ -36,7 +35,7 @@ public section
 noncomputable section
 
 open Filter MeasureTheory ProbabilityTheory Set
-open scoped ENNReal NNReal Topology
+open scoped NNReal Topology
 
 namespace TauCeti.Probability
 
@@ -392,50 +391,5 @@ theorem isQuadraticVariation_sum_of_isCovariation_zero [IsFiniteMeasure P] {ι :
   exact hcov.isQuadraticVariation_of_ae_monotone
     (((ae_ball_iff s.countable_toSet).2 fun i hi ↦ (hA i hi).ae_monotone).mono
       fun _ hω _ _ huv ↦ Finset.sum_le_sum fun i hi ↦ hω i hi huv)
-
-namespace IsCovariation
-
-variable {M N A B C : ℝ≥0 → Ω → ℝ}
-
-/-- **Increment Kunita–Watanabe inequality**: a.s. for `s ≤ t`,
-`|C t ω - C s ω| ≤ √(A t ω - A s ω) * √(B t ω - B s ω)`. -/
-theorem ae_abs_sub_le_sqrt_mul_sqrt [IsFiniteMeasure P] (hC : IsCovariation ℱ P M N C)
-    (hA : IsQuadraticVariation ℱ P M A) (hB : IsQuadraticVariation ℱ P N B)
-    (hMprog : IsStronglyProgressive ℱ M) (hNprog : IsStronglyProgressive ℱ N)
-    (hcM : ∀ᵐ ω ∂P, Continuous (M · ω)) (hcN : ∀ᵐ ω ∂P, Continuous (N · ω))
-    (hquad : ∀ q : ℚ, ∃ Q, IsQuadraticVariation ℱ P (M + (q : ℝ) • N) Q) :
-    ∀ᵐ ω ∂P, ∀ s t, s ≤ t → |C t ω - C s ω| ≤ √(A t ω - A s ω) * √(B t ω - B s ω) := by
-  have hqmono (q : ℚ) : ∀ᵐ ω ∂P,
-      Monotone (fun t ↦ ((A + (q : ℝ) • C) + ((q : ℝ) • C + (q : ℝ) ^ 2 • B)) t ω) := by
-    have hqprog : IsStronglyProgressive ℱ ((q : ℝ) • N) := fun t ↦ (hNprog t).const_smul (q : ℝ)
-    have hcq : ∀ᵐ ω ∂P, Continuous (((q : ℝ) • N) · ω) :=
-      hcN.mono fun _ hn ↦ continuous_const.mul hn
-    have hcsum : ∀ᵐ ω ∂P, Continuous ((M + (q : ℝ) • N) · ω) :=
-      (hcM.and hcq).mono fun _ h ↦ h.1.add h.2
-    exact (((hA.isCovariation_self.add_right (hC.const_smul_right (q : ℝ))
-        hMprog hMprog hqprog hcM hcM hcq).add_left
-      ((hC.symm.const_smul_left (q : ℝ)).add_right (hB.const_smul (q : ℝ)).isCovariation_self
-        hqprog hMprog hqprog hcq hcM hcq)
-      hMprog hqprog (hMprog.add hqprog) hcM hcq hcsum).isQuadraticVariation_of_exists hcsum
-      (hquad q)).ae_monotone
-  filter_upwards [ae_all_iff.2 hqmono] with ω hq s t hst
-  refine Real.abs_le_sqrt_mul_sqrt_of_forall_rat_quadratic_nonneg fun q ↦ ?_
-  have hle := sub_nonneg.2 (hq q hst)
-  dsimp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul] at hle; linarith
-
-/-- **Variation Kunita–Watanabe inequality** bounding `eVariationOn (C · ω) (Icc s t)`. -/
-theorem ae_eVariationOn_Icc_le [IsFiniteMeasure P] (hC : IsCovariation ℱ P M N C)
-    (hA : IsQuadraticVariation ℱ P M A) (hB : IsQuadraticVariation ℱ P N B)
-    (hMprog : IsStronglyProgressive ℱ M) (hNprog : IsStronglyProgressive ℱ N)
-    (hcM : ∀ᵐ ω ∂P, Continuous (M · ω)) (hcN : ∀ᵐ ω ∂P, Continuous (N · ω))
-    (hquad : ∀ q : ℚ, ∃ Q, IsQuadraticVariation ℱ P (M + (q : ℝ) • N) Q) :
-    ∀ᵐ ω ∂P, ∀ s t,
-      eVariationOn (C · ω) (Icc s t) ≤ ENNReal.ofReal (√(A t ω - A s ω) * √(B t ω - B s ω)) := by
-  filter_upwards [hC.ae_abs_sub_le_sqrt_mul_sqrt hA hB hMprog hNprog hcM hcN hquad,
-    hA.ae_monotone, hB.ae_monotone] with ω hkw hAm hBm s t
-  exact eVariationOn.Icc_le_of_dist_le_sqrt_mul_sqrt hAm hBm fun u _ v _ huv ↦ by
-    simpa only [Real.dist_eq] using hkw u v huv
-
-end IsCovariation
 
 end TauCeti.Probability
