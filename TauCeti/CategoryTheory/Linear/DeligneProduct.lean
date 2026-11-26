@@ -336,6 +336,14 @@ instance (X : C) : ((bifunctor k C D).obj X).Additive where
 instance (X : C) : ((bifunctor k C D).obj X).Linear k where
   map_smul g r := tmul_smul r (𝟙 X) g
 
+/-- Inserting a fixed object in the second factor is additive. -/
+instance (Y : D) : ((bifunctor k C D).flip.obj Y).Additive where
+  map_add {_ _ f g} := add_tmul (k := k) f g (𝟙 Y)
+
+/-- Inserting a fixed object in the second factor is linear. -/
+instance (Y : D) : ((bifunctor k C D).flip.obj Y).Linear k where
+  map_smul f r := smul_tmul (k := k) r f (𝟙 Y)
+
 instance : (bifunctor k C D).Additive where
   map_add {_ _ f f'} := by
     ext Y

@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.EssentiallySmall
 public import TauCeti.CategoryTheory.Linear.DeligneProduct
-import Mathlib.Logic.Small.List
 
 /-!
 # Symmetry and opposites of linear tensor products
@@ -30,7 +29,6 @@ public section
 noncomputable section
 
 open CategoryTheory Opposite
-open scoped TensorProduct
 
 universe w v₁ v₂ v₃ u₁ u₂ u₃ s
 
@@ -141,6 +139,30 @@ def swapEquiv : LinearTensor R C D ≌ LinearTensor R D C where
   functor_unitIso_comp := by
     intro P
     simp [NatIso.ofComponents]
+
+/-- The unit of the swap equivalence is the identity on each object. -/
+@[simp]
+theorem swapEquiv_unitIso_hom_app (P : LinearTensor R C D) :
+    swapEquiv.unitIso.hom.app P = 𝟙 P :=
+  rfl
+
+/-- The inverse unit of the swap equivalence is the identity on each object. -/
+@[simp]
+theorem swapEquiv_unitIso_inv_app (P : LinearTensor R C D) :
+    swapEquiv.unitIso.inv.app P = 𝟙 P :=
+  rfl
+
+/-- The counit of the swap equivalence is the identity on each object. -/
+@[simp]
+theorem swapEquiv_counitIso_hom_app (P : LinearTensor R D C) :
+    swapEquiv.counitIso.hom.app P = 𝟙 P :=
+  rfl
+
+/-- The inverse counit of the swap equivalence is the identity on each object. -/
+@[simp]
+theorem swapEquiv_counitIso_inv_app (P : LinearTensor R D C) :
+    swapEquiv.counitIso.inv.app P = 𝟙 P :=
+  rfl
 
 instance : (swapEquiv (R := R) (C := C) (D := D)).functor.Additive :=
   inferInstanceAs (swapFunctor (R := R) (C := C) (D := D)).Additive
@@ -270,6 +292,35 @@ def opEquiv : LinearTensor R Cᵒᵖ Dᵒᵖ ≌ (LinearTensor R C D)ᵒᵖ :=
       simp only [Iso.refl_hom, Functor.id_map, Functor.comp_map, opFunctor_map_unopFunctor_map]
       exact (Category.comp_id f).trans (Category.id_comp f).symm))
 
+/-- The counit of the opposite comparison is the identity on each object. -/
+@[simp]
+theorem opEquiv_counitIso_hom_app (P : (LinearTensor R C D)ᵒᵖ) :
+    opEquiv.counitIso.hom.app P = 𝟙 P :=
+  rfl
+
+/-- The inverse counit of the opposite comparison is the identity on each object. -/
+@[simp]
+theorem opEquiv_counitIso_inv_app (P : (LinearTensor R C D)ᵒᵖ) :
+    opEquiv.counitIso.inv.app P = 𝟙 P :=
+  rfl
+
+/-- The unit of the opposite comparison is the identity on each object. -/
+@[simp]
+theorem opEquiv_unitIso_hom_app (P : LinearTensor R Cᵒᵖ Dᵒᵖ) :
+    opEquiv.unitIso.hom.app P = 𝟙 P := by
+  calc
+    _ = opEquiv.inverse.map (opEquiv.counitIso.inv.app (opEquiv.functor.obj P)) :=
+      opEquiv.unit_app_inverse (opEquiv.functor.obj P)
+    _ = 𝟙 P := by
+      rw [opEquiv_counitIso_inv_app]
+      exact opEquiv.inverse.map_id (opEquiv.functor.obj P)
+
+/-- The inverse unit of the opposite comparison is the identity on each object. -/
+@[simp]
+theorem opEquiv_unitIso_inv_app (P : LinearTensor R Cᵒᵖ Dᵒᵖ) :
+    opEquiv.unitIso.inv.app P = 𝟙 P := by
+  simpa only [opEquiv_unitIso_hom_app, Category.id_comp] using opEquiv.unitIso_hom_inv_id_app P
+
 instance : (opEquiv (R := R) (C := C) (D := D)).functor.Additive :=
   (inferInstance : (opFunctor (R := R) (C := C) (D := D)).Additive)
 
@@ -284,31 +335,12 @@ instance : (unopFunctor (R := R) (C := C) (D := D)).Linear R :=
 
 end Opposite
 
-section Slices
-
-/-- Inserting a fixed object in the second factor is additive. -/
-instance (Y : D) : ((bifunctor R C D).flip.obj Y).Additive where
-  map_add {_ _ f g} := add_tmul (k := R) f g (𝟙 Y)
-
-/-- Inserting a fixed object in the second factor is linear. -/
-instance (Y : D) : ((bifunctor R C D).flip.obj Y).Linear R where
-  map_smul f r := smul_tmul (k := R) r f (𝟙 Y)
-
-end Slices
-
 section Smallness
 
 /-- The homs of the tensor product are small in any universe in which both factors have
 small homs. -/
 instance [LocallySmall.{s} C] [LocallySmall.{s} D] : LocallySmall.{s} (LinearTensor R C D) where
-  hom_small P Q := by
-    let : Small.{s} (FreeAddMonoid ((P.fst ⟶ Q.fst) × (P.snd ⟶ Q.snd))) :=
-      small_map FreeAddMonoid.toListEquiv
-    -- The module tensor product is the additive congruence quotient of the free additive
-    -- monoid on pairs. Its universe bound is independent of the universe of the scalars.
-    have : Small.{s} ((P.fst ⟶ Q.fst) ⊗[R] (P.snd ⟶ Q.snd)) :=
-      small_of_surjective (AddCon.mk'_surjective (c := addConGen (TensorProduct.Eqv R _ _)))
-    exact small_map (homEquiv P Q).toEquiv
+  hom_small P Q := small_map (homEquiv P Q).toEquiv
 
 /-- The tensor product of two essentially small linear categories is essentially small in
 the same universe. -/
