@@ -56,10 +56,9 @@ variable (R K : Type*) [CommRing R] [Field K] [Algebra R K] (n : ℕ)
 transpose of `k`. -/
 theorem transposeMulEquiv_mem_integralGL {g : GL (Fin n) K} (hg : g ∈ integralGL R K (Fin n)) :
     (GeneralLinearGroup.transposeMulEquiv (Fin n) g).unop ∈ integralGL R K (Fin n) := by
-  obtain ⟨k, rfl⟩ := hg
-  refine ⟨(GeneralLinearGroup.transposeMulEquiv (Fin n) k).unop, Units.ext ?_⟩
-  ext i j
-  simp [GeneralLinearGroup.val_map_apply]
+  rw [GeneralLinearGroup.unop_transposeMulEquiv_eq_inverseTranspose_inv,
+    inverseTranspose_mem_integralGL]
+  exact Subgroup.inv_mem _ hg
 
 /-- Transposition as an anti-involution of the Hecke datum `(GL_n(K), GL_n(R))`. -/
 noncomputable def transposeAntiInvolutionIntegralGL :

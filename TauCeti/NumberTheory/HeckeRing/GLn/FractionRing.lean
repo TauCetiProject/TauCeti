@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
 public import TauCeti.NumberTheory.HeckeRing.Associativity
 
 import Mathlib.Tactic.Group
@@ -88,6 +89,20 @@ theorem mem_integralGL_iff {g : GL ι K} :
     exact ⟨k, isUnits_det_units k, rfl⟩
   · rintro ⟨A, hA, hAg⟩
     exact ⟨GeneralLinearGroup.mk'' A hA, Units.ext hAg⟩
+
+/-- Inverse transpose preserves `GL_ι(R)`. -/
+theorem inverseTranspose_mem_integralGL {g : GL ι K} :
+    GeneralLinearGroup.inverseTranspose g ∈ integralGL R K ι ↔ g ∈ integralGL R K ι := by
+  have hmap (u : GL ι R) :
+      GeneralLinearGroup.map (algebraMap R K) (GeneralLinearGroup.inverseTranspose u) =
+        GeneralLinearGroup.inverseTranspose (GeneralLinearGroup.map (algebraMap R K) u) :=
+    GeneralLinearGroup.map_inverseTranspose (algebraMap R K) u
+  constructor
+  · rintro ⟨u, hu⟩
+    exact ⟨GeneralLinearGroup.inverseTranspose u, by
+      rw [hmap, hu, GeneralLinearGroup.inverseTranspose_inverseTranspose]⟩
+  · rintro ⟨u, rfl⟩
+    exact ⟨GeneralLinearGroup.inverseTranspose u, hmap u⟩
 
 /-- When `R → K` is injective, an invertible matrix over `K` whose determinant is the image of a
 unit of `R` lies in `GL_ι(R)` as soon as its entries lie in `R`. -/
