@@ -114,6 +114,12 @@ variable {σ R : Type*} [CommRing R]
 private def defect (f g : R⟦X⟧) (H : MvPowerSeries σ R) : MvPowerSeries σ R :=
   f.subst H - H.subst fun i ↦ g.subst (MvPowerSeries.X i)
 
+/-- A series of positive order has zero constant coefficient. -/
+private theorem constantCoeff_eq_zero_of_le_order {F : MvPowerSeries σ R} {n : ℕ} (hn : n ≠ 0)
+    (h : (n : ℕ∞) ≤ F.order) : MvPowerSeries.constantCoeff F = 0 :=
+  MvPowerSeries.one_le_order_iff_constCoeff_eq_zero.mp
+    (h.trans' (by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hn))
+
 variable [Finite σ]
 
 /-- **The variation of the defect.** If `H` and `H'` have zero constant coefficient, then in each
@@ -195,13 +201,13 @@ private theorem exists_two_le_order_defect {f g : R⟦X⟧} (hf₀ : constantCoe
     (hg₀ : constantCoeff g = 0) (hfg : coeff 1 f = coeff 1 g) (a : σ → R) :
     ∃ L : MvPowerSeries σ R, MvPowerSeries.constantCoeff L = 0 ∧
       (∀ i, MvPowerSeries.coeff (Finsupp.single i 1) L = a i) ∧
-      ((0 + 2 : ℕ) : ℕ∞) ≤ (defect f g L).order := by
+      2 ≤ (defect f g L).order := by
   classical
   have := Fintype.ofFinite σ
   let L : MvPowerSeries σ R := ∑ i, MvPowerSeries.C (a i) * MvPowerSeries.X i
   have hL₀ : MvPowerSeries.constantCoeff L = 0 := by simp [L]
   refine ⟨L, hL₀, fun i ↦ by simp [L, MvPowerSeries.coeff_X, Finsupp.single_eq_single_iff],
-    MvPowerSeries.nat_le_order fun e he ↦ ?_⟩
+    MvPowerSeries.nat_le_order (n := 2) fun e he ↦ ?_⟩
   -- compare with the zero series, whose defect vanishes
   have hdef0 : defect f g (0 : MvPowerSeries σ R) = 0 := by
     rw [defect, subst_def, ← Pi.zero_def, MvPowerSeries.subst_zero_of_constantCoeff_zero hf₀,
@@ -246,6 +252,12 @@ private theorem exists_defect_eq_zero_of_stages {f g : R⟦X⟧} (hg₀ : consta
     hagree e.degree le_rfl, sub_self, mul_zero] at h
   rw [h, map_zero]
 
+/-- `1 - π ^ (k + 1)` is a unit when `π` lies in the maximal ideal. -/
+private theorem isUnit_one_sub_pow_succ {O : Type*} [CommRing O] [IsLocalRing O] {π : O}
+    (hπ : π ∈ maximalIdeal O) (k : ℕ) : IsUnit (1 - π ^ (k + 1)) :=
+  isUnit_one_sub_self_of_mem_nonunits _
+    ((mem_maximalIdeal _).mp (Ideal.pow_mem_of_mem _ hπ _ k.succ_pos))
+
 section Existence
 
 variable {O : Type*} [CommRing O] [IsLocalRing O] [Finite (ResidueField O)] {π : O}
@@ -262,9 +274,7 @@ private theorem exists_le_order_defect_add (hπ : maximalIdeal O = Ideal.span {�
     (hd : ((n + 2 : ℕ) : ℕ∞) ≤ (defect f g H).order) :
     ∃ Δ : MvPowerSeries σ O, ((n + 2 : ℕ) : ℕ∞) ≤ Δ.order ∧
       ((n + 3 : ℕ) : ℕ∞) ≤ (defect f g (H + Δ)).order := by
-  have hπm : π ∈ maximalIdeal O := hπ ▸ Ideal.mem_span_singleton_self π
-  have hu : IsUnit (1 - π ^ (n + 1)) := isUnit_one_sub_self_of_mem_nonunits _
-    (mem_maximalIdeal _ |>.mp (Ideal.pow_mem_of_mem _ hπm _ n.succ_pos))
+  have hu := isUnit_one_sub_pow_succ (hπ ▸ Ideal.mem_span_singleton_self π) n
   -- every coefficient of the defect is divisible by `π`
   have hdiv (e : σ →₀ ℕ) : ∃ y, y * π = MvPowerSeries.coeff e (defect f g H) := by
     rw [← Ideal.mem_span_singleton', ← hπ, ← residue_eq_zero_iff, ← MvPowerSeries.coeff_map,
@@ -278,9 +288,7 @@ private theorem exists_le_order_defect_add (hπ : maximalIdeal O = Ideal.span {�
   have hΔo : ((n + 2 : ℕ) : ℕ∞) ≤ Δ.order :=
     MvPowerSeries.nat_le_order fun e he ↦ by rw [hΔ, ite_eq_right he.ne]
   refine ⟨Δ, hΔo, MvPowerSeries.nat_le_order fun e he ↦ ?_⟩
-  have hΔ₀ : MvPowerSeries.constantCoeff Δ = 0 :=
-    MvPowerSeries.one_le_order_iff_constCoeff_eq_zero.mp
-      (hΔo.trans' (by exact_mod_cast (by omega : 1 ≤ n + 2)))
+  have hΔ₀ := constantCoeff_eq_zero_of_le_order (by omega) hΔo
   have hle : (e.degree : ℕ∞) ≤ (H + Δ - H).order := by
     rw [add_sub_cancel_left]
     exact hΔo.trans' (by exact_mod_cast (by omega : e.degree ≤ n + 2))
@@ -316,14 +324,13 @@ private theorem exists_defect_eq_zero (hπ : maximalIdeal O = Ideal.span {π})
   obtain ⟨S, hS₀, hS⟩ : ∃ S : ℕ → MvPowerSeries σ O, S 0 = L ∧ ∀ n, S (n + 1) = S n + Δ n (S n) :=
     ⟨fun n ↦ Nat.rec L (fun k Hk ↦ Hk + Δ k Hk) n, rfl, fun _ ↦ rfl⟩
   have hΔ₀ (n : ℕ) (H : MvPowerSeries σ O) : MvPowerSeries.constantCoeff (Δ n H) = 0 :=
-    MvPowerSeries.one_le_order_iff_constCoeff_eq_zero.mp
-      ((hΔ n H).trans' (by exact_mod_cast (by omega : 1 ≤ n + 2)))
+    constantCoeff_eq_zero_of_le_order (by omega) (hΔ n H)
   -- the stages keep the linear part and solve the equation in increasing degree
   have hinv (n : ℕ) : MvPowerSeries.constantCoeff (S n) = 0 ∧
       (∀ i, MvPowerSeries.coeff (Finsupp.single i 1) (S n) = a i) ∧
       ((n + 2 : ℕ) : ℕ∞) ≤ (defect f g (S n)).order := by
     induction n with
-    | zero => exact hS₀ ▸ ⟨hL₀, hL₁, hL⟩
+    | zero => exact hS₀ ▸ ⟨hL₀, hL₁, by simpa using hL⟩
     | succ n ih =>
       refine hS n ▸ ⟨by rw [map_add, ih.1, hΔ₀, add_zero], fun i ↦ ?_, hΔd n _ ih.1 ih.2.2⟩
       rw [map_add, ih.2.1, MvPowerSeries.coeff_of_lt_order ((hΔ n _).trans_lt'
@@ -359,18 +366,16 @@ theorem exists_lubinTate_interpolation {O : Type*} [CommRing O] [IsDomain O]
         (f.map (algebraMap O K)).subst H' =
           H'.subst (fun i ↦ (g.map (algebraMap O K)).subst (MvPowerSeries.X i)) →
         H' = MvPowerSeries.map (algebraMap O K) H := by
-  obtain ⟨H, hH₀, hH₁, hH⟩ :=
-    exists_defect_eq_zero ((IsDiscreteValuationRing.irreducible_iff_uniformizer π).mp hπ) hf hg a
+  have hπm := (IsDiscreteValuationRing.irreducible_iff_uniformizer π).mp hπ
+  obtain ⟨H, hH₀, hH₁, hH⟩ := exists_defect_eq_zero hπm hf hg a
   rw [defect, sub_eq_zero] at hH
   have hg₀ := hg.constantCoeff_eq_zero
   -- `π - πʳ = π (1 - πʳ⁻¹)` is a nonzero element of `O` for `r ≥ 2`
   have hne (r : ℕ) (hr : 2 ≤ r) : π - π ^ r ≠ 0 := by
     obtain ⟨s, rfl⟩ := Nat.exists_eq_add_of_le' hr
     rw [show π - π ^ (s + 2) = π * (1 - π ^ (s + 1)) by ring]
-    refine mul_ne_zero hπ.ne_zero (isUnit_one_sub_self_of_mem_nonunits _ ?_).ne_zero
-    exact (mem_maximalIdeal _).mp (Ideal.pow_mem_of_mem _
-      (((IsDiscreteValuationRing.irreducible_iff_uniformizer π).mp hπ) ▸
-        Ideal.mem_span_singleton_self π) _ s.succ_pos)
+    exact mul_ne_zero hπ.ne_zero
+      (isUnit_one_sub_pow_succ (hπm ▸ Ideal.mem_span_singleton_self π) s).ne_zero
   refine ⟨H, ⟨hH₀, hH₁, hH⟩, fun H₁ h₀ h₁ h ↦ ?_, fun H' h₀ h₁ h ↦ ?_⟩
   · exact eq_of_lubinTate_functional_equation
       (fun r hr ↦ IsLeftCancelMulZero.mul_left_cancel_of_ne_zero (hne r hr))
