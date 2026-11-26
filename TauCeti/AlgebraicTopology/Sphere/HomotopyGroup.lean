@@ -270,6 +270,21 @@ def homotopyGroupSphereAddEquivOfFinrankEq {E : Type*} [NormedAddCommGroup E] [N
   (HomotopyGroup.homeomorphMulEquiv h x).toAdditive.trans
     (homotopyGroupSphereAddEquiv (EuclideanSpace.basisFun (Fin (n + 3)) ℝ) (h x))
 
+/-- `TauCeti.homotopyGroupSphereAddEquivOfFinrankEq` is the map induced by the homeomorphism
+`TauCeti.sphereHomeomorphOfFinrankEq` with the unit sphere of `EuclideanSpace ℝ (Fin (n + 3))`,
+followed by `TauCeti.homotopyGroupSphereAddEquiv` for its standard basis. -/
+theorem homotopyGroupSphereAddEquivOfFinrankEq_apply {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (hE : finrank ℝ E = n + 3) (x : sphere (0 : E) 1)
+    (a : Additive (π_ (n + 2) (sphere (0 : E) 1) x)) :
+    homotopyGroupSphereAddEquivOfFinrankEq hE x a =
+      haveI := Module.finite_of_finrank_eq_succ hE
+      homotopyGroupSphereAddEquiv (EuclideanSpace.basisFun (Fin (n + 3)) ℝ)
+        (sphereHomeomorphOfFinrankEq (hE.trans (finrank_euclideanSpace_fin (n := n + 3)).symm) x)
+        ((HomotopyGroup.homeomorphMulEquiv
+          (sphereHomeomorphOfFinrankEq (hE.trans (finrank_euclideanSpace_fin (n := n + 3)).symm))
+          x).toAdditive a) :=
+  (rfl)
+
 /-- **`πₙ(Sⁿ)` is nontrivial** for `n ≥ 2`: for the unit sphere `Sⁿ⁺²` of an
 `(n + 3)`-dimensional real normed space, `πₙ₊₂(Sⁿ⁺², x)` is nontrivial. -/
 theorem nontrivial_homotopyGroup_sphere {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

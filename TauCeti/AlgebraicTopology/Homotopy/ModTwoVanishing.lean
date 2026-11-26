@@ -72,7 +72,8 @@ would need.
 
 The hypothesis on mod-two homology cannot be dropped: for `n ≥ 2`, the sphere `Sⁿ` is simply
 connected, its `πₙ ≅ ℤ` is not uniquely two-divisible
-(`TauCeti.not_isUniquelyTwoDivisible_homotopyGroup_sphere`), and indeed `Hₙ(Sⁿ; 𝔽₂) ≠ 0`.
+(`TauCeti.not_isUniquelyTwoDivisible_homotopyGroup_sphere`), and indeed `Hₙ(Sⁿ; 𝔽₂) ≠ 0`
+(`TauCeti.nontrivial_singularHomology_sphere`).
 
 ## Main results
 
@@ -86,8 +87,6 @@ connected, its `πₙ ≅ ℤ` is not uniquely two-divisible
   homology of a point, the higher homotopy groups of `Y` at `y` are uniquely two-divisible.
 * `TauCeti.not_isUniquelyTwoDivisible_homotopyGroup_sphere`: `π_{n+2}(S^{n+2}) ≅ ℤ` is not
   uniquely two-divisible, so the conclusion fails for spheres, which are not mod-two acyclic.
-* `TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations`: if the fibre of a Serre fibration
-  has trivial `π_{n+1}` and the base has nontrivial `π_{n+2}`, so does the total space.
 * `TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations_sphere`: a Serre fibration over
   `S^{n+2}` whose fibre has trivial `π_{n+1}` has a total space with nontrivial `π_{n+2}`.
 
@@ -183,32 +182,17 @@ variable {n : ℕ}
 /-- **The conclusion of mod-two vanishing fails for spheres.** For every `n`, the homotopy group
 `π_{n+2}(S^{n+2}, x) ≅ ℤ` of the simply connected sphere `S^{n+2}`, the unit sphere of an
 `(n + 3)`-dimensional real normed space, is not uniquely two-divisible. This is consistent with
-the theorem, whose hypothesis fails for `S^{n+2}` since `H_{n+2}(S^{n+2}; 𝔽₂) ≠ 0`. -/
+the theorem, whose hypothesis fails for `S^{n+2}` since `H_{n+2}(S^{n+2}; 𝔽₂) ≠ 0`
+(`TauCeti.nontrivial_singularHomology_sphere`). -/
 theorem not_isUniquelyTwoDivisible_homotopyGroup_sphere {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (hE : Module.finrank ℝ E = n + 3) (x : sphere (0 : E) 1) :
     ¬ IsUniquelyTwoDivisible (Additive (π_ (n + 2) (sphere (0 : E) 1) x)) := fun hx ↦
   not_isUniquelyTwoDivisible_int (hx.of_addEquiv (homotopyGroupSphereAddEquivOfFinrankEq hE x))
 
-/-- **A fibre with trivial `π_{n+1}` keeps `π_{n+2}` of the base.** Let `p : X → B` be a Serre
-fibration whose fibre over `y` has trivial `π_{n+1}` at `e`. If `π_{n+2}(B, y)` is nontrivial,
-then so is `π_{n+2}(X, e)`: by exactness of `π_{n+2}(X) → π_{n+2}(B) → π_{n+1}(p⁻¹(y))`, the
-projection maps `π_{n+2}(X, e)` onto `π_{n+2}(B, y)`. -/
-theorem nontrivial_homotopyGroup_of_mem_serreFibrations {X B : TopCat.{u}} {p : X ⟶ B}
-    (hp : TopCat.serreFibrations p) {y : B} (e : p.fiber y)
-    [Subsingleton (π_ (n + 1) (p.fiber y) e)] [Nontrivial (π_ (n + 2) B y)] :
-    Nontrivial (π_ (n + 2) X e.val) := by
-  -- Read `π_{n+2}` on the cube `I^(Option (Fin (n + 1)))` of the exact sequence.
-  let c : Fin (n + 2) ≃ Option (Fin (n + 1)) := finSuccEquiv (n + 1)
-  have : Nontrivial (HomotopyGroup (Option (Fin (n + 1))) B y) :=
-    (HomotopyGroup.congrEquiv c).symm.nontrivial
-  have := (TopCat.surjective_homotopyGroupMap_of_subsingleton (N := Fin (n + 1)) hp
-    (e := e)).nontrivial
-  exact (HomotopyGroup.congrEquiv c).nontrivial
-
 /-- **No fibre with trivial `π_{n+1}` over `S^{n+2}` has a total space with trivial
 `π_{n+2}`.** Let `p : X → S^{n+2}` be a Serre fibration whose fibre over `y` has trivial
 `π_{n+1}` at `e`, as a `K(A, n + 2)` space does. Then `π_{n+2}(X, e)` is nontrivial, since
-`π_{n+2}(S^{n+2}) ≅ ℤ` is (`TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations`). In
+`π_{n+2}(S^{n+2}) ≅ ℤ` is (`TauCeti.TopCat.nontrivial_homotopyGroup_of_mem_serreFibrations`). In
 particular, for `n = 0`, there is no fibration `K(π₃(S²), 2) → X → S²` with `X` `3`-connected. -/
 theorem nontrivial_homotopyGroup_of_mem_serreFibrations_sphere {E : Type u}
     [NormedAddCommGroup E] [NormedSpace ℝ E] (hE : Module.finrank ℝ E = n + 3) {X : TopCat.{u}}
@@ -216,7 +200,7 @@ theorem nontrivial_homotopyGroup_of_mem_serreFibrations_sphere {E : Type u}
     {y : sphere (0 : E) 1} (e : p.fiber y) [Subsingleton (π_ (n + 1) (p.fiber y) e)] :
     Nontrivial (π_ (n + 2) X e.val) :=
   have := nontrivial_homotopyGroup_sphere hE y
-  nontrivial_homotopyGroup_of_mem_serreFibrations hp e
+  TopCat.nontrivial_homotopyGroup_of_mem_serreFibrations hp
 
 end Sphere
 
