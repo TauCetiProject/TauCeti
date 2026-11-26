@@ -21,6 +21,11 @@ secant approximations; compare Munkres, *Elementary Differential Topology*, Chap
 It rests on the uniform first-order approximation of such a map by its derivative at nearby
 points, `IsCompact.exists_pos_forall_norm_image_sub_sub_le`.
 
+Locally, no compactness is needed: if the derivatives of `f` within a convex set `s` stay within
+`C` of a fixed linear map `φ`, and `φ` stretches a chord `y - x` of `s` by at least `c`, then `f`
+stretches it by at least `c - C`, that is `(c - C) ‖y - x‖ ≤ ‖f y - f x‖`
+(`Convex.mul_norm_sub_le_norm_image_sub_of_norm_hasFDerivWithin_sub_le`).
+
 With one point held fixed, differentiability at that point alone suffices. At a point `x` where
 `f` has an antilipschitz derivative, such as an injective derivative on a finite-dimensional
 space, `dist x y ≤ K * dist (f x) (f y)` for `y` near `x`
@@ -82,6 +87,27 @@ theorem exists_antilipschitzWith_of_hasFDerivWithinAt (hs : IsCompact s) (hconv 
   nlinarith
 
 end IsCompact
+
+namespace Convex
+
+variable {𝕜 E G : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **A lower bound on chords from a nearly constant derivative.** If `f` has derivatives `f' x`
+within a convex set `s` with `‖f' x - φ‖ ≤ C` on `s`, and `c ‖y - x‖ ≤ ‖φ (y - x)‖` for
+`x, y ∈ s`, then `(c - C) ‖y - x‖ ≤ ‖f y - f x‖`. -/
+theorem mul_norm_sub_le_norm_image_sub_of_norm_hasFDerivWithin_sub_le {f : E → G}
+    {f' : E → E →L[𝕜] G} {φ : E →L[𝕜] G} {s : Set E} {c C : ℝ} {x y : E}
+    (hf : ∀ x ∈ s, HasFDerivWithinAt f (f' x) s x) (bound : ∀ x ∈ s, ‖f' x - φ‖ ≤ C)
+    (hs : Convex ℝ s) (xs : x ∈ s) (ys : y ∈ s) (hφ : c * ‖y - x‖ ≤ ‖φ (y - x)‖) :
+    (c - C) * ‖y - x‖ ≤ ‖f y - f x‖ := by
+  have hmv := hs.norm_image_sub_le_of_norm_hasFDerivWithin_le' hf bound xs ys
+  have := norm_sub_norm_le (φ (y - x)) (f y - f x)
+  rw [norm_sub_rev (φ (y - x))] at this
+  linarith
+
+end Convex
 
 section Pointwise
 
