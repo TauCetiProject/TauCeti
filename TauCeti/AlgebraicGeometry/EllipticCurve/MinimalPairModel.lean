@@ -53,6 +53,8 @@ such a table finite.
 * `WeierstrassCurve.shortEquationHeight_le_of_natAbs_le` and
   `WeierstrassCurve.natAbs_Δ_le_mul_shortEquationHeight`: the height is monotone in `|a₄|` and
   `|a₆|`, and bounds the discriminant, `|Δ| ≤ 32 · H`.
+* `WeierstrassCurve.natAbs_pow_six_le_mul_shortEquationHeight`: an integer root `r` of
+  `x³ + a₄x + a₆`, the `x`-coordinate of an integral point of order two, has `r⁶ ≤ 16 · H`.
 
 ## Design
 
@@ -144,6 +146,31 @@ theorem natAbs_Δ_le_mul_shortEquationHeight [W.IsShortNF] :
   rw [Δ_of_isShortNF, shortEquationHeight_def]
   norm_num [Int.natAbs_mul, Int.natAbs_pow] at h ⊢
   omega
+
+/-- **The height of a short equation bounds the integral roots of its cubic**: an integer root `r`
+of `x³ + Ax + B` has `r⁶ ≤ 16 · max (4|A|³) (27B²)`. So the `x`-coordinates of the integral
+points of order two on `y² = x³ + Ax + B` are bounded by `2 H^(1/6)`. -/
+theorem natAbs_pow_six_le_mul_shortEquationHeight {A B r : ℤ} (h : r ^ 3 + A * r + B = 0) :
+    r.natAbs ^ 6 ≤ 16 * (shortCurve A B).shortEquationHeight := by
+  have hA : 4 * A.natAbs ^ 3 ≤ (shortCurve A B).shortEquationHeight := by simp
+  have hB : 27 * B.natAbs ^ 2 ≤ (shortCurve A B).shortEquationHeight := by simp
+  zify at hA hB
+  rw [sq_abs] at hB
+  zify
+  rw [(by decide : Even 6).pow_abs, show 6 = 2 * 3 from rfl, pow_mul]
+  have hs : 0 ≤ r ^ 2 := sq_nonneg r
+  -- either `r² < 4|A|`, or `r² + A ≥ 3r²/4` and `B² = r²(r² + A)² ≥ 9r⁶/16`
+  rcases lt_or_ge (r ^ 2) (4 * |A|) with hr | hr
+  · -- `r⁶ < (4|A|)³ = 16 · 4|A|³`
+    have := pow_le_pow_left₀ hs hr.le 3
+    nlinarith
+  · -- `B = -r(r² + A)` and `4(r² + A) ≥ 3r²`, so `16B² ≥ 9r⁶`
+    have hB' : B ^ 2 = r ^ 2 * (r ^ 2 + A) ^ 2 := by
+      rw [show B = -(r * (r ^ 2 + A)) by linear_combination h]
+      ring
+    have h3 : 3 * r ^ 2 ≤ 4 * (r ^ 2 + A) := by linarith [neg_abs_le A]
+    have h9 : 9 * (r ^ 2) ^ 2 ≤ 16 * (r ^ 2 + A) ^ 2 := by nlinarith
+    nlinarith [mul_le_mul_of_nonneg_left h9 hs]
 
 end Height
 
