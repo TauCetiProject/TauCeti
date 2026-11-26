@@ -16,8 +16,6 @@ public import TauCeti.LinearAlgebra.PiTensorProduct.Restricted.Rescale
   nonzero, has image `0` in the restricted tensor product, so the empty stage does not embed
   (`TauCeti.RestrictedTensor.not_injective_ofFinite_empty`). The nonzero-reference hypothesis of
   `TauCeti.RestrictedTensor.ofFinite_injective` cannot be dropped.
-* Rescaling the references by units `c i` sends the pure tensor of the references to the pure
-  tensor of the rescaled references (`TauCeti.RestrictedTensor.rescale_tprod_ref`).
 -/
 
 public section
@@ -49,13 +47,6 @@ theorem not_injective_ofFinite_empty [Nontrivial R] {w : ∀ i, W i} {j : ι} (h
     simpa [h] using PiTensorProduct.isEmptyEquiv_apply_tprod (R := R)
       (s := fun i : (∅ : Finset ι) ↦ W i) (∅ : Finset ι) fun i ↦ w i
   exact hne (hinj (h0.trans (map_zero _).symm))
-
-/-- Rescaling the references sends the pure tensor of the references to the pure tensor of the
-rescaled references. -/
-theorem rescale_tprod_ref {w w' : ∀ i, W i} (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) :
-    rescale w w' c hw (tprod R w w (by simp)) = tprod R w' w' (by simp) := by
-  rw [rescale_tprod]
-  simp_rw [← hw]
 
 end RestrictedTensor
 

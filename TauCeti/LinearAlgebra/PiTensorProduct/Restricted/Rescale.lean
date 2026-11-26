@@ -30,7 +30,9 @@ with inverse `map` of the multiplications by `(c i)⁻¹`.
 
 * `TauCeti.RestrictedTensor.rescale_ofFinite`: on the stage `S` it is multiplication by
   `∏ i ∈ S, c i`.
-* `TauCeti.RestrictedTensor.rescale_tprod`: on pure tensors it is `⨂ₜ f ↦ ⨂ₜ (c i • f i)`.
+* `TauCeti.RestrictedTensor.rescale_tprod`: on pure tensors it is `⨂ₜ f ↦ ⨂ₜ (c i • f i)`;
+  in particular `TauCeti.RestrictedTensor.rescale_tprod_ref` sends the reference tensor for `w`
+  to the reference tensor for `w'`.
 * `TauCeti.RestrictedTensor.rescale_symm`: its inverse is the rescaling by the inverse units.
 * `TauCeti.RestrictedTensor.rescale_one`, `TauCeti.RestrictedTensor.rescale_trans`: rescaling by
   `1` is the identity, and rescaling by `c` and then `c'` is rescaling by `c * c'`.
@@ -52,18 +54,6 @@ namespace RestrictedTensor
 variable {ι : Type*} {R : Type*} [CommSemiring R] {W : ι → Type*}
   [∀ i, AddCommMonoid (W i)] [∀ i, Module R (W i)] {w w' : ∀ i, W i}
 
-/-- If `w' i = c i • w i` for units `c i`, then `w i = (c i)⁻¹ • w' i`. -/
-theorem eq_inv_smul_of_eq_smul (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) (i : ι) :
-    w i = (((c i)⁻¹ : Rˣ) : R) • w' i := by
-  simp [hw, smul_smul]
-
-/-- The tensor map of the factorwise multiplications by `c i` is multiplication by `∏ i, c i`. -/
-private theorem piTensorProduct_map_smul_id {S : Finset ι} (c : S → R) (x : ⨂[R] i : S, W i) :
-    PiTensorProduct.map (fun i ↦ c i • (LinearMap.id : W i →ₗ[R] W i)) x = (∏ i, c i) • x := by
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r f => simp [smul_comm r, MultilinearMap.map_smul_univ]
-  | add x y hx hy => rw [map_add, hx, hy, smul_add]
-
 variable [DecidableEq ι]
 
 variable (w w') in
@@ -75,7 +65,7 @@ def rescale (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) :
     RestrictedTensor R W w ≃ₗ[R] RestrictedTensor R W w' :=
   LinearEquiv.ofLinearMap (map (fun i ↦ (c i : R) • LinearMap.id) fun i ↦ (hw i).symm)
     (map (fun i ↦ (((c i)⁻¹ : Rˣ) : R) • LinearMap.id) fun i ↦
-      (eq_inv_smul_of_eq_smul c hw i).symm)
+      ((eq_inv_smul_iff (g := c i)).2 (hw i).symm).symm)
     (by rw [← map_comp, ← map_id w']; congr 1; ext i x; simp [smul_smul])
     (by rw [← map_comp, ← map_id w]; congr 1; ext i x; simp [smul_smul])
 
@@ -84,8 +74,10 @@ def rescale (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) :
 theorem rescale_ofFinite (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) (S : Finset ι)
     (x : ⨂[R] i : S, W i) :
     rescale w w' c hw (ofFinite R W w S x) = (∏ i ∈ S, (c i : R)) • ofFinite R W w' S x := by
-  simp [rescale, piTensorProduct_map_smul_id (fun i : S ↦ (c i : R)),
-    Finset.prod_attach S fun i ↦ (c i : R)]
+  have h := (PiTensorProduct.mapMultilinear R (fun i : S ↦ W i) (fun i : S ↦ W i)).map_smul_univ
+    (fun i ↦ (c i : R)) fun _ ↦ LinearMap.id
+  simp only [PiTensorProduct.mapMultilinear_apply, PiTensorProduct.map_id] at h
+  simp [rescale, h, Finset.prod_attach S fun i ↦ (c i : R)]
 
 /-- On pure tensors, `rescale c` is `⨂ₜ f ↦ ⨂ₜ (c i • f i)`. -/
 @[simp]
@@ -93,13 +85,22 @@ theorem rescale_tprod (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) (f
     (hf : {i | f i ≠ w i}.Finite) :
     rescale w w' c hw (tprod R w f hf) =
       tprod R w' (fun i ↦ (c i : R) • f i)
-        (hf.subset fun i hi h ↦ hi (by rw [h, hw])) :=
-  map_tprod _ _ f hf
+        (hf.subset fun i hi h ↦ hi (by rw [h, hw])) := by
+  rw [rescale, LinearEquiv.coe_ofLinearMap, map_tprod]
+  simp only [LinearMap.smul_apply, LinearMap.id_apply]
+
+/-- Rescaling the references sends the pure tensor of the references to the pure tensor of the
+rescaled references. -/
+theorem rescale_tprod_ref (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) :
+    rescale w w' c hw (tprod R w w (by simp)) = tprod R w' w' (by simp) := by
+  rw [rescale_tprod]
+  simp_rw [← hw]
 
 /-- The inverse of the rescaling by `c` is the rescaling by the inverse units. -/
+@[simp]
 theorem rescale_symm (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) :
     (rescale w w' c hw).symm =
-      rescale w' w (fun i ↦ (c i)⁻¹) (eq_inv_smul_of_eq_smul c hw) := by
+      rescale w' w (fun i ↦ (c i)⁻¹) fun i ↦ (eq_inv_smul_iff (g := c i)).2 (hw i).symm := by
   ext y
   rw [LinearEquiv.symm_apply_eq]
   obtain ⟨S, x, rfl⟩ := exists_ofFinite y
