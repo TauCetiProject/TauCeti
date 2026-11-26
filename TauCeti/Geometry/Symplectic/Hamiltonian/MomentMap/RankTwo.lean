@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.ConvexHull
 import TauCeti.Analysis.Convex.ConnectedFiber
 
 /-!
-# Convexity of moment maps of groups of dimension at most two
+# Convexity of moment images in dimension two: rank-two groups and planar projections
 
 Let a compact Lie group `G` whose Lie algebra `𝔤` has dimension at most two act smoothly on a
 compact connected boundaryless manifold `M`, preserving a nondegenerate two-form `σ`, with moment
@@ -25,6 +25,9 @@ Guillemin–Sternberg for two-dimensional tori; the connectedness of the fibres 
 here. For a circle, the image and the fibres were already treated in
 `TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.LocallyFree`
 (`TauCeti.SmoothTwoForm.IsMomentMap.range_eq_convexHull_image_fixedPoints_of_finrank_eq_one`).
+For a compact group `G` of any dimension, the file also proves that the projection of the image of
+`μ` to a plane of `𝔤*` is convex
+(`TauCeti.SmoothTwoForm.IsMomentMap.convex_range_domRestrict_of_finrank_le_two`).
 
 The argument is Atiyah's. In dimension two every affine line of `𝔤*` is a level set
 `{ν | ν ξ = c}` for some `ξ ∈ 𝔤`, and its intersection with the image of `μ` is the image of the
@@ -44,7 +47,7 @@ of this projection is convex
 orbit of a compact connected group, with the orbit map as moment map, this gives the convexity of
 the projections of the orbit to planes of the dual of a maximal torus, and hence Kostant's
 convexity theorem for those planes
-(`TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_le`).
+(`TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_le_of_finrank_le_two`).
 
 ## Main results
 

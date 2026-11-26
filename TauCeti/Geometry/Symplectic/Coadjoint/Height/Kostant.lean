@@ -38,11 +38,12 @@ compact connected `G` and every subspace `s ⊆ t` of dimension at most two,
 
 `pr_s (G · ν) = conv (pr_s (W · ν))`
 
-(`TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_le`). In particular
-Kostant's theorem `pr (G · ν) = conv (pr (W · ν))` holds when the maximal torus has dimension at
-most two (`TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull`), for instance for
-`SU(2)`, `SU(3)`, `Sp(2)` and `G₂`. For a maximal torus of higher dimension the convexity of the
-full projection `pr (G · ν)` is not proved here.
+(`TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_le_of_finrank_le_two`).
+In particular Kostant's theorem `pr (G · ν) = conv (pr (W · ν))` holds when the maximal torus has
+dimension at most two
+(`TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_finrank_le_two`), for
+instance for `SU(2)`, `SU(3)`, `Sp(2)` and `G₂`. For a maximal torus of higher dimension the
+convexity of the full projection `pr (G · ν)` is not proved here.
 
 Convexity of a planar projection comes from Atiyah's argument
 (`TauCeti.SmoothTwoForm.IsMomentMap.convex_range_domRestrict_of_finrank_le_two`). The orbit map
@@ -54,7 +55,7 @@ set of one of these heights, so `pr_s (G · ν)` meets every line in an interval
 `s ⊆ 𝔤`. For `s ⊆ t` the projection `pr_s (G · ν)` then contains the points of `pr_s (W · ν)`, and
 restricting the inclusion above from `t` to `s` bounds it by their convex hull.
 
-The argument is the one for torus moment maps
+The inclusion `pr (G · ν) ⊆ conv (pr (W · ν))` is proved as for torus moment maps
 (`TauCeti.SmoothTwoForm.IsMomentMap.range_subset_convexHull_image_fixedPoints`), on the coadjoint
 orbit `O = G ⧸ G_ν`. The Lie algebra `t` is a maximal abelian subspace of `𝔤`, so it carries a
 root-plane decomposition `𝔤 = t + Σ F_i` with roots `α_i ∈ t*`, and an element of `t` at which no
@@ -87,10 +88,11 @@ holds, while the convexity theorem needs connectedness.
   attains its maximum over the orbit at a Weyl group point.
 * `Module.Dual.convex_range_domRestrict_coadjointRepresentation`: for compact connected `G`, the
   projection of a coadjoint orbit to a plane `s*` is convex.
-* `TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_le`: Kostant's
-  convexity theorem for the projections to planes `s ⊆ t`, `pr_s (G · ν) = conv (pr_s (W · ν))`.
-* `TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull`: Kostant's convexity
-  theorem when the maximal torus has dimension at most two.
+* `TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_le_of_finrank_le_two`:
+  Kostant's convexity theorem for the projections to planes `s ⊆ t`,
+  `pr_s (G · ν) = conv (pr_s (W · ν))`.
+* `TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_finrank_le_two`:
+  Kostant's convexity theorem when the maximal torus has dimension at most two.
 
 ## References
 
@@ -314,8 +316,8 @@ algebra `𝔱` of `T`. For `μ ∈ 𝔱`, `ν = B (e μ)` and every subspace `s 
 the restrictions to `s` of the covectors of the coadjoint orbit of `ν` form exactly the convex hull
 of the restrictions to `s` of the covectors `B (e (w μ))`, `w` in the Weyl group:
 `pr_s (G · ν) = conv (pr_s (W · ν))`. -/
-theorem range_domRestrict_coadjointRepresentation_eq_convexHull_of_le [CompactSpace G]
-    [ConnectedSpace G] (hT : IsMaximalTorus T)
+theorem range_domRestrict_coadjointRepresentation_eq_convexHull_of_le_of_finrank_le_two
+    [CompactSpace G] [ConnectedSpace G] (hT : IsMaximalTorus T)
     (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
     (hBs : B.IsSymm) (hpos : ∀ a, a ≠ 0 → 0 < B a a)
     (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
@@ -352,8 +354,8 @@ most two of a compact connected Lie group `G`, `B` an `Ad`-invariant inner produ
 the image of the Lie algebra `𝔱` of `T`. For `μ ∈ 𝔱` and `ν = B (e μ)`, the projection of the
 coadjoint orbit of `ν` to `t*` is the convex hull of the projected Weyl orbit:
 `pr_t (G · ν) = conv (pr_t (W · ν))`. -/
-theorem range_domRestrict_coadjointRepresentation_eq_convexHull [CompactSpace G]
-    [ConnectedSpace G] (hT : IsMaximalTorus T)
+theorem range_domRestrict_coadjointRepresentation_eq_convexHull_of_finrank_le_two
+    [CompactSpace G] [ConnectedSpace G] (hT : IsMaximalTorus T)
     (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
     (hBs : B.IsSymm) (hpos : ∀ a, a ≠ 0 → 0 < B a a)
     (ht : t = (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.map
@@ -367,6 +369,7 @@ theorem range_domRestrict_coadjointRepresentation_eq_convexHull [CompactSpace G]
         (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
           BoundarylessManifold.isInteriorPoint
             (T.weylAdjointRepresentation (I := I) w μ))).domRestrict t) :=
-  range_domRestrict_coadjointRepresentation_eq_convexHull_of_le hT hB hBs hpos ht μ le_rfl htwo
+  range_domRestrict_coadjointRepresentation_eq_convexHull_of_le_of_finrank_le_two hT hB hBs hpos ht
+    μ le_rfl htwo
 
 end TauCeti.Lie
