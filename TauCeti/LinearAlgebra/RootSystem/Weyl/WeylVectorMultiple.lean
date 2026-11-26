@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MonoidAlgebra.MapDomain
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Numerator
 import Mathlib.Algebra.Order.Interval.Finset.SuccPred
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.MonoidAlgebra.Telescope
 import TauCeti.Algebra.MonoidAlgebra.Units
 
@@ -145,22 +146,15 @@ theorem eq_prod_sum_Icc_of_mul_weylDenominator_eq
   rw [eq_single_nsmul_weylVector_mul_prod_of_mul_weylDenominator_eq hΔ hf, ← nsmul_twoWeylVector,
     hsingle, ← prod_mul_distrib]
   refine prod_congr rfl fun i _ ↦ ?_
-  rw [Finset.mul_sum]
   -- Reindex the string `j ↦ n - j` from `0, …, 2 n` to `-n, …, n`.
-  refine Finset.sum_nbij' (fun j ↦ (n : ℤ) - j) (fun j ↦ ((n : ℤ) - j).toNat) ?_ ?_ ?_ ?_ ?_
-  · intro j hj
-    simp only [mem_range, mem_Icc] at hj ⊢
-    omega
-  · intro j hj
-    simp only [mem_range, mem_Icc] at hj ⊢
-    omega
-  · intro j _
-    simp
-  · intro j hj
-    simp only [mem_Icc] at hj
-    omega
-  · intro j _
-    rw [single_mul_single, one_mul, sub_smul, natCast_zsmul, natCast_zsmul, sub_eq_add_neg]
+  rw [Finset.mul_sum, sum_Icc_neg_natCast_eq_sum_range, ← sum_range_reflect]
+  refine sum_congr rfl fun j hj ↦ ?_
+  rw [mem_range] at hj
+  rw [single_mul_single, one_mul, add_tsub_cancel_right, ← natCast_zsmul, ← natCast_zsmul,
+    Nat.cast_sub (by omega), ← neg_smul, ← add_smul]
+  congr 2
+  push_cast
+  ring
 
 end Numerator
 

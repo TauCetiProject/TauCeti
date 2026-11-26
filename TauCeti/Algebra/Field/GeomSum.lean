@@ -14,6 +14,7 @@ import Mathlib.Algebra.Module.Basic
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Summation by parts against a geometric sequence
@@ -77,24 +78,9 @@ theorem one_sub_mul_sum_Icc_zpow {𝕜 : Type*} [DivisionRing 𝕜] {z : 𝕜} (
     (1 - z) * ∑ j ∈ Icc (-(n : ℤ)) n, z ^ j = z ^ (-(n : ℤ)) - z ^ (n + 1) := by
   -- Reindex `j = -n + k` with `k = 0, …, 2 n`.
   have hsum : ∑ j ∈ Icc (-(n : ℤ)) n, z ^ j = z ^ (-(n : ℤ)) * ∑ k ∈ range (2 * n + 1), z ^ k := by
-    rw [Finset.mul_sum]
-    refine Finset.sum_nbij' (fun j ↦ (j + n).toNat) (fun k ↦ -(n : ℤ) + k) ?_ ?_ ?_ ?_ ?_
-    · intro j hj
-      simp only [mem_range, mem_Icc] at hj ⊢
-      omega
-    · intro k hk
-      simp only [mem_range, mem_Icc] at hk ⊢
-      omega
-    · intro j hj
-      simp only [mem_Icc] at hj
-      omega
-    · intro k _
-      simp
-    · intro j hj
-      simp only [mem_Icc] at hj
-      rw [← zpow_natCast, ← zpow_add₀ hz]
-      congr 1
-      omega
+    rw [sum_Icc_neg_natCast_eq_sum_range, Finset.mul_sum]
+    refine sum_congr rfl fun k _ ↦ ?_
+    rw [sub_eq_neg_add, zpow_add₀ hz, zpow_natCast]
   -- `1 - z` commutes with the powers of `z`.
   have hc : Commute (1 - z) (z ^ (-(n : ℤ))) :=
     (Commute.one_left _).sub_left ((Commute.refl z).zpow_right₀ _)
