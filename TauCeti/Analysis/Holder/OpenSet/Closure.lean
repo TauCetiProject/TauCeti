@@ -26,6 +26,7 @@ conditions for the Cauchy–Riemann operator on the disc.
 
 * `TauCeti.CkHolderSpaceOn.closureExtend`: the extension `extendFrom Ω f` of an element to `E`; it
   agrees with the element on `Ω` (`TauCeti.CkHolderSpaceOn.closureExtend_apply`).
+* `TauCeti.CkHolderSpaceOn.closureExtend_zero`: the zero element extends by zero on the closure.
 * `TauCeti.CkHolderSpaceOn.closureExtend_eq_of_continuousWithinAt`: it is the value at the point
   of any function agreeing with the element on `Ω` and continuous within `Ω` there.
 * `TauCeti.CkHolderSpaceOn.differentiableOn_closureExtend`: from order one on, the extension to the
@@ -102,6 +103,14 @@ theorem closureExtend_eq_of_continuousWithinAt (f : CkHolderSpaceOn k α Ω F) {
   refine extendFrom_eq hx (hg.tendsto.congr' ?_)
   filter_upwards [self_mem_nhdsWithin] with y hy
   rw [f.extend_apply_of_mem hy, hfg]
+
+/-- The extension of the zero element of `C^{k,α}(Ω)` vanishes on the closure of `Ω`. -/
+@[simp]
+theorem closureExtend_zero {x : E} (hx : x ∈ closure (Ω : Set E)) :
+    (0 : CkHolderSpaceOn k α Ω F).closureExtend x = 0 := by
+  refine extendFrom_eq hx (tendsto_const_nhds.congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with y hy
+  rw [extend_apply_of_mem _ hy, coe_zero, Pi.zero_apply]
 
 variable [CompleteSpace F]
 
