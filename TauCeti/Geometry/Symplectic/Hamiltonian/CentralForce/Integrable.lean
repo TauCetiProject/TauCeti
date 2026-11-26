@@ -58,8 +58,8 @@ completely integrable system there (`TauCeti.isIntegrableSystem_centralForceEner
   smooth on the punctured phase space as its potential is on `r > 0`.
 * `TauCeti.coe_smul_puncturedPhaseSpace`: a group acting linearly on `V` acts on the punctured
   phase space by acting on positions and momenta alike, smoothly if it acts smoothly on `V`.
-* `TauCeti.poissonBracket_comp_centralForceEnergyMomentum`: all the functions `ℓ ∘ (H, L)`
-  Poisson-commute on `V × V`.
+* `TauCeti.stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum`: all the functions
+  `ℓ ∘ (H, L)` Poisson-commute on `V × V`.
 * `TauCeti.poissonBracket_centralForceEnergyMomentum_comp_subtypeVal`: `H` and `L` Poisson-commute
   on every open set avoiding the collision set.
 * `TauCeti.isIntegrableSystem_centralForceEnergyMomentum`: `(H, L)` is a completely integrable
@@ -515,8 +515,8 @@ theorem comp_centralForceEnergyMomentum (m : ℝ) (U : ℝ → ℝ) (ℓ : (Fin 
 /-- **The components of the energy–momentum map Poisson-commute.** For all functionals `ℓ` and
 `ℓ'` on `ℝ²`, the functions `ℓ ∘ (H, L)` and `ℓ' ∘ (H, L)` Poisson-commute for the standard
 symplectic form of `V × V`, at every point. -/
-theorem poissonBracket_comp_centralForceEnergyMomentum [FiniteDimensional ℝ V] (m : ℝ)
-    (U : ℝ → ℝ) (ℓ ℓ' : (Fin 2 → ℝ) →L[ℝ] ℝ) (y : V × V) :
+theorem stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum [FiniteDimensional ℝ V]
+    (m : ℝ) (U : ℝ → ℝ) (ℓ ℓ' : (Fin 2 → ℝ) →L[ℝ] ℝ) (y : V × V) :
     (stdSymplecticForm (V := V)).poissonBracket (ℓ ∘ centralForceEnergyMomentum b m U)
       (ℓ' ∘ centralForceEnergyMomentum b m U) y = 0 := by
   rw [comp_centralForceEnergyMomentum, comp_centralForceEnergyMomentum,

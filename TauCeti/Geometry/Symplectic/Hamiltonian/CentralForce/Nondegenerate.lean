@@ -209,7 +209,7 @@ private theorem finrank_reducedSpace_ker_fderiv_centralForceEnergyMomentum {U' :
       (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker) = 2 := by
   have h := (stdSymplecticForm (V := V)).finrank_reducedSpace_ker_fderiv
     (hasFDerivAt_centralForceEnergyMomentum b (m := m) hU hq).differentiableAt
-    fun ℓ ℓ' ↦ poissonBracket_comp_centralForceEnergyMomentum b m U ℓ ℓ' x
+    fun ℓ ℓ' ↦ stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum b m U ℓ ℓ' x
   rw [finrank_range_fderiv_centralForceEnergyMomentum b hU hq h0 hU', Module.finrank_prod,
     finrank_eq_card_basis b.toBasis, Fintype.card_fin] at h
   omega
@@ -270,7 +270,8 @@ private theorem exists_reducedQuadraticForm_eq_hessianQuadraticForm {U' : ℝ}
   exact ⟨_, (stdSymplecticForm (V := V)).reducedQuadraticForm_mk _ _ fun _ hw u _ ↦
     (stdSymplecticForm (V := V)).polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal
       (contDiffAt_centralForceEnergyMomentum b hU hq) hℓ₀
-      (fun ℓ' ↦ .of_forall fun y ↦ poissonBracket_comp_centralForceEnergyMomentum b m U ℓ' ℓ₀ y)
+      (fun ℓ' ↦ .of_forall fun y ↦
+        stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum b m U ℓ' ℓ₀ y)
       hw.2 u⟩
 
 /-- At a point of a circular orbit, the transversal Hessians of all the critical functions
@@ -378,7 +379,8 @@ theorem isNondegeneratePoint_centralForceEnergyMomentum_iff (hm : m ≠ 0)
   -- so nondegeneracy is that of the single transversal Hessian `Q`, which is diagonal in `e`.
   rw [SymplecticForm.isNondegeneratePoint_iff_of_poissonBracket
       (contDiffAt_centralForceEnergyMomentum b hU hq)
-      fun ℓ ℓ' ↦ .of_forall fun y ↦ poissonBracket_comp_centralForceEnergyMomentum b m U ℓ' ℓ y,
+      fun ℓ ℓ' ↦ .of_forall fun y ↦
+        stdSymplecticForm_poissonBracket_comp_centralForceEnergyMomentum b m U ℓ' ℓ y,
     SymplecticForm.isNondegenerateQuadraticFamily_iff_of_span_eq
       (span_range_eq_span_range_const b hUd hq h0 hU' hQ fun ℓ u ↦
         SymplecticForm.reducedQuadraticForm_mk _ _ _ _ u),
