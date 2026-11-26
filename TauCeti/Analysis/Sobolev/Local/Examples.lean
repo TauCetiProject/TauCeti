@@ -380,14 +380,18 @@ theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
 
 /-! ### The logarithm of the norm and its gradient -/
 
+/-- Planar specialization of `TauCeti.memLpLoc_norm_inv_iff_lt_finrank`: `‖z‖⁻¹` is locally `Lᵖ`
+near the origin in `ℂ` if and only if `p < 2`. -/
+private theorem memLpLoc_norm_inv_iff (hU : U ∈ 𝓝 0) :
+    MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
+  simpa [Complex.finrank_real_complex] using memLpLoc_norm_inv_iff_lt_finrank (p := p) hU
+
 /-- **The components of the gradient of `log ‖z‖` are locally `Lᵖ` near the origin exactly for
 `p < 2`.** These are `Re z / ‖z‖²` and `Im z / ‖z‖²`, the divergence-form data of `log ‖z‖`. -/
 theorem memLpLoc_re_div_and_im_div_iff (hU : U ∈ 𝓝 0) :
     (MemLpLoc p U (fun z : ℂ => z.re / ‖z‖ ^ 2) ∧ MemLpLoc p U fun z : ℂ => z.im / ‖z‖ ^ 2) ↔
       p < 2 := by
-  have hinv : MemLpLoc p U (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
-    simpa [Complex.finrank_real_complex] using memLpLoc_norm_inv_iff_lt_finrank (p := p) hU
-  rw [← hinv]
+  rw [← memLpLoc_norm_inv_iff hU]
   have hdiv (a : ℝ) (z : ℂ) (hz : |a| ≤ ‖z‖) :
       ‖a / ‖z‖ ^ 2‖ ≤ ‖‖z‖⁻¹‖ := by
     rcases eq_or_ne z 0 with rfl | hz0
@@ -433,9 +437,7 @@ theorem memWkpLoc_one_log_norm_iff {Ω : Opens ℂ} (h0 : (0 : ℂ) ∈ Ω) :
     · simp
     rw [← (hasFDerivAt_log_norm_of_ne hz).fderiv, norm_fderiv_log_norm_of_ne hz]
   simp only [memWkpLoc_succ_iff_of_isOpen, memWkpLoc_zero_iff]
-  have hinv : MemLpLoc p (Ω : Set ℂ) (fun z : ℂ => ‖z‖⁻¹) ↔ p < 2 := by
-    simpa [Complex.finrank_real_complex] using memLpLoc_norm_inv_iff_lt_finrank (p := p) hU
-  rw [← hinv]
+  rw [← memLpLoc_norm_inv_iff hU]
   constructor
   · rintro ⟨-, D, hD, hDp⟩
     have hae := hD.ae_eq (hasWeakFDerivOn_log_norm Ω)

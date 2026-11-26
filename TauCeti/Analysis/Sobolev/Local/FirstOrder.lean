@@ -258,7 +258,8 @@ theorem MemW1pLoc.prodMk [OpensMeasurableSpace E] {w : E → G} (hu : MemW1pLoc 
   convert h using 1
   ext x <;> simp
 
-/-- Pointwise product of two operator fields in `MemW1pLoc p Ω`. -/
+/-- The pointwise product map `x ↦ (A x).prodMap (B x)` of two operator fields in `MemW1pLoc p Ω`
+(acting componentwise on `E₁ × E₃`) belongs to `MemW1pLoc p Ω`. -/
 theorem MemW1pLoc.prodMap {E₁ E₂ E₃ E₄ : Type*} [OpensMeasurableSpace E]
     [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
     [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [CompleteSpace E₂] [NormedAddCommGroup E₃]
@@ -539,9 +540,11 @@ theorem memW1pLoc_comp_toLp_iff {n : ℕ} {F : Type*} [NormedAddCommGroup F] [No
     MemW1pLoc p U (u ∘ WithLp.toLp 2) ↔ MemW1pLoc p Ω u := by
   let e : (Fin n → ℝ) ≃L[ℝ] EuclideanSpace ℝ (Fin n) :=
     (PiLp.continuousLinearEquiv 2 ℝ fun _ : Fin n => ℝ).symm
+  have he : ⇑e = WithLp.toLp 2 := PiLp.coe_symm_continuousLinearEquiv 2 ℝ _
   have hUe : U = Ω.comap (e.toHomeomorph : C(Fin n → ℝ, EuclideanSpace ℝ (Fin n))) :=
-    SetLike.ext' hU
-  rw [hUe]
+    SetLike.ext' <| by
+      rw [hU, ← he, Opens.coe_comap, ContinuousMap.coe_ofClass, e.coe_toHomeomorph]
+  rw [hUe, ← he]
   exact e.memW1pLoc_comp_iff
 
 end HaarAndLinear
