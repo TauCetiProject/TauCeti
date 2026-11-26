@@ -47,7 +47,7 @@ phrased through induced maps.
   `(a, b) ↦ (-d₀ a, f₀ a + d₁ b)` of `f₀` to `M₂` is a chain map
   (`LinearMap.coprod_comp_mappingCone`). If `ψ₀` and `ψ₁` induce isomorphisms on homology and
   `ψ₂` is injective on homology, it induces an isomorphism on homology
-  (`LinearMap.bijective_homologyMap_coprod_of_triangle`).
+  (`LinearMap.homologyMap_coprod_bijective_of_triangle`).
 * **Exact triangles.** For three differential modules with chain maps `f₀ : M₀ → M₁`,
   `f₁ : M₁ → M₂`, `f₂ : M₂ → M₀` and homotopies `h₀ : M₀ → M₂`, `h₁ : M₁ → M₀`,
   `h₂ : M₂ → M₁`, if the three maps `ψᵢ : Mᵢ → Mᵢ` induce isomorphisms on homology, the
@@ -60,9 +60,8 @@ Over `𝔽₂` the signs disappear, and `ψᵢ = fᵢ₊₂ ∘ hᵢ + hᵢ₊�
 
 * `LinearMap.exists_mem_ker_sub_mem_range_of_triangle`: exactness at `M₁`, elementwise.
 * `LinearMap.exact_homologyMap_of_triangle`: the induced maps on homology are exact at `H(M₁)`.
-* `LinearMap.coprod_comp_mappingCone`: `(a, b) ↦ h₀ a + f₁ b` is a chain map from the cone
-  of `f₀` to `M₂`.
-* `LinearMap.bijective_homologyMap_coprod_of_triangle`: it induces an isomorphism on homology.
+* `LinearMap.homologyMap_coprod_bijective_of_triangle`: the chain map `(a, b) ↦ h₀ a + f₁ b` from
+  the cone of `f₀` to `M₂` induces an isomorphism on homology.
 * `LinearMap.exact_homologyMap_of_cyclic_triangle`: the exact triangle of homologies.
 
 ## References
@@ -104,30 +103,21 @@ theorem exists_mem_ker_sub_mem_range_of_triangle
     (hψ₁' : ∀ m ∈ ker d₁, (f₃ ∘ₗ h₁ - h₂ ∘ₗ f₁) m ∈ range d₄ → m ∈ range d₁)
     {b : M₁} (hb : b ∈ ker d₁) (hfb : f₁ b ∈ range d₂) :
     ∃ a ∈ ker d₀, b - f₀ a ∈ range d₁ := by
-  have hf₀' (x : M₀) : f₀ (d₀ x) = d₁ (f₀ x) := congr($hf₀ x)
-  have hf₂' (x : M₂) : f₂ (d₂ x) = d₃ (f₂ x) := congr($hf₂ x)
-  have hf₃' (x : M₃) : f₃ (d₃ x) = d₄ (f₃ x) := congr($hf₃ x)
-  have hh₀' (x : M₀) : f₁ (f₀ x) = d₂ (h₀ x) + h₀ (d₀ x) := congr($hh₀ x)
-  have hh₁' (x : M₁) : f₂ (f₁ x) = d₃ (h₁ x) + h₁ (d₁ x) := congr($hh₁ x)
-  have hh₂' (x : M₂) : f₃ (f₂ x) = d₄ (h₂ x) + h₂ (d₂ x) := congr($hh₂ x)
+  simp only [LinearMap.ext_iff, comp_apply, LinearMap.add_apply] at hf₀ hf₂ hf₃ hh₀ hh₁ hh₂
   rw [mem_ker] at hb
   obtain ⟨c, hc⟩ := hfb
   -- `h₁ b - f₂ c` is a cycle, homologous to `ψ₀ a` for a cycle `a`.
-  obtain ⟨a, ha, e, he⟩ := hψ₀ (h₁ b - f₂ c) <| by
-    rw [mem_ker, map_sub, ← hf₂', hc, hh₁', hb, map_zero, add_zero, sub_self]
+  obtain ⟨a, ha, e, he⟩ := hψ₀ (h₁ b - f₂ c) (by simp [← hf₂, hc, hh₁, hb])
   rw [mem_ker] at ha
-  have he' : d₄ (f₃ e) = f₃ (h₁ b) - (d₄ (h₂ c) + h₂ (f₁ b)) -
-      (d₄ (h₂ (h₀ a)) + h₂ (f₁ (f₀ a)) - f₃ (h₁ (f₀ a))) := by
-    have hd₂h₀ : d₂ (h₀ a) = f₁ (f₀ a) := by rw [hh₀', ha, map_zero, add_zero]
-    rw [← hf₃', he]
-    simp only [LinearMap.sub_apply, comp_apply, map_sub, hh₂', hc, hd₂h₀]
+  have hd₂h₀ : d₂ (h₀ a) = f₁ (f₀ a) := by simp [hh₀, ha]
   -- Applying `f₃` shows that `ψ₁ (b + f₀ a)` is a boundary.
   have hb' : b + f₀ a ∈ range d₁ := by
-    refine hψ₁' _ (by rw [mem_ker, map_add, hb, ← hf₀', ha, map_zero, add_zero])
-      ⟨f₃ e + h₂ c + h₂ (h₀ a), ?_⟩
+    refine hψ₁' _ (by simp [hb, ← hf₀, ha]) ⟨f₃ e + h₂ c + h₂ (h₀ a), ?_⟩
+    have he' := congr(f₃ $he)
+    simp only [hf₃, map_sub, LinearMap.sub_apply, comp_apply, hh₂, hc, hd₂h₀] at he'
     simp only [map_add, he', LinearMap.sub_apply, comp_apply]
     abel
-  exact ⟨-a, by rw [mem_ker, map_neg, ha, neg_zero], by rwa [map_neg, sub_neg_eq_add]⟩
+  exact ⟨-a, by simpa using ha, by simpa [sub_eq_add_neg] using hb'⟩
 
 /-- **Exactness in the triangle detection lemma.** Let `f₀, …, f₃` be chain maps with
 null-homotopic composites, `fᵢ₊₁ ∘ fᵢ = dᵢ₊₂ ∘ hᵢ + hᵢ ∘ dᵢ`. If `ψ₀ = f₂ ∘ h₀ - h₁ ∘ f₀` is
@@ -149,28 +139,13 @@ theorem exact_homologyMap_of_triangle (hd₀ : d₀ ∘ₗ d₀ = 0) (hd₁ : d�
     obtain ⟨a, ha, hab⟩ := exists_mem_ker_sub_mem_range_of_triangle hf₀ hf₂ hf₃ hh₀ hh₁ hh₂ hψ₀
       hψ₁' b.property hy
     refine ⟨d₀.homologyπ hd₀ ⟨a, ha⟩, ?_⟩
-    rw [homologyπ_apply, homologyπ_apply, homologyMap_mk, Submodule.Quotient.eq,
-      mem_boundariesInKer, Submodule.coe_sub, ← neg_sub]
-    exact neg_mem hab
+    simpa [homologyπ_apply, Submodule.Quotient.eq, mem_boundariesInKer] using neg_mem hab
   · rintro ⟨x, rfl⟩
-    obtain ⟨a, rfl⟩ := d₀.homologyπ_surjective hd₀ x
-    rw [homologyπ_apply, homologyMap_mk, homologyMap_mk, Submodule.Quotient.mk_eq_zero,
-      mem_boundariesInKer]
-    refine ⟨h₀ a, ?_⟩
-    simpa [mem_ker.mp a.property] using (congr($hh₀ (a : M₀))).symm
+    rw [homologyMap_homologyMap,
+      homologyMap_eq_of_sub_eq (f₁ ∘ₗ f₀) 0 h₀ hd₀ hd₂ _ (by simp) (by simpa using hh₀),
+      homologyMap_zero, LinearMap.zero_apply]
 
-/-- The map `(a, b) ↦ h₀ a + f₁ b` from the mapping cone of `f₀` to `M₂` is a chain map when
-`f₁` is a chain map and `h₀` is a null-homotopy of `f₁ ∘ f₀`. -/
-theorem coprod_comp_mappingCone (hf₁ : f₁ ∘ₗ d₁ = d₂ ∘ₗ f₁)
-    (hh₀ : f₁ ∘ₗ f₀ = d₂ ∘ₗ h₀ + h₀ ∘ₗ d₀) :
-    h₀.coprod f₁ ∘ₗ mappingCone d₀ d₁ f₀ = d₂ ∘ₗ h₀.coprod f₁ := by
-  refine LinearMap.ext fun x ↦ ?_
-  have hh : f₁ (f₀ x.1) = d₂ (h₀ x.1) + h₀ (d₀ x.1) := congr($hh₀ x.1)
-  have hf : f₁ (d₁ x.2) = d₂ (f₁ x.2) := congr($hf₁ x.2)
-  simp only [comp_apply, mappingCone_apply, coprod_apply, map_neg, map_add, hh, hf]
-  abel
-
-/-- The injectivity half of `LinearMap.bijective_homologyMap_coprod_of_triangle`: a cycle of
+/-- The injectivity half of `LinearMap.homologyMap_coprod_bijective_of_triangle`: a cycle of
 the mapping cone of `f₀` whose image `h₀ a + f₁ b` is a boundary is a boundary. -/
 private theorem mem_range_mappingCone_of_triangle
     (hf₀ : f₀ ∘ₗ d₀ = d₁ ∘ₗ f₀) (hf₂ : f₂ ∘ₗ d₂ = d₃ ∘ₗ f₂) (hf₃ : f₃ ∘ₗ d₃ = d₄ ∘ₗ f₃)
@@ -181,10 +156,9 @@ private theorem mem_range_mappingCone_of_triangle
     (hψ₁' : ∀ m ∈ ker d₁, (f₃ ∘ₗ h₁ - h₂ ∘ₗ f₁) m ∈ range d₄ → m ∈ range d₁)
     (x : M₀ × M₁) (hx : x ∈ ker (mappingCone d₀ d₁ f₀)) (hαx : h₀.coprod f₁ x ∈ range d₂) :
     x ∈ range (mappingCone d₀ d₁ f₀) := by
-  have hf₀' (x : M₀) : f₀ (d₀ x) = d₁ (f₀ x) := congr($hf₀ x)
-  have hf₂' (x : M₂) : f₂ (d₂ x) = d₃ (f₂ x) := congr($hf₂ x)
-  have hh₀' (x : M₀) : f₁ (f₀ x) = d₂ (h₀ x) + h₀ (d₀ x) := congr($hh₀ x)
-  have hh₁' (x : M₁) : f₂ (f₁ x) = d₃ (h₁ x) + h₁ (d₁ x) := congr($hh₁ x)
+  have key {b : M₁} :=
+    exists_mem_ker_sub_mem_range_of_triangle (b := b) hf₀ hf₂ hf₃ hh₀ hh₁ hh₂ hψ₀ hψ₁'
+  simp only [LinearMap.ext_iff, comp_apply, LinearMap.add_apply] at hf₀ hf₂ hh₀ hh₁
   obtain ⟨a, b⟩ := x
   obtain ⟨c, hc⟩ := hαx
   simp only [mem_ker, mappingCone_apply, Prod.mk_eq_zero, neg_eq_zero] at hx
@@ -193,20 +167,21 @@ private theorem mem_range_mappingCone_of_triangle
   -- `ψ₀ a` is the boundary of `f₂ c - h₁ b`, so `a = d₀ x`.
   obtain ⟨x, rfl⟩ := hψ₀' a (mem_ker.mpr ha) ⟨f₂ c - h₁ b, by
     have hb : d₁ b = -f₀ a := eq_neg_of_add_eq_zero_right hab
-    rw [map_sub, ← hf₂', hc, map_add, hh₁', hb, LinearMap.sub_apply, comp_apply, comp_apply]
-    simp only [map_neg]
+    simp only [map_sub, ← hf₂, hc, map_add, hh₁, hb, map_neg, LinearMap.sub_apply, comp_apply]
     abel⟩
   -- Then `b + f₀ x` is a cycle whose image under `f₁` is a boundary, so it comes from `M₀`.
-  have hbx : b + f₀ x ∈ ker d₁ := by rw [mem_ker, map_add, ← hf₀', add_comm, hab]
-  obtain ⟨a', ha', y, hy⟩ := exists_mem_ker_sub_mem_range_of_triangle hf₀ hf₂ hf₃ hh₀ hh₁ hh₂
-    hψ₀ hψ₁' hbx ⟨c + h₀ x, by rw [map_add, hc, map_add, hh₀']; abel⟩
+  have hbx : b + f₀ x ∈ ker d₁ := by
+    rw [mem_ker, map_add, ← hf₀]
+    exact (add_comm _ _).trans hab
+  obtain ⟨a', ha', y, hy⟩ := key hbx ⟨c + h₀ x, by
+    simp only [map_add, hc, hh₀]
+    abel⟩
   refine ⟨(a' - x, y), ?_⟩
-  have ha'0 : d₀ a' = 0 := mem_ker.mp ha'
-  simp only [mappingCone_apply, map_sub, ha'0, zero_sub, neg_neg, Prod.mk.injEq, true_and]
-  rw [hy]
+  simp only [mappingCone_apply, map_sub, mem_ker.mp ha', zero_sub, neg_neg, Prod.mk.injEq,
+    true_and, hy]
   abel
 
-/-- The surjectivity half of `LinearMap.bijective_homologyMap_coprod_of_triangle`: every cycle of
+/-- The surjectivity half of `LinearMap.homologyMap_coprod_bijective_of_triangle`: every cycle of
 `d₂` differs from the image `h₀ a + f₁ b` of a cycle of the mapping cone of `f₀` by a
 boundary. -/
 private theorem exists_mem_ker_mappingCone_sub_mem_range_of_triangle
@@ -220,44 +195,37 @@ private theorem exists_mem_ker_mappingCone_sub_mem_range_of_triangle
     (hψ₂' : ∀ m ∈ ker d₂, (f₄ ∘ₗ h₂ - h₃ ∘ₗ f₂) m ∈ range d₅ → m ∈ range d₂)
     (c : M₂) (hc : c ∈ ker d₂) :
     ∃ x ∈ ker (mappingCone d₀ d₁ f₀), c - h₀.coprod f₁ x ∈ range d₂ := by
-  have hf₀' (x : M₀) : f₀ (d₀ x) = d₁ (f₀ x) := congr($hf₀ x)
-  have hf₁' (x : M₁) : f₁ (d₁ x) = d₂ (f₁ x) := congr($hf₁ x)
-  have hf₂' (x : M₂) : f₂ (d₂ x) = d₃ (f₂ x) := congr($hf₂ x)
-  have hf₃' (x : M₃) : f₃ (d₃ x) = d₄ (f₃ x) := congr($hf₃ x)
-  have hh₀' (x : M₀) : f₁ (f₀ x) = d₂ (h₀ x) + h₀ (d₀ x) := congr($hh₀ x)
-  have hh₁' (x : M₁) : f₂ (f₁ x) = d₃ (h₁ x) + h₁ (d₁ x) := congr($hh₁ x)
-  have hh₂' (x : M₂) : f₃ (f₂ x) = d₄ (h₂ x) + h₂ (d₂ x) := congr($hh₂ x)
+  have key {c : M₂} :=
+    exists_mem_ker_sub_mem_range_of_triangle (b := c) hf₁ hf₃ hf₄ hh₁ hh₂ hh₃ hψ₁ hψ₂'
+  simp only [LinearMap.ext_iff, comp_apply, LinearMap.add_apply] at hf₀ hf₁ hf₂ hf₃ hh₀ hh₁ hh₂
   rw [mem_ker] at hc
-  obtain ⟨a, ha, e, he⟩ := hψ₀ (f₂ c) (by rw [mem_ker, ← hf₂', hc, map_zero])
+  obtain ⟨a, ha, e, he⟩ := hψ₀ (f₂ c) (by simp [← hf₂, hc])
   rw [mem_ker] at ha
   simp only [LinearMap.sub_apply, comp_apply] at he
-  have hd₂h₀ : d₂ (h₀ a) = f₁ (f₀ a) := by rw [hh₀', ha, map_zero, add_zero]
+  have hd₂h₀ : d₂ (h₀ a) = f₁ (f₀ a) := by simp [hh₀, ha]
   -- `ψ₁ (f₀ a)` is a boundary, so `f₀ a = d₁ b` for some `b`.
-  obtain ⟨b, hb⟩ := hψ₁' (f₀ a) (by rw [mem_ker, ← hf₀', ha, map_zero])
+  obtain ⟨b, hb⟩ := hψ₁' (f₀ a) (by simp [← hf₀, ha])
     ⟨h₂ (h₀ a) - h₂ c + f₃ e, by
-      rw [map_add, map_sub, ← hf₃', he]
-      simp only [map_sub, LinearMap.sub_apply, comp_apply, hh₂', hc, hd₂h₀, map_zero, add_zero]
+      simp only [map_add, map_sub, ← hf₃, he, LinearMap.sub_apply, comp_apply, hh₂, hc, hd₂h₀,
+        map_zero, add_zero]
       abel⟩
   -- `c - h₀ a + f₁ b` is a cycle killed by `f₂` in homology, so it comes from `M₁`.
   have hc' : c - (h₀ a + f₁ (-b)) ∈ ker d₂ := by
-    simp only [mem_ker, map_sub, map_add, map_neg, hd₂h₀, ← hf₁', hb, hc]
+    simp only [mem_ker, map_sub, map_add, map_neg, hd₂h₀, ← hf₁, hb, hc]
     abel
-  obtain ⟨b', hb', z, hz⟩ := exists_mem_ker_sub_mem_range_of_triangle hf₁ hf₃ hf₄ hh₁ hh₂ hh₃
-    hψ₁ hψ₂' hc' ⟨e - h₁ (-b), by
-      simp only [map_sub, map_add, map_neg, he, hh₁', hb]
-      abel⟩
-  refine ⟨(a, -b + b'), ?_, z, ?_⟩
-  · rw [mem_ker, mappingCone_apply, ha, neg_zero, map_add, map_neg, hb, mem_ker.mp hb']
-    simp
-  · rw [hz, coprod_apply, map_add]
-    abel
+  obtain ⟨b', hb', z, hz⟩ := key hc' ⟨e - h₁ (-b), by
+    simp only [map_sub, map_add, map_neg, he, hh₁, hb]
+    abel⟩
+  refine ⟨(a, -b + b'), by simp [ha, hb, mem_ker.mp hb'], z, ?_⟩
+  rw [hz, coprod_apply, map_add]
+  abel
 
 /-- **The triangle detection lemma.** Let `f₀, …, f₄` be chain maps with null-homotopic
 composites, `fᵢ₊₁ ∘ fᵢ = dᵢ₊₂ ∘ hᵢ + hᵢ ∘ dᵢ`, and suppose that the maps
 `ψᵢ = fᵢ₊₂ ∘ hᵢ - hᵢ₊₁ ∘ fᵢ` induce isomorphisms on homology for `i = 0, 1` and an injection
 for `i = 2`, all stated elementwise. Then the chain map `(a, b) ↦ h₀ a + f₁ b` from the mapping
 cone of `f₀` to `M₂` induces an isomorphism on homology. -/
-theorem bijective_homologyMap_coprod_of_triangle (hd₀ : d₀ ∘ₗ d₀ = 0) (hd₁ : d₁ ∘ₗ d₁ = 0)
+theorem homologyMap_coprod_bijective_of_triangle (hd₀ : d₀ ∘ₗ d₀ = 0) (hd₁ : d₁ ∘ₗ d₁ = 0)
     (hd₂ : d₂ ∘ₗ d₂ = 0) (hf₀ : f₀ ∘ₗ d₀ = d₁ ∘ₗ f₀) (hf₁ : f₁ ∘ₗ d₁ = d₂ ∘ₗ f₁)
     (hf₂ : f₂ ∘ₗ d₂ = d₃ ∘ₗ f₂) (hf₃ : f₃ ∘ₗ d₃ = d₄ ∘ₗ f₃) (hf₄ : f₄ ∘ₗ d₄ = d₅ ∘ₗ f₄)
     (hh₀ : f₁ ∘ₗ f₀ = d₂ ∘ₗ h₀ + h₀ ∘ₗ d₀) (hh₁ : f₂ ∘ₗ f₁ = d₃ ∘ₗ h₁ + h₁ ∘ₗ d₁)

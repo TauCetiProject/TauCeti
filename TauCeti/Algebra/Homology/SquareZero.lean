@@ -61,6 +61,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   map on homology.
 * `LinearMap.comp_comp_sub_id_eq_of_sub_id_eq`: a chain homotopy for a composite of two chain
   homotopy equivalences.
+* `LinearMap.coprod_comp_mappingCone`: `(m, n) ↦ h m + g n` is a chain map out of the mapping
+  cone of `f` when `g` is a chain map and `h` is a null-homotopy of `g ∘ f`.
 * `LinearMap.ker_le_range_mappingCone_iff`: a linear chain map over a single coefficient ring
   induces a bijection on homology exactly when its mapping cone is exact.
 * `LinearMap.ker_le_range_sumMappingCone_iff`: the kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies
@@ -423,6 +425,18 @@ theorem mappingCone_comp_self (f : M →ₗ[S] N) (hd : d ∘ₗ d = 0) (he : e 
           rw [← map_add, he2]
       _ = 0 := by
           rw [neg_add_cancel, map_zero, add_zero]
+
+/-- The map `(m, n) ↦ h m + g n` from the mapping cone of `f` to `(P, q)` is a chain map when `g`
+is a chain map and `h` is a null-homotopy of `g ∘ f`, that is, `g ∘ f = q ∘ h + h ∘ d`. -/
+theorem coprod_comp_mappingCone {P : Type*} [AddCommGroup P] [Module S P] {q : P →ₗ[S] P}
+    {f : M →ₗ[S] N} {g : N →ₗ[S] P} {h : M →ₗ[S] P} (hg : g ∘ₗ e = q ∘ₗ g)
+    (hh : g ∘ₗ f = q ∘ₗ h + h ∘ₗ d) :
+    h.coprod g ∘ₗ mappingCone d e f = q ∘ₗ h.coprod g := by
+  refine LinearMap.ext fun x ↦ ?_
+  have hgf : g (f x.1) = q (h x.1) + h (d x.1) := congr($hh x.1)
+  have hge : g (e x.2) = q (g x.2) := congr($hg x.2)
+  simp only [comp_apply, mappingCone_apply, coprod_apply, map_neg, map_add, hgf, hge]
+  abel
 
 end MappingCone
 
