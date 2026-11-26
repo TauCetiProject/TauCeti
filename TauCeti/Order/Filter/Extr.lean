@@ -69,6 +69,13 @@ theorem exists_mem_image_isMinOn_iff {X Y β : Type*} [Preorder β] {p : X → Y
     (∃ y ∈ p '' s, IsMinOn f (p '' s) y) ↔ ∃ z ∈ s, IsMinOn (f ∘ p) s z := by
   simp only [exists_mem_image, isMinOn_image_iff]
 
+/-- Along a surjection `p`, `z` minimizes `f ∘ p` on `univ` if and only if `p z` minimizes `f`
+on `univ`. -/
+theorem isMinOn_univ_comp_iff {X Y β : Type*} [Preorder β] {p : X → Y}
+    (hp : Function.Surjective p) (f : Y → β) (z : X) :
+    IsMinOn (f ∘ p) univ z ↔ IsMinOn f univ (p z) := by
+  rw [← isMinOn_image_iff, image_univ, hp.range_eq]
+
 end TauCeti
 
 /-- At an admissible minimizer, the sublevel at its value is the full minimizer set. -/
