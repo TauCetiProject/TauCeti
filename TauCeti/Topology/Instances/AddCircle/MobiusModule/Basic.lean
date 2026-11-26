@@ -183,7 +183,7 @@ theorem mem_mobiusSections_iff {w : Fin 2 → C(AddCircle (1 : ℝ), A)} :
   simp [mobiusReflection_def, mulVec, dotProduct, Fin.sum_univ_two, sub_eq_add_neg,
     Algebra.smul_def]
 
-/-! ### `M ⊕ M ≅ A²` -/
+/-! ### `M ⊕ M ≅ C(ℝ / ℤ, A)²` -/
 
 /-- The rotation `J = [[0, −1], [1, 0]]` by a quarter turn. It anticommutes with the reflection
 `ρ`, so it carries the fixed line of `ρ` onto the line `ρ` negates. -/
@@ -360,7 +360,7 @@ theorem mobiusProjection_mulVec (w : Fin 2 → C(AddCircle (1 : ℝ), A)) :
     mobiusProjection A *ᵥ w = (2⁻¹ : ℝ) • (w + mobiusReflection A *ᵥ w) := by
   rw [mobiusProjection_def, smul_mulVec, add_mulVec, one_mulVec]
 
-/-- The Möbius module is the image `pA²` of the projection `p` acting on columns. -/
+/-- The Möbius module is the image `p C(ℝ / ℤ, A)²` of the projection `p` acting on columns. -/
 theorem range_mulVecLin_mobiusProjection :
     LinearMap.range (mulVecLin (mobiusProjection A)) = mobiusSections A := by
   refine le_antisymm ?_ fun w hw ↦ ⟨w, ?_⟩

@@ -16,9 +16,9 @@ The Möbius module `M = TauCeti.mobiusSections ℝ` over `R = C(ℝ / ℤ, ℝ)`
 reflection `ρ([t]) = [[cos 2πt, sin 2πt], [sin 2πt, −cos 2πt]]` acting on `R²`, is finitely
 generated projective but not free (`TauCeti.not_free_mobiusSections`): it is the module of
 continuous sections of the Möbius line bundle, which is nontrivial. Over the complex numbers every
-line bundle on the circle is trivial. This file proves the module-theoretic form of that fact:
-extending scalars along the pointwise inclusion `R → R_ℂ = C(ℝ / ℤ, ℂ)` makes `M` free of rank
-one.
+line bundle on the circle is trivial. This file proves the instance of that fact for the Möbius
+bundle: extending scalars along the pointwise inclusion `R → R_ℂ = C(ℝ / ℤ, ℂ)` makes `M` free of
+rank one.
 
 1. **Extension of scalars.** Since `M` is the image of the symmetric idempotent `p = (1 + ρ) / 2`
    (`TauCeti.range_vecMulLinear_mobiusProjection`), for a continuous `ℝ`-algebra homomorphism
@@ -188,6 +188,7 @@ theorem mobiusComplexFrame_apply_mk (i : Fin 2) (t : ℝ) :
 
 /-- The frame `s` spans the image of `p`: `s s* = p` pointwise, with `s*` the conjugate transpose.
 Equivalently `ρ = 2 s s* − 1`, so `ρ` is the reflection in the complex line spanned by `s`. -/
+@[simp]
 theorem vecMulVec_mobiusComplexFrame_star :
     vecMulVec mobiusComplexFrame (star mobiusComplexFrame) = mobiusProjection ℂ := by
   ext i j x
