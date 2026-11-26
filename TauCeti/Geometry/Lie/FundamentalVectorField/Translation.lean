@@ -25,9 +25,8 @@ the action of the abelian Lie algebra `V` by infinitesimal translations
 phase-space translations of a symplectic vector space, whose moment maps are not equivariant.
 
 More generally, a linear subspace `W ≤ V` acts on `V` by translations, as the Lie group
-`Multiplicative W`. This action is smooth (`Submodule.contMDiffVAdd`), proper when `V` is
-finite-dimensional (`Submodule.properVAdd`, with `Multiplicative.properSMul`), and its
-fundamental vector field of `ξ` is the constant vector field `ξ`, read in `V`
+`Multiplicative W`. This action is smooth (`Submodule.contMDiffVAdd`), and its fundamental
+vector field of `ξ` is the constant vector field `ξ`, read in `V`
 (`TauCeti.fundamentalVectorField_multiplicative_submodule`). These are the symmetries of
 cotangent reduction by translations along a subspace.
 
@@ -96,19 +95,3 @@ theorem fundamentalVectorField_multiplicative_submodule
   rfl
 
 end TauCeti
-
-/-! ### The translation action of a subspace -/
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {V : Type*}
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-
-namespace Submodule
-
-/-- A subspace `W` of a finite-dimensional normed space `V` over a complete field acts properly on
-`V` by translations, since it is closed. Through `Multiplicative.properSMul`, so does the Lie group
-`Multiplicative W`. -/
-instance properVAdd [FiniteDimensional 𝕜 V] (W : Submodule 𝕜 V) : ProperVAdd W V :=
-  have : IsClosed (W.toAddSubgroup : Set V) := W.isClosed_of_finiteDimensional
-  inferInstanceAs (ProperVAdd W.toAddSubgroup V)
-
-end Submodule

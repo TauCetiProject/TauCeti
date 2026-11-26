@@ -8,17 +8,20 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Cotangent.ReducedSpace
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Lift
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Translation
+public import TauCeti.Topology.Algebra.ProperAction.Submodule
 
+import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 import TauCeti.Geometry.Manifold.Submersion.Split
+import TauCeti.LinearAlgebra.Pi.Coordinates
 
 /-!
 # Cotangent reduction of a vector space by translations along a subspace
 
 Let `V` be a finite-dimensional real normed space and `W ≤ V` a linear subspace. The Lie group
 `Multiplicative W` acts on `V` by translations, `g • x = toAdd g + x`, smoothly, freely and
-properly, and the fundamental vector field of `ξ ∈ W` is the constant vector field `ξ`
-(`TauCeti.fundamentalVectorField_multiplicative_submodule`). So the moment map of the
-cotangent-lifted action on `T*V` is the restriction of the covector to `W`,
+properly (`Submodule.properVAdd`), and the fundamental vector field of `ξ ∈ W` is the constant
+vector field `ξ` (`TauCeti.fundamentalVectorField_multiplicative_submodule`). So the moment map
+of the cotangent-lifted action on `T*V` is the restriction of the covector to `W`,
 `⟨μ(q, p), ξ⟩ = p(ξ)`, and its zero level consists of the covectors vanishing on `W`
 (`TauCeti.CotangentBundle.momentMap_multiplicative_submodule_eq_zero_iff`).
 
@@ -41,7 +44,8 @@ restriction of the Liouville form of `T*V` to the Liouville form of `T*B`.
 
 For `V = ℝⁿ⁺¹ = Fin (n + 1) → ℝ`, `W = ℝ e₀` and `ρ` forgetting the first coordinate, this is the
 reduction `T*ℝⁿ⁺¹ //₀ ℝ ≅ T*ℝⁿ` by translations along the first coordinate axis
-(`TauCeti.CotangentBundle.exists_diffeomorph_mpullback_symplecticForm_eq_tail`).
+(`exists_diffeomorph_proj_eq_tail_and_snd_apply_tail_and_mpullback_symplecticForm_eq`, in the
+namespace `TauCeti.CotangentBundle`).
 
 ## Main definitions
 
@@ -54,8 +58,8 @@ reduction `T*ℝⁿ⁺¹ //₀ ℝ ≅ T*ℝⁿ` by translations along the first
   translation action consists of the covectors vanishing on `W`.
 * `TauCeti.CotangentBundle.mpullback_translationReducedSpaceDiffeomorph_symplecticForm`:
   `T*V //₀ W ≅ T*B` is a symplectomorphism.
-* `TauCeti.CotangentBundle.exists_diffeomorph_mpullback_symplecticForm_eq_tail`:
-  `T*ℝⁿ⁺¹ //₀ ℝ ≅ T*ℝⁿ`.
+* `exists_diffeomorph_proj_eq_tail_and_snd_apply_tail_and_mpullback_symplecticForm_eq`, in the
+  namespace `TauCeti.CotangentBundle`: `T*ℝⁿ⁺¹ //₀ ℝ ≅ T*ℝⁿ`.
 
 ## References
 
@@ -74,18 +78,6 @@ open Function Manifold Module
 open scoped ContDiff Manifold
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- **The fibres of a linear map with kernel `W` are the orbits of translations along `W`.** -/
-theorem LinearMap.apply_eq_apply_iff_exists_smul_eq {W : Submodule ℝ V} {B : Type*}
-    [AddCommGroup B] [Module ℝ B] (f : V →ₗ[ℝ] B) (hker : f.ker = W) (x y : V) :
-    f x = f y ↔ ∃ g : Multiplicative W, g • y = x := by
-  refine ⟨fun h ↦ ⟨Multiplicative.ofAdd ⟨x - y, ?_⟩, sub_add_cancel x y⟩, fun ⟨g, hg⟩ ↦ ?_⟩
-  · rw [← hker, LinearMap.mem_ker, map_sub, h, sub_self]
-  · have hW : ((Multiplicative.toAdd g : W) : V) ∈ f.ker := hker ▸ (Multiplicative.toAdd g).property
-    rw [← hg]
-    -- The action of `Multiplicative W` unfolds to the translation `g • y = toAdd g + y`.
-    change f (((Multiplicative.toAdd g : W) : V) + y) = f y
-    rw [map_add, LinearMap.mem_ker.1 hW, zero_add]
 
 namespace TauCeti
 
@@ -295,8 +287,9 @@ variable {n m : ℕ}
 /-- **`T*ℝⁿ⁺¹ //₀ ℝ ≅ T*ℝⁿ`.** For the line `ℝ e₀` acting on `ℝⁿ⁺¹ = Fin (n + 1) → ℝ` by
 translations along the first coordinate axis, the Marsden–Weinstein–Meyer reduced space at zero
 is symplectomorphic to `T*ℝⁿ`, by a diffeomorphism lying over the projection `Fin.tail` that
-forgets the first coordinate. -/
-theorem exists_diffeomorph_mpullback_symplecticForm_eq_tail :
+forgets the first coordinate, and sending the orbit of a covector `p` to the covector `p'` with
+`p'(Fin.tail v) = p(v)`. -/
+theorem exists_diffeomorph_proj_eq_tail_and_snd_apply_tail_and_mpullback_symplecticForm_eq :
     haveI := properSMul (IG := 𝓘(ℝ, ℝ ∙ (Pi.single 0 1 : Fin (n + 1) → ℝ)))
       (G := Multiplicative (ℝ ∙ (Pi.single 0 1 : Fin (n + 1) → ℝ)))
       (I := 𝓘(ℝ, Fin (n + 1) → ℝ)) (M := Fin (n + 1) → ℝ)
@@ -312,6 +305,8 @@ theorem exists_diffeomorph_mpullback_symplecticForm_eq_tail :
         CotangentBundle 𝓘(ℝ, Fin n → ℝ) (Fin n → ℝ),
       (∀ z : h.levelSubMulAction 0, (Φ (Quotient.mk _ z)).proj =
         Fin.tail (z : CotangentBundle 𝓘(ℝ, Fin (n + 1) → ℝ) (Fin (n + 1) → ℝ)).proj) ∧
+      (∀ (z : h.levelSubMulAction 0) (v : Fin (n + 1) → ℝ), (Φ (Quotient.mk _ z)).snd (Fin.tail v) =
+        (z : CotangentBundle 𝓘(ℝ, Fin (n + 1) → ℝ) (Fin (n + 1) → ℝ)).snd v) ∧
       ∀ η : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin m → ℝ))
           (MulAction.orbitRel.Quotient
             ((Lie.coadjointRepresentation ℝ 𝓘(ℝ, ℝ ∙ (Pi.single 0 1 : Fin (n + 1) → ℝ))
@@ -327,22 +322,11 @@ theorem exists_diffeomorph_mpullback_symplecticForm_eq_tail :
   have hρ : Surjective ρ := by
     rw [LinearMap.coe_toContinuousLinearMap']
     exact LinearMap.funLeft_surjective_of_injective _ _ _ (Fin.succ_injective n)
-  -- Forgetting the first coordinate has kernel the first coordinate axis.
   have hker : ρ.ker = ℝ ∙ (Pi.single 0 1 : Fin (n + 1) → ℝ) := by
-    ext x
-    rw [LinearMap.coe_toContinuousLinearMap, LinearMap.mem_ker, Submodule.mem_span_singleton]
-    refine ⟨fun hx ↦ ⟨x 0, funext fun i ↦ ?_⟩, ?_⟩
-    · cases i using Fin.cases with
-      | zero => simp
-      | succ j =>
-        have hj := congrFun hx j
-        rw [LinearMap.funLeft_apply, Pi.zero_apply] at hj
-        simp [hj, Fin.succ_ne_zero]
-    · rintro ⟨a, rfl⟩
-      funext j
-      simp [LinearMap.funLeft_apply, Fin.succ_ne_zero]
+    rw [LinearMap.coe_toContinuousLinearMap, LinearMap.ker_funLeft_succ]
   exact ⟨translationReducedSpaceDiffeomorph h hreg hm d hρ hker,
     proj_translationReducedSpaceDiffeomorph_mk hreg hm d hρ hker,
+    translationReducedSpaceDiffeomorph_mk_snd_apply hreg hm d hρ hker,
     mpullback_translationReducedSpaceDiffeomorph_symplecticForm hreg hm d hρ hker⟩
 
 end Coordinate
