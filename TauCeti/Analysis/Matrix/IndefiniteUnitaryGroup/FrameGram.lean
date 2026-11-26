@@ -24,9 +24,9 @@ leading principal minor of order `n`. If `q ≤ n + 1` and `T ≥ 0`, then
 
 `T T' |D|² ≤ |det Z|²`
 
-(`Matrix.mul_mul_norm_det_submatrix_castSucc_sq_le`). For `n = 0` this is the reverse
-Cauchy–Schwarz inequality `T T' ≤ |⟨z, z'⟩|²` for two vectors `z`, `z'` of norms `-T`, `-T'` in a
-space of signature `(p, 1)`.
+(`Matrix.mul_mul_norm_det_submatrix_castSucc_sq_le_of_frame`). For `n = 0` this is the
+reverse Cauchy–Schwarz inequality `T T' ≤ |⟨z, z'⟩|²` for two vectors `z`, `z'` of norms `-T`,
+`-T'` in a space of signature `(p, 1)`.
 
 The Gram determinant of the `2n + 2` vectors `F ∪ F'` is `(-1) ^ (n + 1) * (|det Z|² - T T' |D|²)`.
 On the span of the first frame the form is `-T |c_n|² ≤ 0`, and on the vectors whose image has
@@ -37,9 +37,9 @@ least `2n + 2 - q ≥ n + 1`, so by the count of the indices of inertia of the G
 
 ## Main results
 
-* `Matrix.mul_mul_norm_det_submatrix_castSucc_sq_le`: the inequality for two frames.
-* `TauCeti.Matrix.indefiniteUnitaryGroup.mul_mul_norm_det_submatrix_castSucc_sq_le`: the
-  inequality for a frame and the image of a frame under an element of `U(p, q)`.
+* `Matrix.mul_mul_norm_det_submatrix_castSucc_sq_le_of_frame`: the inequality for two frames.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.mul_mul_norm_det_submatrix_castSucc_sq_le_of_frame`:
+  the inequality for a frame and the image of a frame under an element of `U(p, q)`.
 
 ## References
 
@@ -115,7 +115,8 @@ private theorem re_neg_one_pow_mul_sub_mul_mul (a b : 𝕜) :
 `Z = Fᴴ * J * F'` the matrix of the products `⟨F_a, F'_b⟩` and `D` its leading principal minor of
 order `n`, `T T' |D|² ≤ |det Z|²`: the Gram determinant of `F ∪ F'`, which is
 `(-1) ^ (n + 1) * (|det Z|² - T T' |D|²)`, has the sign `(-1) ^ (n + 1)` or vanishes. -/
-theorem mul_mul_norm_det_submatrix_castSucc_sq_le (hq : Fintype.card q ≤ n + 1) (hT : 0 ≤ T)
+theorem mul_mul_norm_det_submatrix_castSucc_sq_le_of_frame (hq : Fintype.card q ≤ n + 1)
+    (hT : 0 ≤ T)
     (hF : Fᴴ * indefiniteDiagonal p q 𝕜 * F = single (last n) (last n) (-(T : 𝕜)))
     (hF' : F'ᴴ * indefiniteDiagonal p q 𝕜 * F' = single (last n) (last n) (-(T' : 𝕜))) :
     T * T' * ‖((Fᴴ * indefiniteDiagonal p q 𝕜 * F').submatrix castSucc castSucc).det‖ ^ 2 ≤
@@ -166,14 +167,15 @@ variable {p q 𝕜 : Type*} [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq
 `F'` be frames of norms `-T` and `-T'` for the form `J` of signature `(p, q)`, with `q ≤ n + 1`
 and `T ≥ 0`, and let `x ∈ U(p, q)`. With `Z` the matrix of the products `⟨F_a, x F'_b⟩` and `D`
 its leading principal minor of order `n`, `T T' |D|² ≤ |det Z|²`. -/
-theorem mul_mul_norm_det_submatrix_castSucc_sq_le (hq : Fintype.card q ≤ n + 1) (hT : 0 ≤ T)
+theorem mul_mul_norm_det_submatrix_castSucc_sq_le_of_frame (hq : Fintype.card q ≤ n + 1)
+    (hT : 0 ≤ T)
     {x : GL (p ⊕ q) 𝕜} (hx : x ∈ indefiniteUnitaryGroup p q 𝕜)
     (hF : Fᴴ * indefiniteDiagonal p q 𝕜 * F = single (last n) (last n) (-(T : 𝕜)))
     (hF' : F'ᴴ * indefiniteDiagonal p q 𝕜 * F' = single (last n) (last n) (-(T' : 𝕜))) :
     T * T' *
         ‖((Fᴴ * indefiniteDiagonal p q 𝕜 * (x.val * F')).submatrix castSucc castSucc).det‖ ^ 2 ≤
       ‖(Fᴴ * indefiniteDiagonal p q 𝕜 * (x.val * F')).det‖ ^ 2 :=
-  _root_.Matrix.mul_mul_norm_det_submatrix_castSucc_sq_le hq hT hF (by
+  _root_.Matrix.mul_mul_norm_det_submatrix_castSucc_sq_le_of_frame hq hT hF (by
     rw [conjTranspose_mul_mul_mul_of_star_mul_mul_eq (mem_unitaryGroupOf_iff.1 hx), hF'])
 
 end TauCeti.Matrix.indefiniteUnitaryGroup
