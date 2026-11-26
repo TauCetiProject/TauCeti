@@ -95,12 +95,14 @@ theorem _root_.MeasureTheory.Measure.isLeFiberMeasure_zero
 
 /-- Let `(t, p) ↦ ψ t p`, for `t` in a neighborhood `V` of `b`, parametrize a part of `X` so that
 `π (ψ t p) = t` for almost every `p` with `w t p ≠ 0` and `μ` dominates `w t p dν(t) dρ(p)` there.
-If `ψ` is continuous and `w` is lower semicontinuous in `t` at `b` for almost every `p`, then
-`(ρ.withDensity (w b)).map (ψ b)` is at most the fiber measure `dμ / dν` of `π` over `b`. -/
+Suppose `ν` is finite on some neighborhood of `b`. If `ψ` is continuous and `w` is lower
+semicontinuous in `t` at `b` for almost every `p`, then `(ρ.withDensity (w b)).map (ψ b)` is at
+most the fiber measure `dμ / dν` of `π` over `b`. -/
 theorem _root_.Measurable.isLeFiberMeasure_of_coordinates
     [OpensMeasurableSpace X] [OpensMeasurableSpace B]
-    [IsCountablyGenerated (𝓝 b)] [ν.IsOpenPosMeasure] [IsLocallyFiniteMeasure ν] {ρ : Measure P}
+    [IsCountablyGenerated (𝓝 b)] [ν.IsOpenPosMeasure] {ρ : Measure P}
     {ψ : B → P → X} {w : B → P → ℝ≥0∞} {V : Set B} (hπ : Measurable π)
+    (hν : ν.FiniteAtFilter (𝓝 b))
     (hψ : Measurable ψ.uncurry) (hw : Measurable w.uncurry) (hV : V ∈ 𝓝 b)
     (h_fiber : ∀ t ∈ V, ∀ᵐ p : P ∂ρ, w t p ≠ 0 → π (ψ t p) = t)
     (h_reg : ∀ᵐ p : P ∂ρ, ContinuousAt (ψ · p) b ∧ LowerSemicontinuousAt (w · p) b)
@@ -121,7 +123,7 @@ theorem _root_.Measurable.isLeFiberMeasure_of_coordinates
       _ ≤ liminf (fun t ↦ w t p * K (ψ t p)) (𝓝 b) := ENNReal.le_liminf_mul
   rw [lintegral_map hK_meas hψ.of_uncurry_left,
     lintegral_withDensity_eq_lintegral_mul _ hw.of_uncurry_left (by fun_prop)]
-  refine hA.le_of_setLIntegral_le (ν := ν) ?_
+  refine hA.le_of_setLIntegral_le hν ?_
   filter_upwards [hC, eventually_smallSets_subset.2 hV] with S hS hS_sub hS_open
   have hπS : MeasurableSet (π ⁻¹' S) := hπ hS_open.measurableSet
   calc
@@ -137,17 +139,18 @@ theorem _root_.Measurable.isLeFiberMeasure_of_coordinates
 
 /-- If `μ` is the image of `ν.prod ρ` under a map `φ` with `π (φ (t, p)) = t`, and `φ (·, p)`
 is continuous at `b` for almost every `p`, then `ρ.map (fun p ↦ φ (b, p))` is at most the fiber
-measure `dμ / dν` of `π` over `b`. -/
+measure `dμ / dν` of `π` over `b`, provided `ν` is finite on some neighborhood of `b`. -/
 theorem _root_.MeasureTheory.MeasurePreserving.isLeFiberMeasure
     [OpensMeasurableSpace X] [OpensMeasurableSpace B]
-    [IsCountablyGenerated (𝓝 b)] [ν.IsOpenPosMeasure] [IsLocallyFiniteMeasure ν] {ρ : Measure P}
+    [IsCountablyGenerated (𝓝 b)] [ν.IsOpenPosMeasure] {ρ : Measure P}
     [SFinite ρ] {φ : B × P → X} (hφ : MeasurePreserving φ (ν.prod ρ) μ) (hπ : Measurable π)
+    (hν : ν.FiniteAtFilter (𝓝 b))
     (h_fiber : ∀ (t : B) (p : P), π (φ (t, p)) = t)
     (h_cont : ∀ᵐ p : P ∂ρ, ContinuousAt (fun t : B ↦ φ (t, p)) b) :
     IsLeFiberMeasure μ ν π b (ρ.map fun p : P ↦ φ (b, p)) := by
   rw [← withDensity_one (μ := ρ)]
   exact hπ.isLeFiberMeasure_of_coordinates (ψ := fun t p ↦ φ (t, p)) (w := 1)
-    hφ.measurable measurable_const univ_mem (fun t _ ↦ .of_forall fun p _ ↦ h_fiber t p)
+    hν hφ.measurable measurable_const univ_mem (fun t _ ↦ .of_forall fun p _ ↦ h_fiber t p)
     (h_cont.mono fun _ hp ↦ ⟨hp, continuousAt_const.lowerSemicontinuousAt⟩) fun K hK ↦ by
       simpa [← hφ.lintegral_comp hK] using
         (lintegral_prod _ (hK.comp hφ.measurable).aemeasurable).ge
@@ -178,15 +181,15 @@ theorem smul (hl : IsLeFiberMeasure μ ν π b l) {c : ℝ≥0∞} (hc : c ≠ �
 /-- If `l` is at most the fiber measure `dμ / dν` of `π` over `b` and the homeomorphism `e` of the
 base carries `ν` to `ν''`, then `l` is at most the fiber measure `dμ / dν''` of `e ∘ π` over
 `e b`. -/
-theorem comp_homeomorph [BorelSpace B] [BorelSpace B'] {ν'' : Measure B'}
+theorem comp_homeomorph [OpensMeasurableSpace B'] {ν'' : Measure B'}
     (hl : IsLeFiberMeasure μ ν π b l) (e : B ≃ₜ B') (he : MeasurePreserving e ν ν'') :
     IsLeFiberMeasure μ ν'' (e ∘ π) (e b) l := by
   intro K hK C hC
   refine hl K hK C (((e.continuous.tendsto b).image_smallSets.eventually hC).mono
     fun S hS hS_open ↦ ?_)
-  have h_bound : ∫⁻ x in e ∘ π ⁻¹' (e '' S), K x ∂μ ≤ C * ν'' (e '' S) :=
-    hS (e.isOpenMap S hS_open)
-  rwa [← he.measure_preimage_emb e.measurableEmbedding, preimage_comp,
+  have h_open : IsOpen (e '' S) := e.isOpenMap S hS_open
+  have h_bound : ∫⁻ x in e ∘ π ⁻¹' (e '' S), K x ∂μ ≤ C * ν'' (e '' S) := hS h_open
+  rwa [← he.measure_preimage h_open.measurableSet.nullMeasurableSet, preimage_comp,
     preimage_image_eq S e.injective] at h_bound
 
 /-- Two-step fibration rule: if `l` is at most `dμ / dν` of `π` over `b`, and `l'` is at most

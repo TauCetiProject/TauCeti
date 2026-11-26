@@ -20,9 +20,10 @@ integration:
 * `TauCeti.lowerSemicontinuousAt_lintegral`: a parameter-dependent Fatou lemma showing that
   `x ↦ ∫⁻ p, F x p ∂ρ` is lower semicontinuous at `x₀` whenever `𝓝 x₀` is countably generated,
   each `F x` is a.e. measurable, and `F · p` is a.e. lower semicontinuous at `x₀`.
-* `LowerSemicontinuousAt.le_of_setLIntegral_le`: if `ν` is locally finite and positive on nonempty
-  open sets, and a function `A` lower semicontinuous at `b` satisfies `∫⁻ t in S, A t ∂ν ≤ C * ν S`
-  for all sufficiently small open neighborhoods `S` of `b`, then `A b ≤ C`.
+* `LowerSemicontinuousAt.le_of_setLIntegral_le`: if `ν` is finite on some neighborhood of `b` and
+  positive on nonempty open sets, and a function `A` lower semicontinuous at `b` satisfies
+  `∫⁻ t in S, A t ∂ν ≤ C * ν S` for all sufficiently small open neighborhoods `S` of `b`,
+  then `A b ≤ C`.
 
 ## References
 
@@ -52,20 +53,20 @@ theorem lowerSemicontinuousAt_lintegral {X P : Type*} [TopologicalSpace X] [Meas
       lintegral_mono_ae (h_lsc.mono fun _ ↦ lowerSemicontinuousAt_iff_le_liminf.1)
     _ ≤ liminf (fun x ↦ ∫⁻ p, F x p ∂ρ) (𝓝 x₀) := lintegral_liminf_le' h_meas
 
-/-- Let `ν` be locally finite and positive on nonempty open sets. A function that is lower
-semicontinuous at `b`, and whose mean for `ν` over every open set contained in some fixed
-neighborhood of `b` is at most `C`, is at most `C` at `b`. -/
+/-- Let `ν` be finite on some neighborhood of `b` and positive on nonempty open sets.
+A function that is lower semicontinuous at `b`, and whose mean for `ν` over every open set
+contained in some fixed neighborhood of `b` is at most `C`, is at most `C` at `b`. -/
 theorem _root_.LowerSemicontinuousAt.le_of_setLIntegral_le {B : Type*} [TopologicalSpace B]
     [MeasurableSpace B] [OpensMeasurableSpace B] {ν : Measure B} [ν.IsOpenPosMeasure]
-    [IsLocallyFiniteMeasure ν] {A : B → ℝ≥0∞} {b : B} {C : ℝ≥0∞}
-    (hA : LowerSemicontinuousAt A b)
+    {A : B → ℝ≥0∞} {b : B} {C : ℝ≥0∞} (hA : LowerSemicontinuousAt A b)
+    (hν : ν.FiniteAtFilter (𝓝 b))
     (h_mean : ∀ᶠ S : Set B in (𝓝 b).smallSets, IsOpen S → ∫⁻ t : B in S, A t ∂ν ≤ C * ν S) :
     A b ≤ C := by
   refine le_of_forall_lt_imp_le_of_dense fun c hc ↦ ?_
   obtain ⟨S, ⟨hb, hS_open⟩, hS_mean, hS_lt, hS_fin⟩ : ∃ S : Set B, (b ∈ S ∧ IsOpen S) ∧
       (IsOpen S → ∫⁻ t in S, A t ∂ν ≤ C * ν S) ∧ S ⊆ {t | c < A t} ∧ ν S < ∞ :=
     (h_mean.and ((eventually_smallSets_subset.2 (hA c hc)).and
-      (ν.finiteAt_nhds b).eventually)).exists_mem_basis_of_smallSets (nhds_basis_opens b)
+      hν.eventually)).exists_mem_basis_of_smallSets (nhds_basis_opens b)
   refine (ENNReal.mul_le_mul_iff_left (hS_open.measure_ne_zero ν ⟨b, hb⟩) hS_fin.ne).1 ?_
   calc
     c * ν S = ∫⁻ _ in S, c ∂ν := (setLIntegral_const S c).symm
