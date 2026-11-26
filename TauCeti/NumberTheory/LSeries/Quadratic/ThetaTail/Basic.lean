@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
-public import TauCeti.NumberTheory.LSeries.GaussianTheta
+public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 
 /-!
 # Gaussian theta tail for quadratic twists

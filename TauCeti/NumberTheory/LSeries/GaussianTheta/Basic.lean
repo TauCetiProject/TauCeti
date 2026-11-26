@@ -102,33 +102,18 @@ theorem gaussianMellin_def (j : Fin 2) :
 
 variable {j : Fin 2} {c : ℕ → ℂ}
 
+/-- The Gaussian Mellin factor is half the real archimedean gamma factor shifted by the parity. -/
+theorem gaussianMellin_eq_Gammaℝ_div_two {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
+    gaussianMellin j s = Complex.Gammaℝ (s + j.val) / 2 := by
+  simpa only [gaussianMellin_def, gaussianMonomial] using
+    (hasMellin_pow_mul_exp_neg_pi_mul_sq j.val (s := s) (by linarith)).2
+
 /-- The Mellin transform of the parity-`j` Gaussian in its half-plane of convergence. -/
 theorem gaussianMellin_eq {s : ℂ} (hs : -(j.val : ℝ) < s.re) :
     gaussianMellin j s =
       (1 / 2 : ℂ) * (π : ℂ) ^ (-(s + j.val) / 2) * Complex.Gamma ((s + j.val) / 2) := by
-  let f : ℝ → ℂ := fun x ↦ (exp (-(π * x)) : ℂ)
-  let a : ℂ := (s + j.val) / 2
-  have ha : 0 < a.re := by
-    dsimp [a]
-    rw [Complex.div_ofNat_re, Complex.add_re, Complex.natCast_re]
-    linarith
-  calc
-    gaussianMellin j s = mellin (fun x : ℝ ↦ (x : ℂ) ^ (j.val : ℂ) • f (x ^ (2 : ℝ))) s := by
-      rw [gaussianMellin_def]
-      congr 1
-      funext x
-      simp [gaussianMonomial, f, Complex.cpow_natCast, neg_mul, smul_eq_mul]
-    _ = (1 / 2 : ℂ) * mellin f a := by
-      rw [mellin_cpow_smul, mellin_comp_rpow]
-      norm_num [a, smul_eq_mul, Complex.real_smul, one_div]
-    _ = _ := by
-      have h := Complex.integral_cpow_mul_exp_neg_mul_Ioi ha pi_pos
-      have hmellin : mellin f a = (1 / (π : ℂ)) ^ a * Complex.Gamma a := by
-        simpa only [mellin, f, smul_eq_mul, Complex.ofReal_exp, Complex.ofReal_neg,
-          Complex.ofReal_mul] using h
-      rw [hmellin]
-      simp only [one_div, Complex.inv_cpow_ofReal_nonneg pi_nonneg, ← Complex.cpow_neg,
-        a, neg_div, mul_assoc]
+  rw [gaussianMellin_eq_Gammaℝ_div_two hs, Complex.Gammaℝ_def]
+  ring
 
 /-- The unnormalized Gaussian theta series is measurable in the scale. -/
 @[fun_prop] theorem measurable_gaussianTheta : Measurable (gaussianTheta j c) := by
