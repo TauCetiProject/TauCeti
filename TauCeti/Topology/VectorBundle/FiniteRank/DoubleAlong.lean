@@ -643,6 +643,8 @@ theorem doubleAlongMap_totalSpaceMap_doubleAlongSwap (p : (C.doubleAlong hC).cor
       (ContinuousLinearMap.IntrinsicStar.isSelfAdjoint_iff_map_star _).2 (hφ x hx),
       ContinuousLinearMap.intrinsicStar_apply, star_star]
   rw [fiberMap_doubleAlongMap, fiberMap_doubleAlongMap]
+  -- The fibres of the doubles are the coordinate spaces `Fin C.rank → ℂ` and `Fin C'.rank → ℂ`
+  -- by definition (`rank_doubleAlong`), where `h` is stated.
   exact h v
 
 /-- On the first sheet the doubled bundle map is `φ`, under the identifications
@@ -653,7 +655,13 @@ theorem doubleAlongMap_totalSpaceMap_doubleAlongSwap (p : (C.doubleAlong hC).cor
   hom_ext fun x => by
     simp only [fiberMap_comp, fiberMap_pullbackMap, fiberMap_doubleAlongMap_inl,
       fiberMap_doubleAlongInlIso_hom]
-    rfl
+    -- Both sides are `φ` at `x` composed with identities. The pulled-back double has rank
+    -- `C.rank` by definition (`rank_pullback`, `rank_doubleAlong`), so its coordinate fibres are
+    -- those of `C`; state the identity on these standard coordinates and close by it.
+    have h : (ContinuousLinearMap.id ℂ (Fin C'.rank → ℂ)).comp (φ.fiberMap x) =
+        (φ.fiberMap x).comp (ContinuousLinearMap.id ℂ (Fin C.rank → ℂ)) := by
+      rw [ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_id]
+    exact h
 
 /-- On the second sheet the doubled bundle map is the conjugate of `φ`, under the identifications
 `doubleAlongInrIso`. -/
@@ -663,7 +671,15 @@ theorem doubleAlongMap_totalSpaceMap_doubleAlongSwap (p : (C.doubleAlong hC).cor
   hom_ext fun x => by
     simp only [fiberMap_comp, fiberMap_pullbackMap, fiberMap_doubleAlongMap_inr,
       fiberMap_doubleAlongInrIso_hom, fiberMap_conjugate_map]
-    rfl
+    -- Both sides are the conjugate of `φ` at `x` composed with identities. The pulled-back double
+    -- and `(conjugate X).obj C` have rank `C.rank` by definition (`rank_pullback`,
+    -- `rank_doubleAlong`, `rank_conjugate_obj`), so their coordinate fibres are those of `C`;
+    -- state the identity on these standard coordinates and close by it.
+    have h : (ContinuousLinearMap.id ℂ (Fin C'.rank → ℂ)).comp
+        (star (toConv (φ.fiberMap x))).ofConv =
+        (star (toConv (φ.fiberMap x))).ofConv.comp (ContinuousLinearMap.id ℂ (Fin C.rank → ℂ)) := by
+      rw [ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_id]
+    exact h
 
 /-- The double of an isomorphism `e : C ≅ C'` whose fibre maps over `A` commute with
 coordinatewise conjugation: an isomorphism of the doubles, `e` on the first sheet and its conjugate
@@ -682,12 +698,16 @@ noncomputable def doubleAlongIso (e : C ≅ C')
 
 @[simp] theorem doubleAlongIso_hom (e : C ≅ C')
     (he : ∀ a ∈ A, ∀ v, e.hom.fiberMap a (star v) = star (e.hom.fiberMap a v)) :
-    (doubleAlongIso hC hC' e he).hom = doubleAlongMap hC hC' e.hom he := (rfl)
+    (doubleAlongIso hC hC' e he).hom = doubleAlongMap hC hC' e.hom he :=
+  -- The `hom` field of `doubleAlongIso`, as defined above.
+  (rfl)
 
 @[simp] theorem doubleAlongIso_inv (e : C ≅ C')
     (he : ∀ a ∈ A, ∀ v, e.hom.fiberMap a (star v) = star (e.hom.fiberMap a v)) :
     (doubleAlongIso hC hC' e he).inv =
-      doubleAlongMap hC' hC e.inv fun a ha => fiberMap_inv_star e (he a ha) := (rfl)
+      doubleAlongMap hC' hC e.inv fun a ha => fiberMap_inv_star e (he a ha) :=
+  -- The `inv` field of `doubleAlongIso`, as defined above.
+  (rfl)
 
 end Map
 
