@@ -43,6 +43,8 @@ whose cones are acyclic.
   homotopy equivalence is contractible.
 * `CochainComplex.quasiIso_iff_acyclic_mappingCone`: in an abelian category, a morphism is a
   quasi-isomorphism exactly when its mapping cone is acyclic.
+* `CochainComplex.mappingCone.map_eq_mapArrowHom`: the map of mapping cones induced by a
+  commutative square is the corresponding map `homotopyCofiber.mapArrowHom` of homotopy cofibers.
 * `CochainComplex.mappingCone.isIso_map_f`: the map of mapping cones induced by a commutative
   square is an isomorphism in each degree where the vertical maps are.
 * `CochainComplex.mappingCone.mapHomotopy`: homotopies of the vertical maps of a commutative
@@ -318,6 +320,18 @@ lemma map_f_snd_v (p : ℤ) :
     (map φ₁ φ₂ a b comm).f p ≫ (snd φ₂).v p p (add_zero p) =
       (snd φ₁).v p p (add_zero p) ≫ b.f p := by
   apply ext_from φ₁ (p + 1) p rfl <;> simp
+
+/-- The map of mapping cones induced by a commutative square is the map of homotopy cofibers
+induced by the corresponding morphism of arrows. -/
+lemma map_eq_mapArrowHom (hc : ∀ j, ∃ i, (ComplexShape.up ℤ).Rel i j) :
+    map φ₁ φ₂ a b comm = homotopyCofiber.mapArrowHom φ₁ φ₂ hc (Arrow.homMk a b comm.symm) := by
+  ext n
+  apply ext_from φ₁ (n + 1) n rfl
+  · rw [inl_v_map_f]
+    exact (homotopyCofiber.inlX_mapArrowHom_f φ₁ φ₂ hc (Arrow.homMk a b comm.symm) (n + 1) n
+      rfl).symm
+  · rw [inr_f_map_f]
+    exact (homotopyCofiber.inrX_mapArrowHom_f φ₁ φ₂ hc (Arrow.homMk a b comm.symm) n).symm
 
 /-- The isomorphism of mapping cones induced by an isomorphism of arrows. -/
 @[expose, simps]

@@ -48,7 +48,8 @@ components, with the maps of mapping cones induced by `S₁` and `S₂`, form a 
 the sequences of `S₁` in degree `n + 1` and of `S₂` in degree `n`. And for `φ : K ⟶ L`, the
 inclusion of `L` in the mapping cone of `φ` is followed by the degreewise split epimorphism onto
 the mapping cone of `K ⟶ 0`, which is `K` shifted by one
-(`CochainComplex.mappingCone.shortExact_inrShortComplex`). Objectwise, for a natural
+(`CochainComplex.mappingCone.shortExact_inrShortComplex`, from
+`HomologicalComplex.homotopyCofiber.coneShortComplex_shortExact`). Objectwise, for a natural
 transformation `τ : F ⟶ G` of functors with values in cochain complexes, this gives the short exact
 sequence `G ⟶ cone τ ⟶ cone (F ⟶ 0)` of functors
 (`CategoryTheory.NatTrans.shortExact_mappingConeInrShortComplex`).
@@ -270,21 +271,28 @@ variable {K L Z : CochainComplex C ℤ} (φ : K ⟶ L) (α : K ⟶ Z) (hZ : IsZe
 noncomputable def inrShortComplex : ShortComplex (CochainComplex C ℤ) :=
   ShortComplex.mk (inr φ) (map φ α (𝟙 K) 0 (by simp [hZ.eq_of_tgt α 0])) (by ext n; simp)
 
+open ZeroObject in
 /-- The sequence `L ⟶ cone φ ⟶ cone α` of a mapping cone, for `α` a map from `K` to a zero
-complex, is short exact. -/
+complex, is short exact: it is isomorphic to the sequence
+`HomologicalComplex.homotopyCofiber.coneShortComplex φ`. -/
 lemma shortExact_inrShortComplex : (inrShortComplex φ α hZ).ShortExact := by
-  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun n ↦ ?_
-  change (ShortComplex.mk ((inr φ).f n)
-    ((map φ α (𝟙 K) 0 (by simp [hZ.eq_of_tgt α 0])).f n) _).ShortExact
-  exact ShortComplex.Splitting.shortExact
-    { r := (snd φ).v n n (add_zero n)
-      s := (fst α).val.v n (n + 1) rfl ≫ (inl φ).v (n + 1) n (by lia)
-      f_r := by simp
-      s_g := by
-        apply ext_from α (n + 1) n rfl
-        · simp
-        · exact ((HomologicalComplex.eval C _ n).map_isZero hZ).eq_of_src _ _
-      id := by simpa [add_comm] using id_X φ n (n + 1) rfl }
+  -- the sequence `L ⟶ homotopyCofiber φ ⟶ homotopyCofiber (K ⟶ 0)`, through `cone 0 ≅ cone α`
+  have hc : ∀ j : ℤ, ∃ i, (ComplexShape.up ℤ).Rel i j := fun j ↦ ⟨j - 1, by simp⟩
+  open HomologicalComplex.homotopyCofiber in
+  have comm : mapArrowHom φ (0 : K ⟶ 0) hc (Arrow.homMk (𝟙 K) 0) ≫
+      mapArrowHom (0 : K ⟶ 0) α hc (Arrow.homMk (𝟙 K) hZ.isoZero.symm.hom (hZ.eq_of_tgt _ _)) =
+      mapArrowHom φ α hc (Arrow.homMk (𝟙 K) 0 (by simp [hZ.eq_of_tgt α 0])) := by
+    rw [← mapArrowHom_comp]
+    congr 1
+    exact Arrow.hom_ext _ _ (Category.comp_id _) (hZ.eq_of_tgt _ _)
+  exact ShortComplex.shortExact_of_iso
+    (ShortComplex.isoMk (S₁ := HomologicalComplex.homotopyCofiber.coneShortComplex φ hc)
+      (Iso.refl _) (Iso.refl _) (mapIso (Iso.refl K) hZ.isoZero.symm (hZ.eq_of_tgt _ _))
+      ((Category.id_comp _).trans (Category.comp_id _).symm)
+      (by
+        simp only [mapIso_hom, Iso.refl_hom, inrShortComplex_g, map_eq_mapArrowHom _ _ _ _ _ hc]
+        exact (Category.id_comp _).trans comm.symm))
+    (HomologicalComplex.homotopyCofiber.coneShortComplex_shortExact φ hc)
 
 end Inr
 
@@ -299,11 +307,7 @@ variable {C : Type*} [Category* C] [Abelian C] {D : Type*} [Category* D]
 
 /-- For a natural transformation `τ : F ⟶ G` of functors with values in cochain complexes, the
 sequence `G ⟶ cone τ ⟶ cone (F ⟶ 0)` of functors: objectwise, the inclusion of `G` in the mapping
-cone, followed by the map of mapping cones which forgets the summand `G`.
-
-The identities below are first stated with the objects `mappingCone (τ.app X)` of
-`NatTrans.mappingConeFunctor τ`, where the component lemmas of mapping cones apply, and then used
-for the functor, whose objects and maps are these by definition. -/
+cone, followed by the map of mapping cones which forgets the summand `G`. -/
 @[expose, simps]
 noncomputable def mappingConeInrShortComplex : ShortComplex (D ⥤ CochainComplex C ℤ) where
   X₁ := G
