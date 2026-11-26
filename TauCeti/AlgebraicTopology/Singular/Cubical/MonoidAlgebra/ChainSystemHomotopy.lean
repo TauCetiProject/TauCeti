@@ -49,6 +49,7 @@ makes it a boundary.
 ## Main definitions
 
 * `TauCeti.TwistingChainSystem.Homotopy`: a homotopy of twisting chain systems.
+* `TauCeti.TwistingChainSystem.Homotopy.refl`: the zero homotopy from a chain system to itself.
 * `TauCeti.TwistingChainSystem.Homotopy.continuationCocycle`: the continuation cocycle `1 + q_* h`
   of push-forwards.
 
@@ -120,6 +121,17 @@ theorem ext {T₁ T₂ : S.Homotopy S'} (h : ∀ x y, T₁.chain x y = T₂.chai
 theorem chain_eq_zero_of_lt (T : S.Homotopy S') {x y : P} (hxy : ind x < ind y) :
     T.chain x y = 0 :=
   eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega) (T.mem_graded x y)
+
+variable (S) in
+/-- The **zero homotopy** from a twisting chain system to itself. -/
+def refl : S.Homotopy S where
+  chain _ _ := 0
+  mem_graded _ _ := zero_mem _
+  homotopy x y := by simp [continuationChainSum_def]
+
+@[simp]
+theorem refl_chain (x y : P) : (refl S).chain x y = 0 :=
+  (rfl)
 
 end Homotopy
 
