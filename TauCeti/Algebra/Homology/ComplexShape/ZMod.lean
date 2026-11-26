@@ -38,6 +38,11 @@ on the bicomplex of a tensor product this is `x ⊗ y ↦ (-1)^(|x| * |y|) y ⊗
 cyclic analogues of Mathlib's instance for `ComplexShape.up ℤ` and of
 `HomologicalComplex₂.totalComplexShapeSymmetryDownNat`.
 
+A double complex whose columns, indexed by `ℤ`, are `n`-periodic complexes has an `n`-periodic
+total complex, for any `n`: the instance `ComplexShape.totalComplexShapeUpIntUpZMod` places the
+bidegree `(p, q)` in degree `p + q` of `ZMod n`, with sign `(-1)^p` on the vertical differential.
+Since the sign depends only on the integer `p`, no parity condition on `n` is needed.
+
 ## Main definitions and results
 
 * `ComplexShape.tensorSignsDownZMod`, `ComplexShape.tensorSignsUpZMod`: the tensor signs on the
@@ -54,6 +59,9 @@ cyclic analogues of Mathlib's instance for `ComplexShape.up ℤ` and of
   the Koszul symmetry signs, computed by `ComplexShape.σ_down_zmod_eq_negOnePow`,
   `ComplexShape.σ_up_zmod_eq_negOnePow` and, at integer classes, `ComplexShape.σ_down_zmod_intCast`
   and `ComplexShape.σ_up_zmod_intCast`.
+* `ComplexShape.totalComplexShapeUpIntUpZMod`: the total complex shape of a double complex of
+  `n`-periodic complexes, computed by `ComplexShape.π_up_int_up_zmod`,
+  `ComplexShape.ε₁_up_int_up_zmod` and `ComplexShape.ε₂_up_int_up_zmod`.
 -/
 
 public section
@@ -342,5 +350,50 @@ theorem nonempty_tensorSigns_down_zmod_iff : Nonempty (TensorSigns (down (ZMod n
 /-- **Tensor signs on a cyclic shape exist exactly in even order.** -/
 theorem nonempty_tensorSigns_up_zmod_iff : Nonempty (TensorSigns (up (ZMod n))) ↔ 2 ∣ n :=
   ⟨fun ⟨_⟩ ↦ two_dvd_of_tensorSigns_up_zmod, fun h ↦ have : Fact (2 ∣ n) := ⟨h⟩; ⟨inferInstance⟩⟩
+
+section Mixed
+
+/-- The total complex shape of a double complex whose columns `K.X p`, for `p : ℤ`, are
+`n`-periodic complexes: the term in bidegree `(p, q)` lies in degree `p + q` of `ZMod n`, the
+horizontal differential has sign `1` and the vertical differential on the column `p` has sign
+`(-1)^p`, as for Mathlib's total complex shape of `ComplexShape.up ℤ`. No parity condition on `n`
+is needed, since the sign depends only on the integer `p`. -/
+instance totalComplexShapeUpIntUpZMod :
+    TotalComplexShape (up ℤ) (up (ZMod n)) (up (ZMod n)) where
+  π x := (x.1 : ZMod n) + x.2
+  ε₁ _ := 1
+  ε₂ x := x.1.negOnePow
+  rel₁ := by
+    rintro p _ rfl q
+    simp only [up_Rel, Int.cast_add, Int.cast_one]
+    exact add_right_comm _ _ _
+  rel₂ := by
+    rintro p q _ rfl
+    exact add_assoc (p : ZMod n) q 1
+  ε₂_ε₁ := by
+    rintro p _ q _ rfl rfl
+    simp [Int.negOnePow_succ]
+
+/-- In the total complex shape of a double complex of `n`-periodic complexes, the bidegree
+`(p, q)` lies in degree `p + q`. -/
+@[simp]
+theorem π_up_int_up_zmod (p : ℤ) (q : ZMod n) :
+    π (up ℤ) (up (ZMod n)) (up (ZMod n)) (p, q) = p + q :=
+  rfl
+
+/-- In the total complex shape of a double complex of `n`-periodic complexes, the horizontal
+differential has sign `1`. -/
+@[simp]
+theorem ε₁_up_int_up_zmod (x : ℤ × ZMod n) : ε₁ (up ℤ) (up (ZMod n)) (up (ZMod n)) x = 1 :=
+  rfl
+
+/-- In the total complex shape of a double complex of `n`-periodic complexes, the vertical
+differential on the column `p` has sign `(-1)^p`. -/
+@[simp]
+theorem ε₂_up_int_up_zmod (p : ℤ) (q : ZMod n) :
+    ε₂ (up ℤ) (up (ZMod n)) (up (ZMod n)) (p, q) = p.negOnePow :=
+  rfl
+
+end Mixed
 
 end ComplexShape
