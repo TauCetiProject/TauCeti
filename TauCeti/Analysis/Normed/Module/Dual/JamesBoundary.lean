@@ -10,7 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import TauCeti.Analysis.Convex.Simons
 import TauCeti.Analysis.Normed.Module.Dual.Basic
-import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
 # James boundaries: Simons's inequality and the Rainwater–Simons theorem
