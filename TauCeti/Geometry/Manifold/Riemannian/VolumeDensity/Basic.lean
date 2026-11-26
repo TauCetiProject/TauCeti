@@ -57,6 +57,13 @@ theorem chartVolumeDensity_def (α x : M) :
     chartVolumeDensity (I := I) α x = Real.sqrt (chartGramMatrix (I := I) α x).det :=
   (rfl)
 
+/-- The chart density is the Gram density of the metric read in the chart
+(`Riemannian.Tensor.chartMetricForm`), in the basis `Module.finBasis ℝ E`. -/
+theorem chartVolumeDensity_eq_sqrt_det (α x : M) :
+    chartVolumeDensity (I := I) α x =
+      √(LinearMap.BilinForm.toMatrix (Module.finBasis ℝ E) (chartMetricForm (I := I) α x)).det := by
+  rw [chartVolumeDensity_def, toMatrix_chartMetricForm]
+
 /-- The chart density is nonnegative, including at its values outside the chart. -/
 theorem chartVolumeDensity_nonneg (α x : M) : 0 ≤ chartVolumeDensity (I := I) α x :=
   Real.sqrt_nonneg _

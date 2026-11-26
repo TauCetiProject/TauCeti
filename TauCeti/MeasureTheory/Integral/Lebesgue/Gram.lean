@@ -25,7 +25,7 @@ Haar measure `b.addHaar` normalized by `b`. This is the coordinate expression of
 volume. The weighted measure does not depend on the basis
 (`Module.Basis.addHaar_withDensity_ofReal_sqrt_det_toMatrix_eq`): a change of basis with matrix
 `P` multiplies the Gram determinant by `(det P)²`, hence the density by `|det P|`, and the Haar
-measure by `|det P|⁻¹`.
+measure by `|det P|⁻¹` (`Module.Basis.addHaar_withDensity_eq_of_eq_abs_det_mul`).
 
 Consequently, for fields of forms `B₁` on `E` and `B₂` on `F`, the Gram density of the
 block-diagonal field `(B₁ x).prod (B₂ y)` on `E × F`, integrated over a product set, is the product
@@ -33,6 +33,10 @@ of the integrals of the two Gram densities
 (`Module.Basis.setLIntegral_ofReal_sqrt_det_toMatrix_prod`): in a product basis the Gram matrix is
 block diagonal and the Haar measure is the product of the Haar measures. This is the computation
 behind the Riemannian volume of a product of Riemannian manifolds.
+
+Both results follow their top-form versions for the density `|ω(b)|` of a top-degree form,
+`Module.Basis.addHaar_withDensity_ofReal_abs_apply_eq` and
+`Module.Basis.setLIntegral_ofReal_abs_apply_prod`.
 
 ## Main results
 
@@ -65,21 +69,9 @@ theorem addHaar_withDensity_ofReal_sqrt_det_toMatrix_eq (b b' : Basis ι ℝ E)
         (fun x ↦ ENNReal.ofReal √(LinearMap.BilinForm.toMatrix b' (B x)).det) =
       b.addHaar.withDensity
         (fun x ↦ ENNReal.ofReal √(LinearMap.BilinForm.toMatrix b (B x)).det) := by
-  have hd : ENNReal.ofReal |(b.det b')⁻¹| * ENNReal.ofReal |b.det b'| = 1 := by
-    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, inv_mul_cancel₀ (b.isUnit_det b').ne_zero,
-      abs_one, ENNReal.ofReal_one]
-  have hB (x : E) : √(LinearMap.BilinForm.toMatrix b' (B x)).det =
-      |b.det b'| * √(LinearMap.BilinForm.toMatrix b (B x)).det := by
-    rw [LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det b b', Real.sqrt_mul (sq_nonneg _),
-      Real.sqrt_sq_eq_abs, b.det_apply]
-  simp_rw [addHaar_eq_smul_of_basis b b', withDensity_smul_measure, hB,
-    ENNReal.ofReal_mul (abs_nonneg _)]
-  have hf : (fun x ↦ ENNReal.ofReal |b.det b'| *
-      ENNReal.ofReal √(LinearMap.BilinForm.toMatrix b (B x)).det) =
-      ENNReal.ofReal |b.det b'| •
-        fun x ↦ ENNReal.ofReal √(LinearMap.BilinForm.toMatrix b (B x)).det :=
-    funext fun _ ↦ (smul_eq_mul _ _).symm
-  rw [hf, withDensity_smul' _ _ ENNReal.ofReal_ne_top, smul_smul, hd, one_smul]
+  refine addHaar_withDensity_eq_of_eq_abs_det_mul b b' fun x ↦ ?_
+  rw [LinearMap.BilinForm.det_toMatrix_eq_det_sq_mul_det b b', Real.sqrt_mul (sq_nonneg _),
+    Real.sqrt_sq_eq_abs, b.det_apply, ENNReal.ofReal_mul (abs_nonneg _)]
 
 /-- **Gram densities of block-diagonal forms integrate as products.** Let `B₁` and `B₂` be fields of
 bilinear forms on `E` and on `F`. Over a product `A₁ ×ˢ A₂` of measurable sets, the Gram density of

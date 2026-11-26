@@ -55,6 +55,10 @@ API replace them.
   inner product in the basis given by the trivialization.
 * `Riemannian.Tensor.gram_basisAt_finBasis_reindex`: it is the Gram matrix of the basis of the
   tangent space given by the trivialization and a reindexing of the basis of the model space.
+* `Riemannian.Tensor.chartMetricForm`, `Riemannian.Tensor.chartMetricForm_apply` and
+  `Riemannian.Tensor.toMatrix_chartMetricForm`: the
+  metric read in the chart as a bilinear form on the model space, whose matrix in
+  `Module.finBasis ℝ E` is the chart Gram matrix at every point.
 * `Riemannian.Tensor.posDef_chartGramMatrix`: positive-definiteness on the base set.
 * `Riemannian.Tensor.chartGramMatrix_det_pos`: strict positivity of its determinant there.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
@@ -227,6 +231,30 @@ theorem chartGramMatrix_eq_toMatrix (α : M) {x : M}
     simpa only [TangentBundle.trivializationAt_baseSet] using hx
   simp only [chartGramMatrix_apply, chartLocalFrame_apply_of_mem_chart_source α hx',
     LinearMap.BilinForm.toMatrix_apply, innerₗ_apply_apply]
+
+/-- The metric at `x`, read in the coordinates of the tangent trivialization at `α`: the bilinear
+form on the model space `E` pulled back along the inverse trivialization at `x`. -/
+def chartMetricForm (α x : M) : LinearMap.BilinForm ℝ E :=
+  (innerₗ (TangentSpace I x)).compl₁₂
+    ((trivializationAt E (TangentSpace I) α).symmL ℝ x).toLinearMap
+    ((trivializationAt E (TangentSpace I) α).symmL ℝ x).toLinearMap
+
+omit [FiniteDimensional ℝ E] in
+/-- The metric read in the chart pairs two vectors of the model space through the inner product of
+their images under the inverse trivialization. -/
+@[simp]
+theorem chartMetricForm_apply (α x : M) (u v : E) :
+    chartMetricForm (I := I) α x u v =
+      inner ℝ ((trivializationAt E (TangentSpace I) α).symmL ℝ x u)
+        ((trivializationAt E (TangentSpace I) α).symmL ℝ x v) := (rfl)
+
+/-- At every point, including outside the chart domain, the chart Gram matrix is the matrix of
+the metric read in the chart, in the basis `Module.finBasis ℝ E`. -/
+theorem toMatrix_chartMetricForm (α x : M) :
+    LinearMap.BilinForm.toMatrix (Module.finBasis ℝ E) (chartMetricForm (I := I) α x) =
+      chartGramMatrix (I := I) α x := by
+  ext i j
+  simp [chartLocalFrame_eq_symmL, LinearMap.BilinForm.toMatrix_apply]
 
 /-- The Gram matrix of the chart-local frame is positive-definite on the tangent-trivialization
 base set. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
@@ -29,6 +30,8 @@ carries the normalized Haar measure of the first to that of the second.
   `volume`.
 * `Module.Basis.addHaar_eq_dirac` — the additive Haar measure of a basis indexed by an empty type
   is the Dirac mass at `0`.
+* `Module.Basis.addHaar_withDensity_eq_of_eq_abs_det_mul` — Haar measures weighted by densities
+  that scale by the absolute determinant of a change of basis agree.
 * `Module.Basis.measurePreserving_equiv` — the linear equivalence matching two bases carries the
   additive Haar measure of one to that of the other.
 * `ContinuousLinearEquiv.exists_map_restrict_preimage_eq_smul_addHaar` — a continuous linear
@@ -45,6 +48,7 @@ coordinate change in
 public section
 
 open MeasureTheory
+open scoped ENNReal
 
 namespace Module.Basis
 
@@ -110,6 +114,20 @@ theorem addHaar_eq_smul_of_basis (b b' : Basis ι ℝ E) :
     _ = _ := by
       simpa only [LinearEquiv.coe_toContinuousLinearEquiv', LinearEquiv.coe_coe, hdet] using
         Measure.map_linearMap_addHaar_eq_smul_addHaar b.addHaar e.isUnit_det'.ne_zero
+
+/-- **Densities that scale like a change of basis give the same weighted Haar measure.** If the
+density `f` used with the Haar measure of `b'` is the density `g` used with the Haar measure of
+`b`, multiplied by the absolute determinant of the change of basis, then the two weighted measures
+agree: the change of basis rescales the Haar measure by the inverse factor. -/
+theorem addHaar_withDensity_eq_of_eq_abs_det_mul (b b' : Basis ι ℝ E) {f g : E → ℝ≥0∞}
+    (hfg : ∀ x, f x = ENNReal.ofReal |b.det b'| * g x) :
+    b'.addHaar.withDensity f = b.addHaar.withDensity g := by
+  have hd : ENNReal.ofReal |(b.det b')⁻¹| * ENNReal.ofReal |b.det b'| = 1 := by
+    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, inv_mul_cancel₀ (b.isUnit_det b').ne_zero,
+      abs_one, ENNReal.ofReal_one]
+  have hf : f = ENNReal.ofReal |b.det b'| • g := funext hfg
+  rw [addHaar_eq_smul_of_basis b b', withDensity_smul_measure, hf,
+    withDensity_smul' _ _ ENNReal.ofReal_ne_top, smul_smul, hd, one_smul]
 
 end ChangeBasis
 
