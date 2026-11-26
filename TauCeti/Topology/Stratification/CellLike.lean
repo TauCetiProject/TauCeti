@@ -344,47 +344,39 @@ theorem preimage_unitIntervalStratum_Iic_empty : unitIntervalStratum ⁻¹' Iic 
   · simp
   · simp [h]
 
-/-- A subset of `Bool` is `univ`, `{false}`, `{true}` or `∅`. -/
-private theorem set_bool_cases (P : Set Bool) : P = univ ∨ P = {false} ∨ P = {true} ∨ P = ∅ := by
-  by_cases hf : false ∈ P <;> by_cases ht : true ∈ P
-  · exact Or.inl (eq_univ_of_forall fun b ↦ by cases b <;> assumption)
-  · refine Or.inr (Or.inl (ext fun b ↦ ?_))
-    cases b <;> simp [hf, ht]
-  · refine Or.inr (Or.inr (Or.inl (ext fun b ↦ ?_)))
-    cases b <;> simp [hf, ht]
-  · refine Or.inr (Or.inr (Or.inr (ext fun b ↦ ?_)))
-    cases b <;> simp [hf, ht]
-
 /-- **The interval is cell-like.** The stratification of `[0, 1]` by `{0} < (0, 1) > {1}`,
 indexed by the subsets of `Bool` with dimension one less than their cardinality, is cell-like: the
 endpoints are manifolds of dimension `0`, and `[0, 1]` is a manifold of dimension `1` with
 boundary `{0, 1}`. -/
 theorem isCellLike_unitIntervalStratum :
     IsCellLike unitIntervalStratum fun P : Set Bool ↦ (P.ncard : ℤ) - 1 := by
+  -- A subset of `Bool` is `∅`, `{false}`, `{true}` or `{false, true} = univ`.
+  have hP (P : Set Bool) := subset_pair_iff_eq.mp (Bool.univ_eq ▸ subset_univ P)
   refine ⟨fun P ↦ ?_, fun P ↦ ?_⟩
-  · rcases set_bool_cases P with rfl | rfl | rfl | rfl
-    · rw [preimage_unitIntervalStratum_Iic_univ]
-      exact isClosed_univ
+  · rcases hP P with rfl | rfl | rfl | rfl
+    · rw [preimage_unitIntervalStratum_Iic_empty]
+      exact isClosed_empty
     · rw [preimage_unitIntervalStratum_Iic_false]
       exact isClosed_singleton
     · rw [preimage_unitIntervalStratum_Iic_true]
       exact isClosed_singleton
-    · rw [preimage_unitIntervalStratum_Iic_empty]
-      exact isClosed_empty
+    · rw [← Bool.univ_eq, preimage_unitIntervalStratum_Iic_univ]
+      exact isClosed_univ
   · rw [univ_inter, univ_inter]
-    rcases set_bool_cases P with rfl | rfl | rfl | rfl
-    · rw [preimage_unitIntervalStratum_Iic_univ, preimage_unitIntervalStratum_Iio_univ]
-      convert isManifoldBoundaryPair_univ_boundary 0 unitInterval using 1
-      · exact boundary_unitInterval.symm
-      · simp
-    · rw [preimage_unitIntervalStratum_Iic_false, preimage_unitIntervalStratum_Iio_false]
-      simpa using isManifoldBoundaryPair_singleton (0 : unitInterval)
-    · rw [preimage_unitIntervalStratum_Iic_true, preimage_unitIntervalStratum_Iio_true]
-      simpa using isManifoldBoundaryPair_singleton (1 : unitInterval)
+    rcases hP P with rfl | rfl | rfl | rfl
     -- `∅` is the bottom element of `Set Bool`, so nothing lies strictly below it.
     · rw [preimage_unitIntervalStratum_Iic_empty, show Iio (∅ : Set Bool) = ∅ from Iio_bot,
         preimage_empty]
       exact isManifoldBoundaryPair_empty _
+    · rw [preimage_unitIntervalStratum_Iic_false, preimage_unitIntervalStratum_Iio_false]
+      simpa using isManifoldBoundaryPair_singleton (0 : unitInterval)
+    · rw [preimage_unitIntervalStratum_Iic_true, preimage_unitIntervalStratum_Iio_true]
+      simpa using isManifoldBoundaryPair_singleton (1 : unitInterval)
+    · rw [← Bool.univ_eq, preimage_unitIntervalStratum_Iic_univ,
+        preimage_unitIntervalStratum_Iio_univ]
+      convert isManifoldBoundaryPair_univ_boundary 0 unitInterval using 1
+      · exact boundary_unitInterval.symm
+      · simp
 
 end UnitInterval
 

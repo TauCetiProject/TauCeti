@@ -338,9 +338,7 @@ noncomputable def unitIntervalCellLikeStratification :
     refine ⟨unitInterval, inferInstance, unitIntervalStratum,
       by simpa [Finset.eq_empty_of_isEmpty I] using isCellLike_unitIntervalStratum,
       (Homeomorph.prodUnique unitInterval ((α : ↥(J \ I)) → E α)).symm.toOpenPartialHomeomorph,
-      by simp, fun _ _ ↦ Subsingleton.elim _ _, fun y _ ↦ ?_⟩
-    rw [Homeomorph.toOpenPartialHomeomorph_apply, ← Homeomorph.coe_prodUnique,
-      Homeomorph.apply_symm_apply]
+      by simp, fun _ _ ↦ Subsingleton.elim _ _, fun y _ ↦ by simp⟩
 
 /-- The interval atlas is stratified by `TauCeti.unitIntervalStratum` in each thickening. -/
 @[simp]

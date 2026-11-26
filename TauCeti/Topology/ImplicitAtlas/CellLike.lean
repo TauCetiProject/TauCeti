@@ -65,12 +65,14 @@ public section
 
 open Set Topology
 
+universe u
+
 namespace TauCeti
 
 variable {A : Type*} [DecidableEq A] {Γ : A → Type*} [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)]
   {E : A → Type*} [∀ α, NormedAddCommGroup (E α)] [∀ α, NormedSpace ℝ (E α)]
   [∀ α, FiniteDimensional ℝ (E α)] {ρ : ∀ α, Representation ℝ (Γ α) (E α)}
-  {T : Finset A → Type*} [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)]
+  {T : Finset A → Type u} [∀ I, TopologicalSpace (T I)] [∀ I, T2Space (T I)]
   {act : ∀ I : Finset A, ((α : I) → Γ α) →* (T I ≃ₜ T I)}
   {X : Type*} [TopologicalSpace X] {bd : Set X} {d : ℤ}
 
@@ -101,7 +103,7 @@ structure CellLikeStratification (𝒜 : ImplicitAtlasWithBoundary Γ E ρ T act
   coordinate is `s_(J \ I)`, for the dimensions `dim s + m_I`. -/
   exists_openPartialHomeomorph_stratum : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
     (x : kuranishiZeroSet 𝒜.kuranishi I J), 𝒜.footprintMap h x ∈ 𝒜.regLocus I →
-      ∃ (F : Type) (_ : TopologicalSpace F) (τ : F → S),
+      ∃ (F : Type u) (_ : TopologicalSpace F) (τ : F → S),
         IsCellLike τ (fun s ↦ dim s + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ)) ∧
         ∃ e : OpenPartialHomeomorph (T J) (F × ((α : ↥(J \ I)) → E α)),
           x.val ∈ e.source ∧ (∀ y ∈ e.source, (e y).2 = kuranishiSdiff 𝒜.kuranishi I J y) ∧
@@ -131,8 +133,7 @@ theorem isStratification_baseStratum : IsStratification σ.baseStratum :=
 /-- The boundary `∂X` of the base is the union of its boundary strata. -/
 theorem preimage_baseStratum_boundary : σ.baseStratum ⁻¹' bdS = bd := by
   ext y
-  rw [mem_preimage, SetLike.mem_coe, baseStratum_apply, ← σ.mem_boundary_iff, 𝒜.boundary_empty,
-    mem_preimage, Homeomorph.apply_symm_apply]
+  simp [baseStratum_apply, ← σ.mem_boundary_iff, 𝒜.boundary_empty]
 
 /-- The stratum of the footprint of a point of `Z_∅I` is its stratum in `X_I`. -/
 theorem baseStratum_footprintMap {I : Finset A} (x : kuranishiZeroSet 𝒜.kuranishi ∅ I) :
