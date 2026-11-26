@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
+import TauCeti.Dynamics.Ergodic.MeasurePreserving
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -202,8 +203,7 @@ theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule (hΦc : ContDiff 
   refine map_mem_w1pVanishingOnSubmodule_of_compOfIsProperMap hΦc hΦp _ (fun φ => ?_) hu
   refine W1p.ext_value (Lp.ext ?_)
   filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hUV hΦl hM _,
-    (hUV ▸ hΦ.restrict_preimage V.isOpen.measurableSet :
-      MeasurePreserving Φ (mu.restrict U) (nu.restrict V)).quasiMeasurePreserving.ae
+    (hΦ.restrict_of_preimage_eq V.isOpen.measurableSet hUV).quasiMeasurePreserving.ae
       (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := nu) (p := p) (le_top : V ≤ ⊤) φ),
     W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : U ≤ ⊤) _]
     with x h1 h2 h3
@@ -236,8 +236,7 @@ theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_lipschitzWith
     (W1p.ofTestFunctionₗ nu ⊤ p φ)
   have hw : ∀ᵐ x ∂mu.restrict ((⊤ : Opens E) : Set E), W1p.value w x = φ (Φ x) := by
     filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ htop _ _ _,
-      (htop ▸ hΦ.restrict_preimage (⊤ : Opens E').isOpen.measurableSet :
-        MeasurePreserving Φ (mu.restrict (⊤ : Opens E)) (nu.restrict (⊤ : Opens E'))
+      (hΦ.restrict_of_preimage_eq (⊤ : Opens E').isOpen.measurableSet htop
         ).quasiMeasurePreserving.ae (testFunctionLp_apply_ae (mu := nu) p φ)] with x h1 h2
     rw [h1, W1p.value_ofTestFunctionₗ, h2]
   have hmem := W1p.restrictL_mem_w1pVanishingOnSubmodule_of_isCompact (Omega := U) hp
@@ -252,8 +251,7 @@ theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_lipschitzWith
       W1p.restrictL (le_top : U ≤ ⊤) w := by
     refine W1p.ext_value (Lp.ext ?_)
     filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hUV hΦl hM _,
-      (hUV ▸ hΦ.restrict_preimage V.isOpen.measurableSet :
-        MeasurePreserving Φ (mu.restrict U) (nu.restrict V)).quasiMeasurePreserving.ae
+      (hΦ.restrict_of_preimage_eq V.isOpen.measurableSet hUV).quasiMeasurePreserving.ae
         (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := nu) (p := p) (le_top : V ≤ ⊤) φ),
       W1p.value_restrictL_ae (le_top : U ≤ ⊤) w,
       hw.filter_mono (ae_mono (Measure.restrict_mono (subset_univ _) le_rfl))] with x h1 h2 h3 h4
