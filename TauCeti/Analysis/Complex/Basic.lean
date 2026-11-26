@@ -97,7 +97,8 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 
 At height `1 ≤ |Im s|`, a point `s` is at distance at least `1` from `1`
 (`Complex.one_le_norm_sub_one`), so `s ≠ 1` (`Complex.ne_one_of_one_le_abs_im`) and
-`‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`).
+`‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`). For real `1 ≤ r`,
+`‖(r : ℂ) - 1‖ = r - 1` (`Complex.norm_ofReal_sub_one`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
@@ -598,6 +599,10 @@ theorem ne_one_of_one_le_abs_im {s : ℂ} (ht : 1 ≤ |s.im|) : s ≠ 1 := by
 theorem norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹‖ ≤ 1 := by
   rw [norm_inv]
   exact inv_le_one_of_one_le₀ (one_le_norm_sub_one ht)
+
+/-- For real `1 ≤ r`, the norm of `(r : ℂ) - 1` is `r - 1`. -/
+theorem norm_ofReal_sub_one {r : ℝ} (h : 1 ≤ r) : ‖(r : ℂ) - 1‖ = r - 1 := by
+  rw [← ofReal_one, ← ofReal_sub, norm_real, Real.norm_of_nonneg (sub_nonneg.mpr h)]
 
 /-- A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`. -/
 theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + μ).im ≠ 0 :=
