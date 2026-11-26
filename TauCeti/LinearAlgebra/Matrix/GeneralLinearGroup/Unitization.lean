@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Algebra.Quasiregular
 public import TauCeti.Algebra.Algebra.Unitization.Matrix
 public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
+import TauCeti.Algebra.Ring.Units
 import TauCeti.Algebra.Star.Unitary
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
@@ -326,14 +327,6 @@ theorem coe_unitizationGLRetract_mem_unitary {g : GL n (Unitization R A)}
 end Star
 
 section Prod
-
-/-- If `q` is a two-sided inverse of `p` and `n₁ q n₂ = 0`, then
-`(p + n₁) q (p + n₂) = p + n₁ + n₂`. -/
-private theorem add_mul_mul_add_of_mul_eq_one {α : Type*} [Semiring α] {p q n₁ n₂ : α}
-    (hpq : p * q = 1) (hqp : q * p = 1) (hn : n₁ * q * n₂ = 0) :
-    (p + n₁) * q * (p + n₂) = p + n₁ + n₂ := by
-  rw [add_mul, hpq, add_mul, one_mul, mul_add, hn, mul_assoc, hqp, mul_one, add_zero]
-  abel
 
 variable {R A B : Type*} [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
   [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [StarModule R A]
