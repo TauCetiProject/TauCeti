@@ -49,7 +49,7 @@ proves `Integrable (deriv f)` and the sharp real-valued `L¹` bounds. Passing to
 * `ContDiff.integrable_iteratedDeriv_of_le_two`: convenience form bundling integrability of
   `iteratedDeriv k f` for all `k ≤ 2`.
 * `ContDiff.integral_norm_deriv_le`: step-parameterized `L¹` bound for `h > 0`.
-* `ContDiff.integral_norm_deriv_sq_le` and `ContDiff.integral_norm_deriv_le_sqrt`: the sharp
+* `ContDiff.sq_integral_norm_deriv_le` and `ContDiff.integral_norm_deriv_le_sqrt`: the sharp
   `L¹` Landau–Kolmogorov inequalities with constant `2` (resp. `√2`).
 
 ## References
@@ -367,7 +367,7 @@ theorem integral_norm_deriv_le {f : ℝ → E} (hf : ContDiff ℝ 2 f)
 
 /-- Sharp `L¹` Landau–Kolmogorov inequality:
 `(∫ t, ‖deriv f t‖) ^ 2 ≤ 2 * (∫ t, ‖f t‖) * (∫ t, ‖iteratedDeriv 2 f t‖)`. -/
-theorem integral_norm_deriv_sq_le {f : ℝ → E} (hf : ContDiff ℝ 2 f)
+theorem sq_integral_norm_deriv_le {f : ℝ → E} (hf : ContDiff ℝ 2 f)
     (h0 : Integrable f) (h2 : Integrable (iteratedDeriv 2 f)) :
     (∫ t, ‖deriv f t‖) ^ 2 ≤ 2 * (∫ t, ‖f t‖) * (∫ t, ‖iteratedDeriv 2 f t‖) :=
   TauCeti.sq_le_two_mul_of_forall_pos
@@ -379,7 +379,7 @@ theorem integral_norm_deriv_sq_le {f : ℝ → E} (hf : ContDiff ℝ 2 f)
 theorem integral_norm_deriv_le_sqrt {f : ℝ → E} (hf : ContDiff ℝ 2 f)
     (h0 : Integrable f) (h2 : Integrable (iteratedDeriv 2 f)) :
     ∫ t, ‖deriv f t‖ ≤ √(2 * (∫ t, ‖f t‖) * (∫ t, ‖iteratedDeriv 2 f t‖)) :=
-  Real.le_sqrt_of_sq_le (hf.integral_norm_deriv_sq_le h0 h2)
+  Real.le_sqrt_of_sq_le (hf.sq_integral_norm_deriv_le h0 h2)
 
 end General
 

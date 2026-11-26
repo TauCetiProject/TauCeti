@@ -42,7 +42,8 @@ for absolutely continuous primitives whose derivative has bounded variation.
   is sharp and attained by `1_[0,1]` at `ξ = 1 / 2`.
 * **Absolutely continuous primitive with BV derivative.** If `f` and `g` are integrable and
   `f x = f a + ∫ t in a..x, g t`, then `f` tends to `0` at `±∞` (via
-  `TauCeti.intervalIntegral.tendsto_zero_atTop_of_eq_add_integral` and its `atBot` counterpart) and
+  `MeasureTheory.IntegrableAtFilter.tendsto_zero_atTop_of_eq_add_integral` and its `atBot`
+  counterpart) and
   Fubini integration by parts on `[-R, R]` via
   `TauCeti.intervalIntegral.integral_deriv_smul_add_eq_sub_of_le`
   gives `𝓕 g ξ = (2 * π * I * ξ) • 𝓕 f ξ` in any complex normed space. If `g` also has bounded
@@ -355,11 +356,11 @@ theorem fourier_eq_smul_fourier_of_eq_add_integral {E : Type*} [NormedAddCommGro
       exact intervalIntegral_tendsto_integral (hg.fourierChar_smul (by fun_prop))
         tendsto_neg_atTop_atBot tendsto_id
     have hf_top : Tendsto f atTop (𝓝 0) :=
-      TauCeti.intervalIntegral.tendsto_zero_atTop_of_eq_add_integral
-        ⟨univ, univ_mem, hf.integrableOn⟩ hg.integrableOn (Eventually.of_forall hfg)
+      (hf.integrableAtFilter atTop).tendsto_zero_atTop_of_eq_add_integral
+        hg.integrableOn (Eventually.of_forall hfg)
     have hf_bot : Tendsto f atBot (𝓝 0) :=
-      TauCeti.intervalIntegral.tendsto_zero_atBot_of_eq_add_integral
-        ⟨univ, univ_mem, hf.integrableOn⟩ hg.integrableOn (Eventually.of_forall hfg)
+      (hf.integrableAtFilter atBot).tendsto_zero_atBot_of_eq_add_integral
+        hg.integrableOn (Eventually.of_forall hfg)
     have hbd_pos : Tendsto (fun R : ℝ ↦ 𝐞 (-(R * ξ)) • f R) atTop (𝓝 0) :=
       tendsto_zero_iff_norm_tendsto_zero.mpr <| by
         simpa [Circle.norm_smul] using hf_top.norm

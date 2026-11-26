@@ -67,9 +67,10 @@ used to identify weak derivatives on an interval with ordinary primitives.
   the primitive is needed.
 * `TauCeti.intervalIntegral.integral_deriv_smul_add_eq_sub_of_le`: symmetric integration by parts
   for `f x = f a + ∫ s in a..x, g s` on `Icc a b`.
-* `TauCeti.intervalIntegral.tendsto_zero_atTop_of_eq_add_integral` and
-  `TauCeti.intervalIntegral.tendsto_zero_atBot_of_eq_add_integral`: vanishing at `±∞` of an
-  integrable function that eventually agrees with `c + ∫ t in a..x, g t`.
+* `MeasureTheory.IntegrableAtFilter.tendsto_zero_atTop_of_eq_add_integral` and
+  `MeasureTheory.IntegrableAtFilter.tendsto_zero_atBot_of_eq_add_integral`: vanishing at `±∞` of a
+  function integrable along `atTop` (resp. `atBot`) that eventually agrees with
+  `c + ∫ t in a..x, g t`.
 -/
 
 public section
@@ -405,10 +406,17 @@ theorem integral_deriv_smul_add_eq_sub_of_le {𝕜 : Type*} [RCLike 𝕜] [Norme
   simp only [sub_smul, smul_add]
   abel
 
-omit [CompleteSpace E] in
+end intervalIntegral
+
+end TauCeti
+
+namespace MeasureTheory.IntegrableAtFilter
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : ℝ → E} {a : ℝ} {c : E}
+
 /-- If `f : ℝ → E` is integrable along `atTop` and eventually equals `c + ∫ t in a..x, g t` for
 some `g` integrable on `Ioi a`, then `f x → 0` as `x → +∞`. -/
-theorem tendsto_zero_atTop_of_eq_add_integral {g : ℝ → E} {c : E}
+theorem tendsto_zero_atTop_of_eq_add_integral
     (hf : IntegrableAtFilter f atTop volume) (hg : IntegrableOn g (Ioi a))
     (hfg : ∀ᶠ x in atTop, f x = c + ∫ t in a..x, g t) :
     Tendsto f atTop (𝓝 0) := by
@@ -421,17 +429,16 @@ theorem tendsto_zero_atTop_of_eq_add_integral {g : ℝ → E} {c : E}
       measure_mono_top (s₁ := Ici b) (fun _ hx ↦ hb _ hx) Real.volume_Ici) hlim
   rwa [hzero] at hlim
 
-omit [CompleteSpace E] in
 /-- If `f : ℝ → E` is integrable along `atBot` and eventually equals `c + ∫ t in a..x, g t` for
 some `g` integrable on `Iic a`, then `f x → 0` as `x → -∞`. -/
-theorem tendsto_zero_atBot_of_eq_add_integral {g : ℝ → E} {c : E}
+theorem tendsto_zero_atBot_of_eq_add_integral
     (hf : IntegrableAtFilter f atBot volume) (hg : IntegrableOn g (Iic a))
     (hfg : ∀ᶠ x in atBot, f x = c + ∫ t in a..x, g t) :
     Tendsto f atBot (𝓝 0) := by
   have hsym : Tendsto (fun x ↦ ∫ t in a..x, g t) atBot (𝓝 (-∫ t in Iic a, g t)) := by
     refine (intervalIntegral_tendsto_integral_Iic a hg tendsto_id).neg.congr fun x ↦ ?_
     dsimp only [Function.comp_apply, id_eq]
-    rw [_root_.intervalIntegral.integral_symm, neg_neg]
+    rw [intervalIntegral.integral_symm, neg_neg]
   have hlim : Tendsto f atBot (𝓝 (c + -∫ t in Iic a, g t)) :=
     (hsym.const_add c).congr' (hfg.mono fun _ hx ↦ hx.symm)
   have hzero : c + -∫ t in Iic a, g t = 0 :=
@@ -440,9 +447,7 @@ theorem tendsto_zero_atBot_of_eq_add_integral {g : ℝ → E} {c : E}
       measure_mono_top (s₁ := Iic b) (fun _ hx ↦ hb _ hx) Real.volume_Iic) hlim
   rwa [hzero] at hlim
 
-end intervalIntegral
-
-end TauCeti
+end MeasureTheory.IntegrableAtFilter
 
 /-- The primitive `z ↦ ∫ s in a..z, f s` of a continuous function is `C¹`, with derivative `f`. -/
 theorem Continuous.contDiff_one_primitive {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
