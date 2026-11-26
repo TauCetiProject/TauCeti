@@ -11,24 +11,25 @@ public import TauCeti.Geometry.Symplectic.Floer.WPlusMonotone
 # w⁺-monotonicity of products of spheres
 
 Let `M = ∏_{i ∈ ι} S²` be a finite product of two-spheres with a product symplectic form giving
-the `i`-th factor the area `a i`. Its spherical classes are `ℤ^ι`, with area
-`ω(A) = ∑ i, a i * A i` (`TauCeti.Floer.WPlusMonotoneExample.area`) and first Chern number
-`c₁(A) = 2 ∑ i, A i` (`TauCeti.Floer.WPlusMonotoneExample.chern`), since `c₁(TS²)[S²] = 2`. This
-file decides for which areas these data are w⁺-monotone (`TauCeti.Floer.IsWPlusMonotone`), the
-hypothesis under which Lee constructs the Floer–Novikov torsion. It works with the class group
-`ℤ^ι` and these two homomorphisms directly; the homology of the product is not computed here.
+the `i`-th factor, with its standard orientation, the area `a i > 0`. Its spherical classes are
+`ℤ^ι`, with area `ω(A) = ∑ i, a i * A i` (`TauCeti.Floer.WPlusMonotoneExample.area`) and first
+Chern number `c₁(A) = 2 ∑ i, A i` (`TauCeti.Floer.WPlusMonotoneExample.chern`), since
+`c₁(TS²)[S²] = 2`. This file decides for which positive areas these data are w⁺-monotone
+(`TauCeti.Floer.IsWPlusMonotone`), the hypothesis under which Lee constructs the Floer–Novikov
+torsion. It works with the class group `ℤ^ι` and these two homomorphisms directly; the homology of
+the product is not computed here. The homomorphisms are defined for every `a : ι → ℝ`, but only
+positive `a` are the data of a product symplectic form: a factor of negative area would carry the
+conjugate complex structure and first Chern number `-2`. Statements without a positivity
+hypothesis are about the pair `(area a, chern)` as abstract period data.
 
 * In dimension at most `6`, that is `n ≤ 3`, they always are, because every first Chern number is
   even (`TauCeti.Floer.WPlusMonotoneExample.isWPlusMonotone_of_le_three`).
 * With all areas equal to `τ > 0` the data are positively monotone, `ω = (τ / 2) c₁`
   (`TauCeti.Floer.WPlusMonotoneExample.area_const_eq_mul_chern`), hence w⁺-monotone in every
   dimension (`TauCeti.Floer.WPlusMonotoneExample.isWPlusMonotone_const`).
-* From dimension `8` on, that is `n ≥ 4`, nothing else is: the data are w⁺-monotone exactly when
-  all the areas are equal to one positive number
-  (`TauCeti.Floer.WPlusMonotoneExample.isWPlusMonotone_iff_exists_pos_forall_eq`). A factor of
-  nonpositive area gives the class of that factor, of first Chern number `2 ≤ n - 2` and
-  nonpositive area
-  (`TauCeti.Floer.WPlusMonotoneExample.not_isWPlusMonotone_of_nonpos`). Two factors of areas
+* From dimension `8` on, that is `n ≥ 4`, nothing else is: for positive areas the data are
+  w⁺-monotone exactly when all the areas are equal
+  (`TauCeti.Floer.WPlusMonotoneExample.isWPlusMonotone_iff_forall_eq`). Two factors of areas
   `a i < a j` give the classes `(N + 1) Aᵢ - N Aⱼ`, of first Chern number `2` and area
   `a i - N (a j - a i)`, which is negative for large `N`
   (`TauCeti.Floer.WPlusMonotoneExample.not_isWPlusMonotone_of_lt`).
@@ -58,7 +59,8 @@ namespace TauCeti.Floer.WPlusMonotoneExample
 variable {ι : Type*} [Fintype ι]
 
 /-- The area `∑ i, a i * A i` of the spherical class `A ∈ ℤ^ι` of a product of two-spheres whose
-`i`-th factor has area `a i`. -/
+`i`-th factor has area `a i`. Together with `chern` these are the spherical data of a product
+symplectic form when every `a i` is positive. -/
 def area (a : ι → ℝ) : (ι → ℤ) →+ ℝ where
   toFun A := ∑ i, a i * A i
   map_zero' := by simp
@@ -69,7 +71,7 @@ theorem area_apply (a : ι → ℝ) (A : ι → ℤ) : area a A = ∑ i, a i * A
   (rfl)
 
 /-- The first Chern number `2 ∑ i, A i` of the spherical class `A ∈ ℤ^ι` of a product of
-two-spheres: each factor contributes `c₁(TS²)[S²] = 2`. -/
+two-spheres with positive areas: each factor contributes `c₁(TS²)[S²] = 2`. -/
 def chern : (ι → ℤ) →+ ℤ where
   toFun A := 2 * ∑ i, A i
   map_zero' := by simp
@@ -93,8 +95,9 @@ theorem chern_single [DecidableEq ι] (i : ι) (x : ℤ) : chern (Pi.single i x 
 theorem even_chern (A : ι → ℤ) : Even (chern A) :=
   ⟨∑ i, A i, by rw [chern_apply]; ring⟩
 
-/-- **A product of two-spheres is w⁺-monotone in dimension at most `6`**, whatever the areas:
-its first Chern numbers are even, and no even integer lies in `(0, n - 2]` for `n ≤ 3`. -/
+/-- **A product of two-spheres is w⁺-monotone in dimension at most `6`**: its first Chern numbers
+are even, and no even integer lies in `(0, n - 2]` for `n ≤ 3`. As abstract data this needs no
+positivity of the areas `a`. -/
 theorem isWPlusMonotone_of_le_three (a : ι → ℝ) {n : ℕ} (hn : n ≤ 3) :
     IsWPlusMonotone (area a) chern n :=
   isWPlusMonotone_of_even_of_le_three even_chern hn
@@ -114,17 +117,10 @@ theorem isWPlusMonotone_const {τ : ℝ} (hτ : 0 < τ) (n : ℕ) :
     IsWPlusMonotone (area fun _ : ι ↦ τ) chern n :=
   isWPlusMonotone_of_area_eq_mul_chern (area_const_eq_mul_chern τ) (half_pos hτ)
 
-/-- **A factor of nonpositive area breaks w⁺-monotonicity** from dimension `8` on: the class of
-that factor has first Chern number `2 ≤ n - 2` and nonpositive area. -/
-theorem not_isWPlusMonotone_of_nonpos {a : ι → ℝ} {n : ℕ} (hn : 4 ≤ n) {i : ι} (hi : a i ≤ 0) :
-    ¬ IsWPlusMonotone (area a) chern n := by
-  classical
-  rw [not_isWPlusMonotone_iff]
-  exact ⟨Pi.single i 1, by simp, by simp; omega, by rw [area_single]; simpa using hi⟩
-
 /-- **Two factors of different areas break w⁺-monotonicity** from dimension `8` on: if
 `a i < a j`, then for large `N` the class `(N + 1) Aᵢ - N Aⱼ` has first Chern number `2 ≤ n - 2`
-and negative area `a i - N (a j - a i)`. -/
+and negative area `a i - N (a j - a i)`. As abstract data this needs no positivity of the areas
+`a`. -/
 theorem not_isWPlusMonotone_of_lt {a : ι → ℝ} {n : ℕ} (hn : 4 ≤ n) {i j : ι} (hij : a i < a j) :
     ¬ IsWPlusMonotone (area a) chern n := by
   classical
@@ -139,22 +135,23 @@ theorem not_isWPlusMonotone_of_lt {a : ι → ℝ} {n : ℕ} (hn : 4 ≤ n) {i j
     push_cast
     linarith
 
-/-- **w⁺-monotonicity of a product of two-spheres from dimension `8` on**: for `n ≥ 4` the data
-are w⁺-monotone exactly when all the areas are equal to one positive number. -/
-theorem isWPlusMonotone_iff_exists_pos_forall_eq {a : ι → ℝ} {n : ℕ} (hn : 4 ≤ n) :
-    IsWPlusMonotone (area a) chern n ↔ ∃ τ, 0 < τ ∧ ∀ i, a i = τ := by
-  refine ⟨fun h ↦ ?_, fun ⟨τ, hτ, ha⟩ ↦ ?_⟩
+/-- **w⁺-monotonicity of a product of two-spheres from dimension `8` on**: for `n ≥ 4` and
+positive areas the data are w⁺-monotone exactly when all the areas are equal. -/
+theorem isWPlusMonotone_iff_forall_eq {a : ι → ℝ} (ha : ∀ i, 0 < a i) {n : ℕ} (hn : 4 ≤ n) :
+    IsWPlusMonotone (area a) chern n ↔ ∀ i j, a i = a j := by
+  refine ⟨fun h i j ↦ ?_, fun h ↦ ?_⟩
+  · rcases lt_trichotomy (a i) (a j) with hlt | heq | hgt
+    · exact absurd h (not_isWPlusMonotone_of_lt hn hlt)
+    · exact heq
+    · exact absurd h (not_isWPlusMonotone_of_lt hn hgt)
   · cases isEmpty_or_nonempty ι with
-    | inl _ => exact ⟨1, one_pos, isEmptyElim⟩
+    | inl _ =>
+      rw [show a = fun _ ↦ 1 from funext isEmptyElim]
+      exact isWPlusMonotone_const one_pos n
     | inr hι =>
       obtain ⟨i₀⟩ := hι
-      refine ⟨a i₀, not_le.1 fun h₀ ↦ not_isWPlusMonotone_of_nonpos hn h₀ h, fun i ↦ ?_⟩
-      rcases lt_trichotomy (a i) (a i₀) with hlt | heq | hgt
-      · exact absurd h (not_isWPlusMonotone_of_lt hn hlt)
-      · exact heq
-      · exact absurd h (not_isWPlusMonotone_of_lt hn hgt)
-  · obtain rfl : a = fun _ ↦ τ := funext ha
-    exact isWPlusMonotone_const hτ n
+      rw [show a = fun _ ↦ a i₀ from funext fun i ↦ h i i₀]
+      exact isWPlusMonotone_const (ha i₀) n
 
 /-! ### The product `(S²)⁴` with areas `1, 3, 1, 1` -/
 
