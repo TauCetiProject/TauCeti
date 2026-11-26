@@ -15,7 +15,8 @@ import Mathlib.Topology.WithTopology
 Containment and equality between inverse images of compact opens in a cofiltered spectral
 limit hold after some transition map. In particular, emptiness and covering the whole limit
 are detected at a finite stage. Neither the transitions nor the limit projections need to be
-surjective. The compactness argument works more generally for pro-constructible subsets.
+surjective. The compactness argument works more generally for pro-constructible subsets, and
+equality of inverse images of constructible subsets is detected in the same way.
 
 Pass to the compact Hausdorff constructible topologies and use finite-stage emptiness there.
 These detection results allow relations between finite-stage opens to be imposed simultaneously
@@ -113,6 +114,20 @@ theorem exists_preimage_eq_of_isLimit {i : J} {s t : Set (F.obj i)}
   · simpa only [F.map_comp, coe_comp, preimage_comp] using preimage_mono (f := F.map a) hf
   · rw [hab]
     simpa only [F.map_comp, coe_comp, preimage_comp] using preimage_mono (f := F.map b) hg
+
+/-- Equality of pullbacks of constructible subsets in a spectral limit is detected after a
+transition map: their symmetric difference is a constructible, hence pro-constructible, subset
+missing the limit. -/
+theorem exists_preimage_eq_of_isConstructible {i : J} {s t : Set (F.obj i)}
+    (hs : IsConstructible s) (ht : IsConstructible t) (h : c.π.app i ⁻¹' s = c.π.app i ⁻¹' t) :
+    ∃ (j : J) (f : j ⟶ i), F.map f ⁻¹' s = F.map f ⁻¹' t := by
+  have hempty : c.π.app i ⁻¹' (s \ t ∪ t \ s) = ∅ := by
+    rw [preimage_union, preimage_sdiff, preimage_sdiff, h, sdiff_self, union_self]
+  obtain ⟨j, f, hf⟩ := exists_preimage_eq_empty_of_isProConstructible F hF c hc
+    ((hs.sdiff ht).union (ht.sdiff hs)).isProConstructible hempty
+  rw [preimage_union, preimage_sdiff, preimage_sdiff, union_empty_iff, sdiff_eq_empty,
+    sdiff_eq_empty] at hf
+  exact ⟨j, f, hf.1.antisymm hf.2⟩
 
 /-- Finitely many containments between pullbacks of compact opens are detected at one
 common stage. This applies in particular to finite lists of union and intersection relations. -/

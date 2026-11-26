@@ -40,9 +40,10 @@ the conclusion cannot be strengthened to `Topology.IsQuotientMap`.
 * `TopCat.isSpectralSubmersion_isLimitMap` — the map `hd.map c η` between limiting cones induced
   by a levelwise spectral submersion `η` is a spectral submersion;
   `TopCat.isSpectralSubmersion_limMap` is the same statement for `CategoryTheory.Limits.limMap η`.
-* `TopCat.isSpectralMap_isLimitMap`, `TopCat.surjective_isLimitMap` — the induced map is spectral
+* `TopCat.isSpectralMap_isLimitMap`, `TopCat.isLimitMap_surjective` — the induced map is spectral
   when `η` is levelwise spectral, and, for cofiltered diagrams, surjective when `η` is levelwise
   surjective and spectral.
+* `TopCat.isLimitMap_π_apply` — the coordinates of the induced map at a point.
 
 ## References
 
@@ -57,6 +58,13 @@ open Set Topology TopologicalSpace CategoryTheory CategoryTheory.Limits
 namespace TopCat
 
 universe v u
+
+/-- The `j`-th coordinate of the image of a point `x` under the map `hd.map c η` between limit
+cones in `TopCat` is the image under `η j` of the `j`-th coordinate of `x`. -/
+theorem isLimitMap_π_apply {K : Type*} [Category K] {F G : K ⥤ TopCat} (c : Cone F) {d : Cone G}
+    (hd : IsLimit d) (η : F ⟶ G) (j : K) (x : c.pt) :
+    d.π.app j (hd.map c η x) = η.app j (c.π.app j x) :=
+  ConcreteCategory.congr_hom (IsLimit.map_π c hd η j) x
 
 variable {J : Type v} [SmallCategory J] [IsCofiltered J]
   (F G : J ⥤ TopCat.{max v u}) [∀ j, SpectralSpace (F.obj j)] [∀ j, SpectralSpace (G.obj j)]
@@ -79,21 +87,19 @@ theorem isSpectralMap_isLimitMap (hη : ∀ j, IsSpectralMap (η.app j)) :
     IsSpectralMap (hd.map c η) := by
   have := spectralSpace_of_isLimit F hF c hc
   refine (isSpectralMap_of_isLimit_iff G hG d hd _).2 fun j ↦ ?_
-  have : d.π.app j ∘ hd.map c η = η.app j ∘ c.π.app j :=
-    funext (ConcreteCategory.congr_hom (IsLimit.map_π c hd η j))
+  have : d.π.app j ∘ hd.map c η = η.app j ∘ c.π.app j := funext (isLimitMap_π_apply c hd η j)
   rw [this]
   exact (hη j).comp (isSpectralMap_of_isLimit_π F hF c hc j)
 
 /-- A cofiltered limit of surjective spectral maps between spectral spaces with spectral
-transition maps is surjective: if the components of `η` are surjective spectral maps, then so is
-the induced map `hd.map c η` of limits. -/
-theorem surjective_isLimitMap (hη : ∀ j, IsSpectralMap (η.app j))
+transition maps is surjective: if the components of `η` are surjective spectral maps, then the
+induced map `hd.map c η` of limits is surjective. It is also spectral by
+`isSpectralMap_isLimitMap`. -/
+theorem isLimitMap_surjective (hη : ∀ j, IsSpectralMap (η.app j))
     (hη' : ∀ j, Function.Surjective (η.app j)) : Function.Surjective (hd.map c η) := by
   have := spectralSpace_of_isLimit F hF c hc
   have := spectralSpace_of_isLimit G hG d hd
   set φ := hd.map c η
-  have hcomm (j : J) (x : c.pt) : d.π.app j (φ x) = η.app j (c.π.app j x) :=
-    ConcreteCategory.congr_hom (IsLimit.map_π c hd η j) x
   intro y
   by_contra hy
   -- The image of `φ` is pro-constructible, so a constructible neighbourhood of `y` misses it.
@@ -108,7 +114,7 @@ theorem surjective_isLimitMap (hη : ∀ j, IsSpectralMap (η.app j))
   -- Hence `η j ⁻¹' W` misses the image of the limit of `F`, and so that of some stage `k`.
   have hempty : c.π.app j ⁻¹' (η.app j ⁻¹' W) = ∅ :=
     eq_empty_iff_forall_notMem.2 fun x hx ↦ hVφ
-      (show d.π.app j (φ x) ∈ W by rwa [hcomm])
+      (mem_preimage.2 (by rwa [isLimitMap_π_apply]))
       (mem_range_self x)
   obtain ⟨k, f, hf⟩ := exists_preimage_eq_empty_of_isProConstructible F hF c hc
     ((hη j).isConstructible_preimage hW).isProConstructible hempty
@@ -129,11 +135,8 @@ theorem isSpectralSubmersion_isLimitMap : TauCeti.IsSpectralSubmersion (hd.map c
   have := spectralSpace_of_isLimit F hF c hc
   have := spectralSpace_of_isLimit G hG d hd
   have hspec := isSpectralMap_isLimitMap F G η hF hG c hc hd fun j ↦ (hη j).isSpectralMap
-  have hsurj := surjective_isLimitMap F G η hF hG c hc hd (fun j ↦ (hη j).isSpectralMap)
+  have hsurj := isLimitMap_surjective F G η hF hG c hc hd (fun j ↦ (hη j).isSpectralMap)
     fun j ↦ (hη j).surjective
-  set φ := hd.map c η
-  have hcomm (j : J) (x : c.pt) : d.π.app j (φ x) = η.app j (c.π.app j x) :=
-    ConcreteCategory.congr_hom (IsLimit.map_π c hd η j) x
   refine ⟨hsurj, hspec, fun U hUo hUc ↦ ?_⟩
   -- `U` is constructible, so it comes from a constructible `W` at a stage `j`; its preimage
   -- comes from a quasi-compact open `V` at a stage `i`. Pass to a common stage below both.
@@ -150,19 +153,15 @@ theorem isSpectralSubmersion_isLimitMap : TauCeti.IsSpectralSubmersion (hd.map c
     (hη _).isSpectralMap.isConstructible_preimage ((hG b).isConstructible_preimage hW)
   -- The constructible sets `s` and `t` have the same preimage in the limit of `F`, so they
   -- agree after a transition map `g : l ⟶ min i j`.
-  have hst : c.π.app _ ⁻¹' (s \ t ∪ t \ s) = ∅ := by
-    have : c.π.app _ ⁻¹' s = c.π.app _ ⁻¹' t := by
-      ext x
-      simpa only [s, t, mem_preimage, Cone.w_apply, ← hcomm] using (Set.ext_iff.1 hV x).symm
-    rw [preimage_union, preimage_sdiff, preimage_sdiff, this, Set.sdiff_self, union_self]
-  obtain ⟨l, g, hg⟩ := exists_preimage_eq_empty_of_isProConstructible F hF c hc
-    (((hs.sdiff ht).union (ht.sdiff hs)).isProConstructible) hst
-  rw [preimage_union, preimage_sdiff, preimage_sdiff, union_empty_iff, sdiff_eq_empty,
-    sdiff_eq_empty] at hg
+  have hst : c.π.app _ ⁻¹' s = c.π.app _ ⁻¹' t := by
+    ext x
+    simpa only [s, t, mem_preimage, Cone.w_apply, ← isLimitMap_π_apply c hd η] using
+      (Set.ext_iff.1 hV x).symm
+  obtain ⟨l, g, hg⟩ := exists_preimage_eq_of_isConstructible F hF c hc hs ht hst
   -- At stage `l`, the preimage of `G.map b ⁻¹' W` under `η l` is quasi-compact open, so this set
   -- is open because `η l` is a spectral submersion. Its preimage in the limit of `G` is `U`.
   have heq : η.app l ⁻¹' (G.map g ⁻¹' (G.map b ⁻¹' W)) = F.map g ⁻¹' s := by
-    rw [Subset.antisymm hg.1 hg.2]
+    rw [hg]
     simp only [t, preimage_preimage, NatTrans.naturality_apply]
   have hWo : IsOpen (G.map g ⁻¹' (G.map b ⁻¹' W)) := by
     refine (hη l).isOpen_of_isOpen_preimage_of_isCompact_preimage ?_ ?_ <;> rw [heq]
