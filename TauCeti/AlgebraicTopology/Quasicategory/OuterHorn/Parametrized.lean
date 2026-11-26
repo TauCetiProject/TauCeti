@@ -101,6 +101,21 @@ theorem exists_ext_unionProd_horn_zero [Quasicategory C] {m n : ℕ}
 
 end prodStdSimplex
 
+namespace boundary
+
+/-- The degenerate edge at vertex `0` of the boundary of a positive-dimensional simplex. -/
+noncomputable def edgeZero (n : ℕ) : (∂Δ[n + 1] : SSet.{u}) _⦋1⦌ :=
+  (∂Δ[n + 1] : SSet.{u}).σ 0
+    ⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩
+
+/-- The underlying simplex of `edgeZero` is constant at vertex `0`. -/
+@[simp]
+lemma edgeZero_val (n : ℕ) :
+    (edgeZero.{u} n).val = stdSimplex.const (n + 1) 0 _ := by
+  exact stdSimplex.ext _ _ fun _ ↦ rfl
+
+end boundary
+
 namespace Quasicategory
 
 open Edge
@@ -114,9 +129,7 @@ braiding `Δ[1] ⊗ Δ[n + 1] ≅ Δ[n + 1] ⊗ Δ[1]`. -/
 theorem exists_ext_cylinder_boundary [Quasicategory C] (g : Δ[n + 1] ⟶ C)
     (L : (∂Δ[n + 1] : SSet.{u}) ⊗ Δ[1] ⟶ C) (hgL : ∂Δ[n + 1].ι ≫ g = ι₀ ≫ L)
     (hL : (Edge.mk' (L.app _
-      (((∂Δ[n + 1] : SSet.{u}).σ 0
-        ⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩),
-        stdSimplex.edge 1 0 1 (Fin.zero_le _)))).IsEquivalence) :
+      (boundary.edgeZero n, stdSimplex.edge 1 0 1 (Fin.zero_le _)))).IsEquivalence) :
     ∃ L' : Δ[n + 1] ⊗ Δ[1] ⟶ C, ι₀ ≫ L' = g ∧ ∂Δ[n + 1].ι ▷ Δ[1] ≫ L' = L := by
   have hpush := Subcomplex.unionProd.isPushout Λ[1, 0] ∂Δ[n + 1]
   have hw : Λ[1, 0].ι ▷ (∂Δ[n + 1] : SSet.{u}) ≫ (β_ _ _).hom ≫ L =
@@ -125,16 +138,18 @@ theorem exists_ext_cylinder_boundary [Quasicategory C] (g : Δ[n + 1] ⟶ C)
       Category.assoc, braiding_hom_fst_assoc, ← hgL, whiskerLeft_snd_assoc]
   let a := hpush.desc ((β_ _ _).hom ≫ L) (snd _ _ ≫ g) hw
   have hmem : (stdSimplex.edge 1 0 1 (Fin.zero_le _), stdSimplex.const (n + 1) 0 _) ∈
-      (Subcomplex.unionProd Λ[1, 0] ∂Δ[n + 1]).obj (Opposite.op ⦋1⦌) :=
-    ((Subcomplex.unionProd.ι₁ _ _).app _
-      (stdSimplex.edge 1 0 1 (Fin.zero_le _), ((∂Δ[n + 1] : SSet.{u}).σ 0
-        ⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩))).property
+      (Subcomplex.unionProd Λ[1, 0] ∂Δ[n + 1]).obj (Opposite.op ⦋1⦌) := by
+    rw [← boundary.edgeZero_val n]
+    exact ((Subcomplex.unionProd.ι₁ _ _).app _
+      (stdSimplex.edge 1 0 1 (Fin.zero_le _), boundary.edgeZero n)).property
   obtain ⟨E, hE⟩ := prodStdSimplex.exists_ext_unionProd_horn_zero a hmem (by
+    have he : (Subcomplex.unionProd.ι₁ _ _).app _
+        (stdSimplex.edge 1 0 1 (Fin.zero_le _), boundary.edgeZero n) = ⟨_, hmem⟩ :=
+      Subtype.ext (Prod.ext rfl (boundary.edgeZero_val n))
     have h := congrArg (fun f ↦ f.app _ (stdSimplex.edge 1 0 1 (Fin.zero_le _),
-      ((∂Δ[n + 1] : SSet.{u}).σ 0
-        ⟨stdSimplex.obj₀Equiv.symm 0, by simp [boundary_obj_eq_univ]⟩)))
-      (hpush.inl_desc _ _ hw)
-    exact (isEquivalence_iff_of_edge_eq (e := Edge.mk' _) (e' := Edge.mk' _) h.symm).1 hL)
+      boundary.edgeZero n)) (hpush.inl_desc _ _ hw)
+    exact (isEquivalence_iff_of_edge_eq (e := Edge.mk' _) (e' := Edge.mk' _)
+      ((congrArg (a.app _) he).symm.trans h).symm).1 hL)
   refine ⟨(β_ _ _).hom ≫ E, ?_, ?_⟩
   · -- The start of the cylinder is the image of `Λ[1, 0] ⊗ Δ[n + 1]`.
     have h : ι₀ ≫ (β_ _ _).hom = lift (stdSimplex.isTerminalObj₀.from _ ≫

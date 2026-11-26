@@ -107,11 +107,6 @@ section prism
 
 variable {C : SSet.{u}} {n : ℕ}
 
-/-- The vertex `0` of `Δ[n + 1]`, as a degenerate edge of its boundary. -/
-private noncomputable def boundaryEdgeZero : (∂Δ[n + 1] : SSet.{u}) _⦋1⦌ :=
-  ⟨stdSimplex.const (n + 1) 0 _, (mem_boundary_iff_notMem_range _).2
-    ⟨Fin.last _, by rintro ⟨k, hk⟩; simp at hk⟩⟩
-
 /-- **Covering homotopies over a boundary, for right fibrations.** Let `p : X ⟶ Y` be a right
 fibration and `H = h ≫ b : Δ[n + 1] ⊗ Δ[1] ⟶ Y` a homotopy through a standard simplex `Δ[k]` which
 is constant on the vertical edge `{0} ⊗ Δ[1]`. A lift `g` of its start and a lift `L` of its
@@ -136,7 +131,7 @@ private lemma exists_lift_cylinder_boundary (p : X ⟶ Y) [RightFibration p] {k 
   -- The vertical edge `{0} ⊗ Δ[1]` lifts to an edge of the pullback over an edge of `Δ[k]` with
   -- equal endpoints, an equivalence; right fibrations reflect equivalences.
   have hL₁ : (Edge.mk' (L₁.app _
-      (boundaryEdgeZero, stdSimplex.edge 1 0 1 (Fin.zero_le _)))).IsEquivalence := by
+      (boundary.edgeZero n, stdSimplex.edge 1 0 1 (Fin.zero_le _)))).IsEquivalence := by
     refine (isEquivalence_map_iff_of_rightFibration (pullback.snd p b) _).1 ?_
     -- The vertical edge at `0`, an edge of `Δ[n + 1] ⊗ Δ[1]`, is sent by `h` to an edge of
     -- `Δ[k]` from a vertex to itself, which is the identity edge.
@@ -153,8 +148,12 @@ private lemma exists_lift_cylinder_boundary (p : X ⟶ Y) [RightFibration p] {k 
       exact isEquivalence_id _
     refine (isEquivalence_iff_of_edge_eq ?_).1 he
     rw [map_edge, map_edge, mk'_edge]
-    exact (congrArg (fun f ↦ f.app _ (boundaryEdgeZero, stdSimplex.edge 1 0 1 (Fin.zero_le _)))
-      (pullback.lift_snd L (∂Δ[n + 1].ι ▷ Δ[1] ≫ h) hL)).symm
+    have he₀ : (∂Δ[n + 1].ι ▷ Δ[1]).app _
+        (boundary.edgeZero n, stdSimplex.edge 1 0 1 (Fin.zero_le _)) = e₀.edge :=
+      Prod.ext (boundary.edgeZero_val n) rfl
+    exact (congrArg (h.app _) he₀).symm.trans
+      (congrArg (fun f ↦ f.app _ (boundary.edgeZero n, stdSimplex.edge 1 0 1 (Fin.zero_le _)))
+        (pullback.lift_snd L (∂Δ[n + 1].ι ▷ Δ[1] ≫ h) hL)).symm
   obtain ⟨L', hL'₀, hL'₁⟩ := Quasicategory.exists_ext_cylinder_boundary g' L₁ hgL' hL₁
   refine ⟨L' ≫ pullback.fst _ _, by rw [reassoc_of% hL'₀, pullback.lift_fst],
     by rw [reassoc_of% hL'₁, pullback.lift_fst], ?_⟩
