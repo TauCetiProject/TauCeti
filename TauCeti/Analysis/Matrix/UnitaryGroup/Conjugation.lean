@@ -49,6 +49,22 @@ theorem conjStarAlgAutCLE_toLinearEquiv (U : unitary (Matrix n n R)) :
     (A : Matrix n n R) : conjStarAlgAutCLE U A = Unitary.conjStarAlgAut R _ U A :=
   (rfl)
 
+/-- Conjugation by the identity unitary is the identity continuous linear equivalence. -/
+@[simp] theorem conjStarAlgAutCLE_one :
+    conjStarAlgAutCLE (1 : unitary (Matrix n n R)) = ContinuousLinearEquiv.refl R _ := by
+  apply ContinuousLinearEquiv.ext
+  funext A
+  simp only [conjStarAlgAutCLE_apply, map_one, StarAlgEquiv.one_apply,
+    ContinuousLinearEquiv.refl_apply]
+
+/-- Conjugating first by `U` and then by `V` is conjugation by `V * U`. -/
+theorem conjStarAlgAutCLE_trans (U V : unitary (Matrix n n R)) :
+    (conjStarAlgAutCLE U).trans (conjStarAlgAutCLE V) = conjStarAlgAutCLE (V * U) := by
+  apply ContinuousLinearEquiv.ext
+  funext A
+  simp only [ContinuousLinearEquiv.trans_apply, conjStarAlgAutCLE_apply,
+    Unitary.conjStarAlgAut_mul_apply]
+
 /-- The inverse continuous linear equivalence is conjugation by the inverse unitary. -/
 @[simp] theorem conjStarAlgAutCLE_symm (U : unitary (Matrix n n R)) :
     (conjStarAlgAutCLE U).symm = conjStarAlgAutCLE U⁻¹ := by

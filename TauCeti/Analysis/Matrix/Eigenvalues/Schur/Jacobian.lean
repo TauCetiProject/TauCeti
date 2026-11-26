@@ -128,6 +128,12 @@ theorem _root_.Matrix.UnitaryGroup.contDiff_schurCoordinates (U : unitaryGroup (
   simp only [Function.comp_apply, ContinuousLinearEquiv.coe_coe, schurCoordinates_apply,
     ← coe_schurAngleFlip, schurMatrixCLE_symm_apply, schurUpper_apply, Unitary.conjStarAlgAut_apply]
 
+/-- The matrix-valued Schur parametrization is smooth in the triangular entries and angles. -/
+theorem _root_.Matrix.UnitaryGroup.contDiff_schurMatrix (U : unitaryGroup (Fin n) ℂ)
+    {k : WithTop ℕ∞} : ContDiff ℝ k (schurMatrix U) := by
+  simpa only [Function.comp_def, schurMatrixCLE_apply, schurMatrixEquiv_schurCoordinates] using
+    (schurMatrixCLE (𝕜 := ℝ) (ι := Fin n) (R := ℂ)).contDiff.comp (contDiff_schurCoordinates U)
+
 private def schurFDeriv (T : Matrix (Fin n) (Fin n) ℂ)
     (K : (FinStrictUpper n → ℂ) →L[ℝ] Matrix (Fin n) (Fin n) ℂ) :
     SchurCoordinates (Fin n) ℂ →L[ℝ] SchurCoordinates (Fin n) ℂ :=
