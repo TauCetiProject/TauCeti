@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Basic
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
+import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.EulerProduct
 
 /-!
@@ -33,12 +34,6 @@ This covers, among others, the squared divisor count (`k = 3`) and the divisor c
 public section
 
 namespace TauCeti
-
-/-- If `Re s > 1`, then `Re (2 * s) > 1`, so `2 * s` also lies in the half-plane
-of absolute convergence of `ζ`. -/
-theorem one_lt_re_two_mul {s : ℂ} (hs : 1 < s.re) : 1 < (2 * s).re := by
-  simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-  linarith
 
 /-- A coefficient sequence, multiplicative on nonzero coprime arguments, whose L-series converges
 absolutely and has local factor `(1 + X) / (1 - X)^k` at every prime, where `X = p^(-s)`, has

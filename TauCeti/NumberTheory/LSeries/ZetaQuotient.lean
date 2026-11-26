@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.LSeries.Liouville
 public import TauCeti.NumberTheory.LSeries.Totient
 public import TauCeti.NumberTheory.LSeries.TwoPowOmega
-import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerProduct
+import TauCeti.NumberTheory.LSeries.Convergence
 
 /-!
 # The series of `2^ω`, `μ²`, `λ` and `φ` as quotients of zeta values
