@@ -6,13 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.Inner
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.PDE.EnergyForm.Drift
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
@@ -371,15 +370,6 @@ theorem energyFormH1_one_add_coord_smul_skew_sub_energyFormH1_eq
     simp only [add_zero, zero_add] at h
     rw [← h]
     exact energyFormH1_one_add_coord_smul_skew hΩ _ ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule g⟩
-  -- The drift form against a test function, with the gradient of a test function.
-  have hdrift (f g : 𝓓(Ω, ℝ)) :
-      energyFormH1 0 (fun _ ↦ e) 0 (W1p.ofTestFunctionₗ mu Ω 2 f) (W1p.ofTestFunctionₗ mu Ω 2 g) =
-        ∫ x in Ω, (∂_{e} f) x * g x ∂mu := by
-    rw [energyFormH1_zero_ofTestFunctionₗ]
-    refine integral_congr_ae ((gradientTestFunctionLp_apply_ae (mu := mu) 2 f).mono fun x hx ↦ ?_)
-    dsimp only
-    rw [W1p.gradient_ofTestFunctionₗ, hx, real_inner_comm, inner_gradient_left,
-      lineDerivOp_apply_eq_fderiv, Pi.zero_apply, zero_mul, add_zero]
   -- Integration by parts moves the drift from `∂₁ψ` onto `ψ`.
   have hparts : energyFormH1 0 (fun _ ↦ e) 0 (W1p.ofTestFunctionₗ mu Ω 2 (∂_{e} ψ))
       (W1p.ofTestFunctionₗ mu Ω 2 ψ) =
@@ -390,7 +380,8 @@ theorem energyFormH1_one_add_coord_smul_skew_sub_energyFormH1_eq
     refine integral_congr_ae (.of_forall fun x ↦ ?_)
     simp [inner_neg_left]
   rw [hsplit, hsplit, energyFormH1_comm_of_isSymm_ae (a := 1)
-    (.of_forall fun _ ↦ Matrix.isSymm_one) (W1p.ofTestFunctionₗ mu Ω 2 (∂_{e} ψ)), hparts, hdrift]
+    (.of_forall fun _ ↦ Matrix.isSymm_one) (W1p.ofTestFunctionₗ mu Ω 2 (∂_{e} ψ)), hparts,
+    energyFormH1_zero_const_ofTestFunctionₗ_ofTestFunctionₗ]
   simp only [← sq]
   ring
 
@@ -405,39 +396,18 @@ theorem exists_energyFormH1_one_add_coord_smul_skew_ne
       energyFormH1 (fun x ↦ 1 + x 0 • !![0, -1; 1, 0]) 0 0 (u : W1p mu Ω 2) (v : W1p mu Ω 2) ≠
         energyFormH1 (fun x ↦ 1 + x 0 • !![0, -1; 1, 0]) 0 0 (v : W1p mu Ω 2) (u : W1p mu Ω 2) := by
   set e : EuclideanSpace ℝ (Fin 2) := EuclideanSpace.single (1 : Fin 2) (1 : ℝ)
-  -- A bump function supported in `Ω`.
-  obtain ⟨y, hy⟩ := hne
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen y hy
-  let φ : ContDiffBump y := ⟨r / 4, r / 2, by positivity, by linarith⟩
-  let ψ : 𝓓(Ω, ℝ) := ⟨φ, φ.contDiff, φ.hasCompactSupport, by
-    rw [φ.tsupport_eq]
-    exact (Metric.closedBall_subset_ball (show r / 2 < r by linarith)).trans hball⟩
+  -- A nonzero test function `ψ` on `Ω`; its derivative `∂₁ψ` is nonzero too.
+  obtain ⟨ψ, -, -, hψ⟩ := TestFunction.exists_nonneg_integral_eq_one (n := ⊤) (μ := mu) Ω.isOpen
+    hne subset_rfl
+  have hψ' : ∂_{e} ψ ≠ 0 := fun h0 ↦ by
+    obtain ⟨z, hz⟩ := exists_lineDerivOp_apply_ne_zero (φ := ψ) (v := e)
+      (fun h ↦ by simp [h] at hψ) (by simp [e])
+    exact hz (by rw [h0]; simp)
   refine ⟨⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule ψ⟩,
     ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule (∂_{e} ψ)⟩, fun h ↦ ?_⟩
   have hsub := energyFormH1_one_add_coord_smul_skew_sub_energyFormH1_eq (mu := mu) hΩ ψ
   rw [h, sub_self] at hsub
-  -- The derivative `∂₁ψ` does not vanish identically, since `ψ` has compact support and `ψ y = 1`.
-  have hderiv : ∃ z, (∂_{e} ψ) z ≠ 0 := by
-    by_contra! h0
-    have hψ := HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero (𝕂 := ℝ) ψ.hasCompactSupport
-      (ψ.contDiff.differentiable (by simp)) (v := e) (by simp [e]) (fun w ↦ by
-        rw [← lineDerivOp_apply_eq_fderiv]
-        exact h0 w) y
-    have h1 : (ψ : EuclideanSpace ℝ (Fin 2) → ℝ) y = 1 :=
-      φ.one_of_mem_closedBall (Metric.mem_closedBall_self (by positivity))
-    rw [h1] at hψ
-    exact one_ne_zero hψ
-  obtain ⟨z, hz⟩ := hderiv
-  -- So `∫_Ω (∂₁ψ)² > 0`, as `∂₁ψ` is a continuous function supported in `Ω`.
-  set ψ' : 𝓓(Ω, ℝ) := ∂_{e} ψ
-  have hpos : 0 < ∫ x, ψ' x ^ 2 ∂mu :=
-    (ψ'.continuous.pow 2).integral_pos_of_hasCompactSupport_nonneg_ne_zero
-      (by simpa only [sq] using ψ'.hasCompactSupport.mul_right (f' := ψ'))
-      (fun x ↦ sq_nonneg _) (pow_ne_zero 2 hz)
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := (Ω : Set _)) fun x hx ↦ by
-    rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (ψ'.tsupport_subset h), sq,
-      mul_zero]] at hpos
-  linarith
+  linarith [setIntegral_sq_pos (μ := mu) hψ']
 
 end Plane
 
