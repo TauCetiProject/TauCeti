@@ -112,25 +112,6 @@ open Subcomplex
 
 variable {X S : SSet.{u}}
 
-/-- A type (I) simplex of Moss's pairing for `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n])` whose
-type (II) face is its first face has dimension at least `2`: its first coordinate starts with the
-vertices `0` and `1`, and also takes the value `2`. -/
-private lemma pairingCore.exists_dim_eq_add_one {m n : ℕ}
-    (s : pairingCore.Type₁.{u} (0 : Fin (m + 2)) n) (hs : s.index = 0) : ∃ d, s.d = d + 1 := by
-  have h := s.isIndex
-  rw [hs, pairingCore.isIndex_succ] at h
-  obtain ⟨h₀, h₁, -⟩ := h
-  refine Nat.exists_eq_add_one.2 (Nat.pos_of_ne_zero fun h0 ↦ ?_)
-  have h₂ : 2 % (m + 1 + 2) = 2 := Nat.mod_eq_of_lt (by omega)
-  have h₂' : 2 % (m + 1 + 1 + 1) = 2 := Nat.mod_eq_of_lt (by omega)
-  obtain ⟨l, hl⟩ := pairingCore.mem_range_left s.x s.hd 2 (by simp [Fin.ext_iff, h₂])
-  have hlt : l.val < s.d + 2 := l.isLt
-  obtain h | h : l.val = 0 ∨ l.val = 1 := by omega
-  · rw [show l = (0 : Fin (s.d + 1)).castSucc from Fin.ext h, h₀] at hl
-    simp [Fin.ext_iff, h₂'] at hl
-  · rw [show l = (0 : Fin (s.d + 1)).succ from Fin.ext h, h₁] at hl
-    simp [Fin.ext_iff, h₂'] at hl
-
 /-- **Lifting along a prism with coCartesian vertical edges.** Let `p : X ⟶ S` be an inner
 fibration. A map `(Λ[m + 2, 0] ⊗ Δ[n]) ∪ (Δ[m + 2] ⊗ ∂Δ[n]) ⟶ X` over `b : Δ[m + 2] ⊗ Δ[n] ⟶ S`
 lifts to a map `Δ[m + 2] ⊗ Δ[n] ⟶ X` over `b` provided that, for every vertex `t` of `Δ[n]`, it
@@ -154,7 +135,7 @@ theorem exists_lift_unionProd_horn_zero (p : X ⟶ S) [InnerFibration p] {m n : 
   by_cases hs : s.index = 0
   · -- The type (I) simplex starts with the vertical edge `(0, t) ⟶ (1, t)`, and it has
     -- dimension at least `2`.
-    obtain ⟨d, hd⟩ := pairingCore.exists_dim_eq_add_one s hs
+    obtain ⟨d, hd⟩ := s.exists_dim_eq_add_one
     -- The initial edge of the horn is the vertical edge at the first vertex of the simplex,
     -- which lies in `Λ[m + 2, 0] ⊗ Δ[n]`, where `g` is `a`.
     have hedge (H) : (σ₀ ≫ g).app _ (horn.edge (s.d + 1) _ 0 1 (Fin.zero_le _) H) =
