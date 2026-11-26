@@ -53,6 +53,8 @@ functional (`TauCeti.PositiveTracialFunctional`) defines a trace
   `TauCeti.IsTrace.mul_mem_sqIntegrable_left`, `TauCeti.IsTrace.mul_mem_sqIntegrable_right`:
   `𝔫_τ` is a self-adjoint complex subspace and a two-sided ideal; these are collected in
   `TauCeti.IsTrace.sqIntegrable_ideal`.
+* `TauCeti.IsTrace.iSup`: the pointwise supremum of an upward directed family of traces is a
+  trace.
 * `TauCeti.IsTrace.comp`, `TauCeti.IsFaithful.comp`: pullback along star homomorphisms.
 * `TauCeti.PositiveTracialFunctional.isTrace_toTrace`,
   `TauCeti.PositiveTracialFunctional.toTrace_lt_top`: a positive tracial functional is a trace
@@ -300,6 +302,21 @@ protected theorem const_mul (hτ : IsTrace τ) (c : ℝ≥0∞) : IsTrace fun x 
   map_add_of_nonneg x y hx hy := by rw [hτ.map_add_of_nonneg hx hy, mul_add]
   map_nnreal_smul_of_nonneg d x hx := by rw [hτ.map_nnreal_smul_of_nonneg d hx, mul_left_comm]
   map_star_mul_self x := by rw [hτ.map_star_mul_self]
+
+omit [StarOrderedRing B] in
+/-- **Directed suprema of traces**: the pointwise supremum of an upward directed family of
+traces is a trace. -/
+protected theorem iSup {ι : Type*} {τ : ι → B → ℝ≥0∞} (hτ : ∀ i, IsTrace (τ i))
+    (hd : Directed (· ≤ ·) τ) : IsTrace (⨆ i, τ i) where
+  map_add_of_nonneg x y hx hy := by
+    simp only [iSup_apply, (hτ _).map_add_of_nonneg hx hy]
+    refine (ENNReal.iSup_add_iSup fun i j ↦ ?_).symm
+    obtain ⟨k, hik, hjk⟩ := hd i j
+    exact ⟨k, add_le_add (hik x) (hjk y)⟩
+  map_nnreal_smul_of_nonneg c x hx := by
+    simp only [iSup_apply, (hτ _).map_nnreal_smul_of_nonneg c hx, ENNReal.mul_iSup]
+  map_star_mul_self x := by
+    simp only [iSup_apply, (hτ _).map_star_mul_self]
 
 end IsTrace
 
