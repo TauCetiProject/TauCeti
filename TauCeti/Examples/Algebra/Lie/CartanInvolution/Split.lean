@@ -1,0 +1,77 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Algebra.Lie.CartanInvolution.RestrictedRoot.Split
+public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Basic
+public import TauCeti.Algebra.Lie.SpecialLinear.RestrictedRoot.Complex
+
+/-!
+# Checks: `𝔰𝔩_n(ℝ)` is split and `𝔰𝔩_n(ℂ)` viewed as real is not
+
+Checks for RealSemisimpleLieGroups §1.4, through the criterion
+`LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff`: a maximal abelian subspace `𝔞` of `𝔭` is a
+Cartan subalgebra exactly when `𝔪 = 0`.
+
+* On `𝔰𝔩_{r+1}(ℝ)` with `θ X = -Xᵀ`, the trace-zero diagonal matrices have `𝔪 = 0`, so they form
+  a Cartan subalgebra: `𝔰𝔩_n(ℝ)` is split.
+* On `𝔰𝔩_n(ℂ)` viewed as real, with `θ X = -Xᴴ`, the real trace-zero diagonal matrices `𝔞` have
+  `𝔪 = i𝔞`, which is nonzero once `n` has two elements, so `𝔞` is not a Cartan subalgebra.
+-/
+
+public section
+
+open LieAlgebra Matrix
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+namespace TauCeti.Examples.RestrictedRootSplit
+
+/-- `𝔰𝔩_{r+1}(ℝ)` is split: its trace-zero diagonal matrices, maximal abelian in `𝔭` for
+`θ X = -Xᵀ`, form a Cartan subalgebra, since `𝔪 = 0`. -/
+theorem isCartanSubalgebra_specialLinearDiagonalCartan (r : ℕ) :
+    (specialLinearDiagonalCartan r ℝ).IsCartanSubalgebra :=
+  (LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff
+    (isCartanInvolution_specialLinearNegTranspose r)
+    (by rw [specialLinearDiagonalCartan_toSubmodule]
+        exact isMaximalAbelianInP_specialLinearDiagonal)).mpr
+    (by rw [specialLinearDiagonalCartan_toSubmodule]
+        exact restrictedRootSpace_zero_inf_fixedSubalgebra_specialLinearDiagonal)
+
+variable (n : Type*) [Fintype n] [DecidableEq n]
+
+/-- The real trace-zero diagonal matrices in `𝔰𝔩_n(ℂ)` viewed as real, as a Lie subalgebra (it
+is abelian). -/
+def slComplexRealDiagonalSubalgebra : LieSubalgebra ℝ (slComplexReal n) :=
+  { slComplexRealDiagonal n with
+    lie_mem' := fun hX hY => by
+      rw [(isMaximalAbelianInP_slComplexRealDiagonal (n := n)).lie_eq_zero hX hY]
+      exact (slComplexRealDiagonal n).zero_mem }
+
+/-- `𝔰𝔩_n(ℂ)` viewed as real is not split: for `i ≠ j`, its real trace-zero diagonal matrices,
+maximal abelian in `𝔭` for `θ X = -Xᴴ`, are not a Cartan subalgebra, since `𝔪 = i𝔞` contains
+`i (E_ii - E_jj) ≠ 0`. -/
+theorem not_isCartanSubalgebra_slComplexRealDiagonalSubalgebra {i j : n} (hij : i ≠ j) :
+    ¬(slComplexRealDiagonalSubalgebra n).IsCartanSubalgebra := by
+  rw [LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff
+    (isCartanInvolution_slComplexNegConjTranspose (n := n))
+    (isMaximalAbelianInP_slComplexRealDiagonal (n := n))]
+  intro h
+  set H := slComplexRealDiagonalSingleSubSingle n i j
+  let X : slComplexReal n := ⟨Complex.I • (((H : slComplexReal n)) : Matrix n n ℂ),
+    mem_slComplexReal_iff.mpr (by
+      rw [trace_smul, mem_slComplexReal_iff.mp (H : slComplexReal n).property, smul_zero])⟩
+  have hX : X ∈ (slComplexRealDiagonal n).restrictedRootSpace 0 ⊓
+      (slComplexNegConjTranspose n).toLieHom.fixedSubalgebra.toSubmodule :=
+    mem_restrictedRootSpace_zero_inf_fixedSubalgebra_slComplexRealDiagonal_iff.mpr
+      ⟨H, H.property, rfl⟩
+  have h0 : X = 0 := by
+    have := h ▸ hX
+    simpa using this
+  have hii := congrFun (congrFun (congrArg Subtype.val h0) i) i
+  simp [X, H, hij.symm] at hii
+
+end TauCeti.Examples.RestrictedRootSplit
