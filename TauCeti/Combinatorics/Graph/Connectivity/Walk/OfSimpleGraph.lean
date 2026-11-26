@@ -430,6 +430,19 @@ theorem toSimpleGraph_reachable_iff {u v : V(G)} :
   rintro ⟨p⟩
   exact p.liftToGraph.reachable u.property
 
+/-- An actual vertex isolated in the simplification is reachable only from itself. Loops at the
+vertex do not affect this conclusion. -/
+theorem reachable_iff_eq_of_isIsolated {x y : α} (hx : x ∈ V(G))
+    (hxi : G.toSimpleGraph.IsIsolated ⟨x, hx⟩) : G.Reachable x y ↔ x = y := by
+  constructor
+  · intro hxy
+    let vy : V(G) := ⟨y, hxy.right_mem⟩
+    obtain ⟨p⟩ := (toSimpleGraph_reachable_iff (G := G) (u := ⟨x, hx⟩) (v := vy)).mpr hxy
+    have hp : p.Nil := p.nil_of_isIsolated_of_mem_support hxi p.start_mem_support
+    exact congrArg Subtype.val hp.eq
+  · rintro rfl
+    exact Reachable.refl hx
+
 /-- Two actual vertices are reachable after deleting `S` exactly when some walk between them in
 the underlying simple graph avoids `S`. -/
 theorem toSimpleGraph_reachable_deleteVerts_iff_exists_walk {S : Set α} {x y : V(G)} :
