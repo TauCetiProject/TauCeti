@@ -24,7 +24,7 @@ The normalisation and the rounding budget follow the statements `New.Data.norm_i
 
 public section
 
-namespace TauCeti
+namespace Finset
 
 /-- The positive rational normalising factor for real divisibility gains and losses at a finite
 set of primes. The exponent at `p` is the negative of the floor of `gain p - loss p`. -/
@@ -47,11 +47,11 @@ theorem inverseGainFactor_pos (S : Finset Nat.Primes) (gain loss : Nat.Primes �
 
 /-- At a prime in the support of the normalising product the norm is the rounded net gain,
 expressed as a prime power. At every other prime the scalar has norm `1`. -/
-@[simp] theorem padicNorm_inverseGainFactor (p : Nat.Primes) (S : Finset Nat.Primes)
-    (gain loss : Nat.Primes → ℝ) :
-    padicNorm (p : ℕ) (inverseGainFactor S gain loss) =
+@[simp] theorem _root_.Nat.Primes.padicNorm_inverseGainFactor (p : Nat.Primes)
+    (S : Finset Nat.Primes) (gain loss : Nat.Primes → ℝ) :
+    padicNorm (p : ℕ) (S.inverseGainFactor gain loss) =
       if p ∈ S then (p.val : ℚ) ^ ⌊gain p - loss p⌋ else 1 := by
-  rw [inverseGainFactor_def, padicNorm.prod_prime_zpow]
+  rw [inverseGainFactor_def, p.padicNorm_prod_prime_zpow]
   simp only [neg_neg]
 
 /-- The logarithm of the normalising factor is minus the sum of the rounded net gains,
@@ -105,4 +105,4 @@ theorem log_inverseGainFactor_insert_le (S : Finset Nat.Primes) (N : Nat.Primes)
   simp only [sub_mul, Finset.sum_sub_distrib] at hround
   linarith
 
-end TauCeti
+end Finset

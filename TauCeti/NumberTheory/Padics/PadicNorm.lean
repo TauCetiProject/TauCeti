@@ -16,11 +16,11 @@ only the exponent at `p`, even when the product has a denominator.
 
 public section
 
-namespace padicNorm
+namespace Nat.Primes
 
 /-- The `p`-adic norm of a finite product of prime powers is `p` raised to the negative
 of its exponent in the product, and is `1` if `p` is not among the factors. -/
-theorem prod_prime_zpow (p : Nat.Primes) (S : Finset Nat.Primes) (e : Nat.Primes → ℤ) :
+theorem padicNorm_prod_prime_zpow (p : Nat.Primes) (S : Finset Nat.Primes) (e : Nat.Primes → ℤ) :
     padicNorm (p : ℕ) (∏ q ∈ S, (q.val : ℚ) ^ e q) =
       if p ∈ S then (p.val : ℚ) ^ (-e p) else 1 := by
   let : Fact (p : ℕ).Prime := ⟨p.property⟩
@@ -35,10 +35,11 @@ theorem prod_prime_zpow (p : Nat.Primes) (S : Finset Nat.Primes) (e : Nat.Primes
         let : Fact (q : ℕ).Prime := ⟨q.property⟩
         suffices v (q.val : ℚ) = 1 by rw [this, one_zpow]
         rw [hv_apply]
-        exact padicNorm_of_prime_of_ne (fun h ↦ hq ((Nat.Primes.coe_nat_inj p q).mp h).symm)
+        exact padicNorm.padicNorm_of_prime_of_ne
+          (fun h ↦ hq ((Nat.Primes.coe_nat_inj p q).mp h).symm)
       by_cases hp : p ∈ S
       · rw [ite_eq_left hp, Finset.prod_eq_single_of_mem p hp (fun q _ hq ↦ hoff q hq)]
-        rw [hv_apply, padicNorm_p_of_prime, inv_zpow, zpow_neg]
+        rw [hv_apply, padicNorm.padicNorm_p_of_prime, inv_zpow, zpow_neg]
       · rw [ite_eq_right hp, Finset.prod_eq_one fun q hq ↦ hoff q (ne_of_mem_of_not_mem hq hp)]
 
-end padicNorm
+end Nat.Primes
