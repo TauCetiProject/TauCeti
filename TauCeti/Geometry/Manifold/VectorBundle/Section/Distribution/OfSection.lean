@@ -75,9 +75,11 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)]
   [FiberBundle G W] [VectorBundle ℝ G W]
 
--- The preferred trivializations of the dual-density bundle `W →L |Λ|`.
-set_option hygiene false in
-local notation "𝒯" => trivializationAt (G →L[ℝ] ℝ) (fun x ↦ W x →L[ℝ] DensityBundle I M x)
+-- The preferred trivializations of the dual-density bundle `W →L |Λ|`, written with the section
+-- variables `G`, `W`, `I`, `M`.
+local macro "𝒯" : term =>
+  `(trivializationAt ($(Lean.mkIdent `G) →L[ℝ] ℝ)
+    (fun x ↦ $(Lean.mkIdent `W) x →L[ℝ] DensityBundle $(Lean.mkIdent `I) $(Lean.mkIdent `M) x))
 
 /-- **Paired densities in preferred charts.** Read in the preferred chart at `α` and the fixed basis
 of the model, the density `x ↦ φ x (u x)` paired from a section `φ` of the dual-density bundle and
