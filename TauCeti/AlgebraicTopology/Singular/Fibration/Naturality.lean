@@ -33,11 +33,12 @@ fibres over the centre of the cell
 (`TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma_hom_naturality`).
 
 * **Comparison theorem.** If `f` induces isomorphisms on the homology of the fibres over the points
-  of `C`, then the morphism of Serre spectral sequences is an isomorphism on every object of every
-  page from the first on (`TauCeti.TopCat.isIso_serreSpectralSequenceMapOver_hom_f`).
+  of `C`, then the morphism of Serre spectral sequences is an isomorphism
+  (`TauCeti.TopCat.isIso_serreSpectralSequenceMapOver`), so in particular on every object of every
+  page from the first on.
 * **Fibre homotopy equivalences.** A fibre homotopy equivalence over `B`, between any maps to `B`,
-  induces an isomorphism of their Serre spectral sequences from the first page on
-  (`TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom_f`), since it is a homology
+  induces an isomorphism of their Serre spectral sequences
+  (`TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver`), since it is a homology
   isomorphism on each step of the filtrations. This is how the fibration theorem of DG Morse
   homology passes from a Hurewicz fibration to its Moore-path replacement.
 
@@ -53,10 +54,9 @@ fibres over the centre of the cell
 * `TauCeti.TopCat.serreSpectralSequenceFirstPageXIsoSigma_hom_naturality`: on the first page, the
   morphism induced by a map over `B` is the sum of the maps of the fibres over the centres of the
   cells.
-* `TauCeti.TopCat.isIso_serreSpectralSequenceMapOver_hom_f`: a map of Serre fibrations over `B`
-  that is a homology isomorphism on the fibres induces an isomorphism of Serre spectral sequences
-  from the first page on.
-* `TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom_f`: so does a fibre homotopy
+* `TauCeti.TopCat.isIso_serreSpectralSequenceMapOver`: a map of Serre fibrations over `B` that is
+  a homology isomorphism on the fibres induces an isomorphism of Serre spectral sequences.
+* `TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver`: so does a fibre homotopy
   equivalence over `B`, with no fibration hypothesis.
 
 ## References
@@ -188,13 +188,12 @@ include hp hp' in
 Serre fibrations `p` and `p'`, and let `C ⊆ B` be a relative CW complex. If for every point `b` of
 `C` the restriction `p⁻¹(b) ⟶ p'⁻¹(b)` of `f` induces isomorphisms on the singular homology
 `Hq(-; R)` of the fibres in every degree `q`, then the morphism of Serre spectral sequences induced
-by `f` is an isomorphism on every object of every page `r ≥ 2`, that is, from the first page on. -/
-theorem isIso_serreSpectralSequenceMapOver_hom_f (hf : f ≫ p' = p)
+by `f` is an isomorphism of spectral sequences, so in particular an isomorphism on every object of
+every page `r ≥ 2`, that is, from the first page on. -/
+theorem isIso_serreSpectralSequenceMapOver (hf : f ≫ p' = p)
     (hfib : ∀ b ∈ C, ∀ q : ℕ, IsIso (((AlgebraicTopology.singularHomologyFunctor
-      (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map (f.preimageMap hf {b})))
-    (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
-    IsIso (((serreSpectralSequenceMapOver C R hf).hom r hr).f pq) := by
-  suffices IsIso (serreSpectralSequenceMapOver C R hf) from inferInstance
+      (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).map (f.preimageMap hf {b}))) :
+    IsIso (serreSpectralSequenceMapOver C R hf) := by
   refine isIso_filteredSpaceSpectralSequenceMap _ _ _ _ _ fun b n ↦ ?_
   rcases lt_or_ge b (-1) with hb | hb
   · -- Below the base both stages are the preimage of `D`, so both pairs have no homology.
@@ -216,16 +215,14 @@ theorem isIso_serreSpectralSequenceMapOver_hom_f (hf : f ≫ p' = p)
 
 /-- **A fibre homotopy equivalence induces an isomorphism of Serre spectral sequences.** For a
 fibre homotopy equivalence `Φ` over `B` between `p` and `p'`, the morphism of Serre spectral
-sequences induced by its forward map is an isomorphism on every object of every page `r ≥ 2`. No
-fibration hypothesis is needed: on each step `(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹))` of the filtration, the
-restriction of `Φ` over `Xᵏ` is a fibre homotopy equivalence, hence a homology isomorphism relative
-to the preimages of `Xᵏ⁻¹`. -/
-theorem _root_.TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver_hom_f
-    (Φ : FiberHomotopyEquiv p.hom p'.hom) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
-    IsIso (((serreSpectralSequenceMapOver C R (f := _root_.TopCat.ofHom Φ.toFun)
-      (_root_.TopCat.hom_ext Φ.comp_toFun)).hom r hr).f pq) := by
-  suffices IsIso (serreSpectralSequenceMapOver C R (f := _root_.TopCat.ofHom Φ.toFun)
-      (_root_.TopCat.hom_ext Φ.comp_toFun)) from inferInstance
+sequences induced by its forward map is an isomorphism of spectral sequences, so in particular on
+every object of every page `r ≥ 2`. No fibration hypothesis is needed: on each step
+`(p⁻¹(Xᵏ), p⁻¹(Xᵏ⁻¹))` of the filtration, the restriction of `Φ` over `Xᵏ` is a fibre homotopy
+equivalence, hence a homology isomorphism relative to the preimages of `Xᵏ⁻¹`. -/
+theorem _root_.TauCeti.FiberHomotopyEquiv.isIso_serreSpectralSequenceMapOver
+    (Φ : FiberHomotopyEquiv p.hom p'.hom) :
+    IsIso (serreSpectralSequenceMapOver C R (f := _root_.TopCat.ofHom Φ.toFun)
+      (_root_.TopCat.hom_ext Φ.comp_toFun)) := by
   refine isIso_filteredSpaceSpectralSequenceMap _ _ _ _ _ fun b n ↦ ?_
   -- The step `b ≤ b + 1` is the pair of preimages of the skeleta `S₀ ⊆ S₁`, and over `S₁` it is
   -- the map of pairs of the restriction of `Φ`, relative to the preimages of `S₀`.

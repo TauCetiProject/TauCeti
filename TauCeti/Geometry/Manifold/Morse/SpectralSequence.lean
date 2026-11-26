@@ -261,7 +261,8 @@ cut.** Let `a` and `a'` be monotone sequences of values such that, for every `q`
 between `a q` and `a' q` is compact and contains no critical point of the smooth function `f`. Then
 the spectral sequences of the filtrations `q ↦ {f ≤ a q}` and `q ↦ {f ≤ a' q}` are isomorphic. The
 isomorphism passes through the cut `a ⊔ a'`, through the morphisms induced by the identity of `M`
-(`TauCeti.filteredSpaceSpectralSequenceSublevelIso_hom_comp`). -/
+(`TauCeti.filteredSpaceSpectralSequenceSublevelIso_hom_comp`,
+`TauCeti.filteredSpaceSpectralSequenceSublevelIso_inv_comp`). -/
 def filteredSpaceSpectralSequenceSublevelIso (hf : ContMDiff I 𝓘(ℝ) ∞ f) {a' : ℤ → ℝ}
     (ha : Monotone a) (ha' : Monotone a')
     (hcompact : ∀ q, IsCompact (f ⁻¹' Icc (a q ⊓ a' q) (a q ⊔ a' q)))
@@ -299,6 +300,24 @@ theorem filteredSpaceSpectralSequenceSublevelIso_hom_comp (hf : ContMDiff I 𝓘
         (fun q _ hx ↦ (hx : f _ ≤ a q).trans (le_sup_left : a q ≤ (a ⊔ a') q)) := by
   simp [filteredSpaceSpectralSequenceSublevelIso]
 
+/-- The inverse of the isomorphism `TauCeti.filteredSpaceSpectralSequenceSublevelIso` between the
+spectral sequences of the cuts `a` and `a'`, followed by the morphism induced by the identity of
+`M` from the cut `a` to the cut `a ⊔ a'`, is the morphism induced by the identity of `M` from the
+cut `a'` to the cut `a ⊔ a'`. -/
+@[reassoc (attr := simp)]
+theorem filteredSpaceSpectralSequenceSublevelIso_inv_comp (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {a' : ℤ → ℝ} (ha : Monotone a) (ha' : Monotone a')
+    (hcompact : ∀ q, IsCompact (f ⁻¹' Icc (a q ⊓ a' q) (a q ⊔ a' q)))
+    (hcrit : ∀ q, ∀ x ∈ criticalPoints I f, f x ∉ Icc (a q ⊓ a' q) (a q ⊔ a' q)) :
+    (filteredSpaceSpectralSequenceSublevelIso R hf ha ha' hcompact hcrit).inv ≫
+        filteredSpaceSpectralSequenceMap (Y := TopCat.of M) (Y' := TopCat.of M) R
+          ((sublevel_mono f).comp ha) ((sublevel_mono f).comp (ha.sup ha')) (𝟙 _)
+          (fun q _ hx ↦ (hx : f _ ≤ a q).trans (le_sup_left : a q ≤ (a ⊔ a') q)) =
+      filteredSpaceSpectralSequenceMap (Y := TopCat.of M) (Y' := TopCat.of M) R
+        ((sublevel_mono f).comp ha') ((sublevel_mono f).comp (ha.sup ha')) (𝟙 _)
+        (fun q _ hx ↦ (hx : f _ ≤ a' q).trans (le_sup_right : a' q ≤ (a ⊔ a') q)) := by
+  simp [filteredSpaceSpectralSequenceSublevelIso]
+
 section Homeomorph
 
 variable {M' : Type u} [TopologicalSpace M'] {f' : M' → ℝ}
@@ -314,8 +333,7 @@ def filteredSpaceSpectralSequenceSublevelCompIso (σ : M ≃ₜ M') (ha : Monoto
     filteredSpaceSpectralSequence (Y := TopCat.of M) R ((sublevel_mono (f' ∘ σ)).comp ha) ≅
       filteredSpaceSpectralSequence (Y := TopCat.of M') R ((sublevel_mono f').comp ha) :=
   filteredSpaceSpectralSequenceIso R _ _ (TopCat.isoOfHomeo (X := .of M) (Y := .of M') σ)
-    (fun _ _ hx ↦ hx)
-    fun q y (hy : f' y ≤ a q) ↦ show f' (σ (σ.symm y)) ≤ a q by rwa [σ.apply_symm_apply]
+    (fun _ _ hx ↦ by simpa using hx) fun _ _ hy ↦ by simpa using hy
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- The isomorphism `TauCeti.filteredSpaceSpectralSequenceSublevelCompIso` is the morphism of
@@ -326,8 +344,20 @@ lemma filteredSpaceSpectralSequenceSublevelCompIso_hom (σ : M ≃ₜ M') (ha : 
       filteredSpaceSpectralSequenceMap (Y := TopCat.of M) (Y' := TopCat.of M') R
         ((sublevel_mono (f' ∘ σ)).comp ha) ((sublevel_mono f').comp ha)
         (TopCat.isoOfHomeo (X := .of M) (Y := .of M') σ).hom
-        fun _ _ hx ↦ hx :=
+        fun _ _ hx ↦ by simpa using hx :=
   filteredSpaceSpectralSequenceIso_hom ..
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
+/-- The inverse of the isomorphism `TauCeti.filteredSpaceSpectralSequenceSublevelCompIso` is the
+morphism of spectral sequences induced by the inverse homeomorphism. -/
+@[simp]
+lemma filteredSpaceSpectralSequenceSublevelCompIso_inv (σ : M ≃ₜ M') (ha : Monotone a) :
+    (filteredSpaceSpectralSequenceSublevelCompIso R (f' := f') σ ha).inv =
+      filteredSpaceSpectralSequenceMap (Y := TopCat.of M') (Y' := TopCat.of M) R
+        ((sublevel_mono f').comp ha) ((sublevel_mono (f' ∘ σ)).comp ha)
+        (TopCat.isoOfHomeo (X := .of M) (Y := .of M') σ).inv
+        fun _ _ hy ↦ by simpa using hy :=
+  filteredSpaceSpectralSequenceIso_inv ..
 
 end Homeomorph
 
