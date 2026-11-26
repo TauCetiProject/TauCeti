@@ -15,6 +15,8 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.Determinant
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 -- The independence of the joint eigenspaces of a representation, indexed by characters.
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
+-- The complement of a member of an independent spanning family by the others.
+import TauCeti.Order.SupIndep
 -- `Subrepresentation`, whose weight spaces are the traces of the ambient ones.
 public import Mathlib.RepresentationTheory.Subrepresentation
 
@@ -56,6 +58,8 @@ The definitions themselves need only a commutative ring, and are stated there.
   weight `Pi.single i 1` and every other weight space vanishing.
 * `TauCeti.isInternal_weightSpace_of_iSup_eq_top`: **a representation whose weight spaces span it
   is their internal direct sum**, as soon as distinct weights give distinct characters.
+* `TauCeti.isCompl_weightSpace_iSup_ne`: in such a representation, each weight space is
+  complementary to the span of the others.
 * `TauCeti.isInternal_weightSpace_stdRep`: **the standard representation is the internal direct sum
   of its weight spaces.**
 * `TauCeti.weightSpace_detPowerRep`: all of `det ^ m` has the constant weight `m`, that is, its
@@ -158,6 +162,15 @@ theorem map_weightSpace_le_of_commute {ρ : Representation k (GL (Fin n) k) W} (
   simp only [Submodule.mem_comap, mem_weightSpace_iff] at hw ⊢
   intro t
   rw [← mul_apply_eq_comp, ← (hφ t).eq, mul_apply_eq_comp, hw t, map_smul]
+
+/-- The span of the weight spaces other than `l` is stable under the torus. -/
+theorem iSup_weightSpace_ne_le_comap {ρ : Representation k (GL (Fin n) k) W} (l : Fin n → ℤ)
+    (t : Fin n → kˣ) :
+    (⨆ (l' : Fin n → ℤ) (_ : l' ≠ l), weightSpace ρ l') ≤
+      (⨆ (l' : Fin n → ℤ) (_ : l' ≠ l), weightSpace ρ l').comap (ρ (diagGL t)) := by
+  refine iSup₂_le fun l' hl' w hw ↦ ?_
+  rw [Submodule.mem_comap, apply_of_mem_weightSpace hw]
+  exact Submodule.smul_mem _ _ ((le_iSup₂ (f := fun l' (_ : l' ≠ l) ↦ weightSpace ρ l') l' hl') hw)
 
 end CommRing
 
@@ -409,6 +422,14 @@ theorem isInternal_weightSpace_of_iSup_eq_top
     DirectSum.IsInternal fun l : Fin n → ℤ ↦ weightSpace ρ l :=
   (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
     ⟨iSupIndep_weightSpace hchar _, h⟩
+
+/-- A weight space is complementary to the span of all the other weight spaces, when the weight
+spaces span and distinct weights give distinct characters. -/
+theorem isCompl_weightSpace_iSup_ne (hchar : Function.Injective (weightChar k (κ := Fin n)))
+    {ρ : Representation k (GL (Fin n) k) W} (h : ⨆ l : Fin n → ℤ, weightSpace ρ l = ⊤)
+    (l : Fin n → ℤ) :
+    IsCompl (weightSpace ρ l) (⨆ (l' : Fin n → ℤ) (_ : l' ≠ l), weightSpace ρ l') :=
+  (iSupIndep_weightSpace hchar ρ).isCompl_biSup_ne h l
 
 /-- **The standard representation is the internal direct sum of its weight spaces**: the
 weight-space decomposition in its smallest instance. -/

@@ -248,19 +248,19 @@ def toTangentSection : letI := hD.fiberBundle; letI := hD.vectorBundle
     Cₛ^n⟮I; Fin k → 𝕜, fun x ↦ D x⟯ →ₗ[C^n⟮I, M; 𝕜⟯]
       Cₛ^n⟮I; E, (TangentSpace I : M → Type _)⟯ :=
   let := hD.fiberBundle; let := hD.vectorBundle; have h := hD.contMDiff_totalSpace_inclusion
-  ⟨(ContMDiffSection.mapLinearMap (fun x ↦ (D x).subtype) h).toAddHom,
-    ContMDiffSection.mapLinearMap_smul_function (fun x ↦ (D x).subtype) h⟩
+  ContMDiffSection.mapFunctionLinearMap (fun x ↦ (D x).subtype) h
 
 @[simp] theorem toTangentSection_apply : letI := hD.fiberBundle; letI := hD.vectorBundle
     ∀ (a : Cₛ^n⟮I; Fin k → 𝕜, fun x ↦ D x⟯) (x : M),
       hD.toTangentSection a x = (a x : TangentSpace I x) :=
   let := hD.fiberBundle; let := hD.vectorBundle
-  ContMDiffSection.mapLinearMap_apply (fun x ↦ (D x).subtype) hD.contMDiff_totalSpace_inclusion
+  ContMDiffSection.mapFunctionLinearMap_apply (fun x ↦ (D x).subtype)
+    hD.contMDiff_totalSpace_inclusion
 
 theorem toTangentSection_injective : letI := hD.fiberBundle; letI := hD.vectorBundle
     Function.Injective hD.toTangentSection :=
   let := hD.fiberBundle; let := hD.vectorBundle
-  ContMDiffSection.mapLinearMap_injective (fun x ↦ (D x).subtype)
+  ContMDiffSection.mapFunctionLinearMap_injective (fun x ↦ (D x).subtype)
     hD.contMDiff_totalSpace_inclusion fun _ ↦ Subtype.val_injective
 
 /-- A `C^n` tangent vector field taking values in `D` defines a `C^n` section of `D`. -/

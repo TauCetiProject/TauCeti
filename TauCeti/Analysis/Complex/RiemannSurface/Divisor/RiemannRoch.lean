@@ -56,6 +56,8 @@ theorem for `h¹` is needed for this.
   `h¹(D) = g_an - 1 - deg D` if `deg D < 0`;
 * `TauCeti.RiemannSurface.eventually_finrank_divisorSheaf_add_nsmul_ofPoint_succ`: for all large
   `k`, `h⁰(D + (k + 1)[x]) = h⁰(D + k[x]) + 1`;
+* `TauCeti.RiemannSurface.exists_meromorphicFunction_notMem_range_algebraMap`: a nonconstant
+  meromorphic function;
 * `TauCeti.RiemannSurface.exists_finiteHolomorphicMap_of_analyticGenus_lt_degree` and
   `TauCeti.RiemannSurface.exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one`: finite
   holomorphic maps to `ℙ¹` from Riemann–Roch.
@@ -167,6 +169,23 @@ theorem exists_finiteHolomorphicMap_of_analyticGenus_lt_degree {D : WeilDivisor 
   have h := degree_add_one_sub_analyticGenus_le_finrank_divisorSheaf D
   rw [(divisorSheafSectionsEquiv D ⊤).finrank_eq] at h
   omega
+
+variable (X) in
+/-- **Nonconstant meromorphic functions exist.** A compact connected Riemann surface carries a
+meromorphic function which is not constant: by Riemann–Roch the divisor `(g_an + 1) · x` has two
+independent global sections. -/
+theorem exists_meromorphicFunction_notMem_range_algebraMap :
+    ∃ f : MeromorphicFunction X, f ∉ Set.range (algebraMap ℂ (MeromorphicFunction X)) := by
+  obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := X)
+  have hdeg : WeilDivisor.degree ((analyticGenus X + 1) • WeilDivisor.ofPoint x) =
+      analyticGenus X + 1 := by
+    simp [map_nsmul, WeilDivisor.degree_ofPoint]
+  have h := degree_add_one_sub_analyticGenus_le_finrank_divisorSheaf
+    ((analyticGenus X + 1) • WeilDivisor.ofPoint x)
+  rw [(divisorSheafSectionsEquiv _ ⊤).finrank_eq] at h
+  obtain ⟨s, hs⟩ := divisorSections.exists_toMeromorphic_notMem_range_algebraMap
+    ((analyticGenus X + 1) • WeilDivisor.ofPoint x) (by omega)
+  exact ⟨_, hs⟩
 
 /-- A compact connected Riemann surface admits a finite
 holomorphic map to `ℙ¹` of degree at most `g_an + 1`. -/

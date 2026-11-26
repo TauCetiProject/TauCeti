@@ -26,7 +26,8 @@ At points where `γ` is differentiable, the derivative is the linear shear
 most `1 + ‖Dγ(y)‖`, as is that of the derivative of the inverse. The shear differs from the
 identity by the height alone, so its iterated derivatives of order at least two are bounded by
 those of `γ`, and so are those of its inverse. For a `K`-Lipschitz `γ`,
-both the shear and its inverse are `(1 + K)`-Lipschitz. These are the chart estimates used to
+both the shear and its inverse are `(1 + K)`-Lipschitz. Two shears differ pointwise by the
+difference of their heights. These are the chart estimates used to
 transfer Sobolev trace and extension operators from a half-space to a domain with a graph
 boundary.
 The shear also preserves Lebesgue measure, requiring only continuity of `γ`.
@@ -114,6 +115,15 @@ end Topology
 section Lipschitz
 
 variable {E : Type*} [SeminormedAddCommGroup E]
+
+/-- Two graph flattenings differ pointwise by the difference of their heights. -/
+theorem dist_graphFlattening_graphFlattening {γ₁ γ₂ : E → ℝ} (hγ₁ : Continuous γ₁)
+    (hγ₂ : Continuous γ₂) (x : WithLp 2 (ℝ × E)) :
+    dist (graphFlattening γ₁ hγ₁ x) (graphFlattening γ₂ hγ₂ x) = dist (γ₁ x.snd) (γ₂ x.snd) := by
+  rw [WithLp.prod_dist_eq_of_L2]
+  -- The normal coordinates differ by the heights, and the tangential coordinates agree.
+  simp only [graphFlattening_apply, WithLp.toLp_fst, WithLp.toLp_snd, dist_sub_left, dist_self]
+  simp [Real.sqrt_sq dist_nonneg]
 
 /-- Graph flattening by a `K`-Lipschitz height is `(1 + K)`-Lipschitz. -/
 theorem lipschitzWith_graphFlattening {γ : E → ℝ} {K : ℝ≥0} (hγ : LipschitzWith K γ) :
