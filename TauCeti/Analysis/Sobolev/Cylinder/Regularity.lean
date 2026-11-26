@@ -158,7 +158,7 @@ private theorem exists_eLpNorm_jet_smul_fst_le (hM : MemLp M ∞ stripMeasure)
   have hηc : Continuous fun w : ℝ × ℝ ↦ ρ w.1 • ξ w :=
     (hρ.continuous.comp continuous_fst).smul hξ.continuous
   -- The two terms on the right of the semi-Fredholm estimate for `η = ρ ξ`.
-  have hDη : ‖jetOperator stripMeasure M (jetLp 2 (testSection V) η)‖ ≤
+  have hDη : ‖jetOperator 2 stripMeasure M (jetLp 2 (testSection V) η)‖ ≤
       (eLpNorm G 2 stripMeasure).toReal := by
     rw [Lp.norm_def, eLpNorm_congr_ae (jetOperator_jetLp_ae_eq hM η)]
     refine ENNReal.toReal_mono hG.eLpNorm_ne_top (eLpNorm_mono_ae_real

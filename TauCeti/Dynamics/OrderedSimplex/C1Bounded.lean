@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.C1Jet
+public import TauCeti.Analysis.FunctionalSpaces.C1Jet.Basic
 public import TauCeti.Dynamics.OrderedSimplex.Basic
 
 import Mathlib.Analysis.Calculus.FDeriv.Add

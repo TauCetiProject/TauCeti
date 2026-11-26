@@ -399,14 +399,15 @@ lemma opFunctor_map_slice_map_comp_opSliceIsoOfEq_hom {p' : K.op ⟶ C.op} {q' :
     ← Functor.map_comp_assoc, ← Functor.map_comp_assoc, slice.map_comp, slice.map_comp]
   simp only [Category.id_comp, Category.comp_id]
 
-/-- Pushing cocones forward along an isomorphism is an isomorphism of coslices: through
+/-- Restricting cocones along an isomorphism and pushing them forward along an isomorphism is an
+isomorphism of coslices: through
 `SSet.coslice.opSliceIso`, it is the image under `SSet.opFunctor` of the map of slices pushing
-cones forward along `gᵒᵖ` (`SSet.coslice.opSliceIso_inv_comp_map`), which is an isomorphism
+cones forward along `gᵒᵖ` and restricting along `iᵒᵖ`
+(`SSet.coslice.opSliceIso_inv_comp_map`), which is an isomorphism
 (`SSet.slice.isIso_map`). -/
-instance isIso_map (g : C ⟶ D) [IsIso g] {r : K ⟶ D} (h : 𝟙 K ≫ p ≫ g = r) :
-    IsIso (map (𝟙 K) g h) := by
-  rw [(Iso.inv_comp_eq _).1 (opSliceIso_inv_comp_map (𝟙 K) g h (CategoryTheory.Functor.map_id _ _)
-    rfl)]
+instance isIso_map (i : L ⟶ K) [IsIso i] (g : C ⟶ D) [IsIso g] (h : i ≫ p ≫ g = q) :
+    IsIso (map i g h) := by
+  rw [(Iso.inv_comp_eq _).1 (opSliceIso_inv_comp_map i g h rfl rfl)]
   infer_instance
 
 section restrictionMap

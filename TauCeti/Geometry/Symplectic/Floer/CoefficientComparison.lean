@@ -20,8 +20,16 @@ class-group map has infinite kernel or area has dense image.
 
 We allow any class-group homomorphism preserving area. If it also preserves a Chern map,
 the comparison negates Chern number on homogeneous supports. Thus raw Floer coefficient
-degree `2 c₁` becomes quantum coefficient degree after cochain regrading. For a quotient by
-any subgroup of the joint area/Chern kernel, use the descended area and Chern homomorphisms.
+degree `2 c₁` becomes quantum coefficient degree after cochain regrading. On homogeneous pieces
+(`TauCeti.NovikovSeries.gradeBy`): the comparison sends quantum series of degree `k`, where `q^A`
+has degree `2 c(A)`, to Floer series of raw degree `-k`
+(`coefficientComparison_mem_gradeBy_two_smul`, and `periodGroupComparison_mem_gradeBy_degree`
+for the joint-period quotient with its degree `PeriodGroup.degree`), which is cochain coefficient
+degree `k`. For an injective class map it also reflects degrees
+(`coefficientComparison_mem_gradeBy_iff`).
+
+For a quotient by any subgroup of the joint area/Chern kernel, use the descended area and Chern
+homomorphisms.
 `periodGroupComparison` specializes to the quotient by the entire joint kernel. In that case
 two monomials with the same nonzero coefficient become equal exactly when their areas and
 Chern numbers agree. No individual quantum invariant is assumed to descend without summation.
@@ -35,6 +43,12 @@ cochain grading `C^k = CF_(n-k)` the monomial `e^γ v` has degree `deg v - 2 c�
 degree `2 c₁(γ)` of `e^γ` enters `n - μ` with the opposite sign. So `q^A v ↦ e^(-q A) v`
 preserves the total degree (`TauCeti.Floer.map_neg_mem_gradeByCoeff`), whereas `q^A v ↦ e^(q A) v`
 would change it by `-4 c₁(A)` (`TauCeti.Floer.single_mem_gradeByCoeff_add_iff`).
+
+For a class `A` of positive area the comparison sends the quantum geometric series
+`∑ₖ r q^(k A)` to the Floer geometric series `∑ₖ r e^(-k q A)`
+(`coefficientComparison_geometric`), whose terms have valuations `k ω(A)` tending to infinity.
+This is why the Floer valuation is `-Ω`: the quantum corrections in the multiples of a class of
+positive area land in the Floer Novikov ring.
 
 The construction reuses `NovikovSeries.mapRingHom`; no augmentation at `q = 1` is involved.
 
@@ -140,6 +154,36 @@ theorem chern_support_coefficientComparison (c : S →+ ℤ) (c' : Γ →+ ℤ)
   obtain ⟨A, hA, rfl⟩ := support_coefficientComparison_subset q hω a hγ
   simp [hc A, ha A hA]
 
+/-- **The comparison preserves homogeneous pieces.** If a degree `f'` on the Floer classes takes
+the value `f A` at the image `-q A` of each class `A`, the comparison sends quantum series of
+degree `i` for `f` to Floer series of degree `i` for `f'`. -/
+theorem coefficientComparison_mem_gradeBy {ι : Type*} {f : S → ι} {f' : Γ → ι}
+    (hf : ∀ A, f' (-q A) = f A) {i : ι} {a : NovikovSeries R S ω}
+    (ha : a ∈ gradeBy R ω f i) : coefficientComparison q hω a ∈ gradeBy R (-Ω) f' i := by
+  rw [coefficientComparison_apply]
+  exact map_mem_gradeBy _ (-q) _ hf ha
+
+/-- For an injective class map the comparison also reflects homogeneous pieces. -/
+theorem coefficientComparison_mem_gradeBy_iff (hq : Function.Injective q) {ι : Type*}
+    {f : S → ι} {f' : Γ → ι} (hf : ∀ A, f' (-q A) = f A) {i : ι} {a : NovikovSeries R S ω} :
+    coefficientComparison q hω a ∈ gradeBy R (-Ω) f' i ↔ a ∈ gradeBy R ω f i := by
+  rw [coefficientComparison_apply]
+  exact map_mem_gradeBy_iff _ (-q) _ Function.injective_id
+    (fun _ _ h => hq (neg_injective h)) hf
+
+/-- **Quantum degree becomes raw Floer degree with the opposite sign.** If the Chern maps agree
+under the class map, the comparison sends quantum series of degree `k`, where `q^A` has degree
+`2 c(A)`, to Floer series of raw degree `-k`, where `e^γ` has degree `2 c'(γ)`. In the cochain
+grading `C^k = CF_(n-k)` a coefficient of raw degree `-k` raises the cochain degree by `k`, so the
+comparison preserves degrees for the quantum and the cochain gradings. -/
+theorem coefficientComparison_mem_gradeBy_two_smul (c : S →+ ℤ) (c' : Γ →+ ℤ)
+    (hc : ∀ A, c' (q A) = c A) {k : ℤ} {a : NovikovSeries R S ω}
+    (ha : a ∈ gradeBy R ω (2 • c : S →+ ℤ) k) :
+    coefficientComparison q hω a ∈ gradeBy R (-Ω) (2 • c' : Γ →+ ℤ) (-k) := by
+  refine coefficientComparison_mem_gradeBy q hω (f := Neg.neg ∘ (2 • c : S →+ ℤ))
+    (fun A => by simp [hc]) ?_
+  rwa [gradeBy_comp_of_injective neg_injective]
+
 section GradedCoefficients
 
 variable {V : Type*} [AddCommMonoid V] [Module R V] {d : S → ℤ} {d' : Γ →+ ℤ}
@@ -197,6 +241,24 @@ end Ring
 
 end Comparison
 
+section Geometric
+
+variable [AddGroup S] [AddCommGroup Γ] {ω : S →+ ℝ} {Ω : Γ →+ ℝ} [Semiring R] (q : S →+ Γ)
+  (hω : ∀ A, Ω (q A) = ω A)
+
+/-- **The comparison of a geometric series.** A class `A` of positive area gives the quantum
+geometric series `∑ₖ r q^(k A)`, and the comparison sends it to the Floer geometric series
+`∑ₖ r e^(-k q A)`, whose exponent `-q A` has positive valuation `ω A`. So the quantum corrections
+in the multiples of a class of positive area land in the Floer Novikov ring. -/
+@[simp]
+theorem coefficientComparison_geometric {A : S} (hA : 0 < ω A) (r : R) :
+    coefficientComparison q hω (geometric ω hA r) =
+      geometric (-Ω) (h := -q A) (by simpa [hω] using hA) r := by
+  rw [coefficientComparison_apply, map_geometric]
+  simp only [AddMonoidHom.neg_apply, RingHom.toAddMonoidHom_id, AddMonoidHom.id_apply]
+
+end Geometric
+
 section PeriodGroup
 
 variable [AddCommGroup S] (ω : S →+ ℝ) (c : S →+ ℤ)
@@ -240,6 +302,17 @@ separate classes. -/
 theorem periodGroupComparison_bijective [Semiring R] (h : Disjoint ω.ker c.ker) :
     Function.Bijective (periodGroupComparison (R := R) ω c) :=
   ⟨periodGroupComparison_injective ω c h, periodGroupComparison_surjective ω c⟩
+
+/-- **The joint-period comparison negates degrees.** It sends quantum series of degree `k`, where
+`q^A` has degree `2 c(A)`, to Floer series of raw degree `-k`, where `e^γ` has degree
+`PeriodGroup.degree ω c γ = 2 c(γ)`; that is, of cochain coefficient degree `k`. -/
+theorem periodGroupComparison_mem_gradeBy_degree [Semiring R] {k : ℤ} {a : NovikovSeries R S ω}
+    (ha : a ∈ gradeBy R ω (2 • c : S →+ ℤ) k) :
+    periodGroupComparison ω c a ∈
+      gradeBy R (-PeriodGroup.area ω c) (PeriodGroup.degree ω c) (-k) := by
+  rw [PeriodGroup.degree_eq_two_smul_chern]
+  exact coefficientComparison_mem_gradeBy_two_smul _ (PeriodGroup.area_mk ω c) c
+    (PeriodGroup.chern ω c) (PeriodGroup.chern_mk ω c) ha
 
 /-- The joint-period comparison is continuous for the energy topologies. -/
 @[fun_prop]

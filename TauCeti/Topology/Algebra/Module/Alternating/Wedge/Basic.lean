@@ -531,6 +531,16 @@ theorem pairedWedge_comm {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
       (-1 : ℝ) ^ (k * l) • pairedWedge mu hmu psi phi (v ∘ Fin.cast (Nat.add_comm l k)) :=
   pairedWedge_flip_of_forall_apply_eq mu hmu mu hmu (fun a b ↦ hsymm b a) phi psi v
 
+/-- Commutativity of the paired wedge along a symmetric pairing when the product of the degrees
+is even, for instance when one of the two forms has even degree. -/
+theorem pairedWedge_comm_of_even {k l : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}
+    (hmu : Continuous (Function.uncurry fun x y ↦ mu x y))
+    (hsymm : ∀ a b, mu a b = mu b a) (hkl : Even (k * l))
+    (phi : E [⋀^Fin k]→L[ℝ] F₁) (psi : E [⋀^Fin l]→L[ℝ] F₁) (v : Fin (k + l) → E) :
+    pairedWedge mu hmu phi psi v =
+      pairedWedge mu hmu psi phi (v ∘ Fin.cast (Nat.add_comm l k)) := by
+  rw [pairedWedge_comm hmu hsymm phi psi v, hkl.neg_one_pow, one_smul]
+
 /-- A form of odd degree wedges to zero with itself along a symmetric pairing. For real one-forms
 this is `a ∧ a = 0`. -/
 theorem pairedWedge_self_eq_zero_of_odd {k : ℕ} {mu : F₁ →L[ℝ] F₁ →L[ℝ] F₃}

@@ -32,6 +32,8 @@ topological ring, the closed lower central series of the Heisenberg group stops 
 * `TauCeti.HeisenbergGroup.instTopologicalSpace`: the topology induced from `R × R × R`.
 * `TauCeti.HeisenbergGroup.homeomorphProd`: the coordinate equivalence as a homeomorphism
   `HeisenbergGroup R ≃ₜ R × R × R`.
+* `TauCeti.HeisenbergGroup.intLattice`: the integer Heisenberg subgroup `H(ℤ) ≤ H(ℝ)`, identified
+  with `HeisenbergGroup ℤ` by `TauCeti.HeisenbergGroup.intLatticeEquiv`.
 
 ## Main results
 
@@ -47,6 +49,8 @@ topological ring, the closed lower central series of the Heisenberg group stops 
 * `TauCeti.HeisenbergGroup.closedLowerCentralSeries_one_le_zAxis`,
   `TauCeti.HeisenbergGroup.closedLowerCentralSeries_two_eq_bot`: over a Hausdorff topological
   ring, `γ_1` of the closed lower central series lies in the `z`-axis and `γ_2` is trivial.
+* `TauCeti.HeisenbergGroup.instDiscreteTopologyIntLattice`: `H(ℤ)` is a discrete subgroup of
+  `H(ℝ)`.
 -/
 
 public section
@@ -168,6 +172,50 @@ theorem closedLowerCentralSeries_two_eq_bot :
   exact one_mem _
 
 end ClosedLowerCentralSeries
+
+section IntLattice
+
+open Set
+
+/-- The **integer Heisenberg group** `H(ℤ)`, as a subgroup of the real Heisenberg group. -/
+def intLattice : Subgroup (HeisenbergGroup ℝ) :=
+  (map (Int.castRingHom ℝ)).range
+
+/-- An element of `H(ℝ)` lies in `H(ℤ)` exactly when its three coordinates are integers. -/
+theorem mem_intLattice {g : HeisenbergGroup ℝ} :
+    g ∈ intLattice ↔ ∃ a b c : ℤ, g = ⟨a, b, c⟩ := by
+  simp only [intLattice, MonoidHom.mem_range, map_apply, eq_intCast]
+  exact ⟨fun ⟨n, hn⟩ ↦ ⟨n.x, n.y, n.z, hn.symm⟩, fun ⟨a, b, c, h⟩ ↦ ⟨⟨a, b, c⟩, h.symm⟩⟩
+
+/-- The integer Heisenberg group `HeisenbergGroup ℤ` is isomorphic to its image `H(ℤ)` in
+`H(ℝ)`. -/
+noncomputable def intLatticeEquiv : HeisenbergGroup ℤ ≃* intLattice :=
+  MonoidHom.ofInjective (map_injective (Int.castRingHom ℝ).injective_int)
+
+/-- The isomorphism `HeisenbergGroup ℤ ≃* H(ℤ)` casts each coordinate to `ℝ`. -/
+@[simp]
+theorem intLatticeEquiv_apply (n : HeisenbergGroup ℤ) :
+    (intLatticeEquiv n : HeisenbergGroup ℝ) = map (Int.castRingHom ℝ) n :=
+  MonoidHom.ofInjective_apply _
+
+/-- The integer Heisenberg group is countable. -/
+instance instCountableIntLattice : Countable intLattice :=
+  intLatticeEquiv.symm.injective.countable
+
+/-- The integer Heisenberg group is discrete. -/
+instance instDiscreteTopologyIntLattice : DiscreteTopology intLattice := by
+  refine discreteTopology_of_isOpen_singleton_one (isOpen_induced_iff.mpr
+    ⟨homeomorphProd ⁻¹' (Ioo (-1) 1 ×ˢ Ioo (-1) 1 ×ˢ Ioo (-1) 1),
+      homeomorphProd.isOpen_preimage.mpr (isOpen_Ioo.prod (isOpen_Ioo.prod isOpen_Ioo)), ?_⟩)
+  ext ⟨g, hg⟩
+  obtain ⟨a, b, c, rfl⟩ := mem_intLattice.mp hg
+  simp only [mem_preimage, homeomorphProd_apply, mem_prod, mem_Ioo, mem_singleton_iff]
+  rw [Subtype.ext_iff]
+  simp only [OneMemClass.coe_one, HeisenbergGroup.ext_iff, one_x, one_y, one_z, Int.cast_eq_zero]
+  norm_cast
+  omega
+
+end IntLattice
 
 end HeisenbergGroup
 

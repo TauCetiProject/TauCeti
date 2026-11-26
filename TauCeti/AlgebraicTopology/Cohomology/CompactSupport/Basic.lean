@@ -41,6 +41,8 @@ along proper maps (`TopCat.compactSupportCohomologyMap`).
   `TopCat.compactSupportCohomologyDesc`.
 * `TopCat.exists_compactSupportCohomologyι_eq` and `TopCat.compactSupportCohomologyι_eq_zero_iff`:
   the description of the elements of the filtered colimit.
+* `TopCat.isIso_compactSupportCohomologyι_of_forall_exists`: `Hⁿ(X, X ∖ K) ≅ Hⁿ_c(X)` when every
+  compact set lies in a compact `K' ⊇ K` with `Hⁿ(X, X ∖ K) ≅ Hⁿ(X, X ∖ K')` by restriction.
 * `TopCat.compactSupportCohomologyIsoOfCompactSpace`: `Hⁿ_c(X) ≅ Hⁿ(X)` for compact `X`, and
   `TopCat.isZero_compactSupportCohomology_of_isEmpty`: `Hⁿ_c(∅) = 0`.
 * `TopCat.compactSupportCohomologyMap`: the pullback `f^* : Hⁿ_c(Y) ⟶ Hⁿ_c(X)` along a proper map,
@@ -201,6 +203,40 @@ lemma compactSupportCohomologyι_eq_zero_iff {n : ℕ} {K : Compacts X}
     exact ⟨L, i.le, hL⟩
   · rintro ⟨L, h, hL⟩
     rw [← singularCohomologyMap_comp_compactSupportCohomologyι_apply n h, hL, map_zero]
+
+/-- **Cohomology with compact supports attained along one compact set.** If every compact set lies
+in a compact `K' ⊇ K` for which the restriction `Hⁿ(X, X ∖ K) ⟶ Hⁿ(X, X ∖ K')` is an isomorphism,
+then `Hⁿ(X, X ∖ K) ⟶ Hⁿ_c(X)` is an isomorphism. For instance, for a compact manifold with
+collared boundary, the complement of an open collar is such a compact subset of the interior. -/
+lemma isIso_compactSupportCohomologyι_of_forall_exists {n : ℕ} {K : Compacts X}
+    (h : ∀ L : Compacts X, ∃ (K' : Compacts X) (hKK' : K ≤ K'), L ≤ K' ∧
+      IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+        (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts hKK')) n)) :
+    IsIso (compactSupportCohomologyι (R := R) (k := k) (M := M) n K) := by
+  rw [ConcreteCategory.isIso_iff_bijective]
+  refine ⟨fun y y' hyy' ↦ ?_, fun x ↦ ?_⟩
+  · -- A class dying along some `L ⊇ K` dies along a `K' ⊇ L` on which restriction from `K` is
+    -- injective.
+    rw [← sub_eq_zero, ← map_sub, compactSupportCohomologyι_eq_zero_iff] at hyy'
+    obtain ⟨L, hKL, hL⟩ := hyy'
+    obtain ⟨K', hKK', hLK', _⟩ := h L
+    rw [← sub_eq_zero]
+    refine (ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap (R := R) (k := k)
+      (M := M) (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts hKK')) n)).1 ?_
+    rw [map_zero, ← singularCohomologyMap_ofSubsetMap_id_trans hKL hLK',
+      ConcreteCategory.comp_apply, hL, map_zero]
+  · -- A class supported in some `L ⊇ K` is supported in a `K' ⊇ L` on which restriction from `K`
+    -- is surjective.
+    obtain ⟨L, -, y, rfl⟩ := exists_compactSupportCohomologyι_eq x K
+    obtain ⟨K', hKK', hLK', _⟩ := h L
+    obtain ⟨z, hz⟩ := (ConcreteCategory.bijective_of_isIso
+      (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+        (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts hKK')) n)).2
+      (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (𝟙 X) (mapsTo_id_compl_compacts hLK'))
+        n y)
+    refine ⟨z, ?_⟩
+    rw [← singularCohomologyMap_comp_compactSupportCohomologyι_apply n hKK', hz,
+      singularCohomologyMap_comp_compactSupportCohomologyι_apply n hLK']
 
 /-! ### Compact spaces -/
 

@@ -60,7 +60,8 @@ theorem twoBits_real_snd (j : Bool) : twoBits.real (Prod.snd ⁻¹' {j}) = 1 / 2
     measureReal_prod_prod, fairBit_real_singleton, probReal_univ, one_mul]
 
 /-- A fair binary label has entropy `log 2`. -/
-example : countablePartitionEntropy fairBit id = ENNReal.ofReal (log 2) := by
+theorem countablePartitionEntropy_fairBit_id :
+    countablePartitionEntropy fairBit id = ENNReal.ofReal (log 2) := by
   rw [countablePartitionEntropy_eq_ofReal_labelEntropy, labelEntropy_def]
   simp only [Set.preimage_id, fairBit_real_singleton, Fintype.sum_bool, negMulLog, one_div,
     log_inv]
@@ -132,7 +133,7 @@ theorem measurePreserving_not_fairBit : MeasurePreserving not fairBit fairBit :=
   cases b <;> simp [Set.preimage]
 
 /-- The two-point flip has entropy `0`: it squares to the identity. -/
-example : measureEntropy fairBit not = 0 :=
+theorem measureEntropy_not_fairBit : measureEntropy fairBit not = 0 :=
   measureEntropy_eq_zero_of_iterate_eq_id measurePreserving_not_fairBit two_pos
     (funext fun b ↦ by cases b <;> rfl)
 
