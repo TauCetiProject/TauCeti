@@ -53,10 +53,7 @@ example : ¬ (Ber((1 : ℤ), -1, p)).HasMaximalSpanOne := by
 weaker than maximal span one. -/
 example (hp : 0 < (p : ℝ)) : AddSubgroup.closure {k : ℤ | Ber((1 : ℤ), -1, p) {k} ≠ 0} = ⊤ := by
   rw [eq_top_iff, ← Int.zmultiples_one, AddSubgroup.zmultiples_le]
-  refine AddSubgroup.subset_closure ?_
-  rw [Set.mem_ofPred_eq, bernoulliMeasure_apply_of_mem_of_notMem _ (measurableSet_singleton _) rfl
-    (by norm_num)]
-  simpa [← NNReal.coe_eq_zero] using hp.ne'
+  exact AddSubgroup.subset_closure (bernoulliMeasure_singleton_left_ne_zero hp)
 
 /-- The differences of the atoms of `Ber(1, -1, p)` do not generate `ℤ`. -/
 example : AddSubgroup.closure ({k : ℤ | Ber((1 : ℤ), -1, p) {k} ≠ 0} -
