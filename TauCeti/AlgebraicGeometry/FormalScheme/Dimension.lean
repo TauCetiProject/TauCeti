@@ -106,7 +106,8 @@ immersion identifies local rings. -/
 theorem dim_le_of_isOpenImmersion (f : X ⟶ Y)
     [LocallyRingedSpace.IsOpenImmersion (forgetToLocallyRingedSpace.map f)] : X.dim ≤ Y.dim :=
   dim_le_iff.mpr fun x ↦ (ringKrullDim_eq_of_ringEquiv
-    (stalkRingEquivOfIsOpenImmersion f x)).ge.trans (ringKrullDim_stalk_le_dim _)
+    (LocallyRingedSpace.IsOpenImmersion.stalkRingEquiv
+      (forgetToLocallyRingedSpace.map f) x)).ge.trans (ringKrullDim_stalk_le_dim _)
 
 /-- The dimension of the formal spectrum of a noetherian adic ring `A` is the Krull dimension
 of `A`. The local ring at the open prime `𝔭` has the dimension of `A_𝔭`, which is at most
@@ -139,10 +140,8 @@ theorem ringKrullDim_stalk_le_of_specializes [X.IsLocallyNoetherian] {x y : X} (
   -- local rings of `Spf A`, whose dimensions are the heights of nested open primes of `A`
   obtain ⟨A, _, _, _, _, _, f, hf, y', rfl⟩ := IsLocallyNoetherian.exists_isNoetherianRing y
   obtain ⟨x', rfl⟩ : x ∈ Set.range f.base := h.mem_open hf.base_open.isOpen_range ⟨y', rfl⟩
-  -- the stalk maps of the open immersion `f` are isomorphisms
-  have := LocallyRingedSpace.IsOpenImmersion.stalk_iso f
-  rw [ringKrullDim_eq_of_ringEquiv (asIso (f.stalkMap x')).commRingCatIsoToRingEquiv,
-    ringKrullDim_eq_of_ringEquiv (asIso (f.stalkMap y')).commRingCatIsoToRingEquiv]
+  rw [ringKrullDim_eq_of_ringEquiv (LocallyRingedSpace.IsOpenImmersion.stalkRingEquiv f x'),
+    ringKrullDim_eq_of_ringEquiv (LocallyRingedSpace.IsOpenImmersion.stalkRingEquiv f y')]
   refine ((Spf.ringKrullDim_stalk_eq_height x').trans_le ?_).trans_eq
     (Spf.ringKrullDim_stalk_eq_height y').symm
   exact_mod_cast Ideal.height_mono <| (PrimeSpectrum.le_iff_specializes _ _).mpr <|
