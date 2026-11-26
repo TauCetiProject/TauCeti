@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Unique
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
@@ -12,6 +13,7 @@ public import TauCeti.LinearAlgebra.Matrix.Idempotent.Monoid
 
 import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 import TauCeti.RingTheory.GrothendieckRing
+import TauCeti.RingTheory.Idempotents.Projective
 
 /-!
 # The idempotent monoid and projective `K₀`
@@ -20,10 +22,13 @@ Building on `TauCeti.IdempotentMonoid` in `TauCeti.LinearAlgebra.Matrix.Idempote
 file proves `objectCodeAddEquiv : IdempotentMonoid R ≃+ ObjectCode (FiniteProjectiveRight R)` and
 identifies the group completions of `V(R)` with split projective `K₀` for right modules
 (`kZeroEquiv`, `kZeroEquiv_of_mk`, `kZeroEquiv_of_mk_one`, `exists_kZeroEquiv_sub_nsmul_eq`,
-`toKZero`, `toKZero_mk`, `map_toKZero`, `map_comp_kZeroEquiv`, `toKZero_mk_eq_toKZero_mk_iff`,
-`mem_mrange_toKZero_iff`, `toKZero_mk_sub_toKZero_mk_one_eq_classOf_of_linearEquiv`) and left
-modules via `opEquiv` (`splitK0Equiv`, `toSplitK0`, `splitK0Equiv_of_mk`), via `ofIdempotent` and
-`extendScalarsOfIdempotentIso`.
+`toKZero`, `toKZero_mk`, `toKZero_mk_one`, `map_toKZero`, `map_comp_kZeroEquiv`,
+`toKZero_mk_eq_toKZero_mk_iff`, `mem_mrange_toKZero_iff`,
+`toKZero_mk_sub_toKZero_mk_one_eq_classOf_of_linearEquiv`) and left modules via `opEquiv`
+(`splitK0Equiv`, `toSplitK0`, `splitK0Equiv_of_mk`), via `ofIdempotent` and
+`extendScalarsOfIdempotentIso`. The principal right ideal `eR` of an idempotent `e`
+(`TauCeti.KZero.principalRightIdeal`) has the class of the `1 × 1` matrix `(e)`, the image of `e`
+under `Matrix.uniqueRingEquiv.symm` (`TauCeti.IdempotentMonoid.toKZero_mk_of_unique`).
 
 ## References
 
@@ -208,6 +213,16 @@ theorem kZeroEquiv_of_mk_one (m : ℕ) :
     (rangeMulVecBilinOneEquiv (Fin m) R).symm]
   exact SplitK0.of_eq_nsmul_of_linearEquiv_fin (.refl _ _) (.refl _ _)
 
+-- Not `@[simp]`, for the same reason as `TauCeti.IdempotentMonoid.kZeroEquiv_of_mk_one`.
+/-- Padding an idempotent matrix `e` by an identity block of size `m` adds `m[R]` to its class:
+`[e ⊕ 1ₘ] = [e] + m[R]` in `K₀(R)`. -/
+theorem kZeroEquiv_of_mk_fromBlocks_one {e : Matrix ι ι R} (he : IsIdempotentElem e) (m : ℕ) :
+    kZeroEquiv R (GrothendieckAddGroup.of (mk (fromBlocks e 0 0 (1 : Matrix (Fin m) (Fin m) R))
+        (he.fromBlocks_zero₁₂_zero₂₁ .one))) =
+      kZeroEquiv R (GrothendieckAddGroup.of (mk e he)) +
+        m • SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := by
+  rw [← mk_add_mk he .one, map_add, map_add, kZeroEquiv_of_mk_one]
+
 /-- **Every class in `K₀(R)` is `[eRⁿ] - m[R]`.** Every element of `K₀(R)` is the difference of
 the class of the image of an idempotent matrix `e` acting on column vectors and the class of a
 finite free right module `Rᵐ`. -/
@@ -331,6 +346,14 @@ theorem toKZero_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempo
     toKZero R (mk e he) = SplitK0.of.{u} (FiniteProjectiveModules.ofIdempotent e he) :=
   kZeroEquiv_of_mk he _ (FiniteProjectiveModules.ofIdempotentLinearEquiv e he)
 
+-- Not `@[simp]`: `TauCeti.IdempotentMonoid.toKZero_mk` rewrites the left-hand side.
+/-- `TauCeti.IdempotentMonoid.toKZero` sends the class of the `1 × 1` identity matrix to `[R]`, the
+class of the free right module of rank one. -/
+theorem toKZero_mk_one :
+    toKZero R (mk (1 : Matrix (Fin 1) (Fin 1) R) .one) =
+      SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := by
+  rw [← kZeroEquiv_of, kZeroEquiv_of_mk_one, one_nsmul]
+
 /-- `TauCeti.IdempotentMonoid.toKZero R` factors via `objectCodeAddEquiv R` and `SplitK0.ofCode`. -/
 theorem ofCode_comp_objectCodeAddEquiv :
     SplitK0.ofCode.{u}.comp (objectCodeAddEquiv R).toAddMonoidHom = toKZero R := by
@@ -428,6 +451,46 @@ theorem toKZero_mk_sub_toKZero_mk_one_eq_classOf_of_linearEquiv {ι : Type*} [Fi
 end PresentationAndCone
 
 end IdempotentMonoid
+
+section PrincipalRightIdeal
+
+variable {R : Type u} [Ring R] {e : R}
+
+/-- **The principal right ideal** `eR` of an idempotent `e` of `R`, as a finitely generated
+projective right `R`-module: the submodule of `Rᵐᵒᵖ` spanned by `op e`. It is a direct summand of
+the regular module, the image of left multiplication by `e`. -/
+def KZero.principalRightIdeal (he : IsIdempotentElem e) : FiniteProjectiveRight R :=
+  ⟨ModuleCat.of Rᵐᵒᵖ (Submodule.span Rᵐᵒᵖ {op e}), finiteProjectiveModules_iff.2
+    ⟨inferInstance, IsIdempotentElem.projective_span_singleton (congrArg op he.eq)⟩⟩
+
+/-- The underlying module of `TauCeti.KZero.principalRightIdeal he` is the right ideal spanned by
+`e`. -/
+@[simp]
+theorem KZero.principalRightIdeal_obj (he : IsIdempotentElem e) :
+    (KZero.principalRightIdeal he).obj = ModuleCat.of Rᵐᵒᵖ (Submodule.span Rᵐᵒᵖ {op e}) :=
+  (rfl)
+
+/-- The identification of the underlying module of `TauCeti.KZero.principalRightIdeal he` with the
+right ideal spanned by `e`, as an isomorphism of right `R`-modules
+(`TauCeti.KZero.principalRightIdeal_obj`). -/
+def KZero.principalRightIdealObjIso (he : IsIdempotentElem e) :
+    (KZero.principalRightIdeal he).obj ≅ ModuleCat.of Rᵐᵒᵖ (Submodule.span Rᵐᵒᵖ {op e}) :=
+  eqToIso (KZero.principalRightIdeal_obj he)
+
+/-- **The class of a principal right ideal.** The principal right ideal `eR` of an idempotent `e`
+has the class of the `1 × 1` idempotent matrix with entry `e`, its image under
+`Matrix.uniqueRingEquiv.symm`. -/
+theorem IdempotentMonoid.toKZero_mk_of_unique {m : Type*} [Unique m] (he : IsIdempotentElem e) :
+    IdempotentMonoid.toKZero R
+      (IdempotentMonoid.mk ((Matrix.uniqueRingEquiv (m := m)).symm e)
+        (he.map Matrix.uniqueRingEquiv.symm)) =
+      SplitK0.of.{u} (KZero.principalRightIdeal he) := by
+  rw [← IdempotentMonoid.kZeroEquiv_of]
+  exact IdempotentMonoid.kZeroEquiv_of_mk _ _
+    ((KZero.principalRightIdealObjIso he).toLinearEquiv.trans
+      (rangeMulVecBilinOfUniqueEquivSpan R m e).symm)
+
+end PrincipalRightIdeal
 
 end ScalarExtension
 

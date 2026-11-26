@@ -13,12 +13,16 @@ public import Mathlib.LinearAlgebra.Pi
 If a module `Y` is a retract of a finite power `Xᵐ`, with `s : Y → Xᵐ` and `r : Xᵐ → Y` such that
 `r ∘ s = id`, then `id_Y` is the finite sum over `j` of the maps `Y → X → Y` through the `j`-th
 coordinate (`LinearMap.sum_comp_eq_id_of_comp_eq_id`). This is the form in which a retract of a
-finite power enters fullness arguments for idempotents of endomorphism rings.
+finite power enters fullness arguments for idempotents of endomorphism rings. Conversely, if `id_Y`
+is a finite sum of maps `u j ∘ v j` factoring through `X`, then `Y` is a retract of a finite power
+of `X` (`LinearMap.comp_eq_id_of_sum_comp_eq_id`).
 
 ## Main results
 
 * `LinearMap.sum_comp_eq_id_of_comp_eq_id`: a retract of a finite power of `X` writes its identity
   map as a finite sum of maps factoring through `X`.
+* `LinearMap.comp_eq_id_of_sum_comp_eq_id`: conversely, a finite sum of maps factoring through `X`
+  that equals `id_Y` exhibits `Y` as a retract of a finite power of `X`.
 -/
 
 public section
@@ -36,5 +40,13 @@ theorem sum_comp_eq_id_of_comp_eq_id {m : ℕ} {s : Y →ₗ[A] (Fin m → X)}
   refine LinearMap.ext fun y ↦ ?_
   simpa [LinearMap.sum_apply, ← map_sum] using
     (congrArg r (LinearMap.sum_single_apply (fun _ ↦ X) (s y))).trans (LinearMap.congr_fun hrs y)
+
+/-- If `id_Y` is a finite sum of maps `u j ∘ v j` factoring through `X`, then `Y` is a retract of
+the finite power `ι → X`, through `y ↦ (v j y)ⱼ` and `x ↦ ∑ j, u j (x j)`. -/
+theorem comp_eq_id_of_sum_comp_eq_id {ι : Type*} [Fintype ι] {u : ι → X →ₗ[A] Y}
+    {v : ι → Y →ₗ[A] X} (h : ∑ j, u j ∘ₗ v j = .id) :
+    (∑ j, u j ∘ₗ LinearMap.proj j) ∘ₗ LinearMap.pi v = .id := by
+  refine LinearMap.ext fun y ↦ ?_
+  simpa [LinearMap.sum_apply] using LinearMap.congr_fun h y
 
 end LinearMap

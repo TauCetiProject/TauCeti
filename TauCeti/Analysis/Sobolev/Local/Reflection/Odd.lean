@@ -53,6 +53,9 @@ As consequences:
   differentiable on `Ω`: it is almost everywhere the even reflection of `L ∘ g` plus the extension
   by zero of `g - L ∘ g`. This is how the leading coefficient of a Cauchy–Riemann equation with a
   totally real boundary condition is reflected.
+* `TauCeti.HasWeakFDerivOn.ite_conj`: the same for the reflection that keeps the values of `g` on
+  the axis, which agrees with the twisted reflection almost everywhere
+  (`TauCeti.ite_conj_ae_eq_twistedReflection`) and is continuous when `g` is.
 
 Without the boundary condition the odd reflection jumps across the axis, and the conclusions fail.
 
@@ -326,5 +329,22 @@ theorem HasWeakFDerivOn.twistedReflection {Ω : Opens ℂ} (hΩ : ∀ z ∈ Ω, 
   · ext v
     simp [hz, not_le.2 hz, imDilation_higherReflectionNode_fin_one_eq_conjCLE]
   · simp [hz, hz.le]
+
+/-- **Weak derivative of the continuous twisted reflection.** Under the hypotheses of
+`TauCeti.HasWeakFDerivOn.twistedReflection`, the reflection of `g` twisted by `L` that keeps the
+values of `g` on the real axis, equal to `g` on `0 ≤ im` and to `L (g (conj z))` below, has the
+same weak derivative on `Ω`. Unlike the twisted reflection, it is continuous when `g` is
+continuous up to the axis. -/
+theorem HasWeakFDerivOn.ite_conj {Ω : Opens ℂ} (hΩ : ∀ z ∈ Ω, z.im < 0 → conj z ∈ Ω)
+    (L : F →L[ℝ] F) {g : ℂ → F} {Dg : ℂ → ℂ →L[ℝ] F}
+    (hgW : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) g Dg)
+    (hgc : ContinuousOn g ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hg0 : ∀ x : ℝ, (x : ℂ) ∈ Ω → L (g x) = g x)
+    (hDg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) Dg) :
+    HasWeakFDerivOn volume Ω (fun z ↦ if 0 ≤ z.im then g z else L (g (conj z)))
+      (TauCeti.twistedReflection ((ContinuousLinearMap.compL ℝ ℂ F F L).comp
+        ((ContinuousLinearMap.compL ℝ ℂ ℂ F).flip (conjCLE : ℂ →L[ℝ] ℂ))) Dg) :=
+  (hgW.twistedReflection hΩ L hgc hg0 hDg).congr_ae
+    (ae_restrict_of_ae (ite_conj_ae_eq_twistedReflection L g).symm)
 
 end TauCeti
