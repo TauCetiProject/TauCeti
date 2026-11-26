@@ -263,15 +263,12 @@ private theorem exists_norm_apply_le_norm_ofExponentLEL_one (hp' : 1 < p') (hp'_
   refine ⟨∑ i, max (M₀ i) 0 * ‖(complexAntilinearPartL : (ℂ →L[ℝ] F) →L[ℝ] ℂ →L[ℝ] F)‖ *
     ‖A.tangentHom.sectionChartData.chartValueL volume 1 0 i‖, fun w ↦ ?_⟩
   -- `w` is the sum of the `(0,1)`-projections of the `χᵢ w`.
-  have hP : ∑ i, zeroOnePartSobolevL A volume p' 0
-      (SobolevSection.contMDiffSMulL A.tangentHom volume p' 0 (χ i).contMDiff w) = w := by
-    have h1 (x : M) : ∑ i, χ i x = 1 := by
-      simpa [finsum_eq_sum_of_fintype] using χ.sum_eq_one (mem_univ x)
-    rw [← map_sum, SobolevSection.sum_contMDiffSMulL_eq_self_of_sum_eq_one _ h1,
-      zeroOnePartSobolevL_coe]
+  have h1 (x : M) : ∑ i, χ i x = 1 := by
+    simpa [finsum_eq_sum_of_fintype] using χ.sum_eq_one (mem_univ x)
   calc ‖Λ w‖ = ‖∑ i, Λ (zeroOnePartSobolevL A volume p' 0
         (SobolevSection.contMDiffSMulL A.tangentHom volume p' 0 (χ i).contMDiff w))‖ := by
-        rw [← map_sum, hP]
+        rw [← map_sum,
+          sum_zeroOnePartSobolevL_contMDiffSMulL_eq_self (fun i ↦ (χ i).contMDiff) h1]
     _ ≤ _ := (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦
         norm_apply_zeroOnePartSobolevL_le A (hQ₀₁ i) (subset_closure.trans (hQ₁i i))
           (χ i).contMDiff (hχ i) (hχ1 i) (le_max_right _ _) (hrep i) (hθM i) w)

@@ -289,9 +289,8 @@ private theorem exists_norm_sub_le_sum (χ : SmoothPartitionOfUnity (Fin A.n) �
       zeroOneSobolevSections A volume p 0 →L[ℝ] zeroOneSobolevSections A volume p 0 :=
     (zeroOnePartSobolevL A volume p 0).comp ((SobolevSection.contMDiffSMulL A.tangentHom volume p 0
       (χ i).contMDiff).comp (zeroOneSobolevSections A volume p 0).subtypeL)
-  have hP (w : zeroOneSobolevSections A volume p 0) : ∑ i, P i w = w := by
-    simp only [P, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, ← map_sum,
-      SobolevSection.sum_contMDiffSMulL_eq_self_of_sum_eq_one _ hχ1, zeroOnePartSobolevL_coe]
+  have hP (w : zeroOneSobolevSections A volume p 0) : ∑ i, P i w = w :=
+    sum_zeroOnePartSobolevL_contMDiffSMulL_eq_self (fun i ↦ (χ i).contMDiff) hχ1 w
   set Kb := ∑ c, ‖(b.coord c).toContinuousLinearMap‖
   set k : Fin A.n → ℝ := fun i ↦
     Kb * ‖A.tangentHom.sectionChartData.chartValueL volume p 0 i‖ * ‖P i‖ with hk
