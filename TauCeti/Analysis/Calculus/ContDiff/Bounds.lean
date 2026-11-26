@@ -47,6 +47,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   map that is `C^n` on an open set, with a nonnegative constant.
 * `IsCompact.exists_norm_fderiv_le`: the derivative of a map that is `C^1` at every point of a
   compact set is bounded on that set.
+* `IsCompact.exists_forall_norm_fderiv_le`: one constant bounds on a compact set the derivatives of
+  finitely many maps `β e` that are `C^1` there and of any `g` with `D g = -∑_e D β_e`.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen`: for a family `f p` that is
   `C^n` jointly in `(p, x)`, the derivatives of order at most `n` of the partial maps `f p` are
   bounded on a compact set by one constant, uniformly for `p` in a compact set.
@@ -140,6 +142,23 @@ theorem IsCompact.exists_norm_fderiv_le {f : E → F} {K : Set E} {n : WithTop �
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn fun x hx ↦
     ((hf x hx).fderiv_right (m := 0) (by simpa using hn)).continuousAt.continuousWithinAt
   exact ⟨M.toNNReal, fun x hx ↦ (hM x hx).trans (Real.le_coe_toNNReal M)⟩
+
+/-- For a finite family of functions `β e`, `C¹` at the points of a compact set `K`, and a function
+`g` with `D g = -∑_e D β_e` on `K` (such as the cutoff `1 - ∑_e β_e` complementary to a partition
+by cutoffs `β e`), one constant `M` bounds `‖D β_e‖` for every `e` and `‖D g‖` on `K`. -/
+theorem IsCompact.exists_forall_norm_fderiv_le {ι : Type*} [Fintype ι] {K : Set E}
+    (hK : IsCompact K) {β : ι → E → F} (hβ : ∀ e, ∀ z ∈ K, ContDiffAt 𝕜 1 (β e) z) {g : E → F}
+    (hg : ∀ z ∈ K, fderiv 𝕜 g z = -∑ e, fderiv 𝕜 (β e) z) :
+    ∃ M, (∀ e, ∀ z ∈ K, ‖fderiv 𝕜 (β e) z‖ ≤ M) ∧ ∀ z ∈ K, ‖fderiv 𝕜 g z‖ ≤ M := by
+  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ ∑ e, ‖fderiv 𝕜 (β e) z‖) <|
+    continuousOn_finsetSum _ fun e _ z hz ↦
+      ((hβ e z hz).continuousAt_fderiv one_ne_zero).norm.continuousWithinAt
+  have hMs (z : E) (hz : z ∈ K) : ∑ e, ‖fderiv 𝕜 (β e) z‖ ≤ M :=
+    (Real.le_norm_self _).trans (hM z hz)
+  refine ⟨M, fun e z hz ↦ (Finset.single_le_sum (fun e' _ ↦ norm_nonneg (fderiv 𝕜 (β e') z))
+    (Finset.mem_univ e)).trans (hMs z hz), fun z hz ↦ ?_⟩
+  rw [hg z hz, norm_neg]
+  exact (norm_sum_le _ _).trans (hMs z hz)
 
 /-- On a compact subset `K` of an open set `s`, the derivatives of order at most `n` of a map that
 is `C^n` on `s` are bounded by a single nonnegative constant. -/
