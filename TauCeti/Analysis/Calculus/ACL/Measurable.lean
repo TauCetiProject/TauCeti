@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.ACL.Basic
 import Mathlib.Topology.GDelta.MetrizableSpace
-import Mathlib.Topology.UrysohnsLemma
+import TauCeti.Topology.UrysohnsLemma
 
 /-!
 # Measurability of the formal derivative on an open set
@@ -38,27 +38,6 @@ namespace TauCeti
 variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {u : EuclideanSpace ℝ (Fin n) → F} {Ω : Set (EuclideanSpace ℝ (Fin n))}
   {μ : Measure (EuclideanSpace ℝ (Fin n))}
-
-/-- A map continuous on an open set `Ω` of a normal space agrees on each closed subset `K ⊆ Ω` with
-a map continuous everywhere, namely its product with a Urysohn cutoff equal to `1` on `K` and to `0`
-near `Ωᶜ`. -/
-theorem _root_.ContinuousOn.exists_continuous_eqOn_of_isClosed {X E : Type*} [TopologicalSpace X]
-    [NormalSpace X] [TopologicalSpace E] [AddCommMonoid E] [Module ℝ E] [ContinuousSMul ℝ E]
-    {u : X → E} {Ω K : Set X} (hu : ContinuousOn u Ω) (hΩ : IsOpen Ω) (hK : IsClosed K)
-    (hKΩ : K ⊆ Ω) : ∃ g : X → E, Continuous g ∧ EqOn g u K := by
-  -- The cutoff `χ` is `1` on `K` and `0` off an open `W ⊇ K` with `closure W ⊆ Ω`.
-  obtain ⟨W, hW, hKW, hWΩ⟩ := normal_exists_closure_subset hK hΩ hKΩ
-  obtain ⟨χ, hχW, hχK, -⟩ := exists_continuous_zero_one_of_isClosed hW.isClosed_compl hK
-    (disjoint_compl_left_iff_subset.2 hKW)
-  refine ⟨fun x ↦ χ x • u x, continuous_iff_continuousAt.2 fun x ↦ ?_,
-    fun x hx ↦ by simp [hχK hx]⟩
-  by_cases hx : x ∈ Ω
-  · exact χ.continuous.continuousAt.smul (hu.continuousAt (hΩ.mem_nhds hx))
-  -- Near `x ∉ Ω`, that is off `closure W`, the cutoff and hence the product vanish.
-  refine continuousAt_const.congr (f := fun _ ↦ (0 : E)) ?_
-  filter_upwards [isClosed_closure.isOpen_compl.mem_nhds (mem_compl fun h ↦ hx (hWΩ h))]
-    with y hy
-  simp [hχW (mem_compl fun h ↦ notMem_of_mem_compl hy (subset_closure h))]
 
 /-- **Measurability of the formal derivative.** If `u` is continuous on an open set `Ω`, the formal
 derivative of `u` is almost everywhere strongly measurable on `Ω` with respect to any measure. -/
