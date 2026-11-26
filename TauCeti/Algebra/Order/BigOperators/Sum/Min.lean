@@ -40,6 +40,7 @@ reindexing; this is the counting step in the uniqueness of elementary divisors.
 * `Finset.sub_sum_min_eq_sum_abs_div_two`: for two families with common sum `S`, `S` minus the sum
   of their pointwise minima is half their `L¹` distance.
 * `Finset.sum_min_add_one`: the first-difference identity for truncated sums.
+* `Finset.sum_min_eq_sum_range_card_filter_lt`: a truncated sum is a sum of column lengths.
 * `Finset.sum_min_add_sum_min_eq`: the second-difference identity for truncated sums.
 * `Fintype.exists_equiv_of_forall_sum_min_eq`: two finite families of positive natural numbers
   with the same truncated sums agree up to a bijection of their index types.
@@ -68,6 +69,14 @@ theorem sum_min_add_one (u : Finset α) (c : α → ℕ) (k : ℕ) :
     ∑ l ∈ u, min (k + 1) (c l) = ∑ l ∈ u, min k (c l) + #{l ∈ u | k < c l} := by
   rw [card_filter, ← sum_add_distrib]
   exact sum_congr rfl fun l _ => by split_ifs <;> omega
+
+/-- The truncated sum `∑ l, min k (c l)` is the number of boxes in the first `k` columns of the
+Young diagram with rows `c l`, the sum of the column lengths `#{l ∈ u | i < c l}` for `i < k`. -/
+theorem sum_min_eq_sum_range_card_filter_lt (u : Finset α) (c : α → ℕ) (k : ℕ) :
+    ∑ l ∈ u, min k (c l) = ∑ i ∈ range k, #{l ∈ u | i < c l} := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [sum_min_add_one, ih, sum_range_succ]
 
 /-- For `p < q`, the second differences of the truncated sums `∑ l, min k (c l)` at `p` and `q`
 count the members of the family `c` strictly between `p` and `q`. -/

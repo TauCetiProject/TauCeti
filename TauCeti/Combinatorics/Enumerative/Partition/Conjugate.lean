@@ -21,8 +21,9 @@ the largest part (`Nat.Partition.card_conjugate_parts`, `Nat.Partition.sup_conju
 column `k` counts the parts larger than `k`.
 Consequently dominance can be read off column by column: `μ` dominates `ν` exactly when, for every
 `k`, the first `k` columns of the Young diagram of `μ` hold at most as many boxes as those of `ν`
-(`Nat.Partition.dominates_iff_forall_sum_map_min_le`). Counting columns also identifies the
-conjugate of the shape `(n + 1, 1)` as `(2, 1ⁿ)`
+(`Nat.Partition.dominates_iff_forall_sum_map_min_le`); for partitions given by finite families of
+parts the column counts are `∑ j, min k (μ j)` (`Nat.Partition.ofSums_dominates_ofSums_iff`).
+Counting columns also identifies the conjugate of the shape `(n + 1, 1)` as `(2, 1ⁿ)`
 (`TauCeti.Nat.Partition.conjugate_parts_singletonSecondRow`).
 
 The reversal theorem supplies the order duality behind the row/column symmetry of Specht
@@ -268,6 +269,29 @@ theorem dominates_iff_forall_sum_map_min_le {n : ℕ} {μ ν : n.Partition} :
   rw [conjugate_parts_sort, conjugate_parts_sort, TauCeti.sum_take_transpose_rowLens,
     TauCeti.sum_take_transpose_rowLens, YoungDiagram.rowLens_ofPartition_eq_sort_parts,
     YoungDiagram.rowLens_ofPartition_eq_sort_parts, hsort, hsort]
+
+/-- Zero parts do not contribute to the column counts `∑ a, min k (f a)` of a finite family. -/
+private theorem sum_map_min_filter_ne_zero {α : Type*} [Fintype α] (f : α → ℕ) (k : ℕ) :
+    (((Finset.univ.val.map f).filter (· ≠ 0)).map (min k)).sum = ∑ a, min k (f a) := by
+  classical
+  rw [Multiset.filter_map, Multiset.map_map, ← Finset.filter_val, ← Finset.sum_eq_multiset_sum]
+  refine Finset.sum_filter_of_ne fun a _ h ↦ ?_
+  simp only [Function.comp_apply] at h ⊢
+  rintro ha
+  simp [ha] at h
+
+/-- Dominance of partitions given by finite families of parts, compared column by column. For
+families `μ` and `ν` of natural numbers with the same total `n`, the partition of `n` whose parts
+are the nonzero `μ j` dominates the one whose parts are the nonzero `ν l` exactly when
+`∑ j, min k (μ j) ≤ ∑ l, min k (ν l)` for every `k`. -/
+theorem ofSums_dominates_ofSums_iff {ι κ : Type*} [Fintype ι] [Fintype κ] {n : ℕ} {μ : ι → ℕ}
+    {ν : κ → ℕ} (hμ : ∑ j, μ j = n) (hν : ∑ l, ν l = n) :
+    (ofSums n _ ((Finset.sum_eq_multiset_sum _ μ).symm.trans hμ)).Dominates
+        (ofSums n _ ((Finset.sum_eq_multiset_sum _ ν).symm.trans hν)) ↔
+      ∀ k, ∑ j, min k (μ j) ≤ ∑ l, min k (ν l) := by
+  rw [dominates_iff_forall_sum_map_min_le]
+  refine forall_congr' fun k ↦ ?_
+  rw [ofSums_parts, ofSums_parts, sum_map_min_filter_ne_zero, sum_map_min_filter_ne_zero]
 
 end Nat.Partition
 
