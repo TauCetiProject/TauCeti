@@ -23,8 +23,9 @@ of the compositum of these finitely many subextensions, an open subgroup of fini
 Galois set is determined by its values on the cosets of that subgroup.
 
 This is the field-theoretic half of the finiteness dichotomy for Galois sets over a local field:
-there the subextensions of a given degree are finite in number except in equal characteristic,
-which is why the étale mass is a sum in `ℝ≥0∞`.
+there the subextensions of a given degree `m > 0` are finite in number unless `K` has equal
+characteristic `p` and `p ∣ m` (`TauCeti.infinite_setOf_finrank_eq_iff`), which is why the étale
+mass is a sum in `ℝ≥0∞`.
 -/
 
 public section
