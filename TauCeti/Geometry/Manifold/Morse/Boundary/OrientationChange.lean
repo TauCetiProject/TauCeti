@@ -164,8 +164,7 @@ variable [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
 
 /-- **Reversal sets compose by symmetric difference.** For three choices of orientation data, a
 critical point lies in the reversal set of `𝔬` and `𝔬''` exactly when it lies in one, and only one,
-of the reversal sets of `𝔬` and `𝔬'` and of `𝔬'` and `𝔬''`. This uses that the changes of negative
-coordinates compose, which holds since the pseudo-gradient is linear in all three charts. -/
+of the reversal sets of `𝔬` and `𝔬'` and of `𝔬'` and `𝔬''`. -/
 theorem mem_reversalSet_iff_xor (hX : IsAdaptedPseudoGradient f X) (hf : IsMorse 𝓘(ℝ, E) f)
     {𝔬'' : MorseOrientation f X} :
     p ∈ 𝔬.reversalSet 𝔬'' ↔ Xor (p ∈ 𝔬.reversalSet 𝔬') (p ∈ 𝔬'.reversalSet 𝔬'') := by
@@ -173,8 +172,9 @@ theorem mem_reversalSet_iff_xor (hX : IsAdaptedPseudoGradient f X) (hf : IsMorse
     (𝔬'.coord_mfderiv_chart p) hf (𝔬''.coord_mfderiv_chart p)
   have hne := (Module.Ray.ne_neg_self
     (Orientation.map _ ((𝔬.chart p).negativeChange (𝔬''.chart p)) (𝔬.orientation p))).symm
-  -- Write the orientation of `𝔬''` as a signed transport of that of `𝔬'`, and that of `𝔬'` as a
-  -- signed transport of that of `𝔬`.
+  -- The hypotheses make the changes of negative coordinates compose (`htrans`). Write the
+  -- orientation of `𝔬''` as a signed transport of that of `𝔬'`, and that of `𝔬'` as a signed
+  -- transport of that of `𝔬`.
   rw [mem_reversalSet_iff]
   by_cases h₁ : p ∈ 𝔬.reversalSet 𝔬' <;> by_cases h₂ : p ∈ 𝔬'.reversalSet 𝔬''
   · rw [orientation_eq_neg_of_mem_reversalSet h₂, orientation_eq_neg_of_mem_reversalSet h₁,
