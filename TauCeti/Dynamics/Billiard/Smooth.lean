@@ -63,6 +63,8 @@ The inverse of `B` is `τ⁻¹ ∘ ι ∘ B ∘ ι`, where `ι(s, v) = (s, -v)` 
   `TauCeti.StrictConvexBilliardTable.contDiffAt_nextCollision`: the next-collision map is `C^n`
   at a state `(s, v)` of the strip when `χ` is `C^(n+1)` at `s` and at `t`, hence on the whole
   strip when `χ` is `C^(n+1)`.
+* `TauCeti.StrictConvexBilliardTable.hasDerivAt_nextTangential`: the next tangential component
+  `w(s, v)` is differentiable in `v` at a state of the strip when `χ` is `C²` at `s` and at `t`.
 * `TauCeti.StrictConvexBilliardTable.nextCollisionPartialDiffeomorph`: the next-collision map as a
   `C^n` diffeomorphism of the strip, with inverse `τ⁻¹ ∘ ι ∘ B ∘ ι`.
 
@@ -186,6 +188,17 @@ theorem contDiffAt_nextTangential {s v : ℝ} (hs : ContDiffAt ℝ (n + 1) χ s)
   simp only [nextTangential_def]
   exact hout.inner ℝ (ContDiffAt.comp (g := deriv χ) (s, v) (ht.derivWithin le_rfl)
     (χ.contDiffAt_nextParam hs (ht.of_le le_self_add) hv))
+
+/-- If `χ` is `C²` at `s` and at the next collision parameter `t(s, v)`, then the partial
+derivative in `v` of the next tangential component exists at the state `(s, v)` of the open
+strip. -/
+theorem hasDerivAt_nextTangential {s v : ℝ} (hs : ContDiffAt ℝ 2 χ s)
+    (ht : ContDiffAt ℝ 2 χ (χ.nextParam s v)) (hv : v ∈ Ioo (-1) 1) :
+    HasDerivAt (χ.nextTangential s) (deriv (χ.nextTangential s) v) v := by
+  have hd := ((χ.contDiffAt_nextTangential (n := 1) (hs.of_le (by norm_num))
+    (ht.of_le (by norm_num)) hv).differentiableAt one_ne_zero).comp v
+    ((differentiableAt_const s).prodMk differentiableAt_id)
+  exact hd.hasDerivAt
 
 /-- **Smoothness of the billiard map at a state.** If `χ` is `C^(n+1)` at `s` and at the next
 collision parameter `t(s, v)`, then the next-collision map `(s, v) ↦ (t, w)` is `C^n` at the state

@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.CyclicCohomology.Cochain
 public import TauCeti.RingTheory.Derivation.Bimodule
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.AlternatingSum
+import Mathlib.Tactic.FinCases
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -56,7 +57,8 @@ the cochains with coefficients in the dual bimodule, see
 * `TauCeti.hochschildBimoduleCoface_castSucc_apply_eq_succ_apply_of_apply_eq_one`: on a tuple
   with `aⱼ = 1`, the cofaces `∂ⱼ` and `∂ⱼ₊₁` agree.
 * `TauCeti.hochschildBimoduleCoboundary_hochschildBimoduleCoboundary`: `δ (δ ψ) = 0`.
-* `TauCeti.hochschildBimoduleCoboundary_apply_eq_add_sum_add`: the explicit formula for `δ`.
+* `TauCeti.hochschildBimoduleCoboundary_apply_eq_add_sum_add`: the explicit formula for `δ`, and
+  `TauCeti.hochschildBimoduleCoboundary_three_apply` in degree three.
 * `TauCeti.hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff`: the degree-zero cocycles
   are the central elements.
 * `TauCeti.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff`: the degree-one cocycles
@@ -369,6 +371,27 @@ theorem hochschildBimoduleCoboundary_apply_eq_add_sum_add
           (-1 : ℤ) ^ (n + 1) • op (a (Fin.last n)) • ψ (Fin.init a) := by
   rw [hochschildBimoduleCoboundary_apply, Fin.sum_univ_succ, Fin.sum_univ_castSucc]
   simp [add_assoc]
+
+/-- The coboundary of a degree-three cochain `χ`: `(δχ)(a, b, c, d)` is
+`a • χ(b, c, d) - χ(a b, c, d) + χ(a, b c, d) - χ(a, b, c d) + χ(a, b, c) • d`. -/
+theorem hochschildBimoduleCoboundary_three_apply (χ : (Fin 3 → A) →ₘₗ[R] M) (a b c d : A) :
+    hochschildBimoduleCoboundary R A M 3 χ ![a, b, c, d] =
+      a • χ ![b, c, d] - χ ![a * b, c, d] + χ ![a, b * c, d] - χ ![a, b, c * d] +
+        op d • χ ![a, b, c] := by
+  have h₀ : Fin.contractNth 0 (· * ·) ![a, b, c, d] = ![a * b, c, d] := by
+    ext i
+    fin_cases i <;> simp [Fin.contractNth]
+  have h₁ : Fin.contractNth 1 (· * ·) ![a, b, c, d] = ![a, b * c, d] := by
+    ext i
+    fin_cases i <;> simp [Fin.contractNth]
+  have h₂ : Fin.contractNth 2 (· * ·) ![a, b, c, d] = ![a, b, c * d] := by
+    ext i
+    fin_cases i <;> simp [Fin.contractNth]
+  have h₃ : Fin.init ![a, b, c, d] = ![a, b, c] := by
+    ext i
+    fin_cases i <;> simp [Fin.init]
+  rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_three]
+  simp [h₀, h₁, h₂, h₃, sub_eq_add_neg, add_assoc]
 
 /-- The Hochschild coboundary with coefficients in a bimodule squares to zero. -/
 @[simp]

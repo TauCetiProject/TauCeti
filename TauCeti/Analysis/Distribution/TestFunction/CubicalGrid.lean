@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.TestFunction.BoxCurrent
 import Mathlib.Algebra.Group.Subgroup.Finsupp
 import Mathlib.Analysis.Calculus.FDeriv.Affine
+import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 
 /-!
 # Coordinate boxes and the cubes of a cubical grid as currents in `ℝⁿ`
@@ -49,6 +50,12 @@ file supplies their boundary formula, supports and mass bounds.
 * `TauCeti.coordPlaneMap_succAboveEmb`: the face maps of the box are coordinate plane maps.
 * `TauCeti.coordPlaneMap_comp_boxFaceMap`: a coordinate plane composed with a face map of the
   box is a coordinate plane of one dimension less.
+* `TauCeti.coordProj I`, `TauCeti.planeProj I x`: the coordinate projection and the affine
+  projection onto a coordinate plane, left inverses of the linear part of `coordPlaneMap I x` and
+  of `coordPlaneMap I x` itself.
+* `TauCeti.coordForm I`: the coordinate form `dx^I`, with
+  `TauCeti.compContinuousLinearMap_contLinear_coordPlaneMap_comp_coordProj` writing a form
+  restricted to the plane as its coefficient times `dx^I`.
 * `TauCeti.coordBoxCurrent I x r Ω`: the oriented current `[[x; I, r]]` of a coordinate box.
 * `TauCeti.coordBoxCurrent_apply`: its value as an integral over `[0, r]`.
 * `TauCeti.coordBoxCurrent_comp_extDerivCLM`: the cubical boundary formula.
@@ -176,6 +183,101 @@ theorem coordPlaneMap_comp_boxFaceMap (I : Fin (k + 1) ↪ Fin n) (x : Euclidean
     have hne : m ≠ I j := fun h ↦ hm ⟨j, h.symm⟩
     rw [Function.extend_apply' _ _ _ hm, Function.extend_apply' _ _ _ hm']
     simp [hne]
+
+/-! ### Coordinate projections and coordinate forms -/
+
+/-- The coordinate projection `v ↦ (v (I j))ⱼ`, a left inverse of the linear part of
+`TauCeti.coordPlaneMap I x` (`TauCeti.coordProj_contLinear_coordPlaneMap`). -/
+noncomputable def coordProj (I : Fin k ↪ Fin n) :
+    EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin k) :=
+  (EuclideanSpace.equiv (Fin k) ℝ).symm.toContinuousLinearMap ∘L
+    ContinuousLinearMap.pi fun j ↦ EuclideanSpace.proj (I j)
+
+@[simp]
+theorem coordProj_apply (I : Fin k ↪ Fin n) (v : EuclideanSpace ℝ (Fin n)) (j : Fin k) :
+    coordProj I v j = v (I j) := by
+  simp [coordProj]
+
+/-- The coordinate projection is a left inverse of the linear part of a coordinate plane map. -/
+theorem coordProj_contLinear_coordPlaneMap (I : Fin k ↪ Fin n)
+    (x : EuclideanSpace ℝ (Fin n)) (s : EuclideanSpace ℝ (Fin k)) :
+    coordProj I ((coordPlaneMap I x).contLinear s) = s := by
+  ext j
+  simp [contLinear_coordPlaneMap, I.injective.extend_apply]
+
+/-- The directions of a coordinate plane lie in the span of `e_{I 0}, …, e_{I (k-1)}`. -/
+theorem contLinear_coordPlaneMap_mem_span (I : Fin k ↪ Fin n)
+    (x : EuclideanSpace ℝ (Fin n)) (v : EuclideanSpace ℝ (Fin k)) :
+    (coordPlaneMap I x).contLinear v ∈
+      Submodule.span ℝ (range fun j ↦ EuclideanSpace.single (I j) (1 : ℝ)) := by
+  refine (Submodule.mem_span_range_iff_exists_fun ℝ).2 ⟨fun j ↦ v j, ?_⟩
+  conv_rhs => rw [← (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.sum_repr v]
+  simp [map_sum, map_smul, contLinear_coordPlaneMap_single]
+
+/-- The affine projection `y ↦ (y - x)_I` onto the coordinates of the plane, a left inverse of
+`TauCeti.coordPlaneMap I x` (`TauCeti.planeProj_coordPlaneMap`). -/
+noncomputable def planeProj (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n)) :
+    EuclideanSpace ℝ (Fin n) →ᴬ[ℝ] EuclideanSpace ℝ (Fin k) :=
+  (coordProj I).toContinuousAffineMap - ContinuousAffineMap.const ℝ _ (coordProj I x)
+
+theorem planeProj_apply (I : Fin k ↪ Fin n) (x y : EuclideanSpace ℝ (Fin n)) :
+    planeProj I x y = coordProj I (y - x) := by
+  simp [planeProj]
+
+/-- The linear part of the projection onto a coordinate plane is the coordinate projection. -/
+@[simp]
+theorem contLinear_planeProj (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n)) :
+    (planeProj I x).contLinear = coordProj I := by
+  ext v
+  simp [planeProj]
+
+@[simp]
+theorem planeProj_coordPlaneMap (I : Fin k ↪ Fin n) (x : EuclideanSpace ℝ (Fin n))
+    (s : EuclideanSpace ℝ (Fin k)) :
+    planeProj I x (coordPlaneMap I x s) = s := by
+  ext j
+  simp [planeProj_apply, coordPlaneMap_apply, I.injective.extend_apply]
+
+/-- The coordinate `k`-form `dx^I`: the determinant of the coordinates indexed by `I`. -/
+noncomputable def coordForm (I : Fin k ↪ Fin n) :
+    EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ :=
+  (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.continuousDet.compContinuousLinearMap (coordProj I)
+
+/-- The coordinate form `dx^I` evaluates to the determinant of the coordinates indexed by `I`. -/
+theorem coordForm_apply (I : Fin k ↪ Fin n) (v : Fin k → EuclideanSpace ℝ (Fin n)) :
+    coordForm I v = (EuclideanSpace.basisFun (Fin k) ℝ).toBasis.det (coordProj I ∘ v) := by
+  rw [coordForm, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+    Module.Basis.continuousDet_apply]
+
+/-- The coordinate form `dx^I` is one on `e_{I 0}, …, e_{I (k-1)}`. -/
+@[simp]
+theorem coordForm_apply_single (I : Fin k ↪ Fin n) :
+    coordForm I (fun j ↦ EuclideanSpace.single (I j) 1) = 1 := by
+  have h : (coordProj I ∘ fun j ↦ EuclideanSpace.single (I j) (1 : ℝ)) =
+      (EuclideanSpace.basisFun (Fin k) ℝ).toBasis := by
+    funext j
+    ext i
+    simp [I.injective.eq_iff, eq_comm]
+  rw [coordForm_apply, h, Module.Basis.det_self]
+
+/-- Projecting onto a coordinate plane turns a `k`-form into the multiple of `dx^I` by its
+coefficient on `e_{I 0}, …, e_{I (k-1)}`. -/
+theorem compContinuousLinearMap_contLinear_coordPlaneMap_comp_coordProj (I : Fin k ↪ Fin n)
+    (x : EuclideanSpace ℝ (Fin n)) (α : EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ) :
+    α.compContinuousLinearMap ((coordPlaneMap I x).contLinear ∘L coordProj I) =
+      α (fun j ↦ EuclideanSpace.single (I j) 1) • coordForm I := by
+  ext v
+  set b := (EuclideanSpace.basisFun (Fin k) ℝ).toBasis
+  have h := (α.compContinuousLinearMap (coordPlaneMap I x).contLinear).apply_eq_det_mul b
+    (coordProj I ∘ v)
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply] at h
+  simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply, ContinuousLinearMap.coe_comp,
+    ContinuousAlternatingMap.smul_apply, coordForm, smul_eq_mul]
+  have hb : (coordPlaneMap I x).contLinear ∘ b = fun j ↦ EuclideanSpace.single (I j) 1 := by
+    funext j
+    simp only [Function.comp_apply, b, OrthonormalBasis.coe_toBasis,
+      EuclideanSpace.basisFun_apply, contLinear_coordPlaneMap_single]
+  rw [Function.comp_assoc, h, hb, mul_comm, Module.Basis.continuousDet_apply]
 
 end CoordPlaneMap
 

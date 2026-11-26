@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.LinearAlgebra.Trace
-import TauCeti.Data.Fin.Tuple.Basic
+public import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.OfEnd
 import TauCeti.LinearAlgebra.Alternating.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import TauCeti.LinearAlgebra.Trace.Basic
@@ -18,11 +18,12 @@ import TauCeti.LinearAlgebra.Trace.Basic
 
 An endomorphism of a module acts infinitesimally on an exterior power by applying the
 endomorphism to one factor at a time. This construction is linear in the endomorphism and carries
-commutators to commutators, hence defines a Lie algebra representation. It is a derivation of the
-wedge product, and in degree `Module.finrank K V` of a free module it is multiplication
-by the trace of the endomorphism: the infinitesimal form of the action of `⋀ⁿ f` by `det f`. For
-a finite free module this degree is the top exterior power; for an infinite free module it is
-degree zero and the trace is zero.
+commutators to commutators, hence defines a Lie algebra representation. It is the restriction to
+`⋀[K]^d V` of the derivation `ExteriorAlgebra.derivationOfEnd K V f` of the exterior algebra, so it
+is a derivation of the wedge product. In degree `Module.finrank K V` of a free module it is
+multiplication by the trace of the endomorphism: the infinitesimal form of the action of `⋀ⁿ f` by
+`det f`. For a finite free module this degree is the top exterior power; for an infinite free
+module it is degree zero and the trace is zero.
 
 ## Main definitions
 
@@ -30,6 +31,8 @@ degree zero and the trace is zero.
 
 ## Main results
 
+* `ExteriorAlgebra.derivationOfEnd_apply_coe`: on `⋀[K]^d V` the derivation of the exterior algebra
+  induced by `f` is `exteriorPower.lieMap d f`.
 * `exteriorPower.lieMap_apply_ιMulti`: the action on a decomposable wedge is the sum of the terms
   obtained by applying the endomorphism to one factor.
 * `exteriorPower.lieMap_two_apply_ιMulti`: on two-vectors this is the derivation rule
@@ -49,109 +52,34 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {K V : Type*} [CommRing K] [AddCommGroup V] [Module K V]
 
-/-- The multilinear map `v ↦ ∑ i, ιMulti K d (update v i (f (v i)))`. -/
-private noncomputable def actionMultilinear (d : ℕ) (f : Module.End K V) :
-    MultilinearMap (RingHom.id K) (fun _ : Fin d => V) (⋀[K]^d V) :=
-  ∑ i : Fin d, (ιMulti K d).toMultilinearMap.compLinearMap
-    (Function.update (fun _ => LinearMap.id) i f)
-
-private theorem actionMultilinear_apply (d : ℕ) (f : Module.End K V) (v : Fin d → V) :
-    actionMultilinear d f v =
-      ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) := by
-  simp only [actionMultilinear, sum_apply, MultilinearMap.compLinearMap_apply]
-  refine Finset.sum_congr rfl fun i _ => congrArg (ιMulti K d) (funext fun j => ?_)
-  rcases eq_or_ne j i with rfl | hji <;> simp [*]
-
-private theorem actionMultilinear_map_eq_zero_of_eq (d : ℕ) (f : Module.End K V)
-    (v : Fin d → V) (i j : Fin d) (hv : v i = v j) (hij : i ≠ j) :
-    actionMultilinear d f v = 0 := by
-  rw [actionMultilinear_apply, Fintype.sum_eq_add i j hij fun k ⟨hki, hkj⟩ =>
-    (ιMulti K d).map_eq_zero_of_eq _ (i := i) (j := j) (by simp [hki.symm, hkj.symm, hv]) hij]
-  -- The `j`-th term is the `i`-th term with the two factors swapped.
-  have hswap : Function.update v j (f (v j)) =
-      Function.update v i (f (v i)) ∘ Equiv.swap i j := by
-    funext k
-    simp only [Function.comp_apply, Function.update_apply, Equiv.swap_apply_def]
-    split_ifs <;> simp_all
-  rw [hswap]
-  exact (ιMulti K d).map_add_swap _ hij
-
-/-- `actionMultilinear d f`, bundled as an alternating map. -/
-private noncomputable def actionAlternating (d : ℕ) (f : Module.End K V) :
-    V [⋀^Fin d]→ₗ[K] (⋀[K]^d V) where
-  toMultilinearMap := actionMultilinear d f
-  map_eq_zero_of_eq' v i j hv hij :=
-    actionMultilinear_map_eq_zero_of_eq d f v i j hv hij
-
-@[simp]
-private theorem actionAlternating_apply (d : ℕ) (f : Module.End K V) (v : Fin d → V) :
-    actionAlternating d f v =
-      ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) := by
-  simp [actionAlternating, actionMultilinear_apply]
-
-/-- The induced endomorphism of `⋀[K]^d V`, as a linear function of `f`. -/
-private noncomputable def actionLinear (d : ℕ) :
-    Module.End K V →ₗ[K] Module.End K (⋀[K]^d V) where
-  toFun f := alternatingMapLinearEquiv (actionAlternating d f)
-  map_add' f g := linearMap_ext <| AlternatingMap.ext fun v => by
-    simp [Finset.sum_add_distrib]
-  map_smul' r f := linearMap_ext <| AlternatingMap.ext fun v => by
-    simp [Finset.smul_sum]
-
-@[simp]
-private theorem actionLinear_apply_ιMulti (d : ℕ) (f : Module.End K V) (v : Fin d → V) :
-    actionLinear d f (ιMulti K d v) =
-      ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) := by
-  simp [actionLinear]
-
-/-- The term of `actionLinear d f (actionLinear d g (ιMulti K d v))` in which `g` acts on the
-`i`-th factor and then `f` acts on the `j`-th factor. -/
-private def actionTerm (d : ℕ) (f g : Module.End K V) (v : Fin d → V)
-    (i j : Fin d) : ⋀[K]^d V :=
-  ιMulti K d (Function.update (Function.update v i (g (v i))) j
-    (f (Function.update v i (g (v i)) j)))
-
-private theorem actionTerm_swap (d : ℕ) (f g : Module.End K V) (v : Fin d → V)
-    {i j : Fin d} (hij : i ≠ j) :
-    actionTerm d f g v i j = actionTerm d g f v j i := by
-  apply congrArg (ιMulti K d)
-  funext k
-  simp only [Function.update_apply]
-  split_ifs <;> simp_all
-
-/-- `actionLinear d` carries commutators to commutators. -/
-private theorem actionLinear_mul_sub_mul (d : ℕ) (f g : Module.End K V) :
-    actionLinear d (f * g - g * f) =
-      actionLinear d f * actionLinear d g - actionLinear d g * actionLinear d f := by
-  have hcomp (f g : Module.End K V) (v : Fin d → V) :
-      actionLinear d f (actionLinear d g (ιMulti K d v)) =
-        ∑ i : Fin d, ∑ j : Fin d, actionTerm d f g v i j := by
-    simp [actionTerm]
-  refine linearMap_ext (AlternatingMap.ext fun v => ?_)
-  simp only [LinearMap.compAlternatingMap_apply, LinearMap.sub_apply, mul_apply_eq_comp]
-  -- Off-diagonal terms of the two composites cancel in pairs by `actionTerm_swap`, leaving the
-  -- diagonal terms, where the commutator acts on a single factor.
-  rw [hcomp, hcomp, actionLinear_apply_ιMulti, Finset.sum_comm (f := actionTerm d g f v),
-    ← Finset.sum_sub_distrib]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← Finset.sum_sub_distrib, Fintype.sum_eq_single i fun j hj =>
-    sub_eq_zero.mpr (actionTerm_swap d f g v (Ne.symm hj))]
-  simp [actionTerm]
-
-/-- The infinitesimal action of endomorphisms on an exterior power. -/
+/-- The infinitesimal action of endomorphisms on an exterior power: the restriction of the
+derivation `ExteriorAlgebra.derivationOfEnd K V f` of the exterior algebra to `⋀[K]^d V`. -/
 noncomputable def lieMap (d : ℕ) :
-    Module.End K V →ₗ⁅K⁆ Module.End K (⋀[K]^d V) :=
-  { actionLinear d with
-    map_lie' := fun {f g} => by
-      rw [Ring.lie_def, Ring.lie_def]
-      exact actionLinear_mul_sub_mul d f g }
+    Module.End K V →ₗ⁅K⁆ Module.End K (⋀[K]^d V) where
+  toFun f := (ExteriorAlgebra.derivationOfEnd K V f : Module.End K (ExteriorAlgebra K V)).restrict
+    fun _ ↦ ExteriorAlgebra.derivationOfEnd_mem_exteriorPower f
+  map_add' f g := LinearMap.ext fun x ↦ Subtype.ext <| by simp
+  map_smul' r f := LinearMap.ext fun x ↦ Subtype.ext <| by simp
+  map_lie' {f g} := LinearMap.ext fun x ↦ Subtype.ext <| by
+    simp only [LinearMap.coe_restrict_apply]
+    rw [LieHom.map_lie]
+    simp [Ring.lie_def]
+
+/-- **On an exterior power, the derivation induced by `f` is the infinitesimal action**
+`exteriorPower.lieMap d f`. -/
+theorem _root_.ExteriorAlgebra.derivationOfEnd_apply_coe (f : Module.End K V) {d : ℕ}
+    (x : ⋀[K]^d V) :
+    (ExteriorAlgebra.derivationOfEnd K V f : Module.End K (ExteriorAlgebra K V)) x =
+      lieMap d f x := by
+  rfl
 
 /-- An endomorphism acts on a decomposable wedge by acting on one factor at a time. -/
 @[simp]
 theorem lieMap_apply_ιMulti (d : ℕ) (f : Module.End K V) (v : Fin d → V) :
     lieMap d f (ιMulti K d v) =
-      ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) := by
-  rw [lieMap, ← LieHom.coe_toLinearMap, actionLinear_apply_ιMulti]
+      ∑ i : Fin d, ιMulti K d (Function.update v i (f (v i))) :=
+  Subtype.ext <| by
+    simp [← ExteriorAlgebra.derivationOfEnd_apply_coe, ExteriorAlgebra.derivationOfEnd_ιMulti]
 
 /-- On two-vectors an endomorphism acts by the derivation rule `f (u ∧ w) = f u ∧ w + u ∧ f w`. -/
 theorem lieMap_two_apply_ιMulti (f : Module.End K V) (u w : V) :
@@ -163,17 +91,10 @@ theorem lieMap_two_apply_ιMulti (f : Module.End K V) (u w : V) :
 `f (x ∧ y) = f x ∧ y + x ∧ f y`. -/
 theorem lieMap_wedge (f : Module.End K V) {k l : ℕ} (x : ⋀[K]^k V) (y : ⋀[K]^l V) :
     lieMap (k + l) f (wedge K V k l x y) =
-      wedge K V k l (lieMap k f x) y + wedge K V k l x (lieMap l f y) := by
-  have key : (wedge K V k l).compr₂ (lieMap (k + l) f) =
-      (wedge K V k l).compl₁₂ (lieMap k f) LinearMap.id +
-        (wedge K V k l).compl₂ (lieMap l f) := by
-    refine linearMap_ext (AlternatingMap.ext fun u ↦ linearMap_ext (AlternatingMap.ext fun v ↦ ?_))
-    simp only [LinearMap.compAlternatingMap_apply, LinearMap.compr₂_apply, LinearMap.add_apply,
-      LinearMap.compl₁₂_apply, LinearMap.compl₂_apply, LinearMap.id_apply, wedge_ιMulti,
-      lieMap_apply_ιMulti, map_sum, LinearMap.sum_apply, Fin.sum_univ_add, Fin.append_left,
-      Fin.append_right, Fin.update_append_castAdd, Fin.update_append_natAdd]
-  simpa only [LinearMap.compr₂_apply, LinearMap.add_apply, LinearMap.compl₁₂_apply,
-    LinearMap.compl₂_apply, LinearMap.id_apply] using LinearMap.congr_fun₂ key x y
+      wedge K V k l (lieMap k f x) y + wedge K V k l x (lieMap l f y) :=
+  Subtype.ext <| by
+    simp only [← ExteriorAlgebra.derivationOfEnd_apply_coe, coe_wedge, Submodule.coe_add,
+      TauCeti.derivationLieAlgebra.leibniz]
 
 /-- An endomorphism of a free module acts in degree `Module.finrank K V` by multiplication by its
 trace: the infinitesimal form of `LinearMap.map_exteriorPower_finrank_eq_det_smul`. For a finite
