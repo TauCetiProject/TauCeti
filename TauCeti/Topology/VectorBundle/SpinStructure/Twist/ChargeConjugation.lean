@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.FiberBundle.Principal.Tensor
 public import TauCeti.Topology.VectorBundle.SpinStructure.ChargeConjugation
 public import TauCeti.Topology.VectorBundle.SpinStructure.Twist.Basic
 
@@ -46,7 +47,16 @@ corresponding equivalences of `Spinᶜ` structures:
   `χ (μ (a, w)) = μ (χ a, w⁻¹)`, since `χ [1, w] = [1, w⁻¹]`
   (`CliffordAlgebra.spinCGroup.chargeConj_mulCircle`): the map `(p, l) ↦ [([p, 1], ψ l), 1]` from
   `P ×_X L` is equivariant along `χ ∘ μ`, and extending along `μ` and then along `χ` is extending
-  along `χ ∘ μ` (`TauCeti.OrthonormalFrameLift.extendCompEquiv`).
+  along `χ ∘ μ` (`TauCeti.OrthonormalFrameLift.extendCompEquiv`). For `L'` the inverse bundle
+  `E⁻¹ = E ×_{z ↦ z⁻¹} U(1)` (`TauCeti.PrincipalBundle.Inverse`) this is
+  `TauCeti.SpinCStructure.chargeConjTwistEquivInverse`.
+* **`conj (s ⊗ E) ≃ s ⊗ ((P ×_{det⁻¹} U(1)) ⊗ E⁻¹)`.** With the tensor product
+  `A ⊗ B = (A ×_X B) ×_{(a, b) ↦ a b} U(1)` of principal `U(1)`-bundles
+  (`TauCeti.PrincipalBundle.Tensor`), the charge conjugate of `s.twist E` is equivalent to the
+  twist of `s` by the tensor product of the inverse determinant bundle with `E⁻¹`
+  (`TauCeti.SpinCStructure.chargeConjTwistEquivTwist`), by
+  `[[(p, e), a], h] ↦ [(p, [([p, 1], [e, 1]), 1]), χ a h]`. This is the second equivalence with
+  `L⁻¹ ⊗ E⁻¹` presented as a tensor product of the two circle bundles.
 
 All these equivalences preserve frames, as equivalences of `Spinᶜ` structures do. For the
 canonical `Spinᶜ` structure `s_ω` of an almost Hermitian four-manifold, whose determinant line is
@@ -67,12 +77,17 @@ identification of associated lines is not made here. The third is the step
   `(s ⊗ E).chargeConj ≃ s ⊗ (L⁻¹ ⊗ E⁻¹)`.
 * `TauCeti.SpinCStructure.chargeConjTwistEquiv`: the equivalence
   `(s.twist L).chargeConj ≃ s.chargeConj.twist L'` for an inverse `L'` of `L`.
+* `TauCeti.SpinCStructure.chargeConjTwistEquivInverse`: the equivalence
+  `(s.twist E).chargeConj ≃ s.chargeConj.twist E⁻¹` for the inverse bundle `E⁻¹`.
+* `TauCeti.SpinCStructure.chargeConjTwistEquivTwist`: the equivalence
+  `(s.twist E).chargeConj ≃ s.twist ((P ×_{det⁻¹} U(1)) ⊗ E⁻¹)`.
 
 ## Main results
 
 * `TauCeti.SpinCStructure.chargeConjTwistEquiv_toEquiv_mk`,
   `TauCeti.SpinCStructure.chargeConjTwistEquiv_toEquiv_inl`: the formula of
-  `chargeConjTwistEquiv` in frames.
+  `chargeConjTwistEquiv` in frames, and likewise `chargeConjTwistEquivInverse_toEquiv_mk`,
+  `chargeConjTwistEquivTwist_toEquiv_mk` and their `_toEquiv_inl` versions.
 
 ## References
 
@@ -409,18 +424,14 @@ theorem chargeConjTwistEquiv_toEquiv_mk (s : SpinCStructure F V n) (ψ : ∀ x, 
           (Extend.mk μ hμ (P := (s.fiberProd Circle L).P) (FiberProd.mk p l) a) h) =
       Extend.mk μ hμ (P := (s.chargeConj.fiberProd Circle L').P)
         (FiberProd.mk (Extend.inl χ hχ p) (ψ x l)) (spinCGroup.chargeConj _ hQ a * h) := by
-  simp only [chargeConjTwistEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv,
-    OrthonormalFrameLift.Equiv.symm_toEquiv]
-  -- `[[(p, l), a], h] = [[(p, l), 1], χ(a) h]` is the image of `[(p, l), χ(a) h]` under
-  -- `extendCompEquiv`.
-  have hcomp := (Equiv.symm_apply_eq _).2 (((s.fiberProd Circle L).extendCompEquiv_toEquiv_mk
-    (ρ' := πᶜ) (ρ'' := πᶜ) μ hμ hπμ
+  simp only [chargeConjTwistEquiv, OrthonormalFrameLift.Equiv.trans_toEquiv]
+  -- `[[(p, l), a], h]` is the image of `[(p, l), χ(a) h]` under `extendCompEquiv`.
+  exact (Equiv.trans_apply _ _ _).trans <| (congrArg _
+    ((s.fiberProd Circle L).extendCompEquiv_symm_toEquiv_mk_mk (ρ' := πᶜ) (ρ'' := πᶜ) μ hμ hπμ
     spinCGroup.norm_toLp_toSpecialOrthogonal_apply
     spinCGroup.continuous_toSpecialOrthogonal_apply χ hχ hπχ
     spinCGroup.norm_toLp_toSpecialOrthogonal_apply
-    spinCGroup.continuous_toSpecialOrthogonal_apply x (FiberProd.mk p l) (χ a * h)).trans
-      (Extend.mk_mk μ hμ χ hχ (P := (s.fiberProd Circle L).P) (FiberProd.mk p l) a h).symm).symm
-  exact (Equiv.trans_apply _ _ _).trans <| (congrArg _ hcomp).trans <|
+    spinCGroup.continuous_toSpecialOrthogonal_apply x (FiberProd.mk p l) a h)).trans <|
     (OrthonormalFrameLift.extendEquivOfEquivariant_toEquiv_mk (ρ' := πᶜ) ..).trans
       (Extend.smul_inl μ hμ (P := (s.chargeConj.fiberProd Circle L').P) _ _)
 
@@ -446,6 +457,197 @@ theorem chargeConjTwistEquiv_toEquiv_inl (s : SpinCStructure F V n) (ψ : ∀ x,
         (by rw [map_one, one_mul])).trans (Extend.inl_def μ hμ _).symm))
 
 end InverseTwist
+
+/-! ### The charge conjugate of a twist via inverse and tensor product bundles -/
+
+section TensorTwist
+
+/-- The inverse determinant character `Spinᶜ(n) → U(1)`, `g ↦ (det g)⁻¹`. -/
+local notation "δ" => (spinCGroup.det (realCliffordForm n 0) hQ)⁻¹
+
+/-- The inverse determinant character is continuous. -/
+local notation "hδ" => spinCGroup.continuous_inv_det (realCliffordForm n 0) hQ
+
+/-- Inversion of the circle, along which a principal `U(1)`-bundle extends to its inverse
+(`TauCeti.PrincipalBundle.Inverse`). -/
+local notation "ν" => (ContinuousMonoidHom.inv Circle : Circle →* Circle)
+
+/-- Inversion of the circle is continuous. -/
+local notation "hν" => map_continuous (ContinuousMonoidHom.inv Circle)
+
+/-- Multiplication of the circle, along which the fibre product of two principal `U(1)`-bundles
+extends to their tensor product (`TauCeti.PrincipalBundle.Tensor`). -/
+local notation "τ" => (ContinuousMonoidHom.mul Circle : Circle × Circle →* Circle)
+
+/-- Multiplication of the circle is continuous. -/
+local notation "hτ" => map_continuous (ContinuousMonoidHom.mul Circle)
+
+variable (E : X → Type) [TopologicalSpace (TotalSpace Circle E)] [∀ x, TopologicalSpace (E x)]
+  [FiberBundle Circle E] [∀ x, MulAction Circleᵐᵒᵖ (E x)] [PrincipalBundle Circle E]
+
+/-- **Charge conjugation inverts the twisting line**: for a `Spinᶜ` structure `s` and a principal
+`U(1)`-bundle `E`, the charge conjugate of the twist `s ⊗ E` is equivalent to the twist of the
+charge conjugate `s.chargeConj` by the inverse bundle `E⁻¹ = E ×_{z ↦ z⁻¹} U(1)`
+(`TauCeti.PrincipalBundle.Inverse`). This is `TauCeti.SpinCStructure.chargeConjTwistEquiv` for the
+map `e ↦ [e, 1]`. The equivalence sends `[[(p, e), a], h]` to `[([p, 1], [e, 1]), χ a h]`
+(`TauCeti.SpinCStructure.chargeConjTwistEquivInverse_toEquiv_mk`). -/
+def chargeConjTwistEquivInverse (s : SpinCStructure F V n) :
+    (s.twist E).chargeConj.Equiv (s.chargeConj.twist (Inverse Circle E)) :=
+  s.chargeConjTwistEquiv (fun _ e ↦ Extend.inl ν hν e) (fun _ e w ↦ Extend.inl_smul ν hν e w)
+    (Extend.continuous_inl E ν hν)
+
+/-- **The equivalence `(s.twist E).chargeConj ≃ s.chargeConj.twist E⁻¹` in a frame**: it sends
+`[[(p, e), a], h]` to `[([p, 1], [e, 1]), χ a h]`. -/
+@[simp]
+theorem chargeConjTwistEquivInverse_toEquiv_mk (s : SpinCStructure F V n) (x : X) (p : s.P x)
+    (e : E x) (a h : SpinC) :
+    (s.chargeConjTwistEquivInverse E).toEquiv x
+        (Extend.mk χ hχ (Extend.mk μ hμ (P := FiberProd s.P E) (FiberProd.mk p e) a) h) =
+      Extend.mk μ hμ (P := FiberProd (Extend s.P χ hχ) (Inverse Circle E))
+        (FiberProd.mk (Extend.inl χ hχ p) (Extend.inl ν hν e)) (χ a * h) :=
+  chargeConjTwistEquiv_toEquiv_mk ..
+
+/-- **The equivalence `(s.twist E).chargeConj ≃ s.chargeConj.twist E⁻¹` at `[[(p, e), 1], 1]`**: it
+sends `[[(p, e), 1], 1]` to `[([p, 1], [e, 1]), 1]`. -/
+@[simp]
+theorem chargeConjTwistEquivInverse_toEquiv_inl (s : SpinCStructure F V n) (x : X) (p : s.P x)
+    (e : E x) :
+    (s.chargeConjTwistEquivInverse E).toEquiv x
+        (Extend.inl χ hχ (Extend.inl μ hμ (P := FiberProd s.P E) (FiberProd.mk p e))) =
+      Extend.inl μ hμ (P := FiberProd (Extend s.P χ hχ) (Inverse Circle E))
+        (FiberProd.mk (Extend.inl χ hχ p) (Extend.inl ν hν e)) :=
+  chargeConjTwistEquiv_toEquiv_inl ..
+
+/-- An equivalence out of the charge conjugate of the twist `s ⊗ E`. Extending `P ×_X E` along `μ`
+and then along `χ` is extending it along `χ ∘ μ` (`TauCeti.OrthonormalFrameLift.extendCompEquiv`),
+so a continuous frame-preserving map `f` from `P ×_X E` to the principal bundle of `t` that
+intertwines `g` with `χ (μ g)` induces `(s.twist E).chargeConj ≃ t`, sending `[[z, a], h]` to
+`f z • χ a h`. -/
+private def chargeConjTwistEquivOfEquivariant (s t : SpinCStructure F V n)
+    (f : ∀ x, FiberProd s.P E x → t.P x)
+    (hf : ∀ x (z : FiberProd s.P E x) (g : SpinC × Circle),
+      f x (op g • z) = op (χ (μ g)) • f x z)
+    (hfc : Continuous fun z : TotalSpace (SpinC × Circle) (FiberProd s.P E) ↦
+        (⟨z.proj, f z.proj z.snd⟩ : TotalSpace SpinC t.P))
+    (hft : ∀ x (z : FiberProd s.P E x), t.toFrame ⟨x, f x z⟩ = s.toFrame ⟨x, z.fst⟩) :
+    (s.twist E).chargeConj.Equiv t :=
+  ((s.fiberProd Circle E).extendCompEquiv (ρ' := πᶜ) (ρ'' := πᶜ) μ hμ hπμ
+      spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+      spinCGroup.continuous_toSpecialOrthogonal_apply χ hχ hπχ
+      spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+      spinCGroup.continuous_toSpecialOrthogonal_apply).symm.trans
+    ((s.fiberProd Circle E).extendEquivOfEquivariant (ρ' := πᶜ) (MonoidHom.comp χ μ)
+      (by rw [MonoidHom.coe_comp]; exact Continuous.comp hχ hμ)
+      (by rw [← MonoidHom.comp_assoc, hπχ, hπμ])
+      spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
+      t f hf hfc hft)
+
+/-- The equivalence `TauCeti.SpinCStructure.chargeConjTwistEquivOfEquivariant` sends `[[z, a], h]`
+to `f z • χ a h`. -/
+private theorem chargeConjTwistEquivOfEquivariant_toEquiv_mk (s t : SpinCStructure F V n)
+    (f : ∀ x, FiberProd s.P E x → t.P x)
+    (hf : ∀ x (z : FiberProd s.P E x) (g : SpinC × Circle),
+      f x (op g • z) = op (χ (μ g)) • f x z)
+    (hfc : Continuous fun z : TotalSpace (SpinC × Circle) (FiberProd s.P E) ↦
+        (⟨z.proj, f z.proj z.snd⟩ : TotalSpace SpinC t.P))
+    (hft : ∀ x (z : FiberProd s.P E x), t.toFrame ⟨x, f x z⟩ = s.toFrame ⟨x, z.fst⟩) (x : X)
+    (z : FiberProd s.P E x) (a h : SpinC) :
+    (chargeConjTwistEquivOfEquivariant E s t f hf hfc hft).toEquiv x
+        (Extend.mk χ hχ (Extend.mk μ hμ (P := FiberProd s.P E) z a) h) =
+      op (χ a * h) • f x z := by
+  simp only [chargeConjTwistEquivOfEquivariant, OrthonormalFrameLift.Equiv.trans_toEquiv]
+  -- `[[z, a], h]` is the image of `[z, χ a h]` under `extendCompEquiv`.
+  exact (Equiv.trans_apply _ _ _).trans <| (congrArg _
+    ((s.fiberProd Circle E).extendCompEquiv_symm_toEquiv_mk_mk (ρ' := πᶜ) (ρ'' := πᶜ) μ hμ hπμ
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
+    χ hχ hπχ
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+    spinCGroup.continuous_toSpecialOrthogonal_apply x z a h)).trans <|
+    (s.fiberProd Circle E).extendEquivOfEquivariant_toEquiv_mk (ρ' := πᶜ) (x := x) (p := z) ..
+
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F V] [VectorBundle ℝ F V] in
+/-- The map `(p, e) ↦ [(p, [([p, 1], [e, 1]), 1]), 1]` from `P ×_X E` to the principal bundle of
+the twist of `s` by `(P ×_{det⁻¹} U(1)) ⊗ E⁻¹` intertwines `(g, w)` with
+`χ (g [1, w]) = g [1, (det g)⁻¹ w⁻¹]`. -/
+private theorem inl_fiberProdMk_inl_fiberProdMk_smul (s : SpinCStructure F V n) {x : X}
+    (z : FiberProd s.P E x) (g : SpinC × Circle) :
+    Extend.inl μ hμ
+        (P := FiberProd s.P (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E)))
+        (FiberProd.mk (FiberProd.fst (op g • z))
+          (Extend.inl τ hτ (FiberProd.mk (Extend.inl δ hδ (FiberProd.fst (op g • z)))
+            (Extend.inl ν hν (FiberProd.snd (op g • z)))))) =
+      Extend.mk μ hμ (FiberProd.mk z.fst
+          (Extend.inl τ hτ (FiberProd.mk (Extend.inl δ hδ z.fst) (Extend.inl ν hν z.snd))))
+        (χ (μ g)) := by
+  obtain ⟨g, w⟩ := g
+  rw [FiberProd.fst_smul, FiberProd.snd_smul, unop_op, Extend.inl_smul δ hδ, Extend.inl_smul ν hν,
+    ← FiberProd.op_smul_mk, Extend.inl_smul τ hτ, ← FiberProd.op_smul_mk, Extend.inl_smul μ hμ,
+    Extend.smul_inl]
+  simp [spinCGroup.chargeConj_mul_ofCircle]
+
+/-- **The charge conjugate of a twist, through the tensor product**: for a `Spinᶜ` structure `s`
+with principal bundle `P` and a principal `U(1)`-bundle `E`, the charge conjugate of `s ⊗ E` is
+equivalent to the twist of `s` by the tensor product `(P ×_{det⁻¹} U(1)) ⊗ E⁻¹` of the inverse
+determinant bundle of `s` (`TauCeti.SpinCStructure.inverseDeterminantBundle`) with the inverse of
+`E` (`TauCeti.PrincipalBundle.Tensor`, `TauCeti.PrincipalBundle.Inverse`). The equivalence sends
+`[[(p, e), a], h]` to `[(p, [([p, 1], [e, 1]), 1]), χ a h]`
+(`TauCeti.SpinCStructure.chargeConjTwistEquivTwist_toEquiv_mk`); it is well defined because
+`χ (g [1, w]) = g [1, (det g)⁻¹ w⁻¹]`. For the canonical `Spinᶜ` structure `s_ω` of an almost
+Hermitian four-manifold, identifying the determinant line of `s_ω` with the anticanonical line
+`K⁻¹`, which is not proved here, would turn this into Taubes's isomorphism
+`conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`. -/
+def chargeConjTwistEquivTwist (s : SpinCStructure F V n) :
+    (s.twist E).chargeConj.Equiv
+      (s.twist (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E))) :=
+  chargeConjTwistEquivOfEquivariant E s
+    (s.twist (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E)))
+    (fun _ z ↦ Extend.inl μ hμ
+      (P := FiberProd s.P (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E)))
+      (FiberProd.mk (FiberProd.fst (P := s.P) (Q := E) z)
+        (Extend.inl τ hτ (FiberProd.mk (Extend.inl δ hδ (FiberProd.fst (P := s.P) (Q := E) z))
+          (Extend.inl ν hν (FiberProd.snd (P := s.P) (Q := E) z))))))
+    (fun _ z g ↦
+      (inl_fiberProdMk_inl_fiberProdMk_smul E s z g).trans (Extend.smul_inl μ hμ _ _).symm)
+    ((Extend.continuous_inl
+        (FiberProd s.P (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E))) μ hμ).comp
+      (Continuous.totalSpaceMk_fiberProdMk FiberProd.continuous_totalSpaceMk_fst
+        ((Extend.continuous_inl
+            (FiberProd s.inverseDeterminantBundle (Inverse Circle E)) τ hτ).comp
+          (Continuous.totalSpaceMk_fiberProdMk
+            ((Extend.continuous_inl s.P δ hδ).comp FiberProd.continuous_totalSpaceMk_fst)
+            ((Extend.continuous_inl E ν hν).comp FiberProd.continuous_totalSpaceMk_snd)))))
+    (fun x z ↦ toFrame_twist_inl s x (FiberProd.fst (P := s.P) (Q := E) z) _)
+
+/-- **The equivalence `(s.twist E).chargeConj ≃ s.twist ((P ×_{det⁻¹} U(1)) ⊗ E⁻¹)` in a frame**:
+it sends `[[(p, e), a], h]` to `[(p, [([p, 1], [e, 1]), 1]), χ a h]`. -/
+@[simp]
+theorem chargeConjTwistEquivTwist_toEquiv_mk (s : SpinCStructure F V n) (x : X) (p : s.P x)
+    (e : E x) (a h : SpinC) :
+    (s.chargeConjTwistEquivTwist E).toEquiv x
+        (Extend.mk χ hχ (Extend.mk μ hμ (P := FiberProd s.P E) (FiberProd.mk p e) a) h) =
+      Extend.mk μ hμ
+        (P := FiberProd s.P (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E)))
+        (FiberProd.mk p
+          (Extend.inl τ hτ (FiberProd.mk (Extend.inl δ hδ p) (Extend.inl ν hν e))))
+        (χ a * h) :=
+  (chargeConjTwistEquivOfEquivariant_toEquiv_mk E s _ _ _ _ _ x _ a h).trans
+    (Extend.smul_inl μ hμ _ _)
+
+/-- **The equivalence `(s.twist E).chargeConj ≃ s.twist ((P ×_{det⁻¹} U(1)) ⊗ E⁻¹)` at
+`[[(p, e), 1], 1]`**: it sends `[[(p, e), 1], 1]` to `[(p, [([p, 1], [e, 1]), 1]), 1]`. -/
+@[simp]
+theorem chargeConjTwistEquivTwist_toEquiv_inl (s : SpinCStructure F V n) (x : X) (p : s.P x)
+    (e : E x) :
+    (s.chargeConjTwistEquivTwist E).toEquiv x
+        (Extend.inl χ hχ (Extend.inl μ hμ (P := FiberProd s.P E) (FiberProd.mk p e))) =
+      Extend.inl μ hμ
+        (P := FiberProd s.P (Tensor Circle s.inverseDeterminantBundle (Inverse Circle E)))
+        (FiberProd.mk p
+          (Extend.inl τ hτ (FiberProd.mk (Extend.inl δ hδ p) (Extend.inl ν hν e)))) := by
+  rw [Extend.inl_def χ, Extend.inl_def μ, chargeConjTwistEquivTwist_toEquiv_mk, map_one, one_mul]
+  exact (Extend.inl_def μ hμ _).symm
+
+end TensorTwist
 
 end SpinCStructure
 

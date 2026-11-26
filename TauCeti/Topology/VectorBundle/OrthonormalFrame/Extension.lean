@@ -362,6 +362,15 @@ theorem extendCompEquiv_toEquiv_inl (x : X) (p : s.P x) :
       Extend.inl τ hτ (Extend.inl σ hσ p) :=
   Extend.compEquiv_symm_inl σ hσ τ hτ p
 
+/-- The inverse of `TauCeti.OrthonormalFrameLift.extendCompEquiv` sends `[[p, h], k]` to
+`[p, τ h * k]`. -/
+theorem extendCompEquiv_symm_toEquiv_mk_mk (x : X) (p : s.P x) (h : H) (k : K) :
+    (s.extendCompEquiv σ hσ hσρ hρ'n hρ'c τ hτ hτρ hρ''n hρ''c).symm.toEquiv x
+        (Extend.mk τ hτ (Extend.mk σ hσ p h) k) =
+      Extend.mk (τ.comp σ) (hτ.comp hσ) p (τ h * k) := by
+  rw [Equiv.symm_toEquiv]
+  exact Extend.compEquiv_mk σ hσ τ hτ p h k
+
 end Comp
 
 end OrthonormalFrameLift
