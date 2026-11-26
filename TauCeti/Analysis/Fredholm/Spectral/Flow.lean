@@ -942,12 +942,8 @@ theorem spectralFlow_add_spectralFlow_eq_add (hab : a ≤ b) (huv : u ≤ v)
         (fun s hs ↦ hF s ⟨hs.1, hs.2.trans hqv⟩ t ht)
     simp only [Θ, hconcat ha, hconcat hb]
     linarith
-  have := isPreconnected_Icc.apply_eq_of_eventually_eq (f := Θ) (fun σ hσ ↦ by
-    filter_upwards [inter_mem_nhdsWithin (Icc u v) (ball_mem_nhds σ hδ)] with s ⟨hs, hsδ⟩
-    rw [Real.ball_eq_Ioo] at hsδ
-    rcases le_total s σ with h | h
-    · exact (key hs.1 h hσ.2 (by linarith [hsδ.1])).symm
-    · exact key hσ.1 h hs.2 (by linarith [hsδ.2])) ⟨huv, le_rfl⟩ ⟨le_rfl, huv⟩
+  have := apply_eq_of_forall_sub_lt (f := Θ) huv hδ fun p q hup hpq hqv hlt ↦
+    (key hup hpq hqv hlt).symm
   simp only [Θ, spectralFlow_self] at this
   linarith
 
