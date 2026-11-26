@@ -77,6 +77,8 @@ suffices, since the chart compressions only see such inputs
 
 ## Main results
 
+* `TauCeti.cutoffFrameCoeff_map_smul_eq_sum_sectionEntry`: a cut-off frame coefficient of
+  `P (Ψ u)` is a sum of matrix entries of `P` applied to cut-off frame coefficients of `u`.
 * `TauCeti.sectionClassicalPseudodifferentialOperators_le`: an operator of order `m - k`, `k ∈ ℕ`,
   has order `m`.
 * `TauCeti.mem_sectionClassicalPseudodifferentialOperators_of_mem_differentialOperators`: a
@@ -370,6 +372,29 @@ theorem sectionEntry_smulCommutator_pow (g : C^∞⟮𝓘(ℝ, CoordinateSpace n
   rw [sectionEntry_eq_comp, sectionEntry_eq_comp]
   obtain ⟨hρ, hσ⟩ := sectionEntry_intertwine t ψ hψ v t' χ hχ ℓ g
   exact (smulCommutator_pow_comp_comp hρ hσ P k).symm
+
+/-- **Cut-off frame coefficients through matrix entries.** Let `(bₖ)` be a basis of the model fibre
+`V` of `E`, with coordinate functionals `bₖ*`, and `Ψ` a real smooth function on whose support
+`ψ = 1`. The cut-off frame coefficient `χ ℓ(t' (P (Ψ u)))` of `P (Ψ u)` is the sum over `k` of the
+matrix entries `f ↦ χ ℓ(t' (P (f ψ t⁻¹ bₖ)))` of `P` applied to `Ψ gₖ`, where `gₖ = ψ bₖ*(t u)`
+are the cut-off frame coefficients of `u`. This reduces estimates for `P` to estimates for its
+scalar entries. -/
+theorem cutoffFrameCoeff_map_smul_eq_sum_sectionEntry [FiniteDimensional ℂ V]
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯)
+    {Ψ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯} (hψΨ : ∀ x ∈ tsupport Ψ, ψ x = 1) {κ : Type*}
+    [Fintype κ] (b : Module.Basis κ ℂ V) (u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    t'.cutoffFrameCoeff χ hχ ℓ (P (ContMDiffMap.ofReal Ψ • u)) =
+      ∑ k, TauCeti.sectionEntry t ψ hψ (b k) t' χ hχ ℓ P
+        (ContMDiffMap.ofReal Ψ * t.cutoffFrameCoeff ψ hψ (b.coord k).toContinuousLinearMap u) := by
+  have hΨ : tsupport Ψ ⊆ t.baseSet := fun x hx ↦
+    hψ (subset_tsupport _ (by rw [Function.mem_support, hψΨ x hx]; exact one_ne_zero))
+  -- `Ψ gₖ` is the cut-off frame coefficient of `u` cut off by `Ψ` itself, since `ψ = 1` there.
+  simp_rw [t.ofReal_mul_cutoffFrameCoeff_of_eq_one Ψ hΨ ψ hψ hψΨ,
+    sectionEntry_apply_eq_cutoffFrameCoeff, ← map_sum]
+  congr 2
+  ext x
+  rw [Bundle.Trivialization.sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply t Ψ hΨ ψ hψ hψΨ,
+    ContMDiffSection.smul_apply_of_normedAlgebra, ContMDiffMap.ofReal_apply]
 
 end Entry
 

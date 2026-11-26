@@ -178,6 +178,19 @@ theorem cutoffFrameCoeff_smul_of_normedAlgebra (χ : C^n⟮I, M; ℝ⟯) (hχ : 
   rw [Complex.real_smul, Complex.real_smul]
   ring
 
+/-- **Changing the cutoff of a cut-off frame coefficient.** If `ψ = 1` on the support of `Ψ`, then
+`Ψ` times the cut-off frame coefficient `ψ ℓ(t h)` is the cut-off frame coefficient `Ψ ℓ(t h)`. -/
+theorem ofReal_mul_cutoffFrameCoeff_of_eq_one (Ψ : C^n⟮I, M; ℝ⟯) (hΨ : tsupport Ψ ⊆ t.baseSet)
+    (ψ : C^n⟮I, M; ℝ⟯) (hψ : tsupport ψ ⊆ t.baseSet) (hψΨ : ∀ x ∈ tsupport Ψ, ψ x = 1)
+    (ℓ : W →L[ℂ] ℂ) (h : Cₛ^n⟮I; W, F⟯) :
+    ContMDiffMap.ofReal Ψ * t.cutoffFrameCoeff ψ hψ ℓ h = t.cutoffFrameCoeff Ψ hΨ ℓ h := by
+  ext x
+  simp only [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.ofReal_apply, cutoffFrameCoeff_apply,
+    Complex.real_smul]
+  by_cases hx : Ψ x = 0
+  · simp [hx]
+  · rw [hψΨ x (subset_tsupport _ hx), Complex.ofReal_one, one_mul]
+
 /-- On the base set of `t`, a real cut-off frame section `g t⁻¹ v` is the complex-linear inverse
 `t⁻¹ₓ` applied to `(g x : ℂ) • v`. -/
 theorem cutoffFrameSection_apply_eq_symmL (g : C^n⟮I, M; ℝ⟯) (hg : tsupport g ⊆ t.baseSet) (v : W)
