@@ -37,9 +37,10 @@ The manifold structures on `H` and on `K_H` are arbitrary, subject only to their
 structure in which these closed subgroups are embedded submanifolds. The vector space `𝔭_H`
 carries its smooth structure as a finite-dimensional real normed space.
 
-The proof restricts the Cartan diffeomorphism `Matrix.GeneralLinearGroup.cartanDiffeomorph` of
-`GL(n, 𝕜)` itself. Its inverse sends `g` to its unitary polar factor and to `log √(gᴴ g)`, which
-lie in `K_H` and in `𝔭_H` when `g ∈ H`, by `Subgroup.cartanHomeomorph`. A smooth map into
+The underlying equivalence is `Subgroup.cartanHomeomorph`, transported along the identifications
+of `K_H` and `𝔭_H` with its factor domains. Its smoothness is read off the Cartan diffeomorphism
+`Matrix.GeneralLinearGroup.cartanDiffeomorph` of `GL(n, 𝕜)` itself, whose inverse sends `g` to its
+unitary polar factor and to `log √(gᴴ g)`. A smooth map into
 `GL(n, 𝕜)` with values in `H` or in `K_H` is smooth into that subgroup, because the inclusion is an
 immersion, and a smooth matrix-valued map with values in the subspace `𝔭_H` is smooth into `𝔭_H`,
 through a continuous linear projection onto it.
@@ -50,14 +51,10 @@ to use these declarations, open the `Matrix.Norms.L2Operator` scope and enable
 
 ## Main definitions
 
-* `Subgroup.hermitianLieSubmodule H`: the real subspace `𝔭_H` of Hermitian matrices in the Lie
-  algebra of `H`.
 * `Subgroup.cartanDiffeomorph`: the smooth diffeomorphism `K_H × 𝔭_H ≃ₘ H`, `(k, X) ↦ k * exp X`.
 
 ## Main results
 
-* `Subgroup.mem_hermitianLieSubmodule_iff`: for closed `H`, `X ∈ 𝔭_H` exactly when `X` is
-  Hermitian and `exp (t X) ∈ H` for every real `t`.
 * `Subgroup.val_cartanDiffeomorph_apply`, `Subgroup.coe_cartanDiffeomorph_symm_apply_fst`,
   `Subgroup.coe_cartanDiffeomorph_symm_apply_snd`: the diffeomorphism sends `(k, X)` to
   `k * exp X`, and its inverse sends `g` to its unitary polar factor and to `log √(gᴴ g)`.
@@ -84,74 +81,34 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
-variable (H : Subgroup (GL n 𝕜)) in
-/-- The Hermitian part `𝔭_H` of the Lie algebra of a subgroup `H` of `GL n 𝕜`: the Hermitian
-matrices of `Subgroup.linearLieSubalgebra H`. For a closed `H` these are the Hermitian matrices
-whose exponential line lies in `H` (`Subgroup.mem_hermitianLieSubmodule_iff`). -/
-def hermitianLieSubmodule : Submodule ℝ (Matrix n n 𝕜) :=
-  selfAdjoint.submodule ℝ (Matrix n n 𝕜) ⊓ H.linearLieSubalgebra.toSubmodule
-
 variable {H : Subgroup (GL n 𝕜)}
 
-/-- A matrix lies in `𝔭_H` exactly when it is Hermitian and lies in the Lie algebra of `H`. -/
-theorem mem_hermitianLieSubmodule {X : Matrix n n 𝕜} :
-    X ∈ H.hermitianLieSubmodule ↔ IsSelfAdjoint X ∧ X ∈ H.linearLieSubalgebra :=
-  Iff.rfl
+variable (H) in
+/-- The unitary elements `K_H` of `H`, viewed as the unitary matrices whose unit lies in `H`: the
+unitary factor domain of `Subgroup.cartanHomeomorph`. -/
+private def unitaryInfEquiv :
+    (H ⊓ unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜)) ≃
+      {u : unitaryGroup n 𝕜 // Unitary.toUnits u ∈ H} :=
+  ((Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
+    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ unitarySubgroup (GL n 𝕜)) (· ∈ H)).symm).trans
+    (unitarySubgroupUnitsEquiv.symm.toEquiv.subtypeEquiv fun u ↦ by
+      rw [← TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply]
+      rfl).symm
 
-/-- For a closed subgroup `H` of `GL n 𝕜`, a matrix lies in the Hermitian part `𝔭_H` of the Lie
-algebra of `H` exactly when it is Hermitian and its whole exponential line lies in `H`. -/
-theorem mem_hermitianLieSubmodule_iff (hH : IsClosed (H : Set (GL n 𝕜))) {X : Matrix n n 𝕜} :
-    X ∈ H.hermitianLieSubmodule ↔
-      X.IsHermitian ∧ ∀ t : ℝ, ∃ h ∈ H, (h : Matrix n n 𝕜) = NormedSpace.exp (t • X) := by
-  rw [mem_hermitianLieSubmodule, forall_exists_mem_coe_eq_exp_smul_iff_mem_linearLieSubalgebra hH,
-    ← Matrix.isHermitian_iff_isSelfAdjoint]
-
-/-- The exponential of an element of `𝔭_H` lies in a closed subgroup `H`. -/
-private theorem expUnit_mem (hH : IsClosed (H : Set (GL n 𝕜))) (X : H.hermitianLieSubmodule) :
-    TauCeti.expUnit (X : Matrix n n 𝕜) ∈ H := by
-  simpa only [one_smul] using
-    mem_linearLieAlgebra_iff.1 ((H.mem_linearLieSubalgebra_iff hH).1 X.property.2) 1
-
-/-- The unitary elements of a closed subgroup of `GL n 𝕜` form a closed subgroup. -/
-theorem isClosed_inf_unitarySubgroup (hH : IsClosed (H : Set (GL n 𝕜))) :
-    IsClosed ((H ⊓ unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜)) : Set (GL n 𝕜)) :=
-  hH.inter (TauCeti.isClosed_unitarySubgroup_units (Matrix n n 𝕜))
-
-/-- The Hermitian factor `log √(gᴴ g)` of an element `g` of `H` lies in `𝔭_H`, when `H` is closed,
-stable under conjugate transpose and contains the exponential line through each of its positive
-elements. -/
-private theorem cfc_log_sqrt_mem (hH : IsClosed (H : Set (GL n 𝕜)))
-    (hstar : ∀ g ∈ H, star g ∈ H)
-    (hexp : ∀ x : Matrix n n 𝕜, IsSelfAdjoint x → TauCeti.expUnit x ∈ H →
-      ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ H) (g : H) :
-    cfc Real.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) ∈
-      H.hermitianLieSubmodule := by
-  set q := (H.cartanHomeomorph hstar hexp).symm g
-  have hq := H.coe_cartanHomeomorph_symm_apply_snd hstar hexp g
-  rw [CFC.log] at hq
-  rw [← hq]
-  exact ⟨q.2.val.property,
-    (H.mem_linearLieSubalgebra_iff hH).2 (mem_linearLieAlgebra_iff.2 q.2.property)⟩
-
-/-- The unitary polar factor of an element of `H` lies in `K_H`. -/
-private theorem toUnits_polarUnitary_mem_inf (hstar : ∀ g ∈ H, star g ∈ H)
-    (hexp : ∀ x : Matrix n n 𝕜, IsSelfAdjoint x → TauCeti.expUnit x ∈ H →
-      ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ H) (g : H) :
-    Unitary.toUnits (g : GL n 𝕜).polarUnitary ∈ H ⊓ unitarySubgroup (GL n 𝕜) := by
-  refine ⟨?_, ?_⟩
-  · have h := ((H.cartanHomeomorph hstar hexp).symm g).1.property
-    rwa [H.coe_cartanHomeomorph_symm_apply_fst hstar hexp g] at h
-  · have h := (unitarySubgroupUnitsEquiv.symm (g : GL n 𝕜).polarUnitary).property
-    rwa [TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply] at h
-
-/-- The unitary element of `U(n)` underlying an element of `K_H`. -/
-private def toUnitary (k : (H ⊓ unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜))) :
-    unitaryGroup n 𝕜 :=
-  unitarySubgroupUnitsEquiv ⟨k, k.property.2⟩
-
-private theorem toUnits_toUnitary (k : (H ⊓ unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜))) :
-    Unitary.toUnits (toUnitary k) = k := by
-  rw [toUnitary, ← TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply, MulEquiv.symm_apply_apply]
+/-- For a closed `H`, the Hermitian part `𝔭_H` of the Lie algebra of `H`, viewed as the Hermitian
+matrices whose exponential line lies in `H`: the Hermitian factor domain of
+`Subgroup.cartanHomeomorph`. -/
+private def hermitianLieSubmoduleEquiv (hH : IsClosed (H : Set (GL n 𝕜))) :
+    H.hermitianLieSubmodule ≃
+      {x : selfAdjoint (Matrix n n 𝕜) //
+        ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H} where
+  toFun X := ⟨⟨X, (mem_hermitianLieSubmodule.1 X.property).1⟩,
+    mem_linearLieAlgebra_iff.1
+      ((H.mem_linearLieSubalgebra_iff hH).1 (mem_hermitianLieSubmodule.1 X.property).2)⟩
+  invFun x := ⟨x, mem_hermitianLieSubmodule.2 ⟨x.val.property,
+    (H.mem_linearLieSubalgebra_iff hH).2 (mem_linearLieAlgebra_iff.2 x.property)⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
 
 variable (H) in
 /-- The Cartan decomposition `(k, X) ↦ k * exp X` of a closed subgroup `H` of `GL n 𝕜` satisfying
@@ -159,34 +116,41 @@ the hypotheses of `Subgroup.cartanHomeomorph`, as an equivalence `K_H × 𝔭_H 
 private def cartanEquiv (hH : IsClosed (H : Set (GL n 𝕜))) (hstar : ∀ g ∈ H, star g ∈ H)
     (hexp : ∀ x : Matrix n n 𝕜, IsSelfAdjoint x → TauCeti.expUnit x ∈ H →
       ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ H) :
-    (H ⊓ unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜)) × H.hermitianLieSubmodule ≃ H where
-  toFun p := ⟨(p.1 : GL n 𝕜) * TauCeti.expUnit (p.2 : Matrix n n 𝕜),
-    H.mul_mem p.1.property.1 (expUnit_mem hH p.2)⟩
-  invFun g := (⟨_, toUnits_polarUnitary_mem_inf hstar hexp g⟩,
-    ⟨_, cfc_log_sqrt_mem hH hstar hexp g⟩)
-  left_inv p := by
-    -- The pair `(k, X)` is the preimage of `k * exp X` under the Cartan decomposition of `GL n 𝕜`.
-    have hX : IsSelfAdjoint (p.2 : Matrix n n 𝕜) := p.2.property.1
-    have hp : GeneralLinearGroup.cartanHomeomorph n 𝕜 (toUnitary p.1, ⟨p.2, hX⟩) =
-        (p.1 : GL n 𝕜) * TauCeti.expUnit (p.2 : Matrix n n 𝕜) := by
-      ext : 1
-      rw [GeneralLinearGroup.val_cartanHomeomorph_apply, Units.val_mul, TauCeti.expUnit_coe,
-        ← Unitary.val_toUnits_apply, toUnits_toUnitary]
-    have h := (GeneralLinearGroup.cartanHomeomorph n 𝕜).symm_apply_apply (toUnitary p.1, ⟨p.2, hX⟩)
-    rw [hp] at h
-    refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
-    · dsimp only
-      rw [← GeneralLinearGroup.cartanHomeomorph_symm_apply_fst, h, toUnits_toUnitary]
-    · dsimp only
-      rw [← GeneralLinearGroup.coe_cartanHomeomorph_symm_apply_snd, h]
-  right_inv g := by
-    refine Subtype.ext (Units.ext ?_)
-    have h := congrArg (fun g : GL n 𝕜 ↦ (g : Matrix n n 𝕜))
-      ((GeneralLinearGroup.cartanHomeomorph n 𝕜).apply_symm_apply (g : GL n 𝕜))
-    simp only [GeneralLinearGroup.val_cartanHomeomorph_apply,
-      GeneralLinearGroup.cartanHomeomorph_symm_apply_fst,
-      GeneralLinearGroup.coe_cartanHomeomorph_symm_apply_snd] at h
-    simpa only [Units.val_mul, TauCeti.expUnit_coe, Unitary.val_toUnits_apply] using h
+    (H ⊓ unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜)) × H.hermitianLieSubmodule ≃ H :=
+  ((unitaryInfEquiv H).prodCongr (hermitianLieSubmoduleEquiv hH)).trans
+    (H.cartanHomeomorph hstar hexp).toEquiv
+
+section CartanEquiv
+
+variable (hH : IsClosed (H : Set (GL n 𝕜))) (hstar : ∀ g ∈ H, star g ∈ H)
+  (hexp : ∀ x : Matrix n n 𝕜, IsSelfAdjoint x → TauCeti.expUnit x ∈ H →
+    ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ H)
+
+/-- The Cartan equivalence sends `(k, X)` to `k * exp X`. -/
+private theorem coe_cartanEquiv_apply
+    (p : (H ⊓ unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜)) × H.hermitianLieSubmodule) :
+    (cartanEquiv H hH hstar hexp p : GL n 𝕜) =
+      (p.1 : GL n 𝕜) * TauCeti.expUnit (p.2 : Matrix n n 𝕜) :=
+  Units.ext <| by
+    rw [Units.val_mul, TauCeti.expUnit_coe]
+    exact Subgroup.val_cartanHomeomorph_apply hstar hexp _
+
+/-- The unitary factor of the inverse Cartan equivalence is the polar unitary factor. -/
+private theorem coe_cartanEquiv_symm_apply_fst (g : H) :
+    (((cartanEquiv H hH hstar hexp).symm g).1 : GL n 𝕜) =
+      Unitary.toUnits (g : GL n 𝕜).polarUnitary := by
+  rw [← Subgroup.coe_cartanHomeomorph_symm_apply_fst hstar hexp g,
+    ← TauCeti.coe_unitarySubgroupUnitsEquiv_symm_apply]
+  rfl
+
+/-- The Hermitian factor of the inverse Cartan equivalence is `log √(gᴴ g)`. -/
+private theorem coe_cartanEquiv_symm_apply_snd (g : H) :
+    (((cartanEquiv H hH hstar hexp).symm g).2 : Matrix n n 𝕜) =
+      cfc Real.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) := by
+  rw [← CFC.log, ← Subgroup.coe_cartanHomeomorph_symm_apply_snd hstar hexp g]
+  rfl
+
+end CartanEquiv
 
 variable {EH EK : Type*} [NormedAddCommGroup EH] [NormedSpace ℝ EH] [ChartedSpace EH H]
   [NormedAddCommGroup EK] [NormedSpace ℝ EK]
@@ -227,25 +191,28 @@ def cartanDiffeomorph (hH : IsClosed (H : Set (GL n 𝕜))) (hstar : ∀ g ∈ H
       exact contDiff_mul.comp_contMDiff
         (((Units.contMDiff_val.comp hιK.contMDiff).comp contMDiff_fst).prodMk_space
           ((Units.contMDiff_val.comp hexpX).comp contMDiff_snd))
+    have hGL' : ContMDiff (𝓘(ℝ, EK).prod 𝓘(ℝ, H.hermitianLieSubmodule)) 𝓘(ℝ, Matrix n n 𝕜) ∞
+        (fun p ↦ (cartanEquiv H hH hstar hexp p : GL n 𝕜)) :=
+      hGL.congr (coe_cartanEquiv_apply hH hstar hexp)
     exact (ContMDiff.iff_comp_isImmersion hιH).2
-      ⟨hGL.continuous.subtype_mk _, hGL⟩
+      ⟨Topology.IsInducing.subtypeVal.continuous_iff.2 hGL'.continuous, hGL'⟩
   contMDiff_invFun := by
     -- The polar unitary factor of `g`, read in `GL n 𝕜`, is smooth, and so is `log √(gᴴ g)`.
     have hU : ContMDiff 𝓘(ℝ, EH) 𝓘(ℝ, Matrix n n 𝕜) ∞
-        (fun g : H ↦ Unitary.toUnits (g : GL n 𝕜).polarUnitary) :=
-      contMDiff_toUnits_polarUnitary.comp hιH.contMDiff
+        (fun g : H ↦ (((cartanEquiv H hH hstar hexp).symm g).1 : GL n 𝕜)) :=
+      (contMDiff_toUnits_polarUnitary.comp hιH.contMDiff).congr
+        (coe_cartanEquiv_symm_apply_fst hH hstar hexp)
     have hlog : ContMDiff 𝓘(ℝ, EH) 𝓘(ℝ, Matrix n n 𝕜) ∞
-        (fun g : H ↦ cfc Real.log
-          (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜)))) := by
-      refine ((selfAdjoint.contDiff_subtype_val ℝ).contMDiff.comp (contMDiff_snd.comp
+        (fun g : H ↦ (((cartanEquiv H hH hstar hexp).symm g).2 : Matrix n n 𝕜)) :=
+      ((selfAdjoint.contDiff_subtype_val ℝ).contMDiff.comp (contMDiff_snd.comp
         ((GeneralLinearGroup.cartanDiffeomorph n 𝕜).symm.contMDiff.comp hιH.contMDiff))).congr
-          fun g ↦ ?_
-      exact (GeneralLinearGroup.coe_cartanDiffeomorph_symm_apply_snd (g : GL n 𝕜)).symm
+          fun g ↦ (coe_cartanEquiv_symm_apply_snd hH hstar hexp g).trans
+            (GeneralLinearGroup.coe_cartanDiffeomorph_symm_apply_snd (g : GL n 𝕜)).symm
     -- A continuous linear projection onto `𝔭_H` makes the Hermitian factor smooth into `𝔭_H`.
     obtain ⟨π, hπ⟩ := Submodule.ClosedComplemented.of_finiteDimensional H.hermitianLieSubmodule
-    refine ContMDiff.prodMk ((ContMDiff.iff_comp_isImmersion hιK).2
-      ⟨hU.continuous.subtype_mk _, hU⟩) ((π.contDiff.comp_contMDiff hlog).congr fun g ↦ ?_)
-    exact (hπ ⟨_, cfc_log_sqrt_mem hH hstar hexp g⟩).symm
+    exact ContMDiff.prodMk ((ContMDiff.iff_comp_isImmersion hιK).2
+      ⟨Topology.IsInducing.subtypeVal.continuous_iff.2 hU.continuous, hU⟩)
+      ((π.contDiff.comp_contMDiff hlog).congr fun g ↦ (hπ _).symm)
 
 variable (hH : IsClosed (H : Set (GL n 𝕜))) (hstar : ∀ g ∈ H, star g ∈ H)
   (hexp : ∀ x : Matrix n n 𝕜, IsSelfAdjoint x → TauCeti.expUnit x ∈ H →
@@ -261,22 +228,22 @@ theorem val_cartanDiffeomorph_apply
     ((H.cartanDiffeomorph hH hstar hexp hιH hιK p : GL n 𝕜) : Matrix n n 𝕜) =
       ((p.1 : GL n 𝕜) : Matrix n n 𝕜) * NormedSpace.exp (p.2 : Matrix n n 𝕜) := by
   rw [← TauCeti.expUnit_coe, ← Units.val_mul]
-  rfl
+  exact congrArg Units.val (coe_cartanEquiv_apply hH hstar hexp p)
 
 /-- The unitary factor of the smooth Cartan decomposition of `g ∈ H` is the polar unitary factor
 of `g`. -/
 @[simp]
 theorem coe_cartanDiffeomorph_symm_apply_fst (g : H) :
     (((H.cartanDiffeomorph hH hstar hexp hιH hιK).symm g).1 : GL n 𝕜) =
-      Unitary.toUnits (g : GL n 𝕜).polarUnitary := by
-  rfl
+      Unitary.toUnits (g : GL n 𝕜).polarUnitary :=
+  coe_cartanEquiv_symm_apply_fst hH hstar hexp g
 
 /-- The Hermitian factor of the smooth Cartan decomposition of `g ∈ H` is the logarithm of
 `√(gᴴ g)`. -/
 @[simp]
 theorem coe_cartanDiffeomorph_symm_apply_snd (g : H) :
     (((H.cartanDiffeomorph hH hstar hexp hιH hιK).symm g).2 : Matrix n n 𝕜) =
-      cfc Real.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) := by
-  rfl
+      cfc Real.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) :=
+  coe_cartanEquiv_symm_apply_snd hH hstar hexp g
 
 end Subgroup
