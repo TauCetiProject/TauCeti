@@ -30,18 +30,17 @@ gives the dimension formulas of algebraic modular forms on a group compact at in
   `u ∈ Z` add up to `|Z| · mass J · dim M` when `ω = 1` and to `0` otherwise;
 * when every stabiliser is trivial, `dim S_Γ(J, M) = #(Γ \ G / J) · dim M = mass J · dim M`, and
   for `J' ≤ J` of finite index all of whose stabilisers are trivial,
-  `dim S_Γ(J', M) = [J : J'] · mass J · dim M` by the index formula `TauCeti.orbitMass_of_le`.
+  `dim S_Γ(J', M) = [J : J'] · mass J · dim M` by the index formula
+  `TauCeti.orbitMass_eq_relIndex_mul_of_le`.
 
-The roadmap writes the stabilisers as `Γ_i = Γ ∩ t_i J t_i⁻¹`, acting on `M` through
-`γ ↦ ρ(t_i⁻¹ γ t_i)`. Conjugation by `t_i = c q` identifies `Γ_i` with `S_q` and this action
-with the level action of `S_q`, so the two trace sums agree; here the stabilisers are taken inside
-`J`, where `M` is a representation, as in `Representation.levelFormsEquivPi`.
+In Gross's convention the stabilisers are `Γ_i = Γ ∩ t_i J t_i⁻¹`, acting on `M` through
+`γ ↦ ρ(t_i⁻¹ γ t_i)`; conjugation by `t_i = c q` identifies `Γ_i` with `S_q`
+(`TauCeti.natCard_mackeySubgroup_inv_subgroupOf`). Here the stabilisers are taken inside `J`,
+where `M` is a representation, as in `Representation.levelFormsEquivPi`.
 
 ## Main results
 
 * `Representation.finrank_levelForms`: `dim S_Γ(J, M) = ∑_q dim M^{S_q}`.
-* `Representation.natCast_finrank_invariants_comp_op_subtype`: the dimension of the invariants
-  of a finite subgroup as the average of the character.
 * `Representation.natCast_finrank_levelForms`: the character form
   `dim S_Γ(J, M) = ∑_q |S_q|⁻¹ ∑_{u ∈ S_q} tr(u | M)`.
 * `Representation.natCast_finrank_levelForms_eq_central`: the central-term form.
@@ -69,23 +68,6 @@ open MulOpposite Module TauCeti
 namespace Representation
 
 variable {K M : Type*} [Field K] [AddCommGroup M] [Module K M]
-
-/-- **The dimension of the invariants of a finite subgroup is the average of the character.**
-For a right action of a group `H` on `M`, written as a representation of `Hᵐᵒᵖ`, and a subgroup
-`S` of `H` whose order is finite and nonzero in `K`, `dim M^S = |S|⁻¹ ∑_{u ∈ S} tr(u | M)`. -/
-theorem natCast_finrank_invariants_comp_op_subtype [FiniteDimensional K M]
-    {H : Type*} [Group H] (ρ : Representation K Hᵐᵒᵖ M) (S : Subgroup H)
-    (hS : (Nat.card S : K) ≠ 0) :
-    (finrank K (invariants (ρ.comp (MonoidHom.op S.subtype))) : K) =
-      (Nat.card S : K)⁻¹ * ∑ᶠ u : S, ρ.character (op (u : H)) := by
-  have := Nat.finite_of_card_ne_zero fun h ↦ hS (by rw [h, Nat.cast_zero])
-  have := Fintype.ofFinite S
-  have : Fintype Sᵐᵒᵖ := Fintype.ofEquiv S MulOpposite.opEquiv
-  have hS' : Nat.card Sᵐᵒᵖ = Nat.card S := Nat.card_congr MulOpposite.opEquiv.symm
-  have : Invertible (Nat.card Sᵐᵒᵖ : K) := invertibleOfNonzero (by rwa [hS'])
-  rw [← card_inv_mul_sum_char_eq_finrank, hS', finsum_eq_sum_of_fintype, character_comp]
-  congr 1
-  exact (Fintype.sum_equiv MulOpposite.opEquiv _ _ fun _ ↦ rfl).symm
 
 variable {G : Type*} [Group G] {J : Subgroup G} (ρ : Representation K Jᵐᵒᵖ M) (Γ : Subgroup G)
 variable (c : DoubleCoset.Quotient (Γ : Set G) J → G) (hc : ∀ q, DoubleCoset.mk Γ J (c q) = q)
@@ -122,8 +104,7 @@ private theorem ratCast_orbitMass [CharZero K] [Finite (DoubleCoset.Quotient (Γ
   have := Fintype.ofFinite (DoubleCoset.Quotient (Γ : Set G) J)
   rw [orbitMass_eq_finsum_doubleCoset_stabilizer c hc, finsum_eq_sum_of_fintype,
     finsum_eq_sum_of_fintype]
-  push_cast
-  rfl
+  simp only [Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
 
 /-- **Splitting off a central subgroup from a trace sum.** If `Z ≤ Γ ∩ J` is central in `G` and
 acts on `M` through a character `ω`, it lies in every stabiliser `S_q = J ∩ (c q)⁻¹ Γ (c q)`, and
@@ -152,13 +133,15 @@ private theorem finsum_character_eq_central (q : DoubleCoset.Quotient (Γ : Set 
   have := Fintype.ofFinite Z
   rw [← finsum_mem_univ, ← Set.union_compl_self {u : S | ((u : J) : G) ∈ Z},
     finsum_mem_union disjoint_compl_right (Set.toFinite _) (Set.toFinite _)]
-  congr 1
+  refine congrArg₂ (· + ·) ?_ ?_
   · -- the elements of `Z` act by scalars, and `∑_{z ∈ Z} ω z` is `|Z|` or `0`
     simp only [Set.mem_ofPred_eq]
     rw [← finsum_subtype_eq_finsum_cond, ← finsum_comp_equiv e.symm]
     simp only [Equiv.coe_fn_symm_mk, e, character_eq_finrank_mul_of_apply_eq_smul ρ (hω _)]
     rw [← mul_finsum, finsum_eq_sum_of_fintype, sum_hom_units, mul_comm]
     split_ifs <;> simp [Nat.card_eq_fintype_card]
+  · -- membership in the complement is the `∉` condition
+    simp only [Set.mem_compl_iff, Set.mem_ofPred_eq]
 
 include hc in
 /-- **The dimension of the level forms, central-term form.** Let `Z ≤ Γ ∩ J` be central in `G`
@@ -257,6 +240,6 @@ theorem finrank_levelForms_eq_relIndex_mul_orbitMass_mul {J' : Subgroup G} (hle 
   have := Finite.of_equiv _ (doubleCosetQuotientEquivOrbitRelQuotient Γ J').symm
   have h' := orbitMass_eq_natCard_of_mackeySubgroup_eq_bot h
   rw [finrank_levelForms_of_mackeySubgroup_eq_bot _ Γ h, Nat.cast_mul, ← h',
-    orbitMass_of_le hle]
+    orbitMass_eq_relIndex_mul_of_le hle]
 
 end Representation
