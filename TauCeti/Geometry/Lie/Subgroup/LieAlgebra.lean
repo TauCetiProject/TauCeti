@@ -81,6 +81,8 @@ closed-subgroup theorem, promoting `K` to an embedded Lie subgroup with `Lie(K) 
 * `TauCeti.Lie.hasDerivAt_Ad_lieExp_smul_apply_zero`: the adjoint orbit `s ↦ Ad (lieExp (s • X)) Y`
   has derivative `⁅X, Y⁆` at the origin. This is the derivation-level infinitesimal adjoint, the
   analytic input to bracket closure.
+* `TauCeti.Lie.lie_mem_of_forall_Ad_mem`: a subspace of `𝔤` invariant under every `Ad g` is
+  invariant under every `ad X`.
 * `TauCeti.Lie.finiteDimensional_lieSubalgebraOfSubgroup`: finite-dimensional subgroup models.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_le_iff`: the universal property of the generated subalgebra,
   for an arbitrary subgroup.
@@ -92,6 +94,8 @@ closed-subgroup theorem, promoting `K` to an embedded Lie subgroup with `Lie(K) 
   subset of `𝔤`.
 * `TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`: the Lie algebra of `K` is invariant under the
   adjoint action of the normalizer of `K`.
+* `TauCeti.Lie.exists_lieIdeal_eq_lieSubalgebraOfSubgroup_of_normal`: the Lie algebra of a normal
+  subgroup is a Lie ideal.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_le_comap_Ad_sub_id`: for `g` in the normalizer of `K`,
   `Ad g - 1` maps `Lie(K)` into itself, in the form that `Submodule.mapQ` consumes.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_inf`: for closed subgroups, the Lie algebra of an
@@ -235,6 +239,22 @@ theorem hasDerivAt_Ad_lieExp_smul_apply_zero (X Y : LeftInvariantDerivation I G)
     (x := (fun s : ℝ => (e (Ad (I := I) (lieExp (I := I) (s • X)) Y) : E)) 0)).comp_hasDerivAt
       0 key
   simpa [Function.comp_def] using hcomp
+
+omit [T2Space G] in
+/-- **An `Ad`-invariant subspace is `ad`-invariant.** If every `Ad g` preserves a subspace `S` of
+`𝔤`, then so does every `ad X`: `⁅X, Y⁆` is the derivative at `0` of the curve
+`s ↦ Ad (lieExp (s • X)) Y` in `S`, and `S` is closed, being finite-dimensional. -/
+theorem lie_mem_of_forall_Ad_mem {S : Submodule ℝ (LeftInvariantDerivation I G)}
+    (hS : ∀ g : G, ∀ Y ∈ S, Ad (I := I) g Y ∈ S) (X : LeftInvariantDerivation I G)
+    {Y : LeftInvariantDerivation I G} (hY : Y ∈ S) : ⁅X, Y⁆ ∈ S := by
+  have _ : T2Space G := I.t2Space_of_lieGroup ∞
+  have _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  refine S.isClosed_of_finiteDimensional.mem_of_tendsto
+    (hasDerivAt_iff_tendsto_slope.mp (hasDerivAt_Ad_lieExp_smul_apply_zero X Y))
+    (Eventually.of_forall fun s => ?_)
+  rw [slope_def_module]
+  exact S.smul_mem _ (S.sub_mem (hS _ _ hY) (hS _ _ hY))
 
 /-! ### Bracket closure -/
 
@@ -450,6 +470,19 @@ theorem Ad_mem_lieSubalgebraOfSubgroup {K : Subgroup G} {g : G}
   lieSubalgebraOfSubgroup_le_iff
       (L := (lieSubalgebraOfSubgroup (I := I) K).comap (Ad (I := I) g).toLieHom)
       |>.mpr (fun _ hY => mem_lieSubalgebraOfSubgroup_of_forall (lieExp_smul_Ad_mem hg hY)) hX
+
+/-- **The Lie algebra of a normal subgroup is a Lie ideal.** No hypothesis on the subgroup or on
+`G` is needed: `Ad g` preserves the Lie algebra of `K` for every `g` in the normalizer of `K`, which
+is all of `G`, and an `Ad`-invariant subspace is `ad`-invariant. -/
+theorem exists_lieIdeal_eq_lieSubalgebraOfSubgroup_of_normal (K : Subgroup G) [K.Normal] :
+    ∃ 𝔞 : LieIdeal ℝ (LeftInvariantDerivation I G),
+      (𝔞 : LieSubalgebra ℝ (LeftInvariantDerivation I G)) = lieSubalgebraOfSubgroup (I := I) K := by
+  rw [LieSubalgebra.exists_lieIdeal_coe_eq_iff]
+  intro X Y hY
+  refine lie_mem_of_forall_Ad_mem (S := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
+    (fun g Z hZ => Ad_mem_lieSubalgebraOfSubgroup ?_ hZ) X hY
+  rw [Subgroup.normalizer_eq_top]
+  exact Subgroup.mem_top g
 
 /-- **`Ad g - 1` preserves the Lie algebra of `K` for `g ∈ N(K)`**, in the form that lets it
 descend to the quotient `𝔤 ⧸ Lie(K)` through `Submodule.mapQ`. -/
