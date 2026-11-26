@@ -28,12 +28,12 @@ vortices of a family of divisors, `π` and `Q` depend smoothly on `p`. Gluing pl
 solutions of the four-dimensional equations uses these operators and their derivatives in `p` on
 errors that decay exponentially away from the vortex cores, measured with the weight
 `exp(c ρ)`, `ρ(z) = √(1 + |z|²)`, `|c| < 1/2`. This file proves the weighted `L²` estimates for
-`π`, `Q` and their first derivatives in `p`, and the weighted Sobolev estimates for these
-derivatives, with constants that depend only on the degree `m`, a radius `R₀` containing the
-zeros, and `c` (and, for the Sobolev estimates, the order and a bound on the derivatives of the
-vortex). They hold uniformly over a window of divisors,
-collisions included, and their size is proportional to the size of the derivative of the
-coefficient. Here `‖g‖_c` denotes the weighted norm `‖exp(c ρ) g‖₂` of the values of `g`.
+`π`, `Q` and their first and second derivatives in `p`, and the weighted Sobolev estimates for
+the first derivatives, with constants that depend only on the degree `m`, a radius `R₀`
+containing the zeros, and `c` (and, for the Sobolev estimates, the order and a bound on the
+derivatives of the vortex). They hold uniformly over a window of divisors, collisions included,
+and their size is proportional to the size of the derivatives of the coefficient. Here `‖g‖_c`
+denotes the weighted norm `‖exp(c ρ) g‖₂` of the values of `g`.
 
 * **The splitting.** The kernel of `L_a` is the weak `L²` kernel (`sobolevGaugeFixedKernelEquiv`),
   whose elements decay at every rate below `1/2` uniformly over the window
@@ -80,7 +80,25 @@ coefficient. Here `‖g‖_c` denotes the weighted norm `‖exp(c ρ) g‖₂` o
   through order `k`. Sobolev norms are those of the coordinates in Mathlib's Bessel-potential
   spaces `H^s(ℂ)`.
 
-Higher derivatives in the parameter are not treated here.
+* **Second derivatives.** For a family `a` that is `C²` at `p₀`, write `Q''` and `π''` for the
+  derivatives along `w` of `p ↦ DQ(p) v` and `p ↦ Dπ(p) v`, and `a''` for that of `p ↦ Da(p) v`.
+  Differentiating the identities `L Q = 1`, `L π = 0` and the orthogonality relations twice gives
+  the components of `Q'' f` and `π'' e` orthogonal to the kernel, `-Q (Z(a'', g₀) + Z(Da v, g₁) +
+  Z(Da w, g₂))` with `gᵢ` among `Q f`, `Q' f`, `π e`, `π' e`, and the pairings of their kernel
+  components with a kernel element `k` as sums of three pairings involving `Q (Z(·, k))` and `π' k`
+  (`IsFredholm.sub_orthogonalKerProjection_fderiv_fun_fderiv_orthogonalRightInverse_apply`,
+  `ContinuousLinearMap.IsFredholm.inner_fderiv_fun_fderiv_orthogonalRightInverse_apply` and their
+  analogues for `π`). Moving the weight across each pairing
+  (`TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_sum_abs_inner`), with the first-derivative estimates
+  at both rates `±c`, gives
+  `‖exp(c ρ) Q'' f‖₂ ≤ K (‖a''‖∞ + ‖Da v‖∞ ‖Da w‖∞) ‖exp(c ρ) f‖₂`
+  (`exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalRightInverse_le`) and
+  `‖exp(c ρ) π'' e‖₂ ≤ K (‖a''‖∞ + ‖Da v‖∞ ‖Da w‖∞) ‖exp(c ρ) e‖₂`
+  (`exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjection_le`), with `K`
+  depending only on `m`, `R₀` and `c`.
+
+Derivatives in the parameter of order three and higher, and weighted Sobolev versions of the second
+derivative estimates, are not treated here.
 
 ## References
 
@@ -256,8 +274,39 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le {c : ℝ} {q 
       ring
 
 /-- **The kernel component.** Let `π` be the projection onto the kernel of `T` along its
-`L²`-orthogonal complement and `Q` a right inverse of `T`, and let `y`, `A` be such that the
-pairings of `y` with the kernel are bounded by `|⟪y, k⟫| ≤ |⟪Q (Z(b, k)), A⟫|`. If the weight
+`L²`-orthogonal complement, and let `y`, `eᵢ`, `Aᵢ` be such that the pairings of `y` with the
+kernel are bounded by sums of pairings, `|⟪y, k⟫| ≤ ∑ i ∈ s, |⟪eᵢ k, Aᵢ⟫|`. If the weight costs at
+most `kc` on the kernel at the rate `c`, and at most `qᵢ` on `eᵢ k` at the rate `-c` relative to
+`‖k‖₂`, then
+
+`‖exp(c ρ) y‖₂ ≤ kc ∑ i ∈ s, qᵢ ‖exp(c ρ) Aᵢ‖₂ + ‖exp(c ρ) (y - π y)‖₂`. -/
+private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le_sum_abs_inner {c : ℝ}
+    {kc : ℝ≥0} {ι : Type*} {s : Finset ι} {q : ι → ℝ≥0}
+    {T : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
+    {π : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
+    (hπ : IsOrthogonalKerProjection sobolevFieldValues T π)
+    (hkc : ∀ k ∈ T.ker, eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+      sobolevFieldValues k z) 2 μ⊤ ≤ kc * eLpNorm (sobolevFieldValues k) 2 μ⊤)
+    {e : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) → ι → Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
+    (he : ∀ k ∈ T.ker, ∀ i ∈ s, eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • e k i z) 2 μ⊤ ≤
+      q i * eLpNorm (sobolevFieldValues k) 2 μ⊤)
+    (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) {A : ι → Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
+    (hpair : ∀ k ∈ T.ker, |⟪sobolevFieldValues y, sobolevFieldValues k⟫| ≤
+      ∑ i ∈ s, |⟪e k i, A i⟫|) :
+    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues y z) 2 μ⊤ ≤
+      kc * ∑ i ∈ s, q i * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • A i z) 2 μ⊤ +
+      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (y - π y) z) 2 μ⊤ := by
+  have hp := hπ.mem_ker y
+  -- `‖π y‖₂² = ⟪y, π y⟫`, since `y - π y` is orthogonal to the kernel.
+  have hinner : ‖sobolevFieldValues (π y)‖ ^ 2 ≤ ∑ i ∈ s, |⟪e (π y) i, A i⟫| :=
+    hπ.real_inner_apply_eq_norm_sq y ▸ (le_abs_self _).trans (hpair _ hp)
+  refine (le_of_eq_of_le ?_ (Lp.eLpNorm_smul_add_le one_le_two _ _ _)).trans (add_le_add_left
+    (TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_sum_abs_inner (hkc _ hp) (he _ hp) hinner) _)
+  rw [← map_add, add_sub_cancel]
+
+/-- **The kernel component for one pairing.** Let `π` be the projection onto the kernel of `T`
+along its `L²`-orthogonal complement and `Q` a right inverse of `T`, and let `y`, `A` be such that
+the pairings of `y` with the kernel are bounded by `|⟪y, k⟫| ≤ |⟪Q (Z(b, k)), A⟫|`. If the weight
 costs at most `kc`, `kn` on the kernel at the rates `c`, `-c`, and at most `qn` on `Q` at the rate
 `-c`, then the kernel component of `y` costs at most `kc qn ‖Z‖ ‖b‖∞ kn ‖exp(c ρ) A‖₂`:
 
@@ -283,21 +332,14 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le {c : 
       (kc * (qn * ‖gaugeFixedZerothOrder‖₊ * ‖b‖₊ * kn) : ℝ≥0) *
         eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • A z) 2 μ⊤ +
       eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (y - π y) z) 2 μ⊤ := by
-  have hp := hπ.mem_ker y
-  -- `‖π y‖₂² = ⟪y, π y⟫`, since `y - π y` is orthogonal to the kernel.
-  have hinner : ‖sobolevFieldValues (π y)‖ ^ 2 ≤
-      |⟪sobolevFieldValues (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b
-        (sobolevFieldValues (π y)))), A⟫| := by
-    exact hπ.real_inner_apply_eq_norm_sq y ▸ (le_abs_self _).trans (hpair _ hp)
-  -- The weight `exp(-c ρ)` costs at most `qn ‖Z‖ ‖b‖∞ kn` on `Q (Z(b, π y))`, relative to `‖π y‖₂`.
-  have hqe : eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
-      (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues (π y)))) z) 2 μ⊤ ≤
-        (qn * ‖gaugeFixedZerothOrder‖₊ * ‖b‖₊ * kn : ℝ≥0) *
-          eLpNorm (sobolevFieldValues (π y)) 2 μ⊤ :=
-    eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hQn b (hkn _ hp)
-  refine (le_of_eq_of_le ?_ (Lp.eLpNorm_smul_add_le one_le_two _ _ _)).trans (add_le_add_left
-    (TauCeti.eLpNorm_exp_mul_smul_le_of_sq_le_abs_inner (hkc _ hp) hqe hinner) _)
-  rw [← map_add, add_sub_cancel]
+  -- The weight `exp(-c ρ)` costs at most `qn ‖Z‖ ‖b‖∞ kn` on `Q (Z(b, k))`, relative to `‖k‖₂`.
+  simpa [mul_assoc] using eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le_sum_abs_inner
+    (s := Finset.univ) (q := fun _ : Unit ↦ qn * ‖gaugeFixedZerothOrder‖₊ * ‖b‖₊ * kn)
+    (e := fun k _ ↦ sobolevFieldValues
+      (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues k))))
+    (A := fun _ ↦ A) hπ hkc
+    (fun k hk _ _ ↦ eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hQn b (hkn k hk)) y
+    (fun k hk ↦ by simpa using hpair k hk)
 
 /-- The weighted estimates for the kernel of the realization and for its orthogonal right inverse,
 at the rates `c` and `-c`, with constants common to a window of divisors, in the volume restricted
@@ -462,6 +504,20 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_f
       push_cast
       ring
 
+/-- If `‖exp(c ρ) π e‖₂ ≤ kπ ‖exp(c ρ) e‖₂`, then
+`‖exp(c ρ) (e - π e)‖₂ ≤ (1 + kπ) ‖exp(c ρ) e‖₂`. -/
+private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_sub_le {c : ℝ} {kπ : ℝ≥0}
+    {π : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
+    {e : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
+    (h : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (π e) z) 2 μ⊤ ≤
+      kπ * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 μ⊤) :
+    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (e - π e) z) 2 μ⊤ ≤
+      ((1 + kπ : ℝ≥0) : ℝ≥0∞) *
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 μ⊤ := by
+  rw [map_sub, sub_eq_add_neg, ENNReal.coe_add, ENNReal.coe_one, add_mul, one_mul]
+  refine (Lp.eLpNorm_smul_add_le one_le_two _ _ _).trans (add_le_add le_rfl ?_)
+  rwa [Lp.eLpNorm_smul_neg]
+
 /-- **The weighted estimate for the parameter derivative of the orthogonal kernel projections,
 uniformly over a window of divisors.** For every degree `m`, radius `R₀` and rate `|c| < 1/2`
 there is a constant `K` with the following property, where `ρ(z) = √(1 + |z|²)`. Let `x` be a
@@ -523,11 +579,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_
     rw [hsplit, map_neg, Lp.eLpNorm_smul_neg]
     exact eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_le hqc' b hkπ'
   -- The field `A = e - π e` paired with the kernel component has `‖A‖_c ≤ (1 + kπ) ‖e‖_c`.
-  have hA : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
-      sobolevFieldValues (e - π e) z) 2 μ⊤ ≤ ((1 + kπ : ℝ≥0) : ℝ≥0∞) * N := by
-    rw [map_sub, sub_eq_add_neg, ENNReal.coe_add, ENNReal.coe_one, add_mul, one_mul]
-    refine (Lp.eLpNorm_smul_add_le one_le_two _ _ _).trans (add_le_add le_rfl ?_)
-    rwa [Lp.eLpNorm_smul_neg]
+  have hA := eLpNorm_exp_mul_smul_sobolevFieldValues_sub_le hkπ'
   refine (eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le hπ hkc' hkn' hqn' b y
     (A := sobolevFieldValues (e - π e))
     fun k hk ↦ by rw [hpair k hk, abs_neg, real_inner_comm]).trans ?_
@@ -537,6 +589,306 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_
     _ = _ := by
       push_cast
       ring
+
+/-! ### The weighted estimates for the second parameter derivatives -/
+
+/-- Along a family of coefficients `C²` at `p₀`, whose value at `p₀` is the class of a smooth plane
+vortex with the degree-`m` end framing, the realizations are `C²` at `p₀`, and at `p₀` the
+realization is Fredholm and onto, with its orthogonal kernel projection. -/
+private theorem isFredholm_and_contDiffAt_sobolevGaugeFixedOperator {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X} (hax : a p₀ =ᵐ[μ⊤] x)
+    (ha : ContDiffAt ℝ 2 a p₀) :
+    (sobolevGaugeFixedOperator (a p₀)).IsFredholm ∧
+      Function.Surjective (sobolevGaugeFixedOperator (a p₀)) ∧ DifferentiableAt ℝ a p₀ ∧
+      ContDiffAt ℝ 2 (fun p ↦ sobolevGaugeFixedOperator (a p)) p₀ ∧
+      IsOrthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
+        (orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))) := by
+  have hd : DifferentiableAt ℝ a p₀ := ha.differentiableAt (by simp)
+  obtain ⟨hT, hsurj, -, hπ⟩ :=
+    isFredholm_and_differentiableAt_sobolevGaugeFixedOperator hx hsol hframe hax hd
+  exact ⟨hT, hsurj, hd, contDiff_sobolevGaugeFixedOperator.contDiffAt.comp p₀ ha, hπ⟩
+
+/-- `Q (Z(b₀, g₀) + Z(b₁, g₁) + Z(b₂, g₂))` costs at most `q ‖Z‖ (‖b₀‖∞ r₀ + ‖b₁‖∞ r₁ + ‖b₂‖∞ r₂) N`
+in a weighted norm in which `Q` costs at most `q` and each `gᵢ` at most `rᵢ N`. -/
+private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_add_add_le {c : ℝ} {q : ℝ≥0}
+    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
+    (hQ : ∀ g, eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (Q g) z) 2 μ⊤ ≤
+      q * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤)
+    (b₀ b₁ b₂ : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
+    {g₀ g₁ g₂ : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2} {N : ℝ≥0∞} {r₀ r₁ r₂ : ℝ≥0}
+    (h₀ : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues g₀ z) 2 μ⊤ ≤ r₀ * N)
+    (h₁ : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues g₁ z) 2 μ⊤ ≤ r₁ * N)
+    (h₂ : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues g₂ z) 2 μ⊤ ≤
+      r₂ * N) :
+    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
+      (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₀ (sobolevFieldValues g₀) +
+        gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₁ (sobolevFieldValues g₁) +
+        gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₂ (sobolevFieldValues g₂))) z) 2 μ⊤ ≤
+      (q * ‖gaugeFixedZerothOrder‖₊ * (‖b₀‖₊ * r₀ + ‖b₁‖₊ * r₁ + ‖b₂‖₊ * r₂) : ℝ≥0) * N := by
+  set Z := ‖gaugeFixedZerothOrder‖₊
+  have hb (b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) {g : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
+      {r : ℝ≥0} (hg : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues g z) 2
+        μ⊤ ≤ r * N) :
+      eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+        gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues g) z) 2 μ⊤ ≤
+          (Z * ‖b‖₊ * r : ℝ≥0) * N := by
+    refine (eLpNorm_exp_mul_smul_holderL_le c b _).trans ?_
+    calc _ ≤ (Z * ‖b‖₊ : ℝ≥0∞) * (r * N) := by gcongr
+      _ = _ := by push_cast; ring
+  refine (hQ _).trans ?_
+  calc _ ≤ (q : ℝ≥0∞) * ((Z * ‖b₀‖₊ * r₀ : ℝ≥0) * N + (Z * ‖b₁‖₊ * r₁ : ℝ≥0) * N +
+        (Z * ‖b₂‖₊ * r₂ : ℝ≥0) * N) := by
+        gcongr
+        refine (Lp.eLpNorm_smul_add_le one_le_two _ _ _).trans (add_le_add ?_ (hb b₂ h₂))
+        exact (Lp.eLpNorm_smul_add_le one_le_two _ _ _).trans (add_le_add (hb b₀ h₀) (hb b₁ h₁))
+    _ = _ := by push_cast; ring
+
+/-- **The second-derivative estimate.** Let `π` be the projection onto the kernel of `T` along its
+`L²`-orthogonal complement and `Q` a right inverse of `T`, with weighted bounds at the rates `c`
+and `-c` on the kernel and on `Q`, and let `P₁`, `P₂` cost at most `p₁`, `p₂` from `L²` on the
+kernel at the rate `-c`. Suppose that the component of `y` orthogonal to the kernel is
+`-Q (Z(b₀, g₀) + Z(b₁, g₁) + Z(b₂, g₂))` and that its pairings with the kernel are bounded by
+`|⟪Q (Z(b₀, k) + Z(b₁, P₁ k) + Z(b₂, P₂ k)), A₀⟫| + |⟪P₁ k, A₁⟫| + |⟪P₂ k, A₂⟫|`, where the `gᵢ`
+and `Aᵢ` cost at most `rᵢ N` and `sᵢ N` at the rate `c`. Then `y` costs at most an explicit
+multiple of `N` at the rate `c`. -/
+private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_sub_and_abs_inner_le {c : ℝ}
+    {kc kn qc qn p₁ p₂ r₀ r₁ r₂ s₀ s₁ s₂ : ℝ≥0} {N : ℝ≥0∞}
+    {T : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
+    {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
+    {π : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
+    (hπ : IsOrthogonalKerProjection sobolevFieldValues T π)
+    (hkc : ∀ k ∈ T.ker, eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+      sobolevFieldValues k z) 2 μ⊤ ≤ kc * eLpNorm (sobolevFieldValues k) 2 μ⊤)
+    (hkn : ∀ k ∈ T.ker, eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) •
+      sobolevFieldValues k z) 2 μ⊤ ≤ kn * eLpNorm (sobolevFieldValues k) 2 μ⊤)
+    (hQc : ∀ g, eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (Q g) z) 2
+      μ⊤ ≤ qc * eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤)
+    (hQn : ∀ g, eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (Q g) z) 2
+      μ⊤ ≤ qn * eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) • g z) 2 μ⊤)
+    {P₁ P₂ : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) → (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)}
+    (hP₁ : ∀ k ∈ T.ker, eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) •
+      sobolevFieldValues (P₁ k) z) 2 μ⊤ ≤ p₁ * eLpNorm (sobolevFieldValues k) 2 μ⊤)
+    (hP₂ : ∀ k ∈ T.ker, eLpNorm (fun z ↦ Real.exp (-c * √(1 + ‖z‖ ^ 2)) •
+      sobolevFieldValues (P₂ k) z) 2 μ⊤ ≤ p₂ * eLpNorm (sobolevFieldValues k) 2 μ⊤)
+    (b₀ b₁ b₂ : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
+    {y g₀ g₁ g₂ : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2}
+    {A₀ A₁ A₂ : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
+    (hg₀ : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues g₀ z) 2 μ⊤ ≤ r₀ * N)
+    (hg₁ : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues g₁ z) 2 μ⊤ ≤ r₁ * N)
+    (hg₂ : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues g₂ z) 2 μ⊤ ≤ r₂ * N)
+    (hA₀ : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • A₀ z) 2 μ⊤ ≤ s₀ * N)
+    (hA₁ : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • A₁ z) 2 μ⊤ ≤ s₁ * N)
+    (hA₂ : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • A₂ z) 2 μ⊤ ≤ s₂ * N)
+    (hsplit : y - π y = -Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₀ (sobolevFieldValues g₀) +
+      gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₁ (sobolevFieldValues g₁) +
+      gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₂ (sobolevFieldValues g₂)))
+    (hpair : ∀ k ∈ T.ker, |⟪sobolevFieldValues y, sobolevFieldValues k⟫| ≤
+      |⟪sobolevFieldValues (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₀ (sobolevFieldValues k) +
+        gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₁ (sobolevFieldValues (P₁ k)) +
+        gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₂ (sobolevFieldValues (P₂ k)))), A₀⟫| +
+      |⟪sobolevFieldValues (P₁ k), A₁⟫| + |⟪sobolevFieldValues (P₂ k), A₂⟫|) :
+    eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues y z) 2 μ⊤ ≤
+      (kc * (qn * ‖gaugeFixedZerothOrder‖₊ * (‖b₀‖₊ * kn + ‖b₁‖₊ * p₁ + ‖b₂‖₊ * p₂) * s₀ +
+          p₁ * s₁ + p₂ * s₂) +
+        qc * ‖gaugeFixedZerothOrder‖₊ * (‖b₀‖₊ * r₀ + ‖b₁‖₊ * r₁ + ‖b₂‖₊ * r₂) : ℝ≥0) * N := by
+  set Z := ‖gaugeFixedZerothOrder‖₊
+  -- The component orthogonal to the kernel.
+  have hperp : eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+      sobolevFieldValues (y - π y) z) 2 μ⊤ ≤
+        (qc * Z * (‖b₀‖₊ * r₀ + ‖b₁‖₊ * r₁ + ‖b₂‖₊ * r₂) : ℝ≥0) * N := by
+    rw [hsplit, map_neg, Lp.eLpNorm_smul_neg]
+    exact eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_add_add_le hQc b₀ b₁ b₂ hg₀ hg₁ hg₂
+  -- The kernel component is bounded by the three pairings.
+  have hker := eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_abs_inner_le_sum_abs_inner
+    (s := Finset.univ) (q := ![qn * Z * (‖b₀‖₊ * kn + ‖b₁‖₊ * p₁ + ‖b₂‖₊ * p₂), p₁, p₂])
+    (e := fun k ↦ ![sobolevFieldValues (Q (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₀
+      (sobolevFieldValues k) +
+      gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₁ (sobolevFieldValues (P₁ k)) +
+      gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b₂ (sobolevFieldValues (P₂ k)))),
+      sobolevFieldValues (P₁ k), sobolevFieldValues (P₂ k)])
+    (A := ![A₀, A₁, A₂]) hπ hkc
+    (fun k hk i _ ↦ by
+      fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
+        Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
+      exacts [eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_add_add_le hQn b₀ b₁ b₂ (hkn k hk)
+        (hP₁ k hk) (hP₂ k hk), hP₁ k hk, hP₂ k hk])
+    y fun k hk ↦ by
+      simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
+      exact hpair k hk
+  simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons] at hker
+  refine hker.trans ?_
+  calc _ ≤ (kc : ℝ≥0∞) * ((qn * Z * (‖b₀‖₊ * kn + ‖b₁‖₊ * p₁ + ‖b₂‖₊ * p₂) : ℝ≥0) * (s₀ * N) +
+        p₁ * (s₁ * N) + p₂ * (s₂ * N)) +
+        (qc * Z * (‖b₀‖₊ * r₀ + ‖b₁‖₊ * r₁ + ‖b₂‖₊ * r₂) : ℝ≥0) * N := by gcongr
+    _ = _ := by push_cast; ring
+
+/-- A constant `C = A x + B y z` is at most `(A + B) (x + y z)`, so `C N ≤ (A + B) (x + y z) N`. -/
+private theorem coe_mul_le_coe_add_mul_add_mul {A B C x y z : ℝ≥0} (h : C = A * x + B * (y * z))
+    (N : ℝ≥0∞) : (C : ℝ≥0∞) * N ≤ ((A + B : ℝ≥0) : ℝ≥0∞) * (x + y * z) * N := by
+  gcongr
+  norm_cast
+  rw [h, add_mul, mul_add, mul_add]
+  exact add_le_add (le_add_of_nonneg_right zero_le) (le_add_of_nonneg_left zero_le)
+
+/-- **The weighted estimate for the second parameter derivative of the orthogonal right inverses,
+uniformly over a window of divisors.** For every degree `m`, radius `R₀` and rate `|c| < 1/2`
+there is a constant `K` with the following property, where `ρ(z) = √(1 + |z|²)`. Let `x` be a
+smooth plane vortex with the degree-`m` end framing whose zeros lie in the closed disc of radius
+`R₀` and whose coordinates have bounded derivatives of every order. Let `a` be a family of `L∞`
+coefficients, `C²` at `p₀`, with `a p₀` the class of `x`, and let `Q p` be the right inverse of
+the realization `L_(a p)` with values `L²`-orthogonal to its kernel. Write `Q''` for the derivative
+at `p₀` along `w` of `p ↦ DQ(p) v` and `a''` for that of `p ↦ Da(p) v`. Then
+
+`‖exp(c ρ) Q'' f‖₂ ≤ K (‖a''‖∞ + ‖Da(p₀) v‖∞ ‖Da(p₀) w‖∞) ‖exp(c ρ) f‖₂`
+
+for every `f ∈ L²`, where either side may be infinite. -/
+theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalRightInverse_le
+    (m : ℕ) (R₀ : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ b ∈ D, ‖b‖ ≤ R₀) →
+      ∀ {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+        {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X}, a p₀ =ᵐ[μ⊤] x →
+        ContDiffAt ℝ 2 a p₀ → ∀ (v w : X) (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤),
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
+          (fderiv ℝ (fun p ↦ fderiv ℝ (fun p ↦ orthogonalRightInverse sobolevFieldValues
+            (sobolevGaugeFixedOperator (a p))) p v f) p₀ w) z) 2 volume ≤
+          K * (‖fderiv ℝ (fun p ↦ fderiv ℝ a p v) p₀ w‖₊ +
+            ‖fderiv ℝ a p₀ v‖₊ * ‖fderiv ℝ a p₀ w‖₊) *
+            eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 volume := by
+  obtain ⟨kc, kn, qc, qn, hest⟩ := exists_forall_ker_and_orthogonalRightInverse_le m R₀ hc
+  obtain ⟨KQ, hKQ⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_forall_mem_norm_le
+      m R₀ hc
+  obtain ⟨Kπ, hKπ⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_forall_mem_norm_le
+      m R₀ (c := -c) (by rwa [abs_neg])
+  set Z := ‖gaugeFixedZerothOrder‖₊
+  refine ⟨kc * qn * Z * kn * qc + qc * Z * qc +
+    2 * (kc * qn * Z * Kπ * kn * qc + kc * Kπ * kn * KQ + qc * Z * KQ), ?_⟩
+  intro x D hx hbound hsol hframe hD hD₀ X _ _ a p₀ hax ha v w f
+  obtain ⟨hkc, hkn, hqc, hqn⟩ := hest x D hx hbound hsol hframe hD hD₀ (a p₀) hax
+  obtain ⟨hT, hsurj, hd, hT2, hπ⟩ :=
+    isFredholm_and_contDiffAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
+  -- The splitting and kernel pairings of `Q''`, with `T' = Z(Da v, ·)` and `T'' = Z(a'', ·)`.
+  have hsplit := hT.sub_orthogonalKerProjection_fderiv_fun_fderiv_orthogonalRightInverse_apply
+    (T := fun p ↦ sobolevGaugeFixedOperator (a p)) sobolevFieldValues_injective hsurj hT2 v w f
+  have hpair := fun k (hk : k ∈ (sobolevGaugeFixedOperator (a p₀)).ker) ↦
+    hT.inner_fderiv_fun_fderiv_orthogonalRightInverse_apply
+      (T := fun p ↦ sobolevGaugeFixedOperator (a p)) sobolevFieldValues_injective hsurj hT2 v w f
+      hk
+  simp only [fderiv_sobolevGaugeFixedOperator_comp_apply hd,
+    fderiv_fun_fderiv_sobolevGaugeFixedOperator_comp_apply ha] at hsplit hpair
+  -- The first derivatives of `Q` at the rate `c` and of `π` at the rate `-c`.
+  set bv := fderiv ℝ a p₀ v
+  set bw := fderiv ℝ a p₀ w
+  have hQ' (u : X) (g) := hKQ x D hx hbound hsol hframe hD hD₀ hax hd u g
+  have hπ' (u : X) (k) := hKπ x D hx hbound hsol hframe hD hD₀ hax hd u k
+  simp only [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at hQ' hπ' ⊢
+  have hP (u : X) (k) (hk : k ∈ (sobolevGaugeFixedOperator (a p₀)).ker) :=
+    (hπ' u k).trans (mul_le_mul_right (hkn k hk) _)
+  set N := eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) 2 μ⊤
+  refine (eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_sub_and_abs_inner_le hπ hkc hkn hqc hqn
+    (p₁ := Kπ * ‖bw‖₊ * kn) (p₂ := Kπ * ‖bv‖₊ * kn) (r₀ := qc) (r₁ := KQ * ‖bw‖₊)
+    (r₂ := KQ * ‖bv‖₊) (s₀ := qc) (s₁ := KQ * ‖bv‖₊) (s₂ := KQ * ‖bw‖₊)
+    (fun k hk ↦ (hP w k hk).trans_eq (by push_cast; ring))
+    (fun k hk ↦ (hP v k hk).trans_eq (by push_cast; ring))
+    _ _ _ (hqc f) ((hQ' w f).trans_eq (by push_cast; ring))
+    ((hQ' v f).trans_eq (by push_cast; ring)) (hqc f)
+    ((hQ' v f).trans_eq (by push_cast; ring)) ((hQ' w f).trans_eq (by push_cast; ring)) hsplit
+    fun k hk ↦ ?_).trans ?_
+  · have hcomm (u u' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) : |⟪u, u'⟫| ≤ |⟪u', u⟫| :=
+      (congrArg abs (real_inner_comm u' u)).le
+    rw [hpair k hk]
+    exact (abs_sub _ _).trans
+      (add_le_add ((abs_sub _ _).trans (add_le_add (hcomm _ _) (hcomm _ _))) (hcomm _ _))
+  · exact coe_mul_le_coe_add_mul_add_mul (by ring) _
+
+/-- **The weighted estimate for the second parameter derivative of the orthogonal kernel
+projections, uniformly over a window of divisors.** For every degree `m`, radius `R₀` and rate
+`|c| < 1/2` there is a constant `K` with the following property, where `ρ(z) = √(1 + |z|²)`. Let
+`x` be a smooth plane vortex with the degree-`m` end framing whose zeros lie in the closed disc of
+radius `R₀` and whose coordinates have bounded derivatives of every order. Let `a` be a family of
+`L∞` coefficients, `C²` at `p₀`, with `a p₀` the class of `x`, and let `π p` be the projection of
+`H¹(ℂ)⁴` onto the kernel of the realization `L_(a p)` along its `L²`-orthogonal complement. Write
+`π''` for the derivative at `p₀` along `w` of `p ↦ Dπ(p) v` and `a''` for that of `p ↦ Da(p) v`.
+Then
+
+`‖exp(c ρ) π'' e‖₂ ≤ K (‖a''‖∞ + ‖Da(p₀) v‖∞ ‖Da(p₀) w‖∞) ‖exp(c ρ) e‖₂`
+
+for every `e ∈ H¹(ℂ)⁴`, where either side may be infinite. -/
+theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjection_le
+    (m : ℕ) (R₀ : ℝ) {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K : ℝ≥0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ b ∈ D, ‖b‖ ≤ R₀) →
+      ∀ {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+        {a : X → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {p₀ : X}, a p₀ =ᵐ[μ⊤] x →
+        ContDiffAt ℝ 2 a p₀ → ∀ (v w : X) (e : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2),
+        eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
+          (fderiv ℝ (fun p ↦ fderiv ℝ (fun p ↦ orthogonalKerProjection sobolevFieldValues
+            (sobolevGaugeFixedOperator (a p))) p v e) p₀ w) z) 2 volume ≤
+          K * (‖fderiv ℝ (fun p ↦ fderiv ℝ a p v) p₀ w‖₊ +
+            ‖fderiv ℝ a p₀ v‖₊ * ‖fderiv ℝ a p₀ w‖₊) *
+            eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 volume := by
+  obtain ⟨kc, kn, qc, qn, hest⟩ := exists_forall_ker_and_orthogonalRightInverse_le m R₀ hc
+  obtain ⟨kπ, hkπ⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ hc
+  obtain ⟨Kc, hKc⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_forall_mem_norm_le
+      m R₀ hc
+  obtain ⟨Kn, hKn⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_forall_mem_norm_le
+      m R₀ (c := -c) (by rwa [abs_neg])
+  set Z := ‖gaugeFixedZerothOrder‖₊
+  refine ⟨kc * qn * Z * kn * (1 + kπ) + qc * Z * kπ +
+    2 * (kc * qn * Z * Kn * kn * (1 + kπ) + kc * Kn * kn * Kc + qc * Z * Kc), ?_⟩
+  intro x D hx hbound hsol hframe hD hD₀ X _ _ a p₀ hax ha v w e
+  obtain ⟨hkc, hkn, hqc, hqn⟩ := hest x D hx hbound hsol hframe hD hD₀ (a p₀) hax
+  obtain ⟨hT, hsurj, hd, hT2, hπ⟩ :=
+    isFredholm_and_contDiffAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
+  -- The splitting and kernel pairings of `π''`, with `T' = Z(Da v, ·)` and `T'' = Z(a'', ·)`.
+  have hsplit := hT.sub_orthogonalKerProjection_fderiv_fun_fderiv_orthogonalKerProjection_apply
+    (T := fun p ↦ sobolevGaugeFixedOperator (a p)) sobolevFieldValues_injective hsurj hT2 v w e
+  have hpair := fun k (hk : k ∈ (sobolevGaugeFixedOperator (a p₀)).ker) ↦
+    hT.inner_fderiv_fun_fderiv_orthogonalKerProjection_apply
+      (T := fun p ↦ sobolevGaugeFixedOperator (a p)) sobolevFieldValues_injective hsurj hT2 v w e
+      hk
+  simp only [fderiv_sobolevGaugeFixedOperator_comp_apply hd,
+    fderiv_fun_fderiv_sobolevGaugeFixedOperator_comp_apply ha] at hsplit hpair
+  set bv := fderiv ℝ a p₀ v
+  set bw := fderiv ℝ a p₀ w
+  have hπe := hkπ x D hx hbound hsol hframe hD hD₀ (a p₀) hax e
+  have hπ'c (u : X) := hKc x D hx hbound hsol hframe hD hD₀ hax hd u e
+  have hπ'n (u : X) (k) := hKn x D hx hbound hsol hframe hD hD₀ hax hd u k
+  simp only [← eLpNorm_restrict_coe_opens_top (volume : Measure ℂ)] at hπe hπ'c hπ'n ⊢
+  have hP (u : X) (k) (hk : k ∈ (sobolevGaugeFixedOperator (a p₀)).ker) :=
+    (hπ'n u k).trans (mul_le_mul_right (hkn k hk) _)
+  set N := eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 μ⊤
+  refine (eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_sub_and_abs_inner_le hπ hkc hkn hqc hqn
+    (p₁ := Kn * ‖bw‖₊ * kn) (p₂ := Kn * ‖bv‖₊ * kn) (r₀ := kπ) (r₁ := Kc * ‖bw‖₊)
+    (r₂ := Kc * ‖bv‖₊) (s₀ := 1 + kπ) (s₁ := Kc * ‖bv‖₊) (s₂ := Kc * ‖bw‖₊)
+    (fun k hk ↦ (hP w k hk).trans_eq (by push_cast; ring))
+    (fun k hk ↦ (hP v k hk).trans_eq (by push_cast; ring))
+    _ _ _ hπe ((hπ'c w).trans_eq (by push_cast; ring)) ((hπ'c v).trans_eq (by push_cast; ring))
+    (eLpNorm_exp_mul_smul_sobolevFieldValues_sub_le hπe)
+    ((hπ'c v).trans_eq (by push_cast; ring)) ((hπ'c w).trans_eq (by push_cast; ring)) hsplit
+    fun k hk ↦ ?_).trans ?_
+  · have hcomm (u u' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) : |⟪u, u'⟫| ≤ |⟪u', u⟫| :=
+      (congrArg abs (real_inner_comm u' u)).le
+    rw [hpair k hk]
+    exact (abs_sub _ _).trans (add_le_add ((abs_sub _ _).trans
+      (add_le_add ((abs_neg _).trans_le (hcomm _ _)) (hcomm _ _))) (hcomm _ _))
+  · exact coe_mul_le_coe_add_mul_add_mul (by ring) _
 
 /-! ### The weighted Sobolev estimate for the parameter derivative -/
 
