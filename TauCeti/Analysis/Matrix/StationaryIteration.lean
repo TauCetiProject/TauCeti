@@ -21,7 +21,7 @@ criterion: the iterates converge for every `c` and every starting vector if and 
 of `G` tend to zero, and then `1 - G` is invertible and the iterates tend to `(1 - G)⁻¹ *ᵥ c`.
 The criterion holds over any commutative topological ring with open units, in particular over
 `ℝ` and `ℂ`, with the entrywise topology on vectors and matrices. No norm is needed, and `G`
-need not have norm less than one in any operator norm: `!![1/2, 1; 0, 1/2]` has row-sum norm
+need not have norm less than one in a given operator norm: `!![1/2, 1; 0, 1/2]` has row-sum norm
 `3/2`, yet its powers tend to zero.
 
 ## Main declarations
@@ -30,7 +30,8 @@ need not have norm less than one in any operator norm: `!![1/2, 1; 0, 1/2]` has 
 * `Matrix.stationaryIterate_eq`: `x k = G ^ k *ᵥ x₀ + (∑ i ∈ range k, G ^ i) *ᵥ c`.
 * `Matrix.stationaryIterate_sub_of_isFixedPt`: for a fixed point `x` of `y ↦ G *ᵥ y + c`, the
   error is `x k - x = G ^ k *ᵥ (x₀ - x)`.
-* `Matrix.tendsto_stationaryIterate`: if `G ^ k → 0`, the iterates tend to `(1 - G)⁻¹ *ᵥ c` from
+* `Matrix.tendsto_stationaryIterate`: if `G` is topologically nilpotent, that is `G ^ k → 0`,
+  the iterates tend to `(1 - G)⁻¹ *ᵥ c` from
   every starting vector.
 * `Matrix.forall_exists_tendsto_stationaryIterate_iff`: the iterates converge for every `c` and
   every `x₀` if and only if `G ^ k → 0`.
@@ -91,9 +92,8 @@ theorem stationaryIterate_eq (k : ℕ) :
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [stationaryIterate_succ, ih, mulVec_add, mulVec_mulVec, mulVec_mulVec, mul_sum,
-      sum_range_succ', pow_zero, add_mulVec, one_mulVec, add_assoc]
-    simp_rw [← pow_succ']
+    simp [ih, mulVec_add, mulVec_mulVec, mul_sum, sum_range_succ', add_mulVec, ← pow_succ',
+      add_assoc]
 
 end Semiring
 
@@ -115,10 +115,11 @@ theorem stationaryIterate_sub_of_isFixedPt [DecidableEq ι] {x : ι → R}
 variable [TopologicalSpace R] [IsTopologicalRing R]
 
 /-- If the stationary iterates of `x ↦ G *ᵥ x + c` converge for every `c` and every starting
-vector, then the powers of `G` tend to zero. Only the starting vector `0` is used. -/
-theorem tendsto_pow_atTop_nhds_zero_of_forall_exists_tendsto_stationaryIterate [DecidableEq ι]
+vector, then `G` is topologically nilpotent: its powers tend to zero. Only the starting vector
+`0` is used. -/
+theorem isTopologicallyNilpotent_of_forall_exists_tendsto_stationaryIterate [DecidableEq ι]
     (h : ∀ c, ∃ x, Tendsto (stationaryIterate G c 0) atTop (𝓝 x)) :
-    Tendsto (G ^ ·) atTop (𝓝 0) := by
+    IsTopologicallyNilpotent G := by
   refine tendsto_iff_forall_tendsto_mulVec.2 fun v ↦ ?_
   obtain ⟨x, hx⟩ := h v
   have hdiff (k : ℕ) :
@@ -137,26 +138,27 @@ section CommRing
 variable [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] [IsOpenUnits R] [DecidableEq ι]
   (G : Matrix ι ι R) (c x₀ : ι → R)
 
-/-- If the powers of `G` tend to zero, then the stationary iterates of `x ↦ G *ᵥ x + c` tend to
-`(1 - G)⁻¹ *ᵥ c` from every starting vector `x₀`. Here `1 - G` is invertible by
-`IsOpenUnits.isUnit_one_sub_of_tendsto_pow_atTop_nhds_zero`, and its inverse is the limit of
-the partial sums `∑ i ∈ range k, G ^ i`. -/
-theorem tendsto_stationaryIterate (hG : Tendsto (G ^ ·) atTop (𝓝 0)) :
+/-- If `G` is topologically nilpotent, that is its powers tend to zero, then the stationary
+iterates of `x ↦ G *ᵥ x + c` tend to `(1 - G)⁻¹ *ᵥ c` from every starting vector `x₀`. Here
+`1 - G` is invertible by `IsTopologicallyNilpotent.isUnit_one_sub_of_isOpenUnits`, and its
+inverse is the limit of the partial sums `∑ i ∈ range k, G ^ i`. -/
+theorem tendsto_stationaryIterate (hG : IsTopologicallyNilpotent G) :
     Tendsto (stationaryIterate G c x₀) atTop (𝓝 ((1 - G)⁻¹ *ᵥ c)) := by
   have hsum : Tendsto (fun k ↦ ∑ i ∈ range k, G ^ i) atTop (𝓝 (1 - G)⁻¹) := by
     rw [nonsing_inv_eq_ringInverse]
-    exact IsOpenUnits.tendsto_geom_sum_of_tendsto_pow_atTop_nhds_zero hG
+    exact hG.tendsto_geom_sum_of_isOpenUnits
   rw [show stationaryIterate G c x₀ = _ from funext (stationaryIterate_eq G c x₀)]
   simpa using (tendsto_iff_forall_tendsto_mulVec.1 hG x₀).add
     (tendsto_iff_forall_tendsto_mulVec.1 hsum c)
 
 /-- The convergence criterion for stationary iterations: the iterates of `x ↦ G *ᵥ x + c`
-converge for every `c` and every starting vector `x₀` if and only if the powers of `G` tend to
-zero. By `tendsto_stationaryIterate`, the limit is then `(1 - G)⁻¹ *ᵥ c`. -/
+converge for every `c` and every starting vector `x₀` if and only if `G` is topologically
+nilpotent, that is its powers tend to zero. By `tendsto_stationaryIterate`, the limit is then
+`(1 - G)⁻¹ *ᵥ c`. -/
 theorem forall_exists_tendsto_stationaryIterate_iff :
     (∀ c x₀, ∃ x, Tendsto (stationaryIterate G c x₀) atTop (𝓝 x)) ↔
-      Tendsto (G ^ ·) atTop (𝓝 0) :=
-  ⟨fun h ↦ tendsto_pow_atTop_nhds_zero_of_forall_exists_tendsto_stationaryIterate G fun c ↦ h c 0,
+      IsTopologicallyNilpotent G :=
+  ⟨fun h ↦ isTopologicallyNilpotent_of_forall_exists_tendsto_stationaryIterate G fun c ↦ h c 0,
     fun hG c x₀ ↦ ⟨_, tendsto_stationaryIterate G c x₀ hG⟩⟩
 
 end CommRing

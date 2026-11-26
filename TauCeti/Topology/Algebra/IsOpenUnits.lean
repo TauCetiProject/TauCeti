@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.Topology.Algebra.IsOpenUnits
 public import Mathlib.Topology.Algebra.Ring.Basic
+public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 
 /-!
 # Rings with open units: the inverse and embeddings
@@ -18,9 +19,9 @@ In a monoid with zero with open units, `Ring.inverse` is therefore continuous at
 The property passes along embeddings: a monoid embedded in one with open units has open units as
 soon as its own units form an open subset.
 
-In a topological ring with open units, an element `x` whose powers tend to zero has `1 - x`
-invertible, and the partial geometric sums `1 + x + ⋯ + x ^ (n - 1)` tend to the inverse of
-`1 - x`. No norm is needed, and `x` need not have norm less than one in any norm. For square
+In a topological ring with open units, a topologically nilpotent element `x`, one whose powers
+tend to zero, has `1 - x` invertible, and the partial geometric sums `1 + x + ⋯ + x ^ (n - 1)`
+tend to the inverse of `1 - x`. No norm is assumed. For square
 matrices over `ℝ` or `ℂ` this is the Neumann series of a matrix whose powers tend to zero, which
 governs the limit of a stationary iteration `x ↦ G x + c`.
 
@@ -30,9 +31,9 @@ governs the limit of a stationary iteration `x ↦ G x + c`.
   with open units.
 * `IsOpenUnits.of_isEmbedding`: a monoid embedding into a monoid with open units whose units
   form an open subset has open units.
-* `IsOpenUnits.isUnit_one_sub_of_tendsto_pow_atTop_nhds_zero`: if `x ^ n → 0`, then `1 - x` is a
+* `IsTopologicallyNilpotent.isUnit_one_sub_of_isOpenUnits`: if `x ^ n → 0`, then `1 - x` is a
   unit.
-* `IsOpenUnits.tendsto_geom_sum_of_tendsto_pow_atTop_nhds_zero`: if `x ^ n → 0`, then the partial
+* `IsTopologicallyNilpotent.tendsto_geom_sum_of_isOpenUnits`: if `x ^ n → 0`, then the partial
   geometric sums of `x` tend to `Ring.inverse (1 - x)`.
 -/
 
@@ -71,10 +72,10 @@ section Ring
 
 variable {R : Type*} [Ring R] [TopologicalSpace R] [IsTopologicalRing R] [IsOpenUnits R] {x : R}
 
-/-- In a topological ring with open units, if the powers of `x` tend to zero, then `1 - x` is a
+/-- In a topological ring with open units, if `x` is topologically nilpotent, then `1 - x` is a
 unit. -/
-theorem IsOpenUnits.isUnit_one_sub_of_tendsto_pow_atTop_nhds_zero
-    (hx : Tendsto (x ^ ·) atTop (𝓝 0)) : IsUnit (1 - x) := by
+theorem IsTopologicallyNilpotent.isUnit_one_sub_of_isOpenUnits
+    (hx : IsTopologicallyNilpotent x) : IsUnit (1 - x) := by
   have h1 : Tendsto (fun n ↦ 1 - x ^ n) atTop (𝓝 (1 : R)) := by
     simpa using tendsto_const_nhds.sub hx
   obtain ⟨m, hm⟩ := (h1.eventually
@@ -84,12 +85,12 @@ theorem IsOpenUnits.isUnit_one_sub_of_tendsto_pow_atTop_nhds_zero
   rw [← mul_neg_geom_sum x m] at hm
   exact (hcomm.isUnit_mul_iff.1 hm).1
 
-/-- In a topological ring with open units, if the powers of `x` tend to zero, then the partial
+/-- In a topological ring with open units, if `x` is topologically nilpotent, then the partial
 geometric sums `∑ i ∈ range n, x ^ i` tend to the inverse of `1 - x`. -/
-theorem IsOpenUnits.tendsto_geom_sum_of_tendsto_pow_atTop_nhds_zero
-    (hx : Tendsto (x ^ ·) atTop (𝓝 0)) :
+theorem IsTopologicallyNilpotent.tendsto_geom_sum_of_isOpenUnits
+    (hx : IsTopologicallyNilpotent x) :
     Tendsto (fun n ↦ ∑ i ∈ range n, x ^ i) atTop (𝓝 (Ring.inverse (1 - x))) := by
-  obtain ⟨u, hu⟩ := isUnit_one_sub_of_tendsto_pow_atTop_nhds_zero hx
+  obtain ⟨u, hu⟩ := hx.isUnit_one_sub_of_isOpenUnits
   have hsum (n : ℕ) : ∑ i ∈ range n, x ^ i = Ring.inverse (1 - x) * (1 - x ^ n) := by
     rw [← mul_neg_geom_sum x n, ← mul_assoc, ← hu, Ring.inverse_mul_cancel _ u.isUnit, one_mul]
   simp_rw [hsum]
