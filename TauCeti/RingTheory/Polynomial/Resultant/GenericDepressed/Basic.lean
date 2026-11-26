@@ -50,6 +50,8 @@ characteristic `2` the discriminant for `m = 2` is `0`.
 * `TauCeti.discr_genericDepressed`: `depressedDiscr R m` is the discriminant of
   `genericDepressed R m`.
 * `TauCeti.depressedDiscr_mem`: the discriminant is weighted homogeneous of weight `m (m - 1)`.
+* `TauCeti.depressedDiscr_three_mem_four_six`: for `m = 3` and the doubled weights `4, 6` of the
+  short Weierstrass equation, the discriminant `-4 a³ - 27 b²` has weight `12`.
 * `TauCeti.map_depressedDiscr`: the discriminant commutes with changing the coefficients.
 * `TauCeti.depressedDiscr_prime`: over a domain in which `2 ≠ 0` and `m` is invertible, the
   discriminant is prime.
@@ -289,6 +291,20 @@ theorem depressedDiscr_mem :
     rcases m with _ | m <;> simp
   rw [← discr_genericDepressed, MvPolynomial.mem_weightedHomogeneousSubmodule, ← hw, ← hm]
   exact h.comp_weight _
+
+/-- The discriminant `-4 a³ - 27 b²` of `X³ + a X + b` is weighted homogeneous of weight `12` for
+the weights `4, 6` of `a, b`, those of the short Weierstrass equation `y² = x³ + a x + b`. -/
+theorem depressedDiscr_three_mem_four_six :
+    depressedDiscr R 3 ∈
+      MvPolynomial.weightedHomogeneousSubmodule R (![4, 6] : Fin 2 → ℤ) 12 := by
+  -- Doubling the weights `2, 3` of `depressedWeight 3` doubles the weight `6` of the discriminant.
+  have h := ((MvPolynomial.mem_weightedHomogeneousSubmodule _ _ _ _).mp
+    (depressedDiscr_mem R 3)).comp_weight (AddMonoidHom.mulLeft (2 : ℤ))
+  rw [MvPolynomial.mem_weightedHomogeneousSubmodule]
+  convert h using 1
+  · ext j
+    fin_cases j <;> simp
+  · simp
 
 /-- For `m = 2`, the discriminant of `X² + a₂` is `-4 a₂`. -/
 theorem depressedDiscr_two : depressedDiscr R 2 = -4 * MvPolynomial.X 0 := by
