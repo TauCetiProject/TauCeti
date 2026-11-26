@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.ShortExact
 public import TauCeti.Geometry.Manifold.DeRham.Relative.Integration
 public import TauCeti.Geometry.Manifold.SmoothSingular.Relative
 public import TauCeti.Geometry.Manifold.SmoothSingular.SingularCohomology
-import TauCeti.Algebra.Homology.ModuleCat.Extend
 
 /-!
 # The relative de Rham homomorphism
@@ -18,8 +17,8 @@ import TauCeti.Algebra.Homology.ModuleCat.Extend
 Let `W` be an open subset of a manifold `M`. Relative integration
 `TauCeti.relativeDeRhamIntegration` is a cochain map from the relative de Rham complex of `(M, W)`
 to the mapping cocone `TauCeti.relativeSmoothCochainComplex I W` of the restriction of real smooth
-singular cochains from `M` to `W`. That cocone is not yet the relative smooth singular cochain
-complex `Hom(C^∞(M)/C^∞(W), ℝ)`, the cochains of the smooth singular pair
+singular cochains from `M` to `W`. That cocone is a model of, but not literally, the relative
+smooth singular cochain complex `Hom(C^∞(M)/C^∞(W), ℝ)`, the cochains of the smooth singular pair
 `TauCeti.smoothSingularPair I W`; this file compares the two.
 
 Restriction of smooth cochains is surjective: the smooth simplices of `W` are among those of `M`,
@@ -27,7 +26,8 @@ and a cochain on them extends by zero. So the cochains of the pair form a short 
 
 `0 → C^*(M, W) → C^*(M) → C^*(W) → 0`,
 
-which we extend by zero to `ℤ` (`TauCeti.smoothCochainShortComplex`). Its second map is the
+which we extend by zero to `ℤ` (`TauCeti.smoothCochainShortComplex`). Its first map is the
+inclusion of relative cochains (`TauCeti.smoothCochainShortComplex_f`) and its second map is the
 restriction of smooth cochains (`TauCeti.smoothCochainShortComplex_g`). For any short exact
 sequence the first map lifts to the mapping cocone of the second, `a ↦ (a, 0)`, and this lift is a
 quasi-isomorphism (`CochainComplex.mappingCocone.quasiIso_lift_of_shortExact`). The lift
@@ -128,6 +128,20 @@ abbrev smoothCochainShortComplex : ShortComplex (CochainComplex (ModuleCat ℝ) 
     (extendMap (SSetPair.cochainComplexπ (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ)
       (smoothSingularPair I W)) ComplexShape.embeddingUpNat)
     (smoothCochainRestriction I W) (extendMap_cochainComplexπ_comp_smoothCochainRestriction I W)
+
+/-- The first map of the sequence of smooth cochains of the pair is the inclusion of relative
+cochains. -/
+theorem smoothCochainShortComplex_f :
+    (smoothCochainShortComplex I W).f =
+      extendMap (SSetPair.cochainComplexπ (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ)
+        (smoothSingularPair I W)) ComplexShape.embeddingUpNat :=
+  (rfl)
+
+/-- The second map of the sequence of smooth cochains of the pair is the restriction of smooth
+cochains to `W`. -/
+theorem smoothCochainShortComplex_g :
+    (smoothCochainShortComplex I W).g = smoothCochainRestriction I W :=
+  (rfl)
 
 /-- The sequence of smooth cochains of the pair is the extension to `ℤ` of the image under
 `Hom(-, ℝ)` of the sequence of smooth chains; the identifications are identities. -/
@@ -280,13 +294,18 @@ private theorem relativeDeRhamIntegration_f_coord_symm_zero (k : ℕ) (β : Smoo
         ((extendXIso 𝒞[W] ComplexShape.embeddingUpNat rfl).inv (integrationCochain β.val)) := by
   apply (CochainComplex.mappingCocone.relativeCoordinates (smoothCochainRestriction I W)
     (k + 1 : ℕ) k (by push_cast; lia)).injective
+  -- In relative coordinates the left side integrates the coordinates `(0, β)` of `(0, β)`, and
+  -- the right side is `(0, ∫ β)`.
   rw [relativeCoordinates_relativeDeRhamIntegration_f, map_neg,
     CochainComplex.mappingCocone.relativeCoordinates_inr_v, relativeDeRhamComplex.coord_symm_apply,
-    map_zero, zero_add, relativeDeRhamComplex.relativeCoordinates_inr, map_zero, Prod.neg_mk,
-    neg_zero, neg_neg]
-  dsimp only
-  rw [deRhamComplexExtendXEquiv_symm_apply, extendMap_f _ _ (i := k) (i' := (k : ℤ)) rfl]
-  simpa using congrArg _ (deRhamIntegration_f_inv_apply I W k β)
+    map_zero, zero_add, relativeDeRhamComplex.relativeCoordinates_inr]
+  simp only [deRhamComplexExtendXEquiv_symm_apply,
+    extendMap_f (deRhamIntegration I W) ComplexShape.embeddingUpNat (i := k) (i' := (k : ℤ)) rfl,
+    ModuleCat.comp_apply, Iso.inv_hom_id_apply, map_zero, Prod.neg_mk, neg_zero, neg_neg,
+    Prod.mk.injEq, true_and]
+  -- What remains is the integral of `β`, carried into the extended complex.
+  exact congrArg (extendXIso 𝒞[W] ComplexShape.embeddingUpNat (i := k) (i' := (k : ℤ)) rfl).inv
+    (deRhamIntegration_f_inv_apply I W k β)
 
 /-- **Relative integration and the connecting maps.** The relative integral of the de Rham
 connecting map `δ [b] = -[(0, b)]` of a class on `W` is the connecting map of the long exact

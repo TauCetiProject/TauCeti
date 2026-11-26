@@ -54,7 +54,7 @@ The cochain-level construction needs no finite dimensionality, separation or cou
   to `W`, extended to `ℤ`.
 * `TauCeti.relativeSmoothCochainComplex I W`: its mapping cocone.
 * `TauCeti.relativeDeRhamIntegration I W`: relative integration, a cochain map from the relative de
-  Rham complex to the relative smooth cochain complex.
+  Rham complex to the mapping cocone of the restriction of smooth cochains.
 * `TauCeti.relativeSmoothCochainComplex.eval`: the pairing of relative smooth cochains with pairs
   of smooth chains.
 * `TauCeti.relativeDeRhamCohomology.integral`: the integral of relative de Rham classes over a
@@ -116,8 +116,10 @@ theorem smoothCochainRestriction_f_comp_extendXIso_hom {k : ℕ} {p : ℤ}
           (smoothSingularSubcomplexMap (Subtype.val : W → M) contMDiff_subtypeVal)).f k :=
   extendMap_f_comp_extendXIso_hom _ _ h
 
-/-- The relative smooth singular cochain complex of the open pair `(M, W)`, with real
-coefficients: the mapping cocone of the restriction of smooth cochains from `M` to `W`. -/
+/-- The cocone model of the relative smooth singular cochains of the open pair `(M, W)`, with real
+coefficients: the mapping cocone of the restriction of smooth cochains from `M` to `W`. It is not
+literally the complex of cochains of the smooth singular pair `TauCeti.smoothSingularPair I W`, but
+is quasi-isomorphic to it through `TauCeti.relativeSmoothCochainLift`. -/
 abbrev relativeSmoothCochainComplex : CochainComplex (ModuleCat ℝ) ℤ :=
   CochainComplex.mappingCocone (smoothCochainRestriction I W)
 
@@ -131,8 +133,8 @@ theorem deRhamRestriction_comp_extendMap_deRhamIntegration :
     deRhamIntegration_naturality]
 
 /-- **Relative integration.** The cochain map from the relative de Rham complex of `(M, W)` to the
-relative smooth cochain complex induced by integration over smooth simplices. In relative
-coordinates it sends `(α, β)` to `(∫ α, ∫ β)`. -/
+mapping cocone of the restriction of smooth cochains, induced by integration over smooth simplices.
+In relative coordinates it sends `(α, β)` to `(∫ α, ∫ β)`. -/
 def relativeDeRhamIntegration : relativeDeRhamComplex I W ⟶ relativeSmoothCochainComplex I W :=
   (CochainComplex.mappingCone.map _ _ _ _
     (deRhamRestriction_comp_extendMap_deRhamIntegration I W))⟦(-1 : ℤ)⟧'

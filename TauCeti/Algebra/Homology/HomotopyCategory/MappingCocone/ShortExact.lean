@@ -213,11 +213,11 @@ lemma moduleCat_homologyMap_lift_δ_homologyπ (n₀ n₁ : ℤ) (h : n₀ + 1 =
   simp only [ConcreteCategory.comp_apply] at key
   -- The cycles lifted from `x` and from `x ≫ inr` at `z` are `z` and the cycle `inr z`.
   rw [(S.X₃.moduleCat_iCycles_injective n₀ (by
-      rw [← ModuleCat.comp_apply, HomologicalComplex.liftCycles_i]; rfl) :
+      rw [← ModuleCat.comp_apply, HomologicalComplex.liftCycles_i]; simp [x]) :
         S.X₃.liftCycles x n₁ _ hx _ = z)] at key
   refine key.trans (congrArg _ ((mappingCocone S.g).moduleCat_iCycles_injective n₁ ?_))
   rw [iCycles_moduleCatCyclesMk, ← ModuleCat.comp_apply, HomologicalComplex.liftCycles_i]
-  rfl
+  simp [x]
 
 end ModuleCat
 
