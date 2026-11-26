@@ -17,6 +17,9 @@ import Mathlib.Topology.Order.ProjIcc
 # Intervals in order topologies
 
 An unordered closed interval is a neighbourhood of each of its points other than its endpoints.
+A point of a closed interval at which a property fails, while it holds at both endpoints, is an
+interior point; at an interior point, continuity on the closed interval and properties holding on
+it hold nearby.
 The frontier of a closed or half-open interval avoids every set that misses both endpoints.
 In `ℝ`, an interval with endpoints near a point lies in the ball about that point, and the
 interval from a point of an order-connected set to a nearby point of that set stays in the ball
@@ -50,6 +53,10 @@ A function continuous on `[a, b]` and strictly monotone or antitone on `(a, b)` 
   `a` and `b`.
 * `TauCeti.Icc_eventuallyEq_Ici`, `TauCeti.Icc_eventuallyEq_Iic` — `Icc a b` eventually agrees
   with `Ici a` around any `t < b`, and dually with `Iic b` around any `a < t`.
+* `TauCeti.mem_Ioo_of_mem_Icc_of_not` — a point of `[a, b]` at which a property holding at `a`
+  and `b` fails lies in `(a, b)`.
+* `ContinuousOn.eventually_continuousAt_and_eventually_of_mem_Ioo` — near a point of `(a, b)`, a
+  function continuous on `[a, b]` is continuous and a property holding on `[a, b]` holds.
 * `TauCeti.disjoint_frontier_Icc`, `TauCeti.disjoint_frontier_Ioc` — the frontier of `[a, b]` or
   `(a, b]` avoids a set containing neither `a` nor `b`.
 * `Real.Icc_subset_ball` — in `ℝ`, an interval whose endpoints lie within `ε` of `x` is
@@ -151,6 +158,22 @@ theorem uIcc_mem_nhds_of_ne {α : Type*} [TopologicalSpace α] [LinearOrder α]
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 ha.symm) (lt_of_le_of_ne ht.2 hb)
   · rw [uIcc_of_ge hab] at ht ⊢
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 hb.symm) (lt_of_le_of_ne ht.2 ha)
+
+/-- A point of `[a, b]` at which a property fails, while it holds at both endpoints, lies in
+`(a, b)`. -/
+theorem mem_Ioo_of_mem_Icc_of_not {α : Type*} [PartialOrder α] (p : α → Prop) {a b t : α}
+    (ha : p a) (hb : p b) (ht : t ∈ Icc a b) (hpt : ¬p t) : t ∈ Ioo a b :=
+  ⟨lt_of_le_of_ne ht.1 fun h ↦ hpt (h ▸ ha), lt_of_le_of_ne ht.2 fun h ↦ hpt (h ▸ hb)⟩
+
+/-- At a point `t₀` of `(a, b)`, a function continuous on `[a, b]` is continuous at every point
+near `t₀`, and a property holding on `[a, b]` holds at every point near `t₀`. -/
+theorem _root_.ContinuousOn.eventually_continuousAt_and_eventually_of_mem_Ioo {α X : Type*}
+    [TopologicalSpace α] [LinearOrder α] [OrderClosedTopology α] [TopologicalSpace X] {f : α → X}
+    {p : α → Prop} {a b t₀ : α} (hf : ContinuousOn f (Icc a b)) (hp : ∀ t ∈ Icc a b, p t)
+    (ht₀ : t₀ ∈ Ioo a b) : (∀ᶠ t in 𝓝 t₀, ContinuousAt f t) ∧ ∀ᶠ t in 𝓝 t₀, p t :=
+  ⟨eventually_of_mem (Ioo_mem_nhds ht₀.1 ht₀.2) fun _ ht ↦
+      hf.continuousAt (Icc_mem_nhds ht.1 ht.2),
+    eventually_of_mem (Icc_mem_nhds ht₀.1 ht₀.2) hp⟩
 
 /-- The frontier of `[a, b]` avoids a set containing neither `a` nor `b`. -/
 theorem disjoint_frontier_Icc {α : Type*} [TopologicalSpace α] [LinearOrder α]
