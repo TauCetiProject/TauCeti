@@ -17,9 +17,9 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
   (`euclideanHausdorffMeasure_graph_id_image`). The codimension-one factor `√(1 + ‖A‖²)` with the
   operator norm `‖I‖ = 1` would give `√2` instead (`sqrt_one_add_norm_id_sq`).
 * *Lipschitz graphs over an interval.* For a Lipschitz `φ : ℝ → ℝ`, the graph `x ↦ (x, φ x)` over
-  `[a, b]` has `H¹` measure `∫_a^b √(1 + φ'(x)²) dx` (`euclideanHausdorffMeasure_graph_image_Icc`),
-  since on `ℝ` the integrand `√det(1 + A* A)` is `√(1 + (A 1)²)`
-  (`det_one_add_adjoint_comp_self_real`).
+  `[a, b]` has `H¹` measure `∫_{[a, b]} √(1 + φ'(x)²) dx`, the integral over the set `[a, b]`
+  (`euclideanHausdorffMeasure_graph_image_Icc`), since on `ℝ` the integrand `√det(1 + A* A)`,
+  the Jacobian of `t ↦ (t, A t)`, is the norm `√(1 + (A 1)²)` of the image of `1`.
 -/
 
 public section
@@ -38,17 +38,13 @@ theorem euclideanHausdorffMeasure_graph_id_image {s : Set (EuclideanSpace ℝ (F
     (hs : MeasurableSet s) :
     μHE[2] ((fun x ↦ WithLp.toLp 2 (x, x)) '' s) = 2 * volume s := by
   have h := LipschitzWith.id.euclideanHausdorffMeasure_graph_image (φ := id) hs
-  simp only [finrank_euclideanSpace_fin, id_eq] at h
-  rw [h]
-  have hdet : ∀ x : EuclideanSpace ℝ (Fin 2), Real.sqrt (LinearMap.det
-      (1 + LinearMap.adjoint (fderiv ℝ (id : EuclideanSpace ℝ (Fin 2) → _) x :
-        EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)) ∘ₗ
-        (fderiv ℝ (id : EuclideanSpace ℝ (Fin 2) → _) x :
-          EuclideanSpace ℝ (Fin 2) →ₗ[ℝ] EuclideanSpace ℝ (Fin 2)))) = 2 := by
-    intro x
-    rw [fderiv_id, ← ContinuousLinearMap.normDet_graphL,
-      ContinuousLinearMap.normDet_graphL_id_of_finrank_eq_two (finrank_euclideanSpace_fin)]
-  simp only [hdet, setLIntegral_const, ENNReal.ofReal_ofNat]
+  rw [finrank_euclideanSpace_fin] at h
+  refine h.trans ?_
+  rw [show (2 : ℝ≥0∞) * volume s = ∫⁻ _ in s, 2 by simp]
+  refine setLIntegral_congr_fun hs fun x _ => ?_
+  rw [fderiv_id, ← ContinuousLinearMap.normDet_graphL,
+    ContinuousLinearMap.normDet_graphL_id_of_finrank_eq_two finrank_euclideanSpace_fin]
+  simp
 
 /-- The codimension-one factor `√(1 + ‖A‖²)` with the operator norm gives `√2` for the identity of
 `ℝ²`, not the area factor `2`. -/
@@ -57,20 +53,9 @@ theorem sqrt_one_add_norm_id_sq :
   rw [ContinuousLinearMap.norm_id]
   norm_num
 
-/-- On `ℝ`, `det (1 + A* A) = 1 + (A 1) ^ 2`. -/
-theorem det_one_add_adjoint_comp_self_real (A : ℝ →ₗ[ℝ] ℝ) :
-    LinearMap.det (1 + LinearMap.adjoint A ∘ₗ A) = 1 + A 1 ^ 2 := by
-  have hA : LinearMap.adjoint A (A 1) = A 1 ^ 2 := by
-    have := LinearMap.adjoint_inner_left A (A 1) 1
-    simp only [RCLike.inner_apply, conj_trivial] at this
-    have hlin : ∀ (f : ℝ →ₗ[ℝ] ℝ) (y : ℝ), f y = y * f 1 := fun f y => by
-      rw [← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
-    rw [hlin (LinearMap.adjoint A), this, mul_one, hlin A (A 1), sq]
-  rw [LinearMap.det_ring]
-  simp [hA]
-
 /-- **The length of a Lipschitz graph over an interval**: for a Lipschitz `φ : ℝ → ℝ`, the graph
-`x ↦ (x, φ x)` over `[a, b]` has one-dimensional Hausdorff measure `∫_a^b √(1 + φ'(x)²) dx`. -/
+`x ↦ (x, φ x)` over `[a, b]` has one-dimensional Hausdorff measure `∫_{[a, b]} √(1 + φ'(x)²) dx`,
+the integral over the set `[a, b]` (both sides vanish when `b < a`). -/
 theorem euclideanHausdorffMeasure_graph_image_Icc {K : ℝ≥0} {φ : ℝ → ℝ} (hφ : LipschitzWith K φ)
     (a b : ℝ) :
     μHE[1] ((fun x ↦ WithLp.toLp 2 (x, φ x)) '' Icc a b) =
@@ -79,7 +64,8 @@ theorem euclideanHausdorffMeasure_graph_image_Icc {K : ℝ≥0} {φ : ℝ → �
   rw [finrank_self] at h
   rw [h]
   refine setLIntegral_congr_fun measurableSet_Icc fun x _ => ?_
-  rw [det_one_add_adjoint_comp_self_real]
+  rw [← ContinuousLinearMap.normDet_graphL, LinearMap.normDet_eq_norm_apply_one,
+    WithLp.prod_norm_eq_of_L2]
   simp
 
 end TauCeti.Examples.AreaFormulaGraph
