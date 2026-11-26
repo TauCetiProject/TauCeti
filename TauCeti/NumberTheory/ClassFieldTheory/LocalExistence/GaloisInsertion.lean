@@ -42,7 +42,7 @@ to `p`.
 * `TauCeti.ClassFieldTheory.localClassField_localNormOpenSubgroup`: the class field of the norm
   subgroup of `V` is the maximal abelian sublayer of `V`.
 * `TauCeti.ClassFieldTheory.localClassFieldPrimeToResidueCharacteristic_galoisConnection` and
-  `TauCeti.ClassFieldTheory.localClassFieldPrimeToResidueCharacteristic_localNormOpenSubgroup`:
+  `TauCeti.ClassFieldTheory.localClassFieldPrimeToLayer_localNormOpenSubgroupPrimeTo`:
   the same statements in the prime-to-residue-characteristic range.
 
 ## References
@@ -65,18 +65,9 @@ variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
 private theorem localNormOpenSubgroup_le_iff_of_isAbelian
     {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)} (hW : W.IsAbelianClassFieldLayer) :
     localNormOpenSubgroup K V ≤ localNormOpenSubgroup K W ↔ V ≤ W := by
-  change (localNormOpenSubgroup K V).val.toSubgroup ≤ (localNormOpenSubgroup K W).val.toSubgroup ↔
-    V ≤ W
-  rw [localNormOpenSubgroup_toSubgroup, localNormOpenSubgroup_toSubgroup]
+  rw [← Subtype.coe_le_coe, ← OpenSubgroup.toSubgroup_le, localNormOpenSubgroup_toSubgroup,
+    localNormOpenSubgroup_toSubgroup]
   exact localNormSubgroup_le_iff_of_isAbelian hW
-
-/-- The norm subgroup of the maximal abelian sublayer of `V` is that of `V`. -/
-private theorem localNormOpenSubgroup_maximalAbelianLayer
-    (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
-    localNormOpenSubgroup K V.maximalAbelianLayer = localNormOpenSubgroup K V :=
-  Subtype.ext <| OpenSubgroup.toSubgroup_injective <| by
-    rw [localNormOpenSubgroup_toSubgroup, localNormOpenSubgroup_toSubgroup,
-      localNormSubgroup_maximalAbelianLayer]
 
 /-! ### Characteristic zero -/
 
@@ -86,9 +77,8 @@ variable [CharZero K]
 
 /-- The bundled norm subgroup of the local class field attached to `N` is `N`. -/
 private theorem localNormOpenSubgroup_localClassField (N : LocalNormSubgroups K) :
-    localNormOpenSubgroup K (localClassField N).val = N :=
-  Subtype.ext <| OpenSubgroup.toSubgroup_injective <| by
-    rw [localNormOpenSubgroup_toSubgroup, localClassField_normSubgroup]
+    localNormOpenSubgroup K (localClassField N).val = N := by
+  simpa using localClassFieldCorrespondence.symm_apply_apply N
 
 variable (K) in
 /-- **The norm-subgroup Galois connection.** In characteristic zero, for every open normal
@@ -132,22 +122,12 @@ prime-to-residue-characteristic norm-subgroup Galois insertion. -/
 abbrev OpenNormalLayerPrimeTo (K : Type) [Field K] (p : ℕ) : Type :=
   {V : OpenNormalSubgroup (AbsoluteGaloisGroup K) // (ofOpenNormal V).degree.Coprime p}
 
-omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- The degree of the maximal abelian sublayer of `V` divides the degree of `V`. -/
-private theorem degree_maximalAbelianLayer_dvd (V : OpenNormalSubgroup (AbsoluteGaloisGroup K)) :
-    (ofOpenNormal V.maximalAbelianLayer).degree ∣ (ofOpenNormal V).degree := by
-  simpa only [NormalLayer.degree_eq_relIndex, NormalLayer.top_ofOpenNormal,
-    NormalLayer.ground_ofOpenNormal, OpenSubgroup.toSubgroup_top,
-    Subgroup.relIndex_top_right] using
-    Subgroup.index_dvd_of_le (fun _ hx ↦ V.le_maximalAbelianLayer hx :
-      V.toSubgroup ≤ V.maximalAbelianLayer.toSubgroup)
-
 /-- The norm subgroup of a layer of degree prime to `p` has index prime to `p`. -/
 private theorem index_localNormSubgroup_coprime {p : ℕ} (V : OpenNormalLayerPrimeTo K p) :
     (localNormOpenSubgroup K V.val).val.toSubgroup.index.Coprime p := by
   rw [localNormOpenSubgroup_toSubgroup, ← localNormSubgroup_maximalAbelianLayer,
     index_localNormSubgroup (K := K) V.val.isAbelianClassFieldLayer_maximalAbelianLayer]
-  exact Nat.Coprime.coprime_dvd_left (degree_maximalAbelianLayer_dvd V.val) V.property
+  exact Nat.Coprime.coprime_dvd_left (V.val.degree_ofOpenNormal_maximalAbelianLayer_dvd) V.property
 
 /-- The norm subgroup of a layer of degree prime to `p`, as a norm subgroup of index prime
 to `p`. -/
@@ -180,9 +160,9 @@ theorem localClassFieldPrimeToLayer_val (N : LocalNormSubgroupsPrimeTo K p) :
 private theorem localNormOpenSubgroupPrimeTo_localClassFieldPrimeToLayer
     (N : LocalNormSubgroupsPrimeTo K p) :
     localNormOpenSubgroupPrimeTo (localClassFieldPrimeToLayer p N) = N :=
-  Subtype.ext <| Subtype.ext <| OpenSubgroup.toSubgroup_injective <| by
-    rw [localNormOpenSubgroupPrimeTo_val, localNormOpenSubgroup_toSubgroup,
-      localClassFieldPrimeToLayer_val, localClassFieldPrimeToResidueCharacteristic_normSubgroup]
+  Subtype.ext <| by
+    simpa using congrArg Subtype.val
+      ((localClassFieldCorrespondencePrimeToResidueCharacteristic (K := K) p).symm_apply_apply N)
 
 variable (K) in
 /-- **The prime-to-residue-characteristic norm-subgroup Galois connection.** For a layer `V` of
@@ -207,7 +187,7 @@ def localClassFieldPrimeToResidueCharacteristicGaloisInsertion :
 /-- **The closure operator of the prime-to-`p` insertion** is the maximal abelian sublayer: the
 prime-to-`p` class field of the norm subgroup of a layer of degree prime to `p` is its maximal
 abelian sublayer. -/
-theorem localClassFieldPrimeToResidueCharacteristic_localNormOpenSubgroup
+theorem localClassFieldPrimeToLayer_localNormOpenSubgroupPrimeTo
     (V : OpenNormalLayerPrimeTo K p) :
     (localClassFieldPrimeToLayer p (localNormOpenSubgroupPrimeTo V)).val =
       V.val.maximalAbelianLayer :=
