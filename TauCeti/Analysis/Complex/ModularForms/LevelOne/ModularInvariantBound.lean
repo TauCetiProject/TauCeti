@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
-import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.Real.Pi.Bounds
 import TauCeti.Analysis.Normed.Ring.InfiniteProd
+import TauCeti.Analysis.SpecialFunctions.Exp.NegPiMulSqrt
 import TauCeti.Analysis.SpecialFunctions.QPochhammer
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
 
@@ -58,32 +57,14 @@ local notation "𝕢" => Function.Periodic.qParam
 
 namespace TauCeti.ModularForm
 
-/-- `230 < e^{π √3}`, so that `|q| < 1/230` on `Im τ ≥ √3 / 2`. -/
-private theorem two_hundred_thirty_lt_exp_pi_mul_sqrt_three : 230 < Real.exp (π * √3) := by
-  have hpi := Real.pi_gt_d6
-  have hsqrt : (1.7320508 : ℝ) ≤ √3 := Real.le_sqrt_of_sq_le (by norm_num)
-  have hx : (5.4413 : ℝ) ≤ π * √3 := by nlinarith
-  have he : (2.7182818283 : ℝ) ^ 5 < Real.exp 1 ^ 5 := by
-    gcongr
-    exact Real.exp_one_gt_d9
-  have hy : ∑ i ∈ Finset.range 4, (0.4413 : ℝ) ^ i / i.factorial ≤ Real.exp 0.4413 :=
-    Real.sum_le_exp_of_nonneg (by norm_num) 4
-  norm_num [Finset.sum_range_succ, Nat.factorial] at hy
-  calc (230 : ℝ) < 2.7182818283 ^ 5 * (155299 / 100000) := by norm_num
-    _ ≤ Real.exp 1 ^ 5 * Real.exp 0.4413 := by gcongr; linarith
-    _ = Real.exp 5.4413 := by
-        rw [← Real.exp_natCast_mul, ← Real.exp_add]
-        norm_num
-    _ ≤ Real.exp (π * √3) := Real.exp_le_exp.2 hx
-
 /-- On `Im τ ≥ √3 / 2` the nome satisfies `|q| ≤ 1/230`. -/
 private theorem norm_qParam_le {τ : ℍ} (hτ : √3 / 2 ≤ τ.im) : ‖𝕢 1 (τ : ℂ)‖ ≤ 1 / 230 := by
-  have h : 230 ≤ Real.exp (2 * π * τ.im) :=
-    two_hundred_thirty_lt_exp_pi_mul_sqrt_three.le.trans
-      (Real.exp_le_exp.2 (by nlinarith [Real.pi_pos]))
-  rw [Function.Periodic.norm_qParam, coe_im, div_one,
-    show -2 * π * τ.im = -(2 * π * τ.im) by ring, Real.exp_neg, one_div]
-  exact inv_anti₀ (by norm_num) h
+  rw [Function.Periodic.norm_qParam, coe_im, div_one]
+  calc Real.exp (-2 * π * τ.im) ≤ Real.exp (-(π * √3)) :=
+        Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
+    _ ≤ 1 / 230 := TauCeti.exp_neg_pi_mul_sqrt_le (s := 1.7320508) (c := 0.4413) 5
+        (by norm_num) (by norm_num) (by norm_num) (by norm_num)
+        (by norm_num [Finset.sum_range_succ, Nat.factorial])
 
 /-- `‖E₄ τ - 1‖ ≤ 250 |q|` when `|q| ≤ 1/230`: the Lambert bound for `E₄ - 1 = 240 s₃(q)`. -/
 private theorem norm_E₄_sub_one_le {τ : ℍ} (hq : ‖𝕢 1 (τ : ℂ)‖ ≤ 1 / 230) :
@@ -178,10 +159,7 @@ private theorem norm_j_sub_inv_qParam_le_of_norm_qParam_le {τ : ℍ}
           simpa using TauCeti.norm_pow_sub_one_le Q 24
       _ ≤ |1 + u - 1| * (24 : ℕ) * max |1 + u| |1| ^ (24 - 1) :=
           (le_abs_self _).trans (abs_pow_sub_pow_le (1 + u) 1 24)
-      _ = u * 24 * (1 + u) ^ 23 := by
-          rw [add_sub_cancel_left, abs_of_nonneg hu0, abs_one, abs_of_nonneg (by linarith),
-            max_eq_left (by linarith)]
-          norm_num
+      _ = u * 24 * (1 + u) ^ 23 := by simp [abs_of_nonneg, hu0, add_nonneg zero_le_one hu0]
       _ ≤ 101 / 100 * r * (24 * (1 + 101 / 100 * (1 / 230)) ^ 23) := by
           rw [mul_assoc]
           gcongr
@@ -196,7 +174,7 @@ private theorem norm_j_sub_inv_qParam_le_of_norm_qParam_le {τ : ℍ}
       101 / 100 * (24 * (1 + 101 / 100 * (1 / 230)) ^ 23) ≤
       2114567 / 1000 * (1 - 101 / 100 * (1 / 230) : ℝ) ^ 24 := by norm_num
   rw [hj, norm_div, div_le_iff₀ (norm_pos_iff.2 (mul_ne_zero hq0 (pow_ne_zero _ hQ0)))]
-  nlinarith [hnum, hconst]
+  linarith [hnum, hE3, hP, hden, mul_le_mul_of_nonneg_left hconst hr0.le]
 
 /-- **The modular invariant near the cusp.** On `Im τ ≥ √3 / 2`, a region containing the
 standard fundamental domain, `j` differs from `q⁻¹`, `q = e^{2πiτ}`, by at most
