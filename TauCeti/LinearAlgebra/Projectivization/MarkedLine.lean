@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Projectivization.Basic
 
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.LinearAlgebra.Projectivization.Independence
+import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -195,7 +196,8 @@ theorem range_markedLine_inf_ker :
     rw [mem_span_singleton, markedLine_single_one_one, markedLine_apply]
     -- The hyperplane condition says `x₀ φ(v) φ(w) = 0`.
     have h : x 0 * φ v * φ w = 0 := by
-      simpa [mul_comm, mul_left_comm, sub_self] using hφx
+      simp only [map_add, map_sub, map_smul, smul_eq_mul] at hφx
+      linear_combination hφx
     rcases mul_eq_zero.1 h with h | h
     · rcases mul_eq_zero.1 h with h | h
       · exact ⟨x 1, by rw [h]; module⟩
