@@ -740,8 +740,9 @@ theorem _root_.Topology.IsInducing.image_connectedComponentIn_preimage {Y : Type
 
 /-- **Connected components of a subspace of a set.** If an inducing map `f` takes values in `F`
 and its range contains the connected component of `f y` in `F`, then the preimage of that
-component is the connected component of `y`. For the inclusion of a subspace `s ⊆ F`, the
-connected component of a point in `s` is its connected component in `F`, read in `s`. -/
+component is the connected component of `y`. For the inclusion of a subspace `s ⊆ F` containing
+the connected component in `F` of a point of `s`, that component, read in `s`, is the point's
+connected component in `s`. -/
 theorem _root_.Topology.IsInducing.preimage_connectedComponentIn {Y : Type*}
     [TopologicalSpace Y] {f : Y → X} (hf : IsInducing f) {F : Set X} {y : Y}
     (hF : range f ⊆ F) (hs : connectedComponentIn F (f y) ⊆ range f) :
