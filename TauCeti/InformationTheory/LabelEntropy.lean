@@ -8,9 +8,9 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 public import Mathlib.Probability.Independence.Basic
 import Mathlib.Analysis.Convex.Jensen
-import Mathlib.InformationTheory.KullbackLeibler.KLFun
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
+import TauCeti.InformationTheory.KullbackLeibler.KLFun
 import TauCeti.MeasureTheory.Measure.Real
 import TauCeti.Probability.Independence.Basic
 
@@ -246,18 +246,6 @@ theorem labelEntropy_pair_of_indepFun [IsProbabilityMeasure μ] [MeasurableSpace
     sum_measureReal_preimage_singleton_eq_one (hY <| measurableSet_singleton ·),
     one_mul]
 
-/-- The per-cell gap in subadditivity is a scaled `klFun` value: for `0 ≤ p ≤ P` and `p ≤ Q`,
-`p log p - p log P - p log Q - p + P Q = P Q klFun (p / (P Q))`. -/
-private theorem cellGap_eq_mul_klFun {p P Q : ℝ} (hp : 0 ≤ p) (hpP : p ≤ P) (hpQ : p ≤ Q) :
-    p * log p - p * log P - p * log Q - p + P * Q = P * Q * klFun (p / (P * Q)) := by
-  rcases hp.eq_or_lt with rfl | hp
-  · simp [klFun_zero]
-  have hP := hp.trans_le hpP
-  have hQ := hp.trans_le hpQ
-  rw [klFun_apply, log_div hp.ne' (by positivity), log_mul hP.ne' hQ.ne']
-  field_simp
-  ring
-
 /-- **Equality in subadditivity.** Under a probability measure (or the zero measure), measurable
 labels with `H((X, Y)) = H(X) + H(Y)` are independent. -/
 theorem indepFun_of_labelEntropy_pair_eq_add [IsZeroOrProbabilityMeasure μ] [MeasurableSpace B]
@@ -295,8 +283,10 @@ theorem indepFun_of_labelEntropy_pair_eq_add [IsZeroOrProbabilityMeasure μ] [Me
     have e3 : ∑ a, ∑ b, P a * Q b = 1 := by
       simp_rw [← Finset.mul_sum, hQsum, mul_one, hPsum]
     have hcell : ∀ a b, p a b * log (p a b) - p a b * log (P a) - p a b * log (Q b) - p a b +
-        P a * Q b = P a * Q b * klFun (p a b / (P a * Q b)) := fun a b ↦
-      cellGap_eq_mul_klFun measureReal_nonneg (hpP a b) (hpQ a b)
+        P a * Q b = P a * Q b * klFun (p a b / (P a * Q b)) := fun a b ↦ by
+      rcases (show 0 ≤ p a b from measureReal_nonneg).eq_or_lt with h0 | hp
+      · simp [← h0, klFun_zero]
+      exact (mul_klFun_div_mul (hp.trans_le (hpP a b)).ne' (hp.trans_le (hpQ a b)).ne').symm
     simp only [← hcell, Finset.sum_add_distrib, Finset.sum_sub_distrib, e1, e2, e3, hrow, hPsum]
     simp only [negMulLog, neg_mul, Finset.sum_neg_distrib] at hreal
     linarith
