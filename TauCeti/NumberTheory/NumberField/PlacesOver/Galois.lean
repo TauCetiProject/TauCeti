@@ -111,7 +111,8 @@ theorem exists_smul_eq_of_liesOver_finitePlace [IsGalois K F] (v : FinitePlace K
   -- Transport the prime of `w₁` to the prime of `w₂` along `σ`.
   rw [← hw₂, ← hσ, Ideal.mem_pointwise_smul_iff_inv_smul_mem, hw₁]
   -- The action of `σ⁻¹` on `𝓞 F` is the restriction of its action on `F`.
-  simp only [AbsoluteValue.algEquiv_smul_apply, AlgEquiv.aut_inv, algebraMap_smul_eq_apply]
+  simp only [AbsoluteValue.smul_apply, AlgEquiv.smul_def, AlgEquiv.aut_inv,
+    algebraMap_smul_eq_apply]
 
 /-- Let `F / K` be a Galois extension of number fields and `v` a finite place of `K`. The absolute
 values of `F` lying over `v` form a single orbit of `F ≃ₐ[K] F`. -/

@@ -12,15 +12,15 @@ public import Mathlib.Analysis.Normed.Ring.WithAbs
 
 A group `G` acting on a semiring `F` by ring automorphisms (`MulSemiringAction G F`) acts on the
 absolute values of `F` by `g • w = w ∘ g⁻¹`, that is, `(g • w) x = w (g⁻¹ • x)`
-(`AbsoluteValue.instMulAction`). This covers the Galois group `F ≃ₐ[R] F` of an `R`-algebra
-(through Mathlib's `AlgEquiv.applyMulSemiringAction`, where `(σ • w) x = w (σ.symm x)` by
-`AbsoluteValue.algEquiv_smul_apply`), as well as an abstract Galois group `G` acting on `F` with
-`IsGaloisGroup G K F`. For `F ≃ₐ[k] F` it extends Mathlib's action of `Gal(F/k)` on the infinite
-places of a number field `F` to all absolute values (`NumberField.InfinitePlace.coe_smul`). For a
-finite extension of number fields `F / K` this is the action that permutes the absolute values of
-`F` lying over a given place of `K`. These need not be places of `F`: over a finite place they are
-in general real powers of finite places. That is why the action is defined on all of
-`AbsoluteValue F S`, rather than on a type of places.
+(`AbsoluteValue.instMulAction`). This covers the Galois group `F ≃ₐ[R] F` of an `R`-algebra (through
+Mathlib's `AlgEquiv.applyMulSemiringAction`, where `(σ • w) x = w (σ.symm x)` by
+`AbsoluteValue.smul_apply`, `AlgEquiv.smul_def` and `AlgEquiv.aut_inv`), as well as an abstract
+Galois group `G` acting on `F` with `IsGaloisGroup G K F`. For `F ≃ₐ[k] F` it extends Mathlib's
+action of `Gal(F/k)` on the infinite places of a number field `F` to all absolute values
+(`NumberField.InfinitePlace.coe_smul`). For a finite extension of number fields `F / K` this is the
+action that permutes the absolute values of `F` lying over a given place of `K`. These need not be
+places of `F`: over a finite place they are in general real powers of finite places. That is why the
+action is defined on all of `AbsoluteValue F S`, rather than on a type of places.
 
 If `F` is an `R`-algebra and the action of `G` commutes with that of `R`
 (`SMulCommClass G R F`), then `g` fixes `R`, so it does not change the restriction of an absolute
@@ -54,11 +54,6 @@ instance instMulAction : MulAction G (AbsoluteValue F S) where
 
 @[simp]
 theorem smul_apply (g : G) (w : AbsoluteValue F S) (x : F) : (g • w) x = w (g⁻¹ • x) :=
-  rfl
-
-/-- For the action of an algebra automorphism, `(σ • w) x = w (σ.symm x)`. -/
-theorem algEquiv_smul_apply {R : Type*} [CommSemiring R] [Algebra R F] (σ : F ≃ₐ[R] F)
-    (w : AbsoluteValue F S) (x : F) : (σ • w) x = w (σ.symm x) :=
   rfl
 
 end MulAction
