@@ -235,6 +235,27 @@ theorem convolution_single_single (B : V →+ W →+ U) (g g' : H) (x : V) (y : 
     subst hu hu'
     exact mem_filter.2 ⟨mem_singleton_self _, huu'⟩
 
+/-- Convolving on the left with a constant series `single 0 x` applies `B x` to each coefficient. -/
+theorem coeff_convolution_single_zero_left (B : V →+ W →+ U) (x : V) (w : NovikovSeries W H N)
+    (h : H) : (convolution B (single 0 x) w).coeff h = B x (w.coeff h) := by
+  rw [coeff_convolution_eq_sum (s := {(0, h)}) (fun p hp => by rw [mem_singleton.1 hp, zero_add])
+    fun u u' huu' hu _ => ?_, sum_singleton, coeff_single_same]
+  have hu : u = 0 := by_contra fun hu0 => hu (coeff_single_of_ne hu0 x)
+  subst hu
+  rw [zero_add] at huu'
+  rw [huu', mem_singleton]
+
+/-- Convolving on the right with a constant series `single 0 y` applies `B · y` to each
+coefficient. -/
+theorem coeff_convolution_single_zero_right (B : V →+ W →+ U) (v : NovikovSeries V H N) (y : W)
+    (h : H) : (convolution B v (single 0 y)).coeff h = B (v.coeff h) y := by
+  rw [coeff_convolution_eq_sum (s := {(h, 0)}) (fun p hp => by rw [mem_singleton.1 hp, add_zero])
+    fun u u' huu' _ hu' => ?_, sum_singleton, coeff_single_same]
+  have hu' : u' = 0 := by_contra fun hu0 => hu' (coeff_single_of_ne hu0 y)
+  subst hu'
+  rw [add_zero] at huu'
+  rw [huu', mem_singleton]
+
 /-- A nonzero coefficient of a convolution comes from a pair of support exponents. -/
 theorem exists_add_eq_of_coeff_convolution_ne_zero {B : V →+ W →+ U} {v : NovikovSeries V H N}
     {w : NovikovSeries W H N} {h : H} (hvw : (convolution B v w).coeff h ≠ 0) :
@@ -400,13 +421,8 @@ theorem single_mul_single (g g' : H) (r r' : R) :
 
 /-- Multiplying by a constant series `single 0 r` multiplies each coefficient on the left. -/
 theorem coeff_single_zero_mul (r : R) (a : NovikovSeries R H N) (h : H) :
-    (single 0 r * a).coeff h = r * a.coeff h := by
-  rw [coeff_mul_eq_sum (s := {(0, h)}) (fun p hp => by rw [mem_singleton.1 hp, zero_add])
-    fun u v huv hu _ => ?_, sum_singleton, coeff_single_same]
-  have hu : u = 0 := by_contra fun hu0 => hu (coeff_single_of_ne hu0 r)
-  subst hu
-  rw [zero_add] at huv
-  rw [huv, mem_singleton]
+    (single 0 r * a).coeff h = r * a.coeff h :=
+  coeff_convolution_single_zero_left _ r a h
 
 /-- Multiplying by a constant series is scalar multiplication. -/
 @[simp]
@@ -417,13 +433,8 @@ theorem single_zero_mul_eq_smul (r : R) (a : NovikovSeries R H N) : single 0 r *
 /-- Multiplying by a constant series `single 0 r` multiplies each coefficient on the right. -/
 @[simp]
 theorem coeff_mul_single_zero (a : NovikovSeries R H N) (r : R) (h : H) :
-    (a * single 0 r).coeff h = a.coeff h * r := by
-  rw [coeff_mul_eq_sum (s := {(h, 0)}) (fun p hp => by rw [mem_singleton.1 hp, add_zero])
-    fun u v huv _ hv => ?_, sum_singleton, coeff_single_same]
-  have hv : v = 0 := by_contra fun hv0 => hv (coeff_single_of_ne hv0 r)
-  subst hv
-  rw [add_zero] at huv
-  rw [huv, mem_singleton]
+    (a * single 0 r).coeff h = a.coeff h * r :=
+  coeff_convolution_single_zero_right _ a r h
 
 /-- Multiplying on the left by the monomial `r e^g` shifts the exponents by `g`. -/
 theorem coeff_single_mul_add [IsLeftCancelAdd H] (g : H) (r : R) (a : NovikovSeries R H N)

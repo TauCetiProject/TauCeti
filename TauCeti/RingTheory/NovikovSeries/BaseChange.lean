@@ -101,18 +101,6 @@ section Module
 
 variable {R H V : Type*} [AddMonoid H] [Semiring R] [AddCommMonoid V] [Module R V]
 
-/-- Convolving on the left with a constant series `single 0 r` along scalar multiplication
-multiplies each coefficient by `r`. -/
-private theorem coeff_convolution_smulAddHom_single_zero {N : H →+ ℝ} (r : R)
-    (v : NovikovSeries V H N) (h : H) :
-    (convolution (smulAddHom R V) (single 0 r) v).coeff h = r • v.coeff h := by
-  rw [coeff_convolution_eq_sum (s := {(0, h)}) (fun p hp => by rw [mem_singleton.1 hp, zero_add])
-    fun u w huw hu _ => ?_, sum_singleton, coeff_single_same, smulAddHom_apply]
-  have hu : u = 0 := by_contra fun hu0 => hu (coeff_single_of_ne hu0 r)
-  subst hu
-  rw [zero_add] at huw
-  rw [huw, mem_singleton]
-
 variable (R V) in
 /-- **Novikov series act on vector-valued Novikov series** by convolution along scalar
 multiplication: the coefficient of `a • v` at `h` is the finite sum of `a_u • v_(u')` over the pairs
@@ -124,7 +112,7 @@ def module (N : H →+ ℝ) : Module (NovikovSeries R H N) (NovikovSeries V H N)
   smul := convolution (smulAddHom R V)
   one_smul v := by
     ext h
-    exact (coeff_convolution_smulAddHom_single_zero 1 v h).trans (one_smul R _)
+    exact (coeff_convolution_single_zero_left _ 1 v h).trans (one_smul R _)
   mul_smul := convolution_convolution _ _ _ _ fun x y z => mul_smul x y z
   smul_zero := convolution_zero _
   smul_add := convolution_add_right _
@@ -162,19 +150,14 @@ theorem single_zero_smul (r : R) (v : NovikovSeries V H N) :
     letI := module R V N
     (single 0 r : NovikovSeries R H N) • v = r • v := by
   ext h
-  exact coeff_convolution_smulAddHom_single_zero r v h
+  exact coeff_convolution_single_zero_left _ r v h
 
 /-- A series acting on a constant series `single 0 x` multiplies `x` by each coefficient. -/
 @[simp]
 theorem coeff_smul_single_zero (a : NovikovSeries R H N) (x : V) (h : H) :
     letI := module R V N
-    (a • (single 0 x : NovikovSeries V H N)).coeff h = a.coeff h • x := by
-  rw [coeff_smul_eq_sum (s := {(h, 0)}) (fun p hp => by rw [mem_singleton.1 hp, add_zero])
-    fun u w huw _ hw => ?_, sum_singleton, coeff_single_same]
-  have hw : w = 0 := by_contra fun hw0 => hw (coeff_single_of_ne hw0 x)
-  subst hw
-  rw [add_zero] at huw
-  rw [huw, mem_singleton]
+    (a • (single 0 x : NovikovSeries V H N)).coeff h = a.coeff h • x :=
+  coeff_convolution_single_zero_right _ a x h
 
 /-- The action of the Novikov ring extends the coefficientwise action of `R`:
 `(r • a) • v = r • (a • v)`. -/
@@ -280,11 +263,9 @@ theorem smulCommClass_module :
     letI := module R V N
     SMulCommClass R (NovikovSeries R H N) (NovikovSeries V H N) := by
   let := module R V N
-  have hr (r : R) (a : NovikovSeries R H N) : single 0 r * a = a * single 0 r := by
-    ext h
-    rw [coeff_single_zero_mul, coeff_mul_single_zero, mul_comm]
   refine ⟨fun r a v => ?_⟩
-  rw [← single_zero_smul, ← single_zero_smul, ← mul_smul, ← mul_smul, hr]
+  rw [← single_zero_smul, ← single_zero_smul, ← mul_smul, ← mul_smul, ← algebraMap_self_apply,
+    Algebra.commutes]
 
 variable (N) in
 /-- **The canonical map from the tensor product.** The `Λ`-linear map
