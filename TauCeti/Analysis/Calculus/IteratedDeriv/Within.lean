@@ -14,12 +14,16 @@ At a point `x` with `s ∈ 𝓝 x`, the `k`-th iterated derivative within `s` of
 `C^n` with `k < n` has an ordinary derivative at `x`, namely the `(k+1)`-th iterated derivative
 within `s`. This upgrades
 Mathlib's `ContDiffWithinAt.differentiableWithinAt_iteratedDerivWithin` to a `HasDerivAt`
-statement with an explicit derivative.
+statement with an explicit derivative. For a function smooth on an open set `s`, iterated
+derivatives within a smaller uniquely differentiable set agree with those within `s`.
 
 ## Main declarations
 
 * `ContDiffWithinAt.hasDerivAt_iteratedDerivWithin`: the pointwise statement.
 * `ContDiffOn.hasDerivAt_iteratedDerivWithin`: the same, from smoothness on all of `s`.
+* `ContDiffOn.iteratedDerivWithin_eq_of_isOpen`: for a function smooth on an open set `s`, the
+  iterated derivatives within any uniquely differentiable set `t` agree with those within `s` on
+  `s ∩ t`.
 
 For the plain fundamental-theorem identity on a compact interval use Mathlib's
 `intervalIntegral.integral_derivWithin_Icc_of_contDiffOn_Icc` together with
@@ -65,3 +69,12 @@ theorem ContDiffOn.hasDerivAt_iteratedDerivWithin (hg : ContDiffOn 𝕜 n g s) (
     (hx : s ∈ 𝓝 x) :
     HasDerivAt (iteratedDerivWithin k g s) (iteratedDerivWithin (k + 1) g s x) x :=
   (hg x (mem_of_mem_nhds hx)).hasDerivAt_iteratedDerivWithin hk hx
+
+/-- If `g` is `C^n` on an open set `s` and `k ≤ n`, then at a point `x ∈ s` the `k`-th iterated
+derivative within any uniquely differentiable set `t ∋ x` agrees with that within `s`: both are the
+ordinary `k`-th derivative at `x`. -/
+theorem ContDiffOn.iteratedDerivWithin_eq_of_isOpen (hg : ContDiffOn 𝕜 n g s) (hk : k ≤ n)
+    (hs : IsOpen s) {t : Set 𝕜} (ht : UniqueDiffOn 𝕜 t) (hxs : x ∈ s) (hxt : x ∈ t) :
+    iteratedDerivWithin k g t x = iteratedDerivWithin k g s x := by
+  rw [iteratedDerivWithin_eq_iteratedDeriv ht ((hg.contDiffAt (hs.mem_nhds hxs)).of_le hk) hxt,
+    iteratedDerivWithin_of_isOpen hs hxs]

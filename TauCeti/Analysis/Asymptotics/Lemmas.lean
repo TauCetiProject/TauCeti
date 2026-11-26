@@ -51,6 +51,10 @@ theta kernels of a lattice at a level. A bound `u n = O(n ^ r)` on a sequence li
 the step function `t ↦ u ⌊t⌋₊` as `O(t ^ r)`, since `⌊t⌋₊ ∼ t`; this is how a bound on the
 partial sums of a sequence enters an integral against the partial-sum step function.
 
+Finitely many power bounds `O(t ^ e k)` as `t → 0+` hold with one constant on one interval
+`(0, b]`, and `(c / x) ^ n = O(x ^ (-β))` as `x → +∞` for `β ≤ n`. These are the bookkeeping steps
+of an asymptotic expansion obtained by repeated integration by parts.
+
 An eventual big-O bound at `atTop` is uniform on a whole half-line `[a, ∞)` of a linear order as
 soon as it holds uniformly on every interval `[a, b]`. This is how an asymptotic estimate becomes
 an explicit inequality valid at every point, which a summation argument can apply at infinitely
@@ -107,6 +111,10 @@ resolvent-type functions, which are `O(1 / y)` there.
   `[a, ∞)`, and `‖g‖` does not vanish there.
 * `Asymptotics.IsBigO.exists_norm_le_div_log`: `f = O((log x)⁻¹)` at `atTop` gives a uniform bound
   `‖f x‖ ≤ C / log x` on `[a, ∞)` (`a > 1`) when `f` is bounded on each `[a, b]`.
+* `Asymptotics.exists_forall_norm_le_mul_rpow_of_isBigO`: finitely many bounds `O(t ^ e k)` as
+  `t → 0+` hold with one constant on one interval `(0, b]`.
+* `Asymptotics.isBigO_const_div_pow_rpow_neg_atTop`: `(c / x) ^ n = O(x ^ (-β))` as `x → +∞` for
+  `β ≤ n`.
 * `TauCeti.mul_abs_pow_le_of_forall_mul_pow_le`: weighted terms bounded by `A` at a radius `q > 0`
   are bounded by `A * (|c| / q)ⁿ` at the radius `c`.
 * `TauCeti.continuousAt_of_isBigO_dist`: `dist (u y) (u x) = O(dist y x)` as `y → x` implies
@@ -363,6 +371,43 @@ theorem IsBigO.exists_norm_le_div_log {E : Type*} [Norm E] {f : ℝ → E} {a : 
   refine ⟨C, hC0.le, fun x hx ↦ ?_⟩
   simpa [norm_inv, Real.norm_of_nonneg (hlog hx).le, div_eq_mul_inv] using
     isBigOWith_principal.mp hC x hx
+
+/-- **Finitely many power bounds at `0+` hold uniformly near `0`.** If `f k = O(t ^ e k)` as
+`t → 0+` for each `k ≤ n`, then a single constant `C` and a single interval `(0, b]` give
+`‖f k t‖ ≤ C t ^ e k` for all `k ≤ n` and `t ∈ (0, b]`. -/
+theorem exists_forall_norm_le_mul_rpow_of_isBigO {E : Type*} [Norm E] {f : ℕ → ℝ → E}
+    {e : ℕ → ℝ} (n : ℕ) (hf : ∀ k ≤ n, f k =O[𝓝[>] 0] fun t ↦ t ^ e k) :
+    ∃ C b : ℝ, 0 < b ∧ ∀ k ≤ n, ∀ t ∈ Set.Ioc 0 b, ‖f k t‖ ≤ C * t ^ e k := by
+  have h : ∀ k ≤ n, ∃ C, ∀ᶠ t in 𝓝[>] (0 : ℝ), ‖f k t‖ ≤ C * t ^ e k := fun k hk ↦ by
+    obtain ⟨C, hC⟩ := (hf k hk).bound
+    refine ⟨C, ?_⟩
+    filter_upwards [hC, self_mem_nhdsWithin] with t h (ht : 0 < t)
+    rwa [Real.norm_of_nonneg (Real.rpow_nonneg ht.le _)] at h
+  choose! C hC using h
+  -- the sum of the `|C j|` is a common constant for the finitely many indices
+  have hall : ∀ᶠ t in 𝓝[>] (0 : ℝ), ∀ k ∈ Finset.range (n + 1),
+      ‖f k t‖ ≤ (∑ j ∈ Finset.range (n + 1), |C j|) * t ^ e k := by
+    refine (eventually_all_finset _).2 fun k hk ↦ ?_
+    filter_upwards [hC k (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)), self_mem_nhdsWithin]
+      with t h (ht : 0 < t)
+    exact h.trans (mul_le_mul_of_nonneg_right ((le_abs_self _).trans
+      (Finset.single_le_sum (fun j _ ↦ abs_nonneg (C j)) hk)) (Real.rpow_nonneg ht.le _))
+  obtain ⟨u, hu, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.1 hall
+  have hu : 0 < u := hu
+  exact ⟨_, u / 2, by positivity, fun k hk t ht ↦
+    hsub ⟨ht.1, ht.2.trans_lt (half_lt_self hu)⟩ k (Finset.mem_range.2 (Nat.lt_succ_of_le hk))⟩
+
+/-- For a constant `c` and `β ≤ n`, `(c / x) ^ n = O(x ^ (-β))` as `x → +∞`. -/
+theorem isBigO_const_div_pow_rpow_neg_atTop (c : ℂ) {β : ℝ} {n : ℕ} (hβn : β ≤ n) :
+    (fun x : ℝ ↦ (c / (x : ℂ)) ^ n) =O[atTop] fun x ↦ x ^ (-β) := by
+  refine IsBigO.of_bound (‖c‖ ^ n) ?_
+  filter_upwards [eventually_ge_atTop 1] with x hx
+  have hx0 : 0 < x := zero_lt_one.trans_le hx
+  rw [norm_pow, norm_div, Complex.norm_real, Real.norm_of_nonneg hx0.le,
+    Real.norm_of_nonneg (Real.rpow_nonneg hx0.le _), div_pow, div_eq_mul_inv,
+    ← Real.rpow_natCast x n, ← Real.rpow_neg hx0.le]
+  exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hx (neg_le_neg hβn))
+    (by positivity)
 
 end Asymptotics
 
