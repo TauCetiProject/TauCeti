@@ -26,11 +26,14 @@ and as a linear map it is Mathlib's `LinearMap.linearProjOfIsCompl`
 (`ContinuousLinearMap.toLinearMap_leftInverseAlong`). Moreover `ker P` is a topological complement
 of the range of `L` (`ContinuousLinearMap.isTopCompl_range_ker_of_isInvertible_comp`), and
 `1 - L (P ∘ L)⁻¹ P` is the projection onto `ker P` along that range
-(`ContinuousLinearMap.id_sub_comp_leftInverseAlong_eq_projectionL`); the equation `L f + S = 0`
-holds exactly when `f = -(P ∘ L)⁻¹ P S` and this projection of `S` vanishes
-(`ContinuousLinearMap.apply_add_eq_zero_iff`). The Banach-space and
-parameter-family theory of this construction is in
-`TauCeti.Analysis.Normed.Operator.Splitting.RangeComplement`.
+(`ContinuousLinearMap.id_sub_comp_leftInverseAlong_eq_projectionL`). Writing `Π` for this
+projection, every vector splits as `y = L ((P ∘ L)⁻¹ P y) + Π y`
+(`ContinuousLinearMap.apply_leftInverseAlong_add_projectionOntoL`), and Mathlib's splitting
+`ContinuousLinearEquiv.equivOfRightInverse` of `F` for `P` and its right inverse `L ∘ (P ∘ L)⁻¹`
+is `y ↦ (P y, Π y)` (`ContinuousLinearMap.snd_equivOfRightInverse_eq_projectionOntoL`). The
+equation `L f + S = 0` holds exactly when `f = -(P ∘ L)⁻¹ P S` and `Π S` vanishes
+(`ContinuousLinearMap.apply_add_eq_zero_iff`). The Banach-space and parameter-family theory of
+this construction is in `TauCeti.Analysis.Normed.Operator.Splitting.RangeComplement`.
 
 A continuous linear injection of a space into a finite-dimensional space of strictly larger
 dimension over a complete field has a continuous left inverse and a nonzero continuous covector
@@ -243,6 +246,41 @@ theorem id_sub_comp_leftInverseAlong_eq_projectionL (h : (P ∘L L).IsInvertible
       P.ker.projectionL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm := by
   rw [comp_leftInverseAlong_eq_projectionL h, Submodule.projectionL_eq_id_sub_projectionL
     (isTopCompl_range_ker_of_isInvertible_comp h)]
+
+/-- **The splitting of the target.** If `P ∘ L` is invertible, every `y` is the sum of
+`L ((P ∘ L)⁻¹ P y)` in the range of `L` and its projection onto `ker P` along that range. -/
+theorem apply_leftInverseAlong_add_projectionOntoL (h : (P ∘L L).IsInvertible) (y : F) :
+    L (leftInverseAlong L P y) +
+        (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm y :
+          F) = y := by
+  rw [Submodule.coe_projectionOntoL_apply, ← id_sub_comp_leftInverseAlong_eq_projectionL h]
+  simp
+
+/-- The projection onto `ker P` along the range of `L` vanishes on the range of `L`. -/
+@[simp]
+theorem projectionOntoL_apply_eq_zero_of_isInvertible_comp (h : (P ∘L L).IsInvertible) (x : E) :
+    P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm (L x) = 0 :=
+  Submodule.projectionOntoL_apply_right _ ⟨L x, LinearMap.mem_range_self _ x⟩
+
+/-- On the range of `L`, that is on the kernel of the projection onto `ker P` along it,
+`L ∘ (P ∘ L)⁻¹ P` is the identity. -/
+theorem apply_leftInverseAlong_eq_self_of_projectionOntoL_eq_zero (h : (P ∘L L).IsInvertible)
+    {y : F}
+    (hy : P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm y = 0) :
+    L (leftInverseAlong L P y) = y := by
+  simpa [hy] using apply_leftInverseAlong_add_projectionOntoL h y
+
+/-- **The target as a product.** If `P ∘ L` is invertible, Mathlib's splitting
+`ContinuousLinearEquiv.equivOfRightInverse : F ≃L[R] Y × ker P` for `P` and its right inverse
+`L ∘ (P ∘ L)⁻¹` is `y ↦ (P y, Π y)`: its second component `y - L ((P ∘ L)⁻¹ P y)` is the
+projection `Π y` of `y` onto `ker P` along the range of `L`. -/
+theorem snd_equivOfRightInverse_eq_projectionOntoL (h : (P ∘L L).IsInvertible)
+    (hr : RightInverse (L ∘L (P ∘L L).inverse) P) (y : F) :
+    (ContinuousLinearEquiv.equivOfRightInverse P _ hr y).2 =
+      P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm y := by
+  ext
+  rw [ContinuousLinearEquiv.snd_equivOfRightInverse, ← sub_eq_of_eq_add'
+    (apply_leftInverseAlong_add_projectionOntoL h y).symm, leftInverseAlong_apply, comp_apply]
 
 /-- **The leading correction.** For `S ∈ F`, the vector `f = -(P ∘ L)⁻¹ P S` satisfies
 `L f + S = Π S`, where `Π` is the projection onto `ker P` along the range of `L`. -/

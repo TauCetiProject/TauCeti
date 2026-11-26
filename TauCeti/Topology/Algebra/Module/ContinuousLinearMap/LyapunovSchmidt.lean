@@ -15,7 +15,12 @@ Let `L : E →L[R] F` be an operator and `P : F →L[R] Y` an auxiliary operator
 invertible. Then `W = ker P` is a topological complement of the range of `L`
 (`ContinuousLinearMap.isTopCompl_range_ker_of_isInvertible_comp`), with the projection
 `Π : F →L[R] W` onto `W` along the range of `L`, and `K = (P ∘ L)⁻¹ P` is the left inverse of `L`
-along `W` (`ContinuousLinearMap.leftInverseAlong`).
+along `W` (`ContinuousLinearMap.leftInverseAlong`). Every vector splits as `y = L (K y) + Π y`
+(`ContinuousLinearMap.apply_leftInverseAlong_add_projectionOntoL`), so the continuous linear
+equivalence `y ↦ (P y, Π y) : F ≃L[R] Y × W` is Mathlib's
+`ContinuousLinearEquiv.equivOfRightInverse` for `P` and its right inverse `L ∘ (P ∘ L)⁻¹`
+(`ContinuousLinearMap.snd_equivOfRightInverse_eq_projectionOntoL`). These facts about `L` and `P`
+alone are in `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.LeftInverse`.
 
 This file studies an operator `[L B] : E × G → F`, `(x, σ) ↦ L x + B σ`, obtained by adding to `L`
 a second block `B : G →L[R] F`, in which `L` acts on fast variables `x` and `B` on slow variables
@@ -23,11 +28,6 @@ a second block `B : G →L[R] F`, in which `L` acts on fast variables `x` and `B
 `Π ∘ B : G →L[R] W`, the slow block followed by the projection onto the complement of the range
 of `L`. The reduction loses nothing:
 
-* every vector splits as `y = L (K y) + Π y`
-  (`ContinuousLinearMap.apply_leftInverseAlong_add_projectionOntoL`), so the continuous linear
-  equivalence `y ↦ (P y, Π y) : F ≃L[R] Y × W` is Mathlib's
-  `ContinuousLinearEquiv.equivOfRightInverse` for `P` and its right inverse `L ∘ (P ∘ L)⁻¹`
-  (`ContinuousLinearMap.snd_equivOfRightInverse_eq_projectionOntoL`);
 * `L x + B σ = 0` exactly when `x = -K (B σ)` and `Π (B σ) = 0`
   (`ContinuousLinearMap.coprod_apply_eq_zero_iff_of_isInvertible_comp`), so the kernel of `[L B]`
   is the kernel of the reduced operator, through `(x, σ) ↦ σ` with inverse
@@ -74,43 +74,6 @@ variable {R E F G Y : Type*} [Ring R]
   [AddCommGroup Y] [TopologicalSpace Y] [Module R Y]
   {L : E →L[R] F} {P : F →L[R] Y}
 
-/-! ### The splitting of the target -/
-
-/-- **The splitting of the target.** If `P ∘ L` is invertible, every `y` is the sum of
-`L ((P ∘ L)⁻¹ P y)` in the range of `L` and its projection onto `ker P` along that range. -/
-theorem apply_leftInverseAlong_add_projectionOntoL (h : (P ∘L L).IsInvertible) (y : F) :
-    L (leftInverseAlong L P y) +
-        (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm y :
-          F) = y := by
-  rw [Submodule.coe_projectionOntoL_apply, ← id_sub_comp_leftInverseAlong_eq_projectionL h]
-  simp
-
-/-- The projection onto `ker P` along the range of `L` vanishes on the range of `L`. -/
-@[simp]
-theorem projectionOntoL_apply_eq_zero_of_isInvertible_comp (h : (P ∘L L).IsInvertible) (x : E) :
-    P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm (L x) = 0 :=
-  Submodule.projectionOntoL_apply_right _ ⟨L x, LinearMap.mem_range_self _ x⟩
-
-/-- On the range of `L`, that is on the kernel of the projection onto `ker P` along it,
-`L ∘ (P ∘ L)⁻¹ P` is the identity. -/
-theorem apply_leftInverseAlong_eq_self_of_projectionOntoL_eq_zero (h : (P ∘L L).IsInvertible)
-    {y : F}
-    (hy : P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm y = 0) :
-    L (leftInverseAlong L P y) = y := by
-  simpa [hy] using apply_leftInverseAlong_add_projectionOntoL h y
-
-/-- **The target as a product.** If `P ∘ L` is invertible, Mathlib's splitting
-`ContinuousLinearEquiv.equivOfRightInverse : F ≃L[R] Y × ker P` for `P` and its right inverse
-`L ∘ (P ∘ L)⁻¹` is `y ↦ (P y, Π y)`: its second component `y - L ((P ∘ L)⁻¹ P y)` is the
-projection `Π y` of `y` onto `ker P` along the range of `L`. -/
-theorem snd_equivOfRightInverse_eq_projectionOntoL (h : (P ∘L L).IsInvertible)
-    (hr : RightInverse (L ∘L (P ∘L L).inverse) P) (y : F) :
-    (ContinuousLinearEquiv.equivOfRightInverse P _ hr y).2 =
-      P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm y := by
-  ext
-  rw [ContinuousLinearEquiv.snd_equivOfRightInverse, ← sub_eq_of_eq_add'
-    (apply_leftInverseAlong_add_projectionOntoL h y).symm, leftInverseAlong_apply, comp_apply]
-
 /-! ### Kernel and range of `[L B]` -/
 
 variable {B : G →L[R] F}
@@ -143,16 +106,20 @@ noncomputable def kerCoprodEquivOfIsInvertibleComp (h : (P ∘L L).IsInvertible)
           B).ker.subtypeL).codRestrict _ fun σ ↦
       LinearMap.mem_ker.2 ((coprod_apply_eq_zero_iff_of_isInvertible_comp h).2
         ⟨map_neg (leftInverseAlong L P) _, LinearMap.mem_ker.1 σ.property⟩))
-    (ContinuousLinearMap.ext fun _ ↦ rfl)
-    (ContinuousLinearMap.ext fun v ↦ Subtype.ext (Prod.ext ((map_neg _ _).trans
-      ((coprod_apply_eq_zero_iff_of_isInvertible_comp h).1
-        (LinearMap.mem_ker.1 v.property)).1.symm) rfl))
+    (ContinuousLinearMap.ext fun σ ↦ Subtype.ext (by
+      simp only [comp_apply, coe_codRestrict_apply, Submodule.subtypeL_apply, prod_apply,
+        coe_snd', id_apply]))
+    (ContinuousLinearMap.ext fun v ↦ Subtype.ext (by
+      simp only [comp_apply, coe_codRestrict_apply, Submodule.subtypeL_apply, prod_apply,
+        coe_snd', id_apply, neg_apply, map_neg]
+      exact Prod.ext ((coprod_apply_eq_zero_iff_of_isInvertible_comp h).1
+        (LinearMap.mem_ker.1 v.property)).1.symm rfl))
 
 theorem coe_kerCoprodEquivOfIsInvertibleComp_apply (h : (P ∘L L).IsInvertible)
     (v : (L.coprod B).ker) :
     (kerCoprodEquivOfIsInvertibleComp h v : G) = (v : E × G).2 := by
-  rw [kerCoprodEquivOfIsInvertibleComp, ContinuousLinearEquiv.coe_ofContinuousLinearMap]
-  rfl
+  rw [kerCoprodEquivOfIsInvertibleComp, ContinuousLinearEquiv.coe_ofContinuousLinearMap,
+    coe_codRestrict_apply, comp_apply, Submodule.subtypeL_apply, coe_snd']
 
 theorem coe_kerCoprodEquivOfIsInvertibleComp_symm_apply (h : (P ∘L L).IsInvertible)
     (σ : (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
@@ -160,8 +127,8 @@ theorem coe_kerCoprodEquivOfIsInvertibleComp_symm_apply (h : (P ∘L L).IsInvert
     ((kerCoprodEquivOfIsInvertibleComp h).symm σ : E × G) =
       (-leftInverseAlong L P (B σ), (σ : G)) := by
   rw [kerCoprodEquivOfIsInvertibleComp, ContinuousLinearEquiv.symm_ofContinuousLinearMap,
-    ContinuousLinearEquiv.coe_ofContinuousLinearMap]
-  exact Prod.ext (map_neg (leftInverseAlong L P) _) rfl
+    ContinuousLinearEquiv.coe_ofContinuousLinearMap, coe_codRestrict_apply, comp_apply,
+    Submodule.subtypeL_apply, prod_apply, comp_apply, neg_apply, map_neg, id_apply]
 
 /-- **The range of `[L B]`.** If `P ∘ L` is invertible, `y` lies in the range of
 `(x, σ) ↦ L x + B σ` exactly when its projection onto `ker P` along the range of `L` lies in the
@@ -209,8 +176,10 @@ noncomputable def quotientRangeCoprodEquivOfIsInvertibleComp (h : (P ∘L L).IsI
 theorem quotientRangeCoprodEquivOfIsInvertibleComp_mk (h : (P ∘L L).IsInvertible) (y : F) :
     quotientRangeCoprodEquivOfIsInvertibleComp (B := B) h (Submodule.Quotient.mk y) =
       Submodule.Quotient.mk
-        (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm y) :=
-  (rfl)
+        (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm y) := by
+  rw [quotientRangeCoprodEquivOfIsInvertibleComp, LinearEquiv.trans_apply,
+    Submodule.quotEquivOfEq_mk, LinearMap.quotKerEquivOfSurjective_apply_mk, LinearMap.comp_apply,
+    Submodule.mkQ_apply, coe_coe]
 
 /-- **The index of `[L B]` is that of the reduced operator.** If `P ∘ L` is invertible, the
 operator `(x, σ) ↦ L x + B σ` and the reduced operator `Π ∘ B` have isomorphic kernels and
