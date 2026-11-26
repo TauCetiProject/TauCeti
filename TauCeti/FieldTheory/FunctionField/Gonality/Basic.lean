@@ -44,6 +44,7 @@ of genus two has gonality exactly two. Gonality one characterizes rational funct
 * `TauCeti.gonality_le_finrank_adjoin`, `TauCeti.exists_finrank_adjoin_eq_gonality`,
   `TauCeti.gonality_pos`: every transcendental element bounds the gonality, and for a function
   field some transcendental element attains it, which is then positive.
+* `TauCeti.gonality_pos_iff`: the gonality is positive exactly for function fields.
 * `AlgEquiv.gonality_eq`: isomorphic extensions have the same gonality.
 * `TauCeti.gonality_eq_sInf_degree`: **the pencil description** of the gonality.
 * `TauCeti.Divisor.dim_sub_ofPoint_lt_of_degree_eq_gonality`: a divisor of least degree with
@@ -112,6 +113,14 @@ theorem gonality_pos (hF : IsFunctionField k F) : 0 < gonality k F := by
   obtain ⟨x, hx, hrank⟩ := exists_finrank_adjoin_eq_gonality hF
   have := hF.finiteDimensional_adjoin hx
   exact hrank ▸ Module.finrank_pos
+
+/-- **The gonality is positive exactly for function fields**: outside algebraic function fields it
+is the junk value zero. -/
+theorem gonality_pos_iff : 0 < gonality k F ↔ IsFunctionField k F := by
+  refine ⟨fun h ↦ ?_, gonality_pos⟩
+  obtain ⟨x, hx, hrank⟩ := Nat.sInf_mem (Nat.nonempty_of_pos_sInf h)
+  have : FiniteDimensional k⟮x⟯ F := Module.finite_of_finrank_pos (hrank ▸ h)
+  exact .of_finiteDimensional_adjoin hx
 
 /-- An isomorphism over `k` carries rational subfields to rational subfields of the same index,
 so **isomorphic extensions have the same gonality**. -/
