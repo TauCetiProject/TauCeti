@@ -41,8 +41,9 @@ lifting the rotation with the complex determinant, and such a lift is unique
 `TauCeti.OrthonormalFrameBundle.canonicalSpinor`, a section of `W⁺` built from `J` alone. It has
 the norm of `u` (`TauCeti.OrthonormalFrameBundle.norm_canonicalSpinor`), so it is a unit section
 for a unit `u`, and it is continuous (`TauCeti.OrthonormalFrameBundle.continuous_canonicalSpinor`).
-Since a unitary frame carries `J₀` to `J`, the vector frame of `[p, 1]` carries the Kähler
-two-vector `ω` of `J` to that of `JV`
+Since a unitary frame carries `J₀` to `J`, the vector frame of `[p, 1]` carries `J` to `JV`
+(`TauCeti.OrthonormalFrameBundle.vectorFrame_canonicalSpinCStructureInl_apply_apply`), hence the
+Kähler two-vector `ω` of `J` to that of `JV`
 (`TauCeti.OrthonormalFrameBundle.map_vectorFrame_canonicalSpinCStructureInl_kahlerForm`), so on
 every fibre the pointwise identities of the canonical line hold:
 `C(iω) u₀ = 2 u₀`, that is `c₂(ω) u₀ = -2i u₀`
@@ -59,8 +60,9 @@ The complementary line bundle `K⁻¹` of `W⁺`, the canonical connection `A₀
 
 ## Main results
 
-* `TauCeti.OrthonormalFrameBundle.map_vectorFrame_canonicalSpinCStructureInl_kahlerForm`: the
-  vector frame of `[p, 1]` carries the Kähler two-vector of `J` to that of the model.
+* `TauCeti.OrthonormalFrameBundle.vectorFrame_canonicalSpinCStructureInl_apply_apply`,
+  `TauCeti.OrthonormalFrameBundle.map_vectorFrame_canonicalSpinCStructureInl_kahlerForm`: the
+  vector frame of `[p, 1]` carries `J` and the Kähler two-vector of `J` to those of the model.
 * `TauCeti.OrthonormalFrameBundle.canonicalSpinor_eq_mk`: `u₀(x) = [[p, 1], u]` for every unitary
   frame `p` over `x`.
 * `TauCeti.OrthonormalFrameBundle.norm_canonicalSpinor`,
@@ -190,6 +192,23 @@ theorem continuous_canonicalSpinor :
     fun y _ ↦ ?_).continuousAt (t.open_baseSet.mem_nhds (mem_baseSet_trivializationAt _ _ x₀))
   rw [canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu (t.symm y 1)]
 
+omit [Fact (finrank ℝ V = 4)] in
+include hJV in
+/-- **The vector frame of `[p, 1]` carries `J` to the model complex structure**: for a unitary
+frame `p` over `x`, `κ_p (J v) = JV (κ_p v)`. -/
+theorem vectorFrame_canonicalSpinCStructureInl_apply_apply {x : X}
+    (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) (v : E x) :
+    (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).vectorFrame b
+        (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) (J x v) =
+      JV ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).vectorFrame b
+        (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) v) := by
+  rw [SpinCStructure.vectorFrame_apply_eq_repr_symm, SpinCStructure.vectorFrame_apply_eq_repr_symm,
+    frameAt_canonicalSpinCStructureInl, hJV]
+  congr 1
+  have hp := mem_unitaryFrames_iff.1 p.property (p.val.frame.symm v)
+  rw [LinearIsometryEquiv.apply_symm_apply] at hp
+  rw [← hp, LinearIsometryEquiv.symm_apply_apply]
+
 include hJV in
 /-- **The frame comparison of Kähler forms**: the vector frame `κ_p : E x ≃ V` of the point
 `[p, 1]` of the canonical `Spinᶜ` structure carries the Kähler two-vector of `J x` to that of the
@@ -200,17 +219,12 @@ theorem map_vectorFrame_canonicalSpinCStructureInl_kahlerForm {x : X} [FiniteDim
     exteriorPower.map 2 ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).vectorFrame b
       (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)).toLinearMap Jx.kahlerForm =
         JV.kahlerForm := by
-  set κ := (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).vectorFrame b
-    (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
-  have hκ : ∀ w, κ w = b.repr.symm (p.val.frame.symm w) := fun w ↦ by
-    rw [SpinCStructure.vectorFrame_apply_eq_repr_symm, frameAt_canonicalSpinCStructureInl]
   refine AlmostComplexStructure.map_kahlerForm_of_isComplexLinearMap
     (fun v w ↦ by rw [hJx, hJx, LinearIsometryEquiv.inner_map_map])
     ((isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ ?_)
-  have hp := mem_unitaryFrames_iff.1 p.property (p.val.frame.symm v)
-  rw [LinearIsometryEquiv.apply_symm_apply] at hp
   simp only [LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv]
-  rw [hJx, hκ, hκ, hJV, ← hp, LinearIsometryEquiv.symm_apply_apply]
+  rw [hJx]
+  exact vectorFrame_canonicalSpinCStructureInl_apply_apply hJ hJ₂ hJ₀ hF e h₀ h₂ b hJV p v
 
 include hJV hu in
 /-- **The canonical spinor lies on the canonical line**: `C(iω) u₀ = 2 u₀`, that is,
