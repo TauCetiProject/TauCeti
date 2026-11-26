@@ -51,8 +51,9 @@ relates that norm to the two norms of geometric measure theory.
 * `exteriorPower.norm_formDualEquiv_ιMulti`: the mass of a wedge of vectors is its volume.
 * `exteriorPower.norm_le_norm_formDualEquiv`, `exteriorPower.norm_formDualEquiv_le`: the mass of
   `k`-vectors is comparable with the inner product norm.
-* `TauCeti.norm_alternatingFormEquiv_ιMulti`, `TauCeti.norm_alternatingFormEquiv_one`: the comass
-  of the form of a simple `k`-vector, or of any `1`-vector, is its norm.
+* `TauCeti.norm_alternatingFormEquiv_ιMulti`, `Orthonormal.norm_alternatingFormEquiv_ιMulti`,
+  `TauCeti.norm_alternatingFormEquiv_one`: the comass of the form of a simple `k`-vector (one for
+  an orthonormal frame), or of any `1`-vector, is its norm.
 * `ContinuousAlternatingMap.sqrt_alternatingFormInner_self_one`: in degree one, the Hilbert norm of
   a real form is its comass.
 * `ContinuousAlternatingMap.norm_le_sqrt_alternatingFormInner_self`,
@@ -196,6 +197,13 @@ theorem norm_alternatingFormEquiv_ιMulti (u : Fin k → E) :
         rw [alternatingFormEquiv_apply, real_inner_self_eq_norm_mul_norm]
     _ ≤ ‖alternatingFormEquiv E k (ιMulti ℝ k u) u‖ := Real.le_norm_self _
     _ ≤ _ := (alternatingFormEquiv E k (ιMulti ℝ k u)).le_opNorm_mul_norm_ιMulti u
+
+/-- The unit decomposable form `alternatingFormEquiv E k (ιMulti ℝ k u)` associated to an
+orthonormal frame `u` has comass `1`. -/
+theorem _root_.Orthonormal.norm_alternatingFormEquiv_ιMulti {u : Fin k → E}
+    (hu : Orthonormal ℝ u) :
+    ‖alternatingFormEquiv E k (ιMulti ℝ k u)‖ = 1 := by
+  rw [TauCeti.norm_alternatingFormEquiv_ιMulti, hu.norm_ιMulti]
 
 /-- **In degree one, comass and Hilbert norm coincide**: for `η : ⋀[ℝ]^1 E`, the form
 `v ↦ ⟪η, v₁⟫` has comass `‖η‖`. -/

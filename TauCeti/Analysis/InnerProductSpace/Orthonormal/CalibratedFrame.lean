@@ -244,10 +244,4 @@ theorem isCalibratedFrame_alternatingFormEquiv_ιMulti (hu : Orthonormal ℝ u) 
   (ContinuousAlternatingMap.isCalibratedFrame_alternatingFormEquiv_ιMulti_iff_ιMulti_eq hu).2
     ⟨hu, rfl⟩
 
-/-- The unit decomposable form `alternatingFormEquiv E k (ιMulti ℝ k u)` associated to an
-orthonormal frame `u` has comass `1`. -/
-theorem norm_alternatingFormEquiv_ιMulti (hu : Orthonormal ℝ u) :
-    ‖TauCeti.alternatingFormEquiv E k (ιMulti ℝ k u)‖ = 1 := by
-  rw [TauCeti.norm_alternatingFormEquiv_ιMulti, hu.norm_ιMulti]
-
 end Orthonormal

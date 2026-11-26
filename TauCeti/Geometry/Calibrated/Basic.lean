@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
+public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
 public import TauCeti.Geometry.Calibrated.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.Volume
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
