@@ -693,7 +693,6 @@ private theorem
   have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
   set K₁ : Set (ℝ × ℝ) := {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a + 1}
   have hK₁ : IsCompact K₁ := isCompact_setOf_norm_equivRealProdCLM_symm_le (a + 1)
-  have hK₁m : MeasurableSet K₁ := hK₁.isClosed.measurableSet
   -- A cutoff `ψ`, equal to `1` near the disc `|w| ≤ a` and to `0` near `|w| ≥ a + 1`.
   obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ :=
     (isCompact_setOf_norm_equivRealProdCLM_symm_le a).exists_contDiff_cutoff_sublevel
@@ -702,14 +701,17 @@ private theorem
     ω.exists_forall_setIntegral_sobolevDensity_le_mul_setIntegral_floerLinearizationAdjoint_add hK₁
       (fun z _ ↦ hJ z) (fun z _ ↦ hKs z) (fun z _ ↦ hKt z) (fun z _ ↦ hu.contDiffAt)
       (fun z _ ↦ hc z)
-  obtain ⟨c, hc0, hcut⟩ := ω.exists_forall_norm_floerLinearizationAdjoint_smul_sq_le
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (Ks := Ks) (Kt := Kt) hJ hu
-    (hψ.of_le (by simp)) hψ01 hK₁ fun z hz ↦ hψK z (not_le.1 hz)
+  obtain ⟨c, hc0, hcut⟩ := ω.exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le
+    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu (w := fun _ ↦ 1)
+    (fun _ ↦ zero_le_one) continuous_const (hψ.of_le (by simp)) hψ01 hK₁
+    fun z hz ↦ hψK z (not_le.1 hz)
   refine ⟨C₁ * (2 + (c + 1)), by positivity, fun η hη hηc ↦ ?_⟩
   set η₁ : ℝ × ℝ → V →L[ℝ] ℝ := fun w ↦ ψ w • η w
   have hη₁ : ContDiff ℝ 2 η₁ := (hψ.of_le (by simp)).smul hη
   have hη₁K : tsupport η₁ ⊆ K₁ := (tsupport_smul_subset_left ψ η).trans <|
     closure_minimal (fun z hz ↦ not_lt.1 fun h ↦ hz (hψ0 z h.le).eq_of_nhds) hK₁.isClosed
+  have hη₁c : HasCompactSupport η₁ := HasCompactSupport.intro hK₁ fun z hz ↦
+    image_eq_zero_of_notMem_tsupport fun h ↦ hz (hη₁K h)
   -- On the disc `η₁` agrees with `η` near each point.
   have hstep₁ : ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, Floer.sobolevDensity η z ≤
       ∫ z in K₁, Floer.sobolevDensity η₁ z := by
@@ -721,51 +723,39 @@ private theorem
         (Eventually.of_forall fun z (hz : _ ≤ a) ↦ (show _ ≤ a + 1 by linarith : z ∈ K₁)))
     have hev : η₁ =ᶠ[𝓝 z] η := (hψ1 z hz).mono fun w hw ↦ by simp [η₁, hw]
     simp only [Floer.sobolevDensity_apply, hev.fderiv_eq, hev.eq_of_nhds]
-  -- The cutoff costs `c ‖η‖²` on `K₁`.
-  have hpt (z : ℝ × ℝ) (hz : z ∈ K₁) :
-      ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
-          η₁ z‖ ^ 2 + ‖η₁ z‖ ^ 2 ≤
-        2 * ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-          Ks Kt u η z‖ ^ 2 + (c + 1) * ‖η z‖ ^ 2 := by
-    have h1 := hcut (hη.differentiable two_ne_zero) z
-    rw [indicator_of_mem hz] at h1
-    have h2 : ‖η₁ z‖ ≤ ‖η z‖ := by
-      simp only [η₁, norm_smul, Real.norm_of_nonneg (hψ01 z).1]
-      exact mul_le_of_le_one_left (norm_nonneg _) (hψ01 z).2
-    nlinarith [norm_nonneg (η₁ z)]
-  have hint {θ : ℝ × ℝ → V →L[ℝ] ℝ} (hθ : ContDiff ℝ 1 θ) (hθc : HasCompactSupport θ) :
-      Integrable fun z ↦ ‖ω.floerLinearizationAdjoint
-        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u θ z‖ ^ 2 := by
+  have iD₁ : Integrable fun z ↦ ‖ω.floerLinearizationAdjoint
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η₁ z‖ ^ 2 := by
     simpa using integrable_mul_norm_floerLinearizationAdjoint_sq_of_forall (ω := ω)
       (L := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu (w := fun _ ↦ 1)
-      continuous_const hθ hθc
-  have iD := hint (hη.of_le one_le_two) hηc
+      continuous_const (hη₁.of_le one_le_two) hη₁c
   have iη : Integrable fun z ↦ ‖η z‖ ^ 2 :=
     hη.continuous.integrable_norm_sq_of_hasCompactSupport hηc
-  have hfull : ∫ z in K₁, ‖ω.floerLinearizationAdjoint
-      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 ≤
-      ∫ z, ‖ω.floerLinearizationAdjoint
-        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 :=
-    setIntegral_le_integral iD (Eventually.of_forall fun _ ↦ sq_nonneg _)
+  have iη₁ : Integrable fun z ↦ ‖η₁ z‖ ^ 2 :=
+    hη₁.continuous.integrable_norm_sq_of_hasCompactSupport hη₁c
+  -- The cutoff costs `c ∫_{K₁} ‖η‖²`.
+  have hD : ∫ z in K₁, ‖ω.floerLinearizationAdjoint
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η₁ z‖ ^ 2 ≤
+      2 * (∫ z, ‖ω.floerLinearizationAdjoint
+        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
+        c * ∫ z in K₁, ‖η z‖ ^ 2 := by
+    have h := hcut (hη.of_le one_le_two) hηc
+    simp only [one_mul] at h
+    exact (setIntegral_le_integral iD₁ (Eventually.of_forall fun _ ↦ sq_nonneg _)).trans h
+  have hη₁η : ∫ z in K₁, ‖η₁ z‖ ^ 2 ≤ ∫ z in K₁, ‖η z‖ ^ 2 :=
+    setIntegral_mono iη₁.integrableOn iη.integrableOn fun z ↦ by
+      simp only [η₁, norm_smul, Real.norm_of_nonneg (hψ01 z).1]
+      exact pow_le_pow_left₀ (mul_nonneg (hψ01 z).1 (norm_nonneg _))
+        (mul_le_of_le_one_left (norm_nonneg _) (hψ01 z).2) 2
   calc _ ≤ ∫ z in K₁, Floer.sobolevDensity η₁ z := hstep₁
     _ ≤ C₁ * ∫ z in K₁, (‖ω.floerLinearizationAdjoint
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η₁ z‖ ^ 2 +
           ‖η₁ z‖ ^ 2) := hdisc hη₁ hη₁K
-    _ ≤ C₁ * ∫ z in K₁, (2 * ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 +
-          (c + 1) * ‖η z‖ ^ 2) := by
-        refine mul_le_mul_of_nonneg_left (setIntegral_mono_on ?_
-          ((iD.const_mul 2).add (iη.const_mul _)).integrableOn hK₁m hpt) hC₁
-        have hη₁c : HasCompactSupport η₁ := HasCompactSupport.intro hK₁ fun z hz ↦
-          image_eq_zero_of_notMem_tsupport fun h ↦ hz (hη₁K h)
-        exact (hint (hη₁.of_le one_le_two) hη₁c).add
-          (hη₁.continuous.integrable_norm_sq_of_hasCompactSupport hη₁c) |>.integrableOn
-    _ = C₁ * (2 * (∫ z in K₁, ‖ω.floerLinearizationAdjoint
+    _ ≤ C₁ * (2 * (∫ z, ‖ω.floerLinearizationAdjoint
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
           (c + 1) * ∫ z in K₁, ‖η z‖ ^ 2) := by
-        rw [integral_add ((iD.const_mul 2).integrableOn) ((iη.const_mul _).integrableOn),
-          integral_const_mul, integral_const_mul]
-    _ ≤ _ := mul_add_mul_le_mul_add hC₁ zero_le_two (by linarith) hfull
+        rw [integral_add iD₁.integrableOn iη₁.integrableOn]
+        exact mul_le_mul_of_nonneg_left (by linarith) hC₁
+    _ ≤ _ := mul_add_mul_le_mul_add hC₁ zero_le_two (by linarith) le_rfl
         (setIntegral_setOf_norm_equivRealProdCLM_symm_le_le iη (fun _ ↦ sq_nonneg _) _)
         (integral_nonneg fun _ ↦ sq_nonneg _)
         (setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _)
@@ -854,25 +844,11 @@ private theorem setIntegral_sobolevDensity_covectorPullback_le_of_eventuallyEq
     simp only [Floer.covectorPullback_apply, hηζ', hJ']
   simp only [Floer.sobolevDensity_apply, hev.fderiv_eq, hev.eq_of_nhds]
 
-/-- **The weight at infinity.** If `X ≤ 2 Y + c E` at `w`, where `E ≥ 0` vanishes unless
-`|w| ≤ r`, then `|w|⁴ X ≤ 2 (1 + |w|²)² Y + c (1 + r²)² E`: the weight `|w|⁴` is at most
-`(1 + |w|²)²`, which is at most `(1 + r²)²` on the disc `|w| ≤ r`. -/
-private theorem norm_pow_four_mul_le {w : ℝ × ℝ} {X Y E c r : ℝ} (hX : 0 ≤ X) (hE : 0 ≤ E)
-    (hc : 0 ≤ c) (hEr : r < ‖Complex.equivRealProdCLM.symm w‖ → E = 0) (h : X ≤ 2 * Y + c * E) :
-    ‖Complex.equivRealProdCLM.symm w‖ ^ 4 * X ≤
-      2 * ((1 + w.1 ^ 2 + w.2 ^ 2) ^ 2 * Y) + c * (1 + r ^ 2) ^ 2 * E := by
+/-- **The weight at infinity.** The weight `|w|⁴` is at most `(1 + |w|²)²`. -/
+private theorem norm_equivRealProdCLM_symm_pow_four_le (w : ℝ × ℝ) :
+    ‖Complex.equivRealProdCLM.symm w‖ ^ 4 ≤ (1 + w.1 ^ 2 + w.2 ^ 2) ^ 2 := by
   have hw := sq_norm_equivRealProdCLM_symm w
-  have h4 : ‖Complex.equivRealProdCLM.symm w‖ ^ 4 ≤ (1 + w.1 ^ 2 + w.2 ^ 2) ^ 2 := by
-    nlinarith [sq_nonneg w.1, sq_nonneg w.2]
-  have hK : (1 + w.1 ^ 2 + w.2 ^ 2) ^ 2 * E ≤ (1 + r ^ 2) ^ 2 * E := by
-    rcases le_or_gt ‖Complex.equivRealProdCLM.symm w‖ r with hwr | hwr
-    · have h2 : 1 + w.1 ^ 2 + w.2 ^ 2 ≤ 1 + r ^ 2 := by
-        nlinarith [norm_nonneg (Complex.equivRealProdCLM.symm w)]
-      exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (by positivity) h2 2) hE
-    · simp [hEr hwr]
-  calc _ ≤ (1 + w.1 ^ 2 + w.2 ^ 2) ^ 2 * X := mul_le_mul_of_nonneg_right h4 hX
-    _ ≤ (1 + w.1 ^ 2 + w.2 ^ 2) ^ 2 * (2 * Y + c * E) := by gcongr
-    _ ≤ _ := by nlinarith [mul_le_mul_of_nonneg_left hK hc]
+  nlinarith [sq_nonneg w.1, sq_nonneg w.2]
 
 /-- **The estimate of the formal adjoint near the point at infinity.** Let the data be `J₀` and the
 zero perturbation on `‖w‖ ≥ T`, and let `a > 2 T`, so that they are `J₀` and `0` near every point
@@ -908,14 +884,14 @@ private theorem
     (isCompact_setOf_norm_equivRealProdCLM_symm_le a).exists_contDiff_cutoff_sublevel
       Complex.equivRealProdCLM.symm.continuous.norm (lt_add_one a)
   have hβ : ContDiff ℝ 2 fun z ↦ 1 - ψ z := contDiff_const.sub (hψ.of_le (by simp))
-  obtain ⟨c, hc0, hcut⟩ := ω.exists_forall_norm_floerLinearizationAdjoint_smul_sq_le
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) (Ks := Ks) (Kt := Kt) hJ hu
-    (hβ.of_le one_le_two)
-    (fun z ↦ ⟨sub_nonneg.2 (hψ01 z).2, sub_le_self _ (hψ01 z).1⟩) hK₁
+  obtain ⟨c, hc0, hcut⟩ := ω.exists_integral_mul_norm_floerLinearizationAdjoint_smul_sq_le
+    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
+    (w := fun z ↦ (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2) (fun _ ↦ by positivity) (by fun_prop)
+    (hβ.of_le one_le_two) (fun z ↦ ⟨sub_nonneg.2 (hψ01 z).2, sub_le_self _ (hψ01 z).1⟩) hK₁
     fun z hz ↦ by rw [fderiv_const_sub, hψK z (not_le.1 hz), neg_zero]
   obtain ⟨C₂, hC₂, hinf⟩ := exists_forall_integral_sobolevDensity_covectorPullback_realChart_inv_le
     (ω := ω) h₀ ha
-  refine ⟨C₂ * (2 + c * (1 + (a + 1) ^ 2) ^ 2), by positivity, fun η hη hηc ↦ ?_⟩
+  refine ⟨C₂ * (2 + c), by positivity, fun η hη hηc ↦ ?_⟩
   obtain ⟨η₂, hη₂def⟩ : ∃ η₂ : ℝ × ℝ → V →L[ℝ] ℝ, η₂ = fun z ↦ (1 - ψ z) • η z := ⟨_, rfl⟩
   have hη₂ : ContDiff ℝ 2 η₂ := hη₂def ▸ hβ.smul hη
   have hη₂c : HasCompactSupport η₂ := hηc.mono fun z hz h ↦ hz (by simp [hη₂def, h])
@@ -927,38 +903,29 @@ private theorem
     hJ₀ ha haT (fun w hw ↦ (hψ0 w hw).mono fun z hz ↦ by simp [hη₂def, hz]) hint
   have hB := floerLinearizationAdjoint_const_eq_of_eq_base (ω := ω) (u := u) hJ₀ hKs₀ hKt₀ haT
     hη₂0
-  -- (C) The pointwise bound, with the weight `|w|⁴ ≤ (1 + |w|²)²`.
-  have hC (w : ℝ × ℝ) : ‖Complex.equivRealProdCLM.symm w‖ ^ 4 * ‖ω.floerLinearizationAdjoint
-      (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 η₂ w‖ ^ 2 ≤
-      2 * ((1 + w.1 ^ 2 + w.2 ^ 2) ^ 2 * ‖ω.floerLinearizationAdjoint
-        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η w‖ ^ 2) +
-      c * (1 + (a + 1) ^ 2) ^ 2 * K₁.indicator (fun z ↦ ‖η z‖ ^ 2) w := by
-    have hcw := hcut (hη.differentiable two_ne_zero) w
-    rw [← hη₂def, ← hB] at hcw
-    exact norm_pow_four_mul_le (sq_nonneg _) (indicator_nonneg (fun _ _ ↦ sq_nonneg _) _) hc0
-      (fun h ↦ indicator_of_notMem (show w ∉ K₁ from not_le.2 h) _) hcw
-  -- (D) Integrating the pointwise bound.
-  have iW := integrable_mul_norm_floerLinearizationAdjoint_sq_of_forall (ω := ω)
-    (L := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
-    (w := fun z ↦ (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2) (by fun_prop) (hη.of_le one_le_two) hηc
+  -- Where `η₂` lives the data are constant, and the weight `|w|⁴` is at most `(1 + |w|²)²`.
+  have hW : ∫ z, ‖Complex.equivRealProdCLM.symm z‖ ^ 4 * ‖ω.floerLinearizationAdjoint
+      (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 η₂ z‖ ^ 2 ≤
+      ∫ z, (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2 * ‖ω.floerLinearizationAdjoint
+        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η₂ z‖ ^ 2 := by
+    have hI {w : ℝ × ℝ → ℝ} (hw : Continuous w) :=
+      integrable_mul_norm_floerLinearizationAdjoint_sq_of_forall (ω := ω)
+        (L := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu hw
+        (hη₂.of_le one_le_two) hη₂c
+    simp only [hB]
+    exact integral_mono (hI (by fun_prop)) (hI (by fun_prop)) fun z ↦
+      mul_le_mul_of_nonneg_right (norm_equivRealProdCLM_symm_pow_four_le z) (sq_nonneg _)
+  -- The cutoff costs `c ∫_{K₁} ‖η‖²`.
+  have hD := hcut (hη.of_le one_le_two) hηc
+  rw [← hη₂def] at hD
   have iη : Integrable fun z ↦ ‖η z‖ ^ 2 :=
     hη.continuous.integrable_norm_sq_of_hasCompactSupport hηc
-  have hK₁m : MeasurableSet K₁ := hK₁.isClosed.measurableSet
-  have iK := (integrable_indicator_iff hK₁m).2 iη.integrableOn
   calc _ ≤ _ := hA
     _ ≤ _ := hest
-    _ ≤ C₂ * ∫ w, (2 * ((1 + w.1 ^ 2 + w.2 ^ 2) ^ 2 * ‖ω.floerLinearizationAdjoint
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η w‖ ^ 2) +
-          c * (1 + (a + 1) ^ 2) ^ 2 * K₁.indicator (fun z ↦ ‖η z‖ ^ 2) w) :=
-        mul_le_mul_of_nonneg_left (integral_mono_of_nonneg
-          (Eventually.of_forall fun w ↦ by positivity) ((iW.const_mul 2).add (iK.const_mul _))
-          (Eventually.of_forall hC)) hC₂
-    _ = C₂ * (2 * (∫ z, (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2 * ‖ω.floerLinearizationAdjoint
+    _ ≤ C₂ * (2 * (∫ z, (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2 * ‖ω.floerLinearizationAdjoint
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
-          c * (1 + (a + 1) ^ 2) ^ 2 * ∫ z in K₁, ‖η z‖ ^ 2) := by
-        rw [integral_add (iW.const_mul 2) (iK.const_mul _), integral_const_mul,
-          integral_const_mul, integral_indicator hK₁m]
-    _ ≤ _ := mul_add_mul_le_mul_add hC₂ zero_le_two (by positivity) le_rfl
+          c * ∫ z in K₁, ‖η z‖ ^ 2) := mul_le_mul_of_nonneg_left (hW.trans hD) hC₂
+    _ ≤ _ := mul_add_mul_le_mul_add hC₂ zero_le_two hc0 le_rfl
         (setIntegral_setOf_norm_equivRealProdCLM_symm_le_le iη (fun _ ↦ sq_nonneg _) _)
         (integral_nonneg fun _ ↦ by positivity)
         (setIntegral_nonneg measurableSet_closedBall fun _ _ ↦ sq_nonneg _)

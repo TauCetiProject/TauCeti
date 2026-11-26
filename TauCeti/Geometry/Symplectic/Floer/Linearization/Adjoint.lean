@@ -56,11 +56,8 @@ Integrating by parts against this pairing gives the **formal adjoint**
   `‖D^* (f η)‖ ≤ |f| ‖D^* η‖ + ‖df‖ (1 + ‖J‖) ‖η‖`
   (`norm_floerLinearizationAdjoint_fun_smul_le`), and for `|f| ≤ 1`, `‖df‖ ≤ M` and `‖J‖ ≤ B`,
   `‖D^* (f η)‖² ≤ 2 ‖D^* η‖² + 2 (M (1 + B))² ‖η‖²`
-  (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). For a cutoff `β` with values in `[0, 1]`
-  whose derivative vanishes off a compact set `K`, this gives one constant `c` with
-  `‖D^* (β η)‖² ≤ 2 ‖D^* η‖² + c ‖η‖²` on `K` and no error term off `K`
-  (`exists_forall_norm_floerLinearizationAdjoint_smul_sq_le`). In particular the weight `e^{δ s}`
-  shifts the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
+  (`norm_floerLinearizationAdjoint_fun_smul_sq_le`). In particular the weight `e^{δ s}` shifts
+  the adjoint by `-δ` (`floerLinearizationAdjoint_exp_smul`). Since
   `D (e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`
   (`TauCeti.SymplecticForm.floerLinearization_exp_smul`), this is the weight dual to `e^{-δ s}`:
   both conjugated operators are `D - δ` and its adjoint `D^* - δ`. Integrated against a
@@ -397,36 +394,6 @@ theorem norm_floerLinearizationAdjoint_fun_smul_sq_le {f : ℝ × ℝ → ℝ}
     · exact (opNorm_comp_le _ _).trans (by rw [mul_comm]; gcongr)
   rw [floerLinearizationAdjoint_fun_smul hf hη hJu, sub_eq_add_neg, sub_eq_add_neg]
   exact norm_smul_add_add_sq_le hf₁ ((norm_neg _).trans_le h₁) ((norm_neg _).trans_le h₂)
-
-/-- **The cost of a cutoff for the formal adjoint.** Let `β` be a `C¹` function with values in
-`[0, 1]` whose derivative vanishes off a compact set `K`, and let `J` be `C¹` along a `C¹` map `u`.
-Then there is `c` such that for every differentiable covector field `η`, pointwise,
-`‖D^* (β η)‖² ≤ 2 ‖D^* η‖² + c ‖η‖²` on `K` and `‖D^* (β η)‖² ≤ 2 ‖D^* η‖²` off `K`. This is the
-pointwise adjoint counterpart of `exists_integral_norm_floerLinearization_smul_sq_le`. -/
-theorem exists_forall_norm_floerLinearizationAdjoint_smul_sq_le
-    (hJ : ∀ z, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z)) (hu : ContDiff ℝ 1 u)
-    {β : ℝ × ℝ → ℝ} (hβ : ContDiff ℝ 1 β) (hβ1 : ∀ z, β z ∈ Icc 0 1) {K : Set (ℝ × ℝ)}
-    (hK : IsCompact K) (hβK : ∀ z ∉ K, fderiv ℝ β z = 0) :
-    ∃ c, 0 ≤ c ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, Differentiable ℝ η → ∀ z,
-      ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ β w • η w) z‖ ^ 2 ≤
-        2 * ‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 +
-          c * K.indicator (fun z ↦ ‖η z‖ ^ 2) z := by
-  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (continuous_comp_prodMk_of_continuousAt
-    (fun z ↦ (hJ z).continuousAt) hu.continuous).continuousOn
-  obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn (hβ.continuous_fderiv one_ne_zero).continuousOn
-  refine ⟨2 * (max M 0 * (1 + max B 0)) ^ 2, by positivity, fun η hη z ↦ ?_⟩
-  have hJu : DifferentiableAt ℝ (fun w ↦ J w (u w)) z :=
-    ((hJ z).differentiableAt one_ne_zero).comp (f := fun w ↦ (w, u w)) z
-      (differentiableAt_id.prodMk (hu.differentiable one_ne_zero z))
-  have hβd := hβ.differentiable one_ne_zero z
-  have hβz : |β z| ≤ 1 := abs_le.2 ⟨by linarith [(hβ1 z).1], (hβ1 z).2⟩
-  by_cases hz : z ∈ K
-  · rw [indicator_of_mem hz]
-    exact norm_floerLinearizationAdjoint_fun_smul_sq_le hβd (hη z) hJu hβz
-      ((hM z hz).trans (le_max_left _ _)) ((hB z hz).trans (le_max_left _ _))
-  · simpa [indicator_of_notMem hz] using
-      norm_floerLinearizationAdjoint_fun_smul_sq_le hβd (hη z) hJu hβz (M := 0)
-        (by simp [hβK z hz]) le_rfl
 
 /-- **Conjugating the formal adjoint by an exponential weight.** On covector fields of the form
 `e^{δ s} η`, the formal adjoint acts as `e^{δ s} (D^* - δ) η`. This is the dual of
