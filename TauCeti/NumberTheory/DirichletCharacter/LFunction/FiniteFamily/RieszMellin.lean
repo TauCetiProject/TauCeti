@@ -62,6 +62,21 @@ of the expressions for it and its inverse. -/
   unfold dirichletFamilyRieszRemainderMellin
   exact Finsupp.sum_single_index (by simp)
 
+/-- Adding two weight families adds their Mellin expressions. -/
+theorem dirichletFamilyRieszRemainderMellin_add (w v : PrimitiveDirichletCharacter →₀ ℝ) :
+    dirichletFamilyRieszRemainderMellin (w + v) =
+      dirichletFamilyRieszRemainderMellin w + dirichletFamilyRieszRemainderMellin v := by
+  unfold dirichletFamilyRieszRemainderMellin
+  exact Finsupp.sum_add_index' (by simp) fun _ _ _ ↦ by rw [ofReal_add, add_div, add_smul]
+
+/-- Scaling a weight family by a real number scales its Mellin expression. -/
+theorem dirichletFamilyRieszRemainderMellin_smul (a : ℝ) (w : PrimitiveDirichletCharacter →₀ ℝ) :
+    dirichletFamilyRieszRemainderMellin (a • w) = a • dirichletFamilyRieszRemainderMellin w := by
+  funext s
+  rw [Pi.smul_apply, Complex.real_smul, dirichletFamilyRieszRemainderMellin_apply,
+    dirichletFamilyRieszRemainderMellin_apply, Finsupp.sum_smul_index (by simp), Finsupp.mul_sum]
+  exact Finset.sum_congr rfl fun χ _ ↦ by simp only [ofReal_mul, mul_div_assoc, mul_assoc]
+
 private theorem meromorphic_rieszPair (χ : PrimitiveDirichletCharacter) :
     Meromorphic (rieszRemainderMellin χ.character.LFunction +
       rieszRemainderMellin χ⁻¹.character.LFunction) :=
@@ -116,6 +131,41 @@ noncomputable def dirichletFamilyZeroMultiplicity (w : PrimitiveDirichletCharact
     (ρ : ℂ) : ℝ :=
   w.sum fun χ c ↦ c / 2 * ((analyticOrderNatAt χ.character.LFunction ρ : ℝ) +
     analyticOrderNatAt χ⁻¹.character.LFunction ρ)
+
+/-- Formula for the weighted zero multiplicity as a finitely supported sum. -/
+theorem dirichletFamilyZeroMultiplicity_def (w : PrimitiveDirichletCharacter →₀ ℝ) (ρ : ℂ) :
+    dirichletFamilyZeroMultiplicity w ρ = w.sum (fun χ c ↦
+      c / 2 * ((analyticOrderNatAt χ.character.LFunction ρ : ℝ) +
+        analyticOrderNatAt χ⁻¹.character.LFunction ρ)) := (rfl)
+
+/-- The empty family has zero weighted multiplicity. -/
+@[simp] theorem dirichletFamilyZeroMultiplicity_zero (ρ : ℂ) :
+    dirichletFamilyZeroMultiplicity 0 ρ = 0 := by
+  rw [dirichletFamilyZeroMultiplicity_def, Finsupp.sum_zero_index]
+
+/-- A single weighted character contributes its weight times the mean of the two
+zero multiplicities for the character and its inverse. -/
+@[simp] theorem dirichletFamilyZeroMultiplicity_single
+    (χ : PrimitiveDirichletCharacter) (c : ℝ) (ρ : ℂ) :
+    dirichletFamilyZeroMultiplicity (Finsupp.single χ c) ρ =
+      c / 2 * ((analyticOrderNatAt χ.character.LFunction ρ : ℝ) +
+        analyticOrderNatAt χ⁻¹.character.LFunction ρ) := by
+  rw [dirichletFamilyZeroMultiplicity_def, Finsupp.sum_single_index (by simp)]
+
+/-- Adding two weight families adds their weighted zero multiplicities. -/
+theorem dirichletFamilyZeroMultiplicity_add (w v : PrimitiveDirichletCharacter →₀ ℝ) (ρ : ℂ) :
+    dirichletFamilyZeroMultiplicity (w + v) ρ =
+      dirichletFamilyZeroMultiplicity w ρ + dirichletFamilyZeroMultiplicity v ρ := by
+  simp only [dirichletFamilyZeroMultiplicity_def]
+  exact Finsupp.sum_add_index' (by simp) (by simp [add_div, add_mul])
+
+/-- Scaling a weight family by a real number scales its weighted zero multiplicity. -/
+theorem dirichletFamilyZeroMultiplicity_smul (a : ℝ) (w : PrimitiveDirichletCharacter →₀ ℝ)
+    (ρ : ℂ) :
+    dirichletFamilyZeroMultiplicity (a • w) ρ = a * dirichletFamilyZeroMultiplicity w ρ := by
+  rw [dirichletFamilyZeroMultiplicity_def, dirichletFamilyZeroMultiplicity_def,
+    Finsupp.sum_smul_index (by simp), Finsupp.mul_sum]
+  exact Finset.sum_congr rfl fun χ _ ↦ by simp only [mul_div_assoc, mul_assoc]
 
 /-- The weighted zero multiplicity is nonnegative for nonnegative weights. -/
 theorem dirichletFamilyZeroMultiplicity_nonneg {w : PrimitiveDirichletCharacter →₀ ℝ}
