@@ -29,7 +29,7 @@ All ring laws are proved by finite-support arguments. The basic tool is
 `NovikovSeries.coeff_mul_eq_sum`: a coefficient of a product may be computed as a sum over any
 finite set of pairs adding up to the exponent which contains every pair of support exponents.
 Associativity is proved once for convolutions along any compatible biadditive coefficient maps
-(`NovikovSeries.convolution_convolution`), and rests on the uniform cutoff lemma
+(`NovikovSeries.convolution_assoc`), and rests on the uniform cutoff lemma
 `NovikovSeries.finite_setOf_period_add_add_lt` for triples of support exponents, from
 `TauCeti.RingTheory.NovikovSeries.Basic`. The same statement gives the module laws of Novikov
 series acting on vector-valued Novikov series, in `TauCeti.RingTheory.NovikovSeries.BaseChange`.
@@ -60,7 +60,7 @@ The arrangement of the instances follows Mathlib's `HahnSeries` in
   the pairs of support exponents.
 * `TauCeti.NovikovSeries.convolution_add_left`, `TauCeti.NovikovSeries.convolution_add_right`: the
   convolution is biadditive.
-* `TauCeti.NovikovSeries.convolution_convolution`: convolution is associative along biadditive
+* `TauCeti.NovikovSeries.convolution_assoc`: convolution is associative along biadditive
   maps satisfying `B (B₁ x y) z = B' x (B₂ y z)`.
 * `TauCeti.NovikovSeries.support_mul_subset`: the support of a product lies in the sum of the
   supports.
@@ -355,7 +355,7 @@ along `B₂` and then `B'` whenever the coefficient maps satisfy
 `B (B₁ x y) z = B' x (B₂ y z)`. For `B₁ = B = B₂ = B'` the multiplication of a semiring this is the
 associativity of the product of Novikov series; for scalar multiplication it is the law
 `(a * b) • v = a • (b • v)`. -/
-theorem convolution_convolution (B₁ : V₁ →+ V₂ →+ W) (B : W →+ V₃ →+ U) (B₂ : V₂ →+ V₃ →+ W')
+theorem convolution_assoc (B₁ : V₁ →+ V₂ →+ W) (B : W →+ V₃ →+ U) (B₂ : V₂ →+ V₃ →+ W')
     (B' : V₁ →+ W' →+ U) (hB : ∀ x y z, B (B₁ x y) z = B' x (B₂ y z))
     (a : NovikovSeries V₁ H N) (b : NovikovSeries V₂ H N) (c : NovikovSeries V₃ H N) :
     convolution B (convolution B₁ a b) c = convolution B' a (convolution B₂ b c) := by
@@ -519,7 +519,7 @@ theorem coeff_mul_mul_eq_sum [NonUnitalSemiring R] (a b c : NovikovSeries R H N)
 `NovikovSeries.finite_setOf_period_add_add_lt`. -/
 instance instNonUnitalSemiring [NonUnitalSemiring R] :
     NonUnitalSemiring (NovikovSeries R H N) where
-  mul_assoc := convolution_convolution _ _ _ _ mul_assoc
+  mul_assoc := convolution_assoc _ _ _ _ mul_assoc
 
 instance instSemiring [Semiring R] : Semiring (NovikovSeries R H N) where
 

@@ -27,7 +27,7 @@ multiplication,
 `(a • v)_h = ∑_(u + u' = h) a_u • v_(u')`,
 
 a finite sum (`TauCeti.NovikovSeries.module`). The module laws are the associativity and
-biadditivity of convolution (`TauCeti.NovikovSeries.convolution_convolution`). For `V = R` this is
+biadditivity of convolution (`TauCeti.NovikovSeries.convolution_assoc`). For `V = R` this is
 the multiplication of the Novikov ring, so the structure is a definition, to be installed with
 `letI := NovikovSeries.module R V N`, rather than a second instance of `Module` for the Novikov
 ring over itself. It is compatible with the coefficientwise action of `R`: a constant series
@@ -39,7 +39,7 @@ ring over itself. It is compatible with the coefficientwise action of `R`: a con
   monomials `single 0 (b i)` form a basis of the series with coefficients in `V` over the Novikov
   ring (`TauCeti.NovikovSeries.basis`, `TauCeti.NovikovSeries.basis_apply`); in particular, for `V`
   finite and free over `R`, these series form a finite free module over the Novikov ring
-  (`TauCeti.NovikovSeries.free_module`, `TauCeti.NovikovSeries.finite_module`).
+  (`TauCeti.NovikovSeries.module_free`, `TauCeti.NovikovSeries.module_finite`).
 * **Comparison with the tensor product.** For a commutative semiring `R`, the canonical map
   `Λ ⊗[R] V → NovikovSeries V H N`, `a ⊗ x ↦ (A ↦ a_A • x)`, with `Λ = NovikovSeries R H N`
   (`TauCeti.NovikovSeries.ofTensorProduct`), is `Λ`-linear and sends the basis
@@ -78,7 +78,7 @@ Novikov module structure transported along `κ_b` is the one constructed here, f
   bijective for a module with a finite basis, and so for a finite free module.
 * `TauCeti.NovikovSeries.ofTensorProduct_surjective`: the canonical map from the tensor product is
   onto for a finite module, so the series with coefficients in a finite module form a finite
-  module over the Novikov ring (`TauCeti.NovikovSeries.finite_module`).
+  module over the Novikov ring (`TauCeti.NovikovSeries.module_finite`).
 
 ## References
 
@@ -113,7 +113,7 @@ def module (N : H →+ ℝ) : Module (NovikovSeries R H N) (NovikovSeries V H N)
   one_smul v := by
     ext h
     exact (coeff_convolution_single_zero_left _ 1 v h).trans (one_smul R _)
-  mul_smul := convolution_convolution _ _ _ _ fun x y z => mul_smul x y z
+  mul_smul := convolution_assoc _ _ _ _ fun x y z => mul_smul x y z
   smul_zero := convolution_zero _
   smul_add := convolution_add_right _
   add_smul := convolution_add_left _
@@ -245,7 +245,7 @@ theorem basis_apply (i : ι) :
 
 /-- **Novikov series with coefficients in a finite free module form a free module over the Novikov
 ring**, with the basis `TauCeti.NovikovSeries.basis` of constant series. -/
-theorem free_module [Module.Free R V] [Module.Finite R V] :
+theorem module_free [Module.Free R V] [Module.Finite R V] :
     letI := module R V N
     Module.Free (NovikovSeries R H N) (NovikovSeries V H N) :=
   letI := module R V N
@@ -351,7 +351,7 @@ theorem ofTensorProduct_surjective [Module.Finite R V] :
 
 /-- **Novikov series with coefficients in a finite module form a finite module over the Novikov
 ring.** -/
-theorem finite_module [Module.Finite R V] :
+theorem module_finite [Module.Finite R V] :
     letI := module R V N
     Module.Finite (NovikovSeries R H N) (NovikovSeries V H N) :=
   letI := module R V N
