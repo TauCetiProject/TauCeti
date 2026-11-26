@@ -10,7 +10,7 @@ public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Algebra.Support
 
 /-!
-# Balls and annuli in pseudo-metric spaces
+# Balls, annuli, and convergence in pseudo-metric spaces
 
 Open balls in locally compact pseudometric spaces are locally compact. Every neighbourhood of a
 point contains a closed ball about it of arbitrarily small positive radius
@@ -20,13 +20,16 @@ The frontier of the closed annulus `closedBall y R \ ball y r` lies on its two b
 (`TauCeti.frontier_closedBall_sdiff_ball_subset`). A point outside a closed ball containing the
 support of a function lies outside its closed support
 (`TauCeti.notMem_tsupport_of_support_subset_closedBall`).
+
+If `dist (x i) u ^ n ≤ g i` eventually along a filter `l` with `g → 0`, then `x → u` along `l`
+(`TauCeti.tendsto_of_dist_pow_le_of_tendsto_zero`).
 -/
 
 public section
 
 namespace TauCeti
 
-open Metric Set Topology
+open Filter Metric Set Topology
 
 variable {X : Type*} [PseudoMetricSpace X]
 
@@ -58,5 +61,14 @@ theorem notMem_tsupport_of_support_subset_closedBall {β : Type*} [Zero β] {f :
     {r : ℝ} (hsupp : Function.support f ⊆ closedBall c r) (hw : r < dist w c) :
     w ∉ tsupport f := fun h ↦
   (mem_closedBall.mp (closure_minimal hsupp isClosed_closedBall h)).not_gt hw
+
+/-- If `dist (x i) u ^ n ≤ g i` eventually along `l` and `g` tends to `0`, then `x` tends to `u`
+along `l`. -/
+theorem tendsto_of_dist_pow_le_of_tendsto_zero {ι : Type*} {l : Filter ι} {x : ι → X} {u : X}
+    {n : ℕ} {g : ι → ℝ} (hle : ∀ᶠ i in l, dist (x i) u ^ n ≤ g i) (hg : Tendsto g l (𝓝 0)) :
+    Tendsto x l (𝓝 u) := by
+  refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
+  filter_upwards [hle, hg.eventually (gt_mem_nhds (pow_pos hε n))] with i hi hgi
+  exact lt_of_pow_lt_pow_left₀ n hε.le (hi.trans_lt hgi)
 
 end TauCeti
