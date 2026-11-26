@@ -9,7 +9,7 @@ public import TauCeti.InformationTheory.ConditionalLabelEntropy
 public import TauCeti.InformationTheory.PartitionEntropy
 import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 import Mathlib.MeasureTheory.Integral.Lebesgue.Map
-import TauCeti.MeasureTheory.Measure.Real
+import TauCeti.Probability.Kernel.CondDistrib
 
 /-!
 # Conditional entropy of standard-Borel labels on countable labels
@@ -21,9 +21,6 @@ For measurable labels `a : X → ι` and `b : X → κ` into countable types, th
 
 ## Main results
 
-* `TauCeti.condDistrib_apply_singleton_ae_eq`: for a countable label `b`, almost everywhere the
-  conditional probability of the atom of `a` given `b = b x` is the ratio of the masses of the
-  cell and of the atom of `b`.
 * `TauCeti.conditionalLabelEntropy_eq_conditionalPartitionEntropy`: the two conditional entropies
   agree on countable measurable labels, under a finite measure.
 
@@ -46,34 +43,18 @@ variable {X ι κ : Type*} {mX : MeasurableSpace X} {μ : Measure X}
 variable [IsFiniteMeasure μ] [MeasurableSpace ι] [StandardBorelSpace ι] [Nonempty ι] [Countable κ]
   [MeasurableSpace κ] [MeasurableSingletonClass κ]
 
-/-- **Conditional probabilities of atoms.** For a measurable standard-Borel label `a` and a
-countable measurable label `b`, almost everywhere the
-conditional probability of the atom `{a x}` given `b = b x` is
-`μ (a ⁻¹' {a x} ∩ b ⁻¹' {b x}) / μ (b ⁻¹' {b x})`. -/
-theorem condDistrib_apply_singleton_ae_eq {a : X → ι} {b : X → κ} (ha : Measurable a)
-    (hb : Measurable b) :
-    ∀ᵐ x ∂μ, condDistrib a b μ (b x) {a x} =
-      (μ (b ⁻¹' {b x}))⁻¹ * μ (a ⁻¹' {a x} ∩ b ⁻¹' {b x}) := by
-  filter_upwards [ae_measureReal_preimage_ne_zero (μ := μ) (b := b)] with x hx
-  replace hx : μ (b ⁻¹' {b x}) ≠ 0 := fun h ↦ hx (by simp [Measure.real, h])
-  have hmap : μ.map b {b x} = μ (b ⁻¹' {b x}) := Measure.map_apply hb (measurableSet_singleton _)
-  rw [condDistrib_apply_of_ne_zero hb ha (b x) (hmap ▸ hx), hmap,
-    Measure.map_apply (hb.prodMk ha) ((measurableSet_singleton _).prod (measurableSet_singleton _)),
-    Set.mk_preimage_prod, Set.inter_comm]
-
 /-- The per-cell identity: the information of a cell of mass `m` inside an atom of mass `q`,
 weighted by `m`, is `m * log (q / m)`. -/
 private theorem atomInformation_mul_eq {m q : ℝ≥0∞} (hmq : m ≤ q) (hq : q ≠ ∞) :
     atomInformation (q⁻¹ * m) * m = ENNReal.ofReal (m.toReal * log (q.toReal / m.toReal)) := by
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  have hq0 : q ≠ 0 := (pos_of_ne_zero hm |>.trans_le hmq).ne'
-  have hmt : m ≠ ∞ := ne_top_of_le_ne_top hq hmq
-  rw [atomInformation_of_ne_zero (mul_ne_zero (ENNReal.inv_ne_zero.2 hq) hm),
-    ENNReal.toReal_mul, ENNReal.toReal_inv, ← div_eq_inv_mul, log_div (ENNReal.toReal_ne_zero.2
-      ⟨hm, hmt⟩) (ENNReal.toReal_ne_zero.2 ⟨hq0, hq⟩), log_div (ENNReal.toReal_ne_zero.2
-      ⟨hq0, hq⟩) (ENNReal.toReal_ne_zero.2 ⟨hm, hmt⟩), mul_comm m.toReal,
-    ENNReal.ofReal_mul' ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hmt, neg_sub]
+  -- The information of the ratio `m / q` is `log (q / m)`.
+  have hlog : -log (q⁻¹ * m).toReal = log (q.toReal / m.toReal) := by
+    rw [← log_inv, ENNReal.toReal_mul, ENNReal.toReal_inv, mul_inv, inv_inv, div_eq_mul_inv]
+  rw [atomInformation_of_ne_zero (mul_ne_zero (ENNReal.inv_ne_zero.2 hq) hm), hlog,
+    ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal (ne_top_of_le_ne_top hq hmq),
+    mul_comm]
 
 /-- **Agreement with the countable formula.** On countable measurable labels, the conditional
 entropy defined through the conditional distribution is the countable conditional entropy
@@ -100,6 +81,6 @@ theorem conditionalLabelEntropy_eq_conditionalPartitionEntropy [Countable ι] {a
         rw [conditionalPartitionEntropy_def]
         refine tsum_congr fun p ↦ ?_
         rw [hg, atomInformation_mul_eq (measure_mono Set.inter_subset_right) (measure_ne_top _ _)]
-        rfl
+        simp only [measureReal_def]
 
 end TauCeti
