@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.Padics.Complex
 public import Mathlib.RingTheory.Algebraic.Basic
 import Mathlib.Algebra.AlgebraicCard
-import TauCeti.Analysis.Complex.FieldEmbedding
 import TauCeti.NumberTheory.Padics.Cardinality
 
 /-!
