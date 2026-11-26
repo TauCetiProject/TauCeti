@@ -40,17 +40,15 @@ closed-manifold hypotheses:
   `H_{d+1}(M; ℤ) ≅ H_{d+1}(S^{d+1}; ℤ) ≅ ℤ` is nontrivial, whereas Hatcher's Proposition 3.29
   (`TauCeti.compactSpace_of_nontrivial_singularHomology`) forces any preconnected Hausdorff
   `(d + 1)`-manifold with nontrivial top singular homology to be compact; hence `M` is compact
-  (`ContinuousMap.HomotopyEquiv.compactSpace_of_sphere`,
-  `ContinuousMap.HomotopyEquiv.compactSpace_of_sphere_of_pos`) and second countable
-  (`ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere`,
-  `ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere_of_pos`).
+  (`ContinuousMap.HomotopyEquiv.compactSpace_of_sphere`) and second countable
+  (`ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere`).
 
 Consequently, for `2 ≤ n`, proving `ContinuousMap.HomotopyEquiv.NonemptyDiffeomorphSphere M n` (or
 its topological counterpart `M ≃ₕ 𝕊ⁿ → Nonempty (M ≃ₜ 𝕊ⁿ)`) reduces to the closed simply connected
 case where `[CompactSpace M]`, `[SecondCountableTopology M]`, and `[SimplyConnectedSpace M]` are
 already available
-(`ContinuousMap.HomotopyEquiv.nonemptyDiffeomorphSphere_of_compactSpace_simplyConnectedSpace_imp`,
-`ContinuousMap.HomotopyEquiv.nonemptyDiffeomorphSphere_of_simplyConnected`, and
+(`ContinuousMap.HomotopyEquiv.nonemptyDiffeomorphSphere_of_compactSpace_simplyConnectedSpace_imp`
+and
 `ContinuousMap.HomotopyEquiv.nonempty_homeomorph_sphere_of_compactSpace_simplyConnectedSpace_imp`),
 and a topological manifold `M ≃ₕ 𝕊ⁿ` that is smoothable once compact and second countable
 (`TauCeti.IsSmoothable (𝓡 n) M`) is homeomorphic to `𝕊ⁿ` whenever `NonemptyDiffeomorphSphere M n`
@@ -59,11 +57,10 @@ holds (`ContinuousMap.HomotopyEquiv.nonempty_homeomorph_sphere_of_isSmoothable`,
 
 The final section records non-vacuity and sharpness: no noncompact Hausdorff `n`-manifold is
 homotopy equivalent to an `n`-sphere of positive radius
-(`TauCeti.isEmpty_homotopyEquiv_sphere_of_noncompactSpace_of_pos`), and no `n`-dimensional real
-normed space (including `n = 0`, where `E` is path connected while `S⁰` has two path components) is
+(`TauCeti.isEmpty_homotopyEquiv_sphere_of_noncompactSpace`), and no `n`-dimensional real normed
+space (including `n = 0`, where `E` is path connected while `S⁰` has two path components) is
 homotopy equivalent to an `n`-sphere of positive radius
-(`TauCeti.isEmpty_homotopyEquiv_normedSpace_sphere_of_pos`,
-`TauCeti.isEmpty_homotopyEquiv_normedSpace_sphere`,
+(`TauCeti.isEmpty_homotopyEquiv_normedSpace_sphere`,
 `TauCeti.isEmpty_homotopyEquiv_euclideanSpace_sphere`). By contrast, at radius `0` the sphere is a
 singleton (`ℝ³ ≃ₕ sphere 0 0`), and for a nontrivial real normed space `F` the cylinder
 `sphere (0 : F) 1 × ℝ` is homotopy equivalent to `sphere (0 : F) 1` yet noncompact: when
@@ -85,14 +82,13 @@ connected, second countable manifolds
   `0`-manifold to a `0`-sphere `sphere c r` to a homeomorphism.
 * `ContinuousMap.HomotopyEquiv.compactSpace_of_topCatSphere`,
   `ContinuousMap.HomotopyEquiv.compactSpace_of_sphere`,
-  `ContinuousMap.HomotopyEquiv.compactSpace_of_sphere_of_pos`,
-  `ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere`,
-  `ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere_of_pos`, and
+  `ContinuousMap.HomotopyEquiv.compactSpace_of_sphere_euclideanSpace`,
+  `ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere`, and
   `ContinuousMap.HomotopyEquiv.secondCountableTopology_of_sphere_euclideanSpace`: compactness and
   second countability of a Hausdorff `n`-manifold without boundary homotopy equivalent to an
   `n`-sphere of positive radius.
-* `ContinuousMap.HomotopyEquiv.nonemptyDiffeomorphSphere_of_compactSpace_simplyConnectedSpace_imp`,
-  `ContinuousMap.HomotopyEquiv.nonemptyDiffeomorphSphere_of_simplyConnected`, and
+* `ContinuousMap.HomotopyEquiv.nonemptyDiffeomorphSphere_of_compactSpace_simplyConnectedSpace_imp`
+  and
   `ContinuousMap.HomotopyEquiv.nonempty_homeomorph_sphere_of_compactSpace_simplyConnectedSpace_imp`:
   reduction of the smooth and topological Poincaré statements for `2 ≤ n` to compact, second
   countable, simply connected manifolds.
@@ -105,15 +101,12 @@ connected, second countable manifolds
   `ContinuousMap.HomotopyEquiv.nonempty_homeomorph_sphere_of_homotopyEquiv_iff_of_two_le`: the
   corresponding equivalences with the restricted statements.
 * `TauCeti.isEmpty_homotopyEquiv_sphere_of_noncompactSpace`,
-  `TauCeti.isEmpty_homotopyEquiv_sphere_of_noncompactSpace_of_pos`,
-  `TauCeti.isEmpty_homotopyEquiv_normedSpace_sphere`,
-  `TauCeti.isEmpty_homotopyEquiv_normedSpace_sphere_of_pos`, and
+  `TauCeti.isEmpty_homotopyEquiv_normedSpace_sphere`, and
   `TauCeti.isEmpty_homotopyEquiv_euclideanSpace_sphere`: nonexistence of homotopy equivalences from
   noncompact `n`-manifolds and `n`-dimensional normed/Euclidean spaces (for all `n : ℕ`) to spheres
   of positive radius of the same dimension.
-* `TauCeti.isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ` and
-  `TauCeti.isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ_of_pos`: no proper open subset of a
-  preconnected Hausdorff `n`-manifold is homotopy equivalent to an `n`-sphere of positive radius.
+* `TauCeti.isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ`: no proper open subset of a preconnected
+  Hausdorff `n`-manifold is homotopy equivalent to an `n`-sphere of positive radius.
 
 ## References
 
@@ -203,47 +196,35 @@ theorem compactSpace_of_topCatSphere {n : ℕ} (e : M ≃ₕ TopCat.sphere.{u} n
     have := iso.toLinearEquiv.toEquiv.nontrivial
     exact TauCeti.compactSpace_of_nontrivial_singularHomology Z hE le_rfl
 
-/-- **A Hausdorff `n`-manifold homotopy equivalent to an `n`-sphere is compact.** If `M` is a
-Hausdorff space modelled on an `n`-dimensional real normed space and `F` has dimension `n + 1`,
-any homotopy equivalence `M ≃ₕ sphere (0 : F) 1` forces `CompactSpace M`. -/
-theorem compactSpace_of_sphere {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
-    (e : M ≃ₕ sphere (0 : F) 1) (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) :
-    CompactSpace M :=
-  (e.topCatSphere hF).compactSpace_of_topCatSphere hE
-
 /-- **A Hausdorff `n`-manifold homotopy equivalent to an `n`-sphere of positive radius is
-compact.** -/
-theorem compactSpace_of_sphere_of_pos {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+compact.** If `M` is a Hausdorff space modelled on an `n`-dimensional real normed space and `F` has
+dimension `n + 1`, any homotopy equivalence `M ≃ₕ sphere c r` with `0 < r` forces
+`CompactSpace M`. -/
+theorem compactSpace_of_sphere {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {c : F} {r : ℝ} {n : ℕ} (e : M ≃ₕ sphere c r) (hE : finrank ℝ E = n)
     (hF : finrank ℝ F = n + 1) (hr : 0 < r) : CompactSpace M :=
-  (e.trans (TauCeti.sphereHomeomorphOfPos c hr).symm.toHomotopyEquiv).compactSpace_of_sphere hE hF
+  ((e.trans (TauCeti.sphereHomeomorphOfPos c hr).symm.toHomotopyEquiv).topCatSphere
+    hF).compactSpace_of_topCatSphere hE
 
 /-- A Hausdorff `n`-manifold homotopy equivalent to the Euclidean `n`-sphere is compact. -/
 theorem compactSpace_of_sphere_euclideanSpace {n : ℕ}
     (e : M ≃ₕ sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (hE : finrank ℝ E = n) :
     CompactSpace M :=
-  e.compactSpace_of_sphere hE finrank_euclideanSpace_fin
-
-/-- **A Hausdorff `n`-manifold homotopy equivalent to an `n`-sphere is second countable.** -/
-theorem secondCountableTopology_of_sphere {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {n : ℕ} (e : M ≃ₕ sphere (0 : F) 1) (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) :
-    SecondCountableTopology M := by
-  have := e.compactSpace_of_sphere hE hF
-  exact ChartedSpace.secondCountable_of_sigmaCompact E M
+  e.compactSpace_of_sphere hE finrank_euclideanSpace_fin one_pos
 
 /-- **A Hausdorff `n`-manifold homotopy equivalent to an `n`-sphere of positive radius is second
 countable.** -/
-theorem secondCountableTopology_of_sphere_of_pos {F : Type*} [NormedAddCommGroup F]
+theorem secondCountableTopology_of_sphere {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {c : F} {r : ℝ} {n : ℕ} (e : M ≃ₕ sphere c r) (hE : finrank ℝ E = n)
     (hF : finrank ℝ F = n + 1) (hr : 0 < r) : SecondCountableTopology M := by
-  have := e.compactSpace_of_sphere_of_pos hE hF hr
+  have := e.compactSpace_of_sphere hE hF hr
   exact ChartedSpace.secondCountable_of_sigmaCompact E M
 
 /-- A Hausdorff `n`-manifold homotopy equivalent to the Euclidean `n`-sphere is second countable. -/
 theorem secondCountableTopology_of_sphere_euclideanSpace {n : ℕ}
     (e : M ≃ₕ sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) (hE : finrank ℝ E = n) :
     SecondCountableTopology M :=
-  e.secondCountableTopology_of_sphere hE finrank_euclideanSpace_fin
+  e.secondCountableTopology_of_sphere hE finrank_euclideanSpace_fin one_pos
 
 end Compactness
 
@@ -266,18 +247,6 @@ theorem nonemptyDiffeomorphSphere_of_compactSpace_simplyConnectedSpace_imp
   have := e.simplyConnectedSpace_of_sphere_euclideanSpace hn
   exact h e
 
-/-- **Smooth Poincaré from the closed simply connected case, without the homotopy-equivalence
-premise.** For `2 ≤ n` (in particular for `n = 3`), to prove `NonemptyDiffeomorphSphere M n` it
-suffices to show—without assuming `M ≃ₕ 𝕊ⁿ`—that every compact, second-countable, simply connected
-smooth `n`-manifold structure on `M` is diffeomorphic to `𝕊ⁿ`. -/
-theorem nonemptyDiffeomorphSphere_of_simplyConnected
-    {M : Type*} [TopologicalSpace M] [T2Space M] {n : ℕ} (hn : 2 ≤ n)
-    (h : ∀ [ChartedSpace (EuclideanSpace ℝ (Fin n)) M] [IsManifold (𝓡 n) ∞ M]
-      [CompactSpace M] [SecondCountableTopology M] [SimplyConnectedSpace M],
-      Nonempty (M ≃ₘ⟮𝓡 n, 𝓡 n⟯ sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) :
-    NonemptyDiffeomorphSphere M n :=
-  nonemptyDiffeomorphSphere_of_compactSpace_simplyConnectedSpace_imp hn fun _ ↦ h
-
 /-- **Reduction of the topological Poincaré statement to closed simply connected manifolds
 (`2 ≤ n`).** If a Hausdorff `n`-manifold `M` with `2 ≤ n` is homotopy equivalent to the unit sphere
 `S` of an `(n + 1)`-dimensional real normed space, `Nonempty (M ≃ₜ S)` holds once it holds under
@@ -290,8 +259,8 @@ theorem nonempty_homeomorph_sphere_of_compactSpace_simplyConnectedSpace_imp
     (h : [CompactSpace M] → [SecondCountableTopology M] → [SimplyConnectedSpace M] →
       Nonempty (M ≃ₜ sphere (0 : F) 1)) :
     Nonempty (M ≃ₜ sphere (0 : F) 1) := by
-  have := e.compactSpace_of_sphere hE hF
-  have := e.secondCountableTopology_of_sphere hE hF
+  have := e.compactSpace_of_sphere hE hF one_pos
+  have := e.secondCountableTopology_of_sphere hE hF one_pos
   have := e.simplyConnectedSpace_of_sphere
     (by exact_mod_cast (lt_rank_of_lt_finrank (n := 2) (by lia))) zero_le_one
   exact h
@@ -380,9 +349,9 @@ theorem nonempty_homeomorph_sphere_of_homotopyEquiv_iff_of_one_le (M : Type*)
     exact h e
   · intro h e
     have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by lia)
-    have := e.compactSpace_of_sphere hE hF
+    have := e.compactSpace_of_sphere hE hF one_pos
     have := e.pathConnectedSpace_of_sphere (one_lt_rank_of_one_lt_finrank (by lia)) zero_le_one
-    have := e.secondCountableTopology_of_sphere hE hF
+    have := e.secondCountableTopology_of_sphere hE hF one_pos
     exact h e
 
 /-- For `2 ≤ n`, the topological generalized Poincaré statement on a Hausdorff `n`-manifold `M`
@@ -407,28 +376,20 @@ namespace TauCeti
 
 /-- **No noncompact Hausdorff `n`-manifold is homotopy equivalent to an `n`-sphere of positive
 radius.** -/
-theorem isEmpty_homotopyEquiv_sphere_of_noncompactSpace_of_pos {M : Type*} [TopologicalSpace M]
+theorem isEmpty_homotopyEquiv_sphere_of_noncompactSpace {M : Type*} [TopologicalSpace M]
     [T2Space M] [NoncompactSpace M] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {c : F} {r : ℝ} {n : ℕ} (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) (hr : 0 < r) :
     IsEmpty (M ≃ₕ sphere c r) :=
-  ⟨fun e ↦ not_compactSpace_iff.mpr ‹_› (e.compactSpace_of_sphere_of_pos hE hF hr)⟩
-
-/-- **No noncompact Hausdorff `n`-manifold is homotopy equivalent to `Sⁿ`.** -/
-theorem isEmpty_homotopyEquiv_sphere_of_noncompactSpace {M : Type*} [TopologicalSpace M]
-    [T2Space M] [NoncompactSpace M] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {n : ℕ} (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) :
-    IsEmpty (M ≃ₕ sphere (0 : F) 1) :=
-  isEmpty_homotopyEquiv_sphere_of_noncompactSpace_of_pos hE hF one_pos
+  ⟨fun e ↦ not_compactSpace_iff.mpr ‹_› (e.compactSpace_of_sphere hE hF hr)⟩
 
 /-- **No real normed space is homotopy equivalent to a sphere of positive radius of the same
 dimension.** When `finrank ℝ E = n` and `finrank ℝ F = n + 1` with `0 < r`, no homotopy equivalence
 `E ≃ₕ sphere c r` exists: for `n = 0`, `E` is path connected while `sphere c r` has two path
 components; for `n ≥ 1`, `E` is noncompact. -/
-theorem isEmpty_homotopyEquiv_normedSpace_sphere_of_pos {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
-    (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) {c : F} {r : ℝ} (hr : 0 < r) :
+theorem isEmpty_homotopyEquiv_normedSpace_sphere {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {c : F} {r : ℝ} {n : ℕ}
+    (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) (hr : 0 < r) :
     IsEmpty (E ≃ₕ sphere c r) := by
   cases n with
   | zero =>
@@ -447,26 +408,18 @@ theorem isEmpty_homotopyEquiv_normedSpace_sphere_of_pos {E : Type*} [NormedAddCo
   | succ _ =>
     have : FiniteDimensional ℝ E := .of_finrank_pos (by lia)
     have : Nontrivial E := Module.nontrivial_of_finrank_eq_succ hE
-    exact isEmpty_homotopyEquiv_sphere_of_noncompactSpace_of_pos hE hF hr
-
-/-- **A real normed space is not homotopy equivalent to the unit sphere of the same dimension.**
-When `finrank ℝ E = n` and `finrank ℝ F = n + 1`, no homotopy equivalence `E ≃ₕ sphere (0 : F) 1`
-exists, for any `n : ℕ` (including `n = 0`). -/
-theorem isEmpty_homotopyEquiv_normedSpace_sphere {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
-    (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) :
-    IsEmpty (E ≃ₕ sphere (0 : F) 1) :=
-  isEmpty_homotopyEquiv_normedSpace_sphere_of_pos hE hF one_pos
+    exact isEmpty_homotopyEquiv_sphere_of_noncompactSpace hE hF hr
 
 /-- Euclidean space `ℝⁿ` is not homotopy equivalent to `Sⁿ`, for any `n : ℕ`. -/
 theorem isEmpty_homotopyEquiv_euclideanSpace_sphere (n : ℕ) :
     IsEmpty (EuclideanSpace ℝ (Fin n) ≃ₕ
       sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
   isEmpty_homotopyEquiv_normedSpace_sphere finrank_euclideanSpace_fin finrank_euclideanSpace_fin
+    one_pos
 
 /-- **No proper open subset of a preconnected Hausdorff `n`-manifold is homotopy equivalent to an
 `n`-sphere of positive radius.** -/
-theorem isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ_of_pos {M : Type*} [TopologicalSpace M]
+theorem isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ {M : Type*} [TopologicalSpace M]
     [T2Space M] [PreconnectedSpace M] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F]
     [NormedSpace ℝ F] {c : F} {r : ℝ} {n : ℕ} (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1)
@@ -478,18 +431,8 @@ theorem isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ_of_pos {M : Type*} [Topol
   obtain ⟨x⟩ := e.symm.nonempty
   let _ : ChartedSpace E U := TopologicalSpace.Opens.instChartedSpace ⟨U, hUo⟩
   have hUc : IsCompact U :=
-    isCompact_iff_compactSpace.mpr (e.compactSpace_of_sphere_of_pos hE hF hr)
+    isCompact_iff_compactSpace.mpr (e.compactSpace_of_sphere hE hF hr)
   exact IsClopen.eq_univ ⟨hUc.isClosed, hUo⟩ ⟨x.val, x.property⟩
-
-/-- **No proper open subset of a preconnected Hausdorff `n`-manifold is homotopy equivalent to
-`Sⁿ`.** -/
-theorem isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ {M : Type*} [TopologicalSpace M] [T2Space M]
-    [PreconnectedSpace M] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [ChartedSpace E M] {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {n : ℕ} (hE : finrank ℝ E = n) (hF : finrank ℝ F = n + 1) {U : Set M}
-    (hUo : IsOpen U) (hU : U ≠ Set.univ) :
-    IsEmpty (U ≃ₕ sphere (0 : F) 1) :=
-  isEmpty_homotopyEquiv_sphere_of_isOpen_ne_univ_of_pos hE hF hUo hU one_pos
 
 -- Dimension-matching sharpness check: for a nontrivial real normed space `F`, the cylinder
 -- `sphere (0 : F) 1 × ℝ` is homotopy equivalent to `sphere (0 : F) 1` yet noncompact.
@@ -500,8 +443,8 @@ example {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Nontrivial F] :
   exact ⟨⟨ContinuousMap.HomotopyEquiv.prodContractible _ ℝ⟩, inferInstance⟩
 
 -- Radius-positivity sharpness check: `0 < r` cannot be weakened to `0 ≤ r` in
--- `compactSpace_of_sphere_of_pos` or `isEmpty_homotopyEquiv_normedSpace_sphere_of_pos`, since at
--- `r = 0` the sphere `sphere 0 0` is a singleton and therefore homotopy equivalent to `ℝ³`.
+-- `compactSpace_of_sphere` or `isEmpty_homotopyEquiv_normedSpace_sphere`, since at `r = 0` the
+-- sphere `sphere 0 0` is a singleton and therefore homotopy equivalent to `ℝ³`.
 example :
     Nonempty (EuclideanSpace ℝ (Fin 3) ≃ₕ
       sphere (0 : EuclideanSpace ℝ (Fin 4)) 0) := by

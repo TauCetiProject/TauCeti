@@ -64,10 +64,8 @@ subset of a preconnected `n`-manifold has vanishing homology in degrees `k ≥ n
 * `TauCeti.compactSpace_of_not_isZero_singularHomology` and
   `TauCeti.compactSpace_of_nontrivial_singularHomology`: nonvanishing or nontriviality of
   `Hₖ(M; N)` for some `k ≥ n` on a preconnected Hausdorff `n`-manifold forces `CompactSpace M`.
-* `TauCeti.isZero_singularHomology_of_isOpen_ne_univ`,
-  `TauCeti.isZero_singularHomology_of_isOpen_of_lt`, and
-  `TauCeti.isZero_singularHomology_of_isOpen_of_isPreconnected_of_not_isCompact`: homology
-  vanishing on open subsets `U ⊆ M`.
+* `TauCeti.isZero_singularHomology_of_isOpen_ne_univ`: for preconnected `M` and proper open
+  `U ⊂ M`, `Hₖ(U; N) = 0` for `k ≥ n`.
 * `ModuleCat.finrank_singularHomology_eq_zero_of_lt`,
   `ModuleCat.finrank_singularHomology_eq_zero_of_forall_not_isCompact_connectedComponent`, and
   `ModuleCat.finrank_singularHomology_eq_zero_of_noncompactSpace`: the corresponding rank-vanishing
@@ -384,26 +382,6 @@ theorem mono_singularHomologyMap_subtype_of_isCompact_closure (hn : finrank ℝ 
   exact (ModuleCat.restrictScalars.{w} φ).mono_singularHomologyFunctor_map_of_mono N _ k
     (mono_singularHomologyMap_subtype_of_isCompact_closure_aux
       (E := ULift.{w} (Fin n) → ℝ) _ (by simp) hU hcpt hk)
-
-/-- **Singular homology of an open subset of a manifold vanishes above the dimension.** For any open
-subset `U ⊆ M` of a Hausdorff `n`-manifold without boundary, `Hₖ(U; N) = 0` for `k > n`. -/
-theorem isZero_singularHomology_of_isOpen_of_lt (hn : finrank ℝ E = n) {U : Set M} (hU : IsOpen U)
-    {k : ℕ} (hk : n < k) :
-    IsZero (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of U)) := by
-  let _ : ChartedSpace E U := TopologicalSpace.Opens.instChartedSpace ⟨U, hU⟩
-  exact isZero_singularHomology_of_lt (E := E) N hn hk
-
-/-- **Top singular homology of a preconnected noncompact open subset of a manifold vanishes.** For
-any preconnected noncompact open subset `U ⊆ M` of a Hausdorff `n`-manifold without boundary,
-`Hₖ(U; N) = 0` for every `k ≥ n`. -/
-theorem isZero_singularHomology_of_isOpen_of_isPreconnected_of_not_isCompact (hn : finrank ℝ E = n)
-    {U : Set M} (hU : IsOpen U) (hUc : IsPreconnected U) (hK : ¬ IsCompact U) {k : ℕ}
-    (hk : n ≤ k) :
-    IsZero (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (of U)) := by
-  let _ : ChartedSpace E U := TopologicalSpace.Opens.instChartedSpace ⟨U, hU⟩
-  have : PreconnectedSpace U := isPreconnected_iff_preconnectedSpace.mp hUc
-  have : NoncompactSpace U := not_compactSpace_iff.mp (isCompact_iff_compactSpace.not.mp hK)
-  exact isZero_singularHomology_of_noncompactSpace (E := E) N hn hk
 
 end General
 
