@@ -45,8 +45,12 @@ covers `f^*E → E` and `X → B`
 for any quotient `(Q, Q₀)` of the Thom pair of `f^*E` and any quotient `Z` of `X`). No orientation
 of `E` and no hypothesis on `2` in `k` are needed.
 
-The orientation double cover itself is the case `X = B'`, `s` the identity and `ρ` the identity of
-`ℤˣ`, where `L_{k_χ}` is the orientation local system. For the universal cover of a locally
+The orientation double cover itself would be the case `X = B'` with `s` the identity. Since the
+acting group must lie in the universe of `B`, there `G` is the copy `ULift ℤˣ` of `ℤˣ` and `ρ` is
+`MulEquiv.ulift`, so `L_{k_χ}` is the local system of the sign representation, which
+`IsQuotientCoveringMap.associatedLocalSystemSignIso` identifies with the sign local system of the
+deck involution. That case is not stated separately here, and its identification with the
+orientation local system `o(E)` is not carried out. For the universal cover of a locally
 path-connected, semilocally simply connected base, `G = π₁(B)` acts by deck transformations, and
 since the universal cover is simply connected its projection lifts to the orientation cover,
 equivariantly along a homomorphism `ρ : π₁(B) →* ℤˣ` recording whether a deck transformation
