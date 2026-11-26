@@ -17,12 +17,13 @@ import TauCeti.RingTheory.MvPowerSeries.NormCoeff
 /-!
 # Couplings and normal form of `p`-adic multivariate power series
 
-For a prime `p`, finite index types `Φ` and `c`, and a partner rule `pr : ℕ → Φ → Φ`, the `e`-th
-coupling is `Γ_e = ∑ x : Φ × c, X x ^ p ^ e * X (pr e x.1, x.2)`, homogeneous of degree
-`p ^ e + 1`. Given `S : Set ℕ` and coefficients `l : ℕ → ℕ → K` in a normed field `K` extending
-`ℚ_[p]`, the formal sum `Ξ = ∑_{e ∈ S} ∑_j l e j • Γ_e ^ p ^ j` converges coefficientwise.
+For an integer `p > 1`, finite index types `Φ` and `c`, and a partner rule `pr : ℕ → Φ → Φ`, the
+`e`-th coupling is `Γ_e = ∑ x : Φ × c, X x ^ p ^ e * X (pr e x.1, x.2)`, homogeneous of degree
+`p ^ e + 1`. Given `S : Set ℕ` and coefficients `l : ℕ → ℕ → R` in a topological commutative ring,
+the formal sum `Ξ = ∑_{e ∈ S} ∑_j l e j • Γ_e ^ p ^ j` converges coefficientwise.
 
-A series `F : MvPowerSeries (Φ × c) K` has **normal form** `HasNormalForm p S pr ϖ l F` if
+For a prime `p` and a normed field `K` extending `ℚ_[p]`, a series `F : MvPowerSeries (Φ × c) K`
+has **normal form** `HasNormalForm p S pr ϖ l F` if
 `F(ϖ z) = W * exp ((ϖ ^ (p + 1) / p) • Ξ)` for an integral series `W` (`∀ d, ‖coeff d W‖ ≤ 1`).
 
 ## Main definitions and results
@@ -31,9 +32,9 @@ A series `F : MvPowerSeries (Φ × c) K` has **normal form** `HasNormalForm p S 
 * `MvPowerSeries.HasNormalForm.exists_subst_eq_mul_exp`, `MvPowerSeries.HasNormalForm.rescale`,
   `MvPowerSeries.HasNormalForm.exists_of_norm_eq`: substitution, rescaling, and dependence on `‖ϖ‖`.
 * `MvPowerSeries.HasNormalForm.norm_coeff_subst_le_one`: if `F` has normal form with integral `l`,
-  and `Z` is an integral substitution without constant term whose couplings `Γ_e(Z)` have norm at
-  most `r` up to degree `B` for `e ∈ S` with `e ≤ p.log B`, then `F(ϖ Z)` is integral in degrees
-  at most `B`.
+  `0 ≤ r ≤ 1`, `‖ϖ ^ (p + 1) / p‖ * r ≤ p ^ (-(p - 1)⁻¹)`, and `Z` is an integral substitution
+  without constant term whose couplings `Γ_e(Z)` have norm at most `r` up to degree `B` for `e ∈ S`
+  with `e ≤ p.log B`, then `F(ϖ Z)` is integral in degrees at most `B`.
 
 ## References
 
@@ -134,43 +135,48 @@ theorem le_order_coupling_pow {p : ℕ} {pr : ℕ → Φ → Φ} (e j : ℕ) :
         nsmul_le_nsmul_right (le_order_coupling e) _
     _ ≤ _ := le_order_pow (p ^ j)
 
+/-- If `1 < p` and either `D < e` or `D < j`, then `D < (p ^ e + 1) * p ^ j`. -/
+private lemma lt_add_one_mul_pow_of_lt {p D e j : ℕ} (hp : 1 < p) (h : D < e ∨ D < j) :
+    D < (p ^ e + 1) * p ^ j := by
+  rcases h with he | hj
+  · exact lt_of_lt_of_le (he.trans ((Nat.lt_pow_self hp).trans (Nat.lt_succ_self _)))
+      (Nat.le_mul_of_pos_right _ (pow_pos (zero_lt_one.trans hp) j))
+  · exact lt_of_lt_of_le (hj.trans (Nat.lt_pow_self hp))
+      (Nat.le_mul_of_pos_left _ (Nat.succ_pos _))
+
 /-- For every multi-index `d`, only finitely many terms of `couplingSum` have nonzero `d`-th
 coefficient, so the sum converges coefficientwise in any topology on `R`. -/
-theorem hasSum_couplingSum [TopologicalSpace R] {p : ℕ} [Fact p.Prime] {S : Set ℕ}
+theorem hasSum_couplingSum [TopologicalSpace R] {p : ℕ} (hp : 1 < p) {S : Set ℕ}
     {pr : ℕ → Φ → Φ} {l : ℕ → ℕ → R} :
     HasSum (fun x : S × ℕ ↦ l x.1 x.2 • (coupling p pr x.1 : MvPowerSeries (Φ × c) R) ^ p ^ x.2)
       (couplingSum p S pr l) := by
   classical
-  have hp : 1 < p := (Fact.out : p.Prime).one_lt
   rw [couplingSum_def]
   refine Summable.hasSum (WithPiTopology.summable_iff_summable_coeff.2 fun d ↦ ?_)
   refine summable_of_ne_finset_zero (s :=
     ((Finset.range (d.degree + 1)).subtype (· ∈ S)) ×ˢ Finset.range (d.degree + 1)) ?_
   rintro ⟨⟨e, _⟩, j⟩ hnot
-  have hlt : d.degree < (p ^ e + 1) * p ^ j := by
-    simp only [Finset.mem_product, Finset.mem_subtype, Finset.mem_range, not_and_or, not_lt] at hnot
-    rcases hnot with he' | hj'
-    · exact lt_of_lt_of_le ((Nat.lt_of_succ_le he').trans
-        ((Nat.lt_pow_self hp).trans (Nat.lt_succ_self _)))
-        (Nat.le_mul_of_pos_right _ (pow_pos (Fact.out : p.Prime).pos j))
-    · exact lt_of_lt_of_le ((Nat.lt_of_succ_le hj').trans (Nat.lt_pow_self hp))
-        (Nat.le_mul_of_pos_left _ (Nat.succ_pos _))
+  simp only [Finset.mem_product, Finset.mem_subtype, Finset.mem_range, not_and_or, not_lt] at hnot
+  have hlt : d.degree < (p ^ e + 1) * p ^ j :=
+    lt_add_one_mul_pow_of_lt hp (hnot.imp Nat.lt_of_succ_le Nat.lt_of_succ_le)
   rw [coeff_smul, coeff_of_lt_order ((Nat.cast_lt.2 hlt).trans_le (le_order_coupling_pow e j)),
     mul_zero]
 
 /-- `couplingSum p S pr l` has zero constant coefficient. -/
-theorem constantCoeff_couplingSum [TopologicalSpace R] [T2Space R] {p : ℕ} [Fact p.Prime]
+@[simp]
+theorem constantCoeff_couplingSum [TopologicalSpace R] [T2Space R] {p : ℕ} (hp : 1 < p)
     {S : Set ℕ} {pr : ℕ → Φ → Φ} {l : ℕ → ℕ → R} :
     constantCoeff (couplingSum p S pr l : MvPowerSeries (Φ × c) R) = 0 := by
+  have hp0 : p ≠ 0 := by omega
   have h0 : HasSum (fun x : S × ℕ ↦
       constantCoeff (l x.1 x.2 • (coupling p pr x.1 : MvPowerSeries (Φ × c) R) ^ p ^ x.2)) 0 := by
-    convert hasSum_zero with x; simp [coupling_def, (Fact.out : p.Prime).ne_zero]
+    convert hasSum_zero with x; simp [coupling_def, hp0]
   exact (hasSum_iff_hasSum_coeff.1
-    (hasSum_couplingSum (p := p) (S := S) (pr := pr) (l := l)) 0).unique h0
+    (hasSum_couplingSum hp (S := S) (pr := pr) (l := l)) 0).unique h0
 
 /-- The `d`-th coefficient of `(couplingSum p S pr l).subst Z` equals the finite sum of the
 `d`-th coefficients of the terms with `e, j ≤ d.degree`. -/
-theorem coeff_subst_couplingSum_eq_sum [TopologicalSpace R] [T2Space R] {p : ℕ} [Fact p.Prime]
+theorem coeff_subst_couplingSum_eq_sum [TopologicalSpace R] [T2Space R] {p : ℕ} (hp : 1 < p)
     {S : Set ℕ} {pr : ℕ → Φ → Φ} {l : ℕ → ℕ → R} {τ : Type*}
     {Z : Φ × c → MvPowerSeries τ R} (hZ : ∀ x, constantCoeff (Z x) = 0) (d : τ →₀ ℕ) :
     letI := Classical.decPred (· ∈ S)
@@ -178,25 +184,18 @@ theorem coeff_subst_couplingSum_eq_sum [TopologicalSpace R] [T2Space R] {p : ℕ
       ∑ x ∈ ((Finset.range (d.degree + 1)).subtype (· ∈ S)) ×ˢ Finset.range (d.degree + 1),
         coeff d (l x.1 x.2 • (coupling p pr x.1 : MvPowerSeries (Φ × c) R).subst Z ^ p ^ x.2) := by
   classical
-  have hp : 1 < p := (Fact.out : p.Prime).one_lt
   have hsub : HasSubst Z := hasSubst_of_constantCoeff_zero hZ
   set s := ((Finset.range (d.degree + 1)).subtype (· ∈ S)) ×ˢ Finset.range (d.degree + 1)
   have hrem : ∀ m : Φ × c →₀ ℕ, m.degree ≤ d.degree →
       coeff m (couplingSum p S pr l - ∑ x ∈ s, l x.1 x.2 • coupling p pr x.1 ^ p ^ x.2) = 0 := by
     intro m hm
     rw [map_sub, map_sum, sub_eq_zero]
-    have h1 := hasSum_iff_hasSum_coeff.1
-      (hasSum_couplingSum (p := p) (S := S) (pr := pr) (l := l)) m
+    have h1 := hasSum_iff_hasSum_coeff.1 (hasSum_couplingSum hp (S := S) (pr := pr) (l := l)) m
     refine h1.unique (hasSum_sum_of_ne_finset_zero fun ⟨⟨e, _⟩, j⟩ hnot ↦ ?_)
-    have hlt : m.degree < (p ^ e + 1) * p ^ j := by
-      simp only [s, Finset.mem_product, Finset.mem_subtype, Finset.mem_range, not_and_or, not_lt]
-        at hnot
-      rcases hnot with he' | hj'
-      · exact hm.trans_lt (lt_of_lt_of_le ((Nat.lt_of_succ_le he').trans
-          ((Nat.lt_pow_self hp).trans (Nat.lt_succ_self _)))
-          (Nat.le_mul_of_pos_right _ (pow_pos (Fact.out : p.Prime).pos j)))
-      · exact hm.trans_lt (lt_of_lt_of_le ((Nat.lt_of_succ_le hj').trans (Nat.lt_pow_self hp))
-          (Nat.le_mul_of_pos_left _ (Nat.succ_pos _)))
+    simp only [s, Finset.mem_product, Finset.mem_subtype, Finset.mem_range, not_and_or, not_lt]
+      at hnot
+    have hlt : m.degree < (p ^ e + 1) * p ^ j :=
+      hm.trans_lt (lt_add_one_mul_pow_of_lt hp (hnot.imp Nat.lt_of_succ_le Nat.lt_of_succ_le))
     rw [coeff_smul, coeff_of_lt_order ((Nat.cast_lt.2 hlt).trans_le (le_order_coupling_pow e j)),
       mul_zero]
   have hord0 : ((d.degree + 1 : ℕ) : ℕ∞) ≤
@@ -217,8 +216,24 @@ theorem coeff_subst_couplingSum_eq_sum [TopologicalSpace R] [T2Space R] {p : ℕ
   rw [← coe_substAlgHom hsub, map_sub, map_sum, map_sub, map_sum, sub_eq_zero] at hzero
   simpa only [coe_substAlgHom, subst_smul hsub, subst_pow hsub] using hzero
 
+/-- Multiplying all coefficients `l e j` by a constant `a` scales `couplingSum p S pr l` by `a`. -/
+theorem couplingSum_const_mul [TopologicalSpace R] [T2Space R] {p : ℕ}
+    (hp : 1 < p) {S : Set ℕ} {pr : ℕ → Φ → Φ} {l : ℕ → ℕ → R} (a : R) :
+    (couplingSum p S pr fun e j ↦ a * l e j : MvPowerSeries (Φ × c) R) =
+      a • couplingSum p S pr l := by
+  classical
+  ext d
+  have h1 := coeff_subst_couplingSum_eq_sum hp (S := S) (pr := pr)
+    (l := fun e j ↦ a * l e j) (Z := X) (fun x ↦ constantCoeff_X x) d
+  have h2 := coeff_subst_couplingSum_eq_sum hp (S := S) (pr := pr)
+    (l := l) (Z := X) (fun x ↦ constantCoeff_X x) d
+  simp only [subst_self, id_eq] at h1 h2
+  rw [h1, coeff_smul, h2, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  rw [coeff_smul, coeff_smul, mul_assoc]
+
 /-- Rescaling `couplingSum p S pr l` by `α` multiplies `l e j` by `α ^ ((p ^ e + 1) * p ^ j)`. -/
-theorem rescale_couplingSum [TopologicalSpace R] [T2Space R] {p : ℕ} [Fact p.Prime]
+theorem rescale_couplingSum [TopologicalSpace R] [T2Space R] {p : ℕ} (hp : 1 < p)
     {S : Set ℕ} {pr : ℕ → Φ → Φ} {l : ℕ → ℕ → R} (α : R) :
     rescale (fun _ : Φ × c ↦ α) (couplingSum p S pr l : MvPowerSeries (Φ × c) R) =
       couplingSum p S pr fun e j : ℕ ↦ α ^ ((p ^ e + 1) * p ^ j) * l e j := by
@@ -232,8 +247,8 @@ theorem rescale_couplingSum [TopologicalSpace R] [T2Space R] {p : ℕ} [Fact p.P
     have hZeq : Z = (fun _ : Φ × c ↦ α) • X := rfl
     rw [hZeq, ← rescale_eq_subst, rescale_coupling, smul_pow, smul_smul, ← pow_mul,
       mul_comm (l _ _)]
-  rw [rescale_eq_subst, coeff_subst_couplingSum_eq_sum (fun x ↦ by simp)]
-  have h1 := coeff_subst_couplingSum_eq_sum (p := p) (S := S) (pr := pr)
+  rw [rescale_eq_subst, coeff_subst_couplingSum_eq_sum hp (fun x ↦ by simp)]
+  have h1 := coeff_subst_couplingSum_eq_sum hp (S := S) (pr := pr)
     (l := fun e j ↦ α ^ ((p ^ e + 1) * p ^ j) * l e j) (Z := X) (fun x ↦ constantCoeff_X x) d
   simpa only [Z, hterm, subst_self, id_eq] using h1.symm
 
@@ -263,22 +278,6 @@ theorem hasNormalForm_iff {S : Set ℕ} {pr : ℕ → Φ → Φ} {ϖ : K} {l : �
 
 variable {S : Set ℕ} {pr : ℕ → Φ → Φ} {ϖ : K} {l : ℕ → ℕ → K} {F : MvPowerSeries (Φ × c) K}
 
-/-- If `‖a‖ * r ≤ p ^ (-(p - 1 : ℝ)⁻¹)` and `G` has zero constant term with `‖coeff d G‖ ≤ r` for
-all `d.degree ≤ B`, then `exp (a • G)` has integral coefficients in degrees at most `B`. -/
-theorem norm_coeff_subst_exp_smul_le_one {τ : Type*} {a : K} {r : ℝ}
-    (hr : ‖a‖ * r ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) {G : MvPowerSeries τ K} (hG : constantCoeff G = 0)
-    {B : ℕ} (h_le : ∀ d : τ →₀ ℕ, d.degree ≤ B → ‖coeff d G‖ ≤ r) {m : τ →₀ ℕ} (hm : m.degree ≤ B) :
-    ‖coeff m ((PowerSeries.exp K).subst (a • G))‖ ≤ 1 := by
-  have haG : constantCoeff (a • G) = 0 := by
-    rw [← coeff_zero_eq_constantCoeff, coeff_smul, coeff_zero_eq_constantCoeff, hG, mul_zero]
-  have h1 := PowerSeries.norm_coeff_subst_exp_mul_prod_le_one (p := p) (K := K)
-    (c := fun _ : τ ↦ (1 : ℝ)) (fun _ ↦ zero_le_one) haG (n := m) fun d hd ↦ by
-      have hprod : d.prod (fun _ n ↦ (1 : ℝ) ^ n) = 1 := by simp [Finsupp.prod]
-      rw [hprod, mul_one, coeff_smul, norm_mul]
-      exact (mul_le_mul_of_nonneg_left (h_le d ((Finsupp.degree_mono hd).trans hm))
-        (norm_nonneg a)).trans hr
-  simpa [Finsupp.prod] using h1
-
 /-- Substituting integral `Z` without constant term into `F(ϖ z)` preserves the normal form
 factorization. -/
 theorem HasNormalForm.exists_subst_eq_mul_exp (hF : HasNormalForm p S pr ϖ l F) {τ : Type*}
@@ -289,6 +288,7 @@ theorem HasNormalForm.exists_subst_eq_mul_exp (hF : HasNormalForm p S pr ϖ l F)
         W * (PowerSeries.exp K).subst ((ϖ ^ (p + 1) / p) • (couplingSum p S pr l).subst Z) := by
   classical
   have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
+  have hp : 1 < p := (Fact.out : p.Prime).one_lt
   obtain ⟨W, hW_int, hW⟩ := hF
   have hsub : HasSubst Z := hasSubst_of_constantCoeff_zero hZ
   have h_rescale : F.subst (fun x : Φ × c ↦ ϖ • Z x) = (F.rescale fun _ ↦ ϖ).subst Z := by
@@ -311,7 +311,7 @@ theorem HasNormalForm.exists_subst_eq_mul_exp (hF : HasNormalForm p S pr ϖ l F)
     have h0 : constantCoeff ((ϖ ^ (p + 1) / p) •
         (couplingSum p S pr l : MvPowerSeries (Φ × c) K)) = 0 := by
       rw [← coeff_zero_eq_constantCoeff, coeff_smul, coeff_zero_eq_constantCoeff,
-        constantCoeff_couplingSum, mul_zero]
+        constantCoeff_couplingSum hp, mul_zero]
     have hcomp := subst_comp_subst_apply
       (PowerSeries.HasSubst.of_constantCoeff_zero h0).const hsub (PowerSeries.exp K)
     simpa only [PowerSeries.subst, Function.const_apply, subst_smul hsub] using hcomp
@@ -321,11 +321,13 @@ theorem HasNormalForm.rescale (hF : HasNormalForm p S pr ϖ l F) {α : K} (hα :
     HasNormalForm p S pr ϖ (fun e j : ℕ ↦ α ^ ((p ^ e + 1) * p ^ j) * l e j)
       (F.rescale fun _ : Φ × c ↦ α) := by
   classical
+  have hp : 1 < p := (Fact.out : p.Prime).one_lt
   let Z : Φ × c → MvPowerSeries (Φ × c) K := fun x ↦ α • X x
   have h_subst : (F.rescale fun _ ↦ α).rescale (fun _ ↦ ϖ) = F.subst fun x ↦ ϖ • Z x := by
     rw [rescale_rescale, rescale_eq_subst]
     congr! with x; simp [Z, smul_smul, mul_comm]
-  rw [hasNormalForm_iff, h_subst, ← rescale_couplingSum, rescale_eq_subst _ (couplingSum p S pr l)]
+  rw [hasNormalForm_iff, h_subst, ← rescale_couplingSum hp,
+    rescale_eq_subst _ (couplingSum p S pr l)]
   refine hF.exists_subst_eq_mul_exp (fun x d ↦ ?_) (fun x ↦ by simp [Z])
   simp only [Z, coeff_smul, coeff_X]
   split_ifs <;> simp [hα]
@@ -333,30 +335,37 @@ theorem HasNormalForm.rescale (hF : HasNormalForm p S pr ϖ l F) {α : K} (hα :
 /-- Existence of a normal form depends only on `‖ϖ‖`. -/
 theorem HasNormalForm.exists_of_norm_eq (hF : HasNormalForm p S pr ϖ l F) (hϖ : ϖ ≠ 0) {ϖ' : K}
     (h_norm : ‖ϖ'‖ = ‖ϖ‖) : ∃ l' : ℕ → ℕ → K, HasNormalForm p S pr ϖ' l' F := by
+  have hp : 1 < p := (Fact.out : p.Prime).one_lt
   have hϖ' : ϖ' ≠ 0 := by rwa [← norm_ne_zero_iff, h_norm, norm_ne_zero_iff]
   let α : K := ϖ' / ϖ; let β : K := ϖ / ϖ'
   have hα : ‖α‖ ≤ 1 := by simp [α, h_norm, hϖ]
   let l₁ (e j : ℕ) : K := α ^ ((p ^ e + 1) * p ^ j) * l e j
-  have h_sum : (couplingSum p S pr fun e j ↦ β ^ (p + 1) * l₁ e j : MvPowerSeries (Φ × c) K) =
-      β ^ (p + 1) • couplingSum p S pr l₁ := by
-    ext d
-    have h1 := hasSum_iff_hasSum_coeff.1 (hasSum_couplingSum (p := p) (S := S) (pr := pr)
-      (l := fun e j ↦ β ^ (p + 1) * l₁ e j)) d
-    have h2 := (hasSum_iff_hasSum_coeff.1 (hasSum_couplingSum (p := p) (S := S) (pr := pr)
-      (l := l₁)) d).mul_left (β ^ (p + 1))
-    exact h1.unique (by simpa [mul_smul, coeff_smul] using h2)
   have h_scale : (fun _ : Φ × c ↦ ϖ') = (fun _ ↦ α) * fun _ ↦ ϖ :=
     funext fun _ ↦ (div_mul_cancel₀ ϖ' hϖ).symm
   have h_const : ϖ' ^ (p + 1) / p * β ^ (p + 1) = ϖ ^ (p + 1) / p := by
     simp [β, div_mul_eq_mul_div, ← mul_pow, mul_div_cancel₀ ϖ hϖ']
   obtain ⟨W, hW_int, hW⟩ := hF.rescale hα
   refine ⟨fun e j ↦ β ^ (p + 1) * l₁ e j, W, hW_int, ?_⟩
-  rw [h_sum, smul_smul, h_const, ← hW, rescale_rescale, h_scale]
+  rw [couplingSum_const_mul hp, smul_smul, h_const, ← hW, rescale_rescale, h_scale]
 
 omit [Algebra ℚ K] in
-/-- If `‖l e j‖ ≤ 1` and `‖coeff d ((coupling p pr e).subst Z)‖ ≤ r` for all `e ∈ S` with
-`e ≤ p.log B` and `d.degree ≤ B`, then `‖coeff d ((couplingSum p S pr l).subst Z)‖ ≤ r` for all
-`d.degree ≤ B`. -/
+/-- If `0 ≤ r ≤ 1` and every coefficient of `G` through degree `B` has norm at most `r`, then every
+coefficient of `G ^ n` (`n ≥ 1`) through degree `B` has norm at most `r`. -/
+private lemma norm_coeff_pow_le_of_degree_le {τ : Type*} [IsUltrametricDist K]
+    {G : MvPowerSeries τ K} {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r ≤ 1) {B : ℕ}
+    (hG : ∀ d : τ →₀ ℕ, d.degree ≤ B → ‖coeff d G‖ ≤ r) {n : ℕ} (hn : n ≠ 0)
+    {d : τ →₀ ℕ} (hd : d.degree ≤ B) :
+    ‖coeff d (G ^ n)‖ ≤ r := by
+  have h1 := MvPowerSeries.norm_coeff_pow_mul_prod_le (c := fun _ : τ ↦ (1 : ℝ))
+    (fun _ ↦ zero_le_one) (g := G) (n := d) (ρ := r) (fun m hm ↦ by
+      simpa [Finsupp.prod] using hG m ((Finsupp.degree_mono hm).trans hd)) n
+  exact (by simpa [Finsupp.prod] using h1 : ‖coeff d (G ^ n)‖ ≤ r ^ n).trans
+    (pow_le_of_le_one hr0 hr1 hn)
+
+omit [Algebra ℚ K] in
+/-- If `0 ≤ r ≤ 1`, `‖l e j‖ ≤ 1`, `Z` has zero constant term, and
+`‖coeff d ((coupling p pr e).subst Z)‖ ≤ r` for all `e ∈ S` with `e ≤ p.log B` and `d.degree ≤ B`,
+then `‖coeff d ((couplingSum p S pr l).subst Z)‖ ≤ r` for all `d.degree ≤ B`. -/
 theorem norm_coeff_subst_couplingSum_le {τ : Type*} {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r ≤ 1)
     (hl : ∀ e j, ‖l e j‖ ≤ 1) {Z : Φ × c → MvPowerSeries τ K}
     (hZ : ∀ x, constantCoeff (Z x) = 0) {B : ℕ}
@@ -367,7 +376,7 @@ theorem norm_coeff_subst_couplingSum_le {τ : Type*} {r : ℝ} (hr0 : 0 ≤ r) (
   classical
   have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
   have hp : p.Prime := Fact.out
-  rw [coeff_subst_couplingSum_eq_sum hZ]
+  rw [coeff_subst_couplingSum_eq_sum hp.one_lt hZ]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hr0 fun ⟨⟨e, he⟩, j⟩ _ ↦ ?_
   rw [coeff_smul, norm_mul]
   calc ‖l e j‖ * ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) K).subst Z ^ p ^ j)‖
@@ -376,25 +385,7 @@ theorem norm_coeff_subst_couplingSum_le {τ : Type*} {r : ℝ} (hr0 : 0 ≤ r) (
     _ = ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) K).subst Z ^ p ^ j)‖ := one_mul _
     _ ≤ r := ?_
   obtain h_le | h_lt := le_or_gt e (p.log B)
-  · have hpow : ∀ n ≥ 1, ∀ m : τ →₀ ℕ, m.degree ≤ B →
-        ‖coeff m (((coupling p pr e : MvPowerSeries (Φ × c) K).subst Z) ^ n)‖ ≤ r := by
-      intro n hn
-      induction n with
-      | zero => omega
-      | succ k ih =>
-        intro m hm
-        rcases eq_or_ne k 0 with rfl | hk
-        · simpa using hΓ e he h_le m hm
-        · rw [pow_succ, coeff_mul]
-          refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hr0 fun x hx ↦ ?_
-          have h1 := (Finsupp.degree_mono
-            (le_of_add_le_left (Finset.HasAntidiagonal.mem_antidiagonal.1 hx).le)).trans hm
-          have h2 := (Finsupp.degree_mono
-            (le_of_add_le_right (Finset.HasAntidiagonal.mem_antidiagonal.1 hx).le)).trans hm
-          rw [norm_mul]
-          exact (mul_le_mul (ih (Nat.pos_of_ne_zero hk) x.1 h1) (hΓ e he h_le x.2 h2)
-            (norm_nonneg _) hr0).trans (mul_le_of_le_one_right hr0 hr1)
-    exact hpow (p ^ j) (Nat.one_le_pow j p hp.pos) d hd
+  · exact norm_coeff_pow_le_of_degree_le hr0 hr1 (hΓ e he h_le) (pow_ne_zero j hp.ne_zero) hd
   · have hdeg : d.degree < (p ^ e + 1) * p ^ j :=
       lt_of_lt_of_le
         ((hd.trans_lt (Nat.lt_pow_of_log_lt hp.one_lt h_lt)).trans (Nat.lt_succ_self _))
@@ -403,9 +394,10 @@ theorem norm_coeff_subst_couplingSum_le {τ : Type*} {r : ℝ} (hr0 : 0 ≤ r) (
       norm_zero]
     exact hr0
 
-/-- If `F` has normal form with integral `l`, `‖ϖ ^ (p + 1) / p‖ * r ≤ p ^ (-(p - 1)⁻¹)`, and `Z`
-is an integral substitution without constant term whose couplings `Γ_e(Z)` have norm at most `r` up
-to degree `B` for `e ∈ S` with `e ≤ p.log B`, then `F(ϖ Z)` is integral in degrees at most `B`. -/
+/-- If `F` has normal form with integral `l`, `0 ≤ r ≤ 1`,
+`‖ϖ ^ (p + 1) / p‖ * r ≤ p ^ (-(p - 1)⁻¹)`, and `Z` is an integral substitution without constant
+term whose couplings `Γ_e(Z)` have norm at most `r` up to degree `B` for `e ∈ S` with
+`e ≤ p.log B`, then `F(ϖ Z)` is integral in degrees at most `B`. -/
 theorem HasNormalForm.norm_coeff_subst_le_one (hF : HasNormalForm p S pr ϖ l F)
     (hl : ∀ e j, ‖l e j‖ ≤ 1) {r : ℝ} (hr0 : 0 ≤ r) (hr1 : r ≤ 1)
     (hr : ‖ϖ ^ (p + 1) / p‖ * r ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) {τ : Type*}
@@ -415,21 +407,23 @@ theorem HasNormalForm.norm_coeff_subst_le_one (hF : HasNormalForm p S pr ϖ l F)
       ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) K).subst Z)‖ ≤ r)
     {m : τ →₀ ℕ} (hm : m.degree ≤ B) :
     ‖coeff m (F.subst fun x : Φ × c ↦ ϖ • Z x)‖ ≤ 1 := by
-  classical
   have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
+  have hp : 1 < p := (Fact.out : p.Prime).one_lt
   set Ξ : MvPowerSeries τ K := (couplingSum p S pr l).subst Z
   have hΞ0 : constantCoeff Ξ = 0 :=
-    constantCoeff_subst_eq_zero (hasSubst_of_constantCoeff_zero hZ) hZ constantCoeff_couplingSum
+    constantCoeff_subst_eq_zero (hasSubst_of_constantCoeff_zero hZ) hZ
+      (constantCoeff_couplingSum hp)
   obtain ⟨W, hW_int, hW⟩ := hF.exists_subst_eq_mul_exp hZ_int hZ
-  rw [hW, coeff_mul]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun x hx ↦ ?_
-  have h2 := (Finsupp.degree_mono
-    (le_of_add_le_right (Finset.HasAntidiagonal.mem_antidiagonal.1 hx).le)).trans hm
-  rw [norm_mul]
-  exact (mul_le_mul (hW_int x.1)
-    (norm_coeff_subst_exp_smul_le_one hr hΞ0
-      (fun d hd ↦ norm_coeff_subst_couplingSum_le hr0 hr1 hl hZ hΓ hd) h2)
-    (norm_nonneg _) zero_le_one).trans_eq (mul_one 1)
+  rw [hW]
+  have h1 := MvPowerSeries.norm_coeff_mul_mul_prod_le (c := fun _ : τ ↦ (1 : ℝ))
+    (fun _ ↦ zero_le_one) (f := W) (g := (PowerSeries.exp K).subst ((ϖ ^ (p + 1) / p) • Ξ))
+    (n := m) (r := 1) (s := 1)
+    (fun d _ ↦ by simpa [Finsupp.prod] using hW_int d)
+    (fun d hd ↦ by
+      simpa [Finsupp.prod] using PowerSeries.norm_coeff_subst_exp_smul_le_one hr hΞ0
+        (fun u hu ↦ norm_coeff_subst_couplingSum_le hr0 hr1 hl hZ hΓ hu)
+        ((Finsupp.degree_mono hd).trans hm))
+  simpa [Finsupp.prod] using h1
 
 end NormalForm
 
