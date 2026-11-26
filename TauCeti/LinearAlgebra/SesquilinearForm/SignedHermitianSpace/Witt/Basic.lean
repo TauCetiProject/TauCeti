@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Isometry
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.OrthogonalBasis
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Orthogonal.Basis
 import Mathlib.Tactic.LinearCombination
 
 /-!

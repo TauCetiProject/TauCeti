@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Orthogonal
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Orthogonal.Basic
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Witt.Basic
 
 /-!
@@ -70,7 +70,7 @@ Anthropic, PBC), file `src/Lib/Adelic/Witt/IwasawaDecomposition.lean`:
 over a CM field. Here the correction is triangular, so that it works in every characteristic, and
 the statements are for signed hermitian spaces of either sign over any field with a nontrivial
 involution; the splitting goes through orthogonal complements
-(`TauCeti/LinearAlgebra/SesquilinearForm/SignedHermitianSpace/Orthogonal.lean`).
+(`TauCeti/LinearAlgebra/SesquilinearForm/SignedHermitianSpace/Orthogonal/Basic.lean`).
 
 ## References
 
