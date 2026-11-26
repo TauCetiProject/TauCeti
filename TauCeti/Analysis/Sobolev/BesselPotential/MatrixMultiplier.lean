@@ -61,6 +61,8 @@ functions and changes of frame bounded on the Sobolev scale of a vector bundle.
   `H^s(E, F) → H^s(E, F)`, for every real `s`.
 * `TemperedDistribution.MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: for
   `1 < p < ∞`, if `f ∈ H^{s,p}` then `g f ∈ H^{s,p}`, for every real `s`.
+* `TemperedDistribution.MemSobolev.smulLeftCLM_schwartzMap`: in particular a Schwartz function
+  multiplies `H^{s,p}` into itself, for every real `s`.
 * `SchwartzMap.hasSobolevExtension_bilinLeftCLM_apply`: multiplication by a matrix-valued `A` of
   temperate growth with bounded derivatives extends to a bounded operator `H^s(E, F) → H^s(E, G)`.
 * `TemperedDistribution.MemSobolev.mulLeftCLM_of_norm_iteratedFDeriv_le_natCeil`: for `A` of class
@@ -189,6 +191,13 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil (hp : 1 < p) (h
     {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s p (smulLeftCLM F g f) :=
   hf.map_of_forall_intCast hp hp_top _ fun _ hk _ hu ↦
     hu.smulLeftCLM_of_norm_iteratedFDeriv_le_intCast hp hp_top fun n hn ↦ hbd n (hn.trans hk)
+
+/-- **Schwartz multipliers preserve `H^{s,p}`, for every real `s`.** For `1 < p < ∞`,
+multiplication by a Schwartz function maps `H^{s,p}` into itself. -/
+theorem MemSobolev.smulLeftCLM_schwartzMap (hp : 1 < p) (hp_top : p ≠ ∞) {s : ℝ} (ψ : 𝓢(E, ℂ))
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) : MemSobolev s p (smulLeftCLM F ψ f) :=
+  hf.smulLeftCLM_of_norm_iteratedFDeriv_le_natCeil hp hp_top
+    fun n _ ↦ ⟨_, ψ.norm_iteratedFDeriv_le_seminorm ℝ n⟩
 
 /-- **Matrix multipliers with bounded derivatives preserve `H^{s,p}`, for every real `s`.** Let
 `1 < p < ∞`, let `F` and `G` be finite-dimensional and let `A : E → (F →L[ℂ] G)` be `⌈|s|⌉` times

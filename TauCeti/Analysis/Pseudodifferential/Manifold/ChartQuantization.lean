@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
+import TauCeti.Algebra.GroupWithZero.Indicator
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -49,6 +50,9 @@ on the overlap and vanishes off it
 
 * `OpenPartialHomeomorph.isProperlySupported_chartQuantization`: a chart quantization is properly
   supported.
+* `OpenPartialHomeomorph.chartQuantization_eq_mulLeft_comp_comp_mulLeft`: localization, the chart
+  quantization of the symbol of a chart compression of `P` by `φ` and `ψ` is `φ P ψ`, with the
+  cutoffs read on `M`.
 * `OpenPartialHomeomorph.exists_complexChartCompression_chartQuantization_eq`: the compression of a
   chart quantization in any chart is the quantization of a classical symbol of the same order, with
   principal symbol transformed by the cotangent map of the transition map.
@@ -186,6 +190,57 @@ theorem isProperlySupported_chartQuantization (φ ψ : 𝓓(⟨e.target, e.open_
       rw [chartQuantization_eq_zero he φ ψ a fun q hq ↦
         (hu.filter_mono (nhdsSet_mono subset_union_right)).self_of_nhdsSet q hq,
         ContMDiffMap.coe_zero, Pi.zero_apply]⟩
+
+/-! ### Localization -/
+
+section Localization
+
+variable {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+  C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+
+/-- **Localization.** Let `a` be the symbol of the chart compression of an operator `P` by cutoffs
+`φ` and `ψ` in a chart `e`. For cutoffs `φ₁` and `ψ₁` equal to `1` on the supports of `φ` and
+`ψ`, the chart quantization of `a` localized by `φ₁` and `ψ₁` is `u ↦ φ · P (ψ u)`, where `φ` and
+`ψ` are read on `M` through the chart and extended by `0`. -/
+theorem chartQuantization_eq_mulLeft_comp_comp_mulLeft {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    {a : ClassicalSymbol n ℂ ℂ m}
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u x =
+        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x)
+    {φ₁ ψ₁ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hφ₁ : EqOn φ₁ 1 (tsupport φ))
+    (hψ₁ : EqOn ψ₁ 1 (tsupport ψ)) :
+    e.chartQuantization he φ₁ ψ₁ a =
+      LinearMap.mulLeft ℂ (e.complexCutoffPullback he φ 1) ∘ₗ P ∘ₗ
+        LinearMap.mulLeft ℂ (e.complexCutoffPullback he ψ 1) := by
+  ext u p
+  -- The input `ψ₁ · (u ∘ e⁻¹)` of `Op(a)`, as a Schwartz function.
+  set v := cutoffPushforwardSchwartz he ψ₁ u
+  have hv (y : CoordinateSpace n) : v y = ψ₁ y • u (e.symm y) :=
+    cutoffPushforwardSchwartz_apply he ψ₁ u y
+  -- Read on `M`, the pullback of `v` by `ψ` is `ψ u`, since `ψ₁ = 1` on the support of `ψ`.
+  have hpull : e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff v (v.smooth ⊤)) =
+      e.complexCutoffPullback he ψ 1 * u := by
+    ext q
+    by_cases hq : q ∈ e.source
+    · have h := mul_complexCutoffPullback_apply_of_eq_smul he ψ (g := 1)
+        (hψ₁.mono inter_subset_left) (f := ContMDiffMap.ofContDiff v (v.smooth ⊤))
+        (fun y ↦ by rw [ContMDiffMap.coe_ofContDiff, hv]) hq
+      rw [Pi.one_apply, one_mul, one_mul, e.left_inv hq] at h
+      rw [h, ContMDiffMap.coe_mul, Pi.mul_apply, complexCutoffPullback_apply_of_mem he _ _ hq,
+        ContMDiffMap.coe_one, Pi.one_apply, smul_one_mul]
+    · simp [complexCutoffPullback_apply_of_notMem he _ _ hq]
+  by_cases hp : p ∈ e.source
+  · rw [chartQuantization_apply_of_mem he φ₁ ψ₁ a u hv hp, ha, complexChartCompression_apply,
+      e.left_inv hp, hpull]
+    simp only [LinearMap.comp_apply, LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+      complexCutoffPullback_apply_of_mem he _ _ hp, ContMDiffMap.coe_one, Pi.one_apply,
+      smul_one_mul]
+    exact smul_eq_right_of_ne_zero_imp_eq_one fun h ↦
+      hφ₁ (subset_tsupport _ (left_ne_zero_of_smul h))
+  · simp [chartQuantization_apply_of_notMem he _ _ a u hp,
+      complexCutoffPullback_apply_of_notMem he _ _ hp]
+
+end Localization
 
 /-! ### Compressions of a chart quantization -/
 

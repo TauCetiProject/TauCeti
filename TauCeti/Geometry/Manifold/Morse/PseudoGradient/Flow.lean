@@ -60,6 +60,10 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
   whose only critical point is `x` converges to `x`.
 * `TauCeti.IsAdaptedPseudoGradient.eq_of_mem_unstableSet_inter_stableSet`: an orbit converging to
   the same point in both directions of time is that point.
+* `TauCeti.IsAdaptedPseudoGradient.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet` and
+  `TauCeti.IsAdaptedPseudoGradient.exists_mem_unstableSet_inter_stableSet_of_mem_stableSet`: a point
+  of `W^u(p)` other than `p` lies on a trajectory from `p`, and a point of `W^s(r)` other than `r`
+  on a trajectory to `r`.
 * `TauCeti.IsAdaptedPseudoGradient.iUnion_stableSet` and
   `TauCeti.IsAdaptedPseudoGradient.iUnion_unstableSet`: the stable sets of the critical points
   cover the manifold, and so do their unstable sets. Together with
@@ -316,6 +320,25 @@ theorem eq_of_mem_unstableSet_inter_stableSet {x y : M}
   have hlim := Flow.mem_stableSet.1 hy.2
   simp only [hX.flow_apply_of_mfderiv_eq_zero hcrit] at hlim
   exact tendsto_nhds_unique tendsto_const_nhds hlim
+
+/-- A point of `W^u(p)` other than `p` lies on a trajectory from `p` to a critical point
+`a ≠ p`. -/
+theorem exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet
+    (hf : IsMorse 𝓘(ℝ, E) f) {p x : M} (hx : x ∈ hX.flow.unstableSet p) (hxp : x ≠ p) :
+    ∃ a, p ≠ a ∧ x ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet a := by
+  obtain ⟨a, -, ha⟩ := hX.exists_tendsto_atTop hf x
+  refine ⟨a, ?_, hx, Flow.mem_stableSet.2 ha⟩
+  rintro rfl
+  exact hxp (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hx, Flow.mem_stableSet.2 ha⟩)
+
+/-- A point of `W^s(r)` other than `r` lies on a trajectory from a critical point `b ≠ r` to `r`. -/
+theorem exists_mem_unstableSet_inter_stableSet_of_mem_stableSet
+    (hf : IsMorse 𝓘(ℝ, E) f) {r x : M} (hx : x ∈ hX.flow.stableSet r) (hxr : x ≠ r) :
+    ∃ b, b ≠ r ∧ x ∈ hX.flow.unstableSet b ∩ hX.flow.stableSet r := by
+  obtain ⟨b, -, hb⟩ := hX.exists_tendsto_atBot hf x
+  refine ⟨b, ?_, Flow.mem_unstableSet.2 hb, hx⟩
+  rintro rfl
+  exact hxr (hX.eq_of_mem_unstableSet_inter_stableSet ⟨Flow.mem_unstableSet.2 hb, hx⟩)
 
 /-- **A critical point is a constant trajectory from itself to itself**: it lies in its own unstable
 and stable sets, since it is a rest point of the flow. -/

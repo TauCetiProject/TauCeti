@@ -56,6 +56,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
 * `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
 * `TauCeti.pow_mul_exp_neg_mul_le`: `t ^ m exp (-a t) ≤ m! / a ^ m` for `0 < a`, `0 ≤ t`.
+* `TauCeti.pow_mul_exp_neg_mul_div_factorial_le_profile`: a sharper bound for the factorial-
+  normalized kernel, expressed in the rescaled coordinate `t = a u / k`.
 * `TauCeti.one_add_pow_mul_exp_neg_mul_le`, `TauCeti.one_add_pow_mul_exp_neg_add_mul_le`:
   `(1 + t) ^ n exp (-a t) ≤ n! exp a / a ^ n` and
   `(1 + t) ^ n exp (-(a + b) t) ≤ (n! exp a / a ^ n) exp (-b t)` for `0 < a`, `-1 ≤ t`.
@@ -72,6 +74,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_sub_mul_le_of_le`: `exp (-(x - σ) t) ≤ exp (-(x - σ) δ)` for `σ ≤ x` and
   `δ ≤ t`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
+* `TauCeti.exp_div_pow_le_exp_div_pow`: `exp t / d ^ k ≤ exp c / s ^ k` for `0 < s`, `0 ≤ d` and
+  `k (s / d - 1) + t ≤ c`.
 * `TauCeti.one_add_mul_le_one_add_mul_exp_mul_sub_one`:
   `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`.
 * `TauCeti.inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq`:
@@ -319,6 +323,37 @@ theorem pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : 0 ≤ t) (m : ℕ)
     le_div_iff₀ (pow_pos ha m)]
   linarith
 
+/-- The Gamma kernel, in the coordinate `t = a u / k`, is bounded by
+`a⁻ᵏ (t exp (1 - t))^k`. For `k = 0` the bound is `1`. -/
+theorem pow_mul_exp_neg_mul_div_factorial_le_profile {a u : ℝ} (ha : 0 < a) (hu : 0 ≤ u)
+    (k : ℕ) :
+    u ^ k * exp (-(a * u)) / (k ! : ℝ) ≤
+      (a ^ k)⁻¹ * (a * u / k * exp (1 - a * u / k)) ^ k := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · simpa using exp_le_one_iff.mpr (neg_nonpos.mpr (mul_nonneg ha.le hu))
+  have hkR : (0 : ℝ) < k := Nat.cast_pos.mpr hk
+  let t : ℝ := a * u / k
+  have ht : t * k = a * u := div_mul_cancel₀ _ hkR.ne'
+  have hexp : exp (1 - t) ^ k * exp (-(k : ℝ)) = exp (-(a * u)) := by
+    rw [← exp_natCast_mul, ← exp_add]
+    congr 1
+    linear_combination -ht
+  have hpow : t ^ k * (k : ℝ) ^ k = a ^ k * u ^ k := by
+    rw [← mul_pow, ht, mul_pow]
+  -- Separate the value at the mode from the factor that depends on the rescaled coordinate.
+  have hmode : (k : ℝ) ^ k * exp (-(k : ℝ)) / (k ! : ℝ) ≤ 1 := by
+    rw [div_le_one (by positivity)]
+    simpa using pow_mul_exp_neg_mul_le (a := 1) one_pos hkR.le k
+  calc
+    _ = (a ^ k)⁻¹ * (t * exp (1 - t)) ^ k * ((k : ℝ) ^ k * exp (-(k : ℝ)) / (k ! : ℝ)) := by
+      symm
+      rw [mul_pow]
+      calc
+        _ = (a ^ k)⁻¹ * (t ^ k * (k : ℝ) ^ k) * (exp (1 - t) ^ k * exp (-(k : ℝ))) /
+            (k ! : ℝ) := by ring
+        _ = _ := by rw [hpow, hexp, ← mul_assoc, inv_mul_cancel₀ (pow_ne_zero _ ha.ne'), one_mul]
+    _ ≤ (a ^ k)⁻¹ * (t * exp (1 - t)) ^ k := mul_le_of_le_one_right (by positivity) hmode
+
 /-- For `0 < a` and `-1 ≤ t`, `(1 + t) ^ n * exp (-a * t) ≤ n! * exp a / a ^ n`. -/
 theorem one_add_pow_mul_exp_neg_mul_le {a t : ℝ} (ha : 0 < a) (ht : -1 ≤ t) (n : ℕ) :
     (1 + t) ^ n * exp (-a * t) ≤ (n ! : ℝ) * exp a / a ^ n := by
@@ -454,6 +489,25 @@ times the base: `x ^ k ≤ exp (k x)` for `0 ≤ x`, since `x ≤ x + 1 ≤ exp 
 theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k ≤ exp (k * x) := by
   rw [exp_natCast_mul]
   exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
+
+/-- Comparison of two geometric rates against exponential factors: for `0 < s` and `0 ≤ d`, if
+`k (s / d - 1) + t ≤ c` then `exp t / d ^ k ≤ exp c / s ^ k`. For `0 < d` it follows from
+`(s / d) ^ k ≤ exp (k (s / d - 1))`, that is from `x ≤ exp (x - 1)`; at `d = 0` the left side is
+`0` unless `k = 0`, when the hypothesis reads `t ≤ c`. -/
+theorem exp_div_pow_le_exp_div_pow {s d t c : ℝ} (k : ℕ) (hs : 0 < s) (hd : 0 ≤ d)
+    (h : k * (s / d - 1) + t ≤ c) : exp t / d ^ k ≤ exp c / s ^ k := by
+  rcases hd.eq_or_lt with rfl | hd
+  · rcases Nat.eq_zero_or_pos k with rfl | hk
+    · simpa using h
+    · rw [zero_pow hk.ne', div_zero]
+      positivity
+  have hx : s ^ k ≤ exp (k * (s / d - 1)) * d ^ k := by
+    rw [← div_le_iff₀ (by positivity), ← div_pow, exp_natCast_mul]
+    exact pow_le_pow_left₀ (by positivity) (by linarith [add_one_le_exp (s / d - 1)]) k
+  rw [div_le_div_iff₀ (by positivity) (by positivity)]
+  calc exp t * s ^ k ≤ exp t * (exp (k * (s / d - 1)) * d ^ k) := by gcongr
+    _ = exp (t + k * (s / d - 1)) * d ^ k := by rw [exp_add]; ring
+    _ ≤ exp c * d ^ k := by gcongr; linarith
 
 /-- `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`. -/
 theorem one_add_mul_le_one_add_mul_exp_mul_sub_one {a x : ℝ} (hx : 1 ≤ x) :

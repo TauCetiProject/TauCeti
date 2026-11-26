@@ -96,6 +96,9 @@ and tangential parts.
   lies in `W^{2,2}(Ω)`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_halfSpace` and
   `TauCeti.PDE.UniformlyEllipticOn.exists_lowerOrder_eq_of_halfSpace`: the case of a half-space.
+* `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_of_mapsTo` and its half-space case
+  `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_of_halfSpace`: for Lipschitz
+  coefficients, a tangential derivative of the solution lies in `H¹₀(Ω)`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_mapsTo`
   and its half-space case
   `UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichlet_of_halfSpace`: a
@@ -747,6 +750,62 @@ private theorem exists_forall_energyFormH1_ofTestFunctionₗ_eq_of_hasWeakLineDe
     (fun i j => (hsmooth i j).of_le (by simp)) hu.energyFormH1_ofTestFunctionₗ hd hD hf φ]
   exact integral_congr_ae (hF.coeFn_toLp.mono fun x hx => congrArg (· * φ x) hx.symm)
 
+/-- Under the hypotheses of `UniformlyEllipticOn.exists_lowerOrder_eq_of_mapsTo`, every first weak
+derivative of the solution `u ∈ H¹₀(Ω)` lies in `H¹(Ω)`, since `u ∈ H²(Ω)`. -/
+private theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_w1p_of_mapsTo (hν : ν ≠ 0)
+    (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) (v : EuclideanSpace ℝ ι) :
+    ∃ d : W1p mu Omega 2,
+      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) v := by
+  obtain ⟨U, hU⟩ := ha.exists_lowerOrder_eq_of_mapsTo hν hΩ hK hu
+  obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 U v
+  rw [Wkp.value_succ, hU, Wkp.value_one, Wkp.value_one (u : W1p mu Omega 2)] at hd
+  exact ⟨d, hd⟩
+
+/-- **Tangential derivatives have zero boundary values.** Let `ν ≠ 0` and let `Ω` be convex and
+mapped into itself by every translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a
+slab is. Let `a` be uniformly elliptic and bounded on `Ω`, with `x ↦ a(x)` Lipschitz on `Ω` as a
+bilinear form, and let `u ∈ H¹₀(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `f ∈ L²(Ω)`.
+Then for every tangential direction `τ`, orthogonal to `ν`, the weak derivative `∂_τ u` exists and
+lies in `H¹₀(Ω)`. -/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_of_mapsTo (hν : ν ≠ 0)
+    (hΩc : Convex ℝ (Omega : Set (EuclideanSpace ℝ ι)))
+    (hΩ : ∀ τ, ⟪τ, ν⟫_ℝ = 0 → ∀ t : ℝ, MapsTo (· + t • τ) Omega Omega)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) {τ : EuclideanSpace ℝ ι} (hτ : ⟪τ, ν⟫_ℝ = 0) :
+    ∃ w : W1p0 mu Omega 2, HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2))
+      (W1p.value (w : W1p mu Omega 2)) τ := by
+  set b := EuclideanSpace.basisFun ι ℝ
+  -- `u ∈ H²(Ω)`, so its first derivatives lie in `H¹(Ω)`.
+  have hder := ha.exists_hasWeakLineDerivOn_w1p_of_mapsTo hν hΩ hK hu
+  choose D hD using fun j => hder (b j)
+  obtain ⟨d, hd⟩ := hder τ
+  -- The difference quotients along `τ` lie in `H¹₀(Ω)` and converge to `∂_τ u` in `H¹(Ω)`.
+  exact ⟨⟨d, W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn (by simp) hΩc (hΩ τ hτ) b u.property
+    hD hd⟩, hd⟩
+
+/-- **Tangential derivatives have zero boundary values on a half-space.** Let
+`Ω = {x | c < ⟪x, ν⟫}` with `ν ≠ 0`, let `a` be uniformly elliptic and bounded on `Ω`, with
+`x ↦ a(x)` Lipschitz on `Ω` as a bilinear form, and let `u ∈ H¹₀(Ω)` be a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `f ∈ L²(Ω)`. Then for every `τ` parallel to the boundary hyperplane, the
+weak derivative `∂_τ u` exists and lies in `H¹₀(Ω)`. This is the half-space case of
+`TauCeti.PDE.UniformlyEllipticOn.exists_hasWeakLineDerivOn_of_mapsTo`. -/
+theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_of_halfSpace (hν : ν ≠ 0)
+    (hΩ : ∀ x, x ∈ Omega ↔ c < ⟪x, ν⟫_ℝ)
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) Omega)
+    {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p0 mu Omega 2}
+    (hu : IsWeakSolutionDirichlet a 0 0 f u) {τ : EuclideanSpace ℝ ι} (hτ : ⟪τ, ν⟫_ℝ = 0) :
+    ∃ w : W1p0 mu Omega 2, HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2))
+      (W1p.value (w : W1p mu Omega 2)) τ :=
+  ha.exists_hasWeakLineDerivOn_of_mapsTo hν (TauCeti.convex_of_halfSpace hΩ)
+    (fun _ hτ => TauCeti.mapsTo_add_smul_of_halfSpace hΩ hτ) hK hu hτ
+
 /-- **The tangential derivative solves the differentiated Dirichlet problem.** Let `ν ≠ 0` and let
 `Ω` be convex and mapped into itself by every translation orthogonal to `ν`, as a half-space
 `{x | c < ⟪x, ν⟫}` or a slab is. Let `a` be uniformly elliptic and bounded on `Ω`, with entries
@@ -772,21 +831,14 @@ theorem UniformlyEllipticOn.exists_hasWeakLineDerivOn_and_isWeakSolutionDirichle
   set b := EuclideanSpace.basisFun ι ℝ
   have hΩm : MeasurableSet (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.measurableSet
   -- `u ∈ H²(Ω)`, so its first derivatives lie in `H¹(Ω)`.
-  obtain ⟨U, hU⟩ := ha.exists_lowerOrder_eq_of_mapsTo hν hΩ hK hu
-  have hder : ∀ v, ∃ d : W1p mu Omega 2,
-      HasWeakLineDerivOn mu Omega (W1p.value (u : W1p mu Omega 2)) (W1p.value d) v := fun v => by
-    obtain ⟨d, hd⟩ := Wkp.exists_hasWeakLineDerivOn_value 1 U v
-    rw [Wkp.value_succ, hU, Wkp.value_one, Wkp.value_one (u : W1p mu Omega 2)] at hd
-    exact ⟨d, hd⟩
+  have hder := ha.exists_hasWeakLineDerivOn_w1p_of_mapsTo hν hΩ hK hu
   choose D hD using fun j => hder (b j)
-  obtain ⟨d, hd⟩ := hder τ
   -- The tangential derivative has zero boundary values.
-  have hmem : d ∈ w1p0Submodule mu Omega 2 :=
-    W1p.mem_w1p0Submodule_of_hasWeakLineDerivOn (by simp) hΩc (hΩ τ hτ) b u.property hD hd
-  -- `d` solves the differentiated equation, with forcing in `L²(Ω)`.
+  obtain ⟨w, hw⟩ := ha.exists_hasWeakLineDerivOn_of_mapsTo hν hΩc hΩ hK hu hτ
+  -- `w` solves the differentiated equation, with forcing in `L²(Ω)`.
   obtain ⟨F, hF⟩ :=
-    exists_forall_energyFormH1_ofTestFunctionₗ_eq_of_hasWeakLineDerivOn hK hsmooth hK' hu hD hd hf
-  refine ⟨⟨d, hmem⟩, F, hd, ?_⟩
+    exists_forall_energyFormH1_ofTestFunctionₗ_eq_of_hasWeakLineDerivOn hK hsmooth hK' hu hD hw hf
+  refine ⟨w, F, hw, ?_⟩
   -- Bounded coefficients make the energy form continuous, so testing against test functions
   -- suffices.
   have hcoeff := memLp_energyIntegrand_of_bounds (mu := mu) (Omega := Omega) (b := 0) (c := 0)

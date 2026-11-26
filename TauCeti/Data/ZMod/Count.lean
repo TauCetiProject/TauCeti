@@ -47,6 +47,8 @@ of the representatives sum to the harmonic number `H_{n-1}`.
 * `ZMod.sum_val_eq_sum_range`: summing a function of the representatives over `range n`.
 * `ZMod.sum_eq_sum_Icc`: summing a function on `ZMod n` over the positive representatives
   `Icc 1 n`.
+* `ZMod.sum_val_filter_castHom_eq_sum_range`: summing a function of the representatives over a
+  fibre of the reduction `ZMod (k * m) → ZMod m`.
 * `ZMod.sum_inv_val_eq_harmonic`: the reciprocals of the representatives sum to `H_{n-1}`.
 * `ZMod.sum_inv_val_le_one_add_log`: a logarithmic bound for reciprocal representatives.
 * `ZMod.sum_Ico_mul`: splitting an integer interval into complete residue blocks.
@@ -110,6 +112,32 @@ theorem sum_eq_sum_Icc {A : Type*} [AddCommMonoid A] [NeZero n] (f : ZMod n → 
   rw [hval, sum_val_eq_sum_range (fun a => f a), Finset.range_eq_Ico,
     Finset.sum_eq_sum_Ico_succ_bot (NeZero.pos n), h0n,
     add_comm, ← Finset.sum_Ico_succ_top (NeZero.pos n), Finset.Ico_add_one_right_eq_Icc]
+
+/-- **Summing over a fibre of the reduction.** The residues modulo `k * m` that reduce to
+`x : ZMod m` have the representatives `x.val + m * j` for `j < k`, so a function of the
+representative summed over them is its sum over these. -/
+theorem sum_val_filter_castHom_eq_sum_range {M : Type*} [AddCommMonoid M] {k : ℕ} [NeZero k]
+    [NeZero m] (x : ZMod m) (f : ℕ → M) :
+    ∑ y : ZMod (k * m) with castHom (dvd_mul_left m k) (ZMod m) y = x, f y.val =
+      ∑ j ∈ range k, f (x.val + m * j) := by
+  have hm : 0 < m := NeZero.pos m
+  have hcast (y : ZMod (k * m)) :
+      castHom (dvd_mul_left m k) (ZMod m) y = x ↔ y.val % m = x.val := by
+    rw [castHom_apply, cast_eq_val, ← (val_injective m).eq_iff, val_natCast]
+  simp_rw [hcast]
+  rw [sum_filter, sum_val_eq_sum_range (fun i ↦ if i % m = x.val then f i else 0), ← sum_filter]
+  -- `i ↦ i / m` is a bijection from the representatives `i ≡ x.val` below `k m` onto `range k`.
+  refine sum_nbij' (· / m) (x.val + m * ·) (fun i hi ↦ ?_) (fun j hj ↦ ?_) (fun i hi ↦ ?_)
+    (fun j _ ↦ ?_) (fun i hi ↦ ?_)
+  · simp only [mem_filter, mem_range] at hi
+    simpa only [mem_range] using Nat.div_lt_of_lt_mul (by linarith [hi.1])
+  · simp only [mem_range] at hj
+    simp only [mem_filter, mem_range, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt x.val_lt,
+      and_true]
+    nlinarith [x.val_lt]
+  · rw [← (mem_filter.1 hi).2, Nat.mod_add_div]
+  · rw [Nat.add_mul_div_left _ _ hm, Nat.div_eq_of_lt x.val_lt, zero_add]
+  · rw [← (mem_filter.1 hi).2, Nat.mod_add_div]
 
 /-- **Summing the reciprocals of the representatives.** The reciprocals of the least nonnegative
 representatives of the residues modulo `n` sum to the harmonic number `H_{n-1}`; the residue `0`

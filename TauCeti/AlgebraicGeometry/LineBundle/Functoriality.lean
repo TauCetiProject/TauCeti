@@ -7,9 +7,12 @@ module
 
 public import TauCeti.AlgebraicGeometry.LineBundle.Pullback
 public import TauCeti.AlgebraicGeometry.LineBundle.Class
+public import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Identity
+public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Quasicoherent
 public import TauCeti.CategoryTheory.Monoidal.EqToHom
+public import TauCeti.CategoryTheory.Monoidal.Subcategory
 
 /-!
 # Functorial pullback of line bundles
@@ -42,11 +45,23 @@ with respect to isomorphisms in either factor, transported by `tensorProductCong
 and composition comparisons (`InvertibleSheaf.pullbackTensorProductIso_id` and
 `InvertibleSheaf.pullbackTensorProductIso_comp`), through Tau Ceti's identities
 `Scheme.Modules.pullback_id_δ` and `Scheme.Modules.pullback_comp_δ` of module pullback.
+
+Pullback of line bundles is moreover a strong symmetric monoidal functor
+(`InvertibleSheaf.pullbackBraided`) for the symmetric monoidal structure of `InvertibleSheaf X`
+inherited from `X.Modules`. Its structure is that of the strong symmetric monoidal pullback of
+quasicoherent sheaves to all modules (`Scheme.Modules.pullbackToModulesBraided`), along the
+inclusion `InvertibleSheaf.toQuasicoherent` of line bundles into quasicoherent sheaves. Its tensor
+comparison is `pullbackTensorProductIso`, read through `tensorProductIsoTensor`
+(`InvertibleSheaf.pullback_μIso`), and on underlying sheaves its comparisons are those of module
+pullback (`InvertibleSheaf.pullback_δ_hom`, `InvertibleSheaf.pullback_η_hom` and their inverses).
+The identity and composition comparisons `pullbackId` and `pullbackComp` are monoidal natural
+isomorphisms (`InvertibleSheaf.isMonoidal_pullbackId_hom` and
+`InvertibleSheaf.isMonoidal_pullbackComp_hom`).
 -/
 
 public section
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory MonoidalCategory Functor.LaxMonoidal Functor.OplaxMonoidal
 
 namespace TauCeti
 
@@ -309,6 +324,166 @@ theorem pullbackEquiv_functor (e : X ≅ Y) : (pullbackEquiv e).functor = pullba
 @[simp]
 theorem pullbackEquiv_inverse (e : X ≅ Y) : (pullbackEquiv e).inverse = pullback e.inv :=
   (rfl)
+
+section Monoidal
+
+/-- **Pullback of line bundles is strong symmetric monoidal.** The structure is transported from
+the lift to line bundles of the strong symmetric monoidal pullback of quasicoherent sheaves to all
+modules, `Scheme.Modules.pullbackToModulesBraided`, along the identifications
+`pullback_obj_obj` of underlying sheaves. -/
+instance pullbackBraided (f : X ⟶ Y) : (pullback f).Braided :=
+  let i : (SheafOfModules.isInvertible X).lift
+      (toQuasicoherent Y ⋙ (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
+        Scheme.Modules.pullback f)
+      (fun L ↦ SheafOfModules.isInvertible_pullback f L.obj) ≅ pullback f :=
+    NatIso.ofComponents (fun L ↦ ObjectProperty.isoMk _ (eqToIso (pullback_obj_obj f L).symm))
+      fun φ ↦ ObjectProperty.hom_ext _ (by
+        simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.isoMk_hom,
+          eqToIso.hom, pullback_map]
+        -- The lift computes `Scheme.Modules.pullback f` on underlying sheaves.
+        rfl)
+  letI : (pullback f).Monoidal := Functor.Monoidal.transport i
+  letI : NatTrans.IsMonoidal i.hom := Functor.Monoidal.natTransIsMonoidal_of_transport _
+  { toMonoidal := inferInstance
+    braided := (Functor.LaxBraided.ofNatIso i).braided }
+
+/-- The inverse tensor comparison of the composite of the inclusion into quasicoherent sheaves
+with module pullback is that of module pullback. -/
+private lemma toQuasicoherent_comp_pullback_δ (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
+    δ (toQuasicoherent Y ⋙ (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙
+        Scheme.Modules.pullback f) L K = δ (Scheme.Modules.pullback f) L.obj K.obj := by
+  rw [Functor.OplaxMonoidal.comp_δ]
+  -- The inclusion `toQuasicoherent Y` has identity comparisons.
+  exact (congrArg (· ≫ _) ((Scheme.Modules.pullback f).map_id _)).trans
+    ((Category.id_comp _).trans (Scheme.Modules.pullbackToModules_δ f _ _))
+
+/-- On underlying sheaves, the inverse tensor comparison of pullback of line bundles is the
+tensor comparison of module pullback, transported along `pullback_obj_obj`. -/
+@[simp]
+lemma pullback_δ_hom (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
+    (δ (pullback f) L K).hom =
+      eqToHom (pullback_obj_obj f (L ⊗ K)) ≫ δ (Scheme.Modules.pullback f) L.obj K.obj ≫
+        (eqToHom (pullback_obj_obj f L).symm ⊗ₘ eqToHom (pullback_obj_obj f K).symm) := by
+  -- Unfold the transported comparison; the canonical pullback functor stays opaque.
+  change (eqToHom (pullback_obj_obj f (L ⊗ K)) ≫ δ (toQuasicoherent Y ⋙
+    (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) L K) ≫
+      (eqToHom (pullback_obj_obj f L).symm ⊗ₘ eqToHom (pullback_obj_obj f K).symm) = _
+  rw [toQuasicoherent_comp_pullback_δ, Category.assoc]
+
+/-- On underlying sheaves, the tensor comparison of pullback of line bundles is the inverse of the
+tensor comparison of module pullback, transported along `pullback_obj_obj`. -/
+@[simp]
+lemma pullback_μ_hom (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
+    (μ (pullback f) L K).hom =
+      (eqToHom (pullback_obj_obj f L) ⊗ₘ eqToHom (pullback_obj_obj f K)) ≫
+        inv (δ (Scheme.Modules.pullback f) L.obj K.obj) ≫
+          eqToHom (pullback_obj_obj f (L ⊗ K)).symm := by
+  rw [← Functor.Monoidal.inv_δ, ObjectProperty.hom_inv]
+  simp [pullback_δ_hom]
+
+/-- On underlying sheaves, the inverse unit comparison of pullback of line bundles is the
+structure-sheaf comparison `f^* 𝒪_Y ≅ 𝒪_X`, transported along `pullback_obj_obj`. -/
+@[simp]
+lemma pullback_η_hom (f : X ⟶ Y) :
+    (η (pullback f)).hom =
+      eqToHom (pullback_obj_obj f (𝟙_ (InvertibleSheaf Y))) ≫
+        (Scheme.Modules.pullbackObjUnitIso f).hom := by
+  -- Unfold the transported comparison; the canonical pullback functor stays opaque.
+  change eqToHom (pullback_obj_obj f (𝟙_ (InvertibleSheaf Y))) ≫ η (toQuasicoherent Y ⋙
+    (ObjectProperty.ι _ : QuasicoherentSheaf Y ⥤ Y.Modules) ⋙ Scheme.Modules.pullback f) = _
+  rw [Functor.OplaxMonoidal.comp_η]
+  -- The inclusion `toQuasicoherent Y` has identity comparisons.
+  exact congrArg (_ ≫ ·) ((congrArg (· ≫ _) ((Scheme.Modules.pullback f).map_id _)).trans
+    ((Category.id_comp _).trans (Scheme.Modules.pullbackToModules_η f)))
+
+/-- On underlying sheaves, the unit comparison of pullback of line bundles is the inverse of the
+structure-sheaf comparison `f^* 𝒪_Y ≅ 𝒪_X`, transported along `pullback_obj_obj`. -/
+@[simp]
+lemma pullback_ε_hom (f : X ⟶ Y) :
+    (ε (pullback f)).hom =
+      (Scheme.Modules.pullbackObjUnitIso f).inv ≫
+        eqToHom (pullback_obj_obj f (𝟙_ (InvertibleSheaf Y))).symm := by
+  rw [← Functor.Monoidal.inv_η, ObjectProperty.hom_inv]
+  simp only [pullback_η_hom, IsIso.inv_comp, IsIso.Iso.inv_hom, inv_eqToHom]
+
+/-- The inverse tensor comparison of pullback of line bundles is `pullbackTensorProductIso`,
+read through `tensorProductIsoTensor`. -/
+private lemma pullback_δ (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
+    δ (pullback f) L K =
+      (pullback f).map (tensorProductIsoTensor L K).inv ≫ (pullbackTensorProductIso f L K).hom ≫
+        (tensorProductIsoTensor _ _).hom := by
+  apply ObjectProperty.hom_ext
+  simp [pullback_δ_hom, pullback_map, pullbackTensorProductIso_hom_hom]
+
+/-- **The tensor comparison of pullback of line bundles is `pullbackTensorProductIso`**, read
+through the identifications `tensorProductIsoTensor` of the explicit tensor product with the
+monoidal one. -/
+lemma pullback_μIso (f : X ⟶ Y) (L K : InvertibleSheaf Y) :
+    Functor.Monoidal.μIso (pullback f) L K =
+      (tensorProductIsoTensor _ _).symm ≪≫ (pullbackTensorProductIso f L K).symm ≪≫
+        (pullback f).mapIso (tensorProductIsoTensor L K) := by
+  rw [← Iso.symm_eq_iff]
+  ext
+  simp [pullback_δ]
+
+/-- The identity comparison `pullbackId X : pullback (𝟙 X) ≅ 𝟭 _` is a monoidal natural
+isomorphism. -/
+instance isMonoidal_pullbackId_hom (X : Scheme.{u}) : NatTrans.IsMonoidal (pullbackId X).hom where
+  unit := by
+    apply ObjectProperty.hom_ext
+    simp only [pullback_ε_hom, ObjectProperty.FullSubcategory.comp_hom, pullbackId_hom_app_hom,
+      Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+    -- The unit of `InvertibleSheaf X` has underlying module `𝟙_ X.Modules`.
+    erw [← Scheme.Modules.pullbackObjUnitIso_id, Iso.inv_hom_id]
+    rfl
+  tensor L K := by
+    apply ObjectProperty.hom_ext
+    have h : inv (δ (Scheme.Modules.pullback (𝟙 X)) L.obj K.obj) ≫
+        (Scheme.Modules.pullbackId X).hom.app (L.obj ⊗ K.obj) =
+          (Scheme.Modules.pullbackId X).hom.app L.obj ⊗ₘ
+            (Scheme.Modules.pullbackId X).hom.app K.obj := by
+      rw [IsIso.inv_comp_eq, Scheme.Modules.pullback_id_δ]
+    simp [pullbackId_hom_app_hom, h, ← tensorHom_comp_tensorHom, eqToHom_tensorHom_eqToHom]
+
+/-- The composition comparison `pullbackComp f g` commutes with the inverse tensor comparisons:
+this is `pullbackTensorProductIso_comp` for the monoidal tensor product. -/
+private lemma pullbackComp_hom_app_comp_δ (f : X ⟶ Y) (g : Y ⟶ Z) (L K : InvertibleSheaf Z) :
+    (pullbackComp f g).hom.app (L ⊗ K) ≫ δ (pullback (f ≫ g)) L K =
+      δ (pullback g ⋙ pullback f) L K ≫
+        ((pullbackComp f g).hom.app L ⊗ₘ (pullbackComp f g).hom.app K) := by
+  rw [Functor.OplaxMonoidal.comp_δ, pullback_δ, pullback_δ, pullback_δ,
+    ← (pullbackComp f g).hom.naturality_assoc, Functor.comp_map,
+    ← reassoc_of% (pullbackTensorProductIso_comp f g L K)]
+  simp only [Functor.map_comp, Category.assoc, Iso.hom_inv_id_map_assoc,
+    tensorProductCongr_hom_comp_tensorProductIsoTensor_hom, Iso.app_hom]
+
+/-- The composition comparison `pullbackComp f g` commutes with the inverse unit
+comparisons. -/
+private lemma pullbackComp_hom_app_comp_η (f : X ⟶ Y) (g : Y ⟶ Z) :
+    (pullbackComp f g).hom.app (𝟙_ _) ≫ η (pullback (f ≫ g)) = η (pullback g ⋙ pullback f) := by
+  apply ObjectProperty.hom_ext
+  rw [Functor.OplaxMonoidal.comp_η]
+  simp only [ObjectProperty.FullSubcategory.comp_hom, pullback_η_hom, pullback_map,
+    pullbackComp_hom_app_hom, Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp,
+    ← Scheme.Modules.pullbackObjUnitIso_comp, Functor.map_comp, eqToHom_map]
+  -- The unit of `InvertibleSheaf Z` has underlying module `𝟙_ Z.Modules`.
+  erw [Iso.hom_inv_id_app_assoc]
+
+/-- The composition comparison `pullbackComp f g : pullback g ⋙ pullback f ≅ pullback (f ≫ g)` is
+a monoidal natural isomorphism. -/
+instance isMonoidal_pullbackComp_hom (f : X ⟶ Y) (g : Y ⟶ Z) :
+    NatTrans.IsMonoidal (pullbackComp f g).hom where
+  unit := by
+    rw [← cancel_mono (η (pullback (f ≫ g))), Category.assoc, pullbackComp_hom_app_comp_η,
+      Functor.Monoidal.ε_η, Functor.Monoidal.ε_η]
+  tensor L K := by
+    rw [← cancel_epi (δ (pullback g ⋙ pullback f) L K),
+      ← cancel_mono (δ (pullback (f ≫ g)) L K)]
+    simp only [Category.assoc, Functor.Monoidal.δ_μ_assoc, Functor.Monoidal.μ_δ,
+      Category.comp_id]
+    exact pullbackComp_hom_app_comp_δ f g L K
+
+end Monoidal
 
 end InvertibleSheaf
 
