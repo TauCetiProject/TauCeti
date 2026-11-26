@@ -53,7 +53,8 @@ theorem _root_.Matrix.UnitaryGroup.lintegral_image_schurMatrix (U : Matrix.unita
   have he : MeasurePreserving e volume volume := measurePreserving_schurMatrixMeasurableEquiv
   have hparam : schurMatrix U = e ∘ schurCoordinates U := by
     funext x
-    simp [e, schurMatrixMeasurableEquiv_apply, schurCoordinates_apply, schurMatrix_apply]
+    simp only [e, Function.comp_apply, schurMatrixMeasurableEquiv_apply,
+      schurMatrixEquiv_schurCoordinates]
   have hinjCoords : Set.InjOn (schurCoordinates U) s := by
     rw [hparam] at hinj
     intro x hx y hy hxy

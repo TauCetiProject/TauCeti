@@ -291,7 +291,7 @@ theorem _root_.Matrix.UnitaryGroup.fderiv_schurMatrix_apply (U : unitaryGroup (F
   have he : schurMatrix U = (e.toContinuousLinearMap : _ → _) ∘ schurCoordinates U := by
     funext y
     simp only [e, Function.comp_apply, ContinuousLinearEquiv.coe_coe, schurMatrixCLE_apply,
-      ← schurMatrixEquiv_symm_schurMatrix, LinearEquiv.apply_symm_apply]
+      schurMatrixEquiv_schurCoordinates]
   rw [he, h.fderiv]
   simp only [e, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, schurMatrixCLE_apply,
     schurConj_apply, LinearEquiv.apply_symm_apply, schurFDeriv_apply, schurFrame,
@@ -321,55 +321,62 @@ theorem _root_.Matrix.UnitaryGroup.det_fderiv_schurCoordinates (U : unitaryGroup
     ContinuousLinearMap.det_id, one_mul]
 
 /-- At distinct diagonal entries and an invertible angular differential, the Schur
-parametrization restricts to a local chart. -/
+parametrization restricts to a local chart with real-analytic inverse. -/
 theorem _root_.Matrix.UnitaryGroup.exists_schurCoordinates_openPartialHomeomorph
     (U : unitaryGroup (Fin n) ℂ) (x : SchurCoordinates (Fin n) ℂ)
     (ha : Function.Injective fun i ↦ x.1 ⟨(i, i), le_rfl⟩)
     (hb : (schurAngularFDeriv x.2).det ≠ 0) :
     ∃ e : OpenPartialHomeomorph (SchurCoordinates (Fin n) ℂ) (SchurCoordinates (Fin n) ℂ),
-      (e : _ → _) = schurCoordinates U ∧ x ∈ e.source := by
+      (e : _ → _) = schurCoordinates U ∧ x ∈ e.source ∧ ContDiffOn ℝ ⊤ e.symm e.target := by
   let f := schurCoordinates U
   let D := fderiv ℝ f x
   have hD : D.det ≠ 0 := by
     rw [det_fderiv_schurCoordinates]
     refine mul_ne_zero hb (Finset.prod_ne_zero_iff.mpr fun ij _ ↦ ?_)
     exact pow_ne_zero _ (norm_ne_zero_iff.mpr (sub_ne_zero.mpr (ha.ne ij.property.ne)))
-  obtain ⟨e, he, hx, _, _⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph
-    (contDiff_schurCoordinates U (k := 1)).contDiffOn isOpen_univ (Set.mem_univ x) le_rfl
+  obtain ⟨e, he, hx, _, hInv⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph
+    (contDiff_schurCoordinates U (k := ⊤)).contDiffOn isOpen_univ (Set.mem_univ x) le_top
     (ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero D hD)
-  exact ⟨e, he, hx⟩
+  exact ⟨e, he, hx, hInv⟩
 
-/-- Distinct diagonal entries give a local Schur chart centered at zero angle. -/
+/-- Distinct diagonal entries give a local Schur chart with real-analytic inverse at zero angle. -/
 theorem _root_.Matrix.UnitaryGroup.exists_schurCoordinates_openPartialHomeomorph_zero
     (U : unitaryGroup (Fin n) ℂ) (a : {ij : Fin n × Fin n // ij.1 ≤ ij.2} → ℂ)
     (ha : Function.Injective fun i ↦ a ⟨(i, i), le_rfl⟩) :
     ∃ e : OpenPartialHomeomorph (SchurCoordinates (Fin n) ℂ) (SchurCoordinates (Fin n) ℂ),
-      (e : _ → _) = schurCoordinates U ∧ (a, 0) ∈ e.source := by
+      (e : _ → _) = schurCoordinates U ∧ (a, 0) ∈ e.source ∧ ContDiffOn ℝ ⊤ e.symm e.target := by
   apply exists_schurCoordinates_openPartialHomeomorph U (a, 0) ha
   simpa only [schurAngularFDeriv_zero, ContinuousLinearMap.det_id] using
     (one_ne_zero : (1 : ℝ) ≠ 0)
 
-/-- The matrix-valued Schur parametrization gives a local chart at any regular input. -/
+/-- The matrix-valued Schur parametrization gives a local chart with real-analytic inverse at any
+regular input. -/
 theorem _root_.Matrix.UnitaryGroup.exists_schurMatrix_openPartialHomeomorph
     (U : unitaryGroup (Fin n) ℂ) (x : SchurCoordinates (Fin n) ℂ)
     (ha : Function.Injective fun i ↦ x.1 ⟨(i, i), le_rfl⟩)
     (hb : (schurAngularFDeriv x.2).det ≠ 0) :
     ∃ e : OpenPartialHomeomorph (SchurCoordinates (Fin n) ℂ) (Matrix (Fin n) (Fin n) ℂ),
-      (e : _ → _) = schurMatrix U ∧ x ∈ e.source := by
-  obtain ⟨e, he, hx⟩ := exists_schurCoordinates_openPartialHomeomorph U x ha hb
-  refine ⟨e.transHomeomorph (schurMatrixCLE (𝕜 := ℝ)).toHomeomorph, ?_, hx⟩
-  rw [OpenPartialHomeomorph.transHomeomorph_apply, ContinuousLinearEquiv.coe_toHomeomorph, he]
-  funext y
-  rw [Function.comp_apply, schurMatrixCLE_apply, ← schurMatrixEquiv_symm_schurMatrix,
-    LinearEquiv.apply_symm_apply]
+      (e : _ → _) = schurMatrix U ∧ x ∈ e.source ∧ ContDiffOn ℝ ⊤ e.symm e.target := by
+  obtain ⟨e, he, hx, hInv⟩ := exists_schurCoordinates_openPartialHomeomorph U x ha hb
+  let L := schurMatrixCLE (𝕜 := ℝ) (ι := Fin n) (R := ℂ)
+  refine ⟨e.transHomeomorph L.toHomeomorph, ?_, hx, ?_⟩
+  · rw [OpenPartialHomeomorph.transHomeomorph_apply, ContinuousLinearEquiv.coe_toHomeomorph, he]
+    funext y
+    simp only [Function.comp_apply, L, schurMatrixCLE_apply, schurMatrixEquiv_schurCoordinates]
+  · rw [OpenPartialHomeomorph.transHomeomorph_symm_apply,
+      OpenPartialHomeomorph.transHomeomorph_target, ← ContinuousLinearEquiv.toHomeomorph_symm,
+      ContinuousLinearEquiv.coe_toHomeomorph]
+    exact hInv.comp L.symm.contDiff.contDiffOn (fun _ hy ↦ hy)
 
-/-- Every complex matrix with simple spectrum is the center of a local Schur chart at zero
-angle. Simplicity means that the characteristic polynomial is separable. -/
+/-- Every complex matrix with simple spectrum is the center of a local Schur chart with
+real-analytic inverse at zero angle, where simplicity means separability of the characteristic
+polynomial. -/
 theorem _root_.Matrix.exists_schurMatrix_openPartialHomeomorph_of_separable
     (A : Matrix (Fin n) (Fin n) ℂ) (hA : A.charpoly.Separable) :
     ∃ (U : unitaryGroup (Fin n) ℂ) (a : {ij : Fin n × Fin n // ij.1 ≤ ij.2} → ℂ)
       (e : OpenPartialHomeomorph (SchurCoordinates (Fin n) ℂ) (Matrix (Fin n) (Fin n) ℂ)),
-      (e : _ → _) = schurMatrix U ∧ (a, 0) ∈ e.source ∧ e (a, 0) = A := by
+      (e : _ → _) = schurMatrix U ∧ (a, 0) ∈ e.source ∧ e (a, 0) = A ∧
+        ContDiffOn ℝ ⊤ e.symm e.target := by
   obtain ⟨U, hU⟩ := A.exists_unitary_isUpperTriangular
   let T := (Unitary.conjStarAlgAut ℂ _ U).symm A
   let a := (schurMatrixEquiv.symm T : SchurCoordinates (Fin n) ℂ).1
@@ -385,9 +392,9 @@ theorem _root_.Matrix.exists_schurMatrix_openPartialHomeomorph_of_separable
     rw [← charpoly_unitary_conj A U, charpoly_of_isUpperTriangular _ hU] at hA
     simpa only [a, schurMatrixEquiv_symm_fst, T, Unitary.conjStarAlgAut_symm_apply,
       Unitary.coe_star, diag_apply] using hA.injective_of_prod_X_sub_C
-  obtain ⟨e, he, hx⟩ := exists_schurMatrix_openPartialHomeomorph U (a, 0) ha
+  obtain ⟨e, he, hx, hInv⟩ := exists_schurMatrix_openPartialHomeomorph U (a, 0) ha
     (by simp [ContinuousLinearMap.det_id])
-  refine ⟨U, a, e, he, hx, ?_⟩
+  refine ⟨U, a, e, he, hx, ?_, hInv⟩
   rw [he, schurMatrix_zero, hTa, StarAlgEquiv.apply_symm_apply]
 
 end Differentiation

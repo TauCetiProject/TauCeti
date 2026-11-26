@@ -64,6 +64,12 @@ def _root_.Matrix.UnitaryGroup.schurMatrix (U : unitaryGroup (Fin n) ℂ)
     (x : SchurCoordinates (Fin n) ℂ) : Matrix (Fin n) (Fin n) ℂ :=
   schurMatrixEquiv (schurCoordinates U x)
 
+/-- Assembling the Schur coordinate map gives the matrix-valued parametrization. -/
+@[simp] theorem _root_.Matrix.UnitaryGroup.schurMatrixEquiv_schurCoordinates
+    (U : unitaryGroup (Fin n) ℂ) (x : SchurCoordinates (Fin n) ℂ) :
+    schurMatrixEquiv (schurCoordinates U x) = schurMatrix U x :=
+  (rfl)
+
 /-- Reading the entries of the parametrized matrix gives the Schur coordinate map. -/
 @[simp] theorem _root_.Matrix.UnitaryGroup.schurMatrixEquiv_symm_schurMatrix
     (U : unitaryGroup (Fin n) ℂ)
