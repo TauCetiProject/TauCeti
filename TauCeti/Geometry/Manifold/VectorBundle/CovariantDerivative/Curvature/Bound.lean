@@ -9,7 +9,6 @@ public import Mathlib.Topology.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Smoothness
-import TauCeti.Topology.Instances.Matrix
 import TauCeti.Topology.VectorBundle.Riemannian.Comparison
 
 /-!
@@ -45,8 +44,6 @@ equations whose coefficients involve curvature, such as the Jacobi equation alon
   positive lower bound on each compact set.
 * `CovariantDerivative.exists_pos_mul_norm_sq_le_ricciTensor_of_compactSpace`: the corresponding
   bound on a compact manifold.
-* `CovariantDerivative.continuous_ricciTensor_apply_self_tangentBundle`: Ricci curvature is
-  continuous as a quadratic function on the tangent bundle.
 * `IsCompact.exists_max_scalarCurvature_sub_two_mul_ricciTensor`: the ambient curvature maximum
   in the traced Gauss equation.
 
@@ -164,56 +161,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [T2Space M] [ChartedSpace H M] [IsManifold I ∞ M]
 
-/-- Evaluating the Ricci tensor on the tautological tangent vector twice gives a continuous
-function on the tangent bundle. -/
-theorem CovariantDerivative.continuous_ricciTensor_apply_self_tangentBundle
-    (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
-    [ContMDiffCovariantDerivative cov ∞] :
-    Continuous (fun v : TangentBundle I M ↦ cov.ricciTensor v.proj v.snd v.snd) := by
-  have hπ := FiberBundle.continuous_proj E (TangentSpace I : M → Type _)
-  have hv : Continuous (fun v : TangentBundle I M ↦ TotalSpace.mk' E v.proj v.snd) :=
-    continuous_id
-  exact continuous_snd.comp ((Trivial.homeomorphProd M ℝ).continuous.comp
-    ((cov.contMDiff_ricciTensor.continuous.comp hπ).clm_bundle_apply₂
-      (F₁ := E) (F₂ := E) (E₃ := Trivial M ℝ) hv hv))
-
 variable
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-
-open Riemannian.Tensor in
-private theorem continuous_scalarCurvature_of_continuous_metric
-    (cov : CovariantDerivative I E (TangentSpace I : M → Type _))
-    [ContMDiffCovariantDerivative cov ∞] : Continuous cov.scalarCurvature := by
-  have : IsManifold I (0 + 1) M := by simp only [zero_add]; infer_instance
-  rw [continuous_iff_continuousAt]
-  intro a
-  have hframe (i : Fin (Module.finrank ℝ E)) :
-      ContinuousOn (fun x ↦ TotalSpace.mk' E x (chartLocalFrame (I := I) a i x))
-        (chartAt H a).source := by
-    rw [← TangentBundle.trivializationAt_baseSet (I := I) a]
-    exact (contMDiffOn_chartLocalFrame (I := I) (n := 0) a i).continuousOn
-  have hgram : ContinuousOn (chartGramMatrix (I := I) a) (chartAt H a).source := by
-    rw [continuousOn_iff_continuous_domRestrict]
-    apply continuous_matrix
-    intro i j
-    change Continuous ((chartAt H a).source.domRestrict
-      (fun x ↦ chartGramMatrix (I := I) a x i j))
-    rw [← continuousOn_iff_continuous_domRestrict]
-    simpa only [chartGramMatrix_apply] using (hframe i).inner_bundle (hframe j)
-  have hinv (i j : Fin (Module.finrank ℝ E)) :
-      ContinuousOn (fun y ↦ chartInvGramMatrix (I := I) a y i j) (chartAt H a).source := by
-    intro x hx
-    have hdet := (chartGramMatrix_det_pos (I := I) a
-      (TangentBundle.trivializationAt_baseSet (I := I) a ▸ hx)).ne'
-    have hA := hgram.continuousAt ((chartAt H a).open_source.mem_nhds hx)
-    simpa only [chartInvGramMatrix_def] using
-      (hA.matrix_inv_apply hdet i j).continuousWithinAt
-  have hsum := continuousOn_finsetSum Finset.univ fun i _ ↦
-    continuousOn_finsetSum Finset.univ fun j _ ↦
-      (hinv i j).mul (cov.contMDiffOn_ricciTensor_chartLocalFrame a i j).continuousOn
-  exact (hsum.congr fun x hx ↦ cov.scalarCurvature_eq_sum_chartInvGramMatrix a hx).continuousAt
-    ((chartAt H a).open_source.mem_nhds (mem_chart_source H a))
 
 /-- For a smooth tangent connection and a continuous background metric, the expression
 `Scal(x) − 2 Ricₓ(v,v)` on unit tangent vectors over a nonempty compact set attains its
@@ -239,11 +189,12 @@ theorem IsCompact.exists_max_scalarCurvature_sub_two_mul_ricciTensor
   let Q (p : TangentBundle I M) :=
     cov.scalarCurvature p.proj - 2 * cov.ricciTensor p.proj p.snd p.snd
   have hQ : Continuous Q :=
-    ((continuous_scalarCurvature_of_continuous_metric cov).comp hπ).sub
+    (cov.continuous_scalarCurvature.comp hπ).sub
       (continuous_const.mul cov.continuous_ricciTensor_apply_self_tangentBundle)
   obtain ⟨p, hp, hmax⟩ := hU.exists_isMaxOn ⟨⟨x, v⟩, hx, hv⟩ hQ.continuousOn
-  exact ⟨p.proj, p.snd, hp.1, hp.2, fun y w hy hw ↦
-    hmax (show (⟨y, w⟩ : TangentBundle I M) ∈ U from ⟨hy, hw⟩)⟩
+  refine ⟨p.proj, p.snd, hp.1, hp.2, fun y w hy hw ↦ ?_⟩
+  have hwU : (⟨y, w⟩ : TangentBundle I M) ∈ U := ⟨hy, hw⟩
+  exact hmax hwU
 
 /-- A compact set with positive Ricci tensor for a smooth tangent connection has a uniform
 bound `k ‖v‖² ≤ Ric(v,v)` with `k > 0`, measured in a continuous background metric. -/

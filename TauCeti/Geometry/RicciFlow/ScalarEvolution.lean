@@ -197,7 +197,7 @@ private theorem palatini_deriv_difference_eq_laplaceBeltrami
         (isLeviCivitaConnection_leviCivitaConnection I)) hU z
   exact sum_palatini_eq_laplaceBeltrami hLC.isMetricCompatible hcanonical
     (hC.mdifferentiableAt (by simp))
-    (((cov t).contMDiff_scalarCurvature x).of_le (by simp))
+    (((cov t).contMDiff_scalarCurvature (n := ⊤) x).of_le (by simp))
     (Filter.Eventually.of_forall (sum_C_self_eq_zero hLC.isMetricCompatible hLC.torsion hpair))
     (Filter.Eventually.of_forall
       (trace_C_eq_neg_mvfderiv_scalarCurvature hLC.isMetricCompatible hLC.torsion hpair))

@@ -122,13 +122,13 @@ theorem neg_mul_rpow_le_subcriticalYamabeQuotient {q K : ℝ} (hq : 2 ≤ q)
   set S := (CovariantDerivative.leviCivitaConnection I M).scalarCurvature
   set f := ⇑(SobolevH1.toLp w)
   obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.continuousOn
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature.continuousOn
   have hsq : Integrable (fun x ↦ f x ^ 2) (riemannianVolume I M) :=
     (Lp.memLp (SobolevH1.toLp w)).integrable_sq
   have hSff : Integrable (fun x ↦ S x * f x * f x) (riemannianVolume I M) := by
     simpa only [mul_assoc, ← sq] using hsq.bdd_mul
       (Continuous.aestronglyMeasurable
-        (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous)
+        (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature)
       (.of_forall fun x ↦ hC x (mem_univ x))
   -- The energy is at least `-K ∫ w²`, since the Dirichlet term is nonnegative.
   have hE : -K * ∫ x, f x ^ 2 ∂riemannianVolume I M ≤ energyForm I w w := by
@@ -159,7 +159,7 @@ theorem bddBelow_image_subcriticalYamabeQuotient {q : ℝ} (hq : 2 ≤ q)
     (hqp : q ≤ criticalExponent (finrank ℝ E)) :
     BddBelow (subcriticalYamabeQuotient I q '' {w : SobolevH1 I M | w ≠ 0}) := by
   obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn
-    (CovariantDerivative.leviCivitaConnection I M).contMDiff_scalarCurvature.continuous.continuousOn
+    (CovariantDerivative.leviCivitaConnection I M).continuous_scalarCurvature.continuousOn
   refine ⟨_, fun _ ⟨w, _, h⟩ ↦ h ▸ neg_mul_rpow_le_subcriticalYamabeQuotient hq hqp
     (le_max_right C 0) (fun x ↦ ?_) w⟩
   have := hC x (mem_univ x)
