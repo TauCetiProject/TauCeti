@@ -98,16 +98,18 @@ theorem groupLieAlgebraMap_one {J : ModelWithCorners 𝕜 F HK} :
   rw [groupLieAlgebraMap_apply, show ⇑(1 : K →* G) = fun _ ↦ 1 from funext one_apply,
     mfderiv_const]
 
-/-- If `ψ ∘ φ = 1` and `φ` is differentiable at the identity, then `dψ ∘ dφ = 0`. -/
+/-- If `ψ ∘ φ = 1`, then `dψ ∘ dφ = 0`. -/
 theorem groupLieAlgebraMap_comp_groupLieAlgebraMap_eq_zero {F' HK' : Type*}
     [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] [TopologicalSpace HK']
     {J' : ModelWithCorners 𝕜 F' HK'} {K' : Type*} [TopologicalSpace K'] [ChartedSpace HK' K']
-    [Group K'] {J : ModelWithCorners 𝕜 F HK} (ψ : K →* G) (φ : K' →* K) (h : ψ.comp φ = 1)
-    (hφ : MDifferentiableAt J' J φ 1) :
+    [Group K'] {J : ModelWithCorners 𝕜 F HK} (ψ : K →* G) (φ : K' →* K) (h : ψ.comp φ = 1) :
     (ψ.groupLieAlgebraMap J I).comp (φ.groupLieAlgebraMap J' J) = 0 := by
-  by_cases hψ : MDifferentiableAt J I ψ 1
-  · rw [← groupLieAlgebraMap_comp ψ φ hψ hφ, h, groupLieAlgebraMap_one]
-  · rw [groupLieAlgebraMap_eq_zero_of_not_mdifferentiableAt ψ hψ, ContinuousLinearMap.zero_comp]
+  by_cases hφ : MDifferentiableAt J' J φ 1
+  · by_cases hψ : MDifferentiableAt J I ψ 1
+    · rw [← groupLieAlgebraMap_comp ψ φ hψ hφ, h, groupLieAlgebraMap_one]
+    · rw [groupLieAlgebraMap_eq_zero_of_not_mdifferentiableAt ψ hψ,
+        ContinuousLinearMap.zero_comp]
+  · rw [groupLieAlgebraMap_eq_zero_of_not_mdifferentiableAt φ hφ, ContinuousLinearMap.comp_zero]
 
 /-! ### Products
 

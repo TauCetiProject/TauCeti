@@ -119,7 +119,7 @@ theorem mem_levelSubMulAction_comp_monoidHom_iff (hpι : p.comp ι = 1)
     obtain ⟨ν, hν⟩ := hann
     exact ⟨ν, hν.symm⟩
   · rw [hν, LinearMap.comp_assoc, ← ContinuousLinearMap.toLinearMap_comp,
-      p.groupLieAlgebraMap_comp_groupLieAlgebraMap_eq_zero ι hpι hι]
+      p.groupLieAlgebraMap_comp_groupLieAlgebraMap_eq_zero ι hpι]
     simp
 
 /-- **The first-stage level is `G`-invariant.** If `p ∘ ι = 1` and `ker dp ≤ range dι`, every
