@@ -98,6 +98,15 @@ theorem mem_boundariesInKer {z : ker d} : z ∈ d.boundariesInKer ↔ (z : M) �
 
 end Semiring
 
+/-- A homotopy from `v` to zero modulo `N` makes `v` commute with `d` modulo `N`. -/
+theorem commutator_mem_of_homotopy {S M : Type*} [Ring S] [AddCommGroup M] [Module S M]
+    {d h v : M →ₗ[S] M} (hd : d ∘ₗ d = 0) {N : Submodule S M} (hN : N ≤ N.comap d)
+    (hhom : ∀ m, d (h m) + h (d m) - v m ∈ N) (u : M) : v (d u) - d (v u) ∈ N := by
+  have hdd (m : M) : d (d m) = 0 := congr($hd m)
+  have h := N.sub_mem (hN (hhom u)) (hhom (d u))
+  simp only [map_sub, map_add, hdd, map_zero, zero_add, add_zero] at h
+  simpa only [sub_sub_sub_cancel_left] using h
+
 section Ring
 
 variable {S M : Type*} [Ring S] [AddCommGroup M] [Module S M] (d : M →ₗ[S] M)
