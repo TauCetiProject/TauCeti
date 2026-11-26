@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Derivative
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Finsupp.Factorial
 import TauCeti.RingTheory.MvPolynomial.Basic
 
 /-!
@@ -30,24 +31,6 @@ ShortProof is Claude’s Lean rewriting of Levent Alpöge’s proof, published b
 -/
 
 public section
-
-/-- Increasing one exponent multiplies the product of factorials by that exponent plus one. -/
-private theorem prod_factorial_add_single {σ R : Type*} [CommSemiring R]
-    (d : σ →₀ ℕ) (i : σ) :
-    ((d + Finsupp.single i 1).prod fun _ n ↦ (n.factorial : R)) =
-      ((d i : R) + 1) * d.prod fun _ n ↦ (n.factorial : R) := by
-  classical
-  let weight : σ → ℕ → R := fun _ n ↦ n.factorial
-  have hzero : ∀ j, weight j 0 = 1 := by simp [weight]
-  calc
-    (d + Finsupp.single i 1).prod weight =
-        weight i ((d + Finsupp.single i 1 : σ →₀ ℕ) i) *
-          ((d + Finsupp.single i 1).erase i).prod weight :=
-      (Finsupp.mul_prod_erase' _ i _ hzero).symm
-    _ = ((d i : R) + 1) * (weight i (d i) * (d.erase i).prod weight) := by
-      simp [weight, Finsupp.add_apply, Finsupp.erase_add, Nat.factorial_succ, mul_assoc]
-    _ = ((d i : R) + 1) * d.prod weight := by
-      rw [Finsupp.mul_prod_erase' d i weight hzero]
 
 namespace MvPolynomial
 
@@ -118,7 +101,7 @@ theorem jetPairing_mul_X (p : MvPolynomial σ R) (f : MvPowerSeries σ R) (i : �
   rw [jetPairing_eq_sum, jetPairing_eq_sum, support_mul_X, Finset.sum_map]
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   rw [addRightEmbedding_apply, coeff_mul_X, MvPowerSeries.coeff_pderiv,
-    prod_factorial_add_single]
+    Finsupp.prod_factorial_add_single]
   ring
 
 /-- The jet pairing commutes with a change of coefficients. -/
