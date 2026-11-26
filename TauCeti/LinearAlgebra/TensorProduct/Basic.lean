@@ -15,7 +15,8 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 /-!
 # Tensor-product naturality, contractions and trace identities
 
-This file records how tensor reassociation interacts with tensoring composite maps. It defines
+This file records how tensor reassociation interacts with tensoring composite maps, and that
+`f ⊗ 𝟙` sends pure tensors with a left factor in the kernel of `f` to zero. It defines
 contraction against a linear functional on the right factor, bundled as a linear map in the
 functional, and records its behavior on pure tensors and under tensor-product maps.
 Such contractions extract coordinates and test tensor identities, supporting componentwise
@@ -34,6 +35,8 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
   anticommuting with `b`.
 * `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
   of `M`.
+* `LinearMap.tmul_mem_ker_rTensor`: tensoring an element of the kernel of `f` with any `w` gives
+  an element of the kernel of `f ⊗ 𝟙`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponentEquiv`: tensors as linear maps from the dual of a finite projective
   right factor.
@@ -113,6 +116,11 @@ theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
   have h : e.lTensor P ∘ f.rTensor M = f.rTensor Q ∘ e.lTensor N :=
     funext fun x ↦ lTensor_rTensor_comm f e.toLinearMap x
   rw [← EquivLike.comp_injective _ (e.lTensor P), h, EquivLike.injective_comp]
+
+/-- Tensoring with any `w` sends the kernel of a linear map `f` into the kernel of `f ⊗ 𝟙`. -/
+theorem tmul_mem_ker_rTensor {f : N →ₗ[R] P} {x : N} (hx : x ∈ ker f) (w : M) :
+    x ⊗ₜ w ∈ ker (f.rTensor M) := by
+  rw [mem_ker, rTensor_tmul, mem_ker.mp hx, zero_tmul]
 
 /-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` with itself:
 if `τ` is an involution anticommuting with `b`, the cross terms cancel and the composite is
