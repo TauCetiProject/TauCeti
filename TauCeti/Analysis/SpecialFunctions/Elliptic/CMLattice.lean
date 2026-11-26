@@ -35,7 +35,8 @@ All three conditions depend only on the lattice of the period pair
 
 * `PeriodPair.exists_isCMPoint`: every lattice stable under `ω` has a CM point.
 * `PeriodPair.IsCMPoint.sub_mem_lattice`: for `d ≡ 7 mod 8`, a CM point is unique modulo the
-  lattice; CM points exist only for `d ≡ 3 mod 4` (`PeriodPair.IsCMPoint.mod_four_eq_three`).
+  lattice; CM points exist only for `d ≡ 3 mod 4`
+  (`PeriodPair.mod_four_eq_three_of_cmOmega_mul_mem`).
 * `PeriodPair.IsCMPoint.g₂_ne_twelve_mul_weierstrassP_sq`: at a CM point `℘''(t) ≠ 0`, in the
   form `g₂ ≠ 12 ℘(t)²`.
 * `PeriodPair.exists_isCMLattice_smul`: every lattice stable under `ω` has a complex multiple that
@@ -43,8 +44,8 @@ All three conditions depend only on the lattice of the period pair
   (`PeriodPair.exists_isCMLattice`).
 * `PeriodPair.IsCMLattice.pow_four_eq_one`: for `d ≡ 7 mod 8`, if `c Λ_C = Λ_D` for two CM
   lattices `C` and `D`, then `c⁴ = 1`.
-* `PeriodPair.IsCMPoint.complexOrder_le_leftOrder`: the lattice of a CM point is a module over the
-  embedded quadratic order `TauCeti.QuadraticOrder.complexOrder (-d)`.
+* `PeriodPair.complexOrder_le_leftOrder_of_cmOmega_mul_mem`: a lattice stable under `ω` is a
+  module over the embedded quadratic order `TauCeti.QuadraticOrder.complexOrder (-d)`.
 
 ## References
 
@@ -71,6 +72,9 @@ ring of integers when `d` is squarefree. -/
 def cmOmega (d : ℕ) : ℂ := (1 + (√(d : ℝ) : ℂ) * I) / 2
 
 variable {d : ℕ}
+
+/-- The defining complex expression for `ω`. -/
+theorem cmOmega_def : cmOmega d = (1 + (√(d : ℝ) : ℂ) * I) / 2 := (rfl)
 
 /-- The real part of `ω` is `1 / 2`. -/
 @[simp] theorem re_cmOmega : (cmOmega d).re = 1 / 2 := by
@@ -197,6 +201,13 @@ private theorem exists_natCast_eq_cmOmega_mul_conj
   have h4' : (4 * n : ℂ) = d + 1 := by exact_mod_cast h4
   linear_combination h4' / 4
 
+/-- A lattice stable under `ω` forces `d ≡ 3 mod 4`: the multiplier `ω` is an algebraic
+integer, so `ω conj(ω) = (d + 1) / 4` is an integer. -/
+theorem mod_four_eq_three_of_cmOmega_mul_mem
+    (hL : ∀ l ∈ L.lattice, cmOmega d * l ∈ L.lattice) : d % 4 = 3 := by
+  obtain ⟨n, -, h4⟩ := exists_natCast_eq_cmOmega_mul_conj hL
+  omega
+
 namespace IsCMPoint
 
 variable (h : L.IsCMPoint d t)
@@ -209,12 +220,6 @@ theorem conj_cmOmega_mul_mem {l : ℂ} (hl : l ∈ L.lattice) :
 
 /-- A CM point lies outside the lattice. -/
 theorem notMem : t ∉ L.lattice := fun ht ↦ h.cmOmega_mul_notMem (h.cmOmega_mul_mem ht)
-
-/-- CM points exist only for `d ≡ 3 mod 4`: the lattice is stable under `ω`, which is therefore an
-algebraic integer, so `ω conj(ω) = (d + 1) / 4` is an integer. -/
-theorem mod_four_eq_three : d % 4 = 3 := by
-  obtain ⟨n, -, h4⟩ := exists_natCast_eq_cmOmega_mul_conj fun _ ↦ h.cmOmega_mul_mem
-  omega
 
 end IsCMPoint
 
@@ -247,30 +252,6 @@ private theorem conj_cmOmega_mul_conj_cmOmega_mul_sub_mem_of_even {n : ℕ}
   linear_combination (starRingEnd ℂ) (cmOmega d) * z * (cmOmega_add_conj (d := d))
 
 /-! ### Existence and uniqueness of the CM point -/
-
-/-- Some half-period is moved out of the lattice by `α`, if `α + conj(α) = 1`: otherwise `α / 2`
-would be a multiplier of the lattice, hence an algebraic integer, and so would be
-`α / 2 + conj(α) / 2 = 1 / 2`. -/
-private theorem exists_two_mul_mem_mul_notMem {α : ℂ} (hα : α + (starRingEnd ℂ) α = 1) :
-    ∃ x : ℂ, 2 * x ∈ L.lattice ∧ α * x ∉ L.lattice := by
-  by_contra! h
-  have hmem : α / 2 ∈ L.lattice.leftOrder := by
-    rw [Submodule.mem_leftOrder_iff]
-    intro l hl
-    have := h (l / 2) (by rwa [mul_div_cancel₀ _ two_ne_zero])
-    rwa [mul_div_assoc', ← div_mul_eq_mul_div] at this
-  have hint := L.isIntegral_of_mem_leftOrder_lattice hmem
-  have hhalf : IsIntegral ℤ ((1 / 2 : ℚ) : ℂ) := by
-    have heq : α / 2 + (starRingEnd ℂ).toIntAlgHom (α / 2) = ((1 / 2 : ℚ) : ℂ) := by
-      rw [RingHom.toIntAlgHom_apply, map_div₀, map_ofNat, ← add_div, hα]
-      push_cast
-      ring
-    exact heq ▸ hint.add (hint.map (starRingEnd ℂ).toIntAlgHom)
-  rw [isIntegral_ratCast_iff, IsIntegrallyClosed.isIntegral_iff (R := ℤ)] at hhalf
-  obtain ⟨n, hn⟩ := hhalf
-  have : (2 * n : ℚ) = 1 := by simp only [eq_intCast] at hn; rw [hn]; norm_num
-  norm_cast at this
-  omega
 
 /-- **Existence of the CM point.** Every lattice stable under `ω = (1 + √-d) / 2` has a point of
 order two that neither `ω` nor `conj(ω)` sends into the lattice. -/
@@ -358,58 +339,19 @@ theorem IsCMPoint.smul (h : L.IsCMPoint d t) (c : ℂˣ) : (c • L).IsCMPoint d
     rw [mul_left_comm, mul_mem_lattice_smul_iff]
     exact h.conj_cmOmega_mul_notMem
 
-/-- The cubic identity behind `℘''(t) ≠ 0`: if `e₁, e₂, e₃` are three distinct roots of
-`4 X³ - g₂ X - g₃`, then `12 e₁² - g₂ = 4 (e₁ - e₂) (e₁ - e₃)`. -/
-private theorem twelve_mul_sq_sub_eq {g₂ g₃ e₁ e₂ e₃ : ℂ} (h₁ : 4 * e₁ ^ 3 - g₂ * e₁ - g₃ = 0)
-    (h₂ : 4 * e₂ ^ 3 - g₂ * e₂ - g₃ = 0) (h₃ : 4 * e₃ ^ 3 - g₂ * e₃ - g₃ = 0)
-    (h₁₂ : e₁ ≠ e₂) (h₁₃ : e₁ ≠ e₃) (h₂₃ : e₂ ≠ e₃) :
-    12 * e₁ ^ 2 - g₂ = 4 * (e₁ - e₂) * (e₁ - e₃) := by
-  have hA : 4 * (e₁ ^ 2 + e₁ * e₂ + e₂ ^ 2) - g₂ = 0 := by
-    refine (mul_eq_zero.mp ?_).resolve_left (sub_ne_zero.mpr h₁₂)
-    linear_combination h₁ - h₂
-  have hB : 4 * (e₁ ^ 2 + e₁ * e₃ + e₃ ^ 2) - g₂ = 0 := by
-    refine (mul_eq_zero.mp ?_).resolve_left (sub_ne_zero.mpr h₁₃)
-    linear_combination h₁ - h₃
-  have hs : e₁ + e₂ + e₃ = 0 := by
-    refine (mul_eq_zero.mp ?_).resolve_left (sub_ne_zero.mpr h₂₃)
-    linear_combination (hA - hB) / 4
-  linear_combination hA + 4 * (e₁ - e₂) * hs
-
 /-- **`℘''` does not vanish at a CM point**, in the form `g₂ ≠ 12 ℘(t)²` (recall
-`℘'' = 6 ℘² - g₂ / 2`). The values of `℘` at the three points of order two `t`, `ω t` and
-`conj(ω) t` are distinct roots of `4 X³ - g₂ X - g₃`. -/
+`℘'' = 6 ℘² - g₂ / 2`). The associated point on the Weierstrass curve is nonsingular and
+has zero `y`-coordinate, so the partial derivative in `x` cannot vanish. -/
 theorem IsCMPoint.g₂_ne_twelve_mul_weierstrassP_sq (h : L.IsCMPoint d t) :
     L.g₂ ≠ 12 * ℘[L] t ^ 2 := by
-  have hω₁ : cmOmega d + (starRingEnd ℂ) (cmOmega d) = 1 := cmOmega_add_conj
-  have h2ω : 2 * (cmOmega d * t) ∈ L.lattice := by
-    convert h.cmOmega_mul_mem h.two_mul_mem using 1; ring
-  have h2ω' : 2 * ((starRingEnd ℂ) (cmOmega d) * t) ∈ L.lattice := by
-    convert h.conj_cmOmega_mul_mem h.two_mul_mem using 1; ring
-  have hroot {u : ℂ} (hu : u ∉ L.lattice) (h2u : 2 * u ∈ L.lattice) :
-      4 * ℘[L] u ^ 3 - L.g₂ * ℘[L] u - L.g₃ = 0 := by
-    rw [← L.derivWeierstrassP_sq u hu, (L.derivWeierstrassP_eq_zero_iff u).mpr h2u]
-    ring
-  have hne {u v : ℂ} (hu : u ∉ L.lattice) (hv : v ∉ L.lattice) (h₁ : u - v ∉ L.lattice)
-      (h₂ : u + v ∉ L.lattice) : ℘[L] u ≠ ℘[L] v := by
-    rw [ne_eq, L.weierstrassP_eq_weierstrassP_iff hu hv]
-    tauto
-  -- the sums and differences of `t = ω t + conj(ω) t`, `ω t`, `conj(ω) t` are again among them
-  -- modulo `Λ`
-  have e₁₂ := hne h.notMem h.cmOmega_mul_notMem
-    (fun hm ↦ h.conj_cmOmega_mul_notMem (by convert hm using 1; linear_combination t * hω₁))
-    (fun hm ↦ h.conj_cmOmega_mul_notMem
-      (by convert sub_mem hm h2ω using 1; linear_combination t * hω₁))
-  have e₁₃ := hne h.notMem h.conj_cmOmega_mul_notMem
-    (fun hm ↦ h.cmOmega_mul_notMem (by convert hm using 1; linear_combination t * hω₁))
-    (fun hm ↦ h.cmOmega_mul_notMem
-      (by convert sub_mem hm h2ω' using 1; linear_combination t * hω₁))
-  have e₂₃ := hne h.cmOmega_mul_notMem h.conj_cmOmega_mul_notMem
-    (fun hm ↦ h.notMem (by convert add_mem hm h2ω' using 1; linear_combination -t * hω₁))
-    (fun hm ↦ h.notMem (by convert hm using 1; linear_combination -t * hω₁))
-  rw [ne_eq, ← sub_eq_zero, ← neg_sub, neg_eq_zero,
-    twelve_mul_sq_sub_eq (hroot h.notMem h.two_mul_mem) (hroot h.cmOmega_mul_notMem h2ω)
-      (hroot h.conj_cmOmega_mul_notMem h2ω') e₁₂ e₁₃ e₂₃]
-  exact mul_ne_zero (mul_ne_zero (by norm_num) (sub_ne_zero.mpr e₁₂)) (sub_ne_zero.mpr e₁₃)
+  have hns := (WeierstrassCurve.Affine.nonsingular_iff _ _).mp (L.nonsingular_weierstrassP h.notMem)
+  have hd := (L.derivWeierstrassP_eq_zero_iff t).mpr h.two_mul_mem
+  simp only [weierstrassCurve_a₁, weierstrassCurve_a₂, weierstrassCurve_a₃,
+    weierstrassCurve_a₄, hd] at hns
+  rcases hns.2 with hx | hy
+  · intro hg
+    exact hx (by rw [hg]; ring)
+  · exact False.elim (hy (by ring))
 
 /-! ### Normalised multiples and the rigidity of the scaling -/
 
@@ -465,6 +407,7 @@ theorem IsCMLattice.pow_four_eq_one (hd : d % 8 = 7) {L' : PeriodPair} {t' a₁'
   have hct : L'.IsCMPoint d (c * t) := (hC.isCMPoint.smul c).of_lattice_eq hc
   have hsub : c * t - t' ∈ L'.lattice := hct.sub_mem_lattice hd hD.isCMPoint
   have h℘ : ℘[L'] t' = ℘[L] t / (c : ℂ) ^ 2 := by
+    -- Subtract the lattice element `c * t - t'` to apply periodicity at `c * t`.
     rw [show t' = c * t - (c * t - t') by ring, L'.weierstrassP_sub_coe _ ⟨_, hsub⟩,
       ← weierstrassP_eq_of_lattice_eq hc, weierstrassP_smul]
   have hg : L'.g₂ = L.g₂ / (c : ℂ) ^ 4 := by
@@ -476,16 +419,18 @@ theorem IsCMLattice.pow_four_eq_one (hd : d % 8 = 7) {L' : PeriodPair} {t' a₁'
   field_simp at h₂
   linear_combination h₂ / 4
 
-/-- The lattice of a CM point is a module over the embedded quadratic order
+/-- A lattice stable under `ω` is a module over the embedded quadratic order
 `ℤ[(-d + √-d) / 2] = ℤ[ω]` of discriminant `-d` (where `d ≡ 3 mod 4` holds automatically). -/
-theorem IsCMPoint.complexOrder_le_leftOrder (h : L.IsCMPoint d t)
+theorem complexOrder_le_leftOrder_of_cmOmega_mul_mem
+    (hL : ∀ l ∈ L.lattice, cmOmega d * l ∈ L.lattice)
     (hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1) :
     QuadraticOrder.complexOrder (-d) (by simp) hD ≤ L.lattice.leftOrder := by
   intro x hx
   rw [Submodule.mem_leftOrder_iff]
   intro l hl
   obtain ⟨m, k, rfl⟩ := (QuadraticOrder.mem_complexOrder_iff _ _ _).mp hx
-  obtain ⟨j, hj⟩ : ∃ j : ℕ, d + 1 = 2 * j := ⟨(d + 1) / 2, by have := h.mod_four_eq_three; omega⟩
+  obtain ⟨j, hj⟩ : ∃ j : ℕ, d + 1 = 2 * j :=
+    ⟨(d + 1) / 2, by have := mod_four_eq_three_of_cmOmega_mul_mem hL; omega⟩
   have hg : QuadraticOrder.complexGenerator (-d) = cmOmega d - j := by
     rw [cmOmega_eq_complexGenerator_add]
     have : ((d : ℂ) + 1) = 2 * j := by exact_mod_cast hj
@@ -493,7 +438,7 @@ theorem IsCMPoint.complexOrder_le_leftOrder (h : L.IsCMPoint d t)
     ring
   rw [hg]
   convert add_mem (L.lattice.smul_mem (m - k * j : ℤ) hl)
-    (L.lattice.smul_mem k (h.cmOmega_mul_mem hl)) using 1
+    (L.lattice.smul_mem k (hL l hl)) using 1
   rw [zsmul_eq_mul, zsmul_eq_mul]
   push_cast
   ring
