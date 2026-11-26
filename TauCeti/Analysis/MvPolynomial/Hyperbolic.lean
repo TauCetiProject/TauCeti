@@ -232,11 +232,9 @@ cone `Γ(p, a)` if and only if every real root of `t ↦ p(x + t • a)` is nega
 theorem mem_gardingCone_iff_forall_mem_roots (hp : p.IsHomogeneous m) (ha : eval a p ≠ 0) :
     x ∈ gardingCone p a ↔ ∀ t ∈
       (aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p).roots, t < 0 := by
-  have hne : aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p ≠ 0 :=
-    fun h ↦ ha <| by
-      rw [← coeff_aeval_C_add_C_mul_X_of_isHomogeneous hp x a, h, Polynomial.coeff_zero]
-  simp only [mem_gardingCone, Polynomial.mem_roots hne, Polynomial.IsRoot.def,
-    eval_aeval_C_add_C_mul_X]
+  simp only [mem_gardingCone,
+    Polynomial.mem_roots (aeval_C_add_C_mul_X_ne_zero_of_isHomogeneous hp x ha),
+    Polynomial.IsRoot.def, eval_aeval_C_add_C_mul_X]
   exact ⟨fun h t ht ↦ not_le.1 fun ht' ↦ h t ht' ht, fun h t ht h0 ↦ (h t h0).not_ge ht⟩
 
 /-- A positive constant is hyperbolic of degree `0` in every direction. -/
