@@ -36,7 +36,9 @@ bijective on `Hₙ(X; ℤ)` (`TopCat.isUniquelyTwoDivisible_singularHomology_of_
 for a `K(A, n)` space `Hₙ(X; ℤ) ≅ A` by the Hurewicz theorem: in degree one because the first
 integral homology of a `K(G, 1)` space is the abelianization of `G`
 (`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one`), which for an abelian
-group is the group itself, and for `n ≥ 2` for an `(n - 1)`-connected space
+group is the group itself
+(`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one_of_comm`), and for
+`n ≥ 2` for an `(n - 1)`-connected space
 (`TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two`).
 
 In degree one the first mod-two homology alone detects two-divisibility: since `H₀(X; ℤ)` is free,
@@ -53,8 +55,11 @@ vanishes exactly when `A = 2 A`
   homology of a `K(G, 1)` space is the abelianization of `G`.
 * `TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_one_iff_surjective_zsmul`: the
   first mod-two homology of a `K(A, 1)` space vanishes exactly when `A` is two-divisible.
+* `TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one_of_comm`: for an
+  abelian group `A`, the first integral homology of a `K(A, 1)` space is `A`.
 * `TauCeti.IsEilenbergMacLaneSpace.isUniquelyTwoDivisible_of_subsingleton_singularHomology`: if a
-  `K(A, n)` space has the mod-two homology of a point, then `A` is uniquely two-divisible.
+  `K(A, n)` space has vanishing mod-two homology in the degrees `n` and `n + 1`, then `A` is
+  uniquely two-divisible.
 * `TauCeti.IsEilenbergMacLaneSpace.forall_subsingleton_singularHomology_iff_isUniquelyTwoDivisible`:
   a `K(A, n)` space has the mod-two homology of a point exactly when `A` is uniquely
   two-divisible.
@@ -101,6 +106,15 @@ theorem nonempty_addEquiv_singularHomology_one {G : Type v} [Group G]
 
 variable {A : Type v} [AddCommGroup A]
 
+/-- **The first integral homology of a `K(A, 1)` space is `A`.** For an abelian group `A`, the
+abelianization of `A` is `A` itself, so a `K(A, 1)` space `X` has `H₁(X; ℤ) ≅ A`. -/
+theorem nonempty_addEquiv_singularHomology_one_of_comm
+    (hX : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x) :
+    Nonempty (A ≃+ ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of X)) := by
+  obtain ⟨φ⟩ := hX.nonempty_addEquiv_singularHomology_one
+  exact ⟨(MulEquiv.toAdditiveLeft Group.Abelianization.equivOfComm).trans φ⟩
+
 /-- **The first mod-two homology of a `K(A, 1)` space vanishes exactly when `A` is
 two-divisible.** For an abelian group `A`, a `K(A, 1)` space `X` and a ring `k` isomorphic to
 `ZMod 2`, `H₁(X; k) = 0` exactly when multiplication by two is onto `A`. -/
@@ -108,14 +122,13 @@ theorem subsingleton_singularHomology_one_iff_surjective_zsmul (e : k ≃+* ZMod
     (hX : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x) :
     Subsingleton (((singularChains k).obj (TopCat.of X)).homology 1) ↔
       Function.Surjective fun a : A ↦ (2 : ℤ) • a := by
-  obtain ⟨φ⟩ := hX.nonempty_addEquiv_singularHomology_one
-  -- the abelianization of the commutative group `A` is `A` itself
-  let ψ : A ≃+ _ := (MulEquiv.toAdditiveLeft Group.Abelianization.equivOfComm).trans φ
+  obtain ⟨ψ⟩ := hX.nonempty_addEquiv_singularHomology_one_of_comm
   -- multiplication by two on `A` is conjugate through `ψ` to that on `H₁(X; ℤ)`
   have hψ : (fun a : A ↦ (2 : ℤ) • a) = ψ.symm ∘ (fun y ↦ (2 : ℤ) • y) ∘ ψ := by
     ext a
     simp
-  rw [hψ, EquivLike.comp_surjective, EquivLike.surjective_comp]
+  rw [hψ, EquivLike.comp_surjective, EquivLike.surjective_comp,
+    ← singularHomologyFunctor_obj_obj]
   exact (TopCat.of X).subsingleton_singularHomology_one_iff_surjective_zsmul e
 
 /-- **A mod-two acyclic `K(A, 1)` space has a uniquely two-divisible group.** If a `K(A, 1)` space
@@ -126,14 +139,13 @@ theorem isUniquelyTwoDivisible_of_subsingleton_singularHomology (e : k ≃+* ZMo
     (h₁ : Subsingleton (((singularChains k).obj (TopCat.of X)).homology 1))
     (h₂ : Subsingleton (((singularChains k).obj (TopCat.of X)).homology 2)) :
     IsUniquelyTwoDivisible A := by
-  obtain ⟨φ⟩ := hX.nonempty_addEquiv_singularHomology_one
+  obtain ⟨φ⟩ := hX.nonempty_addEquiv_singularHomology_one_of_comm
   rw [← singularHomologyFunctor_obj_obj] at h₁ h₂
   exact ((TopCat.of X).isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two 1
     (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 2 e 1).2
       (ModuleCat.isZero_iff_subsingleton.2 h₁))
     (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 2 e 2).2
-      (ModuleCat.isZero_iff_subsingleton.2 h₂))).of_addEquiv
-    ((MulEquiv.toAdditiveLeft Group.Abelianization.equivOfComm).trans φ).symm
+      (ModuleCat.isZero_iff_subsingleton.2 h₂))).of_addEquiv φ.symm
 
 /-- **`K(ℤ/2, 1)` spaces have nonzero first mod-two homology.** For every `K(ℤ/2, 1)` space `X`,
 such as `ℝP^∞`, and every ring `k` isomorphic to `ZMod 2`, the group `H₁(X; k)` is nonzero:
@@ -154,23 +166,24 @@ end IsEilenbergMacLaneSpaceOne
 namespace IsEilenbergMacLaneSpace
 
 /-- **A mod-two acyclic `K(A, n)` space has a uniquely two-divisible group.** For an abelian
-group `A`, `n ≥ 1` and a `K(A, n)` space `X` whose homology in positive degrees vanishes with
-coefficients in a ring `k` isomorphic to `ZMod 2`, multiplication by two is a bijection of `A`.
-This is the converse of
+group `A`, `n ≥ 1` and a `K(A, n)` space `X` whose homology in the degrees `n` and `n + 1`
+vanishes with coefficients in a ring `k` isomorphic to `ZMod 2`, multiplication by two is a
+bijection of `A`. With vanishing in all positive degrees this is the converse of
 `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`. -/
 theorem isUniquelyTwoDivisible_of_subsingleton_singularHomology (e : k ≃+* ZMod 2)
     {A : Type v} [AddCommGroup A] {n : ℕ} [NeZero n]
     (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x)
-    (hk : ∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1))) :
+    (hn : Subsingleton (((singularChains k).obj (TopCat.of X)).homology n))
+    (hn' : Subsingleton (((singularChains k).obj (TopCat.of X)).homology (n + 1))) :
     IsUniquelyTwoDivisible A := by
   obtain _ | _ | n := n
   · exact (NeZero.ne 0 rfl).elim
   · exact IsEilenbergMacLaneSpaceOne.isUniquelyTwoDivisible_of_subsingleton_singularHomology e
-      (isEilenbergMacLaneSpace_one_iff.1 hX) (hk 0) (hk 1)
+      (isEilenbergMacLaneSpace_one_iff.1 hX) hn hn'
   · -- for `n ≥ 2` the space is `(n - 1)`-connected and `πₙ ≅ A` is its first nonzero group
     obtain ⟨φ⟩ := hX.nonempty_homotopyGroupMulEquiv
     exact (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two e
-      (fun j hj ↦ hX.subsingleton_homotopyGroup hj.ne) (hk (n + 1)) (hk (n + 2))).of_addEquiv
+      (fun j hj ↦ hX.subsingleton_homotopyGroup hj.ne) hn hn').of_addEquiv
       (MulEquiv.toAdditiveLeft φ)
 
 /-- **Mod-two acyclic Eilenberg--Mac Lane spaces.** For an abelian group `A` and `n ≥ 1`, a
@@ -183,17 +196,20 @@ theorem forall_subsingleton_singularHomology_iff_isUniquelyTwoDivisible (e : k �
       IsUniquelyTwoDivisible A := by
   have : IsSemisimpleRing k := e.symm.isSemisimpleRing
   have hk : (2 : k) = 0 := e.injective (by rw [map_ofNat, map_zero]; decide)
-  exact ⟨hX.isUniquelyTwoDivisible_of_subsingleton_singularHomology e,
-    fun hA ↦ subsingleton_singularHomology_of_isUniquelyTwoDivisible k hk hA hX⟩
+  refine ⟨fun h ↦ ?_, fun hA ↦ subsingleton_singularHomology_of_isUniquelyTwoDivisible k hk hA hX⟩
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (NeZero.ne n)
+  exact hX.isUniquelyTwoDivisible_of_subsingleton_singularHomology e (h m) (h (m + 1))
 
 /-- **`K(ℤ/2, n)` spaces are not mod-two acyclic.** For `n ≥ 1`, no `K(ℤ/2, n)` space has the
 mod-two homology of a point, with coefficients in a ring `k` isomorphic to `ZMod 2`: the group
 `ℤ/2` is not uniquely two-divisible. -/
 theorem not_forall_subsingleton_singularHomology_zmod_two (e : k ≃+* ZMod 2) {n : ℕ} [NeZero n]
     (hX : IsEilenbergMacLaneSpace (Multiplicative (ZMod 2)) n X x) :
-    ¬∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) := fun h ↦
-  Nat.not_odd_iff_even.2 even_two ((isUniquelyTwoDivisible_zmod_iff 2).1
-    (hX.isUniquelyTwoDivisible_of_subsingleton_singularHomology e h))
+    ¬∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) := by
+  intro h
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (NeZero.ne n)
+  exact Nat.not_odd_iff_even.2 even_two ((isUniquelyTwoDivisible_zmod_iff 2).1
+    (hX.isUniquelyTwoDivisible_of_subsingleton_singularHomology e (h m) (h (m + 1))))
 
 end IsEilenbergMacLaneSpace
 
