@@ -117,18 +117,14 @@ schemes supplies one as `toOverFunctor.mapIso e`. -/
 theorem relativeDimension_eq_of_iso {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) :
     A.relativeDimension = B.relativeDimension := by
   funext s
-  -- The isomorphism of underlying schemes carries the fibre of `A` over `s` onto that of `B`.
+  -- An isomorphism over `S` is a cartesian square along `𝟙 S`.
   have : IsIso e.hom.left := (Over.forget S).map_isIso e.hom
-  have hpre : A.toOver.hom ⁻¹' {s} = e.hom.left ⁻¹' (B.toOver.hom ⁻¹' {s}) := by
-    rw [← Over.w e.hom, Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp]
-  have hdim : topologicalKrullDim (A.toOver.hom.fiber s) =
-      topologicalKrullDim (B.toOver.hom.fiber s) := by
-    rw [(A.toOver.hom.fiberHomeo s).isHomeomorph.topologicalKrullDim_eq,
-      (B.toOver.hom.fiberHomeo s).isHomeomorph.topologicalKrullDim_eq, hpre]
-    exact (e.hom.left.homeomorph.isEmbedding.homeomorphOfSubsetRange
-      (by simp)).isHomeomorph.topologicalKrullDim_eq
-  rw [topologicalKrullDim_fiber, topologicalKrullDim_fiber] at hdim
-  exact_mod_cast hdim
+  have h : topologicalKrullDim (A.toOver.hom.fiber s) =
+      topologicalKrullDim (B.toOver.hom.fiber s) :=
+    topologicalKrullDim_fiber_of_isPullback
+      (IsPullback.of_horiz_isIso (fst := e.hom.left) (g := 𝟙 S) ⟨by simp⟩) s
+  rw [topologicalKrullDim_fiber, topologicalKrullDim_fiber] at h
+  exact_mod_cast h
 
 end AbelianScheme
 
