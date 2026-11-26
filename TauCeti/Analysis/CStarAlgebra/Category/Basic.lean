@@ -189,8 +189,9 @@ theorem norm_comp_dagger_le_polarization (f g : X ⟶ Y) :
       (4 : ℝ)⁻¹ * (‖f + g‖ ^ 2 + ‖f - g‖ ^ 2 +
         ‖f + Complex.I • g‖ ^ 2 + ‖f - Complex.I • g‖ ^ 2) := by
   let := normedAddCommGroup X X
+  have h4 : ‖(4 : ℂ)⁻¹‖ = (4 : ℝ)⁻¹ := by norm_num
   rw [← norm_dagger (f ≫ dagger g), dagger_comp, dagger_dagger,
-    comp_dagger_polarization f g, norm_smul, show ‖(4 : ℂ)⁻¹‖ = (4 : ℝ)⁻¹ by norm_num]
+    comp_dagger_polarization f g, norm_smul, h4]
   gcongr
   conv_lhs => rw [sub_eq_add_neg, sub_eq_add_neg]
   refine norm_add₄_le.trans_eq ?_

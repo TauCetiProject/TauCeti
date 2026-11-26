@@ -122,18 +122,11 @@ variable (F : C ⥤ D) (R : Type w) [Semiring R]
   [Preadditive C] [Preadditive D] [CategoryTheory.Linear R C] [CategoryTheory.Linear R D]
   [F.Additive] [F.Linear R] [F.PreservesDagger] [F.Full] [F.Faithful]
 
-omit [DaggerCategory C] [DaggerCategory D] [F.PreservesDagger] in
-private theorem mapEndRingHom_bijective (X : C) :
-    Function.Bijective (F.mapEndRingHom X) :=
-  ⟨fun _ _ hab => End.ext <| F.map_injective <| by
-    simpa only [mapEndRingHom_apply_asHom] using congrArg End.asHom hab,
-   F.mapEndRingHom_surjective X⟩
-
 /-- A fully faithful linear dagger functor induces a star-algebra equivalence on endomorphism
 algebras over any `Semiring R`. -/
 noncomputable def mapEndStarAlgEquiv (X : C) :
     End X ≃⋆ₐ[R] End (F.obj X) :=
-  { __ := RingEquiv.ofBijective (F.mapEndRingHom X) (mapEndRingHom_bijective F X)
+  { __ := RingEquiv.ofBijective (F.mapEndRingHom X) (F.mapEndRingHom_bijective X)
     map_smul' r f := by ext; simp [RingEquiv.coe_ofBijective]
     map_star' f := by ext; simp [RingEquiv.coe_ofBijective] }
 
