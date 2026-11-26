@@ -11,20 +11,22 @@ public import Mathlib.Combinatorics.SimpleGraph.Operations
 /-!
 # Hamiltonian paths with a large degree sum at their ends
 
-A Hamiltonian path `u = x₀, x₁, …, xₗ = v` whose ends have degree sum at least the number `n` of
-vertices closes up to a Hamilton cycle, possibly after a rotation: there is an index `i` with
-`u` adjacent to `xᵢ₊₁` and `xᵢ` adjacent to `v`, and then `xᵢ₊₁ ⋯ xₗ xᵢ ⋯ x₀` is a Hamiltonian
-path whose ends `xᵢ₊₁` and `u` are adjacent. This gives the lemma of Bondy and Chvátal that adding
-an edge between two vertices of degree sum at least `n` does not change whether a graph is
-Hamiltonian, the step from which the Bondy–Chvátal closure and the theorems of Ore and Dirac
-follow.
+In a graph on at least three vertices, a Hamiltonian path `u = x₀, x₁, …, xₗ = v` whose ends
+have degree sum at least the number `n` of vertices closes up to a Hamilton cycle, possibly after
+a rotation: there is an index `i` with `u` adjacent to `xᵢ₊₁` and `xᵢ` adjacent to `v`, and then
+`xᵢ₊₁ ⋯ xₗ xᵢ ⋯ x₀` is a Hamiltonian path whose ends `xᵢ₊₁` and `u` are adjacent. This gives the
+lemma of Bondy and Chvátal that adding an edge between two vertices of degree sum at least `n` does
+not change whether a graph is Hamiltonian, the step from which the Bondy–Chvátal closure and the
+theorems of Ore and Dirac follow.
 
 ## Main results
 
-* `SimpleGraph.Walk.IsHamiltonian.isHamiltonian_of_adj_getVert`: a Hamiltonian path
-  `x₀ ⋯ xₗ` with `x₀` adjacent to `xᵢ₊₁` and `xᵢ` adjacent to `xₗ` gives a Hamilton cycle.
-* `SimpleGraph.Walk.IsHamiltonian.isHamiltonian_of_card_le_degree_add_degree`: a Hamiltonian
-  path whose ends have degree sum at least the number of vertices gives a Hamilton cycle.
+* `SimpleGraph.Walk.IsHamiltonian.isHamiltonian_of_adj_getVert`: in a graph on at least three
+  vertices, a Hamiltonian path `x₀ ⋯ xₗ` with `x₀` adjacent to `xᵢ₊₁` and `xᵢ` adjacent to `xₗ`
+  gives a Hamilton cycle.
+* `SimpleGraph.Walk.IsHamiltonian.isHamiltonian_of_card_le_degree_add_degree`: in a graph on at
+  least three vertices, a Hamiltonian path whose ends have degree sum at least the number of
+  vertices gives a Hamilton cycle.
 * `SimpleGraph.isHamiltonian_sup_edge_iff`: the Bondy–Chvátal lemma; if `n ≤ deg u + deg v`,
   then `G ⊔ edge u v` is Hamiltonian if and only if `G` is.
 
@@ -58,13 +60,17 @@ theorem IsHamiltonian.isHamiltonian_of_adj_getVert {p : G.Walk u v} (hp : p.IsHa
   let q : G.Walk (p.getVert (i + 1)) u := (p.drop (i + 1)).append (cons hv.symm (p.take i).reverse)
   have hsupp : q.support = p.support.drop (i + 1) ++ (p.support.take (i + 1)).reverse := by
     simp [q, support_append, support_take, Nat.min_eq_left hi]
-  refine IsHamiltonian.isHamiltonian_of_adj (p := q) (fun a ↦ ?_) hu.symm ?_
-  · rw [hsupp, List.count_append, List.count_reverse, add_comm, ← List.count_append,
-      List.take_append_drop]
-    exact hp a
-  · have := hp.length_add_one_eq
-    simp only [q, length_append, length_cons, length_reverse, drop_length, take_length]
-    omega
+  -- `q` visits the blocks `p.support.take (i + 1)` and `p.support.drop (i + 1)` of `p`'s support
+  -- in swapped order, the first one reversed, so its support is a permutation of `p`'s.
+  have hperm : q.support.Perm p.support := by
+    rw [hsupp]
+    exact List.perm_append_comm.trans
+      (((List.reverse_perm _).append_right _).trans (.of_eq (List.take_append_drop _ _)))
+  refine IsHamiltonian.isHamiltonian_of_adj (p := q) (fun a ↦ (hperm.count_eq a).trans (hp a))
+    hu.symm ?_
+  have := hp.length_add_one_eq
+  simp only [q, length_append, length_cons, length_reverse, drop_length, take_length]
+  omega
 
 /-- **Ore's crossing argument.** A Hamiltonian path whose ends have degree sum at least the
 number of vertices, on at least three vertices, gives a Hamilton cycle. -/
