@@ -85,10 +85,7 @@ theorem rowStep_le_exp_mul {x r : ℕ} (hr : r ≤ 3 * x ^ 5) :
     (5 * r : ℝ) ≤ 15 * (x : ℝ) ^ 5 := by linarith
     _ ≤ Real.exp 8 * (x : ℝ) ^ 5 := by
       gcongr
-      calc
-        (15 : ℝ) ≤ 2 ^ (8 : ℕ) := by norm_num
-        _ ≤ Real.exp 1 ^ (8 : ℕ) := pow_le_pow_left₀ (by norm_num) Real.exp_one_gt_two.le _
-        _ = Real.exp 8 := Real.exp_one_pow _
+      exact le_trans (by norm_num) (Real.one_add_div_pow_le_exp (m := 8) (by norm_num))
 
 /-- The half-gap in the derivative orders is at least one row increment plus the initial rank. -/
 theorem sourceRank_add_rowStep_add_one_le_halfGap {m r : ℕ} (hr : 2 ≤ r) :
@@ -109,10 +106,7 @@ theorem gap_le_exp_mul {x r : ℕ} (hr : r ≤ 3 * x ^ 5) :
     _ = (2 * 3 ^ (8 : ℕ)) * (x : ℝ) ^ 40 := by ring
     _ ≤ Real.exp 27 * (x : ℝ) ^ 40 := by
       gcongr
-      calc
-        (2 * 3 ^ (8 : ℕ) : ℝ) ≤ 2 ^ (27 : ℕ) := by norm_num
-        _ ≤ Real.exp 1 ^ (27 : ℕ) := pow_le_pow_left₀ (by norm_num) Real.exp_one_gt_two.le _
-        _ = Real.exp 27 := Real.exp_one_pow _
+      exact le_trans (by norm_num) (Real.one_add_div_pow_le_exp (m := 27) (by norm_num))
 
 /-- The final definite rank has size `x^(11/2)` up to a factor of `exp(12)` when the chain length is
 between `√x` and `2√x` and the target rank is between `x^5` and `3x^5`. -/
@@ -139,10 +133,8 @@ theorem lastRank_mem_Icc {x m r : ℕ} (hx : 0 < x) (hm₁ : √(x : ℝ) ≤ m)
           exact add_le_add ((by omega : r + 1 - m ≤ r).trans (Nat.le_mul_of_pos_left _ hm))
             (Nat.mul_le_mul_left _ (by omega))
         _ = 7 * m * r := by ring
-    have h42 : (42 : ℝ) ≤ Real.exp 12 := calc
-      _ ≤ 2 ^ (12 : ℕ) := by norm_num
-      _ ≤ Real.exp 1 ^ (12 : ℕ) := pow_le_pow_left₀ (by norm_num) Real.exp_one_gt_two.le _
-      _ = _ := Real.exp_one_pow _
+    have h42 : (42 : ℝ) ≤ Real.exp 12 :=
+      le_trans (by norm_num) (Real.one_add_div_pow_le_exp (m := 12) (by norm_num))
     calc
       ((r + 1 - m + m * (5 * r + 1) : ℕ) : ℝ) ≤ 7 * m * r := by exact_mod_cast hmul
       _ ≤ 7 * (2 * √(x : ℝ)) * (3 * (x : ℝ) ^ 5) := by gcongr
