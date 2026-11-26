@@ -50,11 +50,10 @@ theorem IsPLOn.inverse_of_leftInvOn (hf : IsPLOn f K.space) (hK : K.faces.Finite
   have hleft : LeftInvOn g f L.space := hLK.space_eq ▸ hgf
   choose B hB using Geometry.SimplicialComplex.simplexwise_affine_of_leftInvOn
     (hf := hinj) (haff := haff) hleft
-  have : Finite T.faces := hT.to_subtype
-  have hg : IsPLOn g T.space := T.isPLOn_of_locallyFinite subset_rfl
-    (fun _ _ => ⟨Set.univ, Filter.univ_mem, Set.toFinite _⟩)
-    (fun s => ⟨B s.val s.property, (B s.val s.property).continuous_of_finiteDimensional⟩)
-    (fun s => (hB s.val s.property).mono inter_subset_right)
+  have hg : IsPLOn g T.space :=
+    (Geometry.SimplicialComplex.isPLOn_space_iff_exists_isSubdivision hT).mpr
+      ⟨T, .refl T, hT, fun t ht =>
+        ⟨⟨B t ht, (B t ht).continuous_of_finiteDimensional⟩, hB t ht⟩⟩
   simpa only [T, Geometry.SimplicialComplex.space_map, hLK.space_eq] using hg
 
 end TauCeti
