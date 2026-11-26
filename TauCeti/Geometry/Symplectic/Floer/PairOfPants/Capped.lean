@@ -48,8 +48,9 @@ is the single-neck model of the same deformation.
   coordinates of `ℂ` (`TauCeti.Floer.contMDiff_cappedPerturbation_apply`,
   `TauCeti.Floer.contDiff_cappedPerturbation_apply`), hence differentiable in the target point
   (`TauCeti.Floer.differentiableAt_cappedPerturbation_apply`); the family `K_R` is smooth in `R`
-  (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`), and on a vector space so are its
-  components (`TauCeti.Floer.contDiff_cappedComparisonPerturbation_apply`).
+  (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`), and so are its components
+  (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation_apply`, and on a vector space
+  `TauCeti.Floer.contDiff_cappedComparisonPerturbation_apply`).
 * On the part `±s > 0` of the end `q` it pulls back to `a β(σ - 1) β(L + 3 - σ) H_q(t) dt`
   (`TauCeti.Floer.cappedPerturbation_cylindricalEndLift_of_pos`). For `L ≥ 0` it is
   `a H_q(t) dt` on the neck `2 ≤ σ ≤ L + 2`, and `a` times the pair-of-pants datum
@@ -641,6 +642,19 @@ theorem contMDiff_cappedComparisonPerturbation {n : ℕ∞} (hH : ∀ q, Functio
   exact (contMDiff_cappedPerturbation hH hHs).comp
     (contMDiff_fst.prodMk ((hρL.comp (contMDiff_fst.comp contMDiff_snd)).prodMk
       (contMDiff_snd.comp contMDiff_snd)))
+
+/-- The components of the comparison family are `C^n` jointly in the family parameter `R`, the
+point of the plane chart `ℝ × ℝ` and the target point. -/
+theorem contMDiff_cappedComparisonPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (H q))) (v : ℂ) :
+    ContMDiff (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ) n (fun p : ℝ × ((ℝ × ℝ) × M) ↦
+      cappedComparisonPerturbation H p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v) := by
+  have hι : ContMDiff (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ).prod I)) n
+      fun p : ℝ × ((ℝ × ℝ) × M) ↦ (Complex.equivRealProdCLM.symm p.2.1, (p.1, p.2.2)) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp
+      (contMDiff_fst.comp contMDiff_snd)).prodMk
+        (contMDiff_fst.prodMk (contMDiff_snd.comp contMDiff_snd))
+  exact ((contMDiff_cappedComparisonPerturbation hH hHs).comp hι).clm_apply contMDiff_const
 
 end Smooth
 

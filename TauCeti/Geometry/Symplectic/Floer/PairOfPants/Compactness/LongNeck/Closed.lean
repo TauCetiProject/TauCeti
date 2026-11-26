@@ -115,17 +115,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsManifold I (⊤ : ℕ∞) M] {σ : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
   {J₀ : SmoothAlmostComplexStructure I M} {J : Puncture → ℝ → SmoothAlmostComplexStructure I M}
 
-omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] in
-/-- Each component of the comparison datum is differentiable in the target point. -/
-private theorem mdifferentiableAt_cappedComparisonPerturbation_apply
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
-    (R : ℝ) (z : ℝ × ℝ) (x : M) (v : ℂ) :
-    MDifferentiableAt I 𝓘(ℝ)
-      (fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y v) x := by
-  rw [cappedComparisonPerturbation_def]
-  exact (((contMDiff_cappedPerturbation_apply hH hHs (comparisonCutoff R) (comparisonNeckLength R)
-    v).comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero) x
-
 /-- **The Floer equation on the caps of the PSS plane pieces, in a manifold.** For `R ≥ 2`, let `χ`
 be the translation `TauCeti.ThricePuncturedSphere.Puncture.endShift q (R - 1)` by the neck length
 along the end `q`. At a point `w` which is the center `c_q` of the end, its pole for an input end,
@@ -158,8 +147,12 @@ theorem Compatible.isComplexLinearMap_perturbedMFDeriv_comp_realChart_endShift
     cappedAlmostComplex_endShift h₀ J hJ hJp 1 (by linarith) hw] at h
   have h' := σ.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
     ((q.contDiff_realChart_endShift (R - 1) (n := 1)).differentiable one_ne_zero w) hu
-    (mdifferentiableAt_cappedComparisonPerturbation_apply hH hHs R _ _ 1)
-    (mdifferentiableAt_cappedComparisonPerturbation_apply hH hHs R _ _ Complex.I)
+    (((contMDiff_cappedComparisonPerturbation_apply hH hHs 1).comp
+      (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))).mdifferentiable
+        one_ne_zero _)
+    (((contMDiff_cappedComparisonPerturbation_apply hH hHs Complex.I).comp
+      (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))).mdifferentiable
+        one_ne_zero _)
     (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_endShift _ _)) h
   rwa [σ.perturbedMFDeriv_congr_perturbation
     (Ks' := fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x 1)
@@ -193,8 +186,12 @@ theorem integral_floerEnergyDensity_image_endShift (ω : SmoothTwoForm I M)
   rw [ω.integral_floerEnergyDensity_image hΩm (realChart_injective (q.endShift_injective _)).injOn
     (fun w _ ↦ (q.contDiff_realChart_endShift (R - 1) (n := 1)).differentiable one_ne_zero w)
     (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_endShift _ _)) hu
-    (fun w _ ↦ mdifferentiableAt_cappedComparisonPerturbation_apply hH hHs R _ _ 1)
-    (fun w _ ↦ mdifferentiableAt_cappedComparisonPerturbation_apply hH hHs R _ _ Complex.I)]
+    (fun w _ ↦ ((contMDiff_cappedComparisonPerturbation_apply hH hHs 1).comp
+      (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))).mdifferentiable
+        one_ne_zero _)
+    (fun w _ ↦ ((contMDiff_cappedComparisonPerturbation_apply hH hHs Complex.I).comp
+      (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))).mdifferentiable
+        one_ne_zero _)]
   refine setIntegral_congr_fun hΩm fun w hw ↦ ω.floerEnergyDensity_congr_perturbation _
     (funext fun x ↦ ?_) (funext fun x ↦ ?_)
   · rw [perturbationPullback_cappedComparisonPerturbation_endShift (hH q) hR (hΩ w hw),
