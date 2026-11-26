@@ -34,7 +34,7 @@ noncomputable section
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℂ, E) ∞ X]
+  {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℂ, E) 1 X]
 
 /-- **The Hermitian form of a continuous two-form, read in the chart at `x₀`, is continuous at
 `x₀`**: `H_α(x)(B x u, B x v) → H_α(x₀)(u, v)`. -/
