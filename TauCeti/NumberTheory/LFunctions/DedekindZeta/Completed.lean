@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta
+import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
@@ -65,6 +66,8 @@ pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib
   `ζ_K(s) = |d_K| ^ (-s / 2) Γ_ℝ(s)⁻¹ ^ r₁ Γ_ℂ(s)⁻¹ ^ r₂ Λ_K(s)`.
 * `TauCeti.LFunctions.dedekindZetaC_eq_dedekindZeta`: `dedekindZetaC K` agrees with
   `NumberField.dedekindZeta K` on `Re s > 1`.
+* `TauCeti.LFunctions.eqOn_dedekindZetaC_of_eqOn_dedekindZeta`: uniqueness away from `1` of
+  an analytic continuation agreeing with the Dedekind zeta series on `Re s > 1`.
 * `TauCeti.LFunctions.analyticAt_dedekindZetaC_iff`,
   `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_one`: `ζ_K` is analytic exactly away
   from `1`, where it has a simple pole.
@@ -437,6 +440,22 @@ theorem analyticAt_dedekindZetaC {s : ℂ} (hs : s ≠ 1) : AnalyticAt ℂ (dede
       omega
   · exact ((analyticAt_invArchFactor K s).mul
       (analyticAt_completedDedekindZeta K h0 hs)).meromorphicOrderAt_nonneg
+
+/-- Any function analytic off `1` and agreeing with the Dedekind zeta series on `Re s > 1`
+agrees with the continued Dedekind zeta function off `1`. -/
+theorem eqOn_dedekindZetaC_of_eqOn_dedekindZeta {Z : ℂ → ℂ}
+    (hZ : ∀ z ≠ 1, AnalyticAt ℂ Z z)
+    (hseries : Set.EqOn Z (dedekindZeta K) {z | 1 < z.re}) :
+    Set.EqOn Z (dedekindZetaC K) ({1}ᶜ : Set ℂ) := by
+  refine AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq
+    (fun z hz ↦ hZ z (Set.mem_compl_singleton_iff.mp hz))
+    (fun _ hz ↦ analyticAt_dedekindZetaC K (Set.mem_compl_singleton_iff.mp hz))
+    (isConnected_compl_singleton_of_one_lt_rank
+      (rank_real_complex ▸ Nat.one_lt_ofNat) 1).isPreconnected
+    (z₀ := 2) (by norm_num) ?_
+  filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
+    (by norm_num : 1 < (2 : ℂ).re)] with z hz
+  exact (hseries hz).trans (dedekindZetaC_eq_dedekindZeta K hz).symm
 
 /-- **The analytic class number formula for the continued Dedekind zeta function**:
 `lim_{s → 1} (s - 1) ζ_K(s) = 2 ^ r₁ (2π) ^ r₂ h R / (w √|d_K|)`, Mathlib's
