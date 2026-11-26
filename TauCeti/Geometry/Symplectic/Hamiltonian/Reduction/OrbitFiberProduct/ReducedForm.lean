@@ -93,6 +93,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
 * `isSubmersion_orbitFiberProductProj`: `q_W` is a smooth submersion.
 * `existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub`: the reduced form is the
   unique symplectic form with `q_W^* ω_red = pr_M^* σ - pr_O^* ω_KKS`.
+* `mpullback_orbitFiberProductProj_eq_sub`: every reduced form `π^* ω_red = i^* σ` of a
+  `G`-invariant `σ` satisfies `q_W^* ω_red = pr_M^* σ - pr_O^* ω_KKS`.
 * `isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv_orbitFiberProductProj`: the form
   `pr_M^* σ - pr_O^* ω_KKS` on `W_O` is closed with null spaces `ker d q_W`.
 * `existsUnique_isSymplectic_mpullback_orbitFiberProductProj_comp_symm_eq_sub`: the same identity
@@ -442,6 +444,85 @@ theorem existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub (hσ : 
   rw [← hΦ.eq_iff, map_sub, SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback,
     SmoothForm.mpullback_mpullback]
   simp only [hq, hM, hO]
+
+/-- **The orbit-reduction identity on the orbit fibre product.** Let `G` act smoothly and properly
+on `M`, preserving `σ`, with coadjoint-equivariant moment map `μ`, let `c` be a regular value of
+`μ`, and let the coadjoint stabilizer `G_c`, with the Lie group structure `d`, act freely on the
+level `μ⁻¹(c)`. Every two-form `ω_red` on `Q = μ⁻¹(c) ⧸ G_c` with `π^* ω_red = i^* σ`, for the
+orbit projection `π` and the inclusion `i` of the level, satisfies
+
+`q_W^* ω_red = pr_M^* σ - pr_O^* ω_KKS`
+
+on the orbit fibre product `W_O = {(x, o) ∈ M × O | μ(x) = ι_O(o)}`, for the orbit projection
+`q_W (x, g G_c) = [g⁻¹ • x]`, the two projections `pr_M (x, o) = x` and `pr_O (x, o) = o`, and the
+Kirillov–Kostant–Souriau form `ω_KKS` on `O = G ⧸ G_c`. Neither closedness nor nondegeneracy of
+`σ` is needed. -/
+theorem mpullback_orbitFiberProductProj_eq_sub
+    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    haveI := h.isManifold_levelSubMulAction hreg hn
+    letI := h.orbitFiberProductChartedSpace c hreg b
+    haveI := h.isManifold_orbitFiberProduct hreg b
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    haveI := h.isManifold_orbitRelQuotient hreg hn d
+    ∀ η : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+          (h.levelSubMulAction c)),
+      SmoothForm.mpullback _ (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).contMDiff η =
+          SmoothForm.mpullback Subtype.val
+            (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff σ →
+        SmoothForm.mpullback (h.orbitFiberProductProj c b)
+            (h.isSubmersion_orbitFiberProductProj hreg hn d b).contMDiff η =
+          SmoothForm.mpullback (fun p : OrbitFiberProduct μ c b ↦ p.val.1)
+              (contMDiff_fst.comp (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff) σ -
+            SmoothForm.mpullback (fun p : OrbitFiberProduct μ c b ↦ p.val.2)
+              (contMDiff_snd.comp (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff)
+              c.coadjointOrbitForm := by
+  intro η hη
+  let _ := d.chartedSpace
+  have := d.lieGroup
+  have := d.contMDiffSMul (M := G) (I'' := I)
+  let _ := h.levelSubMulActionChartedSpace c hreg hn
+  have := h.isManifold_levelSubMulAction hreg hn
+  have := h.contMDiffSMul_levelSubMulAction d.contMDiff_subtypeVal
+    (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn)
+  let _ := h.orbitRelQuotientChartedSpace c hreg hn d
+  have := h.isManifold_orbitRelQuotient hreg hn d
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
+  let _ := BalancedProduct.rightTranslationChartedSpace
+    ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c) I
+    𝓘(ℝ, Fin n → ℝ) F
+  have := BalancedProduct.isManifold_rightTranslation
+    (K := (Lie.coadjointRepresentation ℝ I G).stabilizer c) (Z := h.levelSubMulAction c)
+    (I := I) (IZ := 𝓘(ℝ, Fin n → ℝ)) (F := F)
+  let _ := h.orbitFiberProductChartedSpace c hreg b
+  have := h.isManifold_orbitFiberProduct hreg b
+  set Φ := h.orbitFiberProductDiffeomorph hreg hn d b
+  -- Pulled back along `Φ`, `q_W`, `pr_M` and `pr_O` become `q_Y`, `i_Y` and `pr_Y`, and the
+  -- identity becomes the orbit-reduction identity on the balanced product.
+  have hq : h.orbitFiberProductProj c b ∘ Φ = BalancedProduct.orbitProj :=
+    funext (h.orbitFiberProductProj_orbitFiberProductDiffeomorph hreg hn d b)
+  have hM : (fun p : OrbitFiberProduct μ c b ↦ p.val.1) ∘ Φ =
+      BalancedProduct.liftRightTranslation (h.levelSubMulActionSubtype c) :=
+    funext fun y ↦ by
+      rw [Function.comp_apply, h.coe_orbitFiberProductDiffeomorph hreg hn d b y,
+        BalancedProduct.fst_liftProjRightTranslation]
+  have hO : (fun p : OrbitFiberProduct μ c b ↦ p.val.2) ∘ Φ =
+      BalancedProduct.proj (h.levelSubMulAction c) Subgroup.RightTranslation.quotientMk_smul :=
+    funext fun y ↦ by
+      rw [Function.comp_apply, h.coe_orbitFiberProductDiffeomorph hreg hn d b y,
+        BalancedProduct.snd_liftProjRightTranslation]
+  refine SmoothForm.mpullback_injective_of_rightInverse (F := ℝ) (k := 2) Φ.contMDiff
+    Φ.symm.contMDiff Φ.apply_symm_apply ?_
+  rw [map_sub, SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback,
+    SmoothForm.mpullback_mpullback]
+  simp only [hq, hM, hO]
+  exact h.mpullback_orbitProj_eq_sub (F := F) hG (h.contMDiff_levelSubMulActionSubtype hreg hn)
+    (fun z ↦ by simpa using h.mem_levelSubMulAction.1 z.property)
+    (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).contMDiff
+    (by simpa only [coe_levelSubMulActionSubtype] using hη)
 
 /-- **The null foliation of `pr_M^* σ - pr_O^* ω_KKS` on the orbit fibre product.** With the
 hypotheses of the Marsden–Weinstein–Meyer theorem, the two-form `pr_M^* σ - pr_O^* ω_KKS` on
