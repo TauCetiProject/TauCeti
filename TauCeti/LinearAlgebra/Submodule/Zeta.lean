@@ -25,9 +25,9 @@ of `R × N` is then determined by the ideal `R ∙ g` of its first coordinates, 
 `M'` with `N`, and by the class modulo `M'` of some `n` with `(g, n) ∈ M`. Since
 `[R × N : M] = [R : R ∙ g] [N : M']` and there are `[N : M']` classes, this gives
 `ζ_{R × N}(s + 1) ≤ ζ_R(s + 1) ζ_N(s)` (`Module.submoduleZeta_prod_le`), and by induction on the
-rank `ζ_{R^r}(r + μ) ≤ ζ_R(μ)^r` (`Module.submoduleZeta_pi_le`). Hey's formula for the zeta
-function of a lattice computes the left side exactly when `R` is a ring of integers or one of its
-completions; only the bound is proved here, and it holds for every such ring.
+rank `ζ_{R^r}(r + μ) ≤ ζ_R(μ)^r` (`Module.submoduleZeta_pi_le`). Both bounds are proved here
+only under the principality hypothesis. When `R` is a ring of integers or one of its completions,
+Hey's formula computes the left side exactly; that formula is not proved here.
 
 The same induction, over a commutative ring, shows that a submodule `M` of finite index in `R^r`
 is the image of a lower triangular matrix `A` whose diagonal entries generate ideals of finite
@@ -83,7 +83,7 @@ private theorem exists_prod_decomposition {M : Submodule R (R × N)}
   obtain ⟨⟨g', n⟩, hn, rfl⟩ : g ∈ M.map (LinearMap.fst R R N) :=
     hg ▸ mem_span_singleton_self g
   exact ⟨g', n, hn, hg, eq_span_singleton_sup_map_inr hn hg,
-    by rw [cardQuot_eq_cardQuot_map_fst_mul_cardQuot_comap_inr, hg]; rfl⟩
+    by rw [cardQuot_eq_cardQuot_map_fst_mul_cardQuot_comap_inr, hg, LinearMap.fst_apply]⟩
 
 end Submodule
 
@@ -97,6 +97,11 @@ the submodules `M` of finite index in `N` (those with `M.cardQuot ≠ 0`), with 
 noncomputable def submoduleZeta (s : ℕ) : ℝ≥0∞ :=
   ∑' M : {M : Submodule R N // M.cardQuot ≠ 0}, (M.val.cardQuot : ℝ≥0∞)⁻¹ ^ s
 
+theorem submoduleZeta_def (s : ℕ) :
+    submoduleZeta R N s = ∑' M : {M : Submodule R N // M.cardQuot ≠ 0},
+      (M.val.cardQuot : ℝ≥0∞)⁻¹ ^ s :=
+  (rfl)
+
 /-- The submodule zeta function is antitone in the exponent. -/
 theorem submoduleZeta_antitone : Antitone (submoduleZeta R N) := fun _ _ hst ↦
   tsum_le_tsum fun M ↦ pow_le_pow_of_le_one zero_le
@@ -104,10 +109,10 @@ theorem submoduleZeta_antitone : Antitone (submoduleZeta R N) := fun _ _ hst ↦
 
 variable {R N} {N' : Type*} [AddCommGroup N'] [Module R N']
 
-/-- If `N` maps onto `N'`, then the zeta function of `N'` is at most that of `N`: pulling back is
-an injection of the submodules of finite index that keeps the index. -/
+/-- If `N` maps onto `N'`, then the zeta function of `N'` is at most that of `N`. -/
 theorem submoduleZeta_le_of_surjective {f : N →ₗ[R] N'} (hf : Function.Surjective f) (s : ℕ) :
     submoduleZeta R N' s ≤ submoduleZeta R N s := by
+  -- Pulling back is an injection of the submodules of finite index that keeps the index.
   have h_index (M : Submodule R N') : (M.comap f).cardQuot = M.cardQuot :=
     Submodule.cardQuot_comap_of_surjective hf M
   let pull (M : {M : Submodule R N' // M.cardQuot ≠ 0}) : {M : Submodule R N // M.cardQuot ≠ 0} :=
@@ -136,13 +141,13 @@ private theorem tsum_quotient_cardQuot_inv_pow {M : Submodule R N} (hM : M.cardQ
     ENNReal.mul_inv_cancel (Nat.cast_ne_zero.2 hM) (ENNReal.natCast_ne_top _), one_mul]
 
 /-- **The zeta function of `R × N`.** If every left ideal of finite index of `R` is principal,
-then `ζ_{R × N}(s + 1) ≤ ζ_R(s + 1) ζ_N(s)`. A submodule `M` of finite index is determined by the
-ideal `R ∙ g` of its first coordinates, by its intersection `M'` with `N`, and by the class modulo
-`M'` of some `n` with `(g, n) ∈ M`; there are `[N : M']` classes, and
-`[R × N : M] = [R : R ∙ g] [N : M']`. -/
+then `ζ_{R × N}(s + 1) ≤ ζ_R(s + 1) ζ_N(s)`. -/
 theorem submoduleZeta_prod_le
     (h_principal : ∀ I : Submodule R R, I.cardQuot ≠ 0 → I.IsPrincipal) (s : ℕ) :
     submoduleZeta R (R × N) (s + 1) ≤ submoduleZeta R R (s + 1) * submoduleZeta R N s := by
+  -- A submodule `M` of finite index is determined by the ideal `R ∙ g` of its first coordinates,
+  -- by its intersection `M'` with `N`, and by the class modulo `M'` of some `n` with `(g, n) ∈ M`;
+  -- there are `[N : M']` classes, and `[R × N : M] = [R : R ∙ g] [N : M']`.
   choose gen h_gen using fun I : {I : Submodule R R // I.cardQuot ≠ 0} ↦
     (h_principal I.val I.property).principal
   let Data : Type _ := Σ (_ : {I : Submodule R R // I.cardQuot ≠ 0})
@@ -176,7 +181,7 @@ theorem submoduleZeta_prod_le
     _ ≤ ∑' d, weight d := tsum_comp_le_tsum_of_injective h_inj weight
     _ = submoduleZeta R R (s + 1) * submoduleZeta R N s := by
       simp only [Data, weight, tsum_sigma', ENNReal.tsum_mul_left, ENNReal.tsum_mul_right,
-        submoduleZeta, h_classes]
+        submoduleZeta_def, h_classes]
 
 /-- **Sums over the submodules of finite index of `R^r`.** If every left ideal of finite index
 of `R` is principal, then `∑_M [R^r : M]^(-(r + μ)) ≤ (∑_I [R : I]^(-μ))^r`, the sums running
@@ -188,7 +193,7 @@ theorem submoduleZeta_pi_le
   induction r with
   | zero =>
     let top : {M : Submodule R (Fin 0 → R) // M.cardQuot ≠ 0} := ⟨⊤, by simp⟩
-    rw [submoduleZeta,
+    rw [submoduleZeta_def,
       tsum_eq_single top fun M hM ↦ absurd (Subtype.ext (Subsingleton.elim M.val top.val)) hM]
     simp [top]
   | succ r ih =>
@@ -228,7 +233,7 @@ private theorem isLowerTriangular_consMatrix (g : R) (n : Fin r → R)
     {A' : Matrix (Fin r) (Fin r) R} (hA' : A'.IsLowerTriangular) :
     (consMatrix g n A').IsLowerTriangular := by
   intro i j hij
-  change i < j at hij
+  replace hij : i < j := OrderDual.toDual_lt_toDual.1 hij
   induction j using Fin.cases with
   | zero => exact absurd hij (Fin.not_lt_zero i)
   | succ j =>
@@ -246,11 +251,13 @@ private theorem range_mulVecLin_consMatrix (g : R) (n : Fin r → R)
   have h_col : (consMatrix g n A').col =
       Fin.cons (Fin.consLinearEquiv R (fun _ : Fin (r + 1) ↦ R) (g, n))
         fun j ↦ Fin.consLinearEquiv R (fun _ : Fin (r + 1) ↦ R) (0, A'.col j) := by
+    -- `consMatrix` is defined column by column as these `Fin.cons` vectors, and
+    -- `Fin.consLinearEquiv` applies `Fin.cons`, so both sides agree by definition.
     funext j i
     rfl
   rw [Matrix.range_mulVecLin, Matrix.range_mulVecLin, h_col, Fin.range_cons, span_insert, map_sup,
     map_span, Set.image_singleton, ← map_comp, map_span, ← Set.range_comp]
-  rfl
+  simp only [LinearEquiv.coe_coe, LinearMap.coe_comp, Function.comp_def, LinearMap.inr_apply]
 
 /-- **A triangular basis of a submodule of finite index.** Let `R` be a commutative ring whose
 ideals of finite index are principal, and `M` a submodule of finite index of `R^r`. Then `M` is
