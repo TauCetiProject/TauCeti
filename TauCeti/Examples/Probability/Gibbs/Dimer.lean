@@ -141,12 +141,6 @@ theorem not_isDimerGibbs_dirac_noEdge (w : (nnGraph ℤ).edgeSet → ℝ) :
 local instance fact_one_lt_six : Fact (1 < 6) :=
   ⟨by decide⟩
 
-/-- The cylinder of a configuration over all of a finite index type is its singleton. -/
-private theorem setOf_forall_mem_univ_eq {ι β : Type*} [Fintype ι] (ω : ι → β) :
-    {η : ι → β | ∀ e ∈ Finset.univ, η e = ω e} = {ω} := by
-  ext η
-  simp [funext_iff]
-
 /-- **Every dimer Gibbs measure on the hexagon is carried by its two matchings**:
 `μ{M_a} + μ{M_b} = 1`. -/
 theorem measure_hexConfig_add {w : (nnGraph (ZMod 6)).edgeSet → ℝ}
@@ -171,7 +165,7 @@ theorem ofReal_mul_measure_hexConfig {w : (nnGraph (ZMod 6)).edgeSet → ℝ}
   have := h.cylinder (F := Finset.univ) (E := Finset.univ) (isDimerConfiguration_hexConfig true)
     (isDimerConfiguration_hexConfig false) (fun e he => absurd (Finset.mem_univ e) he)
     fun _ _ e' _ => Finset.mem_univ e'
-  rwa [setOf_forall_mem_univ_eq, setOf_forall_mem_univ_eq] at this
+  simpa only [Finset.mem_univ, forall_const, ← funext_iff, ofPred_eq_eq_singleton] using this
 
 /-- **Uniqueness of the dimer Gibbs measure of the hexagon**: for positive weights, every dimer
 Gibbs measure gives the matching `M` the Boltzmann mass `w(M)/(w(M_a) + w(M_b))`. -/
@@ -227,7 +221,7 @@ theorem isDimerGibbs_hexConfig {w : (nnGraph (ZMod 6)).edgeSet → ℝ} (hw : �
   obtain rfl : E = Finset.univ := Finset.eq_univ_of_forall fun e' => by
     obtain ⟨a, rfl⟩ := exists_edge_eq e'
     exact hE (edge a) (Finset.mem_univ _) _ ⟨a, by simp, by simp⟩
-  rw [setOf_forall_mem_univ_eq, setOf_forall_mem_univ_eq]
+  simp only [Finset.mem_univ, forall_const, ← funext_iff, ofPred_eq_eq_singleton]
   rcases hD ω hω with rfl | rfl <;> rcases hD ω' hω' with rfl | rfl <;>
     simp_all [A, B, div_eq_mul_inv, mul_left_comm]
 

@@ -61,6 +61,12 @@ def nnGraph : SimpleGraph R :=
 theorem nnGraph_adj {a b : R} : (nnGraph R).Adj a b ↔ a ≠ b ∧ (b = a + 1 ∨ a = b + 1) :=
   fromRel_adj _ a b
 
+/-- The nearest-neighbour graph of a ring is locally finite: the neighbours of `v` lie in
+`{v - 1, v + 1}`. -/
+instance : (nnGraph R).LocallyFinite := fun v =>
+  ((toFinite {v - 1, v + 1}).subset fun w hw => by
+    rcases (nnGraph_adj.1 hw).2 with rfl | rfl <;> simp).fintype
+
 variable [Nontrivial R]
 
 theorem nnGraph_adj_add_one (a : R) : (nnGraph R).Adj a (a + 1) := by
@@ -83,10 +89,6 @@ theorem exists_edge_eq (e : (nnGraph R).edgeSet) : ∃ a, edge a = e := by
     rcases (nnGraph_adj.1 he).2 with h | h <;> dsimp only at h <;> subst h
     · exact ⟨u, rfl⟩
     · exact ⟨v, Subtype.ext Sym2.eq_swap⟩
-
-/-- `a ↦ {a, a + 1}` is onto the edges. -/
-theorem edge_surjective : Surjective (edge (R := R)) :=
-  exists_edge_eq
 
 /-- The edges at `v` are `{v − 1, v}` and `{v, v + 1}`. -/
 theorem mem_iff_eq_edge_sub_one_or_eq_edge {v : R} {e : (nnGraph R).edgeSet} :
@@ -117,7 +119,7 @@ theorem edge_injective (h2 : (2 : R) ≠ 0) : Injective (edge (R := R)) := by
 
 /-- When `2 ≠ 0`, `a ↦ {a, a + 1}` is a bijection onto the edges. -/
 theorem edge_bijective (h2 : (2 : R) ≠ 0) : Bijective (edge (R := R)) :=
-  ⟨edge_injective h2, edge_surjective⟩
+  ⟨edge_injective h2, exists_edge_eq⟩
 
 /-- When `2 ≠ 0`, a product over the edges of a finite ring is the product over `a` of the value
 at the edge `{a, a + 1}`. -/
@@ -212,10 +214,6 @@ theorem setOf_isDimerConfiguration_int :
   · refine Or.inl (funext fun e => ?_)
     obtain ⟨a, rfl⟩ := exists_edge_eq e
     simp [key a, h0, ← Int.not_odd_iff_even]
-
-instance : (nnGraph ℤ).LocallyFinite := fun v =>
-  ((toFinite {v - 1, v + 1}).subset fun w hw => by
-    rcases (nnGraph_adj.1 hw).2 with rfl | rfl <;> simp).fintype
 
 /-- Translation by `2` as an automorphism of the line. -/
 def shiftTwo : nnGraph ℤ ≃g nnGraph ℤ where
@@ -417,10 +415,6 @@ theorem setOf_isDimerConfiguration_zmod_six :
 theorem isDimerConfiguration_hexConfig (b : Bool) :
     (nnGraph (ZMod 6)).IsDimerConfiguration (hexConfig b) :=
   (Set.ext_iff.1 setOf_isDimerConfiguration_zmod_six _).2 (by cases b <;> simp)
-
-/-- The hexagon is locally finite. -/
-instance instLocallyFiniteNNGraphZModSix : (nnGraph (ZMod 6)).LocallyFinite :=
-  fun _ => Fintype.ofFinite _
 
 /-- The edges of the hexagon are finite. -/
 instance instFintypeEdgeSetNNGraphZModSix : Fintype (nnGraph (ZMod 6)).edgeSet :=
