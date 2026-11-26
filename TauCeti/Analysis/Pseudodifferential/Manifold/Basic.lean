@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 public import TauCeti.Geometry.Manifold.ContMDiffMap.LocallyFiniteSum
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Basic
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
 
 /-!
@@ -72,6 +73,8 @@ values on compactly supported functions, and hence by its chart compressions.
   transported by `TauCeti.IsProperlySupported.conj`. Since the class is defined through every
   chart of the maximal atlas, the chart compressions of the transport are chart compressions of `P`
   (`OpenPartialHomeomorph.complexChartCompression_conj`).
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_dim_eq_zero`: on a manifold modelled on `ℝ⁰`,
+  every properly supported operator has every order.
 * `TauCeti.id_mem_classicalPseudodifferentialOperators` and
   `TauCeti.mulLeft_mem_classicalPseudodifferentialOperators`: the identity and multiplication by a
   smooth function have order `0`.
@@ -345,6 +348,25 @@ theorem mem_classicalPseudodifferentialOperators_iff {m : ℝ}
               e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x :=
   Iff.rfl
 
+/-- The symbol of a chart compression by `φ` and `ψ` has compact spatial support, since every
+output of the compression is supported in the compact support of `φ`. -/
+theorem hasCompactSpatialSupport_of_eq_complexChartCompression {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {b : ClassicalSymbol n ℂ ℂ m}
+    (hb : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue b.toSymbol.coefficient u y =
+        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y) :
+    b.toSymbol.HasCompactSpatialSupport := by
+  refine Symbol.hasCompactSpatialSupport_iff_exists_tsupport_quantizeSchwartzValue_subset.2
+    ⟨tsupport φ, φ.hasCompactSupport.isCompact, fun u _ ↦ ?_⟩
+  rw [show quantizeSchwartzValue b.toSymbol.coefficient u = fun y ↦ φ y •
+      P (e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤))) (e.symm y) from
+    funext fun y ↦ by rw [hb, OpenPartialHomeomorph.complexChartCompression_apply]]
+  exact tsupport_smul_subset_left _ _
+
 /-- **Inclusion of orders.** A classical pseudodifferential operator of order `m' = m - k`,
 `k ∈ ℕ`, has order `m`. As for classical symbols (`TauCeti.ClassicalSymbol.inclusion`), orders
 with a non-integer difference are not comparable. -/
@@ -355,6 +377,27 @@ theorem classicalPseudodifferentialOperators_le {m m' : ℝ} (k : ℕ) (hk : m' 
     let ⟨a, ha⟩ := hP.2 e he φ ψ
     ⟨ClassicalSymbol.inclusion k hk a, fun u x ↦ by
       rw [ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion, ha]⟩⟩
+
+/-- **Dimension zero.** On a manifold modelled on `ℝ⁰`, every properly supported operator is a
+classical pseudodifferential operator of every order: each chart compression is multiplication by
+a constant, and on `ℝ⁰` a constant symbol is classical of every order. -/
+theorem mem_classicalPseudodifferentialOperators_of_dim_eq_zero (hn : n = 0)
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P) (m : ℝ) : P ∈ classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  set A := e.complexChartCompression he φ ψ P
+  obtain ⟨b, hb⟩ := Symbol.isSmoothing_iff.1
+    (Symbol.isSmoothing_of_dim_eq_zero hn (Symbol.const (A 1 0 • ContinuousLinearMap.id ℂ ℂ))) m
+  refine ⟨ClassicalSymbol.ofIsSmoothing b (Symbol.isSmoothing_of_dim_eq_zero hn b), fun u x ↦ ?_⟩
+  subst hn
+  -- On `ℝ⁰` the input is the constant `u x`, so the compression multiplies it by `A 1 0`.
+  have hu : ContMDiffMap.ofContDiff u (u.smooth ⊤) = u x • 1 := by
+    ext y
+    simp [Subsingleton.elim y x]
+  rw [ClassicalSymbol.toSymbol_ofIsSmoothing, hb, Symbol.quantizeSchwartzValue_const, hu,
+    map_smul, ContMDiffMap.complex_smul_apply, Subsingleton.elim x 0]
+  simp [mul_comm]
 
 /-! ### Locally finite sums of pseudodifferential operators -/
 
@@ -459,15 +502,18 @@ private theorem chartPartCutoff_re_add_im {e : OpenPartialHomeomorph M (Coordina
   push_cast
   ring
 
-/-- **The identity is a classical pseudodifferential operator of order `0`.** In a chart, its
-compression by `φ` and `ψ` is multiplication by `φ ψ`, the quantization of the symbol `φ(x) ψ(x)`
-of order `0`. -/
-theorem id_mem_classicalPseudodifferentialOperators :
-    LinearMap.id ∈ classicalPseudodifferentialOperators (n := n) (M := M) 0 := by
-  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨isProperlySupported_id, fun e he φ ψ ↦ ?_⟩
-  have hφψ : ContDiff ℝ ∞ fun y ↦ ((φ y * ψ y : ℝ) : ℂ) • ContinuousLinearMap.id ℂ ℂ :=
-    (Complex.ofRealCLM.contDiff.comp (φ.contDiff.mul ψ.contDiff)).smul contDiff_const
-  refine ⟨ClassicalSymbol.ofSpatial _ hφψ, fun u x ↦ ?_⟩
+/-- **The identity in a chart.** The compression of the identity by `φ` and `ψ` in a chart is
+multiplication by `φ ψ`, the quantization of the symbol `φ(x) ψ(x)` of order `0`. -/
+theorem ClassicalSymbol.quantizeSchwartzValue_ofSpatial_eq_complexChartCompression_id
+    {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (u : 𝓢(CoordinateSpace n, ℂ)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue
+      (ClassicalSymbol.ofSpatial
+        (fun y ↦ Complex.ofRealCLM (φ y * ψ y) • ContinuousLinearMap.id ℂ ℂ)
+        ((Complex.ofRealCLM.contDiff.comp (φ.contDiff.mul ψ.contDiff)).smul
+          contDiff_const)).toSymbol.coefficient u x =
+      e.complexChartCompression he φ ψ LinearMap.id (ContMDiffMap.ofContDiff u (u.smooth ⊤)) x := by
   rw [ClassicalSymbol.toSymbol_ofSpatial, Symbol.quantizeSchwartzValue_ofSpatial,
     OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.id_apply]
   by_cases hφ : φ x = 0
@@ -476,6 +522,15 @@ theorem id_mem_classicalPseudodifferentialOperators :
     rw [OpenPartialHomeomorph.complexCutoffPullback_apply_of_mem he _ _ (e.map_target hx),
       e.right_inv hx]
     simp [Complex.real_smul, mul_assoc]
+
+/-- **The identity is a classical pseudodifferential operator of order `0`.** In a chart, its
+compression by `φ` and `ψ` is multiplication by `φ ψ`, the quantization of the symbol `φ(x) ψ(x)`
+of order `0`
+(`TauCeti.ClassicalSymbol.quantizeSchwartzValue_ofSpatial_eq_complexChartCompression_id`). -/
+theorem id_mem_classicalPseudodifferentialOperators :
+    LinearMap.id ∈ classicalPseudodifferentialOperators (n := n) (M := M) 0 :=
+  mem_classicalPseudodifferentialOperators_iff.2 ⟨isProperlySupported_id, fun _ he φ ψ ↦
+    ⟨_, ClassicalSymbol.quantizeSchwartzValue_ofSpatial_eq_complexChartCompression_id he φ ψ⟩⟩
 
 /-- **Multiplication on the left.** If `P` is a classical pseudodifferential operator of order
 `m`, then so is `u ↦ g · P u` for every complex-valued smooth function `g`. In a chart, the

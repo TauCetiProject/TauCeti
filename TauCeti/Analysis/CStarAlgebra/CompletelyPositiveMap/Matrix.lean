@@ -26,8 +26,13 @@ into a unital C⋆-algebra in which `φ 1` has finite spectrum.
   positive maps into matrix algebras over a C⋆-algebra, built from the corner embeddings
   `CStarMatrix.blockDiagonalSingle`, with the trace formula
   `CompletelyPositiveMap.normalizedTrace_blockDiagonal_apply`, which weights the block `i` by
-  `|n i| / |Σ i, n i|`, and contractivity
-  `CompletelyPositiveMap.norm_blockDiagonal_map_one_le_one`.
+  `|n i| / |Σ i, n i|`, the norm `CompletelyPositiveMap.norm_blockDiagonal_apply`
+  (`‖diag(φ_i(a))‖ = maxᵢ ‖φ_i(a)‖`), the multiplicativity defect
+  `CompletelyPositiveMap.blockDiagonal_map_mul_sub`, which is the block-diagonal matrix of the
+  defects of the `φ_i`, and contractivity `CompletelyPositiveMap.norm_blockDiagonal_map_one_le_one`.
+* `CompletelyPositiveMap.submatrix`: the compression `x ↦ x|_{f × f}` of a matrix to the rows and
+  columns picked by `f : m → n`, unital when `f` is injective
+  (`CompletelyPositiveMap.submatrix_map_one`).
 * `CompletelyPositiveMap.compression`: the compression `T ↦ (⟪e i, T e j⟫)ᵢⱼ` of `B(H)` by a finite
   family of vectors, which is the map `T ↦ V⋆TV` for `V x = Σ xᵢ eᵢ`. It is unital when the family
   is orthonormal (`CompletelyPositiveMap.compression_map_one`), and its normalized trace is
@@ -105,6 +110,22 @@ theorem normalizedTrace_blockDiagonal_apply (φ : ∀ i, A →CP CStarMatrix (n 
         CStarMatrix.normalizedTrace (φ i a) := by
   rw [blockDiagonal_apply, CStarMatrix.normalizedTrace_blockDiagonal']
 
+/-- The norm of `diag(φ_i(a))` is the largest of the norms `‖φ_i(a)‖`, so a block-diagonal sum of
+completely positive contractions is a contraction. -/
+theorem norm_blockDiagonal_apply (φ : ∀ i, A →CP CStarMatrix (n i) (n i) B) (a : A) :
+    ‖blockDiagonal φ a‖ = ‖fun i => φ i a‖ := by
+  rw [blockDiagonal_apply, CStarMatrix.norm_ofMatrix_blockDiagonal']
+
+/-- The multiplicativity defect of the block-diagonal sum is the block-diagonal matrix of the
+multiplicativity defects of the `φ_i`. -/
+theorem blockDiagonal_map_mul_sub (φ : ∀ i, A →CP CStarMatrix (n i) (n i) B) (a b : A) :
+    blockDiagonal φ (a * b) - blockDiagonal φ a * blockDiagonal φ b =
+      ofMatrix (Matrix.blockDiagonal' fun i => ofMatrix.symm (φ i (a * b) - φ i a * φ i b)) := by
+  simp only [blockDiagonal_apply, ← CStarMatrix.blockDiagonalNonUnitalStarAlgHom_apply (R := ℂ),
+    ← map_mul, ← map_sub]
+  -- unfold the embedding and evaluate the pointwise operations blockwise
+  simp only [CStarMatrix.blockDiagonalNonUnitalStarAlgHom_apply, Pi.sub_apply, Pi.mul_apply]
+
 end BlockDiagonal
 
 section BlockDiagonalUnital
@@ -136,6 +157,48 @@ theorem norm_blockDiagonal_map_one_le_one (φ : ∀ i, A →CP CStarMatrix (n i)
   exact map_nonneg (CStarMatrix.blockDiagonalSingle ℂ B i) hi
 
 end BlockDiagonalUnital
+
+section Submatrix
+
+variable {B : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  {m n : Type*} [Fintype m] [Fintype n]
+
+/-- The compression `x ↦ x|_{f × f}` of an `n × n` matrix to the rows and columns `f : m → n` is
+completely positive. -/
+def submatrix (f : m → n) : CStarMatrix n n B →CP CStarMatrix m m B where
+  toFun x := ofMatrix ((ofMatrix.symm x).submatrix f f)
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  map_cstarMatrix_nonneg' k M hM := by
+    let eA := CStarMatrix.compStarAlgEquiv ℂ (Fin k) n B
+    let eB := CStarMatrix.compStarAlgEquiv ℂ (Fin k) m B
+    have hM' : 0 ≤ eA M := by simpa using (map_le_map_iff eA).mpr hM
+    rw [← map_le_map_iff eB, map_zero]
+    convert CStarMatrix.submatrix_nonneg (Prod.map id f) hM' using 1
+    ext ⟨a, b⟩ ⟨c, d⟩
+    simp [eA, eB, CStarMatrix.ofMatrix_apply]
+    -- The left side applies the linear map under construction entrywise, which no simp lemma
+    -- unfolds; by its `toFun` it is the entry `M a c (f b) (f d)` of the right side.
+    rfl
+
+@[simp]
+theorem submatrix_apply (f : m → n) (x : CStarMatrix n n B) (i j : m) :
+    submatrix f x i j = x (f i) (f j) :=
+  (rfl)
+
+end Submatrix
+
+section SubmatrixUnital
+
+variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+  {m n : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
+
+/-- The compression to the rows and columns picked by an injective `f` is unital. -/
+theorem submatrix_map_one {f : m → n} (hf : Function.Injective f) :
+    submatrix (B := B) f 1 = 1 :=
+  congrArg ofMatrix (Matrix.submatrix_one _ hf)
+
+end SubmatrixUnital
 
 section Compression
 

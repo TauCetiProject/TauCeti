@@ -181,13 +181,37 @@ theorem HasWeakLineDerivOn.setIntegral_fderiv_smul_eq_neg_of_continuousOn {Ω : 
 omit [NormedSpace ℝ F] in
 /-- The extension by zero of a function locally integrable up to the real axis is locally
 integrable on `Ω`. -/
-private theorem locallyIntegrableOn_indicator_setOf_im_nonneg {Ω : Opens ℂ} {g : ℂ → F}
+theorem MemLpLoc.locallyIntegrableOn_indicator_setOf_im_nonneg {Ω : Opens ℂ} {g : ℂ → F}
     (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g) :
     LocallyIntegrableOn ({z : ℂ | 0 ≤ z.im}.indicator g) Ω :=
   LocallyIntegrableOn.indicator_of_closure
     (by rw [(Complex.isClosed_setOfPred_le_im 0).closure_eq]
         exact hg.locallyIntegrableOn le_rfl (Ω.isOpen.isLocallyClosed_inter_setOfPred_le_im 0))
     (measurableSet_le measurable_const measurable_im).nullMeasurableSet
+
+/-- **Extension by zero, from integration by parts up to the axis.** If `g` and `g'` are
+integrable on compact subsets of `Ω ∩ {0 ≤ im}` and the integration-by-parts identity in the
+direction `v` holds on the upper half-plane against every smooth compactly supported test
+function on `Ω`, then the extensions by zero below the axis satisfy the weak derivative relation
+on all of `Ω`. -/
+theorem hasWeakLineDerivOn_indicator_setOf_im_nonneg_of_setIntegral [CompleteSpace F]
+    {Ω : Opens ℂ} {g g' : ℂ → F} {v : ℂ} (hg : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g)
+    (hg' : MemLpLoc 1 ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) g')
+    (hibp : ∀ φ : ℂ → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ → tsupport φ ⊆ Ω →
+      ∫ z in {z : ℂ | 0 < z.im}, fderiv ℝ φ z v • g z = -∫ z in {z : ℂ | 0 < z.im}, φ z • g' z) :
+    HasWeakLineDerivOn volume Ω ({z : ℂ | 0 ≤ z.im}.indicator g)
+      ({z : ℂ | 0 ≤ z.im}.indicator g') v := by
+  refine (hasWeakLineDerivOn_iff hg.locallyIntegrableOn_indicator_setOf_im_nonneg
+    hg'.locallyIntegrableOn_indicator_setOf_im_nonneg).2 fun φ hφ hφc hφΩ => ?_
+  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
+  have hind (a : ℂ → ℝ) (f : ℂ → F) : (fun z => a z • {z : ℂ | 0 ≤ z.im}.indicator f z) =
+      {z : ℂ | 0 ≤ z.im}.indicator fun z => a z • f z :=
+    funext fun z => (indicator_smul_apply _ _ _ _).symm
+  simp_rw [((hφ.differentiable (by simp)) _).lineDeriv_eq_fderiv]
+  rw [hind (fun z => fderiv ℝ φ z v) g, hind φ g', integral_indicator hH, integral_indicator hH,
+    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0),
+    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0)]
+  exact hibp φ hφ hφc hφΩ
 
 /-- **Extension by zero.** If `g'` is the weak derivative of `g` in the direction `v` on the upper
 part of `Ω`, with `g` continuous on `Ω ∩ {0 ≤ im}` and zero on `Ω ∩ ℝ` and `g'` integrable on
@@ -200,16 +224,8 @@ theorem HasWeakLineDerivOn.indicator_setOf_im_nonneg {Ω : Opens ℂ} {g g' : �
     HasWeakLineDerivOn volume Ω ({z : ℂ | 0 ≤ z.im}.indicator g)
       ({z : ℂ | 0 ≤ z.im}.indicator g') v := by
   have := hgW.completeSpace
-  refine (hasWeakLineDerivOn_iff (locallyIntegrableOn_indicator_setOf_im_nonneg hgc.memLpLoc)
-    (locallyIntegrableOn_indicator_setOf_im_nonneg hg')).2 fun φ hφ hφc hφΩ => ?_
-  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
-  have hind (a : ℂ → ℝ) (f : ℂ → F) : (fun z => a z • {z : ℂ | 0 ≤ z.im}.indicator f z) =
-      {z : ℂ | 0 ≤ z.im}.indicator fun z => a z • f z :=
-    funext fun z => (indicator_smul_apply _ _ _ _).symm
-  simp_rw [((hφ.differentiable (by simp)) _).lineDeriv_eq_fderiv]
-  rw [hind (fun z => fderiv ℝ φ z v) g, hind φ g', integral_indicator hH, integral_indicator hH,
-    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0),
-    setIntegral_congr_set (Complex.setOf_le_im_ae_eq 0)]
+  refine hasWeakLineDerivOn_indicator_setOf_im_nonneg_of_setIntegral hgc.memLpLoc hg'
+    fun φ hφ hφc hφΩ => ?_
   exact hgW.setIntegral_fderiv_smul_eq_neg_of_continuousOn hgc hg0 hg' hφ hφc
     fun z hz => hφΩ hz.1
 

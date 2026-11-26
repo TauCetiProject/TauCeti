@@ -42,6 +42,11 @@ Such localized perturbations need neighbourhoods of `p` that the orbits starting
 before returning. Near a point of least period `k` of a continuous self-map of a metric space,
 small closed balls are left by every orbit starting in them until time `k`
 (`TauCeti.exists_pos_closedBall_subset_and_iterate_notMem`).
+
+The hypotheses on the later orbit points hold for all points near `p` when `p` is not fixed by any
+`φ^[j]`, `0 < j < k`: in a metric space, the orbits of the points of every small enough ball around
+`p` leave that ball until time `k`, with a margin proportional to its radius
+(`Continuous.eventually_forall_mul_le_dist_iterate`).
 -/
 
 public section
@@ -119,6 +124,33 @@ theorem iterate_comp_eventuallyEq_comp_add [Add X] [ContinuousAdd X] (hk : 0 < k
     (hadd.fun_comp φ^[k])
 
 end Function
+
+namespace Continuous
+
+variable {X : Type*} [MetricSpace X] {φ : X → X} {p : X} {k : ℕ}
+
+/-- **Orbits leave small balls with a margin.** If no iterate `φ^[j] p` with `0 < j < k` equals
+`p`, then for every `c` and all small enough `ρ > 0`, the points `φ^[j] y` with
+`y ∈ closedBall p ρ` and `0 < j < k` lie at distance at least `c * ρ` from `p`. -/
+theorem eventually_forall_mul_le_dist_iterate (hφ : Continuous φ)
+    (hp : ∀ j, 0 < j → j < k → φ^[j] p ≠ p) (c : ℝ) :
+    ∀ᶠ ρ in 𝓝[>] (0 : ℝ), ∀ j, 0 < j → j < k → ∀ y ∈ Metric.closedBall p ρ,
+      c * ρ ≤ dist (φ^[j] y) p := by
+  have hc : Tendsto (fun ρ : ℝ ↦ c * ρ) (𝓝[>] 0) (𝓝 0) :=
+    tendsto_nhdsWithin_of_tendsto_nhds (by simpa using (tendsto_id (x := 𝓝 (0 : ℝ))).const_mul c)
+  refine ((eventually_all_finset (Finset.Ioo 0 k)).2 fun j hj ↦ ?_).mono fun ρ h j hj hjk ↦
+    h j (Finset.mem_Ioo.2 ⟨hj, hjk⟩)
+  obtain ⟨hj, hjk⟩ := Finset.mem_Ioo.1 hj
+  -- The iterate `φ^[j] p` lies at distance `d > 0` from `p`; points near `p` stay within `d / 2`.
+  have hd : 0 < dist (φ^[j] p) p := dist_pos.2 (hp j hj hjk)
+  obtain ⟨θ, hθ, hcont⟩ := Metric.continuousAt_iff.1 ((hφ.iterate j).continuousAt (x := p))
+    _ (half_pos hd)
+  filter_upwards [hc.eventually (gt_mem_nhds (half_pos hd)),
+    nhdsWithin_le_nhds (gt_mem_nhds hθ)] with ρ hcρ hρθ y hy
+  have h := hcont ((Metric.mem_closedBall.1 hy).trans_lt hρθ)
+  linarith [dist_triangle (φ^[j] p) (φ^[j] y) p, dist_comm (φ^[j] p) (φ^[j] y)]
+
+end Continuous
 
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {φ ψ : E → E} {p : E} {k : ℕ} {A B : E →L[𝕜] E}

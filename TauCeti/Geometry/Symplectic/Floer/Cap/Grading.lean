@@ -19,9 +19,8 @@ Conley–Zehnder index of `Φ` along the capped loop `(γ, u)` is
 `TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex`. This file shows that it is a function of the
 raw cap of `u` (`TauCeti.Floer.RawCap γ`, a homotopy class of discs bounding `γ`), extends it to
 all raw caps of `γ`, and descends it to the cap classes `TauCeti.Floer.SphericalCapClass ω c γ` of
-capped Hamiltonian Floer theory. The grading of capped orbits is `μ = -CZ`, so the recapping laws
-below say that recapping by a class `B` raises `μ` by `2 c₁(B)`, while it lowers the capped action
-by the area of `B` (`TauCeti.Floer.SphericalCapClass.action_vadd`).
+capped Hamiltonian Floer theory. At a nondegenerate orbit the index is an integer, the grading of
+the capped orbit.
 
 * **Raw caps.** Once `γ` has one smooth based cap, the index extends to all raw caps of `γ`
   (`TauCeti.Floer.RawCap.conleyZehnderIndex`). On the raw cap of every smooth based cap `u` it is
@@ -42,11 +41,51 @@ by the area of `B` (`TauCeti.Floer.SphericalCapClass.action_vadd`).
   (`TauCeti.Floer.SphericalCapClass.eq_iff_action_eq_and_conleyZehnderIndex_eq`): the two
   invariants of a capped orbit separate the cap classes, as the joint kernel defining `Γ`
   requires.
+* **Integrality.** Suppose that `Φ` starts at the identity and that its endpoint `Φ(1)` fixes no
+  nonzero vector, as the linearized flow along a nondegenerate one-periodic orbit does. In a
+  periodic symplectic frame along `γ`, `Φ` becomes a path of linear symplectic maps from the
+  identity to a map without the eigenvalue `1`, whose index is an integer
+  (`TauCeti.SymplecticForm.exists_int_conleyZehnderIndex_eq_of_one`). Hence the index of every
+  smooth cap, raw cap and cap class of `γ` is an integer
+  (`TauCeti.SmoothTwoForm.exists_int_frameConleyZehnderIndex_eq`,
+  `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq`,
+  `TauCeti.Floer.RawCap.exists_int_conleyZehnderIndex_eq`,
+  `TauCeti.Floer.SphericalCapClass.exists_int_conleyZehnderIndex_eq`). If the end value of `Φ` is
+  an endomorphism `P` of `T_(γ 0) M`, the index is an integer `k` with
+  `(-1) ^ (n - k) = sign det (1 - P)`, where `2 n` is the dimension of `M`
+  (`TauCeti.SmoothTwoForm.exists_int_frameConleyZehnderIndex_eq_and_negOnePow_eq`,
+  `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`,
+  `TauCeti.Floer.RawCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`,
+  `TauCeti.Floer.SphericalCapClass.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`), since
+  recapping changes the index by an even integer.
+* **The grading.** The grading of a cap class `TauCeti.Floer.SphericalCapClass.grading` is the
+  nearest integer to its index, which is the index itself at a nondegenerate orbit
+  (`TauCeti.Floer.SphericalCapClass.grading_eq`). Recapping by `B ∈ Γ` lowers it by `2 c₁(B)`
+  (`TauCeti.Floer.SphericalCapClass.grading_vadd`) for every `Φ`, and a cap class is determined by
+  its capped action and its grading
+  (`TauCeti.Floer.SphericalCapClass.eq_iff_action_eq_and_grading_eq`). The parity of `n + μ` is
+  that of `sign det (1 - P)` for all cap classes
+  (`TauCeti.Floer.SphericalCapClass.negOnePow_add_grading`).
+
+## Sign convention
+
+Recapping by `B` lowers both the Conley–Zehnder index, by `2 c₁(B)`, and the capped action, by the
+area of `B` (`TauCeti.Floer.SphericalCapClass.action_vadd`), so the index moves with the action, as
+the grading of capped Hamiltonian Floer theory does. In the sign convention of
+`TauCeti.SymplecticForm.conleyZehnderIndex`, which reads paths in bases in which the symplectic
+form has the matrix `Matrix.J`, the index is therefore the grading `μ` itself, not its negative.
+This agrees with the normalization of `μ` at the constant orbits of a small Morse Hamiltonian
+`ε F`, whose index is `ind_p(F) - n`
+(`exists_pos_forall_conleyZehnderIndex_eq_manifoldMorseIndex_sub` in the namespace
+`TauCeti.SmoothTwoForm.IsNondegenerate`).
+The convention `μ = -CZ` refers to the index read in complex coordinates, which has the opposite
+sign.
 
 ## Main definitions
 
 * `TauCeti.Floer.RawCap.conleyZehnderIndex`: the Conley–Zehnder index of a raw cap.
 * `TauCeti.Floer.SphericalCapClass.conleyZehnderIndex`: the Conley–Zehnder index of a cap class.
+* `TauCeti.Floer.SphericalCapClass.grading`: the grading of a cap class.
 
 ## Main results
 
@@ -56,12 +95,23 @@ by the area of `B` (`TauCeti.Floer.SphericalCapClass.action_vadd`).
   `TauCeti.Floer.SphericalCapClass.conleyZehnderIndex_vadd`: the recapping laws.
 * `TauCeti.Floer.SphericalCapClass.eq_iff_action_eq_and_conleyZehnderIndex_eq`: a cap class is
   determined by its action and its Conley–Zehnder index.
+* `TauCeti.Floer.RawCap.exists_int_conleyZehnderIndex_eq`,
+  `TauCeti.Floer.SphericalCapClass.exists_int_conleyZehnderIndex_eq`: integrality at a
+  nondegenerate orbit.
+* `TauCeti.Floer.RawCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`,
+  `TauCeti.Floer.SphericalCapClass.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`,
+  `TauCeti.Floer.SphericalCapClass.negOnePow_add_grading`: the parity of the index and of the
+  grading.
+* `TauCeti.Floer.SphericalCapClass.grading_eq`, `TauCeti.Floer.SphericalCapClass.grading_vadd`,
+  `TauCeti.Floer.SphericalCapClass.eq_iff_action_eq_and_grading_eq`: the grading is the index at a
+  nondegenerate orbit, its recapping law, and the separation of cap classes.
 
 ## References
 
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
   Math. Ser. **7**, AMS, 1999, Lecture 2 (the Conley–Zehnder index of a capped periodic orbit and
   its change under recapping).
+* D. Salamon, *Lectures on Floer homology*, Section 2.4 (the parity of the Conley–Zehnder index).
 * H. Hofer and D. A. Salamon, *Floer homology and Novikov rings*, in *The Floer memorial
   volume*, Progr. Math. 133 (1995), 483–524 (the grading of capped orbits).
 -/
@@ -138,6 +188,40 @@ theorem conleyZehnderIndex_sub_conleyZehnderIndex (D' D : RawCap γ) :
   have : Nonempty (RawCap γ) := ⟨D⟩
   conv_lhs => rw [← vsub_vadd D' D, conleyZehnderIndex_vadd]
   ring
+
+/-- **The index of a raw cap of a nondegenerate orbit is an integer.** If the family `Φ` starts at
+the identity and its endpoint `Φ(1)` fixes no nonzero vector, as the linearized flow along a
+nondegenerate periodic orbit does, the Conley–Zehnder index of every raw cap of `γ` is an
+integer. -/
+theorem exists_int_conleyZehnderIndex_eq (hΦ₀ : ∀ v, Φ 0 v = v) (hΦ₁ : ∀ v, Φ 1 v = v → v = 0)
+    (D : RawCap γ) : ∃ k : ℤ, conleyZehnderIndex h hcap hΦ hΦσ D = k := by
+  obtain ⟨k, hk⟩ := hcap.choose_spec.exists_int_conleyZehnderIndex_eq h hΦ hΦσ hΦ₀ hΦ₁
+  refine ⟨k - 2 * h.firstChernHom x (D -ᵥ hcap.choose_spec.homotopyClass), ?_⟩
+  rw [conleyZehnderIndex_def, hk]
+  push_cast
+  ring
+
+/-- **The parity of the index of a raw cap.** If `Φ` starts at the identity and its end value is an
+endomorphism `P` of `T_(γ 0) M` without the eigenvalue `1`, as for the linearized flow along a
+nondegenerate periodic orbit, then the Conley–Zehnder index of every raw cap of `γ` is an integer
+`k` with `(-1) ^ (n - k) = sign det (1 - P)`, where `2 n` is the dimension of `M`. -/
+theorem exists_int_conleyZehnderIndex_eq_and_negOnePow_eq (hΦ₀ : ∀ v, Φ 0 v = v)
+    {P : TangentSpace I (γ 0) →ₗ[ℝ] TangentSpace I (γ 0)} (hP : ∀ v, Φ 1 v = P v)
+    (hPdet : LinearMap.det (1 - P) ≠ 0) (D : RawCap γ) :
+    ∃ k : ℤ, conleyZehnderIndex h hcap hΦ hΦσ D = k ∧
+      ((((Module.finrank ℝ E / 2 : ℕ) : ℤ) - k).negOnePow : ℤ) =
+        SignType.sign (LinearMap.det (1 - P)) := by
+  obtain ⟨k, hk, hpar⟩ :=
+    hcap.choose_spec.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq h hΦ hΦσ hΦ₀ hP hPdet
+  -- The index of `D` differs from that of the chosen smooth cap by an even integer.
+  set a := h.firstChernHom x (D -ᵥ hcap.choose_spec.homotopyClass)
+  refine ⟨k - 2 * a, ?_, ?_⟩
+  · rw [conleyZehnderIndex_def, hk]
+    push_cast
+    ring
+  · rw [← hpar, show ((Module.finrank ℝ E / 2 : ℕ) : ℤ) - (k - 2 * a) =
+      ((Module.finrank ℝ E / 2 : ℕ) : ℤ) - k + 2 * a by ring, Int.negOnePow_add,
+      Int.negOnePow_two_mul, mul_one]
 
 end RawCap
 
@@ -223,6 +307,100 @@ theorem eq_iff_action_eq_and_conleyZehnderIndex_eq [CompactSpace M] [I.Boundaryl
       conleyZehnderIndex h hc hcap hΦ hΦσ q' = conleyZehnderIndex h hc hcap hΦ hΦσ q := by
   rw [conleyZehnderIndex_eq_conleyZehnderIndex_iff, eq_iff_action_eq_and_chern_vsub_eq_zero hω]
 
+/-- **The index of a cap class of a nondegenerate orbit is an integer.** If the family `Φ` starts
+at the identity and its endpoint `Φ(1)` fixes no nonzero vector, as the linearized flow along a
+nondegenerate periodic orbit does, the Conley–Zehnder index of every cap class of `γ` is an
+integer. -/
+theorem exists_int_conleyZehnderIndex_eq (hΦ₀ : ∀ v, Φ 0 v = v) (hΦ₁ : ∀ v, Φ 1 v = v → v = 0)
+    (q : SphericalCapClass ω c γ) : ∃ k : ℤ, conleyZehnderIndex h hc hcap hΦ hΦσ q = k := by
+  induction q using induction_on with
+  | h D =>
+    rw [conleyZehnderIndex_mk]
+    exact RawCap.exists_int_conleyZehnderIndex_eq h hcap hΦ hΦσ hΦ₀ hΦ₁ D
+
+/-- **The parity of the index of a cap class.** If `Φ` starts at the identity and its end value is
+an endomorphism `P` of `T_(γ 0) M` without the eigenvalue `1`, as for the linearized flow along a
+nondegenerate periodic orbit, then the Conley–Zehnder index of every cap class of `γ` is an
+integer `k` with `(-1) ^ (n - k) = sign det (1 - P)`, where `2 n` is the dimension of `M`. -/
+theorem exists_int_conleyZehnderIndex_eq_and_negOnePow_eq (hΦ₀ : ∀ v, Φ 0 v = v)
+    {P : TangentSpace I (γ 0) →ₗ[ℝ] TangentSpace I (γ 0)} (hP : ∀ v, Φ 1 v = P v)
+    (hPdet : LinearMap.det (1 - P) ≠ 0) (q : SphericalCapClass ω c γ) :
+    ∃ k : ℤ, conleyZehnderIndex h hc hcap hΦ hΦσ q = k ∧
+      ((((Module.finrank ℝ E / 2 : ℕ) : ℤ) - k).negOnePow : ℤ) =
+        SignType.sign (LinearMap.det (1 - P)) := by
+  induction q using induction_on with
+  | h D =>
+    rw [conleyZehnderIndex_mk]
+    exact RawCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq h hcap hΦ hΦσ hΦ₀ hP hPdet D
+
+/-- The **grading** of a cap class: the nearest integer to its Conley–Zehnder index. When `Φ`
+starts at the identity and `Φ(1)` fixes no nonzero vector, as for the linearized flow along a
+nondegenerate one-periodic orbit, it is the index itself
+(`TauCeti.Floer.SphericalCapClass.grading_eq`), and it is the grading `μ` of the capped orbit in
+capped Hamiltonian Floer theory. Taking the nearest integer makes the recapping laws hold for every
+`Φ`. -/
+def grading (q : SphericalCapClass ω c γ) : ℤ :=
+  round (conleyZehnderIndex h hc hcap hΦ hΦσ q)
+
+/-- The defining equation of `TauCeti.Floer.SphericalCapClass.grading`. -/
+theorem grading_def (q : SphericalCapClass ω c γ) :
+    grading h hc hcap hΦ hΦσ q = round (conleyZehnderIndex h hc hcap hΦ hΦσ q) :=
+  (rfl)
+
+/-- At a nondegenerate orbit the grading of a cap class is its Conley–Zehnder index. -/
+theorem grading_eq (hΦ₀ : ∀ v, Φ 0 v = v) (hΦ₁ : ∀ v, Φ 1 v = v → v = 0)
+    (q : SphericalCapClass ω c γ) :
+    (grading h hc hcap hΦ hΦσ q : ℝ) = conleyZehnderIndex h hc hcap hΦ hΦσ q := by
+  obtain ⟨k, hk⟩ := exists_int_conleyZehnderIndex_eq h hc hcap hΦ hΦσ hΦ₀ hΦ₁ q
+  rw [grading_def, hk, round_intCast]
+
+/-- **The parity of the grading.** If `Φ` starts at the identity and ends at an endomorphism `P`
+of `T_(γ 0) M` without the eigenvalue `1`, then `(-1) ^ (n + μ) = sign det (1 - P)` for the
+grading `μ` of every cap class of `γ`, where `2 n` is the dimension of `M`; equivalently
+`(-1) ^ (n - μ) = sign det (1 - P)`. In particular the parity of `n + μ` is the same for all cap
+classes of `γ`. -/
+theorem negOnePow_add_grading (hΦ₀ : ∀ v, Φ 0 v = v)
+    {P : TangentSpace I (γ 0) →ₗ[ℝ] TangentSpace I (γ 0)} (hP : ∀ v, Φ 1 v = P v)
+    (hPdet : LinearMap.det (1 - P) ≠ 0) (q : SphericalCapClass ω c γ) :
+    ((((Module.finrank ℝ E / 2 : ℕ) : ℤ) + grading h hc hcap hΦ hΦσ q).negOnePow : ℤ) =
+      SignType.sign (LinearMap.det (1 - P)) := by
+  obtain ⟨k, hk, hpar⟩ :=
+    exists_int_conleyZehnderIndex_eq_and_negOnePow_eq h hc hcap hΦ hΦσ hΦ₀ hP hPdet q
+  rwa [grading_def, hk, round_intCast, Int.negOnePow_add, ← Int.negOnePow_neg k,
+    ← Int.negOnePow_add, ← sub_eq_add_neg]
+
+/-- **Two cap classes differ by a class of the period group.** The gradings of two cap classes of
+`γ` differ by minus the degree `2 c₁` of the class by which they differ. -/
+theorem grading_sub_grading (q' q : SphericalCapClass ω c γ) :
+    grading h hc hcap hΦ hΦσ q' - grading h hc hcap hΦ hΦσ q =
+      -PeriodGroup.degree _ _ (q' -ᵥ q) := by
+  have hq : conleyZehnderIndex h hc hcap hΦ hΦσ q' = conleyZehnderIndex h hc hcap hΦ hΦσ q +
+      ((-PeriodGroup.degree _ _ (q' -ᵥ q) : ℤ) : ℝ) := by
+    rw [Int.cast_neg, ← conleyZehnderIndex_sub_conleyZehnderIndex h hc hcap hΦ hΦσ q' q]
+    ring
+  rw [grading_def, grading_def, hq, round_add_intCast]
+  ring
+
+/-- Two cap classes of `γ` have the same grading exactly when the class of the period group by
+which they differ has first Chern number zero. -/
+theorem grading_eq_grading_iff {q' q : SphericalCapClass ω c γ} :
+    grading h hc hcap hΦ hΦσ q' = grading h hc hcap hΦ hΦσ q ↔
+      PeriodGroup.chern _ _ (q' -ᵥ q) = 0 := by
+  rw [← sub_eq_zero, grading_sub_grading, neg_eq_zero, PeriodGroup.degree_apply, mul_eq_zero]
+  simp
+
+/-- **A cap class is determined by its action and its grading.** For a closed `C¹` two-form `α`
+whose integral over every sphere is the value of `ω` on its Hurewicz class and any Hamiltonian
+`Ham`, two cap classes of `γ` are equal exactly when they have the same capped action and the same
+grading. -/
+theorem eq_iff_action_eq_and_grading_eq [CompactSpace M] [I.Boundaryless]
+    {α : RoughForm I M ℝ 2} {hα : IsSmoothForm I 1 α} {hdα : mextDeriv α = 0}
+    (hω : ∀ a, ω (hurewiczIntHom M x 1 a) = sphereIntegralHom x hα hdα a) (Ham : ℝ → M → ℝ)
+    {q' q : SphericalCapClass ω c γ} :
+    q' = q ↔ action hα hdα hω Ham hcap q' = action hα hdα hω Ham hcap q ∧
+      grading h hc hcap hΦ hΦσ q' = grading h hc hcap hΦ hΦσ q := by
+  rw [grading_eq_grading_iff, eq_iff_action_eq_and_chern_vsub_eq_zero hω]
+
 variable [PathConnectedSpace M]
 
 /-- **The recapping law on cap classes.** Recapping a cap class by a class `B` of the period group
@@ -232,6 +410,14 @@ theorem conleyZehnderIndex_vadd (B : SphericalPeriodGroup ω c) (q : SphericalCa
     conleyZehnderIndex h hc hcap hΦ hΦσ (B +ᵥ q) =
       -(PeriodGroup.degree _ _ B : ℝ) + conleyZehnderIndex h hc hcap hΦ hΦσ q :=
   lift_vadd _ _ _ B q
+
+/-- **The recapping law of the grading.** Recapping a cap class by a class `B` of the period group
+lowers its grading by the degree `2 c₁(B)` of `B`, as it lowers the capped action by the area of
+`B` (`TauCeti.Floer.SphericalCapClass.action_vadd`). -/
+@[simp]
+theorem grading_vadd (B : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
+    grading h hc hcap hΦ hΦσ (B +ᵥ q) = -PeriodGroup.degree _ _ B + grading h hc hcap hΦ hΦσ q := by
+  rw [grading_def, grading_def, conleyZehnderIndex_vadd, ← Int.cast_neg, round_intCast_add]
 
 end SphericalCapClass
 
