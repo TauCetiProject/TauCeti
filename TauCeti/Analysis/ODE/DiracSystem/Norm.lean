@@ -63,7 +63,8 @@ entry of `M_q(t, z)` has modulus at most `exp(t|z| + ∫₀ᵗ |q|)`. -/
 theorem norm_diracFundamentalMatrix_apply_le (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t)
     (z : ℂ) (i j : Fin 2) :
     ‖diracFundamentalMatrix q t z i j‖ ≤ Real.exp (t * ‖z‖ + ∫ s in (0 : ℝ)..t, ‖q s‖) :=
-  (norm_apply_le_l2_opNorm _ i j).trans (norm_toEuclideanCLM_diracFundamentalMatrix_le hq ht z)
+  ((norm_apply_le_l2_opNorm _ i j).trans_eq (cstar_norm_def _)).trans
+    (norm_toEuclideanCLM_diracFundamentalMatrix_le hq ht z)
 
 /-- **A constant potential at `z = 0`.** For a constant `c`,
 `M_c(t, 0) = cosh(t|c|) + (sinh(t|c|)/|c|) Ω Q_c`, with
