@@ -198,9 +198,10 @@ theorem translateCoeff_zero (c : Fin n → R) : translateCoeff 0 c = c := by
 /-- Translating by `a + b` is translating by `a` and then by `b`. -/
 theorem translateCoeff_add (a b : R) (c : Fin n → R) :
     translateCoeff (a + b) c = translateCoeff b (translateCoeff a c) := by
-  rw [← monicOfCoeff_inj, monicOfCoeff_translateCoeff, monicOfCoeff_translateCoeff,
-    monicOfCoeff_translateCoeff, comp_assoc, add_comp, X_comp, C_comp, map_add, add_assoc,
-    add_comm (C b)]
+  rw [← monicOfCoeff_inj]
+  simp only [monicOfCoeff_translateCoeff, comp_assoc, add_comp, X_comp, C_comp, map_add]
+  congr 1
+  ring
 
 end Translate
 
