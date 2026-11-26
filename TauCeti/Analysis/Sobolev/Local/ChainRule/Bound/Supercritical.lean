@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Norm
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Calculus.Hadamard.Basic
 import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Supercritical
-import TauCeti.Data.ENNReal.Mul
 import TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Supercritical
+import TauCeti.Data.ENNReal.Mul
 
 /-!
 # Local bounds for composition for `kp > 2`, including `p ≤ 2`
@@ -47,12 +49,18 @@ stated once for a domain shape `T`, measuring norms on `T U` and `T Ω`
 bound here, and `U ↦ U ∩ {0 ≤ im}` gives the bound on half-discs
 `TauCeti.exists_eLpNormWkp_comp_le_of_two_lt_mul_halfPlane`.
 
+For a `C^{k+1}` outer map, Hadamard's formula expresses `g ∘ v - g ∘ u` as a
+`Cᵏ` coefficient of the pair `(u, v)` applied to `v - u`. The composition and product
+estimates then give a local Lipschitz bound with a coefficient polynomial in the input norms.
+
 ## Main declarations
 
 * `TauCeti.exists_eLpNormWkp_comp_le_of_two_lt_mul`: the local bound for `g ∘ u` in `W^{k,p}`
   for `kp > 2`.
 * `TauCeti.exists_eLpNormWkp_comp_le_of_two_lt_mul_of_shape`: the same bound on `T U` and `T Ω`
   for a domain shape `T` with product bounds, shared with the bound on half-discs.
+* `TauCeti.exists_eLpNormWkp_comp_sub_le_of_two_lt_mul`: the local Lipschitz bound for
+  supercritical Sobolev composition.
 
 ## References
 
@@ -376,5 +384,40 @@ theorem exists_eLpNormWkp_comp_le_of_two_lt_mul {p : ℝ≥0} (hp : 1 < p) {k : 
     (fun _ _ _ _ _ _ _ _ _ _ _ hca hcb habc _ _ hU hUΩ =>
       exists_eLpNormWkp_bilin_le_of_two_lt_add_sub_mul hp hca hcb habc hU hUΩ)
     hkp hW hg hL hLW hU hUΩ
+
+/-- Local Lipschitz estimate for supercritical Sobolev composition. The constant is uniform for
+continuous maps taking their values in the prescribed compact set `L ⊆ W`. -/
+theorem exists_eLpNormWkp_comp_sub_le_of_two_lt_mul {p : ℝ≥0} (hp : 1 < p) {k : ℕ}
+    (hkp : 2 < (k : ℝ≥0) * p) {g : F → G} {W L : Set F} (hW : IsOpen W)
+    (hg : ContDiffOn ℝ (k + 1) g W) (hL : IsCompact L) (hLW : L ⊆ W) {K : Set ℂ}
+    (hK : IsCompact (closure K)) (hKΩ : closure K ⊆ Ω) :
+    ∃ C : ℝ≥0, ∀ (u v : ℂ → F), ContinuousOn u Ω → ContinuousOn v Ω →
+      MapsTo u Ω L → MapsTo v Ω L →
+        eLpNormWkp p K k (g ∘ v - g ∘ u) ≤
+          C * (1 + (eLpNormWkp p Ω k u + eLpNormWkp p Ω k v)) ^ k * eLpNormWkp p Ω k (v - u) := by
+  obtain ⟨f, hf, -, heq⟩ := hL.exists_contDiff_eventuallyEq (k + 1)
+    fun x hx ↦ (hg.contDiffAt (hW.mem_nhds (hLW hx)))
+  let A : F × F → F →L[ℝ] G := fun q ↦ hadamardFactor f q.1 q.2
+  have hA : ContDiff ℝ k A :=
+    ContDiff.contDiff_hadamardFactor_uncurry_of_succ k f (by simpa using hf)
+  obtain ⟨V, hKV, hVΩ, hVc⟩ := Opens.exists_between_and_isCompact_closure hK hKΩ
+  obtain ⟨a, ha⟩ := exists_eLpNormWkp_clm_apply_le_of_two_lt_mul (F := F) (G := G) hp hkp hK hKV
+  obtain ⟨b, hb⟩ := exists_eLpNormWkp_comp_le_of_two_lt_mul hp hkp isOpen_univ hA.contDiffOn
+    (hL.prod hL) (subset_univ _) hVc hVΩ
+  refine ⟨a * b, fun u v huc hvc hu hv ↦ ?_⟩
+  let P := fun z ↦ (u z, v z)
+  have hcoeff := hb P (huc.prodMk hvc) (fun z hz ↦ ⟨hu hz, hv hz⟩)
+  have hfactor : (g ∘ v - g ∘ u) =ᵐ[volume.restrict K] fun z ↦ A (P z) ((v - u) z) := by
+    -- Restrict from the open domain since the norm set itself need not be measurable.
+    apply ae_restrict_of_ae_restrict_of_subset (subset_closure.trans hKΩ)
+    filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with z hz
+    simp only [Pi.sub_apply, Function.comp_apply]
+    rw [← (heq _ (hu hz)).eq_of_nhds, ← (heq _ (hv hz)).eq_of_nhds]
+    exact ContDiff.sub_eq_hadamardFactor_apply f (hf.of_le (by norm_cast; omega)) _ _
+  rw [eLpNormWkp_congr_ae hfactor, ENNReal.coe_mul, mul_assoc (a : ℝ≥0∞)]
+  refine (ha (A ∘ P) (v - u)).trans (mul_le_mul' (mul_le_mul' le_rfl (hcoeff.trans ?_))
+    (eLpNormWkp_mono_set (subset_closure.trans hVΩ)))
+  gcongr
+  exact eLpNormWkp_prodMk_le (by exact_mod_cast hp.le)
 
 end TauCeti
