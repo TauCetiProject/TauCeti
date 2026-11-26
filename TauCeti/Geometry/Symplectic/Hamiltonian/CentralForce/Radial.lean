@@ -290,6 +290,11 @@ theorem hasFDerivAt_radialProjection {x : V × V} (hq : x.1 ≠ 0) :
     field_simp
     ring
 
+/-- The radial projection `(q, p) ↦ (‖q‖, p_r)` is continuous away from the collision set. -/
+theorem continuousAt_radialProjection {x : V × V} (hq : x.1 ≠ 0) :
+    ContinuousAt radialProjection x :=
+  (hasFDerivAt_radialProjection hq).continuousAt
+
 /-! ### Uniform circular motion -/
 
 /-- The uniform circular motion `q(t) = r₀ (cos(ω t) u + sin(ω t) w)` of radius `r₀` and angular
