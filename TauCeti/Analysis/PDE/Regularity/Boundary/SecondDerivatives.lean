@@ -7,12 +7,14 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.FlatBoundary
 public import TauCeti.Analysis.PDE.Regularity.HalfSpace
-import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
+import TauCeti.Analysis.InnerProductSpace.OrthogonalSpanSingleton
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
 import TauCeti.Analysis.PDE.Regularity.Hessian.DivergenceForm
 import TauCeti.Analysis.Sobolev.W1p.Extension
+import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Analysis.Sobolev.W1p.Symmetry
+import TauCeti.Analysis.Sobolev.WeakDeriv.NormalTangential
 import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -28,8 +30,8 @@ Let `H = {x | c₀ < ⟪x, ν⟫}` be an open half-space of `ℝ^{n+1}`, `ν ≠
 that is `∫_H ⟨a ∇u, ∇v⟩ = ∫_H f v` for every `v ∈ H¹₀(H)`, where `a` is uniformly elliptic and
 Lipschitz, as a bilinear form, on all of `H`, `a` is uniformly elliptic on a ball `B(y₀, r)` about
 a point `y₀` of the boundary hyperplane and its entries are `C¹` with first derivatives `α`-Hölder
-there, and `f ∈ L²(H)` is `α`-Hölder up to the boundary there. This file proves that all second
-derivatives of `u` are `α`-Hölder up to the boundary near `y₀`, so that `u` is `C^{2,α}` there.
+there, and `f ∈ L²(H)` is `α`-Hölder up to the boundary there. This file proves that the weak second
+derivatives of `u` have `α`-Hölder precise representatives up to the boundary near `y₀`.
 
 * **Tangential directions.** For every `e` with `⟪e, ν⟫ = 0`, the weak derivative `∂ₑu` lies in
   `H¹₀(H)`, and the precise representative of its gradient for the Lebesgue measure on `H` is
@@ -162,17 +164,6 @@ private theorem preciseRepresentative_gradient_extendRestrict {U H : Opens E}
   rw [Measure.restrict_restrict U.isOpen.measurableSet]
   exact gradient_extendRestrict_ae_eq w
 
-/-- For `D ∈ W^{1,2}(U)`, an open set `s` and a set `t` with `s ∩ t ⊆ U`, the gradient of `D`
-agrees almost everywhere on `s ∩ t` with its precise representative for the Lebesgue measure on
-`t`. -/
-private theorem gradient_ae_eq_preciseRepresentative_restrict {U : Opens E} (D : W1p volume U 2)
-    {s t : Set E} (hs : IsOpen s) (hst : s ∩ t ⊆ U) :
-    (W1p.gradient D : E → E) =ᵐ[volume.restrict (s ∩ t)]
-      preciseRepresentative (volume.restrict t) (W1p.gradient D) :=
-  ae_eq_restrict_inter_preciseRepresentative_restrict hs
-    (((Lp.memLp (W1p.gradient D)).mono_measure (Measure.restrict_mono hst le_rfl)).locallyIntegrable
-      one_le_two)
-
 /-- **Step 1: `∇u` is Hölder up to the boundary.** For the solution `u ∈ H¹₀(H)` of
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, with `a` uniformly elliptic on `B(y₀, r)` and `α`-Hölder on
 `closedBall y₀ (3r / 4)`, and `f` bounded on the points of `H` in that ball, the precise
@@ -271,7 +262,7 @@ private theorem exists_holderOnWith_and_ae_eq_gradient {α : ℝ≥0} (hα : 0 <
       simpa only [Function.comp_apply, ((hH x).1 hxH).le, ↓reduceIte] using
         hMf x (self_subset_thickening hδf _ hx)) hu
   -- The precise representative agrees with `∇u` almost everywhere on `B ∩ H`.
-  exact ⟨_, ⟨CP, hP⟩, (gradient_ae_eq_preciseRepresentative_restrict (extendRestrict u B)
+  exact ⟨_, ⟨CP, hP⟩, (W1p.gradient_ae_eq_preciseRepresentative_restrict (extendRestrict u B)
     B.isOpen inter_subset_left).symm.trans
     (gradient_extendRestrict_ae_eq u)⟩
 
@@ -472,35 +463,6 @@ private theorem preciseRepresentative_eq_of_ae_eq_of_holderOnWith {α : ℝ≥0}
     simp only [Function.comp_apply, ((hH y).1 hyB.2).le, ↓reduceIte, hy]
   · simp only [Function.comp_apply, hx.2.out, ↓reduceIte]
 
-/-- For a unit vector `e`, every `z` is `⟪e, z⟫ e` plus its projection onto `(ℝ ∙ e)ᗮ`. -/
-private theorem inner_smul_add_starProjection_eq {e : E} (he : ‖e‖ = 1) (z : E) :
-    ⟪e, z⟫_ℝ • e + (ℝ ∙ e)ᗮ.starProjection z = z := by
-  rw [← Submodule.starProjection_unit_singleton ℝ he,
-    Submodule.starProjection_add_starProjection_orthogonal]
-
-/-- For `ν ≠ 0`, the projection onto the orthogonal complement of the unit normal `ν / ‖ν‖` is
-tangential: orthogonal to `ν`. -/
-private theorem inner_starProjection_orthogonal_eq_zero {ν : E} (hν : ν ≠ 0) (z : E) :
-    ⟪(ℝ ∙ (‖ν‖⁻¹ • ν))ᗮ.starProjection z, ν⟫_ℝ = 0 := by
-  have h : ⟪(ℝ ∙ (‖ν‖⁻¹ • ν))ᗮ.starProjection z, ‖ν‖⁻¹ • ν⟫_ℝ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_left.1 (Submodule.starProjection_apply_mem _ z)
-  rw [real_inner_smul_right, mul_eq_zero] at h
-  exact h.resolve_left (inv_ne_zero (norm_ne_zero_iff.2 hν))
-
-/-- For a unit vector `e`, weak derivatives `d` of `u` along `e` and `dτ` along the projection of
-`z` onto `(ℝ ∙ e)ᗮ` combine into the weak derivative `⟪e, z⟫ d + dτ` of `u` along `z`. -/
-private theorem hasWeakLineDerivOn_smul_add_of_normal_tangential {H : Opens E} {e : E}
-    (he : ‖e‖ = 1) {u d dτ : W1p volume H 2}
-    (hd : HasWeakLineDerivOn volume H (W1p.value u) (W1p.value d) e) {z : E}
-    (hdτ : HasWeakLineDerivOn volume H (W1p.value u) (W1p.value dτ)
-      ((ℝ ∙ e)ᗮ.starProjection z)) :
-    HasWeakLineDerivOn volume H (W1p.value u) (W1p.value (⟪e, z⟫_ℝ • d + dτ)) z := by
-  have h := (hd.smul_direction ⟪e, z⟫_ℝ).add_direction hdτ
-  rw [inner_smul_add_starProjection_eq he] at h
-  refine h.congr_ae_deriv ?_
-  filter_upwards [W1p.value_add_ae (⟪e, z⟫_ℝ • d) dτ, W1p.value_smul_ae ⟪e, z⟫_ℝ d] with x h1 h2
-  simp only [h1, h2, Pi.add_apply]
-
 /-- **Solving the equation for the normal second derivative, pointwise.** Let `e` be a unit vector,
 `P` the orthogonal projection onto `(ℝ ∙ e)ᗮ` and `(bᵢ)` the standard basis. Suppose that the
 vector `v`, the gradient of `∂ₑu`, and the vectors `t i`, the gradients of `∂_{P bᵢ} u`, satisfy the
@@ -522,7 +484,7 @@ private theorem eq_smul_add_sum_of_sum_sum_eq_neg {e : E} (he : ‖e‖ = 1)
       ∑ k, ⟪t k, e⟫_ℝ • EuclideanSpace.basisFun (Fin (n + 1)) ℝ k := by
   set b := EuclideanSpace.basisFun (Fin (n + 1)) ℝ
   set P := (ℝ ∙ e)ᗮ.starProjection
-  have hdec := inner_smul_add_starProjection_eq he
+  have hdec := inner_smul_add_starProjection_eq ℝ he
   -- `⟪v, bᵢ⟫ = ⟪e, bᵢ⟫ ⟪v, e⟫ + ⟪t i, e⟫`.
   have hvb (i : Fin (n + 1)) : ⟪v, b i⟫_ℝ = ⟪e, b i⟫_ℝ * ⟪v, e⟫_ℝ + ⟪t i, e⟫_ℝ := by
     conv_lhs => rw [← hdec (b i)]
@@ -680,7 +642,7 @@ private theorem gradient_ae_eq_normalField {H : Opens E} {e : E} (he : ‖e‖ =
   -- The coordinate derivatives `∂ⱼu = ⟪e, bⱼ⟫ ∂ₑu + ∂_{P bⱼ}u`.
   have hDf (j : Fin (n + 1)) : HasWeakLineDerivOn volume H (W1p.value (u : W1p volume H 2))
       (W1p.value (⟪e, b j⟫_ℝ • d + (dt j : W1p volume H 2))) (b j) :=
-    hasWeakLineDerivOn_smul_add_of_normal_tangential he hd (hdt j)
+    by rw [W1p.value_add, W1p.value_smul]; exact hd.smul_add_of_normal_tangential he (hdt j)
   -- The equation holds almost everywhere on `V`, where the coefficients are `C¹`.
   have hstrong := ae_sum_sum_eq_neg_of_hasWeakLineDerivOn (fun i j => (ha i j).mono hVr)
     (locallyIntegrableOn_of_locallyIntegrable_restrict ((hf.mono_measure
@@ -752,7 +714,9 @@ private theorem exists_hasWeakLineDerivOn_normal_and_ae_eq_holderOnWith {α : �
   -- representatives `gₖ` on the closed half-ball, and the Hölder representative `Pu` of `∇u`.
   choose dt hdt Ct hCt using fun k =>
     exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient hα hα1 hν hH
-      hell hK hy₀ hr ha hellB hda hf hfH hu (inner_starProjection_orthogonal_eq_zero hν (b k))
+      hell hK hy₀ hr ha hellB hda hf hfH hu
+        (inner_starProjection_orthogonal_singleton_smul_eq_zero ℝ
+          (inv_ne_zero (norm_ne_zero_iff.2 hν)) ν (b k))
   obtain ⟨Pu, ⟨CPu, hPu⟩, hPuae⟩ :=
     exists_holderOnWith_and_ae_eq_gradient hα hα1 hν hH hy₀ hr ha hellB hf hfH hu
   refine ⟨d, hd, _, exists_holderOnWith_normalField_closedBall hα hα1 hν hy₀ hr ha hellB hda hfH
@@ -760,8 +724,8 @@ private theorem exists_hasWeakLineDerivOn_normal_and_ae_eq_holderOnWith {α : �
     fun k => ⟨Ct k, hCt k⟩, gradient_ae_eq_normalField he hr ha hellB hf hu hd hdt
     (ae_restrict_of_ae_restrict_of_subset
       (inter_subset_inter_left _ (ball_subset_ball (by linarith))) hPuae)
-    fun k => gradient_ae_eq_preciseRepresentative_restrict (dt k : W1p volume H 2) isOpen_ball
-      inter_subset_right⟩
+    fun k => W1p.gradient_ae_eq_preciseRepresentative_restrict (dt k : W1p volume H 2)
+      isOpen_ball inter_subset_right⟩
 
 /-- **Every second derivative is Hölder up to a flat boundary.** Let `0 < α < 1`, let
 `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, and let `u ∈ H¹₀(H)` be a weak solution of the Dirichlet
@@ -774,8 +738,8 @@ boundary near each point of `B(y₀, r) ∩ {c₀ ≤ ⟪y, ν⟫}`.
 
 Then for every direction `w`, normal ones included, the weak derivative `∂_w u` exists in `H¹(H)`,
 and the precise representative of its gradient for the Lebesgue measure on `H` is `α`-Hölder on
-the closed half-ball `closedBall y₀ (r / 8) ∩ {c₀ ≤ ⟪y, ν⟫}`. So all second derivatives of `u`
-extend `α`-Hölder continuously up to the flat boundary near `y₀`: `u` is `C^{2,α}` there. For a
+the closed half-ball `closedBall y₀ (r / 8) ∩ {c₀ ≤ ⟪y, ν⟫}`. So the weak second derivatives of `u`
+have `α`-Hölder representatives up to the flat boundary near `y₀`. For a
 tangential `w` the derivative `∂_w u` even lies in `H¹₀(H)`, with the Hölder bound on the larger
 half-ball `closedBall y₀ (r / 4) ∩ {c₀ ≤ ⟪y, ν⟫}`
 (`exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient`). -/
@@ -806,10 +770,12 @@ theorem exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_res
     hα1 hν hH hell hK hy₀ hr ha hellB hda hf hfH hu
   obtain ⟨dτ, hdτ, Cτ, hτ⟩ :=
     exists_hasWeakLineDerivOn_and_holderOnWith_preciseRepresentative_restrict_gradient hα hα1 hν hH
-      hell hK hy₀ hr ha hellB hda hf hfH hu (inner_starProjection_orthogonal_eq_zero hν w)
+      hell hK hy₀ hr ha hellB hda hf hfH hu
+        (inner_starProjection_orthogonal_singleton_smul_eq_zero ℝ
+          (inv_ne_zero (norm_ne_zero_iff.2 hν)) ν w)
   -- Split `w` into its normal part `⟪e, w⟫ e` and its tangential part.
   refine ⟨⟪e, w⟫_ℝ • d + (dτ : W1p volume H 2),
-    hasWeakLineDerivOn_smul_add_of_normal_tangential he hd hdτ, ?_⟩
+    by rw [W1p.value_add, W1p.value_smul]; exact hd.smul_add_of_normal_tangential he hdτ, ?_⟩
   · -- The gradient agrees on `B(y₀, r / 4) ∩ H` with `⟪e, w⟫ G + ∇(∂_{P w} u)`, whose precise
     -- representative is Hölder on the closed half-ball of radius `r / 4`.
     set gτ := preciseRepresentative (volume.restrict (H : Set E))
@@ -821,7 +787,7 @@ theorem exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_res
           (W1p.gradient_add_ae (⟪e, w⟫_ℝ • d) (dτ : W1p volume H 2)),
         ae_restrict_of_ae_restrict_of_subset inter_subset_right
           (W1p.gradient_smul_ae ⟪e, w⟫_ℝ d), hdG,
-        gradient_ae_eq_preciseRepresentative_restrict (dτ : W1p volume H 2) isOpen_ball
+        W1p.gradient_ae_eq_preciseRepresentative_restrict (dτ : W1p volume H 2) isOpen_ball
           inter_subset_right]
         with x h1 h2 h3 h4
       simp only [h1, h2, h3, h4, Pi.add_apply, Pi.smul_apply, gτ]
