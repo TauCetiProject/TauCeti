@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.CylindricalEnd
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Basic
-import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
@@ -67,7 +66,7 @@ asymptotic orbit are proved in `TauCeti.Geometry.Symplectic.Floer.Plane.Exponent
 public section
 
 open Set Real Filter Function MeasureTheory
-open TauCeti.Complex (realChart realChart_mk contDiff_realChart)
+open TauCeti.Complex (realChart realChart_mk)
 open scoped ENNReal NNReal Manifold Topology
 
 namespace TauCeti.SymplecticForm
@@ -78,8 +77,7 @@ section NormedSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {𝔎 : ℂ → V → ℂ →L[ℝ] ℝ} {H : ℝ → V → ℝ} {T₀ : ℝ}
-  {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {c M : ℝ} {K : Set V} {W : Set (ℝ × V)}
-  {Jq : ℝ → V → AlmostComplexStructure V}
+  {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {c M : ℝ} {K : Set V}
 
 /-- Nondegeneracy of the time-one map at `x 0` for every `1`-periodic orbit `x` of `H` in `K`
 implies uniform isolation of `1`-periodic orbits of `H` in `K`. -/
@@ -277,98 +275,6 @@ theorem exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_isolated
   have hxx' : x = x' := funext fun t ↦
     tendsto_nhds_unique (hσx.tendsto_at t) ((hx'.tendsto_at t).comp hσ)
   exact ⟨x, hxper, hx, hxx' ▸ hx', hA, hEx⟩
-
-/-- **Cylindrical half-cylinder pullback on `(a, ∞)` of the positive plane.** Where `𝔎 = H(t) dt`
-and `J(realChart φ_+ (s, t)) = Jq(t, u(realChart φ_+ (s, t)))` for `s ≥ T₀` on the positive plane,
-for any `a ≥ T₀` with `r ≤ exp (2πa)`, `u ∘ realChart φ_+` solves the cylindrical Floer equation for
-`(Jq, H)` on `(a, ∞) × [0, 1]` with finite energy. -/
-theorem floer_comp_realChart_positive_of_cylindrical (ω : SymplecticForm V)
-    (h𝔎 : ∀ w x, w ≠ 0 → T₀ ≤ (positive.endCoord w).re →
-      𝔎 w x = H (positive.endCoord w).im x • positive.endAngularForm w)
-    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {n : WithTop ℕ∞} (hn : n ≠ 0)
-    {r a : ℝ} (ha : T₀ ≤ a) (hr : r ≤ Real.exp (2 * π * a))
-    (hu : ContDiffOn ℝ n u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
-    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
-    (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedFDeriv
-          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
-      ENNReal.ofReal (ω.floerEnergyDensity
-        (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
-    (hJ : ∀ s t, T₀ ≤ s →
-      J (realChart positive.cylindricalEndLift (s, t)) =
-        Jq t (u (realChart positive.cylindricalEndLift (s, t)))) :
-    ContDiffOn ℝ n (u ∘ realChart positive.cylindricalEndLift) (Ioi a ×ˢ univ) ∧
-      (∀ s, a < s → Periodic (fun t ↦ (u ∘ realChart positive.cylindricalEndLift) (s, t)) 1) ∧
-      (∀ s, a < s → ∀ t, (u ∘ realChart positive.cylindricalEndLift) (s, t) ∈ K) ∧
-      (∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-        (Jq z.2 ((u ∘ realChart positive.cylindricalEndLift) z))
-        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2)
-          (u ∘ realChart positive.cylindricalEndLift) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
-      ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
-        (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) ≠ ⊤ := by
-  obtain ⟨hu', hper', huK', hfloer', hE'⟩ :=
-    ω.floer_comp_realChart_positive_of_eq_smul_endAngularForm h𝔎 hH hHd hn ha hr hu huK hfloer hE
-  refine ⟨hu', hper', huK', fun z hz ↦ ?_, hE'⟩
-  have h := hfloer' z hz
-  rwa [comp_apply, hJ z.1 z.2 (ha.trans hz.1.le)] at h
-
-/-- **Cylindrical half-cylinder reduction of the negative plane to the positive plane.** Where
-`𝔎 = H(t) dt` and `J(realChart φ_- (ε s, t)) = Jq(t, u(realChart φ_- (ε s, t)))` for `s ≥ T₀` on
-the negative plane, `u ∘ realChart φ_+` solves the cylindrical Floer equation for the reversed datum
-`(t ↦ Jq (-t), (t, y) ↦ -H (-t) y)` on `(a, ∞) × [0, 1]` whenever `T₀ ≤ a` and `r ≤ exp (2πa)`. -/
-theorem floer_comp_realChart_negative_of_cylindrical (ω : SymplecticForm V)
-    (h𝔎 : ∀ w x, w ≠ 0 → T₀ ≤ negative.endSign * (negative.endCoord w).re →
-      𝔎 w x = H (negative.endCoord w).im x • negative.endAngularForm w)
-    (hH : Periodic H 1) {n : WithTop ℕ∞} (hHs : ContDiff ℝ n (uncurry H)) (hn : n ≠ 0)
-    {r a : ℝ} (ha : T₀ ≤ a) (hr : r ≤ Real.exp (2 * π * a))
-    (hu : ContDiffOn ℝ n u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
-    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
-    (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedFDeriv
-          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
-      ENNReal.ofReal (ω.floerEnergyDensity
-        (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
-    (hW : IsOpen W)
-    (hJq : ContDiffOn ℝ 2 (fun q : ℝ × V ↦ (Jq q.1 q.2).toLinearMap.toContinuousLinearMap) W)
-    (hJqper : Periodic Jq 1) (hKW : univ ×ˢ K ⊆ W) (hJqt : ∀ t, ∀ x ∈ K, ω.Tames (Jq t x))
-    (hJ : ∀ s t, T₀ ≤ s →
-      J (realChart negative.cylindricalEndLift (negative.endSign * s, t)) =
-        Jq t (u (realChart negative.cylindricalEndLift (negative.endSign * s, t)))) :
-    Periodic (fun t y ↦ -H (-t) y) 1 ∧
-      ContDiff ℝ n (uncurry fun t y ↦ -H (-t) y) ∧
-      IsOpen ((fun q : ℝ × V ↦ (-q.1, q.2)) ⁻¹' W) ∧
-      ContDiffOn ℝ 2 (fun q : ℝ × V ↦ (Jq (-q.1) q.2).toLinearMap.toContinuousLinearMap)
-        ((fun q : ℝ × V ↦ (-q.1, q.2)) ⁻¹' W) ∧
-      Periodic (fun t ↦ Jq (-t)) 1 ∧
-      univ ×ˢ K ⊆ (fun q : ℝ × V ↦ (-q.1, q.2)) ⁻¹' W ∧
-      (∀ t, ∀ x ∈ K, ω.Tames (Jq (-t) x)) ∧
-      ContDiffOn ℝ n (u ∘ realChart positive.cylindricalEndLift) (Ioi a ×ˢ univ) ∧
-      (∀ s, a < s → Periodic (fun t ↦ (u ∘ realChart positive.cylindricalEndLift) (s, t)) 1) ∧
-      (∀ s, a < s → ∀ t, (u ∘ realChart positive.cylindricalEndLift) (s, t) ∈ K) ∧
-      (∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-        (Jq (-z.2) ((u ∘ realChart positive.cylindricalEndLift) z))
-        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w y ↦ -H (-w.2) y)
-          (u ∘ realChart positive.cylindricalEndLift) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
-      ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
-        (fun w y ↦ -H (-w.2) y) (u ∘ realChart positive.cylindricalEndLift) z) ≠ ⊤ := by
-  have hH' : Periodic (fun t y ↦ -H (-t) y) 1 := hH.comp_neg.comp Neg.neg
-  have hHs' : ContDiff ℝ n (uncurry fun t y ↦ -H (-t) y) := hHs.uncurry_comp_neg.neg
-  refine ⟨hH', hHs', hW.preimage (by fun_prop),
-    hJq.comp (f := fun q : ℝ × V ↦ (-q.1, q.2)) (by fun_prop : ContDiff ℝ 2 _).contDiffOn
-      fun _ hq ↦ hq,
-    hJqper.comp_neg, fun _ hq ↦ hKW ⟨mem_univ _, hq.2⟩, fun t ↦ hJqt (-t),
-    ω.floer_comp_realChart_positive_of_cylindrical (Jq := fun t ↦ Jq (-t))
-      (fun w y hw hz ↦ eq_smul_endAngularForm_positive_of_negative h𝔎 y hw hz) hH'
-      (fun t ↦ (hHs'.of_uncurry_left t).differentiable hn) hn ha hr hu huK hfloer hE
-      fun s t hs ↦ by simpa [realChart_cylindricalEndLift_negative] using hJ s (-t) hs⟩
 
 end NormedSpace
 

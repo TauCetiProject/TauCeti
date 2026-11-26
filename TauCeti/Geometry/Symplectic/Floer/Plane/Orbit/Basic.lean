@@ -60,9 +60,13 @@ Hence its energy over a band `P × [0, 1]` with `ε s ≥ T₀` on `P` is at mos
 over any set containing the image
 (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_le`).
 These pullback results are proved in `TauCeti.Geometry.Symplectic.Floer.Plane.Curvature`. The end
-is the positive half-cylinder `s > a` on the positive plane and the negative half-cylinder `s < -a`
+is the positive half-cylinder `s > a` on the positive plane
+(`floer_comp_realChart_positive_of_eq_smul_endAngularForm`) and the negative half-cylinder `s < -a`
 on the negative plane, for `a ≥ T₀` large (`floer_comp_realChart_cylindricalEndLift`), and the
-results of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` apply to either.
+results of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` apply to either; when `J` is
+cylindrical on the end, `u ∘ ψ_+` solves the cylindrical Floer equation for `(Jq, H)` on the
+positive plane (`floer_comp_realChart_positive_of_cylindrical`) and for the reversed datum
+`(t ↦ Jq (-t), -H(-t))` on the negative plane (`floer_comp_realChart_negative_of_cylindrical`).
 
 Uniform convergence along the entire end under orbit isolation and derivative bounds on cylindrical
 ends are proved in `TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Convergence`. The case of a
@@ -90,7 +94,8 @@ open Floer Floer.PSSPlane
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {H : ℝ → V → ℝ} {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V}
-  {c M : ℝ} {K : Set V} {p : PSSPlane} {𝔎 : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
+  {c M : ℝ} {K : Set V} {p : PSSPlane} {𝔎 : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ} {W : Set (ℝ × V)}
+  {Jq : ℝ → V → AlmostComplexStructure V}
 
 /-! ### The end in real coordinates -/
 
@@ -180,6 +185,98 @@ theorem floer_comp_realChart_positive_of_eq_smul_endAngularForm (ω : Symplectic
     fun s _ ↦ periodic_comp_realChart_cylindricalEndLift _ u s,
     fun s hs t ↦ hvK (s, t) (hpos hs), fun z hz ↦ hfloer' z (hpos hz.1),
     hE' _ measurableSet_Ioi fun _ hs ↦ hpos hs⟩
+
+/-- **Cylindrical half-cylinder pullback on `(a, ∞)` of the positive plane.** Where `𝔎 = H(t) dt`
+and `J(realChart φ_+ (s, t)) = Jq(t, u(realChart φ_+ (s, t)))` for `s ≥ T₀` on the positive plane,
+for any `a ≥ T₀` with `r ≤ exp (2πa)`, `u ∘ realChart φ_+` solves the cylindrical Floer equation for
+`(Jq, H)` on `(a, ∞) × [0, 1]` with finite energy. -/
+theorem floer_comp_realChart_positive_of_cylindrical (ω : SymplecticForm V)
+    (h𝔎 : ∀ w x, w ≠ 0 → T₀ ≤ (positive.endCoord w).re →
+      𝔎 w x = H (positive.endCoord w).im x • positive.endAngularForm w)
+    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {n : WithTop ℕ∞} (hn : n ≠ 0)
+    {r a : ℝ} (ha : T₀ ≤ a) (hr : r ≤ Real.exp (2 * π * a))
+    (hu : ContDiffOn ℝ n u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
+    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
+    (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv
+          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (realChart positive.cylindricalEndLift (s, t)) =
+        Jq t (u (realChart positive.cylindricalEndLift (s, t)))) :
+    ContDiffOn ℝ n (u ∘ realChart positive.cylindricalEndLift) (Ioi a ×ˢ univ) ∧
+      (∀ s, a < s → Periodic (fun t ↦ (u ∘ realChart positive.cylindricalEndLift) (s, t)) 1) ∧
+      (∀ s, a < s → ∀ t, (u ∘ realChart positive.cylindricalEndLift) (s, t) ∈ K) ∧
+      (∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (Jq z.2 ((u ∘ realChart positive.cylindricalEndLift) z))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2)
+          (u ∘ realChart positive.cylindricalEndLift) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
+      ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) ≠ ⊤ := by
+  obtain ⟨hu', hper', huK', hfloer', hE'⟩ :=
+    ω.floer_comp_realChart_positive_of_eq_smul_endAngularForm h𝔎 hH hHd hn ha hr hu huK hfloer hE
+  refine ⟨hu', hper', huK', fun z hz ↦ ?_, hE'⟩
+  have h := hfloer' z hz
+  rwa [comp_apply, hJ z.1 z.2 (ha.trans hz.1.le)] at h
+
+/-- **Cylindrical half-cylinder reduction of the negative plane to the positive plane.** Where
+`𝔎 = H(t) dt` and `J(realChart φ_- (ε s, t)) = Jq(t, u(realChart φ_- (ε s, t)))` for `s ≥ T₀` on
+the negative plane, `u ∘ realChart φ_+` solves the cylindrical Floer equation for the reversed datum
+`(t ↦ Jq (-t), (t, y) ↦ -H (-t) y)` on `(a, ∞) × [0, 1]` whenever `T₀ ≤ a` and `r ≤ exp (2πa)`. -/
+theorem floer_comp_realChart_negative_of_cylindrical (ω : SymplecticForm V)
+    (h𝔎 : ∀ w x, w ≠ 0 → T₀ ≤ negative.endSign * (negative.endCoord w).re →
+      𝔎 w x = H (negative.endCoord w).im x • negative.endAngularForm w)
+    (hH : Periodic H 1) {n : WithTop ℕ∞} (hHs : ContDiff ℝ n (uncurry H)) (hn : n ≠ 0)
+    {r a : ℝ} (ha : T₀ ≤ a) (hr : r ≤ Real.exp (2 * π * a))
+    (hu : ContDiffOn ℝ n u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
+    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
+    (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv
+          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≠ ⊤)
+    (hW : IsOpen W)
+    (hJq : ContDiffOn ℝ 2 (fun q : ℝ × V ↦ (Jq q.1 q.2).toLinearMap.toContinuousLinearMap) W)
+    (hJqper : Periodic Jq 1) (hKW : univ ×ˢ K ⊆ W) (hJqt : ∀ t, ∀ x ∈ K, ω.Tames (Jq t x))
+    (hJ : ∀ s t, T₀ ≤ s →
+      J (realChart negative.cylindricalEndLift (negative.endSign * s, t)) =
+        Jq t (u (realChart negative.cylindricalEndLift (negative.endSign * s, t)))) :
+    Periodic (fun t y ↦ -H (-t) y) 1 ∧
+      ContDiff ℝ n (uncurry fun t y ↦ -H (-t) y) ∧
+      IsOpen ((fun q : ℝ × V ↦ (-q.1, q.2)) ⁻¹' W) ∧
+      ContDiffOn ℝ 2 (fun q : ℝ × V ↦ (Jq (-q.1) q.2).toLinearMap.toContinuousLinearMap)
+        ((fun q : ℝ × V ↦ (-q.1, q.2)) ⁻¹' W) ∧
+      Periodic (fun t ↦ Jq (-t)) 1 ∧
+      univ ×ˢ K ⊆ (fun q : ℝ × V ↦ (-q.1, q.2)) ⁻¹' W ∧
+      (∀ t, ∀ x ∈ K, ω.Tames (Jq (-t) x)) ∧
+      ContDiffOn ℝ n (u ∘ realChart positive.cylindricalEndLift) (Ioi a ×ˢ univ) ∧
+      (∀ s, a < s → Periodic (fun t ↦ (u ∘ realChart positive.cylindricalEndLift) (s, t)) 1) ∧
+      (∀ s, a < s → ∀ t, (u ∘ realChart positive.cylindricalEndLift) (s, t) ∈ K) ∧
+      (∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (Jq (-z.2) ((u ∘ realChart positive.cylindricalEndLift) z))
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w y ↦ -H (-w.2) y)
+          (u ∘ realChart positive.cylindricalEndLift) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
+      ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w y ↦ -H (-w.2) y) (u ∘ realChart positive.cylindricalEndLift) z) ≠ ⊤ := by
+  have hH' : Periodic (fun t y ↦ -H (-t) y) 1 := hH.comp_neg.comp Neg.neg
+  have hHs' : ContDiff ℝ n (uncurry fun t y ↦ -H (-t) y) := hHs.uncurry_comp_neg.neg
+  refine ⟨hH', hHs', hW.preimage (by fun_prop),
+    hJq.comp (f := fun q : ℝ × V ↦ (-q.1, q.2)) (by fun_prop : ContDiff ℝ 2 _).contDiffOn
+      fun _ hq ↦ hq,
+    hJqper.comp_neg, fun _ hq ↦ hKW ⟨mem_univ _, hq.2⟩, fun t ↦ hJqt (-t),
+    ω.floer_comp_realChart_positive_of_cylindrical (Jq := fun t ↦ Jq (-t))
+      (fun w y hw hz ↦ eq_smul_endAngularForm_positive_of_negative h𝔎 y hw hz) hH'
+      (fun t ↦ (hHs'.of_uncurry_left t).differentiable hn) hn ha hr hu huK hfloer hE
+      fun s t hs ↦ by simpa [realChart_cylindricalEndLift_negative] using hJ s (-t) hs⟩
 
 /-- **The half-cylinder at the end of a PSS plane.** Let `𝔎` be a perturbation that is `H(t) dt`
 on the part `ε s ≥ T₀` of the end. If `u` is `Cⁿ`, `n ≠ 0`, on a part `‖w‖ > r` of the plane,
