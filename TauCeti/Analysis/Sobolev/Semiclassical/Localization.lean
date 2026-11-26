@@ -208,7 +208,7 @@ theorem sum_sq_semiclassicalSobolevNorm_smul_le {ι : Type*} (s : Finset ι) {χ
       (((integrable_sq_sum_pow_mul_norm_iteratedFDeriv hfm h).const_mul _).const_mul _) hpt
   calc ∑ a ∈ s, semiclassicalSobolevNorm k h (fun y ↦ χ a y • f y) ^ 2
       ≤ ∑ a ∈ s, (k + 1) * (h ^ (-(finrank ℝ E : ℝ)) * ∫ y, V a y ^ 2) :=
-        Finset.sum_le_sum fun a ha ↦ sq_semiclassicalSobolevNorm_le_integral (hgm a ha) hh
+        Finset.sum_le_sum fun a ha ↦ sq_semiclassicalSobolevNorm_le_integral (hgm a ha) hh.le
     _ = (k + 1) * h ^ (-(finrank ℝ E : ℝ)) * ∑ a ∈ s, ∫ y, V a y ^ 2 := by
         rw [Finset.mul_sum]
         exact Finset.sum_congr rfl fun a _ ↦ by ring
@@ -216,7 +216,7 @@ theorem sum_sq_semiclassicalSobolevNorm_smul_le {ι : Type*} (s : Finset ι) {χ
         mul_le_mul_of_nonneg_left hint (by positivity)
     _ = (k + 1) * K * c ^ 2 * (h ^ (-(finrank ℝ E : ℝ)) * ∫ y, W y ^ 2) := by ring
     _ ≤ (k + 1) * K * c ^ 2 * ((k + 1) * semiclassicalSobolevNorm k h f ^ 2) :=
-        mul_le_mul_of_nonneg_left (integral_le_sq_semiclassicalSobolevNorm hfm hh)
+        mul_le_mul_of_nonneg_left (integral_le_sq_semiclassicalSobolevNorm hfm hh.le)
           (by positivity)
     _ = _ := by
         rw [hcdef, show (4 : ℝ) ^ k = (2 ^ k) ^ 2 by rw [← pow_mul, mul_comm, pow_mul]; norm_num]
@@ -304,7 +304,7 @@ open Classical in
 `a ∈ s`, be compactly supported cutoffs of class `Cᵏ` such that every point lies in the support of
 at most `K` of them, and let `ψ a` be cutoffs of class `Cᵏ` with the semiclassical bounds
 `hⁱ ‖Dⁱ ψ a‖ ≤ B` for `i ≤ k`. Let `f` be of class `Cᵏ` with `∑_{a ∈ s} ψ a y χ a y = 1` wherever
-`f y ≠ 0`. Then for `h > 0`
+`f y ≠ 0`. Then for `h ≥ 0`
 
 `‖f‖²_{k,h} ≤ (k + 1)⁴ 4ᵏ B² K ∑_{a ∈ s} ‖χ a • f‖²_{k,h}`.
 
@@ -314,7 +314,7 @@ theorem sq_semiclassicalSobolevNorm_le_sum_sq_smul {ι : Type*} (s : Finset ι)
     (hχ : ∀ a ∈ s, ContDiff ℝ k (χ a)) (hχc : ∀ a ∈ s, HasCompactSupport (χ a))
     (hψ : ∀ a ∈ s, ContDiff ℝ k (ψ a)) {B : ℝ}
     (hB : ∀ a ∈ s, ∀ i ≤ k, ∀ y, h ^ i * ‖iteratedFDeriv ℝ i (ψ a) y‖ ≤ B) (hf : ContDiff ℝ k f)
-    (hpart : ∀ y ∈ Function.support f, ∑ a ∈ s, ψ a y * χ a y = 1) (hh : 0 < h) :
+    (hpart : ∀ y ∈ Function.support f, ∑ a ∈ s, ψ a y * χ a y = 1) (hh : 0 ≤ h) :
     semiclassicalSobolevNorm k h f ^ 2 ≤ (k + 1) ^ 4 * 4 ^ k * B ^ 2 * K *
       ∑ a ∈ s, semiclassicalSobolevNorm k h (fun y ↦ χ a y • f y) ^ 2 := by
   -- The localizations `g a` of `f`, and the scaled jets of `f` and of the `g a`.
@@ -330,7 +330,7 @@ theorem sq_semiclassicalSobolevNorm_le_sum_sq_smul {ι : Type*} (s : Finset ι)
       (hχc a ha).smul_right
   -- Pointwise, `W ≤ c ∑ₐ V a`, a sum with at most `K` nonzero terms, so `W² ≤ c² K ∑ₐ (V a)²`.
   have hW (y : E) : W y ≤ c * ∑ a ∈ s, V a y :=
-    sum_pow_mul_norm_iteratedFDeriv_le_sum s hψ hB hg hdec hh.le y
+    sum_pow_mul_norm_iteratedFDeriv_le_sum s hψ hB hg hdec hh y
   have hpt (y : E) : W y ^ 2 ≤ c ^ 2 * (K * ∑ a ∈ s, V a y ^ 2) :=
     calc W y ^ 2 ≤ (c * ∑ a ∈ s, V a y) ^ 2 :=
           pow_le_pow_left₀ (Finset.sum_nonneg fun i _ ↦ by positivity) (hW y) 2
@@ -383,7 +383,7 @@ theorem sq_semiclassicalSobolevNorm_le_sum_sq_localization {ι : Type*} (s : Fin
     (fun a _ ↦ hη.comp_inv_smul_sub h (x a)) (fun a _ ↦ hηc.comp_inv_smul_sub hh.ne' (x a))
     (fun a _ ↦ hψ.comp_inv_smul_sub h (x a))
     (fun a _ i hi y ↦ (pow_mul_norm_iteratedFDeriv_comp_inv_smul_sub _ hh (x a) i y).trans_le
-      (hB i hi _)) hf hpart hh
+      (hB i hi _)) hf hpart hh.le
 
 /-! ### Comparison with the uniformly local norm -/
 
