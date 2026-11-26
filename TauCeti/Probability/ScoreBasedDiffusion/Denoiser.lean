@@ -261,26 +261,6 @@ end Covariance
 
 section Derivative
 
-/-- The norm of the derivative of `z ↦ φ_{s²}(z) z` is controlled by a quadratic weight. -/
-private theorem norm_pdf_smul_id_sub_le (z : EuclideanSpace ℝ ι) :
-    ‖multivariateGaussianPDFReal 0 (s ^ 2 • 1) z • ContinuousLinearMap.id ℝ _ -
-        ((s ^ 2)⁻¹ * multivariateGaussianPDFReal 0 (s ^ 2 • 1) z) • rankOne ℝ z z‖ ≤
-      (1 + (s ^ 2)⁻¹) * ((1 + ‖z‖) ^ 2 * multivariateGaussianPDFReal 0 (s ^ 2 • 1) z) := by
-  have hφ := multivariateGaussianPDFReal_nonneg (0 : EuclideanSpace ℝ ι) (s ^ 2 • 1) z
-  have hid : ‖ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)‖ ≤ 1 := norm_id_le
-  refine (norm_sub_le _ _).trans ?_
-  rw [norm_smul, norm_smul, norm_rankOne, Real.norm_of_nonneg hφ,
-    Real.norm_of_nonneg (by positivity)]
-  have h1 : 1 ≤ (1 + ‖z‖) ^ 2 := one_le_pow₀ (le_add_of_nonneg_right (norm_nonneg z))
-  have h2 : ‖z‖ * ‖z‖ ≤ (1 + ‖z‖) ^ 2 := by nlinarith [norm_nonneg z]
-  calc multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * ‖ContinuousLinearMap.id ℝ _‖ +
-        (s ^ 2)⁻¹ * multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * (‖z‖ * ‖z‖)
-      ≤ multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * (1 + ‖z‖) ^ 2 +
-        (s ^ 2)⁻¹ * multivariateGaussianPDFReal 0 (s ^ 2 • 1) z * (1 + ‖z‖) ^ 2 := by
-        gcongr
-        exact hid.trans h1
-    _ = _ := by ring
-
 /-- Differentiation under the integral sign of the first moment of the noise, the integral giving
 `-s² ∇p(y)`. -/
 private theorem hasFDerivAt_noiseFirstMoment [IsFiniteMeasure μ₀] (hs : s ≠ 0)
@@ -307,13 +287,17 @@ private theorem hasFDerivAt_noiseFirstMoment [IsFiniteMeasure μ₀] (hs : s ≠
     (bound := fun _ ↦ (1 + (s ^ 2)⁻¹) * C) Filter.univ_mem
     (.of_forall fun y' ↦ (integrable_pdf_sub_smul_sub hs y').aestronglyMeasurable)
     (integrable_pdf_sub_smul_sub hs y) (hid.sub hrk).aestronglyMeasurable
-    (.of_forall fun x y' _ ↦ (norm_pdf_smul_id_sub_le _).trans
-      (mul_le_mul_of_nonneg_left (hC _) (by positivity)))
+    (.of_forall fun x y' _ ↦ by
+      rw [← (hasFDerivAt_multivariateGaussianPDFReal_smul_one_smul_self
+        (by positivity : 0 < s ^ 2) (y' - c • x)).fderiv]
+      exact (norm_fderiv_multivariateGaussianPDFReal_smul_one_smul_self_le
+        (by positivity) _).trans (mul_le_mul_of_nonneg_left (hC _) (by positivity)))
     (integrable_const _)
     (.of_forall fun x y' _ ↦ by
       have h := (hasFDerivAt_multivariateGaussianPDFReal_smul_one_smul_self
         (by positivity : 0 < s ^ 2) (y' - c • x)).comp y' ((hasFDerivAt_id y').sub_const (c • x))
       rwa [comp_id] at h)
+  rw [funext (noiseFirstMoment_def μ₀ c s)]
   refine key.congr_fderiv ?_
   rw [integral_sub hid hrk, integral_smul_const, ← smoothedDensity_apply, noiseSecondMoment_def]
   simp only [mul_smul, integral_smul]
@@ -336,12 +320,13 @@ theorem hasFDerivAt_noisyScore [IsFiniteMeasure μ₀] [NeZero μ₀] (hs : s �
     HasFDerivAt (noisyScore μ₀ c s)
       ((s ^ 2)⁻¹ • ((c ^ 2 / s ^ 2) • posteriorCov μ₀ c s y - ContinuousLinearMap.id ℝ _)) y := by
   have hp0 : smoothedDensity μ₀ c s y ≠ 0 := (smoothedDensity_pos hs y).ne'
-  have hp : HasFDerivAt (smoothedDensity μ₀ c s)
-      (toDual ℝ _ (-(s ^ 2)⁻¹ • noiseFirstMoment μ₀ c s y)) y :=
-    hasGradientAt_iff_hasFDerivAt.1 (hasGradientAt_smoothedDensity (μ₀ := μ₀) (c := c) hs y)
+  have hp := hasGradientAt_iff_hasFDerivAt.1
+    (hasGradientAt_smoothedDensity (μ₀ := μ₀) (c := c) hs y)
+  rw [← noiseFirstMoment_def] at hp
   have h := (((hasDerivAt_inv hp0).comp_hasFDerivAt y hp).smul
     (hasFDerivAt_noiseFirstMoment (μ₀ := μ₀) (c := c) hs y)).const_smul (-(s ^ 2)⁻¹)
   rw [funext (noisyScore_eq_integral (μ₀ := μ₀) (c := c) hs)]
+  simp only [← noiseFirstMoment_def]
   refine h.congr_fderiv ?_
   rw [div_eq_inv_mul, mul_smul, sq_smul_posteriorCov hs]
   ext1 w

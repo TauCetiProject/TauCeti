@@ -40,6 +40,8 @@ so the score of `N(m, v • 1)` is `-(y - m) / v`.
   `N(m, v • 1)` has gradient `-v⁻¹ φ(y) (y - m)`, so its score is `-(y - m) / v`.
 * `TauCeti.Probability.hasFDerivAt_multivariateGaussianPDFReal_smul_one_smul_self`: for the density
   `φ` of `N(0, v • 1)`, the derivative of `z ↦ φ(z) z` is `φ(z) (1 - z ⊗ z / v)`.
+* `TauCeti.Probability.norm_fderiv_multivariateGaussianPDFReal_smul_one_smul_self_le`: the norm of
+  that derivative is at most `(1 + v⁻¹) (1 + ‖z‖)² φ(z)`.
 -/
 
 public section
@@ -186,5 +188,28 @@ theorem hasFDerivAt_multivariateGaussianPDFReal_smul_one_smul_self {v : ℝ} (hv
     InnerProductSpace.toDual_apply_apply, sub_apply,
     InnerProductSpace.rankOne_apply, real_inner_smul_left, mul_smul, id_eq]
   module
+
+/-- For `v > 0` and the density `φ` of the centred isotropic Gaussian law `N(0, v • 1)`, the norm
+of the derivative of `z ↦ φ(z) z` at `z` is at most `(1 + v⁻¹) (1 + ‖z‖)² φ(z)`. -/
+theorem norm_fderiv_multivariateGaussianPDFReal_smul_one_smul_self_le {v : ℝ} (hv : 0 < v)
+    (z : EuclideanSpace ℝ ι) :
+    ‖fderiv ℝ (fun z ↦ multivariateGaussianPDFReal 0 (v • 1) z • z) z‖ ≤
+      (1 + v⁻¹) * ((1 + ‖z‖) ^ 2 * multivariateGaussianPDFReal 0 (v • 1) z) := by
+  rw [(hasFDerivAt_multivariateGaussianPDFReal_smul_one_smul_self hv z).fderiv]
+  have hφ := multivariateGaussianPDFReal_nonneg (0 : EuclideanSpace ℝ ι) (v • 1) z
+  have hid : ‖ContinuousLinearMap.id ℝ (EuclideanSpace ℝ ι)‖ ≤ 1 :=
+    ContinuousLinearMap.norm_id_le
+  refine (norm_sub_le _ _).trans ?_
+  rw [norm_smul, norm_smul, InnerProductSpace.norm_rankOne, Real.norm_of_nonneg hφ,
+    Real.norm_of_nonneg (by positivity)]
+  have h1 : 1 ≤ (1 + ‖z‖) ^ 2 := one_le_pow₀ (le_add_of_nonneg_right (norm_nonneg z))
+  have h2 : ‖z‖ * ‖z‖ ≤ (1 + ‖z‖) ^ 2 := by nlinarith [norm_nonneg z]
+  calc multivariateGaussianPDFReal 0 (v • 1) z * ‖ContinuousLinearMap.id ℝ _‖ +
+        v⁻¹ * multivariateGaussianPDFReal 0 (v • 1) z * (‖z‖ * ‖z‖)
+      ≤ multivariateGaussianPDFReal 0 (v • 1) z * (1 + ‖z‖) ^ 2 +
+        v⁻¹ * multivariateGaussianPDFReal 0 (v • 1) z * (1 + ‖z‖) ^ 2 := by
+        gcongr
+        exact hid.trans h1
+    _ = _ := by ring
 
 end TauCeti.Probability
