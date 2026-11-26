@@ -31,7 +31,7 @@ pairwise disjoint pairs.
 ## Main results
 
 * `Finset.card_le_two_pow_of_even`: the eventown bound `#F ≤ 2 ^ ⌊n / 2⌋`.
-* `Finset.exists_card_eq_two_pow_of_even`: a family attaining it.
+* `Finset.exists_even_card_even_card_inter_card_eq_two_pow`: a family attaining it.
 
 ## References
 
@@ -91,7 +91,7 @@ theorem card_le_two_pow_of_even (F : Finset (Finset α)) (hsize : ∀ A ∈ F, E
 /-- The eventown bound is attained: some family of `2 ^ ⌊n / 2⌋` subsets of an `n`-element set
 has members of even size and distinct members meeting in an even number of elements. The family
 consists of the unions of some of `⌊n / 2⌋` pairwise disjoint pairs. -/
-theorem exists_card_eq_two_pow_of_even :
+theorem exists_even_card_even_card_inter_card_eq_two_pow :
     ∃ F : Finset (Finset α), (∀ A ∈ F, Even #A) ∧
       (∀ A ∈ F, ∀ B ∈ F, A ≠ B → Even #(A ∩ B)) ∧ #F = 2 ^ (Fintype.card α / 2) := by
   -- Choose `⌊n / 2⌋` disjoint pairs `{g (i, 0), g (i, 1)}` in `α`.
