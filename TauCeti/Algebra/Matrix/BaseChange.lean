@@ -85,6 +85,7 @@ variable {R S n} in
 /-- Extending scalars to matrices is natural in the commutative algebra: for an `R`-algebra map
 `φ : S → S'`, applying `φ` to the scalar factor of `S ⊗[R] Matrix n n R` applies it to the
 entries of the corresponding matrix over `S`. -/
+@[simp]
 theorem matrixBaseChangeAlgEquiv_rTensor {S' : Type*} [CommSemiring S'] [Algebra R S']
     (φ : S →ₐ[R] S') (x : S ⊗[R] Matrix n n R) :
     matrixBaseChangeAlgEquiv R S' n (φ.toLinearMap.rTensor _ x) =

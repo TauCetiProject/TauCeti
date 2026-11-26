@@ -552,6 +552,11 @@ def algHomDet (ρ : R →ₐ[A] Matrix n n A) : Determinant A R (Fintype.card n)
       ρ.toLinearMap.isHomogeneousOfDegree_toPolynomialLaw
   isMultiplicative := PolynomialLaw.isMultiplicative_det.comp ρ.isMultiplicative_toPolynomialLaw
 
+/-- The law of `algHomDet ρ` is the determinant law composed with `ρ`. -/
+theorem toLaw_algHomDet (ρ : R →ₐ[A] Matrix n n A) :
+    (algHomDet ρ).toLaw = (PolynomialLaw.det n A).comp ρ.toLinearMap.toPolynomialLaw :=
+  (rfl)
+
 /-- After scalar extension to a commutative ring `S`, the law of `algHomDet ρ` is the determinant
 of `ρ` extended to `S`, read in `Matrix n n S`. -/
 @[simp]
@@ -560,7 +565,7 @@ theorem algHomDet_toFun (ρ : R →ₐ[A] Matrix n n A) (S : Type*) [CommRing S]
     (algHomDet ρ).toLaw.toFun S x =
       (TauCeti.Algebra.matrixBaseChangeAlgEquiv A S n
         (Algebra.TensorProduct.map (AlgHom.id A S) ρ x)).det ⊗ₜ 1 := by
-  simp [algHomDet, PolynomialLaw.toFun_comp_apply, LinearMap.baseChange_eq_lTensor,
+  simp [toLaw_algHomDet, PolynomialLaw.toFun_comp_apply, LinearMap.baseChange_eq_lTensor,
     AlgHom.lTensor_toLinearMap_apply]
 
 /-- After scalar extension to any commutative `A`-algebra `S`, the law of `algHomDet ρ` is the
@@ -571,7 +576,7 @@ theorem algHomDet_toFun_eq_leibniz (ρ : R →ₐ[A] Matrix n n A) (S : Type*) [
     (algHomDet ρ).toLaw.toFun S x = (∑ σ : Equiv.Perm n, ((Equiv.Perm.sign σ : ℤ) : A) •
       ∏ i, TauCeti.Algebra.matrixBaseChangeAlgEquiv A S n
         (Algebra.TensorProduct.map (AlgHom.id A S) ρ x) (σ i) i) ⊗ₜ 1 := by
-  simp [algHomDet, PolynomialLaw.toFun_comp_apply, PolynomialLaw.det_toFun_eq_leibniz,
+  simp [toLaw_algHomDet, PolynomialLaw.toFun_comp_apply, PolynomialLaw.det_toFun_eq_leibniz,
     LinearMap.baseChange_eq_lTensor, AlgHom.lTensor_toLinearMap_apply]
 
 /-- The value of `algHomDet ρ` at `x` is `det (ρ x)`. -/
@@ -606,7 +611,7 @@ theorem trace_algHomDet (ρ : R →ₐ[A] Matrix n n A) (x : R) :
 theorem algHomDet_innerAut_comp (g : GL n A) (ρ : R →ₐ[A] Matrix n n A) :
     algHomDet ((Matrix.GeneralLinearGroup.innerAut g).toAlgHom.comp ρ) = algHomDet ρ := by
   ext1
-  simp [algHomDet, LinearMap.toPolynomialLaw_comp, PolynomialLaw.comp_assoc]
+  simp [toLaw_algHomDet, LinearMap.toPolynomialLaw_comp, PolynomialLaw.comp_assoc]
 
 end AlgHomDet
 
