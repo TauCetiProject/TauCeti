@@ -10,7 +10,9 @@ public import Mathlib.RingTheory.WittVector.TeichmullerSeries
 public import TauCeti.RingTheory.Valuation.Integers
 public import TauCeti.Topology.Algebra.Valued.NormedValued
 import Mathlib.RingTheory.AdicCompletion.Functoriality
+import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.RingTheory.WittVector.Units
 
 /-!
 # `(p, [ϖ])`-adic completeness of Witt vectors of a perfect ring
@@ -212,13 +214,17 @@ theorem ker_mk_comp_constantCoeff (ϖ : R) :
 /-- **Generators of a `p`-saturated ideal from the zeroth coordinate.** Let `R` be perfect of
 characteristic `p` and let `I` be an ideal of `𝕎 R` such that `p * x ∈ I` implies `x ∈ I`. If
 `c ∈ I` and the zeroth coordinate of `c` divides the zeroth coordinate of every element of `I`,
-then `I = (c)`. Modulo `p` every `x ∈ I` is `[t] * c + p * z` with `z ∈ I`, and `p`-adic
-completeness of `𝕎 R` turns these approximations into an exact factorization. -/
-theorem eq_span_singleton_of_coeff_zero_dvd {I : Ideal (𝕎 R)} {c : 𝕎 R} (hc : c ∈ I)
+then `I = (c)`.
+
+This generalizes `New.Period.Witt.dvd_of_mem_of_constantCoeff_dvd` in
+`src/Lib/PadicHodge/PeriodRings/Ainf.lean` of grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). -/
+theorem eq_span_singleton_of_coeff_zero_dvd (c : 𝕎 R) {I : Ideal (𝕎 R)} (hc : c ∈ I)
     (hsat : ∀ x, (p : 𝕎 R) * x ∈ I → x ∈ I) (hdvd : ∀ x ∈ I, c.coeff 0 ∣ x.coeff 0) :
     I = span {c} := by
+  -- Modulo `p`, every `y ∈ I` is `[t] * c + p * z` with `z ∈ I`; since `I` is `p`-adically
+  -- separated and `𝕎 R` is `p`-adically complete, these approximations give `I = (c)`.
   refine le_antisymm (fun x hx ↦ ?_) ((span_singleton_le_iff_mem I).mpr hc)
-  -- `b ↦ b * c` maps `𝕎 R` onto `I` modulo `p I`, and `I` is `p`-adically separated
   let f : 𝕎 R →ₗ[𝕎 R] I := LinearMap.toSpanSingleton (𝕎 R) I ⟨c, hc⟩
   have hsurj : Function.Surjective ((span {(p : 𝕎 R)} • ⊤ : Submodule (𝕎 R) I).mkQ ∘ₗ f) := by
     intro y
@@ -226,9 +232,8 @@ theorem eq_span_singleton_of_coeff_zero_dvd {I : Ideal (𝕎 R)} {c : 𝕎 R} (h
     obtain ⟨t, ht⟩ := hdvd y y.property
     -- modulo `p`, the element `y` is `[t] * c`
     obtain ⟨z, hz⟩ : (p : 𝕎 R) ∣ y - teichmuller p t * c := by
-      rw [← mem_span_singleton, mem_span_p_iff_coeff_zero_eq_zero, ← constantCoeff_apply,
-        map_sub, map_mul, constantCoeff_apply, constantCoeff_apply, constantCoeff_apply,
-        teichmuller_coeff_zero, ht, mul_comm, sub_self]
+      rw [← mem_span_singleton, mem_span_p_iff_coeff_zero_eq_zero]
+      simp [sub_coeff_zero, mul_coeff_zero, ht, mul_comm]
     have hz' : z ∈ I := hsat z (hz ▸ I.sub_mem y.property (I.mul_mem_left _ hc))
     refine ⟨teichmuller p t, ?_⟩
     rw [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq]
@@ -236,11 +241,6 @@ theorem eq_span_singleton_of_coeff_zero_dvd {I : Ideal (𝕎 R)} {c : 𝕎 R} (h
       Subtype.ext (by simp [f, ← hz])
     rw [he]
     exact neg_mem (Submodule.smul_mem_smul (mem_span_singleton_self _) trivial)
-  have : IsHausdorff (span {(p : 𝕎 R)}) I := ⟨fun y hy ↦ Subtype.ext <|
-    IsHausdorff.haus' (I := span {(p : 𝕎 R)}) (y : 𝕎 R) fun n ↦ by
-      refine SModEq.mono ?_ ((hy n).map I.subtype)
-      rw [Submodule.map_smul'']
-      exact Submodule.smul_mono le_rfl le_top⟩
   obtain ⟨b, hb⟩ := surjective_of_mkQ_comp_surjective hsurj ⟨x, hx⟩
   exact mem_span_singleton'.mpr ⟨b, congrArg Subtype.val hb⟩
 

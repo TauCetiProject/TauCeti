@@ -8,11 +8,10 @@ module
 public import TauCeti.RingTheory.Perfectoid.ShiftedTheta
 public import TauCeti.RingTheory.Perfectoid.Pair
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.RingTheory.Huber.Normed
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
 
-import TauCeti.RingTheory.Perfectoid.IsAlgClosed
 import TauCeti.RingTheory.WittVector.Frobenius
 
 /-!
@@ -129,6 +128,22 @@ theorem fontaineTheta_xi_eq_zero [IsDomain A] (ε : PreTilt A p)
   rw [fontaineTheta_xi]
   exact hε.geom_sum_eq_zero (Fact.out : p.Prime).one_lt
 
+/-- If the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of unity, then `ε♯ = 1`. -/
+theorem untilt_eq_one_of_isPrimitiveRoot (ε : PreTilt A p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
+    ε.untilt = 1 := by
+  rw [← untilt_iterate_frobeniusEquiv_symm_pow ε 1, pow_one, Function.iterate_one,
+    hε.pow_eq_one]
+
+/-- If the sharp of `ε ^ (1 / p)` is a primitive `p`-th root of unity, then `ε ≠ 1`. -/
+theorem ne_one_of_isPrimitiveRoot (ε : PreTilt A p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
+    ε ≠ 1 := by
+  rintro rfl
+  exact hε.ne_one (Fact.out : p.Prime).one_lt (by rw [map_one, map_one])
+
 /-- A root system with sharp one gives `θ(μ) = 0`. -/
 @[simp high]
 theorem fontaineTheta_mu_eq_zero (ε : PreTilt A p) (hε : ε.untilt = 1) :
@@ -217,36 +232,26 @@ namespace PreTilt
 open TauCeti TauCeti.Perfectoid _root_.WittVector
 open scoped _root_.NormedField Valued
 
-section AlgebraicallyClosed
+section PerfectoidField
 
 variable {p : ℕ} [Fact p.Prime] {C : Type*} [NontriviallyNormedField C]
-  [IsUltrametricDist C] [CompleteSpace C] [IsAlgClosed C]
+  [IsUltrametricDist C] [CompleteSpace C] [IsPerfectoidTateRing p C]
   [Fact ¬IsUnit (p : 𝒪[C])] [IsAdicComplete (Ideal.span {(p : 𝒪[C])}) (𝒪[C])]
 
-/-- For a complete algebraically closed nonarchimedean field of residue characteristic `p`,
-the cyclotomic polynomial `ξ` generates the Fontaine kernel on its valuation ring.
-Primitivity excludes the trivial root system. -/
+/-- For a complete perfectoid nonarchimedean field of residue characteristic `p`, the cyclotomic
+polynomial `ξ` generates the Fontaine kernel on its valuation ring. Primitivity excludes the
+trivial root system. -/
 theorem ker_fontaineTheta_eq_span_xi (ε : PreTilt (𝒪[C]) p)
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p) :
     RingHom.ker (fontaineTheta (𝒪[C]) p) = Ideal.span {xi p ε} := by
   have hO := Huber.powerBoundedSubring_eq_integer (K := C)
-  have hnonunit : ¬IsUnit (p : Huber.powerBoundedSubring C) := by
-    rw [hO]
-    exact Fact.out
-  have hnorm : ‖(p : C)‖ < 1 := by
-    have hle := Huber.isPowerBounded_iff_norm_le_one.mp
-      (Huber.mem_powerBoundedSubring.mp (p : Huber.powerBoundedSubring C).property)
-    apply lt_of_le_of_ne hle
-    intro he
-    exact hnonunit (Huber.powerBoundedSubring.isUnit_iff_norm_eq_one.mpr he)
-  have : IsPerfectoidTateRing p C := isPerfectoidTateRing_of_isAlgClosed hnorm
   have hplus : Huber.IsRingOfIntegralElements (𝒪[C]) := by
     rw [← hO]
     exact Huber.isRingOfIntegralElements_powerBoundedSubring C
   exact ker_fontaineTheta_eq_span_xi_of_isRingOfIntegralElements hplus ε hε
 
-/-- On the valuation ring of a complete algebraically closed nonarchimedean field,
+/-- On the valuation ring of a complete perfectoid nonarchimedean field,
 `xiTilde` generates the shifted Fontaine kernel. -/
 theorem ker_fontaineThetaShifted_eq_span_xiTilde (ε : PreTilt (𝒪[C]) p)
     (hε : IsPrimitiveRoot
@@ -255,6 +260,6 @@ theorem ker_fontaineThetaShifted_eq_span_xiTilde (ε : PreTilt (𝒪[C]) p)
   rw [xiTilde_eq]
   exact WittVector.ker_fontaineThetaShifted_eq_span (ker_fontaineTheta_eq_span_xi ε hε)
 
-end AlgebraicallyClosed
+end PerfectoidField
 
 end PreTilt
