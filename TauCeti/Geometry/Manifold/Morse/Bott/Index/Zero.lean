@@ -95,9 +95,10 @@ bundle of size `ε` onto the image of `i`. -/
 theorem image_negativeDiscBundle_eq_range_of_manifoldMorseIndex_eq_zero {P : Type*}
     (hn : (∞ : ℕ∞ω) ≠ 0) (h : i.IsNondegenerateCriticalSubmanifold f)
     (hidx : ∀ s, manifoldMorseIndex I f (i s) = 0)
-    (g : RiemannianMetric fun s ↦ i.NormalSpace s hn)
-    {Θ : TotalSpace P (fun s ↦ i.NormalSpace s hn) → M}
-    (hΘi : ∀ s, Θ (zeroSection P (fun s ↦ i.NormalSpace s hn) s) = i s) {ε : ℝ} (hε : 0 ≤ ε) :
+    (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
+    {Θ : TotalSpace P (fun s ↦ i.isImmersion.NormalSpace s hn) → M}
+    (hΘi : ∀ s, Θ (zeroSection P (fun s ↦ i.isImmersion.NormalSpace s hn) s) = i s) {ε : ℝ}
+        (hε : 0 ≤ ε) :
     Θ '' h.negativeDiscBundle hn P g ε = range i := by
   refine Subset.antisymm ?_ (range_subset_iff.2 fun s ↦
     ⟨_, h.zeroSection_mem_negativeDiscBundle hn P g hε s, hΘi s⟩)

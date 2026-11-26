@@ -146,12 +146,8 @@ theorem W1p.halfSpaceTrace_compMeasurePreservingL (hp : p ≠ ∞) (a : ℝ)
   let C : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p →L[ℝ]
       W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p :=
     W1p.compMeasurePreservingL hΦ hUV hΦl hM
-  -- Restrictions of test functions are dense in `W^{1,p}(H)`: restriction is onto, since it
-  -- undoes the reflection extension.
-  have hd : DenseRange fun φ : 𝓓((⊤ : Opens (WithLp 2 (ℝ × E))), ℝ) =>
-      W1p.restrictL hle (W1p.ofTestFunctionₗ volume ⊤ p φ) :=
-    (Function.RightInverse.surjective (W1p.restrictL_extendByReflectionL a)).denseRange.comp
-      (W1p.denseRange_ofTestFunctionₗ_top hp) (W1p.restrictL hle).continuous
+  -- Restrictions of test functions are dense in `W^{1,p}(H)`.
+  have hd := W1p.denseRange_restrictL_ofTestFunctionₗ_normalHalfSpace (E := E) (p := p) hp a
   have key : (fun v => W1p.halfSpaceTrace hp a (C v)) =
       fun v => Lp.compMeasurePreserving ψ hψ (W1p.halfSpaceTrace hp a v) := by
     refine hd.equalizer ((W1p.halfSpaceTrace hp a).continuous.comp C.continuous)

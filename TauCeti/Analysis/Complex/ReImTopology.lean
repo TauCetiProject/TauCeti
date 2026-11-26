@@ -24,7 +24,11 @@ open half-plane `{a < im}` (`TauCeti.setOfPred_le_im_mem_nhds`). A relatively op
 (`TauCeti.interior_inter_setOf_im_nonneg`), which as an open set is the upper half of `Ω`
 (`TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf`), and every point of
 `Ω ∩ {0 ≤ im}` is a limit of interior points
-(`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). A local property holds on
+(`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). The set `Ω ∩ {0 ≤ im}` is also the
+closed upper part of a conjugation-invariant open set
+(`TauCeti.exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq`). If the closure of `U` lies in `Ω`,
+the closure of `U ∩ {0 ≤ im}` lies in `Ω ∩ {0 ≤ im}`
+(`TauCeti.closure_inter_setOf_im_nonneg_subset`). A local property holds on
 `Ω ∩ {0 ≤ im}` once it holds on the upper half of `Ω` and on the half-discs centred on the real
 axis (`TauCeti.inter_setOf_im_nonneg_induction`). A function continuous on `Ω ∩ {0 ≤ im}` and
 zero on `Ω ∩ ℝ` is uniformly small near the axis on compact sets
@@ -92,6 +96,25 @@ theorem subset_closure_interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOp
   rw [interior_inter_setOf_im_nonneg hΩ]
   exact hΩ.inter_closure ⟨hx.1, by rw [Complex.closure_setOfPred_lt_im]; exact hx.2⟩
 
+/-- **A conjugation-invariant open set with the same closed upper part.** For `Ω` open, the open
+set `Ω' = {z | re z + i |im z| ∈ Ω}` is invariant under conjugation and has the same closed upper
+part `Ω ∩ {0 ≤ im}` as `Ω`. -/
+theorem exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq {Ω : Set ℂ} (hΩ : IsOpen Ω) :
+    ∃ Ω' : Set ℂ, IsOpen Ω' ∧ Set.MapsTo (starRingEnd ℂ) Ω' Ω' ∧
+      Ω' ∩ {z : ℂ | 0 ≤ z.im} = Ω ∩ {z : ℂ | 0 ≤ z.im} := by
+  refine ⟨(fun z : ℂ ↦ (z.re : ℂ) + |z.im| * Complex.I) ⁻¹' Ω, hΩ.preimage (by fun_prop),
+    fun z hz ↦ by simpa using hz, ?_⟩
+  ext z
+  exact and_congr_left fun h ↦ by
+    rw [Set.mem_preimage, abs_of_nonneg (show 0 ≤ z.im from h), Complex.re_add_im]
+
+/-- The closure of `U ∩ {0 ≤ im}` lies in `Ω ∩ {0 ≤ im}` when the closure of `U` lies in `Ω`,
+since it lies in `closure U ∩ {0 ≤ im}`. -/
+theorem closure_inter_setOf_im_nonneg_subset {Ω U : Set ℂ} (hUΩ : closure U ⊆ Ω) :
+    closure (U ∩ {z | 0 ≤ z.im}) ⊆ Ω ∩ {z | 0 ≤ z.im} :=
+  (closure_minimal (Set.inter_subset_inter_left _ subset_closure)
+    (isClosed_closure.inter (Complex.isClosed_setOfPred_le_im 0))).trans
+    (Set.inter_subset_inter_left _ hUΩ)
 /-- **Induction on half-discs.** A property `P` of subsets of `ℂ` holds on `Ω ∩ {0 ≤ im}` if it
 can be checked on relative neighbourhoods of each point, and holds on the upper half
 `Ω ∩ {0 < im}` and on the half-discs `ball x r ∩ {0 ≤ im}` centred on the real axis inside `Ω`. -/

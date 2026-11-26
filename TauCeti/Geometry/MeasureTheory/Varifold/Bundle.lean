@@ -11,7 +11,7 @@ public import TauCeti.MeasureTheory.Measure.Restrict
 public import TauCeti.MeasureTheory.Measure.Support
 public import TauCeti.Topology.FiberBundle.Countable
 public import TauCeti.Topology.FiberBundle.Separation
-public import TauCeti.Topology.VectorBundle.GrassmannBundle
+public import TauCeti.Topology.VectorBundle.GrassmannBundle.Basic
 import Mathlib.Topology.Metrizable.Urysohn
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 

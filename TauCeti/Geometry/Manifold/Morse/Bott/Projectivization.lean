@@ -95,7 +95,7 @@ theorem isNondegenerateCriticalSubmanifold_projectiveMomentFunction
   -- The tangent space lies in the kernel and has at least its dimension, so the two agree.
   refine (Submodule.eq_of_le_of_finrank_le (hcs.tangentRange_le_ker_criticalHessian hr0 s)
     ?_).ge
-  rw [SmoothEmbedding.tangentRange,
+  rw [Manifold.IsImmersion.tangentRange_def,
     LinearMap.finrank_range_of_inj ((i.isImmersion.isImmersionAt s).mfderiv_injective hr0),
     finrank_ker_criticalHessian_projectiveMomentFunction (hcrit s).1, (hcrit s).2, hm,
     finrank_tangentSpace]

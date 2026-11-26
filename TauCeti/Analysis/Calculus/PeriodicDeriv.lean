@@ -19,6 +19,7 @@ import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 import Mathlib.Topology.Instances.Real.Lemmas
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # Periodicity of the derivative and the logarithmic derivative
@@ -50,12 +51,16 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   function is periodic.
 * `Function.Periodic.exists_lipschitzWith`: a continuously differentiable periodic function of a
   real variable is Lipschitz.
+* `Function.Periodic.exists_forall_norm_le_comp_snd`: such a function, read on `E × ℝ` through
+  the second coordinate, is bounded together with its Fréchet derivative.
 * `TauCeti.fderiv_add_eq_smul`: a scalar twist `f (x + c) = a • f x` under translation, by a
   scalar from any division semiring acting on the codomain, passes to the Fréchet derivative.
 * `TauCeti.fderiv_apply_eq_zero_of_forall_periodic_smul`: a function invariant under all
   translations along a vector `v` has derivative vanishing on `v`.
 * `TauCeti.fderiv_add_snd_of_periodic_snd`: a map on a product of period `c` in the second
   coordinate has a Fréchet derivative of period `c` in it.
+* `TauCeti.exists_mem_Ico_fderiv_comp_add_right_eq`: for such a map on `E × ℝ`, translation in
+  the first coordinate moves every point to `{0} × [0, c)` without changing the derivative.
 * `TauCeti.hasDerivAt_of_periodic_of_hasDerivWithinAt`: a periodic function solving `x' = Y` for a
   periodic `Y` within a single closed period interval `[a, a + T]` solves it everywhere.
 -/
@@ -126,6 +131,21 @@ theorem Periodic.exists_lipschitzWith {F : Type*} [NormedAddCommGroup F] [Normed
   rw [← NNReal.coe_le_coe, coe_nnNorm]
   exact (hC _ (Set.mem_range_self x)).trans (Real.le_coe_toNNReal C)
 
+/-- A continuously differentiable periodic function `f` of a real variable with nonzero period,
+read on a product `E × ℝ` through the second coordinate, is bounded together with its Fréchet
+derivative there. -/
+theorem Periodic.exists_forall_norm_le_comp_snd {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {f : ℝ → F} {c : ℝ}
+    (hf : Periodic f c) (hc : c ≠ 0) (hf₁ : ContDiff ℝ 1 f) :
+    ∃ B, ∀ z : E × ℝ, ‖f z.2‖ ≤ B ∧ ‖fderiv ℝ (fun w : E × ℝ ↦ f w.2) z‖ ≤ B := by
+  obtain ⟨B₀, hB₀⟩ := (hf.isBounded_of_continuous hc hf₁.continuous).exists_norm_le
+  obtain ⟨B₁, hB₁⟩ :=
+    (hf.deriv.isBounded_of_continuous hc (hf₁.continuous_deriv le_rfl)).exists_norm_le
+  refine ⟨max B₀ B₁, fun z ↦ ⟨(hB₀ _ (Set.mem_range_self _)).trans (le_max_left _ _), ?_⟩⟩
+  refine (TauCeti.norm_fderiv_comp_snd_le f z).trans ?_
+  rw [← norm_deriv_eq_norm_fderiv]
+  exact (hB₁ _ (Set.mem_range_self _)).trans (le_max_right _ _)
+
 end Function
 
 namespace TauCeti
@@ -164,6 +184,21 @@ theorem fderiv_add_snd_of_periodic_snd {𝕜 E F G : Type*} [NontriviallyNormedF
     fderiv 𝕜 f (x, y + c) = fderiv 𝕜 f (x, y) := by
   have hp : Function.Periodic f (0, c) := fun ⟨p, q⟩ ↦ by simpa using hf p q
   simpa using hp.fderiv (x, y)
+
+/-- **Moving a point of a periodic map into one period.** For a map `u` on `E × ℝ` of period
+`c > 0` in the second coordinate, every point `z` is moved, by translation in the first coordinate
+and periodicity in the second, to a point `(0, t)` with `t ∈ [0, c)` at which the translate
+`w ↦ u (w + (z.1, 0))` has the same Fréchet derivative as `u` at `z`. -/
+theorem exists_mem_Ico_fderiv_comp_add_right_eq {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {u : E × ℝ → F} {c : ℝ}
+    (hc : 0 < c) (hu : ∀ x y, u (x, y + c) = u (x, y)) (z : E × ℝ) :
+    ∃ t ∈ Set.Ico 0 c, fderiv ℝ (fun w ↦ u (w + (z.1, 0))) (0, t) = fderiv ℝ u z := by
+  have hpd : Function.Periodic (fun t ↦ fderiv ℝ u (z.1, t)) c :=
+    fun t ↦ fderiv_add_snd_of_periodic_snd hu _ t
+  obtain ⟨t, ht, heq⟩ := hpd.exists_mem_Ico₀ hc z.2
+  refine ⟨t, ht, ?_⟩
+  rw [fderiv_comp_add_right, Prod.mk_add_mk, zero_add, add_zero]
+  exact heq.symm
 
 open Set in
 /-- **Periodic solutions of a differential equation on one period.** Let `x` and `Y` be

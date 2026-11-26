@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.PowerSeries.Expand
 public import TauCeti.RingTheory.PowerSeries.PiTopology
 import TauCeti.RingTheory.PowerSeries.Binomial
 import TauCeti.RingTheory.PowerSeries.Derivative
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!

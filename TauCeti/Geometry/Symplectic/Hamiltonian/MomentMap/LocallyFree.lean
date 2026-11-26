@@ -47,6 +47,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 
 * `contMDiff_toContinuousLinearMap`, `mfderiv_toContinuousLinearMap_apply`: a moment map read
   in the continuous dual is smooth, with differential `dμ_x`.
+* `surjective_mfderiv_toContinuousLinearMap_iff`: where `σ` is nondegenerate, a moment map is a
+  submersion exactly at the locally free points.
 * `exists_isConvexChart_subset_of_isotropy_eq_bot`: a moment map has arbitrarily small convexity
   charts around every point where the action is locally free and `σ` is nondegenerate.
 * `convex_range_of_forall_mem_fixedPoints_or_isotropy_eq_bot`,
@@ -141,6 +143,26 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [MulAction G M] [ContMDiffSMul I I' ∞ G M]
   {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
 
+omit [I'.Boundaryless] in
+/-- **A moment map is a submersion exactly at the locally free points.** At a point `x` where `σ`
+is nondegenerate, the differential of a moment map, read in the continuous dual `𝔤*`, is
+surjective exactly when the isotropy algebra `𝔤_x` is trivial. -/
+theorem surjective_mfderiv_toContinuousLinearMap_iff
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) {x : M}
+    (hσ : (σ.bilinFormAt x).Nondegenerate) :
+    Surjective (mfderiv I' 𝓘(ℝ, StrongDual ℝ E)
+        (fun y ↦ (LinearMap.toContinuousLinearMap (μ y) : StrongDual ℝ E)) x) ↔
+      (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
+  rw [← h.differential_surjective_iff hσ]
+  -- Read in `𝔤*`, the differential is `dμ_x` followed by the linear equivalence `𝔤^* ≃ 𝔤*`.
+  let T : (E →ₗ[ℝ] ℝ) ≃ₗ[ℝ] StrongDual ℝ E := LinearMap.toContinuousLinearMap
+  have hd : ⇑(mfderiv I' 𝓘(ℝ, StrongDual ℝ E)
+      (fun y ↦ (LinearMap.toContinuousLinearMap (μ y) : StrongDual ℝ E)) x) =
+      T ∘ h.differential x :=
+    funext (h.mfderiv_toContinuousLinearMap_apply x)
+  rw [hd]
+  exact EquivLike.comp_surjective _ T
+
 /-- **Convexity charts at locally free points.** Let a Lie group `G` act smoothly on a
 finite-dimensional boundaryless manifold `M` with a two-form `σ`, with moment map `μ`. At a point
 `x` where `σ` is nondegenerate and the isotropy algebra `𝔤_x` is trivial, `μ` is a submersion, and
@@ -151,14 +173,10 @@ theorem exists_isConvexChart_subset_of_isotropy_eq_bot
     (hσ : (σ.bilinFormAt x).Nondegenerate)
     (hx : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥) {N : Set M} (hN : N ∈ 𝓝 x) :
     ∃ U ⊆ N, x ∈ U ∧
-      IsConvexChart (fun y ↦ (LinearMap.toContinuousLinearMap (μ y) : StrongDual ℝ E)) U := by
-  refine h.contMDiff_toContinuousLinearMap.contMDiffOn
+      IsConvexChart (fun y ↦ (LinearMap.toContinuousLinearMap (μ y) : StrongDual ℝ E)) U :=
+  h.contMDiff_toContinuousLinearMap.contMDiffOn
     |>.exists_isConvexChart_subset_of_surjective_mfderiv isOpen_univ (mem_univ x) (by simp)
-      (fun (φ : StrongDual ℝ E) ↦ ?_) hN
-  obtain ⟨v, hv⟩ := (h.differential_surjective_iff hσ).2 hx (φ : E →ₗ[ℝ] ℝ)
-  refine ⟨v, ?_⟩
-  rw [h.mfderiv_toContinuousLinearMap_apply, hv]
-  exact ContinuousLinearMap.coe_injective (LinearMap.coe_toContinuousLinearMap _)
+      ((h.surjective_mfderiv_toContinuousLinearMap_iff hσ).2 hx) hN
 
 end RegularChart
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.GNS.Conjugation
+public import TauCeti.Analysis.CStarAlgebra.GNS.Conjugation.Basic
 public import TauCeti.Analysis.CStarAlgebra.GNS.ProductRepresentation
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
 

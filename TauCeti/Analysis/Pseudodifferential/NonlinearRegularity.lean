@@ -12,7 +12,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Holder.Iterated
 import TauCeti.Analysis.Sobolev.BesselPotential.Holder
 import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
-import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
+import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.SobolevEmbedding
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 

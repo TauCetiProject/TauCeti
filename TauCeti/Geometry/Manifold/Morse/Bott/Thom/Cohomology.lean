@@ -38,8 +38,8 @@ cohomology of `S`, shifted up by the index.
   orientation local system `o(ν⁻)`. For every commutative ring `K` and every injective `K`-module
   `N`, for instance `K = ℤ` and `N = ℚ`, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K, N) ≅ Hᵖ(S; o(ν⁻) ⊗ K, N)` with
   no orientation of `ν⁻` (`nonempty_singularCohomology_sublevelPair_iso_twistedCohomology`), by the
-  twisted Thom isomorphism in cohomology over the compact base `S`
-  (`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`, in the namespace
+  twisted Thom isomorphism in cohomology
+  (`nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`, in the namespace
   `TauCeti.VectorBundleOrientationCover`).
 
 These are the cohomology forms of the homology statements in
@@ -102,7 +102,7 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
   (g : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) {r : ℕ}
+    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
   (hV : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
     HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g.toRiemannianMetric))
@@ -204,7 +204,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_two_e
   have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
   let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤) (F := P)
-    (E := fun s ↦ i.NormalSpace s hn)
+    (E := fun s ↦ i.isImmersion.NormalSpace s hn)
   have hV := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
     (fun s ↦ (hfs (i s)).of_le (by simp)) hdim g hr).hasLocalSubbundleFrames
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
@@ -246,15 +246,12 @@ theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology
   have := hV.vectorBundle
   -- The negative normal spaces have the dimension of the Morse index.
   have hr := h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV
-  -- The critical submanifold is compact, as the critical points of the compact band.
-  have := h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc (hfs.of_le (by simp))
-    hc hac.le hcb.le hcompact hcrit
-  -- The band has the cohomology of the Thom pair of `ν⁻`, which the twisted Thom isomorphism over
-  -- the compact base `S` computes.
+  -- The band has the cohomology of the Thom pair of `ν⁻`, which the twisted Thom isomorphism
+  -- computes.
   obtain ⟨e⟩ := h.nonempty_singularCohomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
     hcrit hdim g hr (ModuleCat.of K K) K N m
   obtain ⟨e'⟩ := open VectorBundleOrientationCover in
-    nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace
+    nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem
       (Fin r → ℝ) (fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) (ι := Fin r) (by simp)
       K N p
   have hpm : p + finrank ℝ (Fin r → ℝ) = m := by rw [finrank_fin_fun]; omega

@@ -398,14 +398,8 @@ with regular left Haar measure `μ`, `(f * g).ofConv` agrees `μ`-almost everywh
 theorem ofConv_mul_ae_eq_modularCharacter (f g : L1GroupAlgebra 𝕜 μ) :
     (f * g).ofConv =ᵐ[μ]
       fun x ↦ ∫ z, (modularCharacter z : ℝ) • (f.ofConv (x * z⁻¹) * g.ofConv z) ∂μ := by
-  filter_upwards [ofConv_mul_ae_eq f g] with x hx
-  rw [hx, ← integral_mul_left_eq_self (fun y ↦ f.ofConv y * g.ofConv (y⁻¹ * x)) x]
-  have hinv := integral_inv_eq_integral_modularCharacter_smul_of_regular (μ := μ)
-    fun z ↦ f.ofConv (x * z⁻¹) * g.ofConv z
-  simp only [inv_inv] at hinv
-  refine Eq.trans ?_ hinv
-  refine integral_congr_ae (.of_forall fun z ↦ ?_)
-  simp [mul_inv_rev, inv_mul_cancel_right]
+  simpa only [ofConv_mul, smul_eq_mul] using
+    Lp.convolutionL_ae_eq_modularCharacter (hp := ENNReal.one_ne_top) f.ofConv g.ofConv
 
 end PointwiseConvolution
 

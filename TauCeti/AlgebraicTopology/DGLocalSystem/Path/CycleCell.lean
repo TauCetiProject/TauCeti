@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Module.Augmentation
 public import TauCeti.AlgebraicTopology.DGLocalSystem.CellResolution
-public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.BrownModel.Basic
 
 /-!
 # Brown models of one cell attached along a cycle

@@ -177,10 +177,35 @@ theorem mapLinearMap_smul_function (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F,
   ext x
   simp
 
+/-- Postcomposition of sections with a smooth fibrewise linear map over the identity, as a map
+linear over the smooth scalar functions. -/
+def mapFunctionLinearMap : Cₛ^n⟮I; F, V⟯ →ₗ[C^n⟮I, M; 𝕜⟯] Cₛ^n⟮I; G, W⟯ where
+  toAddHom := (mapLinearMap ϕ hϕ).toAddHom
+  map_smul' := mapLinearMap_smul_function ϕ hϕ
+
+/-- Function-linear transport evaluates by the given fibre map. -/
+@[simp]
+theorem mapFunctionLinearMap_apply (s : Cₛ^n⟮I; F, V⟯) (x : M) :
+    mapFunctionLinearMap ϕ hϕ s x = ϕ x (s x) := (rfl)
+
+/-- Forgetting linearity over the smooth functions recovers ground-field linear transport. -/
+@[simp]
+theorem restrictScalars_mapFunctionLinearMap :
+    (mapFunctionLinearMap ϕ hϕ).restrictScalars 𝕜 = mapLinearMap ϕ hϕ := (rfl)
+
+/-- As a function, function-linear transport is ground-field linear transport. -/
+theorem coe_mapFunctionLinearMap :
+    (mapFunctionLinearMap ϕ hϕ : Cₛ^n⟮I; F, V⟯ → Cₛ^n⟮I; G, W⟯) = mapLinearMap ϕ hϕ := (rfl)
+
 /-- Pointwise injectivity of a bundle map implies injectivity on smooth sections. -/
 theorem mapLinearMap_injective (h : ∀ x, Function.Injective (ϕ x)) :
     Function.Injective (mapLinearMap ϕ hϕ) :=
   ContMDiffSection.map_injective (fun x ↦ ϕ x) hϕ h
+
+/-- Pointwise injectivity of a bundle map implies injectivity of function-linear transport. -/
+theorem mapFunctionLinearMap_injective (h : ∀ x, Function.Injective (ϕ x)) :
+    Function.Injective (mapFunctionLinearMap ϕ hϕ) :=
+  coe_mapFunctionLinearMap ϕ hϕ ▸ mapLinearMap_injective ϕ hϕ h
 
 /-- The identity bundle map acts identically on sections. -/
 @[simp]

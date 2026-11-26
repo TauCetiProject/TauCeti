@@ -111,7 +111,8 @@ theorem isZero_singularHomology_sublevelPair_of_lt {r : ℕ}
     let := i.normalSpaceVectorBundle hn hdim
     have := i.normalSpaceContMDiffVectorBundle hn (m := ∞) (by simp) hdim
     obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤)
-      (F := EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ E'))) (E := fun s ↦ i.NormalSpace s hn)
+      (F := EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ E')))
+          (E := fun s ↦ i.isImmersion.NormalSpace s hn)
     let := subbundleTopology (EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ E')))
       (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
     have hV := h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
@@ -126,7 +127,7 @@ variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimension
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
   (g : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn)
+    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn)
 
 include h hfs hc hac hcb hcompact hcrit in
 /-- **Across a Morse–Bott level, in the degree of the index, the relative homology is the zeroth

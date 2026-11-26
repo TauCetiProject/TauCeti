@@ -49,6 +49,8 @@ over the residue field, then the trace of `M` comes from `A` and has residue `u 
   `± 1` of `M`.
 * `Matrix.charpoly_eq_charpoly_iff_fin_two`: two `2 × 2` matrices have the same characteristic
   polynomial exactly when they have the same trace and determinant, over any commutative ring.
+* `Matrix.charpolyRev_fin_two`: the reversed characteristic polynomial
+  `det (1 - X M) = 1 - trace M X + det M X ^ 2`.
 * `TauCeti.exists_algebraMap_eq_trace_fin_two`: a `2 × 2` matrix whose characteristic
   polynomial comes from `P` over a local ring, with reduction `(X - u) (X - v)`, has integral
   trace with residue `u + v`.
@@ -139,6 +141,16 @@ theorem charpoly_eq_charpoly_iff_fin_two {R : Type*} [CommRing R]
   · rw [det_eq_sign_charpoly_coeff, det_eq_sign_charpoly_coeff, h]
   · nontriviality R
     rw [charpoly_fin_two, charpoly_fin_two, htr, hdet]
+
+open Polynomial in
+/-- The reversed characteristic polynomial of a `2 × 2` matrix:
+`det (1 - X M) = 1 - trace M X + det M X ^ 2`. -/
+theorem charpolyRev_fin_two {R : Type*} [CommRing R] (M : Matrix (Fin 2) (Fin 2) R) :
+    M.charpolyRev = 1 - C M.trace * X + C M.det * X ^ 2 := by
+  simp only [charpolyRev, det_fin_two, trace_fin_two, Matrix.sub_apply, Matrix.smul_apply,
+    smul_eq_mul, Matrix.map_apply, one_apply_eq, one_apply_ne zero_ne_one,
+    one_apply_ne one_ne_zero, map_add, map_sub, map_mul]
+  ring
 
 end Matrix
 

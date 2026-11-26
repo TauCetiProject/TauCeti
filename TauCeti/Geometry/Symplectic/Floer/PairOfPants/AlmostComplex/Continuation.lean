@@ -145,7 +145,7 @@ theorem compatible_pairOfPantsContinuationAlmostComplex (h₀ : ω.Compatible J�
     (hJ₁c : ∀ q t x, ω.Compatible (J₁ q t x)) (hJ₂c : ∀ q t x, ω.Compatible (J₂ q t x)) (w : ℂ)
     (x : M) : ω.Compatible (pairOfPantsContinuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ L w x) :=
   compatible_pairOfPantsAlmostComplex h₀
-    (fun q _ _ => compatible_continuationAlmostComplex h₀ (hJ₁c q) (hJ₂c q) _ _) w _
+    (fun q _ _ => compatible_continuationAlmostComplex h₀ (hJ₁c q _ _) (hJ₂c q _ _)) w _
 
 /-- **The structure is the pair-of-pants structure of `J₁` on the pants side of the necks.** At a
 point where the signed longitudinal coordinate `σ_q` of every end is at most the neck position

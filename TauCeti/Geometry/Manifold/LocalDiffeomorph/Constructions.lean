@@ -41,6 +41,9 @@ records the source, target, forward map and inverse map of Mathlib's composition
 
 ## Main results
 
+* `PartialDiffeomorph.contDiffOn_comp_of_contMDiffOn`: the coordinate map `Φ ∘ u` of a `Cᵏ` map
+  `u` from a normed space into the source of a `Cⁿ` partial diffeomorphism `Φ` into a normed
+  space is `Cᵏ`, for `k ≤ n`.
 * `PartialDiffeomorph.toPartialEquiv_injective` and `PartialDiffeomorph.ext`: extensionality for
   `PartialDiffeomorph` through its underlying `PartialEquiv`.
 * `PartialDiffeomorph.exists_transition`: charts with a common coordinate induce a local change
@@ -95,6 +98,21 @@ def ofLE (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) : PartialDiffeomorp
 theorem ofLE_toPartialEquiv (Φ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) :
     (Φ.ofLE hmn).toPartialEquiv = Φ.toPartialEquiv :=
   (rfl)
+
+section ContDiffOn
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- **The coordinate map in a chart is `Cᵏ`.** The coordinate map `Φ ∘ u` of a `Cᵏ` map `u` on a
+set `U` of a normed space, with values in the source of a `Cⁿ` partial diffeomorphism `Φ` into a
+normed space, is `Cᵏ` on `U` when `k ≤ n`. -/
+theorem contDiffOn_comp_of_contMDiffOn {k : WithTop ℕ∞} (Φ : PartialDiffeomorph I 𝓘(𝕜, F) M F n)
+    (hk : k ≤ n) {u : G → M} {U : Set G} (hu : ContMDiffOn 𝓘(𝕜, G) I k u U)
+    (huΦ : ∀ z ∈ U, u z ∈ Φ.source) :
+    ContDiffOn 𝕜 k (Φ ∘ u) U :=
+  contMDiffOn_iff_contDiffOn.1 <| (Φ.contMDiffOn.of_le hk).comp hu huΦ
+
+end ContDiffOn
 
 section Trans
 

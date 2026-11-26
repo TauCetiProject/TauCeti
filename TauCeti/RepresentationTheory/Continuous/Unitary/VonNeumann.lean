@@ -28,13 +28,7 @@ theorem mem_commutant_adjoin_range_iff {G H : Type*} [Group G] [NormedAddCommGro
     [InnerProductSpace ℂ H] [CompleteSpace H] {π : ContRepresentation ℂ G H}
     (hπ : IsUnitary π) {T : H →L[ℂ] H} :
     T ∈ (VonNeumannAlgebra.adjoin (Set.range π)).commutant ↔ ∀ g : G, π g * T = T * π g := by
-  refine ⟨fun hT g => VonNeumannAlgebra.mem_commutant_iff.1 hT _
-      (VonNeumannAlgebra.subset_adjoin _ ⟨g, rfl⟩),
-    fun hT => ?_⟩
-  rw [← SetLike.mem_coe, VonNeumannAlgebra.coe_commutant_adjoin, Set.mem_centralizer_iff]
-  rintro x (⟨g, rfl⟩ | hx)
-  · exact hT g
-  · obtain ⟨g, hg⟩ := Set.mem_star.1 hx
-    have hstar : x = π g⁻¹ := by simpa [hπ.star_eq_inv] using congr_arg star hg.symm
-    exact hstar ▸ hT g⁻¹
+  rw [VonNeumannAlgebra.mem_commutant_adjoin_iff_of_star_subset
+    (by rintro _ ⟨g, hg⟩; exact ⟨g⁻¹, by simpa [hπ.star_eq_inv] using congr_arg star hg⟩),
+    Set.forall_mem_range]
 end ContRepresentation.IsUnitary

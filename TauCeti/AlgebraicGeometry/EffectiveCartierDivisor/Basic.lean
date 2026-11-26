@@ -54,10 +54,11 @@ element of a domain. In particular an effective Cartier divisor not containing a
 the closure of `η`, with its reduced induced structure, properly
 (`IsEffectiveCartier.comap_subschemeι_vanishingIdeal_closure_singleton`).
 
-Sums, nonnegative multiples, and finite sums are effective Cartier
-(`TauCeti.isEffectiveCartier_mul`, `TauCeti.isEffectiveCartier_pow`, and
-`TauCeti.isEffectiveCartier_prod`), and addition of an effective Cartier divisor is cancellative
-(`IsEffectiveCartier.mul_left_cancel`).
+Sums, nonnegative multiples, and finite sums are effective Cartier, and conversely any factor of an
+effective Cartier product is itself effective Cartier (`IsEffectiveCartier.of_mul_left`,
+`IsEffectiveCartier.of_mul_right`, `TauCeti.isEffectiveCartier_mul_iff`,
+`TauCeti.isEffectiveCartier_pow_iff`, and `TauCeti.isEffectiveCartier_prod_iff`). Addition of an
+effective Cartier divisor is cancellative (`IsEffectiveCartier.mul_left_cancel`).
 
 ## References
 
@@ -324,6 +325,60 @@ theorem IsEffectiveCartier.mul_left_cancel {I J K : X.IdealSheafData} (hI : I.Is
   rwa [ideal_mul, ideal_mul, Pi.mul_apply, Pi.mul_apply, hUa x,
     (ha x).span_singleton_mul_right_inj] at hx
 
+/-- **Factors of an effective Cartier divisor are effective Cartier.** If the product `I * J`
+defines an effective Cartier divisor on an arbitrary scheme `X`, then `I` defines an effective
+Cartier divisor, with no assumption on `J` or `X`. -/
+theorem IsEffectiveCartier.of_mul_left {I J : X.IdealSheafData}
+    (h : (I * J).IsEffectiveCartier) : I.IsEffectiveCartier := by
+  rw [isEffectiveCartier_iff]
+  intro x
+  obtain ⟨U, hxU, c, hc, hUc⟩ := (isEffectiveCartier_iff _).mp h x
+  have hUc' : I.ideal U * J.ideal U = Ideal.span {c} := by rwa [ideal_mul, Pi.mul_apply] at hUc
+  have hcover := _root_.AlgebraicGeometry.iSup_basicOpen_of_span_eq_top U.val _
+    (Ideal.span_setOf_mul_eq_mul_eq_top hUc')
+  obtain ⟨u, ⟨a, ha, b, hb, huc⟩, hxu⟩ :
+      ∃ u ∈ {u : Γ(X, U) | ∃ a ∈ I.ideal U, ∃ b ∈ J.ideal U, u * c = a * b},
+        x ∈ X.basicOpen u := by
+    have hx : x ∈ ⨆ u ∈ {u : Γ(X, U) | ∃ a ∈ I.ideal U, ∃ b ∈ J.ideal U, u * c = a * b},
+        X.basicOpen u := by
+      rw [hcover]
+      exact hxU
+    simpa only [Opens.mem_iSup, exists_prop] using hx
+  let V : X.affineOpens := ⟨X.basicOpen u, U.property.basicOpen u⟩
+  have hVU : V.val ≤ U.val := X.basicOpen_le u
+  let ρ := (X.presheaf.map (homOfLE hVU).op).hom
+  have hu : IsUnit (ρ u) := X.toRingedSpace.isUnit_res_basicOpen u
+  have hab : ρ a * ρ b = ρ u * ρ c := by rw [← map_mul, ← map_mul, huc]
+  have hreg : IsSMulRegular Γ(X, V) (ρ a * ρ b) :=
+    hab ▸ (hu.isSMulRegular _).mul (U.property.isSMulRegular_map hVU hc)
+  have hb' : IsSMulRegular Γ(X, V) (ρ b) := hreg.of_mul
+  have ha' : IsSMulRegular Γ(X, V) (ρ a) := (mul_comm (ρ a) (ρ b) ▸ hreg).of_mul
+  refine ⟨V, hxu, ρ a, ha', le_antisymm (hb'.span_singleton_mul_right_mono.mp ?_) ?_⟩
+  · calc
+      Ideal.span {ρ b} * I.ideal V ≤ J.ideal V * I.ideal V :=
+        Ideal.mul_mono_left ((Ideal.span_singleton_le_iff_mem _).mpr
+          (by rw [← J.map_ideal hVU]; exact Ideal.mem_map_of_mem _ hb))
+      _ = (I * J).ideal V := by rw [mul_comm, ideal_mul, Pi.mul_apply]
+      _ = Ideal.span {ρ c} := by
+        rw [← (I * J).map_ideal hVU, hUc, Ideal.map_span, Set.image_singleton]
+        -- `Ideal.map_span` uses the `CommRingCat`-derived `Semiring` instance on `Γ(X, V)`,
+        -- which is definitionally equal to the target `Semiring` instance after unfolding `ρ`.
+        change Ideal.span {(X.presheaf.map (homOfLE hVU).op).hom c} = Ideal.span {ρ c}
+        simp only [ρ]
+      _ ≤ Ideal.span {ρ u * ρ c} :=
+        Ideal.span_singleton_le_span_singleton.mpr (hu.mul_left_dvd.mpr dvd_rfl)
+      _ = Ideal.span {ρ b} * Ideal.span {ρ a} := by
+        rw [← hab, mul_comm (ρ a), Ideal.span_singleton_mul_span_singleton]
+  · rw [Ideal.span_singleton_le_iff_mem, ← I.map_ideal hVU]
+    exact Ideal.mem_map_of_mem _ ha
+
+/-- If the product `I * J` defines an effective Cartier divisor, then `J` defines an effective
+Cartier divisor. -/
+theorem IsEffectiveCartier.of_mul_right {I J : X.IdealSheafData}
+    (h : (I * J).IsEffectiveCartier) : J.IsEffectiveCartier := by
+  rw [mul_comm] at h
+  exact h.of_mul_left
+
 end AlgebraicGeometry.Scheme.IdealSheafData
 
 namespace TauCeti
@@ -344,12 +399,27 @@ theorem isEffectiveCartier_mul {I J : X.IdealSheafData}
   exact ⟨V, hxV, a * b, ha.mul hb, by
     simp only [ideal_mul, Pi.mul_apply, hIa, hJb, Ideal.span_singleton_mul_span_singleton]⟩
 
+/-- A product of two ideal sheaves defines an effective Cartier divisor if and only if both
+factors do. -/
+@[simp, grind =]
+theorem isEffectiveCartier_mul_iff {I J : X.IdealSheafData} :
+    (I * J).IsEffectiveCartier ↔ I.IsEffectiveCartier ∧ J.IsEffectiveCartier :=
+  ⟨fun h ↦ ⟨h.of_mul_left, h.of_mul_right⟩, fun ⟨hI, hJ⟩ ↦ isEffectiveCartier_mul hI hJ⟩
+
 /-- Every nonnegative multiple of an effective Cartier divisor is effective Cartier. -/
 theorem isEffectiveCartier_pow {I : X.IdealSheafData} (hI : I.IsEffectiveCartier) (n : ℕ) :
     (I ^ n).IsEffectiveCartier := by
   induction n with
   | zero => simp
   | succ n hn => simpa only [pow_succ] using isEffectiveCartier_mul hn hI
+
+/-- A positive power `I ^ n` defines an effective Cartier divisor if and only if `I` does. -/
+@[simp]
+theorem isEffectiveCartier_pow_iff {I : X.IdealSheafData} {n : ℕ} (hn : n ≠ 0) :
+    (I ^ n).IsEffectiveCartier ↔ I.IsEffectiveCartier := by
+  refine ⟨fun h ↦ ?_, fun h ↦ isEffectiveCartier_pow h n⟩
+  rw [← Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hn), pow_succ] at h
+  exact h.of_mul_right
 
 /-- A finite sum of effective Cartier divisors is effective Cartier. -/
 theorem isEffectiveCartier_prod {ι : Type*} {s : Finset ι} {I : ι → X.IdealSheafData}
@@ -361,5 +431,15 @@ theorem isEffectiveCartier_prod {ι : Type*} {s : Finset ι} {I : ι → X.Ideal
     rw [Finset.prod_insert hi]
     exact isEffectiveCartier_mul (hI i (Finset.mem_insert_self i s))
       (hs fun j hj ↦ hI j (Finset.mem_insert_of_mem hj))
+
+/-- A finite product of ideal sheaves defines an effective Cartier divisor if and only if every
+factor does. -/
+@[simp]
+theorem isEffectiveCartier_prod_iff {ι : Type*} {s : Finset ι} {I : ι → X.IdealSheafData} :
+    (∏ i ∈ s, I i).IsEffectiveCartier ↔ ∀ i ∈ s, (I i).IsEffectiveCartier := by
+  classical
+  refine ⟨fun h i hi ↦ ?_, isEffectiveCartier_prod⟩
+  rw [← Finset.mul_prod_erase s I hi] at h
+  exact h.of_mul_left
 
 end TauCeti
