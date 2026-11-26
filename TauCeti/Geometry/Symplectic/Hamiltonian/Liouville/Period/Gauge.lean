@@ -12,7 +12,6 @@ import Mathlib.Analysis.Convex.Contractible
 import TauCeti.Analysis.Calculus.DifferentialForm.Gradient
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Lift
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 
 /-!
 # The angle gauge of global action–angle coordinates is a gradient
@@ -151,38 +150,6 @@ theorem exists_eq_mulVec_add_and_apply_eq_actionAngleCover_of_actionAngle_of_sim
   funext i
   simp only [Pi.add_apply, AddCircle.coe_add]
   rw [← congrFun (hgg₀ (π x)) i]
-
-include h hΦ' hΦ'σ hΦ'a in
-/-- The actions `a'` of global action–angle coordinates `Φ'` identify the base with the open set
-`a'(B)`: the map `c ↦ π(Φ'⁻¹(κ(0, c)))` is smooth on `a'(B)` and inverts `a'`. -/
-private theorem isOpen_range_and_exists_contMDiffOn_apply_eq_of_actionAngle [Nonempty M]
-    (hΦ'i : Injective Φ') :
-    IsOpen (range a') ∧
-      ∃ e : (ι → ℝ) → B, ContMDiffOn 𝓘(ℝ, ι → ℝ) J ∞ e (range a') ∧ ∀ b, e (a' b) = b := by
-  set k : (ι → ℝ) → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p) :=
-    fun c ↦ actionAngleCover p ((0 : ι → ℝ), c)
-  have hk : ContMDiff 𝓘(ℝ, ι → ℝ)
-      ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ k :=
-    (contMDiff_actionAngleCover p).comp (contMDiff_const.prodMk_space contMDiff_id)
-  -- `a'(B)` is the set of actions whose zero angles lie in the open image of `Φ'`.
-  have hV : range a' = k ⁻¹' (Φ' '' univ) := by
-    ext c
-    refine ⟨?_, fun ⟨y, _, hy⟩ ↦ ⟨π y, ?_⟩⟩
-    · rintro ⟨b, rfl⟩
-      obtain ⟨y, -, hy⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ' hΦ'σ hΦ'a b 0
-      exact ⟨y, mem_univ _, hy⟩
-    · rw [← hΦ'a, hy, torusActions_actionAngleCover]
-  refine ⟨by rw [hV, image_univ]; exact hΦ'.isOpenMap.isOpen_range.preimage hk.continuous,
-    π ∘ invFunOn Φ' univ ∘ k, ?_, fun b ↦ ?_⟩
-  · refine h.isSubmersion.contMDiff.comp_contMDiffOn
-      ((IsLocalDiffeomorphOn.contMDiffOn_invFunOn (hΦ'.isLocalDiffeomorphOn univ) isOpen_univ
-        hΦ'i.injOn).comp hk.contMDiffOn fun c hc ↦ ?_)
-    rwa [hV] at hc
-  · -- `Φ'⁻¹(κ(0, a' b))` is the point with zero angles over `b`.
-    obtain ⟨y, hyb, hy⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ' hΦ'σ hΦ'a b 0
-    have hinv : invFunOn Φ' univ (k (a' b)) = y :=
-      hΦ'i ((invFunOn_eq ⟨y, mem_univ _, hy⟩).trans hy.symm)
-    simp only [Function.comp_apply, hinv, hyb]
 
 include h hΦ' hΦ'σ hΦ'a in
 /-- If the set of actions `a'(B)` of global action–angle coordinates `Φ'` is star-convex, then the
