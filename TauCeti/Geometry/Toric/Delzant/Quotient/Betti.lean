@@ -393,14 +393,15 @@ private theorem ncard_edgeBasis_simplexDirection_zero (ha : 0 < a)
     linarith [(k : ℕ).cast_nonneg (α := ℝ)]
 
 /-- At the vertex `a e p*` of the standard simplex, exactly `p + 1` edges descend along
-`(1, 2, …, n)`: the slanted edge and the edges towards the vertices `a e k*` with `k < p`. -/
+`(1, 2, …, n)`: the edge towards the vertex `0` and the edges towards the vertices `a e k*` with
+`k < p`. -/
 private theorem ncard_edgeBasis_simplexDirection_smul_proj (ha : 0 < a) {p : Fin n}
     (hv : IsSmoothVertex ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n))
       (simplexSupport a) (a • ContinuousLinearMap.proj p)) :
     {e | hv.edgeBasis (isIntegralLattice_intCast n) e (simplexDirection n) < 0}.ncard =
       p + 1 := by
   classical
-  -- The descending edges are the slanted one and those of the facets `x(e k) ≥ 0` with `k < p`.
+  -- The descending edges are those leaving the slanted facet and the facets `x(e k) ≥ 0`, `k < p`.
   have himage : Subtype.val ''
       {e | hv.edgeBasis (isIntegralLattice_intCast n) e (simplexDirection n) < 0} =
       insert none (some '' Iio p) := by
