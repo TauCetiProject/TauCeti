@@ -275,6 +275,20 @@ theorem lineClass_def :
       ((ContinuousMap.id_apply _).trans (affineParam_def 1 0)) ⟦lineSquare n⟧ :=
   (rfl)
 
+/-- Any quantity depending on a base point and a class in `π₂(CPⁿ⁺¹)` at that point takes the same
+value on `lineClass n` at `[e₁]` as on `⟦lineSquare n⟧` at `affineParam 1 0`: the two base points
+agree and `lineClass n` is `⟦lineSquare n⟧` carried along `HomotopyGroup.map` of the identity. -/
+theorem apply_lineClass {α : Sort*}
+    (f : ∀ y, HomotopyGroup (Fin 2) (ComplexProjectiveSpace (n + 1)) y → α) :
+    f _ (lineClass n) = f (affineParam 1 0) ⟦lineSquare n⟧ := by
+  have key : ∀ y (h : ContinuousMap.id _ (affineParam 1 0) = y),
+      f y (HomotopyGroup.map (ContinuousMap.id _) h ⟦lineSquare n⟧) =
+        f (affineParam 1 0) ⟦lineSquare n⟧ := by
+    intro y h
+    obtain rfl : affineParam 1 0 = y := h
+    exact congrArg (f _) (HomotopyGroup.map_id_apply _)
+  exact key _ _
+
 /-- The coordinate line carried to `[e₁]`, with its cube reindexed along `finSuccEquiv 1` so that
 the homotopy parameter of the boundary map comes first. -/
 private def lineGenLoop :

@@ -247,17 +247,8 @@ theorem sphereIntegral_fubiniStudyForm_pi2MulEquivInt_symm_ofAdd_one :
     sphereIntegral (fubiniStudyForm (n + 1)).val (mk (n + 1) (affineUnitVector 1 0))
       ((pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero).symm
         (Multiplicative.ofAdd 1)) = 1 := by
-  -- `lineClass n` is `⟦lineSquare n⟧` with its base point renamed by `HomotopyGroup.map` of the
-  -- identity.
-  have key : ∀ y (h : ContinuousMap.id _ (affineParam 1 0) = y),
-      sphereIntegral (fubiniStudyForm (n + 1)).val y
-        (HomotopyGroup.map (ContinuousMap.id _) h
-          (⟦lineSquare n⟧ : HomotopyGroup (Fin 2) _ (affineParam 1 0))) = 1 := by
-    intro y h
-    obtain rfl : affineParam 1 0 = y := h
-    exact (congrArg (sphereIntegral _ _) (HomotopyGroup.map_id_apply _)).trans
-      sphereIntegral_fubiniStudyForm_lineSquare
-  rw [pi2MulEquivInt_symm_ofAdd_one, lineClass_def]
-  exact key _ _
+  rw [pi2MulEquivInt_symm_ofAdd_one]
+  exact (apply_lineClass n fun y a ↦ sphereIntegral (fubiniStudyForm (n + 1)).val y a).trans
+    sphereIntegral_fubiniStudyForm_lineSquare
 
 end TauCeti.ComplexProjectiveSpace

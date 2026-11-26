@@ -85,18 +85,8 @@ theorem firstChernHom_fubiniStudyForm_apply_pi2MulEquivInt_symm_ofAdd_one :
       (mk (n + 1) (affineUnitVector 1 0))
       (Additive.ofMul ((pi2MulEquivInt (affineUnitVector 1 0) n.add_one_ne_zero).symm
         (Multiplicative.ofAdd 1))) = n + 2 := by
-  -- `lineClass n` is `⟦lineSquare n⟧` with its base point renamed by `HomotopyGroup.map` of the
-  -- identity.
-  have key : ∀ y (h : ContinuousMap.id _ (affineParam 1 0) = y),
-      (isSymplectic_fubiniStudyForm (n := n + 1)).isNondegenerate.firstChernHom y
-        (Additive.ofMul (HomotopyGroup.map (ContinuousMap.id _) h
-          (⟦lineSquare n⟧ : HomotopyGroup (Fin 2) _ (affineParam 1 0)))) = n + 2 := by
-    intro y h
-    obtain rfl : affineParam 1 0 = y := h
-    exact (congrArg (fun a ↦ isSymplectic_fubiniStudyForm.isNondegenerate.firstChernHom _
-      (Additive.ofMul a)) (HomotopyGroup.map_id_apply _)).trans
-      firstChernHom_fubiniStudyForm_apply_mk_lineSquare
-  rw [pi2MulEquivInt_symm_ofAdd_one, lineClass_def]
-  exact key _ _
+  rw [pi2MulEquivInt_symm_ofAdd_one]
+  exact (apply_lineClass n fun y a ↦ isSymplectic_fubiniStudyForm.isNondegenerate.firstChernHom y
+    (Additive.ofMul a)).trans firstChernHom_fubiniStudyForm_apply_mk_lineSquare
 
 end TauCeti.ComplexProjectiveSpace
