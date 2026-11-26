@@ -34,8 +34,7 @@ for every `u ∈ C_{par,b}^{k+2+α}` on `ℝⁿ × [0, T]` with `δ < T`
 on `n`, `k`, `α`, `δ`, the ellipticity constant, a bound on the norms of the coefficients and a
 bound on the horizon. The constant is uniform in `u` and involves only the supremum of the initial
 values, which is the form needed to pass to solutions with merely bounded initial values by
-approximation. At order `k = 0` the sharp dependence
-`δ^(1 + α/2)` of the constant on `δ` is
+approximation. At order `k = 0` the explicit dependence `δ^(1 + α/2)` of the constant on `δ` is
 `TauCeti.ParabolicC2HolderSpace.exists_rpow_mul_norm_restrictL_le_euclideanParabolicOperatorL`;
 at higher orders the constant is not tracked in `δ`.
 
