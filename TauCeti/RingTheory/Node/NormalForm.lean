@@ -115,6 +115,22 @@ theorem Z_mul (q : B) (n m : ℤ) :
       Int.natAbs_add_of_nonneg (not_lt.mp hn) (not_lt.mp hm), Nat.sub_self, Nat.zero_div,
       pow_zero, map_one, one_mul, pow_add]
 
+/-- When `a` and `b` have the same sign, `Z q (a + b) = Z q a * Z q b` without any factor of
+`q`. -/
+theorem Z_add_eq_mul_of_same_sign (q : B) {a b : ℤ}
+    (hab : (0 ≤ a ∧ 0 ≤ b) ∨ (a ≤ 0 ∧ b ≤ 0)) : Z q (a + b) = Z q a * Z q b := by
+  have hexp : (a.natAbs + b.natAbs - (a + b).natAbs) / 2 = 0 := by omega
+  rw [Z_mul, hexp, pow_zero, map_one, one_mul]
+
+/-- Reduction of a polynomial monomial `b X₀^(d 0) X₁^(d 1)` in `NodeAlgebra B q` to normal form:
+`mk q (monomial d b) = algebraMap B _ (b * q ^ min (d 0) (d 1)) * Z q (d 1 - d 0)`. -/
+theorem mk_monomial (q : B) (d : Fin 2 →₀ ℕ) (b : B) :
+    mk q (MvPolynomial.monomial d b) =
+      algebraMap B (NodeAlgebra B q) (b * q ^ min (d 0) (d 1)) * Z q ((d 1 : ℤ) - (d 0 : ℤ)) := by
+  rw [MvPolynomial.monomial_eq, map_mul, ← MvPolynomial.algebraMap_eq, AlgHom.commutes,
+    Finsupp.prod_fintype _ _ (fun _ => by simp), Fin.prod_univ_two]
+  simp [coord_zero_pow_mul_coord_one_pow, mul_assoc]
+
 /-! ### Normal-form basis and injectivity of the structure map -/
 
 /-- Monomial reduction map `B[x, y] →ₗ[B] (ℤ →₀ B)` sending `b x^i y^j` to
@@ -181,12 +197,8 @@ private def slabReprEquiv (q : B) : NodeAlgebra B q ≃ₗ[B] (ℤ →₀ B) :=
       obtain ⟨p, rfl⟩ := mk_surjective q u
       induction p using MvPolynomial.induction_on' with
       | monomial d b =>
-        rw [LinearMap.comp_apply, LinearMap.id_apply, reduceQuot_mk, reducePoly_monomial,
-          Finsupp.linearCombination_single, MvPolynomial.monomial_eq, map_mul,
-          ← MvPolynomial.algebraMap_eq, AlgHom.commutes,
-          Finsupp.prod_fintype _ _ (fun _ => by simp), Fin.prod_univ_two, map_mul, map_pow,
-          map_pow, mk_X, mk_X, coord_zero_pow_mul_coord_one_pow,
-          ← Algebra.smul_def, ← Algebra.smul_def, smul_smul]
+        rw [LinearMap.comp_apply, reduceQuot_mk]
+        simp [reducePoly_monomial, mk_monomial, Algebra.smul_def]
       | add f g hf hg => rw [map_add]; simpa only [map_add] using congrArg₂ (· + ·) hf hg)
 
 /-- **Slab normal form**: `NodeAlgebra B q` has the integer-indexed `B`-basis `n ↦ Z q n`,

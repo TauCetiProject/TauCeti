@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.Node.NormalForm
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.MonoidAlgebra.Grading
 import TauCeti.Algebra.MonoidAlgebra.MapDomain
+import TauCeti.Algebra.Polynomial.Laurent.Binomial
 
 /-!
 # Chamber Laurent maps and graded correspondences for nodal slab algebras
@@ -26,7 +27,8 @@ adjacent chambers carry Laurent algebras `B[T;T⁻¹]` linked by `B`-algebra hom
 
 From the Laurent coefficients (`coeff_leftChamberMap`, `coeff_rightChamberMap`) we obtain:
 * joint injectivity of `(leftChamberMap q, rightChamberMap q)` for arbitrary `B` and `q`
-  (`NodeAlgebra.chamberProd_injective`), and individual injectivity when `IsRegular q`;
+  (`NodeAlgebra.chamberProd_injective`), individual injectivity when `IsRegular q`, and the
+  binomial expansion for `q = C t * (1 + T 1)` (`NodeAlgebra.rightChamberMap_binomial`);
 * the `B`-linear `GradedCorrespondence` `NodeAlgebra.slabCorrespondence` with multiplicative
   lifts, explicit transfers (`slabCorrespondence_transfer_C_mul_T`,
   `slabCorrespondence_symm_transfer_C_mul_T`), and functoriality (`slabCorrespondenceHom`);
@@ -177,6 +179,24 @@ theorem mapAlgHom_comp_rightChamberMap [CommSemiring R] [Algebra R B] [Algebra R
       ((rightChamberMap q').restrictScalars R).comp (mapAlgHom φ hq) :=
   algHom_ext_of_algebra (fun _ => by simp [← C_eq_algebraMap]) (by simp [hq]) (by simp)
 
+/-- In `S[w, w⁻¹][x, y] / (x y - t (1 + w))` (with `w = T 1` in `S[T;T⁻¹]` and `y = T 1` in
+`(S[T;T⁻¹])[T;T⁻¹]`), `x^a w^b` maps in the right chamber to
+`t^a y^{-a} ∑_{j=0}^a binom(a, j) w^{b + j}`. -/
+theorem rightChamberMap_binomial {S : Type*} [CommRing S] (t : S) (a : ℕ) (b : ℤ) :
+    let q : S[T;T⁻¹] := C t * (1 + T 1)
+    rightChamberMap q (coord q 0 ^ a * algebraMap S[T;T⁻¹] (NodeAlgebra S[T;T⁻¹] q) (T b)) =
+      C (C (t ^ a)) * T (-(a : ℤ)) * ∑ j ∈ Finset.range (a + 1),
+        (a.choose j : (S[T;T⁻¹])[T;T⁻¹]) * C (T (b + j)) := by
+  intro q
+  calc rightChamberMap q (coord q 0 ^ a * algebraMap S[T;T⁻¹] (NodeAlgebra S[T;T⁻¹] q) (T b))
+      = C (C (t ^ a) * ((1 + T 1 : S[T;T⁻¹]) ^ a * T b)) * T (-(a : ℤ)) := by
+        rw [map_mul, map_pow, rightChamberMap_coord_zero, AlgHom.commutes]
+        simp [q, mul_pow, map_mul, T_pow]; ring
+    _ = C (C (t ^ a)) * T (-(a : ℤ)) * ∑ j ∈ Finset.range (a + 1),
+          (a.choose j : (S[T;T⁻¹])[T;T⁻¹]) * C (T (b + j)) := by
+        rw [LaurentPolynomial.one_add_T_pow_mul_T, map_mul, map_sum, mul_right_comm]
+        exact congrArg _ (Finset.sum_congr rfl fun _ _ => by rw [mul_one, map_mul, map_natCast])
+
 /-! ### `B`-linear graded correspondence across a slab -/
 
 /-- Auxiliary `B`-linear map reading the `k`-th Laurent coefficient and scaling a slab element. -/
@@ -189,6 +209,13 @@ private def coeffLiftLinearMap (q : B) (k : ℤ) (z : NodeAlgebra B q) :
 @[simp] private theorem coeffLiftLinearMap_apply (q : B) (k : ℤ) (z : NodeAlgebra B q)
     (a : AddMonoidAlgebra.grade B k) :
     coeffLiftLinearMap q k z a = ((a : B[T;T⁻¹]).coeff k) • z := by simp [coeffLiftLinearMap]
+
+private theorem chamberMap_coeffLiftLinearMap (q : B) (f : NodeAlgebra B q →ₐ[B] B[T;T⁻¹])
+    (k : ℤ) (z : NodeAlgebra B q) (hz : f z = T k) :
+    f.toLinearMap.comp (coeffLiftLinearMap q k z) = (AddMonoidAlgebra.grade B k).subtype :=
+  LinearMap.ext fun a => by
+    simp [hz, Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T,
+      AddMonoidAlgebra.single_coeff_eq_of_mem_grade a.property]
 
 /-- The `B`-linear `GradedCorrespondence` across `NodeAlgebra B q` for incoming degree sets
 `I, J ⊆ Set.Ici (0 : ℤ)` (such as `Set.Ici 0` for all nonnegative incoming powers or `Set.Ioi 0`
@@ -204,18 +231,10 @@ def slabCorrespondence (q : B) {I J : Set ℤ} (hI : I ⊆ Set.Ici 0) (hJ : J �
   right := (rightChamberMap q).toLinearMap
   liftLeft i := coeffLiftLinearMap q (i : ℤ) (Z q (-(i : ℤ)))
   liftRight j := coeffLiftLinearMap q (j : ℤ) (Z q (j : ℤ))
-  left_liftLeft i := LinearMap.ext fun a => by
-    rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Submodule.subtype_apply,
-      coeffLiftLinearMap_apply, map_smul, leftChamberMap_Z,
-      Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.property)), pow_zero, map_one, one_mul,
-      neg_neg, Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T,
-      AddMonoidAlgebra.single_coeff_eq_of_mem_grade a.property]
-  right_liftRight j := LinearMap.ext fun a => by
-    rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Submodule.subtype_apply,
-      coeffLiftLinearMap_apply, map_smul, rightChamberMap_Z,
-      Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.property)), pow_zero, map_one, one_mul,
-      Algebra.smul_def, ← C_eq_algebraMap, ← single_eq_C_mul_T,
-      AddMonoidAlgebra.single_coeff_eq_of_mem_grade a.property]
+  left_liftLeft i := chamberMap_coeffLiftLinearMap q (leftChamberMap q) (i : ℤ) (Z q (-(i : ℤ)))
+    (by simp [Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.property))])
+  right_liftRight j := chamberMap_coeffLiftLinearMap q (rightChamberMap q) (j : ℤ) (Z q (j : ℤ))
+    (by simp [Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.property))])
 
 @[simp] theorem slabCorrespondence_left (q : B) {I J : Set ℤ} (hI : I ⊆ Set.Ici 0)
     (hJ : J ⊆ Set.Ici 0) : (slabCorrespondence q hI hJ).left = (leftChamberMap q).toLinearMap :=
@@ -277,10 +296,13 @@ private theorem slab_transfer_C_mul_T_aux (q : B) {I J : Set ℤ}
       b • (C q * T (-1)) ^ (i : ℤ).natAbs) :
     (c.transfer i k ⟨C b * T (i : ℤ), hm⟩ : B[T;T⁻¹]) =
       if -(i : ℤ) = k then C (b * q ^ (i : ℤ).natAbs) * T (-(i : ℤ)) else 0 := by
-  rw [GradedCorrespondence.transfer_apply, himg, mul_pow, ← map_pow, T_pow, mul_neg_one,
-    Int.natAbs_of_nonneg hi, Algebra.smul_def, ← C_eq_algebraMap, ← mul_assoc, ← map_mul,
-    ← single_eq_C_mul_T, AddMonoidAlgebra.grade.decompose_single, DirectSum.coe_of_apply]
-  split_ifs with h <;> simp [h]
+  have hsingle : b • (C q * T (-1)) ^ (i : ℤ).natAbs =
+      AddMonoidAlgebra.single (-(i : ℤ)) (b * q ^ (i : ℤ).natAbs) := by
+    simp [Algebra.smul_def, ← C_eq_algebraMap, mul_pow, T_pow, Int.natAbs_of_nonneg hi,
+      single_eq_C_mul_T, mul_assoc]
+  simp only [GradedCorrespondence.transfer_apply, himg, hsingle,
+    AddMonoidAlgebra.grade.decompose_single, DirectSum.coe_of_apply]
+  split_ifs with h <;> simp [h, single_eq_C_mul_T]
 
 /-- Explicit right-chamber transfer of an incoming left monomial `C b * T i` across
 `slabCorrespondence`. -/
@@ -487,6 +509,17 @@ private theorem tangentialLiftLinearMap_apply (q : AddMonoidAlgebra S Λ) (p : �
   rw [Algebra.smul_def, IsScalarTower.algebraMap_apply S (AddMonoidAlgebra S Λ),
     ← map_mul, ← Algebra.smul_def, AddMonoidAlgebra.smul_single, smul_eq_mul, mul_one]
 
+private theorem tangentialMap_tangentialLiftLinearMap (q : AddMonoidAlgebra S Λ)
+    (f : NodeAlgebra (AddMonoidAlgebra S Λ) q →ₐ[S] AddMonoidAlgebra S (ℤ × Λ))
+    (p : ℤ × Λ) (z : NodeAlgebra (AddMonoidAlgebra S Λ) q)
+    (hz : ∀ s : S,
+      f (algebraMap (AddMonoidAlgebra S Λ) _ (AddMonoidAlgebra.single p.2 s) * z) =
+        AddMonoidAlgebra.single p s) :
+    f.toLinearMap.comp (tangentialLiftLinearMap q p z) = (AddMonoidAlgebra.grade S p).subtype :=
+  LinearMap.ext fun a => by
+    simp [tangentialLiftLinearMap_apply, hz,
+      AddMonoidAlgebra.single_coeff_eq_of_mem_grade a.property]
+
 /-- The `S`-linear full-exponent `GradedCorrespondence` across `NodeAlgebra S[Λ] q` on the monoid
 algebras `S[ℤ × Λ]` graded by `AddMonoidAlgebra.grade S`, for admissible exponent sets
 `I, J ⊆ {p : ℤ × Λ | 0 ≤ p.1}`. -/
@@ -498,18 +531,16 @@ def tangentialSlabCorrespondence (q : AddMonoidAlgebra S Λ)
   right := (rightTangentialMap q).toLinearMap
   liftLeft i := tangentialLiftLinearMap q (i : ℤ × Λ) (Z q (-(i : ℤ × Λ).1))
   liftRight j := tangentialLiftLinearMap q (j : ℤ × Λ) (Z q (j : ℤ × Λ).1)
-  left_liftLeft i := LinearMap.ext fun a => by
-    rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Submodule.subtype_apply,
-      tangentialLiftLinearMap_apply, leftTangentialMap_algebraMap_single_mul_Z, neg_neg,
-      Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.val i.property)), pow_zero, mul_one,
-      AddMonoidAlgebra.curryAlgEquiv_symm_single, Prod.mk.eta,
-      AddMonoidAlgebra.single_coeff_eq_of_mem_grade a.property]
-  right_liftRight j := LinearMap.ext fun a => by
-    rw [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Submodule.subtype_apply,
-      tangentialLiftLinearMap_apply, rightTangentialMap_algebraMap_single_mul_Z,
-      Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.val j.property)), pow_zero, mul_one,
-      AddMonoidAlgebra.curryAlgEquiv_symm_single, Prod.mk.eta,
-      AddMonoidAlgebra.single_coeff_eq_of_mem_grade a.property]
+  left_liftLeft i := tangentialMap_tangentialLiftLinearMap q (leftTangentialMap q) (i : ℤ × Λ)
+    (Z q (-(i : ℤ × Λ).1)) fun s => by
+      simp only [leftTangentialMap_algebraMap_single_mul_Z, neg_neg,
+        Int.toNat_of_nonpos (neg_nonpos.mpr (hI i.val i.property)), pow_zero, mul_one,
+        AddMonoidAlgebra.curryAlgEquiv_symm_single, Prod.mk.eta]
+  right_liftRight j := tangentialMap_tangentialLiftLinearMap q (rightTangentialMap q) (j : ℤ × Λ)
+    (Z q (j : ℤ × Λ).1) fun s => by
+      simp only [rightTangentialMap_algebraMap_single_mul_Z,
+        Int.toNat_of_nonpos (neg_nonpos.mpr (hJ j.val j.property)), pow_zero, mul_one,
+        AddMonoidAlgebra.curryAlgEquiv_symm_single, Prod.mk.eta]
 
 @[simp] theorem tangentialSlabCorrespondence_left (q : AddMonoidAlgebra S Λ)
     {I J : Set (ℤ × Λ)} (hI : ∀ p ∈ I, 0 ≤ p.1) (hJ : ∀ p ∈ J, 0 ≤ p.1) :
@@ -534,11 +565,6 @@ def tangentialSlabCorrespondence (q : AddMonoidAlgebra S Λ)
       (AddMonoidAlgebra.single (j : ℤ × Λ).2 ((a : AddMonoidAlgebra S (ℤ × Λ)).coeff j)) *
         Z q (j : ℤ × Λ).1 :=
   tangentialLiftLinearMap_apply q j (Z q (j : ℤ × Λ).1) a
-
-private theorem Z_add_eq_mul_of_same_sign (q : B) {a b : ℤ}
-    (hab : (0 ≤ a ∧ 0 ≤ b) ∨ (a ≤ 0 ∧ b ≤ 0)) : Z q (a + b) = Z q a * Z q b := by
-  have hexp : (a.natAbs + b.natAbs - (a + b).natAbs) / 2 = 0 := by omega
-  rw [Z_mul, hexp, pow_zero, map_one, one_mul]
 
 /-- Admissible left lifts of `tangentialSlabCorrespondence` preserve products, supplying the
 multiplicativity hypothesis of `GradedCorrespondence.transfer_mul`. -/
