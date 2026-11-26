@@ -11,6 +11,7 @@ public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.Data.Nat.Cast.SetInterval
 import Mathlib.Order.SuccPred.Int
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
@@ -34,7 +35,8 @@ Read backwards, `∑_{j < n} (n - j) = n (n + 1) / 2` in `ℕ`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
 form of Gauss's sum. Grouping `i < n` into blocks of length `H`, the quotients `i / H` sum to
 `H (q choose 2) + ρ q` for `n = H q + ρ` with `ρ < H`.
-A sum over `Icc 0 N` of a sequence vanishing at `0` is its sum over `Icc 1 N`.
+A sum over `Icc 0 N` of a sequence vanishing at `0` is its sum over `Icc 1 N`, and a product or sum
+over the integer interval `Icc (a : ℤ) b` (`a, b : ℕ`) rewrites to `Icc a b`.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
 For naturals `N` and `K`, writing the weight `⌊K N / n⌋` of `∑_{N < n ≤ K N} ⌊K N / n⌋ f(n)` as the
@@ -64,6 +66,8 @@ number of `1 ≤ j < K` with `n ≤ K N / j` and swapping the sums gives
   `k (k - 1)` for every `k : ℤ`.
 * `Finset.sum_Icc_zero_eq_sum_Icc_one`: a sum over `Icc 0 N` of a sequence vanishing at `0` is
   its sum over `Icc 1 N`.
+* `Finset.prod_Icc_intCast` and `Finset.sum_Icc_intCast`: a product or sum over `Icc (a : ℤ) b`
+  (`a, b : ℕ`) equals the corresponding product or sum over `Icc a b`.
 * `Finset.sum_Ico_sub_add_eq_sum_range_indicator`: a window sum `∑_{j - L ≤ k < j + L} f k` as the
   sum of `2 L` shifts of `f`.
 * `Finset.sum_Ioc_div_smul_eq_sum_Ico_sum_Ioc`:
@@ -352,5 +356,16 @@ theorem sum_Ioc_div_smul_eq_sum_Ico_sum_Ioc {M : Type*} [AddCommMonoid M] (f : �
         ext n
         simp only [mem_filter, mem_Ioc]
         exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans (Nat.div_le_self _ _)⟩, h.2⟩⟩
+
+/-- A product over the integer interval `Icc (a : ℤ) b` with natural endpoints `a, b : ℕ` equals
+the product over `Icc a b`. -/
+@[to_additive /-- A sum over the integer interval `Icc (a : ℤ) b` with natural endpoints `a, b : ℕ`
+equals the sum over `Icc a b`. -/]
+theorem prod_Icc_intCast {M : Type*} [CommMonoid M] (a b : ℕ) (f : ℤ → M) :
+    ∏ j ∈ Icc (a : ℤ) b, f j = ∏ j ∈ Icc a b, f j := by
+  have hmap : (Icc a b).map Nat.castEmbedding = Icc (a : ℤ) b := by
+    simpa [← Finset.coe_inj] using Nat.image_cast_int_Icc a b
+  rw [← hmap, prod_map]
+  simp only [Nat.castEmbedding_apply]
 
 end Finset

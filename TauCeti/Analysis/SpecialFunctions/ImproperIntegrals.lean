@@ -16,18 +16,20 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 /-!
 # Improper-integral asymptotics and logarithmic decay
 
-This file extends Mathlib's improper-integral estimates with an asymptotic estimate for weighted
-integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability of
-`(x ^ 2 + c ^ 2)⁻¹` for `c ≠ 0`, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the
-closed forms `∫_A^∞ dy / y² = 1 / A` and `∫_{-∞}^0 e^{a s} ds = ∫_0^∞ e^{-a s} ds = 1 / a` as
-Lebesgue integrals, and `∫_0^∞ e^{-a s} ds = 1 / a` and `∫_c^∞ dx / x^(k+1) = 1 / (k c^k)` as
-Bochner integrals.
+This file extends Mathlib's improper-integral estimates with tail integrability of integer powers
+`x ^ m` on `(c, ∞)`, an asymptotic estimate for weighted integrals, an Abelian limit for the
+averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability of `(x ^ 2 + c ^ 2)⁻¹` for `c ≠ 0`,
+integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the closed forms `∫_A^∞ dy / y² = 1 / A`
+and `∫_{-∞}^0 e^{a s} ds = ∫_0^∞ e^{-a s} ds = 1 / a` as Lebesgue integrals, and
+`∫_0^∞ e^{-a s} ds = 1 / a` and `∫_c^∞ dx / x^(k+1) = 1 / (k c^k)` as Bochner integrals.
 
 It also evaluates the power-weighted sine integral on the positive half-line for exponents between
 zero and one.
 
 ## Main declarations
 
+* `TauCeti.integrableOn_Ioi_zpow_iff` and `TauCeti.integrableOn_Ioi_zpow_of_lt`: for `0 < c`,
+  the integer power `x ↦ x ^ m` is integrable on `(c, ∞)` iff `m < -1`.
 * `TauCeti.integrable_inv_sq_add_sq`: `(x ^ 2 + c ^ 2)⁻¹` is integrable for `c ≠ 0`.
 * `TauCeti.one_div_sqrt_mul_sqrt_le_inv_min_sq_add_sq` and
   `TauCeti.integrable_one_div_sqrt_mul_sqrt`: the inverse product of two quadratic square
@@ -64,6 +66,18 @@ namespace TauCeti
 
 open Asymptotics Filter MeasureTheory Real Set
 open scoped Topology
+
+/-- For `0 < c`, the integer power `x ↦ x ^ m` is integrable on `(c, ∞)` iff `m < -1`. -/
+theorem integrableOn_Ioi_zpow_iff {m : ℤ} {c : ℝ} (hc : 0 < c) :
+    IntegrableOn (fun x : ℝ ↦ x ^ m) (Ioi c) ↔ m < -1 := by
+  simp_rw [← Real.rpow_intCast]
+  rw [integrableOn_Ioi_rpow_iff hc]
+  exact_mod_cast Iff.rfl
+
+/-- For `0 < c` and `m < -1`, the integer power `x ↦ x ^ m` is integrable on `(c, ∞)`. -/
+theorem integrableOn_Ioi_zpow_of_lt {m : ℤ} {c : ℝ} (hm : m < -1) (hc : 0 < c) :
+    IntegrableOn (fun x : ℝ ↦ x ^ m) (Ioi c) :=
+  (integrableOn_Ioi_zpow_iff hc).2 hm
 
 /-- For `0 < alpha < 1`, the function `x ↦ x ^ (-(alpha + 1)) * sin x` is integrable on the
 positive half-line. -/

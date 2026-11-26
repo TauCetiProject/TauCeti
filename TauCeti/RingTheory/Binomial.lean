@@ -78,6 +78,8 @@ span. This gives independence of integral toral constructions from a choice of l
 * `TauCeti.Ring.choose_zsmul_mem`: such sets contain the coefficients of every integer multiple.
 * `TauCeti.Ring.choose_mem_of_mem_span`: such sets contain the coefficients of every element
   in the integer span of a commuting set.
+* `TauCeti.Ring.choose_add_one_succ_eq_div_mul_descPochhammer_eval`: in a characteristic-zero
+  division ring, `Ring.choose (r + 1) (k + 1) = (r + 1) / (k + 1)! * (descPochhammer R k).eval r`.
 * `TauCeti.exists_forall_sum_mul_choose_eq`: prescribed integer values on an initial segment are
   attained by an integral combination of binomial coefficients.
 
@@ -814,5 +816,24 @@ theorem choose_mem_of_mem_span (S : G) {s : Set R}
   | add x y hx hy ihx ihy =>
     exact choose_add_mem S (hspan x hx y hy) (fun k _ ↦ ihx k) (fun k _ ↦ ihy k)
   | smul z x _ ih => exact choose_zsmul_mem S (fun k _ ↦ ih k) z
+
+/-- In a characteristic-zero division ring, `Ring.choose (r + 1) (k + 1)` equals
+`(r + 1) / (k + 1)! * (descPochhammer R k).eval r`. -/
+theorem choose_add_one_succ_eq_div_mul_descPochhammer_eval {R : Type*} [DivisionRing R]
+    [CharZero R] (r : R) (k : ℕ) :
+    _root_.Ring.choose (r + 1) (k + 1) =
+      (r + 1) / ((k + 1).factorial : R) * (descPochhammer R k).eval r := by
+  have hfac : ((k + 1).factorial : R) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
+  have h := _root_.Ring.descPochhammer_eq_factorial_smul_choose (r + 1) (k + 1)
+  rw [descPochhammer_smeval_eq_eval, descPochhammer_succ_eval_add_one,
+    ← Nat.cast_smul_eq_nsmul R, smul_eq_mul] at h
+  have hcancel :
+      (r + 1) / ((k + 1).factorial : R) * ((k + 1).factorial : R) = r + 1 :=
+    div_mul_cancel₀ (r + 1) hfac
+  have hcomm :
+      ((k + 1).factorial : R) * ((r + 1) / ((k + 1).factorial : R)) = r + 1 :=
+    (Nat.cast_commute (k + 1).factorial ((r + 1) / (k + 1).factorial)).eq.trans hcancel
+  refine mul_left_cancel₀ hfac ?_
+  rw [← h, ← mul_assoc, hcomm]
 
 end TauCeti.Ring

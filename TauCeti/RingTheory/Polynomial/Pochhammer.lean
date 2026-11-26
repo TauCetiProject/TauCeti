@@ -34,6 +34,8 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
 * `TauCeti.descPochhammer_degree`: `(descPochhammer R n).degree = n` for nontrivial `R`.
 * `TauCeti.descPochhammer_succ_eval_add_one`: the falling factorial of degree `m + 1` at `x + 1` is
   `x + 1` times the one of degree `m` at `x`.
+* `TauCeti.descPochhammer_smeval_eq_eval`: evaluating `descPochhammer ℤ n` via `smeval` in any ring
+  `R` agrees with evaluating `descPochhammer R n` via `Polynomial.eval`.
 * `TauCeti.descPochhammer_succ_smeval_of_sq_eq_zero`: at a square-zero element `ε`, the falling
   factorial of degree `n + 1` is `(-1) ^ n n! ε`.
 * `TauCeti.factorial_dvd_descPochhammer_eval`: the values of the falling factorial of degree `n`
@@ -118,6 +120,12 @@ theorem descPochhammer_succ_eval_add_one {R : Type*} [Ring R] (m : ℕ) (x : R) 
   rw [← descPochhammer_map (Int.castRingHom R), ← descPochhammer_map (Int.castRingHom R) m,
     eval_map, eval_map, ← algebraMap_int_eq, ← aeval_def, ← aeval_def, descPochhammer_succ_left,
     map_mul, aeval_X, aeval_comp, map_sub, aeval_X, map_one, add_sub_cancel_right]
+
+/-- Evaluating `descPochhammer ℤ n` via `smeval` in any ring `R` agrees with evaluating
+`descPochhammer R n` via `Polynomial.eval`. -/
+theorem descPochhammer_smeval_eq_eval {R : Type*} [Ring R] (r : R) (n : ℕ) :
+    (descPochhammer ℤ n).smeval r = (descPochhammer R n).eval r := by
+  rw [← aeval_eq_smeval, aeval_def, algebraMap_int_eq, eval₂_eq_eval_map, descPochhammer_map]
 
 /-- The descending Pochhammer polynomial at a square-zero element keeps only its linear term:
 `ε (ε - 1) ⋯ (ε - n) = (-1) ^ n n! ε`. -/

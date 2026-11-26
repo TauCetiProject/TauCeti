@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.LSeries.SumCoeff
+import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.PSeriesComplex
 import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
@@ -32,7 +34,8 @@ For a real `s > 1`, Mathlib's `riemannZeta s` is the sum of the complex Dirichle
 normalizing constant of a `p`-series, as needed for the Zipf law on the positive integers.
 
 The file also proves that `riemannZeta` is measurable, so that families of laws normalized by its
-real values are measurable in their parameter.
+real values are measurable in their parameter, and records Schwarz reflection for
+`deriv riemannZeta` together with reality of `riemannZeta` and `deriv riemannZeta` on `ℝ`.
 
 On the critical strip the series diverges, and the sign of `ζ(σ)` for real `0 < σ < 1` comes from
 the alternating series `η(s) = ∑ (-1) ^ (n + 1) n⁻ˢ = (1 - 2 ^ (1 - s)) ζ(s)`. Its partial sums
@@ -46,6 +49,9 @@ Siegel's theorem on real zeros.
 
 * `TauCeti.ofReal_riemannZeta_re` and `TauCeti.ofReal_riemannZeta_ofReal_re`:
   `((riemannZeta s).re : ℂ) = riemannZeta s` whenever `s.im = 0` (in particular for real `s`);
+* `TauCeti.deriv_riemannZeta_conj`, `TauCeti.riemannZeta_im_ofReal`, and
+  `TauCeti.deriv_riemannZeta_im_ofReal`: conjugation symmetry of `deriv riemannZeta` and reality
+  of `riemannZeta` and `deriv riemannZeta` on `ℝ`;
 * `TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re`: `∑ (n + 1) ^ (-s) = Re ζ(s)` for `s > 1`;
 * `TauCeti.hasSum_nat_rpow_neg_riemannZeta_re`: the same series indexed from `n = 0` with the
   vanishing term `0 ^ (-s)`;
@@ -85,6 +91,26 @@ theorem ofReal_riemannZeta_re {s : ℂ} (hs : s.im = 0) :
 /-- At every real point `s`, `riemannZeta s` equals the coercion of its real part. -/
 theorem ofReal_riemannZeta_ofReal_re (s : ℝ) : ((riemannZeta s).re : ℂ) = riemannZeta s :=
   ofReal_riemannZeta_re (ofReal_im s)
+
+/-- Complex conjugation commutes with `deriv riemannZeta`. -/
+@[simp]
+theorem deriv_riemannZeta_conj (s : ℂ) :
+    deriv riemannZeta (starRingEnd ℂ s) = starRingEnd ℂ (deriv riemannZeta s) := by
+  have hfn : (starRingEnd ℂ ∘ riemannZeta ∘ starRingEnd ℂ) = riemannZeta :=
+    funext fun z => by simp [riemannZeta_conj]
+  have h := congrFun (deriv_conj_conj (f := riemannZeta)) s
+  rw [hfn] at h
+  simpa using congrArg (starRingEnd ℂ) h.symm
+
+/-- At every real argument `x`, `riemannZeta x` has zero imaginary part. -/
+@[simp]
+theorem riemannZeta_im_ofReal (x : ℝ) : (riemannZeta x).im = 0 :=
+  conj_eq_iff_im.mp (by simpa using (riemannZeta_conj x).symm)
+
+/-- At every real argument `x`, `deriv riemannZeta x` has zero imaginary part. -/
+@[simp]
+theorem deriv_riemannZeta_im_ofReal (x : ℝ) : (deriv riemannZeta x).im = 0 :=
+  conj_eq_iff_im.mp (by simpa using (deriv_riemannZeta_conj x).symm)
 
 /-- For real `s > 1`, the real series `∑ (n + 1) ^ (-s)` sums to the real part of `riemannZeta s`.
 -/
