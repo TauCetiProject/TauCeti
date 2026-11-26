@@ -60,7 +60,9 @@ chart, `(p, z, y) ↦ (K + δ_p)(z, φ⁻¹ y)`, are jointly `C³`
 (`TauCeti.Floer.contDiffOn_pairOfPantsPerturbation_add_comp_symm`). The energy density of a
 solution is integrable once its area density is
 (`IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add`), so only the area
-density is assumed integrable. Localizing the images of small discs into charts on a closed
+density is assumed integrable; both facts are combined in
+`IsNondegenerate.exists_integrableOn_and_setIntegral_le_pairOfPantsPerturbation_add`.
+Localizing the images of small discs into charts on a closed
 manifold is not treated here.
 
 ## References
@@ -341,7 +343,7 @@ theorem
         TendstoLocallyUniformlyOn (fun n ↦ φ ∘ u (ψ n)) (φ ∘ v) atTop (Ω \ ↑Z) ∧
         ∀ y ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (ψ n) y) atTop (𝓝 (v y)) := by
   obtain ⟨c, hc, hbound⟩ :=
-    hω.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le hH
+    hω.exists_integrableOn_and_setIntegral_le_pairOfPantsPerturbation_add hH
       (fun q ↦ (hHs q).of_le (by norm_num)) hB (hδs.of_le (by norm_num))
       (hδt.of_le (by norm_num)) hA hD hQ hU hDU hcore hs ht
   -- Read in the chart, the perturbed data are jointly `C³` over `A × S × φ(U)`, which contains
@@ -364,28 +366,10 @@ theorem
     fun p hp z hz x _ ↦ hJt p hp z (hD'S hz) x
   refine ⟨c, hc, δ, hδ, fun Ω p u x E hΩ hΩD hpA hu hfl hx harea htop huQ huC ↦ ?_⟩
   have hΩS : Ω ⊆ thricePuncturedSphereReal := hΩD.trans hD'S
-  have hι (k : ℕ) : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) ((𝓘(ℝ, P).prod 𝓘(ℝ, ℝ × ℝ)).prod I) 1
-      (fun r : (ℝ × ℝ) × M ↦ ((p k, r.1), r.2)) :=
-    (contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd
-  -- The energy density of a solution is nonnegative on `S`, hence integrable there.
-  have hnn (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) :=
-    floerEnergyDensity_nonneg hω (hJt _ (hpA k) z hz _) (hfl k z hz)
-  have hint (k : ℕ) := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add
-    (δs := δs (p k)) (δt := δt (p k)) hH (fun q ↦ (hHs q).of_le (by norm_num)) hB
-    ((hδs.of_le (by norm_num)).comp (hι k)) ((hδt.of_le (by norm_num)).comp (hι k)) hD hU hDU
-    hcore (hs _ (hpA k)) (ht _ (hpA k)) ((hu k).of_le (by norm_num)) (hx k) (hnn k) (harea k)
-  -- The energy over `Ω` is at most the energy over `S`, hence at most `E + B₀ + B₁ + B_∞ + c`.
-  have hle (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1 + δs (p k) z x)
-      (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I + δt (p k) z x)
-      (u k) z ≤ E + ((∑ q, B q) + c) := by
-    have habs := abs_le.1 (hbound (p k) (hpA k) (u k) ((hu k).of_le (by norm_num)) (huQ k) (x k)
-      (hx k) (hint k) (harea k))
-    refine (setIntegral_mono_set (hint k) (ae_restrict_of_forall_mem
-      isOpen_thricePuncturedSphereReal.measurableSet (hnn k))
-      (Eventually.of_forall hΩS)).trans ?_
-    linarith [habs.2, htop k]
+  -- The energy density is integrable, and the energy over `Ω` is at most `E + B₀ + B₁ + B_∞ + c`.
+  have hE (k : ℕ) := hbound (p k) (hpA k) (u k) ((hu k).of_le (by norm_num)) (huQ k) (x k) (hx k)
+    (harea k) (fun z ↦ J (p k) z (u k z)) (fun z hz ↦ hJt _ (hpA k) z hz _) (hfl k)
   exact hconv hΩ hΩD hpA (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huC
-    (fun k ↦ (hint k).mono_set hΩS) hle
+    (fun k ↦ (hE k).1.mono_set hΩS) fun k ↦ ((hE k).2 Ω hΩS).trans (by linarith [htop k])
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

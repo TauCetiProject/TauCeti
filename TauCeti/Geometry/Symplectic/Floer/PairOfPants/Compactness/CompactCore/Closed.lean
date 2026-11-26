@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.CompactCore
-import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 /-!
 # Compactness of pairs of pants with core perturbations in a closed manifold
@@ -40,11 +39,14 @@ applies once its hypotheses are checked for the family.
   (`IsNondegenerate.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le` in
   the namespace `TauCeti.SmoothTwoForm`). The energy density is integrable once the area density
   is (`IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add`), so only the
-  area density is assumed integrable.
+  area density is assumed integrable; both facts are combined in
+  `IsNondegenerate.exists_integrableOn_and_setIntegral_le_pairOfPantsPerturbation_add`.
 * **The Hamiltonian vector fields.** On a compact window of parameters and of `S`, the
   pushforwards through a `C¹` map `e : M → F` of the Hamiltonian vector fields of the components
-  of `K + δ_p` are bounded, uniformly in the target point, since they depend continuously on
-  `(p, z, x)` and `M` is compact.
+  of `K + δ_p` are bounded, uniformly in the target point, since the components are `C¹` in
+  `(p, z, x)` there and `M` is compact
+  (`IsNondegenerate.exists_forall_norm_mvfderiv_hamiltonianVectorField_le_of_isCompact` in the
+  namespace `TauCeti.SmoothTwoForm`).
 
 As in `TauCeti.Geometry.Symplectic.Floer.Compactness.Closed`, sizes in `M` are measured through an
 injective differentiable map `e : M → F` into a normed space, such as the Whitney embedding of a
@@ -55,7 +57,7 @@ through `e` of the Hamiltonian vector fields bounded.
 
 In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 
-* `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_corePerturbation`:
+* `exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pairOfPantsPerturbation_add`:
   for any family `J_p(z, x)` of tame structures which is `C²` read in the charts of `M` near the
   parameter and domain windows, there are a constant `c ≥ 0` and a threshold `δ > 0` such that
   every sequence of solutions for parameters `pₖ` in a compact window `A`, with topological energy
@@ -99,7 +101,7 @@ in the parameter `p`, the real coordinates `z` of `S = ℂ ∖ {0, 1}` and the t
 compact window `A` of parameters and a compact part `D'` of `S`, the pushforwards through a `C¹` map
 `e : M → F` of the Hamiltonian vector fields of a component `K(z)(w) + δ_p(z)` of the pair-of-pants
 perturbation plus `δ_p` are bounded, uniformly in the target point. These are the bounds that
-`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_corePerturbation`
+`exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pairOfPantsPerturbation_add`
 takes on its windows. -/
 theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_pairOfPantsPerturbation_add_le
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
@@ -110,19 +112,10 @@ theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_pairOfPantsPerturbati
     (hD' : IsCompact D') (hD'S : D' ⊆ thricePuncturedSphereReal) (w : ℂ) :
     ∃ L, ∀ p ∈ A, ∀ z ∈ D', ∀ x, ‖mvfderiv I e x (ω.hamiltonianVectorField
       (fun y ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) y w + δ p z y) x)‖ ≤ L := by
-  -- The pushforward is continuous in `((p, z), x)` at every point with `z ∈ S`: it is the
-  -- differential of `e` applied to the Hamiltonian vector field of a jointly `C¹` family.
-  have hcont : ContinuousOn (fun r : (P × (ℝ × ℝ)) × M ↦ mvfderiv I e r.2
-      (ω.hamiltonianVectorField (fun y ↦
-        pairOfPantsPerturbation H (equivRealProdCLM.symm r.1.2) y w + δ r.1.1 r.1.2 y) r.2))
-      ((A ×ˢ D') ×ˢ univ) := fun r hr ↦ by
-    have hX := hω.contMDiffAt_hamiltonianVectorField_uncurry (n := 0) (by simp)
-      (q := r) ((contMDiffAt_uncurry_pairOfPantsPerturbation_add hH hHs hδ (hD'S hr.1.2) r.2
-        w).of_le (by simp))
-    exact ((he.contMDiff_mvfderiv_apply (m := 0) (by simp)).contMDiffAt.comp r hX).continuousAt
-      |>.continuousWithinAt
-  obtain ⟨L, hL⟩ := ((hA.prod hD').prod isCompact_univ).exists_bound_of_continuousOn hcont
-  exact ⟨L, fun p hp z hz x ↦ hL ((p, z), x) ⟨⟨hp, hz⟩, mem_univ x⟩⟩
+  obtain ⟨L, hL⟩ := hω.exists_forall_norm_mvfderiv_hamiltonianVectorField_le_of_isCompact
+    (hA.prod hD') he fun r hr x ↦ contMDiffAt_uncurry_pairOfPantsPerturbation_add hH hHs hδ
+      (hD'S hr.2) x w
+  exact ⟨L, fun p hp z hz ↦ hL (p, z) ⟨hp, hz⟩⟩
 
 variable [I.Boundaryless] [FiniteDimensional ℝ P] {B : Puncture → ℝ}
 
@@ -148,7 +141,8 @@ parameters `p_{φ n}` and a finite set `Z ⊆ Ω` with `#Z * δ ≤ E + B₀ + B
 `φ`, every disc about a point of `Z` eventually carries energy at least `δ`, the energy densities
 are uniformly bounded on every compact subset of `Ω \ Z`, and the solutions converge on `Ω \ Z` to a
 continuous map `v`, locally uniformly after applying `e` and pointwise in `M`. -/
-theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_corePerturbation
+theorem
+  exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pairOfPantsPerturbation_add
     (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
     (hB : ∀ q t x, |H q t x| ≤ B q) {δs δt : P → ℝ × ℝ → M → ℝ}
@@ -208,7 +202,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   set S := thricePuncturedSphereReal
   -- Since `M` is compact, the whole of `M` is a compact target window for the core.
   obtain ⟨c, hc, hbound⟩ :=
-    hω.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le hH
+    hω.exists_integrableOn_and_setIntegral_le_pairOfPantsPerturbation_add hH
       (fun q ↦ (hHs q).of_le (by norm_num)) hB (hδs.of_le (by norm_num))
       (hδt.of_le (by norm_num)) hA hD isCompact_univ hU hDU hcore hs ht
   -- Each component of `K + δ_p` is `C³` jointly in the parameter, the domain point of `S` and the
@@ -229,23 +223,11 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
       (fun p hp z hz ↦ hJt p hp z (hD'S hz)) hκ hJc hLs hLt
   refine ⟨c, hc, δ, hδ, fun Ω p u x E hΩ hΩD hpA hu hfl hx harea htop ↦ ?_⟩
   have hΩS : Ω ⊆ S := hΩD.trans hD'S
-  have hι (k : ℕ) : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) ((𝓘(ℝ, P).prod 𝓘(ℝ, ℝ × ℝ)).prod I) 1
-      (fun r : (ℝ × ℝ) × M ↦ ((p k, r.1), r.2)) :=
-    (contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd
-  -- The energy density of a solution is nonnegative on `S`, hence integrable there.
-  have hnn (k : ℕ) (z : ℝ × ℝ) (hz : z ∈ S) :=
-    floerEnergyDensity_nonneg hω (hJt _ (hpA k) z hz _) (hfl k z hz)
-  have hint (k : ℕ) := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add
-    (δs := δs (p k)) (δt := δt (p k)) hH (fun q ↦ (hHs q).of_le (by norm_num)) hB
-    ((hδs.of_le (by norm_num)).comp (hι k)) ((hδt.of_le (by norm_num)).comp (hι k)) hD hU hDU
-    hcore (hs _ (hpA k)) (ht _ (hpA k)) ((hu k).of_le (by norm_num)) (hx k) (hnn k) (harea k)
-  -- The energy over `Ω` is at most the energy over `S`, hence at most `E + B₀ + B₁ + B_∞ + c`.
-  refine hconv hΩ hΩD hpA (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz))
-    (fun k ↦ (hint k).mono_set hΩS) fun k ↦ ?_
-  have habs := abs_le.1 (hbound (p k) (hpA k) (u k) ((hu k).of_le (by norm_num))
-    (fun _ _ ↦ mem_univ _) (x k) (hx k) (hint k) (harea k))
-  refine (setIntegral_mono_set (hint k) (ae_restrict_of_forall_mem
-    isOpen_thricePuncturedSphereReal.measurableSet (hnn k)) (Eventually.of_forall hΩS)).trans ?_
-  linarith [habs.2, htop k]
+  -- The energy density is integrable, and the energy over `Ω` is at most `E + B₀ + B₁ + B_∞ + c`.
+  have hE (k : ℕ) := hbound (p k) (hpA k) (u k) ((hu k).of_le (by norm_num))
+    (fun _ _ ↦ mem_univ _) (x k) (hx k) (harea k) (fun z ↦ J (p k) z (u k z))
+    (fun z hz ↦ hJt _ (hpA k) z hz _) (hfl k)
+  exact hconv hΩ hΩD hpA (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz))
+    (fun k ↦ (hE k).1.mono_set hΩS) fun k ↦ ((hE k).2 Ω hΩS).trans (by linarith [htop k])
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

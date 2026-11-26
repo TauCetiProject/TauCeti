@@ -165,7 +165,9 @@ Hamiltonian vector fields and Poisson brackets restrict to open submanifolds, fo
   pushforward `d e (X_{H_t})` by a `C¹` map `e` of the Hamiltonian vector field of a `C¹`
   time-dependent Hamiltonian is continuous, and uniformly bounded on a compact manifold for a
   Hamiltonian periodic in time
-  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_mvfderiv_hamiltonianVectorField_le`).
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_forall_norm_mvfderiv_hamiltonianVectorField_le`),
+  and for a family of Hamiltonians over a compact set of parameters
+  (`exists_forall_norm_mvfderiv_hamiltonianVectorField_le_of_isCompact` in the same namespace).
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`: `X^{cσ}_f = c⁻¹ X^σ_f`.
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.apply_eq_of_isMIntegralCurveOn`: conservation
   of energy along integral curves on preconnected sets of times, with the global case
@@ -859,6 +861,24 @@ theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_le [CompactSpace M] {
   obtain ⟨t', ht', hHt⟩ := hHper.exists_mem_Ico₀ one_pos t
   rw [hHt]
   exact hB (t', x) ⟨Set.Ico_subset_Icc_self ht', Set.mem_univ x⟩
+
+/-- On a compact manifold, let `f : N → M → ℝ` be a family of Hamiltonians which is jointly `C¹` at
+every point of `K × M`, for a compact set `K` of parameters. Then the pushforwards `d e (X_{f r})`
+by a `C¹` map `e` into a normed space are bounded, uniformly in `r ∈ K` and in the point of `M`. -/
+theorem exists_forall_norm_mvfderiv_hamiltonianVectorField_le_of_isCompact [CompactSpace M]
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J 1 N]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {e : M → F} {f : N → M → ℝ} {K : Set N}
+    (hK : IsCompact K) (he : ContMDiff I 𝓘(ℝ, F) 1 e)
+    (hf : ∀ r ∈ K, ∀ x, ContMDiffAt (J.prod I) 𝓘(ℝ) 1 (Function.uncurry f) (r, x)) :
+    ∃ L, ∀ r ∈ K, ∀ x, ‖mvfderiv I e x (σ.hamiltonianVectorField (f r) x)‖ ≤ L := by
+  have hcont : ContinuousOn (fun q : N × M ↦ mvfderiv I e q.2
+      (σ.hamiltonianVectorField (f q.1) q.2)) (K ×ˢ Set.univ) := fun q hq ↦
+    ((he.contMDiff_mvfderiv_apply (m := 0) (by simp)).contMDiffAt.comp q
+      (h.contMDiffAt_hamiltonianVectorField_uncurry (n := 0) (by simp)
+        (by simpa using hf q.1 hq.1 q.2))).continuousAt.continuousWithinAt
+  obtain ⟨L, hL⟩ := (hK.prod isCompact_univ).exists_bound_of_continuousOn hcont
+  exact ⟨L, fun r hr x ↦ hL (r, x) ⟨hr, Set.mem_univ x⟩⟩
 
 /-- The Hamiltonian vector field of a `C²` function is differentiable. -/
 theorem mdifferentiable_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f) :
