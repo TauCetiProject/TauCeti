@@ -316,14 +316,16 @@ noncomputable def restrictCellLikeStratification :
     obtain ⟨F, _, τ, hτ, e, hxe, he, hστ⟩ := σ.exists_openPartialHomeomorph_stratum h _ hx
     have hP : ∀ y ∈ e.source, y ∈ σ.stratum J ⁻¹' Iic s ↔ (e y).1 ∈ τ ⁻¹' Iic s :=
       fun y hy ↦ by simp [hστ y hy]
+    have : Nonempty (σ.stratum J ⁻¹' Iic s) := ⟨x.val⟩
+    have : Nonempty (τ ⁻¹' Iic s) := ⟨⟨_, (hP _ hxe).1 x.val.property⟩⟩
     refine ⟨τ ⁻¹' Iic s, inferInstance, (Iic s).restrictPreimage τ,
-      hτ.restrictPreimage (IsLowerSet.Iic s), e.subtypeFst hP x.val hxe, by simpa using hxe,
+      hτ.restrictPreimage (IsLowerSet.Iic s), e.subtypeFst hP, by simpa using hxe,
       fun y hy ↦ ?_, fun y hy ↦ Subtype.ext ?_⟩ <;>
     replace hy : (y : T J) ∈ e.source := by simpa using hy
     · rw [OpenPartialHomeomorph.snd_subtypeFst_apply, he y hy]
       ext α
       simp
-    · rw [OpenPartialHomeomorph.subtypeFst_apply _ _ _ _ hy]
+    · rw [OpenPartialHomeomorph.subtypeFst_apply _ _ hy]
       exact hστ y hy
 
 /-- The restricted stratification of `X_I^≤s` is the stratification `σ_I`. -/

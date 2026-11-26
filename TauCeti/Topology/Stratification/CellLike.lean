@@ -185,7 +185,7 @@ theorem IsManifoldBoundaryPair.preimage_subtypeVal {Y B Z : Set X} {n : ℤ}
   refine ⟨fun y hy ↦ h.1 hy, fun y hy ↦ ?_⟩
   rcases h.2 y.val hy with ⟨m, hm, c, hyc, hcB⟩ | ⟨m, hm, c, hyc, hcB⟩ <;> [left; right] <;>
     exact ⟨m, hm, φ.toOpenPartialHomeomorph.trans c, by simpa [φ] using hyc,
-      fun z hz ↦ hcB (φ z) (by simpa using hz)⟩
+      fun z hz ↦ by simpa [φ] using hcB (φ z) (by simpa using hz)⟩
 
 /-- The empty set is a manifold with empty boundary in every dimension. -/
 theorem isManifoldBoundaryPair_empty (n : ℤ) : IsManifoldBoundaryPair (∅ : Set X) ∅ n :=
@@ -208,36 +208,6 @@ theorem isManifoldBoundaryPair_univ_boundary (n : ℕ) (M : Type*) [TopologicalS
   · have hz' : (z : M) ∈ (chartAt (EuclideanHalfSpace (n + 1)) y).source := by simpa using hz
     simpa using ModelWithCorners.mem_boundary_euclideanHalfSpace_iff hz'
 
-section SubtypeFstTrans
-
-variable {M F G H : Type*} [TopologicalSpace M] [TopologicalSpace F] [TopologicalSpace G]
-  [TopologicalSpace H] {Y : Set F} (e : OpenPartialHomeomorph M (F × G)) {P : Set M}
-  (hP : ∀ y ∈ e.source, y ∈ P ↔ (e y).1 ∈ Y) {x : M} (hxe : x ∈ e.source) (hxP : x ∈ P)
-  (c : OpenPartialHomeomorph Y H)
-
-/-- The source of the restriction `OpenPartialHomeomorph.subtypeFst` of a product chart `e`,
-composed with a chart `c` of the first factor, is the part of `P` in the source of `e` that `c`
-reads. -/
-private theorem mem_subtypeFst_trans_prod_refl_source {y : P} :
-    y ∈ ((e.subtypeFst hP ⟨x, hxP⟩ hxe).trans (c.prod (OpenPartialHomeomorph.refl G))).source ↔
-      ∃ hy : y.val ∈ e.source, (⟨(e y).1, (hP _ hy).1 y.property⟩ : Y) ∈ c.source := by
-  simp only [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.subtypeFst_source,
-    mem_inter_iff, mem_preimage, OpenPartialHomeomorph.prod_source,
-    OpenPartialHomeomorph.refl_source, mem_prod, mem_univ, and_true]
-  refine ⟨fun ⟨hy, hc⟩ ↦ ⟨hy, ?_⟩, fun ⟨hy, hc⟩ ↦ ⟨hy, ?_⟩⟩
-  · rwa [OpenPartialHomeomorph.subtypeFst_apply _ _ _ _ hy] at hc
-  · rwa [OpenPartialHomeomorph.subtypeFst_apply _ _ _ _ hy]
-
-/-- The restriction `OpenPartialHomeomorph.subtypeFst` of a product chart `e`, composed with a chart
-`c` of the first factor, reads a point through `e` and then `c` in the first factor. -/
-private theorem subtypeFst_trans_prod_refl_apply {y : P} (hy : y.val ∈ e.source) :
-    (e.subtypeFst hP ⟨x, hxP⟩ hxe).trans (c.prod (OpenPartialHomeomorph.refl G)) y =
-      (c ⟨(e y).1, (hP _ hy).1 y.property⟩, (e y).2) := by
-  rw [OpenPartialHomeomorph.trans_apply, OpenPartialHomeomorph.subtypeFst_apply _ _ _ _ hy]
-  simp only [OpenPartialHomeomorph.prod_apply, OpenPartialHomeomorph.refl_apply, id_eq]
-
-end SubtypeFstTrans
-
 /-- **Product charts read a manifold with boundary in their first factor.** Let `e` be a chart of
 `M` with values in `F × G`, and let `(Y, B)` be a manifold with boundary of dimension `n` in `F`.
 Let `P` and `Q` be the subsets of `M` that `e` reads in `Y × G` and in `B × G`. Then every point of
@@ -258,16 +228,18 @@ theorem IsManifoldBoundaryPair.exists_openPartialHomeomorph_prod {M F G : Type*}
   -- Restrict `e` to a chart of `P` with values in `Y × G`, then compose with a chart `c` of
   -- `(Y, B)` in the first factor.
   have hY : (e x).1 ∈ Y := (hP x hxe).1 hxP
+  have : Nonempty P := ⟨⟨x, hxP⟩⟩
+  have : Nonempty Y := ⟨⟨_, hY⟩⟩
   rcases hYB.2 _ hY with ⟨m, hm, c, hcx, hcB⟩ | ⟨m, hm, c, hcx, hcB⟩
-  · have hsrc (y : P) := mem_subtypeFst_trans_prod_refl_source e hP hxe hxP c (y := y)
-    have happ (y : P) := subtypeFst_trans_prod_refl_apply e hP hxe hxP c (y := y)
+  · have hsrc (y : P) := e.mem_subtypeFst_trans_prod_refl_source hP c (y := y)
+    have happ (y : P) := e.subtypeFst_trans_prod_refl_apply hP c (y := y)
     refine Or.inl ⟨m, hm, _, (hsrc _).2 ⟨hxe, hcx⟩, fun y hy ↦ ((hsrc y).1 hy).1,
       disjoint_left.2 fun y hy hyQ ↦ ?_, fun y hy ↦ ?_⟩
     · obtain ⟨hy', hcy⟩ := (hsrc y).1 hy
       exact hcB _ hcy ((hQ _ hy').1 hyQ)
     · rw [happ y ((hsrc y).1 hy).1]
-  · have hsrc (y : P) := mem_subtypeFst_trans_prod_refl_source e hP hxe hxP c (y := y)
-    have happ (y : P) := subtypeFst_trans_prod_refl_apply e hP hxe hxP c (y := y)
+  · have hsrc (y : P) := e.mem_subtypeFst_trans_prod_refl_source hP c (y := y)
+    have happ (y : P) := e.subtypeFst_trans_prod_refl_apply hP c (y := y)
     refine Or.inr ⟨m, hm, _, (hsrc _).2 ⟨hxe, hcx⟩, fun y hy ↦ ((hsrc y).1 hy).1, fun y hy ↦ ?_,
       fun y hy ↦ ?_⟩
     · obtain ⟨hy', hcy⟩ := (hsrc y).1 hy

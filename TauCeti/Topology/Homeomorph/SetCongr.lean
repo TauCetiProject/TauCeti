@@ -22,7 +22,7 @@ contained in `s` with the subspace `Subtype.val ⁻¹' t` of `s`.
   homeomorphic to `t`.
 -/
 
-@[expose] public section
+public section
 
 namespace Homeomorph
 
@@ -44,7 +44,6 @@ theorem setCongr_symm_apply {s t : Set X} (h : s = t) (x : t) :
 
 /-- For `t ⊆ s`, the subspace `Subtype.val ⁻¹' t` of `s` is homeomorphic to `t`. This is the
 homeomorphism counterpart of Mathlib's `Equiv.subtypeSubtypeEquivSubtype`. -/
-@[simps apply symm_apply]
 def Set.preimageVal {s t : Set X} (h : t ⊆ s) : (Subtype.val ⁻¹' t : Set s) ≃ₜ t where
   toFun x := ⟨x.val.val, x.property⟩
   invFun x := ⟨⟨x.val, h x.property⟩, x.property⟩
@@ -52,5 +51,17 @@ def Set.preimageVal {s t : Set X} (h : t ⊆ s) : (Subtype.val ⁻¹' t : Set s)
   right_inv _ := rfl
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
+
+/-- `Homeomorph.Set.preimageVal` forgets the larger set `s`. -/
+@[simp]
+theorem Set.preimageVal_apply {s t : Set X} (h : t ⊆ s) (x : (Subtype.val ⁻¹' t : Set s)) :
+    Set.preimageVal h x = ⟨x.val.val, x.property⟩ :=
+  (rfl)
+
+/-- The inverse of `Homeomorph.Set.preimageVal` views a point of `t` as a point of `s`. -/
+@[simp]
+theorem Set.preimageVal_symm_apply {s t : Set X} (h : t ⊆ s) (x : t) :
+    (Set.preimageVal h).symm x = ⟨⟨x.val, h x.property⟩, x.property⟩ :=
+  (rfl)
 
 end Homeomorph
