@@ -22,6 +22,8 @@ A partial isomorphism `φ`, an isomorphism between dense opens of `X` and `Y` (M
 * `AlgebraicGeometry.Scheme.PartialIso.toRationalMap_comp_symm` and
   `AlgebraicGeometry.Scheme.PartialIso.toRationalMap_symm_comp`: `φ⁻¹ ∘ φ = id` and
   `φ ∘ φ⁻¹ = id` as rational maps.
+* `AlgebraicGeometry.Scheme.PartialIso.eq_symm_toRationalMap_of_comp_eq_id`: a left inverse of
+  the rational map of `φ` is the rational map of `φ.symm`.
 -/
 
 public section
@@ -73,5 +75,14 @@ theorem toRationalMap_comp_symm [PreirreducibleSpace X] [Nonempty Y] (φ : X.Par
 theorem toRationalMap_symm_comp [PreirreducibleSpace Y] [Nonempty X] (φ : X.PartialIso Y) :
     φ.symm.toRationalMap.comp φ.toRationalMap = RationalMap.id Y :=
   φ.symm.toRationalMap_comp_symm
+
+/-- A left inverse `g` of the rational map of a partial isomorphism `φ` is the rational map of
+`φ.symm`. -/
+theorem eq_symm_toRationalMap_of_comp_eq_id [IrreducibleSpace X] [IrreducibleSpace Y]
+    (φ : X.PartialIso Y) (g : Y ⤏ X) (h : φ.toRationalMap.comp g = RationalMap.id X) :
+    g = φ.symm.toRationalMap :=
+  calc g = (φ.symm.toRationalMap.comp φ.toRationalMap).comp g := by
+        simp only [φ.toRationalMap_symm_comp, RationalMap.id_comp]
+    _ = φ.symm.toRationalMap := by rw [RationalMap.comp_assoc, h, RationalMap.comp_id]
 
 end AlgebraicGeometry.Scheme.PartialIso
