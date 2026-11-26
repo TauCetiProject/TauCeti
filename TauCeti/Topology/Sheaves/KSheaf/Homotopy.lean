@@ -54,6 +54,10 @@ that every compact set has a compact neighbourhood.
 * `TopCat.KPresheaf.isPullback_homologyMap`: where `mayerVietorisDesc` is a quasi-isomorphism,
   the cohomology squares are pullbacks in the degree above a degree where `F(K₂ ∩ K₃)` has no
   cohomology.
+* `TopCat.KPresheaf.IsHomotopyKSheaf.exactAt_of_bicartSq`: the Mayer–Vietoris step for vanishing
+  cohomology.
+* `TopCat.KPresheaf.IsHomotopyKSheaf.exactAt_of_forall_mem_nhds`: vanishing of cohomology below a
+  degree on compact sets is local.
 * `TopCat.KPresheaf.nonempty_isColimit_coconeOfCompacts_homology`: the colimit axiom passes to
   cohomology.
 * `TopCat.KPresheaf.IsHomotopyKSheaf.isKSheaf_homology`: the cohomology of a homotopy K-sheaf in
@@ -68,7 +72,7 @@ that every compact set has a compact neighbourhood.
 
 public section
 
-open CategoryTheory Limits Opposite TopologicalSpace HomologicalComplex CochainComplex
+open CategoryTheory Limits Opposite TopologicalSpace HomologicalComplex CochainComplex Topology
 
 universe w v u
 
@@ -192,6 +196,54 @@ theorem isPullback_homologyMap {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.B
         simp [S, he, ψ, ← homologyMap_comp, biprod.desc_eq, homologyMap_add]))).1
     ⟨hex, hφ⟩
   exact IsPullback.of_isLimit (sq.isLimitEquivIsLimitKernelFork.symm hS.fIsKernel)
+
+section Vanishing
+
+variable {F}
+
+/-- In a homotopy K-sheaf, if the cohomology of `F(K₂ ∩ K₃)` vanishes in degree `i` and that of
+`F(K₂)` and `F(K₃)` vanishes in degree `i + 1`, then that of `F(K₂ ∪ K₃)` vanishes in degree
+`i + 1`. -/
+theorem IsHomotopyKSheaf.exactAt_of_bicartSq (hF : F.IsHomotopyKSheaf)
+    {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄) {i j : ℤ} (hij : i + 1 = j)
+    (h₁ : (F.obj (op K₁)).ExactAt i) (h₂ : (F.obj (op K₂)).ExactAt j)
+    (h₃ : (F.obj (op K₃)).ExactAt j) : (F.obj (op K₄)).ExactAt j := by
+  have := hF.quasiIso_mayerVietorisDesc h
+  rw [exactAt_iff_isZero_homology] at h₂ h₃ ⊢
+  exact (IsZero.iff_id_eq_zero _).2 <|
+    (F.isPullback_homologyMap h hij h₁).hom_ext (h₂.eq_of_tgt _ _) (h₃.eq_of_tgt _ _)
+
+/-- In a homotopy K-sheaf, vanishing of cohomology in degrees `≤ n` on compact sets is local: if
+every point has a neighbourhood `U` such that the cohomology of `F(K)` vanishes in degrees `≤ n`
+for every compact `K ⊆ U`, then the cohomology of `F(K)` vanishes in degrees `≤ n` for every
+compact `K`. -/
+theorem IsHomotopyKSheaf.exactAt_of_forall_mem_nhds (hF : F.IsHomotopyKSheaf) {n : ℤ}
+    (hloc : ∀ x : X, ∃ U ∈ 𝓝 x, ∀ K : Compacts X, (K : Set X) ⊆ U → ∀ i ≤ n,
+      (F.obj (op K)).ExactAt i)
+    (K : Compacts X) {i : ℤ} (hi : i ≤ n) : (F.obj (op K)).ExactAt i := by
+  classical
+  choose U hU hUK using hloc
+  -- `K` is a finite union of compact sets `L x`, each inside the interior of `U x`
+  obtain ⟨t, -, hKt⟩ := K.isCompact.elim_nhds_subcover (fun x ↦ interior (U x))
+    (fun x _ ↦ interior_mem_nhds.2 (hU x))
+  obtain ⟨L, hL, hLU, hKL⟩ := K.isCompact.finite_compact_cover t _ (fun _ _ ↦ isOpen_interior) hKt
+  let L' (x : X) : Compacts X := ⟨L x, hL x⟩
+  have hL' (x : X) (K' : Compacts X) (hK' : K' ≤ L' x) {i : ℤ} (hi : i ≤ n) :
+      (F.obj (op K')).ExactAt i :=
+    hUK x K' ((SetLike.coe_subset_coe.2 hK').trans ((hLU x).trans interior_subset)) i hi
+  -- the cohomology vanishes on every finite union of the `L x`
+  have key (s : Finset X) : ∀ i ≤ n, (F.obj (op (s.sup L'))).ExactAt i := by
+    induction s using Finset.induction_on with
+    | empty => exact fun i _ ↦ hF.acyclic_bot i
+    | insert a s _ ih =>
+      intro i hi
+      rw [Finset.sup_insert]
+      exact hF.exactAt_of_bicartSq ⟨rfl, rfl⟩ (sub_add_cancel i 1)
+        (hL' a _ inf_le_left (by omega)) (hL' a _ le_rfl hi) (ih i hi)
+  have hK : K = t.sup L' := Compacts.ext <| by simp [Compacts.coe_finset_sup, L', hKL]
+  exact hK ▸ key t i hi
+
+end Vanishing
 
 section Colimit
 

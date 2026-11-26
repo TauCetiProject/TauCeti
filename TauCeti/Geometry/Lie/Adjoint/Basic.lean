@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.GroupLieAlgebra
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Lie.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Conjugation
+public import TauCeti.Geometry.Lie.RightInvariantVectorField
 public import TauCeti.Geometry.Lie.Tangent.Differential
 import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 
@@ -33,6 +34,8 @@ The construction works over any nontrivially normed field. Its differential only
 
 * `TauCeti.Lie.mfderiv_mul_right_mulInvariantVectorField`: right translation by `g` carries the
   left-invariant vector field of `X` to that of `Ad_{g⁻¹} X`.
+* `TauCeti.Lie.mulInvariantVectorField_eq_mulRightInvariantVectorField_adjoint`: the
+  left-invariant vector field of `X` at `g` is the right-invariant vector field of `Ad_g X` at `g`.
 * `TauCeti.Lie.adjointContinuousLinearMap_lie`: the differential preserves the Lie bracket.
 * `TauCeti.Lie.tangentAd_mul`: the tangent adjoint automorphism respects group multiplication.
 * `TauCeti.Lie.adjointContinuousLinearMap_eq_id`: the adjoint action of a commutative Lie group is
@@ -286,6 +289,27 @@ theorem mfderiv_mul_right_mulInvariantVectorField (g x : G) (X : GroupLieAlgebra
   -- type-correctness check and `change` is needed.
   change mfderiv I I (g * ·) (C x) (mfderiv I I C x (mulInvariantVectorField X x)) = _
   rw [mfderiv_conjugation_mulInvariantVectorField, mfderiv_mul_left_mulInvariantVectorField, hpt]
+
+/-- **Left-invariant fields through the adjoint action**: the left-invariant vector field of `X`
+at `g` is the right-invariant vector field of `Ad_g X` at `g`, `X^L(g) = (Ad_g X)^R(g)`, since
+`(g x g⁻¹) g = g x`. -/
+theorem mulInvariantVectorField_eq_mulRightInvariantVectorField_adjoint
+    (X : GroupLieAlgebra I G) (g : G) :
+    mulInvariantVectorField X g =
+      mulRightInvariantVectorField (adjointContinuousLinearMap (I := I) g X) g := by
+  have hreg : (1 : ℕ∞ω) ≠ 0 := by simp
+  have hfun : (fun x : G ↦ x * g) ∘ (conjDiffeomorph (I := I) (n := 1) g) = (g * ·) := by
+    funext x
+    simp [mul_assoc]
+  have h := congrArg (fun f : G → G ↦ mfderiv I I f 1 X) hfun
+  rw [mfderiv_comp_apply (I := I) (I' := I) (I'' := I)] at h
+  · rw [mfderiv_congr_point (I := I) (I' := I) (f := fun x : G ↦ x * g)
+      (x := conjDiffeomorph (I := I) (n := 1) g 1) (x' := 1) (by simp)] at h
+    rw [GroupLieAlgebra.mulInvariantVectorField_apply, mulRightInvariantVectorField_apply,
+      adjointContinuousLinearMap_apply]
+    exact h.symm
+  · exact (contMDiff_mul_right (I := I) (n := 1) (a := g)).contMDiffAt.mdifferentiableAt hreg
+  · exact ((conjDiffeomorph (I := I) (n := 1) g).mdifferentiable hreg) _
 
 /-- Pullback through inverse conjugation is the derivative of forward conjugation. -/
 theorem mpullback_conjugation (g x : G) (V : ∀ y : G, TangentSpace I y) :
