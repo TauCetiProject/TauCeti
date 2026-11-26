@@ -30,19 +30,17 @@ public section
 open Filter Set
 open scoped Topology
 
-namespace TauCeti
-
 /-- The real-part subtraction in the Riesz remainder transform removes the apparent pole at
 `1` when `G` is analytic there and agrees just to the right on the real axis with a real
 Dirichlet series minus a real counterterm. The filled-in value is `G′(1) - G(1)`. -/
-theorem analyticAt_update_riesz_quotient_of_LSeries {a : ℕ → ℝ} {C : ℝ → ℝ} {G : ℂ → ℂ}
+theorem AnalyticAt.update_riesz_quotient_of_LSeries {a : ℕ → ℝ} {C : ℝ → ℝ} {G : ℂ → ℂ}
     (hG : AnalyticAt ℂ G 1)
     (h : ∀ᶠ x : ℝ in 𝓝[>] 1, G x = _root_.LSeries (fun n ↦ (a n : ℂ)) x - (C x : ℂ)) :
     AnalyticAt ℂ (Function.update (fun s : ℂ ↦ (G s / s - ((G 1).re : ℂ)) / (s - 1))
       1 (deriv G 1 - G 1)) 1 := by
   classical
   have him : (G 1).im = 0 :=
-    TauCeti.LSeries.im_eq_zero_of_continuousAt_of_eventuallyEq_LSeries_sub_ofReal
+    ContinuousAt.im_eq_zero_of_eventuallyEq_LSeries_sub_ofReal
       (by simpa only [Complex.ofReal_one] using hG.continuousAt) h
   have hreal : ((G 1).re : ℂ) = G 1 := Complex.conj_eq_iff_re.mp <|
     Complex.conj_eq_iff_im.mpr him
@@ -59,5 +57,3 @@ theorem analyticAt_update_riesz_quotient_of_LSeries {a : ℕ → ℝ} {C : ℝ �
       rw [dslope_of_ne _ (mem_compl_singleton_iff.mp hs), slope_def_field, div_one, hreal]
   rw [← heq]
   exact hdiv.dslope 1
-
-end TauCeti

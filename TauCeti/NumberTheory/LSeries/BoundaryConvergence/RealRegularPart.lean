@@ -22,17 +22,15 @@ public section
 open Complex Filter
 open scoped ComplexConjugate Topology
 
-namespace TauCeti.LSeries
-
 /-- A right-hand limit of a real-coefficient Dirichlet series on the real axis, after subtracting
 an arbitrary real counterterm, is real. -/
-theorem im_eq_zero_of_tendsto_LSeries_sub_ofReal {a : ℕ → ℝ} {C : ℝ → ℝ} {b : ℝ} {z : ℂ}
+theorem Filter.Tendsto.im_eq_zero_of_LSeries_sub_ofReal {a : ℕ → ℝ} {C : ℝ → ℝ} {b : ℝ} {z : ℂ}
     (h : Tendsto (fun x : ℝ ↦ _root_.LSeries (fun n ↦ (a n : ℂ)) x - (C x : ℂ))
       (𝓝[>] b) (𝓝 z)) : z.im = 0 := by
   have hreal (x : ℝ) : conj (_root_.LSeries (fun n ↦ (a n : ℂ)) x) =
       _root_.LSeries (fun n ↦ (a n : ℂ)) x := by
     simpa only [Pi.star_def, Complex.star_def, conj_ofReal] using
-      (LSeries_star (fun n ↦ (a n : ℂ)) (x : ℂ)).symm
+      (TauCeti.LSeries.LSeries_star (fun n ↦ (a n : ℂ)) (x : ℂ)).symm
   apply Complex.conj_eq_iff_im.mp
   refine tendsto_nhds_unique_of_forall (continuous_conj.continuousAt.tendsto.comp h) h ?_
   intro x
@@ -40,11 +38,9 @@ theorem im_eq_zero_of_tendsto_LSeries_sub_ofReal {a : ℕ → ℝ} {C : ℝ → 
 
 /-- A continuous extension at a real point is real there if it agrees to the right on the real
 axis with a real-coefficient Dirichlet series less a real counterterm. -/
-theorem im_eq_zero_of_continuousAt_of_eventuallyEq_LSeries_sub_ofReal
+theorem ContinuousAt.im_eq_zero_of_eventuallyEq_LSeries_sub_ofReal
     {a : ℕ → ℝ} {C : ℝ → ℝ} {b : ℝ} {G : ℂ → ℂ} (hG : ContinuousAt G (b : ℂ))
     (h : ∀ᶠ x : ℝ in 𝓝[>] b, G x = _root_.LSeries (fun n ↦ (a n : ℂ)) x - (C x : ℂ)) :
-    (G b).im = 0 :=
-  im_eq_zero_of_tendsto_LSeries_sub_ofReal <|
-    ((hG.comp continuous_ofReal.continuousAt).mono_left nhdsWithin_le_nhds).congr' h
-
-end TauCeti.LSeries
+    (G b).im = 0 := by
+  have hlim := ((hG.comp continuous_ofReal.continuousAt).mono_left nhdsWithin_le_nhds).congr' h
+  exact hlim.im_eq_zero_of_LSeries_sub_ofReal
