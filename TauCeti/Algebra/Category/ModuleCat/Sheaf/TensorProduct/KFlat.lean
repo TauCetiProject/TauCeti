@@ -48,6 +48,9 @@ quasi-isomorphisms
 These are the K-flat replacements from which derived tensor products of complexes of sheaves of
 modules are computed (`TauCeti.derivedTensor`).
 
+Since the free module sheaf on an object of the site is flat, tensoring with it preserves acyclic
+complexes (`SheafOfModules.acyclic_tensorRight_freeYonedaFunctor_obj`).
+
 ## References
 
 * The Stacks Project, Cohomology on Sites, Section 21.17, Flat resolutions.
@@ -180,3 +183,29 @@ instance instIsLeftDerivabilityStructureLocalizerMorphismSheafOfModules :
 end KFlat
 
 end CochainComplex
+
+namespace SheafOfModules
+
+variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
+variable [J.HasSheafCompose (forget₂ CommRingCat RingCat.{u})]
+variable [HasSheafify J AddCommGrpCat.{u}] [J.WEqualsLocallyBijective AddCommGrpCat.{u}]
+variable {R : Sheaf J CommRingCat.{u}}
+
+/-- Tensoring on the right with the free module sheaf on an object `U` of the site preserves
+acyclic complexes of sheaves of modules, since that sheaf is flat
+(`SheafOfModules.preservesFiniteLimits_tensorLeft_freeYonedaFunctor_obj`). -/
+theorem acyclic_tensorRight_freeYonedaFunctor_obj (U : C)
+    {E : CochainComplex (SheafOfModules.{u} (ringCatSheaf R)) ℤ} (hE : E.Acyclic) :
+    (((tensorRight ((freeYonedaFunctor (ringCatSheaf R)).obj U)).mapHomologicalComplex
+      _).obj E).Acyclic := by
+  let G := (freeYonedaFunctor (ringCatSheaf R)).obj U
+  have : PreservesFiniteLimits (tensorRight G) :=
+    preservesFiniteLimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
+  have : PreservesFiniteColimits (tensorRight G) :=
+    preservesFiniteColimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
+  intro i
+  have := hE i
+  rw [HomologicalComplex.exactAt_iff] at this ⊢
+  exact this.map (tensorRight G)
+
+end SheafOfModules

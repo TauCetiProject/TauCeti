@@ -46,8 +46,6 @@ separating family is used (`TauCeti.quasiIso_internalHomComplexPrecomp`).
 
 * `TauCeti.derivedTensorInternalHomAdjOfIsKFlat`: for a K-flat complex `P`, the adjunction between
   `T(P, -)` and the internal Hom complex out of `P` into K-injective replacements.
-* `TauCeti.derivedInternalHomObjIsoOfQuasiIso`: `R𝓗om(L, -)` computed by the internal Hom complex
-  out of any complex with a quasi-isomorphism to the K-injective replacement of `L`.
 * `TauCeti.derivedTensorInternalHomAdjOfQuasiIso`: the derived tensor–internal Hom adjunction
   `T(L, -) ⊣ R𝓗om(L, -)` built from a given K-flat complex with a quasi-isomorphism to the
   K-injective replacement of `L`.
@@ -83,51 +81,6 @@ namespace TauCeti
 variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
   [MonoidalClosed C] [HasCountableProducts C] [HasKInjectiveResolutions C]
   [HasDerivedCategory.{w} C]
-
-section Precomp
-
-variable {S : ObjectProperty C} (hS : S.IsSeparating)
-  (hSacyclic : ∀ G, S G → ∀ X : CochainComplex C ℤ, X.Acyclic →
-    (((tensorRight G).mapHomologicalComplex _).obj X).Acyclic)
-
-include hS hSacyclic
-
-/-- Let `C` have a separating family of objects `G` for which `- ⊗ G` preserves acyclic
-complexes. If `p : K ⟶ I` is a quasi-isomorphism to the K-injective replacement `I` of `L`, the
-derived internal Hom `R𝓗om(L, -)` is the internal Hom complex out of `K` into K-injective
-replacements; the isomorphism is precomposition with `p`. -/
-def derivedInternalHomObjIsoOfQuasiIso (L : DerivedCategory C) {K : CochainComplex C ℤ}
-    (p : K ⟶ ((kInjectiveReplacement C).obj L).as) [QuasiIso p] :
-    (derivedInternalHom C).obj (op L) ≅ kInjectiveReplacement C ⋙
-      (internalHomComplexHomotopyFunctor C).obj (op ((HomotopyCategory.quotient _ _).obj K)) ⋙
-        Qh :=
-  have : IsIso (Functor.whiskerLeft (kInjectiveReplacement C) (Functor.whiskerRight
-      ((internalHomComplexHomotopyFunctor C).map ((HomotopyCategory.quotient _ _).map p).op)
-        Qh)) := by
-    rw [NatTrans.isIso_iff_isIso_app]
-    intro M
-    simp only [Functor.whiskerLeft_app, Functor.whiskerRight_app]
-    -- The component at `M` is the image under `Qh` of precomposition with `p` on the internal
-    -- Hom complex into the K-injective replacement of `M`, whose class is that replacement.
-    have h := (isIso_Qh_map_iff _).2 ((HomotopyCategory.quotient_map_mem_quasiIso_iff _).2
-      ((HomologicalComplex.mem_quasiIso_iff _).2
-        (quasiIso_internalHomComplexPrecomp hS hSacyclic p ((kInjectiveReplacement C).obj M).as)))
-    rw [← internalHomComplexHomotopyFunctor_map_app] at h
-    exact h
-  @asIso _ _ _ _ _ this
-
-/-- The component of `derivedInternalHomObjIsoOfQuasiIso` at `M` is the image of precomposition
-with `p` on the internal Hom complex into the K-injective replacement of `M`. -/
-@[simp]
-lemma derivedInternalHomObjIsoOfQuasiIso_hom_app (L : DerivedCategory C)
-    {K : CochainComplex C ℤ} (p : K ⟶ ((kInjectiveReplacement C).obj L).as) [QuasiIso p]
-    (M : DerivedCategory C) :
-    (derivedInternalHomObjIsoOfQuasiIso hS hSacyclic L p).hom.app M =
-      Qh.map ((HomotopyCategory.quotient _ _).map
-        (internalHomComplexPrecomp p ((kInjectiveReplacement C).obj M).as)) :=
-  (rfl)
-
-end Precomp
 
 variable [∀ (X₁ X₂ : GradedObject ℤ C), GradedObject.HasTensor X₁ X₂]
   [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((MonoidalCategory.curriedTensor C).obj X₁)]

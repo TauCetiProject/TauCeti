@@ -31,7 +31,7 @@ category `X.Modules`. The K-flat complexes of `𝒪_X`-modules form a left deriv
 the derived tensor product `TauCeti.derivedTensor X.Modules` exists. The separating family is the
 extensions by zero `j_! 𝒪_U` of the structure sheaf of the opens `U` of `X`
 (`SheafOfModules.isSeparating_freeYonedaFunctor`); they are flat, so tensoring with them preserves
-acyclic complexes (`TauCeti.AlgebraicGeometry.Coherent.acyclic_tensorRight_freeYonedaFunctor_obj`).
+acyclic complexes (`SheafOfModules.acyclic_tensorRight_freeYonedaFunctor_obj`).
 
 ## References
 
@@ -58,25 +58,6 @@ instance isLeftDerivabilityStructure_kFlat_localizerMorphism :
   CochainComplex.KFlat.instIsLeftDerivabilityStructureLocalizerMorphismSheafOfModules
     (R := X.sheaf)
 
-variable {X} in
-/-- Tensoring on the right with the extension by zero `j_! 𝒪_U` of the structure sheaf of an open
-`U` preserves acyclic complexes of `𝒪_X`-modules, since `j_! 𝒪_U` is flat. -/
-theorem acyclic_tensorRight_freeYonedaFunctor_obj (U : X.Opens) {E : CochainComplex X.Modules ℤ}
-    (hE : E.Acyclic) :
-    (((tensorRight ((SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj U)).mapHomologicalComplex
-      _).obj E).Acyclic := by
-  let G : X.Modules := (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj U
-  have : PreservesFiniteLimits (tensorLeft G) :=
-    SheafOfModules.preservesFiniteLimits_tensorLeft_freeYonedaFunctor_obj (R := X.sheaf) U
-  have : PreservesFiniteLimits (tensorRight G) :=
-    preservesFiniteLimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
-  have : PreservesFiniteColimits (tensorRight G) :=
-    preservesFiniteColimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
-  intro i
-  have := hE i
-  rw [HomologicalComplex.exactAt_iff] at this ⊢
-  exact this.map (tensorRight G)
-
 /-- The extensions by zero `j_! 𝒪_U` of the structure sheaf of the opens `U` of `X`, as a family
 of `𝒪_X`-modules. -/
 private abbrev separatingFamily : ObjectProperty X.Modules :=
@@ -89,7 +70,7 @@ private lemma acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj (G : X.Modules)
     (E : CochainComplex X.Modules ℤ) (hE : E.Acyclic) :
     (((tensorRight G).mapHomologicalComplex _).obj E).Acyclic := by
   obtain ⟨U⟩ := hG
-  exact acyclic_tensorRight_freeYonedaFunctor_obj U hE
+  exact SheafOfModules.acyclic_tensorRight_freeYonedaFunctor_obj (R := X.sheaf) U hE
 
 variable [HasDerivedCategory.{w} X.Modules]
 
