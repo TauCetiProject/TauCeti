@@ -63,7 +63,11 @@ basis rather than identifying them.
 * `TauCeti.UqSl2.map_laurentEval_one_ladderMatrixE` and its companions: the integral ladder
   matrices at `v = 1`.
 * `TauCeti.UqSl2.ClassicalLadder.raise_basis`, `lower_basis`, `diag_basis`: the specialized
-  operators on the ladder basis.
+  operators on the ladder basis, and `lower_pow_basis_zero`: the normalization `F^j v₀ = j! v_j`.
+* `TauCeti.UqSl2.ClassicalLadder.map_basis`: a module map `φ` out of the classical specialization
+  sends `v_j` to `(j!)⁻¹ F^j φ(v₀)` over a field of characteristic zero.
+* `TauCeti.UqSl2.ClassicalLadder.lieModuleHom_ext`: a module map out of the classical
+  specialization over a field of characteristic zero is determined by its value on `v₀`.
 * `TauCeti.UqSl2.ClassicalLadder.isSl2Triple`: for `m ≠ 0` in `K`, the specialized matrices
   `(H, E, F)` form an `sl₂` triple.
 * `TauCeti.UqSl2.ClassicalLadder.toSl2Std_basis`: the module map sends `v_j` to
@@ -442,6 +446,20 @@ theorem lower_basis_last : lower K m (basis K m (Fin.last m)) = 0 := by
   intro _
   rw [basis_apply, ite_eq_right (by simp only [Fin.ext_iff, Fin.val_last]; omega), mul_zero]
 
+/-- **The lowering operator walks `v₀` along the ladder basis**: `F^j v₀ = j! v_j`. -/
+theorem lower_pow_basis_zero (j : Fin (m + 1)) :
+    (lower K m ^ (j : ℕ)) (basis K m 0) = ((j : ℕ).factorial : K) • basis K m j := by
+  induction j using Fin.induction with
+  | zero => simp
+  | succ i ih =>
+    have hidx : (⟨((i.castSucc : Fin (m + 1)) : ℕ) + 1, by simp⟩ : Fin (m + 1)) = i.succ := by
+      ext; simp
+    rw [Fin.val_succ, pow_succ', mul_apply_eq_comp, ← Fin.val_castSucc, ih, map_smul,
+      lower_basis _ i.isLt, hidx, smul_smul]
+    congr 1
+    push_cast [Nat.factorial_succ]
+    ring
+
 /-- The Cartan operator on the ladder basis: `H v_j = (m - 2j) v_j`. -/
 theorem diag_basis (j : Fin (m + 1)) :
     diag K m (basis K m j) = ((m : K) - 2 * (j : ℕ)) • basis K m j := by
@@ -573,6 +591,14 @@ theorem lie_slFinTwoBasis_two (v : ClassicalLadder K m) :
   rw [lie_eq_rep_apply, rep_apply_basis]
   simp
 
+variable (K m) in
+/-- The endomorphism by which the element `f` of the standard `sl₂` triple acts on the classical
+specialization is the specialized lowering matrix. -/
+theorem toEnd_slFinTwoBasis_one :
+    LieModule.toEnd K (SpecialLinear.sl (Fin 2) K) (ClassicalLadder K m) (slFinTwoBasis K 1) =
+      lower K m :=
+  LinearMap.ext fun v => by rw [LieModule.toEnd_apply_apply, lie_slFinTwoBasis_one]
+
 /-! ### Comparison with the standard module `V(m)` -/
 
 /-- The coordinatewise rescaling `v ↦ ((m choose j) v_j)_j`, which turns the ladder normalization
@@ -698,6 +724,29 @@ theorem equivSl2Std_symm_basis (j : Fin (m + 1)) :
   rcases eq_or_ne i j with rfl | hij
   · simp
   · simp [hij]
+
+/-- **A module map out of the classical specialization is determined by the image of `v₀`**: it
+sends the ladder vector `v_j` to `(j!)⁻¹ F^j φ(v₀)`, since `F^j v₀ = j! v_j`. -/
+theorem map_basis {M : Type*} [AddCommGroup M] [Module K M]
+    [LieRingModule (SpecialLinear.sl (Fin 2) K) M] [LieModule K (SpecialLinear.sl (Fin 2) K) M]
+    (φ : ClassicalLadder K m →ₗ⁅K,SpecialLinear.sl (Fin 2) K⁆ M) (j : Fin (m + 1)) :
+    φ (basis K m j) = ((j : ℕ).factorial : K)⁻¹ •
+      (LieModule.toEnd K (SpecialLinear.sl (Fin 2) K) M (slFinTwoBasis K 1) ^ (j : ℕ))
+        (φ (basis K m 0)) := by
+  rw [LieModule.toEnd_pow_apply_map, toEnd_slFinTwoBasis_one, lower_pow_basis_zero, map_smul,
+    inv_smul_smul₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _))]
+
+/-- **Two module maps out of the classical specialization that agree on `v₀` are equal**: by
+`TauCeti.UqSl2.ClassicalLadder.map_basis` both are determined on the ladder basis by their value
+on `v₀`. -/
+@[ext]
+theorem lieModuleHom_ext {M : Type*} [AddCommGroup M] [Module K M]
+    [LieRingModule (SpecialLinear.sl (Fin 2) K) M] [LieModule K (SpecialLinear.sl (Fin 2) K) M]
+    {φ ψ : ClassicalLadder K m →ₗ⁅K,SpecialLinear.sl (Fin 2) K⁆ M}
+    (h : φ (basis K m 0) = ψ (basis K m 0)) : φ = ψ := by
+  have hlin : (φ : ClassicalLadder K m →ₗ[K] M) = ψ := (basis K m).ext fun j => by
+    simp only [LieModuleHom.coe_toLinearMap, map_basis φ j, map_basis ψ j, h]
+  exact LieModuleHom.ext fun v => LinearMap.congr_fun hlin v
 
 end ClassicalLadder
 
