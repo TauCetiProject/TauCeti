@@ -71,9 +71,8 @@ whose parameters converge to some `p₀ ∈ C` and which converges on an open `�
 namespace `TauCeti.SmoothTwoForm.Compatible` is the same for the almost complex structures of the
 family.
 
-On the whole domain, the theorem
-`exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_continuation` in the
-namespace `TauCeti.SmoothTwoForm.IsNondegenerate` gives a subsequence converging on all of
+On the whole domain, the theorem in `TauCeti.SmoothTwoForm.IsNondegenerate` named as the first
+one above with the suffix `_global` added gives a subsequence converging on all of
 `S` off a finite set `Z ⊆ S` with `#Z * δ ≤ A + ∑ q, (B_q + Δ_q)`, when the structures are
 cylindrical on the ends, `J_p = J_q(t)` beyond some height for every `p ∈ C`. Over the compact
 window `C` the neck positions are bounded, so beyond a fixed height the perturbations are the
@@ -269,7 +268,8 @@ on `S \ Z`, locally uniformly after applying `e` and pointwise in `M`. Over the 
 the necks stay below a fixed height, beyond which the perturbations are the cylindrical data
 `H_q(t) dt` of the outer Hamiltonians, so the family is cylindrical on the ends with data
 independent of `p`. -/
-theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_continuation
+theorem
+exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_finset_pantsContinuation_global
     (hω : ω.IsNondegenerate) (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
     (hGs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (G q)))
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
