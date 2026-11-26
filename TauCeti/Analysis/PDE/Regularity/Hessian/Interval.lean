@@ -159,18 +159,24 @@ theorem existsUnique_firstOrder_mem_w1p0Submodule_and_neg_mul_iteratedGradient_e
 private theorem setLIntegral_ofReal_inv_ite_rpow {q : ℝ} (hq : 0 ≤ q) :
     ∫⁻ x in Ioo (0 : ℝ) 1, ENNReal.ofReal (if 1 / 2 < x then 2 else 1 : ℝ)⁻¹ ^ q =
       ENNReal.ofReal ((1 + (1 / 2) ^ q) / 2) := by
+  -- On `(0, 1/2]` the coefficient is `1`, so the integrand is `1`.
+  have h₁ : ∫⁻ x in Ioc (0 : ℝ) (1 / 2), ENNReal.ofReal (if 1 / 2 < x then 2 else 1 : ℝ)⁻¹ ^ q =
+      ENNReal.ofReal (1 / 2) := by
+    rw [setLIntegral_congr_fun measurableSet_Ioc (g := fun _ => 1) fun x hx => by
+      rw [ite_eq_right (not_lt.2 hx.2), inv_one, ENNReal.ofReal_one, ENNReal.one_rpow]]
+    simp
+  -- On `(1/2, 1)` the coefficient is `2`, so the integrand is `(1/2)^q`.
+  have h₂ : ∫⁻ x in Ioo (1 / 2 : ℝ) 1, ENNReal.ofReal (if 1 / 2 < x then 2 else 1 : ℝ)⁻¹ ^ q =
+      ENNReal.ofReal ((1 / 2) ^ q / 2) := by
+    rw [setLIntegral_congr_fun measurableSet_Ioo (g := fun _ => ENNReal.ofReal ((1 / 2) ^ q))
+      fun x hx => by rw [ite_eq_left hx.1, ENNReal.ofReal_rpow_of_nonneg (by norm_num) hq, one_div]]
+    rw [setLIntegral_const, Real.volume_Ioo, ← ENNReal.ofReal_mul (by positivity)]
+    norm_num [div_eq_mul_inv, mul_comm]
   have hdisj : Disjoint (Ioc (0 : ℝ) (1 / 2)) (Ioo (1 / 2) 1) :=
     disjoint_left.2 fun x hx hx' => (hx'.1.trans_le hx.2).false
   rw [← Ioc_union_Ioo_eq_Ioo (by norm_num : (0 : ℝ) ≤ 1 / 2) (by norm_num : (1 / 2 : ℝ) < 1),
-    lintegral_union measurableSet_Ioo hdisj,
-    setLIntegral_congr_fun measurableSet_Ioc (g := fun _ => 1) fun x hx => by
-      rw [ite_eq_right (not_lt.2 hx.2), inv_one, ENNReal.ofReal_one,
-        ENNReal.one_rpow],
-    setLIntegral_congr_fun measurableSet_Ioo (g := fun _ => ENNReal.ofReal (1 / 2) ^ q)
-      fun x hx => by rw [ite_eq_left hx.1, one_div],
-    setLIntegral_const, setLIntegral_const, Real.volume_Ioc, Real.volume_Ioo,
-    ENNReal.ofReal_rpow_of_nonneg (by norm_num) hq, one_mul,
-    ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_add (by norm_num) (by positivity)]
+    lintegral_union measurableSet_Ioo hdisj, h₁, h₂,
+    ← ENNReal.ofReal_add (by norm_num) (by positivity)]
   congr 1
   ring
 
@@ -203,10 +209,13 @@ theorem norm_iteratedGradient_eq_of_neg_ite_mul_iteratedGradient_eq_one (hp : p 
     rw [← ofReal_norm, ← (ContinuousLinearMap.toSpanSingletonLIE ℝ ℝ).symm.norm_map,
       ContinuousLinearMap.toSpanSingletonLIE_symm_apply, hx', norm_neg,
       Real.norm_of_nonneg (inv_nonneg.2 (hσ x).le)]
-  -- The domain `Ioo 0 1` enters the norm as an open set, and `hint` is stated for its carrier.
+  -- The domain `Ioo 0 1` enters the norm as an open set, whose carrier is `Ioo 0 1` by
+  -- definition; `hD` and the helper are stated for that carrier.
   have hlint : ∫⁻ x in ((⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ),
-      ‖Wkp.iteratedGradient 1 u x‖ₑ ^ p.toReal = ENNReal.ofReal ((1 + (1 / 2) ^ p.toReal) / 2) :=
-    (lintegral_congr_ae hD).trans (setLIntegral_ofReal_inv_ite_rpow hq.le)
+      ‖Wkp.iteratedGradient 1 u x‖ₑ ^ p.toReal =
+        ENNReal.ofReal ((1 + (1 / 2) ^ p.toReal) / 2) := by
+    change ∫⁻ x in Ioo (0 : ℝ) 1, _ = _
+    exact (lintegral_congr_ae hD).trans (setLIntegral_ofReal_inv_ite_rpow hq.le)
   rw [Lp.norm_def, eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (Lp.aestronglyMeasurable _),
     hlint, ENNReal.ofReal_rpow_of_nonneg (by positivity) (by positivity),
     ENNReal.toReal_ofReal (by positivity)]
