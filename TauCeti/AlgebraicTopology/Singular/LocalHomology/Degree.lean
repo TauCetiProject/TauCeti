@@ -90,8 +90,8 @@ classes along the parts.
   `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`, and more generally
   `TauCeti.HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul`:
   `(g ∘ f)_*[M] = deg f • g_*[N]` for every continuous `g : N → X`.
-* `TauCeti.HomologicalOrientation.map_fundamentalClassOver`: the same over a commutative ring `k`,
-  `f_*[M]_k = deg f • [N]_k` in `Hₙ(N; k)`.
+* `TauCeti.HomologicalOrientation.map_fundamentalClassOver_eq_degree_smul`: the same over a
+  commutative ring `k`, `f_*[M]_k = deg f • [N]_k` in `Hₙ(N; k)`.
 * `TauCeti.HomologicalOrientation.singularHomologyMap_eq_degree_smul`: a self-map of a compact
   connected oriented manifold acts on top homology by multiplication by its degree.
 * `TauCeti.HomologicalOrientation.bijective_singularHomologyMap_iff`: for compact connected `M`
@@ -634,7 +634,7 @@ open MonoidalCategory in
 /-- **The degree computes the image of the fundamental class over a ring**: for a map
 `f : M → N` between compact oriented `n`-manifolds with `N` preconnected and a commutative ring
 `k`, `f_*[M]_k = deg f • [N]_k` in `Hₙ(N; k)`. -/
-theorem map_fundamentalClassOver (k : Type) [CommRing k] (f : C(M, N)) :
+theorem map_fundamentalClassOver_eq_degree_smul (k : Type) [CommRing k] (f : C(M, N)) :
     (((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) n).obj (𝟙_ (ModuleCat k))).map
       (TopCat.ofHom f)).hom (o.fundamentalClassOver hE k) =
       o.degree o' hE f • o'.fundamentalClassOver hF k := by

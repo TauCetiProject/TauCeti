@@ -48,9 +48,9 @@ and `p = 1`, this is `b₂⁺ = b₂⁻ = b₁(Y)` for the real cup pairing of `
 `[S¹] × [Y]_ℝ`.
 
 A map `f : M → N` of compact oriented `n`-manifolds with `N` preconnected carries `[M]_k` to
-`deg f • [N]_k` (`TauCeti.HomologicalOrientation.map_fundamentalClassOver`), so by naturality of the
-cup pairing `⟨f^*α ⌣ f^*β, [M]_k⟩ = deg f • ⟨α ⌣ β, [N]_k⟩`
-(`TauCeti.HomologicalOrientation.singularCupPairing_singularCohomologyMap_fundamentalClassOver`).
+`deg f • [N]_k` (`TauCeti.HomologicalOrientation.map_fundamentalClassOver_eq_degree_smul`), so by
+naturality of the cup pairing `⟨f^*α ⌣ f^*β, [M]_k⟩ = deg f • ⟨α ⌣ β, [N]_k⟩`
+(`singularCupPairing_singularCohomologyMap_fundamentalClassOver_eq_degree_smul`).
 In particular a self-map of degree one, such as an orientation-preserving homeomorphism, is an
 isometry of the cup pairing on the middle cohomology
 (`TauCeti.HomologicalOrientation.isIsometry_singularCohomologyMap_of_degree_eq_one`). On a closed
@@ -186,8 +186,9 @@ variable {N F : Type} [TopologicalSpace N] [T2Space N] [NormedAddCommGroup F] [N
 /-- **The cup pairing under a map of degree `d`**: for a map `f : M → N` of compact oriented
 `n`-manifolds with `N` preconnected, a commutative ring `k` and classes `α ∈ Hᵖ(N; k)`,
 `β ∈ H^q(N; k)` with `p + q = n`, `⟨f^*α ⌣ f^*β, [M]_k⟩ = deg f • ⟨α ⌣ β, [N]_k⟩`. -/
-theorem singularCupPairing_singularCohomologyMap_fundamentalClassOver (hF : finrank ℝ F = n)
-    [CompactSpace N] [PreconnectedSpace N] {p q : ℕ} (h : p + q = n) (f : C(M, N))
+theorem singularCupPairing_singularCohomologyMap_fundamentalClassOver_eq_degree_smul
+    (hF : finrank ℝ F = n) [CompactSpace N] [PreconnectedSpace N] {p q : ℕ} (h : p + q = n)
+    (f : C(M, N))
     (α : (TopCat.of N).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) p)
     (β : (TopCat.of N).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) q) :
     (TopCat.of M).singularCupPairing k h (o.fundamentalClassOver hn k)
@@ -195,7 +196,7 @@ theorem singularCupPairing_singularCohomologyMap_fundamentalClassOver (hF : finr
         (TopCat.singularCohomologyMap (TopCat.ofHom f) q β) =
       o.degree o' hn f •
         (TopCat.of N).singularCupPairing k h (o'.fundamentalClassOver hF k) α β := by
-  rw [TopCat.singularCupPairing_naturality, o.map_fundamentalClassOver o' hn hF,
+  rw [TopCat.singularCupPairing_naturality, o.map_fundamentalClassOver_eq_degree_smul o' hn hF,
     TopCat.singularCupPairing_apply, TopCat.singularCupPairing_apply, map_zsmul]
 
 /-- **A map of degree one preserves the middle cup pairing**: for a self-map `f` of degree one of
@@ -207,8 +208,8 @@ theorem isIsometry_singularCohomologyMap_of_degree_eq_one [PreconnectedSpace M] 
     BilinForm.IsIsometry ((TopCat.of M).singularCupPairing k h (o.fundamentalClassOver hn k))
       (TopCat.singularCohomologyMap (TopCat.ofHom f) p).hom :=
   BilinForm.isIsometry_iff.2 fun α β ↦ by
-    simpa [hf] using
-      o.singularCupPairing_singularCohomologyMap_fundamentalClassOver o hn k hn h f α β
+    simpa [hf] using o.singularCupPairing_singularCohomologyMap_fundamentalClassOver_eq_degree_smul
+      o hn k hn h f α β
 
 end Degree
 

@@ -44,11 +44,11 @@ formula
 
 **Maps of degree one.** A map of degree one preserves the cup pairing
 `(α, β) ↦ ⟨α ⌣ β, [M]_k⟩` on `H¹(M; k)`
-(`TauCeti.HomologicalOrientation.isIsometry_singularCohomologyMap_of_degree_eq_one`). When
-`2 ≠ 0` in `k` this pairing is a nondegenerate alternating form, by Poincaré duality, so in a
-symplectic basis `f^*` is a symplectic matrix, and `P = f_*` is its transpose. Writing
-`2 g = dim H₁(M; k)` and `p (t) = det (1 - t P)`, the identities for symplectic matrices of
-`TauCeti.LinearAlgebra.BilinearForm.Isometry.Charpoly` give
+(`TauCeti.HomologicalOrientation.isIsometry_singularCohomologyMap_of_degree_eq_one`). This
+pairing is nondegenerate by Poincaré duality and, when `2 ≠ 0` in `k`, alternating by graded
+commutativity, so in a symplectic basis `f^*` is a symplectic matrix, and `P = f_*` is its
+transpose. Writing `2 g = dim H₁(M; k)` and `p (t) = det (1 - t P)`, the identities for
+symplectic matrices of `TauCeti.LinearAlgebra.BilinearForm.Isometry.Charpoly` give
 
 * self-reciprocity, `t ^ (2 g) p (1 / t) = p (t)`
   (`TauCeti.HomologicalOrientation.reflect_reverse_charpoly_singularHomologyMap_one`);

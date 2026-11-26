@@ -28,9 +28,9 @@ symplectic (`TauCeti.BilinForm.IsIsometry.toMatrix_mem_symplecticGroup`), so the
 * the coefficient of `t ^ a` in `p (t) / (1 - t) ^ 2` is `det (1 - f) (a + 1 - g)` for every
   `a ≥ 2 g - 1` (`TauCeti.BilinForm.IsIsometry.coeff_coe_reverse_charpoly_mul_mk_one_sq`).
 
-The isometries of the cup pairing on the first cohomology of a closed oriented surface are the
-actions of its self-maps of degree one, and `p (t) / (1 - t) ^ 2` is then their Lefschetz zeta
-function; these identities compute its coefficients.
+The action on the first cohomology of a closed oriented surface of a self-map of degree one is an
+isometry of the cup pairing, and `p (t) / (1 - t) ^ 2` is then its Lefschetz zeta function; these
+identities compute its coefficients.
 
 ## References
 
