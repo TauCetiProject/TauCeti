@@ -330,20 +330,17 @@ private lemma toAffineWeylGroup_surjective : Function.Surjective b.toAffineWeylG
   have hwall (k : Option b.support) : b.wallReflection k ∈ G :=
     ⟨_, ⟨_, b.toAffineWeylGroup_weylSimple k⟩, rfl⟩
   obtain ⟨x, hx⟩ := fundamentalAlcove_nonempty b
-  have hy := P.root'_apply_ne_intCast_of_mem_affineWeylGroup hf
-    (root'_ne_intCast_of_mem_fundamentalAlcove hx)
-  obtain ⟨g, hg, hgy⟩ := exists_mem_apply_mem_closedFundamentalAlcove_of_affineCoreflection_mem b
-    (G := G) (fun i hi ↦ hwall (some ⟨i, hi⟩)) (hwall none)
-    (b.exists_intCast_lt_root'_apply hx hf)
-  have hgW : g ∈ P.affineWeylGroup := by
-    obtain ⟨g', -, rfl⟩ := hg
-    exact g'.property
-  have hgf : g * f = 1 := eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove b
-    (mul_mem hgW hf) hx (mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove.mpr
-      ⟨hgy, P.root'_apply_ne_intCast_of_mem_affineWeylGroup hgW hy⟩)
+  obtain ⟨ω, hω, -⟩ := exists_wallWord_eq_inv_of_mem_affineWeylGroup b hf hx
+  have hg : (ω.map fun k ↦ k.elim (P.affineCoreflection b.highestRoot 1)
+      (fun i ↦ P.affineCoreflection i 0)).prod ∈ G := G.list_prod_mem <| by
+    intro g hg
+    obtain ⟨k, -, rfl⟩ := List.mem_map.mp hg
+    cases k with
+    | none => exact hwall none
+    | some i => exact hwall (some i)
   have hfG : f ∈ G := by
-    rw [eq_inv_of_mul_eq_one_right hgf]
-    exact inv_mem hg
+    rw [hω] at hg
+    exact inv_mem_iff.mp hg
   obtain ⟨f', ⟨w, hw⟩, hf'⟩ := hfG
   exact ⟨w, hw.trans (Subtype.ext hf')⟩
 
@@ -503,17 +500,10 @@ theorem affineWeylCoxeterSystem_length {x : N} (hx : x ∈ fundamentalAlcove P b
         simp only [CoxeterSystem.wordProd_cons, Subgroup.coe_mul,
           coe_affineWeylCoxeterSystem_simple, wallReflection, List.map_cons, List.prod_cons, ih]
         cases k <;> rfl
-    obtain ⟨ω, hω, hcount⟩ := exists_wallWord_apply_mem_closedFundamentalAlcove b hx
-      (b.exists_intCast_lt_root'_apply hx f.property)
-    have hgf : cs.wordProd ω * f = 1 := Subtype.ext <|
-      eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove b (cs.wordProd ω * f).property hx
-        (mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove.mpr
-          ⟨by simpa only [Subgroup.coe_mul, AffineEquiv.coe_mul, Function.comp_apply, hprod]
-              using hω,
-            P.root'_apply_ne_intCast_of_mem_affineWeylGroup (cs.wordProd ω * f).property
-              (root'_ne_intCast_of_mem_fundamentalAlcove hx)⟩)
+    obtain ⟨ω, hω, hcount⟩ := exists_wallWord_eq_inv_of_mem_affineWeylGroup b f.property hx
+    have hinv : cs.wordProd ω = f⁻¹ := Subtype.ext ((hprod ω).trans hω)
     have hlen : cs.length f ≤ ω.length := by
-      rw [eq_inv_of_mul_eq_one_right hgf, cs.length_inv]
+      rw [← cs.length_inv f, ← hinv]
       exact cs.length_wordProd_le ω
     omega
   · -- Each simple reflection in a reduced word adds at most one separating affine root.
