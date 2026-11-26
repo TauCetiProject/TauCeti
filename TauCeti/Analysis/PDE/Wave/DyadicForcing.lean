@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.HomogeneousLitt
 public import TauCeti.Analysis.PDE.Wave.InhomogeneousStrichartz
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Series
 

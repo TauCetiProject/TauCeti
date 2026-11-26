@@ -9,6 +9,7 @@ public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Homogeneous.Basic
 public import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Series
 
 /-!
