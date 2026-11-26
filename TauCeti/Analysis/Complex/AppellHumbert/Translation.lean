@@ -17,13 +17,14 @@ import Mathlib.Tactic.LinearCombination
 
 Let `D = (B, χ)` be an Appell–Humbert datum for a subgroup `L` of a complex normed space `V`, with
 Riemann form `E` (`TauCeti.AppellHumbertData`). The **twisted translation** by `a ∈ V`
-(`TauCeti.AppellHumbertData.translate`) is the complex linear map on functions `V → ℂ`
+(`TauCeti.AppellHumbertData.twistedTranslate`) is the complex linear map on functions `V → ℂ`
 
 `(T_a f) (z) = exp (-(B (a, z) + B (a, a) / 2)) f (z + a)`.
 
 It is the analytic form of the pull-back along the translation `t_a` of the torus `V ⧸ L`: it maps
 the theta functions of `D` to those of the datum whose semicharacter is twisted by the unitary
-character `exp (2πi E (a, ·))` of `L` (`TauCeti.AppellHumbertData.translate_mem_thetaSpace`). This
+character `exp (2πi E (a, ·))` of `L`
+(`TauCeti.AppellHumbertData.twistedTranslate_mem_thetaSpace`). This
 is the statement `t_a^* L (H, α) ≅ L (H, α · exp (2πi E (a, ·)))` at the level of theta functions;
 line bundles on the torus are not formalized here. The twisted data are the sums
 `D + ofAddChar ψ` with the topologically trivial data `TauCeti.AppellHumbertData.ofAddChar ψ`,
@@ -33,28 +34,30 @@ entire maps with `f (z + l) = ψ (l) f (z)`
 unitary line bundle of `ψ` studied in `TauCeti.Analysis.Complex.QuasiPeriodic.Basic`. The twist is
 trivial exactly when `a` lies in the dual of `L` for `E`
 (`TauCeti.AppellHumbertData.riemannChar_eq_one_iff`), and then `T_a` preserves the theta functions
-of `D` (`TauCeti.AppellHumbertData.translate_mem_thetaSpace_of_mem_dualSubmodule`). On a theta
-function, translation by `l ∈ L` is multiplication by `χ (l)`
-(`TauCeti.AppellHumbertData.translate_eq_smul_of_mem_thetaSpace`).
+of `D` (`TauCeti.AppellHumbertData.twistedTranslate_mem_thetaSpace_of_mem_dualSubmodule`).
+On a theta function, translation by `l ∈ L` is multiplication by `χ (l)`
+(`TauCeti.AppellHumbertData.twistedTranslate_eq_smul_of_mem_thetaSpace`).
 
 The twisted translations satisfy the Heisenberg relations: `T_u T_v = exp (-πi E (u, v)) T_(u + v)`
-(`TauCeti.AppellHumbertData.translate_translate`), so two of them commute up to the phase
-`exp (2πi E (v, u))` (`TauCeti.AppellHumbertData.translate_translate_eq_smul_swap`). They are
+(`TauCeti.AppellHumbertData.twistedTranslate_twistedTranslate`), so two of them commute up to the
+phase `exp (2πi E (v, u))`
+(`TauCeti.AppellHumbertData.twistedTranslate_twistedTranslate_eq_smul_swap`). They are
 compatible with products and powers of theta functions.
 
 ## Main declarations
 
-* `TauCeti.AppellHumbertData.translate`: the twisted translation `T_a`.
+* `TauCeti.AppellHumbertData.twistedTranslate`: the twisted translation `T_a`.
 * `TauCeti.AppellHumbertData.ofAddChar`: the datum `(0, ψ)` of a unitary character `ψ` of `L`.
 * `TauCeti.AppellHumbertData.riemannChar`: the character `exp (2πi E (a, ·))` of `L`.
-* `TauCeti.AppellHumbertData.translate_translate`,
-  `TauCeti.AppellHumbertData.translate_translate_eq_smul_swap`: the Heisenberg relations.
-* `TauCeti.AppellHumbertData.translate_mem_thetaSpace`: translation twists the semicharacter by
-  `exp (2πi E (a, ·))`.
+* `TauCeti.AppellHumbertData.twistedTranslate_twistedTranslate`,
+  `TauCeti.AppellHumbertData.twistedTranslate_twistedTranslate_eq_smul_swap`:
+  the Heisenberg relations.
+* `TauCeti.AppellHumbertData.twistedTranslate_mem_thetaSpace`: translation twists the semicharacter
+  by `exp (2πi E (a, ·))`.
 
 ## Provenance
 
-`TauCeti.AppellHumbertData.translate` and its lemmas are adapted from
+`TauCeti.AppellHumbertData.twistedTranslate` and its lemmas are adapted from
 `New.RealComplexForm.thetaShift`, `New.thetaShift_apply_apply`, `New.differentiable_thetaShift`,
 `New.thetaShift_zero`, `New.thetaShift_mul`, `New.thetaShift_pow`, `New.thetaShift_of_mem`,
 `New.IsAppellHumbert.thetaShift_thetaShift`, `New.IsAppellHumbert.thetaShift_comm`,
@@ -183,7 +186,7 @@ theorem riemannChar_eq_one_iff {a : V} :
 
 /-- The **twisted translation** by `a ∈ V`, the complex linear map on functions `V → ℂ` given by
 `(T_a f) (z) = exp (-(B (a, z) + B (a, a) / 2)) f (z + a)`. -/
-noncomputable def translate (a : V) : (V → ℂ) →ₗ[ℂ] V → ℂ where
+noncomputable def twistedTranslate (a : V) : (V → ℂ) →ₗ[ℂ] V → ℂ where
   toFun f z := exp (-(D.form a z + D.form a a / 2)) * f (z + a)
   map_add' f g := by
     ext z
@@ -194,82 +197,84 @@ noncomputable def translate (a : V) : (V → ℂ) →ₗ[ℂ] V → ℂ where
 
 /-- The defining formula of the twisted translation. -/
 @[simp]
-theorem translate_apply (a : V) (f : V → ℂ) (z : V) :
-    D.translate a f z = exp (-(D.form a z + D.form a a / 2)) * f (z + a) := (rfl)
+theorem twistedTranslate_apply (a : V) (f : V → ℂ) (z : V) :
+    D.twistedTranslate a f z = exp (-(D.form a z + D.form a a / 2)) * f (z + a) := (rfl)
 
 /-- The twisted translation by `0` is the identity. -/
 @[simp]
-theorem translate_zero (f : V → ℂ) : D.translate 0 f = f := by
+theorem twistedTranslate_zero (f : V → ℂ) : D.twistedTranslate 0 f = f := by
   ext z
-  simp [translate_apply]
+  simp [twistedTranslate_apply]
 
 /-- **Composition of twisted translations**: `T_u T_v = exp (-πi E (u, v)) T_(u + v)`. -/
-theorem translate_translate (u v : V) (f : V → ℂ) :
-    D.translate u (D.translate v f) =
-      exp (-(π * I * D.riemannForm u v)) • D.translate (u + v) f := by
+theorem twistedTranslate_twistedTranslate (u v : V) (f : V → ℂ) :
+    D.twistedTranslate u (D.twistedTranslate v f) =
+      exp (-(π * I * D.riemannForm u v)) • D.twistedTranslate (u + v) f := by
   ext z
   have h_exp : -(D.form u z + D.form u u / 2) + -(D.form v (z + u) + D.form v v / 2) =
       -(π * I * D.riemannForm u v) + -(D.form (u + v) z + D.form (u + v) (u + v) / 2) := by
     simp only [map_add, _root_.add_apply]
     linear_combination (-1 / 2 : ℂ) * D.form_sub_form u v
-  simp only [translate_apply, Pi.smul_apply, smul_eq_mul]
+  simp only [twistedTranslate_apply, Pi.smul_apply, smul_eq_mul]
   rw [← mul_assoc, ← exp_add, h_exp, exp_add, add_assoc]
   ring
 
 /-- **The Heisenberg commutation relation**: two twisted translations commute up to the phase
 `exp (2πi E (v, u))`. -/
-theorem translate_translate_eq_smul_swap (u v : V) (f : V → ℂ) :
-    D.translate u (D.translate v f) =
-      (Circle.exp (2 * π * D.riemannForm v u) : ℂ) • D.translate v (D.translate u f) := by
-  rw [D.translate_translate, D.translate_translate v u, add_comm v u, smul_smul, Circle.coe_exp,
-    ← exp_add, D.riemannForm_swap v u]
+theorem twistedTranslate_twistedTranslate_eq_smul_swap (u v : V) (f : V → ℂ) :
+    D.twistedTranslate u (D.twistedTranslate v f) =
+      (Circle.exp (2 * π * D.riemannForm v u) : ℂ) •
+        D.twistedTranslate v (D.twistedTranslate u f) := by
+  rw [D.twistedTranslate_twistedTranslate, D.twistedTranslate_twistedTranslate v u, add_comm v u,
+    smul_smul, Circle.coe_exp, ← exp_add, D.riemannForm_swap v u]
   congr 2
   push_cast
   ring
 
 /-- Twisted translation is compatible with products: the translate of `f g` for the sum of two data
 is the product of the translates. -/
-theorem translate_mul (u : V) (f g : V → ℂ) :
-    (D + D').translate u (f * g) = D.translate u f * D'.translate u g := by
+theorem twistedTranslate_mul (u : V) (f g : V → ℂ) :
+    (D + D').twistedTranslate u (f * g) = D.twistedTranslate u f * D'.twistedTranslate u g := by
   ext z
-  simp only [translate_apply, form_add, _root_.add_apply, Pi.mul_apply, add_div]
+  simp only [twistedTranslate_apply, form_add, _root_.add_apply, Pi.mul_apply, add_div]
   rw [show -(D.form u z + D'.form u z + (D.form u u / 2 + D'.form u u / 2)) =
     -(D.form u z + D.form u u / 2) + -(D'.form u z + D'.form u u / 2) by ring, exp_add]
   ring
 
 /-- Twisted translation is compatible with powers: the translate of `f ^ n` for `n • D` is the
 `n`-th power of the translate. -/
-theorem translate_pow (u : V) (f : V → ℂ) (n : ℕ) :
-    (n • D).translate u (f ^ n) = D.translate u f ^ n := by
+theorem twistedTranslate_pow (u : V) (f : V → ℂ) (n : ℕ) :
+    (n • D).twistedTranslate u (f ^ n) = D.twistedTranslate u f ^ n := by
   ext z
-  simp only [translate_apply, form_nsmul, _root_.smul_apply, nsmul_eq_mul, Pi.pow_apply, mul_pow,
-    ← exp_natCast_mul]
+  simp only [twistedTranslate_apply, form_nsmul, _root_.smul_apply, nsmul_eq_mul, Pi.pow_apply,
+    mul_pow, ← exp_natCast_mul]
   congr 2
   ring
 
 variable {D} {f : V → ℂ}
 
 /-- On a theta function, the twisted translation by `l ∈ L` is multiplication by `χ (l)`. -/
-theorem translate_eq_smul_of_mem_thetaSpace (hf : f ∈ D.thetaSpace) (l : L) :
-    D.translate l f = (D.semichar l : ℂ) • f := by
+theorem twistedTranslate_eq_smul_of_mem_thetaSpace (hf : f ∈ D.thetaSpace) (l : L) :
+    D.twistedTranslate l f = (D.semichar l : ℂ) • f := by
   ext z
-  rw [translate_apply, apply_add_of_mem_thetaSpace hf, factor_def, Pi.smul_apply, smul_eq_mul,
-    exp_neg]
+  rw [twistedTranslate_apply, apply_add_of_mem_thetaSpace hf, factor_def, Pi.smul_apply,
+    smul_eq_mul, exp_neg]
   field_simp
 
 /-- On a theta function, changing `u` by `l ∈ L` changes the twisted translation by `u` by the
 scalar `exp (πi E (u, l)) χ (l)`. -/
-theorem translate_add_eq_smul_of_mem_thetaSpace (hf : f ∈ D.thetaSpace) (u : V) (l : L) :
-    D.translate (u + l) f = (exp (π * I * D.riemannForm u l) * D.semichar l) • D.translate u f := by
-  have h := D.translate_translate u l f
-  rw [translate_eq_smul_of_mem_thetaSpace hf, map_smul] at h
+theorem twistedTranslate_add_eq_smul_of_mem_thetaSpace (hf : f ∈ D.thetaSpace) (u : V) (l : L) :
+    D.twistedTranslate (u + l) f =
+      (exp (π * I * D.riemannForm u l) * D.semichar l) • D.twistedTranslate u f := by
+  have h := D.twistedTranslate_twistedTranslate u l f
+  rw [twistedTranslate_eq_smul_of_mem_thetaSpace hf, map_smul] at h
   rw [mul_smul, h, smul_smul, ← exp_add, add_neg_cancel, exp_zero, one_smul]
 
 /-- **Translation twists the semicharacter**: the twisted translate by `a ∈ V` of a theta function
 of `D` is a theta function of the datum `D + ofAddChar (D.riemannChar a)`, whose semicharacter is
 `χ · exp (2πi E (a, ·))`. -/
-theorem translate_mem_thetaSpace (hf : f ∈ D.thetaSpace) (a : V) :
-    D.translate a f ∈ (D + ofAddChar (D.riemannChar a)).thetaSpace := by
+theorem twistedTranslate_mem_thetaSpace (hf : f ∈ D.thetaSpace) (a : V) :
+    D.twistedTranslate a f ∈ (D + ofAddChar (D.riemannChar a)).thetaSpace := by
   refine (mem_thetaSpace_iff _).mpr ⟨?_, fun l z ↦ ?_⟩
   · have hdiff := differentiable_of_mem_thetaSpace hf
     have : Differentiable ℂ fun z ↦ exp (-(D.form a z + D.form a a / 2)) := by fun_prop
@@ -281,9 +286,9 @@ theorem translate_mem_thetaSpace (hf : f ∈ D.thetaSpace) (a : V) :
     simp only [map_add]
     push_cast
     linear_combination D.form_sub_form a l
-  rw [factor_add, factor_ofAddChar, riemannChar_apply, translate_apply, translate_apply,
-    add_right_comm z (l : V) a, apply_add_of_mem_thetaSpace hf l (z + a), factor_def, factor_def,
-    Circle.coe_exp]
+  rw [factor_add, factor_ofAddChar, riemannChar_apply, twistedTranslate_apply,
+    twistedTranslate_apply, add_right_comm z (l : V) a,
+    apply_add_of_mem_thetaSpace hf l (z + a), factor_def, factor_def, Circle.coe_exp]
   calc _ = D.semichar l * exp (-(D.form a (z + l) + D.form a a / 2) +
         (D.form l (z + a) + D.form l l / 2)) * f (z + a) := by
         rw [exp_add (-(D.form a (z + l) + D.form a a / 2))]
@@ -294,9 +299,9 @@ theorem translate_mem_thetaSpace (hf : f ∈ D.thetaSpace) (a : V) :
 
 /-- For `a` in the dual of `L` for the Riemann form, the twisted translation by `a` preserves the
 theta functions of `D`. -/
-theorem translate_mem_thetaSpace_of_mem_dualSubmodule {a : V}
+theorem twistedTranslate_mem_thetaSpace_of_mem_dualSubmodule {a : V}
     (ha : a ∈ D.riemannForm.dualSubmodule L) (hf : f ∈ D.thetaSpace) :
-    D.translate a f ∈ D.thetaSpace := by
-  simpa [(D.riemannChar_eq_one_iff).mpr ha] using translate_mem_thetaSpace hf a
+    D.twistedTranslate a f ∈ D.thetaSpace := by
+  simpa [(D.riemannChar_eq_one_iff).mpr ha] using twistedTranslate_mem_thetaSpace hf a
 
 end TauCeti.AppellHumbertData
