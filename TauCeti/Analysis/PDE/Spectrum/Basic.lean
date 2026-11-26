@@ -83,7 +83,8 @@ map.
   `TauCeti.PDE.isDirichletEigenvalue_iff_exists_isWeakSolutionDirichlet_sub_const` matching it
   with a homogeneous weak equation for the mass coefficient `c - κ`.
 * `TauCeti.PDE.inner_value_eq_zero_of_energyFormH1_eq_of_ne`: for a symmetric form,
-  eigenfunctions of distinct eigenvalues are orthogonal in `L²(Ω)`.
+  eigenfunctions of distinct eigenvalues are orthogonal in `L²(Ω)`, with
+  `TauCeti.PDE.W1p.inner_value_eq_zero_of_energyFormH1_eq_of_ne` for any test space.
 * `TauCeti.PDE.firstDirichletEigenvalue` and `TauCeti.PDE.isDirichletEigenvalue_first`: the least
   Dirichlet eigenvalue and its attainment on a nonempty bounded domain.
 * `TauCeti.PDE.pos_of_isDirichletEigenvalue` and `TauCeti.PDE.le_of_isDirichletEigenvalue`:
@@ -255,6 +256,21 @@ theorem isDirichletEigenvalue_iff_setIntegral (kappa : ℝ) :
             W1p.value (v : W1p mu Omega 2) x ∂mu := by
   simp only [IsDirichletEigenvalue, W1p.inner_value_eq_setIntegral]
 
+/-- **Eigenfunctions of distinct eigenvalues are orthogonal**, whatever the test space. For an
+energy form without drift and with an almost everywhere symmetric principal coefficient, if
+`u, v ∈ H¹(Ω)` satisfy `a(u, v) = κ ⟪u, v⟫_{L²(Ω)}` and `a(v, u) = κ' ⟪v, u⟫_{L²(Ω)}` with
+`κ ≠ κ'`, then `u` and `v` are orthogonal in `L²(Ω)`. This applies to Dirichlet and Neumann
+eigenfunctions alike. -/
+theorem W1p.inner_value_eq_zero_of_energyFormH1_eq_of_ne
+    (ha : ∀ᵐ x ∂mu.restrict (Omega : Set (EuclideanSpace ℝ ι)), (a x).IsSymm)
+    {u v : W1p mu Omega 2} {kappa kappa' : ℝ} (hne : kappa ≠ kappa')
+    (hu : energyFormH1 a 0 c u v = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ)
+    (hv : energyFormH1 a 0 c v u = kappa' * ⟪W1p.value v, W1p.value u⟫_ℝ) :
+    ⟪W1p.value u, W1p.value v⟫_ℝ = 0 := by
+  have key := hu.symm.trans ((energyFormH1_comm_of_isSymm_ae ha _ _).trans hv)
+  rw [real_inner_comm (W1p.value u), ← sub_eq_zero, ← sub_mul, mul_eq_zero] at key
+  exact key.resolve_left (sub_ne_zero.2 hne)
+
 /-- **Eigenfunctions of distinct eigenvalues are orthogonal.** For an energy form without drift
 and with an almost everywhere symmetric principal coefficient, two solutions of the Dirichlet
 eigenvalue identity `a(u, v) = κ ⟪u, v⟫_{L²(Ω)}` with different `κ` are orthogonal in `L²(Ω)`. -/
@@ -265,11 +281,8 @@ theorem inner_value_eq_zero_of_energyFormH1_eq_of_ne
       kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (w : W1p mu Omega 2)⟫_ℝ)
     (hv : ∀ w : W1p0 mu Omega 2, energyFormH1 a 0 c (v : W1p mu Omega 2) (w : W1p mu Omega 2) =
       kappa' * ⟪W1p.value (v : W1p mu Omega 2), W1p.value (w : W1p mu Omega 2)⟫_ℝ) :
-    ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ = 0 := by
-  have key := (hu v).symm.trans ((energyFormH1_comm_of_isSymm_ae ha _ _).trans (hv u))
-  rw [real_inner_comm (W1p.value (u : W1p mu Omega 2)), ← sub_eq_zero, ← sub_mul,
-    mul_eq_zero] at key
-  exact key.resolve_left (sub_ne_zero.2 hne)
+    ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ = 0 :=
+  W1p.inner_value_eq_zero_of_energyFormH1_eq_of_ne ha hne (hu v) (hv u)
 
 /-- A domain with a Dirichlet eigenvalue is nonempty: on the empty domain the only element of
 `H¹₀(Ω)` is `0`. -/

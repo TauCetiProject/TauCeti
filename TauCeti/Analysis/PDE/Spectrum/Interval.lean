@@ -361,6 +361,24 @@ theorem exists_lt_and_energyFormH1_eq_intervalDomain (hab : a < b) (C : ℝ) :
   rw [← h] at hnorm
   linarith
 
+/-- A function on the interval domain whose value agrees almost everywhere with a continuous `f`
+is nonzero as soon as `f` does not vanish at some point of `(a, b)`. -/
+private theorem ne_zero_of_value_ae_eq {f : EuclideanSpace ℝ (Fin 1) → ℝ} (hf : Continuous f)
+    {u : W1p volume (intervalDomain a b) 2}
+    (hu : W1p.value u =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))] f)
+    {t : ℝ} (ht : t ∈ Ioo a b) (hft : f (lineEquiv t) ≠ 0) :
+    u ≠ 0 := by
+  rintro rfl
+  rw [W1p.value_zero] at hu
+  have hzero : EqOn f 0 (intervalDomain a b) := by
+    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (intervalDomain a b).isOpen
+      hf.continuousOn continuousOn_const
+    filter_upwards [hu, Lp.coeFn_zero ℝ 2
+      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
+    rw [← h1, h2]
+  refine hft (hzero ?_)
+  rwa [SetLike.mem_coe, mem_intervalDomain, lineEquiv_apply_zero]
+
 /-- `(k π / (b - a))²` is a Dirichlet eigenvalue of `-Δ` on `(a, b)` for every `k ≥ 1`, with
 eigenfunction `x ↦ sin (k π (x - a) / (b - a))`. -/
 theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (hk : 0 < k) :
@@ -369,32 +387,20 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
   obtain ⟨u, hu, heq⟩ := exists_value_ae_eq_sin_and_energyFormH1_eq hab k
   refine (isDirichletEigenvalue_iff_setIntegral _).2
     ⟨u, fun h0 => ?_, fun v => by rw [heq v, W1p.inner_value_eq_setIntegral]⟩
-  have hval : W1p.value (u : W1p volume (intervalDomain a b) 2) = 0 := by
-    rw [← W1p0.valueL_apply, h0, map_zero]
-  -- The sine mode would vanish on `(a, b)`, but it equals `1` at `a + (b - a) / (2k)`.
-  have hzero : EqOn (fun x : EuclideanSpace ℝ (Fin 1) => Real.sin (k * π * (x 0 - a) / (b - a)))
-      0 (intervalDomain a b) := by
-    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (intervalDomain a b).isOpen
-      (Continuous.continuousOn (by fun_prop)) continuousOn_const
-    filter_upwards [hu, Lp.coeFn_zero ℝ 2
-      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
-    rw [← h1, hval, h2]
+  -- The sine mode equals `1` at `a + (b - a) / (2k)`.
   have hba : 0 < b - a := sub_pos.2 hab
-  have hmem : lineEquiv (a + (b - a) / (2 * k)) ∈ intervalDomain a b := by
-    rw [mem_intervalDomain, ← lineEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply]
-    constructor
-    · have : 0 < (b - a) / (2 * k) := by positivity
-      linarith
-    · have hk1 : (1 : ℝ) ≤ k := Nat.one_le_cast.2 hk
-      have : (b - a) / (2 * k) ≤ (b - a) / 2 :=
-        div_le_div_of_nonneg_left hba.le two_pos (by linarith)
-      linarith
-  have h1 := hzero hmem
-  simp only [Pi.zero_apply] at h1
-  rw [← lineEquiv_symm_apply, LinearIsometryEquiv.symm_apply_apply,
-    show k * π * (a + (b - a) / (2 * k) - a) / (b - a) = π / 2 by field_simp; ring,
-    Real.sin_pi_div_two] at h1
-  exact one_ne_zero h1
+  refine ne_zero_of_value_ae_eq (by fun_prop) hu (t := a + (b - a) / (2 * k)) ⟨?_, ?_⟩ ?_
+    (congrArg Subtype.val h0)
+  · have : 0 < (b - a) / (2 * k) := by positivity
+    linarith
+  · have hk1 : (1 : ℝ) ≤ k := Nat.one_le_cast.2 hk
+    have : (b - a) / (2 * k) ≤ (b - a) / 2 :=
+      div_le_div_of_nonneg_left hba.le two_pos (by linarith)
+    linarith
+  · rw [lineEquiv_apply_zero,
+      show k * π * (a + (b - a) / (2 * k) - a) / (b - a) = π / 2 by field_simp; ring,
+      Real.sin_pi_div_two]
+    exact one_ne_zero
 
 private theorem measurePreserving_lineEquiv_restrict :
     MeasurePreserving lineEquiv (volume.restrict (Ioo a b))
@@ -658,30 +664,17 @@ private theorem ne_zero_of_value_ae_eq_cos (hab : a < b) (k : ℕ)
     (hu : W1p.value u =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
       (fun x => Real.cos (k * π * (x 0 - a) / (b - a)))) :
     u ≠ 0 := by
-  rintro rfl
-  rw [W1p.value_zero] at hu
-  have hzero : EqOn (fun x : EuclideanSpace ℝ (Fin 1) => Real.cos (k * π * (x 0 - a) / (b - a)))
-      0 (intervalDomain a b) := by
-    refine Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (intervalDomain a b).isOpen
-      (Continuous.continuousOn (by fun_prop)) continuousOn_const
-    filter_upwards [hu, Lp.coeFn_zero ℝ 2
-      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))] with x h1 h2
-    rw [← h1, h2]
   have hba : 0 < b - a := sub_pos.2 hab
   have hk : (0 : ℝ) < k + 1 := by positivity
-  have hmem : lineEquiv (a + (b - a) / (2 * (k + 1))) ∈ intervalDomain a b := by
-    rw [mem_intervalDomain, lineEquiv_apply_zero]
-    constructor
-    · have : 0 < (b - a) / (2 * (k + 1)) := by positivity
-      linarith
-    · have : (b - a) / (2 * (k + 1)) ≤ (b - a) / 2 :=
-        div_le_div_of_nonneg_left hba.le two_pos (by linarith)
-      linarith
-  have h1 := hzero hmem
-  simp only [Pi.zero_apply, lineEquiv_apply_zero] at h1
-  rw [show k * π * (a + (b - a) / (2 * (k + 1)) - a) / (b - a) = k / (k + 1) * (π / 2) by
-    field_simp; ring] at h1
-  refine (Real.cos_pos_of_mem_Ioo ⟨?_, ?_⟩).ne' h1
+  refine ne_zero_of_value_ae_eq (by fun_prop) hu (t := a + (b - a) / (2 * (k + 1))) ⟨?_, ?_⟩ ?_
+  · have : 0 < (b - a) / (2 * (k + 1)) := by positivity
+    linarith
+  · have : (b - a) / (2 * (k + 1)) ≤ (b - a) / 2 :=
+      div_le_div_of_nonneg_left hba.le two_pos (by linarith)
+    linarith
+  rw [lineEquiv_apply_zero, show k * π * (a + (b - a) / (2 * (k + 1)) - a) / (b - a) =
+    k / (k + 1) * (π / 2) by field_simp; ring]
+  refine (Real.cos_pos_of_mem_Ioo ⟨?_, ?_⟩).ne'
   · have : 0 ≤ (k : ℝ) / (k + 1) * (π / 2) := by positivity
     linarith [Real.pi_pos]
   · have : (k : ℝ) / (k + 1) < 1 := (div_lt_one hk).2 (by linarith)
@@ -709,10 +702,8 @@ theorem exists_ne_zero_forall_energyFormH1_eq_iff_intervalDomain (hab : a < b) {
     -- `u` is orthogonal to every cosine mode, since `κ` differs from each of their eigenvalues.
     refine eq_zero_of_forall_setIntegral_mul_cos_eq_zero hab _ fun k => ?_
     obtain ⟨s, hs, hseq⟩ := exists_value_ae_eq_cos_and_energyFormH1_eq hab k
-    have hint : ⟪W1p.value u, W1p.value s⟫_ℝ = 0 := by
-      have h := hu s
-      rw [energyFormH1_one_zero_zero_comm, hseq u, real_inner_comm] at h
-      exact (mul_eq_mul_right_iff.1 h).resolve_left (hne k).symm
+    have hint := W1p.inner_value_eq_zero_of_energyFormH1_eq_of_ne
+      (ae_of_all _ fun _ => Matrix.isSymm_one) (hne k) (hu s) (hseq u)
     rw [W1p.inner_value_eq_setIntegral] at hint
     refine (integral_congr_ae ?_).trans hint
     filter_upwards [hs] with x hx

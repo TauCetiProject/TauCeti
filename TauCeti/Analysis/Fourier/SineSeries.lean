@@ -255,9 +255,8 @@ private theorem integral_mul_cos_intCast_eq_zero {g : ℝ → ℝ}
 `∫ x in a..b, g x * cos (k π (x - a) / (b - a)) = 0` for every `k ≥ 0`
 
 vanishes almost everywhere on `(a, b]`. For `a < b` these cosines are the Neumann eigenfunctions
-of `-d²/dx²` on `(a, b)`, so this is the completeness half of the Fourier cosine expansion. The
-proof is that of the sine system with the even extension of `g` about `a` in place of the odd
-one. For `b ≤ a` the interval `(a, b]` is empty and the conclusion holds trivially. -/
+of `-d²/dx²` on `(a, b)`, so this is the completeness half of the Fourier cosine expansion. For
+`b ≤ a` the interval `(a, b]` is empty and the conclusion holds trivially. -/
 theorem ae_eq_zero_of_forall_integral_mul_cos_eq_zero {g : ℝ → ℝ}
     (hg : IntegrableOn g (Ioc a b))
     (h : ∀ k : ℕ, ∫ x in a..b, g x * Real.cos (k * π * (x - a) / (b - a)) = 0) :
