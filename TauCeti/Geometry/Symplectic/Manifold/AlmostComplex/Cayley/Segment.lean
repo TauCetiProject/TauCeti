@@ -24,10 +24,10 @@ relative to `J₀` is `(1 - β t) • cayley J₁ + β t • cayley J₂` at eve
 smooth transition function. It is `J₁` for `t ≤ 0` and `J₂` for `t ≥ 1`. The Cayley path
 `TauCeti.SmoothTwoForm.Compatible.cayleyPath h₀ h₂` is the segment starting at `J₀`
 (`TauCeti.SmoothTwoForm.Compatible.cayleySegment_eq_cayleyPath`), and the continuation homotopy
-between two families of structures is the segment between their members
-(`TauCeti.SmoothTwoForm.Compatible.continuationAlmostComplex_eq_cayleySegment`). Unlike these, the
-endpoints of the segments here may vary with a parameter, and the segments then vary smoothly
-with it (`TauCeti.SmoothTwoForm.Compatible.contMDiffAt_cayleySegment`).
+`TauCeti.SmoothTwoForm.Compatible.continuationAlmostComplex` between two families of structures is
+defined as the segment between their members. The endpoints of the segments may vary with a
+parameter, and the segments then vary smoothly with it
+(`TauCeti.SmoothTwoForm.Compatible.contMDiffAt_cayleySegment`).
 
 Such segments switch a domain-dependent structure on or off over a family of domains, keeping it
 tame throughout: a family of Floer data whose Hamiltonian perturbation is scaled by `β t` uses the

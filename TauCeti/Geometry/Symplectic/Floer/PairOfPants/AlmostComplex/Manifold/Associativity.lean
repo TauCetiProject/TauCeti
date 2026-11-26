@@ -80,6 +80,9 @@ public noncomputable section
 open Bundle Set Real Manifold Topology Function
 open scoped ContDiff
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
+open TauCeti.Floer (associativityLeftInserted associativityLeftReceiving associativityRightInserted
+  associativityRightReceiving associativityLeftInserted_mem associativityLeftReceiving_mem
+  associativityRightInserted_mem associativityRightReceiving_mem)
 
 namespace TauCeti.SmoothTwoForm.Compatible
 
@@ -92,71 +95,33 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 section Pieces
 
-/-- The end structures of the inserted pair of pants of `(x₁ x₂) x₃`. -/
-private def leftInserted (J : Fin 3 → ℝ → SmoothAlmostComplexStructure I M)
-    (G : ℝ → SmoothAlmostComplexStructure I M) : Puncture → ℝ → SmoothAlmostComplexStructure I M
-  | zero => J 0
-  | one => J 1
-  | inf => G
-
-/-- The end structures of the receiving pair of pants of `(x₁ x₂) x₃`. -/
-private def leftReceiving (J : Fin 3 → ℝ → SmoothAlmostComplexStructure I M)
-    (Jout G : ℝ → SmoothAlmostComplexStructure I M) :
-    Puncture → ℝ → SmoothAlmostComplexStructure I M
-  | zero => G
-  | one => J 2
-  | inf => Jout
-
-/-- The end structures of the inserted pair of pants of `x₁ (x₂ x₃)`. -/
-private def rightInserted (J : Fin 3 → ℝ → SmoothAlmostComplexStructure I M)
-    (G' : ℝ → SmoothAlmostComplexStructure I M) :
-    Puncture → ℝ → SmoothAlmostComplexStructure I M
-  | zero => J 1
-  | one => J 2
-  | inf => G'
-
-/-- The end structures of the receiving pair of pants of `x₁ (x₂ x₃)`. -/
-private def rightReceiving (J : Fin 3 → ℝ → SmoothAlmostComplexStructure I M)
-    (Jout G' : ℝ → SmoothAlmostComplexStructure I M) :
-    Puncture → ℝ → SmoothAlmostComplexStructure I M
-  | zero => J 0
-  | one => G'
-  | inf => Jout
-
 variable {J : Fin 3 → ℝ → SmoothAlmostComplexStructure I M}
   {Jout G G' : ℝ → SmoothAlmostComplexStructure I M}
 
 omit [FiniteDimensional ℝ E] in
 private theorem tames_leftInserted (hJ : ∀ i t, σ.Tames (J i t)) (hG : ∀ t, σ.Tames (G t)) :
-    ∀ p t, σ.Tames (leftInserted J G p t) := by
-  rintro (_ | _ | _) t <;> simp [leftInserted, hJ, hG]
+    ∀ p t, σ.Tames (associativityLeftInserted J G p t) :=
+  associativityLeftInserted_mem
+    (S := {K : ℝ → SmoothAlmostComplexStructure I M | ∀ t, σ.Tames (K t)}) hJ hG
 
 omit [FiniteDimensional ℝ E] in
 private theorem tames_leftReceiving (hJ : ∀ i t, σ.Tames (J i t)) (hJout : ∀ t, σ.Tames (Jout t))
-    (hG : ∀ t, σ.Tames (G t)) : ∀ p t, σ.Tames (leftReceiving J Jout G p t) := by
-  rintro (_ | _ | _) t <;> simp [leftReceiving, hJ, hJout, hG]
+    (hG : ∀ t, σ.Tames (G t)) : ∀ p t, σ.Tames (associativityLeftReceiving J Jout G p t) :=
+  associativityLeftReceiving_mem
+    (S := {K : ℝ → SmoothAlmostComplexStructure I M | ∀ t, σ.Tames (K t)}) hJ hJout hG
 
 omit [FiniteDimensional ℝ E] in
 private theorem tames_rightInserted (hJ : ∀ i t, σ.Tames (J i t)) (hG' : ∀ t, σ.Tames (G' t)) :
-    ∀ p t, σ.Tames (rightInserted J G' p t) := by
-  rintro (_ | _ | _) t <;> simp [rightInserted, hJ, hG']
+    ∀ p t, σ.Tames (associativityRightInserted J G' p t) :=
+  associativityRightInserted_mem
+    (S := {K : ℝ → SmoothAlmostComplexStructure I M | ∀ t, σ.Tames (K t)}) hJ hG'
 
 omit [FiniteDimensional ℝ E] in
 private theorem tames_rightReceiving (hJ : ∀ i t, σ.Tames (J i t))
     (hJout : ∀ t, σ.Tames (Jout t)) (hG' : ∀ t, σ.Tames (G' t)) :
-    ∀ p t, σ.Tames (rightReceiving J Jout G' p t) := by
-  rintro (_ | _ | _) t <;> simp [rightReceiving, hJ, hJout, hG']
-
-/-- The plumbed structure depends only on the end structures, not on the proofs of tameness. -/
-private theorem plumbedAlmostComplex_congr (h₀ : σ.Compatible J₀)
-    {Ja Ja' Jb Jb' : Puncture → ℝ → SmoothAlmostComplexStructure I M} (ha : Ja = Ja')
-    (hb : Jb = Jb') (hJa : ∀ p t, σ.Tames (Ja p t)) (hJb : ∀ p t, σ.Tames (Jb p t))
-    (hJa' : ∀ p t, σ.Tames (Ja' p t)) (hJb' : ∀ p t, σ.Tames (Jb' p t)) {q : Puncture} {L : ℝ}
-    {w : ℂ} (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) :
-    h₀.plumbedAlmostComplex h₀ Ja Jb hJa hJb q L w hw =
-      h₀.plumbedAlmostComplex h₀ Ja' Jb' hJa' hJb' q L w hw := by
-  subst ha hb
-  rfl
+    ∀ p t, σ.Tames (associativityRightReceiving J Jout G' p t) :=
+  associativityRightReceiving_mem
+    (S := {K : ℝ → SmoothAlmostComplexStructure I M | ∀ t, σ.Tames (K t)}) hJ hJout hG'
 
 end Pieces
 
@@ -179,13 +144,14 @@ private def movingEnds {L : ℝ} (hL : 0 ≤ L) (τ : ℝ) (w : ℂ) : SmoothAlm
 /-- The plumbed structure of `(x₁ x₂) x₃`, with `G` on its neck. -/
 private def leftPlumbed (L : ℝ) (w : ℂ) (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1) :
     SmoothAlmostComplexStructure I M :=
-  h₀.plumbedAlmostComplex h₀ (leftInserted J G) (leftReceiving J Jout G)
+  h₀.plumbedAlmostComplex h₀ (associativityLeftInserted J G) (associativityLeftReceiving J Jout G)
     (tames_leftInserted hJ hG) (tames_leftReceiving hJ hJout hG) zero L w hw
 
 /-- The plumbed structure of `x₁ (x₂ x₃)`, with `G'` on its neck. -/
 private def rightPlumbed (L : ℝ) (w : ℂ) (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ one.plumbingMap L 1) :
     SmoothAlmostComplexStructure I M :=
-  h₀.plumbedAlmostComplex h₀ (rightInserted J G') (rightReceiving J Jout G')
+  h₀.plumbedAlmostComplex h₀ (associativityRightInserted J G')
+    (associativityRightReceiving J Jout G')
     (tames_rightInserted hJ hG') (tames_rightReceiving hJ hJout hG') one L w hw
 
 private theorem tames_movingEnds {L : ℝ} (hL : 0 ≤ L) (τ : ℝ) (w : ℂ) :
@@ -245,6 +211,16 @@ private theorem associativityAlmostComplex_of_pos (hL : 0 ≤ L) (hτ : 0 < τ)
   · rw [dite_eq_left ⟨hτ₁, hw⟩]
   · rw [dite_eq_right (fun h => hτ₁ h.1), cayleySegment_of_nonpos h₀ _ _ (by linarith)]
 
+/-- On `[0, 1]` the family is the structure of the moving input ends. -/
+private theorem associativityAlmostComplex_eq_movingEnds (hL : 0 ≤ L) (hτ : τ ∈ Icc 0 1) :
+    h₀.associativityAlmostComplex J hJ Jout hJout G hG G' hG' L τ w =
+      movingEnds h₀ J hJ Jout hJout hL τ w := by
+  rw [associativityAlmostComplex, dite_eq_left hL]
+  split_ifs with hl hr
+  · exact cayleySegment_of_nonpos h₀ _ _ (by linarith [hτ.1])
+  · exact cayleySegment_of_nonpos h₀ _ _ (by linarith [hτ.2])
+  · rfl
+
 /-- **On `[0, 1]` the family is the structure of the moving input ends.** -/
 theorem associativityAlmostComplex_of_mem_Icc (hL : 0 ≤ L) (hτ : τ ∈ Icc 0 1) :
     h₀.associativityAlmostComplex J hJ Jout hJout G hG G' hG' L τ w =
@@ -253,11 +229,7 @@ theorem associativityAlmostComplex_of_mem_Icc (hL : 0 ≤ L) (hτ : τ ∈ Icc 0
         (Floer.associativityScale (Real.exp (-(2 * π * L)) / 4) τ)
         (Floer.pairwise_mul_exp_add_le_norm_associativityCenter_sub_of_nonneg hL τ)
         (Floer.norm_associativityCenter_add_mul_exp_le_of_nonneg hL τ) w := by
-  rw [associativityAlmostComplex, dite_eq_left hL]
-  split_ifs with hl hr
-  · exact cayleySegment_of_nonpos h₀ _ _ (by linarith [hτ.1])
-  · exact cayleySegment_of_nonpos h₀ _ _ (by linarith [hτ.2])
-  · rfl
+  rw [associativityAlmostComplex_eq_movingEnds h₀ J hJ Jout hJout G hG G' hG' hL hτ, movingEnds]
 
 /-- The family is tamed by `σ`. -/
 theorem tames_associativityAlmostComplex (L τ : ℝ) (w : ℂ) :
@@ -277,16 +249,18 @@ theorem compatible_associativityAlmostComplex (hJc : ∀ i t, σ.Compatible (J i
   have hmov {L : ℝ} (hL : 0 ≤ L) (τ : ℝ) (w : ℂ) :
       σ.Compatible (movingEnds h₀ J hJ Jout hJout hL τ w) :=
     compatible_puncturedSphereAlmostComplex h₀ _ _ _ _ _ _ hJc hJoutc w
+  -- The families of compatible structures, which contain all the end and neck structures.
+  let S : Set (ℝ → SmoothAlmostComplexStructure I M) := {K | ∀ t, σ.Compatible (K t)}
   rw [associativityAlmostComplex]
   split_ifs with hL hl hr
   · refine compatible_cayleySegment h₀ (hmov hL τ w) ?_ (-τ)
-    exact compatible_plumbedAlmostComplex h₀ h₀ _ _ _ _ (by rintro (_ | _ | _) t <;>
-      simp [leftInserted, hJc, hGc]) (by rintro (_ | _ | _) t <;>
-      simp [leftReceiving, hJc, hJoutc, hGc]) w hl.2
+    exact compatible_plumbedAlmostComplex h₀ h₀ _ _ _ _
+      (associativityLeftInserted_mem (S := S) hJc hGc)
+      (associativityLeftReceiving_mem (S := S) hJc hJoutc hGc) w hl.2
   · refine compatible_cayleySegment h₀ (hmov hL τ w) ?_ (τ - 1)
-    exact compatible_plumbedAlmostComplex h₀ h₀ _ _ _ _ (by rintro (_ | _ | _) t <;>
-      simp [rightInserted, hJc, hG'c]) (by rintro (_ | _ | _) t <;>
-      simp [rightReceiving, hJc, hJoutc, hG'c]) w hr.2
+    exact compatible_plumbedAlmostComplex h₀ h₀ _ _ _ _
+      (associativityRightInserted_mem (S := S) hJc hG'c)
+      (associativityRightReceiving_mem (S := S) hJc hJoutc hG'c) w hr.2
   · exact hmov hL τ w
   · exact h₀
 
@@ -312,7 +286,7 @@ theorem associativityAlmostComplex_of_nonpos
         (tames_plumbedAlmostComplex h₀ h₀ Ja Jb hJa hJb w hw) (-τ) := by
   rw [associativityAlmostComplex_of_lt_one _ _ _ _ _ _ _ _ _ hL (by linarith) hw]
   refine cayleySegment_congr h₀ _ _ _ _ rfl ?_ _
-  refine plumbedAlmostComplex_congr h₀ ?_ ?_ _ _ _ _ hw
+  refine plumbedAlmostComplex_congr h₀ h₀ _ _ _ _ _ _ ?_ ?_ _ hw
   · funext p
     cases p <;> rfl
   · funext p
@@ -341,7 +315,7 @@ theorem associativityAlmostComplex_of_one_le
         (tames_plumbedAlmostComplex h₀ h₀ Ja Jb hJa hJb w hw) (τ - 1) := by
   rw [associativityAlmostComplex_of_pos _ _ _ _ _ _ _ _ _ hL (by linarith) hw]
   refine cayleySegment_congr h₀ _ _ _ _ rfl ?_ _
-  refine plumbedAlmostComplex_congr h₀ ?_ ?_ _ _ _ _ hw
+  refine plumbedAlmostComplex_congr h₀ h₀ _ _ _ _ _ _ ?_ ?_ _ hw
   · funext p
     cases p <;> rfl
   · funext p
@@ -415,24 +389,28 @@ private theorem leftPlumbed_cylindricalEndLift (i : Fin 3) (hJp : Periodic (J i)
       rw [← hP]
       simp [plumbingMap_apply, plumbingFactor_zero]
     exact fun hw => plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
-      (leftInserted J G) (leftReceiving J Jout G) _ _
+      (associativityLeftInserted J G) (associativityLeftReceiving J Jout G) _ _
       (q := zero) (r := zero) (by simp) rfl hL (by simp) hJp hz hw
   · obtain rfl : w' = zero.plumbingMap L (one.cylindricalEndLift z) := by
       rw [← hP]
       simp only [plumbingMap_apply, plumbingFactor_zero, cylindricalEndLift_zero,
-        cylindricalEndLift_one]
-      simp
+        cylindricalEndLift_one, Nat.succ_eq_add_one, Nat.reduceAdd, Complex.ofReal_div,
+        Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_mul, Complex.ofReal_ofNat,
+        Fin.mk_one, Fin.isValue, Matrix.cons_val_one, Matrix.cons_val_zero, neg_mul,
+        endCenter_zero, zero_add]
       ring
     exact fun hw => plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
-      (leftInserted J G) (leftReceiving J Jout G) _ _
+      (associativityLeftInserted J G) (associativityLeftReceiving J Jout G) _ _
       (q := zero) (r := one) (by simp) rfl hL (by simp) hJp hz hw
   · obtain rfl : w' = one.cylindricalEndLift z := by
       rw [← hP]
-      simp only [cylindricalEndLift_zero, cylindricalEndLift_one]
-      simp
+      simp only [cylindricalEndLift_zero, cylindricalEndLift_one, Nat.succ_eq_add_one,
+        Nat.reduceAdd, Complex.ofReal_div, Complex.ofReal_exp, Complex.ofReal_neg,
+        Complex.ofReal_mul, Complex.ofReal_ofNat, Fin.reduceFinMk, Matrix.cons_val, neg_mul,
+        one_mul]
       ring
     exact fun hw => plumbedAlmostComplex_cylindricalEndLift h₀ h₀
-      (leftInserted J G) (leftReceiving J Jout G) _ _
+      (associativityLeftInserted J G) (associativityLeftReceiving J Jout G) _ _
       (q := zero) (r := one) (by simp) rfl hL
       (by simp) hJp (by simpa using hz) hw
 
@@ -454,23 +432,24 @@ private theorem rightPlumbed_cylindricalEndLift (i : Fin 3) (hJp : Periodic (J i
       rw [← hP]
       simp
     exact fun hw => plumbedAlmostComplex_cylindricalEndLift h₀ h₀
-      (rightInserted J G') (rightReceiving J Jout G') _ _
+      (associativityRightInserted J G') (associativityRightReceiving J Jout G') _ _
       (q := one) (r := zero) (by simp) rfl hL
       (by simp) hJp (by simpa using hz) hw
   · obtain rfl : w' = one.plumbingMap L (zero.cylindricalEndLift z) := by
       rw [← hP]
       simp [plumbingMap_apply, plumbingFactor_one, plumbingFactor_zero]
     exact fun hw => plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
-      (rightInserted J G') (rightReceiving J Jout G') _ _
+      (associativityRightInserted J G') (associativityRightReceiving J Jout G') _ _
       (q := one) (r := zero) (by simp) rfl hL (by simp) hJp hz hw
   · obtain rfl : w' = one.plumbingMap L (one.cylindricalEndLift z) := by
       rw [← hP]
       simp only [plumbingMap_apply, plumbingFactor_one, plumbingFactor_zero,
-        cylindricalEndLift_zero, cylindricalEndLift_one]
-      simp
+        cylindricalEndLift_zero, cylindricalEndLift_one, Nat.succ_eq_add_one, Nat.reduceAdd,
+        Complex.ofReal_div, Complex.ofReal_exp, Complex.ofReal_neg, Complex.ofReal_mul,
+        Complex.ofReal_ofNat, Fin.reduceFinMk, Matrix.cons_val, neg_mul, endCenter_one]
       ring
     exact fun hw => plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
-      (rightInserted J G') (rightReceiving J Jout G') _ _
+      (associativityRightInserted J G') (associativityRightReceiving J Jout G') _ _
       (q := one) (r := one) (by simp) rfl hL (by simp) hJp hz hw
 
 /-- **The family is `J i t` far out on each input end.** If `J i` has period one in `t` and
@@ -502,27 +481,16 @@ theorem associativityAlmostComplex_cylindricalEndLift_inf (hJoutp : Periodic Jou
   refine associativityAlmostComplex_eq_of h₀ J hJ Jout hJout G hG G' hG' (by linarith) ?_
     (fun _ hw => ?_) (fun _ hw => ?_)
   · exact puncturedSphereAlmostComplex_cylindricalEndLift_inf h₀ J hJ Jout hJout _ _ hJoutp hz
-  · exact plumbedAlmostComplex_cylindricalEndLift h₀ h₀ (leftInserted J G)
-      (leftReceiving J Jout G) _ _ (q := zero) (r := inf) (by simp) rfl hL (by simp) hJoutp hz' hw
-  · exact plumbedAlmostComplex_cylindricalEndLift h₀ h₀ (rightInserted J G')
-      (rightReceiving J Jout G') _ _ (q := one) (r := inf) (by simp) rfl hL (by simp) hJoutp hz' hw
+  · exact plumbedAlmostComplex_cylindricalEndLift h₀ h₀ (associativityLeftInserted J G)
+      (associativityLeftReceiving J Jout G) _ _ (q := zero) (r := inf) (by simp) rfl hL (by simp)
+      hJoutp hz' hw
+  · exact plumbedAlmostComplex_cylindricalEndLift h₀ h₀ (associativityRightInserted J G')
+      (associativityRightReceiving J Jout G') _ _ (q := one) (r := inf) (by simp) rfl hL (by simp)
+      hJoutp hz' hw
 
 /-! ### Smoothness -/
 
 section Smooth
-
-/-- The plumbing factor `exp (-2πL) / 4` of the associativity path is smooth in `L`. -/
-private theorem contDiff_associativityFactor {n : WithTop ℕ∞} :
-    ContDiff ℝ n fun L : ℝ => Real.exp (-(2 * π * L)) / 4 := by
-  fun_prop
-
-/-- The centers of the associativity path are continuous in the neck length and the parameter. -/
-private theorem continuous_associativityCenter_apply (i : Fin 3) :
-    Continuous fun q : ℝ × ℝ =>
-      Floer.associativityCenter (Real.exp (-(2 * π * q.1)) / 4) q.2 i :=
-  (continuous_apply i).comp ((Floer.contDiff_uncurry_associativityCenter (n := 0)).continuous.comp
-    ((contDiff_associativityFactor (n := 0)).continuous.comp continuous_fst |>.prodMk
-      continuous_snd))
 
 /-- The parameters `(L, τ, w, x)` with `4 < L` at which `w` is not an input puncture of the
 associativity path and lies in the region `W` of the domain, `τ ∈ T` and `W` depending on `L`. -/
@@ -538,7 +506,7 @@ private def paramOpens (T : Set ℝ) (hT : IsOpen T) (W : ℝ → Set ℂ)
           (continuous_snd.comp continuous_snd)))).inter
         (isOpen_iInter_of_finite fun i => isOpen_ne_fun
           (continuous_fst.comp (continuous_snd.comp continuous_snd))
-          ((continuous_associativityCenter_apply i).comp
+          ((Floer.continuous_associativityCenter_apply i).comp
             (continuous_fst.prodMk (continuous_fst.comp continuous_snd))))))
 
 omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] in
@@ -547,16 +515,6 @@ private theorem mem_paramOpens {T : Set ℝ} {hT : IsOpen T} {W : ℝ → Set �
     p ∈ paramOpens T hT W hW ↔ 4 < p.1 ∧ p.2.1 ∈ T ∧ p.2.2.1 ∈ W p.1 ∧
       ∀ i, p.2.2.1 ≠ Floer.associativityCenter (Real.exp (-(2 * π * p.1)) / 4) p.2.1 i :=
   Iff.rfl
-
-/-- The domain points other than the punctures of the plumbed sphere with neck length `L`, glued
-into the input `q`, form an open set jointly in `L` and the point. -/
-private theorem isOpen_plumbedSphere (q : Puncture) :
-    IsOpen {p : ℝ × ℂ | (p.2 ≠ 0 ∧ p.2 ≠ 1) ∧ p.2 ≠ q.plumbingMap p.1 1} := by
-  simp only [Set.ofPred_and]
-  refine ((isOpen_ne_fun continuous_snd continuous_const).inter
-    (isOpen_ne_fun continuous_snd continuous_const)).inter (isOpen_ne_fun continuous_snd ?_)
-  simp only [plumbingMap_apply, mul_one]
-  exact continuous_const.add ((q.contDiff_plumbingFactor (n := 0)).continuous.comp continuous_fst)
 
 variable {n : ℕ∞ω} [ENat.LEInfty n]
   (hJp : ∀ i, Periodic (J i) 1)
@@ -599,7 +557,7 @@ private theorem contMDiffAt_movingEnds_opens {T : Set ℝ} {hT : IsOpen T} {W : 
       (by linarith [v.property.1]) _)
     (fun v => Floer.norm_associativityCenter_add_mul_exp_le_of_nonneg
       (by linarith [v.property.1]) _)
-    ((contDiff_associativityFactor.of_le le_top).contMDiff.contMDiffAt.comp u
+    ((Floer.contDiff_associativityFactor.of_le le_top).contMDiff.contMDiffAt.comp u
       (contMDiffAt_fst.comp u hval))
     (contMDiffAt_fst.comp u (contMDiffAt_snd.comp u hval))
     (contMDiffAt_fst.comp u (contMDiffAt_snd.comp u (contMDiffAt_snd.comp u hval)))
@@ -620,7 +578,8 @@ private theorem contMDiff_leftPlumbed_opens {T : Set ℝ} {hT : IsOpen T} {W : �
           (hWl _ _ v.property.2.2.1)).toEndomorphism v.val.2.2.2)) := by
   have hval := contMDiff_subtypeVal (n := n) (I := 𝓘(ℝ).prod (𝓘(ℝ).prod (𝓘(ℝ, ℂ).prod I)))
     (U := paramOpens (M := M) T hT W hW)
-  exact contMDiff_plumbedAlmostComplex h₀ h₀ (leftInserted J G) (leftReceiving J Jout G) _ _
+  exact contMDiff_plumbedAlmostComplex h₀ h₀ (associativityLeftInserted J G)
+    (associativityLeftReceiving J Jout G) _ _
     (fun r => by cases r; exacts [hJp 0, hJp 1, hGp])
     (fun r => by cases r; exacts [hJs 0, hJs 1, hGs])
     (fun r => by cases r; exacts [hGp, hJp 2, hJoutp])
@@ -642,7 +601,8 @@ private theorem contMDiff_rightPlumbed_opens {T : Set ℝ} {hT : IsOpen T} {W : 
           (hWr _ _ v.property.2.2.1)).toEndomorphism v.val.2.2.2)) := by
   have hval := contMDiff_subtypeVal (n := n) (I := 𝓘(ℝ).prod (𝓘(ℝ).prod (𝓘(ℝ, ℂ).prod I)))
     (U := paramOpens (M := M) T hT W hW)
-  exact contMDiff_plumbedAlmostComplex h₀ h₀ (rightInserted J G') (rightReceiving J Jout G') _ _
+  exact contMDiff_plumbedAlmostComplex h₀ h₀ (associativityRightInserted J G')
+    (associativityRightReceiving J Jout G') _ _
     (fun r => by cases r; exacts [hJp 1, hJp 2, hG'p])
     (fun r => by cases r; exacts [hJs 1, hJs 2, hG's])
     (fun r => by cases r; exacts [hJp 0, hG'p, hJoutp])
@@ -664,9 +624,9 @@ private theorem contMDiffAt_associativityAlmostComplex_prod_of_nonpos
         ((h₀.associativityAlmostComplex J hJ Jout hJout G hG G' hG' p.1 p.2.1
           p.2.2.1).toEndomorphism p.2.2.2)) p₀ := by
   let U := paramOpens (M := M) (Iio 1) isOpen_Iio
-    (fun L => {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1}) (isOpen_plumbedSphere zero)
+    (fun L => {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ zero.plumbingMap L 1}) (isOpen_plumbedSphere_prod zero)
   have hc := Floer.associativityCenter_eq_plumbingMap_of_nonpos (L := p₀.1) hτ
-  have hp₀ : p₀ ∈ U := mem_paramOpens.2 ⟨hL₀, show p₀.2.1 < 1 by linarith,
+  have hp₀ : p₀ ∈ U := mem_paramOpens.2 ⟨hL₀, Set.mem_Iio.2 (by linarith),
     ⟨⟨by simpa [hc] using hw₀ 0, by simpa [hc] using hw₀ 2⟩, by simpa [hc] using hw₀ 1⟩, hw₀⟩
   refine (contMDiffAt_subtype_iff (U := U) (x := ⟨p₀, hp₀⟩)).mp ?_
   have hval := (contMDiff_subtypeVal (n := n)
@@ -681,9 +641,8 @@ private theorem contMDiffAt_associativityAlmostComplex_prod_of_nonpos
     (contMDiff_leftPlumbed_opens h₀ J hJ Jout hJout G hG hJp hJs hJoutp hJouts hGp hGs
       (fun _ _ h => h) _)).congr_of_eventuallyEq (Filter.Eventually.of_forall fun v => ?_)
   obtain ⟨hv₁, hv₂, hv₃, -⟩ := mem_paramOpens.1 v.property
-  dsimp only
+  dsimp only [Function.comp_apply]
   rw [associativityAlmostComplex_of_lt_one h₀ J hJ Jout hJout G hG G' hG' (by linarith) hv₂ hv₃]
-  rfl
 
 include hJp hJs hJoutp hJouts in
 /-- Near a parameter `τ ∈ (0, 1)` the family is the structure of the moving input ends. -/
@@ -703,9 +662,8 @@ private theorem contMDiffAt_associativityAlmostComplex_prod_of_mem_Ioo
     _).congr_of_eventuallyEq (Filter.Eventually.of_forall fun v => ?_)
   obtain ⟨hv₁, hv₂, -, -⟩ := mem_paramOpens.1 v.property
   dsimp only
-  rw [associativityAlmostComplex_of_mem_Icc h₀ J hJ Jout hJout G hG G' hG' (by linarith)
+  rw [associativityAlmostComplex_eq_movingEnds h₀ J hJ Jout hJout G hG G' hG' (by linarith)
     (Ioo_subset_Icc_self hv₂)]
-  rfl
 
 include hJp hJs hJoutp hJouts hG'p hG's in
 /-- Near a parameter `τ ≥ 1` the family is the Cayley segment towards the plumbed structure of
@@ -713,20 +671,20 @@ include hJp hJs hJoutp hJouts hG'p hG's in
 private theorem contMDiffAt_associativityAlmostComplex_prod_of_one_le
     {p₀ : ℝ × ℝ × ℂ × M} (hL₀ : 4 < p₀.1)
     (hw₀ : ∀ i, p₀.2.2.1 ≠ Floer.associativityCenter (Real.exp (-(2 * π * p₀.1)) / 4) p₀.2.1 i)
-    (hτ : 0 < p₀.2.1) (hτ₁ : 1 ≤ p₀.2.1) :
+    (hτ₁ : 1 ≤ p₀.2.1) :
     ContMDiffAt (𝓘(ℝ).prod (𝓘(ℝ).prod (𝓘(ℝ, ℂ).prod I))) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun p : ℝ × ℝ × ℂ × M => TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x) p.2.2.2
         ((h₀.associativityAlmostComplex J hJ Jout hJout G hG G' hG' p.1 p.2.1
           p.2.2.1).toEndomorphism p.2.2.2)) p₀ := by
   let U := paramOpens (M := M) (Ioi 0) isOpen_Ioi
-    (fun L => {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ one.plumbingMap L 1}) (isOpen_plumbedSphere one)
+    (fun L => {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ one.plumbingMap L 1}) (isOpen_plumbedSphere_prod one)
   have hc := congrFun (Floer.associativityCenter_comp_finRotate_of_one_le (L := p₀.1) hτ₁)
   have hc' (i : Fin 3) :
       p₀.2.2.1 ≠ ![one.endCenter, one.plumbingMap p₀.1 1, zero.endCenter] i := by
     rw [← hc i]
     exact hw₀ (finRotate 3 i)
-  have hp₀ : p₀ ∈ U := mem_paramOpens.2 ⟨hL₀, show 0 < p₀.2.1 from hτ,
+  have hp₀ : p₀ ∈ U := mem_paramOpens.2 ⟨hL₀, Set.mem_Ioi.2 (by linarith),
     ⟨⟨by simpa using hc' 2, by simpa using hc' 0⟩, by simpa using hc' 1⟩, hw₀⟩
   refine (contMDiffAt_subtype_iff (U := U) (x := ⟨p₀, hp₀⟩)).mp ?_
   have hval := (contMDiff_subtypeVal (n := n)
@@ -741,9 +699,8 @@ private theorem contMDiffAt_associativityAlmostComplex_prod_of_one_le
     (contMDiff_rightPlumbed_opens h₀ J hJ Jout hJout G' hG' hJp hJs hJoutp hJouts hG'p hG's
       (fun _ _ h => h) _)).congr_of_eventuallyEq (Filter.Eventually.of_forall fun v => ?_)
   obtain ⟨hv₁, hv₂, hv₃, -⟩ := mem_paramOpens.1 v.property
-  dsimp only
+  dsimp only [Function.comp_apply]
   rw [associativityAlmostComplex_of_pos h₀ J hJ Jout hJout G hG G' hG' (by linarith) hv₂ hv₃]
-  rfl
 
 include hJp hJs hJoutp hJouts hGp hGs hG'p hG's in
 /-- The family is smooth on the product `ℝ × ℝ × ℂ × M` of neck lengths, parameters, domain points
@@ -763,7 +720,7 @@ private theorem contMDiffAt_associativityAlmostComplex_prod {p₀ : ℝ × ℝ �
   · exact contMDiffAt_associativityAlmostComplex_prod_of_mem_Ioo h₀ J hJ Jout hJout G hG G' hG' hJp
       hJs hJoutp hJouts hL₀ hw₀ hτ hτ₁
   · exact contMDiffAt_associativityAlmostComplex_prod_of_one_le h₀ J hJ Jout hJout G hG G' hG' hJp
-      hJs hJoutp hJouts hG'p hG's hL₀ hw₀ hτ hτ₁
+      hJs hJoutp hJouts hG'p hG's hL₀ hw₀ hτ₁
 
 include hJp hJs hJoutp hJouts hGp hGs hG'p hG's in
 /-- **The family is smooth.** For end and neck structures which have period one in `t` and are

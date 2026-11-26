@@ -106,6 +106,16 @@ theorem plumbedAlmostComplex_def (w : ℂ) (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠
             q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hw⟩
       else hᵦ.pairOfPantsAlmostComplex Jb hJb ⟨w, hw.1⟩ := (rfl)
 
+/-- The plumbed structure depends only on the end structures, not on the proofs of their
+tameness. -/
+theorem plumbedAlmostComplex_congr {Ja' Jb' : Puncture → ℝ → SmoothAlmostComplexStructure I M}
+    (hJa' : ∀ r t, σ.Tames (Ja' r t)) (hJb' : ∀ r t, σ.Tames (Jb' r t)) (ea : Ja = Ja')
+    (eb : Jb = Jb') (w : ℂ) (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) :
+    hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb q L w hw =
+      hₐ.plumbedAlmostComplex hᵦ Ja' Jb' hJa' hJb' q L w hw := by
+  subst ea eb
+  rfl
+
 /-- On every tangent fiber, the plumbed structure is the linear plumbed structure of the fiberwise
 end data. -/
 theorem almostComplexStructureAt_plumbedAlmostComplex (w : ℂ)
