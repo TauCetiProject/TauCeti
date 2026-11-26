@@ -371,43 +371,36 @@ private theorem lmp_absorb_subball {n p α₀ K C_M lam s R Nw Np G F ūx wx η 
         linarith [hm, mul_le_mul_of_nonneg_left (add_le_add h1 h2) hCM]
     _ = C_M * K * (R ^ (-n / p) * Np + R / lam * F) + η * (C_M * K * (R / lam) + 1) := by ring
 
-/-- The `η`-approximation step for the strong local maximum principle on a concentric sub-ball
-`closedBall c s ⊆ B(c, R)` containing `x ∈ B(c, s / 2)`. -/
-private theorem preciseRepresentative_le_add_mul_of_subball
+/-- Mollify a strong subsolution `u` from below on `closedBall c s ⊆ B(c, R)` and transfer the
+resulting `Lⁿ` right-hand side bound to `volume`. -/
+private theorem exists_contDiff_sub_le_and_memLp_of_subball
     [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))]
     {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-    {κ p C_M K_haar lam Lam R s : ℝ} {c x : EuclideanSpace ℝ ι} {Ω : Opens (EuclideanSpace ℝ ι)}
+    {p lam Lam R s : ℝ} {c x : EuclideanSpace ℝ ι} {Ω : Opens (EuclideanSpace ℝ ι)}
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {f : EuclideanSpace ℝ ι → ℝ}
-    (u : Wkp mu Ω (Fintype.card ι) 2) (hp : 0 < p) (hCM : 0 < C_M)
-    (HM : ∀ ⦃lam Lam R : ℝ⦄ ⦃c : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
-      ⦃u f : EuclideanSpace ℝ ι → ℝ⦄, UniformlyEllipticOn (ball c R) a lam Lam → Lam ≤ κ * lam →
-      ContinuousOn u (closedBall c R) → ContDiffOn ℝ 2 u (ball c R) →
-      (∀ x ∈ ball c R, f x ≤ ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) →
-      MemLp (fun x ↦ (f x)⁻) (Fintype.card ι) (volume.restrict (ball c R)) →
-      ∀ x ∈ ball c (R / 2), u x ≤ C_M * (R ^ (-(Fintype.card ι : ℝ) / p) *
-        (eLpNorm (fun y ↦ (u y)⁺) (ENNReal.ofReal p) (volume.restrict (ball c R))).toReal +
-        R / lam * (eLpNorm (fun y ↦ (f y)⁻) (Fintype.card ι)
-          (volume.restrict (ball c R))).toReal))
-    (hBΩ : ball c R ⊆ Ω) (ha : UniformlyEllipticOn (ball c R) a lam Lam) (hLam : Lam ≤ κ * lam)
+    (u : Wkp mu Ω (Fintype.card ι) 2) (hBΩ : ball c R ⊆ Ω)
+    (ha : UniformlyEllipticOn (ball c R) a lam Lam)
     (hsub : ∀ᵐ x ∂mu.restrict (ball c R),
       f x ≤ ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i)
     (hf : MemLp (fun x ↦ (f x)⁻) (Fintype.card ι) (mu.restrict (ball c R)))
     (hup : MemLp (fun y ↦ (Wkp.value 2 u y)⁺) (ENNReal.ofReal p) (mu.restrict (ball c R)))
     (hR : 0 < R) (hsR2 : R / 2 < s) (hsR : s < R) (hxs : x ∈ ball c (s / 2)) {η : ℝ}
-    (hη : 0 < η)
-    (hK_haar : K_haar = max (2 ^ ((Fintype.card ι : ℝ) / p) *
-      (Measure.addHaarScalarFactor volume mu : ℝ) ^ p⁻¹)
-      ((Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹)) :
-    preciseRepresentative mu (Wkp.value 2 u) x ≤
-      C_M * K_haar * (R ^ (-(Fintype.card ι : ℝ) / p) *
-        (eLpNorm (fun y ↦ (Wkp.value 2 u y)⁺) (ENNReal.ofReal p) (mu.restrict (ball c R))).toReal +
-        R / lam * (eLpNorm (fun y ↦ (f y)⁻) (Fintype.card ι) (mu.restrict (ball c R))).toReal) +
-      η * (C_M * K_haar * (R / lam) + 1) := by
-  set n : ℝ := (Fintype.card ι : ℝ)
-  set α₀ : ℝ := (Measure.addHaarScalarFactor volume mu : ℝ)
-  have hα₀ : 0 < α₀ :=
-    NNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure volume mu)
+    (hη : 0 < η) :
+    ∃ w g : EuclideanSpace ℝ ι → ℝ,
+      ContDiff ℝ 2 w ∧
+      (∀ y ∈ ball c s, g y ≤ ∑ i, ∑ j, a y i j * fderiv ℝ (fderiv ℝ w) y
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) ∧
+      MemLp (fun y ↦ (g y)⁻) (Fintype.card ι) (volume.restrict (ball c s)) ∧
+      preciseRepresentative mu (Wkp.value 2 u) x ≤ w x + η ∧
+      (eLpNorm (fun y ↦ (w y)⁺) (ENNReal.ofReal p) (mu.restrict (ball c s))).toReal ≤
+        (eLpNorm (fun y ↦ (Wkp.value 2 u y)⁺) (ENNReal.ofReal p)
+          (mu.restrict (ball c R))).toReal ∧
+      s / lam * (eLpNorm (fun y ↦ (g y)⁻) (Fintype.card ι) (volume.restrict (ball c s))).toReal ≤
+        max (2 ^ ((Fintype.card ι : ℝ) / p) *
+            (Measure.addHaarScalarFactor volume mu : ℝ) ^ p⁻¹)
+            ((Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹) *
+          (R / lam * ((eLpNorm (fun y ↦ (f y)⁻) (Fintype.card ι)
+            (mu.restrict (ball c R))).toReal + η)) := by
   have hs0 : 0 < s := (half_pos hR).trans hsR2
   have hlam : 0 < lam := ha.pos
   have hcs_sub : closedBall c s ⊆ ball c R := closedBall_subset_ball hsR
@@ -427,22 +420,20 @@ private theorem preciseRepresentative_le_add_mul_of_subball
     have hxK : x ∈ closedBall c s :=
       ball_subset_closedBall (ball_subset_ball (by linarith) hxs)
     linarith [(hwK x hxK).1]
-  -- Transfer `g⁻` to `volume` and apply the classical local maximum principle to `w`.
+  -- Transfer `g⁻` to `volume` and bound `‖w⁺‖_{Lᵖ(B(c, s))} ≤ ‖u⁺‖_{Lᵖ(B(c, R))}`.
   obtain ⟨hg_vol, h2⟩ := memLp_and_mul_eLpNorm_div_le_of_isAddHaarMeasure hbs_sub hf hη.le hs0.le
-    hsR.le hlam (hK_haar ▸ le_max_right (2 ^ (n / p) * α₀ ^ p⁻¹) (α₀ ^ n⁻¹)) hg_neg
+    hsR.le hlam (le_max_right _ _) hg_neg
   have h2' : s / lam * (eLpNorm (fun y ↦ (g y)⁻) (Fintype.card ι)
-      (volume.restrict (ball c s))).toReal ≤ K_haar * (R / lam *
-        ((eLpNorm (fun y ↦ (f y)⁻) (Fintype.card ι) (mu.restrict (ball c R))).toReal + η)) := by
+      (volume.restrict (ball c s))).toReal ≤
+      max (2 ^ ((Fintype.card ι : ℝ) / p) *
+          (Measure.addHaarScalarFactor volume mu : ℝ) ^ p⁻¹)
+          ((Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹) *
+        (R / lam * ((eLpNorm (fun y ↦ (f y)⁻) (Fintype.card ι)
+          (mu.restrict (ball c R))).toReal + η)) := by
     rwa [div_mul_eq_mul_div, div_mul_eq_mul_div]
-  have hm := HM (ha.mono_set hbs_sub) hLam hw2.continuous.continuousOn hw2.contDiffOn hwg
-    hg_vol x hxs
-  rw [toReal_eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul (fun y ↦ (w y)⁺) (ENNReal.ofReal p)
-    volume mu (ball c s), ENNReal.toReal_ofReal hp.le] at hm
-  -- Compare `‖w⁺‖_{Lᵖ(B(c, s))} ≤ ‖u⁺‖_{Lᵖ(B(c, R))}` and absorb `η`.
   have hw_lp := toReal_eLpNorm_posPart_ball_le_of_le u hBΩ hbs_sub hw2.continuous
     (fun y hy ↦ (hwK y (ball_subset_closedBall hy)).2) hup
-  exact lmp_absorb_subball (Nat.cast_nonneg _) hp hα₀.le hCM.le hR hsR2
-    (hK_haar ▸ le_max_left _ _) ENNReal.toReal_nonneg hw_lp hūx_le hm h2'
+  exact ⟨w, g, hw2, hwg, hg_vol, hūx_le, hw_lp, h2'⟩
 
 /-- **The local maximum principle for strong subsolutions** (Gilbarg–Trudinger, Theorem 9.20,
 without lower-order terms). Let `κ` and `p > 0` be given. For every additive Haar measure `mu`
@@ -494,9 +485,16 @@ theorem exists_preciseRepresentative_le_mul_rpow_mul_eLpNorm_posPart_add_of_wkp
   have hxs : x ∈ ball c (s / 2) := by
     rw [mem_ball]
     linarith [lt_of_le_of_lt (le_max_left (2 * dist x c) (R / 2)) hs_gt]
-  exact le_of_forall_pos_mul_le (C := C_M * K_haar * (R / lam) + 1) fun η hη ↦
-    preciseRepresentative_le_add_mul_of_subball u hp hCM HM hBΩ ha hLam hsub hf hup hR hsR2 hsR
-      hxs hη rfl
+  refine le_of_forall_pos_mul_le (C := C_M * K_haar * (R / lam) + 1) fun η hη ↦ ?_
+  obtain ⟨w, g, hw2, hwg, hg_vol, hūx_le, hw_lp, h2'⟩ :=
+    exists_contDiff_sub_le_and_memLp_of_subball u hBΩ ha hsub hf hup hR hsR2 hsR hxs hη
+  have hbs_sub : ball c s ⊆ ball c R := ball_subset_ball hsR.le
+  have hm := HM (ha.mono_set hbs_sub) hLam hw2.continuous.continuousOn hw2.contDiffOn hwg
+    hg_vol x hxs
+  rw [toReal_eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul (fun y ↦ (w y)⁺) (ENNReal.ofReal p)
+    volume mu (ball c s), ENNReal.toReal_ofReal hp.le] at hm
+  exact lmp_absorb_subball (Nat.cast_nonneg _) hp hα₀.le hCM.le hR hsR2
+    (le_max_left _ _) ENNReal.toReal_nonneg hw_lp hūx_le hm h2'
 
 omit [DecidableEq ι] in
 /-- Divide the Haar factor `α₀ ^ p⁻¹` out of the `Lᵖ` estimate on `B(x₀, θ R)` and absorb the
@@ -519,43 +517,35 @@ private theorem weakHarnack_absorb_subball {n p α₀ C_W C_final lam s R θ Nu 
     _ = C_final * (ūy + R * F / lam) + η * (C_final * (1 + R / lam)) := by
         rw [hC_final]; ring
 
-/-- The `η`-approximation step for the strong weak Harnack inequality on `closedBall x₀ (√θ R)`. -/
-private theorem rpow_neg_mul_eLpNorm_le_add_mul_of_subball
+/-- Mollify a nonnegative strong supersolution `u` from above on `closedBall x₀ (√θ R)` and
+transfer the resulting `Lⁿ` right-hand side bound to `volume`. -/
+private theorem exists_contDiff_le_and_memLp_of_subball
     [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))]
     {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-    {κ p C_W C_final θ lam Lam R : ℝ} {x₀ y : EuclideanSpace ℝ ι}
+    {p θ lam Lam R : ℝ} {x₀ y : EuclideanSpace ℝ ι}
     {Ω : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
-    {f : EuclideanSpace ℝ ι → ℝ} (u : Wkp mu Ω (Fintype.card ι) 2) (hp : 0 < p) (hCW : 0 < C_W)
-    (hθ0 : 0 < θ) (hθ1 : θ < 1)
-    (HW : ∀ ⦃lam Lam R : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
-      ⦃u f : EuclideanSpace ℝ ι → ℝ⦄,
-      UniformlyEllipticOn (ball x₀ R) a lam Lam → Lam ≤ κ * lam →
-      ContDiffOn ℝ 2 u (ball x₀ R) → (∀ x ∈ ball x₀ R, 0 ≤ u x) →
-      (∀ x ∈ ball x₀ R, ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ f x) →
-      MemLp (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball x₀ R)) →
-      ∀ y ∈ ball x₀ (√θ * R),
-        (√θ * R) ^ (-(Fintype.card ι : ℝ) / p) *
-          (eLpNorm u (ENNReal.ofReal p) (volume.restrict (ball x₀ (√θ * R)))).toReal ≤
-        C_W * (u y + R * (eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
-          (volume.restrict (ball x₀ R))).toReal / lam))
-    (hBΩ : ball x₀ R ⊆ Ω) (ha : UniformlyEllipticOn (ball x₀ R) a lam Lam) (hLam : Lam ≤ κ * lam)
+    {f : EuclideanSpace ℝ ι → ℝ} (u : Wkp mu Ω (Fintype.card ι) 2)
+    (hθ0 : 0 < θ) (hθ1 : θ < 1) (hBΩ : ball x₀ R ⊆ Ω)
+    (ha : UniformlyEllipticOn (ball x₀ R) a lam Lam)
     (hnn : ∀ᵐ x ∂mu.restrict (ball x₀ R), 0 ≤ Wkp.value 2 u x)
     (hsuper : ∀ᵐ x ∂mu.restrict (ball x₀ R),
       ∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i ≤ f x)
     (hf : MemLp (fun x ↦ (f x)⁺) (Fintype.card ι) (mu.restrict (ball x₀ R)))
-    (hy : y ∈ ball x₀ (θ * R)) {η : ℝ} (hη : 0 < η)
-    (hC_final : C_final = ((Measure.addHaarScalarFactor volume mu : ℝ) ^ p⁻¹)⁻¹ * C_W *
-      max 1 ((Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹)) :
-    (θ * R) ^ (-(Fintype.card ι : ℝ) / p) *
+    (hy : y ∈ ball x₀ (θ * R)) {η : ℝ} (hη : 0 < η) :
+    ∃ w g : EuclideanSpace ℝ ι → ℝ,
+      ContDiff ℝ 2 w ∧
+      (∀ z ∈ ball x₀ (√θ * R), 0 ≤ w z) ∧
+      (∀ z ∈ ball x₀ (√θ * R), ∑ i, ∑ j, a z i j * fderiv ℝ (fderiv ℝ w) z
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) ≤ g z) ∧
+      MemLp (fun z ↦ (g z)⁺) (Fintype.card ι) (volume.restrict (ball x₀ (√θ * R))) ∧
       (eLpNorm (Wkp.value 2 u) (ENNReal.ofReal p) (mu.restrict (ball x₀ (θ * R)))).toReal ≤
-      C_final * (preciseRepresentative mu (Wkp.value 2 u) y +
-        R * (eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι) (mu.restrict (ball x₀ R))).toReal / lam) +
-      η * (C_final * (1 + R / lam)) := by
-  set n : ℝ := (Fintype.card ι : ℝ)
-  set α₀ : ℝ := (Measure.addHaarScalarFactor volume mu : ℝ)
-  have hα₀ : 0 < α₀ :=
-    NNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure volume mu)
+        (eLpNorm w (ENNReal.ofReal p) (mu.restrict (ball x₀ (θ * R)))).toReal ∧
+      w y + √θ * R * (eLpNorm (fun z ↦ (g z)⁺) (Fintype.card ι)
+          (volume.restrict (ball x₀ (√θ * R)))).toReal / lam ≤
+        max 1 ((Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹) *
+          (preciseRepresentative mu (Wkp.value 2 u) y +
+            R * (eLpNorm (fun z ↦ (f z)⁺) (Fintype.card ι)
+              (mu.restrict (ball x₀ R))).toReal / lam + η * (1 + R / lam)) := by
   have hR : 0 < R := (mul_pos_iff_of_pos_left hθ0).1 (pos_of_mem_ball hy)
   have hlam : 0 < lam := ha.pos
   -- Set up `s = √θ * R` so `θ * R = √θ * s` and `closedBall x₀ s ⊆ B(x₀, R)`.
@@ -582,21 +572,17 @@ private theorem rpow_neg_mul_eLpNorm_le_add_mul_of_subball
   have hw2 : ContDiff ℝ 2 w := contDiff_infty.1 hw 2
   have hw_nn : ∀ z ∈ ball x₀ s, 0 ≤ w z := fun z hz ↦
     (hū_nn z (hbs_sub hz)).trans (hwK z (ball_subset_closedBall hz)).1
-  -- Transfer `g⁺` to `volume` and apply the classical weak Harnack inequality to `w`.
+  -- Transfer `g⁺` to `volume` and compare `‖u‖_{Lᵖ(B(x₀, θ R))} ≤ ‖w‖_{Lᵖ(B(x₀, θ R))}`.
   have hθR_sub_s : ball x₀ (θ * R) ⊆ ball x₀ s :=
     hθ's ▸ ball_subset_ball (mul_le_of_le_one_left hs0.le hθ'1.le)
   have hyR : y ∈ ball x₀ R := ball_subset_ball (mul_le_of_le_one_left hR.le hθ1.le) hy
   obtain ⟨hg_vol, h12⟩ := memLp_and_add_mul_eLpNorm_div_le_of_isAddHaarMeasure hbs_sub hf
     (hū_nn y hyR) (hwK y (ball_subset_closedBall (hθR_sub_s hy))).2 hη.le hs0.le hsR.le hlam hg
-  have hw_est := HW (ha.mono_set hbs_sub) hLam hw2.contDiffOn hw_nn hwg hg_vol y (hθ's.symm ▸ hy)
-  rw [hθ's, toReal_eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul w (ENNReal.ofReal p)
-    volume mu (ball x₀ (θ * R)), ENNReal.toReal_ofReal hp.le] at hw_est
-  -- Compare `‖u‖_{Lᵖ(B(x₀, θ R))} ≤ ‖w‖_{Lᵖ(B(x₀, θ R))}`, divide out `α₀ ^ p⁻¹`, and absorb `η`.
   have hu_le_w := toReal_eLpNorm_value_ball_le_of_le (p := p) u
     (hθR_sub_s.trans (hbs_sub.trans hBΩ)) hw2.continuous
     (fun z hz ↦ hū_nn z (hθR_sub_s.trans hbs_sub hz))
     (fun z hz ↦ (hwK z (ball_subset_closedBall (hθR_sub_s hz))).1)
-  exact weakHarnack_absorb_subball hα₀ hCW.le (mul_pos hθ0 hR).le hu_le_w hw_est h12 hC_final
+  exact ⟨w, g, hw2, hw_nn, hwg, hg_vol, hu_le_w, h12⟩
 
 /-- **The weak Harnack inequality of Krylov and Safonov for strong supersolutions**
 (Gilbarg–Trudinger, Theorem 9.22; Caffarelli–Cabré, Theorem 4.8). Let `κ` be given. There is an
@@ -631,8 +617,6 @@ theorem exists_rpow_neg_mul_eLpNorm_le_mul_preciseRepresentative_add_of_wkp
             C * (preciseRepresentative mu (Wkp.value 2 u) y +
               R * (eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι)
                 (mu.restrict (ball x₀ R))).toReal / lam) := by
-  have : Nonempty ι :=
-    Fintype.card_pos_iff.1 (by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ Fintype.card ι))
   obtain ⟨p, hp, HW'⟩ :=
     exists_rpow_neg_mul_eLpNorm_le_mul_add_of_sum_mul_fderiv_fderiv_le (ι := ι) κ
   refine ⟨p, hp, fun mu _ θ hθ0 hθ1 ↦ ?_⟩
@@ -644,40 +628,44 @@ theorem exists_rpow_neg_mul_eLpNorm_le_mul_preciseRepresentative_add_of_wkp
   obtain ⟨C_W, hCW, HW⟩ := HW' hθ'0 hθ'1
   set C_final : ℝ := (α₀ ^ p⁻¹)⁻¹ * C_W * max 1 (α₀ ^ (Fintype.card ι : ℝ)⁻¹)
   refine ⟨C_final, by positivity, fun lam Lam R x₀ Ω a f u hBΩ ha hLam hnn hsuper hf y hy ↦ ?_⟩
-  exact le_of_forall_pos_mul_le (C := C_final * (1 + R / lam)) fun η hη ↦
-    rpow_neg_mul_eLpNorm_le_add_mul_of_subball u hp hCW hθ0 hθ1 HW hBΩ ha hLam hnn hsuper hf
-      hy hη rfl
+  refine le_of_forall_pos_mul_le (C := C_final * (1 + R / lam)) fun η hη ↦ ?_
+  obtain ⟨w, g, hw2, hw_nn, hwg, hg_vol, hu_le_w, h12⟩ :=
+    exists_contDiff_le_and_memLp_of_subball u hθ0 hθ1 hBΩ ha hnn hsuper hf hy hη
+  have hR : 0 < R := (mul_pos_iff_of_pos_left hθ0).1 (pos_of_mem_ball hy)
+  have hθ's : √θ * (√θ * R) = θ * R := by rw [← mul_assoc, Real.mul_self_sqrt hθ0.le]
+  have hbs_sub : ball x₀ (√θ * R) ⊆ ball x₀ R :=
+    ball_subset_ball (mul_le_of_le_one_left hR.le hθ'1.le)
+  have hw_est := HW (ha.mono_set hbs_sub) hLam hw2.contDiffOn hw_nn hwg hg_vol y (hθ's.symm ▸ hy)
+  rw [hθ's, toReal_eLpNorm_restrict_eq_addHaarScalarFactor_rpow_mul w (ENNReal.ofReal p)
+    volume mu (ball x₀ (θ * R)), ENNReal.toReal_ofReal hp.le] at hw_est
+  exact weakHarnack_absorb_subball hα₀ hCW.le (mul_pos hθ0 hR).le hu_le_w hw_est h12 rfl
 
-/-- The `η`-approximation step for the strong Harnack inequality on `closedBall x₀ (2 * s)`. -/
-private theorem preciseRepresentative_le_add_mul_of_abs_subball
+/-- Mollify a nonnegative strong two-sided solution `u` from above on `closedBall x₀ (2 * s)` and
+transfer the resulting `Lⁿ` right-hand side bound to `volume`. -/
+private theorem exists_contDiff_le_and_memLp_of_abs_subball
     [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))]
     {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-    {κ C₀ C lam Lam r s : ℝ} {x₀ x y : EuclideanSpace ℝ ι} {Ω : Opens (EuclideanSpace ℝ ι)}
+    {lam Lam r s : ℝ} {x₀ x y : EuclideanSpace ℝ ι} {Ω : Opens (EuclideanSpace ℝ ι)}
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {f : EuclideanSpace ℝ ι → ℝ}
-    (u : Wkp mu Ω (Fintype.card ι) 2) (hC₀ : 0 < C₀)
-    (H : ∀ ⦃lam Lam r : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
-      ⦃u f : EuclideanSpace ℝ ι → ℝ⦄, UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam →
-      Lam ≤ κ * lam → ContDiffOn ℝ 2 u (ball x₀ (2 * r)) →
-      (∀ x ∈ ball x₀ (2 * r), 0 ≤ u x) →
-      (∀ x ∈ ball x₀ (2 * r), |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ f x) →
-      MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
-      ∀ x ∈ ball x₀ r, ∀ y ∈ ball x₀ r, u x ≤ C₀ * (u y + r * (eLpNorm f (Fintype.card ι)
-        (volume.restrict (ball x₀ (2 * r)))).toReal / lam))
+    (u : Wkp mu Ω (Fintype.card ι) 2)
     (hBΩ : ball x₀ (2 * r) ⊆ Ω) (ha : UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam)
-    (hLam : Lam ≤ κ * lam) (hnn : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)), 0 ≤ Wkp.value 2 u x)
+    (hnn : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)), 0 ≤ Wkp.value 2 u x)
     (heq : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)),
       |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ f x)
     (hf : MemLp f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r))))
-    (hs_lt : s < r) (hxs : x ∈ ball x₀ s) (hys : y ∈ ball x₀ s) {η : ℝ} (hη : 0 < η)
-    (hC : C = C₀ * max 1 ((Measure.addHaarScalarFactor volume mu : ℝ) ^
-      (Fintype.card ι : ℝ)⁻¹)) :
-    preciseRepresentative mu (Wkp.value 2 u) x ≤
-      C * (preciseRepresentative mu (Wkp.value 2 u) y +
-        r * (eLpNorm f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r)))).toReal / lam) +
-      η * (C * (1 + r / lam)) := by
-  set n : ℝ := (Fintype.card ι : ℝ)
-  set α₀ : ℝ := (Measure.addHaarScalarFactor volume mu : ℝ)
+    (hs_lt : s < r) (hxs : x ∈ ball x₀ s) (hys : y ∈ ball x₀ s) {η : ℝ} (hη : 0 < η) :
+    ∃ w g : EuclideanSpace ℝ ι → ℝ,
+      ContDiff ℝ 2 w ∧
+      (∀ z ∈ ball x₀ (2 * s), 0 ≤ w z) ∧
+      (∀ z ∈ ball x₀ (2 * s), |∑ i, ∑ j, a z i j * fderiv ℝ (fderiv ℝ w) z
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ g z) ∧
+      MemLp g (Fintype.card ι) (volume.restrict (ball x₀ (2 * s))) ∧
+      preciseRepresentative mu (Wkp.value 2 u) x ≤ w x ∧
+      w y + s * (eLpNorm g (Fintype.card ι) (volume.restrict (ball x₀ (2 * s)))).toReal / lam ≤
+        max 1 ((Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹) *
+          (preciseRepresentative mu (Wkp.value 2 u) y +
+            r * (eLpNorm f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r)))).toReal / lam +
+            η * (1 + r / lam)) := by
   have hs0 : 0 < s := pos_of_mem_ball hxs
   have hlam : 0 < lam := ha.pos
   have hcs_sub : closedBall x₀ (2 * s) ⊆ ball x₀ (2 * r) := closedBall_subset_ball (by linarith)
@@ -703,14 +691,7 @@ private theorem preciseRepresentative_le_add_mul_of_abs_subball
   obtain ⟨hg_vol, h12⟩ := memLp_and_add_mul_eLpNorm_div_le_of_isAddHaarMeasure hbs_sub hf
     (hū_nn y (ball_subset_ball (by linarith) (ball_subset_ball hs_lt.le hys))) (hwK y hyK).2 hη.le
     hs0.le hs_lt.le hlam hg
-  have hw_har := H (ha.mono_set hbs_sub) hLam hw2.contDiffOn hw_nn hwg hg_vol x hxs y hys
-  set F : ℝ := (eLpNorm f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r)))).toReal
-  calc ū x ≤ w x := (hwK x hxK).1
-    _ ≤ C₀ * (max 1 (α₀ ^ n⁻¹) * (ū y + r * F / lam + η * (1 + r / lam))) :=
-        hw_har.trans (mul_le_mul_of_nonneg_left h12 hC₀.le)
-    _ = C * (ū y + r * F / lam) + η * (C * (1 + r / lam)) := by
-        rw [hC]
-        ring
+  exact ⟨w, g, hw2, hw_nn, hwg, hg_vol, (hwK x hxK).1, h12⟩
 
 /-- **The Harnack inequality of Krylov and Safonov for strong solutions** (Gilbarg–Trudinger,
 Theorem 9.22; Caffarelli–Cabré, Corollary 4.9), for functions in `W^{2,n}` satisfying the
@@ -740,8 +721,6 @@ theorem exists_preciseRepresentative_le_mul_add_of_abs_sum_mul_iteratedGradient_
             preciseRepresentative mu (Wkp.value 2 u) x ≤
               C * (preciseRepresentative mu (Wkp.value 2 u) y +
                 r * (eLpNorm f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r)))).toReal / lam) := by
-  have : Nonempty ι :=
-    Fintype.card_pos_iff.1 (by exact_mod_cast (Fact.out : (1 : ℝ≥0∞) ≤ Fintype.card ι))
   obtain ⟨C₀, hC₀, H⟩ := exists_le_mul_add_of_abs_sum_mul_fderiv_fderiv_le (ι := ι) κ
   intro mu _
   set α₀ : ℝ := (Measure.addHaarScalarFactor volume mu : ℝ)
@@ -750,9 +729,20 @@ theorem exists_preciseRepresentative_le_mul_add_of_abs_sum_mul_iteratedGradient_
   have hr : 0 < r := pos_of_mem_ball hx
   obtain ⟨s, -, hs_lt, hxs, hys⟩ :=
     TauCeti.exists_lt_mem_ball_of_mem_ball (half_lt_self hr) hx hy
-  exact le_of_forall_pos_mul_le (C := C * (1 + r / lam)) fun η hη ↦
-    preciseRepresentative_le_add_mul_of_abs_subball u hC₀ H hBΩ ha hLam hnn heq hf hs_lt hxs hys
-      hη rfl
+  refine le_of_forall_pos_mul_le (C := C * (1 + r / lam)) fun η hη ↦ ?_
+  obtain ⟨w, g, hw2, hw_nn, hwg, hg_vol, hux_le, h12⟩ :=
+    exists_contDiff_le_and_memLp_of_abs_subball u hBΩ ha hnn heq hf hs_lt hxs hys hη
+  have hbs_sub : ball x₀ (2 * s) ⊆ ball x₀ (2 * r) := ball_subset_ball (by linarith)
+  have hw_har := H (ha.mono_set hbs_sub) hLam hw2.contDiffOn hw_nn hwg hg_vol x hxs y hys
+  set F : ℝ := (eLpNorm f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r)))).toReal
+  calc preciseRepresentative mu (Wkp.value 2 u) x ≤ w x := hux_le
+    _ ≤ C₀ * (max 1 (α₀ ^ (Fintype.card ι : ℝ)⁻¹) *
+          (preciseRepresentative mu (Wkp.value 2 u) y + r * F / lam + η * (1 + r / lam))) :=
+        hw_har.trans (mul_le_mul_of_nonneg_left h12 hC₀.le)
+    _ = C * (preciseRepresentative mu (Wkp.value 2 u) y + r * F / lam) +
+          η * (C * (1 + r / lam)) := by
+        simp only [C]
+        ring
 
 /-- **The Harnack inequality of Krylov and Safonov for strong solutions** (Gilbarg–Trudinger,
 Theorem 9.22), for solutions of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` almost everywhere in `W^{2,n}`. Let `κ` be
@@ -827,43 +817,36 @@ private theorem holder_absorb_subball {α : ℝ≥0} {n α₀ C₀ C lam r s M G
     _ = C * r ^ (-(α : ℝ)) * (M + r * F / lam) * d ^ (α : ℝ) +
           η * (C * r ^ (-(α : ℝ)) * (1 + r / lam) * d ^ (α : ℝ) + 2) := by ring
 
-/-- The `η`-approximation step for the strong interior Hölder estimate on
-`closedBall x₀ (2 * s)`. -/
-private theorem dist_preciseRepresentative_le_add_mul_of_subball
+/-- Mollify a bounded strong two-sided solution `u` uniformly within `η` on `closedBall x₀ (2 * s)`
+and transfer the resulting `Lⁿ` right-hand side bound to `volume`. -/
+private theorem exists_contDiff_abs_sub_le_and_memLp_of_subball
     [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))]
     {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-    {α : ℝ≥0} {κ C₀ C lam Lam r M s : ℝ} {x₀ x y : EuclideanSpace ℝ ι}
+    {lam Lam r M s : ℝ} {x₀ x y : EuclideanSpace ℝ ι}
     {Ω : Opens (EuclideanSpace ℝ ι)} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {f : EuclideanSpace ℝ ι → ℝ} (u : Wkp mu Ω (Fintype.card ι) 2)
-    (hα0 : 0 < α) (hα1 : α ≤ 1) (hC₀ : 0 < C₀)
-    (H : ∀ ⦃lam Lam r M : ℝ⦄ ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
-      ⦃u f : EuclideanSpace ℝ ι → ℝ⦄, 0 < r →
-      UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam → Lam ≤ max κ 1 * lam →
-      ContDiffOn ℝ 2 u (ball x₀ (2 * r)) → (∀ x ∈ ball x₀ (2 * r), |u x| ≤ M) →
-      (∀ x ∈ ball x₀ (2 * r), |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ u) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ f x) →
-      MemLp f (Fintype.card ι) (volume.restrict (ball x₀ (2 * r))) →
-      HolderOnWith (C₀ * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
-        (volume.restrict (ball x₀ (2 * r)))).toReal / lam)).toNNReal α u (ball x₀ r))
     (hBΩ : ball x₀ (2 * r) ⊆ Ω) (ha : UniformlyEllipticOn (ball x₀ (2 * r)) a lam Lam)
-    (hLam : Lam ≤ κ * lam)
     (heq : ∀ᵐ x ∂mu.restrict (ball x₀ (2 * r)),
       |∑ i, ∑ j, a x i j * Wkp.iteratedGradient 1 u x (EuclideanSpace.single j 1) i| ≤ f x)
     (hf : MemLp f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r))))
     (hū_abs : ∀ z ∈ ball x₀ (2 * r), |preciseRepresentative mu (Wkp.value 2 u) z| ≤ M)
-    (hM0 : 0 ≤ M) (hr : 0 < r) (hs_r2 : r / 2 < s) (hs_lt : s < r)
-    (hxs : x ∈ ball x₀ s) (hys : y ∈ ball x₀ s) {η : ℝ} (hη : 0 < η)
-    (hC : C = 2 * C₀ * max 1 ((Measure.addHaarScalarFactor volume mu : ℝ) ^
-      (Fintype.card ι : ℝ)⁻¹)) :
-    dist (preciseRepresentative mu (Wkp.value 2 u) x)
-        (preciseRepresentative mu (Wkp.value 2 u) y) ≤
-      C * r ^ (-(α : ℝ)) * (M + r * (eLpNorm f (Fintype.card ι)
-        (mu.restrict (ball x₀ (2 * r)))).toReal / lam) * dist x y ^ (α : ℝ) +
-      η * (C * r ^ (-(α : ℝ)) * (1 + r / lam) * dist x y ^ (α : ℝ) + 2) := by
+    (hM0 : 0 ≤ M) (hs_lt : s < r) (hxs : x ∈ ball x₀ s) (hys : y ∈ ball x₀ s) {η : ℝ}
+    (hη : 0 < η) :
+    ∃ v g : EuclideanSpace ℝ ι → ℝ,
+      ContDiff ℝ 2 v ∧
+      (∀ z ∈ ball x₀ (2 * s), |v z| ≤ M + η) ∧
+      (∀ z ∈ ball x₀ (2 * s), |∑ i, ∑ j, a z i j * fderiv ℝ (fderiv ℝ v) z
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ g z) ∧
+      MemLp g (Fintype.card ι) (volume.restrict (ball x₀ (2 * s))) ∧
+      dist (preciseRepresentative mu (Wkp.value 2 u) x)
+          (preciseRepresentative mu (Wkp.value 2 u) y) ≤
+        dist (v x) (v y) + 2 * η ∧
+      M + η + s * (eLpNorm g (Fintype.card ι) (volume.restrict (ball x₀ (2 * s)))).toReal / lam ≤
+        max 1 ((Measure.addHaarScalarFactor volume mu : ℝ) ^ (Fintype.card ι : ℝ)⁻¹) *
+          (M + r * (eLpNorm f (Fintype.card ι) (mu.restrict (ball x₀ (2 * r)))).toReal / lam +
+            η * (1 + r / lam)) := by
   have hs0 : 0 < s := pos_of_mem_ball hxs
   have hlam : 0 < lam := ha.pos
-  have hLam' : Lam ≤ max κ 1 * lam :=
-    hLam.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hlam.le)
   have hcs_sub : closedBall x₀ (2 * s) ⊆ ball x₀ (2 * r) := closedBall_subset_ball (by linarith)
   have hbs_sub : ball x₀ (2 * s) ⊆ ball x₀ (2 * r) := ball_subset_closedBall.trans hcs_sub
   -- Mollify `u` uniformly within `η` on `closedBall x₀ (2 * s)`.
@@ -881,15 +864,9 @@ private theorem dist_preciseRepresentative_le_add_mul_of_subball
     have htri := abs_add_le (ū z) (v z - ū z)
     rw [add_sub_cancel] at htri
     exact htri.trans (add_le_add (hū_abs z (hbs_sub hz)) (hvK z (ball_subset_closedBall hz)))
-  -- Transfer `g` to `volume` and apply the classical Hölder estimate to `v`.
+  -- Transfer `g` to `volume` and bound `dist (ū x) (ū y)` via the triangle inequality.
   obtain ⟨hg_vol, h12⟩ := memLp_and_add_mul_eLpNorm_div_le_of_isAddHaarMeasure hbs_sub hf
     hM0 le_rfl hη.le hs0.le hs_lt.le hlam hg
-  have hhold := (H hs0 (ha.mono_set hbs_sub) hLam' hv2.contDiffOn hv_abs hvg hg_vol).dist_le hxs hys
-  have hv_dist : dist (v x) (v y) ≤
-      C₀ * s ^ (-(α : ℝ)) * (M + η + s * (eLpNorm g (Fintype.card ι)
-        (volume.restrict (ball x₀ (2 * s)))).toReal / lam) * dist x y ^ (α : ℝ) :=
-    hhold.trans_eq (by rw [Real.coe_toNNReal _ (by positivity)])
-  -- Compare `dist (ū x) (ū y)` to `dist (v x) (v y)` via the triangle inequality and absorb `η`.
   have hxK : x ∈ closedBall x₀ (2 * s) :=
     ball_subset_closedBall (ball_subset_ball (by linarith) hxs)
   have hyK : y ∈ closedBall x₀ (2 * s) :=
@@ -898,8 +875,7 @@ private theorem dist_preciseRepresentative_le_add_mul_of_subball
     have hdx : dist (ū x) (v x) ≤ η := by rw [dist_comm, Real.dist_eq]; exact hvK x hxK
     have hdy : dist (v y) (ū y) ≤ η := by rw [Real.dist_eq]; exact hvK y hyK
     linarith [dist_triangle4 (ū x) (v x) (v y) (ū y)]
-  exact holder_absorb_subball hα0 hα1 hC₀.le hM0 hr hs_r2 hlam ENNReal.toReal_nonneg hη.le
-    dist_nonneg hdist_u hv_dist h12 hC
+  exact ⟨v, g, hv2, hv_abs, hvg, hg_vol, hdist_u, h12⟩
 
 /-- **The interior Hölder estimate of Krylov and Safonov for strong solutions** (Gilbarg–Trudinger,
 Corollary 9.24; Caffarelli–Cabré, Proposition 4.10), for functions in `W^{2,n}` satisfying the
@@ -948,10 +924,23 @@ theorem exists_holderOnWith_preciseRepresentative_of_abs_sum_mul_iteratedGradien
   have hM0 : 0 ≤ M := (abs_nonneg _).trans (hū_abs x (ball_subset_ball (by linarith) hx))
   obtain ⟨s, hs_r2, hs_lt, hxs, hys⟩ :=
     TauCeti.exists_lt_mem_ball_of_mem_ball (half_lt_self hr) hx hy
-  exact le_of_forall_pos_mul_le
-    (C := C * r ^ (-(α : ℝ)) * (1 + r / lam) * dist x y ^ (α : ℝ) + 2) fun η hη ↦
-    dist_preciseRepresentative_le_add_mul_of_subball u hα0 hα1 hC₀ H hBΩ ha hLam heq hf
-      hū_abs hM0 hr hs_r2 hs_lt hxs hys hη rfl
+  refine le_of_forall_pos_mul_le
+    (C := C * r ^ (-(α : ℝ)) * (1 + r / lam) * dist x y ^ (α : ℝ) + 2) fun η hη ↦ ?_
+  obtain ⟨v, g, hv2, hv_abs, hvg, hg_vol, hdist_u, h12⟩ :=
+    exists_contDiff_abs_sub_le_and_memLp_of_subball u hBΩ ha heq hf hū_abs hM0 hs_lt hxs hys hη
+  have hs0 : 0 < s := pos_of_mem_ball hxs
+  have hlam : 0 < lam := ha.pos
+  have hLam' : Lam ≤ max κ 1 * lam :=
+    hLam.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hlam.le)
+  have hbs_sub : ball x₀ (2 * s) ⊆ ball x₀ (2 * r) := ball_subset_ball (by linarith)
+  have hhold := (H hs0 (ha.mono_set hbs_sub) hLam' hv2.contDiffOn hv_abs hvg hg_vol).dist_le
+    hxs hys
+  have hv_dist : dist (v x) (v y) ≤
+      C₀ * s ^ (-(α : ℝ)) * (M + η + s * (eLpNorm g (Fintype.card ι)
+        (volume.restrict (ball x₀ (2 * s)))).toReal / lam) * dist x y ^ (α : ℝ) :=
+    hhold.trans_eq (by rw [Real.coe_toNNReal _ (by positivity)])
+  exact holder_absorb_subball hα0 hα1 hC₀.le hM0 hr hs_r2 hlam ENNReal.toReal_nonneg hη.le
+    dist_nonneg hdist_u hv_dist h12 rfl
 
 /-- **The interior Hölder estimate of Krylov and Safonov for strong solutions** (Gilbarg–Trudinger,
 Corollary 9.24), for solutions of `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu = f` almost everywhere in `W^{2,n}`. Let `κ` be
