@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Semicontinuity.Basic
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
-public import TauCeti.Analysis.CStarAlgebra.Trace.Basic
+public import TauCeti.Analysis.CStarAlgebra.Trace.Domain
 
 /-!
 # Matrix amplification of traces
@@ -24,7 +24,10 @@ The same computation identifies the square-integrable elements: `𝔫_{τ_n} = M
 (`TauCeti.IsTrace.mem_sqIntegrable_matrixTrace_iff`, Thomsen [WTK], Lemma 3.1 (e)). The
 amplification is faithful when `τ` is (`TauCeti.IsFaithful.matrixTrace`): a positive matrix `R⋆R`
 whose diagonal entries `Σₖ Rₖᵢ⋆Rₖᵢ` vanish has `R = 0`. It is lower semicontinuous when `τ` is
-(`LowerSemicontinuousOn.matrixTrace`), and it is additive over the diagonal blocks of a block
+(`LowerSemicontinuousOn.matrixTrace`), and densely defined when `τ` is
+(`TauCeti.IsTrace.isDenselyDefined_matrixTrace`): write a positive matrix as `R⋆R` and approximate
+`R` entrywise by matrices over `𝔫_τ`, which lie in `𝔫_{τ_n}`; their products `S⋆S` lie in
+`𝔪_{τ_n}⁺` and converge to `R⋆R`. It is additive over the diagonal blocks of a block
 matrix (`TauCeti.matrixTrace_fromBlocks`).
 
 ## Main definitions
@@ -37,6 +40,7 @@ matrix (`TauCeti.matrixTrace_fromBlocks`).
 * `TauCeti.IsTrace.mem_sqIntegrable_matrixTrace_iff`: `𝔫_{τ_n} = M_n(𝔫_τ)`.
 * `TauCeti.IsFaithful.matrixTrace`: `τ_n` is faithful when `τ` is.
 * `LowerSemicontinuousOn.matrixTrace`: `τ_n` is lower semicontinuous when `τ` is.
+* `TauCeti.IsTrace.isDenselyDefined_matrixTrace`: `τ_n` is densely defined when `τ` is.
 * `TauCeti.matrixTrace_fromBlocks`: `τ_{n ⊕ m}([[x, b], [c, y]]) = τ_n(x) + τ_m(y)`.
 
 ## References
@@ -103,6 +107,24 @@ theorem mem_sqIntegrable_matrixTrace_iff (hτ : IsTrace τ) {x : CStarMatrix n n
   simp only [mem_sqIntegrable, hτ.matrixTrace_star_mul_self, ENNReal.sum_lt_top,
     Finset.mem_univ, forall_const]
   exact forall_comm
+
+/-- **The matrix amplification of a densely defined trace is densely defined.** -/
+theorem isDenselyDefined_matrixTrace (hτ : IsTrace τ) (hd : IsDenselyDefined τ) :
+    IsDenselyDefined (matrixTrace τ n) := by
+  refine isDenselyDefined_iff.2 fun x hx ↦ ?_
+  obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp (Set.mem_ofPred.1 hx)
+  -- Matrices over `𝔫_τ` are dense in `Matrix n n B`: `Set.matrix_eq_pi` writes them as a product
+  -- set, and Mathlib defines the matrix topology as the product one (as in `IsOpen.matrix`, the
+  -- identity map transfers between them). `CStarMatrix.ofMatrixL` carries them into `M_n(B)`.
+  have hM : Dense ((sqIntegrable τ).matrix : Set (Matrix n n B)) :=
+    Set.matrix_eq_pi ▸ (dense_pi Set.univ fun _ _ ↦ dense_pi Set.univ fun _ _ ↦
+      hτ.dense_sqIntegrable_of_isDenselyDefined hd).preimage IsOpenMap.id
+  have hS : Dense {S : CStarMatrix n n B | ∀ i j, S i j ∈ sqIntegrable τ} :=
+    hM.preimage CStarMatrix.ofMatrixL.symm.toHomeomorph.isOpenMap
+  have hcont : Continuous fun S : CStarMatrix n n B ↦ star S * S :=
+    continuous_star.mul continuous_id
+  exact map_mem_closure (f := fun S : CStarMatrix n n B ↦ star S * S) hcont (hS R) fun S hSmem ↦
+    star_mul_self_mem_finitePart_iff.2 (hτ.mem_sqIntegrable_matrixTrace_iff.2 hSmem)
 
 end IsTrace
 
