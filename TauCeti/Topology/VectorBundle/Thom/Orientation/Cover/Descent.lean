@@ -333,7 +333,9 @@ cocycle `φ` of degree `r` of `(E', E'₀)` which the deck involution negates an
 Thom class of `E'` gives `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` for every `k`-module `N`, with
 coefficients in the orientation local system `o(E)`. The chain map `thomPairTwistedChainMap` is a
 chain homotopy equivalence, and `Hom(-, N)` preserves chain homotopy equivalences, so no hypothesis
-on `N` is needed. -/
+on `N` is needed. This is the construction of the general
+`TopPair.twistedCohomologyIsoTwistedCohomologyOfQuasiIso`, applied to `thomPairTwistedChainMap`,
+which already contains the identifications of the trivial and sign local systems. -/
 def thomPairSingularCohomologyIsoTwistedCohomology
     {φ : (TopPair.singularCochainComplex
       (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))

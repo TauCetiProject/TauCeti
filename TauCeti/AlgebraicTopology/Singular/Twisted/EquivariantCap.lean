@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
+public import TauCeti.Algebra.Homology.Embedding.LinearYoneda
 public import TauCeti.Algebra.Homology.Embedding.MapExtend
+public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Relative
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Cap
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Coordinates
 public import TauCeti.AlgebraicTopology.Singular.Twisted.QuotientCovering
@@ -50,7 +52,11 @@ complexes of representations projective, so when `f` is a quasi-isomorphism its 
 are a chain homotopy equivalence (`TopPair.homotopyEquivalences_coinvariantsTensor_map`), and so is
 the chain map (`TopPair.homotopyEquivalences_coinvariantsTwistedChainMap`). The isomorphisms in
 homology are induced by it, followed by the removal of the shift
-(`HomologicalComplex.extendHomologyIso`).
+(`HomologicalComplex.extendHomologyIso`). Since `Hom(-, N)` preserves chain homotopy equivalences,
+the same chain map also gives, for every `k`-module `N`, the isomorphism in cohomology
+`Hᵖ⁺ⁿ(Q, Q₀; L_D, N) ≅ Hᵖ(Z; L_{D ⊗ k_χ}, N)`
+(`TopPair.twistedCohomologyIsoTwistedCohomologyOfQuasiIso`), with the shift removed by
+`ChainComplex.linearYonedaObjExtendHomologyIso`.
 
 The intended use is the Thom pair of a vector bundle `E' → B'` pulled back to the orientation double
 cover `B'` of a real vector bundle `E → B`, with `G = ℤˣ` acting by the deck involution, `χ` the
@@ -77,6 +83,9 @@ cocycle `φ` is done in this file.
   `H_q(Z; L_{D ⊗ k_χ})`.
 * `TopPair.singularHomologyIsoTwistedHomologyOfQuasiIso`: the case of the trivial
   representation, `H_{q + n}(Q, Q₀; k) ≅ H_q(Z; L_{k_χ})`.
+* `TopPair.twistedCohomologyIsoTwistedCohomologyOfQuasiIso`: a quasi-isomorphism
+  `C(X, A; k) ⟶ (k_χ ⊗ C(Y; k))[n]` identifies `Hᵖ⁺ⁿ(Q, Q₀; L_D, N)` with
+  `Hᵖ(Z; L_{D ⊗ k_χ}, N)` for every `k`-module `N`.
 
 ## References
 
@@ -281,6 +290,52 @@ theorem singularHomologyIsoTwistedHomologyOfQuasiIso_def
           (LocalCoefficientSystem.twistedChainComplexCoefficientIso
             ((hY.associatedLocalSystemFunctor k).mapIso
               (λ_ (Rep.of (Representation.ofLinearCharacter χ))))) :=
+  (rfl)
+
+/-- **Twisted cohomology of a quotient pair from a shifted twisted quasi-isomorphism.** Under the
+hypotheses of `TopPair.twistedHomologyIsoTwistedHomologyOfQuasiIso`, a quasi-isomorphism
+`f : C(X, A; k) ⟶ (k_χ ⊗ C(Y; k))[n]` of complexes of representations gives for every
+representation `D` of `G` and every `k`-module `N` the isomorphism
+`Hᵖ⁺ⁿ(Q, Q₀; L_D, N) ≅ Hᵖ(Z; L_{D ⊗ k_χ}, N)` of cohomology with values in `N`. The chain map
+`TopPair.coinvariantsTwistedChainMap` is a chain homotopy equivalence, and `Hom(-, N)` preserves
+chain homotopy equivalences, so no hypothesis on `N` is needed; the shift is removed by
+`ChainComplex.linearYonedaObjExtendHomologyIso`. -/
+def twistedCohomologyIsoTwistedCohomologyOfQuasiIso
+    (f : haveI := hfst.toContinuousConstSMul
+      haveI := hsnd.toContinuousConstSMul
+      haveI := hY.toContinuousConstSMul
+      P'.singularChainsRep k G hP ⟶
+        (((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
+          (TauCeti.singularChainsRep k Y G)).extend (ComplexShape.embeddingDownNatAdd n))
+    [QuasiIso f] (N : ModuleCat.{u} k) (q : ℕ) :
+    P.twistedCohomology (hfst.associatedLocalSystem k D) k N (q + n) ≅
+      LocalCoefficientSystem.twistedCohomology k N
+        (hY.associatedLocalSystem k (D ⊗ Rep.of (Representation.ofLinearCharacter χ))) q :=
+  haveI : QuasiIso ((TauCeti.ChainComplex.linearYonedaFunctor k N).map
+      (coinvariantsTwistedChainMap hfst hsnd hP hY χ D f).op) :=
+    homotopyEquivalences_le_quasiIso _ _ _
+      (TauCeti.ChainComplex.homotopyEquivalences_linearYonedaFunctor_map k N
+        (homotopyEquivalences_coinvariantsTwistedChainMap hfst hsnd hP hY χ D f))
+  (asIso (HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k N).map
+      (coinvariantsTwistedChainMap hfst hsnd hP hY χ D f).op) (q + n))).symm ≪≫
+    _root_.ChainComplex.linearYonedaObjExtendHomologyIso N _ (ComplexShape.embeddingDownNatAdd n)
+      (ComplexShape.embeddingDownNatAdd_f n q)
+
+/-- The inverse of `twistedCohomologyIsoTwistedCohomologyOfQuasiIso` is the removal of the shift,
+followed by the map induced in cohomology by precomposition with `coinvariantsTwistedChainMap`. -/
+theorem twistedCohomologyIsoTwistedCohomologyOfQuasiIso_inv
+    (f : haveI := hfst.toContinuousConstSMul
+      haveI := hsnd.toContinuousConstSMul
+      haveI := hY.toContinuousConstSMul
+      P'.singularChainsRep k G hP ⟶
+        (((tensorLeft (Rep.of (Representation.ofLinearCharacter χ))).mapHomologicalComplex _).obj
+          (TauCeti.singularChainsRep k Y G)).extend (ComplexShape.embeddingDownNatAdd n))
+    [QuasiIso f] (N : ModuleCat.{u} k) (q : ℕ) :
+    (twistedCohomologyIsoTwistedCohomologyOfQuasiIso hfst hsnd hP hY χ D f N q).inv =
+      (_root_.ChainComplex.linearYonedaObjExtendHomologyIso N _
+        (ComplexShape.embeddingDownNatAdd n) (ComplexShape.embeddingDownNatAdd_f n q)).inv ≫
+        HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k N).map
+          (coinvariantsTwistedChainMap hfst hsnd hP hY χ D f).op) (q + n) :=
   (rfl)
 
 end TopPair
