@@ -77,13 +77,13 @@ theorem mem_zeroOneSobolevSections_prod_iff {w : SobolevSection (A.prod h).tange
           zeroOneSobolevSections (A.ofBaseSet h) μ p k := by
   simp only [mem_zeroOneSobolevSections_iff]
   refine ⟨fun hw ↦ ⟨fun i ↦ (A.ae_image_tangentHom_iff μ i).2 ?_,
-    fun i ↦ (FiniteBundleAtlas.ae_image_tangentHom_ofBaseSet_iff (h := h)).2 ?_⟩, fun hw i ↦
-      (FiniteBundleAtlas.ae_image_tangentHom_prod_iff (h := h)).2 ?_⟩
-  · filter_upwards [(FiniteBundleAtlas.ae_image_tangentHom_prod_iff (h := h)).1 (hw i),
+    fun i ↦ (A.ae_image_tangentHom_ofBaseSet_iff μ h i).2 ?_⟩, fun hw i ↦
+      (A.ae_image_tangentHom_ofBaseSet_iff μ _ i).2 ?_⟩
+  · filter_upwards [(A.ae_image_tangentHom_ofBaseSet_iff μ _ i).1 (hw i),
       SobolevSection.chartValueL_tangentHomProdEquiv_fst_ae w i] with y h₁ h₂ v
     rw [h₂, ContinuousLinearMap.comp_apply, h₁ v]
     simp
-  · filter_upwards [(FiniteBundleAtlas.ae_image_tangentHom_prod_iff (h := h)).1 (hw i),
+  · filter_upwards [(A.ae_image_tangentHom_ofBaseSet_iff μ _ i).1 (hw i),
       SobolevSection.chartValueL_tangentHomProdEquiv_snd_ae w i] with y h₁ h₂ v
     rw [h₂, ContinuousLinearMap.comp_apply, h₁ v]
     simp
@@ -92,7 +92,7 @@ theorem mem_zeroOneSobolevSections_prod_iff {w : SobolevSection (A.prod h).tange
       (SobolevSection.tangentHomProdEquiv A h μ p k w).2 i
     rw [Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply] at hs
     filter_upwards [(A.ae_image_tangentHom_iff μ i).1 (hw.1 i),
-      (FiniteBundleAtlas.ae_image_tangentHom_ofBaseSet_iff (h := h)).1 (hw.2 i), hs]
+      (A.ae_image_tangentHom_ofBaseSet_iff μ h i).1 (hw.2 i), hs]
       with y h₁ h₂ h₃ v
     rw [h₃, ContinuousLinearMap.prod_apply, ContinuousLinearMap.prod_apply, h₁ v, h₂ v]
     simp

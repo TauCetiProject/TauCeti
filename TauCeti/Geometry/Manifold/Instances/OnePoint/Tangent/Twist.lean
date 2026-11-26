@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.LineBundle
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # The tangent bundle of the Riemann sphere is `𝒪(2)`

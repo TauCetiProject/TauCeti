@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!

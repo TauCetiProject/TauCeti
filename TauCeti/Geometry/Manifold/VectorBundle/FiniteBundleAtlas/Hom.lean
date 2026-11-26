@@ -9,8 +9,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.HomProd
 import TauCeti.Topology.VectorBundle.Coordinates
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Finite bundle atlases of derived bundles

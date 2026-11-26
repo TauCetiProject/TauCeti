@@ -37,8 +37,10 @@ of Fredholm operators is the sum of the indices (`ContinuousLinearMap.IsFredholm
 
 ## Main results
 
-* `TauCeti.FiniteBundleAtlas.chartZeroOrder_sectionProdMap`: the zeroth-order term of a direct sum
-  in a chart.
+* `TauCeti.FiniteBundleAtlas.chartZeroOrder_sectionProdMap`,
+  `TauCeti.FiniteBundleAtlas.fst_comp_chartZeroOrder_sectionProdMap`,
+  `TauCeti.FiniteBundleAtlas.snd_comp_chartZeroOrder_sectionProdMap`: the zeroth-order term of a
+  direct sum in a chart and its components.
 * `TauCeti.IsRealCauchyRiemannOperator.sobolevL_prod`: the realization of `D₁ ⊕ D₂` is the
   product of the realizations of `D₁` and `D₂`.
 * `TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_prod`: the realization of `D₁ ⊕ D₂`, which
@@ -125,6 +127,38 @@ theorem FiniteBundleAtlas.chartZeroOrder_sectionProdMap {i : Fin A.n} {y : ℂ} 
   simp only [σ, sectionProdMap_apply, ContinuousLinearMap.fst_comp_prod,
     ContinuousLinearMap.snd_comp_prod]
 
+include hD₁ hD₂ in
+/-- The first component of the zeroth-order term of `D₁ ⊕ D₂` in a chart is the zeroth-order
+term of `D₁`. -/
+theorem FiniteBundleAtlas.fst_comp_chartZeroOrder_sectionProdMap {i : Fin A.n} {y : ℂ}
+    (hy : y ∈ A.image i) (a : F × F') :
+    (ContinuousLinearMap.fst ℝ F F').comp
+        ((A.prod h).chartZeroOrder (sectionProdMap D₁ D₂) i y a) =
+      A.chartZeroOrder D₁ i y a.1 := by
+  rw [FiniteBundleAtlas.chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy,
+    ContinuousLinearMap.fst_comp_prod]
+
+include hD₁ hD₂ in
+/-- The second component of the zeroth-order term of `D₁ ⊕ D₂` in a chart is the zeroth-order
+term of `D₂`. -/
+theorem FiniteBundleAtlas.snd_comp_chartZeroOrder_sectionProdMap {i : Fin A.n} {y : ℂ}
+    (hy : y ∈ A.image i) (a : F × F') :
+    (ContinuousLinearMap.snd ℝ F F').comp
+        ((A.prod h).chartZeroOrder (sectionProdMap D₁ D₂) i y a) =
+      (A.ofBaseSet h).chartZeroOrder D₂ i y a.2 := by
+  rw [FiniteBundleAtlas.chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy,
+    ContinuousLinearMap.snd_comp_prod]
+
+omit [IsManifold 𝓘(ℂ) ∞ M] [FiniteDimensional ℝ F] [FiniteDimensional ℝ F'] in
+/-- A complex linear map `L` commutes with the chart formula `∂bar X + Z` of the realizations:
+`L ∘ (∂bar X + Z) = ∂bar (L ∘ X) + L ∘ Z`. -/
+private theorem comp_complexAntilinearPartL_add {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [NormedSpace ℂ G] [IsScalarTower ℝ ℂ G] (L : F × F' →L[ℂ] G)
+    {L' : F × F' →L[ℝ] G} (hL : L.restrictScalars ℝ = L') (X Z : ℂ →L[ℝ] F × F') :
+    L'.comp (complexAntilinearPartL X + Z) = complexAntilinearPartL (L'.comp X) + L'.comp Z := by
+  subst hL
+  rw [ContinuousLinearMap.comp_add, ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp]
+
 namespace IsRealCauchyRiemannOperator
 
 variable [T2Space M] {A h}
@@ -143,8 +177,6 @@ theorem sobolevL_prod (w : SobolevSection (A.prod h) μ p 1) :
         ((hD₁.prod hD₂).sobolevL (A.prod h) (hD₁s.sectionProdMap hD₂s) μ p w) =
       (hD₁.sobolevL A hD₁s μ p (SobolevSection.prodEquiv A h μ p 1 w).1,
         hD₂.sobolevL (A.ofBaseSet h) hD₂s μ p (SobolevSection.prodEquiv A h μ p 1 w).2) := by
-  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
-  have : ∀ x, ContinuousSMul ℂ (V' x) := VectorBundle.continuousSMul ℂ F' V'
   -- The projections of `F × F'` are complex linear.
   have hfst : (ContinuousLinearMap.fst ℂ F F').restrictScalars ℝ = ContinuousLinearMap.fst ℝ F F' :=
     ContinuousLinearMap.ext fun _ ↦ rfl
@@ -166,15 +198,11 @@ theorem sobolevL_prod (w : SobolevSection (A.prod h) μ p 1) :
       chartValueL_sobolevL_ae A hD₁ hD₁s μ p _
         ((((hDu i).mono (hsub i)).clm_comp (ContinuousLinearMap.fst ℝ F F')).congr_ae h₁.symm), h₁,
       ae_restrict_mem (A.image i).isOpen.measurableSet] with y e₁ e₂ e₃ e₄ hy
-    have hZ (a : F × F') : (ContinuousLinearMap.fst ℝ F F').comp
-        ((A.prod h).chartZeroOrder (sectionProdMap D₁ D₂) i y a) = A.chartZeroOrder D₁ i y a.1 := by
-      rw [FiniteBundleAtlas.chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy,
-        ContinuousLinearMap.fst_comp_prod]
-    rw [e₁, e₂, e₃, e₄, ContinuousLinearMap.comp_add, hZ, ← hfst,
-      ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp]
+    rw [e₁, e₂, e₃, e₄, comp_complexAntilinearPartL_add _ hfst,
+      FiniteBundleAtlas.fst_comp_chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy]
   · rw [coe_zeroOneSobolevSectionsProdEquiv_snd]
     refine SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
-      (FiniteBundleAtlas.ae_image_tangentHom_ofBaseSet_iff (h := h)).2 ?_
+      (A.ae_image_tangentHom_ofBaseSet_iff μ h i).2 ?_
     have h₁ := SobolevSection.chartValueL_prodEquiv_snd_ae w i
     have hsub' : ((A.ofBaseSet h).image i : Set ℂ) ⊆ A.image i :=
       (FiniteBundleAtlas.image_ofBaseSet (h := h) i).le
@@ -187,13 +215,8 @@ theorem sobolevL_prod (w : SobolevSection (A.prod h) μ p 1) :
             (ContinuousLinearMap.snd ℝ F F')).congr_ae (ae_restrict_of_ae_restrict_of_subset hsub'
               h₁.symm))), h₁,
       ae_restrict_mem (A.image i).isOpen.measurableSet] with y e₁ e₂ e₃ e₄ hy
-    have hZ (a : F × F') : (ContinuousLinearMap.snd ℝ F F').comp
-        ((A.prod h).chartZeroOrder (sectionProdMap D₁ D₂) i y a) =
-          (A.ofBaseSet h).chartZeroOrder D₂ i y a.2 := by
-      rw [FiniteBundleAtlas.chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy,
-        ContinuousLinearMap.snd_comp_prod]
-    rw [e₁, e₂, e₃, e₄, ContinuousLinearMap.comp_add, hZ, ← hsnd,
-      ContinuousLinearMap.complexAntilinearPartL_restrictScalars_comp]
+    rw [e₁, e₂, e₃, e₄, comp_complexAntilinearPartL_add _ hsnd,
+      FiniteBundleAtlas.snd_comp_chartZeroOrder_sectionProdMap A h hD₁ hD₂ hy]
 
 include hD₁ hD₂ in
 /-- **The index is additive under direct sums** (McDuff–Salamon, proof of Theorem C.1.10, step 1,

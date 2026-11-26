@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Section
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Jet.VanishingIdeal
 
 /-!

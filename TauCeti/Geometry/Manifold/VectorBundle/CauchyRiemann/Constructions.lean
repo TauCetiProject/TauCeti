@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 import Mathlib.Geometry.Manifold.Notation
-import TauCeti.Geometry.Manifold.VectorBundle.HomProd
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Prod
 
 /-!

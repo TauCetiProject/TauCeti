@@ -6,23 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-public import Mathlib.Topology.VectorBundle.Constructions
+public import TauCeti.Topology.VectorBundle.Hom
 
 /-!
-# Hom bundles into a direct sum
+# Smooth Hom-bundle sections into a direct sum
 
-Let `E₁ → B` and `E₂ ×ᵇ E₃ → B'` be vector bundles, the second a fibrewise product. A fibrewise
-linear map `ϕ : E₁ x → E₂ y × E₃ y` is read in the trivializations of the product bundle as the
-pair of the readings of its two components, at every point `y` in both base sets
-(`ContinuousLinearMap.inCoordinates_prod_eq`). Consequently a section `x ↦ (ϕ x).prod (ψ x)` of the
-bundle of linear maps into a product is `C^n` exactly when both components are
-(`ContMDiffWithinAt.clm_bundle_prod`).
+Let `E₁ → B` be a vector bundle and `E₂ ×ᵇ E₃ → B` a fibrewise product. The fibrewise `prod`
+`x ↦ (ϕ x).prod (ψ x)` of two `C^n` sections of the bundles of linear maps `E₁ → E₂` and
+`E₁ → E₃` is a `C^n` section of the bundle of linear maps `E₁ → E₂ ×ᵇ E₃`
+(`ContMDiffWithinAt.clm_bundle_prod`). Read in the trivializations, the section is the `prod` of
+the readings of its components (`ContinuousLinearMap.inCoordinates_prod`).
 
 ## Main results
 
-* `ContinuousLinearMap.inCoordinates_prod_eq`, `ContinuousLinearMap.inCoordinates_prod`: the
-  coordinate expression of a linear map into a product is the `prod` of the coordinate
-  expressions of its components.
 * `ContMDiffWithinAt.clm_bundle_prod`, `ContMDiffAt.clm_bundle_prod`,
   `ContMDiffOn.clm_bundle_prod`, `ContMDiff.clm_bundle_prod`: the fibrewise `prod` of two `C^n`
   Hom-bundle sections is `C^n`.
@@ -32,46 +28,6 @@ public section
 
 open Bundle Set
 open scoped Manifold Topology
-
-section InCoordinates
-
-variable {𝕜 B B' F₁ F₂ F₃ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
-  [TopologicalSpace B']
-  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
-  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
-  {E₁ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜 (E₁ x)]
-  [∀ x, TopologicalSpace (E₁ x)] [TopologicalSpace (TotalSpace F₁ E₁)]
-  [FiberBundle F₁ E₁] [VectorBundle 𝕜 F₁ E₁]
-  {E₂ : B' → Type*} [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜 (E₂ x)]
-  [∀ x, TopologicalSpace (E₂ x)] [TopologicalSpace (TotalSpace F₂ E₂)]
-  [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
-  {E₃ : B' → Type*} [∀ x, AddCommGroup (E₃ x)] [∀ x, Module 𝕜 (E₃ x)]
-  [∀ x, TopologicalSpace (E₃ x)] [TopologicalSpace (TotalSpace F₃ E₃)]
-  [FiberBundle F₃ E₃] [VectorBundle 𝕜 F₃ E₃]
-
-/-- Read in the trivializations of a fibrewise product bundle, a linear map into the product is the
-pair of the readings of its two components, at every point of both base sets. -/
-theorem ContinuousLinearMap.inCoordinates_prod_eq {x₀ x : B} {y₀ y : B'}
-    (hy₂ : y ∈ (trivializationAt F₂ E₂ y₀).baseSet)
-    (hy₃ : y ∈ (trivializationAt F₃ E₃ y₀).baseSet) (ϕ : E₁ x →L[𝕜] (E₂ ×ᵇ E₃) y) :
-    inCoordinates F₁ E₁ (F₂ × F₃) (E₂ ×ᵇ E₃) x₀ x y₀ y ϕ =
-      (inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y ((ContinuousLinearMap.fst 𝕜 _ _).comp ϕ)).prod
-        (inCoordinates F₁ E₁ F₃ E₃ x₀ x y₀ y ((ContinuousLinearMap.snd 𝕜 _ _).comp ϕ)) := by
-  ext v <;> simp [inCoordinates, Trivialization.continuousLinearMapAt_apply,
-    Trivialization.linearMapAt_apply, hy₂, hy₃, Trivialization.Prod.toFun']
-
-/-- Read in the trivializations of a fibrewise product bundle, the `prod` of two linear maps is the
-pair of their readings, at every point of both base sets. -/
-theorem ContinuousLinearMap.inCoordinates_prod {x₀ x : B} {y₀ y : B'}
-    (hy₂ : y ∈ (trivializationAt F₂ E₂ y₀).baseSet)
-    (hy₃ : y ∈ (trivializationAt F₃ E₃ y₀).baseSet) (ϕ : E₁ x →L[𝕜] E₂ y)
-    (ψ : E₁ x →L[𝕜] E₃ y) :
-    inCoordinates F₁ E₁ (F₂ × F₃) (E₂ ×ᵇ E₃) x₀ x y₀ y
-        (ϕ.prod ψ : E₁ x →L[𝕜] (E₂ ×ᵇ E₃) y) =
-      (inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y ϕ).prod (inCoordinates F₁ E₁ F₃ E₃ x₀ x y₀ y ψ) :=
-  by rw [inCoordinates_prod_eq hy₂ hy₃, fst_comp_prod, snd_comp_prod]
-
-end InCoordinates
 
 section Smooth
 
