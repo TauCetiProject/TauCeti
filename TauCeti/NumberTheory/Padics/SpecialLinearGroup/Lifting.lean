@@ -95,14 +95,14 @@ private theorem two_ne_zero_of_five_le (hℓ5 : 5 ≤ ℓ) : (2 : ZMod ℓ) ≠ 
 submonoid of `M₂(𝔽_ℓ)`. -/
 private def layerAddSubmonoid (H : Subgroup SL(2, ℤ_[ℓ])) (k : ℕ) :
     AddSubmonoid (Matrix (Fin 2) (Fin 2) (ZMod ℓ)) where
-  carrier := {Y | ∃ X, toZMod.mapMatrix X = Y ∧
+  carrier := {Y | ∃ X, X.map toZMod = Y ∧
     ∃ h ∈ H, (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = 1 + ℓ ^ (k + 1) • X}
-  zero_mem' := ⟨0, map_zero _, 1, H.one_mem, by simp⟩
+  zero_mem' := ⟨0, Matrix.map_zero _ (map_zero _), 1, H.one_mem, by simp⟩
   add_mem' := by
     rintro _ _ ⟨X₁, rfl, h₁, hh₁, e₁⟩ ⟨X₂, rfl, h₂, hh₂, e₂⟩
     refine ⟨X₁ + X₂ + ℓ ^ (k + 1) • (X₁ * X₂), ?_, h₁ * h₂, H.mul_mem hh₁ hh₂, ?_⟩
     · exact (map_toZMod_add_nsmul (dvd_pow_self ℓ k.succ_ne_zero) _ _).trans
-        (map_add toZMod.mapMatrix X₁ X₂)
+        (Matrix.map_add _ (map_add _) X₁ X₂)
     · rw [SpecialLinearGroup.coe_mul, e₁, e₂]
       simp only [mul_add, add_mul, mul_one, one_mul, smul_mul_assoc, mul_smul_comm, smul_add,
         smul_smul]
@@ -159,20 +159,19 @@ private theorem layer_zero_ne_bot (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(2, ℤ_[�
   let u : SL(2, ZMod ℓ) := ⟨!![1, 1; 0, 1], by simp [det_fin_two]⟩
   obtain ⟨x, hx, hxu⟩ : u ∈ H.map (SpecialLinearGroup.map toZMod) := hmap ▸ Subgroup.mem_top u
   set A : Matrix (Fin 2) (Fin 2) ℤ_[ℓ] := (x : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) - 1 with hA
-  have hredA : toZMod.mapMatrix A = !![0, 1; 0, 0] := by
-    have hxu' : toZMod.mapMatrix (x : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = u := by
-      rw [← hxu, SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply]
-    rw [hA, map_sub, hxu', map_one]
+  have hredA : A.map toZMod = !![0, 1; 0, 0] := by
+    rw [hA, Matrix.map_sub _ (map_sub _), Matrix.map_one _ (map_zero _) (map_one _),
+      ← SpecialLinearGroup.map_apply_coe, hxu]
     ext i j
     fin_cases i <;> fin_cases j <;> simp [u]
   obtain ⟨B, hB⟩ : ∃ B, A ^ 2 = ℓ • B := by
     refine exists_eq_nsmul_of_map_toZMod_eq_zero ?_
-    rw [← RingHom.mapMatrix_apply, map_pow, hredA]
+    rw [Matrix.map_pow, hredA]
     ext i j
     fin_cases i <;> fin_cases j <;> simp [sq]
   obtain ⟨W, hW⟩ := exists_one_add_pow_prime_eq_of_sq_eq_nsmul (c := 1) hℓ.out (by omega)
     (by rwa [one_mul])
-  refine (Submodule.ne_bot_iff _).2 ⟨toZMod.mapMatrix A,
+  refine (Submodule.ne_bot_iff _).2 ⟨A.map toZMod,
     ⟨A + ℓ • W, map_toZMod_add_nsmul dvd_rfl A W, x ^ ℓ, H.pow_mem hx ℓ, ?_⟩, ?_⟩
   · rw [SpecialLinearGroup.coe_pow, show (x : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = 1 + A by
       rw [hA, add_sub_cancel], hW]
@@ -217,7 +216,7 @@ theorem exists_mem_eq_add_pow_smul_of_le {H : Subgroup SL(2, ℤ_[ℓ])} {k₀ :
     (hbase : ∀ g : SL(2, ℤ_[ℓ]), ∃ h ∈ H, ∃ Z,
       (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = h + ℓ ^ (k₀ + 1) • Z)
     (hlayer : ∀ k, k₀ ≤ k → ∀ Y : Matrix (Fin 2) (Fin 2) (ZMod ℓ), Y.trace = 0 →
-      ∃ X, toZMod.mapMatrix X = Y ∧
+      ∃ X, X.map toZMod = Y ∧
         ∃ h ∈ H, (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = 1 + ℓ ^ (k + 1) • X)
     {k : ℕ} (hk : k₀ ≤ k) (g : SL(2, ℤ_[ℓ])) :
     ∃ h ∈ H, ∃ Z, (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = h + ℓ ^ (k + 1) • Z := by
@@ -234,11 +233,11 @@ theorem exists_mem_eq_add_pow_smul_of_le {H : Subgroup SL(2, ℤ_[ℓ])} {k₀ :
           SpecialLinearGroup.coe_inv_mul_coe]
       rw [this]
       exact (h⁻¹ * g).prop
-    obtain ⟨X, hX, h', hh', e'⟩ := hlayer k hk (toZMod.mapMatrix (hinv * Z)) <|
+    obtain ⟨X, hX, h', hh', e'⟩ := hlayer k hk ((hinv * Z).map toZMod) <|
       trace_map_toZMod_eq_zero_of_det_one_add_nsmul (dvd_pow_self ℓ k.succ_ne_zero)
         (pow_ne_zero _ hℓ.out.ne_zero) hdet
     obtain ⟨W, hW⟩ := exists_eq_nsmul_of_map_toZMod_eq_zero (X := hinv * Z - X)
-      (by rw [← RingHom.mapMatrix_apply, map_sub, hX, sub_self])
+      (by rw [Matrix.map_sub _ (map_sub _), hX, sub_self])
     refine ⟨h * h', H.mul_mem hh hh', h * W, ?_⟩
     calc (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ])
         = h + ℓ ^ (k + 1) • (h * (hinv * Z)) := by
@@ -259,7 +258,7 @@ theorem eq_top_of_isClosed_of_exists_mem_eq_add_pow_smul {H : Subgroup SL(2, ℤ
     (hbase : ∀ g : SL(2, ℤ_[ℓ]), ∃ h ∈ H, ∃ Z,
       (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = h + ℓ ^ (k₀ + 1) • Z)
     (hlayer : ∀ k, k₀ ≤ k → ∀ Y : Matrix (Fin 2) (Fin 2) (ZMod ℓ), Y.trace = 0 →
-      ∃ X, toZMod.mapMatrix X = Y ∧
+      ∃ X, X.map toZMod = Y ∧
         ∃ h ∈ H, (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = 1 + ℓ ^ (k + 1) • X) :
     H = ⊤ := by
   refine eq_top_iff.2 fun g _ ↦ ?_
