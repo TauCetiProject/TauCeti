@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Core.Parametrix
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.End.Parametrix
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm
-import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Fredholm.CompactPerturbation
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
@@ -38,7 +37,9 @@ the cokernel comes from a right parametrix spliced from local inverses.
 * **The ends.** On each end `q` the cutoff is `ψ(a + b |w - c_q|²)`, radial around the center
   `c_q` of the end, for the smooth transition function `ψ`. Read in the end chart it vanishes
   below the height `T - 1` and is one beyond the height `T + 1`, and the bounds required by the
-  transfer along the chart hold uniformly in `T`. Far enough out, an inverse of the end model
+  transfer along the chart hold uniformly in `T`, since the derivative bound of the radial cutoff
+  (`Real.smoothTransition.norm_sub_mul_norm_fderiv_add_mul_norm_sub_sq_le`) does not depend on
+  `b`. Far enough out, an inverse of the end model
   carries such a cutoff up to a compact operator and an operator of norm at most `1 / 4`
   (`exists_forall_exists_isCompactOperator_jetOperator_floerConformalJetCoeff_endTransfer`, in
   the namespace `TauCeti.SymplecticForm`). The three end cutoffs sum to one outside a compact
@@ -203,82 +204,6 @@ end Splice
 
 section Cutoff
 
-/-- A radial cutoff around `c`: `ψ(a + b |w - c|²)` for the smooth transition function `ψ`. -/
-private def radialCutoff (c : ℂ) (a b : ℝ) (z : ℝ × ℝ) : ℝ :=
-  smoothTransition (a + b * ‖Complex.equivRealProdCLM.symm z - c‖ ^ 2)
-
-private theorem contDiff_radialCutoff (c : ℂ) (a b : ℝ) {n : ℕ∞} :
-    ContDiff ℝ n (radialCutoff c a b) :=
-  smoothTransition.contDiff.comp (contDiff_const.add (contDiff_const.mul
-    ((contDiff_norm_sq ℝ).comp (Complex.equivRealProdCLM.symm.contDiff.sub contDiff_const))))
-
-private theorem abs_radialCutoff_le_one (c : ℂ) (a b : ℝ) (z : ℝ × ℝ) :
-    |radialCutoff c a b z| ≤ 1 :=
-  smoothTransition.abs_le_one _
-
-private theorem hasFDerivAt_radialCutoff (c : ℂ) (a b : ℝ) (z : ℝ × ℝ) :
-    HasFDerivAt (radialCutoff c a b)
-      (deriv smoothTransition (a + b * ‖Complex.equivRealProdCLM.symm z - c‖ ^ 2) •
-        b • (2 • (innerSL ℝ (Complex.equivRealProdCLM.symm z - c)).comp
-          (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ))) z :=
-  (((Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ).hasFDerivAt.sub_const c).norm_sq.const_mul
-    b |>.const_add a).smoothTransition
-
-/-- A radial cutoff has derivative zero where its argument lies outside `(0, 1)`, since `ψ'`
-vanishes there. -/
-private theorem fderiv_radialCutoff_eq_zero {c : ℂ} {a b : ℝ} {z : ℝ × ℝ}
-    (h : a + b * ‖Complex.equivRealProdCLM.symm z - c‖ ^ 2 ≤ 0 ∨
-      1 ≤ a + b * ‖Complex.equivRealProdCLM.symm z - c‖ ^ 2) :
-    fderiv ℝ (radialCutoff c a b) z = 0 := by
-  rw [(hasFDerivAt_radialCutoff c a b z).fderiv]
-  rcases h with h | h
-  · rw [smoothTransition.deriv_of_nonpos h, zero_smul]
-  · rw [smoothTransition.deriv_of_one_le h, zero_smul]
-
-/-- The derivative of a radial cutoff around `c` decays like `|w - c|⁻¹`, with a constant depending
-only on `a`. -/
-private theorem norm_mul_norm_fderiv_radialCutoff_le {L : ℝ}
-    (hL : ∀ x, ‖deriv smoothTransition x‖ ≤ L) (c : ℂ) (a b : ℝ) (z : ℝ × ℝ) :
-    ‖Complex.equivRealProdCLM.symm z - c‖ * ‖fderiv ℝ (radialCutoff c a b) z‖ ≤
-      L * (2 * ‖(Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)‖ * (1 + |a|)) := by
-  set w := Complex.equivRealProdCLM.symm z - c
-  set g := a + b * ‖w‖ ^ 2
-  set Φ := (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)
-  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0)
-  have hR : 0 ≤ L * (2 * ‖Φ‖ * (1 + |a|)) := by positivity
-  by_cases hg : g ≤ 0 ∨ 1 ≤ g
-  · rw [fderiv_radialCutoff_eq_zero hg, norm_zero, mul_zero]
-    exact hR
-  push Not at hg
-  -- Where `ψ'` does not vanish, `0 < g < 1`, so `|b| |w - c|² ≤ 1 + |a|`.
-  have hbw : |b| * ‖w‖ ^ 2 ≤ 1 + |a| := by
-    have : |b * ‖w‖ ^ 2| ≤ 1 + |a| := by
-      rw [abs_le]
-      constructor <;> cases abs_cases a <;> nlinarith [hg.1, hg.2]
-    rwa [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖w‖ ^ 2)] at this
-  rw [(hasFDerivAt_radialCutoff c a b z).fderiv]
-  have hnorm : ‖deriv smoothTransition g • b • (2 • (innerSL ℝ w).comp Φ)‖ ≤
-      L * (|b| * (2 * (‖w‖ * ‖Φ‖))) := by
-    have h₂ : ‖(2 : ℕ) • (innerSL ℝ w).comp Φ‖ ≤ 2 * (‖w‖ * ‖Φ‖) := by
-      refine norm_nsmul_le.trans ?_
-      rw [Nat.cast_ofNat]
-      gcongr
-      exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by rw [innerSL_apply_norm])
-    rw [norm_smul, norm_smul, ← Real.norm_eq_abs b]
-    exact mul_le_mul (hL _) (mul_le_mul_of_nonneg_left h₂ (norm_nonneg _)) (by positivity) hL0
-  calc ‖w‖ * ‖deriv smoothTransition g • b • (2 • (innerSL ℝ w).comp Φ)‖
-      ≤ ‖w‖ * (L * (|b| * (2 * (‖w‖ * ‖Φ‖)))) := by gcongr
-    _ = L * (2 * ‖Φ‖ * (|b| * ‖w‖ ^ 2)) := by ring
-    _ ≤ L * (2 * ‖Φ‖ * (1 + |a|)) := by gcongr
-
-/-- A radial cutoff is supported where its argument is nonnegative. -/
-private theorem tsupport_radialCutoff_subset (c : ℂ) (a b : ℝ) :
-    tsupport (radialCutoff c a b) ⊆
-      {z | 0 ≤ a + b * ‖Complex.equivRealProdCLM.symm z - c‖ ^ 2} := by
-  refine closure_minimal (fun z hz ↦ ?_) (isClosed_le continuous_const (by fun_prop))
-  by_contra h
-  exact hz (smoothTransition.zero_of_nonpos (not_le.1 h).le)
-
 private theorem two_lt_exp_four_pi : 2 < exp (4 * π) := by
   nlinarith [Real.add_one_le_exp (4 * π), Real.two_le_pi]
 
@@ -290,14 +215,26 @@ height `T`. -/
 private def endB (q : Puncture) (T : ℝ) : ℝ :=
   if q = inf then exp (-(4 * π * T)) / 4 else -(4 * exp (4 * π * T))
 
-/-- The cutoff of the end `q` at the height `T`: it vanishes below the height `T - 1` of the end
-and is one beyond the height `T + 1`. -/
-private def endCutoff (q : Puncture) (T : ℝ) : ℝ × ℝ → ℝ :=
-  radialCutoff q.endCenter (endA q) (endB q T)
+/-- The cutoff of the end `q` at the height `T`, the radial cutoff
+`ψ(a + b |w - c_q|²)` around the center of the end read through `Complex.equivRealProdCLM`: it
+vanishes below the height `T - 1` of the end and is one beyond the height `T + 1`. -/
+private def endCutoff (q : Puncture) (T : ℝ) (z : ℝ × ℝ) : ℝ :=
+  smoothTransition (endA q + endB q T * ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2)
 
 private theorem contDiff_endCutoff (q : Puncture) (T : ℝ) {n : ℕ∞} :
     ContDiff ℝ n (endCutoff q T) :=
-  contDiff_radialCutoff _ _ _
+  (smoothTransition.contDiff_add_mul_norm_sub_sq _ _ _).comp
+    Complex.equivRealProdCLM.symm.contDiff
+
+/-- The derivative of the end cutoff is that of the radial cutoff on `ℂ`, composed with
+`Complex.equivRealProdCLM.symm`. -/
+private theorem fderiv_endCutoff (q : Puncture) (T : ℝ) (z : ℝ × ℝ) :
+    fderiv ℝ (endCutoff q T) z =
+      (fderiv ℝ (fun w : ℂ ↦ smoothTransition (endA q + endB q T * ‖w - q.endCenter‖ ^ 2))
+        (Complex.equivRealProdCLM.symm z)).comp
+        (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ) :=
+  ((smoothTransition.hasFDerivAt_add_mul_norm_sub_sq _ _ _ _).differentiableAt.hasFDerivAt.comp z
+    (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ).hasFDerivAt).fderiv
 
 private theorem abs_endA_le (q : Puncture) : |endA q| ≤ 2 := by
   unfold endA
@@ -378,15 +315,17 @@ private theorem endCutoff_positiveEndChart_eq_zero (q : Puncture) {T : ℝ} {ζ 
 
 private theorem fderiv_endCutoff_positiveEndChart_eq_zero (q : Puncture) {T : ℝ} {ζ : ℝ × ℝ}
     (h : ζ.1 ≤ T - 1 ∨ T + 1 ≤ ζ.1) : fderiv ℝ (endCutoff q T) (positiveEndChart q ζ) = 0 :=
-  fderiv_radialCutoff_eq_zero (h.imp (fun h ↦ (endArg_positiveEndChart_neg q h).le)
-    (one_le_endArg_positiveEndChart q))
+  by rw [fderiv_endCutoff, smoothTransition.fderiv_add_mul_norm_sub_sq_eq_zero
+    (h.imp (fun h ↦ (endArg_positiveEndChart_neg q h).le) (one_le_endArg_positiveEndChart q)),
+    ContinuousLinearMap.zero_comp]
 
 /-- The end cutoff of `q` at the height `T` lives beyond the height `T - 1` of the end. -/
 private theorem sub_one_lt_fst_positiveEndCoord_of_mem_tsupport (q : Puncture) {T : ℝ}
     {z : ℝ × ℝ} (hz : z ∈ tsupport (endCutoff q T))
     (hc : Complex.equivRealProdCLM.symm z ≠ q.endCenter) :
     T - 1 < (positiveEndCoord q z).1 := by
-  have h := tsupport_radialCutoff_subset _ _ _ hz
+  have h := smoothTransition.tsupport_add_mul_norm_sub_sq_subset _ _ _
+    (tsupport_comp_subset_preimage _ Complex.equivRealProdCLM.symm.continuous hz)
   rw [mem_ofPred_eq, ← positiveEndChart_positiveEndCoord q hc] at h
   by_contra hs
   exact (endArg_positiveEndChart_neg q (not_lt.1 hs)).not_ge h
@@ -412,7 +351,8 @@ private theorem endCutoff_bound {L : ℝ} (hL : ∀ x, ‖deriv smoothTransition
   set Φ := (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ)
   have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0)
   have hLΦ : 0 ≤ L * (2 * ‖Φ‖ * 3) := by positivity
-  have h1 := abs_radialCutoff_le_one q.endCenter (endA q) (endB q T) z
+  have h1 := smoothTransition.abs_le_one
+    (endA q + endB q T * ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2)
   refine ⟨by unfold endCutoff; linarith, ?_, ?_⟩
   · by_cases h0 : endCutoff q T z = 0
     · rw [h0, abs_zero, mul_zero, mul_zero]
@@ -431,10 +371,22 @@ private theorem endCutoff_bound {L : ℝ} (hL : ∀ x, ‖deriv smoothTransition
             |endCutoff q T z| := by ring
       _ ≤ 3 * 1 := mul_le_mul hsq (by unfold endCutoff; exact h1) (abs_nonneg _) (by norm_num)
       _ ≤ _ := by linarith
-  · refine (norm_mul_norm_fderiv_radialCutoff_le hL q.endCenter (endA q) (endB q T) z).trans ?_
+  · have hw := smoothTransition.norm_sub_mul_norm_fderiv_add_mul_norm_sub_sq_le hL q.endCenter
+      (endA q) (endB q T) (Φ z)
     have := abs_endA_le q
-    have : L * (2 * ‖Φ‖ * (1 + |endA q|)) ≤ L * (2 * ‖Φ‖ * 3) := by gcongr; linarith
-    linarith
+    have : 2 * L * (1 + |endA q|) * ‖Φ‖ ≤ L * (2 * ‖Φ‖ * 3) := by
+      nlinarith [norm_nonneg Φ, mul_nonneg hL0 (norm_nonneg Φ)]
+    rw [fderiv_endCutoff]
+    calc ‖Φ z - q.endCenter‖ * ‖(fderiv ℝ (fun w : ℂ ↦
+            smoothTransition (endA q + endB q T * ‖w - q.endCenter‖ ^ 2)) (Φ z)).comp Φ‖
+        ≤ ‖Φ z - q.endCenter‖ * (‖fderiv ℝ (fun w : ℂ ↦
+            smoothTransition (endA q + endB q T * ‖w - q.endCenter‖ ^ 2)) (Φ z)‖ * ‖Φ‖) := by
+          gcongr
+          exact ContinuousLinearMap.opNorm_comp_le _ _
+      _ ≤ 2 * L * (1 + |endA q|) * ‖Φ‖ := by
+          rw [← mul_assoc]
+          gcongr
+      _ ≤ _ := by linarith
 
 /-! ### The compact core -/
 
@@ -488,7 +440,7 @@ private theorem sum_endCutoff_eq_one {T : ℝ} (hT : 1 ≤ T) {z : ℝ × ℝ}
   have ht₂ : 1 - ‖w‖ ≤ ‖w - 1‖ := by
     simpa [norm_sub_rev] using norm_sub_norm_le (1 : ℂ) w
   rw [Puncture.sum_univ]
-  simp only [endCutoff, radialCutoff, endA, endB, reduceCtorEq, ite_false, ite_true, endCenter_zero,
+  simp only [endCutoff, endA, endB, reduceCtorEq, ite_false, ite_true, endCenter_zero,
     endCenter_one, endCenter_inf, sub_zero]
   simp only [annularRegion, mem_ofPred_eq, not_and_or, not_le] at hz
   rcases hz with h | h | h
