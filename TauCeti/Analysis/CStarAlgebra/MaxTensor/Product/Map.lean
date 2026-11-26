@@ -122,12 +122,17 @@ theorem lift_comp_map {C : Type (max u v)} [NonUnitalCStarAlgebra C] (φ' : A' �
 
 /-- Star isomorphisms `e : A ≃ A'` and `f : B ≃ B'` induce a star isomorphism
 `A ⊗max B ≃ A' ⊗max B'`, sending `a ⊗ b` to `e a ⊗ f b`. -/
-@[expose, simps! apply]
 def congr (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') :
     MaxTensorProduct A B ≃⋆ₐ[ℂ] MaxTensorProduct A' B' :=
   .ofNonUnitalStarAlgHom (map e.toNonUnitalStarAlgHom f.toNonUnitalStarAlgHom)
     (map e.symm.toNonUnitalStarAlgHom f.symm.toNonUnitalStarAlgHom)
     (starAlgHom_ext fun a b ↦ by simp) (starAlgHom_ext fun a b ↦ by simp)
+
+/-- The induced isomorphism is the map induced by the underlying star homomorphisms. -/
+@[simp]
+theorem congr_apply (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') (x : MaxTensorProduct A B) :
+    congr e f x = map e.toNonUnitalStarAlgHom f.toNonUnitalStarAlgHom x :=
+  (rfl)
 
 /-- The identities induce the identity. -/
 @[simp]
@@ -180,11 +185,15 @@ variable (A B)
 
 /-- **The flip of the maximal tensor product**: the star isomorphism `A ⊗max B ≃ B ⊗max A`
 sending `a ⊗ b` to `b ⊗ a` (`TauCeti.MaxTensorProduct.comm_of_tmul`). -/
-@[expose, simps! apply]
 def comm : MaxTensorProduct A B ≃⋆ₐ[ℂ] MaxTensorProduct B A :=
   .ofNonUnitalStarAlgHom (commHom A B) (commHom B A) commHom_comp_commHom commHom_comp_commHom
 
 variable {A B}
+
+/-- The flip is the star homomorphism `TauCeti.MaxTensorProduct.commHom`. -/
+@[simp]
+theorem comm_apply (x : MaxTensorProduct A B) : comm A B x = commHom A B x :=
+  (rfl)
 
 /-- The inverse of the flip is the flip. -/
 @[simp]
