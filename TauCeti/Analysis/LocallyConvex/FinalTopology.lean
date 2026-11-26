@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.RCLike.Basic
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.Module.LocallyConvex
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Final locally convex topologies
@@ -26,15 +28,17 @@ its composites with all generating maps are continuous
 distributive and commutes with real scalars, each generator is `R`-equivariant, and constant
 `R`-scalar multiplication is continuous on each source, constant `R`-scalar multiplication is also
 continuous on the target (`TauCeti.FinalLocallyConvexTopology.continuousConstSMul`); for `ℝ` or `ℂ`
-(`RCLike R`), `RCLike.continuousSMul_of_continuousConstSMul` upgrades this to joint continuity of
-scalar multiplication (`TauCeti.FinalLocallyConvexTopology.continuousSMul`). More precisely, over
-`ℝ` or `ℂ` scalar multiplication is jointly continuous exactly when multiplication by `RCLike.I`
-composed with each generating map is continuous
+(`RCLike R`), `TauCeti.continuousSMul_of_continuousConstSMul_of_finiteDimensional` upgrades this to
+joint continuity of scalar multiplication (`TauCeti.FinalLocallyConvexTopology.continuousSMul`).
+More precisely, over `ℝ` or `ℂ` scalar multiplication is jointly continuous exactly when
+multiplication by `RCLike.I` composed with each generating map is continuous
 (`TauCeti.FinalLocallyConvexTopology.continuousSMul_rclike_iff`).
 
-The comparison criterion permits replacing the generating family by another family through finite
-sums of continuous factorizations. This allows partition-of-unity decompositions when comparing
-chart-generated test-section topologies with fixed-support inductive limits.
+The comparison criterion (`TauCeti.FinalLocallyConvexTopology.le_of_sum_factor_fintype`,
+`TauCeti.FinalLocallyConvexTopology.le_of_sum_factor`) permits replacing the generating family by
+another family through finite sums of continuous factorizations. This allows partition-of-unity
+decompositions when comparing chart-generated test-section topologies with fixed-support inductive
+limits.
 
 The construction and universal-property proof generalize Mathlib's
 `TestFunction.topologicalSpace` and `TestFunction.continuous_iff_continuous_comp` from a particular
@@ -183,21 +187,33 @@ theorem continuousSMul_rclike_iff {𝕜 : Type*} [RCLike 𝕜] [Module 𝕜 F] [
 variable {κ : Type*} {H : κ → Type*} [∀ j, AddCommGroup (H j)]
   [∀ j, Module ℝ (H j)] [∀ j, TopologicalSpace (H j)]
 
+/-- A finite continuous decomposition of each generator into generators of another family,
+indexed by a stage-dependent finite type `α` mapping into target generator indices via `r`,
+compares their final locally convex topologies. -/
+theorem le_of_sum_factor_fintype.{u} (g : ∀ j, H j →ₗ[ℝ] F)
+    (h : ∀ i, ∃ (α : Type u) (_ : Fintype α) (r : α → κ) (a : ∀ x : α, E i →ₗ[ℝ] H (r x)),
+      (∀ x, Continuous (a x)) ∧ ∑ x : α, g (r x) ∘ₗ a x = f i) :
+    finalLocallyConvexTopology f ≤ finalLocallyConvexTopology g := by
+  let := finalLocallyConvexTopology g
+  apply (le_iff f _).2
+  intro i
+  obtain ⟨α, _, r, a, ha, hfa⟩ := h i
+  rw [← hfa]
+  convert continuous_finsetSum Finset.univ (fun x _ ↦ (continuous g (r x)).comp (ha x)) using 1
+  ext x
+  simp
+
 /-- A finite continuous decomposition of each generator into generators of another family
 compares their final locally convex topologies. The finite sets may depend on the source stage,
 as happens for a partition of unity on each fixed compact support. -/
 theorem le_of_sum_factor (g : ∀ j, H j →ₗ[ℝ] F)
     (h : ∀ i, ∃ (s : Finset κ) (a : ∀ j, E i →ₗ[ℝ] H j),
       (∀ j ∈ s, Continuous (a j)) ∧ ∑ j ∈ s, g j ∘ₗ a j = f i) :
-    finalLocallyConvexTopology f ≤ finalLocallyConvexTopology g := by
-  let := finalLocallyConvexTopology g
-  apply (le_iff f _).2
-  intro i
-  obtain ⟨s, a, ha, hfa⟩ := h i
-  rw [← hfa]
-  convert continuous_finsetSum s (fun j hj ↦ (continuous g j).comp (ha j hj)) using 1
-  ext x
-  simp
+    finalLocallyConvexTopology f ≤ finalLocallyConvexTopology g :=
+  le_of_sum_factor_fintype f g fun i ↦ by
+    obtain ⟨s, a, ha, hfa⟩ := h i
+    refine ⟨↥s, inferInstance, Subtype.val, fun x ↦ a x.val, fun x ↦ ha x.val x.property, ?_⟩
+    simpa only [Finset.univ_eq_attach, Finset.sum_attach s fun j ↦ g j ∘ₗ a j] using hfa
 
 /-- Mutual finite continuous stage decompositions identify two presentations of the same
 locally convex inductive-limit topology. Neither family needs to be directed. -/
@@ -245,7 +261,7 @@ theorem continuousSMul {R : Type*} [RCLike R] [Module R F] [IsScalarTower ℝ R 
     @ContinuousSMul R F _ _ (finalLocallyConvexTopology f) :=
   let := finalLocallyConvexTopology f
   have := continuousConstSMul f hf
-  RCLike.continuousSMul_of_continuousConstSMul
+  TauCeti.continuousSMul_of_continuousConstSMul_of_finiteDimensional ℝ
 
 end SMul
 

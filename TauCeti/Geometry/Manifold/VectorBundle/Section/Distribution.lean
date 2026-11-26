@@ -127,7 +127,8 @@ their base sets. Every covering family of smooth frames gives the same topology
 (`TauCeti.BundleTest.instTopologicalSpace_eq_compactlySupportedTopology`). -/
 instance instTopologicalSpace : TopologicalSpace (BundleTest I F V) :=
   compactlySupportedTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
-    (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+    (fun x ↦ (trivializationAt F V x).baseSetOpens)
+    fun x ↦ (trivializationAt F V x).coe_baseSetOpens.subset
 
 end BundleTest
 
@@ -205,7 +206,8 @@ theorem instTopologicalSpace_eq_compactlySupportedTopology [LocallyCompactSpace 
     (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
     (hcover : ∀ x : M, ∃ i, x ∈ U i) :
     instTopologicalSpace = compactlySupportedTopology (I := I) (n := ∞) e U hU :=
-  compactlySupportedTopology_eq_of_covers _ _ _ (fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩)
+  compactlySupportedTopology_eq_of_covers _ _ _
+    (fun x ↦ ⟨x, FiberBundle.mem_baseSetOpens_trivializationAt F V x⟩)
     e U hU hcover
 
 section CompactlySupportedCLE
@@ -260,7 +262,7 @@ end CompactlySupportedCLE
 
 instance : T2Space (BundleTest I F V) :=
   t2Space_compactlySupportedTopology (I := I) (n := ∞) _ _ _
-    fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩
+    fun x ↦ ⟨x, FiberBundle.mem_baseSetOpens_trivializationAt F V x⟩
 
 instance : IsTopologicalAddGroup (BundleTest I F V) :=
   isTopologicalAddGroup_compactlySupportedTopology (I := I) (n := ∞) _ _ _
@@ -274,15 +276,17 @@ instance : LocallyConvexSpace ℝ (BundleTest I F V) :=
 /-- Evaluation of bundle tests at a point is continuous. -/
 theorem continuous_eval_const (x : M) : Continuous fun s : BundleTest I F V ↦ s x := by
   let := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
-    (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+    (fun x ↦ (trivializationAt F V x).baseSetOpens)
+    fun x ↦ (trivializationAt F V x).coe_baseSetOpens.subset
   exact (ContMDiffSection.continuous_eval_const _ _ _
-    (fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩) x).comp
+    (fun x ↦ ⟨x, FiberBundle.mem_baseSetOpens_trivializationAt F V x⟩) x).comp
     (continuous_val_compactlySupportedTopology (I := I) (n := ∞) _ _ _)
 
 /-- Every fixed-compact support stage includes continuously into the bundle tests. -/
 theorem continuous_ofSupportedIn (K : Compacts M) :
     letI := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
-      (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+      (fun x ↦ (trivializationAt F V x).baseSetOpens)
+      fun x ↦ (trivializationAt F V x).coe_baseSetOpens.subset
     Continuous (ofCompactlySupported I F V ∘ ofSupportedIn (I := I) (F := F) (V := V) K) :=
   ContMDiffSection.continuous_ofSupportedIn _ _ _ K
 
@@ -294,7 +298,8 @@ convex real topological vector space is continuous exactly when it is continuous
 fixed-compact support stage. -/
 theorem continuous_iff_continuous_comp (g : BundleTest I F V →ₗ[ℝ] G) :
     letI := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
-      (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+      (fun x ↦ (trivializationAt F V x).baseSetOpens)
+      fun x ↦ (trivializationAt F V x).coe_baseSetOpens.subset
     Continuous g ↔ ∀ K : Compacts M,
       Continuous (g ∘ ofCompactlySupported I F V ∘ ofSupportedIn (I := I) (F := F) (V := V) K) :=
   continuous_compactlySupportedTopology_iff _ _ _
@@ -446,7 +451,7 @@ namespace TauCeti.BundleTest
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
@@ -454,7 +459,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- **Functionals on bundle tests are determined by their local representatives.** On a
-boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model, two functionals agree
+boundaryless Hausdorff manifold with finite-dimensional model, two functionals agree
 once their local representatives agree in every smooth chart lying over the base set of a
 trivialization of the bundle atlas: bundle tests are finite sums of chart extensions of native
 test functions (`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`). -/

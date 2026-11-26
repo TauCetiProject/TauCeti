@@ -155,21 +155,65 @@ variable [FiniteDimensional ℝ E] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
 /-- The chart localization of bundle tests by a cutoff `ψ` supported in the support of the `i`-th
 cutoff, as a continuous linear map into the test functions supported in `A.chartSupport i`. -/
 private def localizationCLM (i : ι) (ψ : C^∞⟮I, M; ℝ⟯) (hψ : tsupport ψ ⊆ tsupport (A.cutoff i)) :
-    BundleTest I F V →L[ℝ] 𝓓_{A.chartSupport i}(E, F) where
-  toLinearMap := (A.chartData i).trivialization.chartLocalization (A.chartData i).chart
-      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ (A.chartSupport i)
-      (A.chartSupport_subset_target i)
-      ((A.mapsTo_chartSupport i).mono_left hψ) ∘ₗ
-    (compactlySupported I F ∞ V).subtype ∘ₗ (BundleTest.ofCompactlySupported I F V).symm.toLinearMap
-  cont := by
-    let e := fun x : M ↦ trivializationAt F V x
-    let U := fun x : M ↦ (⟨_, (trivializationAt F V x).open_baseSet⟩ : Opens M)
-    let := frameTopology (I := I) (n := ∞) e U fun _ ↦ subset_rfl
-    exact ((A.chartData i).trivialization.continuous_chartLocalization (A.chartData i).chart
-      (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ (A.chartSupport i)
-      (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ) e U
-      (fun _ ↦ subset_rfl) fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩).comp
-      (continuous_val_compactlySupportedTopology (I := I) (n := ∞) e U fun _ ↦ subset_rfl)
+    BundleTest I F V →L[ℝ] 𝓓_{A.chartSupport i}(E, F) :=
+  let Ki : Compacts M := ⟨tsupport (A.cutoff i), A.isCompact_tsupport_cutoff i⟩
+  { toFun := fun s ↦
+      ContDiffMapSupportedIn.monoCLM ℝ
+        (K₁ := ⟨(A.chartData i).chart '' (Ki : Set M),
+          Ki.isCompact.image_of_continuousOn
+            ((A.chartData i).chart.continuousOn.mono (A.tsupport_cutoff_subset i))⟩)
+        (K₂ := A.chartSupport i)
+        ((A.chartData i).trivialization.chartReadSupportedIn (A.chartData i).chart
+          (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset
+          (K := Ki) (A.tsupport_cutoff_subset i)
+          ⟨ψ • ((BundleTest.ofCompactlySupported I F V).symm s).val,
+            mem_supportedIn.2 ((tsupport_smul_function_subset ψ _).trans
+              (inter_subset_left.trans hψ))⟩)
+    map_add' := fun s₁ s₂ ↦ by
+      have harg : (⟨ψ • ((BundleTest.ofCompactlySupported I F V).symm (s₁ + s₂)).val,
+          mem_supportedIn.2 ((tsupport_smul_function_subset ψ _).trans
+            (inter_subset_left.trans hψ))⟩ : supportedIn I F ∞ V Ki) =
+          ⟨ψ • ((BundleTest.ofCompactlySupported I F V).symm s₁).val,
+            mem_supportedIn.2 ((tsupport_smul_function_subset ψ _).trans
+              (inter_subset_left.trans hψ))⟩ +
+          ⟨ψ • ((BundleTest.ofCompactlySupported I F V).symm s₂).val,
+            mem_supportedIn.2 ((tsupport_smul_function_subset ψ _).trans
+              (inter_subset_left.trans hψ))⟩ := by
+        apply Subtype.ext
+        change ψ • (((BundleTest.ofCompactlySupported I F V).symm s₁).val +
+          ((BundleTest.ofCompactlySupported I F V).symm s₂).val) = _
+        rw [smul_add]
+        rfl
+      rw [harg, map_add, map_add]
+    map_smul' := fun a s ↦ by
+      have harg : (⟨ψ • ((BundleTest.ofCompactlySupported I F V).symm (a • s)).val,
+          mem_supportedIn.2 ((tsupport_smul_function_subset ψ _).trans
+            (inter_subset_left.trans hψ))⟩ : supportedIn I F ∞ V Ki) =
+          a • ⟨ψ • ((BundleTest.ofCompactlySupported I F V).symm s).val,
+            mem_supportedIn.2 ((tsupport_smul_function_subset ψ _).trans
+              (inter_subset_left.trans hψ))⟩ := by
+        apply Subtype.ext
+        change ψ • (a • ((BundleTest.ofCompactlySupported I F V).symm s).val) = _
+        rw [smul_comm]
+        rfl
+      rw [harg, map_smul, map_smul, RingHom.id_apply]
+    cont := by
+      let e := fun x : M ↦ trivializationAt F V x
+      let U := fun x : M ↦ (⟨_, (trivializationAt F V x).open_baseSet⟩ : Opens M)
+      let := frameTopology (I := I) (n := ∞) e U fun _ ↦ subset_rfl
+      have hsub : Continuous (fun s : Cₛ^∞⟮I; F, V⟯ ↦
+          (⟨ψ • s, mem_supportedIn.2 ((tsupport_smul_function_subset ψ s).trans
+            (inter_subset_left.trans hψ))⟩ : supportedIn I F ∞ V Ki)) :=
+        (continuous_smul_function_frameTopology e U (fun _ ↦ subset_rfl) ψ).subtype_mk _
+      have hval : Continuous (fun s : BundleTest I F V ↦
+          ((BundleTest.ofCompactlySupported I F V).symm s).val) :=
+        continuous_val_compactlySupportedTopology (I := I) (n := ∞) e U fun _ ↦ subset_rfl
+      exact (ContDiffMapSupportedIn.monoCLM ℝ).continuous.comp
+        (((A.chartData i).trivialization.continuous_chartReadSupportedIn (A.chartData i).chart
+          (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset e U (fun _ ↦ subset_rfl)
+          (K := Ki) (A.tsupport_cutoff_subset i)
+          fun x _ ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩).comp
+          (hsub.comp hval)) }
 
 omit [FiniteDimensional ℝ F] in
 private theorem localizationCLM_apply_of_mem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯)
@@ -177,15 +221,42 @@ private theorem localizationCLM_apply_of_mem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯
     (hy : y ∈ (A.chartData i).chart.target) :
     A.localizationCLM i ψ hψ s y = ψ ((A.chartData i).chart.symm y) •
       ((A.chartData i).trivialization
-        ⟨(A.chartData i).chart.symm y, s ((A.chartData i).chart.symm y)⟩).2 :=
-  (A.chartData i).trivialization.chartLocalization_apply_of_mem _ _ _ _ _ _ _ _ hy
+        ⟨(A.chartData i).chart.symm y, s ((A.chartData i).chart.symm y)⟩).2 := by
+  let Ki : Compacts M := ⟨tsupport (A.cutoff i), A.isCompact_tsupport_cutoff i⟩
+  have hle : (⟨(A.chartData i).chart '' (Ki : Set M),
+      Ki.isCompact.image_of_continuousOn
+        ((A.chartData i).chart.continuousOn.mono (A.tsupport_cutoff_subset i))⟩ :
+      Compacts E) ≤ A.chartSupport i :=
+    (A.coe_chartSupport i).symm.subset
+  change (ContDiffMapSupportedIn.monoCLM ℝ
+    (K₁ := ⟨(A.chartData i).chart '' (Ki : Set M),
+      Ki.isCompact.image_of_continuousOn
+        ((A.chartData i).chart.continuousOn.mono (A.tsupport_cutoff_subset i))⟩)
+    (K₂ := A.chartSupport i) _) y = _
+  have hmem := (A.chartData i).source_subset ((A.chartData i).chart.map_target hy)
+  simp [ContDiffMapSupportedIn.monoCLM_apply, hle,
+    (A.chartData i).trivialization.chartReadSupportedIn_apply_of_mem _ _ _ _ _ hy,
+    (A.chartData i).trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) hmem,
+    (A.chartData i).trivialization.snd_apply_mk_smul hmem]
 
 omit [FiniteDimensional ℝ F] in
 private theorem localizationCLM_apply_of_notMem (i : ι) (ψ : C^∞⟮I, M; ℝ⟯)
     (hψ : tsupport ψ ⊆ tsupport (A.cutoff i)) (s : BundleTest I F V) {y : E}
     (hy : y ∉ (A.chartData i).chart.target) :
-    A.localizationCLM i ψ hψ s y = 0 :=
-  (A.chartData i).trivialization.chartLocalization_apply_of_notMem _ _ _ _ _ _ _ _ hy
+    A.localizationCLM i ψ hψ s y = 0 := by
+  let Ki : Compacts M := ⟨tsupport (A.cutoff i), A.isCompact_tsupport_cutoff i⟩
+  have hle : (⟨(A.chartData i).chart '' (Ki : Set M),
+      Ki.isCompact.image_of_continuousOn
+        ((A.chartData i).chart.continuousOn.mono (A.tsupport_cutoff_subset i))⟩ :
+      Compacts E) ≤ A.chartSupport i :=
+    (A.coe_chartSupport i).symm.subset
+  change (ContDiffMapSupportedIn.monoCLM ℝ
+    (K₁ := ⟨(A.chartData i).chart '' (Ki : Set M),
+      Ki.isCompact.image_of_continuousOn
+        ((A.chartData i).chart.continuousOn.mono (A.tsupport_cutoff_subset i))⟩)
+    (K₂ := A.chartSupport i) _) y = _
+  simp [ContDiffMapSupportedIn.monoCLM_apply, hle,
+    (A.chartData i).trivialization.chartReadSupportedIn_apply_of_notMem _ _ _ _ _ hy]
 
 /-- The `j`-th coordinate functional of the fixed basis `Module.finBasis ℝ F` of the model fibre
 (chosen non-constructively), with complex values. -/
@@ -301,13 +372,28 @@ private theorem chartTestCLM_localizationCLM (i : ι) (ψ : C^∞⟮I, M; ℝ⟯
       (A.chartData i).contMDiffOn_chart (A.chartData i).source_subset
       (TestFunction.ofSupportedIn (A.chartSupport_subset_target i) (A.localizationCLM i ψ hψ s)) x =
       ψ x • s x := by
-  rw [Bundle.Trivialization.coe_chartTestCLM]
-  refine (congr($((A.chartData i).trivialization.chartTestSection_chartLocalization
-    (A.chartData i).chart (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset ψ
-    (A.chartSupport i) (A.chartSupport_subset_target i) ((A.mapsTo_chartSupport i).mono_left hψ)
-    (A.chartData i).contMDiffOn_chart (hψ.trans (A.tsupport_cutoff_subset i))
-    ((BundleTest.ofCompactlySupported I F V).symm s).val) x)).trans ?_
-  simp
+  let Ki : Compacts M := ⟨tsupport (A.cutoff i), A.isCompact_tsupport_cutoff i⟩
+  let s' : supportedIn I F ∞ V Ki :=
+    ⟨ψ • ((BundleTest.ofCompactlySupported I F V).symm s).val,
+      mem_supportedIn.2 ((tsupport_smul_function_subset ψ _).trans
+        (inter_subset_left.trans hψ))⟩
+  have htf : TestFunction.ofSupportedIn (A.chartSupport_subset_target i)
+      (A.localizationCLM i ψ hψ s) =
+      (A.chartData i).trivialization.chartReadTestFunction (A.chartData i).chart
+        (A.contMDiffOn_chart_symm i) (A.chartData i).source_subset
+        (A.tsupport_cutoff_subset i) s' := by
+    ext y
+    by_cases hy : y ∈ (A.chartData i).chart.target
+    · rw [TestFunction.coe_ofSupportedIn, A.localizationCLM_apply_of_mem i ψ hψ s hy,
+        (A.chartData i).trivialization.chartReadTestFunction_apply_of_mem _ _ _ _ _ hy]
+      have hmem := (A.chartData i).source_subset ((A.chartData i).chart.map_target hy)
+      simp [s', (A.chartData i).trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) hmem,
+        (A.chartData i).trivialization.snd_apply_mk_smul hmem]
+    · rw [TestFunction.coe_ofSupportedIn, A.localizationCLM_apply_of_notMem i ψ hψ s hy,
+        (A.chartData i).trivialization.chartReadTestFunction_apply_of_notMem _ _ _ _ _ hy]
+  rw [Bundle.Trivialization.coe_chartTestCLM, htf,
+    (A.chartData i).trivialization.chartTestSection_chartReadTestFunction]
+  simp [s']
 
 /-- The **localization of distributions**: a real functional `T` on bundle tests goes to the
 tempered distribution `χᵢ Tᵢⱼ` on the model space, where `Tᵢⱼ` is the component of `T` along the

@@ -7,23 +7,44 @@ module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Topology.PartitionOfUnity.Basic
+import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
-# Pointwise sums over the finite support of a smooth partition of unity
+# Manifold partitions of unity
 
-Two facts about the finite set `ρ.finsupport x` of indices whose bump does not vanish at `x`, for a
-smooth partition of unity `ρ`: every such index `i` has `x ∈ U i` for any cover `U` to which `ρ` is
-subordinate (`SmoothPartitionOfUnity.IsSubordinate.mem_of_mem_finsupport`), and a weighted sum
-`∑ i ∈ ρ.finsupport x, ρ i x • w i` whose summands `w i` all equal `v` is `v`
-(`SmoothPartitionOfUnity.sum_finsupport_smul_eq_of_forall_eq`). Together they collapse the
-partition-of-unity sums that glue local constructions over the members of a cover. Both are
-derived from their counterparts for the underlying `PartitionOfUnity` in
-`TauCeti.Topology.PartitionOfUnity.Basic`.
+This file collects basic facts about `BumpCovering` and `SmoothPartitionOfUnity` on manifolds:
+
+* `BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff`: a `BumpCovering` whose functions are
+  all `C^n` (`n : ℕ∞ω`) produces a `C^n` partition of unity, without assuming `C^∞` regularity,
+  `σ`-compactness, or finite-dimensionality of the model space.
+* `SmoothPartitionOfUnity.IsSubordinate.mem_of_mem_finsupport`: every index `i ∈ ρ.finsupport x`
+  has `x ∈ U i` for any cover `U` to which `ρ` is subordinate.
+* `SmoothPartitionOfUnity.sum_finsupport_smul_eq_of_forall_eq`: a weighted sum
+  `∑ i ∈ ρ.finsupport x, ρ i x • w i` whose summands `w i` all equal `v` is `v`.
 -/
 
 public section
 
-open Set
+open Function Set
+open scoped ContDiff Manifold
+
+section BumpCovering
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- If every function in a `BumpCovering` is `C^n`, each weight of its associated partition of
+unity is `C^n`. Adapted from Mathlib's `BumpCovering.contMDiff_toPartitionOfUnity`, generalized
+from `C^∞` to `C^n`. -/
+theorem BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff {ι : Type*} {s : Set M} {n : ℕ∞ω}
+    (f : BumpCovering ι M s) (hf : ∀ i, ContMDiff I 𝓘(ℝ) n (f i)) (i : ι) :
+    ContMDiff I 𝓘(ℝ) n (f.toPartitionOfUnity i) :=
+  (hf i).mul <| (contMDiff_finprod_cond fun j _ ↦ contMDiff_const.sub (hf j)) <| by
+    simp only [mulSupport_one_sub]
+    exact f.locallyFinite
+
+end BumpCovering
 
 namespace SmoothPartitionOfUnity
 

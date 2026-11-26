@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.MicrolocalRegularit
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.SmulLeft
 public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
-import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!

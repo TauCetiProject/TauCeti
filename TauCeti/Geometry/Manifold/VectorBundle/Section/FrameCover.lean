@@ -70,16 +70,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [∀ i, MemTrivializationAtlas (e i)]
   (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
 
-/-- Coefficients in any smooth frame depend continuously on sections in a covering frame
-topology. The comparison uses the actual transition multiplier on each overlap. -/
-theorem continuous_frameCoordinates_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U i)
+/-- Coefficients in any smooth frame depend continuously on sections in a frame topology whose
+domains cover the target frame domain `U'`. The comparison uses the actual transition multiplier on
+each overlap. -/
+theorem continuous_frameCoordinates_of_subset_iUnion
     (e' : Trivialization F (π F V)) [MemTrivializationAtlas e']
-    (U' : Opens M) (hU' : (U' : Set M) ⊆ e'.baseSet) :
+    (U' : Opens M) (hU' : (U' : Set M) ⊆ e'.baseSet)
+    (hcover : (U' : Set M) ⊆ ⋃ i, (U i : Set M)) :
     let _ := frameTopology (I := I) (n := n) e U hU
     Continuous (e'.frameCoordinates (I := I) (n := n) hU') := by
   let _ := frameTopology (I := I) (n := n) e U hU
   let W (i : ι) : Opens U' := Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ (U i)
-  have hW : ∀ x : U', ∃ i, x ∈ W i := fun x ↦ hcover x
+  have hW : ∀ x : U', ∃ i, x ∈ W i := fun x ↦ by simpa [W] using hcover x.property
   apply ContMDiffMap.continuous_of_forall_continuous_restrict W hW
   intro i
   let j : C^n⟮I, W i; I, U i⟯ :=
@@ -121,7 +123,8 @@ theorem frameTopology_le_of_cover (hcover : ∀ x : M, ∃ i, x ∈ U i)
   let _ := frameTopology (I := I) (n := n) e U hU
   apply (continuous_frameTopology_iff_frameCoordinates e' U' hU').mpr
   intro j
-  exact continuous_frameCoordinates_of_cover e U hU hcover (e' j) (U' j) (hU' j)
+  exact continuous_frameCoordinates_of_subset_iUnion e U hU (e' j) (U' j) (hU' j)
+    fun x _ ↦ mem_iUnion.2 (hcover x)
 
 /-- The existing compact derivative topology on sections is independent of any choice of
 covering smooth frames. This includes empty bases and empty covering index types. -/
