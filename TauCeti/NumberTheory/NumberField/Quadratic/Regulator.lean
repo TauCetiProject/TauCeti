@@ -112,6 +112,17 @@ private theorem discr_le_embedding_of_isReal_sub_norm_div_sq_of_one_lt {w : Infi
   rw [← hfdiscr]
   exact_mod_cast hidx
 
+/-- If `1 < x` and `E ≤ (x - 1/x)²`, then `(√(E + 4) + √E) / 2 ≤ x`: indeed `√E ≤ x - 1/x` and
+`√(E + 4) ≤ x + 1/x`, since `(x + 1/x)² = (x - 1/x)² + 4`. -/
+private theorem sqrt_add_four_add_sqrt_div_two_le_of_le_sub_inv_sq {E x : ℝ} (hx : 1 < x)
+    (hE : E ≤ (x - 1 / x) ^ 2) : (√(E + 4) + √E) / 2 ≤ x := by
+  have hx0 : 0 < x := zero_lt_one.trans hx
+  have h1 : √E ≤ x - 1 / x :=
+    Real.sqrt_le_iff.mpr ⟨by linarith [div_le_self zero_le_one hx.le], hE⟩
+  have h2 : √(E + 4) ≤ x + 1 / x :=
+    Real.sqrt_le_iff.mpr ⟨by positivity, by linear_combination hE - 4 * mul_one_div_cancel hx0.ne'⟩
+  linarith
+
 /-- **Norm-one unit lower bound in a real quadratic field.** If `u` is a unit of norm `1` whose
 real image at `w` exceeds `1`, then `(√(D + 4) + √D) / 2 ≤ w(u)`, where `D = discr K`. -/
 theorem sqrt_discr_add_four_add_sqrt_div_two_le_embedding_of_isReal_of_norm_eq_one
@@ -120,17 +131,7 @@ theorem sqrt_discr_add_four_add_sqrt_div_two_le_embedding_of_isReal_of_norm_eq_o
     (√((discr K : ℝ) + 4) + √(discr K : ℝ)) / 2 ≤ embedding_of_isReal hw (u : K) := by
   have hsq := discr_le_embedding_of_isReal_sub_norm_div_sq_of_one_lt hw hK hu
   rw [hnorm, Rat.cast_one] at hsq
-  set x := embedding_of_isReal hw (u : K)
-  have hx0 : 0 < x := zero_lt_one.trans hu
-  have h1 : √(discr K : ℝ) ≤ x - 1 / x :=
-    Real.sqrt_le_iff.mpr ⟨by linarith [div_le_self zero_le_one hu.le], hsq⟩
-  have hadd_sq : (discr K : ℝ) + 4 ≤ (x + 1 / x) ^ 2 := by
-    have hid : (x + 1 / x) ^ 2 = (x - 1 / x) ^ 2 + 4 := by
-      linear_combination 4 * mul_one_div_cancel hx0.ne'
-    linarith
-  have h2 : √((discr K : ℝ) + 4) ≤ x + 1 / x :=
-    Real.sqrt_le_iff.mpr ⟨by positivity, hadd_sq⟩
-  linarith
+  exact sqrt_add_four_add_sqrt_div_two_le_of_le_sub_inv_sq hu hsq
 
 /-- **Sharp discriminant-dependent unit lower bound in a real quadratic field.** Every unit `u`
 whose real image at `w` exceeds `1` satisfies `(√D + √(D - 4)) / 2 ≤ w(u)`, where `D = discr K`. -/
@@ -146,21 +147,12 @@ theorem sqrt_discr_add_sqrt_sub_four_div_two_le_embedding_of_isReal {w : Infinit
       (sqrt_discr_add_four_add_sqrt_div_two_le_embedding_of_isReal_of_norm_eq_one hw hK hu h1)
     have hle : √((discr K : ℝ) - 4) ≤ √((discr K : ℝ) + 4) := Real.sqrt_le_sqrt (by linarith)
     linarith
-  · rw [hneg1, Rat.cast_neg, Rat.cast_one] at hsq
-    set x := embedding_of_isReal hw (u : K)
-    have hx0 : 0 < x := zero_lt_one.trans hu
-    have hsq' : (discr K : ℝ) ≤ (x + 1 / x) ^ 2 := by
-      convert hsq using 2
-      ring
-    have h1 : √(discr K : ℝ) ≤ x + 1 / x :=
-      Real.sqrt_le_iff.mpr ⟨by positivity, hsq'⟩
-    have hsub_sq : (discr K : ℝ) - 4 ≤ (x - 1 / x) ^ 2 := by
-      have hid : (x - 1 / x) ^ 2 = (x + 1 / x) ^ 2 - 4 := by
-        linear_combination -4 * mul_one_div_cancel hx0.ne'
-      linarith
-    have h2 : √((discr K : ℝ) - 4) ≤ x - 1 / x :=
-      Real.sqrt_le_iff.mpr ⟨by linarith [div_le_self zero_le_one hu.le], hsub_sq⟩
-    linarith
+  · -- With `N(u) = -1`, apply the shared bound to `D - 4`, using `(x + 1/x)² = (x - 1/x)² + 4`.
+    rw [hneg1, Rat.cast_neg, Rat.cast_one] at hsq
+    have hx0 : 0 < embedding_of_isReal hw (u : K) := zero_lt_one.trans hu
+    have hsub := sqrt_add_four_add_sqrt_div_two_le_of_le_sub_inv_sq hu
+      (E := (discr K : ℝ) - 4) (by linear_combination hsq + 4 * mul_one_div_cancel hx0.ne')
+    rwa [sub_add_cancel] at hsub
 
 /-- In a real quadratic field (`0 < discr K`), a positive lower bound `B` valid at every real place
 on units `u` with `1 < w(u)` gives `log B ≤ regulator K`. -/
