@@ -7,8 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
-
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Forms definite off the origin separate vectors
@@ -17,7 +18,8 @@ A semilinear map of two arguments `B` that is definite off the origin, `B x x �
 **separates** vectors: two vectors pairing identically against every vector are equal, because
 their difference pairs to zero with itself. On a finite-dimensional space, a separating form
 represents every pairing by a linear map, and a form definite off the origin identifies the space
-semilinearly with its dual.
+semilinearly with its dual. In any dimension, the pairings of a vector with two linearly
+independent vectors can be prescribed independently through a left-separating form.
 
 ## Main results
 
@@ -26,6 +28,9 @@ semilinearly with its dual.
   form on a finite-dimensional space.
 * `LinearMap.bijective_of_apply_self_ne_zero`: on a finite-dimensional space, a form definite off
   the origin is a bijection onto the dual.
+* `LinearMap.SeparatingLeft.exists_apply_eq_and_apply_eq_of_linearIndependent`: through a
+  left-separating form, the pairings with two linearly independent vectors can be prescribed
+  independently.
 -/
 
 public section
@@ -80,5 +85,31 @@ theorem bijective_of_apply_self_ne_zero {K V : Type*} [Field K] [AddCommGroup V]
       hdef' u ((Submodule.mem_dualCoannihilator u).1 hu _ ⟨u, rfl⟩)
   rw [hbot, finrank_bot, add_zero] at hW
   rw [hW, Subspace.dual_finrank_eq]
+
+/-- **Prescribing two pairings through a left-separating form.** Over a field, let `B` pair `V`
+with `W` and separate the vectors of `V`. For linearly independent `u` and `v` and any `a` and `b`
+there is `w` with `B u w = a` and `B v w = b`, that is, `x ↦ (B u x, B v x)` is onto `K × K`. No
+finiteness of `V` or `W` is needed. -/
+theorem SeparatingLeft.exists_apply_eq_and_apply_eq_of_linearIndependent {K V W : Type*}
+    [Field K] [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W]
+    {B : V →ₗ[K] W →ₗ[K] K} (hB : B.SeparatingLeft) {u v : V}
+    (hli : LinearIndependent K ![u, v]) (a b : K) : ∃ w, B u w = a ∧ B v w = b := by
+  -- A linear form vanishing on the range of `φ` is `(s, t) ↦ a' * s + b' * t` with
+  -- `B (a' • u + b' • v) = 0`, so `a' = b' = 0` and the range is everything.
+  set φ := (B u).prod (B v)
+  have hφ : LinearMap.range φ = ⊤ := by
+    by_contra h
+    obtain ⟨f, hf₀, hf⟩ := (LinearMap.range φ).exists_le_ker_of_lt_top (lt_top_iff_ne_top.mpr h)
+    have hfx (x : W) : B (f (1, 0) • u + f (0, 1) • v) x = 0 := by
+      have hφx : φ x = B u x • ((1 : K), (0 : K)) + B v x • ((0 : K), (1 : K)) := by
+        ext <;> simp [φ]
+      have := LinearMap.mem_ker.mp (hf ⟨x, rfl⟩)
+      simp only [hφx, map_add, map_smul, smul_eq_mul] at this
+      simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
+      linear_combination this
+    obtain ⟨ha, hb⟩ := LinearIndependent.pair_iff.mp hli _ _ (hB _ hfx)
+    exact hf₀ (LinearMap.prod_ext (LinearMap.ext_ring ha) (LinearMap.ext_ring hb))
+  obtain ⟨w, hw⟩ := LinearMap.range_eq_top.mp hφ (a, b)
+  exact ⟨w, congrArg Prod.fst hw, congrArg Prod.snd hw⟩
 
 end LinearMap

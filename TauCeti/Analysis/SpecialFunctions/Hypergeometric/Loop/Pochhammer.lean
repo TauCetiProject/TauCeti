@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
 -- Reuse the private `(0+)` keyhole contour helpers from `Loop/Integral.lean`.
 import all TauCeti.Analysis.SpecialFunctions.Hypergeometric.Loop.Integral
@@ -46,6 +47,10 @@ combination of the two `(0+)` keyhole pieces from
   `(A, ρ₀, ρ₁)`, shrinking the radii collapses the contour onto `[0, 1]`, yielding DLMF 15.6.5 on
   the cut plane (with `b, c - b ∉ {1, 2, …}` for
   `Complex.eulerIntegral_eq_hypergeometricPochhammerLoop`).
+* `Complex.hypergeometricPochhammerLoop_eq_mul_regularizedGaussHGFun`: on the open unit disk,
+  joint continuation in `(b, c)` gives the contour value even where its reciprocal Gamma factors
+  vanish. `Complex.regularizedGaussHGFun_eq_mul_hypergeometricPochhammerLoop` gives the inverse
+  formula ([DLMF 15.6.5](https://dlmf.nist.gov/15.6.E5)) when those factors are nonzero.
 * `Complex.hypergeometricPochhammerLoop_zero` and `Complex.hypergeometricPochhammerLoop_zero_left`:
   at `z = 0` or `a = 0` with `0 < ρ₀ < A` and `0 < ρ₁ < 1 - A`, parameter holomorphy evaluates the
   integral in closed form via reciprocal Gamma factors across all `(b, c) ∈ ℂ × ℂ`, yielding
@@ -583,6 +588,65 @@ theorem eulerIntegral_eq_hypergeometricPochhammerLoop (a : ℂ) {b c z : ℂ} (h
   field_simp
   linear_combination (eulerIntegral a b c z) * hexp.symm
 
+/-- Pochhammer's double-loop integral on the open unit disk equals the regularized Gauss series
+times the indicated Gamma and phase factors. The identity holds for all complex parameters,
+including positive integral `b` or `c - b`, where the loop vanishes. -/
+theorem hypergeometricPochhammerLoop_eq_mul_regularizedGaussHGFun (a : ℂ) {b c z : ℂ}
+    (hz : ‖z‖ < 1) {A ρ₀ ρ₁ : ℝ} (hρ₀ : 0 < ρ₀) (hρ₀A : ρ₀ < A)
+    (hρ₁ : 0 < ρ₁) (hρ₁A : ρ₁ < 1 - A)
+    (hz₁ : closedBall (1 - z) (‖z‖ * ρ₁) ⊆ slitPlane) :
+    hypergeometricPochhammerLoop a b c z A ρ₀ ρ₁ =
+      4 * π ^ 2 * exp (c * π * I) / (Gamma (1 - b) * Gamma (1 + b - c)) *
+        regularizedGaussHGFun a b c z := by
+  have hz₀ : ‖z‖ * ρ₀ < 1 :=
+    (mul_le_of_le_one_right (norm_nonneg z) (by linarith)).trans_lt hz
+  have hloop : AnalyticOnNhd ℂ
+      (fun p : ℂ × ℂ => hypergeometricPochhammerLoop a p.1 p.2 z A ρ₀ ρ₁) univ :=
+    fun p _ =>
+      (analyticOnNhd_hypergeometricPochhammerLoop hρ₀ hρ₀A hρ₁ hρ₁A (a, p.1, p.2, z)
+        ⟨hz₀, hz₁⟩).comp₂ analyticAt_const
+          (analyticAt_fst.prod (analyticAt_snd.prod analyticAt_const))
+  have hseries : AnalyticOnNhd ℂ (fun p : ℂ × ℂ =>
+      4 * π ^ 2 * exp (p.2 * π * I) / (Gamma (1 - p.1) * Gamma (1 + p.1 - p.2)) *
+        regularizedGaussHGFun a p.1 p.2 z) univ := by
+    intro p _
+    simp only [div_eq_mul_inv, mul_inv]
+    have hb : AnalyticAt ℂ (fun w : ℂ × ℂ => w.1) p := analyticAt_fst
+    have hc : AnalyticAt ℂ (fun w : ℂ × ℂ => w.2) p := analyticAt_snd
+    have hphase : AnalyticAt ℂ (fun w : ℂ × ℂ => exp (w.2 * π * I)) p :=
+      ((hc.mul analyticAt_const).mul analyticAt_const).cexp
+    have hΓ₀ : AnalyticAt ℂ (fun w : ℂ × ℂ => (Gamma (1 - w.1))⁻¹) p :=
+      (differentiable_one_div_Gamma.analyticAt _).comp (analyticAt_const.sub hb)
+    have hΓ₁ : AnalyticAt ℂ (fun w : ℂ × ℂ => (Gamma (1 + w.1 - w.2))⁻¹) p :=
+      (differentiable_one_div_Gamma.analyticAt _).comp ((analyticAt_const.add hb).sub hc)
+    exact ((analyticAt_const.mul hphase).mul (hΓ₀.mul hΓ₁)).mul
+      (analyticAt_const.regularizedGaussHGFun hb hc analyticAt_const hz)
+  have hU : IsOpen {p : ℂ × ℂ | 0 < p.1.re ∧ p.1.re < p.2.re} :=
+    (isOpen_lt continuous_const (continuous_re.comp continuous_fst)).inter
+      (isOpen_lt (continuous_re.comp continuous_fst) (continuous_re.comp continuous_snd))
+  have heq := hloop.eq_of_eventuallyEq hseries (z₀ := (1, 2)) (by
+    filter_upwards [hU.mem_nhds (by simp : (0 : ℝ) < (1 : ℂ).re ∧ (1 : ℂ).re < (2 : ℂ).re)]
+      with p hp
+    rw [hypergeometricPochhammerLoop_eq_eulerIntegral a hp.1 hp.2 hρ₀ hρ₀A hρ₁ hρ₁A hz₀ hz₁,
+      regularizedGaussHGFun_eq_eulerIntegral a hp.1 hp.2 hz])
+  exact congrFun heq (b, c)
+
+/-- Pochhammer's contour represents the regularized Gauss series on the open unit disk when
+neither `b` nor `c - b` is a positive integer (DLMF 15.6.5). -/
+theorem regularizedGaussHGFun_eq_mul_hypergeometricPochhammerLoop (a : ℂ) {b c z : ℂ}
+    (hb : ∀ n : ℕ, b ≠ n + 1) (hcb : ∀ n : ℕ, c - b ≠ n + 1) (hz : ‖z‖ < 1)
+    {A ρ₀ ρ₁ : ℝ} (hρ₀ : 0 < ρ₀) (hρ₀A : ρ₀ < A) (hρ₁ : 0 < ρ₁) (hρ₁A : ρ₁ < 1 - A)
+    (hz₁ : closedBall (1 - z) (‖z‖ * ρ₁) ⊆ slitPlane) :
+    regularizedGaussHGFun a b c z =
+      exp (-c * π * I) * Gamma (1 - b) * Gamma (1 + b - c) / (4 * π ^ 2) *
+        hypergeometricPochhammerLoop a b c z A ρ₀ ρ₁ := by
+  have hGb : Gamma (1 - b) ≠ 0 := Gamma_ne_zero fun n hn => hb n (by linear_combination -hn)
+  have hGcb : Gamma (1 + b - c) ≠ 0 := Gamma_ne_zero fun n hn =>
+    hcb n (by linear_combination -hn)
+  rw [hypergeometricPochhammerLoop_eq_mul_regularizedGaussHGFun a hz hρ₀ hρ₀A hρ₁ hρ₁A hz₁,
+    neg_mul, neg_mul, exp_neg]
+  field_simp [Real.pi_ne_zero, exp_ne_zero]
+
 /-- **Pochhammer's contour integral for Euler's Beta function (DLMF 5.12.12).** At zero argument,
 `Complex.hypergeometricPochhammerLoop` evaluates in closed form for all complex `a`, `b`, and `c`
 with no real-part restrictions whenever `0 < ρ₀ < A` and `0 < ρ₁ < 1 - A`. -/
@@ -591,33 +655,8 @@ theorem hypergeometricPochhammerLoop_zero (a b c : ℂ) {A ρ₀ ρ₁ : ℝ}
     (hρ₀ : 0 < ρ₀) (hρ₀A : ρ₀ < A) (hρ₁ : 0 < ρ₁) (hρ₁A : ρ₁ < 1 - A) :
     hypergeometricPochhammerLoop a b c 0 A ρ₀ ρ₁ =
       4 * π ^ 2 * exp (c * π * I) / (Gamma (1 - b) * Gamma (1 + b - c) * Gamma c) := by
-  have h0 : ‖(0 : ℂ)‖ * ρ₀ < 1 ∧ closedBall (1 - (0 : ℂ)) (‖(0 : ℂ)‖ * ρ₁) ⊆ slitPlane := by
-    simp [one_mem_slitPlane]
-  have han₁ : AnalyticOnNhd ℂ
-      (fun p : ℂ × ℂ => hypergeometricPochhammerLoop a p.1 p.2 0 A ρ₀ ρ₁) univ := fun p _ =>
-    (analyticOnNhd_hypergeometricPochhammerLoop hρ₀ hρ₀A hρ₁ hρ₁A (a, p.1, p.2, 0) h0).comp₂
-      analyticAt_const (analyticAt_fst.prod (analyticAt_snd.prod analyticAt_const))
-  have hG (s : ℂ) : AnalyticAt ℂ (fun s : ℂ => (Gamma s)⁻¹) s :=
-    Complex.differentiable_one_div_Gamma.analyticAt s
-  have han₂ : AnalyticOnNhd ℂ
-      (fun p : ℂ × ℂ => 4 * π ^ 2 * exp (p.2 * π * I) /
-        (Gamma (1 - p.1) * Gamma (1 + p.1 - p.2) * Gamma p.2)) univ := fun p _ => by
-    simp_rw [div_eq_mul_inv, mul_inv]
-    exact (analyticAt_const.mul ((analyticAt_snd.mul analyticAt_const).mul
-      analyticAt_const).cexp).mul
-      ((((hG _).comp (analyticAt_const.sub analyticAt_fst)).mul
-        ((hG _).comp ((analyticAt_const.add analyticAt_fst).sub analyticAt_snd))).mul
-        ((hG _).comp analyticAt_snd))
-  have hU : IsOpen {p : ℂ × ℂ | 0 < p.1.re ∧ p.1.re < p.2.re} :=
-    (isOpen_lt continuous_const (Complex.continuous_re.comp continuous_fst)).inter
-      (isOpen_lt (Complex.continuous_re.comp continuous_fst)
-        (Complex.continuous_re.comp continuous_snd))
-  have heq := han₁.eq_of_eventuallyEq han₂ (z₀ := (1, 2)) ?_
-  · exact congrFun heq (b, c)
-  · filter_upwards [hU.mem_nhds (by simp : (0 : ℝ) < (1 : ℂ).re ∧ (1 : ℂ).re < (2 : ℂ).re)]
-      with p hp
-    rw [hypergeometricPochhammerLoop_eq_eulerIntegral a hp.1 hp.2 hρ₀ hρ₀A hρ₁ hρ₁A h0.1 h0.2,
-      eulerIntegral_zero a hp.1 hp.2, ← div_eq_mul_inv, div_div]
+  rw [hypergeometricPochhammerLoop_eq_mul_regularizedGaussHGFun a (by simp) hρ₀ hρ₀A hρ₁ hρ₁A
+    (by simp [one_mem_slitPlane]), regularizedGaussHGFun_zero, ← div_eq_mul_inv, div_div]
 
 /-- With first parameter zero, Pochhammer's contour integral is independent of `z` and evaluates in
 closed form for all complex `b`, `c`, and `z` whenever `0 < ρ₀ < A` and `0 < ρ₁ < 1 - A`. -/
