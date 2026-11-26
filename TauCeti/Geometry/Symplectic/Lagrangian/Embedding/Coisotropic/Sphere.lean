@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Sphere
-public import TauCeti.Geometry.Symplectic.Lagrangian.Presymplectic
+public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Isotropic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!

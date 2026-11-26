@@ -238,9 +238,10 @@ theorem ker_bilinFormAt_mpullback_coe_sphere (x : sphere (0 : E) 1) :
     LinearMap.ker ((SmoothForm.mpullback ((↑) : sphere (0 : E) 1 → E) contMDiff_coe_sphere
         ω.constSmooth).bilinFormAt x) =
       ℝ ∙ (ω.sphereContactForm n).reebVectorField x := by
+  have hα := ω.isContactForm_sphereContactForm (n := n)
+  rw [sphereContactForm_def] at hα ⊢
   rw [← ω.mextDerivₗ_radialPrimitive]
-  exact SmoothForm.ker_bilinFormAt_mpullback_mextDerivₗ contMDiff_coe_sphere
-    ω.isContactForm_sphereContactForm x
+  exact SmoothForm.ker_bilinFormAt_mpullback_mextDerivₗ contMDiff_coe_sphere hα x
 
 /-- The characteristic line of the sphere is a line: the kernel of the form induced by `ω` has
 dimension one, the codimension of the sphere. -/
